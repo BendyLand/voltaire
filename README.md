@@ -1,5 +1,9 @@
 # Voltaire Engine
 
+<p align="center">
+  <img src="logo.svg" alt="Voltaire Engine Logo" width="450">
+</p>
+
 ## 2D and 3D cross-platform game engine
 
 **Voltaire** is a lightweight, cross-platform game engine designed to create 2D and 3D games from a unified interface. It provides a comprehensive set of development tools, allowing you to focus on making games without having to reinvent the wheel. Games can be compiled and exported to major desktop platforms (Linux, macOS, Windows), mobile platforms (Android, iOS), as well as Web-based platforms.
