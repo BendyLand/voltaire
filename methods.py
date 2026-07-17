@@ -1233,7 +1233,7 @@ def generate_vs_project(env, original_args, project_name="godot"):
     others_active = []
 
     get_dependencies(
-        env.File(f"#bin/godot{env['PROGSUFFIX']}"), env, extensions, headers_active, sources_active, others_active
+        env.File(f"#bin/voltaire{env['PROGSUFFIX']}"), env, extensions, headers_active, sources_active, others_active
     )
 
     all_items = []

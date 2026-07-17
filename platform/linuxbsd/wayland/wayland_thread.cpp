@@ -5195,7 +5195,7 @@ void WaylandThread::set_default_icon(const Ref<Image> &p_icon) {
 		// We only want the project manager and editor to get themed,
 		// Games will get icons with the protocol and themed icons with .desktop entries.
 		// NOTE: should be synced with the icon name in misc/dist/linuxbsd/Godot.desktop
-		xdg_toplevel_icon_v1_set_name(xdg_icon, "godot");
+		xdg_toplevel_icon_v1_set_name(xdg_icon, "voltaire");
 	}
 
 	for (KeyValue<DisplayServerEnums::WindowID, WindowState> &pair : windows) {
