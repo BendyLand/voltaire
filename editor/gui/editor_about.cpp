@@ -56,41 +56,37 @@
 void EditorAbout::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_TRANSLATION_CHANGED: {
-			_about_text_label->set_text(
-					String(U"© 2026-present ") + TTR("Voltaire Engine contributors") + ".\n" +
-					String(U"© 2014-present ") + TTR("Godot Engine contributors") + ".\n" +
-					String(U"© 2007-2014 Juan Linietsky, Ariel Manzur.\n"));
+            _about_text_label->set_text(
+                    String(U"© 2026-present ") + TTR("Voltaire Engine contributors") + ".\n" +
+                    String(U"© 2014-2026 ") + TTR("Godot Engine contributors") + ".\n" +
+                    String(U"© 2007-2014 Juan Linietsky, Ariel Manzur.\n"));
 
-			_project_manager_label->set_text(TTR("Project Manager", "Job Title"));
+            _project_manager_label->set_text(TTR("Godot Project Manager", "Job Title"));
 
-			for (ItemList *il : name_lists) {
-				for (int i = 0; i < il->get_item_count(); i++) {
-					const Variant val = il->get_item_metadata(i);
-					if (val.get_type() == Variant::STRING) {
-						il->set_item_tooltip(i, val.operator String() + "\n\n" + TTR("Double-click to open in browser."));
-					}
-				}
-			}
-		} break;
+            for (ItemList *il : name_lists) {
+                for (int i = 0; i < il->get_item_count(); i++) {
+                    const Variant val = il->get_item_metadata(i);
+                    if (val.get_type() == Variant::STRING) {
+                        il->set_item_tooltip(i, val.operator String() + "\n\n" + TTR("Double-click to open in browser."));
+                    }
+                }
+            }
+        } break;
 
 		case NOTIFICATION_THEME_CHANGED: {
 			const Ref<Font> font = get_theme_font(SNAME("source"), EditorStringName(EditorFonts));
 			const int font_size = get_theme_font_size(SNAME("source_size"), EditorStringName(EditorFonts));
-
 			_tpl_text->begin_bulk_theme_override();
 			_tpl_text->add_theme_font_override("normal_font", font);
 			_tpl_text->add_theme_font_size_override("normal_font_size", font_size);
 			_tpl_text->add_theme_constant_override(SceneStringName(line_separation), 4 * EDSCALE);
 			_tpl_text->end_bulk_theme_override();
-
 			license_text_label->begin_bulk_theme_override();
 			license_text_label->add_theme_font_override("normal_font", font);
 			license_text_label->add_theme_font_size_override("normal_font_size", font_size);
 			license_text_label->add_theme_constant_override(SceneStringName(line_separation), 4 * EDSCALE);
 			license_text_label->end_bulk_theme_override();
-
 			_logo->set_texture(get_editor_theme_icon(SNAME("Logo")));
-
 			for (ItemList *il : name_lists) {
 				for (int i = 0; i < il->get_item_count(); i++) {
 					if (il->get_item_metadata(i)) {
@@ -252,22 +248,31 @@ EditorAbout::EditorAbout() {
 	vbc->add_child(tc);
 
 	{
-		ScrollContainer *sc = memnew(ScrollContainer);
-		sc->set_name(TTRC("Authors"));
-		sc->set_v_size_flags(Control::SIZE_EXPAND);
-		tc->add_child(sc);
-
-		VBoxContainer *vb = memnew(VBoxContainer);
-		vb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		sc->add_child(vb);
-
-		_create_section(vb, TTRC("Project Founders"), AUTHORS_FOUNDERS, FLAG_SINGLE_COLUMN);
-		_create_section(vb, TTRC("Lead Developer"), AUTHORS_LEAD_DEVELOPERS);
-		// The section title will be updated in NOTIFICATION_TRANSLATION_CHANGED.
-		_project_manager_label = _create_section(vb, "", AUTHORS_PROJECT_MANAGERS, FLAG_EASTER_EGG);
-		_project_manager_label->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-		_create_section(vb, TTRC("Developers"), AUTHORS_DEVELOPERS);
-	}
+        ScrollContainer *sc = memnew(ScrollContainer);
+        sc->set_name(TTRC("Authors"));
+        sc->set_v_size_flags(Control::SIZE_EXPAND);
+        tc->add_child(sc);
+        VBoxContainer *vb = memnew(VBoxContainer);
+        vb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+        sc->add_child(vb);
+        // voltaire project section
+        Label *voltaire_header = memnew(Label(TTRC("Voltaire Engine")));
+        voltaire_header->set_theme_type_variation("HeaderMedium");
+        vb->add_child(voltaire_header);
+        static const char *const VOLTAIRE_LEADS[] = { "Bland Logic LLC (BendyLand)", nullptr };
+        _create_section(vb, TTRC("Lead Developer"), VOLTAIRE_LEADS);
+        HSeparator *project_sep = memnew(HSeparator);
+        vb->add_child(project_sep);
+        // godot history section
+        Label *godot_header = memnew(Label(TTRC("Godot Engine")));
+        godot_header->set_theme_type_variation("HeaderMedium");
+        vb->add_child(godot_header);
+        _create_section(vb, TTRC("Godot Project Founders"), AUTHORS_FOUNDERS, FLAG_SINGLE_COLUMN);
+        _create_section(vb, TTRC("Godot Lead Developer"), AUTHORS_LEAD_DEVELOPERS);
+        _project_manager_label = _create_section(vb, "", AUTHORS_PROJECT_MANAGERS, FLAG_EASTER_EGG);
+        _project_manager_label->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
+        _create_section(vb, TTRC("Godot Engine Contributors"), AUTHORS_DEVELOPERS);
+    }
 
 	{
 		// ScrollContainer *sc = memnew(ScrollContainer);
