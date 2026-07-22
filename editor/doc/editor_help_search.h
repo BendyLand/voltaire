@@ -40,7 +40,7 @@
 class FilterLineEdit;
 
 class EditorHelpSearch : public ConfirmationDialog {
-	GDCLASS(EditorHelpSearch, ConfirmationDialog);
+	VLTRCLASS(EditorHelpSearch, ConfirmationDialog);
 
 	enum SearchFlags {
 		SEARCH_CLASSES = 1 << 0,

@@ -57,7 +57,7 @@ class DebugAdapterParser;
 class EditorExpressionEvaluator;
 
 class ScriptEditorDebugger : public MarginContainer {
-	GDCLASS(ScriptEditorDebugger, MarginContainer);
+	VLTRCLASS(ScriptEditorDebugger, MarginContainer);
 
 	friend class EditorDebuggerNode;
 	friend class DebugAdapterProtocol;

@@ -40,7 +40,7 @@ class EditorDockManager;
 class StyleBoxFlat;
 
 class EditorDockDragHint : public Control {
-	GDCLASS(EditorDockDragHint, Control);
+	VLTRCLASS(EditorDockDragHint, Control);
 
 	static constexpr float SIDE_DROP_MARGIN = 0.2;
 
@@ -74,7 +74,7 @@ public:
 };
 
 class DockTabContainer : public TabContainer {
-	GDCLASS(DockTabContainer, TabContainer);
+	VLTRCLASS(DockTabContainer, TabContainer);
 
 	EditorDockDragHint *drag_hint = nullptr;
 
@@ -129,7 +129,7 @@ public:
 };
 
 class SideDockTabContainer : public DockTabContainer {
-	GDCLASS(SideDockTabContainer, DockTabContainer);
+	VLTRCLASS(SideDockTabContainer, DockTabContainer);
 
 public:
 	virtual Rect2 get_floating_dock_rect(EditorDock *p_dock) override;
@@ -138,7 +138,7 @@ public:
 };
 
 class BottomSideDockTabContainer : public DockTabContainer {
-	GDCLASS(BottomSideDockTabContainer, DockTabContainer);
+	VLTRCLASS(BottomSideDockTabContainer, DockTabContainer);
 
 public:
 	virtual Rect2 get_floating_dock_rect(EditorDock *p_dock) override;

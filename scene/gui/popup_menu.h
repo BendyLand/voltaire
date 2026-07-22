@@ -44,7 +44,7 @@ class Timer;
 class PopupMenuItems;
 
 class PopupMenu : public Popup {
-	GDCLASS(PopupMenu, Popup);
+	VLTRCLASS(PopupMenu, Popup);
 
 	friend class PopupMenuItems;
 
@@ -463,7 +463,7 @@ public:
 };
 
 class PopupMenuItems : public Control {
-	GDCLASS(PopupMenuItems, Control);
+	VLTRCLASS(PopupMenuItems, Control);
 
 	PopupMenu *popup = nullptr;
 

@@ -33,7 +33,7 @@
 #include "scene/resources/style_box.h"
 
 class StyleBoxLine : public StyleBox {
-	GDCLASS(StyleBoxLine, StyleBox);
+	VLTRCLASS(StyleBoxLine, StyleBox);
 	Color color;
 	int thickness = 1;
 	bool vertical = false;

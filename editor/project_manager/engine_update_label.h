@@ -35,7 +35,7 @@
 class HTTPRequest;
 
 class EngineUpdateLabel : public LinkButton {
-	GDCLASS(EngineUpdateLabel, LinkButton);
+	VLTRCLASS(EngineUpdateLabel, LinkButton);
 
 public:
 	enum class UpdateMode {

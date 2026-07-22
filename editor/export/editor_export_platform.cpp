@@ -595,7 +595,7 @@ Ref<Texture2D> EditorExportPlatform::get_option_icon(int p_index) const {
 }
 
 String EditorExportPlatform::find_export_template(const String &template_file_name, String *err) const {
-	String current_version = GODOT_VERSION_FULL_CONFIG;
+	String current_version = VLTR_VERSION_FULL_CONFIG;
 	String template_path = EditorPaths::get_singleton()->get_export_templates_dir().path_join(current_version).path_join(template_file_name);
 
 	if (FileAccess::exists(template_path)) {
@@ -805,7 +805,7 @@ EditorExportPlatform::ExportNotifier::ExportNotifier(EditorExportPlatform &p_pla
 	//initial export plugin callback
 	for (int i = 0; i < export_plugins.size(); i++) {
 		export_plugins.write[i]->set_export_preset(p_preset);
-		if (GDVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_begin)) {
+		if (VLTRVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_begin)) {
 			PackedStringArray features_psa;
 			for (const String &feature : features) {
 				features_psa.push_back(feature);
@@ -823,7 +823,7 @@ EditorExportPlatform::ExportNotifier::~ExportNotifier() {
 	}
 	Vector<Ref<EditorExportPlugin>> export_plugins = EditorExport::get_singleton()->get_export_plugins();
 	for (int i = 0; i < export_plugins.size(); i++) {
-		if (GDVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_end)) {
+		if (VLTRVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_end)) {
 			export_plugins.write[i]->_export_end_script();
 		} else {
 			export_plugins.write[i]->_export_end();
@@ -1209,7 +1209,7 @@ Dictionary EditorExportPlatform::get_internal_export_files(const Ref<EditorExpor
 						export_ok = true;
 					}
 				} else {
-					String current_version = GODOT_VERSION_FULL_CONFIG;
+					String current_version = VLTR_VERSION_FULL_CONFIG;
 					String template_path = EditorPaths::get_singleton()->get_export_templates_dir().path_join(current_version);
 					if (p_debug && p_preset->has("custom_template/debug") && p_preset->get("custom_template/debug") != "") {
 						template_path = p_preset->get("custom_template/debug").operator String().get_base_dir();
@@ -1542,7 +1542,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 
 		bool do_export = true;
 		for (int i = 0; i < export_plugins.size(); i++) {
-			if (GDVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_file)) {
+			if (VLTRVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_file)) {
 				export_plugins.write[i]->_export_file_script(path, type, features_psa);
 			} else {
 				export_plugins.write[i]->_export_file(path, type, features);
@@ -2177,9 +2177,9 @@ Dictionary EditorExportPlatform::_save_zip_patch(const Ref<EditorExportPreset> &
 bool EditorExportPlatform::_store_header(Ref<FileAccess> p_fd, bool p_enc, bool p_sparse, uint64_t &r_file_base_ofs, uint64_t &r_dir_base_ofs, const String &p_salt) {
 	p_fd->store_32(PACK_HEADER_MAGIC);
 	p_fd->store_32(PACK_FORMAT_VERSION);
-	p_fd->store_32(GODOT_VERSION_MAJOR);
-	p_fd->store_32(GODOT_VERSION_MINOR);
-	p_fd->store_32(GODOT_VERSION_PATCH);
+	p_fd->store_32(VLTR_VERSION_MAJOR);
+	p_fd->store_32(VLTR_VERSION_MINOR);
+	p_fd->store_32(VLTR_VERSION_PATCH);
 
 	uint32_t pack_flags = PACK_REL_FILEBASE;
 	if (p_enc) {

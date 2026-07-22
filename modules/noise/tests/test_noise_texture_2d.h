@@ -40,7 +40,7 @@
 namespace TestNoiseTexture2D {
 
 class NoiseTextureTester : public RefCounted {
-	GDCLASS(NoiseTextureTester, RefCounted);
+	VLTRCLASS(NoiseTextureTester, RefCounted);
 
 	const NoiseTexture2D *const texture;
 

@@ -37,7 +37,7 @@
 #include "servers/physics_2d/queries/physics_shape_query_parameters_2d.h"
 
 class PhysicsDirectSpaceState2D : public Object {
-	GDCLASS(PhysicsDirectSpaceState2D, Object);
+	VLTRCLASS(PhysicsDirectSpaceState2D, Object);
 
 	Dictionary _intersect_ray(RequiredParam<PhysicsRayQueryParameters2D> rp_ray_query);
 	TypedArray<Dictionary> _intersect_point(RequiredParam<PhysicsPointQueryParameters2D> rp_point_query, int p_max_results = 32);

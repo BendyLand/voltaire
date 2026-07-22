@@ -36,7 +36,7 @@
 #include "scene/gui/tree.h"
 
 class EditorBuildProfile : public RefCounted {
-	GDCLASS(EditorBuildProfile, RefCounted);
+	VLTRCLASS(EditorBuildProfile, RefCounted);
 
 public:
 	enum BuildOption {
@@ -144,7 +144,7 @@ class EditorFileDialog;
 class EditorFileSystemDirectory;
 
 class EditorBuildProfileManager : public AcceptDialog {
-	GDCLASS(EditorBuildProfileManager, AcceptDialog);
+	VLTRCLASS(EditorBuildProfileManager, AcceptDialog);
 
 	enum Action {
 		ACTION_NEW,

@@ -60,7 +60,7 @@ class TTS_Linux;
 #endif
 
 class DisplayServerWayland : public DisplayServer {
-	GDSOFTCLASS(DisplayServerWayland, DisplayServer);
+	VLTRSOFTCLASS(DisplayServerWayland, DisplayServer);
 
 	struct WindowData {
 		DisplayServerEnums::WindowID id = DisplayServerEnums::INVALID_WINDOW_ID;

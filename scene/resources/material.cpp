@@ -130,24 +130,24 @@ void Material::inspect_native_shader_code() {
 
 RID Material::get_shader_rid() const {
 	RID ret;
-	GDVIRTUAL_CALL(_get_shader_rid, ret);
+	VLTRVIRTUAL_CALL(_get_shader_rid, ret);
 	return ret;
 }
 Shader::Mode Material::get_shader_mode() const {
 	Shader::Mode ret = Shader::MODE_MAX;
-	GDVIRTUAL_CALL(_get_shader_mode, ret);
+	VLTRVIRTUAL_CALL(_get_shader_mode, ret);
 	return ret;
 }
 
 bool Material::_can_do_next_pass() const {
 	bool ret = false;
-	GDVIRTUAL_CALL(_can_do_next_pass, ret);
+	VLTRVIRTUAL_CALL(_can_do_next_pass, ret);
 	return ret;
 }
 
 bool Material::_can_use_render_priority() const {
 	bool ret = false;
-	GDVIRTUAL_CALL(_can_use_render_priority, ret);
+	VLTRVIRTUAL_CALL(_can_use_render_priority, ret);
 	return ret;
 }
 
@@ -175,10 +175,10 @@ void Material::_bind_methods() {
 	BIND_CONSTANT(RENDER_PRIORITY_MAX);
 	BIND_CONSTANT(RENDER_PRIORITY_MIN);
 
-	GDVIRTUAL_BIND(_get_shader_rid)
-	GDVIRTUAL_BIND(_get_shader_mode)
-	GDVIRTUAL_BIND(_can_do_next_pass)
-	GDVIRTUAL_BIND(_can_use_render_priority)
+	VLTRVIRTUAL_BIND(_get_shader_rid)
+	VLTRVIRTUAL_BIND(_get_shader_mode)
+	VLTRVIRTUAL_BIND(_can_do_next_pass)
+	VLTRVIRTUAL_BIND(_can_use_render_priority)
 }
 
 Material::Material() {
@@ -738,7 +738,7 @@ void BaseMaterial3D::_update_shader() {
 
 	// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
 	String code = vformat(
-			"// NOTE: Shader automatically converted from " GODOT_VERSION_NAME " " GODOT_VERSION_FULL_CONFIG "'s %s.\n\n",
+			"// NOTE: Shader automatically converted from " VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG "'s %s.\n\n",
 			orm ? "ORMMaterial3D" : "StandardMaterial3D");
 
 	// Define shader type and render mode based on property values.

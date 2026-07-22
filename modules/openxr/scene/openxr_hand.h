@@ -39,7 +39,7 @@ class OpenXRAPI;
 class OpenXRHandTrackingExtension;
 
 class OpenXRHand : public Node3D {
-	GDCLASS(OpenXRHand, Node3D);
+	VLTRCLASS(OpenXRHand, Node3D);
 
 public:
 	enum Hands { // Deprecated, need to change this to OpenXRInterface::Hands.

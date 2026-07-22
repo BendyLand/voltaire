@@ -36,7 +36,7 @@
 class Joint2D;
 
 class PhysicalBone2D : public RigidBody2D {
-	GDCLASS(PhysicalBone2D, RigidBody2D);
+	VLTRCLASS(PhysicalBone2D, RigidBody2D);
 
 protected:
 	void _notification(int p_what);

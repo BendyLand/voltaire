@@ -36,7 +36,7 @@ class EditorExportPlatform;
 #include "core/variant/type_info.h"
 
 class EditorExportPreset : public RefCounted {
-	GDCLASS(EditorExportPreset, RefCounted);
+	VLTRCLASS(EditorExportPreset, RefCounted);
 
 public:
 	enum ExportFilter {

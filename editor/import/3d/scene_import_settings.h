@@ -52,7 +52,7 @@ class SceneImportSettingsData;
 class Timer;
 
 class SceneImportSettingsDialog : public ConfirmationDialog {
-	GDCLASS(SceneImportSettingsDialog, ConfirmationDialog)
+	VLTRCLASS(SceneImportSettingsDialog, ConfirmationDialog)
 
 	static SceneImportSettingsDialog *singleton;
 

@@ -37,7 +37,7 @@ class EditorFileDialog;
 class LightmapGI;
 
 class LightmapGIEditorPlugin : public EditorPlugin {
-	GDCLASS(LightmapGIEditorPlugin, EditorPlugin);
+	VLTRCLASS(LightmapGIEditorPlugin, EditorPlugin);
 
 	LightmapGI *lightmap = nullptr;
 

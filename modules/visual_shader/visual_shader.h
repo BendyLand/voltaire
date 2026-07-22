@@ -40,7 +40,7 @@ class VisualShaderNodeParameter;
 class VisualShaderNode;
 
 class VisualShader : public Shader {
-	GDCLASS(VisualShader, Shader);
+	VLTRCLASS(VisualShader, Shader);
 
 public:
 	enum Type {
@@ -267,7 +267,7 @@ VARIANT_ENUM_CAST(VisualShader::VaryingType)
 ///
 
 class VisualShaderNode : public Resource {
-	GDCLASS(VisualShaderNode, Resource);
+	VLTRCLASS(VisualShaderNode, Resource);
 
 public:
 	enum PortType {
@@ -392,7 +392,7 @@ public:
 VARIANT_ENUM_CAST(VisualShaderNode::PortType)
 
 class VisualShaderNodeCustom : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeCustom, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeCustom, VisualShaderNode);
 
 	struct Port {
 		String name;
@@ -433,27 +433,27 @@ protected:
 	virtual void remove_input_port_default_value(int p_port) override;
 	virtual void clear_default_input_values() override;
 
-	GDVIRTUAL0RC(String, _get_name)
-	GDVIRTUAL0RC(String, _get_description)
-	GDVIRTUAL0RC(String, _get_category)
-	GDVIRTUAL0RC(PortType, _get_return_icon_type)
-	GDVIRTUAL0RC(int, _get_input_port_count)
-	GDVIRTUAL1RC(PortType, _get_input_port_type, int)
-	GDVIRTUAL1RC(String, _get_input_port_name, int)
-	GDVIRTUAL1RC(Variant, _get_input_port_default_value, int)
-	GDVIRTUAL1RC(int, _get_default_input_port, PortType)
-	GDVIRTUAL0RC(int, _get_output_port_count)
-	GDVIRTUAL1RC(PortType, _get_output_port_type, int)
-	GDVIRTUAL1RC(String, _get_output_port_name, int)
-	GDVIRTUAL0RC(int, _get_property_count)
-	GDVIRTUAL1RC(String, _get_property_name, int)
-	GDVIRTUAL1RC(int, _get_property_default_index, int)
-	GDVIRTUAL1RC(Vector<String>, _get_property_options, int)
-	GDVIRTUAL4RC(String, _get_code, TypedArray<String>, TypedArray<String>, Shader::Mode, VisualShader::Type)
-	GDVIRTUAL2RC(String, _get_func_code, Shader::Mode, VisualShader::Type)
-	GDVIRTUAL1RC(String, _get_global_code, Shader::Mode)
-	GDVIRTUAL0RC(bool, _is_highend)
-	GDVIRTUAL2RC(bool, _is_available, Shader::Mode, VisualShader::Type)
+	VLTRVIRTUAL0RC(String, _get_name)
+	VLTRVIRTUAL0RC(String, _get_description)
+	VLTRVIRTUAL0RC(String, _get_category)
+	VLTRVIRTUAL0RC(PortType, _get_return_icon_type)
+	VLTRVIRTUAL0RC(int, _get_input_port_count)
+	VLTRVIRTUAL1RC(PortType, _get_input_port_type, int)
+	VLTRVIRTUAL1RC(String, _get_input_port_name, int)
+	VLTRVIRTUAL1RC(Variant, _get_input_port_default_value, int)
+	VLTRVIRTUAL1RC(int, _get_default_input_port, PortType)
+	VLTRVIRTUAL0RC(int, _get_output_port_count)
+	VLTRVIRTUAL1RC(PortType, _get_output_port_type, int)
+	VLTRVIRTUAL1RC(String, _get_output_port_name, int)
+	VLTRVIRTUAL0RC(int, _get_property_count)
+	VLTRVIRTUAL1RC(String, _get_property_name, int)
+	VLTRVIRTUAL1RC(int, _get_property_default_index, int)
+	VLTRVIRTUAL1RC(Vector<String>, _get_property_options, int)
+	VLTRVIRTUAL4RC(String, _get_code, TypedArray<String>, TypedArray<String>, Shader::Mode, VisualShader::Type)
+	VLTRVIRTUAL2RC(String, _get_func_code, Shader::Mode, VisualShader::Type)
+	VLTRVIRTUAL1RC(String, _get_global_code, Shader::Mode)
+	VLTRVIRTUAL0RC(bool, _is_highend)
+	VLTRVIRTUAL2RC(bool, _is_available, Shader::Mode, VisualShader::Type)
 
 	bool _is_valid_code(const String &p_code) const;
 
@@ -492,7 +492,7 @@ public:
 /////
 
 class VisualShaderNodeInput : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeInput, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeInput, VisualShaderNode);
 
 	friend class VisualShader;
 	VisualShader::Type shader_type = VisualShader::TYPE_MAX;
@@ -553,7 +553,7 @@ public:
 ///
 
 class VisualShaderNodeOutput : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeOutput, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeOutput, VisualShaderNode);
 
 public:
 	friend class VisualShader;
@@ -592,7 +592,7 @@ public:
 };
 
 class VisualShaderNodeParameter : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeParameter, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeParameter, VisualShaderNode);
 
 public:
 	enum Qualifier {
@@ -644,7 +644,7 @@ public:
 VARIANT_ENUM_CAST(VisualShaderNodeParameter::Qualifier)
 
 class VisualShaderNodeParameterRef : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeParameterRef, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeParameterRef, VisualShaderNode);
 
 public:
 	enum ParameterType {
@@ -716,7 +716,7 @@ public:
 };
 
 class VisualShaderNodeResizableBase : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeResizableBase, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeResizableBase, VisualShaderNode);
 
 protected:
 	Size2 size = Size2(0, 0);
@@ -736,7 +736,7 @@ public:
 };
 
 class VisualShaderNodeFrame : public VisualShaderNodeResizableBase {
-	GDCLASS(VisualShaderNodeFrame, VisualShaderNodeResizableBase);
+	VLTRCLASS(VisualShaderNodeFrame, VisualShaderNodeResizableBase);
 
 protected:
 	String title = "Title";
@@ -786,7 +786,7 @@ public:
 #ifndef DISABLE_DEPRECATED
 // Deprecated, for compatibility only.
 class VisualShaderNodeComment : public VisualShaderNodeFrame {
-	GDCLASS(VisualShaderNodeComment, VisualShaderNodeFrame);
+	VLTRCLASS(VisualShaderNodeComment, VisualShaderNodeFrame);
 
 	String description;
 
@@ -804,7 +804,7 @@ public:
 #endif
 
 class VisualShaderNodeGroupBase : public VisualShaderNodeResizableBase {
-	GDCLASS(VisualShaderNodeGroupBase, VisualShaderNodeResizableBase);
+	VLTRCLASS(VisualShaderNodeGroupBase, VisualShaderNodeResizableBase);
 
 private:
 	void _apply_port_changes();
@@ -874,7 +874,7 @@ public:
 };
 
 class VisualShaderNodeExpression : public VisualShaderNodeGroupBase {
-	GDCLASS(VisualShaderNodeExpression, VisualShaderNodeGroupBase);
+	VLTRCLASS(VisualShaderNodeExpression, VisualShaderNodeGroupBase);
 
 private:
 	bool _is_valid_identifier_char(char32_t p_c) const;
@@ -898,7 +898,7 @@ public:
 };
 
 class VisualShaderNodeGlobalExpression : public VisualShaderNodeExpression {
-	GDCLASS(VisualShaderNodeGlobalExpression, VisualShaderNodeExpression);
+	VLTRCLASS(VisualShaderNodeGlobalExpression, VisualShaderNodeExpression);
 
 public:
 	virtual String get_caption() const override;
@@ -909,7 +909,7 @@ public:
 };
 
 class VisualShaderNodeVarying : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeVarying, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeVarying, VisualShaderNode);
 
 public:
 	struct Varying {
@@ -969,7 +969,7 @@ public:
 };
 
 class VisualShaderNodeVaryingSetter : public VisualShaderNodeVarying {
-	GDCLASS(VisualShaderNodeVaryingSetter, VisualShaderNodeVarying);
+	VLTRCLASS(VisualShaderNodeVaryingSetter, VisualShaderNodeVarying);
 
 public:
 	virtual String get_caption() const override;
@@ -990,7 +990,7 @@ public:
 };
 
 class VisualShaderNodeVaryingGetter : public VisualShaderNodeVarying {
-	GDCLASS(VisualShaderNodeVaryingGetter, VisualShaderNodeVarying);
+	VLTRCLASS(VisualShaderNodeVaryingGetter, VisualShaderNodeVarying);
 
 public:
 	virtual String get_caption() const override;

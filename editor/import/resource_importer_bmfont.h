@@ -33,7 +33,7 @@
 #include "core/io/resource_importer.h"
 
 class ResourceImporterBMFont : public ResourceImporter {
-	GDCLASS(ResourceImporterBMFont, ResourceImporter);
+	VLTRCLASS(ResourceImporterBMFont, ResourceImporter);
 
 public:
 	virtual String get_importer_name() const override;

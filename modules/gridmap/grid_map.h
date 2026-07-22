@@ -40,7 +40,7 @@ class PhysicsMaterial;
 #endif // PHYSICS_3D_DISABLED
 
 class GridMap : public Node3D {
-	GDCLASS(GridMap, Node3D);
+	VLTRCLASS(GridMap, Node3D);
 
 	enum DebugVisibilityMode {
 		DEBUG_VISIBILITY_MODE_DEFAULT,

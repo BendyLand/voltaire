@@ -38,7 +38,7 @@
 #include "core/object/script_language.h"
 
 class GDScriptNativeClass : public RefCounted {
-	GDCLASS(GDScriptNativeClass, RefCounted);
+	VLTRCLASS(GDScriptNativeClass, RefCounted);
 
 	StringName name;
 
@@ -55,7 +55,7 @@ public:
 };
 
 class GDScript : public Script {
-	GDCLASS(GDScript, Script);
+	VLTRCLASS(GDScript, Script);
 	bool tool = false;
 	bool valid = false;
 	bool reloading = false;

@@ -33,7 +33,7 @@
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 
 class Marker3DGizmoPlugin : public EditorNode3DGizmoPlugin {
-	GDCLASS(Marker3DGizmoPlugin, EditorNode3DGizmoPlugin);
+	VLTRCLASS(Marker3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
 	Ref<ArrayMesh> pos3d_mesh;
 

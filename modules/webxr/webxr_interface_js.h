@@ -47,7 +47,7 @@ class TextureStorage;
 class XRHandTracker;
 
 class WebXRInterfaceJS : public WebXRInterface {
-	GDCLASS(WebXRInterfaceJS, WebXRInterface);
+	VLTRCLASS(WebXRInterfaceJS, WebXRInterface);
 
 private:
 	bool initialized;

@@ -34,16 +34,16 @@
 #include "core/object/gdvirtual.gen.h"
 
 class ResourceFormatSaver : public RefCounted {
-	GDCLASS(ResourceFormatSaver, RefCounted);
+	VLTRCLASS(ResourceFormatSaver, RefCounted);
 
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL3R(Error, _save, Ref<Resource>, String, uint32_t)
-	GDVIRTUAL2R(Error, _set_uid, String, ResourceUID::ID)
-	GDVIRTUAL1RC(bool, _recognize, Ref<Resource>)
-	GDVIRTUAL1RC(Vector<String>, _get_recognized_extensions, Ref<Resource>)
-	GDVIRTUAL2RC(bool, _recognize_path, Ref<Resource>, String)
+	VLTRVIRTUAL3R(Error, _save, Ref<Resource>, String, uint32_t)
+	VLTRVIRTUAL2R(Error, _set_uid, String, ResourceUID::ID)
+	VLTRVIRTUAL1RC(bool, _recognize, Ref<Resource>)
+	VLTRVIRTUAL1RC(Vector<String>, _get_recognized_extensions, Ref<Resource>)
+	VLTRVIRTUAL2RC(bool, _recognize_path, Ref<Resource>, String)
 
 public:
 	virtual Error save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags = 0);

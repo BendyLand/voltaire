@@ -35,7 +35,7 @@
 #include "core/variant/variant.h"
 
 class JSONRPC : public Object {
-	GDCLASS(JSONRPC, Object)
+	VLTRCLASS(JSONRPC, Object)
 
 	HashMap<String, Callable> methods;
 	HashMap<int, Callable> response_handlers;

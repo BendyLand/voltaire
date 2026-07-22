@@ -49,7 +49,7 @@ typedef void *zipFile;
 const String ENV_SCRIPT_ENCRYPTION_KEY = "GODOT_SCRIPT_ENCRYPTION_KEY";
 
 class EditorExportPlatform : public RefCounted {
-	GDCLASS(EditorExportPlatform, RefCounted);
+	VLTRCLASS(EditorExportPlatform, RefCounted);
 
 protected:
 	static void _bind_methods();

@@ -65,7 +65,7 @@
 /*************************************************************************/
 
 class TextServerFallback : public TextServerExtension {
-	GDCLASS(TextServerFallback, TextServerExtension);
+	VLTRCLASS(TextServerFallback, TextServerExtension);
 	_THREAD_SAFE_CLASS_
 
 	HashMap<StringName, int32_t> feature_sets;

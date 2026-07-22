@@ -35,7 +35,7 @@
 #include "scene/gui/texture_rect.h"
 
 class EditorSpinSlider : public Range {
-	GDCLASS(EditorSpinSlider, Range);
+	VLTRCLASS(EditorSpinSlider, Range);
 
 	String label;
 	String suffix;

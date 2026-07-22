@@ -34,33 +34,33 @@
 #include "core/io/json.h"
 #include "core/io/resource.h"
 #include "core/math/math_funcs.h"
-#include "core/object/gdtype.h"
+#include "core/object/vltrtype.h"
 #include "core/variant/variant_parser.h"
 #include "core/variant/variant_pools.h"
 
 // Caution: These GDTypes are work-in-progress and may not be feature complete.
 // Do not use them without consulting the core team.
-static GDType *variant_gdtypes[Variant::VARIANT_MAX] = {};
+static VLTRType *variant_vltrtypes[Variant::VARIANT_MAX] = {};
 
-GDType &Variant::_get_gdtype_for_type(Variant::Type p_type) {
-	ERR_FAIL_INDEX_V_MSG(p_type, VARIANT_MAX, *variant_gdtypes[Variant::NIL], "Invalid Variant type");
+VLTRType &Variant::_get_vltrtype_for_type(Variant::Type p_type) {
+	ERR_FAIL_INDEX_V_MSG(p_type, VARIANT_MAX, *variant_vltrtypes[Variant::NIL], "Invalid Variant type");
 
-	return *variant_gdtypes[p_type];
+	return *variant_vltrtypes[p_type];
 }
 
-void Variant::_register_variant_gdtypes() {
+void Variant::_register_variant_vltrtypes() {
 	for (int i = 0; i < Variant::VARIANT_MAX; i++) {
 		Variant::Type type = static_cast<Variant::Type>(i);
-		variant_gdtypes[i] = memnew(GDType(nullptr, Variant::get_type_name(type)));
-		variant_gdtypes[i]->initialize();
+		variant_vltrtypes[i] = memnew(VLTRType(nullptr, Variant::get_type_name(type)));
+		variant_vltrtypes[i]->initialize();
 	}
 }
 
-void Variant::_unregister_variant_gdtypes() {
+void Variant::_unregister_variant_vltrtypes() {
 	for (int i = 0; i < Variant::VARIANT_MAX; i++) {
-		if (variant_gdtypes[i]) {
-			memdelete(variant_gdtypes[i]);
-			variant_gdtypes[i] = nullptr;
+		if (variant_vltrtypes[i]) {
+			memdelete(variant_vltrtypes[i]);
+			variant_vltrtypes[i] = nullptr;
 		}
 	}
 }
@@ -3593,7 +3593,7 @@ String Variant::get_callable_error_text(const Callable &p_callable, const Varian
 }
 
 void Variant::register_types() {
-	_register_variant_gdtypes();
+	_register_variant_vltrtypes();
 	_register_variant_operators();
 	_register_variant_methods();
 	_register_variant_setters_getters();
@@ -3607,5 +3607,5 @@ void Variant::unregister_types() {
 	_unregister_variant_setters_getters();
 	_unregister_variant_destructors();
 	_unregister_variant_utility_functions();
-	_unregister_variant_gdtypes();
+	_unregister_variant_vltrtypes();
 }

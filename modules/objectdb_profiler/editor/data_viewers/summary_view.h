@@ -39,7 +39,7 @@ class CenterContainer;
 class RichTextLabel;
 
 class SummaryBlurb : public MarginContainer {
-	GDCLASS(SummaryBlurb, MarginContainer);
+	VLTRCLASS(SummaryBlurb, MarginContainer);
 
 public:
 	RichTextLabel *label = nullptr;
@@ -48,7 +48,7 @@ public:
 };
 
 class SnapshotSummaryView : public SnapshotView {
-	GDCLASS(SnapshotSummaryView, SnapshotView);
+	VLTRCLASS(SnapshotSummaryView, SnapshotView);
 
 	PanelContainer *content_wrapper = nullptr;
 	Label *title = nullptr;

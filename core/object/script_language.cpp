@@ -187,11 +187,11 @@ void Script::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_rpc_config"), &Script::_get_rpc_config_bind);
 
 #ifndef DISABLE_DEPRECATED
-	GODOT_PUSH_IGNORE_DEPRECATION();
+	VLTR_PUSH_IGNORE_DEPRECATION();
 
 	ClassDB::bind_method(D_METHOD("instance_has", "base_object"), &Script::instance_has);
 
-	GODOT_POP_IGNORE_DEPRECATION();
+	VLTR_POP_IGNORE_DEPRECATION();
 #endif // !DISABLE_DEPRECATED
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "source_code", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_source_code", "get_source_code");

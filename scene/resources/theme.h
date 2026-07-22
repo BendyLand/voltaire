@@ -36,7 +36,7 @@
 #include "scene/resources/texture.h"
 
 class Theme : public Resource {
-	GDCLASS(Theme, Resource);
+	VLTRCLASS(Theme, Resource);
 	RES_BASE_EXTENSION("theme");
 
 #ifdef TOOLS_ENABLED

@@ -41,7 +41,7 @@
 class Timer;
 
 class EditorNetworkProfiler : public VBoxContainer {
-	GDCLASS(EditorNetworkProfiler, VBoxContainer)
+	VLTRCLASS(EditorNetworkProfiler, VBoxContainer)
 
 public:
 	struct NodeInfo {

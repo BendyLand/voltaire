@@ -35,7 +35,7 @@
 class PhysicsDirectBodyState2D;
 
 class AnimatableBody2D : public StaticBody2D {
-	GDCLASS(AnimatableBody2D, StaticBody2D);
+	VLTRCLASS(AnimatableBody2D, StaticBody2D);
 
 private:
 	bool sync_to_physics = true;

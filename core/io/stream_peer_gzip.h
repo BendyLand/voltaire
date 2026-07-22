@@ -34,7 +34,7 @@
 #include "core/templates/ring_buffer.h"
 
 class StreamPeerGZIP : public StreamPeer {
-	GDCLASS(StreamPeerGZIP, StreamPeer);
+	VLTRCLASS(StreamPeerGZIP, StreamPeer);
 
 private:
 	void *ctx = nullptr; // Will hold our z_stream instance.

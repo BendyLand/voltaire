@@ -191,7 +191,7 @@ void SubViewportContainer::_propagate_nonpositional_event(const Ref<InputEvent> 
 	}
 
 	bool send;
-	if (GDVIRTUAL_CALL(_propagate_input_event, p_event, send)) {
+	if (VLTRVIRTUAL_CALL(_propagate_input_event, p_event, send)) {
 		if (!send) {
 			return;
 		}
@@ -212,7 +212,7 @@ void SubViewportContainer::gui_input(const Ref<InputEvent> &p_event) {
 	}
 
 	bool send;
-	if (GDVIRTUAL_CALL(_propagate_input_event, p_event, send)) {
+	if (VLTRVIRTUAL_CALL(_propagate_input_event, p_event, send)) {
 		if (!send) {
 			return;
 		}
@@ -302,7 +302,7 @@ void SubViewportContainer::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "stretch_shrink", PROPERTY_HINT_RANGE, "1,32,1,or_greater"), "set_stretch_shrink", "get_stretch_shrink");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mouse_target"), "set_mouse_target", "is_mouse_target_enabled");
 
-	GDVIRTUAL_BIND(_propagate_input_event, "event");
+	VLTRVIRTUAL_BIND(_propagate_input_event, "event");
 }
 
 SubViewportContainer::SubViewportContainer() {

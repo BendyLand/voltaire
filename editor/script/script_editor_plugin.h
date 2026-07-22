@@ -55,7 +55,7 @@ class EditorSyntaxHighlighter;
 class ScriptEditorBase;
 
 class ScriptEditorQuickOpen : public ConfirmationDialog {
-	GDCLASS(ScriptEditorQuickOpen, ConfirmationDialog);
+	VLTRCLASS(ScriptEditorQuickOpen, ConfirmationDialog);
 
 	FilterLineEdit *search_box = nullptr;
 	Tree *search_options = nullptr;
@@ -78,7 +78,7 @@ public:
 };
 
 class DocumentOutline : public VBoxContainer {
-	GDCLASS(DocumentOutline, VBoxContainer);
+	VLTRCLASS(DocumentOutline, VBoxContainer);
 
 	ItemList *item_list = nullptr;
 	HBoxContainer *buttons_hbox = nullptr;
@@ -106,7 +106,7 @@ class EditorScriptCodeCompletionCache;
 class FindInFiles;
 
 class ScriptEditor : public PanelContainer {
-	GDCLASS(ScriptEditor, PanelContainer);
+	VLTRCLASS(ScriptEditor, PanelContainer);
 
 	enum MenuOptions {
 		// File.
@@ -478,7 +478,7 @@ public:
 };
 
 class ScriptEditorPlugin : public EditorPlugin {
-	GDCLASS(ScriptEditorPlugin, EditorPlugin);
+	VLTRCLASS(ScriptEditorPlugin, EditorPlugin);
 
 	ScriptEditor *script_editor = nullptr;
 	WindowWrapper *window_wrapper = nullptr;

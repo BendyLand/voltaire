@@ -38,7 +38,7 @@
 #include "scene/resources/texture.h"
 
 class NoiseTexture3D : public Texture3D {
-	GDCLASS(NoiseTexture3D, Texture3D);
+	VLTRCLASS(NoiseTexture3D, Texture3D);
 
 private:
 	WorkerThreadPool::TaskID current_task_id = WorkerThreadPool::INVALID_TASK_ID;

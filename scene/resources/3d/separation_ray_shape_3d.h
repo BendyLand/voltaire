@@ -35,7 +35,7 @@
 class ArrayMesh;
 
 class SeparationRayShape3D : public Shape3D {
-	GDCLASS(SeparationRayShape3D, Shape3D);
+	VLTRCLASS(SeparationRayShape3D, Shape3D);
 	float length = 1.0;
 	bool slide_on_slope = false;
 

@@ -35,7 +35,7 @@
 #include "editor/plugins/editor_plugin.h"
 
 class NavigationLink3DEditorPlugin : public EditorPlugin {
-	GDCLASS(NavigationLink3DEditorPlugin, EditorPlugin);
+	VLTRCLASS(NavigationLink3DEditorPlugin, EditorPlugin);
 
 	Ref<NavigationLink3DGizmoPlugin> gizmo_plugin;
 

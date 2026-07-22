@@ -46,7 +46,7 @@ class MainLoop;
 namespace CoreBind {
 
 class ResourceLoader : public Object {
-	GDCLASS(ResourceLoader, Object);
+	VLTRCLASS(ResourceLoader, Object);
 
 protected:
 	static void _bind_methods();
@@ -92,7 +92,7 @@ public:
 };
 
 class ResourceSaver : public Object {
-	GDCLASS(ResourceSaver, Object);
+	VLTRCLASS(ResourceSaver, Object);
 
 protected:
 	static void _bind_methods();
@@ -124,7 +124,7 @@ public:
 };
 
 class Logger : public RefCounted {
-	GDCLASS(Logger, RefCounted);
+	VLTRCLASS(Logger, RefCounted);
 
 public:
 	enum ErrorType {
@@ -135,8 +135,8 @@ public:
 	};
 
 protected:
-	GDVIRTUAL2(_log_message, String, bool);
-	GDVIRTUAL8(_log_error, String, String, int, String, String, bool, int, TypedArray<ScriptBacktrace>);
+	VLTRVIRTUAL2(_log_message, String, bool);
+	VLTRVIRTUAL8(_log_error, String, String, int, String, String, bool, int, TypedArray<ScriptBacktrace>);
 	static void _bind_methods();
 
 public:
@@ -145,7 +145,7 @@ public:
 };
 
 class OS : public Object {
-	GDCLASS(OS, Object);
+	VLTRCLASS(OS, Object);
 
 	mutable HashMap<String, bool> feature_cache;
 
@@ -324,7 +324,7 @@ public:
 };
 
 class Geometry2D : public Object {
-	GDCLASS(Geometry2D, Object);
+	VLTRCLASS(Geometry2D, Object);
 
 	static inline Geometry2D *singleton = nullptr;
 
@@ -390,7 +390,7 @@ public:
 };
 
 class Geometry3D : public Object {
-	GDCLASS(Geometry3D, Object);
+	VLTRCLASS(Geometry3D, Object);
 
 	static inline Geometry3D *singleton = nullptr;
 
@@ -421,7 +421,7 @@ public:
 };
 
 class Marshalls : public Object {
-	GDCLASS(Marshalls, Object);
+	VLTRCLASS(Marshalls, Object);
 
 	static inline Marshalls *singleton = nullptr;
 
@@ -445,7 +445,7 @@ public:
 };
 
 class Mutex : public RefCounted {
-	GDCLASS(Mutex, RefCounted);
+	VLTRCLASS(Mutex, RefCounted);
 	::Mutex mutex;
 
 	static void _bind_methods();
@@ -457,7 +457,7 @@ public:
 };
 
 class Semaphore : public RefCounted {
-	GDCLASS(Semaphore, RefCounted);
+	VLTRCLASS(Semaphore, RefCounted);
 	::Semaphore semaphore;
 
 protected:
@@ -474,7 +474,7 @@ public:
 };
 
 class Thread : public RefCounted {
-	GDCLASS(Thread, RefCounted);
+	VLTRCLASS(Thread, RefCounted);
 
 protected:
 	Variant ret;
@@ -505,7 +505,7 @@ public:
 namespace Special {
 
 class ClassDB : public Object {
-	GDCLASS(ClassDB, Object);
+	VLTRCLASS(ClassDB, Object);
 
 protected:
 	static void _bind_methods();
@@ -568,7 +568,7 @@ public:
 } // namespace Special
 
 class Engine : public Object {
-	GDCLASS(Engine, Object);
+	VLTRCLASS(Engine, Object);
 
 protected:
 	static void _bind_methods();
@@ -645,7 +645,7 @@ public:
 };
 
 class EngineDebugger : public Object {
-	GDCLASS(EngineDebugger, Object);
+	VLTRCLASS(EngineDebugger, Object);
 
 	HashMap<StringName, Callable> captures;
 	HashMap<StringName, Ref<EngineProfiler>> profilers;

@@ -41,7 +41,7 @@ class EditorValidationPanel;
 class LineEdit;
 
 class ScriptCreateDialog : public ConfirmationDialog {
-	GDCLASS(ScriptCreateDialog, ConfirmationDialog);
+	VLTRCLASS(ScriptCreateDialog, ConfirmationDialog);
 
 	enum {
 		MSG_ID_SCRIPT,

@@ -47,7 +47,7 @@
 #include "scene/gui/box_container.h"
 
 class ImportDockParameters : public Object {
-	GDCLASS(ImportDockParameters, Object);
+	VLTRCLASS(ImportDockParameters, Object);
 
 public:
 	HashMap<StringName, Variant> values;

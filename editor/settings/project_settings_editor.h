@@ -49,7 +49,7 @@ class FileSystemDock;
 class ProjectSettingsGDExtension;
 
 class ProjectSettingsEditor : public AcceptDialog {
-	GDCLASS(ProjectSettingsEditor, AcceptDialog);
+	VLTRCLASS(ProjectSettingsEditor, AcceptDialog);
 
 	inline static ProjectSettingsEditor *singleton = nullptr;
 

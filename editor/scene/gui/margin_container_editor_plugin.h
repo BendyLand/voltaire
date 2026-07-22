@@ -36,7 +36,7 @@
 class CanvasItemEditor;
 
 class MarginContainerEditorPlugin : public EditorPlugin {
-	GDCLASS(MarginContainerEditorPlugin, EditorPlugin);
+	VLTRCLASS(MarginContainerEditorPlugin, EditorPlugin);
 
 	MarginContainer *margin_container = nullptr;
 

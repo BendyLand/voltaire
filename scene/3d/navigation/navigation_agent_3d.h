@@ -40,7 +40,7 @@ class Node3D;
 class StandardMaterial3D;
 
 class NavigationAgent3D : public Node {
-	GDCLASS(NavigationAgent3D, Node);
+	VLTRCLASS(NavigationAgent3D, Node);
 
 	Node3D *agent_parent = nullptr;
 

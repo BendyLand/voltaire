@@ -38,7 +38,7 @@
 class OpenXRActionMap;
 
 class OpenXRIPBinding : public Resource {
-	GDCLASS(OpenXRIPBinding, Resource);
+	VLTRCLASS(OpenXRIPBinding, Resource);
 
 private:
 	Ref<OpenXRAction> action;
@@ -88,7 +88,7 @@ public:
 };
 
 class OpenXRInteractionProfile : public Resource {
-	GDCLASS(OpenXRInteractionProfile, Resource);
+	VLTRCLASS(OpenXRInteractionProfile, Resource);
 
 private:
 	String interaction_profile_path;

@@ -44,7 +44,7 @@ class Panel;
 class ViewPanner;
 
 class Sprite2DEditor : public Control {
-	GDCLASS(Sprite2DEditor, Control);
+	VLTRCLASS(Sprite2DEditor, Control);
 
 	enum Menu {
 		MENU_OPTION_CONVERT_TO_MESH_2D,
@@ -123,7 +123,7 @@ public:
 };
 
 class Sprite2DEditorPlugin : public EditorPlugin {
-	GDCLASS(Sprite2DEditorPlugin, EditorPlugin);
+	VLTRCLASS(Sprite2DEditorPlugin, EditorPlugin);
 
 	Sprite2DEditor *sprite_editor = nullptr;
 

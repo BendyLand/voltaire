@@ -35,7 +35,7 @@
 class AudioStreamPlaybackSynchronized;
 
 class AudioStreamSynchronized : public AudioStream {
-	GDCLASS(AudioStreamSynchronized, AudioStream)
+	VLTRCLASS(AudioStreamSynchronized, AudioStream)
 	OBJ_SAVE_TYPE(AudioStream)
 
 private:
@@ -76,7 +76,7 @@ protected:
 ///////////////////////////////////////
 
 class AudioStreamPlaybackSynchronized : public AudioStreamPlayback {
-	GDCLASS(AudioStreamPlaybackSynchronized, AudioStreamPlayback)
+	VLTRCLASS(AudioStreamPlaybackSynchronized, AudioStreamPlayback)
 	friend class AudioStreamSynchronized;
 
 private:

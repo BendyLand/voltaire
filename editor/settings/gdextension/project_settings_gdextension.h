@@ -35,7 +35,7 @@
 class Tree;
 
 class ProjectSettingsGDExtension : public VBoxContainer {
-	GDCLASS(ProjectSettingsGDExtension, VBoxContainer);
+	VLTRCLASS(ProjectSettingsGDExtension, VBoxContainer);
 
 	enum {
 		COLUMN_PATH,

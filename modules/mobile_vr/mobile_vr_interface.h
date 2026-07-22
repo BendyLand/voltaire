@@ -46,7 +46,7 @@
 */
 
 class MobileVRInterface : public XRInterface {
-	GDCLASS(MobileVRInterface, XRInterface);
+	VLTRCLASS(MobileVRInterface, XRInterface);
 
 private:
 	bool initialized = false;

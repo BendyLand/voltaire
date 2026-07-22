@@ -38,7 +38,7 @@ class ObjectDBProfilerDebuggerPlugin;
 
 // First, ObjectDBProfilerPlugin is loaded. Then it loads ObjectDBProfilerDebuggerPlugin.
 class ObjectDBProfilerPlugin : public EditorPlugin {
-	GDCLASS(ObjectDBProfilerPlugin, EditorPlugin);
+	VLTRCLASS(ObjectDBProfilerPlugin, EditorPlugin);
 
 protected:
 	Ref<ObjectDBProfilerDebuggerPlugin> debugger;
@@ -49,7 +49,7 @@ public:
 };
 
 class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
-	GDCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
+	VLTRCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
 
 protected:
 	ObjectDBProfilerPanel *debugger_panel = nullptr;

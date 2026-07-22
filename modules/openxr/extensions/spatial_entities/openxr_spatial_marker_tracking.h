@@ -36,7 +36,7 @@
 
 // QrCode marker tracking capability configuration
 class OpenXRSpatialCapabilityConfigurationQrCode : public OpenXRSpatialCapabilityConfigurationBaseHeader {
-	GDCLASS(OpenXRSpatialCapabilityConfigurationQrCode, OpenXRSpatialCapabilityConfigurationBaseHeader);
+	VLTRCLASS(OpenXRSpatialCapabilityConfigurationQrCode, OpenXRSpatialCapabilityConfigurationBaseHeader);
 
 public:
 	virtual bool has_valid_configuration() const override;
@@ -56,7 +56,7 @@ private:
 
 // Micro QrCode marker tracking capability configuration
 class OpenXRSpatialCapabilityConfigurationMicroQrCode : public OpenXRSpatialCapabilityConfigurationBaseHeader {
-	GDCLASS(OpenXRSpatialCapabilityConfigurationMicroQrCode, OpenXRSpatialCapabilityConfigurationBaseHeader);
+	VLTRCLASS(OpenXRSpatialCapabilityConfigurationMicroQrCode, OpenXRSpatialCapabilityConfigurationBaseHeader);
 
 public:
 	virtual bool has_valid_configuration() const override;
@@ -76,7 +76,7 @@ private:
 
 // Aruco marker tracking capability configuration
 class OpenXRSpatialCapabilityConfigurationAruco : public OpenXRSpatialCapabilityConfigurationBaseHeader {
-	GDCLASS(OpenXRSpatialCapabilityConfigurationAruco, OpenXRSpatialCapabilityConfigurationBaseHeader);
+	VLTRCLASS(OpenXRSpatialCapabilityConfigurationAruco, OpenXRSpatialCapabilityConfigurationBaseHeader);
 
 public:
 	enum ArucoDict {
@@ -126,7 +126,7 @@ VARIANT_ENUM_CAST(OpenXRSpatialCapabilityConfigurationAruco::ArucoDict);
 
 // April tag marker tracking capability configuration
 class OpenXRSpatialCapabilityConfigurationAprilTag : public OpenXRSpatialCapabilityConfigurationBaseHeader {
-	GDCLASS(OpenXRSpatialCapabilityConfigurationAprilTag, OpenXRSpatialCapabilityConfigurationBaseHeader);
+	VLTRCLASS(OpenXRSpatialCapabilityConfigurationAprilTag, OpenXRSpatialCapabilityConfigurationBaseHeader);
 
 public:
 	enum AprilTagDict {
@@ -164,7 +164,7 @@ VARIANT_ENUM_CAST(OpenXRSpatialCapabilityConfigurationAprilTag::AprilTagDict);
 
 // Marker component data
 class OpenXRSpatialComponentMarkerList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentMarkerList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentMarkerList, OpenXRSpatialComponentData);
 
 public:
 	enum MarkerType {
@@ -197,7 +197,7 @@ VARIANT_ENUM_CAST(OpenXRSpatialComponentMarkerList::MarkerType);
 
 // Marker tracker
 class OpenXRMarkerTracker : public OpenXRSpatialEntityTracker {
-	GDCLASS(OpenXRMarkerTracker, OpenXRSpatialEntityTracker);
+	VLTRCLASS(OpenXRMarkerTracker, OpenXRSpatialEntityTracker);
 
 public:
 	void set_bounds_size(const Vector2 &p_bounds_size);
@@ -225,7 +225,7 @@ private:
 
 // Marker tracking logic
 class OpenXRSpatialMarkerTrackingCapability : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRSpatialMarkerTrackingCapability, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRSpatialMarkerTrackingCapability, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods();

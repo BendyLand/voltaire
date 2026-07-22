@@ -33,7 +33,7 @@
 #include "servers/physics_3d/physics_server_3d.h"
 
 class PhysicsDirectBodyState3DDummy : public PhysicsDirectBodyState3D {
-	GDCLASS(PhysicsDirectBodyState3DDummy, PhysicsDirectBodyState3D);
+	VLTRCLASS(PhysicsDirectBodyState3DDummy, PhysicsDirectBodyState3D);
 
 	PhysicsDirectSpaceState3D *space_state_dummy = nullptr;
 
@@ -113,7 +113,7 @@ public:
 };
 
 class PhysicsDirectSpaceState3DDummy : public PhysicsDirectSpaceState3D {
-	GDCLASS(PhysicsDirectSpaceState3DDummy, PhysicsDirectSpaceState3D);
+	VLTRCLASS(PhysicsDirectSpaceState3DDummy, PhysicsDirectSpaceState3D);
 
 public:
 	virtual bool intersect_ray(const PS3DT::RayParameters &p_parameters, PS3DT::RayResult &r_result) override { return false; }
@@ -129,7 +129,7 @@ public:
 };
 
 class PhysicsServer3DDummy : public PhysicsServer3D {
-	GDCLASS(PhysicsServer3DDummy, PhysicsServer3D);
+	VLTRCLASS(PhysicsServer3DDummy, PhysicsServer3D);
 
 	PhysicsDirectBodyState3DDummy *body_state_dummy = nullptr;
 	PhysicsDirectSpaceState3DDummy *space_state_dummy = nullptr;

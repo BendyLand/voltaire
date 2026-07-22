@@ -33,7 +33,7 @@
 #include "openxr_extension_wrapper.h"
 
 class OpenXRPicoControllerExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRPicoControllerExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRPicoControllerExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

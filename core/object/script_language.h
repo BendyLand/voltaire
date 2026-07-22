@@ -115,7 +115,7 @@ public:
 class PlaceHolderScriptInstance;
 
 class Script : public Resource {
-	GDCLASS(Script, Resource);
+	VLTRCLASS(Script, Resource);
 	OBJ_SAVE_TYPE(Script);
 
 protected:
@@ -210,7 +210,7 @@ public:
 };
 
 class ScriptLanguage : public Object {
-	GDCLASS(ScriptLanguage, Object)
+	VLTRCLASS(ScriptLanguage, Object)
 
 protected:
 	static void _bind_methods();

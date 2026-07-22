@@ -35,7 +35,7 @@
 #include "core/io/file_access.h"
 
 class FileAccessUnixPipe : public FileAccess {
-	GDSOFTCLASS(FileAccessUnixPipe, FileAccess);
+	VLTRSOFTCLASS(FileAccessUnixPipe, FileAccess);
 	bool unlink_on_close = false;
 
 	int fd[2] = { -1, -1 };

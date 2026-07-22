@@ -35,7 +35,7 @@
 #include <openxr/openxr.h>
 
 class OpenXRCompositionLayerEquirect : public OpenXRCompositionLayer {
-	GDCLASS(OpenXRCompositionLayerEquirect, OpenXRCompositionLayer);
+	VLTRCLASS(OpenXRCompositionLayerEquirect, OpenXRCompositionLayer);
 
 	float radius = 1.0;
 	float central_horizontal_angle = Math::PI / 2.0;

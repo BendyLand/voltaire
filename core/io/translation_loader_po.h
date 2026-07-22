@@ -34,7 +34,7 @@
 #include "core/io/resource_loader.h"
 
 class TranslationLoaderPO : public ResourceFormatLoader {
-	GDSOFTCLASS(TranslationLoaderPO, ResourceFormatLoader);
+	VLTRSOFTCLASS(TranslationLoaderPO, ResourceFormatLoader);
 
 public:
 	static Ref<Resource> load_translation(Ref<FileAccess> r_file, Error *r_error = nullptr);

@@ -152,17 +152,17 @@ double Engine::get_unfrozen_time_scale() const {
 
 Dictionary Engine::get_version_info() const {
 	Dictionary dict;
-	dict["major"] = GODOT_VERSION_MAJOR;
-	dict["minor"] = GODOT_VERSION_MINOR;
-	dict["patch"] = GODOT_VERSION_PATCH;
-	dict["hex"] = GODOT_VERSION_HEX;
-	dict["status"] = GODOT_VERSION_STATUS;
-	dict["build"] = GODOT_VERSION_BUILD;
+	dict["major"] = VLTR_VERSION_MAJOR;
+	dict["minor"] = VLTR_VERSION_MINOR;
+	dict["patch"] = VLTR_VERSION_PATCH;
+	dict["hex"] = VLTR_VERSION_HEX;
+	dict["status"] = VLTR_VERSION_STATUS;
+	dict["build"] = VLTR_VERSION_BUILD;
 
-	String hash = String(GODOT_VERSION_HASH);
+	String hash = String(VLTR_VERSION_HASH);
 	dict["hash"] = hash.is_empty() ? String("unknown") : hash;
 
-	dict["timestamp"] = GODOT_VERSION_TIMESTAMP;
+	dict["timestamp"] = VLTR_VERSION_TIMESTAMP;
 
 	String stringver = String(dict["major"]) + "." + String(dict["minor"]);
 	if ((int)dict["patch"] != 0) {

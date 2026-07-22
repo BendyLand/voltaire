@@ -33,7 +33,7 @@
 #include "scene/resources/2d/shape_2d.h"
 
 class CapsuleShape2D : public Shape2D {
-	GDCLASS(CapsuleShape2D, Shape2D);
+	VLTRCLASS(CapsuleShape2D, Shape2D);
 
 	real_t height = 30.0;
 	real_t radius = 10.0;

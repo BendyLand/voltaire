@@ -40,7 +40,7 @@
 #include <unistd.h>
 
 class DirAccessMacOS : public DirAccessUnix {
-	GDSOFTCLASS(DirAccessMacOS, DirAccessUnix);
+	VLTRSOFTCLASS(DirAccessMacOS, DirAccessUnix);
 
 protected:
 	virtual String fix_unicode_name(const char *p_name) const override;

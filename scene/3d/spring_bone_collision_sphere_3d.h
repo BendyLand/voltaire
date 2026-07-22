@@ -35,7 +35,7 @@
 class SpringBoneCollisionCapsule3D;
 
 class SpringBoneCollisionSphere3D : public SpringBoneCollision3D {
-	GDCLASS(SpringBoneCollisionSphere3D, SpringBoneCollision3D);
+	VLTRCLASS(SpringBoneCollisionSphere3D, SpringBoneCollision3D);
 
 	friend class SpringBoneCollisionCapsule3D;
 

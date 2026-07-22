@@ -34,11 +34,11 @@
 
 #ifdef WINRT_ENABLED
 
-GODOT_GCC_WARNING_PUSH
-GODOT_GCC_WARNING_IGNORE("-Wnon-virtual-dtor")
-GODOT_GCC_WARNING_IGNORE("-Wctor-dtor-privacy")
-GODOT_GCC_WARNING_IGNORE("-Wshadow")
-GODOT_GCC_WARNING_IGNORE("-Wstrict-aliasing")
+VLTR_GCC_WARNING_PUSH
+VLTR_GCC_WARNING_IGNORE("-Wnon-virtual-dtor")
+VLTR_GCC_WARNING_IGNORE("-Wctor-dtor-privacy")
+VLTR_GCC_WARNING_IGNORE("-Wshadow")
+VLTR_GCC_WARNING_IGNORE("-Wstrict-aliasing")
 GODOT_CLANG_WARNING_PUSH
 GODOT_CLANG_WARNING_IGNORE("-Wnon-virtual-dtor")
 
@@ -107,7 +107,7 @@ __CRT_UUID_DECL(IDisplayInformationStaticsInterop, 0x7449121c, 0x382b, 0x4705, 0
 
 #endif // defined __MINGW32__ || defined __MINGW64__
 
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP
 GODOT_CLANG_WARNING_POP
 
 using namespace winrt::Windows::Graphics::Display;

@@ -35,7 +35,7 @@
 class Gizmo3DHelper;
 
 class VoxelGIGizmoPlugin : public EditorNode3DGizmoPlugin {
-	GDCLASS(VoxelGIGizmoPlugin, EditorNode3DGizmoPlugin);
+	VLTRCLASS(VoxelGIGizmoPlugin, EditorNode3DGizmoPlugin);
 
 	Ref<Gizmo3DHelper> helper;
 

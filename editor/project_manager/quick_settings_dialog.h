@@ -41,7 +41,7 @@ class PanelContainer;
 class VBoxContainer;
 
 class SettingLabel : public Label {
-	GDCLASS(SettingLabel, Label);
+	VLTRCLASS(SettingLabel, Label);
 
 	String setting_name;
 
@@ -52,7 +52,7 @@ public:
 };
 
 class QuickSettingsDialog : public AcceptDialog {
-	GDCLASS(QuickSettingsDialog, AcceptDialog);
+	VLTRCLASS(QuickSettingsDialog, AcceptDialog);
 
 #ifndef ANDROID_ENABLED
 	Vector<String> editor_languages;

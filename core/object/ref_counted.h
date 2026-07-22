@@ -34,7 +34,7 @@
 #include "core/templates/safe_refcount.h"
 
 class RefCounted : public Object {
-	GDCLASS(RefCounted, Object);
+	VLTRCLASS(RefCounted, Object);
 	SafeRefCount refcount;
 	SafeRefCount refcount_init;
 	SafeNumeric<uint32_t> dereference_count;
@@ -239,7 +239,7 @@ void postinitialize_handler(Ref<T> &p_object) {
 }
 
 class WeakRef : public RefCounted {
-	GDCLASS(WeakRef, RefCounted);
+	VLTRCLASS(WeakRef, RefCounted);
 
 	ObjectID ref;
 

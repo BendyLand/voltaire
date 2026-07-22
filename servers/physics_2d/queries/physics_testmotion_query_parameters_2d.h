@@ -34,7 +34,7 @@
 #include "servers/physics_2d/physics_server_2d_types.h"
 
 class PhysicsTestMotionParameters2D : public RefCounted {
-	GDCLASS(PhysicsTestMotionParameters2D, RefCounted);
+	VLTRCLASS(PhysicsTestMotionParameters2D, RefCounted);
 
 	PS2DT::MotionParameters parameters;
 

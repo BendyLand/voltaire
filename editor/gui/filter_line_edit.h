@@ -33,7 +33,7 @@
 #include "scene/gui/line_edit.h"
 
 class FilterLineEdit : public LineEdit {
-	GDCLASS(FilterLineEdit, LineEdit);
+	VLTRCLASS(FilterLineEdit, LineEdit);
 
 	Control *forward_control = nullptr;
 

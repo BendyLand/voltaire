@@ -36,7 +36,7 @@
 class BitMap;
 
 class CompressedTexture2D : public Texture2D {
-	GDCLASS(CompressedTexture2D, Texture2D);
+	VLTRCLASS(CompressedTexture2D, Texture2D);
 
 public:
 	enum DataFormat {
@@ -110,7 +110,7 @@ public:
 };
 
 class CompressedTextureLayered : public TextureLayered {
-	GDCLASS(CompressedTextureLayered, TextureLayered);
+	VLTRCLASS(CompressedTextureLayered, TextureLayered);
 
 public:
 	enum DataFormat {
@@ -166,14 +166,14 @@ public:
 };
 
 class CompressedTexture2DArray : public CompressedTextureLayered {
-	GDCLASS(CompressedTexture2DArray, CompressedTextureLayered)
+	VLTRCLASS(CompressedTexture2DArray, CompressedTextureLayered)
 public:
 	CompressedTexture2DArray() :
 			CompressedTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
 };
 
 class CompressedCubemap : public CompressedTextureLayered {
-	GDCLASS(CompressedCubemap, CompressedTextureLayered);
+	VLTRCLASS(CompressedCubemap, CompressedTextureLayered);
 
 public:
 	CompressedCubemap() :
@@ -181,7 +181,7 @@ public:
 };
 
 class CompressedCubemapArray : public CompressedTextureLayered {
-	GDCLASS(CompressedCubemapArray, CompressedTextureLayered);
+	VLTRCLASS(CompressedCubemapArray, CompressedTextureLayered);
 
 public:
 	CompressedCubemapArray() :
@@ -189,7 +189,7 @@ public:
 };
 
 class CompressedTexture3D : public Texture3D {
-	GDCLASS(CompressedTexture3D, Texture3D);
+	VLTRCLASS(CompressedTexture3D, Texture3D);
 
 public:
 	enum DataFormat {

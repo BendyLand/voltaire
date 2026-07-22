@@ -45,7 +45,7 @@ struct CaretInfo;
 #define OT_TAG(m_c1, m_c2, m_c3, m_c4) ((int32_t)((((uint32_t)(m_c1) & 0xff) << 24) | (((uint32_t)(m_c2) & 0xff) << 16) | (((uint32_t)(m_c3) & 0xff) << 8) | ((uint32_t)(m_c4) & 0xff)))
 
 class TextServer : public RefCounted {
-	GDCLASS(TextServer, RefCounted);
+	VLTRCLASS(TextServer, RefCounted);
 
 public:
 	enum FontAntialiasing {
@@ -667,7 +667,7 @@ struct CaretInfo {
 /*************************************************************************/
 
 class TextServerManager : public Object {
-	GDCLASS(TextServerManager, Object);
+	VLTRCLASS(TextServerManager, Object);
 
 protected:
 	static void _bind_methods();
@@ -723,5 +723,5 @@ VARIANT_ENUM_CAST(TextServer::FontAntialiasing);
 VARIANT_ENUM_CAST(TextServer::FontLCDSubpixelLayout);
 VARIANT_ENUM_CAST(TextServer::FixedSizeScaleMode);
 
-GDVIRTUAL_NATIVE_PTR(Glyph);
-GDVIRTUAL_NATIVE_PTR(CaretInfo);
+VLTRVIRTUAL_NATIVE_PTR(Glyph);
+VLTRVIRTUAL_NATIVE_PTR(CaretInfo);

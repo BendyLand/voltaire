@@ -33,7 +33,7 @@
 #include "../gltf_document.h"
 
 class EditorSceneExporterGLTFSettings : public RefCounted {
-	GDCLASS(EditorSceneExporterGLTFSettings, RefCounted);
+	VLTRCLASS(EditorSceneExporterGLTFSettings, RefCounted);
 	List<PropertyInfo> _property_list;
 	Ref<GLTFDocument> _document;
 	HashMap<String, Ref<GLTFDocumentExtension>> _config_name_to_extension_map;

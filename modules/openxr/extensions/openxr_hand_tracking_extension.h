@@ -37,7 +37,7 @@
 #include "servers/xr/xr_hand_tracker.h"
 
 class OpenXRHandTrackingExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRHandTrackingExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRHandTrackingExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

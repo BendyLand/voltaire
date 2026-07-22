@@ -50,7 +50,7 @@ class RichTextLabel;
 class EditorInspectorPluginAnimationNodeAnimation;
 
 class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin {
-	GDCLASS(AnimationNodeBlendTreeEditor, AnimationTreeNodeEditorPlugin);
+	VLTRCLASS(AnimationNodeBlendTreeEditor, AnimationTreeNodeEditorPlugin);
 
 	Ref<AnimationNodeBlendTree> blend_tree;
 
@@ -176,7 +176,7 @@ public:
 // EditorPluginAnimationNodeAnimation
 
 class EditorInspectorPluginAnimationNodeAnimation : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginAnimationNodeAnimation, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginAnimationNodeAnimation, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -184,7 +184,7 @@ public:
 };
 
 class AnimationNodeAnimationEditorDialog : public ConfirmationDialog {
-	GDCLASS(AnimationNodeAnimationEditorDialog, ConfirmationDialog);
+	VLTRCLASS(AnimationNodeAnimationEditorDialog, ConfirmationDialog);
 
 	friend class AnimationNodeAnimationEditor;
 
@@ -196,7 +196,7 @@ public:
 };
 
 class AnimationNodeAnimationEditor : public VBoxContainer {
-	GDCLASS(AnimationNodeAnimationEditor, VBoxContainer);
+	VLTRCLASS(AnimationNodeAnimationEditor, VBoxContainer);
 
 	Ref<AnimationNodeAnimation> animation_node_animation;
 	Button *button = nullptr;

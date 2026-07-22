@@ -44,7 +44,7 @@ class AudioStreamPlayerInternal;
 class VelocityTracker3D;
 
 class AudioStreamPlayer3D : public Node3D {
-	GDCLASS(AudioStreamPlayer3D, Node3D);
+	VLTRCLASS(AudioStreamPlayer3D, Node3D);
 
 public:
 	enum AttenuationModel {

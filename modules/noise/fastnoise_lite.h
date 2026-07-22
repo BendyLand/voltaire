@@ -37,7 +37,7 @@
 typedef fastnoiselite::FastNoiseLite _FastNoiseLite;
 
 class FastNoiseLite : public Noise {
-	GDCLASS(FastNoiseLite, Noise);
+	VLTRCLASS(FastNoiseLite, Noise);
 	OBJ_SAVE_TYPE(FastNoiseLite);
 
 public:

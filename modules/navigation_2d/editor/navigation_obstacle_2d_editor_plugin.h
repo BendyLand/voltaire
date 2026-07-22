@@ -34,7 +34,7 @@
 #include "scene/2d/navigation/navigation_obstacle_2d.h"
 
 class NavigationObstacle2DEditor : public AbstractPolygon2DEditor {
-	GDCLASS(NavigationObstacle2DEditor, AbstractPolygon2DEditor);
+	VLTRCLASS(NavigationObstacle2DEditor, AbstractPolygon2DEditor);
 
 	NavigationObstacle2D *node = nullptr;
 
@@ -51,7 +51,7 @@ protected:
 };
 
 class NavigationObstacle2DEditorPlugin : public AbstractPolygon2DEditorPlugin {
-	GDCLASS(NavigationObstacle2DEditorPlugin, AbstractPolygon2DEditorPlugin);
+	VLTRCLASS(NavigationObstacle2DEditorPlugin, AbstractPolygon2DEditorPlugin);
 
 public:
 	NavigationObstacle2DEditorPlugin();

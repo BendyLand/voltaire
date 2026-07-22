@@ -42,7 +42,7 @@
 #endif
 
 class OpenXRAndroidThreadSettingsExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRAndroidThreadSettingsExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRAndroidThreadSettingsExtension, OpenXRExtensionWrapper);
 
 public:
 	static OpenXRAndroidThreadSettingsExtension *get_singleton();

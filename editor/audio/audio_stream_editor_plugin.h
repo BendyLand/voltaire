@@ -38,7 +38,7 @@
 #include "scene/gui/label.h"
 
 class AudioStreamEditor : public ColorRect {
-	GDCLASS(AudioStreamEditor, ColorRect);
+	VLTRCLASS(AudioStreamEditor, ColorRect);
 
 	Ref<AudioStream> stream;
 
@@ -74,7 +74,7 @@ public:
 };
 
 class EditorInspectorPluginAudioStream : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginAudioStream, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginAudioStream, EditorInspectorPlugin);
 	AudioStreamEditor *editor = nullptr;
 
 public:
@@ -83,7 +83,7 @@ public:
 };
 
 class AudioStreamEditorPlugin : public EditorPlugin {
-	GDCLASS(AudioStreamEditorPlugin, EditorPlugin);
+	VLTRCLASS(AudioStreamEditorPlugin, EditorPlugin);
 
 public:
 	AudioStreamEditorPlugin();

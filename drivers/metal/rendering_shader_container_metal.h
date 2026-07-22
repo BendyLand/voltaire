@@ -42,7 +42,7 @@ const uint32_t VIEW_MASK_BUFFER_INDEX = 24;
 class RenderingShaderContainerFormatMetal;
 
 class RenderingShaderContainerMetal : public RenderingShaderContainer {
-	GDSOFTCLASS(RenderingShaderContainerMetal, RenderingShaderContainer);
+	VLTRSOFTCLASS(RenderingShaderContainerMetal, RenderingShaderContainer);
 
 public:
 	struct HeaderData {

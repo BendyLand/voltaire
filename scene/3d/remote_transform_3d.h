@@ -33,7 +33,7 @@
 #include "scene/3d/node_3d.h"
 
 class RemoteTransform3D : public Node3D {
-	GDCLASS(RemoteTransform3D, Node3D);
+	VLTRCLASS(RemoteTransform3D, Node3D);
 
 	NodePath remote_node;
 

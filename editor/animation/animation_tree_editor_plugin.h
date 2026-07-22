@@ -42,7 +42,7 @@ class ScrollContainer;
 class RichTextLabel;
 
 class AnimationTreeNodeEditorPlugin : public VBoxContainer {
-	GDCLASS(AnimationTreeNodeEditorPlugin, VBoxContainer);
+	VLTRCLASS(AnimationTreeNodeEditorPlugin, VBoxContainer);
 
 public:
 	virtual bool can_edit(const Ref<AnimationNode> &p_node) = 0;
@@ -53,7 +53,7 @@ private:
 };
 
 class AnimationTreeEditor : public EditorDock {
-	GDCLASS(AnimationTreeEditor, EditorDock);
+	VLTRCLASS(AnimationTreeEditor, EditorDock);
 
 	ScrollContainer *path_edit = nullptr;
 	HBoxContainer *path_hb = nullptr;
@@ -107,7 +107,7 @@ public:
 };
 
 class AnimationTreeEditorPlugin : public EditorPlugin {
-	GDCLASS(AnimationTreeEditorPlugin, EditorPlugin);
+	VLTRCLASS(AnimationTreeEditorPlugin, EditorPlugin);
 
 	AnimationTreeEditor *anim_tree_editor = nullptr;
 

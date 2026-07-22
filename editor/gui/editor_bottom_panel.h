@@ -40,7 +40,7 @@ class EditorToaster;
 class HBoxContainer;
 
 class ProgressIndicator : public TextureProgressBar {
-	GDCLASS(ProgressIndicator, TextureProgressBar);
+	VLTRCLASS(ProgressIndicator, TextureProgressBar);
 
 protected:
 	void _notification(int p_what);
@@ -53,7 +53,7 @@ public:
 };
 
 class EditorBottomPanel : public DockTabContainer {
-	GDCLASS(EditorBottomPanel, DockTabContainer);
+	VLTRCLASS(EditorBottomPanel, DockTabContainer);
 
 	HBoxContainer *bottom_hbox = nullptr;
 	EditorToaster *editor_toaster = nullptr;

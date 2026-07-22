@@ -55,7 +55,7 @@ class TabContainer;
 class VSeparator;
 
 class EditorAssetLibraryItem : public MarginContainer {
-	GDCLASS(EditorAssetLibraryItem, MarginContainer);
+	VLTRCLASS(EditorAssetLibraryItem, MarginContainer);
 
 	MarginContainer *margin = nullptr;
 	Button *button = nullptr;
@@ -100,7 +100,7 @@ public:
 };
 
 class EditorAssetLibraryZoomMode : public CanvasLayer {
-	GDCLASS(EditorAssetLibraryZoomMode, CanvasLayer);
+	VLTRCLASS(EditorAssetLibraryZoomMode, CanvasLayer);
 
 	Control *previews = nullptr;
 
@@ -113,7 +113,7 @@ public:
 };
 
 class EditorAssetLibraryItemDescription : public ConfirmationDialog {
-	GDCLASS(EditorAssetLibraryItemDescription, ConfirmationDialog);
+	VLTRCLASS(EditorAssetLibraryItemDescription, ConfirmationDialog);
 
 	EditorAssetLibraryItem *item = nullptr;
 	HBoxContainer *root = nullptr;
@@ -203,7 +203,7 @@ public:
 };
 
 class EditorAssetLibraryItemDownload : public MarginContainer {
-	GDCLASS(EditorAssetLibraryItemDownload, MarginContainer);
+	VLTRCLASS(EditorAssetLibraryItemDownload, MarginContainer);
 
 	PanelContainer *panel = nullptr;
 	TextureRect *icon = nullptr;
@@ -250,7 +250,7 @@ public:
 };
 
 class EditorAssetLibrary : public PanelContainer {
-	GDCLASS(EditorAssetLibrary, PanelContainer);
+	VLTRCLASS(EditorAssetLibrary, PanelContainer);
 
 	String host;
 
@@ -406,7 +406,7 @@ public:
 };
 
 class AssetLibraryEditorPlugin : public EditorPlugin {
-	GDCLASS(AssetLibraryEditorPlugin, EditorPlugin);
+	VLTRCLASS(AssetLibraryEditorPlugin, EditorPlugin);
 
 	EditorAssetLibrary *addon_library = nullptr;
 

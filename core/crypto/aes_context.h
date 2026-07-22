@@ -35,7 +35,7 @@
 #include "core/variant/type_info.h"
 
 class AESContext : public RefCounted {
-	GDCLASS(AESContext, RefCounted);
+	VLTRCLASS(AESContext, RefCounted);
 
 public:
 	enum Mode : int32_t {

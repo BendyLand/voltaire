@@ -37,7 +37,7 @@
 /*************************************************************************/
 
 class EditorPropertyFontMetaObject : public RefCounted {
-	GDCLASS(EditorPropertyFontMetaObject, RefCounted);
+	VLTRCLASS(EditorPropertyFontMetaObject, RefCounted);
 
 	Dictionary dict;
 
@@ -53,7 +53,7 @@ public:
 /*************************************************************************/
 
 class EditorPropertyFontOTObject : public RefCounted {
-	GDCLASS(EditorPropertyFontOTObject, RefCounted);
+	VLTRCLASS(EditorPropertyFontOTObject, RefCounted);
 
 	Dictionary dict;
 	Dictionary defaults_dict;
@@ -75,7 +75,7 @@ public:
 /*************************************************************************/
 
 class EditorPropertyFontMetaOverride : public EditorProperty {
-	GDCLASS(EditorPropertyFontMetaOverride, EditorProperty);
+	VLTRCLASS(EditorPropertyFontMetaOverride, EditorProperty);
 
 	Ref<EditorPropertyFontMetaObject> object;
 
@@ -113,7 +113,7 @@ public:
 /*************************************************************************/
 
 class EditorPropertyOTVariation : public EditorProperty {
-	GDCLASS(EditorPropertyOTVariation, EditorProperty);
+	VLTRCLASS(EditorPropertyOTVariation, EditorProperty);
 
 	Ref<EditorPropertyFontOTObject> object;
 
@@ -142,7 +142,7 @@ public:
 /*************************************************************************/
 
 class EditorPropertyOTFeatures : public EditorProperty {
-	GDCLASS(EditorPropertyOTFeatures, EditorProperty);
+	VLTRCLASS(EditorPropertyOTFeatures, EditorProperty);
 
 	enum FeatureGroups {
 		FGRP_STYLISTIC_SET,
@@ -190,7 +190,7 @@ public:
 /*************************************************************************/
 
 class EditorInspectorPluginFontVariation : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginFontVariation, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginFontVariation, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -200,7 +200,7 @@ public:
 /*************************************************************************/
 
 class FontPreview : public Control {
-	GDCLASS(FontPreview, Control);
+	VLTRCLASS(FontPreview, Control);
 
 protected:
 	void _notification(int p_what);
@@ -218,7 +218,7 @@ public:
 /*************************************************************************/
 
 class EditorInspectorPluginFontPreview : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginFontPreview, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginFontPreview, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -229,7 +229,7 @@ public:
 /*************************************************************************/
 
 class EditorPropertyFontNamesArray : public EditorPropertyArray {
-	GDCLASS(EditorPropertyFontNamesArray, EditorPropertyArray);
+	VLTRCLASS(EditorPropertyFontNamesArray, EditorPropertyArray);
 
 	PopupMenu *menu = nullptr;
 
@@ -245,7 +245,7 @@ public:
 /*************************************************************************/
 
 class EditorInspectorPluginSystemFont : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginSystemFont, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginSystemFont, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -255,7 +255,7 @@ public:
 /*************************************************************************/
 
 class FontEditorPlugin : public EditorPlugin {
-	GDCLASS(FontEditorPlugin, EditorPlugin);
+	VLTRCLASS(FontEditorPlugin, EditorPlugin);
 
 public:
 	FontEditorPlugin();

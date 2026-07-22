@@ -37,7 +37,7 @@ template <typename T>
 class TypedArray;
 
 class PhysicsRayQueryParameters2D : public RefCounted {
-	GDCLASS(PhysicsRayQueryParameters2D, RefCounted);
+	VLTRCLASS(PhysicsRayQueryParameters2D, RefCounted);
 
 	PS2DT::RayParameters parameters;
 

@@ -60,7 +60,7 @@ enum class Column {
 };
 
 class DependencyEditor : public AcceptDialog {
-	GDCLASS(DependencyEditor, AcceptDialog);
+	VLTRCLASS(DependencyEditor, AcceptDialog);
 
 	Tree *tree = nullptr;
 	Button *fixdeps = nullptr;
@@ -96,7 +96,7 @@ public:
 };
 
 class DependencyEditorOwners : public AcceptDialog {
-	GDCLASS(DependencyEditorOwners, AcceptDialog);
+	VLTRCLASS(DependencyEditorOwners, AcceptDialog);
 
 	Label *owners_count = nullptr;
 	Label *empty = nullptr;
@@ -123,7 +123,7 @@ public:
 };
 
 class DependencyRemoveDialog : public ConfirmationDialog {
-	GDCLASS(DependencyRemoveDialog, ConfirmationDialog);
+	VLTRCLASS(DependencyRemoveDialog, ConfirmationDialog);
 
 	Label *text = nullptr;
 	Tree *owners = nullptr;
@@ -167,7 +167,7 @@ public:
 };
 
 class DependencyErrorDialog : public ConfirmationDialog {
-	GDCLASS(DependencyErrorDialog, ConfirmationDialog);
+	VLTRCLASS(DependencyErrorDialog, ConfirmationDialog);
 
 	StringName icon_name_fail;
 	StringName icon_name_check;
@@ -195,7 +195,7 @@ public:
 };
 
 class OrphanResourcesDialog : public ConfirmationDialog {
-	GDCLASS(OrphanResourcesDialog, ConfirmationDialog);
+	VLTRCLASS(OrphanResourcesDialog, ConfirmationDialog);
 
 	DependencyEditor *dep_edit = nullptr;
 	Tree *files = nullptr;

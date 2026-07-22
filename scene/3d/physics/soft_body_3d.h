@@ -64,7 +64,7 @@ public:
 };
 
 class SoftBody3D : public MeshInstance3D {
-	GDCLASS(SoftBody3D, MeshInstance3D);
+	VLTRCLASS(SoftBody3D, MeshInstance3D);
 
 public:
 	enum DisableMode {

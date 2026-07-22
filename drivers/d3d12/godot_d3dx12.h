@@ -37,10 +37,10 @@
 #define __REQUIRED_RPCNDR_H_VERSION__ 475
 #endif // !defined(_MSC_VER) && !defined(__REQUIRED_RPCNDR_H_VERSION__)
 
-GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
 
 #include <thirdparty/directx_headers/include/directx/d3dx12.h> // IWYU pragma: export.
 
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP
 GODOT_CLANG_WARNING_POP

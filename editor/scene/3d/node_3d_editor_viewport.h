@@ -53,7 +53,7 @@ class SubViewportContainer;
 class VBoxContainer;
 
 class Node3DEditorSelectedItem : public Object {
-	GDCLASS(Node3DEditorSelectedItem, Object);
+	VLTRCLASS(Node3DEditorSelectedItem, Object);
 
 public:
 	AABB aabb;
@@ -77,7 +77,7 @@ public:
 };
 
 class ViewportNavigationControl : public Control {
-	GDCLASS(ViewportNavigationControl, Control);
+	VLTRCLASS(ViewportNavigationControl, Control);
 
 	Node3DEditorViewport *viewport = nullptr;
 	Vector2i focused_mouse_start;
@@ -102,7 +102,7 @@ public:
 };
 
 class ViewportRotationControl : public Control {
-	GDCLASS(ViewportRotationControl, Control);
+	VLTRCLASS(ViewportRotationControl, Control);
 
 	struct Axis2D {
 		Vector2 screen_point;
@@ -144,7 +144,7 @@ public:
 };
 
 class Node3DEditorViewport : public Control {
-	GDCLASS(Node3DEditorViewport, Control);
+	VLTRCLASS(Node3DEditorViewport, Control);
 	friend class Node3DEditor;
 	friend class ViewportNavigationControl;
 	friend class ViewportRotationControl;
@@ -577,7 +577,7 @@ public:
 };
 
 class Node3DEditorViewportContainer : public MarginContainer {
-	GDCLASS(Node3DEditorViewportContainer, MarginContainer);
+	VLTRCLASS(Node3DEditorViewportContainer, MarginContainer);
 
 public:
 	enum View {

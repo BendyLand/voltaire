@@ -40,7 +40,7 @@ class ItemList;
 class RDShaderFile;
 
 class ShaderFileEditor : public EditorDock {
-	GDCLASS(ShaderFileEditor, EditorDock);
+	VLTRCLASS(ShaderFileEditor, EditorDock);
 
 	Ref<RDShaderFile> shader_file;
 
@@ -67,7 +67,7 @@ public:
 };
 
 class ShaderFileEditorPlugin : public EditorPlugin {
-	GDCLASS(ShaderFileEditorPlugin, EditorPlugin);
+	VLTRCLASS(ShaderFileEditorPlugin, EditorPlugin);
 
 	ShaderFileEditor *shader_editor = nullptr;
 

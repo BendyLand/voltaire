@@ -36,7 +36,7 @@
 #include "scene/resources/3d/shape_3d.h"
 
 class CollisionObject3D : public Node3D {
-	GDCLASS(CollisionObject3D, Node3D);
+	VLTRCLASS(CollisionObject3D, Node3D);
 
 public:
 	static constexpr AncestralClass static_ancestral_class = AncestralClass::COLLISION_OBJECT_3D;
@@ -124,9 +124,9 @@ protected:
 	void set_only_update_transform_changes(bool p_enable);
 	bool is_only_update_transform_changes_enabled() const;
 
-	GDVIRTUAL5(_input_event, RequiredParam<Camera3D>, RequiredParam<InputEvent>, Vector3, Vector3, int)
-	GDVIRTUAL0(_mouse_enter)
-	GDVIRTUAL0(_mouse_exit)
+	VLTRVIRTUAL5(_input_event, RequiredParam<Camera3D>, RequiredParam<InputEvent>, Vector3, Vector3, int)
+	VLTRVIRTUAL0(_mouse_enter)
+	VLTRVIRTUAL0(_mouse_exit)
 public:
 	void set_collision_layer(uint32_t p_layer);
 	uint32_t get_collision_layer() const;

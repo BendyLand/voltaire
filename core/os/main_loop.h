@@ -34,15 +34,15 @@
 #include "core/object/object.h"
 
 class MainLoop : public Object {
-	GDCLASS(MainLoop, Object);
+	VLTRCLASS(MainLoop, Object);
 
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL0(_initialize)
-	GDVIRTUAL1R(bool, _physics_process, double)
-	GDVIRTUAL1R(bool, _process, double)
-	GDVIRTUAL0(_finalize)
+	VLTRVIRTUAL0(_initialize)
+	VLTRVIRTUAL1R(bool, _physics_process, double)
+	VLTRVIRTUAL1R(bool, _process, double)
+	VLTRVIRTUAL0(_finalize)
 
 public:
 	enum {

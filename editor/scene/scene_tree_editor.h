@@ -42,7 +42,7 @@ class TextureRect;
 class Timer;
 
 class SceneTreeEditor : public Control {
-	GDCLASS(SceneTreeEditor, Control);
+	VLTRCLASS(SceneTreeEditor, Control);
 
 	EditorSelection *editor_selection = nullptr;
 
@@ -278,7 +278,7 @@ public:
 };
 
 class SceneTreeDialog : public ConfirmationDialog {
-	GDCLASS(SceneTreeDialog, ConfirmationDialog);
+	VLTRCLASS(SceneTreeDialog, ConfirmationDialog);
 
 	VBoxContainer *content = nullptr;
 	SceneTreeEditor *tree = nullptr;

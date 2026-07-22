@@ -64,7 +64,7 @@ public:
 };
 
 class RenderingDeviceCommons : public Object {
-	GDSOFTCLASS(RenderingDeviceCommons, Object);
+	VLTRSOFTCLASS(RenderingDeviceCommons, Object);
 
 	////////////////////////////////////////////
 	// PUBLIC STUFF

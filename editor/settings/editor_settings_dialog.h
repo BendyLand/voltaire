@@ -45,7 +45,7 @@ class Tree;
 class TreeItem;
 
 class EditorSettingsDialog : public AcceptDialog {
-	GDCLASS(EditorSettingsDialog, AcceptDialog);
+	VLTRCLASS(EditorSettingsDialog, AcceptDialog);
 
 	static inline EditorSettingsDialog *singleton = nullptr;
 
@@ -145,7 +145,7 @@ public:
 };
 
 class EditorSettingsPropertyWrapper : public EditorProperty {
-	GDCLASS(EditorSettingsPropertyWrapper, EditorProperty);
+	VLTRCLASS(EditorSettingsPropertyWrapper, EditorProperty);
 
 	String property;
 	PropertyHint hint;
@@ -174,7 +174,7 @@ public:
 };
 
 class EditorSettingsInspectorPlugin : public EditorInspectorPlugin {
-	GDCLASS(EditorSettingsInspectorPlugin, EditorInspectorPlugin);
+	VLTRCLASS(EditorSettingsInspectorPlugin, EditorInspectorPlugin);
 
 	Object *current_object = nullptr;
 

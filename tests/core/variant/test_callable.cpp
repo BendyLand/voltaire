@@ -39,7 +39,7 @@ TEST_FORCE_LINK(test_callable)
 namespace TestCallable {
 
 class TestClass : public Object {
-	GDCLASS(TestClass, Object);
+	VLTRCLASS(TestClass, Object);
 
 protected:
 	static void _bind_methods() {
@@ -137,7 +137,7 @@ TEST_CASE("[Callable] Argument count") {
 }
 
 class TestBoundUnboundArgumentCount : public Object {
-	GDCLASS(TestBoundUnboundArgumentCount, Object);
+	VLTRCLASS(TestBoundUnboundArgumentCount, Object);
 
 protected:
 	static void _bind_methods() {

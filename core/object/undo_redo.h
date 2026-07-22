@@ -34,7 +34,7 @@
 #include "core/variant/type_info.h"
 
 class UndoRedo : public Object {
-	GDCLASS(UndoRedo, Object);
+	VLTRCLASS(UndoRedo, Object);
 	OBJ_SAVE_TYPE(UndoRedo);
 
 public:

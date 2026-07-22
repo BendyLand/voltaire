@@ -30,18 +30,18 @@
 
 #include "webrtc_peer_connection_extension.h"
 
-#include "core/object/class_db.h" // IWYU pragma: keep. `GDVIRTUAL_BIND` macro.
+#include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
 
 void WebRTCPeerConnectionExtension::_bind_methods() {
-	GDVIRTUAL_BIND(_get_connection_state);
-	GDVIRTUAL_BIND(_get_gathering_state);
-	GDVIRTUAL_BIND(_get_signaling_state);
-	GDVIRTUAL_BIND(_initialize, "config");
-	GDVIRTUAL_BIND(_create_data_channel, "label", "config");
-	GDVIRTUAL_BIND(_create_offer);
-	GDVIRTUAL_BIND(_set_remote_description, "type", "sdp");
-	GDVIRTUAL_BIND(_set_local_description, "type", "sdp");
-	GDVIRTUAL_BIND(_add_ice_candidate, "sdp_mid_name", "sdp_mline_index", "sdp_name");
-	GDVIRTUAL_BIND(_poll);
-	GDVIRTUAL_BIND(_close);
+	VLTRVIRTUAL_BIND(_get_connection_state);
+	VLTRVIRTUAL_BIND(_get_gathering_state);
+	VLTRVIRTUAL_BIND(_get_signaling_state);
+	VLTRVIRTUAL_BIND(_initialize, "config");
+	VLTRVIRTUAL_BIND(_create_data_channel, "label", "config");
+	VLTRVIRTUAL_BIND(_create_offer);
+	VLTRVIRTUAL_BIND(_set_remote_description, "type", "sdp");
+	VLTRVIRTUAL_BIND(_set_local_description, "type", "sdp");
+	VLTRVIRTUAL_BIND(_add_ice_candidate, "sdp_mid_name", "sdp_mline_index", "sdp_name");
+	VLTRVIRTUAL_BIND(_poll);
+	VLTRVIRTUAL_BIND(_close);
 }

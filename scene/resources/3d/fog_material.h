@@ -34,7 +34,7 @@
 #include "scene/resources/texture.h"
 
 class FogMaterial : public Material {
-	GDCLASS(FogMaterial, Material);
+	VLTRCLASS(FogMaterial, Material);
 
 private:
 	float density = 1.0;

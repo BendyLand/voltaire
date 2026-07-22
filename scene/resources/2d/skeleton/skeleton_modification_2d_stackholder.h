@@ -38,7 +38,7 @@
 ///////////////////////////////////////
 
 class SkeletonModification2DStackHolder : public SkeletonModification2D {
-	GDCLASS(SkeletonModification2DStackHolder, SkeletonModification2D);
+	VLTRCLASS(SkeletonModification2DStackHolder, SkeletonModification2D);
 
 protected:
 	static void _bind_methods();

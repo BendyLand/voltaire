@@ -35,7 +35,7 @@
 #include <enet/enet.h>
 
 class ENetPacketPeer : public PacketPeer {
-	GDCLASS(ENetPacketPeer, PacketPeer);
+	VLTRCLASS(ENetPacketPeer, PacketPeer);
 
 private:
 	ENetPeer *peer = nullptr;

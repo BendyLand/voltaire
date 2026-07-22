@@ -180,7 +180,7 @@ public:
 };
 
 class FileAccessPack : public FileAccess {
-	GDSOFTCLASS(FileAccessPack, FileAccess);
+	VLTRSOFTCLASS(FileAccessPack, FileAccess);
 	PackedData::PackedFile pf;
 
 	String path;
@@ -265,7 +265,7 @@ bool PackedData::has_directory(const String &p_path) {
 }
 
 class DirAccessPack : public DirAccess {
-	GDSOFTCLASS(DirAccessPack, DirAccess);
+	VLTRSOFTCLASS(DirAccessPack, DirAccess);
 	PackedData::PackedDir *current;
 
 	List<String> list_dirs;

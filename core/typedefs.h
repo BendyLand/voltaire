@@ -57,34 +57,34 @@ static_assert(__cplusplus >= 201703L, "Minimum of C++17 required.");
 // IWYU pragma: end_exports
 
 #if defined(__has_feature)
-#define GD_HAS_FEATURE(m_feature) __has_feature(m_feature)
+#define VLTR_HAS_FEATURE(m_feature) __has_feature(m_feature)
 #else
-#define GD_HAS_FEATURE(m_feature) 0
+#define VLTR_HAS_FEATURE(m_feature) 0
 #endif
 
 #if defined(__has_cpp_attribute)
-#define GD_HAS_CPP_ATTRIBUTE(m_feature) __has_cpp_attribute(m_feature)
+#define VLTR_HAS_CPP_ATTRIBUTE(m_feature) __has_cpp_attribute(m_feature)
 #else
-#define GD_HAS_CPP_ATTRIBUTE(m_feature) 0
+#define VLTR_HAS_CPP_ATTRIBUTE(m_feature) 0
 #endif
 
-#if (GD_HAS_FEATURE(address_sanitizer) || defined(__SANITIZE_ADDRESS__)) && !defined(ASAN_ENABLED)
+#if (VLTR_HAS_FEATURE(address_sanitizer) || defined(__SANITIZE_ADDRESS__)) && !defined(ASAN_ENABLED)
 #error Address sanitizer was enabled without defining `ASAN_ENABLED`
 #endif
 
-#if (GD_HAS_FEATURE(leak_sanitizer) || defined(__SANITIZE_LEAKS__)) && !defined(LSAN_ENABLED)
+#if (VLTR_HAS_FEATURE(leak_sanitizer) || defined(__SANITIZE_LEAKS__)) && !defined(LSAN_ENABLED)
 #error Leak sanitizer was enabled without defining `LSAN_ENABLED`
 #endif
 
-#if (GD_HAS_FEATURE(memory_sanitizer) || defined(__SANITIZE_MEMORY__)) && !defined(MSAN_ENABLED)
+#if (VLTR_HAS_FEATURE(memory_sanitizer) || defined(__SANITIZE_MEMORY__)) && !defined(MSAN_ENABLED)
 #error Memory sanitizer was enabled without defining `MSAN_ENABLED`
 #endif
 
-#if (GD_HAS_FEATURE(thread_sanitizer) || defined(__SANITIZE_THREAD__)) && !defined(TSAN_ENABLED)
+#if (VLTR_HAS_FEATURE(thread_sanitizer) || defined(__SANITIZE_THREAD__)) && !defined(TSAN_ENABLED)
 #error Thread sanitizer was enabled without defining `TSAN_ENABLED`
 #endif
 
-#if (GD_HAS_FEATURE(undefined_behavior_sanitizer) || defined(__UNDEFINED_SANITIZER__)) && !defined(UBSAN_ENABLED)
+#if (VLTR_HAS_FEATURE(undefined_behavior_sanitizer) || defined(__UNDEFINED_SANITIZER__)) && !defined(UBSAN_ENABLED)
 #error Undefined behavior sanitizer was enabled without defining `UBSAN_ENABLED`
 #endif
 
@@ -133,13 +133,13 @@ static_assert(__cplusplus >= 201703L, "Minimum of C++17 required.");
 #define _ALLOW_DISCARD_ (void)
 #endif
 
-#if GD_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
+#if VLTR_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
 #define _LIFETIME_BOUND_ [[clang::lifetimebound]]
-#elif GD_HAS_CPP_ATTRIBUTE(gnu::lifetimebound)
+#elif VLTR_HAS_CPP_ATTRIBUTE(gnu::lifetimebound)
 #define _LIFETIME_BOUND_ [[gnu::lifetimebound]]
-#elif GD_HAS_CPP_ATTRIBUTE(msvc::lifetimebound)
+#elif VLTR_HAS_CPP_ATTRIBUTE(msvc::lifetimebound)
 #define _LIFETIME_BOUND_ [[msvc::lifetimebound]]
-#elif GD_HAS_CPP_ATTRIBUTE(lifetimebound)
+#elif VLTR_HAS_CPP_ATTRIBUTE(lifetimebound)
 #define _LIFETIME_BOUND_ [[lifetimebound]]
 #else
 #define _LIFETIME_BOUND_
@@ -259,12 +259,12 @@ struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
 // Limit the depth of recursive algorithms when dealing with Array/Dictionary
 #define MAX_RECURSION 100
 
-// Macro GD_IS_DEFINED() allows to check if a macro is defined. It needs to be defined to anything (say 1) to work.
-#define __GDARG_PLACEHOLDER_1 false,
+// Macro VLTR_IS_DEFINED() allows to check if a macro is defined. It needs to be defined to anything (say 1) to work.
+#define __VLTRARG_PLACEHOLDER_1 false,
 #define __gd_take_second_arg(__ignored, val, ...) val
 #define ____gd_is_defined(arg1_or_junk) __gd_take_second_arg(arg1_or_junk true, false)
-#define ___gd_is_defined(val) ____gd_is_defined(__GDARG_PLACEHOLDER_##val)
-#define GD_IS_DEFINED(x) ___gd_is_defined(x)
+#define ___gd_is_defined(val) ____gd_is_defined(__VLTRARG_PLACEHOLDER_##val)
+#define VLTR_IS_DEFINED(x) ___gd_is_defined(x)
 
 // Whether the default value of a type is just all-0 bytes.
 // This can most commonly be exploited by using memset for these types instead of loop-construct.
@@ -284,7 +284,7 @@ struct is_zero_constructible<const volatile T> : is_zero_constructible<T> {};
 template <typename T>
 inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
 
-#if GD_HAS_CPP_ATTRIBUTE(gnu::warn_unused)
+#if VLTR_HAS_CPP_ATTRIBUTE(gnu::warn_unused)
 // https://gcc.gnu.org/onlinedocs/gcc/C_002b_002b-Attributes.html#index-warn_005funused
 #define _WARN_UNUSED_ [[gnu::warn_unused]]
 #else
@@ -293,61 +293,61 @@ inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
 
 // Warning suppression helper macros.
 #if defined(__clang__)
-#define GODOT_CLANG_PRAGMA(m_content) _Pragma(#m_content)
-#define GODOT_CLANG_WARNING_PUSH GODOT_CLANG_PRAGMA(clang diagnostic push)
-#define GODOT_CLANG_WARNING_IGNORE(m_warning) GODOT_CLANG_PRAGMA(clang diagnostic ignored m_warning)
-#define GODOT_CLANG_WARNING_POP GODOT_CLANG_PRAGMA(clang diagnostic pop)
-#define GODOT_CLANG_WARNING_PUSH_AND_IGNORE(m_warning) GODOT_CLANG_WARNING_PUSH GODOT_CLANG_WARNING_IGNORE(m_warning)
+#define VLTR_CLANG_PRAGMA(m_content) _Pragma(#m_content)
+#define VLTR_CLANG_WARNING_PUSH VLTR_CLANG_PRAGMA(clang diagnostic push)
+#define VLTR_CLANG_WARNING_IGNORE(m_warning) VLTR_CLANG_PRAGMA(clang diagnostic ignored m_warning)
+#define VLTR_CLANG_WARNING_POP VLTR_CLANG_PRAGMA(clang diagnostic pop)
+#define VLTR_CLANG_WARNING_PUSH_AND_IGNORE(m_warning) VLTR_CLANG_WARNING_PUSH VLTR_CLANG_WARNING_IGNORE(m_warning)
 #else
-#define GODOT_CLANG_PRAGMA(m_content)
-#define GODOT_CLANG_WARNING_PUSH
-#define GODOT_CLANG_WARNING_IGNORE(m_warning)
-#define GODOT_CLANG_WARNING_POP
-#define GODOT_CLANG_WARNING_PUSH_AND_IGNORE(m_warning)
+#define VLTR_CLANG_PRAGMA(m_content)
+#define VLTR_CLANG_WARNING_PUSH
+#define VLTR_CLANG_WARNING_IGNORE(m_warning)
+#define VLTR_CLANG_WARNING_POP
+#define VLTR_CLANG_WARNING_PUSH_AND_IGNORE(m_warning)
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)
-#define GODOT_GCC_PRAGMA(m_content) _Pragma(#m_content)
-#define GODOT_GCC_WARNING_PUSH GODOT_GCC_PRAGMA(GCC diagnostic push)
-#define GODOT_GCC_WARNING_IGNORE(m_warning) GODOT_GCC_PRAGMA(GCC diagnostic ignored m_warning)
-#define GODOT_GCC_WARNING_POP GODOT_GCC_PRAGMA(GCC diagnostic pop)
-#define GODOT_GCC_WARNING_PUSH_AND_IGNORE(m_warning) GODOT_GCC_WARNING_PUSH GODOT_GCC_WARNING_IGNORE(m_warning)
+#define VLTR_GCC_PRAGMA(m_content) _Pragma(#m_content)
+#define VLTR_GCC_WARNING_PUSH VLTR_GCC_PRAGMA(GCC diagnostic push)
+#define VLTR_GCC_WARNING_IGNORE(m_warning) VLTR_GCC_PRAGMA(GCC diagnostic ignored m_warning)
+#define VLTR_GCC_WARNING_POP VLTR_GCC_PRAGMA(GCC diagnostic pop)
+#define VLTR_GCC_WARNING_PUSH_AND_IGNORE(m_warning) VLTR_GCC_WARNING_PUSH VLTR_GCC_WARNING_IGNORE(m_warning)
 #else
-#define GODOT_GCC_PRAGMA(m_content)
-#define GODOT_GCC_WARNING_PUSH
-#define GODOT_GCC_WARNING_IGNORE(m_warning)
-#define GODOT_GCC_WARNING_POP
-#define GODOT_GCC_WARNING_PUSH_AND_IGNORE(m_warning)
+#define VLTR_GCC_PRAGMA(m_content)
+#define VLTR_GCC_WARNING_PUSH
+#define VLTR_GCC_WARNING_IGNORE(m_warning)
+#define VLTR_GCC_WARNING_POP
+#define VLTR_GCC_WARNING_PUSH_AND_IGNORE(m_warning)
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
-#define GODOT_MSVC_PRAGMA(m_command) __pragma(m_command)
-#define GODOT_MSVC_WARNING_PUSH GODOT_MSVC_PRAGMA(warning(push))
-#define GODOT_MSVC_WARNING_IGNORE(m_warning) GODOT_MSVC_PRAGMA(warning(disable : m_warning))
-#define GODOT_MSVC_WARNING_POP GODOT_MSVC_PRAGMA(warning(pop))
-#define GODOT_MSVC_WARNING_PUSH_AND_IGNORE(m_warning) GODOT_MSVC_WARNING_PUSH GODOT_MSVC_WARNING_IGNORE(m_warning)
+#define VLTR_MSVC_PRAGMA(m_command) __pragma(m_command)
+#define VLTR_MSVC_WARNING_PUSH VLTR_MSVC_PRAGMA(warning(push))
+#define VLTR_MSVC_WARNING_IGNORE(m_warning) VLTR_MSVC_PRAGMA(warning(disable : m_warning))
+#define VLTR_MSVC_WARNING_POP VLTR_MSVC_PRAGMA(warning(pop))
+#define VLTR_MSVC_WARNING_PUSH_AND_IGNORE(m_warning) VLTR_MSVC_WARNING_PUSH VLTR_MSVC_WARNING_IGNORE(m_warning)
 #else
-#define GODOT_MSVC_PRAGMA(m_command)
-#define GODOT_MSVC_WARNING_PUSH
-#define GODOT_MSVC_WARNING_IGNORE(m_warning)
-#define GODOT_MSVC_WARNING_POP
-#define GODOT_MSVC_WARNING_PUSH_AND_IGNORE(m_warning)
+#define VLTR_MSVC_PRAGMA(m_command)
+#define VLTR_MSVC_WARNING_PUSH
+#define VLTR_MSVC_WARNING_IGNORE(m_warning)
+#define VLTR_MSVC_WARNING_POP
+#define VLTR_MSVC_WARNING_PUSH_AND_IGNORE(m_warning)
 #endif
 
 // Deprecation warning suppression helper macros.
 #if defined(__clang__)
-#define GODOT_PUSH_IGNORE_DEPRECATION() GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
-#define GODOT_POP_IGNORE_DEPRECATION() GODOT_CLANG_WARNING_POP
+#define VLTR_PUSH_IGNORE_DEPRECATION() VLTR_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
+#define VLTR_POP_IGNORE_DEPRECATION() VLTR_CLANG_WARNING_POP
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)
-#define GODOT_PUSH_IGNORE_DEPRECATION() GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
-#define GODOT_POP_IGNORE_DEPRECATION() GODOT_GCC_WARNING_POP
+#define VLTR_PUSH_IGNORE_DEPRECATION() VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
+#define VLTR_POP_IGNORE_DEPRECATION() VLTR_GCC_WARNING_POP
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
-#define GODOT_PUSH_IGNORE_DEPRECATION() GODOT_MSVC_WARNING_PUSH_AND_IGNORE(4996)
-#define GODOT_POP_IGNORE_DEPRECATION() GODOT_MSVC_WARNING_POP
+#define VLTR_PUSH_IGNORE_DEPRECATION() VLTR_MSVC_WARNING_PUSH_AND_IGNORE(4996)
+#define VLTR_POP_IGNORE_DEPRECATION() VLTR_MSVC_WARNING_POP
 #endif
 
 template <typename T, typename = void>
@@ -370,7 +370,7 @@ constexpr bool is_fully_defined_v = is_fully_defined<T>::value;
 #define STATIC_ASSERT_INCOMPLETE_TYPE(m_keyword, m_type)
 #endif
 
-#define _GD_VARNAME_CONCAT_B_(m_ignore, m_name) m_name
-#define _GD_VARNAME_CONCAT_A_(m_a, m_b, m_c) _GD_VARNAME_CONCAT_B_(hello there, m_a##m_b##m_c)
-#define _GD_VARNAME_CONCAT_(m_a, m_b, m_c) _GD_VARNAME_CONCAT_A_(m_a, m_b, m_c)
-#define GD_UNIQUE_NAME(m_name) _GD_VARNAME_CONCAT_(m_name, _, __COUNTER__)
+#define _VLTR_VARNAME_CONCAT_B_(m_ignore, m_name) m_name
+#define _VLTR_VARNAME_CONCAT_A_(m_a, m_b, m_c) _VLTR_VARNAME_CONCAT_B_(hello there, m_a##m_b##m_c)
+#define _VLTR_VARNAME_CONCAT_(m_a, m_b, m_c) _VLTR_VARNAME_CONCAT_A_(m_a, m_b, m_c)
+#define VLTR_UNIQUE_NAME(m_name) _VLTR_VARNAME_CONCAT_(m_name, _, __COUNTER__)

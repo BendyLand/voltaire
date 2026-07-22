@@ -38,7 +38,7 @@
 class Node2D;
 
 class NavigationAgent2D : public Node {
-	GDCLASS(NavigationAgent2D, Node);
+	VLTRCLASS(NavigationAgent2D, Node);
 
 	Node2D *agent_parent = nullptr;
 

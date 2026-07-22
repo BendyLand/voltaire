@@ -39,7 +39,7 @@ class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 
 class NavMeshGenerator3D : public Object {
-	GDSOFTCLASS(NavMeshGenerator3D, Object);
+	VLTRSOFTCLASS(NavMeshGenerator3D, Object);
 
 	static NavMeshGenerator3D *singleton;
 

@@ -35,7 +35,7 @@
 class Viewport;
 
 class CanvasLayer : public Node {
-	GDCLASS(CanvasLayer, Node);
+	VLTRCLASS(CanvasLayer, Node);
 
 	mutable bool locrotscale_dirty = false;
 	mutable Vector2 ofs;

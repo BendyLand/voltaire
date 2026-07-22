@@ -35,7 +35,7 @@
 #include <thirdparty/misc/ok_color.h>
 
 class Gradient : public Resource {
-	GDCLASS(Gradient, Resource);
+	VLTRCLASS(Gradient, Resource);
 	OBJ_SAVE_TYPE(Gradient);
 
 public:

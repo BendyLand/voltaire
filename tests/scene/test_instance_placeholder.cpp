@@ -45,7 +45,7 @@ TEST_FORCE_LINK(test_instance_placeholder)
 namespace TestInstancePlaceholder {
 
 class _TestInstancePlaceholderNode : public Node {
-	GDCLASS(_TestInstancePlaceholderNode, Node);
+	VLTRCLASS(_TestInstancePlaceholderNode, Node);
 
 protected:
 	static void _bind_methods() {

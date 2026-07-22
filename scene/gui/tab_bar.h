@@ -37,7 +37,7 @@
 class Timer;
 
 class TabBar : public Control {
-	GDCLASS(TabBar, Control);
+	VLTRCLASS(TabBar, Control);
 
 public:
 	enum AlignmentMode {

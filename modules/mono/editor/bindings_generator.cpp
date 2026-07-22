@@ -4262,7 +4262,7 @@ bool BindingsGenerator::_populate_object_type_interfaces() {
 
 		// Populate signals
 
-		const AHashMap<StringName, const MethodInfo *> &signal_map = class_info->gdtype->get_signal_map(true);
+		const AHashMap<StringName, const MethodInfo *> &signal_map = class_info->vltrtype->get_signal_map(true);
 
 		for (const KeyValue<StringName, const MethodInfo *> &E : signal_map) {
 			SignalInterface isignal;
@@ -4358,7 +4358,7 @@ bool BindingsGenerator::_populate_object_type_interfaces() {
 		List<String> constants;
 		ClassDB::get_integer_constant_list(type_cname, &constants, true);
 
-		const AHashMap<StringName, const GDType::EnumInfo *> &enum_map = class_info->gdtype->get_enum_map(true);
+		const AHashMap<StringName, const GDType::EnumInfo *> &enum_map = class_info->vltrtype->get_enum_map(true);
 
 		for (const KeyValue<StringName, const GDType::EnumInfo *> &kv : enum_map) {
 			StringName enum_proxy_cname = kv.key;
@@ -4416,7 +4416,7 @@ bool BindingsGenerator::_populate_object_type_interfaces() {
 		}
 
 		for (const String &constant_name : constants) {
-			const int64_t *value = class_info->gdtype->get_integer_constant_map(true).getptr(StringName(constant_name));
+			const int64_t *value = class_info->vltrtype->get_integer_constant_map(true).getptr(StringName(constant_name));
 			ERR_FAIL_NULL_V(value, false);
 
 			String constant_proxy_name = snake_to_pascal_case(constant_name, true);

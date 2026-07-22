@@ -60,7 +60,7 @@ struct EditorPropertyRangeHint {
 };
 
 class EditorPropertyNil : public EditorProperty {
-	GDCLASS(EditorPropertyNil, EditorProperty);
+	VLTRCLASS(EditorPropertyNil, EditorProperty);
 	LineEdit *text = nullptr;
 
 public:
@@ -69,7 +69,7 @@ public:
 };
 
 class EditorPropertyVariant : public EditorProperty {
-	GDCLASS(EditorPropertyVariant, EditorProperty);
+	VLTRCLASS(EditorPropertyVariant, EditorProperty);
 
 	HBoxContainer *content = nullptr;
 	EditorProperty *sub_property = nullptr;
@@ -93,7 +93,7 @@ public:
 };
 
 class EditorPropertyText : public EditorProperty {
-	GDCLASS(EditorPropertyText, EditorProperty);
+	VLTRCLASS(EditorPropertyText, EditorProperty);
 	LineEdit *text = nullptr;
 
 	bool monospaced = false;
@@ -118,7 +118,7 @@ public:
 };
 
 class EditorPropertyMultilineText : public EditorProperty {
-	GDCLASS(EditorPropertyMultilineText, EditorProperty);
+	VLTRCLASS(EditorPropertyMultilineText, EditorProperty);
 
 	TextEdit *text = nullptr;
 
@@ -152,7 +152,7 @@ public:
 };
 
 class EditorPropertyTextEnum : public EditorProperty {
-	GDCLASS(EditorPropertyTextEnum, EditorProperty);
+	VLTRCLASS(EditorPropertyTextEnum, EditorProperty);
 
 	HBoxContainer *default_layout = nullptr;
 	HBoxContainer *edit_custom_layout = nullptr;
@@ -188,7 +188,7 @@ public:
 };
 
 class EditorPropertyPath : public EditorProperty {
-	GDCLASS(EditorPropertyPath, EditorProperty);
+	VLTRCLASS(EditorPropertyPath, EditorProperty);
 	Vector<String> extensions;
 	bool folder = false;
 	bool global = false;
@@ -225,7 +225,7 @@ public:
 };
 
 class EditorPropertyLocale : public EditorProperty {
-	GDCLASS(EditorPropertyLocale, EditorProperty);
+	VLTRCLASS(EditorPropertyLocale, EditorProperty);
 	EditorLocaleDialog *dialog = nullptr;
 	LineEdit *locale = nullptr;
 	Button *locale_edit = nullptr;
@@ -244,7 +244,7 @@ public:
 };
 
 class EditorPropertyClassName : public EditorProperty {
-	GDCLASS(EditorPropertyClassName, EditorProperty);
+	VLTRCLASS(EditorPropertyClassName, EditorProperty);
 
 private:
 	CreateDialog *dialog = nullptr;
@@ -264,7 +264,7 @@ public:
 };
 
 class EditorPropertyCheck : public EditorProperty {
-	GDCLASS(EditorPropertyCheck, EditorProperty);
+	VLTRCLASS(EditorPropertyCheck, EditorProperty);
 	CheckBox *checkbox = nullptr;
 
 	void _checkbox_pressed();
@@ -278,7 +278,7 @@ public:
 };
 
 class EditorPropertyEnum : public EditorProperty {
-	GDCLASS(EditorPropertyEnum, EditorProperty);
+	VLTRCLASS(EditorPropertyEnum, EditorProperty);
 	OptionButton *options = nullptr;
 
 	void _option_selected(int p_which);
@@ -295,7 +295,7 @@ public:
 };
 
 class EditorPropertyFlags : public EditorProperty {
-	GDCLASS(EditorPropertyFlags, EditorProperty);
+	VLTRCLASS(EditorPropertyFlags, EditorProperty);
 	VBoxContainer *vbox = nullptr;
 	Vector<CheckBox *> flags;
 	Vector<uint32_t> flag_values;
@@ -314,7 +314,7 @@ public:
 ///////////////////// LAYERS /////////////////////////
 
 class EditorPropertyLayersGrid : public Control {
-	GDCLASS(EditorPropertyLayersGrid, Control);
+	VLTRCLASS(EditorPropertyLayersGrid, Control);
 
 private:
 	Vector<Rect2> flag_rects;
@@ -359,7 +359,7 @@ public:
 };
 
 class EditorPropertyLayers : public EditorProperty {
-	GDCLASS(EditorPropertyLayers, EditorProperty);
+	VLTRCLASS(EditorPropertyLayers, EditorProperty);
 
 public:
 	enum LayerType {
@@ -397,7 +397,7 @@ public:
 };
 
 class EditorPropertyInteger : public EditorProperty {
-	GDCLASS(EditorPropertyInteger, EditorProperty);
+	VLTRCLASS(EditorPropertyInteger, EditorProperty);
 	EditorSpinSlider *spin = nullptr;
 	void _value_changed(int64_t p_val);
 
@@ -412,7 +412,7 @@ public:
 };
 
 class EditorPropertyObjectID : public EditorProperty {
-	GDCLASS(EditorPropertyObjectID, EditorProperty);
+	VLTRCLASS(EditorPropertyObjectID, EditorProperty);
 	Button *edit = nullptr;
 	String base_type;
 
@@ -430,7 +430,7 @@ public:
 };
 
 class EditorPropertySignal : public EditorProperty {
-	GDCLASS(EditorPropertySignal, EditorProperty);
+	VLTRCLASS(EditorPropertySignal, EditorProperty);
 	Button *edit = nullptr;
 	String base_type;
 	void _edit_pressed();
@@ -441,7 +441,7 @@ public:
 };
 
 class EditorPropertyCallable : public EditorProperty {
-	GDCLASS(EditorPropertyCallable, EditorProperty);
+	VLTRCLASS(EditorPropertyCallable, EditorProperty);
 	Button *edit = nullptr;
 	String base_type;
 
@@ -451,7 +451,7 @@ public:
 };
 
 class EditorPropertyFloat : public EditorProperty {
-	GDCLASS(EditorPropertyFloat, EditorProperty);
+	VLTRCLASS(EditorPropertyFloat, EditorProperty);
 	EditorSpinSlider *spin = nullptr;
 	bool radians_as_degrees = false;
 	void _value_changed(double p_val);
@@ -467,7 +467,7 @@ public:
 };
 
 class EditorPropertyEasing : public EditorProperty {
-	GDCLASS(EditorPropertyEasing, EditorProperty);
+	VLTRCLASS(EditorPropertyEasing, EditorProperty);
 	Control *easing_draw = nullptr;
 	PopupMenu *preset = nullptr;
 	EditorSpinSlider *spin = nullptr;
@@ -508,7 +508,7 @@ public:
 };
 
 class EditorPropertyRect2 : public EditorProperty {
-	GDCLASS(EditorPropertyRect2, EditorProperty);
+	VLTRCLASS(EditorPropertyRect2, EditorProperty);
 	EditorSpinSlider *spin[4];
 	void _value_changed(double p_val, const String &p_name);
 
@@ -523,7 +523,7 @@ public:
 };
 
 class EditorPropertyRect2i : public EditorProperty {
-	GDCLASS(EditorPropertyRect2i, EditorProperty);
+	VLTRCLASS(EditorPropertyRect2i, EditorProperty);
 	EditorSpinSlider *spin[4];
 	void _value_changed(double p_val, const String &p_name);
 
@@ -538,7 +538,7 @@ public:
 };
 
 class EditorPropertyPlane : public EditorProperty {
-	GDCLASS(EditorPropertyPlane, EditorProperty);
+	VLTRCLASS(EditorPropertyPlane, EditorProperty);
 	EditorSpinSlider *spin[4];
 	void _value_changed(double p_val, const String &p_name);
 
@@ -553,7 +553,7 @@ public:
 };
 
 class EditorPropertyQuaternion : public EditorProperty {
-	GDCLASS(EditorPropertyQuaternion, EditorProperty);
+	VLTRCLASS(EditorPropertyQuaternion, EditorProperty);
 	BoxContainer *default_layout = nullptr;
 	EditorSpinSlider *spin[4];
 
@@ -585,7 +585,7 @@ public:
 };
 
 class EditorPropertyAABB : public EditorProperty {
-	GDCLASS(EditorPropertyAABB, EditorProperty);
+	VLTRCLASS(EditorPropertyAABB, EditorProperty);
 	EditorSpinSlider *spin[6];
 	void _value_changed(double p_val, const String &p_name);
 
@@ -600,7 +600,7 @@ public:
 };
 
 class EditorPropertyTransform2D : public EditorProperty {
-	GDCLASS(EditorPropertyTransform2D, EditorProperty);
+	VLTRCLASS(EditorPropertyTransform2D, EditorProperty);
 	EditorSpinSlider *spin[6];
 	void _value_changed(double p_val, const String &p_name);
 
@@ -615,7 +615,7 @@ public:
 };
 
 class EditorPropertyBasis : public EditorProperty {
-	GDCLASS(EditorPropertyBasis, EditorProperty);
+	VLTRCLASS(EditorPropertyBasis, EditorProperty);
 	EditorSpinSlider *spin[9];
 	void _value_changed(double p_val, const String &p_name);
 
@@ -630,7 +630,7 @@ public:
 };
 
 class EditorPropertyTransform3D : public EditorProperty {
-	GDCLASS(EditorPropertyTransform3D, EditorProperty);
+	VLTRCLASS(EditorPropertyTransform3D, EditorProperty);
 	EditorSpinSlider *spin[12];
 	void _value_changed(double p_val, const String &p_name);
 
@@ -646,7 +646,7 @@ public:
 };
 
 class EditorPropertyProjection : public EditorProperty {
-	GDCLASS(EditorPropertyProjection, EditorProperty);
+	VLTRCLASS(EditorPropertyProjection, EditorProperty);
 	EditorSpinSlider *spin[16];
 	void _value_changed(double p_val, const String &p_name);
 
@@ -662,7 +662,7 @@ public:
 };
 
 class EditorPropertyColor : public EditorProperty {
-	GDCLASS(EditorPropertyColor, EditorProperty);
+	VLTRCLASS(EditorPropertyColor, EditorProperty);
 	ColorPickerButton *picker = nullptr;
 	void _color_changed(const Color &p_color);
 	void _picker_created();
@@ -684,7 +684,7 @@ public:
 };
 
 class EditorPropertyNodePath : public EditorProperty {
-	GDCLASS(EditorPropertyNodePath, EditorProperty);
+	VLTRCLASS(EditorPropertyNodePath, EditorProperty);
 
 	enum {
 		ACTION_CLEAR,
@@ -730,7 +730,7 @@ public:
 };
 
 class EditorPropertyRID : public EditorProperty {
-	GDCLASS(EditorPropertyRID, EditorProperty);
+	VLTRCLASS(EditorPropertyRID, EditorProperty);
 	Label *label = nullptr;
 
 public:
@@ -739,7 +739,7 @@ public:
 };
 
 class EditorPropertyResource : public EditorProperty {
-	GDCLASS(EditorPropertyResource, EditorProperty);
+	VLTRCLASS(EditorPropertyResource, EditorProperty);
 
 	EditorResourcePicker *resource_picker = nullptr;
 	SceneTreeDialog *scene_tree = nullptr;
@@ -795,7 +795,7 @@ public:
 /// \brief The EditorInspectorDefaultPlugin class
 ///
 class EditorInspectorDefaultPlugin : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorDefaultPlugin, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorDefaultPlugin, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;

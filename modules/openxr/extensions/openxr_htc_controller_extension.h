@@ -33,7 +33,7 @@
 #include "openxr_extension_wrapper.h"
 
 class OpenXRHTCControllerExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRHTCControllerExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRHTCControllerExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

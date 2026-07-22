@@ -34,7 +34,7 @@
 #include "scene/gui/popup_menu.h"
 
 class LineEdit : public Control {
-	GDCLASS(LineEdit, Control);
+	VLTRCLASS(LineEdit, Control);
 
 public:
 	enum MenuItems {

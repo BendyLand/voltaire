@@ -47,7 +47,7 @@
 #include "scene/animation/animation_player.h"
 
 class GLTFState : public Resource {
-	GDCLASS(GLTFState, Resource);
+	VLTRCLASS(GLTFState, Resource);
 	friend class GLTFDocument;
 	friend class GLTFNode;
 

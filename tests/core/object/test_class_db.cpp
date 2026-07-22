@@ -711,7 +711,7 @@ void add_exposed_classes(Context &r_context) {
 
 		// Add signals
 
-		const AHashMap<StringName, const MethodInfo *> &signal_map = class_info->gdtype->get_signal_map(true);
+		const AHashMap<StringName, const MethodInfo *> &signal_map = class_info->vltrtype->get_signal_map(true);
 
 		for (const KeyValue<StringName, const MethodInfo *> &K : signal_map) {
 			SignalData signal;
@@ -764,7 +764,7 @@ void add_exposed_classes(Context &r_context) {
 		List<String> constants;
 		ClassDB::get_integer_constant_list(class_name, &constants, true);
 
-		const AHashMap<StringName, const GDType::EnumInfo *> &enum_map = class_info->gdtype->get_enum_map(true);
+		const AHashMap<StringName, const GDType::EnumInfo *> &enum_map = class_info->vltrtype->get_enum_map(true);
 
 		for (const KeyValue<StringName, const GDType::EnumInfo *> &kv_enum : enum_map) {
 			EnumData enum_;
@@ -775,7 +775,7 @@ void add_exposed_classes(Context &r_context) {
 				TEST_FAIL_COND(String(constant_name).contains("::"),
 						"Enum constant contains '::', check bindings to remove the scope: '",
 						String(class_name), ".", String(enum_.name), ".", String(constant_name), "'.");
-				const int64_t *value = class_info->gdtype->get_integer_constant_map(false).getptr(constant_name);
+				const int64_t *value = class_info->vltrtype->get_integer_constant_map(false).getptr(constant_name);
 				TEST_FAIL_COND(!value, "Missing enum constant value: '",
 						String(class_name), ".", String(enum_.name), ".", String(constant_name), "'.");
 				constants.erase(constant_name);
@@ -797,7 +797,7 @@ void add_exposed_classes(Context &r_context) {
 			TEST_FAIL_COND(constant_name.contains("::"),
 					"Constant contains '::', check bindings to remove the scope: '",
 					String(class_name), ".", constant_name, "'.");
-			const int64_t *value = class_info->gdtype->get_integer_constant_map(false).getptr(StringName(E));
+			const int64_t *value = class_info->vltrtype->get_integer_constant_map(false).getptr(StringName(E));
 			TEST_FAIL_COND(!value, "Missing constant value: '", String(class_name), ".", String(constant_name), "'.");
 
 			ConstantData constant;

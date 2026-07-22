@@ -33,7 +33,7 @@
 #include "scene/gui/button.h"
 
 class CheckBox : public Button {
-	GDCLASS(CheckBox, Button);
+	VLTRCLASS(CheckBox, Button);
 
 	struct ThemeCache {
 		int h_separation = 0;

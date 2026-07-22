@@ -40,57 +40,57 @@ void EditorExportPlatformExtension::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_config_missing_templates", "missing_templates"), &EditorExportPlatformExtension::set_config_missing_templates);
 	ClassDB::bind_method(D_METHOD("get_config_missing_templates"), &EditorExportPlatformExtension::get_config_missing_templates);
 
-	GDVIRTUAL_BIND(_get_preset_features, "preset");
-	GDVIRTUAL_BIND(_is_executable, "path");
-	GDVIRTUAL_BIND(_get_export_options);
-	GDVIRTUAL_BIND(_should_update_export_options);
-	GDVIRTUAL_BIND(_get_export_option_visibility, "preset", "option");
-	GDVIRTUAL_BIND(_get_export_option_warning, "preset", "option");
+	VLTRVIRTUAL_BIND(_get_preset_features, "preset");
+	VLTRVIRTUAL_BIND(_is_executable, "path");
+	VLTRVIRTUAL_BIND(_get_export_options);
+	VLTRVIRTUAL_BIND(_should_update_export_options);
+	VLTRVIRTUAL_BIND(_get_export_option_visibility, "preset", "option");
+	VLTRVIRTUAL_BIND(_get_export_option_warning, "preset", "option");
 
-	GDVIRTUAL_BIND(_get_os_name);
-	GDVIRTUAL_BIND(_get_name);
-	GDVIRTUAL_BIND(_get_logo);
+	VLTRVIRTUAL_BIND(_get_os_name);
+	VLTRVIRTUAL_BIND(_get_name);
+	VLTRVIRTUAL_BIND(_get_logo);
 
-	GDVIRTUAL_BIND(_poll_export);
-	GDVIRTUAL_BIND(_get_options_count);
-	GDVIRTUAL_BIND(_get_options_tooltip);
+	VLTRVIRTUAL_BIND(_poll_export);
+	VLTRVIRTUAL_BIND(_get_options_count);
+	VLTRVIRTUAL_BIND(_get_options_tooltip);
 
-	GDVIRTUAL_BIND(_get_option_icon, "device");
+	VLTRVIRTUAL_BIND(_get_option_icon, "device");
 #ifndef DISABLE_DEPRECATED
-	GDVIRTUAL_BIND_COMPAT(_get_option_icon_bind_compat_108825, "device");
+	VLTRVIRTUAL_BIND_COMPAT(_get_option_icon_bind_compat_108825, "device");
 #endif
 
-	GDVIRTUAL_BIND(_get_option_label, "device");
-	GDVIRTUAL_BIND(_get_option_tooltip, "device");
-	GDVIRTUAL_BIND(_get_device_architecture, "device");
+	VLTRVIRTUAL_BIND(_get_option_label, "device");
+	VLTRVIRTUAL_BIND(_get_option_tooltip, "device");
+	VLTRVIRTUAL_BIND(_get_device_architecture, "device");
 
-	GDVIRTUAL_BIND(_cleanup);
+	VLTRVIRTUAL_BIND(_cleanup);
 
-	GDVIRTUAL_BIND(_run, "preset", "device", "debug_flags");
-	GDVIRTUAL_BIND(_get_run_icon);
+	VLTRVIRTUAL_BIND(_run, "preset", "device", "debug_flags");
+	VLTRVIRTUAL_BIND(_get_run_icon);
 
-	GDVIRTUAL_BIND(_can_export, "preset", "debug");
-	GDVIRTUAL_BIND(_has_valid_export_configuration, "preset", "debug");
-	GDVIRTUAL_BIND(_has_valid_project_configuration, "preset");
+	VLTRVIRTUAL_BIND(_can_export, "preset", "debug");
+	VLTRVIRTUAL_BIND(_has_valid_export_configuration, "preset", "debug");
+	VLTRVIRTUAL_BIND(_has_valid_project_configuration, "preset");
 
-	GDVIRTUAL_BIND(_get_binary_extensions, "preset");
+	VLTRVIRTUAL_BIND(_get_binary_extensions, "preset");
 
-	GDVIRTUAL_BIND(_export_project, "preset", "debug", "path", "flags");
-	GDVIRTUAL_BIND(_export_pack, "preset", "debug", "path", "flags");
-	GDVIRTUAL_BIND(_export_zip, "preset", "debug", "path", "flags");
-	GDVIRTUAL_BIND(_export_pack_patch, "preset", "debug", "path", "patches", "flags");
-	GDVIRTUAL_BIND(_export_zip_patch, "preset", "debug", "path", "patches", "flags");
+	VLTRVIRTUAL_BIND(_export_project, "preset", "debug", "path", "flags");
+	VLTRVIRTUAL_BIND(_export_pack, "preset", "debug", "path", "flags");
+	VLTRVIRTUAL_BIND(_export_zip, "preset", "debug", "path", "flags");
+	VLTRVIRTUAL_BIND(_export_pack_patch, "preset", "debug", "path", "patches", "flags");
+	VLTRVIRTUAL_BIND(_export_zip_patch, "preset", "debug", "path", "patches", "flags");
 
-	GDVIRTUAL_BIND(_get_platform_features);
+	VLTRVIRTUAL_BIND(_get_platform_features);
 
-	GDVIRTUAL_BIND(_get_debug_protocol);
+	VLTRVIRTUAL_BIND(_get_debug_protocol);
 
-	GDVIRTUAL_BIND(_initialize);
+	VLTRVIRTUAL_BIND(_initialize);
 }
 
 void EditorExportPlatformExtension::get_preset_features(const Ref<EditorExportPreset> &p_preset, List<String> *r_features) const {
 	Vector<String> ret;
-	if (GDVIRTUAL_CALL(_get_preset_features, p_preset, ret) && r_features) {
+	if (VLTRVIRTUAL_CALL(_get_preset_features, p_preset, ret) && r_features) {
 		for (const String &E : ret) {
 			r_features->push_back(E);
 		}
@@ -99,13 +99,13 @@ void EditorExportPlatformExtension::get_preset_features(const Ref<EditorExportPr
 
 bool EditorExportPlatformExtension::is_executable(const String &p_path) const {
 	bool ret = false;
-	GDVIRTUAL_CALL(_is_executable, p_path, ret);
+	VLTRVIRTUAL_CALL(_is_executable, p_path, ret);
 	return ret;
 }
 
 void EditorExportPlatformExtension::get_export_options(List<ExportOption> *r_options) const {
 	TypedArray<Dictionary> ret;
-	if (GDVIRTUAL_CALL(_get_export_options, ret) && r_options) {
+	if (VLTRVIRTUAL_CALL(_get_export_options, ret) && r_options) {
 		for (const Variant &var : ret) {
 			const Dictionary &d = var;
 			ERR_CONTINUE(!d.has("name"));
@@ -135,66 +135,66 @@ void EditorExportPlatformExtension::get_export_options(List<ExportOption> *r_opt
 
 bool EditorExportPlatformExtension::should_update_export_options() {
 	bool ret = false;
-	GDVIRTUAL_CALL(_should_update_export_options, ret);
+	VLTRVIRTUAL_CALL(_should_update_export_options, ret);
 	return ret;
 }
 
 bool EditorExportPlatformExtension::get_export_option_visibility(const EditorExportPreset *p_preset, const String &p_option) const {
 	bool ret = true;
-	GDVIRTUAL_CALL(_get_export_option_visibility, Ref<EditorExportPreset>(p_preset), p_option, ret);
+	VLTRVIRTUAL_CALL(_get_export_option_visibility, Ref<EditorExportPreset>(p_preset), p_option, ret);
 	return ret;
 }
 
 String EditorExportPlatformExtension::get_export_option_warning(const EditorExportPreset *p_preset, const StringName &p_name) const {
 	String ret;
-	GDVIRTUAL_CALL(_get_export_option_warning, Ref<EditorExportPreset>(p_preset), p_name, ret);
+	VLTRVIRTUAL_CALL(_get_export_option_warning, Ref<EditorExportPreset>(p_preset), p_name, ret);
 	return ret;
 }
 
 String EditorExportPlatformExtension::get_os_name() const {
 	String ret;
-	GDVIRTUAL_CALL(_get_os_name, ret);
+	VLTRVIRTUAL_CALL(_get_os_name, ret);
 	return ret;
 }
 
 String EditorExportPlatformExtension::get_name() const {
 	String ret;
-	GDVIRTUAL_CALL(_get_name, ret);
+	VLTRVIRTUAL_CALL(_get_name, ret);
 	return ret;
 }
 
 Ref<Texture2D> EditorExportPlatformExtension::get_logo() const {
 	Ref<Texture2D> ret;
-	GDVIRTUAL_CALL(_get_logo, ret);
+	VLTRVIRTUAL_CALL(_get_logo, ret);
 	return ret;
 }
 
 bool EditorExportPlatformExtension::poll_export() {
 	bool ret = false;
-	GDVIRTUAL_CALL(_poll_export, ret);
+	VLTRVIRTUAL_CALL(_poll_export, ret);
 	return ret;
 }
 
 int EditorExportPlatformExtension::get_options_count() const {
 	int ret = 0;
-	GDVIRTUAL_CALL(_get_options_count, ret);
+	VLTRVIRTUAL_CALL(_get_options_count, ret);
 	return ret;
 }
 
 String EditorExportPlatformExtension::get_options_tooltip() const {
 	String ret;
-	GDVIRTUAL_CALL(_get_options_tooltip, ret);
+	VLTRVIRTUAL_CALL(_get_options_tooltip, ret);
 	return ret;
 }
 
 Ref<Texture2D> EditorExportPlatformExtension::get_option_icon(int p_index) const {
 	Ref<Texture2D> ret;
-	if (GDVIRTUAL_CALL(_get_option_icon, p_index, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_option_icon, p_index, ret)) {
 		return ret;
 	}
 #ifndef DISABLE_DEPRECATED
 	Ref<ImageTexture> comp_ret;
-	if (GDVIRTUAL_CALL(_get_option_icon_bind_compat_108825, p_index, comp_ret)) {
+	if (VLTRVIRTUAL_CALL(_get_option_icon_bind_compat_108825, p_index, comp_ret)) {
 		return comp_ret;
 	}
 #endif
@@ -203,35 +203,35 @@ Ref<Texture2D> EditorExportPlatformExtension::get_option_icon(int p_index) const
 
 String EditorExportPlatformExtension::get_option_label(int p_device) const {
 	String ret;
-	GDVIRTUAL_CALL(_get_option_label, p_device, ret);
+	VLTRVIRTUAL_CALL(_get_option_label, p_device, ret);
 	return ret;
 }
 
 String EditorExportPlatformExtension::get_option_tooltip(int p_device) const {
 	String ret;
-	GDVIRTUAL_CALL(_get_option_tooltip, p_device, ret);
+	VLTRVIRTUAL_CALL(_get_option_tooltip, p_device, ret);
 	return ret;
 }
 
 String EditorExportPlatformExtension::get_device_architecture(int p_device) const {
 	String ret;
-	GDVIRTUAL_CALL(_get_device_architecture, p_device, ret);
+	VLTRVIRTUAL_CALL(_get_device_architecture, p_device, ret);
 	return ret;
 }
 
 void EditorExportPlatformExtension::cleanup() {
-	GDVIRTUAL_CALL(_cleanup);
+	VLTRVIRTUAL_CALL(_cleanup);
 }
 
 Error EditorExportPlatformExtension::run(const Ref<EditorExportPreset> &p_preset, int p_device, BitField<EditorExportPlatform::DebugFlags> p_debug_flags) {
 	Error ret = OK;
-	GDVIRTUAL_CALL(_run, p_preset, p_device, p_debug_flags, ret);
+	VLTRVIRTUAL_CALL(_run, p_preset, p_device, p_debug_flags, ret);
 	return ret;
 }
 
 Ref<Texture2D> EditorExportPlatformExtension::get_run_icon() const {
 	Ref<Texture2D> ret;
-	if (GDVIRTUAL_CALL(_get_run_icon, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_run_icon, ret)) {
 		return ret;
 	}
 	return EditorExportPlatform::get_run_icon();
@@ -241,7 +241,7 @@ bool EditorExportPlatformExtension::can_export(const Ref<EditorExportPreset> &p_
 	bool ret = false;
 	config_error = r_error;
 	config_missing_templates = r_missing_templates;
-	if (GDVIRTUAL_CALL(_can_export, p_preset, p_debug, ret)) {
+	if (VLTRVIRTUAL_CALL(_can_export, p_preset, p_debug, ret)) {
 		r_error = config_error;
 		r_missing_templates = config_missing_templates;
 		return ret;
@@ -253,7 +253,7 @@ bool EditorExportPlatformExtension::has_valid_export_configuration(const Ref<Edi
 	bool ret = false;
 	config_error = r_error;
 	config_missing_templates = r_missing_templates;
-	if (GDVIRTUAL_CALL(_has_valid_export_configuration, p_preset, p_debug, ret)) {
+	if (VLTRVIRTUAL_CALL(_has_valid_export_configuration, p_preset, p_debug, ret)) {
 		r_error = config_error;
 		r_missing_templates = config_missing_templates;
 	}
@@ -263,7 +263,7 @@ bool EditorExportPlatformExtension::has_valid_export_configuration(const Ref<Edi
 bool EditorExportPlatformExtension::has_valid_project_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error) const {
 	bool ret = false;
 	config_error = r_error;
-	if (GDVIRTUAL_CALL(_has_valid_project_configuration, p_preset, ret)) {
+	if (VLTRVIRTUAL_CALL(_has_valid_project_configuration, p_preset, ret)) {
 		r_error = config_error;
 	}
 	return ret;
@@ -272,7 +272,7 @@ bool EditorExportPlatformExtension::has_valid_project_configuration(const Ref<Ed
 List<String> EditorExportPlatformExtension::get_binary_extensions(const Ref<EditorExportPreset> &p_preset) const {
 	List<String> ret_list;
 	Vector<String> ret;
-	if (GDVIRTUAL_CALL(_get_binary_extensions, p_preset, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_binary_extensions, p_preset, ret)) {
 		for (const String &E : ret) {
 			ret_list.push_back(E);
 		}
@@ -284,7 +284,7 @@ Error EditorExportPlatformExtension::export_project(const Ref<EditorExportPreset
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags, p_notify);
 
 	Error ret = FAILED;
-	GDVIRTUAL_CALL(_export_project, p_preset, p_debug, p_path, p_flags, ret);
+	VLTRVIRTUAL_CALL(_export_project, p_preset, p_debug, p_path, p_flags, ret);
 	return ret;
 }
 
@@ -292,7 +292,7 @@ Error EditorExportPlatformExtension::export_pack(const Ref<EditorExportPreset> &
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
 
 	Error ret = FAILED;
-	if (GDVIRTUAL_CALL(_export_pack, p_preset, p_debug, p_path, p_flags, ret)) {
+	if (VLTRVIRTUAL_CALL(_export_pack, p_preset, p_debug, p_path, p_flags, ret)) {
 		return ret;
 	}
 	return save_pack(p_preset, p_debug, p_path);
@@ -302,7 +302,7 @@ Error EditorExportPlatformExtension::export_zip(const Ref<EditorExportPreset> &p
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
 
 	Error ret = FAILED;
-	if (GDVIRTUAL_CALL(_export_zip, p_preset, p_debug, p_path, p_flags, ret)) {
+	if (VLTRVIRTUAL_CALL(_export_zip, p_preset, p_debug, p_path, p_flags, ret)) {
 		return ret;
 	}
 	return save_zip(p_preset, p_debug, p_path);
@@ -317,7 +317,7 @@ Error EditorExportPlatformExtension::export_pack_patch(const Ref<EditorExportPre
 	}
 
 	Error ret = FAILED;
-	if (GDVIRTUAL_CALL(_export_pack_patch, p_preset, p_debug, p_path, p_patches, p_flags, ret)) {
+	if (VLTRVIRTUAL_CALL(_export_pack_patch, p_preset, p_debug, p_path, p_patches, p_flags, ret)) {
 		_unload_patches();
 		return ret;
 	}
@@ -336,7 +336,7 @@ Error EditorExportPlatformExtension::export_zip_patch(const Ref<EditorExportPres
 	}
 
 	Error ret = FAILED;
-	if (GDVIRTUAL_CALL(_export_zip_patch, p_preset, p_debug, p_path, p_patches, p_flags, ret)) {
+	if (VLTRVIRTUAL_CALL(_export_zip_patch, p_preset, p_debug, p_path, p_patches, p_flags, ret)) {
 		_unload_patches();
 		return ret;
 	}
@@ -348,7 +348,7 @@ Error EditorExportPlatformExtension::export_zip_patch(const Ref<EditorExportPres
 
 void EditorExportPlatformExtension::get_platform_features(List<String> *r_features) const {
 	Vector<String> ret;
-	if (GDVIRTUAL_CALL(_get_platform_features, ret) && r_features) {
+	if (VLTRVIRTUAL_CALL(_get_platform_features, ret) && r_features) {
 		for (const String &E : ret) {
 			r_features->push_back(E);
 		}
@@ -357,14 +357,14 @@ void EditorExportPlatformExtension::get_platform_features(List<String> *r_featur
 
 String EditorExportPlatformExtension::get_debug_protocol() const {
 	String ret;
-	if (GDVIRTUAL_CALL(_get_debug_protocol, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_debug_protocol, ret)) {
 		return ret;
 	}
 	return EditorExportPlatform::get_debug_protocol();
 }
 
 void EditorExportPlatformExtension::initialize() {
-	GDVIRTUAL_CALL(_initialize);
+	VLTRVIRTUAL_CALL(_initialize);
 }
 
 EditorExportPlatformExtension::EditorExportPlatformExtension() {

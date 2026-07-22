@@ -34,7 +34,7 @@
 #include "scene/3d/skeleton_3d.h"
 
 class SkeletonModifier3D : public Node3D {
-	GDCLASS(SkeletonModifier3D, Node3D);
+	VLTRCLASS(SkeletonModifier3D, Node3D);
 
 	void rebind();
 
@@ -98,8 +98,8 @@ protected:
 
 	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new);
 	virtual void _validate_bone_names();
-	GDVIRTUAL2(_skeleton_changed, Skeleton3D *, Skeleton3D *);
-	GDVIRTUAL0(_validate_bone_names);
+	VLTRVIRTUAL2(_skeleton_changed, Skeleton3D *, Skeleton3D *);
+	VLTRVIRTUAL0(_validate_bone_names);
 
 	void _notification(int p_what);
 	static void _bind_methods();
@@ -107,10 +107,10 @@ protected:
 	virtual void _set_active(bool p_active);
 
 	virtual void _process_modification(double p_delta);
-	// TODO: In Godot 5, should obsolete old GDVIRTUAL0(_process_modification); and replace it with _process_modification_with_delta as GDVIRTUAL1(_process_modification, double).
-	GDVIRTUAL1(_process_modification_with_delta, double);
+	// TODO: In Godot 5, should obsolete old VLTRVIRTUAL0(_process_modification); and replace it with _process_modification_with_delta as VLTRVIRTUAL1(_process_modification, double).
+	VLTRVIRTUAL1(_process_modification_with_delta, double);
 #ifndef DISABLE_DEPRECATED
-	GDVIRTUAL0(_process_modification);
+	VLTRVIRTUAL0(_process_modification);
 #endif
 
 	bool should_check_node_path();

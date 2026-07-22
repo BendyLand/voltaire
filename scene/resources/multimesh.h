@@ -34,7 +34,7 @@
 #include "servers/rendering/rendering_server_enums.h"
 
 class MultiMesh : public Resource {
-	GDCLASS(MultiMesh, Resource);
+	VLTRCLASS(MultiMesh, Resource);
 	RES_BASE_EXTENSION("multimesh");
 
 public:

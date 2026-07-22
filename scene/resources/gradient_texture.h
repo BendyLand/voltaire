@@ -34,7 +34,7 @@
 #include "scene/resources/texture.h"
 
 class GradientTexture1D : public Texture2D {
-	GDCLASS(GradientTexture1D, Texture2D);
+	VLTRCLASS(GradientTexture1D, Texture2D);
 
 private:
 	Ref<Gradient> gradient;
@@ -71,7 +71,7 @@ public:
 };
 
 class GradientTexture2D : public Texture2D {
-	GDCLASS(GradientTexture2D, Texture2D);
+	VLTRCLASS(GradientTexture2D, Texture2D);
 
 public:
 	enum Fill {

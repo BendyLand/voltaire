@@ -46,7 +46,7 @@ class AnimationTree;
 struct AnimationNodeInstance;
 
 class AnimationNode : public Resource {
-	GDCLASS(AnimationNode, Resource);
+	VLTRCLASS(AnimationNode, Resource);
 
 public:
 	friend class AnimationTree;
@@ -170,14 +170,14 @@ protected:
 
 	void _validate_property(PropertyInfo &p_property) const;
 
-	GDVIRTUAL0RC(Dictionary, _get_child_nodes)
-	GDVIRTUAL0RC(Array, _get_parameter_list)
-	GDVIRTUAL1RC(Ref<AnimationNode>, _get_child_by_name, StringName)
-	GDVIRTUAL1RC(Variant, _get_parameter_default_value, StringName)
-	GDVIRTUAL1RC(bool, _is_parameter_read_only, StringName)
-	GDVIRTUAL4R(double, _process, double, bool, bool, bool)
-	GDVIRTUAL0RC(String, _get_caption)
-	GDVIRTUAL0RC(bool, _has_filter)
+	VLTRVIRTUAL0RC(Dictionary, _get_child_nodes)
+	VLTRVIRTUAL0RC(Array, _get_parameter_list)
+	VLTRVIRTUAL1RC(Ref<AnimationNode>, _get_child_by_name, StringName)
+	VLTRVIRTUAL1RC(Variant, _get_parameter_default_value, StringName)
+	VLTRVIRTUAL1RC(bool, _is_parameter_read_only, StringName)
+	VLTRVIRTUAL4R(double, _process, double, bool, bool, bool)
+	VLTRVIRTUAL0RC(String, _get_caption)
+	VLTRVIRTUAL0RC(bool, _has_filter)
 private:
 	mutable uint32_t filters_version = 1;
 	void _mark_filters_dirty();
@@ -235,7 +235,7 @@ VARIANT_ENUM_CAST(AnimationNode::FilterAction)
 
 // Root node does not allow inputs.
 class AnimationRootNode : public AnimationNode {
-	GDCLASS(AnimationRootNode, AnimationNode);
+	VLTRCLASS(AnimationRootNode, AnimationNode);
 
 protected:
 	void _add_node(const Ref<AnimationNode> &p_node);
@@ -247,11 +247,11 @@ protected:
 };
 
 class AnimationNodeStartState : public AnimationRootNode {
-	GDCLASS(AnimationNodeStartState, AnimationRootNode);
+	VLTRCLASS(AnimationNodeStartState, AnimationRootNode);
 };
 
 class AnimationNodeEndState : public AnimationRootNode {
-	GDCLASS(AnimationNodeEndState, AnimationRootNode);
+	VLTRCLASS(AnimationNodeEndState, AnimationRootNode);
 };
 
 // Per instance data, for a node.
@@ -436,7 +436,7 @@ struct AnimationNodeInstance {
 };
 
 class AnimationTree : public AnimationMixer {
-	GDCLASS(AnimationTree, AnimationMixer);
+	VLTRCLASS(AnimationTree, AnimationMixer);
 
 #ifndef DISABLE_DEPRECATED
 public:

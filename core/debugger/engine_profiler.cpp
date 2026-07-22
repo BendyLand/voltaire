@@ -31,24 +31,24 @@
 #include "engine_profiler.h"
 
 #include "core/debugger/engine_debugger.h"
-#include "core/object/class_db.h" // IWYU pragma: keep. `GDVIRTUAL_BIND` macro.
+#include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
 
 void EngineProfiler::_bind_methods() {
-	GDVIRTUAL_BIND(_toggle, "enable", "options");
-	GDVIRTUAL_BIND(_add_frame, "data");
-	GDVIRTUAL_BIND(_tick, "frame_time", "process_time", "physics_time", "physics_frame_time");
+	VLTRVIRTUAL_BIND(_toggle, "enable", "options");
+	VLTRVIRTUAL_BIND(_add_frame, "data");
+	VLTRVIRTUAL_BIND(_tick, "frame_time", "process_time", "physics_time", "physics_frame_time");
 }
 
 void EngineProfiler::toggle(bool p_enable, const Array &p_array) {
-	GDVIRTUAL_CALL(_toggle, p_enable, p_array);
+	VLTRVIRTUAL_CALL(_toggle, p_enable, p_array);
 }
 
 void EngineProfiler::add(const Array &p_data) {
-	GDVIRTUAL_CALL(_add_frame, p_data);
+	VLTRVIRTUAL_CALL(_add_frame, p_data);
 }
 
 void EngineProfiler::tick(double p_frame_time, double p_process_time, double p_physics_time, double p_physics_frame_time) {
-	GDVIRTUAL_CALL(_tick, p_frame_time, p_process_time, p_physics_time, p_physics_frame_time);
+	VLTRVIRTUAL_CALL(_tick, p_frame_time, p_process_time, p_physics_time, p_physics_frame_time);
 }
 
 Error EngineProfiler::bind(const String &p_name) {

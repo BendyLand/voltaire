@@ -35,7 +35,7 @@
 class ArrayMesh;
 
 class Occluder3D : public Resource {
-	GDCLASS(Occluder3D, Resource);
+	VLTRCLASS(Occluder3D, Resource);
 	RES_BASE_EXTENSION("occ");
 
 	RID occluder;
@@ -66,7 +66,7 @@ public:
 };
 
 class ArrayOccluder3D : public Occluder3D {
-	GDCLASS(ArrayOccluder3D, Occluder3D);
+	VLTRCLASS(ArrayOccluder3D, Occluder3D);
 
 	PackedVector3Array vertices;
 	PackedInt32Array indices;
@@ -85,7 +85,7 @@ public:
 };
 
 class QuadOccluder3D : public Occluder3D {
-	GDCLASS(QuadOccluder3D, Occluder3D);
+	VLTRCLASS(QuadOccluder3D, Occluder3D);
 
 private:
 	Size2 size = Vector2(1.0f, 1.0f);
@@ -103,7 +103,7 @@ public:
 };
 
 class BoxOccluder3D : public Occluder3D {
-	GDCLASS(BoxOccluder3D, Occluder3D);
+	VLTRCLASS(BoxOccluder3D, Occluder3D);
 
 private:
 	Vector3 size = Vector3(1.0f, 1.0f, 1.0f);
@@ -121,7 +121,7 @@ public:
 };
 
 class SphereOccluder3D : public Occluder3D {
-	GDCLASS(SphereOccluder3D, Occluder3D);
+	VLTRCLASS(SphereOccluder3D, Occluder3D);
 
 private:
 	static constexpr int RINGS = 7;
@@ -141,7 +141,7 @@ public:
 };
 
 class PolygonOccluder3D : public Occluder3D {
-	GDCLASS(PolygonOccluder3D, Occluder3D);
+	VLTRCLASS(PolygonOccluder3D, Occluder3D);
 
 private:
 	Vector<Vector2> polygon;
@@ -161,7 +161,7 @@ public:
 };
 
 class OccluderInstance3D : public VisualInstance3D {
-	GDCLASS(OccluderInstance3D, VisualInstance3D);
+	VLTRCLASS(OccluderInstance3D, VisualInstance3D);
 
 private:
 	Ref<Occluder3D> occluder;

@@ -37,7 +37,7 @@
 #include <miniupnpc/miniupnpc.h>
 
 class UPNPMiniUPNP : public UPNP {
-	GDCLASS(UPNPMiniUPNP, UPNP);
+	VLTRCLASS(UPNPMiniUPNP, UPNP);
 
 private:
 	static UPNP *_create(bool p_notify_postinitialize);

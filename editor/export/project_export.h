@@ -54,7 +54,7 @@ class Tree;
 class TreeItem;
 
 class ProjectExportTextureFormatError : public HBoxContainer {
-	GDCLASS(ProjectExportTextureFormatError, HBoxContainer);
+	VLTRCLASS(ProjectExportTextureFormatError, HBoxContainer);
 
 	ProjectExportDialog *export_dialog = nullptr;
 	Label *texture_format_error_label = nullptr;
@@ -72,7 +72,7 @@ public:
 };
 
 class ProjectExportDialog : public ConfirmationDialog {
-	GDCLASS(ProjectExportDialog, ConfirmationDialog);
+	VLTRCLASS(ProjectExportDialog, ConfirmationDialog);
 
 	HSplitContainer *main_split = nullptr;
 	TabContainer *sections = nullptr;

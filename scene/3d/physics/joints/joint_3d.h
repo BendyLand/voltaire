@@ -34,7 +34,7 @@
 #include "scene/3d/physics/physics_body_3d.h"
 
 class Joint3D : public Node3D {
-	GDCLASS(Joint3D, Node3D);
+	VLTRCLASS(Joint3D, Node3D);
 
 	RID ba, bb;
 

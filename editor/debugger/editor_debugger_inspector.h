@@ -38,7 +38,7 @@ template <typename K, typename V>
 class TypedDictionary;
 
 class EditorDebuggerRemoteObjects : public Object {
-	GDCLASS(EditorDebuggerRemoteObjects, Object);
+	VLTRCLASS(EditorDebuggerRemoteObjects, Object);
 
 private:
 	bool _set_impl(const StringName &p_name, const Variant &p_value, const String &p_field);
@@ -69,7 +69,7 @@ public:
 };
 
 class EditorDebuggerInspector : public EditorInspector {
-	GDCLASS(EditorDebuggerInspector, EditorInspector);
+	VLTRCLASS(EditorDebuggerInspector, EditorInspector);
 
 private:
 	LocalVector<EditorDebuggerRemoteObjects *> remote_objects_list;

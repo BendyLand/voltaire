@@ -33,7 +33,7 @@
 #include "scene/resources/animation.h"
 
 class GLTFAnimation : public Resource {
-	GDCLASS(GLTFAnimation, Resource);
+	VLTRCLASS(GLTFAnimation, Resource);
 
 protected:
 	static void _bind_methods();

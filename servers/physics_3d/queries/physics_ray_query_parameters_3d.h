@@ -34,7 +34,7 @@
 #include "servers/physics_3d/physics_server_3d_types.h"
 
 class PhysicsRayQueryParameters3D : public RefCounted {
-	GDCLASS(PhysicsRayQueryParameters3D, RefCounted);
+	VLTRCLASS(PhysicsRayQueryParameters3D, RefCounted);
 
 	PS3DT::RayParameters parameters;
 

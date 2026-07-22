@@ -36,7 +36,7 @@
 #include "scene/main/timer.h"
 
 class EditorImportBlendRunner : public Node {
-	GDCLASS(EditorImportBlendRunner, Node);
+	VLTRCLASS(EditorImportBlendRunner, Node);
 
 	static EditorImportBlendRunner *singleton;
 

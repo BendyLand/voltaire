@@ -116,7 +116,7 @@ void ProjectManager::_notification(int p_what) {
 
 		case NOTIFICATION_TRANSLATION_CHANGED: {
 			// TRANSLATORS: This refers to the application where users manage their Godot projects.
-			SceneTree::get_singleton()->get_root()->set_title(GODOT_VERSION_NAME + String(" - ") + TTR("Project Manager", "Application"));
+			SceneTree::get_singleton()->get_root()->set_title(VLTR_VERSION_NAME + String(" - ") + TTR("Project Manager", "Application"));
 
 			const String line1 = TTR("You don't have any projects yet.");
 			const String line2 = TTR("Get started by creating a new one,\nimporting one that exists, or by downloading a project template from the Asset Store!");
@@ -701,7 +701,7 @@ void ProjectManager::_open_selected_projects_check_warnings() {
 					migration_guide_button->show();
 				}
 				version_convert_feature = feature;
-				warning_message += vformat(TTR("Warning: This project was last edited in Godot %s. Opening will change it to Godot %s.\n\n"), Variant(feature), Variant(GODOT_VERSION_BRANCH));
+				warning_message += vformat(TTR("Warning: This project was last edited in Godot %s. Opening will change it to Godot %s.\n\n"), Variant(feature), Variant(VLTR_VERSION_BRANCH));
 				unsupported_features.remove_at(i);
 				i--;
 			}
@@ -1198,7 +1198,7 @@ void ProjectManager::_full_convert_button_pressed() {
 }
 
 void ProjectManager::_migration_guide_button_pressed() {
-	const String url = vformat("%s/tutorials/migrating/index.html", GODOT_VERSION_DOCS_URL);
+	const String url = vformat("%s/tutorials/migrating/index.html", VLTR_VERSION_DOCS_URL);
 	OS::get_singleton()->shell_open(url);
 }
 

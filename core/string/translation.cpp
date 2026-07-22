@@ -163,7 +163,7 @@ void Translation::add_plural_message(const StringName &p_src_text, const Vector<
 
 StringName Translation::get_message(const StringName &p_src_text, const StringName &p_context) const {
 	StringName ret;
-	if (GDVIRTUAL_CALL(_get_message, p_src_text, p_context, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_message, p_src_text, p_context, ret)) {
 		return ret;
 	}
 
@@ -178,7 +178,7 @@ StringName Translation::get_message(const StringName &p_src_text, const StringNa
 
 StringName Translation::get_plural_message(const StringName &p_src_text, const StringName &p_plural_text, int p_n, const StringName &p_context) const {
 	StringName ret;
-	if (GDVIRTUAL_CALL(_get_plural_message, p_src_text, p_plural_text, p_n, p_context, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_plural_message, p_src_text, p_plural_text, p_n, p_context, ret)) {
 		return ret;
 	}
 
@@ -271,8 +271,8 @@ void Translation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_plural_rules_override", "rules"), &Translation::set_plural_rules_override);
 	ClassDB::bind_method(D_METHOD("get_plural_rules_override"), &Translation::get_plural_rules_override);
 
-	GDVIRTUAL_BIND(_get_plural_message, "src_message", "src_plural_message", "n", "context");
-	GDVIRTUAL_BIND(_get_message, "src_message", "context");
+	VLTRVIRTUAL_BIND(_get_plural_message, "src_message", "src_plural_message", "n", "context");
+	VLTRVIRTUAL_BIND(_get_message, "src_message", "context");
 
 	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "messages", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_messages", "_get_messages");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "locale", PROPERTY_HINT_LOCALE_ID), "set_locale", "get_locale");

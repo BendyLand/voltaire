@@ -34,7 +34,7 @@
 #include "scene/3d/velocity_tracker_3d.h"
 
 class AudioListener3D : public Node3D {
-	GDCLASS(AudioListener3D, Node3D);
+	VLTRCLASS(AudioListener3D, Node3D);
 
 public:
 	enum DopplerTracking {

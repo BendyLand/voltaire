@@ -35,7 +35,7 @@
 #include "core/object/class_db.h"
 
 bool Object::_is_class_bind_compat_118582(const String &p_name) const {
-	for (const StringName &name : get_gdtype().get_name_hierarchy()) {
+	for (const StringName &name : get_vltrtype().get_name_hierarchy()) {
 		if (name == p_name) {
 			return true;
 		}

@@ -40,7 +40,7 @@ class SpinBox;
 class EditorUndoRedoManager;
 
 class TileDataEditor : public VBoxContainer {
-	GDCLASS(TileDataEditor, VBoxContainer);
+	VLTRCLASS(TileDataEditor, VBoxContainer);
 
 private:
 	bool _tile_set_changed_update_needed = false;
@@ -69,7 +69,7 @@ public:
 };
 
 class DummyObject : public Object {
-	GDCLASS(DummyObject, Object)
+	VLTRCLASS(DummyObject, Object)
 private:
 	HashMap<String, Variant> properties;
 
@@ -85,7 +85,7 @@ public:
 };
 
 class GenericTilePolygonEditor : public VBoxContainer {
-	GDCLASS(GenericTilePolygonEditor, VBoxContainer);
+	VLTRCLASS(GenericTilePolygonEditor, VBoxContainer);
 
 private:
 	Ref<TileSet> tile_set;
@@ -191,7 +191,7 @@ public:
 };
 
 class TileDataDefaultEditor : public TileDataEditor {
-	GDCLASS(TileDataDefaultEditor, TileDataEditor);
+	VLTRCLASS(TileDataDefaultEditor, TileDataEditor);
 
 private:
 	// Toolbar
@@ -249,28 +249,28 @@ public:
 };
 
 class TileDataTextureOriginEditor : public TileDataDefaultEditor {
-	GDCLASS(TileDataTextureOriginEditor, TileDataDefaultEditor);
+	VLTRCLASS(TileDataTextureOriginEditor, TileDataDefaultEditor);
 
 public:
 	virtual void draw_over_tile(CanvasItem *p_canvas_item, Transform2D p_transform, TileMapCell p_cell, bool p_selected = false) override;
 };
 
 class TileDataPositionEditor : public TileDataDefaultEditor {
-	GDCLASS(TileDataPositionEditor, TileDataDefaultEditor);
+	VLTRCLASS(TileDataPositionEditor, TileDataDefaultEditor);
 
 public:
 	virtual void draw_over_tile(CanvasItem *p_canvas_item, Transform2D p_transform, TileMapCell p_cell, bool p_selected = false) override;
 };
 
 class TileDataYSortEditor : public TileDataDefaultEditor {
-	GDCLASS(TileDataYSortEditor, TileDataDefaultEditor);
+	VLTRCLASS(TileDataYSortEditor, TileDataDefaultEditor);
 
 public:
 	virtual void draw_over_tile(CanvasItem *p_canvas_item, Transform2D p_transform, TileMapCell p_cell, bool p_selected = false) override;
 };
 
 class TileDataOcclusionShapeEditor : public TileDataDefaultEditor {
-	GDCLASS(TileDataOcclusionShapeEditor, TileDataDefaultEditor);
+	VLTRCLASS(TileDataOcclusionShapeEditor, TileDataDefaultEditor);
 
 private:
 	int occlusion_layer = -1;
@@ -300,7 +300,7 @@ public:
 };
 
 class TileDataCollisionEditor : public TileDataDefaultEditor {
-	GDCLASS(TileDataCollisionEditor, TileDataDefaultEditor);
+	VLTRCLASS(TileDataCollisionEditor, TileDataDefaultEditor);
 
 	int physics_layer = -1;
 
@@ -334,7 +334,7 @@ public:
 };
 
 class TileDataTerrainsEditor : public TileDataEditor {
-	GDCLASS(TileDataTerrainsEditor, TileDataEditor);
+	VLTRCLASS(TileDataTerrainsEditor, TileDataEditor);
 
 private:
 	// Toolbar
@@ -383,7 +383,7 @@ public:
 };
 
 class TileDataNavigationEditor : public TileDataDefaultEditor {
-	GDCLASS(TileDataNavigationEditor, TileDataDefaultEditor);
+	VLTRCLASS(TileDataNavigationEditor, TileDataDefaultEditor);
 
 private:
 	int navigation_layer = -1;

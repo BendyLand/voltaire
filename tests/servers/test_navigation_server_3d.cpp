@@ -48,7 +48,7 @@ namespace TestNavigationServer3D {
 
 // TODO: Find a more generic way to create `Callable` mocks.
 class CallableMock : public Object {
-	GDCLASS(CallableMock, Object);
+	VLTRCLASS(CallableMock, Object);
 
 public:
 	void function1(Variant arg0) {

@@ -42,7 +42,7 @@
 */
 
 class XRPositionalTracker : public XRTracker {
-	GDCLASS(XRPositionalTracker, XRTracker);
+	VLTRCLASS(XRPositionalTracker, XRTracker);
 	_THREAD_SAFE_CLASS_
 
 public:

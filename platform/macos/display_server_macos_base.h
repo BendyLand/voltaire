@@ -45,7 +45,7 @@ class RenderingContextDriver;
 class RenderingDevice;
 
 class DisplayServerMacOSBase : public DisplayServer {
-	GDSOFTCLASS(DisplayServerMacOSBase, DisplayServer)
+	VLTRSOFTCLASS(DisplayServerMacOSBase, DisplayServer)
 
 	id tts = nullptr;
 	IOPMAssertionID screen_keep_on_assertion = kIOPMNullAssertionID;

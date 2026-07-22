@@ -451,7 +451,7 @@ public:
 
 	// Struct for use in render buffer
 	class RenderBuffersGI : public RenderBufferCustomDataRD {
-		GDCLASS(RenderBuffersGI, RenderBufferCustomDataRD)
+		VLTRCLASS(RenderBuffersGI, RenderBufferCustomDataRD)
 
 	private:
 		RID voxel_gi_buffer;
@@ -554,7 +554,7 @@ public:
 	/* SDFGI */
 
 	class SDFGI : public RenderBufferCustomDataRD {
-		GDCLASS(SDFGI, RenderBufferCustomDataRD)
+		VLTRCLASS(SDFGI, RenderBufferCustomDataRD)
 
 	public:
 		enum {

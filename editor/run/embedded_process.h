@@ -37,7 +37,7 @@ class ScriptEditorDebugger;
 class Timer;
 
 class EmbeddedProcessBase : public Control {
-	GDCLASS(EmbeddedProcessBase, Control);
+	VLTRCLASS(EmbeddedProcessBase, Control);
 
 	void _draw();
 
@@ -83,7 +83,7 @@ public:
 };
 
 class EmbeddedProcess : public EmbeddedProcessBase {
-	GDCLASS(EmbeddedProcess, EmbeddedProcessBase);
+	VLTRCLASS(EmbeddedProcess, EmbeddedProcessBase);
 
 	bool application_has_focus = true;
 	uint64_t last_application_focus_time = 0;

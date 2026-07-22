@@ -35,7 +35,7 @@
 class BitMap;
 
 class ImageTexture : public Texture2D {
-	GDCLASS(ImageTexture, Texture2D);
+	VLTRCLASS(ImageTexture, Texture2D);
 	RES_BASE_EXTENSION("tex");
 
 	mutable RID texture;
@@ -83,7 +83,7 @@ public:
 };
 
 class ImageTextureLayered : public TextureLayered {
-	GDCLASS(ImageTextureLayered, TextureLayered);
+	VLTRCLASS(ImageTextureLayered, TextureLayered);
 
 	LayeredType layered_type;
 
@@ -123,7 +123,7 @@ public:
 };
 
 class ImageTexture3D : public Texture3D {
-	GDCLASS(ImageTexture3D, Texture3D);
+	VLTRCLASS(ImageTexture3D, Texture3D);
 
 	mutable RID texture;
 
@@ -162,7 +162,7 @@ public:
 };
 
 class Texture2DArray : public ImageTextureLayered {
-	GDCLASS(Texture2DArray, ImageTextureLayered)
+	VLTRCLASS(Texture2DArray, ImageTextureLayered)
 
 protected:
 	static void _bind_methods();
@@ -175,7 +175,7 @@ public:
 };
 
 class Cubemap : public ImageTextureLayered {
-	GDCLASS(Cubemap, ImageTextureLayered);
+	VLTRCLASS(Cubemap, ImageTextureLayered);
 
 protected:
 	static void _bind_methods();
@@ -188,7 +188,7 @@ public:
 };
 
 class CubemapArray : public ImageTextureLayered {
-	GDCLASS(CubemapArray, ImageTextureLayered);
+	VLTRCLASS(CubemapArray, ImageTextureLayered);
 
 protected:
 	static void _bind_methods();

@@ -33,7 +33,7 @@
 #include "scene/gui/popup_menu.h"
 
 class MenuBar : public Control {
-	GDCLASS(MenuBar, Control);
+	VLTRCLASS(MenuBar, Control);
 
 	Mutex mutex;
 

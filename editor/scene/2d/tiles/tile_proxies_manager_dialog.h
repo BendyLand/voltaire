@@ -39,7 +39,7 @@ class EditorPropertyVector2i;
 class EditorUndoRedoManager;
 
 class TileProxiesManagerDialog : public ConfirmationDialog {
-	GDCLASS(TileProxiesManagerDialog, ConfirmationDialog);
+	VLTRCLASS(TileProxiesManagerDialog, ConfirmationDialog);
 
 private:
 	int committed_actions_count = 0;

@@ -33,7 +33,7 @@
 #include "scene/resources/texture.h"
 
 class SkeletonProfile : public Resource {
-	GDCLASS(SkeletonProfile, Resource);
+	VLTRCLASS(SkeletonProfile, Resource);
 
 public:
 	enum TailDirection {
@@ -128,7 +128,7 @@ public:
 };
 
 class SkeletonProfileHumanoid : public SkeletonProfile {
-	GDCLASS(SkeletonProfileHumanoid, SkeletonProfile);
+	VLTRCLASS(SkeletonProfileHumanoid, SkeletonProfile);
 
 public:
 	SkeletonProfileHumanoid();

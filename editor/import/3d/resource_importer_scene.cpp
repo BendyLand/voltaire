@@ -63,7 +63,7 @@
 
 void EditorSceneFormatImporter::get_extensions(List<String> *r_extensions) const {
 	Vector<String> arr;
-	GDVIRTUAL_CALL(_get_extensions, arr);
+	VLTRVIRTUAL_CALL(_get_extensions, arr);
 	for (int i = 0; i < arr.size(); i++) {
 		r_extensions->push_back(arr[i]);
 	}
@@ -75,7 +75,7 @@ Node *EditorSceneFormatImporter::import_scene(const String &p_path, uint32_t p_f
 		options_dict[elem.key] = elem.value;
 	}
 	Object *ret = nullptr;
-	GDVIRTUAL_CALL(_import_scene, p_path, p_flags, options_dict, ret);
+	VLTRVIRTUAL_CALL(_import_scene, p_path, p_flags, options_dict, ret);
 	return Object::cast_to<Node>(ret);
 }
 
@@ -91,14 +91,14 @@ void EditorSceneFormatImporter::add_import_option_advanced(Variant::Type p_type,
 
 void EditorSceneFormatImporter::get_import_options(const String &p_path, List<ResourceImporter::ImportOption> *r_options) {
 	current_option_list = r_options;
-	GDVIRTUAL_CALL(_get_import_options, p_path);
+	VLTRVIRTUAL_CALL(_get_import_options, p_path);
 	current_option_list = nullptr;
 }
 
 Variant EditorSceneFormatImporter::get_option_visibility(const String &p_path, const String &p_scene_import_type, const String &p_option, const HashMap<StringName, Variant> &p_options) {
 	Variant ret;
 	// For compatibility with the old API, pass the import type as a boolean.
-	GDVIRTUAL_CALL(_get_option_visibility, p_path, p_scene_import_type == "AnimationLibrary", p_option, ret);
+	VLTRVIRTUAL_CALL(_get_option_visibility, p_path, p_scene_import_type == "AnimationLibrary", p_option, ret);
 	return ret;
 }
 
@@ -106,10 +106,10 @@ void EditorSceneFormatImporter::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_import_option", "name", "value"), &EditorSceneFormatImporter::add_import_option);
 	ClassDB::bind_method(D_METHOD("add_import_option_advanced", "type", "name", "default_value", "hint", "hint_string", "usage_flags"), &EditorSceneFormatImporter::add_import_option_advanced, DEFVAL(PROPERTY_HINT_NONE), DEFVAL(""), DEFVAL(PROPERTY_USAGE_DEFAULT));
 
-	GDVIRTUAL_BIND(_get_extensions);
-	GDVIRTUAL_BIND(_import_scene, "path", "flags", "options");
-	GDVIRTUAL_BIND(_get_import_options, "path");
-	GDVIRTUAL_BIND(_get_option_visibility, "path", "for_animation", "option");
+	VLTRVIRTUAL_BIND(_get_extensions);
+	VLTRVIRTUAL_BIND(_import_scene, "path", "flags", "options");
+	VLTRVIRTUAL_BIND(_get_import_options, "path");
+	VLTRVIRTUAL_BIND(_get_option_visibility, "path", "for_animation", "option");
 
 	BIND_BITFIELD_FLAG(IMPORT_SCENE);
 	BIND_BITFIELD_FLAG(IMPORT_ANIMATION);
@@ -122,13 +122,13 @@ void EditorSceneFormatImporter::_bind_methods() {
 
 /////////////////////////////////
 void EditorScenePostImport::_bind_methods() {
-	GDVIRTUAL_BIND(_post_import, "scene")
+	VLTRVIRTUAL_BIND(_post_import, "scene")
 	ClassDB::bind_method(D_METHOD("get_source_file"), &EditorScenePostImport::get_source_file);
 }
 
 Node *EditorScenePostImport::post_import(Node *p_scene) {
 	Object *ret;
-	if (GDVIRTUAL_CALL(_post_import, p_scene, ret)) {
+	if (VLTRVIRTUAL_CALL(_post_import, p_scene, ret)) {
 		return Object::cast_to<Node>(ret);
 	}
 
@@ -168,7 +168,7 @@ void EditorScenePostImportPlugin::add_import_option_advanced(Variant::Type p_typ
 
 void EditorScenePostImportPlugin::get_internal_import_options(InternalImportCategory p_category, List<ResourceImporter::ImportOption> *r_options) {
 	current_option_list = r_options;
-	GDVIRTUAL_CALL(_get_internal_import_options, p_category);
+	VLTRVIRTUAL_CALL(_get_internal_import_options, p_category);
 	current_option_list = nullptr;
 }
 
@@ -176,7 +176,7 @@ Variant EditorScenePostImportPlugin::get_internal_option_visibility(InternalImpo
 	current_options = &p_options;
 	Variant ret;
 	// For compatibility with the old API, pass the import type as a boolean.
-	GDVIRTUAL_CALL(_get_internal_option_visibility, p_category, p_scene_import_type == "AnimationLibrary", p_option, ret);
+	VLTRVIRTUAL_CALL(_get_internal_option_visibility, p_category, p_scene_import_type == "AnimationLibrary", p_option, ret);
 	current_options = nullptr;
 	return ret;
 }
@@ -184,38 +184,38 @@ Variant EditorScenePostImportPlugin::get_internal_option_visibility(InternalImpo
 Variant EditorScenePostImportPlugin::get_internal_option_update_view_required(InternalImportCategory p_category, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
 	current_options = &p_options;
 	Variant ret;
-	GDVIRTUAL_CALL(_get_internal_option_update_view_required, p_category, p_option, ret);
+	VLTRVIRTUAL_CALL(_get_internal_option_update_view_required, p_category, p_option, ret);
 	current_options = nullptr;
 	return ret;
 }
 
 void EditorScenePostImportPlugin::internal_process(InternalImportCategory p_category, Node *p_base_scene, Node *p_node, Ref<Resource> p_resource, const Dictionary &p_options) {
 	current_options_dict = &p_options;
-	GDVIRTUAL_CALL(_internal_process, p_category, p_base_scene, p_node, p_resource);
+	VLTRVIRTUAL_CALL(_internal_process, p_category, p_base_scene, p_node, p_resource);
 	current_options_dict = nullptr;
 }
 
 void EditorScenePostImportPlugin::get_import_options(const String &p_path, List<ResourceImporter::ImportOption> *r_options) {
 	current_option_list = r_options;
-	GDVIRTUAL_CALL(_get_import_options, p_path);
+	VLTRVIRTUAL_CALL(_get_import_options, p_path);
 	current_option_list = nullptr;
 }
 Variant EditorScenePostImportPlugin::get_option_visibility(const String &p_path, const String &p_scene_import_type, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
 	current_options = &p_options;
 	Variant ret;
-	GDVIRTUAL_CALL(_get_option_visibility, p_path, p_scene_import_type == "AnimationLibrary", p_option, ret);
+	VLTRVIRTUAL_CALL(_get_option_visibility, p_path, p_scene_import_type == "AnimationLibrary", p_option, ret);
 	current_options = nullptr;
 	return ret;
 }
 
 void EditorScenePostImportPlugin::pre_process(Node *p_scene, const HashMap<StringName, Variant> &p_options) {
 	current_options = &p_options;
-	GDVIRTUAL_CALL(_pre_process, p_scene);
+	VLTRVIRTUAL_CALL(_pre_process, p_scene);
 	current_options = nullptr;
 }
 void EditorScenePostImportPlugin::post_process(Node *p_scene, const HashMap<StringName, Variant> &p_options) {
 	current_options = &p_options;
-	GDVIRTUAL_CALL(_post_process, p_scene);
+	VLTRVIRTUAL_CALL(_post_process, p_scene);
 	current_options = nullptr;
 }
 
@@ -225,14 +225,14 @@ void EditorScenePostImportPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_import_option", "name", "value"), &EditorScenePostImportPlugin::add_import_option);
 	ClassDB::bind_method(D_METHOD("add_import_option_advanced", "type", "name", "default_value", "hint", "hint_string", "usage_flags"), &EditorScenePostImportPlugin::add_import_option_advanced, DEFVAL(PROPERTY_HINT_NONE), DEFVAL(""), DEFVAL(PROPERTY_USAGE_DEFAULT));
 
-	GDVIRTUAL_BIND(_get_internal_import_options, "category");
-	GDVIRTUAL_BIND(_get_internal_option_visibility, "category", "for_animation", "option");
-	GDVIRTUAL_BIND(_get_internal_option_update_view_required, "category", "option");
-	GDVIRTUAL_BIND(_internal_process, "category", "base_node", "node", "resource");
-	GDVIRTUAL_BIND(_get_import_options, "path");
-	GDVIRTUAL_BIND(_get_option_visibility, "path", "for_animation", "option");
-	GDVIRTUAL_BIND(_pre_process, "scene");
-	GDVIRTUAL_BIND(_post_process, "scene");
+	VLTRVIRTUAL_BIND(_get_internal_import_options, "category");
+	VLTRVIRTUAL_BIND(_get_internal_option_visibility, "category", "for_animation", "option");
+	VLTRVIRTUAL_BIND(_get_internal_option_update_view_required, "category", "option");
+	VLTRVIRTUAL_BIND(_internal_process, "category", "base_node", "node", "resource");
+	VLTRVIRTUAL_BIND(_get_import_options, "path");
+	VLTRVIRTUAL_BIND(_get_option_visibility, "path", "for_animation", "option");
+	VLTRVIRTUAL_BIND(_pre_process, "scene");
+	VLTRVIRTUAL_BIND(_post_process, "scene");
 
 	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_NODE);
 	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_MESH_3D_NODE);

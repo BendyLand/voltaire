@@ -40,7 +40,7 @@
 
 namespace TestMultiplayerSpawner {
 class Wasp : public Node {
-	GDCLASS(Wasp, Node);
+	VLTRCLASS(Wasp, Node);
 
 	int _size = 0;
 
@@ -59,7 +59,7 @@ public:
 };
 
 class SpawnWasps : public Object {
-	GDCLASS(SpawnWasps, Object);
+	VLTRCLASS(SpawnWasps, Object);
 
 protected:
 	static void _bind_methods() {

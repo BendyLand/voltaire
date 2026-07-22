@@ -1736,7 +1736,7 @@ Vector<String> OS_Windows::get_system_fonts() const {
 	return ret;
 }
 
-GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor") // Silence warning due to a COM API weirdness.
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor") // Silence warning due to a COM API weirdness.
 
 class FallbackTextAnalysisSource : public IDWriteTextAnalysisSource {
 	LONG _cRef = 1;
@@ -1820,7 +1820,7 @@ public:
 	virtual ~FallbackTextAnalysisSource() {}
 };
 
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP
 
 String OS_Windows::_get_default_fontname(const String &p_font_name) const {
 	String font_name = p_font_name;
@@ -2471,7 +2471,7 @@ String OS_Windows::get_temp_path() const {
 
 // Get properly capitalized engine name for system paths
 String OS_Windows::get_godot_dir_name() const {
-	return String(GODOT_VERSION_SHORT_NAME).capitalize();
+	return String(VLTR_VERSION_SHORT_NAME).capitalize();
 }
 
 String OS_Windows::get_system_dir(SystemDir p_dir, bool p_shared_storage) const {

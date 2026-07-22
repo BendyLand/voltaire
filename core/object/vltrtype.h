@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  gdtype.h                                                              */
+/*  vltrtype.h                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -35,7 +35,7 @@
 #include "core/templates/a_hash_map.h"
 #include "core/templates/vector.h"
 
-class GDType {
+class VLTRType {
 public:
 	enum class InitState {
 		UNINITIALIZED,
@@ -50,7 +50,7 @@ public:
 	};
 
 protected:
-	const GDType *super_type;
+	const VLTRType *super_type;
 	mutable InitState init_state = InitState::UNINITIALIZED;
 
 	StringName name;
@@ -68,13 +68,13 @@ protected:
 	AHashMap<StringName, const MethodInfo *> self_signal_map;
 
 public:
-	GDType(const GDType *p_super_type, StringName p_name);
-	~GDType();
+	VLTRType(const VLTRType *p_super_type, StringName p_name);
+	~VLTRType();
 
 	InitState get_init_state() const { return init_state; }
 	void initialize();
 
-	const GDType *get_super_type() const { return super_type; }
+	const VLTRType *get_super_type() const { return super_type; }
 	const StringName &get_name() const { return name; }
 	const StringName &get_super_type_name() const {
 		static const StringName EMPTY;

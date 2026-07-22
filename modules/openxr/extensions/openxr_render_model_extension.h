@@ -46,7 +46,7 @@
 #include <openxr/openxr.h>
 
 class OpenXRRenderModelData : public RefCounted {
-	GDCLASS(OpenXRRenderModelData, RefCounted);
+	VLTRCLASS(OpenXRRenderModelData, RefCounted);
 
 private:
 	Ref<GLTFDocument> gltf_document;
@@ -68,7 +68,7 @@ public:
 };
 
 class OpenXRRenderModelExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRRenderModelExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRRenderModelExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods();

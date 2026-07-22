@@ -38,7 +38,7 @@ template <typename T>
 class TypedArray;
 
 class ProjectSettings : public Object {
-	GDCLASS(ProjectSettings, Object);
+	VLTRCLASS(ProjectSettings, Object);
 	_THREAD_SAFE_CLASS_
 	friend class TestProjectSettingsInternalsAccessor;
 

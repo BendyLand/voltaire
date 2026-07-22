@@ -36,7 +36,7 @@ class AtlasTexture;
 class Texture2D;
 
 class EditorIconManager : public Control {
-	GDCLASS(EditorIconManager, Control);
+	VLTRCLASS(EditorIconManager, Control);
 
 	HashMap<StringName, Ref<AtlasTexture>> icons;
 

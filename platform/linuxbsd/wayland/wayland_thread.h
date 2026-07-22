@@ -114,7 +114,7 @@ public:
 
 	// Messages used for exchanging information between Godot's and Wayland's thread.
 	class Message : public RefCounted {
-		GDSOFTCLASS(Message, RefCounted);
+		VLTRSOFTCLASS(Message, RefCounted);
 
 	public:
 		Message() {}
@@ -122,7 +122,7 @@ public:
 	};
 
 	class WindowMessage : public Message {
-		GDSOFTCLASS(WindowMessage, Message);
+		VLTRSOFTCLASS(WindowMessage, Message);
 
 	public:
 		DisplayServerEnums::WindowID id = DisplayServerEnums::INVALID_WINDOW_ID;
@@ -130,7 +130,7 @@ public:
 
 	// Message data for window rect changes.
 	class WindowRectMessage : public WindowMessage {
-		GDSOFTCLASS(WindowRectMessage, WindowMessage);
+		VLTRSOFTCLASS(WindowRectMessage, WindowMessage);
 
 	public:
 		// The window size in "absolute units" (pre-scaled). Basically the desired
@@ -147,32 +147,32 @@ public:
 	};
 
 	class WindowEventMessage : public WindowMessage {
-		GDSOFTCLASS(WindowEventMessage, WindowMessage);
+		VLTRSOFTCLASS(WindowEventMessage, WindowMessage);
 
 	public:
 		DisplayServerEnums::WindowEvent event;
 	};
 
 	class WindowHoverMessage : public WindowMessage {
-		GDSOFTCLASS(WindowHoverMessage, WindowMessage);
+		VLTRSOFTCLASS(WindowHoverMessage, WindowMessage);
 	};
 
 	class InputEventMessage : public Message {
-		GDSOFTCLASS(InputEventMessage, Message);
+		VLTRSOFTCLASS(InputEventMessage, Message);
 
 	public:
 		Ref<InputEvent> event;
 	};
 
 	class DropFilesEventMessage : public WindowMessage {
-		GDSOFTCLASS(DropFilesEventMessage, WindowMessage);
+		VLTRSOFTCLASS(DropFilesEventMessage, WindowMessage);
 
 	public:
 		Vector<String> files;
 	};
 
 	class IMEUpdateEventMessage : public WindowMessage {
-		GDSOFTCLASS(IMEUpdateEventMessage, WindowMessage);
+		VLTRSOFTCLASS(IMEUpdateEventMessage, WindowMessage);
 
 	public:
 		String text;
@@ -180,14 +180,14 @@ public:
 	};
 
 	class IMECommitEventMessage : public WindowMessage {
-		GDSOFTCLASS(IMECommitEventMessage, WindowMessage);
+		VLTRSOFTCLASS(IMECommitEventMessage, WindowMessage);
 
 	public:
 		String text;
 	};
 
 	class ColorProfileMessage : public WindowMessage {
-		GDSOFTCLASS(ColorProfileMessage, WindowMessage);
+		VLTRSOFTCLASS(ColorProfileMessage, WindowMessage);
 
 	public:
 		WaylandThread *wayland_thread;

@@ -40,7 +40,7 @@ class NavigationMeshSourceGeometryData3D;
 #endif // NAVIGATION_3D_DISABLED
 
 class StaticBody3D : public PhysicsBody3D {
-	GDCLASS(StaticBody3D, PhysicsBody3D);
+	VLTRCLASS(StaticBody3D, PhysicsBody3D);
 
 private:
 	Vector3 constant_linear_velocity;

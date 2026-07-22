@@ -43,7 +43,7 @@
  */
 
 class FileAccess : public RefCounted {
-	GDCLASS(FileAccess, RefCounted);
+	VLTRCLASS(FileAccess, RefCounted);
 
 public:
 	enum AccessType : int32_t {

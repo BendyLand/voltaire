@@ -55,7 +55,7 @@ TScriptInstance *cast_script_instance(ScriptInstance *p_inst) {
 #define CAST_CSHARP_INSTANCE(m_inst) (cast_script_instance<CSharpInstance, CSharpLanguage>(m_inst))
 
 class CSharpScript : public Script {
-	GDCLASS(CSharpScript, Script);
+	VLTRCLASS(CSharpScript, Script);
 
 	friend class CSharpInstance;
 	friend class CSharpLanguage;
@@ -393,7 +393,7 @@ struct CSharpScriptBinding {
 };
 
 class ManagedCallableMiddleman : public Object {
-	GDCLASS(ManagedCallableMiddleman, Object);
+	VLTRCLASS(ManagedCallableMiddleman, Object);
 };
 
 class CSharpLanguage : public ScriptLanguage {

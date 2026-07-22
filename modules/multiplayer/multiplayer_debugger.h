@@ -77,7 +77,7 @@ public:
 
 private:
 	class BandwidthProfiler : public EngineProfiler {
-		GDSOFTCLASS(BandwidthProfiler, EngineProfiler);
+		VLTRSOFTCLASS(BandwidthProfiler, EngineProfiler);
 
 	protected:
 		struct BandwidthFrame {
@@ -100,7 +100,7 @@ private:
 	};
 
 	class RPCProfiler : public EngineProfiler {
-		GDSOFTCLASS(RPCProfiler, EngineProfiler);
+		VLTRSOFTCLASS(RPCProfiler, EngineProfiler);
 
 	private:
 		HashMap<ObjectID, RPCNodeInfo> rpc_node_data;
@@ -115,7 +115,7 @@ private:
 	};
 
 	class ReplicationProfiler : public EngineProfiler {
-		GDSOFTCLASS(ReplicationProfiler, EngineProfiler);
+		VLTRSOFTCLASS(ReplicationProfiler, EngineProfiler);
 
 	private:
 		HashMap<ObjectID, SyncInfo> sync_data;

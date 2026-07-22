@@ -35,7 +35,7 @@
 class ConnectionsDock;
 
 class SignalsDock : public EditorDock {
-	GDCLASS(SignalsDock, EditorDock);
+	VLTRCLASS(SignalsDock, EditorDock);
 
 	ConnectionsDock *connections = nullptr;
 

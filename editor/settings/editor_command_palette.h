@@ -37,7 +37,7 @@ class Shortcut;
 class Tree;
 
 class EditorCommandPalette : public ConfirmationDialog {
-	GDCLASS(EditorCommandPalette, ConfirmationDialog);
+	VLTRCLASS(EditorCommandPalette, ConfirmationDialog);
 
 	static EditorCommandPalette *singleton;
 	FilterLineEdit *command_search_box = nullptr;

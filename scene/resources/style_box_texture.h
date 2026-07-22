@@ -34,7 +34,7 @@
 #include "scene/resources/texture.h"
 
 class StyleBoxTexture : public StyleBox {
-	GDCLASS(StyleBoxTexture, StyleBox);
+	VLTRCLASS(StyleBoxTexture, StyleBox);
 
 public:
 	enum AxisStretchMode {

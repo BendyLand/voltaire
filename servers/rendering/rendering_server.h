@@ -62,7 +62,7 @@ struct MeshData;
 class RenderingDevice;
 
 class RenderingServer : public Object {
-	GDCLASS(RenderingServer, Object);
+	VLTRCLASS(RenderingServer, Object);
 
 	static RenderingServer *singleton;
 

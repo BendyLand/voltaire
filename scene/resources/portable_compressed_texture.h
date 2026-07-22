@@ -35,7 +35,7 @@
 class BitMap;
 
 class PortableCompressedTexture2D : public Texture2D {
-	GDCLASS(PortableCompressedTexture2D, Texture2D);
+	VLTRCLASS(PortableCompressedTexture2D, Texture2D);
 
 public:
 	enum DataFormat {

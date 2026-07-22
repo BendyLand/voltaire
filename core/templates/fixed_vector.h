@@ -33,7 +33,7 @@
 #include "core/os/memory.h"
 #include "core/templates/span.h"
 
-GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Warray-bounds")
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Warray-bounds")
 
 /**
  * A high performance Vector of fixed capacity.
@@ -205,4 +205,4 @@ public:
 	_FORCE_INLINE_ constexpr const T *end() const _LIFETIME_BOUND_ { return ptr() + _size; }
 };
 
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP

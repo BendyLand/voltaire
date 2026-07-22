@@ -34,7 +34,7 @@
 #include "scene/resources/text_paragraph.h"
 
 class Button : public BaseButton {
-	GDCLASS(Button, BaseButton);
+	VLTRCLASS(Button, BaseButton);
 
 private:
 	bool flat = false;

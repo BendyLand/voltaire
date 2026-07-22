@@ -33,7 +33,7 @@
 #include "scene/resources/material.h"
 
 class CanvasItemMaterial : public Material {
-	GDCLASS(CanvasItemMaterial, Material);
+	VLTRCLASS(CanvasItemMaterial, Material);
 
 public:
 	enum BlendMode {

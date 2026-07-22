@@ -273,7 +273,7 @@
 // CameraFeedApple - Subclass for camera feeds in macOS
 
 class CameraFeedApple : public CameraFeed {
-	GDSOFTCLASS(CameraFeedApple, CameraFeed);
+	VLTRSOFTCLASS(CameraFeedApple, CameraFeed);
 
 private:
 	AVCaptureDevice *device;

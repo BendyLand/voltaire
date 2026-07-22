@@ -38,7 +38,7 @@
 class StreamPeerSocket;
 
 class RemoteDebuggerPeer : public RefCounted {
-	GDSOFTCLASS(RemoteDebuggerPeer, RefCounted);
+	VLTRSOFTCLASS(RemoteDebuggerPeer, RefCounted);
 
 protected:
 	int max_queued_messages = 4096;
@@ -57,7 +57,7 @@ public:
 };
 
 class RemoteDebuggerPeerTCP : public RemoteDebuggerPeer {
-	GDSOFTCLASS(RemoteDebuggerPeerTCP, RemoteDebuggerPeer);
+	VLTRSOFTCLASS(RemoteDebuggerPeerTCP, RemoteDebuggerPeer);
 
 private:
 	Ref<StreamPeerSocket> tcp_client;

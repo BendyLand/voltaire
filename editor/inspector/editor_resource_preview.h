@@ -39,16 +39,16 @@ class ImageTexture;
 class Texture2D;
 
 class EditorResourcePreviewGenerator : public RefCounted {
-	GDCLASS(EditorResourcePreviewGenerator, RefCounted);
+	VLTRCLASS(EditorResourcePreviewGenerator, RefCounted);
 
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL1RC_REQUIRED(bool, _handles, String)
-	GDVIRTUAL3RC_REQUIRED(Ref<Texture2D>, _generate, Ref<Resource>, Vector2i, Dictionary)
-	GDVIRTUAL3RC(Ref<Texture2D>, _generate_from_path, String, Vector2i, Dictionary)
-	GDVIRTUAL0RC(bool, _generate_small_preview_automatically)
-	GDVIRTUAL0RC(bool, _can_generate_small_preview)
+	VLTRVIRTUAL1RC_REQUIRED(bool, _handles, String)
+	VLTRVIRTUAL3RC_REQUIRED(Ref<Texture2D>, _generate, Ref<Resource>, Vector2i, Dictionary)
+	VLTRVIRTUAL3RC(Ref<Texture2D>, _generate_from_path, String, Vector2i, Dictionary)
+	VLTRVIRTUAL0RC(bool, _generate_small_preview_automatically)
+	VLTRVIRTUAL0RC(bool, _can_generate_small_preview)
 
 	class DrawRequester : public Object {
 		Semaphore semaphore;
@@ -73,7 +73,7 @@ public:
 };
 
 class EditorResourcePreview : public Node {
-	GDCLASS(EditorResourcePreview, Node);
+	VLTRCLASS(EditorResourcePreview, Node);
 
 	static constexpr int CURRENT_METADATA_VERSION = 1; // Increment this number to invalidate all previews.
 	inline static EditorResourcePreview *singleton = nullptr;

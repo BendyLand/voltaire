@@ -36,7 +36,7 @@
 class AudioEffectReverb;
 
 class AudioEffectReverbInstance : public AudioEffectInstance {
-	GDCLASS(AudioEffectReverbInstance, AudioEffectInstance);
+	VLTRCLASS(AudioEffectReverbInstance, AudioEffectInstance);
 
 	Ref<AudioEffectReverb> base;
 
@@ -53,7 +53,7 @@ public:
 };
 
 class AudioEffectReverb : public AudioEffect {
-	GDCLASS(AudioEffectReverb, AudioEffect);
+	VLTRCLASS(AudioEffectReverb, AudioEffect);
 
 	friend class AudioEffectReverbInstance;
 

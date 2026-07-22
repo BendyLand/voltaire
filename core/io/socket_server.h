@@ -34,7 +34,7 @@
 #include "core/io/stream_peer_socket.h"
 
 class SocketServer : public RefCounted {
-	GDCLASS(SocketServer, RefCounted);
+	VLTRCLASS(SocketServer, RefCounted);
 
 protected:
 	enum {

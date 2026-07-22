@@ -84,7 +84,7 @@ PackedStringArray Range::get_configuration_warnings() const {
 }
 
 void Range::_value_changed(double p_value) {
-	GDVIRTUAL_CALL(_value_changed, p_value);
+	VLTRVIRTUAL_CALL(_value_changed, p_value);
 }
 
 void Range::_value_changed_notify() {
@@ -426,7 +426,7 @@ void Range::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_greater"), "set_allow_greater", "is_greater_allowed");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_lesser"), "set_allow_lesser", "is_lesser_allowed");
 
-	GDVIRTUAL_BIND(_value_changed, "new_value");
+	VLTRVIRTUAL_BIND(_value_changed, "new_value");
 
 	ADD_LINKED_PROPERTY("min_value", "value");
 	ADD_LINKED_PROPERTY("min_value", "max_value");

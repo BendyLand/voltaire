@@ -36,7 +36,7 @@ class Node;
 class SceneMultiplayer;
 
 class SceneCacheInterface : public RefCounted {
-	GDCLASS(SceneCacheInterface, RefCounted);
+	VLTRCLASS(SceneCacheInterface, RefCounted);
 
 private:
 	SceneMultiplayer *multiplayer = nullptr;

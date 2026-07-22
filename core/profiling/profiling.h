@@ -49,9 +49,9 @@
 
 #define TRACY_ENABLE
 
-GODOT_MSVC_WARNING_PUSH_AND_IGNORE(4366) // The result of the unary operator may be unaligned.
+VLTR_MSVC_WARNING_PUSH_AND_IGNORE(4366) // The result of the unary operator may be unaligned.
 #include <tracy/Tracy.hpp>
-GODOT_MSVC_WARNING_POP
+VLTR_MSVC_WARNING_POP
 
 // Hijacking the tracy namespace so we can use their macros.
 namespace tracy {
@@ -83,9 +83,9 @@ const SourceLocationData *intern_source_location(const void *p_function_ptr, con
 // Memory allocation
 #ifdef GODOT_PROFILER_TRACK_MEMORY
 #define GodotProfileAlloc(m_ptr, m_size) \
-	GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wmaybe-uninitialized") \
+	VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wmaybe-uninitialized") \
 	TracyAlloc(m_ptr, m_size); \
-	GODOT_GCC_WARNING_POP
+	VLTR_GCC_WARNING_POP
 #define GodotProfileFree(m_ptr) TracyFree(m_ptr)
 #else
 #define GodotProfileAlloc(m_ptr, m_size)

@@ -37,7 +37,7 @@
 #include <windows.h>
 
 class FileAccessWindowsPipe : public FileAccess {
-	GDSOFTCLASS(FileAccessWindowsPipe, FileAccess);
+	VLTRSOFTCLASS(FileAccessWindowsPipe, FileAccess);
 	HANDLE fd[2] = { nullptr, nullptr };
 
 	mutable Error last_error = OK;

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  gdtype.cpp                                                            */
+/*  vltrtype.cpp                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "gdtype.h"
+#include "vltrtype.h"
 
 #include "core/os/memory.h"
 #include "core/os/thread.h"
 
-GDType::GDType(const GDType *p_super_type, StringName p_name) :
+VLTRType::VLTRType(const VLTRType *p_super_type, StringName p_name) :
 		super_type(p_super_type), name(std::move(p_name)) {
 	name_hierarchy.push_back(name);
 
@@ -44,7 +44,7 @@ GDType::GDType(const GDType *p_super_type, StringName p_name) :
 	}
 }
 
-GDType::~GDType() {
+VLTRType::~VLTRType() {
 	for (const KeyValue<StringName, const EnumInfo *> &kv : self_enum_map) {
 		memdelete(const_cast<EnumInfo *>(kv.value));
 	}
@@ -53,7 +53,7 @@ GDType::~GDType() {
 	}
 }
 
-void GDType::initialize() {
+void VLTRType::initialize() {
 	ERR_FAIL_COND(init_state != InitState::UNINITIALIZED);
 
 	if (super_type) {
@@ -71,7 +71,7 @@ void GDType::initialize() {
 	init_state = InitState::MUTABLE;
 }
 
-void GDType::bind_integer_constant(const StringName &p_enum, const StringName &p_name, int64_t p_constant, bool p_is_bitfield) {
+void VLTRType::bind_integer_constant(const StringName &p_enum, const StringName &p_name, int64_t p_constant, bool p_is_bitfield) {
 	ERR_FAIL_COND(!Thread::is_main_thread());
 	ERR_FAIL_COND(init_state != InitState::MUTABLE);
 	ERR_FAIL_COND_MSG(self_constant_map.has(p_name), vformat("Class '%s' already has constant '%s'.", String(name), String(p_name)));
@@ -102,7 +102,7 @@ void GDType::bind_integer_constant(const StringName &p_enum, const StringName &p
 	}
 }
 
-const GDType::EnumInfo *GDType::get_integer_constant_enum(const StringName &p_name, bool p_no_inheritance) const {
+const VLTRType::EnumInfo *VLTRType::get_integer_constant_enum(const StringName &p_name, bool p_no_inheritance) const {
 	for (const KeyValue<StringName, const EnumInfo *> &kv : get_enum_map(p_no_inheritance)) {
 		if (kv.value->values.has(p_name)) {
 			return kv.value;
@@ -112,7 +112,7 @@ const GDType::EnumInfo *GDType::get_integer_constant_enum(const StringName &p_na
 	return nullptr;
 }
 
-void GDType::add_signal(MethodInfo p_signal) {
+void VLTRType::add_signal(MethodInfo p_signal) {
 	ERR_FAIL_COND(!Thread::is_main_thread());
 	ERR_FAIL_COND(init_state != InitState::MUTABLE);
 

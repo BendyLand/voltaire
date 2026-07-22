@@ -41,7 +41,7 @@ class GDScriptAnalyzer;
 class GDScriptParser;
 
 class GDScriptParserRef : public RefCounted {
-	GDSOFTCLASS(GDScriptParserRef, RefCounted);
+	VLTRSOFTCLASS(GDScriptParserRef, RefCounted);
 
 public:
 	enum Status {

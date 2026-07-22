@@ -35,7 +35,7 @@
 #include "scene/resources/packed_scene.h"
 
 class MultiplayerSpawner : public Node {
-	GDCLASS(MultiplayerSpawner, Node);
+	VLTRCLASS(MultiplayerSpawner, Node);
 
 public:
 	enum {

@@ -35,7 +35,7 @@
 #include "scene/3d/node_3d.h"
 
 class GLTFDocumentExtension : public Resource {
-	GDCLASS(GLTFDocumentExtension, Resource);
+	VLTRCLASS(GLTFDocumentExtension, Resource);
 
 protected:
 	static void _bind_methods();
@@ -69,29 +69,29 @@ public:
 	virtual Error export_post(Ref<GLTFState> p_state);
 
 	// Import process.
-	GDVIRTUAL2R(Error, _import_preflight, Ref<GLTFState>, Vector<String>);
-	GDVIRTUAL0R(Vector<String>, _get_supported_extensions);
-	GDVIRTUAL3R(Error, _parse_node_extensions, Ref<GLTFState>, Ref<GLTFNode>, Dictionary);
-	GDVIRTUAL4R(Error, _parse_image_data, Ref<GLTFState>, PackedByteArray, String, Ref<Image>);
-	GDVIRTUAL0R(String, _get_image_file_extension);
-	GDVIRTUAL3R(Error, _parse_texture_json, Ref<GLTFState>, Dictionary, Ref<GLTFTexture>);
-	GDVIRTUAL3R(Ref<GLTFObjectModelProperty>, _import_object_model_property, Ref<GLTFState>, PackedStringArray, TypedArray<NodePath>);
-	GDVIRTUAL1R(Error, _import_post_parse, Ref<GLTFState>);
-	GDVIRTUAL1R(Error, _import_pre_generate, Ref<GLTFState>);
-	GDVIRTUAL3R(Node3D *, _generate_scene_node, Ref<GLTFState>, Ref<GLTFNode>, Node *);
-	GDVIRTUAL4R(Error, _import_node, Ref<GLTFState>, Ref<GLTFNode>, Dictionary, Node *);
-	GDVIRTUAL2R(Error, _import_post, Ref<GLTFState>, Node *);
+	VLTRVIRTUAL2R(Error, _import_preflight, Ref<GLTFState>, Vector<String>);
+	VLTRVIRTUAL0R(Vector<String>, _get_supported_extensions);
+	VLTRVIRTUAL3R(Error, _parse_node_extensions, Ref<GLTFState>, Ref<GLTFNode>, Dictionary);
+	VLTRVIRTUAL4R(Error, _parse_image_data, Ref<GLTFState>, PackedByteArray, String, Ref<Image>);
+	VLTRVIRTUAL0R(String, _get_image_file_extension);
+	VLTRVIRTUAL3R(Error, _parse_texture_json, Ref<GLTFState>, Dictionary, Ref<GLTFTexture>);
+	VLTRVIRTUAL3R(Ref<GLTFObjectModelProperty>, _import_object_model_property, Ref<GLTFState>, PackedStringArray, TypedArray<NodePath>);
+	VLTRVIRTUAL1R(Error, _import_post_parse, Ref<GLTFState>);
+	VLTRVIRTUAL1R(Error, _import_pre_generate, Ref<GLTFState>);
+	VLTRVIRTUAL3R(Node3D *, _generate_scene_node, Ref<GLTFState>, Ref<GLTFNode>, Node *);
+	VLTRVIRTUAL4R(Error, _import_node, Ref<GLTFState>, Ref<GLTFNode>, Dictionary, Node *);
+	VLTRVIRTUAL2R(Error, _import_post, Ref<GLTFState>, Node *);
 	// Export process.
-	GDVIRTUAL1R(TypedArray<Dictionary>, _export_get_property_list, Node *);
-	GDVIRTUAL2R(Error, _export_preflight, Ref<GLTFState>, Node *);
-	GDVIRTUAL3(_convert_scene_node, Ref<GLTFState>, Ref<GLTFNode>, Node *);
-	GDVIRTUAL2R(Error, _export_post_convert, Ref<GLTFState>, Node *);
-	GDVIRTUAL1R(Error, _export_preserialize, Ref<GLTFState>);
-	GDVIRTUAL6R(Ref<GLTFObjectModelProperty>, _export_object_model_property, Ref<GLTFState>, NodePath, const Node *, GLTFNodeIndex, const Object *, int);
-	GDVIRTUAL0R(Vector<String>, _get_saveable_image_formats);
-	GDVIRTUAL5R(PackedByteArray, _serialize_image_to_bytes, Ref<GLTFState>, Ref<Image>, Dictionary, String, float);
-	GDVIRTUAL5R(Error, _save_image_at_path, Ref<GLTFState>, Ref<Image>, String, String, float);
-	GDVIRTUAL4R(Error, _serialize_texture_json, Ref<GLTFState>, Dictionary, Ref<GLTFTexture>, String);
-	GDVIRTUAL4R(Error, _export_node, Ref<GLTFState>, Ref<GLTFNode>, Dictionary, Node *);
-	GDVIRTUAL1R(Error, _export_post, Ref<GLTFState>);
+	VLTRVIRTUAL1R(TypedArray<Dictionary>, _export_get_property_list, Node *);
+	VLTRVIRTUAL2R(Error, _export_preflight, Ref<GLTFState>, Node *);
+	VLTRVIRTUAL3(_convert_scene_node, Ref<GLTFState>, Ref<GLTFNode>, Node *);
+	VLTRVIRTUAL2R(Error, _export_post_convert, Ref<GLTFState>, Node *);
+	VLTRVIRTUAL1R(Error, _export_preserialize, Ref<GLTFState>);
+	VLTRVIRTUAL6R(Ref<GLTFObjectModelProperty>, _export_object_model_property, Ref<GLTFState>, NodePath, const Node *, GLTFNodeIndex, const Object *, int);
+	VLTRVIRTUAL0R(Vector<String>, _get_saveable_image_formats);
+	VLTRVIRTUAL5R(PackedByteArray, _serialize_image_to_bytes, Ref<GLTFState>, Ref<Image>, Dictionary, String, float);
+	VLTRVIRTUAL5R(Error, _save_image_at_path, Ref<GLTFState>, Ref<Image>, String, String, float);
+	VLTRVIRTUAL4R(Error, _serialize_texture_json, Ref<GLTFState>, Dictionary, Ref<GLTFTexture>, String);
+	VLTRVIRTUAL4R(Error, _export_node, Ref<GLTFState>, Ref<GLTFNode>, Dictionary, Node *);
+	VLTRVIRTUAL1R(Error, _export_post, Ref<GLTFState>);
 };

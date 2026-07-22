@@ -33,7 +33,7 @@
 #include "scene/resources/material.h"
 
 class BlitMaterial : public Material {
-	GDCLASS(BlitMaterial, Material);
+	VLTRCLASS(BlitMaterial, Material);
 
 public:
 	enum BlendMode {

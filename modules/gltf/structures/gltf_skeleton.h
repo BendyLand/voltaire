@@ -37,7 +37,7 @@
 #include "scene/3d/skeleton_3d.h"
 
 class GLTFSkeleton : public Resource {
-	GDCLASS(GLTFSkeleton, Resource);
+	VLTRCLASS(GLTFSkeleton, Resource);
 	friend class GLTFDocument;
 	friend class SkinTool;
 	friend class FBXDocument;

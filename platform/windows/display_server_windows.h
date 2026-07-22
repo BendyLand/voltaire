@@ -193,7 +193,7 @@ class WinRTWindowData;
 class JoypadSDL;
 
 class DisplayServerWindows : public DisplayServer {
-	GDSOFTCLASS(DisplayServerWindows, DisplayServer);
+	VLTRSOFTCLASS(DisplayServerWindows, DisplayServer);
 
 	friend class DropTargetWindows;
 

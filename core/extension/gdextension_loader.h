@@ -35,7 +35,7 @@
 class GDExtension;
 
 class GDExtensionLoader : public RefCounted {
-	GDSOFTCLASS(GDExtensionLoader, RefCounted);
+	VLTRSOFTCLASS(GDExtensionLoader, RefCounted);
 
 public:
 	virtual Error open_library(const String &p_path) = 0;

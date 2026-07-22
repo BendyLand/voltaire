@@ -35,7 +35,7 @@
 #include "core/io/resource_uid.h"
 
 class ResourceFormatLoaderJSON : public ResourceFormatLoader {
-	GDSOFTCLASS(ResourceFormatLoaderJSON, ResourceFormatLoader);
+	VLTRSOFTCLASS(ResourceFormatLoaderJSON, ResourceFormatLoader);
 
 public:
 	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
@@ -49,7 +49,7 @@ public:
 };
 
 class ResourceFormatSaverJSON : public ResourceFormatSaver {
-	GDSOFTCLASS(ResourceFormatSaverJSON, ResourceFormatSaver);
+	VLTRSOFTCLASS(ResourceFormatSaverJSON, ResourceFormatSaver);
 
 public:
 	virtual Error save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags = 0) override;

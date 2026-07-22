@@ -35,7 +35,7 @@
 
 class EditorNetworkProfiler;
 class MultiplayerEditorDebugger : public EditorDebuggerPlugin {
-	GDCLASS(MultiplayerEditorDebugger, EditorDebuggerPlugin);
+	VLTRCLASS(MultiplayerEditorDebugger, EditorDebuggerPlugin);
 
 private:
 	HashMap<int, EditorNetworkProfiler *> profilers;
@@ -55,7 +55,7 @@ public:
 class ReplicationEditor;
 
 class MultiplayerEditorPlugin : public EditorPlugin {
-	GDCLASS(MultiplayerEditorPlugin, EditorPlugin);
+	VLTRCLASS(MultiplayerEditorPlugin, EditorPlugin);
 
 private:
 	ReplicationEditor *repl_editor = nullptr;

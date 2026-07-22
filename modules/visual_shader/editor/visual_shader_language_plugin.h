@@ -33,7 +33,7 @@
 #include "editor/shader/editor_shader_language_plugin.h"
 
 class VisualShaderLanguagePlugin : public EditorShaderLanguagePlugin {
-	GDCLASS(VisualShaderLanguagePlugin, EditorShaderLanguagePlugin);
+	VLTRCLASS(VisualShaderLanguagePlugin, EditorShaderLanguagePlugin);
 
 public:
 	virtual bool handles_shader(const Ref<Shader> &p_shader) const override;

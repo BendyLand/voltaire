@@ -34,7 +34,7 @@
 
 class JavaScriptObject : public RefCounted {
 private:
-	GDCLASS(JavaScriptObject, RefCounted);
+	VLTRCLASS(JavaScriptObject, RefCounted);
 
 protected:
 	virtual bool _set(const StringName &p_name, const Variant &p_value) { return false; }
@@ -44,7 +44,7 @@ protected:
 
 class JavaScriptBridge : public Object {
 private:
-	GDCLASS(JavaScriptBridge, Object);
+	VLTRCLASS(JavaScriptBridge, Object);
 
 	static JavaScriptBridge *singleton;
 

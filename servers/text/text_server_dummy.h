@@ -35,7 +35,7 @@
 /*************************************************************************/
 
 class TextServerDummy : public TextServerExtension {
-	GDCLASS(TextServerDummy, TextServerExtension);
+	VLTRCLASS(TextServerDummy, TextServerExtension);
 	_THREAD_SAFE_CLASS_
 
 public:

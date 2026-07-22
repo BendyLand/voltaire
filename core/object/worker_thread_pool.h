@@ -42,7 +42,7 @@
 #include "core/variant/callable.h"
 
 class WorkerThreadPool : public Object {
-	GDCLASS(WorkerThreadPool, Object)
+	VLTRCLASS(WorkerThreadPool, Object)
 public:
 	enum {
 		INVALID_TASK_ID = -1

@@ -43,7 +43,7 @@
 */
 
 class PrimitiveMesh : public Mesh {
-	GDCLASS(PrimitiveMesh, Mesh);
+	VLTRCLASS(PrimitiveMesh, Mesh);
 
 private:
 	RID mesh;
@@ -73,7 +73,7 @@ protected:
 	static void _bind_methods();
 
 	virtual void _create_mesh_array(Array &p_arr) const {}
-	GDVIRTUAL0RC(Array, _create_mesh_array)
+	VLTRVIRTUAL0RC(Array, _create_mesh_array)
 
 	Vector2 get_uv2_scale(Vector2 p_margin_scale = Vector2(1.0, 1.0)) const;
 	float get_lightmap_texel_size() const;
@@ -125,7 +125,7 @@ public:
 	Mesh for a simple capsule
 */
 class CapsuleMesh : public PrimitiveMesh {
-	GDCLASS(CapsuleMesh, PrimitiveMesh);
+	VLTRCLASS(CapsuleMesh, PrimitiveMesh);
 
 private:
 	float radius = 0.5;
@@ -159,7 +159,7 @@ public:
 	A box
 */
 class BoxMesh : public PrimitiveMesh {
-	GDCLASS(BoxMesh, PrimitiveMesh);
+	VLTRCLASS(BoxMesh, PrimitiveMesh);
 
 private:
 	Vector3 size = Vector3(1, 1, 1);
@@ -194,7 +194,7 @@ public:
 */
 
 class CylinderMesh : public PrimitiveMesh {
-	GDCLASS(CylinderMesh, PrimitiveMesh);
+	VLTRCLASS(CylinderMesh, PrimitiveMesh);
 
 private:
 	float top_radius = 0.5;
@@ -240,7 +240,7 @@ public:
 	A flat rectangle, can be used as quad or heightmap.
 */
 class PlaneMesh : public PrimitiveMesh {
-	GDCLASS(PlaneMesh, PrimitiveMesh);
+	VLTRCLASS(PlaneMesh, PrimitiveMesh);
 
 public:
 	enum Orientation {
@@ -285,7 +285,7 @@ VARIANT_ENUM_CAST(PlaneMesh::Orientation)
 	A flat rectangle, inherits from PlaneMesh but defaults to facing the Z-plane.
 */
 class QuadMesh : public PlaneMesh {
-	GDCLASS(QuadMesh, PlaneMesh);
+	VLTRCLASS(QuadMesh, PlaneMesh);
 
 public:
 	QuadMesh() {
@@ -298,7 +298,7 @@ public:
 	A prism shapen, handy for ramps, triangles, etc.
 */
 class PrismMesh : public PrimitiveMesh {
-	GDCLASS(PrismMesh, PrimitiveMesh);
+	VLTRCLASS(PrismMesh, PrimitiveMesh);
 
 private:
 	float left_to_right = 0.5;
@@ -334,7 +334,7 @@ public:
 	A sphere..
 */
 class SphereMesh : public PrimitiveMesh {
-	GDCLASS(SphereMesh, PrimitiveMesh);
+	VLTRCLASS(SphereMesh, PrimitiveMesh);
 
 private:
 	float radius = 0.5;
@@ -372,7 +372,7 @@ public:
 	Big donut
 */
 class TorusMesh : public PrimitiveMesh {
-	GDCLASS(TorusMesh, PrimitiveMesh);
+	VLTRCLASS(TorusMesh, PrimitiveMesh);
 
 private:
 	float inner_radius = 0.5;
@@ -405,7 +405,7 @@ public:
 */
 
 class PointMesh : public PrimitiveMesh {
-	GDCLASS(PointMesh, PrimitiveMesh)
+	VLTRCLASS(PointMesh, PrimitiveMesh)
 
 protected:
 	virtual void _create_mesh_array(Array &p_arr) const override;
@@ -415,7 +415,7 @@ public:
 };
 
 class TubeTrailMesh : public PrimitiveMesh {
-	GDCLASS(TubeTrailMesh, PrimitiveMesh);
+	VLTRCLASS(TubeTrailMesh, PrimitiveMesh);
 
 private:
 	float radius = 0.5;
@@ -466,7 +466,7 @@ public:
 };
 
 class RibbonTrailMesh : public PrimitiveMesh {
-	GDCLASS(RibbonTrailMesh, PrimitiveMesh);
+	VLTRCLASS(RibbonTrailMesh, PrimitiveMesh);
 
 public:
 	enum Shape {
@@ -520,7 +520,7 @@ public:
 */
 
 class TextMesh : public PrimitiveMesh {
-	GDCLASS(TextMesh, PrimitiveMesh);
+	VLTRCLASS(TextMesh, PrimitiveMesh);
 
 private:
 	struct ContourPoint {
@@ -615,7 +615,7 @@ protected:
 	virtual void _create_mesh_array(Array &p_arr) const override;
 
 public:
-	GDVIRTUAL2RC(TypedArray<Vector3i>, _structured_text_parser, Array, String)
+	VLTRVIRTUAL2RC(TypedArray<Vector3i>, _structured_text_parser, Array, String)
 
 	TextMesh();
 	~TextMesh();

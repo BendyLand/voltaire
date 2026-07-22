@@ -171,7 +171,7 @@ void CanvasItem::_redraw_callback() {
 		current_item_drawn = this;
 		notification(NOTIFICATION_DRAW);
 		emit_signal(SceneStringName(draw));
-		GDVIRTUAL_CALL(_draw);
+		VLTRVIRTUAL_CALL(_draw);
 		current_item_drawn = nullptr;
 		TextServer::set_current_drawn_item_oversampling(0.0);
 		drawing = false;
@@ -1562,7 +1562,7 @@ void CanvasItem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_oversampling_with_scale", "enabled"), &CanvasItem::set_oversampling_with_scale);
 	ClassDB::bind_method(D_METHOD("get_oversampling_with_scale"), &CanvasItem::get_oversampling_with_scale);
 
-	GDVIRTUAL_BIND(_draw);
+	VLTRVIRTUAL_BIND(_draw);
 
 	ADD_GROUP("Visibility", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "visible"), "set_visible", "is_visible");

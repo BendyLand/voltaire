@@ -58,7 +58,7 @@ class VSplitContainer;
 class WorldEnvironment;
 
 class Node3DEditor : public VBoxContainer {
-	GDCLASS(Node3DEditor, VBoxContainer);
+	VLTRCLASS(Node3DEditor, VBoxContainer);
 
 public:
 	static const unsigned int VIEWPORTS_COUNT = 4;
@@ -305,7 +305,7 @@ private:
 	// Preview Sun and Environment
 
 	class PreviewSunEnvPopup : public PopupPanel {
-		GDCLASS(PreviewSunEnvPopup, PopupPanel);
+		VLTRCLASS(PreviewSunEnvPopup, PopupPanel);
 
 	protected:
 		virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
@@ -512,7 +512,7 @@ public:
 };
 
 class Node3DEditorPlugin : public EditorPlugin {
-	GDCLASS(Node3DEditorPlugin, EditorPlugin);
+	VLTRCLASS(Node3DEditorPlugin, EditorPlugin);
 
 	Node3DEditor *spatial_editor = nullptr;
 

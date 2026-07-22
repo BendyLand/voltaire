@@ -42,7 +42,7 @@ class SubViewport;
 class Button;
 
 class MeshEditor : public SubViewportContainer {
-	GDCLASS(MeshEditor, SubViewportContainer);
+	VLTRCLASS(MeshEditor, SubViewportContainer);
 
 	float rot_x;
 	float rot_y;
@@ -80,7 +80,7 @@ public:
 };
 
 class EditorInspectorPluginMesh : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginMesh, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginMesh, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -88,7 +88,7 @@ public:
 };
 
 class MeshEditorPlugin : public EditorPlugin {
-	GDCLASS(MeshEditorPlugin, EditorPlugin);
+	VLTRCLASS(MeshEditorPlugin, EditorPlugin);
 
 public:
 	virtual String get_plugin_name() const override { return "Mesh"; }

@@ -36,7 +36,7 @@
 #include "scene/resources/3d/importer_mesh.h"
 
 class GLTFMesh : public Resource {
-	GDCLASS(GLTFMesh, Resource);
+	VLTRCLASS(GLTFMesh, Resource);
 
 private:
 	String original_name;

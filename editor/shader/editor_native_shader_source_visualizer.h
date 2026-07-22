@@ -36,7 +36,7 @@ class CodeHighlighter;
 class TabContainer;
 
 class EditorNativeShaderSourceVisualizer : public AcceptDialog {
-	GDCLASS(EditorNativeShaderSourceVisualizer, AcceptDialog)
+	VLTRCLASS(EditorNativeShaderSourceVisualizer, AcceptDialog)
 	TabContainer *versions = nullptr;
 	Ref<CodeHighlighter> syntax_highlighter;
 

@@ -41,7 +41,7 @@ class PackedScene;
 class ScrollContainer;
 
 class ScalableContainer : public MarginContainer {
-	GDCLASS(ScalableContainer, MarginContainer);
+	VLTRCLASS(ScalableContainer, MarginContainer);
 
 protected:
 	void _notification(int p_what);
@@ -53,7 +53,7 @@ public:
 };
 
 class ThemeEditorPreview : public VBoxContainer {
-	GDCLASS(ThemeEditorPreview, VBoxContainer);
+	VLTRCLASS(ThemeEditorPreview, VBoxContainer);
 
 	ScrollContainer *preview_container = nullptr;
 	MarginContainer *preview_root = nullptr;
@@ -96,7 +96,7 @@ public:
 };
 
 class DefaultThemeEditorPreview : public ThemeEditorPreview {
-	GDCLASS(DefaultThemeEditorPreview, ThemeEditorPreview);
+	VLTRCLASS(DefaultThemeEditorPreview, ThemeEditorPreview);
 
 	ColorPickerButton *test_color_picker_button = nullptr;
 
@@ -108,7 +108,7 @@ public:
 };
 
 class SceneThemeEditorPreview : public ThemeEditorPreview {
-	GDCLASS(SceneThemeEditorPreview, ThemeEditorPreview);
+	VLTRCLASS(SceneThemeEditorPreview, ThemeEditorPreview);
 
 	Ref<PackedScene> loaded_scene;
 

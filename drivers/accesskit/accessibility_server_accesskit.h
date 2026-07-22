@@ -38,7 +38,7 @@
 #include <accesskit.h>
 
 class AccessibilityServerAccessKit : public AccessibilityServer {
-	GDSOFTCLASS(AccessibilityServerAccessKit, AccessibilityServer);
+	VLTRSOFTCLASS(AccessibilityServerAccessKit, AccessibilityServer);
 
 	static AccessibilityServer *create_func(Error &r_error);
 

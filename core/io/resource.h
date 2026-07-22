@@ -50,7 +50,7 @@ public: \
 private:
 
 class Resource : public RefCounted {
-	GDCLASS(Resource, RefCounted);
+	VLTRCLASS(Resource, RefCounted);
 
 public:
 	static constexpr AncestralClass static_ancestral_class = AncestralClass::RESOURCE;
@@ -114,12 +114,12 @@ protected:
 	void _take_over_path(const String &p_path);
 
 	virtual void reset_local_to_scene();
-	GDVIRTUAL0(_setup_local_to_scene);
+	VLTRVIRTUAL0(_setup_local_to_scene);
 
-	GDVIRTUAL0RC(RID, _get_rid);
+	VLTRVIRTUAL0RC(RID, _get_rid);
 
-	GDVIRTUAL1C(_set_path_cache, String);
-	GDVIRTUAL0(_reset_state);
+	VLTRVIRTUAL1C(_set_path_cache, String);
+	VLTRVIRTUAL0(_reset_state);
 
 	virtual Ref<Resource> _duplicate(const DuplicateParams &p_params) const;
 	virtual String _to_string() override;

@@ -38,7 +38,7 @@ TEST_FORCE_LINK(test_stream_peer_tcp)
 namespace TestStreamPeerTCP {
 
 class MockNetSocket : public NetSocket {
-	GDSOFTCLASS(MockNetSocket, NetSocket);
+	VLTRSOFTCLASS(MockNetSocket, NetSocket);
 
 public:
 	static void make_default();

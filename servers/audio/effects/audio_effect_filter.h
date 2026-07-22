@@ -36,7 +36,7 @@
 class AudioEffectFilter;
 
 class AudioEffectFilterInstance : public AudioEffectInstance {
-	GDCLASS(AudioEffectFilterInstance, AudioEffectInstance);
+	VLTRCLASS(AudioEffectFilterInstance, AudioEffectInstance);
 	friend class AudioEffectFilter;
 
 	Ref<AudioEffectFilter> base;
@@ -54,7 +54,7 @@ public:
 };
 
 class AudioEffectFilter : public AudioEffect {
-	GDCLASS(AudioEffectFilter, AudioEffect);
+	VLTRCLASS(AudioEffectFilter, AudioEffect);
 
 public:
 	enum FilterDB {
@@ -95,7 +95,7 @@ public:
 VARIANT_ENUM_CAST(AudioEffectFilter::FilterDB)
 
 class AudioEffectLowPassFilter : public AudioEffectFilter {
-	GDCLASS(AudioEffectLowPassFilter, AudioEffectFilter);
+	VLTRCLASS(AudioEffectLowPassFilter, AudioEffectFilter);
 
 	void _validate_property(PropertyInfo &p_property) const {
 		if (p_property.name == "gain") {
@@ -109,7 +109,7 @@ public:
 };
 
 class AudioEffectHighPassFilter : public AudioEffectFilter {
-	GDCLASS(AudioEffectHighPassFilter, AudioEffectFilter);
+	VLTRCLASS(AudioEffectHighPassFilter, AudioEffectFilter);
 	void _validate_property(PropertyInfo &p_property) const {
 		if (p_property.name == "gain") {
 			p_property.usage = PROPERTY_USAGE_NONE;
@@ -122,7 +122,7 @@ public:
 };
 
 class AudioEffectBandPassFilter : public AudioEffectFilter {
-	GDCLASS(AudioEffectBandPassFilter, AudioEffectFilter);
+	VLTRCLASS(AudioEffectBandPassFilter, AudioEffectFilter);
 	void _validate_property(PropertyInfo &p_property) const {
 		if (p_property.name == "gain") {
 			p_property.usage = PROPERTY_USAGE_NONE;
@@ -135,7 +135,7 @@ public:
 };
 
 class AudioEffectNotchFilter : public AudioEffectFilter {
-	GDCLASS(AudioEffectNotchFilter, AudioEffectFilter);
+	VLTRCLASS(AudioEffectNotchFilter, AudioEffectFilter);
 
 protected:
 	void _validate_property(PropertyInfo &p_property) const {
@@ -150,7 +150,7 @@ public:
 };
 
 class AudioEffectBandLimitFilter : public AudioEffectFilter {
-	GDCLASS(AudioEffectBandLimitFilter, AudioEffectFilter);
+	VLTRCLASS(AudioEffectBandLimitFilter, AudioEffectFilter);
 
 protected:
 	void _validate_property(PropertyInfo &p_property) const {
@@ -165,7 +165,7 @@ public:
 };
 
 class AudioEffectLowShelfFilter : public AudioEffectFilter {
-	GDCLASS(AudioEffectLowShelfFilter, AudioEffectFilter);
+	VLTRCLASS(AudioEffectLowShelfFilter, AudioEffectFilter);
 
 public:
 	AudioEffectLowShelfFilter() :
@@ -173,7 +173,7 @@ public:
 };
 
 class AudioEffectHighShelfFilter : public AudioEffectFilter {
-	GDCLASS(AudioEffectHighShelfFilter, AudioEffectFilter);
+	VLTRCLASS(AudioEffectHighShelfFilter, AudioEffectFilter);
 
 public:
 	AudioEffectHighShelfFilter() :

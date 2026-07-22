@@ -35,10 +35,10 @@
 #include "core/string/ustring.h"
 #include "core/templates/local_vector.h"
 
-GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
 #include <dxcapi.h>
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP
 GODOT_CLANG_WARNING_POP
 
 #include <dxgi1_6.h>

@@ -1138,7 +1138,7 @@ void EditorHelp::_update_doc() {
 	if (classes_with_csharp_differences.has(cd.name)) {
 		class_desc->add_newline();
 
-		const String &csharp_differences_url = vformat("%s/tutorials/scripting/c_sharp/c_sharp_differences.html", GODOT_VERSION_DOCS_URL);
+		const String &csharp_differences_url = vformat("%s/tutorials/scripting/c_sharp/c_sharp_differences.html", VLTR_VERSION_DOCS_URL);
 
 		_push_normal_font();
 		class_desc->push_color(theme_cache.text_color);
@@ -2988,7 +2988,7 @@ void EditorHelp::_compute_doc_version_hash() {
 }
 
 String EditorHelp::get_cache_full_path() {
-	return EditorPaths::get_singleton()->get_cache_dir().path_join(vformat("editor_doc_cache-%d.%d.res", GODOT_VERSION_MAJOR, GODOT_VERSION_MINOR));
+	return EditorPaths::get_singleton()->get_cache_dir().path_join(vformat("editor_doc_cache-%d.%d.res", VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR));
 }
 
 String EditorHelp::get_script_doc_cache_full_path() {
@@ -4315,7 +4315,7 @@ void EditorHelpBit::_go_to_url(const String &p_what) {
 		section = vformat("#%s", clss);
 	}
 
-	String doc_url = clss.is_empty() ? String(GODOT_VERSION_DOCS_URL "/") : vformat(GODOT_VERSION_DOCS_URL "/classes/class_%s.html%s", clss, section);
+	String doc_url = clss.is_empty() ? String(VLTR_VERSION_DOCS_URL "/") : vformat(VLTR_VERSION_DOCS_URL "/classes/class_%s.html%s", clss, section);
 	OS::get_singleton()->shell_open(doc_url);
 }
 

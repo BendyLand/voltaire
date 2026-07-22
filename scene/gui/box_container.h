@@ -33,7 +33,7 @@
 #include "scene/gui/container.h"
 
 class BoxContainer : public Container {
-	GDCLASS(BoxContainer, Container);
+	VLTRCLASS(BoxContainer, Container);
 
 public:
 	enum AlignmentMode {
@@ -84,7 +84,7 @@ public:
 };
 
 class HBoxContainer : public BoxContainer {
-	GDCLASS(HBoxContainer, BoxContainer);
+	VLTRCLASS(HBoxContainer, BoxContainer);
 
 public:
 	HBoxContainer() :
@@ -93,7 +93,7 @@ public:
 
 class MarginContainer;
 class VBoxContainer : public BoxContainer {
-	GDCLASS(VBoxContainer, BoxContainer);
+	VLTRCLASS(VBoxContainer, BoxContainer);
 
 public:
 	MarginContainer *add_margin_child(const String &p_label, Control *p_control, bool p_expand = false);

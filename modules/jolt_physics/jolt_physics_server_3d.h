@@ -43,7 +43,7 @@ class JoltSpace3D;
 class JoltTempAllocator;
 
 class JoltPhysicsServer3D final : public PhysicsServer3D {
-	GDCLASS(JoltPhysicsServer3D, PhysicsServer3D)
+	VLTRCLASS(JoltPhysicsServer3D, PhysicsServer3D)
 
 	inline static JoltPhysicsServer3D *singleton = nullptr;
 

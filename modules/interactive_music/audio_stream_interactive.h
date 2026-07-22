@@ -35,7 +35,7 @@
 class AudioStreamPlaybackInteractive;
 
 class AudioStreamInteractive : public AudioStream {
-	GDCLASS(AudioStreamInteractive, AudioStream)
+	VLTRCLASS(AudioStreamInteractive, AudioStream)
 	OBJ_SAVE_TYPE(AudioStream)
 public:
 	enum TransitionFromTime {
@@ -198,7 +198,7 @@ VARIANT_ENUM_CAST(AudioStreamInteractive::AutoAdvanceMode)
 VARIANT_ENUM_CAST(AudioStreamInteractive::FadeMode)
 
 class AudioStreamPlaybackInteractive : public AudioStreamPlayback {
-	GDCLASS(AudioStreamPlaybackInteractive, AudioStreamPlayback)
+	VLTRCLASS(AudioStreamPlaybackInteractive, AudioStreamPlayback)
 	friend class AudioStreamInteractive;
 
 private:

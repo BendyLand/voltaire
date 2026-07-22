@@ -36,7 +36,7 @@
 class PluralRules;
 
 class Translation : public Resource {
-	GDCLASS(Translation, Resource);
+	VLTRCLASS(Translation, Resource);
 	OBJ_SAVE_TYPE(Translation);
 	RES_BASE_EXTENSION("translation");
 
@@ -74,8 +74,8 @@ protected:
 
 	PluralRules *_get_plural_rules() const;
 
-	GDVIRTUAL2RC(StringName, _get_message, StringName, StringName);
-	GDVIRTUAL4RC(StringName, _get_plural_message, StringName, StringName, int, StringName);
+	VLTRVIRTUAL2RC(StringName, _get_message, StringName, StringName);
+	VLTRVIRTUAL4RC(StringName, _get_plural_message, StringName, StringName, int, StringName);
 
 public:
 	void set_locale(const String &p_locale);

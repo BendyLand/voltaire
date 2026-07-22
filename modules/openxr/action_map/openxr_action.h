@@ -35,7 +35,7 @@
 class OpenXRActionSet;
 
 class OpenXRAction : public Resource {
-	GDCLASS(OpenXRAction, Resource);
+	VLTRCLASS(OpenXRAction, Resource);
 
 public:
 	enum ActionType {

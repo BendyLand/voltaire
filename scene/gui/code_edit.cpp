@@ -2470,7 +2470,7 @@ String CodeEdit::get_text_for_code_completion() const {
 }
 
 void CodeEdit::request_code_completion(bool p_force) {
-	if (GDVIRTUAL_CALL(_request_code_completion, p_force)) {
+	if (VLTRVIRTUAL_CALL(_request_code_completion, p_force)) {
 		return;
 	}
 
@@ -2592,7 +2592,7 @@ void CodeEdit::confirm_code_completion(bool p_replace) {
 		return;
 	}
 
-	if (GDVIRTUAL_CALL(_confirm_code_completion, p_replace)) {
+	if (VLTRVIRTUAL_CALL(_confirm_code_completion, p_replace)) {
 		return;
 	}
 
@@ -3208,9 +3208,9 @@ void CodeEdit::_bind_methods() {
 
 	// Overridable
 
-	GDVIRTUAL_BIND(_confirm_code_completion, "replace")
-	GDVIRTUAL_BIND(_request_code_completion, "force")
-	GDVIRTUAL_BIND(_filter_code_completion_candidates, "candidates")
+	VLTRVIRTUAL_BIND(_confirm_code_completion, "replace")
+	VLTRVIRTUAL_BIND(_request_code_completion, "force")
+	VLTRVIRTUAL_BIND(_filter_code_completion_candidates, "candidates")
 
 	/* Line length guidelines */
 	ClassDB::bind_method(D_METHOD("set_line_length_guidelines", "guideline_columns"), &CodeEdit::set_line_length_guidelines);
@@ -3815,7 +3815,7 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 	const String line = get_line(caret_line);
 	ERR_FAIL_INDEX_MSG(caret_column, line.length() + 1, "Caret column exceeds line length.");
 
-	if (GDVIRTUAL_IS_OVERRIDDEN(_filter_code_completion_candidates)) {
+	if (VLTRVIRTUAL_IS_OVERRIDDEN(_filter_code_completion_candidates)) {
 		Vector<ScriptLanguage::CodeCompletionOption> code_completion_options_new;
 		code_completion_base = "";
 
@@ -3838,7 +3838,7 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 
 		TypedArray<Dictionary> completion_options;
 
-		GDVIRTUAL_CALL(_filter_code_completion_candidates, completion_options_sources, completion_options);
+		VLTRVIRTUAL_CALL(_filter_code_completion_candidates, completion_options_sources, completion_options);
 
 		/* No options to complete, cancel. */
 		if (completion_options.is_empty()) {

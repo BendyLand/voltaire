@@ -1638,7 +1638,7 @@ void TextShaderEditor::_menu_option(int p_option) {
 			_focus_preview_line(bpoints[bpoint_idx]);
 		} break;
 		case HELP_DOCS: {
-			OS::get_singleton()->shell_open(vformat("%s/tutorials/shaders/shader_reference/index.html", GODOT_VERSION_DOCS_URL));
+			OS::get_singleton()->shell_open(vformat("%s/tutorials/shaders/shader_reference/index.html", VLTR_VERSION_DOCS_URL));
 		} break;
 		case EDIT_EMOJI_AND_SYMBOL: {
 			tx->show_emoji_and_symbol_picker();

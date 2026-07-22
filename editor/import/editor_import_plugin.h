@@ -34,25 +34,25 @@
 #include "core/variant/typed_array.h"
 
 class EditorImportPlugin : public ResourceImporter {
-	GDCLASS(EditorImportPlugin, ResourceImporter);
+	VLTRCLASS(EditorImportPlugin, ResourceImporter);
 
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL0RC_REQUIRED(String, _get_importer_name)
-	GDVIRTUAL0RC_REQUIRED(String, _get_visible_name)
-	GDVIRTUAL0RC(int, _get_preset_count)
-	GDVIRTUAL1RC_REQUIRED(String, _get_preset_name, int)
-	GDVIRTUAL0RC_REQUIRED(Vector<String>, _get_recognized_extensions)
-	GDVIRTUAL2RC_REQUIRED(TypedArray<Dictionary>, _get_import_options, String, int)
-	GDVIRTUAL0RC_REQUIRED(String, _get_save_extension)
-	GDVIRTUAL0RC_REQUIRED(String, _get_resource_type)
-	GDVIRTUAL0RC(float, _get_priority)
-	GDVIRTUAL0RC(int, _get_import_order)
-	GDVIRTUAL0RC(int, _get_format_version)
-	GDVIRTUAL3RC(bool, _get_option_visibility, String, StringName, Dictionary)
-	GDVIRTUAL5RC_REQUIRED(Error, _import, String, String, Dictionary, TypedArray<String>, TypedArray<String>)
-	GDVIRTUAL0RC(bool, _can_import_threaded)
+	VLTRVIRTUAL0RC_REQUIRED(String, _get_importer_name)
+	VLTRVIRTUAL0RC_REQUIRED(String, _get_visible_name)
+	VLTRVIRTUAL0RC(int, _get_preset_count)
+	VLTRVIRTUAL1RC_REQUIRED(String, _get_preset_name, int)
+	VLTRVIRTUAL0RC_REQUIRED(Vector<String>, _get_recognized_extensions)
+	VLTRVIRTUAL2RC_REQUIRED(TypedArray<Dictionary>, _get_import_options, String, int)
+	VLTRVIRTUAL0RC_REQUIRED(String, _get_save_extension)
+	VLTRVIRTUAL0RC_REQUIRED(String, _get_resource_type)
+	VLTRVIRTUAL0RC(float, _get_priority)
+	VLTRVIRTUAL0RC(int, _get_import_order)
+	VLTRVIRTUAL0RC(int, _get_format_version)
+	VLTRVIRTUAL3RC(bool, _get_option_visibility, String, StringName, Dictionary)
+	VLTRVIRTUAL5RC_REQUIRED(Error, _import, String, String, Dictionary, TypedArray<String>, TypedArray<String>)
+	VLTRVIRTUAL0RC(bool, _can_import_threaded)
 
 	Error _append_import_external_resource(const String &p_file, const Dictionary &p_custom_options = Dictionary(), const String &p_custom_importer = String(), Variant p_generator_parameters = Variant());
 

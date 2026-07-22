@@ -33,7 +33,7 @@
 #include "scene/3d/visual_instance_3d.h"
 
 class Light3D : public VisualInstance3D {
-	GDCLASS(Light3D, VisualInstance3D);
+	VLTRCLASS(Light3D, VisualInstance3D);
 
 public:
 	enum Param {
@@ -159,7 +159,7 @@ VARIANT_ENUM_CAST(Light3D::Param);
 VARIANT_ENUM_CAST(Light3D::BakeMode);
 
 class DirectionalLight3D : public Light3D {
-	GDCLASS(DirectionalLight3D, Light3D);
+	VLTRCLASS(DirectionalLight3D, Light3D);
 
 public:
 	enum ShadowMode {
@@ -200,7 +200,7 @@ VARIANT_ENUM_CAST(DirectionalLight3D::ShadowMode)
 VARIANT_ENUM_CAST(DirectionalLight3D::SkyMode)
 
 class OmniLight3D : public Light3D {
-	GDCLASS(OmniLight3D, Light3D);
+	VLTRCLASS(OmniLight3D, Light3D);
 
 public:
 	// omni light
@@ -227,7 +227,7 @@ public:
 VARIANT_ENUM_CAST(OmniLight3D::ShadowMode)
 
 class SpotLight3D : public Light3D {
-	GDCLASS(SpotLight3D, Light3D);
+	VLTRCLASS(SpotLight3D, Light3D);
 
 protected:
 	static void _bind_methods();
@@ -239,7 +239,7 @@ public:
 };
 
 class AreaLight3D : public Light3D {
-	GDCLASS(AreaLight3D, Light3D);
+	VLTRCLASS(AreaLight3D, Light3D);
 
 private:
 	Vector2 area_size;

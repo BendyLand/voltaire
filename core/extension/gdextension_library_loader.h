@@ -37,7 +37,7 @@
 #include <functional>
 
 class GDExtensionLibraryLoader : public GDExtensionLoader {
-	GDSOFTCLASS(GDExtensionLibraryLoader, GDExtensionLoader);
+	VLTRSOFTCLASS(GDExtensionLibraryLoader, GDExtensionLoader);
 
 	friend class GDExtensionManager;
 	friend class GDExtension;

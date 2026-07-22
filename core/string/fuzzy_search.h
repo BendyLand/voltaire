@@ -64,7 +64,7 @@ public:
 };
 
 class FuzzySearchMatch : public RefCounted {
-	GDCLASS(FuzzySearchMatch, RefCounted)
+	VLTRCLASS(FuzzySearchMatch, RefCounted)
 
 	friend class FuzzySearch;
 
@@ -103,7 +103,7 @@ public:
 };
 
 class FuzzySearch : public RefCounted {
-	GDCLASS(FuzzySearch, RefCounted)
+	VLTRCLASS(FuzzySearch, RefCounted)
 
 	int start_offset = 0;
 	int max_results = 100;

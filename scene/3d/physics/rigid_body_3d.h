@@ -36,7 +36,7 @@
 class PhysicsMaterial;
 
 class RigidBody3D : public PhysicsBody3D {
-	GDCLASS(RigidBody3D, PhysicsBody3D);
+	VLTRCLASS(RigidBody3D, PhysicsBody3D);
 
 public:
 	enum FreezeMode {
@@ -137,7 +137,7 @@ protected:
 
 	void _validate_property(PropertyInfo &p_property) const;
 
-	GDVIRTUAL1(_integrate_forces, RequiredParam<PhysicsDirectBodyState3D>)
+	VLTRVIRTUAL1(_integrate_forces, RequiredParam<PhysicsDirectBodyState3D>)
 
 	virtual void _body_state_changed(PhysicsDirectBodyState3D *p_state);
 

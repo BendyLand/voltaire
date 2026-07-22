@@ -38,7 +38,7 @@ class RandomNumberGenerator;
 
 class CPUParticles2D : public Node2D {
 private:
-	GDCLASS(CPUParticles2D, Node2D);
+	VLTRCLASS(CPUParticles2D, Node2D);
 
 public:
 	enum DrawOrder {

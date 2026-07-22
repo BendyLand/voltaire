@@ -55,7 +55,7 @@ class Node3D;
 #endif
 
 class SceneTreeTimer : public RefCounted {
-	GDCLASS(SceneTreeTimer, RefCounted);
+	VLTRCLASS(SceneTreeTimer, RefCounted);
 
 	double time_left = 0.0;
 	bool process_always = true;
@@ -89,7 +89,7 @@ struct SceneTreeGroup {
 class SceneTree : public MainLoop {
 	_THREAD_SAFE_CLASS_
 
-	GDCLASS(SceneTree, MainLoop);
+	VLTRCLASS(SceneTree, MainLoop);
 
 public:
 	typedef void (*IdleCallback)();

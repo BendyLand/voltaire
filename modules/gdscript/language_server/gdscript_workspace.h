@@ -37,7 +37,7 @@
 #include "core/variant/variant.h"
 
 class GDScriptWorkspace : public RefCounted {
-	GDCLASS(GDScriptWorkspace, RefCounted);
+	VLTRCLASS(GDScriptWorkspace, RefCounted);
 
 private:
 #ifndef DISABLE_DEPRECATED

@@ -44,7 +44,7 @@ class FileAccess;
 
 struct EditorProgressBG;
 class EditorFileSystemDirectory : public Object {
-	GDCLASS(EditorFileSystemDirectory, Object);
+	VLTRCLASS(EditorFileSystemDirectory, Object);
 
 	String name;
 	uint64_t modified_time;
@@ -116,34 +116,34 @@ public:
 };
 
 class EditorFileSystemImportFormatSupportQuery : public RefCounted {
-	GDCLASS(EditorFileSystemImportFormatSupportQuery, RefCounted);
+	VLTRCLASS(EditorFileSystemImportFormatSupportQuery, RefCounted);
 
 protected:
-	GDVIRTUAL0RC_REQUIRED(bool, _is_active)
-	GDVIRTUAL0RC_REQUIRED(Vector<String>, _get_file_extensions)
-	GDVIRTUAL0RC_REQUIRED(bool, _query)
+	VLTRVIRTUAL0RC_REQUIRED(bool, _is_active)
+	VLTRVIRTUAL0RC_REQUIRED(Vector<String>, _get_file_extensions)
+	VLTRVIRTUAL0RC_REQUIRED(bool, _query)
 	static void _bind_methods();
 
 public:
 	virtual bool is_active() const {
 		bool ret = false;
-		GDVIRTUAL_CALL(_is_active, ret);
+		VLTRVIRTUAL_CALL(_is_active, ret);
 		return ret;
 	}
 	virtual Vector<String> get_file_extensions() const {
 		Vector<String> ret;
-		GDVIRTUAL_CALL(_get_file_extensions, ret);
+		VLTRVIRTUAL_CALL(_get_file_extensions, ret);
 		return ret;
 	}
 	virtual bool query() {
 		bool ret = false;
-		GDVIRTUAL_CALL(_query, ret);
+		VLTRVIRTUAL_CALL(_query, ret);
 		return ret;
 	}
 };
 
 class EditorFileSystem : public Node {
-	GDCLASS(EditorFileSystem, Node);
+	VLTRCLASS(EditorFileSystem, Node);
 
 	_THREAD_SAFE_CLASS_
 

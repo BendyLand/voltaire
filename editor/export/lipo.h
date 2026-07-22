@@ -36,7 +36,7 @@
 #include "core/object/ref_counted.h"
 
 class LipO : public RefCounted {
-	GDSOFTCLASS(LipO, RefCounted);
+	VLTRSOFTCLASS(LipO, RefCounted);
 
 	struct FatArch {
 		uint32_t cputype;

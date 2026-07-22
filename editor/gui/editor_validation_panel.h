@@ -37,7 +37,7 @@ class Label;
 class VBoxContainer;
 
 class EditorValidationPanel : public PanelContainer {
-	GDCLASS(EditorValidationPanel, PanelContainer);
+	VLTRCLASS(EditorValidationPanel, PanelContainer);
 
 public:
 	enum MessageType {

@@ -119,7 +119,7 @@ struct EditorProgress {
 };
 
 class EditorNode : public Node {
-	GDCLASS(EditorNode, Node);
+	VLTRCLASS(EditorNode, Node);
 
 public:
 	enum SceneNameCasing {

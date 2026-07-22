@@ -33,7 +33,7 @@
 #include "editor/plugins/editor_resource_conversion_plugin.h"
 
 class StandardMaterial3DConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(StandardMaterial3DConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(StandardMaterial3DConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;
@@ -42,7 +42,7 @@ public:
 };
 
 class ORMMaterial3DConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(ORMMaterial3DConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(ORMMaterial3DConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;
@@ -51,7 +51,7 @@ public:
 };
 
 class ProceduralSkyMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(ProceduralSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(ProceduralSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;
@@ -60,7 +60,7 @@ public:
 };
 
 class PanoramaSkyMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(PanoramaSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(PanoramaSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;
@@ -69,7 +69,7 @@ public:
 };
 
 class PhysicalSkyMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(PhysicalSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(PhysicalSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;
@@ -78,7 +78,7 @@ public:
 };
 
 class FogMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(FogMaterialConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(FogMaterialConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;

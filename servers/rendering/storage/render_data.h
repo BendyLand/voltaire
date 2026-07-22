@@ -35,7 +35,7 @@
 #include "servers/rendering/storage/render_scene_data.h"
 
 class RenderData : public Object {
-	GDCLASS(RenderData, Object);
+	VLTRCLASS(RenderData, Object);
 
 protected:
 	static void _bind_methods();

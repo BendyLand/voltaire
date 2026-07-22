@@ -81,7 +81,7 @@ void EditorNode3DGizmo::clear() {
 }
 
 void EditorNode3DGizmo::redraw() {
-	if (!GDVIRTUAL_CALL(_redraw)) {
+	if (!VLTRVIRTUAL_CALL(_redraw)) {
 		ERR_FAIL_NULL(gizmo_plugin);
 		gizmo_plugin->redraw(this);
 	}
@@ -95,7 +95,7 @@ void EditorNode3DGizmo::redraw() {
 
 String EditorNode3DGizmo::get_handle_name(int p_id, bool p_secondary) const {
 	String ret;
-	if (GDVIRTUAL_CALL(_get_handle_name, p_id, p_secondary, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_handle_name, p_id, p_secondary, ret)) {
 		return ret;
 	}
 
@@ -105,7 +105,7 @@ String EditorNode3DGizmo::get_handle_name(int p_id, bool p_secondary) const {
 
 bool EditorNode3DGizmo::is_handle_highlighted(int p_id, bool p_secondary) const {
 	bool success;
-	if (GDVIRTUAL_CALL(_is_handle_highlighted, p_id, p_secondary, success)) {
+	if (VLTRVIRTUAL_CALL(_is_handle_highlighted, p_id, p_secondary, success)) {
 		return success;
 	}
 
@@ -115,7 +115,7 @@ bool EditorNode3DGizmo::is_handle_highlighted(int p_id, bool p_secondary) const 
 
 Variant EditorNode3DGizmo::get_handle_value(int p_id, bool p_secondary) const {
 	Variant value;
-	if (GDVIRTUAL_CALL(_get_handle_value, p_id, p_secondary, value)) {
+	if (VLTRVIRTUAL_CALL(_get_handle_value, p_id, p_secondary, value)) {
 		return value;
 	}
 
@@ -124,7 +124,7 @@ Variant EditorNode3DGizmo::get_handle_value(int p_id, bool p_secondary) const {
 }
 
 void EditorNode3DGizmo::begin_handle_action(int p_id, bool p_secondary) {
-	if (GDVIRTUAL_CALL(_begin_handle_action, p_id, p_secondary)) {
+	if (VLTRVIRTUAL_CALL(_begin_handle_action, p_id, p_secondary)) {
 		return;
 	}
 
@@ -133,7 +133,7 @@ void EditorNode3DGizmo::begin_handle_action(int p_id, bool p_secondary) {
 }
 
 void EditorNode3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	if (GDVIRTUAL_CALL(_set_handle, p_id, p_secondary, p_camera, p_point)) {
+	if (VLTRVIRTUAL_CALL(_set_handle, p_id, p_secondary, p_camera, p_point)) {
 		return;
 	}
 
@@ -142,7 +142,7 @@ void EditorNode3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camer
 }
 
 void EditorNode3DGizmo::commit_handle(int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	if (GDVIRTUAL_CALL(_commit_handle, p_id, p_secondary, p_restore, p_cancel)) {
+	if (VLTRVIRTUAL_CALL(_commit_handle, p_id, p_secondary, p_restore, p_cancel)) {
 		return;
 	}
 
@@ -152,7 +152,7 @@ void EditorNode3DGizmo::commit_handle(int p_id, bool p_secondary, const Variant 
 
 int EditorNode3DGizmo::subgizmos_intersect_ray(Camera3D *p_camera, const Vector2 &p_point) const {
 	int id;
-	if (GDVIRTUAL_CALL(_subgizmos_intersect_ray, p_camera, p_point, id)) {
+	if (VLTRVIRTUAL_CALL(_subgizmos_intersect_ray, p_camera, p_point, id)) {
 		return id;
 	}
 
@@ -167,7 +167,7 @@ Vector<int> EditorNode3DGizmo::subgizmos_intersect_frustum(const Camera3D *p_cam
 		frustum[i] = p_frustum[i];
 	}
 	Vector<int> ret;
-	if (GDVIRTUAL_CALL(_subgizmos_intersect_frustum, p_camera, frustum, ret)) {
+	if (VLTRVIRTUAL_CALL(_subgizmos_intersect_frustum, p_camera, frustum, ret)) {
 		return ret;
 	}
 
@@ -177,7 +177,7 @@ Vector<int> EditorNode3DGizmo::subgizmos_intersect_frustum(const Camera3D *p_cam
 
 Transform3D EditorNode3DGizmo::get_subgizmo_transform(int p_id) const {
 	Transform3D ret;
-	if (GDVIRTUAL_CALL(_get_subgizmo_transform, p_id, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_subgizmo_transform, p_id, ret)) {
 		return ret;
 	}
 
@@ -186,7 +186,7 @@ Transform3D EditorNode3DGizmo::get_subgizmo_transform(int p_id) const {
 }
 
 void EditorNode3DGizmo::set_subgizmo_transform(int p_id, Transform3D p_transform) {
-	if (GDVIRTUAL_CALL(_set_subgizmo_transform, p_id, p_transform)) {
+	if (VLTRVIRTUAL_CALL(_set_subgizmo_transform, p_id, p_transform)) {
 		return;
 	}
 
@@ -201,7 +201,7 @@ void EditorNode3DGizmo::commit_subgizmos(const Vector<int> &p_ids, const Vector<
 		restore[i] = p_restore[i];
 	}
 
-	if (GDVIRTUAL_CALL(_commit_subgizmos, p_ids, restore, p_cancel)) {
+	if (VLTRVIRTUAL_CALL(_commit_subgizmos, p_ids, restore, p_cancel)) {
 		return;
 	}
 
@@ -866,20 +866,20 @@ void EditorNode3DGizmo::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_subgizmo_selection"), &EditorNode3DGizmo::get_subgizmo_selection);
 	ClassDB::bind_method(D_METHOD("is_selected"), &EditorNode3DGizmo::is_selected);
 
-	GDVIRTUAL_BIND(_redraw);
-	GDVIRTUAL_BIND(_get_handle_name, "id", "secondary");
-	GDVIRTUAL_BIND(_is_handle_highlighted, "id", "secondary");
+	VLTRVIRTUAL_BIND(_redraw);
+	VLTRVIRTUAL_BIND(_get_handle_name, "id", "secondary");
+	VLTRVIRTUAL_BIND(_is_handle_highlighted, "id", "secondary");
 
-	GDVIRTUAL_BIND(_get_handle_value, "id", "secondary");
-	GDVIRTUAL_BIND(_begin_handle_action, "id", "secondary");
-	GDVIRTUAL_BIND(_set_handle, "id", "secondary", "camera", "point");
-	GDVIRTUAL_BIND(_commit_handle, "id", "secondary", "restore", "cancel");
+	VLTRVIRTUAL_BIND(_get_handle_value, "id", "secondary");
+	VLTRVIRTUAL_BIND(_begin_handle_action, "id", "secondary");
+	VLTRVIRTUAL_BIND(_set_handle, "id", "secondary", "camera", "point");
+	VLTRVIRTUAL_BIND(_commit_handle, "id", "secondary", "restore", "cancel");
 
-	GDVIRTUAL_BIND(_subgizmos_intersect_ray, "camera", "point");
-	GDVIRTUAL_BIND(_subgizmos_intersect_frustum, "camera", "frustum");
-	GDVIRTUAL_BIND(_set_subgizmo_transform, "id", "transform");
-	GDVIRTUAL_BIND(_get_subgizmo_transform, "id");
-	GDVIRTUAL_BIND(_commit_subgizmos, "ids", "restores", "cancel");
+	VLTRVIRTUAL_BIND(_subgizmos_intersect_ray, "camera", "point");
+	VLTRVIRTUAL_BIND(_subgizmos_intersect_frustum, "camera", "frustum");
+	VLTRVIRTUAL_BIND(_set_subgizmo_transform, "id", "transform");
+	VLTRVIRTUAL_BIND(_get_subgizmo_transform, "id");
+	VLTRVIRTUAL_BIND(_commit_subgizmos, "ids", "restores", "cancel");
 }
 
 EditorNode3DGizmo::EditorNode3DGizmo() {
@@ -1038,7 +1038,7 @@ Ref<StandardMaterial3D> EditorNode3DGizmoPlugin::get_material(const String &p_na
 
 String EditorNode3DGizmoPlugin::get_gizmo_name() const {
 	String ret;
-	if (GDVIRTUAL_CALL(_get_gizmo_name, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_gizmo_name, ret)) {
 		return ret;
 	}
 
@@ -1048,7 +1048,7 @@ String EditorNode3DGizmoPlugin::get_gizmo_name() const {
 
 int EditorNode3DGizmoPlugin::get_priority() const {
 	int ret;
-	if (GDVIRTUAL_CALL(_get_priority, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_priority, ret)) {
 		return ret;
 	}
 	return 0;
@@ -1081,40 +1081,40 @@ void EditorNode3DGizmoPlugin::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_material", "name", "gizmo"), &EditorNode3DGizmoPlugin::get_material, DEFVAL(Ref<EditorNode3DGizmo>()));
 
-	GDVIRTUAL_BIND(_has_gizmo, "for_node_3d");
-	GDVIRTUAL_BIND(_create_gizmo, "for_node_3d");
+	VLTRVIRTUAL_BIND(_has_gizmo, "for_node_3d");
+	VLTRVIRTUAL_BIND(_create_gizmo, "for_node_3d");
 
-	GDVIRTUAL_BIND(_get_gizmo_name);
-	GDVIRTUAL_BIND(_get_priority);
-	GDVIRTUAL_BIND(_can_be_hidden);
-	GDVIRTUAL_BIND(_is_selectable_when_hidden);
-	GDVIRTUAL_BIND(_can_commit_handle_on_click);
+	VLTRVIRTUAL_BIND(_get_gizmo_name);
+	VLTRVIRTUAL_BIND(_get_priority);
+	VLTRVIRTUAL_BIND(_can_be_hidden);
+	VLTRVIRTUAL_BIND(_is_selectable_when_hidden);
+	VLTRVIRTUAL_BIND(_can_commit_handle_on_click);
 
-	GDVIRTUAL_BIND(_redraw, "gizmo");
-	GDVIRTUAL_BIND(_get_handle_name, "gizmo", "handle_id", "secondary");
-	GDVIRTUAL_BIND(_is_handle_highlighted, "gizmo", "handle_id", "secondary");
-	GDVIRTUAL_BIND(_get_handle_value, "gizmo", "handle_id", "secondary");
+	VLTRVIRTUAL_BIND(_redraw, "gizmo");
+	VLTRVIRTUAL_BIND(_get_handle_name, "gizmo", "handle_id", "secondary");
+	VLTRVIRTUAL_BIND(_is_handle_highlighted, "gizmo", "handle_id", "secondary");
+	VLTRVIRTUAL_BIND(_get_handle_value, "gizmo", "handle_id", "secondary");
 
-	GDVIRTUAL_BIND(_begin_handle_action, "gizmo", "handle_id", "secondary");
-	GDVIRTUAL_BIND(_set_handle, "gizmo", "handle_id", "secondary", "camera", "screen_pos");
-	GDVIRTUAL_BIND(_commit_handle, "gizmo", "handle_id", "secondary", "restore", "cancel");
+	VLTRVIRTUAL_BIND(_begin_handle_action, "gizmo", "handle_id", "secondary");
+	VLTRVIRTUAL_BIND(_set_handle, "gizmo", "handle_id", "secondary", "camera", "screen_pos");
+	VLTRVIRTUAL_BIND(_commit_handle, "gizmo", "handle_id", "secondary", "restore", "cancel");
 
-	GDVIRTUAL_BIND(_subgizmos_intersect_ray, "gizmo", "camera", "screen_pos");
-	GDVIRTUAL_BIND(_subgizmos_intersect_frustum, "gizmo", "camera", "frustum_planes");
-	GDVIRTUAL_BIND(_get_subgizmo_transform, "gizmo", "subgizmo_id");
-	GDVIRTUAL_BIND(_set_subgizmo_transform, "gizmo", "subgizmo_id", "transform");
-	GDVIRTUAL_BIND(_commit_subgizmos, "gizmo", "ids", "restores", "cancel");
+	VLTRVIRTUAL_BIND(_subgizmos_intersect_ray, "gizmo", "camera", "screen_pos");
+	VLTRVIRTUAL_BIND(_subgizmos_intersect_frustum, "gizmo", "camera", "frustum_planes");
+	VLTRVIRTUAL_BIND(_get_subgizmo_transform, "gizmo", "subgizmo_id");
+	VLTRVIRTUAL_BIND(_set_subgizmo_transform, "gizmo", "subgizmo_id", "transform");
+	VLTRVIRTUAL_BIND(_commit_subgizmos, "gizmo", "ids", "restores", "cancel");
 }
 
 bool EditorNode3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
 	bool success = false;
-	GDVIRTUAL_CALL(_has_gizmo, p_spatial, success);
+	VLTRVIRTUAL_CALL(_has_gizmo, p_spatial, success);
 	return success;
 }
 
 Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D *p_spatial) {
 	Ref<EditorNode3DGizmo> ret;
-	if (GDVIRTUAL_CALL(_create_gizmo, p_spatial, ret)) {
+	if (VLTRVIRTUAL_CALL(_create_gizmo, p_spatial, ret)) {
 		return ret;
 	}
 
@@ -1127,59 +1127,59 @@ Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D *p_spatial) 
 
 bool EditorNode3DGizmoPlugin::can_be_hidden() const {
 	bool ret = true;
-	GDVIRTUAL_CALL(_can_be_hidden, ret);
+	VLTRVIRTUAL_CALL(_can_be_hidden, ret);
 	return ret;
 }
 
 bool EditorNode3DGizmoPlugin::is_selectable_when_hidden() const {
 	bool ret = false;
-	GDVIRTUAL_CALL(_is_selectable_when_hidden, ret);
+	VLTRVIRTUAL_CALL(_is_selectable_when_hidden, ret);
 	return ret;
 }
 
 bool EditorNode3DGizmoPlugin::can_commit_handle_on_click() const {
 	bool ret = false;
-	GDVIRTUAL_CALL(_can_commit_handle_on_click, ret);
+	VLTRVIRTUAL_CALL(_can_commit_handle_on_click, ret);
 	return ret;
 }
 
 void EditorNode3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
-	GDVIRTUAL_CALL(_redraw, p_gizmo);
+	VLTRVIRTUAL_CALL(_redraw, p_gizmo);
 }
 
 bool EditorNode3DGizmoPlugin::is_handle_highlighted(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	bool ret = false;
-	GDVIRTUAL_CALL(_is_handle_highlighted, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, ret);
+	VLTRVIRTUAL_CALL(_is_handle_highlighted, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, ret);
 	return ret;
 }
 
 String EditorNode3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	String ret;
-	GDVIRTUAL_CALL(_get_handle_name, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, ret);
+	VLTRVIRTUAL_CALL(_get_handle_name, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, ret);
 	return ret;
 }
 
 Variant EditorNode3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	Variant ret;
-	GDVIRTUAL_CALL(_get_handle_value, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, ret);
+	VLTRVIRTUAL_CALL(_get_handle_value, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, ret);
 	return ret;
 }
 
 void EditorNode3DGizmoPlugin::begin_handle_action(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) {
-	GDVIRTUAL_CALL(_begin_handle_action, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary);
+	VLTRVIRTUAL_CALL(_begin_handle_action, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary);
 }
 
 void EditorNode3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	GDVIRTUAL_CALL(_set_handle, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, p_camera, p_point);
+	VLTRVIRTUAL_CALL(_set_handle, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, p_camera, p_point);
 }
 
 void EditorNode3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	GDVIRTUAL_CALL(_commit_handle, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, p_restore, p_cancel);
+	VLTRVIRTUAL_CALL(_commit_handle, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_secondary, p_restore, p_cancel);
 }
 
 int EditorNode3DGizmoPlugin::subgizmos_intersect_ray(const EditorNode3DGizmo *p_gizmo, Camera3D *p_camera, const Vector2 &p_point) const {
 	int ret = -1;
-	GDVIRTUAL_CALL(_subgizmos_intersect_ray, Ref<EditorNode3DGizmo>(p_gizmo), p_camera, p_point, ret);
+	VLTRVIRTUAL_CALL(_subgizmos_intersect_ray, Ref<EditorNode3DGizmo>(p_gizmo), p_camera, p_point, ret);
 	return ret;
 }
 
@@ -1190,18 +1190,18 @@ Vector<int> EditorNode3DGizmoPlugin::subgizmos_intersect_frustum(const EditorNod
 		frustum[i] = p_frustum[i];
 	}
 	Vector<int> ret;
-	GDVIRTUAL_CALL(_subgizmos_intersect_frustum, Ref<EditorNode3DGizmo>(p_gizmo), p_camera, frustum, ret);
+	VLTRVIRTUAL_CALL(_subgizmos_intersect_frustum, Ref<EditorNode3DGizmo>(p_gizmo), p_camera, frustum, ret);
 	return ret;
 }
 
 Transform3D EditorNode3DGizmoPlugin::get_subgizmo_transform(const EditorNode3DGizmo *p_gizmo, int p_id) const {
 	Transform3D ret;
-	GDVIRTUAL_CALL(_get_subgizmo_transform, Ref<EditorNode3DGizmo>(p_gizmo), p_id, ret);
+	VLTRVIRTUAL_CALL(_get_subgizmo_transform, Ref<EditorNode3DGizmo>(p_gizmo), p_id, ret);
 	return ret;
 }
 
 void EditorNode3DGizmoPlugin::set_subgizmo_transform(const EditorNode3DGizmo *p_gizmo, int p_id, Transform3D p_transform) {
-	GDVIRTUAL_CALL(_set_subgizmo_transform, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_transform);
+	VLTRVIRTUAL_CALL(_set_subgizmo_transform, Ref<EditorNode3DGizmo>(p_gizmo), p_id, p_transform);
 }
 
 void EditorNode3DGizmoPlugin::commit_subgizmos(const EditorNode3DGizmo *p_gizmo, const Vector<int> &p_ids, const Vector<Transform3D> &p_restore, bool p_cancel) {
@@ -1211,7 +1211,7 @@ void EditorNode3DGizmoPlugin::commit_subgizmos(const EditorNode3DGizmo *p_gizmo,
 		restore[i] = p_restore[i];
 	}
 
-	GDVIRTUAL_CALL(_commit_subgizmos, Ref<EditorNode3DGizmo>(p_gizmo), p_ids, restore, p_cancel);
+	VLTRVIRTUAL_CALL(_commit_subgizmos, Ref<EditorNode3DGizmo>(p_gizmo), p_ids, restore, p_cancel);
 }
 
 void EditorNode3DGizmoPlugin::set_state(int p_state) {

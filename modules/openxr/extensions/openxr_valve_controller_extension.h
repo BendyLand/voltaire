@@ -33,7 +33,7 @@
 #include "openxr_extension_wrapper.h"
 
 class OpenXRValveControllerExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRValveControllerExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRValveControllerExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

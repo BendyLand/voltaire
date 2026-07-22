@@ -33,7 +33,7 @@
 #include "scene/resources/skeleton_profile.h"
 
 class BoneMap : public Resource {
-	GDCLASS(BoneMap, Resource);
+	VLTRCLASS(BoneMap, Resource);
 
 	Ref<SkeletonProfile> profile;
 	HashMap<StringName, StringName> bone_map;

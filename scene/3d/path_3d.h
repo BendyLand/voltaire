@@ -37,7 +37,7 @@
 class ArrayMesh;
 
 class Path3D : public Node3D {
-	GDCLASS(Path3D, Node3D);
+	VLTRCLASS(Path3D, Node3D);
 
 private:
 	Ref<Curve3D> curve;
@@ -73,7 +73,7 @@ public:
 };
 
 class PathFollow3D : public Node3D {
-	GDCLASS(PathFollow3D, Node3D);
+	VLTRCLASS(PathFollow3D, Node3D);
 
 public:
 	enum RotationMode {

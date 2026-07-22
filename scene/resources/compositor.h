@@ -37,7 +37,7 @@
 /* Compositor Effect */
 
 class CompositorEffect : public Resource {
-	GDCLASS(CompositorEffect, Resource);
+	VLTRCLASS(CompositorEffect, Resource);
 
 public:
 	enum EffectCallbackType {
@@ -66,7 +66,7 @@ protected:
 
 	void _call_render_callback(int p_effect_callback_type, const RenderData *p_render_data);
 
-	GDVIRTUAL2(_render_callback, int, const RenderData *)
+	VLTRVIRTUAL2(_render_callback, int, const RenderData *)
 
 public:
 	virtual RID get_rid() const override { return rid; }
@@ -101,7 +101,7 @@ VARIANT_ENUM_CAST(CompositorEffect::EffectCallbackType)
 /* Compositor */
 
 class Compositor : public Resource {
-	GDCLASS(Compositor, Resource);
+	VLTRCLASS(Compositor, Resource);
 
 private:
 	RID compositor;

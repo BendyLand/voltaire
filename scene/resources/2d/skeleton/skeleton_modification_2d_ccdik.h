@@ -38,7 +38,7 @@
 ///////////////////////////////////////
 
 class SkeletonModification2DCCDIK : public SkeletonModification2D {
-	GDCLASS(SkeletonModification2DCCDIK, SkeletonModification2D);
+	VLTRCLASS(SkeletonModification2DCCDIK, SkeletonModification2D);
 
 private:
 	struct CCDIK_Joint_Data2D {

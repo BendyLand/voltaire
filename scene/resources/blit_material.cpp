@@ -39,7 +39,7 @@ void BlitMaterial::_update_shader(BlendMode p_blend) {
 	int index = int(p_blend);
 	if (shader_cache[p_blend].is_null()) {
 		shader_cache[p_blend] = RS::get_singleton()->shader_create();
-		String code = "// NOTE: Shader automatically converted from " GODOT_VERSION_NAME " " GODOT_VERSION_FULL_CONFIG "'s BlitMaterial.\n\n";
+		String code = "// NOTE: Shader automatically converted from " VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG "'s BlitMaterial.\n\n";
 
 		code += "shader_type texture_blit;\nrender_mode ";
 		switch (p_blend) {

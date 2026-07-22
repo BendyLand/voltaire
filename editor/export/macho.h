@@ -36,7 +36,7 @@
 #include "core/object/ref_counted.h"
 
 class MachO : public RefCounted {
-	GDSOFTCLASS(MachO, RefCounted);
+	VLTRSOFTCLASS(MachO, RefCounted);
 
 public:
 	struct MachHeader {

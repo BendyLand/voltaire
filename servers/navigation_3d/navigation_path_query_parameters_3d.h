@@ -35,7 +35,7 @@
 #include "servers/navigation_3d/navigation_constants_3d.h"
 
 class NavigationPathQueryParameters3D : public RefCounted {
-	GDCLASS(NavigationPathQueryParameters3D, RefCounted);
+	VLTRCLASS(NavigationPathQueryParameters3D, RefCounted);
 
 protected:
 	static void _bind_methods();

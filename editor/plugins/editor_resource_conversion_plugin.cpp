@@ -30,28 +30,28 @@
 
 #include "editor_resource_conversion_plugin.h"
 
-#include "core/object/class_db.h" // IWYU pragma: keep. `GDVIRTUAL_BIND` macro.
+#include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
 
 void EditorResourceConversionPlugin::_bind_methods() {
-	GDVIRTUAL_BIND(_converts_to);
-	GDVIRTUAL_BIND(_handles, "resource");
-	GDVIRTUAL_BIND(_convert, "resource");
+	VLTRVIRTUAL_BIND(_converts_to);
+	VLTRVIRTUAL_BIND(_handles, "resource");
+	VLTRVIRTUAL_BIND(_convert, "resource");
 }
 
 String EditorResourceConversionPlugin::converts_to() const {
 	String ret;
-	GDVIRTUAL_CALL(_converts_to, ret);
+	VLTRVIRTUAL_CALL(_converts_to, ret);
 	return ret;
 }
 
 bool EditorResourceConversionPlugin::handles(const Ref<Resource> &p_resource) const {
 	bool ret = false;
-	GDVIRTUAL_CALL(_handles, p_resource, ret);
+	VLTRVIRTUAL_CALL(_handles, p_resource, ret);
 	return ret;
 }
 
 Ref<Resource> EditorResourceConversionPlugin::convert(const Ref<Resource> &p_resource) const {
 	Ref<Resource> ret;
-	GDVIRTUAL_CALL(_convert, p_resource, ret);
+	VLTRVIRTUAL_CALL(_convert, p_resource, ret);
 	return ret;
 }

@@ -452,7 +452,7 @@ void StreamPeer::_bind_methods() {
 Error StreamPeerExtension::get_data(uint8_t *r_buffer, int p_bytes) {
 	Error err;
 	int received = 0;
-	if (GDVIRTUAL_CALL(_get_data, r_buffer, p_bytes, &received, err)) {
+	if (VLTRVIRTUAL_CALL(_get_data, r_buffer, p_bytes, &received, err)) {
 		return err;
 	}
 	WARN_PRINT_ONCE("StreamPeerExtension::_get_data is unimplemented!");
@@ -461,7 +461,7 @@ Error StreamPeerExtension::get_data(uint8_t *r_buffer, int p_bytes) {
 
 Error StreamPeerExtension::get_partial_data(uint8_t *r_buffer, int p_bytes, int &r_received) {
 	Error err;
-	if (GDVIRTUAL_CALL(_get_partial_data, r_buffer, p_bytes, &r_received, err)) {
+	if (VLTRVIRTUAL_CALL(_get_partial_data, r_buffer, p_bytes, &r_received, err)) {
 		return err;
 	}
 	WARN_PRINT_ONCE("StreamPeerExtension::_get_partial_data is unimplemented!");
@@ -471,7 +471,7 @@ Error StreamPeerExtension::get_partial_data(uint8_t *r_buffer, int p_bytes, int 
 Error StreamPeerExtension::put_data(const uint8_t *p_data, int p_bytes) {
 	Error err;
 	int sent = 0;
-	if (GDVIRTUAL_CALL(_put_data, p_data, p_bytes, &sent, err)) {
+	if (VLTRVIRTUAL_CALL(_put_data, p_data, p_bytes, &sent, err)) {
 		return err;
 	}
 	WARN_PRINT_ONCE("StreamPeerExtension::_put_data is unimplemented!");
@@ -480,7 +480,7 @@ Error StreamPeerExtension::put_data(const uint8_t *p_data, int p_bytes) {
 
 Error StreamPeerExtension::put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) {
 	Error err;
-	if (GDVIRTUAL_CALL(_put_partial_data, p_data, p_bytes, &r_sent, err)) {
+	if (VLTRVIRTUAL_CALL(_put_partial_data, p_data, p_bytes, &r_sent, err)) {
 		return err;
 	}
 	WARN_PRINT_ONCE("StreamPeerExtension::_put_partial_data is unimplemented!");
@@ -488,11 +488,11 @@ Error StreamPeerExtension::put_partial_data(const uint8_t *p_data, int p_bytes, 
 }
 
 void StreamPeerExtension::_bind_methods() {
-	GDVIRTUAL_BIND(_get_data, "r_buffer", "r_bytes", "r_received");
-	GDVIRTUAL_BIND(_get_partial_data, "r_buffer", "r_bytes", "r_received");
-	GDVIRTUAL_BIND(_put_data, "data", "bytes", "r_sent");
-	GDVIRTUAL_BIND(_put_partial_data, "data", "bytes", "r_sent");
-	GDVIRTUAL_BIND(_get_available_bytes);
+	VLTRVIRTUAL_BIND(_get_data, "r_buffer", "r_bytes", "r_received");
+	VLTRVIRTUAL_BIND(_get_partial_data, "r_buffer", "r_bytes", "r_received");
+	VLTRVIRTUAL_BIND(_put_data, "data", "bytes", "r_sent");
+	VLTRVIRTUAL_BIND(_put_partial_data, "data", "bytes", "r_sent");
+	VLTRVIRTUAL_BIND(_get_available_bytes);
 }
 
 ////////////////////////////////

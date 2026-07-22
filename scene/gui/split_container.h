@@ -36,7 +36,7 @@ class TextureRect;
 class SplitContainer;
 
 class SplitContainerMultiDragger : public Control {
-	GDCLASS(SplitContainerMultiDragger, Control);
+	VLTRCLASS(SplitContainerMultiDragger, Control);
 
 	bool dragging = false;
 	int drag_from = 0;
@@ -59,7 +59,7 @@ public:
 };
 
 class SplitContainerDragger : public Control {
-	GDCLASS(SplitContainerDragger, Control);
+	VLTRCLASS(SplitContainerDragger, Control);
 	friend class SplitContainer;
 
 	bool dragging = false;
@@ -96,7 +96,7 @@ public:
 };
 
 class SplitContainer : public Container {
-	GDCLASS(SplitContainer, Container);
+	VLTRCLASS(SplitContainer, Container);
 	friend class SplitContainerDragger;
 	friend class SplitContainerMultiDragger;
 
@@ -248,7 +248,7 @@ public:
 VARIANT_ENUM_CAST(SplitContainer::DraggerVisibility);
 
 class HSplitContainer : public SplitContainer {
-	GDCLASS(HSplitContainer, SplitContainer);
+	VLTRCLASS(HSplitContainer, SplitContainer);
 
 public:
 	HSplitContainer() :
@@ -256,7 +256,7 @@ public:
 };
 
 class VSplitContainer : public SplitContainer {
-	GDCLASS(VSplitContainer, SplitContainer);
+	VLTRCLASS(VSplitContainer, SplitContainer);
 
 public:
 	VSplitContainer() :

@@ -36,7 +36,7 @@ class ArrayMesh;
 class Image;
 
 class HeightMapShape3D : public Shape3D {
-	GDCLASS(HeightMapShape3D, Shape3D);
+	VLTRCLASS(HeightMapShape3D, Shape3D);
 
 	int map_width = 2;
 	int map_depth = 2;

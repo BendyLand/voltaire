@@ -33,7 +33,7 @@
 #include "core/io/resource.h"
 
 class TextFile : public Resource {
-	GDCLASS(TextFile, Resource);
+	VLTRCLASS(TextFile, Resource);
 
 private:
 	String text;

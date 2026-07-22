@@ -41,7 +41,7 @@
 class RichTextLabel;
 
 class ConnectionInfoDialog : public AcceptDialog {
-	GDCLASS(ConnectionInfoDialog, AcceptDialog);
+	VLTRCLASS(ConnectionInfoDialog, AcceptDialog);
 
 	Label *method = nullptr;
 	Tree *tree = nullptr;
@@ -55,7 +55,7 @@ public:
 };
 
 class ScriptTextEditor : public CodeEditorBase {
-	GDCLASS(ScriptTextEditor, CodeEditorBase);
+	VLTRCLASS(ScriptTextEditor, CodeEditorBase);
 
 	Variant pending_state;
 	bool script_is_valid = false;
@@ -130,7 +130,7 @@ class ScriptTextEditor : public CodeEditorBase {
 	};
 
 	class EditMenusSTE : public EditMenusCEB {
-		GDCLASS(EditMenusSTE, EditMenusCEB);
+		VLTRCLASS(EditMenusSTE, EditMenusCEB);
 		PopupMenu *breakpoints_menu = nullptr;
 
 		void _update_breakpoint_list();

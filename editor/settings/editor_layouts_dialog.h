@@ -37,7 +37,7 @@ class LineEdit;
 class ItemList;
 
 class EditorLayoutsDialog : public ConfirmationDialog {
-	GDCLASS(EditorLayoutsDialog, ConfirmationDialog);
+	VLTRCLASS(EditorLayoutsDialog, ConfirmationDialog);
 
 	bool save_mode = true;
 

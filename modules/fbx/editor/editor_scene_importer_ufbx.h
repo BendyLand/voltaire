@@ -36,7 +36,7 @@ class Animation;
 class Node;
 
 class EditorSceneFormatImporterUFBX : public EditorSceneFormatImporter {
-	GDCLASS(EditorSceneFormatImporterUFBX, EditorSceneFormatImporter);
+	VLTRCLASS(EditorSceneFormatImporterUFBX, EditorSceneFormatImporter);
 
 public:
 	enum FBX_IMPORTER_TYPE {

@@ -53,7 +53,7 @@ class StyleBoxFlat;
 class Timer;
 
 class EditorAudioBus : public PanelContainer {
-	GDCLASS(EditorAudioBus, PanelContainer);
+	VLTRCLASS(EditorAudioBus, PanelContainer);
 
 	LineEdit *track_name = nullptr;
 	MenuButton *bus_options = nullptr;
@@ -166,7 +166,7 @@ public:
 };
 
 class EditorAudioBusDrop : public Control {
-	GDCLASS(EditorAudioBusDrop, Control);
+	VLTRCLASS(EditorAudioBusDrop, Control);
 
 	virtual bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;
 	virtual void drop_data(const Point2 &p_point, const Variant &p_data) override;
@@ -179,7 +179,7 @@ protected:
 };
 
 class EditorAudioBuses : public EditorDock {
-	GDCLASS(EditorAudioBuses, EditorDock);
+	VLTRCLASS(EditorAudioBuses, EditorDock);
 
 	enum class MenuOption {
 		LOAD,
@@ -249,7 +249,7 @@ public:
 };
 
 class EditorAudioMeterNotches : public Control {
-	GDCLASS(EditorAudioMeterNotches, Control);
+	VLTRCLASS(EditorAudioMeterNotches, Control);
 
 private:
 	struct AudioNotch {
@@ -303,7 +303,7 @@ private:
 };
 
 class AudioBusesEditorPlugin : public EditorPlugin {
-	GDCLASS(AudioBusesEditorPlugin, EditorPlugin);
+	VLTRCLASS(AudioBusesEditorPlugin, EditorPlugin);
 
 	EditorAudioBuses *audio_bus_editor = nullptr;
 

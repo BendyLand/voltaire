@@ -34,7 +34,7 @@
 #include "servers/physics_2d/physics_server_2d_types.h"
 
 class PhysicsPointQueryParameters2D : public RefCounted {
-	GDCLASS(PhysicsPointQueryParameters2D, RefCounted);
+	VLTRCLASS(PhysicsPointQueryParameters2D, RefCounted);
 
 	PS2DT::PointParameters parameters;
 

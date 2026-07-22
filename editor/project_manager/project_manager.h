@@ -52,7 +52,7 @@ class TabContainer;
 class VBoxContainer;
 
 class ProjectManager : public Control {
-	GDCLASS(ProjectManager, Control);
+	VLTRCLASS(ProjectManager, Control);
 
 	static ProjectManager *singleton;
 

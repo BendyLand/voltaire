@@ -41,7 +41,7 @@ TEST_FORCE_LINK(test_object)
 namespace TestObject {
 
 class _TestDerivedObject : public Object {
-	GDCLASS(_TestDerivedObject, Object);
+	VLTRCLASS(_TestDerivedObject, Object);
 
 	int property_value;
 
@@ -306,7 +306,7 @@ TEST_CASE("[Object] Absent name getter") {
 }
 
 class SignalReceiver : public Object {
-	GDCLASS(SignalReceiver, Object);
+	VLTRCLASS(SignalReceiver, Object);
 
 public:
 	Vector<Variant> received_args;
@@ -515,7 +515,7 @@ TEST_CASE("[Object] Signals") {
 }
 
 class NotificationObjectSuperclass : public Object {
-	GDCLASS(NotificationObjectSuperclass, Object);
+	VLTRCLASS(NotificationObjectSuperclass, Object);
 
 protected:
 	void _notification(int p_what) {
@@ -528,7 +528,7 @@ public:
 };
 
 class NotificationObjectSubclass : public NotificationObjectSuperclass {
-	GDCLASS(NotificationObjectSubclass, NotificationObjectSuperclass);
+	VLTRCLASS(NotificationObjectSubclass, NotificationObjectSuperclass);
 
 protected:
 	void _notification(int p_what) {

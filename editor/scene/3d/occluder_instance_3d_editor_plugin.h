@@ -36,7 +36,7 @@ class EditorFileDialog;
 class OccluderInstance3D;
 
 class OccluderInstance3DEditorPlugin : public EditorPlugin {
-	GDCLASS(OccluderInstance3DEditorPlugin, EditorPlugin);
+	VLTRCLASS(OccluderInstance3DEditorPlugin, EditorPlugin);
 
 	OccluderInstance3D *occluder_instance = nullptr;
 

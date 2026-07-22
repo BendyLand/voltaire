@@ -34,7 +34,7 @@
 #include "core/io/tcp_server.h"
 
 class EditorHTTPServer : public RefCounted {
-	GDSOFTCLASS(EditorHTTPServer, RefCounted);
+	VLTRSOFTCLASS(EditorHTTPServer, RefCounted);
 
 private:
 	Ref<TCPServer> server;

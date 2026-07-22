@@ -46,7 +46,7 @@ class TreeItem;
 class VSplitContainer;
 
 class TemplateDownloader : public HTTPRequest {
-	GDCLASS(TemplateDownloader, HTTPRequest);
+	VLTRCLASS(TemplateDownloader, HTTPRequest);
 
 	struct FileInfo {
 		int offset = 0;
@@ -109,7 +109,7 @@ public:
 };
 
 class ExportTemplateManager : public AcceptDialog {
-	GDCLASS(ExportTemplateManager, AcceptDialog);
+	VLTRCLASS(ExportTemplateManager, AcceptDialog);
 
 	const StringName PATH_META = "path";
 	const StringName FILE_META = "file";

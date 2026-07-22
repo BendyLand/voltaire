@@ -37,7 +37,7 @@
 class StreamPeerTCP;
 
 class HTTPClientTCP : public HTTPClient {
-	GDSOFTCLASS(HTTPClientTCP, HTTPClient);
+	VLTRSOFTCLASS(HTTPClientTCP, HTTPClient);
 
 private:
 	Status status = STATUS_DISCONNECTED;

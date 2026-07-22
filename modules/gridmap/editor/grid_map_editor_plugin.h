@@ -52,7 +52,7 @@ class Tree;
 class TreeItem;
 
 class GridMapEditor : public EditorDock {
-	GDCLASS(GridMapEditor, EditorDock);
+	VLTRCLASS(GridMapEditor, EditorDock);
 
 	static constexpr int32_t GRID_CURSOR_SIZE = 50;
 
@@ -305,7 +305,7 @@ public:
 };
 
 class GridMapEditorPlugin : public EditorPlugin {
-	GDCLASS(GridMapEditorPlugin, EditorPlugin);
+	VLTRCLASS(GridMapEditorPlugin, EditorPlugin);
 
 	GridMapEditor *grid_map_editor = nullptr;
 

@@ -33,7 +33,7 @@
 #include "scene/2d/node_2d.h"
 
 class NavigationLink2D : public Node2D {
-	GDCLASS(NavigationLink2D, Node2D);
+	VLTRCLASS(NavigationLink2D, Node2D);
 
 	bool enabled = true;
 	RID link;

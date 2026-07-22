@@ -33,7 +33,7 @@
 #include "scene/2d/node_2d.h"
 
 class AudioListener2D : public Node2D {
-	GDCLASS(AudioListener2D, Node2D);
+	VLTRCLASS(AudioListener2D, Node2D);
 
 private:
 	bool current = false;

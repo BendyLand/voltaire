@@ -60,7 +60,7 @@ class NativeMenu;
 
 /// "Embedded" as in "Embedded Device".
 class DisplayServerAppleEmbedded : public DisplayServer {
-	GDSOFTCLASS(DisplayServerAppleEmbedded, DisplayServer);
+	VLTRSOFTCLASS(DisplayServerAppleEmbedded, DisplayServer);
 
 	_THREAD_SAFE_CLASS_
 

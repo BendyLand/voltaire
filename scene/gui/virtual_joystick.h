@@ -33,7 +33,7 @@
 #include "scene/gui/control.h"
 
 class VirtualJoystick : public Control {
-	GDCLASS(VirtualJoystick, Control);
+	VLTRCLASS(VirtualJoystick, Control);
 
 public:
 	enum JoystickMode {

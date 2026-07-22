@@ -33,7 +33,7 @@
 #include "core/object/object.h"
 
 class RenderSceneData : public Object {
-	GDCLASS(RenderSceneData, Object);
+	VLTRCLASS(RenderSceneData, Object);
 
 protected:
 	static void _bind_methods();

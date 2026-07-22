@@ -60,7 +60,7 @@ struct TTSUtterance {
 };
 
 class DisplayServer : public Object {
-	GDCLASS(DisplayServer, Object)
+	VLTRCLASS(DisplayServer, Object)
 
 	static DisplayServer *singleton;
 

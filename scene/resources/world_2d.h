@@ -41,7 +41,7 @@ class Viewport;
 struct SpatialIndexer2D;
 
 class World2D : public Resource {
-	GDCLASS(World2D, Resource);
+	VLTRCLASS(World2D, Resource);
 
 	RID canvas;
 #ifndef NAVIGATION_2D_DISABLED

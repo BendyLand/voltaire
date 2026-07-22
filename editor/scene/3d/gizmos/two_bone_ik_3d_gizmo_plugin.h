@@ -36,7 +36,7 @@ class TwoBoneIK3D;
 class SurfaceTool;
 
 class TwoBoneIK3DGizmoPlugin : public EditorNode3DGizmoPlugin {
-	GDCLASS(TwoBoneIK3DGizmoPlugin, EditorNode3DGizmoPlugin);
+	VLTRCLASS(TwoBoneIK3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
 	struct SelectionMaterials {
 		Ref<StandardMaterial3D> unselected_mat;

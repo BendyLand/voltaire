@@ -46,14 +46,14 @@
 static_assert(std::is_trivially_destructible_v<std::atomic<uint64_t>>);
 
 // Silences false-positive warnings.
-GODOT_GCC_WARNING_PUSH
-GODOT_GCC_WARNING_IGNORE("-Wplacement-new") // Silence a false positive warning (see GH-52119).
-GODOT_GCC_WARNING_IGNORE("-Wmaybe-uninitialized") // False positive raised when using constexpr.
-GODOT_GCC_WARNING_IGNORE("-Warray-bounds")
-GODOT_GCC_WARNING_IGNORE("-Wrestrict")
-GODOT_GCC_PRAGMA(GCC diagnostic warning "-Wstringop-overflow=0") // Can't "ignore" this for some reason.
+VLTR_GCC_WARNING_PUSH
+VLTR_GCC_WARNING_IGNORE("-Wplacement-new") // Silence a false positive warning (see GH-52119).
+VLTR_GCC_WARNING_IGNORE("-Wmaybe-uninitialized") // False positive raised when using constexpr.
+VLTR_GCC_WARNING_IGNORE("-Warray-bounds")
+VLTR_GCC_WARNING_IGNORE("-Wrestrict")
+VLTR_GCC_PRAGMA(GCC diagnostic warning "-Wstringop-overflow=0") // Can't "ignore" this for some reason.
 #ifdef WINDOWS_ENABLED
-GODOT_GCC_PRAGMA(GCC diagnostic warning "-Wdangling-pointer=0") // Can't "ignore" this for some reason.
+VLTR_GCC_PRAGMA(GCC diagnostic warning "-Wdangling-pointer=0") // Can't "ignore" this for some reason.
 #endif
 
 template <typename T>
@@ -586,7 +586,7 @@ CowData<T>::CowData(Span<T> p_span) {
 	*_get_size() = p_span.size();
 }
 
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP
 
 // Zero-constructing CowData initializes _ptr to nullptr (and thus empty).
 template <typename T>

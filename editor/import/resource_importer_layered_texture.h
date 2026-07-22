@@ -37,7 +37,7 @@
 class CompressedTexture2D;
 
 class LayeredTextureImport : public RefCounted {
-	GDCLASS(LayeredTextureImport, RefCounted);
+	VLTRCLASS(LayeredTextureImport, RefCounted);
 
 public:
 	Image::CompressSource *csource = nullptr;
@@ -60,7 +60,7 @@ public:
 };
 
 class ResourceImporterLayeredTexture : public ResourceImporter {
-	GDCLASS(ResourceImporterLayeredTexture, ResourceImporter);
+	VLTRCLASS(ResourceImporterLayeredTexture, ResourceImporter);
 
 public:
 	enum Mode {

@@ -35,7 +35,7 @@
 class ScriptLanguage;
 
 class ScriptBacktrace : public RefCounted {
-	GDCLASS(ScriptBacktrace, RefCounted);
+	VLTRCLASS(ScriptBacktrace, RefCounted);
 
 	struct StackVariable {
 		String name;

@@ -36,7 +36,7 @@
 #include "core/variant/variant_parser.h"
 
 class ConfigFile : public RefCounted {
-	GDCLASS(ConfigFile, RefCounted);
+	VLTRCLASS(ConfigFile, RefCounted);
 
 	HashMap<String, HashMap<String, Variant>> values;
 

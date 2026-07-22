@@ -48,7 +48,7 @@
 
 // Thirdparty headers.
 
-GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wshadow")
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wshadow")
 #if defined(__EMSCRIPTEN__) || (defined(__MINGW32__) && __clang_major__ >= 21)
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wunnecessary-virtual-specifier")
 #endif
@@ -66,7 +66,7 @@ GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wunnecessary-virtual-specifier")
 #include <unicode/ustring.h>
 #include <unicode/utypes.h>
 
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP
 #if defined(__EMSCRIPTEN__) || (defined(__MINGW32__) && __clang_major__ >= 21)
 GODOT_CLANG_WARNING_POP
 #endif
@@ -98,7 +98,7 @@ GODOT_CLANG_WARNING_POP
 /*************************************************************************/
 
 class TextServerAdvanced : public TextServerExtension {
-	GDCLASS(TextServerAdvanced, TextServerExtension);
+	VLTRCLASS(TextServerAdvanced, TextServerExtension);
 	_THREAD_SAFE_CLASS_
 
 	struct FeatureInfo {

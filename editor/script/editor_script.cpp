@@ -58,7 +58,7 @@ EditorInterface *EditorScript::get_editor_interface() const {
 #endif // DISABLE_DEPRECATED
 
 void EditorScript::run() {
-	GDVIRTUAL_CALL(_run);
+	VLTRVIRTUAL_CALL(_run);
 }
 
 void EditorScript::_bind_methods() {
@@ -70,5 +70,5 @@ void EditorScript::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_editor_interface"), &EditorScript::get_editor_interface);
 #endif // DISABLE_DEPRECATED
 
-	GDVIRTUAL_BIND(_run);
+	VLTRVIRTUAL_BIND(_run);
 }

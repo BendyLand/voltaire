@@ -34,7 +34,7 @@
 #include "core/templates/hash_set.h"
 
 class ShaderInclude : public Resource {
-	GDCLASS(ShaderInclude, Resource);
+	VLTRCLASS(ShaderInclude, Resource);
 	OBJ_SAVE_TYPE(ShaderInclude);
 
 private:

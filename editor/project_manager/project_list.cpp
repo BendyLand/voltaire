@@ -300,16 +300,16 @@ void ProjectListItemControl::set_unsupported_features(PackedStringArray p_featur
 				}
 
 				version_match_type = VersionMatchType::PROJECT_USES_SAME;
-				if (project_version_major > GODOT_VERSION_MAJOR) {
+				if (project_version_major > VLTR_VERSION_MAJOR) {
 					version_match_type = VersionMatchType::PROJECT_USES_NEWER_MAJOR;
-				} else if (project_version_major < GODOT_VERSION_MAJOR) {
+				} else if (project_version_major < VLTR_VERSION_MAJOR) {
 					version_match_type = VersionMatchType::PROJECT_USES_OLDER_MAJOR;
 				} else {
 					// Project is same major version.
 					// Is it the same minor version, or an upgrade or downgrade?
-					if (project_version_minor > GODOT_VERSION_MINOR) {
+					if (project_version_minor > VLTR_VERSION_MINOR) {
 						version_match_type = VersionMatchType::PROJECT_USES_NEWER_MINOR;
-					} else if (project_version_minor < GODOT_VERSION_MINOR) {
+					} else if (project_version_minor < VLTR_VERSION_MINOR) {
 						version_match_type = VersionMatchType::PROJECT_USES_OLDER_MINOR;
 					}
 				}
@@ -317,9 +317,9 @@ void ProjectListItemControl::set_unsupported_features(PackedStringArray p_featur
 				if (version_match_type != VersionMatchType::PROJECT_USES_SAME) {
 					String project_version_tooltip_text = TTR("This project was last edited in a different Godot version: ") + p_features[i] + "\n";
 					if (version_match_type == VersionMatchType::PROJECT_USES_OLDER_MAJOR || version_match_type == VersionMatchType::PROJECT_USES_OLDER_MINOR) {
-						project_version_tooltip_text += vformat(TTR("Opening it will upgrade it to Godot %s.%s."), GODOT_VERSION_MAJOR, GODOT_VERSION_MINOR) + "\n";
+						project_version_tooltip_text += vformat(TTR("Opening it will upgrade it to Godot %s.%s."), VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) + "\n";
 					} else if (version_match_type == VersionMatchType::PROJECT_USES_NEWER_MAJOR || version_match_type == VersionMatchType::PROJECT_USES_NEWER_MINOR) {
-						project_version_tooltip_text += vformat(TTR("Opening it will downgrade it to Godot %s.%s."), GODOT_VERSION_MAJOR, GODOT_VERSION_MINOR) + "\n";
+						project_version_tooltip_text += vformat(TTR("Opening it will downgrade it to Godot %s.%s."), VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) + "\n";
 						project_version_tooltip_text += TTR("Downgrading projects is not recommended.") + "\n";
 					}
 					project_different_version->set_focus_mode(FOCUS_ACCESSIBILITY);
@@ -332,7 +332,7 @@ void ProjectListItemControl::set_unsupported_features(PackedStringArray p_featur
 				if (p_features[i] == "3.x") {
 					version_match_type = VersionMatchType::PROJECT_USES_OLDER_MAJOR;
 					String project_version_tooltip_text = TTR("This project was last edited in a different Godot version: ") + p_features[i] + "\n";
-					project_version_tooltip_text += vformat(TTR("Opening it will upgrade it to Godot %s.%s."), GODOT_VERSION_MAJOR, GODOT_VERSION_MINOR) + "\n";
+					project_version_tooltip_text += vformat(TTR("Opening it will upgrade it to Godot %s.%s."), VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) + "\n";
 					project_different_version->set_focus_mode(FOCUS_ACCESSIBILITY);
 					project_different_version->set_tooltip_text(project_version_tooltip_text);
 					project_different_version->show();

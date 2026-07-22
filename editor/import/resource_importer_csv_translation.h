@@ -33,7 +33,7 @@
 #include "core/io/resource_importer.h"
 
 class ResourceImporterCSVTranslation : public ResourceImporter {
-	GDCLASS(ResourceImporterCSVTranslation, ResourceImporter);
+	VLTRCLASS(ResourceImporterCSVTranslation, ResourceImporter);
 
 public:
 	virtual String get_importer_name() const override;

@@ -34,7 +34,7 @@
 #include "scene/resources/label_settings.h"
 
 class Label : public Control {
-	GDCLASS(Label, Control);
+	VLTRCLASS(Label, Control);
 
 private:
 	HorizontalAlignment horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT;

@@ -33,7 +33,7 @@
 #include "scene/gui/option_button.h"
 
 class OpenXRSelectRuntime : public OptionButton {
-	GDCLASS(OpenXRSelectRuntime, OptionButton);
+	VLTRCLASS(OpenXRSelectRuntime, OptionButton);
 
 public:
 	OpenXRSelectRuntime();

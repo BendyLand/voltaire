@@ -39,7 +39,7 @@ class EditorVariantTypePopupMenu;
 class MarginContainer;
 
 class EditorPropertyArrayObject : public RefCounted {
-	GDCLASS(EditorPropertyArrayObject, RefCounted);
+	VLTRCLASS(EditorPropertyArrayObject, RefCounted);
 
 	Variant array;
 
@@ -57,7 +57,7 @@ public:
 };
 
 class EditorPropertyDictionaryObject : public RefCounted {
-	GDCLASS(EditorPropertyDictionaryObject, RefCounted);
+	VLTRCLASS(EditorPropertyDictionaryObject, RefCounted);
 
 	Variant new_item_key;
 	Variant new_item_value;
@@ -90,7 +90,7 @@ public:
 };
 
 class EditorPropertyArray : public EditorProperty {
-	GDCLASS(EditorPropertyArray, EditorProperty);
+	VLTRCLASS(EditorPropertyArray, EditorProperty);
 
 	struct Slot {
 		Ref<EditorPropertyArrayObject> object;
@@ -179,7 +179,7 @@ public:
 };
 
 class EditorPropertyDictionary : public EditorProperty {
-	GDCLASS(EditorPropertyDictionary, EditorProperty);
+	VLTRCLASS(EditorPropertyDictionary, EditorProperty);
 
 	struct Slot {
 		Ref<EditorPropertyDictionaryObject> object;
@@ -277,7 +277,7 @@ public:
 };
 
 class EditorPropertyLocalizableString : public EditorProperty {
-	GDCLASS(EditorPropertyLocalizableString, EditorProperty);
+	VLTRCLASS(EditorPropertyLocalizableString, EditorProperty);
 
 	EditorLocaleDialog *locale_select = nullptr;
 

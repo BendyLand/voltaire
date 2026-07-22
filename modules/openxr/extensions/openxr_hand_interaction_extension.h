@@ -52,7 +52,7 @@
 class OpenXRInteractionProfileMetadata;
 
 class OpenXRHandInteractionExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRHandInteractionExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRHandInteractionExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

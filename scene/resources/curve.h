@@ -36,7 +36,7 @@
 
 // y(x) curve
 class Curve : public Resource {
-	GDCLASS(Curve, Resource);
+	VLTRCLASS(Curve, Resource);
 
 public:
 	static const char *SIGNAL_RANGE_CHANGED;
@@ -178,7 +178,7 @@ private:
 VARIANT_ENUM_CAST(Curve::TangentMode)
 
 class Curve2D : public Resource {
-	GDCLASS(Curve2D, Resource);
+	VLTRCLASS(Curve2D, Resource);
 
 	struct Point {
 		Vector2 in;
@@ -271,7 +271,7 @@ public:
 };
 
 class Curve3D : public Resource {
-	GDCLASS(Curve3D, Resource);
+	VLTRCLASS(Curve3D, Resource);
 
 	struct Point {
 		Vector3 in;

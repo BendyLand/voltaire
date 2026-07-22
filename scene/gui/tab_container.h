@@ -39,7 +39,7 @@ class HBoxContainer;
 class Popup;
 
 class TabContainer : public Container {
-	GDCLASS(TabContainer, Container);
+	VLTRCLASS(TabContainer, Container);
 
 public:
 	enum TabPosition {

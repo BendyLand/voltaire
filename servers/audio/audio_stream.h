@@ -40,7 +40,7 @@
 class AudioStream;
 
 class AudioSamplePlayback : public RefCounted {
-	GDCLASS(AudioSamplePlayback, RefCounted);
+	VLTRCLASS(AudioSamplePlayback, RefCounted);
 
 public:
 	Ref<AudioStream> stream;
@@ -53,7 +53,7 @@ public:
 };
 
 class AudioSample : public RefCounted {
-	GDCLASS(AudioSample, RefCounted)
+	VLTRCLASS(AudioSample, RefCounted)
 
 public:
 	enum LoopMode {
@@ -75,21 +75,21 @@ public:
 ///////////
 
 class AudioStreamPlayback : public RefCounted {
-	GDCLASS(AudioStreamPlayback, RefCounted);
+	VLTRCLASS(AudioStreamPlayback, RefCounted);
 
 protected:
 	static void _bind_methods();
 	PackedVector2Array _mix_audio_bind(float p_rate_scale, int p_frames);
-	GDVIRTUAL1_REQUIRED(_start, double)
-	GDVIRTUAL0_REQUIRED(_stop)
-	GDVIRTUAL0RC_REQUIRED(bool, _is_playing)
-	GDVIRTUAL0RC(int, _get_loop_count)
-	GDVIRTUAL0RC_REQUIRED(double, _get_playback_position)
-	GDVIRTUAL1(_seek, double)
-	GDVIRTUAL3R_REQUIRED(int, _mix, GDExtensionPtr<AudioFrame>, float, int)
-	GDVIRTUAL0(_tag_used_streams)
-	GDVIRTUAL2(_set_parameter, const StringName &, const Variant &)
-	GDVIRTUAL1RC(Variant, _get_parameter, const StringName &)
+	VLTRVIRTUAL1_REQUIRED(_start, double)
+	VLTRVIRTUAL0_REQUIRED(_stop)
+	VLTRVIRTUAL0RC_REQUIRED(bool, _is_playing)
+	VLTRVIRTUAL0RC(int, _get_loop_count)
+	VLTRVIRTUAL0RC_REQUIRED(double, _get_playback_position)
+	VLTRVIRTUAL1(_seek, double)
+	VLTRVIRTUAL3R_REQUIRED(int, _mix, GDExtensionPtr<AudioFrame>, float, int)
+	VLTRVIRTUAL0(_tag_used_streams)
+	VLTRVIRTUAL2(_set_parameter, const StringName &, const Variant &)
+	VLTRVIRTUAL1RC(Variant, _get_parameter, const StringName &)
 
 public:
 	virtual void start(double p_from_pos = 0.0);
@@ -123,7 +123,7 @@ public:
 };
 
 class AudioStreamPlaybackResampled : public AudioStreamPlayback {
-	GDCLASS(AudioStreamPlaybackResampled, AudioStreamPlayback);
+	VLTRCLASS(AudioStreamPlaybackResampled, AudioStreamPlayback);
 
 	enum {
 		FP_BITS = 16, //fixed point used for resampling
@@ -143,8 +143,8 @@ protected:
 	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames);
 	virtual float get_stream_sampling_rate();
 
-	GDVIRTUAL2R_REQUIRED(int, _mix_resampled, GDExtensionPtr<AudioFrame>, int)
-	GDVIRTUAL0RC_REQUIRED(float, _get_stream_sampling_rate)
+	VLTRVIRTUAL2R_REQUIRED(int, _mix_resampled, GDExtensionPtr<AudioFrame>, int)
+	VLTRVIRTUAL0RC_REQUIRED(float, _get_stream_sampling_rate)
 
 	static void _bind_methods();
 
@@ -155,7 +155,7 @@ public:
 };
 
 class AudioStream : public Resource {
-	GDCLASS(AudioStream, Resource);
+	VLTRCLASS(AudioStream, Resource);
 	OBJ_SAVE_TYPE(AudioStream); // Saves derived classes with common type so they can be interchanged.
 
 	enum {
@@ -169,18 +169,18 @@ class AudioStream : public Resource {
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL0RC_REQUIRED(Ref<AudioStreamPlayback>, _instantiate_playback)
+	VLTRVIRTUAL0RC_REQUIRED(Ref<AudioStreamPlayback>, _instantiate_playback)
 #ifndef DISABLE_DEPRECATED
-	GDVIRTUAL0RC(String, _get_stream_name)
+	VLTRVIRTUAL0RC(String, _get_stream_name)
 #endif
-	GDVIRTUAL0RC(double, _get_length)
-	GDVIRTUAL0RC(bool, _is_monophonic)
-	GDVIRTUAL0RC(double, _get_bpm)
-	GDVIRTUAL0RC(bool, _has_loop)
-	GDVIRTUAL0RC(int, _get_bar_beats)
-	GDVIRTUAL0RC(int, _get_beat_count)
-	GDVIRTUAL0RC(Dictionary, _get_tags);
-	GDVIRTUAL0RC(TypedArray<Dictionary>, _get_parameter_list)
+	VLTRVIRTUAL0RC(double, _get_length)
+	VLTRVIRTUAL0RC(bool, _is_monophonic)
+	VLTRVIRTUAL0RC(double, _get_bpm)
+	VLTRVIRTUAL0RC(bool, _has_loop)
+	VLTRVIRTUAL0RC(int, _get_bar_beats)
+	VLTRVIRTUAL0RC(int, _get_beat_count)
+	VLTRVIRTUAL0RC(Dictionary, _get_tags);
+	VLTRVIRTUAL0RC(TypedArray<Dictionary>, _get_parameter_list)
 
 public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback();
@@ -221,7 +221,7 @@ public:
 class AudioStreamPlaybackMicrophone;
 
 class AudioStreamMicrophone : public AudioStream {
-	GDCLASS(AudioStreamMicrophone, AudioStream);
+	VLTRCLASS(AudioStreamMicrophone, AudioStream);
 	friend class AudioStreamPlaybackMicrophone;
 
 	HashSet<AudioStreamPlaybackMicrophone *> playbacks;
@@ -235,7 +235,7 @@ public:
 };
 
 class AudioStreamPlaybackMicrophone : public AudioStreamPlaybackResampled {
-	GDCLASS(AudioStreamPlaybackMicrophone, AudioStreamPlaybackResampled);
+	VLTRCLASS(AudioStreamPlaybackMicrophone, AudioStreamPlaybackResampled);
 	friend class AudioStreamMicrophone;
 
 	bool active = false;
@@ -270,7 +270,7 @@ public:
 class AudioStreamPlaybackRandomizer;
 
 class AudioStreamRandomizer : public AudioStream {
-	GDCLASS(AudioStreamRandomizer, AudioStream);
+	VLTRCLASS(AudioStreamRandomizer, AudioStream);
 
 public:
 	enum PlaybackMode {
@@ -347,7 +347,7 @@ public:
 };
 
 class AudioStreamPlaybackRandomizer : public AudioStreamPlayback {
-	GDCLASS(AudioStreamPlaybackRandomizer, AudioStreamPlayback);
+	VLTRCLASS(AudioStreamPlaybackRandomizer, AudioStreamPlayback);
 	friend class AudioStreamRandomizer;
 
 	Ref<AudioStreamRandomizer> randomizer;
