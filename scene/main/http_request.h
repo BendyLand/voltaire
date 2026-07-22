@@ -39,7 +39,7 @@ class Timer;
 class StreamPeerGZIP;
 
 class HTTPRequest : public Node {
-	GDCLASS(HTTPRequest, Node);
+	VLTRCLASS(HTTPRequest, Node);
 
 public:
 	enum Result {

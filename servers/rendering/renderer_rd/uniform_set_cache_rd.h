@@ -35,7 +35,7 @@
 #include "servers/rendering/rendering_device.h"
 
 class UniformSetCacheRD : public Object {
-	GDCLASS(UniformSetCacheRD, Object)
+	VLTRCLASS(UniformSetCacheRD, Object)
 
 	struct Cache {
 		Cache *prev = nullptr;

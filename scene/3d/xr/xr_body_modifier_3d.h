@@ -41,7 +41,7 @@ class Skeleton3D;
  */
 
 class XRBodyModifier3D : public SkeletonModifier3D {
-	GDCLASS(XRBodyModifier3D, SkeletonModifier3D);
+	VLTRCLASS(XRBodyModifier3D, SkeletonModifier3D);
 
 public:
 	enum BodyUpdate {

@@ -33,7 +33,7 @@
 #include "scene/gui/range.h"
 
 class ScrollBar : public Range {
-	GDCLASS(ScrollBar, Range);
+	VLTRCLASS(ScrollBar, Range);
 
 	enum HighlightStatus {
 		HIGHLIGHT_NONE,
@@ -134,7 +134,7 @@ public:
 };
 
 class HScrollBar : public ScrollBar {
-	GDCLASS(HScrollBar, ScrollBar);
+	VLTRCLASS(HScrollBar, ScrollBar);
 
 protected:
 	static void _bind_methods();
@@ -145,7 +145,7 @@ public:
 };
 
 class VScrollBar : public ScrollBar {
-	GDCLASS(VScrollBar, ScrollBar);
+	VLTRCLASS(VScrollBar, ScrollBar);
 
 protected:
 	static void _bind_methods();

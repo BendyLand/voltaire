@@ -34,7 +34,7 @@
 #include "servers/physics_3d/physics_server_3d_types.h"
 
 class PhysicsTestMotionParameters3D : public RefCounted {
-	GDCLASS(PhysicsTestMotionParameters3D, RefCounted);
+	VLTRCLASS(PhysicsTestMotionParameters3D, RefCounted);
 
 	PS3DT::MotionParameters parameters;
 

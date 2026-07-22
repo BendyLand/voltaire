@@ -54,7 +54,7 @@ enum TestDuplicateMode {
 };
 
 class DuplicateGuineaPigData : public Object {
-	GDSOFTCLASS(DuplicateGuineaPigData, Object)
+	VLTRSOFTCLASS(DuplicateGuineaPigData, Object)
 
 public:
 	const Variant SENTINEL_1 = "A";
@@ -255,7 +255,7 @@ public:
 
 #define DEFINE_DUPLICATE_GUINEA_PIG(m_class_name, m_property_usage) \
 	class m_class_name : public Resource { \
-		GDCLASS(m_class_name, Resource) \
+		VLTRCLASS(m_class_name, Resource) \
 \
 		DuplicateGuineaPigData data; \
 \

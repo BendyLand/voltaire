@@ -41,7 +41,7 @@ class MeshInstance3D;
 class StandardMaterial3D;
 
 class Polygon3DEditor : public HBoxContainer {
-	GDCLASS(Polygon3DEditor, HBoxContainer);
+	VLTRCLASS(Polygon3DEditor, HBoxContainer);
 
 	enum Mode {
 		MODE_CREATE,
@@ -95,7 +95,7 @@ public:
 };
 
 class Polygon3DEditorPlugin : public EditorPlugin {
-	GDCLASS(Polygon3DEditorPlugin, EditorPlugin);
+	VLTRCLASS(Polygon3DEditorPlugin, EditorPlugin);
 
 	Polygon3DEditor *polygon_editor = nullptr;
 

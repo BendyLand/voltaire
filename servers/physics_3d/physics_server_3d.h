@@ -49,7 +49,7 @@ class PhysicsTestMotionParameters3D;
 class PhysicsTestMotionResult3D;
 
 class PhysicsServer3D : public Object {
-	GDCLASS(PhysicsServer3D, Object);
+	VLTRCLASS(PhysicsServer3D, Object);
 
 	static PhysicsServer3D *singleton;
 
@@ -396,7 +396,7 @@ public:
 };
 
 class PhysicsServer3DManager : public Object {
-	GDCLASS(PhysicsServer3DManager, Object);
+	VLTRCLASS(PhysicsServer3DManager, Object);
 
 	static PhysicsServer3DManager *singleton;
 

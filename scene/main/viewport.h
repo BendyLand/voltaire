@@ -54,7 +54,7 @@ class World3D;
 #endif // _3D_DISABLED
 
 class ViewportTexture : public Texture2D {
-	GDCLASS(ViewportTexture, Texture2D);
+	VLTRCLASS(ViewportTexture, Texture2D);
 
 	NodePath path;
 
@@ -94,7 +94,7 @@ public:
 };
 
 class Viewport : public Node {
-	GDCLASS(Viewport, Node);
+	VLTRCLASS(Viewport, Node);
 
 public:
 	enum Scaling3DMode {
@@ -898,7 +898,7 @@ public:
 };
 
 class SubViewport : public Viewport {
-	GDCLASS(SubViewport, Viewport);
+	VLTRCLASS(SubViewport, Viewport);
 
 public:
 	enum ClearMode {

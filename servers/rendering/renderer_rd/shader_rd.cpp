@@ -166,9 +166,9 @@ void ShaderRD::setup(const char *p_vertex_code, const char *p_fragment_code, con
 
 	StringBuilder tohash;
 	tohash.append("[GodotVersionNumber]");
-	tohash.append(GODOT_VERSION_NUMBER);
+	tohash.append(VLTR_VERSION_NUMBER);
 	tohash.append("[GodotVersionHash]");
-	tohash.append(GODOT_VERSION_HASH);
+	tohash.append(VLTR_VERSION_HASH);
 	tohash.append("[Vertex]");
 	tohash.append(p_vertex_code ? p_vertex_code : "");
 	tohash.append("[Fragment]");
@@ -203,9 +203,9 @@ void ShaderRD::setup_raytracing(const char *p_raygen_code, const char *p_any_hit
 
 	StringBuilder tohash;
 	tohash.append("[GodotVersionNumber]");
-	tohash.append(GODOT_VERSION_NUMBER);
+	tohash.append(VLTR_VERSION_NUMBER);
 	tohash.append("[GodotVersionHash]");
-	tohash.append(GODOT_VERSION_HASH);
+	tohash.append(VLTR_VERSION_HASH);
 	tohash.append("[Raygen]");
 	tohash.append(p_raygen_code ? p_raygen_code : "");
 	tohash.append("[AnyHit]");

@@ -39,7 +39,7 @@ class Tree;
 class TreeItem;
 
 class PropertySelector : public ConfirmationDialog {
-	GDCLASS(PropertySelector, ConfirmationDialog);
+	VLTRCLASS(PropertySelector, ConfirmationDialog);
 
 	FilterLineEdit *search_box = nullptr;
 	Tree *search_options = nullptr;

@@ -44,7 +44,7 @@ class TextureRect;
 class StyleBoxFlat;
 
 class GDShaderSyntaxHighlighter : public CodeHighlighter {
-	GDCLASS(GDShaderSyntaxHighlighter, CodeHighlighter)
+	VLTRCLASS(GDShaderSyntaxHighlighter, CodeHighlighter)
 
 private:
 	Vector<Point2i> disabled_branch_regions;
@@ -59,7 +59,7 @@ public:
 };
 
 class TextShaderPreview : public VBoxContainer {
-	GDCLASS(TextShaderPreview, VBoxContainer);
+	VLTRCLASS(TextShaderPreview, VBoxContainer);
 
 	static constexpr int BUTTON_SIZE = 32;
 
@@ -119,7 +119,7 @@ public:
 };
 
 class TextShaderPreviewLineLayer : public Control {
-	GDCLASS(TextShaderPreviewLineLayer, Control);
+	VLTRCLASS(TextShaderPreviewLineLayer, Control);
 
 private:
 	Color line_color;
@@ -139,7 +139,7 @@ public:
 };
 
 class ShaderTextEditor : public CodeTextEditor {
-	GDCLASS(ShaderTextEditor, CodeTextEditor);
+	VLTRCLASS(ShaderTextEditor, CodeTextEditor);
 
 	Color marked_line_color = Color(1, 1, 1);
 
@@ -205,7 +205,7 @@ public:
 };
 
 class TextShaderEditor : public ShaderEditor {
-	GDCLASS(TextShaderEditor, ShaderEditor);
+	VLTRCLASS(TextShaderEditor, ShaderEditor);
 
 	enum {
 		EDIT_UNDO,

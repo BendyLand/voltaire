@@ -41,7 +41,7 @@ class ItemList;
 class OptionButton;
 
 class ScenePaint2DEditor : public Control {
-	GDCLASS(ScenePaint2DEditor, Control);
+	VLTRCLASS(ScenePaint2DEditor, Control);
 
 	inline static ScenePaint2DEditor *singleton = nullptr;
 
@@ -187,7 +187,7 @@ public:
 };
 
 class ScenePaint2DEditorPlugin : public EditorPlugin {
-	GDCLASS(ScenePaint2DEditorPlugin, EditorPlugin);
+	VLTRCLASS(ScenePaint2DEditorPlugin, EditorPlugin);
 
 	ScenePaint2DEditor *scene_paint_2d_editor = nullptr;
 

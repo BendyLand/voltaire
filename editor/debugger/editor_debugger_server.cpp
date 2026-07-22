@@ -39,7 +39,7 @@
 
 template <typename T>
 class EditorDebuggerServerSocket : public EditorDebuggerServer {
-	GDSOFTCLASS(EditorDebuggerServerSocket, EditorDebuggerServer);
+	VLTRSOFTCLASS(EditorDebuggerServerSocket, EditorDebuggerServer);
 
 protected:
 	Ref<T> server;

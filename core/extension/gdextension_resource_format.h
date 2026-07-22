@@ -34,7 +34,7 @@
 #include "core/io/resource_loader.h"
 
 class GDExtensionResourceLoader : public ResourceFormatLoader {
-	GDSOFTCLASS(GDExtensionResourceLoader, ResourceFormatLoader);
+	VLTRSOFTCLASS(GDExtensionResourceLoader, ResourceFormatLoader);
 
 public:
 	static Error load_gdextension_resource(const String &p_path, Ref<GDExtension> &p_extension);

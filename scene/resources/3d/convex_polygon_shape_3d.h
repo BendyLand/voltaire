@@ -35,7 +35,7 @@
 class ArrayMesh;
 
 class ConvexPolygonShape3D : public Shape3D {
-	GDCLASS(ConvexPolygonShape3D, Shape3D);
+	VLTRCLASS(ConvexPolygonShape3D, Shape3D);
 	Vector<Vector3> points;
 
 protected:

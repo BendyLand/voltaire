@@ -38,7 +38,7 @@
 #include <sys/un.h>
 
 class NetSocketUnix : public NetSocket {
-	GDSOFTCLASS(NetSocketUnix, NetSocket);
+	VLTRSOFTCLASS(NetSocketUnix, NetSocket);
 
 private:
 	int _sock = -1;

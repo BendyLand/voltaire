@@ -38,7 +38,7 @@
 class EditorSelectionHistory;
 
 class EditorObjectSelector : public Button {
-	GDCLASS(EditorObjectSelector, Button);
+	VLTRCLASS(EditorObjectSelector, Button);
 
 	EditorSelectionHistory *history = nullptr;
 

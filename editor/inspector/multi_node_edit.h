@@ -33,7 +33,7 @@
 #include "core/object/ref_counted.h"
 
 class MultiNodeEdit : public RefCounted {
-	GDCLASS(MultiNodeEdit, RefCounted);
+	VLTRCLASS(MultiNodeEdit, RefCounted);
 
 	friend class EditorQuickOpenDialog;
 

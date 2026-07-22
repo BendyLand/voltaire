@@ -45,7 +45,7 @@ class JavaObject;
 
 // OpenXRCompositionLayerExtension enables the extensions related to this functionality
 class OpenXRCompositionLayerExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRCompositionLayerExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRCompositionLayerExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

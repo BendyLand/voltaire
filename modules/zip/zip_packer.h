@@ -36,7 +36,7 @@
 #include <thirdparty/minizip/zip.h>
 
 class ZIPPacker : public RefCounted {
-	GDCLASS(ZIPPacker, RefCounted);
+	VLTRCLASS(ZIPPacker, RefCounted);
 
 	Ref<FileAccess> fa;
 	zipFile zf = nullptr;

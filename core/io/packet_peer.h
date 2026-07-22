@@ -37,7 +37,7 @@
 #include "core/variant/native_ptr.h"
 
 class PacketPeer : public RefCounted {
-	GDCLASS(PacketPeer, RefCounted);
+	VLTRCLASS(PacketPeer, RefCounted);
 
 	Variant _bnd_get_var(bool p_allow_objects = false);
 
@@ -72,24 +72,24 @@ public:
 };
 
 class PacketPeerExtension : public PacketPeer {
-	GDCLASS(PacketPeerExtension, PacketPeer);
+	VLTRCLASS(PacketPeerExtension, PacketPeer);
 
 protected:
 	static void _bind_methods();
 
 public:
 	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override; ///< buffer is GONE after next get_packet
-	GDVIRTUAL2R(Error, _get_packet, GDExtensionPtr<const uint8_t *>, GDExtensionPtr<int>);
+	VLTRVIRTUAL2R(Error, _get_packet, GDExtensionPtr<const uint8_t *>, GDExtensionPtr<int>);
 
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
-	GDVIRTUAL2R(Error, _put_packet, GDExtensionPtr<const uint8_t>, int);
+	VLTRVIRTUAL2R(Error, _put_packet, GDExtensionPtr<const uint8_t>, int);
 
 	EXBIND0RC(int, get_available_packet_count);
 	EXBIND0RC(int, get_max_packet_size);
 };
 
 class PacketPeerStream : public PacketPeer {
-	GDCLASS(PacketPeerStream, PacketPeer);
+	VLTRCLASS(PacketPeerStream, PacketPeer);
 
 	//the way the buffers work sucks, will change later
 

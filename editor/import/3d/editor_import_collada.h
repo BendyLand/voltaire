@@ -33,7 +33,7 @@
 #include "editor/import/3d/resource_importer_scene.h"
 
 class EditorSceneFormatImporterCollada : public EditorSceneFormatImporter {
-	GDCLASS(EditorSceneFormatImporterCollada, EditorSceneFormatImporter);
+	VLTRCLASS(EditorSceneFormatImporterCollada, EditorSceneFormatImporter);
 
 public:
 	virtual void get_extensions(List<String> *r_extensions) const override;

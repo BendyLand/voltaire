@@ -33,7 +33,7 @@
 #include "scene/gui/container.h"
 
 class GridContainer : public Container {
-	GDCLASS(GridContainer, Container);
+	VLTRCLASS(GridContainer, Container);
 
 	int columns = 1;
 

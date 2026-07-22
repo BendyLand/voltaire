@@ -51,7 +51,7 @@ class ArrayMesh;
 #endif
 
 class RuntimeNodeSelect : public Object {
-	GDCLASS(RuntimeNodeSelect, Object);
+	VLTRCLASS(RuntimeNodeSelect, Object);
 
 public:
 	enum NodeType {

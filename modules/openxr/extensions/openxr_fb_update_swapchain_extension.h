@@ -40,7 +40,7 @@
 #include "openxr_extension_wrapper.h"
 
 class OpenXRFBUpdateSwapchainExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRFBUpdateSwapchainExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRFBUpdateSwapchainExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

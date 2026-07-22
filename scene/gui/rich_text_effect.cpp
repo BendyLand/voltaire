@@ -41,7 +41,7 @@ CharFXTransform::~CharFXTransform() {
 }
 
 void RichTextEffect::_bind_methods(){
-	GDVIRTUAL_BIND(_process_custom_fx, "char_fx")
+	VLTRVIRTUAL_BIND(_process_custom_fx, "char_fx")
 }
 
 Variant RichTextEffect::get_bbcode() const {
@@ -57,7 +57,7 @@ Variant RichTextEffect::get_bbcode() const {
 
 bool RichTextEffect::_process_effect_impl(Ref<CharFXTransform> p_cfx) {
 	bool return_value = false;
-	GDVIRTUAL_CALL(_process_custom_fx, p_cfx, return_value);
+	VLTRVIRTUAL_CALL(_process_custom_fx, p_cfx, return_value);
 	return return_value;
 }
 

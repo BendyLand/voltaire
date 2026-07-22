@@ -37,7 +37,7 @@ class Texture;
 class Texture2D;
 
 class Shader : public Resource {
-	GDCLASS(Shader, Resource);
+	VLTRCLASS(Shader, Resource);
 	OBJ_SAVE_TYPE(Shader);
 
 public:

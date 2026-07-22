@@ -43,7 +43,7 @@ class MenuButton;
 class PanelContainer;
 
 class EditorRunBar : public MarginContainer {
-	GDCLASS(EditorRunBar, MarginContainer);
+	VLTRCLASS(EditorRunBar, MarginContainer);
 
 	static EditorRunBar *singleton;
 

@@ -64,7 +64,7 @@
 #define RB_TEX_BACK_DEPTH SNAME("back_depth")
 
 class RenderSceneBuffersRD : public RenderSceneBuffers {
-	GDCLASS(RenderSceneBuffersRD, RenderSceneBuffers);
+	VLTRCLASS(RenderSceneBuffersRD, RenderSceneBuffers);
 
 private:
 	bool can_be_storage = true;

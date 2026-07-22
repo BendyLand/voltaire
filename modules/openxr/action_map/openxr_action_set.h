@@ -35,7 +35,7 @@
 #include "core/io/resource.h"
 
 class OpenXRActionSet : public Resource {
-	GDCLASS(OpenXRActionSet, Resource);
+	VLTRCLASS(OpenXRActionSet, Resource);
 
 private:
 	String localized_name;

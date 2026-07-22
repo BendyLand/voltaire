@@ -1852,7 +1852,7 @@ Size2 Control::get_custom_maximum_size() const {
 Size2 Control::get_maximum_size() const {
 	ERR_READ_THREAD_GUARD_V(Size2());
 	Vector2 ms = Vector2(-1, -1);
-	GDVIRTUAL_CALL(_get_maximum_size, ms);
+	VLTRVIRTUAL_CALL(_get_maximum_size, ms);
 	return ms;
 }
 
@@ -1974,7 +1974,7 @@ void Control::set_block_minimum_size_adjust(bool p_block) {
 Size2 Control::get_minimum_size() const {
 	ERR_READ_THREAD_GUARD_V(Size2());
 	Vector2 ms;
-	GDVIRTUAL_CALL(_get_minimum_size, ms);
+	VLTRVIRTUAL_CALL(_get_minimum_size, ms);
 	return ms;
 }
 
@@ -2578,7 +2578,7 @@ void Control::_call_gui_input(const Ref<InputEvent> &p_event) {
 	}
 
 	if (p_event->get_device() != InputEvent::DEVICE_ID_INTERNAL) {
-		GDVIRTUAL_CALL(_gui_input, p_event);
+		VLTRVIRTUAL_CALL(_gui_input, p_event);
 	}
 	if (!is_inside_tree() || get_viewport()->is_input_handled()) {
 		return; // Input was handled, abort.
@@ -2599,7 +2599,7 @@ void Control::accept_event() {
 bool Control::has_point(const Point2 &p_point) const {
 	ERR_READ_THREAD_GUARD_V(false);
 	bool ret;
-	if (GDVIRTUAL_CALL(_has_point, p_point, ret)) {
+	if (VLTRVIRTUAL_CALL(_has_point, p_point, ret)) {
 		return ret;
 	}
 	return Rect2(Point2(), get_size()).has_point(p_point);
@@ -2760,7 +2760,7 @@ Variant Control::get_drag_data(const Point2 &p_point) {
 		return ret;
 	}
 
-	GDVIRTUAL_CALL(_get_drag_data, p_point, ret);
+	VLTRVIRTUAL_CALL(_get_drag_data, p_point, ret);
 	return ret;
 }
 
@@ -2779,7 +2779,7 @@ bool Control::can_drop_data(const Point2 &p_point, const Variant &p_data) const 
 	}
 
 	bool ret = false;
-	GDVIRTUAL_CALL(_can_drop_data, p_point, p_data, ret);
+	VLTRVIRTUAL_CALL(_can_drop_data, p_point, p_data, ret);
 	return ret;
 }
 
@@ -2797,7 +2797,7 @@ void Control::drop_data(const Point2 &p_point, const Variant &p_data) {
 		return;
 	}
 
-	GDVIRTUAL_CALL(_drop_data, p_point, p_data);
+	VLTRVIRTUAL_CALL(_drop_data, p_point, p_data);
 }
 
 void Control::force_drag(const Variant &p_data, Control *p_control) {
@@ -2843,7 +2843,7 @@ void Control::accessibility_drop() {
 
 String Control::get_accessibility_container_name(const Node *p_node) const {
 	String ret;
-	if (GDVIRTUAL_CALL(_get_accessibility_container_name, p_node, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_accessibility_container_name, p_node, ret)) {
 	} else if (data.parent_control) {
 		ret = data.parent_control->get_accessibility_container_name(this);
 	}
@@ -3587,7 +3587,7 @@ Control::CursorShape Control::get_default_cursor_shape() const {
 Control::CursorShape Control::get_cursor_shape(const Point2 &p_pos) const {
 	ERR_READ_THREAD_GUARD_V(CURSOR_ARROW);
 	int ret;
-	if (GDVIRTUAL_CALL(_get_cursor_shape, p_pos, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_cursor_shape, p_pos, ret)) {
 		return (CursorShape)ret;
 	}
 	return data.default_cursor;
@@ -4215,7 +4215,7 @@ TypedArray<Vector3i> Control::structured_text_parser(TextServer::StructuredTextP
 	ERR_READ_THREAD_GUARD_V(TypedArray<Vector3i>());
 	if (p_parser_type == TextServer::STRUCTURED_TEXT_CUSTOM) {
 		TypedArray<Vector3i> ret;
-		GDVIRTUAL_CALL(_structured_text_parser, p_args, p_text, ret);
+		VLTRVIRTUAL_CALL(_structured_text_parser, p_args, p_text, ret);
 		return ret;
 	} else {
 		return TS->parse_structured_text(p_parser_type, p_args, p_text);
@@ -4358,7 +4358,7 @@ Node::AutoTranslateMode Control::get_tooltip_auto_translate_mode() const {
 Node::AutoTranslateMode Control::get_tooltip_auto_translate_mode_at(const Vector2 &p_at) const {
 	ERR_READ_THREAD_GUARD_V(AUTO_TRANSLATE_MODE_INHERIT);
 	AutoTranslateMode auto_translating;
-	if (GDVIRTUAL_CALL(_get_tooltip_auto_translate_mode_at, p_at, auto_translating)) {
+	if (VLTRVIRTUAL_CALL(_get_tooltip_auto_translate_mode_at, p_at, auto_translating)) {
 		return auto_translating;
 	}
 	return get_tooltip_auto_translate_mode();
@@ -4397,7 +4397,7 @@ StringName Control::_get_translation_context_with_override(const StringName &p_c
 String Control::get_tooltip(const Point2 &p_pos) const {
 	ERR_READ_THREAD_GUARD_V(String());
 	String ret;
-	if (GDVIRTUAL_CALL(_get_tooltip, p_pos, ret)) {
+	if (VLTRVIRTUAL_CALL(_get_tooltip, p_pos, ret)) {
 		return ret;
 	}
 	return data.tooltip;
@@ -4406,14 +4406,14 @@ String Control::get_tooltip(const Point2 &p_pos) const {
 String Control::accessibility_get_contextual_info() const {
 	ERR_READ_THREAD_GUARD_V(String());
 	String ret;
-	GDVIRTUAL_CALL(_accessibility_get_contextual_info, ret);
+	VLTRVIRTUAL_CALL(_accessibility_get_contextual_info, ret);
 	return ret;
 }
 
 Control *Control::make_custom_tooltip(const String &p_text) const {
 	ERR_READ_THREAD_GUARD_V(nullptr);
 	Object *ret = nullptr;
-	GDVIRTUAL_CALL(_make_custom_tooltip, p_text, ret);
+	VLTRVIRTUAL_CALL(_make_custom_tooltip, p_text, ret);
 	return Object::cast_to<Control>(ret);
 }
 
@@ -5192,24 +5192,24 @@ void Control::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("_desired_size_changed"));
 	ADD_SIGNAL(MethodInfo("theme_changed"));
 
-	GDVIRTUAL_BIND(_has_point, "point");
-	GDVIRTUAL_BIND(_structured_text_parser, "args", "text");
-	GDVIRTUAL_BIND(_get_maximum_size);
-	GDVIRTUAL_BIND(_get_minimum_size);
-	GDVIRTUAL_BIND(_get_tooltip, "at_position");
-	GDVIRTUAL_BIND(_get_tooltip_auto_translate_mode_at, "at_position");
+	VLTRVIRTUAL_BIND(_has_point, "point");
+	VLTRVIRTUAL_BIND(_structured_text_parser, "args", "text");
+	VLTRVIRTUAL_BIND(_get_maximum_size);
+	VLTRVIRTUAL_BIND(_get_minimum_size);
+	VLTRVIRTUAL_BIND(_get_tooltip, "at_position");
+	VLTRVIRTUAL_BIND(_get_tooltip_auto_translate_mode_at, "at_position");
 
-	GDVIRTUAL_BIND(_get_drag_data, "at_position");
-	GDVIRTUAL_BIND(_can_drop_data, "at_position", "data");
-	GDVIRTUAL_BIND(_drop_data, "at_position", "data");
-	GDVIRTUAL_BIND(_make_custom_tooltip, "for_text");
+	VLTRVIRTUAL_BIND(_get_drag_data, "at_position");
+	VLTRVIRTUAL_BIND(_can_drop_data, "at_position", "data");
+	VLTRVIRTUAL_BIND(_drop_data, "at_position", "data");
+	VLTRVIRTUAL_BIND(_make_custom_tooltip, "for_text");
 
-	GDVIRTUAL_BIND(_get_cursor_shape, "at_position");
+	VLTRVIRTUAL_BIND(_get_cursor_shape, "at_position");
 
-	GDVIRTUAL_BIND(_accessibility_get_contextual_info);
-	GDVIRTUAL_BIND(_get_accessibility_container_name, "node");
+	VLTRVIRTUAL_BIND(_accessibility_get_contextual_info);
+	VLTRVIRTUAL_BIND(_get_accessibility_container_name, "node");
 
-	GDVIRTUAL_BIND(_gui_input, "event");
+	VLTRVIRTUAL_BIND(_gui_input, "event");
 }
 
 Control::Control() {

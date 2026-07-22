@@ -40,7 +40,7 @@
 class ColorChannelSelector;
 
 class Texture3DEditor : public Control {
-	GDCLASS(Texture3DEditor, Control);
+	VLTRCLASS(Texture3DEditor, Control);
 
 	struct ThemeCache {
 		Color outline_color;
@@ -91,7 +91,7 @@ public:
 };
 
 class EditorInspectorPlugin3DTexture : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPlugin3DTexture, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPlugin3DTexture, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -99,7 +99,7 @@ public:
 };
 
 class Texture3DEditorPlugin : public EditorPlugin {
-	GDCLASS(Texture3DEditorPlugin, EditorPlugin);
+	VLTRCLASS(Texture3DEditorPlugin, EditorPlugin);
 
 public:
 	virtual String get_plugin_name() const override { return "Texture3D"; }

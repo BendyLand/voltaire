@@ -53,19 +53,19 @@
 
 bool EditorResourcePreviewGenerator::handles(const String &p_type) const {
 	bool success = false;
-	GDVIRTUAL_CALL(_handles, p_type, success);
+	VLTRVIRTUAL_CALL(_handles, p_type, success);
 	return success;
 }
 
 Ref<Texture2D> EditorResourcePreviewGenerator::generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const {
 	Ref<Texture2D> preview;
-	GDVIRTUAL_CALL(_generate, p_from, p_size, p_metadata, preview);
+	VLTRVIRTUAL_CALL(_generate, p_from, p_size, p_metadata, preview);
 	return preview;
 }
 
 Ref<Texture2D> EditorResourcePreviewGenerator::generate_from_path(const String &p_path, const Size2 &p_size, Dictionary &p_metadata) const {
 	Ref<Texture2D> preview;
-	if (GDVIRTUAL_CALL(_generate_from_path, p_path, p_size, p_metadata, preview)) {
+	if (VLTRVIRTUAL_CALL(_generate_from_path, p_path, p_size, p_metadata, preview)) {
 		return preview;
 	}
 
@@ -78,22 +78,22 @@ Ref<Texture2D> EditorResourcePreviewGenerator::generate_from_path(const String &
 
 bool EditorResourcePreviewGenerator::generate_small_preview_automatically() const {
 	bool success = false;
-	GDVIRTUAL_CALL(_generate_small_preview_automatically, success);
+	VLTRVIRTUAL_CALL(_generate_small_preview_automatically, success);
 	return success;
 }
 
 bool EditorResourcePreviewGenerator::can_generate_small_preview() const {
 	bool success = false;
-	GDVIRTUAL_CALL(_can_generate_small_preview, success);
+	VLTRVIRTUAL_CALL(_can_generate_small_preview, success);
 	return success;
 }
 
 void EditorResourcePreviewGenerator::_bind_methods() {
-	GDVIRTUAL_BIND(_handles, "type");
-	GDVIRTUAL_BIND(_generate, "resource", "size", "metadata");
-	GDVIRTUAL_BIND(_generate_from_path, "path", "size", "metadata");
-	GDVIRTUAL_BIND(_generate_small_preview_automatically);
-	GDVIRTUAL_BIND(_can_generate_small_preview);
+	VLTRVIRTUAL_BIND(_handles, "type");
+	VLTRVIRTUAL_BIND(_generate, "resource", "size", "metadata");
+	VLTRVIRTUAL_BIND(_generate_from_path, "path", "size", "metadata");
+	VLTRVIRTUAL_BIND(_generate_small_preview_automatically);
+	VLTRVIRTUAL_BIND(_can_generate_small_preview);
 
 	ClassDB::bind_method(D_METHOD("request_draw_and_wait", "viewport"), &EditorResourcePreviewGenerator::request_draw_and_wait);
 }

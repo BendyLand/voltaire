@@ -33,7 +33,7 @@
 #include "core/io/resource.h"
 
 class Skin : public Resource {
-	GDCLASS(Skin, Resource)
+	VLTRCLASS(Skin, Resource)
 
 	struct Bind {
 		int bone = -1;

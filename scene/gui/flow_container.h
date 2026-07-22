@@ -33,7 +33,7 @@
 #include "scene/gui/container.h"
 
 class FlowContainer : public Container {
-	GDCLASS(FlowContainer, Container);
+	VLTRCLASS(FlowContainer, Container);
 
 public:
 	enum AlignmentMode {
@@ -99,7 +99,7 @@ public:
 };
 
 class HFlowContainer : public FlowContainer {
-	GDCLASS(HFlowContainer, FlowContainer);
+	VLTRCLASS(HFlowContainer, FlowContainer);
 
 public:
 	HFlowContainer() :
@@ -107,7 +107,7 @@ public:
 };
 
 class VFlowContainer : public FlowContainer {
-	GDCLASS(VFlowContainer, FlowContainer);
+	VLTRCLASS(VFlowContainer, FlowContainer);
 
 public:
 	VFlowContainer() :

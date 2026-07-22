@@ -35,7 +35,7 @@
 class ArrayMesh;
 
 class WorldBoundaryShape3D : public Shape3D {
-	GDCLASS(WorldBoundaryShape3D, Shape3D);
+	VLTRCLASS(WorldBoundaryShape3D, Shape3D);
 	Plane plane;
 
 protected:

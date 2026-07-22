@@ -50,9 +50,9 @@ void class_db_api_to_json(const String &p_output_file, ClassDB::APIType p_api) {
 		}
 
 		Dictionary class_dict;
-		classes_dict[t->gdtype->get_name()] = class_dict;
+		classes_dict[t->vltrtype->get_name()] = class_dict;
 
-		class_dict["inherits"] = t->gdtype->get_super_type_name();
+		class_dict["inherits"] = t->vltrtype->get_super_type_name();
 
 		{ //methods
 
@@ -121,7 +121,7 @@ void class_db_api_to_json(const String &p_output_file, ClassDB::APIType p_api) {
 
 			List<StringName> snames;
 
-			for (const KeyValue<StringName, int64_t> &F : t->gdtype->get_integer_constant_map(true)) {
+			for (const KeyValue<StringName, int64_t> &F : t->vltrtype->get_integer_constant_map(true)) {
 				snames.push_back(F.key);
 			}
 
@@ -134,7 +134,7 @@ void class_db_api_to_json(const String &p_output_file, ClassDB::APIType p_api) {
 				constants.push_back(constant_dict);
 
 				constant_dict["name"] = F;
-				constant_dict["value"] = t->gdtype->get_integer_constant_map(true)[F];
+				constant_dict["value"] = t->vltrtype->get_integer_constant_map(true)[F];
 			}
 
 			if (!constants.is_empty()) {
@@ -146,7 +146,7 @@ void class_db_api_to_json(const String &p_output_file, ClassDB::APIType p_api) {
 
 			List<StringName> snames;
 
-			for (const KeyValue<StringName, const MethodInfo *> &F : t->gdtype->get_signal_map(true)) {
+			for (const KeyValue<StringName, const MethodInfo *> &F : t->vltrtype->get_signal_map(true)) {
 				snames.push_back(F.key);
 			}
 
@@ -158,7 +158,7 @@ void class_db_api_to_json(const String &p_output_file, ClassDB::APIType p_api) {
 				Dictionary signal_dict;
 				signals.push_back(signal_dict);
 
-				const MethodInfo &mi = *t->gdtype->get_signal_map(true)[F];
+				const MethodInfo &mi = *t->vltrtype->get_signal_map(true)[F];
 				signal_dict["name"] = F;
 
 				Array arguments;

@@ -35,7 +35,7 @@
 #include "scene/gui/line_edit.h"
 
 class FBXImporterManager : public ConfirmationDialog {
-	GDCLASS(FBXImporterManager, ConfirmationDialog)
+	VLTRCLASS(FBXImporterManager, ConfirmationDialog)
 
 	bool is_importing = false;
 

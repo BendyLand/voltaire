@@ -40,7 +40,7 @@
 struct StreamingBuffer;
 
 class CameraFeedLinux : public CameraFeed {
-	GDSOFTCLASS(CameraFeedLinux, CameraFeed);
+	VLTRSOFTCLASS(CameraFeedLinux, CameraFeed);
 
 private:
 	SafeFlag exit_flag;

@@ -35,7 +35,7 @@
 class PhysicsBody2D;
 
 class PinJoint2D : public Joint2D {
-	GDCLASS(PinJoint2D, Joint2D);
+	VLTRCLASS(PinJoint2D, Joint2D);
 
 	real_t softness = 0.0;
 	real_t angular_limit_lower = 0.0;

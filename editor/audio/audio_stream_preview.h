@@ -36,7 +36,7 @@
 #include "servers/audio/audio_stream.h"
 
 class AudioStreamPreview : public RefCounted {
-	GDCLASS(AudioStreamPreview, RefCounted);
+	VLTRCLASS(AudioStreamPreview, RefCounted);
 	friend class AudioStream;
 	Vector<uint8_t> preview;
 	float length;
@@ -54,7 +54,7 @@ public:
 };
 
 class AudioStreamPreviewGenerator : public Node {
-	GDCLASS(AudioStreamPreviewGenerator, Node);
+	VLTRCLASS(AudioStreamPreviewGenerator, Node);
 
 	static AudioStreamPreviewGenerator *singleton;
 

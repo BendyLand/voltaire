@@ -36,11 +36,11 @@
 #include "core/variant/native_ptr.h"
 
 class AudioEffectInstance : public RefCounted {
-	GDCLASS(AudioEffectInstance, RefCounted);
+	VLTRCLASS(AudioEffectInstance, RefCounted);
 
 protected:
-	GDVIRTUAL3_REQUIRED(_process, GDExtensionPtr<const AudioFrame>, GDExtensionPtr<AudioFrame>, int)
-	GDVIRTUAL0RC(bool, _process_silence)
+	VLTRVIRTUAL3_REQUIRED(_process, GDExtensionPtr<const AudioFrame>, GDExtensionPtr<AudioFrame>, int)
+	VLTRVIRTUAL0RC(bool, _process_silence)
 	static void _bind_methods();
 
 public:
@@ -49,10 +49,10 @@ public:
 };
 
 class AudioEffect : public Resource {
-	GDCLASS(AudioEffect, Resource);
+	VLTRCLASS(AudioEffect, Resource);
 
 protected:
-	GDVIRTUAL0R_REQUIRED(Ref<AudioEffectInstance>, _instantiate)
+	VLTRVIRTUAL0R_REQUIRED(Ref<AudioEffectInstance>, _instantiate)
 	static void _bind_methods();
 
 public:

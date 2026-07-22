@@ -31,7 +31,7 @@
 #pragma once
 
 #include "core/extension/gdextension_interface.gen.h"
-#include "core/object/gdtype.h"
+#include "core/object/vltrtype.h"
 #include "core/object/method_info.h"
 #include "core/object/object_id.h"
 #include "core/object/property_info.h"
@@ -43,7 +43,7 @@
 #include "core/templates/safe_refcount.h"
 #include "core/variant/variant.h"
 
-#define ADD_SIGNAL(m_signal) get_gdtype_static_mutable().add_signal(m_signal)
+#define ADD_SIGNAL(m_signal) get_vltrtype_static_mutable().add_signal(m_signal)
 #define ADD_PROPERTY(m_property, m_setter, m_getter) ::ClassDB::add_property(get_class_static(), m_property, StringName(m_setter), StringName(m_getter))
 #define ADD_PROPERTYI(m_property, m_setter, m_getter, m_index) ::ClassDB::add_property(get_class_static(), m_property, StringName(m_setter), StringName(m_getter), m_index)
 #define ADD_PROPERTY_DEFAULT(m_property, m_default) ::ClassDB::set_property_default_value(get_class_static(), m_property, m_default)
@@ -131,24 +131,24 @@ struct ObjectGDExtension {
 
 	/// A type for this Object extension.
 	/// This is not exposed through the GDExtension API (yet) so it is inferred from above parameters.
-	GDType *gdtype;
-	void create_gdtype();
-	void destroy_gdtype();
+	VLTRType *vltrtype;
+	void create_vltrtype();
+	void destroy_vltrtype();
 
 	~ObjectGDExtension();
 };
 
-#define GDVIRTUAL_CALL(m_name, ...) _gdvirtual_##m_name##_call(__VA_ARGS__)
-#define GDVIRTUAL_CALL_PTR(m_obj, m_name, ...) m_obj->_gdvirtual_##m_name##_call(__VA_ARGS__)
+#define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+#define VLTRVIRTUAL_CALL_PTR(m_obj, m_name, ...) m_obj->_vltrvirtual_##m_name##_call(__VA_ARGS__)
 
 #ifdef DEBUG_ENABLED
-#define GDVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _gdvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+#define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
 #else
-#define GDVIRTUAL_BIND(m_name, ...)
+#define VLTRVIRTUAL_BIND(m_name, ...)
 #endif // DEBUG_ENABLED
-#define GDVIRTUAL_BIND_COMPAT(m_alias, ...) ::ClassDB::add_virtual_compatibility_method(get_class_static(), _gdvirtual_##m_alias##_get_method_info(), true, sarray(__VA_ARGS__));
-#define GDVIRTUAL_IS_OVERRIDDEN(m_name) _gdvirtual_##m_name##_overridden()
-#define GDVIRTUAL_IS_OVERRIDDEN_PTR(m_obj, m_name) m_obj->_gdvirtual_##m_name##_overridden()
+#define VLTRVIRTUAL_BIND_COMPAT(m_alias, ...) ::ClassDB::add_virtual_compatibility_method(get_class_static(), _vltrvirtual_##m_alias##_get_method_info(), true, sarray(__VA_ARGS__));
+#define VLTRVIRTUAL_IS_OVERRIDDEN(m_name) _vltrvirtual_##m_name##_overridden()
+#define VLTRVIRTUAL_IS_OVERRIDDEN_PTR(m_obj, m_name) m_obj->_vltrvirtual_##m_name##_overridden()
 
 /*
  * The following is an incomprehensible blob of hacks and workarounds to
@@ -157,8 +157,8 @@ struct ObjectGDExtension {
  */
 
 /// Provides `Object` functionality, such as being able to use `Object::cast_to()`.
-/// Use this for `Object` subclasses that are not registered in `ClassDB` (use `GDCLASS` otherwise).
-#define GDSOFTCLASS(m_class, m_inherits) \
+/// Use this for `Object` subclasses that are not registered in `ClassDB` (use `VLTRCLASS` otherwise).
+#define VLTRSOFTCLASS(m_class, m_inherits) \
 public: \
 	using self_type = m_class; \
 	using super_type = m_inherits; \
@@ -244,40 +244,40 @@ protected: \
 private:
 
 /// Provides `Object` functionality, such as being able to use `Object::cast_to()`, and `ClassDB` integration.
-/// Use this for `Object` subclasses that are registered in `ClassDB` (use `GDSOFTCLASS` otherwise).
-#define GDCLASS(m_class, m_inherits) \
-	GDSOFTCLASS(m_class, m_inherits) \
+/// Use this for `Object` subclasses that are registered in `ClassDB` (use `VLTRSOFTCLASS` otherwise).
+#define VLTRCLASS(m_class, m_inherits) \
+	VLTRSOFTCLASS(m_class, m_inherits) \
 private: \
 	void operator=(const m_class &p_rval) {} \
 	friend class ::ClassDB; \
 \
-	static GDType &get_gdtype_static_mutable() { \
-		static GDType *gdtype = nullptr; \
+	static VLTRType &get_vltrtype_static_mutable() { \
+		static VLTRType *vltrtype = nullptr; \
 		static bool initialized = false; \
 		if (likely(initialized)) { \
-			return *gdtype; \
+			return *vltrtype; \
 		} \
 \
 		static BinaryMutex __init_mutex; \
 		MutexLock lock(__init_mutex); \
 		if (initialized) { \
-			return *gdtype; \
+			return *vltrtype; \
 		} \
-		gdtype = memnew(GDType(&super_type::get_gdtype_static(), StringName(#m_class))); \
-		m_class::autorelease_gdtype(&gdtype); \
+		vltrtype = memnew(VLTRType(&super_type::get_vltrtype_static(), StringName(#m_class))); \
+		m_class::autorelease_vltrtype(&vltrtype); \
 		initialized = true; \
-		return *gdtype; \
+		return *vltrtype; \
 	} \
 \
 public: \
-	virtual const GDType &_get_typev() const override { \
-		return get_gdtype_static(); \
+	virtual const VLTRType &_get_typev() const override { \
+		return get_vltrtype_static(); \
 	} \
-	static const GDType &get_gdtype_static() { \
-		return get_gdtype_static_mutable(); \
+	static const VLTRType &get_vltrtype_static() { \
+		return get_vltrtype_static_mutable(); \
 	} \
 	static const StringName &get_class_static() { \
-		return get_gdtype_static().get_name(); \
+		return get_vltrtype_static().get_name(); \
 	} \
 \
 protected: \
@@ -301,8 +301,8 @@ public: \
 			return; \
 		} \
 		m_inherits::initialize_class(); \
-		_add_class_to_classdb(get_gdtype_static_mutable(), &super_type::get_gdtype_static()); \
-		get_gdtype_static_mutable().initialize(); \
+		_add_class_to_classdb(get_vltrtype_static_mutable(), &super_type::get_vltrtype_static()); \
+		get_vltrtype_static_mutable().initialize(); \
 		if (m_class::_get_bind_methods() != m_inherits::_get_bind_methods()) { \
 			_bind_methods(); \
 		} \
@@ -449,25 +449,25 @@ private:
 	ScriptInstance *script_instance = nullptr;
 	HashMap<StringName, Variant> metadata;
 	HashMap<StringName, Variant *> metadata_properties;
-	mutable const GDType *_gdtype_ptr = nullptr;
-	void _reset_gdtype() const;
+	mutable const VLTRType *_vltrtype_ptr = nullptr;
+	void _reset_vltrtype() const;
 
-	static GDType &get_gdtype_static_mutable() {
-		static GDType *gdtype = nullptr;
+	static VLTRType &get_vltrtype_static_mutable() {
+		static VLTRType *vltrtype = nullptr;
 		static bool initialized = false;
 		if (likely(initialized)) {
-			return *gdtype;
+			return *vltrtype;
 		}
 
 		static BinaryMutex __init_mutex;
 		MutexLock lock(__init_mutex);
 		if (initialized) {
-			return *gdtype;
+			return *vltrtype;
 		}
-		gdtype = memnew(GDType(nullptr, StringName("Object")));
-		autorelease_gdtype(&gdtype);
+		vltrtype = memnew(VLTRType(nullptr, StringName("Object")));
+		autorelease_vltrtype(&vltrtype);
 		initialized = true;
-		return *gdtype;
+		return *vltrtype;
 	}
 
 	void _add_user_signal(const String &p_name, const Array &p_args = Array());
@@ -517,8 +517,8 @@ protected:
 		return can_die;
 	}
 
-	// Used in gdvirtual.gen.h
-	void _gdvirtual_init_method_ptr(uint32_t p_compat_hash, void *&r_fn_ptr, const StringName &p_fn_name, bool p_compat) const;
+	// Used in vltrvirtual.gen.h
+	void _vltrvirtual_init_method_ptr(uint32_t p_compat_hash, void *&r_fn_ptr, const StringName &p_fn_name, bool p_compat) const;
 
 	friend class GDExtensionMethodBind;
 	_ALWAYS_INLINE_ const ObjectGDExtension *_get_extension() const { return _extension; }
@@ -578,9 +578,9 @@ protected:
 	Variant _call_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 	Variant _call_deferred_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 
-	static void autorelease_gdtype(GDType **r_type);
+	static void autorelease_vltrtype(VLTRType **r_type);
 
-	virtual const GDType &_get_typev() const { return get_gdtype_static(); }
+	virtual const VLTRType &_get_typev() const { return get_vltrtype_static(); }
 
 	TypedArray<StringName> _get_meta_list_bind() const;
 	TypedArray<Dictionary> _get_property_list_bind() const;
@@ -591,7 +591,7 @@ protected:
 	friend class ::ClassDB;
 	friend class PlaceholderExtensionInstance;
 
-	static void _add_class_to_classdb(GDType &p_class, const GDType *p_inherits);
+	static void _add_class_to_classdb(VLTRType &p_class, const VLTRType *p_inherits);
 	static void _get_property_list_from_classdb(const StringName &p_class, List<PropertyInfo> *p_list, bool p_no_inheritance, const Object *p_validator);
 
 	bool _disconnect(const StringName &p_signal, const Callable &p_callable, bool p_force = false);
@@ -664,11 +664,11 @@ public:
 	};
 
 	/* TYPE API */
-	static const GDType &get_gdtype_static() { return get_gdtype_static_mutable(); }
+	static const VLTRType &get_vltrtype_static() { return get_vltrtype_static_mutable(); }
 
-	const GDType &get_gdtype() const;
+	const VLTRType &get_vltrtype() const;
 
-	static const StringName &get_class_static() { return get_gdtype_static().get_name(); }
+	static const StringName &get_class_static() { return get_vltrtype_static().get_name(); }
 
 	_FORCE_INLINE_ String get_class() const { return get_class_name(); }
 
@@ -860,7 +860,7 @@ bool Object::derives_from() const {
 	} else {
 		static_assert(std::is_base_of_v<Object, O>, "derives_from can only be used with Object subclasses.");
 		static_assert(std::is_base_of_v<O, T>, "Cannot cast argument to T because T does not derive from the argument's known class.");
-		static_assert(std::is_same_v<std::decay_t<T>, typename T::self_type>, "T must use GDCLASS or GDSOFTCLASS.");
+		static_assert(std::is_same_v<std::decay_t<T>, typename T::self_type>, "T must use VLTRCLASS or VLTRSOFTCLASS.");
 
 		// If there is an explicitly set ancestral class on the type, we can use that.
 		if constexpr (T::static_ancestral_class != T::super_type::static_ancestral_class) {

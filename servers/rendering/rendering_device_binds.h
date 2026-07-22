@@ -61,7 +61,7 @@
 	ADD_PROPERTY(PropertyInfo(m_variant_type, _MKSTR(m_sub) "_" _MKSTR(m_member)), "set_" _MKSTR(m_sub) "_" _MKSTR(m_member), "get_" _MKSTR(m_sub) "_" _MKSTR(m_member))
 
 class RDTextureFormat : public RefCounted {
-	GDCLASS(RDTextureFormat, RefCounted)
+	VLTRCLASS(RDTextureFormat, RefCounted)
 
 	friend class RenderingDevice;
 	friend class RenderSceneBuffersRD;
@@ -104,7 +104,7 @@ protected:
 };
 
 class RDTextureView : public RefCounted {
-	GDCLASS(RDTextureView, RefCounted)
+	VLTRCLASS(RDTextureView, RefCounted)
 
 	friend class RenderingDevice;
 	friend class RenderSceneBuffersRD;
@@ -128,7 +128,7 @@ protected:
 };
 
 class RDAttachmentFormat : public RefCounted {
-	GDCLASS(RDAttachmentFormat, RefCounted)
+	VLTRCLASS(RDAttachmentFormat, RefCounted)
 	friend class RenderingDevice;
 
 	RD::AttachmentFormat base;
@@ -146,7 +146,7 @@ protected:
 };
 
 class RDFramebufferPass : public RefCounted {
-	GDCLASS(RDFramebufferPass, RefCounted)
+	VLTRCLASS(RDFramebufferPass, RefCounted)
 	friend class RenderingDevice;
 	friend class FramebufferCacheRD;
 
@@ -175,7 +175,7 @@ protected:
 };
 
 class RDSamplerState : public RefCounted {
-	GDCLASS(RDSamplerState, RefCounted)
+	VLTRCLASS(RDSamplerState, RefCounted)
 	friend class RenderingDevice;
 
 	RD::SamplerState base;
@@ -218,7 +218,7 @@ protected:
 };
 
 class RDVertexAttribute : public RefCounted {
-	GDCLASS(RDVertexAttribute, RefCounted)
+	VLTRCLASS(RDVertexAttribute, RefCounted)
 	friend class RenderingDevice;
 	RD::VertexAttribute base;
 
@@ -241,7 +241,7 @@ protected:
 	}
 };
 class RDShaderSource : public RefCounted {
-	GDCLASS(RDShaderSource, RefCounted)
+	VLTRCLASS(RDShaderSource, RefCounted)
 	String source[RD::SHADER_STAGE_MAX];
 	RD::ShaderLanguage language = RD::SHADER_LANGUAGE_GLSL;
 
@@ -289,7 +289,7 @@ protected:
 };
 
 class RDShaderSPIRV : public Resource {
-	GDCLASS(RDShaderSPIRV, Resource)
+	VLTRCLASS(RDShaderSPIRV, Resource)
 
 	Vector<uint8_t> bytecode[RD::SHADER_STAGE_MAX];
 	String compile_error[RD::SHADER_STAGE_MAX];
@@ -362,7 +362,7 @@ protected:
 };
 
 class RDShaderFile : public Resource {
-	GDCLASS(RDShaderFile, Resource)
+	VLTRCLASS(RDShaderFile, Resource)
 
 	HashMap<StringName, Ref<RDShaderSPIRV>> versions;
 	String base_error;
@@ -471,7 +471,7 @@ protected:
 };
 
 class RDUniform : public RefCounted {
-	GDCLASS(RDUniform, RefCounted)
+	VLTRCLASS(RDUniform, RefCounted)
 	friend class RenderingDevice;
 	friend class UniformSetCacheRD;
 	RD::Uniform base;
@@ -511,7 +511,7 @@ protected:
 };
 
 class RDPipelineSpecializationConstant : public RefCounted {
-	GDCLASS(RDPipelineSpecializationConstant, RefCounted)
+	VLTRCLASS(RDPipelineSpecializationConstant, RefCounted)
 	friend class RenderingDevice;
 
 	Variant value = false;
@@ -545,7 +545,7 @@ protected:
 };
 
 class RDPipelineRasterizationState : public RefCounted {
-	GDCLASS(RDPipelineRasterizationState, RefCounted)
+	VLTRCLASS(RDPipelineRasterizationState, RefCounted)
 	friend class RenderingDevice;
 
 	RD::PipelineRasterizationState base;
@@ -580,7 +580,7 @@ protected:
 };
 
 class RDPipelineMultisampleState : public RefCounted {
-	GDCLASS(RDPipelineMultisampleState, RefCounted)
+	VLTRCLASS(RDPipelineMultisampleState, RefCounted)
 	friend class RenderingDevice;
 
 	RD::PipelineMultisampleState base;
@@ -611,7 +611,7 @@ protected:
 };
 
 class RDPipelineDepthStencilState : public RefCounted {
-	GDCLASS(RDPipelineDepthStencilState, RefCounted)
+	VLTRCLASS(RDPipelineDepthStencilState, RefCounted)
 	friend class RenderingDevice;
 
 	RD::PipelineDepthStencilState base;
@@ -670,7 +670,7 @@ protected:
 };
 
 class RDPipelineColorBlendStateAttachment : public RefCounted {
-	GDCLASS(RDPipelineColorBlendStateAttachment, RefCounted)
+	VLTRCLASS(RDPipelineColorBlendStateAttachment, RefCounted)
 	friend class RenderingDevice;
 	RD::PipelineColorBlendState::Attachment base;
 
@@ -715,7 +715,7 @@ protected:
 };
 
 class RDPipelineColorBlendState : public RefCounted {
-	GDCLASS(RDPipelineColorBlendState, RefCounted)
+	VLTRCLASS(RDPipelineColorBlendState, RefCounted)
 	friend class RenderingDevice;
 	RD::PipelineColorBlendState base;
 
@@ -747,7 +747,7 @@ protected:
 };
 
 class RDAccelerationStructureGeometry : public RefCounted {
-	GDCLASS(RDAccelerationStructureGeometry, RefCounted)
+	VLTRCLASS(RDAccelerationStructureGeometry, RefCounted)
 	friend class RenderingDevice;
 	RD::AccelerationStructureGeometry base;
 
@@ -777,7 +777,7 @@ protected:
 };
 
 class RDAccelerationStructureInstance : public RefCounted {
-	GDCLASS(RDAccelerationStructureInstance, RefCounted)
+	VLTRCLASS(RDAccelerationStructureInstance, RefCounted)
 	friend class RenderingDevice;
 	RD::AccelerationStructureInstance base;
 
@@ -801,7 +801,7 @@ protected:
 };
 
 class RDPipelineShader : public RefCounted {
-	GDCLASS(RDPipelineShader, RefCounted)
+	VLTRCLASS(RDPipelineShader, RefCounted)
 	friend class RenderingDevice;
 	RD::PipelineShader base;
 
@@ -829,7 +829,7 @@ protected:
 };
 
 class RDHitGroup : public RefCounted {
-	GDCLASS(RDHitGroup, RefCounted)
+	VLTRCLASS(RDHitGroup, RefCounted)
 	friend class RenderingDevice;
 
 	Ref<RDPipelineShader> closest_hit_shader;

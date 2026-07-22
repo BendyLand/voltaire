@@ -35,7 +35,7 @@
 #include <openxr/openxr.h>
 
 class OpenXRCompositionLayerQuad : public OpenXRCompositionLayer {
-	GDCLASS(OpenXRCompositionLayerQuad, OpenXRCompositionLayer);
+	VLTRCLASS(OpenXRCompositionLayerQuad, OpenXRCompositionLayer);
 
 	Size2 quad_size = Size2(1.0, 1.0);
 

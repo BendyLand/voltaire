@@ -37,7 +37,7 @@ class ConfirmationDialog;
 class Tree;
 
 class EditorPropertyRootMotion : public EditorProperty {
-	GDCLASS(EditorPropertyRootMotion, EditorProperty);
+	VLTRCLASS(EditorPropertyRootMotion, EditorProperty);
 
 	Button *assign = nullptr;
 	Button *clear = nullptr;
@@ -60,7 +60,7 @@ public:
 };
 
 class EditorInspectorRootMotionPlugin : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorRootMotionPlugin, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorRootMotionPlugin, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;

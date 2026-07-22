@@ -38,7 +38,7 @@
 class ViewPanner;
 
 class AnimationBezierTrackEdit : public Control {
-	GDCLASS(AnimationBezierTrackEdit, Control);
+	VLTRCLASS(AnimationBezierTrackEdit, Control);
 
 	enum {
 		MENU_KEY_INSERT,

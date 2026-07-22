@@ -38,7 +38,7 @@
 /* This is a helper class for generating stereoscopic VRS images */
 
 class XRVRS : public Object {
-	GDCLASS(XRVRS, Object);
+	VLTRCLASS(XRVRS, Object);
 
 private:
 	float vrs_min_radius = 20.0;

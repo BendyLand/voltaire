@@ -57,7 +57,7 @@ class EditorUndoRedoManager;
 class ScriptCreateDialog;
 
 class EditorPlugin : public Node {
-	GDCLASS(EditorPlugin, Node);
+	VLTRCLASS(EditorPlugin, Node);
 	friend class EditorData;
 
 	bool input_event_forwarding_always_enabled = false;
@@ -119,31 +119,31 @@ protected:
 	void add_custom_type(const String &p_type, const String &p_base, const Ref<Script> &p_script, const Ref<Texture2D> &p_icon);
 	void remove_custom_type(const String &p_type);
 
-	GDVIRTUAL1R(bool, _forward_canvas_gui_input, Ref<InputEvent>)
-	GDVIRTUAL1(_forward_canvas_draw_over_viewport, Control *)
-	GDVIRTUAL1(_forward_canvas_force_draw_over_viewport, Control *)
-	GDVIRTUAL2R(int, _forward_3d_gui_input, Camera3D *, Ref<InputEvent>)
-	GDVIRTUAL1(_forward_3d_draw_over_viewport, Control *)
-	GDVIRTUAL1(_forward_3d_force_draw_over_viewport, Control *)
-	GDVIRTUAL0RC(String, _get_plugin_name)
-	GDVIRTUAL0RC(Ref<Texture2D>, _get_plugin_icon)
-	GDVIRTUAL0RC(bool, _has_main_screen)
-	GDVIRTUAL1(_make_visible, bool)
-	GDVIRTUAL1(_edit, Object *)
-	GDVIRTUAL1RC(bool, _handles, Object *)
-	GDVIRTUAL0RC(Dictionary, _get_state)
-	GDVIRTUAL1(_set_state, Dictionary)
-	GDVIRTUAL0(_clear)
-	GDVIRTUAL1RC(String, _get_unsaved_status, String)
-	GDVIRTUAL0(_save_external_data)
-	GDVIRTUAL0(_apply_changes)
-	GDVIRTUAL0RC(Vector<String>, _get_breakpoints)
-	GDVIRTUAL1(_set_window_layout, Ref<ConfigFile>)
-	GDVIRTUAL1(_get_window_layout, Ref<ConfigFile>)
-	GDVIRTUAL0R(bool, _build)
-	GDVIRTUAL2RC(Vector<String>, _run_scene, String, Vector<String>)
-	GDVIRTUAL0(_enable_plugin)
-	GDVIRTUAL0(_disable_plugin)
+	VLTRVIRTUAL1R(bool, _forward_canvas_gui_input, Ref<InputEvent>)
+	VLTRVIRTUAL1(_forward_canvas_draw_over_viewport, Control *)
+	VLTRVIRTUAL1(_forward_canvas_force_draw_over_viewport, Control *)
+	VLTRVIRTUAL2R(int, _forward_3d_gui_input, Camera3D *, Ref<InputEvent>)
+	VLTRVIRTUAL1(_forward_3d_draw_over_viewport, Control *)
+	VLTRVIRTUAL1(_forward_3d_force_draw_over_viewport, Control *)
+	VLTRVIRTUAL0RC(String, _get_plugin_name)
+	VLTRVIRTUAL0RC(Ref<Texture2D>, _get_plugin_icon)
+	VLTRVIRTUAL0RC(bool, _has_main_screen)
+	VLTRVIRTUAL1(_make_visible, bool)
+	VLTRVIRTUAL1(_edit, Object *)
+	VLTRVIRTUAL1RC(bool, _handles, Object *)
+	VLTRVIRTUAL0RC(Dictionary, _get_state)
+	VLTRVIRTUAL1(_set_state, Dictionary)
+	VLTRVIRTUAL0(_clear)
+	VLTRVIRTUAL1RC(String, _get_unsaved_status, String)
+	VLTRVIRTUAL0(_save_external_data)
+	VLTRVIRTUAL0(_apply_changes)
+	VLTRVIRTUAL0RC(Vector<String>, _get_breakpoints)
+	VLTRVIRTUAL1(_set_window_layout, Ref<ConfigFile>)
+	VLTRVIRTUAL1(_get_window_layout, Ref<ConfigFile>)
+	VLTRVIRTUAL0R(bool, _build)
+	VLTRVIRTUAL2RC(Vector<String>, _run_scene, String, Vector<String>)
+	VLTRVIRTUAL0(_enable_plugin)
+	VLTRVIRTUAL0(_disable_plugin)
 
 #ifndef DISABLE_DEPRECATED
 	Button *_add_control_to_bottom_panel_bind_compat_88081(Control *p_control, const String &p_title);

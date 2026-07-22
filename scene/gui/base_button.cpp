@@ -225,13 +225,13 @@ void BaseButton::_notification(int p_what) {
 }
 
 void BaseButton::_pressed() {
-	GDVIRTUAL_CALL(_pressed);
+	VLTRVIRTUAL_CALL(_pressed);
 	pressed();
 	emit_signal(SceneStringName(pressed));
 }
 
 void BaseButton::_toggled(bool p_pressed) {
-	GDVIRTUAL_CALL(_toggled, p_pressed);
+	VLTRVIRTUAL_CALL(_toggled, p_pressed);
 	toggled(p_pressed);
 	emit_signal(SceneStringName(toggled), p_pressed);
 }
@@ -399,7 +399,7 @@ BaseButton::DrawMode BaseButton::get_draw_mode() const {
 bool BaseButton::has_point(const Point2 &p_point) const {
 	ERR_READ_THREAD_GUARD_V(false);
 	bool ret;
-	if (GDVIRTUAL_CALL(_has_point, p_point, ret)) {
+	if (VLTRVIRTUAL_CALL(_has_point, p_point, ret)) {
 		return ret;
 	}
 	Rect2 rect = Rect2(Point2(), get_size()).grow(theme_cache.click_margin);
@@ -616,8 +616,8 @@ void BaseButton::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_button_group", "button_group"), &BaseButton::set_button_group);
 	ClassDB::bind_method(D_METHOD("get_button_group"), &BaseButton::get_button_group);
 
-	GDVIRTUAL_BIND(_pressed);
-	GDVIRTUAL_BIND(_toggled, "toggled_on");
+	VLTRVIRTUAL_BIND(_pressed);
+	VLTRVIRTUAL_BIND(_toggled, "toggled_on");
 
 	ADD_SIGNAL(MethodInfo("pressed"));
 	ADD_SIGNAL(MethodInfo("button_up"));

@@ -42,7 +42,7 @@ class ScriptCreateDialog;
 class Tree;
 
 class EditorAutoloadSettings : public VBoxContainer {
-	GDCLASS(EditorAutoloadSettings, VBoxContainer);
+	VLTRCLASS(EditorAutoloadSettings, VBoxContainer);
 
 	enum {
 		BUTTON_MOVE_UP,

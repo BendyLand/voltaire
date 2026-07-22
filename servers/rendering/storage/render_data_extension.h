@@ -36,16 +36,16 @@
 #include "servers/rendering/storage/render_scene_data.h"
 
 class RenderSceneBuffersExtension : public RenderSceneBuffers {
-	GDCLASS(RenderSceneBuffersExtension, RenderSceneBuffers);
+	VLTRCLASS(RenderSceneBuffersExtension, RenderSceneBuffers);
 
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL1(_configure, const RenderSceneBuffersConfiguration *)
-	GDVIRTUAL1(_set_fsr_sharpness, float)
-	GDVIRTUAL1(_set_texture_mipmap_bias, float)
-	GDVIRTUAL1(_set_anisotropic_filtering_level, int)
-	GDVIRTUAL1(_set_use_debanding, bool)
+	VLTRVIRTUAL1(_configure, const RenderSceneBuffersConfiguration *)
+	VLTRVIRTUAL1(_set_fsr_sharpness, float)
+	VLTRVIRTUAL1(_set_texture_mipmap_bias, float)
+	VLTRVIRTUAL1(_set_anisotropic_filtering_level, int)
+	VLTRVIRTUAL1(_set_use_debanding, bool)
 
 public:
 	virtual ~RenderSceneBuffersExtension() {}
@@ -59,7 +59,7 @@ public:
 };
 
 class RenderSceneDataExtension : public RenderSceneData {
-	GDCLASS(RenderSceneDataExtension, RenderSceneData);
+	VLTRCLASS(RenderSceneDataExtension, RenderSceneData);
 
 protected:
 	static void _bind_methods();
@@ -74,18 +74,18 @@ public:
 
 	virtual RID get_uniform_buffer() const override;
 
-	GDVIRTUAL0RC(Transform3D, _get_cam_transform)
-	GDVIRTUAL0RC(Projection, _get_cam_projection)
+	VLTRVIRTUAL0RC(Transform3D, _get_cam_transform)
+	VLTRVIRTUAL0RC(Projection, _get_cam_projection)
 
-	GDVIRTUAL0RC(uint32_t, _get_view_count)
-	GDVIRTUAL1RC(Vector3, _get_view_eye_offset, uint32_t)
-	GDVIRTUAL1RC(Projection, _get_view_projection, uint32_t)
+	VLTRVIRTUAL0RC(uint32_t, _get_view_count)
+	VLTRVIRTUAL1RC(Vector3, _get_view_eye_offset, uint32_t)
+	VLTRVIRTUAL1RC(Projection, _get_view_projection, uint32_t)
 
-	GDVIRTUAL0RC(RID, _get_uniform_buffer)
+	VLTRVIRTUAL0RC(RID, _get_uniform_buffer)
 };
 
 class RenderDataExtension : public RenderData {
-	GDCLASS(RenderDataExtension, RenderData);
+	VLTRCLASS(RenderDataExtension, RenderData);
 
 protected:
 	static void _bind_methods();
@@ -96,8 +96,8 @@ protected:
 	virtual RID get_environment() const override;
 	virtual RID get_camera_attributes() const override;
 
-	GDVIRTUAL0RC(Ref<RenderSceneBuffers>, _get_render_scene_buffers)
-	GDVIRTUAL0RC(RenderSceneData *, _get_render_scene_data)
-	GDVIRTUAL0RC(RID, _get_environment)
-	GDVIRTUAL0RC(RID, _get_camera_attributes)
+	VLTRVIRTUAL0RC(Ref<RenderSceneBuffers>, _get_render_scene_buffers)
+	VLTRVIRTUAL0RC(RenderSceneData *, _get_render_scene_data)
+	VLTRVIRTUAL0RC(RID, _get_environment)
+	VLTRVIRTUAL0RC(RID, _get_camera_attributes)
 };

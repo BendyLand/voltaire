@@ -33,7 +33,7 @@
 #include "core/object/object.h"
 
 class TTSDriver : public Object {
-	GDSOFTCLASS(TTSDriver, Object);
+	VLTRSOFTCLASS(TTSDriver, Object);
 
 public:
 	virtual bool is_speaking() const = 0;

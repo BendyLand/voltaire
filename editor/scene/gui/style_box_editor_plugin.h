@@ -38,7 +38,7 @@ class Button;
 class StyleBox;
 
 class StyleBoxPreview : public TextureRect {
-	GDCLASS(StyleBoxPreview, TextureRect);
+	VLTRCLASS(StyleBoxPreview, TextureRect);
 
 	Button *grid_preview = nullptr;
 	Ref<StyleBox> stylebox;
@@ -58,7 +58,7 @@ public:
 };
 
 class EditorInspectorPluginStyleBox : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginStyleBox, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginStyleBox, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -66,7 +66,7 @@ public:
 };
 
 class StyleBoxEditorPlugin : public EditorPlugin {
-	GDCLASS(StyleBoxEditorPlugin, EditorPlugin);
+	VLTRCLASS(StyleBoxEditorPlugin, EditorPlugin);
 
 public:
 	virtual String get_plugin_name() const override { return "StyleBox"; }

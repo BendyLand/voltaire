@@ -69,7 +69,7 @@ class GLManagerANGLE_MacOS;
 #endif
 
 class DisplayServerMacOS : public DisplayServerMacOSBase {
-	GDSOFTCLASS(DisplayServerMacOS, DisplayServerMacOSBase);
+	VLTRSOFTCLASS(DisplayServerMacOS, DisplayServerMacOSBase);
 
 public:
 	struct KeyEvent {

@@ -36,7 +36,7 @@
 #include "core/variant/variant.h"
 
 class JNISingleton : public Object {
-	GDCLASS(JNISingleton, Object);
+	VLTRCLASS(JNISingleton, Object);
 
 	struct MethodData {
 		Variant::Type ret_type;

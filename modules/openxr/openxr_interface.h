@@ -64,7 +64,7 @@
 #define INTERACTION_PROFILE_NONE "/interaction_profiles/none"
 
 class OpenXRInterface : public XRInterface {
-	GDCLASS(OpenXRInterface, XRInterface);
+	VLTRCLASS(OpenXRInterface, XRInterface);
 
 private:
 	OpenXRAPI *openxr_api = nullptr;

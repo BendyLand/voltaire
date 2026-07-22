@@ -41,7 +41,7 @@
 
 // Wrapper class for XrSpatialCapabilityConfigurationBaseHeaderEXT
 class OpenXRSpatialCapabilityConfigurationBaseHeader : public RefCounted {
-	GDCLASS(OpenXRSpatialCapabilityConfigurationBaseHeader, RefCounted);
+	VLTRCLASS(OpenXRSpatialCapabilityConfigurationBaseHeader, RefCounted);
 
 protected:
 	static void _bind_methods();
@@ -51,13 +51,13 @@ public:
 	uint64_t _get_configurationgd();
 	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT *get_configuration();
 
-	GDVIRTUAL0RC(bool, _has_valid_configuration);
-	GDVIRTUAL0R(uint64_t, _get_configuration);
+	VLTRVIRTUAL0RC(bool, _has_valid_configuration);
+	VLTRVIRTUAL0R(uint64_t, _get_configuration);
 };
 
 // Tracker for our spatial entities
 class OpenXRSpatialEntityTracker : public XRPositionalTracker {
-	GDCLASS(OpenXRSpatialEntityTracker, XRPositionalTracker);
+	VLTRCLASS(OpenXRSpatialEntityTracker, XRPositionalTracker);
 
 public:
 	enum EntityTrackingState {
@@ -99,7 +99,7 @@ VARIANT_ENUM_CAST(OpenXRSpatialEntityTracker::EntityTrackingState)
 
 // Wrapper class for our spatial component data returned by discovery queries
 class OpenXRSpatialComponentData : public RefCounted {
-	GDCLASS(OpenXRSpatialComponentData, RefCounted);
+	VLTRCLASS(OpenXRSpatialComponentData, RefCounted);
 
 protected:
 	static void _bind_methods();
@@ -110,16 +110,16 @@ public:
 	virtual XrSpatialComponentTypeEXT get_component_type() const;
 	virtual void *get_structure_data(void *p_next);
 
-	GDVIRTUAL1(_set_capacity, uint32_t);
-	GDVIRTUAL0RC(uint64_t, _get_component_type);
-	GDVIRTUAL1R(uint64_t, _get_structure_data, uint64_t);
+	VLTRVIRTUAL1(_set_capacity, uint32_t);
+	VLTRVIRTUAL0RC(uint64_t, _get_component_type);
+	VLTRVIRTUAL1R(uint64_t, _get_structure_data, uint64_t);
 #ifndef DISABLE_DEPRECATED
-	GDVIRTUAL1RC_COMPAT(_get_structure_data_bind_compat_118128, uint64_t, _get_structure_data, uint64_t);
+	VLTRVIRTUAL1RC_COMPAT(_get_structure_data_bind_compat_118128, uint64_t, _get_structure_data, uint64_t);
 #endif
 };
 
 class OpenXRSpatialComponentBounded2DList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentBounded2DList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentBounded2DList, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();
@@ -139,7 +139,7 @@ private:
 };
 
 class OpenXRSpatialComponentBounded3DList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentBounded3DList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentBounded3DList, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();
@@ -159,7 +159,7 @@ private:
 };
 
 class OpenXRSpatialComponentParentList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentParentList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentParentList, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();
@@ -178,7 +178,7 @@ private:
 };
 
 class OpenXRSpatialComponentMesh2DList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentMesh2DList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentMesh2DList, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();
@@ -199,7 +199,7 @@ private:
 };
 
 class OpenXRSpatialComponentMesh3DList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentMesh3DList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentMesh3DList, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();
@@ -219,7 +219,7 @@ private:
 };
 
 class OpenXRSpatialQueryResultData : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialQueryResultData, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialQueryResultData, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();

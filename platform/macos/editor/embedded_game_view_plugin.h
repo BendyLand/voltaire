@@ -35,7 +35,7 @@
 class EmbeddedProcessMacOS;
 
 class GameViewDebuggerMacOS : public GameViewDebugger {
-	GDCLASS(GameViewDebuggerMacOS, GameViewDebugger);
+	VLTRCLASS(GameViewDebuggerMacOS, GameViewDebugger);
 
 	EmbeddedProcessMacOS *embedded_process = nullptr;
 
@@ -67,7 +67,7 @@ public:
 };
 
 class GameViewPluginMacOS : public GameViewPluginBase {
-	GDCLASS(GameViewPluginMacOS, GameViewPluginBase);
+	VLTRCLASS(GameViewPluginMacOS, GameViewPluginBase);
 
 public:
 	GameViewPluginMacOS();

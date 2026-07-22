@@ -35,7 +35,7 @@
 class Curve3D;
 
 class SplineIK3D : public ChainIK3D {
-	GDCLASS(SplineIK3D, ChainIK3D);
+	VLTRCLASS(SplineIK3D, ChainIK3D);
 
 public:
 	struct SplineIK3DSetting : public ChainIK3DSetting {

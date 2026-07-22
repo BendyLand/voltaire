@@ -35,7 +35,7 @@
 #include "servers/physics_3d/physics_server_3d.h"
 
 class PhysicsBody3D : public CollisionObject3D {
-	GDCLASS(PhysicsBody3D, CollisionObject3D);
+	VLTRCLASS(PhysicsBody3D, CollisionObject3D);
 
 protected:
 	static void _bind_methods();

@@ -65,7 +65,7 @@ class RDPipelineShader;
 class RDHitGroup;
 
 class RenderingDevice : public RenderingDeviceCommons {
-	GDCLASS(RenderingDevice, Object)
+	VLTRCLASS(RenderingDevice, Object)
 
 	_THREAD_SAFE_CLASS_
 

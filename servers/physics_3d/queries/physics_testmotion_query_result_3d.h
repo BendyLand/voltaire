@@ -34,7 +34,7 @@
 #include "servers/physics_3d/physics_server_3d_types.h"
 
 class PhysicsTestMotionResult3D : public RefCounted {
-	GDCLASS(PhysicsTestMotionResult3D, RefCounted);
+	VLTRCLASS(PhysicsTestMotionResult3D, RefCounted);
 
 	PS3DT::MotionResult result;
 

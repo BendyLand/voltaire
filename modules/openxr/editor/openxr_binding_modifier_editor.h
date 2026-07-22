@@ -41,7 +41,7 @@
 #include "scene/gui/panel_container.h"
 
 class EditorPropertyActionSet : public EditorProperty {
-	GDCLASS(EditorPropertyActionSet, EditorProperty);
+	VLTRCLASS(EditorPropertyActionSet, EditorProperty);
 	OptionButton *options = nullptr;
 
 	void _option_selected(int p_which);
@@ -57,7 +57,7 @@ public:
 };
 
 class EditorPropertyBindingPath : public EditorProperty {
-	GDCLASS(EditorPropertyBindingPath, EditorProperty);
+	VLTRCLASS(EditorPropertyBindingPath, EditorProperty);
 	OptionButton *options = nullptr;
 
 	void _option_selected(int p_which);
@@ -73,7 +73,7 @@ public:
 };
 
 class EditorInspectorPluginBindingModifier : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginBindingModifier, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginBindingModifier, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -81,7 +81,7 @@ public:
 };
 
 class OpenXRBindingModifierEditor : public PanelContainer {
-	GDCLASS(OpenXRBindingModifierEditor, PanelContainer);
+	VLTRCLASS(OpenXRBindingModifierEditor, PanelContainer);
 
 private:
 	HBoxContainer *header_hb = nullptr;

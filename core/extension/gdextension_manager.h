@@ -33,10 +33,10 @@
 #include "core/extension/gdextension.h"
 #include "core/variant/native_ptr.h"
 
-GDVIRTUAL_NATIVE_PTR(GDExtensionInitializationFunction)
+VLTRVIRTUAL_NATIVE_PTR(GDExtensionInitializationFunction)
 
 class GDExtensionManager : public Object {
-	GDCLASS(GDExtensionManager, Object);
+	VLTRCLASS(GDExtensionManager, Object);
 
 	int32_t level = -1;
 	HashMap<String, Ref<GDExtension>> gdextension_map;

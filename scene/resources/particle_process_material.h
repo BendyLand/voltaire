@@ -44,7 +44,7 @@
 */
 
 class ParticleProcessMaterial : public Material {
-	GDCLASS(ParticleProcessMaterial, Material);
+	VLTRCLASS(ParticleProcessMaterial, Material);
 
 public:
 	enum Parameter {

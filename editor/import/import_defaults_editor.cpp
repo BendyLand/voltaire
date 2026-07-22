@@ -41,7 +41,7 @@
 #include "scene/gui/margin_container.h"
 
 class ImportDefaultsEditorSettings : public Object {
-	GDCLASS(ImportDefaultsEditorSettings, Object)
+	VLTRCLASS(ImportDefaultsEditorSettings, Object)
 	friend class ImportDefaultsEditor;
 	List<PropertyInfo> properties;
 	HashMap<StringName, Variant> values;

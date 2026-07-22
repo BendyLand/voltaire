@@ -36,7 +36,7 @@
 #include "servers/rendering/rendering_server_enums.h"
 
 class SurfaceTool : public RefCounted {
-	GDCLASS(SurfaceTool, RefCounted);
+	VLTRCLASS(SurfaceTool, RefCounted);
 
 	static const uint32_t custom_mask[RSE::ARRAY_CUSTOM_COUNT];
 	static const uint32_t custom_shift[RSE::ARRAY_CUSTOM_COUNT];

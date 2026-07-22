@@ -34,7 +34,7 @@
 #include "scene/2d/physics/kinematic_collision_2d.h"
 
 class PhysicsBody2D : public CollisionObject2D {
-	GDCLASS(PhysicsBody2D, CollisionObject2D);
+	VLTRCLASS(PhysicsBody2D, CollisionObject2D);
 
 protected:
 	static void _bind_methods();

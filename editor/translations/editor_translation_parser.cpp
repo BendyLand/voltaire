@@ -31,7 +31,7 @@
 #include "editor_translation_parser.h"
 
 #include "core/error/error_macros.h"
-#include "core/object/class_db.h" // IWYU pragma: keep. `GDVIRTUAL_BIND` macro.
+#include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
 #include "core/object/script_language.h"
 #include "core/templates/hash_set.h"
 
@@ -40,7 +40,7 @@ EditorTranslationParser *EditorTranslationParser::singleton = nullptr;
 Error EditorTranslationParserPlugin::parse_file(const String &p_path, Vector<Vector<String>> *r_translations) {
 	TypedArray<PackedStringArray> ret;
 
-	if (GDVIRTUAL_CALL(_parse_file, p_path, ret)) {
+	if (VLTRVIRTUAL_CALL(_parse_file, p_path, ret)) {
 		// Copy over entries directly.
 		for (const PackedStringArray translation : ret) {
 			r_translations->push_back(translation);
@@ -53,7 +53,7 @@ Error EditorTranslationParserPlugin::parse_file(const String &p_path, Vector<Vec
 	TypedArray<String> ids;
 	TypedArray<Array> ids_ctx_plural;
 
-	if (GDVIRTUAL_CALL(_parse_file_bind_compat_99297, p_path, ids, ids_ctx_plural)) {
+	if (VLTRVIRTUAL_CALL(_parse_file_bind_compat_99297, p_path, ids, ids_ctx_plural)) {
 		// Add user's extracted translatable messages.
 		for (int i = 0; i < ids.size(); i++) {
 			r_translations->push_back({ ids[i] });
@@ -76,17 +76,17 @@ Error EditorTranslationParserPlugin::parse_file(const String &p_path, Vector<Vec
 
 void EditorTranslationParserPlugin::get_recognized_extensions(List<String> *r_extensions) const {
 	Vector<String> extensions;
-	if (GDVIRTUAL_CALL(_get_recognized_extensions, extensions)) {
+	if (VLTRVIRTUAL_CALL(_get_recognized_extensions, extensions)) {
 		for (int i = 0; i < extensions.size(); i++) {
 			r_extensions->push_back(extensions[i]);
 		}
-	} else if (!GDVIRTUAL_IS_OVERRIDDEN(_customize_strings)) {
+	} else if (!VLTRVIRTUAL_IS_OVERRIDDEN(_customize_strings)) {
 		ERR_PRINT("Custom translation parser plugin's \"func get_recognized_extensions()\" is undefined.");
 	}
 }
 
 void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>> &r_strings) const {
-	if (!GDVIRTUAL_IS_OVERRIDDEN(_customize_strings)) {
+	if (!VLTRVIRTUAL_IS_OVERRIDDEN(_customize_strings)) {
 		return;
 	}
 
@@ -98,7 +98,7 @@ void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>> &r_
 		i++;
 	}
 
-	GDVIRTUAL_CALL(_customize_strings, new_strings, new_strings);
+	VLTRVIRTUAL_CALL(_customize_strings, new_strings, new_strings);
 
 	r_strings.resize(new_strings.size());
 	PackedStringArray *translation_write = r_strings.ptrw();
@@ -110,12 +110,12 @@ void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>> &r_
 }
 
 void EditorTranslationParserPlugin::_bind_methods() {
-	GDVIRTUAL_BIND(_parse_file, "path");
-	GDVIRTUAL_BIND(_get_recognized_extensions);
-	GDVIRTUAL_BIND(_customize_strings, "strings");
+	VLTRVIRTUAL_BIND(_parse_file, "path");
+	VLTRVIRTUAL_BIND(_get_recognized_extensions);
+	VLTRVIRTUAL_BIND(_customize_strings, "strings");
 
 #ifndef DISABLE_DEPRECATED
-	GDVIRTUAL_BIND_COMPAT(_parse_file_bind_compat_99297, "path", "msgids", "msgids_context_plural");
+	VLTRVIRTUAL_BIND_COMPAT(_parse_file_bind_compat_99297, "path", "msgids", "msgids_context_plural");
 #endif
 }
 

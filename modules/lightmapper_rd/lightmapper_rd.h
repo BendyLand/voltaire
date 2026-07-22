@@ -37,7 +37,7 @@ class RenderingDevice;
 class RDShaderFile;
 
 class LightmapperRD : public Lightmapper {
-	GDCLASS(LightmapperRD, Lightmapper)
+	VLTRCLASS(LightmapperRD, Lightmapper)
 
 	struct BakeParameters {
 		float world_size[3] = {};

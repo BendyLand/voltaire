@@ -35,7 +35,7 @@
 class RenderSceneBuffersRD;
 
 class RenderBufferCustomDataRD : public RefCounted {
-	GDCLASS(RenderBufferCustomDataRD, RefCounted);
+	VLTRCLASS(RenderBufferCustomDataRD, RefCounted);
 
 public:
 	virtual void configure(RenderSceneBuffersRD *p_render_buffers) = 0;

@@ -36,7 +36,7 @@
 #include "servers/display/display_server_enums.h"
 
 class AccessibilityServer : public Object {
-	GDCLASS(AccessibilityServer, Object)
+	VLTRCLASS(AccessibilityServer, Object)
 
 public:
 	typedef AccessibilityServer *(*CreateFunction)(Error &r_error);

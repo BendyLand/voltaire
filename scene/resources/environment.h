@@ -36,7 +36,7 @@
 class Sky;
 
 class Environment : public Resource {
-	GDCLASS(Environment, Resource);
+	VLTRCLASS(Environment, Resource);
 
 public:
 	enum BGMode {

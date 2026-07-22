@@ -33,7 +33,7 @@
 #include "openxr_extension_wrapper.h"
 
 class OpenXRCompositionLayerDepthExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRCompositionLayerDepthExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRCompositionLayerDepthExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

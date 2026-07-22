@@ -34,7 +34,7 @@
 #include "core/variant/type_info.h"
 
 class XRPose : public RefCounted {
-	GDCLASS(XRPose, RefCounted);
+	VLTRCLASS(XRPose, RefCounted);
 
 public:
 	// TrackingConfidence gives an indication of how reliable our transform data is.

@@ -34,7 +34,7 @@
 #include "core/object/ref_counted.h"
 
 class EditorDebuggerServer : public RefCounted {
-	GDSOFTCLASS(EditorDebuggerServer, RefCounted);
+	VLTRSOFTCLASS(EditorDebuggerServer, RefCounted);
 
 public:
 	typedef Ref<EditorDebuggerServer> (*CreateServerFunc)(const String &p_uri);

@@ -36,7 +36,7 @@ class CanvasItemEditor;
 class VirtualJoystick;
 
 class VirtualJoystickEditorPlugin : public EditorPlugin {
-	GDCLASS(VirtualJoystickEditorPlugin, EditorPlugin);
+	VLTRCLASS(VirtualJoystickEditorPlugin, EditorPlugin);
 
 	VirtualJoystick *virtual_joystick = nullptr;
 

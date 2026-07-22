@@ -111,12 +111,12 @@ void VisualShaderNodePlugin::set_editor(VisualShaderEditor *p_editor) {
 
 Control *VisualShaderNodePlugin::create_editor(const Ref<Resource> &p_parent_resource, const Ref<VisualShaderNode> &p_node) {
 	Object *ret = nullptr;
-	GDVIRTUAL_CALL(_create_editor, p_parent_resource, p_node, ret);
+	VLTRVIRTUAL_CALL(_create_editor, p_parent_resource, p_node, ret);
 	return Object::cast_to<Control>(ret);
 }
 
 void VisualShaderNodePlugin::_bind_methods() {
-	GDVIRTUAL_BIND(_create_editor, "parent_resource", "visual_shader_node");
+	VLTRVIRTUAL_BIND(_create_editor, "parent_resource", "visual_shader_node");
 }
 
 ///////////////////
@@ -5272,7 +5272,7 @@ void VisualShaderEditor::_param_unselected() {
 }
 
 void VisualShaderEditor::_help_open() {
-	OS::get_singleton()->shell_open(vformat("%s/tutorials/shaders/visual_shaders.html", GODOT_VERSION_DOCS_URL));
+	OS::get_singleton()->shell_open(vformat("%s/tutorials/shaders/visual_shaders.html", VLTR_VERSION_DOCS_URL));
 }
 
 void VisualShaderEditor::_notification(int p_what) {
@@ -7832,7 +7832,7 @@ VisualShaderEditor::~VisualShaderEditor() {
 }
 
 class VisualShaderNodePluginInputEditor : public OptionButton {
-	GDCLASS(VisualShaderNodePluginInputEditor, OptionButton);
+	VLTRCLASS(VisualShaderNodePluginInputEditor, OptionButton);
 
 	VisualShaderEditor *editor = nullptr;
 	Ref<VisualShaderNodeInput> input;
@@ -7889,7 +7889,7 @@ public:
 ////////////////
 
 class VisualShaderNodePluginVaryingEditor : public OptionButton {
-	GDCLASS(VisualShaderNodePluginVaryingEditor, OptionButton);
+	VLTRCLASS(VisualShaderNodePluginVaryingEditor, OptionButton);
 
 	VisualShaderEditor *editor = nullptr;
 	Ref<VisualShaderNodeVarying> varying;
@@ -7971,7 +7971,7 @@ public:
 ////////////////
 
 class VisualShaderNodePluginParameterRefEditor : public OptionButton {
-	GDCLASS(VisualShaderNodePluginParameterRefEditor, OptionButton);
+	VLTRCLASS(VisualShaderNodePluginParameterRefEditor, OptionButton);
 
 	VisualShaderEditor *editor = nullptr;
 	Ref<VisualShaderNodeParameterRef> parameter_ref;
@@ -8029,7 +8029,7 @@ public:
 ////////////////
 
 class VisualShaderNodePluginDefaultEditor : public VBoxContainer {
-	GDCLASS(VisualShaderNodePluginDefaultEditor, VBoxContainer);
+	VLTRCLASS(VisualShaderNodePluginDefaultEditor, VBoxContainer);
 	VisualShaderEditor *editor = nullptr;
 	Ref<Resource> parent_resource;
 	int node_id = 0;

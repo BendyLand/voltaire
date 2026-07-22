@@ -43,7 +43,7 @@ class Tree;
 class TreeItem;
 
 class GroupsEditor : public VBoxContainer {
-	GDCLASS(GroupsEditor, VBoxContainer);
+	VLTRCLASS(GroupsEditor, VBoxContainer);
 
 	const String GLOBAL_GROUP_PREFIX = "global_group/";
 

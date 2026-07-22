@@ -38,7 +38,7 @@
 ///////////////////////////////////////
 
 class SkeletonModification2DTwoBoneIK : public SkeletonModification2D {
-	GDCLASS(SkeletonModification2DTwoBoneIK, SkeletonModification2D);
+	VLTRCLASS(SkeletonModification2DTwoBoneIK, SkeletonModification2D);
 
 private:
 	NodePath target_node;

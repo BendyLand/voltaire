@@ -34,7 +34,7 @@
 
 class Viewport;
 class VisibleOnScreenNotifier2D : public Node2D {
-	GDCLASS(VisibleOnScreenNotifier2D, Node2D);
+	VLTRCLASS(VisibleOnScreenNotifier2D, Node2D);
 
 	Rect2 rect;
 	bool show_rect = true;
@@ -79,7 +79,7 @@ public:
 };
 
 class VisibleOnScreenEnabler2D : public VisibleOnScreenNotifier2D {
-	GDCLASS(VisibleOnScreenEnabler2D, VisibleOnScreenNotifier2D);
+	VLTRCLASS(VisibleOnScreenEnabler2D, VisibleOnScreenNotifier2D);
 
 public:
 	enum EnableMode {

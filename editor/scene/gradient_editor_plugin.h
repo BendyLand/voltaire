@@ -40,7 +40,7 @@ class PopupPanel;
 class GradientTexture1D;
 
 class GradientEdit : public Control {
-	GDCLASS(GradientEdit, Control);
+	VLTRCLASS(GradientEdit, Control);
 
 	Ref<Gradient> gradient;
 	Ref<GradientTexture1D> preview_texture;
@@ -106,7 +106,7 @@ public:
 };
 
 class GradientEditor : public VBoxContainer {
-	GDCLASS(GradientEditor, VBoxContainer);
+	VLTRCLASS(GradientEditor, VBoxContainer);
 
 	Button *reverse_button = nullptr;
 	Button *snap_button = nullptr;
@@ -127,7 +127,7 @@ public:
 };
 
 class EditorInspectorPluginGradient : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginGradient, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginGradient, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -135,7 +135,7 @@ public:
 };
 
 class GradientEditorPlugin : public EditorPlugin {
-	GDCLASS(GradientEditorPlugin, EditorPlugin);
+	VLTRCLASS(GradientEditorPlugin, EditorPlugin);
 
 public:
 	virtual String get_plugin_name() const override { return "Gradient"; }

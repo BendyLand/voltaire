@@ -37,20 +37,20 @@
 
 String EditorSyntaxHighlighter::_get_name() const {
 	String ret = "Unnamed";
-	GDVIRTUAL_CALL(_get_name, ret);
+	VLTRVIRTUAL_CALL(_get_name, ret);
 	return ret;
 }
 
 PackedStringArray EditorSyntaxHighlighter::_get_supported_languages() const {
 	PackedStringArray ret;
-	GDVIRTUAL_CALL(_get_supported_languages, ret);
+	VLTRVIRTUAL_CALL(_get_supported_languages, ret);
 	return ret;
 }
 
 Ref<EditorSyntaxHighlighter> EditorSyntaxHighlighter::_create() const {
 	Ref<EditorSyntaxHighlighter> syntax_highlighter;
-	if (GDVIRTUAL_IS_OVERRIDDEN(_create)) {
-		GDVIRTUAL_CALL(_create, syntax_highlighter);
+	if (VLTRVIRTUAL_IS_OVERRIDDEN(_create)) {
+		VLTRVIRTUAL_CALL(_create, syntax_highlighter);
 	} else {
 		syntax_highlighter.instantiate();
 		if (get_script_instance()) {
@@ -63,9 +63,9 @@ Ref<EditorSyntaxHighlighter> EditorSyntaxHighlighter::_create() const {
 void EditorSyntaxHighlighter::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_get_edited_resource"), &EditorSyntaxHighlighter::_get_edited_resource);
 
-	GDVIRTUAL_BIND(_get_name)
-	GDVIRTUAL_BIND(_get_supported_languages)
-	GDVIRTUAL_BIND(_create)
+	VLTRVIRTUAL_BIND(_get_name)
+	VLTRVIRTUAL_BIND(_get_supported_languages)
+	VLTRVIRTUAL_BIND(_create)
 }
 
 ////

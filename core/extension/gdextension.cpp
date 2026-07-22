@@ -561,7 +561,7 @@ void GDExtension::_register_extension_class_internal(GDExtensionClassLibraryPtr 
 	}
 #endif
 
-	extension->gdextension.create_gdtype();
+	extension->gdextension.create_vltrtype();
 
 	ClassDB::register_extension_class(&extension->gdextension);
 
@@ -983,7 +983,7 @@ void GDExtension::_clear_extension(Extension *p_extension) {
 		obj->clear_internal_extension();
 	}
 
-	p_extension->gdextension.destroy_gdtype();
+	p_extension->gdextension.destroy_vltrtype();
 }
 
 void GDExtension::track_instance_binding(Object *p_object) {

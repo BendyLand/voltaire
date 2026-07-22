@@ -34,7 +34,7 @@
 #include "servers/physics_2d/physics_server_2d_types.h"
 
 class PhysicsTestMotionResult2D : public RefCounted {
-	GDCLASS(PhysicsTestMotionResult2D, RefCounted);
+	VLTRCLASS(PhysicsTestMotionResult2D, RefCounted);
 
 	PS2DT::MotionResult result;
 

@@ -34,7 +34,7 @@
 #include "core/object/ref_counted.h"
 
 class EngineProfiler : public RefCounted {
-	GDCLASS(EngineProfiler, RefCounted);
+	VLTRCLASS(EngineProfiler, RefCounted);
 
 private:
 	String registration;
@@ -51,9 +51,9 @@ public:
 	Error unbind();
 	bool is_bound() const { return registration.length() > 0; }
 
-	GDVIRTUAL2(_toggle, bool, Array);
-	GDVIRTUAL1(_add_frame, Array);
-	GDVIRTUAL4(_tick, double, double, double, double);
+	VLTRVIRTUAL2(_toggle, bool, Array);
+	VLTRVIRTUAL1(_add_frame, Array);
+	VLTRVIRTUAL4(_tick, double, double, double, double);
 
 	virtual ~EngineProfiler();
 };

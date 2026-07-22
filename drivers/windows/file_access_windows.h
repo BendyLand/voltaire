@@ -37,7 +37,7 @@
 #include <cstdio>
 
 class FileAccessWindows : public FileAccess {
-	GDSOFTCLASS(FileAccessWindows, FileAccess);
+	VLTRSOFTCLASS(FileAccessWindows, FileAccess);
 	FILE *f = nullptr;
 	int flags = 0;
 	void check_errors(bool p_write = false) const;

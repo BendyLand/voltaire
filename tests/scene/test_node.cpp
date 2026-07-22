@@ -44,7 +44,7 @@ TEST_FORCE_LINK(test_node)
 namespace TestNode {
 
 class TestNode : public Node {
-	GDCLASS(TestNode, Node);
+	VLTRCLASS(TestNode, Node);
 
 protected:
 	void _notification(int p_what) {

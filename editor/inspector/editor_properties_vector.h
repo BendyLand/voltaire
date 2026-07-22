@@ -37,7 +37,7 @@ class EditorSpinSlider;
 class TextureButton;
 
 class EditorPropertyVectorN : public EditorProperty {
-	GDCLASS(EditorPropertyVectorN, EditorProperty);
+	VLTRCLASS(EditorPropertyVectorN, EditorProperty);
 
 	static const String COMPONENT_LABELS[4];
 
@@ -66,42 +66,42 @@ public:
 };
 
 class EditorPropertyVector2 : public EditorPropertyVectorN {
-	GDCLASS(EditorPropertyVector2, EditorPropertyVectorN);
+	VLTRCLASS(EditorPropertyVector2, EditorPropertyVectorN);
 
 public:
 	EditorPropertyVector2(bool p_force_wide = false);
 };
 
 class EditorPropertyVector2i : public EditorPropertyVectorN {
-	GDCLASS(EditorPropertyVector2i, EditorPropertyVectorN);
+	VLTRCLASS(EditorPropertyVector2i, EditorPropertyVectorN);
 
 public:
 	EditorPropertyVector2i(bool p_force_wide = false);
 };
 
 class EditorPropertyVector3 : public EditorPropertyVectorN {
-	GDCLASS(EditorPropertyVector3, EditorPropertyVectorN);
+	VLTRCLASS(EditorPropertyVector3, EditorPropertyVectorN);
 
 public:
 	EditorPropertyVector3(bool p_force_wide = false);
 };
 
 class EditorPropertyVector3i : public EditorPropertyVectorN {
-	GDCLASS(EditorPropertyVector3i, EditorPropertyVectorN);
+	VLTRCLASS(EditorPropertyVector3i, EditorPropertyVectorN);
 
 public:
 	EditorPropertyVector3i(bool p_force_wide = false);
 };
 
 class EditorPropertyVector4 : public EditorPropertyVectorN {
-	GDCLASS(EditorPropertyVector4, EditorPropertyVectorN);
+	VLTRCLASS(EditorPropertyVector4, EditorPropertyVectorN);
 
 public:
 	EditorPropertyVector4(bool p_force_wide = false);
 };
 
 class EditorPropertyVector4i : public EditorPropertyVectorN {
-	GDCLASS(EditorPropertyVector4i, EditorPropertyVectorN);
+	VLTRCLASS(EditorPropertyVector4i, EditorPropertyVectorN);
 
 public:
 	EditorPropertyVector4i(bool p_force_wide = false);

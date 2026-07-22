@@ -34,7 +34,7 @@
 #include "core/object/object.h"
 
 class GodotInstance : public Object {
-	GDCLASS(GodotInstance, Object);
+	VLTRCLASS(GodotInstance, Object);
 
 	bool started = false;
 

@@ -39,7 +39,7 @@ TEST_FORCE_LINK(test_undo_redo)
 namespace TestUndoRedo {
 
 class _TestUndoRedoObject : public Object {
-	GDCLASS(_TestUndoRedoObject, Object);
+	VLTRCLASS(_TestUndoRedoObject, Object);
 	int property_value = 0;
 
 protected:

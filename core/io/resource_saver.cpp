@@ -45,25 +45,25 @@ ResourceSaverGetResourceIDForPath ResourceSaver::save_get_id_for_path = nullptr;
 
 Error ResourceFormatSaver::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
 	Error err = ERR_METHOD_NOT_FOUND;
-	GDVIRTUAL_CALL(_save, p_resource, p_path, p_flags, err);
+	VLTRVIRTUAL_CALL(_save, p_resource, p_path, p_flags, err);
 	return err;
 }
 
 Error ResourceFormatSaver::set_uid(const String &p_path, ResourceUID::ID p_uid) {
 	Error err = ERR_FILE_UNRECOGNIZED;
-	GDVIRTUAL_CALL(_set_uid, p_path, p_uid, err);
+	VLTRVIRTUAL_CALL(_set_uid, p_path, p_uid, err);
 	return err;
 }
 
 bool ResourceFormatSaver::recognize(const Ref<Resource> &p_resource) const {
 	bool success = false;
-	GDVIRTUAL_CALL(_recognize, p_resource, success);
+	VLTRVIRTUAL_CALL(_recognize, p_resource, success);
 	return success;
 }
 
 void ResourceFormatSaver::get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) const {
 	PackedStringArray exts;
-	if (GDVIRTUAL_CALL(_get_recognized_extensions, p_resource, exts)) {
+	if (VLTRVIRTUAL_CALL(_get_recognized_extensions, p_resource, exts)) {
 		const String *r = exts.ptr();
 		for (int i = 0; i < exts.size(); ++i) {
 			p_extensions->push_back(r[i]);
@@ -73,7 +73,7 @@ void ResourceFormatSaver::get_recognized_extensions(const Ref<Resource> &p_resou
 
 bool ResourceFormatSaver::recognize_path(const Ref<Resource> &p_resource, const String &p_path) const {
 	bool ret = false;
-	if (GDVIRTUAL_CALL(_recognize_path, p_resource, p_path, ret)) {
+	if (VLTRVIRTUAL_CALL(_recognize_path, p_resource, p_path, ret)) {
 		return ret;
 	}
 
@@ -92,11 +92,11 @@ bool ResourceFormatSaver::recognize_path(const Ref<Resource> &p_resource, const 
 }
 
 void ResourceFormatSaver::_bind_methods() {
-	GDVIRTUAL_BIND(_save, "resource", "path", "flags");
-	GDVIRTUAL_BIND(_set_uid, "path", "uid");
-	GDVIRTUAL_BIND(_recognize, "resource");
-	GDVIRTUAL_BIND(_get_recognized_extensions, "resource");
-	GDVIRTUAL_BIND(_recognize_path, "resource", "path");
+	VLTRVIRTUAL_BIND(_save, "resource", "path", "flags");
+	VLTRVIRTUAL_BIND(_set_uid, "path", "uid");
+	VLTRVIRTUAL_BIND(_recognize, "resource");
+	VLTRVIRTUAL_BIND(_get_recognized_extensions, "resource");
+	VLTRVIRTUAL_BIND(_recognize_path, "resource", "path");
 }
 
 Error ResourceSaver::save(RequiredParam<Resource> rp_resource, const String &p_path, uint32_t p_flags) {

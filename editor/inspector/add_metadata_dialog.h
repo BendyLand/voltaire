@@ -37,7 +37,7 @@ class EditorVariantTypeOptionButton;
 class LineEdit;
 
 class AddMetadataDialog : public ConfirmationDialog {
-	GDCLASS(AddMetadataDialog, ConfirmationDialog);
+	VLTRCLASS(AddMetadataDialog, ConfirmationDialog);
 
 public:
 	AddMetadataDialog();

@@ -43,7 +43,7 @@ class WindowWrapper;
 class ScriptEditorDebugger;
 
 class GameViewDebugger : public EditorDebuggerPlugin {
-	GDCLASS(GameViewDebugger, EditorDebuggerPlugin);
+	VLTRCLASS(GameViewDebugger, EditorDebuggerPlugin);
 
 private:
 	Vector<Ref<EditorDebuggerSession>> sessions;
@@ -117,7 +117,7 @@ public:
 };
 
 class GameView : public VBoxContainer {
-	GDCLASS(GameView, VBoxContainer);
+	VLTRCLASS(GameView, VBoxContainer);
 
 	enum {
 		CAMERA_RESET_2D,
@@ -294,7 +294,7 @@ public:
 };
 
 class GameViewPluginBase : public EditorPlugin {
-	GDCLASS(GameViewPluginBase, EditorPlugin);
+	VLTRCLASS(GameViewPluginBase, EditorPlugin);
 
 #ifndef ANDROID_ENABLED
 	GameView *game_view = nullptr;
@@ -337,7 +337,7 @@ public:
 };
 
 class GameViewPlugin : public GameViewPluginBase {
-	GDCLASS(GameViewPlugin, GameViewPluginBase);
+	VLTRCLASS(GameViewPlugin, GameViewPluginBase);
 
 public:
 	GameViewPlugin();

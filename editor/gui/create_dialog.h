@@ -43,7 +43,7 @@ class HBoxContainer;
 class MenuButton;
 
 class CreateDialog : public ConfirmationDialog {
-	GDCLASS(CreateDialog, ConfirmationDialog);
+	VLTRCLASS(CreateDialog, ConfirmationDialog);
 
 	enum TypeCategory {
 		CPP_TYPE,

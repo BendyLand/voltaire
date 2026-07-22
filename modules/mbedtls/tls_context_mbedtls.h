@@ -41,7 +41,7 @@
 class TLSContextMbedTLS;
 
 class CookieContextMbedTLS : public RefCounted {
-	GDSOFTCLASS(CookieContextMbedTLS, RefCounted);
+	VLTRSOFTCLASS(CookieContextMbedTLS, RefCounted);
 
 	friend class TLSContextMbedTLS;
 
@@ -58,7 +58,7 @@ public:
 };
 
 class TLSContextMbedTLS : public RefCounted {
-	GDSOFTCLASS(TLSContextMbedTLS, RefCounted);
+	VLTRSOFTCLASS(TLSContextMbedTLS, RefCounted);
 
 private:
 	bool inited = false;

@@ -47,7 +47,7 @@ class OptionButton;
 class EditorFileDialog;
 
 class ClipboardSpriteFrames : public Resource {
-	GDCLASS(ClipboardSpriteFrames, Resource);
+	VLTRCLASS(ClipboardSpriteFrames, Resource);
 
 public:
 	struct Frame {
@@ -58,7 +58,7 @@ public:
 };
 
 class ClipboardAnimation : public Resource {
-	GDCLASS(ClipboardAnimation, Resource);
+	VLTRCLASS(ClipboardAnimation, Resource);
 
 public:
 	String name;
@@ -70,7 +70,7 @@ public:
 };
 
 class SpriteFramesEditor : public EditorDock {
-	GDCLASS(SpriteFramesEditor, EditorDock);
+	VLTRCLASS(SpriteFramesEditor, EditorDock);
 
 	Ref<SpriteFrames> frames;
 	Node *animated_sprite = nullptr;
@@ -315,7 +315,7 @@ public:
 };
 
 class SpriteFramesEditorPlugin : public EditorPlugin {
-	GDCLASS(SpriteFramesEditorPlugin, EditorPlugin);
+	VLTRCLASS(SpriteFramesEditorPlugin, EditorPlugin);
 
 	SpriteFramesEditor *frames_editor = nullptr;
 

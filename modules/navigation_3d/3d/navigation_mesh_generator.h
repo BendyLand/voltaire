@@ -35,7 +35,7 @@
 class NavigationMeshSourceGeometryData3D;
 
 class NavigationMeshGenerator : public Object {
-	GDCLASS(NavigationMeshGenerator, Object);
+	VLTRCLASS(NavigationMeshGenerator, Object);
 
 	static NavigationMeshGenerator *singleton;
 

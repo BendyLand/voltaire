@@ -39,7 +39,7 @@ class ResourceFormatImporter;
 typedef Ref<Resource> (*ResourceFormatImporterLoadOnStartup)(ResourceFormatImporter *p_importer, const String &p_path, Error *r_error, bool p_use_sub_threads, float *r_progress, ResourceFormatLoader::CacheMode p_cache_mode);
 
 class ResourceFormatImporter : public ResourceFormatLoader {
-	GDSOFTCLASS(ResourceFormatImporter, ResourceFormatLoader);
+	VLTRSOFTCLASS(ResourceFormatImporter, ResourceFormatLoader);
 
 	struct PathAndType {
 		String path;
@@ -108,10 +108,10 @@ public:
 };
 
 class ResourceImporter : public RefCounted {
-	GDCLASS(ResourceImporter, RefCounted);
+	VLTRCLASS(ResourceImporter, RefCounted);
 
 protected:
-	GDVIRTUAL1RC(Vector<String>, _get_build_dependencies, String)
+	VLTRVIRTUAL1RC(Vector<String>, _get_build_dependencies, String)
 
 	static void _bind_methods();
 
@@ -169,7 +169,7 @@ public:
 VARIANT_ENUM_CAST(ResourceImporter::ImportOrder);
 
 class ResourceFormatImporterSaver : public ResourceFormatSaver {
-	GDCLASS(ResourceFormatImporterSaver, ResourceFormatSaver)
+	VLTRCLASS(ResourceFormatImporterSaver, ResourceFormatSaver)
 
 public:
 	virtual Error set_uid(const String &p_path, ResourceUID::ID p_uid) override;

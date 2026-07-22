@@ -34,7 +34,7 @@
 #include "scene/resources/2d/navigation_polygon.h"
 
 class NavigationRegion2D : public Node2D {
-	GDCLASS(NavigationRegion2D, Node2D);
+	VLTRCLASS(NavigationRegion2D, Node2D);
 
 	bool enabled = true;
 	bool use_edge_connections = true;

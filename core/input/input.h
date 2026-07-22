@@ -76,7 +76,7 @@ enum CursorShape : int {
 } //namespace InputClassEnums
 
 class Input : public Object {
-	GDCLASS(Input, Object);
+	VLTRCLASS(Input, Object);
 	_THREAD_SAFE_CLASS_
 
 	static inline Input *singleton = nullptr;

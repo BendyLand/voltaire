@@ -33,7 +33,7 @@
 #include "scene/3d/bone_constraint_3d.h"
 
 class AimModifier3D : public BoneConstraint3D {
-	GDCLASS(AimModifier3D, BoneConstraint3D);
+	VLTRCLASS(AimModifier3D, BoneConstraint3D);
 
 public:
 	struct AimModifier3DSetting : public BoneConstraint3DSetting {

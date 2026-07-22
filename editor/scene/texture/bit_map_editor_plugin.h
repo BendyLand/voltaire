@@ -38,7 +38,7 @@ class AspectRatioContainer;
 class TextureRect;
 
 class BitMapEditor : public VBoxContainer {
-	GDCLASS(BitMapEditor, VBoxContainer);
+	VLTRCLASS(BitMapEditor, VBoxContainer);
 
 private:
 	AspectRatioContainer *centering_container = nullptr;
@@ -60,7 +60,7 @@ public:
 };
 
 class EditorInspectorPluginBitMap : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginBitMap, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginBitMap, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -68,7 +68,7 @@ public:
 };
 
 class BitMapEditorPlugin : public EditorPlugin {
-	GDCLASS(BitMapEditorPlugin, EditorPlugin);
+	VLTRCLASS(BitMapEditorPlugin, EditorPlugin);
 
 public:
 	BitMapEditorPlugin();

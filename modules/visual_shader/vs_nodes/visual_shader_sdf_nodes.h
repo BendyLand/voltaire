@@ -33,7 +33,7 @@
 #include "modules/visual_shader/visual_shader.h"
 
 class VisualShaderNodeSDFToScreenUV : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeSDFToScreenUV, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeSDFToScreenUV, VisualShaderNode);
 
 public:
 	virtual String get_caption() const override;
@@ -54,7 +54,7 @@ public:
 };
 
 class VisualShaderNodeScreenUVToSDF : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeScreenUVToSDF, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeScreenUVToSDF, VisualShaderNode);
 
 public:
 	virtual String get_caption() const override;
@@ -76,7 +76,7 @@ public:
 };
 
 class VisualShaderNodeTextureSDF : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeTextureSDF, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeTextureSDF, VisualShaderNode);
 
 public:
 	virtual String get_caption() const override;
@@ -97,7 +97,7 @@ public:
 };
 
 class VisualShaderNodeTextureSDFNormal : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeTextureSDFNormal, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeTextureSDFNormal, VisualShaderNode);
 
 public:
 	virtual String get_caption() const override;
@@ -118,7 +118,7 @@ public:
 };
 
 class VisualShaderNodeSDFRaymarch : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeSDFRaymarch, VisualShaderNode);
+	VLTRCLASS(VisualShaderNodeSDFRaymarch, VisualShaderNode);
 
 public:
 	virtual String get_caption() const override;

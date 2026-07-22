@@ -53,7 +53,7 @@
 #include "servers/display/display_server.h"
 
 class SceneImportSettingsData : public Object {
-	GDCLASS(SceneImportSettingsData, Object)
+	VLTRCLASS(SceneImportSettingsData, Object)
 	friend class SceneImportSettingsDialog;
 	HashMap<StringName, Variant> *settings = nullptr;
 	HashMap<StringName, Variant> current;

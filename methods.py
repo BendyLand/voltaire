@@ -157,8 +157,8 @@ def get_version_info(module_version_string="", silent=False):
 
     # For dev snapshots (alpha, beta, RC, etc.) we do not commit status change to Git,
     # so this define provides a way to override it without having to modify the source.
-    if os.getenv("GODOT_VERSION_STATUS") is not None:
-        version_info["status"] = str(os.getenv("GODOT_VERSION_STATUS"))
+    if os.getenv("VLTR_VERSION_STATUS") is not None:
+        version_info["status"] = str(os.getenv("VLTR_VERSION_STATUS"))
         if not silent:
             print_info(f"Using version status '{version_info['status']}', overriding the original '{version.status}'.")
 
@@ -546,8 +546,8 @@ def generate_cpp_hint_file(filename):
     else:
         try:
             with open(filename, "w", encoding="utf-8", newline="\n") as fd:
-                fd.write("#define GDCLASS(m_class, m_inherits)\n")
-                for name in ["GDVIRTUAL", "EXBIND", "MODBIND"]:
+                fd.write("#define VLTRCLASS(m_class, m_inherits)\n")
+                for name in ["VLTRVIRTUAL", "EXBIND", "MODBIND"]:
                     for count in range(13):
                         for suffix in ["", "R", "C", "RC"]:
                             fd.write(f"#define {name}{count}{suffix}(")
@@ -1514,10 +1514,11 @@ def generate_copyright_header(filename: str) -> str:
 /*  %s*/
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                        https://blandlogic.com                          */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */

@@ -39,7 +39,7 @@
 
 // Anchor capability configuration
 class OpenXRSpatialCapabilityConfigurationAnchor : public OpenXRSpatialCapabilityConfigurationBaseHeader {
-	GDCLASS(OpenXRSpatialCapabilityConfigurationAnchor, OpenXRSpatialCapabilityConfigurationBaseHeader);
+	VLTRCLASS(OpenXRSpatialCapabilityConfigurationAnchor, OpenXRSpatialCapabilityConfigurationBaseHeader);
 
 public:
 	virtual bool has_valid_configuration() const override;
@@ -57,7 +57,7 @@ private:
 
 // Anchor component anchor list
 class OpenXRSpatialComponentAnchorList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentAnchorList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentAnchorList, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();
@@ -77,7 +77,7 @@ private:
 
 // Persistence configuration
 class OpenXRSpatialContextPersistenceConfig : public OpenXRStructureBase {
-	GDCLASS(OpenXRSpatialContextPersistenceConfig, OpenXRStructureBase);
+	VLTRCLASS(OpenXRSpatialContextPersistenceConfig, OpenXRStructureBase);
 
 public:
 	bool has_valid_configuration() const;
@@ -100,7 +100,7 @@ private:
 
 // Component persistence list
 class OpenXRSpatialComponentPersistenceList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentPersistenceList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentPersistenceList, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();
@@ -126,7 +126,7 @@ private:
 
 // Anchor tracker, this adds no new logic, it's purely for typing!
 class OpenXRAnchorTracker : public OpenXRSpatialEntityTracker {
-	GDCLASS(OpenXRAnchorTracker, OpenXRSpatialEntityTracker);
+	VLTRCLASS(OpenXRAnchorTracker, OpenXRSpatialEntityTracker);
 
 protected:
 	static void _bind_methods();
@@ -147,7 +147,7 @@ private:
 
 // (Persistent) anchor logic
 class OpenXRSpatialAnchorCapability : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRSpatialAnchorCapability, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRSpatialAnchorCapability, OpenXRExtensionWrapper);
 
 public:
 	enum PersistenceScope {

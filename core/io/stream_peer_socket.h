@@ -40,7 +40,7 @@ enum class Status;
 #endif
 
 class StreamPeerSocket : public StreamPeer {
-	GDCLASS(StreamPeerSocket, StreamPeer);
+	VLTRCLASS(StreamPeerSocket, StreamPeer);
 
 public:
 	enum Status {

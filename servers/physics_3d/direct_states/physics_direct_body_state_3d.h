@@ -34,7 +34,7 @@
 #include "servers/physics_3d/direct_states/physics_direct_space_state_3d.h"
 
 class PhysicsDirectBodyState3D : public Object {
-	GDCLASS(PhysicsDirectBodyState3D, Object);
+	VLTRCLASS(PhysicsDirectBodyState3D, Object);
 
 protected:
 	static void _bind_methods();

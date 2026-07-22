@@ -71,7 +71,7 @@ void ExportTemplateManager::_request_mirrors() {
 	// (which always have a number following their status, e.g. "alpha1").
 	// Therefore, don't display download-related features when using a development version
 	// (whose builds aren't numbered).
-	if (!strcmp(GODOT_VERSION_STATUS, "dev") || !strcmp(GODOT_VERSION_STATUS, "beta") || !strcmp(GODOT_VERSION_STATUS, "rc")) {
+	if (!strcmp(VLTR_VERSION_STATUS, "dev") || !strcmp(VLTR_VERSION_STATUS, "beta") || !strcmp(VLTR_VERSION_STATUS, "rc")) {
 		_set_empty_mirror_list();
 		mirrors_list->set_tooltip_text(TTRC("Official export templates aren't available for development builds."));
 #ifdef REAL_T_IS_DOUBLE
@@ -86,7 +86,7 @@ void ExportTemplateManager::_request_mirrors() {
 	}
 
 	if (mirrors_list->get_tooltip_text().is_empty()) {
-		const String mirrors_metadata_url = vformat("https://godotengine.org/mirrorlist/%s.json", GODOT_VERSION_FULL_CONFIG);
+		const String mirrors_metadata_url = vformat("https://godotengine.org/mirrorlist/%s.json", VLTR_VERSION_FULL_CONFIG);
 		mirrors_requester->request(mirrors_metadata_url);
 	}
 }
@@ -199,7 +199,7 @@ void ExportTemplateManager::_delete_confirmed() {
 	_delete_file(item_to_delete);
 
 	const String selected_version = version_list->get_item_text(version_list->get_current());
-	if (selected_version != GODOT_VERSION_FULL_CONFIG) {
+	if (selected_version != VLTR_VERSION_FULL_CONFIG) {
 		// Deleting all installed templates removes the version from list.
 		_update_version_list();
 	}
@@ -559,7 +559,7 @@ void ExportTemplateManager::_initialize_template_data() {
 	}
 
 	// Template directory status.
-	DirAccess::make_dir_recursive_absolute(_get_template_folder_path(GODOT_VERSION_FULL_CONFIG));
+	DirAccess::make_dir_recursive_absolute(_get_template_folder_path(VLTR_VERSION_FULL_CONFIG));
 	_update_version_list();
 }
 
@@ -575,7 +575,7 @@ void ExportTemplateManager::_update_version_list() {
 
 	int current_version_id = -1;
 	for (const String &dir : templates_dir->get_directories()) {
-		if (dir == GODOT_VERSION_FULL_CONFIG) {
+		if (dir == VLTR_VERSION_FULL_CONFIG) {
 			version_list->add_item(dir);
 			version_list->set_item_custom_fg_color(-1, theme_cache.current_version_color);
 			current_version_id = version_list->get_item_count() - 1;
@@ -614,7 +614,7 @@ void ExportTemplateManager::_update_template_tree() {
 	Ref<DirAccess> template_directory = DirAccess::open(_get_template_folder_path(selected_version));
 	ERR_FAIL_COND(template_directory.is_null());
 
-	bool is_current_version = (selected_version == GODOT_VERSION_FULL_CONFIG);
+	bool is_current_version = (selected_version == VLTR_VERSION_FULL_CONFIG);
 	HashMap<TemplateID, LocalVector<String>> installed_template_files;
 
 	for (const KeyValue<PlatformID, PlatformInfo> &KV : platform_map) {
@@ -845,7 +845,7 @@ void ExportTemplateManager::_update_install_button() {
 
 bool ExportTemplateManager::_can_download_templates() {
 	const String selected_version = version_list->get_item_text(version_list->get_current());
-	return !mirrors_empty && _is_online() && selected_version == GODOT_VERSION_FULL_CONFIG;
+	return !mirrors_empty && _is_online() && selected_version == VLTR_VERSION_FULL_CONFIG;
 }
 
 void ExportTemplateManager::_update_folding_cache(TreeItem *p_item) {
@@ -1399,7 +1399,7 @@ String ExportTemplateManager::get_android_source_zip(const Ref<EditorExportPrese
 		}
 	}
 
-	const String templates_dir = EditorPaths::get_singleton()->get_export_templates_dir().path_join(GODOT_VERSION_FULL_CONFIG);
+	const String templates_dir = EditorPaths::get_singleton()->get_export_templates_dir().path_join(VLTR_VERSION_FULL_CONFIG);
 	return templates_dir.path_join("android_source.zip");
 }
 
@@ -1411,7 +1411,7 @@ String ExportTemplateManager::get_android_template_identifier(const Ref<EditorEx
 			return android_source_zip + String(" [") + FileAccess::get_md5(android_source_zip) + String("]");
 		}
 	}
-	return GODOT_VERSION_FULL_CONFIG;
+	return VLTR_VERSION_FULL_CONFIG;
 }
 
 bool ExportTemplateManager::is_android_template_installed(const Ref<EditorExportPreset> &p_preset) {
@@ -1693,7 +1693,7 @@ ExportTemplateManager::ExportTemplateManager() {
 	mirrors_requester->connect("request_completed", callable_mp(this, &ExportTemplateManager::_mirrors_request_completed));
 	add_child(mirrors_requester);
 
-	const String template_directory = _get_template_folder_path(GODOT_VERSION_FULL_CONFIG);
+	const String template_directory = _get_template_folder_path(VLTR_VERSION_FULL_CONFIG);
 	for (int i = 0; i < 5; i++) {
 		TemplateDownloader *downloader = memnew(TemplateDownloader(template_directory));
 		downloader->set_use_threads(true);

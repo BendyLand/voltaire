@@ -45,7 +45,7 @@ class Window;
 class World2D;
 
 class CanvasItem : public Node {
-	GDCLASS(CanvasItem, Node);
+	VLTRCLASS(CanvasItem, Node);
 
 	friend class CanvasLayer;
 
@@ -228,7 +228,7 @@ protected:
 
 	_FORCE_INLINE_ void set_hide_clip_children(bool p_value) { hide_clip_children = p_value; }
 
-	GDVIRTUAL0(_draw)
+	VLTRVIRTUAL0(_draw)
 
 public:
 	enum {
@@ -456,7 +456,7 @@ VARIANT_ENUM_CAST(CanvasItem::ClipChildrenMode)
 VARIANT_ENUM_CAST(CanvasItem::OversamplingWithScale)
 
 class CanvasTexture : public Texture2D {
-	GDCLASS(CanvasTexture, Texture2D);
+	VLTRCLASS(CanvasTexture, Texture2D);
 	OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
 
 	Ref<Texture2D> diffuse_texture;

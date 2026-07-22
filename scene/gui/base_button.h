@@ -37,7 +37,7 @@ class ButtonGroup;
 class Timer;
 
 class BaseButton : public Control {
-	GDCLASS(BaseButton, Control);
+	VLTRCLASS(BaseButton, Control);
 
 public:
 	enum ActionMode {
@@ -93,8 +93,8 @@ protected:
 	bool _was_pressed_by_mouse() const;
 	void _accessibility_action_click(const Variant &p_data);
 
-	GDVIRTUAL0(_pressed)
-	GDVIRTUAL1(_toggled, bool)
+	VLTRVIRTUAL0(_pressed)
+	VLTRVIRTUAL1(_toggled, bool)
 
 public:
 	enum DrawMode {
@@ -156,7 +156,7 @@ VARIANT_ENUM_CAST(BaseButton::DrawMode)
 VARIANT_ENUM_CAST(BaseButton::ActionMode)
 
 class ButtonGroup : public Resource {
-	GDCLASS(ButtonGroup, Resource);
+	VLTRCLASS(ButtonGroup, Resource);
 	friend class BaseButton;
 	HashSet<BaseButton *> buttons;
 	bool allow_unpress = false;

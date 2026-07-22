@@ -49,7 +49,7 @@ class TextureRect;
 
 // Inspector controls.
 class ControlPositioningWarning : public MarginContainer {
-	GDCLASS(ControlPositioningWarning, MarginContainer);
+	VLTRCLASS(ControlPositioningWarning, MarginContainer);
 
 	Control *control_node = nullptr;
 
@@ -76,7 +76,7 @@ public:
 };
 
 class EditorPropertyAnchorsPreset : public EditorProperty {
-	GDCLASS(EditorPropertyAnchorsPreset, EditorProperty);
+	VLTRCLASS(EditorPropertyAnchorsPreset, EditorProperty);
 	OptionButton *options = nullptr;
 
 	void _option_selected(int p_which);
@@ -92,7 +92,7 @@ public:
 };
 
 class EditorPropertySizeFlags : public EditorProperty {
-	GDCLASS(EditorPropertySizeFlags, EditorProperty);
+	VLTRCLASS(EditorPropertySizeFlags, EditorProperty);
 
 	enum FlagPreset {
 		SIZE_FLAGS_PRESET_FILL,
@@ -125,7 +125,7 @@ public:
 };
 
 class EditorInspectorPluginControl : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginControl, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginControl, EditorInspectorPlugin);
 
 	bool inside_control_category = false;
 
@@ -138,7 +138,7 @@ public:
 
 // Toolbar controls.
 class ControlEditorPopupButton : public Button {
-	GDCLASS(ControlEditorPopupButton, Button);
+	VLTRCLASS(ControlEditorPopupButton, Button);
 
 	Ref<Texture2D> arrow_icon;
 
@@ -160,7 +160,7 @@ public:
 };
 
 class ControlEditorPresetPicker : public MarginContainer {
-	GDCLASS(ControlEditorPresetPicker, MarginContainer);
+	VLTRCLASS(ControlEditorPresetPicker, MarginContainer);
 
 	virtual void _preset_button_pressed(const int p_preset) {}
 
@@ -174,7 +174,7 @@ protected:
 };
 
 class AnchorPresetPicker : public ControlEditorPresetPicker {
-	GDCLASS(AnchorPresetPicker, ControlEditorPresetPicker);
+	VLTRCLASS(AnchorPresetPicker, ControlEditorPresetPicker);
 
 	virtual void _preset_button_pressed(const int p_preset) override;
 
@@ -189,7 +189,7 @@ public:
 };
 
 class SizeFlagPresetPicker : public ControlEditorPresetPicker {
-	GDCLASS(SizeFlagPresetPicker, ControlEditorPresetPicker);
+	VLTRCLASS(SizeFlagPresetPicker, ControlEditorPresetPicker);
 
 	CheckButton *expand_button = nullptr;
 
@@ -211,7 +211,7 @@ public:
 };
 
 class ControlEditorToolbar : public HBoxContainer {
-	GDCLASS(ControlEditorToolbar, HBoxContainer);
+	VLTRCLASS(ControlEditorToolbar, HBoxContainer);
 
 	EditorSelection *editor_selection = nullptr;
 
@@ -254,7 +254,7 @@ public:
 };
 
 class ControlOffsetTransformPreview : public Control {
-	GDCLASS(ControlOffsetTransformPreview, Control);
+	VLTRCLASS(ControlOffsetTransformPreview, Control);
 
 	EditorPlugin *plugin = nullptr;
 	Control *selected_control = nullptr;
@@ -271,7 +271,7 @@ public:
 
 // Editor plugin.
 class ControlEditorPlugin : public EditorPlugin {
-	GDCLASS(ControlEditorPlugin, EditorPlugin);
+	VLTRCLASS(ControlEditorPlugin, EditorPlugin);
 
 	ControlEditorToolbar *toolbar = nullptr;
 	ControlOffsetTransformPreview *offset_transform_preview = nullptr;

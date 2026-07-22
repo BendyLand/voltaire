@@ -35,7 +35,7 @@
 class Translation;
 
 class TranslationDomain : public RefCounted {
-	GDCLASS(TranslationDomain, RefCounted);
+	VLTRCLASS(TranslationDomain, RefCounted);
 
 	struct PseudolocalizationConfig {
 		bool enabled = false;

@@ -501,7 +501,7 @@ public:
 };
 
 class GDScriptFunctionState : public RefCounted {
-	GDCLASS(GDScriptFunctionState, RefCounted);
+	VLTRCLASS(GDScriptFunctionState, RefCounted);
 
 	friend class GDScriptFunction;
 

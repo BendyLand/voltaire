@@ -33,7 +33,7 @@
 #include "core/io/resource_importer.h"
 
 class ResourceImporterImage : public ResourceImporter {
-	GDCLASS(ResourceImporterImage, ResourceImporter);
+	VLTRCLASS(ResourceImporterImage, ResourceImporter);
 
 public:
 	virtual String get_importer_name() const override;

@@ -36,7 +36,7 @@
 class Panel;
 
 class Popup : public Window {
-	GDCLASS(Popup, Window);
+	VLTRCLASS(Popup, Window);
 
 	LocalVector<Window *> visible_parents;
 	bool popped_up = false;
@@ -75,7 +75,7 @@ public:
 };
 
 class PopupPanel : public Popup {
-	GDCLASS(PopupPanel, Popup);
+	VLTRCLASS(PopupPanel, Popup);
 
 	Panel *panel = nullptr;
 

@@ -41,7 +41,7 @@ class Mesh;
 class Sky;
 
 class LightmapGIData : public Resource {
-	GDCLASS(LightmapGIData, Resource);
+	VLTRCLASS(LightmapGIData, Resource);
 	RES_BASE_EXTENSION("lmbake")
 
 public:
@@ -146,7 +146,7 @@ public:
 };
 
 class LightmapGI : public VisualInstance3D {
-	GDCLASS(LightmapGI, VisualInstance3D);
+	VLTRCLASS(LightmapGI, VisualInstance3D);
 
 public:
 	enum BakeQuality {

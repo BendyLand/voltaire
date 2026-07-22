@@ -45,7 +45,7 @@
 // Suffixes such as "Z" are not handled, you need to strip them away manually.
 
 class Time : public Object {
-	GDCLASS(Time, Object);
+	VLTRCLASS(Time, Object);
 	static void _bind_methods();
 	static Time *singleton;
 

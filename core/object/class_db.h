@@ -96,7 +96,7 @@ MethodDefinition D_METHOD(const char *p_name, const VarArgs... p_args) {
 
 class ClassDB {
 	friend class Object;
-	friend class GDType;
+	friend class VLTRType;
 
 public:
 	enum APIType {
@@ -121,7 +121,7 @@ public:
 		APIType api = API_NONE;
 		ClassInfo *inherits_ptr = nullptr;
 		void *class_ptr = nullptr;
-		GDType *gdtype = nullptr;
+		VLTRType *vltrtype = nullptr;
 
 		ObjectGDExtension *gdextension = nullptr;
 
@@ -208,7 +208,7 @@ public:
 	static APIType current_api;
 	static HashMap<APIType, uint32_t> api_hashes_cache;
 
-	static void _add_class(GDType &p_class, const GDType *p_inherits);
+	static void _add_class(VLTRType &p_class, const VLTRType *p_inherits);
 
 	static HashMap<StringName, HashMap<StringName, Variant>> default_values;
 	static HashSet<StringName> default_values_cached;
@@ -225,7 +225,7 @@ public:
 
 	// Types added here will be automatically cleaned up on engine shutdown.
 	// Only add types that aren't cleaned up in another way.
-	static LocalVector<GDType **> gdtype_autorelease_pool;
+	static LocalVector<VLTRType **> vltrtype_autorelease_pool;
 
 private:
 	// Non-locking variants of get_parent_class and is_parent_class.
@@ -244,7 +244,7 @@ public:
 	template <typename T>
 	static void register_class(bool p_virtual = false) {
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use GDCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
 		ClassInfo *t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
@@ -259,7 +259,7 @@ public:
 	template <typename T>
 	static void register_abstract_class() {
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use GDCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
 		ClassInfo *t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
@@ -272,7 +272,7 @@ public:
 	template <typename T>
 	static void register_internal_class() {
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use GDCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
 		ClassInfo *t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
@@ -287,7 +287,7 @@ public:
 	template <typename T>
 	static void register_runtime_class() {
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use GDCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
 		ClassInfo *t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
@@ -312,7 +312,7 @@ public:
 	template <typename T>
 	static void register_custom_instance_class() {
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use GDCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
 		ClassInfo *t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
@@ -329,7 +329,7 @@ public:
 	static void get_extension_class_list(const Ref<GDExtension> &p_extension, List<StringName> *p_classes);
 	static ObjectGDExtension *get_placeholder_extension(const StringName &p_class);
 #endif
-	static const GDType *get_gdtype(const StringName &p_class);
+	static const VLTRType *get_vltrtype(const StringName &p_class);
 	static void get_inheriters_from_class(const StringName &p_class, LocalVector<StringName> &p_classes);
 	static void get_direct_inheriters_from_class(const StringName &p_class, List<StringName> *p_classes);
 	static StringName get_parent_class_nocheck(const StringName &p_class);
@@ -546,13 +546,13 @@ public:
 };
 
 #define BIND_ENUM_CONSTANT(m_constant) \
-	get_gdtype_static_mutable().bind_integer_constant(__constant_get_enum_name(m_constant), __constant_get_enum_value_name(#m_constant), m_constant);
+	get_vltrtype_static_mutable().bind_integer_constant(__constant_get_enum_name(m_constant), __constant_get_enum_value_name(#m_constant), m_constant);
 
 #define BIND_BITFIELD_FLAG(m_constant) \
-	get_gdtype_static_mutable().bind_integer_constant(__constant_get_bitfield_name(m_constant), __constant_get_enum_value_name(#m_constant), m_constant, true);
+	get_vltrtype_static_mutable().bind_integer_constant(__constant_get_bitfield_name(m_constant), __constant_get_enum_value_name(#m_constant), m_constant, true);
 
 #define BIND_CONSTANT(m_constant) \
-	get_gdtype_static_mutable().bind_integer_constant(StringName(), __constant_get_enum_value_name(#m_constant), m_constant);
+	get_vltrtype_static_mutable().bind_integer_constant(StringName(), __constant_get_enum_value_name(#m_constant), m_constant);
 
 #ifdef DEBUG_ENABLED
 

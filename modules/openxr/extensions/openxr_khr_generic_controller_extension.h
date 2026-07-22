@@ -33,7 +33,7 @@
 #include "openxr_extension_wrapper.h"
 
 class OpenXRKHRGenericController : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRKHRGenericController, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRKHRGenericController, OpenXRExtensionWrapper);
 
 public:
 	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;

@@ -33,7 +33,7 @@
 #include "scene/main/node.h"
 
 class EditorPropertyNameProcessor : public Node {
-	GDCLASS(EditorPropertyNameProcessor, Node);
+	VLTRCLASS(EditorPropertyNameProcessor, Node);
 
 	static EditorPropertyNameProcessor *singleton;
 

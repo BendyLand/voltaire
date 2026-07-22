@@ -34,7 +34,7 @@
 #include "scene/resources/animation.h"
 
 class AnimationPlayer : public AnimationMixer {
-	GDCLASS(AnimationPlayer, AnimationMixer);
+	VLTRCLASS(AnimationPlayer, AnimationMixer);
 
 #ifndef DISABLE_DEPRECATED
 public:

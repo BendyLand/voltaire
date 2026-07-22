@@ -43,7 +43,7 @@ class ColorChannelSelector;
 class SpinBox;
 
 class TexturePreview : public MarginContainer {
-	GDCLASS(TexturePreview, MarginContainer);
+	VLTRCLASS(TexturePreview, MarginContainer);
 
 private:
 	struct ThemeCache {
@@ -82,7 +82,7 @@ public:
 };
 
 class EditorInspectorPluginTexture : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginTexture, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginTexture, EditorInspectorPlugin);
 
 	Ref<Image> this_image;
 
@@ -92,7 +92,7 @@ public:
 };
 
 class TextureEditorPlugin : public EditorPlugin {
-	GDCLASS(TextureEditorPlugin, EditorPlugin);
+	VLTRCLASS(TextureEditorPlugin, EditorPlugin);
 
 public:
 	virtual String get_plugin_name() const override { return "Texture2D"; }

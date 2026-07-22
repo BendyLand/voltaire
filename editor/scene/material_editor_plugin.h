@@ -48,7 +48,7 @@ class Button;
 class Label;
 
 class MaterialEditor : public Control {
-	GDCLASS(MaterialEditor, Control);
+	VLTRCLASS(MaterialEditor, Control);
 
 	// Both 2D and 3D materials.
 	Ref<Material> material;
@@ -119,7 +119,7 @@ public:
 };
 
 class EditorInspectorPluginMaterial : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginMaterial, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginMaterial, EditorInspectorPlugin);
 	Ref<Environment> env;
 
 public:
@@ -132,7 +132,7 @@ public:
 };
 
 class MaterialEditorPlugin : public EditorPlugin {
-	GDCLASS(MaterialEditorPlugin, EditorPlugin);
+	VLTRCLASS(MaterialEditorPlugin, EditorPlugin);
 
 public:
 	virtual String get_plugin_name() const override { return "Material"; }
@@ -141,7 +141,7 @@ public:
 };
 
 class ParticleProcessMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(ParticleProcessMaterialConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(ParticleProcessMaterialConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;
@@ -150,7 +150,7 @@ public:
 };
 
 class CanvasItemMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(CanvasItemMaterialConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(CanvasItemMaterialConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;
@@ -159,7 +159,7 @@ public:
 };
 
 class BlitMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	GDCLASS(BlitMaterialConversionPlugin, EditorResourceConversionPlugin);
+	VLTRCLASS(BlitMaterialConversionPlugin, EditorResourceConversionPlugin);
 
 public:
 	virtual String converts_to() const override;

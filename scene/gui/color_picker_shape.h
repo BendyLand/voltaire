@@ -33,7 +33,7 @@
 #include "scene/gui/color_picker.h"
 
 class ColorPickerShape : public Object {
-	GDCLASS(ColorPickerShape, Object);
+	VLTRCLASS(ColorPickerShape, Object);
 
 	void _emit_color_changed();
 
@@ -114,7 +114,7 @@ public:
 };
 
 class ColorPickerShapeOKHSRectangle : public ColorPickerShape {
-	GDCLASS(ColorPickerShapeOKHSRectangle, ColorPickerShape);
+	VLTRCLASS(ColorPickerShapeOKHSRectangle, ColorPickerShape);
 
 	MarginContainer *rectangle_margin = nullptr;
 
@@ -145,7 +145,7 @@ public:
 };
 
 class ColorPickerShapeOKHLRectangle : public ColorPickerShapeOKHSRectangle {
-	GDCLASS(ColorPickerShapeOKHLRectangle, ColorPickerShapeOKHSRectangle);
+	VLTRCLASS(ColorPickerShapeOKHLRectangle, ColorPickerShapeOKHSRectangle);
 
 protected:
 	virtual Ref<Shader> _get_shader() const override { return ColorPickerShape::rectangle_ok_color_hl_shader; }
@@ -168,7 +168,7 @@ public:
 };
 
 class ColorPickerShapeWheel : public ColorPickerShape {
-	GDCLASS(ColorPickerShapeWheel, ColorPickerShape);
+	VLTRCLASS(ColorPickerShapeWheel, ColorPickerShape);
 
 	static constexpr float WHEEL_RADIUS = 0.42;
 
@@ -202,7 +202,7 @@ public:
 };
 
 class ColorPickerShapeCircle : public ColorPickerShape {
-	GDCLASS(ColorPickerShapeCircle, ColorPickerShape);
+	VLTRCLASS(ColorPickerShapeCircle, ColorPickerShape);
 
 protected:
 	Control *circle = nullptr;
@@ -233,7 +233,7 @@ public:
 };
 
 class ColorPickerShapeVHSCircle : public ColorPickerShapeCircle {
-	GDCLASS(ColorPickerShapeVHSCircle, ColorPickerShapeCircle);
+	VLTRCLASS(ColorPickerShapeVHSCircle, ColorPickerShapeCircle);
 
 protected:
 	virtual void _update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) override;
@@ -254,7 +254,7 @@ public:
 };
 
 class ColorPickerShapeOKHSLCircle : public ColorPickerShapeCircle {
-	GDCLASS(ColorPickerShapeOKHSLCircle, ColorPickerShapeCircle);
+	VLTRCLASS(ColorPickerShapeOKHSLCircle, ColorPickerShapeCircle);
 
 protected:
 	virtual void _update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) override;

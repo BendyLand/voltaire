@@ -114,33 +114,33 @@ Object::Connection::operator Variant() const {
 	return d;
 }
 
-void ObjectGDExtension::create_gdtype() {
-	ERR_FAIL_COND(gdtype);
+void ObjectGDExtension::create_vltrtype() {
+	ERR_FAIL_COND(vltrtype);
 
-	gdtype = memnew(GDType(ClassDB::get_gdtype(parent_class_name), class_name));
-	gdtype->initialize();
+	vltrtype = memnew(VLTRType(ClassDB::get_vltrtype(parent_class_name), class_name));
+	vltrtype->initialize();
 }
 
-void ObjectGDExtension::destroy_gdtype() {
-	ERR_FAIL_COND(!gdtype);
+void ObjectGDExtension::destroy_vltrtype() {
+	ERR_FAIL_COND(!vltrtype);
 
 #ifdef TOOLS_ENABLED
 	if (!is_placeholder) {
 #endif
-		memdelete(const_cast<GDType *>(gdtype));
+		memdelete(const_cast<VLTRType *>(vltrtype));
 #ifdef TOOLS_ENABLED
 	}
 #endif
 
-	gdtype = nullptr;
+	vltrtype = nullptr;
 }
 
 ObjectGDExtension::~ObjectGDExtension() {
-	if (gdtype) {
+	if (vltrtype) {
 #ifdef TOOLS_ENABLED
 		if (!is_placeholder) {
 #endif
-			memdelete(const_cast<GDType *>(gdtype));
+			memdelete(const_cast<VLTRType *>(vltrtype));
 #ifdef TOOLS_ENABLED
 		}
 #endif
@@ -175,7 +175,7 @@ bool Object::_predelete() {
 		return false;
 	}
 
-	_gdtype_ptr = nullptr; // Must restore, so constructors/destructors have proper class name access at each stage.
+	_vltrtype_ptr = nullptr; // Must restore, so constructors/destructors have proper class name access at each stage.
 	notification(NOTIFICATION_PREDELETE_CLEANUP, true);
 
 	// Destruction order starts with the most derived class, and progresses towards the base Object class:
@@ -194,7 +194,7 @@ bool Object::_predelete() {
 		}
 		_extension = nullptr;
 		_extension_instance = nullptr;
-		// _gdtype_ptr = nullptr; // The pointer already set to nullptr above, no need to do it again.
+		// _vltrtype_ptr = nullptr; // The pointer already set to nullptr above, no need to do it again.
 	}
 #ifdef TOOLS_ENABLED
 	else if (_instance_bindings != nullptr) {
@@ -217,7 +217,7 @@ void Object::cancel_free() {
 
 void Object::_initialize() {
 	// Cache the class name in the object for quick reference.
-	_gdtype_ptr = &_get_typev();
+	_vltrtype_ptr = &_get_typev();
 	_initialize_classv();
 }
 
@@ -874,7 +874,7 @@ Variant Object::call_const(const StringName &p_method, const Variant **p_args, i
 	return ret;
 }
 
-void Object::_gdvirtual_init_method_ptr(uint32_t p_compat_hash, void *&r_fn_ptr, const StringName &p_fn_name, bool p_compat) const {
+void Object::_vltrvirtual_init_method_ptr(uint32_t p_compat_hash, void *&r_fn_ptr, const StringName &p_fn_name, bool p_compat) const {
 	void *fn_ptr = nullptr;
 	if (_extension->get_virtual_call_data2 && _extension->call_virtual_with_data) {
 		fn_ptr = _extension->get_virtual_call_data2(_extension->class_userdata, &p_fn_name, p_compat_hash);
@@ -898,7 +898,7 @@ void Object::_gdvirtual_init_method_ptr(uint32_t p_compat_hash, void *&r_fn_ptr,
 	}
 #endif
 	if (fn_ptr == nullptr) {
-		fn_ptr = reinterpret_cast<void *>(_INVALID_GDVIRTUAL_FUNC_ADDR);
+		fn_ptr = reinterpret_cast<void *>(_INVALID_VLTRVIRTUAL_FUNC_ADDR);
 	}
 	r_fn_ptr = fn_ptr;
 }
@@ -1102,7 +1102,7 @@ void Object::get_meta_list(List<StringName> *p_list) const {
 
 void Object::add_user_signal(const MethodInfo &p_signal) {
 	ERR_FAIL_COND_MSG(p_signal.name.is_empty(), "Signal name cannot be empty.");
-	ERR_FAIL_COND_MSG(get_gdtype().get_signal_map(false).has(p_signal.name), vformat("User signal's name conflicts with a built-in signal of '%s'.", get_class_name()));
+	ERR_FAIL_COND_MSG(get_vltrtype().get_signal_map(false).has(p_signal.name), vformat("User signal's name conflicts with a built-in signal of '%s'.", get_class_name()));
 
 	ObjectSignalLock signal_lock(this);
 
@@ -1192,7 +1192,7 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 		SignalData *s = signal_map.getptr(p_name);
 		if (!s) {
 #ifdef DEBUG_ENABLED
-			bool signal_is_valid = get_gdtype().get_signal_map(false).has(p_name);
+			bool signal_is_valid = get_vltrtype().get_signal_map(false).has(p_name);
 			//check in script
 			ERR_FAIL_COND_V_MSG(!signal_is_valid && script_instance && !script_instance->get_script()->has_script_signal(p_name), ERR_UNAVAILABLE, vformat("Can't emit non-existing signal \"%s\".", p_name));
 #endif
@@ -1332,18 +1332,18 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 	return err;
 }
 
-void Object::_reset_gdtype() const {
+void Object::_reset_vltrtype() const {
 	if (_extension) {
 		// Set to extension's type.
-		_gdtype_ptr = _extension->gdtype;
+		_vltrtype_ptr = _extension->vltrtype;
 	} else {
 		// Reset to internal type.
-		_gdtype_ptr = &_get_typev();
+		_vltrtype_ptr = &_get_typev();
 	}
 }
 
-void Object::autorelease_gdtype(GDType **r_type) {
-	ClassDB::gdtype_autorelease_pool.push_back(r_type);
+void Object::autorelease_vltrtype(VLTRType **r_type) {
+	ClassDB::vltrtype_autorelease_pool.push_back(r_type);
 }
 
 void Object::_add_user_signal(const String &p_name, const Array &p_args) {
@@ -1420,7 +1420,7 @@ bool Object::has_signal(const StringName &p_name) const {
 		return true;
 	}
 
-	if (get_gdtype().get_signal_map(false).has(p_name)) {
+	if (get_vltrtype().get_signal_map(false).has(p_name)) {
 		return true;
 	}
 
@@ -1527,7 +1527,7 @@ Error Object::connect(const StringName &p_signal, const Callable &p_callable, ui
 
 	SignalData *s = signal_map.getptr(p_signal);
 	if (!s) {
-		bool signal_is_valid = get_gdtype().get_signal_map(false).has(p_signal);
+		bool signal_is_valid = get_vltrtype().get_signal_map(false).has(p_signal);
 		//check in script
 		if (!signal_is_valid && script_instance) {
 			if (script_instance->get_script()->has_script_signal(p_signal)) {
@@ -1585,7 +1585,7 @@ bool Object::is_connected(const StringName &p_signal, const Callable &p_callable
 
 	const SignalData *s = signal_map.getptr(p_signal);
 	if (!s) {
-		bool signal_is_valid = get_gdtype().get_signal_map(false).has(p_signal);
+		bool signal_is_valid = get_vltrtype().get_signal_map(false).has(p_signal);
 		if (signal_is_valid) {
 			return false;
 		}
@@ -1605,7 +1605,7 @@ bool Object::has_connections(const StringName &p_signal) const {
 
 	const SignalData *s = signal_map.getptr(p_signal);
 	if (!s) {
-		bool signal_is_valid = get_gdtype().get_signal_map(false).has(p_signal);
+		bool signal_is_valid = get_vltrtype().get_signal_map(false).has(p_signal);
 		if (signal_is_valid) {
 			return false;
 		}
@@ -1631,7 +1631,7 @@ bool Object::_disconnect(const StringName &p_signal, const Callable &p_callable,
 
 	SignalData *s = signal_map.getptr(p_signal);
 	if (!s) {
-		bool signal_is_valid = get_gdtype().get_signal_map(false).has(p_signal) ||
+		bool signal_is_valid = get_vltrtype().get_signal_map(false).has(p_signal) ||
 				(script_instance && script_instance->get_script()->has_script_signal(p_signal));
 		ERR_FAIL_COND_V_MSG(signal_is_valid, false, vformat("Attempt to disconnect a nonexistent connection from '%s'. Signal: '%s', callable: '%s'.", to_string(), p_signal, p_callable));
 	}
@@ -1654,7 +1654,7 @@ bool Object::_disconnect(const StringName &p_signal, const Callable &p_callable,
 
 	s->slot_map.erase(*p_callable.get_base_comparator());
 
-	if (s->slot_map.is_empty() && get_gdtype().get_signal_map(false).has(p_signal)) {
+	if (s->slot_map.is_empty() && get_vltrtype().get_signal_map(false).has(p_signal)) {
 		//not user signal, delete
 		signal_map.erase(p_signal);
 	}
@@ -1707,8 +1707,8 @@ void Object::initialize_class() {
 		// Initialized on another thread while we were waiting.
 		return;
 	}
-	_add_class_to_classdb(get_gdtype_static_mutable(), nullptr);
-	get_gdtype_static_mutable().initialize();
+	_add_class_to_classdb(get_vltrtype_static_mutable(), nullptr);
+	get_vltrtype_static_mutable().initialize();
 	_bind_methods();
 	_bind_compatibility_methods();
 	initialized = true;
@@ -1784,7 +1784,7 @@ void Object::_clear_internal_resource_paths(const Variant &p_var) {
 	}
 }
 
-void Object::_add_class_to_classdb(GDType &p_type, const GDType *p_inherits) {
+void Object::_add_class_to_classdb(VLTRType &p_type, const VLTRType *p_inherits) {
 	ClassDB::_add_class(p_type, p_inherits);
 }
 
@@ -2096,21 +2096,21 @@ uint32_t Object::get_edited_version() const {
 }
 #endif
 
-const GDType &Object::get_gdtype() const {
-	if (unlikely(!_gdtype_ptr)) {
+const VLTRType &Object::get_vltrtype() const {
+	if (unlikely(!_vltrtype_ptr)) {
 		// While class is initializing / deinitializing, constructors and destructors
 		// need access to the proper type at the proper stage.
 		return _get_typev();
 	}
-	return *_gdtype_ptr;
+	return *_vltrtype_ptr;
 }
 
 bool Object::is_class(const StringName &p_class) const {
-	return get_gdtype().get_name_hierarchy().has(p_class);
+	return get_vltrtype().get_name_hierarchy().has(p_class);
 }
 
 const StringName &Object::get_class_name() const {
-	return get_gdtype().get_name();
+	return get_vltrtype().get_name();
 }
 
 StringName Object::get_class_name_for_extension(const GDExtension *p_library) const {
@@ -2243,7 +2243,7 @@ void Object::clear_internal_extension() {
 	_extension = nullptr;
 	_extension_instance = nullptr;
 	// Reset GDType to internal type.
-	_gdtype_ptr = &_get_typev();
+	_vltrtype_ptr = &_get_typev();
 
 	// Clear the instance bindings.
 	_instance_binding_mutex.lock();
@@ -2272,7 +2272,7 @@ void Object::reset_internal_extension(ObjectGDExtension *p_extension) {
 		_extension_instance = p_extension->recreate_instance ? p_extension->recreate_instance(p_extension->class_userdata, (GDExtensionObjectPtr)this) : nullptr;
 		ERR_FAIL_NULL_MSG(_extension_instance, "Unable to recreate GDExtension instance - does this extension support hot reloading?");
 		_extension = p_extension;
-		_gdtype_ptr = p_extension->gdtype;
+		_vltrtype_ptr = p_extension->vltrtype;
 	}
 }
 #endif

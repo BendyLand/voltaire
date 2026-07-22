@@ -34,7 +34,7 @@
 #include "scene/gui/text_edit.h"
 
 class CodeEdit : public TextEdit {
-	GDCLASS(CodeEdit, TextEdit)
+	VLTRCLASS(CodeEdit, TextEdit)
 
 public:
 	// Keep enums in sync with:
@@ -348,9 +348,9 @@ protected:
 
 	virtual RID get_focused_accessibility_element() const override;
 
-	GDVIRTUAL1(_confirm_code_completion, bool)
-	GDVIRTUAL1(_request_code_completion, bool)
-	GDVIRTUAL1RC(TypedArray<Dictionary>, _filter_code_completion_candidates, TypedArray<Dictionary>)
+	VLTRVIRTUAL1(_confirm_code_completion, bool)
+	VLTRVIRTUAL1(_request_code_completion, bool)
+	VLTRVIRTUAL1RC(TypedArray<Dictionary>, _filter_code_completion_candidates, TypedArray<Dictionary>)
 
 public:
 	/* General overrides */

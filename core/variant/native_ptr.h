@@ -36,7 +36,7 @@
 #include "core/variant/variant_caster.h"
 #include "core/variant/variant_internal.h"
 
-// Metafunction for pointee name. Specialized in GDVIRTUAL_NATIVE_PTR; takes into account const; falls back to "void".
+// Metafunction for pointee name. Specialized in VLTRVIRTUAL_NATIVE_PTR; takes into account const; falls back to "void".
 template <typename T>
 struct GDExtensionPtrName {
 	static const char *get() { return "void"; }
@@ -56,7 +56,7 @@ struct GDExtensionPtrName<T *> {
 	}
 };
 
-#define GDVIRTUAL_NATIVE_PTR(m_type) \
+#define VLTRVIRTUAL_NATIVE_PTR(m_type) \
 	template <> \
 	struct GDExtensionPtrName<m_type> { \
 		static const char *get() { return #m_type; } \
@@ -110,19 +110,19 @@ struct PtrToArg<GDExtensionPtr<T>> {
 	}
 };
 
-GDVIRTUAL_NATIVE_PTR(AudioFrame)
-GDVIRTUAL_NATIVE_PTR(bool)
-GDVIRTUAL_NATIVE_PTR(char)
-GDVIRTUAL_NATIVE_PTR(char16_t)
-GDVIRTUAL_NATIVE_PTR(char32_t)
-GDVIRTUAL_NATIVE_PTR(wchar_t)
-GDVIRTUAL_NATIVE_PTR(uint8_t)
-GDVIRTUAL_NATIVE_PTR(int8_t)
-GDVIRTUAL_NATIVE_PTR(uint16_t)
-GDVIRTUAL_NATIVE_PTR(int16_t)
-GDVIRTUAL_NATIVE_PTR(uint32_t)
-GDVIRTUAL_NATIVE_PTR(int32_t)
-GDVIRTUAL_NATIVE_PTR(int64_t)
-GDVIRTUAL_NATIVE_PTR(uint64_t)
-GDVIRTUAL_NATIVE_PTR(float)
-GDVIRTUAL_NATIVE_PTR(double)
+VLTRVIRTUAL_NATIVE_PTR(AudioFrame)
+VLTRVIRTUAL_NATIVE_PTR(bool)
+VLTRVIRTUAL_NATIVE_PTR(char)
+VLTRVIRTUAL_NATIVE_PTR(char16_t)
+VLTRVIRTUAL_NATIVE_PTR(char32_t)
+VLTRVIRTUAL_NATIVE_PTR(wchar_t)
+VLTRVIRTUAL_NATIVE_PTR(uint8_t)
+VLTRVIRTUAL_NATIVE_PTR(int8_t)
+VLTRVIRTUAL_NATIVE_PTR(uint16_t)
+VLTRVIRTUAL_NATIVE_PTR(int16_t)
+VLTRVIRTUAL_NATIVE_PTR(uint32_t)
+VLTRVIRTUAL_NATIVE_PTR(int32_t)
+VLTRVIRTUAL_NATIVE_PTR(int64_t)
+VLTRVIRTUAL_NATIVE_PTR(uint64_t)
+VLTRVIRTUAL_NATIVE_PTR(float)
+VLTRVIRTUAL_NATIVE_PTR(double)

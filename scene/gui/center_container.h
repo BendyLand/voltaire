@@ -33,7 +33,7 @@
 #include "scene/gui/container.h"
 
 class CenterContainer : public Container {
-	GDCLASS(CenterContainer, Container);
+	VLTRCLASS(CenterContainer, Container);
 
 	bool use_top_left = false;
 

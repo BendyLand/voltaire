@@ -33,7 +33,7 @@
 #include "scene/resources/syntax_highlighter.h"
 
 class EditorSyntaxHighlighter : public SyntaxHighlighter {
-	GDCLASS(EditorSyntaxHighlighter, SyntaxHighlighter)
+	VLTRCLASS(EditorSyntaxHighlighter, SyntaxHighlighter)
 
 private:
 	Ref<RefCounted> edited_resource;
@@ -41,9 +41,9 @@ private:
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL0RC(String, _get_name)
-	GDVIRTUAL0RC(PackedStringArray, _get_supported_languages)
-	GDVIRTUAL0RC(Ref<EditorSyntaxHighlighter>, _create)
+	VLTRVIRTUAL0RC(String, _get_name)
+	VLTRVIRTUAL0RC(PackedStringArray, _get_supported_languages)
+	VLTRVIRTUAL0RC(Ref<EditorSyntaxHighlighter>, _create)
 
 public:
 	virtual String _get_name() const;
@@ -56,7 +56,7 @@ public:
 };
 
 class EditorStandardSyntaxHighlighter : public EditorSyntaxHighlighter {
-	GDCLASS(EditorStandardSyntaxHighlighter, EditorSyntaxHighlighter)
+	VLTRCLASS(EditorStandardSyntaxHighlighter, EditorSyntaxHighlighter)
 
 private:
 	Ref<CodeHighlighter> highlighter;
@@ -76,7 +76,7 @@ public:
 };
 
 class EditorPlainTextSyntaxHighlighter : public EditorSyntaxHighlighter {
-	GDCLASS(EditorPlainTextSyntaxHighlighter, EditorSyntaxHighlighter)
+	VLTRCLASS(EditorPlainTextSyntaxHighlighter, EditorSyntaxHighlighter)
 
 public:
 	virtual String _get_name() const override { return TTR("Plain Text"); }
@@ -85,7 +85,7 @@ public:
 };
 
 class EditorJSONSyntaxHighlighter : public EditorSyntaxHighlighter {
-	GDCLASS(EditorJSONSyntaxHighlighter, EditorSyntaxHighlighter)
+	VLTRCLASS(EditorJSONSyntaxHighlighter, EditorSyntaxHighlighter)
 
 private:
 	Ref<CodeHighlighter> highlighter;
@@ -103,7 +103,7 @@ public:
 };
 
 class EditorMarkdownSyntaxHighlighter : public EditorSyntaxHighlighter {
-	GDCLASS(EditorMarkdownSyntaxHighlighter, EditorSyntaxHighlighter)
+	VLTRCLASS(EditorMarkdownSyntaxHighlighter, EditorSyntaxHighlighter)
 
 private:
 	Ref<CodeHighlighter> highlighter;
@@ -121,7 +121,7 @@ public:
 };
 
 class EditorConfigFileSyntaxHighlighter : public EditorSyntaxHighlighter {
-	GDCLASS(EditorConfigFileSyntaxHighlighter, EditorSyntaxHighlighter)
+	VLTRCLASS(EditorConfigFileSyntaxHighlighter, EditorSyntaxHighlighter)
 
 private:
 	Ref<CodeHighlighter> highlighter;

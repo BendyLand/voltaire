@@ -178,7 +178,7 @@ public:
 class AudioBusLayout;
 
 class AudioServer : public Object {
-	GDCLASS(AudioServer, Object);
+	VLTRCLASS(AudioServer, Object);
 
 public:
 	//re-expose this here, as AudioDriver is not exposed to script
@@ -528,7 +528,7 @@ VARIANT_ENUM_CAST(AudioServer::SpeakerMode)
 VARIANT_ENUM_CAST(AudioServer::PlaybackType)
 
 class AudioBusLayout : public Resource {
-	GDCLASS(AudioBusLayout, Resource);
+	VLTRCLASS(AudioBusLayout, Resource);
 
 	friend class AudioServer;
 

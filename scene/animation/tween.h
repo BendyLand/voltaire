@@ -38,7 +38,7 @@ class Node;
 class SceneTree;
 
 class Tweener : public RefCounted {
-	GDCLASS(Tweener, RefCounted);
+	VLTRCLASS(Tweener, RefCounted);
 
 	ObjectID tween_id;
 
@@ -65,7 +65,7 @@ class SubtweenTweener;
 class AwaitTweener;
 
 class Tween : public RefCounted {
-	GDCLASS(Tween, RefCounted);
+	VLTRCLASS(Tween, RefCounted);
 
 	friend class PropertyTweener;
 
@@ -202,7 +202,7 @@ VARIANT_ENUM_CAST(Tween::TransitionType);
 VARIANT_ENUM_CAST(Tween::EaseType);
 
 class PropertyTweener : public Tweener {
-	GDCLASS(PropertyTweener, Tweener);
+	VLTRCLASS(PropertyTweener, Tweener);
 
 	double _get_custom_interpolated_value(const Variant &p_value);
 
@@ -247,7 +247,7 @@ private:
 };
 
 class IntervalTweener : public Tweener {
-	GDCLASS(IntervalTweener, Tweener);
+	VLTRCLASS(IntervalTweener, Tweener);
 
 public:
 	bool step(double &r_delta) override;
@@ -260,7 +260,7 @@ private:
 };
 
 class CallbackTweener : public Tweener {
-	GDCLASS(CallbackTweener, Tweener);
+	VLTRCLASS(CallbackTweener, Tweener);
 
 public:
 	RequiredResult<CallbackTweener> set_delay(double p_delay);
@@ -281,7 +281,7 @@ private:
 };
 
 class MethodTweener : public Tweener {
-	GDCLASS(MethodTweener, Tweener);
+	VLTRCLASS(MethodTweener, Tweener);
 
 public:
 	RequiredResult<MethodTweener> set_trans(Tween::TransitionType p_trans);
@@ -312,7 +312,7 @@ private:
 };
 
 class SubtweenTweener : public Tweener {
-	GDCLASS(SubtweenTweener, Tweener);
+	VLTRCLASS(SubtweenTweener, Tweener);
 
 public:
 	Ref<Tween> subtween;
@@ -332,7 +332,7 @@ private:
 };
 
 class AwaitTweener : public Tweener {
-	GDCLASS(AwaitTweener, Tweener);
+	VLTRCLASS(AwaitTweener, Tweener);
 
 public:
 	Ref<AwaitTweener> set_timeout(double p_timeout);

@@ -40,7 +40,7 @@ class ThemeOwner;
 class ThemeContext;
 
 class Window : public Viewport {
-	GDCLASS(Window, Viewport);
+	VLTRCLASS(Window, Viewport);
 
 public:
 	// Keep synced with enum hint for `mode` property.
@@ -292,7 +292,7 @@ protected:
 
 	virtual String _get_accessibility_name() const;
 
-	GDVIRTUAL0RC(Vector2, _get_contents_minimum_size)
+	VLTRVIRTUAL0RC(Vector2, _get_contents_minimum_size)
 
 public:
 	enum {

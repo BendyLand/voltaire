@@ -33,7 +33,7 @@
 #include "scene/gui/container.h"
 
 class GraphElement : public Container {
-	GDCLASS(GraphElement, Container);
+	VLTRCLASS(GraphElement, Container);
 
 protected:
 	bool selected = false;

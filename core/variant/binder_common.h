@@ -434,7 +434,7 @@ void call_with_validated_object_instance_args_static_retc(T *p_base, R (*p_metho
 
 // GCC raises "parameter 'p_args' set but not used" when P = {},
 // it's not clever enough to treat other P values as making this branch valid.
-GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wunused-but-set-parameter")
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wunused-but-set-parameter")
 
 template <typename Q>
 void call_get_argument_type_helper(int p_arg, int &r_index, Variant::Type &r_type) {
@@ -775,4 +775,4 @@ void call_with_variant_args_static_dv(void (*p_method)(P...), const Variant **p_
 	call_with_variant_args_static(p_method, args, r_error, BuildIndexSequence<sizeof...(P)>{});
 }
 
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP

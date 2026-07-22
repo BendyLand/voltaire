@@ -38,7 +38,7 @@ struct SpvReflectDescriptorBinding;
 struct SpvReflectSpecializationConstant;
 
 class RenderingShaderContainer : public RefCounted {
-	GDSOFTCLASS(RenderingShaderContainer, RefCounted);
+	VLTRSOFTCLASS(RenderingShaderContainer, RefCounted);
 
 public:
 	static const uint32_t CONTAINER_MAGIC_NUMBER = 0x43535247;
@@ -302,7 +302,7 @@ public:
 };
 
 class RenderingShaderContainerFormat : public RenderingDeviceCommons {
-	GDSOFTCLASS(RenderingShaderContainerFormat, RenderingDeviceCommons);
+	VLTRSOFTCLASS(RenderingShaderContainerFormat, RenderingDeviceCommons);
 
 public:
 	virtual Ref<RenderingShaderContainer> create_container() const = 0;

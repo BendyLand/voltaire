@@ -36,7 +36,7 @@
 
 // Performs the actual search.
 class FindInFilesSearch : public Node {
-	GDCLASS(FindInFilesSearch, Node);
+	VLTRCLASS(FindInFilesSearch, Node);
 
 	// Config.
 	String pattern;
@@ -93,7 +93,7 @@ class HBoxContainer;
 
 // Prompts search parameters.
 class FindInFilesDialog : public AcceptDialog {
-	GDCLASS(FindInFilesDialog, AcceptDialog);
+	VLTRCLASS(FindInFilesDialog, AcceptDialog);
 
 	void _on_folder_button_pressed();
 	void _on_folder_selected(String p_path);
@@ -153,7 +153,7 @@ class ProgressBar;
 
 // Display search results.
 class FindInFilesPanel : public MarginContainer {
-	GDCLASS(FindInFilesPanel, MarginContainer);
+	VLTRCLASS(FindInFilesPanel, MarginContainer);
 
 	enum FindButtons {
 		FIND_BUTTON_REPLACE,
@@ -237,7 +237,7 @@ class TabContainer;
 // FindInFilesContainer can contain several FindInFilesPanels so that multiple search
 // results can remain at the same time.
 class FindInFilesContainer : public EditorDock {
-	GDCLASS(FindInFilesContainer, EditorDock);
+	VLTRCLASS(FindInFilesContainer, EditorDock);
 
 	enum PanelMenuOptions {
 		PANEL_CLOSE,
@@ -277,7 +277,7 @@ public:
 };
 
 class FindInFiles : public Object {
-	GDCLASS(FindInFiles, Object);
+	VLTRCLASS(FindInFiles, Object);
 
 	FindInFilesDialog *dialog = nullptr;
 	FindInFilesContainer *container = nullptr;

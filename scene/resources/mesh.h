@@ -48,7 +48,7 @@ class Shape3D;
 class MeshConvexDecompositionSettings;
 
 class Mesh : public Resource {
-	GDCLASS(Mesh, Resource);
+	VLTRCLASS(Mesh, Resource);
 
 	mutable Ref<TriangleMesh> triangle_mesh; //cached
 	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; //cached
@@ -70,20 +70,20 @@ public:
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL0RC_REQUIRED(int, _get_surface_count)
-	GDVIRTUAL1RC_REQUIRED(int, _surface_get_array_len, int)
-	GDVIRTUAL1RC_REQUIRED(int, _surface_get_array_index_len, int)
-	GDVIRTUAL1RC_REQUIRED(Array, _surface_get_arrays, int)
-	GDVIRTUAL1RC_REQUIRED(TypedArray<Array>, _surface_get_blend_shape_arrays, int)
-	GDVIRTUAL1RC_REQUIRED(Dictionary, _surface_get_lods, int)
-	GDVIRTUAL1RC_REQUIRED(uint32_t, _surface_get_format, int)
-	GDVIRTUAL1RC_REQUIRED(uint32_t, _surface_get_primitive_type, int)
-	GDVIRTUAL2_REQUIRED(_surface_set_material, int, Ref<Material>)
-	GDVIRTUAL1RC_REQUIRED(Ref<Material>, _surface_get_material, int)
-	GDVIRTUAL0RC_REQUIRED(int, _get_blend_shape_count)
-	GDVIRTUAL1RC_REQUIRED(StringName, _get_blend_shape_name, int)
-	GDVIRTUAL2_REQUIRED(_set_blend_shape_name, int, StringName)
-	GDVIRTUAL0RC_REQUIRED(AABB, _get_aabb)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_surface_count)
+	VLTRVIRTUAL1RC_REQUIRED(int, _surface_get_array_len, int)
+	VLTRVIRTUAL1RC_REQUIRED(int, _surface_get_array_index_len, int)
+	VLTRVIRTUAL1RC_REQUIRED(Array, _surface_get_arrays, int)
+	VLTRVIRTUAL1RC_REQUIRED(TypedArray<Array>, _surface_get_blend_shape_arrays, int)
+	VLTRVIRTUAL1RC_REQUIRED(Dictionary, _surface_get_lods, int)
+	VLTRVIRTUAL1RC_REQUIRED(uint32_t, _surface_get_format, int)
+	VLTRVIRTUAL1RC_REQUIRED(uint32_t, _surface_get_primitive_type, int)
+	VLTRVIRTUAL2_REQUIRED(_surface_set_material, int, Ref<Material>)
+	VLTRVIRTUAL1RC_REQUIRED(Ref<Material>, _surface_get_material, int)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_blend_shape_count)
+	VLTRVIRTUAL1RC_REQUIRED(StringName, _get_blend_shape_name, int)
+	VLTRVIRTUAL2_REQUIRED(_set_blend_shape_name, int, StringName)
+	VLTRVIRTUAL0RC_REQUIRED(AABB, _get_aabb)
 
 public:
 	enum {
@@ -216,7 +216,7 @@ public:
 };
 
 class MeshConvexDecompositionSettings : public RefCounted {
-	GDCLASS(MeshConvexDecompositionSettings, RefCounted);
+	VLTRCLASS(MeshConvexDecompositionSettings, RefCounted);
 
 public:
 	enum Mode : int {
@@ -299,7 +299,7 @@ public:
 VARIANT_ENUM_CAST(MeshConvexDecompositionSettings::Mode);
 
 class ArrayMesh : public Mesh {
-	GDCLASS(ArrayMesh, Mesh);
+	VLTRCLASS(ArrayMesh, Mesh);
 	RES_BASE_EXTENSION("mesh");
 
 	PackedStringArray _get_blend_shape_names() const;
@@ -412,7 +412,7 @@ VARIANT_ENUM_CAST(Mesh::PrimitiveType);
 VARIANT_ENUM_CAST(Mesh::BlendShapeMode);
 
 class PlaceholderMesh : public Mesh {
-	GDCLASS(PlaceholderMesh, Mesh);
+	VLTRCLASS(PlaceholderMesh, Mesh);
 
 	RID rid;
 	AABB aabb;

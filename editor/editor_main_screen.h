@@ -39,7 +39,7 @@ class HBoxContainer;
 class VBoxContainer;
 
 class EditorMainScreen : public PanelContainer {
-	GDCLASS(EditorMainScreen, PanelContainer);
+	VLTRCLASS(EditorMainScreen, PanelContainer);
 
 public:
 	enum EditorTable {

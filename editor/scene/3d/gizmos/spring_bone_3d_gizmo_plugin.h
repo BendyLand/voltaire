@@ -37,7 +37,7 @@ class SpringBoneSimulator3D;
 class SurfaceTool;
 
 class SpringBoneSimulator3DGizmoPlugin : public EditorNode3DGizmoPlugin {
-	GDCLASS(SpringBoneSimulator3DGizmoPlugin, EditorNode3DGizmoPlugin);
+	VLTRCLASS(SpringBoneSimulator3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
 	struct SelectionMaterials {
 		Ref<StandardMaterial3D> unselected_mat;
@@ -61,7 +61,7 @@ public:
 };
 
 class SpringBoneCollision3DGizmoPlugin : public EditorNode3DGizmoPlugin {
-	GDCLASS(SpringBoneCollision3DGizmoPlugin, EditorNode3DGizmoPlugin);
+	VLTRCLASS(SpringBoneCollision3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
 	struct SelectionMaterials {
 		Ref<StandardMaterial3D> unselected_mat;

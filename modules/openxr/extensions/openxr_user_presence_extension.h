@@ -39,7 +39,7 @@
 // for more information.
 
 class OpenXRUserPresenceExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRUserPresenceExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRUserPresenceExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

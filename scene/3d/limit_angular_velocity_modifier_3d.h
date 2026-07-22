@@ -33,7 +33,7 @@
 #include "scene/3d/skeleton_modifier_3d.h"
 
 class LimitAngularVelocityModifier3D : public SkeletonModifier3D {
-	GDCLASS(LimitAngularVelocityModifier3D, SkeletonModifier3D);
+	VLTRCLASS(LimitAngularVelocityModifier3D, SkeletonModifier3D);
 
 public:
 	struct BoneJoint {

@@ -35,7 +35,7 @@
 #include "core/object/ref_counted.h"
 
 class UPNP : public RefCounted {
-	GDCLASS(UPNP, RefCounted);
+	VLTRCLASS(UPNP, RefCounted);
 
 protected:
 	static void _bind_methods();

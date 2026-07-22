@@ -234,9 +234,9 @@ void EditorLog::_meta_clicked(const String &p_meta) {
 		if (!FileAccess::exists(path)) {
 			// The file does not exist. Try on GitHub instead.
 			String branch = "master";
-			if (str_compare(GODOT_VERSION_BUILD, "official") == 0) {
+			if (str_compare(VLTR_VERSION_BUILD, "official") == 0) {
 				// In official builds it's safe to use specific commit hash, so the line number is more accurate.
-				branch = GODOT_VERSION_HASH;
+				branch = VLTR_VERSION_HASH;
 			}
 			OS::get_singleton()->shell_open(vformat("https://github.com/godotengine/godot/blob/%s/%s#L%d", branch, path, line + 1));
 			return;
@@ -583,7 +583,7 @@ EditorLog::EditorLog() {
 	hbox->add_child(editor_filter->toggle_button);
 	type_filter_map.insert(MSG_TYPE_EDITOR, editor_filter);
 
-	add_message(GODOT_VERSION_FULL_NAME " (c) 2007-present Juan Linietsky, Ariel Manzur & Godot Contributors.");
+	add_message(VLTR_VERSION_FULL_NAME " (c) 2007-present Juan Linietsky, Ariel Manzur & Godot Contributors.");
 
 	eh.errfunc = _error_handler;
 	eh.userdata = this;

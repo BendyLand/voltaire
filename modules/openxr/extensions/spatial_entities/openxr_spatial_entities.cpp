@@ -45,14 +45,14 @@ void OpenXRSpatialCapabilityConfigurationBaseHeader::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("has_valid_configuration"), &OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration);
 	ClassDB::bind_method(D_METHOD("get_configuration"), &OpenXRSpatialCapabilityConfigurationBaseHeader::_get_configurationgd);
 
-	GDVIRTUAL_BIND(_has_valid_configuration);
-	GDVIRTUAL_BIND(_get_configuration);
+	VLTRVIRTUAL_BIND(_has_valid_configuration);
+	VLTRVIRTUAL_BIND(_get_configuration);
 }
 
 bool OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration() const {
 	bool is_valid = false;
 
-	if (GDVIRTUAL_CALL(_has_valid_configuration, is_valid)) {
+	if (VLTRVIRTUAL_CALL(_has_valid_configuration, is_valid)) {
 		return is_valid;
 	}
 
@@ -67,7 +67,7 @@ uint64_t OpenXRSpatialCapabilityConfigurationBaseHeader::_get_configurationgd() 
 XrSpatialCapabilityConfigurationBaseHeaderEXT *OpenXRSpatialCapabilityConfigurationBaseHeader::get_configuration() {
 	uint64_t pointer = 0;
 
-	if (GDVIRTUAL_CALL(_get_configuration, pointer)) {
+	if (VLTRVIRTUAL_CALL(_get_configuration, pointer)) {
 		return reinterpret_cast<XrSpatialCapabilityConfigurationBaseHeaderEXT *>(pointer);
 	}
 
@@ -224,16 +224,16 @@ void OpenXRSpatialComponentData::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_capacity", "capacity"), &OpenXRSpatialComponentData::set_capacity);
 	ClassDB::bind_method(D_METHOD("get_component_type"), &OpenXRSpatialComponentData::_get_component_typegd);
 
-	GDVIRTUAL_BIND(_set_capacity, "capacity");
-	GDVIRTUAL_BIND(_get_component_type);
-	GDVIRTUAL_BIND(_get_structure_data, "next");
+	VLTRVIRTUAL_BIND(_set_capacity, "capacity");
+	VLTRVIRTUAL_BIND(_get_component_type);
+	VLTRVIRTUAL_BIND(_get_structure_data, "next");
 #ifndef DISABLE_DEPRECATED
-	GDVIRTUAL_BIND_COMPAT(_get_structure_data_bind_compat_118128, "next");
+	VLTRVIRTUAL_BIND_COMPAT(_get_structure_data_bind_compat_118128, "next");
 #endif
 }
 
 void OpenXRSpatialComponentData::set_capacity(uint32_t p_capacity) {
-	GDVIRTUAL_CALL(_set_capacity, p_capacity);
+	VLTRVIRTUAL_CALL(_set_capacity, p_capacity);
 }
 
 // For exposing this to GDExtension
@@ -244,7 +244,7 @@ int64_t OpenXRSpatialComponentData::_get_component_typegd() const {
 XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const {
 	uint64_t component_type = XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
 
-	if (GDVIRTUAL_CALL(_get_component_type, component_type)) {
+	if (VLTRVIRTUAL_CALL(_get_component_type, component_type)) {
 		return (XrSpatialComponentTypeEXT)component_type;
 	}
 
@@ -254,12 +254,12 @@ XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const
 void *OpenXRSpatialComponentData::get_structure_data(void *p_next) {
 	uint64_t pointer = 0;
 
-	if (GDVIRTUAL_CALL(_get_structure_data, (uint64_t)p_next, pointer)) {
+	if (VLTRVIRTUAL_CALL(_get_structure_data, (uint64_t)p_next, pointer)) {
 		return reinterpret_cast<void *>(pointer);
 	}
 
 #ifndef DISABLE_DEPRECATED
-	if (GDVIRTUAL_CALL(_get_structure_data_bind_compat_118128, (uint64_t)p_next, pointer)) {
+	if (VLTRVIRTUAL_CALL(_get_structure_data_bind_compat_118128, (uint64_t)p_next, pointer)) {
 		return reinterpret_cast<void *>(pointer);
 	}
 #endif

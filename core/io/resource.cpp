@@ -121,7 +121,7 @@ String Resource::get_path() const {
 
 void Resource::set_path_cache(const String &p_path) {
 	path_cache = p_path;
-	GDVIRTUAL_CALL(_set_path_cache, p_path);
+	VLTRVIRTUAL_CALL(_set_path_cache, p_path);
 }
 
 static thread_local RandomPCG unique_id_gen = RandomPCG(0);
@@ -228,7 +228,7 @@ void Resource::disconnect_changed(const Callable &p_callable) {
 }
 
 void Resource::reset_state() {
-	GDVIRTUAL_CALL(_reset_state);
+	VLTRVIRTUAL_CALL(_reset_state);
 }
 
 Error Resource::copy_from(const Ref<Resource> &p_resource) {
@@ -617,7 +617,7 @@ void Resource::_take_over_path(const String &p_path) {
 
 RID Resource::get_rid() const {
 	RID ret;
-	if (!GDVIRTUAL_CALL(_get_rid, ret)) {
+	if (!VLTRVIRTUAL_CALL(_get_rid, ret)) {
 #ifndef DISABLE_DEPRECATED
 		if (_get_extension() && _get_extension()->get_rid) {
 			ret = RID::from_uint64(_get_extension()->get_rid(_get_extension_instance()));
@@ -671,7 +671,7 @@ Node *Resource::get_local_scene() const {
 
 void Resource::setup_local_to_scene() {
 	emit_signal(SNAME("setup_local_to_scene_requested"));
-	GDVIRTUAL_CALL(_setup_local_to_scene);
+	VLTRVIRTUAL_CALL(_setup_local_to_scene);
 }
 
 void Resource::reset_local_to_scene() {
@@ -763,9 +763,9 @@ void Resource::_bind_methods() {
 
 	// For the bindings, it's much more natural to expose this enum from the Variant realm via Resource.
 	// Therefore, we can't use BIND_ENUM_CONSTANT here because we need some customization.
-	get_gdtype_static_mutable().bind_integer_constant(StringName("DeepDuplicateMode"), "DEEP_DUPLICATE_NONE", RESOURCE_DEEP_DUPLICATE_NONE);
-	get_gdtype_static_mutable().bind_integer_constant(StringName("DeepDuplicateMode"), "DEEP_DUPLICATE_INTERNAL", RESOURCE_DEEP_DUPLICATE_INTERNAL);
-	get_gdtype_static_mutable().bind_integer_constant(StringName("DeepDuplicateMode"), "DEEP_DUPLICATE_ALL", RESOURCE_DEEP_DUPLICATE_ALL);
+	get_vltrtype_static_mutable().bind_integer_constant(StringName("DeepDuplicateMode"), "DEEP_DUPLICATE_NONE", RESOURCE_DEEP_DUPLICATE_NONE);
+	get_vltrtype_static_mutable().bind_integer_constant(StringName("DeepDuplicateMode"), "DEEP_DUPLICATE_INTERNAL", RESOURCE_DEEP_DUPLICATE_INTERNAL);
+	get_vltrtype_static_mutable().bind_integer_constant(StringName("DeepDuplicateMode"), "DEEP_DUPLICATE_ALL", RESOURCE_DEEP_DUPLICATE_ALL);
 
 	ADD_SIGNAL(MethodInfo("changed"));
 	ADD_SIGNAL(MethodInfo("setup_local_to_scene_requested"));
@@ -776,10 +776,10 @@ void Resource::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "resource_name"), "set_name", "get_name");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "resource_scene_unique_id", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_scene_unique_id", "get_scene_unique_id");
 
-	GDVIRTUAL_BIND(_setup_local_to_scene);
-	GDVIRTUAL_BIND(_get_rid);
-	GDVIRTUAL_BIND(_reset_state);
-	GDVIRTUAL_BIND(_set_path_cache, "path");
+	VLTRVIRTUAL_BIND(_setup_local_to_scene);
+	VLTRVIRTUAL_BIND(_get_rid);
+	VLTRVIRTUAL_BIND(_reset_state);
+	VLTRVIRTUAL_BIND(_set_path_cache, "path");
 }
 
 Resource::Resource() :

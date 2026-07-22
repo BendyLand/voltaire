@@ -35,7 +35,7 @@
 class BitMap;
 
 class DPITexture : public Texture2D {
-	GDCLASS(DPITexture, Texture2D);
+	VLTRCLASS(DPITexture, Texture2D);
 	RES_BASE_EXTENSION("dpitex");
 
 	String source;

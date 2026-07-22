@@ -46,7 +46,7 @@ int godot_mbedtls_random_compat(void *p_rng, unsigned char *r_output, size_t p_o
 class CryptoMbedTLS;
 class TLSContextMbedTLS;
 class CryptoKeyMbedTLS : public CryptoKey {
-	GDSOFTCLASS(CryptoKeyMbedTLS, CryptoKey);
+	VLTRSOFTCLASS(CryptoKeyMbedTLS, CryptoKey);
 
 private:
 	psa_key_id_t pk_slot = PSA_KEY_ID_NULL;
@@ -84,7 +84,7 @@ public:
 };
 
 class X509CertificateMbedTLS : public X509Certificate {
-	GDSOFTCLASS(X509CertificateMbedTLS, X509Certificate);
+	VLTRSOFTCLASS(X509CertificateMbedTLS, X509Certificate);
 
 private:
 	mbedtls_x509_crt cert;

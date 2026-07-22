@@ -37,7 +37,7 @@
 class AudioStreamMP3;
 
 class AudioStreamPlaybackMP3 : public AudioStreamPlaybackResampled {
-	GDCLASS(AudioStreamPlaybackMP3, AudioStreamPlaybackResampled);
+	VLTRCLASS(AudioStreamPlaybackMP3, AudioStreamPlaybackResampled);
 
 	enum {
 		FADE_SIZE = 256
@@ -88,7 +88,7 @@ public:
 };
 
 class AudioStreamMP3 : public AudioStream {
-	GDCLASS(AudioStreamMP3, AudioStream);
+	VLTRCLASS(AudioStreamMP3, AudioStream);
 	OBJ_SAVE_TYPE(AudioStream) //children are all saved as AudioStream, so they can be exchanged
 	RES_BASE_EXTENSION("mp3str");
 

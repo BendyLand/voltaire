@@ -37,7 +37,7 @@
 class CollisionObject2D;
 
 class ShapeCast2D : public Node2D {
-	GDCLASS(ShapeCast2D, Node2D);
+	VLTRCLASS(ShapeCast2D, Node2D);
 
 	bool enabled = true;
 

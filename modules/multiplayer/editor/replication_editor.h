@@ -45,7 +45,7 @@ class PropertySelector;
 class SceneTreeDialog;
 
 class ReplicationEditor : public EditorDock {
-	GDCLASS(ReplicationEditor, EditorDock);
+	VLTRCLASS(ReplicationEditor, EditorDock);
 
 private:
 	MultiplayerSynchronizer *current = nullptr;

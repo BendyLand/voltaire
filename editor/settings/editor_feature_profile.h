@@ -40,7 +40,7 @@
 class EditorFileDialog;
 
 class EditorFeatureProfile : public RefCounted {
-	GDCLASS(EditorFeatureProfile, RefCounted);
+	VLTRCLASS(EditorFeatureProfile, RefCounted);
 
 public:
 	enum Feature {
@@ -106,7 +106,7 @@ public:
 VARIANT_ENUM_CAST(EditorFeatureProfile::Feature)
 
 class EditorFeatureProfileManager : public AcceptDialog {
-	GDCLASS(EditorFeatureProfileManager, AcceptDialog);
+	VLTRCLASS(EditorFeatureProfileManager, AcceptDialog);
 
 	enum Action {
 		PROFILE_CLEAR,

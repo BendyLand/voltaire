@@ -33,7 +33,7 @@
 #include "editor/import/3d/resource_importer_scene.h"
 
 class PostImportPluginSkeletonTrackOrganizer : public EditorScenePostImportPlugin {
-	GDCLASS(PostImportPluginSkeletonTrackOrganizer, EditorScenePostImportPlugin);
+	VLTRCLASS(PostImportPluginSkeletonTrackOrganizer, EditorScenePostImportPlugin);
 
 public:
 	virtual void get_internal_import_options(InternalImportCategory p_category, List<ResourceImporter::ImportOption> *r_options) override;

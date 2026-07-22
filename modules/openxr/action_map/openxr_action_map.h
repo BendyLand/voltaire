@@ -37,7 +37,7 @@
 #include "core/io/resource.h"
 
 class OpenXRActionMap : public Resource {
-	GDCLASS(OpenXRActionMap, Resource);
+	VLTRCLASS(OpenXRActionMap, Resource);
 
 private:
 	Array action_sets;

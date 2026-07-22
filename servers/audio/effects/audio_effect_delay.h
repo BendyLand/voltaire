@@ -35,7 +35,7 @@
 class AudioEffectDelay;
 
 class AudioEffectDelayInstance : public AudioEffectInstance {
-	GDCLASS(AudioEffectDelayInstance, AudioEffectInstance);
+	VLTRCLASS(AudioEffectDelayInstance, AudioEffectInstance);
 
 	friend class AudioEffectDelay;
 	Ref<AudioEffectDelay> base;
@@ -58,7 +58,7 @@ public:
 };
 
 class AudioEffectDelay : public AudioEffect {
-	GDCLASS(AudioEffectDelay, AudioEffect);
+	VLTRCLASS(AudioEffectDelay, AudioEffect);
 
 	friend class AudioEffectDelayInstance;
 	enum {

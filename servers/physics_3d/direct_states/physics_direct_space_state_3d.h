@@ -37,7 +37,7 @@
 #include "servers/physics_3d/queries/physics_shape_query_parameters_3d.h"
 
 class PhysicsDirectSpaceState3D : public Object {
-	GDCLASS(PhysicsDirectSpaceState3D, Object);
+	VLTRCLASS(PhysicsDirectSpaceState3D, Object);
 
 private:
 	Dictionary _intersect_ray(RequiredParam<PhysicsRayQueryParameters3D> rp_ray_query);

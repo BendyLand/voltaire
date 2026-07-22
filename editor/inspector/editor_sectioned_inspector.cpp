@@ -55,7 +55,7 @@ static bool _property_path_matches(const String &p_property_path, const String &
 }
 
 class SectionedInspectorFilter : public Object {
-	GDCLASS(SectionedInspectorFilter, Object);
+	VLTRCLASS(SectionedInspectorFilter, Object);
 
 	Object *edited = nullptr;
 	String section;

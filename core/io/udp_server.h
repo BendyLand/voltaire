@@ -34,7 +34,7 @@
 #include "core/io/packet_peer_udp.h"
 
 class UDPServer : public RefCounted {
-	GDCLASS(UDPServer, RefCounted);
+	VLTRCLASS(UDPServer, RefCounted);
 
 protected:
 	enum {

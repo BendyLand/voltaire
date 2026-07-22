@@ -37,7 +37,7 @@ class Button;
 class TextureRect;
 
 class TouchActionsPanel : public PanelContainer {
-	GDCLASS(TouchActionsPanel, PanelContainer);
+	VLTRCLASS(TouchActionsPanel, PanelContainer);
 
 private:
 	BoxContainer *box = nullptr;

@@ -33,7 +33,7 @@
 #include "editor/plugins/editor_plugin.h"
 
 class GDScriptLanguageServer : public EditorPlugin {
-	GDSOFTCLASS(GDScriptLanguageServer, EditorPlugin);
+	VLTRSOFTCLASS(GDScriptLanguageServer, EditorPlugin);
 
 	Thread thread;
 	bool thread_running = false;

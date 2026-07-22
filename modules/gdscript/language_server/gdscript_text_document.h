@@ -38,7 +38,7 @@
 class GDScript;
 
 class GDScriptTextDocument : public RefCounted {
-	GDCLASS(GDScriptTextDocument, RefCounted)
+	VLTRCLASS(GDScriptTextDocument, RefCounted)
 protected:
 	static void _bind_methods();
 

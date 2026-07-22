@@ -65,7 +65,7 @@ struct DisplayServerMacOSEmbeddedState {
 
 /// "Embedded" as in "Embedded in the Godot editor window".
 class DisplayServerMacOSEmbedded : public DisplayServerMacOSBase {
-	GDSOFTCLASS(DisplayServerMacOSEmbedded, DisplayServerMacOSBase)
+	VLTRSOFTCLASS(DisplayServerMacOSEmbedded, DisplayServerMacOSBase)
 
 	DisplayServerMacOSEmbeddedState state;
 

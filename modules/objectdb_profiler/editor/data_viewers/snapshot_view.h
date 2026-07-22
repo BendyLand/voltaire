@@ -38,7 +38,7 @@ class Tree;
 class TreeItem;
 
 class SnapshotView : public Control {
-	GDCLASS(SnapshotView, Control);
+	VLTRCLASS(SnapshotView, Control);
 
 protected:
 	GameStateSnapshot *snapshot_data = nullptr;

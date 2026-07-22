@@ -44,7 +44,7 @@ class EditorFileDialog;
 class EditorObjectSelector;
 
 class InspectorDock : public EditorDock {
-	GDCLASS(InspectorDock, EditorDock);
+	VLTRCLASS(InspectorDock, EditorDock);
 
 	enum MenuOptions {
 		RESOURCE_LOAD,

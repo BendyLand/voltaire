@@ -33,7 +33,7 @@
 #include "scene/main/node.h"
 
 class ResourcePreloader : public Node {
-	GDCLASS(ResourcePreloader, Node);
+	VLTRCLASS(ResourcePreloader, Node);
 
 	HashMap<StringName, Ref<Resource>> resources;
 

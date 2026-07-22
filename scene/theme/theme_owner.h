@@ -39,7 +39,7 @@ class ThemeContext;
 class Window;
 
 class ThemeOwner : public Object {
-	GDSOFTCLASS(ThemeOwner, Object);
+	VLTRSOFTCLASS(ThemeOwner, Object);
 
 	Node *holder = nullptr;
 

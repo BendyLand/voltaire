@@ -33,7 +33,7 @@
 #include "scene/gui/popup_menu.h"
 
 class EditorTranslationPreviewMenu : public PopupMenu {
-	GDCLASS(EditorTranslationPreviewMenu, PopupMenu);
+	VLTRCLASS(EditorTranslationPreviewMenu, PopupMenu);
 
 	static constexpr int MENU_ID_PSEUDOLOCALIZATION = 1;
 

@@ -46,7 +46,7 @@
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_visibility_mask
 
 class OpenXRVisibilityMaskExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRVisibilityMaskExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRVisibilityMaskExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

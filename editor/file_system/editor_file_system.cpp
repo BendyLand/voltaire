@@ -246,9 +246,9 @@ EditorFileSystemDirectory::~EditorFileSystemDirectory() {
 }
 
 void EditorFileSystemImportFormatSupportQuery::_bind_methods() {
-	GDVIRTUAL_BIND(_is_active);
-	GDVIRTUAL_BIND(_get_file_extensions);
-	GDVIRTUAL_BIND(_query);
+	VLTRVIRTUAL_BIND(_is_active);
+	VLTRVIRTUAL_BIND(_get_file_extensions);
+	VLTRVIRTUAL_BIND(_query);
 }
 
 EditorFileSystem::ScannedDirectory::~ScannedDirectory() {

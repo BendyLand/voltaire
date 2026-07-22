@@ -36,7 +36,7 @@
 #include "servers/rendering/storage/render_data.h"
 
 class RenderDataRD : public RenderData {
-	GDCLASS(RenderDataRD, RenderData);
+	VLTRCLASS(RenderDataRD, RenderData);
 
 public:
 	// Access methods to expose data externally

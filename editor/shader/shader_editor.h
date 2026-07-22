@@ -37,7 +37,7 @@ class Button;
 class MenuButton;
 
 class ShaderEditor : public MarginContainer {
-	GDCLASS(ShaderEditor, MarginContainer);
+	VLTRCLASS(ShaderEditor, MarginContainer);
 
 public:
 	virtual void edit_shader(const Ref<Shader> &p_shader) = 0;

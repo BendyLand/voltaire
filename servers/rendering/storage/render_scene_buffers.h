@@ -34,7 +34,7 @@
 #include "servers/rendering/rendering_server_enums.h"
 
 class RenderSceneBuffersConfiguration : public RefCounted {
-	GDCLASS(RenderSceneBuffersConfiguration, RefCounted);
+	VLTRCLASS(RenderSceneBuffersConfiguration, RefCounted);
 
 private:
 	RID render_target;
@@ -98,7 +98,7 @@ public:
 };
 
 class RenderSceneBuffers : public RefCounted {
-	GDCLASS(RenderSceneBuffers, RefCounted);
+	VLTRCLASS(RenderSceneBuffers, RefCounted);
 
 protected:
 	static void _bind_methods();

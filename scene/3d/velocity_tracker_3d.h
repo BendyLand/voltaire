@@ -33,7 +33,7 @@
 #include "core/object/ref_counted.h"
 
 class VelocityTracker3D : public RefCounted {
-	GDSOFTCLASS(VelocityTracker3D, RefCounted);
+	VLTRSOFTCLASS(VelocityTracker3D, RefCounted);
 
 	struct PositionHistory {
 		uint64_t frame = 0;

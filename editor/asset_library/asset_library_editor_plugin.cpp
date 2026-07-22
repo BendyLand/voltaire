@@ -1506,9 +1506,9 @@ void EditorAssetLibrary::_search(int p_page) {
 	args += "&type=" + String(templates_only ? "1" : "0");
 	args += "&sort=" + String(sort_key[sort->get_selected()]);
 
-	args += "&compatibility=" + itos(GODOT_VERSION_MAJOR) + "." + itos(GODOT_VERSION_MINOR);
-	if (GODOT_VERSION_PATCH > 0) {
-		args += "." + itos(GODOT_VERSION_PATCH);
+	args += "&compatibility=" + itos(VLTR_VERSION_MAJOR) + "." + itos(VLTR_VERSION_MINOR);
+	if (VLTR_VERSION_PATCH > 0) {
+		args += "." + itos(VLTR_VERSION_PATCH);
 	}
 
 	if (!licenses_all_toggled) {
@@ -1840,7 +1840,7 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code, const
 					// This is typically because the version number changed recently
 					// and no assets compatible with the new version have been published yet.
 					_set_library_message(
-							vformat(TTR("No results compatible with %s %s."), String(GODOT_VERSION_SHORT_NAME).capitalize(), String(GODOT_VERSION_BRANCH)));
+							vformat(TTR("No results compatible with %s %s."), String(VLTR_VERSION_SHORT_NAME).capitalize(), String(VLTR_VERSION_BRANCH)));
 				}
 			} else {
 				library_message_box->hide();
@@ -1970,7 +1970,7 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code, const
 				return;
 			}
 
-			LocalVector<int> engine_version = { GODOT_VERSION_MAJOR, GODOT_VERSION_MINOR, GODOT_VERSION_PATCH };
+			LocalVector<int> engine_version = { VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR, VLTR_VERSION_PATCH };
 			for (const Dictionary d : (Array)dt) {
 				ERR_FAIL_COND(!d.has("download_url"));
 				ERR_FAIL_COND(!d.has("version"));

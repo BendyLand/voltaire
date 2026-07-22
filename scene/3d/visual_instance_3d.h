@@ -37,7 +37,7 @@ class Material;
 class TriangleMesh;
 
 class VisualInstance3D : public Node3D {
-	GDCLASS(VisualInstance3D, Node3D);
+	VLTRCLASS(VisualInstance3D, Node3D);
 
 	RID base;
 	RID instance;
@@ -54,7 +54,7 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	GDVIRTUAL0RC(AABB, _get_aabb)
+	VLTRVIRTUAL0RC(AABB, _get_aabb)
 public:
 	static constexpr AncestralClass static_ancestral_class = AncestralClass::VISUAL_INSTANCE_3D;
 
@@ -88,7 +88,7 @@ public:
 };
 
 class GeometryInstance3D : public VisualInstance3D {
-	GDCLASS(GeometryInstance3D, VisualInstance3D);
+	VLTRCLASS(GeometryInstance3D, VisualInstance3D);
 
 public:
 	static constexpr AncestralClass static_ancestral_class = AncestralClass::GEOMETRY_INSTANCE_3D;

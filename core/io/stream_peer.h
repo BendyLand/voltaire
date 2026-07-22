@@ -36,7 +36,7 @@
 #include "core/variant/native_ptr.h"
 
 class StreamPeer : public RefCounted {
-	GDCLASS(StreamPeer, RefCounted);
+	VLTRCLASS(StreamPeer, RefCounted);
 
 protected:
 	static void _bind_methods();
@@ -95,29 +95,29 @@ public:
 };
 
 class StreamPeerExtension : public StreamPeer {
-	GDCLASS(StreamPeerExtension, StreamPeer);
+	VLTRCLASS(StreamPeerExtension, StreamPeer);
 
 protected:
 	static void _bind_methods();
 
 public:
 	virtual Error put_data(const uint8_t *p_data, int p_bytes) override;
-	GDVIRTUAL3R(Error, _put_data, GDExtensionPtr<const uint8_t>, int, GDExtensionPtr<int>);
+	VLTRVIRTUAL3R(Error, _put_data, GDExtensionPtr<const uint8_t>, int, GDExtensionPtr<int>);
 
 	virtual Error put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) override;
-	GDVIRTUAL3R(Error, _put_partial_data, GDExtensionPtr<const uint8_t>, int, GDExtensionPtr<int>);
+	VLTRVIRTUAL3R(Error, _put_partial_data, GDExtensionPtr<const uint8_t>, int, GDExtensionPtr<int>);
 
 	virtual Error get_data(uint8_t *p_buffer, int p_bytes) override;
-	GDVIRTUAL3R(Error, _get_data, GDExtensionPtr<uint8_t>, int, GDExtensionPtr<int>);
+	VLTRVIRTUAL3R(Error, _get_data, GDExtensionPtr<uint8_t>, int, GDExtensionPtr<int>);
 
 	virtual Error get_partial_data(uint8_t *p_buffer, int p_bytes, int &r_received) override;
-	GDVIRTUAL3R(Error, _get_partial_data, GDExtensionPtr<uint8_t>, int, GDExtensionPtr<int>);
+	VLTRVIRTUAL3R(Error, _get_partial_data, GDExtensionPtr<uint8_t>, int, GDExtensionPtr<int>);
 
 	EXBIND0RC(int, get_available_bytes);
 };
 
 class StreamPeerBuffer : public StreamPeer {
-	GDCLASS(StreamPeerBuffer, StreamPeer);
+	VLTRCLASS(StreamPeerBuffer, StreamPeer);
 
 	Vector<uint8_t> data;
 	int pointer = 0;

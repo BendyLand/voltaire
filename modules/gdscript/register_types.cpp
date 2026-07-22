@@ -82,7 +82,7 @@ GDScriptCache *gdscript_cache = nullptr;
 Ref<GDScriptEditorTranslationParserPlugin> gdscript_translation_parser_plugin;
 
 class GDScriptExportPlugin : public EditorExportPlugin {
-	GDSOFTCLASS(GDScriptExportPlugin, EditorExportPlugin);
+	VLTRSOFTCLASS(GDScriptExportPlugin, EditorExportPlugin);
 
 	static constexpr EditorExportPreset::ScriptExportMode DEFAULT_SCRIPT_MODE = EditorExportPreset::MODE_SCRIPT_BINARY_TOKENS_COMPRESSED;
 	EditorExportPreset::ScriptExportMode script_mode = DEFAULT_SCRIPT_MODE;

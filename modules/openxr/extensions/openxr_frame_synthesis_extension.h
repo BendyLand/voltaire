@@ -36,7 +36,7 @@
 #include <openxr/openxr.h>
 
 class OpenXRFrameSynthesisExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRFrameSynthesisExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRFrameSynthesisExtension, OpenXRExtensionWrapper);
 
 public:
 	static OpenXRFrameSynthesisExtension *get_singleton();

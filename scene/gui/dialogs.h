@@ -40,7 +40,7 @@
 class LineEdit;
 
 class AcceptDialog : public Window {
-	GDCLASS(AcceptDialog, Window);
+	VLTRCLASS(AcceptDialog, Window);
 
 	Window *parent_visible = nullptr;
 
@@ -130,7 +130,7 @@ public:
 };
 
 class ConfirmationDialog : public AcceptDialog {
-	GDCLASS(ConfirmationDialog, AcceptDialog);
+	VLTRCLASS(ConfirmationDialog, AcceptDialog);
 	Button *cancel = nullptr;
 
 protected:

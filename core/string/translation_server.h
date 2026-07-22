@@ -34,7 +34,7 @@
 #include "core/string/translation_domain.h"
 
 class TranslationServer : public Object {
-	GDCLASS(TranslationServer, Object);
+	VLTRCLASS(TranslationServer, Object);
 
 	String locale = "en";
 	bool allow_fallback = true;

@@ -34,7 +34,7 @@
 #include "scene/resources/curve.h"
 
 class BoneTwistDisperser3D : public SkeletonModifier3D {
-	GDCLASS(BoneTwistDisperser3D, SkeletonModifier3D);
+	VLTRCLASS(BoneTwistDisperser3D, SkeletonModifier3D);
 
 	bool mutable_bone_axes = true;
 

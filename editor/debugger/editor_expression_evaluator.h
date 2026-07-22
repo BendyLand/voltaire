@@ -39,7 +39,7 @@ class LineEdit;
 class ScriptEditorDebugger;
 
 class EditorExpressionEvaluator : public VBoxContainer {
-	GDCLASS(EditorExpressionEvaluator, VBoxContainer)
+	VLTRCLASS(EditorExpressionEvaluator, VBoxContainer)
 
 private:
 	LineEdit *expression_input = nullptr;

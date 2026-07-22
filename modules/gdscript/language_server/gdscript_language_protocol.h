@@ -45,7 +45,7 @@
 #define LSP_NO_CLIENT -1
 
 class GDScriptLanguageProtocol : public JSONRPC {
-	GDCLASS(GDScriptLanguageProtocol, JSONRPC)
+	VLTRCLASS(GDScriptLanguageProtocol, JSONRPC)
 
 	friend class TestGDScriptLanguageProtocolInitializer;
 

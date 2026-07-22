@@ -56,7 +56,7 @@ class InputEventWithModifiers;
 class Shortcut;
 
 class View3DController : public RefCounted {
-	GDCLASS(View3DController, RefCounted);
+	VLTRCLASS(View3DController, RefCounted);
 
 public:
 	enum NavigationMode {

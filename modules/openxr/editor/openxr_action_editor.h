@@ -39,7 +39,7 @@
 #include "scene/gui/option_button.h"
 
 class OpenXRActionEditor : public HBoxContainer {
-	GDCLASS(OpenXRActionEditor, HBoxContainer);
+	VLTRCLASS(OpenXRActionEditor, HBoxContainer);
 
 private:
 	EditorUndoRedoManager *undo_redo;

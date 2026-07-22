@@ -33,7 +33,7 @@
 #include "editor/export/editor_export_plugin.h"
 
 class DedicatedServerExportPlugin : public EditorExportPlugin {
-	GDSOFTCLASS(DedicatedServerExportPlugin, EditorExportPlugin);
+	VLTRSOFTCLASS(DedicatedServerExportPlugin, EditorExportPlugin);
 
 private:
 	EditorExportPreset::FileExportMode current_export_mode;

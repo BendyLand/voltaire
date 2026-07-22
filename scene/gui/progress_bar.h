@@ -33,7 +33,7 @@
 #include "scene/gui/range.h"
 
 class ProgressBar : public Range {
-	GDCLASS(ProgressBar, Range);
+	VLTRCLASS(ProgressBar, Range);
 
 	bool show_percentage = true;
 	bool indeterminate = false;

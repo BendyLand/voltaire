@@ -37,7 +37,7 @@ class Mesh;
 
 class GPUParticles3D : public GeometryInstance3D {
 private:
-	GDCLASS(GPUParticles3D, GeometryInstance3D);
+	VLTRCLASS(GPUParticles3D, GeometryInstance3D);
 
 public:
 	enum DrawOrder {

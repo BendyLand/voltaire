@@ -34,7 +34,7 @@
 #include "core/io/resource_saver.h"
 
 class ResourceFormatLoaderShader : public ResourceFormatLoader {
-	GDSOFTCLASS(ResourceFormatLoaderShader, ResourceFormatLoader);
+	VLTRSOFTCLASS(ResourceFormatLoaderShader, ResourceFormatLoader);
 
 public:
 	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
@@ -44,7 +44,7 @@ public:
 };
 
 class ResourceFormatSaverShader : public ResourceFormatSaver {
-	GDSOFTCLASS(ResourceFormatSaverShader, ResourceFormatSaver);
+	VLTRSOFTCLASS(ResourceFormatSaverShader, ResourceFormatSaver);
 
 public:
 	virtual Error save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags = 0) override;

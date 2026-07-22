@@ -36,7 +36,7 @@ class ChainIK3D;
 class SurfaceTool;
 
 class ChainIK3DGizmoPlugin : public EditorNode3DGizmoPlugin {
-	GDCLASS(ChainIK3DGizmoPlugin, EditorNode3DGizmoPlugin);
+	VLTRCLASS(ChainIK3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
 	struct SelectionMaterials {
 		Ref<StandardMaterial3D> unselected_mat;

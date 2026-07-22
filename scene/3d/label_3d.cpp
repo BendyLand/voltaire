@@ -488,7 +488,7 @@ void Label3D::_shape() {
 
 		TypedArray<Vector3i> stt;
 		if (st_parser == TextServer::STRUCTURED_TEXT_CUSTOM) {
-			GDVIRTUAL_CALL(_structured_text_parser, st_args, txt, stt);
+			VLTRVIRTUAL_CALL(_structured_text_parser, st_args, txt, stt);
 		} else {
 			stt = TS->parse_structured_text(st_parser, st_args, txt);
 		}

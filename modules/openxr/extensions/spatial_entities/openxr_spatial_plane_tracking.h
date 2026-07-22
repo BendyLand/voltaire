@@ -40,7 +40,7 @@
 
 // Plane tracking capability configuration
 class OpenXRSpatialCapabilityConfigurationPlaneTracking : public OpenXRSpatialCapabilityConfigurationBaseHeader {
-	GDCLASS(OpenXRSpatialCapabilityConfigurationPlaneTracking, OpenXRSpatialCapabilityConfigurationBaseHeader);
+	VLTRCLASS(OpenXRSpatialCapabilityConfigurationPlaneTracking, OpenXRSpatialCapabilityConfigurationBaseHeader);
 
 public:
 	virtual bool has_valid_configuration() const override;
@@ -68,7 +68,7 @@ private:
 
 // Plane alignment component data
 class OpenXRSpatialComponentPlaneAlignmentList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentPlaneAlignmentList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentPlaneAlignmentList, OpenXRSpatialComponentData);
 
 public:
 	enum PlaneAlignment {
@@ -98,7 +98,7 @@ private:
 VARIANT_ENUM_CAST(OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment);
 
 class OpenXRSpatialComponentPolygon2DList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentPolygon2DList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentPolygon2DList, OpenXRSpatialComponentData);
 
 protected:
 	static void _bind_methods();
@@ -119,7 +119,7 @@ private:
 
 // Plane semantic label component data.
 class OpenXRSpatialComponentPlaneSemanticLabelList : public OpenXRSpatialComponentData {
-	GDCLASS(OpenXRSpatialComponentPlaneSemanticLabelList, OpenXRSpatialComponentData);
+	VLTRCLASS(OpenXRSpatialComponentPlaneSemanticLabelList, OpenXRSpatialComponentData);
 
 public:
 	enum PlaneSemanticLabel {
@@ -151,7 +151,7 @@ VARIANT_ENUM_CAST(OpenXRSpatialComponentPlaneSemanticLabelList::PlaneSemanticLab
 
 // Plane tracker
 class OpenXRPlaneTracker : public OpenXRSpatialEntityTracker {
-	GDCLASS(OpenXRPlaneTracker, OpenXRSpatialEntityTracker);
+	VLTRCLASS(OpenXRPlaneTracker, OpenXRSpatialEntityTracker);
 
 public:
 	void set_bounds_size(const Vector2 &p_bounds_size);
@@ -216,7 +216,7 @@ private:
 
 // Plane tracking logic
 class OpenXRSpatialPlaneTrackingCapability : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRSpatialPlaneTrackingCapability, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRSpatialPlaneTrackingCapability, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods();

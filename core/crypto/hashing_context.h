@@ -34,7 +34,7 @@
 #include "core/variant/type_info.h"
 
 class HashingContext : public RefCounted {
-	GDCLASS(HashingContext, RefCounted);
+	VLTRCLASS(HashingContext, RefCounted);
 
 public:
 	enum HashType : int32_t {

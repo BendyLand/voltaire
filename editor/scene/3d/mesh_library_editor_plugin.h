@@ -46,10 +46,10 @@ class MeshLibrary;
 class Timer;
 
 class MeshLibraryEditor : public EditorDock {
-	GDCLASS(MeshLibraryEditor, EditorDock);
+	VLTRCLASS(MeshLibraryEditor, EditorDock);
 
 	class MeshLibraryItem : public RefCounted {
-		GDCLASS(MeshLibraryItem, RefCounted);
+		VLTRCLASS(MeshLibraryItem, RefCounted);
 
 		friend MeshLibraryEditor;
 
@@ -124,7 +124,7 @@ public:
 };
 
 class MeshLibraryEditorPlugin : public EditorPlugin {
-	GDCLASS(MeshLibraryEditorPlugin, EditorPlugin);
+	VLTRCLASS(MeshLibraryEditorPlugin, EditorPlugin);
 
 	static inline MeshLibraryEditorPlugin *singleton = nullptr;
 

@@ -36,7 +36,7 @@
 class Resource;
 
 class PhysicsShapeQueryParameters3D : public RefCounted {
-	GDCLASS(PhysicsShapeQueryParameters3D, RefCounted);
+	VLTRCLASS(PhysicsShapeQueryParameters3D, RefCounted);
 
 	PS3DT::ShapeParameters parameters;
 

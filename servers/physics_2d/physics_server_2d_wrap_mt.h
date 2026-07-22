@@ -61,7 +61,7 @@
 #include "servers/server_wrap_mt_common.h"
 
 class PhysicsServer2DWrapMT : public PhysicsServer2D {
-	GDSOFTCLASS(PhysicsServer2DWrapMT, PhysicsServer2D);
+	VLTRSOFTCLASS(PhysicsServer2DWrapMT, PhysicsServer2D);
 
 	mutable PhysicsServer2D *physics_server_2d = nullptr;
 

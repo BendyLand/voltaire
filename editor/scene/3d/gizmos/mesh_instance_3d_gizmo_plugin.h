@@ -34,7 +34,7 @@
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 
 class MeshInstance3DGizmoPlugin : public EditorNode3DGizmoPlugin {
-	GDCLASS(MeshInstance3DGizmoPlugin, EditorNode3DGizmoPlugin);
+	VLTRCLASS(MeshInstance3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
 	Ref<Gizmo3DHelper> helper;
 

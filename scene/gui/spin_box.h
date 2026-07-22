@@ -35,7 +35,7 @@
 #include "scene/main/timer.h"
 
 class SpinBoxLineEdit : public LineEdit {
-	GDCLASS(SpinBoxLineEdit, LineEdit);
+	VLTRCLASS(SpinBoxLineEdit, LineEdit);
 
 protected:
 	void _notification(int p_what);
@@ -47,7 +47,7 @@ protected:
 };
 
 class SpinBox : public Range {
-	GDCLASS(SpinBox, Range);
+	VLTRCLASS(SpinBox, Range);
 
 	SpinBoxLineEdit *line_edit = nullptr;
 	bool update_on_text_changed = false;

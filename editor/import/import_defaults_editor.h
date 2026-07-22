@@ -38,7 +38,7 @@ class ImportDefaultsEditorSettings;
 class EditorInspector;
 
 class ImportDefaultsEditor : public VBoxContainer {
-	GDCLASS(ImportDefaultsEditor, VBoxContainer)
+	VLTRCLASS(ImportDefaultsEditor, VBoxContainer)
 
 	OptionButton *importers = nullptr;
 	Button *save_defaults = nullptr;

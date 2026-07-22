@@ -40,7 +40,7 @@
 #include "servers/physics_2d/queries/physics_testmotion_query_result_2d.h"
 
 class PhysicsServer2D : public Object {
-	GDCLASS(PhysicsServer2D, Object);
+	VLTRCLASS(PhysicsServer2D, Object);
 
 	static PhysicsServer2D *singleton;
 
@@ -294,7 +294,7 @@ public:
 };
 
 class PhysicsServer2DManager : public Object {
-	GDCLASS(PhysicsServer2DManager, Object);
+	VLTRCLASS(PhysicsServer2DManager, Object);
 
 	static PhysicsServer2DManager *singleton;
 

@@ -33,7 +33,7 @@
 #include "editor/script/script_editor_base.h"
 
 class TextEditor : public TextEditorBase {
-	GDCLASS(TextEditor, TextEditorBase);
+	VLTRCLASS(TextEditor, TextEditorBase);
 
 	static ScriptEditorBase *create_editor(const Ref<Resource> &p_resource);
 

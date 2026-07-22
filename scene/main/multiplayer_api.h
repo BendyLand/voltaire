@@ -34,7 +34,7 @@
 #include "scene/main/multiplayer_peer.h"
 
 class MultiplayerAPI : public RefCounted {
-	GDCLASS(MultiplayerAPI, RefCounted);
+	VLTRCLASS(MultiplayerAPI, RefCounted);
 
 private:
 	static StringName default_interface;
@@ -80,7 +80,7 @@ public:
 VARIANT_ENUM_CAST(MultiplayerAPI::RPCMode);
 
 class MultiplayerAPIExtension : public MultiplayerAPI {
-	GDCLASS(MultiplayerAPIExtension, MultiplayerAPI);
+	VLTRCLASS(MultiplayerAPIExtension, MultiplayerAPI);
 
 protected:
 	static void _bind_methods();
@@ -99,13 +99,13 @@ public:
 	virtual Error object_configuration_remove(Object *p_object, Variant p_config) override;
 
 	// Extensions
-	GDVIRTUAL0R(Error, _poll);
-	GDVIRTUAL1(_set_multiplayer_peer, Ref<MultiplayerPeer>);
-	GDVIRTUAL0R(Ref<MultiplayerPeer>, _get_multiplayer_peer);
-	GDVIRTUAL0RC(int, _get_unique_id);
-	GDVIRTUAL0RC(PackedInt32Array, _get_peer_ids);
-	GDVIRTUAL4R(Error, _rpc, int, Object *, StringName, Array);
-	GDVIRTUAL0RC(int, _get_remote_sender_id);
-	GDVIRTUAL2R(Error, _object_configuration_add, Object *, Variant);
-	GDVIRTUAL2R(Error, _object_configuration_remove, Object *, Variant);
+	VLTRVIRTUAL0R(Error, _poll);
+	VLTRVIRTUAL1(_set_multiplayer_peer, Ref<MultiplayerPeer>);
+	VLTRVIRTUAL0R(Ref<MultiplayerPeer>, _get_multiplayer_peer);
+	VLTRVIRTUAL0RC(int, _get_unique_id);
+	VLTRVIRTUAL0RC(PackedInt32Array, _get_peer_ids);
+	VLTRVIRTUAL4R(Error, _rpc, int, Object *, StringName, Array);
+	VLTRVIRTUAL0RC(int, _get_remote_sender_id);
+	VLTRVIRTUAL2R(Error, _object_configuration_add, Object *, Variant);
+	VLTRVIRTUAL2R(Error, _object_configuration_remove, Object *, Variant);
 };

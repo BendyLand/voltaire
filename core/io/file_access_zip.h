@@ -71,7 +71,7 @@ public:
 };
 
 class FileAccessZip : public FileAccess {
-	GDSOFTCLASS(FileAccessZip, FileAccess);
+	VLTRSOFTCLASS(FileAccessZip, FileAccess);
 	unzFile zfile = nullptr;
 	unz_file_info64 file_info;
 

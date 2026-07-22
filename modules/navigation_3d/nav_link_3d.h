@@ -37,7 +37,7 @@
 #include "core/os/rw_lock.h"
 
 class NavLinkIteration3D : public NavBaseIteration3D {
-	GDCLASS(NavLinkIteration3D, NavBaseIteration3D);
+	VLTRCLASS(NavLinkIteration3D, NavBaseIteration3D);
 
 public:
 	bool bidirectional = true;

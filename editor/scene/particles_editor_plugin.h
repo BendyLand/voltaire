@@ -41,7 +41,7 @@ class SceneTreeDialog;
 class SpinBox;
 
 class ParticlesEditorPlugin : public EditorPlugin {
-	GDCLASS(ParticlesEditorPlugin, EditorPlugin);
+	VLTRCLASS(ParticlesEditorPlugin, EditorPlugin);
 
 private:
 	enum {

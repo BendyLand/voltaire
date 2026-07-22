@@ -36,7 +36,7 @@
 class SubViewport;
 
 class Camera3DEditor : public Control {
-	GDCLASS(Camera3DEditor, Control);
+	VLTRCLASS(Camera3DEditor, Control);
 
 	Button *preview = nullptr;
 	Node *node = nullptr;
@@ -52,7 +52,7 @@ public:
 };
 
 class Camera3DPreview : public MarginContainer {
-	GDCLASS(Camera3DPreview, MarginContainer);
+	VLTRCLASS(Camera3DPreview, MarginContainer);
 
 	Camera3D *camera = nullptr;
 	AspectRatioContainer *centering_container = nullptr;
@@ -69,7 +69,7 @@ public:
 };
 
 class EditorInspectorPluginCamera3DPreview : public EditorInspectorPluginTexture {
-	GDCLASS(EditorInspectorPluginCamera3DPreview, EditorInspectorPluginTexture);
+	VLTRCLASS(EditorInspectorPluginCamera3DPreview, EditorInspectorPluginTexture);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -77,7 +77,7 @@ public:
 };
 
 class Camera3DEditorPlugin : public EditorPlugin {
-	GDCLASS(Camera3DEditorPlugin, EditorPlugin);
+	VLTRCLASS(Camera3DEditorPlugin, EditorPlugin);
 
 public:
 	virtual String get_plugin_name() const override { return "Camera3D"; }

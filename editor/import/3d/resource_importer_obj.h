@@ -33,7 +33,7 @@
 #include "editor/import/3d/resource_importer_scene.h"
 
 class EditorOBJImporter : public EditorSceneFormatImporter {
-	GDCLASS(EditorOBJImporter, EditorSceneFormatImporter);
+	VLTRCLASS(EditorOBJImporter, EditorSceneFormatImporter);
 
 public:
 	virtual void get_extensions(List<String> *r_extensions) const override;
@@ -41,7 +41,7 @@ public:
 };
 
 class ResourceImporterOBJ : public ResourceImporter {
-	GDCLASS(ResourceImporterOBJ, ResourceImporter);
+	VLTRCLASS(ResourceImporterOBJ, ResourceImporter);
 
 public:
 	virtual String get_importer_name() const override;

@@ -36,7 +36,7 @@
 #include "scene/gui/rich_text_label.h"
 
 class EditorRunNative : public HBoxContainer {
-	GDCLASS(EditorRunNative, HBoxContainer);
+	VLTRCLASS(EditorRunNative, HBoxContainer);
 
 	RichTextLabel *result_dialog_log = nullptr;
 	AcceptDialog *result_dialog = nullptr;

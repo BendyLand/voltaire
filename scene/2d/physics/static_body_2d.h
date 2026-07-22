@@ -40,7 +40,7 @@ class NavigationMeshSourceGeometryData2D;
 #endif
 
 class StaticBody2D : public PhysicsBody2D {
-	GDCLASS(StaticBody2D, PhysicsBody2D);
+	VLTRCLASS(StaticBody2D, PhysicsBody2D);
 
 private:
 	Vector2 constant_linear_velocity;

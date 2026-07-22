@@ -42,7 +42,7 @@ class OptionButton;
 class SceneTreeDialog;
 
 class MultiMeshEditor : public Control {
-	GDCLASS(MultiMeshEditor, Control);
+	VLTRCLASS(MultiMeshEditor, Control);
 
 	friend class MultiMeshEditorPlugin;
 
@@ -85,7 +85,7 @@ public:
 };
 
 class MultiMeshEditorPlugin : public EditorPlugin {
-	GDCLASS(MultiMeshEditorPlugin, EditorPlugin);
+	VLTRCLASS(MultiMeshEditorPlugin, EditorPlugin);
 
 	MultiMeshEditor *multimesh_editor = nullptr;
 

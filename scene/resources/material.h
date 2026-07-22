@@ -36,7 +36,7 @@
 #include "servers/rendering/rendering_server_enums.h"
 
 class Material : public Resource {
-	GDCLASS(Material, Resource);
+	VLTRCLASS(Material, Resource);
 	RES_BASE_EXTENSION("material")
 	OBJ_SAVE_TYPE(Material);
 
@@ -64,10 +64,10 @@ protected:
 	void _mark_ready();
 	void _mark_initialized(const Callable &p_add_to_dirty_list, const Callable &p_update_shader);
 
-	GDVIRTUAL0RC_REQUIRED(RID, _get_shader_rid)
-	GDVIRTUAL0RC_REQUIRED(Shader::Mode, _get_shader_mode)
-	GDVIRTUAL0RC(bool, _can_do_next_pass)
-	GDVIRTUAL0RC(bool, _can_use_render_priority)
+	VLTRVIRTUAL0RC_REQUIRED(RID, _get_shader_rid)
+	VLTRVIRTUAL0RC_REQUIRED(Shader::Mode, _get_shader_mode)
+	VLTRVIRTUAL0RC(bool, _can_do_next_pass)
+	VLTRVIRTUAL0RC(bool, _can_use_render_priority)
 public:
 	enum {
 		RENDER_PRIORITY_MAX = RSE::MATERIAL_RENDER_PRIORITY_MAX,
@@ -93,7 +93,7 @@ public:
 };
 
 class ShaderMaterial : public Material {
-	GDCLASS(ShaderMaterial, Material);
+	VLTRCLASS(ShaderMaterial, Material);
 	Ref<Shader> shader;
 
 	mutable HashMap<StringName, StringName> remap_cache;
@@ -138,7 +138,7 @@ public:
 class StandardMaterial3D;
 
 class BaseMaterial3D : public Material {
-	GDCLASS(BaseMaterial3D, Material);
+	VLTRCLASS(BaseMaterial3D, Material);
 
 private:
 	mutable Mutex material_rid_mutex;
@@ -910,7 +910,7 @@ VARIANT_ENUM_CAST(BaseMaterial3D::StencilFlags)
 VARIANT_ENUM_CAST(BaseMaterial3D::StencilCompare)
 
 class StandardMaterial3D : public BaseMaterial3D {
-	GDCLASS(StandardMaterial3D, BaseMaterial3D)
+	VLTRCLASS(StandardMaterial3D, BaseMaterial3D)
 protected:
 #ifndef DISABLE_DEPRECATED
 	// Kept for compatibility from 3.x to 4.0.
@@ -923,14 +923,14 @@ public:
 };
 
 class ORMMaterial3D : public BaseMaterial3D {
-	GDCLASS(ORMMaterial3D, BaseMaterial3D)
+	VLTRCLASS(ORMMaterial3D, BaseMaterial3D)
 public:
 	ORMMaterial3D() :
 			BaseMaterial3D(true) {}
 };
 
 class PlaceholderMaterial : public Material {
-	GDCLASS(PlaceholderMaterial, Material)
+	VLTRCLASS(PlaceholderMaterial, Material)
 public:
 	virtual RID get_shader_rid() const override { return RID(); }
 	virtual Shader::Mode get_shader_mode() const override { return Shader::MODE_CANVAS_ITEM; }

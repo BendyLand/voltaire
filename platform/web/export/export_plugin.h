@@ -40,7 +40,7 @@
 class ImageTexture;
 
 class EditorExportPlatformWeb : public EditorExportPlatform {
-	GDCLASS(EditorExportPlatformWeb, EditorExportPlatform);
+	VLTRCLASS(EditorExportPlatformWeb, EditorExportPlatform);
 
 	enum RemoteDebugState {
 		REMOTE_DEBUG_STATE_UNAVAILABLE,

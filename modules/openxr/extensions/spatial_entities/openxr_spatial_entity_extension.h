@@ -40,7 +40,7 @@
 
 // Spatial entity extension
 class OpenXRSpatialEntityExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRSpatialEntityExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRSpatialEntityExtension, OpenXRExtensionWrapper);
 
 public:
 	enum Capability {

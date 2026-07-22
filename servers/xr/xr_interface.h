@@ -51,7 +51,7 @@ struct BlitToScreen;
 }
 
 class XRInterface : public RefCounted {
-	GDCLASS(XRInterface, RefCounted);
+	VLTRCLASS(XRInterface, RefCounted);
 
 public:
 	enum Capabilities { /* purely metadata, provides some info about what this interface supports */

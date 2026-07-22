@@ -43,7 +43,7 @@
 #include "../openxr_platform_inc.h" // IWYU pragma: keep.
 
 class OpenXRFBFoveationExtension : public OpenXRExtensionWrapper {
-	GDCLASS(OpenXRFBFoveationExtension, OpenXRExtensionWrapper);
+	VLTRCLASS(OpenXRFBFoveationExtension, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods() {}

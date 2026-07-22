@@ -43,7 +43,7 @@ class SpinBox;
 class TabContainer;
 
 class RenameDialog : public ConfirmationDialog {
-	GDCLASS(RenameDialog, ConfirmationDialog);
+	VLTRCLASS(RenameDialog, ConfirmationDialog);
 
 	virtual void ok_pressed() override { rename(); }
 	void _cancel_pressed() {}

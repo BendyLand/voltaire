@@ -102,7 +102,7 @@ typedef struct _xrr_monitor_info {
 } xrr_monitor_info;
 
 class DisplayServerX11 : public DisplayServer {
-	GDSOFTCLASS(DisplayServerX11, DisplayServer);
+	VLTRSOFTCLASS(DisplayServerX11, DisplayServer);
 
 	_THREAD_SAFE_CLASS_
 

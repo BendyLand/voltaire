@@ -42,7 +42,7 @@
 #endif // PHYSICS_3D_DISABLED
 
 class MeshLibrary : public Resource {
-	GDCLASS(MeshLibrary, Resource);
+	VLTRCLASS(MeshLibrary, Resource);
 	RES_BASE_EXTENSION("meshlib");
 
 	static inline PropertyListHelper base_property_helper;

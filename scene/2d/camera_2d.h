@@ -33,7 +33,7 @@
 #include "scene/2d/node_2d.h"
 
 class Camera2D : public Node2D {
-	GDCLASS(Camera2D, Node2D);
+	VLTRCLASS(Camera2D, Node2D);
 
 public:
 	enum AnchorMode {

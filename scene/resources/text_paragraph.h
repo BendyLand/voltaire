@@ -38,7 +38,7 @@
 /*************************************************************************/
 
 class TextParagraph : public RefCounted {
-	GDCLASS(TextParagraph, RefCounted);
+	VLTRCLASS(TextParagraph, RefCounted);
 	_THREAD_SAFE_CLASS_
 
 private:

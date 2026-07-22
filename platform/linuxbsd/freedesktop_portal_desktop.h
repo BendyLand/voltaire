@@ -43,7 +43,7 @@ struct DBusConnection;
 struct DBusMessageIter;
 
 class FreeDesktopPortalDesktop : public Object {
-	GDSOFTCLASS(FreeDesktopPortalDesktop, Object);
+	VLTRSOFTCLASS(FreeDesktopPortalDesktop, Object);
 
 private:
 	bool unsupported = false;

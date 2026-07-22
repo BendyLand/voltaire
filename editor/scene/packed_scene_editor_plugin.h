@@ -37,7 +37,7 @@
 class PackedScene;
 
 class PackedSceneEditor : public VBoxContainer {
-	GDCLASS(PackedSceneEditor, VBoxContainer);
+	VLTRCLASS(PackedSceneEditor, VBoxContainer);
 
 	Ref<PackedScene> packed_scene;
 
@@ -48,7 +48,7 @@ public:
 };
 
 class EditorInspectorPluginPackedScene : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPluginPackedScene, EditorInspectorPlugin);
+	VLTRCLASS(EditorInspectorPluginPackedScene, EditorInspectorPlugin);
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -56,7 +56,7 @@ public:
 };
 
 class PackedSceneEditorPlugin : public EditorPlugin {
-	GDCLASS(PackedSceneEditorPlugin, EditorPlugin);
+	VLTRCLASS(PackedSceneEditorPlugin, EditorPlugin);
 
 public:
 	PackedSceneEditorPlugin();

@@ -52,7 +52,7 @@ class XRPositionalTracker;
 **/
 
 class XRServer : public Object {
-	GDCLASS(XRServer, Object);
+	VLTRCLASS(XRServer, Object);
 	_THREAD_SAFE_CLASS_
 
 public:

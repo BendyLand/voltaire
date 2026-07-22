@@ -33,7 +33,7 @@
 #include "core/io/packet_peer.h"
 
 class WebRTCDataChannel : public PacketPeer {
-	GDCLASS(WebRTCDataChannel, PacketPeer);
+	VLTRCLASS(WebRTCDataChannel, PacketPeer);
 
 public:
 	enum WriteMode {

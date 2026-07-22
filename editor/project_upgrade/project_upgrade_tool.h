@@ -36,7 +36,7 @@ class ConfirmationDialog;
 class EditorFileSystemDirectory;
 
 class ProjectUpgradeTool : public Object {
-	GDCLASS(ProjectUpgradeTool, Object);
+	VLTRCLASS(ProjectUpgradeTool, Object);
 
 	ConfirmationDialog *upgrade_dialog = nullptr;
 

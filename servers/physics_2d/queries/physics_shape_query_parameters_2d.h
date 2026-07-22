@@ -38,7 +38,7 @@ template <typename T>
 class Ref;
 
 class PhysicsShapeQueryParameters2D : public RefCounted {
-	GDCLASS(PhysicsShapeQueryParameters2D, RefCounted);
+	VLTRCLASS(PhysicsShapeQueryParameters2D, RefCounted);
 
 	PS2DT::ShapeParameters parameters;
 

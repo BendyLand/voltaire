@@ -35,7 +35,7 @@
 #include <jni.h>
 
 class FileAccessFilesystemJAndroid : public FileAccess {
-	GDSOFTCLASS(FileAccessFilesystemJAndroid, FileAccess);
+	VLTRSOFTCLASS(FileAccessFilesystemJAndroid, FileAccess);
 	static jobject file_access_handler;
 	static jclass cls;
 

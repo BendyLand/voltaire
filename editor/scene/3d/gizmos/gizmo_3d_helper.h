@@ -35,7 +35,7 @@
 class Camera3D;
 
 class Gizmo3DHelper : public RefCounted {
-	GDCLASS(Gizmo3DHelper, RefCounted);
+	VLTRCLASS(Gizmo3DHelper, RefCounted);
 
 	Variant initial_value;
 	Transform3D initial_transform;

@@ -38,7 +38,7 @@ class VBoxContainer;
 class ScrollContainer;
 
 class OpenXRSelectActionDialog : public ConfirmationDialog {
-	GDCLASS(OpenXRSelectActionDialog, ConfirmationDialog);
+	VLTRCLASS(OpenXRSelectActionDialog, ConfirmationDialog);
 
 private:
 	Ref<OpenXRActionMap> action_map;

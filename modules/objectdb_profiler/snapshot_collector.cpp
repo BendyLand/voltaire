@@ -169,9 +169,9 @@ Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const 
 }
 
 String SnapshotCollector::get_godot_version_string() {
-	String hash = String(GODOT_VERSION_HASH);
+	String hash = String(VLTR_VERSION_HASH);
 	if (hash.length() != 0) {
 		hash = " " + vformat("[%s]", hash.left(9));
 	}
-	return "v" GODOT_VERSION_FULL_BUILD + hash;
+	return "v" VLTR_VERSION_FULL_BUILD + hash;
 }

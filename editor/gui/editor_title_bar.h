@@ -33,7 +33,7 @@
 #include "scene/gui/box_container.h"
 
 class EditorTitleBar : public HBoxContainer {
-	GDCLASS(EditorTitleBar, HBoxContainer);
+	VLTRCLASS(EditorTitleBar, HBoxContainer);
 
 	Point2i click_pos;
 	bool moving = false;

@@ -34,7 +34,7 @@
 #include "core/variant/type_info.h"
 
 class UPNPDevice : public RefCounted {
-	GDCLASS(UPNPDevice, RefCounted);
+	VLTRCLASS(UPNPDevice, RefCounted);
 
 protected:
 	static void _bind_methods();

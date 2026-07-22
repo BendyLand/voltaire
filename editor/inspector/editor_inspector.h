@@ -56,7 +56,7 @@ public:
 };
 
 class EditorInspectorActionButton : public Button {
-	GDCLASS(EditorInspectorActionButton, Button);
+	VLTRCLASS(EditorInspectorActionButton, Button);
 
 	StringName icon_name;
 
@@ -68,7 +68,7 @@ public:
 };
 
 class EditorProperty : public Container {
-	GDCLASS(EditorProperty, Container);
+	VLTRCLASS(EditorProperty, Container);
 
 	friend class EditorInspector;
 
@@ -210,8 +210,8 @@ private:
 
 	HashMap<StringName, Variant> cache;
 
-	GDVIRTUAL0(_update_property)
-	GDVIRTUAL1(_set_read_only, bool)
+	VLTRVIRTUAL0(_update_property)
+	VLTRVIRTUAL1(_set_read_only, bool)
 
 	void _update_flags();
 
@@ -339,7 +339,7 @@ public:
 };
 
 class EditorInspectorPlugin : public RefCounted {
-	GDCLASS(EditorInspectorPlugin, RefCounted);
+	VLTRCLASS(EditorInspectorPlugin, RefCounted);
 
 public:
 	friend class EditorInspector;
@@ -355,12 +355,12 @@ public:
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL1RC(bool, _can_handle, Object *)
-	GDVIRTUAL1(_parse_begin, Object *)
-	GDVIRTUAL2(_parse_category, Object *, String)
-	GDVIRTUAL2(_parse_group, Object *, String)
-	GDVIRTUAL7R(bool, _parse_property, Object *, Variant::Type, String, PropertyHint, String, BitField<PropertyUsageFlags>, bool)
-	GDVIRTUAL1(_parse_end, Object *)
+	VLTRVIRTUAL1RC(bool, _can_handle, Object *)
+	VLTRVIRTUAL1(_parse_begin, Object *)
+	VLTRVIRTUAL2(_parse_category, Object *, String)
+	VLTRVIRTUAL2(_parse_group, Object *, String)
+	VLTRVIRTUAL7R(bool, _parse_property, Object *, Variant::Type, String, PropertyHint, String, BitField<PropertyUsageFlags>, bool)
+	VLTRVIRTUAL1(_parse_end, Object *)
 
 #ifndef DISABLE_DEPRECATED
 	void _add_property_editor_bind_compat_92322(const String &p_for_property, Control *p_prop, bool p_add_to_end);
@@ -380,7 +380,7 @@ public:
 };
 
 class EditorInspectorCategory : public Control {
-	GDCLASS(EditorInspectorCategory, Control);
+	VLTRCLASS(EditorInspectorCategory, Control);
 
 	friend class EditorInspector;
 
@@ -453,7 +453,7 @@ public:
 };
 
 class EditorInspectorSection : public Container {
-	GDCLASS(EditorInspectorSection, Container);
+	VLTRCLASS(EditorInspectorSection, Container);
 
 	friend class EditorInspector;
 
@@ -581,7 +581,7 @@ public:
 };
 
 class ArrayPanelContainer : public PanelContainer {
-	GDCLASS(ArrayPanelContainer, PanelContainer);
+	VLTRCLASS(ArrayPanelContainer, PanelContainer);
 
 protected:
 	void _notification(int p_what);
@@ -593,7 +593,7 @@ public:
 };
 
 class EditorInspectorArray : public EditorInspectorSection {
-	GDCLASS(EditorInspectorArray, EditorInspectorSection);
+	VLTRCLASS(EditorInspectorArray, EditorInspectorSection);
 
 	enum Mode {
 		MODE_NONE,
@@ -705,7 +705,7 @@ public:
 };
 
 class EditorPaginator : public HBoxContainer {
-	GDCLASS(EditorPaginator, HBoxContainer);
+	VLTRCLASS(EditorPaginator, HBoxContainer);
 
 	int page = 0;
 	int max_page = 0;
@@ -733,7 +733,7 @@ public:
 };
 
 class EditorInspector : public ScrollContainer {
-	GDCLASS(EditorInspector, ScrollContainer);
+	VLTRCLASS(EditorInspector, ScrollContainer);
 
 	friend class EditorPropertyResource;
 

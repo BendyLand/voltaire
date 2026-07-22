@@ -34,7 +34,7 @@
 #include "servers/camera/camera_server.h"
 
 class CameraTexture : public Texture2D {
-	GDCLASS(CameraTexture, Texture2D);
+	VLTRCLASS(CameraTexture, Texture2D);
 
 private:
 	mutable RID _texture;

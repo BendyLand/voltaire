@@ -52,7 +52,7 @@ TEST_FORCE_LINK(test_viewport)
 namespace TestViewport {
 
 class NotificationControlViewport : public Control {
-	GDCLASS(NotificationControlViewport, Control);
+	VLTRCLASS(NotificationControlViewport, Control);
 
 protected:
 	void _notification(int p_what) {
@@ -97,7 +97,7 @@ public:
 // - allows start Dragging
 // - stores mouse information of last event
 class DragStart : public NotificationControlViewport {
-	GDCLASS(DragStart, NotificationControlViewport);
+	VLTRCLASS(DragStart, NotificationControlViewport);
 
 public:
 	MouseButton last_mouse_button;
@@ -125,7 +125,7 @@ public:
 
 // `NotificationControlViewport`-derived class that acts as a Drag and Drop target.
 class DragTarget : public NotificationControlViewport {
-	GDCLASS(DragTarget, NotificationControlViewport);
+	VLTRCLASS(DragTarget, NotificationControlViewport);
 
 protected:
 	void _notification(int p_what) {
@@ -1559,7 +1559,7 @@ TEST_CASE("[SceneTree][Viewport] Control mouse cursor shape") {
 
 #ifndef PHYSICS_2D_DISABLED
 class TestArea2D : public Area2D {
-	GDCLASS(TestArea2D, Area2D);
+	VLTRCLASS(TestArea2D, Area2D);
 
 	void _on_mouse_entered() {
 		enter_id = ++TestArea2D::counter; // > 0, if activated.

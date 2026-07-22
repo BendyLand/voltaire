@@ -232,8 +232,8 @@ void ResourceSaver::_bind_methods() {
 ////// Logger ///////
 
 void Logger::_bind_methods() {
-	GDVIRTUAL_BIND(_log_error, "function", "file", "line", "code", "rationale", "editor_notify", "error_type", "script_backtraces");
-	GDVIRTUAL_BIND(_log_message, "message", "error");
+	VLTRVIRTUAL_BIND(_log_error, "function", "file", "line", "code", "rationale", "editor_notify", "error_type", "script_backtraces");
+	VLTRVIRTUAL_BIND(_log_message, "message", "error");
 	BIND_ENUM_CONSTANT(ERROR_TYPE_ERROR);
 	BIND_ENUM_CONSTANT(ERROR_TYPE_WARNING);
 	BIND_ENUM_CONSTANT(ERROR_TYPE_SCRIPT);
@@ -241,11 +241,11 @@ void Logger::_bind_methods() {
 }
 
 void Logger::log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, ErrorType p_type, const TypedArray<ScriptBacktrace> &p_script_backtraces) {
-	GDVIRTUAL_CALL(_log_error, String::utf8(p_function), String::utf8(p_file), p_line, String::utf8(p_code), String::utf8(p_rationale), p_editor_notify, p_type, p_script_backtraces);
+	VLTRVIRTUAL_CALL(_log_error, String::utf8(p_function), String::utf8(p_file), p_line, String::utf8(p_code), String::utf8(p_rationale), p_editor_notify, p_type, p_script_backtraces);
 }
 
 void Logger::log_message(const String &p_text, bool p_error) {
-	GDVIRTUAL_CALL(_log_message, p_text, p_error);
+	VLTRVIRTUAL_CALL(_log_message, p_text, p_error);
 }
 
 ////// OS //////

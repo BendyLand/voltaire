@@ -33,7 +33,7 @@
 #include "core/io/stream_peer_socket.h"
 
 class StreamPeerUDS : public StreamPeerSocket {
-	GDCLASS(StreamPeerUDS, StreamPeerSocket);
+	VLTRCLASS(StreamPeerUDS, StreamPeerSocket);
 
 protected:
 	String peer_path;

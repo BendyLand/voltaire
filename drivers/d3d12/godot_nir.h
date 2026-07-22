@@ -32,7 +32,7 @@
 
 #include "core/typedefs.h"
 
-GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wmissing-field-initializers")
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wmissing-field-initializers")
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wmissing-field-initializers")
 GODOT_MSVC_WARNING_PUSH
 GODOT_MSVC_WARNING_IGNORE(4200) // "nonstandard extension used: zero-sized array in struct/union".
@@ -45,6 +45,6 @@ extern "C" {
 #include <dxil_spirv_nir.h>
 }
 
-GODOT_GCC_WARNING_POP
+VLTR_GCC_WARNING_POP
 GODOT_CLANG_WARNING_POP
-GODOT_MSVC_WARNING_POP
+VLTR_MSVC_WARNING_POP

@@ -44,7 +44,7 @@ class RichTextLabel;
 class Timer;
 
 class GotoLinePopup : public PopupPanel {
-	GDCLASS(GotoLinePopup, PopupPanel);
+	VLTRCLASS(GotoLinePopup, PopupPanel);
 
 	Variant original_state;
 	LineEdit *line_input = nullptr;
@@ -64,7 +64,7 @@ public:
 };
 
 class FindReplaceBar : public HBoxContainer {
-	GDCLASS(FindReplaceBar, HBoxContainer);
+	VLTRCLASS(FindReplaceBar, HBoxContainer);
 
 	enum SearchMode {
 		SEARCH_CURRENT,
@@ -158,7 +158,7 @@ public:
 typedef void (*CodeTextEditorCodeCompleteFunc)(void *p_ud, const String &p_code, List<ScriptLanguage::CodeCompletionOption> *r_options, bool &r_forced);
 
 class CodeTextEditor : public VBoxContainer {
-	GDCLASS(CodeTextEditor, VBoxContainer);
+	VLTRCLASS(CodeTextEditor, VBoxContainer);
 
 	CodeEdit *text_editor = nullptr;
 	FindReplaceBar *find_replace_bar = nullptr;

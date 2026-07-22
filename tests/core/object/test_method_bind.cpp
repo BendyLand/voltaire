@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_method_bind)
 namespace TestMethodBind {
 
 class MethodBindTester : public Object {
-	GDCLASS(MethodBindTester, Object);
+	VLTRCLASS(MethodBindTester, Object);
 
 public:
 	enum Test {
@@ -55,7 +55,7 @@ public:
 	};
 
 	class ObjectSubclass : public Object {
-		GDSOFTCLASS(ObjectSubclass, Object);
+		VLTRSOFTCLASS(ObjectSubclass, Object);
 
 	public:
 		int value = 1;

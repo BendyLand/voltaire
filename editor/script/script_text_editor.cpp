@@ -1277,11 +1277,11 @@ void ScriptTextEditor::_lookup_symbol(const String &p_symbol, int p_row, int p_c
 				case EditorLanguage::LookupResult::Type::CLASS_ANNOTATION: {
 					emit_signal(SNAME("go_to_help"), "class_annotation:" + result.class_name + ":" + result.class_member);
 				} break;
-					GODOT_PUSH_IGNORE_DEPRECATION()
+					VLTR_PUSH_IGNORE_DEPRECATION()
 				case EditorLanguage::LookupResult::Type::CLASS_TBD_GLOBALSCOPE: { // Deprecated.
 					emit_signal(SNAME("go_to_help"), "class_global:" + result.class_name + ":" + result.class_member);
 				} break;
-					GODOT_POP_IGNORE_DEPRECATION()
+					VLTR_POP_IGNORE_DEPRECATION()
 				case EditorLanguage::LookupResult::Type::SCRIPT_LOCATION:
 				case EditorLanguage::LookupResult::Type::LOCAL_CONSTANT:
 				case EditorLanguage::LookupResult::Type::LOCAL_VARIABLE: {
@@ -1438,12 +1438,12 @@ void ScriptTextEditor::_show_symbol_tooltip(const String &p_symbol, int p_row, i
 				item_data["value"] = result.value;
 				doc_symbol = item_type + "||" + p_symbol + "|" + JSON::stringify(item_data);
 			} break;
-				GODOT_PUSH_IGNORE_DEPRECATION()
+				VLTR_PUSH_IGNORE_DEPRECATION()
 			case EditorLanguage::LookupResult::Type::SCRIPT_LOCATION:
 			case EditorLanguage::LookupResult::Type::CLASS_TBD_GLOBALSCOPE: {
 				// Nothing to do.
 			} break;
-				GODOT_POP_IGNORE_DEPRECATION()
+				VLTR_POP_IGNORE_DEPRECATION()
 		}
 	}
 
@@ -1603,7 +1603,7 @@ void ScriptTextEditor::_update_connected_methods() {
 				if (base_class_ptr == nullptr) {
 					break;
 				}
-				base_class = base_class_ptr->gdtype->get_name();
+				base_class = base_class_ptr->vltrtype->get_name();
 			}
 		}
 

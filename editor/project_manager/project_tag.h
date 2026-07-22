@@ -35,7 +35,7 @@
 class Button;
 
 class ProjectTag : public HBoxContainer {
-	GDCLASS(ProjectTag, HBoxContainer);
+	VLTRCLASS(ProjectTag, HBoxContainer);
 
 	String tag_string;
 	bool display_close = false;

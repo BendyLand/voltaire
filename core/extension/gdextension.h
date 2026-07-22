@@ -37,7 +37,7 @@
 class GDExtensionMethodBind;
 
 class GDExtension : public Resource {
-	GDCLASS(GDExtension, Resource)
+	VLTRCLASS(GDExtension, Resource)
 
 	friend class GDExtensionManager;
 

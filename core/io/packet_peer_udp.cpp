@@ -114,8 +114,8 @@ Error PacketPeerUDP::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
 	 *   68 |                                 p_buf[dst++] = read[pos + i];
 	 *      |                                 ~~~~~~~~~~~~~^~~~~~~
 	 */
-	GODOT_GCC_WARNING_PUSH
-	GODOT_GCC_PRAGMA(GCC diagnostic warning "-Wstringop-overflow=0") // Can't "ignore" this for some reason.
+	VLTR_GCC_WARNING_PUSH
+	VLTR_GCC_PRAGMA(GCC diagnostic warning "-Wstringop-overflow=0") // Can't "ignore" this for some reason.
 
 	uint32_t size = 0;
 	uint8_t ipv6[16] = {};
@@ -128,7 +128,7 @@ Error PacketPeerUDP::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
 	*r_buffer = packet_buffer;
 	r_buffer_size = size;
 
-	GODOT_GCC_WARNING_POP
+	VLTR_GCC_WARNING_POP
 
 	return OK;
 }

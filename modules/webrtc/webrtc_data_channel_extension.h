@@ -37,7 +37,7 @@
 #include "core/variant/native_ptr.h"
 
 class WebRTCDataChannelExtension : public WebRTCDataChannel {
-	GDCLASS(WebRTCDataChannelExtension, WebRTCDataChannel);
+	VLTRCLASS(WebRTCDataChannelExtension, WebRTCDataChannel);
 
 protected:
 	static void _bind_methods();
@@ -68,8 +68,8 @@ public:
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
 
 	/** GDExtension **/
-	GDVIRTUAL2R(Error, _get_packet, GDExtensionPtr<const uint8_t *>, GDExtensionPtr<int>);
-	GDVIRTUAL2R(Error, _put_packet, GDExtensionPtr<const uint8_t>, int);
+	VLTRVIRTUAL2R(Error, _get_packet, GDExtensionPtr<const uint8_t *>, GDExtensionPtr<int>);
+	VLTRVIRTUAL2R(Error, _put_packet, GDExtensionPtr<const uint8_t>, int);
 
 	WebRTCDataChannelExtension() {}
 };

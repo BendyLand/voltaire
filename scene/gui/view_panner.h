@@ -37,7 +37,7 @@ class Node;
 class Shortcut;
 
 class ViewPanner : public RefCounted {
-	GDCLASS(ViewPanner, RefCounted);
+	VLTRCLASS(ViewPanner, RefCounted);
 
 public:
 	enum ControlScheme {

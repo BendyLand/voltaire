@@ -38,7 +38,7 @@ class Tree;
 class HSplitContainer;
 
 class SnapshotObjectView : public SnapshotView {
-	GDCLASS(SnapshotObjectView, SnapshotView);
+	VLTRCLASS(SnapshotObjectView, SnapshotView);
 
 protected:
 	Tree *object_list = nullptr;

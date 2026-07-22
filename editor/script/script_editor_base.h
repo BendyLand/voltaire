@@ -38,7 +38,7 @@ class MenuButton;
 class VSplitContainer;
 
 class ScriptEditorBase : public VBoxContainer {
-	GDCLASS(ScriptEditorBase, VBoxContainer);
+	VLTRCLASS(ScriptEditorBase, VBoxContainer);
 
 protected:
 	Ref<Resource> edited_res;
@@ -74,7 +74,7 @@ public:
 typedef ScriptEditorBase *(*CreateScriptEditorFunc)(const Ref<Resource> &p_resource);
 
 class TextEditorBase : public ScriptEditorBase {
-	GDCLASS(TextEditorBase, ScriptEditorBase);
+	VLTRCLASS(TextEditorBase, ScriptEditorBase);
 
 	void _post_init();
 
@@ -126,7 +126,7 @@ protected:
 	};
 
 	class EditMenus : public HBoxContainer {
-		GDCLASS(EditMenus, HBoxContainer);
+		VLTRCLASS(EditMenus, HBoxContainer);
 
 	protected:
 		MenuButton *edit_menu = nullptr;
@@ -240,7 +240,7 @@ public:
 };
 
 class CodeEditorBase : public TextEditorBase {
-	GDCLASS(CodeEditorBase, TextEditorBase);
+	VLTRCLASS(CodeEditorBase, TextEditorBase);
 
 protected:
 	enum {
@@ -251,7 +251,7 @@ protected:
 	};
 
 	class EditMenusCEB : public EditMenus {
-		GDCLASS(EditMenusCEB, EditMenus);
+		VLTRCLASS(EditMenusCEB, EditMenus);
 
 	public:
 		EditMenusCEB();

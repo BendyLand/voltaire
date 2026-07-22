@@ -471,10 +471,10 @@ VisualShaderNode::VisualShaderNode() {
 
 void VisualShaderNodeCustom::update_property_default_values() {
 	int prop_count;
-	if (GDVIRTUAL_CALL(_get_property_count, prop_count)) {
+	if (VLTRVIRTUAL_CALL(_get_property_count, prop_count)) {
 		for (int i = 0; i < prop_count; i++) {
 			int selected = 0;
-			if (GDVIRTUAL_CALL(_get_property_default_index, i, selected)) {
+			if (VLTRVIRTUAL_CALL(_get_property_default_index, i, selected)) {
 				dp_selected_cache[i] = selected;
 			}
 		}
@@ -483,10 +483,10 @@ void VisualShaderNodeCustom::update_property_default_values() {
 
 void VisualShaderNodeCustom::update_input_port_default_values() {
 	int input_port_count;
-	if (GDVIRTUAL_CALL(_get_input_port_count, input_port_count)) {
+	if (VLTRVIRTUAL_CALL(_get_input_port_count, input_port_count)) {
 		for (int i = 0; i < input_port_count; i++) {
 			Variant value;
-			if (GDVIRTUAL_CALL(_get_input_port_default_value, i, value)) {
+			if (VLTRVIRTUAL_CALL(_get_input_port_default_value, i, value)) {
 				default_input_values[i] = value;
 			}
 		}
@@ -497,13 +497,13 @@ void VisualShaderNodeCustom::update_ports() {
 	{
 		dp_props.clear();
 		int prop_count;
-		if (GDVIRTUAL_CALL(_get_property_count, prop_count)) {
+		if (VLTRVIRTUAL_CALL(_get_property_count, prop_count)) {
 			for (int i = 0; i < prop_count; i++) {
 				DropDownListProperty prop;
-				if (!GDVIRTUAL_CALL(_get_property_name, i, prop.name)) {
+				if (!VLTRVIRTUAL_CALL(_get_property_name, i, prop.name)) {
 					prop.name = "prop";
 				}
-				if (!GDVIRTUAL_CALL(_get_property_options, i, prop.options)) {
+				if (!VLTRVIRTUAL_CALL(_get_property_options, i, prop.options)) {
 					prop.options.push_back("Default");
 				}
 				dp_props.push_back(prop);
@@ -527,14 +527,14 @@ void VisualShaderNodeCustom::update_ports() {
 	{
 		input_ports.clear();
 		int input_port_count;
-		if (GDVIRTUAL_CALL(_get_input_port_count, input_port_count)) {
+		if (VLTRVIRTUAL_CALL(_get_input_port_count, input_port_count)) {
 			for (int i = 0; i < input_port_count; i++) {
 				Port port;
-				if (!GDVIRTUAL_CALL(_get_input_port_name, i, port.name)) {
+				if (!VLTRVIRTUAL_CALL(_get_input_port_name, i, port.name)) {
 					port.name = "in" + itos(i);
 				}
 				PortType port_type;
-				if (GDVIRTUAL_CALL(_get_input_port_type, i, port_type)) {
+				if (VLTRVIRTUAL_CALL(_get_input_port_type, i, port_type)) {
 					port.type = (int)port_type;
 				} else {
 					port.type = (int)PortType::PORT_TYPE_SCALAR;
@@ -548,14 +548,14 @@ void VisualShaderNodeCustom::update_ports() {
 	{
 		output_ports.clear();
 		int output_port_count;
-		if (GDVIRTUAL_CALL(_get_output_port_count, output_port_count)) {
+		if (VLTRVIRTUAL_CALL(_get_output_port_count, output_port_count)) {
 			for (int i = 0; i < output_port_count; i++) {
 				Port port;
-				if (!GDVIRTUAL_CALL(_get_output_port_name, i, port.name)) {
+				if (!VLTRVIRTUAL_CALL(_get_output_port_name, i, port.name)) {
 					port.name = "out" + itos(i);
 				}
 				PortType port_type;
-				if (GDVIRTUAL_CALL(_get_output_port_type, i, port_type)) {
+				if (VLTRVIRTUAL_CALL(_get_output_port_type, i, port_type)) {
 					port.type = (int)port_type;
 				} else {
 					port.type = (int)PortType::PORT_TYPE_SCALAR;
@@ -578,7 +578,7 @@ void VisualShaderNodeCustom::update_properties() {
 
 String VisualShaderNodeCustom::get_caption() const {
 	String ret = "Unnamed";
-	GDVIRTUAL_CALL(_get_name, ret);
+	VLTRVIRTUAL_CALL(_get_name, ret);
 	return ret;
 }
 
@@ -598,7 +598,7 @@ String VisualShaderNodeCustom::get_input_port_name(int p_port) const {
 
 int VisualShaderNodeCustom::get_default_input_port(PortType p_type) const {
 	int ret = 0;
-	GDVIRTUAL_CALL(_get_default_input_port, p_type, ret);
+	VLTRVIRTUAL_CALL(_get_default_input_port, p_type, ret);
 	return ret;
 }
 
@@ -617,7 +617,7 @@ String VisualShaderNodeCustom::get_output_port_name(int p_port) const {
 }
 
 String VisualShaderNodeCustom::generate_code(Shader::Mode p_mode, VisualShader::Type p_type, int p_id, const String *p_input_vars, const String *p_output_vars, bool p_for_preview) const {
-	ERR_FAIL_COND_V(!GDVIRTUAL_IS_OVERRIDDEN(_get_code), "");
+	ERR_FAIL_COND_V(!VLTRVIRTUAL_IS_OVERRIDDEN(_get_code), "");
 	TypedArray<String> input_vars;
 	for (int i = 0; i < get_input_port_count(); i++) {
 		input_vars.push_back(p_input_vars[i]);
@@ -628,7 +628,7 @@ String VisualShaderNodeCustom::generate_code(Shader::Mode p_mode, VisualShader::
 	}
 
 	String _code;
-	GDVIRTUAL_CALL(_get_code, input_vars, output_vars, p_mode, p_type, _code);
+	VLTRVIRTUAL_CALL(_get_code, input_vars, output_vars, p_mode, p_type, _code);
 	if (_is_valid_code(_code)) {
 		String code = "	{\n";
 		bool nend = _code.ends_with("\n");
@@ -649,7 +649,7 @@ String VisualShaderNodeCustom::generate_code(Shader::Mode p_mode, VisualShader::
 
 String VisualShaderNodeCustom::generate_global_per_node(Shader::Mode p_mode, int p_id) const {
 	String _code;
-	if (GDVIRTUAL_CALL(_get_global_code, p_mode, _code)) {
+	if (VLTRVIRTUAL_CALL(_get_global_code, p_mode, _code)) {
 		if (_is_valid_code(_code)) {
 			String code = "// " + get_caption() + "\n";
 			code += _code;
@@ -662,7 +662,7 @@ String VisualShaderNodeCustom::generate_global_per_node(Shader::Mode p_mode, int
 
 String VisualShaderNodeCustom::generate_global_per_func(Shader::Mode p_mode, VisualShader::Type p_type, int p_id) const {
 	String _code;
-	if (GDVIRTUAL_CALL(_get_func_code, p_mode, p_type, _code)) {
+	if (VLTRVIRTUAL_CALL(_get_func_code, p_mode, p_type, _code)) {
 		if (_is_valid_code(_code)) {
 			bool nend = _code.ends_with("\n");
 			String code = "// " + get_caption() + "\n";
@@ -685,7 +685,7 @@ String VisualShaderNodeCustom::generate_global_per_func(Shader::Mode p_mode, Vis
 
 bool VisualShaderNodeCustom::is_available(Shader::Mode p_mode, VisualShader::Type p_type) const {
 	bool ret = true;
-	GDVIRTUAL_CALL(_is_available, p_mode, p_type, ret);
+	VLTRVIRTUAL_CALL(_is_available, p_mode, p_type, ret);
 	return ret;
 }
 
@@ -742,31 +742,31 @@ String VisualShaderNodeCustom::_get_properties() const {
 
 String VisualShaderNodeCustom::_get_name() const {
 	String ret;
-	GDVIRTUAL_CALL(_get_name, ret);
+	VLTRVIRTUAL_CALL(_get_name, ret);
 	return ret;
 }
 
 String VisualShaderNodeCustom::_get_description() const {
 	String ret;
-	GDVIRTUAL_CALL(_get_description, ret);
+	VLTRVIRTUAL_CALL(_get_description, ret);
 	return ret;
 }
 
 String VisualShaderNodeCustom::_get_category() const {
 	String ret;
-	GDVIRTUAL_CALL(_get_category, ret);
+	VLTRVIRTUAL_CALL(_get_category, ret);
 	return ret;
 }
 
 VisualShaderNodeCustom::PortType VisualShaderNodeCustom::_get_return_icon_type() const {
 	PortType ret = PORT_TYPE_SCALAR;
-	GDVIRTUAL_CALL(_get_return_icon_type, ret);
+	VLTRVIRTUAL_CALL(_get_return_icon_type, ret);
 	return ret;
 }
 
 bool VisualShaderNodeCustom::_is_highend() const {
 	bool ret = false;
-	GDVIRTUAL_CALL(_is_highend, ret);
+	VLTRVIRTUAL_CALL(_is_highend, ret);
 	return ret;
 }
 
@@ -786,27 +786,27 @@ int VisualShaderNodeCustom::get_option_index(int p_option) const {
 }
 
 void VisualShaderNodeCustom::_bind_methods() {
-	GDVIRTUAL_BIND(_get_name);
-	GDVIRTUAL_BIND(_get_description);
-	GDVIRTUAL_BIND(_get_category);
-	GDVIRTUAL_BIND(_get_return_icon_type);
-	GDVIRTUAL_BIND(_get_input_port_count);
-	GDVIRTUAL_BIND(_get_input_port_type, "port");
-	GDVIRTUAL_BIND(_get_input_port_name, "port");
-	GDVIRTUAL_BIND(_get_input_port_default_value, "port");
-	GDVIRTUAL_BIND(_get_default_input_port, "type");
-	GDVIRTUAL_BIND(_get_output_port_count);
-	GDVIRTUAL_BIND(_get_output_port_type, "port");
-	GDVIRTUAL_BIND(_get_output_port_name, "port");
-	GDVIRTUAL_BIND(_get_property_count);
-	GDVIRTUAL_BIND(_get_property_name, "index");
-	GDVIRTUAL_BIND(_get_property_default_index, "index");
-	GDVIRTUAL_BIND(_get_property_options, "index");
-	GDVIRTUAL_BIND(_get_code, "input_vars", "output_vars", "mode", "type");
-	GDVIRTUAL_BIND(_get_func_code, "mode", "type");
-	GDVIRTUAL_BIND(_get_global_code, "mode");
-	GDVIRTUAL_BIND(_is_highend);
-	GDVIRTUAL_BIND(_is_available, "mode", "type");
+	VLTRVIRTUAL_BIND(_get_name);
+	VLTRVIRTUAL_BIND(_get_description);
+	VLTRVIRTUAL_BIND(_get_category);
+	VLTRVIRTUAL_BIND(_get_return_icon_type);
+	VLTRVIRTUAL_BIND(_get_input_port_count);
+	VLTRVIRTUAL_BIND(_get_input_port_type, "port");
+	VLTRVIRTUAL_BIND(_get_input_port_name, "port");
+	VLTRVIRTUAL_BIND(_get_input_port_default_value, "port");
+	VLTRVIRTUAL_BIND(_get_default_input_port, "type");
+	VLTRVIRTUAL_BIND(_get_output_port_count);
+	VLTRVIRTUAL_BIND(_get_output_port_type, "port");
+	VLTRVIRTUAL_BIND(_get_output_port_name, "port");
+	VLTRVIRTUAL_BIND(_get_property_count);
+	VLTRVIRTUAL_BIND(_get_property_name, "index");
+	VLTRVIRTUAL_BIND(_get_property_default_index, "index");
+	VLTRVIRTUAL_BIND(_get_property_options, "index");
+	VLTRVIRTUAL_BIND(_get_code, "input_vars", "output_vars", "mode", "type");
+	VLTRVIRTUAL_BIND(_get_func_code, "mode", "type");
+	VLTRVIRTUAL_BIND(_get_global_code, "mode");
+	VLTRVIRTUAL_BIND(_is_highend);
+	VLTRVIRTUAL_BIND(_is_available, "mode", "type");
 
 	ClassDB::bind_method(D_METHOD("_set_initialized", "enabled"), &VisualShaderNodeCustom::_set_initialized);
 	ClassDB::bind_method(D_METHOD("_is_initialized"), &VisualShaderNodeCustom::_is_initialized);

@@ -35,7 +35,7 @@
 #include "servers/rendering/rendering_device.h"
 
 class FramebufferCacheRD : public Object {
-	GDCLASS(FramebufferCacheRD, Object)
+	VLTRCLASS(FramebufferCacheRD, Object)
 
 	struct Cache {
 		Cache *prev = nullptr;

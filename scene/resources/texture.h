@@ -35,28 +35,28 @@
 #include "core/variant/typed_array.h"
 
 class Texture : public Resource {
-	GDCLASS(Texture, Resource);
+	VLTRCLASS(Texture, Resource);
 };
 
 class Texture2D : public Texture {
-	GDCLASS(Texture2D, Texture);
+	VLTRCLASS(Texture2D, Texture);
 	OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
 
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL0RC(Image::Format, _get_format)
-	GDVIRTUAL0RC(Ref<Image>, _get_image)
-	GDVIRTUAL0RC(int, _get_mipmap_count)
-	GDVIRTUAL0RC(bool, _has_mipmaps)
-	GDVIRTUAL0RC_REQUIRED(int, _get_width)
-	GDVIRTUAL0RC_REQUIRED(int, _get_height)
-	GDVIRTUAL2RC(bool, _is_pixel_opaque, int, int)
-	GDVIRTUAL0RC(bool, _has_alpha)
+	VLTRVIRTUAL0RC(Image::Format, _get_format)
+	VLTRVIRTUAL0RC(Ref<Image>, _get_image)
+	VLTRVIRTUAL0RC(int, _get_mipmap_count)
+	VLTRVIRTUAL0RC(bool, _has_mipmaps)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_width)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_height)
+	VLTRVIRTUAL2RC(bool, _is_pixel_opaque, int, int)
+	VLTRVIRTUAL0RC(bool, _has_alpha)
 
-	GDVIRTUAL4C(_draw, RID, Point2, Color, bool)
-	GDVIRTUAL5C(_draw_rect, RID, Rect2, bool, Color, bool)
-	GDVIRTUAL6C(_draw_rect_region, RID, Rect2, Rect2, Color, bool, bool)
+	VLTRVIRTUAL4C(_draw, RID, Point2, Color, bool)
+	VLTRVIRTUAL5C(_draw_rect, RID, Rect2, bool, Color, bool)
+	VLTRVIRTUAL6C(_draw_rect_region, RID, Rect2, Rect2, Color, bool, bool)
 
 public:
 	virtual Image::Format get_format() const;
@@ -84,18 +84,18 @@ public:
 };
 
 class TextureLayered : public Texture {
-	GDCLASS(TextureLayered, Texture);
+	VLTRCLASS(TextureLayered, Texture);
 
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL0RC_REQUIRED(Image::Format, _get_format)
-	GDVIRTUAL0RC_REQUIRED(uint32_t, _get_layered_type)
-	GDVIRTUAL0RC_REQUIRED(int, _get_width)
-	GDVIRTUAL0RC_REQUIRED(int, _get_height)
-	GDVIRTUAL0RC_REQUIRED(int, _get_layers)
-	GDVIRTUAL0RC_REQUIRED(bool, _has_mipmaps)
-	GDVIRTUAL1RC_REQUIRED(Ref<Image>, _get_layer_data, int)
+	VLTRVIRTUAL0RC_REQUIRED(Image::Format, _get_format)
+	VLTRVIRTUAL0RC_REQUIRED(uint32_t, _get_layered_type)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_width)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_height)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_layers)
+	VLTRVIRTUAL0RC_REQUIRED(bool, _has_mipmaps)
+	VLTRVIRTUAL1RC_REQUIRED(Ref<Image>, _get_layer_data, int)
 public:
 	enum LayeredType {
 		LAYERED_TYPE_2D_ARRAY,
@@ -115,19 +115,19 @@ public:
 VARIANT_ENUM_CAST(TextureLayered::LayeredType)
 
 class Texture3D : public Texture {
-	GDCLASS(Texture3D, Texture);
+	VLTRCLASS(Texture3D, Texture);
 
 protected:
 	static void _bind_methods();
 
 	TypedArray<Image> _get_datai() const;
 
-	GDVIRTUAL0RC_REQUIRED(Image::Format, _get_format)
-	GDVIRTUAL0RC_REQUIRED(int, _get_width)
-	GDVIRTUAL0RC_REQUIRED(int, _get_height)
-	GDVIRTUAL0RC_REQUIRED(int, _get_depth)
-	GDVIRTUAL0RC_REQUIRED(bool, _has_mipmaps)
-	GDVIRTUAL0RC_REQUIRED(TypedArray<Image>, _get_data)
+	VLTRVIRTUAL0RC_REQUIRED(Image::Format, _get_format)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_width)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_height)
+	VLTRVIRTUAL0RC_REQUIRED(int, _get_depth)
+	VLTRVIRTUAL0RC_REQUIRED(bool, _has_mipmaps)
+	VLTRVIRTUAL0RC_REQUIRED(TypedArray<Image>, _get_data)
 public:
 	virtual Image::Format get_format() const;
 	virtual int get_width() const;

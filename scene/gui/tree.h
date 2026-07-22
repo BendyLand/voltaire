@@ -46,7 +46,7 @@ class Tree;
 class VScrollBar;
 
 class TreeItem : public Object {
-	GDCLASS(TreeItem, Object);
+	VLTRCLASS(TreeItem, Object);
 
 public:
 	enum TreeCellMode {
@@ -467,7 +467,7 @@ public:
 VARIANT_ENUM_CAST(TreeItem::TreeCellMode);
 
 class Tree : public Control {
-	GDCLASS(Tree, Control);
+	VLTRCLASS(Tree, Control);
 
 public:
 	enum SelectMode {
