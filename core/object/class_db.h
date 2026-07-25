@@ -123,8 +123,6 @@ public:
 		void *class_ptr = nullptr;
 		VLTRType *vltrtype = nullptr;
 
-		ObjectGDExtension *gdextension = nullptr;
-
 		HashMap<StringName, MethodBind *> method_map;
 		HashMap<StringName, LocalVector<MethodBind *>> method_map_compatibility;
 
@@ -195,10 +193,6 @@ public:
 	static HashMap<StringName, StringName> resource_base_extensions;
 	static HashMap<StringName, StringName> compat_classes;
 
-#ifdef TOOLS_ENABLED
-	static HashMap<StringName, ObjectGDExtension> placeholder_extensions;
-#endif
-
 #ifdef DEBUG_ENABLED
 	static MethodBind *bind_methodfi(uint32_t p_flags, MethodBind *p_bind, bool p_compatibility, const MethodDefinition &p_method_name, const Variant **p_defs, int p_defcount);
 #else
@@ -235,7 +229,6 @@ private:
 	static MethodBind *_bind_vararg_method(MethodBind *p_bind, const StringName &p_name, const Vector<Variant> &p_default_args, bool p_compatibility);
 	static void _bind_method_custom(const StringName &p_class, MethodBind *p_method, bool p_compatibility);
 
-	static Object *_instantiate_from_gdextension(ObjectGDExtension *p_object_gd_extension, bool p_notify_postinitialize, bool p_with_refcount);
 	static Object *_instantiate_internal(const StringName &p_class, bool p_require_real_class = false, bool p_notify_postinitialize = true, bool p_exposed_only = true, bool p_with_refcount = false);
 
 	static bool _can_instantiate(ClassInfo *p_class_info, bool p_exposed_only = true);
@@ -301,7 +294,6 @@ public:
 		T::register_custom_data_to_otdb();
 	}
 
-	static void register_extension_class(ObjectGDExtension *p_extension);
 	static void unregister_extension_class(const StringName &p_class, bool p_free_method_binds = true);
 
 	template <typename T>
@@ -327,7 +319,6 @@ public:
 #ifdef TOOLS_ENABLED
 	static void get_extensions_class_list(LocalVector<StringName> &p_classes);
 	static void get_extension_class_list(const Ref<GDExtension> &p_extension, List<StringName> *p_classes);
-	static ObjectGDExtension *get_placeholder_extension(const StringName &p_class);
 #endif
 	static const VLTRType *get_vltrtype(const StringName &p_class);
 	static void get_inheriters_from_class(const StringName &p_class, LocalVector<StringName> &p_classes);
@@ -346,7 +337,6 @@ public:
 	static Object *instantiate_no_placeholders(const StringName &p_class);
 	static Object *instantiate_without_postinitialization(const StringName &p_class);
 	static Object *instantiate_without_postinitialization_with_refcount(const StringName &p_class);
-	static void set_object_extension_instance(Object *p_object, const StringName &p_class, GDExtensionClassInstancePtr p_instance);
 
 	static APIType get_api_type(const StringName &p_class);
 
@@ -494,7 +484,6 @@ public:
 	static void add_virtual_method(const StringName &p_class, const MethodInfo &p_method, bool p_virtual = true, const Vector<String> &p_arg_names = Vector<String>(), bool p_object_core = false);
 	static void add_virtual_compatibility_method(const StringName &p_class, const MethodInfo &p_method, bool p_virtual = true, const Vector<String> &p_arg_names = Vector<String>(), bool p_object_core = false);
 	static void get_virtual_methods(const StringName &p_class, List<MethodInfo> *p_methods, bool p_no_inheritance = false);
-	static void add_extension_class_virtual_method(const StringName &p_class, const GDExtensionClassVirtualMethodInfo *p_method_info);
 	static Vector<uint32_t> get_virtual_method_compatibility_hashes(const StringName &p_class, const StringName &p_name);
 
 	static void bind_integer_constant(const StringName &p_class, const StringName &p_enum, const StringName &p_name, int64_t p_constant, bool p_is_bitfield = false);

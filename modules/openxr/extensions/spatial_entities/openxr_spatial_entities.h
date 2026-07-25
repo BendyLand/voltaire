@@ -50,9 +50,6 @@ public:
 	virtual bool has_valid_configuration() const;
 	uint64_t _get_configurationgd();
 	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT *get_configuration();
-
-	VLTRVIRTUAL0RC(bool, _has_valid_configuration);
-	VLTRVIRTUAL0R(uint64_t, _get_configuration);
 };
 
 // Tracker for our spatial entities
@@ -109,13 +106,6 @@ public:
 	int64_t _get_component_typegd() const;
 	virtual XrSpatialComponentTypeEXT get_component_type() const;
 	virtual void *get_structure_data(void *p_next);
-
-	VLTRVIRTUAL1(_set_capacity, uint32_t);
-	VLTRVIRTUAL0RC(uint64_t, _get_component_type);
-	VLTRVIRTUAL1R(uint64_t, _get_structure_data, uint64_t);
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL1RC_COMPAT(_get_structure_data_bind_compat_118128, uint64_t, _get_structure_data, uint64_t);
-#endif
 };
 
 class OpenXRSpatialComponentBounded2DList : public OpenXRSpatialComponentData {

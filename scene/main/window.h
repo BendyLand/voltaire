@@ -292,8 +292,6 @@ protected:
 
 	virtual String _get_accessibility_name() const;
 
-	VLTRVIRTUAL0RC(Vector2, _get_contents_minimum_size)
-
 public:
 	enum {
 		NOTIFICATION_VISIBILITY_CHANGED = 30,

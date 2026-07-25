@@ -41,10 +41,6 @@ private:
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL0RC(String, _get_name)
-	VLTRVIRTUAL0RC(PackedStringArray, _get_supported_languages)
-	VLTRVIRTUAL0RC(Ref<EditorSyntaxHighlighter>, _create)
-
 public:
 	virtual String _get_name() const;
 	virtual PackedStringArray _get_supported_languages() const;

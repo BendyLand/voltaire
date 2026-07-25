@@ -74,20 +74,6 @@ struct MethodInfo {
 
 	MethodInfo() {}
 
-	explicit MethodInfo(const GDExtensionMethodInfo &p_info) :
-			name(*reinterpret_cast<StringName *>(p_info.name)),
-			return_val(PropertyInfo(p_info.return_value)),
-			flags(p_info.flags),
-			id(p_info.id) {
-		for (uint32_t i = 0; i < p_info.argument_count; i++) {
-			arguments.push_back(PropertyInfo(p_info.arguments[i]));
-		}
-		const Variant *def_values = (const Variant *)p_info.default_arguments;
-		for (uint32_t j = 0; j < p_info.default_argument_count; j++) {
-			default_arguments.push_back(def_values[j]);
-		}
-	}
-
 	MethodInfo(const String &p_name) { name = p_name; }
 
 	template <typename... VarArgs>

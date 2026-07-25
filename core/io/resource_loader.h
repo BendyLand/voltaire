@@ -59,19 +59,6 @@ public:
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL0RC(Vector<String>, _get_recognized_extensions)
-	VLTRVIRTUAL2RC(bool, _recognize_path, String, StringName)
-	VLTRVIRTUAL1RC(bool, _handles_type, StringName)
-	VLTRVIRTUAL1RC(String, _get_resource_type, String)
-	VLTRVIRTUAL1RC(String, _get_resource_script_class, String)
-	VLTRVIRTUAL1RC(ResourceUID::ID, _get_resource_uid, String)
-	VLTRVIRTUAL2RC(Vector<String>, _get_dependencies, String, bool)
-	VLTRVIRTUAL1RC(Vector<String>, _get_classes_used, String)
-	VLTRVIRTUAL2RC(Error, _rename_dependencies, String, Dictionary)
-	VLTRVIRTUAL1RC(bool, _exists, String)
-
-	VLTRVIRTUAL4RC_REQUIRED(Variant, _load, String, String, bool, int)
-
 public:
 	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE);
 	virtual bool exists(const String &p_path) const;

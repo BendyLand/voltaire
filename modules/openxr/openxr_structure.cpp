@@ -39,8 +39,6 @@ void OpenXRStructureBase::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_next"), &OpenXRStructureBase::get_next);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "next", PROPERTY_HINT_RESOURCE_TYPE, OpenXRStructureBase::get_class_static()), "set_next", "get_next");
-
-	VLTRVIRTUAL_BIND(_get_header, "next");
 }
 
 void OpenXRStructureBase::set_next(const Ref<OpenXRStructureBase> p_next) {
@@ -56,13 +54,6 @@ void *OpenXRStructureBase::get_header(void *p_next) {
 	if (get_next().is_valid()) {
 		n = get_next()->get_header(p_next);
 	}
-
-	uint64_t pointer = 0;
-
-	if (VLTRVIRTUAL_CALL(_get_header, (uint64_t)n, pointer)) {
-		return reinterpret_cast<void *>(pointer);
-	}
-
 	return n;
 }
 

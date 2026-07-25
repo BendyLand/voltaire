@@ -44,34 +44,11 @@
 void OpenXRSpatialCapabilityConfigurationBaseHeader::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("has_valid_configuration"), &OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration);
 	ClassDB::bind_method(D_METHOD("get_configuration"), &OpenXRSpatialCapabilityConfigurationBaseHeader::_get_configurationgd);
-
-	VLTRVIRTUAL_BIND(_has_valid_configuration);
-	VLTRVIRTUAL_BIND(_get_configuration);
-}
-
-bool OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration() const {
-	bool is_valid = false;
-
-	if (VLTRVIRTUAL_CALL(_has_valid_configuration, is_valid)) {
-		return is_valid;
-	}
-
-	return false;
 }
 
 // For exposing this to GDExtension
 uint64_t OpenXRSpatialCapabilityConfigurationBaseHeader::_get_configurationgd() {
 	return (uint64_t)get_configuration();
-}
-
-XrSpatialCapabilityConfigurationBaseHeaderEXT *OpenXRSpatialCapabilityConfigurationBaseHeader::get_configuration() {
-	uint64_t pointer = 0;
-
-	if (VLTRVIRTUAL_CALL(_get_configuration, pointer)) {
-		return reinterpret_cast<XrSpatialCapabilityConfigurationBaseHeaderEXT *>(pointer);
-	}
-
-	return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -223,17 +200,6 @@ Ref<OpenXRStructureBase> OpenXRSpatialEntityTracker::get_next() const {
 void OpenXRSpatialComponentData::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_capacity", "capacity"), &OpenXRSpatialComponentData::set_capacity);
 	ClassDB::bind_method(D_METHOD("get_component_type"), &OpenXRSpatialComponentData::_get_component_typegd);
-
-	VLTRVIRTUAL_BIND(_set_capacity, "capacity");
-	VLTRVIRTUAL_BIND(_get_component_type);
-	VLTRVIRTUAL_BIND(_get_structure_data, "next");
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL_BIND_COMPAT(_get_structure_data_bind_compat_118128, "next");
-#endif
-}
-
-void OpenXRSpatialComponentData::set_capacity(uint32_t p_capacity) {
-	VLTRVIRTUAL_CALL(_set_capacity, p_capacity);
 }
 
 // For exposing this to GDExtension
@@ -242,29 +208,7 @@ int64_t OpenXRSpatialComponentData::_get_component_typegd() const {
 }
 
 XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const {
-	uint64_t component_type = XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
-
-	if (VLTRVIRTUAL_CALL(_get_component_type, component_type)) {
-		return (XrSpatialComponentTypeEXT)component_type;
-	}
-
 	return XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
-}
-
-void *OpenXRSpatialComponentData::get_structure_data(void *p_next) {
-	uint64_t pointer = 0;
-
-	if (VLTRVIRTUAL_CALL(_get_structure_data, (uint64_t)p_next, pointer)) {
-		return reinterpret_cast<void *>(pointer);
-	}
-
-#ifndef DISABLE_DEPRECATED
-	if (VLTRVIRTUAL_CALL(_get_structure_data_bind_compat_118128, (uint64_t)p_next, pointer)) {
-		return reinterpret_cast<void *>(pointer);
-	}
-#endif
-
-	return p_next;
 }
 
 ////////////////////////////////////////////////////////////////////////////

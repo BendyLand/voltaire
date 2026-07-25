@@ -169,125 +169,14 @@ String EditorExportPlugin::_has_valid_export_configuration(const Ref<EditorExpor
 	return warning;
 }
 
-void EditorExportPlugin::_export_file_script(const String &p_path, const String &p_type, const Vector<String> &p_features) {
-	VLTRVIRTUAL_CALL(_export_file, p_path, p_type, p_features);
-}
-
-void EditorExportPlugin::_export_begin_script(const Vector<String> &p_features, bool p_debug, const String &p_path, int p_flags) {
-	VLTRVIRTUAL_CALL(_export_begin, p_features, p_debug, p_path, p_flags);
-}
-
-void EditorExportPlugin::_export_end_script() {
-	VLTRVIRTUAL_CALL(_export_end);
-}
-
 // Customization
-
-bool EditorExportPlugin::_begin_customize_resources(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features) {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_begin_customize_resources, p_platform, p_features, ret);
-	return ret;
-}
-
-Ref<Resource> EditorExportPlugin::_customize_resource(const Ref<Resource> &p_resource, const String &p_path) {
-	Ref<Resource> ret;
-	VLTRVIRTUAL_CALL(_customize_resource, p_resource, p_path, ret);
-	return ret;
-}
-
-bool EditorExportPlugin::_begin_customize_scenes(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features) {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_begin_customize_scenes, p_platform, p_features, ret);
-	return ret;
-}
-
-Node *EditorExportPlugin::_customize_scene(Node *p_root, const String &p_path) {
-	Node *ret = nullptr;
-	VLTRVIRTUAL_CALL(_customize_scene, p_root, p_path, ret);
-	return ret;
-}
-
-uint64_t EditorExportPlugin::_get_customization_configuration_hash() const {
-	uint64_t ret = 0;
-	VLTRVIRTUAL_CALL(_get_customization_configuration_hash, ret);
-	return ret;
-}
-
-void EditorExportPlugin::_end_customize_scenes() {
-	VLTRVIRTUAL_CALL(_end_customize_scenes);
-}
-
-void EditorExportPlugin::_end_customize_resources() {
-	VLTRVIRTUAL_CALL(_end_customize_resources);
-}
-
-String EditorExportPlugin::get_name() const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_name, ret);
-	return ret;
-}
-
-bool EditorExportPlugin::supports_platform(const Ref<EditorExportPlatform> &p_export_platform) const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_supports_platform, p_export_platform, ret);
-	return ret;
-}
 
 PackedStringArray EditorExportPlugin::get_export_features(const Ref<EditorExportPlatform> &p_export_platform, bool p_debug) const {
 	return _get_export_features(p_export_platform, p_debug);
 }
 
-PackedStringArray EditorExportPlugin::get_android_dependencies(const Ref<EditorExportPlatform> &p_export_platform, bool p_debug) const {
-	PackedStringArray ret;
-	VLTRVIRTUAL_CALL(_get_android_dependencies, p_export_platform, p_debug, ret);
-	return ret;
-}
-
-PackedStringArray EditorExportPlugin::get_android_dependencies_maven_repos(const Ref<EditorExportPlatform> &p_export_platform, bool p_debug) const {
-	PackedStringArray ret;
-	VLTRVIRTUAL_CALL(_get_android_dependencies_maven_repos, p_export_platform, p_debug, ret);
-	return ret;
-}
-
-PackedStringArray EditorExportPlugin::get_android_libraries(const Ref<EditorExportPlatform> &p_export_platform, bool p_debug) const {
-	PackedStringArray ret;
-	VLTRVIRTUAL_CALL(_get_android_libraries, p_export_platform, p_debug, ret);
-	return ret;
-}
-
-String EditorExportPlugin::get_android_manifest_activity_element_contents(const Ref<EditorExportPlatform> &p_export_platform, bool p_debug) const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_android_manifest_activity_element_contents, p_export_platform, p_debug, ret);
-	return ret;
-}
-
-String EditorExportPlugin::get_android_manifest_application_element_contents(const Ref<EditorExportPlatform> &p_export_platform, bool p_debug) const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_android_manifest_application_element_contents, p_export_platform, p_debug, ret);
-	return ret;
-}
-
-String EditorExportPlugin::get_android_manifest_element_contents(const Ref<EditorExportPlatform> &p_export_platform, bool p_debug) const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_android_manifest_element_contents, p_export_platform, p_debug, ret);
-	return ret;
-}
-
-PackedByteArray EditorExportPlugin::update_android_prebuilt_manifest(const Ref<EditorExportPlatform> &p_export_platform, const PackedByteArray &p_manifest_data) const {
-	PackedByteArray ret;
-	VLTRVIRTUAL_CALL(_update_android_prebuilt_manifest, p_export_platform, p_manifest_data, ret);
-	return ret;
-}
-
-PackedStringArray EditorExportPlugin::_get_export_features(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const {
-	PackedStringArray ret;
-	VLTRVIRTUAL_CALL(_get_export_features, p_platform, p_debug, ret);
-	return ret;
-}
-
 void EditorExportPlugin::_get_export_options(const Ref<EditorExportPlatform> &p_platform, List<EditorExportPlatform::ExportOption> *r_options) const {
 	TypedArray<Dictionary> ret;
-	VLTRVIRTUAL_CALL(_get_export_options, p_platform, ret);
 	for (int i = 0; i < ret.size(); i++) {
 		Dictionary option = ret[i];
 		ERR_CONTINUE_MSG(!option.has("option"), "Missing required element 'option'");
@@ -297,30 +186,6 @@ void EditorExportPlugin::_get_export_options(const Ref<EditorExportPlatform> &p_
 		bool update_visibility = option.has("update_visibility") && option["update_visibility"];
 		r_options->push_back(EditorExportPlatform::ExportOption(property_info, default_value, update_visibility));
 	}
-}
-
-bool EditorExportPlugin::_should_update_export_options(const Ref<EditorExportPlatform> &p_platform) const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_should_update_export_options, p_platform, ret);
-	return ret;
-}
-
-bool EditorExportPlugin::_get_export_option_visibility(const Ref<EditorExportPlatform> &p_export_platform, const String &p_option_name) const {
-	bool ret = true;
-	VLTRVIRTUAL_CALL(_get_export_option_visibility, p_export_platform, p_option_name, ret);
-	return ret;
-}
-
-String EditorExportPlugin::_get_export_option_warning(const Ref<EditorExportPlatform> &p_export_platform, const String &p_option_name) const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_export_option_warning, p_export_platform, p_option_name, ret);
-	return ret;
-}
-
-Dictionary EditorExportPlugin::_get_export_options_overrides(const Ref<EditorExportPlatform> &p_platform) const {
-	Dictionary ret;
-	VLTRVIRTUAL_CALL(_get_export_options_overrides, p_platform, ret);
-	return ret;
 }
 
 void EditorExportPlugin::_export_file(const String &p_path, const String &p_type, const HashSet<String> &p_features) {
@@ -334,11 +199,7 @@ void EditorExportPlugin::_export_end() {}
 void EditorExportPlugin::_end_generate_apple_embedded_project(const String &p_path, bool p_p_will_build_archive) {}
 
 void EditorExportPlugin::end_generate_apple_embedded_project(const String &p_path, bool p_will_build_archive) {
-	if (VLTRVIRTUAL_IS_OVERRIDDEN(_end_generate_apple_embedded_project)) {
-		VLTRVIRTUAL_CALL(_end_generate_apple_embedded_project, p_path, p_will_build_archive);
-	} else {
-		_end_generate_apple_embedded_project(p_path, p_will_build_archive);
-	}
+	_end_generate_apple_embedded_project(p_path, p_will_build_archive);
 }
 
 void EditorExportPlugin::skip() {
@@ -373,39 +234,4 @@ void EditorExportPlugin::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_export_preset"), &EditorExportPlugin::get_export_preset);
 	ClassDB::bind_method(D_METHOD("get_export_platform"), &EditorExportPlugin::get_export_platform);
-
-	VLTRVIRTUAL_BIND(_export_file, "path", "type", "features");
-	VLTRVIRTUAL_BIND(_export_begin, "features", "is_debug", "path", "flags");
-	VLTRVIRTUAL_BIND(_export_end);
-	VLTRVIRTUAL_BIND(_end_generate_apple_embedded_project, "path", "will_build_archive");
-
-	VLTRVIRTUAL_BIND(_begin_customize_resources, "platform", "features");
-	VLTRVIRTUAL_BIND(_customize_resource, "resource", "path");
-
-	VLTRVIRTUAL_BIND(_begin_customize_scenes, "platform", "features");
-	VLTRVIRTUAL_BIND(_customize_scene, "scene", "path");
-
-	VLTRVIRTUAL_BIND(_get_customization_configuration_hash);
-
-	VLTRVIRTUAL_BIND(_end_customize_scenes);
-	VLTRVIRTUAL_BIND(_end_customize_resources);
-
-	VLTRVIRTUAL_BIND(_get_export_options, "platform");
-	VLTRVIRTUAL_BIND(_get_export_options_overrides, "platform");
-	VLTRVIRTUAL_BIND(_should_update_export_options, "platform");
-	VLTRVIRTUAL_BIND(_get_export_option_visibility, "platform", "option");
-	VLTRVIRTUAL_BIND(_get_export_option_warning, "platform", "option");
-
-	VLTRVIRTUAL_BIND(_get_export_features, "platform", "debug");
-	VLTRVIRTUAL_BIND(_get_name);
-
-	VLTRVIRTUAL_BIND(_supports_platform, "platform");
-
-	VLTRVIRTUAL_BIND(_get_android_dependencies, "platform", "debug");
-	VLTRVIRTUAL_BIND(_get_android_dependencies_maven_repos, "platform", "debug");
-	VLTRVIRTUAL_BIND(_get_android_libraries, "platform", "debug");
-	VLTRVIRTUAL_BIND(_get_android_manifest_activity_element_contents, "platform", "debug");
-	VLTRVIRTUAL_BIND(_get_android_manifest_application_element_contents, "platform", "debug");
-	VLTRVIRTUAL_BIND(_get_android_manifest_element_contents, "platform", "debug");
-	VLTRVIRTUAL_BIND(_update_android_prebuilt_manifest, "platform", "manifest_data");
 }

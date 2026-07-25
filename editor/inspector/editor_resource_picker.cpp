@@ -652,11 +652,6 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 
 void EditorResourcePicker::set_create_options(Object *p_menu_node) {
 	_ensure_resource_menu();
-	// If a subclass implements this method, use it to replace all create items.
-	if (VLTRVIRTUAL_CALL(_set_create_options, p_menu_node)) {
-		return;
-	}
-
 	// By default provide generic "New ..." options.
 	if (!base_type.is_empty()) {
 		int idx = 0;
@@ -693,12 +688,6 @@ void EditorResourcePicker::set_create_options(Object *p_menu_node) {
 			edit_menu->add_separator();
 		}
 	}
-}
-
-bool EditorResourcePicker::handle_menu_selected(int p_which) {
-	bool success = false;
-	VLTRVIRTUAL_CALL(_handle_menu_selected, p_which, success);
-	return success;
 }
 
 void EditorResourcePicker::_button_draw() {
@@ -1053,9 +1042,6 @@ void EditorResourcePicker::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_toggle_pressed", "pressed"), &EditorResourcePicker::set_toggle_pressed);
 	ClassDB::bind_method(D_METHOD("set_editable", "enable"), &EditorResourcePicker::set_editable);
 	ClassDB::bind_method(D_METHOD("is_editable"), &EditorResourcePicker::is_editable);
-
-	VLTRVIRTUAL_BIND(_set_create_options, "menu_node");
-	VLTRVIRTUAL_BIND(_handle_menu_selected, "id");
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "base_type"), "set_base_type", "get_base_type");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "edited_resource", PROPERTY_HINT_RESOURCE_TYPE, Resource::get_class_static(), PROPERTY_USAGE_NONE), "set_edited_resource", "get_edited_resource");

@@ -480,8 +480,8 @@ class ThemeEditor : public EditorDock {
 protected:
 	void _notification(int p_what);
 
-	virtual void save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const override;
-	virtual void load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section) override;
+	virtual void save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const;
+	virtual void load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section);
 
 public:
 	void edit(const Ref<Theme> &p_theme);

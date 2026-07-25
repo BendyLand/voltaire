@@ -89,17 +89,9 @@ public:
 	Ref<EditorDebuggerSession> get_session(int p_session_id);
 	Array get_sessions();
 
-	VLTRVIRTUAL3R(bool, _capture, const String &, const Array &, int);
-	VLTRVIRTUAL1RC(bool, _has_capture, const String &);
-	VLTRVIRTUAL1(_setup_session, int);
-
 	virtual void goto_script_line(const Ref<Script> &p_script, int p_line);
 	virtual void breakpoints_cleared_in_tree();
 	virtual void breakpoint_set_in_tree(const Ref<Script> &p_script, int p_line, bool p_enabled);
-
-	VLTRVIRTUAL2(_goto_script_line, const Ref<Script> &, int);
-	VLTRVIRTUAL0(_breakpoints_cleared_in_tree);
-	VLTRVIRTUAL3(_breakpoint_set_in_tree, const Ref<Script> &, int, bool);
 
 	EditorDebuggerPlugin();
 	~EditorDebuggerPlugin();

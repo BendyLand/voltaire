@@ -102,36 +102,6 @@ protected:
 	Commit _convert_commit(const Dictionary &p_commit);
 	StatusFile _convert_status_file(const Dictionary &p_status_file);
 
-	// Proxy endpoints for extensions to implement
-	VLTRVIRTUAL1R_REQUIRED(bool, _initialize, String);
-	VLTRVIRTUAL5_REQUIRED(_set_credentials, String, String, String, String, String);
-	VLTRVIRTUAL0R_REQUIRED(TypedArray<Dictionary>, _get_modified_files_data);
-	VLTRVIRTUAL1_REQUIRED(_stage_file, String);
-	VLTRVIRTUAL1_REQUIRED(_unstage_file, String);
-	VLTRVIRTUAL1_REQUIRED(_discard_file, String);
-	VLTRVIRTUAL2(_commit, String, bool);
-	VLTRVIRTUAL0R(bool, _allow_amends);
-	VLTRVIRTUAL2R_REQUIRED(TypedArray<Dictionary>, _get_diff, String, int);
-	VLTRVIRTUAL0R_REQUIRED(bool, _shut_down);
-	VLTRVIRTUAL0R_REQUIRED(String, _get_vcs_name);
-	VLTRVIRTUAL1R_REQUIRED(TypedArray<Dictionary>, _get_previous_commits, int);
-	VLTRVIRTUAL0R_REQUIRED(TypedArray<String>, _get_branch_list);
-	VLTRVIRTUAL0R_REQUIRED(TypedArray<String>, _get_remotes);
-	VLTRVIRTUAL1_REQUIRED(_create_branch, String);
-	VLTRVIRTUAL1_REQUIRED(_remove_branch, String);
-	VLTRVIRTUAL2_REQUIRED(_create_remote, String, String);
-	VLTRVIRTUAL1_REQUIRED(_remove_remote, String);
-	VLTRVIRTUAL0R_REQUIRED(String, _get_current_branch_name);
-	VLTRVIRTUAL1R_REQUIRED(bool, _checkout_branch, String);
-	VLTRVIRTUAL1_REQUIRED(_pull, String);
-	VLTRVIRTUAL2_REQUIRED(_push, String, bool);
-	VLTRVIRTUAL1_REQUIRED(_fetch, String);
-	VLTRVIRTUAL2R_REQUIRED(TypedArray<Dictionary>, _get_line_diff, String, String);
-
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL1_COMPAT(_commit_bind_compat_117968, _commit, String);
-#endif
-
 public:
 	static EditorVCSInterface *get_singleton();
 	static void set_singleton(EditorVCSInterface *p_singleton);

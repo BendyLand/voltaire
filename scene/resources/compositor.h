@@ -66,8 +66,6 @@ protected:
 
 	void _call_render_callback(int p_effect_callback_type, const RenderData *p_render_data);
 
-	VLTRVIRTUAL2(_render_callback, int, const RenderData *)
-
 public:
 	virtual RID get_rid() const override { return rid; }
 

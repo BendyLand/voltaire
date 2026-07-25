@@ -111,8 +111,6 @@ class ResourceImporter : public RefCounted {
 	VLTRCLASS(ResourceImporter, RefCounted);
 
 protected:
-	VLTRVIRTUAL1RC(Vector<String>, _get_build_dependencies, String)
-
 	static void _bind_methods();
 
 public:

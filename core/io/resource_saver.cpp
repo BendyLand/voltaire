@@ -45,58 +45,37 @@ ResourceSaverGetResourceIDForPath ResourceSaver::save_get_id_for_path = nullptr;
 
 Error ResourceFormatSaver::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
 	Error err = ERR_METHOD_NOT_FOUND;
-	VLTRVIRTUAL_CALL(_save, p_resource, p_path, p_flags, err);
 	return err;
 }
 
 Error ResourceFormatSaver::set_uid(const String &p_path, ResourceUID::ID p_uid) {
 	Error err = ERR_FILE_UNRECOGNIZED;
-	VLTRVIRTUAL_CALL(_set_uid, p_path, p_uid, err);
 	return err;
 }
 
 bool ResourceFormatSaver::recognize(const Ref<Resource> &p_resource) const {
 	bool success = false;
-	VLTRVIRTUAL_CALL(_recognize, p_resource, success);
 	return success;
 }
 
 void ResourceFormatSaver::get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) const {
 	PackedStringArray exts;
-	if (VLTRVIRTUAL_CALL(_get_recognized_extensions, p_resource, exts)) {
-		const String *r = exts.ptr();
-		for (int i = 0; i < exts.size(); ++i) {
-			p_extensions->push_back(r[i]);
-		}
+	const String *r = exts.ptr();
+	for (int i = 0; i < exts.size(); ++i) {
+		p_extensions->push_back(r[i]);
 	}
 }
 
 bool ResourceFormatSaver::recognize_path(const Ref<Resource> &p_resource, const String &p_path) const {
-	bool ret = false;
-	if (VLTRVIRTUAL_CALL(_recognize_path, p_resource, p_path, ret)) {
-		return ret;
-	}
-
 	String extension = p_path.get_extension();
-
 	List<String> extensions;
 	get_recognized_extensions(p_resource, &extensions);
-
 	for (const String &E : extensions) {
 		if (E.nocasecmp_to(extension) == 0) {
 			return true;
 		}
 	}
-
 	return false;
-}
-
-void ResourceFormatSaver::_bind_methods() {
-	VLTRVIRTUAL_BIND(_save, "resource", "path", "flags");
-	VLTRVIRTUAL_BIND(_set_uid, "path", "uid");
-	VLTRVIRTUAL_BIND(_recognize, "resource");
-	VLTRVIRTUAL_BIND(_get_recognized_extensions, "resource");
-	VLTRVIRTUAL_BIND(_recognize_path, "resource", "path");
 }
 
 Error ResourceSaver::save(RequiredParam<Resource> rp_resource, const String &p_path, uint32_t p_flags) {
@@ -106,9 +85,7 @@ Error ResourceSaver::save(RequiredParam<Resource> rp_resource, const String &p_p
 		path = p_resource->get_path();
 	}
 	ERR_FAIL_COND_V_MSG(path.is_empty(), ERR_INVALID_PARAMETER, "Can't save resource to empty path. Provide non-empty path or a Resource with non-empty resource_path.");
-
 	Error err = ERR_FILE_UNRECOGNIZED;
-
 	for (int i = 0; i < saver_count; i++) {
 		if (!saver[i]->recognize(p_resource)) {
 			continue;

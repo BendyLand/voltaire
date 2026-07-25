@@ -98,21 +98,11 @@ protected:
 
 	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new);
 	virtual void _validate_bone_names();
-	VLTRVIRTUAL2(_skeleton_changed, Skeleton3D *, Skeleton3D *);
-	VLTRVIRTUAL0(_validate_bone_names);
 
 	void _notification(int p_what);
 	static void _bind_methods();
-
 	virtual void _set_active(bool p_active);
-
 	virtual void _process_modification(double p_delta);
-	// TODO: In Godot 5, should obsolete old VLTRVIRTUAL0(_process_modification); and replace it with _process_modification_with_delta as VLTRVIRTUAL1(_process_modification, double).
-	VLTRVIRTUAL1(_process_modification_with_delta, double);
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL0(_process_modification);
-#endif
-
 	bool should_check_node_path();
 
 public:

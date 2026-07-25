@@ -170,14 +170,6 @@ protected:
 
 	void _validate_property(PropertyInfo &p_property) const;
 
-	VLTRVIRTUAL0RC(Dictionary, _get_child_nodes)
-	VLTRVIRTUAL0RC(Array, _get_parameter_list)
-	VLTRVIRTUAL1RC(Ref<AnimationNode>, _get_child_by_name, StringName)
-	VLTRVIRTUAL1RC(Variant, _get_parameter_default_value, StringName)
-	VLTRVIRTUAL1RC(bool, _is_parameter_read_only, StringName)
-	VLTRVIRTUAL4R(double, _process, double, bool, bool, bool)
-	VLTRVIRTUAL0RC(String, _get_caption)
-	VLTRVIRTUAL0RC(bool, _has_filter)
 private:
 	mutable uint32_t filters_version = 1;
 	void _mark_filters_dirty();

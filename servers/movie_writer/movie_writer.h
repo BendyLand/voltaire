@@ -67,16 +67,6 @@ protected:
 	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data);
 	virtual void write_end();
 
-	VLTRVIRTUAL0RC_REQUIRED(uint32_t, _get_audio_mix_rate)
-	VLTRVIRTUAL0RC_REQUIRED(AudioServer::SpeakerMode, _get_audio_speaker_mode)
-
-	VLTRVIRTUAL1RC_REQUIRED(bool, _handles_file, const String &)
-	VLTRVIRTUAL0RC_REQUIRED(Vector<String>, _get_supported_extensions)
-
-	VLTRVIRTUAL3R_REQUIRED(Error, _write_begin, const Size2i &, uint32_t, const String &)
-	VLTRVIRTUAL2R_REQUIRED(Error, _write_frame, const Ref<Image> &, GDExtensionPtr<const int32_t>)
-	VLTRVIRTUAL0_REQUIRED(_write_end)
-
 	static void _bind_methods();
 
 public:

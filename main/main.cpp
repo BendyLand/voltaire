@@ -35,10 +35,6 @@
 #include "core/core_globals.h"
 #include "core/crypto/crypto.h"
 #include "core/debugger/engine_debugger.h"
-#include "core/extension/extension_api_dump.h"
-#include "core/extension/gdextension_interface_dump.gen.h"
-#include "core/extension/gdextension_interface_header_generator.h"
-#include "core/extension/gdextension_manager.h"
 #include "core/input/input.h"
 #include "core/input/input_map.h"
 #include "core/io/dir_access.h"
@@ -2266,7 +2262,6 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	}
 
 	register_early_core_singletons();
-	initialize_modules(MODULE_INITIALIZATION_LEVEL_CORE);
 	register_core_extensions(); // core extensions must be registered after globals setup and before display
 
 	if (!editor) {
@@ -3195,10 +3190,6 @@ Error Main::setup2(bool p_show_boot_logo) {
 	register_server_types();
 	{
 		OS::get_singleton()->benchmark_begin_measure("Servers", "Modules and Extensions");
-
-		initialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
-		GDExtensionManager::get_singleton()->initialize_extensions(GDExtension::INITIALIZATION_LEVEL_SERVERS);
-
 		OS::get_singleton()->benchmark_end_measure("Servers", "Modules and Extensions");
 	}
 
@@ -3363,9 +3354,6 @@ Error Main::setup2(bool p_show_boot_logo) {
 			ERR_PRINT("Unable to create DisplayServer, all display drivers failed.\nUse \"--headless\" command line argument to run the engine in headless mode if this is desired (e.g. for continuous integration).");
 
 			memdelete(display_server);
-
-			GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_SERVERS);
-			uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
 			unregister_server_types();
 
 			memdelete(input);
@@ -3751,10 +3739,6 @@ Error Main::setup2(bool p_show_boot_logo) {
 
 	{
 		OS::get_singleton()->benchmark_begin_measure("Scene", "Modules and Extensions");
-
-		initialize_modules(MODULE_INITIALIZATION_LEVEL_SCENE);
-		GDExtensionManager::get_singleton()->initialize_extensions(GDExtension::INITIALIZATION_LEVEL_SCENE);
-
 		OS::get_singleton()->benchmark_end_measure("Scene", "Modules and Extensions");
 
 		// We need to initialize the movie writer here in case
@@ -3784,10 +3768,6 @@ Error Main::setup2(bool p_show_boot_logo) {
 
 	{
 		OS::get_singleton()->benchmark_begin_measure("Editor", "Modules and Extensions");
-
-		initialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
-		GDExtensionManager::get_singleton()->initialize_extensions(GDExtension::INITIALIZATION_LEVEL_EDITOR);
-
 		OS::get_singleton()->benchmark_end_measure("Editor", "Modules and Extensions");
 	}
 
@@ -4241,32 +4221,6 @@ int Main::start() {
 		}
 
 		return EXIT_SUCCESS;
-	}
-
-	// GDExtension API and interface.
-	{
-		if (dump_gdextension_interface) {
-			GDExtensionInterfaceDump::generate_gdextension_interface_file("gdextension_interface.json");
-		}
-
-		if (dump_gdextension_interface_header) {
-			GDExtensionInterfaceHeaderGenerator::generate_gdextension_interface_header("gdextension_interface.h");
-		}
-
-		if (dump_extension_api) {
-			Engine::get_singleton()->set_editor_hint(true); // "extension_api.json" should always contains editor singletons.
-			GDExtensionAPIDump::generate_extension_json_file("extension_api.json", include_docs_in_extension_api_dump);
-		}
-
-		if (dump_gdextension_interface || dump_gdextension_interface_header || dump_extension_api) {
-			return EXIT_SUCCESS;
-		}
-
-		if (validate_extension_api) {
-			Engine::get_singleton()->set_editor_hint(true); // "extension_api.json" should always contains editor singletons.
-			bool valid = GDExtensionAPIDump::validate_extension_json_file(validate_extension_api_file) == OK;
-			return valid ? EXIT_SUCCESS : EXIT_FAILURE;
-		}
 	}
 
 #ifndef DISABLE_DEPRECATED
@@ -4814,8 +4768,6 @@ int Main::start() {
 		movie_writer->begin(movie_size, fixed_fps, Engine::get_singleton()->get_write_movie_path());
 	}
 
-	GDExtensionManager::get_singleton()->startup();
-
 #ifdef MACOS_ENABLED
 	// TODO: Used to fix full-screen splash drawing on macOS, processing events before main loop is fully initialized cause issues on Wayland, and has no effect on other platforms.
 	if (minimum_time_msec) {
@@ -5060,8 +5012,6 @@ bool Main::iteration() {
 	uint64_t frame_time = OS::get_singleton()->get_ticks_usec() - ticks;
 
 	GodotProfileZoneGrouped(_profile_zone, "GDExtensionManager::frame");
-	GDExtensionManager::get_singleton()->frame();
-
 	GodotProfileZoneGrouped(_profile_zone, "ScriptServer::frame");
 	for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 		ScriptServer::get_language(i)->frame();
@@ -5190,8 +5140,6 @@ void Main::cleanup(bool p_force) {
 	}
 #endif
 
-	GDExtensionManager::get_singleton()->shutdown();
-
 	for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
 		TextServerManager::get_singleton()->get_interface(i)->cleanup();
 	}
@@ -5243,16 +5191,11 @@ void Main::cleanup(bool p_force) {
 #endif // XR_DISABLED
 
 #ifdef TOOLS_ENABLED
-	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_EDITOR);
-	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
 	unregister_editor_types();
 
 #endif
 
 	ImageLoader::cleanup();
-
-	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_SCENE);
-	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SCENE);
 
 	unregister_platform_apis();
 	unregister_driver_types();
@@ -5270,11 +5213,7 @@ void Main::cleanup(bool p_force) {
 	NavigationServer3DManager::finalize_server_manager();
 #endif // NAVIGATION_3D_DISABLED
 	finalize_physics();
-
-	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_SERVERS);
-	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
 	unregister_server_types();
-
 	EngineDebugger::deinitialize();
 
 #ifndef XR_DISABLED
@@ -5324,7 +5263,6 @@ void Main::cleanup(bool p_force) {
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
-	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_CORE);
 
 	memdelete(engine);
 

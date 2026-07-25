@@ -51,9 +51,5 @@ public:
 	Error unbind();
 	bool is_bound() const { return registration.length() > 0; }
 
-	VLTRVIRTUAL2(_toggle, bool, Array);
-	VLTRVIRTUAL1(_add_frame, Array);
-	VLTRVIRTUAL4(_tick, double, double, double, double);
-
 	virtual ~EngineProfiler();
 };

@@ -433,28 +433,6 @@ protected:
 	virtual void remove_input_port_default_value(int p_port) override;
 	virtual void clear_default_input_values() override;
 
-	VLTRVIRTUAL0RC(String, _get_name)
-	VLTRVIRTUAL0RC(String, _get_description)
-	VLTRVIRTUAL0RC(String, _get_category)
-	VLTRVIRTUAL0RC(PortType, _get_return_icon_type)
-	VLTRVIRTUAL0RC(int, _get_input_port_count)
-	VLTRVIRTUAL1RC(PortType, _get_input_port_type, int)
-	VLTRVIRTUAL1RC(String, _get_input_port_name, int)
-	VLTRVIRTUAL1RC(Variant, _get_input_port_default_value, int)
-	VLTRVIRTUAL1RC(int, _get_default_input_port, PortType)
-	VLTRVIRTUAL0RC(int, _get_output_port_count)
-	VLTRVIRTUAL1RC(PortType, _get_output_port_type, int)
-	VLTRVIRTUAL1RC(String, _get_output_port_name, int)
-	VLTRVIRTUAL0RC(int, _get_property_count)
-	VLTRVIRTUAL1RC(String, _get_property_name, int)
-	VLTRVIRTUAL1RC(int, _get_property_default_index, int)
-	VLTRVIRTUAL1RC(Vector<String>, _get_property_options, int)
-	VLTRVIRTUAL4RC(String, _get_code, TypedArray<String>, TypedArray<String>, Shader::Mode, VisualShader::Type)
-	VLTRVIRTUAL2RC(String, _get_func_code, Shader::Mode, VisualShader::Type)
-	VLTRVIRTUAL1RC(String, _get_global_code, Shader::Mode)
-	VLTRVIRTUAL0RC(bool, _is_highend)
-	VLTRVIRTUAL2RC(bool, _is_available, Shader::Mode, VisualShader::Type)
-
 	bool _is_valid_code(const String &p_code) const;
 
 protected:

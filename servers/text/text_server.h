@@ -723,5 +723,3 @@ VARIANT_ENUM_CAST(TextServer::FontAntialiasing);
 VARIANT_ENUM_CAST(TextServer::FontLCDSubpixelLayout);
 VARIANT_ENUM_CAST(TextServer::FixedSizeScaleMode);
 
-VLTRVIRTUAL_NATIVE_PTR(Glyph);
-VLTRVIRTUAL_NATIVE_PTR(CaretInfo);

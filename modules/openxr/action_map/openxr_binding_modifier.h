@@ -44,9 +44,6 @@ class OpenXRBindingModifier : public Resource {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL0RC_REQUIRED(String, _get_description)
-	VLTRVIRTUAL0R_REQUIRED(PackedByteArray, _get_ip_modification)
-
 public:
 	virtual String get_description() const; // Returns the description shown in the editor
 	virtual PackedByteArray get_ip_modification(); // Return the XrBindingModificationsKHR binding modifier struct data used when calling xrSuggestInteractionProfileBindings

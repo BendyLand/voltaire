@@ -135,8 +135,6 @@ public:
 	};
 
 protected:
-	VLTRVIRTUAL2(_log_message, String, bool);
-	VLTRVIRTUAL8(_log_error, String, String, int, String, String, bool, int, TypedArray<ScriptBacktrace>);
 	static void _bind_methods();
 
 public:

@@ -133,9 +133,6 @@ protected:
 
 	void set_assign_button_min_size(const Size2i &p_size);
 
-	VLTRVIRTUAL1(_set_create_options, Object *)
-	VLTRVIRTUAL1R(bool, _handle_menu_selected, int)
-
 public:
 	void set_base_type(const String &p_base_type);
 	String get_base_type() const;

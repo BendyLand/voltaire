@@ -64,8 +64,6 @@ public:
 	void set_next(const Ref<OpenXRStructureBase> p_next);
 	Ref<OpenXRStructureBase> get_next() const;
 
-	VLTRVIRTUAL1R(uint64_t, _get_header, uint64_t);
-
 protected:
 	static void _bind_methods();
 

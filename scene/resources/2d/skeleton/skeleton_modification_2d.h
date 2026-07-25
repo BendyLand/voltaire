@@ -56,10 +56,6 @@ protected:
 
 	virtual void reset_state() override;
 
-	VLTRVIRTUAL1(_execute, double)
-	VLTRVIRTUAL1(_setup_modification, Ref<SkeletonModificationStack2D>)
-	VLTRVIRTUAL0(_draw_editor_gizmo)
-
 public:
 	virtual void _execute(float _delta);
 	virtual void _setup_modification(SkeletonModificationStack2D *p_stack);

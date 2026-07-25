@@ -1293,11 +1293,6 @@ HashSet<String> FileSystemDock::_get_valid_conversions_for_file_paths(const Vect
 
 		// Get a list of all potential conversion-to targets.
 		HashSet<String> current_valid_conversion_to_targets;
-		for (const Ref<EditorResourceConversionPlugin> &E : conversions) {
-			const String what = E->converts_to();
-			current_valid_conversion_to_targets.insert(what);
-		}
-
 		if (all_valid_conversion_to_targets.is_empty()) {
 			// If we have no existing valid conversions, this is the first one, so copy them directly.
 			all_valid_conversion_to_targets = current_valid_conversion_to_targets;
@@ -1982,14 +1977,11 @@ void FileSystemDock::_convert_dialog_action() {
 	HashSet<Ref<Resource>> resources_to_erase_history_for;
 	for (Ref<Resource> res : selected_resources) {
 		Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorNode::get_singleton()->find_resource_conversion_plugin_for_resource(res);
-		for (const Ref<EditorResourceConversionPlugin> &conversion : conversions) {
+		for ([[maybe_unused]] const Ref<EditorResourceConversionPlugin> &conversion : conversions) {
 			int conversion_id = 0;
-			for (const String &target : cached_valid_conversion_targets) {
-				if (conversion_id == selected_conversion_id && conversion->converts_to() == target) {
-					Ref<Resource> converted_res = conversion->convert(res);
-					ERR_FAIL_COND(converted_res.is_null());
+			for ([[maybe_unused]] const String &target : cached_valid_conversion_targets) {
+				if (conversion_id == selected_conversion_id) {
 					ERR_FAIL_COND(res.is_null());
-					converted_resources.push_back(converted_res);
 					resources_to_erase_history_for.insert(res);
 					break;
 				}

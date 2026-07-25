@@ -84,19 +84,6 @@ protected:
 
 	EditorNode3DGizmoPlugin *gizmo_plugin = nullptr;
 
-	VLTRVIRTUAL0(_redraw)
-	VLTRVIRTUAL2RC(String, _get_handle_name, int, bool)
-	VLTRVIRTUAL2RC(bool, _is_handle_highlighted, int, bool)
-	VLTRVIRTUAL2RC(Variant, _get_handle_value, int, bool)
-	VLTRVIRTUAL2(_begin_handle_action, int, bool)
-	VLTRVIRTUAL4(_set_handle, int, bool, const Camera3D *, Vector2)
-	VLTRVIRTUAL4(_commit_handle, int, bool, Variant, bool)
-
-	VLTRVIRTUAL2RC(int, _subgizmos_intersect_ray, const Camera3D *, Vector2)
-	VLTRVIRTUAL2RC(Vector<int>, _subgizmos_intersect_frustum, const Camera3D *, TypedArray<Plane>)
-	VLTRVIRTUAL1RC(Transform3D, _get_subgizmo_transform, int)
-	VLTRVIRTUAL2(_set_subgizmo_transform, int, Transform3D)
-	VLTRVIRTUAL3(_commit_subgizmos, Vector<int>, TypedArray<Transform3D>, bool)
 public:
 	void add_lines(const Vector<Vector3> &p_lines, const Ref<Material> &p_material, bool p_billboard = false, const Color &p_modulate = Color(1, 1, 1));
 	void add_vertices(const Vector<Vector3> &p_vertices, const Ref<Material> &p_material, Mesh::PrimitiveType p_primitive_type, bool p_billboard = false, const Color &p_modulate = Color(1, 1, 1));
@@ -167,30 +154,6 @@ protected:
 	static void _bind_methods();
 	virtual bool has_gizmo(Node3D *p_spatial);
 	virtual Ref<EditorNode3DGizmo> create_gizmo(Node3D *p_spatial);
-
-	VLTRVIRTUAL1RC(bool, _has_gizmo, Node3D *)
-	VLTRVIRTUAL1RC(Ref<EditorNode3DGizmo>, _create_gizmo, Node3D *)
-
-	VLTRVIRTUAL0RC(String, _get_gizmo_name)
-	VLTRVIRTUAL0RC(int, _get_priority)
-	VLTRVIRTUAL0RC(bool, _can_be_hidden)
-	VLTRVIRTUAL0RC(bool, _is_selectable_when_hidden)
-	VLTRVIRTUAL0RC(bool, _can_commit_handle_on_click)
-
-	VLTRVIRTUAL1(_redraw, Ref<EditorNode3DGizmo>)
-	VLTRVIRTUAL3RC(String, _get_handle_name, Ref<EditorNode3DGizmo>, int, bool)
-	VLTRVIRTUAL3RC(bool, _is_handle_highlighted, Ref<EditorNode3DGizmo>, int, bool)
-	VLTRVIRTUAL3RC(Variant, _get_handle_value, Ref<EditorNode3DGizmo>, int, bool)
-
-	VLTRVIRTUAL3(_begin_handle_action, Ref<EditorNode3DGizmo>, int, bool)
-	VLTRVIRTUAL5(_set_handle, Ref<EditorNode3DGizmo>, int, bool, const Camera3D *, Vector2)
-	VLTRVIRTUAL5(_commit_handle, Ref<EditorNode3DGizmo>, int, bool, Variant, bool)
-
-	VLTRVIRTUAL3RC(int, _subgizmos_intersect_ray, Ref<EditorNode3DGizmo>, const Camera3D *, Vector2)
-	VLTRVIRTUAL3RC(Vector<int>, _subgizmos_intersect_frustum, Ref<EditorNode3DGizmo>, const Camera3D *, TypedArray<Plane>)
-	VLTRVIRTUAL2RC(Transform3D, _get_subgizmo_transform, Ref<EditorNode3DGizmo>, int)
-	VLTRVIRTUAL3(_set_subgizmo_transform, Ref<EditorNode3DGizmo>, int, Transform3D)
-	VLTRVIRTUAL4(_commit_subgizmos, Ref<EditorNode3DGizmo>, Vector<int>, TypedArray<Transform3D>, bool)
 
 public:
 	void create_material(const String &p_name, const Color &p_color, bool p_billboard = false, bool p_on_top = false, bool p_use_vertex_color = false);

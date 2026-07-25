@@ -67,31 +67,4 @@ public:
 	virtual Error serialize_texture_json(Ref<GLTFState> p_state, Dictionary &r_texture_json, Ref<GLTFTexture> p_gltf_texture, const String &p_image_format);
 	virtual Error export_node(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Dictionary &r_json, Node *p_node);
 	virtual Error export_post(Ref<GLTFState> p_state);
-
-	// Import process.
-	VLTRVIRTUAL2R(Error, _import_preflight, Ref<GLTFState>, Vector<String>);
-	VLTRVIRTUAL0R(Vector<String>, _get_supported_extensions);
-	VLTRVIRTUAL3R(Error, _parse_node_extensions, Ref<GLTFState>, Ref<GLTFNode>, Dictionary);
-	VLTRVIRTUAL4R(Error, _parse_image_data, Ref<GLTFState>, PackedByteArray, String, Ref<Image>);
-	VLTRVIRTUAL0R(String, _get_image_file_extension);
-	VLTRVIRTUAL3R(Error, _parse_texture_json, Ref<GLTFState>, Dictionary, Ref<GLTFTexture>);
-	VLTRVIRTUAL3R(Ref<GLTFObjectModelProperty>, _import_object_model_property, Ref<GLTFState>, PackedStringArray, TypedArray<NodePath>);
-	VLTRVIRTUAL1R(Error, _import_post_parse, Ref<GLTFState>);
-	VLTRVIRTUAL1R(Error, _import_pre_generate, Ref<GLTFState>);
-	VLTRVIRTUAL3R(Node3D *, _generate_scene_node, Ref<GLTFState>, Ref<GLTFNode>, Node *);
-	VLTRVIRTUAL4R(Error, _import_node, Ref<GLTFState>, Ref<GLTFNode>, Dictionary, Node *);
-	VLTRVIRTUAL2R(Error, _import_post, Ref<GLTFState>, Node *);
-	// Export process.
-	VLTRVIRTUAL1R(TypedArray<Dictionary>, _export_get_property_list, Node *);
-	VLTRVIRTUAL2R(Error, _export_preflight, Ref<GLTFState>, Node *);
-	VLTRVIRTUAL3(_convert_scene_node, Ref<GLTFState>, Ref<GLTFNode>, Node *);
-	VLTRVIRTUAL2R(Error, _export_post_convert, Ref<GLTFState>, Node *);
-	VLTRVIRTUAL1R(Error, _export_preserialize, Ref<GLTFState>);
-	VLTRVIRTUAL6R(Ref<GLTFObjectModelProperty>, _export_object_model_property, Ref<GLTFState>, NodePath, const Node *, GLTFNodeIndex, const Object *, int);
-	VLTRVIRTUAL0R(Vector<String>, _get_saveable_image_formats);
-	VLTRVIRTUAL5R(PackedByteArray, _serialize_image_to_bytes, Ref<GLTFState>, Ref<Image>, Dictionary, String, float);
-	VLTRVIRTUAL5R(Error, _save_image_at_path, Ref<GLTFState>, Ref<Image>, String, String, float);
-	VLTRVIRTUAL4R(Error, _serialize_texture_json, Ref<GLTFState>, Dictionary, Ref<GLTFTexture>, String);
-	VLTRVIRTUAL4R(Error, _export_node, Ref<GLTFState>, Ref<GLTFNode>, Dictionary, Node *);
-	VLTRVIRTUAL1R(Error, _export_post, Ref<GLTFState>);
 };

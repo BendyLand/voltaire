@@ -54,7 +54,6 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	VLTRVIRTUAL0RC(AABB, _get_aabb)
 public:
 	static constexpr AncestralClass static_ancestral_class = AncestralClass::VISUAL_INSTANCE_3D;
 

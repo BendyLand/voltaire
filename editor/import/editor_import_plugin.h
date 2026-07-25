@@ -39,21 +39,6 @@ class EditorImportPlugin : public ResourceImporter {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL0RC_REQUIRED(String, _get_importer_name)
-	VLTRVIRTUAL0RC_REQUIRED(String, _get_visible_name)
-	VLTRVIRTUAL0RC(int, _get_preset_count)
-	VLTRVIRTUAL1RC_REQUIRED(String, _get_preset_name, int)
-	VLTRVIRTUAL0RC_REQUIRED(Vector<String>, _get_recognized_extensions)
-	VLTRVIRTUAL2RC_REQUIRED(TypedArray<Dictionary>, _get_import_options, String, int)
-	VLTRVIRTUAL0RC_REQUIRED(String, _get_save_extension)
-	VLTRVIRTUAL0RC_REQUIRED(String, _get_resource_type)
-	VLTRVIRTUAL0RC(float, _get_priority)
-	VLTRVIRTUAL0RC(int, _get_import_order)
-	VLTRVIRTUAL0RC(int, _get_format_version)
-	VLTRVIRTUAL3RC(bool, _get_option_visibility, String, StringName, Dictionary)
-	VLTRVIRTUAL5RC_REQUIRED(Error, _import, String, String, Dictionary, TypedArray<String>, TypedArray<String>)
-	VLTRVIRTUAL0RC(bool, _can_import_threaded)
-
 	Error _append_import_external_resource(const String &p_file, const Dictionary &p_custom_options = Dictionary(), const String &p_custom_importer = String(), Variant p_generator_parameters = Variant());
 
 public:

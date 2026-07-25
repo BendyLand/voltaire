@@ -33,7 +33,6 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/core_constants.h"
-#include "core/extension/gdextension.h"
 #include "core/input/input.h"
 #include "core/io/json.h"
 #include "core/io/resource_loader.h"
@@ -3477,11 +3476,6 @@ void EditorHelp::_bind_methods() {
 
 	ADD_SIGNAL(MethodInfo("go_to_help"));
 	ADD_SIGNAL(MethodInfo("_request_save_new_history", PropertyInfo(Variant::DICTIONARY, "state")));
-}
-
-void EditorHelp::init_gdext_pointers() {
-	GDExtensionEditorHelp::editor_help_load_xml_buffer = &EditorHelp::load_xml_buffer;
-	GDExtensionEditorHelp::editor_help_remove_class = &EditorHelp::remove_class;
 }
 
 EditorHelp::EditorHelp() {

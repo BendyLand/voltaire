@@ -43,8 +43,6 @@ class EditorScript : public RefCounted {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL0_REQUIRED(_run)
-
 public:
 	void add_root_node(Node *p_node);
 #ifndef DISABLE_DEPRECATED

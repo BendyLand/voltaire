@@ -44,12 +44,6 @@ class EditorResourcePreviewGenerator : public RefCounted {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL1RC_REQUIRED(bool, _handles, String)
-	VLTRVIRTUAL3RC_REQUIRED(Ref<Texture2D>, _generate, Ref<Resource>, Vector2i, Dictionary)
-	VLTRVIRTUAL3RC(Ref<Texture2D>, _generate_from_path, String, Vector2i, Dictionary)
-	VLTRVIRTUAL0RC(bool, _generate_small_preview_automatically)
-	VLTRVIRTUAL0RC(bool, _can_generate_small_preview)
-
 	class DrawRequester : public Object {
 		Semaphore semaphore;
 

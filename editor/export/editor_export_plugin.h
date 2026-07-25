@@ -117,40 +117,6 @@ protected:
 
 	static void _bind_methods();
 
-	VLTRVIRTUAL3(_export_file, String, String, Vector<String>)
-	VLTRVIRTUAL4(_export_begin, Vector<String>, bool, String, uint32_t)
-	VLTRVIRTUAL0(_export_end)
-	VLTRVIRTUAL2(_end_generate_apple_embedded_project, const String &, bool)
-
-	VLTRVIRTUAL2RC(bool, _begin_customize_resources, const Ref<EditorExportPlatform> &, const Vector<String> &)
-	VLTRVIRTUAL2R_REQUIRED(Ref<Resource>, _customize_resource, const Ref<Resource> &, String)
-
-	VLTRVIRTUAL2RC(bool, _begin_customize_scenes, const Ref<EditorExportPlatform> &, const Vector<String> &)
-	VLTRVIRTUAL2R_REQUIRED(Node *, _customize_scene, Node *, String)
-	VLTRVIRTUAL0RC_REQUIRED(uint64_t, _get_customization_configuration_hash)
-
-	VLTRVIRTUAL0(_end_customize_scenes)
-	VLTRVIRTUAL0(_end_customize_resources)
-
-	VLTRVIRTUAL2RC(PackedStringArray, _get_export_features, const Ref<EditorExportPlatform> &, bool);
-	VLTRVIRTUAL1RC(TypedArray<Dictionary>, _get_export_options, const Ref<EditorExportPlatform> &);
-	VLTRVIRTUAL1RC(Dictionary, _get_export_options_overrides, const Ref<EditorExportPlatform> &);
-	VLTRVIRTUAL1RC(bool, _should_update_export_options, const Ref<EditorExportPlatform> &);
-	VLTRVIRTUAL2RC(bool, _get_export_option_visibility, const Ref<EditorExportPlatform> &, String);
-	VLTRVIRTUAL2RC(String, _get_export_option_warning, const Ref<EditorExportPlatform> &, String);
-
-	VLTRVIRTUAL0RC_REQUIRED(String, _get_name)
-
-	VLTRVIRTUAL1RC(bool, _supports_platform, const Ref<EditorExportPlatform> &);
-
-	VLTRVIRTUAL2RC(PackedStringArray, _get_android_dependencies, const Ref<EditorExportPlatform> &, bool);
-	VLTRVIRTUAL2RC(PackedStringArray, _get_android_dependencies_maven_repos, const Ref<EditorExportPlatform> &, bool);
-	VLTRVIRTUAL2RC(PackedStringArray, _get_android_libraries, const Ref<EditorExportPlatform> &, bool);
-	VLTRVIRTUAL2RC(String, _get_android_manifest_activity_element_contents, const Ref<EditorExportPlatform> &, bool);
-	VLTRVIRTUAL2RC(String, _get_android_manifest_application_element_contents, const Ref<EditorExportPlatform> &, bool);
-	VLTRVIRTUAL2RC(String, _get_android_manifest_element_contents, const Ref<EditorExportPlatform> &, bool);
-	VLTRVIRTUAL2RC(PackedByteArray, _update_android_prebuilt_manifest, const Ref<EditorExportPlatform> &, const PackedByteArray &);
-
 	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features); // Return true if this plugin does property export customization
 	virtual Ref<Resource> _customize_resource(const Ref<Resource> &p_resource, const String &p_path); // If nothing is returned, it means do not touch (nothing changed). If something is returned (either the same or a different resource) it means changes are made.
 
