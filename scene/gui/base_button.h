@@ -93,9 +93,6 @@ protected:
 	bool _was_pressed_by_mouse() const;
 	void _accessibility_action_click(const Variant &p_data);
 
-	VLTRVIRTUAL0(_pressed)
-	VLTRVIRTUAL1(_toggled, bool)
-
 public:
 	enum DrawMode {
 		DRAW_NORMAL,

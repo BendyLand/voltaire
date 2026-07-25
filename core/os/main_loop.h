@@ -39,11 +39,6 @@ class MainLoop : public Object {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL0(_initialize)
-	VLTRVIRTUAL1R(bool, _physics_process, double)
-	VLTRVIRTUAL1R(bool, _process, double)
-	VLTRVIRTUAL0(_finalize)
-
 public:
 	enum {
 		//make sure these are replicated in Node

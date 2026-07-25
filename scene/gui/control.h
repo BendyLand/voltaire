@@ -466,27 +466,6 @@ protected:
 	virtual void add_child_notify(Node *p_child) override;
 	virtual void remove_child_notify(Node *p_child) override;
 
-	// Exposed virtual methods.
-
-	VLTRVIRTUAL1RC(bool, _has_point, Vector2)
-	VLTRVIRTUAL2RC(TypedArray<Vector3i>, _structured_text_parser, Array, String)
-	VLTRVIRTUAL0RC(Vector2, _get_maximum_size)
-	VLTRVIRTUAL0RC(Vector2, _get_minimum_size)
-	VLTRVIRTUAL1RC(String, _get_tooltip, Vector2)
-	VLTRVIRTUAL1RC(AutoTranslateMode, _get_tooltip_auto_translate_mode_at, Vector2)
-
-	VLTRVIRTUAL1R(Variant, _get_drag_data, Vector2)
-	VLTRVIRTUAL2RC(bool, _can_drop_data, Vector2, Variant)
-	VLTRVIRTUAL2(_drop_data, Vector2, Variant)
-	VLTRVIRTUAL1RC(Object *, _make_custom_tooltip, String)
-
-	VLTRVIRTUAL1RC(int, _get_cursor_shape, Vector2)
-
-	VLTRVIRTUAL0RC(String, _accessibility_get_contextual_info);
-	VLTRVIRTUAL1RC(String, _get_accessibility_container_name, RequiredParam<const Node>)
-
-	VLTRVIRTUAL1(_gui_input, RequiredParam<InputEvent>)
-
 public:
 	enum {
 		NOTIFICATION_RESIZED = 40,

@@ -43,7 +43,6 @@ void OpenXRAPIExtension::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_system_id"), &OpenXRAPIExtension::get_system_id);
 	ClassDB::bind_method(D_METHOD("get_session"), &OpenXRAPIExtension::get_session);
 
-	ClassDB::bind_method(D_METHOD("transform_from_pose", "pose"), &OpenXRAPIExtension::transform_from_pose);
 	ClassDB::bind_method(D_METHOD("xr_result", "result", "format", "args"), &OpenXRAPIExtension::xr_result);
 	ClassDB::bind_static_method("OpenXRAPIExtension", D_METHOD("openxr_is_enabled", "check_run_in_editor"), &OpenXRAPIExtension::openxr_is_enabled);
 	ClassDB::bind_method(D_METHOD("get_instance_proc_addr", "name"), &OpenXRAPIExtension::get_instance_proc_addr);
@@ -60,7 +59,6 @@ void OpenXRAPIExtension::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_initialized"), &OpenXRAPIExtension::is_initialized);
 	ClassDB::bind_method(D_METHOD("is_running"), &OpenXRAPIExtension::is_running);
 
-	ClassDB::bind_method(D_METHOD("set_custom_play_space", "space"), &OpenXRAPIExtension::set_custom_play_space);
 	ClassDB::bind_method(D_METHOD("get_play_space"), &OpenXRAPIExtension::get_play_space);
 	ClassDB::bind_method(D_METHOD("get_predicted_display_time"), &OpenXRAPIExtension::get_predicted_display_time);
 	ClassDB::bind_method(D_METHOD("get_next_frame_time"), &OpenXRAPIExtension::get_next_frame_time);
@@ -131,11 +129,6 @@ uint64_t OpenXRAPIExtension::get_system_id() {
 uint64_t OpenXRAPIExtension::get_session() {
 	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
 	return (uint64_t)OpenXRAPI::get_singleton()->get_session();
-}
-
-Transform3D OpenXRAPIExtension::transform_from_pose(GDExtensionPtr<const void> p_pose) {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), Transform3D());
-	return OpenXRAPI::get_singleton()->transform_from_pose(*(XrPosef *)p_pose.data);
 }
 
 bool OpenXRAPIExtension::xr_result(uint64_t p_result, const String &p_format, const Array &p_args) {
@@ -211,11 +204,6 @@ bool OpenXRAPIExtension::is_initialized() {
 bool OpenXRAPIExtension::is_running() {
 	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), false);
 	return OpenXRAPI::get_singleton()->is_running();
-}
-
-void OpenXRAPIExtension::set_custom_play_space(GDExtensionPtr<const void> p_custom_space) {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
-	OpenXRAPI::get_singleton()->set_custom_play_space(*(XrSpace *)p_custom_space.data);
 }
 
 uint64_t OpenXRAPIExtension::get_play_space() {

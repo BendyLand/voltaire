@@ -38,10 +38,6 @@
 #include "core/crypto/crypto_resource_format.h"
 #include "core/crypto/hashing_context.h"
 #include "core/debugger/engine_profiler.h"
-#include "core/extension/gdextension.h"
-#include "core/extension/gdextension_manager.h"
-#include "core/extension/gdextension_resource_format.h"
-#include "core/extension/godot_instance.h"
 #include "core/input/input.h"
 #include "core/input/input_map.h"
 #include "core/input/shortcut.h"
@@ -78,7 +74,6 @@
 #include "core/math/triangle_mesh.h"
 #include "core/object/class_db.h"
 #include "core/object/script_backtrace.h"
-#include "core/object/script_language_extension.h"
 #include "core/object/undo_redo.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/os/main_loop.h"
@@ -100,7 +95,6 @@ static Ref<ResourceFormatLoaderImage> resource_format_image;
 static Ref<TranslationLoaderPO> resource_format_po;
 static Ref<ResourceFormatSaverCrypto> resource_format_saver_crypto;
 static Ref<ResourceFormatLoaderCrypto> resource_format_loader_crypto;
-static Ref<GDExtensionResourceLoader> resource_loader_gdextension;
 static Ref<ResourceFormatSaverJSON> resource_saver_json;
 static Ref<ResourceFormatLoaderJSON> resource_loader_json;
 
@@ -121,8 +115,6 @@ static CoreBind::Geometry3D *_geometry_3d = nullptr;
 static WorkerThreadPool *worker_thread_pool = nullptr;
 
 extern Mutex _global_mutex;
-
-static GDExtensionManager *gdextension_manager = nullptr;
 
 extern void register_global_constants();
 extern void unregister_global_constants();
@@ -179,11 +171,7 @@ void register_core_types() {
 		ResourceLoader::add_resource_format_loader(resource_format_image);
 	}
 
-	GDREGISTER_ABSTRACT_CLASS(Script);
-	GDREGISTER_ABSTRACT_CLASS(ScriptLanguage);
 	GDREGISTER_CLASS(ScriptBacktrace);
-	GDREGISTER_VIRTUAL_CLASS(ScriptExtension);
-	GDREGISTER_VIRTUAL_CLASS(ScriptLanguageExtension);
 
 	GDREGISTER_CLASS(MissingResource);
 	GDREGISTER_CLASS(Image);
@@ -211,7 +199,6 @@ void register_core_types() {
 	GDREGISTER_ABSTRACT_CLASS(StreamPeer);
 	GDREGISTER_ABSTRACT_CLASS(StreamPeerSocket);
 	GDREGISTER_ABSTRACT_CLASS(SocketServer);
-	GDREGISTER_CLASS(StreamPeerExtension);
 	GDREGISTER_CLASS(StreamPeerBuffer);
 	GDREGISTER_CLASS(StreamPeerGZIP);
 	GDREGISTER_CLASS(StreamPeerTCP);
@@ -222,7 +209,6 @@ void register_core_types() {
 	GDREGISTER_CLASS(UDSServer);
 
 	GDREGISTER_ABSTRACT_CLASS(PacketPeer);
-	GDREGISTER_CLASS(PacketPeerExtension);
 	GDREGISTER_CLASS(PacketPeerStream);
 	GDREGISTER_CLASS(PacketPeerUDP);
 	GDREGISTER_CLASS(UDPServer);
@@ -294,11 +280,6 @@ void register_core_types() {
 	GDREGISTER_CLASS(ImageFormatLoaderExtension);
 	GDREGISTER_ABSTRACT_CLASS(ResourceImporter);
 
-	GDREGISTER_CLASS(GDExtension);
-
-	GDREGISTER_ABSTRACT_CLASS(GodotInstance);
-
-	GDREGISTER_ABSTRACT_CLASS(GDExtensionManager);
 
 	GDREGISTER_ABSTRACT_CLASS(ResourceUID);
 
@@ -308,13 +289,6 @@ void register_core_types() {
 	GDREGISTER_CLASS(FuzzySearchMatch);
 
 	resource_uid = memnew(ResourceUID);
-
-	gdextension_manager = memnew(GDExtensionManager);
-
-	if constexpr (GD_IS_CLASS_ENABLED(GDExtension)) {
-		resource_loader_gdextension.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_loader_gdextension);
-	}
 
 	GDREGISTER_ABSTRACT_CLASS(IP);
 	GDREGISTER_CLASS(CoreBind::Geometry2D);
@@ -348,7 +322,6 @@ void register_core_types() {
 
 	GDREGISTER_NATIVE_STRUCT(ObjectID, "uint64_t id = 0");
 	GDREGISTER_NATIVE_STRUCT(AudioFrame, "float left;float right");
-	GDREGISTER_NATIVE_STRUCT(ScriptLanguageExtensionProfilingInfo, "StringName signature;uint64_t call_count;uint64_t total_time;uint64_t self_time");
 
 	worker_thread_pool = memnew(WorkerThreadPool);
 
@@ -387,7 +360,6 @@ void register_core_singletons() {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Input", Input::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("InputMap", InputMap::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("EngineDebugger", CoreBind::EngineDebugger::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("GDExtensionManager", GDExtensionManager::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ResourceUID", ResourceUID::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("WorkerThreadPool", worker_thread_pool));
 
@@ -398,9 +370,6 @@ void register_core_extensions() {
 	OS::get_singleton()->benchmark_begin_measure("Core", "Register Extensions");
 
 	// Hardcoded for now.
-	GDExtension::initialize_gdextensions();
-	gdextension_manager->load_extensions();
-	gdextension_manager->initialize_extensions(GDExtension::INITIALIZATION_LEVEL_CORE);
 	_is_core_extensions_registered = true;
 
 	OS::get_singleton()->benchmark_end_measure("Core", "Register Extensions");
@@ -408,12 +377,6 @@ void register_core_extensions() {
 
 void unregister_core_extensions() {
 	OS::get_singleton()->benchmark_begin_measure("Core", "Unregister Extensions");
-
-	if (_is_core_extensions_registered) {
-		gdextension_manager->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_CORE);
-	}
-	GDExtension::finalize_gdextensions();
-
 	OS::get_singleton()->benchmark_end_measure("Core", "Unregister Extensions");
 }
 
@@ -434,8 +397,6 @@ void unregister_core_types() {
 
 	memdelete(_geometry_3d);
 	memdelete(_geometry_2d);
-
-	memdelete(gdextension_manager);
 
 	memdelete(resource_uid);
 
@@ -477,11 +438,6 @@ void unregister_core_types() {
 
 		ResourceLoader::remove_resource_format_loader(resource_loader_json);
 		resource_loader_json.unref();
-	}
-
-	if constexpr (GD_IS_CLASS_ENABLED(GDExtension)) {
-		ResourceLoader::remove_resource_format_loader(resource_loader_gdextension);
-		resource_loader_gdextension.unref();
 	}
 
 	ResourceLoader::finalize();

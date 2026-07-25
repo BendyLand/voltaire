@@ -800,13 +800,6 @@ protected:
 	void _accessibility_scroll_set(const Variant &p_data);
 	void _accessibility_action_scroll_into_view(const Variant &p_data, int p_line, int p_wrap);
 
-	VLTRVIRTUAL2(_handle_unicode_input, int, int)
-	VLTRVIRTUAL1(_backspace, int)
-	VLTRVIRTUAL1(_cut, int)
-	VLTRVIRTUAL1(_copy, int)
-	VLTRVIRTUAL1(_paste, int)
-	VLTRVIRTUAL1(_paste_primary_clipboard, int)
-
 public:
 	/* General overrides. */
 	virtual void unhandled_key_input(const Ref<InputEvent> &p_event) override;

@@ -121,7 +121,6 @@ String Resource::get_path() const {
 
 void Resource::set_path_cache(const String &p_path) {
 	path_cache = p_path;
-	VLTRVIRTUAL_CALL(_set_path_cache, p_path);
 }
 
 static thread_local RandomPCG unique_id_gen = RandomPCG(0);
@@ -225,10 +224,6 @@ void Resource::disconnect_changed(const Callable &p_callable) {
 	if (is_connected(CoreStringName(changed), p_callable)) {
 		disconnect(CoreStringName(changed), p_callable);
 	}
-}
-
-void Resource::reset_state() {
-	VLTRVIRTUAL_CALL(_reset_state);
 }
 
 Error Resource::copy_from(const Ref<Resource> &p_resource) {
@@ -615,18 +610,6 @@ void Resource::_take_over_path(const String &p_path) {
 	set_path(p_path, true);
 }
 
-RID Resource::get_rid() const {
-	RID ret;
-	if (!VLTRVIRTUAL_CALL(_get_rid, ret)) {
-#ifndef DISABLE_DEPRECATED
-		if (_get_extension() && _get_extension()->get_rid) {
-			ret = RID::from_uint64(_get_extension()->get_rid(_get_extension_instance()));
-		}
-#endif
-	}
-	return ret;
-}
-
 #ifdef TOOLS_ENABLED
 
 uint32_t Resource::hash_edited_version_for_preview() const {
@@ -671,7 +654,6 @@ Node *Resource::get_local_scene() const {
 
 void Resource::setup_local_to_scene() {
 	emit_signal(SNAME("setup_local_to_scene_requested"));
-	VLTRVIRTUAL_CALL(_setup_local_to_scene);
 }
 
 void Resource::reset_local_to_scene() {
@@ -775,11 +757,6 @@ void Resource::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "resource_path", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR), "set_path", "get_path");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "resource_name"), "set_name", "get_name");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "resource_scene_unique_id", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_scene_unique_id", "get_scene_unique_id");
-
-	VLTRVIRTUAL_BIND(_setup_local_to_scene);
-	VLTRVIRTUAL_BIND(_get_rid);
-	VLTRVIRTUAL_BIND(_reset_state);
-	VLTRVIRTUAL_BIND(_set_path_cache, "path");
 }
 
 Resource::Resource() :

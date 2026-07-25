@@ -97,15 +97,4 @@ public:
 
 	virtual Error object_configuration_add(Object *p_object, Variant p_config) override;
 	virtual Error object_configuration_remove(Object *p_object, Variant p_config) override;
-
-	// Extensions
-	VLTRVIRTUAL0R(Error, _poll);
-	VLTRVIRTUAL1(_set_multiplayer_peer, Ref<MultiplayerPeer>);
-	VLTRVIRTUAL0R(Ref<MultiplayerPeer>, _get_multiplayer_peer);
-	VLTRVIRTUAL0RC(int, _get_unique_id);
-	VLTRVIRTUAL0RC(PackedInt32Array, _get_peer_ids);
-	VLTRVIRTUAL4R(Error, _rpc, int, Object *, StringName, Array);
-	VLTRVIRTUAL0RC(int, _get_remote_sender_id);
-	VLTRVIRTUAL2R(Error, _object_configuration_add, Object *, Variant);
-	VLTRVIRTUAL2R(Error, _object_configuration_remove, Object *, Variant);
 };

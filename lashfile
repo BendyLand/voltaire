@@ -1,3 +1,20 @@
 build:
 	scons target=editor compiledb=yes
 
+errs:
+	if [[ -f errs ]]; then
+		rm errs
+	fi
+	lash build 2> errs
+	if [[ -f errs ]]; then
+		wc -l errs
+	fi
+
+clean:
+	if [[ -f errs ]]; then
+		rm errs
+	fi
+
+show:
+	head errs
+

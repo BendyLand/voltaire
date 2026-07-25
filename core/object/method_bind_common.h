@@ -77,7 +77,7 @@ public:
 #endif // DEBUG_ENABLED
 	virtual Variant call(Object *p_object, const Variant **p_args, int p_arg_count, Callable::CallError &r_error) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_V_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), Variant(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_V_MSG(p_object && p_object->get_class_name() == get_instance_class(), Variant(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_variant_args_dv(static_cast<T *>(p_object), method, p_args, p_arg_count, r_error, get_default_arguments());
@@ -89,7 +89,7 @@ public:
 
 	virtual void validated_call(Object *p_object, const Variant **p_args, Variant *r_ret) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_MSG(p_object && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_validated_object_instance_args(static_cast<T *>(p_object), method, p_args);
@@ -100,7 +100,7 @@ public:
 
 	virtual void ptrcall(Object *p_object, const void **p_args, void *r_ret) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_MSG(p_object &&  p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_ptr_args<T, P...>(static_cast<T *>(p_object), method, p_args);
@@ -161,7 +161,7 @@ public:
 #endif // DEBUG_ENABLED
 	virtual Variant call(Object *p_object, const Variant **p_args, int p_arg_count, Callable::CallError &r_error) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_V_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), Variant(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_V_MSG(p_object && p_object->get_class_name() == get_instance_class(), Variant(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_variant_argsc_dv(static_cast<T *>(p_object), method, p_args, p_arg_count, r_error, get_default_arguments());
@@ -173,7 +173,7 @@ public:
 
 	virtual void validated_call(Object *p_object, const Variant **p_args, Variant *r_ret) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_MSG(p_object && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_validated_object_instance_argsc(static_cast<T *>(p_object), method, p_args);
@@ -184,7 +184,7 @@ public:
 
 	virtual void ptrcall(Object *p_object, const void **p_args, void *r_ret) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_MSG(p_object && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_ptr_argsc<T, P...>(static_cast<T *>(p_object), method, p_args);
@@ -255,7 +255,7 @@ public:
 	virtual Variant call(Object *p_object, const Variant **p_args, int p_arg_count, Callable::CallError &r_error) const override {
 		Variant ret;
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_V_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), ret, vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_V_MSG(p_object && p_object->get_class_name() == get_instance_class(), ret, vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_variant_args_ret_dv(static_cast<T *>(p_object), method, p_args, p_arg_count, ret, r_error, get_default_arguments());
@@ -267,7 +267,7 @@ public:
 
 	virtual void validated_call(Object *p_object, const Variant **p_args, Variant *r_ret) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_MSG(p_object && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_validated_object_instance_args_ret(static_cast<T *>(p_object), method, p_args, r_ret);
@@ -278,7 +278,7 @@ public:
 
 	virtual void ptrcall(Object *p_object, const void **p_args, void *r_ret) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_MSG(p_object && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_ptr_args_ret<T, R, P...>(static_cast<T *>(p_object), method, p_args, r_ret);
@@ -350,7 +350,7 @@ public:
 	virtual Variant call(Object *p_object, const Variant **p_args, int p_arg_count, Callable::CallError &r_error) const override {
 		Variant ret;
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_V_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), ret, vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_V_MSG(p_object && p_object->get_class_name() == get_instance_class(), ret, vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_variant_args_retc_dv(static_cast<T *>(p_object), method, p_args, p_arg_count, ret, r_error, get_default_arguments());
@@ -362,7 +362,7 @@ public:
 
 	virtual void validated_call(Object *p_object, const Variant **p_args, Variant *r_ret) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_MSG(p_object && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_validated_object_instance_args_retc(static_cast<T *>(p_object), method, p_args, r_ret);
@@ -373,7 +373,7 @@ public:
 
 	virtual void ptrcall(Object *p_object, const void **p_args, void *r_ret) const override {
 #ifdef TOOLS_ENABLED
-		ERR_FAIL_COND_MSG(p_object && p_object->is_extension_placeholder() && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
+		ERR_FAIL_COND_MSG(p_object && p_object->get_class_name() == get_instance_class(), vformat("Cannot call method bind '%s' on placeholder instance.", MethodBind::get_name()));
 #endif
 #ifdef TYPED_METHOD_BIND
 		call_with_ptr_args_retc<T, R, P...>(static_cast<T *>(p_object), method, p_args, r_ret);

@@ -142,14 +142,6 @@ void EditorDock::_bind_methods() {
 	BIND_ENUM_CONSTANT(DOCK_SLOT_BOTTOM_L);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_BOTTOM_R);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_MAX);
-
-	VLTRVIRTUAL_BIND(_update_layout_and_slot, "layout", "slot");
-	VLTRVIRTUAL_BIND(_save_layout_to_config, "config", "section");
-	VLTRVIRTUAL_BIND(_load_layout_from_config, "config", "section");
-
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL_BIND(_update_layout, "layout");
-#endif
 }
 
 void EditorDock::open() {
@@ -330,16 +322,6 @@ Ref<Texture2D> EditorDock::get_effective_icon(const Callable &p_icon_fetch) {
 		icon = p_icon_fetch.call(icon_name);
 	}
 	return icon;
-}
-
-void EditorDock::update_layout(DockLayout p_layout, int p_slot) {
-	if (VLTRVIRTUAL_CALL(_update_layout_and_slot, p_layout, p_slot)) {
-		return;
-	}
-
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL_CALL(_update_layout, p_layout);
-#endif
 }
 
 EditorDock::EditorDock() {

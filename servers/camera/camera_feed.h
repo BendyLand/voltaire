@@ -123,11 +123,6 @@ public:
 
 	virtual bool activate_feed();
 	virtual void deactivate_feed();
-
-	VLTRVIRTUAL2R(bool, _set_format, int, const Dictionary &);
-	VLTRVIRTUAL0RC(Array, _get_formats);
-	VLTRVIRTUAL0R(bool, _activate_feed)
-	VLTRVIRTUAL0(_deactivate_feed)
 };
 
 VARIANT_ENUM_CAST(CameraFeed::FeedDataType);

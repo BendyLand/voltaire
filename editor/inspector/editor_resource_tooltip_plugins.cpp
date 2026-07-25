@@ -51,9 +51,6 @@ void EditorResourceTooltipPlugin::_thumbnail_ready(const String &p_path, const R
 
 void EditorResourceTooltipPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("request_thumbnail", "path", "control"), &EditorResourceTooltipPlugin::request_thumbnail);
-
-	VLTRVIRTUAL_BIND(_handles, "type");
-	VLTRVIRTUAL_BIND(_make_tooltip_for_path, "path", "metadata", "base");
 }
 
 VBoxContainer *EditorResourceTooltipPlugin::make_default_tooltip(const String &p_resource_path) {
@@ -100,18 +97,6 @@ VBoxContainer *EditorResourceTooltipPlugin::make_default_tooltip(const String &p
 void EditorResourceTooltipPlugin::request_thumbnail(const String &p_path, TextureRect *p_for_control) const {
 	ERR_FAIL_NULL(p_for_control);
 	EditorResourcePreview::get_singleton()->queue_resource_preview(p_path, callable_mp(const_cast<EditorResourceTooltipPlugin *>(this), &EditorResourceTooltipPlugin::_thumbnail_ready).bind(p_for_control->get_instance_id()));
-}
-
-bool EditorResourceTooltipPlugin::handles(const String &p_resource_type) const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_handles, p_resource_type, ret);
-	return ret;
-}
-
-Control *EditorResourceTooltipPlugin::make_tooltip_for_path(const String &p_resource_path, const Dictionary &p_metadata, Control *p_base) const {
-	Control *ret = nullptr;
-	VLTRVIRTUAL_CALL(_make_tooltip_for_path, p_resource_path, p_metadata, p_base, ret);
-	return ret;
 }
 
 // EditorTextureTooltipPlugin

@@ -1,0 +1,1789 @@
+In file included from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from modules/theora/video_stream_theora.h:34,
+                 from modules/theora/register_types.cpp:33:
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__stop_call()':
+./core/object/gdvirtual.gen.h:33:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+   33 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+In file included from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from modules/theora/video_stream_theora.h:34,
+                 from modules/theora/register_types.cpp:33:
+./core/object/gdvirtual.gen.h:39:62: error: '_get_extension_instance' was not declared in this scope
+   39 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:51: error: expected ')' before '_vltrvirtual__stop'
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:21: note: to match this '('
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+In file included from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from modules/theora/video_stream_theora.h:34,
+                 from modules/theora/video_stream_theora.cpp:31:
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__stop_call()':
+./core/object/gdvirtual.gen.h:33:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+   33 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__stop_overridden() const':
+./core/object/gdvirtual.gen.h:54:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+   54 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+In file included from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from modules/theora/video_stream_theora.h:34,
+                 from modules/theora/register_types.cpp:33:
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__play_call()':
+./core/object/gdvirtual.gen.h:33:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+   33 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+In file included from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from modules/theora/video_stream_theora.h:34,
+                 from modules/theora/video_stream_theora.cpp:31:
+./core/object/gdvirtual.gen.h:39:62: error: '_get_extension_instance' was not declared in this scope
+   39 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:51: error: expected ')' before '_vltrvirtual__stop'
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:21: note: to match this '('
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+In file included from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from modules/theora/video_stream_theora.h:34,
+                 from modules/theora/register_types.cpp:33:
+./core/object/gdvirtual.gen.h:39:62: error: '_get_extension_instance' was not declared in this scope
+   39 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:51: error: expected ')' before '_vltrvirtual__play'
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:21: note: to match this '('
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__stop_overridden() const':
+./core/object/gdvirtual.gen.h:54:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+   54 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:47:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   47 |         VLTRVIRTUAL0(_stop);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__play_overridden() const':
+./core/object/gdvirtual.gen.h:54:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+   54 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+In file included from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from modules/theora/video_stream_theora.h:34,
+                 from modules/theora/video_stream_theora.cpp:31:
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__play_call()':
+./core/object/gdvirtual.gen.h:33:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+   33 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__is_playing_call(bool&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+In file included from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from modules/theora/video_stream_theora.h:34,
+                 from modules/theora/video_stream_theora.cpp:31:
+./core/object/gdvirtual.gen.h:39:62: error: '_get_extension_instance' was not declared in this scope
+   39 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:51: error: expected ')' before '_vltrvirtual__play'
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:41:21: note: to match this '('
+   41 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__is_playing'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__play_overridden() const':
+./core/object/gdvirtual.gen.h:54:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+   54 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:48:9: note: in expansion of macro 'VLTRVIRTUAL0'
+   48 |         VLTRVIRTUAL0(_play);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__is_playing_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__is_playing_call(bool&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__set_paused_call(bool)':
+./core/object/gdvirtual.gen.h:641:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  641 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:647:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+  647 |                         GDExtensionConstTypePtr argptrs[1] = { &argval1 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__is_playing'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:62: error: '_get_extension_instance' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:158: error: 'GDExtensionConstTypePtr' does not name a type
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '>' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '(' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:183: error: expected primary-expression before '>' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                       ^
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:185: error: 'argptrs' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                         ^~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__is_playing_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:49:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   49 |         VLTRVIRTUAL0RC(bool, _is_playing);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:51: error: expected ')' before '_vltrvirtual__set_paused'
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:21: note: to match this '('
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__set_paused_call(bool)':
+./core/object/gdvirtual.gen.h:641:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  641 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__set_paused_overridden() const':
+./core/object/gdvirtual.gen.h:664:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  664 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:647:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+  647 |                         GDExtensionConstTypePtr argptrs[1] = { &argval1 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__is_paused_call(bool&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:62: error: '_get_extension_instance' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__is_paused'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:158: error: 'GDExtensionConstTypePtr' does not name a type
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '>' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '(' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:183: error: expected primary-expression before '>' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                       ^
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:185: error: 'argptrs' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                         ^~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__is_paused_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:51: error: expected ')' before '_vltrvirtual__set_paused'
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:21: note: to match this '('
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_length_call(double&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__set_paused_overridden() const':
+./core/object/gdvirtual.gen.h:664:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  664 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:50:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   50 |         VLTRVIRTUAL1(_set_paused, bool);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__is_paused_call(bool&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_length'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_length_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__is_paused'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_playback_position_call(double&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__is_paused_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:51:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   51 |         VLTRVIRTUAL0RC(bool, _is_paused);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_length_call(double&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_playback_position'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_playback_position_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__seek_call(double)':
+./core/object/gdvirtual.gen.h:641:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  641 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:647:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+  647 |                         GDExtensionConstTypePtr argptrs[1] = { &argval1 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_length'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:62: error: '_get_extension_instance' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:158: error: 'GDExtensionConstTypePtr' does not name a type
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '>' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '(' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:183: error: expected primary-expression before '>' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                       ^
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:185: error: 'argptrs' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                         ^~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_length_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:52:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   52 |         VLTRVIRTUAL0RC(double, _get_length);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:51: error: expected ')' before '_vltrvirtual__seek'
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:21: note: to match this '('
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_playback_position_call(double&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__seek_overridden() const':
+./core/object/gdvirtual.gen.h:664:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  664 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__set_audio_track_call(int)':
+./core/object/gdvirtual.gen.h:641:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  641 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_playback_position'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:647:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+  647 |                         GDExtensionConstTypePtr argptrs[1] = { &argval1 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_playback_position_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:53:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   53 |         VLTRVIRTUAL0RC(double, _get_playback_position);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:62: error: '_get_extension_instance' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:158: error: 'GDExtensionConstTypePtr' does not name a type
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '>' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '(' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:183: error: expected primary-expression before '>' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                       ^
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__seek_call(double)':
+./core/object/gdvirtual.gen.h:641:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  641 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:185: error: 'argptrs' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                         ^~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:647:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+  647 |                         GDExtensionConstTypePtr argptrs[1] = { &argval1 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:51: error: expected ')' before '_vltrvirtual__set_audio_track'
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:21: note: to match this '('
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:62: error: '_get_extension_instance' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__set_audio_track_overridden() const':
+./core/object/gdvirtual.gen.h:664:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  664 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:158: error: 'GDExtensionConstTypePtr' does not name a type
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '>' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '(' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:183: error: expected primary-expression before '>' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                       ^
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:185: error: 'argptrs' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                         ^~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_texture_call(Ref<Texture2D>&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:51: error: expected ')' before '_vltrvirtual__seek'
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:21: note: to match this '('
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__seek_overridden() const':
+./core/object/gdvirtual.gen.h:664:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  664 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:54:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   54 |         VLTRVIRTUAL1(_seek, double);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_texture'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__set_audio_track_call(int)':
+./core/object/gdvirtual.gen.h:641:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  641 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:647:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+  647 |                         GDExtensionConstTypePtr argptrs[1] = { &argval1 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_texture_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:62: error: '_get_extension_instance' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__update_call(double)':
+./core/object/gdvirtual.gen.h:875:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  875 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:158: error: 'GDExtensionConstTypePtr' does not name a type
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '>' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:182: error: expected '(' before '*' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:183: error: expected primary-expression before '>' token
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                       ^
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:881:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+  881 |                         GDExtensionConstTypePtr argptrs[1] = { &argval1 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:649:185: error: 'argptrs' was not declared in this scope
+  649 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                         ^~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:51: error: expected ')' before '_vltrvirtual__set_audio_track'
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:651:21: note: to match this '('
+  651 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:62: error: '_get_extension_instance' was not declared in this scope
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:158: error: 'GDExtensionConstTypePtr' does not name a type
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:182: error: expected '>' before '*' token
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:182: error: expected '(' before '*' token
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:183: error: expected primary-expression before '>' token
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                       ^
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__set_audio_track_overridden() const':
+./core/object/gdvirtual.gen.h:664:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  664 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:55:9: note: in expansion of macro 'VLTRVIRTUAL1'
+   55 |         VLTRVIRTUAL1(_set_audio_track, int);
+      |         ^~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:185: error: 'argptrs' was not declared in this scope
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                         ^~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:885:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  885 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:885:51: error: expected ')' before '_vltrvirtual__update'
+  885 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:885:21: note: to match this '('
+  885 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_texture_call(Ref<Texture2D>&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__update_overridden() const':
+./core/object/gdvirtual.gen.h:899:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  899 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_channels_call(int&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_texture'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_texture_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:56:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   56 |         VLTRVIRTUAL0RC(Ref<Texture2D>, _get_texture);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_channels'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__update_call(double)':
+./core/object/gdvirtual.gen.h:875:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  875 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_channels_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:881:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+  881 |                         GDExtensionConstTypePtr argptrs[1] = { &argval1 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_mix_rate_call(int&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:62: error: '_get_extension_instance' was not declared in this scope
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:158: error: 'GDExtensionConstTypePtr' does not name a type
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:182: error: expected '>' before '*' token
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:182: error: expected '(' before '*' token
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                      ^
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:183: error: expected primary-expression before '>' token
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                       ^
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:883:185: error: 'argptrs' was not declared in this scope
+  883 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                                                                                                                                                         ^~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:885:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  885 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:885:51: error: expected ')' before '_vltrvirtual__update'
+  885 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:885:21: note: to match this '('
+  885 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), nullptr);\
+      |                     ^
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_mix_rate'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__update_overridden() const':
+./core/object/gdvirtual.gen.h:899:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  899 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:57:9: note: in expansion of macro 'VLTRVIRTUAL1_REQUIRED'
+   57 |         VLTRVIRTUAL1_REQUIRED(_update, double);
+      |         ^~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_mix_rate_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_channels_call(int&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStream::_vltrvirtual__instantiate_playback_call(Ref<VideoStreamPlayback>&)':
+./core/object/gdvirtual.gen.h:299:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  299 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_channels'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:306:62: error: '_get_extension_instance' was not declared in this scope
+  306 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:309:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  309 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:309:51: error: expected ')' before '_vltrvirtual__instantiate_playback'
+  309 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:309:21: note: to match this '('
+  309 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_channels_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:58:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   58 |         VLTRVIRTUAL0RC(int, _get_channels);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_mix_rate_call(int&) const':
+./core/object/gdvirtual.gen.h:191:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  191 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStream::_vltrvirtual__instantiate_playback_overridden() const':
+./core/object/gdvirtual.gen.h:325:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  325 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:198:62: error: '_get_extension_instance' was not declared in this scope
+  198 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:51: error: expected ')' before '_vltrvirtual__get_mix_rate'
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:201:21: note: to match this '('
+  201 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStreamPlayback::_vltrvirtual__get_mix_rate_overridden() const':
+./core/object/gdvirtual.gen.h:216:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  216 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:59:9: note: in expansion of macro 'VLTRVIRTUAL0RC'
+   59 |         VLTRVIRTUAL0RC(int, _get_mix_rate);
+      |         ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStream::_vltrvirtual__instantiate_playback_call(Ref<VideoStreamPlayback>&)':
+./core/object/gdvirtual.gen.h:299:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  299 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+In file included from modules/text_server_adv/register_types.cpp:33:
+modules/text_server_adv/text_server_adv.h:40:10: fatal error: core/extension/ext_wrappers.gen.h: No such file or directory
+   40 | #include "core/extension/ext_wrappers.gen.h"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+scons: *** [bin/obj/modules/text_server_adv/register_types.linuxbsd.editor.x86_64.o] Error 1
+./core/object/gdvirtual.gen.h:306:62: error: '_get_extension_instance' was not declared in this scope
+  306 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, nullptr, &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:309:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+  309 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:309:51: error: expected ')' before '_vltrvirtual__instantiate_playback'
+  309 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                                                   ^~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:309:21: note: to match this '('
+  309 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), nullptr, &ret);\
+      |                     ^
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+./scene/resources/video_stream.h: In member function 'bool VideoStream::_vltrvirtual__instantiate_playback_overridden() const':
+./core/object/gdvirtual.gen.h:325:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+  325 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+./scene/resources/video_stream.h:97:9: note: in expansion of macro 'VLTRVIRTUAL0R_REQUIRED'
+   97 |         VLTRVIRTUAL0R_REQUIRED(Ref<VideoStreamPlayback>, _instantiate_playback);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+In file included from modules/text_server_adv/text_server_adv.cpp:31:
+modules/text_server_adv/text_server_adv.h:40:10: fatal error: core/extension/ext_wrappers.gen.h: No such file or directory
+   40 | #include "core/extension/ext_wrappers.gen.h"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+scons: *** [bin/obj/modules/text_server_adv/text_server_adv.linuxbsd.editor.x86_64.o] Error 1
+scons: *** [bin/obj/modules/theora/register_types.linuxbsd.editor.x86_64.o] Error 1
+scons: *** [bin/obj/modules/theora/video_stream_theora.linuxbsd.editor.x86_64.o] Error 1
+In file included from ./core/variant/method_ptrcall.h:33,
+                 from ./core/object/gdvirtual.gen.h:6,
+                 from ./scene/gui/control.h:33,
+                 from modules/visual_shader/visual_shader.h:36,
+                 from modules/visual_shader/visual_shader.cpp:31:
+modules/visual_shader/visual_shader.cpp: In member function 'void VisualShaderNodeCustom::update_property_default_values()':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_property_count_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:474:13: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  474 |         if (VLTRVIRTUAL_CALL(_get_property_count, prop_count)) {
+      |             ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_property_default_index_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:477:29: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  477 |                         if (VLTRVIRTUAL_CALL(_get_property_default_index, i, selected)) {
+      |                             ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'void VisualShaderNodeCustom::update_input_port_default_values()':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_input_port_count_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:486:13: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  486 |         if (VLTRVIRTUAL_CALL(_get_input_port_count, input_port_count)) {
+      |             ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_input_port_default_value_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:489:29: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  489 |                         if (VLTRVIRTUAL_CALL(_get_input_port_default_value, i, value)) {
+      |                             ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'void VisualShaderNodeCustom::update_ports()':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_property_count_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:500:21: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  500 |                 if (VLTRVIRTUAL_CALL(_get_property_count, prop_count)) {
+      |                     ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_property_name_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:503:38: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  503 |                                 if (!VLTRVIRTUAL_CALL(_get_property_name, i, prop.name)) {
+      |                                      ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_property_options_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:506:38: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  506 |                                 if (!VLTRVIRTUAL_CALL(_get_property_options, i, prop.options)) {
+      |                                      ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_input_port_count_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:530:21: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  530 |                 if (VLTRVIRTUAL_CALL(_get_input_port_count, input_port_count)) {
+      |                     ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_input_port_name_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:533:38: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  533 |                                 if (!VLTRVIRTUAL_CALL(_get_input_port_name, i, port.name)) {
+      |                                      ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_input_port_type_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:537:37: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  537 |                                 if (VLTRVIRTUAL_CALL(_get_input_port_type, i, port_type)) {
+      |                                     ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_output_port_count_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:551:21: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  551 |                 if (VLTRVIRTUAL_CALL(_get_output_port_count, output_port_count)) {
+      |                     ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_output_port_name_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:554:38: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  554 |                                 if (!VLTRVIRTUAL_CALL(_get_output_port_name, i, port.name)) {
+      |                                      ^~~~~~~~~~~~~~~~
+./core/object/object.h:73:39: error: '_vltrvirtual__get_output_port_type_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:558:37: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  558 |                                 if (VLTRVIRTUAL_CALL(_get_output_port_type, i, port_type)) {
+      |                                     ^~~~~~~~~~~~~~~~
+In file included from ./scene/gui/control.h:33,
+                 from modules/visual_shader/visual_shader.h:36,
+                 from modules/visual_shader/register_types.cpp:33:
+modules/visual_shader/editor/visual_shader_editor_plugin.h: In member function 'bool VisualShaderNodePlugin::_vltrvirtual__create_editor_call(Ref<Resource>, Ref<VisualShaderNode>, Object*&) const':
+./core/object/gdvirtual.gen.h:1475:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+ 1475 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1482:25: error: 'GDExtensionConstTypePtr' was not declared in this scope
+ 1482 |                         GDExtensionConstTypePtr argptrs[2] = { &argval1, &argval2 };\
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'virtual String VisualShaderNodeCustom::get_caption() const':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_name_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:581:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  581 |         VLTRVIRTUAL_CALL(_get_name, ret);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1485:62: error: '_get_extension_instance' was not declared in this scope
+ 1485 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1485:158: error: 'GDExtensionConstTypePtr' does not name a type
+ 1485 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                                                                                                                                                              ^~~~~~~~~~~~~~~~~~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1485:182: error: expected '>' before '*' token
+ 1485 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                                                                                                                                                                                      ^
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1485:182: error: expected '(' before '*' token
+ 1485 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                                                                                                                                                                                      ^
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1485:183: error: expected primary-expression before '>' token
+ 1485 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                                                                                                                                                                                       ^
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'virtual int VisualShaderNodeCustom::get_default_input_port(VisualShaderNode::PortType) const':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_default_input_port_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:601:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  601 |         VLTRVIRTUAL_CALL(_get_default_input_port, p_type, ret);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1485:185: error: 'argptrs' was not declared in this scope
+ 1485 |                     _get_extension()->call_virtual_with_data(_get_extension_instance(), &_vltrvirtual_##m_name##_sn, _vltrvirtual_##m_name, reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                                                                                                                                                                                         ^~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1488:23: error: 'GDExtensionClassCallVirtual' was not declared in this scope
+ 1488 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1488:51: error: expected ')' before '_vltrvirtual__create_editor'
+ 1488 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                                                   ^~~~~~~~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+./core/object/gdvirtual.gen.h:1488:21: note: to match this '('
+ 1488 |                     ((GDExtensionClassCallVirtual)_vltrvirtual_##m_name)(_get_extension_instance(), reinterpret_cast<GDExtensionConstTypePtr *>(argptrs), &ret);\
+      |                     ^
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+In file included from ./core/string/char_utils.h:33,
+                 from ./core/string/ustring.h:33,
+                 from ./core/string/string_builder.h:33,
+                 from modules/visual_shader/visual_shader.h:33,
+                 from modules/visual_shader/visual_shader.cpp:31:
+modules/visual_shader/visual_shader.cpp: In member function 'virtual String VisualShaderNodeCustom::generate_code(Shader::Mode, VisualShader::Type, int, const String*, const String*, bool) const':
+./core/object/object.h:82:43: error: '_vltrvirtual__get_code_overridden' was not declared in this scope
+   82 | #define VLTRVIRTUAL_IS_OVERRIDDEN(m_name) _vltrvirtual_##m_name##_overridden()
+      |                                           ^~~~~~~~~~~~~
+./core/typedefs.h:230:41: note: in definition of macro 'unlikely'
+  230 | #define unlikely(x) __builtin_expect(!!(x), 0)
+      |                                         ^
+modules/visual_shader/visual_shader.cpp:620:9: note: in expansion of macro 'ERR_FAIL_COND_V'
+  620 |         ERR_FAIL_COND_V(!VLTRVIRTUAL_IS_OVERRIDDEN(_get_code), "");
+      |         ^~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:620:26: note: in expansion of macro 'VLTRVIRTUAL_IS_OVERRIDDEN'
+  620 |         ERR_FAIL_COND_V(!VLTRVIRTUAL_IS_OVERRIDDEN(_get_code), "");
+      |                          ^~~~~~~~~~~~~~~~~~~~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h: In member function 'bool VisualShaderNodePlugin::_vltrvirtual__create_editor_overridden() const':
+./core/object/gdvirtual.gen.h:1503:13: error: '_get_extension' was not declared in this scope; did you mean 'GDExtension'?
+ 1503 |         if (_get_extension()) {\
+      |             ^~~~~~~~~~~~~~
+modules/visual_shader/editor/visual_shader_editor_plugin.h:68:9: note: in expansion of macro 'VLTRVIRTUAL2RC'
+   68 |         VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
+      |         ^~~~~~~~~~~~~~
+In file included from ./core/variant/method_ptrcall.h:33,
+                 from ./core/object/gdvirtual.gen.h:6,
+                 from ./scene/gui/control.h:33,
+                 from modules/visual_shader/visual_shader.h:36,
+                 from modules/visual_shader/visual_shader.cpp:31:
+./core/object/object.h:73:39: error: '_vltrvirtual__get_code_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:631:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  631 |         VLTRVIRTUAL_CALL(_get_code, input_vars, output_vars, p_mode, p_type, _code);
+      |         ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'virtual String VisualShaderNodeCustom::generate_global_per_node(Shader::Mode, int) const':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_global_code_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:652:13: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  652 |         if (VLTRVIRTUAL_CALL(_get_global_code, p_mode, _code)) {
+      |             ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'virtual String VisualShaderNodeCustom::generate_global_per_func(Shader::Mode, VisualShader::Type, int) const':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_func_code_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:665:13: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  665 |         if (VLTRVIRTUAL_CALL(_get_func_code, p_mode, p_type, _code)) {
+      |             ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'bool VisualShaderNodeCustom::is_available(Shader::Mode, VisualShader::Type) const':
+./core/object/object.h:73:39: error: '_vltrvirtual__is_available_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:688:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  688 |         VLTRVIRTUAL_CALL(_is_available, p_mode, p_type, ret);
+      |         ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'String VisualShaderNodeCustom::_get_name() const':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_name_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:745:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  745 |         VLTRVIRTUAL_CALL(_get_name, ret);
+      |         ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'String VisualShaderNodeCustom::_get_description() const':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_description_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:751:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  751 |         VLTRVIRTUAL_CALL(_get_description, ret);
+      |         ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'String VisualShaderNodeCustom::_get_category() const':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_category_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:757:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  757 |         VLTRVIRTUAL_CALL(_get_category, ret);
+      |         ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'VisualShaderNode::PortType VisualShaderNodeCustom::_get_return_icon_type() const':
+./core/object/object.h:73:39: error: '_vltrvirtual__get_return_icon_type_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:763:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  763 |         VLTRVIRTUAL_CALL(_get_return_icon_type, ret);
+      |         ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In member function 'bool VisualShaderNodeCustom::_is_highend() const':
+./core/object/object.h:73:39: error: '_vltrvirtual__is_highend_call' was not declared in this scope
+   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
+      |                                       ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:769:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
+  769 |         VLTRVIRTUAL_CALL(_is_highend, ret);
+      |         ^~~~~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp: In static member function 'static void VisualShaderNodeCustom::_bind_methods()':
+./core/object/object.h:77:89: error: '_vltrvirtual__get_name_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:789:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  789 |         VLTRVIRTUAL_BIND(_get_name);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_description_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:790:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  790 |         VLTRVIRTUAL_BIND(_get_description);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_category_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:791:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  791 |         VLTRVIRTUAL_BIND(_get_category);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_return_icon_type_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:792:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  792 |         VLTRVIRTUAL_BIND(_get_return_icon_type);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_input_port_count_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:793:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  793 |         VLTRVIRTUAL_BIND(_get_input_port_count);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_input_port_type_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:794:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  794 |         VLTRVIRTUAL_BIND(_get_input_port_type, "port");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_input_port_name_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:795:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  795 |         VLTRVIRTUAL_BIND(_get_input_port_name, "port");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_input_port_default_value_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:796:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  796 |         VLTRVIRTUAL_BIND(_get_input_port_default_value, "port");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_default_input_port_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:797:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  797 |         VLTRVIRTUAL_BIND(_get_default_input_port, "type");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_output_port_count_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:798:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  798 |         VLTRVIRTUAL_BIND(_get_output_port_count);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_output_port_type_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:799:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  799 |         VLTRVIRTUAL_BIND(_get_output_port_type, "port");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_output_port_name_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:800:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  800 |         VLTRVIRTUAL_BIND(_get_output_port_name, "port");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_property_count_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:801:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  801 |         VLTRVIRTUAL_BIND(_get_property_count);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_property_name_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:802:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  802 |         VLTRVIRTUAL_BIND(_get_property_name, "index");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_property_default_index_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:803:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  803 |         VLTRVIRTUAL_BIND(_get_property_default_index, "index");
+      |         ^~~~~~~~~~~~~~~~
+scons: *** [bin/obj/modules/visual_shader/register_types.linuxbsd.editor.x86_64.o] Error 1
+./core/object/object.h:77:89: error: '_vltrvirtual__get_property_options_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:804:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  804 |         VLTRVIRTUAL_BIND(_get_property_options, "index");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_code_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:805:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  805 |         VLTRVIRTUAL_BIND(_get_code, "input_vars", "output_vars", "mode", "type");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_func_code_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:806:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  806 |         VLTRVIRTUAL_BIND(_get_func_code, "mode", "type");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__get_global_code_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:807:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  807 |         VLTRVIRTUAL_BIND(_get_global_code, "mode");
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__is_highend_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:808:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  808 |         VLTRVIRTUAL_BIND(_is_highend);
+      |         ^~~~~~~~~~~~~~~~
+./core/object/object.h:77:89: error: '_vltrvirtual__is_available_get_method_info' was not declared in this scope
+   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
+      |                                                                                         ^~~~~~~~~~~~~
+modules/visual_shader/visual_shader.cpp:809:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
+  809 |         VLTRVIRTUAL_BIND(_is_available, "mode", "type");
+      |         ^~~~~~~~~~~~~~~~
+scons: *** [bin/obj/modules/visual_shader/visual_shader.linuxbsd.editor.x86_64.o] Error 1

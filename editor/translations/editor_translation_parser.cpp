@@ -40,56 +40,37 @@ EditorTranslationParser *EditorTranslationParser::singleton = nullptr;
 Error EditorTranslationParserPlugin::parse_file(const String &p_path, Vector<Vector<String>> *r_translations) {
 	TypedArray<PackedStringArray> ret;
 
-	if (VLTRVIRTUAL_CALL(_parse_file, p_path, ret)) {
-		// Copy over entries directly.
-		for (const PackedStringArray translation : ret) {
-			r_translations->push_back(translation);
-		}
-
-		return OK;
+	// Copy over entries directly.
+	for (const PackedStringArray translation : ret) {
+		r_translations->push_back(translation);
 	}
 
-#ifndef DISABLE_DEPRECATED
 	TypedArray<String> ids;
 	TypedArray<Array> ids_ctx_plural;
 
-	if (VLTRVIRTUAL_CALL(_parse_file_bind_compat_99297, p_path, ids, ids_ctx_plural)) {
-		// Add user's extracted translatable messages.
-		for (int i = 0; i < ids.size(); i++) {
-			r_translations->push_back({ ids[i] });
-		}
-
-		// Add user's collected translatable messages with context or plurals.
-		for (int i = 0; i < ids_ctx_plural.size(); i++) {
-			Array arr = ids_ctx_plural[i];
-			ERR_FAIL_COND_V_MSG(arr.size() != 3, ERR_INVALID_DATA, "Array entries written into `msgids_context_plural` in `_parse_file` method should have the form [\"message\", \"context\", \"plural message\"]");
-
-			r_translations->push_back({ arr[0], arr[1], arr[2] });
-		}
-		return OK;
+	// Add user's extracted translatable messages.
+	for (int i = 0; i < ids.size(); i++) {
+		r_translations->push_back({ ids[i] });
 	}
-#endif // DISABLE_DEPRECATED
 
-	ERR_PRINT("Custom translation parser plugin's \"_parse_file\" is undefined.");
-	return ERR_UNAVAILABLE;
+	// Add user's collected translatable messages with context or plurals.
+	for (int i = 0; i < ids_ctx_plural.size(); i++) {
+		Array arr = ids_ctx_plural[i];
+		ERR_FAIL_COND_V_MSG(arr.size() != 3, ERR_INVALID_DATA, "Array entries written into `msgids_context_plural` in `_parse_file` method should have the form [\"message\", \"context\", \"plural message\"]");
+
+		r_translations->push_back({ arr[0], arr[1], arr[2] });
+	}
+	return OK;
 }
 
 void EditorTranslationParserPlugin::get_recognized_extensions(List<String> *r_extensions) const {
 	Vector<String> extensions;
-	if (VLTRVIRTUAL_CALL(_get_recognized_extensions, extensions)) {
-		for (int i = 0; i < extensions.size(); i++) {
-			r_extensions->push_back(extensions[i]);
-		}
-	} else if (!VLTRVIRTUAL_IS_OVERRIDDEN(_customize_strings)) {
-		ERR_PRINT("Custom translation parser plugin's \"func get_recognized_extensions()\" is undefined.");
+	for (int i = 0; i < extensions.size(); i++) {
+		r_extensions->push_back(extensions[i]);
 	}
 }
 
 void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>> &r_strings) const {
-	if (!VLTRVIRTUAL_IS_OVERRIDDEN(_customize_strings)) {
-		return;
-	}
-
 	TypedArray<PackedStringArray> new_strings;
 	new_strings.resize(r_strings.size());
 	int i = 0;
@@ -98,8 +79,6 @@ void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>> &r_
 		i++;
 	}
 
-	VLTRVIRTUAL_CALL(_customize_strings, new_strings, new_strings);
-
 	r_strings.resize(new_strings.size());
 	PackedStringArray *translation_write = r_strings.ptrw();
 	i = 0;
@@ -107,16 +86,6 @@ void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>> &r_
 		translation_write[i] = translation;
 		i++;
 	}
-}
-
-void EditorTranslationParserPlugin::_bind_methods() {
-	VLTRVIRTUAL_BIND(_parse_file, "path");
-	VLTRVIRTUAL_BIND(_get_recognized_extensions);
-	VLTRVIRTUAL_BIND(_customize_strings, "strings");
-
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL_BIND_COMPAT(_parse_file_bind_compat_99297, "path", "msgids", "msgids_context_plural");
-#endif
 }
 
 /////////////////////////

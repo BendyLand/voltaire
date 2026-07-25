@@ -119,27 +119,7 @@ class EditorFileSystemImportFormatSupportQuery : public RefCounted {
 	VLTRCLASS(EditorFileSystemImportFormatSupportQuery, RefCounted);
 
 protected:
-	VLTRVIRTUAL0RC_REQUIRED(bool, _is_active)
-	VLTRVIRTUAL0RC_REQUIRED(Vector<String>, _get_file_extensions)
-	VLTRVIRTUAL0RC_REQUIRED(bool, _query)
 	static void _bind_methods();
-
-public:
-	virtual bool is_active() const {
-		bool ret = false;
-		VLTRVIRTUAL_CALL(_is_active, ret);
-		return ret;
-	}
-	virtual Vector<String> get_file_extensions() const {
-		Vector<String> ret;
-		VLTRVIRTUAL_CALL(_get_file_extensions, ret);
-		return ret;
-	}
-	virtual bool query() {
-		bool ret = false;
-		VLTRVIRTUAL_CALL(_query, ret);
-		return ret;
-	}
 };
 
 class EditorFileSystem : public Node {

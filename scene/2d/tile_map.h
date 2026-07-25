@@ -241,10 +241,6 @@ public:
 	// Helpers?
 	TypedArray<Vector2i> get_surrounding_cells(const Vector2i &p_coords);
 
-	// Virtual function to modify the TileData at runtime.
-	VLTRVIRTUAL2R(bool, _use_tile_data_runtime_update, int, Vector2i);
-	VLTRVIRTUAL3(_tile_data_runtime_update, int, Vector2i, TileData *);
-
 	// Configuration warnings.
 	PackedStringArray get_configuration_warnings() const override;
 

@@ -34,80 +34,17 @@
 #include "core/object/script_language.h"
 #include "editor/file_system/editor_file_system.h"
 
-String EditorImportPlugin::get_importer_name() const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_importer_name, ret);
-	return ret;
-}
-
-String EditorImportPlugin::get_visible_name() const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_visible_name, ret);
-	return ret;
-}
 
 void EditorImportPlugin::get_recognized_extensions(List<String> *p_extensions) const {
 	Vector<String> extensions;
-	VLTRVIRTUAL_CALL(_get_recognized_extensions, extensions);
 	for (int i = 0; i < extensions.size(); i++) {
 		p_extensions->push_back(extensions[i]);
 	}
 }
 
-String EditorImportPlugin::get_preset_name(int p_idx) const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_preset_name, p_idx, ret);
-	return ret;
-}
-
-int EditorImportPlugin::get_preset_count() const {
-	int ret;
-	if (VLTRVIRTUAL_CALL(_get_preset_count, ret)) {
-		return ret;
-	}
-	return 0;
-}
-
-String EditorImportPlugin::get_save_extension() const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_save_extension, ret);
-	return ret;
-}
-
-String EditorImportPlugin::get_resource_type() const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_resource_type, ret);
-	return ret;
-}
-
-float EditorImportPlugin::get_priority() const {
-	float ret;
-	if (VLTRVIRTUAL_CALL(_get_priority, ret)) {
-		return ret;
-	}
-	return 1.0;
-}
-
-int EditorImportPlugin::get_import_order() const {
-	int ret;
-	if (VLTRVIRTUAL_CALL(_get_import_order, ret)) {
-		return ret;
-	}
-	return IMPORT_ORDER_DEFAULT;
-}
-
-int EditorImportPlugin::get_format_version() const {
-	int ret = 0;
-	if (VLTRVIRTUAL_CALL(_get_format_version, ret)) {
-		return ret;
-	}
-	return 0;
-}
-
 void EditorImportPlugin::get_import_options(const String &p_path, List<ResourceImporter::ImportOption> *r_options, int p_preset) const {
 	Array needed = { "name", "default_value" };
 	TypedArray<Dictionary> options;
-	VLTRVIRTUAL_CALL(_get_import_options, p_path, p_preset, options);
 	for (int i = 0; i < options.size(); i++) {
 		Dictionary d = options[i];
 		ERR_FAIL_COND(!d.has_all(needed));
@@ -141,10 +78,6 @@ bool EditorImportPlugin::get_option_visibility(const String &p_path, const Strin
 		d[E->key] = E->value;
 		++E;
 	}
-	bool visible = false;
-	if (VLTRVIRTUAL_CALL(_get_option_visibility, p_path, p_option, d, visible)) {
-		return visible;
-	}
 	return true;
 }
 
@@ -159,7 +92,6 @@ Error EditorImportPlugin::import(ResourceUID::ID p_source_id, const String &p_so
 	}
 
 	Error err = OK;
-	VLTRVIRTUAL_CALL(_import, p_source_file, p_save_path, options, platform_variants, gen_files, err);
 	for (int i = 0; i < platform_variants.size(); i++) {
 		r_platform_variants->push_back(platform_variants[i]);
 	}
@@ -170,12 +102,7 @@ Error EditorImportPlugin::import(ResourceUID::ID p_source_id, const String &p_so
 }
 
 bool EditorImportPlugin::can_import_threaded() const {
-	bool ret = false;
-	if (VLTRVIRTUAL_CALL(_can_import_threaded, ret)) {
-		return ret;
-	} else {
-		return ResourceImporter::can_import_threaded();
-	}
+	return ResourceImporter::can_import_threaded();
 }
 
 Error EditorImportPlugin::_append_import_external_resource(const String &p_file, const Dictionary &p_custom_options, const String &p_custom_importer, Variant p_generator_parameters) {
@@ -192,19 +119,5 @@ Error EditorImportPlugin::append_import_external_resource(const String &p_file, 
 }
 
 void EditorImportPlugin::_bind_methods() {
-	VLTRVIRTUAL_BIND(_get_importer_name)
-	VLTRVIRTUAL_BIND(_get_visible_name)
-	VLTRVIRTUAL_BIND(_get_preset_count)
-	VLTRVIRTUAL_BIND(_get_preset_name, "preset_index")
-	VLTRVIRTUAL_BIND(_get_recognized_extensions)
-	VLTRVIRTUAL_BIND(_get_import_options, "path", "preset_index")
-	VLTRVIRTUAL_BIND(_get_save_extension)
-	VLTRVIRTUAL_BIND(_get_resource_type)
-	VLTRVIRTUAL_BIND(_get_priority)
-	VLTRVIRTUAL_BIND(_get_import_order)
-	VLTRVIRTUAL_BIND(_get_format_version)
-	VLTRVIRTUAL_BIND(_get_option_visibility, "path", "option_name", "options")
-	VLTRVIRTUAL_BIND(_import, "source_file", "save_path", "options", "platform_variants", "gen_files");
-	VLTRVIRTUAL_BIND(_can_import_threaded);
 	ClassDB::bind_method(D_METHOD("append_import_external_resource", "path", "custom_options", "custom_importer", "generator_parameters"), &EditorImportPlugin::_append_import_external_resource, DEFVAL(Dictionary()), DEFVAL(String()), DEFVAL(Variant()));
 }

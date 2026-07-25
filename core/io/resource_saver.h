@@ -39,12 +39,6 @@ class ResourceFormatSaver : public RefCounted {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL3R(Error, _save, Ref<Resource>, String, uint32_t)
-	VLTRVIRTUAL2R(Error, _set_uid, String, ResourceUID::ID)
-	VLTRVIRTUAL1RC(bool, _recognize, Ref<Resource>)
-	VLTRVIRTUAL1RC(Vector<String>, _get_recognized_extensions, Ref<Resource>)
-	VLTRVIRTUAL2RC(bool, _recognize_path, Ref<Resource>, String)
-
 public:
 	virtual Error save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags = 0);
 	virtual Error set_uid(const String &p_path, ResourceUID::ID p_uid);

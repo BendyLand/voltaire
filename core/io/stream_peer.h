@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/extension/ext_wrappers.gen.h"
 #include "core/object/gdvirtual.gen.h"
 #include "core/object/ref_counted.h"
 #include "core/variant/native_ptr.h"
@@ -102,18 +101,9 @@ protected:
 
 public:
 	virtual Error put_data(const uint8_t *p_data, int p_bytes) override;
-	VLTRVIRTUAL3R(Error, _put_data, GDExtensionPtr<const uint8_t>, int, GDExtensionPtr<int>);
-
 	virtual Error put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) override;
-	VLTRVIRTUAL3R(Error, _put_partial_data, GDExtensionPtr<const uint8_t>, int, GDExtensionPtr<int>);
-
 	virtual Error get_data(uint8_t *p_buffer, int p_bytes) override;
-	VLTRVIRTUAL3R(Error, _get_data, GDExtensionPtr<uint8_t>, int, GDExtensionPtr<int>);
-
 	virtual Error get_partial_data(uint8_t *p_buffer, int p_bytes, int &r_received) override;
-	VLTRVIRTUAL3R(Error, _get_partial_data, GDExtensionPtr<uint8_t>, int, GDExtensionPtr<int>);
-
-	EXBIND0RC(int, get_available_bytes);
 };
 
 class StreamPeerBuffer : public StreamPeer {

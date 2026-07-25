@@ -32,7 +32,6 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/extension/gdextension_manager.h"
 #include "core/input/input.h"
 #include "core/io/config_file.h"
 #include "core/io/file_access.h"
@@ -74,7 +73,6 @@
 #include "editor/export/dedicated_server_export_plugin.h"
 #include "editor/export/editor_export.h"
 #include "editor/export/export_template_manager.h"
-#include "editor/export/gdextension_export_plugin.h"
 #include "editor/export/project_export.h"
 #include "editor/export/project_zip_packer.h"
 #include "editor/export/register_exporters.h"
@@ -1094,9 +1092,6 @@ void EditorNode::_notification(int p_what) {
 				EditorFileSystem::get_singleton()->scan_changes();
 			}
 			_scan_external_changes();
-
-			GDExtensionManager *gdextension_manager = GDExtensionManager::get_singleton();
-			callable_mp(gdextension_manager, &GDExtensionManager::reload_extensions).call_deferred();
 		} break;
 
 		case NOTIFICATION_APPLICATION_FOCUS_OUT: {
@@ -8445,7 +8440,6 @@ EditorNode::EditorNode() {
 	EditorUndoRedoManager::get_singleton()->connect("history_changed", callable_mp(this, &EditorNode::_update_undo_redo_allowed));
 	EditorUndoRedoManager::get_singleton()->connect("history_changed", callable_mp(this, &EditorNode::_update_unsaved_cache));
 	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &EditorNode::_update_from_settings));
-	GDExtensionManager::get_singleton()->connect("extensions_reloaded", callable_mp(this, &EditorNode::_gdextensions_reloaded));
 
 	Ref<TranslationDomain> domain = TranslationServer::get_singleton()->get_main_domain();
 	domain->set_enabled(false);
@@ -9482,12 +9476,6 @@ EditorNode::EditorNode() {
 		add_editor_plugin(EditorPlugins::create(i));
 	}
 
-	for (const StringName &extension_class_name : GDExtensionEditorPlugins::get_extension_classes()) {
-		add_extension_editor_plugin(extension_class_name);
-	}
-	GDExtensionEditorPlugins::editor_node_add_plugin = &EditorNode::add_extension_editor_plugin;
-	GDExtensionEditorPlugins::editor_node_remove_plugin = &EditorNode::remove_extension_editor_plugin;
-
 	for (int i = 0; i < plugin_init_callback_count; i++) {
 		plugin_init_callbacks[i]();
 	}
@@ -9547,11 +9535,6 @@ EditorNode::EditorNode() {
 	editor_plugins_over = memnew(EditorPluginList);
 	editor_plugins_force_over = memnew(EditorPluginList);
 	editor_plugins_force_input_forwarding = memnew(EditorPluginList);
-
-	Ref<GDExtensionExportPlugin> gdextension_export_plugin;
-	gdextension_export_plugin.instantiate();
-
-	EditorExport::get_singleton()->add_export_plugin(gdextension_export_plugin);
 
 	Ref<DedicatedServerExportPlugin> dedicated_server_export_plugin;
 	dedicated_server_export_plugin.instantiate();
@@ -9713,9 +9696,6 @@ EditorNode::~EditorNode() {
 
 	EditorSettings::destroy();
 	EditorThemeManager::finalize();
-
-	GDExtensionEditorPlugins::editor_node_add_plugin = nullptr;
-	GDExtensionEditorPlugins::editor_node_remove_plugin = nullptr;
 
 	FileDialog::register_func = nullptr;
 	FileDialog::unregister_func = nullptr;

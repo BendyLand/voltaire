@@ -49,9 +49,6 @@ protected:
 
 	static void _bind_methods();
 
-	VLTRVIRTUAL1RC(Dictionary, _get_line_syntax_highlighting, int)
-	VLTRVIRTUAL0(_clear_highlighting_cache)
-	VLTRVIRTUAL0(_update_cache)
 public:
 	Dictionary get_line_syntax_highlighting(int p_line);
 	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) { return Dictionary(); }

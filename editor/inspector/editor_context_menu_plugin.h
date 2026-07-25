@@ -76,8 +76,6 @@ public:
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL1(_popup_menu, Vector<String>);
-
 public:
 	virtual void get_options(const Vector<String> &p_paths);
 

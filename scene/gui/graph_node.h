@@ -124,7 +124,6 @@ protected:
 	virtual void _resort() override;
 
 	virtual void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color &p_color);
-	VLTRVIRTUAL4(_draw_port, int, Point2i, bool, const Color &);
 
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;

@@ -40,14 +40,6 @@ class EditorTranslationParserPlugin : public RefCounted {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL1R(TypedArray<PackedStringArray>, _parse_file, String)
-	VLTRVIRTUAL0RC(Vector<String>, _get_recognized_extensions)
-	VLTRVIRTUAL1RC(TypedArray<PackedStringArray>, _customize_strings, TypedArray<PackedStringArray>)
-
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL3_COMPAT(_parse_file_bind_compat_99297, _parse_file, String, TypedArray<String>, TypedArray<Array>)
-#endif
-
 public:
 	virtual Error parse_file(const String &p_path, Vector<Vector<String>> *r_translations);
 	virtual void get_recognized_extensions(List<String> *r_extensions) const;

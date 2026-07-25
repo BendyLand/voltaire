@@ -59,7 +59,6 @@
 #include "scene/scene_string_names.h"
 
 #ifdef TOOLS_ENABLED
-#include "core/extension/gdextension_manager.h"
 #include "editor/file_system/editor_paths.h"
 #endif
 
@@ -2180,13 +2179,6 @@ void GDScriptLanguage::init() {
 	for (const Engine::Singleton &E : singletons) {
 		_add_global(E.name, E.ptr);
 	}
-
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		GDExtensionManager::get_singleton()->connect("extension_loaded", callable_mp(this, &GDScriptLanguage::_extension_loaded));
-		GDExtensionManager::get_singleton()->connect("extension_unloading", callable_mp(this, &GDScriptLanguage::_extension_unloading));
-	}
-#endif // TOOLS_ENABLED
 
 #ifdef DEBUG_ENABLED
 	GDScriptParser::update_project_settings();

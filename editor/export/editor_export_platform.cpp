@@ -33,7 +33,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/crypto/crypto_core.h"
-#include "core/extension/gdextension.h"
 #include "core/io/delta_encoding.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access_encrypted.h"
@@ -805,15 +804,7 @@ EditorExportPlatform::ExportNotifier::ExportNotifier(EditorExportPlatform &p_pla
 	//initial export plugin callback
 	for (int i = 0; i < export_plugins.size(); i++) {
 		export_plugins.write[i]->set_export_preset(p_preset);
-		if (VLTRVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_begin)) {
-			PackedStringArray features_psa;
-			for (const String &feature : features) {
-				features_psa.push_back(feature);
-			}
-			export_plugins.write[i]->_export_begin_script(features_psa, p_debug, p_path, p_flags);
-		} else {
-			export_plugins.write[i]->_export_begin(features, p_debug, p_path, p_flags);
-		}
+		export_plugins.write[i]->_export_begin(features, p_debug, p_path, p_flags);
 	}
 }
 
@@ -823,11 +814,7 @@ EditorExportPlatform::ExportNotifier::~ExportNotifier() {
 	}
 	Vector<Ref<EditorExportPlugin>> export_plugins = EditorExport::get_singleton()->get_export_plugins();
 	for (int i = 0; i < export_plugins.size(); i++) {
-		if (VLTRVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_end)) {
-			export_plugins.write[i]->_export_end_script();
-		} else {
-			export_plugins.write[i]->_export_end();
-		}
+		export_plugins.write[i]->_export_end();
 		export_plugins.write[i]->_export_end_clear();
 		export_plugins.write[i]->set_export_preset(Ref<EditorExportPreset>());
 	}
@@ -1256,12 +1243,6 @@ Vector<String> EditorExportPlatform::get_forced_export_files(const Ref<EditorExp
 	if (!splash.is_empty() && FileAccess::exists(splash) && icon != splash) {
 		files.push_back(splash);
 	}
-
-	String extension_list_config_file = GDExtension::get_extension_list_config_file();
-	if (FileAccess::exists(extension_list_config_file)) {
-		files.push_back(extension_list_config_file);
-	}
-
 	return files;
 }
 
@@ -1542,11 +1523,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 
 		bool do_export = true;
 		for (int i = 0; i < export_plugins.size(); i++) {
-			if (VLTRVIRTUAL_IS_OVERRIDDEN_PTR(export_plugins[i], _export_file)) {
-				export_plugins.write[i]->_export_file_script(path, type, features_psa);
-			} else {
-				export_plugins.write[i]->_export_file(path, type, features);
-			}
+			export_plugins.write[i]->_export_file(path, type, features);
 			if (p_so_func) {
 				for (int j = 0; j < export_plugins[i]->shared_objects.size(); j++) {
 					err = p_so_func(p_preset, p_udata, export_plugins[i]->shared_objects[j]);
@@ -1804,9 +1781,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 	for (const String &file : forced_export) {
 		Vector<uint8_t> array;
 
-		if (file == GDExtension::get_extension_list_config_file()) {
-			array = filtered_cache.extension_list;
-		} else if (file == ProjectSettings::get_singleton()->get_global_class_list_path()) {
+		if (file == ProjectSettings::get_singleton()->get_global_class_list_path()) {
 			array = filtered_cache.global_class_list;
 		} else {
 			array = FileAccess::get_file_as_bytes(file);
@@ -1868,16 +1843,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 // and UIDs based on excluded resources configured in the export preset.
 EditorExportPlatform::FilteredCache EditorExportPlatform::_get_filtered_cache(const HashSet<String> &p_paths) {
 	FilteredCache result;
-
 	HashSet<String> extension_list_lines;
-	Ref<FileAccess> ext_file = FileAccess::open(GDExtension::get_extension_list_config_file(), FileAccess::READ);
-	if (ext_file.is_valid()) {
-		while (!ext_file->eof_reached()) {
-			String line = ext_file->get_line().strip_edges();
-			extension_list_lines.insert(line);
-		}
-	}
-
 	HashMap<String, Dictionary> class_by_path;
 	Ref<ConfigFile> global_class_cf;
 	global_class_cf.instantiate();
@@ -1890,7 +1856,6 @@ EditorExportPlatform::FilteredCache EditorExportPlatform::_get_filtered_cache(co
 			class_by_path[class_dict["path"]] = class_dict;
 		}
 	}
-
 	Vector<String> extension_lines;
 	Array global_class_list;
 	Vector<Pair<ResourceUID::ID, String>> uid_entries;

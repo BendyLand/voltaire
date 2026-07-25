@@ -137,8 +137,6 @@ protected:
 
 	void _validate_property(PropertyInfo &p_property) const;
 
-	VLTRVIRTUAL1(_integrate_forces, RequiredParam<PhysicsDirectBodyState3D>)
-
 	virtual void _body_state_changed(PhysicsDirectBodyState3D *p_state);
 
 	void _apply_body_mode();

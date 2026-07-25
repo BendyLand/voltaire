@@ -39,8 +39,6 @@ class AudioEffectInstance : public RefCounted {
 	VLTRCLASS(AudioEffectInstance, RefCounted);
 
 protected:
-	VLTRVIRTUAL3_REQUIRED(_process, GDExtensionPtr<const AudioFrame>, GDExtensionPtr<AudioFrame>, int)
-	VLTRVIRTUAL0RC(bool, _process_silence)
 	static void _bind_methods();
 
 public:
@@ -52,7 +50,6 @@ class AudioEffect : public Resource {
 	VLTRCLASS(AudioEffect, Resource);
 
 protected:
-	VLTRVIRTUAL0R_REQUIRED(Ref<AudioEffectInstance>, _instantiate)
 	static void _bind_methods();
 
 public:

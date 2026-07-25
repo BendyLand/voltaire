@@ -121,10 +121,6 @@ protected:
 	virtual real_t _estimate_cost(int64_t p_from_id, int64_t p_end_id);
 	virtual real_t _compute_cost(int64_t p_from_id, int64_t p_to_id);
 
-	VLTRVIRTUAL2RC(bool, _filter_neighbor, int64_t, int64_t)
-	VLTRVIRTUAL2RC(real_t, _estimate_cost, int64_t, int64_t)
-	VLTRVIRTUAL2RC(real_t, _compute_cost, int64_t, int64_t)
-
 #ifndef DISABLE_DEPRECATED
 	Vector<int64_t> _get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id);
 	Vector<Vector3> _get_point_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id);
@@ -176,13 +172,8 @@ class AStar2D : public RefCounted {
 
 protected:
 	static void _bind_methods();
-
 	virtual real_t _estimate_cost(int64_t p_from_id, int64_t p_end_id);
 	virtual real_t _compute_cost(int64_t p_from_id, int64_t p_to_id);
-
-	VLTRVIRTUAL2RC(bool, _filter_neighbor, int64_t, int64_t)
-	VLTRVIRTUAL2RC(real_t, _estimate_cost, int64_t, int64_t)
-	VLTRVIRTUAL2RC(real_t, _compute_cost, int64_t, int64_t)
 
 #ifndef DISABLE_DEPRECATED
 	Vector<int64_t> _get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id);

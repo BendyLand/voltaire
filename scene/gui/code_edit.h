@@ -348,10 +348,6 @@ protected:
 
 	virtual RID get_focused_accessibility_element() const override;
 
-	VLTRVIRTUAL1(_confirm_code_completion, bool)
-	VLTRVIRTUAL1(_request_code_completion, bool)
-	VLTRVIRTUAL1RC(TypedArray<Dictionary>, _filter_code_completion_candidates, TypedArray<Dictionary>)
-
 public:
 	/* General overrides */
 	virtual void gui_input(const Ref<InputEvent> &p_gui_input) override;

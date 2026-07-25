@@ -39,10 +39,6 @@ struct Vector3;
 class PhysicsServer3DRenderingServerHandler : public Object {
 	VLTRCLASS(PhysicsServer3DRenderingServerHandler, Object)
 protected:
-	VLTRVIRTUAL2_REQUIRED(_set_vertex, int, const Vector3 &)
-	VLTRVIRTUAL2_REQUIRED(_set_normal, int, const Vector3 &)
-	VLTRVIRTUAL1_REQUIRED(_set_aabb, const AABB &)
-
 	static void _bind_methods();
 
 public:

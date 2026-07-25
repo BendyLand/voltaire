@@ -589,9 +589,6 @@ public:
 	// --- Runtime ---
 	void update_internals();
 	void notify_runtime_tile_data_update();
-	VLTRVIRTUAL1R(bool, _use_tile_data_runtime_update, Vector2i);
-	VLTRVIRTUAL2(_tile_data_runtime_update, Vector2i, TileData *);
-	VLTRVIRTUAL2(_update_cells, TypedArray<Vector2i>, bool);
 
 	// --- Shortcuts to methods defined in TileSet ---
 	Vector2i map_pattern(const Vector2i &p_position_in_tilemap, const Vector2i &p_coords_in_pattern, Ref<TileMapPattern> p_pattern);
