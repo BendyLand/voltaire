@@ -40,7 +40,7 @@
 #endif
 
 void register_ios_exporter_types() {
-	GDREGISTER_VIRTUAL_CLASS(EditorExportPlatformIOS);
+	VLTR_REGISTER_VIRTUAL_CLASS(EditorExportPlatformIOS);
 }
 
 void register_ios_exporter() {

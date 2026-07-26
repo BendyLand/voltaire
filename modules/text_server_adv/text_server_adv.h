@@ -37,7 +37,6 @@
 
 #include "script_iterator.h"
 
-#include "core/extension/ext_wrappers.gen.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/safe_refcount.h"
@@ -51,6 +50,11 @@
 VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wshadow")
 #if defined(__EMSCRIPTEN__) || (defined(__MINGW32__) && __clang_major__ >= 21)
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wunnecessary-virtual-specifier")
+#endif
+
+#ifdef MODULE_MSDFGEN_ENABLED
+#include "thirdparty/msdfgen/msdfgen.h"
+#include "thirdparty/msdfgen/core/edge-selectors.h"
 #endif
 
 #include <unicode/ubidi.h>
@@ -622,25 +626,6 @@ class TextServerAdvanced : public TextServerExtension {
 			italic = p_italic;
 			weight = p_weight;
 			stretch = p_stretch;
-			antialiasing = p_fb->_font_get_antialiasing(p_font);
-			disable_embedded_bitmaps = p_fb->_font_get_disable_embedded_bitmaps(p_font);
-			mipmaps = p_fb->_font_get_generate_mipmaps(p_font);
-			msdf = p_fb->_font_is_multichannel_signed_distance_field(p_font);
-			msdf_range = p_fb->_font_get_msdf_pixel_range(p_font);
-			msdf_source_size = p_fb->_font_get_msdf_size(p_font);
-			fixed_size = p_fb->_font_get_fixed_size(p_font);
-			force_autohinter = p_fb->_font_is_force_autohinter(p_font);
-			hinting = p_fb->_font_get_hinting(p_font);
-			subpixel_positioning = p_fb->_font_get_subpixel_positioning(p_font);
-			keep_rounding_remainders = p_fb->_font_get_keep_rounding_remainders(p_font);
-			variation_coordinates = p_fb->_font_get_variation_coordinates(p_font);
-			embolden = p_fb->_font_get_embolden(p_font);
-			transform = p_fb->_font_get_transform(p_font);
-			extra_spacing[SPACING_TOP] = p_fb->_font_get_spacing(p_font, SPACING_TOP);
-			extra_spacing[SPACING_BOTTOM] = p_fb->_font_get_spacing(p_font, SPACING_BOTTOM);
-			extra_spacing[SPACING_SPACE] = p_fb->_font_get_spacing(p_font, SPACING_SPACE);
-			extra_spacing[SPACING_GLYPH] = p_fb->_font_get_spacing(p_font, SPACING_GLYPH);
-			baseline_offset = p_fb->_font_get_baseline_offset(p_font);
 		}
 	};
 
@@ -726,13 +711,6 @@ class TextServerAdvanced : public TextServerExtension {
 			return font_count;
 		}
 
-		_FORCE_INLINE_ int _get_priority(const RID &p_font) {
-			if (color && text_server->_font_is_color(p_font)) {
-				return 0;
-			}
-			return text_server->_font_is_script_supported(p_font, script_code) ? (text_server->_font_is_language_supported(p_font, language) ? 0 : 1) : 2;
-		}
-
 		RID operator[](uint32_t p_index) {
 			if (p_index < fonts.size()) {
 				return fonts[p_index];
@@ -745,7 +723,7 @@ class TextServerAdvanced : public TextServerExtension {
 				const RID &font = unprocessed_fonts[current_index].first;
 				int &priority = unprocessed_fonts[current_index].second;
 				if (priority < 0) {
-					priority = _get_priority(font);
+					priority = 0;
 				}
 				if (priority == current_priority) {
 					unprocessed_fonts[current_index].second = PRIORITY_SKIP;
@@ -815,328 +793,282 @@ protected:
 	void invalidate(ShapedTextDataAdvanced *p_shaped, bool p_text = false);
 
 public:
-	MODBIND1RC(bool, has_feature, Feature);
-	MODBIND0RC(String, get_name);
-	MODBIND0RC(String, get_short_name);
-	MODBIND0RC(int64_t, get_features);
-
-	MODBIND1(free_rid, const RID &);
-	MODBIND1R(bool, has, const RID &);
-	MODBIND1R(bool, load_support_data, const String &);
-
-	MODBIND0RC(String, get_support_data_filename);
-	MODBIND0RC(String, get_support_data_info);
-	MODBIND1RC(bool, save_support_data, const String &);
-	MODBIND0RC(PackedByteArray, get_support_data);
-	MODBIND1RC(bool, is_locale_using_support_data, const String &);
-
-	MODBIND1RC(bool, is_locale_right_to_left, const String &);
-
-	MODBIND1RC(int64_t, name_to_tag, const String &);
-	MODBIND1RC(String, tag_to_name, int64_t);
-
-	/* Font interface */
-
-	MODBIND0R(RID, create_font);
-	MODBIND1R(RID, create_font_linked_variation, const RID &);
-
-	MODBIND2(font_set_data, const RID &, const PackedByteArray &);
-	MODBIND3(font_set_data_ptr, const RID &, const uint8_t *, int64_t);
-
-	MODBIND2(font_set_face_index, const RID &, int64_t);
-	MODBIND1RC(int64_t, font_get_face_index, const RID &);
-
-	MODBIND1RC(int64_t, font_get_face_count, const RID &);
-
-	MODBIND2(font_set_style, const RID &, BitField<FontStyle>);
-	MODBIND1RC(BitField<FontStyle>, font_get_style, const RID &);
-
-	MODBIND2(font_set_style_name, const RID &, const String &);
-	MODBIND1RC(String, font_get_style_name, const RID &);
-
-	MODBIND2(font_set_weight, const RID &, int64_t);
-	MODBIND1RC(int64_t, font_get_weight, const RID &);
-
-	MODBIND2(font_set_stretch, const RID &, int64_t);
-	MODBIND1RC(int64_t, font_get_stretch, const RID &);
-
-	MODBIND2(font_set_name, const RID &, const String &);
-	MODBIND1RC(String, font_get_name, const RID &);
-	MODBIND1RC(Dictionary, font_get_ot_name_strings, const RID &);
-
-	MODBIND2(font_set_antialiasing, const RID &, TextServer::FontAntialiasing);
-	MODBIND1RC(TextServer::FontAntialiasing, font_get_antialiasing, const RID &);
-
-	MODBIND2(font_set_disable_embedded_bitmaps, const RID &, bool);
-	MODBIND1RC(bool, font_get_disable_embedded_bitmaps, const RID &);
-
-	MODBIND2(font_set_generate_mipmaps, const RID &, bool);
-	MODBIND1RC(bool, font_get_generate_mipmaps, const RID &);
-
-	MODBIND2(font_set_multichannel_signed_distance_field, const RID &, bool);
-	MODBIND1RC(bool, font_is_multichannel_signed_distance_field, const RID &);
-
-	MODBIND2(font_set_msdf_pixel_range, const RID &, int64_t);
-	MODBIND1RC(int64_t, font_get_msdf_pixel_range, const RID &);
-
-	MODBIND2(font_set_msdf_size, const RID &, int64_t);
-	MODBIND1RC(int64_t, font_get_msdf_size, const RID &);
-
-	MODBIND2(font_set_fixed_size, const RID &, int64_t);
-	MODBIND1RC(int64_t, font_get_fixed_size, const RID &);
-
-	MODBIND2(font_set_fixed_size_scale_mode, const RID &, FixedSizeScaleMode);
-	MODBIND1RC(FixedSizeScaleMode, font_get_fixed_size_scale_mode, const RID &);
-
-	MODBIND2(font_set_allow_system_fallback, const RID &, bool);
-	MODBIND1RC(bool, font_is_allow_system_fallback, const RID &);
-	MODBIND0(font_clear_system_fallback_cache);
-
-	MODBIND2(font_set_force_autohinter, const RID &, bool);
-	MODBIND1RC(bool, font_is_force_autohinter, const RID &);
-
-	MODBIND2(font_set_modulate_color_glyphs, const RID &, bool);
-	MODBIND1RC(bool, font_is_modulate_color_glyphs, const RID &);
-
-	MODBIND1RC(int64_t, font_get_palette_count, const RID &);
-	MODBIND2RC(String, font_get_palette_name, const RID &, int64_t);
-	MODBIND2RC(Vector<Color>, font_get_palette_colors, const RID &, int64_t);
-	MODBIND2(font_set_palette_custom_colors, const RID &, const Vector<Color> &);
-	MODBIND1RC(Vector<Color>, font_get_palette_custom_colors, const RID &);
-	MODBIND1RC(int64_t, font_get_used_palette, const RID &);
-	MODBIND2(font_set_used_palette, const RID &, int64_t);
-
-	MODBIND2(font_set_subpixel_positioning, const RID &, SubpixelPositioning);
-	MODBIND1RC(SubpixelPositioning, font_get_subpixel_positioning, const RID &);
-
-	MODBIND2(font_set_keep_rounding_remainders, const RID &, bool);
-	MODBIND1RC(bool, font_get_keep_rounding_remainders, const RID &);
-
-	MODBIND2(font_set_embolden, const RID &, double);
-	MODBIND1RC(double, font_get_embolden, const RID &);
-
-	MODBIND3(font_set_spacing, const RID &, SpacingType, int64_t);
-	MODBIND2RC(int64_t, font_get_spacing, const RID &, SpacingType);
-
-	MODBIND2(font_set_baseline_offset, const RID &, double);
-	MODBIND1RC(double, font_get_baseline_offset, const RID &);
-
-	MODBIND2(font_set_transform, const RID &, const Transform2D &);
-	MODBIND1RC(Transform2D, font_get_transform, const RID &);
-
-	MODBIND2(font_set_variation_coordinates, const RID &, const Dictionary &);
-	MODBIND1RC(Dictionary, font_get_variation_coordinates, const RID &);
-
-	MODBIND2(font_set_oversampling, const RID &, double);
-	MODBIND1RC(double, font_get_oversampling, const RID &);
-
-	MODBIND2(font_set_hinting, const RID &, TextServer::Hinting);
-	MODBIND1RC(TextServer::Hinting, font_get_hinting, const RID &);
-
-	MODBIND1RC(TypedArray<Vector2i>, font_get_size_cache_list, const RID &);
-	MODBIND1(font_clear_size_cache, const RID &);
-	MODBIND2(font_remove_size_cache, const RID &, const Vector2i &);
-	MODBIND1RC(TypedArray<Dictionary>, font_get_size_cache_info, const RID &);
-
-	MODBIND3(font_set_ascent, const RID &, int64_t, double);
-	MODBIND2RC(double, font_get_ascent, const RID &, int64_t);
-
-	MODBIND3(font_set_descent, const RID &, int64_t, double);
-	MODBIND2RC(double, font_get_descent, const RID &, int64_t);
-
-	MODBIND3(font_set_underline_position, const RID &, int64_t, double);
-	MODBIND2RC(double, font_get_underline_position, const RID &, int64_t);
-
-	MODBIND3(font_set_underline_thickness, const RID &, int64_t, double);
-	MODBIND2RC(double, font_get_underline_thickness, const RID &, int64_t);
-
-	MODBIND3(font_set_scale, const RID &, int64_t, double);
-	MODBIND2RC(double, font_get_scale, const RID &, int64_t);
-
-	MODBIND2RC(int64_t, font_get_texture_count, const RID &, const Vector2i &);
-	MODBIND2(font_clear_textures, const RID &, const Vector2i &);
-	MODBIND3(font_remove_texture, const RID &, const Vector2i &, int64_t);
-
-	MODBIND4(font_set_texture_image, const RID &, const Vector2i &, int64_t, const Ref<Image> &);
-	MODBIND3RC(Ref<Image>, font_get_texture_image, const RID &, const Vector2i &, int64_t);
-
-	MODBIND4(font_set_texture_offsets, const RID &, const Vector2i &, int64_t, const PackedInt32Array &);
-	MODBIND3RC(PackedInt32Array, font_get_texture_offsets, const RID &, const Vector2i &, int64_t);
-
-	MODBIND2RC(PackedInt32Array, font_get_glyph_list, const RID &, const Vector2i &);
-	MODBIND2(font_clear_glyphs, const RID &, const Vector2i &);
-	MODBIND3(font_remove_glyph, const RID &, const Vector2i &, int64_t);
-
-	MODBIND3RC(Vector2, font_get_glyph_advance, const RID &, int64_t, int64_t);
-	MODBIND4(font_set_glyph_advance, const RID &, int64_t, int64_t, const Vector2 &);
-
-	MODBIND3RC(Vector2, font_get_glyph_offset, const RID &, const Vector2i &, int64_t);
-	MODBIND4(font_set_glyph_offset, const RID &, const Vector2i &, int64_t, const Vector2 &);
-
-	MODBIND3RC(Vector2, font_get_glyph_size, const RID &, const Vector2i &, int64_t);
-	MODBIND4(font_set_glyph_size, const RID &, const Vector2i &, int64_t, const Vector2 &);
-
-	MODBIND3RC(Rect2, font_get_glyph_uv_rect, const RID &, const Vector2i &, int64_t);
-	MODBIND4(font_set_glyph_uv_rect, const RID &, const Vector2i &, int64_t, const Rect2 &);
-
-	MODBIND3RC(int64_t, font_get_glyph_texture_idx, const RID &, const Vector2i &, int64_t);
-	MODBIND4(font_set_glyph_texture_idx, const RID &, const Vector2i &, int64_t, int64_t);
-
-	MODBIND3RC(RID, font_get_glyph_texture_rid, const RID &, const Vector2i &, int64_t);
-	MODBIND3RC(Size2, font_get_glyph_texture_size, const RID &, const Vector2i &, int64_t);
-
-	MODBIND3RC(Dictionary, font_get_glyph_contours, const RID &, int64_t, int64_t);
-
-	MODBIND2RC(TypedArray<Vector2i>, font_get_kerning_list, const RID &, int64_t);
-	MODBIND2(font_clear_kerning_map, const RID &, int64_t);
-	MODBIND3(font_remove_kerning, const RID &, int64_t, const Vector2i &);
-
-	MODBIND4(font_set_kerning, const RID &, int64_t, const Vector2i &, const Vector2 &);
-	MODBIND3RC(Vector2, font_get_kerning, const RID &, int64_t, const Vector2i &);
-
-	MODBIND4RC(int64_t, font_get_glyph_index, const RID &, int64_t, int64_t, int64_t);
-	MODBIND3RC(int64_t, font_get_char_from_glyph_index, const RID &, int64_t, int64_t);
-
-	MODBIND2RC(bool, font_has_char, const RID &, int64_t);
-	MODBIND1RC(String, font_get_supported_chars, const RID &);
-	MODBIND1RC(PackedInt32Array, font_get_supported_glyphs, const RID &);
-
-	MODBIND4(font_render_range, const RID &, const Vector2i &, int64_t, int64_t);
-	MODBIND3(font_render_glyph, const RID &, const Vector2i &, int64_t);
-
-	MODBIND7C(font_draw_glyph, const RID &, const RID &, int64_t, const Vector2 &, int64_t, const Color &, float);
-	MODBIND8C(font_draw_glyph_outline, const RID &, const RID &, int64_t, int64_t, const Vector2 &, int64_t, const Color &, float);
-
-	MODBIND2RC(bool, font_is_language_supported, const RID &, const String &);
-	MODBIND3(font_set_language_support_override, const RID &, const String &, bool);
-	MODBIND2R(bool, font_get_language_support_override, const RID &, const String &);
-	MODBIND2(font_remove_language_support_override, const RID &, const String &);
-	MODBIND1R(PackedStringArray, font_get_language_support_overrides, const RID &);
-
-	MODBIND2RC(bool, font_is_script_supported, const RID &, const String &);
-	MODBIND3(font_set_script_support_override, const RID &, const String &, bool);
-	MODBIND2R(bool, font_get_script_support_override, const RID &, const String &);
-	MODBIND2(font_remove_script_support_override, const RID &, const String &);
-	MODBIND1R(PackedStringArray, font_get_script_support_overrides, const RID &);
-
-	MODBIND2(font_set_opentype_feature_overrides, const RID &, const Dictionary &);
-	MODBIND1RC(Dictionary, font_get_opentype_feature_overrides, const RID &);
-
-	MODBIND1RC(Dictionary, font_supported_feature_list, const RID &);
-	MODBIND1RC(Dictionary, font_supported_variation_list, const RID &);
-
-	MODBIND1(reference_oversampling_level, double);
-	MODBIND1(unreference_oversampling_level, double);
-
-	/* Shaped text buffer interface */
-
-	MODBIND2R(RID, create_shaped_text, Direction, Orientation);
-
-	MODBIND1(shaped_text_clear, const RID &);
-	MODBIND1R(RID, shaped_text_duplicate, const RID &);
-
-	MODBIND2(shaped_text_set_direction, const RID &, Direction);
-	MODBIND1RC(Direction, shaped_text_get_direction, const RID &);
-	MODBIND1RC(Direction, shaped_text_get_inferred_direction, const RID &);
-
-	MODBIND2(shaped_text_set_bidi_override, const RID &, const Array &);
-
-	MODBIND2(shaped_text_set_custom_punctuation, const RID &, const String &);
-	MODBIND1RC(String, shaped_text_get_custom_punctuation, const RID &);
-
-	MODBIND2(shaped_text_set_custom_ellipsis, const RID &, int64_t);
-	MODBIND1RC(int64_t, shaped_text_get_custom_ellipsis, const RID &);
-
-	MODBIND2(shaped_text_set_orientation, const RID &, Orientation);
-	MODBIND1RC(Orientation, shaped_text_get_orientation, const RID &);
-
-	MODBIND2(shaped_text_set_preserve_invalid, const RID &, bool);
-	MODBIND1RC(bool, shaped_text_get_preserve_invalid, const RID &);
-
-	MODBIND2(shaped_text_set_preserve_control, const RID &, bool);
-	MODBIND1RC(bool, shaped_text_get_preserve_control, const RID &);
-
-	MODBIND3(shaped_text_set_spacing, const RID &, SpacingType, int64_t);
-	MODBIND2RC(int64_t, shaped_text_get_spacing, const RID &, SpacingType);
-
-	MODBIND7R(bool, shaped_text_add_string, const RID &, const String &, const TypedArray<RID> &, int64_t, const Dictionary &, const String &, const Variant &);
-	MODBIND6R(bool, shaped_text_add_object, const RID &, const Variant &, const Size2 &, InlineAlignment, int64_t, double);
-	MODBIND5R(bool, shaped_text_resize_object, const RID &, const Variant &, const Size2 &, InlineAlignment, double);
-	MODBIND2RC(bool, shaped_text_has_object, const RID &, const Variant &);
-	MODBIND1RC(String, shaped_get_text, const RID &);
-
-	MODBIND1RC(int64_t, shaped_get_span_count, const RID &);
-	MODBIND2RC(Variant, shaped_get_span_meta, const RID &, int64_t);
-	MODBIND2RC(Variant, shaped_get_span_embedded_object, const RID &, int64_t);
-	MODBIND2RC(String, shaped_get_span_text, const RID &, int64_t);
-	MODBIND2RC(Variant, shaped_get_span_object, const RID &, int64_t);
-	MODBIND5(shaped_set_span_update_font, const RID &, int64_t, const TypedArray<RID> &, int64_t, const Dictionary &);
-
-	MODBIND1RC(int64_t, shaped_get_run_count, const RID &);
-	MODBIND2RC(String, shaped_get_run_text, const RID &, int64_t);
-	MODBIND2RC(Vector2i, shaped_get_run_range, const RID &, int64_t);
-	MODBIND2RC(Vector2i, shaped_get_run_glyph_range, const RID &, int64_t);
-	MODBIND2RC(RID, shaped_get_run_font_rid, const RID &, int64_t);
-	MODBIND2RC(int, shaped_get_run_font_size, const RID &, int64_t);
-	MODBIND2RC(String, shaped_get_run_language, const RID &, int64_t);
-	MODBIND2RC(Direction, shaped_get_run_direction, const RID &, int64_t);
-	MODBIND2RC(Variant, shaped_get_run_object, const RID &, int64_t);
-
-	MODBIND3RC(RID, shaped_text_substr, const RID &, int64_t, int64_t);
-	MODBIND1RC(RID, shaped_text_get_parent, const RID &);
-
-	MODBIND3R(double, shaped_text_fit_to_width, const RID &, double, BitField<TextServer::JustificationFlag>);
-	MODBIND2R(double, shaped_text_tab_align, const RID &, const PackedFloat32Array &);
-
-	MODBIND1R(bool, shaped_text_shape, const RID &);
-	MODBIND1R(bool, shaped_text_update_breaks, const RID &);
-	MODBIND1R(bool, shaped_text_update_justification_ops, const RID &);
-
-	MODBIND1RC(int64_t, shaped_text_get_trim_pos, const RID &);
-	MODBIND1RC(int64_t, shaped_text_get_ellipsis_pos, const RID &);
-	MODBIND1RC(const Glyph *, shaped_text_get_ellipsis_glyphs, const RID &);
-	MODBIND1RC(int64_t, shaped_text_get_ellipsis_glyph_count, const RID &);
-
-	MODBIND3(shaped_text_overrun_trim_to_width, const RID &, double, BitField<TextServer::TextOverrunFlag>);
-
-	MODBIND1RC(bool, shaped_text_is_ready, const RID &);
-
-	MODBIND1RC(const Glyph *, shaped_text_get_glyphs, const RID &);
-	MODBIND1R(const Glyph *, shaped_text_sort_logical, const RID &);
-	MODBIND1RC(int64_t, shaped_text_get_glyph_count, const RID &);
-
-	MODBIND1RC(Vector2i, shaped_text_get_range, const RID &);
-
-	MODBIND1RC(Array, shaped_text_get_objects, const RID &);
-	MODBIND2RC(Rect2, shaped_text_get_object_rect, const RID &, const Variant &);
-	MODBIND2RC(Vector2i, shaped_text_get_object_range, const RID &, const Variant &);
-	MODBIND2RC(int64_t, shaped_text_get_object_glyph, const RID &, const Variant &);
-
-	MODBIND1RC(Size2, shaped_text_get_size, const RID &);
-	MODBIND1RC(double, shaped_text_get_ascent, const RID &);
-	MODBIND1RC(double, shaped_text_get_descent, const RID &);
-	MODBIND1RC(double, shaped_text_get_width, const RID &);
-	MODBIND1RC(double, shaped_text_get_underline_position, const RID &);
-	MODBIND1RC(double, shaped_text_get_underline_thickness, const RID &);
-
-	MODBIND1RC(PackedInt32Array, shaped_text_get_character_breaks, const RID &);
-
-	MODBIND3RC(PackedInt32Array, string_get_word_breaks, const String &, const String &, int64_t);
-	MODBIND2RC(PackedInt32Array, string_get_character_breaks, const String &, const String &);
-
-	MODBIND2RC(int64_t, is_confusable, const String &, const PackedStringArray &);
-	MODBIND1RC(bool, spoof_check, const String &);
-
-	MODBIND1RC(String, strip_diacritics, const String &);
-	MODBIND1RC(bool, is_valid_identifier, const String &);
-	MODBIND1RC(bool, is_valid_letter, uint64_t);
-
-	MODBIND2RC(String, string_to_upper, const String &, const String &);
-	MODBIND2RC(String, string_to_lower, const String &, const String &);
-	MODBIND2RC(String, string_to_title, const String &, const String &);
-
-	MODBIND0(cleanup);
-
 	TextServerAdvanced();
+	bool _has_feature(Feature p_feature) const;
+	String _get_name() const;
+	String _get_short_name() const;
+
+	int64_t _get_features() const;
+	void _free_rid(const RID &p_rid);
+	bool _has(const RID &p_rid);
+
+bool _load_support_data(const String &p_filename);
+String _get_support_data_filename() const;
+String _get_support_data_info() const;
+bool _save_support_data(const String &p_filename) const;
+PackedByteArray _get_support_data() const;
+bool _is_locale_using_support_data(const String &p_locale) const;
+bool _is_locale_right_to_left(const String &p_locale) const;
+int64_t _name_to_tag(const String &p_name) const;
+String _tag_to_name(int64_t p_tag) const;
+
+/*************************************************************************/
+/* Font Glyph Rendering                                                  */
+/*************************************************************************/
+
+
+#ifdef MODULE_MSDFGEN_ENABLED
+
+struct MSContext {
+	msdfgen::Point2 position;
+	msdfgen::Shape *shape = nullptr;
+	msdfgen::Contour *contour = nullptr;
+};
+
+class DistancePixelConversion {
+	double invRange;
+
+public:
+	_FORCE_INLINE_ explicit DistancePixelConversion(double range) :
+			invRange(1 / range) {}
+	_FORCE_INLINE_ void operator()(float *pixels, const msdfgen::MultiAndTrueDistance &distance) const {
+		pixels[0] = float(invRange * distance.r + .5);
+		pixels[1] = float(invRange * distance.g + .5);
+		pixels[2] = float(invRange * distance.b + .5);
+		pixels[3] = float(invRange * distance.a + .5);
+	}
+};
+
+struct MSDFThreadData {
+	msdfgen::Bitmap<float, 4> *output;
+	msdfgen::Shape *shape;
+	msdfgen::Projection *projection;
+	DistancePixelConversion *distancePixelConversion;
+};
+
+static msdfgen::Point2 ft_point2(const FT_Vector &vector);
+static int ft_move_to(const FT_Vector *to, void *user);
+static int ft_line_to(const FT_Vector *to, void *user);
+static int ft_conic_to(const FT_Vector *control, const FT_Vector *to, void *user);
+static int ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to, void *user);
+
+#endif
+
+/*************************************************************************/
+/* Font Cache                                                            */
+/*************************************************************************/
+
+	void _reference_oversampling_level(double p_oversampling);
+	void _unreference_oversampling_level(double p_oversampling);
+	RID _create_font();
+	RID _create_font_linked_variation(const RID &p_font_rid);
+	void _font_set_data(const RID &p_font_rid, const PackedByteArray &p_data);
+	void _font_set_data_ptr(const RID &p_font_rid, const uint8_t *p_data_ptr, int64_t p_data_size);
+	void _font_set_face_index(const RID &p_font_rid, int64_t p_face_index);
+	int64_t _font_get_face_index(const RID &p_font_rid) const;
+	int64_t _font_get_face_count(const RID &p_font_rid) const;
+	void _font_set_style(const RID &p_font_rid, BitField<FontStyle> p_style);
+	BitField<TextServer::FontStyle> _font_get_style(const RID &p_font_rid) const;
+	void _font_set_style_name(const RID &p_font_rid, const String &p_name);
+	String _font_get_style_name(const RID &p_font_rid) const;
+	void _font_set_weight(const RID &p_font_rid, int64_t p_weight);
+	int64_t _font_get_weight(const RID &p_font_rid) const;
+	void _font_set_stretch(const RID &p_font_rid, int64_t p_stretch);
+	int64_t _font_get_stretch(const RID &p_font_rid) const;
+	void _font_set_name(const RID &p_font_rid, const String &p_name);
+	Dictionary _font_get_ot_name_strings(const RID &p_font_rid) const;
+	void _font_set_antialiasing(const RID &p_font_rid, TextServer::FontAntialiasing p_antialiasing);
+	TextServer::FontAntialiasing _font_get_antialiasing(const RID &p_font_rid) const;
+	void _font_set_disable_embedded_bitmaps(const RID &p_font_rid, bool p_disable_embedded_bitmaps);
+	bool _font_get_disable_embedded_bitmaps(const RID &p_font_rid) const;
+	void _font_set_generate_mipmaps(const RID &p_font_rid, bool p_generate_mipmaps);
+	bool _font_get_generate_mipmaps(const RID &p_font_rid) const;
+	void _font_set_multichannel_signed_distance_field(const RID &p_font_rid, bool p_msdf);
+	bool _font_is_multichannel_signed_distance_field(const RID &p_font_rid) const;
+	void _font_set_msdf_pixel_range(const RID &p_font_rid, int64_t p_msdf_pixel_range);
+	int64_t _font_get_msdf_pixel_range(const RID &p_font_rid) const;
+	void _font_set_msdf_size(const RID &p_font_rid, int64_t p_msdf_size);
+	int64_t _font_get_msdf_size(const RID &p_font_rid) const;
+	void _font_set_fixed_size(const RID &p_font_rid, int64_t p_fixed_size);
+	int64_t _font_get_fixed_size(const RID &p_font_rid) const;
+	void _font_set_fixed_size_scale_mode(const RID &p_font_rid, TextServer::FixedSizeScaleMode p_fixed_size_scale_mode);
+	TextServer::FixedSizeScaleMode _font_get_fixed_size_scale_mode(const RID &p_font_rid) const;
+	void _font_set_allow_system_fallback(const RID &p_font_rid, bool p_allow_system_fallback);
+	bool _font_is_allow_system_fallback(const RID &p_font_rid) const;
+	void _font_set_force_autohinter(const RID &p_font_rid, bool p_force_autohinter);
+	bool _font_is_force_autohinter(const RID &p_font_rid) const;
+	void _font_set_modulate_color_glyphs(const RID &p_font_rid, bool p_modulate);
+	bool _font_is_modulate_color_glyphs(const RID &p_font_rid) const;
+	int64_t _font_get_palette_count(const RID &p_font_rid) const;
+	String _font_get_palette_name(const RID &p_font_rid, int64_t p_index) const;
+	Vector<Color> _font_get_palette_colors(const RID &p_font_rid, int64_t p_index) const;
+	void _font_set_palette_custom_colors(const RID &p_font_rid, const Vector<Color> &p_colors);
+	Vector<Color> _font_get_palette_custom_colors(const RID &p_font_rid) const;
+	int64_t _font_get_used_palette(const RID &p_font_rid) const;
+	void _font_set_used_palette(const RID &p_font_rid, int64_t p_index);
+	void _font_set_hinting(const RID &p_font_rid, TextServer::Hinting p_hinting);
+	TextServer::Hinting _font_get_hinting(const RID &p_font_rid) const;
+	void _font_set_subpixel_positioning(const RID &p_font_rid, TextServer::SubpixelPositioning p_subpixel);
+	TextServer::SubpixelPositioning _font_get_subpixel_positioning(const RID &p_font_rid) const;
+	void _font_set_keep_rounding_remainders(const RID &p_font_rid, bool p_keep_rounding_remainders);
+	bool _font_get_keep_rounding_remainders(const RID &p_font_rid) const;
+	void _font_set_embolden(const RID &p_font_rid, double p_strength);
+	double _font_get_embolden(const RID &p_font_rid) const;
+	void _font_set_spacing(const RID &p_font_rid, SpacingType p_spacing, int64_t p_value);
+	int64_t _font_get_spacing(const RID &p_font_rid, SpacingType p_spacing) const;
+	void _font_set_baseline_offset(const RID &p_font_rid, double p_baseline_offset);
+	double _font_get_baseline_offset(const RID &p_font_rid) const;
+	void _font_set_transform(const RID &p_font_rid, const Transform2D &p_transform);
+	Transform2D _font_get_transform(const RID &p_font_rid) const;
+	void _font_set_variation_coordinates(const RID &p_font_rid, const Dictionary &p_variation_coordinates);
+	double _font_get_oversampling(const RID &p_font_rid) const;
+	void _font_set_oversampling(const RID &p_font_rid, double p_oversampling);
+	Dictionary _font_get_variation_coordinates(const RID &p_font_rid) const;
+	TypedArray<Vector2i> _font_get_size_cache_list(const RID &p_font_rid) const;
+	TypedArray<Dictionary> _font_get_size_cache_info(const RID &p_font_rid) const;
+	void _font_clear_size_cache(const RID &p_font_rid);
+	void _font_remove_size_cache(const RID &p_font_rid, const Vector2i &p_size);
+	void _font_set_ascent(const RID &p_font_rid, int64_t p_size, double p_ascent);
+	double _font_get_ascent(const RID &p_font_rid, int64_t p_size) const;
+	void _font_set_descent(const RID &p_font_rid, int64_t p_size, double p_descent);
+	double _font_get_descent(const RID &p_font_rid, int64_t p_size) const;
+	void _font_set_underline_position(const RID &p_font_rid, int64_t p_size, double p_underline_position);
+	double _font_get_underline_position(const RID &p_font_rid, int64_t p_size) const;
+	void _font_set_underline_thickness(const RID &p_font_rid, int64_t p_size, double p_underline_thickness);
+	double _font_get_underline_thickness(const RID &p_font_rid, int64_t p_size) const;
+	void _font_set_scale(const RID &p_font_rid, int64_t p_size, double p_scale);
+	double _font_get_scale(const RID &p_font_rid, int64_t p_size) const;
+	int64_t _font_get_texture_count(const RID &p_font_rid, const Vector2i &p_size) const;
+	void _font_clear_textures(const RID &p_font_rid, const Vector2i &p_size);
+	void _font_remove_texture(const RID &p_font_rid, const Vector2i &p_size, int64_t p_texture_index);
+	void _font_set_texture_image(const RID &p_font_rid, const Vector2i &p_size, int64_t p_texture_index, const Ref<Image> &p_image);
+	Ref<Image> _font_get_texture_image(const RID &p_font_rid, const Vector2i &p_size, int64_t p_texture_index) const;
+	void _font_set_texture_offsets(const RID &p_font_rid, const Vector2i &p_size, int64_t p_texture_index, const PackedInt32Array &p_offsets);
+	PackedInt32Array _font_get_texture_offsets(const RID &p_font_rid, const Vector2i &p_size, int64_t p_texture_index) const;
+	PackedInt32Array _font_get_glyph_list(const RID &p_font_rid, const Vector2i &p_size) const;
+	void _font_clear_glyphs(const RID &p_font_rid, const Vector2i &p_size);
+	void _font_remove_glyph(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph);
+	Vector2 _font_get_glyph_advance(const RID &p_font_rid, int64_t p_size, int64_t p_glyph) const;
+	void _font_set_glyph_advance(const RID &p_font_rid, int64_t p_size, int64_t p_glyph, const Vector2 &p_advance);
+	Vector2 _font_get_glyph_offset(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph) const;
+	void _font_set_glyph_offset(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph, const Vector2 &p_offset);
+	Vector2 _font_get_glyph_size(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph) const;
+	void _font_set_glyph_size(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph, const Vector2 &p_gl_size);
+	Rect2 _font_get_glyph_uv_rect(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph) const;
+	void _font_set_glyph_uv_rect(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph, const Rect2 &p_uv_rect);
+	int64_t _font_get_glyph_texture_idx(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph) const;
+	void _font_set_glyph_texture_idx(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph, int64_t p_texture_idx);
+	RID _font_get_glyph_texture_rid(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph) const;
+	Size2 _font_get_glyph_texture_size(const RID &p_font_rid, const Vector2i &p_size, int64_t p_glyph) const;
+	Dictionary _font_get_glyph_contours(const RID &p_font_rid, int64_t p_size, int64_t p_index) const;
+	TypedArray<Vector2i> _font_get_kerning_list(const RID &p_font_rid, int64_t p_size) const;
+	void _font_clear_kerning_map(const RID &p_font_rid, int64_t p_size);
+	void _font_remove_kerning(const RID &p_font_rid, int64_t p_size, const Vector2i &p_glyph_pair);
+	void _font_set_kerning(const RID &p_font_rid, int64_t p_size, const Vector2i &p_glyph_pair, const Vector2 &p_kerning);
+	Vector2 _font_get_kerning(const RID &p_font_rid, int64_t p_size, const Vector2i &p_glyph_pair) const;
+	int64_t _font_get_glyph_index(const RID &p_font_rid, int64_t p_size, int64_t p_char, int64_t p_variation_selector) const;
+	int64_t _font_get_char_from_glyph_index(const RID &p_font_rid, int64_t p_size, int64_t p_glyph_index) const;
+	bool _font_has_char(const RID &p_font_rid, int64_t p_char) const;
+	String _font_get_supported_chars(const RID &p_font_rid) const;
+	PackedInt32Array _font_get_supported_glyphs(const RID &p_font_rid) const;
+	void _font_render_range(const RID &p_font_rid, const Vector2i &p_size, int64_t p_start, int64_t p_end);
+	void _font_render_glyph(const RID &p_font_rid, const Vector2i &p_size, int64_t p_index);
+	void _font_draw_glyph(const RID &p_font_rid, const RID &p_canvas, int64_t p_size, const Vector2 &p_pos, int64_t p_index, const Color &p_color, float p_oversampling) const;
+	void _font_draw_glyph_outline(const RID &p_font_rid, const RID &p_canvas, int64_t p_size, int64_t p_outline_size, const Vector2 &p_pos, int64_t p_index, const Color &p_color, float p_oversampling) const;
+	bool _font_is_language_supported(const RID &p_font_rid, const String &p_language) const;
+	void _font_set_language_support_override(const RID &p_font_rid, const String &p_language, bool p_supported);
+	bool _font_get_language_support_override(const RID &p_font_rid, const String &p_language);
+	void _font_remove_language_support_override(const RID &p_font_rid, const String &p_language);
+	PackedStringArray _font_get_language_support_overrides(const RID &p_font_rid);
+	bool _font_is_script_supported(const RID &p_font_rid, const String &p_script) const;
+	void _font_set_script_support_override(const RID &p_font_rid, const String &p_script, bool p_supported);
+	bool _font_get_script_support_override(const RID &p_font_rid, const String &p_script);
+	void _font_remove_script_support_override(const RID &p_font_rid, const String &p_script);
+	PackedStringArray _font_get_script_support_overrides(const RID &p_font_rid);
+	void _font_set_opentype_feature_overrides(const RID &p_font_rid, const Dictionary &p_overrides);
+	Dictionary _font_get_opentype_feature_overrides(const RID &p_font_rid) const;
+	Dictionary _font_supported_feature_list(const RID &p_font_rid) const;
+	Dictionary _font_supported_variation_list(const RID &p_font_rid) const;
+	RID _create_shaped_text(TextServer::Direction p_direction, TextServer::Orientation p_orientation);
+	void _shaped_text_clear(const RID &p_shaped);
+	RID _shaped_text_duplicate(const RID &p_shaped);
+	void _shaped_text_set_direction(const RID &p_shaped, TextServer::Direction p_direction);
+	TextServer::Direction _shaped_text_get_direction(const RID &p_shaped) const;
+	TextServer::Direction _shaped_text_get_inferred_direction(const RID &p_shaped) const;
+	void _shaped_text_set_custom_punctuation(const RID &p_shaped, const String &p_punct);
+	String _shaped_text_get_custom_punctuation(const RID &p_shaped) const;
+	void _shaped_text_set_custom_ellipsis(const RID &p_shaped, int64_t p_char);
+	int64_t _shaped_text_get_custom_ellipsis(const RID &p_shaped) const;
+	void _shaped_text_set_bidi_override(const RID &p_shaped, const Array &p_override);
+	void _shaped_text_set_orientation(const RID &p_shaped, TextServer::Orientation p_orientation);
+	void _shaped_text_set_preserve_invalid(const RID &p_shaped, bool p_enabled);
+	bool _shaped_text_get_preserve_invalid(const RID &p_shaped) const;
+	void _shaped_text_set_preserve_control(const RID &p_shaped, bool p_enabled);
+	bool _shaped_text_get_preserve_control(const RID &p_shaped) const;
+	void _shaped_text_set_spacing(const RID &p_shaped, SpacingType p_spacing, int64_t p_value);
+	int64_t _shaped_text_get_spacing(const RID &p_shaped, SpacingType p_spacing) const;
+	TextServer::Orientation _shaped_text_get_orientation(const RID &p_shaped) const;
+	int64_t _shaped_get_span_count(const RID &p_shaped) const;
+	Variant _shaped_get_span_meta(const RID &p_shaped, int64_t p_index) const;
+	Variant _shaped_get_span_embedded_object(const RID &p_shaped, int64_t p_index) const;
+	String _shaped_get_span_text(const RID &p_shaped, int64_t p_index) const;
+	Variant _shaped_get_span_object(const RID &p_shaped, int64_t p_index) const;
+	int64_t _shaped_get_run_count(const RID &p_shaped) const;
+	String _shaped_get_run_text(const RID &p_shaped, int64_t p_index) const;
+	Vector2i _shaped_get_run_range(const RID &p_shaped, int64_t p_index) const;
+	Vector2i _shaped_get_run_glyph_range(const RID &p_shaped, int64_t p_index) const;
+	RID _shaped_get_run_font_rid(const RID &p_shaped, int64_t p_index) const;
+	int _shaped_get_run_font_size(const RID &p_shaped, int64_t p_index) const;
+	String _shaped_get_run_language(const RID &p_shaped, int64_t p_index) const;
+	TextServer::Direction _shaped_get_run_direction(const RID &p_shaped, int64_t p_index) const;
+	Variant _shaped_get_run_object(const RID &p_shaped, int64_t p_index) const;
+	void _shaped_set_span_update_font(const RID &p_shaped, int64_t p_index, const TypedArray<RID> &p_fonts, int64_t p_size, const Dictionary &p_opentype_features);
+	bool _shaped_text_add_string(const RID &p_shaped, const String &p_text, const TypedArray<RID> &p_fonts, int64_t p_size, const Dictionary &p_opentype_features, const String &p_language, const Variant &p_meta);
+	bool _shaped_text_add_object(const RID &p_shaped, const Variant &p_key, const Size2 &p_size, InlineAlignment p_inline_align, int64_t p_length, double p_baseline);
+	String _shaped_get_text(const RID &p_shaped) const;
+	bool _shaped_text_has_object(const RID &p_shaped, const Variant &p_key) const;
+	bool _shaped_text_resize_object(const RID &p_shaped, const Variant &p_key, const Size2 &p_size, InlineAlignment p_inline_align, double p_baseline);
+	RID _shaped_text_substr(const RID &p_shaped, int64_t p_start, int64_t p_length) const;
+	RID _shaped_text_get_parent(const RID &p_shaped) const;
+	double _shaped_text_fit_to_width(const RID &p_shaped, double p_width, BitField<TextServer::JustificationFlag> p_jst_flags);
+	double _shaped_text_tab_align(const RID &p_shaped, const PackedFloat32Array &p_tab_stops);
+	void _shaped_text_overrun_trim_to_width(const RID &p_shaped_line, double p_width, BitField<TextServer::TextOverrunFlag> p_trim_flags);
+	int64_t _shaped_text_get_trim_pos(const RID &p_shaped) const;
+	int64_t _shaped_text_get_ellipsis_pos(const RID &p_shaped) const;
+	const Glyph *_shaped_text_get_ellipsis_glyphs(const RID &p_shaped) const;
+	int64_t _shaped_text_get_ellipsis_glyph_count(const RID &p_shaped) const;
+	PackedInt32Array _shaped_text_get_character_breaks(const RID &p_shaped) const;
+	bool _shaped_text_update_breaks(const RID &p_shaped);
+	_FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
+	bool _shaped_text_update_justification_ops(const RID &p_shaped);
+	bool _shaped_text_shape(const RID &p_shaped);
+	bool _shaped_text_is_ready(const RID &p_shaped) const;
+	const Glyph *_shaped_text_get_glyphs(const RID &p_shaped) const;
+	int64_t _shaped_text_get_glyph_count(const RID &p_shaped) const;
+	const Glyph *_shaped_text_sort_logical(const RID &p_shaped);
+	Vector2i _shaped_text_get_range(const RID &p_shaped) const;
+	Array _shaped_text_get_objects(const RID &p_shaped) const;
+	Rect2 _shaped_text_get_object_rect(const RID &p_shaped, const Variant &p_key) const;
+	Vector2i _shaped_text_get_object_range(const RID &p_shaped, const Variant &p_key) const;
+	int64_t _shaped_text_get_object_glyph(const RID &p_shaped, const Variant &p_key) const;
+	Size2 _shaped_text_get_size(const RID &p_shaped) const;
+	double _shaped_text_get_ascent(const RID &p_shaped) const;
+	double _shaped_text_get_descent(const RID &p_shaped) const;
+	double _shaped_text_get_width(const RID &p_shaped) const;
+	double _shaped_text_get_underline_position(const RID &p_shaped) const;
+	double _shaped_text_get_underline_thickness(const RID &p_shaped) const;
+	int64_t _is_confusable(const String &p_string, const PackedStringArray &p_dict) const;
+	bool _spoof_check(const String &p_string) const;
+	String _strip_diacritics(const String &p_string) const;
+	String _string_to_upper(const String &p_string, const String &p_language) const;
+	String _string_to_lower(const String &p_string, const String &p_language) const;
+	String _string_to_title(const String &p_string, const String &p_language) const;
+	PackedInt32Array _string_get_word_breaks(const String &p_string, const String &p_language, int64_t p_chars_per_line) const;
+	PackedInt32Array _string_get_character_breaks(const String &p_string, const String &p_language) const;
+	bool _is_valid_identifier(const String &p_string) const;
+	bool _is_valid_letter(uint64_t p_unicode) const;
+	void _font_clear_system_fallback_cache();
+	String _font_get_name(const RID &p_font_rid) const;
+	void _cleanup();
 	~TextServerAdvanced();
 };

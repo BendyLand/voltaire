@@ -137,8 +137,8 @@ static void _editor_init() {
 
 void initialize_gdscript_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
-		GDREGISTER_CLASS(GDScript);
-		GDREGISTER_INTERNAL_CLASS(GDScriptFunctionState);
+		VLTR_REGISTER_CLASS(GDScript);
+		VLTR_REGISTER_INTERNAL_CLASS(GDScriptFunctionState);
 
 		script_language_gd = memnew(GDScriptLanguage);
 		ScriptServer::register_language(script_language_gd);
@@ -162,8 +162,7 @@ void initialize_gdscript_module(ModuleInitializationLevel p_level) {
 		EditorTranslationParser::get_singleton()->add_parser(gdscript_translation_parser_plugin, EditorTranslationParser::STANDARD);
 	} else if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		memnew(GDScriptEditorLanguage);
-
-		GDREGISTER_CLASS(GDScriptSyntaxHighlighter);
+		VLTR_REGISTER_CLASS(GDScriptSyntaxHighlighter);
 #ifndef GDSCRIPT_NO_LSP
 		register_lsp_types();
 		memnew(GDScriptLanguageProtocol);

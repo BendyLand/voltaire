@@ -118,7 +118,7 @@ void GDScriptLanguageServer::stop() {
 }
 
 void register_lsp_types() {
-	GDREGISTER_CLASS(GDScriptLanguageProtocol);
-	GDREGISTER_CLASS(GDScriptTextDocument);
-	GDREGISTER_CLASS(GDScriptWorkspace);
+	VLTR_REGISTER_CLASS(GDScriptLanguageProtocol);
+	VLTR_REGISTER_CLASS(GDScriptTextDocument);
+	VLTR_REGISTER_CLASS(GDScriptWorkspace);
 }
