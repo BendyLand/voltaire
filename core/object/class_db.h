@@ -54,7 +54,7 @@ struct is_class_enabled<T, std::enable_if_t<std::is_base_of_v<Object, T>>> {
 template <typename T>
 inline constexpr bool is_class_enabled_v = is_class_enabled<T>::value;
 
-#define GD_IS_CLASS_ENABLED(m_class) is_class_enabled_v<m_class>
+#define VLTR_IS_CLASS_ENABLED(m_class) is_class_enabled_v<m_class>
 
 #include "core/disabled_classes.gen.h" // IWYU pragma: keep.
 
@@ -554,25 +554,25 @@ public:
 
 #endif // DEBUG_ENABLED
 
-#define GDREGISTER_CLASS(m_class) \
-	if constexpr (GD_IS_CLASS_ENABLED(m_class)) { \
+#define VLTR_REGISTER_CLASS(m_class) \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
 		::ClassDB::register_class<m_class>(); \
 	}
-#define GDREGISTER_VIRTUAL_CLASS(m_class) \
-	if constexpr (GD_IS_CLASS_ENABLED(m_class)) { \
+#define VLTR_REGISTER_VIRTUAL_CLASS(m_class) \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
 		::ClassDB::register_class<m_class>(true); \
 	}
-#define GDREGISTER_ABSTRACT_CLASS(m_class) \
-	if constexpr (GD_IS_CLASS_ENABLED(m_class)) { \
+#define VLTR_REGISTER_ABSTRACT_CLASS(m_class) \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
 		::ClassDB::register_abstract_class<m_class>(); \
 	}
-#define GDREGISTER_INTERNAL_CLASS(m_class) \
-	if constexpr (GD_IS_CLASS_ENABLED(m_class)) { \
+#define VLTR_REGISTER_INTERNAL_CLASS(m_class) \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
 		::ClassDB::register_internal_class<m_class>(); \
 	}
-#define GDREGISTER_RUNTIME_CLASS(m_class) \
-	if constexpr (GD_IS_CLASS_ENABLED(m_class)) { \
+#define VLTR_REGISTER_RUNTIME_CLASS(m_class) \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
 		::ClassDB::register_runtime_class<m_class>(); \
 	}
 
-#define GDREGISTER_NATIVE_STRUCT(m_class, m_code) ClassDB::register_native_struct(#m_class, m_code, sizeof(m_class))
+#define VLTR_REGISTER_NATIVE_STRUCT(m_class, m_code) ClassDB::register_native_struct(#m_class, m_code, sizeof(m_class))

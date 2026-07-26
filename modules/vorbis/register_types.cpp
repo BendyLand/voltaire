@@ -49,13 +49,13 @@ static void _editor_init() {
 
 void initialize_vorbis_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		GDREGISTER_CLASS(AudioStreamOggVorbis);
-		GDREGISTER_CLASS(AudioStreamPlaybackOggVorbis);
+		VLTR_REGISTER_CLASS(AudioStreamOggVorbis);
+		VLTR_REGISTER_CLASS(AudioStreamPlaybackOggVorbis);
 	}
 
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		GDREGISTER_CLASS(ResourceImporterOggVorbis);
+		VLTR_REGISTER_CLASS(ResourceImporterOggVorbis);
 
 		EditorNode::add_init_callback(_editor_init);
 	}

@@ -37,7 +37,7 @@
 #include "editor/settings/editor_settings.h"
 
 void register_windows_exporter_types() {
-	GDREGISTER_VIRTUAL_CLASS(EditorExportPlatformWindows);
+	VLTR_REGISTER_VIRTUAL_CLASS(EditorExportPlatformWindows);
 }
 
 void register_windows_exporter() {

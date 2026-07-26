@@ -41,7 +41,7 @@ void initialize_mobile_vr_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	GDREGISTER_CLASS(MobileVRInterface);
+	VLTR_REGISTER_CLASS(MobileVRInterface);
 
 	if (XRServer::get_singleton()) {
 		mobile_vr.instantiate();

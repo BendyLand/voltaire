@@ -65,8 +65,8 @@ static void _editor_init() {
 
 void initialize_fbx_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		GDREGISTER_CLASS(FBXDocument);
-		GDREGISTER_CLASS(FBXState);
+		VLTR_REGISTER_CLASS(FBXDocument);
+		VLTR_REGISTER_CLASS(FBXState);
 		bool is_editor = Engine::get_singleton()->is_editor_hint();
 		if (!is_editor) {
 			FBX_REGISTER_DOCUMENT_EXTENSION(GLTFDocumentExtensionConvertImporterMesh);
@@ -75,10 +75,10 @@ void initialize_fbx_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		GDREGISTER_CLASS(EditorSceneFormatImporterUFBX);
+		VLTR_REGISTER_CLASS(EditorSceneFormatImporterUFBX);
 
 		GLOBAL_DEF_RST_BASIC("filesystem/import/fbx2gltf/enabled", true);
-		GDREGISTER_CLASS(EditorSceneFormatImporterFBX2GLTF);
+		VLTR_REGISTER_CLASS(EditorSceneFormatImporterFBX2GLTF);
 		GLOBAL_DEF_RST("filesystem/import/fbx2gltf/enabled.android", false);
 		GLOBAL_DEF_RST("filesystem/import/fbx2gltf/enabled.web", false);
 
