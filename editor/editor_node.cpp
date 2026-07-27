@@ -9704,3 +9704,28 @@ EditorNode::~EditorNode() {
 
 	singleton = nullptr;
 }
+
+String StandardMaterial3DConversionPlugin::converts_to() const { return ""; }
+bool StandardMaterial3DConversionPlugin::handles(const Ref<Resource> &p_resource) const { return false; }
+Ref<Resource> StandardMaterial3DConversionPlugin::convert(const Ref<Resource> &p_resource) const { return Ref<Resource>(); }
+
+String ORMMaterial3DConversionPlugin::converts_to() const { return ""; }
+bool ORMMaterial3DConversionPlugin::handles(const Ref<Resource> &p_resource) const { return false; }
+Ref<Resource> ORMMaterial3DConversionPlugin::convert(const Ref<Resource> &p_resource) const { return Ref<Resource>(); }
+
+String ProceduralSkyMaterialConversionPlugin::converts_to() const { return ""; }
+bool ProceduralSkyMaterialConversionPlugin::handles(const Ref<Resource> &p_resource) const { return false; }
+Ref<Resource> ProceduralSkyMaterialConversionPlugin::convert(const Ref<Resource> &p_resource) const { return Ref<Resource>(); }
+
+String PanoramaSkyMaterialConversionPlugin::converts_to() const { return ""; }
+bool PanoramaSkyMaterialConversionPlugin::handles(const Ref<Resource> &p_resource) const { return false; }
+Ref<Resource> PanoramaSkyMaterialConversionPlugin::convert(const Ref<Resource> &p_resource) const { return Ref<Resource>(); }
+
+String PhysicalSkyMaterialConversionPlugin::converts_to() const { return ""; }
+bool PhysicalSkyMaterialConversionPlugin::handles(const Ref<Resource> &p_resource) const { return false; }
+Ref<Resource> PhysicalSkyMaterialConversionPlugin::convert(const Ref<Resource> &p_resource) const { return Ref<Resource>(); }
+
+String FogMaterialConversionPlugin::converts_to() const { return ""; }
+bool FogMaterialConversionPlugin::handles(const Ref<Resource> &p_resource) const { return false; }
+Ref<Resource> FogMaterialConversionPlugin::convert(const Ref<Resource> &p_resource) const { return Ref<Resource>(); }
+

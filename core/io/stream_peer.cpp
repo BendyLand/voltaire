@@ -582,3 +582,6 @@ Ref<StreamPeerBuffer> StreamPeerBuffer::duplicate() const {
 	spb->data = data;
 	return spb;
 }
+
+void StreamPeerExtension::_bind_methods() {}
+

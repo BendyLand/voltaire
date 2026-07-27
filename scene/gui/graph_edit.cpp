@@ -1461,13 +1461,8 @@ bool GraphEdit::_check_clickable_control(Control *p_control, const Vector2 &mpos
 }
 
 bool GraphEdit::is_in_input_hotzone(GraphNode *p_graph_node, int p_port_idx, const Vector2 &p_mouse_pos, const Vector2i &p_port_size) {
-	bool success;
-	if (VLTRVIRTUAL_CALL(_is_in_input_hotzone, p_graph_node, p_port_idx, p_mouse_pos, success)) {
-		return success;
-	} else {
-		Vector2 pos = p_graph_node->get_input_port_position(p_port_idx) * zoom + p_graph_node->get_position();
-		return is_in_port_hotzone(pos / zoom, p_mouse_pos, p_port_size, true);
-	}
+	Vector2 pos = p_graph_node->get_input_port_position(p_port_idx) * zoom + p_graph_node->get_position();
+	return is_in_port_hotzone(pos / zoom, p_mouse_pos, p_port_size, true);
 }
 
 bool GraphEdit::is_in_output_hotzone(GraphNode *p_graph_node, int p_port_idx, const Vector2 &p_mouse_pos, const Vector2i &p_port_size) {
@@ -1478,14 +1473,8 @@ bool GraphEdit::is_in_output_hotzone(GraphNode *p_graph_node, int p_port_idx, co
 			return false;
 		}
 	}
-
-	bool success;
-	if (VLTRVIRTUAL_CALL(_is_in_output_hotzone, p_graph_node, p_port_idx, p_mouse_pos, success)) {
-		return success;
-	} else {
-		Vector2 pos = p_graph_node->get_output_port_position(p_port_idx) * zoom + p_graph_node->get_position();
-		return is_in_port_hotzone(pos / zoom, p_mouse_pos, p_port_size, false);
-	}
+	Vector2 pos = p_graph_node->get_output_port_position(p_port_idx) * zoom + p_graph_node->get_position();
+	return is_in_port_hotzone(pos / zoom, p_mouse_pos, p_port_size, false);
 }
 
 bool GraphEdit::is_in_port_hotzone(const Vector2 &p_pos, const Vector2 &p_mouse_pos, const Vector2i &p_port_size, bool p_left) {
@@ -1524,11 +1513,6 @@ bool GraphEdit::is_in_port_hotzone(const Vector2 &p_pos, const Vector2 &p_mouse_
 }
 
 PackedVector2Array GraphEdit::get_connection_line(const Vector2 &p_from, const Vector2 &p_to) const {
-	Vector<Vector2> ret;
-	if (VLTRVIRTUAL_CALL(_get_connection_line, p_from, p_to, ret)) {
-		return ret;
-	}
-
 	float x_diff = (p_to.x - p_from.x);
 	float cp_offset = x_diff * lines_curvature;
 	if (x_diff < 0) {
@@ -2414,12 +2398,6 @@ void GraphEdit::force_connection_drag_end() {
 	emit_signal(SNAME("connection_drag_ended"));
 }
 
-bool GraphEdit::is_node_hover_valid(const StringName &p_from, const int p_from_port, const StringName &p_to, const int p_to_port) {
-	bool valid = true;
-	VLTRVIRTUAL_CALL(_is_node_hover_valid, p_from, p_from_port, p_to, p_to_port, valid);
-	return valid;
-}
-
 void GraphEdit::set_panning_scheme(PanningScheme p_scheme) {
 	panning_scheme = p_scheme;
 	panner->set_control_scheme((ViewPanner::ControlScheme)p_scheme);
@@ -3059,17 +3037,11 @@ void GraphEdit::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_type_names", "type_names"), &GraphEdit::set_type_names);
 	ClassDB::bind_method(D_METHOD("get_type_names"), &GraphEdit::get_type_names);
 
-	VLTRVIRTUAL_BIND(_is_in_input_hotzone, "in_node", "in_port", "mouse_position");
-	VLTRVIRTUAL_BIND(_is_in_output_hotzone, "in_node", "in_port", "mouse_position");
-
 	ClassDB::bind_method(D_METHOD("get_menu_hbox"), &GraphEdit::get_menu_hbox);
 
 	ClassDB::bind_method(D_METHOD("arrange_nodes"), &GraphEdit::arrange_nodes);
 
 	ClassDB::bind_method(D_METHOD("set_selected", "node"), &GraphEdit::set_selected);
-
-	VLTRVIRTUAL_BIND(_get_connection_line, "from_position", "to_position")
-	VLTRVIRTUAL_BIND(_is_node_hover_valid, "from_node", "from_port", "to_node", "to_port");
 
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "scroll_offset", PROPERTY_HINT_NONE, "suffix:px"), "set_scroll_offset", "get_scroll_offset");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_grid"), "set_show_grid", "is_showing_grid");
@@ -3372,3 +3344,5 @@ GraphEdit::GraphEdit() {
 
 	arranger.instantiate(this);
 }
+
+bool GraphEdit::is_node_hover_valid(const StringName &p_from, int p_from_port, const StringName &p_to, int p_to_port) { return true; }

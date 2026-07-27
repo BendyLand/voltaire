@@ -1437,6 +1437,10 @@ List<Node *> EditorSelection::get_full_selected_node_list() {
 	return node_list;
 }
 
+Ref<Texture2D> EditorData::extension_class_get_icon(const String &p_class) const {
+    return Ref<Texture2D>();
+}
+
 void EditorSelection::clear() {
 	while (!selection.is_empty()) {
 		Node *node = ObjectDB::get_instance<Node>(selection.begin()->key);
@@ -1452,3 +1456,4 @@ void EditorSelection::clear() {
 EditorSelection::~EditorSelection() {
 	clear();
 }
+

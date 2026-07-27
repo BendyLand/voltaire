@@ -133,6 +133,7 @@ protected:
 #endif
 
 public:
+    virtual ~EditorPlugin();
 	//TODO: send a resource for editing to the editor node?
 
 	void add_control_to_container(CustomControlContainer p_location, Control *p_control);

@@ -63,3 +63,14 @@ EngineProfiler::~EngineProfiler() {
 		unbind();
 	}
 }
+
+void EngineProfiler::_bind_methods() {
+}
+
+void EngineProfiler::add(const Array &p_data) {
+}
+
+void EngineProfiler::tick(double p_frame_time, double p_process_time, double p_physics_time, double p_physics_frame_time) {
+}
+
+void EngineProfiler::toggle(bool p_enable, const Array &p_opts) {}

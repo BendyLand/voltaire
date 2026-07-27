@@ -40,6 +40,8 @@ void EditorContextMenuPlugin::add_menu_shortcut(const Ref<Shortcut> &p_shortcut,
 	context_menu_shortcuts.insert(p_shortcut, p_callable);
 }
 
+void EditorContextMenuPlugin::add_custom_options(const Vector<String> &p_paths) {}
+
 void EditorContextMenuPlugin::add_context_menu_item(const String &p_name, const Callable &p_callable, const Ref<Texture2D> &p_texture) {
 	ERR_FAIL_COND_MSG(context_menu_items.has(p_name), "Context menu item already registered.");
 	ERR_FAIL_COND_MSG(context_menu_items.size() == MAX_ITEMS, "Maximum number of context menu items reached.");
@@ -206,3 +208,4 @@ void EditorContextMenuPluginManager::cleanup() {
 	memdelete(singleton);
 	singleton = nullptr;
 }
+

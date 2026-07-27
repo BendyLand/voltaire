@@ -121,3 +121,9 @@ Error EditorImportPlugin::append_import_external_resource(const String &p_file, 
 void EditorImportPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("append_import_external_resource", "path", "custom_options", "custom_importer", "generator_parameters"), &EditorImportPlugin::_append_import_external_resource, DEFVAL(Dictionary()), DEFVAL(String()), DEFVAL(Variant()));
 }
+
+String EditorImportPlugin::get_importer_name() const { return ""; }
+String EditorImportPlugin::get_visible_name() const { return ""; }
+String EditorImportPlugin::get_save_extension() const { return ""; }
+String EditorImportPlugin::get_resource_type() const { return ""; }
+int EditorImportPlugin::get_preset_count() const { return 0; }

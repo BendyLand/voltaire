@@ -60,40 +60,25 @@ MovieWriter *MovieWriter::find_writer_for_file(const String &p_file) {
 
 uint32_t MovieWriter::get_audio_mix_rate() const {
 	uint32_t ret = 48000;
-	VLTRVIRTUAL_CALL(_get_audio_mix_rate, ret);
 	return ret;
 }
 AudioServer::SpeakerMode MovieWriter::get_audio_speaker_mode() const {
 	AudioServer::SpeakerMode ret = AudioServer::SPEAKER_MODE_STEREO;
-	VLTRVIRTUAL_CALL(_get_audio_speaker_mode, ret);
 	return ret;
 }
 
 Error MovieWriter::write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) {
 	Error ret = ERR_UNCONFIGURED;
-	VLTRVIRTUAL_CALL(_write_begin, p_movie_size, p_fps, p_base_path, ret);
 	return ret;
 }
 
 Error MovieWriter::write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) {
 	Error ret = ERR_UNCONFIGURED;
-	VLTRVIRTUAL_CALL(_write_frame, p_image, p_audio_data, ret);
-	return ret;
-}
-
-void MovieWriter::write_end() {
-	VLTRVIRTUAL_CALL(_write_end);
-}
-
-bool MovieWriter::handles_file(const String &p_path) const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_handles_file, p_path, ret);
 	return ret;
 }
 
 void MovieWriter::get_supported_extensions(List<String> *r_extensions) const {
 	Vector<String> exts;
-	VLTRVIRTUAL_CALL(_get_supported_extensions, exts);
 	for (int i = 0; i < exts.size(); i++) {
 		r_extensions->push_back(exts[i]);
 	}
@@ -136,16 +121,6 @@ void MovieWriter::begin(const Size2i &p_movie_size, uint32_t p_fps, const String
 
 void MovieWriter::_bind_methods() {
 	ClassDB::bind_static_method("MovieWriter", D_METHOD("add_writer", "writer"), &MovieWriter::add_writer);
-
-	VLTRVIRTUAL_BIND(_get_audio_mix_rate)
-	VLTRVIRTUAL_BIND(_get_audio_speaker_mode)
-
-	VLTRVIRTUAL_BIND(_handles_file, "path")
-	VLTRVIRTUAL_BIND(_get_supported_extensions)
-
-	VLTRVIRTUAL_BIND(_write_begin, "movie_size", "fps", "base_path")
-	VLTRVIRTUAL_BIND(_write_frame, "frame_image", "audio_frame_block")
-	VLTRVIRTUAL_BIND(_write_end)
 
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/mix_rate", PROPERTY_HINT_RANGE, "8000,192000,1,suffix:Hz"), 48000);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/speaker_mode", PROPERTY_HINT_ENUM, "Stereo,3.1,5.1,7.1"), 0);
@@ -283,4 +258,10 @@ void MovieWriter::end() {
 	print_line(vformat("GPU render time: %.2f seconds (average: %.2f ms/frame)", gpu_time / 1000, gpu_time / Engine::get_singleton()->get_frames_drawn()));
 	print_line(vformat("Encoding time: %.2f seconds (average: %.2f ms/frame)", encoding_time_usec / 1000000.f, encoding_time_usec / 1000.f / Engine::get_singleton()->get_frames_drawn()));
 	print_line("--------------------------------------------------------------------------------");
+}
+
+void MovieWriter::write_end() {}
+
+bool MovieWriter::handles_file(const String &p_path) const {
+	return false;
 }

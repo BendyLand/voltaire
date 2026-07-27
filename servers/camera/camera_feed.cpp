@@ -60,11 +60,6 @@ void CameraFeed::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_formats"), &CameraFeed::get_formats);
 	ClassDB::bind_method(D_METHOD("set_format", "index", "parameters"), &CameraFeed::set_format);
 
-	VLTRVIRTUAL_BIND(_activate_feed);
-	VLTRVIRTUAL_BIND(_deactivate_feed);
-	VLTRVIRTUAL_BIND(_set_format, "index", "parameters");
-	VLTRVIRTUAL_BIND(_get_formats);
-
 	ADD_SIGNAL(MethodInfo("frame_changed"));
 	ADD_SIGNAL(MethodInfo("format_changed"));
 
@@ -301,29 +296,13 @@ void CameraFeed::set_external(int p_width, int p_height) {
 	call_deferred("emit_signal", frame_changed_signal_name);
 }
 
-bool CameraFeed::activate_feed() {
-	bool ret = true;
-	VLTRVIRTUAL_CALL(_activate_feed, ret);
-	return ret;
-}
-
-void CameraFeed::deactivate_feed() {
-	VLTRVIRTUAL_CALL(_deactivate_feed);
-}
-
-bool CameraFeed::set_format(int p_index, const Dictionary &p_parameters) {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_set_format, p_index, p_parameters, ret);
-	return ret;
-}
-
-Array CameraFeed::get_formats() const {
-	Array ret;
-	VLTRVIRTUAL_CALL(_get_formats, ret);
-	return ret;
-}
-
 CameraFeed::FeedFormat CameraFeed::get_format() const {
 	FeedFormat feed_format = {};
 	return feed_format;
 }
+
+bool CameraFeed::set_format(int p_index, const Dictionary &p_format) { return true; }
+Array CameraFeed::get_formats() const { return Array(); }
+bool CameraFeed::activate_feed() { return false; }
+void CameraFeed::deactivate_feed() {}
+

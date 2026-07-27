@@ -40,8 +40,9 @@
 #include "core/templates/hash_map.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/safe_refcount.h"
+#include "servers/text/text_server.h"
 #include "scene/resources/image_texture.h"
-#include "servers/text/text_server_extension.h"
+#include "core/os/thread_safe.h"
 
 #include "modules/modules_enabled.gen.h" // For freetype, msdfgen, svg.
 
@@ -101,8 +102,8 @@ GODOT_CLANG_WARNING_POP
 
 /*************************************************************************/
 
-class TextServerAdvanced : public TextServerExtension {
-	VLTRCLASS(TextServerAdvanced, TextServerExtension);
+class TextServerAdvanced : public TextServer {
+	VLTRCLASS(TextServerAdvanced, TextServer);
 	_THREAD_SAFE_CLASS_
 
 	struct FeatureInfo {
@@ -797,20 +798,18 @@ public:
 	bool _has_feature(Feature p_feature) const;
 	String _get_name() const;
 	String _get_short_name() const;
-
 	int64_t _get_features() const;
 	void _free_rid(const RID &p_rid);
 	bool _has(const RID &p_rid);
-
-bool _load_support_data(const String &p_filename);
-String _get_support_data_filename() const;
-String _get_support_data_info() const;
-bool _save_support_data(const String &p_filename) const;
-PackedByteArray _get_support_data() const;
-bool _is_locale_using_support_data(const String &p_locale) const;
-bool _is_locale_right_to_left(const String &p_locale) const;
-int64_t _name_to_tag(const String &p_name) const;
-String _tag_to_name(int64_t p_tag) const;
+	bool _load_support_data(const String &p_filename);
+	String _get_support_data_filename() const;
+	String _get_support_data_info() const;
+	bool _save_support_data(const String &p_filename) const;
+	PackedByteArray _get_support_data() const;
+	bool _is_locale_using_support_data(const String &p_locale) const;
+	bool _is_locale_right_to_left(const String &p_locale) const;
+	int64_t _name_to_tag(const String &p_name) const;
+	String _tag_to_name(int64_t p_tag) const;
 
 /*************************************************************************/
 /* Font Glyph Rendering                                                  */
@@ -918,7 +917,7 @@ static int ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, con
 	int64_t _font_get_spacing(const RID &p_font_rid, SpacingType p_spacing) const;
 	void _font_set_baseline_offset(const RID &p_font_rid, double p_baseline_offset);
 	double _font_get_baseline_offset(const RID &p_font_rid) const;
-	void _font_set_transform(const RID &p_font_rid, const Transform2D &p_transform);
+	void font_set_transform(const RID &p_font_rid, const Transform2D &p_transform) override;
 	Transform2D _font_get_transform(const RID &p_font_rid) const;
 	void _font_set_variation_coordinates(const RID &p_font_rid, const Dictionary &p_variation_coordinates);
 	double _font_get_oversampling(const RID &p_font_rid) const;

@@ -269,3 +269,5 @@ ResourceUID::ID ResourceSaver::get_resource_id_for_path(const String &p_path, bo
 void ResourceSaver::set_get_resource_id_for_path(ResourceSaverGetResourceIDForPath p_callback) {
 	save_get_id_for_path = p_callback;
 }
+
+void ResourceFormatSaver::_bind_methods() {}

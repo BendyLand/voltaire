@@ -40,10 +40,6 @@ CharFXTransform::~CharFXTransform() {
 	environment.clear();
 }
 
-void RichTextEffect::_bind_methods(){
-	VLTRVIRTUAL_BIND(_process_custom_fx, "char_fx")
-}
-
 Variant RichTextEffect::get_bbcode() const {
 	Variant r;
 	if (get_script_instance()) {
@@ -53,12 +49,6 @@ Variant RichTextEffect::get_bbcode() const {
 		}
 	}
 	return r;
-}
-
-bool RichTextEffect::_process_effect_impl(Ref<CharFXTransform> p_cfx) {
-	bool return_value = false;
-	VLTRVIRTUAL_CALL(_process_custom_fx, p_cfx, return_value);
-	return return_value;
 }
 
 RichTextEffect::RichTextEffect() {
@@ -118,3 +108,7 @@ void CharFXTransform::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "relative_index"), "set_relative_index", "get_relative_index");
 	ADD_PROPERTY(PropertyInfo(Variant::RID, "font"), "set_font", "get_font");
 }
+
+bool RichTextEffect::_process_effect_impl(Ref<CharFXTransform> p_cfx) { return false; }
+
+void RichTextEffect::_bind_methods() {}

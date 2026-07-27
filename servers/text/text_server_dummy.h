@@ -30,12 +30,14 @@
 
 #pragma once
 
-#include "servers/text/text_server_extension.h"
-
 /*************************************************************************/
 
-class TextServerDummy : public TextServerExtension {
-	VLTRCLASS(TextServerDummy, TextServerExtension);
+#include "servers/text/text_server.h"
+#include "core/os/thread_safe.h"
+#include "core/variant/typed_array.h"
+
+class TextServerDummy : public TextServer {
+	VLTRCLASS(TextServerDummy, TextServer);
 	_THREAD_SAFE_CLASS_
 
 public:

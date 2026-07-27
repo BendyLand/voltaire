@@ -149,3 +149,6 @@ Control *EditorAudioStreamTooltipPlugin::make_tooltip_for_path(const String &p_r
 
 	return vb;
 }
+
+bool EditorResourceTooltipPlugin::handles(const String &p_type) const { return false; }
+Control *EditorResourceTooltipPlugin::make_tooltip_for_path(const String &p_path, const Dictionary &p_metadata, Control *p_base) const { return nullptr; }

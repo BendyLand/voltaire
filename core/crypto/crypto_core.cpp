@@ -312,3 +312,25 @@ void CryptoCore::finalize() {
 	godot_mbedtls_platform_free();
 #endif
 }
+
+extern "C" {
+psa_status_t psa_crypto_init(void) { return 0; }
+psa_status_t psa_hash_abort(psa_hash_operation_t *operation) { return 0; }
+psa_status_t psa_hash_setup(psa_hash_operation_t *operation, psa_algorithm_t alg) { return 0; }
+psa_status_t psa_hash_update(psa_hash_operation_t *operation, const uint8_t *input, size_t input_length) { return 0; }
+psa_status_t psa_hash_finish(psa_hash_operation_t *operation, uint8_t *hash, size_t hash_size, size_t *hash_length) { return 0; }
+psa_status_t psa_hash_compute(psa_algorithm_t alg, const uint8_t *input, size_t input_length, uint8_t *hash, size_t hash_size, size_t *hash_length) { return 0; }
+psa_status_t psa_cipher_abort(psa_cipher_operation_t *operation) { return 0; }
+psa_status_t psa_destroy_key(psa_key_id_t key) { return 0; }
+psa_status_t psa_import_key(const psa_key_attributes_t *attributes, const uint8_t *data, size_t data_length, psa_key_id_t *key) { return 0; }
+psa_status_t psa_cipher_decrypt_setup(psa_cipher_operation_t *operation, psa_key_id_t key, psa_algorithm_t alg) { return 0; }
+psa_status_t psa_cipher_encrypt_setup(psa_cipher_operation_t *operation, psa_key_id_t key, psa_algorithm_t alg) { return 0; }
+psa_status_t psa_cipher_set_iv(psa_cipher_operation_t *operation, const uint8_t *iv, size_t iv_length) { return 0; }
+psa_status_t psa_cipher_update(psa_cipher_operation_t *operation, const uint8_t *input, size_t input_length, uint8_t *output, size_t output_size, size_t *output_length) { return 0; }
+psa_status_t psa_cipher_finish(psa_cipher_operation_t *operation, uint8_t *output, size_t output_size, size_t *output_length) { return 0; }
+psa_status_t psa_generate_random(uint8_t *output, size_t output_size) { return 0; }
+void mbedtls_psa_crypto_free(void) {}
+int mbedtls_base64_encode(unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen) { return 0; }
+int mbedtls_base64_decode(unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen) { return 0; }
+}
+

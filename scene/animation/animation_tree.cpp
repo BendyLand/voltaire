@@ -43,12 +43,10 @@ thread_local AnimationNodeInstance *AnimationNode::current_instance = nullptr;
 void AnimationNode::get_parameter_list(LocalVector<PropertyInfo> *r_list) const {
 	Array parameters;
 
-	if (VLTRVIRTUAL_CALL(_get_parameter_list, parameters)) {
-		for (int i = 0; i < parameters.size(); i++) {
-			Dictionary d = parameters[i];
-			ERR_CONTINUE(d.is_empty());
-			r_list->push_back(PropertyInfo::from_dict(d));
-		}
+	for (int i = 0; i < parameters.size(); i++) {
+		Dictionary d = parameters[i];
+		ERR_CONTINUE(d.is_empty());
+		r_list->push_back(PropertyInfo::from_dict(d));
 	}
 
 	r_list->push_back(PropertyInfo(Variant::FLOAT, current_length, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY));
@@ -61,16 +59,10 @@ Variant AnimationNode::get_parameter_default_value(const StringName &p_parameter
 	if (p_parameter == current_length || p_parameter == current_position || p_parameter == current_delta) {
 		return 0.0;
 	}
-	VLTRVIRTUAL_CALL(_get_parameter_default_value, p_parameter, ret);
 	return ret;
 }
 
 bool AnimationNode::is_parameter_read_only(const StringName &p_parameter) const {
-	bool ret = false;
-	if (VLTRVIRTUAL_CALL(_is_parameter_read_only, p_parameter, ret) && ret) {
-		return true;
-	}
-
 	if (p_parameter == current_length || p_parameter == current_position || p_parameter == current_delta) {
 		return true;
 	}
@@ -92,13 +84,11 @@ Variant AnimationNode::get_parameter_ex(const StringName &p_name) const {
 
 void AnimationNode::get_child_nodes(LocalVector<ChildNode> *r_child_nodes) {
 	Dictionary cn;
-	if (VLTRVIRTUAL_CALL(_get_child_nodes, cn)) {
-		for (const KeyValue<Variant, Variant> &kv : cn) {
-			ChildNode child;
-			child.name = kv.key;
-			child.node = kv.value;
-			r_child_nodes->push_back(child);
-		}
+	for (const KeyValue<Variant, Variant> &kv : cn) {
+		ChildNode child;
+		child.name = kv.key;
+		child.node = kv.value;
+		r_child_nodes->push_back(child);
 	}
 }
 
@@ -268,7 +258,6 @@ AnimationNode::NodeTimeInfo AnimationNode::_blend_node(ProcessState &p_process_s
 
 String AnimationNode::get_caption() const {
 	String ret = "Node";
-	VLTRVIRTUAL_CALL(_get_caption, ret);
 	return ret;
 }
 
@@ -346,7 +335,6 @@ AnimationNode::NodeTimeInfo AnimationNode::process(ProcessState &p_process_state
 
 AnimationNode::NodeTimeInfo AnimationNode::_process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only) {
 	double r_ret = 0.0;
-	VLTRVIRTUAL_CALL(_process, p_playback_info.time, p_playback_info.seeked, p_playback_info.is_external_seeking, p_test_only, r_ret);
 	NodeTimeInfo nti;
 	nti.delta = r_ret;
 	return nti;
@@ -400,12 +388,6 @@ bool AnimationNode::is_path_filtered(const NodePath &p_path) const {
 	return filter.has(p_path);
 }
 
-bool AnimationNode::has_filter() const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_has_filter, ret);
-	return ret;
-}
-
 Array AnimationNode::_get_filters() const {
 	Array paths;
 
@@ -447,12 +429,6 @@ void AnimationNode::_validate_property(PropertyInfo &p_property) const {
 	if (!has_filter() && (p_property.name == "filter_enabled" || p_property.name == "filters")) {
 		p_property.usage = PROPERTY_USAGE_NONE;
 	}
-}
-
-Ref<AnimationNode> AnimationNode::get_child_by_name(const StringName &p_name) const {
-	Ref<AnimationNode> ret;
-	VLTRVIRTUAL_CALL(_get_child_by_name, p_name, ret);
-	return ret;
 }
 
 Ref<AnimationNode> AnimationNode::find_node_by_path(const String &p_name) const {
@@ -571,15 +547,6 @@ void AnimationNode::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "filter_enabled", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_filter_enabled", "is_filter_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "filters", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_filters", "_get_filters");
-
-	VLTRVIRTUAL_BIND(_get_child_nodes);
-	VLTRVIRTUAL_BIND(_get_parameter_list);
-	VLTRVIRTUAL_BIND(_get_child_by_name, "name");
-	VLTRVIRTUAL_BIND(_get_parameter_default_value, "parameter");
-	VLTRVIRTUAL_BIND(_is_parameter_read_only, "parameter");
-	VLTRVIRTUAL_BIND(_process, "time", "seek", "is_external_seeking", "test_only");
-	VLTRVIRTUAL_BIND(_get_caption);
-	VLTRVIRTUAL_BIND(_has_filter);
 
 	// For "tree_changed", wouldn't it be nice, if we could pass in the source?
 	// That way we would be able to partially rebuild instances.
@@ -1163,4 +1130,12 @@ AnimationTree::AnimationTree() {
 }
 
 AnimationTree::~AnimationTree() {
+}
+
+bool AnimationNode::has_filter() const {
+	return false;
+}
+
+Ref<AnimationNode> AnimationNode::get_child_by_name(const StringName &p_name) const {
+	return Ref<AnimationNode>();
 }

@@ -3593,3 +3593,5 @@ Node *EditorSceneFormatImporterESCN::import_scene(const String &p_path, uint32_t
 
 	return scene;
 }
+
+Object *EditorScenePostImport::post_import(Object *p_scene) { return p_scene; }

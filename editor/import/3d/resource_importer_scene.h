@@ -91,6 +91,7 @@ public:
 	String get_source_file() const;
 	virtual Node *post_import(Node *p_scene);
 	virtual void init(const String &p_source_file);
+	Object *post_import(Object *p_scene);
 };
 
 class EditorScenePostImportPlugin : public RefCounted {

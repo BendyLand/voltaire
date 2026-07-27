@@ -96,14 +96,6 @@ void Node::_notification(int p_notification) {
 			}
 		} break;
 
-		case NOTIFICATION_PROCESS: {
-			VLTRVIRTUAL_CALL(_process, get_process_delta_time());
-		} break;
-
-		case NOTIFICATION_PHYSICS_PROCESS: {
-			VLTRVIRTUAL_CALL(_physics_process, get_physics_process_delta_time());
-		} break;
-
 		case NOTIFICATION_ENTER_TREE: {
 			ERR_FAIL_NULL(get_viewport());
 			ERR_FAIL_NULL(data.tree);
@@ -252,33 +244,6 @@ void Node::_notification(int p_notification) {
 			}
 		} break;
 
-		case NOTIFICATION_READY: {
-			if (VLTRVIRTUAL_IS_OVERRIDDEN(_input)) {
-				set_process_input(true);
-			}
-
-			if (VLTRVIRTUAL_IS_OVERRIDDEN(_shortcut_input)) {
-				set_process_shortcut_input(true);
-			}
-
-			if (VLTRVIRTUAL_IS_OVERRIDDEN(_unhandled_input)) {
-				set_process_unhandled_input(true);
-			}
-
-			if (VLTRVIRTUAL_IS_OVERRIDDEN(_unhandled_key_input)) {
-				set_process_unhandled_key_input(true);
-			}
-
-			if (VLTRVIRTUAL_IS_OVERRIDDEN(_process)) {
-				set_process(true);
-			}
-			if (VLTRVIRTUAL_IS_OVERRIDDEN(_physics_process)) {
-				set_physics_process(true);
-			}
-
-			VLTRVIRTUAL_CALL(_ready);
-		} break;
-
 		case NOTIFICATION_PREDELETE: {
 			if (data.tree && !Thread::is_main_thread()) {
 				cancel_free();
@@ -359,8 +324,6 @@ void Node::_propagate_enter_tree() {
 
 	notification(NOTIFICATION_ENTER_TREE);
 
-	VLTRVIRTUAL_CALL(_enter_tree);
-
 	emit_signal(SceneStringName(tree_entered));
 
 	data.tree->node_added(this);
@@ -423,8 +386,6 @@ void Node::_propagate_exit_tree() {
 	}
 
 	data.blocked--;
-
-	VLTRVIRTUAL_CALL(_exit_tree);
 
 	emit_signal(SceneStringName(tree_exiting));
 
@@ -3540,24 +3501,12 @@ void Node::clear_internal_tree_resource_paths() {
 PackedStringArray Node::get_accessibility_configuration_warnings() const {
 	ERR_THREAD_GUARD_V(PackedStringArray());
 	PackedStringArray ret;
-
-	Vector<String> warnings;
-	if (VLTRVIRTUAL_CALL(_get_accessibility_configuration_warnings, warnings)) {
-		ret.append_array(warnings);
-	}
-
 	return ret;
 }
 
 PackedStringArray Node::get_configuration_warnings() const {
 	ERR_THREAD_GUARD_V(PackedStringArray());
 	PackedStringArray ret;
-
-	Vector<String> warnings;
-	if (VLTRVIRTUAL_CALL(_get_configuration_warnings, warnings)) {
-		ret.append_array(warnings);
-	}
-
 	return ret;
 }
 
@@ -3592,9 +3541,6 @@ void Node::request_ready() {
 }
 
 void Node::_call_input(const Ref<InputEvent> &p_event) {
-	if (p_event->get_device() != InputEvent::DEVICE_ID_INTERNAL) {
-		VLTRVIRTUAL_CALL(_input, p_event);
-	}
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
 		return;
 	}
@@ -3602,9 +3548,6 @@ void Node::_call_input(const Ref<InputEvent> &p_event) {
 }
 
 void Node::_call_shortcut_input(const Ref<InputEvent> &p_event) {
-	if (p_event->get_device() != InputEvent::DEVICE_ID_INTERNAL) {
-		VLTRVIRTUAL_CALL(_shortcut_input, p_event);
-	}
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
 		return;
 	}
@@ -3612,9 +3555,6 @@ void Node::_call_shortcut_input(const Ref<InputEvent> &p_event) {
 }
 
 void Node::_call_unhandled_input(const Ref<InputEvent> &p_event) {
-	if (p_event->get_device() != InputEvent::DEVICE_ID_INTERNAL) {
-		VLTRVIRTUAL_CALL(_unhandled_input, p_event);
-	}
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
 		return;
 	}
@@ -3622,9 +3562,6 @@ void Node::_call_unhandled_input(const Ref<InputEvent> &p_event) {
 }
 
 void Node::_call_unhandled_key_input(const Ref<InputEvent> &p_event) {
-	if (p_event->get_device() != InputEvent::DEVICE_ID_INTERNAL) {
-		VLTRVIRTUAL_CALL(_unhandled_key_input, p_event);
-	}
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
 		return;
 	}
@@ -3747,12 +3684,7 @@ void Node::notify_thread_safe(int p_notification) {
 }
 
 RID Node::get_focused_accessibility_element() const {
-	RID id;
-	if (VLTRVIRTUAL_CALL(_get_focused_accessibility_element, id)) {
-		return id;
-	} else {
-		return get_accessibility_element();
-	}
+	return get_accessibility_element();
 }
 
 Transform2D Node::get_accessibility_transform() const {
@@ -4090,19 +4022,6 @@ void Node::_bind_methods() {
 
 	ADD_GROUP("Editor Description", "editor_");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "editor_description", PROPERTY_HINT_MULTILINE_TEXT), "set_editor_description", "get_editor_description");
-
-	VLTRVIRTUAL_BIND(_process, "delta");
-	VLTRVIRTUAL_BIND(_physics_process, "delta");
-	VLTRVIRTUAL_BIND(_enter_tree);
-	VLTRVIRTUAL_BIND(_exit_tree);
-	VLTRVIRTUAL_BIND(_ready);
-	VLTRVIRTUAL_BIND(_get_configuration_warnings);
-	VLTRVIRTUAL_BIND(_get_accessibility_configuration_warnings);
-	VLTRVIRTUAL_BIND(_input, "event");
-	VLTRVIRTUAL_BIND(_shortcut_input, "event");
-	VLTRVIRTUAL_BIND(_unhandled_input, "event");
-	VLTRVIRTUAL_BIND(_unhandled_key_input, "event");
-	VLTRVIRTUAL_BIND(_get_focused_accessibility_element);
 }
 
 String Node::_get_name_num_separator() {

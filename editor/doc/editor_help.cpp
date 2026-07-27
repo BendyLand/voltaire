@@ -5457,3 +5457,6 @@ void FindBar::_search_text_submitted(const String &p_text) {
 		search_next();
 	}
 }
+
+void EditorHelp::init_gdext_pointers() {
+}

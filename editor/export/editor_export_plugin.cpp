@@ -235,3 +235,25 @@ void EditorExportPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_export_preset"), &EditorExportPlugin::get_export_preset);
 	ClassDB::bind_method(D_METHOD("get_export_platform"), &EditorExportPlugin::get_export_platform);
 }
+
+bool EditorExportPlugin::_begin_customize_resources(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_targets) { return true; }
+Ref<Resource> EditorExportPlugin::_customize_resource(const Ref<Resource> &p_resource, const String &p_path) { return nullptr; }
+bool EditorExportPlugin::_begin_customize_scenes(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_targets) { return true; }
+Node* EditorExportPlugin::_customize_scene(Node *p_scene, const String &p_path) { return nullptr; }
+uint64_t EditorExportPlugin::_get_customization_configuration_hash() const { return 0; }
+void EditorExportPlugin::_end_customize_scenes() {}
+void EditorExportPlugin::_end_customize_resources() {}
+PackedStringArray EditorExportPlugin::_get_export_features(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const { return PackedStringArray(); }
+Dictionary EditorExportPlugin::_get_export_options_overrides(const Ref<EditorExportPlatform> &p_platform) const { return Dictionary(); }
+bool EditorExportPlugin::_should_update_export_options(const Ref<EditorExportPlatform> &p_platform) const { return false; }
+bool EditorExportPlugin::_get_export_option_visibility(const Ref<EditorExportPlatform> &p_platform, const String &p_option) const { return true; }
+String EditorExportPlugin::_get_export_option_warning(const Ref<EditorExportPlatform> &p_platform, const String &p_option) const { return String(); }
+String EditorExportPlugin::get_name() const { return String(); }
+bool EditorExportPlugin::supports_platform(const Ref<EditorExportPlatform> &p_platform) const { return true; }
+Vector<String> EditorExportPlugin::get_android_dependencies(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const { return Vector<String>(); }
+Vector<String> EditorExportPlugin::get_android_dependencies_maven_repos(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const { return Vector<String>(); }
+Vector<String> EditorExportPlugin::get_android_libraries(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const { return Vector<String>(); }
+String EditorExportPlugin::get_android_manifest_activity_element_contents(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const { return String(); }
+String EditorExportPlugin::get_android_manifest_application_element_contents(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const { return String(); }
+String EditorExportPlugin::get_android_manifest_element_contents(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const { return String(); }
+PackedByteArray EditorExportPlugin::update_android_prebuilt_manifest(const Ref<EditorExportPlatform> &p_export_platform, const PackedByteArray &p_manifest_data) const { return PackedByteArray(); }

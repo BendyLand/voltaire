@@ -2339,5 +2339,5 @@ void EngineDebugger::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("remove_breakpoint", "line", "source"), &EngineDebugger::remove_breakpoint);
 	ClassDB::bind_method(D_METHOD("clear_breakpoints"), &EngineDebugger::clear_breakpoints);
 }
-
 } // namespace CoreBind
+

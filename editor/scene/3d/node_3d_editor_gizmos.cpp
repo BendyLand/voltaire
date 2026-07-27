@@ -1052,4 +1052,20 @@ EditorNode3DGizmoPlugin::~EditorNode3DGizmoPlugin() {
 	}
 }
 
+bool EditorNode3DGizmoPlugin::can_be_hidden() const { return true; }
+bool EditorNode3DGizmoPlugin::is_selectable_when_hidden() const { return false; }
+bool EditorNode3DGizmoPlugin::can_commit_handle_on_click() const { return true; }
+bool EditorNode3DGizmoPlugin::is_handle_highlighted(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const { return false; }
+String EditorNode3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const { return String(); }
+Variant EditorNode3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const { return Variant(); }
+void EditorNode3DGizmoPlugin::begin_handle_action(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) {}
+void EditorNode3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Vector2 &p_point) {}
+void EditorNode3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {}
+int EditorNode3DGizmoPlugin::subgizmos_intersect_ray(const EditorNode3DGizmo *p_gizmo, Camera3D *p_camera, const Vector2 &p_point) const { return -1; }
+Transform3D EditorNode3DGizmoPlugin::get_subgizmo_transform(const EditorNode3DGizmo *p_gizmo, int p_id) const { return Transform3D(); }
+void EditorNode3DGizmoPlugin::set_subgizmo_transform(const EditorNode3DGizmo *p_gizmo, int p_id, Transform3D p_transform) {}
+bool EditorNode3DGizmoPlugin::has_gizmo(Node3D *p_spatial) const { return false; }
+Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D *p_spatial) const { return Ref<EditorNode3DGizmo>(); }
+int EditorNode3DGizmoPlugin::get_priority() const { return 0; }
+
 //////

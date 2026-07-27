@@ -934,42 +934,42 @@ struct MSDFThreadData {
 	DistancePixelConversion *distancePixelConversion;
 };
 
-static msdfgen::Point2 ft_point2(const FT_Vector &vector) {
-	return msdfgen::Point2(vector.x / 60.0f, vector.y / 60.0f);
-}
+// static msdfgen::Point2 ft_point2(const FT_Vector &vector) {
+// 	return msdfgen::Point2(vector.x / 60.0f, vector.y / 60.0f);
+// }
 
-static int ft_move_to(const FT_Vector *to, void *user) {
-	MSContext *context = static_cast<MSContext *>(user);
-	if (!(context->contour && context->contour->edges.empty())) {
-		context->contour = &context->shape->addContour();
-	}
-	context->position = ft_point2(*to);
-	return 0;
-}
+// static int ft_move_to(const FT_Vector *to, void *user) {
+// 	MSContext *context = static_cast<MSContext *>(user);
+// 	if (!(context->contour && context->contour->edges.empty())) {
+// 		context->contour = &context->shape->addContour();
+// 	}
+// 	context->position = ft_point2(*to);
+// 	return 0;
+// }
 
-static int ft_line_to(const FT_Vector *to, void *user) {
-	MSContext *context = static_cast<MSContext *>(user);
-	msdfgen::Point2 endpoint = ft_point2(*to);
-	if (endpoint != context->position) {
-		context->contour->addEdge(new msdfgen::LinearSegment(context->position, endpoint));
-		context->position = endpoint;
-	}
-	return 0;
-}
+// static int ft_line_to(const FT_Vector *to, void *user) {
+// 	MSContext *context = static_cast<MSContext *>(user);
+// 	msdfgen::Point2 endpoint = ft_point2(*to);
+// 	if (endpoint != context->position) {
+// 		context->contour->addEdge(new msdfgen::LinearSegment(context->position, endpoint));
+// 		context->position = endpoint;
+// 	}
+// 	return 0;
+// }
 
-static int ft_conic_to(const FT_Vector *control, const FT_Vector *to, void *user) {
-	MSContext *context = static_cast<MSContext *>(user);
-	context->contour->addEdge(new msdfgen::QuadraticSegment(context->position, ft_point2(*control), ft_point2(*to)));
-	context->position = ft_point2(*to);
-	return 0;
-}
+// static int ft_conic_to(const FT_Vector *control, const FT_Vector *to, void *user) {
+// 	MSContext *context = static_cast<MSContext *>(user);
+// 	context->contour->addEdge(new msdfgen::QuadraticSegment(context->position, ft_point2(*control), ft_point2(*to)));
+// 	context->position = ft_point2(*to);
+// 	return 0;
+// }
 
-static int ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to, void *user) {
-	MSContext *context = static_cast<MSContext *>(user);
-	context->contour->addEdge(new msdfgen::CubicSegment(context->position, ft_point2(*control1), ft_point2(*control2), ft_point2(*to)));
-	context->position = ft_point2(*to);
-	return 0;
-}
+// static int ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to, void *user) {
+// 	MSContext *context = static_cast<MSContext *>(user);
+// 	context->contour->addEdge(new msdfgen::CubicSegment(context->position, ft_point2(*control1), ft_point2(*control2), ft_point2(*to)));
+// 	context->position = ft_point2(*to);
+// 	return 0;
+// }
 
 void TextServerAdvanced::_generateMTSDF_threaded(void *p_td, uint32_t p_y) {
 	MSDFThreadData *td = static_cast<MSDFThreadData *>(p_td);
@@ -3028,7 +3028,7 @@ double TextServerAdvanced::_font_get_baseline_offset(const RID &p_font_rid) cons
 	}
 }
 
-void TextServerAdvanced::_font_set_transform(const RID &p_font_rid, const Transform2D &p_transform) {
+void TextServerAdvanced::font_set_transform(const RID &p_font_rid, const Transform2D &p_transform) {
 	FontAdvanced *fd = _get_font_data(p_font_rid);
 	ERR_FAIL_NULL(fd);
 
@@ -6178,7 +6178,7 @@ RID TextServerAdvanced::_find_sys_font_for_text(const RID &p_fdef, const String 
 			_font_set_keep_rounding_remainders(sysf.rid, key.keep_rounding_remainders);
 			_font_set_variation_coordinates(sysf.rid, var);
 			_font_set_embolden(sysf.rid, key.embolden);
-			_font_set_transform(sysf.rid, key.transform);
+			font_set_transform(sysf.rid, key.transform);
 			_font_set_spacing(sysf.rid, SPACING_TOP, key.extra_spacing[SPACING_TOP]);
 			_font_set_spacing(sysf.rid, SPACING_BOTTOM, key.extra_spacing[SPACING_BOTTOM]);
 			_font_set_spacing(sysf.rid, SPACING_SPACE, key.extra_spacing[SPACING_SPACE]);
@@ -6738,7 +6738,7 @@ bool TextServerAdvanced::_shaped_text_update_breaks(const RID &p_shaped) {
 	return sd->line_breaks_valid;
 }
 
-_FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end) {
+_FORCE_INLINE_ int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end) {
 	int64_t kashida_pos = -1;
 	int8_t priority = 100;
 	int64_t i = p_start;

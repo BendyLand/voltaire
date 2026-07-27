@@ -613,10 +613,89 @@ void EditorPlugin::_bind_methods() {
 	BIND_ENUM_CONSTANT(AFTER_GUI_INPUT_CUSTOM);
 }
 
+void EditorPlugin::enable_plugin() {
+    // stub
+}
+
+void EditorPlugin::disable_plugin() {
+    // stub
+}
+
 EditorUndoRedoManager *EditorPlugin::get_undo_redo() {
 	return EditorUndoRedoManager::get_singleton();
 }
 
 EditorPluginCreateFunc EditorPlugins::creation_funcs[MAX_CREATE_FUNCS];
 
+bool EditorPlugin::has_main_screen() const {
+	return false;
+}
+
+String EditorPlugin::get_plugin_name() const {
+	return String();
+}
+
+void EditorPlugin::edit(Object *p_object) {
+}
+
+bool EditorPlugin::handles(Object *p_object) const {
+	return false;
+}
+
+void EditorPlugin::make_visible(bool p_visible) {
+}
+
+String EditorPlugin::get_unsaved_status(const String &p_for_scene) const {
+	return String();
+}
+
+void EditorPlugin::save_external_data() {
+}
+
 int EditorPlugins::creation_func_count = 0;
+
+EditorPlugin::~EditorPlugin() {
+}
+
+bool EditorPlugin::forward_canvas_gui_input(const Ref<InputEvent> &p_event) {
+	return false;
+}
+
+void EditorPlugin::forward_canvas_draw_over_viewport(Control *p_overlay) {
+}
+
+void EditorPlugin::forward_canvas_force_draw_over_viewport(Control *p_overlay) {
+}
+
+void EditorPlugin::forward_3d_draw_over_viewport(Control *p_overlay) {
+}
+
+void EditorPlugin::forward_3d_force_draw_over_viewport(Control *p_overlay) {
+}
+
+const Ref<Texture2D> EditorPlugin::get_plugin_icon() const {
+	return Ref<Texture2D>();
+}
+
+Dictionary EditorPlugin::get_state() const {
+	return Dictionary();
+}
+
+void EditorPlugin::set_state(const Dictionary &p_state) {
+}
+
+void EditorPlugin::clear() {
+}
+
+void EditorPlugin::apply_changes() {
+}
+
+void EditorPlugin::set_window_layout(Ref<ConfigFile> p_layout) {
+}
+
+void EditorPlugin::get_window_layout(Ref<ConfigFile> p_layout) {
+}
+
+bool EditorPlugin::build() {
+	return true;
+}

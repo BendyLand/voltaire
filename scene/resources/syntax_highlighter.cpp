@@ -44,10 +44,6 @@ Dictionary SyntaxHighlighter::get_line_syntax_highlighting(int p_line) {
 		return color_map;
 	}
 
-	if (!VLTRVIRTUAL_CALL(_get_line_syntax_highlighting, p_line, color_map)) {
-		color_map = _get_line_syntax_highlighting_impl(p_line);
-	}
-
 	highlighting_cache[p_line] = color_map;
 	return color_map;
 }
@@ -67,10 +63,6 @@ void SyntaxHighlighter::_lines_edited_from(int p_from_line, int p_to_line) {
 
 void SyntaxHighlighter::clear_highlighting_cache() {
 	highlighting_cache.clear();
-
-	if (VLTRVIRTUAL_CALL(_clear_highlighting_cache)) {
-		return;
-	}
 	_clear_highlighting_cache();
 }
 
@@ -78,9 +70,6 @@ void SyntaxHighlighter::update_cache() {
 	clear_highlighting_cache();
 
 	if (text_edit == nullptr) {
-		return;
-	}
-	if (VLTRVIRTUAL_CALL(_update_cache)) {
 		return;
 	}
 	_update_cache();
@@ -109,10 +98,6 @@ void SyntaxHighlighter::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("update_cache"), &SyntaxHighlighter::update_cache);
 	ClassDB::bind_method(D_METHOD("clear_highlighting_cache"), &SyntaxHighlighter::clear_highlighting_cache);
 	ClassDB::bind_method(D_METHOD("get_text_edit"), &SyntaxHighlighter::get_text_edit);
-
-	VLTRVIRTUAL_BIND(_get_line_syntax_highlighting, "line")
-	VLTRVIRTUAL_BIND(_clear_highlighting_cache)
-	VLTRVIRTUAL_BIND(_update_cache)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

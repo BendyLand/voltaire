@@ -1747,3 +1747,9 @@ SelfList<Resource>::List ResourceLoader::remapped_list;
 HashMap<String, Vector<String>> ResourceLoader::translation_remaps;
 
 ResourceLoaderImport ResourceLoader::import = nullptr;
+
+bool ResourceFormatLoader::handles_type(const String &p_type) const { return false; }
+String ResourceFormatLoader::get_resource_type(const String &p_path) const { return String(); }
+String ResourceFormatLoader::get_resource_script_class(const String &p_path) const { return String(); }
+bool ResourceFormatLoader::has_custom_uid_support() const { return false; }
+

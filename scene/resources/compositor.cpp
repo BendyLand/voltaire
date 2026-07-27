@@ -71,8 +71,6 @@ void CompositorEffect::_bind_methods() {
 	BIND_ENUM_CONSTANT(EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT)
 	BIND_ENUM_CONSTANT(EFFECT_CALLBACK_TYPE_POST_TRANSPARENT)
 	BIND_ENUM_CONSTANT(EFFECT_CALLBACK_TYPE_MAX)
-
-	VLTRVIRTUAL_BIND(_render_callback, "effect_callback_type", "render_data");
 }
 
 void CompositorEffect::_validate_property(PropertyInfo &p_property) const {
@@ -89,10 +87,6 @@ void CompositorEffect::_validate_property(PropertyInfo &p_property) const {
 			p_property.usage = PROPERTY_USAGE_NONE;
 		}
 	}
-}
-
-void CompositorEffect::_call_render_callback(int p_effect_callback_type, const RenderData *p_render_data) {
-	VLTRVIRTUAL_CALL(_render_callback, p_effect_callback_type, p_render_data);
 }
 
 void CompositorEffect::set_enabled(bool p_enabled) {
@@ -258,3 +252,5 @@ TypedArray<CompositorEffect> Compositor::get_compositor_effects() const {
 
 	return arr;
 }
+
+void CompositorEffect::_call_render_callback(int p_effect_callback_type, const RenderData *p_render_data) {}

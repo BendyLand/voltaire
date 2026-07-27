@@ -594,3 +594,10 @@ EditorResourcePreview::EditorResourcePreview() {
 EditorResourcePreview::~EditorResourcePreview() {
 	stop();
 }
+
+bool EditorResourcePreviewGenerator::can_generate_small_preview() const { return false; }
+bool EditorResourcePreviewGenerator::generate_small_preview_automatically() const { return false; }
+bool EditorResourcePreviewGenerator::handles(const String &p_type) const { return false; }
+Ref<Texture2D> EditorResourcePreviewGenerator::generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const {
+    return Ref<Texture2D>();
+}

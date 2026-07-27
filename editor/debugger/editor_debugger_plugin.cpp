@@ -176,3 +176,10 @@ EditorDebuggerPlugin::EditorDebuggerPlugin() {
 	EditorDebuggerNode::get_singleton()->connect("breakpoints_cleared_in_tree", callable_mp(this, &EditorDebuggerPlugin::breakpoints_cleared_in_tree));
 	EditorDebuggerNode::get_singleton()->connect("breakpoint_set_in_tree", callable_mp(this, &EditorDebuggerPlugin::breakpoint_set_in_tree));
 }
+
+void EditorDebuggerPlugin::goto_script_line(const Ref<Script> &p_script, int p_line) {}
+void EditorDebuggerPlugin::breakpoints_cleared_in_tree() {}
+void EditorDebuggerPlugin::breakpoint_set_in_tree(const Ref<Script> &p_script, int p_line, bool p_enabled) {}
+void EditorDebuggerPlugin::setup_session(int p_idx) {}
+bool EditorDebuggerPlugin::capture(const String &p_message, const Array &p_data, int p_session_id) { return false; }
+bool EditorDebuggerPlugin::has_capture(const String &p_capture) const { return false; }
