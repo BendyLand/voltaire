@@ -38,8 +38,8 @@
 static JavaScriptBridge *javascript_bridge_singleton;
 
 void register_web_api() {
-	GDREGISTER_ABSTRACT_CLASS(JavaScriptObject);
-	GDREGISTER_ABSTRACT_CLASS(JavaScriptBridge);
+	VLTR_REGISTER_ABSTRACT_CLASS(JavaScriptObject);
+	VLTR_REGISTER_ABSTRACT_CLASS(JavaScriptBridge);
 	javascript_bridge_singleton = memnew(JavaScriptBridge);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("JavaScriptBridge", javascript_bridge_singleton));
 }

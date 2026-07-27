@@ -54,3 +54,14 @@ void MainLoop::finalize() {
 		set_script(Variant()); //clear script
 	}
 }
+
+void MainLoop::initialize() {
+}
+
+bool MainLoop::physics_process(double p_time) {
+	return false;
+}
+
+bool MainLoop::process(double p_time) {
+	return false;
+}

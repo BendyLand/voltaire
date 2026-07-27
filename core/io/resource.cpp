@@ -874,3 +874,11 @@ int ResourceCache::get_cached_resource_count() {
 	MutexLock mutex_lock(lock);
 	return resources.size();
 }
+
+void Resource::reset_state() {
+    // stub
+}
+
+RID Resource::get_rid() const {
+    return RID();
+}

@@ -33,10 +33,6 @@
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
 
-#ifndef DISABLE_DEPRECATED
-#include "servers/physics_3d/physics_server_3d_extension.h"
-#endif
-
 //so, if you pass 45 as limit, avoid numerical precision errors when angle is 45.
 #define FLOOR_ANGLE_THRESHOLD 0.01
 
@@ -623,17 +619,7 @@ void CharacterBody3D::_set_platform_data(const PS3DT::MotionCollision &p_collisi
 	platform_object_id = p_collision.collider_id;
 	platform_velocity = p_collision.collider_velocity;
 	platform_angular_velocity = p_collision.collider_angular_velocity;
-
-#ifndef DISABLE_DEPRECATED
-	// Try to accommodate for any physics extensions that have yet to implement `PhysicsDirectBodyState3D::get_collision_layer`.
-	PhysicsDirectBodyState3DExtension *bs_ext = Object::cast_to<PhysicsDirectBodyState3DExtension>(bs);
-	if (bs_ext != nullptr && !VLTRVIRTUAL_IS_OVERRIDDEN_PTR(bs_ext, _get_collision_layer)) {
-		platform_layer = PhysicsServer3D::get_singleton()->body_get_collision_layer(p_collision.collider);
-	} else
-#endif
-	{
-		platform_layer = bs->get_collision_layer();
-	}
+	platform_layer = bs->get_collision_layer();
 }
 
 void CharacterBody3D::set_safe_margin(real_t p_margin) {

@@ -35,10 +35,6 @@
 #include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
-#ifndef DISABLE_DEPRECATED
-#include "servers/physics_2d/physics_server_2d_extension.h"
-#endif
-
 // So, if you pass 45 as limit, avoid numerical precision errors when angle is 45.
 #define FLOOR_ANGLE_THRESHOLD 0.01
 
@@ -433,17 +429,7 @@ void CharacterBody2D::_set_platform_data(const PS2DT::MotionResult &p_result) {
 	platform_rid = p_result.collider;
 	platform_object_id = p_result.collider_id;
 	platform_velocity = p_result.collider_velocity;
-
-#ifndef DISABLE_DEPRECATED
-	// Try to accommodate for any physics extensions that have yet to implement `PhysicsDirectBodyState2D::get_collision_layer`.
-	PhysicsDirectBodyState2DExtension *bs_ext = Object::cast_to<PhysicsDirectBodyState2DExtension>(bs);
-	if (bs_ext != nullptr && !VLTRVIRTUAL_IS_OVERRIDDEN_PTR(bs_ext, _get_collision_layer)) {
-		platform_layer = PhysicsServer2D::get_singleton()->body_get_collision_layer(p_result.collider);
-	} else
-#endif
-	{
-		platform_layer = bs->get_collision_layer();
-	}
+	platform_layer = bs->get_collision_layer();
 }
 
 const Vector2 &CharacterBody2D::get_velocity() const {

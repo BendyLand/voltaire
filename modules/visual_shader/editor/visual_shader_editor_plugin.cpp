@@ -111,12 +111,7 @@ void VisualShaderNodePlugin::set_editor(VisualShaderEditor *p_editor) {
 
 Control *VisualShaderNodePlugin::create_editor(const Ref<Resource> &p_parent_resource, const Ref<VisualShaderNode> &p_node) {
 	Object *ret = nullptr;
-	VLTRVIRTUAL_CALL(_create_editor, p_parent_resource, p_node, ret);
 	return Object::cast_to<Control>(ret);
-}
-
-void VisualShaderNodePlugin::_bind_methods() {
-	VLTRVIRTUAL_BIND(_create_editor, "parent_resource", "visual_shader_node");
 }
 
 ///////////////////

@@ -184,3 +184,5 @@ EditorTranslationParser::~EditorTranslationParser() {
 	memdelete(singleton);
 	singleton = nullptr;
 }
+
+void EditorTranslationParserPlugin::_bind_methods() {}

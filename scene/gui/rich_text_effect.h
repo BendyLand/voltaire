@@ -104,8 +104,6 @@ class RichTextEffect : public Resource {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL1RC(bool, _process_custom_fx, Ref<CharFXTransform>)
-
 public:
 	Variant get_bbcode() const;
 	bool _process_effect_impl(Ref<class CharFXTransform> p_cfx);

@@ -48,3 +48,4 @@ Ref<Resource> EditorResourceConversionPlugin::convert(const Ref<Resource> &p_res
 	Ref<Resource> ret;
 	return ret;
 }
+

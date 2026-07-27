@@ -39,12 +39,6 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "scene/resources/material.h"
 #include "servers/rendering/rendering_server.h"
 
-AABB VisualInstance3D::get_aabb() const {
-	AABB ret;
-	VLTRVIRTUAL_CALL(_get_aabb, ret);
-	return ret;
-}
-
 void VisualInstance3D::_update_visibility() {
 	if (!is_inside_tree()) {
 		return;
@@ -185,7 +179,6 @@ void VisualInstance3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_sorting_use_aabb_center", "enabled"), &VisualInstance3D::set_sorting_use_aabb_center);
 	ClassDB::bind_method(D_METHOD("is_sorting_use_aabb_center"), &VisualInstance3D::is_sorting_use_aabb_center);
 
-	VLTRVIRTUAL_BIND(_get_aabb);
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "layers", PROPERTY_HINT_LAYERS_3D_RENDER), "set_layer_mask", "get_layer_mask");
 
 	ADD_GROUP("Sorting", "sorting_");
@@ -656,4 +649,8 @@ GeometryInstance3D::~GeometryInstance3D() {
 	if (material_override.is_valid()) {
 		set_material_override(Ref<Material>());
 	}
+}
+
+AABB VisualInstance3D::get_aabb() const {
+	return AABB();
 }

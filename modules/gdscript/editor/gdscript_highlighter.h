@@ -115,4 +115,5 @@ public:
 	virtual PackedStringArray _get_supported_languages() const override;
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
+	virtual void _clear_highlighting_cache() override;
 };

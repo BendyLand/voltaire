@@ -33,39 +33,6 @@
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
 
-void AudioStreamPlayback::start(double p_from_pos) {
-	VLTRVIRTUAL_CALL(_start, p_from_pos);
-}
-void AudioStreamPlayback::stop() {
-	VLTRVIRTUAL_CALL(_stop);
-}
-bool AudioStreamPlayback::is_playing() const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_is_playing, ret);
-	return ret;
-}
-
-int AudioStreamPlayback::get_loop_count() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_loop_count, ret);
-	return ret;
-}
-
-double AudioStreamPlayback::get_playback_position() const {
-	double ret = 0.0;
-	VLTRVIRTUAL_CALL(_get_playback_position, ret);
-	return ret;
-}
-void AudioStreamPlayback::seek(double p_time) {
-	VLTRVIRTUAL_CALL(_seek, p_time);
-}
-
-int AudioStreamPlayback::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_mix, p_buffer, p_rate_scale, p_frames, ret);
-	return ret;
-}
-
 PackedVector2Array AudioStreamPlayback::_mix_audio_bind(float p_rate_scale, int p_frames) {
 	Vector<AudioFrame> frames = mix_audio(p_rate_scale, p_frames);
 
@@ -102,36 +69,11 @@ void AudioStreamPlayback::seek_playback(double p_time) {
 	seek(p_time);
 }
 
-void AudioStreamPlayback::tag_used_streams() {
-	VLTRVIRTUAL_CALL(_tag_used_streams);
-}
-
-void AudioStreamPlayback::set_parameter(const StringName &p_name, const Variant &p_value) {
-	VLTRVIRTUAL_CALL(_set_parameter, p_name, p_value);
-}
-
-Variant AudioStreamPlayback::get_parameter(const StringName &p_name) const {
-	Variant ret;
-	VLTRVIRTUAL_CALL(_get_parameter, p_name, ret);
-	return ret;
-}
-
 Ref<AudioSamplePlayback> AudioStreamPlayback::get_sample_playback() const {
 	return nullptr;
 }
 
 void AudioStreamPlayback::_bind_methods() {
-	VLTRVIRTUAL_BIND(_start, "from_pos")
-	VLTRVIRTUAL_BIND(_stop)
-	VLTRVIRTUAL_BIND(_is_playing)
-	VLTRVIRTUAL_BIND(_get_loop_count)
-	VLTRVIRTUAL_BIND(_get_playback_position)
-	VLTRVIRTUAL_BIND(_seek, "position")
-	VLTRVIRTUAL_BIND(_mix, "buffer", "rate_scale", "frames");
-	VLTRVIRTUAL_BIND(_tag_used_streams);
-	VLTRVIRTUAL_BIND(_set_parameter, "name", "value");
-	VLTRVIRTUAL_BIND(_get_parameter, "name");
-
 	ClassDB::bind_method(D_METHOD("set_sample_playback", "playback_sample"), &AudioStreamPlayback::set_sample_playback);
 	ClassDB::bind_method(D_METHOD("get_sample_playback"), &AudioStreamPlayback::get_sample_playback);
 	ClassDB::bind_method(D_METHOD("mix_audio", "rate_scale", "frames"), &AudioStreamPlayback::_mix_audio_bind);
@@ -163,22 +105,9 @@ void AudioStreamPlaybackResampled::begin_resample() {
 	mix_offset = 0;
 }
 
-int AudioStreamPlaybackResampled::_mix_internal(AudioFrame *p_buffer, int p_frames) {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_mix_resampled, p_buffer, p_frames, ret);
-	return ret;
-}
-float AudioStreamPlaybackResampled::get_stream_sampling_rate() {
-	float ret = 0;
-	VLTRVIRTUAL_CALL(_get_stream_sampling_rate, ret);
-	return ret;
-}
 
 void AudioStreamPlaybackResampled::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("begin_resample"), &AudioStreamPlaybackResampled::begin_resample);
-
-	VLTRVIRTUAL_BIND(_mix_resampled, "dst_buffer", "frame_count");
-	VLTRVIRTUAL_BIND(_get_stream_sampling_rate);
 }
 
 int AudioStreamPlaybackResampled::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
@@ -239,54 +168,6 @@ int AudioStreamPlaybackResampled::mix(AudioFrame *p_buffer, float p_rate_scale, 
 
 ////////////////////////////////
 
-Ref<AudioStreamPlayback> AudioStream::instantiate_playback() {
-	Ref<AudioStreamPlayback> ret;
-	VLTRVIRTUAL_CALL(_instantiate_playback, ret);
-	return ret;
-}
-
-double AudioStream::get_length() const {
-	double ret = 0;
-	VLTRVIRTUAL_CALL(_get_length, ret);
-	return ret;
-}
-
-bool AudioStream::is_monophonic() const {
-	bool ret = true;
-	VLTRVIRTUAL_CALL(_is_monophonic, ret);
-	return ret;
-}
-
-double AudioStream::get_bpm() const {
-	double ret = 0;
-	VLTRVIRTUAL_CALL(_get_bpm, ret);
-	return ret;
-}
-
-bool AudioStream::has_loop() const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_has_loop, ret);
-	return ret;
-}
-
-int AudioStream::get_bar_beats() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_bar_beats, ret);
-	return ret;
-}
-
-int AudioStream::get_beat_count() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_beat_count, ret);
-	return ret;
-}
-
-Dictionary AudioStream::get_tags() const {
-	Dictionary ret;
-	VLTRVIRTUAL_CALL(_get_tags, ret);
-	return ret;
-}
-
 void AudioStream::tag_used(float p_offset) {
 	if (tagged_frame != AudioServer::get_singleton()->get_mixed_frames()) {
 		offset_count = 0;
@@ -310,7 +191,6 @@ float AudioStream::get_tagged_frame_offset(int p_index) const {
 
 void AudioStream::get_parameter_list(List<Parameter> *r_parameters) {
 	TypedArray<Dictionary> ret;
-	VLTRVIRTUAL_CALL(_get_parameter_list, ret);
 	for (int i = 0; i < ret.size(); i++) {
 		Dictionary d = ret[i];
 		ERR_CONTINUE(!d.has("default_value"));
@@ -333,19 +213,6 @@ void AudioStream::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("can_be_sampled"), &AudioStream::can_be_sampled);
 	ClassDB::bind_method(D_METHOD("generate_sample"), &AudioStream::generate_sample);
 	ClassDB::bind_method(D_METHOD("is_meta_stream"), &AudioStream::is_meta_stream);
-
-	VLTRVIRTUAL_BIND(_instantiate_playback);
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL_BIND(_get_stream_name);
-#endif
-	VLTRVIRTUAL_BIND(_get_length);
-	VLTRVIRTUAL_BIND(_is_monophonic);
-	VLTRVIRTUAL_BIND(_get_bpm)
-	VLTRVIRTUAL_BIND(_get_beat_count)
-	VLTRVIRTUAL_BIND(_get_tags);
-	VLTRVIRTUAL_BIND(_get_parameter_list)
-	VLTRVIRTUAL_BIND(_has_loop);
-	VLTRVIRTUAL_BIND(_get_bar_beats);
 
 	ADD_SIGNAL(MethodInfo("parameter_list_changed"));
 }
@@ -861,4 +728,30 @@ int AudioStreamPlaybackRandomizer::mix(AudioFrame *p_buffer, float p_rate_scale,
 AudioStreamPlaybackRandomizer::~AudioStreamPlaybackRandomizer() {
 	randomizer->playbacks.erase(this);
 }
+
+double AudioStream::get_bpm() const { return 0.0; }
+bool AudioStream::has_loop() const { return false; }
+int AudioStream::get_bar_beats() const { return 4; }
+int AudioStream::get_beat_count() const { return 0; }
+Dictionary AudioStream::get_tags() const { return Dictionary(); }
+double AudioStream::get_length() const { return 0.0; }
+
+void AudioStreamPlayback::set_parameter(const StringName &p_name, const Variant &p_value) {}
+Variant AudioStreamPlayback::get_parameter(const StringName &p_name) const { return Variant(); }
+
 /////////////////////////////////////////////
+
+Ref<AudioStreamPlayback> AudioStream::instantiate_playback() { return Ref<AudioStreamPlayback>(); }
+String AudioStream::get_stream_name() const { return ""; }
+bool AudioStream::is_monophonic() const { return false; }
+double AudioStreamPlayback::get_playback_position() const { return 0.0; }
+bool AudioStreamPlayback::is_playing() const { return false; }
+void AudioStreamPlayback::start(double p_from_pos) {}
+void AudioStreamPlayback::stop() {}
+int AudioStreamPlaybackResampled::_mix_internal(AudioFrame *p_buffer, int p_frames) { return 0; }
+float AudioStreamPlaybackResampled::get_stream_sampling_rate() const { return 44100.0; }
+int AudioStreamPlayback::get_loop_count() const { return 0; }
+void AudioStreamPlayback::seek(double p_time) {}
+void AudioStreamPlayback::tag_used_streams() {}
+int AudioStreamPlayback::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) { return 0; }
+

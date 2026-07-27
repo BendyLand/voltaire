@@ -310,3 +310,5 @@ PacketPeerStream::PacketPeerStream() {
 	input_buffer.resize(int64_t(1) << rbsize);
 	output_buffer.resize(int64_t(1) << rbsize);
 }
+
+void PacketPeerExtension::_bind_methods() {}

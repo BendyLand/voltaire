@@ -1,121 +1,62 @@
-In file included from ./core/templates/cowdata.h:34,
-                 from ./core/string/ustring.h:34,
-                 from modules/text_server_adv/script_iterator.h:33,
-                 from modules/text_server_adv/text_server_adv.h:38,
-                 from modules/text_server_adv/register_types.cpp:33:
-./core/object/ref_counted.h: In instantiation of 'void Ref<T>::instantiate(VarArgs ...) [with VarArgs = {}; T = TextServerAdvanced]':
-modules/text_server_adv/register_types.cpp:46:17:   required from here
-./core/os/memory.h:148:42: error: invalid new-expression of abstract class type 'TextServerAdvanced'
-  148 | #define memnew(m_class) _post_initialize(::new (DefaultAllocator{}) m_class)
-./core/object/ref_counted.h:217:30: note: in expansion of macro 'memnew'
-  217 |                 Ref<T> ref = memnew(T(p_params...));
-      |                              ^~~~~~
-In file included from modules/text_server_adv/register_types.cpp:33:
-modules/text_server_adv/text_server_adv.h:104:7: note:   because the following virtual functions are pure within 'TextServerAdvanced':
-  104 | class TextServerAdvanced : public TextServerExtension {
-      |       ^~~~~~~~~~~~~~~~~~
-In file included from ./servers/text/text_server_extension.h:37,
-                 from modules/text_server_adv/text_server_adv.h:44,
-                 from modules/text_server_adv/register_types.cpp:33:
-./servers/text/text_server.h:362:22: note:     'virtual void TextServer::font_set_transform(const RID&, const Transform2D&)'
-  362 |         virtual void font_set_transform(const RID &p_font_rid, const Transform2D &p_transform) = 0;
-      |                      ^~~~~~~~~~~~~~~~~~
-In file included from modules/text_server_adv/register_types.cpp:35:
-./core/object/class_db.h: In instantiation of 'static Object* ClassDB::creator(bool) [with T = TextServerAdvanced]':
-./core/object/class_db.h:244:20:   required from 'static void ClassDB::register_class(bool) [with T = TextServerAdvanced]'
-modules/text_server_adv/register_types.cpp:42:2:   required from here
-./core/object/class_db.h:160:31: error: invalid new-expression of abstract class type 'TextServerAdvanced'
-  160 |                 Object *ret = new (DefaultAllocator{}) T;
-      |                               ^~~~~~~~~~~~~~~~~~~~~~~~~~
-scons: *** [bin/obj/modules/text_server_adv/register_types.linuxbsd.editor.x86_64.o] Error 1
-In file included from ./core/io/resource_uid.h:33,
-                 from ./core/io/resource.h:33,
-                 from ./core/input/input_event.h:34,
-                 from ./scene/main/node.h:33,
-                 from ./editor/inspector/editor_property_name_processor.h:33,
-                 from ./editor/inspector/editor_inspector.h:33,
-                 from ./editor/inspector/editor_properties.h:33,
-                 from modules/visual_shader/editor/visual_shader_editor_plugin.h:33,
-                 from modules/visual_shader/editor/visual_shader_editor_plugin.cpp:31:
-modules/visual_shader/editor/visual_shader_editor_plugin.cpp: In member function 'virtual Control* VisualShaderNodePlugin::create_editor(const Ref<Resource>&, const Ref<VisualShaderNode>&)':
-./core/object/object.h:73:39: error: '_vltrvirtual__create_editor_call' was not declared in this scope
-   73 | #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
-      |                                       ^~~~~~~~~~~~~
-modules/visual_shader/editor/visual_shader_editor_plugin.cpp:114:9: note: in expansion of macro 'VLTRVIRTUAL_CALL'
-  114 |         VLTRVIRTUAL_CALL(_create_editor, p_parent_resource, p_node, ret);
-      |         ^~~~~~~~~~~~~~~~
-modules/visual_shader/editor/visual_shader_editor_plugin.cpp: In static member function 'static void VisualShaderNodePlugin::_bind_methods()':
-./core/object/object.h:77:89: error: '_vltrvirtual__create_editor_get_method_info' was not declared in this scope
-   77 | #define VLTRVIRTUAL_BIND(m_name, ...) ::ClassDB::add_virtual_method(get_class_static(), _vltrvirtual_##m_name##_get_method_info(), true, sarray(__VA_ARGS__));
-      |                                                                                         ^~~~~~~~~~~~~
-modules/visual_shader/editor/visual_shader_editor_plugin.cpp:119:9: note: in expansion of macro 'VLTRVIRTUAL_BIND'
-  119 |         VLTRVIRTUAL_BIND(_create_editor, "parent_resource", "visual_shader_node");
-      |         ^~~~~~~~~~~~~~~~
-scons: *** [bin/obj/modules/visual_shader/editor/visual_shader_editor_plugin.linuxbsd.editor.x86_64.o] Error 1
-In file included from modules/text_server_adv/text_server_adv.cpp:31:
-modules/text_server_adv/text_server_adv.h:1042:32: warning: inline function 'int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String&, int64_t, int64_t)' used but never defined
- 1042 |         _FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
-      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:967:12: warning: 'int ft_cubic_to(const FT_Vector*, const FT_Vector*, const FT_Vector*, void*)' defined but not used [-Wunused-function]
-  967 | static int ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to, void *user) {
-      |            ^~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:960:12: warning: 'int ft_conic_to(const FT_Vector*, const FT_Vector*, void*)' defined but not used [-Wunused-function]
-  960 | static int ft_conic_to(const FT_Vector *control, const FT_Vector *to, void *user) {
-      |            ^~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:950:12: warning: 'int ft_line_to(const FT_Vector*, void*)' defined but not used [-Wunused-function]
-  950 | static int ft_line_to(const FT_Vector *to, void *user) {
-      |            ^~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:941:12: warning: 'int ft_move_to(const FT_Vector*, void*)' defined but not used [-Wunused-function]
-  941 | static int ft_move_to(const FT_Vector *to, void *user) {
-      |            ^~~~~~~~~~
-In file included from modules/text_server_adv/text_server_adv.cpp:31:
-modules/text_server_adv/text_server_adv.h: In member function 'bool TextServerAdvanced::_shaped_text_update_justification_ops(const RID&)':
-modules/text_server_adv/text_server_adv.h:1042:32: error: inlining failed in call to 'always_inline' 'int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String&, int64_t, int64_t)': function body not available
- 1042 |         _FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
-      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:6846:95: note: called from here
- 6846 |                                         int ks = _generate_kashida_justification_opportunities(sd->text, limit, i) + sd->start;
-      |                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
-In file included from modules/text_server_adv/text_server_adv.cpp:31:
-modules/text_server_adv/text_server_adv.h:1042:32: error: inlining failed in call to 'always_inline' 'int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String&, int64_t, int64_t)': function body not available
- 1042 |         _FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
-      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:6853:79: note: called from here
- 6853 |                         int ks = _generate_kashida_justification_opportunities(sd->text, limit, sd->text.length()) + sd->start;
-      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from modules/text_server_adv/text_server_adv.cpp:31:
-modules/text_server_adv/text_server_adv.h:1042:32: error: inlining failed in call to 'always_inline' 'int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String&, int64_t, int64_t)': function body not available
- 1042 |         _FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
-      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:6853:79: note: called from here
- 6853 |                         int ks = _generate_kashida_justification_opportunities(sd->text, limit, sd->text.length()) + sd->start;
-      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from modules/text_server_adv/text_server_adv.cpp:31:
-modules/text_server_adv/text_server_adv.h:1042:32: error: inlining failed in call to 'always_inline' 'int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String&, int64_t, int64_t)': function body not available
- 1042 |         _FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
-      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:6863:95: note: called from here
- 6863 |                                         int ks = _generate_kashida_justification_opportunities(sd->text, limit, i);
-      |                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
-In file included from modules/text_server_adv/text_server_adv.cpp:31:
-modules/text_server_adv/text_server_adv.h:1042:32: error: inlining failed in call to 'always_inline' 'int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String&, int64_t, int64_t)': function body not available
- 1042 |         _FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
-      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:6846:95: note: called from here
- 6846 |                                         int ks = _generate_kashida_justification_opportunities(sd->text, limit, i) + sd->start;
-      |                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
-In file included from modules/text_server_adv/text_server_adv.cpp:31:
-modules/text_server_adv/text_server_adv.h:1042:32: error: inlining failed in call to 'always_inline' 'int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String&, int64_t, int64_t)': function body not available
- 1042 |         _FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
-      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:6853:79: note: called from here
- 6853 |                         int ks = _generate_kashida_justification_opportunities(sd->text, limit, sd->text.length()) + sd->start;
-      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from modules/text_server_adv/text_server_adv.cpp:31:
-modules/text_server_adv/text_server_adv.h:1042:32: error: inlining failed in call to 'always_inline' 'int64_t TextServerAdvanced::_generate_kashida_justification_opportunities(const String&, int64_t, int64_t)': function body not available
- 1042 |         _FORCE_INLINE_ int64_t _generate_kashida_justification_opportunities(const String &p_data, int64_t p_start, int64_t p_end);
-      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-modules/text_server_adv/text_server_adv.cpp:6863:95: note: called from here
- 6863 |                                         int ks = _generate_kashida_justification_opportunities(sd->text, limit, i);
-      |                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
-scons: *** [bin/obj/modules/text_server_adv/text_server_adv.linuxbsd.editor.x86_64.o] Error 1
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(node_3d_editor_gizmos.linuxbsd.editor.x86_64.o): warning: relocation against `_ZTV23EditorNode3DGizmoPlugin' in read-only section `.text'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_help.linuxbsd.editor.x86_64.o): in function `void Ref<GDScriptSyntaxHighlighter>::instantiate<>()':
+editor_help.cpp:(.text._ZN3RefI25GDScriptSyntaxHighlighterE11instantiateIJEEEvDpT_[_ZN3RefI25GDScriptSyntaxHighlighterE11instantiateIJEEEvDpT_]+0x50): undefined reference to `vtable for GDScriptSyntaxHighlighter'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(resource_importer_scene.linuxbsd.editor.x86_64.o): in function `ResourceImporterScene::import(long, String const&, String const&, HashMap<StringName, Variant, HashMapHasherDefault, HashMapComparatorDefault<StringName, void>, DefaultTypedAllocator<HashMapElement<StringName, Variant> > > const&, List<String, DefaultAllocator>*, List<String, DefaultAllocator>*, Variant*)':
+resource_importer_scene.cpp:(.text+0x2d8ce): undefined reference to `vtable for EditorScenePostImport'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(node_3d_editor_gizmos.linuxbsd.editor.x86_64.o): in function `EditorNode3DGizmoPlugin::EditorNode3DGizmoPlugin()':
+node_3d_editor_gizmos.cpp:(.text+0x2f20): undefined reference to `vtable for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(node_3d_editor_gizmos.linuxbsd.editor.x86_64.o): in function `EditorNode3DGizmoPlugin::~EditorNode3DGizmoPlugin()':
+node_3d_editor_gizmos.cpp:(.text+0x67ac): undefined reference to `vtable for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(path_3d_editor_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI17Path3DGizmoPlugin[_ZTI17Path3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(skeleton_3d_editor_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI21Skeleton3DGizmoPlugin[_ZTI21Skeleton3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(audio_listener_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI26AudioListener3DGizmoPlugin[_ZTI26AudioListener3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(audio_stream_player_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI30AudioStreamPlayer3DGizmoPlugin[_ZTI30AudioStreamPlayer3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(camera_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI19Camera3DGizmoPlugin[_ZTI19Camera3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(cpu_particles_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI25CPUParticles3DGizmoPlugin[_ZTI25CPUParticles3DGizmoPlugin]+0x10): more undefined references to `typeinfo for EditorNode3DGizmoPlugin' follow
+/bin/ld: bin/obj/servers/libservers.linuxbsd.editor.x86_64.a(audio_stream.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV28AudioStreamPlaybackResampled[_ZTV28AudioStreamPlaybackResampled]+0x1e0): undefined reference to `AudioStreamPlaybackResampled::get_stream_sampling_rate()'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(register_editor_types.linuxbsd.editor.x86_64.o): in function `Object* ClassDB::creator<EditorScenePostImport>(bool)':
+register_editor_types.cpp:(.text._ZN7ClassDB7creatorI21EditorScenePostImportEEP6Objectb[_ZN7ClassDB7creatorI21EditorScenePostImportEEP6Objectb]+0x25): undefined reference to `vtable for EditorScenePostImport'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(register_editor_types.linuxbsd.editor.x86_64.o): in function `Object* ClassDB::creator<EditorContextMenuPlugin>(bool)':
+register_editor_types.cpp:(.text._ZN7ClassDB7creatorI23EditorContextMenuPluginEEP6Objectb[_ZN7ClassDB7creatorI23EditorContextMenuPluginEEP6Objectb]+0x25): undefined reference to `vtable for EditorContextMenuPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_export_platform_extension.linuxbsd.editor.x86_64.o): in function `EditorExportPlatformExtension::EditorExportPlatformExtension()':
+editor_export_platform_extension.cpp:(.text+0x230): undefined reference to `vtable for EditorExportPlatformExtension'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_export_platform_extension.linuxbsd.editor.x86_64.o): in function `EditorExportPlatformExtension::~EditorExportPlatformExtension()':
+editor_export_platform_extension.cpp:(.text+0xa37): undefined reference to `vtable for EditorExportPlatformExtension'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_export_platform_extension.linuxbsd.editor.x86_64.o): in function `EditorExportPlatformExtension::~EditorExportPlatformExtension()':
+editor_export_platform_extension.cpp:(.text+0xa97): undefined reference to `vtable for EditorExportPlatformExtension'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_import_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV18EditorImportPlugin[_ZTV18EditorImportPlugin]+0x190): undefined reference to `EditorImportPlugin::get_priority() const'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_import_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV18EditorImportPlugin[_ZTV18EditorImportPlugin]+0x198): undefined reference to `EditorImportPlugin::get_import_order() const'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_import_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV18EditorImportPlugin[_ZTV18EditorImportPlugin]+0x1a0): undefined reference to `EditorImportPlugin::get_format_version() const'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_import_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV18EditorImportPlugin[_ZTV18EditorImportPlugin]+0x1c0): undefined reference to `EditorImportPlugin::get_preset_name(int) const'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(chain_ik_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI20ChainIK3DGizmoPlugin[_ZTI20ChainIK3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(geometry_instance_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI29GeometryInstance3DGizmoPlugin[_ZTI29GeometryInstance3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(gpu_particles_collision_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI34GPUParticlesCollision3DGizmoPlugin[_ZTI34GPUParticlesCollision3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(mesh_instance_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI25MeshInstance3DGizmoPlugin[_ZTI25MeshInstance3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(occluder_instance_3d_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI29OccluderInstance3DGizmoPlugin[_ZTI29OccluderInstance3DGizmoPlugin]+0x10): undefined reference to `typeinfo for EditorNode3DGizmoPlugin'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(particles_3d_emission_shape_gizmo_plugin.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTI35Particles3DEmissionShapeGizmoPlugin[_ZTI35Particles3DEmissionShapeGizmoPlugin]+0x10): more undefined references to `typeinfo for EditorNode3DGizmoPlugin' follow
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(export_plugin.linuxbsd.editor.x86_64.o): in function `EditorExportPlatformAndroid::initialize()':
+export_plugin.cpp:(.text+0x56e0): undefined reference to `ImageLoaderSVG::create_image_from_string(Ref<Image>, String, float, bool, HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)'
+/bin/ld: export_plugin.cpp:(.text+0x5821): undefined reference to `ImageLoaderSVG::create_image_from_string(Ref<Image>, String, float, bool, HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(export_plugin.linuxbsd.editor.x86_64.o): in function `EditorExportPlatformLinuxBSD::initialize()':
+export_plugin.cpp:(.text+0x26ca): undefined reference to `ImageLoaderSVG::create_image_from_string(Ref<Image>, String, float, bool, HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)'
+/bin/ld: export_plugin.cpp:(.text+0x2841): undefined reference to `ImageLoaderSVG::create_image_from_string(Ref<Image>, String, float, bool, HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(export_plugin.linuxbsd.editor.x86_64.o): in function `EditorExportPlatformMacOS::initialize()':
+export_plugin.cpp:(.text+0x2c9a): undefined reference to `ImageLoaderSVG::create_image_from_string(Ref<Image>, String, float, bool, HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)'
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(export_plugin.linuxbsd.editor.x86_64.o):export_plugin.cpp:(.text+0x2de1): more undefined references to `ImageLoaderSVG::create_image_from_string(Ref<Image>, String, float, bool, HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)' follow
+/bin/ld: bin/obj/editor/libeditor.linuxbsd.editor.x86_64.a(editor_icons.linuxbsd.editor.x86_64.o): in function `editor_configure_icons(bool)':
+editor_icons.cpp:(.text+0x52): undefined reference to `ImageLoaderSVG::set_forced_color_map(HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)'
+/bin/ld: editor_icons.cpp:(.text+0xc5): undefined reference to `ImageLoaderSVG::set_forced_color_map(HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)'
+/bin/ld: bin/obj/scene/libscene.linuxbsd.editor.x86_64.a(multiplayer_api.linuxbsd.editor.x86_64.o): in function `MultiplayerAPIExtension::_initialize_classv()':
+multiplayer_api.cpp:(.text._ZN23MultiplayerAPIExtension18_initialize_classvEv[_ZN23MultiplayerAPIExtension18_initialize_classvEv]+0xcd): undefined reference to `MultiplayerAPIExtension::_bind_methods()'
+/bin/ld: bin/obj/scene/libscene.linuxbsd.editor.x86_64.a(multiplayer_api.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV23MultiplayerAPIExtension[_ZTV23MultiplayerAPIExtension]+0x170): undefined reference to `MultiplayerAPIExtension::set_multiplayer_peer(Ref<MultiplayerPeer> const&)'
+/bin/ld: bin/obj/scene/libscene.linuxbsd.editor.x86_64.a(multiplayer_api.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV23MultiplayerAPIExtension[_ZTV23MultiplayerAPIExtension]+0x178): undefined reference to `MultiplayerAPIExtension::get_multiplayer_peer()'
+/bin/ld: bin/obj/scene/libscene.linuxbsd.editor.x86_64.a(multiplayer_api.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV23MultiplayerAPIExtension[_ZTV23MultiplayerAPIExtension]+0x180): undefined reference to `MultiplayerAPIExtension::get_unique_id()'
+/bin/ld: bin/obj/scene/libscene.linuxbsd.editor.x86_64.a(multiplayer_api.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV23MultiplayerAPIExtension[_ZTV23MultiplayerAPIExtension]+0x188): undefined reference to `MultiplayerAPIExtension::get_peer_ids()'
+/bin/ld: bin/obj/scene/libscene.linuxbsd.editor.x86_64.a(multiplayer_api.linuxbsd.editor.x86_64.o):(.data.rel.ro._ZTV23MultiplayerAPIExtension[_ZTV23MultiplayerAPIExtension]+0x198): undefined reference to `MultiplayerAPIExtension::get_remote_sender_id()'
+/bin/ld: bin/obj/scene/libscene.linuxbsd.editor.x86_64.a(dpi_texture.linuxbsd.editor.x86_64.o): in function `DPITexture::_load_at_scale(double, bool) const':
+dpi_texture.cpp:(.text+0x15da): undefined reference to `ImageLoaderSVG::create_image_from_string(Ref<Image>, String, float, bool, HashMap<Color, Color, HashMapHasherDefault, HashMapComparatorDefault<Color, void>, DefaultTypedAllocator<HashMapElement<Color, Color> > > const&)'
+/bin/ld: bin/obj/core/libcore.linuxbsd.editor.x86_64.a(register_core_types.linuxbsd.editor.x86_64.o): in function `Object* ClassDB::creator<CoreBind::Logger>(bool)':
+register_core_types.cpp:(.text._ZN7ClassDB7creatorIN8CoreBind6LoggerEEEP6Objectb[_ZN7ClassDB7creatorIN8CoreBind6LoggerEEEP6Objectb]+0x25): undefined reference to `vtable for CoreBind::Logger'
+/bin/ld: warning: creating DT_TEXTREL in a PIE
+collect2: error: ld returned 1 exit status
+scons: *** [bin/voltaire.linuxbsd.editor.x86_64] Error 1

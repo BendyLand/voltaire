@@ -137,6 +137,7 @@ protected:
 
 public:
 	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;
+	virtual float get_stream_sampling_rate() const;
 
 	AudioStreamPlaybackResampled() { mix_offset = 0; }
 };
@@ -167,6 +168,7 @@ public:
 
 	virtual double get_length() const;
 	virtual bool is_monophonic() const;
+	virtual String get_stream_name() const;
 
 	void tag_used(float p_offset);
 	uint64_t get_tagged_frame() const;

@@ -34,76 +34,19 @@
 #include "scene/resources/placeholder_textures.h"
 #include "servers/rendering/rendering_server.h"
 
-Ref<Image> Texture2D::get_image() const {
-	Ref<Image> ret;
-	VLTRVIRTUAL_CALL(_get_image, ret);
-	return ret;
-}
-
-Image::Format Texture2D::get_format() const {
-	Image::Format ret = Image::FORMAT_MAX;
-	VLTRVIRTUAL_CALL(_get_format, ret);
-	return ret;
-}
-
-int Texture2D::get_mipmap_count() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_mipmap_count, ret);
-	return ret;
-}
-
-bool Texture2D::has_mipmaps() const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_has_mipmaps, ret);
-	return ret;
-}
-
-int Texture2D::get_width() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_width, ret);
-	return ret;
-}
-
-int Texture2D::get_height() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_height, ret);
-	return ret;
-}
-
 Size2 Texture2D::get_size() const {
 	return Size2(get_width(), get_height());
 }
 
-bool Texture2D::is_pixel_opaque(int p_x, int p_y) const {
-	bool ret = true;
-	VLTRVIRTUAL_CALL(_is_pixel_opaque, p_x, p_y, ret);
-	return ret;
-}
-
-bool Texture2D::has_alpha() const {
-	bool ret = true;
-	VLTRVIRTUAL_CALL(_has_alpha, ret);
-	return ret;
-}
-
 void Texture2D::draw(RID p_canvas_item, const Point2 &p_pos, const Color &p_modulate, bool p_transpose) const {
-	if (VLTRVIRTUAL_CALL(_draw, p_canvas_item, p_pos, p_modulate, p_transpose)) {
-		return;
-	}
 	RenderingServer::get_singleton()->canvas_item_add_texture_rect(p_canvas_item, Rect2(p_pos, get_size()), get_rid(), false, p_modulate, p_transpose);
 }
 
 void Texture2D::draw_rect(RID p_canvas_item, const Rect2 &p_rect, bool p_tile, const Color &p_modulate, bool p_transpose) const {
-	if (VLTRVIRTUAL_CALL(_draw_rect, p_canvas_item, p_rect, p_tile, p_modulate, p_transpose)) {
-		return;
-	}
 	RenderingServer::get_singleton()->canvas_item_add_texture_rect(p_canvas_item, p_rect, get_rid(), p_tile, p_modulate, p_transpose);
 }
 
 void Texture2D::draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, const Rect2 &p_src_rect, const Color &p_modulate, bool p_transpose, bool p_clip_uv) const {
-	if (VLTRVIRTUAL_CALL(_draw_rect_region, p_canvas_item, p_rect, p_src_rect, p_modulate, p_transpose, p_clip_uv)) {
-		return;
-	}
 	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas_item, p_rect, get_rid(), p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
@@ -135,19 +78,6 @@ void Texture2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("create_placeholder"), &Texture2D::create_placeholder);
 
 	ADD_GROUP("", "");
-
-	VLTRVIRTUAL_BIND(_get_image);
-	VLTRVIRTUAL_BIND(_get_format);
-	VLTRVIRTUAL_BIND(_get_mipmap_count);
-	VLTRVIRTUAL_BIND(_get_width);
-	VLTRVIRTUAL_BIND(_get_height);
-	VLTRVIRTUAL_BIND(_is_pixel_opaque, "x", "y");
-	VLTRVIRTUAL_BIND(_has_alpha);
-	VLTRVIRTUAL_BIND(_has_mipmaps);
-
-	VLTRVIRTUAL_BIND(_draw, "to_canvas_item", "pos", "modulate", "transpose")
-	VLTRVIRTUAL_BIND(_draw_rect, "to_canvas_item", "rect", "tile", "modulate", "transpose")
-	VLTRVIRTUAL_BIND(_draw_rect_region, "to_canvas_item", "rect", "src_rect", "modulate", "transpose", "clip_uv");
 }
 
 Texture2D::Texture2D() {
@@ -166,37 +96,11 @@ TypedArray<Image> Texture3D::_get_datai() const {
 
 Image::Format Texture3D::get_format() const {
 	Image::Format ret = Image::FORMAT_MAX;
-	VLTRVIRTUAL_CALL(_get_format, ret);
-	return ret;
-}
-
-int Texture3D::get_width() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_width, ret);
-	return ret;
-}
-
-int Texture3D::get_height() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_height, ret);
-	return ret;
-}
-
-int Texture3D::get_depth() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_depth, ret);
-	return ret;
-}
-
-bool Texture3D::has_mipmaps() const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_has_mipmaps, ret);
 	return ret;
 }
 
 Vector<Ref<Image>> Texture3D::get_data() const {
 	TypedArray<Image> ret;
-	VLTRVIRTUAL_CALL(_get_data, ret);
 	Vector<Ref<Image>> data;
 	data.resize(ret.size());
 	for (int i = 0; i < data.size(); i++) {
@@ -213,13 +117,6 @@ void Texture3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("has_mipmaps"), &Texture3D::has_mipmaps);
 	ClassDB::bind_method(D_METHOD("get_data"), &Texture3D::_get_datai);
 	ClassDB::bind_method(D_METHOD("create_placeholder"), &Texture3D::create_placeholder);
-
-	VLTRVIRTUAL_BIND(_get_format);
-	VLTRVIRTUAL_BIND(_get_width);
-	VLTRVIRTUAL_BIND(_get_height);
-	VLTRVIRTUAL_BIND(_get_depth);
-	VLTRVIRTUAL_BIND(_has_mipmaps);
-	VLTRVIRTUAL_BIND(_get_data);
 }
 
 Ref<Resource> Texture3D::create_placeholder() const {
@@ -231,44 +128,12 @@ Ref<Resource> Texture3D::create_placeholder() const {
 
 Image::Format TextureLayered::get_format() const {
 	Image::Format ret = Image::FORMAT_MAX;
-	VLTRVIRTUAL_CALL(_get_format, ret);
 	return ret;
 }
 
 TextureLayered::LayeredType TextureLayered::get_layered_type() const {
 	uint32_t ret = LAYERED_TYPE_2D_ARRAY;
-	VLTRVIRTUAL_CALL(_get_layered_type, ret);
 	return (LayeredType)ret;
-}
-
-int TextureLayered::get_width() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_width, ret);
-	return ret;
-}
-
-int TextureLayered::get_height() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_height, ret);
-	return ret;
-}
-
-int TextureLayered::get_layers() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_layers, ret);
-	return ret;
-}
-
-bool TextureLayered::has_mipmaps() const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_has_mipmaps, ret);
-	return ret;
-}
-
-Ref<Image> TextureLayered::get_layer_data(int p_layer) const {
-	Ref<Image> ret;
-	VLTRVIRTUAL_CALL(_get_layer_data, p_layer, ret);
-	return ret;
 }
 
 void TextureLayered::_bind_methods() {
@@ -283,12 +148,25 @@ void TextureLayered::_bind_methods() {
 	BIND_ENUM_CONSTANT(LAYERED_TYPE_2D_ARRAY);
 	BIND_ENUM_CONSTANT(LAYERED_TYPE_CUBEMAP);
 	BIND_ENUM_CONSTANT(LAYERED_TYPE_CUBEMAP_ARRAY);
-
-	VLTRVIRTUAL_BIND(_get_format);
-	VLTRVIRTUAL_BIND(_get_layered_type);
-	VLTRVIRTUAL_BIND(_get_width);
-	VLTRVIRTUAL_BIND(_get_height);
-	VLTRVIRTUAL_BIND(_get_layers);
-	VLTRVIRTUAL_BIND(_has_mipmaps);
-	VLTRVIRTUAL_BIND(_get_layer_data, "layer_index");
 }
+
+Image::Format Texture2D::get_format() const { return Image::FORMAT_L8; }
+int Texture2D::get_mipmap_count() const { return 0; }
+bool Texture2D::has_mipmaps() const { return false; }
+bool Texture2D::is_pixel_opaque(int p_x, int p_y) const { return true; }
+bool Texture2D::has_alpha() const { return false; }
+Ref<Image> Texture2D::get_image() const { return Ref<Image>(); }
+
+int Texture2D::get_width() const { return 0; }
+int Texture2D::get_height() const { return 0; }
+
+int Texture3D::get_width() const { return 0; }
+int Texture3D::get_height() const { return 0; }
+int Texture3D::get_depth() const { return 0; }
+bool Texture3D::has_mipmaps() const { return false; }
+
+int TextureLayered::get_width() const { return 0; }
+int TextureLayered::get_height() const { return 0; }
+int TextureLayered::get_layers() const { return 0; }
+bool TextureLayered::has_mipmaps() const { return false; }
+Ref<Image> TextureLayered::get_layer_data(int p_layer) const { return Ref<Image>(); }

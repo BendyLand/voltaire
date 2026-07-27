@@ -50,12 +50,8 @@
 */
 void PrimitiveMesh::_update() const {
 	Array arr;
-	if (VLTRVIRTUAL_CALL(_create_mesh_array, arr)) {
-		ERR_FAIL_COND_MSG(arr.size() != RSE::ARRAY_MAX, "_create_mesh_array must return an array of Mesh.ARRAY_MAX elements.");
-	} else {
-		arr.resize(RSE::ARRAY_MAX);
-		_create_mesh_array(arr);
-	}
+	arr.resize(RSE::ARRAY_MAX);
+	_create_mesh_array(arr);
 
 	Vector<Vector3> points = arr[RSE::ARRAY_VERTEX];
 
@@ -263,8 +259,6 @@ void PrimitiveMesh::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_faces"), "set_flip_faces", "get_flip_faces");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "add_uv2"), "set_add_uv2", "get_add_uv2");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "uv2_padding", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater"), "set_uv2_padding", "get_uv2_padding");
-
-	VLTRVIRTUAL_BIND(_create_mesh_array);
 }
 
 void PrimitiveMesh::set_material(const Ref<Material> &p_material) {
@@ -3237,11 +3231,7 @@ void TextMesh::_create_mesh_array(Array &p_arr) const {
 		TS->shaped_text_add_string(text_rid, txt, font->get_rids(), font_size, font->get_opentype_features(), lang);
 
 		TypedArray<Vector3i> stt;
-		if (st_parser == TextServer::STRUCTURED_TEXT_CUSTOM) {
-			VLTRVIRTUAL_CALL(_structured_text_parser, st_args, txt, stt);
-		} else {
-			stt = TS->parse_structured_text(st_parser, st_args, txt);
-		}
+		stt = TS->parse_structured_text(st_parser, st_args, txt);
 		TS->shaped_text_set_bidi_override(text_rid, stt);
 
 		dirty_text = false;

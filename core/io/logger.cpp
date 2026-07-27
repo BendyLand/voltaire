@@ -273,3 +273,4 @@ CompositeLogger::~CompositeLogger() {
 		memdelete(loggers[i]);
 	}
 }
+

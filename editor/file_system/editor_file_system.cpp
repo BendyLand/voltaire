@@ -3772,3 +3772,9 @@ EditorFileSystem::~EditorFileSystem() {
 	filesystem = nullptr;
 	ResourceSaver::set_get_resource_id_for_path(nullptr);
 }
+
+void EditorFileSystemImportFormatSupportQuery::_bind_methods() {
+}
+
+bool EditorFileSystem::_scan_extensions() { return true; }
+

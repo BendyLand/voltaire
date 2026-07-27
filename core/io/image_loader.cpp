@@ -127,3 +127,5 @@ void ImageLoader::cleanup() {
 		remove_image_format_loader(loader[0]);
 	}
 }
+
+void ImageFormatLoaderExtension::get_recognized_extensions(List<String> *p_extensions) const {}

@@ -487,11 +487,7 @@ void Label3D::_shape() {
 		TS->shaped_text_add_string(text_rid, txt, font->get_rids(), font_size, font->get_opentype_features(), lang);
 
 		TypedArray<Vector3i> stt;
-		if (st_parser == TextServer::STRUCTURED_TEXT_CUSTOM) {
-			VLTRVIRTUAL_CALL(_structured_text_parser, st_args, txt, stt);
-		} else {
-			stt = TS->parse_structured_text(st_parser, st_args, txt);
-		}
+		stt = TS->parse_structured_text(st_parser, st_args, txt);
 		TS->shaped_text_set_bidi_override(text_rid, stt);
 
 		dirty_text = false;

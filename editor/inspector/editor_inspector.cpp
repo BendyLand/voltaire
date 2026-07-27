@@ -6297,3 +6297,33 @@ EditorInspector::EditorInspector() {
 	set_draw_focus_border(true);
 	set_scroll_on_drag_hover(true);
 }
+
+bool EditorInspectorPlugin::can_handle(Object *p_object) {
+	return false;
+}
+
+void EditorInspectorPlugin::parse_begin(Object *p_object) {
+}
+
+bool EditorInspectorPlugin::parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_string, const BitField<PropertyUsageFlags> p_usage, const bool p_wide) {
+	return false;
+}
+
+void EditorInspectorPlugin::parse_end(Object *p_object) {
+}
+
+void EditorProperty::_set_read_only(bool p_read_only) {
+	// stub
+}
+
+void EditorProperty::update_property() {
+	// stub
+}
+
+void EditorInspectorPlugin::parse_category(Object *p_object, const String &p_category) {
+	// stub
+}
+
+void EditorInspectorPlugin::parse_group(Object *p_object, const String &p_group) {
+	// stub
+}

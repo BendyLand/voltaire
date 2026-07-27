@@ -1987,4 +1987,8 @@ ClassDB::Locker::Lock::~Lock() {
 	}
 }
 
+void ClassDB::get_extension_class_list(const Ref<GDExtension> &p_extension, List<StringName> *p_classes) {
+    // stub
+}
+
 #undef ERR_FAIL_NO_CLASS

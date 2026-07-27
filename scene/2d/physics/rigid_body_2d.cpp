@@ -171,21 +171,7 @@ void RigidBody2D::_sync_body_state(PhysicsDirectBodyState2D *p_state) {
 void RigidBody2D::_body_state_changed(PhysicsDirectBodyState2D *p_state) {
 	lock_callback();
 
-	if (VLTRVIRTUAL_IS_OVERRIDDEN(_integrate_forces)) {
-		_sync_body_state(p_state);
-
-		Transform2D old_transform = get_global_transform();
-		VLTRVIRTUAL_CALL(_integrate_forces, p_state);
-		Transform2D new_transform = get_global_transform();
-
-		if (new_transform != old_transform) {
-			// Update the physics server with the new transform, to prevent it from being overwritten at the sync below.
-			PhysicsServer2D::get_singleton()->body_set_state(get_rid(), PS2DE::BODY_STATE_TRANSFORM, new_transform);
-		}
-	}
-
 	_sync_body_state(p_state);
-
 	if (contact_monitor) {
 		contact_monitor->locked = true;
 
@@ -744,8 +730,6 @@ void RigidBody2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_freeze_mode"), &RigidBody2D::get_freeze_mode);
 
 	ClassDB::bind_method(D_METHOD("get_colliding_bodies"), &RigidBody2D::get_colliding_bodies);
-
-	VLTRVIRTUAL_BIND(_integrate_forces, "state");
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mass", PROPERTY_HINT_RANGE, "0.001,1000,0.001,or_greater,exp,suffix:kg"), "set_mass", "get_mass");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "physics_material_override", PROPERTY_HINT_RESOURCE_TYPE, PhysicsMaterial::get_class_static()), "set_physics_material_override", "get_physics_material_override");

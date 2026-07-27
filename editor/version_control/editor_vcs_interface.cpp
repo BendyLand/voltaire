@@ -261,3 +261,21 @@ void EditorVCSInterface::create_vcs_metadata_files(VCSMetadata p_vcs_metadata_ty
 		}
 	}
 }
+
+bool EditorVCSInterface::shut_down() { return true; }
+void EditorVCSInterface::push(const String &p_remote, bool p_force) {}
+void EditorVCSInterface::stage_file(const String &p_file_path) {}
+void EditorVCSInterface::unstage_file(const String &p_file_path) {}
+void EditorVCSInterface::set_credentials(const String &p_username, const String &p_password, const String &p_ssh_public_key, const String &p_ssh_private_key, const String &p_ssh_passphrase) {}
+void EditorVCSInterface::discard_file(const String &p_file_path) {}
+void EditorVCSInterface::create_remote(const String &p_remote_name, const String &p_remote_url) {}
+String EditorVCSInterface::get_current_branch_name() { return String(); }
+void EditorVCSInterface::create_branch(const String &p_branch_name) {}
+bool EditorVCSInterface::checkout_branch(const String &p_branch_name) { return true; }
+void EditorVCSInterface::fetch(const String &p_remote) {}
+void EditorVCSInterface::remove_remote(const String &p_remote_name) {}
+void EditorVCSInterface::remove_branch(const String &p_branch_name) {}
+bool EditorVCSInterface::initialize(const String &p_project_path) { return false; }
+bool EditorVCSInterface::allow_amends() { return false; }
+String EditorVCSInterface::get_vcs_name() { return String(); }
+void EditorVCSInterface::pull(const String &p_remote) {}

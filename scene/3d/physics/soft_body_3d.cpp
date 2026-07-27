@@ -868,3 +868,8 @@ int SoftBody3D::_has_pinned_point(int p_point_index) const {
 	}
 	return -1;
 }
+
+void PhysicsServer3DRenderingServerHandler::_bind_methods() {}
+void PhysicsServer3DRenderingServerHandler::set_vertex(int p_vertex, const Vector3 &p_location) {}
+void PhysicsServer3DRenderingServerHandler::set_normal(int p_vertex, const Vector3 &p_normal) {}
+void PhysicsServer3DRenderingServerHandler::set_aabb(const AABB &p_aabb) {}

@@ -1785,3 +1785,5 @@ EditorAudioStreamPicker::EditorAudioStreamPicker() :
 	get_assign_button()->move_child(stream_preview_rect, 0);
 	set_process_internal(true);
 }
+
+bool EditorResourcePicker::handle_menu_selected(int p_idx) { return true; }

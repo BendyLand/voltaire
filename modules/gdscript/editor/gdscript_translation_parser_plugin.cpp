@@ -458,3 +458,6 @@ GDScriptEditorTranslationParserPlugin::GDScriptEditorTranslationParserPlugin() {
 	second_arg_patterns.insert("add_icon_radio_check_item");
 	second_arg_patterns.insert("set_item_text");
 }
+
+void EditorTranslationParserPlugin::_bind_methods() {
+}

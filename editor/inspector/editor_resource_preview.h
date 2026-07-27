@@ -53,6 +53,7 @@ protected:
 	public:
 		void request_and_wait(RID p_viewport);
 		void abort();
+		Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size) const;
 	};
 
 public:

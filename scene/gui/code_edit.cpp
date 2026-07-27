@@ -2470,10 +2470,6 @@ String CodeEdit::get_text_for_code_completion() const {
 }
 
 void CodeEdit::request_code_completion(bool p_force) {
-	if (VLTRVIRTUAL_CALL(_request_code_completion, p_force)) {
-		return;
-	}
-
 	/* Don't re-query if all existing options are quoted types, eg path, signal. */
 	bool ignored = code_completion_active && !code_completion_options.is_empty();
 	if (ignored) {
@@ -2589,10 +2585,6 @@ void CodeEdit::set_code_completion_selected_index(int p_index) {
 
 void CodeEdit::confirm_code_completion(bool p_replace) {
 	if (!is_editable() || !code_completion_active) {
-		return;
-	}
-
-	if (VLTRVIRTUAL_CALL(_confirm_code_completion, p_replace)) {
 		return;
 	}
 
@@ -3206,12 +3198,6 @@ void CodeEdit::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_code_completion_prefixes", "prefixes"), &CodeEdit::set_code_completion_prefixes);
 	ClassDB::bind_method(D_METHOD("get_code_completion_prefixes"), &CodeEdit::get_code_completion_prefixes);
 
-	// Overridable
-
-	VLTRVIRTUAL_BIND(_confirm_code_completion, "replace")
-	VLTRVIRTUAL_BIND(_request_code_completion, "force")
-	VLTRVIRTUAL_BIND(_filter_code_completion_candidates, "candidates")
-
 	/* Line length guidelines */
 	ClassDB::bind_method(D_METHOD("set_line_length_guidelines", "guideline_columns"), &CodeEdit::set_line_length_guidelines);
 	ClassDB::bind_method(D_METHOD("get_line_length_guidelines"), &CodeEdit::get_line_length_guidelines);
@@ -3814,83 +3800,6 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 	const int caret_column = get_caret_column();
 	const String line = get_line(caret_line);
 	ERR_FAIL_INDEX_MSG(caret_column, line.length() + 1, "Caret column exceeds line length.");
-
-	if (VLTRVIRTUAL_IS_OVERRIDDEN(_filter_code_completion_candidates)) {
-		Vector<ScriptLanguage::CodeCompletionOption> code_completion_options_new;
-		code_completion_base = "";
-
-		/* Build options argument. */
-		TypedArray<Dictionary> completion_options_sources;
-		completion_options_sources.resize(code_completion_option_sources.size());
-		int i = 0;
-		for (const ScriptLanguage::CodeCompletionOption &E : code_completion_option_sources) {
-			Dictionary option;
-			option["kind"] = E.kind;
-			option["display_text"] = E.display;
-			option["insert_text"] = E.insert_text;
-			option["font_color"] = E.font_color;
-			option["icon"] = E.icon;
-			option["default_value"] = E.default_value;
-			option["location"] = E.location;
-			completion_options_sources[i] = option;
-			i++;
-		}
-
-		TypedArray<Dictionary> completion_options;
-
-		VLTRVIRTUAL_CALL(_filter_code_completion_candidates, completion_options_sources, completion_options);
-
-		/* No options to complete, cancel. */
-		if (completion_options.is_empty()) {
-			cancel_code_completion();
-			return;
-		}
-
-		/* Convert back into options. */
-		int max_width = 0;
-		for (i = 0; i < completion_options.size(); i++) {
-			ScriptLanguage::CodeCompletionOption option;
-			option.kind = (ScriptLanguage::CodeCompletionKind)(int)completion_options[i].get("kind");
-			option.display = completion_options[i].get("display_text");
-			option.insert_text = completion_options[i].get("insert_text");
-			option.font_color = completion_options[i].get("font_color");
-			option.icon = completion_options[i].get("icon");
-			option.location = completion_options[i].get("location");
-			option.default_value = completion_options[i].get("default_value");
-
-			int offset = 0;
-			if (option.default_value.get_type() == Variant::COLOR) {
-				offset = line_height;
-			}
-
-			if (theme_cache.font.is_valid()) {
-				max_width = MAX(max_width, theme_cache.font->get_string_size(option.display, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).width + offset);
-			}
-			code_completion_options_new.push_back(option);
-		}
-
-		if (_should_reset_selected_option_for_new_options(code_completion_options_new)) {
-			code_completion_current_selected = 0;
-			code_completion_pan_offset = 0.0f;
-		}
-		for (RID &E : code_completion_ac_items) {
-			if (E.is_valid()) {
-				AccessibilityServer::get_singleton()->free_element(E);
-			}
-		}
-		code_completion_ac_items.clear();
-		code_completion_options = code_completion_options_new;
-		code_completion_ac_items.resize_initialized(code_completion_options.size());
-
-		code_completion_caret_column = caret_column;
-		code_completion_line = line;
-		code_completion_longest_line = MIN(max_width, theme_cache.code_completion_max_width * theme_cache.font_size);
-		code_completion_force_item_center = -1;
-		code_completion_active = true;
-		queue_accessibility_update();
-		queue_redraw();
-		return;
-	}
 
 	if (caret_column > 0 && line[caret_column - 1] == '(' && !code_completion_forced) {
 		cancel_code_completion();

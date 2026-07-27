@@ -207,86 +207,6 @@ void MeshConvexDecompositionSettings::_bind_methods() {
 Mesh::ConvexDecompositionFunc Mesh::convex_decomposition_function = nullptr;
 #endif // PHYSICS_3D_DISABLED
 
-int Mesh::get_surface_count() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_surface_count, ret);
-	return ret;
-}
-
-int Mesh::surface_get_array_len(int p_idx) const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_surface_get_array_len, p_idx, ret);
-	return ret;
-}
-
-int Mesh::surface_get_array_index_len(int p_idx) const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_surface_get_array_index_len, p_idx, ret);
-	return ret;
-}
-
-Array Mesh::surface_get_arrays(int p_surface) const {
-	Array ret;
-	VLTRVIRTUAL_CALL(_surface_get_arrays, p_surface, ret);
-	return ret;
-}
-
-TypedArray<Array> Mesh::surface_get_blend_shape_arrays(int p_surface) const {
-	TypedArray<Array> ret;
-	VLTRVIRTUAL_CALL(_surface_get_blend_shape_arrays, p_surface, ret);
-	return ret;
-}
-
-Dictionary Mesh::surface_get_lods(int p_surface) const {
-	Dictionary ret;
-	VLTRVIRTUAL_CALL(_surface_get_lods, p_surface, ret);
-	return ret;
-}
-
-BitField<Mesh::ArrayFormat> Mesh::surface_get_format(int p_idx) const {
-	uint32_t ret = 0;
-	VLTRVIRTUAL_CALL(_surface_get_format, p_idx, ret);
-	return ret;
-}
-
-Mesh::PrimitiveType Mesh::surface_get_primitive_type(int p_idx) const {
-	uint32_t ret = PRIMITIVE_MAX;
-	VLTRVIRTUAL_CALL(_surface_get_primitive_type, p_idx, ret);
-	return (Mesh::PrimitiveType)ret;
-}
-
-void Mesh::surface_set_material(int p_idx, const Ref<Material> &p_material) {
-	VLTRVIRTUAL_CALL(_surface_set_material, p_idx, p_material);
-}
-
-Ref<Material> Mesh::surface_get_material(int p_idx) const {
-	Ref<Material> ret;
-	VLTRVIRTUAL_CALL(_surface_get_material, p_idx, ret);
-	return ret;
-}
-
-int Mesh::get_blend_shape_count() const {
-	int ret = 0;
-	VLTRVIRTUAL_CALL(_get_blend_shape_count, ret);
-	return ret;
-}
-
-StringName Mesh::get_blend_shape_name(int p_index) const {
-	StringName ret;
-	VLTRVIRTUAL_CALL(_get_blend_shape_name, p_index, ret);
-	return ret;
-}
-
-void Mesh::set_blend_shape_name(int p_index, const StringName &p_name) {
-	VLTRVIRTUAL_CALL(_set_blend_shape_name, p_index, p_name);
-}
-
-AABB Mesh::get_aabb() const {
-	AABB ret;
-	VLTRVIRTUAL_CALL(_get_aabb, ret);
-	return ret;
-}
-
 Ref<TriangleMesh> Mesh::generate_triangle_mesh() const {
 	if (triangle_mesh.is_valid()) {
 		return triangle_mesh;
@@ -895,21 +815,6 @@ void Mesh::_bind_methods() {
 
 	BIND_ENUM_CONSTANT(BLEND_SHAPE_MODE_NORMALIZED);
 	BIND_ENUM_CONSTANT(BLEND_SHAPE_MODE_RELATIVE);
-
-	VLTRVIRTUAL_BIND(_get_surface_count)
-	VLTRVIRTUAL_BIND(_surface_get_array_len, "index")
-	VLTRVIRTUAL_BIND(_surface_get_array_index_len, "index")
-	VLTRVIRTUAL_BIND(_surface_get_arrays, "index")
-	VLTRVIRTUAL_BIND(_surface_get_blend_shape_arrays, "index")
-	VLTRVIRTUAL_BIND(_surface_get_lods, "index")
-	VLTRVIRTUAL_BIND(_surface_get_format, "index")
-	VLTRVIRTUAL_BIND(_surface_get_primitive_type, "index")
-	VLTRVIRTUAL_BIND(_surface_set_material, "index", "material")
-	VLTRVIRTUAL_BIND(_surface_get_material, "index")
-	VLTRVIRTUAL_BIND(_get_blend_shape_count)
-	VLTRVIRTUAL_BIND(_get_blend_shape_name, "index")
-	VLTRVIRTUAL_BIND(_set_blend_shape_name, "index", "name")
-	VLTRVIRTUAL_BIND(_get_aabb)
 }
 
 void Mesh::clear_cache() const {
@@ -2377,3 +2282,18 @@ PlaceholderMesh::~PlaceholderMesh() {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RS::get_singleton()->free_rid(rid);
 }
+
+int Mesh::get_surface_count() const { return 0; }
+int Mesh::surface_get_array_len(int p_idx) const { return 0; }
+int Mesh::surface_get_array_index_len(int p_idx) const { return 0; }
+Array Mesh::surface_get_arrays(int p_idx) const { return Array(); }
+TypedArray<Array> Mesh::surface_get_blend_shape_arrays(int p_idx) const { return TypedArray<Array>(); }
+Dictionary Mesh::surface_get_lods(int p_idx) const { return Dictionary(); }
+BitField<Mesh::ArrayFormat> Mesh::surface_get_format(int p_idx) const { return 0; }
+Mesh::PrimitiveType Mesh::surface_get_primitive_type(int p_idx) const { return PRIMITIVE_TRIANGLES; }
+void Mesh::surface_set_material(int p_idx, const Ref<Material> &p_material) {}
+Ref<Material> Mesh::surface_get_material(int p_idx) const { return Ref<Material>(); }
+int Mesh::get_blend_shape_count() const { return 0; }
+StringName Mesh::get_blend_shape_name(int p_idx) const { return StringName(); }
+void Mesh::set_blend_shape_name(int p_idx, const StringName &p_name) {}
+AABB Mesh::get_aabb() const { return AABB(); }

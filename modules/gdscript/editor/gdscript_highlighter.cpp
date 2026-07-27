@@ -1015,3 +1015,5 @@ Ref<EditorSyntaxHighlighter> GDScriptSyntaxHighlighter::_create() const {
 	syntax_highlighter.instantiate();
 	return syntax_highlighter;
 }
+
+void GDScriptSyntaxHighlighter::_clear_highlighting_cache() {}
