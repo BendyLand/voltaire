@@ -1017,3 +1017,11 @@ Ref<EditorSyntaxHighlighter> GDScriptSyntaxHighlighter::_create() const {
 }
 
 void GDScriptSyntaxHighlighter::_clear_highlighting_cache() {}
+
+GDScriptSyntaxHighlighter::GDScriptSyntaxHighlighter() {
+}
+
+GDScriptSyntaxHighlighter::~GDScriptSyntaxHighlighter() {
+}
+
+

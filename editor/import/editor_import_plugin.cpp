@@ -127,3 +127,18 @@ String EditorImportPlugin::get_visible_name() const { return ""; }
 String EditorImportPlugin::get_save_extension() const { return ""; }
 String EditorImportPlugin::get_resource_type() const { return ""; }
 int EditorImportPlugin::get_preset_count() const { return 0; }
+float EditorImportPlugin::get_priority() const {
+	return 1.0;
+}
+
+int EditorImportPlugin::get_import_order() const {
+	return 0;
+}
+
+int EditorImportPlugin::get_format_version() const {
+	return 0;
+}
+
+String EditorImportPlugin::get_preset_name(int p_idx) const {
+	return String();
+}

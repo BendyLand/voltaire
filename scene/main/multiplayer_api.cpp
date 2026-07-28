@@ -45,10 +45,7 @@ StringName MultiplayerAPI::get_default_interface() {
 }
 
 Ref<MultiplayerAPI> MultiplayerAPI::create_default_interface() {
-	if (default_interface != StringName()) {
-		return Ref<MultiplayerAPI>(Object::cast_to<MultiplayerAPI>(ClassDB::instantiate(default_interface)));
-	}
-	return Ref<MultiplayerAPI>(memnew(MultiplayerAPIExtension));
+	return Ref<MultiplayerAPI>(Object::cast_to<MultiplayerAPI>(ClassDB::instantiate(default_interface)));
 }
 
 // The variant is compressed and encoded; The first byte contains all the meta
@@ -316,26 +313,15 @@ void MultiplayerAPI::_bind_methods() {
 	BIND_ENUM_CONSTANT(RPC_MODE_AUTHORITY);
 }
 
-/// MultiplayerAPIExtension
-
-
-Error MultiplayerAPIExtension::rpcp(Object *p_obj, int p_peer_id, const StringName &p_method, const Variant **p_arg, int p_argcount) {
-	Array args;
-	for (int i = 0; i < p_argcount; i++) {
-		args.push_back(*p_arg[i]);
-	}
-	Error ret = FAILED;
-	return ret;
+int MultiplayerAPI::get_unique_id() {
+	return 0;
 }
 
-Error MultiplayerAPIExtension::object_configuration_add(Object *p_object, Variant p_config) {
-	Error err = ERR_UNAVAILABLE;
-	return err;
+Vector<int> MultiplayerAPI::get_peer_ids() {
+	return Vector<int>();
 }
 
-Error MultiplayerAPIExtension::object_configuration_remove(Object *p_object, Variant p_config) {
-	Error err = ERR_UNAVAILABLE;
-	return err;
+int MultiplayerAPI::get_remote_sender_id() {
+	return 0;
 }
 
-Error MultiplayerAPIExtension::poll() { return OK; }

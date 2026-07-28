@@ -1,5 +1,5 @@
 build:
-	scons target=editor compiledb=yes
+	scons linkflags="-Wl,--whole-archive bin/obj/modules/libmodule_svg.linuxbsd.editor.x86_64.a -Wl,--no-whole-archive" debug_symbols=yes target=editor compiledb=yes
 
 errs:
 	if [[ -f errs ]]; then
@@ -16,5 +16,5 @@ clean:
 	fi
 
 show:
-	head errs
+	batcat errs
 

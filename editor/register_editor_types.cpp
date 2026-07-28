@@ -48,7 +48,6 @@
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/export/editor_export_platform.h"
 #include "editor/export/editor_export_platform_apple_embedded.h"
-#include "editor/export/editor_export_platform_extension.h"
 #include "editor/export/editor_export_platform_pc.h"
 #include "editor/export/editor_export_plugin.h"
 #include "editor/export/register_exporters.h"
@@ -177,7 +176,6 @@ void register_editor_types() {
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatform);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatformPC);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatformAppleEmbedded);
-	VLTR_REGISTER_CLASS(EditorExportPlatformExtension);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPreset);
 
 	register_exporter_types();

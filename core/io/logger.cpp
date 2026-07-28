@@ -274,3 +274,4 @@ CompositeLogger::~CompositeLogger() {
 	}
 }
 
+

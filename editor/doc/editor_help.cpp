@@ -59,6 +59,7 @@
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/line_edit.h"
+#include "scene/resources/syntax_highlighter.h"
 #include "servers/display/display_server.h"
 
 #include "modules/modules_enabled.gen.h" // For gdscript, mono.
@@ -5218,14 +5219,8 @@ EditorHelpHighlighter::EditorHelpHighlighter() {
 	Ref<GDScript> gdscript;
 	gdscript.instantiate();
 
-	Ref<GDScriptSyntaxHighlighter> gdscript_highlighter;
-	gdscript_highlighter.instantiate();
-	gdscript_highlighter->set_text_edit(gdscript_text_edit);
-	gdscript_highlighter->_set_edited_resource(gdscript);
-
 	text_edits[LANGUAGE_GDSCRIPT] = gdscript_text_edit;
 	scripts[LANGUAGE_GDSCRIPT] = gdscript;
-	highlighters[LANGUAGE_GDSCRIPT] = gdscript_highlighter;
 #endif
 
 #ifdef MODULE_MONO_ENABLED
