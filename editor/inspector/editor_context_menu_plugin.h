@@ -44,6 +44,8 @@ class EditorContextMenuPlugin : public RefCounted {
 	friend class EditorContextMenuPluginManager;
 
 	static constexpr int MAX_ITEMS = 100;
+	EditorContextMenuPlugin();
+	~EditorContextMenuPlugin();
 
 public:
 	enum ContextMenuSlot {

@@ -749,6 +749,7 @@ bool AudioStreamPlayback::is_playing() const { return false; }
 void AudioStreamPlayback::start(double p_from_pos) {}
 void AudioStreamPlayback::stop() {}
 int AudioStreamPlaybackResampled::_mix_internal(AudioFrame *p_buffer, int p_frames) { return 0; }
+float AudioStreamPlaybackResampled::get_stream_sampling_rate() { return 44100.0; }
 float AudioStreamPlaybackResampled::get_stream_sampling_rate() const { return 44100.0; }
 int AudioStreamPlayback::get_loop_count() const { return 0; }
 void AudioStreamPlayback::seek(double p_time) {}

@@ -209,3 +209,8 @@ void EditorContextMenuPluginManager::cleanup() {
 	singleton = nullptr;
 }
 
+EditorContextMenuPlugin::EditorContextMenuPlugin() { }
+
+EditorContextMenuPlugin::~EditorContextMenuPlugin() { }
+
+void EditorContextMenuPlugin::get_options(const Vector<String> &p_paths) { }

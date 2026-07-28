@@ -152,7 +152,6 @@ protected:
 	HashMap<String, Vector<Ref<StandardMaterial3D>>> materials;
 
 	static void _bind_methods();
-	virtual bool has_gizmo(Node3D *p_spatial);
 	virtual Ref<EditorNode3DGizmo> create_gizmo(Node3D *p_spatial);
 
 public:
@@ -163,6 +162,7 @@ public:
 
 	Ref<StandardMaterial3D> get_material(const String &p_name, const Ref<EditorNode3DGizmo> &p_gizmo = Ref<EditorNode3DGizmo>());
 
+	virtual bool has_gizmo(Node3D *p_spatial);
 	virtual String get_gizmo_name() const;
 	virtual int get_priority() const;
 	virtual bool can_be_hidden() const;
@@ -182,7 +182,6 @@ public:
 	virtual Transform3D get_subgizmo_transform(const EditorNode3DGizmo *p_gizmo, int p_id) const;
 	virtual void set_subgizmo_transform(const EditorNode3DGizmo *p_gizmo, int p_id, Transform3D p_transform);
 	virtual void commit_subgizmos(const EditorNode3DGizmo *p_gizmo, const Vector<int> &p_ids, const Vector<Transform3D> &p_restore, bool p_cancel = false);
-	virtual bool has_gizmo(Node3D *p_spatial) const;
 	virtual Ref<EditorNode3DGizmo> create_gizmo(Node3D *p_spatial) const;
 
 	Ref<EditorNode3DGizmo> get_gizmo(Node3D *p_spatial);

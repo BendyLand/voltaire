@@ -284,6 +284,10 @@ void OS::LoggerBind::log_error(const char *p_function, const char *p_file, int p
 	}
 }
 
+void Logger::log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, Logger::ErrorType p_type, const TypedArray<ScriptBacktrace> &p_script_backtraces) { }
+
+void Logger::log_message(const String &p_text, bool p_error) { }
+
 PackedByteArray OS::get_entropy(int p_bytes) {
 	PackedByteArray pba;
 	pba.resize(p_bytes);
