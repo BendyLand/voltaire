@@ -40,22 +40,8 @@ void EditorVCSInterface::popup_error(const String &p_msg) {
 	EditorNode::get_singleton()->show_warning(p_msg.strip_edges(), vformat(TTR("%s Error"), get_vcs_name()));
 }
 
-bool EditorVCSInterface::initialize(const String &p_project_path) {
-	bool result = false;
-	VLTRVIRTUAL_CALL(_initialize, p_project_path, result);
-	return result;
-}
-
-void EditorVCSInterface::set_credentials(const String &p_username, const String &p_password, const String &p_ssh_public_key, const String &p_ssh_private_key, const String &p_ssh_passphrase) {
-	VLTRVIRTUAL_CALL(_set_credentials, p_username, p_password, p_ssh_public_key, p_ssh_private_key, p_ssh_passphrase);
-}
-
 List<String> EditorVCSInterface::get_remotes() {
 	TypedArray<String> result;
-	if (!VLTRVIRTUAL_CALL(_get_remotes, result)) {
-		return {};
-	}
-
 	List<String> remotes;
 	for (int i = 0; i < result.size(); i++) {
 		remotes.push_back(result[i]);
@@ -65,10 +51,6 @@ List<String> EditorVCSInterface::get_remotes() {
 
 List<EditorVCSInterface::StatusFile> EditorVCSInterface::get_modified_files_data() {
 	TypedArray<Dictionary> result;
-	if (!VLTRVIRTUAL_CALL(_get_modified_files_data, result)) {
-		return {};
-	}
-
 	List<EditorVCSInterface::StatusFile> status_files;
 	for (int i = 0; i < result.size(); i++) {
 		status_files.push_back(_convert_status_file(result[i]));
@@ -76,43 +58,12 @@ List<EditorVCSInterface::StatusFile> EditorVCSInterface::get_modified_files_data
 	return status_files;
 }
 
-void EditorVCSInterface::stage_file(const String &p_file_path) {
-	VLTRVIRTUAL_CALL(_stage_file, p_file_path);
-}
-
-void EditorVCSInterface::unstage_file(const String &p_file_path) {
-	VLTRVIRTUAL_CALL(_unstage_file, p_file_path);
-}
-
-void EditorVCSInterface::discard_file(const String &p_file_path) {
-	VLTRVIRTUAL_CALL(_discard_file, p_file_path);
-}
-
 void EditorVCSInterface::commit(const String &p_msg, bool p_amend) {
-	if (VLTRVIRTUAL_CALL(_commit, p_msg, p_amend)) {
-		return;
-	}
-
-#ifndef DISABLE_DEPRECATED
-	if (VLTRVIRTUAL_CALL(_commit_bind_compat_117968, p_msg)) {
-		return;
-	}
-#endif
-
 	ERR_PRINT_ONCE("Required virtual method " + get_class() + "::_commit must be overridden before calling.");
-}
-
-bool EditorVCSInterface::allow_amends() {
-	bool result = false;
-	VLTRVIRTUAL_CALL(_allow_amends, result);
-	return result;
 }
 
 List<EditorVCSInterface::DiffFile> EditorVCSInterface::get_diff(const String &p_identifier, TreeArea p_area) {
 	TypedArray<Dictionary> result;
-	if (!VLTRVIRTUAL_CALL(_get_diff, p_identifier, int(p_area), result)) {
-		return {};
-	}
 
 	List<DiffFile> diff_files;
 	for (int i = 0; i < result.size(); i++) {
@@ -123,9 +74,6 @@ List<EditorVCSInterface::DiffFile> EditorVCSInterface::get_diff(const String &p_
 
 List<EditorVCSInterface::Commit> EditorVCSInterface::get_previous_commits(int p_max_commits) {
 	TypedArray<Dictionary> result;
-	if (!VLTRVIRTUAL_CALL(_get_previous_commits, p_max_commits, result)) {
-		return {};
-	}
 
 	List<EditorVCSInterface::Commit> commits;
 	for (int i = 0; i < result.size(); i++) {
@@ -136,9 +84,6 @@ List<EditorVCSInterface::Commit> EditorVCSInterface::get_previous_commits(int p_
 
 List<String> EditorVCSInterface::get_branch_list() {
 	TypedArray<String> result;
-	if (!VLTRVIRTUAL_CALL(_get_branch_list, result)) {
-		return {};
-	}
 
 	List<String> branch_list;
 	for (int i = 0; i < result.size(); i++) {
@@ -147,69 +92,14 @@ List<String> EditorVCSInterface::get_branch_list() {
 	return branch_list;
 }
 
-void EditorVCSInterface::create_branch(const String &p_branch_name) {
-	VLTRVIRTUAL_CALL(_create_branch, p_branch_name);
-}
-
-void EditorVCSInterface::create_remote(const String &p_remote_name, const String &p_remote_url) {
-	VLTRVIRTUAL_CALL(_create_remote, p_remote_name, p_remote_url);
-}
-
-void EditorVCSInterface::remove_branch(const String &p_branch_name) {
-	VLTRVIRTUAL_CALL(_remove_branch, p_branch_name);
-}
-
-void EditorVCSInterface::remove_remote(const String &p_remote_name) {
-	VLTRVIRTUAL_CALL(_remove_remote, p_remote_name);
-}
-
-String EditorVCSInterface::get_current_branch_name() {
-	String result;
-	VLTRVIRTUAL_CALL(_get_current_branch_name, result);
-	return result;
-}
-
-bool EditorVCSInterface::checkout_branch(const String &p_branch_name) {
-	bool result = false;
-	VLTRVIRTUAL_CALL(_checkout_branch, p_branch_name, result);
-	return result;
-}
-
-void EditorVCSInterface::pull(const String &p_remote) {
-	VLTRVIRTUAL_CALL(_pull, p_remote);
-}
-
-void EditorVCSInterface::push(const String &p_remote, bool p_force) {
-	VLTRVIRTUAL_CALL(_push, p_remote, p_force);
-}
-
-void EditorVCSInterface::fetch(const String &p_remote) {
-	VLTRVIRTUAL_CALL(_fetch, p_remote);
-}
 
 List<EditorVCSInterface::DiffHunk> EditorVCSInterface::get_line_diff(const String &p_file_path, const String &p_text) {
 	TypedArray<Dictionary> result;
-	if (!VLTRVIRTUAL_CALL(_get_line_diff, p_file_path, p_text, result)) {
-		return {};
-	}
-
 	List<DiffHunk> diff_hunks;
 	for (int i = 0; i < result.size(); i++) {
 		diff_hunks.push_back(_convert_diff_hunk(result[i]));
 	}
 	return diff_hunks;
-}
-
-bool EditorVCSInterface::shut_down() {
-	bool result = false;
-	VLTRVIRTUAL_CALL(_shut_down, result);
-	return result;
-}
-
-String EditorVCSInterface::get_vcs_name() {
-	String result;
-	VLTRVIRTUAL_CALL(_get_vcs_name, result);
-	return result;
 }
 
 Dictionary EditorVCSInterface::create_diff_line(int p_new_line_no, int p_old_line_no, const String &p_content, const String &p_status) {
@@ -323,35 +213,6 @@ EditorVCSInterface::StatusFile EditorVCSInterface::_convert_status_file(const Di
 
 void EditorVCSInterface::_bind_methods() {
 	// Proxy end points that implement the VCS specific operations that the editor demands.
-	VLTRVIRTUAL_BIND(_initialize, "project_path");
-	VLTRVIRTUAL_BIND(_set_credentials, "username", "password", "ssh_public_key_path", "ssh_private_key_path", "ssh_passphrase");
-	VLTRVIRTUAL_BIND(_get_modified_files_data);
-	VLTRVIRTUAL_BIND(_stage_file, "file_path");
-	VLTRVIRTUAL_BIND(_unstage_file, "file_path");
-	VLTRVIRTUAL_BIND(_discard_file, "file_path");
-	VLTRVIRTUAL_BIND(_commit, "msg", "amend");
-	VLTRVIRTUAL_BIND(_allow_amends);
-	VLTRVIRTUAL_BIND(_get_diff, "identifier", "area");
-	VLTRVIRTUAL_BIND(_shut_down);
-	VLTRVIRTUAL_BIND(_get_vcs_name);
-	VLTRVIRTUAL_BIND(_get_previous_commits, "max_commits");
-	VLTRVIRTUAL_BIND(_get_branch_list);
-	VLTRVIRTUAL_BIND(_get_remotes);
-	VLTRVIRTUAL_BIND(_create_branch, "branch_name");
-	VLTRVIRTUAL_BIND(_remove_branch, "branch_name");
-	VLTRVIRTUAL_BIND(_create_remote, "remote_name", "remote_url");
-	VLTRVIRTUAL_BIND(_remove_remote, "remote_name");
-	VLTRVIRTUAL_BIND(_get_current_branch_name);
-	VLTRVIRTUAL_BIND(_checkout_branch, "branch_name");
-	VLTRVIRTUAL_BIND(_pull, "remote");
-	VLTRVIRTUAL_BIND(_push, "remote", "force");
-	VLTRVIRTUAL_BIND(_fetch, "remote");
-	VLTRVIRTUAL_BIND(_get_line_diff, "file_path", "text");
-
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL_BIND_COMPAT(_commit_bind_compat_117968, "msg");
-#endif
-
 	ClassDB::bind_method(D_METHOD("create_diff_line", "new_line_no", "old_line_no", "content", "status"), &EditorVCSInterface::create_diff_line);
 	ClassDB::bind_method(D_METHOD("create_diff_hunk", "old_start", "new_start", "old_lines", "new_lines"), &EditorVCSInterface::create_diff_hunk);
 	ClassDB::bind_method(D_METHOD("create_diff_file", "new_file", "old_file"), &EditorVCSInterface::create_diff_file);
@@ -400,3 +261,21 @@ void EditorVCSInterface::create_vcs_metadata_files(VCSMetadata p_vcs_metadata_ty
 		}
 	}
 }
+
+bool EditorVCSInterface::shut_down() { return true; }
+void EditorVCSInterface::push(const String &p_remote, bool p_force) {}
+void EditorVCSInterface::stage_file(const String &p_file_path) {}
+void EditorVCSInterface::unstage_file(const String &p_file_path) {}
+void EditorVCSInterface::set_credentials(const String &p_username, const String &p_password, const String &p_ssh_public_key, const String &p_ssh_private_key, const String &p_ssh_passphrase) {}
+void EditorVCSInterface::discard_file(const String &p_file_path) {}
+void EditorVCSInterface::create_remote(const String &p_remote_name, const String &p_remote_url) {}
+String EditorVCSInterface::get_current_branch_name() { return String(); }
+void EditorVCSInterface::create_branch(const String &p_branch_name) {}
+bool EditorVCSInterface::checkout_branch(const String &p_branch_name) { return true; }
+void EditorVCSInterface::fetch(const String &p_remote) {}
+void EditorVCSInterface::remove_remote(const String &p_remote_name) {}
+void EditorVCSInterface::remove_branch(const String &p_branch_name) {}
+bool EditorVCSInterface::initialize(const String &p_project_path) { return false; }
+bool EditorVCSInterface::allow_amends() { return false; }
+String EditorVCSInterface::get_vcs_name() { return String(); }
+void EditorVCSInterface::pull(const String &p_remote) {}

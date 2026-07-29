@@ -147,3 +147,19 @@ void godot_mbedtls_platform_free() {
 #endif
 }
 };
+
+extern "C" {
+void mbedtls_threading_set_alt(
+	int (*mutex_init)(mbedtls_platform_mutex_t *),
+	void (*mutex_destroy)(mbedtls_platform_mutex_t *),
+	int (*mutex_lock)(mbedtls_platform_mutex_t *),
+	int (*mutex_unlock)(mbedtls_platform_mutex_t *),
+	int (*cond_init)(mbedtls_platform_condition_variable_t *),
+	void (*cond_destroy)(mbedtls_platform_condition_variable_t *),
+	int (*cond_signal)(mbedtls_platform_condition_variable_t *),
+	int (*cond_broadcast)(mbedtls_platform_condition_variable_t *),
+	int (*cond_wait)(mbedtls_platform_condition_variable_t *, mbedtls_platform_mutex_t *)
+) {}
+
+void mbedtls_threading_free_alt(void) {}
+}

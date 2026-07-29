@@ -109,7 +109,7 @@ class EditorFileSystemImportFormatSupportQueryBlend : public EditorFileSystemImp
 	void _update_icons();
 
 public:
-	virtual bool is_active() const override;
-	virtual Vector<String> get_file_extensions() const override;
-	virtual bool query() override;
+	virtual bool is_active() const;
+	virtual Vector<String> get_file_extensions() const;
+	virtual bool query();
 };

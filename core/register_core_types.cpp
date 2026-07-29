@@ -38,10 +38,6 @@
 #include "core/crypto/crypto_resource_format.h"
 #include "core/crypto/hashing_context.h"
 #include "core/debugger/engine_profiler.h"
-#include "core/extension/gdextension.h"
-#include "core/extension/gdextension_manager.h"
-#include "core/extension/gdextension_resource_format.h"
-#include "core/extension/godot_instance.h"
 #include "core/input/input.h"
 #include "core/input/input_map.h"
 #include "core/input/shortcut.h"
@@ -78,7 +74,6 @@
 #include "core/math/triangle_mesh.h"
 #include "core/object/class_db.h"
 #include "core/object/script_backtrace.h"
-#include "core/object/script_language_extension.h"
 #include "core/object/undo_redo.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/os/main_loop.h"
@@ -100,7 +95,6 @@ static Ref<ResourceFormatLoaderImage> resource_format_image;
 static Ref<TranslationLoaderPO> resource_format_po;
 static Ref<ResourceFormatSaverCrypto> resource_format_saver_crypto;
 static Ref<ResourceFormatLoaderCrypto> resource_format_loader_crypto;
-static Ref<GDExtensionResourceLoader> resource_loader_gdextension;
 static Ref<ResourceFormatSaverJSON> resource_saver_json;
 static Ref<ResourceFormatLoaderJSON> resource_loader_json;
 
@@ -122,8 +116,6 @@ static WorkerThreadPool *worker_thread_pool = nullptr;
 
 extern Mutex _global_mutex;
 
-static GDExtensionManager *gdextension_manager = nullptr;
-
 extern void register_global_constants();
 extern void unregister_global_constants();
 
@@ -144,21 +136,21 @@ void register_core_types() {
 	register_global_constants();
 	CoreStringNames::create();
 
-	GDREGISTER_CLASS(Object);
-	GDREGISTER_CLASS(RefCounted);
-	GDREGISTER_CLASS(WeakRef);
-	GDREGISTER_CLASS(Resource);
+	VLTR_REGISTER_CLASS(Object);
+	VLTR_REGISTER_CLASS(RefCounted);
+	VLTR_REGISTER_CLASS(WeakRef);
+	VLTR_REGISTER_CLASS(Resource);
 
-	GDREGISTER_CLASS(Time);
+	VLTR_REGISTER_CLASS(Time);
 	_time = memnew(Time);
 	ResourceLoader::initialize();
 
 	Variant::register_types();
 
-	GDREGISTER_CLASS(ResourceFormatLoader);
-	GDREGISTER_CLASS(ResourceFormatSaver);
+	VLTR_REGISTER_CLASS(ResourceFormatLoader);
+	VLTR_REGISTER_CLASS(ResourceFormatSaver);
 
-	if constexpr (GD_IS_CLASS_ENABLED(Translation)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(Translation)) {
 		resource_format_po.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_format_po);
 	}
@@ -174,76 +166,70 @@ void register_core_types() {
 	resource_format_importer_saver.instantiate();
 	ResourceSaver::add_resource_format_saver(resource_format_importer_saver);
 
-	if constexpr (GD_IS_CLASS_ENABLED(Image)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(Image)) {
 		resource_format_image.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_format_image);
 	}
 
-	GDREGISTER_ABSTRACT_CLASS(Script);
-	GDREGISTER_ABSTRACT_CLASS(ScriptLanguage);
-	GDREGISTER_CLASS(ScriptBacktrace);
-	GDREGISTER_VIRTUAL_CLASS(ScriptExtension);
-	GDREGISTER_VIRTUAL_CLASS(ScriptLanguageExtension);
+	VLTR_REGISTER_CLASS(ScriptBacktrace);
 
-	GDREGISTER_CLASS(MissingResource);
-	GDREGISTER_CLASS(Image);
+	VLTR_REGISTER_CLASS(MissingResource);
+	VLTR_REGISTER_CLASS(Image);
 
-	GDREGISTER_CLASS(Shortcut);
-	GDREGISTER_ABSTRACT_CLASS(InputEvent);
-	GDREGISTER_ABSTRACT_CLASS(InputEventFromWindow);
-	GDREGISTER_ABSTRACT_CLASS(InputEventWithModifiers);
-	GDREGISTER_CLASS(InputEventKey);
-	GDREGISTER_CLASS(InputEventShortcut);
-	GDREGISTER_ABSTRACT_CLASS(InputEventMouse);
-	GDREGISTER_CLASS(InputEventMouseButton);
-	GDREGISTER_CLASS(InputEventMouseMotion);
-	GDREGISTER_CLASS(InputEventJoypadButton);
-	GDREGISTER_CLASS(InputEventJoypadMotion);
-	GDREGISTER_CLASS(InputEventScreenDrag);
-	GDREGISTER_CLASS(InputEventScreenTouch);
-	GDREGISTER_CLASS(InputEventAction);
-	GDREGISTER_ABSTRACT_CLASS(InputEventGesture);
-	GDREGISTER_CLASS(InputEventMagnifyGesture);
-	GDREGISTER_CLASS(InputEventPanGesture);
-	GDREGISTER_CLASS(InputEventMIDI);
+	VLTR_REGISTER_CLASS(Shortcut);
+	VLTR_REGISTER_ABSTRACT_CLASS(InputEvent);
+	VLTR_REGISTER_ABSTRACT_CLASS(InputEventFromWindow);
+	VLTR_REGISTER_ABSTRACT_CLASS(InputEventWithModifiers);
+	VLTR_REGISTER_CLASS(InputEventKey);
+	VLTR_REGISTER_CLASS(InputEventShortcut);
+	VLTR_REGISTER_ABSTRACT_CLASS(InputEventMouse);
+	VLTR_REGISTER_CLASS(InputEventMouseButton);
+	VLTR_REGISTER_CLASS(InputEventMouseMotion);
+	VLTR_REGISTER_CLASS(InputEventJoypadButton);
+	VLTR_REGISTER_CLASS(InputEventJoypadMotion);
+	VLTR_REGISTER_CLASS(InputEventScreenDrag);
+	VLTR_REGISTER_CLASS(InputEventScreenTouch);
+	VLTR_REGISTER_CLASS(InputEventAction);
+	VLTR_REGISTER_ABSTRACT_CLASS(InputEventGesture);
+	VLTR_REGISTER_CLASS(InputEventMagnifyGesture);
+	VLTR_REGISTER_CLASS(InputEventPanGesture);
+	VLTR_REGISTER_CLASS(InputEventMIDI);
 
 	// Network
-	GDREGISTER_ABSTRACT_CLASS(StreamPeer);
-	GDREGISTER_ABSTRACT_CLASS(StreamPeerSocket);
-	GDREGISTER_ABSTRACT_CLASS(SocketServer);
-	GDREGISTER_CLASS(StreamPeerExtension);
-	GDREGISTER_CLASS(StreamPeerBuffer);
-	GDREGISTER_CLASS(StreamPeerGZIP);
-	GDREGISTER_CLASS(StreamPeerTCP);
-	GDREGISTER_CLASS(TCPServer);
+	VLTR_REGISTER_ABSTRACT_CLASS(StreamPeer);
+	VLTR_REGISTER_ABSTRACT_CLASS(StreamPeerSocket);
+	VLTR_REGISTER_ABSTRACT_CLASS(SocketServer);
+	VLTR_REGISTER_CLASS(StreamPeerBuffer);
+	VLTR_REGISTER_CLASS(StreamPeerGZIP);
+	VLTR_REGISTER_CLASS(StreamPeerTCP);
+	VLTR_REGISTER_CLASS(TCPServer);
 
 	// IPC using UNIX domain sockets.
-	GDREGISTER_CLASS(StreamPeerUDS);
-	GDREGISTER_CLASS(UDSServer);
+	VLTR_REGISTER_CLASS(StreamPeerUDS);
+	VLTR_REGISTER_CLASS(UDSServer);
 
-	GDREGISTER_ABSTRACT_CLASS(PacketPeer);
-	GDREGISTER_CLASS(PacketPeerExtension);
-	GDREGISTER_CLASS(PacketPeerStream);
-	GDREGISTER_CLASS(PacketPeerUDP);
-	GDREGISTER_CLASS(UDPServer);
+	VLTR_REGISTER_ABSTRACT_CLASS(PacketPeer);
+	VLTR_REGISTER_CLASS(PacketPeerStream);
+	VLTR_REGISTER_CLASS(PacketPeerUDP);
+	VLTR_REGISTER_CLASS(UDPServer);
 
-	GDREGISTER_ABSTRACT_CLASS(WorkerThreadPool);
+	VLTR_REGISTER_ABSTRACT_CLASS(WorkerThreadPool);
 
 	ClassDB::register_custom_instance_class<HTTPClient>();
 
 	// Crypto
-	GDREGISTER_CLASS(HashingContext);
-	GDREGISTER_CLASS(AESContext);
+	VLTR_REGISTER_CLASS(HashingContext);
+	VLTR_REGISTER_CLASS(AESContext);
 	ClassDB::register_custom_instance_class<X509Certificate>();
 	ClassDB::register_custom_instance_class<CryptoKey>();
-	GDREGISTER_ABSTRACT_CLASS(TLSOptions);
+	VLTR_REGISTER_ABSTRACT_CLASS(TLSOptions);
 	ClassDB::register_custom_instance_class<HMACContext>();
 	ClassDB::register_custom_instance_class<Crypto>();
 	ClassDB::register_custom_instance_class<StreamPeerTLS>();
 	ClassDB::register_custom_instance_class<PacketPeerDTLS>();
 	ClassDB::register_custom_instance_class<DTLSServer>();
 
-	if constexpr (GD_IS_CLASS_ENABLED(Crypto)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(Crypto)) {
 		resource_format_saver_crypto.instantiate();
 		ResourceSaver::add_resource_format_saver(resource_format_saver_crypto);
 
@@ -251,7 +237,7 @@ void register_core_types() {
 		ResourceLoader::add_resource_format_loader(resource_format_loader_crypto);
 	}
 
-	if constexpr (GD_IS_CLASS_ENABLED(JSON)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(JSON)) {
 		resource_saver_json.instantiate();
 		ResourceSaver::add_resource_format_saver(resource_saver_json);
 
@@ -259,79 +245,67 @@ void register_core_types() {
 		ResourceLoader::add_resource_format_loader(resource_loader_json);
 	}
 
-	GDREGISTER_CLASS(MainLoop);
-	GDREGISTER_CLASS(Translation);
-	GDREGISTER_CLASS(TranslationDomain);
-	GDREGISTER_CLASS(OptimizedTranslation);
-	GDREGISTER_CLASS(UndoRedo);
-	GDREGISTER_CLASS(TriangleMesh);
+	VLTR_REGISTER_CLASS(MainLoop);
+	VLTR_REGISTER_CLASS(Translation);
+	VLTR_REGISTER_CLASS(TranslationDomain);
+	VLTR_REGISTER_CLASS(OptimizedTranslation);
+	VLTR_REGISTER_CLASS(UndoRedo);
+	VLTR_REGISTER_CLASS(TriangleMesh);
 
-	GDREGISTER_ABSTRACT_CLASS(FileAccess);
-	GDREGISTER_ABSTRACT_CLASS(DirAccess);
-	GDREGISTER_CLASS(CoreBind::Thread);
-	GDREGISTER_CLASS(CoreBind::Mutex);
-	GDREGISTER_CLASS(CoreBind::Semaphore);
-	GDREGISTER_VIRTUAL_CLASS(CoreBind::Logger);
+	VLTR_REGISTER_ABSTRACT_CLASS(FileAccess);
+	VLTR_REGISTER_ABSTRACT_CLASS(DirAccess);
+	VLTR_REGISTER_CLASS(CoreBind::Thread);
+	VLTR_REGISTER_CLASS(CoreBind::Mutex);
+	VLTR_REGISTER_CLASS(CoreBind::Semaphore);
+	VLTR_REGISTER_VIRTUAL_CLASS(CoreBind::Logger);
 
-	GDREGISTER_CLASS(XMLParser);
-	GDREGISTER_CLASS(JSON);
+	VLTR_REGISTER_CLASS(XMLParser);
+	VLTR_REGISTER_CLASS(JSON);
 
-	GDREGISTER_CLASS(ConfigFile);
+	VLTR_REGISTER_CLASS(ConfigFile);
 
-	GDREGISTER_CLASS(PCKPacker);
+	VLTR_REGISTER_CLASS(PCKPacker);
 
-	GDREGISTER_CLASS(AStar3D);
-	GDREGISTER_CLASS(AStar2D);
-	GDREGISTER_CLASS(AStarGrid2D);
-	GDREGISTER_CLASS(EncodedObjectAsID);
-	GDREGISTER_CLASS(RandomNumberGenerator);
+	VLTR_REGISTER_CLASS(AStar3D);
+	VLTR_REGISTER_CLASS(AStar2D);
+	VLTR_REGISTER_CLASS(AStarGrid2D);
+	VLTR_REGISTER_CLASS(EncodedObjectAsID);
+	VLTR_REGISTER_CLASS(RandomNumberGenerator);
 #ifndef DISABLE_DEPRECATED
-	GDREGISTER_CLASS(PackedDataContainer);
-	GDREGISTER_ABSTRACT_CLASS(PackedDataContainerRef);
+	VLTR_REGISTER_CLASS(PackedDataContainer);
+	VLTR_REGISTER_ABSTRACT_CLASS(PackedDataContainerRef);
 #endif
 
-	GDREGISTER_ABSTRACT_CLASS(ImageFormatLoader);
-	GDREGISTER_CLASS(ImageFormatLoaderExtension);
-	GDREGISTER_ABSTRACT_CLASS(ResourceImporter);
+	VLTR_REGISTER_ABSTRACT_CLASS(ImageFormatLoader);
+	VLTR_REGISTER_CLASS(ImageFormatLoaderExtension);
+	VLTR_REGISTER_ABSTRACT_CLASS(ResourceImporter);
 
-	GDREGISTER_CLASS(GDExtension);
 
-	GDREGISTER_ABSTRACT_CLASS(GodotInstance);
+	VLTR_REGISTER_ABSTRACT_CLASS(ResourceUID);
 
-	GDREGISTER_ABSTRACT_CLASS(GDExtensionManager);
+	VLTR_REGISTER_CLASS(EngineProfiler);
 
-	GDREGISTER_ABSTRACT_CLASS(ResourceUID);
-
-	GDREGISTER_CLASS(EngineProfiler);
-
-	GDREGISTER_CLASS(FuzzySearch);
-	GDREGISTER_CLASS(FuzzySearchMatch);
+	VLTR_REGISTER_CLASS(FuzzySearch);
+	VLTR_REGISTER_CLASS(FuzzySearchMatch);
 
 	resource_uid = memnew(ResourceUID);
 
-	gdextension_manager = memnew(GDExtensionManager);
+	VLTR_REGISTER_ABSTRACT_CLASS(IP);
+	VLTR_REGISTER_CLASS(CoreBind::Geometry2D);
+	VLTR_REGISTER_CLASS(CoreBind::Geometry3D);
+	VLTR_REGISTER_CLASS(CoreBind::ResourceLoader);
+	VLTR_REGISTER_CLASS(CoreBind::ResourceSaver);
+	VLTR_REGISTER_CLASS(CoreBind::OS);
+	VLTR_REGISTER_CLASS(CoreBind::Engine);
+	VLTR_REGISTER_CLASS(CoreBind::Special::ClassDB);
+	VLTR_REGISTER_CLASS(CoreBind::Marshalls);
+	VLTR_REGISTER_CLASS(CoreBind::EngineDebugger);
 
-	if constexpr (GD_IS_CLASS_ENABLED(GDExtension)) {
-		resource_loader_gdextension.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_loader_gdextension);
-	}
-
-	GDREGISTER_ABSTRACT_CLASS(IP);
-	GDREGISTER_CLASS(CoreBind::Geometry2D);
-	GDREGISTER_CLASS(CoreBind::Geometry3D);
-	GDREGISTER_CLASS(CoreBind::ResourceLoader);
-	GDREGISTER_CLASS(CoreBind::ResourceSaver);
-	GDREGISTER_CLASS(CoreBind::OS);
-	GDREGISTER_CLASS(CoreBind::Engine);
-	GDREGISTER_CLASS(CoreBind::Special::ClassDB);
-	GDREGISTER_CLASS(CoreBind::Marshalls);
-	GDREGISTER_CLASS(CoreBind::EngineDebugger);
-
-	GDREGISTER_CLASS(TranslationServer);
-	GDREGISTER_ABSTRACT_CLASS(Input);
-	GDREGISTER_CLASS(InputMap);
-	GDREGISTER_CLASS(Expression);
-	GDREGISTER_CLASS(ProjectSettings);
+	VLTR_REGISTER_CLASS(TranslationServer);
+	VLTR_REGISTER_ABSTRACT_CLASS(Input);
+	VLTR_REGISTER_CLASS(InputMap);
+	VLTR_REGISTER_CLASS(Expression);
+	VLTR_REGISTER_CLASS(ProjectSettings);
 
 	ip = IP::create();
 
@@ -346,9 +320,8 @@ void register_core_types() {
 	_marshalls = memnew(CoreBind::Marshalls);
 	_engine_debugger = memnew(CoreBind::EngineDebugger);
 
-	GDREGISTER_NATIVE_STRUCT(ObjectID, "uint64_t id = 0");
-	GDREGISTER_NATIVE_STRUCT(AudioFrame, "float left;float right");
-	GDREGISTER_NATIVE_STRUCT(ScriptLanguageExtensionProfilingInfo, "StringName signature;uint64_t call_count;uint64_t total_time;uint64_t self_time");
+	VLTR_REGISTER_NATIVE_STRUCT(ObjectID, "uint64_t id = 0");
+	VLTR_REGISTER_NATIVE_STRUCT(AudioFrame, "float left;float right");
 
 	worker_thread_pool = memnew(WorkerThreadPool);
 
@@ -387,7 +360,6 @@ void register_core_singletons() {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Input", Input::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("InputMap", InputMap::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("EngineDebugger", CoreBind::EngineDebugger::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("GDExtensionManager", GDExtensionManager::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ResourceUID", ResourceUID::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("WorkerThreadPool", worker_thread_pool));
 
@@ -398,9 +370,6 @@ void register_core_extensions() {
 	OS::get_singleton()->benchmark_begin_measure("Core", "Register Extensions");
 
 	// Hardcoded for now.
-	GDExtension::initialize_gdextensions();
-	gdextension_manager->load_extensions();
-	gdextension_manager->initialize_extensions(GDExtension::INITIALIZATION_LEVEL_CORE);
 	_is_core_extensions_registered = true;
 
 	OS::get_singleton()->benchmark_end_measure("Core", "Register Extensions");
@@ -408,12 +377,6 @@ void register_core_extensions() {
 
 void unregister_core_extensions() {
 	OS::get_singleton()->benchmark_begin_measure("Core", "Unregister Extensions");
-
-	if (_is_core_extensions_registered) {
-		gdextension_manager->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_CORE);
-	}
-	GDExtension::finalize_gdextensions();
-
 	OS::get_singleton()->benchmark_end_measure("Core", "Unregister Extensions");
 }
 
@@ -435,13 +398,11 @@ void unregister_core_types() {
 	memdelete(_geometry_3d);
 	memdelete(_geometry_2d);
 
-	memdelete(gdextension_manager);
-
 	memdelete(resource_uid);
 
 	memdelete(ip);
 
-	if constexpr (GD_IS_CLASS_ENABLED(Image)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(Image)) {
 		ResourceLoader::remove_resource_format_loader(resource_format_image);
 		resource_format_image.unref();
 	}
@@ -458,12 +419,12 @@ void unregister_core_types() {
 	ResourceSaver::remove_resource_format_saver(resource_format_importer_saver);
 	resource_format_importer_saver.unref();
 
-	if constexpr (GD_IS_CLASS_ENABLED(Translation)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(Translation)) {
 		ResourceLoader::remove_resource_format_loader(resource_format_po);
 		resource_format_po.unref();
 	}
 
-	if constexpr (GD_IS_CLASS_ENABLED(Crypto)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(Crypto)) {
 		ResourceSaver::remove_resource_format_saver(resource_format_saver_crypto);
 		resource_format_saver_crypto.unref();
 
@@ -471,17 +432,12 @@ void unregister_core_types() {
 		resource_format_loader_crypto.unref();
 	}
 
-	if constexpr (GD_IS_CLASS_ENABLED(JSON)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(JSON)) {
 		ResourceSaver::remove_resource_format_saver(resource_saver_json);
 		resource_saver_json.unref();
 
 		ResourceLoader::remove_resource_format_loader(resource_loader_json);
 		resource_loader_json.unref();
-	}
-
-	if constexpr (GD_IS_CLASS_ENABLED(GDExtension)) {
-		ResourceLoader::remove_resource_format_loader(resource_loader_gdextension);
-		resource_loader_gdextension.unref();
 	}
 
 	ResourceLoader::finalize();

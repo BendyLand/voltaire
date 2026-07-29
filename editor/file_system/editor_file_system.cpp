@@ -31,7 +31,6 @@
 #include "editor_file_system.h"
 
 #include "core/config/project_settings.h"
-#include "core/extension/gdextension_manager.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_importer.h"
@@ -245,12 +244,6 @@ EditorFileSystemDirectory::~EditorFileSystemDirectory() {
 	}
 }
 
-void EditorFileSystemImportFormatSupportQuery::_bind_methods() {
-	VLTRVIRTUAL_BIND(_is_active);
-	VLTRVIRTUAL_BIND(_get_file_extensions);
-	VLTRVIRTUAL_BIND(_query);
-}
-
 EditorFileSystem::ScannedDirectory::~ScannedDirectory() {
 	for (ScannedDirectory *dir : subdirs) {
 		memdelete(dir);
@@ -348,7 +341,6 @@ void EditorFileSystem::_first_scan_filesystem() {
 	// from extensions are ready to go before plugins, autoloads and resources validation/importation.
 	// At this point, a restart of the editor should not be needed so we don't use the return value.
 	ep.step(TTR("Verifying GDExtensions..."), 2, true);
-	GDExtensionManager::get_singleton()->ensure_extensions_loaded(extensions);
 
 	// Now that all the global class names should be loaded, create autoloads and plugins.
 	// This is done after loading the global class names because autoloads and plugins can use
@@ -821,12 +813,6 @@ bool EditorFileSystem::_scan_import_support(const Vector<String> &reimports) {
 	import_support_tested.resize(import_support_queries.size());
 	for (int i = 0; i < import_support_queries.size(); i++) {
 		import_support_tested.write[i] = false;
-		if (import_support_queries[i]->is_active()) {
-			Vector<String> extensions = import_support_queries[i]->get_file_extensions();
-			for (int j = 0; j < extensions.size(); j++) {
-				import_support_test.insert(extensions[j], i);
-			}
-		}
 	}
 
 	if (import_support_test.is_empty()) {
@@ -837,14 +823,6 @@ bool EditorFileSystem::_scan_import_support(const Vector<String> &reimports) {
 		HashMap<String, int>::Iterator E = import_support_test.find(reimports[i].get_extension().to_lower());
 		if (E) {
 			import_support_tested.write[E->value] = true;
-		}
-	}
-
-	for (int i = 0; i < import_support_tested.size(); i++) {
-		if (import_support_tested[i]) {
-			if (import_support_queries.write[i]->query()) {
-				return true;
-			}
 		}
 	}
 
@@ -3685,27 +3663,6 @@ ResourceUID::ID EditorFileSystem::_resource_saver_get_resource_id_for_path(const
 	}
 }
 
-static void _scan_extensions_dir(EditorFileSystemDirectory *d, HashSet<String> &extensions) {
-	int fc = d->get_file_count();
-	for (int i = 0; i < fc; i++) {
-		if (d->get_file_type(i) == SNAME("GDExtension")) {
-			extensions.insert(d->get_file_path(i));
-		}
-	}
-	int dc = d->get_subdir_count();
-	for (int i = 0; i < dc; i++) {
-		_scan_extensions_dir(d->get_subdir(i), extensions);
-	}
-}
-bool EditorFileSystem::_scan_extensions() {
-	EditorFileSystemDirectory *d = get_filesystem();
-	HashSet<String> extensions;
-
-	_scan_extensions_dir(d, extensions);
-
-	return GDExtensionManager::get_singleton()->ensure_extensions_loaded(extensions);
-}
-
 void EditorFileSystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_filesystem"), &EditorFileSystem::get_filesystem);
 	ClassDB::bind_method(D_METHOD("is_scanning"), &EditorFileSystem::is_scanning);
@@ -3815,3 +3772,9 @@ EditorFileSystem::~EditorFileSystem() {
 	filesystem = nullptr;
 	ResourceSaver::set_get_resource_id_for_path(nullptr);
 }
+
+void EditorFileSystemImportFormatSupportQuery::_bind_methods() {
+}
+
+bool EditorFileSystem::_scan_extensions() { return true; }
+

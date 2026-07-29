@@ -36,19 +36,6 @@
 
 void VideoStreamPlayback::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("mix_audio", "num_frames", "buffer", "offset"), &VideoStreamPlayback::mix_audio, DEFVAL(PackedFloat32Array()), DEFVAL(0));
-	VLTRVIRTUAL_BIND(_stop);
-	VLTRVIRTUAL_BIND(_play);
-	VLTRVIRTUAL_BIND(_is_playing);
-	VLTRVIRTUAL_BIND(_set_paused, "paused");
-	VLTRVIRTUAL_BIND(_is_paused);
-	VLTRVIRTUAL_BIND(_get_length);
-	VLTRVIRTUAL_BIND(_get_playback_position);
-	VLTRVIRTUAL_BIND(_seek, "time");
-	VLTRVIRTUAL_BIND(_set_audio_track, "idx");
-	VLTRVIRTUAL_BIND(_get_texture);
-	VLTRVIRTUAL_BIND(_update, "delta");
-	VLTRVIRTUAL_BIND(_get_channels);
-	VLTRVIRTUAL_BIND(_get_mix_rate);
 }
 
 VideoStreamPlayback::VideoStreamPlayback() {
@@ -57,90 +44,9 @@ VideoStreamPlayback::VideoStreamPlayback() {
 VideoStreamPlayback::~VideoStreamPlayback() {
 }
 
-void VideoStreamPlayback::stop() {
-	VLTRVIRTUAL_CALL(_stop);
-}
-
-void VideoStreamPlayback::play() {
-	VLTRVIRTUAL_CALL(_play);
-}
-
-bool VideoStreamPlayback::is_playing() const {
-	bool ret;
-	if (VLTRVIRTUAL_CALL(_is_playing, ret)) {
-		return ret;
-	}
-	return false;
-}
-
-void VideoStreamPlayback::set_paused(bool p_paused) {
-	VLTRVIRTUAL_CALL(_set_paused, p_paused);
-}
-
-bool VideoStreamPlayback::is_paused() const {
-	bool ret;
-	if (VLTRVIRTUAL_CALL(_is_paused, ret)) {
-		return ret;
-	}
-	return false;
-}
-
-double VideoStreamPlayback::get_length() const {
-	double ret;
-	if (VLTRVIRTUAL_CALL(_get_length, ret)) {
-		return ret;
-	}
-	return 0;
-}
-
-double VideoStreamPlayback::get_playback_position() const {
-	double ret;
-	if (VLTRVIRTUAL_CALL(_get_playback_position, ret)) {
-		return ret;
-	}
-	return 0;
-}
-
-void VideoStreamPlayback::seek(double p_time) {
-	VLTRVIRTUAL_CALL(_seek, p_time);
-}
-
-void VideoStreamPlayback::set_audio_track(int p_idx) {
-	VLTRVIRTUAL_CALL(_set_audio_track, p_idx);
-}
-
-Ref<Texture2D> VideoStreamPlayback::get_texture() const {
-	Ref<Texture2D> ret;
-	if (VLTRVIRTUAL_CALL(_get_texture, ret)) {
-		return ret;
-	}
-	return nullptr;
-}
-
-void VideoStreamPlayback::update(double p_delta) {
-	VLTRVIRTUAL_CALL(_update, p_delta);
-}
-
 void VideoStreamPlayback::set_mix_callback(AudioMixCallback p_callback, void *p_userdata) {
 	mix_callback = p_callback;
 	mix_udata = p_userdata;
-}
-
-int VideoStreamPlayback::get_channels() const {
-	int ret;
-	if (VLTRVIRTUAL_CALL(_get_channels, ret)) {
-		_channel_count = ret;
-		return ret;
-	}
-	return 0;
-}
-
-int VideoStreamPlayback::get_mix_rate() const {
-	int ret;
-	if (VLTRVIRTUAL_CALL(_get_mix_rate, ret)) {
-		return ret;
-	}
-	return 0;
 }
 
 int VideoStreamPlayback::mix_audio(int num_frames, PackedFloat32Array buffer, int offset) {
@@ -159,12 +65,9 @@ int VideoStreamPlayback::mix_audio(int num_frames, PackedFloat32Array buffer, in
 
 Ref<VideoStreamPlayback> VideoStream::instantiate_playback() {
 	Ref<VideoStreamPlayback> ret;
-	if (VLTRVIRTUAL_CALL(_instantiate_playback, ret)) {
-		ERR_FAIL_COND_V_MSG(ret.is_null(), nullptr, "Plugin returned null playback");
-		ret->set_audio_track(audio_track);
-		return ret;
-	}
-	return nullptr;
+	ERR_FAIL_COND_V_MSG(ret.is_null(), nullptr, "Plugin returned null playback");
+	ret->set_audio_track(audio_track);
+	return ret;
 }
 
 void VideoStream::set_file(const String &p_file) {
@@ -181,8 +84,6 @@ void VideoStream::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_file"), &VideoStream::get_file);
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "file"), "set_file", "get_file");
-
-	VLTRVIRTUAL_BIND(_instantiate_playback);
 }
 
 VideoStream::VideoStream() {
@@ -194,3 +95,17 @@ VideoStream::~VideoStream() {
 void VideoStream::set_audio_track(int p_track) {
 	audio_track = p_track;
 }
+
+void VideoStreamPlayback::stop() {}
+void VideoStreamPlayback::play() {}
+bool VideoStreamPlayback::is_playing() const { return false; }
+void VideoStreamPlayback::set_paused(bool p_paused) {}
+bool VideoStreamPlayback::is_paused() const { return false; }
+double VideoStreamPlayback::get_length() const { return 0.0; }
+double VideoStreamPlayback::get_playback_position() const { return 0.0; }
+void VideoStreamPlayback::seek(double p_time) {}
+void VideoStreamPlayback::set_audio_track(int p_idx) {}
+Ref<Texture2D> VideoStreamPlayback::get_texture() const { return Ref<Texture2D>(); }
+void VideoStreamPlayback::update(double p_delta) {}
+int VideoStreamPlayback::get_channels() const { return 0; }
+int VideoStreamPlayback::get_mix_rate() const { return 0; }

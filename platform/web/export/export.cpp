@@ -37,7 +37,7 @@
 #include "editor/settings/editor_settings.h"
 
 void register_web_exporter_types() {
-	GDREGISTER_VIRTUAL_CLASS(EditorExportPlatformWeb);
+	VLTR_REGISTER_VIRTUAL_CLASS(EditorExportPlatformWeb);
 }
 
 void register_web_exporter() {

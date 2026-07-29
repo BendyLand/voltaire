@@ -356,13 +356,6 @@ bool AStar3D::_solve(Point *p_begin_point, Point *p_end_point, bool p_allow_part
 				continue;
 			}
 
-			if (neighbor_filter_enabled) {
-				bool filtered;
-				if (VLTRVIRTUAL_CALL(_filter_neighbor, p->id, e->id, filtered) && filtered) {
-					continue;
-				}
-			}
-
 			real_t tentative_g_score = p->g_score + _compute_cost(p->id, e->id) * e->weight_scale;
 
 			bool new_point = false;
@@ -393,11 +386,6 @@ bool AStar3D::_solve(Point *p_begin_point, Point *p_end_point, bool p_allow_part
 }
 
 real_t AStar3D::_estimate_cost(int64_t p_from_id, int64_t p_end_id) {
-	real_t scost;
-	if (VLTRVIRTUAL_CALL(_estimate_cost, p_from_id, p_end_id, scost)) {
-		return scost;
-	}
-
 	Point **from_entry = points.getptr(p_from_id);
 	ERR_FAIL_COND_V_MSG(!from_entry, 0, vformat("Can't estimate cost. Point with id: %d doesn't exist.", p_from_id));
 	Point *from_point = *from_entry;
@@ -410,11 +398,6 @@ real_t AStar3D::_estimate_cost(int64_t p_from_id, int64_t p_end_id) {
 }
 
 real_t AStar3D::_compute_cost(int64_t p_from_id, int64_t p_to_id) {
-	real_t scost;
-	if (VLTRVIRTUAL_CALL(_compute_cost, p_from_id, p_to_id, scost)) {
-		return scost;
-	}
-
 	Point **from_entry = points.getptr(p_from_id);
 	ERR_FAIL_COND_V_MSG(!from_entry, 0, vformat("Can't compute cost. Point with id: %d doesn't exist.", p_from_id));
 	Point *from_point = *from_entry;
@@ -579,10 +562,6 @@ void AStar3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_point_path", "from_id", "to_id", "allow_partial_path"), &AStar3D::get_point_path, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("get_id_path", "from_id", "to_id", "allow_partial_path"), &AStar3D::get_id_path, DEFVAL(false));
 
-	VLTRVIRTUAL_BIND(_filter_neighbor, "from_id", "neighbor_id")
-	VLTRVIRTUAL_BIND(_estimate_cost, "from_id", "end_id")
-	VLTRVIRTUAL_BIND(_compute_cost, "from_id", "to_id")
-
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "neighbor_filter_enabled"), "set_neighbor_filter_enabled", "is_neighbor_filter_enabled");
 }
 
@@ -687,11 +666,6 @@ Vector2 AStar2D::get_closest_position_in_segment(const Vector2 &p_point) const {
 }
 
 real_t AStar2D::_estimate_cost(int64_t p_from_id, int64_t p_end_id) {
-	real_t scost;
-	if (VLTRVIRTUAL_CALL(_estimate_cost, p_from_id, p_end_id, scost)) {
-		return scost;
-	}
-
 	AStar3D::Point **from_entry = astar.points.getptr(p_from_id);
 	ERR_FAIL_COND_V_MSG(!from_entry, 0, vformat("Can't estimate cost. Point with id: %d doesn't exist.", p_from_id));
 	AStar3D::Point *from_point = *from_entry;
@@ -704,11 +678,6 @@ real_t AStar2D::_estimate_cost(int64_t p_from_id, int64_t p_end_id) {
 }
 
 real_t AStar2D::_compute_cost(int64_t p_from_id, int64_t p_to_id) {
-	real_t scost;
-	if (VLTRVIRTUAL_CALL(_compute_cost, p_from_id, p_to_id, scost)) {
-		return scost;
-	}
-
 	AStar3D::Point **from_entry = astar.points.getptr(p_from_id);
 	ERR_FAIL_COND_V_MSG(!from_entry, 0, vformat("Can't compute cost. Point with id: %d doesn't exist.", p_from_id));
 	AStar3D::Point *from_point = *from_entry;
@@ -865,13 +834,6 @@ bool AStar2D::_solve(AStar3D::Point *p_begin_point, AStar3D::Point *p_end_point,
 				continue;
 			}
 
-			if (astar.neighbor_filter_enabled) {
-				bool filtered;
-				if (VLTRVIRTUAL_CALL(_filter_neighbor, p->id, e->id, filtered) && filtered) {
-					continue;
-				}
-			}
-
 			real_t tentative_g_score = p->g_score + _compute_cost(p->id, e->id) * e->weight_scale;
 
 			bool new_point = false;
@@ -933,10 +895,6 @@ void AStar2D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_point_path", "from_id", "to_id", "allow_partial_path"), &AStar2D::get_point_path, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("get_id_path", "from_id", "to_id", "allow_partial_path"), &AStar2D::get_id_path, DEFVAL(false));
-
-	VLTRVIRTUAL_BIND(_filter_neighbor, "from_id", "neighbor_id")
-	VLTRVIRTUAL_BIND(_estimate_cost, "from_id", "end_id")
-	VLTRVIRTUAL_BIND(_compute_cost, "from_id", "to_id")
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "neighbor_filter_enabled"), "set_neighbor_filter_enabled", "is_neighbor_filter_enabled");
 }

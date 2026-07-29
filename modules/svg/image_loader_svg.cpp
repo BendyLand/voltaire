@@ -186,3 +186,5 @@ Error ImageLoaderSVG::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileacces
 ImageLoaderSVG::ImageLoaderSVG() {
 	Image::_svg_scalable_mem_loader_func = load_mem_svg;
 }
+
+

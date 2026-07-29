@@ -33,7 +33,6 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/core_constants.h"
-#include "core/extension/gdextension.h"
 #include "core/input/input.h"
 #include "core/io/json.h"
 #include "core/io/resource_loader.h"
@@ -60,6 +59,7 @@
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/line_edit.h"
+#include "scene/resources/syntax_highlighter.h"
 #include "servers/display/display_server.h"
 
 #include "modules/modules_enabled.gen.h" // For gdscript, mono.
@@ -3479,11 +3479,6 @@ void EditorHelp::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("_request_save_new_history", PropertyInfo(Variant::DICTIONARY, "state")));
 }
 
-void EditorHelp::init_gdext_pointers() {
-	GDExtensionEditorHelp::editor_help_load_xml_buffer = &EditorHelp::load_xml_buffer;
-	GDExtensionEditorHelp::editor_help_remove_class = &EditorHelp::remove_class;
-}
-
 EditorHelp::EditorHelp() {
 	set_custom_minimum_size(Size2(150 * EDSCALE, 0));
 
@@ -5224,14 +5219,8 @@ EditorHelpHighlighter::EditorHelpHighlighter() {
 	Ref<GDScript> gdscript;
 	gdscript.instantiate();
 
-	Ref<GDScriptSyntaxHighlighter> gdscript_highlighter;
-	gdscript_highlighter.instantiate();
-	gdscript_highlighter->set_text_edit(gdscript_text_edit);
-	gdscript_highlighter->_set_edited_resource(gdscript);
-
 	text_edits[LANGUAGE_GDSCRIPT] = gdscript_text_edit;
 	scripts[LANGUAGE_GDSCRIPT] = gdscript;
-	highlighters[LANGUAGE_GDSCRIPT] = gdscript_highlighter;
 #endif
 
 #ifdef MODULE_MONO_ENABLED
@@ -5462,4 +5451,7 @@ void FindBar::_search_text_submitted(const String &p_text) {
 	} else {
 		search_next();
 	}
+}
+
+void EditorHelp::init_gdext_pointers() {
 }

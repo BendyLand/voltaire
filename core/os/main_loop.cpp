@@ -47,33 +47,21 @@ void MainLoop::_bind_methods() {
 	BIND_CONSTANT(NOTIFICATION_APPLICATION_PIP_MODE_EXITED);
 
 	ADD_SIGNAL(MethodInfo("on_request_permissions_result", PropertyInfo(Variant::STRING, "permission"), PropertyInfo(Variant::BOOL, "granted")));
-
-	VLTRVIRTUAL_BIND(_initialize);
-	VLTRVIRTUAL_BIND(_physics_process, "delta");
-	VLTRVIRTUAL_BIND(_process, "delta");
-	VLTRVIRTUAL_BIND(_finalize);
-}
-
-void MainLoop::initialize() {
-	VLTRVIRTUAL_CALL(_initialize);
-}
-
-bool MainLoop::physics_process(double p_time) {
-	bool quit = false;
-	VLTRVIRTUAL_CALL(_physics_process, p_time, quit);
-	return quit;
-}
-
-bool MainLoop::process(double p_time) {
-	bool quit = false;
-	VLTRVIRTUAL_CALL(_process, p_time, quit);
-	return quit;
 }
 
 void MainLoop::finalize() {
-	VLTRVIRTUAL_CALL(_finalize);
-
 	if (get_script_instance()) {
 		set_script(Variant()); //clear script
 	}
+}
+
+void MainLoop::initialize() {
+}
+
+bool MainLoop::physics_process(double p_time) {
+	return false;
+}
+
+bool MainLoop::process(double p_time) {
+	return false;
 }

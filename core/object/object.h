@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/extension/gdextension_interface.gen.h"
 #include "core/object/vltrtype.h"
 #include "core/object/method_info.h"
 #include "core/object/object_id.h"
@@ -70,73 +69,6 @@
 // API used to extend in GDExtension and other C compatible compiled languages.
 class MethodBind;
 class GDExtension;
-
-struct ObjectGDExtension {
-	GDExtension *library = nullptr;
-	ObjectGDExtension *parent = nullptr;
-	List<ObjectGDExtension *> children;
-	StringName parent_class_name;
-	StringName class_name;
-	bool editor_class = false;
-	bool reloadable = false;
-	bool is_virtual = false;
-	bool is_abstract = false;
-	bool is_exposed = true;
-#ifdef TOOLS_ENABLED
-	bool is_runtime = false;
-	bool is_placeholder = false;
-#endif
-#ifndef DISABLE_DEPRECATED
-	bool legacy_unexposed_class = false;
-#endif // DISABLE_DEPRECATED
-	GDExtensionClassSet set;
-	GDExtensionClassGet get;
-	GDExtensionClassGetPropertyList get_property_list;
-	GDExtensionClassFreePropertyList2 free_property_list2;
-	GDExtensionClassPropertyCanRevert property_can_revert;
-	GDExtensionClassPropertyGetRevert property_get_revert;
-	GDExtensionClassValidateProperty validate_property;
-#ifndef DISABLE_DEPRECATED
-	GDExtensionClassNotification notification;
-	GDExtensionClassFreePropertyList free_property_list;
-#endif // DISABLE_DEPRECATED
-	GDExtensionClassNotification2 notification2;
-	GDExtensionClassToString to_string;
-	GDExtensionClassReference reference;
-	GDExtensionClassReference unreference;
-	GDExtensionClassGetRID get_rid;
-
-	void *class_userdata = nullptr;
-
-#ifndef DISABLE_DEPRECATED
-	GDExtensionClassCreateInstance create_instance;
-	GDExtensionClassCreateInstance2 create_instance2; // Without refcount.
-#endif // DISABLE_DEPRECATED
-	GDExtensionClassCreateInstance3 create_instance3;
-	GDExtensionClassFreeInstance free_instance;
-#ifndef DISABLE_DEPRECATED
-	GDExtensionClassGetVirtual get_virtual;
-	GDExtensionClassGetVirtualCallData get_virtual_call_data;
-#endif // DISABLE_DEPRECATED
-	GDExtensionClassGetVirtual2 get_virtual2;
-	GDExtensionClassGetVirtualCallData2 get_virtual_call_data2;
-	GDExtensionClassCallVirtualWithData call_virtual_with_data;
-	GDExtensionClassRecreateInstance recreate_instance;
-
-#ifdef TOOLS_ENABLED
-	void *tracking_userdata = nullptr;
-	void (*track_instance)(void *p_userdata, void *p_instance) = nullptr;
-	void (*untrack_instance)(void *p_userdata, void *p_instance) = nullptr;
-#endif
-
-	/// A type for this Object extension.
-	/// This is not exposed through the GDExtension API (yet) so it is inferred from above parameters.
-	VLTRType *vltrtype;
-	void create_vltrtype();
-	void destroy_vltrtype();
-
-	~ObjectGDExtension();
-};
 
 #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
 #define VLTRVIRTUAL_CALL_PTR(m_obj, m_name, ...) m_obj->_vltrvirtual_##m_name##_call(__VA_ARGS__)
@@ -404,10 +336,6 @@ private:
 	friend struct ObjectSignalLock;
 	friend bool predelete_handler(Object *);
 	friend void postinitialize_handler(Object *);
-
-	ObjectGDExtension *_extension = nullptr;
-	GDExtensionClassInstancePtr _extension_instance = nullptr;
-
 	struct SignalData {
 		struct Slot {
 			int reference_count = 0;
@@ -491,8 +419,6 @@ private:
 	struct InstanceBinding {
 		void *binding = nullptr;
 		void *token = nullptr;
-		GDExtensionInstanceBindingFreeCallback free_callback = nullptr;
-		GDExtensionInstanceBindingReferenceCallback reference_callback = nullptr;
 	};
 	InstanceBinding *_instance_bindings = nullptr;
 	uint32_t _instance_binding_count = 0;
@@ -506,13 +432,6 @@ protected:
 		bool can_die = true;
 		if (_instance_bindings) {
 			MutexLock instance_binding_lock(_instance_binding_mutex);
-			for (uint32_t i = 0; i < _instance_binding_count; i++) {
-				if (_instance_bindings[i].reference_callback) {
-					if (!_instance_bindings[i].reference_callback(_instance_bindings[i].token, _instance_bindings[i].binding, p_reference)) {
-						can_die = false;
-					}
-				}
-			}
 		}
 		return can_die;
 	}
@@ -521,8 +440,6 @@ protected:
 	void _vltrvirtual_init_method_ptr(uint32_t p_compat_hash, void *&r_fn_ptr, const StringName &p_fn_name, bool p_compat) const;
 
 	friend class GDExtensionMethodBind;
-	_ALWAYS_INLINE_ const ObjectGDExtension *_get_extension() const { return _extension; }
-	_ALWAYS_INLINE_ GDExtensionClassInstancePtr _get_extension_instance() const { return _extension_instance; }
 	virtual void _initialize_classv() { initialize_class(); }
 	virtual bool _setv(const StringName &p_name, const Variant &p_property) { return false; }
 	virtual bool _getv(const StringName &p_name, Variant &r_property) const { return false; }
@@ -827,16 +744,12 @@ public:
 #endif
 
 	// Used by script languages to store binding data.
-	void *get_instance_binding(void *p_token, const GDExtensionInstanceBindingCallbacks *p_callbacks);
 	// Used on creation by binding only.
-	void set_instance_binding(void *p_token, void *p_binding, const GDExtensionInstanceBindingCallbacks *p_callbacks);
 	bool has_instance_binding(void *p_token);
 	void free_instance_binding(void *p_token);
 
 #ifdef TOOLS_ENABLED
 	void clear_internal_extension();
-	void reset_internal_extension(ObjectGDExtension *p_extension);
-	bool is_extension_placeholder() const { return _extension && _extension->is_placeholder; }
 #endif
 
 	void clear_internal_resource_paths();

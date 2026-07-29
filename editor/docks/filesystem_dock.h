@@ -402,8 +402,8 @@ protected:
 	static void _bind_methods();
 
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
-	virtual void save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const override;
-	virtual void load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section) override;
+	virtual void save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const;
+	virtual void load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section);
 
 public:
 	static constexpr double ITEM_COLOR_SCALE = 1.75;

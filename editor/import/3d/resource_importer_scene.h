@@ -57,11 +57,6 @@ protected:
 	Node *import_scene_wrapper(const String &p_path, uint32_t p_flags, const Dictionary &p_options);
 	Ref<Animation> import_animation_wrapper(const String &p_path, uint32_t p_flags, const Dictionary &p_options);
 
-	VLTRVIRTUAL0RC_REQUIRED(Vector<String>, _get_extensions)
-	VLTRVIRTUAL3R_REQUIRED(Object *, _import_scene, String, uint32_t, Dictionary)
-	VLTRVIRTUAL1(_get_import_options, String)
-	VLTRVIRTUAL3RC(Variant, _get_option_visibility, String, bool, String)
-
 public:
 	enum ImportFlags {
 		IMPORT_SCENE = 1,
@@ -92,12 +87,11 @@ class EditorScenePostImport : public RefCounted {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL1R(Object *, _post_import, Node *)
-
 public:
 	String get_source_file() const;
 	virtual Node *post_import(Node *p_scene);
 	virtual void init(const String &p_source_file);
+	Object *post_import(Object *p_scene);
 };
 
 class EditorScenePostImportPlugin : public RefCounted {
@@ -121,15 +115,6 @@ private:
 	List<ResourceImporter::ImportOption> *current_option_list = nullptr;
 
 protected:
-	VLTRVIRTUAL1(_get_internal_import_options, int)
-	VLTRVIRTUAL3RC(Variant, _get_internal_option_visibility, int, bool, String)
-	VLTRVIRTUAL2RC(Variant, _get_internal_option_update_view_required, int, String)
-	VLTRVIRTUAL4(_internal_process, int, Node *, Node *, Ref<Resource>)
-	VLTRVIRTUAL1(_get_import_options, String)
-	VLTRVIRTUAL3RC(Variant, _get_option_visibility, String, bool, String)
-	VLTRVIRTUAL1(_pre_process, Node *)
-	VLTRVIRTUAL1(_post_process, Node *)
-
 	static void _bind_methods();
 
 public:

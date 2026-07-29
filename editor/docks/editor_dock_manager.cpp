@@ -462,9 +462,6 @@ void EditorDockManager::save_docks_to_config(Ref<ConfigFile> p_layout, const Str
 
 	Array closed_docks_dump;
 	for (const EditorDock *dock : all_docks) {
-		const String section_name = p_section + "/" + dock->get_effective_layout_key();
-		dock->save_layout_to_config(p_layout, section_name);
-
 		if (dock->is_open) {
 			continue;
 		}
@@ -547,8 +544,6 @@ void EditorDockManager::load_docks_from_config(Ref<ConfigFile> p_layout, const S
 		Vector<String> names = String(p_layout->get_value(p_section, key)).split(",");
 		for (int j = names.size() - 1; j >= 0; j--) {
 			const String &name = names[j];
-			const String section_name = p_section + "/" + name;
-
 			if (!dock_map.has(name)) {
 				continue;
 			}
@@ -556,7 +551,6 @@ void EditorDockManager::load_docks_from_config(Ref<ConfigFile> p_layout, const S
 
 			if (!dock->enabled) {
 				// Don't open disabled docks.
-				dock->load_layout_from_config(p_layout, section_name);
 				continue;
 			}
 
@@ -573,8 +567,6 @@ void EditorDockManager::load_docks_from_config(Ref<ConfigFile> p_layout, const S
 					_move_dock(dock, dock_slots[i], 0, false);
 				}
 			}
-			dock->load_layout_from_config(p_layout, section_name);
-
 			dock->dock_slot_index = i;
 			dock->previous_tab_index = i >= 0 ? j : 0;
 		}

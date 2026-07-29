@@ -34,22 +34,3 @@
 #include "core/math/vector3.h"
 #include "core/object/class_db.h"
 
-void PhysicsServer3DRenderingServerHandler::set_vertex(int p_vertex_id, const Vector3 &p_vertex) {
-	VLTRVIRTUAL_CALL(_set_vertex, p_vertex_id, p_vertex);
-}
-void PhysicsServer3DRenderingServerHandler::set_normal(int p_vertex_id, const Vector3 &p_normal) {
-	VLTRVIRTUAL_CALL(_set_normal, p_vertex_id, p_normal);
-}
-void PhysicsServer3DRenderingServerHandler::set_aabb(const AABB &p_aabb) {
-	VLTRVIRTUAL_CALL(_set_aabb, p_aabb);
-}
-
-void PhysicsServer3DRenderingServerHandler::_bind_methods() {
-	VLTRVIRTUAL_BIND(_set_vertex, "vertex_id", "vertex");
-	VLTRVIRTUAL_BIND(_set_normal, "vertex_id", "normal");
-	VLTRVIRTUAL_BIND(_set_aabb, "aabb");
-
-	ClassDB::bind_method(D_METHOD("set_vertex", "vertex_id", "vertex"), &PhysicsServer3DRenderingServerHandler::set_vertex);
-	ClassDB::bind_method(D_METHOD("set_normal", "vertex_id", "normal"), &PhysicsServer3DRenderingServerHandler::set_normal);
-	ClassDB::bind_method(D_METHOD("set_aabb", "aabb"), &PhysicsServer3DRenderingServerHandler::set_aabb);
-}

@@ -65,8 +65,6 @@ protected:
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL2RC(Object *, _create_editor, Ref<Resource>, Ref<VisualShaderNode>)
-
 public:
 	void set_editor(VisualShaderEditor *p_editor);
 	virtual Control *create_editor(const Ref<Resource> &p_parent_resource, const Ref<VisualShaderNode> &p_node);

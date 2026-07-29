@@ -32,23 +32,6 @@
 
 #include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
 
-void OpenXRBindingModifier::_bind_methods() {
-	VLTRVIRTUAL_BIND(_get_description);
-	VLTRVIRTUAL_BIND(_get_ip_modification);
-}
-
-String OpenXRBindingModifier::get_description() const {
-	String desc;
-	if (VLTRVIRTUAL_CALL(_get_description, desc)) {
-		return desc;
-	}
-	return "";
-}
-
 PackedByteArray OpenXRBindingModifier::get_ip_modification() {
-	PackedByteArray data;
-	if (VLTRVIRTUAL_CALL(_get_ip_modification, data)) {
-		return data;
-	}
 	return PackedByteArray();
 }

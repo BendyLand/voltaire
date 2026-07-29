@@ -44,6 +44,8 @@ class EditorContextMenuPlugin : public RefCounted {
 	friend class EditorContextMenuPluginManager;
 
 	static constexpr int MAX_ITEMS = 100;
+	EditorContextMenuPlugin();
+	~EditorContextMenuPlugin();
 
 public:
 	enum ContextMenuSlot {
@@ -76,8 +78,6 @@ public:
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL1(_popup_menu, Vector<String>);
-
 public:
 	virtual void get_options(const Vector<String> &p_paths);
 
@@ -85,6 +85,7 @@ public:
 	void add_context_menu_item(const String &p_name, const Callable &p_callable, const Ref<Texture2D> &p_texture);
 	void add_context_menu_item_from_shortcut(const String &p_name, const Ref<Shortcut> &p_shortcut, const Ref<Texture2D> &p_texture);
 	void add_context_submenu_item(const String &p_name, PopupMenu *p_menu, const Ref<Texture2D> &p_texture);
+	void add_custom_options(const Vector<String> &p_paths);
 };
 
 VARIANT_ENUM_CAST(EditorContextMenuPlugin::ContextMenuSlot);

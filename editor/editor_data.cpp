@@ -31,7 +31,6 @@
 #include "editor_data.h"
 
 #include "core/config/project_settings.h"
-#include "core/extension/gdextension_manager.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/object/callable_mp.h"
@@ -1162,17 +1161,6 @@ void EditorData::script_class_load_icon_paths() {
 	}
 }
 
-Ref<Texture2D> EditorData::extension_class_get_icon(const String &p_class) const {
-	if (GDExtensionManager::get_singleton()->class_has_icon_path(p_class)) {
-		String icon_path = GDExtensionManager::get_singleton()->class_get_icon_path(p_class);
-		Ref<Texture2D> icon = _load_script_icon(icon_path);
-		if (icon.is_valid()) {
-			return icon;
-		}
-	}
-	return nullptr;
-}
-
 Ref<Texture2D> EditorData::_load_script_icon(const String &p_path) const {
 	if (!p_path.is_empty() && ResourceLoader::exists(p_path)) {
 		Ref<Texture2D> icon = ResourceLoader::load(p_path);
@@ -1449,6 +1437,10 @@ List<Node *> EditorSelection::get_full_selected_node_list() {
 	return node_list;
 }
 
+Ref<Texture2D> EditorData::extension_class_get_icon(const String &p_class) const {
+    return Ref<Texture2D>();
+}
+
 void EditorSelection::clear() {
 	while (!selection.is_empty()) {
 		Node *node = ObjectDB::get_instance<Node>(selection.begin()->key);
@@ -1464,3 +1456,4 @@ void EditorSelection::clear() {
 EditorSelection::~EditorSelection() {
 	clear();
 }
+

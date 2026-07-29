@@ -73,7 +73,6 @@ protected:
 	static void _bind_methods();
 
 	virtual void _create_mesh_array(Array &p_arr) const {}
-	VLTRVIRTUAL0RC(Array, _create_mesh_array)
 
 	Vector2 get_uv2_scale(Vector2 p_margin_scale = Vector2(1.0, 1.0)) const;
 	float get_lightmap_texel_size() const;
@@ -615,8 +614,6 @@ protected:
 	virtual void _create_mesh_array(Array &p_arr) const override;
 
 public:
-	VLTRVIRTUAL2RC(TypedArray<Vector3i>, _structured_text_parser, Array, String)
-
 	TextMesh();
 	~TextMesh();
 

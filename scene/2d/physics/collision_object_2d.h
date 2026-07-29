@@ -114,11 +114,6 @@ protected:
 
 	virtual void _space_changed(const RID &p_new_space);
 
-	VLTRVIRTUAL3(_input_event, RequiredParam<Viewport>, RequiredParam<InputEvent>, int)
-	VLTRVIRTUAL0(_mouse_enter)
-	VLTRVIRTUAL0(_mouse_exit)
-	VLTRVIRTUAL1(_mouse_shape_enter, int)
-	VLTRVIRTUAL1(_mouse_shape_exit, int)
 public:
 	void set_collision_layer(uint32_t p_layer);
 	uint32_t get_collision_layer() const;

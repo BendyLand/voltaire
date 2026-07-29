@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/extension/ext_wrappers.gen.h"
 #include "core/io/packet_peer.h"
 #include "core/object/gdvirtual.gen.h"
 #include "core/variant/native_ptr.h"
@@ -97,8 +96,6 @@ VARIANT_ENUM_CAST(MultiplayerPeer::ConnectionStatus);
 VARIANT_ENUM_CAST(MultiplayerPeer::TransferMode);
 
 class MultiplayerPeerExtension : public MultiplayerPeer {
-	VLTRCLASS(MultiplayerPeerExtension, MultiplayerPeer);
-
 protected:
 	static void _bind_methods();
 
@@ -107,38 +104,9 @@ protected:
 public:
 	/* PacketPeer extension */
 	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override; ///< buffer is GONE after next get_packet
-	VLTRVIRTUAL2R(Error, _get_packet, GDExtensionPtr<const uint8_t *>, GDExtensionPtr<int>);
-	VLTRVIRTUAL0R(PackedByteArray, _get_packet_script); // For GDScript.
-
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
-	VLTRVIRTUAL2R(Error, _put_packet, GDExtensionPtr<const uint8_t>, int);
-	VLTRVIRTUAL1R(Error, _put_packet_script, PackedByteArray); // For GDScript.
-
-	EXBIND0RC(int, get_available_packet_count);
-	EXBIND0RC(int, get_max_packet_size);
-
 	/* MultiplayerPeer extension */
 	virtual void set_refuse_new_connections(bool p_enable) override;
-	VLTRVIRTUAL1(_set_refuse_new_connections, bool); // Optional.
-
 	virtual bool is_refusing_new_connections() const override;
-	VLTRVIRTUAL0RC(bool, _is_refusing_new_connections); // Optional.
-
 	virtual bool is_server_relay_supported() const override;
-	VLTRVIRTUAL0RC(bool, _is_server_relay_supported); // Optional.
-
-	EXBIND1(set_transfer_channel, int);
-	EXBIND0RC(int, get_transfer_channel);
-	EXBIND1(set_transfer_mode, TransferMode);
-	EXBIND0RC(TransferMode, get_transfer_mode);
-	EXBIND1(set_target_peer, int);
-	EXBIND0RC(int, get_packet_peer);
-	EXBIND0RC(TransferMode, get_packet_mode);
-	EXBIND0RC(int, get_packet_channel);
-	EXBIND0RC(bool, is_server);
-	EXBIND0(poll);
-	EXBIND0(close);
-	EXBIND2(disconnect_peer, int, bool);
-	EXBIND0RC(int, get_unique_id);
-	EXBIND0RC(ConnectionStatus, get_connection_status);
 };

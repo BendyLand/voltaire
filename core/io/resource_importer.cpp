@@ -582,19 +582,14 @@ ResourceFormatImporter::ResourceFormatImporter() {
 
 void ResourceImporter::get_build_dependencies(const String &p_path, HashSet<String> *r_dependencies) {
 	Vector<String> ret;
-	if (VLTRVIRTUAL_CALL(_get_build_dependencies, p_path, ret)) {
-		for (int i = 0; i < ret.size(); i++) {
-			r_dependencies->insert(ret[i]);
-		}
-		return;
+	for (int i = 0; i < ret.size(); i++) {
+		r_dependencies->insert(ret[i]);
 	}
 }
 
 void ResourceImporter::_bind_methods() {
 	BIND_ENUM_CONSTANT(IMPORT_ORDER_DEFAULT);
 	BIND_ENUM_CONSTANT(IMPORT_ORDER_SCENE);
-
-	VLTRVIRTUAL_BIND(_get_build_dependencies, "path");
 }
 
 /////

@@ -232,20 +232,10 @@ void ResourceSaver::_bind_methods() {
 ////// Logger ///////
 
 void Logger::_bind_methods() {
-	VLTRVIRTUAL_BIND(_log_error, "function", "file", "line", "code", "rationale", "editor_notify", "error_type", "script_backtraces");
-	VLTRVIRTUAL_BIND(_log_message, "message", "error");
 	BIND_ENUM_CONSTANT(ERROR_TYPE_ERROR);
 	BIND_ENUM_CONSTANT(ERROR_TYPE_WARNING);
 	BIND_ENUM_CONSTANT(ERROR_TYPE_SCRIPT);
 	BIND_ENUM_CONSTANT(ERROR_TYPE_SHADER);
-}
-
-void Logger::log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, ErrorType p_type, const TypedArray<ScriptBacktrace> &p_script_backtraces) {
-	VLTRVIRTUAL_CALL(_log_error, String::utf8(p_function), String::utf8(p_file), p_line, String::utf8(p_code), String::utf8(p_rationale), p_editor_notify, p_type, p_script_backtraces);
-}
-
-void Logger::log_message(const String &p_text, bool p_error) {
-	VLTRVIRTUAL_CALL(_log_message, p_text, p_error);
 }
 
 ////// OS //////
@@ -293,6 +283,10 @@ void OS::LoggerBind::log_error(const char *p_function, const char *p_file, int p
 		logger->log_error(p_function, p_file, p_line, p_code, p_rationale, p_editor_notify, CoreBind::Logger::ErrorType(p_type), backtraces);
 	}
 }
+
+void Logger::log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, Logger::ErrorType p_type, const TypedArray<ScriptBacktrace> &p_script_backtraces) { }
+
+void Logger::log_message(const String &p_text, bool p_error) { }
 
 PackedByteArray OS::get_entropy(int p_bytes) {
 	PackedByteArray pba;
@@ -2349,5 +2343,5 @@ void EngineDebugger::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("remove_breakpoint", "line", "source"), &EngineDebugger::remove_breakpoint);
 	ClassDB::bind_method(D_METHOD("clear_breakpoints"), &EngineDebugger::clear_breakpoints);
 }
-
 } // namespace CoreBind
+

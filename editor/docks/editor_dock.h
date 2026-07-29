@@ -103,14 +103,6 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	VLTRVIRTUAL2(_update_layout_and_slot, int, int)
-	VLTRVIRTUAL2C(_save_layout_to_config, Ref<ConfigFile>, const String &)
-	VLTRVIRTUAL2(_load_layout_from_config, Ref<ConfigFile>, const String &)
-
-#ifndef DISABLE_DEPRECATED
-	VLTRVIRTUAL1(_update_layout, int)
-#endif
-
 public:
 	void open();
 	void make_visible();
@@ -161,13 +153,10 @@ public:
 	void update_tab_style();
 	Ref<Texture2D> get_effective_icon(const Callable &p_icon_fetch);
 
-	virtual void update_layout(DockLayout p_layout, int p_slot);
 	DockLayout get_current_layout() const { return current_layout; }
 	DockSlot get_current_slot() const { return (DockSlot)dock_slot_index; }
 
-	virtual void save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const { VLTRVIRTUAL_CALL(_save_layout_to_config, p_layout, p_section); }
-	virtual void load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section) { VLTRVIRTUAL_CALL(_load_layout_from_config, p_layout, p_section); }
-
+	virtual void update_layout(DockLayout p_layout, int p_slot) { /* stub */ }
 	EditorDock();
 };
 

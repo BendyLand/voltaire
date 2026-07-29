@@ -228,8 +228,6 @@ protected:
 
 	_FORCE_INLINE_ void set_hide_clip_children(bool p_value) { hide_clip_children = p_value; }
 
-	VLTRVIRTUAL0(_draw)
-
 public:
 	enum {
 		NOTIFICATION_TRANSFORM_CHANGED = 2000, // Keep in sync with SceneTree.

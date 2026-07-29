@@ -47,7 +47,7 @@ void initialize_webxr_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	GDREGISTER_ABSTRACT_CLASS(WebXRInterface);
+	VLTR_REGISTER_ABSTRACT_CLASS(WebXRInterface);
 
 #ifdef WEB_ENABLED
 	if (XRServer::get_singleton()) {

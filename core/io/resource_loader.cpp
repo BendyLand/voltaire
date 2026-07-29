@@ -60,11 +60,6 @@ Ref<ResourceFormatLoader> ResourceLoader::loader[ResourceLoader::MAX_LOADERS];
 int ResourceLoader::loader_count = 0;
 
 bool ResourceFormatLoader::recognize_path(const String &p_path, const String &p_for_type) const {
-	bool ret = false;
-	if (VLTRVIRTUAL_CALL(_recognize_path, p_path, p_for_type, ret)) {
-		return ret;
-	}
-
 	List<String> extensions;
 	if (p_for_type.is_empty()) {
 		get_recognized_extensions(&extensions);
@@ -82,19 +77,10 @@ bool ResourceFormatLoader::recognize_path(const String &p_path, const String &p_
 	return false;
 }
 
-bool ResourceFormatLoader::handles_type(const String &p_type) const {
-	bool success = false;
-	VLTRVIRTUAL_CALL(_handles_type, p_type, success);
-	return success;
-}
-
 void ResourceFormatLoader::get_classes_used(const String &p_path, HashSet<StringName> *r_classes) {
 	Vector<String> ret;
-	if (VLTRVIRTUAL_CALL(_get_classes_used, p_path, ret)) {
-		for (int i = 0; i < ret.size(); i++) {
-			r_classes->insert(ret[i]);
-		}
-		return;
+	for (int i = 0; i < ret.size(); i++) {
+		r_classes->insert(ret[i]);
 	}
 
 	String res = get_resource_type(p_path);
@@ -103,33 +89,13 @@ void ResourceFormatLoader::get_classes_used(const String &p_path, HashSet<String
 	}
 }
 
-String ResourceFormatLoader::get_resource_type(const String &p_path) const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_resource_type, p_path, ret);
-	return ret;
-}
-
-String ResourceFormatLoader::get_resource_script_class(const String &p_path) const {
-	String ret;
-	VLTRVIRTUAL_CALL(_get_resource_script_class, p_path, ret);
-	return ret;
-}
-
 ResourceUID::ID ResourceFormatLoader::get_resource_uid(const String &p_path) const {
 	int64_t uid = ResourceUID::INVALID_ID;
-	if (has_custom_uid_support()) {
-		VLTRVIRTUAL_CALL(_get_resource_uid, p_path, uid);
-	} else {
-		Ref<FileAccess> file = FileAccess::open(p_path + ".uid", FileAccess::READ);
-		if (file.is_valid()) {
-			uid = ResourceUID::get_singleton()->text_to_id(file->get_line());
-		}
+	Ref<FileAccess> file = FileAccess::open(p_path + ".uid", FileAccess::READ);
+	if (file.is_valid()) {
+		uid = ResourceUID::get_singleton()->text_to_id(file->get_line());
 	}
 	return uid;
-}
-
-bool ResourceFormatLoader::has_custom_uid_support() const {
-	return VLTRVIRTUAL_IS_OVERRIDDEN(_get_resource_uid);
 }
 
 void ResourceFormatLoader::get_recognized_extensions_for_type(const String &p_type, List<String> *p_extensions) const {
@@ -145,49 +111,38 @@ void ResourceLoader::get_recognized_extensions_for_type(const String &p_type, Li
 }
 
 bool ResourceFormatLoader::exists(const String &p_path) const {
-	bool success = false;
-	if (VLTRVIRTUAL_CALL(_exists, p_path, success)) {
-		return success;
-	}
 	return FileAccess::exists(p_path); // By default just check file.
 }
 
 void ResourceFormatLoader::get_recognized_extensions(List<String> *p_extensions) const {
 	PackedStringArray exts;
-	if (VLTRVIRTUAL_CALL(_get_recognized_extensions, exts)) {
-		const String *r = exts.ptr();
-		for (int i = 0; i < exts.size(); ++i) {
-			p_extensions->push_back(r[i]);
-		}
+	const String *r = exts.ptr();
+	for (int i = 0; i < exts.size(); ++i) {
+		p_extensions->push_back(r[i]);
 	}
 }
 
 Ref<Resource> ResourceFormatLoader::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
 	Variant res;
-	if (VLTRVIRTUAL_CALL(_load, p_path, p_original_path, p_use_sub_threads, p_cache_mode, res)) {
-		if (res.get_type() == Variant::INT) { // Error code, abort.
-			if (r_error) {
-				*r_error = (Error)res.operator int64_t();
-			}
-			return Ref<Resource>();
-		} else { // Success, pass on result.
-			if (r_error) {
-				*r_error = OK;
-			}
-			return res;
+	if (res.get_type() == Variant::INT) { // Error code, abort.
+		if (r_error) {
+			*r_error = (Error)res.operator int64_t();
 		}
+		return Ref<Resource>();
+	} else { // Success, pass on result.
+		if (r_error) {
+			*r_error = OK;
+		}
+		return res;
 	}
-
 	return Ref<Resource>();
 }
 
 void ResourceFormatLoader::get_dependencies(const String &p_path, List<String> *p_dependencies, bool p_add_types) {
 	PackedStringArray deps;
-	if (VLTRVIRTUAL_CALL(_get_dependencies, p_path, p_add_types, deps)) {
-		const String *r = deps.ptr();
-		for (int i = 0; i < deps.size(); ++i) {
-			p_dependencies->push_back(r[i]);
-		}
+	const String *r = deps.ptr();
+	for (int i = 0; i < deps.size(); ++i) {
+		p_dependencies->push_back(r[i]);
 	}
 }
 
@@ -196,9 +151,7 @@ Error ResourceFormatLoader::rename_dependencies(const String &p_path, const Hash
 	for (KeyValue<String, String> E : p_map) {
 		deps_dict[E.key] = E.value;
 	}
-
 	Error err = OK;
-	VLTRVIRTUAL_CALL(_rename_dependencies, p_path, deps_dict, err);
 	return err;
 }
 
@@ -208,18 +161,6 @@ void ResourceFormatLoader::_bind_methods() {
 	BIND_ENUM_CONSTANT(CACHE_MODE_REPLACE);
 	BIND_ENUM_CONSTANT(CACHE_MODE_IGNORE_DEEP);
 	BIND_ENUM_CONSTANT(CACHE_MODE_REPLACE_DEEP);
-
-	VLTRVIRTUAL_BIND(_get_recognized_extensions);
-	VLTRVIRTUAL_BIND(_recognize_path, "path", "type");
-	VLTRVIRTUAL_BIND(_handles_type, "type");
-	VLTRVIRTUAL_BIND(_get_resource_type, "path");
-	VLTRVIRTUAL_BIND(_get_resource_script_class, "path");
-	VLTRVIRTUAL_BIND(_get_resource_uid, "path");
-	VLTRVIRTUAL_BIND(_get_dependencies, "path", "add_types");
-	VLTRVIRTUAL_BIND(_rename_dependencies, "path", "renames");
-	VLTRVIRTUAL_BIND(_exists, "path");
-	VLTRVIRTUAL_BIND(_get_classes_used, "path");
-	VLTRVIRTUAL_BIND(_load, "path", "original_path", "use_sub_threads", "cache_mode");
 }
 
 // This should be robust enough to be called redundantly without issues.
@@ -1806,3 +1747,9 @@ SelfList<Resource>::List ResourceLoader::remapped_list;
 HashMap<String, Vector<String>> ResourceLoader::translation_remaps;
 
 ResourceLoaderImport ResourceLoader::import = nullptr;
+
+bool ResourceFormatLoader::handles_type(const String &p_type) const { return false; }
+String ResourceFormatLoader::get_resource_type(const String &p_path) const { return String(); }
+String ResourceFormatLoader::get_resource_script_class(const String &p_path) const { return String(); }
+bool ResourceFormatLoader::has_custom_uid_support() const { return false; }
+

@@ -40,9 +40,6 @@
 
 class RefCounted;
 
-template <typename T>
-struct GDExtensionPtr;
-
 class VariantInternal {
 	friend class Variant;
 
@@ -558,10 +555,6 @@ public:
 	template <typename T>
 	_FORCE_INLINE_ static Variant make(const T &p_variant) {
 		return Variant(p_variant);
-	}
-	template <typename T>
-	_FORCE_INLINE_ static Variant make(const GDExtensionPtr<T> &p_variant) {
-		return p_variant.operator Variant();
 	}
 	template <typename T>
 	_FORCE_INLINE_ static Variant make(const RequiredParam<T> &p_variant) {

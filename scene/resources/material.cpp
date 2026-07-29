@@ -128,26 +128,8 @@ void Material::inspect_native_shader_code() {
 	}
 }
 
-RID Material::get_shader_rid() const {
-	RID ret;
-	VLTRVIRTUAL_CALL(_get_shader_rid, ret);
-	return ret;
-}
 Shader::Mode Material::get_shader_mode() const {
 	Shader::Mode ret = Shader::MODE_MAX;
-	VLTRVIRTUAL_CALL(_get_shader_mode, ret);
-	return ret;
-}
-
-bool Material::_can_do_next_pass() const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_can_do_next_pass, ret);
-	return ret;
-}
-
-bool Material::_can_use_render_priority() const {
-	bool ret = false;
-	VLTRVIRTUAL_CALL(_can_use_render_priority, ret);
 	return ret;
 }
 
@@ -174,11 +156,6 @@ void Material::_bind_methods() {
 
 	BIND_CONSTANT(RENDER_PRIORITY_MAX);
 	BIND_CONSTANT(RENDER_PRIORITY_MIN);
-
-	VLTRVIRTUAL_BIND(_get_shader_rid)
-	VLTRVIRTUAL_BIND(_get_shader_mode)
-	VLTRVIRTUAL_BIND(_can_do_next_pass)
-	VLTRVIRTUAL_BIND(_can_use_render_priority)
 }
 
 Material::Material() {
@@ -4096,6 +4073,12 @@ bool StandardMaterial3D::_set(const StringName &p_name, const Variant &p_value) 
 		WARN_PRINT("Godot 3.x SpatialMaterial remapped parameter not found: " + String(p_name));
 		return true;
 	}
+}
+
+bool Material::_can_do_next_pass() const { return false; }
+bool Material::_can_use_render_priority() const { return false; }
+RID Material::get_shader_rid() const {
+	return RID();
 }
 
 #endif // DISABLE_DEPRECATED

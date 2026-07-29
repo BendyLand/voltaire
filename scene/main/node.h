@@ -430,21 +430,6 @@ protected:
 	virtual void unhandled_input(const Ref<InputEvent> &p_event);
 	virtual void unhandled_key_input(const Ref<InputEvent> &p_key_event);
 
-	VLTRVIRTUAL1(_process, double)
-	VLTRVIRTUAL1(_physics_process, double)
-	VLTRVIRTUAL0(_enter_tree)
-	VLTRVIRTUAL0(_exit_tree)
-	VLTRVIRTUAL0(_ready)
-	VLTRVIRTUAL0RC(Vector<String>, _get_accessibility_configuration_warnings)
-	VLTRVIRTUAL0RC(Vector<String>, _get_configuration_warnings)
-
-	VLTRVIRTUAL1(_input, RequiredParam<InputEvent>)
-	VLTRVIRTUAL1(_shortcut_input, RequiredParam<InputEvent>)
-	VLTRVIRTUAL1(_unhandled_input, RequiredParam<InputEvent>)
-	VLTRVIRTUAL1(_unhandled_key_input, RequiredParam<InputEvent>)
-
-	VLTRVIRTUAL0RC(RID, _get_focused_accessibility_element)
-
 #ifndef DISABLE_DEPRECATED
 	void _set_name_bind_compat_76560(const String &p_name);
 	Variant _get_rpc_config_bind_compat_106848() const;

@@ -183,10 +183,6 @@ Control *Container::as_sortable_control(Node *p_node, SortableVisibilityMode p_v
 
 Vector<int> Container::get_allowed_size_flags_horizontal() const {
 	Vector<int> flags;
-	if (VLTRVIRTUAL_CALL(_get_allowed_size_flags_horizontal, flags)) {
-		return flags;
-	}
-
 	flags.append(SIZE_FILL);
 	flags.append(SIZE_EXPAND);
 	flags.append(SIZE_SHRINK_BEGIN);
@@ -197,10 +193,6 @@ Vector<int> Container::get_allowed_size_flags_horizontal() const {
 
 Vector<int> Container::get_allowed_size_flags_vertical() const {
 	Vector<int> flags;
-	if (VLTRVIRTUAL_CALL(_get_allowed_size_flags_vertical, flags)) {
-		return flags;
-	}
-
 	flags.append(SIZE_FILL);
 	flags.append(SIZE_EXPAND);
 	flags.append(SIZE_SHRINK_BEGIN);
@@ -262,9 +254,6 @@ void Container::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("fit_child_in_rect", "child", "rect"), &Container::fit_child_in_rect);
 	ClassDB::bind_method(D_METHOD("set_accessibility_region", "region"), &Container::set_accessibility_region);
 	ClassDB::bind_method(D_METHOD("is_accessibility_region"), &Container::is_accessibility_region);
-
-	VLTRVIRTUAL_BIND(_get_allowed_size_flags_horizontal);
-	VLTRVIRTUAL_BIND(_get_allowed_size_flags_vertical);
 
 	BIND_CONSTANT(NOTIFICATION_PRE_SORT_CHILDREN);
 	BIND_CONSTANT(NOTIFICATION_SORT_CHILDREN);

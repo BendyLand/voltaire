@@ -30,12 +30,14 @@
 
 #pragma once
 
-#include "servers/text/text_server_extension.h"
-
 /*************************************************************************/
 
-class TextServerDummy : public TextServerExtension {
-	VLTRCLASS(TextServerDummy, TextServerExtension);
+#include "servers/text/text_server.h"
+#include "core/os/thread_safe.h"
+#include "core/variant/typed_array.h"
+
+class TextServerDummy : public TextServer {
+	VLTRCLASS(TextServerDummy, TextServer);
 	_THREAD_SAFE_CLASS_
 
 public:
@@ -126,4 +128,5 @@ public:
 	virtual double shaped_text_get_width(const RID &p_shaped) const override { return 0; }
 	virtual double shaped_text_get_underline_position(const RID &p_shaped) const override { return 0; }
 	virtual double shaped_text_get_underline_thickness(const RID &p_shaped) const override { return 0; }
+	virtual void font_set_transform(const RID &p_font_rid, const Transform2D &p_transform) override {}
 };

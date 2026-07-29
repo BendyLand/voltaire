@@ -102,6 +102,17 @@ void WebRTCPeerConnection::_bind_methods() {
 	BIND_ENUM_CONSTANT(SIGNALING_STATE_CLOSED);
 }
 
+WebRTCPeerConnection::ConnectionState WebRTCPeerConnection::get_connection_state() const { return STATE_DISCONNECTED; }
+WebRTCPeerConnection::GatheringState WebRTCPeerConnection::get_gathering_state() const { return GATHERING_STATE_NEW; }
+WebRTCPeerConnection::SignalingState WebRTCPeerConnection::get_signaling_state() const { return SIGNALING_STATE_STABLE; }
+Error WebRTCPeerConnection::initialize(const Dictionary &p_config) { return OK; }
+Ref<WebRTCDataChannel> WebRTCPeerConnection::create_data_channel(const String &p_label, const Dictionary &p_options) { return nullptr; }
+Error WebRTCPeerConnection::create_offer() { return OK; }
+Error WebRTCPeerConnection::set_remote_description(const String &p_type, const String &p_sdp) { return OK; }
+Error WebRTCPeerConnection::set_local_description(const String &p_type, const String &p_sdp) { return OK; }
+Error WebRTCPeerConnection::add_ice_candidate(const String &p_sdp_mid, int p_sdp_mline_index_name, const String &p_sdp_name) { return OK; }
+Error WebRTCPeerConnection::poll() { return OK; }
+
 WebRTCPeerConnection::WebRTCPeerConnection() {
 }
 

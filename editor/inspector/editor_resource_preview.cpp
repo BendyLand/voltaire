@@ -51,23 +51,9 @@
 #include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_globals.h"
 
-bool EditorResourcePreviewGenerator::handles(const String &p_type) const {
-	bool success = false;
-	VLTRVIRTUAL_CALL(_handles, p_type, success);
-	return success;
-}
-
-Ref<Texture2D> EditorResourcePreviewGenerator::generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const {
-	Ref<Texture2D> preview;
-	VLTRVIRTUAL_CALL(_generate, p_from, p_size, p_metadata, preview);
-	return preview;
-}
 
 Ref<Texture2D> EditorResourcePreviewGenerator::generate_from_path(const String &p_path, const Size2 &p_size, Dictionary &p_metadata) const {
 	Ref<Texture2D> preview;
-	if (VLTRVIRTUAL_CALL(_generate_from_path, p_path, p_size, p_metadata, preview)) {
-		return preview;
-	}
 
 	Ref<Resource> res = ResourceLoader::load(p_path);
 	if (res.is_null()) {
@@ -76,25 +62,7 @@ Ref<Texture2D> EditorResourcePreviewGenerator::generate_from_path(const String &
 	return generate(res, p_size, p_metadata);
 }
 
-bool EditorResourcePreviewGenerator::generate_small_preview_automatically() const {
-	bool success = false;
-	VLTRVIRTUAL_CALL(_generate_small_preview_automatically, success);
-	return success;
-}
-
-bool EditorResourcePreviewGenerator::can_generate_small_preview() const {
-	bool success = false;
-	VLTRVIRTUAL_CALL(_can_generate_small_preview, success);
-	return success;
-}
-
 void EditorResourcePreviewGenerator::_bind_methods() {
-	VLTRVIRTUAL_BIND(_handles, "type");
-	VLTRVIRTUAL_BIND(_generate, "resource", "size", "metadata");
-	VLTRVIRTUAL_BIND(_generate_from_path, "path", "size", "metadata");
-	VLTRVIRTUAL_BIND(_generate_small_preview_automatically);
-	VLTRVIRTUAL_BIND(_can_generate_small_preview);
-
 	ClassDB::bind_method(D_METHOD("request_draw_and_wait", "viewport"), &EditorResourcePreviewGenerator::request_draw_and_wait);
 }
 
@@ -625,4 +593,11 @@ EditorResourcePreview::EditorResourcePreview() {
 
 EditorResourcePreview::~EditorResourcePreview() {
 	stop();
+}
+
+bool EditorResourcePreviewGenerator::can_generate_small_preview() const { return false; }
+bool EditorResourcePreviewGenerator::generate_small_preview_automatically() const { return false; }
+bool EditorResourcePreviewGenerator::handles(const String &p_type) const { return false; }
+Ref<Texture2D> EditorResourcePreviewGenerator::generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const {
+    return Ref<Texture2D>();
 }

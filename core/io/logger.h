@@ -90,6 +90,7 @@ public:
 	void logf(const char *p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
 	void logf_error(const char *p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
 
+	Logger() noexcept {}
 	virtual ~Logger() {}
 };
 

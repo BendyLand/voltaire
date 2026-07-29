@@ -36,13 +36,11 @@
 #include "scene/gui/popup_menu.h"
 #include "scene/resources/texture.h"
 
-void EditorContextMenuPlugin::get_options(const Vector<String> &p_paths) {
-	VLTRVIRTUAL_CALL(_popup_menu, p_paths);
-}
-
 void EditorContextMenuPlugin::add_menu_shortcut(const Ref<Shortcut> &p_shortcut, const Callable &p_callable) {
 	context_menu_shortcuts.insert(p_shortcut, p_callable);
 }
+
+void EditorContextMenuPlugin::add_custom_options(const Vector<String> &p_paths) {}
 
 void EditorContextMenuPlugin::add_context_menu_item(const String &p_name, const Callable &p_callable, const Ref<Texture2D> &p_texture) {
 	ERR_FAIL_COND_MSG(context_menu_items.has(p_name), "Context menu item already registered.");
@@ -82,8 +80,6 @@ void EditorContextMenuPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_context_menu_item", "name", "callback", "icon"), &EditorContextMenuPlugin::add_context_menu_item, DEFVAL(Ref<Texture2D>()));
 	ClassDB::bind_method(D_METHOD("add_context_menu_item_from_shortcut", "name", "shortcut", "icon"), &EditorContextMenuPlugin::add_context_menu_item_from_shortcut, DEFVAL(Ref<Texture2D>()));
 	ClassDB::bind_method(D_METHOD("add_context_submenu_item", "name", "menu", "icon"), &EditorContextMenuPlugin::add_context_submenu_item, DEFVAL(Ref<Texture2D>()));
-
-	VLTRVIRTUAL_BIND(_popup_menu, "paths");
 
 	BIND_ENUM_CONSTANT(CONTEXT_SLOT_SCENE_TREE);
 	BIND_ENUM_CONSTANT(CONTEXT_SLOT_FILESYSTEM);
@@ -212,3 +208,9 @@ void EditorContextMenuPluginManager::cleanup() {
 	memdelete(singleton);
 	singleton = nullptr;
 }
+
+EditorContextMenuPlugin::EditorContextMenuPlugin() { }
+
+EditorContextMenuPlugin::~EditorContextMenuPlugin() { }
+
+void EditorContextMenuPlugin::get_options(const Vector<String> &p_paths) { }

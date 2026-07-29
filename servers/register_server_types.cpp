@@ -73,12 +73,10 @@
 #include "servers/rendering/shader_include_db.h"
 #include "servers/rendering/shader_types.h"
 #include "servers/rendering/storage/render_data.h"
-#include "servers/rendering/storage/render_data_extension.h"
 #include "servers/rendering/storage/render_scene_buffers.h"
 #include "servers/rendering/storage/render_scene_data.h"
 #include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
-#include "servers/text/text_server_extension.h"
 
 #ifndef DISABLE_DEPRECATED
 #include "servers/audio/effects/audio_effect_limiter.h"
@@ -91,7 +89,6 @@
 #ifndef PHYSICS_2D_DISABLED
 #include "servers/physics_2d/physics_server_2d.h"
 #include "servers/physics_2d/physics_server_2d_dummy.h"
-#include "servers/physics_2d/physics_server_2d_extension.h"
 #endif // PHYSICS_2D_DISABLED
 
 // 3D physics and navigation.
@@ -101,7 +98,6 @@
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/physics_3d/physics_server_3d.h"
 #include "servers/physics_3d/physics_server_3d_dummy.h"
-#include "servers/physics_3d/physics_server_3d_extension.h"
 #endif // PHYSICS_3D_DISABLED
 
 // XR
@@ -111,7 +107,6 @@
 #include "servers/xr/xr_face_tracker.h"
 #include "servers/xr/xr_hand_tracker.h"
 #include "servers/xr/xr_interface.h"
-#include "servers/xr/xr_interface_extension.h"
 #include "servers/xr/xr_positional_tracker.h"
 #include "servers/xr/xr_server.h"
 #include "servers/xr/xr_vrs.h"
@@ -148,137 +143,133 @@ void register_server_types() {
 
 	shader_types = memnew(ShaderTypes);
 
-	GDREGISTER_CLASS(TextServerManager);
-	GDREGISTER_ABSTRACT_CLASS(TextServer);
-	GDREGISTER_CLASS(TextServerExtension);
-	GDREGISTER_CLASS(TextServerDummy);
+	VLTR_REGISTER_CLASS(TextServerManager);
+	VLTR_REGISTER_ABSTRACT_CLASS(TextServer);
+	VLTR_REGISTER_CLASS(TextServerDummy);
 
-	GDREGISTER_NATIVE_STRUCT(Glyph, "int start = -1;int end = -1;uint8_t count = 0;uint8_t repeat = 1;uint16_t flags = 0;float x_off = 0.f;float y_off = 0.f;float advance = 0.f;RID font_rid;int font_size = 0;int32_t index = 0");
-	GDREGISTER_NATIVE_STRUCT(CaretInfo, "Rect2 leading_caret;Rect2 trailing_caret;TextServer::Direction leading_direction;TextServer::Direction trailing_direction");
+	VLTR_REGISTER_NATIVE_STRUCT(Glyph, "int start = -1;int end = -1;uint8_t count = 0;uint8_t repeat = 1;uint16_t flags = 0;float x_off = 0.f;float y_off = 0.f;float advance = 0.f;RID font_rid;int font_size = 0;int32_t index = 0");
+	VLTR_REGISTER_NATIVE_STRUCT(CaretInfo, "Rect2 leading_caret;Rect2 trailing_caret;TextServer::Direction leading_direction;TextServer::Direction trailing_direction");
 
 	Engine::get_singleton()->add_singleton(Engine::Singleton("TextServerManager", TextServerManager::get_singleton(), "TextServerManager"));
 
 	OS::get_singleton()->set_has_server_feature_callback(has_server_feature_callback);
 
-	GDREGISTER_ABSTRACT_CLASS(AccessibilityServer);
-	GDREGISTER_ABSTRACT_CLASS(DisplayServer);
-	GDREGISTER_ABSTRACT_CLASS(RenderingServer);
-	GDREGISTER_CLASS(AudioServer);
+	VLTR_REGISTER_ABSTRACT_CLASS(AccessibilityServer);
+	VLTR_REGISTER_ABSTRACT_CLASS(DisplayServer);
+	VLTR_REGISTER_ABSTRACT_CLASS(RenderingServer);
+	VLTR_REGISTER_CLASS(AudioServer);
 
-	GDREGISTER_CLASS(NativeMenu);
+	VLTR_REGISTER_CLASS(NativeMenu);
 
-	GDREGISTER_CLASS(CameraServer);
+	VLTR_REGISTER_CLASS(CameraServer);
 
-	GDREGISTER_ABSTRACT_CLASS(RenderingDevice);
+	VLTR_REGISTER_ABSTRACT_CLASS(RenderingDevice);
 
-	GDREGISTER_CLASS(AudioStream);
-	GDREGISTER_CLASS(AudioStreamPlayback);
-	GDREGISTER_VIRTUAL_CLASS(AudioStreamPlaybackResampled);
-	GDREGISTER_CLASS(AudioStreamMicrophone);
-	GDREGISTER_CLASS(AudioStreamRandomizer);
-	GDREGISTER_CLASS(AudioSample);
-	GDREGISTER_CLASS(AudioSamplePlayback);
-	GDREGISTER_VIRTUAL_CLASS(AudioEffect);
-	GDREGISTER_VIRTUAL_CLASS(AudioEffectInstance);
-	GDREGISTER_CLASS(AudioEffectEQ);
-	GDREGISTER_CLASS(AudioEffectFilter);
-	GDREGISTER_CLASS(AudioBusLayout);
+	VLTR_REGISTER_CLASS(AudioStream);
+	VLTR_REGISTER_CLASS(AudioStreamPlayback);
+	VLTR_REGISTER_VIRTUAL_CLASS(AudioStreamPlaybackResampled);
+	VLTR_REGISTER_CLASS(AudioStreamMicrophone);
+	VLTR_REGISTER_CLASS(AudioStreamRandomizer);
+	VLTR_REGISTER_CLASS(AudioSample);
+	VLTR_REGISTER_CLASS(AudioSamplePlayback);
+	VLTR_REGISTER_VIRTUAL_CLASS(AudioEffect);
+	VLTR_REGISTER_VIRTUAL_CLASS(AudioEffectInstance);
+	VLTR_REGISTER_CLASS(AudioEffectEQ);
+	VLTR_REGISTER_CLASS(AudioEffectFilter);
+	VLTR_REGISTER_CLASS(AudioBusLayout);
 
-	GDREGISTER_CLASS(AudioStreamGenerator);
-	GDREGISTER_ABSTRACT_CLASS(AudioStreamGeneratorPlayback);
+	VLTR_REGISTER_CLASS(AudioStreamGenerator);
+	VLTR_REGISTER_ABSTRACT_CLASS(AudioStreamGeneratorPlayback);
 
 	{
 		//audio effects
-		GDREGISTER_CLASS(AudioEffectAmplify);
+		VLTR_REGISTER_CLASS(AudioEffectAmplify);
 
-		GDREGISTER_CLASS(AudioEffectReverb);
+		VLTR_REGISTER_CLASS(AudioEffectReverb);
 
-		GDREGISTER_CLASS(AudioEffectLowPassFilter);
-		GDREGISTER_CLASS(AudioEffectHighPassFilter);
-		GDREGISTER_CLASS(AudioEffectBandPassFilter);
-		GDREGISTER_CLASS(AudioEffectNotchFilter);
-		GDREGISTER_CLASS(AudioEffectBandLimitFilter);
-		GDREGISTER_CLASS(AudioEffectLowShelfFilter);
-		GDREGISTER_CLASS(AudioEffectHighShelfFilter);
+		VLTR_REGISTER_CLASS(AudioEffectLowPassFilter);
+		VLTR_REGISTER_CLASS(AudioEffectHighPassFilter);
+		VLTR_REGISTER_CLASS(AudioEffectBandPassFilter);
+		VLTR_REGISTER_CLASS(AudioEffectNotchFilter);
+		VLTR_REGISTER_CLASS(AudioEffectBandLimitFilter);
+		VLTR_REGISTER_CLASS(AudioEffectLowShelfFilter);
+		VLTR_REGISTER_CLASS(AudioEffectHighShelfFilter);
 
-		GDREGISTER_CLASS(AudioEffectEQ6);
-		GDREGISTER_CLASS(AudioEffectEQ10);
-		GDREGISTER_CLASS(AudioEffectEQ21);
+		VLTR_REGISTER_CLASS(AudioEffectEQ6);
+		VLTR_REGISTER_CLASS(AudioEffectEQ10);
+		VLTR_REGISTER_CLASS(AudioEffectEQ21);
 
-		GDREGISTER_CLASS(AudioEffectDistortion);
+		VLTR_REGISTER_CLASS(AudioEffectDistortion);
 
-		GDREGISTER_CLASS(AudioEffectStereoEnhance);
+		VLTR_REGISTER_CLASS(AudioEffectStereoEnhance);
 
-		GDREGISTER_CLASS(AudioEffectPanner);
-		GDREGISTER_CLASS(AudioEffectChorus);
-		GDREGISTER_CLASS(AudioEffectDelay);
-		GDREGISTER_CLASS(AudioEffectCompressor);
-		GDREGISTER_CLASS(AudioEffectHardLimiter);
-		GDREGISTER_CLASS(AudioEffectPitchShift);
-		GDREGISTER_CLASS(AudioEffectPhaser);
-		GDREGISTER_CLASS(AudioEffectRecord);
-		GDREGISTER_CLASS(AudioEffectSpectrumAnalyzer);
-		GDREGISTER_ABSTRACT_CLASS(AudioEffectSpectrumAnalyzerInstance);
+		VLTR_REGISTER_CLASS(AudioEffectPanner);
+		VLTR_REGISTER_CLASS(AudioEffectChorus);
+		VLTR_REGISTER_CLASS(AudioEffectDelay);
+		VLTR_REGISTER_CLASS(AudioEffectCompressor);
+		VLTR_REGISTER_CLASS(AudioEffectHardLimiter);
+		VLTR_REGISTER_CLASS(AudioEffectPitchShift);
+		VLTR_REGISTER_CLASS(AudioEffectPhaser);
+		VLTR_REGISTER_CLASS(AudioEffectRecord);
+		VLTR_REGISTER_CLASS(AudioEffectSpectrumAnalyzer);
+		VLTR_REGISTER_ABSTRACT_CLASS(AudioEffectSpectrumAnalyzerInstance);
 
-		GDREGISTER_CLASS(AudioEffectCapture);
+		VLTR_REGISTER_CLASS(AudioEffectCapture);
 
 #ifndef DISABLE_DEPRECATED
-		GDREGISTER_CLASS(AudioEffectLimiter);
+		VLTR_REGISTER_CLASS(AudioEffectLimiter);
 #endif
 	}
 
-	GDREGISTER_ABSTRACT_CLASS(RenderingDevice);
-	GDREGISTER_CLASS(ShaderIncludeDB);
-	GDREGISTER_CLASS(RDTextureFormat);
-	GDREGISTER_CLASS(RDTextureView);
-	GDREGISTER_CLASS(RDAttachmentFormat);
-	GDREGISTER_CLASS(RDFramebufferPass);
-	GDREGISTER_CLASS(RDSamplerState);
-	GDREGISTER_CLASS(RDVertexAttribute);
-	GDREGISTER_CLASS(RDUniform);
-	GDREGISTER_CLASS(RDPipelineRasterizationState);
-	GDREGISTER_CLASS(RDPipelineMultisampleState);
-	GDREGISTER_CLASS(RDPipelineDepthStencilState);
-	GDREGISTER_CLASS(RDPipelineColorBlendStateAttachment);
-	GDREGISTER_CLASS(RDPipelineColorBlendState);
-	GDREGISTER_CLASS(RDShaderSource);
-	GDREGISTER_CLASS(RDShaderSPIRV);
-	GDREGISTER_CLASS(RDShaderFile);
-	GDREGISTER_CLASS(RDPipelineSpecializationConstant);
-	GDREGISTER_CLASS(RDAccelerationStructureGeometry);
-	GDREGISTER_CLASS(RDAccelerationStructureInstance);
-	GDREGISTER_CLASS(RDPipelineShader);
-	GDREGISTER_CLASS(RDHitGroup);
+	VLTR_REGISTER_ABSTRACT_CLASS(RenderingDevice);
+	VLTR_REGISTER_CLASS(ShaderIncludeDB);
+	VLTR_REGISTER_CLASS(RDTextureFormat);
+	VLTR_REGISTER_CLASS(RDTextureView);
+	VLTR_REGISTER_CLASS(RDAttachmentFormat);
+	VLTR_REGISTER_CLASS(RDFramebufferPass);
+	VLTR_REGISTER_CLASS(RDSamplerState);
+	VLTR_REGISTER_CLASS(RDVertexAttribute);
+	VLTR_REGISTER_CLASS(RDUniform);
+	VLTR_REGISTER_CLASS(RDPipelineRasterizationState);
+	VLTR_REGISTER_CLASS(RDPipelineMultisampleState);
+	VLTR_REGISTER_CLASS(RDPipelineDepthStencilState);
+	VLTR_REGISTER_CLASS(RDPipelineColorBlendStateAttachment);
+	VLTR_REGISTER_CLASS(RDPipelineColorBlendState);
+	VLTR_REGISTER_CLASS(RDShaderSource);
+	VLTR_REGISTER_CLASS(RDShaderSPIRV);
+	VLTR_REGISTER_CLASS(RDShaderFile);
+	VLTR_REGISTER_CLASS(RDPipelineSpecializationConstant);
+	VLTR_REGISTER_CLASS(RDAccelerationStructureGeometry);
+	VLTR_REGISTER_CLASS(RDAccelerationStructureInstance);
+	VLTR_REGISTER_CLASS(RDPipelineShader);
+	VLTR_REGISTER_CLASS(RDHitGroup);
 
-	GDREGISTER_ABSTRACT_CLASS(RenderData);
-	GDREGISTER_CLASS(RenderDataExtension);
-	GDREGISTER_CLASS(RenderDataRD);
+	VLTR_REGISTER_ABSTRACT_CLASS(RenderData);
+	VLTR_REGISTER_CLASS(RenderDataRD);
 
-	GDREGISTER_ABSTRACT_CLASS(RenderSceneData);
-	GDREGISTER_CLASS(RenderSceneDataExtension);
-	GDREGISTER_CLASS(RenderSceneDataRD);
+	VLTR_REGISTER_ABSTRACT_CLASS(RenderSceneData);
+	VLTR_REGISTER_CLASS(RenderSceneDataRD);
 
-	GDREGISTER_CLASS(RenderSceneBuffersConfiguration);
-	GDREGISTER_ABSTRACT_CLASS(RenderSceneBuffers);
-	GDREGISTER_CLASS(RenderSceneBuffersExtension);
-	GDREGISTER_CLASS(RenderSceneBuffersRD);
+	VLTR_REGISTER_CLASS(RenderSceneBuffersConfiguration);
+	VLTR_REGISTER_ABSTRACT_CLASS(RenderSceneBuffers);
+	VLTR_REGISTER_CLASS(RenderSceneBuffersRD);
 
-	GDREGISTER_CLASS(FramebufferCacheRD);
-	GDREGISTER_CLASS(UniformSetCacheRD);
+	VLTR_REGISTER_CLASS(FramebufferCacheRD);
+	VLTR_REGISTER_CLASS(UniformSetCacheRD);
 
-	GDREGISTER_CLASS(CameraFeed);
+	VLTR_REGISTER_CLASS(CameraFeed);
 
-	GDREGISTER_VIRTUAL_CLASS(MovieWriter);
+	VLTR_REGISTER_VIRTUAL_CLASS(MovieWriter);
 
 	ServersDebugger::initialize();
 
 #ifndef NAVIGATION_2D_DISABLED
-	GDREGISTER_CLASS(NavigationServer2DManager);
+	VLTR_REGISTER_CLASS(NavigationServer2DManager);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationServer2DManager", NavigationServer2DManager::get_singleton(), "NavigationServer2DManager"));
 
-	GDREGISTER_ABSTRACT_CLASS(NavigationServer2D);
-	GDREGISTER_CLASS(NavigationPathQueryParameters2D);
-	GDREGISTER_CLASS(NavigationPathQueryResult2D);
+	VLTR_REGISTER_ABSTRACT_CLASS(NavigationServer2D);
+	VLTR_REGISTER_CLASS(NavigationPathQueryParameters2D);
+	VLTR_REGISTER_CLASS(NavigationPathQueryResult2D);
 
 	GLOBAL_DEF(PropertyInfo(Variant::STRING, NavigationServer2DManager::setting_property_name, PROPERTY_HINT_ENUM, "DEFAULT"), "DEFAULT");
 
@@ -287,26 +278,18 @@ void register_server_types() {
 
 #ifndef PHYSICS_2D_DISABLED
 	// Physics 2D
-	GDREGISTER_CLASS(PhysicsServer2DManager);
+	VLTR_REGISTER_CLASS(PhysicsServer2DManager);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsServer2DManager", PhysicsServer2DManager::get_singleton(), "PhysicsServer2DManager"));
 
-	GDREGISTER_ABSTRACT_CLASS(PhysicsServer2D);
-	GDREGISTER_VIRTUAL_CLASS(PhysicsServer2DExtension);
-	GDREGISTER_ABSTRACT_CLASS(PhysicsDirectBodyState2D);
-	GDREGISTER_VIRTUAL_CLASS(PhysicsDirectBodyState2DExtension);
-	GDREGISTER_ABSTRACT_CLASS(PhysicsDirectSpaceState2D);
-	GDREGISTER_VIRTUAL_CLASS(PhysicsDirectSpaceState2DExtension);
+	VLTR_REGISTER_ABSTRACT_CLASS(PhysicsServer2D);
+	VLTR_REGISTER_ABSTRACT_CLASS(PhysicsDirectBodyState2D);
+	VLTR_REGISTER_ABSTRACT_CLASS(PhysicsDirectSpaceState2D);
 
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer2DExtensionRayResult, "Vector2 position;Vector2 normal;RID rid;ObjectID collider_id;Object *collider;int shape");
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer2DExtensionShapeResult, "RID rid;ObjectID collider_id;Object *collider;int shape");
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer2DExtensionShapeRestInfo, "Vector2 point;Vector2 normal;RID rid;ObjectID collider_id;int shape;Vector2 linear_velocity");
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer2DExtensionMotionResult, "Vector2 travel;Vector2 remainder;Vector2 collision_point;Vector2 collision_normal;Vector2 collider_velocity;real_t collision_depth;real_t collision_safe_fraction;real_t collision_unsafe_fraction;int collision_local_shape;ObjectID collider_id;RID collider;int collider_shape");
-
-	GDREGISTER_CLASS(PhysicsRayQueryParameters2D);
-	GDREGISTER_CLASS(PhysicsPointQueryParameters2D);
-	GDREGISTER_CLASS(PhysicsShapeQueryParameters2D);
-	GDREGISTER_CLASS(PhysicsTestMotionParameters2D);
-	GDREGISTER_CLASS(PhysicsTestMotionResult2D);
+	VLTR_REGISTER_CLASS(PhysicsRayQueryParameters2D);
+	VLTR_REGISTER_CLASS(PhysicsPointQueryParameters2D);
+	VLTR_REGISTER_CLASS(PhysicsShapeQueryParameters2D);
+	VLTR_REGISTER_CLASS(PhysicsTestMotionParameters2D);
+	VLTR_REGISTER_CLASS(PhysicsTestMotionResult2D);
 
 	GLOBAL_DEF(PropertyInfo(Variant::STRING, PhysicsServer2DManager::setting_property_name, PROPERTY_HINT_ENUM, "DEFAULT"), "DEFAULT");
 
@@ -314,12 +297,12 @@ void register_server_types() {
 #endif // PHYSICS_2D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED
-	GDREGISTER_CLASS(NavigationServer3DManager);
+	VLTR_REGISTER_CLASS(NavigationServer3DManager);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationServer3DManager", NavigationServer3DManager::get_singleton(), "NavigationServer3DManager"));
 
-	GDREGISTER_ABSTRACT_CLASS(NavigationServer3D);
-	GDREGISTER_CLASS(NavigationPathQueryParameters3D);
-	GDREGISTER_CLASS(NavigationPathQueryResult3D);
+	VLTR_REGISTER_ABSTRACT_CLASS(NavigationServer3D);
+	VLTR_REGISTER_CLASS(NavigationPathQueryParameters3D);
+	VLTR_REGISTER_CLASS(NavigationPathQueryResult3D);
 
 	GLOBAL_DEF(PropertyInfo(Variant::STRING, NavigationServer3DManager::setting_property_name, PROPERTY_HINT_ENUM, "DEFAULT"), "DEFAULT");
 
@@ -328,28 +311,19 @@ void register_server_types() {
 
 #ifndef PHYSICS_3D_DISABLED
 	// Physics 3D
-	GDREGISTER_CLASS(PhysicsServer3DManager);
+	VLTR_REGISTER_CLASS(PhysicsServer3DManager);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsServer3DManager", PhysicsServer3DManager::get_singleton(), "PhysicsServer3DManager"));
 
-	GDREGISTER_ABSTRACT_CLASS(PhysicsServer3D);
-	GDREGISTER_VIRTUAL_CLASS(PhysicsServer3DExtension);
-	GDREGISTER_ABSTRACT_CLASS(PhysicsDirectBodyState3D);
-	GDREGISTER_VIRTUAL_CLASS(PhysicsDirectBodyState3DExtension);
-	GDREGISTER_ABSTRACT_CLASS(PhysicsDirectSpaceState3D);
-	GDREGISTER_VIRTUAL_CLASS(PhysicsDirectSpaceState3DExtension)
-	GDREGISTER_VIRTUAL_CLASS(PhysicsServer3DRenderingServerHandler)
+	VLTR_REGISTER_ABSTRACT_CLASS(PhysicsServer3D);
+	VLTR_REGISTER_ABSTRACT_CLASS(PhysicsDirectBodyState3D);
+	VLTR_REGISTER_ABSTRACT_CLASS(PhysicsDirectSpaceState3D);
+	VLTR_REGISTER_VIRTUAL_CLASS(PhysicsServer3DRenderingServerHandler)
 
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer3DExtensionRayResult, "Vector3 position;Vector3 normal;RID rid;ObjectID collider_id;Object *collider;int shape;int face_index");
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer3DExtensionShapeResult, "RID rid;ObjectID collider_id;Object *collider;int shape");
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer3DExtensionShapeRestInfo, "Vector3 point;Vector3 normal;RID rid;ObjectID collider_id;int shape;Vector3 linear_velocity");
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer3DExtensionMotionCollision, "Vector3 position;Vector3 normal;Vector3 collider_velocity;Vector3 collider_angular_velocity;real_t depth;int local_shape;ObjectID collider_id;RID collider;int collider_shape");
-	GDREGISTER_NATIVE_STRUCT(PhysicsServer3DExtensionMotionResult, "Vector3 travel;Vector3 remainder;real_t collision_depth;real_t collision_safe_fraction;real_t collision_unsafe_fraction;PhysicsServer3DExtensionMotionCollision collisions[32];int collision_count");
-
-	GDREGISTER_CLASS(PhysicsRayQueryParameters3D);
-	GDREGISTER_CLASS(PhysicsPointQueryParameters3D);
-	GDREGISTER_CLASS(PhysicsShapeQueryParameters3D);
-	GDREGISTER_CLASS(PhysicsTestMotionParameters3D);
-	GDREGISTER_CLASS(PhysicsTestMotionResult3D);
+	VLTR_REGISTER_CLASS(PhysicsRayQueryParameters3D);
+	VLTR_REGISTER_CLASS(PhysicsPointQueryParameters3D);
+	VLTR_REGISTER_CLASS(PhysicsShapeQueryParameters3D);
+	VLTR_REGISTER_CLASS(PhysicsTestMotionParameters3D);
+	VLTR_REGISTER_CLASS(PhysicsTestMotionResult3D);
 
 	GLOBAL_DEF(PropertyInfo(Variant::STRING, PhysicsServer3DManager::setting_property_name, PROPERTY_HINT_ENUM, "DEFAULT"), "DEFAULT");
 
@@ -357,20 +331,19 @@ void register_server_types() {
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
-	GDREGISTER_ABSTRACT_CLASS(XRInterface);
-	GDREGISTER_ABSTRACT_CLASS(XRTracker);
-	GDREGISTER_CLASS(XRVRS);
-	GDREGISTER_CLASS(XRPositionalTracker);
-	GDREGISTER_CLASS(XRBodyTracker);
-	GDREGISTER_CLASS(XRControllerTracker);
-	GDREGISTER_CLASS(XRFaceTracker);
-	GDREGISTER_CLASS(XRHandTracker);
-	GDREGISTER_CLASS(XRInterfaceExtension); // can't register this as virtual because we need a creation function for our extensions.
-	GDREGISTER_CLASS(XRPose);
-	GDREGISTER_CLASS(XRServer);
+	VLTR_REGISTER_ABSTRACT_CLASS(XRInterface);
+	VLTR_REGISTER_ABSTRACT_CLASS(XRTracker);
+	VLTR_REGISTER_CLASS(XRVRS);
+	VLTR_REGISTER_CLASS(XRPositionalTracker);
+	VLTR_REGISTER_CLASS(XRBodyTracker);
+	VLTR_REGISTER_CLASS(XRControllerTracker);
+	VLTR_REGISTER_CLASS(XRFaceTracker);
+	VLTR_REGISTER_CLASS(XRHandTracker);
+	VLTR_REGISTER_CLASS(XRPose);
+	VLTR_REGISTER_CLASS(XRServer);
 #endif // XR_DISABLED
 
-	if constexpr (GD_IS_CLASS_ENABLED(MovieWriterPNGWAV)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(MovieWriterPNGWAV)) {
 		writer_pngwav = memnew(MovieWriterPNGWAV);
 		MovieWriter::add_writer(writer_pngwav);
 	}
@@ -383,7 +356,7 @@ void unregister_server_types() {
 
 	ServersDebugger::deinitialize();
 	memdelete(shader_types);
-	if constexpr (GD_IS_CLASS_ENABLED(MovieWriterPNGWAV)) {
+	if constexpr (VLTR_IS_CLASS_ENABLED(MovieWriterPNGWAV)) {
 		memdelete(writer_pngwav);
 	}
 

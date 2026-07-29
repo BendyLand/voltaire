@@ -37,7 +37,7 @@
 #include "editor/settings/editor_settings.h"
 
 void register_macos_exporter_types() {
-	GDREGISTER_VIRTUAL_CLASS(EditorExportPlatformMacOS);
+	VLTR_REGISTER_VIRTUAL_CLASS(EditorExportPlatformMacOS);
 }
 
 void register_macos_exporter() {

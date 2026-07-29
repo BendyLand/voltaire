@@ -108,6 +108,8 @@ private:
 	void add_color_region(ColorRegion::Type p_type, const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only = false, bool p_r_prefix = false);
 
 public:
+	GDScriptSyntaxHighlighter();
+	~GDScriptSyntaxHighlighter();
 	virtual void _update_cache() override;
 	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override;
 
@@ -115,4 +117,5 @@ public:
 	virtual PackedStringArray _get_supported_languages() const override;
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
+	virtual void _clear_highlighting_cache() override;
 };

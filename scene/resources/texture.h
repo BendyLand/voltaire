@@ -45,19 +45,6 @@ class Texture2D : public Texture {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL0RC(Image::Format, _get_format)
-	VLTRVIRTUAL0RC(Ref<Image>, _get_image)
-	VLTRVIRTUAL0RC(int, _get_mipmap_count)
-	VLTRVIRTUAL0RC(bool, _has_mipmaps)
-	VLTRVIRTUAL0RC_REQUIRED(int, _get_width)
-	VLTRVIRTUAL0RC_REQUIRED(int, _get_height)
-	VLTRVIRTUAL2RC(bool, _is_pixel_opaque, int, int)
-	VLTRVIRTUAL0RC(bool, _has_alpha)
-
-	VLTRVIRTUAL4C(_draw, RID, Point2, Color, bool)
-	VLTRVIRTUAL5C(_draw_rect, RID, Rect2, bool, Color, bool)
-	VLTRVIRTUAL6C(_draw_rect_region, RID, Rect2, Rect2, Color, bool, bool)
-
 public:
 	virtual Image::Format get_format() const;
 	virtual int get_mipmap_count() const;
@@ -89,13 +76,6 @@ class TextureLayered : public Texture {
 protected:
 	static void _bind_methods();
 
-	VLTRVIRTUAL0RC_REQUIRED(Image::Format, _get_format)
-	VLTRVIRTUAL0RC_REQUIRED(uint32_t, _get_layered_type)
-	VLTRVIRTUAL0RC_REQUIRED(int, _get_width)
-	VLTRVIRTUAL0RC_REQUIRED(int, _get_height)
-	VLTRVIRTUAL0RC_REQUIRED(int, _get_layers)
-	VLTRVIRTUAL0RC_REQUIRED(bool, _has_mipmaps)
-	VLTRVIRTUAL1RC_REQUIRED(Ref<Image>, _get_layer_data, int)
 public:
 	enum LayeredType {
 		LAYERED_TYPE_2D_ARRAY,
@@ -122,12 +102,6 @@ protected:
 
 	TypedArray<Image> _get_datai() const;
 
-	VLTRVIRTUAL0RC_REQUIRED(Image::Format, _get_format)
-	VLTRVIRTUAL0RC_REQUIRED(int, _get_width)
-	VLTRVIRTUAL0RC_REQUIRED(int, _get_height)
-	VLTRVIRTUAL0RC_REQUIRED(int, _get_depth)
-	VLTRVIRTUAL0RC_REQUIRED(bool, _has_mipmaps)
-	VLTRVIRTUAL0RC_REQUIRED(TypedArray<Image>, _get_data)
 public:
 	virtual Image::Format get_format() const;
 	virtual int get_width() const;

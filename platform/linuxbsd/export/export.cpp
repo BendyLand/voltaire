@@ -36,7 +36,7 @@
 #include "editor/export/editor_export.h"
 
 void register_linuxbsd_exporter_types() {
-	GDREGISTER_VIRTUAL_CLASS(EditorExportPlatformLinuxBSD);
+	VLTR_REGISTER_VIRTUAL_CLASS(EditorExportPlatformLinuxBSD);
 }
 
 void register_linuxbsd_exporter() {

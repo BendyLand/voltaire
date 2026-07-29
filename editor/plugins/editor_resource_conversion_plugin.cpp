@@ -32,26 +32,20 @@
 
 #include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
 
-void EditorResourceConversionPlugin::_bind_methods() {
-	VLTRVIRTUAL_BIND(_converts_to);
-	VLTRVIRTUAL_BIND(_handles, "resource");
-	VLTRVIRTUAL_BIND(_convert, "resource");
-}
+void EditorResourceConversionPlugin::_bind_methods() {}
 
 String EditorResourceConversionPlugin::converts_to() const {
 	String ret;
-	VLTRVIRTUAL_CALL(_converts_to, ret);
 	return ret;
 }
 
 bool EditorResourceConversionPlugin::handles(const Ref<Resource> &p_resource) const {
 	bool ret = false;
-	VLTRVIRTUAL_CALL(_handles, p_resource, ret);
 	return ret;
 }
 
 Ref<Resource> EditorResourceConversionPlugin::convert(const Ref<Resource> &p_resource) const {
 	Ref<Resource> ret;
-	VLTRVIRTUAL_CALL(_convert, p_resource, ret);
 	return ret;
 }
+

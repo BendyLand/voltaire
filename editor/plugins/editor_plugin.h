@@ -119,32 +119,6 @@ protected:
 	void add_custom_type(const String &p_type, const String &p_base, const Ref<Script> &p_script, const Ref<Texture2D> &p_icon);
 	void remove_custom_type(const String &p_type);
 
-	VLTRVIRTUAL1R(bool, _forward_canvas_gui_input, Ref<InputEvent>)
-	VLTRVIRTUAL1(_forward_canvas_draw_over_viewport, Control *)
-	VLTRVIRTUAL1(_forward_canvas_force_draw_over_viewport, Control *)
-	VLTRVIRTUAL2R(int, _forward_3d_gui_input, Camera3D *, Ref<InputEvent>)
-	VLTRVIRTUAL1(_forward_3d_draw_over_viewport, Control *)
-	VLTRVIRTUAL1(_forward_3d_force_draw_over_viewport, Control *)
-	VLTRVIRTUAL0RC(String, _get_plugin_name)
-	VLTRVIRTUAL0RC(Ref<Texture2D>, _get_plugin_icon)
-	VLTRVIRTUAL0RC(bool, _has_main_screen)
-	VLTRVIRTUAL1(_make_visible, bool)
-	VLTRVIRTUAL1(_edit, Object *)
-	VLTRVIRTUAL1RC(bool, _handles, Object *)
-	VLTRVIRTUAL0RC(Dictionary, _get_state)
-	VLTRVIRTUAL1(_set_state, Dictionary)
-	VLTRVIRTUAL0(_clear)
-	VLTRVIRTUAL1RC(String, _get_unsaved_status, String)
-	VLTRVIRTUAL0(_save_external_data)
-	VLTRVIRTUAL0(_apply_changes)
-	VLTRVIRTUAL0RC(Vector<String>, _get_breakpoints)
-	VLTRVIRTUAL1(_set_window_layout, Ref<ConfigFile>)
-	VLTRVIRTUAL1(_get_window_layout, Ref<ConfigFile>)
-	VLTRVIRTUAL0R(bool, _build)
-	VLTRVIRTUAL2RC(Vector<String>, _run_scene, String, Vector<String>)
-	VLTRVIRTUAL0(_enable_plugin)
-	VLTRVIRTUAL0(_disable_plugin)
-
 #ifndef DISABLE_DEPRECATED
 	Button *_add_control_to_bottom_panel_bind_compat_88081(Control *p_control, const String &p_title);
 	void _add_control_to_dock_bind_compat_88081(DockSlot p_slot, Control *p_control);
@@ -159,6 +133,7 @@ protected:
 #endif
 
 public:
+    virtual ~EditorPlugin();
 	//TODO: send a resource for editing to the editor node?
 
 	void add_control_to_container(CustomControlContainer p_location, Control *p_control);

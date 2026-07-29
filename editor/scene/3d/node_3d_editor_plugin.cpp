@@ -4123,3 +4123,4 @@ Node3DEditorPlugin::Node3DEditorPlugin() {
 
 	spatial_editor->hide();
 }
+

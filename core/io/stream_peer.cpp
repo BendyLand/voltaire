@@ -450,49 +450,23 @@ void StreamPeer::_bind_methods() {
 ////////////////////////////////
 
 Error StreamPeerExtension::get_data(uint8_t *r_buffer, int p_bytes) {
-	Error err;
-	int received = 0;
-	if (VLTRVIRTUAL_CALL(_get_data, r_buffer, p_bytes, &received, err)) {
-		return err;
-	}
 	WARN_PRINT_ONCE("StreamPeerExtension::_get_data is unimplemented!");
 	return FAILED;
 }
 
 Error StreamPeerExtension::get_partial_data(uint8_t *r_buffer, int p_bytes, int &r_received) {
-	Error err;
-	if (VLTRVIRTUAL_CALL(_get_partial_data, r_buffer, p_bytes, &r_received, err)) {
-		return err;
-	}
 	WARN_PRINT_ONCE("StreamPeerExtension::_get_partial_data is unimplemented!");
 	return FAILED;
 }
 
 Error StreamPeerExtension::put_data(const uint8_t *p_data, int p_bytes) {
-	Error err;
-	int sent = 0;
-	if (VLTRVIRTUAL_CALL(_put_data, p_data, p_bytes, &sent, err)) {
-		return err;
-	}
 	WARN_PRINT_ONCE("StreamPeerExtension::_put_data is unimplemented!");
 	return FAILED;
 }
 
 Error StreamPeerExtension::put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) {
-	Error err;
-	if (VLTRVIRTUAL_CALL(_put_partial_data, p_data, p_bytes, &r_sent, err)) {
-		return err;
-	}
 	WARN_PRINT_ONCE("StreamPeerExtension::_put_partial_data is unimplemented!");
 	return FAILED;
-}
-
-void StreamPeerExtension::_bind_methods() {
-	VLTRVIRTUAL_BIND(_get_data, "r_buffer", "r_bytes", "r_received");
-	VLTRVIRTUAL_BIND(_get_partial_data, "r_buffer", "r_bytes", "r_received");
-	VLTRVIRTUAL_BIND(_put_data, "data", "bytes", "r_sent");
-	VLTRVIRTUAL_BIND(_put_partial_data, "data", "bytes", "r_sent");
-	VLTRVIRTUAL_BIND(_get_available_bytes);
 }
 
 ////////////////////////////////
@@ -608,3 +582,6 @@ Ref<StreamPeerBuffer> StreamPeerBuffer::duplicate() const {
 	spb->data = data;
 	return spb;
 }
+
+void StreamPeerExtension::_bind_methods() {}
+

@@ -144,8 +144,6 @@ protected:
 
 	void _validate_property(PropertyInfo &p_property) const;
 
-	VLTRVIRTUAL1(_integrate_forces, RequiredParam<PhysicsDirectBodyState2D>)
-
 	void _apply_body_mode();
 
 public:

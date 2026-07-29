@@ -77,9 +77,6 @@ public:
 
 	void add_format_loader();
 	void remove_format_loader();
-
-	VLTRVIRTUAL0RC(PackedStringArray, _get_recognized_extensions);
-	VLTRVIRTUAL4R(Error, _load_image, Ref<Image>, Ref<FileAccess>, BitField<ImageFormatLoader::LoaderFlags>, float);
 };
 
 class ImageLoader {

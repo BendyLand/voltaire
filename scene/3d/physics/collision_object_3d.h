@@ -124,9 +124,6 @@ protected:
 	void set_only_update_transform_changes(bool p_enable);
 	bool is_only_update_transform_changes_enabled() const;
 
-	VLTRVIRTUAL5(_input_event, RequiredParam<Camera3D>, RequiredParam<InputEvent>, Vector3, Vector3, int)
-	VLTRVIRTUAL0(_mouse_enter)
-	VLTRVIRTUAL0(_mouse_exit)
 public:
 	void set_collision_layer(uint32_t p_layer);
 	uint32_t get_collision_layer() const;

@@ -74,9 +74,6 @@ protected:
 
 	PluralRules *_get_plural_rules() const;
 
-	VLTRVIRTUAL2RC(StringName, _get_message, StringName, StringName);
-	VLTRVIRTUAL4RC(StringName, _get_plural_message, StringName, StringName, int, StringName);
-
 public:
 	void set_locale(const String &p_locale);
 	_FORCE_INLINE_ String get_locale() const { return locale; }

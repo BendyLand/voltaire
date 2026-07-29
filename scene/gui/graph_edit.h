@@ -393,11 +393,6 @@ protected:
 	virtual bool is_in_input_hotzone(GraphNode *p_graph_node, int p_port_idx, const Vector2 &p_mouse_pos, const Vector2i &p_port_size);
 	virtual bool is_in_output_hotzone(GraphNode *p_graph_node, int p_port_idx, const Vector2 &p_mouse_pos, const Vector2i &p_port_size);
 
-	VLTRVIRTUAL2RC(Vector<Vector2>, _get_connection_line, Vector2, Vector2)
-	VLTRVIRTUAL3R(bool, _is_in_input_hotzone, Object *, int, Vector2)
-	VLTRVIRTUAL3R(bool, _is_in_output_hotzone, Object *, int, Vector2)
-	VLTRVIRTUAL4R(bool, _is_node_hover_valid, StringName, int, StringName, int);
-
 public:
 	static void init_shaders();
 	static void finish_shaders();

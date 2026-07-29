@@ -111,27 +111,27 @@ static void _editor_init() {
 void initialize_gltf_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		// glTF API available at runtime.
-		GDREGISTER_CLASS(GLTFAccessor);
-		GDREGISTER_CLASS(GLTFAnimation);
-		GDREGISTER_CLASS(GLTFBufferView);
-		GDREGISTER_CLASS(GLTFCamera);
-		GDREGISTER_CLASS(GLTFDocument);
-		GDREGISTER_CLASS(GLTFDocumentExtension);
-		GDREGISTER_CLASS(GLTFDocumentExtensionConvertImporterMesh);
-		GDREGISTER_CLASS(GLTFLight);
-		GDREGISTER_CLASS(GLTFMesh);
-		GDREGISTER_CLASS(GLTFNode);
-		GDREGISTER_CLASS(GLTFObjectModelProperty);
+		VLTR_REGISTER_CLASS(GLTFAccessor);
+		VLTR_REGISTER_CLASS(GLTFAnimation);
+		VLTR_REGISTER_CLASS(GLTFBufferView);
+		VLTR_REGISTER_CLASS(GLTFCamera);
+		VLTR_REGISTER_CLASS(GLTFDocument);
+		VLTR_REGISTER_CLASS(GLTFDocumentExtension);
+		VLTR_REGISTER_CLASS(GLTFDocumentExtensionConvertImporterMesh);
+		VLTR_REGISTER_CLASS(GLTFLight);
+		VLTR_REGISTER_CLASS(GLTFMesh);
+		VLTR_REGISTER_CLASS(GLTFNode);
+		VLTR_REGISTER_CLASS(GLTFObjectModelProperty);
 #ifndef PHYSICS_3D_DISABLED
-		GDREGISTER_CLASS(GLTFPhysicsBody);
-		GDREGISTER_CLASS(GLTFPhysicsShape);
+		VLTR_REGISTER_CLASS(GLTFPhysicsBody);
+		VLTR_REGISTER_CLASS(GLTFPhysicsShape);
 #endif // PHYSICS_3D_DISABLED
-		GDREGISTER_CLASS(GLTFSkeleton);
-		GDREGISTER_CLASS(GLTFSkin);
-		GDREGISTER_CLASS(GLTFSpecGloss);
-		GDREGISTER_CLASS(GLTFState);
-		GDREGISTER_CLASS(GLTFTexture);
-		GDREGISTER_CLASS(GLTFTextureSampler);
+		VLTR_REGISTER_CLASS(GLTFSkeleton);
+		VLTR_REGISTER_CLASS(GLTFSkin);
+		VLTR_REGISTER_CLASS(GLTFSpecGloss);
+		VLTR_REGISTER_CLASS(GLTFState);
+		VLTR_REGISTER_CLASS(GLTFTexture);
+		VLTR_REGISTER_CLASS(GLTFTextureSampler);
 // Register GLTFDocumentExtension classes with GLTFDocument.
 #ifndef PHYSICS_3D_DISABLED
 		// Ensure physics is first in this list so that physics nodes are created before other nodes.
@@ -147,12 +147,12 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		GDREGISTER_CLASS(EditorSceneFormatImporterGLTF);
+		VLTR_REGISTER_CLASS(EditorSceneFormatImporterGLTF);
 		EditorPlugins::add_by_type<SceneExporterGLTFPlugin>();
 
 		// Project settings defined here so doctool finds them.
 		GLOBAL_DEF_RST_BASIC("filesystem/import/blender/enabled", true);
-		GDREGISTER_CLASS(EditorSceneFormatImporterBlend);
+		VLTR_REGISTER_CLASS(EditorSceneFormatImporterBlend);
 		// Can't (a priori) run external app on these platforms.
 		GLOBAL_DEF_RST("filesystem/import/blender/enabled.android", false);
 		GLOBAL_DEF_RST("filesystem/import/blender/enabled.web", false);
