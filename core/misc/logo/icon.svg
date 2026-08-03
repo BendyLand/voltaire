@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="45.935219mm"
+   height="52.831833mm"
+   viewBox="0 0 45.935221 52.831833"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"><defs
+     id="defs1" /><metadata
+     id="metadata1"><rdf:RDF><cc:Work
+         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><g
+     id="g1"
+     transform="matrix(0.67733333,0,0,0.67733333,-10.899057,-7.4507503)"><g
+       fill="none"
+       stroke="#3bc4a7"
+       stroke-width="2"
+       stroke-linejoin="round"
+       stroke-linecap="round"
+       id="g8"><!-- Central Hexagon (The Core) --><polygon
+         points="50,44 55,47 55,53 50,56 45,53 45,47 "
+         fill="#3bc4a7"
+         id="polygon1" /><!-- 6 Petals Rotated Around the Center (50, 50) --><g
+         fill="#3bc4a7"
+         fill-opacity="0.15"
+         stroke="#3bc4a7"
+         stroke-width="2"
+         id="g7"><polygon
+           points="50,12 63,38 50,44 37,38 "
+           id="polygon2" /><polygon
+           points="50,12 63,38 50,44 37,38 "
+           transform="rotate(60,50,50)"
+           id="polygon3" /><polygon
+           points="50,12 63,38 50,44 37,38 "
+           transform="rotate(120,50,50)"
+           id="polygon4" /><polygon
+           points="50,12 63,38 50,44 37,38 "
+           transform="rotate(180,50,50)"
+           id="polygon5" /><polygon
+           points="50,12 63,38 50,44 37,38 "
+           transform="rotate(-120,50,50)"
+           id="polygon6" /><polygon
+           points="50,12 63,38 50,44 37,38 "
+           transform="rotate(-60,50,50)"
+           id="polygon7" /></g></g></g></svg>
