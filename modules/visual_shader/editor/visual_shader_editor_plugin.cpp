@@ -8529,3 +8529,6 @@ Ref<Resource> VisualShaderConversionPlugin::convert(const Ref<Resource> &p_resou
 
 	return shader;
 }
+
+void VisualShaderNodePlugin::_bind_methods() {
+}

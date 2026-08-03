@@ -183,3 +183,14 @@ Error GLTFDocumentExtension::export_post(Ref<GLTFState> p_state) {
 	return err;
 }
 
+PackedStringArray GLTFDocumentExtension::get_supported_extensions() {
+	return PackedStringArray();
+}
+
+String GLTFDocumentExtension::get_image_file_extension() {
+	return String();
+}
+
+PackedStringArray GLTFDocumentExtension::get_saveable_image_formats() {
+	return PackedStringArray();
+}

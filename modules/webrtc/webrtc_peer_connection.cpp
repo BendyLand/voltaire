@@ -112,3 +112,6 @@ WebRTCPeerConnection::WebRTCPeerConnection() {
 
 WebRTCPeerConnection::~WebRTCPeerConnection() {
 }
+
+void WebRTCPeerConnection::close() {
+}

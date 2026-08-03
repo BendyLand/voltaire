@@ -47,6 +47,9 @@ protected:
 public:
 	virtual String get_description() const; // Returns the description shown in the editor
 	virtual PackedByteArray get_ip_modification(); // Return the XrBindingModificationsKHR binding modifier struct data used when calling xrSuggestInteractionProfileBindings
+
+	OpenXRBindingModifier();
+	~OpenXRBindingModifier();
 };
 
 class OpenXRIPBindingModifier : public OpenXRBindingModifier {

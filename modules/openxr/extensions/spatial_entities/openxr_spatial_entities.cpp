@@ -528,3 +528,31 @@ OpenXRSpatialEntityTracker::EntityTrackingState OpenXRSpatialQueryResultData::_g
 String OpenXRSpatialQueryResultData::get_entity_tracking_state_name(XrSpatialEntityTrackingStateEXT p_tracking_state) {
 	XR_ENUM_SWITCH(XrSpatialEntityTrackingStateEXT, p_tracking_state)
 }
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::OpenXRSpatialCapabilityConfigurationBaseHeader() {
+}
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::~OpenXRSpatialCapabilityConfigurationBaseHeader() {
+}
+
+OpenXRSpatialComponentData::OpenXRSpatialComponentData() {
+}
+
+OpenXRSpatialComponentData::~OpenXRSpatialComponentData() {
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration() const {
+	return false;
+}
+
+
+XrSpatialCapabilityConfigurationBaseHeaderEXT *OpenXRSpatialCapabilityConfigurationBaseHeader::get_configuration() {
+	return nullptr;
+}
+
+void OpenXRSpatialComponentData::set_capacity(uint32_t p_capacity) {
+}
+
+void *OpenXRSpatialComponentData::get_structure_data(void *p_next) {
+	return nullptr;
+}

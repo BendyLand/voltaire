@@ -5495,3 +5495,36 @@ String VisualShaderNodeVaryingGetter::generate_code(Shader::Mode p_mode, VisualS
 VisualShaderNodeVaryingGetter::VisualShaderNodeVaryingGetter() {
 	varying_name = "[None]";
 }
+
+String VisualShaderNodeCustom::_get_name() const {
+	return String();
+}
+
+String VisualShaderNodeCustom::_get_description() const {
+	return String();
+}
+
+bool VisualShaderNodeCustom::_is_highend() const {
+	return false;
+}
+
+String VisualShaderNodeCustom::_get_category() const {
+	return String();
+}
+
+void VisualShaderNodeCustom::update_property_default_values() {
+}
+
+void VisualShaderNodeCustom::update_input_port_default_values() {
+}
+
+bool VisualShaderNodeCustom::is_available(Shader::Mode p_mode, VisualShader::Type p_type) const {
+	return true;
+}
+
+void VisualShaderNodeCustom::update_ports() {
+}
+
+int VisualShaderNodeCustom::get_default_input_port(VisualShaderNode::PortType p_type) const {
+	return 0;
+}

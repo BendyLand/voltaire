@@ -44,10 +44,6 @@ HashMap<String, bool *> OpenXRExtensionWrapper::get_requested_extensions(XrVersi
 	return HashMap<String, bool *>();
 }
 
-PackedStringArray OpenXRExtensionWrapper::get_suggested_tracker_names() {
-	return PackedStringArray();
-}
-
 Ref<OpenXRAPIExtension> OpenXRExtensionWrapper::_gdextension_get_openxr_api() {
 	return openxr_api_extension;
 }

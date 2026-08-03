@@ -313,6 +313,7 @@ void CryptoCore::finalize() {
 #endif
 }
 
+#ifndef VOLTAIRE_BUILD
 extern "C" {
 psa_status_t psa_crypto_init(void) { return 0; }
 psa_status_t psa_hash_abort(psa_hash_operation_t *operation) { return 0; }
@@ -333,4 +334,5 @@ void mbedtls_psa_crypto_free(void) {}
 int mbedtls_base64_encode(unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen) { return 0; }
 int mbedtls_base64_decode(unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen) { return 0; }
 }
+#endif
 

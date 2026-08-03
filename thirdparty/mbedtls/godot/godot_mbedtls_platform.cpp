@@ -148,6 +148,7 @@ void godot_mbedtls_platform_free() {
 }
 };
 
+#ifndef VOLTAIRE_BUILD
 extern "C" {
 void mbedtls_threading_set_alt(
 	int (*mutex_init)(mbedtls_platform_mutex_t *),
@@ -163,3 +164,5 @@ void mbedtls_threading_set_alt(
 
 void mbedtls_threading_free_alt(void) {}
 }
+#endif
+
