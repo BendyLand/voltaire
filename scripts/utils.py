@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import shlex
 import subprocess
 import sys
@@ -13,6 +14,31 @@ DUPS = {
     "make_translations": 0,
     "run": 0,
 }
+
+LINKER_EXCLUSIONS = {
+    "bin/obj/thirdparty/harfbuzz/src/hb-subset.linuxbsd.editor.x86_64.o",
+    "bin/obj/thirdparty/harfbuzz/src/hb-vector-paint.linuxbsd.editor.x86_64.o",
+    "bin/obj/thirdparty/harfbuzz/src/hb-vector-paint-svg.linuxbsd.editor.x86_64.o",
+}
+
+ARCHIVE_COMMAND_PATTERN = re.compile(r"(\b\w+\.a\b)+")
+
+
+def simplify_linker_command(cmd: str, rsp_path = "bin/objects.rsp"):
+    cmd = re.sub(r"bin/obj/.*\.o", f"@{rsp_path}", cmd)
+    cmd = re.sub(r"\s+bin/obj/.*\.a", "", cmd)
+    return re.sub(r" +", " ", cmd).strip()
+
+
+def filter_object_files(object_files):
+    filtered = []
+    for obj in object_files:
+        if obj in LINKER_EXCLUSIONS:
+            continue
+        filtered.append(obj)
+    icu_ushape = "bin/obj/thirdparty/icu4c/common/ushape.linuxbsd.editor.x86_64.o"
+    filtered.append(icu_ushape)
+    return sorted(filtered)
 
 
 def get_run_arg():
@@ -130,30 +156,53 @@ def get_compilation_cmds(changed_files, comp):
     return result
 
 
-def generate_comp_file(name):
-    # FIX: add the -DVOLTAIRE_BUILD flag to core/crypto/crypto_core.cpp and servers/rendering/rendering_device.cpp
-    cont = input("Warning: this will delete any existing build artifacts. Continue? (y/N)\n")
+def is_linker_command(line: str):
+    """Check if a line contains static archive files (.a), identifying it as a linker step."""
+    return bool(ARCHIVE_COMMAND_PATTERN.search(line))
+
+
+def generate_comp_file(name, obj_list_name):
+    cont = input(
+        "Warning: this will delete any existing build artifacts. Continue? (y/N)\n"
+    )
     if "y" not in cont.lower():
         print("File generation aborted.")
         return
     print("Generating compilation file...")
     subprocess.run(shlex.split("scons -c"), check=True)
+    scons_cmd = "scons -n progress=no verbose=yes CPPDEFINES=VOLTAIRE_BUILD"
     comp_file = subprocess.run(
-        shlex.split("scons -n progress=no verbose=yes"),
+        shlex.split(scons_cmd),
         check=True,
         capture_output=True,
         text=True,
     )
     lines = comp_file.stdout.split("\n")
-    result = []
+    comp_commands = []
+    object_files = []
+    obj_pattern = re.compile(r"-o\s+([^\s]+|\"[^\"]+\")")
     # the first 7 lines are scons boilerplate
     for line in lines[6:]:
-        if line.startswith("ar ") or line.startswith("ranlib ") or line.startswith("scons:") or line.startswith("INFO:"):
+        line_str = line.strip()
+        if not line_str or line_str.startswith(("ar ", "ranlib ", "scons:", "INFO:")):
             continue
-        result.append(line)
+        comp_commands.append(line_str)
+        match = obj_pattern.search(line_str)
+        if match:
+            obj_path = match.group(1).strip("\"'")
+            if obj_path.endswith(".o"):
+                object_files.append(obj_path)
+    object_files = filter_object_files(object_files)
+    print("Writing compilation commands...")
     with open(name, "w") as file:
-        for line in result:
+        for line in comp_commands:
+            if is_linker_command(line):
+                line = simplify_linker_command(line)
             file.write(f"{line}\n")
+    print("Writing response file...")
+    with open(obj_list_name, "w") as file:
+        for obj in object_files:
+            file.write(f"{obj}\n")
     print("Done!")
 
 
