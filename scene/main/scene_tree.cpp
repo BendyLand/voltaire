@@ -703,7 +703,7 @@ bool SceneTree::process(double p_time) {
 
 	process_time = p_time;
 
-	if (multiplayer_poll) {
+	if (multiplayer_poll && multiplayer != nullptr) {
 		multiplayer->poll();
 		for (KeyValue<NodePath, Ref<MultiplayerAPI>> &E : custom_multiplayers) {
 			E.value->poll();

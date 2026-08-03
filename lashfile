@@ -18,3 +18,5 @@ clean:
 show:
 	batcat errs
 
+inspect:
+	gdb ./bin/voltaire.linuxbsd.editor.x86_64

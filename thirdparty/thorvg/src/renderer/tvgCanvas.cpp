@@ -161,7 +161,6 @@ SwCanvas* SwCanvas::gen(EngineOption op) noexcept
     return nullptr;
 }
 
-
 /************************************************************************/
 /* GlCanvas Class Implementation                                        */
 /************************************************************************/
