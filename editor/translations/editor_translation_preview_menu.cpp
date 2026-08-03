@@ -71,7 +71,7 @@ void EditorTranslationPreviewMenu::_pressed(int p_index) {
 	for (int i = 0; i < get_item_count(); i++) {
 		set_item_checked(i, i == p_index);
 	}
-	EditorNode::get_singleton()->set_preview_locale(get_item_metadata(p_index));
+	EditorNode::get_singleton()->set_preview_locale(get_item_metadata(p_index), true);
 }
 
 void EditorTranslationPreviewMenu::_notification(int p_what) {

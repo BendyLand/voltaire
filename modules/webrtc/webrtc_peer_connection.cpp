@@ -34,14 +34,11 @@
 #include "webrtc_peer_connection_js.h"
 #endif
 
-#include "webrtc_peer_connection_extension.h"
-
 #include "core/object/class_db.h"
 
 StringName WebRTCPeerConnection::default_extension;
 
 void WebRTCPeerConnection::set_default_extension(const StringName &p_extension) {
-	ERR_FAIL_COND_MSG(!ClassDB::is_parent_class(p_extension, WebRTCPeerConnectionExtension::get_class_static()), vformat("Can't make %s the default WebRTC extension since it does not extend WebRTCPeerConnectionExtension.", p_extension));
 	default_extension = StringName(p_extension, true);
 }
 
@@ -51,7 +48,6 @@ WebRTCPeerConnection *WebRTCPeerConnection::create(bool p_notify_postinitialize)
 #else
 	if (default_extension == StringName()) {
 		WARN_PRINT_ONCE("No default WebRTC extension configured.");
-		return static_cast<WebRTCPeerConnection *>(ClassDB::creator<WebRTCPeerConnectionExtension>(p_notify_postinitialize));
 	}
 	Object *obj = nullptr;
 	if (p_notify_postinitialize) {
@@ -59,13 +55,11 @@ WebRTCPeerConnection *WebRTCPeerConnection::create(bool p_notify_postinitialize)
 	} else {
 		obj = ClassDB::instantiate_without_postinitialization(default_extension);
 	}
-	return Object::cast_to<WebRTCPeerConnectionExtension>(obj);
+	return Object::cast_to<WebRTCPeerConnection>(obj);
 #endif
 }
 
 void WebRTCPeerConnection::_bind_methods() {
-	ClassDB::bind_static_method(get_class_static(), D_METHOD("set_default_extension", "extension_class"), &WebRTCPeerConnectionExtension::set_default_extension);
-
 	ClassDB::bind_method(D_METHOD("initialize", "configuration"), &WebRTCPeerConnection::initialize, DEFVAL(Dictionary()));
 	ClassDB::bind_method(D_METHOD("create_data_channel", "label", "options"), &WebRTCPeerConnection::create_data_channel, DEFVAL(Dictionary()));
 	ClassDB::bind_method(D_METHOD("create_offer"), &WebRTCPeerConnection::create_offer);

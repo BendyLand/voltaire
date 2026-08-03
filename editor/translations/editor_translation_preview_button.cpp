@@ -48,7 +48,7 @@ void EditorTranslationPreviewButton::_update() {
 }
 
 void EditorTranslationPreviewButton::pressed() {
-	EditorNode::get_singleton()->set_preview_locale(String());
+	EditorNode::get_singleton()->set_preview_locale(String(""), true);
 }
 
 void EditorTranslationPreviewButton::_notification(int p_what) {

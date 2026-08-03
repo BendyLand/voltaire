@@ -31,10 +31,8 @@
 #include "register_types.h"
 
 #include "webrtc_data_channel.h"
-#include "webrtc_data_channel_extension.h"
 #include "webrtc_multiplayer_peer.h"
 #include "webrtc_peer_connection.h"
-#include "webrtc_peer_connection_extension.h"
 
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
