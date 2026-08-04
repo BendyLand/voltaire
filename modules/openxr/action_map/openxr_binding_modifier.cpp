@@ -35,3 +35,19 @@
 PackedByteArray OpenXRBindingModifier::get_ip_modification() {
 	return PackedByteArray();
 }
+
+#include "openxr_binding_modifier.h"
+
+void OpenXRBindingModifier::_bind_methods() {
+    // Bind class methods to ClassDB here
+}
+
+String OpenXRBindingModifier::get_description() const {
+    return "";
+}
+
+OpenXRBindingModifier::OpenXRBindingModifier() {
+}
+
+OpenXRBindingModifier::~OpenXRBindingModifier() {
+}

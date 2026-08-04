@@ -65,12 +65,6 @@
 #include "modules/modules_enabled.gen.h" // For gdscript, mono.
 
 // For syntax highlighting.
-#ifdef MODULE_GDSCRIPT_ENABLED
-#include "modules/gdscript/editor/gdscript_highlighter.h"
-#include "modules/gdscript/gdscript.h"
-#endif
-
-// For syntax highlighting.
 #ifdef MODULE_MONO_ENABLED
 #include "modules/mono/csharp_script.h"
 #endif
@@ -5212,24 +5206,13 @@ void EditorHelpHighlighter::reset_cache() {
 EditorHelpHighlighter::EditorHelpHighlighter() {
 	const Color text_color = EDITOR_GET("text_editor/theme/highlighting/text_color");
 
-#ifdef MODULE_GDSCRIPT_ENABLED
-	TextEdit *gdscript_text_edit = memnew(TextEdit);
-	gdscript_text_edit->add_theme_color_override(SceneStringName(font_color), text_color);
-
-	Ref<GDScript> gdscript;
-	gdscript.instantiate();
-
-	text_edits[LANGUAGE_GDSCRIPT] = gdscript_text_edit;
-	scripts[LANGUAGE_GDSCRIPT] = gdscript;
-#endif
-
 #ifdef MODULE_MONO_ENABLED
 	TextEdit *csharp_text_edit = memnew(TextEdit);
 	csharp_text_edit->add_theme_color_override(SceneStringName(font_color), text_color);
 
 	// See GH-89610.
 	//Ref<CSharpScript> csharp;
-	//csharp.instantiate();
+	// csharp.instantiate();
 
 	Ref<EditorStandardSyntaxHighlighter> csharp_highlighter;
 	csharp_highlighter.instantiate();

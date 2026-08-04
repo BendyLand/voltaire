@@ -545,6 +545,9 @@ if env["optimize"] == "auto":
 
 env["debug_symbols"] = methods.get_cmdline_bool("debug_symbols", env.dev_build)
 
+# add the VOLTAIRE_BUILD flag to fix duplicate symbol linker errors
+env.Append(CPPDEFINES=["VOLTAIRE_BUILD"])
+
 if env.editor_build:
     env.Append(CPPDEFINES=["TOOLS_ENABLED"])
 

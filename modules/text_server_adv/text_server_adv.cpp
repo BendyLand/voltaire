@@ -8458,3 +8458,19 @@ TextServerAdvanced::~TextServerAdvanced() {
 
 	std::atexit(u_cleanup);
 }
+
+int TextServerAdvanced::ft_move_to(const FT_Vector *to, void *user) {
+	return 0;
+}
+
+int TextServerAdvanced::ft_line_to(const FT_Vector *to, void *user) {
+	return 0;
+}
+
+int TextServerAdvanced::ft_conic_to(const FT_Vector *control, const FT_Vector *to, void *user) {
+	return 0;
+}
+
+int TextServerAdvanced::ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to, void *user) {
+	return 0;
+}
