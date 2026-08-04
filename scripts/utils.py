@@ -24,7 +24,7 @@ LINKER_EXCLUSIONS = {
 ARCHIVE_COMMAND_PATTERN = re.compile(r"(\b\w+\.a\b)+")
 
 
-def simplify_linker_command(cmd: str, rsp_path = "bin/objects.rsp"):
+def simplify_linker_command(cmd: str, rsp_path="bin/objects.rsp"):
     cmd = re.sub(r"bin/obj/.*\.o", f"@{rsp_path}", cmd)
     cmd = re.sub(r"\s+bin/obj/.*\.a", "", cmd)
     return re.sub(r" +", " ", cmd).strip()
@@ -120,12 +120,24 @@ def get_changed_files():
     if not changed_paths:
         print("No changed files detected.")
         return []
-    result = changed_paths.split(" ")
-    trace_cmd = f"./tools/trace-includes {changed_paths}"
-    changed_files = subprocess.run(
-        shlex.split(trace_cmd), check=True, capture_output=True, text=True
-    )
-    result.extend(changed_files.stdout.strip().split(" "))
+    HEADER_EXTS = (".h", ".hpp", ".hh", ".hxx", ".H")
+    all_files = set(changed_paths.split())
+    headers_to_trace = {f for f in all_files if f.endswith(HEADER_EXTS)}
+    while headers_to_trace:
+        trace_cmd = f"./tools/trace-includes {' '.join(headers_to_trace)}"
+        changed_files = subprocess.run(
+            shlex.split(trace_cmd), check=True, capture_output=True, text=True
+        )
+        output_paths = changed_files.stdout.strip()
+        if not output_paths:
+            break
+        discovered_files = set(output_paths.split())
+        # Identify files not yet seen in previous iterations
+        new_files = discovered_files - all_files
+        all_files.update(new_files)
+        # Prepare only the newly discovered headers for the next pass
+        headers_to_trace = {f for f in new_files if f.endswith(HEADER_EXTS)}
+    result = list(all_files)
     result = remove_headers(result)
     result = keep_source_files(result)
     print(f"Done! Compiling {len(result)} files.")
@@ -246,11 +258,21 @@ def run_incremental_build():
                     cmd = line
                 else:
                     cmd = get_shell_command(line)
-                print(line)
+                print(f"{line}\n")
                 try_exec(cmd, shell)
         # if nothing executed by here, search for python funtion
         if not found:
             if line:
                 cmd = construct_python_command(line)
-                print(line)
+                print(f"{line}\n")
                 try_exec(get_shell_command(cmd), False)
+
+
+# TODO: make platform agnostic
+def link_object_files():
+    subprocess.run(
+        shlex.split(
+            "g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -s -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl"
+        ),
+        check=True,
+    )
