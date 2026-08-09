@@ -1,9 +1,10 @@
 /**************************************************************************/
 /*  callable_mp.h                                                         */
 /**************************************************************************/
+/*                                                                        */
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            GODOT ENGINE                                */
+/*                   https://godotengine.org                              */
 /**************************************************************************/
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
@@ -30,27 +31,65 @@
 
 #pragma once
 
+#include <type_traits>
 #include "core/object/object.h"
 #include "core/variant/binder_common.h"
 #include "core/variant/callable.h"
 
-#include <type_traits>
+// compile-time trait to check if T has a get_object() method
+template <typename T, typename = void> struct has_get_object : std::false_type
+{
+};
 
-class CallableCustomMethodPointerBase : public CallableCustom {
-	uint32_t *comp_ptr = nullptr;
+template <typename T>
+struct has_get_object<T, std::void_t<decltype(std::declval<T*>()->get_object())>> : std::true_type
+{
+};
+
+template <typename T> inline constexpr bool has_get_object_v = has_get_object<T>::value;
+
+template <typename T> uint64_t _get_callable_object_id(T* p_instance)
+{
+	if (!p_instance) {
+		return 0;
+	}
+
+	using CleanT = std::remove_const_t<T>;
+
+	if constexpr (std::is_base_of_v<Object, CleanT>) {
+		// class inherits from Object
+		return p_instance->get_instance_id();
+	}
+	else if constexpr (has_get_object_v<CleanT>) {
+		// class composes Object and provides get_object()
+		if (Object* obj = p_instance->get_object()) {
+			return obj->get_instance_id();
+		}
+		return 0;
+	}
+	else {
+		// class is pure C++ and does not wrap Object
+		return 0;
+	}
+}
+
+class CallableCustomMethodPointerBase : public CallableCustom
+{
+	uint32_t* comp_ptr = nullptr;
 	uint32_t comp_size;
 	uint32_t h;
 #ifdef DEBUG_ENABLED
-	const char *text = "";
+	const char* text = "";
 #endif // DEBUG_ENABLED
-	static bool compare_equal(const CallableCustom *p_a, const CallableCustom *p_b);
-	static bool compare_less(const CallableCustom *p_a, const CallableCustom *p_b);
+	static bool compare_equal(const CallableCustom* p_a, const CallableCustom* p_b);
+	static bool compare_less(const CallableCustom* p_a, const CallableCustom* p_b);
 
 protected:
-	void _setup(uint32_t *p_base_ptr, uint32_t p_ptr_size);
+	void _setup(uint32_t* p_base_ptr, uint32_t p_ptr_size);
 
 public:
-	virtual StringName get_method() const {
+	virtual StringName get_method() const
+	{
 #ifdef DEBUG_ENABLED
 		return StringName(text);
 #else
@@ -59,16 +98,11 @@ public:
 	}
 
 #ifdef DEBUG_ENABLED
-	void set_text(const char *p_text) {
-		text = p_text;
-	}
-	virtual String get_as_text() const {
-		return text;
-	}
+	void set_text(const char* p_text) { text = p_text; }
+
+	virtual String get_as_text() const { return text; }
 #else
-	virtual String get_as_text() const {
-		return String();
-	}
+	virtual String get_as_text() const { return String(); }
 #endif // DEBUG_ENABLED
 	virtual CompareEqualFunc get_compare_equal_func() const;
 	virtual CompareLessFunc get_compare_less_func() const;
@@ -77,138 +111,164 @@ public:
 };
 
 template <typename T, typename R, typename... P>
-class CallableCustomMethodPointer : public CallableCustomMethodPointerBase {
-	struct Data {
-		T *instance;
+class CallableCustomMethodPointer : public CallableCustomMethodPointerBase
+{
+	struct Data
+	{
+		T* instance;
 		uint64_t object_id;
 		R (T::*method)(P...);
 	} data;
 
 public:
-	virtual ObjectID get_object() const {
+	virtual ObjectID get_object() const override
+	{
 		if (ObjectDB::get_instance(ObjectID(data.object_id)) == nullptr) {
 			return ObjectID();
 		}
-		return data.instance->get_instance_id();
+		return ObjectID(_get_callable_object_id(data.instance));
 	}
 
-	virtual int get_argument_count(bool &r_is_valid) const {
+	virtual int get_argument_count(bool& r_is_valid) const override
+	{
 		r_is_valid = true;
 		return sizeof...(P);
 	}
 
-	virtual void call(const Variant **p_arguments, int p_argcount, Variant &r_return_value, Callable::CallError &r_call_error) const {
-		ERR_FAIL_NULL_MSG(ObjectDB::get_instance(ObjectID(data.object_id)), "Invalid Object id '" + uitos(data.object_id) + "', can't call method.");
+	virtual void call(const Variant** p_arguments, int p_argcount, Variant& r_return_value,
+		Callable::CallError& r_call_error) const override
+	{
+		ERR_FAIL_NULL_MSG(ObjectDB::get_instance(ObjectID(data.object_id)),
+			"Invalid Object id '" + uitos(data.object_id) + "', can't call method.");
 		if constexpr (std::is_same<R, void>::value) {
-			call_with_variant_args(data.instance, data.method, p_arguments, p_argcount, r_call_error);
-		} else {
-			call_with_variant_args_ret(data.instance, data.method, p_arguments, p_argcount, r_return_value, r_call_error);
+			call_with_variant_args(
+				data.instance, data.method, p_arguments, p_argcount, r_call_error);
+		}
+		else {
+			call_with_variant_args_ret(
+				data.instance, data.method, p_arguments, p_argcount, r_return_value, r_call_error);
 		}
 	}
 
-	CallableCustomMethodPointer(T *p_instance, R (T::*p_method)(P...)) {
+	CallableCustomMethodPointer(T* p_instance, R (T::*p_method)(P...))
+	{
 		memset(&data, 0, sizeof(Data)); // Clear beforehand, may have padding bytes.
 		data.instance = p_instance;
-		data.object_id = p_instance->get_instance_id();
+		data.object_id = _get_callable_object_id(p_instance);
 		data.method = p_method;
-		_setup((uint32_t *)&data, sizeof(Data));
+		_setup((uint32_t*)&data, sizeof(Data));
 	}
 };
 
 template <typename T, typename... P>
-Callable create_custom_callable_function_pointer(T *p_instance,
+Callable create_custom_callable_function_pointer(T* p_instance,
 #ifdef DEBUG_ENABLED
-		const char *p_func_text,
+	const char* p_func_text,
 #endif // DEBUG_ENABLED
-		void (T::*p_method)(P...)) {
+	void (T::*p_method)(P...))
+{
 	typedef CallableCustomMethodPointer<T, void, P...> CCMP; // Messes with memnew otherwise.
-	CCMP *ccmp = memnew(CCMP(p_instance, p_method));
+	CCMP* ccmp = memnew(CCMP(p_instance, p_method));
 #ifdef DEBUG_ENABLED
 	ccmp->set_text(p_func_text + 1); // Try to get rid of the ampersand.
-#endif // DEBUG_ENABLED
+#endif								 // DEBUG_ENABLED
 	return Callable(ccmp);
 }
 
 template <typename T, typename R, typename... P>
-Callable create_custom_callable_function_pointer(T *p_instance,
+Callable create_custom_callable_function_pointer(T* p_instance,
 #ifdef DEBUG_ENABLED
-		const char *p_func_text,
+	const char* p_func_text,
 #endif // DEBUG_ENABLED
-		R (T::*p_method)(P...)) {
+	R (T::*p_method)(P...))
+{
 	typedef CallableCustomMethodPointer<T, R, P...> CCMP; // Messes with memnew otherwise.
-	CCMP *ccmp = memnew(CCMP(p_instance, p_method));
+	CCMP* ccmp = memnew(CCMP(p_instance, p_method));
 #ifdef DEBUG_ENABLED
 	ccmp->set_text(p_func_text + 1); // Try to get rid of the ampersand.
-#endif // DEBUG_ENABLED
+#endif								 // DEBUG_ENABLED
 	return Callable(ccmp);
 }
 
 // CONST VERSION
 
 template <typename T, typename R, typename... P>
-class CallableCustomMethodPointerC : public CallableCustomMethodPointerBase {
-	struct Data {
-		T *instance;
+class CallableCustomMethodPointerC : public CallableCustomMethodPointerBase
+{
+	struct Data
+	{
+		T* instance;
 		uint64_t object_id;
 		R (T::*method)(P...) const;
 	} data;
 
 public:
-	virtual ObjectID get_object() const override {
+	virtual ObjectID get_object() const override
+	{
 		if (ObjectDB::get_instance(ObjectID(data.object_id)) == nullptr) {
 			return ObjectID();
 		}
-		return data.instance->get_instance_id();
+		return ObjectID(_get_callable_object_id(data.instance));
 	}
 
-	virtual int get_argument_count(bool &r_is_valid) const override {
+	virtual int get_argument_count(bool& r_is_valid) const override
+	{
 		r_is_valid = true;
 		return sizeof...(P);
 	}
 
-	virtual void call(const Variant **p_arguments, int p_argcount, Variant &r_return_value, Callable::CallError &r_call_error) const override {
-		ERR_FAIL_NULL_MSG(ObjectDB::get_instance(ObjectID(data.object_id)), "Invalid Object id '" + uitos(data.object_id) + "', can't call method.");
+	virtual void call(const Variant** p_arguments, int p_argcount, Variant& r_return_value,
+		Callable::CallError& r_call_error) const override
+	{
+		ERR_FAIL_NULL_MSG(ObjectDB::get_instance(ObjectID(data.object_id)),
+			"Invalid Object id '" + uitos(data.object_id) + "', can't call method.");
 		if constexpr (std::is_same<R, void>::value) {
-			call_with_variant_argsc(data.instance, data.method, p_arguments, p_argcount, r_call_error);
-		} else {
-			call_with_variant_args_retc(data.instance, data.method, p_arguments, p_argcount, r_return_value, r_call_error);
+			call_with_variant_argsc(
+				data.instance, data.method, p_arguments, p_argcount, r_call_error);
+		}
+		else {
+			call_with_variant_args_retc(
+				data.instance, data.method, p_arguments, p_argcount, r_return_value, r_call_error);
 		}
 	}
 
-	CallableCustomMethodPointerC(T *p_instance, R (T::*p_method)(P...) const) {
+	CallableCustomMethodPointerC(T* p_instance, R (T::*p_method)(P...) const)
+	{
 		memset(&data, 0, sizeof(Data)); // Clear beforehand, may have padding bytes.
 		data.instance = p_instance;
-		data.object_id = p_instance->get_instance_id();
+		data.object_id = _get_callable_object_id(p_instance);
 		data.method = p_method;
-		_setup((uint32_t *)&data, sizeof(Data));
+		_setup((uint32_t*)&data, sizeof(Data));
 	}
 };
 
 template <typename T, typename... P>
-Callable create_custom_callable_function_pointer(T *p_instance,
+Callable create_custom_callable_function_pointer(T* p_instance,
 #ifdef DEBUG_ENABLED
-		const char *p_func_text,
+	const char* p_func_text,
 #endif // DEBUG_ENABLED
-		void (T::*p_method)(P...) const) {
+	void (T::*p_method)(P...) const)
+{
 	typedef CallableCustomMethodPointerC<T, void, P...> CCMP; // Messes with memnew otherwise.
-	CCMP *ccmp = memnew(CCMP(p_instance, p_method));
+	CCMP* ccmp = memnew(CCMP(p_instance, p_method));
 #ifdef DEBUG_ENABLED
 	ccmp->set_text(p_func_text + 1); // Try to get rid of the ampersand.
-#endif // DEBUG_ENABLED
+#endif								 // DEBUG_ENABLED
 	return Callable(ccmp);
 }
 
 template <typename T, typename R, typename... P>
-Callable create_custom_callable_function_pointer(T *p_instance,
+Callable create_custom_callable_function_pointer(T* p_instance,
 #ifdef DEBUG_ENABLED
-		const char *p_func_text,
+	const char* p_func_text,
 #endif
-		R (T::*p_method)(P...) const) {
+	R (T::*p_method)(P...) const)
+{
 	typedef CallableCustomMethodPointerC<T, R, P...> CCMP; // Messes with memnew otherwise.
-	CCMP *ccmp = memnew(CCMP(p_instance, p_method));
+	CCMP* ccmp = memnew(CCMP(p_instance, p_method));
 #ifdef DEBUG_ENABLED
 	ccmp->set_text(p_func_text + 1); // Try to get rid of the ampersand.
-#endif // DEBUG_ENABLED
+#endif								 // DEBUG_ENABLED
 	return Callable(ccmp);
 }
 
@@ -221,65 +281,71 @@ Callable create_custom_callable_function_pointer(T *p_instance,
 // STATIC VERSIONS
 
 template <typename R, typename... P>
-class CallableCustomStaticMethodPointer : public CallableCustomMethodPointerBase {
-	struct Data {
+class CallableCustomStaticMethodPointer : public CallableCustomMethodPointerBase
+{
+	struct Data
+	{
 		R (*method)(P...);
 	} data;
 
 public:
-	virtual bool is_valid() const override {
-		return true;
-	}
+	virtual bool is_valid() const override { return true; }
 
-	virtual ObjectID get_object() const override {
-		return ObjectID();
-	}
+	virtual ObjectID get_object() const override { return ObjectID(); }
 
-	virtual int get_argument_count(bool &r_is_valid) const override {
+	virtual int get_argument_count(bool& r_is_valid) const override
+	{
 		r_is_valid = true;
 		return sizeof...(P);
 	}
 
-	virtual void call(const Variant **p_arguments, int p_argcount, Variant &r_return_value, Callable::CallError &r_call_error) const override {
+	virtual void call(const Variant** p_arguments, int p_argcount, Variant& r_return_value,
+		Callable::CallError& r_call_error) const override
+	{
 		if constexpr (std::is_same<R, void>::value) {
 			call_with_variant_args_static(data.method, p_arguments, p_argcount, r_call_error);
-		} else {
-			call_with_variant_args_static_ret(data.method, p_arguments, p_argcount, r_return_value, r_call_error);
+		}
+		else {
+			call_with_variant_args_static_ret(
+				data.method, p_arguments, p_argcount, r_return_value, r_call_error);
 		}
 	}
 
-	CallableCustomStaticMethodPointer(R (*p_method)(P...)) {
+	CallableCustomStaticMethodPointer(R (*p_method)(P...))
+	{
 		memset(&data, 0, sizeof(Data)); // Clear beforehand, may have padding bytes.
 		data.method = p_method;
-		_setup((uint32_t *)&data, sizeof(Data));
+		_setup((uint32_t*)&data, sizeof(Data));
 	}
 };
 
 template <typename... P>
 Callable create_custom_callable_static_function_pointer(
 #ifdef DEBUG_ENABLED
-		const char *p_func_text,
+	const char* p_func_text,
 #endif // DEBUG_ENABLED
-		void (*p_method)(P...)) {
+	void (*p_method)(P...))
+{
 	typedef CallableCustomStaticMethodPointer<void, P...> CCMP; // Messes with memnew otherwise.
-	CCMP *ccmp = memnew(CCMP(p_method));
+	CCMP* ccmp = memnew(CCMP(p_method));
 #ifdef DEBUG_ENABLED
 	ccmp->set_text(p_func_text + 1); // Try to get rid of the ampersand.
-#endif // DEBUG_ENABLED
+#endif								 // DEBUG_ENABLED
 	return Callable(ccmp);
 }
 
 template <typename R, typename... P>
 Callable create_custom_callable_static_function_pointer(
 #ifdef DEBUG_ENABLED
-		const char *p_func_text,
+	const char* p_func_text,
 #endif // DEBUG_ENABLED
-		R (*p_method)(P...)) {
+	R (*p_method)(P...))
+{
 	typedef CallableCustomStaticMethodPointer<R, P...> CCMP; // Messes with memnew otherwise.
-	CCMP *ccmp = memnew(CCMP(p_method));
+	CCMP* ccmp = memnew(CCMP(p_method));
 #ifdef DEBUG_ENABLED
 	ccmp->set_text(p_func_text + 1); // Try to get rid of the ampersand.
-#endif // DEBUG_ENABLED
+#endif								 // DEBUG_ENABLED
 	return Callable(ccmp);
 }
 
@@ -288,3 +354,5 @@ Callable create_custom_callable_static_function_pointer(
 #else
 #define callable_mp_static(M) create_custom_callable_static_function_pointer(M)
 #endif
+
+

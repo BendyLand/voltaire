@@ -31,16 +31,18 @@
 #pragma once
 
 #include "core/object/object.h"
+#include "core/templates/mem_unique_ptr.h"
 
 class ConfirmationDialog;
 class EditorFileSystemDirectory;
 
-class ProjectUpgradeTool : public Object {
-	VLTRCLASS(ProjectUpgradeTool, Object);
+class ProjectUpgradeTool
+{
+	mem_unique_ptr<Object> obj;
+	ConfirmationDialog* upgrade_dialog = nullptr;
 
-	ConfirmationDialog *upgrade_dialog = nullptr;
-
-	void _add_files(EditorFileSystemDirectory *p_dir, Vector<String> &r_reimport_paths, Vector<String> &r_resave_scenes, Vector<String> &r_resave_resources);
+	void _add_files(EditorFileSystemDirectory* p_dir, Vector<String>& r_reimport_paths,
+		Vector<String>& r_resave_scenes, Vector<String>& r_resave_resources);
 
 	const String META_REIMPORT_PATHS = "reimport_paths";
 	const String META_RESAVE_SCENES = "resave_scenes";
@@ -55,8 +57,12 @@ protected:
 	static void _bind_methods();
 
 public:
+	ProjectUpgradeTool();
 	void popup_dialog();
 	void prepare_upgrade();
 	void begin_upgrade();
 	void finish_upgrade();
+	Object *get_object() const { return obj.get(); }
 };
+
+

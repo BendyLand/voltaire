@@ -1,4 +1,7 @@
+Done:
 editor/editor_undo_redo_manager.h:class EditorUndoRedoManager : public Object {
+
+Not done:
 editor/project_upgrade/project_upgrade_tool.h:class ProjectUpgradeTool : public Object {
 editor/shader/shader_globals_editor.cpp:class ShaderGlobalsEditorInterface : public Object {
 editor/debugger/editor_debugger_inspector.h:class EditorDebuggerRemoteObjects : public Object {

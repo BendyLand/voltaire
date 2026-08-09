@@ -28,31 +28,36 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "project_upgrade_tool.h"
-
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/object/callable_mp.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "editor/editor_node.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/scene/editor_scene_tabs.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "project_upgrade_tool.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/gui/dialogs.h"
 
-void ProjectUpgradeTool::_add_files(EditorFileSystemDirectory *p_dir, Vector<String> &r_reimport_paths, Vector<String> &r_resave_scenes, Vector<String> &r_resave_resources) {
+void ProjectUpgradeTool::_add_files(EditorFileSystemDirectory* p_dir,
+	Vector<String>& r_reimport_paths, Vector<String>& r_resave_scenes,
+	Vector<String>& r_resave_resources)
+{
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 	for (int i = 0; i < p_dir->get_file_count(); i++) {
 		const String path = p_dir->get_file_path(i);
 		const String ext = path.get_extension();
 		if (ext == "tscn" || ext == "scn") {
 			r_resave_scenes.append(path);
-		} else if (ext == "tres" || ext == "res") {
+		}
+		else if (ext == "tres" || ext == "res") {
 			r_resave_resources.append(path);
-		} else if (da->file_exists(path + ".import")) {
+		}
+		else if (da->file_exists(path + ".import")) {
 			r_reimport_paths.append(path);
 		}
 	}
@@ -62,72 +67,91 @@ void ProjectUpgradeTool::_add_files(EditorFileSystemDirectory *p_dir, Vector<Str
 	}
 }
 
-void ProjectUpgradeTool::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("upgrade_finished"));
-}
-
-void ProjectUpgradeTool::popup_dialog() {
+void ProjectUpgradeTool::popup_dialog()
+{
 	if (!upgrade_dialog) {
 		upgrade_dialog = memnew(ConfirmationDialog);
 		upgrade_dialog->set_autowrap(true);
-		upgrade_dialog->set_text(TTRC("Different engine version may have minor differences in various Resources, like additional fields or removed properties. When upgrading the project to a new version, such changes can cause diffs when saving scenes or resources, or reimporting.\n\nThis tool ensures that such changes are performed all at once. It will:\n- Regenerate UID cache\n- Load and re-save every text/binary Resource\n- Reimport every importable Resource\n\nFull upgrade will take considerable amount of time, but afterwards saving/reimporting any scene/resource should not cause unintended changes."));
+		upgrade_dialog->set_text(TTRC(
+			"Different engine version may have minor differences in various Resources, like "
+			"additional fields or removed properties. When upgrading the project to a new version, "
+			"such changes can cause diffs when saving scenes or resources, or reimporting.\n\nThis "
+			"tool ensures that such changes are performed all at once. It will:\n- Regenerate UID "
+			"cache\n- Load and re-save every text/binary Resource\n- Reimport every importable "
+			"Resource\n\nFull upgrade will take considerable amount of time, but afterwards "
+			"saving/reimporting any scene/resource should not cause unintended changes."));
 		upgrade_dialog->get_ok_button()->set_text(TTRC("Restart & Upgrade"));
 		upgrade_dialog->get_label()->set_custom_minimum_size(Size2(750 * EDSCALE, 0));
 		EditorNode::get_singleton()->get_gui_base()->add_child(upgrade_dialog);
-		upgrade_dialog->connect(SceneStringName(confirmed), callable_mp(this, &ProjectUpgradeTool::prepare_upgrade));
+		upgrade_dialog->connect(
+			SceneStringName(confirmed), callable_mp(this, &ProjectUpgradeTool::prepare_upgrade));
 	}
 	upgrade_dialog->popup_centered();
 }
 
-void ProjectUpgradeTool::prepare_upgrade() {
-	EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RUN_ON_RESTART, true);
+void ProjectUpgradeTool::prepare_upgrade()
+{
+	EditorSettings::get_singleton()->set_project_metadata(
+		META_PROJECT_UPGRADE_TOOL, META_RUN_ON_RESTART, true);
 
 #ifndef DISABLE_DEPRECATED
-	ProjectSettings::get_singleton()->set_setting("animation/compatibility/default_parent_skeleton_in_mesh_instance_3d", false);
+	ProjectSettings::get_singleton()->set_setting(
+		"animation/compatibility/default_parent_skeleton_in_mesh_instance_3d", false);
 	ProjectSettings::get_singleton()->save();
 #endif
 
 	Vector<String> reimport_paths;
 	Vector<String> resave_scenes;
 	Vector<String> resave_resources;
-	_add_files(EditorFileSystem::get_singleton()->get_filesystem(), reimport_paths, resave_scenes, resave_resources);
+	_add_files(EditorFileSystem::get_singleton()->get_filesystem(), reimport_paths, resave_scenes,
+		resave_resources);
 
-	EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_REIMPORT_PATHS, reimport_paths);
-	EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RESAVE_SCENES, resave_scenes);
-	EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RESAVE_RESOURCES, resave_resources);
+	EditorSettings::get_singleton()->set_project_metadata(
+		META_PROJECT_UPGRADE_TOOL, META_REIMPORT_PATHS, reimport_paths);
+	EditorSettings::get_singleton()->set_project_metadata(
+		META_PROJECT_UPGRADE_TOOL, META_RESAVE_SCENES, resave_scenes);
+	EditorSettings::get_singleton()->set_project_metadata(
+		META_PROJECT_UPGRADE_TOOL, META_RESAVE_RESOURCES, resave_resources);
 
 	// Delay to avoid deadlocks, since this dialog can be triggered by loading a scene.
 	callable_mp(EditorNode::get_singleton(), &EditorNode::restart_editor).call_deferred(false);
 }
 
-void ProjectUpgradeTool::begin_upgrade() {
-	EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RUN_ON_RESTART, false);
+void ProjectUpgradeTool::begin_upgrade()
+{
+	EditorSettings::get_singleton()->set_project_metadata(
+		META_PROJECT_UPGRADE_TOOL, META_RUN_ON_RESTART, false);
 	DirAccess::remove_absolute("res://.godot/uid_cache.bin");
 }
 
-void ProjectUpgradeTool::finish_upgrade() {
+void ProjectUpgradeTool::finish_upgrade()
+{
 	EditorNode::get_singleton()->trigger_menu_option(EditorNode::SCENE_CLOSE_ALL, true);
 
-	Vector<String> paths = EditorSettings::get_singleton()->get_project_metadata(META_PROJECT_UPGRADE_TOOL, META_REIMPORT_PATHS, Vector<String>());
+	Vector<String> paths = EditorSettings::get_singleton()->get_project_metadata(
+		META_PROJECT_UPGRADE_TOOL, META_REIMPORT_PATHS, Vector<String>());
 	EditorFileSystem::get_singleton()->reimport_files(paths);
-	EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_REIMPORT_PATHS, Variant());
+	EditorSettings::get_singleton()->set_project_metadata(
+		META_PROJECT_UPGRADE_TOOL, META_REIMPORT_PATHS, Variant());
 
 #ifndef DISABLE_DEPRECATED
 	MeshInstance3D::upgrading_skeleton_compat = true;
 #endif
 
 	{
-		paths = EditorSettings::get_singleton()->get_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RESAVE_SCENES, Vector<String>());
+		paths = EditorSettings::get_singleton()->get_project_metadata(
+			META_PROJECT_UPGRADE_TOOL, META_RESAVE_SCENES, Vector<String>());
 		EditorProgress ep("uid_upgrade_resave", TTR("Updating Project Scenes"), paths.size());
 
 		int step = 0;
-		for (const String &file_path : paths) {
+		for (const String& file_path : paths) {
 			ep.step(TTR("Re-saving scene:") + " " + file_path, step++);
 			EditorNode::get_singleton()->open_scene(file_path);
 			EditorNode::get_singleton()->trigger_menu_option(EditorNode::SCENE_SAVE_SCENE, true);
 			EditorNode::get_singleton()->trigger_menu_option(EditorNode::SCENE_CLOSE, true);
 		}
-		EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RESAVE_SCENES, Variant());
+		EditorSettings::get_singleton()->set_project_metadata(
+			META_PROJECT_UPGRADE_TOOL, META_RESAVE_SCENES, Variant());
 	}
 
 #ifndef DISABLE_DEPRECATED
@@ -135,19 +159,29 @@ void ProjectUpgradeTool::finish_upgrade() {
 #endif
 
 	{
-		paths = EditorSettings::get_singleton()->get_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RESAVE_RESOURCES, Vector<String>());
+		paths = EditorSettings::get_singleton()->get_project_metadata(
+			META_PROJECT_UPGRADE_TOOL, META_RESAVE_RESOURCES, Vector<String>());
 		EditorProgress ep("uid_upgrade_resave", TTR("Updating Project Resources"), paths.size());
 
 		int step = 0;
-		for (const String &file_path : paths) {
+		for (const String& file_path : paths) {
 			ep.step(TTR("Re-saving resource:") + " " + file_path, step++);
-			Ref<Resource> res = ResourceLoader::load(file_path, "", ResourceFormatLoader::CACHE_MODE_REPLACE);
+			Ref<Resource> res =
+				ResourceLoader::load(file_path, "", ResourceFormatLoader::CACHE_MODE_REPLACE);
 			if (res.is_valid()) {
 				ResourceSaver::save(res);
 			}
 		}
-		EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RESAVE_RESOURCES, Variant());
+		EditorSettings::get_singleton()->set_project_metadata(
+			META_PROJECT_UPGRADE_TOOL, META_RESAVE_RESOURCES, Variant());
 	}
-
-	emit_signal(UPGRADE_FINISHED);
 }
+
+ProjectUpgradeTool::ProjectUpgradeTool() { this->obj = mem_make_unique<Object>(); }
+
+void ProjectUpgradeTool::_bind_methods()
+{
+	// ClassDB member bindings removed for composed architecture
+}
+
+
