@@ -32,22 +32,24 @@
 
 #include "core/object/object.h"
 #include "core/object/undo_redo.h"
+#include "core/templates/mem_unique_ptr.h"
 
-class EditorUndoRedoManager : public Object {
-	VLTRCLASS(EditorUndoRedoManager, Object);
-
+class EditorUndoRedoManager
+{
+	mem_unique_ptr<Object> obj;
 	static EditorUndoRedoManager *singleton;
-
 	static constexpr uint64_t UNSAVED_VERSION = 0;
 
 public:
-	enum SpecialHistory {
+	enum SpecialHistory
+	{
 		GLOBAL_HISTORY = 0,
 		REMOTE_HISTORY = -9,
 		INVALID_HISTORY = -99,
 	};
 
-	struct Action {
+	struct Action
+	{
 		int history_id = INVALID_HISTORY;
 		double timestamp = 0;
 		String action_name;
@@ -56,7 +58,8 @@ public:
 		bool mark_unsaved = true;
 	};
 
-	struct History {
+	struct History
+	{
 		int id = INVALID_HISTORY;
 		UndoRedo *undo_redo = nullptr;
 		uint64_t saved_version = 1;
@@ -95,7 +98,8 @@ public:
 	void add_undo_methodp(Object *p_object, const StringName &p_method, const Variant **p_args, int p_argcount);
 
 	template <typename... VarArgs>
-	void add_do_method(Object *p_object, const StringName &p_method, VarArgs... p_args) {
+	void add_do_method(Object *p_object, const StringName &p_method, VarArgs... p_args)
+	{
 		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
 		const Variant *argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
@@ -106,7 +110,8 @@ public:
 	}
 
 	template <typename... VarArgs>
-	void add_undo_method(Object *p_object, const StringName &p_method, VarArgs... p_args) {
+	void add_undo_method(Object *p_object, const StringName &p_method, VarArgs... p_args)
+	{
 		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
 		const Variant *argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {

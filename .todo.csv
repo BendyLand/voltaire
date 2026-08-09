@@ -1,0 +1,1 @@
+1,go through the list of paths in 'objs' and change each subclass to instead *take* an Object as an argument.

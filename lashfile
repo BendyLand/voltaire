@@ -24,3 +24,8 @@ inspect:
 link:
 	g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -s -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl
 
+todo:
+	todo -l show
+
+remind:
+	todo -li

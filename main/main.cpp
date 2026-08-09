@@ -3819,10 +3819,8 @@ Error Main::setup2(bool p_show_boot_logo) {
 	}
 
 #endif
-
 	theme_db->initialize_theme();
 	audio_server->load_default_bus_layout();
-
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 	// Hacky to have it here, but we don't have good facility yet to let modules
 	// register command line options to call at the right time. This needs to happen
