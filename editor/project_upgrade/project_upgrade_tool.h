@@ -38,7 +38,6 @@ class EditorFileSystemDirectory;
 
 class ProjectUpgradeTool
 {
-	mem_unique_ptr<Object> obj;
 	ConfirmationDialog* upgrade_dialog = nullptr;
 
 	void _add_files(EditorFileSystemDirectory* p_dir, Vector<String>& r_reimport_paths,
@@ -49,6 +48,7 @@ class ProjectUpgradeTool
 	const String META_RESAVE_RESOURCES = "resave_resources";
 
 public:
+	mem_unique_ptr<Object> obj;
 	const String META_PROJECT_UPGRADE_TOOL = "project_upgrade_tool";
 	const String META_RUN_ON_RESTART = "run_on_restart";
 	const StringName UPGRADE_FINISHED = "upgrade_finished";

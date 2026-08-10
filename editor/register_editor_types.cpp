@@ -189,7 +189,6 @@ void register_editor_types() {
 	VLTR_REGISTER_CLASS(EditorSpinSlider);
 	VLTR_REGISTER_CLASS(EditorResourcePicker);
 	VLTR_REGISTER_CLASS(EditorScriptPicker);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorUndoRedoManager);
 	VLTR_REGISTER_CLASS(EditorContextMenuPlugin);
 
 	VLTR_REGISTER_ABSTRACT_CLASS(FileSystemDock);

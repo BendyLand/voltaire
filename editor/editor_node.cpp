@@ -1255,7 +1255,7 @@ void EditorNode::_execute_upgrades() {
 	if (run_project_upgrade_tool) {
 		run_project_upgrade_tool = false;
 		// Execute another scan to reimport the modified files.
-		project_upgrade_tool->connect(project_upgrade_tool->UPGRADE_FINISHED, callable_mp(EditorFileSystem::get_singleton(), &EditorFileSystem::scan), CONNECT_ONE_SHOT);
+		project_upgrade_tool->obj->connect(project_upgrade_tool->UPGRADE_FINISHED, callable_mp(EditorFileSystem::get_singleton(), &EditorFileSystem::scan), CONNECT_ONE_SHOT);
 		project_upgrade_tool->finish_upgrade();
 	}
 }
@@ -8435,10 +8435,10 @@ EditorNode::EditorNode() {
 	EditorPropertyNameProcessor *epnp = memnew(EditorPropertyNameProcessor);
 	add_child(epnp);
 
-	EditorUndoRedoManager::get_singleton()->connect("version_changed", callable_mp(this, &EditorNode::_update_undo_redo_allowed));
-	EditorUndoRedoManager::get_singleton()->connect("version_changed", callable_mp(this, &EditorNode::_update_unsaved_cache));
-	EditorUndoRedoManager::get_singleton()->connect("history_changed", callable_mp(this, &EditorNode::_update_undo_redo_allowed));
-	EditorUndoRedoManager::get_singleton()->connect("history_changed", callable_mp(this, &EditorNode::_update_unsaved_cache));
+	EditorUndoRedoManager::get_singleton()->obj->connect("version_changed", callable_mp(this, &EditorNode::_update_undo_redo_allowed));
+	EditorUndoRedoManager::get_singleton()->obj->connect("version_changed", callable_mp(this, &EditorNode::_update_unsaved_cache));
+	EditorUndoRedoManager::get_singleton()->obj->connect("history_changed", callable_mp(this, &EditorNode::_update_undo_redo_allowed));
+	EditorUndoRedoManager::get_singleton()->obj->connect("history_changed", callable_mp(this, &EditorNode::_update_unsaved_cache));
 	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &EditorNode::_update_from_settings));
 
 	Ref<TranslationDomain> domain = TranslationServer::get_singleton()->get_main_domain();

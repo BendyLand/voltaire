@@ -242,8 +242,8 @@ HistoryDock::HistoryDock() {
 	set_default_slot(EditorDock::DOCK_SLOT_LEFT_BR);
 
 	ur_manager = EditorUndoRedoManager::get_singleton();
-	ur_manager->connect("history_changed", callable_mp(this, &HistoryDock::on_history_changed));
-	ur_manager->connect("version_changed", callable_mp(this, &HistoryDock::on_version_changed));
+	ur_manager->obj->connect("history_changed", callable_mp(this, &HistoryDock::on_history_changed));
+	ur_manager->obj->connect("version_changed", callable_mp(this, &HistoryDock::on_version_changed));
 
 	VBoxContainer *main_vb = memnew(VBoxContainer);
 	add_child(main_vb);

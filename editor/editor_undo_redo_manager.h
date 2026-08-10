@@ -36,11 +36,11 @@
 
 class EditorUndoRedoManager
 {
-	mem_unique_ptr<Object> obj;
 	static EditorUndoRedoManager *singleton;
 	static constexpr uint64_t UNSAVED_VERSION = 0;
 
 public:
+	mem_unique_ptr<Object> obj;
 	enum SpecialHistory
 	{
 		GLOBAL_HISTORY = 0,

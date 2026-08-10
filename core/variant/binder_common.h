@@ -39,6 +39,8 @@
 #include "core/variant/variant_internal.h"
 
 #include <cstdio>
+#include <type_traits>
+
 
 template <>
 struct PtrToArg<char32_t> {

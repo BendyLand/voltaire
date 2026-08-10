@@ -131,8 +131,8 @@ void BonePropertiesEditor::create_editors() {
 	section->get_vbox()->add_child(add_metadata_button);
 
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->connect("version_changed", callable_mp(this, &BonePropertiesEditor::_update_properties));
-	undo_redo->connect("history_changed", callable_mp(this, &BonePropertiesEditor::_update_properties));
+	undo_redo->obj->connect("version_changed", callable_mp(this, &BonePropertiesEditor::_update_properties));
+	undo_redo->obj->connect("history_changed", callable_mp(this, &BonePropertiesEditor::_update_properties));
 }
 
 void BonePropertiesEditor::_notification(int p_what) {

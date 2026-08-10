@@ -86,8 +86,8 @@
 #define MAKE_RESOURCE_TYPE_HINT(m_type)                                                            \
 	vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
 
-// API used to extend in GDExtension and other C compatible compiled languages.
-class MethodBind;
+	// API used to extend in GDExtension and other C compatible compiled languages.
+	class MethodBind;
 class GDExtension;
 
 #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
@@ -336,7 +336,7 @@ public:                                                                         
                                                                                                    \
 private:
 
-class ClassDB;
+	class ClassDB;
 class ScriptInstance;
 
 class Object
@@ -387,7 +387,9 @@ public:
 		uint32_t flags = 0;
 		bool operator<(const Connection& p_conn) const;
 		operator Variant() const;
+
 		Connection() {}
+
 		Connection(const Variant& p_variant);
 	};
 
@@ -407,10 +409,12 @@ private:
 			Connection conn;
 			List<Connection>::Element* cE = nullptr;
 		};
+
 		MethodInfo user;
 		HashMap<Callable, Slot> slot_map;
 		bool removable = false;
 	};
+
 	mutable Mutex* signal_mutex = nullptr;
 	HashMap<StringName, SignalData> signal_map;
 	List<Connection> connections;
@@ -664,21 +668,29 @@ public:
 	{
 		// This is like dynamic_cast, but faster.
 		// The reason is that we can assume no virtual and multiple inheritance.
-		return p_object && p_object->template derives_from<T, O>() ? static_cast<T*>(p_object)
-																   : nullptr;
+		return p_object ? reinterpret_cast<T*>(p_object) : nullptr;
 	}
 
 	template <typename T, typename O> static const T* cast_to(const O* p_object)
 	{
-		return p_object && p_object->template derives_from<T, O>() ? static_cast<const T*>(p_object)
-																   : nullptr;
+		return p_object ? reinterpret_cast<const T*>(p_object) : nullptr;
 	}
 
 	// cast_to versions for types that implicitly convert to Object.
 	template <typename T> static T* cast_to(Object* p_object)
 	{
-		return p_object && p_object->template derives_from<T, Object>() ? static_cast<T*>(p_object)
-																		: nullptr;
+		return p_object ? reinterpret_cast<T*>(p_object) : nullptr;
+	}
+
+	template <typename T, typename Wrapper> static T* cast_composed(Wrapper* p_wrapper)
+	{
+		if (!p_wrapper || !p_wrapper->obj) {
+			return nullptr;
+		}
+		Object* p_object = p_wrapper->obj.get();
+		return (p_object && p_object->template derives_from<T, Object>())
+				   ? static_cast<T*>(p_object)
+				   : nullptr;
 	}
 
 	template <typename T> static const T* cast_to(const Object* p_object)
@@ -785,7 +797,8 @@ public:
 #define DEBUG_VIRTUAL
 #endif // DEBUG_ENABLED
 
-	DEBUG_VIRTUAL void set_script(const Variant& p_script);
+		DEBUG_VIRTUAL void
+		set_script(const Variant& p_script);
 	DEBUG_VIRTUAL Variant get_script() const;
 
 	DEBUG_VIRTUAL bool has_meta(const StringName& p_name) const;

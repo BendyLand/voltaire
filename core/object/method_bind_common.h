@@ -123,7 +123,11 @@ MethodBind *create_method_bind(void (T::*p_method)(P...)) {
 #else
 	MethodBind *a = memnew((MethodBindT<P...>)(reinterpret_cast<void (MB_T::*)(P...)>(p_method)));
 #endif
-	a->set_instance_class(T::get_class_static());
+	if constexpr (std::is_base_of_v<Object, T>) {
+	    a->set_instance_class(T::get_class_static());
+	} else {
+	    a->set_instance_class(StringName());
+	}
 	return a;
 }
 

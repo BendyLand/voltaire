@@ -31,22 +31,11 @@
 
 #pragma once
 
+#include "core/variant/type_info.h"
 #include <type_traits>
 #include "core/object/object.h"
 #include "core/variant/binder_common.h"
 #include "core/variant/callable.h"
-
-// compile-time trait to check if T has a get_object() method
-template <typename T, typename = void> struct has_get_object : std::false_type
-{
-};
-
-template <typename T>
-struct has_get_object<T, std::void_t<decltype(std::declval<T*>()->get_object())>> : std::true_type
-{
-};
-
-template <typename T> inline constexpr bool has_get_object_v = has_get_object<T>::value;
 
 template <typename T> uint64_t _get_callable_object_id(T* p_instance)
 {
@@ -60,7 +49,7 @@ template <typename T> uint64_t _get_callable_object_id(T* p_instance)
 		// class inherits from Object
 		return p_instance->get_instance_id();
 	}
-	else if constexpr (has_get_object_v<CleanT>) {
+	else if constexpr (has_obj_member_v<CleanT>) {
 		// class composes Object and provides get_object()
 		if (Object* obj = p_instance->get_object()) {
 			return obj->get_instance_id();
