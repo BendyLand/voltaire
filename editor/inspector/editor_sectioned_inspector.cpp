@@ -32,6 +32,7 @@
 
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "editor/editor_string_names.h"
 #include "editor/inspector/editor_inspector.h"
 #include "editor/inspector/editor_property_name_processor.h"
@@ -54,9 +55,7 @@ static bool _property_path_matches(const String &p_property_path, const String &
 	return false;
 }
 
-class SectionedInspectorFilter : public Object {
-	VLTRCLASS(SectionedInspectorFilter, Object);
-
+class SectionedInspectorFilter {
 	Object *edited = nullptr;
 	String section;
 	bool allow_sub = false;
@@ -129,15 +128,16 @@ class SectionedInspectorFilter : public Object {
 	}
 
 public:
+	mem_unique_ptr<Object> obj;
 	void set_section(const String &p_section, bool p_allow_sub) {
 		section = p_section;
 		allow_sub = p_allow_sub;
-		notify_property_list_changed();
+		this->obj->notify_property_list_changed();
 	}
 
 	void set_edited(Object *p_edited) {
 		edited = p_edited;
-		notify_property_list_changed();
+		this->obj->notify_property_list_changed();
 	}
 };
 
@@ -204,7 +204,7 @@ void SectionedInspector::edit(Object *p_object) {
 		update_category_list();
 
 		filter->set_edited(p_object);
-		inspector->edit(filter);
+		inspector->edit(filter->obj.get());
 
 		TreeItem *first_item = sections->get_root();
 		if (first_item) {

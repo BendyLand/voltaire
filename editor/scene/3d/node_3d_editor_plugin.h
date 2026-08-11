@@ -33,6 +33,7 @@
 #include "core/math/dynamic_bvh.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
+#include "editor/scene/3d/node_3d_editor_viewport.h"
 #include "scene/debugger/view_3d_controller.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/popup.h"
@@ -272,7 +273,7 @@ private:
 
 	Node *custom_camera = nullptr;
 
-	Object *_get_editor_data(Object *p_what);
+	Node3DEditorSelectedItem* _get_editor_data(Object* p_what);
 
 	Ref<Environment> viewport_environment;
 

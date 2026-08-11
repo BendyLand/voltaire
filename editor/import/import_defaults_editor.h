@@ -37,16 +37,17 @@
 class ImportDefaultsEditorSettings;
 class EditorInspector;
 
-class ImportDefaultsEditor : public VBoxContainer {
+class ImportDefaultsEditor : public VBoxContainer
+{
 	VLTRCLASS(ImportDefaultsEditor, VBoxContainer)
 
-	OptionButton *importers = nullptr;
-	Button *save_defaults = nullptr;
-	Button *reset_defaults = nullptr;
+	OptionButton* importers = nullptr;
+	Button* save_defaults = nullptr;
+	Button* reset_defaults = nullptr;
 
-	EditorInspector *inspector = nullptr;
+	EditorInspector* inspector = nullptr;
 
-	ImportDefaultsEditorSettings *settings = nullptr;
+	ImportDefaultsEditorSettings* settings = nullptr;
 
 	void _update_importer();
 	void _importer_selected(int p_index);
@@ -63,3 +64,5 @@ public:
 	ImportDefaultsEditor();
 	~ImportDefaultsEditor();
 };
+
+

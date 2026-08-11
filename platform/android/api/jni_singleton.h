@@ -30,15 +30,15 @@
 
 #pragma once
 
-#include "java_class_wrapper.h"
-
+#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "core/variant/variant.h"
+#include "java_class_wrapper.h"
 
-class JNISingleton : public Object {
-	VLTRCLASS(JNISingleton, Object);
-
-	struct MethodData {
+class JNISingleton
+{
+	struct MethodData
+	{
 		Variant::Type ret_type;
 		Vector<Variant::Type> argtypes;
 	};
@@ -48,31 +48,31 @@ class JNISingleton : public Object {
 
 protected:
 	static void _bind_methods();
-	bool _get(const StringName &p_name, Variant &r_property) const;
+	bool _get(const StringName& p_name, Variant& r_property) const;
 
 public:
-	virtual Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) override;
+	mem_unique_ptr<Object> obj;
+	virtual Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount,
+		Callable::CallError& r_error);
 
-	Ref<JavaObject> get_wrapped_object() const {
-		return wrapped_object;
-	}
+	Ref<JavaObject> get_wrapped_object() const { return wrapped_object; }
 
-	bool has_java_method(const StringName &p_method) const {
-		return method_map.has(p_method);
-	}
+	bool has_java_method(const StringName& p_method) const { return method_map.has(p_method); }
 
-	void add_method(const StringName &p_name, const Vector<Variant::Type> &p_args, Variant::Type p_ret_type);
+	void add_method(
+		const StringName& p_name, const Vector<Variant::Type>& p_args, Variant::Type p_ret_type);
 
-	void add_signal(const StringName &p_name, const Vector<Variant::Type> &p_args);
+	void add_signal(const StringName& p_name, const Vector<Variant::Type>& p_args);
 
 	JNISingleton() {}
 
-	JNISingleton(const Ref<JavaObject> &p_wrapped_object) {
-		wrapped_object = p_wrapped_object;
-	}
+	JNISingleton(const Ref<JavaObject>& p_wrapped_object) { wrapped_object = p_wrapped_object; }
 
-	~JNISingleton() {
+	~JNISingleton()
+	{
 		method_map.clear();
 		wrapped_object.unref();
 	}
 };
+
+

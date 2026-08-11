@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "core/templates/mem_unique_ptr.h"
 #ifdef DBUS_ENABLED
 
 #include "core/object/object.h"
@@ -42,51 +43,65 @@ struct DBusMessage;
 struct DBusConnection;
 struct DBusMessageIter;
 
-class FreeDesktopPortalDesktop : public Object {
-	VLTRSOFTCLASS(FreeDesktopPortalDesktop, Object);
-
+class FreeDesktopPortalDesktop
+{
 private:
 	bool unsupported = false;
 
-	enum ReadVariantType {
+	enum ReadVariantType
+	{
 		VAR_TYPE_UINT32, // u
-		VAR_TYPE_BOOL, // b
-		VAR_TYPE_COLOR, // (ddd)
+		VAR_TYPE_BOOL,	 // b
+		VAR_TYPE_COLOR,	 // (ddd)
 	};
 
-	static bool try_parse_variant(DBusMessage *p_reply_message, ReadVariantType p_type, void *r_value);
+	static bool try_parse_variant(
+		DBusMessage* p_reply_message, ReadVariantType p_type, void* r_value);
 	// Read a setting from org.freekdesktop.portal.Settings
-	bool read_setting(const char *p_namespace, const char *p_key, ReadVariantType p_type, void *r_value);
+	bool read_setting(
+		const char* p_namespace, const char* p_key, ReadVariantType p_type, void* r_value);
 
-	static void append_dbus_string(DBusMessageIter *p_iter, const String &p_string);
-	static void append_dbus_dict_options(DBusMessageIter *p_iter, const TypedArray<Dictionary> &p_options, HashMap<String, String> &r_ids);
-	static void append_dbus_dict_filters(DBusMessageIter *p_iter, const Vector<String> &p_filter_names, const Vector<String> &p_filter_exts, const Vector<String> &p_filter_mimes);
-	static void append_dbus_dict_string(DBusMessageIter *p_iter, const String &p_key, const String &p_value, bool p_as_byte_array = false);
-	static void append_dbus_dict_bool(DBusMessageIter *p_iter, const String &p_key, bool p_value);
+	static void append_dbus_string(DBusMessageIter* p_iter, const String& p_string);
+	static void append_dbus_dict_options(DBusMessageIter* p_iter,
+		const TypedArray<Dictionary>& p_options, HashMap<String, String>& r_ids);
+	static void append_dbus_dict_filters(DBusMessageIter* p_iter,
+		const Vector<String>& p_filter_names, const Vector<String>& p_filter_exts,
+		const Vector<String>& p_filter_mimes);
+	static void append_dbus_dict_string(DBusMessageIter* p_iter, const String& p_key,
+		const String& p_value, bool p_as_byte_array = false);
+	static void append_dbus_dict_bool(DBusMessageIter* p_iter, const String& p_key, bool p_value);
 
-	static bool file_chooser_parse_response(DBusMessageIter *p_iter, const Vector<String> &p_names, const HashMap<String, String> &p_ids, bool &r_cancel, Vector<String> &r_urls, int &r_index, Dictionary &r_options);
-	static bool color_picker_parse_response(DBusMessageIter *p_iter, bool &r_cancel, Color &r_color);
+	static bool file_chooser_parse_response(DBusMessageIter* p_iter, const Vector<String>& p_names,
+		const HashMap<String, String>& p_ids, bool& r_cancel, Vector<String>& r_urls, int& r_index,
+		Dictionary& r_options);
+	static bool color_picker_parse_response(
+		DBusMessageIter* p_iter, bool& r_cancel, Color& r_color);
 
-	static Error make_request_token(String &r_token);
-	bool send_request(DBusMessage *p_message, const String &r_token, String &r_response_path, String &r_response_filter);
+	static Error make_request_token(String& r_token);
+	bool send_request(DBusMessage* p_message, const String& r_token, String& r_response_path,
+		String& r_response_filter);
 
-	struct ColorPickerData {
+	struct ColorPickerData
+	{
 		Callable callback;
 		String filter;
 		String path;
 	};
 
-	struct ColorPickerCallback {
+	struct ColorPickerCallback
+	{
 		Callable callback;
 		Variant status;
 		Variant color;
 	};
+
 	List<ColorPickerCallback> pending_color_cbs;
 
 	Mutex color_picker_mutex;
 	Vector<ColorPickerData> color_pickers;
 
-	struct FileDialogData {
+	struct FileDialogData
+	{
 		Vector<String> filter_names;
 		HashMap<String, String> option_ids;
 		DisplayServerEnums::WindowID prev_focus = DisplayServerEnums::INVALID_WINDOW_ID;
@@ -96,7 +111,8 @@ private:
 		bool opt_in_cb = false;
 	};
 
-	struct FileDialogCallback {
+	struct FileDialogCallback
+	{
 		Callable callback;
 		Variant status;
 		Variant files;
@@ -104,37 +120,44 @@ private:
 		Variant options;
 		bool opt_in_cb = false;
 	};
+
 	List<FileDialogCallback> pending_file_cbs;
 
 	Mutex file_dialog_mutex;
 	Vector<FileDialogData> file_dialogs;
 	Thread monitor_thread;
 	SafeFlag monitor_thread_abort;
-	DBusConnection *monitor_connection = nullptr;
+	DBusConnection* monitor_connection = nullptr;
 
 	String theme_path;
 	Callable system_theme_changed;
 	void _system_theme_changed_callback();
-	bool _is_interface_supported(const char *p_iface, uint32_t p_minimum_version);
+	bool _is_interface_supported(const char* p_iface, uint32_t p_minimum_version);
 
 	Mutex inhibit_mutex;
 	String inhibit_path;
 	String inhibit_filter;
 
-	static void _thread_monitor(void *p_ud);
+	static void _thread_monitor(void* p_ud);
 
 public:
+	mem_unique_ptr<Object> obj;
 	FreeDesktopPortalDesktop();
 	~FreeDesktopPortalDesktop();
 
 	bool is_supported() { return !unsupported; }
+
 	bool is_file_chooser_supported();
 	bool is_settings_supported();
 	bool is_screenshot_supported();
 	bool is_inhibit_supported();
 
 	// org.freedesktop.portal.FileChooser methods.
-	Error file_dialog_show(DisplayServerEnums::WindowID p_window_id, const String &p_xid, const String &p_title, const String &p_current_directory, const String &p_root, const String &p_filename, DisplayServerEnums::FileDialogMode p_mode, const Vector<String> &p_filters, const TypedArray<Dictionary> &p_options, const Callable &p_callback, bool p_options_in_cb);
+	Error file_dialog_show(DisplayServerEnums::WindowID p_window_id, const String& p_xid,
+		const String& p_title, const String& p_current_directory, const String& p_root,
+		const String& p_filename, DisplayServerEnums::FileDialogMode p_mode,
+		const Vector<String>& p_filters, const TypedArray<Dictionary>& p_options,
+		const Callable& p_callback, bool p_options_in_cb);
 	void process_callbacks();
 
 	// org.freedesktop.portal.Settings methods.
@@ -145,7 +168,9 @@ public:
 	// 2: Prefer light appearance.
 	uint32_t get_appearance_color_scheme();
 	Color get_appearance_accent_color();
-	void set_system_theme_change_callback(const Callable &p_system_theme_changed) {
+
+	void set_system_theme_change_callback(const Callable& p_system_theme_changed)
+	{
 		system_theme_changed = p_system_theme_changed;
 	}
 
@@ -156,11 +181,13 @@ public:
 	uint32_t get_high_contrast();
 
 	// org.freedesktop.portal.Screenshot methods.
-	bool color_picker(const String &p_xid, const Callable &p_callback);
+	bool color_picker(const String& p_xid, const Callable& p_callback);
 
 	// org.freedesktop.portal.Inhibit methods.
-	bool inhibit(const String &p_xid);
+	bool inhibit(const String& p_xid);
 	void uninhibit();
 };
 
 #endif // DBUS_ENABLED
+
+

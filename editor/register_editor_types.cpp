@@ -158,7 +158,6 @@ void register_editor_types() {
 	VLTR_REGISTER_CLASS(EditorImportPlugin);
 	VLTR_REGISTER_CLASS(EditorScript);
 	VLTR_REGISTER_CLASS(EditorDock);
-	VLTR_REGISTER_CLASS(EditorSelection);
 	VLTR_REGISTER_CLASS(EditorFileDialog);
 	VLTR_REGISTER_VIRTUAL_CLASS(EditorSettings);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorToaster);
@@ -167,11 +166,9 @@ void register_editor_types() {
 	VLTR_REGISTER_CLASS(EditorResourceTooltipPlugin);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorFileSystem);
 	VLTR_REGISTER_CLASS(EditorFileSystemDirectory);
-	VLTR_REGISTER_CLASS(EditorVCSInterface);
 	VLTR_REGISTER_ABSTRACT_CLASS(ScriptEditor);
 	VLTR_REGISTER_ABSTRACT_CLASS(ScriptEditorBase);
 	VLTR_REGISTER_CLASS(EditorSyntaxHighlighter);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorInterface);
 	VLTR_REGISTER_CLASS(EditorExportPlugin);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatform);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatformPC);
@@ -317,7 +314,7 @@ void register_editor_types() {
 	GLOBAL_DEF("editor/version_control/autoload_on_startup", false);
 
 	EditorInterface::create();
-	Engine::Singleton ei_singleton = Engine::Singleton("EditorInterface", EditorInterface::get_singleton());
+	Engine::Singleton ei_singleton = Engine::Singleton("EditorInterface", EditorInterface::get_singleton()->obj.get());
 	ei_singleton.editor_only = true;
 	Engine::get_singleton()->add_singleton(ei_singleton);
 

@@ -34,6 +34,7 @@
 #include "core/debugger/remote_debugger.h"
 #include "core/io/stream_peer_tcp.h"
 #include "core/io/tcp_server.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "editor/debugger/debug_adapter/debug_adapter_types.h"
 #include "scene/debugger/scene_debugger_object.h"
 
@@ -69,9 +70,7 @@ struct DAPeer : RefCounted {
 	Vector<uint8_t> format_output(const Dictionary &p_params) const;
 };
 
-class DebugAdapterProtocol : public Object {
-	VLTRCLASS(DebugAdapterProtocol, Object)
-
+class DebugAdapterProtocol {
 	friend class DebugAdapterParser;
 
 	using DAPVarID = int;
@@ -140,6 +139,7 @@ private:
 	HashSet<String> eval_pending_list;
 
 public:
+	mem_unique_ptr<Object> obj;
 	friend class DebugAdapterServer;
 
 	_FORCE_INLINE_ static DebugAdapterProtocol *get_singleton() { return singleton; }

@@ -164,7 +164,7 @@ public:
 	bool is_valid();
 	void clear();
 
-	RequiredResult<Tween> bind_node(RequiredParam<const Node> rp_node);
+	Tween* bind_node(const Node* rp_node);
 	RequiredResult<Tween> set_process_mode(TweenProcessMode p_mode);
 	TweenProcessMode get_process_mode() const;
 	RequiredResult<Tween> set_pause_mode(TweenPauseMode p_mode);

@@ -1,11 +1,6 @@
 Done:
 editor/editor_undo_redo_manager.h:class EditorUndoRedoManager : public Object {
 editor/project_upgrade/project_upgrade_tool.h:class ProjectUpgradeTool : public Object {
-
-Kinda done?:
-editor/shader/shader_globals_editor.cpp:class ShaderGlobalsEditorInterface : public Object {
-
-Not done:
 editor/debugger/editor_debugger_inspector.h:class EditorDebuggerRemoteObjects : public Object {
 editor/debugger/editor_file_server.h:class EditorFileServer : public Object {
 editor/debugger/debug_adapter/debug_adapter_parser.h:class DebugAdapterParser : public Object {
@@ -35,11 +30,7 @@ editor/docks/import_dock.cpp:class ImportDockParameters : public Object {
 scene/audio/audio_stream_player_internal.h:class AudioStreamPlayerInternal : public Object {
 scene/gui/tree.h:class TreeItem : public Object {
 scene/gui/color_picker_shape.h:class ColorPickerShape : public Object {
-platform/web/api/javascript_bridge_singleton.h:class JavaScriptBridge : public Object {
-platform/windows/tts_driver.h:class TTSDriver : public Object {
 platform/android/api/jni_singleton.h:class JNISingleton : public Object {
-platform/android/api/java_class_wrapper.h:class JavaClassWrapper : public Object {
-platform/android/export/android_editor_gradle_runner.h:class AndroidEditorGradleRunner : public Object {
 platform/linuxbsd/tts_linux.h:class TTS_Linux : public Object {
 platform/linuxbsd/freedesktop_portal_desktop.h:class FreeDesktopPortalDesktop : public Object {
 scene/theme/theme_owner.h:class ThemeOwner : public Object {
@@ -47,9 +38,14 @@ scene/debugger/runtime_node_select.h:class RuntimeNodeSelect : public Object {
 scene/theme/theme_db.h:class ThemeDB : public Object {
 scene/theme/theme_db.h:class ThemeContext : public Object {
 editor/file_system/editor_file_system.h:class EditorFileSystemDirectory : public Object {
-scene/main/node.h:class Node : public Object {
 editor/file_system/editor_paths.h:class EditorPaths : public Object {
 scene/resources/2d/tile_set.h:class TileData : public Object {
+
+Kinda done?:
+editor/shader/shader_globals_editor.cpp:class ShaderGlobalsEditorInterface : public Object {
+
+Not done:
+scene/main/node.h:class Node : public Object {
 core/input/input.h:class Input : public Object {
 core/string/translation_server.h:class TranslationServer : public Object {
 core/object/ref_counted.h:class RefCounted : public Object {
@@ -127,3 +123,7 @@ servers/physics_2d/physics_server_2d.h:class PhysicsServer2D : public Object {
 servers/physics_2d/physics_server_2d.h:class PhysicsServer2DManager : public Object {
 servers/physics_2d/direct_states/physics_direct_body_state_2d.h:class PhysicsDirectBodyState2D : public Object {
 servers/physics_2d/direct_states/physics_direct_space_state_2d.h:class PhysicsDirectSpaceState2D : public Object {
+platform/web/api/javascript_bridge_singleton.h:class JavaScriptBridge : public Object {
+platform/windows/tts_driver.h:class TTSDriver : public Object {
+platform/android/api/java_class_wrapper.h:class JavaClassWrapper : public Object {
+platform/android/export/android_editor_gradle_runner.h:class AndroidEditorGradleRunner : public Object {

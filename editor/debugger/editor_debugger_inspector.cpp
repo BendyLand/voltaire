@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_debugger_inspector.h"
-
 #include "core/debugger/debugger_marshalls.h"
 #include "core/io/marshalls.h"
 #include "core/io/resource_loader.h"
@@ -39,13 +37,17 @@
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_node.h"
 #include "editor/editor_undo_redo_manager.h"
+#include "editor_debugger_inspector.h"
 #include "scene/debugger/scene_debugger_object.h"
 
-bool EditorDebuggerRemoteObjects::_set(const StringName &p_name, const Variant &p_value) {
+bool EditorDebuggerRemoteObjects::_set(const StringName& p_name, const Variant& p_value)
+{
 	return _set_impl(p_name, p_value, "");
 }
 
-bool EditorDebuggerRemoteObjects::_set_impl(const StringName &p_name, const Variant &p_value, const String &p_field) {
+bool EditorDebuggerRemoteObjects::_set_impl(
+	const StringName& p_name, const Variant& p_value, const String& p_field)
+{
 	String name = p_name;
 	if (!prop_values.has(name) || String(name).begins_with("Constants/")) {
 		return false;
@@ -54,28 +56,34 @@ bool EditorDebuggerRemoteObjects::_set_impl(const StringName &p_name, const Vari
 	// Change it back to the real name when sending it.
 	if (name == "Script") {
 		name = "script";
-	} else if (name.begins_with("Metadata/")) {
+	}
+	else if (name.begins_with("Metadata/")) {
 		name = name.replace_first("Metadata/", "metadata/");
 	}
 
-	Dictionary &values = prop_values[p_name];
+	Dictionary& values = prop_values[p_name];
 	Dictionary old_values = values.duplicate();
 	for (const uint64_t key : values.keys()) {
 		values.set(key, p_value);
 	}
 
-	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 	const int size = remote_object_ids.size();
-	ur->create_action(size == 1 ? vformat(TTR("Set %s"), name) : vformat(TTR("Set %s on %d objects"), name, size), UndoRedo::MERGE_ENDS);
+	ur->create_action(
+		size == 1 ? vformat(TTR("Set %s"), name) : vformat(TTR("Set %s on %d objects"), name, size),
+		UndoRedo::MERGE_ENDS);
 
-	ur->add_do_method(this, SNAME("emit_signal"), SNAME("values_edited"), name, values, p_field);
-	ur->add_undo_method(this, SNAME("emit_signal"), SNAME("values_edited"), name, old_values, p_field);
+	ur->add_do_method(
+		this->obj.get(), SNAME("emit_signal"), SNAME("values_edited"), name, values, p_field);
+	ur->add_undo_method(
+		this->obj.get(), SNAME("emit_signal"), SNAME("values_edited"), name, old_values, p_field);
 	ur->commit_action();
 
 	return true;
 }
 
-bool EditorDebuggerRemoteObjects::_get(const StringName &p_name, Variant &r_ret) const {
+bool EditorDebuggerRemoteObjects::_get(const StringName& p_name, Variant& r_ret) const
+{
 	if (!prop_values.has(p_name)) {
 		return false;
 	}
@@ -84,25 +92,31 @@ bool EditorDebuggerRemoteObjects::_get(const StringName &p_name, Variant &r_ret)
 	return true;
 }
 
-void EditorDebuggerRemoteObjects::_get_property_list(List<PropertyInfo> *p_list) const {
+void EditorDebuggerRemoteObjects::_get_property_list(List<PropertyInfo>* p_list) const
+{
 	p_list->clear(); // Sorry, don't want any categories.
-	for (const PropertyInfo &prop : prop_list) {
+	for (const PropertyInfo& prop : prop_list) {
 		p_list->push_back(prop);
 	}
 }
 
-void EditorDebuggerRemoteObjects::set_property_field(const StringName &p_property, const Variant &p_value, const String &p_field) {
+void EditorDebuggerRemoteObjects::set_property_field(
+	const StringName& p_property, const Variant& p_value, const String& p_field)
+{
 	// Ignore the field with arrays and dictionaries, as they are passed whole when edited.
 	Variant::Type type = p_value.get_type();
 	if (type == Variant::ARRAY || type == Variant::DICTIONARY) {
 		_set_impl(p_property, p_value, "");
-	} else {
+	}
+	else {
 		_set_impl(p_property, p_value, p_field);
 	}
 }
 
-String EditorDebuggerRemoteObjects::get_title() {
-	if (!remote_object_ids.is_empty() && ObjectID(remote_object_ids[0].operator uint64_t()).is_valid()) {
+String EditorDebuggerRemoteObjects::get_title()
+{
+	if (!remote_object_ids.is_empty() &&
+		ObjectID(remote_object_ids[0].operator uint64_t()).is_valid()) {
 		const int size = remote_object_ids.size();
 		if (size == 1) {
 			if (node_name.is_empty() || node_name == type_name) {
@@ -116,64 +130,72 @@ String EditorDebuggerRemoteObjects::get_title() {
 	return "<null>";
 }
 
-Variant EditorDebuggerRemoteObjects::get_variant(const StringName &p_name) {
+Variant EditorDebuggerRemoteObjects::get_variant(const StringName& p_name)
+{
 	Variant var;
 	_get(p_name, var);
 	return var;
 }
 
-void EditorDebuggerRemoteObjects::clear() {
+void EditorDebuggerRemoteObjects::clear()
+{
 	prop_list.clear();
 	prop_values.clear();
 }
 
-void EditorDebuggerRemoteObjects::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_title"), &EditorDebuggerRemoteObjects::get_title);
-	ClassDB::bind_method("_hide_script_from_inspector", &EditorDebuggerRemoteObjects::_hide_script_from_inspector);
-	ClassDB::bind_method("_hide_metadata_from_inspector", &EditorDebuggerRemoteObjects::_hide_metadata_from_inspector);
-
-	ADD_SIGNAL(MethodInfo("values_edited", PropertyInfo(Variant::STRING, "property"), PropertyInfo(Variant::DICTIONARY, "values", PROPERTY_HINT_DICTIONARY_TYPE, "uint64_t;Variant"), PropertyInfo(Variant::STRING, "field")));
-}
+void EditorDebuggerRemoteObjects::_bind_methods() {}
 
 /// EditorDebuggerInspector
 
-EditorDebuggerInspector::EditorDebuggerInspector() {
+EditorDebuggerInspector::EditorDebuggerInspector()
+{
 	variables = memnew(EditorDebuggerRemoteObjects);
 }
 
-EditorDebuggerInspector::~EditorDebuggerInspector() {
+EditorDebuggerInspector::~EditorDebuggerInspector()
+{
 	clear_cache();
 	memdelete(variables);
 }
 
-void EditorDebuggerInspector::_bind_methods() {
+void EditorDebuggerInspector::_bind_methods()
+{
 	ADD_SIGNAL(MethodInfo("object_selected", PropertyInfo(Variant::INT, "id")));
-	ADD_SIGNAL(MethodInfo("objects_edited", PropertyInfo(Variant::ARRAY, "ids"), PropertyInfo(Variant::STRING, "property"), PropertyInfo("value"), PropertyInfo(Variant::STRING, "field")));
-	ADD_SIGNAL(MethodInfo("object_property_updated", PropertyInfo(Variant::INT, "id"), PropertyInfo(Variant::STRING, "property")));
+	ADD_SIGNAL(MethodInfo("objects_edited", PropertyInfo(Variant::ARRAY, "ids"),
+		PropertyInfo(Variant::STRING, "property"), PropertyInfo("value"),
+		PropertyInfo(Variant::STRING, "field")));
+	ADD_SIGNAL(MethodInfo("object_property_updated", PropertyInfo(Variant::INT, "id"),
+		PropertyInfo(Variant::STRING, "property")));
 }
 
-void EditorDebuggerInspector::_notification(int p_what) {
+void EditorDebuggerInspector::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_POSTINITIALIZE: {
-			connect("object_id_selected", callable_mp(this, &EditorDebuggerInspector::_object_selected));
-		} break;
+	case NOTIFICATION_POSTINITIALIZE: {
+		connect(
+			"object_id_selected", callable_mp(this, &EditorDebuggerInspector::_object_selected));
+	} break;
 
-		case NOTIFICATION_ENTER_TREE: {
-			variables->remote_object_ids.append(0);
-			edit(variables);
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		variables->remote_object_ids.append(0);
+		edit(variables->obj.get());
+	} break;
 	}
 }
 
-void EditorDebuggerInspector::_objects_edited(const String &p_prop, const TypedDictionary<uint64_t, Variant> &p_values, const String &p_field) {
+void EditorDebuggerInspector::_objects_edited(
+	const String& p_prop, const TypedDictionary<uint64_t, Variant>& p_values, const String& p_field)
+{
 	emit_signal(SNAME("objects_edited"), p_prop, p_values, p_field);
 }
 
-void EditorDebuggerInspector::_object_selected(ObjectID p_object) {
+void EditorDebuggerInspector::_object_selected(ObjectID p_object)
+{
 	emit_signal(SNAME("object_selected"), p_object);
 }
 
-EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p_arr) {
+EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p_arr)
+{
 	ERR_FAIL_COND_V(p_arr.is_empty(), nullptr);
 
 	TypedArray<uint64_t> ids;
@@ -191,8 +213,8 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 	// Sorting is necessary, as selected nodes in the remote tree are ordered by index.
 	ids.sort();
 
-	EditorDebuggerRemoteObjects *remote_objects = nullptr;
-	for (EditorDebuggerRemoteObjects *robjs : remote_objects_list) {
+	EditorDebuggerRemoteObjects* remote_objects = nullptr;
+	for (EditorDebuggerRemoteObjects* robjs : remote_objects_list) {
 		if (robjs->remote_object_ids == ids) {
 			remote_objects = robjs;
 			break;
@@ -203,25 +225,30 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 		remote_objects = memnew(EditorDebuggerRemoteObjects);
 		remote_objects->remote_object_ids = ids;
 		remote_objects->remote_object_ids.make_read_only();
-		remote_objects->connect("values_edited", callable_mp(this, &EditorDebuggerInspector::_objects_edited));
+		remote_objects->obj->connect(
+			"values_edited", callable_mp(this, &EditorDebuggerInspector::_objects_edited));
 		remote_objects_list.push_back(remote_objects);
 	}
 
 	// Search for properties that are present in all selected objects.
-	struct UsageData {
+	struct UsageData
+	{
 		int qty = 0;
 		SceneDebuggerObject::SceneDebuggerProperty prop;
 		TypedDictionary<uint64_t, Variant> values;
 	};
+
 	HashMap<String, UsageData> usage;
 	int nc = 0;
-	for (const SceneDebuggerObject &obj : objects) {
-		for (const SceneDebuggerObject::SceneDebuggerProperty &prop : obj.properties) {
+	for (const SceneDebuggerObject& obj : objects) {
+		for (const SceneDebuggerObject::SceneDebuggerProperty& prop : obj.properties) {
 			PropertyInfo pinfo = prop.first;
-			// Rename those variables, so they don't conflict with the ones from the resource itself.
+			// Rename those variables, so they don't conflict with the ones from the resource
+			// itself.
 			if (pinfo.name == "script") {
 				pinfo.name = "Script";
-			} else if (pinfo.name.begins_with("metadata/")) {
+			}
+			else if (pinfo.name.begins_with("metadata/")) {
 				pinfo.name = pinfo.name.replace_first("metadata/", "Metadata/");
 			}
 
@@ -235,16 +262,18 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 
 			// Make sure only properties with matching PropertyInfo data will appear.
 			if (usage[pinfo.name].prop.first.name == pinfo.name &&
-					usage[pinfo.name].prop.first.type == pinfo.type &&
-					usage[pinfo.name].prop.first.class_name == pinfo.class_name &&
-					usage[pinfo.name].prop.first.hint == pinfo.hint &&
-					usage[pinfo.name].prop.first.hint_string == pinfo.hint_string) {
+				usage[pinfo.name].prop.first.type == pinfo.type &&
+				usage[pinfo.name].prop.first.class_name == pinfo.class_name &&
+				usage[pinfo.name].prop.first.hint == pinfo.hint &&
+				usage[pinfo.name].prop.first.hint_string == pinfo.hint_string) {
 				if (usage[pinfo.name].prop.first.usage != pinfo.usage) {
 					// Checkable properties (mostly theme items) need special treatment.
-					if (usage[pinfo.name].prop.first.usage & PROPERTY_USAGE_CHECKABLE && pinfo.usage & PROPERTY_USAGE_CHECKABLE) {
+					if (usage[pinfo.name].prop.first.usage & PROPERTY_USAGE_CHECKABLE &&
+						pinfo.usage & PROPERTY_USAGE_CHECKABLE) {
 						if (usage[pinfo.name].prop.first.usage & PROPERTY_USAGE_CHECKED) {
 							pinfo.usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
-						} else {
+						}
+						else {
 							pinfo.usage &= ~(PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED);
 						}
 
@@ -279,8 +308,8 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 	remote_objects->prop_list.clear();
 	int new_props_added = 0;
 	HashSet<String> changed;
-	for (KeyValue<String, UsageData> &KV : usage) {
-		const PropertyInfo &pinfo = KV.value.prop.first;
+	for (KeyValue<String, UsageData>& KV : usage) {
+		const PropertyInfo& pinfo = KV.value.prop.first;
 		Variant var = KV.value.values[remote_objects->remote_object_ids[0]];
 
 		if (pinfo.type == Variant::OBJECT && var.is_string()) {
@@ -302,7 +331,9 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 
 		if (!remote_objects->prop_values.has(pinfo.name)) {
 			new_props_added++;
-		} else if (bool(Variant::evaluate(Variant::OP_NOT_EQUAL, remote_objects->prop_values[pinfo.name], var))) {
+		}
+		else if (bool(Variant::evaluate(
+					   Variant::OP_NOT_EQUAL, remote_objects->prop_values[pinfo.name], var))) {
 			changed.insert(pinfo.name);
 		}
 
@@ -316,7 +347,7 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 		// Check if all objects have the same script.
 		Ref<Script> common_scr;
 		LocalVector<Variant> keys = usage["Script"].values.get_key_list();
-		for (const Variant &key : keys) {
+		for (const Variant& key : keys) {
 			Ref<Script> scr = usage["Script"].values[key];
 			if (scr.is_null()) {
 				has_custom_class = false;
@@ -325,7 +356,8 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 
 			if (common_scr.is_null()) {
 				common_scr = scr;
-			} else if (scr != common_scr) {
+			}
+			else if (scr != common_scr) {
 				has_custom_class = false;
 				break;
 			}
@@ -335,11 +367,13 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 			// Now check if the script has a custom class.
 			if (common_scr.is_null()) {
 				has_custom_class = false;
-			} else {
+			}
+			else {
 				const StringName scr_class = common_scr->get_global_name();
 				if (scr_class.is_empty()) {
 					has_custom_class = false;
-				} else {
+				}
+				else {
 					class_name = scr_class;
 				}
 			}
@@ -359,12 +393,14 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 			}
 
 			// Check that all objects inherit from type_name.
-			for (const SceneDebuggerObject &obj : objects) {
-				if (obj.class_name == class_name || ClassDB::is_parent_class(obj.class_name, class_name)) {
+			for (const SceneDebuggerObject& obj : objects) {
+				if (obj.class_name == class_name ||
+					ClassDB::is_parent_class(obj.class_name, class_name)) {
 					continue; // class_name is the same or a parent of the object's class.
 				}
 
-				// class_name is not a parent of the node's class, so check again with the parent class.
+				// class_name is not a parent of the node's class, so check again with the parent
+				// class.
 				class_name = ClassDB::get_parent_class(class_name);
 				check_type_again = true;
 				break;
@@ -374,7 +410,7 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 	remote_objects->type_name = class_name;
 	remote_objects->node_name = "";
 	if (objects.size() == 1) {
-		for (const SceneDebuggerObject::SceneDebuggerProperty &prop : objects[0].properties) {
+		for (const SceneDebuggerObject::SceneDebuggerProperty& prop : objects[0].properties) {
 			if (prop.first.name == "name") {
 				remote_objects->node_name = prop.second;
 				break;
@@ -384,10 +420,12 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 
 	if (old_prop_size == remote_objects->prop_list.size() && new_props_added == 0) {
 		// Only some may have changed, if so, then update those, if they exist.
-		for (const String &E : changed) {
-			emit_signal(SNAME("object_property_updated"), remote_objects->get_instance_id(), E);
+		for (const String& E : changed) {
+			emit_signal(
+				SNAME("object_property_updated"), remote_objects->obj->get_instance_id(), E);
 		}
-	} else {
+	}
+	else {
 		// Full update, because props were added or removed.
 		remote_objects->update();
 	}
@@ -395,22 +433,24 @@ EditorDebuggerRemoteObjects *EditorDebuggerInspector::set_objects(const Array &p
 	return remote_objects;
 }
 
-void EditorDebuggerInspector::clear_remote_inspector() {
+void EditorDebuggerInspector::clear_remote_inspector()
+{
 	if (remote_objects_list.is_empty()) {
 		return;
 	}
 
-	const Object *obj = InspectorDock::get_inspector_singleton()->get_edited_object();
+	const Object* obj = InspectorDock::get_inspector_singleton()->get_edited_object();
 	// Check if the inspector holds remote items, and take it out if so.
 	if (Object::cast_to<EditorDebuggerRemoteObjects>(obj)) {
 		EditorNode::get_singleton()->push_item(nullptr);
 	}
 }
 
-void EditorDebuggerInspector::clear_cache() {
+void EditorDebuggerInspector::clear_cache()
+{
 	clear_remote_inspector();
 
-	for (EditorDebuggerRemoteObjects *robjs : remote_objects_list) {
+	for (EditorDebuggerRemoteObjects* robjs : remote_objects_list) {
 		memdelete(robjs);
 	}
 	remote_objects_list.clear();
@@ -418,11 +458,12 @@ void EditorDebuggerInspector::clear_cache() {
 	remote_dependencies.clear();
 }
 
-void EditorDebuggerInspector::invalidate_selection_from_cache(const TypedArray<uint64_t> &p_ids) {
-	for (EditorDebuggerRemoteObjects *robjs : remote_objects_list) {
+void EditorDebuggerInspector::invalidate_selection_from_cache(const TypedArray<uint64_t>& p_ids)
+{
+	for (EditorDebuggerRemoteObjects* robjs : remote_objects_list) {
 		if (robjs->remote_object_ids == p_ids) {
-			const Object *obj = InspectorDock::get_inspector_singleton()->get_edited_object();
-			if (obj == robjs) {
+			const Object* obj = InspectorDock::get_inspector_singleton()->get_edited_object();
+			if (obj == robjs->obj.get()) {
 				EditorNode::get_singleton()->push_item(nullptr);
 			}
 
@@ -433,7 +474,8 @@ void EditorDebuggerInspector::invalidate_selection_from_cache(const TypedArray<u
 	}
 }
 
-void EditorDebuggerInspector::add_stack_variable(const Array &p_array, int p_offset) {
+void EditorDebuggerInspector::add_stack_variable(const Array& p_array, int p_offset)
+{
 	DebuggerMarshalls::ScriptStackVariable var;
 	var.deserialize(p_array);
 	String n = var.name;
@@ -447,7 +489,8 @@ void EditorDebuggerInspector::add_stack_variable(const Array &p_array, int p_off
 		h = PROPERTY_HINT_OBJECT_ID;
 		hs = var.type_hint;
 
-		// Makes the call stack select the node in the remote tree. See https://github.com/godotengine/godot/issues/79477
+		// Makes the call stack select the node in the remote tree. See
+		// https://github.com/godotengine/godot/issues/79477
 		if (n == "self") {
 			_object_selected(v);
 		}
@@ -455,29 +498,30 @@ void EditorDebuggerInspector::add_stack_variable(const Array &p_array, int p_off
 
 	String type;
 	switch (var.type) {
-		case 0:
-			type = "Locals/";
-			break;
-		case 1:
-			if (n.begins_with("@")) {
-				return; // Skip groups.
-			}
+	case 0:
+		type = "Locals/";
+		break;
+	case 1:
+		if (n.begins_with("@")) {
+			return; // Skip groups.
+		}
 
-			type = "Members/";
-			break;
-		case 2:
-			type = "Globals/";
-			break;
-		case 3:
-			type = "Evaluated/";
-			break;
-		default:
-			type = "Unknown/";
+		type = "Members/";
+		break;
+	case 2:
+		type = "Globals/";
+		break;
+	case 3:
+		type = "Evaluated/";
+		break;
+	default:
+		type = "Unknown/";
 	}
 
 	PropertyInfo pinfo;
 	// Encode special characters to avoid issues with expressions in Evaluator.
-	// Dots are skipped by uri_encode(), but uri_decode() process them correctly when replaced with "%2E".
+	// Dots are skipped by uri_encode(), but uri_decode() process them correctly when replaced with
+	// "%2E".
 	pinfo.name = type + n.uri_encode().replace(".", "%2E");
 	pinfo.type = v.get_type();
 	pinfo.hint = h;
@@ -485,8 +529,9 @@ void EditorDebuggerInspector::add_stack_variable(const Array &p_array, int p_off
 
 	if ((p_offset == -1) || variables->prop_list.is_empty()) {
 		variables->prop_list.push_back(pinfo);
-	} else {
-		List<PropertyInfo>::Element *current = variables->prop_list.front();
+	}
+	else {
+		List<PropertyInfo>::Element* current = variables->prop_list.front();
 		for (int i = 0; i < p_offset; i++) {
 			current = current->next();
 		}
@@ -494,16 +539,18 @@ void EditorDebuggerInspector::add_stack_variable(const Array &p_array, int p_off
 	}
 	variables->prop_values[pinfo.name][0] = v;
 	variables->update();
-	edit(variables);
+	edit(variables->obj.get());
 }
 
-void EditorDebuggerInspector::clear_stack_variables() {
+void EditorDebuggerInspector::clear_stack_variables()
+{
 	variables->clear();
 	variables->update();
 }
 
-String EditorDebuggerInspector::get_stack_variable(const String &p_var) {
-	for (KeyValue<StringName, TypedDictionary<uint64_t, Variant>> &E : variables->prop_values) {
+String EditorDebuggerInspector::get_stack_variable(const String& p_var)
+{
+	for (KeyValue<StringName, TypedDictionary<uint64_t, Variant>>& E : variables->prop_values) {
 		String v = E.key.string();
 		if (v.get_slicec('/', 1) == p_var) {
 			return variables->get_variant(v);
@@ -511,3 +558,5 @@ String EditorDebuggerInspector::get_stack_variable(const String &p_var) {
 	}
 	return String();
 }
+
+

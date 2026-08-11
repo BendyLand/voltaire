@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "editor/themes/editor_scale.h"
@@ -52,16 +53,16 @@ class SubViewport;
 class SubViewportContainer;
 class VBoxContainer;
 
-class Node3DEditorSelectedItem : public Object {
-	VLTRCLASS(Node3DEditorSelectedItem, Object);
-
+class Node3DEditorSelectedItem
+{
 public:
+	mem_unique_ptr<Object> obj;
 	AABB aabb;
 	Transform3D original; // original location when moving
 	Transform3D original_local;
 	Transform3D last_xform; // last transform
 	bool last_xform_dirty;
-	Node3D *sp = nullptr;
+	Node3D* sp = nullptr;
 	RID sbox_instance;
 	RID sbox_instance_offset;
 	RID sbox_instance_xray;
@@ -69,17 +70,20 @@ public:
 	Ref<EditorNode3DGizmo> gizmo;
 	HashMap<int, Transform3D> subgizmos; // Key: Subgizmo ID, Value: Initial subgizmo transform.
 
-	Node3DEditorSelectedItem() {
+	Node3DEditorSelectedItem()
+	{
 		sp = nullptr;
 		last_xform_dirty = true;
 	}
+
 	~Node3DEditorSelectedItem();
 };
 
-class ViewportNavigationControl : public Control {
+class ViewportNavigationControl : public Control
+{
 	VLTRCLASS(ViewportNavigationControl, Control);
 
-	Node3DEditorViewport *viewport = nullptr;
+	Node3DEditorViewport* viewport = nullptr;
 	Vector2i focused_mouse_start;
 	Vector2 focused_pos;
 	bool hovered = false;
@@ -90,7 +94,7 @@ class ViewportNavigationControl : public Control {
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event) override;
 	void _draw();
 	void _process_click(int p_index, Vector2 p_position, bool p_pressed);
 	void _process_drag(int p_index, Vector2 p_position, Vector2 p_relative_position);
@@ -98,26 +102,30 @@ protected:
 
 public:
 	void set_navigation_mode(View3DController::NavigationMode p_nav_mode);
-	void set_viewport(Node3DEditorViewport *p_viewport);
+	void set_viewport(Node3DEditorViewport* p_viewport);
 };
 
-class ViewportRotationControl : public Control {
+class ViewportRotationControl : public Control
+{
 	VLTRCLASS(ViewportRotationControl, Control);
 
-	struct Axis2D {
+	struct Axis2D
+	{
 		Vector2 screen_point;
 		float z_axis = -99.0;
 		int axis = -1;
 		bool is_positive = true;
 	};
 
-	struct Axis2DCompare {
-		_FORCE_INLINE_ bool operator()(const Axis2D &l, const Axis2D &r) const {
+	struct Axis2DCompare
+	{
+		_FORCE_INLINE_ bool operator()(const Axis2D& l, const Axis2D& r) const
+		{
 			return l.z_axis < r.z_axis;
 		}
 	};
 
-	Node3DEditorViewport *viewport = nullptr;
+	Node3DEditorViewport* viewport = nullptr;
 	Vector<Color> axis_colors;
 	Vector<int> axis_menu_options;
 	Vector2i orbiting_mouse_start;
@@ -131,24 +139,28 @@ class ViewportRotationControl : public Control {
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event) override;
 	void _draw();
-	void _draw_axis(const Axis2D &p_axis);
-	void _get_sorted_axis(Vector<Axis2D> &r_axis);
+	void _draw_axis(const Axis2D& p_axis);
+	void _get_sorted_axis(Vector<Axis2D>& r_axis);
 	void _update_focus();
 	void _process_click(int p_index, Vector2 p_position, bool p_pressed);
-	void _process_drag(Ref<InputEventWithModifiers> p_event, int p_index, Vector2 p_position, Vector2 p_relative_position);
+	void _process_drag(Ref<InputEventWithModifiers> p_event, int p_index, Vector2 p_position,
+		Vector2 p_relative_position);
 
 public:
-	void set_viewport(Node3DEditorViewport *p_viewport);
+	void set_viewport(Node3DEditorViewport* p_viewport);
 };
 
-class Node3DEditorViewport : public Control {
+class Node3DEditorViewport : public Control
+{
 	VLTRCLASS(Node3DEditorViewport, Control);
 	friend class Node3DEditor;
 	friend class ViewportNavigationControl;
 	friend class ViewportRotationControl;
-	enum {
+
+	enum
+	{
 		VIEW_TOP,
 		VIEW_BOTTOM,
 		VIEW_LEFT,
@@ -227,53 +239,53 @@ private:
 	double gpu_time_history[FRAME_TIME_HISTORY];
 	int gpu_time_history_index;
 
-	Node *ruler = nullptr;
-	Node3D *ruler_start_point = nullptr;
-	Node3D *ruler_end_point = nullptr;
+	Node* ruler = nullptr;
+	Node3D* ruler_start_point = nullptr;
+	Node3D* ruler_end_point = nullptr;
 	Ref<ImmediateMesh> geometry;
 	Ref<ImmediateMesh> geometry_xray;
-	MeshInstance3D *ruler_line = nullptr;
-	MeshInstance3D *ruler_line_xray = nullptr;
-	Label *ruler_label = nullptr;
+	MeshInstance3D* ruler_line = nullptr;
+	MeshInstance3D* ruler_line_xray = nullptr;
+	Label* ruler_label = nullptr;
 	Ref<StandardMaterial3D> ruler_material;
 	Ref<StandardMaterial3D> ruler_material_xray;
 	Ref<StandardMaterial3D> ruler_triangle_material;
 	Ref<StandardMaterial3D> ruler_triangle_material_xray;
-	MeshInstance3D *ruler_triangle_lines = nullptr;
-	MeshInstance3D *ruler_triangle_lines_xray = nullptr;
-	Label *ruler_label_x = nullptr;
-	Label *ruler_label_y = nullptr;
-	Label *ruler_label_z = nullptr;
+	MeshInstance3D* ruler_triangle_lines = nullptr;
+	MeshInstance3D* ruler_triangle_lines_xray = nullptr;
+	Label* ruler_label_x = nullptr;
+	Label* ruler_label_y = nullptr;
+	Label* ruler_label_z = nullptr;
 
 	int index;
 	void _menu_option(int p_option);
-	Node3D *preview_node = nullptr;
+	Node3D* preview_node = nullptr;
 	bool update_preview_node = false;
 	Point2 preview_node_viewport_pos;
 	Vector3 preview_node_pos;
-	AABB *preview_bounds = nullptr;
+	AABB* preview_bounds = nullptr;
 	Vector<String> selected_files;
-	AcceptDialog *accept = nullptr;
+	AcceptDialog* accept = nullptr;
 
-	Node *target_node = nullptr;
+	Node* target_node = nullptr;
 	Point2 drop_pos;
 
 	ObjectID focused_node_id;
 
-	EditorSelection *editor_selection = nullptr;
+	EditorSelection* editor_selection = nullptr;
 
-	Button *translation_preview_button = nullptr;
-	Button *follow_mode = nullptr;
-	CheckBox *preview_camera = nullptr;
-	CheckBox *pilot_camera = nullptr;
-	SubViewportContainer *subviewport_container = nullptr;
+	Button* translation_preview_button = nullptr;
+	Button* follow_mode = nullptr;
+	CheckBox* preview_camera = nullptr;
+	CheckBox* pilot_camera = nullptr;
+	SubViewportContainer* subviewport_container = nullptr;
 
-	MenuButton *view_display_menu = nullptr;
-	PopupMenu *display_submenu = nullptr;
+	MenuButton* view_display_menu = nullptr;
+	PopupMenu* display_submenu = nullptr;
 
-	Control *surface = nullptr;
-	SubViewport *viewport = nullptr;
-	Camera3D *camera = nullptr;
+	Control* surface = nullptr;
+	SubViewport* viewport = nullptr;
+	Camera3D* camera = nullptr;
 	bool transforming = false;
 	bool transform_gizmo_visible = true;
 	bool collision_reposition = false;
@@ -289,49 +301,55 @@ private:
 	bool vertex_snap_has_source = false;
 	HashMap<ObjectID, Vector3> vertex_snap_original_positions;
 
-	PanelContainer *info_panel = nullptr;
-	Label *info_label = nullptr;
-	Label *cinema_label = nullptr;
-	Label *locked_label = nullptr;
-	Label *zoom_limit_label = nullptr;
+	PanelContainer* info_panel = nullptr;
+	Label* info_label = nullptr;
+	Label* cinema_label = nullptr;
+	Label* locked_label = nullptr;
+	Label* zoom_limit_label = nullptr;
 
-	RichTextLabel *tooltip_panel = nullptr;
+	RichTextLabel* tooltip_panel = nullptr;
 
-	VBoxContainer *top_right_vbox = nullptr;
-	VBoxContainer *bottom_center_vbox = nullptr;
-	ViewportNavigationControl *position_control = nullptr;
-	ViewportNavigationControl *look_control = nullptr;
-	ViewportRotationControl *rotation_control = nullptr;
+	VBoxContainer* top_right_vbox = nullptr;
+	VBoxContainer* bottom_center_vbox = nullptr;
+	ViewportNavigationControl* position_control = nullptr;
+	ViewportNavigationControl* look_control = nullptr;
+	ViewportRotationControl* rotation_control = nullptr;
 	Ref<Gradient> frame_time_gradient;
-	PanelContainer *frame_time_panel = nullptr;
-	VBoxContainer *frame_time_vbox = nullptr;
-	Label *cpu_time_label = nullptr;
-	Label *gpu_time_label = nullptr;
-	Label *fps_label = nullptr;
+	PanelContainer* frame_time_panel = nullptr;
+	VBoxContainer* frame_time_vbox = nullptr;
+	Label* cpu_time_label = nullptr;
+	Label* gpu_time_label = nullptr;
+	Label* fps_label = nullptr;
 
-	struct _RayResult {
-		Node3D *item = nullptr;
+	struct _RayResult
+	{
+		Node3D* item = nullptr;
 		real_t depth = 0;
-		_FORCE_INLINE_ bool operator<(const _RayResult &p_rr) const { return depth < p_rr.depth; }
+
+		_FORCE_INLINE_ bool operator<(const _RayResult& p_rr) const { return depth < p_rr.depth; }
 	};
 
 	void _view_state_changed();
 
 	void _update_name();
-	void _compute_edit(const Point2 &p_point);
+	void _compute_edit(const Point2& p_point);
 	void _clear_selected();
 	bool _is_rotation_arc_visible() const;
 	void _select_clicked(bool p_allow_locked);
-	ObjectID _select_ray(const Point2 &p_pos) const;
-	void _find_items_at_pos(const Point2 &p_pos, Vector<_RayResult> &r_results, bool p_include_locked);
+	ObjectID _select_ray(const Point2& p_pos) const;
+	void _find_items_at_pos(
+		const Point2& p_pos, Vector<_RayResult>& r_results, bool p_include_locked);
 
-	float _min_screen_dist_to_aabb(const AABB &p_aabb, const Transform3D &p_transform, const Point2 &p_cursor) const;
-	bool _find_closest_vertex_on_node(const Point2 &p_screen_pos, Node3D *p_node, float &r_closest_screen_dist, Vector3 &r_vertex_world) const;
-	bool _find_closest_vertex_in_scene(const Point2 &p_screen_pos, float p_threshold, Vector3 &r_vertex_world, const HashMap<ObjectID, Vector3> *p_exclude = nullptr);
-	void _vertex_snap_update_source(const Point2 &p_screen_pos);
+	float _min_screen_dist_to_aabb(
+		const AABB& p_aabb, const Transform3D& p_transform, const Point2& p_cursor) const;
+	bool _find_closest_vertex_on_node(const Point2& p_screen_pos, Node3D* p_node,
+		float& r_closest_screen_dist, Vector3& r_vertex_world) const;
+	bool _find_closest_vertex_in_scene(const Point2& p_screen_pos, float p_threshold,
+		Vector3& r_vertex_world, const HashMap<ObjectID, Vector3>* p_exclude = nullptr);
+	void _vertex_snap_update_source(const Point2& p_screen_pos);
 	void _vertex_snap_commit();
 	void _vertex_snap_cancel();
-	bool _is_vertex_occluded(const Vector3 &p_world_pos, const Vector2 &p_screen_pos) const;
+	bool _is_vertex_occluded(const Vector3& p_world_pos, const Vector2& p_screen_pos) const;
 
 	Transform3D _get_camera_transform() const;
 	int get_selected_count() const;
@@ -341,39 +359,42 @@ private:
 
 	Vector3 _get_camera_position() const;
 	Vector3 _get_camera_normal() const;
-	Vector3 _get_screen_to_space(const Vector3 &p_vector3);
-	Vector<Plane> _build_screen_frustum(const Point2 &p_min, const Point2 &p_max);
+	Vector3 _get_screen_to_space(const Vector3& p_vector3);
+	Vector<Plane> _build_screen_frustum(const Point2& p_min, const Point2& p_max);
 
 	void _select_region();
-	bool _transform_gizmo_select(const Vector2 &p_screenpos, bool p_highlight_only = false);
-	void _transform_gizmo_apply(Node3D *p_node, const Transform3D &p_transform, bool p_local);
+	bool _transform_gizmo_select(const Vector2& p_screenpos, bool p_highlight_only = false);
+	void _transform_gizmo_apply(Node3D* p_node, const Transform3D& p_transform, bool p_local);
 
-	bool _is_shortcut_empty(const String &p_name);
-	bool _is_nav_modifier_pressed(const String &p_name);
+	bool _is_shortcut_empty(const String& p_name);
+	bool _is_nav_modifier_pressed(const String& p_name);
 
 	float get_znear() const;
 	float get_zfar() const;
 	float get_fov() const;
 
-	void _show_tooltip(const String &p_title, const String &p_description) const;
+	void _show_tooltip(const String& p_title, const String& p_description) const;
 
 	ObjectID clicked;
 	ObjectID material_target;
-	Vector<Node3D *> selection_results;
-	Vector<Node3D *> selection_results_menu;
+	Vector<Node3D*> selection_results;
+	Vector<Node3D*> selection_results_menu;
 	bool clicked_wants_append = false;
 	bool selection_in_progress = false;
 	bool movement_threshold_passed = false;
 
-	PopupMenu *selection_menu = nullptr;
+	PopupMenu* selection_menu = nullptr;
 
-	enum TransformMode {
+	enum TransformMode
+	{
 		TRANSFORM_NONE,
 		TRANSFORM_ROTATE,
 		TRANSFORM_TRANSLATE,
 		TRANSFORM_SCALE
 	};
-	enum TransformPlane {
+
+	enum TransformPlane
+	{
 		TRANSFORM_VIEW,
 		TRANSFORM_X_AXIS,
 		TRANSFORM_Y_AXIS,
@@ -382,13 +403,16 @@ private:
 		TRANSFORM_XZ,
 		TRANSFORM_XY,
 	};
-	enum TransformType {
+
+	enum TransformType
+	{
 		POSITION,
 		ROTATION,
 		SCALE,
 	};
 
-	struct EditData {
+	struct EditData
+	{
 		TransformMode mode;
 		TransformPlane plane;
 		Transform3D original;
@@ -423,7 +447,7 @@ private:
 		Vector3 previous_rotation_vector;
 		bool gizmo_initiated = false;
 
-		HashMap<Node3D *, Transform3D> children_original_globals;
+		HashMap<Node3D*, Transform3D> children_original_globals;
 	} _edit;
 
 	Ref<View3DController> view_3d_controller;
@@ -438,14 +462,15 @@ private:
 	real_t zoom_indicator_delay;
 	int zoom_failed_attempts_count = 0;
 
-	RID move_gizmo_instance[3], move_plane_gizmo_instance[3], rotate_gizmo_instance[4], scale_gizmo_instance[3], scale_plane_gizmo_instance[3], axis_gizmo_instance[3];
+	RID move_gizmo_instance[3], move_plane_gizmo_instance[3], rotate_gizmo_instance[4],
+		scale_gizmo_instance[3], scale_plane_gizmo_instance[3], axis_gizmo_instance[3];
 	RID trackball_sphere_instance;
 
 	String last_message;
 	String message;
 	double message_time;
 
-	void set_message(const String &p_message, float p_time = 5);
+	void set_message(const String& p_message, float p_time = 5);
 
 	void _view_settings_confirmed(real_t p_interp_delta);
 	void _update_navigation_controls_visibility();
@@ -461,12 +486,12 @@ private:
 	void _surface_focus_enter();
 	void _surface_focus_exit();
 
-	void input(const Ref<InputEvent> &p_event) override;
-	void _sinput(const Ref<InputEvent> &p_event);
-	Node3DEditor *spatial_editor = nullptr;
+	void input(const Ref<InputEvent>& p_event) override;
+	void _sinput(const Ref<InputEvent>& p_event);
+	Node3DEditor* spatial_editor = nullptr;
 
-	Camera3D *previewing = nullptr;
-	Camera3D *preview = nullptr;
+	Camera3D* previewing = nullptr;
+	Camera3D* preview = nullptr;
 
 	bool previewing_camera = false;
 	bool previewing_cinema = false;
@@ -480,10 +505,10 @@ private:
 	void _pilot_commit_undo_session();
 	void _pilot_tick_undo_session(real_t p_delta);
 
-	bool _is_node_locked(const Node *p_node) const;
+	bool _is_node_locked(const Node* p_node) const;
 	void _preview_exited_scene();
 	void _preview_camera_property_changed();
-	void _sync_cursor_from_transform(const Transform3D &p_transform);
+	void _sync_cursor_from_transform(const Transform3D& p_transform);
 	void _update_centered_labels();
 	void _disable_follow_mode();
 	void _reset_follow_mode_count();
@@ -496,27 +521,30 @@ private:
 	void _selection_menu_hide();
 	void _list_select(Ref<InputEventMouseButton> b);
 
-	Vector3 _get_instance_position(const Point2 &p_pos, Node3D *p_node) const;
-	static AABB _calculate_spatial_bounds(const Node3D *p_parent, bool p_omit_top_level = false, const Transform3D *p_bounds_orientation = nullptr);
+	Vector3 _get_instance_position(const Point2& p_pos, Node3D* p_node) const;
+	static AABB _calculate_spatial_bounds(const Node3D* p_parent, bool p_omit_top_level = false,
+		const Transform3D* p_bounds_orientation = nullptr);
 
-	Node *_sanitize_preview_node(Node *p_node) const;
+	Node* _sanitize_preview_node(Node* p_node) const;
 
-	void _create_preview_node(const Vector<String> &files) const;
+	void _create_preview_node(const Vector<String>& files) const;
 	void _remove_preview_node();
-	bool _apply_preview_material(ObjectID p_target, const Point2 &p_point) const;
+	bool _apply_preview_material(ObjectID p_target, const Point2& p_point) const;
 	void _reset_preview_material() const;
 	void _remove_preview_material();
-	bool _cyclical_dependency_exists(const String &p_target_scene_path, Node *p_desired_node) const;
-	bool _create_instance(Node *p_parent, const String &p_path, const Point2 &p_point);
-	bool _create_audio_node(Node *p_parent, const String &p_path, const Point2 &p_point);
+	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node) const;
+	bool _create_instance(Node* p_parent, const String& p_path, const Point2& p_point);
+	bool _create_audio_node(Node* p_parent, const String& p_path, const Point2& p_point);
 	void _perform_drop_data();
 
-	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
-	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
+	bool can_drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from);
+	void drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from);
 
 	void _project_settings_changed();
 
-	Transform3D _compute_transform(TransformMode p_mode, const Transform3D &p_original, const Transform3D &p_original_local, Vector3 p_motion, double p_extra, bool p_local, bool p_orthogonal, bool p_view_axis);
+	Transform3D _compute_transform(TransformMode p_mode, const Transform3D& p_original,
+		const Transform3D& p_original_local, Vector3 p_motion, double p_extra, bool p_local,
+		bool p_orthogonal, bool p_view_axis);
 
 	void _reset_transform(TransformType p_type);
 
@@ -528,18 +556,22 @@ private:
 	void finish_transform();
 
 	void _load_viewport_inputs();
-	void register_shortcut_action(const String &p_path, const String &p_name, Key p_keycode, bool p_physical = false);
-	void shortcut_changed_callback(const Ref<Shortcut> p_shortcut, const String &p_shortcut_path);
+	void register_shortcut_action(
+		const String& p_path, const String& p_name, Key p_keycode, bool p_physical = false);
+	void shortcut_changed_callback(const Ref<Shortcut> p_shortcut, const String& p_shortcut_path);
 
 	// Supported rendering methods for advanced debug draw mode items.
-	enum SupportedRenderingMethods {
+	enum SupportedRenderingMethods
+	{
 		ALL,
 		FORWARD_PLUS,
 		FORWARD_PLUS_MOBILE,
 	};
 
 	void _set_lock_view_rotation(bool p_lock_rotation);
-	void _add_advanced_debug_draw_mode_item(PopupMenu *p_popup, const String &p_name, int p_value, SupportedRenderingMethods p_rendering_methods = SupportedRenderingMethods::ALL, const String &p_tooltip = "");
+	void _add_advanced_debug_draw_mode_item(PopupMenu* p_popup, const String& p_name, int p_value,
+		SupportedRenderingMethods p_rendering_methods = SupportedRenderingMethods::ALL,
+		const String& p_tooltip = "");
 
 protected:
 	void _notification(int p_what);
@@ -547,40 +579,44 @@ protected:
 
 public:
 	void update_surface() { surface->queue_redraw(); }
+
 	void update_transform_gizmo_view();
 	void update_transform_gizmo_highlight();
 
-	void set_can_preview(Camera3D *p_preview);
-	void switch_preview_camera(Camera3D *p_new_camera);
-	void set_state(const Dictionary &p_state);
+	void set_can_preview(Camera3D* p_preview);
+	void switch_preview_camera(Camera3D* p_new_camera);
+	void set_state(const Dictionary& p_state);
 	Dictionary get_state() const;
 	void reset();
 
-	Vector3 get_ray_pos(const Vector2 &p_pos) const;
-	Vector3 get_ray(const Vector2 &p_pos) const;
-	Point2 point_to_screen(const Vector3 &p_point);
+	Vector3 get_ray_pos(const Vector2& p_pos) const;
+	Vector3 get_ray(const Vector2& p_pos) const;
+	Point2 point_to_screen(const Vector3& p_point);
 
 	void focus_selection();
 
 	void assign_pending_data_pointers(
-			Node3D *p_preview_node,
-			AABB *p_preview_bounds,
-			AcceptDialog *p_accept);
+		Node3D* p_preview_node, AABB* p_preview_bounds, AcceptDialog* p_accept);
 
-	SubViewport *get_viewport_node() { return viewport; }
-	Camera3D *get_camera_3d() { return camera; } // return the default camera object.
-	Control *get_surface() { return surface; }
+	SubViewport* get_viewport_node() { return viewport; }
+
+	Camera3D* get_camera_3d() { return camera; } // return the default camera object.
+
+	Control* get_surface() { return surface; }
+
 	Ref<View3DController> get_controller() { return view_3d_controller; }
 
-	Node3DEditorViewport(Node3DEditor *p_spatial_editor, int p_index);
+	Node3DEditorViewport(Node3DEditor* p_spatial_editor, int p_index);
 	~Node3DEditorViewport();
 };
 
-class Node3DEditorViewportContainer : public MarginContainer {
+class Node3DEditorViewportContainer : public MarginContainer
+{
 	VLTRCLASS(Node3DEditorViewportContainer, MarginContainer);
 
 public:
-	enum View {
+	enum View
+	{
 		VIEW_USE_1_VIEWPORT,
 		VIEW_USE_2_VIEWPORTS,
 		VIEW_USE_2_VIEWPORTS_ALT,
@@ -591,9 +627,9 @@ public:
 
 private:
 	View view = VIEW_USE_1_VIEWPORT;
-	SplitContainer *main_split = nullptr;
-	SplitContainer *first_split = nullptr;
-	SplitContainer *second_split = nullptr;
+	SplitContainer* main_split = nullptr;
+	SplitContainer* first_split = nullptr;
+	SplitContainer* second_split = nullptr;
 
 	void _update_split_drag_margin();
 
@@ -604,10 +640,12 @@ public:
 	void set_view(View p_view);
 	View get_view();
 
-	void add_viewport(Node3DEditorViewport *p_viewport, int p_index);
+	void add_viewport(Node3DEditorViewport* p_viewport, int p_index);
 
 	Dictionary get_split_state() const;
-	void set_split_state(const Dictionary &p_state);
+	void set_split_state(const Dictionary& p_state);
 
 	Node3DEditorViewportContainer();
 };
+
+

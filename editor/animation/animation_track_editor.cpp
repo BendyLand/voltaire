@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "animation_track_editor.h"
-
 #include "core/config/project_settings.h"
 #include "core/error/error_macros.h"
 #include "core/input/input.h"
@@ -72,35 +71,29 @@
 constexpr double FPS_DECIMAL = 1.0;
 constexpr double SECOND_DECIMAL = 0.0001;
 
-void AnimationTrackKeyEdit::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_update_obj"), &AnimationTrackKeyEdit::_update_obj);
-	ClassDB::bind_method(D_METHOD("_key_ofs_changed"), &AnimationTrackKeyEdit::_key_ofs_changed);
-	ClassDB::bind_method(D_METHOD("_hide_script_from_inspector"), &AnimationTrackKeyEdit::_hide_script_from_inspector);
-	ClassDB::bind_method(D_METHOD("_hide_metadata_from_inspector"), &AnimationTrackKeyEdit::_hide_metadata_from_inspector);
-	ClassDB::bind_method(D_METHOD("get_root_path"), &AnimationTrackKeyEdit::get_root_path);
-	ClassDB::bind_method(D_METHOD("_dont_undo_redo"), &AnimationTrackKeyEdit::_dont_undo_redo);
-	ClassDB::bind_method(D_METHOD("_is_read_only"), &AnimationTrackKeyEdit::_is_read_only);
-}
+void AnimationTrackKeyEdit::_bind_methods() {}
 
-void AnimationTrackKeyEdit::_fix_node_path(Variant &value) {
+void AnimationTrackKeyEdit::_fix_node_path(Variant& value)
+{
 	NodePath np = value;
 
 	if (np == NodePath()) {
 		return;
 	}
 
-	Node *root = EditorNode::get_singleton()->get_tree()->get_root();
+	Node* root = EditorNode::get_singleton()->get_tree()->get_root();
 
-	Node *np_node = root->get_node_or_null(np);
+	Node* np_node = root->get_node_or_null(np);
 	ERR_FAIL_NULL(np_node);
 
-	Node *edited_node = root->get_node_or_null(base);
+	Node* edited_node = root->get_node_or_null(base);
 	ERR_FAIL_NULL(edited_node);
 
 	value = edited_node->get_path_to(np_node);
 }
 
-void AnimationTrackKeyEdit::_update_obj(const Ref<Animation> &p_anim) {
+void AnimationTrackKeyEdit::_update_obj(const Ref<Animation>& p_anim)
+{
 	if (setting || animation != p_anim) {
 		return;
 	}
@@ -108,7 +101,8 @@ void AnimationTrackKeyEdit::_update_obj(const Ref<Animation> &p_anim) {
 	notify_change();
 }
 
-void AnimationTrackKeyEdit::_key_ofs_changed(const Ref<Animation> &p_anim, float from, float to) {
+void AnimationTrackKeyEdit::_key_ofs_changed(const Ref<Animation>& p_anim, float from, float to)
+{
 	if (animation != p_anim || from != key_ofs) {
 		return;
 	}
@@ -122,7 +116,8 @@ void AnimationTrackKeyEdit::_key_ofs_changed(const Ref<Animation> &p_anim, float
 	notify_change();
 }
 
-bool AnimationTrackKeyEdit::_set(const StringName &p_name, const Variant &p_value) {
+bool AnimationTrackKeyEdit::_set(const StringName& p_name, const Variant& p_value)
+{
 	int key = animation->track_find_key(track, key_ofs, Animation::FIND_MODE_APPROX);
 	ERR_FAIL_COND_V(key == -1, false);
 
@@ -132,13 +127,14 @@ bool AnimationTrackKeyEdit::_set(const StringName &p_name, const Variant &p_valu
 		float prev_val = animation->track_get_key_transition(track, key);
 		setting = true;
 
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Animation Change Transition"), UndoRedo::MERGE_ENDS);
 		undo_redo->add_do_method(animation.ptr(), "track_set_key_transition", track, key, val);
-		undo_redo->add_undo_method(animation.ptr(), "track_set_key_transition", track, key, prev_val);
-		undo_redo->add_do_method(this, "_update_obj", animation);
-		undo_redo->add_undo_method(this, "_update_obj", animation);
-		AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+		undo_redo->add_undo_method(
+			animation.ptr(), "track_set_key_transition", track, key, prev_val);
+		undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+		undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+		AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 		if (ape) {
 			undo_redo->add_do_method(ape, "_animation_update_key_frame");
 			undo_redo->add_undo_method(ape, "_animation_update_key_frame");
@@ -149,297 +145,323 @@ bool AnimationTrackKeyEdit::_set(const StringName &p_name, const Variant &p_valu
 		return true;
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	switch (animation->track_get_type(track)) {
-		case Animation::TYPE_POSITION_3D:
-		case Animation::TYPE_ROTATION_3D:
-		case Animation::TYPE_SCALE_3D: {
-			if (name == "position" || name == "rotation" || name == "scale") {
-				Variant old = animation->track_get_key_value(track, key);
-				setting = true;
-				String action_name;
-				switch (animation->track_get_type(track)) {
-					case Animation::TYPE_POSITION_3D:
-						action_name = TTR("Animation Change Position3D");
-						break;
-					case Animation::TYPE_ROTATION_3D:
-						action_name = TTR("Animation Change Rotation3D");
-						break;
-					case Animation::TYPE_SCALE_3D:
-						action_name = TTR("Animation Change Scale3D");
-						break;
-					default: {
-					}
-				}
-
-				undo_redo->create_action(action_name);
-				undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, p_value);
-				undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, old);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				undo_redo->commit_action();
-
-				setting = false;
-				return true;
+	case Animation::TYPE_POSITION_3D:
+	case Animation::TYPE_ROTATION_3D:
+	case Animation::TYPE_SCALE_3D: {
+		if (name == "position" || name == "rotation" || name == "scale") {
+			Variant old = animation->track_get_key_value(track, key);
+			setting = true;
+			String action_name;
+			switch (animation->track_get_type(track)) {
+			case Animation::TYPE_POSITION_3D:
+				action_name = TTR("Animation Change Position3D");
+				break;
+			case Animation::TYPE_ROTATION_3D:
+				action_name = TTR("Animation Change Rotation3D");
+				break;
+			case Animation::TYPE_SCALE_3D:
+				action_name = TTR("Animation Change Scale3D");
+				break;
+			default: {
+			}
 			}
 
-		} break;
-		case Animation::TYPE_BLEND_SHAPE:
-		case Animation::TYPE_VALUE: {
-			if (name == "value") {
-				Variant value = p_value;
+			undo_redo->create_action(action_name);
+			undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, p_value);
+			undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, old);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->commit_action();
 
+			setting = false;
+			return true;
+		}
+
+	} break;
+	case Animation::TYPE_BLEND_SHAPE:
+	case Animation::TYPE_VALUE: {
+		if (name == "value") {
+			Variant value = p_value;
+
+			if (value.get_type() == Variant::NODE_PATH) {
+				_fix_node_path(value);
+			}
+
+			setting = true;
+
+			undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+			Variant prev = animation->track_get_key_value(track, key);
+			undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, value);
+			undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, prev);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+			if (ape) {
+				undo_redo->add_do_method(ape, "_animation_update_key_frame");
+				undo_redo->add_undo_method(ape, "_animation_update_key_frame");
+			}
+			undo_redo->commit_action();
+
+			setting = false;
+			return true;
+		}
+	} break;
+	case Animation::TYPE_METHOD: {
+		Dictionary d_old = animation->track_get_key_value(track, key);
+		Dictionary d_new = d_old.duplicate();
+
+		bool change_notify_deserved = false;
+		bool mergeable = false;
+
+		if (name == "name") {
+			d_new["method"] = p_value;
+		}
+		else if (name == "arg_count") {
+			Vector<Variant> args = d_old["args"];
+			args.resize(p_value);
+			d_new["args"] = args;
+			change_notify_deserved = true;
+		}
+		else if (name.begins_with("args/")) {
+			Vector<Variant> args = d_old["args"];
+			int idx = name.get_slicec('/', 1).to_int();
+			ERR_FAIL_INDEX_V(idx, args.size(), false);
+
+			String what = name.get_slicec('/', 2);
+			if (what == "type") {
+				Variant::Type t = Variant::Type(int(p_value));
+
+				if (t != args[idx].get_type()) {
+					Callable::CallError err;
+					if (Variant::can_convert_strict(args[idx].get_type(), t)) {
+						Variant old = args[idx];
+						Variant* ptrs[1] = {&old};
+						Variant::construct(t, args.write[idx], (const Variant**)ptrs, 1, err);
+					}
+					else {
+						Variant::construct(t, args.write[idx], nullptr, 0, err);
+					}
+					change_notify_deserved = true;
+					d_new["args"] = args;
+				}
+			}
+			else if (what == "value") {
+				Variant value = p_value;
 				if (value.get_type() == Variant::NODE_PATH) {
 					_fix_node_path(value);
 				}
 
-				setting = true;
-
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-				Variant prev = animation->track_get_key_value(track, key);
-				undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, value);
-				undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, prev);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-				if (ape) {
-					undo_redo->add_do_method(ape, "_animation_update_key_frame");
-					undo_redo->add_undo_method(ape, "_animation_update_key_frame");
-				}
-				undo_redo->commit_action();
-
-				setting = false;
-				return true;
-			}
-		} break;
-		case Animation::TYPE_METHOD: {
-			Dictionary d_old = animation->track_get_key_value(track, key);
-			Dictionary d_new = d_old.duplicate();
-
-			bool change_notify_deserved = false;
-			bool mergeable = false;
-
-			if (name == "name") {
-				d_new["method"] = p_value;
-			} else if (name == "arg_count") {
-				Vector<Variant> args = d_old["args"];
-				args.resize(p_value);
+				args.write[idx] = value;
 				d_new["args"] = args;
-				change_notify_deserved = true;
-			} else if (name.begins_with("args/")) {
-				Vector<Variant> args = d_old["args"];
-				int idx = name.get_slicec('/', 1).to_int();
-				ERR_FAIL_INDEX_V(idx, args.size(), false);
-
-				String what = name.get_slicec('/', 2);
-				if (what == "type") {
-					Variant::Type t = Variant::Type(int(p_value));
-
-					if (t != args[idx].get_type()) {
-						Callable::CallError err;
-						if (Variant::can_convert_strict(args[idx].get_type(), t)) {
-							Variant old = args[idx];
-							Variant *ptrs[1] = { &old };
-							Variant::construct(t, args.write[idx], (const Variant **)ptrs, 1, err);
-						} else {
-							Variant::construct(t, args.write[idx], nullptr, 0, err);
-						}
-						change_notify_deserved = true;
-						d_new["args"] = args;
-					}
-				} else if (what == "value") {
-					Variant value = p_value;
-					if (value.get_type() == Variant::NODE_PATH) {
-						_fix_node_path(value);
-					}
-
-					args.write[idx] = value;
-					d_new["args"] = args;
-					mergeable = true;
-				}
+				mergeable = true;
 			}
+		}
 
-			if (mergeable) {
-				undo_redo->create_action(TTR("Animation Change Call"), UndoRedo::MERGE_ENDS);
-			} else {
-				undo_redo->create_action(TTR("Animation Change Call"));
-			}
+		if (mergeable) {
+			undo_redo->create_action(TTR("Animation Change Call"), UndoRedo::MERGE_ENDS);
+		}
+		else {
+			undo_redo->create_action(TTR("Animation Change Call"));
+		}
+
+		setting = true;
+		undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, d_new);
+		undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, d_old);
+		undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+		undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+		undo_redo->commit_action();
+
+		setting = false;
+		if (change_notify_deserved) {
+			notify_change();
+		}
+		return true;
+	} break;
+	case Animation::TYPE_BEZIER: {
+		if (name == "value") {
+			const Variant& value = p_value;
 
 			setting = true;
-			undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, d_new);
-			undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, d_old);
-			undo_redo->add_do_method(this, "_update_obj", animation);
-			undo_redo->add_undo_method(this, "_update_obj", animation);
+			undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+			float prev = animation->bezier_track_get_key_value(track, key);
+			undo_redo->add_do_method(
+				animation.ptr(), "bezier_track_set_key_value", track, key, value);
+			undo_redo->add_undo_method(
+				animation.ptr(), "bezier_track_set_key_value", track, key, prev);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+			if (ape) {
+				undo_redo->add_do_method(ape, "_animation_update_key_frame");
+				undo_redo->add_undo_method(ape, "_animation_update_key_frame");
+			}
 			undo_redo->commit_action();
 
 			setting = false;
-			if (change_notify_deserved) {
-				notify_change();
-			}
 			return true;
-		} break;
-		case Animation::TYPE_BEZIER: {
-			if (name == "value") {
-				const Variant &value = p_value;
+		}
 
-				setting = true;
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-				float prev = animation->bezier_track_get_key_value(track, key);
-				undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_value", track, key, value);
-				undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_value", track, key, prev);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-				if (ape) {
-					undo_redo->add_do_method(ape, "_animation_update_key_frame");
-					undo_redo->add_undo_method(ape, "_animation_update_key_frame");
-				}
-				undo_redo->commit_action();
+		if (name == "in_handle") {
+			const Variant& value = p_value;
 
-				setting = false;
-				return true;
+			setting = true;
+			undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+			Vector2 prev = animation->bezier_track_get_key_in_handle(track, key);
+			undo_redo->add_do_method(
+				animation.ptr(), "bezier_track_set_key_in_handle", track, key, value);
+			undo_redo->add_undo_method(
+				animation.ptr(), "bezier_track_set_key_in_handle", track, key, prev);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+			if (ape) {
+				undo_redo->add_do_method(ape, "_animation_update_key_frame");
+				undo_redo->add_undo_method(ape, "_animation_update_key_frame");
 			}
+			undo_redo->commit_action();
 
-			if (name == "in_handle") {
-				const Variant &value = p_value;
+			setting = false;
+			return true;
+		}
 
-				setting = true;
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-				Vector2 prev = animation->bezier_track_get_key_in_handle(track, key);
-				undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_in_handle", track, key, value);
-				undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_in_handle", track, key, prev);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-				if (ape) {
-					undo_redo->add_do_method(ape, "_animation_update_key_frame");
-					undo_redo->add_undo_method(ape, "_animation_update_key_frame");
-				}
-				undo_redo->commit_action();
+		if (name == "out_handle") {
+			const Variant& value = p_value;
 
-				setting = false;
-				return true;
+			setting = true;
+			undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+			Vector2 prev = animation->bezier_track_get_key_out_handle(track, key);
+			undo_redo->add_do_method(
+				animation.ptr(), "bezier_track_set_key_out_handle", track, key, value);
+			undo_redo->add_undo_method(
+				animation.ptr(), "bezier_track_set_key_out_handle", track, key, prev);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+			if (ape) {
+				undo_redo->add_do_method(ape, "_animation_update_key_frame");
+				undo_redo->add_undo_method(ape, "_animation_update_key_frame");
 			}
+			undo_redo->commit_action();
 
-			if (name == "out_handle") {
-				const Variant &value = p_value;
+			setting = false;
+			return true;
+		}
 
-				setting = true;
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-				Vector2 prev = animation->bezier_track_get_key_out_handle(track, key);
-				undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_out_handle", track, key, value);
-				undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_out_handle", track, key, prev);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-				if (ape) {
-					undo_redo->add_do_method(ape, "_animation_update_key_frame");
-					undo_redo->add_undo_method(ape, "_animation_update_key_frame");
-				}
-				undo_redo->commit_action();
+		if (name == "handle_mode") {
+			const Variant& value = p_value;
 
-				setting = false;
-				return true;
+			setting = true;
+			undo_redo->create_action(
+				TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS, animation.ptr());
+			int prev_mode = animation->bezier_track_get_key_handle_mode(track, key);
+			Vector2 prev_in_handle = animation->bezier_track_get_key_in_handle(track, key);
+			Vector2 prev_out_handle = animation->bezier_track_get_key_out_handle(track, key);
+			undo_redo->add_do_method(
+				editor, "_bezier_track_set_key_handle_mode", animation.ptr(), track, key, value);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(editor, "_bezier_track_set_key_handle_mode", animation.ptr(),
+				track, key, prev_mode);
+			undo_redo->add_undo_method(
+				animation.ptr(), "bezier_track_set_key_in_handle", track, key, prev_in_handle);
+			undo_redo->add_undo_method(
+				animation.ptr(), "bezier_track_set_key_out_handle", track, key, prev_out_handle);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+			if (ape) {
+				undo_redo->add_do_method(ape, "_animation_update_key_frame");
+				undo_redo->add_undo_method(ape, "_animation_update_key_frame");
 			}
+			undo_redo->commit_action();
 
-			if (name == "handle_mode") {
-				const Variant &value = p_value;
+			setting = false;
+			return true;
+		}
+	} break;
+	case Animation::TYPE_AUDIO: {
+		if (name == "stream") {
+			Ref<AudioStream> stream = p_value;
 
-				setting = true;
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS, animation.ptr());
-				int prev_mode = animation->bezier_track_get_key_handle_mode(track, key);
-				Vector2 prev_in_handle = animation->bezier_track_get_key_in_handle(track, key);
-				Vector2 prev_out_handle = animation->bezier_track_get_key_out_handle(track, key);
-				undo_redo->add_do_method(editor, "_bezier_track_set_key_handle_mode", animation.ptr(), track, key, value);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(editor, "_bezier_track_set_key_handle_mode", animation.ptr(), track, key, prev_mode);
-				undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_in_handle", track, key, prev_in_handle);
-				undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_out_handle", track, key, prev_out_handle);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-				if (ape) {
-					undo_redo->add_do_method(ape, "_animation_update_key_frame");
-					undo_redo->add_undo_method(ape, "_animation_update_key_frame");
-				}
-				undo_redo->commit_action();
+			setting = true;
+			undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+			Ref<Resource> prev = animation->audio_track_get_key_stream(track, key);
+			undo_redo->add_do_method(
+				animation.ptr(), "audio_track_set_key_stream", track, key, stream);
+			undo_redo->add_undo_method(
+				animation.ptr(), "audio_track_set_key_stream", track, key, prev);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->commit_action();
 
-				setting = false;
-				return true;
-			}
-		} break;
-		case Animation::TYPE_AUDIO: {
-			if (name == "stream") {
-				Ref<AudioStream> stream = p_value;
+			setting = false;
+			notify_change(); // To update limits for `start_offset`/`end_offset` sliders (they
+							 // depend on the stream length).
+			return true;
+		}
 
-				setting = true;
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-				Ref<Resource> prev = animation->audio_track_get_key_stream(track, key);
-				undo_redo->add_do_method(animation.ptr(), "audio_track_set_key_stream", track, key, stream);
-				undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_stream", track, key, prev);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				undo_redo->commit_action();
+		if (name == "start_offset") {
+			float value = p_value;
 
-				setting = false;
-				notify_change(); // To update limits for `start_offset`/`end_offset` sliders (they depend on the stream length).
-				return true;
-			}
+			setting = true;
+			undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+			float prev = animation->audio_track_get_key_start_offset(track, key);
+			undo_redo->add_do_method(
+				animation.ptr(), "audio_track_set_key_start_offset", track, key, value);
+			undo_redo->add_undo_method(
+				animation.ptr(), "audio_track_set_key_start_offset", track, key, prev);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->commit_action();
 
-			if (name == "start_offset") {
-				float value = p_value;
+			setting = false;
+			return true;
+		}
 
-				setting = true;
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-				float prev = animation->audio_track_get_key_start_offset(track, key);
-				undo_redo->add_do_method(animation.ptr(), "audio_track_set_key_start_offset", track, key, value);
-				undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_start_offset", track, key, prev);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				undo_redo->commit_action();
+		if (name == "end_offset") {
+			float value = p_value;
 
-				setting = false;
-				return true;
-			}
+			setting = true;
+			undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+			float prev = animation->audio_track_get_key_end_offset(track, key);
+			undo_redo->add_do_method(
+				animation.ptr(), "audio_track_set_key_end_offset", track, key, value);
+			undo_redo->add_undo_method(
+				animation.ptr(), "audio_track_set_key_end_offset", track, key, prev);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->commit_action();
 
-			if (name == "end_offset") {
-				float value = p_value;
+			setting = false;
+			return true;
+		}
+	} break;
+	case Animation::TYPE_ANIMATION: {
+		if (name == "animation") {
+			StringName anim_name = p_value;
 
-				setting = true;
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-				float prev = animation->audio_track_get_key_end_offset(track, key);
-				undo_redo->add_do_method(animation.ptr(), "audio_track_set_key_end_offset", track, key, value);
-				undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_end_offset", track, key, prev);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				undo_redo->commit_action();
+			setting = true;
+			undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+			StringName prev = animation->animation_track_get_key_animation(track, key);
+			undo_redo->add_do_method(
+				animation.ptr(), "animation_track_set_key_animation", track, key, anim_name);
+			undo_redo->add_undo_method(
+				animation.ptr(), "animation_track_set_key_animation", track, key, prev);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->commit_action();
 
-				setting = false;
-				return true;
-			}
-		} break;
-		case Animation::TYPE_ANIMATION: {
-			if (name == "animation") {
-				StringName anim_name = p_value;
-
-				setting = true;
-				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-				StringName prev = animation->animation_track_get_key_animation(track, key);
-				undo_redo->add_do_method(animation.ptr(), "animation_track_set_key_animation", track, key, anim_name);
-				undo_redo->add_undo_method(animation.ptr(), "animation_track_set_key_animation", track, key, prev);
-				undo_redo->add_do_method(this, "_update_obj", animation);
-				undo_redo->add_undo_method(this, "_update_obj", animation);
-				undo_redo->commit_action();
-
-				setting = false;
-				return true;
-			}
-		} break;
+			setting = false;
+			return true;
+		}
+	} break;
 	}
 
 	return false;
 }
 
-bool AnimationTrackKeyEdit::_get(const StringName &p_name, Variant &r_ret) const {
+bool AnimationTrackKeyEdit::_get(const StringName& p_name, Variant& r_ret) const
+{
 	int key = animation->track_find_key(track, key_ofs, Animation::FIND_MODE_APPROX);
 	ERR_FAIL_COND_V(key == -1, false);
 
@@ -450,109 +472,110 @@ bool AnimationTrackKeyEdit::_get(const StringName &p_name, Variant &r_ret) const
 	}
 
 	switch (animation->track_get_type(track)) {
-		case Animation::TYPE_POSITION_3D:
-		case Animation::TYPE_ROTATION_3D:
-		case Animation::TYPE_SCALE_3D: {
-			if (name == "position" || name == "rotation" || name == "scale") {
-				r_ret = animation->track_get_key_value(track, key);
-				return true;
-			}
-		} break;
-		case Animation::TYPE_BLEND_SHAPE:
-		case Animation::TYPE_VALUE: {
-			if (name == "value") {
-				r_ret = animation->track_get_key_value(track, key);
-				return true;
-			}
+	case Animation::TYPE_POSITION_3D:
+	case Animation::TYPE_ROTATION_3D:
+	case Animation::TYPE_SCALE_3D: {
+		if (name == "position" || name == "rotation" || name == "scale") {
+			r_ret = animation->track_get_key_value(track, key);
+			return true;
+		}
+	} break;
+	case Animation::TYPE_BLEND_SHAPE:
+	case Animation::TYPE_VALUE: {
+		if (name == "value") {
+			r_ret = animation->track_get_key_value(track, key);
+			return true;
+		}
 
-		} break;
-		case Animation::TYPE_METHOD: {
-			Dictionary d = animation->track_get_key_value(track, key);
+	} break;
+	case Animation::TYPE_METHOD: {
+		Dictionary d = animation->track_get_key_value(track, key);
 
-			if (name == "name") {
-				ERR_FAIL_COND_V(!d.has("method"), false);
-				r_ret = d["method"];
-				return true;
-			}
+		if (name == "name") {
+			ERR_FAIL_COND_V(!d.has("method"), false);
+			r_ret = d["method"];
+			return true;
+		}
 
-			ERR_FAIL_COND_V(!d.has("args"), false);
+		ERR_FAIL_COND_V(!d.has("args"), false);
 
-			Vector<Variant> args = d["args"];
+		Vector<Variant> args = d["args"];
 
-			if (name == "arg_count") {
-				r_ret = args.size();
-				return true;
-			}
+		if (name == "arg_count") {
+			r_ret = args.size();
+			return true;
+		}
 
-			if (name.begins_with("args/")) {
-				int idx = name.get_slicec('/', 1).to_int();
-				ERR_FAIL_INDEX_V(idx, args.size(), false);
+		if (name.begins_with("args/")) {
+			int idx = name.get_slicec('/', 1).to_int();
+			ERR_FAIL_INDEX_V(idx, args.size(), false);
 
-				String what = name.get_slicec('/', 2);
-				if (what == "type") {
-					r_ret = args[idx].get_type();
-					return true;
-				}
-
-				if (what == "value") {
-					r_ret = args[idx];
-					return true;
-				}
-			}
-
-		} break;
-		case Animation::TYPE_BEZIER: {
-			if (name == "value") {
-				r_ret = animation->bezier_track_get_key_value(track, key);
+			String what = name.get_slicec('/', 2);
+			if (what == "type") {
+				r_ret = args[idx].get_type();
 				return true;
 			}
 
-			if (name == "in_handle") {
-				r_ret = animation->bezier_track_get_key_in_handle(track, key);
+			if (what == "value") {
+				r_ret = args[idx];
 				return true;
 			}
+		}
 
-			if (name == "out_handle") {
-				r_ret = animation->bezier_track_get_key_out_handle(track, key);
-				return true;
-			}
+	} break;
+	case Animation::TYPE_BEZIER: {
+		if (name == "value") {
+			r_ret = animation->bezier_track_get_key_value(track, key);
+			return true;
+		}
 
-			if (name == "handle_mode") {
-				r_ret = animation->bezier_track_get_key_handle_mode(track, key);
-				return true;
-			}
+		if (name == "in_handle") {
+			r_ret = animation->bezier_track_get_key_in_handle(track, key);
+			return true;
+		}
 
-		} break;
-		case Animation::TYPE_AUDIO: {
-			if (name == "stream") {
-				r_ret = animation->audio_track_get_key_stream(track, key);
-				return true;
-			}
+		if (name == "out_handle") {
+			r_ret = animation->bezier_track_get_key_out_handle(track, key);
+			return true;
+		}
 
-			if (name == "start_offset") {
-				r_ret = animation->audio_track_get_key_start_offset(track, key);
-				return true;
-			}
+		if (name == "handle_mode") {
+			r_ret = animation->bezier_track_get_key_handle_mode(track, key);
+			return true;
+		}
 
-			if (name == "end_offset") {
-				r_ret = animation->audio_track_get_key_end_offset(track, key);
-				return true;
-			}
+	} break;
+	case Animation::TYPE_AUDIO: {
+		if (name == "stream") {
+			r_ret = animation->audio_track_get_key_stream(track, key);
+			return true;
+		}
 
-		} break;
-		case Animation::TYPE_ANIMATION: {
-			if (name == "animation") {
-				r_ret = animation->animation_track_get_key_animation(track, key);
-				return true;
-			}
+		if (name == "start_offset") {
+			r_ret = animation->audio_track_get_key_start_offset(track, key);
+			return true;
+		}
 
-		} break;
+		if (name == "end_offset") {
+			r_ret = animation->audio_track_get_key_end_offset(track, key);
+			return true;
+		}
+
+	} break;
+	case Animation::TYPE_ANIMATION: {
+		if (name == "animation") {
+			r_ret = animation->animation_track_get_key_animation(track, key);
+			return true;
+		}
+
+	} break;
 	}
 
 	return false;
 }
 
-void AnimationTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) const {
+void AnimationTrackKeyEdit::_get_property_list(List<PropertyInfo>* p_list) const
+{
 	if (animation.is_null()) {
 		return;
 	}
@@ -562,112 +585,127 @@ void AnimationTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) const
 	ERR_FAIL_COND(key == -1);
 
 	switch (animation->track_get_type(track)) {
-		case Animation::TYPE_POSITION_3D: {
-			p_list->push_back(PropertyInfo(Variant::VECTOR3, PNAME("position")));
-		} break;
-		case Animation::TYPE_ROTATION_3D: {
-			p_list->push_back(PropertyInfo(Variant::QUATERNION, PNAME("rotation")));
-		} break;
-		case Animation::TYPE_SCALE_3D: {
-			p_list->push_back(PropertyInfo(Variant::VECTOR3, PNAME("scale")));
-		} break;
-		case Animation::TYPE_BLEND_SHAPE: {
-			p_list->push_back(PropertyInfo(Variant::FLOAT, PNAME("value")));
-		} break;
-		case Animation::TYPE_VALUE: {
-			Variant v = animation->track_get_key_value(track, key);
+	case Animation::TYPE_POSITION_3D: {
+		p_list->push_back(PropertyInfo(Variant::VECTOR3, PNAME("position")));
+	} break;
+	case Animation::TYPE_ROTATION_3D: {
+		p_list->push_back(PropertyInfo(Variant::QUATERNION, PNAME("rotation")));
+	} break;
+	case Animation::TYPE_SCALE_3D: {
+		p_list->push_back(PropertyInfo(Variant::VECTOR3, PNAME("scale")));
+	} break;
+	case Animation::TYPE_BLEND_SHAPE: {
+		p_list->push_back(PropertyInfo(Variant::FLOAT, PNAME("value")));
+	} break;
+	case Animation::TYPE_VALUE: {
+		Variant v = animation->track_get_key_value(track, key);
 
-			if (hint.type != Variant::NIL) {
-				PropertyInfo pi = hint;
-				pi.name = PNAME("value");
-				p_list->push_back(pi);
-			} else {
-				PropertyHint val_hint = PROPERTY_HINT_NONE;
-				String val_hint_string;
+		if (hint.type != Variant::NIL) {
+			PropertyInfo pi = hint;
+			pi.name = PNAME("value");
+			p_list->push_back(pi);
+		}
+		else {
+			PropertyHint val_hint = PROPERTY_HINT_NONE;
+			String val_hint_string;
 
-				if (v.get_type() == Variant::OBJECT) {
-					// Could actually check the object property if exists..? Yes I will!
-					Ref<Resource> res = v;
-					if (res.is_valid()) {
-						val_hint = PROPERTY_HINT_RESOURCE_TYPE;
-						val_hint_string = res->get_class();
+			if (v.get_type() == Variant::OBJECT) {
+				// Could actually check the object property if exists..? Yes I will!
+				Ref<Resource> res = v;
+				if (res.is_valid()) {
+					val_hint = PROPERTY_HINT_RESOURCE_TYPE;
+					val_hint_string = res->get_class();
+				}
+			}
+
+			if (v.get_type() != Variant::NIL) {
+				p_list->push_back(
+					PropertyInfo(v.get_type(), PNAME("value"), val_hint, val_hint_string));
+			}
+		}
+
+	} break;
+	case Animation::TYPE_METHOD: {
+		p_list->push_back(PropertyInfo(Variant::STRING_NAME, PNAME("name")));
+		p_list->push_back(PropertyInfo(
+			Variant::INT, PNAME("arg_count"), PROPERTY_HINT_RANGE, "0,32,1,or_greater"));
+
+		Dictionary d = animation->track_get_key_value(track, key);
+		ERR_FAIL_COND(!d.has("args"));
+		Vector<Variant> args = d["args"];
+		String vtypes;
+		for (int i = 0; i < Variant::VARIANT_MAX; i++) {
+			if (i > 0) {
+				vtypes += ",";
+			}
+			vtypes += Variant::get_type_name(Variant::Type(i));
+		}
+
+		for (int i = 0; i < args.size(); i++) {
+			p_list->push_back(PropertyInfo(Variant::INT,
+				vformat("%s/%d/%s", PNAME("args"), i, PNAME("type")), PROPERTY_HINT_ENUM, vtypes));
+			if (args[i].get_type() != Variant::NIL) {
+				p_list->push_back(PropertyInfo(
+					args[i].get_type(), vformat("%s/%d/%s", PNAME("args"), i, PNAME("value"))));
+			}
+		}
+
+	} break;
+	case Animation::TYPE_BEZIER: {
+		Animation::HandleMode hm = animation->bezier_track_get_key_handle_mode(track, key);
+		p_list->push_back(PropertyInfo(Variant::FLOAT, PNAME("value")));
+		if (hm == Animation::HANDLE_MODE_LINEAR) {
+			p_list->push_back(PropertyInfo(Variant::VECTOR2, PNAME("in_handle"), PROPERTY_HINT_NONE,
+				"", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY));
+			p_list->push_back(PropertyInfo(Variant::VECTOR2, PNAME("out_handle"),
+				PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY));
+		}
+		else {
+			p_list->push_back(PropertyInfo(Variant::VECTOR2, PNAME("in_handle")));
+			p_list->push_back(PropertyInfo(Variant::VECTOR2, PNAME("out_handle")));
+		}
+		p_list->push_back(PropertyInfo(Variant::INT, PNAME("handle_mode"), PROPERTY_HINT_ENUM,
+			"Free,Linear,Balanced,Mirrored"));
+
+	} break;
+	case Animation::TYPE_AUDIO: {
+		p_list->push_back(PropertyInfo(Variant::OBJECT, PNAME("stream"),
+			PROPERTY_HINT_RESOURCE_TYPE, AudioStream::get_class_static()));
+		Ref<AudioStream> audio_stream = animation->audio_track_get_key_stream(track, key);
+		String hint_string = vformat("0,%.4f,0.0001,or_greater",
+			audio_stream.is_valid() ? audio_stream->get_length() : 3600.0);
+		p_list->push_back(
+			PropertyInfo(Variant::FLOAT, PNAME("start_offset"), PROPERTY_HINT_RANGE, hint_string));
+		p_list->push_back(
+			PropertyInfo(Variant::FLOAT, PNAME("end_offset"), PROPERTY_HINT_RANGE, hint_string));
+
+	} break;
+	case Animation::TYPE_ANIMATION: {
+		String animations;
+
+		if (root_path) {
+			AnimationPlayer* ap = Object::cast_to<AnimationPlayer>(
+				root_path->get_node_or_null(animation->track_get_path(track)));
+			if (ap) {
+				for (const StringName& E : ap->get_sorted_animation_list()) {
+					if (!animations.is_empty()) {
+						animations += ",";
 					}
-				}
 
-				if (v.get_type() != Variant::NIL) {
-					p_list->push_back(PropertyInfo(v.get_type(), PNAME("value"), val_hint, val_hint_string));
+					animations += String(E);
 				}
 			}
+		}
 
-		} break;
-		case Animation::TYPE_METHOD: {
-			p_list->push_back(PropertyInfo(Variant::STRING_NAME, PNAME("name")));
-			p_list->push_back(PropertyInfo(Variant::INT, PNAME("arg_count"), PROPERTY_HINT_RANGE, "0,32,1,or_greater"));
+		if (!animations.is_empty()) {
+			animations += ",";
+		}
+		animations += "[stop]";
 
-			Dictionary d = animation->track_get_key_value(track, key);
-			ERR_FAIL_COND(!d.has("args"));
-			Vector<Variant> args = d["args"];
-			String vtypes;
-			for (int i = 0; i < Variant::VARIANT_MAX; i++) {
-				if (i > 0) {
-					vtypes += ",";
-				}
-				vtypes += Variant::get_type_name(Variant::Type(i));
-			}
+		p_list->push_back(
+			PropertyInfo(Variant::STRING_NAME, PNAME("animation"), PROPERTY_HINT_ENUM, animations));
 
-			for (int i = 0; i < args.size(); i++) {
-				p_list->push_back(PropertyInfo(Variant::INT, vformat("%s/%d/%s", PNAME("args"), i, PNAME("type")), PROPERTY_HINT_ENUM, vtypes));
-				if (args[i].get_type() != Variant::NIL) {
-					p_list->push_back(PropertyInfo(args[i].get_type(), vformat("%s/%d/%s", PNAME("args"), i, PNAME("value"))));
-				}
-			}
-
-		} break;
-		case Animation::TYPE_BEZIER: {
-			Animation::HandleMode hm = animation->bezier_track_get_key_handle_mode(track, key);
-			p_list->push_back(PropertyInfo(Variant::FLOAT, PNAME("value")));
-			if (hm == Animation::HANDLE_MODE_LINEAR) {
-				p_list->push_back(PropertyInfo(Variant::VECTOR2, PNAME("in_handle"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY));
-				p_list->push_back(PropertyInfo(Variant::VECTOR2, PNAME("out_handle"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY));
-			} else {
-				p_list->push_back(PropertyInfo(Variant::VECTOR2, PNAME("in_handle")));
-				p_list->push_back(PropertyInfo(Variant::VECTOR2, PNAME("out_handle")));
-			}
-			p_list->push_back(PropertyInfo(Variant::INT, PNAME("handle_mode"), PROPERTY_HINT_ENUM, "Free,Linear,Balanced,Mirrored"));
-
-		} break;
-		case Animation::TYPE_AUDIO: {
-			p_list->push_back(PropertyInfo(Variant::OBJECT, PNAME("stream"), PROPERTY_HINT_RESOURCE_TYPE, AudioStream::get_class_static()));
-			Ref<AudioStream> audio_stream = animation->audio_track_get_key_stream(track, key);
-			String hint_string = vformat("0,%.4f,0.0001,or_greater", audio_stream.is_valid() ? audio_stream->get_length() : 3600.0);
-			p_list->push_back(PropertyInfo(Variant::FLOAT, PNAME("start_offset"), PROPERTY_HINT_RANGE, hint_string));
-			p_list->push_back(PropertyInfo(Variant::FLOAT, PNAME("end_offset"), PROPERTY_HINT_RANGE, hint_string));
-
-		} break;
-		case Animation::TYPE_ANIMATION: {
-			String animations;
-
-			if (root_path) {
-				AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(root_path->get_node_or_null(animation->track_get_path(track)));
-				if (ap) {
-					for (const StringName &E : ap->get_sorted_animation_list()) {
-						if (!animations.is_empty()) {
-							animations += ",";
-						}
-
-						animations += String(E);
-					}
-				}
-			}
-
-			if (!animations.is_empty()) {
-				animations += ",";
-			}
-			animations += "[stop]";
-
-			p_list->push_back(PropertyInfo(Variant::STRING_NAME, PNAME("animation"), PROPERTY_HINT_ENUM, animations));
-
-		} break;
+	} break;
 	}
 
 	if (animation->track_get_type(track) == Animation::TYPE_VALUE) {
@@ -675,48 +713,39 @@ void AnimationTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) const
 	}
 }
 
-void AnimationTrackKeyEdit::notify_change() {
-	notify_property_list_changed();
-}
+void AnimationTrackKeyEdit::notify_change() { this->obj->notify_property_list_changed(); }
 
-Node *AnimationTrackKeyEdit::get_root_path() {
-	return root_path;
-}
+Node* AnimationTrackKeyEdit::get_root_path() { return root_path; }
 
-void AnimationTrackKeyEdit::set_use_fps(bool p_enable) {
+void AnimationTrackKeyEdit::set_use_fps(bool p_enable)
+{
 	use_fps = p_enable;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
-void AnimationMultiTrackKeyEdit::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_update_obj"), &AnimationMultiTrackKeyEdit::_update_obj);
-	ClassDB::bind_method(D_METHOD("_key_ofs_changed"), &AnimationMultiTrackKeyEdit::_key_ofs_changed);
-	ClassDB::bind_method(D_METHOD("_hide_script_from_inspector"), &AnimationMultiTrackKeyEdit::_hide_script_from_inspector);
-	ClassDB::bind_method(D_METHOD("_hide_metadata_from_inspector"), &AnimationMultiTrackKeyEdit::_hide_metadata_from_inspector);
-	ClassDB::bind_method(D_METHOD("get_root_path"), &AnimationMultiTrackKeyEdit::get_root_path);
-	ClassDB::bind_method(D_METHOD("_dont_undo_redo"), &AnimationMultiTrackKeyEdit::_dont_undo_redo);
-	ClassDB::bind_method(D_METHOD("_is_read_only"), &AnimationMultiTrackKeyEdit::_is_read_only);
-}
+void AnimationMultiTrackKeyEdit::_bind_methods() {}
 
-void AnimationMultiTrackKeyEdit::_fix_node_path(Variant &value, NodePath &base) {
+void AnimationMultiTrackKeyEdit::_fix_node_path(Variant& value, NodePath& base)
+{
 	NodePath np = value;
 
 	if (np == NodePath()) {
 		return;
 	}
 
-	Node *root = EditorNode::get_singleton()->get_tree()->get_root();
+	Node* root = EditorNode::get_singleton()->get_tree()->get_root();
 
-	Node *np_node = root->get_node_or_null(np);
+	Node* np_node = root->get_node_or_null(np);
 	ERR_FAIL_NULL(np_node);
 
-	Node *edited_node = root->get_node_or_null(base);
+	Node* edited_node = root->get_node_or_null(base);
 	ERR_FAIL_NULL(edited_node);
 
 	value = edited_node->get_path_to(np_node);
 }
 
-void AnimationMultiTrackKeyEdit::_update_obj(const Ref<Animation> &p_anim) {
+void AnimationMultiTrackKeyEdit::_update_obj(const Ref<Animation>& p_anim)
+{
 	if (setting || animation != p_anim) {
 		return;
 	}
@@ -724,14 +753,16 @@ void AnimationMultiTrackKeyEdit::_update_obj(const Ref<Animation> &p_anim) {
 	notify_change();
 }
 
-void AnimationMultiTrackKeyEdit::_key_ofs_changed(const Ref<Animation> &p_anim, float from, float to) {
+void AnimationMultiTrackKeyEdit::_key_ofs_changed(
+	const Ref<Animation>& p_anim, float from, float to)
+{
 	if (animation != p_anim) {
 		return;
 	}
 
-	for (const KeyValue<int, List<float>> &E : key_ofs_map) {
+	for (const KeyValue<int, List<float>>& E : key_ofs_map) {
 		int key = 0;
-		for (const float &key_ofs : E.value) {
+		for (const float& key_ofs : E.value) {
 			if (from != key_ofs) {
 				key++;
 				continue;
@@ -751,12 +782,13 @@ void AnimationMultiTrackKeyEdit::_key_ofs_changed(const Ref<Animation> &p_anim, 
 	}
 }
 
-bool AnimationMultiTrackKeyEdit::_set(const StringName &p_name, const Variant &p_value) {
+bool AnimationMultiTrackKeyEdit::_set(const StringName& p_name, const Variant& p_value)
+{
 	bool update_obj = false;
 	bool change_notify_deserved = false;
-	for (const KeyValue<int, List<float>> &E : key_ofs_map) {
+	for (const KeyValue<int, List<float>>& E : key_ofs_map) {
 		int track = E.key;
-		for (const float &key_ofs : E.value) {
+		for (const float& key_ofs : E.value) {
 			int key = animation->track_find_key(track, key_ofs, Animation::FIND_MODE_APPROX);
 			ERR_FAIL_COND_V(key == -1, false);
 
@@ -765,234 +797,281 @@ bool AnimationMultiTrackKeyEdit::_set(const StringName &p_name, const Variant &p
 				float val = p_value;
 				float prev_val = animation->track_get_key_transition(track, key);
 
-				EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+				EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 				if (!setting) {
 					setting = true;
-					undo_redo->create_action(TTR("Animation Multi Change Transition"), UndoRedo::MERGE_ENDS);
+					undo_redo->create_action(
+						TTR("Animation Multi Change Transition"), UndoRedo::MERGE_ENDS);
 				}
-				undo_redo->add_do_method(animation.ptr(), "track_set_key_transition", track, key, val);
-				undo_redo->add_undo_method(animation.ptr(), "track_set_key_transition", track, key, prev_val);
+				undo_redo->add_do_method(
+					animation.ptr(), "track_set_key_transition", track, key, val);
+				undo_redo->add_undo_method(
+					animation.ptr(), "track_set_key_transition", track, key, prev_val);
 				update_obj = true;
 			}
 
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+			EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 			switch (animation->track_get_type(track)) {
-				case Animation::TYPE_POSITION_3D:
-				case Animation::TYPE_ROTATION_3D:
-				case Animation::TYPE_SCALE_3D: {
-					Variant old = animation->track_get_key_value(track, key);
-					if (!setting) {
-						String action_name;
-						switch (animation->track_get_type(track)) {
-							case Animation::TYPE_POSITION_3D:
-								action_name = TTR("Animation Multi Change Position3D");
-								break;
-							case Animation::TYPE_ROTATION_3D:
-								action_name = TTR("Animation Multi Change Rotation3D");
-								break;
-							case Animation::TYPE_SCALE_3D:
-								action_name = TTR("Animation Multi Change Scale3D");
-								break;
-							default: {
-							}
-						}
-
-						setting = true;
-						undo_redo->create_action(action_name);
+			case Animation::TYPE_POSITION_3D:
+			case Animation::TYPE_ROTATION_3D:
+			case Animation::TYPE_SCALE_3D: {
+				Variant old = animation->track_get_key_value(track, key);
+				if (!setting) {
+					String action_name;
+					switch (animation->track_get_type(track)) {
+					case Animation::TYPE_POSITION_3D:
+						action_name = TTR("Animation Multi Change Position3D");
+						break;
+					case Animation::TYPE_ROTATION_3D:
+						action_name = TTR("Animation Multi Change Rotation3D");
+						break;
+					case Animation::TYPE_SCALE_3D:
+						action_name = TTR("Animation Multi Change Scale3D");
+						break;
+					default: {
 					}
-					undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, p_value);
-					undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, old);
-					update_obj = true;
-				} break;
-				case Animation::TYPE_BLEND_SHAPE:
-				case Animation::TYPE_VALUE: {
-					if (name == "value") {
-						Variant value = p_value;
+					}
 
+					setting = true;
+					undo_redo->create_action(action_name);
+				}
+				undo_redo->add_do_method(
+					animation.ptr(), "track_set_key_value", track, key, p_value);
+				undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, old);
+				update_obj = true;
+			} break;
+			case Animation::TYPE_BLEND_SHAPE:
+			case Animation::TYPE_VALUE: {
+				if (name == "value") {
+					Variant value = p_value;
+
+					if (value.get_type() == Variant::NODE_PATH) {
+						_fix_node_path(value, base_map[track]);
+					}
+
+					if (!setting) {
+						setting = true;
+						undo_redo->create_action(
+							TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+					}
+					Variant prev = animation->track_get_key_value(track, key);
+					undo_redo->add_do_method(
+						animation.ptr(), "track_set_key_value", track, key, value);
+					undo_redo->add_undo_method(
+						animation.ptr(), "track_set_key_value", track, key, prev);
+					update_obj = true;
+				}
+			} break;
+			case Animation::TYPE_METHOD: {
+				Dictionary d_old = animation->track_get_key_value(track, key);
+				Dictionary d_new = d_old.duplicate();
+
+				bool mergeable = false;
+
+				if (name == "name") {
+					d_new["method"] = p_value;
+				}
+				else if (name == "arg_count") {
+					Vector<Variant> args = d_old["args"];
+					args.resize(p_value);
+					d_new["args"] = args;
+					change_notify_deserved = true;
+				}
+				else if (name.begins_with("args/")) {
+					Vector<Variant> args = d_old["args"];
+					int idx = name.get_slicec('/', 1).to_int();
+					ERR_FAIL_INDEX_V(idx, args.size(), false);
+
+					String what = name.get_slicec('/', 2);
+					if (what == "type") {
+						Variant::Type t = Variant::Type(int(p_value));
+
+						if (t != args[idx].get_type()) {
+							Callable::CallError err;
+							if (Variant::can_convert_strict(args[idx].get_type(), t)) {
+								Variant old = args[idx];
+								Variant* ptrs[1] = {&old};
+								Variant::construct(
+									t, args.write[idx], (const Variant**)ptrs, 1, err);
+							}
+							else {
+								Variant::construct(t, args.write[idx], nullptr, 0, err);
+							}
+							change_notify_deserved = true;
+							d_new["args"] = args;
+						}
+					}
+					else if (what == "value") {
+						Variant value = p_value;
 						if (value.get_type() == Variant::NODE_PATH) {
 							_fix_node_path(value, base_map[track]);
 						}
 
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-						}
-						Variant prev = animation->track_get_key_value(track, key);
-						undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, value);
-						undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, prev);
-						update_obj = true;
-					}
-				} break;
-				case Animation::TYPE_METHOD: {
-					Dictionary d_old = animation->track_get_key_value(track, key);
-					Dictionary d_new = d_old.duplicate();
-
-					bool mergeable = false;
-
-					if (name == "name") {
-						d_new["method"] = p_value;
-					} else if (name == "arg_count") {
-						Vector<Variant> args = d_old["args"];
-						args.resize(p_value);
+						args.write[idx] = value;
 						d_new["args"] = args;
-						change_notify_deserved = true;
-					} else if (name.begins_with("args/")) {
-						Vector<Variant> args = d_old["args"];
-						int idx = name.get_slicec('/', 1).to_int();
-						ERR_FAIL_INDEX_V(idx, args.size(), false);
-
-						String what = name.get_slicec('/', 2);
-						if (what == "type") {
-							Variant::Type t = Variant::Type(int(p_value));
-
-							if (t != args[idx].get_type()) {
-								Callable::CallError err;
-								if (Variant::can_convert_strict(args[idx].get_type(), t)) {
-									Variant old = args[idx];
-									Variant *ptrs[1] = { &old };
-									Variant::construct(t, args.write[idx], (const Variant **)ptrs, 1, err);
-								} else {
-									Variant::construct(t, args.write[idx], nullptr, 0, err);
-								}
-								change_notify_deserved = true;
-								d_new["args"] = args;
-							}
-						} else if (what == "value") {
-							Variant value = p_value;
-							if (value.get_type() == Variant::NODE_PATH) {
-								_fix_node_path(value, base_map[track]);
-							}
-
-							args.write[idx] = value;
-							d_new["args"] = args;
-							mergeable = true;
-						}
+						mergeable = true;
 					}
+				}
+
+				if (!setting) {
+					if (mergeable) {
+						undo_redo->create_action(
+							TTR("Animation Multi Change Call"), UndoRedo::MERGE_ENDS);
+					}
+					else {
+						undo_redo->create_action(TTR("Animation Multi Change Call"));
+					}
+
+					setting = true;
+				}
+
+				undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, d_new);
+				undo_redo->add_undo_method(
+					animation.ptr(), "track_set_key_value", track, key, d_old);
+				update_obj = true;
+			} break;
+			case Animation::TYPE_BEZIER: {
+				if (name == "value") {
+					const Variant& value = p_value;
 
 					if (!setting) {
-						if (mergeable) {
-							undo_redo->create_action(TTR("Animation Multi Change Call"), UndoRedo::MERGE_ENDS);
-						} else {
-							undo_redo->create_action(TTR("Animation Multi Change Call"));
-						}
-
 						setting = true;
+						undo_redo->create_action(
+							TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
 					}
-
-					undo_redo->add_do_method(animation.ptr(), "track_set_key_value", track, key, d_new);
-					undo_redo->add_undo_method(animation.ptr(), "track_set_key_value", track, key, d_old);
+					float prev = animation->bezier_track_get_key_value(track, key);
+					undo_redo->add_do_method(
+						animation.ptr(), "bezier_track_set_key_value", track, key, value);
+					undo_redo->add_undo_method(
+						animation.ptr(), "bezier_track_set_key_value", track, key, prev);
 					update_obj = true;
-				} break;
-				case Animation::TYPE_BEZIER: {
-					if (name == "value") {
-						const Variant &value = p_value;
+				}
+				else if (name == "in_handle") {
+					const Variant& value = p_value;
 
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-						}
-						float prev = animation->bezier_track_get_key_value(track, key);
-						undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_value", track, key, value);
-						undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_value", track, key, prev);
-						update_obj = true;
-					} else if (name == "in_handle") {
-						const Variant &value = p_value;
-
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-						}
-						Vector2 prev = animation->bezier_track_get_key_in_handle(track, key);
-						undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_in_handle", track, key, value);
-						undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_in_handle", track, key, prev);
-						update_obj = true;
-					} else if (name == "out_handle") {
-						const Variant &value = p_value;
-
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-						}
-						Vector2 prev = animation->bezier_track_get_key_out_handle(track, key);
-						undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_out_handle", track, key, value);
-						undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_out_handle", track, key, prev);
-						update_obj = true;
-					} else if (name == "handle_mode") {
-						const Variant &value = p_value;
-
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS, animation.ptr());
-						}
-						int prev_mode = animation->bezier_track_get_key_handle_mode(track, key);
-						Vector2 prev_in_handle = animation->bezier_track_get_key_in_handle(track, key);
-						Vector2 prev_out_handle = animation->bezier_track_get_key_out_handle(track, key);
-						undo_redo->add_do_method(editor, "_bezier_track_set_key_handle_mode", animation.ptr(), track, key, value);
-						undo_redo->add_undo_method(editor, "_bezier_track_set_key_handle_mode", animation.ptr(), track, key, prev_mode);
-						undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_in_handle", track, key, prev_in_handle);
-						undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_out_handle", track, key, prev_out_handle);
-						update_obj = true;
+					if (!setting) {
+						setting = true;
+						undo_redo->create_action(
+							TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
 					}
-				} break;
-				case Animation::TYPE_AUDIO: {
-					if (name == "stream") {
-						Ref<AudioStream> stream = p_value;
+					Vector2 prev = animation->bezier_track_get_key_in_handle(track, key);
+					undo_redo->add_do_method(
+						animation.ptr(), "bezier_track_set_key_in_handle", track, key, value);
+					undo_redo->add_undo_method(
+						animation.ptr(), "bezier_track_set_key_in_handle", track, key, prev);
+					update_obj = true;
+				}
+				else if (name == "out_handle") {
+					const Variant& value = p_value;
 
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-						}
-						Ref<Resource> prev = animation->audio_track_get_key_stream(track, key);
-						undo_redo->add_do_method(animation.ptr(), "audio_track_set_key_stream", track, key, stream);
-						undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_stream", track, key, prev);
-						update_obj = true;
-					} else if (name == "start_offset") {
-						float value = p_value;
-
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-						}
-						float prev = animation->audio_track_get_key_start_offset(track, key);
-						undo_redo->add_do_method(animation.ptr(), "audio_track_set_key_start_offset", track, key, value);
-						undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_start_offset", track, key, prev);
-						update_obj = true;
-					} else if (name == "end_offset") {
-						float value = p_value;
-
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-						}
-						float prev = animation->audio_track_get_key_end_offset(track, key);
-						undo_redo->add_do_method(animation.ptr(), "audio_track_set_key_end_offset", track, key, value);
-						undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_end_offset", track, key, prev);
-						update_obj = true;
+					if (!setting) {
+						setting = true;
+						undo_redo->create_action(
+							TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
 					}
-				} break;
-				case Animation::TYPE_ANIMATION: {
-					if (name == "animation") {
-						StringName anim_name = p_value;
+					Vector2 prev = animation->bezier_track_get_key_out_handle(track, key);
+					undo_redo->add_do_method(
+						animation.ptr(), "bezier_track_set_key_out_handle", track, key, value);
+					undo_redo->add_undo_method(
+						animation.ptr(), "bezier_track_set_key_out_handle", track, key, prev);
+					update_obj = true;
+				}
+				else if (name == "handle_mode") {
+					const Variant& value = p_value;
 
-						if (!setting) {
-							setting = true;
-							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
-						}
-						StringName prev = animation->animation_track_get_key_animation(track, key);
-						undo_redo->add_do_method(animation.ptr(), "animation_track_set_key_animation", track, key, anim_name);
-						undo_redo->add_undo_method(animation.ptr(), "animation_track_set_key_animation", track, key, prev);
-						update_obj = true;
+					if (!setting) {
+						setting = true;
+						undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"),
+							UndoRedo::MERGE_ENDS, animation.ptr());
 					}
-				} break;
+					int prev_mode = animation->bezier_track_get_key_handle_mode(track, key);
+					Vector2 prev_in_handle = animation->bezier_track_get_key_in_handle(track, key);
+					Vector2 prev_out_handle =
+						animation->bezier_track_get_key_out_handle(track, key);
+					undo_redo->add_do_method(editor, "_bezier_track_set_key_handle_mode",
+						animation.ptr(), track, key, value);
+					undo_redo->add_undo_method(editor, "_bezier_track_set_key_handle_mode",
+						animation.ptr(), track, key, prev_mode);
+					undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_in_handle",
+						track, key, prev_in_handle);
+					undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_out_handle",
+						track, key, prev_out_handle);
+					update_obj = true;
+				}
+			} break;
+			case Animation::TYPE_AUDIO: {
+				if (name == "stream") {
+					Ref<AudioStream> stream = p_value;
+
+					if (!setting) {
+						setting = true;
+						undo_redo->create_action(
+							TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+					}
+					Ref<Resource> prev = animation->audio_track_get_key_stream(track, key);
+					undo_redo->add_do_method(
+						animation.ptr(), "audio_track_set_key_stream", track, key, stream);
+					undo_redo->add_undo_method(
+						animation.ptr(), "audio_track_set_key_stream", track, key, prev);
+					update_obj = true;
+				}
+				else if (name == "start_offset") {
+					float value = p_value;
+
+					if (!setting) {
+						setting = true;
+						undo_redo->create_action(
+							TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+					}
+					float prev = animation->audio_track_get_key_start_offset(track, key);
+					undo_redo->add_do_method(
+						animation.ptr(), "audio_track_set_key_start_offset", track, key, value);
+					undo_redo->add_undo_method(
+						animation.ptr(), "audio_track_set_key_start_offset", track, key, prev);
+					update_obj = true;
+				}
+				else if (name == "end_offset") {
+					float value = p_value;
+
+					if (!setting) {
+						setting = true;
+						undo_redo->create_action(
+							TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+					}
+					float prev = animation->audio_track_get_key_end_offset(track, key);
+					undo_redo->add_do_method(
+						animation.ptr(), "audio_track_set_key_end_offset", track, key, value);
+					undo_redo->add_undo_method(
+						animation.ptr(), "audio_track_set_key_end_offset", track, key, prev);
+					update_obj = true;
+				}
+			} break;
+			case Animation::TYPE_ANIMATION: {
+				if (name == "animation") {
+					StringName anim_name = p_value;
+
+					if (!setting) {
+						setting = true;
+						undo_redo->create_action(
+							TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+					}
+					StringName prev = animation->animation_track_get_key_animation(track, key);
+					undo_redo->add_do_method(animation.ptr(), "animation_track_set_key_animation",
+						track, key, anim_name);
+					undo_redo->add_undo_method(
+						animation.ptr(), "animation_track_set_key_animation", track, key, prev);
+					update_obj = true;
+				}
+			} break;
 			}
 		}
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	if (setting) {
 		if (update_obj) {
-			undo_redo->add_do_method(this, "_update_obj", animation);
-			undo_redo->add_undo_method(this, "_update_obj", animation);
+			undo_redo->add_do_method(this->obj.get(), "_update_obj", animation);
+			undo_redo->add_undo_method(this->obj.get(), "_update_obj", animation);
 		}
 
 		undo_redo->commit_action();
@@ -1008,10 +1087,11 @@ bool AnimationMultiTrackKeyEdit::_set(const StringName &p_name, const Variant &p
 	return false;
 }
 
-bool AnimationMultiTrackKeyEdit::_get(const StringName &p_name, Variant &r_ret) const {
-	for (const KeyValue<int, List<float>> &E : key_ofs_map) {
+bool AnimationMultiTrackKeyEdit::_get(const StringName& p_name, Variant& r_ret) const
+{
+	for (const KeyValue<int, List<float>>& E : key_ofs_map) {
 		int track = E.key;
-		for (const float &key_ofs : E.value) {
+		for (const float& key_ofs : E.value) {
 			int key = animation->track_find_key(track, key_ofs, Animation::FIND_MODE_APPROX);
 			ERR_CONTINUE(key == -1);
 
@@ -1022,104 +1102,104 @@ bool AnimationMultiTrackKeyEdit::_get(const StringName &p_name, Variant &r_ret) 
 			}
 
 			switch (animation->track_get_type(track)) {
-				case Animation::TYPE_POSITION_3D:
-				case Animation::TYPE_ROTATION_3D:
-				case Animation::TYPE_SCALE_3D: {
-					if (name == "position" || name == "rotation" || name == "scale") {
-						r_ret = animation->track_get_key_value(track, key);
+			case Animation::TYPE_POSITION_3D:
+			case Animation::TYPE_ROTATION_3D:
+			case Animation::TYPE_SCALE_3D: {
+				if (name == "position" || name == "rotation" || name == "scale") {
+					r_ret = animation->track_get_key_value(track, key);
+					return true;
+				}
+
+			} break;
+			case Animation::TYPE_BLEND_SHAPE:
+			case Animation::TYPE_VALUE: {
+				if (name == "value") {
+					r_ret = animation->track_get_key_value(track, key);
+					return true;
+				}
+
+			} break;
+			case Animation::TYPE_METHOD: {
+				Dictionary d = animation->track_get_key_value(track, key);
+
+				if (name == "name") {
+					ERR_FAIL_COND_V(!d.has("method"), false);
+					r_ret = d["method"];
+					return true;
+				}
+
+				ERR_FAIL_COND_V(!d.has("args"), false);
+
+				Vector<Variant> args = d["args"];
+
+				if (name == "arg_count") {
+					r_ret = args.size();
+					return true;
+				}
+
+				if (name.begins_with("args/")) {
+					int idx = name.get_slicec('/', 1).to_int();
+					ERR_FAIL_INDEX_V(idx, args.size(), false);
+
+					String what = name.get_slicec('/', 2);
+					if (what == "type") {
+						r_ret = args[idx].get_type();
 						return true;
 					}
 
-				} break;
-				case Animation::TYPE_BLEND_SHAPE:
-				case Animation::TYPE_VALUE: {
-					if (name == "value") {
-						r_ret = animation->track_get_key_value(track, key);
+					if (what == "value") {
+						r_ret = args[idx];
 						return true;
 					}
+				}
 
-				} break;
-				case Animation::TYPE_METHOD: {
-					Dictionary d = animation->track_get_key_value(track, key);
+			} break;
+			case Animation::TYPE_BEZIER: {
+				if (name == "value") {
+					r_ret = animation->bezier_track_get_key_value(track, key);
+					return true;
+				}
 
-					if (name == "name") {
-						ERR_FAIL_COND_V(!d.has("method"), false);
-						r_ret = d["method"];
-						return true;
-					}
+				if (name == "in_handle") {
+					r_ret = animation->bezier_track_get_key_in_handle(track, key);
+					return true;
+				}
 
-					ERR_FAIL_COND_V(!d.has("args"), false);
+				if (name == "out_handle") {
+					r_ret = animation->bezier_track_get_key_out_handle(track, key);
+					return true;
+				}
 
-					Vector<Variant> args = d["args"];
+				if (name == "handle_mode") {
+					r_ret = animation->bezier_track_get_key_handle_mode(track, key);
+					return true;
+				}
 
-					if (name == "arg_count") {
-						r_ret = args.size();
-						return true;
-					}
+			} break;
+			case Animation::TYPE_AUDIO: {
+				if (name == "stream") {
+					r_ret = animation->audio_track_get_key_stream(track, key);
+					return true;
+				}
 
-					if (name.begins_with("args/")) {
-						int idx = name.get_slicec('/', 1).to_int();
-						ERR_FAIL_INDEX_V(idx, args.size(), false);
+				if (name == "start_offset") {
+					r_ret = animation->audio_track_get_key_start_offset(track, key);
+					return true;
+				}
 
-						String what = name.get_slicec('/', 2);
-						if (what == "type") {
-							r_ret = args[idx].get_type();
-							return true;
-						}
+				if (name == "end_offset") {
+					r_ret = animation->audio_track_get_key_end_offset(track, key);
+					return true;
+				}
 
-						if (what == "value") {
-							r_ret = args[idx];
-							return true;
-						}
-					}
+			} break;
+			case Animation::TYPE_ANIMATION: {
+				if (name == "animation") {
+					r_ret = animation->animation_track_get_key_animation(track, key);
+					return true;
+				}
 
-				} break;
-				case Animation::TYPE_BEZIER: {
-					if (name == "value") {
-						r_ret = animation->bezier_track_get_key_value(track, key);
-						return true;
-					}
-
-					if (name == "in_handle") {
-						r_ret = animation->bezier_track_get_key_in_handle(track, key);
-						return true;
-					}
-
-					if (name == "out_handle") {
-						r_ret = animation->bezier_track_get_key_out_handle(track, key);
-						return true;
-					}
-
-					if (name == "handle_mode") {
-						r_ret = animation->bezier_track_get_key_handle_mode(track, key);
-						return true;
-					}
-
-				} break;
-				case Animation::TYPE_AUDIO: {
-					if (name == "stream") {
-						r_ret = animation->audio_track_get_key_stream(track, key);
-						return true;
-					}
-
-					if (name == "start_offset") {
-						r_ret = animation->audio_track_get_key_start_offset(track, key);
-						return true;
-					}
-
-					if (name == "end_offset") {
-						r_ret = animation->audio_track_get_key_end_offset(track, key);
-						return true;
-					}
-
-				} break;
-				case Animation::TYPE_ANIMATION: {
-					if (name == "animation") {
-						r_ret = animation->animation_track_get_key_animation(track, key);
-						return true;
-					}
-
-				} break;
+			} break;
 			}
 		}
 	}
@@ -1127,7 +1207,8 @@ bool AnimationMultiTrackKeyEdit::_get(const StringName &p_name, Variant &r_ret) 
 	return false;
 }
 
-void AnimationMultiTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) const {
+void AnimationMultiTrackKeyEdit::_get_property_list(List<PropertyInfo>* p_list) const
+{
 	if (animation.is_null()) {
 		return;
 	}
@@ -1137,7 +1218,7 @@ void AnimationMultiTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) 
 
 	bool same_track_type = true;
 	bool same_key_type = true;
-	for (const KeyValue<int, List<float>> &E : key_ofs_map) {
+	for (const KeyValue<int, List<float>>& E : key_ofs_map) {
 		int track = E.key;
 		ERR_FAIL_INDEX(track, animation->get_track_count());
 
@@ -1151,14 +1232,15 @@ void AnimationMultiTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) 
 				same_key_type = false;
 			}
 
-			for (const float &F : E.value) {
+			for (const float& F : E.value) {
 				int key = animation->track_find_key(track, F, Animation::FIND_MODE_APPROX);
 				ERR_FAIL_COND(key == -1);
 				if (first_key < 0) {
 					first_key = key;
 				}
 
-				if (animation->track_get_key_value(first_track, first_key).get_type() != animation->track_get_key_value(track, key).get_type()) {
+				if (animation->track_get_key_value(first_track, first_key).get_type() !=
+					animation->track_get_key_value(track, key).get_type()) {
 					same_key_type = false;
 				}
 			}
@@ -1167,132 +1249,144 @@ void AnimationMultiTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) 
 
 	if (same_track_type) {
 		switch (animation->track_get_type(first_track)) {
-			case Animation::TYPE_POSITION_3D: {
-				p_list->push_back(PropertyInfo(Variant::VECTOR3, "position"));
-			} break;
-			case Animation::TYPE_ROTATION_3D: {
-				p_list->push_back(PropertyInfo(Variant::QUATERNION, "rotation"));
-			} break;
-			case Animation::TYPE_SCALE_3D: {
-				p_list->push_back(PropertyInfo(Variant::VECTOR3, "scale"));
-			} break;
-			case Animation::TYPE_BLEND_SHAPE: {
-				p_list->push_back(PropertyInfo(Variant::FLOAT, "value"));
-			} break;
-			case Animation::TYPE_VALUE: {
-				if (same_key_type) {
-					Variant v = animation->track_get_key_value(first_track, first_key);
+		case Animation::TYPE_POSITION_3D: {
+			p_list->push_back(PropertyInfo(Variant::VECTOR3, "position"));
+		} break;
+		case Animation::TYPE_ROTATION_3D: {
+			p_list->push_back(PropertyInfo(Variant::QUATERNION, "rotation"));
+		} break;
+		case Animation::TYPE_SCALE_3D: {
+			p_list->push_back(PropertyInfo(Variant::VECTOR3, "scale"));
+		} break;
+		case Animation::TYPE_BLEND_SHAPE: {
+			p_list->push_back(PropertyInfo(Variant::FLOAT, "value"));
+		} break;
+		case Animation::TYPE_VALUE: {
+			if (same_key_type) {
+				Variant v = animation->track_get_key_value(first_track, first_key);
 
-					if (hint.type != Variant::NIL) {
-						PropertyInfo pi = hint;
-						pi.name = "value";
-						p_list->push_back(pi);
-					} else {
-						PropertyHint val_hint = PROPERTY_HINT_NONE;
-						String val_hint_string;
+				if (hint.type != Variant::NIL) {
+					PropertyInfo pi = hint;
+					pi.name = "value";
+					p_list->push_back(pi);
+				}
+				else {
+					PropertyHint val_hint = PROPERTY_HINT_NONE;
+					String val_hint_string;
 
-						if (v.get_type() == Variant::OBJECT) {
-							// Could actually check the object property if exists..? Yes I will!
-							Ref<Resource> res = v;
-							if (res.is_valid()) {
-								val_hint = PROPERTY_HINT_RESOURCE_TYPE;
-								val_hint_string = res->get_class();
-							}
-						}
-
-						if (v.get_type() != Variant::NIL) {
-							p_list->push_back(PropertyInfo(v.get_type(), "value", val_hint, val_hint_string));
+					if (v.get_type() == Variant::OBJECT) {
+						// Could actually check the object property if exists..? Yes I will!
+						Ref<Resource> res = v;
+						if (res.is_valid()) {
+							val_hint = PROPERTY_HINT_RESOURCE_TYPE;
+							val_hint_string = res->get_class();
 						}
 					}
-				}
 
-				p_list->push_back(PropertyInfo(Variant::FLOAT, "easing", PROPERTY_HINT_EXP_EASING));
-			} break;
-			case Animation::TYPE_METHOD: {
-				p_list->push_back(PropertyInfo(Variant::STRING_NAME, "name"));
-
-				p_list->push_back(PropertyInfo(Variant::INT, "arg_count", PROPERTY_HINT_RANGE, "0,32,1,or_greater"));
-
-				Dictionary d = animation->track_get_key_value(first_track, first_key);
-				ERR_FAIL_COND(!d.has("args"));
-				Vector<Variant> args = d["args"];
-				String vtypes;
-				for (int i = 0; i < Variant::VARIANT_MAX; i++) {
-					if (i > 0) {
-						vtypes += ",";
-					}
-					vtypes += Variant::get_type_name(Variant::Type(i));
-				}
-
-				for (int i = 0; i < args.size(); i++) {
-					p_list->push_back(PropertyInfo(Variant::INT, "args/" + itos(i) + "/type", PROPERTY_HINT_ENUM, vtypes));
-					if (args[i].get_type() != Variant::NIL) {
-						p_list->push_back(PropertyInfo(args[i].get_type(), "args/" + itos(i) + "/value"));
+					if (v.get_type() != Variant::NIL) {
+						p_list->push_back(
+							PropertyInfo(v.get_type(), "value", val_hint, val_hint_string));
 					}
 				}
-			} break;
-			case Animation::TYPE_BEZIER: {
-				p_list->push_back(PropertyInfo(Variant::FLOAT, "value"));
-				p_list->push_back(PropertyInfo(Variant::VECTOR2, "in_handle"));
-				p_list->push_back(PropertyInfo(Variant::VECTOR2, "out_handle"));
-				p_list->push_back(PropertyInfo(Variant::INT, "handle_mode", PROPERTY_HINT_ENUM, "Free,Linear,Balanced,Mirrored"));
-			} break;
-			case Animation::TYPE_AUDIO: {
-				p_list->push_back(PropertyInfo(Variant::OBJECT, "stream", PROPERTY_HINT_RESOURCE_TYPE, AudioStream::get_class_static()));
-				p_list->push_back(PropertyInfo(Variant::FLOAT, "start_offset", PROPERTY_HINT_RANGE, "0,3600,0.0001,or_greater"));
-				p_list->push_back(PropertyInfo(Variant::FLOAT, "end_offset", PROPERTY_HINT_RANGE, "0,3600,0.0001,or_greater"));
-			} break;
-			case Animation::TYPE_ANIMATION: {
-				if (key_ofs_map.size() > 1) {
-					break;
+			}
+
+			p_list->push_back(PropertyInfo(Variant::FLOAT, "easing", PROPERTY_HINT_EXP_EASING));
+		} break;
+		case Animation::TYPE_METHOD: {
+			p_list->push_back(PropertyInfo(Variant::STRING_NAME, "name"));
+
+			p_list->push_back(
+				PropertyInfo(Variant::INT, "arg_count", PROPERTY_HINT_RANGE, "0,32,1,or_greater"));
+
+			Dictionary d = animation->track_get_key_value(first_track, first_key);
+			ERR_FAIL_COND(!d.has("args"));
+			Vector<Variant> args = d["args"];
+			String vtypes;
+			for (int i = 0; i < Variant::VARIANT_MAX; i++) {
+				if (i > 0) {
+					vtypes += ",";
 				}
+				vtypes += Variant::get_type_name(Variant::Type(i));
+			}
 
-				String animations;
+			for (int i = 0; i < args.size(); i++) {
+				p_list->push_back(PropertyInfo(
+					Variant::INT, "args/" + itos(i) + "/type", PROPERTY_HINT_ENUM, vtypes));
+				if (args[i].get_type() != Variant::NIL) {
+					p_list->push_back(
+						PropertyInfo(args[i].get_type(), "args/" + itos(i) + "/value"));
+				}
+			}
+		} break;
+		case Animation::TYPE_BEZIER: {
+			p_list->push_back(PropertyInfo(Variant::FLOAT, "value"));
+			p_list->push_back(PropertyInfo(Variant::VECTOR2, "in_handle"));
+			p_list->push_back(PropertyInfo(Variant::VECTOR2, "out_handle"));
+			p_list->push_back(PropertyInfo(
+				Variant::INT, "handle_mode", PROPERTY_HINT_ENUM, "Free,Linear,Balanced,Mirrored"));
+		} break;
+		case Animation::TYPE_AUDIO: {
+			p_list->push_back(PropertyInfo(Variant::OBJECT, "stream", PROPERTY_HINT_RESOURCE_TYPE,
+				AudioStream::get_class_static()));
+			p_list->push_back(PropertyInfo(
+				Variant::FLOAT, "start_offset", PROPERTY_HINT_RANGE, "0,3600,0.0001,or_greater"));
+			p_list->push_back(PropertyInfo(
+				Variant::FLOAT, "end_offset", PROPERTY_HINT_RANGE, "0,3600,0.0001,or_greater"));
+		} break;
+		case Animation::TYPE_ANIMATION: {
+			if (key_ofs_map.size() > 1) {
+				break;
+			}
 
-				if (root_path) {
-					AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(root_path->get_node_or_null(animation->track_get_path(first_track)));
-					if (ap) {
-						for (const StringName &anim : ap->get_sorted_animation_list()) {
-							if (!animations.is_empty()) {
-								animations += ",";
-							}
+			String animations;
 
-							animations += String(anim);
+			if (root_path) {
+				AnimationPlayer* ap = Object::cast_to<AnimationPlayer>(
+					root_path->get_node_or_null(animation->track_get_path(first_track)));
+				if (ap) {
+					for (const StringName& anim : ap->get_sorted_animation_list()) {
+						if (!animations.is_empty()) {
+							animations += ",";
 						}
+
+						animations += String(anim);
 					}
 				}
+			}
 
-				if (!animations.is_empty()) {
-					animations += ",";
-				}
-				animations += "[stop]";
+			if (!animations.is_empty()) {
+				animations += ",";
+			}
+			animations += "[stop]";
 
-				p_list->push_back(PropertyInfo(Variant::STRING_NAME, "animation", PROPERTY_HINT_ENUM, animations));
-			} break;
+			p_list->push_back(
+				PropertyInfo(Variant::STRING_NAME, "animation", PROPERTY_HINT_ENUM, animations));
+		} break;
 		}
 	}
 }
 
-void AnimationMultiTrackKeyEdit::notify_change() {
-	notify_property_list_changed();
-}
+void AnimationMultiTrackKeyEdit::notify_change() { this->obj->notify_property_list_changed(); }
 
-Node *AnimationMultiTrackKeyEdit::get_root_path() {
-	return root_path;
-}
+Node* AnimationMultiTrackKeyEdit::get_root_path() { return root_path; }
 
-void AnimationMultiTrackKeyEdit::set_use_fps(bool p_enable) {
+void AnimationMultiTrackKeyEdit::set_use_fps(bool p_enable)
+{
 	use_fps = p_enable;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
-void AnimationTimelineEdit::_zoom_changed(double) {
-	double zoom_pivot = 0; // Point on timeline to stay fixed.
+void AnimationTimelineEdit::_zoom_changed(double)
+{
+	double zoom_pivot = 0;		 // Point on timeline to stay fixed.
 	double zoom_pivot_delta = 0; // Delta seconds from left-most point on timeline to zoom pivot.
 
 	int timeline_width_pixels = get_size().width - get_buttons_width() - get_name_limit();
-	double timeline_width_seconds = timeline_width_pixels / last_zoom_scale; // Length (in seconds) of visible part of timeline before zoom.
-	double updated_timeline_width_seconds = timeline_width_pixels / get_zoom_scale(); // Length after zoom.
+	double timeline_width_seconds =
+		timeline_width_pixels /
+		last_zoom_scale; // Length (in seconds) of visible part of timeline before zoom.
+	double updated_timeline_width_seconds =
+		timeline_width_pixels / get_zoom_scale(); // Length after zoom.
 	double updated_timeline_half_width = updated_timeline_width_seconds / 2.0;
 	bool zooming = updated_timeline_width_seconds < timeline_width_seconds;
 
@@ -1300,15 +1394,20 @@ void AnimationTimelineEdit::_zoom_changed(double) {
 	double timeline_right = timeline_left + timeline_width_seconds;
 	double timeline_center = timeline_left + timeline_width_seconds / 2.0;
 
-	if (zoom_callback_occurred) { // Zooming with scroll wheel will focus on the position of the mouse.
-		double zoom_scroll_origin_norm = (zoom_scroll_origin.x - get_name_limit()) / timeline_width_pixels;
+	if (zoom_callback_occurred) { // Zooming with scroll wheel will focus on the position of the
+								  // mouse.
+		double zoom_scroll_origin_norm =
+			(zoom_scroll_origin.x - get_name_limit()) / timeline_width_pixels;
 		zoom_scroll_origin_norm = MAX(zoom_scroll_origin_norm, 0);
 		zoom_pivot = timeline_left + timeline_width_seconds * zoom_scroll_origin_norm;
 		zoom_pivot_delta = updated_timeline_width_seconds * zoom_scroll_origin_norm;
 		zoom_callback_occurred = false;
-	} else { // Zooming with slider will depend on the current play position.
+	}
+	else { // Zooming with slider will depend on the current play position.
 		// If the play position is not in range, or exactly in the center, zoom in on the center.
-		if (get_play_position() < timeline_left || get_play_position() > timeline_left + timeline_width_seconds || get_play_position() == timeline_center) {
+		if (get_play_position() < timeline_left ||
+			get_play_position() > timeline_left + timeline_width_seconds ||
+			get_play_position() == timeline_center) {
 			zoom_pivot = timeline_center;
 			zoom_pivot_delta = updated_timeline_half_width;
 		}
@@ -1316,18 +1415,23 @@ void AnimationTimelineEdit::_zoom_changed(double) {
 		// and shrink from right if play position is left of center.
 		else if ((get_play_position() > timeline_center) == zooming) {
 			// If play position crosses to other side of center, center it.
-			bool center_passed = (get_play_position() < timeline_right - updated_timeline_half_width) == zooming;
+			bool center_passed =
+				(get_play_position() < timeline_right - updated_timeline_half_width) == zooming;
 			zoom_pivot = center_passed ? get_play_position() : timeline_right;
-			double center_offset = CMP_EPSILON * (zooming ? 1 : -1); // Small offset to prevent crossover.
-			zoom_pivot_delta = center_passed ? updated_timeline_half_width + center_offset : updated_timeline_width_seconds;
+			double center_offset =
+				CMP_EPSILON * (zooming ? 1 : -1); // Small offset to prevent crossover.
+			zoom_pivot_delta = center_passed ? updated_timeline_half_width + center_offset
+											 : updated_timeline_width_seconds;
 		}
 		// Zoom from left if play position is left of center,
 		// and shrink from left if play position is right of center.
 		else if ((get_play_position() <= timeline_center) == zooming) {
 			// If play position crosses to other side of center, center it.
-			bool center_passed = (get_play_position() > timeline_left + updated_timeline_half_width) == zooming;
+			bool center_passed =
+				(get_play_position() > timeline_left + updated_timeline_half_width) == zooming;
 			zoom_pivot = center_passed ? get_play_position() : timeline_left;
-			double center_offset = CMP_EPSILON * (zooming ? -1 : 1); // Small offset to prevent crossover.
+			double center_offset =
+				CMP_EPSILON * (zooming ? -1 : 1); // Small offset to prevent crossover.
 			zoom_pivot_delta = center_passed ? updated_timeline_half_width + center_offset : 0;
 		}
 	}
@@ -1344,21 +1448,22 @@ void AnimationTimelineEdit::_zoom_changed(double) {
 	emit_signal(SNAME("zoom_changed"));
 }
 
-float AnimationTimelineEdit::get_zoom_scale() const {
-	return _get_zoom_scale(zoom->get_value());
-}
+float AnimationTimelineEdit::get_zoom_scale() const { return _get_zoom_scale(zoom->get_value()); }
 
-float AnimationTimelineEdit::_get_zoom_scale(double p_zoom_value) const {
+float AnimationTimelineEdit::_get_zoom_scale(double p_zoom_value) const
+{
 	float zv = zoom->get_max() - p_zoom_value;
 	if (zv < 1) {
 		zv = 1.0 - zv;
 		return Math::pow(1.0f + zv, 8.0f) * 100;
-	} else {
+	}
+	else {
 		return 1.0 / Math::pow(zv, 8.0f) * 100;
 	}
 }
 
-void AnimationTimelineEdit::_anim_length_changed(double p_new_len) {
+void AnimationTimelineEdit::_anim_length_changed(double p_new_len)
+{
 	if (editing) {
 		return;
 	}
@@ -1369,7 +1474,7 @@ void AnimationTimelineEdit::_anim_length_changed(double p_new_len) {
 	}
 
 	editing = true;
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Change Animation Length"), UndoRedo::MERGE_ENDS);
 	undo_redo->add_do_method(animation.ptr(), "set_length", p_new_len);
 	undo_redo->add_undo_method(animation.ptr(), "set_length", animation->get_length());
@@ -1380,28 +1485,30 @@ void AnimationTimelineEdit::_anim_length_changed(double p_new_len) {
 	emit_signal(SNAME("length_changed"), p_new_len);
 }
 
-void AnimationTimelineEdit::_anim_loop_pressed() {
+void AnimationTimelineEdit::_anim_loop_pressed()
+{
 	if (!read_only) {
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Change Animation Loop"));
 		switch (animation->get_loop_mode()) {
-			case Animation::LOOP_NONE: {
-				undo_redo->add_do_method(animation.ptr(), "set_loop_mode", Animation::LOOP_LINEAR);
-			} break;
-			case Animation::LOOP_LINEAR: {
-				undo_redo->add_do_method(animation.ptr(), "set_loop_mode", Animation::LOOP_PINGPONG);
-			} break;
-			case Animation::LOOP_PINGPONG: {
-				undo_redo->add_do_method(animation.ptr(), "set_loop_mode", Animation::LOOP_NONE);
-			} break;
-			default:
-				break;
+		case Animation::LOOP_NONE: {
+			undo_redo->add_do_method(animation.ptr(), "set_loop_mode", Animation::LOOP_LINEAR);
+		} break;
+		case Animation::LOOP_LINEAR: {
+			undo_redo->add_do_method(animation.ptr(), "set_loop_mode", Animation::LOOP_PINGPONG);
+		} break;
+		case Animation::LOOP_PINGPONG: {
+			undo_redo->add_do_method(animation.ptr(), "set_loop_mode", Animation::LOOP_NONE);
+		} break;
+		default:
+			break;
 		}
 		undo_redo->add_do_method(this, "update_values");
 		undo_redo->add_undo_method(animation.ptr(), "set_loop_mode", animation->get_loop_mode());
 		undo_redo->add_undo_method(this, "update_values");
 		undo_redo->commit_action();
-	} else {
+	}
+	else {
 		String base = animation->get_path();
 		int srpos = base.find("::");
 		if (srpos != -1) {
@@ -1410,15 +1517,26 @@ void AnimationTimelineEdit::_anim_loop_pressed() {
 
 		if (FileAccess::exists(base + ".import")) {
 			if (ResourceLoader::get_resource_type(base) == "PackedScene") {
-				EditorNode::get_singleton()->show_warning(TTR("Can't change loop mode on animation instanced from an imported scene.\n\nTo change this animation's loop mode, navigate to the scene's Advanced Import settings and select the animation.\nYou can then change the loop mode from the inspector menu."));
-			} else {
-				EditorNode::get_singleton()->show_warning(TTR("Can't change loop mode on animation instanced from an imported resource."));
+				EditorNode::get_singleton()->show_warning(
+					TTR("Can't change loop mode on animation instanced from an imported "
+						"scene.\n\nTo change this animation's loop mode, navigate to the scene's "
+						"Advanced Import settings and select the animation.\nYou can then change "
+						"the loop mode from the inspector menu."));
 			}
-		} else {
+			else {
+				EditorNode::get_singleton()->show_warning(TTR(
+					"Can't change loop mode on animation instanced from an imported resource."));
+			}
+		}
+		else {
 			if (ResourceLoader::get_resource_type(base) == "PackedScene") {
-				EditorNode::get_singleton()->show_warning(TTR("Can't change loop mode on animation embedded in another scene.\n\nYou must open this scene and change the animation's loop mode from there."));
-			} else {
-				EditorNode::get_singleton()->show_warning(TTR("Can't change loop mode on animation embedded in another resource."));
+				EditorNode::get_singleton()->show_warning(
+					TTR("Can't change loop mode on animation embedded in another scene.\n\nYou "
+						"must open this scene and change the animation's loop mode from there."));
+			}
+			else {
+				EditorNode::get_singleton()->show_warning(
+					TTR("Can't change loop mode on animation embedded in another resource."));
 			}
 		}
 
@@ -1426,7 +1544,8 @@ void AnimationTimelineEdit::_anim_loop_pressed() {
 	}
 }
 
-int AnimationTimelineEdit::get_buttons_width() const {
+int AnimationTimelineEdit::get_buttons_width() const
+{
 	const Ref<Texture2D> interp_mode = get_editor_theme_icon(SNAME("TrackContinuous"));
 	const Ref<Texture2D> interp_type = get_editor_theme_icon(SNAME("InterpRaw"));
 	const Ref<Texture2D> loop_type = get_editor_theme_icon(SNAME("InterpWrapClamp"));
@@ -1436,289 +1555,349 @@ int AnimationTimelineEdit::get_buttons_width() const {
 	const int h_separation = get_theme_constant(SNAME("h_separation"), SNAME("AnimationTrackEdit"));
 	const int outer_margin = get_theme_constant(SNAME("outer_margin"), SNAME("AnimationTrackEdit"));
 
-	int total_w = interp_mode->get_width() + interp_type->get_width() + loop_type->get_width() + remove_icon->get_width() + outer_margin;
+	int total_w = interp_mode->get_width() + interp_type->get_width() + loop_type->get_width() +
+				  remove_icon->get_width() + outer_margin;
 	total_w += (down_icon->get_width() + h_separation) * 4;
 
 	return total_w;
 }
 
-int AnimationTimelineEdit::get_name_limit() const {
+int AnimationTimelineEdit::get_name_limit() const
+{
 	Ref<Texture2D> hsize_icon = get_editor_theme_icon(SNAME("Hsize"));
 
-	int filter_track_width = filter_track->is_visible() ? filter_track->get_custom_minimum_size().width : 0;
-	int limit = MAX(name_limit, add_track->get_minimum_size().width + hsize_icon->get_width() + filter_track_width + 16 * EDSCALE);
+	int filter_track_width =
+		filter_track->is_visible() ? filter_track->get_custom_minimum_size().width : 0;
+	int limit = MAX(name_limit, add_track->get_minimum_size().width + hsize_icon->get_width() +
+									filter_track_width + 16 * EDSCALE);
 
 	limit = MIN(limit, get_size().width - get_buttons_width() - 1);
 
 	return limit;
 }
 
-void AnimationTimelineEdit::_notification(int p_what) {
+void AnimationTimelineEdit::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			add_track->set_button_icon(get_editor_theme_icon(SNAME("Add")));
-			loop->set_button_icon(get_editor_theme_icon(SNAME("Loop")));
-			time_icon->set_texture(get_editor_theme_icon(SNAME("Time")));
-			time_icon->set_custom_minimum_size(Size2((get_editor_theme_icon(SNAME("Time"))->get_size().width + 16) * EDSCALE, 0));
-			filter_track->set_right_icon(get_editor_theme_icon(SNAME("Search")));
+	case NOTIFICATION_THEME_CHANGED: {
+		add_track->set_button_icon(get_editor_theme_icon(SNAME("Add")));
+		loop->set_button_icon(get_editor_theme_icon(SNAME("Loop")));
+		time_icon->set_texture(get_editor_theme_icon(SNAME("Time")));
+		time_icon->set_custom_minimum_size(
+			Size2((get_editor_theme_icon(SNAME("Time"))->get_size().width + 16) * EDSCALE, 0));
+		filter_track->set_right_icon(get_editor_theme_icon(SNAME("Search")));
 
-			add_track->get_popup()->clear();
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyValue")), TTRC("Property Track..."));
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyXPosition")), TTRC("3D Position Track..."));
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyXRotation")), TTRC("3D Rotation Track..."));
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyXScale")), TTRC("3D Scale Track..."));
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyBlendShape")), TTRC("Blend Shape Track..."));
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyCall")), TTRC("Call Method Track..."));
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyBezier")), TTRC("Bezier Curve Track..."));
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyAudio")), TTRC("Audio Playback Track..."));
-			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyAnimation")), TTRC("Animation Playback Track..."));
+		add_track->get_popup()->clear();
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyValue")), TTRC("Property Track..."));
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyXPosition")), TTRC("3D Position Track..."));
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyXRotation")), TTRC("3D Rotation Track..."));
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyXScale")), TTRC("3D Scale Track..."));
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyBlendShape")), TTRC("Blend Shape Track..."));
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyCall")), TTRC("Call Method Track..."));
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyBezier")), TTRC("Bezier Curve Track..."));
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyAudio")), TTRC("Audio Playback Track..."));
+		add_track->get_popup()->add_icon_item(
+			get_editor_theme_icon(SNAME("KeyAnimation")), TTRC("Animation Playback Track..."));
 
-			timeline_resize_rect.size = get_editor_theme_icon(SNAME("TimelineHandle"))->get_size();
-		} break;
+		timeline_resize_rect.size = get_editor_theme_icon(SNAME("TimelineHandle"))->get_size();
+	} break;
 
-		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-			if (!EditorSettings::get_singleton()->check_changed_settings_in_group("editors/panning")) {
-				break;
-			}
-			[[fallthrough]];
+	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+		if (!EditorSettings::get_singleton()->check_changed_settings_in_group("editors/panning")) {
+			break;
 		}
-		case NOTIFICATION_READY: {
-			panner->setup((ViewPanner::ControlScheme)EDITOR_GET("editors/panning/animation_editors_panning_scheme").operator int(), ED_GET_SHORTCUT("canvas_item_editor/pan_view"), bool(EDITOR_GET("editors/panning/simple_panning")));
-			panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
-		} break;
+		[[fallthrough]];
+	}
+	case NOTIFICATION_READY: {
+		panner->setup((ViewPanner::ControlScheme)EDITOR_GET(
+						  "editors/panning/animation_editors_panning_scheme")
+						  .
+						  operator int(),
+			ED_GET_SHORTCUT("canvas_item_editor/pan_view"),
+			bool(EDITOR_GET("editors/panning/simple_panning")));
+		panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
+	} break;
 
-		case NOTIFICATION_RESIZED: {
-			len_hb->set_position(Vector2(get_size().width - get_buttons_width(), 0));
-			len_hb->set_size(Size2(get_buttons_width(), get_size().height));
-			int hsize_icon_width = get_editor_theme_icon(SNAME("Hsize"))->get_width();
-			add_track_hb->set_size(Size2(name_limit - ((hsize_icon_width + 16) * EDSCALE), 0));
-		} break;
+	case NOTIFICATION_RESIZED: {
+		len_hb->set_position(Vector2(get_size().width - get_buttons_width(), 0));
+		len_hb->set_size(Size2(get_buttons_width(), get_size().height));
+		int hsize_icon_width = get_editor_theme_icon(SNAME("Hsize"))->get_width();
+		add_track_hb->set_size(Size2(name_limit - ((hsize_icon_width + 16) * EDSCALE), 0));
+	} break;
 
-		case NOTIFICATION_DRAW: {
-			if (animation.is_null()) {
-				return;
-			}
+	case NOTIFICATION_DRAW: {
+		if (animation.is_null()) {
+			return;
+		}
 
-			const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-			const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+		const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
+		const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 
-			const Ref<StyleBox> &stylebox_time_unavailable = get_theme_stylebox(SNAME("time_unavailable"), SNAME("AnimationTimelineEdit"));
-			const Ref<StyleBox> &stylebox_time_available = get_theme_stylebox(SNAME("time_available"), SNAME("AnimationTimelineEdit"));
+		const Ref<StyleBox>& stylebox_time_unavailable =
+			get_theme_stylebox(SNAME("time_unavailable"), SNAME("AnimationTimelineEdit"));
+		const Ref<StyleBox>& stylebox_time_available =
+			get_theme_stylebox(SNAME("time_available"), SNAME("AnimationTimelineEdit"));
 
-			const Color v_line_primary_color = get_theme_color(SNAME("v_line_primary_color"), SNAME("AnimationTimelineEdit"));
-			const Color v_line_secondary_color = get_theme_color(SNAME("v_line_secondary_color"), SNAME("AnimationTimelineEdit"));
-			const Color h_line_color = get_theme_color(SNAME("h_line_color"), SNAME("AnimationTimelineEdit"));
-			const Color font_primary_color = get_theme_color(SNAME("font_primary_color"), SNAME("AnimationTimelineEdit"));
-			const Color font_secondary_color = get_theme_color(SNAME("font_secondary_color"), SNAME("AnimationTimelineEdit"));
+		const Color v_line_primary_color =
+			get_theme_color(SNAME("v_line_primary_color"), SNAME("AnimationTimelineEdit"));
+		const Color v_line_secondary_color =
+			get_theme_color(SNAME("v_line_secondary_color"), SNAME("AnimationTimelineEdit"));
+		const Color h_line_color =
+			get_theme_color(SNAME("h_line_color"), SNAME("AnimationTimelineEdit"));
+		const Color font_primary_color =
+			get_theme_color(SNAME("font_primary_color"), SNAME("AnimationTimelineEdit"));
+		const Color font_secondary_color =
+			get_theme_color(SNAME("font_secondary_color"), SNAME("AnimationTimelineEdit"));
 
-			const int v_line_primary_margin = get_theme_constant(SNAME("v_line_primary_margin"), SNAME("AnimationTimelineEdit"));
-			const int v_line_secondary_margin = get_theme_constant(SNAME("v_line_secondary_margin"), SNAME("AnimationTimelineEdit"));
-			const int v_line_primary_width = get_theme_constant(SNAME("v_line_primary_width"), SNAME("AnimationTimelineEdit"));
-			const int v_line_secondary_width = get_theme_constant(SNAME("v_line_secondary_width"), SNAME("AnimationTimelineEdit"));
-			const int text_primary_margin = get_theme_constant(SNAME("text_primary_margin"), SNAME("AnimationTimelineEdit"));
-			const int text_secondary_margin = get_theme_constant(SNAME("text_secondary_margin"), SNAME("AnimationTimelineEdit"));
+		const int v_line_primary_margin =
+			get_theme_constant(SNAME("v_line_primary_margin"), SNAME("AnimationTimelineEdit"));
+		const int v_line_secondary_margin =
+			get_theme_constant(SNAME("v_line_secondary_margin"), SNAME("AnimationTimelineEdit"));
+		const int v_line_primary_width =
+			get_theme_constant(SNAME("v_line_primary_width"), SNAME("AnimationTimelineEdit"));
+		const int v_line_secondary_width =
+			get_theme_constant(SNAME("v_line_secondary_width"), SNAME("AnimationTimelineEdit"));
+		const int text_primary_margin =
+			get_theme_constant(SNAME("text_primary_margin"), SNAME("AnimationTimelineEdit"));
+		const int text_secondary_margin =
+			get_theme_constant(SNAME("text_secondary_margin"), SNAME("AnimationTimelineEdit"));
 
-			int zoomw = get_size().width - get_buttons_width() - get_name_limit();
-			float scale = get_zoom_scale();
-			int h = get_size().height;
+		int zoomw = get_size().width - get_buttons_width() - get_name_limit();
+		float scale = get_zoom_scale();
+		int h = get_size().height;
 
-			float l = animation->get_length();
-			if (l <= 0) {
-				l = SECOND_DECIMAL; // Avoid crashor.
-			}
+		float l = animation->get_length();
+		if (l <= 0) {
+			l = SECOND_DECIMAL; // Avoid crashor.
+		}
 
-			Ref<Texture2D> hsize_icon = get_editor_theme_icon(SNAME("Hsize"));
-			hsize_rect = Rect2(get_name_limit() - hsize_icon->get_width() - 8 * EDSCALE, (get_size().height - hsize_icon->get_height()) / 2, hsize_icon->get_width(), hsize_icon->get_height());
-			draw_texture(hsize_icon, hsize_rect.position);
+		Ref<Texture2D> hsize_icon = get_editor_theme_icon(SNAME("Hsize"));
+		hsize_rect = Rect2(get_name_limit() - hsize_icon->get_width() - 8 * EDSCALE,
+			(get_size().height - hsize_icon->get_height()) / 2, hsize_icon->get_width(),
+			hsize_icon->get_height());
+		draw_texture(hsize_icon, hsize_rect.position);
 
-			{
-				float time_min = 0;
-				float time_max = animation->get_length();
-				for (int i = 0; i < animation->get_track_count(); i++) {
-					if (animation->track_get_key_count(i) > 0) {
-						float beg = animation->track_get_key_time(i, 0);
+		{
+			float time_min = 0;
+			float time_max = animation->get_length();
+			for (int i = 0; i < animation->get_track_count(); i++) {
+				if (animation->track_get_key_count(i) > 0) {
+					float beg = animation->track_get_key_time(i, 0);
 
-						if (beg < time_min) {
-							time_min = beg;
-						}
+					if (beg < time_min) {
+						time_min = beg;
+					}
 
-						float end = animation->track_get_key_time(i, animation->track_get_key_count(i) - 1);
+					float end =
+						animation->track_get_key_time(i, animation->track_get_key_count(i) - 1);
 
-						if (end > time_max) {
-							time_max = end;
-						}
+					if (end > time_max) {
+						time_max = end;
 					}
 				}
+			}
 
-				PackedStringArray markers = animation->get_marker_names();
-				if (markers.size() > 0) {
-					float min_marker = animation->get_marker_time(markers[0]);
-					float max_marker = animation->get_marker_time(markers[markers.size() - 1]);
-					if (min_marker < time_min) {
-						time_min = min_marker;
-					}
-					if (max_marker > time_max) {
-						time_max = max_marker;
-					}
+			PackedStringArray markers = animation->get_marker_names();
+			if (markers.size() > 0) {
+				float min_marker = animation->get_marker_time(markers[0]);
+				float max_marker = animation->get_marker_time(markers[markers.size() - 1]);
+				if (min_marker < time_min) {
+					time_min = min_marker;
 				}
-
-				float extra = (zoomw / scale) * 0.5;
-
-				time_max += extra;
-				set_min(time_min);
-				set_max(time_max);
-
-				if (zoomw / scale < (time_max - time_min)) {
-					hscroll->show();
-
-				} else {
-					hscroll->hide();
+				if (max_marker > time_max) {
+					time_max = max_marker;
 				}
 			}
 
-			set_page(zoomw / scale);
+			float extra = (zoomw / scale) * 0.5;
 
-			if (hscroll->is_visible() && hscroll_on_zoom_buffer >= 0) {
-				hscroll->set_value(hscroll_on_zoom_buffer);
-				hscroll_on_zoom_buffer = -1.0;
+			time_max += extra;
+			set_min(time_min);
+			set_max(time_max);
+
+			if (zoomw / scale < (time_max - time_min)) {
+				hscroll->show();
+
+			}
+			else {
+				hscroll->hide();
+			}
+		}
+
+		set_page(zoomw / scale);
+
+		if (hscroll->is_visible() && hscroll_on_zoom_buffer >= 0) {
+			hscroll->set_value(hscroll_on_zoom_buffer);
+			hscroll_on_zoom_buffer = -1.0;
+		}
+
+		int end_px = (l - get_value()) * scale;
+		int begin_px = -get_value() * scale;
+
+		draw_style_box(
+			stylebox_time_unavailable, Rect2(Point2(get_name_limit(), 0), Point2(zoomw - 1, h)));
+
+		if (begin_px < zoomw && end_px > 0) {
+			if (begin_px < 0) {
+				begin_px = 0;
+			}
+			if (end_px > zoomw) {
+				end_px = zoomw;
 			}
 
-			int end_px = (l - get_value()) * scale;
-			int begin_px = -get_value() * scale;
-
-			draw_style_box(stylebox_time_unavailable, Rect2(Point2(get_name_limit(), 0), Point2(zoomw - 1, h)));
-
-			if (begin_px < zoomw && end_px > 0) {
-				if (begin_px < 0) {
-					begin_px = 0;
-				}
-				if (end_px > zoomw) {
-					end_px = zoomw;
-				}
-
-				draw_style_box(stylebox_time_available, Rect2(Point2(get_name_limit() + begin_px, 0), Point2(end_px - begin_px, h)));
-			}
+			draw_style_box(stylebox_time_available,
+				Rect2(Point2(get_name_limit() + begin_px, 0), Point2(end_px - begin_px, h)));
+		}
 
 #define SC_ADJ 100
-			int dec = 1;
-			int step = 1;
-			int decimals = 2;
-			bool step_found = false;
+		int dec = 1;
+		int step = 1;
+		int decimals = 2;
+		bool step_found = false;
 
-			const float period_width = font->get_char_size('.', font_size).width;
-			float max_digit_width = font->get_char_size('0', font_size).width;
-			for (int i = 1; i <= 9; i++) {
-				const float digit_width = font->get_char_size('0' + i, font_size).width;
-				max_digit_width = MAX(digit_width, max_digit_width);
+		const float period_width = font->get_char_size('.', font_size).width;
+		float max_digit_width = font->get_char_size('0', font_size).width;
+		for (int i = 1; i <= 9; i++) {
+			const float digit_width = font->get_char_size('0' + i, font_size).width;
+			max_digit_width = MAX(digit_width, max_digit_width);
+		}
+		const int max_sc = int(Math::ceil(zoomw / scale));
+		const int max_sc_width = String::num(max_sc).length() * Math::ceil(max_digit_width);
+
+		const int min_margin = MAX(text_secondary_margin, text_primary_margin);
+
+		while (!step_found) {
+			int min = max_sc_width;
+			if (decimals > 0) {
+				min += Math::ceil(period_width + max_digit_width * decimals);
 			}
-			const int max_sc = int(Math::ceil(zoomw / scale));
-			const int max_sc_width = String::num(max_sc).length() * Math::ceil(max_digit_width);
 
-			const int min_margin = MAX(text_secondary_margin, text_primary_margin);
+			min += (min_margin * 2);
 
-			while (!step_found) {
-				int min = max_sc_width;
-				if (decimals > 0) {
-					min += Math::ceil(period_width + max_digit_width * decimals);
-				}
-
-				min += (min_margin * 2);
-
-				static const int _multp[3] = { 1, 2, 5 };
-				for (int i = 0; i < 3; i++) {
-					step = (_multp[i] * dec);
-					if (step * scale / SC_ADJ > min) {
-						step_found = true;
-						break;
-					}
-				}
-				if (step_found) {
+			static const int _multp[3] = {1, 2, 5};
+			for (int i = 0; i < 3; i++) {
+				step = (_multp[i] * dec);
+				if (step * scale / SC_ADJ > min) {
+					step_found = true;
 					break;
 				}
-				dec *= 10;
-				decimals--;
-				if (decimals < 0) {
-					decimals = 0;
-				}
 			}
+			if (step_found) {
+				break;
+			}
+			dec *= 10;
+			decimals--;
+			if (decimals < 0) {
+				decimals = 0;
+			}
+		}
 
-			if (use_fps) {
-				float step_size = animation->get_step();
-				if (step_size > 0) {
-					int prev_frame_ofs = -10000000;
+		if (use_fps) {
+			float step_size = animation->get_step();
+			if (step_size > 0) {
+				int prev_frame_ofs = -10000000;
 
-					for (int i = 0; i < zoomw; i++) {
-						float pos = get_value() + double(i) / scale;
-						float prev = get_value() + (double(i) - 1.0) / scale;
-
-						int frame = int(Math::floor(pos / step_size));
-						int prev_frame = int(Math::floor(prev / step_size));
-
-						bool sub = Math::floor(prev) == Math::floor(pos);
-
-						if (frame != prev_frame && i >= prev_frame_ofs) {
-							int line_margin = sub ? v_line_secondary_margin : v_line_primary_margin;
-							int line_width = sub ? v_line_secondary_width : v_line_primary_width;
-							Color line_color = sub ? v_line_secondary_color : v_line_primary_color;
-
-							draw_line(Point2(get_name_limit() + i, 0 + line_margin), Point2(get_name_limit() + i, h - line_margin), line_color, line_width);
-
-							int text_margin = sub ? text_secondary_margin : text_primary_margin;
-
-							draw_string(font, Point2(get_name_limit() + i + text_margin, (h - font->get_height(font_size)) / 2 + font->get_ascent(font_size)).floor(), itos(frame), HORIZONTAL_ALIGNMENT_LEFT, zoomw - i, font_size, sub ? font_secondary_color : font_primary_color);
-
-							prev_frame_ofs = i + font->get_string_size(itos(frame), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + text_margin;
-						}
-					}
-				}
-
-			} else {
 				for (int i = 0; i < zoomw; i++) {
 					float pos = get_value() + double(i) / scale;
 					float prev = get_value() + (double(i) - 1.0) / scale;
 
-					int sc = int(Math::floor(pos * SC_ADJ));
-					int prev_sc = int(Math::floor(prev * SC_ADJ));
+					int frame = int(Math::floor(pos / step_size));
+					int prev_frame = int(Math::floor(prev / step_size));
 
-					if ((sc / step) != (prev_sc / step) || (prev_sc < 0 && sc >= 0)) {
-						int scd = sc < 0 ? prev_sc : sc;
-						bool sub = (((scd - (scd % step)) % (dec * 10)) != 0);
+					bool sub = Math::floor(prev) == Math::floor(pos);
 
+					if (frame != prev_frame && i >= prev_frame_ofs) {
 						int line_margin = sub ? v_line_secondary_margin : v_line_primary_margin;
 						int line_width = sub ? v_line_secondary_width : v_line_primary_width;
 						Color line_color = sub ? v_line_secondary_color : v_line_primary_color;
 
-						draw_line(Point2(get_name_limit() + i, 0 + line_margin), Point2(get_name_limit() + i, h - line_margin), line_color, line_width);
+						draw_line(Point2(get_name_limit() + i, 0 + line_margin),
+							Point2(get_name_limit() + i, h - line_margin), line_color, line_width);
 
 						int text_margin = sub ? text_secondary_margin : text_primary_margin;
 
-						draw_string(font, Point2(get_name_limit() + i + text_margin, (h - font->get_height(font_size)) / 2 + font->get_ascent(font_size)).floor(), String::num((scd - (scd % step)) / double(SC_ADJ), decimals), HORIZONTAL_ALIGNMENT_LEFT, zoomw - i, font_size, sub ? font_secondary_color : font_primary_color);
+						draw_string(font,
+							Point2(get_name_limit() + i + text_margin,
+								(h - font->get_height(font_size)) / 2 + font->get_ascent(font_size))
+								.floor(),
+							itos(frame), HORIZONTAL_ALIGNMENT_LEFT, zoomw - i, font_size,
+							sub ? font_secondary_color : font_primary_color);
+
+						prev_frame_ofs = i +
+										 font->get_string_size(itos(frame),
+												 HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+											 .x +
+										 text_margin;
 					}
 				}
 			}
 
-			draw_line(Vector2(0, get_size().height), get_size(), h_line_color, Math::round(EDSCALE));
+		}
+		else {
+			for (int i = 0; i < zoomw; i++) {
+				float pos = get_value() + double(i) / scale;
+				float prev = get_value() + (double(i) - 1.0) / scale;
 
-			int px = get_name_limit() + end_px - timeline_resize_rect.size.width * 0.5;
-			timeline_resize_rect.position.x = px;
-			if (px >= get_name_limit() && px < zoomw + get_buttons_width()) {
-				draw_texture(get_editor_theme_icon(SNAME("TimelineHandle")), Point2(timeline_resize_rect.position.x, 0));
+				int sc = int(Math::floor(pos * SC_ADJ));
+				int prev_sc = int(Math::floor(prev * SC_ADJ));
+
+				if ((sc / step) != (prev_sc / step) || (prev_sc < 0 && sc >= 0)) {
+					int scd = sc < 0 ? prev_sc : sc;
+					bool sub = (((scd - (scd % step)) % (dec * 10)) != 0);
+
+					int line_margin = sub ? v_line_secondary_margin : v_line_primary_margin;
+					int line_width = sub ? v_line_secondary_width : v_line_primary_width;
+					Color line_color = sub ? v_line_secondary_color : v_line_primary_color;
+
+					draw_line(Point2(get_name_limit() + i, 0 + line_margin),
+						Point2(get_name_limit() + i, h - line_margin), line_color, line_width);
+
+					int text_margin = sub ? text_secondary_margin : text_primary_margin;
+
+					draw_string(font,
+						Point2(get_name_limit() + i + text_margin,
+							(h - font->get_height(font_size)) / 2 + font->get_ascent(font_size))
+							.floor(),
+						String::num((scd - (scd % step)) / double(SC_ADJ), decimals),
+						HORIZONTAL_ALIGNMENT_LEFT, zoomw - i, font_size,
+						sub ? font_secondary_color : font_primary_color);
+				}
 			}
+		}
 
-			update_values();
-		} break;
+		draw_line(Vector2(0, get_size().height), get_size(), h_line_color, Math::round(EDSCALE));
 
-		case NOTIFICATION_WM_WINDOW_FOCUS_OUT: {
-			if (resizing_timeline) {
-				_commit_timeline_resize();
-			} else if (dragging_hsize || dragging_timeline) {
-				_stop_dragging();
-			}
-		} break;
+		int px = get_name_limit() + end_px - timeline_resize_rect.size.width * 0.5;
+		timeline_resize_rect.position.x = px;
+		if (px >= get_name_limit() && px < zoomw + get_buttons_width()) {
+			draw_texture(get_editor_theme_icon(SNAME("TimelineHandle")),
+				Point2(timeline_resize_rect.position.x, 0));
+		}
+
+		update_values();
+	} break;
+
+	case NOTIFICATION_WM_WINDOW_FOCUS_OUT: {
+		if (resizing_timeline) {
+			_commit_timeline_resize();
+		}
+		else if (dragging_hsize || dragging_timeline) {
+			_stop_dragging();
+		}
+	} break;
 	}
 }
 
-void AnimationTimelineEdit::set_animation(const Ref<Animation> &p_animation, bool p_read_only) {
+void AnimationTimelineEdit::set_animation(const Ref<Animation>& p_animation, bool p_read_only)
+{
 	animation = p_animation;
 	read_only = p_read_only;
 
@@ -1729,11 +1908,13 @@ void AnimationTimelineEdit::set_animation(const Ref<Animation> &p_animation, boo
 		filter_track->show();
 		if (read_only) {
 			add_track->hide();
-		} else {
+		}
+		else {
 			add_track->show();
 		}
 		play_position->show();
-	} else {
+	}
+	else {
 		len_hb->hide();
 		filter_track->hide();
 		add_track->hide();
@@ -1742,21 +1923,26 @@ void AnimationTimelineEdit::set_animation(const Ref<Animation> &p_animation, boo
 	queue_redraw();
 }
 
-Size2 AnimationTimelineEdit::get_minimum_size() const {
+Size2 AnimationTimelineEdit::get_minimum_size() const
+{
 	Size2 ms = filter_track->get_minimum_size();
 	const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 	ms.height = MAX(ms.height, font->get_height(font_size));
-	ms.width = get_buttons_width() + add_track->get_minimum_size().width + get_editor_theme_icon(SNAME("Hsize"))->get_width() + 2 + 8 * EDSCALE;
+	ms.width = get_buttons_width() + add_track->get_minimum_size().width +
+			   get_editor_theme_icon(SNAME("Hsize"))->get_width() + 2 + 8 * EDSCALE;
 	return ms;
 }
 
-void AnimationTimelineEdit::set_zoom(Range *p_zoom) {
+void AnimationTimelineEdit::set_zoom(Range* p_zoom)
+{
 	zoom = p_zoom;
-	zoom->connect(SceneStringName(value_changed), callable_mp(this, &AnimationTimelineEdit::_zoom_changed));
+	zoom->connect(
+		SceneStringName(value_changed), callable_mp(this, &AnimationTimelineEdit::_zoom_changed));
 }
 
-void AnimationTimelineEdit::auto_fit() {
+void AnimationTimelineEdit::auto_fit()
+{
 	if (animation.is_null()) {
 		return;
 	}
@@ -1764,7 +1950,8 @@ void AnimationTimelineEdit::auto_fit() {
 	float anim_end = animation->get_length();
 	float anim_start = 0;
 
-	// Search for keyframe outside animation boundaries to include keyframes before animation start and after animation length.
+	// Search for keyframe outside animation boundaries to include keyframes before animation start
+	// and after animation length.
 	int track_count = animation->get_track_count();
 	for (int track = 0; track < track_count; ++track) {
 		for (int i = 0; i < animation->track_get_key_count(track); i++) {
@@ -1781,12 +1968,14 @@ void AnimationTimelineEdit::auto_fit() {
 	float anim_length = anim_end - anim_start;
 	int timeline_width_pixels = get_size().width - get_buttons_width() - get_name_limit();
 
-	// I want a little buffer at the end... (5% looks nice and we should keep some space for the bezier handles)
+	// I want a little buffer at the end... (5% looks nice and we should keep some space for the
+	// bezier handles)
 	timeline_width_pixels *= 0.95;
 
-	// The technique is to reuse the _get_zoom_scale function directly to be sure that the auto_fit is always calculated
-	// the same way as the zoom slider. It's a little bit more calculation then doing the inverse of get_zoom_scale but
-	// it's really easier to understand and should always be accurate.
+	// The technique is to reuse the _get_zoom_scale function directly to be sure that the auto_fit
+	// is always calculated the same way as the zoom slider. It's a little bit more calculation then
+	// doing the inverse of get_zoom_scale but it's really easier to understand and should always be
+	// accurate.
 	float new_zoom = zoom->get_max();
 	while (true) {
 		double test_zoom_scale = _get_zoom_scale(new_zoom);
@@ -1804,42 +1993,44 @@ void AnimationTimelineEdit::auto_fit() {
 		}
 	}
 
-	// Horizontal scroll to get_min which should include keyframes that are before the animation start.
+	// Horizontal scroll to get_min which should include keyframes that are before the animation
+	// start.
 	hscroll->set_value(hscroll->get_min());
-	// Set the zoom value... the signal value_changed will be emitted and the timeline will be refreshed correctly!
+	// Set the zoom value... the signal value_changed will be emitted and the timeline will be
+
+	// refreshed correctly!
 	zoom->set_value(new_zoom);
-	// The new zoom value must be applied correctly so the scrollbar are updated before we move the scrollbar to
-	// the beginning of the animation, hence the call deferred.
+	// The new zoom value must be applied correctly so the scrollbar are updated before we move the
+	// scrollbar to the beginning of the animation, hence the call deferred.
 	callable_mp(this, &AnimationTimelineEdit::_scroll_to_start).call_deferred();
 }
 
-void AnimationTimelineEdit::_scroll_to_start() {
-	// Horizontal scroll to get_min which should include keyframes that are before the animation start.
+void AnimationTimelineEdit::_scroll_to_start()
+{
+	// Horizontal scroll to get_min which should include keyframes that are before the animation
+	// start.
 	hscroll->set_value(hscroll->get_min());
 }
 
-void AnimationTimelineEdit::set_track_edit(AnimationTrackEdit *p_track_edit) {
+void AnimationTimelineEdit::set_track_edit(AnimationTrackEdit* p_track_edit)
+{
 	track_edit = p_track_edit;
 }
 
-void AnimationTimelineEdit::set_editor(AnimationTrackEditor *p_editor) {
-	editor = p_editor;
-}
+void AnimationTimelineEdit::set_editor(AnimationTrackEditor* p_editor) { editor = p_editor; }
 
-void AnimationTimelineEdit::set_play_position(float p_pos) {
+void AnimationTimelineEdit::set_play_position(float p_pos)
+{
 	play_position_pos = p_pos;
 	play_position->queue_redraw();
 }
 
-float AnimationTimelineEdit::get_play_position() const {
-	return play_position_pos;
-}
+float AnimationTimelineEdit::get_play_position() const { return play_position_pos; }
 
-void AnimationTimelineEdit::update_play_position() {
-	play_position->queue_redraw();
-}
+void AnimationTimelineEdit::update_play_position() { play_position->queue_redraw(); }
 
-void AnimationTimelineEdit::update_values() {
+void AnimationTimelineEdit::update_values()
+{
 	if (animation.is_null() || editing) {
 		return;
 	}
@@ -1854,7 +2045,8 @@ void AnimationTimelineEdit::update_values() {
 			track_edit->editor->_update_key_edit();
 			track_edit->editor->marker_edit->_update_key_edit();
 		}
-	} else {
+	}
+	else {
 		length->set_step(SECOND_DECIMAL);
 		length->set_value(animation->get_length());
 		length->set_tooltip_text(TTR("Animation length (seconds)"));
@@ -1862,26 +2054,27 @@ void AnimationTimelineEdit::update_values() {
 	}
 
 	switch (animation->get_loop_mode()) {
-		case Animation::LOOP_NONE: {
-			loop->set_button_icon(get_editor_theme_icon(SNAME("Loop")));
-			loop->set_pressed(false);
-		} break;
-		case Animation::LOOP_LINEAR: {
-			loop->set_button_icon(get_editor_theme_icon(SNAME("Loop")));
-			loop->set_pressed(true);
-		} break;
-		case Animation::LOOP_PINGPONG: {
-			loop->set_button_icon(get_editor_theme_icon(SNAME("PingPongLoop")));
-			loop->set_pressed(true);
-		} break;
-		default:
-			break;
+	case Animation::LOOP_NONE: {
+		loop->set_button_icon(get_editor_theme_icon(SNAME("Loop")));
+		loop->set_pressed(false);
+	} break;
+	case Animation::LOOP_LINEAR: {
+		loop->set_button_icon(get_editor_theme_icon(SNAME("Loop")));
+		loop->set_pressed(true);
+	} break;
+	case Animation::LOOP_PINGPONG: {
+		loop->set_button_icon(get_editor_theme_icon(SNAME("PingPongLoop")));
+		loop->set_pressed(true);
+	} break;
+	default:
+		break;
 	}
 
 	editing = false;
 }
 
-void AnimationTimelineEdit::_play_position_draw() {
+void AnimationTimelineEdit::_play_position_draw()
+{
 	if (animation.is_null() || play_position_pos < 0) {
 		return;
 	}
@@ -1894,14 +2087,14 @@ void AnimationTimelineEdit::_play_position_draw() {
 		Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 
 		play_position->draw_line(Point2(px, 0), Point2(px, h), color, Math::round(2 * EDSCALE));
-		play_position->draw_texture(
-				get_editor_theme_icon(SNAME("TimelineIndicator")),
-				Point2(px - get_editor_theme_icon(SNAME("TimelineIndicator"))->get_width() * 0.5, 0),
-				color);
+		play_position->draw_texture(get_editor_theme_icon(SNAME("TimelineIndicator")),
+			Point2(px - get_editor_theme_icon(SNAME("TimelineIndicator"))->get_width() * 0.5, 0),
+			color);
 	}
 }
 
-void AnimationTimelineEdit::gui_input(const Ref<InputEvent> &p_event) {
+void AnimationTimelineEdit::gui_input(const Ref<InputEvent>& p_event)
+{
 	ERR_FAIL_COND(p_event.is_null());
 
 	if (panner->gui_input(p_event, get_global_rect())) {
@@ -1912,34 +2105,41 @@ void AnimationTimelineEdit::gui_input(const Ref<InputEvent> &p_event) {
 	const Ref<InputEventMouseButton> mb = p_event;
 
 	if (mb.is_valid()) {
-		if (mb->is_pressed() && mb->is_alt_pressed() && mb->get_button_index() == MouseButton::WHEEL_UP) {
+		if (mb->is_pressed() && mb->is_alt_pressed() &&
+			mb->get_button_index() == MouseButton::WHEEL_UP) {
 			if (track_edit) {
 				track_edit->get_editor()->goto_prev_step(true);
 			}
 			accept_event();
 		}
 
-		if (mb->is_pressed() && mb->is_alt_pressed() && mb->get_button_index() == MouseButton::WHEEL_DOWN) {
+		if (mb->is_pressed() && mb->is_alt_pressed() &&
+			mb->get_button_index() == MouseButton::WHEEL_DOWN) {
 			if (track_edit) {
 				track_edit->get_editor()->goto_next_step(true);
 			}
 			accept_event();
 		}
 
-		if (!resizing_timeline && !dragging_hsize && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
+		if (!resizing_timeline && !dragging_hsize && mb->is_pressed() &&
+			mb->get_button_index() == MouseButton::LEFT) {
 			if (timeline_resize_rect.has_point(mb->get_position())) {
 				resizing_timeline = true;
-				timeline_resize_from = timeline_resize_rect.position.x + timeline_resize_rect.size.width / 2 - mb->get_position().x;
+				timeline_resize_from = timeline_resize_rect.position.x +
+									   timeline_resize_rect.size.width / 2 - mb->get_position().x;
 				timeline_resize_at = animation->get_length();
-			} else if (hsize_rect.has_point(mb->get_position())) {
+			}
+			else if (hsize_rect.has_point(mb->get_position())) {
 				dragging_hsize = true;
 				dragging_hsize_from = mb->get_position().x;
 				dragging_hsize_at = name_limit;
 			}
 		}
 
-		if (!resizing_timeline && !panner->is_panning() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT &&
-				mb->get_position().x > get_name_limit() && mb->get_position().x < (get_size().width - get_buttons_width())) {
+		if (!resizing_timeline && !panner->is_panning() && mb->is_pressed() &&
+			mb->get_button_index() == MouseButton::LEFT &&
+			mb->get_position().x > get_name_limit() &&
+			mb->get_position().x < (get_size().width - get_buttons_width())) {
 			int x = mb->get_position().x - get_name_limit();
 
 			float ofs = x / get_zoom_scale() + get_value();
@@ -1950,7 +2150,8 @@ void AnimationTimelineEdit::gui_input(const Ref<InputEvent> &p_event) {
 		if (!mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
 			if (resizing_timeline) {
 				_commit_timeline_resize();
-			} else if (dragging_hsize || dragging_timeline) {
+			}
+			else if (dragging_hsize || dragging_timeline) {
 				_stop_dragging();
 			}
 		}
@@ -1975,11 +2176,13 @@ void AnimationTimelineEdit::gui_input(const Ref<InputEvent> &p_event) {
 			queue_redraw();
 			emit_signal(SNAME("name_limit_changed"));
 			play_position->queue_redraw();
-		} else if (resizing_timeline) {
+		}
+		else if (resizing_timeline) {
 			int x = mm->get_position().x + timeline_resize_from - get_name_limit();
 			float ofs = x / get_zoom_scale() + get_value();
 			animation->set_length(editor->snap_time(ofs));
-		} else if (dragging_timeline) {
+		}
+		else if (dragging_timeline) {
 			int x = mm->get_position().x - get_name_limit();
 			float ofs = x / get_zoom_scale() + get_value();
 			emit_signal(SNAME("timeline_changed"), ofs, mm->is_alt_pressed());
@@ -1987,9 +2190,10 @@ void AnimationTimelineEdit::gui_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-void AnimationTimelineEdit::_commit_timeline_resize() {
+void AnimationTimelineEdit::_commit_timeline_resize()
+{
 	if (animation->get_length() != timeline_resize_at) {
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Change Animation Length"));
 		undo_redo->add_do_method(animation.ptr(), "set_length", animation->get_length());
 		undo_redo->add_undo_method(animation.ptr(), "set_length", timeline_resize_at);
@@ -1998,67 +2202,74 @@ void AnimationTimelineEdit::_commit_timeline_resize() {
 	resizing_timeline = false;
 }
 
-void AnimationTimelineEdit::_stop_dragging() {
+void AnimationTimelineEdit::_stop_dragging()
+{
 	dragging_hsize = false;
 	dragging_timeline = false;
 }
 
-Control::CursorShape AnimationTimelineEdit::get_cursor_shape(const Point2 &p_pos) const {
-	if (dragging_hsize || resizing_timeline || hsize_rect.has_point(p_pos) || timeline_resize_rect.has_point(p_pos)) {
+Control::CursorShape AnimationTimelineEdit::get_cursor_shape(const Point2& p_pos) const
+{
+	if (dragging_hsize || resizing_timeline || hsize_rect.has_point(p_pos) ||
+		timeline_resize_rect.has_point(p_pos)) {
 		// Indicate that the track name column's width and the timeline length can be adjusted.
 		return Control::CURSOR_HSIZE;
-	} else {
+	}
+	else {
 		return get_default_cursor_shape();
 	}
 }
 
-void AnimationTimelineEdit::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event) {
+void AnimationTimelineEdit::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event)
+{
 	set_value(get_value() - p_scroll_vec.x / get_zoom_scale());
 }
 
-void AnimationTimelineEdit::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event) {
+void AnimationTimelineEdit::_zoom_callback(
+	float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event)
+{
 	double current_zoom_value = get_zoom()->get_value();
 	zoom_scroll_origin = p_origin;
 	zoom_callback_occurred = true;
 	get_zoom()->set_value(MAX(0.01, current_zoom_value - (1.0 - p_zoom_factor)));
 }
 
-void AnimationTimelineEdit::set_use_fps(bool p_use_fps) {
+void AnimationTimelineEdit::set_use_fps(bool p_use_fps)
+{
 	use_fps = p_use_fps;
 	queue_redraw();
 }
 
-bool AnimationTimelineEdit::is_using_fps() const {
-	return use_fps;
-}
+bool AnimationTimelineEdit::is_using_fps() const { return use_fps; }
 
-void AnimationTimelineEdit::set_hscroll(HScrollBar *p_hscroll) {
-	hscroll = p_hscroll;
-}
+void AnimationTimelineEdit::set_hscroll(HScrollBar* p_hscroll) { hscroll = p_hscroll; }
 
-void AnimationTimelineEdit::_track_added(int p_track) {
+void AnimationTimelineEdit::_track_added(int p_track)
+{
 	emit_signal(SNAME("track_added"), p_track);
 }
 
-void AnimationTimelineEdit::_bind_methods() {
+void AnimationTimelineEdit::_bind_methods()
+{
 	ADD_SIGNAL(MethodInfo("zoom_changed"));
 	ADD_SIGNAL(MethodInfo("name_limit_changed"));
-	ADD_SIGNAL(MethodInfo("timeline_changed", PropertyInfo(Variant::FLOAT, "position"), PropertyInfo(Variant::BOOL, "timeline_only")));
+	ADD_SIGNAL(MethodInfo("timeline_changed", PropertyInfo(Variant::FLOAT, "position"),
+		PropertyInfo(Variant::BOOL, "timeline_only")));
 	ADD_SIGNAL(MethodInfo("track_added", PropertyInfo(Variant::INT, "track")));
 	ADD_SIGNAL(MethodInfo("length_changed", PropertyInfo(Variant::FLOAT, "size")));
 	ADD_SIGNAL(MethodInfo("filter_changed"));
-
-	ClassDB::bind_method(D_METHOD("update_values"), &AnimationTimelineEdit::update_values);
 }
 
-AnimationTimelineEdit::AnimationTimelineEdit() {
+AnimationTimelineEdit::AnimationTimelineEdit()
+{
 	name_limit = 150 * EDSCALE;
 
 	play_position = memnew(Control);
 	play_position->set_mouse_filter(MOUSE_FILTER_PASS);
 	add_child(play_position);
 	play_position->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
-	play_position->connect(SceneStringName(draw), callable_mp(this, &AnimationTimelineEdit::_play_position_draw));
+	play_position->connect(
+		SceneStringName(draw), callable_mp(this, &AnimationTimelineEdit::_play_position_draw));
 
 	add_track_hb = memnew(HBoxContainer);
 	add_child(add_track_hb);
@@ -2071,15 +2282,17 @@ AnimationTimelineEdit::AnimationTimelineEdit() {
 	filter_track->set_h_size_flags(SIZE_EXPAND_FILL);
 	filter_track->set_custom_minimum_size(Vector2(120 * EDSCALE, 0));
 	filter_track->set_placeholder(TTRC("Filter Tracks"));
-	filter_track->set_tooltip_text(TTRC("Filter tracks by entering part of their node name or property."));
-	filter_track->connect(SceneStringName(text_changed), callable_mp((AnimationTrackEditor *)this, &AnimationTrackEditor::_on_filter_updated));
+	filter_track->set_tooltip_text(
+		TTRC("Filter tracks by entering part of their node name or property."));
+	filter_track->connect(SceneStringName(text_changed),
+		callable_mp((AnimationTrackEditor*)this, &AnimationTrackEditor::_on_filter_updated));
 	filter_track->set_clear_button_enabled(true);
 	filter_track->hide();
 	add_track_hb->add_child(filter_track);
 
 	len_hb = memnew(HBoxContainer);
 
-	Control *expander = memnew(Control);
+	Control* expander = memnew(Control);
 	expander->set_custom_minimum_size(Vector2(2 * EDSCALE, 0));
 	expander->set_mouse_filter(MOUSE_FILTER_IGNORE);
 	len_hb->add_child(expander);
@@ -2100,24 +2313,28 @@ AnimationTimelineEdit::AnimationTimelineEdit() {
 	length->set_h_size_flags(SIZE_EXPAND_FILL);
 	length->set_tooltip_text(TTRC("Animation length (seconds)"));
 	length->set_accessibility_name(TTRC("Animation length (seconds)"));
-	length->connect(SceneStringName(value_changed), callable_mp(this, &AnimationTimelineEdit::_anim_length_changed));
+	length->connect(SceneStringName(value_changed),
+		callable_mp(this, &AnimationTimelineEdit::_anim_length_changed));
 	len_hb->add_child(length);
 
 	loop = memnew(Button);
 	loop->set_flat(true);
 	loop->set_tooltip_text(TTRC("Animation Looping"));
-	loop->connect(SceneStringName(pressed), callable_mp(this, &AnimationTimelineEdit::_anim_loop_pressed));
+	loop->connect(
+		SceneStringName(pressed), callable_mp(this, &AnimationTimelineEdit::_anim_loop_pressed));
 	loop->set_toggle_mode(true);
 	len_hb->add_child(loop);
 	add_child(len_hb);
 
 	add_track->hide();
-	add_track->get_popup()->connect("index_pressed", callable_mp(this, &AnimationTimelineEdit::_track_added));
+	add_track->get_popup()->connect(
+		"index_pressed", callable_mp(this, &AnimationTimelineEdit::_track_added));
 	len_hb->hide();
 
 	panner.instantiate();
 	panner->set_scroll_zoom_factor(SCROLL_ZOOM_FACTOR_IN);
-	panner->set_callbacks(callable_mp(this, &AnimationTimelineEdit::_pan_callback), callable_mp(this, &AnimationTimelineEdit::_zoom_callback));
+	panner->set_callbacks(callable_mp(this, &AnimationTimelineEdit::_pan_callback),
+		callable_mp(this, &AnimationTimelineEdit::_zoom_callback));
 	panner->set_pan_axis(ViewPanner::PAN_AXIS_HORIZONTAL);
 
 	set_layout_direction(Control::LAYOUT_DIRECTION_LTR);
@@ -2125,445 +2342,537 @@ AnimationTimelineEdit::AnimationTimelineEdit() {
 
 ////////////////////////////////////
 
-void AnimationTrackEdit::_notification(int p_what) {
+void AnimationTrackEdit::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			if (animation.is_null()) {
-				return;
+	case NOTIFICATION_THEME_CHANGED: {
+		if (animation.is_null()) {
+			return;
+		}
+		ERR_FAIL_INDEX(track, animation->get_track_count());
+
+		type_icon = _get_key_type_icon();
+		selected_icon = get_editor_theme_icon(SNAME("KeySelected"));
+	} break;
+
+	case NOTIFICATION_DRAW: {
+		if (animation.is_null() || animation->get_track_count() == 0) {
+			return;
+		}
+		ERR_FAIL_INDEX(track, animation->get_track_count());
+
+		int limit = timeline->get_name_limit();
+
+		const Ref<StyleBox>& stylebox_odd =
+			get_theme_stylebox(SNAME("odd"), SNAME("AnimationTrackEdit"));
+		const Ref<StyleBox>& stylebox_focus =
+			get_theme_stylebox(SNAME("focus"), SNAME("AnimationTrackEdit"));
+		const Ref<StyleBox>& stylebox_hover =
+			get_theme_stylebox(SceneStringName(hover), SNAME("AnimationTrackEdit"));
+
+		const Color h_line_color =
+			get_theme_color(SNAME("h_line_color"), SNAME("AnimationTrackEdit"));
+		const int h_separation =
+			get_theme_constant(SNAME("h_separation"), SNAME("AnimationTrackEdit"));
+		const int outer_margin =
+			get_theme_constant(SNAME("outer_margin"), SNAME("AnimationTrackEdit"));
+
+		if (track % 2 == 1) {
+			// Draw a background over odd lines to make long lists of tracks easier to read.
+			draw_style_box(
+				stylebox_odd, Rect2(Point2(1 * EDSCALE, 0), get_size() - Size2(1 * EDSCALE, 0)));
+		}
+
+		if (hovered) {
+			// Draw hover feedback.
+			draw_style_box(
+				stylebox_hover, Rect2(Point2(1 * EDSCALE, 0), get_size() - Size2(1 * EDSCALE, 0)));
+		}
+
+		if (has_focus()) {
+			// Offside so the horizontal sides aren't cutoff.
+			draw_style_box(
+				stylebox_focus, Rect2(Point2(1 * EDSCALE, 0), get_size() - Size2(1 * EDSCALE, 0)));
+		}
+
+		int limit_end = get_size().width - timeline->get_buttons_width();
+
+		// Unavailable timeline.
+
+		{
+			int px =
+				(animation->get_length() - timeline->get_value()) * timeline->get_zoom_scale() +
+				timeline->get_name_limit();
+			px = MAX(px, timeline->get_name_limit());
+			Rect2 rect = Rect2(px, 0, limit_end - px, get_size().height);
+			if (rect.size.width > 0) {
+				draw_rect(rect, Color(0, 0, 0, 0.2));
 			}
-			ERR_FAIL_INDEX(track, animation->get_track_count());
+		}
 
-			type_icon = _get_key_type_icon();
-			selected_icon = get_editor_theme_icon(SNAME("KeySelected"));
-		} break;
+		const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
+		const Ref<Font> source_font =
+			get_theme_font(SNAME("source"), EditorStringName(EditorFonts));
+		const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+		const int source_font_size =
+			get_theme_font_size(SNAME("source_size"), EditorStringName(EditorFonts));
+		const Color color = get_theme_color(SceneStringName(font_color), SNAME("Label"));
 
-		case NOTIFICATION_DRAW: {
-			if (animation.is_null() || animation->get_track_count() == 0) {
-				return;
-			}
-			ERR_FAIL_INDEX(track, animation->get_track_count());
+		const Color dc = get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor));
 
-			int limit = timeline->get_name_limit();
+		// Names and icons.
 
-			const Ref<StyleBox> &stylebox_odd = get_theme_stylebox(SNAME("odd"), SNAME("AnimationTrackEdit"));
-			const Ref<StyleBox> &stylebox_focus = get_theme_stylebox(SNAME("focus"), SNAME("AnimationTrackEdit"));
-			const Ref<StyleBox> &stylebox_hover = get_theme_stylebox(SceneStringName(hover), SNAME("AnimationTrackEdit"));
+		{
+			Ref<Font> font_to_use = font;
+			int font_size_to_use = font_size;
 
-			const Color h_line_color = get_theme_color(SNAME("h_line_color"), SNAME("AnimationTrackEdit"));
-			const int h_separation = get_theme_constant(SNAME("h_separation"), SNAME("AnimationTrackEdit"));
-			const int outer_margin = get_theme_constant(SNAME("outer_margin"), SNAME("AnimationTrackEdit"));
+			Ref<Texture2D> check = animation->track_is_enabled(track)
+									   ? get_theme_icon(SNAME("checked"), SNAME("CheckBox"))
+									   : get_theme_icon(SNAME("unchecked"), SNAME("CheckBox"));
 
-			if (track % 2 == 1) {
-				// Draw a background over odd lines to make long lists of tracks easier to read.
-				draw_style_box(stylebox_odd, Rect2(Point2(1 * EDSCALE, 0), get_size() - Size2(1 * EDSCALE, 0)));
-			}
+			int ofs = in_group ? outer_margin : 0;
 
-			if (hovered) {
-				// Draw hover feedback.
-				draw_style_box(stylebox_hover, Rect2(Point2(1 * EDSCALE, 0), get_size() - Size2(1 * EDSCALE, 0)));
-			}
+			check_rect = Rect2(Point2(ofs, (get_size().height - check->get_height()) / 2).round(),
+				check->get_size());
+			draw_texture(check, check_rect.position);
+			ofs += check->get_width() + h_separation;
 
-			if (has_focus()) {
-				// Offside so the horizontal sides aren't cutoff.
-				draw_style_box(stylebox_focus, Rect2(Point2(1 * EDSCALE, 0), get_size() - Size2(1 * EDSCALE, 0)));
-			}
+			Ref<Texture2D> key_type_icon = _get_key_type_icon();
+			draw_texture(key_type_icon,
+				Point2(ofs, (get_size().height - key_type_icon->get_height()) / 2).round());
+			ofs += key_type_icon->get_width() + h_separation;
 
-			int limit_end = get_size().width - timeline->get_buttons_width();
-
-			// Unavailable timeline.
-
-			{
-				int px = (animation->get_length() - timeline->get_value()) * timeline->get_zoom_scale() + timeline->get_name_limit();
-				px = MAX(px, timeline->get_name_limit());
-				Rect2 rect = Rect2(px, 0, limit_end - px, get_size().height);
-				if (rect.size.width > 0) {
-					draw_rect(rect, Color(0, 0, 0, 0.2));
-				}
-			}
-
-			const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-			const Ref<Font> source_font = get_theme_font(SNAME("source"), EditorStringName(EditorFonts));
-			const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
-			const int source_font_size = get_theme_font_size(SNAME("source_size"), EditorStringName(EditorFonts));
-			const Color color = get_theme_color(SceneStringName(font_color), SNAME("Label"));
-
-			const Color dc = get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor));
-
-			// Names and icons.
-
-			{
-				Ref<Font> font_to_use = font;
-				int font_size_to_use = font_size;
-
-				Ref<Texture2D> check = animation->track_is_enabled(track) ? get_theme_icon(SNAME("checked"), SNAME("CheckBox")) : get_theme_icon(SNAME("unchecked"), SNAME("CheckBox"));
-
-				int ofs = in_group ? outer_margin : 0;
-
-				check_rect = Rect2(Point2(ofs, (get_size().height - check->get_height()) / 2).round(), check->get_size());
-				draw_texture(check, check_rect.position);
-				ofs += check->get_width() + h_separation;
-
-				Ref<Texture2D> key_type_icon = _get_key_type_icon();
-				draw_texture(key_type_icon, Point2(ofs, (get_size().height - key_type_icon->get_height()) / 2).round());
-				ofs += key_type_icon->get_width() + h_separation;
-
-				NodePath anim_path = animation->track_get_path(track);
-				Node *node = nullptr;
-				if (root) {
-					node = root->get_node_or_null(anim_path);
-				}
-
-				String text;
-				Color text_color = color;
-				if (node && EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
-					text_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-				}
-
-				if (in_group) {
-					if (animation->track_get_type(track) == Animation::TYPE_METHOD) {
-						text = TTR("Functions:");
-					} else if (animation->track_get_type(track) == Animation::TYPE_AUDIO) {
-						text = TTR("Audio Clips:");
-					} else if (animation->track_get_type(track) == Animation::TYPE_ANIMATION) {
-						text = TTR("Animation Clips:");
-					} else {
-						text += anim_path.get_concatenated_subnames();
-					}
-
-					bool use_monospace_font = EDITOR_GET("interface/theme/use_monospace_font_for_editor_symbols");
-					if (animation->track_get_type(track) == Animation::TYPE_VALUE && use_monospace_font) {
-						font_to_use = source_font;
-						font_size_to_use = source_font_size;
-					}
-
-					text_color.a *= 0.7;
-				} else if (node) {
-					Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(node);
-					const Vector2 icon_size = Vector2(1, 1) * get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
-
-					icon_rect = Rect2(Point2(ofs, (get_size().height - check->get_height()) / 2).round(), icon_size);
-					draw_texture_rect(icon, icon_rect);
-					icon_cache = icon;
-
-					text = String() + node->get_name() + ":" + anim_path.get_concatenated_subnames();
-					ofs += h_separation;
-					ofs += icon_size.x;
-
-				} else {
-					icon_cache = key_type_icon;
-
-					text = String(anim_path);
-				}
-
-				path_cache = text;
-
-				path_rect = Rect2(ofs, 0, limit - ofs - h_separation, get_size().height);
-
-				Vector2 string_pos = Point2(ofs, (get_size().height - font_to_use->get_height(font_size_to_use)) / 2 + font_to_use->get_ascent(font_size_to_use));
-				string_pos = string_pos.floor();
-				draw_string(font_to_use, string_pos, text, HORIZONTAL_ALIGNMENT_LEFT, limit - ofs - h_separation, font_size_to_use, text_color);
-
-				draw_line(Point2(limit, 0), Point2(limit, get_size().height), h_line_color, Math::round(EDSCALE));
+			NodePath anim_path = animation->track_get_path(track);
+			Node* node = nullptr;
+			if (root) {
+				node = root->get_node_or_null(anim_path);
 			}
 
-			// Marker sections.
-
-			{
-				float scale = timeline->get_zoom_scale();
-
-				PackedStringArray section = editor->get_selected_section();
-				if (section.size() == 2) {
-					StringName start_marker = section[0];
-					StringName end_marker = section[1];
-					double start_time = animation->get_marker_time(start_marker);
-					double end_time = animation->get_marker_time(end_marker);
-
-					// When AnimationPlayer is playing, don't move the preview rect, so it still indicates the playback section.
-					AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
-					if (editor->is_marker_moving_selection() && !(player && player->is_playing())) {
-						start_time += editor->get_marker_moving_selection_offset();
-						end_time += editor->get_marker_moving_selection_offset();
-					}
-
-					if (start_time < animation->get_length() && end_time >= 0) {
-						float start_ofs = MAX(0, start_time) - timeline->get_value();
-						float end_ofs = MIN(animation->get_length(), end_time) - timeline->get_value();
-						start_ofs = start_ofs * scale + limit;
-						end_ofs = end_ofs * scale + limit;
-						start_ofs = MAX(start_ofs, limit);
-						end_ofs = MIN(end_ofs, limit_end);
-						Rect2 rect;
-						rect.set_position(Vector2(start_ofs, 0));
-						rect.set_size(Vector2(end_ofs - start_ofs, get_size().height));
-
-						draw_rect(rect, Color(1, 0.1, 0.1, 0.2));
-					}
-				}
-			}
-
-			// Marker overlays.
-
-			{
-				float scale = timeline->get_zoom_scale();
-				PackedStringArray markers = animation->get_marker_names();
-				for (const StringName marker : markers) {
-					double time = animation->get_marker_time(marker);
-					if (editor->is_marker_selected(marker) && editor->is_marker_moving_selection()) {
-						time += editor->get_marker_moving_selection_offset();
-					}
-					if (time >= 0) {
-						float offset = time - timeline->get_value();
-						offset = offset * scale + limit;
-						if (offset >= timeline->get_name_limit() && offset < limit_end) {
-							Color marker_color = animation->get_marker_color(marker);
-							marker_color.a = 0.2;
-							draw_line(Point2(offset, 0), Point2(offset, get_size().height), marker_color, Math::round(EDSCALE));
-						}
-					}
-				}
-			}
-
-			// Keyframes.
-
-			draw_bg(limit, limit_end);
-
-			{
-				float scale = timeline->get_zoom_scale();
-
-				// Pre-calculate the actual order of the keys. This is needed as a move might be happening
-				// which might cause the keys to be in a different order than their current indices.
-				Vector<Pair<float, int>> sorted_keys;
-
-				for (int i = 0; i < animation->track_get_key_count(track); i++) {
-					float time_offset = animation->track_get_key_time(track, i) - timeline->get_value();
-					if (editor->is_key_selected(track, i) && editor->is_moving_selection()) {
-						time_offset += editor->get_moving_selection_offset();
-					}
-
-					float screen_pos = time_offset * scale + limit;
-					sorted_keys.push_back(Pair<float, int>(screen_pos, i));
-				}
-
-				sorted_keys.sort();
-
-				for (int i = 0; i < sorted_keys.size(); i++) {
-					float offset = sorted_keys[i].first;
-					int original_index = sorted_keys[i].second;
-					bool selected = editor->is_key_selected(track, original_index);
-
-					if (i < sorted_keys.size() - 1) {
-						float offset_n = sorted_keys[i + 1].first;
-
-						int next_original_index = sorted_keys[i + 1].second;
-
-						draw_key_link(original_index, next_original_index, scale, int(offset), int(offset_n), limit, limit_end);
-						draw_key(original_index, scale, int(offset), selected, limit, MIN(offset_n, limit_end));
-					} else {
-						draw_key(original_index, scale, int(offset), selected, limit, limit_end);
-					}
-				}
-			}
-
-			draw_fg(limit, limit_end);
-
-			// Buttons.
-
-			{
-				Ref<Texture2D> wrap_icon[2] = {
-					get_editor_theme_icon(SNAME("InterpWrapClamp")),
-					get_editor_theme_icon(SNAME("InterpWrapLoop")),
-				};
-				Ref<Texture2D> interp_icon[5] = {
-					get_editor_theme_icon(SNAME("InterpRaw")),
-					get_editor_theme_icon(SNAME("InterpLinear")),
-					get_editor_theme_icon(SNAME("InterpCubic")),
-					get_editor_theme_icon(SNAME("InterpLinearAngle")),
-					get_editor_theme_icon(SNAME("InterpCubicAngle")),
-				};
-				Ref<Texture2D> cont_icon[3] = {
-					get_editor_theme_icon(SNAME("TrackContinuous")),
-					get_editor_theme_icon(SNAME("TrackDiscrete")),
-					get_editor_theme_icon(SNAME("TrackCapture"))
-				};
-				Ref<Texture2D> blend_icon[2] = {
-					get_editor_theme_icon(SNAME("UseBlendEnable")),
-					get_editor_theme_icon(SNAME("UseBlendDisable")),
-				};
-
-				int ofs = limit_end;
-
-				const Ref<Texture2D> down_icon = get_theme_icon(SNAME("select_arrow"), SNAME("Tree"));
-
-				draw_line(Point2(ofs, 0), Point2(ofs, get_size().height), h_line_color, Math::round(EDSCALE));
-
-				ofs += h_separation;
-				{
-					// Callmode.
-
-					Animation::UpdateMode update_mode;
-
-					if (animation->track_get_type(track) == Animation::TYPE_VALUE) {
-						update_mode = animation->value_track_get_update_mode(track);
-					} else {
-						update_mode = Animation::UPDATE_CONTINUOUS;
-					}
-
-					Ref<Texture2D> update_icon = cont_icon[update_mode];
-
-					update_mode_rect.position.x = ofs;
-					update_mode_rect.position.y = Math::round((get_size().height - update_icon->get_height()) / 2);
-					update_mode_rect.size = update_icon->get_size();
-
-					if (!animation->track_is_compressed(track) && animation->track_get_type(track) == Animation::TYPE_VALUE) {
-						draw_texture(update_icon, update_mode_rect.position);
-					}
-					if (animation->track_get_type(track) == Animation::TYPE_AUDIO) {
-						Ref<Texture2D> use_blend_icon = blend_icon[animation->audio_track_is_use_blend(track) ? 0 : 1];
-						Vector2 use_blend_icon_pos = update_mode_rect.position + (update_mode_rect.size - use_blend_icon->get_size()) / 2;
-						draw_texture(use_blend_icon, use_blend_icon_pos);
-					}
-					// Make it easier to click.
-					update_mode_rect.position.y = 0;
-					update_mode_rect.size.y = get_size().height;
-
-					ofs += update_icon->get_width() + h_separation / 2;
-					update_mode_rect.size.x += h_separation / 2;
-
-					if (!read_only) {
-						if (animation->track_get_type(track) == Animation::TYPE_VALUE || animation->track_get_type(track) == Animation::TYPE_AUDIO) {
-							draw_texture(down_icon, Vector2(ofs, (get_size().height - down_icon->get_height()) / 2).round());
-							update_mode_rect.size.x += down_icon->get_width();
-						} else if (animation->track_get_type(track) == Animation::TYPE_BEZIER) {
-							update_mode_rect.size.x += down_icon->get_width();
-							update_mode_rect = Rect2();
-						} else {
-							update_mode_rect = Rect2();
-						}
-					} else {
-						update_mode_rect = Rect2();
-					}
-
-					ofs += down_icon->get_width();
-					draw_line(Point2(ofs + h_separation * 0.5, 0), Point2(ofs + h_separation * 0.5, get_size().height), h_line_color, Math::round(EDSCALE));
-					ofs += h_separation;
-				}
-
-				{
-					// Interp.
-
-					Animation::InterpolationType interp_mode = animation->track_get_interpolation_type(track);
-
-					Ref<Texture2D> icon = interp_icon[interp_mode];
-
-					interp_mode_rect.position.x = ofs;
-					interp_mode_rect.position.y = Math::round((get_size().height - icon->get_height()) / 2);
-					interp_mode_rect.size = icon->get_size();
-
-					if (!animation->track_is_compressed(track) && (animation->track_get_type(track) == Animation::TYPE_VALUE || animation->track_get_type(track) == Animation::TYPE_BLEND_SHAPE || animation->track_get_type(track) == Animation::TYPE_POSITION_3D || animation->track_get_type(track) == Animation::TYPE_SCALE_3D || animation->track_get_type(track) == Animation::TYPE_ROTATION_3D)) {
-						draw_texture(icon, interp_mode_rect.position);
-					}
-					// Make it easier to click.
-					interp_mode_rect.position.y = 0;
-					interp_mode_rect.size.y = get_size().height;
-
-					ofs += icon->get_width() + h_separation / 2;
-					interp_mode_rect.size.x += h_separation / 2;
-
-					if (!read_only && !animation->track_is_compressed(track) && (animation->track_get_type(track) == Animation::TYPE_VALUE || animation->track_get_type(track) == Animation::TYPE_BLEND_SHAPE || animation->track_get_type(track) == Animation::TYPE_POSITION_3D || animation->track_get_type(track) == Animation::TYPE_SCALE_3D || animation->track_get_type(track) == Animation::TYPE_ROTATION_3D)) {
-						draw_texture(down_icon, Vector2(ofs, (get_size().height - down_icon->get_height()) / 2).round());
-						interp_mode_rect.size.x += down_icon->get_width();
-					} else {
-						interp_mode_rect = Rect2();
-					}
-
-					ofs += down_icon->get_width();
-					draw_line(Point2(ofs + h_separation * 0.5, 0), Point2(ofs + h_separation * 0.5, get_size().height), h_line_color, Math::round(EDSCALE));
-					ofs += h_separation;
-				}
-
-				{
-					// Loop.
-
-					bool loop_wrap = animation->track_get_interpolation_loop_wrap(track);
-
-					Ref<Texture2D> icon = wrap_icon[loop_wrap ? 1 : 0];
-
-					loop_wrap_rect.position.x = ofs;
-					loop_wrap_rect.position.y = Math::round((get_size().height - icon->get_height()) / 2);
-					loop_wrap_rect.size = icon->get_size();
-
-					if (!animation->track_is_compressed(track) && (animation->track_get_type(track) == Animation::TYPE_VALUE || animation->track_get_type(track) == Animation::TYPE_BLEND_SHAPE || animation->track_get_type(track) == Animation::TYPE_POSITION_3D || animation->track_get_type(track) == Animation::TYPE_SCALE_3D || animation->track_get_type(track) == Animation::TYPE_ROTATION_3D)) {
-						draw_texture(icon, loop_wrap_rect.position);
-					}
-
-					loop_wrap_rect.position.y = 0;
-					loop_wrap_rect.size.y = get_size().height;
-
-					ofs += icon->get_width() + h_separation / 2;
-					loop_wrap_rect.size.x += h_separation / 2;
-
-					if (!read_only && !animation->track_is_compressed(track) && (animation->track_get_type(track) == Animation::TYPE_VALUE || animation->track_get_type(track) == Animation::TYPE_BLEND_SHAPE || animation->track_get_type(track) == Animation::TYPE_POSITION_3D || animation->track_get_type(track) == Animation::TYPE_SCALE_3D || animation->track_get_type(track) == Animation::TYPE_ROTATION_3D)) {
-						draw_texture(down_icon, Vector2(ofs, (get_size().height - down_icon->get_height()) / 2).round());
-						loop_wrap_rect.size.x += down_icon->get_width();
-					} else {
-						loop_wrap_rect = Rect2();
-					}
-
-					ofs += down_icon->get_width();
-					draw_line(Point2(ofs + h_separation * 0.5, 0), Point2(ofs + h_separation * 0.5, get_size().height), h_line_color, Math::round(EDSCALE));
-					ofs += h_separation;
-				}
-
-				{
-					// Erase.
-
-					Ref<Texture2D> icon = get_editor_theme_icon(animation->track_is_compressed(track) ? SNAME("Lock") : SNAME("Remove"));
-
-					remove_rect.position.x = ofs + ((get_size().width - ofs) - icon->get_width()) - outer_margin;
-					remove_rect.position.y = Math::round((get_size().height - icon->get_height()) / 2);
-					remove_rect.size = icon->get_size();
-
-					if (read_only) {
-						draw_texture(icon, remove_rect.position, dc);
-					} else {
-						draw_texture(icon, remove_rect.position);
-					}
-				}
+			String text;
+			Color text_color = color;
+			if (node && EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
+				text_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 			}
 
 			if (in_group) {
-				draw_line(Vector2(timeline->get_name_limit(), get_size().height), get_size(), h_line_color, Math::round(EDSCALE));
-			} else {
-				draw_line(Vector2(0, get_size().height), get_size(), h_line_color, Math::round(EDSCALE));
+				if (animation->track_get_type(track) == Animation::TYPE_METHOD) {
+					text = TTR("Functions:");
+				}
+				else if (animation->track_get_type(track) == Animation::TYPE_AUDIO) {
+					text = TTR("Audio Clips:");
+				}
+				else if (animation->track_get_type(track) == Animation::TYPE_ANIMATION) {
+					text = TTR("Animation Clips:");
+				}
+				else {
+					text += anim_path.get_concatenated_subnames();
+				}
+
+				bool use_monospace_font =
+					EDITOR_GET("interface/theme/use_monospace_font_for_editor_symbols");
+				if (animation->track_get_type(track) == Animation::TYPE_VALUE &&
+					use_monospace_font) {
+					font_to_use = source_font;
+					font_size_to_use = source_font_size;
+				}
+
+				text_color.a *= 0.7;
+			}
+			else if (node) {
+				Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(node);
+				const Vector2 icon_size =
+					Vector2(1, 1) *
+					get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
+
+				icon_rect = Rect2(
+					Point2(ofs, (get_size().height - check->get_height()) / 2).round(), icon_size);
+				draw_texture_rect(icon, icon_rect);
+				icon_cache = icon;
+
+				text = String() + node->get_name() + ":" + anim_path.get_concatenated_subnames();
+				ofs += h_separation;
+				ofs += icon_size.x;
+
+			}
+			else {
+				icon_cache = key_type_icon;
+
+				text = String(anim_path);
 			}
 
-			if (dropping_at != 0) {
-				Color drop_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-				if (dropping_at < 0) {
-					draw_line(Vector2(0, 0), Vector2(get_size().width, 0), drop_color, Math::round(EDSCALE));
-				} else {
-					draw_line(Vector2(0, get_size().height), get_size(), drop_color, Math::round(EDSCALE));
+			path_cache = text;
+
+			path_rect = Rect2(ofs, 0, limit - ofs - h_separation, get_size().height);
+
+			Vector2 string_pos =
+				Point2(ofs, (get_size().height - font_to_use->get_height(font_size_to_use)) / 2 +
+								font_to_use->get_ascent(font_size_to_use));
+			string_pos = string_pos.floor();
+			draw_string(font_to_use, string_pos, text, HORIZONTAL_ALIGNMENT_LEFT,
+				limit - ofs - h_separation, font_size_to_use, text_color);
+
+			draw_line(Point2(limit, 0), Point2(limit, get_size().height), h_line_color,
+				Math::round(EDSCALE));
+		}
+
+		// Marker sections.
+
+		{
+			float scale = timeline->get_zoom_scale();
+
+			PackedStringArray section = editor->get_selected_section();
+			if (section.size() == 2) {
+				StringName start_marker = section[0];
+				StringName end_marker = section[1];
+				double start_time = animation->get_marker_time(start_marker);
+				double end_time = animation->get_marker_time(end_marker);
+
+				// When AnimationPlayer is playing, don't move the preview rect, so it still
+				// indicates the playback section.
+				AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
+				if (editor->is_marker_moving_selection() && !(player && player->is_playing())) {
+					start_time += editor->get_marker_moving_selection_offset();
+					end_time += editor->get_marker_moving_selection_offset();
+				}
+
+				if (start_time < animation->get_length() && end_time >= 0) {
+					float start_ofs = MAX(0, start_time) - timeline->get_value();
+					float end_ofs = MIN(animation->get_length(), end_time) - timeline->get_value();
+					start_ofs = start_ofs * scale + limit;
+					end_ofs = end_ofs * scale + limit;
+					start_ofs = MAX(start_ofs, limit);
+					end_ofs = MIN(end_ofs, limit_end);
+					Rect2 rect;
+					rect.set_position(Vector2(start_ofs, 0));
+					rect.set_size(Vector2(end_ofs - start_ofs, get_size().height));
+
+					draw_rect(rect, Color(1, 0.1, 0.1, 0.2));
 				}
 			}
-		} break;
+		}
 
-		case NOTIFICATION_MOUSE_ENTER:
-			hovered = true;
-			queue_redraw();
-			break;
-		case NOTIFICATION_MOUSE_EXIT:
-			hovered = false;
-			// When the mouse cursor exits the track, we're no longer hovering any keyframe.
-			hovering_key_idx = -1;
-			queue_redraw();
-			[[fallthrough]];
-		case NOTIFICATION_DRAG_END: {
-			cancel_drop();
-		} break;
+		// Marker overlays.
+
+		{
+			float scale = timeline->get_zoom_scale();
+			PackedStringArray markers = animation->get_marker_names();
+			for (const StringName marker : markers) {
+				double time = animation->get_marker_time(marker);
+				if (editor->is_marker_selected(marker) && editor->is_marker_moving_selection()) {
+					time += editor->get_marker_moving_selection_offset();
+				}
+				if (time >= 0) {
+					float offset = time - timeline->get_value();
+					offset = offset * scale + limit;
+					if (offset >= timeline->get_name_limit() && offset < limit_end) {
+						Color marker_color = animation->get_marker_color(marker);
+						marker_color.a = 0.2;
+						draw_line(Point2(offset, 0), Point2(offset, get_size().height),
+							marker_color, Math::round(EDSCALE));
+					}
+				}
+			}
+		}
+
+		// Keyframes.
+
+		draw_bg(limit, limit_end);
+
+		{
+			float scale = timeline->get_zoom_scale();
+
+			// Pre-calculate the actual order of the keys. This is needed as a move might be
+			// happening which might cause the keys to be in a different order than their current
+			// indices.
+			Vector<Pair<float, int>> sorted_keys;
+
+			for (int i = 0; i < animation->track_get_key_count(track); i++) {
+				float time_offset = animation->track_get_key_time(track, i) - timeline->get_value();
+				if (editor->is_key_selected(track, i) && editor->is_moving_selection()) {
+					time_offset += editor->get_moving_selection_offset();
+				}
+
+				float screen_pos = time_offset * scale + limit;
+				sorted_keys.push_back(Pair<float, int>(screen_pos, i));
+			}
+
+			sorted_keys.sort();
+
+			for (int i = 0; i < sorted_keys.size(); i++) {
+				float offset = sorted_keys[i].first;
+				int original_index = sorted_keys[i].second;
+				bool selected = editor->is_key_selected(track, original_index);
+
+				if (i < sorted_keys.size() - 1) {
+					float offset_n = sorted_keys[i + 1].first;
+
+					int next_original_index = sorted_keys[i + 1].second;
+
+					draw_key_link(original_index, next_original_index, scale, int(offset),
+						int(offset_n), limit, limit_end);
+					draw_key(original_index, scale, int(offset), selected, limit,
+						MIN(offset_n, limit_end));
+				}
+				else {
+					draw_key(original_index, scale, int(offset), selected, limit, limit_end);
+				}
+			}
+		}
+
+		draw_fg(limit, limit_end);
+
+		// Buttons.
+
+		{
+			Ref<Texture2D> wrap_icon[2] = {
+				get_editor_theme_icon(SNAME("InterpWrapClamp")),
+				get_editor_theme_icon(SNAME("InterpWrapLoop")),
+			};
+			Ref<Texture2D> interp_icon[5] = {
+				get_editor_theme_icon(SNAME("InterpRaw")),
+				get_editor_theme_icon(SNAME("InterpLinear")),
+				get_editor_theme_icon(SNAME("InterpCubic")),
+				get_editor_theme_icon(SNAME("InterpLinearAngle")),
+				get_editor_theme_icon(SNAME("InterpCubicAngle")),
+			};
+			Ref<Texture2D> cont_icon[3] = {get_editor_theme_icon(SNAME("TrackContinuous")),
+				get_editor_theme_icon(SNAME("TrackDiscrete")),
+				get_editor_theme_icon(SNAME("TrackCapture"))};
+			Ref<Texture2D> blend_icon[2] = {
+				get_editor_theme_icon(SNAME("UseBlendEnable")),
+				get_editor_theme_icon(SNAME("UseBlendDisable")),
+			};
+
+			int ofs = limit_end;
+
+			const Ref<Texture2D> down_icon = get_theme_icon(SNAME("select_arrow"), SNAME("Tree"));
+
+			draw_line(
+				Point2(ofs, 0), Point2(ofs, get_size().height), h_line_color, Math::round(EDSCALE));
+
+			ofs += h_separation;
+			{
+				// Callmode.
+
+				Animation::UpdateMode update_mode;
+
+				if (animation->track_get_type(track) == Animation::TYPE_VALUE) {
+					update_mode = animation->value_track_get_update_mode(track);
+				}
+				else {
+					update_mode = Animation::UPDATE_CONTINUOUS;
+				}
+
+				Ref<Texture2D> update_icon = cont_icon[update_mode];
+
+				update_mode_rect.position.x = ofs;
+				update_mode_rect.position.y =
+					Math::round((get_size().height - update_icon->get_height()) / 2);
+				update_mode_rect.size = update_icon->get_size();
+
+				if (!animation->track_is_compressed(track) &&
+					animation->track_get_type(track) == Animation::TYPE_VALUE) {
+					draw_texture(update_icon, update_mode_rect.position);
+				}
+				if (animation->track_get_type(track) == Animation::TYPE_AUDIO) {
+					Ref<Texture2D> use_blend_icon =
+						blend_icon[animation->audio_track_is_use_blend(track) ? 0 : 1];
+					Vector2 use_blend_icon_pos =
+						update_mode_rect.position +
+						(update_mode_rect.size - use_blend_icon->get_size()) / 2;
+					draw_texture(use_blend_icon, use_blend_icon_pos);
+				}
+				// Make it easier to click.
+				update_mode_rect.position.y = 0;
+				update_mode_rect.size.y = get_size().height;
+
+				ofs += update_icon->get_width() + h_separation / 2;
+				update_mode_rect.size.x += h_separation / 2;
+
+				if (!read_only) {
+					if (animation->track_get_type(track) == Animation::TYPE_VALUE ||
+						animation->track_get_type(track) == Animation::TYPE_AUDIO) {
+						draw_texture(down_icon,
+							Vector2(ofs, (get_size().height - down_icon->get_height()) / 2)
+								.round());
+						update_mode_rect.size.x += down_icon->get_width();
+					}
+					else if (animation->track_get_type(track) == Animation::TYPE_BEZIER) {
+						update_mode_rect.size.x += down_icon->get_width();
+						update_mode_rect = Rect2();
+					}
+					else {
+						update_mode_rect = Rect2();
+					}
+				}
+				else {
+					update_mode_rect = Rect2();
+				}
+
+				ofs += down_icon->get_width();
+				draw_line(Point2(ofs + h_separation * 0.5, 0),
+					Point2(ofs + h_separation * 0.5, get_size().height), h_line_color,
+					Math::round(EDSCALE));
+				ofs += h_separation;
+			}
+
+			{
+				// Interp.
+
+				Animation::InterpolationType interp_mode =
+					animation->track_get_interpolation_type(track);
+
+				Ref<Texture2D> icon = interp_icon[interp_mode];
+
+				interp_mode_rect.position.x = ofs;
+				interp_mode_rect.position.y =
+					Math::round((get_size().height - icon->get_height()) / 2);
+				interp_mode_rect.size = icon->get_size();
+
+				if (!animation->track_is_compressed(track) &&
+					(animation->track_get_type(track) == Animation::TYPE_VALUE ||
+						animation->track_get_type(track) == Animation::TYPE_BLEND_SHAPE ||
+						animation->track_get_type(track) == Animation::TYPE_POSITION_3D ||
+						animation->track_get_type(track) == Animation::TYPE_SCALE_3D ||
+						animation->track_get_type(track) == Animation::TYPE_ROTATION_3D)) {
+					draw_texture(icon, interp_mode_rect.position);
+				}
+				// Make it easier to click.
+				interp_mode_rect.position.y = 0;
+				interp_mode_rect.size.y = get_size().height;
+
+				ofs += icon->get_width() + h_separation / 2;
+				interp_mode_rect.size.x += h_separation / 2;
+
+				if (!read_only && !animation->track_is_compressed(track) &&
+					(animation->track_get_type(track) == Animation::TYPE_VALUE ||
+						animation->track_get_type(track) == Animation::TYPE_BLEND_SHAPE ||
+						animation->track_get_type(track) == Animation::TYPE_POSITION_3D ||
+						animation->track_get_type(track) == Animation::TYPE_SCALE_3D ||
+						animation->track_get_type(track) == Animation::TYPE_ROTATION_3D)) {
+					draw_texture(down_icon,
+						Vector2(ofs, (get_size().height - down_icon->get_height()) / 2).round());
+					interp_mode_rect.size.x += down_icon->get_width();
+				}
+				else {
+					interp_mode_rect = Rect2();
+				}
+
+				ofs += down_icon->get_width();
+				draw_line(Point2(ofs + h_separation * 0.5, 0),
+					Point2(ofs + h_separation * 0.5, get_size().height), h_line_color,
+					Math::round(EDSCALE));
+				ofs += h_separation;
+			}
+
+			{
+				// Loop.
+
+				bool loop_wrap = animation->track_get_interpolation_loop_wrap(track);
+
+				Ref<Texture2D> icon = wrap_icon[loop_wrap ? 1 : 0];
+
+				loop_wrap_rect.position.x = ofs;
+				loop_wrap_rect.position.y =
+					Math::round((get_size().height - icon->get_height()) / 2);
+				loop_wrap_rect.size = icon->get_size();
+
+				if (!animation->track_is_compressed(track) &&
+					(animation->track_get_type(track) == Animation::TYPE_VALUE ||
+						animation->track_get_type(track) == Animation::TYPE_BLEND_SHAPE ||
+						animation->track_get_type(track) == Animation::TYPE_POSITION_3D ||
+						animation->track_get_type(track) == Animation::TYPE_SCALE_3D ||
+						animation->track_get_type(track) == Animation::TYPE_ROTATION_3D)) {
+					draw_texture(icon, loop_wrap_rect.position);
+				}
+
+				loop_wrap_rect.position.y = 0;
+				loop_wrap_rect.size.y = get_size().height;
+
+				ofs += icon->get_width() + h_separation / 2;
+				loop_wrap_rect.size.x += h_separation / 2;
+
+				if (!read_only && !animation->track_is_compressed(track) &&
+					(animation->track_get_type(track) == Animation::TYPE_VALUE ||
+						animation->track_get_type(track) == Animation::TYPE_BLEND_SHAPE ||
+						animation->track_get_type(track) == Animation::TYPE_POSITION_3D ||
+						animation->track_get_type(track) == Animation::TYPE_SCALE_3D ||
+						animation->track_get_type(track) == Animation::TYPE_ROTATION_3D)) {
+					draw_texture(down_icon,
+						Vector2(ofs, (get_size().height - down_icon->get_height()) / 2).round());
+					loop_wrap_rect.size.x += down_icon->get_width();
+				}
+				else {
+					loop_wrap_rect = Rect2();
+				}
+
+				ofs += down_icon->get_width();
+				draw_line(Point2(ofs + h_separation * 0.5, 0),
+					Point2(ofs + h_separation * 0.5, get_size().height), h_line_color,
+					Math::round(EDSCALE));
+				ofs += h_separation;
+			}
+
+			{
+				// Erase.
+
+				Ref<Texture2D> icon = get_editor_theme_icon(
+					animation->track_is_compressed(track) ? SNAME("Lock") : SNAME("Remove"));
+
+				remove_rect.position.x =
+					ofs + ((get_size().width - ofs) - icon->get_width()) - outer_margin;
+				remove_rect.position.y = Math::round((get_size().height - icon->get_height()) / 2);
+				remove_rect.size = icon->get_size();
+
+				if (read_only) {
+					draw_texture(icon, remove_rect.position, dc);
+				}
+				else {
+					draw_texture(icon, remove_rect.position);
+				}
+			}
+		}
+
+		if (in_group) {
+			draw_line(Vector2(timeline->get_name_limit(), get_size().height), get_size(),
+				h_line_color, Math::round(EDSCALE));
+		}
+		else {
+			draw_line(
+				Vector2(0, get_size().height), get_size(), h_line_color, Math::round(EDSCALE));
+		}
+
+		if (dropping_at != 0) {
+			Color drop_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
+			if (dropping_at < 0) {
+				draw_line(
+					Vector2(0, 0), Vector2(get_size().width, 0), drop_color, Math::round(EDSCALE));
+			}
+			else {
+				draw_line(
+					Vector2(0, get_size().height), get_size(), drop_color, Math::round(EDSCALE));
+			}
+		}
+	} break;
+
+	case NOTIFICATION_MOUSE_ENTER:
+		hovered = true;
+		queue_redraw();
+		break;
+	case NOTIFICATION_MOUSE_EXIT:
+		hovered = false;
+		// When the mouse cursor exits the track, we're no longer hovering any keyframe.
+		hovering_key_idx = -1;
+		queue_redraw();
+		[[fallthrough]];
+	case NOTIFICATION_DRAG_END: {
+		cancel_drop();
+	} break;
 	}
 }
 
-int AnimationTrackEdit::get_key_height() const {
+int AnimationTrackEdit::get_key_height() const
+{
 	if (animation.is_null()) {
 		return 0;
 	}
@@ -2571,7 +2880,8 @@ int AnimationTrackEdit::get_key_height() const {
 	return type_icon->get_height();
 }
 
-Rect2 AnimationTrackEdit::get_key_rect(int p_index, float p_pixels_sec) {
+Rect2 AnimationTrackEdit::get_key_rect(int p_index, float p_pixels_sec)
+{
 	if (animation.is_null()) {
 		return Rect2();
 	}
@@ -2583,11 +2893,11 @@ Rect2 AnimationTrackEdit::get_key_rect(int p_index, float p_pixels_sec) {
 	return rect;
 }
 
-bool AnimationTrackEdit::is_key_selectable_by_distance() const {
-	return true;
-}
+bool AnimationTrackEdit::is_key_selectable_by_distance() const { return true; }
 
-void AnimationTrackEdit::draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec, int p_x, int p_next_x, int p_clip_left, int p_clip_right) {
+void AnimationTrackEdit::draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec,
+	int p_x, int p_next_x, int p_clip_left, int p_clip_right)
+{
 	if (p_next_x < p_clip_left) {
 		return;
 	}
@@ -2597,7 +2907,8 @@ void AnimationTrackEdit::draw_key_link(int p_index_from, int p_index_to, float p
 
 	Variant current = animation->track_get_key_value(get_track(), p_index_from);
 	Variant next = animation->track_get_key_value(get_track(), p_index_to);
-	if (current != next || animation->track_get_type(get_track()) == Animation::TrackType::TYPE_METHOD) {
+	if (current != next ||
+		animation->track_get_type(get_track()) == Animation::TrackType::TYPE_METHOD) {
 		return;
 	}
 
@@ -2607,10 +2918,13 @@ void AnimationTrackEdit::draw_key_link(int p_index_from, int p_index_to, float p
 	int from_x = MAX(p_x, p_clip_left);
 	int to_x = MIN(p_next_x, p_clip_right);
 
-	draw_line(Point2(from_x + 1, get_size().height / 2), Point2(to_x, get_size().height / 2), color, Math::round(2 * EDSCALE));
+	draw_line(Point2(from_x + 1, get_size().height / 2), Point2(to_x, get_size().height / 2), color,
+		Math::round(2 * EDSCALE));
 }
 
-void AnimationTrackEdit::draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
+void AnimationTrackEdit::draw_key(
+	int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right)
+{
 	if (animation.is_null()) {
 		return;
 	}
@@ -2621,24 +2935,28 @@ void AnimationTrackEdit::draw_key(int p_index, float p_pixels_sec, int p_x, bool
 
 	Ref<Texture2D> icon_to_draw = p_selected ? selected_icon : type_icon;
 
-	if (animation->track_get_type(track) == Animation::TYPE_VALUE && !Math::is_equal_approx(animation->track_get_key_transition(track, p_index), real_t(1.0))) {
+	if (animation->track_get_type(track) == Animation::TYPE_VALUE &&
+		!Math::is_equal_approx(animation->track_get_key_transition(track, p_index), real_t(1.0))) {
 		// Use a different icon for keys with non-linear easing.
-		icon_to_draw = get_editor_theme_icon(p_selected ? SNAME("KeyEasedSelected") : SNAME("KeyValueEased"));
+		icon_to_draw =
+			get_editor_theme_icon(p_selected ? SNAME("KeyEasedSelected") : SNAME("KeyValueEased"));
 	}
 
 	// Override type icon for invalid value keys, unless selected.
 	if (!p_selected && animation->track_get_type(track) == Animation::TYPE_VALUE) {
-		const Variant &v = animation->track_get_key_value(track, p_index);
+		const Variant& v = animation->track_get_key_value(track, p_index);
 		Variant::Type valid_type = Variant::NIL;
 		if (!_is_value_key_valid(v, valid_type)) {
 			icon_to_draw = get_editor_theme_icon(SNAME("KeyInvalid"));
 		}
 	}
 
-	Vector2 ofs(p_x - icon_to_draw->get_width() / 2, (get_size().height - icon_to_draw->get_height()) / 2);
+	Vector2 ofs(
+		p_x - icon_to_draw->get_width() / 2, (get_size().height - icon_to_draw->get_height()) / 2);
 
 	if (animation->track_get_type(track) == Animation::TYPE_METHOD) {
-		bool use_monospace_font = EDITOR_GET("interface/theme/use_monospace_font_for_editor_symbols");
+		bool use_monospace_font =
+			EDITOR_GET("interface/theme/use_monospace_font_for_editor_symbols");
 
 		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
@@ -2669,24 +2987,31 @@ void AnimationTrackEdit::draw_key(int p_index, float p_pixels_sec, int p_x, bool
 		}
 		text += ")";
 
-		int limit = editor->is_function_name_pressed() ? 0 : MAX(0, p_clip_right - p_x - icon_to_draw->get_width() * 2);
+		int limit = editor->is_function_name_pressed()
+						? 0
+						: MAX(0, p_clip_right - p_x - icon_to_draw->get_width() * 2);
 
 		if (limit > 0) {
-			draw_string(font, Vector2(p_x + icon_to_draw->get_width(), int(get_size().height - font->get_height(font_size)) / 2 + font->get_ascent(font_size)), text, HORIZONTAL_ALIGNMENT_LEFT, limit, font_size, color);
+			draw_string(font,
+				Vector2(p_x + icon_to_draw->get_width(),
+					int(get_size().height - font->get_height(font_size)) / 2 +
+						font->get_ascent(font_size)),
+				text, HORIZONTAL_ALIGNMENT_LEFT, limit, font_size, color);
 		}
 	}
 
 	// Use a different color for the currently hovered key.
 	// The color multiplier is chosen to work with both dark and light editor themes,
 	// and on both unselected and selected key icons.
-	draw_texture(
-			icon_to_draw,
-			ofs,
-			p_index == hovering_key_idx ? get_theme_color(SNAME("folder_icon_color"), SNAME("FileDialog")) : Color(1, 1, 1));
+	draw_texture(icon_to_draw, ofs,
+		p_index == hovering_key_idx
+			? get_theme_color(SNAME("folder_icon_color"), SNAME("FileDialog"))
+			: Color(1, 1, 1));
 }
 
 // Helper.
-void AnimationTrackEdit::draw_rect_clipped(const Rect2 &p_rect, const Color &p_color, bool p_filled) {
+void AnimationTrackEdit::draw_rect_clipped(const Rect2& p_rect, const Color& p_color, bool p_filled)
+{
 	int clip_left = timeline->get_name_limit();
 	int clip_right = get_size().width - timeline->get_buttons_width();
 
@@ -2700,13 +3025,13 @@ void AnimationTrackEdit::draw_rect_clipped(const Rect2 &p_rect, const Color &p_c
 	draw_rect(clip.intersection(p_rect), p_color, p_filled);
 }
 
-void AnimationTrackEdit::draw_bg(int p_clip_left, int p_clip_right) {
-}
+void AnimationTrackEdit::draw_bg(int p_clip_left, int p_clip_right) {}
 
-void AnimationTrackEdit::draw_fg(int p_clip_left, int p_clip_right) {
-}
+void AnimationTrackEdit::draw_fg(int p_clip_left, int p_clip_right) {}
 
-void AnimationTrackEdit::draw_texture_region_clipped(const Ref<Texture2D> &p_texture, const Rect2 &p_rect, const Rect2 &p_region) {
+void AnimationTrackEdit::draw_texture_region_clipped(
+	const Ref<Texture2D>& p_texture, const Rect2& p_rect, const Rect2& p_region)
+{
 	int clip_left = timeline->get_name_limit();
 	int clip_right = get_size().width - timeline->get_buttons_width();
 
@@ -2743,15 +3068,13 @@ void AnimationTrackEdit::draw_texture_region_clipped(const Ref<Texture2D> &p_tex
 	draw_texture_rect_region(p_texture, rect, region);
 }
 
-int AnimationTrackEdit::get_track() const {
-	return track;
-}
+int AnimationTrackEdit::get_track() const { return track; }
 
-Ref<Animation> AnimationTrackEdit::get_animation() const {
-	return animation;
-}
+Ref<Animation> AnimationTrackEdit::get_animation() const { return animation; }
 
-void AnimationTrackEdit::set_animation_and_track(const Ref<Animation> &p_animation, int p_track, bool p_read_only) {
+void AnimationTrackEdit::set_animation_and_track(
+	const Ref<Animation>& p_animation, int p_track, bool p_read_only)
+{
 	animation = p_animation;
 	read_only = p_read_only;
 
@@ -2765,11 +3088,10 @@ void AnimationTrackEdit::set_animation_and_track(const Ref<Animation> &p_animati
 	selected_icon = get_editor_theme_icon(SNAME("KeySelected"));
 }
 
-NodePath AnimationTrackEdit::get_path() const {
-	return node_path;
-}
+NodePath AnimationTrackEdit::get_path() const { return node_path; }
 
-Size2 AnimationTrackEdit::get_minimum_size() const {
+Size2 AnimationTrackEdit::get_minimum_size() const
+{
 	Ref<Texture2D> texture = get_editor_theme_icon(SNAME("Object"));
 	const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
@@ -2781,18 +3103,18 @@ Size2 AnimationTrackEdit::get_minimum_size() const {
 	return Vector2(1, max_h + separation);
 }
 
-void AnimationTrackEdit::set_timeline(AnimationTimelineEdit *p_timeline) {
+void AnimationTrackEdit::set_timeline(AnimationTimelineEdit* p_timeline)
+{
 	timeline = p_timeline;
 	timeline->set_track_edit(this);
 	timeline->connect("zoom_changed", callable_mp(this, &AnimationTrackEdit::_zoom_changed));
 	timeline->connect("name_limit_changed", callable_mp(this, &AnimationTrackEdit::_zoom_changed));
 }
 
-void AnimationTrackEdit::set_editor(AnimationTrackEditor *p_editor) {
-	editor = p_editor;
-}
+void AnimationTrackEdit::set_editor(AnimationTrackEditor* p_editor) { editor = p_editor; }
 
-void AnimationTrackEdit::_play_position_draw() {
+void AnimationTrackEdit::_play_position_draw()
+{
 	if (animation.is_null() || play_position_pos < 0) {
 		return;
 	}
@@ -2802,51 +3124,55 @@ void AnimationTrackEdit::_play_position_draw() {
 
 	int px = (-timeline->get_value() + play_position_pos) * scale + timeline->get_name_limit();
 
-	if (px >= timeline->get_name_limit() && px < (get_size().width - timeline->get_buttons_width())) {
+	if (px >= timeline->get_name_limit() &&
+		px < (get_size().width - timeline->get_buttons_width())) {
 		Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 		play_position->draw_line(Point2(px, 0), Point2(px, h), color, Math::round(2 * EDSCALE));
 	}
 }
 
-void AnimationTrackEdit::set_play_position(float p_pos) {
+void AnimationTrackEdit::set_play_position(float p_pos)
+{
 	play_position_pos = p_pos;
 	play_position->queue_redraw();
 }
 
-void AnimationTrackEdit::update_play_position() {
-	play_position->queue_redraw();
-}
+void AnimationTrackEdit::update_play_position() { play_position->queue_redraw(); }
 
-void AnimationTrackEdit::set_root(Node *p_root) {
-	root = p_root;
-}
+void AnimationTrackEdit::set_root(Node* p_root) { root = p_root; }
 
-void AnimationTrackEdit::_zoom_changed() {
+void AnimationTrackEdit::_zoom_changed()
+{
 	queue_redraw();
 	play_position->queue_redraw();
 }
 
-void AnimationTrackEdit::_path_submitted(const String &p_text) {
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+void AnimationTrackEdit::_path_submitted(const String& p_text)
+{
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Change Track Path"));
 	undo_redo->add_do_method(animation.ptr(), "track_set_path", track, p_text);
-	undo_redo->add_undo_method(animation.ptr(), "track_set_path", track, animation->track_get_path(track));
+	undo_redo->add_undo_method(
+		animation.ptr(), "track_set_path", track, animation->track_get_path(track));
 	undo_redo->commit_action();
 	path_popup->hide();
 }
 
-bool AnimationTrackEdit::_is_value_key_valid(const Variant &p_key_value, Variant::Type &r_valid_type) const {
+bool AnimationTrackEdit::_is_value_key_valid(
+	const Variant& p_key_value, Variant::Type& r_valid_type) const
+{
 	if (root == nullptr || !root->has_node_and_resource(animation->track_get_path(track))) {
 		return false;
 	}
 	Ref<Resource> res;
 	Vector<StringName> leftover_path;
-	Node *node = root->get_node_and_resource(animation->track_get_path(track), res, leftover_path);
+	Node* node = root->get_node_and_resource(animation->track_get_path(track), res, leftover_path);
 
-	Object *obj = nullptr;
+	Object* obj = nullptr;
 	if (res.is_valid()) {
 		obj = res.ptr();
-	} else if (node) {
+	}
+	else if (node) {
 		obj = node;
 	}
 
@@ -2858,29 +3184,29 @@ bool AnimationTrackEdit::_is_value_key_valid(const Variant &p_key_value, Variant
 	return (!prop_exists || Variant::can_convert(p_key_value.get_type(), r_valid_type));
 }
 
-Ref<Texture2D> AnimationTrackEdit::_get_key_type_icon() const {
-	const Ref<Texture2D> type_icons[9] = {
-		get_editor_theme_icon(SNAME("KeyValue")),
+Ref<Texture2D> AnimationTrackEdit::_get_key_type_icon() const
+{
+	const Ref<Texture2D> type_icons[9] = {get_editor_theme_icon(SNAME("KeyValue")),
 		get_editor_theme_icon(SNAME("KeyTrackPosition")),
 		get_editor_theme_icon(SNAME("KeyTrackRotation")),
 		get_editor_theme_icon(SNAME("KeyTrackScale")),
-		get_editor_theme_icon(SNAME("KeyTrackBlendShape")),
-		get_editor_theme_icon(SNAME("KeyCall")),
-		get_editor_theme_icon(SNAME("KeyBezier")),
-		get_editor_theme_icon(SNAME("KeyAudio")),
-		get_editor_theme_icon(SNAME("KeyAnimation"))
-	};
+		get_editor_theme_icon(SNAME("KeyTrackBlendShape")), get_editor_theme_icon(SNAME("KeyCall")),
+		get_editor_theme_icon(SNAME("KeyBezier")), get_editor_theme_icon(SNAME("KeyAudio")),
+		get_editor_theme_icon(SNAME("KeyAnimation"))};
 	return type_icons[animation->track_get_type(track)];
 }
 
-Control::CursorShape AnimationTrackEdit::get_cursor_shape(const Point2 &p_pos) const {
-	if (command_or_control_pressed && animation->track_get_type(track) == Animation::TYPE_METHOD && hovering_key_idx != -1) {
+Control::CursorShape AnimationTrackEdit::get_cursor_shape(const Point2& p_pos) const
+{
+	if (command_or_control_pressed && animation->track_get_type(track) == Animation::TYPE_METHOD &&
+		hovering_key_idx != -1) {
 		return Control::CURSOR_POINTING_HAND;
 	}
 	return get_default_cursor_shape();
 }
 
-String AnimationTrackEdit::get_tooltip(const Point2 &p_pos) const {
+String AnimationTrackEdit::get_tooltip(const Point2& p_pos) const
+{
 	if (check_rect.has_point(p_pos)) {
 		return TTR("Toggle this track on/off.");
 	}
@@ -2897,7 +3223,8 @@ String AnimationTrackEdit::get_tooltip(const Point2 &p_pos) const {
 	if (update_mode_rect.has_point(p_pos)) {
 		if (animation->track_get_type(track) == Animation::TYPE_AUDIO) {
 			return TTR("Use Blend");
-		} else {
+		}
+		else {
 			return TTR("Update Mode (How this property is set)");
 		}
 	}
@@ -2925,19 +3252,21 @@ String AnimationTrackEdit::get_tooltip(const Point2 &p_pos) const {
 
 		// Select should happen in the opposite order of drawing for more accurate overlap select.
 		for (int i = animation->track_get_key_count(track) - 1; i >= 0; i--) {
-			Rect2 rect = const_cast<AnimationTrackEdit *>(this)->get_key_rect(i, timeline->get_zoom_scale());
+			Rect2 rect =
+				const_cast<AnimationTrackEdit*>(this)->get_key_rect(i, timeline->get_zoom_scale());
 			float offset = animation->track_get_key_time(track, i) - timeline->get_value();
 			offset = offset * timeline->get_zoom_scale() + limit;
 			rect.position.x += offset;
 
 			if (rect.has_point(p_pos)) {
-				if (const_cast<AnimationTrackEdit *>(this)->is_key_selectable_by_distance()) {
+				if (const_cast<AnimationTrackEdit*>(this)->is_key_selectable_by_distance()) {
 					float distance = Math::abs(offset - p_pos.x);
 					if (key_idx == -1 || distance < key_distance) {
 						key_idx = i;
 						key_distance = distance;
 					}
-				} else {
+				}
+				else {
 					// First one does it.
 					break;
 				}
@@ -2945,107 +3274,116 @@ String AnimationTrackEdit::get_tooltip(const Point2 &p_pos) const {
 		}
 
 		if (key_idx != -1) {
-			String text = TTR("Time (s):") + " " + TranslationServer::get_singleton()->format_number(rtos(Math::snapped(animation->track_get_key_time(track, key_idx), SECOND_DECIMAL)), _get_locale()) + "\n";
+			String text = TTR("Time (s):") + " " +
+						  TranslationServer::get_singleton()->format_number(
+							  rtos(Math::snapped(
+								  animation->track_get_key_time(track, key_idx), SECOND_DECIMAL)),
+							  _get_locale()) +
+						  "\n";
 			switch (animation->track_get_type(track)) {
-				case Animation::TYPE_POSITION_3D: {
-					Vector3 t = animation->track_get_key_value(track, key_idx);
-					text += TTR("Position:") + " " + String(t);
-				} break;
-				case Animation::TYPE_ROTATION_3D: {
-					Quaternion t = animation->track_get_key_value(track, key_idx);
-					text += TTR("Rotation:") + " " + String(t);
-				} break;
-				case Animation::TYPE_SCALE_3D: {
-					Vector3 t = animation->track_get_key_value(track, key_idx);
-					text += TTR("Scale:") + " " + String(t);
-				} break;
-				case Animation::TYPE_BLEND_SHAPE: {
-					float t = animation->track_get_key_value(track, key_idx);
-					text += TTR("Blend Shape:") + " " + itos(t);
-				} break;
-				case Animation::TYPE_VALUE: {
-					const Variant &v = animation->track_get_key_value(track, key_idx);
-					text += TTR("Type:") + " " + Variant::get_type_name(v.get_type()) + "\n";
-					Variant::Type valid_type = Variant::NIL;
-					text += TTR("Value:") + " " + String(v);
-					if (!_is_value_key_valid(v, valid_type)) {
-						text += " " + vformat(TTR("(Invalid, expected type: %s)"), Variant::get_type_name(valid_type));
-					}
-					text += "\n" + TTR("Easing:") + " " + rtos(animation->track_get_key_transition(track, key_idx));
+			case Animation::TYPE_POSITION_3D: {
+				Vector3 t = animation->track_get_key_value(track, key_idx);
+				text += TTR("Position:") + " " + String(t);
+			} break;
+			case Animation::TYPE_ROTATION_3D: {
+				Quaternion t = animation->track_get_key_value(track, key_idx);
+				text += TTR("Rotation:") + " " + String(t);
+			} break;
+			case Animation::TYPE_SCALE_3D: {
+				Vector3 t = animation->track_get_key_value(track, key_idx);
+				text += TTR("Scale:") + " " + String(t);
+			} break;
+			case Animation::TYPE_BLEND_SHAPE: {
+				float t = animation->track_get_key_value(track, key_idx);
+				text += TTR("Blend Shape:") + " " + itos(t);
+			} break;
+			case Animation::TYPE_VALUE: {
+				const Variant& v = animation->track_get_key_value(track, key_idx);
+				text += TTR("Type:") + " " + Variant::get_type_name(v.get_type()) + "\n";
+				Variant::Type valid_type = Variant::NIL;
+				text += TTR("Value:") + " " + String(v);
+				if (!_is_value_key_valid(v, valid_type)) {
+					text += " " + vformat(TTR("(Invalid, expected type: %s)"),
+									  Variant::get_type_name(valid_type));
+				}
+				text += "\n" + TTR("Easing:") + " " +
+						rtos(animation->track_get_key_transition(track, key_idx));
 
-				} break;
-				case Animation::TYPE_METHOD: {
-					Dictionary d = animation->track_get_key_value(track, key_idx);
-					if (d.has("method")) {
-						text += String(d["method"]);
+			} break;
+			case Animation::TYPE_METHOD: {
+				Dictionary d = animation->track_get_key_value(track, key_idx);
+				if (d.has("method")) {
+					text += String(d["method"]);
+				}
+				text += "(";
+				Vector<Variant> args;
+				if (d.has("args")) {
+					args = d["args"];
+				}
+				for (int i = 0; i < args.size(); i++) {
+					if (i > 0) {
+						text += ", ";
 					}
-					text += "(";
-					Vector<Variant> args;
-					if (d.has("args")) {
-						args = d["args"];
-					}
-					for (int i = 0; i < args.size(); i++) {
-						if (i > 0) {
-							text += ", ";
-						}
-						text += args[i].get_construct_string();
-					}
-					text += ")";
+					text += args[i].get_construct_string();
+				}
+				text += ")";
 
-				} break;
-				case Animation::TYPE_BEZIER: {
-					float h = animation->bezier_track_get_key_value(track, key_idx);
-					text += TTR("Value:") + " " + rtos(h) + "\n";
-					Vector2 ih = animation->bezier_track_get_key_in_handle(track, key_idx);
-					text += TTR("In-Handle:") + " " + String(ih) + "\n";
-					Vector2 oh = animation->bezier_track_get_key_out_handle(track, key_idx);
-					text += TTR("Out-Handle:") + " " + String(oh) + "\n";
+			} break;
+			case Animation::TYPE_BEZIER: {
+				float h = animation->bezier_track_get_key_value(track, key_idx);
+				text += TTR("Value:") + " " + rtos(h) + "\n";
+				Vector2 ih = animation->bezier_track_get_key_in_handle(track, key_idx);
+				text += TTR("In-Handle:") + " " + String(ih) + "\n";
+				Vector2 oh = animation->bezier_track_get_key_out_handle(track, key_idx);
+				text += TTR("Out-Handle:") + " " + String(oh) + "\n";
 
-					String handle_mode;
-					int hm = animation->bezier_track_get_key_handle_mode(track, key_idx);
-					switch (hm) {
-						case Animation::HANDLE_MODE_FREE: {
-							handle_mode = TTR("Free", "Bezier Handle Mode");
-						} break;
-						case Animation::HANDLE_MODE_LINEAR: {
-							handle_mode = TTR("Linear", "Bezier Handle Mode");
-						} break;
-						case Animation::HANDLE_MODE_BALANCED: {
-							handle_mode = TTR("Balanced", "Bezier Handle Mode");
-						} break;
-						case Animation::HANDLE_MODE_MIRRORED: {
-							handle_mode = TTR("Mirrored", "Bezier Handle Mode");
-						} break;
-						default: {
-							// Unknown modes may occur when editing a file from a newer version of Godot.
-							handle_mode = itos(hm);
-						} break;
-					}
-					text += vformat(TTR("Handle mode: %s"), handle_mode);
+				String handle_mode;
+				int hm = animation->bezier_track_get_key_handle_mode(track, key_idx);
+				switch (hm) {
+				case Animation::HANDLE_MODE_FREE: {
+					handle_mode = TTR("Free", "Bezier Handle Mode");
 				} break;
-				case Animation::TYPE_AUDIO: {
-					String stream_name = "null";
-					Ref<Resource> stream = animation->audio_track_get_key_stream(track, key_idx);
-					if (stream.is_valid()) {
-						if (stream->get_path().is_resource_file()) {
-							stream_name = stream->get_path().get_file();
-						} else if (!stream->get_name().is_empty()) {
-							stream_name = stream->get_name();
-						} else {
-							stream_name = stream->get_class();
-						}
+				case Animation::HANDLE_MODE_LINEAR: {
+					handle_mode = TTR("Linear", "Bezier Handle Mode");
+				} break;
+				case Animation::HANDLE_MODE_BALANCED: {
+					handle_mode = TTR("Balanced", "Bezier Handle Mode");
+				} break;
+				case Animation::HANDLE_MODE_MIRRORED: {
+					handle_mode = TTR("Mirrored", "Bezier Handle Mode");
+				} break;
+				default: {
+					// Unknown modes may occur when editing a file from a newer version of Godot.
+					handle_mode = itos(hm);
+				} break;
+				}
+				text += vformat(TTR("Handle mode: %s"), handle_mode);
+			} break;
+			case Animation::TYPE_AUDIO: {
+				String stream_name = "null";
+				Ref<Resource> stream = animation->audio_track_get_key_stream(track, key_idx);
+				if (stream.is_valid()) {
+					if (stream->get_path().is_resource_file()) {
+						stream_name = stream->get_path().get_file();
 					}
+					else if (!stream->get_name().is_empty()) {
+						stream_name = stream->get_name();
+					}
+					else {
+						stream_name = stream->get_class();
+					}
+				}
 
-					text += TTR("Stream:") + " " + stream_name + "\n";
-					float so = animation->audio_track_get_key_start_offset(track, key_idx);
-					text += TTR("Start (s):") + " " + rtos(so) + "\n";
-					float eo = animation->audio_track_get_key_end_offset(track, key_idx);
-					text += TTR("End (s):") + " " + rtos(eo);
-				} break;
-				case Animation::TYPE_ANIMATION: {
-					String name = animation->animation_track_get_key_animation(track, key_idx);
-					text += TTR("Animation Clip:") + " " + name;
-				} break;
+				text += TTR("Stream:") + " " + stream_name + "\n";
+				float so = animation->audio_track_get_key_start_offset(track, key_idx);
+				text += TTR("Start (s):") + " " + rtos(so) + "\n";
+				float eo = animation->audio_track_get_key_end_offset(track, key_idx);
+				text += TTR("End (s):") + " " + rtos(eo);
+			} break;
+			case Animation::TYPE_ANIMATION: {
+				String name = animation->animation_track_get_key_animation(track, key_idx);
+				text += TTR("Animation Clip:") + " " + name;
+			} break;
 			}
 			return text;
 		}
@@ -3054,7 +3392,8 @@ String AnimationTrackEdit::get_tooltip(const Point2 &p_pos) const {
 	return Control::get_tooltip(p_pos);
 }
 
-void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
+void AnimationTrackEdit::gui_input(const Ref<InputEvent>& p_event)
+{
 	ERR_FAIL_COND(p_event.is_null());
 
 	if (p_event->is_pressed()) {
@@ -3095,7 +3434,8 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 	Ref<InputEventMouseButton> mb = p_event;
 	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
 		Point2 pos = mb->get_position();
-		bool no_mod_key_pressed = !mb->is_alt_pressed() && !mb->is_shift_pressed() && !mb->is_command_or_control_pressed();
+		bool no_mod_key_pressed = !mb->is_alt_pressed() && !mb->is_shift_pressed() &&
+								  !mb->is_command_or_control_pressed();
 		if (mb->is_double_click() && !moving_selection && no_mod_key_pressed) {
 			int x = pos.x - timeline->get_name_limit();
 			float ofs = x / timeline->get_zoom_scale() + timeline->get_value();
@@ -3104,19 +3444,22 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 
 		if (!read_only) {
 			if (check_rect.has_point(pos)) {
-				EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+				EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 				undo_redo->create_action(TTR("Toggle Track Enabled"));
-				undo_redo->add_do_method(animation.ptr(), "track_set_enabled", track, !animation->track_is_enabled(track));
-				undo_redo->add_undo_method(animation.ptr(), "track_set_enabled", track, animation->track_is_enabled(track));
+				undo_redo->add_do_method(animation.ptr(), "track_set_enabled", track,
+					!animation->track_is_enabled(track));
+				undo_redo->add_undo_method(animation.ptr(), "track_set_enabled", track,
+					animation->track_is_enabled(track));
 				undo_redo->commit_action();
 				queue_redraw();
 				accept_event();
 			}
 
 			if (icon_rect.has_point(pos)) {
-				EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+				EditorSelection* editor_selection =
+					EditorNode::get_singleton()->get_editor_selection();
 				editor_selection->clear();
-				Node *n = root->get_node_or_null(node_path);
+				Node* n = root->get_node_or_null(node_path);
 				if (n) {
 					editor_selection->add_node(n);
 				}
@@ -3132,23 +3475,31 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				if (!menu) {
 					menu = memnew(PopupMenu);
 					add_child(menu);
-					menu->connect(SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEdit::_menu_selected));
+					menu->connect(SceneStringName(id_pressed),
+						callable_mp(this, &AnimationTrackEdit::_menu_selected));
 				}
 				menu->clear();
 				if (animation->track_get_type(track) == Animation::TYPE_AUDIO) {
-					menu->add_icon_item(get_editor_theme_icon(SNAME("UseBlendEnable")), TTR("Use Blend"), MENU_USE_BLEND_ENABLED);
-					menu->add_icon_item(get_editor_theme_icon(SNAME("UseBlendDisable")), TTR("Don't Use Blend"), MENU_USE_BLEND_DISABLED);
-				} else {
-					menu->add_icon_item(get_editor_theme_icon(SNAME("TrackContinuous")), TTR("Continuous"), MENU_CALL_MODE_CONTINUOUS);
-					menu->add_icon_item(get_editor_theme_icon(SNAME("TrackDiscrete")), TTR("Discrete"), MENU_CALL_MODE_DISCRETE);
-					menu->add_icon_item(get_editor_theme_icon(SNAME("TrackCapture")), TTR("Capture"), MENU_CALL_MODE_CAPTURE);
+					menu->add_icon_item(get_editor_theme_icon(SNAME("UseBlendEnable")),
+						TTR("Use Blend"), MENU_USE_BLEND_ENABLED);
+					menu->add_icon_item(get_editor_theme_icon(SNAME("UseBlendDisable")),
+						TTR("Don't Use Blend"), MENU_USE_BLEND_DISABLED);
+				}
+				else {
+					menu->add_icon_item(get_editor_theme_icon(SNAME("TrackContinuous")),
+						TTR("Continuous"), MENU_CALL_MODE_CONTINUOUS);
+					menu->add_icon_item(get_editor_theme_icon(SNAME("TrackDiscrete")),
+						TTR("Discrete"), MENU_CALL_MODE_DISCRETE);
+					menu->add_icon_item(get_editor_theme_icon(SNAME("TrackCapture")),
+						TTR("Capture"), MENU_CALL_MODE_CAPTURE);
 				}
 				menu->reset_size();
 
 				moving_selection_attempt = false;
 				moving_selection = false;
 
-				Vector2 popup_pos = get_screen_position() + update_mode_rect.position + Vector2(0, update_mode_rect.size.height);
+				Vector2 popup_pos = get_screen_position() + update_mode_rect.position +
+									Vector2(0, update_mode_rect.size.height);
 				menu->set_position(popup_pos);
 				menu->popup();
 				accept_event();
@@ -3158,36 +3509,46 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				if (!menu) {
 					menu = memnew(PopupMenu);
 					add_child(menu);
-					menu->connect(SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEdit::_menu_selected));
+					menu->connect(SceneStringName(id_pressed),
+						callable_mp(this, &AnimationTrackEdit::_menu_selected));
 				}
 				menu->clear();
-				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpRaw")), TTR("Nearest"), MENU_INTERPOLATION_NEAREST);
-				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinear")), TTR("Linear"), MENU_INTERPOLATION_LINEAR);
-				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubic")), TTR("Cubic"), MENU_INTERPOLATION_CUBIC);
+				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpRaw")), TTR("Nearest"),
+					MENU_INTERPOLATION_NEAREST);
+				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinear")), TTR("Linear"),
+					MENU_INTERPOLATION_LINEAR);
+				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubic")), TTR("Cubic"),
+					MENU_INTERPOLATION_CUBIC);
 				// Check whether it is angle property.
-				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+				AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 				if (ape) {
-					AnimationPlayer *ap = ape->get_player();
+					AnimationPlayer* ap = ape->get_player();
 					if (ap) {
 						NodePath npath = animation->track_get_path(track);
-						Node *a_ap_root_node = ap->get_node_or_null(ap->get_root_node());
-						Node *nd = nullptr;
-						// We must test that we have a valid a_ap_root_node before trying to access its content to init the nd Node.
+						Node* a_ap_root_node = ap->get_node_or_null(ap->get_root_node());
+						Node* nd = nullptr;
+						// We must test that we have a valid a_ap_root_node before trying to access
+						// its content to init the nd Node.
 						if (a_ap_root_node) {
-							nd = a_ap_root_node->get_node_or_null(NodePath(npath.get_concatenated_names()));
+							nd = a_ap_root_node->get_node_or_null(
+								NodePath(npath.get_concatenated_names()));
 						}
 						if (nd) {
-							StringName prop = npath.get_concatenated_subnames();
 							PropertyInfo prop_info;
-							ClassDB::get_property_info(nd->get_class(), prop, &prop_info);
 #ifdef DISABLE_DEPRECATED
-							bool is_angle = prop_info.type == Variant::FLOAT && prop_info.hint_string.contains("radians_as_degrees");
+							bool is_angle = prop_info.type == Variant::FLOAT &&
+											prop_info.hint_string.contains("radians_as_degrees");
 #else
-							bool is_angle = prop_info.type == Variant::FLOAT && prop_info.hint_string.contains("radians");
+							bool is_angle = prop_info.type == Variant::FLOAT &&
+											prop_info.hint_string.contains("radians");
 #endif // DISABLE_DEPRECATED
 							if (is_angle) {
-								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinearAngle")), TTR("Linear Angle"), MENU_INTERPOLATION_LINEAR_ANGLE);
-								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubicAngle")), TTR("Cubic Angle"), MENU_INTERPOLATION_CUBIC_ANGLE);
+								menu->add_icon_item(
+									get_editor_theme_icon(SNAME("InterpLinearAngle")),
+									TTR("Linear Angle"), MENU_INTERPOLATION_LINEAR_ANGLE);
+								menu->add_icon_item(
+									get_editor_theme_icon(SNAME("InterpCubicAngle")),
+									TTR("Cubic Angle"), MENU_INTERPOLATION_CUBIC_ANGLE);
 							}
 						}
 					}
@@ -3197,7 +3558,8 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				moving_selection_attempt = false;
 				moving_selection = false;
 
-				Vector2 popup_pos = get_screen_position() + interp_mode_rect.position + Vector2(0, interp_mode_rect.size.height);
+				Vector2 popup_pos = get_screen_position() + interp_mode_rect.position +
+									Vector2(0, interp_mode_rect.size.height);
 				menu->set_position(popup_pos);
 				menu->popup();
 				accept_event();
@@ -3207,17 +3569,21 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				if (!menu) {
 					menu = memnew(PopupMenu);
 					add_child(menu);
-					menu->connect(SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEdit::_menu_selected));
+					menu->connect(SceneStringName(id_pressed),
+						callable_mp(this, &AnimationTrackEdit::_menu_selected));
 				}
 				menu->clear();
-				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpWrapClamp")), TTR("Clamp Loop Interp"), MENU_LOOP_CLAMP);
-				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpWrapLoop")), TTR("Wrap Loop Interp"), MENU_LOOP_WRAP);
+				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpWrapClamp")),
+					TTR("Clamp Loop Interp"), MENU_LOOP_CLAMP);
+				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpWrapLoop")),
+					TTR("Wrap Loop Interp"), MENU_LOOP_WRAP);
 				menu->reset_size();
 
 				moving_selection_attempt = false;
 				moving_selection = false;
 
-				Vector2 popup_pos = get_screen_position() + loop_wrap_rect.position + Vector2(0, loop_wrap_rect.size.height);
+				Vector2 popup_pos = get_screen_position() + loop_wrap_rect.position +
+									Vector2(0, loop_wrap_rect.size.height);
 				menu->set_position(popup_pos);
 				menu->popup();
 				accept_event();
@@ -3235,30 +3601,36 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 			return;
 		}
 
-		if (_try_select_at_ui_pos(pos, mb->is_command_or_control_pressed() || mb->is_shift_pressed(), true)) {
+		if (_try_select_at_ui_pos(
+				pos, mb->is_command_or_control_pressed() || mb->is_shift_pressed(), true)) {
 			accept_event();
 		}
 	}
 
-	if (!moving_selection && mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::RIGHT) {
+	if (!moving_selection && mb.is_valid() && mb->is_pressed() &&
+		mb->get_button_index() == MouseButton::RIGHT) {
 		Point2 pos = mb->get_position();
-		if (pos.x >= timeline->get_name_limit() && pos.x <= get_size().width - timeline->get_buttons_width()) {
+		if (pos.x >= timeline->get_name_limit() &&
+			pos.x <= get_size().width - timeline->get_buttons_width()) {
 			// Can do something with menu too! show insert key.
 			float offset = (pos.x - timeline->get_name_limit()) / timeline->get_zoom_scale();
 			if (!read_only) {
-				_try_select_at_ui_pos(pos, mb->is_command_or_control_pressed() || mb->is_shift_pressed(), false);
+				_try_select_at_ui_pos(
+					pos, mb->is_command_or_control_pressed() || mb->is_shift_pressed(), false);
 				moving_selection_attempt = false;
 
 				insert_at_pos = offset + timeline->get_value();
 				Vector2 popup_pos = get_screen_position() + get_local_mouse_position();
 				// Use call_deferred to wait for the selected keys being updated.
-				callable_mp(this, &AnimationTrackEdit::_popup_key_context_menu).call_deferred(hovering_key_idx, popup_pos);
+				callable_mp(this, &AnimationTrackEdit::_popup_key_context_menu)
+					.call_deferred(hovering_key_idx, popup_pos);
 				accept_event();
 			}
 		}
 	}
 
-	if (mb.is_valid() && !mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && clicking_on_name) {
+	if (mb.is_valid() && !mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT &&
+		clicking_on_name) {
 		if (!path) {
 			path_popup = memnew(Popup);
 			path_popup->set_wrap_controls(true);
@@ -3266,11 +3638,13 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 			path = memnew(LineEdit);
 			path_popup->add_child(path);
 			path->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
-			path->connect(SceneStringName(text_submitted), callable_mp(this, &AnimationTrackEdit::_path_submitted));
+			path->connect(SceneStringName(text_submitted),
+				callable_mp(this, &AnimationTrackEdit::_path_submitted));
 		}
 
 		path->set_text(String(animation->track_get_path(track)));
-		const Vector2 theme_ofs = path->get_theme_stylebox(CoreStringName(normal), SNAME("LineEdit"))->get_offset();
+		const Vector2 theme_ofs =
+			path->get_theme_stylebox(CoreStringName(normal), SNAME("LineEdit"))->get_offset();
 
 		moving_selection_attempt = false;
 		moving_selection = false;
@@ -3290,7 +3664,8 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				if (std::abs(editor->get_moving_selection_offset()) > CMP_EPSILON) {
 					emit_signal(SNAME("move_selection_commit"));
 				}
-			} else if (select_single_attempt != -1) {
+			}
+			else if (select_single_attempt != -1) {
 				emit_signal(SNAME("select_key"), select_single_attempt, true);
 			}
 			moving_selection = false;
@@ -3327,7 +3702,8 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 
 				hovering_key_idx = -1;
 
-				// Hovering should happen in the opposite order of drawing for more accurate overlap hovering.
+				// Hovering should happen in the opposite order of drawing for more accurate overlap
+				// hovering.
 				for (int i = animation->track_get_key_count(track) - 1; i >= 0; i--) {
 					Rect2 rect = get_key_rect(i, scale);
 					float offset = animation->track_get_key_time(track, i) - timeline->get_value();
@@ -3342,7 +3718,8 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 								key_distance = distance;
 								hovering_key_idx = i;
 							}
-						} else {
+						}
+						else {
 							// First one does it.
 							hovering_key_idx = i;
 							break;
@@ -3358,19 +3735,26 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 		}
 	}
 
-	if (mm.is_valid() && mm->get_button_mask().has_flag(MouseButtonMask::LEFT) && moving_selection_attempt) {
+	if (mm.is_valid() && mm->get_button_mask().has_flag(MouseButtonMask::LEFT) &&
+		moving_selection_attempt) {
 		if (!moving_selection) {
 			moving_selection = true;
 			emit_signal(SNAME("move_selection_begin"));
 		}
 
-		float moving_begin_time = ((moving_selection_mouse_begin_x - timeline->get_name_limit()) / timeline->get_zoom_scale()) + timeline->get_value();
-		float new_time = ((mm->get_position().x - timeline->get_name_limit()) / timeline->get_zoom_scale()) + timeline->get_value();
+		float moving_begin_time = ((moving_selection_mouse_begin_x - timeline->get_name_limit()) /
+									  timeline->get_zoom_scale()) +
+								  timeline->get_value();
+		float new_time =
+			((mm->get_position().x - timeline->get_name_limit()) / timeline->get_zoom_scale()) +
+			timeline->get_value();
 		float delta = new_time - moving_begin_time;
 		float snapped_time = editor->snap_time(moving_selection_pivot + delta);
 
 		float offset = 0.0;
-		if (std::abs(editor->get_moving_selection_offset()) > CMP_EPSILON || (snapped_time > moving_selection_pivot && delta > CMP_EPSILON) || (snapped_time < moving_selection_pivot && delta < -CMP_EPSILON)) {
+		if (std::abs(editor->get_moving_selection_offset()) > CMP_EPSILON ||
+			(snapped_time > moving_selection_pivot && delta > CMP_EPSILON) ||
+			(snapped_time < moving_selection_pivot && delta < -CMP_EPSILON)) {
 			offset = snapped_time - moving_selection_pivot;
 			moving_selection_effective = true;
 		}
@@ -3379,8 +3763,11 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-bool AnimationTrackEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggregate, bool p_deselectable) {
-	if (!animation->track_is_compressed(track)) { // Selecting compressed keyframes for editing is not possible.
+bool AnimationTrackEdit::_try_select_at_ui_pos(
+	const Point2& p_pos, bool p_aggregate, bool p_deselectable)
+{
+	if (!animation->track_is_compressed(
+			track)) { // Selecting compressed keyframes for editing is not possible.
 		float scale = timeline->get_zoom_scale();
 		int limit = timeline->get_name_limit();
 		int limit_end = get_size().width - timeline->get_buttons_width();
@@ -3391,7 +3778,8 @@ bool AnimationTrackEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggre
 			int key_idx = -1;
 			float key_distance = 1e20;
 
-			// Select should happen in the opposite order of drawing for more accurate overlap select.
+			// Select should happen in the opposite order of drawing for more accurate overlap
+			// select.
 			for (int i = animation->track_get_key_count(track) - 1; i >= 0; i--) {
 				Rect2 rect = get_key_rect(i, scale);
 				float offset = animation->track_get_key_time(track, i) - timeline->get_value();
@@ -3405,7 +3793,8 @@ bool AnimationTrackEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggre
 							key_idx = i;
 							key_distance = distance;
 						}
-					} else {
+					}
+					else {
 						// First one does it.
 						key_idx = i;
 						break;
@@ -3421,7 +3810,8 @@ bool AnimationTrackEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggre
 							moving_selection_pivot = 0.0f;
 							moving_selection_mouse_begin_x = 0.0f;
 						}
-					} else {
+					}
+					else {
 						emit_signal(SNAME("select_key"), key_idx, false);
 						moving_selection_attempt = true;
 						moving_selection_effective = false;
@@ -3429,11 +3819,13 @@ bool AnimationTrackEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggre
 						moving_selection_pivot = animation->track_get_key_time(track, key_idx);
 						moving_selection_mouse_begin_x = p_pos.x;
 					}
-				} else {
+				}
+				else {
 					if (!editor->is_key_selected(track, key_idx)) {
 						emit_signal(SNAME("select_key"), key_idx, true);
 						select_single_attempt = -1;
-					} else {
+					}
+					else {
 						select_single_attempt = key_idx;
 					}
 
@@ -3455,38 +3847,26 @@ bool AnimationTrackEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggre
 	return false;
 }
 
-bool AnimationTrackEdit::_lookup_key(int p_key_idx) const {
+bool AnimationTrackEdit::_lookup_key(int p_key_idx) const
+{
 	if (p_key_idx < 0 || p_key_idx >= animation->track_get_key_count(track)) {
 		return false;
 	}
 
 	if (animation->track_get_type(track) == Animation::TYPE_METHOD) {
-		Node *target = root->get_node_or_null(animation->track_get_path(track));
+		Node* target = root->get_node_or_null(animation->track_get_path(track));
 		if (target) {
 			StringName method = animation->method_track_get_name(track, p_key_idx);
-			// First, check every script in the inheritance chain.
-			bool found_in_script = false;
 			Ref<Script> target_script_ref = target->get_script();
-			Script *target_script = target_script_ref.ptr();
+			Script* target_script = target_script_ref.ptr();
 			while (target_script) {
 				if (target_script->has_method(method)) {
-					found_in_script = true;
 					// Tell ScriptEditor to show the method's line.
-					ScriptEditor::get_singleton()->script_goto_method(target_script, animation->method_track_get_name(track, p_key_idx));
+					ScriptEditor::get_singleton()->script_goto_method(
+						target_script, animation->method_track_get_name(track, p_key_idx));
 					break;
 				}
 				target_script = target_script->get_base_script().ptr();
-			}
-
-			if (!found_in_script) {
-				// Not found in script, so it must be a native method.
-				if (ClassDB::has_method(target->get_class_name(), method)) {
-					// Show help page instead.
-					ScriptEditor::get_singleton()->goto_help(vformat("class_method:%s:%s", target->get_class_name(), method));
-				} else {
-					// Still not found, which means the target doesn't have this method. Warn the user.
-					WARN_PRINT_ED(vformat(TTR("Failed to lookup method: \"%s\""), method));
-				}
 			}
 			return true;
 		}
@@ -3494,8 +3874,10 @@ bool AnimationTrackEdit::_lookup_key(int p_key_idx) const {
 	return false;
 }
 
-Variant AnimationTrackEdit::get_drag_data(const Point2 &p_point) {
-	if (!clicking_on_name || (get_editor()->is_sorting_alphabetically() && !get_editor()->is_grouping_tracks())) {
+Variant AnimationTrackEdit::get_drag_data(const Point2& p_point)
+{
+	if (!clicking_on_name ||
+		(get_editor()->is_sorting_alphabetically() && !get_editor()->is_grouping_tracks())) {
 		return Variant();
 	}
 
@@ -3506,12 +3888,13 @@ Variant AnimationTrackEdit::get_drag_data(const Point2 &p_point) {
 	drag_data["group"] = base_path;
 	drag_data["index"] = track;
 
-	Button *tb = memnew(Button);
+	Button* tb = memnew(Button);
 	tb->set_flat(true);
 	tb->set_text(path_cache);
 	tb->set_button_icon(icon_cache);
 	tb->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	tb->add_theme_constant_override("icon_max_width", get_theme_constant("class_icon_size", EditorStringName(Editor)));
+	tb->add_theme_constant_override(
+		"icon_max_width", get_theme_constant("class_icon_size", EditorStringName(Editor)));
 	set_drag_preview(tb);
 
 	clicking_on_name = false;
@@ -3519,7 +3902,8 @@ Variant AnimationTrackEdit::get_drag_data(const Point2 &p_point) {
 	return drag_data;
 }
 
-bool AnimationTrackEdit::can_drop_data(const Point2 &p_point, const Variant &p_data) const {
+bool AnimationTrackEdit::can_drop_data(const Point2& p_point, const Variant& p_data) const
+{
 	Dictionary d = p_data;
 	if (!d.has("type")) {
 		return false;
@@ -3541,16 +3925,18 @@ bool AnimationTrackEdit::can_drop_data(const Point2 &p_point, const Variant &p_d
 
 	if (p_point.y < get_size().height / 2) {
 		dropping_at = -1;
-	} else {
+	}
+	else {
 		dropping_at = 1;
 	}
 
-	const_cast<AnimationTrackEdit *>(this)->queue_redraw();
+	const_cast<AnimationTrackEdit*>(this)->queue_redraw();
 
 	return true;
 }
 
-void AnimationTrackEdit::drop_data(const Point2 &p_point, const Variant &p_data) {
+void AnimationTrackEdit::drop_data(const Point2& p_point, const Variant& p_data)
+{
 	Dictionary d = p_data;
 	if (!d.has("type")) {
 		return;
@@ -3574,47 +3960,61 @@ void AnimationTrackEdit::drop_data(const Point2 &p_point, const Variant &p_data)
 
 	if (dropping_at < 0) {
 		emit_signal(SNAME("dropped"), from_track, track);
-	} else {
+	}
+	else {
 		emit_signal(SNAME("dropped"), from_track, track + 1);
 	}
 }
 
-void AnimationTrackEdit::_popup_key_context_menu(int p_hovering_key_idx, Vector2 p_popup_pos) {
+void AnimationTrackEdit::_popup_key_context_menu(int p_hovering_key_idx, Vector2 p_popup_pos)
+{
 	if (!menu) {
 		menu = memnew(PopupMenu);
 		add_child(menu);
-		menu->connect(SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEdit::_menu_selected));
+		menu->connect(
+			SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEdit::_menu_selected));
 	}
 
 	menu->clear();
 	if (animation->track_get_type(track) == Animation::TYPE_METHOD) {
 		if (p_hovering_key_idx != -1) {
 			lookup_key_idx = p_hovering_key_idx;
-			menu->add_icon_item(get_editor_theme_icon(SNAME("Help")), vformat("%s (%s)", TTR("Go to Definition"), animation->method_track_get_name(track, lookup_key_idx)), MENU_KEY_LOOKUP);
+			menu->add_icon_item(get_editor_theme_icon(SNAME("Help")),
+				vformat("%s (%s)", TTR("Go to Definition"),
+					animation->method_track_get_name(track, lookup_key_idx)),
+				MENU_KEY_LOOKUP);
 			menu->add_separator();
 		}
 	}
 	menu->add_icon_item(get_editor_theme_icon(SNAME("Key")), TTR("Insert Key..."), MENU_KEY_INSERT);
 	if (editor->is_selection_active()) {
 		menu->add_separator();
-		menu->add_icon_item(get_editor_theme_icon(SNAME("Duplicate")), TTR("Duplicate Key(s)"), MENU_KEY_DUPLICATE);
-		menu->add_icon_item(get_editor_theme_icon(SNAME("ActionCut")), TTR("Cut Key(s)"), MENU_KEY_CUT);
-		menu->add_icon_item(get_editor_theme_icon(SNAME("ActionCopy")), TTR("Copy Key(s)"), MENU_KEY_COPY);
+		menu->add_icon_item(
+			get_editor_theme_icon(SNAME("Duplicate")), TTR("Duplicate Key(s)"), MENU_KEY_DUPLICATE);
+		menu->add_icon_item(
+			get_editor_theme_icon(SNAME("ActionCut")), TTR("Cut Key(s)"), MENU_KEY_CUT);
+		menu->add_icon_item(
+			get_editor_theme_icon(SNAME("ActionCopy")), TTR("Copy Key(s)"), MENU_KEY_COPY);
 	}
 	if (editor->is_key_clipboard_active()) {
-		menu->add_icon_item(get_editor_theme_icon(SNAME("ActionPaste")), TTR("Paste Key(s)"), MENU_KEY_PASTE);
+		menu->add_icon_item(
+			get_editor_theme_icon(SNAME("ActionPaste")), TTR("Paste Key(s)"), MENU_KEY_PASTE);
 	}
 	if (editor->is_selection_active()) {
-		AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+		AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 		if (ape) {
-			AnimationPlayer *ap = ape->get_player();
-			if (ap && editor->can_add_reset_key() && animation != ap->get_animation(SceneStringName(RESET))) {
-				menu->add_separator();
-				menu->add_icon_item(get_editor_theme_icon(SNAME("MoveUp")), TTR("Send Key(s) to RESET"), MENU_KEY_ADD_RESET);
+			AnimationPlayer* ap = ape->get_player();
+			if (ap && editor->can_add_reset_key() &&
+				animation != ap->get_animation(SceneStringName(RESET))) {
+				menu->
+add_separator();
+				menu->add_icon_item(get_editor_theme_icon(SNAME("MoveUp")),
+					TTR("Send Key(s) to RESET"), MENU_KEY_ADD_RESET);
 			}
 		}
 		menu->add_separator();
-		menu->add_icon_item(get_editor_theme_icon(SNAME("Remove")), TTR("Delete Key(s)"), MENU_KEY_DELETE);
+		menu->add_icon_item(
+			get_editor_theme_icon(SNAME("Remove")), TTR("Delete Key(s)"), MENU_KEY_DELETE);
 	}
 	menu->reset_size();
 
@@ -3622,120 +4022,137 @@ void AnimationTrackEdit::_popup_key_context_menu(int p_hovering_key_idx, Vector2
 	menu->popup();
 }
 
-void AnimationTrackEdit::_menu_selected(int p_index) {
+void AnimationTrackEdit::_menu_selected(int p_index)
+{
 	switch (p_index) {
-		case MENU_CALL_MODE_CONTINUOUS:
-		case MENU_CALL_MODE_DISCRETE:
-		case MENU_CALL_MODE_CAPTURE: {
-			Animation::UpdateMode update_mode = Animation::UpdateMode(p_index);
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Change Animation Update Mode"));
-			undo_redo->add_do_method(animation.ptr(), "value_track_set_update_mode", track, update_mode);
-			undo_redo->add_undo_method(animation.ptr(), "value_track_set_update_mode", track, animation->value_track_get_update_mode(track));
-			AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-			if (ape) {
-				undo_redo->add_do_method(ape, "_animation_update_key_frame");
-				undo_redo->add_undo_method(ape, "_animation_update_key_frame");
-			}
-			undo_redo->commit_action();
-			queue_redraw();
+	case MENU_CALL_MODE_CONTINUOUS:
+	case MENU_CALL_MODE_DISCRETE:
+	case MENU_CALL_MODE_CAPTURE: {
+		Animation::UpdateMode update_mode = Animation::UpdateMode(p_index);
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Change Animation Update Mode"));
+		undo_redo->add_do_method(
+			animation.ptr(), "value_track_set_update_mode", track, update_mode);
+		undo_redo->add_undo_method(animation.ptr(), "value_track_set_update_mode", track,
+			animation->value_track_get_update_mode(track));
+		AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+		if (ape) {
+			undo_redo->add_do_method(ape, "_animation_update_key_frame");
+			undo_redo->add_undo_method(ape, "_animation_update_key_frame");
+		}
+		undo_redo->commit_action();
+		queue_redraw();
 
-		} break;
-		case MENU_INTERPOLATION_NEAREST:
-		case MENU_INTERPOLATION_LINEAR:
-		case MENU_INTERPOLATION_CUBIC:
-		case MENU_INTERPOLATION_LINEAR_ANGLE:
-		case MENU_INTERPOLATION_CUBIC_ANGLE: {
-			Animation::InterpolationType interp_mode = Animation::InterpolationType(p_index - MENU_INTERPOLATION_NEAREST);
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Change Animation Interpolation Mode"));
-			undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type", track, interp_mode);
-			undo_redo->add_undo_method(animation.ptr(), "track_set_interpolation_type", track, animation->track_get_interpolation_type(track));
-			AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-			if (ape) {
-				undo_redo->add_do_method(ape, "_animation_update_key_frame");
-				undo_redo->add_undo_method(ape, "_animation_update_key_frame");
-			}
-			undo_redo->commit_action();
-			queue_redraw();
-		} break;
-		case MENU_LOOP_WRAP:
-		case MENU_LOOP_CLAMP: {
-			bool loop_wrap = p_index == MENU_LOOP_WRAP;
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Change Animation Loop Mode"));
-			undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_loop_wrap", track, loop_wrap);
-			undo_redo->add_undo_method(animation.ptr(), "track_set_interpolation_loop_wrap", track, animation->track_get_interpolation_loop_wrap(track));
-			AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-			if (ape) {
-				undo_redo->add_do_method(ape, "_animation_update_key_frame");
-				undo_redo->add_undo_method(ape, "_animation_update_key_frame");
-			}
-			undo_redo->commit_action();
-			queue_redraw();
+	} break;
+	case MENU_INTERPOLATION_NEAREST:
+	case MENU_INTERPOLATION_LINEAR:
+	case MENU_INTERPOLATION_CUBIC:
+	case MENU_INTERPOLATION_LINEAR_ANGLE:
+	case MENU_INTERPOLATION_CUBIC_ANGLE: {
+		Animation::InterpolationType interp_mode =
+			Animation::InterpolationType(p_index - MENU_INTERPOLATION_NEAREST);
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Change Animation Interpolation Mode"));
+		undo_redo->add_do_method(
+			animation.ptr(), "track_set_interpolation_type", track, interp_mode);
+		undo_redo->add_undo_method(animation.ptr(), "track_set_interpolation_type", track,
+			animation->track_get_interpolation_type(track));
+		AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+		if (ape) {
+			undo_redo->add_do_method(ape, "_animation_update_key_frame");
+			undo_redo->add_undo_method(ape, "_animation_update_key_frame");
+		}
+		undo_redo->commit_action();
+		queue_redraw();
+	} break;
+	case MENU_LOOP_WRAP:
+	case MENU_LOOP_CLAMP: {
+		bool loop_wrap = p_index == MENU_LOOP_WRAP;
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Change Animation Loop Mode"));
+		undo_redo->add_do_method(
+			animation.ptr(), "track_set_interpolation_loop_wrap", track, loop_wrap);
+		undo_redo->add_undo_method(animation.ptr(), "track_set_interpolation_loop_wrap", track,
+			animation->track_get_interpolation_loop_wrap(track));
+		AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+		if (ape) {
+			undo_redo->add_do_method(ape, "_animation_update_key_frame");
+			undo_redo->add_undo_method(ape, "_animation_update_key_frame");
+		}
+		undo_redo->commit_action();
+		queue_redraw();
 
-		} break;
-		case MENU_KEY_INSERT: {
-			emit_signal(SNAME("insert_key"), insert_at_pos);
-		} break;
-		case MENU_KEY_DUPLICATE: {
-			emit_signal(SNAME("duplicate_request"), insert_at_pos, !editor->is_insert_at_current_time_enabled());
-		} break;
-		case MENU_KEY_CUT: {
-			emit_signal(SNAME("cut_request"));
-		} break;
-		case MENU_KEY_COPY: {
-			emit_signal(SNAME("copy_request"));
-		} break;
-		case MENU_KEY_PASTE: {
-			emit_signal(SNAME("paste_request"), insert_at_pos, !editor->is_insert_at_current_time_enabled());
-		} break;
-		case MENU_KEY_ADD_RESET: {
-			emit_signal(SNAME("create_reset_request"));
-		} break;
-		case MENU_KEY_DELETE: {
-			emit_signal(SNAME("delete_request"));
-		} break;
-		case MENU_KEY_LOOKUP: {
-			_lookup_key(lookup_key_idx);
-		} break;
-		case MENU_USE_BLEND_ENABLED:
-		case MENU_USE_BLEND_DISABLED: {
-			bool use_blend = p_index == MENU_USE_BLEND_ENABLED;
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Change Animation Use Blend"));
-			undo_redo->add_do_method(animation.ptr(), "audio_track_set_use_blend", track, use_blend);
-			undo_redo->add_undo_method(animation.ptr(), "audio_track_set_use_blend", track, animation->audio_track_is_use_blend(track));
-			undo_redo->commit_action();
-			queue_redraw();
-		} break;
+	} break;
+	case MENU_KEY_INSERT: {
+		emit_signal(SNAME("insert_key"), insert_at_pos);
+	} break;
+	case MENU_KEY_DUPLICATE: {
+		emit_signal(SNAME("duplicate_request"), insert_at_pos,
+			!editor->is_insert_at_current_time_enabled());
+	} break;
+	case MENU_KEY_CUT: {
+		emit_signal(SNAME("cut_request"));
+	} break;
+	case MENU_KEY_COPY: {
+		emit_signal(SNAME("copy_request"));
+	} break;
+	case MENU_KEY_PASTE: {
+		emit_signal(
+			SNAME("paste_request"), insert_at_pos, !editor->is_insert_at_current_time_enabled());
+	} break;
+	case MENU_KEY_ADD_RESET: {
+		emit_signal(SNAME("create_reset_request"));
+	} break;
+	case MENU_KEY_DELETE: {
+		emit_signal(SNAME("delete_request"));
+	} break;
+	case MENU_KEY_LOOKUP: {
+		_lookup_key(lookup_key_idx);
+	} break;
+	case MENU_USE_BLEND_ENABLED:
+	case MENU_USE_BLEND_DISABLED: {
+		bool use_blend = p_index == MENU_USE_BLEND_ENABLED;
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Change Animation Use Blend"));
+		undo_redo->add_do_method(animation.ptr(), "audio_track_set_use_blend", track, use_blend);
+		undo_redo->add_undo_method(animation.ptr(), "audio_track_set_use_blend", track,
+			animation->audio_track_is_use_blend(track));
+		undo_redo->commit_action();
+		queue_redraw();
+	} break;
 	}
 }
 
-void AnimationTrackEdit::cancel_drop() {
+void AnimationTrackEdit::cancel_drop()
+{
 	if (dropping_at != 0) {
 		dropping_at = 0;
 		queue_redraw();
 	}
 }
 
-void AnimationTrackEdit::set_in_group(bool p_enable) {
+void AnimationTrackEdit::set_in_group(bool p_enable)
+{
 	in_group = p_enable;
 	queue_redraw();
 }
 
-void AnimationTrackEdit::append_to_selection(const Rect2 &p_box, bool p_deselection) {
+void AnimationTrackEdit::append_to_selection(const Rect2& p_box, bool p_deselection)
+{
 	if (animation->track_is_compressed(track)) {
 		return; // Compressed keyframes can't be edited
 	}
 	// Left Border including space occupied by keyframes on t=0.
 	int limit_start_hitbox = timeline->get_name_limit() - type_icon->get_width();
-	Rect2 select_rect(limit_start_hitbox, 0, get_size().width - timeline->get_name_limit() - timeline->get_buttons_width(), get_size().height);
+	Rect2 select_rect(limit_start_hitbox, 0,
+		get_size().width - timeline->get_name_limit() - timeline->get_buttons_width(),
+		get_size().height);
 	select_rect = select_rect.intersection(p_box);
 
 	// Select should happen in the opposite order of drawing for more accurate overlap select.
 	for (int i = animation->track_get_key_count(track) - 1; i >= 0; i--) {
-		Rect2 rect = const_cast<AnimationTrackEdit *>(this)->get_key_rect(i, timeline->get_zoom_scale());
+		Rect2 rect =
+			const_cast<AnimationTrackEdit*>(this)->get_key_rect(i, timeline->get_zoom_scale());
 		float offset = animation->track_get_key_time(track, i) - timeline->get_value();
 		offset = offset * timeline->get_zoom_scale() + timeline->get_name_limit();
 		rect.position.x += offset;
@@ -3743,19 +4160,24 @@ void AnimationTrackEdit::append_to_selection(const Rect2 &p_box, bool p_deselect
 		if (select_rect.intersects(rect)) {
 			if (p_deselection) {
 				emit_signal(SNAME("deselect_key"), i);
-			} else {
+			}
+			else {
 				emit_signal(SNAME("select_key"), i, false);
 			}
 		}
 	}
 }
 
-void AnimationTrackEdit::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("timeline_changed", PropertyInfo(Variant::FLOAT, "position"), PropertyInfo(Variant::BOOL, "timeline_only")));
+void AnimationTrackEdit::_bind_methods()
+{
+	ADD_SIGNAL(MethodInfo("timeline_changed", PropertyInfo(Variant::FLOAT, "position"),
+		PropertyInfo(Variant::BOOL, "timeline_only")));
 	ADD_SIGNAL(MethodInfo("remove_request", PropertyInfo(Variant::INT, "track")));
-	ADD_SIGNAL(MethodInfo("dropped", PropertyInfo(Variant::INT, "from_track"), PropertyInfo(Variant::INT, "to_track")));
+	ADD_SIGNAL(MethodInfo("dropped", PropertyInfo(Variant::INT, "from_track"),
+		PropertyInfo(Variant::INT, "to_track")));
 	ADD_SIGNAL(MethodInfo("insert_key", PropertyInfo(Variant::FLOAT, "offset")));
-	ADD_SIGNAL(MethodInfo("select_key", PropertyInfo(Variant::INT, "index"), PropertyInfo(Variant::BOOL, "single")));
+	ADD_SIGNAL(MethodInfo(
+		"select_key", PropertyInfo(Variant::INT, "index"), PropertyInfo(Variant::BOOL, "single")));
 	ADD_SIGNAL(MethodInfo("deselect_key", PropertyInfo(Variant::INT, "index")));
 
 	ADD_SIGNAL(MethodInfo("move_selection_begin"));
@@ -3763,236 +4185,295 @@ void AnimationTrackEdit::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("move_selection_commit"));
 	ADD_SIGNAL(MethodInfo("move_selection_cancel"));
 
-	ADD_SIGNAL(MethodInfo("duplicate_request", PropertyInfo(Variant::FLOAT, "offset"), PropertyInfo(Variant::BOOL, "is_offset_valid")));
+	ADD_SIGNAL(MethodInfo("duplicate_request", PropertyInfo(Variant::FLOAT, "offset"),
+		PropertyInfo(Variant::BOOL, "is_offset_valid")));
 	ADD_SIGNAL(MethodInfo("create_reset_request"));
 	ADD_SIGNAL(MethodInfo("copy_request"));
 	ADD_SIGNAL(MethodInfo("cut_request"));
-	ADD_SIGNAL(MethodInfo("paste_request", PropertyInfo(Variant::FLOAT, "offset"), PropertyInfo(Variant::BOOL, "is_offset_valid")));
+	ADD_SIGNAL(MethodInfo("paste_request", PropertyInfo(Variant::FLOAT, "offset"),
+		PropertyInfo(Variant::BOOL, "is_offset_valid")));
 	ADD_SIGNAL(MethodInfo("delete_request"));
 }
 
-AnimationTrackEdit::AnimationTrackEdit() {
+AnimationTrackEdit::AnimationTrackEdit()
+{
 	play_position = memnew(Control);
 	play_position->set_mouse_filter(MOUSE_FILTER_PASS);
 	add_child(play_position);
 	play_position->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
-	play_position->connect(SceneStringName(draw), callable_mp(this, &AnimationTrackEdit::_play_position_draw));
+	play_position->connect(
+		SceneStringName(draw), callable_mp(this, &AnimationTrackEdit::_play_position_draw));
 	set_focus_mode(FOCUS_CLICK);
 	set_mouse_filter(MOUSE_FILTER_PASS); // Scroll has to work too for selection.
 }
 
 //////////////////////////////////////
 
-AnimationTrackEdit *AnimationTrackEditPlugin::create_value_track_edit(Object *p_object, Variant::Type p_type, const String &p_property, PropertyHint p_hint, const String &p_hint_string, int p_usage) {
+AnimationTrackEdit* AnimationTrackEditPlugin::create_value_track_edit(Object* p_object,
+	Variant::Type p_type, const String& p_property, PropertyHint p_hint,
+	const String& p_hint_string, int p_usage)
+{
 	if (get_script_instance()) {
-		return Object::cast_to<AnimationTrackEdit>(get_script_instance()->call("create_value_track_edit", p_object, p_type, p_property, p_hint, p_hint_string, p_usage));
+		return Object::cast_to<AnimationTrackEdit>(
+			get_script_instance()->call("create_value_track_edit", p_object, p_type, p_property,
+				p_hint, p_hint_string, p_usage));
 	}
 	return nullptr;
 }
 
-AnimationTrackEdit *AnimationTrackEditPlugin::create_audio_track_edit() {
+AnimationTrackEdit* AnimationTrackEditPlugin::create_audio_track_edit()
+{
 	if (get_script_instance()) {
-		return Object::cast_to<AnimationTrackEdit>(get_script_instance()->call("create_audio_track_edit").operator Object *());
+		return Object::cast_to<AnimationTrackEdit>(
+			get_script_instance()->call("create_audio_track_edit").operator Object*());
 	}
 	return nullptr;
 }
 
-AnimationTrackEdit *AnimationTrackEditPlugin::create_animation_track_edit(Object *p_object) {
+AnimationTrackEdit* AnimationTrackEditPlugin::create_animation_track_edit(Object* p_object)
+{
 	if (get_script_instance()) {
-		return Object::cast_to<AnimationTrackEdit>(get_script_instance()->call("create_animation_track_edit", p_object).operator Object *());
+		return Object::cast_to<AnimationTrackEdit>(
+			get_script_instance()
+				->call("create_animation_track_edit", p_object)
+				.
+				operator Object*());
 	}
 	return nullptr;
 }
 
 ///////////////////////////////////////
 
-void AnimationTrackEditGroup::_notification(int p_what) {
+void AnimationTrackEditGroup::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			icon_size = Vector2(1, 1) * get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		icon_size =
+			Vector2(1, 1) * get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
+	} break;
 
-		case NOTIFICATION_DRAW: {
-			const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-			const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
-			Color color = get_theme_color(SceneStringName(font_color), SNAME("Label"));
+	case NOTIFICATION_DRAW: {
+		const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
+		const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+		Color color = get_theme_color(SceneStringName(font_color), SNAME("Label"));
 
-			const Ref<StyleBox> &stylebox_header = get_theme_stylebox(SNAME("header"), SNAME("AnimationTrackEditGroup"));
-			float v_margin_offset = stylebox_header->get_content_margin(SIDE_TOP) - stylebox_header->get_content_margin(SIDE_BOTTOM);
+		const Ref<StyleBox>& stylebox_header =
+			get_theme_stylebox(SNAME("header"), SNAME("AnimationTrackEditGroup"));
+		float v_margin_offset = stylebox_header->get_content_margin(SIDE_TOP) -
+								stylebox_header->get_content_margin(SIDE_BOTTOM);
 
-			const Color h_line_color = get_theme_color(SNAME("h_line_color"), SNAME("AnimationTrackEditGroup"));
-			const Color v_line_color = get_theme_color(SNAME("v_line_color"), SNAME("AnimationTrackEditGroup"));
-			const int h_separation = get_theme_constant(SNAME("h_separation"), SNAME("AnimationTrackEditGroup"));
+		const Color h_line_color =
+			get_theme_color(SNAME("h_line_color"), SNAME("AnimationTrackEditGroup"));
+		const Color v_line_color =
+			get_theme_color(SNAME("v_line_color"), SNAME("AnimationTrackEditGroup"));
+		const int h_separation =
+			get_theme_constant(SNAME("h_separation"), SNAME("AnimationTrackEditGroup"));
 
-			const Ref<StyleBox> &stylebox_hover = get_theme_stylebox(SceneStringName(hover), SNAME("AnimationTrackEditGroup"));
+		const Ref<StyleBox>& stylebox_hover =
+			get_theme_stylebox(SceneStringName(hover), SNAME("AnimationTrackEditGroup"));
 
-			if (root) {
-				Node *n = root->get_node_or_null(node);
-				if (n && EditorNode::get_singleton()->get_editor_selection()->is_selected(n)) {
-					color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-				}
+		if (root) {
+			Node* n = root->get_node_or_null(node);
+			if (n && EditorNode::get_singleton()->get_editor_selection()->is_selected(n)) {
+				color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 			}
+		}
 
-			draw_style_box(stylebox_header, Rect2(Point2(), get_size()));
+		draw_style_box(stylebox_header, Rect2(Point2(), get_size()));
 
-			if (hovered) {
-				// Draw hover feedback for AnimationTrackEditGroup.
-				// Add a limit to just show hover over portion with text.
-				int limit = timeline->get_name_limit();
-				draw_style_box(stylebox_hover, Rect2(Point2(1 * EDSCALE, 0), Size2(limit - 1 * EDSCALE, get_size().height)));
-			}
-
+		if (hovered) {
+			// Draw hover feedback for AnimationTrackEditGroup.
+			// Add a limit to just show hover over portion with text.
 			int limit = timeline->get_name_limit();
-			int limit_end = get_size().width - timeline->get_buttons_width();
+			draw_style_box(stylebox_hover,
+				Rect2(Point2(1 * EDSCALE, 0), Size2(limit - 1 * EDSCALE, get_size().height)));
+		}
 
-			// Unavailable timeline.
+		int limit = timeline->get_name_limit();
+		int limit_end = get_size().width - timeline->get_buttons_width();
 
-			{
-				int px = (editor->get_current_animation()->get_length() - timeline->get_value()) * timeline->get_zoom_scale() + timeline->get_name_limit();
-				px = MAX(px, timeline->get_name_limit());
-				Rect2 rect = Rect2(px, 0, limit_end - px, get_size().height);
-				if (rect.size.width > 0) {
-					draw_rect(rect, Color(0, 0, 0, 0.2));
+		// Unavailable timeline.
+
+		{
+			int px = (editor->get_current_animation()->get_length() - timeline->get_value()) *
+						 timeline->get_zoom_scale() +
+					 timeline->get_name_limit();
+			px = MAX(px, timeline->get_name_limit());
+			Rect2 rect = Rect2(px, 0, limit_end - px, get_size().height);
+			if (rect.size.width > 0) {
+				draw_rect(rect, Color(0, 0, 0, 0.2));
+			}
+		}
+
+		// Section preview.
+
+		{
+			float scale = timeline->get_zoom_scale();
+
+			PackedStringArray section = editor->get_selected_section();
+			if (section.size() == 2) {
+				StringName start_marker = section[0];
+				StringName end_marker = section[1];
+				double start_time = editor->get_current_animation()->get_marker_time(start_marker);
+				double end_time = editor->get_current_animation()->get_marker_time(end_marker);
+
+				AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
+				// When AnimationPlayer is playing, don't move the preview rect, so it still
+				// indicates the playback section.
+				if (editor->is_marker_moving_selection() && !(player && player->is_playing())) {
+					start_time += editor->get_marker_moving_selection_offset();
+					end_time += editor->get_marker_moving_selection_offset();
+				}
+
+				if (start_time < editor->get_current_animation()->get_length() && end_time >= 0) {
+					float start_ofs = MAX(0, start_time) - timeline->get_value();
+					float end_ofs = MIN(editor->get_current_animation()->get_length(), end_time) -
+									timeline->get_value();
+					start_ofs = start_ofs * scale + limit;
+					end_ofs = end_ofs * scale + limit;
+					start_ofs = MAX(start_ofs, limit);
+					end_ofs = MIN(end_ofs, limit_end);
+					Rect2 rect;
+					rect.set_position(Vector2(start_ofs, 0));
+					rect.set_size(Vector2(end_ofs - start_ofs, get_size().height));
+
+					draw_rect(rect, Color(1, 0.1, 0.1, 0.2));
 				}
 			}
+		}
 
-			// Section preview.
+		// Marker overlays.
 
-			{
-				float scale = timeline->get_zoom_scale();
-
-				PackedStringArray section = editor->get_selected_section();
-				if (section.size() == 2) {
-					StringName start_marker = section[0];
-					StringName end_marker = section[1];
-					double start_time = editor->get_current_animation()->get_marker_time(start_marker);
-					double end_time = editor->get_current_animation()->get_marker_time(end_marker);
-
-					AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
-					// When AnimationPlayer is playing, don't move the preview rect, so it still indicates the playback section.
-					if (editor->is_marker_moving_selection() && !(player && player->is_playing())) {
-						start_time += editor->get_marker_moving_selection_offset();
-						end_time += editor->get_marker_moving_selection_offset();
-					}
-
-					if (start_time < editor->get_current_animation()->get_length() && end_time >= 0) {
-						float start_ofs = MAX(0, start_time) - timeline->get_value();
-						float end_ofs = MIN(editor->get_current_animation()->get_length(), end_time) - timeline->get_value();
-						start_ofs = start_ofs * scale + limit;
-						end_ofs = end_ofs * scale + limit;
-						start_ofs = MAX(start_ofs, limit);
-						end_ofs = MIN(end_ofs, limit_end);
-						Rect2 rect;
-						rect.set_position(Vector2(start_ofs, 0));
-						rect.set_size(Vector2(end_ofs - start_ofs, get_size().height));
-
-						draw_rect(rect, Color(1, 0.1, 0.1, 0.2));
-					}
+		{
+			float scale = timeline->get_zoom_scale();
+			PackedStringArray markers = editor->get_current_animation()->get_marker_names();
+			for (const StringName marker : markers) {
+				double time = editor->get_current_animation()->get_marker_time(marker);
+				if (editor->is_marker_selected(marker) && editor->is_marker_moving_selection()) {
+					time += editor->get_marker_moving_selection_offset();
 				}
-			}
-
-			// Marker overlays.
-
-			{
-				float scale = timeline->get_zoom_scale();
-				PackedStringArray markers = editor->get_current_animation()->get_marker_names();
-				for (const StringName marker : markers) {
-					double time = editor->get_current_animation()->get_marker_time(marker);
-					if (editor->is_marker_selected(marker) && editor->is_marker_moving_selection()) {
-						time += editor->get_marker_moving_selection_offset();
-					}
-					if (time >= 0) {
-						float offset = time - timeline->get_value();
-						offset = offset * scale + limit;
-						if (offset >= timeline->get_name_limit() && offset < limit_end) {
-							Color marker_color = editor->get_current_animation()->get_marker_color(marker);
-							marker_color.a = 0.2;
-							draw_line(Point2(offset, 0), Point2(offset, get_size().height), marker_color, Math::round(EDSCALE));
-						}
-					}
-				}
-			}
-
-			draw_line(Point2(), Point2(get_size().width, 0), h_line_color, Math::round(EDSCALE));
-			draw_line(Point2(timeline->get_name_limit(), 0), Point2(timeline->get_name_limit(), get_size().height), v_line_color, Math::round(EDSCALE));
-			draw_line(Point2(get_size().width - timeline->get_buttons_width(), 0), Point2(get_size().width - timeline->get_buttons_width(), get_size().height), v_line_color, Math::round(EDSCALE));
-
-			int ofs = stylebox_header->get_margin(SIDE_LEFT);
-			bool is_group_folded = editor->get_current_animation()->editor_is_group_folded(node_name);
-			Ref<Texture2D> fold_icon = get_theme_icon(is_group_folded ? SNAME("arrow_collapsed") : SNAME("arrow"), SNAME("Tree"));
-			Size2 fold_icon_size = fold_icon->get_size();
-			draw_texture_rect(fold_icon, Rect2(Point2(ofs, (get_size().height - fold_icon_size.y) / 2 + v_margin_offset).round(), fold_icon_size));
-
-			ofs += h_separation + fold_icon_size.x;
-			draw_texture_rect(icon, Rect2(Point2(ofs, (get_size().height - icon_size.y) / 2 + v_margin_offset).round(), icon_size));
-
-			ofs += h_separation + icon_size.x;
-			draw_string(font, Point2(ofs, (get_size().height - font->get_height(font_size)) / 2 + font->get_ascent(font_size) + v_margin_offset).round(), node_name, HORIZONTAL_ALIGNMENT_LEFT, timeline->get_name_limit() - ofs, font_size, color);
-
-			int px = (-timeline->get_value() + timeline->get_play_position()) * timeline->get_zoom_scale() + timeline->get_name_limit();
-			if (px >= timeline->get_name_limit() && px < limit_end) {
-				const Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-				draw_line(Point2(px, 0), Point2(px, get_size().height), accent, Math::round(2 * EDSCALE));
-			}
-
-			if (is_group_folded) {
-				for (const AnimationTrackEdit *track_edit : track_edits) {
-					const Ref<Texture2D> &key_type_icon = track_edit->get_key_type_icon();
-					int track = track_edit->get_track();
-					for (int i = 0; i < editor->get_current_animation()->track_get_key_count(track); ++i) {
-						float key_time_offset = editor->get_current_animation()->track_get_key_time(track, i) - timeline->get_value();
-						int key_screen_pos = int(key_time_offset * timeline->get_zoom_scale() + limit);
-						int key_limit_left = timeline->get_name_limit();
-						int key_limit_right = get_size().width - timeline->get_buttons_width();
-						if (key_screen_pos >= key_limit_left && key_screen_pos <= key_limit_right) {
-							draw_texture(
-									key_type_icon,
-									Vector2(key_screen_pos - key_type_icon->get_width() / 2, (get_size().height - key_type_icon->get_height()) / 2),
-									Color(1, 1, 1, 0.3));
-						}
+				if (time >= 0) {
+					float offset = time - timeline->get_value();
+					offset = offset * scale + limit;
+					if (offset >= timeline->get_name_limit() && offset < limit_end) {
+						Color marker_color =
+							editor->get_current_animation()->get_marker_color(marker);
+						marker_color.a = 0.2;
+						draw_line(Point2(offset, 0), Point2(offset, get_size().height),
+							marker_color, Math::round(EDSCALE));
 					}
 				}
 			}
-		} break;
+		}
 
-		case NOTIFICATION_MOUSE_EXIT: {
-			if (hovered) {
-				hovered = false;
-				// When the mouse cursor exits the AnimationTrackEditGroup, we're no longer hovering the group.
-				queue_redraw();
+		draw_line(Point2(), Point2(get_size().width, 0), h_line_color, Math::round(EDSCALE));
+		draw_line(Point2(timeline->get_name_limit(), 0),
+			Point2(timeline->get_name_limit(), get_size().height), v_line_color,
+			Math::round(EDSCALE));
+		draw_line(Point2(get_size().width - timeline->get_buttons_width(), 0),
+			Point2(get_size().width - timeline->get_buttons_width(), get_size().height),
+			v_line_color, Math::round(EDSCALE));
+
+		int ofs = stylebox_header->get_margin(SIDE_LEFT);
+		bool is_group_folded = editor->get_current_animation()->editor_is_group_folded(node_name);
+		Ref<Texture2D> fold_icon = get_theme_icon(
+			is_group_folded ? SNAME("arrow_collapsed") : SNAME("arrow"), SNAME("Tree"));
+		Size2 fold_icon_size = fold_icon->get_size();
+		draw_texture_rect(fold_icon,
+			Rect2(Point2(ofs, (get_size().height - fold_icon_size.y) / 2 + v_margin_offset).round(),
+				fold_icon_size));
+
+		ofs += h_separation + fold_icon_size.x;
+		draw_texture_rect(icon,
+			Rect2(Point2(ofs, (get_size().height - icon_size.y) / 2 + v_margin_offset).round(),
+				icon_size));
+
+		ofs += h_separation + icon_size.x;
+		draw_string(font,
+			Point2(ofs, (get_size().height - font->get_height(font_size)) / 2 +
+							font->get_ascent(font_size) + v_margin_offset)
+				.round(),
+			node_name, HORIZONTAL_ALIGNMENT_LEFT, timeline->get_name_limit() - ofs, font_size,
+			color);
+
+		int px =
+			(-timeline->get_value() + timeline->get_play_position()) * timeline->get_zoom_scale() +
+			timeline->get_name_limit();
+		if (px >= timeline->get_name_limit() && px < limit_end) {
+			const Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
+			draw_line(
+				Point2(px, 0), Point2(px, get_size().height), accent, Math::round(2 * EDSCALE));
+		}
+
+		if (is_group_folded) {
+			for (const AnimationTrackEdit* track_edit : track_edits) {
+				const Ref<Texture2D>& key_type_icon = track_edit->get_key_type_icon();
+				int track = track_edit->get_track();
+				for (int i = 0; i < editor->get_current_animation()->track_get_key_count(track);
+					 ++i) {
+					float key_time_offset =
+						editor->get_current_animation()->track_get_key_time(track, i) -
+						timeline->get_value();
+					int key_screen_pos = int(key_time_offset * timeline->get_zoom_scale() + limit);
+					int key_limit_left = timeline->get_name_limit();
+					int key_limit_right = get_size().width - timeline->get_buttons_width();
+					if (key_screen_pos >= key_limit_left && key_screen_pos <= key_limit_right) {
+						draw_texture(key_type_icon,
+							Vector2(key_screen_pos - key_type_icon->get_width() / 2,
+								(get_size().height - key_type_icon->get_height()) / 2),
+							Color(1, 1, 1, 0.3));
+					}
+				}
 			}
-		} break;
+		}
+	} break;
+
+	case NOTIFICATION_MOUSE_EXIT: {
+		if (hovered) {
+			hovered = false;
+			// When the mouse cursor exits the AnimationTrackEditGroup, we're no longer hovering the
+			// group.
+			queue_redraw();
+		}
+	} break;
 	}
 }
 
-void AnimationTrackEditGroup::gui_input(const Ref<InputEvent> &p_event) {
+void AnimationTrackEditGroup::gui_input(const Ref<InputEvent>& p_event)
+{
 	ERR_FAIL_COND(p_event.is_null());
 
 	Ref<InputEventMouseButton> mb = p_event;
 	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
 		Point2 pos = mb->get_position();
 
-		int left_ofs = get_theme_stylebox(SNAME("header"), SNAME("AnimationTrackEditGroup"))->get_margin(SIDE_LEFT);
+		int left_ofs = get_theme_stylebox(SNAME("header"), SNAME("AnimationTrackEditGroup"))
+						   ->get_margin(SIDE_LEFT);
 		bool is_group_folded = editor->get_current_animation()->editor_is_group_folded(node_name);
-		Ref<Texture2D> fold_icon = get_theme_icon(is_group_folded ? SNAME("arrow_collapsed") : SNAME("arrow"), SNAME("Tree"));
+		Ref<Texture2D> fold_icon = get_theme_icon(
+			is_group_folded ? SNAME("arrow_collapsed") : SNAME("arrow"), SNAME("Tree"));
 		int fold_icon_width = fold_icon->get_size().width;
 		Rect2 fold_area_rect = Rect2(0, 0, left_ofs + fold_icon_width, get_size().height);
 
 		if (fold_area_rect.has_point(pos)) {
-			bool current_group_folded = !editor->get_current_animation()->editor_is_group_folded(node_name);
-			editor->get_current_animation()->editor_set_group_folded(node_name, current_group_folded);
+			bool current_group_folded =
+				!editor->get_current_animation()->editor_is_group_folded(node_name);
+			editor->get_current_animation()->editor_set_group_folded(
+				node_name, current_group_folded);
 
-			for (AnimationTrackEdit *i : track_edits) {
+			for (AnimationTrackEdit* i : track_edits) {
 				i->set_visible(!current_group_folded);
 			}
 
 			queue_redraw();
-		} else {
+		}
+		else {
 			Rect2 node_name_rect = Rect2(0, 0, timeline->get_name_limit(), get_size().height);
 			if (node_name_rect.has_point(pos)) {
-				EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+				EditorSelection* editor_selection =
+					EditorNode::get_singleton()->get_editor_selection();
 				editor_selection->clear();
-				Node *n = root->get_node_or_null(node);
+				Node* n = root->get_node_or_null(node);
 				if (n) {
 					editor_selection->add_node(n);
 				}
@@ -4013,7 +4494,9 @@ void AnimationTrackEditGroup::gui_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-void AnimationTrackEditGroup::set_type_and_name(const Ref<Texture2D> &p_type, const String &p_name, const NodePath &p_node) {
+void AnimationTrackEditGroup::set_type_and_name(
+	const Ref<Texture2D>& p_type, const String& p_name, const NodePath& p_node)
+{
 	icon = p_type;
 	node_name = p_name;
 	node = p_node;
@@ -4021,58 +4504,59 @@ void AnimationTrackEditGroup::set_type_and_name(const Ref<Texture2D> &p_type, co
 	update_minimum_size();
 }
 
-Size2 AnimationTrackEditGroup::get_minimum_size() const {
+Size2 AnimationTrackEditGroup::get_minimum_size() const
+{
 	const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 	const int separation = get_theme_constant(SNAME("v_separation"), SNAME("ItemList"));
 
-	const Ref<StyleBox> &header_style = get_theme_stylebox(SNAME("header"), SNAME("AnimationTrackEditGroup"));
-	const int content_margin = header_style->get_content_margin(SIDE_TOP) + header_style->get_content_margin(SIDE_BOTTOM);
+	const Ref<StyleBox>& header_style =
+		get_theme_stylebox(SNAME("header"), SNAME("AnimationTrackEditGroup"));
+	const int content_margin =
+		header_style->get_content_margin(SIDE_TOP) + header_style->get_content_margin(SIDE_BOTTOM);
 
 	return Vector2(0, MAX(font->get_height(font_size), icon_size.y) + separation + content_margin);
 }
 
-String AnimationTrackEditGroup::get_node_name() const {
-	return node_name;
-}
+String AnimationTrackEditGroup::get_node_name() const { return node_name; }
 
-void AnimationTrackEditGroup::set_timeline(AnimationTimelineEdit *p_timeline) {
+void AnimationTrackEditGroup::set_timeline(AnimationTimelineEdit* p_timeline)
+{
 	timeline = p_timeline;
 	timeline->connect("zoom_changed", callable_mp(this, &AnimationTrackEditGroup::_zoom_changed));
-	timeline->connect("name_limit_changed", callable_mp(this, &AnimationTrackEditGroup::_zoom_changed));
+	timeline->connect(
+		"name_limit_changed", callable_mp(this, &AnimationTrackEditGroup::_zoom_changed));
 }
 
-void AnimationTrackEditGroup::set_root(Node *p_root) {
+void AnimationTrackEditGroup::set_root(Node* p_root)
+{
 	root = p_root;
 	queue_redraw();
 }
 
-void AnimationTrackEditGroup::set_editor(AnimationTrackEditor *p_editor) {
-	editor = p_editor;
-}
+void AnimationTrackEditGroup::set_editor(AnimationTrackEditor* p_editor) { editor = p_editor; }
 
-void AnimationTrackEditGroup::_zoom_changed() {
-	queue_redraw();
-}
+void AnimationTrackEditGroup::_zoom_changed() { queue_redraw(); }
 
-AnimationTrackEditGroup::AnimationTrackEditGroup() {
-	set_mouse_filter(MOUSE_FILTER_PASS);
-}
+AnimationTrackEditGroup::AnimationTrackEditGroup() { set_mouse_filter(MOUSE_FILTER_PASS); }
 
 //////////////////////////////////////
 
-void AnimationTrackEditor::add_track_edit_plugin(const Ref<AnimationTrackEditPlugin> &p_plugin) {
+void AnimationTrackEditor::add_track_edit_plugin(const Ref<AnimationTrackEditPlugin>& p_plugin)
+{
 	if (track_edit_plugins.has(p_plugin)) {
 		return;
 	}
 	track_edit_plugins.push_back(p_plugin);
 }
 
-void AnimationTrackEditor::remove_track_edit_plugin(const Ref<AnimationTrackEditPlugin> &p_plugin) {
+void AnimationTrackEditor::remove_track_edit_plugin(const Ref<AnimationTrackEditPlugin>& p_plugin)
+{
 	track_edit_plugins.erase(p_plugin);
 }
 
-void AnimationTrackEditor::set_animation(const Ref<Animation> &p_anim, bool p_read_only) {
+void AnimationTrackEditor::set_animation(const Ref<Animation>& p_anim, bool p_read_only)
+{
 	if (animation != p_anim) {
 		for (int i = 0; i < track_edits.size(); i++) {
 			if (track_edits[i]->has_focus()) {
@@ -4129,7 +4613,8 @@ void AnimationTrackEditor::set_animation(const Ref<Animation> &p_anim, bool p_re
 				}
 			}
 		}
-	} else {
+	}
+	else {
 		hscroll->hide();
 		edit->set_disabled(true);
 		step->set_block_signals(true);
@@ -4147,7 +4632,8 @@ void AnimationTrackEditor::set_animation(const Ref<Animation> &p_anim, bool p_re
 	}
 }
 
-void AnimationTrackEditor::_check_bezier_exist() {
+void AnimationTrackEditor::_check_bezier_exist()
+{
 	bool is_exist = false;
 	if (animation.is_valid()) {
 		for (int i = 0; i < animation->get_track_count(); i++) {
@@ -4159,7 +4645,8 @@ void AnimationTrackEditor::_check_bezier_exist() {
 	}
 	if (is_exist) {
 		bezier_edit_icon->set_disabled(false);
-	} else {
+	}
+	else {
 		if (bezier_mc->is_visible()) {
 			_cancel_bezier_edit();
 		}
@@ -4167,39 +4654,39 @@ void AnimationTrackEditor::_check_bezier_exist() {
 	}
 }
 
-Ref<Animation> AnimationTrackEditor::get_current_animation() const {
-	return animation;
-}
+Ref<Animation> AnimationTrackEditor::get_current_animation() const { return animation; }
 
-void AnimationTrackEditor::_root_removed() {
-	root = nullptr;
-}
+void AnimationTrackEditor::_root_removed() { root = nullptr; }
 
-void AnimationTrackEditor::set_root(Node *p_root) {
+void AnimationTrackEditor::set_root(Node* p_root)
+{
 	if (root) {
-		root->disconnect(SceneStringName(tree_exiting), callable_mp(this, &AnimationTrackEditor::_root_removed));
+		root->disconnect(
+			SceneStringName(tree_exiting), callable_mp(this, &AnimationTrackEditor::_root_removed));
 	}
 
 	root = p_root;
 
 	if (root) {
-		root->connect(SceneStringName(tree_exiting), callable_mp(this, &AnimationTrackEditor::_root_removed), CONNECT_ONE_SHOT);
+		root->connect(SceneStringName(tree_exiting),
+			callable_mp(this, &AnimationTrackEditor::_root_removed), CONNECT_ONE_SHOT);
 	}
 
 	_update_tracks();
 }
 
-Node *AnimationTrackEditor::get_root() const {
-	return root;
-}
+Node* AnimationTrackEditor::get_root() const { return root; }
 
-void AnimationTrackEditor::update_keying() {
+void AnimationTrackEditor::update_keying()
+{
 	bool keying_enabled = false;
 
-	EditorSelectionHistory *editor_history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory* editor_history =
+		EditorNode::get_singleton()->get_editor_selection_history();
 	if (is_visible_in_tree() && animation.is_valid() && editor_history->get_path_size() > 0) {
-		Object *obj = ObjectDB::get_instance(editor_history->get_path_object(0));
-		keying_enabled = Object::cast_to<Node>(obj) != nullptr || Object::cast_to<MultiNodeEdit>(obj) != nullptr;
+		Object* obj = ObjectDB::get_instance(editor_history->get_path_object(0));
+		keying_enabled =
+			Object::cast_to<Node>(obj) != nullptr || Object::cast_to<MultiNodeEdit>(obj) != nullptr;
 	}
 
 	if (keying_enabled == keying) {
@@ -4211,11 +4698,10 @@ void AnimationTrackEditor::update_keying() {
 	emit_signal(SNAME("keying_changed"));
 }
 
-bool AnimationTrackEditor::has_keying() const {
-	return keying;
-}
+bool AnimationTrackEditor::has_keying() const { return keying; }
 
-Dictionary AnimationTrackEditor::get_state() const {
+Dictionary AnimationTrackEditor::get_state() const
+{
 	Dictionary state;
 	state["fps_mode"] = timeline->is_using_fps();
 	state["fps_compat"] = fps_compat->is_pressed();
@@ -4225,12 +4711,14 @@ Dictionary AnimationTrackEditor::get_state() const {
 	return state;
 }
 
-void AnimationTrackEditor::set_state(const Dictionary &p_state) {
+void AnimationTrackEditor::set_state(const Dictionary& p_state)
+{
 	if (p_state.has("fps_mode")) {
 		bool fps_mode = p_state["fps_mode"];
 		if (fps_mode) {
 			snap_mode->select(1);
-		} else {
+		}
+		else {
 			snap_mode->select(0);
 		}
 		_snap_mode_changed(snap_mode->get_selected());
@@ -4253,7 +4741,8 @@ void AnimationTrackEditor::set_state(const Dictionary &p_state) {
 	}
 }
 
-void AnimationTrackEditor::clear() {
+void AnimationTrackEditor::clear()
+{
 	snap_mode->select(EDITOR_GET("editors/animation/default_fps_mode"));
 	_snap_mode_changed(snap_mode->get_selected());
 	fps_compat->set_pressed(EDITOR_GET("editors/animation/default_fps_compatibility"));
@@ -4262,34 +4751,37 @@ void AnimationTrackEditor::clear() {
 	scroll->get_v_scroll_bar()->set_value(0);
 }
 
-void AnimationTrackEditor::cleanup() {
-	set_animation(Ref<Animation>(), read_only);
-}
+void AnimationTrackEditor::cleanup() { set_animation(Ref<Animation>(), read_only); }
 
-void AnimationTrackEditor::_name_limit_changed() {
-	_redraw_tracks();
-}
+void AnimationTrackEditor::_name_limit_changed() { _redraw_tracks(); }
 
-void AnimationTrackEditor::_timeline_changed(float p_new_pos, bool p_timeline_only) {
+void AnimationTrackEditor::_timeline_changed(float p_new_pos, bool p_timeline_only)
+{
 	emit_signal(SNAME("timeline_changed"), p_new_pos, p_timeline_only, false);
 }
 
-void AnimationTrackEditor::_track_remove_request(int p_track) {
+void AnimationTrackEditor::_track_remove_request(int p_track)
+{
 	_animation_track_remove_request(p_track, animation);
 }
 
-void AnimationTrackEditor::_animation_track_remove_request(int p_track, Ref<Animation> p_from_animation) {
+void AnimationTrackEditor::_animation_track_remove_request(
+	int p_track, Ref<Animation> p_from_animation)
+{
 	if (p_from_animation->track_is_compressed(p_track)) {
-		EditorNode::get_singleton()->show_warning(TTR("Compressed tracks can't be edited or removed. Re-import the animation with compression disabled in order to edit."));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Compressed tracks can't be edited or removed. Re-import the animation with "
+				"compression disabled in order to edit."));
 		return;
 	}
 	int idx = p_track;
 	if (idx >= 0 && idx < p_from_animation->get_track_count()) {
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-		undo_redo->create_action(TTR("Remove Anim Track"), UndoRedo::MERGE_DISABLE, p_from_animation.ptr());
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(
+			TTR("Remove Anim Track"), UndoRedo::MERGE_DISABLE, p_from_animation.ptr());
 
 		// Remove corresponding reset tracks if they are no longer needed.
-		AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+		AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
 		if (player->has_animation(SceneStringName(RESET))) {
 			Ref<Animation> reset = player->get_animation(SceneStringName(RESET));
 			if (reset != p_from_animation) {
@@ -4298,7 +4790,7 @@ void AnimationTrackEditor::_animation_track_remove_request(int p_track, Ref<Anim
 						// Check if the reset track isn't used by other animations.
 						bool used = false;
 
-						for (const StringName &anim_name : player->get_sorted_animation_list()) {
+						for (const StringName& anim_name : player->get_sorted_animation_list()) {
 							Ref<Animation> anim = player->get_animation(anim_name);
 							if (anim == p_from_animation || anim == reset) {
 								continue;
@@ -4327,8 +4819,10 @@ void AnimationTrackEditor::_animation_track_remove_request(int p_track, Ref<Anim
 
 		undo_redo->add_do_method(this, "_clear_selection", false);
 		undo_redo->add_do_method(p_from_animation.ptr(), "remove_track", idx);
-		undo_redo->add_undo_method(p_from_animation.ptr(), "add_track", p_from_animation->track_get_type(idx), idx);
-		undo_redo->add_undo_method(p_from_animation.ptr(), "track_set_path", idx, p_from_animation->track_get_path(idx));
+		undo_redo->add_undo_method(
+			p_from_animation.ptr(), "add_track", p_from_animation->track_get_type(idx), idx);
+		undo_redo->add_undo_method(
+			p_from_animation.ptr(), "track_set_path", idx, p_from_animation->track_get_path(idx));
 
 		// TODO interpolation.
 		for (int i = 0; i < p_from_animation->track_get_key_count(idx); i++) {
@@ -4337,22 +4831,27 @@ void AnimationTrackEditor::_animation_track_remove_request(int p_track, Ref<Anim
 			float trans = p_from_animation->track_get_key_transition(idx, i);
 
 			undo_redo->add_undo_method(p_from_animation.ptr(), "track_insert_key", idx, time, v);
-			undo_redo->add_undo_method(p_from_animation.ptr(), "track_set_key_transition", idx, i, trans);
+			undo_redo->add_undo_method(
+				p_from_animation.ptr(), "track_set_key_transition", idx, i, trans);
 		}
 
-		undo_redo->add_undo_method(p_from_animation.ptr(), "track_set_interpolation_type", idx, p_from_animation->track_get_interpolation_type(idx));
+		undo_redo->add_undo_method(p_from_animation.ptr(), "track_set_interpolation_type", idx,
+			p_from_animation->track_get_interpolation_type(idx));
 		if (p_from_animation->track_get_type(idx) == Animation::TYPE_VALUE) {
-			undo_redo->add_undo_method(p_from_animation.ptr(), "value_track_set_update_mode", idx, p_from_animation->value_track_get_update_mode(idx));
+			undo_redo->add_undo_method(p_from_animation.ptr(), "value_track_set_update_mode", idx,
+				p_from_animation->value_track_get_update_mode(idx));
 		}
 		if (animation->track_get_type(idx) == Animation::TYPE_AUDIO) {
-			undo_redo->add_undo_method(animation.ptr(), "audio_track_set_use_blend", idx, animation->audio_track_is_use_blend(idx));
+			undo_redo->add_undo_method(animation.ptr(), "audio_track_set_use_blend", idx,
+				animation->audio_track_is_use_blend(idx));
 		}
 
 		undo_redo->commit_action();
 	}
 }
 
-void AnimationTrackEditor::_track_grab_focus(int p_track) {
+void AnimationTrackEditor::_track_grab_focus(int p_track)
+{
 	// Don't steal focus if not working with the track editor.
 	if (Object::cast_to<AnimationTrackEdit>(get_viewport()->gui_get_focus_owner())) {
 		for (int i = 0; i < track_edits.size(); i++) {
@@ -4363,7 +4862,8 @@ void AnimationTrackEditor::_track_grab_focus(int p_track) {
 	}
 }
 
-void AnimationTrackEditor::set_anim_pos(float p_pos) {
+void AnimationTrackEditor::set_anim_pos(float p_pos)
+{
 	timeline->set_play_position(p_pos);
 	marker_edit->set_play_position(p_pos);
 	for (int i = 0; i < track_edits.size(); i++) {
@@ -4374,43 +4874,47 @@ void AnimationTrackEditor::set_anim_pos(float p_pos) {
 	emit_signal(SNAME("timeline_changed"), p_pos, true, true);
 }
 
-static bool track_type_is_resettable(Animation::TrackType p_type) {
+static bool track_type_is_resettable(Animation::TrackType p_type)
+{
 	switch (p_type) {
-		case Animation::TYPE_VALUE:
-			[[fallthrough]];
-		case Animation::TYPE_BLEND_SHAPE:
-			[[fallthrough]];
-		case Animation::TYPE_BEZIER:
-			[[fallthrough]];
-		case Animation::TYPE_POSITION_3D:
-			[[fallthrough]];
-		case Animation::TYPE_ROTATION_3D:
-			[[fallthrough]];
-		case Animation::TYPE_SCALE_3D:
-			return true;
-		default:
-			return false;
+	case Animation::TYPE_VALUE:
+		[[fallthrough]];
+	case Animation::TYPE_BLEND_SHAPE:
+		[[fallthrough]];
+	case Animation::TYPE_BEZIER:
+		[[fallthrough]];
+	case Animation::TYPE_POSITION_3D:
+		[[fallthrough]];
+	case Animation::TYPE_ROTATION_3D:
+		[[fallthrough]];
+	case Animation::TYPE_SCALE_3D:
+		return true;
+	default:
+		return false;
 	}
 }
 
-bool AnimationTrackEditor::is_read_only() const {
-	return read_only;
-}
+bool AnimationTrackEditor::is_read_only() const { return read_only; }
 
-void AnimationTrackEditor::make_insert_queue() {
+void AnimationTrackEditor::make_insert_queue()
+{
 	insert_data.clear();
 	insert_queue = true;
 }
 
-void AnimationTrackEditor::commit_insert_queue() {
+void AnimationTrackEditor::commit_insert_queue()
+{
 	bool reset_allowed = true;
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
-	if (is_global_library_read_only() || (player->has_animation(SceneStringName(RESET)) && player->get_animation(SceneStringName(RESET)) == animation)) {
+	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
+	if (is_global_library_read_only() ||
+		(player->has_animation(SceneStringName(RESET)) &&
+			player->get_animation(SceneStringName(RESET)) == animation)) {
 		// Avoid messing with the reset animation itself.
 		reset_allowed = false;
-	} else {
+	}
+	else {
 		bool some_resettable = false;
-		for (const AnimationTrackEditor::InsertData &E : insert_data) {
+		for (const AnimationTrackEditor::InsertData& E : insert_data) {
 			if (track_type_is_resettable(E.type)) {
 				some_resettable = true;
 				break;
@@ -4425,7 +4929,7 @@ void AnimationTrackEditor::commit_insert_queue() {
 	int num_tracks = 0;
 	String last_track_query;
 	bool all_bezier = true;
-	for (const AnimationTrackEditor::InsertData &E : insert_data) {
+	for (const AnimationTrackEditor::InsertData& E : insert_data) {
 		if (E.type != Animation::TYPE_VALUE && E.type != Animation::TYPE_BEZIER) {
 			all_bezier = false;
 		}
@@ -4440,18 +4944,18 @@ void AnimationTrackEditor::commit_insert_queue() {
 		}
 
 		switch (E.value.get_type()) {
-			case Variant::INT:
-			case Variant::FLOAT:
-			case Variant::VECTOR2:
-			case Variant::VECTOR3:
-			case Variant::QUATERNION:
-			case Variant::PLANE:
-			case Variant::COLOR: {
-				// Valid.
-			} break;
-			default: {
-				all_bezier = false;
-			}
+		case Variant::INT:
+		case Variant::FLOAT:
+		case Variant::VECTOR2:
+		case Variant::VECTOR3:
+		case Variant::QUATERNION:
+		case Variant::PLANE:
+		case Variant::COLOR: {
+			// Valid.
+		} break;
+		default: {
+			all_bezier = false;
+		}
 		}
 	}
 
@@ -4465,12 +4969,14 @@ void AnimationTrackEditor::commit_insert_queue() {
 		if (num_tracks == 1) {
 			// TRANSLATORS: %s will be replaced by a phrase describing the target of track.
 			dialog_text = vformat(TTR("Create new track for %s and insert key?"), last_track_query);
-		} else {
+		}
+		else {
 			dialog_text = vformat(TTR("Create %d new tracks and insert keys?"), num_tracks);
 		}
 
 		if (confirm_insert) {
-			dialog_text += +"\n\n" + TTR("Hold Shift when clicking the key icon to skip this dialog.");
+			dialog_text +=
+				+"\n\n" + TTR("Hold Shift when clicking the key icon to skip this dialog.");
 		}
 		insert_confirm_text->set_text(dialog_text);
 
@@ -4479,21 +4985,25 @@ void AnimationTrackEditor::commit_insert_queue() {
 
 		insert_confirm->set_ok_button_text(TTR("Create"));
 		insert_confirm->popup_centered();
-	} else {
-		_insert_track(reset_allowed && EDITOR_GET("editors/animation/default_create_reset_tracks"), all_bezier && EDITOR_GET("editors/animation/default_create_bezier_tracks"));
+	}
+	else {
+		_insert_track(reset_allowed && EDITOR_GET("editors/animation/default_create_reset_tracks"),
+			all_bezier && EDITOR_GET("editors/animation/default_create_bezier_tracks"));
 	}
 
 	insert_queue = false;
 }
 
-void AnimationTrackEditor::_query_insert(const InsertData &p_id) {
-	ERR_FAIL_COND_EDMSG(read_only, "Animation is read-only."); // Should have been prevented by dialog, but for safety.
+void AnimationTrackEditor::_query_insert(const InsertData& p_id)
+{
+	ERR_FAIL_COND_EDMSG(read_only,
+		"Animation is read-only."); // Should have been prevented by dialog, but for safety.
 
 	if (!insert_queue) {
 		insert_data.clear();
 	}
 
-	for (const InsertData &E : insert_data) {
+	for (const InsertData& E : insert_data) {
 		// Prevent insertion of multiple tracks.
 		if (E.path == p_id.path && E.type == p_id.type) {
 			return; // Already inserted a track this frame.
@@ -4508,8 +5018,9 @@ void AnimationTrackEditor::_query_insert(const InsertData &p_id) {
 	}
 }
 
-void AnimationTrackEditor::_insert_track(bool p_reset_wanted, bool p_create_beziers) {
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+void AnimationTrackEditor::_insert_track(bool p_reset_wanted, bool p_create_beziers)
+{
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Animation Insert Key"));
 
 	Ref<Animation> reset_anim;
@@ -4523,7 +5034,8 @@ void AnimationTrackEditor::_insert_track(bool p_reset_wanted, bool p_create_bezi
 		if (insert_data.front()->get().advance) {
 			advance = true;
 		}
-		next_tracks = _confirm_insert(insert_data.front()->get(), next_tracks, p_reset_wanted, reset_anim, p_create_beziers);
+		next_tracks = _confirm_insert(
+			insert_data.front()->get(), next_tracks, p_reset_wanted, reset_anim, p_create_beziers);
 		insert_data.pop_front();
 	}
 
@@ -4534,7 +5046,9 @@ void AnimationTrackEditor::_insert_track(bool p_reset_wanted, bool p_create_bezi
 	}
 }
 
-void AnimationTrackEditor::insert_transform_3d_key(Node3D *p_node, const String &p_sub, const Animation::TrackType p_type, const Variant &p_value) {
+void AnimationTrackEditor::insert_transform_3d_key(
+	Node3D* p_node, const String& p_sub, const Animation::TrackType p_type, const Variant& p_value)
+{
 	if (read_only) {
 		popup_read_only_dialog();
 		return;
@@ -4542,8 +5056,9 @@ void AnimationTrackEditor::insert_transform_3d_key(Node3D *p_node, const String 
 
 	ERR_FAIL_NULL(root);
 	ERR_FAIL_COND_MSG(
-			(p_type != Animation::TYPE_POSITION_3D && p_type != Animation::TYPE_ROTATION_3D && p_type != Animation::TYPE_SCALE_3D),
-			"Track type must be Position/Rotation/Scale 3D.");
+		(p_type != Animation::TYPE_POSITION_3D && p_type != Animation::TYPE_ROTATION_3D &&
+			p_type != Animation::TYPE_SCALE_3D),
+		"Track type must be Position/Rotation/Scale 3D.");
 	if (!keying) {
 		return;
 	}
@@ -4573,7 +5088,8 @@ void AnimationTrackEditor::insert_transform_3d_key(Node3D *p_node, const String 
 
 	InsertData id;
 	id.path = np;
-	// TRANSLATORS: This describes the target of new animation track, will be inserted into another string.
+	// TRANSLATORS: This describes the target of new animation track, will be inserted into another
+	// string.
 	id.query = vformat(TTR("node '%s'"), p_node->get_name());
 	id.advance = false;
 	id.track_idx = track_idx;
@@ -4582,7 +5098,9 @@ void AnimationTrackEditor::insert_transform_3d_key(Node3D *p_node, const String 
 	_query_insert(id);
 }
 
-bool AnimationTrackEditor::has_transform_3d_track(Node3D *p_node, const String &p_sub, const Animation::TrackType p_type) {
+bool AnimationTrackEditor::has_transform_3d_track(
+	Node3D* p_node, const String& p_sub, const Animation::TrackType p_type)
+{
 	ERR_FAIL_NULL_V(root, false);
 	if (!keying) {
 		return false;
@@ -4604,7 +5122,8 @@ bool AnimationTrackEditor::has_transform_3d_track(Node3D *p_node, const String &
 	return false;
 }
 
-void AnimationTrackEditor::_insert_animation_key(NodePath p_path, const Variant &p_value) {
+void AnimationTrackEditor::_insert_animation_key(NodePath p_path, const Variant& p_value)
+{
 	if (read_only) {
 		popup_read_only_dialog();
 		return;
@@ -4623,7 +5142,8 @@ void AnimationTrackEditor::_insert_animation_key(NodePath p_path, const Variant 
 			id.track_idx = i;
 			id.value = p_value;
 			id.type = Animation::TYPE_ANIMATION;
-			// TRANSLATORS: This describes the target of new animation track, will be inserted into another string.
+			// TRANSLATORS: This describes the target of new animation track, will be inserted into
+			// another string.
 			id.query = TTR("animation");
 			id.advance = false;
 			// Dialog insert.
@@ -4643,7 +5163,9 @@ void AnimationTrackEditor::_insert_animation_key(NodePath p_path, const Variant 
 	_query_insert(id);
 }
 
-void AnimationTrackEditor::insert_node_value_key(Node *p_node, const String &p_property, bool p_only_if_exists, bool p_advance) {
+void AnimationTrackEditor::insert_node_value_key(
+	Node* p_node, const String& p_property, bool p_only_if_exists, bool p_advance)
+{
 	if (read_only) {
 		popup_read_only_dialog();
 		return;
@@ -4660,14 +5182,15 @@ void AnimationTrackEditor::insert_node_value_key(Node *p_node, const String &p_p
 
 	if (Object::cast_to<AnimationPlayer>(p_node) && p_property == "current_animation") {
 		if (p_node == AnimationPlayerEditor::get_singleton()->get_player()) {
-			EditorNode::get_singleton()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
+			EditorNode::get_singleton()->show_warning(
+				TTR("AnimationPlayer can't animate itself, only other players."));
 			return;
 		}
 		_insert_animation_key(path, value);
 		return;
 	}
 
-	EditorSelectionHistory *history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory* history = EditorNode::get_singleton()->get_editor_selection_history();
 	for (int i = 1; i < history->get_path_size(); i++) {
 		String prop = history->get_path_property(i);
 		ERR_FAIL_COND(prop.is_empty());
@@ -4693,28 +5216,33 @@ void AnimationTrackEditor::insert_node_value_key(Node *p_node, const String &p_p
 			id.track_idx = i;
 			id.value = value;
 			id.type = Animation::TYPE_VALUE;
-			// TRANSLATORS: This describes the target of new animation track, will be inserted into another string.
+			// TRANSLATORS: This describes the target of new animation track, will be inserted into
+			// another string.
 			id.query = vformat(TTR("property '%s'"), p_property);
 			id.advance = p_advance;
 			// Dialog insert.
 			_query_insert(id);
 			inserted = true;
-		} else if (animation->track_get_type(i) == Animation::TYPE_BEZIER) {
+		}
+		else if (animation->track_get_type(i) == Animation::TYPE_BEZIER) {
 			Variant actual_value;
 			String track_path = String(animation->track_get_path(i));
 			if (track_path == String(np)) {
 				actual_value = value; // All good.
-			} else {
+			}
+			else {
 				int sep = track_path.rfind_char(':');
 				if (sep != -1) {
 					String base_path = track_path.substr(0, sep);
 					if (base_path == String(np)) {
 						String value_name = track_path.substr(sep + 1);
 						actual_value = value.get(value_name);
-					} else {
+					}
+					else {
 						continue;
 					}
-				} else {
+				}
+				else {
 					continue;
 				}
 			}
@@ -4746,49 +5274,55 @@ void AnimationTrackEditor::insert_node_value_key(Node *p_node, const String &p_p
 	_query_insert(id);
 }
 
-PackedStringArray AnimationTrackEditor::get_selected_section() const {
+PackedStringArray AnimationTrackEditor::get_selected_section() const
+{
 	return marker_edit->get_selected_section();
 }
 
-bool AnimationTrackEditor::is_marker_selected(const StringName &p_marker) const {
+bool AnimationTrackEditor::is_marker_selected(const StringName& p_marker) const
+{
 	return marker_edit->is_marker_selected(p_marker);
 }
 
-bool AnimationTrackEditor::is_marker_moving_selection() const {
+bool AnimationTrackEditor::is_marker_moving_selection() const
+{
 	return marker_edit->is_moving_selection();
 }
 
-float AnimationTrackEditor::get_marker_moving_selection_offset() const {
+float AnimationTrackEditor::get_marker_moving_selection_offset() const
+{
 	return marker_edit->get_moving_selection_offset();
 }
 
-void AnimationTrackEditor::insert_value_key(const String &p_property, bool p_advance) {
+void AnimationTrackEditor::insert_value_key(const String& p_property, bool p_advance)
+{
 	if (read_only) {
 		popup_read_only_dialog();
 		return;
 	}
 
-	EditorSelectionHistory *history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory* history = EditorNode::get_singleton()->get_editor_selection_history();
 
 	ERR_FAIL_NULL(root);
 	ERR_FAIL_COND(history->get_path_size() == 0);
-	Object *obj = ObjectDB::get_instance(history->get_path_object(0));
+	Object* obj = ObjectDB::get_instance(history->get_path_object(0));
 
 	Ref<MultiNodeEdit> multi_node_edit(obj);
 	if (multi_node_edit.is_valid()) {
-		Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+		Node* edited_scene = EditorNode::get_singleton()->get_edited_scene();
 		ERR_FAIL_NULL(edited_scene);
 
 		make_insert_queue();
 
 		for (int i = 0; i < multi_node_edit->get_node_count(); ++i) {
-			Node *node = edited_scene->get_node(multi_node_edit->get_node(i));
+			Node* node = edited_scene->get_node(multi_node_edit->get_node(i));
 			insert_node_value_key(node, p_property, false, p_advance);
 		}
 
 		commit_insert_queue();
-	} else {
-		Node *node = Object::cast_to<Node>(obj);
+	}
+	else {
+		Node* node = Object::cast_to<Node>(obj);
 		ERR_FAIL_NULL(node);
 
 		make_insert_queue();
@@ -4797,13 +5331,15 @@ void AnimationTrackEditor::insert_value_key(const String &p_property, bool p_adv
 	}
 }
 
-bool AnimationTrackEditor::is_global_library_read_only() const {
+bool AnimationTrackEditor::is_global_library_read_only() const
+{
 	Ref<AnimationLibrary> al;
-	AnimationMixer *mixer = AnimationPlayerEditor::get_singleton()->fetch_mixer_for_library();
+	AnimationMixer* mixer = AnimationPlayerEditor::get_singleton()->fetch_mixer_for_library();
 	if (mixer) {
 		if (!mixer->has_animation_library("")) {
 			return false;
-		} else {
+		}
+		else {
 			al = mixer->get_animation_library("");
 		}
 	}
@@ -4820,35 +5356,41 @@ bool AnimationTrackEditor::is_global_library_read_only() const {
 	return false;
 }
 
-Ref<Animation> AnimationTrackEditor::_create_and_get_reset_animation() {
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+Ref<Animation> AnimationTrackEditor::_create_and_get_reset_animation()
+{
+	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
 	if (player->has_animation(SceneStringName(RESET))) {
 		return player->get_animation(SceneStringName(RESET));
-	} else {
+	}
+	else {
 		Ref<AnimationLibrary> al;
-		AnimationMixer *mixer = AnimationPlayerEditor::get_singleton()->fetch_mixer_for_library();
+		AnimationMixer* mixer = AnimationPlayerEditor::get_singleton()->fetch_mixer_for_library();
 		if (mixer) {
 			if (!mixer->has_animation_library("")) {
 				al.instantiate();
 				mixer->add_animation_library("", al);
-			} else {
+			}
+			else {
 				al = mixer->get_animation_library("");
 			}
 		}
 		Ref<Animation> reset_anim;
 		reset_anim.instantiate();
 		reset_anim->set_length(ANIM_MIN_LENGTH);
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->add_do_method(al.ptr(), "add_animation", SceneStringName(RESET), reset_anim);
-		undo_redo->add_do_method(AnimationPlayerEditor::get_singleton(), "_animation_player_changed", player);
+		undo_redo->add_do_method(
+			AnimationPlayerEditor::get_singleton(), "_animation_player_changed", player);
 		undo_redo->add_undo_method(al.ptr(), "remove_animation", SceneStringName(RESET));
-		undo_redo->add_undo_method(AnimationPlayerEditor::get_singleton(), "_animation_player_changed", player);
+		undo_redo->add_undo_method(
+			AnimationPlayerEditor::get_singleton(), "_animation_player_changed", player);
 		return reset_anim;
 	}
 }
 
-void AnimationTrackEditor::_confirm_insert_list() {
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+void AnimationTrackEditor::_confirm_insert_list()
+{
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Animation Insert Key"));
 
 	bool create_reset = insert_confirm_reset->is_visible() && insert_confirm_reset->is_pressed();
@@ -4863,7 +5405,8 @@ void AnimationTrackEditor::_confirm_insert_list() {
 		if (insert_data.front()->get().advance) {
 			advance = true;
 		}
-		next_tracks = _confirm_insert(insert_data.front()->get(), next_tracks, create_reset, reset_anim, insert_confirm_bezier->is_pressed());
+		next_tracks = _confirm_insert(insert_data.front()->get(), next_tracks, create_reset,
+			reset_anim, insert_confirm_bezier->is_pressed());
 		insert_data.pop_front();
 	}
 
@@ -4874,7 +5417,9 @@ void AnimationTrackEditor::_confirm_insert_list() {
 	}
 }
 
-PropertyInfo AnimationTrackEditor::_find_hint_for_track(int p_idx, NodePath &r_base_path, Variant *r_current_val) {
+PropertyInfo AnimationTrackEditor::_find_hint_for_track(
+	int p_idx, NodePath& r_base_path, Variant* r_current_val)
+{
 	r_base_path = NodePath();
 	ERR_FAIL_COND_V(animation.is_null(), PropertyInfo());
 	ERR_FAIL_INDEX_V(p_idx, animation->get_track_count(), PropertyInfo());
@@ -4891,7 +5436,7 @@ PropertyInfo AnimationTrackEditor::_find_hint_for_track(int p_idx, NodePath &r_b
 
 	Ref<Resource> res;
 	Vector<StringName> leftover_path;
-	Node *node = root->get_node_and_resource(path, res, leftover_path, true);
+	Node* node = root->get_node_and_resource(path, res, leftover_path, true);
 
 	if (node) {
 		r_base_path = node->get_path();
@@ -4901,7 +5446,8 @@ PropertyInfo AnimationTrackEditor::_find_hint_for_track(int p_idx, NodePath &r_b
 		if (r_current_val) {
 			if (res.is_valid()) {
 				*r_current_val = res;
-			} else if (node) {
+			}
+			else if (node) {
 				*r_current_val = node;
 			}
 		}
@@ -4914,7 +5460,8 @@ PropertyInfo AnimationTrackEditor::_find_hint_for_track(int p_idx, NodePath &r_b
 		if (r_current_val) {
 			*r_current_val = res->get_indexed(leftover_path);
 		}
-	} else if (node) {
+	}
+	else if (node) {
 		property_info_base = node;
 		if (r_current_val) {
 			*r_current_val = node->get_indexed(leftover_path);
@@ -4922,7 +5469,8 @@ PropertyInfo AnimationTrackEditor::_find_hint_for_track(int p_idx, NodePath &r_b
 	}
 
 	if (property_info_base.is_null()) {
-		WARN_PRINT(vformat("Could not determine track hint for '%s:%s' because its base property is null.",
+		WARN_PRINT(
+			vformat("Could not determine track hint for '%s:%s' because its base property is null.",
 				String(path.get_concatenated_names()), String(path.get_concatenated_subnames())));
 		return PropertyInfo();
 	}
@@ -4930,7 +5478,7 @@ PropertyInfo AnimationTrackEditor::_find_hint_for_track(int p_idx, NodePath &r_b
 	List<PropertyInfo> pinfo;
 	property_info_base.get_property_list(&pinfo);
 
-	for (const PropertyInfo &E : pinfo) {
+	for (const PropertyInfo& E : pinfo) {
 		if (E.name == leftover_path[leftover_path.size() - 1]) {
 			return E;
 		}
@@ -4939,59 +5487,64 @@ PropertyInfo AnimationTrackEditor::_find_hint_for_track(int p_idx, NodePath &r_b
 	return PropertyInfo();
 }
 
-static Vector<String> _get_bezier_subindices_for_type(Variant::Type p_type, bool *r_valid = nullptr) {
+static Vector<String> _get_bezier_subindices_for_type(Variant::Type p_type, bool* r_valid = nullptr)
+{
 	Vector<String> subindices;
 	if (r_valid) {
 		*r_valid = true;
 	}
 	switch (p_type) {
-		case Variant::INT: {
-			subindices.push_back("");
-		} break;
-		case Variant::FLOAT: {
-			subindices.push_back("");
-		} break;
-		case Variant::VECTOR2: {
-			subindices.push_back(":x");
-			subindices.push_back(":y");
-		} break;
-		case Variant::VECTOR3: {
-			subindices.push_back(":x");
-			subindices.push_back(":y");
-			subindices.push_back(":z");
-		} break;
-		case Variant::QUATERNION: {
-			subindices.push_back(":x");
-			subindices.push_back(":y");
-			subindices.push_back(":z");
-			subindices.push_back(":w");
-		} break;
-		case Variant::COLOR: {
-			subindices.push_back(":r");
-			subindices.push_back(":g");
-			subindices.push_back(":b");
-			subindices.push_back(":a");
-		} break;
-		case Variant::PLANE: {
-			subindices.push_back(":x");
-			subindices.push_back(":y");
-			subindices.push_back(":z");
-			subindices.push_back(":d");
-		} break;
-		case Variant::NIL: {
-			subindices.push_back(""); // Hack: it is probably float since non-numeric types are filtered in the selection window.
-		} break;
-		default: {
-			if (r_valid) {
-				*r_valid = false;
-			}
+	case Variant::INT: {
+		subindices.push_back("");
+	} break;
+	case Variant::FLOAT: {
+		subindices.push_back("");
+	} break;
+	case Variant::VECTOR2: {
+		subindices.push_back(":x");
+		subindices.push_back(":y");
+	} break;
+	case Variant::VECTOR3: {
+		subindices.push_back(":x");
+		subindices.push_back(":y");
+		subindices.push_back(":z");
+	} break;
+	case Variant::QUATERNION: {
+		subindices.push_back(":x");
+		subindices.push_back(":y");
+		subindices.push_back(":z");
+		subindices.push_back(":w");
+	} break;
+	case Variant::COLOR: {
+		subindices.push_back(":r");
+		subindices.push_back(":g");
+		subindices.push_back(":b");
+		subindices.push_back(":a");
+	} break;
+	case Variant::PLANE: {
+		subindices.push_back(":x");
+		subindices.push_back(":y");
+		subindices.push_back(":z");
+		subindices.push_back(":d");
+	} break;
+	case Variant::NIL: {
+		subindices.push_back(""); // Hack: it is probably float since non-numeric types are filtered
+								  // in the selection window.
+	} break;
+	default: {
+		if (r_valid) {
+			*r_valid = false;
 		}
+	}
 	}
 
 	return subindices;
 }
 
-AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertData p_id, TrackIndices p_next_tracks, bool p_reset_wanted, Ref<Animation> p_reset_anim, bool p_create_beziers) {
+AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertData p_id,
+	TrackIndices p_next_tracks, bool p_reset_wanted, Ref<Animation> p_reset_anim,
+	bool p_create_beziers)
+{
 	bool created = false;
 
 	bool create_normal_track = p_id.track_idx < 0;
@@ -5006,18 +5559,21 @@ AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertD
 		}
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	if (create_normal_track) {
 		if (p_create_beziers) {
 			bool valid;
-			Vector<String> subindices = _get_bezier_subindices_for_type(p_id.value.get_type(), &valid);
+			Vector<String> subindices =
+				_get_bezier_subindices_for_type(p_id.value.get_type(), &valid);
 			if (valid) {
 				for (int i = 0; i < subindices.size(); i++) {
 					InsertData id = p_id;
 					id.type = Animation::TYPE_BEZIER;
-					id.value = subindices[i].is_empty() ? p_id.value : p_id.value.get(subindices[i].substr(1));
+					id.value = subindices[i].is_empty() ? p_id.value
+														: p_id.value.get(subindices[i].substr(1));
 					id.path = String(p_id.path) + subindices[i];
-					p_next_tracks = _confirm_insert(id, p_next_tracks, p_reset_wanted, p_reset_anim, false);
+					p_next_tracks =
+						_confirm_insert(id, p_next_tracks, p_reset_wanted, p_reset_anim, false);
 				}
 
 				return p_next_tracks;
@@ -5029,10 +5585,13 @@ AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertD
 
 		undo_redo->add_do_method(animation.ptr(), "add_track", p_id.type);
 		undo_redo->add_do_method(animation.ptr(), "track_set_path", p_id.track_idx, p_id.path);
-		undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type", p_id.track_idx, interp_type);
-		undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_loop_wrap", p_id.track_idx, loop_wrap);
+		undo_redo->add_do_method(
+			animation.ptr(), "track_set_interpolation_type", p_id.track_idx, interp_type);
+		undo_redo->add_do_method(
+			animation.ptr(), "track_set_interpolation_loop_wrap", p_id.track_idx, loop_wrap);
 		if (p_id.type == Animation::TYPE_VALUE) {
-			undo_redo->add_do_method(animation.ptr(), "value_track_set_update_mode", p_id.track_idx, update_mode);
+			undo_redo->add_do_method(
+				animation.ptr(), "value_track_set_update_mode", p_id.track_idx, update_mode);
 		}
 	}
 
@@ -5040,40 +5599,43 @@ AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertD
 	Variant value;
 
 	switch (p_id.type) {
-		case Animation::TYPE_POSITION_3D:
-		case Animation::TYPE_ROTATION_3D:
-		case Animation::TYPE_SCALE_3D:
-		case Animation::TYPE_BLEND_SHAPE:
-		case Animation::TYPE_VALUE:
-		case Animation::TYPE_AUDIO:
-		case Animation::TYPE_ANIMATION: {
-			value = p_id.value;
+	case Animation::TYPE_POSITION_3D:
+	case Animation::TYPE_ROTATION_3D:
+	case Animation::TYPE_SCALE_3D:
+	case Animation::TYPE_BLEND_SHAPE:
+	case Animation::TYPE_VALUE:
+	case Animation::TYPE_AUDIO:
+	case Animation::TYPE_ANIMATION: {
+		value = p_id.value;
 
-		} break;
-		case Animation::TYPE_BEZIER: {
-			int existing = -1;
-			if (p_id.track_idx < animation->get_track_count()) {
-				existing = animation->track_find_key(p_id.track_idx, time, Animation::FIND_MODE_APPROX);
-			}
-
-			if (existing != -1) {
-				Array arr = animation->track_get_key_value(p_id.track_idx, existing);
-				arr[0] = p_id.value;
-				value = arr;
-			} else {
-				value = animation->make_default_bezier_key(p_id.value);
-			}
-			bezier_edit_icon->set_disabled(false);
-		} break;
-		default: {
-			// Other track types shouldn't use this code path.
-			DEV_ASSERT(false);
+	} break;
+	case Animation::TYPE_BEZIER: {
+		int existing = -1;
+		if (p_id.track_idx < animation->get_track_count()) {
+			existing = animation->track_find_key(p_id.track_idx, time, Animation::FIND_MODE_APPROX);
 		}
+
+		if (existing != -1) {
+			Array arr = animation->track_get_key_value(p_id.track_idx, existing);
+			arr[0] = p_id.value;
+			value = arr;
+		}
+		else {
+			value = animation->make_default_bezier_key(p_id.value);
+		}
+		bezier_edit_icon->set_disabled(false);
+	} break;
+	default: {
+		// Other track types shouldn't use this code path.
+		DEV_ASSERT(false);
+	}
 	}
 
 	undo_redo->add_do_method(animation.ptr(), "track_insert_key", p_id.track_idx, time, value);
 	if (!created && p_id.type == Animation::TYPE_BEZIER) {
-		undo_redo->add_do_method(this, "_bezier_track_set_key_handle_mode_at_time", animation.ptr(), p_id.track_idx, time, (Animation::HandleMode)bezier_key_mode->get_selected_id(), Animation::HANDLE_SET_MODE_AUTO);
+		undo_redo->add_do_method(this, "_bezier_track_set_key_handle_mode_at_time", animation.ptr(),
+			p_id.track_idx, time, (Animation::HandleMode)bezier_key_mode->get_selected_id(),
+			Animation::HANDLE_SET_MODE_AUTO);
 	}
 
 	if (created) {
@@ -5081,18 +5643,21 @@ AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertD
 		undo_redo->add_undo_method(this, "_clear_selection", false);
 		undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
 		p_next_tracks.normal++;
-	} else {
-		undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", p_id.track_idx, time);
+	}
+	else {
+		undo_redo->add_undo_method(
+			animation.ptr(), "track_remove_key_at_time", p_id.track_idx, time);
 		int existing = animation->track_find_key(p_id.track_idx, time, Animation::FIND_MODE_APPROX);
 		if (existing != -1) {
 			Variant v = animation->track_get_key_value(p_id.track_idx, existing);
 			float trans = animation->track_get_key_transition(p_id.track_idx, existing);
-			undo_redo->add_undo_method(animation.ptr(), "track_insert_key", p_id.track_idx, time, v, trans);
+			undo_redo->add_undo_method(
+				animation.ptr(), "track_insert_key", p_id.track_idx, time, v, trans);
 		}
 	}
 
 	if (create_reset_track) {
-		Animation *reset_anim = p_reset_anim.ptr();
+		Animation* reset_anim = p_reset_anim.ptr();
 		for (int i = 0; i < reset_anim->get_track_count(); i++) {
 			if (reset_anim->track_get_path(i) == p_id.path) {
 				create_reset_track = false;
@@ -5103,10 +5668,13 @@ AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertD
 			undo_redo->add_do_method(reset_anim, "add_track", p_id.type);
 			undo_redo->add_do_method(reset_anim, "track_set_path", p_next_tracks.reset, p_id.path);
 			if (p_id.type == Animation::TYPE_VALUE) {
-				undo_redo->add_do_method(reset_anim, "value_track_set_update_mode", p_next_tracks.reset, update_mode);
+				undo_redo->add_do_method(
+					reset_anim, "value_track_set_update_mode", p_next_tracks.reset, update_mode);
 			}
-			undo_redo->add_do_method(reset_anim, "track_set_interpolation_type", p_next_tracks.reset, interp_type);
-			undo_redo->add_do_method(reset_anim, "track_insert_key", p_next_tracks.reset, 0.0f, value);
+			undo_redo->add_do_method(
+				reset_anim, "track_set_interpolation_type", p_next_tracks.reset, interp_type);
+			undo_redo->add_do_method(
+				reset_anim, "track_insert_key", p_next_tracks.reset, 0.0f, value);
 			undo_redo->add_undo_method(reset_anim, "remove_track", reset_anim->get_track_count());
 			p_next_tracks.reset++;
 		}
@@ -5115,19 +5683,23 @@ AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertD
 	return p_next_tracks;
 }
 
-void AnimationTrackEditor::show_select_node_warning(bool p_show) {
+void AnimationTrackEditor::show_select_node_warning(bool p_show)
+{
 	info_message_vbox->set_visible(p_show);
 }
 
-void AnimationTrackEditor::show_dummy_player_warning(bool p_show) {
+void AnimationTrackEditor::show_dummy_player_warning(bool p_show)
+{
 	dummy_player_warning->set_visible(p_show);
 }
 
-void AnimationTrackEditor::show_inactive_player_warning(bool p_show) {
+void AnimationTrackEditor::show_inactive_player_warning(bool p_show)
+{
 	inactive_player_warning->set_visible(p_show);
 }
 
-bool AnimationTrackEditor::is_key_selected(int p_track, int p_key) const {
+bool AnimationTrackEditor::is_key_selected(int p_track, int p_key) const
+{
 	SelectedKey sk;
 	sk.key = p_key;
 	sk.track = p_track;
@@ -5135,54 +5707,56 @@ bool AnimationTrackEditor::is_key_selected(int p_track, int p_key) const {
 	return selection.has(sk);
 }
 
-bool AnimationTrackEditor::is_selection_active() const {
-	return selection.size();
-}
+bool AnimationTrackEditor::is_selection_active() const { return selection.size(); }
 
-bool AnimationTrackEditor::is_key_clipboard_active() const {
-	return key_clipboard.keys.size();
-}
+bool AnimationTrackEditor::is_key_clipboard_active() const { return key_clipboard.keys.size(); }
 
-bool AnimationTrackEditor::is_snap_timeline_enabled() const {
+bool AnimationTrackEditor::is_snap_timeline_enabled() const
+{
 	return snap_timeline->is_pressed() ^ Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL);
 }
 
-bool AnimationTrackEditor::is_snap_keys_enabled() const {
+bool AnimationTrackEditor::is_snap_keys_enabled() const
+{
 	return snap_keys->is_pressed() ^ Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL);
 }
 
-bool AnimationTrackEditor::is_insert_at_current_time_enabled() const {
+bool AnimationTrackEditor::is_insert_at_current_time_enabled() const
+{
 	return insert_at_current_time->is_pressed();
 }
 
-void AnimationTrackEditor::resolve_insertion_offset(float &r_offset) const {
+void AnimationTrackEditor::resolve_insertion_offset(float& r_offset) const
+{
 	if (is_insert_at_current_time_enabled()) {
 		r_offset = timeline->get_play_position();
 	}
 }
 
-bool AnimationTrackEditor::is_bezier_editor_active() const {
-	return bezier_mc->is_visible();
-}
+bool AnimationTrackEditor::is_bezier_editor_active() const { return bezier_mc->is_visible(); }
 
-bool AnimationTrackEditor::can_add_reset_key() const {
+bool AnimationTrackEditor::can_add_reset_key() const
+{
 	if (is_global_library_read_only()) {
 		return false;
 	}
-	for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
+	for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
 		const Animation::TrackType track_type = animation->track_get_type(E.key.track);
-		if (track_type != Animation::TYPE_ANIMATION && track_type != Animation::TYPE_AUDIO && track_type != Animation::TYPE_METHOD) {
+		if (track_type != Animation::TYPE_ANIMATION && track_type != Animation::TYPE_AUDIO &&
+			track_type != Animation::TYPE_METHOD) {
 			return true;
 		}
 	}
 	return false;
 }
 
-void AnimationTrackEditor::_on_filter_updated(const String &p_filter) {
+void AnimationTrackEditor::_on_filter_updated(const String& p_filter)
+{
 	emit_signal(SNAME("filter_changed"));
 }
 
-void AnimationTrackEditor::_update_tracks() {
+void AnimationTrackEditor::_update_tracks()
+{
 	int selected = _get_track_selected();
 
 	while (track_vbox->get_child_count()) {
@@ -5204,32 +5778,35 @@ void AnimationTrackEditor::_update_tracks() {
 		if (srpos != -1) {
 			String base = animation->get_path().substr(0, srpos);
 			if (ResourceLoader::get_resource_type(base) == "PackedScene") {
-				if (!get_tree()->get_edited_scene_root() || get_tree()->get_edited_scene_root()->get_scene_file_path() != base) {
+				if (!get_tree()->get_edited_scene_root() ||
+					get_tree()->get_edited_scene_root()->get_scene_file_path() != base) {
 					file_read_only = true;
 				}
-			} else {
+			}
+			else {
 				if (FileAccess::exists(base + ".import")) {
 					file_read_only = true;
 				}
 			}
 		}
-	} else {
+	}
+	else {
 		if (FileAccess::exists(animation->get_path() + ".import")) {
 			file_read_only = true;
 		}
 	}
 
-	RBMap<String, VBoxContainer *> group_sort;
-	LocalVector<VBoxContainer *> group_containers;
+	RBMap<String, VBoxContainer*> group_sort;
+	LocalVector<VBoxContainer*> group_containers;
 
 	bool use_grouping = !view_group->is_pressed();
 	bool use_filter = selected_filter->is_pressed();
 	bool use_alphabetic_sorting = alphabetic_sorting->is_pressed();
 
-	AnimationTrackEdit *selected_track_edit = nullptr;
+	AnimationTrackEdit* selected_track_edit = nullptr;
 
 	for (int i = 0; i < animation->get_track_count(); i++) {
-		AnimationTrackEdit *track_edit = nullptr;
+		AnimationTrackEdit* track_edit = nullptr;
 
 		// Find hint and info for plugin.
 
@@ -5237,7 +5814,7 @@ void AnimationTrackEditor::_update_tracks() {
 			NodePath path = animation->track_get_path(i);
 
 			if (root) {
-				Node *node = root->get_node_or_null(path);
+				Node* node = root->get_node_or_null(path);
 				if (!node) {
 					continue; // No node, no filter.
 				}
@@ -5263,10 +5840,10 @@ void AnimationTrackEditor::_update_tracks() {
 				Ref<Resource> res;
 				NodePath base_path;
 				Vector<StringName> leftover_path;
-				Node *node = root->get_node_and_resource(path, res, leftover_path, true);
+				Node* node = root->get_node_and_resource(path, res, leftover_path, true);
 				PropertyInfo pinfo = _find_hint_for_track(i, base_path);
 
-				Object *object = node;
+				Object* object = node;
 				if (res.is_valid()) {
 					object = res.ptr();
 				}
@@ -5277,7 +5854,8 @@ void AnimationTrackEditor::_update_tracks() {
 					}
 
 					for (int j = 0; j < track_edit_plugins.size(); j++) {
-						track_edit = track_edit_plugins.write[j]->create_value_track_edit(object, pinfo.type, pinfo.name, pinfo.hint, pinfo.hint_string, pinfo.usage);
+						track_edit = track_edit_plugins.write[j]->create_value_track_edit(object,
+							pinfo.type, pinfo.name, pinfo.hint, pinfo.hint_string, pinfo.usage);
 						if (track_edit) {
 							break;
 						}
@@ -5297,7 +5875,7 @@ void AnimationTrackEditor::_update_tracks() {
 		if (animation->track_get_type(i) == Animation::TYPE_ANIMATION) {
 			NodePath path = animation->track_get_path(i);
 
-			Node *node = nullptr;
+			Node* node = nullptr;
 			if (root) {
 				node = root->get_node_or_null(path);
 			}
@@ -5324,12 +5902,12 @@ void AnimationTrackEditor::_update_tracks() {
 			base_path = base_path.get_slicec(':', 0); // Remove sub-path.
 
 			if (!group_sort.has(base_path)) {
-				AnimationTrackEditGroup *g = memnew(AnimationTrackEditGroup);
+				AnimationTrackEditGroup* g = memnew(AnimationTrackEditGroup);
 				Ref<Texture2D> icon = get_editor_theme_icon(SNAME("Node"));
 				String name = base_path;
 				String tooltip;
 				if (root) {
-					Node *n = root->get_node_or_null(base_path);
+					Node* n = root->get_node_or_null(base_path);
 					if (n) {
 						icon = EditorNode::get_singleton()->get_object_icon(n);
 						name = n->get_name();
@@ -5343,7 +5921,7 @@ void AnimationTrackEditor::_update_tracks() {
 				g->set_timeline(timeline);
 				g->set_editor(this);
 				groups.push_back(g);
-				VBoxContainer *vb = memnew(VBoxContainer);
+				VBoxContainer* vb = memnew(VBoxContainer);
 				vb->add_theme_constant_override("separation", 0);
 				vb->add_child(g);
 				group_sort[base_path] = vb;
@@ -5353,11 +5931,15 @@ void AnimationTrackEditor::_update_tracks() {
 			track_edit->set_in_group(true);
 			group_sort[base_path]->add_child(track_edit);
 
-			AnimationTrackEditGroup *g = Object::cast_to<AnimationTrackEditGroup>(group_sort[base_path]->get_child(0));
-			ERR_FAIL_NULL_MSG(g, "The first child of this group's VBoxContainer isn't an AnimationTrackEditGroup. Collapsing this animation group may not work.");
+			AnimationTrackEditGroup* g =
+				Object::cast_to<AnimationTrackEditGroup>(group_sort[base_path]->get_child(0));
+			ERR_FAIL_NULL_MSG(g,
+				"The first child of this group's VBoxContainer isn't an "
+				"AnimationTrackEditGroup. Collapsing this animation group may not work.");
 			g->track_edits.push_back(track_edit);
 
-		} else {
+		}
+		else {
 			track_edit->set_in_group(false);
 		}
 
@@ -5371,31 +5953,60 @@ void AnimationTrackEditor::_update_tracks() {
 			selected_track_edit = track_edit;
 		}
 
-		track_edit->connect("timeline_changed", callable_mp(this, &AnimationTrackEditor::_timeline_changed));
-		track_edit->connect("remove_request", callable_mp(this, &AnimationTrackEditor::_track_remove_request), CONNECT_DEFERRED);
-		track_edit->connect("dropped", callable_mp(this, &AnimationTrackEditor::_dropped_track), CONNECT_DEFERRED);
-		track_edit->connect("insert_key", callable_mp(this, &AnimationTrackEditor::_insert_key_from_track).bind(i), CONNECT_DEFERRED);
-		track_edit->connect("select_key", callable_mp(this, &AnimationTrackEditor::_key_selected).bind(i), CONNECT_DEFERRED);
-		track_edit->connect("deselect_key", callable_mp(this, &AnimationTrackEditor::_key_deselected).bind(i), CONNECT_DEFERRED);
-		track_edit->connect("move_selection_begin", callable_mp(this, &AnimationTrackEditor::_move_selection_begin));
-		track_edit->connect("move_selection", callable_mp(this, &AnimationTrackEditor::_move_selection));
-		track_edit->connect("move_selection_commit", callable_mp(this, &AnimationTrackEditor::_move_selection_commit));
-		track_edit->connect("move_selection_cancel", callable_mp(this, &AnimationTrackEditor::_move_selection_cancel));
+		track_edit->connect(
+			"timeline_changed", callable_mp(this, &AnimationTrackEditor::_timeline_changed));
+		track_edit->connect("remove_request",
+			callable_mp(this, &AnimationTrackEditor::_track_remove_request), CONNECT_DEFERRED);
+		track_edit->connect(
+			"dropped", callable_mp(this, &AnimationTrackEditor::_dropped_track), CONNECT_DEFERRED);
+		track_edit->connect("insert_key",
+			callable_mp(this, &AnimationTrackEditor::_insert_key_from_track).bind(i),
+			CONNECT_DEFERRED);
+		track_edit->connect("select_key",
+			callable_mp(this, &AnimationTrackEditor::_key_selected).bind(i), CONNECT_DEFERRED);
+		track_edit->connect("deselect_key",
+			callable_mp(this, &AnimationTrackEditor::_key_deselected).bind(i), CONNECT_DEFERRED);
+		track_edit->connect("move_selection_begin",
+			callable_mp(this, &AnimationTrackEditor::_move_selection_begin));
+		track_edit->connect(
+			"move_selection", callable_mp(this, &AnimationTrackEditor::_move_selection));
+		track_edit->connect("move_selection_commit",
+			callable_mp(this, &AnimationTrackEditor::_move_selection_commit));
+		track_edit->connect("move_selection_cancel",
+			callable_mp(this, &AnimationTrackEditor::_move_selection_cancel));
 
-		track_edit->connect("duplicate_request", callable_mp(this, &AnimationTrackEditor::_anim_duplicate_keys).bind(i), CONNECT_DEFERRED);
-		track_edit->connect("cut_request", callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_CUT_KEYS), CONNECT_DEFERRED);
-		track_edit->connect("copy_request", callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_COPY_KEYS), CONNECT_DEFERRED);
-		track_edit->connect("paste_request", callable_mp(this, &AnimationTrackEditor::_anim_paste_keys).bind(i), CONNECT_DEFERRED);
-		track_edit->connect("create_reset_request", callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_ADD_RESET_KEY), CONNECT_DEFERRED);
-		track_edit->connect("delete_request", callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_DELETE_SELECTION), CONNECT_DEFERRED);
+		track_edit->connect("duplicate_request",
+			callable_mp(this, &AnimationTrackEditor::_anim_duplicate_keys).bind(i),
+			CONNECT_DEFERRED);
+		track_edit->connect("cut_request",
+			callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_CUT_KEYS),
+			CONNECT_DEFERRED);
+		track_edit->connect("copy_request",
+			callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_COPY_KEYS),
+			CONNECT_DEFERRED);
+		track_edit->connect("paste_request",
+			callable_mp(this, &AnimationTrackEditor::_anim_paste_keys).bind(i), CONNECT_DEFERRED);
+		track_edit->connect("create_reset_request",
+			callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_ADD_RESET_KEY),
+			CONNECT_DEFERRED);
+		track_edit->connect("delete_request",
+			callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed)
+				.bind(EDIT_DELETE_SELECTION),
+			CONNECT_DEFERRED);
 	}
 
 	if (use_grouping) {
 		if (use_alphabetic_sorting) {
-			struct GroupAlphaCompare {
-				bool operator()(const VBoxContainer *p_lhs, const VBoxContainer *p_rhs) const {
-					String lhs_node_name = Object::cast_to<AnimationTrackEditGroup>(p_lhs->get_child(0))->get_node_name();
-					String rhs_node_name = Object::cast_to<AnimationTrackEditGroup>(p_rhs->get_child(0))->get_node_name();
+			struct GroupAlphaCompare
+			{
+				bool operator()(const VBoxContainer* p_lhs, const VBoxContainer* p_rhs) const
+				{
+					String lhs_node_name =
+						Object::cast_to<AnimationTrackEditGroup>(p_lhs->get_child(0))
+							->get_node_name();
+					String rhs_node_name =
+						Object::cast_to<AnimationTrackEditGroup>(p_rhs->get_child(0))
+							->get_node_name();
 					return lhs_node_name < rhs_node_name;
 				}
 			};
@@ -5403,23 +6014,29 @@ void AnimationTrackEditor::_update_tracks() {
 			group_containers.sort_custom<GroupAlphaCompare>();
 		}
 
-		for (VBoxContainer *vb : group_containers) {
+		for (VBoxContainer* vb : group_containers) {
 			track_vbox->add_child(vb);
 
-			AnimationTrackEditGroup *g = Object::cast_to<AnimationTrackEditGroup>(vb->get_child(0));
+			AnimationTrackEditGroup* g = Object::cast_to<AnimationTrackEditGroup>(vb->get_child(0));
 			if (g) {
-				for (AnimationTrackEdit *i : g->track_edits) {
+				for (AnimationTrackEdit* i : g->track_edits) {
 					i->set_visible(!animation->editor_is_group_folded(g->node_name));
 				}
 			}
 		}
 
-	} else {
+	}
+	else {
 		if (use_alphabetic_sorting) {
-			struct TrackAlphaCompare {
-				bool operator()(const AnimationTrackEdit *p_lhs, const AnimationTrackEdit *p_rhs) const {
-					String lhs_leaf = (String)p_lhs->get_path().slice(-p_lhs->get_path().get_subname_count() - 1);
-					String rhs_leaf = (String)p_rhs->get_path().slice(-p_rhs->get_path().get_subname_count() - 1);
+			struct TrackAlphaCompare
+			{
+				bool operator()(
+					const AnimationTrackEdit* p_lhs, const AnimationTrackEdit* p_rhs) const
+				{
+					String lhs_leaf =
+						(String)p_lhs->get_path().slice(-p_lhs->get_path().get_subname_count() - 1);
+					String rhs_leaf =
+						(String)p_rhs->get_path().slice(-p_rhs->get_path().get_subname_count() - 1);
 					return lhs_leaf < rhs_leaf;
 				}
 			};
@@ -5427,7 +6044,7 @@ void AnimationTrackEditor::_update_tracks() {
 			track_edits.sort_custom<TrackAlphaCompare>();
 		}
 
-		for (AnimationTrackEdit *track_edit : track_edits) {
+		for (AnimationTrackEdit* track_edit : track_edits) {
 			track_vbox->add_child(track_edit);
 		}
 	}
@@ -5437,19 +6054,22 @@ void AnimationTrackEditor::_update_tracks() {
 	}
 }
 
-void AnimationTrackEditor::_redraw_tracks() {
+void AnimationTrackEditor::_redraw_tracks()
+{
 	for (int i = 0; i < track_edits.size(); i++) {
 		track_edits[i]->queue_redraw();
 	}
 }
 
-void AnimationTrackEditor::_redraw_groups() {
+void AnimationTrackEditor::_redraw_groups()
+{
 	for (int i = 0; i < groups.size(); i++) {
 		groups[i]->queue_redraw();
 	}
 }
 
-void AnimationTrackEditor::_animation_changed() {
+void AnimationTrackEditor::_animation_changed()
+{
 	if (animation_changing_awaiting_update) {
 		return; // All will be updated, don't bother with anything.
 	}
@@ -5462,12 +6082,14 @@ void AnimationTrackEditor::_animation_changed() {
 			if (key_edit->track < track_edits.size()) {
 				if (animation->track_get_type(key_edit->track) == Animation::TYPE_BEZIER) {
 					bezier_edit->queue_redraw();
-				} else {
+				}
+				else {
 					track_edits[key_edit->track]->queue_redraw();
 				}
 			}
 			return;
-		} else {
+		}
+		else {
 			_update_key_edit();
 		}
 	}
@@ -5476,24 +6098,28 @@ void AnimationTrackEditor::_animation_changed() {
 	callable_mp(this, &AnimationTrackEditor::_animation_update).call_deferred();
 }
 
-void AnimationTrackEditor::_snap_mode_changed(int p_mode) {
+void AnimationTrackEditor::_snap_mode_changed(int p_mode)
+{
 	bool use_fps = p_mode == 1;
 	timeline->set_use_fps(use_fps);
 	if (key_edit) {
 		key_edit->set_use_fps(use_fps);
 	}
 	marker_edit->set_use_fps(use_fps);
-	// To ensure that the conversion results are consistent between serialization and load, the value is snapped with 0.0625 to be a rational number when FPS mode is used.
+	// To ensure that the conversion results are consistent between serialization and load, the
+	// value is snapped with 0.0625 to be a rational number when FPS mode is used.
 	step->set_step(use_fps ? FPS_DECIMAL : SECOND_DECIMAL);
 	if (use_fps) {
 		fps_compat->hide();
-	} else {
+	}
+	else {
 		fps_compat->show();
 	}
 	_update_step_spinbox();
 }
 
-void AnimationTrackEditor::_update_step_spinbox() {
+void AnimationTrackEditor::_update_step_spinbox()
+{
 	if (animation.is_null()) {
 		return;
 	}
@@ -5502,10 +6128,12 @@ void AnimationTrackEditor::_update_step_spinbox() {
 	if (timeline->is_using_fps()) {
 		if (animation->get_step() == 0.0) {
 			step->set_value(0.0);
-		} else {
+		}
+		else {
 			step->set_value(1.0 / animation->get_step());
 		}
-	} else {
+	}
+	else {
 		step->set_value(animation->get_step());
 	}
 
@@ -5513,26 +6141,30 @@ void AnimationTrackEditor::_update_step_spinbox() {
 	_update_snap_unit();
 }
 
-void AnimationTrackEditor::_store_snap_states() {
-	EditorSettings::get_singleton()->set_project_metadata("animation_track_editor", "snap_timeline", snap_timeline->is_pressed());
-	EditorSettings::get_singleton()->set_project_metadata("animation_track_editor", "snap_keys", snap_keys->is_pressed());
+void AnimationTrackEditor::_store_snap_states()
+{
+	EditorSettings::get_singleton()->set_project_metadata(
+		"animation_track_editor", "snap_timeline", snap_timeline->is_pressed());
+	EditorSettings::get_singleton()->set_project_metadata(
+		"animation_track_editor", "snap_keys", snap_keys->is_pressed());
 }
 
-void AnimationTrackEditor::_update_fps_compat_mode(bool p_enabled) {
-	_update_snap_unit();
-}
+void AnimationTrackEditor::_update_fps_compat_mode(bool p_enabled) { _update_snap_unit(); }
 
-void AnimationTrackEditor::_update_nearest_fps_label() {
+void AnimationTrackEditor::_update_nearest_fps_label()
+{
 	bool is_fps_invalid = nearest_fps == 0;
 	if (is_fps_invalid) {
 		nearest_fps_label->hide();
-	} else {
+	}
+	else {
 		nearest_fps_label->show();
 		nearest_fps_label->set_text(vformat(TTR("Nearest FPS: %d"), nearest_fps));
 	}
 }
 
-void AnimationTrackEditor::_animation_update() {
+void AnimationTrackEditor::_animation_update()
+{
 	timeline->queue_redraw();
 	timeline->update_values();
 
@@ -5551,14 +6183,16 @@ void AnimationTrackEditor::_animation_update() {
 				break;
 			}
 		}
-	} else {
+	}
+	else {
 		same = false;
 	}
 
 	if (same) {
 		_redraw_tracks();
 		_redraw_groups();
-	} else {
+	}
+	else {
 		_update_tracks();
 	}
 
@@ -5571,126 +6205,188 @@ void AnimationTrackEditor::_animation_update() {
 	animation_changing_awaiting_update = false;
 }
 
-MenuButton *AnimationTrackEditor::get_edit_menu() {
-	return edit;
-}
+MenuButton* AnimationTrackEditor::get_edit_menu() { return edit; }
 
-void AnimationTrackEditor::_notification(int p_what) {
+void AnimationTrackEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-			if (!EditorSettings::get_singleton()->check_changed_settings_in_group("editors/panning")) {
-				break;
-			}
+	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+		if (!EditorSettings::get_singleton()->check_changed_settings_in_group("editors/panning")) {
+			break;
+		}
 
-			panner->setup((ViewPanner::ControlScheme)EDITOR_GET("editors/panning/animation_editors_panning_scheme").operator int(), ED_GET_SHORTCUT("canvas_item_editor/pan_view"), bool(EDITOR_GET("editors/panning/simple_panning")));
-			panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
-		} break;
+		panner->setup((ViewPanner::ControlScheme)EDITOR_GET(
+						  "editors/panning/animation_editors_panning_scheme")
+						  .
+						  operator int(),
+			ED_GET_SHORTCUT("canvas_item_editor/pan_view"),
+			bool(EDITOR_GET("editors/panning/simple_panning")));
+		panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED: {
-			add_animation_player->set_button_icon(get_editor_theme_icon(SNAME("Add")));
-			zoom_icon->set_texture(get_editor_theme_icon(SNAME("Zoom")));
-			bezier_edit_icon->set_button_icon(get_editor_theme_icon(SNAME("EditBezier")));
-			snap_timeline->set_button_icon(get_editor_theme_icon(SNAME("SnapTimeline")));
-			snap_keys->set_button_icon(get_editor_theme_icon(SNAME("SnapKeys")));
-			insert_at_current_time->set_button_icon(get_editor_theme_icon(SNAME("InsertAtCurrentTime")));
-			fps_compat->set_button_icon(get_editor_theme_icon(SNAME("FPS")));
-			view_group->set_button_icon(get_editor_theme_icon(view_group->is_pressed() ? SNAME("AnimationTrackList") : SNAME("AnimationTrackGroup")));
-			function_name_toggler->set_button_icon(get_editor_theme_icon(SNAME("MemberMethod")));
-			selected_filter->set_button_icon(get_editor_theme_icon(SNAME("AnimationFilter")));
-			alphabetic_sorting->set_button_icon(get_editor_theme_icon(SNAME("Sort")));
-			imported_anim_warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
-			dummy_player_warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
-			inactive_player_warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
+	case NOTIFICATION_THEME_CHANGED: {
+		add_animation_player->set_button_icon(get_editor_theme_icon(SNAME("Add")));
+		zoom_icon->set_texture(get_editor_theme_icon(SNAME("Zoom")));
+		bezier_edit_icon->set_button_icon(get_editor_theme_icon(SNAME("EditBezier")));
+		snap_timeline->set_button_icon(get_editor_theme_icon(SNAME("SnapTimeline")));
+		snap_keys->set_button_icon(get_editor_theme_icon(SNAME("SnapKeys")));
+		insert_at_current_time->set_button_icon(
+			get_editor_theme_icon(SNAME("InsertAtCurrentTime")));
+		fps_compat->set_button_icon(get_editor_theme_icon(SNAME("FPS")));
+		view_group->set_button_icon(get_editor_theme_icon(
+			view_group->is_pressed() ? SNAME("AnimationTrackList") : SNAME("AnimationTrackGroup")));
+		function_name_toggler->set_button_icon(get_editor_theme_icon(SNAME("MemberMethod")));
+		selected_filter->set_button_icon(get_editor_theme_icon(SNAME("AnimationFilter")));
+		alphabetic_sorting->set_button_icon(get_editor_theme_icon(SNAME("Sort")));
+		imported_anim_warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
+		dummy_player_warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
+		inactive_player_warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
 
-			Ref<StyleBox> panel_style = get_theme_stylebox(SceneStringName(panel), SNAME("Tree"))->duplicate();
-			panel_style->set_content_margin(SIDE_TOP, get_theme_constant("base_margin", EditorStringName(Editor)) * EDSCALE);
-			main_panel->add_theme_style_override(SceneStringName(panel), panel_style);
+		Ref<StyleBox> panel_style =
+			get_theme_stylebox(SceneStringName(panel), SNAME("Tree"))->duplicate();
+		panel_style->set_content_margin(
+			SIDE_TOP, get_theme_constant("base_margin", EditorStringName(Editor)) * EDSCALE);
+		main_panel->add_theme_style_override(SceneStringName(panel), panel_style);
 
-			edit->get_popup()->set_item_icon(edit->get_popup()->get_item_index(EDIT_ADD_RESET_KEY), get_editor_theme_icon(SNAME("MoveUp")));
-			edit->get_popup()->set_item_icon(edit->get_popup()->get_item_index(EDIT_APPLY_RESET), get_editor_theme_icon(SNAME("Reload")));
-			auto_fit->set_button_icon(get_editor_theme_icon(SNAME("AnimationAutoFit")));
-			auto_fit_bezier->set_button_icon(get_editor_theme_icon(SNAME("AnimationAutoFitBezier")));
+		edit->get_popup()->set_item_icon(edit->get_popup()->get_item_index(EDIT_ADD_RESET_KEY),
+			get_editor_theme_icon(SNAME("MoveUp")));
+		edit->get_popup()->set_item_icon(edit->get_popup()->get_item_index(EDIT_APPLY_RESET),
+			get_editor_theme_icon(SNAME("Reload")));
+		auto_fit->set_button_icon(get_editor_theme_icon(SNAME("AnimationAutoFit")));
+		auto_fit_bezier->set_button_icon(get_editor_theme_icon(SNAME("AnimationAutoFitBezier")));
 
-			const int timeline_separation = get_theme_constant(SNAME("timeline_v_separation"), SNAME("AnimationTrackEditor"));
-			timeline_vbox->add_theme_constant_override("separation", timeline_separation);
+		const int timeline_separation =
+			get_theme_constant(SNAME("timeline_v_separation"), SNAME("AnimationTrackEditor"));
+		timeline_vbox->add_theme_constant_override("separation", timeline_separation);
 
-			const int track_separation = get_theme_constant(SNAME("track_v_separation"), SNAME("AnimationTrackEditor"));
-			track_vbox->add_theme_constant_override("separation", track_separation);
+		const int track_separation =
+			get_theme_constant(SNAME("track_v_separation"), SNAME("AnimationTrackEditor"));
+		track_vbox->add_theme_constant_override("separation", track_separation);
 
-			function_name_toggler->add_theme_color_override("icon_pressed_color", get_theme_color("icon_disabled_color", EditorStringName(Editor)));
+		function_name_toggler->add_theme_color_override(
+			"icon_pressed_color", get_theme_color("icon_disabled_color", EditorStringName(Editor)));
 
-			bezier_key_mode->set_item_icon(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_FREE), get_editor_theme_icon(SNAME("BezierHandlesFree")));
-			bezier_key_mode->set_item_icon(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_LINEAR), get_editor_theme_icon(SNAME("BezierHandlesLinear")));
-			bezier_key_mode->set_item_icon(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_BALANCED), get_editor_theme_icon(SNAME("BezierHandlesBalanced")));
-			bezier_key_mode->set_item_icon(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_MIRRORED), get_editor_theme_icon(SNAME("BezierHandlesMirror")));
+		bezier_key_mode->set_item_icon(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_FREE),
+			get_editor_theme_icon(SNAME("BezierHandlesFree")));
+		bezier_key_mode->set_item_icon(
+			bezier_key_mode->get_item_index(Animation::HANDLE_MODE_LINEAR),
+			get_editor_theme_icon(SNAME("BezierHandlesLinear")));
+		bezier_key_mode->set_item_icon(
+			bezier_key_mode->get_item_index(Animation::HANDLE_MODE_BALANCED),
+			get_editor_theme_icon(SNAME("BezierHandlesBalanced")));
+		bezier_key_mode->set_item_icon(
+			bezier_key_mode->get_item_index(Animation::HANDLE_MODE_MIRRORED),
+			get_editor_theme_icon(SNAME("BezierHandlesMirror")));
 
-			_update_timeline_margins();
-		} break;
+		_update_timeline_margins();
+	} break;
 
-		case NOTIFICATION_READY: {
-			Node *scene_root = EditorNode::get_singleton()->get_scene_root();
-			scene_root->connect("child_entered_tree", callable_mp(this, &AnimationTrackEditor::_root_node_changed).bind(false));
-			scene_root->connect("child_exiting_tree", callable_mp(this, &AnimationTrackEditor::_root_node_changed).bind(true));
+	case NOTIFICATION_READY: {
+		Node* scene_root = EditorNode::get_singleton()->get_scene_root();
+		scene_root->connect("child_entered_tree",
+			callable_mp(this, &AnimationTrackEditor::_root_node_changed).bind(false));
+		scene_root->connect("child_exiting_tree",
+			callable_mp(this, &AnimationTrackEditor::_root_node_changed).bind(true));
 
-			EditorNode::get_singleton()->connect("scene_changed", callable_mp(this, &AnimationTrackEditor::_scene_changed));
-			EditorNode::get_singleton()->get_editor_selection()->connect("selection_changed", callable_mp(this, &AnimationTrackEditor::_selection_changed));
+		EditorNode::get_singleton()->connect(
+			"scene_changed", callable_mp(this, &AnimationTrackEditor::_scene_changed));
+		EditorNode::get_singleton()->get_editor_selection()->connect(
+			"selection_changed", callable_mp(this, &AnimationTrackEditor::_selection_changed));
 
-			panner->setup((ViewPanner::ControlScheme)EDITOR_GET("editors/panning/animation_editors_panning_scheme").operator int(), ED_GET_SHORTCUT("canvas_item_editor/pan_view"), bool(EDITOR_GET("editors/panning/simple_panning")));
-			panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
-		} break;
+		panner->setup((ViewPanner::ControlScheme)EDITOR_GET(
+						  "editors/panning/animation_editors_panning_scheme")
+						  .
+						  operator int(),
+			ED_GET_SHORTCUT("canvas_item_editor/pan_view"),
+			bool(EDITOR_GET("editors/panning/simple_panning")));
+		panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
+	} break;
 
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			update_keying();
-		} break;
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		update_keying();
+	} break;
 
-		case NOTIFICATION_TRANSLATION_CHANGED: {
-			bezier_key_mode->set_item_text(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_FREE), TTR("Free", "Bezier Handle Mode"));
-			bezier_key_mode->set_item_text(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_LINEAR), TTR("Linear", "Bezier Handle Mode"));
-			bezier_key_mode->set_item_text(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_BALANCED), TTR("Balanced", "Bezier Handle Mode"));
-			bezier_key_mode->set_item_text(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_MIRRORED), TTR("Mirrored", "Bezier Handle Mode"));
-			bezier_key_mode->set_tooltip_text(TTR("Bezier Default Mode") + "\n" + TTR("Set the default handle mode of new bezier keys."));
+	case NOTIFICATION_TRANSLATION_CHANGED: {
+		bezier_key_mode->set_item_text(bezier_key_mode->get_item_index(Animation::HANDLE_MODE_FREE),
+			TTR("Free", "Bezier Handle Mode"));
+		bezier_key_mode->set_item_text(
+			bezier_key_mode->get_item_index(Animation::HANDLE_MODE_LINEAR),
+			TTR("Linear", "Bezier Handle Mode"));
+		bezier_key_mode->set_item_text(
+			bezier_key_mode->get_item_index(Animation::HANDLE_MODE_BALANCED),
+			TTR("Balanced", "Bezier Handle Mode"));
+		bezier_key_mode->set_item_text(
+			bezier_key_mode->get_item_index(Animation::HANDLE_MODE_MIRRORED),
+			TTR("Mirrored", "Bezier Handle Mode"));
+		bezier_key_mode->set_tooltip_text(TTR("Bezier Default Mode") + "\n" +
+										  TTR("Set the default handle mode of new bezier keys."));
 
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_LINEAR), TTR("Linear", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_QUINT), TTR("Quint", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_QUART), TTR("Quart", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_QUAD), TTR("Quad", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_EXPO), TTR("Expo", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_ELASTIC), TTR("Elastic", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_CUBIC), TTR("Cubic", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_CIRC), TTR("Circ", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_BOUNCE), TTR("Bounce", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_BACK), TTR("Back", "Transition Type"));
-			transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_SPRING), TTR("Spring", "Transition Type"));
+		transition_selection->set_item_text(
+			transition_selection->get_item_index(Tween::TRANS_LINEAR),
+			TTR("Linear", "Transition Type"));
+		transition_selection->set_item_text(
+			transition_selection->get_item_index(Tween::TRANS_QUINT),
+			TTR("Quint", "Transition Type"));
+		transition_selection->set_item_text(
+			transition_selection->get_item_index(Tween::TRANS_QUART),
+			TTR("Quart", "Transition Type"));
+		transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_QUAD),
+			TTR("Quad", "Transition Type"));
+		transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_EXPO),
+			TTR("Expo", "Transition Type"));
+		transition_selection->set_item_text(
+			transition_selection->get_item_index(Tween::TRANS_ELASTIC),
+			TTR("Elastic", "Transition Type"));
+		transition_selection->set_item_text(
+			transition_selection->get_item_index(Tween::TRANS_CUBIC),
+			TTR("Cubic", "Transition Type"));
+		transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_CIRC),
+			TTR("Circ", "Transition Type"));
+		transition_selection->set_item_text(
+			transition_selection->get_item_index(Tween::TRANS_BOUNCE),
+			TTR("Bounce", "Transition Type"));
+		transition_selection->set_item_text(transition_selection->get_item_index(Tween::TRANS_BACK),
+			TTR("Back", "Transition Type"));
+		transition_selection->set_item_text(
+			transition_selection->get_item_index(Tween::TRANS_SPRING),
+			TTR("Spring", "Transition Type"));
 
-			ease_selection->set_item_text(ease_selection->get_item_index(Tween::EASE_IN), TTR("Ease In", "Ease Type"));
-			ease_selection->set_item_text(ease_selection->get_item_index(Tween::EASE_OUT), TTR("Ease Out", "Ease Type"));
-			ease_selection->set_item_text(ease_selection->get_item_index(Tween::EASE_IN_OUT), TTR("Ease In-Out", "Ease Type"));
-			ease_selection->set_item_text(ease_selection->get_item_index(Tween::EASE_OUT_IN), TTR("Ease Out-In", "Ease Type"));
+		ease_selection->set_item_text(
+			ease_selection->get_item_index(Tween::EASE_IN), TTR("Ease In", "Ease Type"));
+		ease_selection->set_item_text(
+			ease_selection->get_item_index(Tween::EASE_OUT), TTR("Ease Out", "Ease Type"));
+		ease_selection->set_item_text(
+			ease_selection->get_item_index(Tween::EASE_IN_OUT), TTR("Ease In-Out", "Ease Type"));
+		ease_selection->set_item_text(
+			ease_selection->get_item_index(Tween::EASE_OUT_IN), TTR("Ease Out-In", "Ease Type"));
 
-			_update_nearest_fps_label();
-		} break;
+		_update_nearest_fps_label();
+	} break;
 	}
 }
 
-void AnimationTrackEditor::_update_scroll(double) {
+void AnimationTrackEditor::_update_scroll(double)
+{
 	_redraw_tracks();
 	_redraw_groups();
 	marker_edit->queue_redraw();
 }
 
-void AnimationTrackEditor::_update_step(double p_new_step) {
+void AnimationTrackEditor::_update_step(double p_new_step)
+{
 	if (animation.is_null()) {
 		return;
 	}
 
 	_update_snap_unit();
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Change Animation Step"));
 	double step_value = p_new_step;
 	if (timeline->is_using_fps()) {
 		if (step_value != 0.0) {
-			// A step_value should be less than or equal to 1000 to ensure that no error accumulates due to interactions with retrieving values from inner range.
+			// A step_value should be less than or equal to 1000 to ensure that no error accumulates
+			// due to interactions with retrieving values from inner range.
 			step_value = 1.0 / MIN(1000.0, p_new_step);
 		}
 		timeline->queue_redraw();
@@ -5703,126 +6399,146 @@ void AnimationTrackEditor::_update_step(double p_new_step) {
 	emit_signal(SNAME("animation_step_changed"), step_value);
 }
 
-void AnimationTrackEditor::_update_length(double p_new_len) {
+void AnimationTrackEditor::_update_length(double p_new_len)
+{
 	emit_signal(SNAME("animation_len_changed"), p_new_len);
 }
 
-void AnimationTrackEditor::_dropped_track(int p_from_track, int p_to_track) {
+void AnimationTrackEditor::_dropped_track(int p_from_track, int p_to_track)
+{
 	if (p_from_track == p_to_track || p_from_track == p_to_track - 1) {
 		return;
 	}
 
 	_clear_selection(true);
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Rearrange Tracks"));
 	undo_redo->add_do_method(animation.ptr(), "track_move_to", p_from_track, p_to_track);
-	// Take into account that the position of the tracks that come after the one removed will change.
+	// Take into account that the position of the tracks that come after the one removed will
+	// change.
 	int to_track_real = p_to_track > p_from_track ? p_to_track - 1 : p_to_track;
-	undo_redo->add_undo_method(animation.ptr(), "track_move_to", to_track_real, p_to_track > p_from_track ? p_from_track : p_from_track + 1);
+	undo_redo->add_undo_method(animation.ptr(), "track_move_to", to_track_real,
+		p_to_track > p_from_track ? p_from_track : p_from_track + 1);
 	undo_redo->add_do_method(this, "_track_grab_focus", to_track_real);
 	undo_redo->add_undo_method(this, "_track_grab_focus", p_from_track);
 	undo_redo->commit_action();
 }
 
-void AnimationTrackEditor::_new_track_node_selected(NodePath p_path) {
+void AnimationTrackEditor::_new_track_node_selected(NodePath p_path)
+{
 	ERR_FAIL_NULL(root);
-	Node *node = get_node_or_null(p_path);
+	Node* node = get_node_or_null(p_path);
 	ERR_FAIL_NULL(node);
 	NodePath path_to = root->get_path_to(node, true);
 
 	if (adding_track_type == Animation::TYPE_BLEND_SHAPE && !node->is_class("MeshInstance3D")) {
-		EditorNode::get_singleton()->show_warning(TTR("Blend Shape tracks only apply to MeshInstance3D nodes."));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Blend Shape tracks only apply to MeshInstance3D nodes."));
 		return;
 	}
 
-	if ((adding_track_type == Animation::TYPE_POSITION_3D || adding_track_type == Animation::TYPE_ROTATION_3D || adding_track_type == Animation::TYPE_SCALE_3D) && !node->is_class("Node3D")) {
-		EditorNode::get_singleton()->show_warning(TTR("Position/Rotation/Scale 3D tracks only apply to 3D-based nodes."));
+	if ((adding_track_type == Animation::TYPE_POSITION_3D ||
+			adding_track_type == Animation::TYPE_ROTATION_3D ||
+			adding_track_type == Animation::TYPE_SCALE_3D) &&
+		!node->is_class("Node3D")) {
+		EditorNode::get_singleton()->show_warning(
+			TTR("Position/Rotation/Scale 3D tracks only apply to 3D-based nodes."));
 		return;
 	}
 
 	switch (adding_track_type) {
-		case Animation::TYPE_VALUE: {
-			adding_track_path = path_to;
-			prop_selector->set_type_filter(Vector<Variant::Type>());
-			prop_selector->select_property_from_instance(node);
-		} break;
-		case Animation::TYPE_BLEND_SHAPE: {
-			adding_track_path = path_to;
-			Vector<Variant::Type> filter;
-			filter.push_back(Variant::FLOAT);
-			prop_selector->set_type_filter(filter);
-			prop_selector->select_property_from_instance(node);
-		} break;
-		case Animation::TYPE_POSITION_3D:
-		case Animation::TYPE_ROTATION_3D:
-		case Animation::TYPE_SCALE_3D:
-		case Animation::TYPE_METHOD: {
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Add Track"));
-			undo_redo->add_do_method(animation.ptr(), "add_track", adding_track_type);
-			undo_redo->add_do_method(animation.ptr(), "track_set_path", animation->get_track_count(), path_to);
-			undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
-			undo_redo->commit_action();
+	case Animation::TYPE_VALUE: {
+		adding_track_path = path_to;
+		prop_selector->set_type_filter(Vector<Variant::Type>());
+		prop_selector->select_property_from_instance(node);
+	} break;
+	case Animation::TYPE_BLEND_SHAPE: {
+		adding_track_path = path_to;
+		Vector<Variant::Type> filter;
+		filter.push_back(Variant::FLOAT);
+		prop_selector->set_type_filter(filter);
+		prop_selector->select_property_from_instance(node);
+	} break;
+	case Animation::TYPE_POSITION_3D:
+	case Animation::TYPE_ROTATION_3D:
+	case Animation::TYPE_SCALE_3D:
+	case Animation::TYPE_METHOD: {
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Add Track"));
+		undo_redo->add_do_method(animation.ptr(), "add_track", adding_track_type);
+		undo_redo->add_do_method(
+			animation.ptr(), "track_set_path", animation->get_track_count(), path_to);
+		undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
+		undo_redo->commit_action();
 
-		} break;
-		case Animation::TYPE_BEZIER: {
-			Vector<Variant::Type> filter;
-			filter.push_back(Variant::INT);
-			filter.push_back(Variant::FLOAT);
-			filter.push_back(Variant::VECTOR2);
-			filter.push_back(Variant::VECTOR3);
-			filter.push_back(Variant::QUATERNION);
-			filter.push_back(Variant::PLANE);
-			filter.push_back(Variant::COLOR);
+	} break;
+	case Animation::TYPE_BEZIER: {
+		Vector<Variant::Type> filter;
+		filter.push_back(Variant::INT);
+		filter.push_back(Variant::FLOAT);
+		filter.push_back(Variant::VECTOR2);
+		filter.push_back(Variant::VECTOR3);
+		filter.push_back(Variant::QUATERNION);
+		filter.push_back(Variant::PLANE);
+		filter.push_back(Variant::COLOR);
 
-			adding_track_path = path_to;
-			prop_selector->set_type_filter(filter);
-			prop_selector->select_property_from_instance(node);
-		} break;
-		case Animation::TYPE_AUDIO: {
-			if (!node->is_class("AudioStreamPlayer") && !node->is_class("AudioStreamPlayer2D") && !node->is_class("AudioStreamPlayer3D")) {
-				EditorNode::get_singleton()->show_warning(TTR("Audio tracks can only point to nodes of type:\n-AudioStreamPlayer\n-AudioStreamPlayer2D\n-AudioStreamPlayer3D"));
-				return;
-			}
+		adding_track_path = path_to;
+		prop_selector->set_type_filter(filter);
+		prop_selector->select_property_from_instance(node);
+	} break;
+	case Animation::TYPE_AUDIO: {
+		if (!node->is_class("AudioStreamPlayer") && !node->is_class("AudioStreamPlayer2D") &&
+			!node->is_class("AudioStreamPlayer3D")) {
+			EditorNode::get_singleton()->show_warning(
+				TTR("Audio tracks can only point to nodes of "
+					"type:\n-AudioStreamPlayer\n-AudioStreamPlayer2D\n-AudioStreamPlayer3D"));
+			return;
+		}
 
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Add Track"));
-			undo_redo->add_do_method(animation.ptr(), "add_track", adding_track_type);
-			undo_redo->add_do_method(animation.ptr(), "track_set_path", animation->get_track_count(), path_to);
-			undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
-			undo_redo->commit_action();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Add Track"));
+		undo_redo->add_do_method(animation.ptr(), "add_track", adding_track_type);
+		undo_redo->add_do_method(
+			animation.ptr(), "track_set_path", animation->get_track_count(), path_to);
+		undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
+		undo_redo->commit_action();
 
-		} break;
-		case Animation::TYPE_ANIMATION: {
-			if (!node->is_class("AnimationPlayer")) {
-				EditorNode::get_singleton()->show_warning(TTR("Animation tracks can only point to AnimationPlayer nodes."));
-				return;
-			}
+	} break;
+	case Animation::TYPE_ANIMATION: {
+		if (!node->is_class("AnimationPlayer")) {
+			EditorNode::get_singleton()->show_warning(
+				TTR("Animation tracks can only point to AnimationPlayer nodes."));
+			return;
+		}
 
-			if (node == AnimationPlayerEditor::get_singleton()->get_player()) {
-				EditorNode::get_singleton()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
-				return;
-			}
+		if (node == AnimationPlayerEditor::get_singleton()->get_player()) {
+			EditorNode::get_singleton()->show_warning(
+				TTR("AnimationPlayer can't animate itself, only other players."));
+			return;
+		}
 
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Add Track"));
-			undo_redo->add_do_method(animation.ptr(), "add_track", adding_track_type);
-			undo_redo->add_do_method(animation.ptr(), "track_set_path", animation->get_track_count(), path_to);
-			undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
-			undo_redo->commit_action();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Add Track"));
+		undo_redo->add_do_method(animation.ptr(), "add_track", adding_track_type);
+		undo_redo->add_do_method(
+			animation.ptr(), "track_set_path", animation->get_track_count(), path_to);
+		undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
+		undo_redo->commit_action();
 
-		} break;
+	} break;
 	}
 }
 
-void AnimationTrackEditor::_add_track(int p_type) {
-	AnimationPlayer *ap = AnimationPlayerEditor::get_singleton()->get_player();
+void AnimationTrackEditor::_add_track(int p_type)
+{
+	AnimationPlayer* ap = AnimationPlayerEditor::get_singleton()->get_player();
 	if (!ap) {
 		ERR_FAIL_EDMSG("No AnimationPlayer is currently being edited.");
 	}
-	Node *root_node = ap->get_node_or_null(ap->get_root_node());
+	Node* root_node = ap->get_node_or_null(ap->get_root_node());
 	if (!root_node) {
-		EditorNode::get_singleton()->show_warning(TTR("Not possible to add a new track without a root"));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Not possible to add a new track without a root"));
 		return;
 	}
 	adding_track_type = p_type;
@@ -5830,29 +6546,29 @@ void AnimationTrackEditor::_add_track(int p_type) {
 	String title_text = TTRC("Pick a node to animate:");
 	Vector<StringName> valid_types;
 	switch (adding_track_type) {
-		case Animation::TYPE_BLEND_SHAPE: {
-			// Blend Shape is a property of MeshInstance3D.
-			valid_types.push_back(SNAME("MeshInstance3D"));
-		} break;
-		case Animation::TYPE_POSITION_3D:
-		case Animation::TYPE_ROTATION_3D:
-		case Animation::TYPE_SCALE_3D: {
-			// 3D Properties come from nodes inheriting Node3D.
-			valid_types.push_back(SNAME("Node3D"));
-		} break;
-		case Animation::TYPE_METHOD: {
-			title_text = TTRC("Pick a node to select method:");
-		} break;
-		case Animation::TYPE_AUDIO: {
-			valid_types.push_back(SNAME("AudioStreamPlayer"));
-			valid_types.push_back(SNAME("AudioStreamPlayer2D"));
-			valid_types.push_back(SNAME("AudioStreamPlayer3D"));
-			title_text = TTRC("Pick a node to play audio:");
-		} break;
-		case Animation::TYPE_ANIMATION: {
-			valid_types.push_back(SNAME("AnimationPlayer"));
-			title_text = TTRC("Pick a node to play animation:");
-		} break;
+	case Animation::TYPE_BLEND_SHAPE: {
+		// Blend Shape is a property of MeshInstance3D.
+		valid_types.push_back(SNAME("MeshInstance3D"));
+	} break;
+	case Animation::TYPE_POSITION_3D:
+	case Animation::TYPE_ROTATION_3D:
+	case Animation::TYPE_SCALE_3D: {
+		// 3D Properties come from nodes inheriting Node3D.
+		valid_types.push_back(SNAME("Node3D"));
+	} break;
+	case Animation::TYPE_METHOD: {
+		title_text = TTRC("Pick a node to select method:");
+	} break;
+	case Animation::TYPE_AUDIO: {
+		valid_types.push_back(SNAME("AudioStreamPlayer"));
+		valid_types.push_back(SNAME("AudioStreamPlayer2D"));
+		valid_types.push_back(SNAME("AudioStreamPlayer3D"));
+		title_text = TTRC("Pick a node to play audio:");
+	} break;
+	case Animation::TYPE_ANIMATION: {
+		valid_types.push_back(SNAME("AnimationPlayer"));
+		title_text = TTRC("Pick a node to play animation:");
+	} break;
 	}
 	pick_track->set_valid_types(valid_types);
 	pick_track->set_title(title_text);
@@ -5861,8 +6577,11 @@ void AnimationTrackEditor::_add_track(int p_type) {
 	pick_track->get_filter_line_edit()->grab_focus();
 }
 
-void AnimationTrackEditor::_fetch_value_track_options(const NodePath &p_path, Animation::UpdateMode *r_update_mode, Animation::InterpolationType *r_interpolation_type, bool *r_loop_wrap) {
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+void AnimationTrackEditor::_fetch_value_track_options(const NodePath& p_path,
+	Animation::UpdateMode* r_update_mode, Animation::InterpolationType* r_interpolation_type,
+	bool* r_loop_wrap)
+{
+	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
 	if (player->has_animation(SceneStringName(RESET))) {
 		Ref<Animation> reset_anim = player->get_animation(SceneStringName(RESET));
 		int rt = reset_anim->find_track(p_path, Animation::TrackType::TYPE_VALUE);
@@ -5887,36 +6606,37 @@ void AnimationTrackEditor::_fetch_value_track_options(const NodePath &p_path, An
 	PropertyInfo h = _find_hint_for_track(animation->get_track_count() - 1, np);
 	animation->remove_track(animation->get_track_count() - 1); // Hack.
 	switch (h.type) {
-		case Variant::FLOAT:
-		case Variant::VECTOR2:
-		case Variant::RECT2:
-		case Variant::VECTOR3:
-		case Variant::TRANSFORM2D:
-		case Variant::VECTOR4:
-		case Variant::PLANE:
-		case Variant::QUATERNION:
-		case Variant::AABB:
-		case Variant::BASIS:
-		case Variant::TRANSFORM3D:
-		case Variant::PROJECTION:
-		case Variant::COLOR:
-		case Variant::PACKED_FLOAT32_ARRAY:
-		case Variant::PACKED_FLOAT64_ARRAY:
-		case Variant::PACKED_VECTOR2_ARRAY:
-		case Variant::PACKED_VECTOR3_ARRAY:
-		case Variant::PACKED_COLOR_ARRAY:
-		case Variant::PACKED_VECTOR4_ARRAY: {
-			*r_update_mode = Animation::UPDATE_CONTINUOUS;
-		} break;
-		default: {
-		}
+	case Variant::FLOAT:
+	case Variant::VECTOR2:
+	case Variant::RECT2:
+	case Variant::VECTOR3:
+	case Variant::TRANSFORM2D:
+	case Variant::VECTOR4:
+	case Variant::PLANE:
+	case Variant::QUATERNION:
+	case Variant::AABB:
+	case Variant::BASIS:
+	case Variant::TRANSFORM3D:
+	case Variant::PROJECTION:
+	case Variant::COLOR:
+	case Variant::PACKED_FLOAT32_ARRAY:
+	case Variant::PACKED_FLOAT64_ARRAY:
+	case Variant::PACKED_VECTOR2_ARRAY:
+	case Variant::PACKED_VECTOR3_ARRAY:
+	case Variant::PACKED_COLOR_ARRAY:
+	case Variant::PACKED_VECTOR4_ARRAY: {
+		*r_update_mode = Animation::UPDATE_CONTINUOUS;
+	} break;
+	default: {
+	}
 	}
 }
 
-void AnimationTrackEditor::_new_track_property_selected(const String &p_name) {
+void AnimationTrackEditor::_new_track_property_selected(const String& p_name)
+{
 	String full_path = String(adding_track_path) + ":" + p_name;
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 
 	Animation::UpdateMode update_mode = Animation::UPDATE_DISCRETE;
 	Animation::InterpolationType interp_type = Animation::INTERPOLATION_LINEAR;
@@ -5934,7 +6654,8 @@ void AnimationTrackEditor::_new_track_property_selected(const String &p_name) {
 			bool valid;
 			subindices = _get_bezier_subindices_for_type(h.type, &valid);
 			if (!valid) {
-				EditorNode::get_singleton()->show_warning(TTR("Invalid track for Bezier (no suitable sub-properties)"));
+				EditorNode::get_singleton()->show_warning(
+					TTR("Invalid track for Bezier (no suitable sub-properties)"));
 				return;
 			}
 		}
@@ -5944,13 +6665,17 @@ void AnimationTrackEditor::_new_track_property_selected(const String &p_name) {
 		for (int i = 0; i < subindices.size(); i++) {
 			int track_idx = base_track + i;
 			undo_redo->add_do_method(animation.ptr(), "add_track", adding_track_type);
-			undo_redo->add_do_method(animation.ptr(), "track_set_path", track_idx, full_path + subindices[i]);
-			undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type", track_idx, interp_type);
-			undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_loop_wrap", track_idx, loop_wrap);
+			undo_redo->add_do_method(
+				animation.ptr(), "track_set_path", track_idx, full_path + subindices[i]);
+			undo_redo->add_do_method(
+				animation.ptr(), "track_set_interpolation_type", track_idx, interp_type);
+			undo_redo->add_do_method(
+				animation.ptr(), "track_set_interpolation_loop_wrap", track_idx, loop_wrap);
 			undo_redo->add_undo_method(animation.ptr(), "remove_track", base_track);
 		}
 		undo_redo->commit_action();
-	} else {
+	}
+	else {
 		bool is_blend_shape = adding_track_type == Animation::TYPE_BLEND_SHAPE;
 		if (is_blend_shape) {
 			PackedStringArray split = p_name.split("/");
@@ -5960,18 +6685,23 @@ void AnimationTrackEditor::_new_track_property_selected(const String &p_name) {
 		}
 		undo_redo->create_action(TTR("Add Track"));
 		undo_redo->add_do_method(animation.ptr(), "add_track", adding_track_type);
-		undo_redo->add_do_method(animation.ptr(), "track_set_path", animation->get_track_count(), full_path);
-		undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type", animation->get_track_count(), interp_type);
-		undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_loop_wrap", animation->get_track_count(), loop_wrap);
+		undo_redo->add_do_method(
+			animation.ptr(), "track_set_path", animation->get_track_count(), full_path);
+		undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type",
+			animation->get_track_count(), interp_type);
+		undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_loop_wrap",
+			animation->get_track_count(), loop_wrap);
 		if (!is_blend_shape) {
-			undo_redo->add_do_method(animation.ptr(), "value_track_set_update_mode", animation->get_track_count(), update_mode);
+			undo_redo->add_do_method(animation.ptr(), "value_track_set_update_mode",
+				animation->get_track_count(), update_mode);
 		}
 		undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
 		undo_redo->commit_action();
 	}
 }
 
-void AnimationTrackEditor::_timeline_value_changed(double) {
+void AnimationTrackEditor::_timeline_value_changed(double)
+{
 	timeline->update_play_position();
 
 	_redraw_tracks();
@@ -5986,7 +6716,8 @@ void AnimationTrackEditor::_timeline_value_changed(double) {
 	marker_edit->update_play_position();
 }
 
-int AnimationTrackEditor::_get_track_selected() {
+int AnimationTrackEditor::_get_track_selected()
+{
 	for (int i = 0; i < track_edits.size(); i++) {
 		if (track_edits[i]->has_focus()) {
 			return track_edits[i]->get_track();
@@ -5996,7 +6727,8 @@ int AnimationTrackEditor::_get_track_selected() {
 	return -1;
 }
 
-void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
+void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track)
+{
 	if (read_only) {
 		popup_read_only_dialog();
 		return;
@@ -6010,9 +6742,10 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 
 	resolve_insertion_offset(p_ofs);
 
-	Node *node = root->get_node_or_null(animation->track_get_path(p_track));
+	Node* node = root->get_node_or_null(animation->track_get_path(p_track));
 	if (!node) {
-		EditorNode::get_singleton()->show_warning(TTR("Track path is invalid, so can't add a key."));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Track path is invalid, so can't add a key."));
 		return;
 	}
 
@@ -6030,104 +6763,113 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 	id.advance = false;
 	id.track_idx = p_track;
 	id.type = animation->track_get_type(p_track);
-	// TRANSLATORS: This describes the target of new animation track, will be inserted into another string.
+	// TRANSLATORS: This describes the target of new animation track, will be inserted into another
+	// string.
 	id.query = vformat(TTR("node '%s'"), node->get_name());
 	id.time = p_ofs;
 	// id.value is filled in each case handled below.
 
 	switch (animation->track_get_type(p_track)) {
-		case Animation::TYPE_POSITION_3D: {
-			Node3D *base = Object::cast_to<Node3D>(node);
+	case Animation::TYPE_POSITION_3D: {
+		Node3D* base = Object::cast_to<Node3D>(node);
 
-			if (!base) {
-				EditorNode::get_singleton()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
-				return;
-			}
-
-			id.value = base->get_position();
-		} break;
-		case Animation::TYPE_ROTATION_3D: {
-			Node3D *base = Object::cast_to<Node3D>(node);
-
-			if (!base) {
-				EditorNode::get_singleton()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
-				return;
-			}
-
-			id.value = base->get_transform().basis.operator Quaternion();
-		} break;
-		case Animation::TYPE_SCALE_3D: {
-			Node3D *base = Object::cast_to<Node3D>(node);
-
-			if (!base) {
-				EditorNode::get_singleton()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
-				return;
-			}
-
-			id.value = base->get_scale();
-		} break;
-		case Animation::TYPE_BLEND_SHAPE: {
-			MeshInstance3D *base = Object::cast_to<MeshInstance3D>(node);
-
-			if (!base) {
-				EditorNode::get_singleton()->show_warning(TTR("Track is not of type MeshInstance3D, can't insert key"));
-				return;
-			}
-
-			id.value = base->get_blend_shape_value(base->find_blend_shape_by_name(id.path.get_subname(0)));
-		} break;
-		case Animation::TYPE_VALUE: {
-			NodePath bp;
-			_find_hint_for_track(p_track, bp, &id.value);
-		} break;
-		case Animation::TYPE_METHOD: {
-			Node *base = root->get_node_or_null(animation->track_get_path(p_track));
-			ERR_FAIL_NULL(base);
-
-			method_selector->select_method_from_instance(base);
-
-			insert_key_from_track_call_ofs = p_ofs;
-			insert_key_from_track_call_track = p_track;
-
-		} break;
-		case Animation::TYPE_BEZIER: {
-			NodePath bp;
-			Variant value;
-			_find_hint_for_track(p_track, bp, &value);
-			id.value = animation->make_default_bezier_key(value);
-		} break;
-		case Animation::TYPE_AUDIO: {
-			Dictionary ak;
-			ak["stream"] = Ref<Resource>();
-			ak["start_offset"] = 0;
-			ak["end_offset"] = 0;
-
-			id.value = ak;
-		} break;
-		case Animation::TYPE_ANIMATION: {
-			id.value = StringName("[stop]");
-		} break;
-		default: {
-			// All track types should be handled by now.
-			DEV_ASSERT(false);
+		if (!base) {
+			EditorNode::get_singleton()->show_warning(
+				TTR("Track is not of type Node3D, can't insert key"));
+			return;
 		}
+
+		id.value = base->get_position();
+	} break;
+	case Animation::TYPE_ROTATION_3D: {
+		Node3D* base = Object::cast_to<Node3D>(node);
+
+		if (!base) {
+			EditorNode::get_singleton()->show_warning(
+				TTR("Track is not of type Node3D, can't insert key"));
+			return;
+		}
+
+		id.value = base->get_transform().basis.operator Quaternion();
+	} break;
+	case Animation::TYPE_SCALE_3D: {
+		Node3D* base = Object::cast_to<Node3D>(node);
+
+		if (!base) {
+			EditorNode::get_singleton()->show_warning(
+				TTR("Track is not of type Node3D, can't insert key"));
+			return;
+		}
+
+		id.value = base->get_scale();
+	} break;
+	case Animation::TYPE_BLEND_SHAPE: {
+		MeshInstance3D* base = Object::cast_to<MeshInstance3D>(node);
+
+		if (!base) {
+			EditorNode::get_singleton()->show_warning(
+				TTR("Track is not of type MeshInstance3D, can't insert key"));
+			return;
+		}
+
+		id.value =
+			base->get_blend_shape_value(base->find_blend_shape_by_name(id.path.get_subname(0)));
+	} break;
+	case Animation::TYPE_VALUE: {
+		NodePath bp;
+		_find_hint_for_track(p_track, bp, &id.value);
+	} break;
+	case Animation::TYPE_METHOD: {
+		Node* base = root->get_node_or_null(animation->track_get_path(p_track));
+		ERR_FAIL_NULL(base);
+
+		method_selector->select_method_from_instance(base);
+
+		insert_key_from_track_call_ofs = p_ofs;
+		insert_key_from_track_call_track = p_track;
+
+	} break;
+	case Animation::TYPE_BEZIER: {
+		NodePath bp;
+		Variant value;
+		_find_hint_for_track(p_track, bp, &value);
+		id.value = animation->make_default_bezier_key(value);
+	} break;
+	case Animation::TYPE_AUDIO: {
+		Dictionary ak;
+		ak["stream"] = Ref<Resource>();
+		ak["start_offset"] = 0;
+		ak["end_offset"] = 0;
+
+		id.value = ak;
+	} break;
+	case Animation::TYPE_ANIMATION: {
+		id.value = StringName("[stop]");
+	} break;
+	default: {
+		// All track types should be handled by now.
+		DEV_ASSERT(false);
+	}
 	}
 
 	_query_insert(id);
 }
 
-void AnimationTrackEditor::_add_method_key(const String &p_method) {
+void AnimationTrackEditor::_add_method_key(const String& p_method)
+{
 	if (!root->has_node(animation->track_get_path(insert_key_from_track_call_track))) {
-		EditorNode::get_singleton()->show_warning(TTR("Track path is invalid, so can't add a method key."));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Track path is invalid, so can't add a method key."));
 		return;
 	}
-	Node *base = root->get_node_or_null(animation->track_get_path(insert_key_from_track_call_track));
+	Node* base =
+		root->get_node_or_null(animation->track_get_path(insert_key_from_track_call_track));
 	ERR_FAIL_NULL(base);
 
 	List<MethodInfo> minfo;
 	base->get_method_list(&minfo);
 
-	for (const MethodInfo &E : minfo) {
+	for (const MethodInfo& E : minfo) {
 		if (E.name == p_method) {
 			Dictionary d;
 			d["method"] = p_method;
@@ -6138,7 +6880,8 @@ void AnimationTrackEditor::_add_method_key(const String &p_method) {
 				if (i >= first_defarg) {
 					Variant arg = E.default_arguments[i - first_defarg];
 					params.push_back(arg);
-				} else {
+				}
+				else {
 					Callable::CallError ce;
 					Variant arg;
 					Variant::construct(E.arguments[i].type, arg, nullptr, 0, ce);
@@ -6147,11 +6890,13 @@ void AnimationTrackEditor::_add_method_key(const String &p_method) {
 			}
 			d["args"] = params;
 
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+			EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->create_action(TTR("Add Method Track Key"));
-			undo_redo->add_do_method(animation.ptr(), "track_insert_key", insert_key_from_track_call_track, insert_key_from_track_call_ofs, d);
+			undo_redo->add_do_method(animation.ptr(), "track_insert_key",
+				insert_key_from_track_call_track, insert_key_from_track_call_ofs, d);
 			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", insert_key_from_track_call_track, insert_key_from_track_call_ofs);
+			undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time",
+				insert_key_from_track_call_track, insert_key_from_track_call_ofs);
 			undo_redo->commit_action();
 
 			return;
@@ -6161,7 +6906,8 @@ void AnimationTrackEditor::_add_method_key(const String &p_method) {
 	EditorNode::get_singleton()->show_warning(TTR("Method not found in object:") + " " + p_method);
 }
 
-void AnimationTrackEditor::_key_selected(int p_key, bool p_single, int p_track) {
+void AnimationTrackEditor::_key_selected(int p_key, bool p_single, int p_track)
+{
 	ERR_FAIL_INDEX(p_track, animation->get_track_count());
 	ERR_FAIL_INDEX(p_key, animation->track_get_key_count(p_track));
 
@@ -6183,7 +6929,8 @@ void AnimationTrackEditor::_key_selected(int p_key, bool p_single, int p_track) 
 	marker_edit->_clear_selection(marker_edit->is_selection_active());
 }
 
-void AnimationTrackEditor::_key_deselected(int p_key, int p_track) {
+void AnimationTrackEditor::_key_deselected(int p_key, int p_track)
+{
 	ERR_FAIL_INDEX(p_track, animation->get_track_count());
 	ERR_FAIL_INDEX(p_key, animation->track_get_key_count(p_track));
 
@@ -6197,28 +6944,33 @@ void AnimationTrackEditor::_key_deselected(int p_key, int p_track) {
 	_update_key_edit();
 }
 
-void AnimationTrackEditor::_move_selection_begin() {
+void AnimationTrackEditor::_move_selection_begin()
+{
 	moving_selection = true;
 	moving_selection_offset = 0;
 }
 
-void AnimationTrackEditor::_move_selection(float p_offset) {
+void AnimationTrackEditor::_move_selection(float p_offset)
+{
 	moving_selection_offset = p_offset;
 	_redraw_tracks();
 }
 
-struct _AnimMoveRestore {
+struct _AnimMoveRestore
+{
 	int track = 0;
 	float time = 0;
 	Variant key;
 	float transition = 0;
 };
+
 // Used for undo/redo.
 
-void AnimationTrackEditor::_clear_key_edit() {
+void AnimationTrackEditor::_clear_key_edit()
+{
 	if (key_edit) {
 		// If key edit is the object being inspected, remove it first.
-		if (InspectorDock::get_inspector_singleton()->get_edited_object() == key_edit) {
+		if (InspectorDock::get_inspector_singleton()->get_edited_object() == key_edit->obj.get()) {
 			EditorNode::get_singleton()->push_item(nullptr);
 		}
 
@@ -6228,7 +6980,8 @@ void AnimationTrackEditor::_clear_key_edit() {
 	}
 
 	if (multi_key_edit) {
-		if (InspectorDock::get_inspector_singleton()->get_edited_object() == multi_key_edit) {
+		if (InspectorDock::get_inspector_singleton()->get_edited_object() ==
+			multi_key_edit->obj.get()) {
 			EditorNode::get_singleton()->push_item(nullptr);
 		}
 
@@ -6237,7 +6990,8 @@ void AnimationTrackEditor::_clear_key_edit() {
 	}
 }
 
-void AnimationTrackEditor::_clear_selection(bool p_update) {
+void AnimationTrackEditor::_clear_selection(bool p_update)
+{
 	selection.clear();
 
 	if (p_update) {
@@ -6247,7 +7001,8 @@ void AnimationTrackEditor::_clear_selection(bool p_update) {
 	_clear_key_edit();
 }
 
-void AnimationTrackEditor::_update_key_edit() {
+void AnimationTrackEditor::_update_key_edit()
+{
 	_clear_key_edit();
 	if (animation.is_null()) {
 		return;
@@ -6274,8 +7029,9 @@ void AnimationTrackEditor::_update_key_edit() {
 		key_edit->hint = _find_hint_for_track(key_edit->track, np);
 		key_edit->base = np;
 
-		EditorNode::get_singleton()->push_item(key_edit);
-	} else if (selection.size() > 1) {
+		EditorNode::get_singleton()->push_item(key_edit->obj.get());
+	}
+	else if (selection.size() > 1) {
 		multi_key_edit = memnew(AnimationMultiTrackKeyEdit);
 		multi_key_edit->animation = animation;
 		multi_key_edit->animation_read_only = read_only;
@@ -6284,7 +7040,7 @@ void AnimationTrackEditor::_update_key_edit() {
 		RBMap<int, List<float>> key_ofs_map;
 		RBMap<int, NodePath> base_map;
 		int first_track = -1;
-		for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
+		for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
 			int track = E.key.track;
 			if (first_track < 0) {
 				first_track = track;
@@ -6308,11 +7064,12 @@ void AnimationTrackEditor::_update_key_edit() {
 		multi_key_edit->use_fps = timeline->is_using_fps();
 		multi_key_edit->root_path = root;
 
-		EditorNode::get_singleton()->push_item(multi_key_edit);
+		EditorNode::get_singleton()->push_item(multi_key_edit->obj.get());
 	}
 }
 
-void AnimationTrackEditor::_clear_selection_for_anim(const Ref<Animation> &p_anim) {
+void AnimationTrackEditor::_clear_selection_for_anim(const Ref<Animation>& p_anim)
+{
 	if (animation != p_anim) {
 		return;
 	}
@@ -6320,7 +7077,8 @@ void AnimationTrackEditor::_clear_selection_for_anim(const Ref<Animation> &p_ani
 	_clear_selection();
 }
 
-void AnimationTrackEditor::_select_at_anim(const Ref<Animation> &p_anim, int p_track, float p_pos) {
+void AnimationTrackEditor::_select_at_anim(const Ref<Animation>& p_anim, int p_track, float p_pos)
+{
 	if (animation != p_anim) {
 		return;
 	}
@@ -6340,19 +7098,20 @@ void AnimationTrackEditor::_select_at_anim(const Ref<Animation> &p_anim, int p_t
 	marker_edit->_clear_selection(marker_edit->is_selection_active());
 }
 
-void AnimationTrackEditor::_move_selection_commit() {
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+void AnimationTrackEditor::_move_selection_commit()
+{
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Animation Move Keys"));
 
 	List<_AnimMoveRestore> to_restore;
 
 	float motion = moving_selection_offset;
 	// 1 - remove the keys.
-	for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
+	for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
 		undo_redo->add_do_method(animation.ptr(), "track_remove_key", E->key().track, E->key().key);
 	}
 	// 2 - Remove overlapped keys.
-	for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
+	for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
 		float newtime = E->get().pos + motion;
 		int idx = animation->track_find_key(E->key().track, newtime, Animation::FIND_MODE_APPROX);
 		if (idx == -1) {
@@ -6365,7 +7124,8 @@ void AnimationTrackEditor::_move_selection_commit() {
 			continue; // Already in selection, don't save.
 		}
 
-		undo_redo->add_do_method(animation.ptr(), "track_remove_key_at_time", E->key().track, newtime);
+		undo_redo->add_do_method(
+			animation.ptr(), "track_remove_key_at_time", E->key().track, newtime);
 		_AnimMoveRestore amr;
 
 		amr.key = animation->track_get_key_value(E->key().track, idx);
@@ -6377,32 +7137,38 @@ void AnimationTrackEditor::_move_selection_commit() {
 	}
 
 	// 3 - Move the keys (Reinsert them).
-	for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
+	for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
 		float newpos = E->get().pos + motion;
-		undo_redo->add_do_method(animation.ptr(), "track_insert_key", E->key().track, newpos, animation->track_get_key_value(E->key().track, E->key().key), animation->track_get_key_transition(E->key().track, E->key().key));
+		undo_redo->add_do_method(animation.ptr(), "track_insert_key", E->key().track, newpos,
+			animation->track_get_key_value(E->key().track, E->key().key),
+			animation->track_get_key_transition(E->key().track, E->key().key));
 	}
 
 	// 4 - (Undo) Remove inserted keys.
-	for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
+	for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
 		float newpos = E->get().pos + motion;
-		undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", E->key().track, newpos);
+		undo_redo->add_undo_method(
+			animation.ptr(), "track_remove_key_at_time", E->key().track, newpos);
 	}
 
 	// 5 - (Undo) Reinsert keys.
-	for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-		undo_redo->add_undo_method(animation.ptr(), "track_insert_key", E->key().track, E->get().pos, animation->track_get_key_value(E->key().track, E->key().key), animation->track_get_key_transition(E->key().track, E->key().key));
+	for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+		undo_redo->add_undo_method(animation.ptr(), "track_insert_key", E->key().track,
+			E->get().pos, animation->track_get_key_value(E->key().track, E->key().key),
+			animation->track_get_key_transition(E->key().track, E->key().key));
 	}
 
 	// 6 - (Undo) Reinsert overlapped keys.
-	for (_AnimMoveRestore &amr : to_restore) {
-		undo_redo->add_undo_method(animation.ptr(), "track_insert_key", amr.track, amr.time, amr.key, amr.transition);
+	for (_AnimMoveRestore& amr : to_restore) {
+		undo_redo->add_undo_method(
+			animation.ptr(), "track_insert_key", amr.track, amr.time, amr.key, amr.transition);
 	}
 
 	undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
 	undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
 
 	// 7 - Reselect.
-	for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
+	for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
 		float oldpos = E->get().pos;
 		float newpos = oldpos + motion;
 
@@ -6415,7 +7181,7 @@ void AnimationTrackEditor::_move_selection_commit() {
 	undo_redo->add_undo_method(this, "_redraw_tracks");
 
 	// Update key frame.
-	AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+	AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 	if (ape) {
 		undo_redo->add_do_method(ape, "_animation_update_key_frame");
 		undo_redo->add_undo_method(ape, "_animation_update_key_frame");
@@ -6424,26 +7190,28 @@ void AnimationTrackEditor::_move_selection_commit() {
 	undo_redo->commit_action();
 }
 
-void AnimationTrackEditor::_move_selection_cancel() {
+void AnimationTrackEditor::_move_selection_cancel()
+{
 	moving_selection = false;
 	_redraw_tracks();
 }
 
-bool AnimationTrackEditor::is_moving_selection() const {
-	return moving_selection;
-}
+bool AnimationTrackEditor::is_moving_selection() const { return moving_selection; }
 
-float AnimationTrackEditor::get_moving_selection_offset() const {
-	return moving_selection_offset;
-}
+float AnimationTrackEditor::get_moving_selection_offset() const { return moving_selection_offset; }
 
-void AnimationTrackEditor::_box_selection_draw() {
+void AnimationTrackEditor::_box_selection_draw()
+{
 	const Rect2 selection_rect = Rect2(Point2(), box_selection->get_size());
-	box_selection->draw_rect(selection_rect, get_theme_color(SNAME("box_selection_fill_color"), EditorStringName(Editor)));
-	box_selection->draw_rect(selection_rect, get_theme_color(SNAME("box_selection_stroke_color"), EditorStringName(Editor)), false, Math::round(EDSCALE));
+	box_selection->draw_rect(selection_rect,
+		get_theme_color(SNAME("box_selection_fill_color"), EditorStringName(Editor)));
+	box_selection->draw_rect(selection_rect,
+		get_theme_color(SNAME("box_selection_stroke_color"), EditorStringName(Editor)), false,
+		Math::round(EDSCALE));
 }
 
-void AnimationTrackEditor::_scroll_input(const Ref<InputEvent> &p_event) {
+void AnimationTrackEditor::_scroll_input(const Ref<InputEvent>& p_event)
+{
 	if (!box_selecting) {
 		if (panner->gui_input(p_event, scroll->get_global_rect())) {
 			scroll->accept_event();
@@ -6458,7 +7226,8 @@ void AnimationTrackEditor::_scroll_input(const Ref<InputEvent> &p_event) {
 			box_selecting = true;
 			box_selecting_from = scroll->get_global_transform().xform(mb->get_position());
 			box_select_rect = Rect2();
-		} else if (box_selecting) {
+		}
+		else if (box_selecting) {
 			if (box_selection->is_visible_in_tree()) {
 				// Only if moved.
 				for (int i = 0; i < track_edits.size(); i++) {
@@ -6467,13 +7236,16 @@ void AnimationTrackEditor::_scroll_input(const Ref<InputEvent> &p_event) {
 					}
 					Rect2 local_rect = box_select_rect;
 					local_rect.position -= track_edits[i]->get_global_position();
-					track_edits[i]->append_to_selection(local_rect, mb->is_command_or_control_pressed());
+					track_edits[i]->append_to_selection(
+						local_rect, mb->is_command_or_control_pressed());
 				}
 
-				if (_get_track_selected() == -1 && track_edits.size() > 0) { // Minimal hack to make shortcuts work.
+				if (_get_track_selected() == -1 &&
+					track_edits.size() > 0) { // Minimal hack to make shortcuts work.
 					track_edits[track_edits.size() - 1]->grab_focus();
 				}
-			} else if (!mb->is_command_or_control_pressed() && !mb->is_shift_pressed()) {
+			}
+			else if (!mb->is_command_or_control_pressed() && !mb->is_shift_pressed()) {
 				_clear_selection(true); // Clear it.
 			}
 
@@ -6518,10 +7290,12 @@ void AnimationTrackEditor::_scroll_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-void AnimationTrackEditor::_toggle_bezier_edit() {
+void AnimationTrackEditor::_toggle_bezier_edit()
+{
 	if (bezier_mc->is_visible()) {
 		_cancel_bezier_edit();
-	} else {
+	}
+	else {
 		int track_count = animation->get_track_count();
 		for (int i = 0; i < track_count; ++i) {
 			if (animation->track_get_type(i) == Animation::TrackType::TYPE_BEZIER) {
@@ -6532,7 +7306,8 @@ void AnimationTrackEditor::_toggle_bezier_edit() {
 	}
 }
 
-void AnimationTrackEditor::_scroll_changed(const Vector2 &p_val) {
+void AnimationTrackEditor::_scroll_changed(const Vector2& p_val)
+{
 	if (box_selecting) {
 		const Vector2 scroll_difference = p_val - prev_scroll_position;
 
@@ -6557,33 +7332,41 @@ void AnimationTrackEditor::_scroll_changed(const Vector2 &p_val) {
 	prev_scroll_position = p_val;
 }
 
-void AnimationTrackEditor::_v_scroll_changed(float p_val) {
+void AnimationTrackEditor::_v_scroll_changed(float p_val)
+{
 	_scroll_changed(Vector2(prev_scroll_position.x, p_val));
 }
 
-void AnimationTrackEditor::_h_scroll_changed(float p_val) {
+void AnimationTrackEditor::_h_scroll_changed(float p_val)
+{
 	_scroll_changed(Vector2(p_val, prev_scroll_position.y));
 }
 
-void AnimationTrackEditor::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event) {
+void AnimationTrackEditor::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event)
+{
 	Ref<InputEventWithModifiers> iewm = p_event;
 	if (iewm.is_valid() && iewm->is_alt_pressed()) {
 		if (p_scroll_vec.x < 0 || p_scroll_vec.y < 0) {
 			goto_prev_step(true);
-		} else {
+		}
+		else {
 			goto_next_step(true);
 		}
-	} else {
+	}
+	else {
 		timeline->set_value(timeline->get_value() - p_scroll_vec.x / timeline->get_zoom_scale());
 		scroll->set_v_scroll(scroll->get_v_scroll() - p_scroll_vec.y);
 	}
 }
 
-void AnimationTrackEditor::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event) {
+void AnimationTrackEditor::_zoom_callback(
+	float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event)
+{
 	timeline->_zoom_callback(p_zoom_factor, p_origin, p_event);
 }
 
-void AnimationTrackEditor::_cancel_bezier_edit() {
+void AnimationTrackEditor::_cancel_bezier_edit()
+{
 	bezier_mc->hide();
 	box_selection_container->show();
 	bezier_edit_icon->set_pressed(false);
@@ -6591,7 +7374,8 @@ void AnimationTrackEditor::_cancel_bezier_edit() {
 	auto_fit_bezier->hide();
 }
 
-void AnimationTrackEditor::_bezier_edit(int p_for_track) {
+void AnimationTrackEditor::_bezier_edit(int p_for_track)
+{
 	_clear_selection(); // Bezier probably wants to use a separate selection mode.
 	bezier_edit->set_root(root);
 	bezier_edit->set_animation_and_track(animation, p_for_track, read_only);
@@ -6602,24 +7386,29 @@ void AnimationTrackEditor::_bezier_edit(int p_for_track) {
 	// Search everything within the track and curve - edit it.
 }
 
-void AnimationTrackEditor::_bezier_track_set_key_handle_mode(Animation *p_anim, int p_track, int p_index, Animation::HandleMode p_mode, Animation::HandleSetMode p_set_mode) {
+void AnimationTrackEditor::_bezier_track_set_key_handle_mode(Animation* p_anim, int p_track,
+	int p_index, Animation::HandleMode p_mode, Animation::HandleSetMode p_set_mode)
+{
 	ERR_FAIL_NULL(p_anim);
 	p_anim->bezier_track_set_key_handle_mode(p_track, p_index, p_mode, p_set_mode);
 }
 
-void AnimationTrackEditor::_bezier_track_set_key_handle_mode_at_time(Animation *p_anim, int p_track, float p_time, Animation::HandleMode p_mode, Animation::HandleSetMode p_set_mode) {
+void AnimationTrackEditor::_bezier_track_set_key_handle_mode_at_time(Animation* p_anim, int p_track,
+	float p_time, Animation::HandleMode p_mode, Animation::HandleSetMode p_set_mode)
+{
 	ERR_FAIL_NULL(p_anim);
 	int index = p_anim->track_find_key(p_track, p_time, Animation::FIND_MODE_APPROX);
 	ERR_FAIL_COND(index < 0);
 	_bezier_track_set_key_handle_mode(p_anim, p_track, index, p_mode, p_set_mode);
 }
 
-void AnimationTrackEditor::_anim_duplicate_keys(float p_ofs, bool p_ofs_valid, int p_track) {
+void AnimationTrackEditor::_anim_duplicate_keys(float p_ofs, bool p_ofs_valid, int p_track)
+{
 	if (selection.size() && animation.is_valid()) {
 		int top_track = 0x7FFFFFFF;
 		float top_time = 1e10;
-		for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-			const SelectedKey &sk = E->key();
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			const SelectedKey& sk = E->key();
 
 			float t = animation->track_get_key_time(sk.track, sk.key);
 			if (t < top_time) {
@@ -6633,14 +7422,15 @@ void AnimationTrackEditor::_anim_duplicate_keys(float p_ofs, bool p_ofs_valid, i
 
 		int start_track = p_track;
 		if (p_track == -1) { // Duplicating from shortcut or Edit menu.
-			bool is_valid_track_selected = _get_track_selected() >= 0 && _get_track_selected() < animation->get_track_count();
+			bool is_valid_track_selected =
+				_get_track_selected() >= 0 && _get_track_selected() < animation->get_track_count();
 			start_track = is_valid_track_selected ? _get_track_selected() : top_track;
 		}
 
 		bool all_compatible = true;
 
-		for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-			const SelectedKey &sk = E->key();
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			const SelectedKey& sk = E->key();
 			int dst_track = sk.track + (start_track - top_track);
 
 			if (dst_track < 0 || dst_track >= animation->get_track_count()) {
@@ -6656,15 +7446,16 @@ void AnimationTrackEditor::_anim_duplicate_keys(float p_ofs, bool p_ofs_valid, i
 			}
 		}
 
-		ERR_FAIL_COND_MSG(!all_compatible, "Duplicate failed: Not all animation keys were compatible with their target tracks");
+		ERR_FAIL_COND_MSG(!all_compatible,
+			"Duplicate failed: Not all animation keys were compatible with their target tracks");
 
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Animation Duplicate Keys"));
 
 		List<Pair<int, float>> new_selection_values;
 
-		for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-			const SelectedKey &sk = E->key();
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			const SelectedKey& sk = E->key();
 
 			float t = animation->track_get_key_time(sk.track, sk.key);
 			float insert_pos = p_ofs_valid ? p_ofs : timeline->get_play_position();
@@ -6682,19 +7473,23 @@ void AnimationTrackEditor::_anim_duplicate_keys(float p_ofs, bool p_ofs_valid, i
 				continue;
 			}
 
-			int existing_idx = animation->track_find_key(dst_track, dst_time, Animation::FIND_MODE_APPROX);
+			int existing_idx =
+				animation->track_find_key(dst_track, dst_time, Animation::FIND_MODE_APPROX);
 
 			Variant value = animation->track_get_key_value(sk.track, sk.key);
 			bool key_is_bezier = animation->track_get_type(sk.track) == Animation::TYPE_BEZIER;
 			bool track_is_bezier = animation->track_get_type(dst_track) == Animation::TYPE_BEZIER;
 			if (key_is_bezier && !track_is_bezier) {
 				value = AnimationBezierTrackEdit::get_bezier_key_value(value);
-			} else if (!key_is_bezier && track_is_bezier) {
+			}
+			else if (!key_is_bezier && track_is_bezier) {
 				value = animation->make_default_bezier_key(value);
 			}
 
-			undo_redo->add_do_method(animation.ptr(), "track_insert_key", dst_track, dst_time, value, animation->track_get_key_transition(E->key().track, E->key().key));
-			undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", dst_track, dst_time);
+			undo_redo->add_do_method(animation.ptr(), "track_insert_key", dst_track, dst_time,
+				value, animation->track_get_key_transition(E->key().track, E->key().key));
+			undo_redo->add_undo_method(
+				animation.ptr(), "track_remove_key_at_time", dst_track, dst_time);
 
 			Pair<int, float> p;
 			p.first = dst_track;
@@ -6702,7 +7497,9 @@ void AnimationTrackEditor::_anim_duplicate_keys(float p_ofs, bool p_ofs_valid, i
 			new_selection_values.push_back(p);
 
 			if (existing_idx != -1) {
-				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", dst_track, dst_time, animation->track_get_key_value(dst_track, existing_idx), animation->track_get_key_transition(dst_track, existing_idx));
+				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", dst_track, dst_time,
+					animation->track_get_key_value(dst_track, existing_idx),
+					animation->track_get_key_transition(dst_track, existing_idx));
 			}
 		}
 
@@ -6710,11 +7507,12 @@ void AnimationTrackEditor::_anim_duplicate_keys(float p_ofs, bool p_ofs_valid, i
 		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
 
 		// Reselect duplicated.
-		for (const Pair<int, float> &E : new_selection_values) {
+		for (const Pair<int, float>& E : new_selection_values) {
 			undo_redo->add_do_method(this, "_select_at_anim", animation, E.first, E.second);
 		}
-		for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-			undo_redo->add_undo_method(this, "_select_at_anim", animation, E->key().track, E->get().pos);
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			undo_redo->add_undo_method(
+				this, "_select_at_anim", animation, E->key().track, E->get().pos);
 		}
 
 		undo_redo->add_do_method(this, "_redraw_tracks");
@@ -6723,13 +7521,14 @@ void AnimationTrackEditor::_anim_duplicate_keys(float p_ofs, bool p_ofs_valid, i
 	}
 }
 
-void AnimationTrackEditor::_anim_copy_keys(bool p_cut) {
+void AnimationTrackEditor::_anim_copy_keys(bool p_cut)
+{
 	if (is_selection_active() && animation.is_valid()) {
 		int top_track = 0x7FFFFFFF;
 		float top_time = 1e10;
 
-		for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-			const SelectedKey &sk = E->key();
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			const SelectedKey& sk = E->key();
 
 			float t = animation->track_get_key_time(sk.track, sk.key);
 			if (t < top_time) {
@@ -6745,29 +7544,36 @@ void AnimationTrackEditor::_anim_copy_keys(bool p_cut) {
 		_set_key_clipboard(top_track, top_time, selection);
 
 		if (p_cut) {
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Animation Cut Keys"), UndoRedo::MERGE_DISABLE, animation.ptr());
+			EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+			undo_redo->create_action(
+				TTR("Animation Cut Keys"), UndoRedo::MERGE_DISABLE, animation.ptr());
 			undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
 			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
-			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
+			for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
 				int track_idx = E->key().track;
 				int key_idx = E->key().key;
 				float time = E->value().pos;
-				undo_redo->add_do_method(animation.ptr(), "track_remove_key_at_time", track_idx, time);
-				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", track_idx, time, animation->track_get_key_value(track_idx, key_idx), animation->track_get_key_transition(track_idx, key_idx));
+				undo_redo->add_do_method(
+					animation.ptr(), "track_remove_key_at_time", track_idx, time);
+				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", track_idx, time,
+					animation->track_get_key_value(track_idx, key_idx),
+					animation->track_get_key_transition(track_idx, key_idx));
 			}
-			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-				undo_redo->add_undo_method(this, "_select_at_anim", animation, E->key().track, E->value().pos);
+			for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+				undo_redo->add_undo_method(
+					this, "_select_at_anim", animation, E->key().track, E->value().pos);
 			}
 			undo_redo->commit_action();
 		}
 	}
 }
 
-void AnimationTrackEditor::_set_key_clipboard(int p_top_track, float p_top_time, RBMap<SelectedKey, KeyInfo> &p_keys) {
+void AnimationTrackEditor::_set_key_clipboard(
+	int p_top_track, float p_top_time, RBMap<SelectedKey, KeyInfo>& p_keys)
+{
 	key_clipboard.keys.clear();
 	key_clipboard.top_track = p_top_track;
-	for (RBMap<SelectedKey, KeyInfo>::Element *E = p_keys.back(); E; E = E->prev()) {
+	for (RBMap<SelectedKey, KeyInfo>::Element* E = p_keys.back(); E; E = E->prev()) {
 		KeyClipboard::Key k;
 		k.value = animation->track_get_key_value(E->key().track, E->key().key);
 		k.transition = animation->track_get_key_transition(E->key().track, E->key().key);
@@ -6779,11 +7585,13 @@ void AnimationTrackEditor::_set_key_clipboard(int p_top_track, float p_top_time,
 	}
 }
 
-void AnimationTrackEditor::_anim_paste_keys(float p_ofs, bool p_ofs_valid, int p_track) {
+void AnimationTrackEditor::_anim_paste_keys(float p_ofs, bool p_ofs_valid, int p_track)
+{
 	if (is_key_clipboard_active() && animation.is_valid()) {
 		int start_track = p_track;
 		if (p_track == -1) { // Pasting from shortcut or Edit menu.
-			bool is_valid_track_selected = _get_track_selected() >= 0 && _get_track_selected() < animation->get_track_count();
+			bool is_valid_track_selected =
+				_get_track_selected() >= 0 && _get_track_selected() < animation->get_track_count();
 			start_track = is_valid_track_selected ? _get_track_selected() : key_clipboard.top_track;
 		}
 
@@ -6805,9 +7613,10 @@ void AnimationTrackEditor::_anim_paste_keys(float p_ofs, bool p_ofs_valid, int p
 			}
 		}
 
-		ERR_FAIL_COND_MSG(!all_compatible, "Paste failed: Not all animation keys were compatible with their target tracks");
+		ERR_FAIL_COND_MSG(!all_compatible,
+			"Paste failed: Not all animation keys were compatible with their target tracks");
 
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Animation Paste Keys"));
 		List<Pair<int, float>> new_selection_values;
 
@@ -6825,19 +7634,23 @@ void AnimationTrackEditor::_anim_paste_keys(float p_ofs, bool p_ofs_valid, int p
 			float dst_time = key.time + insert_pos;
 			int dst_track = key.track + start_track;
 
-			int existing_idx = animation->track_find_key(dst_track, dst_time, Animation::FIND_MODE_APPROX);
+			int existing_idx =
+				animation->track_find_key(dst_track, dst_time, Animation::FIND_MODE_APPROX);
 
 			Variant value = key.value;
 			bool key_is_bezier = key.track_type == Animation::TYPE_BEZIER;
 			bool track_is_bezier = animation->track_get_type(dst_track) == Animation::TYPE_BEZIER;
 			if (key_is_bezier && !track_is_bezier) {
 				value = AnimationBezierTrackEdit::get_bezier_key_value(value);
-			} else if (!key_is_bezier && track_is_bezier) {
+			}
+			else if (!key_is_bezier && track_is_bezier) {
 				value = animation->make_default_bezier_key(value);
 			}
 
-			undo_redo->add_do_method(animation.ptr(), "track_insert_key", dst_track, dst_time, value, key.transition);
-			undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", dst_track, dst_time);
+			undo_redo->add_do_method(
+				animation.ptr(), "track_insert_key", dst_track, dst_time, value, key.transition);
+			undo_redo->add_undo_method(
+				animation.ptr(), "track_remove_key_at_time", dst_track, dst_time);
 
 			Pair<int, float> p;
 			p.first = dst_track;
@@ -6845,7 +7658,9 @@ void AnimationTrackEditor::_anim_paste_keys(float p_ofs, bool p_ofs_valid, int p
 			new_selection_values.push_back(p);
 
 			if (existing_idx != -1) {
-				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", dst_track, dst_time, animation->track_get_key_value(dst_track, existing_idx), animation->track_get_key_transition(dst_track, existing_idx));
+				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", dst_track, dst_time,
+					animation->track_get_key_value(dst_track, existing_idx),
+					animation->track_get_key_transition(dst_track, existing_idx));
 			}
 		}
 
@@ -6853,11 +7668,12 @@ void AnimationTrackEditor::_anim_paste_keys(float p_ofs, bool p_ofs_valid, int p
 		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
 
 		// Reselect pasted.
-		for (const Pair<int, float> &E : new_selection_values) {
+		for (const Pair<int, float>& E : new_selection_values) {
 			undo_redo->add_do_method(this, "_select_at_anim", animation, E.first, E.second);
 		}
-		for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-			undo_redo->add_undo_method(this, "_select_at_anim", animation, E->key().track, E->get().pos);
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			undo_redo->add_undo_method(
+				this, "_select_at_anim", animation, E->key().track, E->get().pos);
 		}
 
 		undo_redo->add_do_method(this, "_redraw_tracks");
@@ -6866,83 +7682,95 @@ void AnimationTrackEditor::_anim_paste_keys(float p_ofs, bool p_ofs_valid, int p
 	}
 }
 
-bool AnimationTrackEditor::_is_track_compatible(int p_target_track_idx, Variant::Type p_source_value_type, Animation::TrackType p_source_track_type) {
+bool AnimationTrackEditor::_is_track_compatible(int p_target_track_idx,
+	Variant::Type p_source_value_type, Animation::TrackType p_source_track_type)
+{
 	if (animation.is_valid()) {
 		Animation::TrackType target_track_type = animation->track_get_type(p_target_track_idx);
 		bool track_types_equal = target_track_type == p_source_track_type;
-		bool is_source_vector3_type = p_source_track_type == Animation::TYPE_POSITION_3D || p_source_track_type == Animation::TYPE_SCALE_3D || p_source_track_type == Animation::TYPE_ROTATION_3D;
+		bool is_source_vector3_type = p_source_track_type == Animation::TYPE_POSITION_3D ||
+									  p_source_track_type == Animation::TYPE_SCALE_3D ||
+									  p_source_track_type == Animation::TYPE_ROTATION_3D;
 		bool is_source_bezier = p_source_track_type == Animation::TYPE_BEZIER;
 		switch (target_track_type) {
-			case Animation::TYPE_POSITION_3D:
-			case Animation::TYPE_SCALE_3D:
-				return p_source_value_type == Variant::VECTOR3;
-			case Animation::TYPE_ROTATION_3D:
-				return p_source_value_type == Variant::QUATERNION;
-			case Animation::TYPE_BEZIER:
-				return track_types_equal || p_source_value_type == Variant::FLOAT;
-			case Animation::TYPE_VALUE:
-				if (track_types_equal || is_source_vector3_type || is_source_bezier) {
-					bool path_valid = false;
-					Variant::Type property_type = Variant::NIL;
+		case Animation::TYPE_POSITION_3D:
+		case Animation::TYPE_SCALE_3D:
+			return p_source_value_type == Variant::VECTOR3;
+		case Animation::TYPE_ROTATION_3D:
+			return p_source_value_type == Variant::QUATERNION;
+		case Animation::TYPE_BEZIER:
+			return track_types_equal || p_source_value_type == Variant::FLOAT;
+		case Animation::TYPE_VALUE:
+			if (track_types_equal || is_source_vector3_type || is_source_bezier) {
+				bool path_valid = false;
+				Variant::Type property_type = Variant::NIL;
 
-					AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
-					if (ape) {
-						AnimationPlayer *ap = ape->get_player();
-						if (ap) {
-							NodePath npath = animation->track_get_path(p_target_track_idx);
-							Node *a_ap_root_node = ap->get_node(ap->get_root_node());
-							Node *nd = nullptr;
-							// We must test that we have a valid a_ap_root_node before trying to access its content to init the nd Node.
-							if (a_ap_root_node) {
-								nd = a_ap_root_node->get_node(NodePath(npath.get_concatenated_names()));
-							}
-							if (nd) {
-								StringName prop = npath.get_concatenated_subnames();
-								PropertyInfo prop_info;
-								path_valid = ClassDB::get_property_info(nd->get_class(), prop, &prop_info);
-								property_type = prop_info.type;
-							}
+				AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
+				if (ape) {
+					AnimationPlayer* ap = ape->get_player();
+					if (ap) {
+						NodePath npath = animation->track_get_path(p_target_track_idx);
+						Node* a_ap_root_node = ap->get_node(ap->get_root_node());
+						Node* nd = nullptr;
+						// We must test that we have a valid a_ap_root_node before trying to access
+						// its content to init the nd Node.
+						if (a_ap_root_node) {
+							nd = a_ap_root_node->get_node(NodePath(npath.get_concatenated_names()));
 						}
-					}
-
-					if (path_valid) {
-						if (is_source_bezier) {
-							p_source_value_type = Variant::FLOAT;
+						if (nd) {
+							PropertyInfo prop_info;
+							property_type = prop_info.type;
 						}
-						return property_type == p_source_value_type;
-					} else {
-						if (animation->track_get_key_count(p_target_track_idx) > 0) {
-							Variant::Type first_key_type = animation->track_get_key_value(p_target_track_idx, 0).get_type();
-							return first_key_type == p_source_value_type;
-						}
-						return true; // Type is Undefined.
 					}
 				}
-				return false;
-			default: // Works for TYPE_ANIMATION; TYPE_AUDIO; TYPE_CALL_METHOD; BLEND_SHAPE.
-				return track_types_equal;
+
+				if (path_valid) {
+					if (is_source_bezier) {
+						p_source_value_type = Variant::FLOAT;
+					}
+					return property_type == p_source_value_type;
+				}
+				else {
+					if (animation->track_get_key_count(p_target_track_idx) > 0) {
+						Variant::Type first_key_type =
+							animation->track_get_key_value(p_target_track_idx, 0).get_type();
+						return first_key_type == p_source_value_type;
+					}
+					return true; // Type is Undefined.
+				}
+			}
+			return false;
+		default: // Works for TYPE_ANIMATION; TYPE_AUDIO; TYPE_CALL_METHOD; BLEND_SHAPE.
+			return track_types_equal;
 		}
 	}
 	return false;
 }
 
-void AnimationTrackEditor::_edit_menu_about_to_popup() {
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
-	edit->get_popup()->set_item_disabled(edit->get_popup()->get_item_index(EDIT_ADD_RESET_KEY), !can_add_reset_key() || animation == player->get_animation(SceneStringName(RESET)));
-	edit->get_popup()->set_item_disabled(edit->get_popup()->get_item_index(EDIT_APPLY_RESET), !player->can_apply_reset());
+void AnimationTrackEditor::_edit_menu_about_to_popup()
+{
+	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
+	edit->get_popup()->set_item_disabled(edit->get_popup()->get_item_index(EDIT_ADD_RESET_KEY),
+		!can_add_reset_key() || animation == player->get_animation(SceneStringName(RESET)));
+	edit->get_popup()->set_item_disabled(
+		edit->get_popup()->get_item_index(EDIT_APPLY_RESET), !player->can_apply_reset());
 
 	bool has_length = false;
-	for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-		if (animation->track_get_type(E.key.track) == Animation::TYPE_AUDIO && animation->audio_track_get_key_stream(E.key.track, E.key.key).is_valid()) {
+	for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+		if (animation->track_get_type(E.key.track) == Animation::TYPE_AUDIO &&
+			animation->audio_track_get_key_stream(E.key.track, E.key.key).is_valid()) {
 			has_length = true;
 			break;
 		}
 	}
-	edit->get_popup()->set_item_disabled(edit->get_popup()->get_item_index(EDIT_SET_START_OFFSET), !has_length);
-	edit->get_popup()->set_item_disabled(edit->get_popup()->get_item_index(EDIT_SET_END_OFFSET), !has_length);
+	edit->get_popup()->set_item_disabled(
+		edit->get_popup()->get_item_index(EDIT_SET_START_OFFSET), !has_length);
+	edit->get_popup()->set_item_disabled(
+		edit->get_popup()->get_item_index(EDIT_SET_END_OFFSET), !has_length);
 }
 
-void AnimationTrackEditor::goto_prev_step(bool p_from_mouse_event) {
+void AnimationTrackEditor::goto_prev_step(bool p_from_mouse_event)
+{
 	if (animation.is_null()) {
 		return;
 	}
@@ -6965,7 +7793,8 @@ void AnimationTrackEditor::goto_prev_step(bool p_from_mouse_event) {
 	_timeline_changed(pos, false);
 }
 
-void AnimationTrackEditor::goto_next_step(bool p_from_mouse_event, bool p_timeline_only) {
+void AnimationTrackEditor::goto_next_step(bool p_from_mouse_event, bool p_timeline_only)
+{
 	if (animation.is_null()) {
 		return;
 	}
@@ -6992,746 +7821,816 @@ void AnimationTrackEditor::goto_next_step(bool p_from_mouse_event, bool p_timeli
 	_timeline_changed(pos, p_timeline_only);
 }
 
-void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
+void AnimationTrackEditor::_edit_menu_pressed(int p_option)
+{
 	switch (p_option) {
-		case EDIT_COPY_TRACKS: {
-			track_copy_select->clear();
-			TreeItem *troot = track_copy_select->create_item();
+	case EDIT_COPY_TRACKS: {
+		track_copy_select->clear();
+		TreeItem* troot = track_copy_select->create_item();
 
-			for (int i = 0; i < animation->get_track_count(); i++) {
-				NodePath path = animation->track_get_path(i);
-				Node *node = nullptr;
+		for (int i = 0; i < animation->get_track_count(); i++) {
+			NodePath path = animation->track_get_path(i);
+			Node* node = nullptr;
 
-				if (root) {
-					node = root->get_node_or_null(path);
-				}
-
-				String text;
-				Ref<Texture2D> icon = get_editor_theme_icon(SNAME("Node"));
-				if (node) {
-					if (has_theme_icon(node->get_class(), EditorStringName(EditorIcons))) {
-						icon = get_editor_theme_icon(node->get_class());
-					}
-
-					text = node->get_name();
-					Vector<StringName> sn = path.get_subnames();
-					for (int j = 0; j < sn.size(); j++) {
-						text += ".";
-						text += sn[j];
-					}
-
-					path = NodePath(node->get_path().get_names(), path.get_subnames(), true); // Store full path instead for copying.
-				} else {
-					text = String(path);
-					int sep = text.find_char(':');
-					if (sep != -1) {
-						text = text.substr(sep + 1);
-					}
-				}
-
-				String track_type;
-				switch (animation->track_get_type(i)) {
-					case Animation::TYPE_POSITION_3D:
-						track_type = TTR("Position");
-						break;
-					case Animation::TYPE_ROTATION_3D:
-						track_type = TTR("Rotation");
-						break;
-					case Animation::TYPE_SCALE_3D:
-						track_type = TTR("Scale");
-						break;
-					case Animation::TYPE_BLEND_SHAPE:
-						track_type = TTR("BlendShape");
-						break;
-					case Animation::TYPE_METHOD:
-						track_type = TTR("Methods");
-						break;
-					case Animation::TYPE_BEZIER:
-						track_type = TTR("Bezier");
-						break;
-					case Animation::TYPE_AUDIO:
-						track_type = TTR("Audio");
-						break;
-					default: {
-					};
-				}
-				if (!track_type.is_empty()) {
-					text += vformat(" (%s)", track_type);
-				}
-
-				TreeItem *it = track_copy_select->create_item(troot);
-				it->set_editable(0, true);
-				it->set_selectable(0, true);
-				it->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-				it->set_icon(0, icon);
-				it->set_text(0, text);
-				Dictionary md;
-				md["track_idx"] = i;
-				md["path"] = path;
-				it->set_metadata(0, md);
+			if (root) {
+				node = root->get_node_or_null(path);
 			}
 
-			track_copy_dialog->popup_centered(Size2(350, 500) * EDSCALE);
-		} break;
-		case EDIT_COPY_TRACKS_CONFIRM: {
-			track_clipboard.clear();
-			TreeItem *tree_root = track_copy_select->get_root();
-			if (tree_root) {
-				TreeItem *it = tree_root->get_first_child();
-				while (it) {
-					Dictionary md = it->get_metadata(0);
-					int idx = md["track_idx"];
-					if (it->is_checked(0) && idx >= 0 && idx < animation->get_track_count()) {
-						TrackClipboard tc;
-						tc.base_path = animation->track_get_path(idx);
-						tc.full_path = md["path"];
-						tc.track_type = animation->track_get_type(idx);
-						tc.interp_type = animation->track_get_interpolation_type(idx);
-						if (tc.track_type == Animation::TYPE_VALUE) {
-							tc.update_mode = animation->value_track_get_update_mode(idx);
-						}
-						if (tc.track_type == Animation::TYPE_AUDIO) {
-							tc.use_blend = animation->audio_track_is_use_blend(idx);
-						}
-						tc.loop_wrap = animation->track_get_interpolation_loop_wrap(idx);
-						tc.enabled = animation->track_is_enabled(idx);
-						for (int i = 0; i < animation->track_get_key_count(idx); i++) {
-							TrackClipboard::Key k;
-							k.time = animation->track_get_key_time(idx, i);
-							k.value = animation->track_get_key_value(idx, i);
-							k.transition = animation->track_get_key_transition(idx, i);
-							tc.keys.push_back(k);
-						}
-						track_clipboard.push_back(tc);
-					}
-					it = it->get_next();
+			String text;
+			Ref<Texture2D> icon = get_editor_theme_icon(SNAME("Node"));
+			if (node) {
+				if (has_theme_icon(node->get_class(), EditorStringName(EditorIcons))) {
+					icon = get_editor_theme_icon(node->get_class());
+				}
+
+				text = node->get_name();
+				Vector<StringName> sn = path.get_subnames();
+				for (int j = 0; j < sn.size(); j++) {
+					text += ".";
+					text += sn[j];
+				}
+
+				path = NodePath(node->get_path().get_names(), path.get_subnames(),
+					true); // Store full path instead for copying.
+			}
+			else {
+				text = String(path);
+				int sep = text.find_char(':');
+				if (sep != -1) {
+					text = text.substr(sep + 1);
 				}
 			}
-		} break;
-		case EDIT_PASTE_TRACKS: {
-			if (track_clipboard.is_empty()) {
-				EditorNode::get_singleton()->show_warning(TTR("Clipboard is empty!"));
+
+			String track_type;
+			switch (animation->track_get_type(i)) {
+			case Animation::TYPE_POSITION_3D:
+				track_type = TTR("Position");
 				break;
+			case Animation::TYPE_ROTATION_3D:
+				track_type = TTR("Rotation");
+				break;
+			case Animation::TYPE_SCALE_3D:
+				track_type = TTR("Scale");
+				break;
+			case Animation::TYPE_BLEND_SHAPE:
+				track_type = TTR("BlendShape");
+				break;
+			case Animation::TYPE_METHOD:
+				track_type = TTR("Methods");
+				break;
+			case Animation::TYPE_BEZIER:
+				track_type = TTR("Bezier");
+				break;
+			case Animation::TYPE_AUDIO:
+				track_type = TTR("Audio");
+				break;
+			default: {
+			};
+			}
+			if (!track_type.is_empty()) {
+				text += vformat(" (%s)", track_type);
 			}
 
-			int base_track = animation->get_track_count();
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Paste Tracks"));
-			for (int i = 0; i < track_clipboard.size(); i++) {
-				undo_redo->add_do_method(animation.ptr(), "add_track", track_clipboard[i].track_type);
-				Node *exists = nullptr;
-				NodePath path = track_clipboard[i].base_path;
+			TreeItem* it = track_copy_select->create_item(troot);
+			it->set_editable(0, true);
+			it->set_selectable(0, true);
+			it->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
+			it->set_icon(0, icon);
+			it->set_text(0, text);
+			Dictionary md;
+			md["track_idx"] = i;
+			md["path"] = path;
+			it->set_metadata(0, md);
+		}
 
-				if (root) {
-					NodePath np = track_clipboard[i].full_path;
-					exists = root->get_node_or_null(np);
-					if (exists) {
-						path = NodePath(root->get_path_to(exists).get_names(), track_clipboard[i].full_path.get_subnames(), false);
+		track_copy_dialog->popup_centered(Size2(350, 500) * EDSCALE);
+	} break;
+	case EDIT_COPY_TRACKS_CONFIRM: {
+		track_clipboard.clear();
+		TreeItem* tree_root = track_copy_select->get_root();
+		if (tree_root) {
+			TreeItem* it = tree_root->get_first_child();
+			while (it) {
+				Dictionary md = it->get_metadata(0);
+				int idx = md["track_idx"];
+				if (it->is_checked(0) && idx >= 0 && idx < animation->get_track_count()) {
+					TrackClipboard tc;
+					tc.base_path = animation->track_get_path(idx);
+					tc.full_path = md["path"];
+					tc.track_type = animation->track_get_type(idx);
+					tc.interp_type = animation->track_get_interpolation_type(idx);
+					if (tc.track_type == Animation::TYPE_VALUE) {
+						tc.update_mode = animation->value_track_get_update_mode(idx);
 					}
+					if (tc.track_type == Animation::TYPE_AUDIO) {
+						tc.use_blend = animation->audio_track_is_use_blend(idx);
+					}
+					tc.loop_wrap = animation->track_get_interpolation_loop_wrap(idx);
+					tc.enabled = animation->track_is_enabled(idx);
+					for (int i = 0; i < animation->track_get_key_count(idx); i++) {
+						TrackClipboard::Key k;
+						k.time = animation->track_get_key_time(idx, i);
+						k.value = animation->track_get_key_value(idx, i);
+						k.transition = animation->track_get_key_transition(idx, i);
+						tc.keys.push_back(k);
+					}
+					track_clipboard.push_back(tc);
 				}
-
-				undo_redo->add_do_method(animation.ptr(), "track_set_path", base_track, path);
-				undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type", base_track, track_clipboard[i].interp_type);
-				undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_loop_wrap", base_track, track_clipboard[i].loop_wrap);
-				undo_redo->add_do_method(animation.ptr(), "track_set_enabled", base_track, track_clipboard[i].enabled);
-				if (track_clipboard[i].track_type == Animation::TYPE_VALUE) {
-					undo_redo->add_do_method(animation.ptr(), "value_track_set_update_mode", base_track, track_clipboard[i].update_mode);
-				}
-				if (track_clipboard[i].track_type == Animation::TYPE_AUDIO) {
-					undo_redo->add_do_method(animation.ptr(), "audio_track_set_use_blend", base_track, track_clipboard[i].use_blend);
-				}
-
-				for (int j = 0; j < track_clipboard[i].keys.size(); j++) {
-					undo_redo->add_do_method(animation.ptr(), "track_insert_key", base_track, track_clipboard[i].keys[j].time, track_clipboard[i].keys[j].value, track_clipboard[i].keys[j].transition);
-				}
-
-				undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
-
-				base_track++;
+				it = it->get_next();
 			}
+		}
+	} break;
+	case EDIT_PASTE_TRACKS: {
+		if (track_clipboard.is_empty()) {
+			EditorNode::get_singleton()->show_warning(TTR("Clipboard is empty!"));
+			break;
+		}
 
-			undo_redo->commit_action();
-		} break;
-		case EDIT_SCALE_SELECTION: {
-			scale_dialog->popup_centered(Size2(200, 100) * EDSCALE);
-			scale->get_line_edit()->grab_focus();
-			scale_from_cursor = false;
-		} break;
-		case EDIT_SCALE_FROM_CURSOR: {
-			scale_dialog->popup_centered(Size2(200, 100) * EDSCALE);
-			scale->get_line_edit()->grab_focus();
-			scale_from_cursor = true;
-		} break;
-		case EDIT_SCALE_CONFIRM: {
-			if (selection.is_empty()) {
-				return;
-			}
+		int base_track = animation->get_track_count();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Paste Tracks"));
+		for (int i = 0; i < track_clipboard.size(); i++) {
+			undo_redo->add_do_method(animation.ptr(), "add_track", track_clipboard[i].track_type);
+			Node* exists = nullptr;
+			NodePath path = track_clipboard[i].base_path;
 
-			float from_t = 1e20;
-			float to_t = -1e20;
-			float len = -1e20;
-			float pivot = 0;
-
-			for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-				float t = animation->track_get_key_time(E.key.track, E.key.key);
-				if (t < from_t) {
-					from_t = t;
-				}
-				if (t > to_t) {
-					to_t = t;
+			if (root) {
+				NodePath np = track_clipboard[i].full_path;
+				exists = root->get_node_or_null(np);
+				if (exists) {
+					path = NodePath(root->get_path_to(exists).get_names(),
+						track_clipboard[i].full_path.get_subnames(), false);
 				}
 			}
 
-			len = to_t - from_t;
-			if (scale_from_cursor) {
-				pivot = timeline->get_play_position();
-			} else {
-				pivot = from_t;
+			undo_redo->add_do_method(animation.ptr(), "track_set_path", base_track, path);
+			undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type", base_track,
+				track_clipboard[i].interp_type);
+			undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_loop_wrap",
+				base_track, track_clipboard[i].loop_wrap);
+			undo_redo->add_do_method(
+				animation.ptr(), "track_set_enabled", base_track, track_clipboard[i].enabled);
+			if (track_clipboard[i].track_type == Animation::TYPE_VALUE) {
+				undo_redo->add_do_method(animation.ptr(), "value_track_set_update_mode", base_track,
+					track_clipboard[i].update_mode);
+			}
+			if (track_clipboard[i].track_type == Animation::TYPE_AUDIO) {
+				undo_redo->add_do_method(animation.ptr(), "audio_track_set_use_blend", base_track,
+					track_clipboard[i].use_blend);
 			}
 
-			float s = scale->get_value();
-			ERR_FAIL_COND_MSG(s == 0, "Can't scale to 0.");
-
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Animation Scale Keys"));
-
-			List<_AnimMoveRestore> to_restore;
-
-			// 1 - Remove the keys.
-			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-				undo_redo->add_do_method(animation.ptr(), "track_remove_key", E->key().track, E->key().key);
-			}
-			// 2 - Remove overlapped keys.
-			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-				float newtime = (E->get().pos - from_t) * s + from_t;
-				int idx = animation->track_find_key(E->key().track, newtime, Animation::FIND_MODE_APPROX);
-				if (idx == -1) {
-					continue;
-				}
-				SelectedKey sk;
-				sk.key = idx;
-				sk.track = E->key().track;
-				if (selection.has(sk)) {
-					continue; // Already in selection, don't save.
-				}
-
-				undo_redo->add_do_method(animation.ptr(), "track_remove_key_at_time", E->key().track, newtime);
-				_AnimMoveRestore amr;
-
-				amr.key = animation->track_get_key_value(E->key().track, idx);
-				amr.track = E->key().track;
-				amr.time = newtime;
-				amr.transition = animation->track_get_key_transition(E->key().track, idx);
-
-				to_restore.push_back(amr);
+			for (int j = 0; j < track_clipboard[i].keys.size(); j++) {
+				undo_redo->add_do_method(animation.ptr(), "track_insert_key", base_track,
+					track_clipboard[i].keys[j].time, track_clipboard[i].keys[j].value,
+					track_clipboard[i].keys[j].transition);
 			}
 
-#define NEW_POS(m_ofs) (((s > 0) ? m_ofs : from_t + (len - (m_ofs - from_t))) - pivot) * Math::abs(s) + pivot
-			// 3 - Move the keys (re insert them).
-			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-				float newpos = NEW_POS(E->get().pos);
-				undo_redo->add_do_method(animation.ptr(), "track_insert_key", E->key().track, newpos, animation->track_get_key_value(E->key().track, E->key().key), animation->track_get_key_transition(E->key().track, E->key().key));
+			undo_redo->add_undo_method(
+				animation.ptr(), "remove_track", animation->get_track_count());
+
+			base_track++;
+		}
+
+		undo_redo->commit_action();
+	} break;
+	case EDIT_SCALE_SELECTION: {
+		scale_dialog->popup_centered(Size2(200, 100) * EDSCALE);
+		scale->get_line_edit()->grab_focus();
+		scale_from_cursor = false;
+	} break;
+	case EDIT_SCALE_FROM_CURSOR: {
+		scale_dialog->popup_centered(Size2(200, 100) * EDSCALE);
+		scale->get_line_edit()->grab_focus();
+		scale_from_cursor = true;
+	} break;
+	case EDIT_SCALE_CONFIRM: {
+		if (selection.is_empty()) {
+			return;
+		}
+
+		float from_t = 1e20;
+		float to_t = -1e20;
+		float len = -1e20;
+		float pivot = 0;
+
+		for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+			float t = animation->track_get_key_time(E.key.track, E.key.key);
+			if (t < from_t) {
+				from_t = t;
+			}
+			if (t > to_t) {
+				to_t = t;
+			}
+		}
+
+		len = to_t - from_t;
+		if (scale_from_cursor) {
+			pivot = timeline->get_play_position();
+		}
+		else {
+			pivot = from_t;
+		}
+
+		float s = scale->get_value();
+		ERR_FAIL_COND_MSG(s == 0, "Can't scale to 0.");
+
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Animation Scale Keys"));
+
+		List<_AnimMoveRestore> to_restore;
+
+		// 1 - Remove the keys.
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			undo_redo->add_do_method(
+				animation.ptr(), "track_remove_key", E->key().track, E->key().key);
+		}
+		// 2 - Remove overlapped keys.
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			float newtime = (E->get().pos - from_t) * s + from_t;
+			int idx =
+				animation->track_find_key(E->key().track, newtime, Animation::FIND_MODE_APPROX);
+			if (idx == -1) {
+				continue;
+			}
+			SelectedKey sk;
+			sk.key = idx;
+			sk.track = E->key().track;
+			if (selection.has(sk)) {
+				continue; // Already in selection, don't save.
 			}
 
-			// 4 - (Undo) Remove inserted keys.
-			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-				float newpos = NEW_POS(E->get().pos);
-				undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", E->key().track, newpos);
-			}
+			undo_redo->add_do_method(
+				animation.ptr(), "track_remove_key_at_time", E->key().track, newtime);
+			_AnimMoveRestore amr;
 
-			// 5 - (Undo) Reinsert keys.
-			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", E->key().track, E->get().pos, animation->track_get_key_value(E->key().track, E->key().key), animation->track_get_key_transition(E->key().track, E->key().key));
-			}
+			amr.key = animation->track_get_key_value(E->key().track, idx);
+			amr.track = E->key().track;
+			amr.time = newtime;
+			amr.transition = animation->track_get_key_transition(E->key().track, idx);
 
-			// 6 - (Undo) Reinsert overlapped keys.
-			for (_AnimMoveRestore &amr : to_restore) {
-				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", amr.track, amr.time, amr.key, amr.transition);
-			}
+			to_restore.push_back(amr);
+		}
 
-			undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
+#define NEW_POS(m_ofs)                                                                             \
+	(((s > 0) ? m_ofs : from_t + (len - (m_ofs - from_t))) - pivot) * Math::abs(s) + pivot
+		// 3 - Move the keys (re insert them).
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			float newpos = NEW_POS(E->get().pos);
+			undo_redo->add_do_method(animation.ptr(), "track_insert_key", E->key().track, newpos,
+				animation->track_get_key_value(E->key().track, E->key().key),
+				animation->track_get_key_transition(E->key().track, E->key().key));
+		}
 
-			// 7 - Reselect.
-			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-				float oldpos = E->get().pos;
-				float newpos = NEW_POS(oldpos);
-				if (newpos >= 0) {
-					undo_redo->add_do_method(this, "_select_at_anim", animation, E->key().track, newpos);
-				}
-				undo_redo->add_undo_method(this, "_select_at_anim", animation, E->key().track, oldpos);
+		// 4 - (Undo) Remove inserted keys.
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			float newpos = NEW_POS(E->get().pos);
+			undo_redo->add_undo_method(
+				animation.ptr(), "track_remove_key_at_time", E->key().track, newpos);
+		}
+
+		// 5 - (Undo) Reinsert keys.
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			undo_redo->add_undo_method(animation.ptr(), "track_insert_key", E->key().track,
+				E->get().pos, animation->track_get_key_value(E->key().track, E->key().key),
+				animation->track_get_key_transition(E->key().track, E->key().key));
+		}
+
+		// 6 - (Undo) Reinsert overlapped keys.
+		for (_AnimMoveRestore& amr : to_restore) {
+			undo_redo->add_undo_method(
+				animation.ptr(), "track_insert_key", amr.track, amr.time, amr.key, amr.transition);
+		}
+
+		undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
+
+		// 7 - Reselect.
+		for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+			float oldpos = E->get().pos;
+			float newpos = NEW_POS(oldpos);
+			if (newpos >= 0) {
+				undo_redo->add_do_method(
+					this, "_select_at_anim", animation, E->key().track, newpos);
 			}
+			undo_redo->add_undo_method(this, "_select_at_anim", animation, E->key().track, oldpos);
+		}
 #undef NEW_POS
 
+		undo_redo->add_do_method(this, "_redraw_tracks");
+		undo_redo->add_undo_method(this, "_redraw_tracks");
+		undo_redo->commit_action();
+	} break;
+
+	case EDIT_SET_START_OFFSET: {
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Animation Set Start Offset"), UndoRedo::MERGE_ENDS);
+		for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+			if (animation->track_get_type(E.key.track) != Animation::TYPE_AUDIO) {
+				continue;
+			}
+			Ref<AudioStream> stream = animation->audio_track_get_key_stream(E.key.track, E.key.key);
+			if (stream.is_null()) {
+				continue;
+			}
+			double len = stream->get_length() -
+						 animation->audio_track_get_key_end_offset(E.key.track, E.key.key);
+			real_t prev_offset =
+				animation->audio_track_get_key_start_offset(E.key.track, E.key.key);
+			double prev_time = animation->track_get_key_time(E.key.track, E.key.key);
+			float cur_time = timeline->get_play_position();
+			float diff = prev_offset + cur_time - prev_time;
+			float destination = cur_time - MIN(0, diff);
+			if (diff >= len || animation->track_find_key(
+								   E.key.track, destination, Animation::FIND_MODE_EXACT) >= 0) {
+				continue;
+			}
+			undo_redo->add_do_method(
+				animation.ptr(), "audio_track_set_key_start_offset", E.key.track, E.key.key, diff);
+			undo_redo->add_do_method(
+				animation.ptr(), "track_set_key_time", E.key.track, E.key.key, destination);
+			undo_redo->add_undo_method(
+				animation.ptr(), "track_set_key_time", E.key.track, E.key.key, prev_time);
+			undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_start_offset",
+				E.key.track, E.key.key, prev_offset);
+		}
+		undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->commit_action();
+	} break;
+	case EDIT_SET_END_OFFSET: {
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Animation Set End Offset"), UndoRedo::MERGE_ENDS);
+		for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+			if (animation->track_get_type(E.key.track) != Animation::TYPE_AUDIO) {
+				continue;
+			}
+			Ref<AudioStream> stream = animation->audio_track_get_key_stream(E.key.track, E.key.key);
+			if (stream.is_null()) {
+				continue;
+			}
+			double len = stream->get_length() -
+						 animation->audio_track_get_key_start_offset(E.key.track, E.key.key);
+			real_t prev_offset = animation->audio_track_get_key_end_offset(E.key.track, E.key.key);
+			double prev_time = animation->track_get_key_time(E.key.track, E.key.key);
+			float cur_time = timeline->get_play_position();
+			float diff = prev_time + len - cur_time;
+			if (diff >= len) {
+				continue;
+			}
+			undo_redo->add_do_method(
+				animation.ptr(), "audio_track_set_key_end_offset", E.key.track, E.key.key, diff);
+			undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_end_offset",
+				E.key.track, E.key.key, prev_offset);
+		}
+		undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->commit_action();
+	} break;
+
+	case EDIT_EASE_SELECTION: {
+		ease_dialog->popup_centered(Size2(200, 100) * EDSCALE);
+	} break;
+	case EDIT_EASE_CONFIRM: {
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Make Easing Keys"));
+
+		Tween::TransitionType transition_type =
+			static_cast<Tween::TransitionType>(transition_selection->get_selected_id());
+		Tween::EaseType ease_type = static_cast<Tween::EaseType>(ease_selection->get_selected_id());
+		float fps = ease_fps->get_value();
+		double dur_step = 1.0 / fps;
+
+		// Organize track and key.
+		HashMap<int, Vector<int>> keymap;
+		Vector<int> tracks;
+		for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+			if (!tracks.has(E.key.track)) {
+				tracks.append(E.key.track);
+			}
+		}
+		for (int i = 0; i < tracks.size(); i++) {
+			switch (animation->track_get_type(tracks[i])) {
+			case Animation::TYPE_VALUE:
+			case Animation::TYPE_POSITION_3D:
+			case Animation::TYPE_ROTATION_3D:
+			case Animation::TYPE_SCALE_3D:
+			case Animation::TYPE_BLEND_SHAPE: {
+				Vector<int> keys;
+				for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+					if (E.key.track == tracks[i]) {
+						keys.append(E.key.key);
+					}
+				}
+				keys.sort();
+				keymap.insert(tracks[i], keys);
+			} break;
+			default: {
+			} break;
+			}
+		}
+
+		// Make easing.
+		HashMap<int, Vector<int>>::Iterator E = keymap.begin();
+		while (E) {
+			int track = E->key;
+			Vector<int> keys = E->value;
+			int len = keys.size() - 1;
+
+			// Special case for angle interpolation.
+			bool is_using_angle = animation->track_get_interpolation_type(track) ==
+									  Animation::INTERPOLATION_LINEAR_ANGLE ||
+								  animation->track_get_interpolation_type(track) ==
+									  Animation::INTERPOLATION_CUBIC_ANGLE;
+
+			// Make insert queue.
+			Vector<Pair<real_t, Variant>> insert_queue_new;
+			for (int i = 0; i < len; i++) {
+				// Check neighboring keys.
+				if (keys[i] + 1 == keys[i + 1]) {
+					double from_t = animation->track_get_key_time(track, keys[i]);
+					double to_t = animation->track_get_key_time(track, keys[i + 1]);
+					Variant from_v = animation->track_get_key_value(track, keys[i]);
+					Variant to_v = animation->track_get_key_value(track, keys[i + 1]);
+					if (is_using_angle) {
+						real_t a = from_v;
+						real_t b = to_v;
+						real_t to_diff = std::fmod(b - a, Math::TAU);
+						to_v = a + std::fmod(2.0 * to_diff, Math::TAU) - to_diff;
+					}
+					Variant delta_v = Animation::subtract_variant(to_v, from_v);
+					double duration = to_t - from_t;
+					double fixed_duration = duration - UNIT_EPSILON; // Prevent to overwrap keys...
+					for (double delta_t = dur_step; delta_t < fixed_duration; delta_t += dur_step) {
+						Pair<real_t, Variant> keydata;
+						keydata.first = from_t + delta_t;
+						keydata.second = Tween::interpolate_variant(
+							from_v, delta_v, delta_t, duration, transition_type, ease_type);
+						insert_queue_new.append(keydata);
+					}
+				}
+			}
+
+			// Do insertion.
+			for (int i = 0; i < insert_queue_new.size(); i++) {
+				undo_redo->add_do_method(animation.ptr(), "track_insert_key", track,
+					insert_queue_new[i].first, insert_queue_new[i].second);
+				undo_redo->add_undo_method(
+					animation.ptr(), "track_remove_key_at_time", track, insert_queue_new[i].first);
+			}
+
+			++E;
+		}
+
+		undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_do_method(this, "_redraw_tracks");
+		undo_redo->add_undo_method(this, "_redraw_tracks");
+		undo_redo->commit_action();
+		_update_key_edit();
+
+	} break;
+
+	case EDIT_DUPLICATE_SELECTED_KEYS: {
+		if (bezier_mc->is_visible()) {
+			bezier_edit->duplicate_selected_keys(-1.0, false);
+			break;
+		}
+		_anim_duplicate_keys(-1.0, false, -1.0);
+	} break;
+	case EDIT_CUT_KEYS: {
+		if (bezier_mc->is_visible()) {
+			bezier_edit->copy_selected_keys(true);
+			break;
+		}
+		_anim_copy_keys(true);
+	} break;
+	case EDIT_COPY_KEYS: {
+		if (bezier_mc->is_visible()) {
+			bezier_edit->copy_selected_keys(false);
+			break;
+		}
+		_anim_copy_keys(false);
+	} break;
+	case EDIT_PASTE_KEYS: {
+		_anim_paste_keys(-1.0, false, -1.0);
+	} break;
+	case EDIT_MOVE_FIRST_SELECTED_KEY_TO_CURSOR: {
+		if (moving_selection || selection.is_empty()) {
+			break;
+		}
+		real_t from_t = 1e20;
+		for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+			real_t t = animation->track_get_key_time(E.key.track, E.key.key);
+			if (t < from_t) {
+				from_t = t;
+			}
+		}
+		_move_selection_begin();
+		_move_selection(timeline->get_play_position() - from_t);
+		_move_selection_commit();
+	} break;
+	case EDIT_MOVE_LAST_SELECTED_KEY_TO_CURSOR: {
+		if (moving_selection || selection.is_empty()) {
+			break;
+		}
+		real_t to_t = -1e20;
+		for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+			real_t t = animation->track_get_key_time(E.key.track, E.key.key);
+			if (t > to_t) {
+				to_t = t;
+			}
+		}
+		_move_selection_begin();
+		_move_selection(timeline->get_play_position() - to_t);
+		_move_selection_commit();
+	} break;
+	case EDIT_ADD_RESET_KEY: {
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Animation Add RESET Keys"));
+
+		Ref<Animation> reset = _create_and_get_reset_animation();
+		int reset_tracks = reset->get_track_count();
+		HashSet<int> tracks_added;
+
+		for (const KeyValue<SelectedKey, KeyInfo>& E : selection) {
+			const SelectedKey& sk = E.key;
+
+			const Animation::TrackType track_type = animation->track_get_type(E.key.track);
+			if (track_type == Animation::TYPE_ANIMATION || track_type == Animation::TYPE_AUDIO ||
+				track_type == Animation::TYPE_METHOD) {
+				continue;
+			}
+
+			// Only add one key per track.
+			if (tracks_added.has(sk.track)) {
+				continue;
+			}
+			tracks_added.insert(sk.track);
+
+			int dst_track = -1;
+
+			const NodePath& path = animation->track_get_path(sk.track);
+			for (int i = 0; i < reset->get_track_count(); i++) {
+				if (reset->track_get_path(i) == path) {
+					dst_track = i;
+					break;
+				}
+			}
+
+			int existing_idx = -1;
+			if (dst_track == -1) {
+				// If adding multiple tracks, make sure that correct track is referenced.
+				dst_track = reset_tracks;
+				reset_tracks++;
+
+				undo_redo->add_do_method(
+					reset.ptr(), "add_track", animation->track_get_type(sk.track));
+				undo_redo->add_do_method(reset.ptr(), "track_set_path", dst_track, path);
+				undo_redo->add_undo_method(reset.ptr(), "remove_track", dst_track);
+			}
+			else {
+				existing_idx = reset->track_find_key(dst_track, 0, Animation::FIND_MODE_APPROX);
+			}
+
+			if (animation->track_get_type(sk.track) == Animation::TYPE_VALUE) {
+				undo_redo->add_do_method(reset.ptr(), "value_track_set_update_mode", dst_track,
+					animation->value_track_get_update_mode(sk.track));
+			}
+			if (animation->track_get_type(sk.track) == Animation::TYPE_AUDIO) {
+				undo_redo->add_do_method(reset.ptr(), "audio_track_set_use_blend", dst_track,
+					animation->audio_track_is_use_blend(sk.track));
+			}
+			undo_redo->add_do_method(reset.ptr(), "track_set_interpolation_type", dst_track,
+				animation->track_get_interpolation_type(sk.track));
+			undo_redo->add_do_method(reset.ptr(), "track_set_interpolation_loop_wrap", dst_track,
+				animation->track_get_interpolation_loop_wrap(sk.track));
+
+			undo_redo->add_do_method(reset.ptr(), "track_insert_key", dst_track, 0,
+				animation->track_get_key_value(sk.track, sk.key),
+				animation->track_get_key_transition(sk.track, sk.key));
+			undo_redo->add_undo_method(reset.ptr(), "track_remove_key_at_time", dst_track, 0);
+
+			if (existing_idx != -1) {
+				undo_redo->add_undo_method(reset.ptr(), "track_insert_key", dst_track, 0,
+					reset->track_get_key_value(dst_track, existing_idx),
+					reset->track_get_key_transition(dst_track, existing_idx));
+			}
+		}
+
+		undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_do_method(this, "_redraw_tracks");
+		undo_redo->add_undo_method(this, "_redraw_tracks");
+		undo_redo->commit_action();
+
+	} break;
+	case EDIT_DELETE_SELECTION: {
+		if (bezier_mc->is_visible()) {
+			bezier_edit->delete_selection();
+			break;
+		}
+
+		if (selection.size()) {
+			EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+			undo_redo->create_action(TTR("Animation Delete Keys"));
+
+			for (RBMap<SelectedKey, KeyInfo>::Element* E = selection.back(); E; E = E->prev()) {
+				undo_redo->add_do_method(
+					animation.ptr(), "track_remove_key", E->key().track, E->key().key);
+				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", E->key().track,
+					E->get().pos, animation->track_get_key_value(E->key().track, E->key().key),
+					animation->track_get_key_transition(E->key().track, E->key().key));
+			}
+			undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
+			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
 			undo_redo->add_do_method(this, "_redraw_tracks");
 			undo_redo->add_undo_method(this, "_redraw_tracks");
 			undo_redo->commit_action();
-		} break;
+			_update_key_edit();
+		}
+	} break;
+	case EDIT_GOTO_NEXT_STEP_TIMELINE_ONLY:
+	case EDIT_GOTO_NEXT_STEP: {
+		goto_next_step(false, p_option == EDIT_GOTO_NEXT_STEP_TIMELINE_ONLY);
+	} break;
+	case EDIT_GOTO_PREV_STEP: {
+		goto_prev_step(false);
+	} break;
 
-		case EDIT_SET_START_OFFSET: {
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Animation Set Start Offset"), UndoRedo::MERGE_ENDS);
-			for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-				if (animation->track_get_type(E.key.track) != Animation::TYPE_AUDIO) {
-					continue;
-				}
-				Ref<AudioStream> stream = animation->audio_track_get_key_stream(E.key.track, E.key.key);
-				if (stream.is_null()) {
-					continue;
-				}
-				double len = stream->get_length() - animation->audio_track_get_key_end_offset(E.key.track, E.key.key);
-				real_t prev_offset = animation->audio_track_get_key_start_offset(E.key.track, E.key.key);
-				double prev_time = animation->track_get_key_time(E.key.track, E.key.key);
-				float cur_time = timeline->get_play_position();
-				float diff = prev_offset + cur_time - prev_time;
-				float destination = cur_time - MIN(0, diff);
-				if (diff >= len || animation->track_find_key(E.key.track, destination, Animation::FIND_MODE_EXACT) >= 0) {
-					continue;
-				}
-				undo_redo->add_do_method(animation.ptr(), "audio_track_set_key_start_offset", E.key.track, E.key.key, diff);
-				undo_redo->add_do_method(animation.ptr(), "track_set_key_time", E.key.track, E.key.key, destination);
-				undo_redo->add_undo_method(animation.ptr(), "track_set_key_time", E.key.track, E.key.key, prev_time);
-				undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_start_offset", E.key.track, E.key.key, prev_offset);
-			}
-			undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->commit_action();
-		} break;
-		case EDIT_SET_END_OFFSET: {
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Animation Set End Offset"), UndoRedo::MERGE_ENDS);
-			for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-				if (animation->track_get_type(E.key.track) != Animation::TYPE_AUDIO) {
-					continue;
-				}
-				Ref<AudioStream> stream = animation->audio_track_get_key_stream(E.key.track, E.key.key);
-				if (stream.is_null()) {
-					continue;
-				}
-				double len = stream->get_length() - animation->audio_track_get_key_start_offset(E.key.track, E.key.key);
-				real_t prev_offset = animation->audio_track_get_key_end_offset(E.key.track, E.key.key);
-				double prev_time = animation->track_get_key_time(E.key.track, E.key.key);
-				float cur_time = timeline->get_play_position();
-				float diff = prev_time + len - cur_time;
-				if (diff >= len) {
-					continue;
-				}
-				undo_redo->add_do_method(animation.ptr(), "audio_track_set_key_end_offset", E.key.track, E.key.key, diff);
-				undo_redo->add_undo_method(animation.ptr(), "audio_track_set_key_end_offset", E.key.track, E.key.key, prev_offset);
-			}
-			undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->commit_action();
-		} break;
+	case EDIT_GOTO_NEXT_KEYFRAME: {
+		AnimationPlayerEditor::get_singleton()->go_to_nearest_keyframe(false);
+	} break;
+	case EDIT_GOTO_PREV_KEYFRAME: {
+		AnimationPlayerEditor::get_singleton()->go_to_nearest_keyframe(true);
+	} break;
 
-		case EDIT_EASE_SELECTION: {
-			ease_dialog->popup_centered(Size2(200, 100) * EDSCALE);
-		} break;
-		case EDIT_EASE_CONFIRM: {
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Make Easing Keys"));
+	case EDIT_APPLY_RESET: {
+		AnimationPlayerEditor::get_singleton()->get_player()->apply_reset(true);
+	} break;
 
-			Tween::TransitionType transition_type = static_cast<Tween::TransitionType>(transition_selection->get_selected_id());
-			Tween::EaseType ease_type = static_cast<Tween::EaseType>(ease_selection->get_selected_id());
-			float fps = ease_fps->get_value();
-			double dur_step = 1.0 / fps;
+	case EDIT_BAKE_ANIMATION: {
+		bake_dialog->popup_centered(Size2(200, 100) * EDSCALE);
+	} break;
+	case EDIT_BAKE_ANIMATION_CONFIRM: {
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Bake Animation as Linear Keys"));
 
-			// Organize track and key.
-			HashMap<int, Vector<int>> keymap;
-			Vector<int> tracks;
-			for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-				if (!tracks.has(E.key.track)) {
-					tracks.append(E.key.track);
+		int track_len = animation->get_track_count();
+		bool b_trs = bake_trs->is_pressed();
+		bool b_bs = bake_blendshape->is_pressed();
+		bool b_v = bake_value->is_pressed();
+
+		double anim_len = animation->get_length() + CMP_EPSILON; // For end key.
+		float fps = bake_fps->get_value();
+		double dur_step = 1.0 / fps;
+
+		for (int i = 0; i < track_len; i++) {
+			bool do_bake = false;
+			Animation::TrackType type = animation->track_get_type(i);
+			do_bake |= b_trs &&
+					   (type == Animation::TYPE_POSITION_3D ||
+						   type == Animation::TYPE_ROTATION_3D || type == Animation::TYPE_SCALE_3D);
+			do_bake |= b_bs && type == Animation::TYPE_BLEND_SHAPE;
+			do_bake |= b_v && type == Animation::TYPE_VALUE;
+			if (do_bake && !animation->track_is_compressed(i)) {
+				Animation::InterpolationType it = animation->track_get_interpolation_type(i);
+				if (it == Animation::INTERPOLATION_NEAREST) {
+					continue; // Nearest interpolation cannot be baked.
 				}
-			}
-			for (int i = 0; i < tracks.size(); i++) {
-				switch (animation->track_get_type(tracks[i])) {
-					case Animation::TYPE_VALUE:
-					case Animation::TYPE_POSITION_3D:
-					case Animation::TYPE_ROTATION_3D:
-					case Animation::TYPE_SCALE_3D:
-					case Animation::TYPE_BLEND_SHAPE: {
-						Vector<int> keys;
-						for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-							if (E.key.track == tracks[i]) {
-								keys.append(E.key.key);
-							}
-						}
-						keys.sort();
-						keymap.insert(tracks[i], keys);
-					} break;
-					default: {
-					} break;
-				}
-			}
-
-			// Make easing.
-			HashMap<int, Vector<int>>::Iterator E = keymap.begin();
-			while (E) {
-				int track = E->key;
-				Vector<int> keys = E->value;
-				int len = keys.size() - 1;
 
 				// Special case for angle interpolation.
-				bool is_using_angle = animation->track_get_interpolation_type(track) == Animation::INTERPOLATION_LINEAR_ANGLE || animation->track_get_interpolation_type(track) == Animation::INTERPOLATION_CUBIC_ANGLE;
+				bool is_using_angle = it == Animation::INTERPOLATION_LINEAR_ANGLE ||
+									  it == Animation::INTERPOLATION_CUBIC_ANGLE;
 
 				// Make insert queue.
 				Vector<Pair<real_t, Variant>> insert_queue_new;
-				for (int i = 0; i < len; i++) {
-					// Check neighboring keys.
-					if (keys[i] + 1 == keys[i + 1]) {
-						double from_t = animation->track_get_key_time(track, keys[i]);
-						double to_t = animation->track_get_key_time(track, keys[i + 1]);
-						Variant from_v = animation->track_get_key_value(track, keys[i]);
-						Variant to_v = animation->track_get_key_value(track, keys[i + 1]);
-						if (is_using_angle) {
-							real_t a = from_v;
-							real_t b = to_v;
-							real_t to_diff = std::fmod(b - a, Math::TAU);
-							to_v = a + std::fmod(2.0 * to_diff, Math::TAU) - to_diff;
-						}
-						Variant delta_v = Animation::subtract_variant(to_v, from_v);
-						double duration = to_t - from_t;
-						double fixed_duration = duration - UNIT_EPSILON; // Prevent to overwrap keys...
-						for (double delta_t = dur_step; delta_t < fixed_duration; delta_t += dur_step) {
-							Pair<real_t, Variant> keydata;
-							keydata.first = from_t + delta_t;
-							keydata.second = Tween::interpolate_variant(from_v, delta_v, delta_t, duration, transition_type, ease_type);
-							insert_queue_new.append(keydata);
-						}
+
+				switch (type) {
+				case Animation::TYPE_POSITION_3D: {
+					for (double delta_t = 0.0; delta_t <= anim_len; delta_t += dur_step) {
+						Pair<real_t, Variant> keydata;
+						keydata.first = delta_t;
+						Vector3 v;
+						animation->try_position_track_interpolate(i, delta_t, &v);
+						keydata.second = v;
+						insert_queue_new.append(keydata);
 					}
-				}
-
-				// Do insertion.
-				for (int i = 0; i < insert_queue_new.size(); i++) {
-					undo_redo->add_do_method(animation.ptr(), "track_insert_key", track, insert_queue_new[i].first, insert_queue_new[i].second);
-					undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", track, insert_queue_new[i].first);
-				}
-
-				++E;
-			}
-
-			undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_do_method(this, "_redraw_tracks");
-			undo_redo->add_undo_method(this, "_redraw_tracks");
-			undo_redo->commit_action();
-			_update_key_edit();
-
-		} break;
-
-		case EDIT_DUPLICATE_SELECTED_KEYS: {
-			if (bezier_mc->is_visible()) {
-				bezier_edit->duplicate_selected_keys(-1.0, false);
-				break;
-			}
-			_anim_duplicate_keys(-1.0, false, -1.0);
-		} break;
-		case EDIT_CUT_KEYS: {
-			if (bezier_mc->is_visible()) {
-				bezier_edit->copy_selected_keys(true);
-				break;
-			}
-			_anim_copy_keys(true);
-		} break;
-		case EDIT_COPY_KEYS: {
-			if (bezier_mc->is_visible()) {
-				bezier_edit->copy_selected_keys(false);
-				break;
-			}
-			_anim_copy_keys(false);
-		} break;
-		case EDIT_PASTE_KEYS: {
-			_anim_paste_keys(-1.0, false, -1.0);
-		} break;
-		case EDIT_MOVE_FIRST_SELECTED_KEY_TO_CURSOR: {
-			if (moving_selection || selection.is_empty()) {
-				break;
-			}
-			real_t from_t = 1e20;
-			for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-				real_t t = animation->track_get_key_time(E.key.track, E.key.key);
-				if (t < from_t) {
-					from_t = t;
-				}
-			}
-			_move_selection_begin();
-			_move_selection(timeline->get_play_position() - from_t);
-			_move_selection_commit();
-		} break;
-		case EDIT_MOVE_LAST_SELECTED_KEY_TO_CURSOR: {
-			if (moving_selection || selection.is_empty()) {
-				break;
-			}
-			real_t to_t = -1e20;
-			for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-				real_t t = animation->track_get_key_time(E.key.track, E.key.key);
-				if (t > to_t) {
-					to_t = t;
-				}
-			}
-			_move_selection_begin();
-			_move_selection(timeline->get_play_position() - to_t);
-			_move_selection_commit();
-		} break;
-		case EDIT_ADD_RESET_KEY: {
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Animation Add RESET Keys"));
-
-			Ref<Animation> reset = _create_and_get_reset_animation();
-			int reset_tracks = reset->get_track_count();
-			HashSet<int> tracks_added;
-
-			for (const KeyValue<SelectedKey, KeyInfo> &E : selection) {
-				const SelectedKey &sk = E.key;
-
-				const Animation::TrackType track_type = animation->track_get_type(E.key.track);
-				if (track_type == Animation::TYPE_ANIMATION || track_type == Animation::TYPE_AUDIO || track_type == Animation::TYPE_METHOD) {
-					continue;
-				}
-
-				// Only add one key per track.
-				if (tracks_added.has(sk.track)) {
-					continue;
-				}
-				tracks_added.insert(sk.track);
-
-				int dst_track = -1;
-
-				const NodePath &path = animation->track_get_path(sk.track);
-				for (int i = 0; i < reset->get_track_count(); i++) {
-					if (reset->track_get_path(i) == path) {
-						dst_track = i;
-						break;
+				} break;
+				case Animation::TYPE_ROTATION_3D: {
+					for (double delta_t = 0.0; delta_t <= anim_len; delta_t += dur_step) {
+						Pair<real_t, Variant> keydata;
+						keydata.first = delta_t;
+						Quaternion v;
+						animation->try_rotation_track_interpolate(i, delta_t, &v);
+						keydata.second = v;
+						insert_queue_new.append(keydata);
 					}
+				} break;
+				case Animation::TYPE_SCALE_3D: {
+					for (double delta_t = 0.0; delta_t <= anim_len; delta_t += dur_step) {
+						Pair<real_t, Variant> keydata;
+						keydata.first = delta_t;
+						Vector3 v;
+						animation->try_scale_track_interpolate(i, delta_t, &v);
+						keydata.second = v;
+						insert_queue_new.append(keydata);
+					}
+				} break;
+				case Animation::TYPE_BLEND_SHAPE: {
+					for (double delta_t = 0.0; delta_t <= anim_len; delta_t += dur_step) {
+						Pair<real_t, Variant> keydata;
+						keydata.first = delta_t;
+						float v;
+						animation->try_blend_shape_track_interpolate(i, delta_t, &v);
+						keydata.second = v;
+						insert_queue_new.append(keydata);
+					}
+				} break;
+				case Animation::TYPE_VALUE: {
+					for (double delta_t = 0.0; delta_t < anim_len; delta_t += dur_step) {
+						Pair<real_t, Variant> keydata;
+						keydata.first = delta_t;
+						keydata.second = animation->value_track_interpolate(i, delta_t);
+						insert_queue_new.append(keydata);
+					}
+				} break;
+				default: {
+				} break;
 				}
 
-				int existing_idx = -1;
-				if (dst_track == -1) {
-					// If adding multiple tracks, make sure that correct track is referenced.
-					dst_track = reset_tracks;
-					reset_tracks++;
-
-					undo_redo->add_do_method(reset.ptr(), "add_track", animation->track_get_type(sk.track));
-					undo_redo->add_do_method(reset.ptr(), "track_set_path", dst_track, path);
-					undo_redo->add_undo_method(reset.ptr(), "remove_track", dst_track);
-				} else {
-					existing_idx = reset->track_find_key(dst_track, 0, Animation::FIND_MODE_APPROX);
+				// Cleanup keys.
+				int key_len = animation->track_get_key_count(i);
+				for (int j = key_len - 1; j >= 0; j--) {
+					undo_redo->add_do_method(animation.ptr(), "track_remove_key", i, j);
 				}
 
-				if (animation->track_get_type(sk.track) == Animation::TYPE_VALUE) {
-					undo_redo->add_do_method(reset.ptr(), "value_track_set_update_mode", dst_track, animation->value_track_get_update_mode(sk.track));
+				// Insert keys.
+				undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type", i,
+					is_using_angle ? Animation::INTERPOLATION_LINEAR_ANGLE
+								   : Animation::INTERPOLATION_LINEAR);
+				for (int j = insert_queue_new.size() - 1; j >= 0; j--) {
+					undo_redo->add_do_method(animation.ptr(), "track_insert_key", i,
+						insert_queue_new[j].first, insert_queue_new[j].second);
+					undo_redo->add_undo_method(
+						animation.ptr(), "track_remove_key_at_time", i, insert_queue_new[j].first);
 				}
-				if (animation->track_get_type(sk.track) == Animation::TYPE_AUDIO) {
-					undo_redo->add_do_method(reset.ptr(), "audio_track_set_use_blend", dst_track, animation->audio_track_is_use_blend(sk.track));
-				}
-				undo_redo->add_do_method(reset.ptr(), "track_set_interpolation_type", dst_track, animation->track_get_interpolation_type(sk.track));
-				undo_redo->add_do_method(reset.ptr(), "track_set_interpolation_loop_wrap", dst_track, animation->track_get_interpolation_loop_wrap(sk.track));
 
-				undo_redo->add_do_method(reset.ptr(), "track_insert_key", dst_track, 0, animation->track_get_key_value(sk.track, sk.key), animation->track_get_key_transition(sk.track, sk.key));
-				undo_redo->add_undo_method(reset.ptr(), "track_remove_key_at_time", dst_track, 0);
-
-				if (existing_idx != -1) {
-					undo_redo->add_undo_method(reset.ptr(), "track_insert_key", dst_track, 0, reset->track_get_key_value(dst_track, existing_idx), reset->track_get_key_transition(dst_track, existing_idx));
+				// Undo methods.
+				undo_redo->add_undo_method(animation.ptr(), "track_set_interpolation_type", i,
+					animation->track_get_interpolation_type(i));
+				for (int j = key_len - 1; j >= 0; j--) {
+					undo_redo->add_undo_method(animation.ptr(), "track_insert_key", i,
+						animation->track_get_key_time(i, j), animation->track_get_key_value(i, j),
+						animation->track_get_key_transition(i, j));
 				}
 			}
+		}
 
-			undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_do_method(this, "_redraw_tracks");
-			undo_redo->add_undo_method(this, "_redraw_tracks");
-			undo_redo->commit_action();
+		undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_do_method(this, "_redraw_tracks");
+		undo_redo->add_undo_method(this, "_redraw_tracks");
+		undo_redo->commit_action();
+		_update_key_edit();
 
-		} break;
-		case EDIT_DELETE_SELECTION: {
-			if (bezier_mc->is_visible()) {
-				bezier_edit->delete_selection();
-				break;
+	} break;
+
+	case EDIT_OPTIMIZE_ANIMATION: {
+		optimize_dialog->popup_centered(Size2(250, 180) * EDSCALE);
+
+	} break;
+	case EDIT_OPTIMIZE_ANIMATION_CONFIRM: {
+		animation->optimize(optimize_velocity_error->get_value(),
+			optimize_angular_error->get_value(), optimize_precision_error->get_value());
+		_redraw_tracks();
+		_update_key_edit();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->clear_history(undo_redo->get_history_id_for_object(animation.ptr()));
+		undo_redo->clear_history(undo_redo->get_history_id_for_object(this));
+
+	} break;
+	case EDIT_CLEAN_UP_ANIMATION: {
+		cleanup_dialog->popup_centered(Size2(300, 0) * EDSCALE);
+
+	} break;
+	case EDIT_CLEAN_UP_ANIMATION_CONFIRM: {
+		if (cleanup_all->is_pressed()) {
+			for (const StringName& E :
+				AnimationPlayerEditor::get_singleton()->get_player()->get_sorted_animation_list()) {
+				_cleanup_animation(
+					AnimationPlayerEditor::get_singleton()->get_player()->get_animation(E));
 			}
+		}
+		else {
+			_cleanup_animation(animation);
+		}
 
-			if (selection.size()) {
-				EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-				undo_redo->create_action(TTR("Animation Delete Keys"));
-
-				for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
-					undo_redo->add_do_method(animation.ptr(), "track_remove_key", E->key().track, E->key().key);
-					undo_redo->add_undo_method(animation.ptr(), "track_insert_key", E->key().track, E->get().pos, animation->track_get_key_value(E->key().track, E->key().key), animation->track_get_key_transition(E->key().track, E->key().key));
-				}
-				undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
-				undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
-				undo_redo->add_do_method(this, "_redraw_tracks");
-				undo_redo->add_undo_method(this, "_redraw_tracks");
-				undo_redo->commit_action();
-				_update_key_edit();
-			}
-		} break;
-		case EDIT_GOTO_NEXT_STEP_TIMELINE_ONLY:
-		case EDIT_GOTO_NEXT_STEP: {
-			goto_next_step(false, p_option == EDIT_GOTO_NEXT_STEP_TIMELINE_ONLY);
-		} break;
-		case EDIT_GOTO_PREV_STEP: {
-			goto_prev_step(false);
-		} break;
-
-		case EDIT_GOTO_NEXT_KEYFRAME: {
-			AnimationPlayerEditor::get_singleton()->go_to_nearest_keyframe(false);
-		} break;
-		case EDIT_GOTO_PREV_KEYFRAME: {
-			AnimationPlayerEditor::get_singleton()->go_to_nearest_keyframe(true);
-		} break;
-
-		case EDIT_APPLY_RESET: {
-			AnimationPlayerEditor::get_singleton()->get_player()->apply_reset(true);
-		} break;
-
-		case EDIT_BAKE_ANIMATION: {
-			bake_dialog->popup_centered(Size2(200, 100) * EDSCALE);
-		} break;
-		case EDIT_BAKE_ANIMATION_CONFIRM: {
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->create_action(TTR("Bake Animation as Linear Keys"));
-
-			int track_len = animation->get_track_count();
-			bool b_trs = bake_trs->is_pressed();
-			bool b_bs = bake_blendshape->is_pressed();
-			bool b_v = bake_value->is_pressed();
-
-			double anim_len = animation->get_length() + CMP_EPSILON; // For end key.
-			float fps = bake_fps->get_value();
-			double dur_step = 1.0 / fps;
-
-			for (int i = 0; i < track_len; i++) {
-				bool do_bake = false;
-				Animation::TrackType type = animation->track_get_type(i);
-				do_bake |= b_trs && (type == Animation::TYPE_POSITION_3D || type == Animation::TYPE_ROTATION_3D || type == Animation::TYPE_SCALE_3D);
-				do_bake |= b_bs && type == Animation::TYPE_BLEND_SHAPE;
-				do_bake |= b_v && type == Animation::TYPE_VALUE;
-				if (do_bake && !animation->track_is_compressed(i)) {
-					Animation::InterpolationType it = animation->track_get_interpolation_type(i);
-					if (it == Animation::INTERPOLATION_NEAREST) {
-						continue; // Nearest interpolation cannot be baked.
-					}
-
-					// Special case for angle interpolation.
-					bool is_using_angle = it == Animation::INTERPOLATION_LINEAR_ANGLE || it == Animation::INTERPOLATION_CUBIC_ANGLE;
-
-					// Make insert queue.
-					Vector<Pair<real_t, Variant>> insert_queue_new;
-
-					switch (type) {
-						case Animation::TYPE_POSITION_3D: {
-							for (double delta_t = 0.0; delta_t <= anim_len; delta_t += dur_step) {
-								Pair<real_t, Variant> keydata;
-								keydata.first = delta_t;
-								Vector3 v;
-								animation->try_position_track_interpolate(i, delta_t, &v);
-								keydata.second = v;
-								insert_queue_new.append(keydata);
-							}
-						} break;
-						case Animation::TYPE_ROTATION_3D: {
-							for (double delta_t = 0.0; delta_t <= anim_len; delta_t += dur_step) {
-								Pair<real_t, Variant> keydata;
-								keydata.first = delta_t;
-								Quaternion v;
-								animation->try_rotation_track_interpolate(i, delta_t, &v);
-								keydata.second = v;
-								insert_queue_new.append(keydata);
-							}
-						} break;
-						case Animation::TYPE_SCALE_3D: {
-							for (double delta_t = 0.0; delta_t <= anim_len; delta_t += dur_step) {
-								Pair<real_t, Variant> keydata;
-								keydata.first = delta_t;
-								Vector3 v;
-								animation->try_scale_track_interpolate(i, delta_t, &v);
-								keydata.second = v;
-								insert_queue_new.append(keydata);
-							}
-						} break;
-						case Animation::TYPE_BLEND_SHAPE: {
-							for (double delta_t = 0.0; delta_t <= anim_len; delta_t += dur_step) {
-								Pair<real_t, Variant> keydata;
-								keydata.first = delta_t;
-								float v;
-								animation->try_blend_shape_track_interpolate(i, delta_t, &v);
-								keydata.second = v;
-								insert_queue_new.append(keydata);
-							}
-						} break;
-						case Animation::TYPE_VALUE: {
-							for (double delta_t = 0.0; delta_t < anim_len; delta_t += dur_step) {
-								Pair<real_t, Variant> keydata;
-								keydata.first = delta_t;
-								keydata.second = animation->value_track_interpolate(i, delta_t);
-								insert_queue_new.append(keydata);
-							}
-						} break;
-						default: {
-						} break;
-					}
-
-					// Cleanup keys.
-					int key_len = animation->track_get_key_count(i);
-					for (int j = key_len - 1; j >= 0; j--) {
-						undo_redo->add_do_method(animation.ptr(), "track_remove_key", i, j);
-					}
-
-					// Insert keys.
-					undo_redo->add_do_method(animation.ptr(), "track_set_interpolation_type", i, is_using_angle ? Animation::INTERPOLATION_LINEAR_ANGLE : Animation::INTERPOLATION_LINEAR);
-					for (int j = insert_queue_new.size() - 1; j >= 0; j--) {
-						undo_redo->add_do_method(animation.ptr(), "track_insert_key", i, insert_queue_new[j].first, insert_queue_new[j].second);
-						undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", i, insert_queue_new[j].first);
-					}
-
-					// Undo methods.
-					undo_redo->add_undo_method(animation.ptr(), "track_set_interpolation_type", i, animation->track_get_interpolation_type(i));
-					for (int j = key_len - 1; j >= 0; j--) {
-						undo_redo->add_undo_method(animation.ptr(), "track_insert_key", i, animation->track_get_key_time(i, j), animation->track_get_key_value(i, j), animation->track_get_key_transition(i, j));
-					}
-				}
-			}
-
-			undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
-			undo_redo->add_do_method(this, "_redraw_tracks");
-			undo_redo->add_undo_method(this, "_redraw_tracks");
-			undo_redo->commit_action();
-			_update_key_edit();
-
-		} break;
-
-		case EDIT_OPTIMIZE_ANIMATION: {
-			optimize_dialog->popup_centered(Size2(250, 180) * EDSCALE);
-
-		} break;
-		case EDIT_OPTIMIZE_ANIMATION_CONFIRM: {
-			animation->optimize(optimize_velocity_error->get_value(), optimize_angular_error->get_value(), optimize_precision_error->get_value());
-			_redraw_tracks();
-			_update_key_edit();
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-			undo_redo->clear_history(undo_redo->get_history_id_for_object(animation.ptr()));
-			undo_redo->clear_history(undo_redo->get_history_id_for_object(this));
-
-		} break;
-		case EDIT_CLEAN_UP_ANIMATION: {
-			cleanup_dialog->popup_centered(Size2(300, 0) * EDSCALE);
-
-		} break;
-		case EDIT_CLEAN_UP_ANIMATION_CONFIRM: {
-			if (cleanup_all->is_pressed()) {
-				for (const StringName &E : AnimationPlayerEditor::get_singleton()->get_player()->get_sorted_animation_list()) {
-					_cleanup_animation(AnimationPlayerEditor::get_singleton()->get_player()->get_animation(E));
-				}
-			} else {
-				_cleanup_animation(animation);
-			}
-
-		} break;
+	} break;
 	}
 }
 
-void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
+void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation)
+{
 	_clear_selection();
 	for (int i = 0; i < p_animation->get_track_count(); i++) {
 		if (!root->has_node_and_resource(p_animation->track_get_path(i))) {
@@ -7739,15 +8638,17 @@ void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
 		}
 		Ref<Resource> res;
 		Vector<StringName> leftover_path;
-		Node *node = root->get_node_and_resource(p_animation->track_get_path(i), res, leftover_path);
+		Node* node =
+			root->get_node_and_resource(p_animation->track_get_path(i), res, leftover_path);
 
 		bool prop_exists = false;
 		Variant::Type valid_type = Variant::NIL;
-		Object *obj = nullptr;
+		Object* obj = nullptr;
 
 		if (res.is_valid()) {
 			obj = res.ptr();
-		} else if (node) {
+		}
+		else if (node) {
 			obj = node;
 		}
 
@@ -7762,15 +8663,21 @@ void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
 		}
 
 		if (cleanup_keys_with_trimming_head->is_pressed()) {
-			// Check is necessary because if there is already a key in position 0, it should not be replaced.
-			if (p_animation->track_get_type(i) == Animation::TYPE_AUDIO && p_animation->track_find_key(i, 0, Animation::FIND_MODE_EXACT) < 0) {
+			// Check is necessary because if there is already a key in position 0, it should not be
+			// replaced.
+			if (p_animation->track_get_type(i) == Animation::TYPE_AUDIO &&
+				p_animation->track_find_key(i, 0, Animation::FIND_MODE_EXACT) < 0) {
 				for (int j = 0; j < p_animation->track_get_key_count(i); j++) {
 					double t = p_animation->track_get_key_time(i, j);
 					if (t < 0) {
-						if (j == p_animation->track_get_key_count(i) - 1 || (j + 1 < p_animation->track_get_key_count(i) && p_animation->track_get_key_time(i, j + 1) > 0)) {
+						if (j == p_animation->track_get_key_count(i) - 1 ||
+							(j + 1 < p_animation->track_get_key_count(i) &&
+								p_animation->track_get_key_time(i, j + 1) > 0)) {
 							Ref<AudioStream> stream = p_animation->audio_track_get_key_stream(i, j);
-							double len = stream->get_length() - p_animation->audio_track_get_key_end_offset(i, j);
-							double prev_offset = p_animation->audio_track_get_key_start_offset(i, j);
+							double len = stream->get_length() -
+										 p_animation->audio_track_get_key_end_offset(i, j);
+							double prev_offset =
+								p_animation->audio_track_get_key_start_offset(i, j);
 							double prev_time = p_animation->track_get_key_time(i, j);
 							double diff = prev_offset - prev_time;
 							if (diff >= len) {
@@ -7780,13 +8687,15 @@ void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
 							}
 							p_animation->audio_track_set_key_start_offset(i, j, diff);
 							p_animation->track_set_key_time(i, j, 0);
-						} else {
+						}
+						else {
 							p_animation->track_remove_key(i, j);
 							j--;
 						}
 					}
 				}
-			} else {
+			}
+			else {
 				for (int j = 0; j < p_animation->track_get_key_count(i); j++) {
 					double t = p_animation->track_get_key_time(i, j);
 					if (t < 0) {
@@ -7801,9 +8710,14 @@ void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
 			if (p_animation->track_get_type(i) == Animation::TYPE_AUDIO) {
 				for (int j = 0; j < p_animation->track_get_key_count(i); j++) {
 					double t = p_animation->track_get_key_time(i, j);
-					if (t <= p_animation->get_length() && (j == p_animation->track_get_key_count(i) - 1 || (j + 1 < p_animation->track_get_key_count(i) && p_animation->track_get_key_time(i, j + 1) > p_animation->get_length()))) {
+					if (t <= p_animation->get_length() &&
+						(j == p_animation->track_get_key_count(i) - 1 ||
+							(j + 1 < p_animation->track_get_key_count(i) &&
+								p_animation->track_get_key_time(i, j + 1) >
+									p_animation->get_length()))) {
 						Ref<AudioStream> stream = animation->audio_track_get_key_stream(i, j);
-						double len = stream->get_length() - animation->audio_track_get_key_start_offset(i, j);
+						double len = stream->get_length() -
+									 animation->audio_track_get_key_start_offset(i, j);
 						if (t + len < p_animation->get_length()) {
 							continue;
 						}
@@ -7815,12 +8729,14 @@ void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
 							continue;
 						}
 						p_animation->audio_track_set_key_end_offset(i, j, diff);
-					} else if (t > p_animation->get_length()) {
+					}
+					else if (t > p_animation->get_length()) {
 						p_animation->track_remove_key(i, j);
 						j--;
 					}
 				}
-			} else {
+			}
+			else {
 				for (int j = 0; j < p_animation->track_get_key_count(i); j++) {
 					double t = p_animation->track_get_key_time(i, j);
 					if (t > p_animation->get_length()) {
@@ -7831,7 +8747,8 @@ void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
 			}
 		}
 
-		if (!prop_exists || p_animation->track_get_type(i) != Animation::TYPE_VALUE || !cleanup_keys->is_pressed()) {
+		if (!prop_exists || p_animation->track_get_type(i) != Animation::TYPE_VALUE ||
+			!cleanup_keys->is_pressed()) {
 			continue;
 		}
 
@@ -7850,23 +8767,24 @@ void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
 		}
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->clear_history(undo_redo->get_history_id_for_object(animation.ptr()));
 	undo_redo->clear_history(undo_redo->get_history_id_for_object(this));
 	_update_tracks();
 }
 
-void AnimationTrackEditor::_toggle_function_names() {
-	_redraw_tracks();
-}
+void AnimationTrackEditor::_toggle_function_names() { _redraw_tracks(); }
 
-void AnimationTrackEditor::_view_group_toggle() {
+void AnimationTrackEditor::_view_group_toggle()
+{
 	_update_tracks();
-	view_group->set_button_icon(get_editor_theme_icon(view_group->is_pressed() ? SNAME("AnimationTrackList") : SNAME("AnimationTrackGroup")));
+	view_group->set_button_icon(get_editor_theme_icon(
+		view_group->is_pressed() ? SNAME("AnimationTrackList") : SNAME("AnimationTrackGroup")));
 	bezier_edit->set_filtered(selected_filter->is_pressed());
 }
 
-bool AnimationTrackEditor::is_grouping_tracks() {
+bool AnimationTrackEditor::is_grouping_tracks()
+{
 	if (!view_group) {
 		return false;
 	}
@@ -7874,19 +8792,17 @@ bool AnimationTrackEditor::is_grouping_tracks() {
 	return !view_group->is_pressed();
 }
 
-bool AnimationTrackEditor::is_sorting_alphabetically() {
-	return alphabetic_sorting->is_pressed();
-}
+bool AnimationTrackEditor::is_sorting_alphabetically() { return alphabetic_sorting->is_pressed(); }
 
-bool AnimationTrackEditor::is_function_name_pressed() {
+bool AnimationTrackEditor::is_function_name_pressed()
+{
 	return function_name_toggler->is_pressed();
 }
 
-void AnimationTrackEditor::_auto_fit() {
-	timeline->auto_fit();
-}
+void AnimationTrackEditor::_auto_fit() { timeline->auto_fit(); }
 
-void AnimationTrackEditor::_auto_fit_bezier() {
+void AnimationTrackEditor::_auto_fit_bezier()
+{
 	timeline->auto_fit();
 
 	if (bezier_mc->is_visible()) {
@@ -7894,24 +8810,29 @@ void AnimationTrackEditor::_auto_fit_bezier() {
 	}
 }
 
-void AnimationTrackEditor::_root_node_changed(Node *p_node, bool p_removed) {
+void AnimationTrackEditor::_root_node_changed(Node* p_node, bool p_removed)
+{
 	add_animation_player->set_disabled(p_removed);
 }
 
-void AnimationTrackEditor::_scene_changed() {
+void AnimationTrackEditor::_scene_changed()
+{
 	add_animation_player->set_disabled(EditorNode::get_singleton()->get_edited_scene() == nullptr);
 }
 
-void AnimationTrackEditor::_selection_changed() {
+void AnimationTrackEditor::_selection_changed()
+{
 	if (selected_filter->is_pressed()) {
 		_update_tracks(); // Needs updating.
-	} else {
+	}
+	else {
 		_redraw_tracks();
 		_redraw_groups();
 	}
 }
 
-void AnimationTrackEditor::_update_snap_unit() {
+void AnimationTrackEditor::_update_snap_unit()
+{
 	nearest_fps = 0;
 
 	if (step->get_value() <= 0) {
@@ -7922,7 +8843,8 @@ void AnimationTrackEditor::_update_snap_unit() {
 
 	if (timeline->is_using_fps()) {
 		snap_unit = 1.0 / step->get_value();
-	} else {
+	}
+	else {
 		if (fps_compat->is_pressed()) {
 			snap_unit = CLAMP(step->get_value(), 0.0, 1.0);
 			if (!Math::is_zero_approx(snap_unit)) {
@@ -7930,14 +8852,16 @@ void AnimationTrackEditor::_update_snap_unit() {
 				nearest_fps = int(fps);
 				snap_unit = 1.0 / fps;
 			}
-		} else {
+		}
+		else {
 			snap_unit = step->get_value();
 		}
 	}
 	_update_nearest_fps_label();
 }
 
-float AnimationTrackEditor::snap_time(float p_value, bool p_relative) {
+float AnimationTrackEditor::snap_time(float p_value, bool p_relative)
+{
 	if (is_snap_keys_enabled()) {
 		double current_snap = snap_unit;
 		if (Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
@@ -7948,7 +8872,8 @@ float AnimationTrackEditor::snap_time(float p_value, bool p_relative) {
 		if (p_relative) {
 			double rel = Math::fmod(timeline->get_value(), current_snap);
 			p_value = Math::snapped(p_value + rel, current_snap) - rel;
-		} else {
+		}
+		else {
 			p_value = Math::snapped(p_value, current_snap);
 		}
 	}
@@ -7956,13 +8881,14 @@ float AnimationTrackEditor::snap_time(float p_value, bool p_relative) {
 	return p_value;
 }
 
-float AnimationTrackEditor::get_snap_unit() {
-	return snap_unit;
-}
+float AnimationTrackEditor::get_snap_unit() { return snap_unit; }
 
-void AnimationTrackEditor::_update_timeline_margins() {
-	int margin_left = timeline_mc->get_theme_constant(SNAME("margin_left"), SNAME("AnimationTrackMargins"));
-	int margin_right = timeline_mc->get_theme_constant(SNAME("margin_right"), SNAME("AnimationTrackMargins"));
+void AnimationTrackEditor::_update_timeline_margins()
+{
+	int margin_left =
+		timeline_mc->get_theme_constant(SNAME("margin_left"), SNAME("AnimationTrackMargins"));
+	int margin_right =
+		timeline_mc->get_theme_constant(SNAME("margin_right"), SNAME("AnimationTrackMargins"));
 
 	// Prevent the timeline cursor from misaligning with the tracks on the right-to-left layout.
 	if (scroll->get_v_scroll_bar()->is_visible() && is_layout_rtl()) {
@@ -7975,13 +8901,14 @@ void AnimationTrackEditor::_update_timeline_margins() {
 	bezier_mc->add_theme_constant_override(SNAME("margin_left"), margin_left);
 }
 
-void AnimationTrackEditor::_add_animation_player() {
-	EditorData &editor_data = EditorNode::get_editor_data();
-	Node *scene = editor_data.get_edited_scene_root();
+void AnimationTrackEditor::_add_animation_player()
+{
+	EditorData& editor_data = EditorNode::get_editor_data();
+	Node* scene = editor_data.get_edited_scene_root();
 
 	ERR_FAIL_NULL_EDMSG(scene, "Cannot add AnimationPlayer without root node in scene");
 
-	AnimationPlayer *animation_player = memnew(AnimationPlayer);
+	AnimationPlayer* animation_player = memnew(AnimationPlayer);
 	editor_data.instantiate_object_properties(animation_player);
 
 	String new_name = scene->validate_child_name(animation_player);
@@ -7990,8 +8917,9 @@ void AnimationTrackEditor::_add_animation_player() {
 	}
 	animation_player->set_name(new_name);
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action_for_history(TTR("Create Node"), editor_data.get_current_edited_scene_history_id());
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+	undo_redo->create_action_for_history(
+		TTR("Create Node"), editor_data.get_current_edited_scene_history_id());
 
 	undo_redo->add_do_method(scene, "add_child", animation_player, true);
 	undo_redo->add_do_method(animation_player, "set_owner", scene);
@@ -8000,29 +8928,38 @@ void AnimationTrackEditor::_add_animation_player() {
 
 	undo_redo->commit_action();
 
-	EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	EditorSelection* editor_selection = EditorNode::get_singleton()->get_editor_selection();
 	editor_selection->clear();
 	editor_selection->add_node(animation_player);
 }
 
-void AnimationTrackEditor::_show_imported_anim_warning() {
+void AnimationTrackEditor::_show_imported_anim_warning()
+{
 	// It looks terrible on a single line but the TTR extractor doesn't support line breaks yet.
 	EditorNode::get_singleton()->show_warning(
-			TTR("This animation belongs to an imported scene, so changes to imported tracks will not be saved.\n\nTo modify this animation, navigate to the scene's Advanced Import settings and select the animation.\nSome options, including looping, are available here. To add custom tracks, enable \"Save To File\" and\n\"Keep Custom Tracks\"."));
+		TTR("This animation belongs to an imported scene, so changes to imported tracks will not "
+			"be saved.\n\nTo modify this animation, navigate to the scene's Advanced Import "
+			"settings and select the animation.\nSome options, including looping, are available "
+			"here. To add custom tracks, enable \"Save To File\" and\n\"Keep Custom Tracks\"."));
 }
 
-void AnimationTrackEditor::_show_dummy_player_warning() {
+void AnimationTrackEditor::_show_dummy_player_warning()
+{
+	EditorNode::get_singleton()->show_warning(TTR(
+		"Some AnimationPlayerEditor's options are disabled since this is the dummy AnimationPlayer "
+		"for preview.\n\nThe dummy player is forced active, non-deterministic and doesn't have the "
+		"root motion track. Furthermore, the original node is inactive temporary."));
+}
+
+void AnimationTrackEditor::_show_inactive_player_warning()
+{
 	EditorNode::get_singleton()->show_warning(
-			TTR("Some AnimationPlayerEditor's options are disabled since this is the dummy AnimationPlayer for preview.\n\nThe dummy player is forced active, non-deterministic and doesn't have the root motion track. Furthermore, the original node is inactive temporary."));
+		TTR("AnimationPlayer is inactive. The playback will not be processed."));
 }
 
-void AnimationTrackEditor::_show_inactive_player_warning() {
-	EditorNode::get_singleton()->show_warning(
-			TTR("AnimationPlayer is inactive. The playback will not be processed."));
-}
-
-void AnimationTrackEditor::_select_all_tracks_for_copy() {
-	TreeItem *track = track_copy_select->get_root()->get_first_child();
+void AnimationTrackEditor::_select_all_tracks_for_copy()
+{
+	TreeItem* track = track_copy_select->get_root()->get_first_child();
 	if (!track) {
 		return;
 	}
@@ -8043,27 +8980,22 @@ void AnimationTrackEditor::_select_all_tracks_for_copy() {
 	}
 }
 
-void AnimationTrackEditor::_bind_methods() {
-	ClassDB::bind_method("_track_grab_focus", &AnimationTrackEditor::_track_grab_focus);
-	ClassDB::bind_method("_redraw_tracks", &AnimationTrackEditor::_redraw_tracks);
-	ClassDB::bind_method("_clear_selection_for_anim", &AnimationTrackEditor::_clear_selection_for_anim);
-	ClassDB::bind_method("_select_at_anim", &AnimationTrackEditor::_select_at_anim);
-	ClassDB::bind_method("_clear_selection", &AnimationTrackEditor::_clear_selection);
-
-	ClassDB::bind_method(D_METHOD("_bezier_track_set_key_handle_mode", "animation", "track_idx", "key_idx", "key_handle_mode", "key_handle_set_mode"), &AnimationTrackEditor::_bezier_track_set_key_handle_mode, DEFVAL(Animation::HANDLE_SET_MODE_NONE));
-	ClassDB::bind_method(D_METHOD("_bezier_track_set_key_handle_mode_at_time", "animation", "track_idx", "time", "key_handle_mode", "key_handle_set_mode"), &AnimationTrackEditor::_bezier_track_set_key_handle_mode_at_time, DEFVAL(Animation::HANDLE_SET_MODE_NONE));
-
-	ADD_SIGNAL(MethodInfo("timeline_changed", PropertyInfo(Variant::FLOAT, "position"), PropertyInfo(Variant::BOOL, "timeline_only"), PropertyInfo(Variant::BOOL, "update_position_only")));
+void AnimationTrackEditor::_bind_methods()
+{
+	ADD_SIGNAL(MethodInfo("timeline_changed", PropertyInfo(Variant::FLOAT, "position"),
+		PropertyInfo(Variant::BOOL, "timeline_only"),
+		PropertyInfo(Variant::BOOL, "update_position_only")));
 	ADD_SIGNAL(MethodInfo("keying_changed"));
 	ADD_SIGNAL(MethodInfo("animation_len_changed", PropertyInfo(Variant::FLOAT, "len")));
 	ADD_SIGNAL(MethodInfo("animation_step_changed", PropertyInfo(Variant::FLOAT, "step")));
 }
 
-void AnimationTrackEditor::_pick_track_filter_text_changed(const String &p_newtext) {
-	TreeItem *root_item = pick_track->get_scene_tree()->get_scene_tree()->get_root();
+void AnimationTrackEditor::_pick_track_filter_text_changed(const String& p_newtext)
+{
+	TreeItem* root_item = pick_track->get_scene_tree()->get_scene_tree()->get_root();
 
-	Vector<Node *> select_candidates;
-	Node *to_select = nullptr;
+	Vector<Node*> select_candidates;
+	Node* to_select = nullptr;
 
 	String filter = pick_track->get_filter_line_edit()->get_text();
 
@@ -8071,7 +9003,7 @@ void AnimationTrackEditor::_pick_track_filter_text_changed(const String &p_newte
 
 	if (!select_candidates.is_empty()) {
 		for (int i = 0; i < select_candidates.size(); ++i) {
-			Node *candidate = select_candidates[i];
+			Node* candidate = select_candidates[i];
 
 			if (((String)candidate->get_name()).to_lower().begins_with(filter.to_lower())) {
 				to_select = candidate;
@@ -8087,19 +9019,21 @@ void AnimationTrackEditor::_pick_track_filter_text_changed(const String &p_newte
 	pick_track->get_scene_tree()->set_selected(to_select);
 }
 
-void AnimationTrackEditor::_pick_track_select_recursive(TreeItem *p_item, const String &p_filter, Vector<Node *> &p_select_candidates) {
+void AnimationTrackEditor::_pick_track_select_recursive(
+	TreeItem* p_item, const String& p_filter, Vector<Node*>& p_select_candidates)
+{
 	if (!p_item) {
 		return;
 	}
 
 	NodePath np = p_item->get_metadata(0);
-	Node *node = get_node_or_null(np);
+	Node* node = get_node_or_null(np);
 
 	if (node && !p_filter.is_empty() && ((String)node->get_name()).containsn(p_filter)) {
 		p_select_candidates.push_back(node);
 	}
 
-	TreeItem *c = p_item->get_first_child();
+	TreeItem* c = p_item->get_first_child();
 
 	while (c) {
 		_pick_track_select_recursive(c, p_filter, p_select_candidates);
@@ -8107,20 +9041,23 @@ void AnimationTrackEditor::_pick_track_select_recursive(TreeItem *p_item, const 
 	}
 }
 
-void AnimationTrackEditor::popup_read_only_dialog() {
+void AnimationTrackEditor::popup_read_only_dialog()
+{
 	read_only_dialog->popup_centered(Size2(200, 100) * EDSCALE);
 }
 
-AnimationTrackEditor::AnimationTrackEditor() {
-	MarginContainer *mc = memnew(MarginContainer);
+AnimationTrackEditor::AnimationTrackEditor()
+{
+	MarginContainer* mc = memnew(MarginContainer);
 	mc->set_theme_type_variation("NoBorderAnimation");
 	mc->set_v_size_flags(SIZE_EXPAND_FILL);
 	add_child(mc);
 
 	main_panel = memnew(PanelContainer);
-	main_panel->set_focus_mode(FOCUS_ALL); // Allow panel to have focus so that shortcuts work as expected.
+	main_panel->set_focus_mode(
+		FOCUS_ALL); // Allow panel to have focus so that shortcuts work as expected.
 	mc->add_child(main_panel);
-	HBoxContainer *timeline_scroll = memnew(HBoxContainer);
+	HBoxContainer* timeline_scroll = memnew(HBoxContainer);
 	main_panel->add_child(timeline_scroll);
 	timeline_scroll->set_v_size_flags(SIZE_EXPAND_FILL);
 
@@ -8143,14 +9080,16 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	info_message->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 	info_message->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
 	info_message->set_custom_minimum_size(Size2(100 * EDSCALE, 0));
-	info_message->set_anchors_and_offsets_preset(PRESET_FULL_RECT, PRESET_MODE_KEEP_SIZE, 8 * EDSCALE);
+	info_message->set_anchors_and_offsets_preset(
+		PRESET_FULL_RECT, PRESET_MODE_KEEP_SIZE, 8 * EDSCALE);
 
 	add_animation_player = memnew(Button);
 	info_message_vbox->add_child(add_animation_player);
 	add_animation_player->set_text(TTRC("Add AnimationPlayer"));
 	add_animation_player->set_tooltip_text(TTRC("Add a new AnimationPlayer node to the scene."));
 	add_animation_player->set_h_size_flags(SIZE_SHRINK_CENTER);
-	add_animation_player->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_add_animation_player));
+	add_animation_player->connect(
+		SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_add_animation_player));
 
 	timeline_mc = memnew(MarginContainer);
 	timeline_mc->set_h_size_flags(SIZE_EXPAND_FILL);
@@ -8159,16 +9098,20 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	timeline = memnew(AnimationTimelineEdit);
 	timeline_mc->add_child(timeline);
 	timeline->set_editor(this);
-	timeline->connect("timeline_changed", callable_mp(this, &AnimationTrackEditor::_timeline_changed));
-	timeline->connect("name_limit_changed", callable_mp(this, &AnimationTrackEditor::_name_limit_changed));
+	timeline->connect(
+		"timeline_changed", callable_mp(this, &AnimationTrackEditor::_timeline_changed));
+	timeline->connect(
+		"name_limit_changed", callable_mp(this, &AnimationTrackEditor::_name_limit_changed));
 	timeline->connect("track_added", callable_mp(this, &AnimationTrackEditor::_add_track));
-	timeline->connect(SceneStringName(value_changed), callable_mp(this, &AnimationTrackEditor::_timeline_value_changed));
+	timeline->connect(SceneStringName(value_changed),
+		callable_mp(this, &AnimationTrackEditor::_timeline_value_changed));
 	timeline->connect("length_changed", callable_mp(this, &AnimationTrackEditor::_update_length));
 	timeline->connect("filter_changed", callable_mp(this, &AnimationTrackEditor::_update_tracks));
 
 	panner.instantiate();
 	panner->set_scroll_zoom_factor(AnimationTimelineEdit::SCROLL_ZOOM_FACTOR_IN);
-	panner->set_callbacks(callable_mp(this, &AnimationTrackEditor::_pan_callback), callable_mp(this, &AnimationTrackEditor::_zoom_callback));
+	panner->set_callbacks(callable_mp(this, &AnimationTrackEditor::_pan_callback),
+		callable_mp(this, &AnimationTrackEditor::_zoom_callback));
 
 	box_selection_container = memnew(Control);
 	box_selection_container->set_v_size_flags(SIZE_EXPAND_FILL);
@@ -8185,19 +9128,24 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	bezier_mc->add_child(bezier_edit);
 	bezier_edit->set_editor(this);
 	bezier_edit->set_timeline(timeline);
-	bezier_edit->connect("timeline_changed", callable_mp(this, &AnimationTrackEditor::_timeline_changed));
+	bezier_edit->connect(
+		"timeline_changed", callable_mp(this, &AnimationTrackEditor::_timeline_changed));
 
 	marker_edit = memnew(AnimationMarkerEdit);
 	timeline->get_child(0)->add_child(marker_edit);
 	// Prevents the play position from being drawn at the wrong place in specific cases.
-	timeline->get_child(0)->connect(SceneStringName(resized), callable_mp(marker_edit, &AnimationMarkerEdit::update_play_position));
+	timeline->get_child(0)->connect(SceneStringName(resized),
+		callable_mp(marker_edit, &AnimationMarkerEdit::update_play_position));
 	marker_edit->set_editor(this);
 	marker_edit->set_timeline(timeline);
 	marker_edit->set_anchors_and_offsets_preset(Control::LayoutPreset::PRESET_FULL_RECT);
 	marker_edit->set_z_index(1); // Ensure marker appears over the animation track editor.
-	marker_edit->connect(SceneStringName(draw), callable_mp(this, &AnimationTrackEditor::_redraw_groups));
-	marker_edit->connect(SceneStringName(draw), callable_mp(this, &AnimationTrackEditor::_redraw_tracks));
-	marker_edit->connect(SceneStringName(draw), callable_mp((CanvasItem *)bezier_edit, &CanvasItem::queue_redraw));
+	marker_edit->connect(
+		SceneStringName(draw), callable_mp(this, &AnimationTrackEditor::_redraw_groups));
+	marker_edit->connect(
+		SceneStringName(draw), callable_mp(this, &AnimationTrackEditor::_redraw_tracks));
+	marker_edit->connect(
+		SceneStringName(draw), callable_mp((CanvasItem*)bezier_edit, &CanvasItem::queue_redraw));
 
 	scroll = memnew(ScrollContainer);
 	scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_ALL);
@@ -8205,21 +9153,28 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	scroll->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
 
 	scroll->set_focus_mode(FOCUS_CLICK);
-	scroll->connect(SceneStringName(gui_input), callable_mp(this, &AnimationTrackEditor::_scroll_input));
-	scroll->connect(SceneStringName(focus_exited), callable_mp(panner.ptr(), &ViewPanner::release_pan_key));
+	scroll->connect(
+		SceneStringName(gui_input), callable_mp(this, &AnimationTrackEditor::_scroll_input));
+	scroll->connect(
+		SceneStringName(focus_exited), callable_mp(panner.ptr(), &ViewPanner::release_pan_key));
 
 	// Must be updated from here, so it guarantees that the scrollbar theme has already changed.
-	scroll->connect(SceneStringName(theme_changed), callable_mp(this, &AnimationTrackEditor::_update_timeline_margins), CONNECT_DEFERRED);
-	scroll->get_v_scroll_bar()->connect(SceneStringName(visibility_changed), callable_mp(this, &AnimationTrackEditor::_update_timeline_margins));
-	scroll->get_v_scroll_bar()->connect(SceneStringName(value_changed), callable_mp(this, &AnimationTrackEditor::_v_scroll_changed));
-	scroll->get_h_scroll_bar()->connect(SceneStringName(value_changed), callable_mp(this, &AnimationTrackEditor::_h_scroll_changed));
+	scroll->connect(SceneStringName(theme_changed),
+		callable_mp(this, &AnimationTrackEditor::_update_timeline_margins), CONNECT_DEFERRED);
+	scroll->get_v_scroll_bar()->connect(SceneStringName(visibility_changed),
+		callable_mp(this, &AnimationTrackEditor::_update_timeline_margins));
+	scroll->get_v_scroll_bar()->connect(SceneStringName(value_changed),
+		callable_mp(this, &AnimationTrackEditor::_v_scroll_changed));
+	scroll->get_h_scroll_bar()->connect(SceneStringName(value_changed),
+		callable_mp(this, &AnimationTrackEditor::_h_scroll_changed));
 
 	timeline_vbox->set_custom_minimum_size(Size2(0, 150) * EDSCALE);
 
 	hscroll = memnew(HScrollBar);
 	hscroll->share(timeline);
 	hscroll->hide();
-	hscroll->connect(SceneStringName(value_changed), callable_mp(this, &AnimationTrackEditor::_update_scroll));
+	hscroll->connect(
+		SceneStringName(value_changed), callable_mp(this, &AnimationTrackEditor::_update_scroll));
 	timeline_vbox->add_child(hscroll);
 	timeline->set_hscroll(hscroll);
 
@@ -8232,31 +9187,34 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	mc->add_child(track_vbox);
 	scroll->set_horizontal_scroll_mode(ScrollContainer::SCROLL_MODE_DISABLED);
 
-	HFlowContainer *bottom_hf = memnew(HFlowContainer);
+	HFlowContainer* bottom_hf = memnew(HFlowContainer);
 	add_child(bottom_hf);
 
 	imported_anim_warning = memnew(Button);
 	imported_anim_warning->hide();
 	imported_anim_warning->set_text(TTRC("Imported Animation"));
 	imported_anim_warning->set_tooltip_text(TTRC("Warning: Editing imported animation"));
-	imported_anim_warning->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_show_imported_anim_warning));
+	imported_anim_warning->connect(SceneStringName(pressed),
+		callable_mp(this, &AnimationTrackEditor::_show_imported_anim_warning));
 	bottom_hf->add_child(imported_anim_warning);
 
 	dummy_player_warning = memnew(Button);
 	dummy_player_warning->hide();
 	dummy_player_warning->set_text(TTRC("Dummy Player"));
 	dummy_player_warning->set_tooltip_text(TTRC("Warning: Editing dummy AnimationPlayer"));
-	dummy_player_warning->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_show_dummy_player_warning));
+	dummy_player_warning->connect(SceneStringName(pressed),
+		callable_mp(this, &AnimationTrackEditor::_show_dummy_player_warning));
 	bottom_hf->add_child(dummy_player_warning);
 
 	inactive_player_warning = memnew(Button);
 	inactive_player_warning->hide();
 	inactive_player_warning->set_text(TTRC("Inactive Player"));
 	inactive_player_warning->set_tooltip_text(TTRC("Warning: AnimationPlayer is inactive"));
-	inactive_player_warning->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_show_inactive_player_warning));
+	inactive_player_warning->connect(SceneStringName(pressed),
+		callable_mp(this, &AnimationTrackEditor::_show_inactive_player_warning));
 	bottom_hf->add_child(inactive_player_warning);
 
-	Control *spacer = memnew(Control);
+	Control* spacer = memnew(Control);
 	spacer->set_mouse_filter(MOUSE_FILTER_PASS);
 	spacer->set_h_size_flags(SIZE_EXPAND_FILL);
 	bottom_hf->add_child(spacer);
@@ -8277,15 +9235,19 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	bezier_edit_icon->set_flat(true);
 	bezier_edit_icon->set_disabled(true);
 	bezier_edit_icon->set_toggle_mode(true);
-	bezier_edit_icon->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_toggle_bezier_edit));
-	bezier_edit_icon->set_tooltip_text(TTRC("Toggle between the bezier curve editor and track editor."));
+	bezier_edit_icon->connect(
+		SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_toggle_bezier_edit));
+	bezier_edit_icon->set_tooltip_text(
+		TTRC("Toggle between the bezier curve editor and track editor."));
 
 	bottom_hf->add_child(bezier_edit_icon);
 
 	function_name_toggler = memnew(Button);
 	function_name_toggler->set_flat(true);
-	function_name_toggler->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_toggle_function_names));
-	function_name_toggler->set_shortcut(ED_SHORTCUT("animation_editor/toggle_function_names", TTRC("Toggle method names")));
+	function_name_toggler->connect(
+		SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_toggle_function_names));
+	function_name_toggler->set_shortcut(
+		ED_SHORTCUT("animation_editor/toggle_function_names", TTRC("Toggle method names")));
 	function_name_toggler->set_toggle_mode(true);
 	function_name_toggler->set_shortcut_in_tooltip(false);
 	function_name_toggler->set_tooltip_text(TTRC("Toggle function names in the track editor."));
@@ -8294,7 +9256,9 @@ AnimationTrackEditor::AnimationTrackEditor() {
 
 	selected_filter = memnew(Button);
 	selected_filter->set_flat(true);
-	selected_filter->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_view_group_toggle)); // Same function works the same.
+	selected_filter->connect(SceneStringName(pressed),
+		callable_mp(
+			this, &AnimationTrackEditor::_view_group_toggle)); // Same function works the same.
 	selected_filter->set_toggle_mode(true);
 	selected_filter->set_tooltip_text(TTRC("Only show tracks from nodes selected in tree."));
 
@@ -8302,15 +9266,19 @@ AnimationTrackEditor::AnimationTrackEditor() {
 
 	alphabetic_sorting = memnew(Button);
 	alphabetic_sorting->set_flat(true);
-	alphabetic_sorting->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_update_tracks));
+	alphabetic_sorting->connect(
+		SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_update_tracks));
 	alphabetic_sorting->set_toggle_mode(true);
-	alphabetic_sorting->set_tooltip_text(TTRC("Sort tracks/groups alphabetically.\nIf disabled, tracks are shown in the order they are added and can be reordered using drag-and-drop."));
+	alphabetic_sorting->set_tooltip_text(
+		TTRC("Sort tracks/groups alphabetically.\nIf disabled, tracks are shown in the order they "
+			 "are added and can be reordered using drag-and-drop."));
 
 	bottom_hf->add_child(alphabetic_sorting);
 
 	view_group = memnew(Button);
 	view_group->set_flat(true);
-	view_group->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_view_group_toggle));
+	view_group->connect(
+		SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_view_group_toggle));
 	view_group->set_toggle_mode(true);
 	view_group->set_tooltip_text(TTRC("Group tracks by node or display them as plain list."));
 
@@ -8331,18 +9299,22 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	snap_timeline->set_disabled(true);
 	snap_timeline->set_toggle_mode(true);
 	snap_timeline->set_tooltip_text(TTRC("Apply snapping to timeline cursor."));
-	snap_timeline->set_pressed(EditorSettings::get_singleton()->get_project_metadata("animation_track_editor", "snap_timeline", false));
+	snap_timeline->set_pressed(EditorSettings::get_singleton()->get_project_metadata(
+		"animation_track_editor", "snap_timeline", false));
 	bottom_hf->add_child(snap_timeline);
-	snap_timeline->connect(SceneStringName(toggled), callable_mp(this, &AnimationTrackEditor::_store_snap_states).unbind(1));
+	snap_timeline->connect(SceneStringName(toggled),
+		callable_mp(this, &AnimationTrackEditor::_store_snap_states).unbind(1));
 
 	snap_keys = memnew(Button);
 	snap_keys->set_flat(true);
 	snap_keys->set_disabled(true);
 	snap_keys->set_toggle_mode(true);
 	snap_keys->set_tooltip_text(TTRC("Apply snapping to selected key(s)."));
-	snap_keys->set_pressed(EditorSettings::get_singleton()->get_project_metadata("animation_track_editor", "snap_keys", true));
+	snap_keys->set_pressed(EditorSettings::get_singleton()->get_project_metadata(
+		"animation_track_editor", "snap_keys", true));
 	bottom_hf->add_child(snap_keys);
-	snap_keys->connect(SceneStringName(toggled), callable_mp(this, &AnimationTrackEditor::_store_snap_states).unbind(1));
+	snap_keys->connect(SceneStringName(toggled),
+		callable_mp(this, &AnimationTrackEditor::_store_snap_states).unbind(1));
 
 	fps_compat = memnew(Button);
 	fps_compat->set_flat(true);
@@ -8351,7 +9323,8 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	fps_compat->set_toggle_mode(true);
 	fps_compat->set_pressed(true);
 	fps_compat->set_tooltip_text(TTRC("Apply snapping to the nearest integer FPS."));
-	fps_compat->connect(SceneStringName(toggled), callable_mp(this, &AnimationTrackEditor::_update_fps_compat_mode));
+	fps_compat->connect(SceneStringName(toggled),
+		callable_mp(this, &AnimationTrackEditor::_update_fps_compat_mode));
 
 	nearest_fps_label = memnew(Label);
 	nearest_fps_label->set_focus_mode(FOCUS_ACCESSIBILITY);
@@ -8367,7 +9340,8 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	step->set_tooltip_text(TTRC("Animation step value."));
 	step->set_accessibility_name(TTRC("Animation step value."));
 	bottom_hf->add_child(step);
-	step->connect(SceneStringName(value_changed), callable_mp(this, &AnimationTrackEditor::_update_step));
+	step->connect(
+		SceneStringName(value_changed), callable_mp(this, &AnimationTrackEditor::_update_step));
 	step->set_read_only(true);
 
 	snap_mode = memnew(OptionButton);
@@ -8376,11 +9350,12 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	snap_mode->set_accessibility_name(TTRC("Snap Mode"));
 	snap_mode->set_disabled(true);
 	bottom_hf->add_child(snap_mode);
-	snap_mode->connect(SceneStringName(item_selected), callable_mp(this, &AnimationTrackEditor::_snap_mode_changed));
+	snap_mode->connect(SceneStringName(item_selected),
+		callable_mp(this, &AnimationTrackEditor::_snap_mode_changed));
 
 	bottom_hf->add_child(memnew(VSeparator));
 
-	HBoxContainer *zoom_hb = memnew(HBoxContainer);
+	HBoxContainer* zoom_hb = memnew(HBoxContainer);
 	zoom_icon = memnew(TextureRect);
 	zoom_icon->set_v_size_flags(SIZE_SHRINK_CENTER);
 	zoom_hb->add_child(zoom_icon);
@@ -8400,7 +9375,8 @@ AnimationTrackEditor::AnimationTrackEditor() {
 
 	auto_fit = memnew(Button);
 	auto_fit->set_flat(true);
-	auto_fit->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_auto_fit));
+	auto_fit->connect(
+		SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_auto_fit));
 	auto_fit->set_shortcut(ED_GET_SHORTCUT("animation_editor/auto_fit"));
 	auto_fit->set_accessibility_name(TTRC("Auto Fit"));
 	bottom_hf->add_child(auto_fit);
@@ -8408,7 +9384,8 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	auto_fit_bezier = memnew(Button);
 	auto_fit_bezier->set_flat(true);
 	auto_fit_bezier->set_visible(false);
-	auto_fit_bezier->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_auto_fit_bezier));
+	auto_fit_bezier->connect(
+		SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_auto_fit_bezier));
 	auto_fit_bezier->set_shortcut(ED_GET_SHORTCUT("animation_editor/auto_fit"));
 	auto_fit_bezier->set_accessibility_name(TTRC("Auto Fit Bezier"));
 	bottom_hf->add_child(auto_fit_bezier);
@@ -8426,48 +9403,93 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	edit->get_popup()->add_item(TTRC("Scale Selection..."), EDIT_SCALE_SELECTION);
 	edit->get_popup()->add_item(TTRC("Scale From Cursor..."), EDIT_SCALE_FROM_CURSOR);
 	edit->get_popup()->add_separator();
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/set_start_offset", TTRC("Set Start Offset (Audio)"), KeyModifierMask::CMD_OR_CTRL | Key::BRACKETLEFT), EDIT_SET_START_OFFSET);
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/set_end_offset", TTRC("Set End Offset (Audio)"), KeyModifierMask::CMD_OR_CTRL | Key::BRACKETRIGHT), EDIT_SET_END_OFFSET);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/set_start_offset", TTRC("Set Start Offset (Audio)"),
+			KeyModifierMask::CMD_OR_CTRL | Key::BRACKETLEFT),
+		EDIT_SET_START_OFFSET);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/set_end_offset", TTRC("Set End Offset (Audio)"),
+			KeyModifierMask::CMD_OR_CTRL | Key::BRACKETRIGHT),
+		EDIT_SET_END_OFFSET);
 	edit->get_popup()->add_separator();
 	edit->get_popup()->add_item(TTRC("Make Easing Selection..."), EDIT_EASE_SELECTION);
 	edit->get_popup()->add_separator();
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/duplicate_selected_keys", TTRC("Duplicate Selected Keys"), KeyModifierMask::CMD_OR_CTRL | Key::D), EDIT_DUPLICATE_SELECTED_KEYS);
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/cut_selected_keys", TTRC("Cut Selected Keys"), KeyModifierMask::CMD_OR_CTRL | Key::X), EDIT_CUT_KEYS);
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/copy_selected_keys", TTRC("Copy Selected Keys"), KeyModifierMask::CMD_OR_CTRL | Key::C), EDIT_COPY_KEYS);
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/paste_keys", TTRC("Paste Keys"), KeyModifierMask::CMD_OR_CTRL | Key::V), EDIT_PASTE_KEYS);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/duplicate_selected_keys", TTRC("Duplicate Selected Keys"),
+			KeyModifierMask::CMD_OR_CTRL | Key::D),
+		EDIT_DUPLICATE_SELECTED_KEYS);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/cut_selected_keys", TTRC("Cut Selected Keys"),
+			KeyModifierMask::CMD_OR_CTRL | Key::X),
+		EDIT_CUT_KEYS);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/copy_selected_keys", TTRC("Copy Selected Keys"),
+			KeyModifierMask::CMD_OR_CTRL | Key::C),
+		EDIT_COPY_KEYS);
+	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/paste_keys", TTRC("Paste Keys"),
+										KeyModifierMask::CMD_OR_CTRL | Key::V),
+		EDIT_PASTE_KEYS);
 
 	edit->get_popup()->add_separator();
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/move_first_selected_key_to_cursor", TTRC("Move First Selected Key to Cursor"), Key::BRACKETLEFT), EDIT_MOVE_FIRST_SELECTED_KEY_TO_CURSOR);
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/move_last_selected_key_to_cursor", TTRC("Move Last Selected Key to Cursor"), Key::BRACKETRIGHT), EDIT_MOVE_LAST_SELECTED_KEY_TO_CURSOR);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/move_first_selected_key_to_cursor",
+			TTRC("Move First Selected Key to Cursor"), Key::BRACKETLEFT),
+		EDIT_MOVE_FIRST_SELECTED_KEY_TO_CURSOR);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/move_last_selected_key_to_cursor",
+			TTRC("Move Last Selected Key to Cursor"), Key::BRACKETRIGHT),
+		EDIT_MOVE_LAST_SELECTED_KEY_TO_CURSOR);
 	edit->get_popup()->add_separator();
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/delete_selection", TTRC("Delete Selection"), Key::KEY_DELETE), EDIT_DELETE_SELECTION);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/delete_selection", TTRC("Delete Selection"), Key::KEY_DELETE),
+		EDIT_DELETE_SELECTION);
 
 	edit->get_popup()->add_separator();
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/goto_next_step", TTRC("Go to Next Step"), KeyModifierMask::CMD_OR_CTRL | Key::RIGHT), EDIT_GOTO_NEXT_STEP);
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/goto_prev_step", TTRC("Go to Previous Step"), KeyModifierMask::CMD_OR_CTRL | Key::LEFT), EDIT_GOTO_PREV_STEP);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/goto_next_step", TTRC("Go to Next Step"),
+			KeyModifierMask::CMD_OR_CTRL | Key::RIGHT),
+		EDIT_GOTO_NEXT_STEP);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/goto_prev_step", TTRC("Go to Previous Step"),
+			KeyModifierMask::CMD_OR_CTRL | Key::LEFT),
+		EDIT_GOTO_PREV_STEP);
 	edit->get_popup()->add_separator();
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/go_to_next_keyframe", TTRC("Go to Next Keyframe"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::D), EDIT_GOTO_NEXT_KEYFRAME);
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/go_to_previous_keyframe", TTRC("Go to Previous Keyframe"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::A), EDIT_GOTO_PREV_KEYFRAME);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/go_to_next_keyframe", TTRC("Go to Next Keyframe"),
+			KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::D),
+		EDIT_GOTO_NEXT_KEYFRAME);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/go_to_previous_keyframe", TTRC("Go to Previous Keyframe"),
+			KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::A),
+		EDIT_GOTO_PREV_KEYFRAME);
 	edit->get_popup()->add_separator();
 
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/add_reset_value", TTRC("Add tracks to RESET")), EDIT_ADD_RESET_KEY);
-	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/apply_reset", TTRC("Apply RESET")), EDIT_APPLY_RESET);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/add_reset_value", TTRC("Add tracks to RESET")),
+		EDIT_ADD_RESET_KEY);
+	edit->get_popup()->add_shortcut(
+		ED_SHORTCUT("animation_editor/apply_reset", TTRC("Apply RESET")), EDIT_APPLY_RESET);
 	edit->get_popup()->add_separator();
 	edit->get_popup()->add_item(TTRC("Bake Animation..."), EDIT_BAKE_ANIMATION);
 	edit->get_popup()->add_item(TTRC("Optimize Animation (no undo)..."), EDIT_OPTIMIZE_ANIMATION);
 	edit->get_popup()->add_item(TTRC("Clean-Up Animation (no undo)..."), EDIT_CLEAN_UP_ANIMATION);
 
-	edit->get_popup()->connect(SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed));
-	edit->get_popup()->connect("about_to_popup", callable_mp(this, &AnimationTrackEditor::_edit_menu_about_to_popup));
+	edit->get_popup()->connect(
+		SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed));
+	edit->get_popup()->connect(
+		"about_to_popup", callable_mp(this, &AnimationTrackEditor::_edit_menu_about_to_popup));
 
 	pick_track = memnew(SceneTreeDialog);
 	add_child(pick_track);
-	pick_track->connect("selected", callable_mp(this, &AnimationTrackEditor::_new_track_node_selected));
-	pick_track->get_filter_line_edit()->connect(SceneStringName(text_changed), callable_mp(this, &AnimationTrackEditor::_pick_track_filter_text_changed));
+	pick_track->connect(
+		"selected", callable_mp(this, &AnimationTrackEditor::_new_track_node_selected));
+	pick_track->get_filter_line_edit()->connect(SceneStringName(text_changed),
+		callable_mp(this, &AnimationTrackEditor::_pick_track_filter_text_changed));
 
 	prop_selector = memnew(PropertySelector);
 	add_child(prop_selector);
-	prop_selector->connect("selected", callable_mp(this, &AnimationTrackEditor::_new_track_property_selected));
+	prop_selector->connect(
+		"selected", callable_mp(this, &AnimationTrackEditor::_new_track_property_selected));
 	prop_selector->set_accessibility_name(TTRC("Track Property"));
 
 	method_selector = memnew(PropertySelector);
@@ -8477,17 +9499,19 @@ AnimationTrackEditor::AnimationTrackEditor() {
 
 	insert_confirm = memnew(ConfirmationDialog);
 	add_child(insert_confirm);
-	insert_confirm->connect(SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_confirm_insert_list));
-	VBoxContainer *icvb = memnew(VBoxContainer);
+	insert_confirm->connect(
+		SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_confirm_insert_list));
+	VBoxContainer* icvb = memnew(VBoxContainer);
 	insert_confirm->add_child(icvb);
 	insert_confirm_text = memnew(Label);
 	insert_confirm_text->set_focus_mode(FOCUS_ACCESSIBILITY);
 	icvb->add_child(insert_confirm_text);
-	HBoxContainer *ichb = memnew(HBoxContainer);
+	HBoxContainer* ichb = memnew(HBoxContainer);
 	icvb->add_child(ichb);
 	insert_confirm_bezier = memnew(CheckBox);
 	insert_confirm_bezier->set_text(TTRC("Use Bezier Curves"));
-	insert_confirm_bezier->set_pressed(EDITOR_GET("editors/animation/default_create_bezier_tracks"));
+	insert_confirm_bezier->set_pressed(
+		EDITOR_GET("editors/animation/default_create_bezier_tracks"));
 	ichb->add_child(insert_confirm_bezier);
 	insert_confirm_reset = memnew(CheckBox);
 	insert_confirm_reset->set_text(TTRC("Create RESET Track(s)"));
@@ -8498,7 +9522,8 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	box_selection_container->add_child(box_selection);
 	box_selection->set_mouse_filter(MOUSE_FILTER_IGNORE);
 	box_selection->hide();
-	box_selection->connect(SceneStringName(draw), callable_mp(this, &AnimationTrackEditor::_box_selection_draw));
+	box_selection->connect(
+		SceneStringName(draw), callable_mp(this, &AnimationTrackEditor::_box_selection_draw));
 
 	// Default Plugins.
 
@@ -8511,7 +9536,7 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	optimize_dialog = memnew(ConfirmationDialog);
 	add_child(optimize_dialog);
 	optimize_dialog->set_title(TTRC("Animation Optimizer"));
-	VBoxContainer *optimize_vb = memnew(VBoxContainer);
+	VBoxContainer* optimize_vb = memnew(VBoxContainer);
 	optimize_dialog->add_child(optimize_vb);
 
 	optimize_velocity_error = memnew(SpinBox);
@@ -8537,12 +9562,14 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	optimize_vb->add_margin_child(TTRC("Max Precision Error:"), optimize_precision_error);
 
 	optimize_dialog->set_ok_button_text(TTRC("Optimize"));
-	optimize_dialog->connect(SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_OPTIMIZE_ANIMATION_CONFIRM));
+	optimize_dialog->connect(
+		SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed)
+										.bind(EDIT_OPTIMIZE_ANIMATION_CONFIRM));
 
 	//
 	cleanup_dialog = memnew(ConfirmationDialog);
 	add_child(cleanup_dialog);
-	VBoxContainer *cleanup_vb = memnew(VBoxContainer);
+	VBoxContainer* cleanup_vb = memnew(VBoxContainer);
 	cleanup_dialog->add_child(cleanup_vb);
 
 	cleanup_keys_with_trimming_head = memnew(CheckBox);
@@ -8572,11 +9599,13 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	cleanup_dialog->set_title(TTRC("Clean-Up Animation(s) (NO UNDO!)"));
 	cleanup_dialog->set_ok_button_text(TTRC("Clean-Up"));
 
-	cleanup_dialog->connect(SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_CLEAN_UP_ANIMATION_CONFIRM));
+	cleanup_dialog->connect(
+		SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed)
+										.bind(EDIT_CLEAN_UP_ANIMATION_CONFIRM));
 
 	//
 	scale_dialog = memnew(ConfirmationDialog);
-	VBoxContainer *vbc = memnew(VBoxContainer);
+	VBoxContainer* vbc = memnew(VBoxContainer);
 	scale_dialog->add_child(vbc);
 
 	scale = memnew(SpinBox);
@@ -8586,7 +9615,9 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	scale->set_select_all_on_focus(true);
 	scale->set_accessibility_name(TTRC("Scale Ratio"));
 	vbc->add_margin_child(TTRC("Scale Ratio:"), scale);
-	scale_dialog->connect(SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_SCALE_CONFIRM), CONNECT_DEFERRED);
+	scale_dialog->connect(SceneStringName(confirmed),
+		callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_SCALE_CONFIRM),
+		CONNECT_DEFERRED);
 	add_child(scale_dialog);
 
 	scale_dialog->register_text_enter(scale->get_line_edit());
@@ -8594,9 +9625,10 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	//
 	ease_dialog = memnew(ConfirmationDialog);
 	ease_dialog->set_title(TTRC("Select Transition and Easing"));
-	ease_dialog->connect(SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_EASE_CONFIRM));
+	ease_dialog->connect(SceneStringName(confirmed),
+		callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_EASE_CONFIRM));
 	add_child(ease_dialog);
-	GridContainer *ease_grid = memnew(GridContainer);
+	GridContainer* ease_grid = memnew(GridContainer);
 	ease_grid->set_columns(2);
 	ease_dialog->add_child(ease_grid);
 	transition_selection = memnew(OptionButton);
@@ -8614,7 +9646,8 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	transition_selection->add_item(String(), Tween::TRANS_BACK);
 	transition_selection->add_item(String(), Tween::TRANS_SPRING);
 	transition_selection->select(Tween::TRANS_LINEAR); // Default.
-	transition_selection->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED); // Translation context is needed.
+	transition_selection->set_auto_translate_mode(
+		AUTO_TRANSLATE_MODE_DISABLED); // Translation context is needed.
 	ease_selection = memnew(OptionButton);
 	ease_selection->set_accessibility_name(TTRC("Ease Type:"));
 	ease_selection->add_item(String(), Tween::EASE_IN);
@@ -8622,7 +9655,8 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	ease_selection->add_item(String(), Tween::EASE_IN_OUT);
 	ease_selection->add_item(String(), Tween::EASE_OUT_IN);
 	ease_selection->select(Tween::EASE_IN_OUT); // Default.
-	ease_selection->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED); // Translation context is needed.
+	ease_selection->set_auto_translate_mode(
+		AUTO_TRANSLATE_MODE_DISABLED); // Translation context is needed.
 	ease_fps = memnew(SpinBox);
 	ease_fps->set_min(FPS_DECIMAL);
 	ease_fps->set_max(999);
@@ -8639,9 +9673,11 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	//
 	bake_dialog = memnew(ConfirmationDialog);
 	bake_dialog->set_title(TTRC("Animation Baker"));
-	bake_dialog->connect(SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_BAKE_ANIMATION_CONFIRM));
+	bake_dialog->connect(
+		SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed)
+										.bind(EDIT_BAKE_ANIMATION_CONFIRM));
 	add_child(bake_dialog);
-	GridContainer *bake_grid = memnew(GridContainer);
+	GridContainer* bake_grid = memnew(GridContainer);
 	bake_grid->set_columns(2);
 	bake_dialog->add_child(bake_grid);
 	bake_trs = memnew(CheckBox);
@@ -8673,12 +9709,13 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	track_copy_dialog->set_title(TTRC("Select Tracks to Copy"));
 	track_copy_dialog->set_ok_button_text(TTRC("Copy"));
 
-	VBoxContainer *track_copy_vbox = memnew(VBoxContainer);
+	VBoxContainer* track_copy_vbox = memnew(VBoxContainer);
 	track_copy_dialog->add_child(track_copy_vbox);
 
-	Button *select_all_button = memnew(Button);
+	Button* select_all_button = memnew(Button);
 	select_all_button->set_text(TTRC("Select All/None"));
-	select_all_button->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_select_all_tracks_for_copy));
+	select_all_button->connect(SceneStringName(pressed),
+		callable_mp(this, &AnimationTrackEditor::_select_all_tracks_for_copy));
 	track_copy_vbox->add_child(select_all_button);
 
 	track_copy_select = memnew(Tree);
@@ -8688,7 +9725,9 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	track_copy_select->set_v_size_flags(SIZE_EXPAND_FILL);
 	track_copy_select->set_hide_root(true);
 	track_copy_vbox->add_child(track_copy_select);
-	track_copy_dialog->connect(SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_COPY_TRACKS_CONFIRM));
+	track_copy_dialog->connect(
+		SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed)
+										.bind(EDIT_COPY_TRACKS_CONFIRM));
 
 	read_only_dialog = memnew(AcceptDialog);
 	read_only_dialog->set_flag(Window::FLAG_RESIZE_DISABLED, true);
@@ -8697,19 +9736,22 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	add_child(read_only_dialog);
 }
 
-AnimationTrackEditor::~AnimationTrackEditor() {
+AnimationTrackEditor::~AnimationTrackEditor()
+{
 	memdelete(key_edit);
 	memdelete(multi_key_edit);
 }
 
 // AnimationTrackKeyEditEditorPlugin.
 
-void AnimationTrackKeyEditEditor::_time_edit_spun() {
+void AnimationTrackKeyEditEditor::_time_edit_spun()
+{
 	_time_edit_entered();
 	_time_edit_exited();
 }
 
-void AnimationTrackKeyEditEditor::_time_edit_entered() {
+void AnimationTrackKeyEditEditor::_time_edit_entered()
+{
 	int key = animation->track_find_key(track, key_ofs, Animation::FIND_MODE_APPROX);
 	if (key == -1) {
 		return;
@@ -8719,7 +9761,8 @@ void AnimationTrackKeyEditEditor::_time_edit_entered() {
 	key_data_cache.value = animation->track_get_key_value(track, key);
 }
 
-void AnimationTrackKeyEditEditor::_time_edit_exited() {
+void AnimationTrackKeyEditEditor::_time_edit_exited()
+{
 	real_t new_time = spinner->get_value();
 
 	if (use_fps) {
@@ -8735,29 +9778,37 @@ void AnimationTrackKeyEditEditor::_time_edit_exited() {
 	}
 
 	int existing = animation->track_find_key(track, new_time, Animation::FIND_MODE_APPROX);
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Animation Change Keyframe Time"));
 
 	if (existing != -1) {
-		undo_redo->add_do_method(animation.ptr(), "track_remove_key_at_time", track, animation->track_get_key_time(track, existing));
+		undo_redo->add_do_method(animation.ptr(), "track_remove_key_at_time", track,
+			animation->track_get_key_time(track, existing));
 	}
-	undo_redo->add_do_method(animation.ptr(), "track_remove_key_at_time", track, key_data_cache.time);
-	undo_redo->add_do_method(animation.ptr(), "track_insert_key", track, new_time, key_data_cache.value, key_data_cache.transition);
+	undo_redo->add_do_method(
+		animation.ptr(), "track_remove_key_at_time", track, key_data_cache.time);
+	undo_redo->add_do_method(animation.ptr(), "track_insert_key", track, new_time,
+		key_data_cache.value, key_data_cache.transition);
 	undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", track, new_time);
-	undo_redo->add_undo_method(animation.ptr(), "track_insert_key", track, key_data_cache.time, key_data_cache.value, key_data_cache.transition);
+	undo_redo->add_undo_method(animation.ptr(), "track_insert_key", track, key_data_cache.time,
+		key_data_cache.value, key_data_cache.transition);
 	if (existing != -1) {
-		undo_redo->add_undo_method(animation.ptr(), "track_insert_key", track, animation->track_get_key_time(track, existing), animation->track_get_key_value(track, existing), animation->track_get_key_transition(track, existing));
+		undo_redo->add_undo_method(animation.ptr(), "track_insert_key", track,
+			animation->track_get_key_time(track, existing),
+			animation->track_get_key_value(track, existing),
+			animation->track_get_key_transition(track, existing));
 	}
 
 	// Reselect key.
-	AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+	AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 	if (ape) {
-		AnimationTrackEditor *ate = ape->get_track_editor();
+		AnimationTrackEditor* ate = ape->get_track_editor();
 		if (ate) {
 			undo_redo->add_do_method(ate, "_clear_selection_for_anim", animation);
 			undo_redo->add_undo_method(ate, "_clear_selection_for_anim", animation);
 			undo_redo->add_do_method(ate, "_select_at_anim", animation, track, new_time);
-			undo_redo->add_undo_method(ate, "_select_at_anim", animation, track, key_data_cache.time);
+			undo_redo->add_undo_method(
+				ate, "_select_at_anim", animation, track, key_data_cache.time);
 		}
 		undo_redo->add_do_method(ape, "_animation_update_key_frame");
 		undo_redo->add_undo_method(ape, "_animation_update_key_frame");
@@ -8766,7 +9817,9 @@ void AnimationTrackKeyEditEditor::_time_edit_exited() {
 	undo_redo->commit_action();
 }
 
-AnimationTrackKeyEditEditor::AnimationTrackKeyEditEditor(Ref<Animation> p_animation, int p_track, real_t p_key_ofs, bool p_use_fps) {
+AnimationTrackKeyEditEditor::AnimationTrackKeyEditEditor(
+	Ref<Animation> p_animation, int p_track, real_t p_key_ofs, bool p_use_fps)
+{
 	if (p_animation.is_null()) {
 		return;
 	}
@@ -8780,6 +9833,7 @@ AnimationTrackKeyEditEditor::AnimationTrackKeyEditEditor(Ref<Animation> p_animat
 
 	spinner = memnew(EditorSpinSlider);
 	spinner->set_focus_mode(Control::FOCUS_CLICK);
+
 	spinner->set_min(0);
 	spinner->set_allow_greater(true);
 	spinner->set_allow_lesser(true);
@@ -8793,45 +9847,54 @@ AnimationTrackKeyEditEditor::AnimationTrackKeyEditEditor(Ref<Animation> p_animat
 		}
 		spinner->set_value(key_ofs * fps);
 		spinner->set_max(animation->get_length() * fps);
-		spinner->connect("updown_pressed", callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_spun), CONNECT_DEFERRED);
-	} else {
+		spinner->connect("updown_pressed",
+			callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_spun), CONNECT_DEFERRED);
+	}
+	else {
 		spinner->set_step(SECOND_DECIMAL);
 		spinner->set_value(key_ofs);
 		spinner->set_max(animation->get_length());
 	}
 
-	spinner->connect("grabbed", callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_entered), CONNECT_DEFERRED);
-	spinner->connect("ungrabbed", callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
-	spinner->connect("value_focus_entered", callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_entered), CONNECT_DEFERRED);
-	spinner->connect("value_focus_exited", callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
+	spinner->connect("grabbed", callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_entered),
+		CONNECT_DEFERRED);
+	spinner->connect("ungrabbed",
+		callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
+	spinner->connect("value_focus_entered",
+		callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_entered), CONNECT_DEFERRED);
+	spinner->connect("value_focus_exited",
+		callable_mp(this, &AnimationTrackKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
 }
 
-void AnimationMarkerEdit::_zoom_changed() {
+void AnimationMarkerEdit::_zoom_changed()
+{
 	queue_redraw();
 	play_position->queue_redraw();
 }
 
-void AnimationMarkerEdit::_menu_selected(int p_index) {
+void AnimationMarkerEdit::_menu_selected(int p_index)
+{
 	switch (p_index) {
-		case MENU_KEY_INSERT: {
-			_insert_marker(insert_at_pos);
-		} break;
-		case MENU_KEY_RENAME: {
-			if (selection.size() > 0) {
-				_rename_marker(*selection.last());
-			}
-		} break;
-		case MENU_KEY_DELETE: {
-			_delete_selected_markers();
-		} break;
-		case MENU_KEY_TOGGLE_MARKER_NAMES: {
-			should_show_all_marker_names = !should_show_all_marker_names;
-			queue_redraw();
-		} break;
+	case MENU_KEY_INSERT: {
+		_insert_marker(insert_at_pos);
+	} break;
+	case MENU_KEY_RENAME: {
+		if (selection.size() > 0) {
+			_rename_marker(*selection.last());
+		}
+	} break;
+	case MENU_KEY_DELETE: {
+		_delete_selected_markers();
+	} break;
+	case MENU_KEY_TOGGLE_MARKER_NAMES: {
+		should_show_all_marker_names = !should_show_all_marker_names;
+		queue_redraw();
+	} break;
 	}
 }
 
-void AnimationMarkerEdit::_play_position_draw() {
+void AnimationMarkerEdit::_play_position_draw()
+{
 	if (animation.is_null() || play_position_pos < 0) {
 		return;
 	}
@@ -8839,13 +9902,17 @@ void AnimationMarkerEdit::_play_position_draw() {
 	float scale = timeline->get_zoom_scale();
 	int px = (play_position_pos - timeline->get_value()) * scale + timeline->get_name_limit();
 
-	if (px >= timeline->get_name_limit() && px < (get_size().width - timeline->get_buttons_width())) {
+	if (px >= timeline->get_name_limit() &&
+		px < (get_size().width - timeline->get_buttons_width())) {
 		Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		play_position->draw_line(Point2(px, 0), Point2(px, get_size().height), color, Math::round(2 * EDSCALE));
+		play_position->draw_line(
+			Point2(px, 0), Point2(px, get_size().height), color, Math::round(2 * EDSCALE));
 	}
 }
 
-bool AnimationMarkerEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggregate, bool p_deselectable) {
+bool AnimationMarkerEdit::_try_select_at_ui_pos(
+	const Point2& p_pos, bool p_aggregate, bool p_deselectable)
+{
 	int limit = timeline->get_name_limit();
 	int limit_end = get_size().width - timeline->get_buttons_width();
 	// Left Border including space occupied by keyframes on t=0.
@@ -8854,20 +9921,23 @@ bool AnimationMarkerEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggr
 	if (p_pos.x >= limit_start_hitbox && p_pos.x <= limit_end) {
 		int key_idx = -1;
 		float key_distance = 1e20;
-		PackedStringArray names = animation->get_marker_names();
+		PackedStringArray names = animation->get_marker_names(
+);
 		for (int i = 0; i < names.size(); i++) {
-			Rect2 rect = const_cast<AnimationMarkerEdit *>(this)->get_key_rect(timeline->get_zoom_scale());
+			Rect2 rect =
+				const_cast<AnimationMarkerEdit*>(this)->get_key_rect(timeline->get_zoom_scale());
 			float offset = animation->get_marker_time(names[i]) - timeline->get_value();
 			offset = offset * timeline->get_zoom_scale() + limit;
 			rect.position.x += offset;
 			if (rect.has_point(p_pos)) {
-				if (const_cast<AnimationMarkerEdit *>(this)->is_key_selectable_by_distance()) {
+				if (const_cast<AnimationMarkerEdit*>(this)->is_key_selectable_by_distance()) {
 					float distance = Math::abs(offset - p_pos.x);
 					if (key_idx == -1 || distance < key_distance) {
 						key_idx = i;
 						key_distance = distance;
 					}
-				} else {
+				}
+				else {
 					// First one does it.
 					break;
 				}
@@ -8883,7 +9953,8 @@ bool AnimationMarkerEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggr
 						moving_selection_pivot = 0.0f;
 						moving_selection_mouse_begin_x = 0.0f;
 					}
-				} else {
+				}
+				else {
 					call_deferred("_select_key", name, false);
 					moving_selection_attempt = true;
 					moving_selection_effective = false;
@@ -8892,12 +9963,14 @@ bool AnimationMarkerEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggr
 					moving_selection_mouse_begin_x = p_pos.x;
 				}
 
-			} else {
+			}
+			else {
 				StringName name = names[key_idx];
 				if (!selection.has(name)) {
 					call_deferred("_select_key", name, true);
 					select_single_attempt = StringName();
-				} else {
+				}
+				else {
 					select_single_attempt = name;
 				}
 
@@ -8919,7 +9992,8 @@ bool AnimationMarkerEdit::_try_select_at_ui_pos(const Point2 &p_pos, bool p_aggr
 	return false;
 }
 
-bool AnimationMarkerEdit::_is_ui_pos_in_current_section(const Point2 &p_pos) {
+bool AnimationMarkerEdit::_is_ui_pos_in_current_section(const Point2& p_pos)
+{
 	int limit = timeline->get_name_limit();
 	int limit_end = get_size().width - timeline->get_buttons_width();
 
@@ -8928,8 +10002,13 @@ bool AnimationMarkerEdit::_is_ui_pos_in_current_section(const Point2 &p_pos) {
 		if (!section.is_empty()) {
 			StringName start_marker = section[0];
 			StringName end_marker = section[1];
-			float start_offset = (animation->get_marker_time(start_marker) - timeline->get_value()) * timeline->get_zoom_scale() + limit;
-			float end_offset = (animation->get_marker_time(end_marker) - timeline->get_value()) * timeline->get_zoom_scale() + limit;
+			float start_offset =
+				(animation->get_marker_time(start_marker) - timeline->get_value()) *
+					timeline->get_zoom_scale() +
+				limit;
+			float end_offset = (animation->get_marker_time(end_marker) - timeline->get_value()) *
+								   timeline->get_zoom_scale() +
+							   limit;
 			return p_pos.x >= start_offset && p_pos.x <= end_offset;
 		}
 	}
@@ -8937,9 +10016,11 @@ bool AnimationMarkerEdit::_is_ui_pos_in_current_section(const Point2 &p_pos) {
 	return false;
 }
 
-HBoxContainer *AnimationMarkerEdit::_create_hbox_labeled_control(const String &p_text, Control *p_control) const {
-	HBoxContainer *hbox = memnew(HBoxContainer);
-	Label *label = memnew(Label);
+HBoxContainer* AnimationMarkerEdit::_create_hbox_labeled_control(
+	const String& p_text, Control* p_control) const
+{
+	HBoxContainer* hbox = memnew(HBoxContainer);
+	Label* label = memnew(Label);
 	label->set_text(p_text);
 	hbox->add_child(label);
 	hbox->add_child(p_control);
@@ -8951,7 +10032,8 @@ HBoxContainer *AnimationMarkerEdit::_create_hbox_labeled_control(const String &p
 	return hbox;
 }
 
-void AnimationMarkerEdit::_update_key_edit() {
+void AnimationMarkerEdit::_update_key_edit()
+{
 	_clear_key_edit();
 	if (animation.is_null()) {
 		return;
@@ -8965,26 +10047,32 @@ void AnimationMarkerEdit::_update_key_edit() {
 		key_edit->use_fps = timeline->is_using_fps();
 		key_edit->marker_edit = this;
 
-		EditorNode::get_singleton()->push_item(key_edit);
+		EditorNode::get_singleton()->push_item(key_edit->obj.get());
 
-		InspectorDock::get_singleton()->set_info(TTR("Marker name is read-only in the inspector."), TTR("A marker's name can only be changed by right-clicking it in the animation editor and selecting \"Rename Marker\", in order to make sure that marker names are all unique."), true);
-	} else if (selection.size() > 1) {
+		InspectorDock::get_singleton()->set_info(TTR("Marker name is read-only in the inspector."),
+			TTR("A marker's name can only be changed by right-clicking it in the animation editor "
+				"and selecting \"Rename Marker\", in order to make sure that marker names are all "
+				"unique."),
+			true);
+	}
+	else if (selection.size() > 1) {
 		multi_key_edit = memnew(AnimationMultiMarkerKeyEdit);
 		multi_key_edit->animation = animation;
 		multi_key_edit->animation_read_only = read_only;
 		multi_key_edit->marker_edit = this;
-		for (const StringName &name : selection) {
+		for (const StringName& name : selection) {
 			multi_key_edit->marker_names.push_back(name);
 		}
 
-		EditorNode::get_singleton()->push_item(multi_key_edit);
+		EditorNode::get_singleton()->push_item(multi_key_edit->obj.get());
 	}
 }
 
-void AnimationMarkerEdit::_clear_key_edit() {
+void AnimationMarkerEdit::_clear_key_edit()
+{
 	if (key_edit) {
 		// If key edit is the object being inspected, remove it first.
-		if (InspectorDock::get_inspector_singleton()->get_edited_object() == key_edit) {
+		if (InspectorDock::get_inspector_singleton()->get_edited_object() == key_edit->obj.get()) {
 			EditorNode::get_singleton()->push_item(nullptr);
 		}
 
@@ -8994,7 +10082,8 @@ void AnimationMarkerEdit::_clear_key_edit() {
 	}
 
 	if (multi_key_edit) {
-		if (InspectorDock::get_inspector_singleton()->get_edited_object() == multi_key_edit) {
+		if (InspectorDock::get_inspector_singleton()->get_edited_object() ==
+			multi_key_edit->obj.get()) {
 			EditorNode::get_singleton()->push_item(nullptr);
 		}
 
@@ -9003,117 +10092,122 @@ void AnimationMarkerEdit::_clear_key_edit() {
 	}
 }
 
-void AnimationMarkerEdit::_bind_methods() {
-	ClassDB::bind_method("_clear_selection_for_anim", &AnimationMarkerEdit::_clear_selection_for_anim);
-	ClassDB::bind_method("_select_key", &AnimationMarkerEdit::_select_key);
-	ClassDB::bind_method("_deselect_key", &AnimationMarkerEdit::_deselect_key);
-}
+void AnimationMarkerEdit::_bind_methods() {}
 
-void AnimationMarkerEdit::_notification(int p_what) {
+void AnimationMarkerEdit::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			if (animation.is_null()) {
-				return;
-			}
+	case NOTIFICATION_THEME_CHANGED: {
+		if (animation.is_null()) {
+			return;
+		}
 
-			type_icon = get_editor_theme_icon(SNAME("Marker"));
-			selected_icon = get_editor_theme_icon(SNAME("MarkerSelected"));
-		} break;
+		type_icon = get_editor_theme_icon(SNAME("Marker"));
+		selected_icon = get_editor_theme_icon(SNAME("MarkerSelected"));
+	} break;
 
-		case NOTIFICATION_DRAW: {
-			if (animation.is_null()) {
-				return;
-			}
+	case NOTIFICATION_DRAW: {
+		if (animation.is_null()) {
+			return;
+		}
 
-			int limit = timeline->get_name_limit();
-			int limit_end = get_size().width - timeline->get_buttons_width();
-			float scale = timeline->get_zoom_scale();
+		int limit = timeline->get_name_limit();
+		int limit_end = get_size().width - timeline->get_buttons_width();
+		float scale = timeline->get_zoom_scale();
 
-			Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-			Color color = get_theme_color(SceneStringName(font_color), SNAME("Label"));
+		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
+		Color color = get_theme_color(SceneStringName(font_color), SNAME("Label"));
 
-			// SECTION PREVIEW //
+		// SECTION PREVIEW //
 
-			{
-				PackedStringArray section = get_selected_section();
-				if (section.size() == 2) {
-					StringName start_marker = section[0];
-					StringName end_marker = section[1];
-					double start_time = animation->get_marker_time(start_marker);
-					double end_time = animation->get_marker_time(end_marker);
+		{
+			PackedStringArray section = get_selected_section();
+			if (section.size() == 2) {
+				StringName start_marker = section[0];
+				StringName end_marker = section[1];
+				double start_time = animation->get_marker_time(start_marker);
+				double end_time = animation->get_marker_time(end_marker);
 
-					// When AnimationPlayer is playing, don't move the preview rect, so it still indicates the playback section.
-					AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
-					if (moving_selection && !(player && player->is_playing())) {
-						start_time += moving_selection_offset;
-						end_time += moving_selection_offset;
-					}
+				// When AnimationPlayer is playing, don't move the preview rect, so it still
+				// indicates the playback section.
+				AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
+				if (moving_selection && !(player && player->is_playing())) {
+					start_time += moving_selection_offset;
+					end_time += moving_selection_offset;
+				}
 
-					if (start_time < animation->get_length() && end_time >= 0) {
-						float start_ofs = MAX(0, start_time) - timeline->get_value();
-						float end_ofs = MIN(animation->get_length(), end_time) - timeline->get_value();
-						start_ofs = start_ofs * scale + limit;
-						end_ofs = end_ofs * scale + limit;
-						start_ofs = MAX(start_ofs, limit);
-						end_ofs = MIN(end_ofs, limit_end);
-						Rect2 rect;
-						rect.set_position(Vector2(start_ofs, 0));
-						rect.set_size(Vector2(end_ofs - start_ofs, get_size().height));
+				if (start_time < animation->get_length() && end_time >= 0) {
+					float start_ofs = MAX(0, start_time) - timeline->get_value();
+					float end_ofs = MIN(animation->get_length(), end_time) - timeline->get_value();
+					start_ofs = start_ofs * scale + limit;
+					end_ofs = end_ofs * scale + limit;
+					start_ofs = MAX(start_ofs, limit);
+					end_ofs = MIN(end_ofs, limit_end);
+					Rect2 rect;
+					rect.set_position(Vector2(start_ofs, 0));
+					rect.set_size(Vector2(end_ofs - start_ofs, get_size().height));
 
-						draw_rect(rect, Color(1, 0.1, 0.1, 0.2));
-					}
+					draw_rect(rect, Color(1, 0.1, 0.1, 0.2));
 				}
 			}
+		}
 
-			// KEYFRAMES //
+		// KEYFRAMES //
 
-			draw_bg(limit, get_size().width - timeline->get_buttons_width());
+		draw_bg(limit, get_size().width - timeline->get_buttons_width());
 
-			{
-				PackedStringArray names = animation->get_marker_names();
-				for (int i = 0; i < names.size(); i++) {
-					StringName name = names[i];
-					bool is_selected = selection.has(name);
-					float offset = animation->get_marker_time(name) - timeline->get_value();
-					if (is_selected && moving_selection) {
-						offset += moving_selection_offset;
-					}
+		{
+			PackedStringArray names = animation->get_marker_names();
+			for (int i = 0; i < names.size(); i++) {
+				StringName name = names[i];
+				bool is_selected = selection.has(name);
+				float offset = animation->get_marker_time(name) - timeline->get_value();
+				if (is_selected && moving_selection) {
+					offset += moving_selection_offset;
+				}
 
-					offset = offset * scale + limit;
+				offset = offset * scale + limit;
 
-					draw_key(name, scale, int(offset), is_selected, limit, limit_end);
+				draw_key(name, scale, int(offset), is_selected, limit, limit_end);
 
-					const int font_size = 12 * EDSCALE;
-					Size2 string_size = font->get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size);
-					if (int(offset) <= limit_end && int(offset) >= limit && should_show_all_marker_names) {
-						float bottom = get_size().height + string_size.y - font->get_descent(font_size);
-						float extrusion = MAX(0, offset + string_size.x - limit_end); // How much the string would extrude outside limit_end if unadjusted.
-						Color marker_color = animation->get_marker_color(name);
-						float margin = 4 * EDSCALE;
-						Point2 pos = Point2(offset - extrusion + margin, bottom + margin);
-						draw_string(font, pos, name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, marker_color);
-						draw_string_outline(font, pos, name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, 1, color);
-					}
+				const int font_size = 12 * EDSCALE;
+				Size2 string_size =
+					font->get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size);
+				if (int(offset) <= limit_end && int(offset) >= limit &&
+					should_show_all_marker_names) {
+					float bottom = get_size().height + string_size.y - font->get_descent(font_size);
+					float extrusion = MAX(
+						0, offset + string_size.x - limit_end); // How much the string would extrude
+																// outside limit_end if unadjusted.
+					Color marker_color = animation->get_marker_color(name);
+					float margin = 4 * EDSCALE;
+					Point2 pos = Point2(offset - extrusion + margin, bottom + margin);
+					draw_string(
+						font, pos, name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, marker_color);
+					draw_string_outline(
+						font, pos, name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, 1, color);
 				}
 			}
+		}
 
-			draw_fg(limit, limit_end);
-		} break;
+		draw_fg(limit, limit_end);
+	} break;
 
-		case NOTIFICATION_MOUSE_ENTER:
-			hovered = true;
-			queue_redraw();
-			break;
-		case NOTIFICATION_MOUSE_EXIT:
-			hovered = false;
-			// When the mouse cursor exits the track, we're no longer hovering any keyframe.
-			hovering_marker = StringName();
-			queue_redraw();
-			break;
+	case NOTIFICATION_MOUSE_ENTER:
+		hovered = true;
+		queue_redraw();
+		break;
+	case NOTIFICATION_MOUSE_EXIT:
+		hovered = false;
+		// When the mouse cursor exits the track, we're no longer hovering any keyframe.
+		hovering_marker = StringName();
+		queue_redraw();
+		break;
 	}
 }
 
-void AnimationMarkerEdit::gui_input(const Ref<InputEvent> &p_event) {
+void AnimationMarkerEdit::gui_input(const Ref<InputEvent>& p_event)
+{
 	ERR_FAIL_COND(p_event.is_null());
 
 	if (animation.is_null()) {
@@ -9144,32 +10238,43 @@ void AnimationMarkerEdit::gui_input(const Ref<InputEvent> &p_event) {
 
 	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
 		Point2 pos = mb->get_position();
-		if (_try_select_at_ui_pos(pos, mb->is_command_or_control_pressed() || mb->is_shift_pressed(), true)) {
+		if (_try_select_at_ui_pos(
+				pos, mb->is_command_or_control_pressed() || mb->is_shift_pressed(), true)) {
 			accept_event();
-		} else if (!_is_ui_pos_in_current_section(pos)) {
+		}
+		else if (!_is_ui_pos_in_current_section(pos)) {
 			_clear_selection_for_anim(animation);
 		}
 	}
 
 	// Check if moving markers or resizing the timeline first, so they can be canceled instead.
-	if (!moving_selection && !timeline->resizing_timeline && mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::RIGHT) {
+	if (!moving_selection && !timeline->resizing_timeline && mb.is_valid() && mb->is_pressed() &&
+		mb->get_button_index() == MouseButton::RIGHT) {
 		Point2 pos = mb->get_position();
-		if (pos.x >= timeline->get_name_limit() && pos.x <= get_size().width - timeline->get_buttons_width()) {
+		if (pos.x >= timeline->get_name_limit() &&
+			pos.x <= get_size().width - timeline->get_buttons_width()) {
 			// Can do something with menu too! show insert key.
 			float offset = (pos.x - timeline->get_name_limit()) / timeline->get_zoom_scale();
 			if (!read_only) {
-				bool selected = _try_select_at_ui_pos(pos, mb->is_command_or_control_pressed() || mb->is_shift_pressed(), false);
+				bool selected = _try_select_at_ui_pos(
+					pos, mb->is_command_or_control_pressed() || mb->is_shift_pressed(), false);
 				moving_selection_attempt = false;
 
 				menu->clear();
-				menu->add_icon_item(get_editor_theme_icon(SNAME("Key")), TTRC("Insert Marker..."), MENU_KEY_INSERT);
+				menu->add_icon_item(
+					get_editor_theme_icon(SNAME("Key")), TTRC("Insert Marker..."), MENU_KEY_INSERT);
 
 				if (selected || selection.size() > 0) {
-					menu->add_icon_item(get_editor_theme_icon(SNAME("Edit")), TTRC("Rename Marker"), MENU_KEY_RENAME);
-					menu->add_icon_item(get_editor_theme_icon(SNAME("Remove")), TTRC("Delete Marker(s)"), MENU_KEY_DELETE);
+					menu->add_icon_item(get_editor_theme_icon(SNAME("Edit")), TTRC("Rename Marker"),
+						MENU_KEY_RENAME);
+					menu->add_icon_item(get_editor_theme_icon(SNAME("Remove")),
+						TTRC("Delete Marker(s)"), MENU_KEY_DELETE);
 				}
 
-				menu->add_icon_item(get_editor_theme_icon(should_show_all_marker_names ? SNAME("GuiChecked") : SNAME("GuiUnchecked")), TTRC("Show All Marker Names"), MENU_KEY_TOGGLE_MARKER_NAMES);
+				menu->add_icon_item(
+					get_editor_theme_icon(
+						should_show_all_marker_names ? SNAME("GuiChecked") : SNAME("GuiUnchecked")),
+					TTRC("Show All Marker Names"), MENU_KEY_TOGGLE_MARKER_NAMES);
 				menu->reset_size();
 
 				menu->set_position(get_screen_position() + get_local_mouse_position());
@@ -9191,20 +10296,23 @@ void AnimationMarkerEdit::gui_input(const Ref<InputEvent> &p_event) {
 					_move_selection_commit();
 					accept_event(); // So play position doesn't snap to the end of move selection.
 				}
-			} else if (select_single_attempt) {
+			}
+			else if (select_single_attempt) {
 				call_deferred("_select_key", select_single_attempt, true);
 
 				// First select click should not affect play position.
 				if (!selection.has(select_single_attempt)) {
 					accept_event();
-				} else {
+				}
+				else {
 					// Second click and onwards should snap to marker time.
 					double ofs = animation->get_marker_time(select_single_attempt);
 					timeline->set_play_position(ofs);
 					timeline->emit_signal(SNAME("timeline_changed"), ofs, mb->is_alt_pressed());
 					accept_event();
 				}
-			} else {
+			}
+			else {
 				// First select click should not affect play position.
 				if (!selection.has(select_single_attempt)) {
 					accept_event();
@@ -9245,7 +10353,8 @@ void AnimationMarkerEdit::gui_input(const Ref<InputEvent> &p_event) {
 
 			PackedStringArray names = animation->get_marker_names();
 
-			// Hovering should happen in the opposite order of drawing for more accurate overlap hovering.
+			// Hovering should happen in the opposite order of drawing for more accurate overlap
+			// hovering.
 			for (int i = names.size() - 1; i >= 0; i--) {
 				StringName name = names[i];
 				Rect2 rect = get_key_rect(scale);
@@ -9261,7 +10370,8 @@ void AnimationMarkerEdit::gui_input(const Ref<InputEvent> &p_event) {
 							key_distance = distance;
 							hovering_marker = name;
 						}
-					} else {
+					}
+					else {
 						// First one does it.
 						hovering_marker = name;
 						break;
@@ -9276,19 +10386,26 @@ void AnimationMarkerEdit::gui_input(const Ref<InputEvent> &p_event) {
 		}
 	}
 
-	if (mm.is_valid() && mm->get_button_mask().has_flag(MouseButtonMask::LEFT) && moving_selection_attempt) {
+	if (mm.is_valid() && mm->get_button_mask().has_flag(MouseButtonMask::LEFT) &&
+		moving_selection_attempt) {
 		if (!moving_selection) {
 			moving_selection = true;
 			_move_selection_begin();
 		}
 
-		float moving_begin_time = ((moving_selection_mouse_begin_x - timeline->get_name_limit()) / timeline->get_zoom_scale()) + timeline->get_value();
-		float new_time = ((mm->get_position().x - timeline->get_name_limit()) / timeline->get_zoom_scale()) + timeline->get_value();
+		float moving_begin_time = ((moving_selection_mouse_begin_x - timeline->get_name_limit()) /
+									  timeline->get_zoom_scale()) +
+								  timeline->get_value();
+		float new_time =
+			((mm->get_position().x - timeline->get_name_limit()) / timeline->get_zoom_scale()) +
+			timeline->get_value();
 		float delta = new_time - moving_begin_time;
 		float snapped_time = editor->snap_time(moving_selection_pivot + delta);
 
 		float offset = 0.0;
-		if (Math::abs(editor->get_moving_selection_offset()) > CMP_EPSILON || (snapped_time > moving_selection_pivot && delta > CMP_EPSILON) || (snapped_time < moving_selection_pivot && delta < -CMP_EPSILON)) {
+		if (Math::abs(editor->get_moving_selection_offset()) > CMP_EPSILON ||
+			(snapped_time > moving_selection_pivot && delta > CMP_EPSILON) ||
+			(snapped_time < moving_selection_pivot && delta < -CMP_EPSILON)) {
 			offset = snapped_time - moving_selection_pivot;
 			moving_selection_effective = true;
 		}
@@ -9297,7 +10414,8 @@ void AnimationMarkerEdit::gui_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-String AnimationMarkerEdit::get_tooltip(const Point2 &p_pos) const {
+String AnimationMarkerEdit::get_tooltip(const Point2& p_pos) const
+{
 	if (animation.is_null()) {
 		return Control::get_tooltip(p_pos);
 	}
@@ -9316,19 +10434,21 @@ String AnimationMarkerEdit::get_tooltip(const Point2 &p_pos) const {
 		// Select should happen in the opposite order of drawing for more accurate overlap select.
 		for (int i = names.size() - 1; i >= 0; i--) {
 			StringName name = names[i];
-			Rect2 rect = const_cast<AnimationMarkerEdit *>(this)->get_key_rect(timeline->get_zoom_scale());
+			Rect2 rect =
+				const_cast<AnimationMarkerEdit*>(this)->get_key_rect(timeline->get_zoom_scale());
 			float offset = animation->get_marker_time(name) - timeline->get_value();
 			offset = offset * timeline->get_zoom_scale() + limit;
 			rect.position.x += offset;
 
 			if (rect.has_point(p_pos)) {
-				if (const_cast<AnimationMarkerEdit *>(this)->is_key_selectable_by_distance()) {
+				if (const_cast<AnimationMarkerEdit*>(this)->is_key_selectable_by_distance()) {
 					float distance = Math::abs(offset - p_pos.x);
 					if (key_idx == -1 || distance < key_distance) {
 						key_idx = i;
 						key_distance = distance;
 					}
-				} else {
+				}
+				else {
 					// First one does it.
 					break;
 				}
@@ -9337,7 +10457,11 @@ String AnimationMarkerEdit::get_tooltip(const Point2 &p_pos) const {
 
 		if (key_idx != -1) {
 			String name = names[key_idx];
-			String text = TTR("Time (s):") + " " + TranslationServer::get_singleton()->format_number(rtos(Math::snapped(animation->get_marker_time(name), 0.0001)), _get_locale()) + "\n";
+			String text =
+				TTR("Time (s):") + " " +
+				TranslationServer::get_singleton()->format_number(
+					rtos(Math::snapped(animation->get_marker_time(name), 0.0001)), _get_locale()) +
+				"\n";
 			text += TTR("Marker:") + " " + name + "\n";
 			return text;
 		}
@@ -9346,7 +10470,8 @@ String AnimationMarkerEdit::get_tooltip(const Point2 &p_pos) const {
 	return Control::get_tooltip(p_pos);
 }
 
-int AnimationMarkerEdit::get_key_height() const {
+int AnimationMarkerEdit::get_key_height() const
+{
 	if (animation.is_null()) {
 		return 0;
 	}
@@ -9354,12 +10479,15 @@ int AnimationMarkerEdit::get_key_height() const {
 	return type_icon->get_height();
 }
 
-Rect2 AnimationMarkerEdit::get_key_rect(float p_pixels_sec) const {
+Rect2 AnimationMarkerEdit::get_key_rect(float p_pixels_sec) const
+{
 	if (animation.is_null()) {
 		return Rect2();
 	}
 
-	Rect2 rect = Rect2(-type_icon->get_width() / 2, get_size().height - type_icon->get_size().height, type_icon->get_width(), type_icon->get_size().height);
+	Rect2 rect =
+		Rect2(-type_icon->get_width() / 2, get_size().height - type_icon->get_size().height,
+			type_icon->get_width(), type_icon->get_size().height);
 
 	// Make it a big easier to click.
 	rect.position.x -= rect.size.x * 0.5;
@@ -9367,14 +10495,15 @@ Rect2 AnimationMarkerEdit::get_key_rect(float p_pixels_sec) const {
 	return rect;
 }
 
-PackedStringArray AnimationMarkerEdit::get_selected_section() const {
+PackedStringArray AnimationMarkerEdit::get_selected_section() const
+{
 	if (selection.size() >= 2) {
 		PackedStringArray arr;
 		arr.push_back(""); // Marker with smallest time.
 		arr.push_back(""); // Marker with largest time.
 		double min_time = Math::INF;
 		double max_time = -Math::INF;
-		for (const StringName &marker_name : selection) {
+		for (const StringName& marker_name : selection) {
 			double time = animation->get_marker_time(marker_name);
 			if (time < min_time) {
 				arr.set(0, marker_name);
@@ -9391,15 +10520,16 @@ PackedStringArray AnimationMarkerEdit::get_selected_section() const {
 	return PackedStringArray();
 }
 
-bool AnimationMarkerEdit::is_marker_selected(const StringName &p_marker) const {
+bool AnimationMarkerEdit::is_marker_selected(const StringName& p_marker) const
+{
 	return selection.has(p_marker);
 }
 
-bool AnimationMarkerEdit::is_key_selectable_by_distance() const {
-	return true;
-}
+bool AnimationMarkerEdit::is_key_selectable_by_distance() const { return true; }
 
-void AnimationMarkerEdit::draw_key(const StringName &p_name, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
+void AnimationMarkerEdit::draw_key(const StringName& p_name, float p_pixels_sec, int p_x,
+	bool p_selected, int p_clip_left, int p_clip_right)
+{
 	if (animation.is_null()) {
 		return;
 	}
@@ -9410,7 +10540,8 @@ void AnimationMarkerEdit::draw_key(const StringName &p_name, float p_pixels_sec,
 
 	Ref<Texture2D> icon_to_draw = p_selected ? selected_icon : type_icon;
 
-	Vector2 ofs(p_x - icon_to_draw->get_width() / 2, int(get_size().height - icon_to_draw->get_height()));
+	Vector2 ofs(
+		p_x - icon_to_draw->get_width() / 2, int(get_size().height - icon_to_draw->get_height()));
 
 	// Don't apply custom marker color when the key is selected.
 	Color marker_color = p_selected ? Color(1, 1, 1) : animation->get_marker_color(p_name);
@@ -9418,23 +10549,19 @@ void AnimationMarkerEdit::draw_key(const StringName &p_name, float p_pixels_sec,
 	// Use a different color for the currently hovered key.
 	// The color multiplier is chosen to work with both dark and light editor themes,
 	// and on both unselected and selected key icons.
-	draw_texture(
-			icon_to_draw,
-			ofs,
-			p_name == hovering_marker ? get_theme_color(SNAME("folder_icon_color"), SNAME("FileDialog")) : marker_color);
+	draw_texture(icon_to_draw, ofs,
+		p_name == hovering_marker ? get_theme_color(SNAME("folder_icon_color"), SNAME("FileDialog"))
+								  : marker_color);
 }
 
-void AnimationMarkerEdit::draw_bg(int p_clip_left, int p_clip_right) {
-}
+void AnimationMarkerEdit::draw_bg(int p_clip_left, int p_clip_right) {}
 
-void AnimationMarkerEdit::draw_fg(int p_clip_left, int p_clip_right) {
-}
+void AnimationMarkerEdit::draw_fg(int p_clip_left, int p_clip_right) {}
 
-Ref<Animation> AnimationMarkerEdit::get_animation() const {
-	return animation;
-}
+Ref<Animation> AnimationMarkerEdit::get_animation() const { return animation; }
 
-void AnimationMarkerEdit::set_animation(const Ref<Animation> &p_animation, bool p_read_only) {
+void AnimationMarkerEdit::set_animation(const Ref<Animation>& p_animation, bool p_read_only)
+{
 	if (animation.is_valid()) {
 		_clear_selection_for_anim(animation);
 	}
@@ -9446,7 +10573,8 @@ void AnimationMarkerEdit::set_animation(const Ref<Animation> &p_animation, bool 
 	queue_redraw();
 }
 
-Size2 AnimationMarkerEdit::get_minimum_size() const {
+Size2 AnimationMarkerEdit::get_minimum_size() const
+{
 	Ref<Texture2D> texture = get_editor_theme_icon(SNAME("Object"));
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
@@ -9458,44 +10586,46 @@ Size2 AnimationMarkerEdit::get_minimum_size() const {
 	return Vector2(1, max_h + separation);
 }
 
-void AnimationMarkerEdit::set_timeline(AnimationTimelineEdit *p_timeline) {
+void AnimationMarkerEdit::set_timeline(AnimationTimelineEdit* p_timeline)
+{
 	timeline = p_timeline;
 	timeline->connect("zoom_changed", callable_mp(this, &AnimationMarkerEdit::_zoom_changed));
 	timeline->connect("name_limit_changed", callable_mp(this, &AnimationMarkerEdit::_zoom_changed));
 }
 
-void AnimationMarkerEdit::set_editor(AnimationTrackEditor *p_editor) {
-	editor = p_editor;
-}
+void AnimationMarkerEdit::set_editor(AnimationTrackEditor* p_editor) { editor = p_editor; }
 
-void AnimationMarkerEdit::set_play_position(float p_pos) {
+void AnimationMarkerEdit::set_play_position(float p_pos)
+{
 	play_position_pos = p_pos;
 	play_position->queue_redraw();
 }
 
-void AnimationMarkerEdit::update_play_position() {
-	play_position->queue_redraw();
-}
+void AnimationMarkerEdit::update_play_position() { play_position->queue_redraw(); }
 
-void AnimationMarkerEdit::set_use_fps(bool p_use_fps) {
+void AnimationMarkerEdit::set_use_fps(bool p_use_fps)
+{
 	if (key_edit) {
 		key_edit->use_fps = p_use_fps;
-		key_edit->notify_property_list_changed();
+		key_edit->obj->notify_property_list_changed();
 	}
 }
 
-void AnimationMarkerEdit::_move_selection_begin() {
+void AnimationMarkerEdit::_move_selection_begin()
+{
 	moving_selection = true;
 	moving_selection_offset = 0;
 }
 
-void AnimationMarkerEdit::_move_selection(float p_offset) {
+void AnimationMarkerEdit::_move_selection(float p_offset)
+{
 	moving_selection_offset = p_offset;
 	queue_redraw();
 }
 
-void AnimationMarkerEdit::_move_selection_commit() {
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+void AnimationMarkerEdit::_move_selection_commit()
+{
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Animation Move Markers"));
 
 	for (HashSet<StringName>::Iterator E = selection.last(); E; --E) {
@@ -9504,28 +10634,34 @@ void AnimationMarkerEdit::_move_selection_commit() {
 		float newpos = time + moving_selection_offset;
 		undo_redo->add_do_method(animation.ptr(), "remove_marker", name);
 		undo_redo->add_do_method(animation.ptr(), "add_marker", name, newpos);
-		undo_redo->add_do_method(animation.ptr(), "set_marker_color", name, animation->get_marker_color(name));
+		undo_redo->add_do_method(
+			animation.ptr(), "set_marker_color", name, animation->get_marker_color(name));
 		undo_redo->add_undo_method(animation.ptr(), "remove_marker", name);
 		undo_redo->add_undo_method(animation.ptr(), "add_marker", name, time);
-		undo_redo->add_undo_method(animation.ptr(), "set_marker_color", name, animation->get_marker_color(name));
+		undo_redo->add_undo_method(
+			animation.ptr(), "set_marker_color", name, animation->get_marker_color(name));
 
-		// add_marker will overwrite the overlapped key on the redo pass, so we add it back on the undo pass.
+		// add_marker will overwrite the overlapped key on the redo pass, so we add it back on the
+		// undo pass.
 		if (StringName overlap = animation->get_marker_at_time(newpos)) {
 			if (select_single_attempt == overlap) {
 				select_single_attempt = "";
 			}
 			undo_redo->add_undo_method(animation.ptr(), "add_marker", overlap, newpos);
-			undo_redo->add_undo_method(animation.ptr(), "set_marker_color", overlap, animation->get_marker_color(overlap));
+			undo_redo->add_undo_method(
+				animation.ptr(), "set_marker_color", overlap, animation->get_marker_color(overlap));
 		}
 	}
 
 	moving_selection = false;
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
 	if (player) {
 		PackedStringArray selected_section = get_selected_section();
 		if (selected_section.size() >= 2) {
-			undo_redo->add_do_method(player, "set_section_with_markers", selected_section[0], selected_section[1]);
-			undo_redo->add_undo_method(player, "set_section_with_markers", selected_section[0], selected_section[1]);
+			undo_redo->add_do_method(
+				player, "set_section_with_markers", selected_section[0], selected_section[1]);
+			undo_redo->add_undo_method(
+				player, "set_section_with_markers", selected_section[0], selected_section[1]);
 		}
 	}
 	undo_redo->add_do_method(timeline, "queue_redraw");
@@ -9536,15 +10672,17 @@ void AnimationMarkerEdit::_move_selection_commit() {
 	_update_key_edit();
 }
 
-void AnimationMarkerEdit::_delete_selected_markers() {
+void AnimationMarkerEdit::_delete_selected_markers()
+{
 	if (selection.size()) {
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Animation Delete Markers"));
-		for (const StringName &name : selection) {
+		for (const StringName& name : selection) {
 			double time = animation->get_marker_time(name);
 			undo_redo->add_do_method(animation.ptr(), "remove_marker", name);
 			undo_redo->add_undo_method(animation.ptr(), "add_marker", name, time);
-			undo_redo->add_undo_method(animation.ptr(), "set_marker_color", name, animation->get_marker_color(name));
+			undo_redo->add_undo_method(
+				animation.ptr(), "set_marker_color", name, animation->get_marker_color(name));
 		}
 		_clear_selection_for_anim(animation);
 
@@ -9555,13 +10693,15 @@ void AnimationMarkerEdit::_delete_selected_markers() {
 	}
 }
 
-void AnimationMarkerEdit::_move_selection_cancel() {
+void AnimationMarkerEdit::_move_selection_cancel()
+{
 	moving_selection = false;
 	queue_redraw();
 }
 
-void AnimationMarkerEdit::_clear_selection(bool p_update) {
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+void AnimationMarkerEdit::_clear_selection(bool p_update)
+{
+	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
 	if (player) {
 		player->reset_section();
 	}
@@ -9575,7 +10715,8 @@ void AnimationMarkerEdit::_clear_selection(bool p_update) {
 	_clear_key_edit();
 }
 
-void AnimationMarkerEdit::_clear_selection_for_anim(const Ref<Animation> &p_anim) {
+void AnimationMarkerEdit::_clear_selection_for_anim(const Ref<Animation>& p_anim)
+{
 	if (animation != p_anim) {
 		return;
 	}
@@ -9583,21 +10724,23 @@ void AnimationMarkerEdit::_clear_selection_for_anim(const Ref<Animation> &p_anim
 	_clear_selection(true);
 }
 
-void AnimationMarkerEdit::_select_key(const StringName &p_name, bool is_single) {
+void AnimationMarkerEdit::_select_key(const StringName& p_name, bool is_single)
+{
 	if (is_single) {
 		_clear_selection(false);
 	}
 
 	selection.insert(p_name);
 
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
 	if (player) {
 		if (selection.size() >= 2) {
 			PackedStringArray selected_section = get_selected_section();
 			double start_time = animation->get_marker_time(selected_section[0]);
 			double end_time = animation->get_marker_time(selected_section[1]);
 			player->set_section(start_time, end_time);
-		} else {
+		}
+		else {
 			player->reset_section();
 		}
 	}
@@ -9608,17 +10751,19 @@ void AnimationMarkerEdit::_select_key(const StringName &p_name, bool is_single) 
 	editor->_clear_selection(editor->is_selection_active());
 }
 
-void AnimationMarkerEdit::_deselect_key(const StringName &p_name) {
+void AnimationMarkerEdit::_deselect_key(const StringName& p_name)
+{
 	selection.erase(p_name);
 
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
 	if (player) {
 		if (selection.size() >= 2) {
 			PackedStringArray selected_section = get_selected_section();
 			double start_time = animation->get_marker_time(selected_section[0]);
 			double end_time = animation->get_marker_time(selected_section[1]);
 			player->set_section(start_time, end_time);
-		} else {
+		}
+		else {
 			player->reset_section();
 		}
 	}
@@ -9627,7 +10772,8 @@ void AnimationMarkerEdit::_deselect_key(const StringName &p_name) {
 	_update_key_edit();
 }
 
-void AnimationMarkerEdit::_insert_marker(float p_ofs) {
+void AnimationMarkerEdit::_insert_marker(float p_ofs)
+{
 	if (editor->is_snap_timeline_enabled()) {
 		p_ofs = editor->snap_time(p_ofs);
 	}
@@ -9657,13 +10803,15 @@ void AnimationMarkerEdit::_insert_marker(float p_ofs) {
 	marker_insert_ofs = p_ofs;
 }
 
-void AnimationMarkerEdit::_rename_marker(const StringName &p_name) {
+void AnimationMarkerEdit::_rename_marker(const StringName& p_name)
+{
 	marker_rename_confirm->popup_centered(Size2i(200, 0) * EDSCALE);
 	marker_rename_prev_name = p_name;
 	marker_rename_new_name->set_text(p_name);
 }
 
-void AnimationMarkerEdit::_marker_insert_confirmed() {
+void AnimationMarkerEdit::_marker_insert_confirmed()
+{
 	StringName name = marker_insert_new_name->get_text();
 
 	if (animation->has_marker(name)) {
@@ -9672,17 +10820,20 @@ void AnimationMarkerEdit::_marker_insert_confirmed() {
 		return;
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 
 	undo_redo->create_action(TTR("Add Marker Key"));
 	undo_redo->add_do_method(animation.ptr(), "add_marker", name, marker_insert_ofs);
 	undo_redo->add_undo_method(animation.ptr(), "remove_marker", name);
 	StringName existing_marker = animation->get_marker_at_time(marker_insert_ofs);
 	if (existing_marker) {
-		undo_redo->add_undo_method(animation.ptr(), "add_marker", existing_marker, marker_insert_ofs);
-		undo_redo->add_undo_method(animation.ptr(), "set_marker_color", existing_marker, animation->get_marker_color(existing_marker));
+		undo_redo->add_undo_method(
+			animation.ptr(), "add_marker", existing_marker, marker_insert_ofs);
+		undo_redo->add_undo_method(animation.ptr(), "set_marker_color", existing_marker,
+			animation->get_marker_color(existing_marker));
 	}
-	undo_redo->add_do_method(animation.ptr(), "set_marker_color", name, marker_insert_color->get_pick_color());
+	undo_redo->add_do_method(
+		animation.ptr(), "set_marker_color", name, marker_insert_color->get_pick_color());
 
 	undo_redo->add_do_method(this, "queue_redraw");
 	undo_redo->add_undo_method(this, "queue_redraw");
@@ -9692,11 +10843,13 @@ void AnimationMarkerEdit::_marker_insert_confirmed() {
 	marker_insert_confirm->hide();
 }
 
-void AnimationMarkerEdit::_marker_insert_new_name_changed(const String &p_text) {
+void AnimationMarkerEdit::_marker_insert_new_name_changed(const String& p_text)
+{
 	marker_insert_confirm->get_ok_button()->set_disabled(p_text.is_empty());
 }
 
-void AnimationMarkerEdit::_marker_rename_confirmed() {
+void AnimationMarkerEdit::_marker_rename_confirmed()
+{
 	StringName new_name = marker_rename_new_name->get_text();
 	StringName prev_name = marker_rename_prev_name;
 
@@ -9713,14 +10866,18 @@ void AnimationMarkerEdit::_marker_rename_confirmed() {
 	}
 
 	if (prev_name != new_name) {
-		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Rename Marker"));
 		undo_redo->add_do_method(animation.ptr(), "remove_marker", prev_name);
-		undo_redo->add_do_method(animation.ptr(), "add_marker", new_name, animation->get_marker_time(prev_name));
-		undo_redo->add_do_method(animation.ptr(), "set_marker_color", new_name, animation->get_marker_color(prev_name));
+		undo_redo->add_do_method(
+			animation.ptr(), "add_marker", new_name, animation->get_marker_time(prev_name));
+		undo_redo->add_do_method(
+			animation.ptr(), "set_marker_color", new_name, animation->get_marker_color(prev_name));
 		undo_redo->add_undo_method(animation.ptr(), "remove_marker", new_name);
-		undo_redo->add_undo_method(animation.ptr(), "add_marker", prev_name, animation->get_marker_time(prev_name));
-		undo_redo->add_undo_method(animation.ptr(), "set_marker_color", prev_name, animation->get_marker_color(prev_name));
+		undo_redo->add_undo_method(
+			animation.ptr(), "add_marker", prev_name, animation->get_marker_time(prev_name));
+		undo_redo->add_undo_method(
+			animation.ptr(), "set_marker_color", prev_name, animation->get_marker_color(prev_name));
 		undo_redo->add_do_method(this, "_select_key", new_name, true);
 		undo_redo->add_undo_method(this, "_select_key", prev_name, true);
 		undo_redo->commit_action();
@@ -9729,41 +10886,57 @@ void AnimationMarkerEdit::_marker_rename_confirmed() {
 	marker_rename_confirm->hide();
 }
 
-void AnimationMarkerEdit::_marker_rename_new_name_changed(const String &p_text) {
+void AnimationMarkerEdit::_marker_rename_new_name_changed(const String& p_text)
+{
 	marker_rename_confirm->get_ok_button()->set_disabled(p_text.is_empty());
 }
 
-AnimationMarkerEdit::AnimationMarkerEdit() {
+AnimationMarkerEdit::AnimationMarkerEdit()
+{
 	play_position = memnew(Control);
 	play_position->set_mouse_filter(MOUSE_FILTER_PASS);
 	add_child(play_position);
-	play_position->connect(SceneStringName(draw), callable_mp(this, &AnimationMarkerEdit::_play_position_draw));
+	play_position->connect(
+		SceneStringName(draw), callable_mp(this, &AnimationMarkerEdit::_play_position_draw));
 	set_focus_mode(FOCUS_CLICK);
 	set_mouse_filter(MOUSE_FILTER_PASS); // Scroll has to work too for selection.
 
 	menu = memnew(PopupMenu);
 	add_child(menu);
-	menu->connect(SceneStringName(id_pressed), callable_mp(this, &AnimationMarkerEdit::_menu_selected));
-	menu->add_shortcut(ED_SHORTCUT("animation_marker_edit/rename_marker", TTRC("Rename Marker"), Key::R), MENU_KEY_RENAME);
-	menu->add_shortcut(ED_SHORTCUT("animation_marker_edit/delete_selection", TTRC("Delete Marker(s)"), Key::KEY_DELETE), MENU_KEY_DELETE);
-	menu->add_shortcut(ED_SHORTCUT("animation_marker_edit/toggle_marker_names", TTRC("Show All Marker Names"), Key::M), MENU_KEY_TOGGLE_MARKER_NAMES);
+	menu->connect(
+		SceneStringName(id_pressed), callable_mp(this, &AnimationMarkerEdit::_menu_selected));
+	menu->add_shortcut(
+		ED_SHORTCUT("animation_marker_edit/rename_marker", TTRC("Rename Marker"), Key::R),
+		MENU_KEY_RENAME);
+	menu->add_shortcut(ED_SHORTCUT("animation_marker_edit/delete_selection",
+						   TTRC("Delete Marker(s)"), Key::KEY_DELETE),
+		MENU_KEY_DELETE);
+	menu->add_shortcut(ED_SHORTCUT("animation_marker_edit/toggle_marker_names",
+						   TTRC("Show All Marker Names"), Key::M),
+		MENU_KEY_TOGGLE_MARKER_NAMES);
 
 	marker_insert_confirm = memnew(ConfirmationDialog);
 	marker_insert_confirm->set_title(TTRC("Insert Marker"));
 	marker_insert_confirm->set_hide_on_ok(false);
-	marker_insert_confirm->connect(SceneStringName(confirmed), callable_mp(this, &AnimationMarkerEdit::_marker_insert_confirmed));
+	marker_insert_confirm->connect(SceneStringName(confirmed),
+		callable_mp(this, &AnimationMarkerEdit::_marker_insert_confirmed));
 	add_child(marker_insert_confirm);
-	VBoxContainer *marker_insert_vbox = memnew(VBoxContainer);
+	VBoxContainer* marker_insert_vbox = memnew(VBoxContainer);
 	marker_insert_vbox->set_anchors_and_offsets_preset(Control::LayoutPreset::PRESET_FULL_RECT);
 	marker_insert_confirm->add_child(marker_insert_vbox);
 	marker_insert_new_name = memnew(LineEdit);
-	marker_insert_new_name->connect(SceneStringName(text_changed), callable_mp(this, &AnimationMarkerEdit::_marker_insert_new_name_changed));
+	marker_insert_new_name->connect(SceneStringName(text_changed),
+		callable_mp(this, &AnimationMarkerEdit::_marker_insert_new_name_changed));
 	marker_insert_confirm->register_text_enter(marker_insert_new_name);
-	marker_insert_vbox->add_child(_create_hbox_labeled_control(TTRC("Marker Name"), marker_insert_new_name));
+	marker_insert_vbox->add_child(
+		_create_hbox_labeled_control(TTRC("Marker Name"), marker_insert_new_name));
 	marker_insert_color = memnew(ColorPickerButton);
 	marker_insert_color->set_edit_alpha(false);
-	marker_insert_color->get_popup()->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(marker_insert_color->get_picker()));
-	marker_insert_vbox->add_child(_create_hbox_labeled_control(TTRC("Marker Color"), marker_insert_color));
+	marker_insert_color->get_popup()->connect(
+		"about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker)
+							  .bind(marker_insert_color->get_picker()));
+	marker_insert_vbox->add_child(
+		_create_hbox_labeled_control(TTRC("Marker Color"), marker_insert_color));
 	marker_insert_error_dialog = memnew(AcceptDialog);
 	marker_insert_error_dialog->set_flag(Window::FLAG_RESIZE_DISABLED, true);
 	marker_insert_error_dialog->set_ok_button_text(TTRC("Close"));
@@ -9773,17 +10946,19 @@ AnimationMarkerEdit::AnimationMarkerEdit() {
 	marker_rename_confirm = memnew(ConfirmationDialog);
 	marker_rename_confirm->set_title(TTRC("Rename Marker"));
 	marker_rename_confirm->set_hide_on_ok(false);
-	marker_rename_confirm->connect(SceneStringName(confirmed), callable_mp(this, &AnimationMarkerEdit::_marker_rename_confirmed));
+	marker_rename_confirm->connect(SceneStringName(confirmed),
+		callable_mp(this, &AnimationMarkerEdit::_marker_rename_confirmed));
 	add_child(marker_rename_confirm);
-	VBoxContainer *marker_rename_vbox = memnew(VBoxContainer);
+	VBoxContainer* marker_rename_vbox = memnew(VBoxContainer);
 	marker_rename_vbox->set_anchors_and_offsets_preset(Control::LayoutPreset::PRESET_FULL_RECT);
 	marker_rename_confirm->add_child(marker_rename_vbox);
-	Label *marker_rename_new_name_label = memnew(Label);
+	Label* marker_rename_new_name_label = memnew(Label);
 	marker_rename_new_name_label->set_text(TTRC("Change Marker Name:"));
 	marker_rename_vbox->add_child(marker_rename_new_name_label);
 	marker_rename_new_name = memnew(LineEdit);
 	marker_rename_new_name->set_accessibility_name(TTRC("Change Marker Name:"));
-	marker_rename_new_name->connect(SceneStringName(text_changed), callable_mp(this, &AnimationMarkerEdit::_marker_rename_new_name_changed));
+	marker_rename_new_name->connect(SceneStringName(text_changed),
+		callable_mp(this, &AnimationMarkerEdit::_marker_rename_new_name_changed));
 	marker_rename_confirm->register_text_enter(marker_rename_new_name);
 	marker_rename_vbox->add_child(marker_rename_new_name);
 
@@ -9794,24 +10969,15 @@ AnimationMarkerEdit::AnimationMarkerEdit() {
 	marker_rename_confirm->add_child(marker_rename_error_dialog);
 }
 
-float AnimationMarkerKeyEdit::get_time() const {
-	return animation->get_marker_time(marker_name);
-}
+float AnimationMarkerKeyEdit::get_time() const { return animation->get_marker_time(marker_name); }
 
-void AnimationMarkerKeyEdit::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_hide_script_from_inspector"), &AnimationMarkerKeyEdit::_hide_script_from_inspector);
-	ClassDB::bind_method(D_METHOD("_hide_metadata_from_inspector"), &AnimationMarkerKeyEdit::_hide_metadata_from_inspector);
-	ClassDB::bind_method(D_METHOD("_dont_undo_redo"), &AnimationMarkerKeyEdit::_dont_undo_redo);
-	ClassDB::bind_method(D_METHOD("_is_read_only"), &AnimationMarkerKeyEdit::_is_read_only);
-	ClassDB::bind_method(D_METHOD("_set_marker_name"), &AnimationMarkerKeyEdit::_set_marker_name);
-}
+void AnimationMarkerKeyEdit::_bind_methods() {}
 
-void AnimationMarkerKeyEdit::_set_marker_name(const StringName &p_name) {
-	marker_name = p_name;
-}
+void AnimationMarkerKeyEdit::_set_marker_name(const StringName& p_name) { marker_name = p_name; }
 
-bool AnimationMarkerKeyEdit::_set(const StringName &p_name, const Variant &p_value) {
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+bool AnimationMarkerKeyEdit::_set(const StringName& p_name, const Variant& p_value)
+{
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 
 	if (p_name == "color") {
 		Color color = p_value;
@@ -9819,7 +10985,8 @@ bool AnimationMarkerKeyEdit::_set(const StringName &p_name, const Variant &p_val
 		if (color != prev_color) {
 			undo_redo->create_action(TTR("Edit Marker Color"), UndoRedo::MERGE_ENDS);
 			undo_redo->add_do_method(animation.ptr(), "set_marker_color", marker_name, color);
-			undo_redo->add_undo_method(animation.ptr(), "set_marker_color", marker_name, prev_color);
+			undo_redo->add_undo_method(
+				animation.ptr(), "set_marker_color", marker_name, prev_color);
 			undo_redo->add_do_method(marker_edit, "queue_redraw");
 			undo_redo->add_undo_method(marker_edit, "queue_redraw");
 			undo_redo->commit_action();
@@ -9830,7 +10997,8 @@ bool AnimationMarkerKeyEdit::_set(const StringName &p_name, const Variant &p_val
 	return false;
 }
 
-bool AnimationMarkerKeyEdit::_get(const StringName &p_name, Variant &r_ret) const {
+bool AnimationMarkerKeyEdit::_get(const StringName& p_name, Variant& r_ret) const
+{
 	if (p_name == "name") {
 		r_ret = marker_name;
 		return true;
@@ -9844,32 +11012,31 @@ bool AnimationMarkerKeyEdit::_get(const StringName &p_name, Variant &r_ret) cons
 	return false;
 }
 
-void AnimationMarkerKeyEdit::_get_property_list(List<PropertyInfo> *p_list) const {
+void AnimationMarkerKeyEdit::_get_property_list(List<PropertyInfo>* p_list) const
+{
 	if (animation.is_null()) {
 		return;
 	}
 
-	p_list->push_back(PropertyInfo(Variant::STRING_NAME, "name", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_EDITOR));
+	p_list->push_back(PropertyInfo(Variant::STRING_NAME, "name", PROPERTY_HINT_NONE, "",
+		PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_EDITOR));
 	p_list->push_back(PropertyInfo(Variant::COLOR, "color", PROPERTY_HINT_COLOR_NO_ALPHA));
 }
 
-void AnimationMultiMarkerKeyEdit::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_hide_script_from_inspector"), &AnimationMultiMarkerKeyEdit::_hide_script_from_inspector);
-	ClassDB::bind_method(D_METHOD("_hide_metadata_from_inspector"), &AnimationMultiMarkerKeyEdit::_hide_metadata_from_inspector);
-	ClassDB::bind_method(D_METHOD("_dont_undo_redo"), &AnimationMultiMarkerKeyEdit::_dont_undo_redo);
-	ClassDB::bind_method(D_METHOD("_is_read_only"), &AnimationMultiMarkerKeyEdit::_is_read_only);
-}
+void AnimationMultiMarkerKeyEdit::_bind_methods() {}
 
-bool AnimationMultiMarkerKeyEdit::_set(const StringName &p_name, const Variant &p_value) {
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+bool AnimationMultiMarkerKeyEdit::_set(const StringName& p_name, const Variant& p_value)
+{
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	if (p_name == "color") {
 		Color color = p_value;
 
 		undo_redo->create_action(TTR("Multi Edit Marker Color"), UndoRedo::MERGE_ENDS);
 
-		for (const StringName &marker_name : marker_names) {
+		for (const StringName& marker_name : marker_names) {
 			undo_redo->add_do_method(animation.ptr(), "set_marker_color", marker_name, color);
-			undo_redo->add_undo_method(animation.ptr(), "set_marker_color", marker_name, animation->get_marker_color(marker_name));
+			undo_redo->add_undo_method(animation.ptr(), "set_marker_color", marker_name,
+				animation->get_marker_color(marker_name));
 		}
 
 		undo_redo->add_do_method(marker_edit, "queue_redraw");
@@ -9882,27 +11049,29 @@ bool AnimationMultiMarkerKeyEdit::_set(const StringName &p_name, const Variant &
 	return false;
 }
 
-bool AnimationMultiMarkerKeyEdit::_get(const StringName &p_name, Variant &r_ret) const {
+bool AnimationMultiMarkerKeyEdit::_get(const StringName& p_name, Variant& r_ret) const
+{
 	if (p_name == "color") {
 		r_ret = animation->get_marker_color(marker_names[0]);
 		return true;
 	}
-
 	return false;
 }
 
-void AnimationMultiMarkerKeyEdit::_get_property_list(List<PropertyInfo> *p_list) const {
+void AnimationMultiMarkerKeyEdit::_get_property_list(List<PropertyInfo>* p_list) const
+{
 	if (animation.is_null()) {
 		return;
 	}
-
 	p_list->push_back(PropertyInfo(Variant::COLOR, "color", PROPERTY_HINT_COLOR_NO_ALPHA));
 }
 
 // AnimationMarkerKeyEditEditorPlugin
 
-void AnimationMarkerKeyEditEditor::_time_edit_exited() {
-	real_t new_time = spinner->get_value();
+void AnimationMarkerKeyEditEditor::_time_edit_exited()
+{
+	real_t new_time = spinner->get_value()
+;
 
 	if (use_fps) {
 		real_t fps = animation->get_step();
@@ -9913,12 +11082,11 @@ void AnimationMarkerKeyEditEditor::_time_edit_exited() {
 	}
 
 	real_t prev_time = animation->get_marker_time(marker_name);
-
 	if (Math::is_equal_approx(new_time, prev_time)) {
 		return; // No change.
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Animation Change Marker Time"));
 
 	Color color = animation->get_marker_color(marker_name);
@@ -9929,14 +11097,16 @@ void AnimationMarkerKeyEditEditor::_time_edit_exited() {
 	undo_redo->add_undo_method(animation.ptr(), "set_marker_color", marker_name, color);
 	StringName existing_marker = animation->get_marker_at_time(new_time);
 	if (existing_marker) {
-		undo_redo->add_undo_method(animation.ptr(), "add_marker", existing_marker, animation->get_marker_time(existing_marker));
-		undo_redo->add_undo_method(animation.ptr(), "set_marker_color", existing_marker, animation->get_marker_color(existing_marker));
+		undo_redo->add_undo_method(animation.ptr(), "add_marker", existing_marker,
+			animation->get_marker_time(existing_marker));
+		undo_redo->add_undo_method(animation.ptr(), "set_marker_color", existing_marker,
+			animation->get_marker_color(existing_marker));
 	}
-	AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+	AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 	if (ape) {
-		AnimationTrackEditor *ate = ape->get_track_editor();
+		AnimationTrackEditor* ate = ape->get_track_editor();
 		if (ate) {
-			AnimationMarkerEdit *ame = ate->marker_edit;
+			AnimationMarkerEdit* ame = ate->marker_edit;
 			undo_redo->add_do_method(ame, "queue_redraw");
 			undo_redo->add_undo_method(ame, "queue_redraw");
 		}
@@ -9944,7 +11114,9 @@ void AnimationMarkerKeyEditEditor::_time_edit_exited() {
 	undo_redo->commit_action();
 }
 
-AnimationMarkerKeyEditEditor::AnimationMarkerKeyEditEditor(Ref<Animation> p_animation, const StringName &p_name, bool p_use_fps) {
+AnimationMarkerKeyEditEditor::AnimationMarkerKeyEditEditor(
+	Ref<Animation> p_animation, const StringName& p_name, bool p_use_fps)
+{
 	if (p_animation.is_null()) {
 		return;
 	}
@@ -9972,13 +11144,19 @@ AnimationMarkerKeyEditEditor::AnimationMarkerKeyEditEditor(Ref<Animation> p_anim
 		}
 		spinner->set_value(time * fps);
 		spinner->set_max(animation->get_length() * fps);
-		spinner->connect("updown_pressed", callable_mp(this, &AnimationMarkerKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
-	} else {
+		spinner->connect("updown_pressed",
+			callable_mp(this, &AnimationMarkerKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
+	}
+	else {
 		spinner->set_step(SECOND_DECIMAL);
 		spinner->set_value(time);
 		spinner->set_max(animation->get_length());
 	}
 
-	spinner->connect("ungrabbed", callable_mp(this, &AnimationMarkerKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
-	spinner->connect("value_focus_exited", callable_mp(this, &AnimationMarkerKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
+	spinner->connect("ungrabbed",
+		callable_mp(this, &AnimationMarkerKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
+	spinner->connect("value_focus_exited",
+		callable_mp(this, &AnimationMarkerKeyEditEditor::_time_edit_exited), CONNECT_DEFERRED);
 }
+
+

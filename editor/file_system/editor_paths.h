@@ -32,29 +32,31 @@
 
 #include "core/object/object.h"
 #include "core/string/ustring.h"
+#include "core/templates/mem_unique_ptr.h"
 
-class EditorPaths : public Object {
-	VLTRCLASS(EditorPaths, Object)
-
-	bool paths_valid = false; // If any of the paths can't be created, this is false.
-	String data_dir; // Editor data (templates, shader cache, etc.).
-	String config_dir; // Editor config (settings, profiles, themes, etc.).
-	String cache_dir; // Editor cache (thumbnails, tmp generated files).
-	String temp_dir; // Editor temporary directory.
-	String project_data_dir; // Project-specific data (metadata, shader cache, etc.).
+class EditorPaths
+{
+	bool paths_valid = false;	 // If any of the paths can't be created, this is false.
+	String data_dir;			 // Editor data (templates, shader cache, etc.).
+	String config_dir;			 // Editor config (settings, profiles, themes, etc.).
+	String cache_dir;			 // Editor cache (thumbnails, tmp generated files).
+	String temp_dir;			 // Editor temporary directory.
+	String project_data_dir;	 // Project-specific data (metadata, shader cache, etc.).
 	bool self_contained = false; // Self-contained means everything goes to `editor_data` dir.
-	String self_contained_file; // Self-contained file with configuration.
+	String self_contained_file;	 // Self-contained file with configuration.
 	String export_templates_folder = "export_templates";
 	String text_editor_themes_folder = "text_editor_themes";
 	String script_templates_folder = "script_templates";
 	String feature_profiles_folder = "feature_profiles";
 
-	static EditorPaths *singleton;
+	static EditorPaths* singleton;
 
 protected:
 	static void _bind_methods();
 
 public:
+	mem_unique_ptr<Object> obj;
+
 	bool are_paths_valid() const;
 
 	String get_data_dir() const;
@@ -73,12 +75,12 @@ public:
 	bool is_self_contained() const;
 	String get_self_contained_file() const;
 
-	static EditorPaths *get_singleton() {
-		return singleton;
-	}
+	static EditorPaths* get_singleton() { return singleton; }
 
 	static void create();
 	static void free();
 
 	EditorPaths();
 };
+
+

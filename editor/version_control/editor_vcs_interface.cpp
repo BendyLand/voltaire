@@ -28,19 +28,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_vcs_interface.h"
-
 #include "core/object/class_db.h"
 #include "editor/editor_node.h"
+#include "editor_vcs_interface.h"
 
-EditorVCSInterface *EditorVCSInterface::singleton = nullptr;
+EditorVCSInterface* EditorVCSInterface::singleton = nullptr;
 
-void EditorVCSInterface::popup_error(const String &p_msg) {
+void EditorVCSInterface::popup_error(const String& p_msg)
+{
 	// TRANSLATORS: %s refers to the name of a version control system (e.g. "Git").
-	EditorNode::get_singleton()->show_warning(p_msg.strip_edges(), vformat(TTR("%s Error"), get_vcs_name()));
+	EditorNode::get_singleton()->show_warning(
+		p_msg.strip_edges(), vformat(TTR("%s Error"), get_vcs_name()));
 }
 
-List<String> EditorVCSInterface::get_remotes() {
+List<String> EditorVCSInterface::get_remotes()
+{
 	TypedArray<String> result;
 	List<String> remotes;
 	for (int i = 0; i < result.size(); i++) {
@@ -49,7 +51,8 @@ List<String> EditorVCSInterface::get_remotes() {
 	return remotes;
 }
 
-List<EditorVCSInterface::StatusFile> EditorVCSInterface::get_modified_files_data() {
+List<EditorVCSInterface::StatusFile> EditorVCSInterface::get_modified_files_data()
+{
 	TypedArray<Dictionary> result;
 	List<EditorVCSInterface::StatusFile> status_files;
 	for (int i = 0; i < result.size(); i++) {
@@ -58,11 +61,15 @@ List<EditorVCSInterface::StatusFile> EditorVCSInterface::get_modified_files_data
 	return status_files;
 }
 
-void EditorVCSInterface::commit(const String &p_msg, bool p_amend) {
-	ERR_PRINT_ONCE("Required virtual method " + get_class() + "::_commit must be overridden before calling.");
+void EditorVCSInterface::commit(const String& p_msg, bool p_amend)
+{
+	ERR_PRINT_ONCE(
+		"Required virtual method " + this->obj->get_class() + "::_commit must be overridden before calling.");
 }
 
-List<EditorVCSInterface::DiffFile> EditorVCSInterface::get_diff(const String &p_identifier, TreeArea p_area) {
+List<EditorVCSInterface::DiffFile> EditorVCSInterface::get_diff(
+	const String& p_identifier, TreeArea p_area)
+{
 	TypedArray<Dictionary> result;
 
 	List<DiffFile> diff_files;
@@ -72,7 +79,8 @@ List<EditorVCSInterface::DiffFile> EditorVCSInterface::get_diff(const String &p_
 	return diff_files;
 }
 
-List<EditorVCSInterface::Commit> EditorVCSInterface::get_previous_commits(int p_max_commits) {
+List<EditorVCSInterface::Commit> EditorVCSInterface::get_previous_commits(int p_max_commits)
+{
 	TypedArray<Dictionary> result;
 
 	List<EditorVCSInterface::Commit> commits;
@@ -82,7 +90,8 @@ List<EditorVCSInterface::Commit> EditorVCSInterface::get_previous_commits(int p_
 	return commits;
 }
 
-List<String> EditorVCSInterface::get_branch_list() {
+List<String> EditorVCSInterface::get_branch_list()
+{
 	TypedArray<String> result;
 
 	List<String> branch_list;
@@ -92,8 +101,9 @@ List<String> EditorVCSInterface::get_branch_list() {
 	return branch_list;
 }
 
-
-List<EditorVCSInterface::DiffHunk> EditorVCSInterface::get_line_diff(const String &p_file_path, const String &p_text) {
+List<EditorVCSInterface::DiffHunk> EditorVCSInterface::get_line_diff(
+	const String& p_file_path, const String& p_text)
+{
 	TypedArray<Dictionary> result;
 	List<DiffHunk> diff_hunks;
 	for (int i = 0; i < result.size(); i++) {
@@ -102,7 +112,9 @@ List<EditorVCSInterface::DiffHunk> EditorVCSInterface::get_line_diff(const Strin
 	return diff_hunks;
 }
 
-Dictionary EditorVCSInterface::create_diff_line(int p_new_line_no, int p_old_line_no, const String &p_content, const String &p_status) {
+Dictionary EditorVCSInterface::create_diff_line(
+	int p_new_line_no, int p_old_line_no, const String& p_content, const String& p_status)
+{
 	Dictionary diff_line;
 	diff_line["new_line_no"] = p_new_line_no;
 	diff_line["old_line_no"] = p_old_line_no;
@@ -112,7 +124,9 @@ Dictionary EditorVCSInterface::create_diff_line(int p_new_line_no, int p_old_lin
 	return diff_line;
 }
 
-Dictionary EditorVCSInterface::create_diff_hunk(int p_old_start, int p_new_start, int p_old_lines, int p_new_lines) {
+Dictionary EditorVCSInterface::create_diff_hunk(
+	int p_old_start, int p_new_start, int p_old_lines, int p_new_lines)
+{
 	Dictionary diff_hunk;
 	diff_hunk["new_lines"] = p_new_lines;
 	diff_hunk["old_lines"] = p_old_lines;
@@ -122,12 +136,15 @@ Dictionary EditorVCSInterface::create_diff_hunk(int p_old_start, int p_new_start
 	return diff_hunk;
 }
 
-Dictionary EditorVCSInterface::add_line_diffs_into_diff_hunk(Dictionary p_diff_hunk, TypedArray<Dictionary> p_line_diffs) {
+Dictionary EditorVCSInterface::add_line_diffs_into_diff_hunk(
+	Dictionary p_diff_hunk, TypedArray<Dictionary> p_line_diffs)
+{
 	p_diff_hunk["diff_lines"] = p_line_diffs;
 	return p_diff_hunk;
 }
 
-Dictionary EditorVCSInterface::create_diff_file(const String &p_new_file, const String &p_old_file) {
+Dictionary EditorVCSInterface::create_diff_file(const String& p_new_file, const String& p_old_file)
+{
 	Dictionary file_diff;
 	file_diff["new_file"] = p_new_file;
 	file_diff["old_file"] = p_old_file;
@@ -135,7 +152,9 @@ Dictionary EditorVCSInterface::create_diff_file(const String &p_new_file, const 
 	return file_diff;
 }
 
-Dictionary EditorVCSInterface::create_commit(const String &p_msg, const String &p_author, const String &p_id, int64_t p_unix_timestamp, int64_t p_offset_minutes) {
+Dictionary EditorVCSInterface::create_commit(const String& p_msg, const String& p_author,
+	const String& p_id, int64_t p_unix_timestamp, int64_t p_offset_minutes)
+{
 	Dictionary commit_info;
 	commit_info["message"] = p_msg;
 	commit_info["author"] = p_author;
@@ -145,12 +164,16 @@ Dictionary EditorVCSInterface::create_commit(const String &p_msg, const String &
 	return commit_info;
 }
 
-Dictionary EditorVCSInterface::add_diff_hunks_into_diff_file(Dictionary p_diff_file, TypedArray<Dictionary> p_diff_hunks) {
+Dictionary EditorVCSInterface::add_diff_hunks_into_diff_file(
+	Dictionary p_diff_file, TypedArray<Dictionary> p_diff_hunks)
+{
 	p_diff_file["diff_hunks"] = p_diff_hunks;
 	return p_diff_file;
 }
 
-Dictionary EditorVCSInterface::create_status_file(const String &p_file_path, ChangeType p_change, TreeArea p_area) {
+Dictionary EditorVCSInterface::create_status_file(
+	const String& p_file_path, ChangeType p_change, TreeArea p_area)
+{
 	Dictionary sf;
 	sf["file_path"] = p_file_path;
 	sf["change_type"] = p_change;
@@ -158,7 +181,8 @@ Dictionary EditorVCSInterface::create_status_file(const String &p_file_path, Cha
 	return sf;
 }
 
-EditorVCSInterface::DiffLine EditorVCSInterface::_convert_diff_line(const Dictionary &p_diff_line) {
+EditorVCSInterface::DiffLine EditorVCSInterface::_convert_diff_line(const Dictionary& p_diff_line)
+{
 	DiffLine d;
 	d.new_line_no = p_diff_line["new_line_no"];
 	d.old_line_no = p_diff_line["old_line_no"];
@@ -167,7 +191,8 @@ EditorVCSInterface::DiffLine EditorVCSInterface::_convert_diff_line(const Dictio
 	return d;
 }
 
-EditorVCSInterface::DiffHunk EditorVCSInterface::_convert_diff_hunk(const Dictionary &p_diff_hunk) {
+EditorVCSInterface::DiffHunk EditorVCSInterface::_convert_diff_hunk(const Dictionary& p_diff_hunk)
+{
 	DiffHunk dh;
 	dh.new_lines = p_diff_hunk["new_lines"];
 	dh.old_lines = p_diff_hunk["old_lines"];
@@ -181,7 +206,8 @@ EditorVCSInterface::DiffHunk EditorVCSInterface::_convert_diff_hunk(const Dictio
 	return dh;
 }
 
-EditorVCSInterface::DiffFile EditorVCSInterface::_convert_diff_file(const Dictionary &p_diff_file) {
+EditorVCSInterface::DiffFile EditorVCSInterface::_convert_diff_file(const Dictionary& p_diff_file)
+{
 	DiffFile df;
 	df.new_file = p_diff_file["new_file"];
 	df.old_file = p_diff_file["old_file"];
@@ -193,7 +219,8 @@ EditorVCSInterface::DiffFile EditorVCSInterface::_convert_diff_file(const Dictio
 	return df;
 }
 
-EditorVCSInterface::Commit EditorVCSInterface::_convert_commit(const Dictionary &p_commit) {
+EditorVCSInterface::Commit EditorVCSInterface::_convert_commit(const Dictionary& p_commit)
+{
 	EditorVCSInterface::Commit c;
 	c.msg = p_commit["message"];
 	c.author = p_commit["author"];
@@ -203,7 +230,9 @@ EditorVCSInterface::Commit EditorVCSInterface::_convert_commit(const Dictionary 
 	return c;
 }
 
-EditorVCSInterface::StatusFile EditorVCSInterface::_convert_status_file(const Dictionary &p_status_file) {
+EditorVCSInterface::StatusFile EditorVCSInterface::_convert_status_file(
+	const Dictionary& p_status_file)
+{
 	StatusFile sf;
 	sf.file_path = p_status_file["file_path"];
 	sf.change_type = (ChangeType)(int)p_status_file["change_type"];
@@ -211,43 +240,22 @@ EditorVCSInterface::StatusFile EditorVCSInterface::_convert_status_file(const Di
 	return sf;
 }
 
-void EditorVCSInterface::_bind_methods() {
-	// Proxy end points that implement the VCS specific operations that the editor demands.
-	ClassDB::bind_method(D_METHOD("create_diff_line", "new_line_no", "old_line_no", "content", "status"), &EditorVCSInterface::create_diff_line);
-	ClassDB::bind_method(D_METHOD("create_diff_hunk", "old_start", "new_start", "old_lines", "new_lines"), &EditorVCSInterface::create_diff_hunk);
-	ClassDB::bind_method(D_METHOD("create_diff_file", "new_file", "old_file"), &EditorVCSInterface::create_diff_file);
-	ClassDB::bind_method(D_METHOD("create_commit", "msg", "author", "id", "unix_timestamp", "offset_minutes"), &EditorVCSInterface::create_commit);
-	ClassDB::bind_method(D_METHOD("create_status_file", "file_path", "change_type", "area"), &EditorVCSInterface::create_status_file);
-	ClassDB::bind_method(D_METHOD("add_diff_hunks_into_diff_file", "diff_file", "diff_hunks"), &EditorVCSInterface::add_diff_hunks_into_diff_file);
-	ClassDB::bind_method(D_METHOD("add_line_diffs_into_diff_hunk", "diff_hunk", "line_diffs"), &EditorVCSInterface::add_line_diffs_into_diff_hunk);
-	ClassDB::bind_method(D_METHOD("popup_error", "msg"), &EditorVCSInterface::popup_error);
-
-	BIND_ENUM_CONSTANT(CHANGE_TYPE_NEW);
-	BIND_ENUM_CONSTANT(CHANGE_TYPE_MODIFIED);
-	BIND_ENUM_CONSTANT(CHANGE_TYPE_RENAMED);
-	BIND_ENUM_CONSTANT(CHANGE_TYPE_DELETED);
-	BIND_ENUM_CONSTANT(CHANGE_TYPE_TYPECHANGE);
-	BIND_ENUM_CONSTANT(CHANGE_TYPE_UNMERGED);
-
-	BIND_ENUM_CONSTANT(TREE_AREA_COMMIT);
-	BIND_ENUM_CONSTANT(TREE_AREA_STAGED);
-	BIND_ENUM_CONSTANT(TREE_AREA_UNSTAGED);
+void EditorVCSInterface::_bind_methods()
+{
 }
 
-EditorVCSInterface *EditorVCSInterface::get_singleton() {
-	return singleton;
-}
+EditorVCSInterface* EditorVCSInterface::get_singleton() { return singleton; }
 
-void EditorVCSInterface::set_singleton(EditorVCSInterface *p_singleton) {
-	singleton = p_singleton;
-}
+void EditorVCSInterface::set_singleton(EditorVCSInterface* p_singleton) { singleton = p_singleton; }
 
-void EditorVCSInterface::create_vcs_metadata_files(VCSMetadata p_vcs_metadata_type, String &p_dir) {
+void EditorVCSInterface::create_vcs_metadata_files(VCSMetadata p_vcs_metadata_type, String& p_dir)
+{
 	if (p_vcs_metadata_type == VCSMetadata::GIT) {
 		Ref<FileAccess> f = FileAccess::open(p_dir.path_join(".gitignore"), FileAccess::WRITE);
 		if (f.is_null()) {
 			ERR_FAIL_MSG("Couldn't create .gitignore in project path.");
-		} else {
+		}
+		else {
 			f->store_line("# Godot 4+ specific ignores");
 			f->store_line(".godot/");
 			f->store_line("/android/");
@@ -255,7 +263,8 @@ void EditorVCSInterface::create_vcs_metadata_files(VCSMetadata p_vcs_metadata_ty
 		f = FileAccess::open(p_dir.path_join(".gitattributes"), FileAccess::WRITE);
 		if (f.is_null()) {
 			ERR_FAIL_MSG("Couldn't create .gitattributes in project path.");
-		} else {
+		}
+		else {
 			f->store_line("# Normalize EOL for all files that Git considers text files.");
 			f->store_line("* text=auto eol=lf");
 		}
@@ -263,19 +272,40 @@ void EditorVCSInterface::create_vcs_metadata_files(VCSMetadata p_vcs_metadata_ty
 }
 
 bool EditorVCSInterface::shut_down() { return true; }
-void EditorVCSInterface::push(const String &p_remote, bool p_force) {}
-void EditorVCSInterface::stage_file(const String &p_file_path) {}
-void EditorVCSInterface::unstage_file(const String &p_file_path) {}
-void EditorVCSInterface::set_credentials(const String &p_username, const String &p_password, const String &p_ssh_public_key, const String &p_ssh_private_key, const String &p_ssh_passphrase) {}
-void EditorVCSInterface::discard_file(const String &p_file_path) {}
-void EditorVCSInterface::create_remote(const String &p_remote_name, const String &p_remote_url) {}
+
+void EditorVCSInterface::push(const String& p_remote, bool p_force) {}
+
+void EditorVCSInterface::stage_file(const String& p_file_path) {}
+
+void EditorVCSInterface::unstage_file(const String& p_file_path) {}
+
+void EditorVCSInterface::set_credentials(const String& p_username, const String& p_password,
+	const String& p_ssh_public_key, const String& p_ssh_private_key, const String& p_ssh_passphrase)
+{
+}
+
+void EditorVCSInterface::discard_file(const String& p_file_path) {}
+
+void EditorVCSInterface::create_remote(const String& p_remote_name, const String& p_remote_url) {}
+
 String EditorVCSInterface::get_current_branch_name() { return String(); }
-void EditorVCSInterface::create_branch(const String &p_branch_name) {}
-bool EditorVCSInterface::checkout_branch(const String &p_branch_name) { return true; }
-void EditorVCSInterface::fetch(const String &p_remote) {}
-void EditorVCSInterface::remove_remote(const String &p_remote_name) {}
-void EditorVCSInterface::remove_branch(const String &p_branch_name) {}
-bool EditorVCSInterface::initialize(const String &p_project_path) { return false; }
+
+void EditorVCSInterface::create_branch(const String& p_branch_name) {}
+
+bool EditorVCSInterface::checkout_branch(const String& p_branch_name) { return true; }
+
+void EditorVCSInterface::fetch(const String& p_remote) {}
+
+void EditorVCSInterface::remove_remote(const String& p_remote_name) {}
+
+void EditorVCSInterface::remove_branch(const String& p_branch_name) {}
+
+bool EditorVCSInterface::initialize(const String& p_project_path) { return false; }
+
 bool EditorVCSInterface::allow_amends() { return false; }
+
 String EditorVCSInterface::get_vcs_name() { return String(); }
-void EditorVCSInterface::pull(const String &p_remote) {}
+
+void EditorVCSInterface::pull(const String& p_remote) {}
+
+

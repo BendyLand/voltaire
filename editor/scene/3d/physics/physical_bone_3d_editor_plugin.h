@@ -30,42 +30,51 @@
 
 #pragma once
 
+#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 
 class PhysicalBone3D;
 
-class PhysicalBone3DEditor : public Object {
-	VLTRCLASS(PhysicalBone3DEditor, Object);
+class PhysicalBone3DEditor
+{
+	HBoxContainer* spatial_editor_hb = nullptr;
+	Button* button_transform_joint = nullptr;
 
-	HBoxContainer *spatial_editor_hb = nullptr;
-	Button *button_transform_joint = nullptr;
-
-	PhysicalBone3D *selected = nullptr;
+	PhysicalBone3D* selected = nullptr;
 
 private:
 	void _on_toggle_button_transform_joint(bool p_is_pressed);
 	void _set_move_joint();
 
 public:
+	mem_unique_ptr<Object> obj;
 	PhysicalBone3DEditor();
 
-	void set_selected(PhysicalBone3D *p_pb);
+	void set_selected(PhysicalBone3D* p_pb);
 
 	void hide();
 	void show();
 };
 
-class PhysicalBone3DEditorPlugin : public EditorPlugin {
+class PhysicalBone3DEditorPlugin : public EditorPlugin
+{
 	VLTRCLASS(PhysicalBone3DEditorPlugin, EditorPlugin);
 
-	PhysicalBone3D *selected = nullptr;
+	PhysicalBone3D* selected = nullptr;
 	PhysicalBone3DEditor physical_bone_editor;
 
 public:
 	virtual String get_plugin_name() const override { return "PhysicalBone3D"; }
-	virtual bool handles(Object *p_object) const override { return p_object->is_class("PhysicalBone3D"); }
+
+	virtual bool handles(Object* p_object) const override
+	{
+		return p_object->is_class("PhysicalBone3D");
+	}
+
 	virtual void make_visible(bool p_visible) override;
-	virtual void edit(Object *p_node) override;
+	virtual void edit(Object* p_node) override;
 };
+
+

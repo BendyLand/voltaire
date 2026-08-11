@@ -28,9 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_interface.h"
-#include "editor_interface.compat.inc"
-
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
@@ -58,6 +55,8 @@
 #include "editor/settings/editor_feature_profile.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "editor_interface.compat.inc"
+#include "editor_interface.h"
 #include "main/main.h"
 #include "scene/3d/light_3d.h"
 #include "scene/3d/visual_instance_3d.h"
@@ -70,13 +69,12 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server.h"
 
-EditorInterface *EditorInterface::singleton = nullptr;
+EditorInterface* EditorInterface::singleton = nullptr;
 
-bool EditorInterface::is_exiting() const {
-	return EditorNode::get_singleton()->is_exiting();
-}
+bool EditorInterface::is_exiting() const { return EditorNode::get_singleton()->is_exiting(); }
 
-void EditorInterface::restart_editor(bool p_save) {
+void EditorInterface::restart_editor(bool p_save)
+{
 	if (p_save) {
 		EditorNode::get_singleton()->save_all_scenes();
 	}
@@ -85,47 +83,54 @@ void EditorInterface::restart_editor(bool p_save) {
 
 // Editor tools.
 
-EditorCommandPalette *EditorInterface::get_command_palette() const {
+EditorCommandPalette* EditorInterface::get_command_palette() const
+{
 	return EditorCommandPalette::get_singleton();
 }
 
-EditorFileSystem *EditorInterface::get_resource_filesystem() const {
+EditorFileSystem* EditorInterface::get_resource_filesystem() const
+{
 	return EditorFileSystem::get_singleton();
 }
 
-EditorPaths *EditorInterface::get_editor_paths() const {
-	return EditorPaths::get_singleton();
-}
+EditorPaths* EditorInterface::get_editor_paths() const { return EditorPaths::get_singleton(); }
 
-EditorResourcePreview *EditorInterface::get_resource_previewer() const {
+EditorResourcePreview* EditorInterface::get_resource_previewer() const
+{
 	return EditorResourcePreview::get_singleton();
 }
 
-EditorSelection *EditorInterface::get_selection() const {
+EditorSelection* EditorInterface::get_selection() const
+{
 	return EditorNode::get_singleton()->get_editor_selection();
 }
 
-Ref<EditorSettings> EditorInterface::get_editor_settings() const {
+Ref<EditorSettings> EditorInterface::get_editor_settings() const
+{
 	return EditorSettings::get_singleton();
 }
 
-EditorToaster *EditorInterface::get_editor_toaster() const {
+EditorToaster* EditorInterface::get_editor_toaster() const
+{
 	return EditorToaster::get_singleton();
 }
 
-EditorUndoRedoManager *EditorInterface::get_editor_undo_redo() const {
+EditorUndoRedoManager* EditorInterface::get_editor_undo_redo() const
+{
 	return EditorUndoRedoManager::get_singleton();
 }
 
-ScenePaint2DEditor *EditorInterface::get_scene_paint_2d() const {
+ScenePaint2DEditor* EditorInterface::get_scene_paint_2d() const
+{
 	return ScenePaint2DEditor::get_singleton();
 }
 
-AABB EditorInterface::_calculate_aabb_for_scene(Node *p_node, AABB &p_scene_aabb) {
-	GeometryInstance3D *geom_node = Object::cast_to<GeometryInstance3D>(p_node);
+AABB EditorInterface::_calculate_aabb_for_scene(Node* p_node, AABB& p_scene_aabb)
+{
+	GeometryInstance3D* geom_node = Object::cast_to<GeometryInstance3D>(p_node);
 	if (geom_node != nullptr) {
 		Transform3D accum_xform;
-		Node3D *base = geom_node;
+		Node3D* base = geom_node;
 		while (base) {
 			accum_xform = base->get_transform() * accum_xform;
 			base = Object::cast_to<Node3D>(base->get_parent());
@@ -142,7 +147,9 @@ AABB EditorInterface::_calculate_aabb_for_scene(Node *p_node, AABB &p_scene_aabb
 	return p_scene_aabb;
 }
 
-TypedArray<Texture2D> EditorInterface::_make_mesh_previews(const TypedArray<Mesh> &p_meshes, int p_preview_size) {
+TypedArray<Texture2D> EditorInterface::_make_mesh_previews(
+	const TypedArray<Mesh>& p_meshes, int p_preview_size)
+{
 	Vector<Ref<Mesh>> meshes;
 
 	for (int i = 0; i < p_meshes.size(); i++) {
@@ -158,7 +165,9 @@ TypedArray<Texture2D> EditorInterface::_make_mesh_previews(const TypedArray<Mesh
 	return ret;
 }
 
-Vector<Ref<Texture2D>> EditorInterface::make_mesh_previews(const Vector<Ref<Mesh>> &p_meshes, Vector<Transform3D> *p_transforms, int p_preview_size) {
+Vector<Ref<Texture2D>> EditorInterface::make_mesh_previews(
+	const Vector<Ref<Mesh>>& p_meshes, Vector<Transform3D>* p_transforms, int p_preview_size)
+{
 	int size = p_preview_size;
 
 	RID scenario = RS::get_singleton()->scenario_create();
@@ -186,7 +195,7 @@ Vector<Ref<Texture2D>> EditorInterface::make_mesh_previews(const Vector<Ref<Mesh
 	Vector<Ref<Texture2D>> textures;
 
 	for (int i = 0; i < p_meshes.size(); i++) {
-		const Ref<Mesh> &mesh = p_meshes[i];
+		const Ref<Mesh>& mesh = p_meshes[i];
 		if (mesh.is_null()) {
 			textures.push_back(Ref<Texture2D>());
 			continue;
@@ -217,11 +226,14 @@ Vector<Ref<Texture2D>> EditorInterface::make_mesh_previews(const Vector<Ref<Mesh
 		xform.invert();
 		xform = mesh_xform * xform;
 
-		RS::get_singleton()->camera_set_transform(camera, xform * Transform3D(Basis(), Vector3(0, 0, 3)));
+		RS::get_singleton()->camera_set_transform(
+			camera, xform * Transform3D(Basis(), Vector3(0, 0, 3)));
 		RS::get_singleton()->camera_set_orthogonal(camera, m * 2, 0.01, 1000.0);
 
-		RS::get_singleton()->instance_set_transform(light_instance, xform * Transform3D().looking_at(Vector3(-2, -1, -1), Vector3(0, 1, 0)));
-		RS::get_singleton()->instance_set_transform(light_instance2, xform * Transform3D().looking_at(Vector3(+1, -1, -2), Vector3(0, 1, 0)));
+		RS::get_singleton()->instance_set_transform(light_instance,
+			xform * Transform3D().looking_at(Vector3(-2, -1, -1), Vector3(0, 1, 0)));
+		RS::get_singleton()->instance_set_transform(light_instance2,
+			xform * Transform3D().looking_at(Vector3(+1, -1, -2), Vector3(0, 1, 0)));
 
 		ep.step(TTR("Thumbnail..."), i);
 		DisplayServer::get_singleton()->process_events();
@@ -247,8 +259,10 @@ Vector<Ref<Texture2D>> EditorInterface::make_mesh_previews(const Vector<Ref<Mesh
 	return textures;
 }
 
-void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, int p_preview_size) {
-	if (!Engine::get_singleton()->is_editor_hint() || !DisplayServer::get_singleton()->window_can_draw()) {
+void EditorInterface::make_scene_preview(const String& p_path, Node* p_scene, int p_preview_size)
+{
+	if (!Engine::get_singleton()->is_editor_hint() ||
+		!DisplayServer::get_singleton()->window_can_draw()) {
 		return;
 	}
 	ERR_FAIL_COND_MSG(p_path.is_empty(), "Path is empty, cannot generate preview.");
@@ -256,7 +270,7 @@ void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, in
 	ERR_FAIL_COND_MSG(p_scene->is_inside_tree(), "The scene must not be inside the tree.");
 	ERR_FAIL_NULL_MSG(EditorNode::get_singleton(), "EditorNode doesn't exist.");
 
-	SubViewport *sub_viewport_node = memnew(SubViewport);
+	SubViewport* sub_viewport_node = memnew(SubViewport);
 	AABB scene_aabb = AABB(Vector3(-0.001f, -0.001f, -0.001f), Vector3(0.002f, 0.002f, 0.002f));
 	scene_aabb = _calculate_aabb_for_scene(p_scene, scene_aabb);
 
@@ -275,11 +289,11 @@ void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, in
 	Ref<CameraAttributesPractical> camera_attributes;
 	camera_attributes.instantiate();
 
-	Node3D *root = memnew(Node3D);
+	Node3D* root = memnew(Node3D);
 	root->set_name("Root");
 	sub_viewport_node->add_child(root);
 
-	Camera3D *camera = memnew(Camera3D);
+	Camera3D* camera = memnew(Camera3D);
 	camera->set_environment(env);
 	camera->set_attributes(camera_attributes);
 	camera->set_name("Camera3D");
@@ -288,9 +302,9 @@ void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, in
 
 	camera->set_position(Vector3(0.0, 0.0, 3.0));
 
-	DirectionalLight3D *light = memnew(DirectionalLight3D);
+	DirectionalLight3D* light = memnew(DirectionalLight3D);
 	light->set_name("Light");
-	DirectionalLight3D *light2 = memnew(DirectionalLight3D);
+	DirectionalLight3D* light2 = memnew(DirectionalLight3D);
 	light2->set_name("Light2");
 	light2->set_color(Color(0.7, 0.7, 0.7, 1.0));
 
@@ -357,7 +371,8 @@ void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, in
 
 		if (vp_size < preview_size) {
 			img->crop_from_point(x, y, vp_size, vp_size);
-		} else {
+		}
+		else {
 			int ratio = vp_size / preview_size;
 			int size = preview_size * MAX(1, ratio / 2);
 
@@ -381,13 +396,14 @@ void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, in
 	EditorFileSystem::get_singleton()->filesystem_changed();
 }
 
-void EditorInterface::add_root_node(Node *p_node) {
+void EditorInterface::add_root_node(Node* p_node)
+{
 	if (EditorNode::get_singleton()->get_edited_scene()) {
 		ERR_PRINT("EditorInterface::add_root_node: The current scene already has a root node.");
 		return;
 	}
 
-	const String &scene_path = p_node->get_scene_file_path();
+	const String& scene_path = p_node->get_scene_file_path();
 	if (!scene_path.is_empty()) {
 		Ref<PackedScene> scene = ResourceLoader::load(scene_path);
 		if (scene.is_valid()) {
@@ -399,112 +415,135 @@ void EditorInterface::add_root_node(Node *p_node) {
 	}
 
 	EditorNode::get_singleton()->set_edited_scene(p_node);
-	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(
+		EditorNode::get_editor_data().get_current_edited_scene_history_id());
 	EditorSceneTabs::get_singleton()->update_scene_tabs();
 }
 
-void EditorInterface::set_plugin_enabled(const String &p_plugin, bool p_enabled) {
+void EditorInterface::set_plugin_enabled(const String& p_plugin, bool p_enabled)
+{
 	EditorNode::get_singleton()->set_addon_plugin_enabled(p_plugin, p_enabled, true);
 }
 
-bool EditorInterface::is_plugin_enabled(const String &p_plugin) const {
+bool EditorInterface::is_plugin_enabled(const String& p_plugin) const
+{
 	return EditorNode::get_singleton()->is_addon_plugin_enabled(p_plugin);
 }
 
 // Editor GUI.
 
-Ref<Theme> EditorInterface::get_editor_theme() const {
+Ref<Theme> EditorInterface::get_editor_theme() const
+{
 	return EditorNode::get_singleton()->get_editor_theme();
 }
 
-Control *EditorInterface::get_base_control() const {
+Control* EditorInterface::get_base_control() const
+{
 	return EditorNode::get_singleton()->get_gui_base();
 }
 
-VBoxContainer *EditorInterface::get_editor_main_screen() const {
+VBoxContainer* EditorInterface::get_editor_main_screen() const
+{
 	return EditorNode::get_singleton()->get_editor_main_screen()->get_control();
 }
 
-ScriptEditor *EditorInterface::get_script_editor() const {
-	return ScriptEditor::get_singleton();
-}
+ScriptEditor* EditorInterface::get_script_editor() const { return ScriptEditor::get_singleton(); }
 
-SubViewport *EditorInterface::get_editor_viewport_2d() const {
+SubViewport* EditorInterface::get_editor_viewport_2d() const
+{
 	return EditorNode::get_singleton()->get_scene_root();
 }
 
-SubViewport *EditorInterface::get_editor_viewport_3d(int p_idx) const {
+SubViewport* EditorInterface::get_editor_viewport_3d(int p_idx) const
+{
 	ERR_FAIL_INDEX_V(p_idx, static_cast<int>(Node3DEditor::VIEWPORTS_COUNT), nullptr);
 	return Node3DEditor::get_singleton()->get_editor_viewport(p_idx)->get_viewport_node();
 }
 
-void EditorInterface::set_main_screen_editor(const String &p_name) {
+void EditorInterface::set_main_screen_editor(const String& p_name)
+{
 	EditorNode::get_singleton()->get_editor_main_screen()->select_by_name(p_name);
 }
 
-void EditorInterface::set_distraction_free_mode(bool p_enter) {
+void EditorInterface::set_distraction_free_mode(bool p_enter)
+{
 	EditorNode::get_singleton()->set_distraction_free_mode(p_enter);
 }
 
-bool EditorInterface::is_distraction_free_mode_enabled() const {
+bool EditorInterface::is_distraction_free_mode_enabled() const
+{
 	return EditorNode::get_singleton()->is_distraction_free_mode_enabled();
 }
 
-bool EditorInterface::is_multi_window_enabled() const {
+bool EditorInterface::is_multi_window_enabled() const
+{
 	return EditorNode::get_singleton()->is_multi_window_enabled();
 }
 
-float EditorInterface::get_editor_scale() const {
-	return EDSCALE;
-}
+float EditorInterface::get_editor_scale() const { return EDSCALE; }
 
-String EditorInterface::get_editor_language() const {
+String EditorInterface::get_editor_language() const
+{
 	return EditorSettings::get_singleton()->get_language();
 }
 
-bool EditorInterface::is_node_3d_snap_enabled() const {
+bool EditorInterface::is_node_3d_snap_enabled() const
+{
 	return Node3DEditor::get_singleton()->is_snap_enabled();
 }
 
-real_t EditorInterface::get_node_3d_translate_snap() const {
+real_t EditorInterface::get_node_3d_translate_snap() const
+{
 	return Node3DEditor::get_singleton()->get_translate_snap();
 }
 
-real_t EditorInterface::get_node_3d_rotate_snap() const {
+real_t EditorInterface::get_node_3d_rotate_snap() const
+{
 	return Node3DEditor::get_singleton()->get_rotate_snap();
 }
 
-real_t EditorInterface::get_node_3d_scale_snap() const {
+real_t EditorInterface::get_node_3d_scale_snap() const
+{
 	return Node3DEditor::get_singleton()->get_scale_snap();
 }
 
-void EditorInterface::popup_dialog(Window *p_dialog, const Rect2i &p_screen_rect) {
+void EditorInterface::popup_dialog(Window* p_dialog, const Rect2i& p_screen_rect)
+{
 	p_dialog->popup_exclusive(EditorNode::get_singleton(), p_screen_rect);
 }
 
-void EditorInterface::popup_dialog_centered(Window *p_dialog, const Size2i &p_minsize) {
+void EditorInterface::popup_dialog_centered(Window* p_dialog, const Size2i& p_minsize)
+{
 	p_dialog->popup_exclusive_centered(EditorNode::get_singleton(), p_minsize);
 }
 
-void EditorInterface::popup_dialog_centered_ratio(Window *p_dialog, float p_ratio) {
+void EditorInterface::popup_dialog_centered_ratio(Window* p_dialog, float p_ratio)
+{
 	p_dialog->popup_exclusive_centered_ratio(EditorNode::get_singleton(), p_ratio);
 }
 
-void EditorInterface::popup_dialog_centered_clamped(Window *p_dialog, const Size2i &p_size, float p_fallback_ratio) {
-	p_dialog->popup_exclusive_centered_clamped(EditorNode::get_singleton(), p_size, p_fallback_ratio);
+void EditorInterface::popup_dialog_centered_clamped(
+	Window* p_dialog, const Size2i& p_size, float p_fallback_ratio)
+{
+	p_dialog->popup_exclusive_centered_clamped(
+		EditorNode::get_singleton(), p_size, p_fallback_ratio);
 }
 
-String EditorInterface::get_current_feature_profile() const {
+String EditorInterface::get_current_feature_profile() const
+{
 	return EditorFeatureProfileManager::get_singleton()->get_current_profile_name();
 }
 
-void EditorInterface::set_current_feature_profile(const String &p_profile_name) {
+void EditorInterface::set_current_feature_profile(const String& p_profile_name)
+{
 	EditorFeatureProfileManager::get_singleton()->set_current_profile(p_profile_name, true);
 }
 
 // Editor dialogs.
 
-void EditorInterface::popup_node_selector(const Callable &p_callback, const TypedArray<StringName> &p_valid_types, Node *p_current_value) {
+void EditorInterface::popup_node_selector(
+	const Callable& p_callback, const TypedArray<StringName>& p_valid_types, Node* p_current_value)
+{
 	if (!node_selector) {
 		node_selector = memnew(SceneTreeDialog);
 		get_base_control()->add_child(node_selector);
@@ -520,11 +559,15 @@ void EditorInterface::popup_node_selector(const Callable &p_callback, const Type
 	node_selector->popup_scenetree_dialog(p_current_value);
 
 	const Callable callback = callable_mp(this, &EditorInterface::_node_selected);
-	node_selector->connect(SNAME("selected"), callback.bind(p_callback), CONNECT_DEFERRED);
-	node_selector->connect(SNAME("canceled"), callback.bind(NodePath(), p_callback), CONNECT_DEFERRED);
+	node_selector->connect(
+		SNAME("selected"), callback.bind(p_callback), this->obj->CONNECT_DEFERRED);
+	node_selector->connect(
+		SNAME("canceled"), callback.bind(NodePath(), p_callback), this->obj->CONNECT_DEFERRED);
 }
 
-void EditorInterface::popup_property_selector(Object *p_object, const Callable &p_callback, const PackedInt32Array &p_type_filter, const String &p_current_value) {
+void EditorInterface::popup_property_selector(Object* p_object, const Callable& p_callback,
+	const PackedInt32Array& p_type_filter, const String& p_current_value)
+{
 	if (!property_selector) {
 		property_selector = memnew(PropertySelector);
 		get_base_control()->add_child(property_selector);
@@ -540,11 +583,15 @@ void EditorInterface::popup_property_selector(Object *p_object, const Callable &
 	property_selector->select_property_from_instance(p_object, p_current_value);
 
 	const Callable callback = callable_mp(this, &EditorInterface::_property_selected);
-	property_selector->connect(SNAME("selected"), callback.bind(p_callback), CONNECT_DEFERRED);
-	property_selector->connect(SNAME("canceled"), callback.bind(String(), p_callback), CONNECT_DEFERRED);
+	property_selector->connect(
+		SNAME("selected"), callback.bind(p_callback), this->obj->CONNECT_DEFERRED);
+	property_selector->connect(
+		SNAME("canceled"), callback.bind(String(), p_callback), this->obj->CONNECT_DEFERRED);
 }
 
-void EditorInterface::popup_method_selector(Object *p_object, const Callable &p_callback, const String &p_current_value) {
+void EditorInterface::popup_method_selector(
+	Object* p_object, const Callable& p_callback, const String& p_current_value)
+{
 	if (!method_selector) {
 		method_selector = memnew(PropertySelector);
 		get_base_control()->add_child(method_selector);
@@ -553,167 +600,210 @@ void EditorInterface::popup_method_selector(Object *p_object, const Callable &p_
 	method_selector->select_method_from_instance(p_object, p_current_value);
 
 	const Callable callback = callable_mp(this, &EditorInterface::_method_selected);
-	method_selector->connect(SNAME("selected"), callback.bind(p_callback), CONNECT_DEFERRED);
-	method_selector->connect(SNAME("canceled"), callback.bind(String(), p_callback), CONNECT_DEFERRED);
+	method_selector->connect(
+		SNAME("selected"), callback.bind(p_callback), this->obj->CONNECT_DEFERRED);
+	method_selector->connect(
+		SNAME("canceled"), callback.bind(String(), p_callback), this->obj->CONNECT_DEFERRED);
 }
 
-void EditorInterface::popup_quick_open(const Callable &p_callback, const TypedArray<StringName> &p_base_types) {
+void EditorInterface::popup_quick_open(
+	const Callable& p_callback, const TypedArray<StringName>& p_base_types)
+{
 	StringName required_type = SNAME("Resource");
 	Vector<StringName> base_types;
 	if (p_base_types.is_empty()) {
 		base_types.append(required_type);
-	} else {
+	}
+	else {
 		for (int i = 0; i < p_base_types.size(); i++) {
 			StringName type = p_base_types[i];
-			ERR_FAIL_COND_MSG(!(ClassDB::is_parent_class(type, required_type) || EditorNode::get_editor_data().script_class_is_parent(type, required_type)), "Only types deriving from Resource are supported in the quick open dialog.");
+			ERR_FAIL_COND_MSG(
+				!(ClassDB::is_parent_class(type, required_type) ||
+					EditorNode::get_editor_data().script_class_is_parent(type, required_type)),
+				"Only types deriving from Resource are supported in the quick open dialog.");
 			base_types.append(type);
 		}
 	}
 
-	EditorQuickOpenDialog *quick_open = EditorNode::get_singleton()->get_quick_open_dialog();
-	quick_open->connect(SNAME("canceled"), callable_mp(this, &EditorInterface::_quick_open).bind(String(), p_callback));
-	quick_open->popup_dialog(base_types, callable_mp(this, &EditorInterface::_quick_open).bind(p_callback));
+	EditorQuickOpenDialog* quick_open = EditorNode::get_singleton()->get_quick_open_dialog();
+	quick_open->connect(SNAME("canceled"),
+		callable_mp(this, &EditorInterface::_quick_open).bind(String(), p_callback));
+	quick_open->popup_dialog(
+		base_types, callable_mp(this, &EditorInterface::_quick_open).bind(p_callback));
 }
 
-void EditorInterface::popup_create_dialog(const Callable &p_callback, const StringName &p_base_type, const String &p_current_type, const String &p_dialog_title, const TypedArray<StringName> &p_custom_type_blocklist) {
+void EditorInterface::popup_create_dialog(const Callable& p_callback, const StringName& p_base_type,
+	const String& p_current_type, const String& p_dialog_title,
+	const TypedArray<StringName>& p_custom_type_blocklist)
+{
 	if (!create_dialog) {
 		create_dialog = memnew(CreateDialog);
 		get_base_control()->add_child(create_dialog);
 	}
 
 	HashSet<StringName> blocklist;
-	for (const Variant &E : p_custom_type_blocklist) {
+	for (const Variant& E : p_custom_type_blocklist) {
 		blocklist.insert(E);
 	}
 	create_dialog->set_type_blocklist(blocklist);
 
 	String safe_base_type = p_base_type;
-	if (p_base_type.is_empty() || (!ClassDB::class_exists(p_base_type) && !ScriptServer::is_global_class(p_base_type))) {
-		ERR_PRINT(vformat("Invalid base type '%s'. The base type has fallen back to 'Object'.", p_base_type));
+	if (p_base_type.is_empty() ||
+		(!ClassDB::class_exists(p_base_type) && !ScriptServer::is_global_class(p_base_type))) {
+		ERR_PRINT(vformat(
+			"Invalid base type '%s'. The base type has fallen back to 'Object'.", p_base_type));
 		safe_base_type = "Object";
 	}
 
 	create_dialog->set_base_type(safe_base_type);
 	create_dialog->popup_create(false, true, p_current_type, "");
-	create_dialog->set_title(p_dialog_title.is_empty() ? vformat(TTR("Create New %s"), p_base_type) : p_dialog_title);
+	create_dialog->set_title(
+		p_dialog_title.is_empty() ? vformat(TTR("Create New %s"), p_base_type) : p_dialog_title);
 
 	const Callable callback = callable_mp(this, &EditorInterface::_create_dialog_item_selected);
-	create_dialog->connect(SNAME("create"), callback.bind(false, p_callback), CONNECT_DEFERRED);
-	create_dialog->connect(SNAME("canceled"), callback.bind(true, p_callback), CONNECT_DEFERRED);
+	create_dialog->connect(
+		SNAME("create"), callback.bind(false, p_callback), this->obj->CONNECT_DEFERRED);
+	create_dialog->connect(
+		SNAME("canceled"), callback.bind(true, p_callback), this->obj->CONNECT_DEFERRED);
 }
 
-void EditorInterface::_node_selected(const NodePath &p_node_path, const Callable &p_callback) {
+void EditorInterface::_node_selected(const NodePath& p_node_path, const Callable& p_callback)
+{
 	const Callable callback = callable_mp(this, &EditorInterface::_node_selected);
 	node_selector->disconnect(SNAME("selected"), callback);
 	node_selector->disconnect(SNAME("canceled"), callback);
 
 	if (p_node_path.is_empty()) {
 		_call_dialog_callback(p_callback, NodePath(), "node selection canceled");
-	} else {
+	}
+	else {
 		const NodePath path = get_edited_scene_root()->get_path().rel_path_to(p_node_path);
 		_call_dialog_callback(p_callback, path, "node selected");
 	}
 }
 
-void EditorInterface::_property_selected(const String &p_property_name, const Callable &p_callback) {
+void EditorInterface::_property_selected(const String& p_property_name, const Callable& p_callback)
+{
 	const Callable callback = callable_mp(this, &EditorInterface::_property_selected);
 	property_selector->disconnect(SNAME("selected"), callback);
 	property_selector->disconnect(SNAME("canceled"), callback);
 
 	if (p_property_name.is_empty()) {
-		_call_dialog_callback(p_callback, NodePath(p_property_name).get_as_property_path(), "property selection canceled");
-	} else {
-		_call_dialog_callback(p_callback, NodePath(p_property_name).get_as_property_path(), "property selected");
+		_call_dialog_callback(p_callback, NodePath(p_property_name).get_as_property_path(),
+			"property selection canceled");
+	}
+	else {
+		_call_dialog_callback(
+			p_callback, NodePath(p_property_name).get_as_property_path(), "property selected");
 	}
 }
 
-void EditorInterface::_method_selected(const String &p_method_name, const Callable &p_callback) {
+void EditorInterface::_method_selected(const String& p_method_name, const Callable& p_callback)
+{
 	const Callable callback = callable_mp(this, &EditorInterface::_method_selected);
 	method_selector->disconnect(SNAME("selected"), callback);
 	method_selector->disconnect(SNAME("canceled"), callback);
 
 	if (p_method_name.is_empty()) {
 		_call_dialog_callback(p_callback, p_method_name, "method selection canceled");
-	} else {
+	}
+	else {
 		_call_dialog_callback(p_callback, p_method_name, "method selected");
 	}
 }
 
-void EditorInterface::_quick_open(const String &p_file_path, const Callable &p_callback) {
-	EditorQuickOpenDialog *quick_open = EditorNode::get_singleton()->get_quick_open_dialog();
+void EditorInterface::_quick_open(const String& p_file_path, const Callable& p_callback)
+{
+	EditorQuickOpenDialog* quick_open = EditorNode::get_singleton()->get_quick_open_dialog();
 	quick_open->disconnect(SNAME("canceled"), callable_mp(this, &EditorInterface::_quick_open));
 	_call_dialog_callback(p_callback, p_file_path, "quick open");
 }
 
-void EditorInterface::_create_dialog_item_selected(bool p_is_canceled, const Callable &p_callback) {
+void EditorInterface::_create_dialog_item_selected(bool p_is_canceled, const Callable& p_callback)
+{
 	const Callable callback = callable_mp(this, &EditorInterface::_create_dialog_item_selected);
 	create_dialog->disconnect(SNAME("create"), callback);
 	create_dialog->disconnect(SNAME("canceled"), callback);
-	_call_dialog_callback(p_callback, p_is_canceled ? "" : create_dialog->get_selected_type(), "create dialog");
+	_call_dialog_callback(
+		p_callback, p_is_canceled ? "" : create_dialog->get_selected_type(), "create dialog");
 }
 
-void EditorInterface::_call_dialog_callback(const Callable &p_callback, const Variant &p_selected, const String &p_context) {
+void EditorInterface::_call_dialog_callback(
+	const Callable& p_callback, const Variant& p_selected, const String& p_context)
+{
 	Callable::CallError ce;
 	Variant ret;
-	const Variant *args[1] = { &p_selected };
+	const Variant* args[1] = {&p_selected};
 	p_callback.callp(args, 1, ret, ce);
 	if (ce.error != Callable::CallError::CALL_OK) {
-		ERR_PRINT(vformat("Error calling %s callback: %s", p_context, Variant::get_callable_error_text(p_callback, args, 1, ce)));
+		ERR_PRINT(vformat("Error calling %s callback: %s", p_context,
+			Variant::get_callable_error_text(p_callback, args, 1, ce)));
 	}
 }
 
 // Editor docks.
 
-FileSystemDock *EditorInterface::get_file_system_dock() const {
+FileSystemDock* EditorInterface::get_file_system_dock() const
+{
 	return FileSystemDock::get_singleton();
 }
 
-void EditorInterface::select_file(const String &p_file) {
+void EditorInterface::select_file(const String& p_file)
+{
 	FileSystemDock::get_singleton()->select_file(p_file);
 }
 
-Vector<String> EditorInterface::get_selected_paths() const {
+Vector<String> EditorInterface::get_selected_paths() const
+{
 	return FileSystemDock::get_singleton()->get_selected_paths();
 }
 
-String EditorInterface::get_current_path() const {
+String EditorInterface::get_current_path() const
+{
 	return FileSystemDock::get_singleton()->get_current_path();
 }
 
-String EditorInterface::get_current_directory() const {
+String EditorInterface::get_current_directory() const
+{
 	return FileSystemDock::get_singleton()->get_current_directory();
 }
 
-EditorInspector *EditorInterface::get_inspector() const {
+EditorInspector* EditorInterface::get_inspector() const
+{
 	return InspectorDock::get_inspector_singleton();
 }
 
 // Object/Resource/Node editing.
 
-void EditorInterface::inspect_object(Object *p_obj, const String &p_for_property, bool p_inspector_only) {
+void EditorInterface::inspect_object(
+	Object* p_obj, const String& p_for_property, bool p_inspector_only)
+{
 	EditorNode::get_singleton()->push_item(p_obj, p_for_property, p_inspector_only);
 }
 
-void EditorInterface::edit_resource(const Ref<Resource> &p_resource) {
+void EditorInterface::edit_resource(const Ref<Resource>& p_resource)
+{
 	EditorNode::get_singleton()->edit_resource(p_resource);
 }
 
-void EditorInterface::edit_node(Node *p_node) {
-	EditorNode::get_singleton()->edit_node(p_node);
-}
+void EditorInterface::edit_node(Node* p_node) { EditorNode::get_singleton()->edit_node(p_node); }
 
-void EditorInterface::edit_script(const Ref<Script> &p_script, int p_line, int p_col, bool p_grab_focus) {
+void EditorInterface::edit_script(
+	const Ref<Script>& p_script, int p_line, int p_col, bool p_grab_focus)
+{
 	ScriptEditor::get_singleton()->edit(p_script, p_line - 1, p_col - 1, p_grab_focus);
 }
 
-void EditorInterface::open_scene_from_path(const String &scene_path, bool p_set_inherited) {
+void EditorInterface::open_scene_from_path(const String& scene_path, bool p_set_inherited)
+{
 	if (EditorNode::get_singleton()->is_changing_scene()) {
 		return;
 	}
 	EditorNode::get_singleton()->open_scene(scene_path, false, p_set_inherited);
 }
 
-void EditorInterface::reload_scene_from_path(const String &scene_path) {
+void EditorInterface::reload_scene_from_path(const String& scene_path)
+{
 	if (EditorNode::get_singleton()->is_changing_scene()) {
 		return;
 	}
@@ -721,31 +811,36 @@ void EditorInterface::reload_scene_from_path(const String &scene_path) {
 	EditorNode::get_singleton()->reload_scene(scene_path);
 }
 
-void EditorInterface::set_object_edited(Object *p_object, bool p_edited) {
+void EditorInterface::set_object_edited(Object* p_object, bool p_edited)
+{
 	ERR_FAIL_NULL_MSG(p_object, "Cannot change edited status on a null object.");
 	p_object->set_edited(p_edited);
 }
 
-bool EditorInterface::is_object_edited(Object *p_object) const {
+bool EditorInterface::is_object_edited(Object* p_object) const
+{
 	ERR_FAIL_NULL_V_MSG(p_object, false, "Cannot check edit status on a null object.");
 	return p_object->is_edited();
 }
 
-Node *EditorInterface::get_edited_scene_root() const {
+Node* EditorInterface::get_edited_scene_root() const
+{
 	return EditorNode::get_singleton()->get_edited_scene();
 }
 
-PackedStringArray EditorInterface::get_open_scenes() const {
+PackedStringArray EditorInterface::get_open_scenes() const
+{
 	PackedStringArray ret;
 	Vector<EditorData::EditedScene> scenes = EditorNode::get_editor_data().get_edited_scenes();
 
-	for (EditorData::EditedScene &edited_scene : scenes) {
+	for (EditorData::EditedScene& edited_scene : scenes) {
 		ret.push_back(edited_scene.path);
 	}
 	return ret;
 }
 
-PackedStringArray EditorInterface::get_unsaved_scenes() const {
+PackedStringArray EditorInterface::get_unsaved_scenes() const
+{
 	PackedStringArray ret;
 	Vector<EditorData::EditedScene> scenes = EditorNode::get_editor_data().get_edited_scenes();
 
@@ -757,11 +852,12 @@ PackedStringArray EditorInterface::get_unsaved_scenes() const {
 	return ret;
 }
 
-TypedArray<Node> EditorInterface::get_open_scene_roots() const {
+TypedArray<Node> EditorInterface::get_open_scene_roots() const
+{
 	TypedArray<Node> ret;
 	Vector<EditorData::EditedScene> scenes = EditorNode::get_editor_data().get_edited_scenes();
 
-	for (EditorData::EditedScene &edited_scene : scenes) {
+	for (EditorData::EditedScene& edited_scene : scenes) {
 		if (edited_scene.root == nullptr) {
 			continue;
 		}
@@ -770,7 +866,8 @@ TypedArray<Node> EditorInterface::get_open_scene_roots() const {
 	return ret;
 }
 
-Error EditorInterface::save_scene() {
+Error EditorInterface::save_scene()
+{
 	if (!get_edited_scene_root()) {
 		return ERR_CANT_CREATE;
 	}
@@ -782,198 +879,92 @@ Error EditorInterface::save_scene() {
 	return OK;
 }
 
-void EditorInterface::save_scene_as(const String &p_scene, bool p_with_preview) {
+void EditorInterface::save_scene_as(const String& p_scene, bool p_with_preview)
+{
 	EditorNode::get_singleton()->save_scene_to_path(p_scene, p_with_preview);
 }
 
-void EditorInterface::mark_scene_as_unsaved() {
-	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+void EditorInterface::mark_scene_as_unsaved()
+{
+	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(
+		EditorNode::get_editor_data().get_current_edited_scene_history_id());
 	EditorSceneTabs::get_singleton()->update_scene_tabs();
 }
 
-void EditorInterface::save_all_scenes() {
-	EditorNode::get_singleton()->save_all_scenes();
-}
+void EditorInterface::save_all_scenes() { EditorNode::get_singleton()->save_all_scenes(); }
 
-Error EditorInterface::close_scene() {
+Error EditorInterface::close_scene()
+{
 	return EditorNode::get_singleton()->close_scene() ? OK : ERR_DOES_NOT_EXIST;
 }
 
 // Scene playback.
 
-void EditorInterface::play_main_scene() {
-	EditorRunBar::get_singleton()->play_main_scene();
-}
+void EditorInterface::play_main_scene() { EditorRunBar::get_singleton()->play_main_scene(); }
 
-void EditorInterface::play_current_scene() {
-	EditorRunBar::get_singleton()->play_current_scene();
-}
+void EditorInterface::play_current_scene() { EditorRunBar::get_singleton()->play_current_scene(); }
 
-void EditorInterface::play_custom_scene(const String &scene_path) {
+void EditorInterface::play_custom_scene(const String& scene_path)
+{
 	EditorRunBar::get_singleton()->play_custom_scene(scene_path);
 }
 
-void EditorInterface::stop_playing_scene() {
-	EditorRunBar::get_singleton()->stop_playing();
-}
+void EditorInterface::stop_playing_scene() { EditorRunBar::get_singleton()->stop_playing(); }
 
-bool EditorInterface::is_playing_scene() const {
+bool EditorInterface::is_playing_scene() const
+{
 	return EditorRunBar::get_singleton()->is_playing();
 }
 
-String EditorInterface::get_playing_scene() const {
+String EditorInterface::get_playing_scene() const
+{
 	return EditorRunBar::get_singleton()->get_playing_scene();
 }
 
-void EditorInterface::set_movie_maker_enabled(bool p_enabled) {
+void EditorInterface::set_movie_maker_enabled(bool p_enabled)
+{
 	EditorRunBar::get_singleton()->set_movie_maker_enabled(p_enabled);
 }
 
-bool EditorInterface::is_movie_maker_enabled() const {
+bool EditorInterface::is_movie_maker_enabled() const
+{
 	return EditorRunBar::get_singleton()->is_movie_maker_enabled();
 }
 
-void EditorInterface::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
+void EditorInterface::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const
+{
 	const String pf = p_function;
 	if (p_idx == 0) {
 		if (pf == "set_main_screen_editor") {
-			for (String E : { "\"2D\"", "\"3D\"", "\"Script\"", "\"Game\"", "\"AssetLib\"" }) {
+			for (String E : {"\"2D\"", "\"3D\"", "\"Script\"", "\"Game\"", "\"AssetLib\""}) {
 				r_options->push_back(E);
 			}
-		} else if (pf == "get_editor_viewport_3d") {
+		}
+		else if (pf == "get_editor_viewport_3d") {
 			for (uint32_t i = 0; i < Node3DEditor::VIEWPORTS_COUNT; i++) {
 				r_options->push_back(String::num_int64(i));
 			}
 		}
 	}
-	Object::get_argument_options(p_function, p_idx, r_options);
 }
 
 // Base.
 
-void EditorInterface::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("is_exiting"), &EditorInterface::is_exiting);
-	ClassDB::bind_method(D_METHOD("restart_editor", "save"), &EditorInterface::restart_editor, DEFVAL(true));
+void EditorInterface::_bind_methods() {}
 
-	// Editor tools.
+void EditorInterface::create() { memnew(EditorInterface); }
 
-	ClassDB::bind_method(D_METHOD("get_command_palette"), &EditorInterface::get_command_palette);
-	ClassDB::bind_method(D_METHOD("get_resource_filesystem"), &EditorInterface::get_resource_filesystem);
-	ClassDB::bind_method(D_METHOD("get_editor_paths"), &EditorInterface::get_editor_paths);
-	ClassDB::bind_method(D_METHOD("get_resource_previewer"), &EditorInterface::get_resource_previewer);
-	ClassDB::bind_method(D_METHOD("get_selection"), &EditorInterface::get_selection);
-	ClassDB::bind_method(D_METHOD("get_editor_settings"), &EditorInterface::get_editor_settings);
-	ClassDB::bind_method(D_METHOD("get_editor_toaster"), &EditorInterface::get_editor_toaster);
-	ClassDB::bind_method(D_METHOD("get_editor_undo_redo"), &EditorInterface::get_editor_undo_redo);
-	ClassDB::bind_method(D_METHOD("get_scene_paint_2d"), &EditorInterface::get_scene_paint_2d);
-
-	ClassDB::bind_method(D_METHOD("make_mesh_previews", "meshes", "preview_size"), &EditorInterface::_make_mesh_previews);
-
-	ClassDB::bind_method(D_METHOD("set_plugin_enabled", "plugin", "enabled"), &EditorInterface::set_plugin_enabled);
-	ClassDB::bind_method(D_METHOD("is_plugin_enabled", "plugin"), &EditorInterface::is_plugin_enabled);
-
-	// Editor GUI.
-
-	ClassDB::bind_method(D_METHOD("get_editor_theme"), &EditorInterface::get_editor_theme);
-	ClassDB::bind_method(D_METHOD("get_base_control"), &EditorInterface::get_base_control);
-	ClassDB::bind_method(D_METHOD("get_editor_main_screen"), &EditorInterface::get_editor_main_screen);
-	ClassDB::bind_method(D_METHOD("get_script_editor"), &EditorInterface::get_script_editor);
-	ClassDB::bind_method(D_METHOD("get_editor_viewport_2d"), &EditorInterface::get_editor_viewport_2d);
-	ClassDB::bind_method(D_METHOD("get_editor_viewport_3d", "idx"), &EditorInterface::get_editor_viewport_3d, DEFVAL(0));
-
-	ClassDB::bind_method(D_METHOD("set_main_screen_editor", "name"), &EditorInterface::set_main_screen_editor);
-	ClassDB::bind_method(D_METHOD("set_distraction_free_mode", "enter"), &EditorInterface::set_distraction_free_mode);
-	ClassDB::bind_method(D_METHOD("is_distraction_free_mode_enabled"), &EditorInterface::is_distraction_free_mode_enabled);
-	ClassDB::bind_method(D_METHOD("is_multi_window_enabled"), &EditorInterface::is_multi_window_enabled);
-
-	ClassDB::bind_method(D_METHOD("get_editor_scale"), &EditorInterface::get_editor_scale);
-	ClassDB::bind_method(D_METHOD("get_editor_language"), &EditorInterface::get_editor_language);
-
-	ClassDB::bind_method(D_METHOD("is_node_3d_snap_enabled"), &EditorInterface::is_node_3d_snap_enabled);
-	ClassDB::bind_method(D_METHOD("get_node_3d_translate_snap"), &EditorInterface::get_node_3d_translate_snap);
-	ClassDB::bind_method(D_METHOD("get_node_3d_rotate_snap"), &EditorInterface::get_node_3d_rotate_snap);
-	ClassDB::bind_method(D_METHOD("get_node_3d_scale_snap"), &EditorInterface::get_node_3d_scale_snap);
-
-	ClassDB::bind_method(D_METHOD("popup_dialog", "dialog", "rect"), &EditorInterface::popup_dialog, DEFVAL(Rect2i()));
-	ClassDB::bind_method(D_METHOD("popup_dialog_centered", "dialog", "minsize"), &EditorInterface::popup_dialog_centered, DEFVAL(Size2i()));
-	ClassDB::bind_method(D_METHOD("popup_dialog_centered_ratio", "dialog", "ratio"), &EditorInterface::popup_dialog_centered_ratio, DEFVAL(0.8));
-	ClassDB::bind_method(D_METHOD("popup_dialog_centered_clamped", "dialog", "minsize", "fallback_ratio"), &EditorInterface::popup_dialog_centered_clamped, DEFVAL(Size2i()), DEFVAL(0.75));
-
-	ClassDB::bind_method(D_METHOD("get_current_feature_profile"), &EditorInterface::get_current_feature_profile);
-	ClassDB::bind_method(D_METHOD("set_current_feature_profile", "profile_name"), &EditorInterface::set_current_feature_profile);
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "distraction_free_mode"), "set_distraction_free_mode", "is_distraction_free_mode_enabled");
-
-	// Editor dialogs.
-
-	ClassDB::bind_method(D_METHOD("popup_node_selector", "callback", "valid_types", "current_value"), &EditorInterface::popup_node_selector, DEFVAL(TypedArray<StringName>()), DEFVAL(Variant()));
-	ClassDB::bind_method(D_METHOD("popup_property_selector", "object", "callback", "type_filter", "current_value"), &EditorInterface::popup_property_selector, DEFVAL(PackedInt32Array()), DEFVAL(String()));
-	ClassDB::bind_method(D_METHOD("popup_method_selector", "object", "callback", "current_value"), &EditorInterface::popup_method_selector, DEFVAL(String()));
-	ClassDB::bind_method(D_METHOD("popup_quick_open", "callback", "base_types"), &EditorInterface::popup_quick_open, DEFVAL(TypedArray<StringName>()));
-	ClassDB::bind_method(D_METHOD("popup_create_dialog", "callback", "base_type", "current_type", "dialog_title", "type_blocklist"), &EditorInterface::popup_create_dialog, DEFVAL(""), DEFVAL(""), DEFVAL(""), DEFVAL(TypedArray<StringName>()));
-
-	// Editor docks.
-
-	ClassDB::bind_method(D_METHOD("get_file_system_dock"), &EditorInterface::get_file_system_dock);
-	ClassDB::bind_method(D_METHOD("select_file", "file"), &EditorInterface::select_file);
-	ClassDB::bind_method(D_METHOD("get_selected_paths"), &EditorInterface::get_selected_paths);
-	ClassDB::bind_method(D_METHOD("get_current_path"), &EditorInterface::get_current_path);
-	ClassDB::bind_method(D_METHOD("get_current_directory"), &EditorInterface::get_current_directory);
-
-	ClassDB::bind_method(D_METHOD("get_inspector"), &EditorInterface::get_inspector);
-
-	// Object/Resource/Node editing.
-
-	ClassDB::bind_method(D_METHOD("inspect_object", "object", "for_property", "inspector_only"), &EditorInterface::inspect_object, DEFVAL(String()), DEFVAL(false));
-
-	ClassDB::bind_method(D_METHOD("edit_resource", "resource"), &EditorInterface::edit_resource);
-	ClassDB::bind_method(D_METHOD("edit_node", "node"), &EditorInterface::edit_node);
-	ClassDB::bind_method(D_METHOD("edit_script", "script", "line", "column", "grab_focus"), &EditorInterface::edit_script, DEFVAL(-1), DEFVAL(0), DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("open_scene_from_path", "scene_filepath", "set_inherited"), &EditorInterface::open_scene_from_path, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("reload_scene_from_path", "scene_filepath"), &EditorInterface::reload_scene_from_path);
-
-	ClassDB::bind_method(D_METHOD("set_object_edited", "object", "edited"), &EditorInterface::set_object_edited);
-	ClassDB::bind_method(D_METHOD("is_object_edited", "object"), &EditorInterface::is_object_edited);
-
-	ClassDB::bind_method(D_METHOD("get_open_scenes"), &EditorInterface::get_open_scenes);
-	ClassDB::bind_method(D_METHOD("get_unsaved_scenes"), &EditorInterface::get_unsaved_scenes);
-	ClassDB::bind_method(D_METHOD("get_open_scene_roots"), &EditorInterface::get_open_scene_roots);
-	ClassDB::bind_method(D_METHOD("get_edited_scene_root"), &EditorInterface::get_edited_scene_root);
-
-	ClassDB::bind_method(D_METHOD("add_root_node", "node"), &EditorInterface::add_root_node);
-
-	ClassDB::bind_method(D_METHOD("save_scene"), &EditorInterface::save_scene);
-	ClassDB::bind_method(D_METHOD("save_scene_as", "path", "with_preview"), &EditorInterface::save_scene_as, DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("save_all_scenes"), &EditorInterface::save_all_scenes);
-	ClassDB::bind_method(D_METHOD("close_scene"), &EditorInterface::close_scene);
-
-	ClassDB::bind_method(D_METHOD("mark_scene_as_unsaved"), &EditorInterface::mark_scene_as_unsaved);
-
-	// Scene playback.
-
-	ClassDB::bind_method(D_METHOD("play_main_scene"), &EditorInterface::play_main_scene);
-	ClassDB::bind_method(D_METHOD("play_current_scene"), &EditorInterface::play_current_scene);
-	ClassDB::bind_method(D_METHOD("play_custom_scene", "scene_filepath"), &EditorInterface::play_custom_scene);
-	ClassDB::bind_method(D_METHOD("stop_playing_scene"), &EditorInterface::stop_playing_scene);
-	ClassDB::bind_method(D_METHOD("is_playing_scene"), &EditorInterface::is_playing_scene);
-	ClassDB::bind_method(D_METHOD("get_playing_scene"), &EditorInterface::get_playing_scene);
-
-	ClassDB::bind_method(D_METHOD("set_movie_maker_enabled", "enabled"), &EditorInterface::set_movie_maker_enabled);
-	ClassDB::bind_method(D_METHOD("is_movie_maker_enabled"), &EditorInterface::is_movie_maker_enabled);
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "movie_maker_enabled"), "set_movie_maker_enabled", "is_movie_maker_enabled");
-}
-
-void EditorInterface::create() {
-	memnew(EditorInterface);
-}
-
-void EditorInterface::free() {
+void EditorInterface::free()
+{
 	ERR_FAIL_NULL(singleton);
 	memdelete(singleton);
 }
 
-EditorInterface::EditorInterface() {
+EditorInterface::EditorInterface()
+{
 	ERR_FAIL_COND(singleton != nullptr);
 	singleton = this;
 }
+
+

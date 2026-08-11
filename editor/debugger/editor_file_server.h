@@ -32,18 +32,20 @@
 
 #include "core/io/tcp_server.h"
 #include "core/os/thread.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "editor/file_system/editor_file_system.h"
 
-class EditorFileServer : public Object {
-	VLTRCLASS(EditorFileServer, Object);
-
+class EditorFileServer
+{
 	Ref<TCPServer> server;
 	String password;
 	int port = 0;
 	bool active = false;
-	void _scan_files_changed(EditorFileSystemDirectory *efd, const Vector<String> &p_tags, HashMap<String, uint64_t> &files_to_send, HashMap<String, uint64_t> &cached_files);
+	void _scan_files_changed(EditorFileSystemDirectory* efd, const Vector<String>& p_tags,
+		HashMap<String, uint64_t>& files_to_send, HashMap<String, uint64_t>& cached_files);
 
 public:
+	mem_unique_ptr<Object> obj;
 	void poll();
 
 	void start();
@@ -54,3 +56,5 @@ public:
 	EditorFileServer();
 	~EditorFileServer();
 };
+
+

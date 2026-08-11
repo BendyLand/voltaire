@@ -33,6 +33,7 @@
 #include "core/config/project_settings.h"
 #include "core/io/resource_importer.h"
 #include "core/object/callable_mp.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "editor/inspector/editor_inspector.h"
 #include "editor/inspector/editor_sectioned_inspector.h"
 #include "editor/settings/action_map_editor.h"
@@ -40,8 +41,7 @@
 #include "scene/gui/label.h"
 #include "scene/gui/margin_container.h"
 
-class ImportDefaultsEditorSettings : public Object {
-	VLTRCLASS(ImportDefaultsEditorSettings, Object)
+class ImportDefaultsEditorSettings {
 	friend class ImportDefaultsEditor;
 	List<PropertyInfo> properties;
 	HashMap<StringName, Variant> values;
@@ -77,6 +77,8 @@ protected:
 			}
 		}
 	}
+public:
+	mem_unique_ptr<Object> obj;
 };
 
 void ImportDefaultsEditor::_notification(int p_what) {
@@ -90,7 +92,7 @@ void ImportDefaultsEditor::_notification(int p_what) {
 void ImportDefaultsEditor::_reset() {
 	if (settings->importer.is_valid()) {
 		settings->values = settings->default_values;
-		settings->notify_property_list_changed();
+		settings->obj->notify_property_list_changed();
 	}
 }
 
@@ -154,12 +156,12 @@ void ImportDefaultsEditor::_update_importer() {
 		reset_defaults->set_disabled(true);
 	}
 
-	settings->notify_property_list_changed();
+	settings->obj->notify_property_list_changed();
 
 	// Set the importer class to fetch the correct class in the XML class reference.
 	// This allows tooltips to display when hovering properties.
 	inspector->set_object_class(importer->get_class_name());
-	inspector->edit(settings);
+	inspector->edit(settings->obj.get());
 }
 
 void ImportDefaultsEditor::_importer_selected(int p_index) {

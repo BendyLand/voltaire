@@ -235,10 +235,8 @@ void Tween::clear() {
 	tweeners.clear();
 }
 
-RequiredResult<Tween> Tween::bind_node(RequiredParam<const Node> rp_node) {
-	EXTRACT_PARAM_OR_FAIL_V(p_node, rp_node, this);
-
-	bound_node = p_node->get_instance_id();
+Tween* Tween::bind_node(const Node* rp_node) {
+	bound_node = rp_node->obj->get_instance_id();
 	is_bound = true;
 	return this;
 }

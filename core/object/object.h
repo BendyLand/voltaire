@@ -86,8 +86,8 @@
 #define MAKE_RESOURCE_TYPE_HINT(m_type)                                                            \
 	vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
 
-	// API used to extend in GDExtension and other C compatible compiled languages.
-	class MethodBind;
+// API used to extend in GDExtension and other C compatible compiled languages.
+class MethodBind;
 class GDExtension;
 
 #define VLTRVIRTUAL_CALL(m_name, ...) _vltrvirtual_##m_name##_call(__VA_ARGS__)
@@ -336,7 +336,7 @@ public:                                                                         
                                                                                                    \
 private:
 
-	class ClassDB;
+class ClassDB;
 class ScriptInstance;
 
 class Object
@@ -498,6 +498,7 @@ private:
 	Object(bool p_reference);
 
 protected:
+	friend class Node;
 	StringName _translation_domain;
 
 	_FORCE_INLINE_ bool _instance_binding_reference(bool p_reference)
@@ -695,9 +696,7 @@ public:
 
 	template <typename T> static const T* cast_to(const Object* p_object)
 	{
-		return p_object && p_object->template derives_from<T, Object>()
-				   ? static_cast<const T*>(p_object)
-				   : nullptr;
+		return p_object ? reinterpret_cast<const T*>(p_object) : nullptr;
 	}
 
 	enum
@@ -797,8 +796,7 @@ public:
 #define DEBUG_VIRTUAL
 #endif // DEBUG_ENABLED
 
-		DEBUG_VIRTUAL void
-		set_script(const Variant& p_script);
+	DEBUG_VIRTUAL void set_script(const Variant& p_script);
 	DEBUG_VIRTUAL Variant get_script() const;
 
 	DEBUG_VIRTUAL bool has_meta(const StringName& p_name) const;

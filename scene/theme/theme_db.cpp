@@ -142,7 +142,7 @@ void ThemeDB::set_fallback_base_scale(float p_base_scale)
 		return;
 	}
 	fallback_base_scale = p_base_scale;
-	emit_signal(SNAME("fallback_changed"));
+	this->obj->emit_signal(SNAME("fallback_changed"));
 }
 
 float ThemeDB::get_fallback_base_scale() { return fallback_base_scale; }
@@ -153,7 +153,7 @@ void ThemeDB::set_fallback_font(const Ref<Font>& p_font)
 		return;
 	}
 	fallback_font = p_font;
-	emit_signal(SNAME("fallback_changed"));
+	this->obj->emit_signal(SNAME("fallback_changed"));
 }
 
 Ref<Font> ThemeDB::get_fallback_font() { return fallback_font; }
@@ -164,7 +164,7 @@ void ThemeDB::set_fallback_font_size(int p_font_size)
 		return;
 	}
 	fallback_font_size = p_font_size;
-	emit_signal(SNAME("fallback_changed"));
+	this->obj->emit_signal(SNAME("fallback_changed"));
 }
 
 int ThemeDB::get_fallback_font_size() { return fallback_font_size; }
@@ -175,7 +175,7 @@ void ThemeDB::set_fallback_icon(const Ref<Texture2D>& p_icon)
 		return;
 	}
 	fallback_icon = p_icon;
-	emit_signal(SNAME("fallback_changed"));
+	this->obj->emit_signal(SNAME("fallback_changed"));
 }
 
 Ref<Texture2D> ThemeDB::get_fallback_icon() { return fallback_icon; }
@@ -186,7 +186,7 @@ void ThemeDB::set_fallback_stylebox(const Ref<StyleBox>& p_stylebox)
 		return;
 	}
 	fallback_stylebox = p_stylebox;
-	emit_signal(SNAME("fallback_changed"));
+	this->obj->emit_signal(SNAME("fallback_changed"));
 }
 
 Ref<StyleBox> ThemeDB::get_fallback_stylebox() { return fallback_stylebox; }
@@ -403,41 +403,7 @@ void ThemeDB::_sort_theme_items()
 
 // Object methods.
 
-void ThemeDB::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("get_default_theme"), &ThemeDB::get_default_theme);
-	ClassDB::bind_method(D_METHOD("get_project_theme"), &ThemeDB::get_project_theme);
-	ClassDB::bind_method(
-		D_METHOD("set_fallback_base_scale", "base_scale"), &ThemeDB::set_fallback_base_scale);
-	ClassDB::bind_method(D_METHOD("get_fallback_base_scale"), &ThemeDB::get_fallback_base_scale);
-	ClassDB::bind_method(D_METHOD("set_fallback_font", "font"), &ThemeDB::set_fallback_font);
-	ClassDB::bind_method(D_METHOD("get_fallback_font"), &ThemeDB::get_fallback_font);
-	ClassDB::bind_method(
-		D_METHOD("set_fallback_font_size", "font_size"), &ThemeDB::set_fallback_font_size);
-	ClassDB::bind_method(D_METHOD("get_fallback_font_size"), &ThemeDB::get_fallback_font_size);
-	ClassDB::bind_method(D_METHOD("set_fallback_icon", "icon"), &ThemeDB::set_fallback_icon);
-	ClassDB::bind_method(D_METHOD("get_fallback_icon"), &ThemeDB::get_fallback_icon);
-	ClassDB::bind_method(
-		D_METHOD("set_fallback_stylebox", "stylebox"), &ThemeDB::set_fallback_stylebox);
-	ClassDB::bind_method(D_METHOD("get_fallback_stylebox"), &ThemeDB::get_fallback_stylebox);
-	ADD_GROUP("Fallback values", "fallback_");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "fallback_base_scale", PROPERTY_HINT_RANGE,
-					 "0.0,2.0,0.01,or_greater"),
-		"set_fallback_base_scale", "get_fallback_base_scale");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "fallback_font", PROPERTY_HINT_RESOURCE_TYPE,
-					 Font::get_class_static(), PROPERTY_USAGE_NONE),
-		"set_fallback_font", "get_fallback_font");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "fallback_font_size", PROPERTY_HINT_RANGE,
-					 "0,256,1,or_greater,suffix:px"),
-		"set_fallback_font_size", "get_fallback_font_size");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "fallback_icon", PROPERTY_HINT_RESOURCE_TYPE,
-					 Texture2D::get_class_static(), PROPERTY_USAGE_NONE),
-		"set_fallback_icon", "get_fallback_icon");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "fallback_stylebox", PROPERTY_HINT_RESOURCE_TYPE,
-					 StyleBox::get_class_static(), PROPERTY_USAGE_NONE),
-		"set_fallback_stylebox", "get_fallback_stylebox");
-	ADD_SIGNAL(MethodInfo("fallback_changed"));
-}
+void ThemeDB::_bind_methods() {}
 
 // Memory management, reference, and initialization.
 
@@ -467,7 +433,7 @@ ThemeDB::~ThemeDB()
 	singleton = nullptr;
 }
 
-void ThemeContext::_emit_changed() { emit_signal(CoreStringName(changed)); }
+void ThemeContext::_emit_changed() { this->obj->emit_signal(CoreStringName(changed)); }
 
 void ThemeContext::set_themes(Vector<Ref<Theme>>& p_themes)
 {
@@ -497,6 +463,6 @@ Ref<Theme> ThemeContext::get_fallback_theme() const
 	return themes[themes.size() - 1];
 }
 
-void ThemeContext::_bind_methods() { ADD_SIGNAL(MethodInfo("changed")); }
+void ThemeContext::_bind_methods() {}
 
 

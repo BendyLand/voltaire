@@ -36,6 +36,7 @@
 #include "core/os/thread.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/hash_set.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"
 
@@ -43,20 +44,22 @@ class ResourceFormatImporter;
 class FileAccess;
 
 struct EditorProgressBG;
-class EditorFileSystemDirectory : public Object {
-	VLTRCLASS(EditorFileSystemDirectory, Object);
 
+class EditorFileSystemDirectory
+{
 	String name;
 	uint64_t modified_time;
-	bool verified = false; //used for checking changes
+	bool verified = false; // used for checking changes
 
-	EditorFileSystemDirectory *parent = nullptr;
-	Vector<EditorFileSystemDirectory *> subdirs;
+	EditorFileSystemDirectory* parent = nullptr;
+	Vector<EditorFileSystemDirectory*> subdirs;
 
-	struct FileInfo {
+	struct FileInfo
+	{
 		String file;
 		StringName type;
-		StringName resource_script_class; // If any resource has script with a global class name, its found here.
+		StringName resource_script_class; // If any resource has script with a global class name,
+										  // its found here.
 		ResourceUID::ID uid = ResourceUID::INVALID_ID;
 		uint64_t modified_time = 0;
 		uint64_t import_modified_time = 0;
@@ -65,30 +68,34 @@ class EditorFileSystemDirectory : public Object {
 		bool import_valid = false;
 		String import_group_file;
 		Vector<String> deps;
-		bool verified = false; //used for checking changes
+		bool verified = false; // used for checking changes
+
 		// This is for script resources only.
-		struct ScriptClassInfo {
+		struct ScriptClassInfo
+		{
 			String name;
 			String extends;
 			String icon_path;
 			bool is_abstract = false;
 			bool is_tool = false;
 		};
+
 		ScriptClassInfo class_info;
 	};
 
-	Vector<FileInfo *> files;
+	Vector<FileInfo*> files;
 
 	static void _bind_methods();
 
 	friend class EditorFileSystem;
 
 public:
+	mem_unique_ptr<Object> obj;
 	String get_name();
 	String get_path() const;
 
 	int get_subdir_count() const;
-	EditorFileSystemDirectory *get_subdir(int p_idx);
+	EditorFileSystemDirectory* get_subdir(int p_idx);
 	int get_file_count() const;
 	String get_file(int p_idx) const;
 	String get_file_path(int p_idx) const;
@@ -99,15 +106,15 @@ public:
 	bool get_file_import_is_valid(int p_idx) const;
 	uint64_t get_file_modified_time(int p_idx) const;
 	uint64_t get_file_import_modified_time(int p_idx) const;
-	String get_file_script_class_name(int p_idx) const; //used for scripts
-	String get_file_script_class_extends(int p_idx) const; //used for scripts
-	String get_file_script_class_icon_path(int p_idx) const; //used for scripts
-	String get_file_icon_path(int p_idx) const; //used for FileSystemDock
+	String get_file_script_class_name(int p_idx) const;		 // used for scripts
+	String get_file_script_class_extends(int p_idx) const;	 // used for scripts
+	String get_file_script_class_icon_path(int p_idx) const; // used for scripts
+	String get_file_icon_path(int p_idx) const;				 // used for FileSystemDock
 
-	EditorFileSystemDirectory *get_parent();
+	EditorFileSystemDirectory* get_parent();
 
-	int find_file_index(const String &p_file) const;
-	int find_dir_index(const String &p_dir) const;
+	int find_file_index(const String& p_file) const;
+	int find_dir_index(const String& p_dir) const;
 
 	void force_update();
 
@@ -115,20 +122,24 @@ public:
 	~EditorFileSystemDirectory();
 };
 
-class EditorFileSystemImportFormatSupportQuery : public RefCounted {
+class EditorFileSystemImportFormatSupportQuery : public RefCounted
+{
 	VLTRCLASS(EditorFileSystemImportFormatSupportQuery, RefCounted);
 
 protected:
 	static void _bind_methods();
 };
 
-class EditorFileSystem : public Node {
+class EditorFileSystem : public Node
+{
 	VLTRCLASS(EditorFileSystem, Node);
 
 	_THREAD_SAFE_CLASS_
 
-	struct ItemAction {
-		enum Action {
+	struct ItemAction
+	{
+		enum Action
+		{
 			ACTION_NONE,
 			ACTION_DIR_ADD,
 			ACTION_DIR_REMOVE,
@@ -139,16 +150,17 @@ class EditorFileSystem : public Node {
 		};
 
 		Action action = ACTION_NONE;
-		EditorFileSystemDirectory *dir = nullptr;
+		EditorFileSystemDirectory* dir = nullptr;
 		String file;
-		EditorFileSystemDirectory *new_dir = nullptr;
-		EditorFileSystemDirectory::FileInfo *new_file = nullptr;
+		EditorFileSystemDirectory* new_dir = nullptr;
+		EditorFileSystemDirectory::FileInfo* new_file = nullptr;
 	};
 
-	struct ScannedDirectory {
+	struct ScannedDirectory
+	{
 		String name;
 		String full_path;
-		Vector<ScannedDirectory *> subdirs;
+		Vector<ScannedDirectory*> subdirs;
 		List<String> files;
 
 		~ScannedDirectory();
@@ -157,10 +169,10 @@ class EditorFileSystem : public Node {
 	bool is_case_sensitive = true;
 	bool use_threads = false;
 	Thread thread;
-	static void _thread_func(void *_userdata);
+	static void _thread_func(void* _userdata);
 
-	EditorFileSystemDirectory *new_filesystem = nullptr;
-	static ScannedDirectory *first_scan_root_dir;
+	EditorFileSystemDirectory* new_filesystem = nullptr;
+	static ScannedDirectory* first_scan_root_dir;
 
 	SafeFlag filesystem_changed_queued;
 	bool scanning = false;
@@ -175,9 +187,12 @@ class EditorFileSystem : public Node {
 	void _notify_filesystem_changed();
 	void _scan_filesystem();
 	void _first_scan_filesystem();
-	void _first_scan_process_scripts(const ScannedDirectory *p_scan_dir, List<String> &p_gdextension_extensions, HashSet<String> &p_existing_class_names, HashSet<String> &p_extensions);
+	void _first_scan_process_scripts(const ScannedDirectory* p_scan_dir,
+		List<String>& p_gdextension_extensions, HashSet<String>& p_existing_class_names,
+		HashSet<String>& p_extensions);
 
-	static void _scan_for_uid_directory(const ScannedDirectory *p_scan_dir, const HashSet<String> &p_import_extensions);
+	static void _scan_for_uid_directory(
+		const ScannedDirectory* p_scan_dir, const HashSet<String>& p_import_extensions);
 
 	static void _load_first_scan_root_dir();
 
@@ -185,14 +200,15 @@ class EditorFileSystem : public Node {
 
 	void _save_late_updated_files();
 
-	EditorFileSystemDirectory *filesystem = nullptr;
+	EditorFileSystemDirectory* filesystem = nullptr;
 
-	static EditorFileSystem *singleton;
+	static EditorFileSystem* singleton;
 
 	using ScriptClassInfo = EditorFileSystemDirectory::FileInfo::ScriptClassInfo;
 
 	/* Used for reading the filesystem cache file */
-	struct FileCache {
+	struct FileCache
+	{
 		StringName type;
 		String resource_script_class;
 		ResourceUID::ID uid = ResourceUID::INVALID_ID;
@@ -209,42 +225,48 @@ class EditorFileSystem : public Node {
 	HashMap<String, FileCache> file_cache;
 	HashSet<String> dep_update_list;
 
-	struct ScanProgress {
+	struct ScanProgress
+	{
 		float hi = 0;
 		int current = 0;
-		EditorProgressBG *progress = nullptr;
+		EditorProgressBG* progress = nullptr;
 		void increment();
 	};
 
-	struct DirectoryComparator {
-		bool operator()(const EditorFileSystemDirectory *p_a, const EditorFileSystemDirectory *p_b) const {
+	struct DirectoryComparator
+	{
+		bool operator()(
+			const EditorFileSystemDirectory* p_a, const EditorFileSystemDirectory* p_b) const
+		{
 			return p_a->name.filenocasecmp_to(p_b->name) < 0;
 		}
 	};
 
 	void _save_filesystem_cache();
-	void _save_filesystem_cache(EditorFileSystemDirectory *p_dir, Ref<FileAccess> p_file);
+	void _save_filesystem_cache(EditorFileSystemDirectory* p_dir, Ref<FileAccess> p_file);
 
-	bool _find_file(const String &p_file, EditorFileSystemDirectory **r_d, int &r_file_pos) const;
+	bool _find_file(const String& p_file, EditorFileSystemDirectory** r_d, int& r_file_pos) const;
 
-	void _scan_fs_changes(EditorFileSystemDirectory *p_dir, ScanProgress &p_progress, bool p_recursive = true);
+	void _scan_fs_changes(
+		EditorFileSystemDirectory* p_dir, ScanProgress& p_progress, bool p_recursive = true);
 
-	void _delete_internal_files(const String &p_file);
-	int _insert_actions_delete_files_directory(EditorFileSystemDirectory *p_dir);
+	void _delete_internal_files(const String& p_file);
+	int _insert_actions_delete_files_directory(EditorFileSystemDirectory* p_dir);
 
 	HashSet<String> textfile_extensions;
 	HashSet<String> other_file_extensions;
 	HashSet<String> valid_extensions;
 	HashSet<String> import_extensions;
 
-	static int _scan_new_dir(ScannedDirectory *p_dir, Ref<DirAccess> &da);
-	void _process_file_system(const ScannedDirectory *p_scan_dir, EditorFileSystemDirectory *p_dir, ScanProgress &p_progress, HashSet<String> *p_processed_files);
+	static int _scan_new_dir(ScannedDirectory* p_dir, Ref<DirAccess>& da);
+	void _process_file_system(const ScannedDirectory* p_scan_dir, EditorFileSystemDirectory* p_dir,
+		ScanProgress& p_progress, HashSet<String>* p_processed_files);
 
 	Thread thread_sources;
 	bool scanning_changes = false;
 	SafeFlag scanning_changes_done;
 
-	static void _thread_func_sources(void *_userdata);
+	static void _thread_func_sources(void* _userdata);
 
 	List<String> sources_changed;
 	List<ItemAction> scan_actions;
@@ -253,34 +275,45 @@ class EditorFileSystem : public Node {
 
 	void _update_extensions();
 
-	Error _reimport_file(const String &p_file, const HashMap<StringName, Variant> &p_custom_options = HashMap<StringName, Variant>(), const String &p_custom_importer = String(), Variant *generator_parameters = nullptr, bool p_update_file_system = true);
-	Error _reimport_group(const String &p_group_file, const Vector<String> &p_files);
+	Error _reimport_file(const String& p_file,
+		const HashMap<StringName, Variant>& p_custom_options = HashMap<StringName, Variant>(),
+		const String& p_custom_importer = String(), Variant* generator_parameters = nullptr,
+		bool p_update_file_system = true);
+	Error _reimport_group(const String& p_group_file, const Vector<String>& p_files);
 
-	bool _test_for_reimport(const String &p_path, const String &p_expected_import_md5);
-	bool _is_test_for_reimport_needed(const String &p_path, uint64_t p_last_modification_time, uint64_t p_modification_time, uint64_t p_last_import_modification_time, uint64_t p_import_modification_time, const Vector<String> &p_import_dest_paths);
-	bool _can_import_file(const String &p_path);
-	Vector<String> _get_import_dest_paths(const String &p_path);
+	bool _test_for_reimport(const String& p_path, const String& p_expected_import_md5);
+	bool _is_test_for_reimport_needed(const String& p_path, uint64_t p_last_modification_time,
+		uint64_t p_modification_time, uint64_t p_last_import_modification_time,
+		uint64_t p_import_modification_time, const Vector<String>& p_import_dest_paths);
+	bool _can_import_file(const String& p_path);
+	Vector<String> _get_import_dest_paths(const String& p_path);
 
 	bool reimport_on_missing_imported_files;
 
-	Vector<String> _get_dependencies(const String &p_path);
+	Vector<String> _get_dependencies(const String& p_path);
 
-	struct ImportFile {
+	struct ImportFile
+	{
 		String path;
 		String importer;
 		bool threaded = false;
 		int order = 0;
-		bool operator<(const ImportFile &p_if) const {
+
+		bool operator<(const ImportFile& p_if) const
+		{
 			return order == p_if.order ? (importer < p_if.importer) : (order < p_if.order);
 		}
 	};
 
-	struct ScriptClassInfoUpdate : public ScriptClassInfo {
+	struct ScriptClassInfoUpdate : public ScriptClassInfo
+	{
 		StringName type;
 		ScriptClassInfoUpdate() = default;
-		explicit ScriptClassInfoUpdate(const ScriptClassInfo &p_info) :
-				ScriptClassInfo(p_info) {}
-		static ScriptClassInfoUpdate from_file_info(const EditorFileSystemDirectory::FileInfo *p_fi) {
+
+		explicit ScriptClassInfoUpdate(const ScriptClassInfo& p_info) : ScriptClassInfo(p_info) {}
+
+		static ScriptClassInfoUpdate from_file_info(const EditorFileSystemDirectory::FileInfo* p_fi)
+		{
 			ScriptClassInfoUpdate update;
 			update.type = p_fi->type;
 			update.name = p_fi->class_info.name;
@@ -295,30 +328,36 @@ class EditorFileSystem : public Node {
 	Mutex update_script_mutex;
 	HashMap<String, ScriptClassInfoUpdate> update_script_paths;
 	HashSet<String> update_script_paths_documentation;
-	void _queue_update_script_class(const String &p_path, const ScriptClassInfoUpdate &p_script_update);
+	void _queue_update_script_class(
+		const String& p_path, const ScriptClassInfoUpdate& p_script_update);
 	void _update_script_classes();
 	void _update_script_documentation();
 	void _process_update_pending();
-	void _process_removed_files(const HashSet<String> &p_processed_files);
-	bool _should_reload_script(const String &p_path);
+	void _process_removed_files(const HashSet<String>& p_processed_files);
+	bool _should_reload_script(const String& p_path);
 
 	Mutex update_scene_mutex;
 	HashSet<String> update_scene_paths;
-	void _queue_update_scene_groups(const String &p_path);
+	void _queue_update_scene_groups(const String& p_path);
 	void _update_scene_groups();
 	void _update_pending_scene_groups();
-	void _get_all_scenes(EditorFileSystemDirectory *p_dir, HashSet<String> &r_list);
+	void _get_all_scenes(EditorFileSystemDirectory* p_dir, HashSet<String>& r_list);
 
-	ScriptClassInfo _get_global_script_class(const String &p_type, const String &p_path) const;
+	ScriptClassInfo _get_global_script_class(const String& p_type, const String& p_path) const;
 
-	static Error _resource_import(const String &p_path);
-	static Ref<Resource> _load_resource_on_startup(ResourceFormatImporter *p_importer, const String &p_path, Error *r_error, bool p_use_sub_threads, float *r_progress, ResourceLoaderConstants::CacheMode p_cache_mode);
+	static Error _resource_import(const String& p_path);
+	static Ref<Resource> _load_resource_on_startup(ResourceFormatImporter* p_importer,
+		const String& p_path, Error* r_error, bool p_use_sub_threads, float* r_progress,
+		ResourceLoaderConstants::CacheMode p_cache_mode);
 
-	bool using_fat32_or_exfat; // Workaround for projects in FAT32 or exFAT filesystem (pendrives, most of the time)
+	bool using_fat32_or_exfat; // Workaround for projects in FAT32 or exFAT filesystem (pendrives,
+							   // most of the time)
 
-	void _find_group_files(EditorFileSystemDirectory *efd, HashMap<String, Vector<String>> &group_files, HashSet<String> &groups_to_reimport);
+	void _find_group_files(EditorFileSystemDirectory* efd,
+		HashMap<String, Vector<String>>& group_files, HashSet<String>& groups_to_reimport);
 
-	void _move_group_files(EditorFileSystemDirectory *efd, const String &p_group_file, const String &p_new_location);
+	void _move_group_files(
+		EditorFileSystemDirectory* efd, const String& p_group_file, const String& p_new_location);
 
 	HashSet<String> group_file_cache;
 	HashMap<String, String> file_icon_cache;
@@ -326,72 +365,83 @@ class EditorFileSystem : public Node {
 	bool refresh_queued = false;
 	HashSet<ObjectID> folders_to_sort;
 
-	Error _copy_file(const String &p_from, const String &p_to);
-	bool _copy_directory(const String &p_from, const String &p_to, HashMap<String, String> *p_files);
+	Error _copy_file(const String& p_from, const String& p_to);
+	bool _copy_directory(
+		const String& p_from, const String& p_to, HashMap<String, String>* p_files);
 	void _queue_refresh_filesystem();
 	void _refresh_filesystem();
 
-	struct ImportThreadData {
-		const ImportFile *reimport_files;
+	struct ImportThreadData
+	{
+		const ImportFile* reimport_files;
 		int reimport_from;
-		Semaphore *imported_sem = nullptr;
+		Semaphore* imported_sem = nullptr;
 	};
 
-	void _reimport_thread(uint32_t p_index, ImportThreadData *p_import_data);
+	void _reimport_thread(uint32_t p_index, ImportThreadData* p_import_data);
 
-	static ResourceUID::ID _resource_saver_get_resource_id_for_path(const String &p_path, bool p_generate);
+	static ResourceUID::ID _resource_saver_get_resource_id_for_path(
+		const String& p_path, bool p_generate);
 
 	bool _scan_extensions();
-	bool _scan_import_support(const Vector<String> &reimports);
+	bool _scan_import_support(const Vector<String>& reimports);
 
 	Vector<Ref<EditorFileSystemImportFormatSupportQuery>> import_support_queries;
 
-	void _update_file_icon_path(EditorFileSystemDirectory::FileInfo *file_info);
-	void _update_files_icon_path(EditorFileSystemDirectory *edp = nullptr);
-	bool _remove_invalid_global_class_names(const HashSet<String> &p_existing_class_names);
-	String _get_file_by_class_name(EditorFileSystemDirectory *p_dir, const String &p_class_name, EditorFileSystemDirectory::FileInfo *&r_file_info);
+	void _update_file_icon_path(EditorFileSystemDirectory::FileInfo* file_info);
+	void _update_files_icon_path(EditorFileSystemDirectory* edp = nullptr);
+	bool _remove_invalid_global_class_names(const HashSet<String>& p_existing_class_names);
+	String _get_file_by_class_name(EditorFileSystemDirectory* p_dir, const String& p_class_name,
+		EditorFileSystemDirectory::FileInfo*& r_file_info);
 
-	void _register_global_class_script(const String &p_search_path, const String &p_target_path, const ScriptClassInfoUpdate &p_script_update);
+	void _register_global_class_script(const String& p_search_path, const String& p_target_path,
+		const ScriptClassInfoUpdate& p_script_update);
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	static EditorFileSystem *get_singleton() { return singleton; }
+	static EditorFileSystem* get_singleton() { return singleton; }
 
-	EditorFileSystemDirectory *get_filesystem();
+	EditorFileSystemDirectory* get_filesystem();
 	bool is_scanning() const;
+
 	bool is_importing() const { return importing; }
+
 	bool doing_first_scan() const { return first_scan; }
+
 	float get_scanning_progress() const;
 	void scan();
 	void scan_changes();
-	void update_file(const String &p_file);
-	void update_files(const Vector<String> &p_script_paths);
+	void update_file(const String& p_file);
+	void update_files(const Vector<String>& p_script_paths);
 	HashSet<String> get_valid_extensions() const;
-	void register_global_class_script(const String &p_search_path, const String &p_target_path);
+	void register_global_class_script(const String& p_search_path, const String& p_target_path);
 
 	void filesystem_changed();
 
-	EditorFileSystemDirectory *get_filesystem_path(const String &p_path);
-	String get_file_type(const String &p_file) const;
-	EditorFileSystemDirectory *find_file(const String &p_file, int *r_index) const;
-	ResourceUID::ID get_file_uid(const String &p_path) const;
+	EditorFileSystemDirectory* get_filesystem_path(const String& p_path);
+	String get_file_type(const String& p_file) const;
+	EditorFileSystemDirectory* find_file(const String& p_file, int* r_index) const;
+	ResourceUID::ID get_file_uid(const String& p_path) const;
 
-	void reimport_files(const Vector<String> &p_files);
-	Error reimport_append(const String &p_file, const HashMap<StringName, Variant> &p_custom_options, const String &p_custom_importer, Variant p_generator_parameters);
+	void reimport_files(const Vector<String>& p_files);
+	Error reimport_append(const String& p_file,
+		const HashMap<StringName, Variant>& p_custom_options, const String& p_custom_importer,
+		Variant p_generator_parameters);
 
-	void reimport_file_with_custom_parameters(const String &p_file, const String &p_importer, const HashMap<StringName, Variant> &p_custom_params);
+	void reimport_file_with_custom_parameters(const String& p_file, const String& p_importer,
+		const HashMap<StringName, Variant>& p_custom_params);
 
-	bool is_group_file(const String &p_path) const;
-	void move_group_file(const String &p_path, const String &p_new_path);
+	bool is_group_file(const String& p_path) const;
+	void move_group_file(const String& p_path, const String& p_new_path);
 
-	Error make_dir_recursive(const String &p_path, const String &p_base_path = String());
-	Error copy_file(const String &p_from, const String &p_to);
-	Error copy_directory(const String &p_from, const String &p_to);
+	Error make_dir_recursive(const String& p_path, const String& p_base_path = String());
+	Error copy_file(const String& p_from, const String& p_to);
+	Error copy_directory(const String& p_from, const String& p_to);
 
-	static bool _should_skip_directory(const String &p_path);
+	static bool _should_skip_directory(const String& p_path);
 
 	static void scan_for_uid();
 
@@ -400,3 +450,5 @@ public:
 	EditorFileSystem();
 	~EditorFileSystem();
 };
+
+
