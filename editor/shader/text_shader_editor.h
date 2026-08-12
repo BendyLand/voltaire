@@ -43,9 +43,8 @@ class Timer;
 class TextureRect;
 class StyleBoxFlat;
 
-class GDShaderSyntaxHighlighter : public CodeHighlighter {
-	VLTRCLASS(GDShaderSyntaxHighlighter, CodeHighlighter)
-
+class GDShaderSyntaxHighlighter : public CodeHighlighter
+{
 private:
 	Vector<Point2i> disabled_branch_regions;
 	Color disabled_branch_color;
@@ -53,29 +52,30 @@ private:
 public:
 	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override;
 
-	void add_disabled_branch_region(const Point2i &p_region);
+	void add_disabled_branch_region(const Point2i& p_region);
 	void clear_disabled_branch_regions();
-	void set_disabled_branch_color(const Color &p_color);
+	void set_disabled_branch_color(const Color& p_color);
 };
 
-class TextShaderPreview : public VBoxContainer {
+class TextShaderPreview : public VBoxContainer
+{
 	VLTRCLASS(TextShaderPreview, VBoxContainer);
 
 	static constexpr int BUTTON_SIZE = 32;
 
 private:
-	PanelContainer *panel = nullptr;
+	PanelContainer* panel = nullptr;
 	Ref<StyleBoxFlat> panel_style;
-	Control *surface_hover = nullptr;
-	Button *goto_button = nullptr;
-	Button *delete_button = nullptr;
-	MarginContainer *surface_container = nullptr;
-	MaterialEditor *surface = nullptr;
+	Control* surface_hover = nullptr;
+	Button* goto_button = nullptr;
+	Button* delete_button = nullptr;
+	MarginContainer* surface_container = nullptr;
+	MaterialEditor* surface = nullptr;
 	Ref<ShaderMaterial> shader_material;
 	Ref<Environment> env;
-	MarginContainer *error_container = nullptr;
-	TextureRect *error_icon = nullptr;
-	Label *error_label = nullptr;
+	MarginContainer* error_container = nullptr;
+	TextureRect* error_icon = nullptr;
+	Label* error_label = nullptr;
 
 	int line = -1;
 	bool in_comment = false;
@@ -86,14 +86,18 @@ private:
 	static HashMap<String, String> builtin_spatial_types;
 	static HashMap<String, String> builtin_canvas_types;
 
-	String _get_enclosing_function(const PackedStringArray &p_lines, int p_line) const;
-	bool _is_inside_loop(const PackedStringArray &p_lines, int p_line) const;
-	bool _find_statement(const PackedStringArray &p_lines, int p_line, String &r_var_name, int &r_start, int &r_end) const;
-	String _find_var_type(const PackedStringArray &p_lines, const String &p_var_name, int p_line, bool p_mode_3d);
-	bool _match_uniforms(const Ref<ShaderMaterial> &p_source, const Ref<ShaderMaterial> &p_target) const;
-	void _sync_shader_parameters(const Ref<ShaderMaterial> &p_source, Ref<ShaderMaterial> &p_target);
-	void _reset_shader_parameters(Ref<ShaderMaterial> &p_target);
-	void _show_error(const String &p_error);
+	String _get_enclosing_function(const PackedStringArray& p_lines, int p_line) const;
+	bool _is_inside_loop(const PackedStringArray& p_lines, int p_line) const;
+	bool _find_statement(const PackedStringArray& p_lines, int p_line, String& r_var_name,
+		int& r_start, int& r_end) const;
+	String _find_var_type(
+		const PackedStringArray& p_lines, const String& p_var_name, int p_line, bool p_mode_3d);
+	bool _match_uniforms(
+		const Ref<ShaderMaterial>& p_source, const Ref<ShaderMaterial>& p_target) const;
+	void _sync_shader_parameters(
+		const Ref<ShaderMaterial>& p_source, Ref<ShaderMaterial>& p_target);
+	void _reset_shader_parameters(Ref<ShaderMaterial>& p_target);
+	void _show_error(const String& p_error);
 	void _goto_pressed();
 	void _delete_pressed();
 	void _on_hover_enter();
@@ -105,57 +109,61 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_shader_code(const String &p_code, int p_line, bool p_in_comment);
+	void set_shader_code(const String& p_code, int p_line, bool p_in_comment);
 	void show_shader_compile_error();
-	void recompile(const String &p_code);
+	void recompile(const String& p_code);
 	void sync_shader_parameters();
-	void update_panel_color(const Color &p_color);
-	PanelContainer *get_panel_container() const;
-	Control *get_hover_control() const;
+	void update_panel_color(const Color& p_color);
+	PanelContainer* get_panel_container() const;
+	Control* get_hover_control() const;
 
 	bool is_hovered() const { return hovered; }
 
 	TextShaderPreview();
 };
 
-class TextShaderPreviewLineLayer : public Control {
+class TextShaderPreviewLineLayer : public Control
+{
 	VLTRCLASS(TextShaderPreviewLineLayer, Control);
 
 private:
 	Color line_color;
-	HashMap<int, TextShaderPreview *> *previews = nullptr;
-	ScrollContainer *scroll_container = nullptr;
-	CodeEdit *code_editor = nullptr;
+	HashMap<int, TextShaderPreview*>* previews = nullptr;
+	ScrollContainer* scroll_container = nullptr;
+	CodeEdit* code_editor = nullptr;
 
 protected:
 	void _notification(int p_what);
 
 public:
-	void set_previews(HashMap<int, TextShaderPreview *> &p_previews);
-	void set_code_editor(CodeEdit *p_code_editor);
-	void set_scroll_container(ScrollContainer *p_scroll_container);
+	void set_previews(HashMap<int, TextShaderPreview*>& p_previews);
+	void set_code_editor(CodeEdit* p_code_editor);
+	void set_scroll_container(ScrollContainer* p_scroll_container);
 
 	TextShaderPreviewLineLayer();
 };
 
-class ShaderTextEditor : public CodeTextEditor {
-	VLTRCLASS(ShaderTextEditor, CodeTextEditor);
-
+class ShaderTextEditor : public CodeTextEditor
+{
 	Color marked_line_color = Color(1, 1, 1);
 
-	struct WarningsComparator {
-		_ALWAYS_INLINE_ bool operator()(const ShaderWarning &p_a, const ShaderWarning &p_b) const { return (p_a.get_line() < p_b.get_line()); }
+	struct WarningsComparator
+	{
+		_ALWAYS_INLINE_ bool operator()(const ShaderWarning& p_a, const ShaderWarning& p_b) const
+		{
+			return (p_a.get_line() < p_b.get_line());
+		}
 	};
 
 	Ref<GDShaderSyntaxHighlighter> syntax_highlighter;
-	RichTextLabel *warnings_panel = nullptr;
+	RichTextLabel* warnings_panel = nullptr;
 	Ref<Shader> shader;
 	Ref<ShaderInclude> shader_inc;
 	List<ShaderWarning> warnings;
 	Error last_compile_result = Error::OK;
-	HashMap<int, TextShaderPreview *> previews;
-	Control *preview_box = nullptr;
-	TextShaderPreviewLineLayer *preview_line_layer = nullptr;
+	HashMap<int, TextShaderPreview*> previews;
+	Control* preview_box = nullptr;
+	TextShaderPreviewLineLayer* preview_line_layer = nullptr;
 
 	void _check_shader_mode();
 	void _update_warning_panel();
@@ -170,32 +178,34 @@ protected:
 	static void _bind_methods();
 	virtual void _load_theme_settings() override;
 
-	virtual void _code_complete_script(const String &p_code, List<ScriptLanguage::CodeCompletionOption> *r_options) override;
+	virtual void _code_complete_script(
+		const String& p_code, List<ScriptLanguage::CodeCompletionOption>* r_options) override;
 
 public:
 	void set_block_shader_changed(bool p_block) { block_shader_changed = p_block; }
+
 	uint32_t get_dependencies_version() const { return dependencies_version; }
 
 	virtual void _validate_script() override;
 
 	void reload_text();
-	void set_warnings_panel(RichTextLabel *p_warnings_panel);
+	void set_warnings_panel(RichTextLabel* p_warnings_panel);
 
 	Ref<Shader> get_edited_shader() const;
 	Ref<ShaderInclude> get_edited_shader_include() const;
-	TextShaderPreviewLineLayer *get_preview_line_layer() const;
-	TextShaderPreview *get_preview(int p_line) const;
+	TextShaderPreviewLineLayer* get_preview_line_layer() const;
+	TextShaderPreview* get_preview(int p_line) const;
 
-	void set_edited_shader(const Ref<Shader> &p_shader);
-	void set_edited_shader(const Ref<Shader> &p_shader, const String &p_code);
-	void set_edited_shader_include(const Ref<ShaderInclude> &p_include);
-	void set_edited_shader_include(const Ref<ShaderInclude> &p_include, const String &p_code);
-	void set_edited_code(const String &p_code);
+	void set_edited_shader(const Ref<Shader>& p_shader);
+	void set_edited_shader(const Ref<Shader>& p_shader, const String& p_code);
+	void set_edited_shader_include(const Ref<ShaderInclude>& p_include);
+	void set_edited_shader_include(const Ref<ShaderInclude>& p_include, const String& p_code);
+	void set_edited_code(const String& p_code);
 
 	void toggle_shader_preview(int p_line);
 	void remove_shader_preview(int p_line);
 	void goto_shader_preview(int p_line);
-	void set_preview_box(Control *p_box);
+	void set_preview_box(Control* p_box);
 	void clear_previews();
 	void redraw_preview_lines();
 	void recompile_previews();
@@ -204,10 +214,10 @@ public:
 	ShaderTextEditor();
 };
 
-class TextShaderEditor : public ShaderEditor {
-	VLTRCLASS(TextShaderEditor, ShaderEditor);
-
-	enum {
+class TextShaderEditor : public ShaderEditor
+{
+	enum
+	{
 		EDIT_UNDO,
 		EDIT_REDO,
 		EDIT_CUT,
@@ -242,23 +252,23 @@ class TextShaderEditor : public ShaderEditor {
 		EDIT_JOIN_LINES,
 	};
 
-	HBoxContainer *menu_bar_hbox = nullptr;
-	PanelContainer *preview_panel = nullptr;
-	VBoxContainer *preview_box = nullptr;
-	MenuButton *edit_menu = nullptr;
-	MenuButton *search_menu = nullptr;
-	PopupMenu *bookmarks_menu = nullptr;
-	PopupMenu *previews_menu = nullptr;
-	Button *site_search = nullptr;
-	PopupMenu *context_menu = nullptr;
-	RichTextLabel *warnings_panel = nullptr;
-	Timer *preview_timer = nullptr;
-	ScrollContainer *preview_sbox = nullptr;
+	HBoxContainer* menu_bar_hbox = nullptr;
+	PanelContainer* preview_panel = nullptr;
+	VBoxContainer* preview_box = nullptr;
+	MenuButton* edit_menu = nullptr;
+	MenuButton* search_menu = nullptr;
+	PopupMenu* bookmarks_menu = nullptr;
+	PopupMenu* previews_menu = nullptr;
+	Button* site_search = nullptr;
+	PopupMenu* context_menu = nullptr;
+	RichTextLabel* warnings_panel = nullptr;
+	Timer* preview_timer = nullptr;
+	ScrollContainer* preview_sbox = nullptr;
 
-	GotoLinePopup *goto_line_popup = nullptr;
-	ConfirmationDialog *disk_changed = nullptr;
+	GotoLinePopup* goto_line_popup = nullptr;
+	ConfirmationDialog* disk_changed = nullptr;
 
-	ShaderTextEditor *code_editor = nullptr;
+	ShaderTextEditor* code_editor = nullptr;
 	bool compilation_success = true;
 
 	void _menu_option(int p_option);
@@ -274,13 +284,14 @@ class TextShaderEditor : public ShaderEditor {
 	void _reload_shader_include_from_disk();
 	void _reload();
 	void _show_warnings_panel(bool p_show);
-	void _warning_clicked(const Variant &p_line);
+	void _warning_clicked(const Variant& p_line);
 	void _update_warnings(bool p_validate);
 	void _focus_preview_line(int p_line);
 
-	void _script_validated(bool p_valid) {
+	void _script_validated(bool p_valid)
+	{
 		compilation_success = p_valid;
-		emit_signal(SNAME("validation_changed"));
+		this->obj->emit_signal(SNAME("validation_changed"));
 	}
 
 	uint32_t dependencies_version = 0xFFFFFFFF;
@@ -290,14 +301,14 @@ class TextShaderEditor : public ShaderEditor {
 	bool pending_update_shader_previews = false;
 
 private:
-	Button *update_params_btn = nullptr;
-	Button *remove_all_btn = nullptr;
+	Button* update_params_btn = nullptr;
+	Button* remove_all_btn = nullptr;
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 	void _make_context_menu(bool p_selection, Vector2 p_position);
-	void _text_edit_gui_input(const Ref<InputEvent> &p_ev);
+	void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
 	void _on_shader_preview_toggled(int p_line);
 	void _update_shader_previews();
 
@@ -307,27 +318,33 @@ protected:
 	void _shader_preview_item_pressed(int p_idx);
 
 public:
-	virtual void edit_shader(const Ref<Shader> &p_shader) override;
-	virtual void edit_shader_include(const Ref<ShaderInclude> &p_shader_inc) override;
-	virtual void use_menu_bar(MenuButton *p_file_menu) override;
+	virtual void edit_shader(const Ref<Shader>& p_shader) override;
+	virtual void edit_shader_include(const Ref<ShaderInclude>& p_shader_inc) override;
+	virtual void use_menu_bar(MenuButton* p_file_menu) override;
 
 	virtual void apply_shaders() override;
 	virtual bool is_unsaved() const override;
-	virtual void save_external_data(const String &p_str = "") override;
-	virtual void set_toggle_list_control(Control *p_toggle_list_control) override;
+	virtual void save_external_data(const String& p_str = "") override;
+	virtual void set_toggle_list_control(Control* p_toggle_list_control) override;
 	virtual void update_toggle_files_button() override;
 	virtual void validate_script() override;
 
 	bool was_compilation_successful() const { return compilation_success; }
+
 	bool get_trim_trailing_whitespace_on_save() const { return trim_trailing_whitespace_on_save; }
+
 	bool get_trim_final_newlines_on_save() const { return trim_final_newlines_on_save; }
+
 	void goto_line_selection(int p_line, int p_begin, int p_end);
 	void trim_trailing_whitespace();
 	void trim_final_newlines();
 	void tag_saved_version();
-	ShaderTextEditor *get_code_editor() { return code_editor; }
+
+	ShaderTextEditor* get_code_editor() { return code_editor; }
 
 	static void register_editor();
 
 	TextShaderEditor();
 };
+
+

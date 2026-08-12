@@ -1682,7 +1682,7 @@ ProjectExportDialog::ProjectExportDialog() {
 	export_path = memnew(EditorPropertyPath);
 	top_settings->add_child(export_path);
 	export_path->set_label(TTRC("Export Path"));
-	export_path->set_object_and_property(this, "export_path");
+	export_path->set_object_and_property(this->obj.get(), "export_path");
 	export_path->set_save_mode();
 	export_path->connect("property_changed", callable_mp(this, &ProjectExportDialog::_export_path_changed));
 

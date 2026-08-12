@@ -537,8 +537,7 @@ public:
 	virtual bool _edit_use_rect() const override;
 #endif // DEBUG_ENABLED
 
-	virtual void reparent(
-		RequiredParam<Node> p_parent, bool p_keep_global_transform = true);
+	void reparent(Node* p_parent, bool p_keep_global_transform = true);
 
 	// Editor integration.
 

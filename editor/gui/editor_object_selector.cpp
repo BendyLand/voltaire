@@ -28,29 +28,30 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_object_selector.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/editor_data.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
+#include "editor_object_selector.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/margin_container.h"
 
-Size2 EditorObjectSelector::get_minimum_size() const {
+Size2 EditorObjectSelector::get_minimum_size() const
+{
 	Ref<Font> font = get_theme_font(SceneStringName(font));
 	int font_size = get_theme_font_size(SceneStringName(font_size));
 	return Button::get_minimum_size() + Size2(0, font->get_height(font_size));
 }
 
-void EditorObjectSelector::_add_children_to_popup(Object *p_obj, int p_depth) {
+void EditorObjectSelector::_add_children_to_popup(Object* p_obj, int p_depth)
+{
 	if (p_depth > 8) {
 		return;
 	}
 
 	List<PropertyInfo> pinfo;
 	p_obj->get_property_list(&pinfo);
-	for (const PropertyInfo &E : pinfo) {
+	for (const PropertyInfo& E : pinfo) {
 		if (!(E.usage & PROPERTY_USAGE_EDITOR)) {
 			continue;
 		}
@@ -62,12 +63,12 @@ void EditorObjectSelector::_add_children_to_popup(Object *p_obj, int p_depth) {
 		if (value.get_type() != Variant::OBJECT) {
 			continue;
 		}
-		Object *obj = value;
-		if (!obj) {
+		Object* o = value;
+		if (!o) {
 			continue;
 		}
 
-		Ref<Texture2D> obj_icon = EditorNode::get_singleton()->get_object_icon(obj);
+		Ref<Texture2D> obj_icon = EditorNode::get_singleton()->get_object_icon(o);
 
 		String proper_name = "";
 		Vector<String> name_parts = E.name.split("/");
@@ -82,13 +83,14 @@ void EditorObjectSelector::_add_children_to_popup(Object *p_obj, int p_depth) {
 		int index = sub_objects_menu->get_item_count();
 		sub_objects_menu->add_icon_item(obj_icon, proper_name, objects.size());
 		sub_objects_menu->set_item_indent(index, p_depth);
-		objects.push_back(obj->get_instance_id());
+		objects.push_back(o->get_instance_id());
 
-		_add_children_to_popup(obj, p_depth + 1);
+		_add_children_to_popup(o, p_depth + 1);
 	}
 }
 
-void EditorObjectSelector::_show_popup() {
+void EditorObjectSelector::_show_popup()
+{
 	if (sub_objects_menu->is_visible()) {
 		sub_objects_menu->hide();
 		return;
@@ -104,8 +106,9 @@ void EditorObjectSelector::_show_popup() {
 	sub_objects_menu->popup(rect);
 }
 
-void EditorObjectSelector::_about_to_show() {
-	Object *obj = ObjectDB::get_instance(history->get_path_object(history->get_path_size() - 1));
+void EditorObjectSelector::_about_to_show()
+{
+	Object* obj = ObjectDB::get_instance(history->get_path_object(history->get_path_size() - 1));
 	if (!obj) {
 		return;
 	}
@@ -119,9 +122,10 @@ void EditorObjectSelector::_about_to_show() {
 	}
 }
 
-void EditorObjectSelector::update_path() {
+void EditorObjectSelector::update_path()
+{
 	for (int i = 0; i < history->get_path_size(); i++) {
-		Object *obj = ObjectDB::get_instance(history->get_path_object(i));
+		Object* obj = ObjectDB::get_instance(history->get_path_object(i));
 		if (!obj) {
 			continue;
 		}
@@ -135,24 +139,31 @@ void EditorObjectSelector::update_path() {
 			String name;
 			if (obj->has_method("_get_editor_name")) {
 				name = obj->call("_get_editor_name");
-			} else if (Object::cast_to<Resource>(obj)) {
-				Resource *r = Object::cast_to<Resource>(obj);
+			}
+			else if (Object::cast_to<Resource>(obj)) {
+				Resource* r = Object::cast_to<Resource>(obj);
 				if (r->get_path().is_resource_file()) {
 					name = r->get_path().get_file();
-				} else {
+				}
+				else {
 					name = r->get_name();
 				}
 
 				if (name.is_empty()) {
 					name = r->get_class();
 				}
-			} else if (obj->is_class("EditorDebuggerRemoteObjects")) {
+			}
+			else if (obj->is_class("EditorDebuggerRemoteObjects")) {
 				name = obj->call("get_title");
-			} else if (Object::cast_to<Node>(obj)) {
+			}
+			else if (Object::cast_to<Node>(obj)) {
 				name = Object::cast_to<Node>(obj)->get_name();
-			} else if (Object::cast_to<Resource>(obj) && !Object::cast_to<Resource>(obj)->get_name().is_empty()) {
+			}
+			else if (Object::cast_to<Resource>(obj) &&
+					   !Object::cast_to<Resource>(obj)->get_name().is_empty()) {
 				name = Object::cast_to<Resource>(obj)->get_name();
-			} else {
+			}
+			else {
 				name = obj->get_class();
 			}
 
@@ -162,7 +173,8 @@ void EditorObjectSelector::update_path() {
 	}
 }
 
-void EditorObjectSelector::clear_path() {
+void EditorObjectSelector::clear_path()
+{
 	set_disabled(true);
 	set_tooltip_text("");
 
@@ -171,15 +183,17 @@ void EditorObjectSelector::clear_path() {
 	sub_objects_icon->hide();
 }
 
-void EditorObjectSelector::enable_path() {
+void EditorObjectSelector::enable_path()
+{
 	set_disabled(false);
 	sub_objects_icon->show();
 }
 
-void EditorObjectSelector::_id_pressed(int p_idx) {
+void EditorObjectSelector::_id_pressed(int p_idx)
+{
 	ERR_FAIL_INDEX(p_idx, objects.size());
 
-	Object *obj = ObjectDB::get_instance(objects[p_idx]);
+	Object* obj = ObjectDB::get_instance(objects[p_idx]);
 	if (!obj) {
 		return;
 	}
@@ -187,34 +201,37 @@ void EditorObjectSelector::_id_pressed(int p_idx) {
 	EditorNode::get_singleton()->push_item(obj);
 }
 
-void EditorObjectSelector::_notification(int p_what) {
+void EditorObjectSelector::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			update_path();
+	case NOTIFICATION_THEME_CHANGED: {
+		update_path();
 
-			int icon_size = get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
+		int icon_size = get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
 
-			current_object_icon->set_custom_minimum_size(Size2(icon_size, icon_size));
-			current_object_label->add_theme_font_override(SceneStringName(font), get_theme_font(SNAME("main"), EditorStringName(EditorFonts)));
-			sub_objects_icon->set_texture(get_theme_icon(SNAME("arrow"), SNAME("OptionButton")));
-			sub_objects_menu->add_theme_constant_override("icon_max_width", icon_size);
-		} break;
+		current_object_icon->set_custom_minimum_size(Size2(icon_size, icon_size));
+		current_object_label->add_theme_font_override(
+			SceneStringName(font), get_theme_font(SNAME("main"), EditorStringName(EditorFonts)));
+		sub_objects_icon->set_texture(get_theme_icon(SNAME("arrow"), SNAME("OptionButton")));
+		sub_objects_menu->add_theme_constant_override("icon_max_width", icon_size);
+	} break;
 
-		case NOTIFICATION_READY: {
-			connect(SceneStringName(pressed), callable_mp(this, &EditorObjectSelector::_show_popup));
-		} break;
+	case NOTIFICATION_READY: {
+		connect(SceneStringName(pressed), callable_mp(this, &EditorObjectSelector::_show_popup));
+	} break;
 	}
 }
 
-EditorObjectSelector::EditorObjectSelector(EditorSelectionHistory *p_history) {
+EditorObjectSelector::EditorObjectSelector(EditorSelectionHistory* p_history)
+{
 	history = p_history;
 
-	MarginContainer *main_mc = memnew(MarginContainer);
+	MarginContainer* main_mc = memnew(MarginContainer);
 	main_mc->set_theme_type_variation("ObjectSelectorMargin");
 	main_mc->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
 	add_child(main_mc);
 
-	HBoxContainer *main_hb = memnew(HBoxContainer);
+	HBoxContainer* main_hb = memnew(HBoxContainer);
 	main_mc->add_child(main_hb);
 
 	current_object_icon = memnew(TextureRect);
@@ -240,8 +257,11 @@ EditorObjectSelector::EditorObjectSelector(EditorSelectionHistory *p_history) {
 	sub_objects_menu->set_shrink_width(false);
 	sub_objects_menu->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	add_child(sub_objects_menu);
-	sub_objects_menu->connect("about_to_popup", callable_mp(this, &EditorObjectSelector::_about_to_show));
-	sub_objects_menu->connect(SceneStringName(id_pressed), callable_mp(this, &EditorObjectSelector::_id_pressed));
+	sub_objects_menu->connect(
+		"about_to_popup", callable_mp(this, &EditorObjectSelector::_about_to_show));
+	sub_objects_menu->connect(
+		SceneStringName(id_pressed), callable_mp(this, &EditorObjectSelector::_id_pressed));
 
 	set_tooltip_text(TTR("Open a list of sub-resources."));
 }
+

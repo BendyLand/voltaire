@@ -455,7 +455,7 @@ void EditorNode::shortcut_input(const Ref<InputEvent>& p_event)
 			editor_main_screen->select(EditorMainScreen::EDITOR_GAME);
 		}
 		else if (ED_IS_SHORTCUT("editor/editor_help", p_event)) {
-			emit_signal(SNAME("request_help_search"), "");
+			this->obj->emit_signal(SNAME("request_help_search"), "");
 		}
 		else if (ED_IS_SHORTCUT("editor/editor_asset_store", p_event) &&
 				   AssetLibraryEditorPlugin::is_available()) {
@@ -488,10 +488,10 @@ void EditorNode::shortcut_input(const Ref<InputEvent>& p_event)
 					}
 				}
 
-				undo_redo->add_do_method(
-					node_with_visibility, "set_visible", !node_with_visibility->get("visible"));
-				undo_redo->add_undo_method(
-					node_with_visibility, "set_visible", node_with_visibility->get("visible"));
+				undo_redo->add_do_method(node_with_visibility->obj.get(), "set_visible",
+					!node_with_visibility->obj->get("visible"));
+				undo_redo->add_undo_method(node_with_visibility->obj.get(), "set_visible",
+					node_with_visibility->obj->get("visible"));
 			}
 
 			undo_redo->commit_action();
@@ -795,7 +795,7 @@ void EditorNode::_translation_resources_changed()
 	}
 
 	_queue_translation_notification();
-	emit_signal(SNAME("preview_locale_changed"));
+	this->obj->emit_signal(SNAME("preview_locale_changed"));
 }
 
 void EditorNode::_queue_translation_notification()
@@ -1103,7 +1103,7 @@ void EditorNode::_notification(int p_what)
 		}
 	} break;
 
-	case NOTIFICATION_POSTINITIALIZE: {
+	case Object::NOTIFICATION_POSTINITIALIZE: {
 		EditorHelp::generate_doc();
 #if defined(MODULE_GDSCRIPT_ENABLED) || defined(MODULE_MONO_ENABLED)
 		EditorHelpHighlighter::create_singleton();
@@ -1144,7 +1144,7 @@ void EditorNode::_notification(int p_what)
 			OS::get_singleton()->benchmark_begin_measure("Editor", "First Scan");
 
 			EditorFileSystem::get_singleton()->connect("filesystem_changed",
-				callable_mp(this, &EditorNode::_execute_upgrades), CONNECT_ONE_SHOT);
+				callable_mp(this, &EditorNode::_execute_upgrades), Object::CONNECT_ONE_SHOT);
 			EditorFileSystem::get_singleton()->scan();
 		}
 
@@ -1504,7 +1504,7 @@ void EditorNode::_execute_upgrades()
 		// Execute another scan to reimport the modified files.
 		project_upgrade_tool->obj->connect(project_upgrade_tool->UPGRADE_FINISHED,
 			callable_mp(EditorFileSystem::get_singleton(), &EditorFileSystem::scan),
-			CONNECT_ONE_SHOT);
+			Object::CONNECT_ONE_SHOT);
 		project_upgrade_tool->finish_upgrade();
 	}
 }
@@ -1524,7 +1524,7 @@ void EditorNode::init_plugins()
 
 	if (!pending_addons.is_empty()) {
 		EditorFileSystem::get_singleton()->connect("script_classes_updated",
-			callable_mp(this, &EditorNode::_enable_pending_addons), CONNECT_ONE_SHOT);
+			callable_mp(this, &EditorNode::_enable_pending_addons), Object::CONNECT_ONE_SHOT);
 	}
 }
 
@@ -1574,7 +1574,7 @@ void EditorNode::_plugin_over_edit(EditorPlugin* p_plugin, Object* p_object, boo
 
 void EditorNode::_plugin_over_self_own(EditorPlugin* p_plugin)
 {
-	active_plugins[p_plugin->get_instance_id()].insert(p_plugin);
+	active_plugins[p_plugin->obj->get_instance_id()].insert(p_plugin);
 }
 
 void EditorNode::_resources_changed(const Vector<String>& p_resources)
@@ -1659,7 +1659,7 @@ void EditorNode::_fs_changed()
 				err = FAILED;
 				export_error =
 					"This project doesn't have an `export_presets.cfg` file at its root.\nCreate "
-					"an export preset from the \"Project > Export\" dialog and try again.";
+					"an export preset from the \"Project > Export\"dialog and try again.";
 			}
 		}
 		else {
@@ -2083,7 +2083,7 @@ Error EditorNode::load_scene_or_resource(
 	return EditorNode::get_singleton()->load_resource(p_path, p_ignore_broken_deps);
 }
 
-void EditorNode::edit_node(Node* p_node) { push_item(p_node); }
+void EditorNode::edit_node(Node* p_node) { push_item(p_node->obj.get()); }
 
 void EditorNode::edit_resource(const Ref<Resource>& p_resource)
 {
@@ -2137,7 +2137,7 @@ void EditorNode::save_resource_in_path(const Ref<Resource>& p_resource, const St
 	_resource_saved(p_resource, path);
 	clear_node_reference(p_resource); // // Check if Resource is saved to disk to potentially remove
 									  // it from resource_count
-	emit_signal(SNAME("resource_saved"), p_resource);
+	this->obj->emit_signal(SNAME("resource_saved"), p_resource);
 	editor_data.notify_resource_saved(p_resource);
 
 	if (EDITOR_GET("filesystem/on_save/warn_on_saving_large_text_resources")) {
@@ -2418,7 +2418,7 @@ void EditorNode::update_resource_count(Node* p_node, bool p_remove)
 		}
 	}
 
-	emit_signal(SNAME("resource_counter_changed"));
+	this->obj->emit_signal(SNAME("resource_counter_changed"));
 }
 
 int EditorNode::get_resource_count(Ref<Resource> p_res)
@@ -2457,7 +2457,7 @@ void EditorNode::update_node_reference(const Variant& p_value, Node* p_node, boo
 			}
 		}
 	}
-	emit_signal(SNAME("resource_counter_changed"));
+	this->obj->emit_signal(SNAME("resource_counter_changed"));
 }
 
 void EditorNode::clear_node_reference(Ref<Resource> p_res)
@@ -2650,7 +2650,7 @@ bool EditorNode::_find_and_save_edited_subresources(
 void EditorNode::_save_edited_subresources(
 	Node* scene, HashMap<Ref<Resource>, bool>& processed, int32_t flags)
 {
-	_find_and_save_edited_subresources(scene, processed, flags);
+	_find_and_save_edited_subresources(scene->obj.get(), processed, flags);
 
 	for (int i = 0; i < scene->get_child_count(); i++) {
 		Node* n = scene->get_child(i);
@@ -2663,16 +2663,16 @@ void EditorNode::_save_edited_subresources(
 
 void EditorNode::_find_node_types(Node* p_node, int& count_2d, int& count_3d)
 {
-	if (p_node->is_class("Viewport") ||
+	if (p_node->obj->is_class("Viewport") ||
 		(p_node != editor_data.get_edited_scene_root() &&
 			p_node->get_owner() != editor_data.get_edited_scene_root())) {
 		return;
 	}
 
-	if (p_node->is_class("CanvasItem")) {
+	if (p_node->obj->is_class("CanvasItem")) {
 		count_2d++;
 	}
-	else if (p_node->is_class("Node3D")) {
+	else if (p_node->obj->is_class("Node3D")) {
 		count_3d++;
 	}
 
@@ -2977,7 +2977,7 @@ void EditorNode::_save_scene(String p_file, int idx)
 	err = ResourceSaver::save(sdata, p_file, flg);
 
 	// This needs to be emitted before saving external resources.
-	emit_signal(SNAME("scene_saved"), p_file);
+	this->obj->emit_signal(SNAME("scene_saved"), p_file);
 	editor_data.notify_scene_saved(p_file);
 
 	_save_external_resources();
@@ -3466,7 +3466,7 @@ void EditorNode::edit_item(Object* p_object, Object* p_editing_owner, bool p_set
 			continue;
 		}
 
-		if (active_plugins.has(plugin->get_instance_id())) {
+		if (active_plugins.has(plugin->obj->get_instance_id())) {
 			// Plugin is already active, but as self-owning, so it needs a separate check.
 			plugin->make_visible(true);
 			plugin->edit(p_object);
@@ -3525,7 +3525,7 @@ void EditorNode::push_node_item(Node* p_node)
 		Object::cast_to<MultiNodeEdit>(
 			InspectorDock::get_inspector_singleton()->get_edited_object())) {
 		// Don't push null if the currently edited object is not a Node.
-		push_item(p_node);
+		push_item(p_node->obj.get());
 	}
 }
 
@@ -3736,13 +3736,13 @@ void EditorNode::_edit_current(bool p_skip_foreign, bool p_skip_inspector_update
 		Node* current_node = Object::cast_to<Node>(current_obj);
 		ERR_FAIL_NULL(current_node);
 
-		InspectorDock::get_inspector_singleton()->edit(current_node);
+		InspectorDock::get_inspector_singleton()->edit(current_node->obj.get());
 		if (current_node->is_inside_tree()) {
-			SignalsDock::get_singleton()->set_object(current_node);
+			SignalsDock::get_singleton()->set_object(current_node->obj.get());
 			GroupsDock::get_singleton()->set_selection(Vector<Node*>{current_node});
 			SceneTreeDock::get_singleton()->set_selected(current_node);
 			SceneTreeDock::get_singleton()->set_selection({current_node});
-			InspectorDock::get_singleton()->update(current_node);
+			InspectorDock::get_singleton()->update(current_node->obj.get());
 			if (!inspector_only && !skip_main_plugin) {
 				if (!ScriptEditor::get_singleton()->is_editor_floating() &&
 					ScriptEditor::get_singleton()->is_visible_in_tree()) {
@@ -3802,7 +3802,8 @@ void EditorNode::_edit_current(bool p_skip_foreign, bool p_skip_inspector_update
 			}
 		}
 
-		if (!current_obj->is_class("EditorDebuggerRemoteObjects")) {
+		if (!current_obj->is_class("EditorDebuggerRemoteObjects"))
+{
 			EditorDebuggerNode::get_singleton()->clear_remote_tree_selection();
 		}
 
@@ -4583,7 +4584,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed)
 
 	} break;
 	case HELP_SEARCH: {
-		emit_signal(SNAME("request_help_search"), "");
+		this->obj->emit_signal(SNAME("request_help_search"), "");
 	} break;
 	case EDITOR_COMMAND_PALETTE: {
 		command_palette->open_popup();
@@ -5053,7 +5054,8 @@ void EditorNode::replace_resources_in_object(Object* p_object,
 	Node* n = Object::cast_to<Node>(p_object);
 	if (n) {
 		for (int i = 0; i < n->get_child_count(); i++) {
-			replace_resources_in_object(n->get_child(i), p_source_resources, p_target_resource);
+			replace_resources_in_object(
+				n->get_child(i)->obj.get(), p_source_resources, p_target_resource);
 		}
 	}
 }
@@ -5064,7 +5066,8 @@ void EditorNode::replace_resources_in_scenes(
 	for (int i = 0; i < editor_data.get_edited_scene_count(); i++) {
 		Node* edited_scene_root = editor_data.get_edited_scene_root(i);
 		if (edited_scene_root) {
-			replace_resources_in_object(edited_scene_root, p_source_resources, p_target_resource);
+			replace_resources_in_object(
+				edited_scene_root->obj.get(), p_source_resources, p_target_resource);
 		}
 	}
 }
@@ -5282,7 +5285,7 @@ void EditorNode::_remove_edited_scene(bool p_change_tab)
 {
 	// When scene gets closed no node is edited anymore, so make sure the editors are notified
 	// before nodes are freed.
-	hide_unused_editors(SceneTreeDock::get_singleton());
+	hide_unused_editors(SceneTreeDock::get_singleton()->obj.get());
 	editor_selection->clear();
 	editor_selection->update(false);
 
@@ -5420,7 +5423,7 @@ void EditorNode::_set_main_scene_state(const Dictionary& p_state)
 				selected_node = get_edited_scene();
 			}
 			const int plugin_index = editor_main_screen->get_plugin_index(
-				editor_data.get_handling_main_editor(selected_node));
+				editor_data.get_handling_main_editor(selected_node->obj.get()));
 			if (plugin_index >= 0) {
 				editor_main_screen->select(plugin_index);
 			}
@@ -5449,7 +5452,7 @@ void EditorNode::_set_main_scene_state(const Dictionary& p_state)
 	ScriptEditor::get_singleton()->set_scene_root_script(
 		editor_data.get_scene_root_script(editor_data.get_edited_scene()));
 	editor_data.notify_edited_scene_changed();
-	emit_signal(SNAME("scene_changed"));
+	this->obj->emit_signal(SNAME("scene_changed"));
 
 	// Reset SDFGI after everything else so that any last-second scene modifications will be
 	// processed.
@@ -5599,7 +5602,7 @@ void EditorNode::register_hdr_viewport(Viewport* p_viewport)
 	const bool hdr_2d_enabled = GLOBAL_GET("rendering/viewport/hdr_2d");
 	p_viewport->set_use_hdr_2d(hdr_2d_enabled || hdr_requested);
 
-	hdr_viewports.push_back(p_viewport->get_instance_id());
+	hdr_viewports.push_back(p_viewport->obj->get_instance_id());
 }
 
 bool EditorNode::is_scene_open(const String& p_path)
@@ -5806,7 +5809,7 @@ Error EditorNode::open_scene(const String& p_scene, bool p_ignore_broken_deps, b
 
 	if (restoring_scenes) {
 		// Initialize history for restored scenes.
-		ObjectID id = new_scene->get_instance_id();
+		ObjectID id = new_scene->obj->get_instance_id();
 		if (id != editor_history.get_current()) {
 			editor_history.add_object(id);
 		}
@@ -5824,11 +5827,10 @@ Error EditorNode::open_scene(const String& p_scene, bool p_ignore_broken_deps, b
 HashMap<StringName, Variant> EditorNode::get_modified_properties_for_node(
 	Node* p_node, bool p_node_references_only)
 {
-	HashMap<StringName, Variant>
-modified_property_map;
+	HashMap<StringName, Variant> modified_property_map;
 
 	List<PropertyInfo> pinfo;
-	p_node->get_property_list(&pinfo);
+	p_node->obj->get_property_list(&pinfo);
 	for (const PropertyInfo& E : pinfo) {
 		if (E.usage & PROPERTY_USAGE_STORAGE) {
 			bool node_reference = (E.type == Variant::OBJECT && E.hint == PROPERTY_HINT_NODE_TYPE);
@@ -5836,12 +5838,12 @@ modified_property_map;
 				continue;
 			}
 			bool is_valid_revert = false;
-			Variant revert_value =
-				EditorPropertyRevert::get_property_revert_value(p_node, E.name, &is_valid_revert);
-			Variant current_value = p_node->get(E.name);
+			Variant revert_value = EditorPropertyRevert::get_property_revert_value(
+				p_node->obj.get(), E.name, &is_valid_revert);
+			Variant current_value = p_node->obj->get(E.name);
 			if (is_valid_revert) {
 				if (PropertyUtils::is_property_value_different(
-						p_node, current_value, revert_value)) {
+						p_node->obj.get(), current_value, revert_value)) {
 					// If this property is a direct node reference, save a NodePath instead to
 					// prevent corrupted references.
 					if (node_reference) {
@@ -5867,13 +5869,13 @@ HashMap<StringName, Variant> EditorNode::get_modified_properties_reference_to_no
 	HashMap<StringName, Variant> modified_property_map;
 
 	List<PropertyInfo> pinfo;
-	p_node->get_property_list(&pinfo);
+	p_node->obj->get_property_list(&pinfo);
 	for (const PropertyInfo& E : pinfo) {
 		if (E.usage & PROPERTY_USAGE_STORAGE) {
 			if (E.type != Variant::OBJECT || E.hint != PROPERTY_HINT_NODE_TYPE) {
 				continue;
 			}
-			Variant current_value = p_node->get(E.name);
+			Variant current_value = p_node->obj->get(E.name);
 			Node* target_node = Object::cast_to<Node>(current_value);
 			if (target_node && p_nodes_referenced_by.find(target_node)) {
 				modified_property_map[E.name] = p_node->get_path_to(target_node);
@@ -5898,7 +5900,7 @@ void EditorNode::update_node_from_node_modification_entry(
 
 		// Get properties for this node.
 		List<PropertyInfo> pinfo;
-		p_node->get_property_list(&pinfo);
+		p_node->obj->get_property_list(&pinfo);
 
 		// Get names of all valid property names.
 		HashMap<StringName, bool> property_node_reference_table;
@@ -5922,18 +5924,18 @@ void EditorNode::update_node_from_node_modification_entry(
 				bool is_node_reference = *property_node_reference_table_entry;
 				if (is_node_reference) {
 					if (E.value.get_type() == Variant::NODE_PATH) {
-						p_node->set(E.key, p_node->get_node_or_null(E.value));
+						p_node->obj->set(E.key, p_node->get_node_or_null(E.value));
 					}
 				}
 				else {
-					p_node->set(E.key, E.value);
+					p_node->obj->set(E.key, E.value);
 				}
 			}
 		}
 
 		// Restore the connections to other nodes.
 		for (const ConnectionWithNodePath& E : p_node_modification.connections_to) {
-			Connection conn = E.connection;
+			Object::Connection conn = E.connection;
 
 			// Get the node the callable is targeting.
 			Node* target_node = Object::cast_to<Node>(conn.callable.get_object());
@@ -5941,13 +5943,14 @@ void EditorNode::update_node_from_node_modification_entry(
 			// If the callable object no longer exists or is marked for deletion,
 			// attempt to reaccquire the closest match by using the node path
 			// we saved earlier.
-			if (!target_node || !target_node->is_queued_for_deletion()) {
+			if (!target_node || !target_node->obj->is_queued_for_deletion()) {
 				target_node = p_node->get_node_or_null(E.node_path);
 			}
 
 			if (target_node) {
 				// Reconstruct the callable.
-				Callable new_callable = Callable(target_node, conn.callable.get_method());
+				Callable new_callable =
+					Callable(target_node->obj.get(), conn.callable.get_method());
 
 				if (!p_node->is_connected(conn.signal.get_name(), new_callable)) {
 					ERR_FAIL_COND(
@@ -5957,10 +5960,10 @@ void EditorNode::update_node_from_node_modification_entry(
 		}
 
 		// Restore the connections from other nodes.
-		for (const Connection& E : p_node_modification.connections_from) {
-			Connection conn = E;
+		for (const Object::Connection& E : p_node_modification.connections_from) {
+			Object::Connection conn = E;
 
-			bool valid = p_node->has_method(conn.callable.get_method()) ||
+			bool valid = p_node->obj->has_method(conn.callable.get_method()) ||
 						 Ref<Script>(p_node->get_script()).is_null() ||
 						 Ref<Script>(p_node->get_script())->has_method(conn.callable.get_method());
 			ERR_CONTINUE_MSG(
@@ -5972,8 +5975,9 @@ void EditorNode::update_node_from_node_modification_entry(
 			Object* source_object = conn.signal.get_object();
 
 			if (source_object) {
-				ERR_FAIL_COND(source_object->connect(conn.signal.get_name(),
-								  Callable(p_node, conn.callable.get_method()), conn.flags) != OK);
+				ERR_FAIL_COND(
+					source_object->connect(conn.signal.get_name(),
+						Callable(p_node->obj.get(), conn.callable.get_method()), conn.flags) != OK);
 			}
 		}
 
@@ -6087,11 +6091,11 @@ void EditorNode::get_preload_scene_modification_table(Node* p_edited_scene, Node
 			get_modified_properties_for_node(p_node, false);
 
 		// Find all valid connections to other nodes.
-		List<Connection> connections_to;
+		List<Object::Connection> connections_to;
 		p_node->get_all_signal_connections(&connections_to);
 
 		List<ConnectionWithNodePath> valid_connections_to;
-		for (const Connection& c : connections_to) {
+		for (const Object::Connection& c : connections_to) {
 			Node* connection_target_node = Object::cast_to<Node>(c.callable.get_object());
 			if (connection_target_node) {
 				// TODO: add support for reinstating custom callables
@@ -6105,11 +6109,11 @@ void EditorNode::get_preload_scene_modification_table(Node* p_edited_scene, Node
 		}
 
 		// Find all valid connections from other nodes.
-		List<Connection> connections_from;
+		List<Object::Connection> connections_from;
 		p_node->get_signals_connected_to_this(&connections_from);
 
-		List<Connection> valid_connections_from;
-		for (const Connection& c : connections_from) {
+		List<Object::Connection> valid_connections_from;
+		for (const Object::Connection& c : connections_from) {
 			Node* source_node = Object::cast_to<Node>(c.signal.get_object());
 
 			Node* valid_source_owner = nullptr;
@@ -6191,10 +6195,11 @@ void EditorNode::replace_history_reimported_nodes(
 	NodePath scene_path_to_node = p_original_root_node->get_path_to(p_node);
 	Node* new_node = p_new_root_node->get_node_or_null(scene_path_to_node);
 	if (new_node) {
-		editor_history.replace_object(p_node->get_instance_id(), new_node->get_instance_id());
+		editor_history.replace_object(
+			p_node->obj->get_instance_id(), new_node->obj->get_instance_id());
 	}
 	else {
-		editor_history.replace_object(p_node->get_instance_id(), ObjectID());
+		editor_history.replace_object(p_node->obj->get_instance_id(), ObjectID());
 	}
 
 	for (int i = 0; i < p_node->get_child_count(); i++) {
@@ -6564,7 +6569,7 @@ Ref<Script> EditorNode::get_object_custom_type_base(const Object* p_object) cons
 
 	const Node* node = Object::cast_to<const Node>(p_object);
 	if (node && node->has_meta(SceneStringName(_custom_type_script))) {
-		return PropertyUtils::get_custom_type_script(node);
+		return PropertyUtils::get_custom_type_script(node->obj.get());
 	}
 
 	Ref<Script> scr = p_object->get_script();
@@ -7950,7 +7955,7 @@ void EditorNode::set_distraction_free_mode(bool p_enter)
 		editor_dock_manager->set_docks_visible(true);
 	}
 
-	emit_signal(SNAME("distraction_free_mode_changed"), p_enter);
+	this->obj->emit_signal(SNAME("distraction_free_mode_changed"), p_enter);
 }
 
 bool EditorNode::is_distraction_free_mode_enabled() const { return distraction_free->is_pressed(); }
@@ -8197,8 +8202,8 @@ void EditorNode::_notify_nodes_scene_reimported(Node* p_node, Array p_reimported
 		}
 	}
 
-	if (p_node->has_method("_nodes_scene_reimported")) {
-		p_node->call("_nodes_scene_reimported", p_reimported_nodes);
+	if (p_node->obj->has_method("_nodes_scene_reimported")) {
+		p_node->obj->call("_nodes_scene_reimported", p_reimported_nodes);
 	}
 
 	for (int i = 0; i < p_node->get_child_count(); i++) {
@@ -8542,12 +8547,12 @@ void EditorNode::reload_instances_with_path_in_edited_scenes()
 			// to.
 			for (const KeyValue<NodePath, ModificationNodeEntry>& modification_table_entry :
 				instance_modifications.modifications) {
-				for (Connection conn : modification_table_entry.value.connections_from) {
+				for (Object::Connection conn : modification_table_entry.value.connections_from) {
 					conn.signal.get_object()->disconnect(conn.signal.get_name(), conn.callable);
 				}
 				for (ConnectionWithNodePath cwnp : modification_table_entry.value.connections_to) {
-					Connection conn = cwnp.connection;
-					if (conn.flags & CONNECT_PERSIST) {
+					Object::Connection conn = cwnp.connection;
+					if (conn.flags & Object::CONNECT_PERSIST) {
 						conn.signal.get_object()->disconnect(conn.signal.get_name(), conn.callable);
 					}
 				}

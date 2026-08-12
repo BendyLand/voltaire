@@ -1,31 +1,14 @@
 build:
 	scons linkflags="-Wl,--whole-archive bin/obj/modules/libmodule_svg.linuxbsd.editor.x86_64.a -Wl,--allow-multiple-definition -Wl,--no-whole-archive" debug_symbols=yes target=editor compiledb=yes
 
-errs:
-	if [[ -f errs ]]; then
-		rm errs
-	fi
-	lash build 2> errs
-	if [[ -f errs ]]; then
-		wc -l errs
-	fi
-
-clean:
-	if [[ -f errs ]]; then
-		rm errs
-	fi
-
-show:
-	batcat errs
-
 inspect:
 	gdb ./bin/voltaire.linuxbsd.editor.x86_64
 
 link:
 	g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl
 
-todo:
+remind:
 	todo -l show
 
-remind:
+todo:
 	todo -li

@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_zoom_widget.h"
-
 #include "core/input/input.h"
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
@@ -37,9 +35,11 @@
 #include "core/string/translation_server.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "editor_zoom_widget.h"
 
-void EditorZoomWidget::_update_zoom_label() {
-	const String &lang = _get_locale();
+void EditorZoomWidget::_update_zoom_label()
+{
+	const String& lang = this->obj->_get_locale();
 
 	String zoom_text;
 	// The zoom level displayed is relative to the editor scale
@@ -47,35 +47,40 @@ void EditorZoomWidget::_update_zoom_label() {
 	// lower the editor scale to increase the available real estate,
 	// even if their display doesn't have a particularly low DPI.
 	if (zoom >= 10) {
-		zoom_text = TranslationServer::get_singleton()->format_number(rtos(Math::round((zoom / MAX(1, EDSCALE)) * 100)), lang);
-	} else {
+		zoom_text = TranslationServer::get_singleton()->format_number(
+			rtos(Math::round((zoom / MAX(1, EDSCALE)) * 100)), lang);
+	}
+	else {
 		// 2 decimal places if the zoom is below 10%, 1 decimal place if it's below 1000%.
-		zoom_text = TranslationServer::get_singleton()->format_number(rtos(Math::snapped((zoom / MAX(1, EDSCALE)) * 100, (zoom >= 0.1) ? 0.1 : 0.01)), lang);
+		zoom_text = TranslationServer::get_singleton()->format_number(
+			rtos(Math::snapped((zoom / MAX(1, EDSCALE)) * 100, (zoom >= 0.1) ? 0.1 : 0.01)), lang);
 	}
 	zoom_text += " " + TranslationServer::get_singleton()->get_percent_sign(lang);
 	zoom_reset->set_text(zoom_text);
 }
 
-void EditorZoomWidget::_button_zoom_minus() {
+void EditorZoomWidget::_button_zoom_minus()
+{
 	set_zoom_by_increments(-6, Input::get_singleton()->is_key_pressed(Key::ALT));
-	emit_signal(SNAME("zoom_changed"), zoom);
+	this->obj->emit_signal(SNAME("zoom_changed"), zoom);
 }
 
-void EditorZoomWidget::_button_zoom_reset() {
+void EditorZoomWidget::_button_zoom_reset()
+{
 	set_zoom(1.0 * MAX(1, EDSCALE));
-	emit_signal(SNAME("zoom_changed"), zoom);
+	this->obj->emit_signal(SNAME("zoom_changed"), zoom);
 }
 
-void EditorZoomWidget::_button_zoom_plus() {
+void EditorZoomWidget::_button_zoom_plus()
+{
 	set_zoom_by_increments(6, Input::get_singleton()->is_key_pressed(Key::ALT));
-	emit_signal(SNAME("zoom_changed"), zoom);
+	this->obj->emit_signal(SNAME("zoom_changed"), zoom);
 }
 
-float EditorZoomWidget::get_zoom() {
-	return zoom;
-}
+float EditorZoomWidget::get_zoom() { return zoom; }
 
-void EditorZoomWidget::set_zoom(float p_zoom) {
+void EditorZoomWidget::set_zoom(float p_zoom)
+{
 	float new_zoom = CLAMP(p_zoom, min_zoom, max_zoom);
 	if (zoom != new_zoom) {
 		zoom = new_zoom;
@@ -83,15 +88,12 @@ void EditorZoomWidget::set_zoom(float p_zoom) {
 	}
 }
 
-float EditorZoomWidget::get_min_zoom() {
-	return min_zoom;
-}
+float EditorZoomWidget::get_min_zoom() { return min_zoom; }
 
-float EditorZoomWidget::get_max_zoom() {
-	return max_zoom;
-}
+float EditorZoomWidget::get_max_zoom() { return max_zoom; }
 
-void EditorZoomWidget::setup_zoom_limits(float p_min, float p_max) {
+void EditorZoomWidget::setup_zoom_limits(float p_min, float p_max)
+{
 	ERR_FAIL_COND(p_min < 0 || p_min > p_max);
 
 	min_zoom = p_min;
@@ -99,33 +101,36 @@ void EditorZoomWidget::setup_zoom_limits(float p_min, float p_max) {
 
 	if (zoom > max_zoom) {
 		set_zoom(max_zoom);
-		emit_signal(SNAME("zoom_changed"), zoom);
-	} else if (zoom < min_zoom) {
+		this->obj->emit_signal(SNAME("zoom_changed"), zoom);
+	}
+	else if (zoom < min_zoom) {
 		set_zoom(min_zoom);
-		emit_signal(SNAME("zoom_changed"), zoom);
+		this->obj->emit_signal(SNAME("zoom_changed"), zoom);
 	}
 }
 
-void EditorZoomWidget::set_zoom_by_increments(int p_increment_count, bool p_integer_only) {
+void EditorZoomWidget::set_zoom_by_increments(int p_increment_count, bool p_integer_only)
+{
 	// Remove editor scale from the index computation.
 	const float zoom_noscale = zoom / MAX(1, EDSCALE);
 
 	if (p_integer_only) {
-		// Only visit integer scaling factors above 100%, and fractions with an integer denominator below 100%
-		// (1/2 = 50%, 1/3 = 33.33%, 1/4 = 25%, …).
-		// This is useful when working on pixel art projects to avoid distortion.
-		// This algorithm is designed to handle fractional start zoom values correctly
-		// (e.g. 190% will zoom up to 200% and down to 100%).
+		// Only visit integer scaling factors above 100%, and fractions with an integer denominator
+		// below 100% (1/2 = 50%, 1/3 = 33.33%, 1/4 = 25%, …). This is useful when working on pixel
+		// art projects to avoid distortion. This algorithm is designed to handle fractional start
+		// zoom values correctly (e.g. 190% will zoom up to 200% and down to 100%).
 		if (zoom_noscale + p_increment_count * 0.001 >= 1.0 - CMP_EPSILON) {
 			// New zoom is certain to be above 100%.
 			if (p_increment_count >= 1) {
 				// Zooming.
 				set_zoom(Math::floor(zoom_noscale + p_increment_count) * MAX(1, EDSCALE));
-			} else {
+			}
+			else {
 				// Dezooming.
 				set_zoom(Math::ceil(zoom_noscale + p_increment_count) * MAX(1, EDSCALE));
 			}
-		} else {
+		}
+		else {
 			if (p_increment_count >= 1) {
 				// Zooming in. Convert the current zoom into a denominator.
 				float new_zoom = 1.0 / Math::ceil(1.0 / zoom_noscale - p_increment_count);
@@ -135,7 +140,8 @@ void EditorZoomWidget::set_zoom_by_increments(int p_increment_count, bool p_inte
 					new_zoom = 1.0 / Math::ceil(1.0 / zoom_noscale - p_increment_count - 1);
 				}
 				set_zoom(new_zoom * MAX(1, EDSCALE));
-			} else {
+			}
+			else {
 				// Zooming out. Convert the current zoom into a denominator.
 				float new_zoom = 1.0 / Math::floor(1.0 / zoom_noscale - p_increment_count);
 				if (Math::is_equal_approx(zoom_noscale, new_zoom)) {
@@ -146,7 +152,8 @@ void EditorZoomWidget::set_zoom_by_increments(int p_increment_count, bool p_inte
 				set_zoom(new_zoom * MAX(1, EDSCALE));
 			}
 		}
-	} else {
+	}
+	else {
 		if (zoom < CMP_EPSILON || p_increment_count == 0) {
 			return;
 		}
@@ -164,41 +171,49 @@ void EditorZoomWidget::set_zoom_by_increments(int p_increment_count, bool p_inte
 	}
 }
 
-void EditorZoomWidget::_notification(int p_what) {
+void EditorZoomWidget::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			zoom_minus->set_button_icon(get_editor_theme_icon(SNAME("ZoomLess")));
-			zoom_plus->set_button_icon(get_editor_theme_icon(SNAME("ZoomMore")));
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		zoom_minus->set_button_icon(get_editor_theme_icon(SNAME("ZoomLess")));
+		zoom_plus->set_button_icon(get_editor_theme_icon(SNAME("ZoomMore")));
+	} break;
 	}
 }
 
-void EditorZoomWidget::_bind_methods() {
+void EditorZoomWidget::_bind_methods()
+{
 	ClassDB::bind_method(D_METHOD("set_zoom", "zoom"), &EditorZoomWidget::set_zoom);
 	ClassDB::bind_method(D_METHOD("get_zoom"), &EditorZoomWidget::get_zoom);
-	ClassDB::bind_method(D_METHOD("set_zoom_by_increments", "increment", "integer_only"), &EditorZoomWidget::set_zoom_by_increments);
+	ClassDB::bind_method(D_METHOD("set_zoom_by_increments", "increment", "integer_only"),
+		&EditorZoomWidget::set_zoom_by_increments);
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "zoom"), "set_zoom", "get_zoom");
 
 	ADD_SIGNAL(MethodInfo("zoom_changed", PropertyInfo(Variant::FLOAT, "zoom")));
 }
 
-void EditorZoomWidget::set_shortcut_context(Node *p_node) const {
+void EditorZoomWidget::set_shortcut_context(Node* p_node) const
+{
 	zoom_minus->set_shortcut_context(p_node);
 	zoom_plus->set_shortcut_context(p_node);
 	zoom_reset->set_shortcut_context(p_node);
 }
 
-EditorZoomWidget::EditorZoomWidget() {
+EditorZoomWidget::EditorZoomWidget()
+{
 	// Zoom buttons
 	zoom_minus = memnew(Button);
 	zoom_minus->set_accessibility_name(TTRC("Zoom Out"));
 	zoom_minus->set_flat(true);
-	zoom_minus->set_shortcut(ED_SHORTCUT_ARRAY("canvas_item_editor/zoom_minus", TTRC("Zoom Out"), { int32_t(KeyModifierMask::CMD_OR_CTRL | Key::MINUS), int32_t(KeyModifierMask::CMD_OR_CTRL | Key::KP_SUBTRACT) }));
+	zoom_minus->set_shortcut(ED_SHORTCUT_ARRAY("canvas_item_editor/zoom_minus", TTRC("Zoom Out"),
+		{int32_t(KeyModifierMask::CMD_OR_CTRL | Key::MINUS),
+			int32_t(KeyModifierMask::CMD_OR_CTRL | Key::KP_SUBTRACT)}));
 	zoom_minus->set_shortcut_context(this);
 	zoom_minus->set_focus_mode(FOCUS_ACCESSIBILITY);
 	add_child(zoom_minus);
-	zoom_minus->connect(SceneStringName(pressed), callable_mp(this, &EditorZoomWidget::_button_zoom_minus));
+	zoom_minus->connect(
+		SceneStringName(pressed), callable_mp(this, &EditorZoomWidget::_button_zoom_minus));
 
 	zoom_reset = memnew(Button);
 	zoom_reset->set_flat(true);
@@ -220,18 +235,24 @@ EditorZoomWidget::EditorZoomWidget() {
 	// Prevent the button's size from changing when the text size changes
 	zoom_reset->set_custom_minimum_size(Size2(56 * EDSCALE, 0));
 	add_child(zoom_reset);
-	zoom_reset->connect(SceneStringName(pressed), callable_mp(this, &EditorZoomWidget::_button_zoom_reset));
+	zoom_reset->connect(
+		SceneStringName(pressed), callable_mp(this, &EditorZoomWidget::_button_zoom_reset));
 
 	zoom_plus = memnew(Button);
 	zoom_plus->set_accessibility_name(TTRC("Zoom In"));
 	zoom_plus->set_flat(true);
-	zoom_plus->set_shortcut(ED_SHORTCUT_ARRAY("canvas_item_editor/zoom_plus", TTRC("Zoom In"), { int32_t(KeyModifierMask::CMD_OR_CTRL | Key::EQUAL), int32_t(KeyModifierMask::CMD_OR_CTRL | Key::KP_ADD) }));
+	zoom_plus->set_shortcut(ED_SHORTCUT_ARRAY("canvas_item_editor/zoom_plus", TTRC("Zoom In"),
+		{int32_t(KeyModifierMask::CMD_OR_CTRL | Key::EQUAL),
+			int32_t(KeyModifierMask::CMD_OR_CTRL | Key::KP_ADD)}));
 	zoom_plus->set_shortcut_context(this);
 	zoom_plus->set_focus_mode(FOCUS_ACCESSIBILITY);
 	add_child(zoom_plus);
-	zoom_plus->connect(SceneStringName(pressed), callable_mp(this, &EditorZoomWidget::_button_zoom_plus));
+	zoom_plus->connect(
+		SceneStringName(pressed), callable_mp(this, &EditorZoomWidget::_button_zoom_plus));
 
 	_update_zoom_label();
 
 	add_theme_constant_override("separation", 0);
 }
+
+

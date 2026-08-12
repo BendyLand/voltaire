@@ -28,11 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "create_dialog.h"
-
 #include "core/io/resource_loader.h"
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
+#include "create_dialog.h"
 #include "editor/doc/editor_help.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
@@ -47,19 +46,27 @@
 #include "scene/gui/menu_button.h"
 #include "scene/gui/tree.h"
 
-void CreateDialog::popup_create(bool p_dont_clear, bool p_replace_mode, const String &p_current_type, const String &p_current_name) {
+void CreateDialog::popup_create(bool p_dont_clear, bool p_replace_mode,
+	const String& p_current_type, const String& p_current_name)
+{
 	_fill_type_list();
 
-	types_enabled[TYPE_BUILT_IN] = EditorSettings::get_singleton()->get_project_metadata("create_dialog", "built_in_enabled", true);
-	types_enabled[TYPE_CUSTOM] = EditorSettings::get_singleton()->get_project_metadata("create_dialog", "custom_enabled", true);
-	types_enabled[TYPE_EDITOR] = EditorSettings::get_singleton()->get_project_metadata("create_dialog", "editor_enabled", false);
+	types_enabled[TYPE_BUILT_IN] = EditorSettings::get_singleton()->get_project_metadata(
+		"create_dialog", "built_in_enabled", true);
+	types_enabled[TYPE_CUSTOM] = EditorSettings::get_singleton()->get_project_metadata(
+		"create_dialog", "custom_enabled", true);
+	types_enabled[TYPE_EDITOR] = EditorSettings::get_singleton()->get_project_metadata(
+		"create_dialog", "editor_enabled", false);
 	_update_filter_button_state();
 
-	icon_fallback = search_options->has_theme_icon(base_type, EditorStringName(EditorIcons)) ? base_type : "Object";
+	icon_fallback = search_options->has_theme_icon(base_type, EditorStringName(EditorIcons))
+						? base_type
+						: "Object";
 
 	if (p_dont_clear) {
 		search_box->select_all();
-	} else {
+	}
+	else {
 		search_box->clear();
 	}
 
@@ -73,7 +80,8 @@ void CreateDialog::popup_create(bool p_dont_clear, bool p_replace_mode, const St
 	if (p_replace_mode) {
 		set_title(vformat(TTR("Change Type of \"%s\""), p_current_name));
 		set_ok_button_text(TTR("Change"));
-	} else {
+	}
+	else {
 		set_title(vformat(TTR("Create New %s"), base_type));
 		set_ok_button_text(TTR("Create"));
 	}
@@ -82,32 +90,33 @@ void CreateDialog::popup_create(bool p_dont_clear, bool p_replace_mode, const St
 	_save_and_update_favorite_list();
 
 	// Restore valid window bounds or pop up at default size.
-	Rect2 saved_size = EditorSettings::get_singleton()->get_project_metadata("dialog_bounds", "create_new_node", Rect2());
+	Rect2 saved_size = EditorSettings::get_singleton()->get_project_metadata(
+		"dialog_bounds", "create_new_node", Rect2());
 	if (saved_size != Rect2()) {
 		popup(saved_size);
-	} else {
+	}
+	else {
 		popup_centered_clamped(Size2(900, 700) * EDSCALE, 0.8);
 	}
 }
 
-void CreateDialog::for_inherit() {
-	allow_abstract_scripts = true;
-}
+void CreateDialog::for_inherit() { allow_abstract_scripts = true; }
 
-void CreateDialog::_fill_type_list() {
+void CreateDialog::_fill_type_list()
+{
 	LocalVector<StringName> complete_type_list;
 	ClassDB::get_class_list(complete_type_list);
 	ScriptServer::get_global_class_list(complete_type_list);
 
-	EditorData &ed = EditorNode::get_editor_data();
-	HashMap<String, DocData::ClassDoc> &class_docs_list = EditorHelp::get_doc_data()->class_list;
+	EditorData& ed = EditorNode::get_editor_data();
+	HashMap<String, DocData::ClassDoc>& class_docs_list = EditorHelp::get_doc_data()->class_list;
 
-	for (const StringName &type : complete_type_list) {
+	for (const StringName& type : complete_type_list) {
 		if (!_should_hide_type(type)) {
 			TypeInfo type_info;
 			type_info.type_name = type;
 
-			const DocData::ClassDoc *class_docs = class_docs_list.getptr(type);
+			const DocData::ClassDoc* class_docs = class_docs_list.getptr(type);
 			if (class_docs) {
 				type_info.search_keywords = class_docs->keywords.split(",");
 
@@ -122,7 +131,7 @@ void CreateDialog::_fill_type_list() {
 				continue;
 			}
 
-			const Vector<EditorData::CustomType> &ct = ed.get_custom_types()[type];
+			const Vector<EditorData::CustomType>& ct = ed.get_custom_types()[type];
 			for (int i = 0; i < ct.size(); i++) {
 				custom_type_parents[ct[i].name] = type;
 				custom_type_indices[ct[i].name] = i;
@@ -134,10 +143,12 @@ void CreateDialog::_fill_type_list() {
 		}
 	}
 
-	struct TypeInfoCompare {
+	struct TypeInfoCompare
+	{
 		StringName::AlphCompare compare;
 
-		_FORCE_INLINE_ bool operator()(const TypeInfo &l, const TypeInfo &r) const {
+		_FORCE_INLINE_ bool operator()(const TypeInfo& l, const TypeInfo& r) const
+		{
 			return compare(l.type_name, r.type_name);
 		}
 	};
@@ -145,15 +156,19 @@ void CreateDialog::_fill_type_list() {
 	type_info_list.sort_custom<TypeInfoCompare>();
 }
 
-bool CreateDialog::_is_type_preferred(const String &p_type) const {
+bool CreateDialog::_is_type_preferred(const String& p_type) const
+{
 	if (ClassDB::class_exists(p_type)) {
 		return ClassDB::is_parent_class(p_type, preferred_search_result_type);
 	}
 
-	return EditorNode::get_editor_data().script_class_is_parent(p_type, preferred_search_result_type);
+	return EditorNode::get_editor_data().script_class_is_parent(
+		p_type, preferred_search_result_type);
 }
 
-void CreateDialog::_script_button_clicked(TreeItem *p_item, int p_column, int p_button_id, MouseButton p_mouse_button_index) {
+void CreateDialog::_script_button_clicked(
+	TreeItem* p_item, int p_column, int p_button_id, MouseButton p_mouse_button_index)
+{
 	if (p_mouse_button_index != MouseButton::LEFT) {
 		return;
 	}
@@ -164,20 +179,24 @@ void CreateDialog::_script_button_clicked(TreeItem *p_item, int p_column, int p_
 
 	String scr_path = ScriptServer::get_global_class_path(p_item->get_text(0));
 	Ref<Script> scr = ResourceLoader::load(scr_path, "Script");
-	ERR_FAIL_COND_MSG(scr.is_null(), vformat("Could not load the script from resource path: %s", scr_path));
+	ERR_FAIL_COND_MSG(
+		scr.is_null(), vformat("Could not load the script from resource path: %s", scr_path));
 	EditorNode::get_singleton()->push_item_no_inspector(scr.ptr());
 
 	hide();
 	_cleanup();
 }
 
-bool CreateDialog::_is_class_disabled_by_feature_profile(const StringName &p_class) const {
-	Ref<EditorFeatureProfile> profile = EditorFeatureProfileManager::get_singleton()->get_current_profile();
+bool CreateDialog::_is_class_disabled_by_feature_profile(const StringName& p_class) const
+{
+	Ref<EditorFeatureProfile> profile =
+		EditorFeatureProfileManager::get_singleton()->get_current_profile();
 
 	return profile.is_valid() && profile->is_class_disabled(p_class);
 }
 
-bool CreateDialog::_should_hide_type(const StringName &p_type) const {
+bool CreateDialog::_should_hide_type(const StringName& p_type) const
+{
 	if (_is_class_disabled_by_feature_profile(p_type)) {
 		return true;
 	}
@@ -195,17 +214,18 @@ bool CreateDialog::_should_hide_type(const StringName &p_type) const {
 			return true; // Unexposed types.
 		}
 
-		for (const StringName &E : type_blacklist) {
+		for (const StringName& E : type_blacklist) {
 			if (ClassDB::is_parent_class(p_type, E)) {
 				return true; // Parent type is blacklisted.
 			}
 		}
-		for (const StringName &F : custom_type_blocklist) {
+		for (const StringName& F : custom_type_blocklist) {
 			if (ClassDB::is_parent_class(p_type, F)) {
 				return true; // Parent type is excluded in custom type blocklist.
 			}
 		}
-	} else {
+	}
+	else {
 		if (!ScriptServer::is_global_class(p_type)) {
 			return true;
 		}
@@ -217,7 +237,9 @@ bool CreateDialog::_should_hide_type(const StringName &p_type) const {
 		if (ClassDB::class_exists(native_type)) {
 			if (!ClassDB::can_instantiate(native_type)) {
 				return true;
-			} else if (custom_type_blocklist.has(p_type) || custom_type_blocklist.has(native_type)) {
+			}
+			else if (custom_type_blocklist.has(p_type) ||
+					   custom_type_blocklist.has(native_type)) {
 				return true;
 			}
 		}
@@ -242,44 +264,51 @@ bool CreateDialog::_should_hide_type(const StringName &p_type) const {
 	return false;
 }
 
-void CreateDialog::_update_search() {
+void CreateDialog::_update_search()
+{
 	search_options->clear();
 	search_options_types.clear();
 
-	TreeItem *root = search_options->create_item();
+	TreeItem* root = search_options->create_item();
 	root->set_text(0, base_type);
 	root->set_icon(0, search_options->get_editor_theme_icon(icon_fallback));
 	search_options_types[base_type] = root;
-	_configure_search_option_item(root, base_type, ClassDB::class_exists(base_type) ? TypeCategory::CPP_TYPE : TypeCategory::OTHER_TYPE, "");
+	_configure_search_option_item(root, base_type,
+		ClassDB::class_exists(base_type) ? TypeCategory::CPP_TYPE : TypeCategory::OTHER_TYPE, "");
 
 	const String search_text = search_box->get_text();
 	bool type_filter_enabled = search_text.is_empty();
 
 	selectable_types.clear();
 	if (type_filter_enabled) {
-		for (const TypeInfo &candidate : type_info_list) {
+		for (const TypeInfo& candidate : type_info_list) {
 			bool is_script_type = !ClassDB::class_exists(candidate.type_name);
 			bool is_extension = !is_script_type && ClassDB::is_gdextension(candidate.type_name);
 			bool is_editor = false;
 			if (!is_script_type) {
 				const ClassDB::APIType api_type = ClassDB::get_api_type(candidate.type_name);
-				is_editor = (api_type == ClassDB::API_EDITOR || api_type == ClassDB::API_EDITOR_EXTENSION);
+				is_editor =
+					(api_type == ClassDB::API_EDITOR || api_type == ClassDB::API_EDITOR_EXTENSION);
 			}
 
 			bool valid = false;
 			if (is_script_type) {
 				valid = types_enabled[TYPE_CUSTOM];
-			} else if (is_extension) {
+			}
+			else if (is_extension) {
 				if (is_editor) {
 					valid = types_enabled[TYPE_EDITOR];
-				} else {
+				}
+				else {
 					valid = types_enabled[TYPE_CUSTOM];
 				}
-			} else {
+			}
+			else {
 				// Native type.
 				if (is_editor) {
 					valid = types_enabled[TYPE_EDITOR];
-				} else {
+				}
+				else {
 					valid = types_enabled[TYPE_BUILT_IN];
 				}
 			}
@@ -293,7 +322,7 @@ void CreateDialog::_update_search() {
 	float highest_score = 0.0f;
 	StringName best_match;
 
-	for (const TypeInfo &candidate : type_info_list) {
+	for (const TypeInfo& candidate : type_info_list) {
 		if (type_filter_enabled && !selectable_types.has(candidate.type_name)) {
 			continue;
 		}
@@ -302,7 +331,7 @@ void CreateDialog::_update_search() {
 		// First check if the name matches. If it does not, try the search keywords.
 		float score = _score_type(candidate.type_name, search_text);
 		if (score < 0.0f) {
-			for (const String &keyword : candidate.search_keywords) {
+			for (const String& keyword : candidate.search_keywords) {
 				score = _score_type(keyword, search_text);
 
 				// Reduce the score of keywords, since they are an indirect match.
@@ -320,7 +349,10 @@ void CreateDialog::_update_search() {
 			continue;
 		}
 
-		_add_type(candidate.type_name, ClassDB::class_exists(candidate.type_name) ? TypeCategory::CPP_TYPE : TypeCategory::OTHER_TYPE, match_keyword);
+		_add_type(candidate.type_name,
+			ClassDB::class_exists(candidate.type_name) ? TypeCategory::CPP_TYPE
+													   : TypeCategory::OTHER_TYPE,
+			match_keyword);
 
 		if (score > highest_score) {
 			highest_score = score;
@@ -331,17 +363,22 @@ void CreateDialog::_update_search() {
 	// Select the best result.
 	if (search_text.is_empty()) {
 		select_type(base_type);
-	} else if (best_match != StringName()) {
+	}
+	else if (best_match != StringName()) {
 		select_type(best_match);
-	} else {
+	}
+	else {
 		favorite->set_disabled(true);
-		help_bit->set_custom_text(String(), String(), vformat(TTR("No results for \"%s\"."), search_text.replace("[", "[lb]")));
+		help_bit->set_custom_text(String(), String(),
+			vformat(TTR("No results for \"%s\"."), search_text.replace("[", "[lb]")));
 		get_ok_button()->set_disabled(true);
 		search_options->deselect_all();
 	}
 }
 
-void CreateDialog::_add_type(const StringName &p_type, TypeCategory p_type_category, const String &p_match_keyword) {
+void CreateDialog::_add_type(
+	const StringName& p_type, TypeCategory p_type_category, const String& p_match_keyword)
+{
 	if (search_options_types.has(p_type)) {
 		return;
 	}
@@ -352,7 +389,8 @@ void CreateDialog::_add_type(const StringName &p_type, TypeCategory p_type_categ
 	if (p_type_category == TypeCategory::CPP_TYPE) {
 		inherits = ClassDB::get_parent_class(p_type);
 		inherited_type = TypeCategory::CPP_TYPE;
-	} else {
+	}
+	else {
 		if (p_type_category == TypeCategory::PATH_TYPE) {
 			ERR_FAIL_COND(!ResourceLoader::exists(p_type, "Script"));
 			Ref<Script> scr = ResourceLoader::load(p_type, "Script");
@@ -363,13 +401,15 @@ void CreateDialog::_add_type(const StringName &p_type, TypeCategory p_type_categ
 				// Must be a native base type.
 				StringName extends = scr->get_instance_base_type();
 				if (extends == StringName()) {
-					// Not a valid script (has compile errors), we therefore ignore it as it can not be instantiated anyway (when selected).
+					// Not a valid script (has compile errors), we therefore ignore it as it can not
+					// be instantiated anyway (when selected).
 					return;
 				}
 
 				inherits = extends;
 				inherited_type = TypeCategory::CPP_TYPE;
-			} else {
+			}
+			else {
 				inherits = base->get_global_name();
 
 				if (inherits == StringName()) {
@@ -377,11 +417,13 @@ void CreateDialog::_add_type(const StringName &p_type, TypeCategory p_type_categ
 					inherited_type = TypeCategory::PATH_TYPE;
 				}
 			}
-		} else if (ScriptServer::is_global_class(p_type)) {
+		}
+		else if (ScriptServer::is_global_class(p_type)) {
 			inherits = ScriptServer::get_global_class_base(p_type);
 			bool is_native_class = ClassDB::class_exists(inherits);
 			inherited_type = is_native_class ? TypeCategory::CPP_TYPE : TypeCategory::OTHER_TYPE;
-		} else {
+		}
+		else {
 			inherits = custom_type_parents[p_type];
 			if (ClassDB::class_exists(inherits)) {
 				inherited_type = TypeCategory::CPP_TYPE;
@@ -394,12 +436,14 @@ void CreateDialog::_add_type(const StringName &p_type, TypeCategory p_type_categ
 
 	_add_type(inherits, inherited_type, "");
 
-	TreeItem *item = search_options->create_item(search_options_types[inherits]);
+	TreeItem* item = search_options->create_item(search_options_types[inherits]);
 	search_options_types[p_type] = item;
 	_configure_search_option_item(item, p_type, p_type_category, p_match_keyword);
 }
 
-void CreateDialog::_configure_search_option_item(TreeItem *r_item, const StringName &p_type, TypeCategory p_type_category, const String &p_match_keyword) {
+void CreateDialog::_configure_search_option_item(TreeItem* r_item, const StringName& p_type,
+	TypeCategory p_type_category, const String& p_match_keyword)
+{
 	bool script_type = ScriptServer::is_global_class(p_type);
 	bool is_abstract = false;
 	bool is_custom_type = false;
@@ -408,10 +452,12 @@ void CreateDialog::_configure_search_option_item(TreeItem *r_item, const StringN
 	if (p_type_category == TypeCategory::CPP_TYPE) {
 		type_name = p_type;
 		text = p_type;
-	} else if (p_type_category == TypeCategory::PATH_TYPE) {
+	}
+	else if (p_type_category == TypeCategory::PATH_TYPE) {
 		type_name = "\"" + p_type + "\"";
 		text = "\"" + p_type + "\"";
-	} else if (script_type) {
+	}
+	else if (script_type) {
 		is_custom_type = true;
 		type_name = p_type;
 		text = p_type;
@@ -426,13 +472,16 @@ void CreateDialog::_configure_search_option_item(TreeItem *r_item, const StringN
 			tooltip = TTR("The script will run in the editor.") + "\n" + tooltip;
 		}
 		const String script_path = ScriptServer::get_global_class_path(p_type);
-		r_item->add_button(0, get_editor_theme_icon(SNAME("Script")), 1, false, vformat(tooltip, script_path));
-		r_item->set_meta(SNAME("_script_path"), script_path);
+		r_item->add_button(
+			0, get_editor_theme_icon(SNAME("Script")), 1, false, vformat(tooltip, script_path));
+		r_item->obj->set_meta(SNAME("_script_path"), script_path);
 		if (is_tool) {
 			int button_index = r_item->get_button_count(0) - 1;
-			r_item->set_button_color(0, button_index, get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
+			r_item->set_button_color(
+				0, button_index, get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
 		}
-	} else {
+	}
+	else {
 		is_custom_type = true;
 		type_name = custom_type_parents[p_type];
 		text = p_type;
@@ -448,52 +497,66 @@ void CreateDialog::_configure_search_option_item(TreeItem *r_item, const StringN
 	meta.append(type_name);
 	r_item->set_metadata(0, meta);
 
-	bool can_instantiate = (p_type_category == TypeCategory::CPP_TYPE && ClassDB::can_instantiate(p_type)) ||
-			(p_type_category == TypeCategory::OTHER_TYPE && !(!allow_abstract_scripts && is_abstract));
-	bool instantiable = can_instantiate && !(ClassDB::class_exists(p_type) && ClassDB::is_virtual(p_type));
+	bool can_instantiate =
+		(p_type_category == TypeCategory::CPP_TYPE && ClassDB::can_instantiate(p_type)) ||
+		(p_type_category == TypeCategory::OTHER_TYPE && !(!allow_abstract_scripts && is_abstract));
+	bool instantiable =
+		can_instantiate && !(ClassDB::class_exists(p_type) && ClassDB::is_virtual(p_type));
 
-	r_item->set_meta(SNAME("__instantiable"), instantiable);
+	r_item->obj->set_meta(SNAME("__instantiable"), instantiable);
 
 	r_item->set_icon(0, EditorNode::get_singleton()->get_class_icon(p_type));
 	if (!instantiable) {
-		r_item->set_custom_color(0, search_options->get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor)));
+		r_item->set_custom_color(0, search_options->get_theme_color(
+										SNAME("font_disabled_color"), EditorStringName(Editor)));
 	}
 
-	HashMap<String, DocData::ClassDoc>::Iterator class_doc = EditorHelp::get_doc_data()->class_list.find(p_type);
+	HashMap<String, DocData::ClassDoc>::Iterator class_doc =
+		EditorHelp::get_doc_data()->class_list.find(p_type);
 
 	bool is_deprecated = (class_doc && class_doc->value.is_deprecated);
 	bool is_experimental = (class_doc && class_doc->value.is_experimental);
 
 	if (is_deprecated) {
-		r_item->add_button(0, get_editor_theme_icon("StatusError"), 0, false, TTR("This class is marked as deprecated."));
-	} else if (is_experimental) {
-		r_item->add_button(0, get_editor_theme_icon("NodeWarning"), 0, false, TTR("This class is marked as experimental."));
+		r_item->add_button(0, get_editor_theme_icon("StatusError"), 0, false,
+			TTR("This class is marked as deprecated."));
+	}
+	else if (is_experimental) {
+		r_item->add_button(0, get_editor_theme_icon("NodeWarning"), 0, false,
+			TTR("This class is marked as experimental."));
 	}
 
 	if (!search_box->get_text().is_empty()) {
 		r_item->set_collapsed(false);
-	} else {
+	}
+	else {
 		// Don't collapse the root node or an abstract node on the first tree level.
-		bool should_collapse = p_type != base_type && (r_item->get_parent()->get_text(0) != base_type || can_instantiate);
+		bool should_collapse = p_type != base_type &&
+							   (r_item->get_parent()->get_text(0) != base_type || can_instantiate);
 
-		if (should_collapse && bool(EDITOR_GET("docks/scene_tree/start_create_dialog_fully_expanded"))) {
+		if (should_collapse &&
+			bool(EDITOR_GET("docks/scene_tree/start_create_dialog_fully_expanded"))) {
 			should_collapse = false; // Collapse all nodes anyway.
 		}
 		r_item->set_collapsed(should_collapse);
 	}
 
-	const String &description = DTR(class_doc ? class_doc->value.brief_description : "");
+	const String& description = DTR(class_doc ? class_doc->value.brief_description : "");
 	r_item->set_tooltip_text(0, description);
 
 	if (p_type_category == TypeCategory::OTHER_TYPE && !script_type) {
-		Ref<Texture2D> icon = EditorNode::get_editor_data().get_custom_types()[custom_type_parents[p_type]][custom_type_indices[p_type]].icon;
+		Ref<Texture2D> icon =
+			EditorNode::get_editor_data()
+				.get_custom_types()[custom_type_parents[p_type]][custom_type_indices[p_type]]
+				.icon;
 		if (icon.is_valid()) {
 			r_item->set_icon(0, icon);
 		}
 	}
 }
 
-float CreateDialog::_score_type(const String &p_type, const String &p_search) const {
+float CreateDialog::_score_type(const String& p_type, const String& p_search) const
+{
 	if (p_search.is_empty()) {
 		return 0.0f;
 	}
@@ -504,7 +567,8 @@ float CreateDialog::_score_type(const String &p_type, const String &p_search) co
 	}
 
 	if (p_type == p_search) {
-		// Always favor an exact match (case-sensitive), since clicking a favorite will set the search text to the type.
+		// Always favor an exact match (case-sensitive), since clicking a favorite will set the
+		// search text to the type.
 		return 1.0f;
 	}
 
@@ -538,7 +602,8 @@ float CreateDialog::_score_type(const String &p_type, const String &p_search) co
 	return score;
 }
 
-void CreateDialog::_cleanup() {
+void CreateDialog::_cleanup()
+{
 	type_info_list.clear();
 	favorite_list.clear();
 	favorites->clear();
@@ -547,19 +612,23 @@ void CreateDialog::_cleanup() {
 	custom_type_indices.clear();
 }
 
-void CreateDialog::_confirmed() {
+void CreateDialog::_confirmed()
+{
 	String selected_item = get_selected_type_name();
 	if (selected_item.is_empty()) {
 		return;
 	}
 
-	TreeItem *selected = search_options->get_selected();
-	if (!selected->get_meta("__instantiable", true)) {
+	TreeItem* selected = search_options->get_selected();
+	if (!selected->obj->get_meta("__instantiable", true)) {
 		return;
 	}
 
 	{
-		Ref<FileAccess> f = FileAccess::open(EditorPaths::get_singleton()->get_project_settings_dir().path_join("create_recent." + base_type), FileAccess::WRITE);
+		Ref<FileAccess> f =
+			FileAccess::open(EditorPaths::get_singleton()->get_project_settings_dir().path_join(
+								 "create_recent." + base_type),
+				FileAccess::WRITE);
 		if (f.is_valid()) {
 			f->store_line(selected_item);
 
@@ -572,14 +641,16 @@ void CreateDialog::_confirmed() {
 		}
 	}
 
-	// To prevent, emitting an error from the transient window (shader dialog for example) hide this dialog before emitting the "create" signal.
+	// To prevent, emitting an error from the transient window (shader dialog for example) hide this
+	// dialog before emitting the "create" signal.
 	hide();
 
-	emit_signal(SNAME("create"));
+	this->obj->emit_signal(SNAME("create"));
 	_cleanup();
 }
 
-void CreateDialog::_reset_filters() {
+void CreateDialog::_reset_filters()
+{
 	if (!types_enabled[TYPE_BUILT_IN]) {
 		_type_filter_toggled(TYPE_BUILT_IN, false);
 	}
@@ -593,7 +664,8 @@ void CreateDialog::_reset_filters() {
 	_update_search();
 }
 
-void CreateDialog::_update_filter_button_state() {
+void CreateDialog::_update_filter_button_state()
+{
 	const bool is_searching = !search_box->get_text().is_empty();
 	filters_button->set_disabled(is_searching);
 	if (!is_searching) {
@@ -601,20 +673,24 @@ void CreateDialog::_update_filter_button_state() {
 		filters_button->get_popup()->set_item_checked(TYPE_CUSTOM, types_enabled[TYPE_CUSTOM]);
 		filters_button->get_popup()->set_item_checked(TYPE_EDITOR, types_enabled[TYPE_EDITOR]);
 	}
-	reset_filters_button->set_visible(!is_searching && (!types_enabled[TYPE_BUILT_IN] || !types_enabled[TYPE_CUSTOM] || types_enabled[TYPE_EDITOR]));
+	reset_filters_button->set_visible(
+		!is_searching && (!types_enabled[TYPE_BUILT_IN] || !types_enabled[TYPE_CUSTOM] ||
+							 types_enabled[TYPE_EDITOR]));
 }
 
-void CreateDialog::_text_changed(const String &p_newtext) {
+void CreateDialog::_text_changed(const String& p_newtext)
+{
 	_update_filter_button_state();
 	_update_search();
 }
 
-void CreateDialog::_sbox_input(const Ref<InputEvent> &p_event) {
+void CreateDialog::_sbox_input(const Ref<InputEvent>& p_event)
+{
 	// Redirect navigational key events to the tree.
 	Ref<InputEventKey> key = p_event;
 	if (key.is_valid()) {
 		if (key->is_action_pressed("ui_select", true)) {
-			TreeItem *ti = search_options->get_selected();
+			TreeItem* ti = search_options->get_selected();
 			if (ti) {
 				ti->set_collapsed(!ti->is_collapsed());
 			}
@@ -623,58 +699,64 @@ void CreateDialog::_sbox_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-void CreateDialog::_notification(int p_what) {
+void CreateDialog::_notification(int p_what)
+{
 	switch (p_what) {
-		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-			if (!EditorSettings::get_singleton()->check_changed_settings_in_group("docks/scene_tree")) {
-				break;
-			}
-
-			[[fallthrough]];
+	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+		if (!EditorSettings::get_singleton()->check_changed_settings_in_group("docks/scene_tree")) {
+			break;
 		}
 
-		case NOTIFICATION_READY: {
-			if (is_visible()) {
-				_update_search();
-			}
-		} break;
+		[[fallthrough]];
+	}
 
-		case NOTIFICATION_ENTER_TREE: {
-			connect(SceneStringName(confirmed), callable_mp(this, &CreateDialog::_confirmed));
-		} break;
+	case NOTIFICATION_READY: {
+		if (is_visible()) {
+			_update_search();
+		}
+	} break;
 
-		case NOTIFICATION_EXIT_TREE: {
-			disconnect(SceneStringName(confirmed), callable_mp(this, &CreateDialog::_confirmed));
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		connect(SceneStringName(confirmed), callable_mp(this, &CreateDialog::_confirmed));
+	} break;
 
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			if (is_visible()) {
-				callable_mp((Control *)search_box, &Control::grab_focus).call_deferred(false); // Still not visible.
-				search_box->select_all();
-			} else {
-				EditorSettings::get_singleton()->set_project_metadata("dialog_bounds", "create_new_node", Rect2(get_position(), get_size()));
-			}
-		} break;
+	case NOTIFICATION_EXIT_TREE: {
+		disconnect(SceneStringName(confirmed), callable_mp(this, &CreateDialog::_confirmed));
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED: {
-			const int icon_width = get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
-			search_options->add_theme_constant_override("icon_max_width", icon_width);
-			favorites->add_theme_constant_override("icon_max_width", icon_width);
-			recent->set_fixed_icon_size(Size2(icon_width, icon_width));
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		if (is_visible()) {
+			callable_mp((Control*)search_box, &Control::grab_focus)
+				.call_deferred(false); // Still not visible.
+			search_box->select_all();
+		}
+		else {
+			EditorSettings::get_singleton()->set_project_metadata(
+				"dialog_bounds", "create_new_node", Rect2(get_position(), get_size()));
+		}
+	} break;
 
-			favorite->set_button_icon(get_editor_theme_icon(SNAME("Favorites")));
-			reset_filters_button->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
-			filters_button->set_button_icon(get_editor_theme_icon(SNAME("GuiDropdown")));
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		const int icon_width =
+			get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
+		search_options->add_theme_constant_override("icon_max_width", icon_width);
+		favorites->add_theme_constant_override("icon_max_width", icon_width);
+		recent->set_fixed_icon_size(Size2(icon_width, icon_width));
+
+		favorite->set_button_icon(get_editor_theme_icon(SNAME("Favorites")));
+		reset_filters_button->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
+		filters_button->set_button_icon(get_editor_theme_icon(SNAME("GuiDropdown")));
+	} break;
 	}
 }
 
-void CreateDialog::select_type(const String &p_type, bool p_center_on_item) {
+void CreateDialog::select_type(const String& p_type, bool p_center_on_item)
+{
 	if (!search_options_types.has(p_type)) {
 		return;
 	}
 
-	TreeItem *to_select = search_options_types[p_type];
+	TreeItem* to_select = search_options_types[p_type];
 	to_select->select(0);
 	search_options->scroll_to_item(to_select, p_center_on_item);
 
@@ -683,24 +765,27 @@ void CreateDialog::select_type(const String &p_type, bool p_center_on_item) {
 	favorite->set_disabled(false);
 	favorite->set_pressed(favorite_list.has(p_type));
 
-	if (to_select->get_meta("__instantiable", true)) {
+	if (to_select->obj->get_meta("__instantiable", true)) {
 		get_ok_button()->set_disabled(false);
 		get_ok_button()->set_tooltip_text(String());
-	} else {
+	}
+	else {
 		get_ok_button()->set_disabled(true);
 		get_ok_button()->set_tooltip_text(TTR("The selected class can't be instantiated."));
 	}
 }
 
-void CreateDialog::select_base() {
+void CreateDialog::select_base()
+{
 	if (search_options_types.is_empty()) {
 		_update_search();
 	}
 	select_type(base_type, false);
 }
 
-String CreateDialog::get_selected_type() {
-	TreeItem *selected = search_options->get_selected();
+String CreateDialog::get_selected_type()
+{
+	TreeItem* selected = search_options->get_selected();
 
 	if (!selected) {
 		return String();
@@ -711,29 +796,33 @@ String CreateDialog::get_selected_type() {
 		return type; // CPP type - from the core or GDExtensions
 	}
 
-	const EditorData::CustomType *custom_type = EditorNode::get_editor_data().get_custom_type_by_name(type);
+	const EditorData::CustomType* custom_type =
+		EditorNode::get_editor_data().get_custom_type_by_name(type);
 	if (custom_type != nullptr) {
 		return custom_type->script->get_path(); // Types via EditorPlugin::add_custom_type()
 	}
 
-	return String(selected->get_meta("_script_path", "")); // Script types
+	return String(selected->obj->get_meta("_script_path", "")); // Script types
 }
 
-String CreateDialog::get_selected_type_name() {
-	TreeItem *selected = search_options->get_selected();
+String CreateDialog::get_selected_type_name()
+{
+	TreeItem* selected = search_options->get_selected();
 	if (!selected) {
 		return String();
 	}
 	return selected->get_text(0).get_slicec(' ', 0);
 }
 
-void CreateDialog::set_base_type(const String &p_base) {
+void CreateDialog::set_base_type(const String& p_base)
+{
 	base_type = p_base;
 	is_base_type_node = ClassDB::is_parent_class(p_base, "Node");
 }
 
-Variant CreateDialog::instantiate_selected() {
-	TreeItem *selected = search_options->get_selected();
+Variant CreateDialog::instantiate_selected()
+{
+	TreeItem* selected = search_options->get_selected();
 
 	if (!selected) {
 		return Variant();
@@ -744,62 +833,69 @@ Variant CreateDialog::instantiate_selected() {
 
 	bool is_custom_type = meta[0].operator bool();
 	String type_name = meta[1].operator String();
-	Variant obj;
+	Variant o;
 	if (is_custom_type) {
 		if (ScriptServer::is_global_class(type_name)) {
-			obj = EditorNode::get_editor_data().script_class_instance(type_name);
-			Node *n = Object::cast_to<Node>(obj);
+			o = EditorNode::get_editor_data().script_class_instance(type_name);
+			Node* n = Object::cast_to<Node>(o);
 			if (n) {
 				n->set_name(type_name);
 			}
-		} else {
-			obj = EditorNode::get_editor_data().instantiate_custom_type(selected->get_text(0), type_name);
 		}
-	} else {
-		obj = ClassDB::instantiate(type_name);
+		else {
+			o = EditorNode::get_editor_data().instantiate_custom_type(
+				selected->get_text(0), type_name);
+		}
 	}
-	EditorNode::get_editor_data().instantiate_object_properties(obj);
+	else {
+		o = ClassDB::instantiate(type_name);
+	}
+	EditorNode::get_editor_data().instantiate_object_properties(o);
 
-	return obj;
+	return o;
 }
 
-void CreateDialog::_item_selected() {
-	select_type(get_selected_type_name(), false);
-}
+void CreateDialog::_item_selected() { select_type(get_selected_type_name(), false); }
 
-void CreateDialog::_hide_requested() {
+void CreateDialog::_hide_requested()
+{
 	_cancel_pressed(); // From AcceptDialog.
 }
 
-void CreateDialog::cancel_pressed() {
-	_cleanup();
-}
+void CreateDialog::cancel_pressed() { _cleanup(); }
 
-void CreateDialog::_type_filter_toggled(int p_type, bool p_search) {
+void CreateDialog::_type_filter_toggled(int p_type, bool p_search)
+{
 	filters_button->get_popup()->toggle_item_checked(p_type);
 	bool is_checked = filters_button->get_popup()->is_item_checked(p_type);
 
 	switch (p_type) {
-		case TYPE_BUILT_IN:
-			EditorSettings::get_singleton()->set_project_metadata("create_dialog", "built_in_enabled", is_checked);
-			break;
-		case TYPE_CUSTOM:
-			EditorSettings::get_singleton()->set_project_metadata("create_dialog", "custom_enabled", is_checked);
-			break;
-		case TYPE_EDITOR:
-			EditorSettings::get_singleton()->set_project_metadata("create_dialog", "editor_enabled", is_checked);
-			break;
+	case TYPE_BUILT_IN:
+		EditorSettings::get_singleton()->set_project_metadata(
+			"create_dialog", "built_in_enabled", is_checked);
+		break;
+	case TYPE_CUSTOM:
+		EditorSettings::get_singleton()->set_project_metadata(
+			"create_dialog", "custom_enabled", is_checked);
+		break;
+	case TYPE_EDITOR:
+		EditorSettings::get_singleton()->set_project_metadata(
+			"create_dialog", "editor_enabled", is_checked);
+		break;
 	}
 	types_enabled[p_type] = is_checked;
 
 	if (p_search) {
-		reset_filters_button->set_visible(!types_enabled[TYPE_BUILT_IN] || !types_enabled[TYPE_CUSTOM] || types_enabled[TYPE_EDITOR]);
+		reset_filters_button->set_visible(!types_enabled[TYPE_BUILT_IN] ||
+										  !types_enabled[TYPE_CUSTOM] ||
+										  types_enabled[TYPE_EDITOR]);
 		_update_search();
 	}
 }
 
-void CreateDialog::_favorite_toggled() {
-	TreeItem *item = search_options->get_selected();
+void CreateDialog::_favorite_toggled()
+{
+	TreeItem* item = search_options->get_selected();
 	if (!item) {
 		return;
 	}
@@ -809,7 +905,8 @@ void CreateDialog::_favorite_toggled() {
 	if (favorite_list.has(name)) {
 		favorite_list.erase(name);
 		favorite->set_pressed(false);
-	} else {
+	}
+	else {
 		favorite_list.push_back(name);
 		favorite->set_pressed(true);
 	}
@@ -817,14 +914,16 @@ void CreateDialog::_favorite_toggled() {
 	_save_and_update_favorite_list();
 }
 
-void CreateDialog::_history_selected(int p_idx) {
+void CreateDialog::_history_selected(int p_idx)
+{
 	search_box->set_text(recent->get_item_text(p_idx));
 	favorites->deselect_all();
 	_update_search();
 }
 
-void CreateDialog::_favorite_selected() {
-	TreeItem *item = favorites->get_selected();
+void CreateDialog::_favorite_selected()
+{
+	TreeItem* item = favorites->get_selected();
 	if (!item) {
 		return;
 	}
@@ -834,24 +933,29 @@ void CreateDialog::_favorite_selected() {
 	_update_search();
 }
 
-void CreateDialog::_history_activated(int p_idx) {
+void CreateDialog::_history_activated(int p_idx)
+{
 	_history_selected(p_idx);
 	_confirmed();
 }
 
-void CreateDialog::_favorite_activated() {
+void CreateDialog::_favorite_activated()
+{
 	_favorite_selected();
 	_confirmed();
 }
 
-Variant CreateDialog::get_drag_data_fw(const Point2 &p_point, Control *p_from) {
-	TreeItem *ti = (p_point == Vector2(Math::INF, Math::INF)) ? favorites->get_selected() : favorites->get_item_at_position(p_point);
+Variant CreateDialog::get_drag_data_fw(const Point2& p_point, Control* p_from)
+{
+	TreeItem* ti = (p_point == Vector2(Math::INF, Math::INF))
+					   ? favorites->get_selected()
+					   : favorites->get_item_at_position(p_point);
 	if (ti) {
 		Dictionary d;
 		d["type"] = "create_favorite_drag";
 		d["class"] = ti->get_text(0);
 
-		Button *tb = memnew(Button);
+		Button* tb = memnew(Button);
 		tb->set_flat(true);
 		tb->set_button_icon(ti->get_icon(0));
 		tb->set_text(ti->get_text(0));
@@ -864,7 +968,9 @@ Variant CreateDialog::get_drag_data_fw(const Point2 &p_point, Control *p_from) {
 	return Variant();
 }
 
-bool CreateDialog::can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const {
+bool CreateDialog::can_drop_data_fw(
+	const Point2& p_point, const Variant& p_data, Control* p_from) const
+{
 	Dictionary d = p_data;
 	if (d.has("type") && String(d["type"]) == "create_favorite_drag") {
 		favorites->set_drop_mode_flags(Tree::DROP_MODE_INBETWEEN);
@@ -874,16 +980,21 @@ bool CreateDialog::can_drop_data_fw(const Point2 &p_point, const Variant &p_data
 	return false;
 }
 
-void CreateDialog::drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) {
+void CreateDialog::drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from)
+{
 	Dictionary d = p_data;
 
-	TreeItem *ti = (p_point == Vector2(Math::INF, Math::INF)) ? favorites->get_selected() : favorites->get_item_at_position(p_point);
+	TreeItem* ti = (p_point == Vector2(Math::INF, Math::INF))
+					   ? favorites->get_selected()
+					   : favorites->get_item_at_position(p_point);
 	if (!ti) {
 		return;
 	}
 
 	String drop_at = ti->get_text(0);
-	int ds = (p_point == Vector2(Math::INF, Math::INF)) ? favorites->get_drop_section_at_position(favorites->get_item_rect(ti).position) : favorites->get_drop_section_at_position(p_point);
+	int ds = (p_point == Vector2(Math::INF, Math::INF))
+				 ? favorites->get_drop_section_at_position(favorites->get_item_rect(ti).position)
+				 : favorites->get_drop_section_at_position(p_point);
 
 	int drop_idx = favorite_list.find(drop_at);
 	if (drop_idx < 0) {
@@ -898,8 +1009,9 @@ void CreateDialog::drop_data_fw(const Point2 &p_point, const Variant &p_data, Co
 	}
 
 	if (drop_idx == from_idx) {
-		ds = -1; //cause it will be gone
-	} else if (drop_idx > from_idx) {
+		ds = -1; // cause it will be gone
+	}
+	else if (drop_idx > from_idx) {
 		drop_idx--;
 	}
 
@@ -907,10 +1019,12 @@ void CreateDialog::drop_data_fw(const Point2 &p_point, const Variant &p_data, Co
 
 	if (ds < 0) {
 		favorite_list.insert(drop_idx, type);
-	} else {
+	}
+	else {
 		if (drop_idx >= favorite_list.size() - 1) {
 			favorite_list.push_back(type);
-		} else {
+		}
+		else {
 			favorite_list.insert(drop_idx + 1, type);
 		}
 	}
@@ -918,14 +1032,18 @@ void CreateDialog::drop_data_fw(const Point2 &p_point, const Variant &p_data, Co
 	_save_and_update_favorite_list();
 }
 
-void CreateDialog::_save_and_update_favorite_list() {
+void CreateDialog::_save_and_update_favorite_list()
+{
 	favorites->clear();
-	TreeItem *root = favorites->create_item();
+	TreeItem* root = favorites->create_item();
 
 	{
-		Ref<FileAccess> f = FileAccess::open(EditorPaths::get_singleton()->get_project_settings_dir().path_join("favorites." + base_type), FileAccess::WRITE);
+		Ref<FileAccess> f =
+			FileAccess::open(EditorPaths::get_singleton()->get_project_settings_dir().path_join(
+								 "favorites." + base_type),
+				FileAccess::WRITE);
 		if (f.is_valid()) {
-			for (const String &name : favorite_list) {
+			for (const String& name : favorite_list) {
 				if (!EditorNode::get_editor_data().is_type_recognized(name)) {
 					continue;
 				}
@@ -935,24 +1053,27 @@ void CreateDialog::_save_and_update_favorite_list() {
 					continue;
 				}
 
-				TreeItem *ti = favorites->create_item(root);
+				TreeItem* ti = favorites->create_item(root);
 				ti->set_text(0, name);
 				ti->set_icon(0, EditorNode::get_singleton()->get_class_icon(name));
 			}
 		}
 	}
 
-	emit_signal(SNAME("favorites_updated"));
+	this->obj->emit_signal(SNAME("favorites_updated"));
 }
 
-void CreateDialog::_load_favorites_and_history() {
+void CreateDialog::_load_favorites_and_history()
+{
 	String dir = EditorPaths::get_singleton()->get_project_settings_dir();
-	Ref<FileAccess> f = FileAccess::open(dir.path_join("create_recent." + base_type), FileAccess::READ);
+	Ref<FileAccess> f =
+		FileAccess::open(dir.path_join("create_recent." + base_type), FileAccess::READ);
 	if (f.is_valid()) {
 		while (!f->eof_reached()) {
 			String name = f->get_line().strip_edges();
 
-			if (EditorNode::get_editor_data().is_type_recognized(name) && !_is_class_disabled_by_feature_profile(name)) {
+			if (EditorNode::get_editor_data().is_type_recognized(name) &&
+				!_is_class_disabled_by_feature_profile(name)) {
 				recent->add_item(name, EditorNode::get_singleton()->get_class_icon(name));
 			}
 		}
@@ -970,28 +1091,30 @@ void CreateDialog::_load_favorites_and_history() {
 	}
 }
 
-void CreateDialog::_bind_methods() {
+void CreateDialog::_bind_methods()
+{
 	ADD_SIGNAL(MethodInfo("create"));
 	ADD_SIGNAL(MethodInfo("favorites_updated"));
 }
 
-CreateDialog::CreateDialog() {
+CreateDialog::CreateDialog()
+{
 	base_type = "Object";
 	preferred_search_result_type = "";
 
 	type_blacklist.insert("MissingNode");
 	type_blacklist.insert("MissingResource");
 
-	HSplitContainer *hsc = memnew(HSplitContainer);
+	HSplitContainer* hsc = memnew(HSplitContainer);
 	add_child(hsc);
 
-	VSplitContainer *vsc = memnew(VSplitContainer);
+	VSplitContainer* vsc = memnew(VSplitContainer);
 	hsc->add_child(vsc);
 
-	VSplitContainer *vsc_right = memnew(VSplitContainer);
+	VSplitContainer* vsc_right = memnew(VSplitContainer);
 	hsc->add_child(vsc_right);
 
-	VBoxContainer *fav_vb = memnew(VBoxContainer);
+	VBoxContainer* fav_vb = memnew(VBoxContainer);
 	fav_vb->set_custom_minimum_size(Size2(150, 100) * EDSCALE);
 	fav_vb->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	vsc->add_child(fav_vb);
@@ -1009,7 +1132,7 @@ CreateDialog::CreateDialog() {
 	SET_DRAG_FORWARDING_GCD(favorites, CreateDialog);
 	fav_vb->add_margin_child(TTR("Favorites:"), favorites, true);
 
-	VBoxContainer *rec_vb = memnew(VBoxContainer);
+	VBoxContainer* rec_vb = memnew(VBoxContainer);
 	vsc->add_child(rec_vb);
 	rec_vb->set_custom_minimum_size(Size2(150, 100) * EDSCALE);
 	rec_vb->set_v_size_flags(Control::SIZE_EXPAND_FILL);
@@ -1019,12 +1142,13 @@ CreateDialog::CreateDialog() {
 	recent->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	rec_vb->add_margin_child(TTR("Recent:"), recent, true);
 	recent->set_allow_reselect(true);
-	recent->connect(SceneStringName(item_selected), callable_mp(this, &CreateDialog::_history_selected));
+	recent->connect(
+		SceneStringName(item_selected), callable_mp(this, &CreateDialog::_history_selected));
 	recent->connect("item_activated", callable_mp(this, &CreateDialog::_history_activated));
 	recent->add_theme_constant_override("draw_guides", 1);
 	recent->set_theme_type_variation("ItemListSecondary");
 
-	VBoxContainer *vbc = memnew(VBoxContainer);
+	VBoxContainer* vbc = memnew(VBoxContainer);
 	vbc->set_custom_minimum_size(Size2(300, 0) * EDSCALE);
 	vbc->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	vbc->set_v_size_flags(Control::SIZE_EXPAND_FILL);
@@ -1033,22 +1157,24 @@ CreateDialog::CreateDialog() {
 	search_box = memnew(FilterLineEdit);
 	search_box->set_accessibility_name(TTRC("Search"));
 	search_box->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	search_box->connect(SceneStringName(text_changed), callable_mp(this, &CreateDialog::_text_changed));
+	search_box->connect(
+		SceneStringName(text_changed), callable_mp(this, &CreateDialog::_text_changed));
 
-	HBoxContainer *search_hb = memnew(HBoxContainer);
+	HBoxContainer* search_hb = memnew(HBoxContainer);
 	search_hb->add_child(search_box);
 
 	favorite = memnew(Button);
 	favorite->set_toggle_mode(true);
 	favorite->set_tooltip_text(TTR("(Un)favorite selected item."));
-	favorite->connect(SceneStringName(pressed), callable_mp(this, &CreateDialog::_favorite_toggled));
+	favorite->connect(
+		SceneStringName(pressed), callable_mp(this, &CreateDialog::_favorite_toggled));
 	search_hb->add_child(favorite);
 	vbc->add_margin_child(TTR("Search:"), search_hb);
 
-	HBoxContainer *matches_hb = memnew(HBoxContainer);
+	HBoxContainer* matches_hb = memnew(HBoxContainer);
 	vbc->add_child(matches_hb);
 
-	Label *matches_label = memnew(Label(TTRC("Matches:")));
+	Label* matches_label = memnew(Label(TTRC("Matches:")));
 	matches_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	matches_label->set_theme_type_variation("HeaderSmall");
 	matches_hb->add_child(matches_label);
@@ -1058,7 +1184,8 @@ CreateDialog::CreateDialog() {
 	reset_filters_button->set_theme_type_variation(SceneStringName(FlatButton));
 	reset_filters_button->set_h_size_flags(Control::SIZE_SHRINK_END);
 	matches_hb->add_child(reset_filters_button);
-	reset_filters_button->connect(SceneStringName(pressed), callable_mp(this, &CreateDialog::_reset_filters));
+	reset_filters_button->connect(
+		SceneStringName(pressed), callable_mp(this, &CreateDialog::_reset_filters));
 
 	filters_button = memnew(MenuButton);
 	filters_button->set_flat(false);
@@ -1068,12 +1195,13 @@ CreateDialog::CreateDialog() {
 	filters_button->set_h_size_flags(Control::SIZE_SHRINK_END);
 	matches_hb->add_child(filters_button);
 
-	PopupMenu *filter_popup = filters_button->get_popup();
+	PopupMenu* filter_popup = filters_button->get_popup();
 	filter_popup->add_check_item(TTRC("Show Built-in"), TYPE_BUILT_IN);
 	filter_popup->add_check_item(TTRC("Show Custom"), TYPE_CUSTOM);
 	filter_popup->add_check_item(TTRC("Show Editor"), TYPE_EDITOR);
 	filter_popup->set_hide_on_checkable_item_selection(false);
-	filter_popup->connect(SceneStringName(id_pressed), callable_mp(this, &CreateDialog::_type_filter_toggled).bind(true));
+	filter_popup->connect(SceneStringName(id_pressed),
+		callable_mp(this, &CreateDialog::_type_filter_toggled).bind(true));
 
 	search_options = memnew(Tree);
 	search_box->set_forward_control(search_options);
@@ -1084,7 +1212,8 @@ CreateDialog::CreateDialog() {
 	vbc->add_child(search_options);
 	search_options->connect("item_activated", callable_mp(this, &CreateDialog::_confirmed));
 	search_options->connect("cell_selected", callable_mp(this, &CreateDialog::_item_selected));
-	search_options->connect("button_clicked", callable_mp(this, &CreateDialog::_script_button_clicked));
+	search_options->connect(
+		"button_clicked", callable_mp(this, &CreateDialog::_script_button_clicked));
 
 	help_bit = memnew(EditorHelpBit);
 	help_bit->set_accessibility_name(TTRC("Description:"));
@@ -1092,7 +1221,7 @@ CreateDialog::CreateDialog() {
 	help_bit->set_content_height_limits(80 * EDSCALE, 80 * EDSCALE);
 	help_bit->connect("request_hide", callable_mp(this, &CreateDialog::_hide_requested));
 
-	VBoxContainer *vbc_desc = memnew(VBoxContainer);
+	VBoxContainer* vbc_desc = memnew(VBoxContainer);
 	vbc_desc->set_custom_minimum_size(Size2(300, 0) * EDSCALE);
 	vbc_desc->add_margin_child(TTR("Description:"), help_bit, true);
 
@@ -1102,3 +1231,4 @@ CreateDialog::CreateDialog() {
 	set_hide_on_ok(false);
 	set_clamp_to_embedder(true);
 }
+

@@ -1129,7 +1129,7 @@ bool EditorFileSystem::_update_scan_actions()
 	_process_update_pending();
 
 	if (reloads.size()) {
-		emit_signal(SNAME("resources_reload"), reloads);
+		this->obj->emit_signal(SNAME("resources_reload"), reloads);
 	}
 	scan_actions.clear();
 
@@ -1193,8 +1193,8 @@ void EditorFileSystem::scan()
 		// false in editor_node to start the export if needed.
 		first_scan = false;
 		ResourceImporter::load_on_startup = nullptr;
-		emit_signal(SNAME("filesystem_changed"));
-		emit_signal(SNAME("sources_changed"), sources_changed.size() > 0);
+		this->obj->emit_signal(SNAME("filesystem_changed"));
+		this->obj->emit_signal(SNAME("sources_changed"), sources_changed.size() > 0);
 	}
 	else {
 		ERR_FAIL_COND(thread.is_started());
@@ -1842,12 +1842,12 @@ void EditorFileSystem::scan_changes()
 			scan_total = 0;
 			_scan_fs_changes(filesystem, sp);
 			if (_update_scan_actions()) {
-				emit_signal(SNAME("filesystem_changed"));
+				this->obj->emit_signal(SNAME("filesystem_changed"));
 			}
 		}
 		scanning_changes = false;
 		scanning_changes_done.set();
-		emit_signal(SNAME("sources_changed"), sources_changed.size() > 0);
+		this->obj->emit_signal(SNAME("sources_changed"), sources_changed.size() > 0);
 	}
 	else {
 		ERR_FAIL_COND(thread_sources.is_started());
@@ -1911,9 +1911,9 @@ void EditorFileSystem::_notification(int p_what)
 					done_importing = true;
 					ResourceImporter::load_on_startup = nullptr;
 					if (changed) {
-						emit_signal(SNAME("filesystem_changed"));
+						this->obj->emit_signal(SNAME("filesystem_changed"));
 					}
-					emit_signal(SNAME("sources_changed"), sources_changed.size() > 0);
+					this->obj->emit_signal(SNAME("sources_changed"), sources_changed.size() > 0);
 				}
 			}
 			else if (!scanning && thread.is_started()) {
@@ -1930,8 +1930,8 @@ void EditorFileSystem::_notification(int p_what)
 				// return false in editor_node to start the export if needed.
 				first_scan = false;
 				ResourceImporter::load_on_startup = nullptr;
-				emit_signal(SNAME("filesystem_changed"));
-				emit_signal(SNAME("sources_changed"), sources_changed.size() > 0);
+				this->obj->emit_signal(SNAME("filesystem_changed"));
+				this->obj->emit_signal(SNAME("sources_changed"), sources_changed.size() > 0);
 			}
 
 			if (done_importing && scan_changes_pending) {
@@ -2336,7 +2336,7 @@ void EditorFileSystem::_update_script_classes()
 
 	EditorNode::get_editor_data().script_class_save_global_classes();
 
-	emit_signal("script_classes_updated");
+	this->obj->emit_signal("script_classes_updated");
 
 	// Rescan custom loaders and savers.
 	// Doing the following here because the `filesystem_changed` signal fires multiple times and
@@ -2739,7 +2739,7 @@ void EditorFileSystem::update_files(const Vector<String>& p_script_paths)
 
 void EditorFileSystem::_notify_filesystem_changed()
 {
-	emit_signal(SNAME("filesystem_changed"));
+	this->obj->emit_signal(SNAME("filesystem_changed"));
 	filesystem_changed_queued.clear();
 }
 
@@ -3348,12 +3348,12 @@ void EditorFileSystem::reimport_file_with_custom_parameters(const String& p_file
 	reloads.append(p_file);
 
 	// Emit the resource_reimporting signal for the single file before the actual importation.
-	emit_signal(SNAME("resources_reimporting"), reloads);
+	this->obj->emit_signal(SNAME("resources_reimporting"), reloads);
 
 	_reimport_file(p_file, p_custom_params, p_importer);
 
 	// Emit the resource_reimported signal for the single file we just reimported.
-	emit_signal(SNAME("resources_reimported"), reloads);
+	this->obj->emit_signal(SNAME("resources_reimported"), reloads);
 }
 
 Error EditorFileSystem::_copy_file(const String& p_from, const String& p_to)
@@ -3472,7 +3472,7 @@ void EditorFileSystem::_queue_refresh_filesystem()
 	}
 	refresh_queued = true;
 	get_tree()->connect(SNAME("process_frame"),
-		callable_mp(this, &EditorFileSystem::_refresh_filesystem), CONNECT_ONE_SHOT);
+		callable_mp(this, &EditorFileSystem::_refresh_filesystem), Object::CONNECT_ONE_SHOT);
 }
 
 void EditorFileSystem::_refresh_filesystem()
@@ -3487,7 +3487,7 @@ void EditorFileSystem::_refresh_filesystem()
 
 	_update_scan_actions();
 
-	emit_signal(SNAME("filesystem_changed"));
+	this->obj->emit_signal(SNAME("filesystem_changed"));
 	refresh_queued = false;
 }
 
@@ -3577,7 +3577,7 @@ void EditorFileSystem::reimport_files(const Vector<String>& p_files)
 	ep->step(TTR("Executing pre-reimport operations..."), 0, true);
 
 	// Emit the resource_reimporting signal for the single file before the actual importation.
-	emit_signal(SNAME("resources_reimporting"), reloads);
+	this->obj->emit_signal(SNAME("resources_reimporting"), reloads);
 
 #ifdef WEB_ENABLED
 	// On web, busy-wait loops on the main thread block the JavaScript event loop,
@@ -3702,9 +3702,9 @@ void EditorFileSystem::reimport_files(const Vector<String>& p_files)
 	ep = memnew(EditorProgress("reimport", TTR("(Re)Importing Assets"), p_files.size()));
 	ep->step(TTR("Executing post-reimport operations..."), 0, true);
 	if (!is_scanning()) {
-		emit_signal(SNAME("filesystem_changed"));
+		this->obj->emit_signal(SNAME("filesystem_changed"));
 	}
-	emit_signal(SNAME("resources_reimported"), reloads);
+	this->obj->emit_signal(SNAME("resources_reimported"), reloads);
 	memdelete(ep);
 }
 
@@ -3716,13 +3716,13 @@ Error EditorFileSystem::reimport_append(const String& p_file,
 	reloads.append(p_file);
 
 	// Emit the resource_reimporting signal for the single file before the actual importation.
-	emit_signal(SNAME("resources_reimporting"), reloads);
+	this->obj->emit_signal(SNAME("resources_reimporting"), reloads);
 
 	Error ret =
 		_reimport_file(p_file, p_custom_options, p_custom_importer, &p_generator_parameters);
 
 	// Emit the resource_reimported signal for the single file we just reimported.
-	emit_signal(SNAME("resources_reimported"), reloads);
+	this->obj->emit_signal(SNAME("resources_reimported"), reloads);
 	return ret;
 }
 

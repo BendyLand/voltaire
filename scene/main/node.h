@@ -588,7 +588,7 @@ public:
 
 	int get_child_count(bool p_include_internal = true) const;
 	Node* get_child(int p_index, bool p_include_internal = true) const;
-	Vector<Node*> get_children(bool p_include_internal) const;
+	Vector<Node*> get_children(bool p_include_internal = true) const;
 	bool has_node(const NodePath& p_path) const;
 	Node* get_node(const NodePath& p_path) const;
 	Node* get_node_or_null(const NodePath& p_path) const;
@@ -599,7 +599,7 @@ public:
 	Node* get_node_and_resource(const NodePath& p_path, Ref<Resource>& r_res,
 		Vector<StringName>& r_leftover_subpath, bool p_last_is_property = true) const;
 
-	void reparent(Node* rp_parent, bool p_keep_global_transform);
+	void reparent(Node* rp_parent, bool p_keep_global_transform = true);
 	Node* get_parent() const;
 	Node* find_parent(const String& p_pattern) const;
 

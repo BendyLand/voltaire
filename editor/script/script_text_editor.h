@@ -40,28 +40,28 @@
 
 class RichTextLabel;
 
-class ConnectionInfoDialog : public AcceptDialog {
+class ConnectionInfoDialog : public AcceptDialog
+{
 	VLTRCLASS(ConnectionInfoDialog, AcceptDialog);
 
-	Label *method = nullptr;
-	Tree *tree = nullptr;
+	Label* method = nullptr;
+	Tree* tree = nullptr;
 
 	virtual void ok_pressed() override;
 
 public:
-	void popup_connections(const String &p_method, const Vector<Node *> &p_nodes);
+	void popup_connections(const String& p_method, const Vector<Node*>& p_nodes);
 
 	ConnectionInfoDialog();
 };
 
-class ScriptTextEditor : public CodeEditorBase {
-	VLTRCLASS(ScriptTextEditor, CodeEditorBase);
-
+class ScriptTextEditor : public CodeEditorBase
+{
 	Variant pending_state;
 	bool script_is_valid = false;
 
-	RichTextLabel *errors_panel = nullptr;
-	Label *drag_info_label = nullptr;
+	RichTextLabel* errors_panel = nullptr;
+	Label* drag_info_label = nullptr;
 
 	Vector<String> functions;
 	List<ScriptLanguage::Warning> warnings;
@@ -69,18 +69,18 @@ class ScriptTextEditor : public CodeEditorBase {
 	HashMap<String, List<ScriptLanguage::ScriptError>> depended_errors;
 	HashSet<int> safe_lines;
 
-	List<Connection> missing_connections;
+	List<Object::Connection> missing_connections;
 
 	int inline_color_line = -1;
 	int inline_color_start = -1;
 	int inline_color_end = -1;
-	PopupPanel *inline_color_popup = nullptr;
-	ColorPicker *inline_color_picker = nullptr;
-	OptionButton *inline_color_options = nullptr;
+	PopupPanel* inline_color_popup = nullptr;
+	ColorPicker* inline_color_picker = nullptr;
+	OptionButton* inline_color_options = nullptr;
 	Ref<Texture2D> color_alpha_texture;
 
-	ScriptEditorQuickOpen *quick_open = nullptr;
-	ConnectionInfoDialog *connection_info_dialog = nullptr;
+	ScriptEditorQuickOpen* quick_open = nullptr;
+	ConnectionInfoDialog* connection_info_dialog = nullptr;
 
 	int connection_gutter = -1;
 	void _gutter_clicked(int p_line, int p_gutter);
@@ -94,14 +94,15 @@ class ScriptTextEditor : public CodeEditorBase {
 	Color warning_line_color = Color(1, 1, 1);
 	Color folded_code_region_color = Color(1, 1, 1);
 
-	PopupPanel *color_panel = nullptr;
-	ColorPicker *color_picker = nullptr;
+	PopupPanel* color_panel = nullptr;
+	ColorPicker* color_picker = nullptr;
 	Vector3i color_position;
 	String color_args;
 
 	bool theme_loaded = false;
 
-	enum {
+	enum
+	{
 		EDIT_AUTO_INDENT = CODE_ENUM_COUNT,
 		EDIT_PICK_COLOR,
 		EDIT_EVALUATE,
@@ -119,7 +120,8 @@ class ScriptTextEditor : public CodeEditorBase {
 		LOOKUP_SYMBOL,
 	};
 
-	enum COLOR_MODE {
+	enum COLOR_MODE
+	{
 		MODE_RGB,
 		MODE_STRING,
 		MODE_HSV,
@@ -129,9 +131,10 @@ class ScriptTextEditor : public CodeEditorBase {
 		MODE_MAX
 	};
 
-	class EditMenusSTE : public EditMenusCEB {
+	class EditMenusSTE : public EditMenusCEB
+	{
 		VLTRCLASS(EditMenusSTE, EditMenusCEB);
-		PopupMenu *breakpoints_menu = nullptr;
+		PopupMenu* breakpoints_menu = nullptr;
 
 		void _update_breakpoint_list();
 		void _breakpoint_item_pressed(int p_idx);
@@ -142,7 +145,8 @@ class ScriptTextEditor : public CodeEditorBase {
 
 	void _enable_code_editor();
 
-	struct DraggedExport {
+	struct DraggedExport
+	{
 		ObjectID obj_id;
 		String variable_name;
 		Variant value;
@@ -151,10 +155,11 @@ class ScriptTextEditor : public CodeEditorBase {
 
 	LocalVector<DraggedExport> pending_dragged_exports;
 	Vector<ObjectID> _get_objects_for_export_assignment() const;
-	String _get_dropped_resource_as_exported_member(const Ref<Resource> &p_resource, const Vector<ObjectID> &p_script_instance_obj_ids);
+	String _get_dropped_resource_as_exported_member(
+		const Ref<Resource>& p_resource, const Vector<ObjectID>& p_script_instance_obj_ids);
 	void _assign_dragged_export_variables();
 
-	static ScriptEditorBase *create_editor(const Ref<Resource> &p_resource);
+	static ScriptEditorBase* create_editor(const Ref<Resource>& p_resource);
 
 protected:
 	void _breakpoint_toggled(int p_row);
@@ -164,22 +169,24 @@ protected:
 	void _update_warnings();
 	void _update_errors();
 
-	static void _code_complete_scripts(void *p_ud, const String &p_code, List<ScriptLanguage::CodeCompletionOption> *r_options, bool &r_force);
-	virtual void _code_complete_script(const String &p_code, List<ScriptLanguage::CodeCompletionOption> *r_options, bool &r_force) override;
+	static void _code_complete_scripts(void* p_ud, const String& p_code,
+		List<ScriptLanguage::CodeCompletionOption>* r_options, bool& r_force);
+	virtual void _code_complete_script(const String& p_code,
+		List<ScriptLanguage::CodeCompletionOption>* r_options, bool& r_force) override;
 
 	void _set_theme_for_script();
 	void _show_errors_panel(bool p_show);
 	void _show_warnings_panel(bool p_show);
-	void _error_clicked(const Variant &p_line);
-	virtual bool _warning_clicked(const Variant &p_line) override;
+	void _error_clicked(const Variant& p_line);
+	virtual bool _warning_clicked(const Variant& p_line) override;
 	void _on_mouse_exited();
 
-	bool _is_valid_color_info(const Dictionary &p_info);
-	Array _inline_object_parse(const String &p_text);
-	void _inline_object_draw(const Dictionary &p_info, const Rect2 &p_rect);
-	void _inline_object_handle_click(const Dictionary &p_info, const Rect2 &p_rect);
-	String _picker_color_stringify(const Color &p_color, COLOR_MODE p_mode);
-	void _picker_color_changed(const Color &p_color);
+	bool _is_valid_color_info(const Dictionary& p_info);
+	Array _inline_object_parse(const String& p_text);
+	void _inline_object_draw(const Dictionary& p_info, const Rect2& p_rect);
+	void _inline_object_handle_click(const Dictionary& p_info, const Rect2& p_rect);
+	String _picker_color_stringify(const Color& p_color, COLOR_MODE p_mode);
+	void _picker_color_changed(const Color& p_color);
 	void _update_color_constructor_options();
 	void _update_background_color();
 	void _update_color_text();
@@ -187,26 +194,28 @@ protected:
 	void _notification(int p_what);
 
 	void _edit_option_toggle_inline_comment();
-	void _color_changed(const Color &p_color);
+	void _color_changed(const Color& p_color);
 
-	void _lookup_symbol(const String &p_symbol, int p_row, int p_column);
-	void _validate_symbol(const String &p_symbol);
+	void _lookup_symbol(const String& p_symbol, int p_row, int p_column);
+	void _validate_symbol(const String& p_symbol);
 
-	void _show_symbol_tooltip(const String &p_symbol, int p_row, int p_column, bool p_shortcut = false);
+	void _show_symbol_tooltip(
+		const String& p_symbol, int p_row, int p_column, bool p_shortcut = false);
 
-	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
-	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
-	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
+	Variant get_drag_data_fw(const Point2& p_point, Control* p_from);
+	bool can_drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from) const;
+	void drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from);
 
-	void _set_drop_info_text(const Dictionary &p_info) const;
+	void _set_drop_info_text(const Dictionary& p_info) const;
 
-	String _get_absolute_path(const String &rel_path);
+	String _get_absolute_path(const String& rel_path);
 
 	void _goto_line(int p_line);
 
-	void _make_context_menu(bool p_selection, bool p_color, bool p_foldable, bool p_open_docs, bool p_goto_definition, const Vector2 &p_pos);
+	void _make_context_menu(bool p_selection, bool p_color, bool p_foldable, bool p_open_docs,
+		bool p_goto_definition, const Vector2& p_pos);
 
-	virtual void _text_edit_gui_input(const Ref<InputEvent> &p_ev) override;
+	virtual void _text_edit_gui_input(const Ref<InputEvent>& p_ev) override;
 	virtual bool _edit_option(int p_op) override;
 
 	virtual void _load_theme_settings() override;
@@ -216,22 +225,22 @@ public:
 	void _update_connected_methods();
 
 	virtual void apply_code() override;
-	virtual void set_edited_resource(const Ref<Resource> &p_res) override;
+	virtual void set_edited_resource(const Ref<Resource>& p_res) override;
 	virtual void enable_editor() override;
 	virtual Vector<String> get_functions() override;
 
-	virtual Control *get_edit_menu() override;
+	virtual Control* get_edit_menu() override;
 
 	virtual Ref<Texture2D> get_theme_icon() override;
 
 	virtual Variant get_edit_state() override;
-	virtual void set_edit_state(const Variant &p_state) override;
+	virtual void set_edit_state(const Variant& p_state) override;
 
 	virtual PackedInt32Array get_breakpoints() override;
 	virtual void set_breakpoint(int p_line, bool p_enabled) override;
 	virtual void clear_breakpoints() override;
 
-	virtual void add_callback(const String &p_function, const PackedStringArray &p_args);
+	virtual void add_callback(const String& p_function, const PackedStringArray& p_args);
 	virtual void update_settings() override;
 
 	static void register_editor();
@@ -242,3 +251,5 @@ public:
 	ScriptTextEditor();
 	~ScriptTextEditor();
 };
+
+

@@ -73,6 +73,17 @@ public:
 	// Must take a copy instead of a reference (see GH-31736).
 	_FORCE_INLINE_ bool push_back(T p_elem) { return _cowdata.push_back(std::move(p_elem)); }
 
+	_FORCE_INLINE_ T pop_back()
+	{
+		if (!_cowdata.is_empty()) {
+			const int n = _cowdata.size() - 1;
+			T ret = std::move(_cowdata[n]);
+			_cowdata.resize(n);
+			return ret;
+		}
+		return T();
+	}
+
 	_FORCE_INLINE_ bool append(T p_elem) { return _cowdata.push_back(std::move(p_elem)); } // alias
 
 	void fill(T p_elem);
