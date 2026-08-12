@@ -1,7 +1,7 @@
 # Voltaire Engine
 
 <p align="center">
-  <img src="misc/logo/full.svg" alt="Voltaire Engine Logo" width="450">
+  <img src="misc/logo/logo_dark_bg.svg" alt="Voltaire Engine Logo" width="450">
 </p>
 
 ## 2D and 3D cross-platform game engine

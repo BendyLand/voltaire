@@ -1,0 +1,38 @@
+In file included from ./core/object/ref_counted.h:33,
+                 from ./core/io/file_access.h:35,
+                 from core/io/resource_format_binary.h:33,
+                 from core/io/resource_format_binary.cpp:31:
+In member function 'String Object::get_class() const',
+    inlined from 'Error ResourceLoaderBinary::_ZN20ResourceLoaderBinary4loadEv.part.0()' at core/io/resource_format_binary.cpp:727:40:
+./core/object/object.h:535:72: warning: 'this' pointer is null [-Wnonnull]
+  535 |         _FORCE_INLINE_ String get_class() const { return get_class_name(); }
+      |                                                          ~~~~~~~~~~~~~~^~
+./core/object/object.h: In member function 'Error ResourceLoaderBinary::_ZN20ResourceLoaderBinary4loadEv.part.0()':
+./core/object/object.h:545:27: note: in a call to non-static member function 'const StringName& Object::get_class_name() const'
+  545 |         const StringName& get_class_name() const;
+      |                           ^~~~~~~~~~~~~~
+core/core_constants.cpp: In function 'void register_global_constants()':
+core/core_constants.cpp:256:6: note: variable tracking size limit exceeded with '-fvar-tracking-assignments', retrying without
+  256 | void register_global_constants() {
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from ./core/io/file_access.h:39,
+                 from editor/editor_data.cpp:32:
+./core/variant/type_info.h: In instantiation of 'Variant::Type GodotTypeInfo::Internal::get_variant_type() [with T = Node]':
+./core/variant/typed_array.h:56:57:   required from 'TypedArray<T>::TypedArray() [with T = Node]'
+editor/editor_data.cpp:1487:19:   required from here
+./core/variant/type_info.h:357:40: error: incomplete type 'GetTypeInfo<Node, void>' used in nested name specifier
+  357 |                 return GetTypeInfo<T>::VARIANT_TYPE;
+      |                                        ^~~~~~~~~~~~
+scons: *** [bin/obj/editor/editor_data.linuxbsd.editor.x86_64.o] Error 1
+In file included from ./core/variant/variant_caster.h:34,
+                 from ./core/object/gdvirtual.gen.h:7,
+                 from ./core/io/resource.h:34,
+                 from ./core/io/resource_loader.h:33,
+                 from editor/editor_interface.cpp:33:
+./core/variant/type_info.h: In instantiation of 'Variant::Type GodotTypeInfo::Internal::get_variant_type() [with T = Node]':
+./core/variant/typed_array.h:56:57:   required from 'TypedArray<T>::TypedArray() [with T = Node]'
+editor/editor_interface.cpp:857:19:   required from here
+./core/variant/type_info.h:357:40: error: incomplete type 'GetTypeInfo<Node, void>' used in nested name specifier
+  357 |                 return GetTypeInfo<T>::VARIANT_TYPE;
+      |                                        ^~~~~~~~~~~~
+scons: *** [bin/obj/editor/editor_interface.linuxbsd.editor.x86_64.o] Error 1
