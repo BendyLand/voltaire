@@ -339,7 +339,7 @@ public:
 		if (!p_node) {
 			return nullptr;
 		}
-		ObjectID nid = p_node->get_instance_id();
+		ObjectID nid = p_node->obj->get_instance_id();
 		if (!selection.has(nid)) {
 			return nullptr;
 		}

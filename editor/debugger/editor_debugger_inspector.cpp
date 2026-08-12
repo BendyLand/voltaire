@@ -171,7 +171,7 @@ void EditorDebuggerInspector::_bind_methods()
 void EditorDebuggerInspector::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_POSTINITIALIZE: {
+	case CompositorEffect::NOTIFICATION_POSTINITIALIZE: {
 		connect(
 			"object_id_selected", callable_mp(this, &EditorDebuggerInspector::_object_selected));
 	} break;
@@ -186,12 +186,12 @@ void EditorDebuggerInspector::_notification(int p_what)
 void EditorDebuggerInspector::_objects_edited(
 	const String& p_prop, const TypedDictionary<uint64_t, Variant>& p_values, const String& p_field)
 {
-	emit_signal(SNAME("objects_edited"), p_prop, p_values, p_field);
+	this->obj->emit_signal(SNAME("objects_edited"), p_prop, p_values, p_field);
 }
 
 void EditorDebuggerInspector::_object_selected(ObjectID p_object)
 {
-	emit_signal(SNAME("object_selected"), p_object);
+	this->obj->emit_signal(SNAME("object_selected"), p_object);
 }
 
 EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p_arr)
@@ -201,11 +201,11 @@ EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p
 	TypedArray<uint64_t> ids;
 	LocalVector<SceneDebuggerObject> objects;
 	for (const Array arr : p_arr) {
-		SceneDebuggerObject obj;
-		obj.deserialize(arr);
-		if (obj.id.is_valid()) {
-			ids.push_back((uint64_t)obj.id);
-			objects.push_back(obj);
+		SceneDebuggerObject o;
+		o.deserialize(arr);
+		if (o.id.is_valid()) {
+			ids.push_back((uint64_t)o.id);
+			objects.push_back(o);
 		}
 	}
 	ERR_FAIL_COND_V(ids.is_empty(), nullptr);
@@ -240,8 +240,8 @@ EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p
 
 	HashMap<String, UsageData> usage;
 	int nc = 0;
-	for (const SceneDebuggerObject& obj : objects) {
-		for (const SceneDebuggerObject::SceneDebuggerProperty& prop : obj.properties) {
+	for (const SceneDebuggerObject& o : objects) {
+		for (const SceneDebuggerObject::SceneDebuggerProperty& prop : o.properties) {
 			PropertyInfo pinfo = prop.first;
 			// Rename those variables, so they don't conflict with the ones from the resource
 			// itself.
@@ -256,7 +256,7 @@ EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p
 				UsageData usage_dt;
 				usage_dt.prop = prop;
 				usage_dt.prop.first.name = pinfo.name;
-				usage_dt.values[obj.id] = prop.second;
+				usage_dt.values[o.id] = prop.second;
 				usage[pinfo.name] = usage_dt;
 			}
 
@@ -284,7 +284,7 @@ EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p
 				}
 
 				usage[pinfo.name].qty++;
-				usage[pinfo.name].values[obj.id] = prop.second;
+				usage[pinfo.name].values[o.id] = prop.second;
 			}
 		}
 
@@ -393,9 +393,9 @@ EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p
 			}
 
 			// Check that all objects inherit from type_name.
-			for (const SceneDebuggerObject& obj : objects) {
-				if (obj.class_name == class_name ||
-					ClassDB::is_parent_class(obj.class_name, class_name)) {
+			for (const SceneDebuggerObject& o : objects) {
+				if (o.class_name == class_name ||
+					ClassDB::is_parent_class(o.class_name, class_name)) {
 					continue; // class_name is the same or a parent of the object's class.
 				}
 
@@ -421,7 +421,7 @@ EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p
 	if (old_prop_size == remote_objects->prop_list.size() && new_props_added == 0) {
 		// Only some may have changed, if so, then update those, if they exist.
 		for (const String& E : changed) {
-			emit_signal(
+			this->obj->emit_signal(
 				SNAME("object_property_updated"), remote_objects->obj->get_instance_id(), E);
 		}
 	}
@@ -439,9 +439,9 @@ void EditorDebuggerInspector::clear_remote_inspector()
 		return;
 	}
 
-	const Object* obj = InspectorDock::get_inspector_singleton()->get_edited_object();
+	const Object* o = InspectorDock::get_inspector_singleton()->get_edited_object();
 	// Check if the inspector holds remote items, and take it out if so.
-	if (Object::cast_to<EditorDebuggerRemoteObjects>(obj)) {
+	if (Object::cast_to<EditorDebuggerRemoteObjects>(o)) {
 		EditorNode::get_singleton()->push_item(nullptr);
 	}
 }
@@ -462,8 +462,8 @@ void EditorDebuggerInspector::invalidate_selection_from_cache(const TypedArray<u
 {
 	for (EditorDebuggerRemoteObjects* robjs : remote_objects_list) {
 		if (robjs->remote_object_ids == p_ids) {
-			const Object* obj = InspectorDock::get_inspector_singleton()->get_edited_object();
-			if (obj == robjs->obj.get()) {
+			const Object* o = InspectorDock::get_inspector_singleton()->get_edited_object();
+			if (o == robjs->obj.get()) {
 				EditorNode::get_singleton()->push_item(nullptr);
 			}
 

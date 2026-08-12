@@ -112,36 +112,7 @@ bool InputEvent::is_action_type() const {
 	return false;
 }
 
-void InputEvent::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_device", "device"), &InputEvent::set_device);
-	ClassDB::bind_method(D_METHOD("get_device"), &InputEvent::get_device);
-
-	ClassDB::bind_method(D_METHOD("is_action", "action", "exact_match"), &InputEvent::is_action, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("is_action_pressed", "action", "allow_echo", "exact_match"), &InputEvent::is_action_pressed, DEFVAL(false), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("is_action_released", "action", "exact_match"), &InputEvent::is_action_released, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("get_action_strength", "action", "exact_match"), &InputEvent::get_action_strength, DEFVAL(false));
-
-	ClassDB::bind_method(D_METHOD("is_canceled"), &InputEvent::is_canceled);
-	ClassDB::bind_method(D_METHOD("is_pressed"), &InputEvent::is_pressed);
-	ClassDB::bind_method(D_METHOD("is_released"), &InputEvent::is_released);
-	ClassDB::bind_method(D_METHOD("is_echo"), &InputEvent::is_echo);
-
-	ClassDB::bind_method(D_METHOD("as_text"), &InputEvent::as_text);
-
-	ClassDB::bind_method(D_METHOD("is_match", "event", "exact_match"), &InputEvent::is_match, DEFVAL(true));
-
-	ClassDB::bind_method(D_METHOD("is_action_type"), &InputEvent::is_action_type);
-
-	ClassDB::bind_method(D_METHOD("accumulate", "with_event"), &InputEvent::accumulate);
-
-	ClassDB::bind_method(D_METHOD("xformed_by", "xform", "local_ofs"), &InputEvent::xformed_by, DEFVAL(Vector2()));
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "device"), "set_device", "get_device");
-
-	BIND_CONSTANT(DEVICE_ID_EMULATION);
-	BIND_CONSTANT(DEVICE_ID_KEYBOARD);
-	BIND_CONSTANT(DEVICE_ID_MOUSE);
-}
+void InputEvent::_bind_methods() {}
 
 ///////////////////////////////////
 

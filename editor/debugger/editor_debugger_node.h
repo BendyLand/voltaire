@@ -44,18 +44,19 @@ class ScriptEditorDebugger;
 class TabContainer;
 class UndoRedo;
 
-class EditorDebuggerNode : public EditorDock {
-	VLTRCLASS(EditorDebuggerNode, EditorDock);
-
+class EditorDebuggerNode : public EditorDock
+{
 public:
-	enum CameraOverride {
+	enum CameraOverride
+	{
 		OVERRIDE_NONE,
 		OVERRIDE_INGAME,
 		OVERRIDE_EDITORS,
 	};
 
 private:
-	enum Options {
+	enum Options
+	{
 		DEBUG_NEXT,
 		DEBUG_STEP,
 		DEBUG_BREAK,
@@ -63,20 +64,25 @@ private:
 		DEBUG_WITH_EXTERNAL_EDITOR,
 	};
 
-	class Breakpoint {
+	class Breakpoint
+	{
 	public:
 		String source;
 		int line = 0;
 
-		static uint32_t hash(const Breakpoint &p_val) {
+		static uint32_t hash(const Breakpoint& p_val)
+		{
 			uint32_t h = HashMapHasherDefault::hash(p_val.source);
 			return hash_murmur3_one_32(p_val.line, h);
 		}
-		bool operator==(const Breakpoint &p_b) const {
+
+		bool operator==(const Breakpoint& p_b) const
+		{
 			return (line == p_b.line && source == p_b.source);
 		}
 
-		bool operator<(const Breakpoint &p_b) const {
+		bool operator<(const Breakpoint& p_b) const
+		{
 			if (line == p_b.line) {
 				return source < p_b.source;
 			}
@@ -85,15 +91,16 @@ private:
 
 		Breakpoint() {}
 
-		Breakpoint(const String &p_source, int p_line) {
+		Breakpoint(const String& p_source, int p_line)
+		{
 			line = p_line;
 			source = p_source;
 		}
 	};
 
 	Ref<EditorDebuggerServer> server;
-	TabContainer *tabs = nullptr;
-	MenuButton *script_menu = nullptr;
+	TabContainer* tabs = nullptr;
+	MenuButton* script_menu = nullptr;
 
 	Ref<Script> stack_script; // Why?!?
 
@@ -103,7 +110,7 @@ private:
 
 	bool inspect_edited_object_wait = false;
 	float inspect_edited_object_timeout = 0;
-	EditorDebuggerTree *remote_scene_tree = nullptr;
+	EditorDebuggerTree* remote_scene_tree = nullptr;
 	bool remote_scene_tree_wait = false;
 	float remote_scene_tree_timeout = 0.0;
 	bool remote_scene_tree_clear_msg = true;
@@ -119,42 +126,45 @@ private:
 
 	HashSet<Ref<EditorDebuggerPlugin>> debugger_plugins;
 
-	ScriptEditorDebugger *_add_debugger();
+	ScriptEditorDebugger* _add_debugger();
 	void _update_errors();
 	void _update_margins();
 
 	friend class DebuggerEditorPlugin;
 	friend class DebugAdapterParser;
-	static EditorDebuggerNode *singleton;
+	static EditorDebuggerNode* singleton;
 	EditorDebuggerNode();
 
 protected:
 	void _debugger_stopped(int p_id);
 	void _debugger_wants_stop(int p_id);
 	void _debugger_changed(int p_tab);
-	void _debug_data(const String &p_msg, const Array &p_data, int p_debugger);
-	void _remote_tree_select_requested(const TypedArray<int64_t> &p_ids, int p_debugger);
+	void _debug_data(const String& p_msg, const Array& p_data, int p_debugger);
+	void _remote_tree_select_requested(const TypedArray<int64_t>& p_ids, int p_debugger);
 	void _remote_tree_clear_selection_requested(int p_debugger);
 	void _remote_tree_updated(int p_debugger);
-	void _remote_tree_button_pressed(Object *p_item, int p_column, int p_id, MouseButton p_button);
-	void _remote_objects_updated(EditorDebuggerRemoteObjects *p_objs, int p_debugger);
-	void _remote_object_property_updated(ObjectID p_id, const String &p_property, int p_debugger);
-	void _remote_objects_requested(const TypedArray<uint64_t> &p_ids, int p_debugger);
+	void _remote_tree_button_pressed(Object* p_item, int p_column, int p_id, MouseButton p_button);
+	void _remote_objects_updated(EditorDebuggerRemoteObjects* p_objs, int p_debugger);
+	void _remote_object_property_updated(ObjectID p_id, const String& p_property, int p_debugger);
+	void _remote_objects_requested(const TypedArray<uint64_t>& p_ids, int p_debugger);
 	void _remote_selection_cleared(int p_debugger);
-	void _save_node_requested(ObjectID p_id, const String &p_file, int p_debugger);
+	void _save_node_requested(ObjectID p_id, const String& p_file, int p_debugger);
 
-	void _breakpoint_set_in_tree(Ref<RefCounted> p_script, int p_line, bool p_enabled, int p_debugger);
+	void _breakpoint_set_in_tree(
+		Ref<RefCounted> p_script, int p_line, bool p_enabled, int p_debugger);
 	void _breakpoints_cleared_in_tree(int p_debugger);
 
-	void _clear_execution(Ref<RefCounted> p_script) {
-		emit_signal(SNAME("clear_execution"), p_script);
+	void _clear_execution(Ref<RefCounted> p_script)
+	{
+		this->obj->emit_signal(SNAME("clear_execution"), p_script);
 	}
 
-	void _text_editor_stack_goto(const ScriptEditorDebugger *p_debugger);
-	void _text_editor_stack_clear(const ScriptEditorDebugger *p_debugger);
+	void _text_editor_stack_goto(const ScriptEditorDebugger* p_debugger);
+	void _text_editor_stack_clear(const ScriptEditorDebugger* p_debugger);
 	void _stack_frame_selected(int p_debugger);
-	void _error_selected(const String &p_file, int p_line, int p_debugger);
-	void _breaked(bool p_breaked, bool p_can_debug, const String &p_message, bool p_has_stackdump, int p_debugger);
+	void _error_selected(const String& p_file, int p_line, int p_debugger);
+	void _breaked(bool p_breaked, bool p_can_debug, const String& p_message, bool p_has_stackdump,
+		int p_debugger);
 	void _paused();
 	void _break_state_changed();
 	void _menu_option(int p_id);
@@ -167,52 +177,59 @@ protected:
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
 public:
-	static EditorDebuggerNode *get_singleton() { return singleton; }
-	void register_undo_redo(UndoRedo *p_undo_redo);
+	static EditorDebuggerNode* get_singleton() { return singleton; }
 
-	ScriptEditorDebugger *get_previous_debugger() const;
-	ScriptEditorDebugger *get_current_debugger() const;
-	ScriptEditorDebugger *get_default_debugger() const;
-	ScriptEditorDebugger *get_debugger(int p_debugger) const;
+	void register_undo_redo(UndoRedo* p_undo_redo);
+
+	ScriptEditorDebugger* get_previous_debugger() const;
+	ScriptEditorDebugger* get_current_debugger() const;
+	ScriptEditorDebugger* get_default_debugger() const;
+	ScriptEditorDebugger* get_debugger(int p_debugger) const;
 
 	void debug_next();
 	void debug_step();
 	void debug_break();
 	void debug_continue();
 
-	void set_script_debug_button(MenuButton *p_button);
+	void set_script_debug_button(MenuButton* p_button);
 
-	String get_var_value(const String &p_var) const;
+	String get_var_value(const String& p_var) const;
+
 	Ref<Script> get_dump_stack_script() const { return stack_script; } // Why do we need this?
 
 	bool get_debug_with_external_editor() { return debug_with_external_editor; }
 
 	bool is_skip_breakpoints() const;
 	bool is_ignore_error_breaks() const;
-	void set_breakpoint(const String &p_path, int p_line, bool p_enabled);
-	void set_breakpoints(const String &p_path, const Array &p_lines);
+	void set_breakpoint(const String& p_path, int p_line, bool p_enabled);
+	void set_breakpoints(const String& p_path, const Array& p_lines);
 	void reload_all_scripts();
-	void reload_scripts(const Vector<String> &p_script_paths);
+	void reload_scripts(const Vector<String>& p_script_paths);
 
 	// Remote inspector/edit.
 	void request_remote_tree();
-	void set_remote_selection(const TypedArray<int64_t> &p_ids);
+	void set_remote_selection(const TypedArray<int64_t>& p_ids);
 	void clear_remote_tree_selection();
 	void stop_waiting_inspection();
-	bool match_remote_selection(const TypedArray<uint64_t> &p_ids) const;
-	static void _methods_changed(void *p_ud, Object *p_base, const StringName &p_name, const Variant **p_args, int p_argcount);
-	static void _properties_changed(void *p_ud, Object *p_base, const StringName &p_property, const Variant &p_value);
+	bool match_remote_selection(const TypedArray<uint64_t>& p_ids) const;
+	static void _methods_changed(void* p_ud, Object* p_base, const StringName& p_name,
+		const Variant** p_args, int p_argcount);
+	static void _properties_changed(
+		void* p_ud, Object* p_base, const StringName& p_property, const Variant& p_value);
 
 	// LiveDebug
 	void set_live_debugging(bool p_enabled);
 	void update_live_edit_root();
-	void live_debug_create_node(const NodePath &p_parent, const String &p_type, const String &p_name);
-	void live_debug_instantiate_node(const NodePath &p_parent, const String &p_path, const String &p_name);
-	void live_debug_remove_node(const NodePath &p_at);
-	void live_debug_remove_and_keep_node(const NodePath &p_at, ObjectID p_keep_id);
-	void live_debug_restore_node(ObjectID p_id, const NodePath &p_at, int p_at_pos);
-	void live_debug_duplicate_node(const NodePath &p_at, const String &p_new_name);
-	void live_debug_reparent_node(const NodePath &p_at, const NodePath &p_new_place, const String &p_new_name, int p_at_pos);
+	void live_debug_create_node(
+		const NodePath& p_parent, const String& p_type, const String& p_name);
+	void live_debug_instantiate_node(
+		const NodePath& p_parent, const String& p_path, const String& p_name);
+	void live_debug_remove_node(const NodePath& p_at);
+	void live_debug_remove_and_keep_node(const NodePath& p_at, ObjectID p_keep_id);
+	void live_debug_restore_node(ObjectID p_id, const NodePath& p_at, int p_at_pos);
+	void live_debug_duplicate_node(const NodePath& p_at, const String& p_new_name);
+	void live_debug_reparent_node(
+		const NodePath& p_at, const NodePath& p_new_place, const String& p_new_name, int p_at_pos);
 
 	void set_debug_mute_audio(bool p_mute);
 	bool get_debug_mute_audio() const;
@@ -223,10 +240,13 @@ public:
 	String get_server_uri() const;
 
 	void set_keep_open(bool p_keep_open);
-	Error start(const String &p_uri = "tcp://");
+	Error start(const String& p_uri = "tcp://");
 	void stop(bool p_force = false);
 
-	bool plugins_capture(ScriptEditorDebugger *p_debugger, const String &p_message, const Array &p_data);
-	void add_debugger_plugin(const Ref<EditorDebuggerPlugin> &p_plugin);
-	void remove_debugger_plugin(const Ref<EditorDebuggerPlugin> &p_plugin);
+	bool plugins_capture(
+		ScriptEditorDebugger* p_debugger, const String& p_message, const Array& p_data);
+	void add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
+	void remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
 };
+
+

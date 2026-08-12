@@ -574,8 +574,9 @@ public:
 
 	InternalMode get_internal_mode() const;
 
-	void add_child(
-		Node* rp_child, bool p_force_readable_name, InternalMode p_internal);
+	// FIX: Check the hardcoded default args; remove if possible
+	void add_child(Node* rp_child, bool p_force_readable_name = false,
+		InternalMode p_internal = InternalMode::INTERNAL_MODE_DISABLED);
 	void add_sibling(Node* rp_sibling, bool p_force_readable_name);
 	void remove_child(Node* rp_child);
 
@@ -587,13 +588,13 @@ public:
 
 	int get_child_count(bool p_include_internal = true) const;
 	Node* get_child(int p_index, bool p_include_internal = true) const;
-	TypedArray<Node> get_children(bool p_include_internal = true) const;
+	Vector<Node*> get_children(bool p_include_internal) const;
 	bool has_node(const NodePath& p_path) const;
 	Node* get_node(const NodePath& p_path) const;
 	Node* get_node_or_null(const NodePath& p_path) const;
 	Node* find_child(const String& p_pattern, bool p_recursive = true, bool p_owned = true) const;
-	TypedArray<Node> find_children(const String& p_pattern, const String& p_type = "",
-		bool p_recursive = true, bool p_owned = true) const;
+	Vector<Node*> find_children(
+		const String& p_pattern, const String& p_type, bool p_recursive = true, bool p_owned = true) const;
 	bool has_node_and_resource(const NodePath& p_path) const;
 	Node* get_node_and_resource(const NodePath& p_path, Ref<Resource>& r_res,
 		Vector<StringName>& r_leftover_subpath, bool p_last_is_property = true) const;

@@ -33,15 +33,14 @@
 #include "editor/debugger/debug_adapter/debug_adapter_protocol.h"
 #include "editor/plugins/editor_plugin.h"
 
-class DebugAdapterServer : public EditorPlugin {
-	VLTRCLASS(DebugAdapterServer, EditorPlugin);
-
+class DebugAdapterServer : public EditorPlugin
+{
 	DebugAdapterProtocol protocol;
 
 	int remote_port = 6006;
 	bool started = false;
 	bool polling = false;
-	static void thread_func(void *p_userdata);
+	static void thread_func(void* p_userdata);
 
 private:
 	void _notification(int p_what);
@@ -52,3 +51,5 @@ public:
 	void start();
 	void stop();
 };
+
+

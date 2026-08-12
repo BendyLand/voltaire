@@ -28,40 +28,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "main_loop.h"
 
-#include "core/object/class_db.h"
+void MainLoop::_bind_methods() {}
 
-void MainLoop::_bind_methods() {
-	BIND_CONSTANT(NOTIFICATION_OS_MEMORY_WARNING);
-	BIND_CONSTANT(NOTIFICATION_TRANSLATION_CHANGED);
-	BIND_CONSTANT(NOTIFICATION_WM_ABOUT);
-	BIND_CONSTANT(NOTIFICATION_CRASH);
-	BIND_CONSTANT(NOTIFICATION_OS_IME_UPDATE);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_RESUMED);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_PAUSED);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_FOCUS_IN);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_FOCUS_OUT);
-	BIND_CONSTANT(NOTIFICATION_TEXT_SERVER_CHANGED);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_PIP_MODE_ENTERED);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_PIP_MODE_EXITED);
-
-	ADD_SIGNAL(MethodInfo("on_request_permissions_result", PropertyInfo(Variant::STRING, "permission"), PropertyInfo(Variant::BOOL, "granted")));
-}
-
-void MainLoop::finalize() {
+void MainLoop::finalize()
+{
 	if (get_script_instance()) {
-		set_script(Variant()); //clear script
+		set_script(Variant()); // clear script
 	}
 }
 
-void MainLoop::initialize() {
-}
+void MainLoop::initialize() {}
 
-bool MainLoop::physics_process(double p_time) {
-	return false;
-}
+bool MainLoop::physics_process(double p_time) { return false; }
 
-bool MainLoop::process(double p_time) {
-	return false;
-}
+bool MainLoop::process(double p_time) { return false; }
+
+

@@ -116,11 +116,11 @@ void EditorProfiler::clear() {
 
 	// Ensure button text (start, stop) is correct
 	_update_button_text();
-	emit_signal(SNAME("enable_profiling"), activate->is_pressed());
+	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
 String EditorProfiler::_get_time_as_text(const Metric &m, float p_time, int p_calls) {
-	const String &lang = _get_locale();
+	const String &lang = this->obj->_get_locale();
 	const TranslationServer *ts = TranslationServer::get_singleton();
 
 	switch (display_mode->get_selected()) {
@@ -440,7 +440,7 @@ void EditorProfiler::_activate_pressed() {
 		_clear_pressed();
 	}
 
-	emit_signal(SNAME("enable_profiling"), activate->is_pressed());
+	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
 void EditorProfiler::_clear_pressed() {
@@ -544,7 +544,7 @@ void EditorProfiler::_graph_tex_input(const Ref<InputEvent> &p_ev) {
 
 			if (activate->is_pressed()) {
 				if (!seeking) {
-					emit_signal(SNAME("break_request"));
+					this->obj->emit_signal(SNAME("break_request"));
 				}
 			}
 
@@ -610,7 +610,7 @@ void EditorProfiler::set_enabled(bool p_enable, bool p_clear) {
 void EditorProfiler::set_profiling(bool p_pressed) {
 	activate->set_pressed(p_pressed);
 	_update_button_text();
-	emit_signal(SNAME("enable_profiling"), activate->is_pressed());
+	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
 bool EditorProfiler::is_profiling() {

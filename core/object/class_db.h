@@ -534,14 +534,9 @@ public:
 	static Object *_instantiate_allow_unexposed(const StringName &p_class); // Used to create unexposed classes from GDExtension, typically for unexposed EditorPlugin.
 };
 
-#define BIND_ENUM_CONSTANT(m_constant) \
-	get_vltrtype_static_mutable().bind_integer_constant(__constant_get_enum_name(m_constant), __constant_get_enum_value_name(#m_constant), m_constant);
-
-#define BIND_BITFIELD_FLAG(m_constant) \
-	get_vltrtype_static_mutable().bind_integer_constant(__constant_get_bitfield_name(m_constant), __constant_get_enum_value_name(#m_constant), m_constant, true);
-
-#define BIND_CONSTANT(m_constant) \
-	get_vltrtype_static_mutable().bind_integer_constant(StringName(), __constant_get_enum_value_name(#m_constant), m_constant);
+#define BIND_ENUM_CONSTANT(m_constant)
+#define BIND_BITFIELD_FLAG(m_constant)
+#define BIND_ENUM_CONSTANT_NO_VAL(m_constant)
 
 #ifdef DEBUG_ENABLED
 

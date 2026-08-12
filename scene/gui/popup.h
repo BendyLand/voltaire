@@ -35,16 +35,17 @@
 
 class Panel;
 
-class Popup : public Window {
-	VLTRCLASS(Popup, Window);
-
-	LocalVector<Window *> visible_parents;
+class Popup : public Window
+{
+	LocalVector<Window*> visible_parents;
 	bool popped_up = false;
 
 public:
-	enum HideReason {
+	enum HideReason
+	{
 		HIDE_REASON_NONE,
-		HIDE_REASON_CANCELED, // E.g., because of rupture of UI flow (app unfocused). Includes closed programmatically.
+		HIDE_REASON_CANCELED,  // E.g., because of rupture of UI flow (app unfocused). Includes
+							   // closed programmatically.
 		HIDE_REASON_UNFOCUSED, // E.g., user clicked outside.
 	};
 
@@ -57,10 +58,10 @@ private:
 protected:
 	void _close_pressed();
 	virtual Rect2i _popup_adjust_rect() const override;
-	virtual void _input_from_window(const Ref<InputEvent> &p_event) override;
+	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 	static void _bind_methods();
 
 	virtual void _parent_focused();
@@ -74,19 +75,19 @@ public:
 	~Popup();
 };
 
-class PopupPanel : public Popup {
-	VLTRCLASS(PopupPanel, Popup);
+class PopupPanel : public Popup
+{
+	Panel* panel = nullptr;
 
-	Panel *panel = nullptr;
-
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> panel_style;
 	} theme_cache;
 
 	mutable Rect2i pre_popup_rect;
 
 protected:
-	virtual void _input_from_window(const Ref<InputEvent> &p_event) override;
+	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
 
 	virtual Rect2i _popup_adjust_rect() const override;
 
@@ -105,3 +106,5 @@ public:
 
 	PopupPanel();
 };
+
+

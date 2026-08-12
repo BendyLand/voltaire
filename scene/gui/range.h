@@ -32,10 +32,10 @@
 
 #include "scene/gui/control.h"
 
-class Range : public Control {
-	VLTRCLASS(Range, Control);
-
-	struct Shared {
+class Range : public Control
+{
+	struct Shared
+	{
 		double val = 0.0;
 		double min = 0.0;
 		double max = 100.0;
@@ -44,18 +44,18 @@ class Range : public Control {
 		bool exp_ratio = false;
 		bool allow_greater = false;
 		bool allow_lesser = false;
-		HashSet<Range *> owners;
+		HashSet<Range*> owners;
 		void emit_value_changed();
 		void emit_changed();
 		void redraw_owners();
 	};
 
-	Shared *shared = nullptr;
+	Shared* shared = nullptr;
 
-	void _ref_shared(Shared *p_shared);
+	void _ref_shared(Shared* p_shared);
 	void _unref_shared();
 
-	void _share(Node *p_range);
+	void _share(Node* p_range);
 
 	void _value_changed_notify();
 	void _changed_notify();
@@ -65,14 +65,16 @@ protected:
 	static double _snapped_r128(double p_value, double p_step);
 	double _calc_value(double p_val, double p_step) const;
 	virtual void _value_changed(double p_value);
+
 	void _notify_shared_value_changed() { shared->emit_value_changed(); }
+
 	void _notification(int p_what);
 
 	static void _bind_methods();
 
-	void _accessibility_action_inc(const Variant &p_data);
-	void _accessibility_action_dec(const Variant &p_data);
-	void _accessibility_action_set_value(const Variant &p_data);
+	void _accessibility_action_inc(const Variant& p_data);
+	void _accessibility_action_dec(const Variant& p_data);
+	void _accessibility_action_set_value(const Variant& p_data);
 
 	bool _rounded_values = false;
 
@@ -104,7 +106,7 @@ public:
 	void set_allow_lesser(bool p_allow);
 	bool is_lesser_allowed() const;
 
-	void share(Range *p_range);
+	void share(Range* p_range);
 	void unshare();
 
 	PackedStringArray get_configuration_warnings() const override;
@@ -112,3 +114,5 @@ public:
 	Range();
 	~Range();
 };
+
+

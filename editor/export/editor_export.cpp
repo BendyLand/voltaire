@@ -128,7 +128,7 @@ void EditorExport::save_presets() {
 }
 
 void EditorExport::emit_presets_runnable_changed() {
-	emit_signal(_export_presets_runnable_updated);
+	this->obj->emit_signal(_export_presets_runnable_updated);
 }
 
 void EditorExport::_bind_methods() {
@@ -507,7 +507,7 @@ void EditorExport::update_export_presets() {
 	}
 
 	if (export_presets_updated) {
-		emit_signal(_export_presets_updated);
+		this->obj->emit_signal(_export_presets_updated);
 	}
 }
 

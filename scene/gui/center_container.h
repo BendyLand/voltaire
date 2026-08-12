@@ -32,9 +32,8 @@
 
 #include "scene/gui/container.h"
 
-class CenterContainer : public Container {
-	VLTRCLASS(CenterContainer, Container);
-
+class CenterContainer : public Container
+{
 	bool use_top_left = false;
 
 protected:
@@ -51,3 +50,5 @@ public:
 	virtual Vector<int> get_allowed_size_flags_horizontal() const override;
 	virtual Vector<int> get_allowed_size_flags_vertical() const override;
 };
+
+

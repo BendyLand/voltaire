@@ -57,7 +57,7 @@ void EditorPerformanceProfiler::Monitor::reset() {
 }
 
 String EditorPerformanceProfiler::_format_label(float p_value, Performance::MonitorType p_type) const {
-	const String &lang = _get_locale();
+	const String &lang = this->obj->_get_locale();
 	const TranslationServer *ts = TranslationServer::get_singleton();
 
 	switch (p_type) {

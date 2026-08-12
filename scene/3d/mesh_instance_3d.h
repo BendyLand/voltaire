@@ -33,6 +33,7 @@
 #include "core/templates/local_vector.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/mesh.h"
+#include "scene/resources/environment.h"
 
 #ifndef NAVIGATION_3D_DISABLED
 class NavigationMesh;
@@ -71,7 +72,7 @@ protected:
 	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
 
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::MESH_INSTANCE_3D;
+	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::MESH_INSTANCE_3D;
 
 #ifndef DISABLE_DEPRECATED
 	static inline bool use_parent_skeleton_compat = false;

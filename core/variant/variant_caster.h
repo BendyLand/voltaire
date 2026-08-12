@@ -49,37 +49,55 @@ enum class KeyLocation;
 // Variant cannot define an implicit cast operator for every Object subclass, so the
 // casting is done here, to allow binding methods with parameters more specific than Object *
 
-template <typename T>
-struct VariantCaster {
-	static _FORCE_INLINE_ T cast(const Variant &p_variant) {
+template <typename T> struct VariantCaster
+{
+	static _FORCE_INLINE_ T cast(const Variant& p_variant)
+	{
 		using TStripped = std::remove_pointer_t<T>;
 		if constexpr (std::is_base_of_v<Object, TStripped>) {
 			return Object::cast_to<TStripped>(p_variant);
-		} else {
+		}
+		else {
 			return p_variant;
 		}
 	}
 };
 
-template <typename T>
-struct VariantCaster<T &> {
-	static _FORCE_INLINE_ T cast(const Variant &p_variant) {
+// Ensure there is a pointer specialization for Object derivatives:
+template <typename T> struct VariantCaster<T*>
+{
+	static _FORCE_INLINE_ T* cast(const Variant& p_variant)
+	{
+		// If Variant still holds an Object pointer:
+		return Object::cast_to<T>(p_variant.operator Object*());
+		// Or if you stripped Variant's Object pointer operator:
+		// return static_cast<T*>(p_variant.get_validated_object());
+	}
+};
+
+template <typename T> struct VariantCaster<T&>
+{
+	static _FORCE_INLINE_ T cast(const Variant& p_variant)
+	{
 		using TStripped = std::remove_pointer_t<T>;
 		if constexpr (std::is_base_of_v<Object, TStripped>) {
 			return Object::cast_to<TStripped>(p_variant);
-		} else {
+		}
+		else {
 			return p_variant;
 		}
 	}
 };
 
-template <typename T>
-struct VariantCaster<const T &> {
-	static _FORCE_INLINE_ T cast(const Variant &p_variant) {
+template <typename T> struct VariantCaster<const T&>
+{
+	static _FORCE_INLINE_ T cast(const Variant& p_variant)
+	{
 		using TStripped = std::remove_pointer_t<T>;
 		if constexpr (std::is_base_of_v<Object, TStripped>) {
 			return Object::cast_to<TStripped>(p_variant);
-		} else {
+		}
+		else {
 			return p_variant;
 		}
 	}
@@ -124,33 +142,36 @@ VARIANT_ENUM_CAST(Key);
 VARIANT_BITFIELD_CAST(KeyModifierMask);
 VARIANT_ENUM_CAST(KeyLocation);
 
-template <>
-struct VariantCaster<char32_t> {
-	static _FORCE_INLINE_ char32_t cast(const Variant &p_variant) {
+template <> struct VariantCaster<char32_t>
+{
+	static _FORCE_INLINE_ char32_t cast(const Variant& p_variant)
+	{
 		return (char32_t)p_variant.operator int();
 	}
 };
 
-template <typename T>
-struct VariantObjectClassChecker {
-	static _FORCE_INLINE_ bool check(const Variant &p_variant) {
+template <typename T> struct VariantObjectClassChecker
+{
+	static _FORCE_INLINE_ bool check(const Variant& p_variant)
+	{
 		using TStripped = std::remove_pointer_t<T>;
 		if constexpr (std::is_base_of_v<Object, TStripped>) {
-			Object *obj = p_variant;
+			Object* obj = p_variant;
 			return Object::cast_to<TStripped>(p_variant) || !obj;
-		} else {
+		}
+		else {
 			return true;
 		}
 	}
 };
 
-template <typename T>
-class Ref;
+template <typename T> class Ref;
 
-template <typename T>
-struct VariantObjectClassChecker<const Ref<T> &> {
-	static _FORCE_INLINE_ bool check(const Variant &p_variant) {
-		Object *obj = p_variant;
+template <typename T> struct VariantObjectClassChecker<const Ref<T>&>
+{
+	static _FORCE_INLINE_ bool check(const Variant& p_variant)
+	{
+		Object* obj = p_variant;
 		const Ref<T> node = p_variant;
 		return node.ptr() || !obj;
 	}
@@ -158,12 +179,14 @@ struct VariantObjectClassChecker<const Ref<T> &> {
 
 #ifdef DEBUG_ENABLED
 
-template <typename T>
-struct VariantCasterAndValidate {
-	static _FORCE_INLINE_ T cast(const Variant **p_args, uint32_t p_arg_idx, Callable::CallError &r_error) {
+template <typename T> struct VariantCasterAndValidate
+{
+	static _FORCE_INLINE_ T cast(
+		const Variant** p_args, uint32_t p_arg_idx, Callable::CallError& r_error)
+	{
 		Variant::Type argtype = GetTypeInfo<T>::VARIANT_TYPE;
 		if (!Variant::can_convert_strict(p_args[p_arg_idx]->get_type(), argtype) ||
-				!VariantObjectClassChecker<T>::check(*p_args[p_arg_idx])) {
+			!VariantObjectClassChecker<T>::check(*p_args[p_arg_idx])) {
 			r_error.error = Callable::CallError::CALL_ERROR_INVALID_ARGUMENT;
 			r_error.argument = p_arg_idx;
 			r_error.expected = argtype;
@@ -173,12 +196,14 @@ struct VariantCasterAndValidate {
 	}
 };
 
-template <typename T>
-struct VariantCasterAndValidate<T &> {
-	static _FORCE_INLINE_ T cast(const Variant **p_args, uint32_t p_arg_idx, Callable::CallError &r_error) {
+template <typename T> struct VariantCasterAndValidate<T&>
+{
+	static _FORCE_INLINE_ T cast(
+		const Variant** p_args, uint32_t p_arg_idx, Callable::CallError& r_error)
+	{
 		Variant::Type argtype = GetTypeInfo<T>::VARIANT_TYPE;
 		if (!Variant::can_convert_strict(p_args[p_arg_idx]->get_type(), argtype) ||
-				!VariantObjectClassChecker<T>::check(*p_args[p_arg_idx])) {
+			!VariantObjectClassChecker<T>::check(*p_args[p_arg_idx])) {
 			r_error.error = Callable::CallError::CALL_ERROR_INVALID_ARGUMENT;
 			r_error.argument = p_arg_idx;
 			r_error.expected = argtype;
@@ -188,12 +213,14 @@ struct VariantCasterAndValidate<T &> {
 	}
 };
 
-template <typename T>
-struct VariantCasterAndValidate<const T &> {
-	static _FORCE_INLINE_ T cast(const Variant **p_args, uint32_t p_arg_idx, Callable::CallError &r_error) {
+template <typename T> struct VariantCasterAndValidate<const T&>
+{
+	static _FORCE_INLINE_ T cast(
+		const Variant** p_args, uint32_t p_arg_idx, Callable::CallError& r_error)
+	{
 		Variant::Type argtype = GetTypeInfo<T>::VARIANT_TYPE;
 		if (!Variant::can_convert_strict(p_args[p_arg_idx]->get_type(), argtype) ||
-				!VariantObjectClassChecker<T>::check(*p_args[p_arg_idx])) {
+			!VariantObjectClassChecker<T>::check(*p_args[p_arg_idx])) {
 			r_error.error = Callable::CallError::CALL_ERROR_INVALID_ARGUMENT;
 			r_error.argument = p_arg_idx;
 			r_error.expected = argtype;
@@ -204,3 +231,5 @@ struct VariantCasterAndValidate<const T &> {
 };
 
 #endif // DEBUG_ENABLED
+
+

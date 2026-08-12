@@ -47,10 +47,10 @@ class VScrollBar;
 class CharFXTransform;
 class RichTextEffect;
 
-class RichTextLabel : public Control {
-	VLTRCLASS(RichTextLabel, Control);
-
-	enum RTLDrawStep {
+class RichTextLabel : public Control
+{
+	enum RTLDrawStep
+	{
 		DRAW_STEP_BACKGROUND,
 		DRAW_STEP_SHADOW_OUTLINE,
 		DRAW_STEP_SHADOW,
@@ -61,20 +61,23 @@ class RichTextLabel : public Control {
 	};
 
 public:
-	enum ListType {
+	enum ListType
+	{
 		LIST_NUMBERS,
 		LIST_LETTERS,
 		LIST_ROMAN,
 		LIST_DOTS
 	};
 
-	enum MetaUnderline {
+	enum MetaUnderline
+	{
 		META_UNDERLINE_NEVER,
 		META_UNDERLINE_ALWAYS,
 		META_UNDERLINE_ON_HOVER,
 	};
 
-	enum ItemType {
+	enum ItemType
+	{
 		ITEM_FRAME,
 		ITEM_TEXT,
 		ITEM_IMAGE,
@@ -107,13 +110,15 @@ public:
 		ITEM_LANGUAGE,
 	};
 
-	enum MenuItems {
+	enum MenuItems
+	{
 		MENU_COPY,
 		MENU_SELECT_ALL,
 		MENU_MAX
 	};
 
-	enum DefaultFont {
+	enum DefaultFont
+	{
 		RTL_NORMAL_FONT,
 		RTL_BOLD_FONT,
 		RTL_ITALICS_FONT,
@@ -122,7 +127,8 @@ public:
 		RTL_CUSTOM_FONT,
 	};
 
-	enum ImageUpdateMask {
+	enum ImageUpdateMask
+	{
 		UPDATE_TEXTURE = 1 << 0,
 		UPDATE_SIZE = 1 << 1,
 		UPDATE_COLOR = 1 << 2,
@@ -133,7 +139,8 @@ public:
 		UPDATE_WIDTH_UNIT = 1 << 7,
 	};
 
-	enum ImageUnit {
+	enum ImageUnit
+	{
 		IMAGE_UNIT_PIXEL,
 		IMAGE_UNIT_PERCENT,
 		IMAGE_UNIT_EM,
@@ -146,29 +153,55 @@ protected:
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	void _push_font_bind_compat_79053(const Ref<Font> &p_font, int p_size);
+	void _push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size);
 	void _set_table_column_expand_bind_compat_79053(int p_column, bool p_expand, int p_ratio);
-	void _push_meta_bind_compat_99481(const Variant &p_meta, MetaUnderline p_underline_mode);
-	void _push_meta_bind_compat_89024(const Variant &p_meta);
-	void _add_image_bind_compat_80410(const Ref<Texture2D> &p_image, const int p_width, const int p_height, const Color &p_color, InlineAlignment p_alignment, const Rect2 &p_region);
-	void _add_image_bind_compat_76829(const Ref<Texture2D> &p_image, const int p_width, const int p_height, const Color &p_color, InlineAlignment p_alignment, const Rect2 &p_region, const Variant &p_key, bool p_pad, const String &p_tooltip, bool p_size_in_percent);
-	void _push_table_bind_compat_76829(int p_columns, InlineAlignment p_alignment, int p_align_to_row);
+	void _push_meta_bind_compat_99481(const Variant& p_meta, MetaUnderline p_underline_mode);
+	void _push_meta_bind_compat_89024(const Variant& p_meta);
+	void _add_image_bind_compat_80410(const Ref<Texture2D>& p_image, const int p_width,
+		const int p_height, const Color& p_color, InlineAlignment p_alignment,
+		const Rect2& p_region);
+	void _add_image_bind_compat_76829(const Ref<Texture2D>& p_image, const int p_width,
+		const int p_height, const Color& p_color, InlineAlignment p_alignment,
+		const Rect2& p_region, const Variant& p_key, bool p_pad, const String& p_tooltip,
+		bool p_size_in_percent);
+	void _push_table_bind_compat_76829(
+		int p_columns, InlineAlignment p_alignment, int p_align_to_row);
 	bool _remove_paragraph_bind_compat_91098(int p_paragraph);
 	void _set_table_column_expand_bind_compat_101482(int p_column, bool p_expand, int p_ratio);
 	void _push_underline_bind_compat_106300();
 	void _push_strikethrough_bind_compat_106300();
-	void _add_image_bind_compat_107347(const Ref<Texture2D> &p_image, int p_width = 0, int p_height = 0, const Color &p_color = Color(1.0, 1.0, 1.0), InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2 &p_region = Rect2(), const Variant &p_key = Variant(), bool p_pad = false, const String &p_tooltip = String(), bool p_size_in_percent = false, const String &p_alt_text = String());
-	void _update_image_bind_compat_107347(const Variant &p_key, BitField<ImageUpdateMask> p_mask, const Ref<Texture2D> &p_image, int p_width = 0, int p_height = 0, const Color &p_color = Color(1.0, 1.0, 1.0), InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2 &p_region = Rect2(), bool p_pad = false, const String &p_tooltip = String(), bool p_size_in_percent = false);
-	void _add_image_bind_compat_112617(const Ref<Texture2D> &p_image, int p_width = 0, int p_height = 0, const Color &p_color = Color(1.0, 1.0, 1.0), InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2 &p_region = Rect2(), const Variant &p_key = Variant(), bool p_pad = false, const String &p_tooltip = String(), bool p_width_in_percent = false, bool p_height_in_percent = false, const String &p_alt_text = String());
-	void _update_image_bind_compat_112617(const Variant &p_key, BitField<ImageUpdateMask> p_mask, const Ref<Texture2D> &p_image, int p_width = 0, int p_height = 0, const Color &p_color = Color(1.0, 1.0, 1.0), InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2 &p_region = Rect2(), bool p_pad = false, const String &p_tooltip = String(), bool p_width_in_percent = false, bool p_height_in_percent = false);
+	void _add_image_bind_compat_107347(const Ref<Texture2D>& p_image, int p_width = 0,
+		int p_height = 0, const Color& p_color = Color(1.0, 1.0, 1.0),
+		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
+		const Variant& p_key = Variant(), bool p_pad = false, const String& p_tooltip = String(),
+		bool p_size_in_percent = false, const String& p_alt_text = String());
+	void _update_image_bind_compat_107347(const Variant& p_key, BitField<ImageUpdateMask> p_mask,
+		const Ref<Texture2D>& p_image, int p_width = 0, int p_height = 0,
+		const Color& p_color = Color(1.0, 1.0, 1.0),
+		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
+		bool p_pad = false, const String& p_tooltip = String(), bool p_size_in_percent = false);
+	void _add_image_bind_compat_112617(const Ref<Texture2D>& p_image, int p_width = 0,
+		int p_height = 0, const Color& p_color = Color(1.0, 1.0, 1.0),
+		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
+		const Variant& p_key = Variant(), bool p_pad = false, const String& p_tooltip = String(),
+		bool p_width_in_percent = false, bool p_height_in_percent = false,
+		const String& p_alt_text = String());
+	void _update_image_bind_compat_112617(const Variant& p_key, BitField<ImageUpdateMask> p_mask,
+		const Ref<Texture2D>& p_image, int p_width = 0, int p_height = 0,
+		const Color& p_color = Color(1.0, 1.0, 1.0),
+		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
+		bool p_pad = false, const String& p_tooltip = String(), bool p_width_in_percent = false,
+		bool p_height_in_percent = false);
 	static void _bind_compatibility_methods();
 #endif
 
 private:
 	struct Item;
 
-	struct Line { // Line is a paragraph.
-		Item *from = nullptr; // `from` is main if this Line is the first Line in the doc, otherwise `from` is the previous Item in the doc of any type.
+	struct Line
+	{						  // Line is a paragraph.
+		Item* from = nullptr; // `from` is main if this Line is the first Line in the doc, otherwise
+							  // `from` is the previous Item in the doc of any type.
 
 		Ref<TextLine> text_prefix;
 		Color prefix_color = Color(0, 0, 0, 0);
@@ -181,7 +214,7 @@ private:
 		RID accessibility_line_element;
 		RID accessibility_text_element;
 
-		Item *dc_item = nullptr;
+		Item* dc_item = nullptr;
 		Color dc_color;
 		int dc_ol_size = 0;
 		Color dc_ol_color;
@@ -191,37 +224,43 @@ private:
 		int char_offset = 0;
 		int char_count = 0;
 
-		Line() {
-			text_buf.instantiate();
-		}
+		Line() { text_buf.instantiate(); }
+
 		~Line();
 
-		_FORCE_INLINE_ float get_height(float p_line_separation, float p_paragraph_separation) const {
-			return offset.y + text_buf->get_size().y + text_buf->get_line_count() * p_line_separation + p_paragraph_separation;
+		_FORCE_INLINE_ float get_height(float p_line_separation, float p_paragraph_separation) const
+		{
+			return offset.y + text_buf->get_size().y +
+				   text_buf->get_line_count() * p_line_separation + p_paragraph_separation;
 		}
 	};
 
-	struct Item {
+	struct Item
+	{
 		int index = 0;
 		int char_ofs = 0;
-		Item *parent = nullptr; // "parent" means "enclosing item tag", if any. It is an interval predecessor, not a hierarchical parent.
+		Item* parent = nullptr; // "parent" means "enclosing item tag", if any. It is an interval
+								// predecessor, not a hierarchical parent.
 		ItemType type = ITEM_FRAME;
-		List<Item *> subitems;
-		List<Item *>::Element *E = nullptr;
-		int line = 0; // `line` is the index number of the paragraph (Line) this item is inside of (zero if the first paragraph).
+		List<Item*> subitems;
+		List<Item*>::Element* E = nullptr;
+		int line = 0; // `line` is the index number of the paragraph (Line) this item is inside of
+					  // (zero if the first paragraph).
 		RID rid;
 
 		RID accessibility_item_element;
 
-		void _clear_children() { // Only ever called on main or a paragraph (Line).
+		void _clear_children()
+		{ // Only ever called on main or a paragraph (Line).
 			while (subitems.size()) {
-				Item *subitem = subitems.front()->get();
+				Item* subitem = subitems.front()->get();
 				memdelete(subitem);
 				subitems.pop_front();
 			}
 		}
 
-		virtual ~Item() {
+		virtual ~Item()
+		{
 			_clear_children();
 			if (rid.is_valid()) {
 				items.free(rid);
@@ -229,7 +268,8 @@ private:
 		}
 	};
 
-	struct ItemFrame : public Item {
+	struct ItemFrame : public Item
+	{
 		bool cell = false;
 
 		LocalVector<Line> lines;
@@ -237,7 +277,7 @@ private:
 		std::atomic<int> first_invalid_font_line;
 		std::atomic<int> first_resized_line;
 
-		ItemFrame *parent_frame = nullptr;
+		ItemFrame* parent_frame = nullptr;
 
 		Color odd_row_bg = Color(0, 0, 0, 0);
 		Color even_row_bg = Color(0, 0, 0, 0);
@@ -246,7 +286,8 @@ private:
 		Size2 max_size_over = Size2(-1, -1);
 		Rect2 padding;
 
-		ItemFrame() {
+		ItemFrame()
+		{
 			type = ITEM_FRAME;
 			first_invalid_line.store(0);
 			first_invalid_font_line.store(0);
@@ -254,12 +295,15 @@ private:
 		}
 	};
 
-	struct ItemText : public Item {
+	struct ItemText : public Item
+	{
 		String text;
+
 		ItemText() { type = ITEM_TEXT; }
 	};
 
-	struct ItemDropcap : public Item {
+	struct ItemDropcap : public Item
+	{
 		String text;
 		Ref<Font> font;
 		int font_size = 0;
@@ -268,11 +312,14 @@ private:
 		Color ol_color;
 		Rect2 dropcap_margins;
 		ObjectID owner;
+
 		ItemDropcap() { type = ITEM_DROPCAP; }
+
 		~ItemDropcap();
 	};
 
-	struct ItemImage : public Item {
+	struct ItemImage : public Item
+	{
 		Ref<Texture2D> image;
 		String alt_text;
 		InlineAlignment inline_align = INLINE_ALIGNMENT_CENTER;
@@ -286,98 +333,133 @@ private:
 		Variant key;
 		String tooltip;
 		ObjectID owner;
+
 		ItemImage() { type = ITEM_IMAGE; }
+
 		~ItemImage();
 	};
 
-	struct ItemFont : public Item {
+	struct ItemFont : public Item
+	{
 		DefaultFont def_font = RTL_CUSTOM_FONT;
 		Ref<Font> font;
 		bool variation = false;
 		bool def_size = false;
 		int font_size = 0;
 		ObjectID owner;
+
 		ItemFont() { type = ITEM_FONT; }
+
 		~ItemFont();
 	};
 
-	struct ItemFontSize : public Item {
+	struct ItemFontSize : public Item
+	{
 		int font_size = 16;
+
 		ItemFontSize() { type = ITEM_FONT_SIZE; }
 	};
 
-	struct ItemColor : public Item {
+	struct ItemColor : public Item
+	{
 		Color color;
+
 		ItemColor() { type = ITEM_COLOR; }
 	};
 
-	struct ItemOutlineSize : public Item {
+	struct ItemOutlineSize : public Item
+	{
 		int outline_size = 0;
+
 		ItemOutlineSize() { type = ITEM_OUTLINE_SIZE; }
 	};
 
-	struct ItemOutlineColor : public Item {
+	struct ItemOutlineColor : public Item
+	{
 		Color color;
+
 		ItemOutlineColor() { type = ITEM_OUTLINE_COLOR; }
 	};
 
-	struct ItemUnderline : public Item {
+	struct ItemUnderline : public Item
+	{
 		Color color;
+
 		ItemUnderline() { type = ITEM_UNDERLINE; }
 	};
 
-	struct ItemStrikethrough : public Item {
+	struct ItemStrikethrough : public Item
+	{
 		Color color;
+
 		ItemStrikethrough() { type = ITEM_STRIKETHROUGH; }
 	};
 
-	struct ItemMeta : public Item {
+	struct ItemMeta : public Item
+	{
 		Variant meta;
 		MetaUnderline underline = META_UNDERLINE_ALWAYS;
 		String tooltip;
+
 		ItemMeta() { type = ITEM_META; }
 	};
 
-	struct ItemHint : public Item {
+	struct ItemHint : public Item
+	{
 		String description;
+
 		ItemHint() { type = ITEM_HINT; }
 	};
 
-	struct ItemLanguage : public Item {
+	struct ItemLanguage : public Item
+	{
 		String language;
+
 		ItemLanguage() { type = ITEM_LANGUAGE; }
 	};
 
-	struct ItemParagraph : public Item {
+	struct ItemParagraph : public Item
+	{
 		HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_LEFT;
 		String language;
 		Control::TextDirection direction = Control::TEXT_DIRECTION_AUTO;
 		TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-		BitField<TextServer::JustificationFlag> jst_flags = TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA | TextServer::JUSTIFICATION_SKIP_LAST_LINE | TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+		BitField<TextServer::JustificationFlag> jst_flags =
+			TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+			TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+			TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
 		PackedFloat32Array tab_stops;
+
 		ItemParagraph() { type = ITEM_PARAGRAPH; }
 	};
 
-	struct ItemIndent : public Item {
+	struct ItemIndent : public Item
+	{
 		int level = 0;
+
 		ItemIndent() { type = ITEM_INDENT; }
 	};
 
-	struct ItemList : public Item {
+	struct ItemList : public Item
+	{
 		ListType list_type = LIST_DOTS;
 		bool capitalize = false;
 		int level = 0;
 		String bullet = U"•";
 		float max_width = 0;
+
 		ItemList() { type = ITEM_LIST; }
 	};
 
-	struct ItemNewline : public Item {
+	struct ItemNewline : public Item
+	{
 		ItemNewline() { type = ITEM_NEWLINE; }
 	};
 
-	struct ItemTable : public Item {
-		struct Column {
+	struct ItemTable : public Item
+	{
+		struct Column
+		{
 			String name;
 			bool expand = false;
 			bool shrink = true;
@@ -397,22 +479,26 @@ private:
 		int total_height = 0;
 		int char_count = 0;
 		InlineAlignment inline_align = INLINE_ALIGNMENT_TOP;
+
 		ItemTable() { type = ITEM_TABLE; }
 	};
 
-	struct ItemFade : public Item {
+	struct ItemFade : public Item
+	{
 		int starting_index = 0;
 		int length = 0;
 
 		ItemFade() { type = ITEM_FADE; }
 	};
 
-	struct ItemFX : public Item {
+	struct ItemFX : public Item
+	{
 		double elapsed_time = 0.f;
 		bool connected = true;
 	};
 
-	struct ItemShake : public ItemFX {
+	struct ItemShake : public ItemFX
+	{
 		int strength = 0;
 		float rate = 0.0f;
 		uint64_t _current_rng = 0;
@@ -421,23 +507,25 @@ private:
 
 		ItemShake() { type = ITEM_SHAKE; }
 
-		void reroll_random() {
+		void reroll_random()
+		{
 			_previous_rng = _current_rng;
 			_current_rng = Math::rand();
 		}
 
-		uint64_t offset_random(int p_index) {
-			return (_current_rng >> (p_index % 64)) |
-					(_current_rng << (64 - (p_index % 64)));
+		uint64_t offset_random(int p_index)
+		{
+			return (_current_rng >> (p_index % 64)) | (_current_rng << (64 - (p_index % 64)));
 		}
 
-		uint64_t offset_previous_random(int p_index) {
-			return (_previous_rng >> (p_index % 64)) |
-					(_previous_rng << (64 - (p_index % 64)));
+		uint64_t offset_previous_random(int p_index)
+		{
+			return (_previous_rng >> (p_index % 64)) | (_previous_rng << (64 - (p_index % 64)));
 		}
 	};
 
-	struct ItemWave : public ItemFX {
+	struct ItemWave : public ItemFX
+	{
 		float frequency = 1.0f;
 		float amplitude = 1.0f;
 		Vector2 prev_off;
@@ -445,7 +533,8 @@ private:
 		ItemWave() { type = ITEM_WAVE; }
 	};
 
-	struct ItemTornado : public ItemFX {
+	struct ItemTornado : public ItemFX
+	{
 		float radius = 1.0f;
 		float frequency = 1.0f;
 		Vector2 prev_off;
@@ -453,7 +542,8 @@ private:
 		ItemTornado() { type = ITEM_TORNADO; }
 	};
 
-	struct ItemRainbow : public ItemFX {
+	struct ItemRainbow : public ItemFX
+	{
 		float saturation = 0.9f;
 		float value = 1.0f;
 		float frequency = 1.0f;
@@ -462,7 +552,8 @@ private:
 		ItemRainbow() { type = ITEM_RAINBOW; }
 	};
 
-	struct ItemPulse : public ItemFX {
+	struct ItemPulse : public ItemFX
+	{
 		Color color = Color(1.0, 1.0, 1.0, 0.25);
 		float frequency = 1.0f;
 		float ease = -2.0f;
@@ -470,17 +561,22 @@ private:
 		ItemPulse() { type = ITEM_PULSE; }
 	};
 
-	struct ItemBGColor : public Item {
+	struct ItemBGColor : public Item
+	{
 		Color color;
+
 		ItemBGColor() { type = ITEM_BGCOLOR; }
 	};
 
-	struct ItemFGColor : public Item {
+	struct ItemFGColor : public Item
+	{
 		Color color;
+
 		ItemFGColor() { type = ITEM_FGCOLOR; }
 	};
 
-	struct ItemCustomFX : public ItemFX {
+	struct ItemCustomFX : public ItemFX
+	{
 		Ref<CharFXTransform> char_fx_transform;
 		Ref<RichTextEffect> custom_effect;
 
@@ -489,9 +585,11 @@ private:
 		virtual ~ItemCustomFX();
 	};
 
-	struct ItemContext : public Item {
+	struct ItemContext : public Item
+	{
 		ItemContext() { type = ITEM_CONTEXT; }
 	};
+
 	const Array formatting_items = {
 		// all ITEM types affecting glyph appearance.
 		ITEM_FONT,
@@ -516,9 +614,9 @@ private:
 		ITEM_PULSE,
 	};
 
-	ItemFrame *main = nullptr;
-	Item *current = nullptr;
-	ItemFrame *current_frame = nullptr;
+	ItemFrame* main = nullptr;
+	Item* current = nullptr;
+	ItemFrame* current_frame = nullptr;
 
 	WorkerThreadPool::TaskID task = WorkerThreadPool::INVALID_TASK_ID;
 	Mutex data_mutex;
@@ -532,10 +630,11 @@ private:
 	uint64_t loading_started = 0;
 	int progress_delay = 1000;
 
-	VScrollBar *vscroll = nullptr;
+	VScrollBar* vscroll = nullptr;
 
 	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_WORD_SMART;
-	BitField<TextServer::LineBreakFlag> autowrap_flags_trim = TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
+	BitField<TextServer::LineBreakFlag> autowrap_flags_trim =
+		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
 
 	bool scroll_visible = false;
 	bool scroll_follow = false;
@@ -559,10 +658,13 @@ private:
 
 	HorizontalAlignment default_alignment = HORIZONTAL_ALIGNMENT_LEFT;
 	VerticalAlignment vertical_alignment = VERTICAL_ALIGNMENT_TOP;
-	BitField<TextServer::JustificationFlag> default_jst_flags = TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA | TextServer::JUSTIFICATION_SKIP_LAST_LINE | TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+	BitField<TextServer::JustificationFlag> default_jst_flags =
+		TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+		TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+		TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
 	PackedFloat32Array default_tab_stops;
 
-	ItemMeta *meta_hovering = nullptr;
+	ItemMeta* meta_hovering = nullptr;
 	Variant current_meta;
 
 	Array custom_effects;
@@ -571,23 +673,25 @@ private:
 
 	void _update_follow_vc();
 	void _invalidate_accessibility();
-	void _invalidate_current_line(ItemFrame *p_frame);
+	void _invalidate_current_line(ItemFrame* p_frame);
 
 	void _prepare_scroll_anchor();
 
-	void _thread_function(void *p_userdata);
+	void _thread_function(void* p_userdata);
 	void _thread_end();
 	void _stop_thread();
 	bool _validate_line_caches();
 	void _process_line_caches();
-	_FORCE_INLINE_ float _update_scroll_exceeds(float p_total_height, float p_ctrl_height, float p_width, int p_idx, float p_old_scroll, float p_text_rect_height);
+	_FORCE_INLINE_ float _update_scroll_exceeds(float p_total_height, float p_ctrl_height,
+		float p_width, int p_idx, float p_old_scroll, float p_text_rect_height);
 
-	void _add_item(Item *p_item, bool p_enter = false, bool p_ensure_newline = false);
-	void _remove_frame(HashSet<Item *> &r_erase_list, ItemFrame *p_frame, int p_line, bool p_erase, int p_char_offset, int p_line_offset);
+	void _add_item(Item* p_item, bool p_enter = false, bool p_ensure_newline = false);
+	void _remove_frame(HashSet<Item*>& r_erase_list, ItemFrame* p_frame, int p_line, bool p_erase,
+		int p_char_offset, int p_line_offset);
 
 	void _texture_changed(RID p_item);
 
-	static inline RID_PtrOwner<Item, true> items{ 65536, 1048576 };
+	static inline RID_PtrOwner<Item, true> items{65536, 1048576};
 	List<String> tag_stack;
 	HashSet<RID> hr_list;
 
@@ -596,31 +700,34 @@ private:
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
 	Array st_args;
 
-	struct Selection {
-		ItemFrame *click_frame = nullptr;
+	struct Selection
+	{
+		ItemFrame* click_frame = nullptr;
 		int click_line = 0;
-		Item *click_item = nullptr;
+		Item* click_item = nullptr;
 		int click_char = 0;
 
-		ItemFrame *from_frame = nullptr;
+		ItemFrame* from_frame = nullptr;
 		int from_line = 0;
-		Item *from_item = nullptr;
+		Item* from_item = nullptr;
 		int from_char = 0;
 		mutable bool from_line_found = false;
 
-		ItemFrame *to_frame = nullptr;
+		ItemFrame* to_frame = nullptr;
 		int to_line = 0;
-		Item *to_item = nullptr;
+		Item* to_item = nullptr;
 		int to_char = 0;
 		mutable bool to_line_found = false;
 
-		enum SelectionMode {
+		enum SelectionMode
+		{
 			SINGLE_CLICK,
 			DOUBLE_CLICK,
 			TRIPLE_CLICK,
 		};
+
 		SelectionMode selection_mode = SINGLE_CLICK;
-		bool active = false; // anything selected? i.e. from, to, etc. valid?
+		bool active = false;  // anything selected? i.e. from, to, etc. valid?
 		bool enabled = false; // allow selections?
 		bool drag_attempt = false;
 	};
@@ -632,76 +739,94 @@ private:
 	bool deselect_on_focus_loss_enabled = true;
 	bool drag_and_drop_selection_enabled = true;
 
-	ItemFrame *keyboard_focus_frame = nullptr;
+	ItemFrame* keyboard_focus_frame = nullptr;
 	int keyboard_focus_line = 0;
-	Item *keyboard_focus_item = nullptr;
+	Item* keyboard_focus_item = nullptr;
 	bool keyboard_focus_on_text = true;
 
 	bool context_menu_enabled = false;
 	bool shortcut_keys_enabled = true;
 
 	// Context menu.
-	PopupMenu *menu = nullptr;
+	PopupMenu* menu = nullptr;
 	void _generate_context_menu();
 	void _update_context_menu();
-	Key _get_menu_action_accelerator(const String &p_action);
+	Key _get_menu_action_accelerator(const String& p_action);
 
 	int visible_characters = -1;
 	float visible_ratio = 1.0;
-	TextServer::VisibleCharactersBehavior visible_chars_behavior = TextServer::VC_CHARS_BEFORE_SHAPING;
+	TextServer::VisibleCharactersBehavior visible_chars_behavior =
+		TextServer::VC_CHARS_BEFORE_SHAPING;
 
 	bool _is_click_inside_selection() const;
-	void _find_click(ItemFrame *p_frame, const Point2i &p_click, ItemFrame **r_click_frame = nullptr, int *r_click_line = nullptr, Item **r_click_item = nullptr, int *r_click_char = nullptr, bool *r_outside = nullptr, bool p_meta = false);
+	void _find_click(ItemFrame* p_frame, const Point2i& p_click,
+		ItemFrame** r_click_frame = nullptr, int* r_click_line = nullptr,
+		Item** r_click_item = nullptr, int* r_click_char = nullptr, bool* r_outside = nullptr,
+		bool p_meta = false);
 
-	String _get_line_text(ItemFrame *p_frame, int p_line) const;
-	bool _search_table_cell(ItemTable *p_table, List<Item *>::Element *p_cell, const String &p_string, bool p_reverse_search, int p_from_line);
-	bool _search_table(ItemTable *p_table, List<Item *>::Element *p_from, const String &p_string, bool p_reverse_search);
-	bool _search_line(ItemFrame *p_frame, int p_line, const String &p_string, int p_char_idx, bool p_reverse_search);
+	String _get_line_text(ItemFrame* p_frame, int p_line) const;
+	bool _search_table_cell(ItemTable* p_table, List<Item*>::Element* p_cell,
+		const String& p_string, bool p_reverse_search, int p_from_line);
+	bool _search_table(ItemTable* p_table, List<Item*>::Element* p_from, const String& p_string,
+		bool p_reverse_search);
+	bool _search_line(ItemFrame* p_frame, int p_line, const String& p_string, int p_char_idx,
+		bool p_reverse_search);
 
-	float _shape_line(ItemFrame *p_frame, int p_line, const Ref<Font> &p_base_font, int p_base_font_size, int p_width, float p_h, int *r_char_offset);
-	float _resize_line(ItemFrame *p_frame, int p_line, const Ref<Font> &p_base_font, int p_base_font_size, int p_width, float p_h);
+	float _shape_line(ItemFrame* p_frame, int p_line, const Ref<Font>& p_base_font,
+		int p_base_font_size, int p_width, float p_h, int* r_char_offset);
+	float _resize_line(ItemFrame* p_frame, int p_line, const Ref<Font>& p_base_font,
+		int p_base_font_size, int p_width, float p_h);
 
-	int _get_line_max_width(ItemFrame *p_frame, int p_line) const;
-	void _update_table_column_width(ItemTable *p_table, int p_available_width);
-	void _update_table_size(ItemTable *p_table);
+	int _get_line_max_width(ItemFrame* p_frame, int p_line) const;
+	void _update_table_column_width(ItemTable* p_table, int p_available_width);
+	void _update_table_size(ItemTable* p_table);
 
-	void _update_line_font(ItemFrame *p_frame, int p_line, const Ref<Font> &p_base_font, int p_base_font_size);
-	int _draw_line(ItemFrame *p_frame, int p_line, const Vector2 &p_ofs, int p_width, float p_vsep, const Color &p_base_color, int p_outline_size, const Color &p_outline_color, const Color &p_font_shadow_color, int p_shadow_outline_size, const Point2 &p_shadow_ofs, int &r_processed_glyphs);
-	float _find_click_in_line(ItemFrame *p_frame, int p_line, const Vector2 &p_ofs, int p_width, float p_vsep, const Point2i &p_click, ItemFrame **r_click_frame = nullptr, int *r_click_line = nullptr, Item **r_click_item = nullptr, int *r_click_char = nullptr, bool p_table = false, bool p_meta = false);
-	void _accessibility_update_line(RID p_id, ItemFrame *p_frame, int p_line, const Vector2 &p_ofs, int p_width, float p_vsep);
+	void _update_line_font(
+		ItemFrame* p_frame, int p_line, const Ref<Font>& p_base_font, int p_base_font_size);
+	int _draw_line(ItemFrame* p_frame, int p_line, const Vector2& p_ofs, int p_width, float p_vsep,
+		const Color& p_base_color, int p_outline_size, const Color& p_outline_color,
+		const Color& p_font_shadow_color, int p_shadow_outline_size, const Point2& p_shadow_ofs,
+		int& r_processed_glyphs);
+	float _find_click_in_line(ItemFrame* p_frame, int p_line, const Vector2& p_ofs, int p_width,
+		float p_vsep, const Point2i& p_click, ItemFrame** r_click_frame = nullptr,
+		int* r_click_line = nullptr, Item** r_click_item = nullptr, int* r_click_char = nullptr,
+		bool p_table = false, bool p_meta = false);
+	void _accessibility_update_line(
+		RID p_id, ItemFrame* p_frame, int p_line, const Vector2& p_ofs, int p_width, float p_vsep);
 
 	String _roman(int p_num, bool p_capitalize) const;
 	String _letters(int p_num, bool p_capitalize) const;
 
-	Item *_find_indentable(Item *p_item);
-	Item *_get_item_at_pos(Item *p_item_from, Item *p_item_to, int p_position);
-	void _find_frame(Item *p_item, ItemFrame **r_frame, int *r_line);
-	ItemFontSize *_find_font_size(Item *p_item);
-	ItemFont *_find_font(Item *p_item);
-	int _find_outline_size(Item *p_item, int p_default);
-	ItemList *_find_list_item(Item *p_item);
-	ItemDropcap *_find_dc_item(Item *p_item);
-	int _find_list(Item *p_item, Vector<int> &r_index, Vector<int> &r_count, Vector<ItemList *> &r_list);
-	int _find_margin(Item *p_item, const Ref<Font> &p_base_font, int p_base_font_size);
-	PackedFloat32Array _find_tab_stops(Item *p_item);
-	HorizontalAlignment _find_alignment(Item *p_item);
-	BitField<TextServer::JustificationFlag> _find_jst_flags(Item *p_item);
-	TextServer::Direction _find_direction(Item *p_item);
-	TextServer::StructuredTextParser _find_stt(Item *p_item);
-	String _find_language(Item *p_item);
-	Color _find_color(Item *p_item, const Color &p_default_color);
-	Color _find_outline_color(Item *p_item, const Color &p_default_color);
-	bool _find_underline(Item *p_item, Color *r_color = nullptr);
-	bool _find_strikethrough(Item *p_item, Color *r_color = nullptr);
-	bool _find_meta(Item *p_item, Variant *r_meta, ItemMeta **r_item = nullptr);
-	bool _find_hint(Item *p_item, String *r_description);
-	Color _find_bgcolor(Item *p_item);
-	Color _find_fgcolor(Item *p_item);
-	bool _find_layout_subitem(Item *from, Item *to);
-	void _fetch_item_fx_stack(Item *p_item, Vector<ItemFX *> &r_stack);
-	void _normalize_subtags(Vector<String> &subtags);
+	Item* _find_indentable(Item* p_item);
+	Item* _get_item_at_pos(Item* p_item_from, Item* p_item_to, int p_position);
+	void _find_frame(Item* p_item, ItemFrame** r_frame, int* r_line);
+	ItemFontSize* _find_font_size(Item* p_item);
+	ItemFont* _find_font(Item* p_item);
+	int _find_outline_size(Item* p_item, int p_default);
+	ItemList* _find_list_item(Item* p_item);
+	ItemDropcap* _find_dc_item(Item* p_item);
+	int _find_list(
+		Item* p_item, Vector<int>& r_index, Vector<int>& r_count, Vector<ItemList*>& r_list);
+	int _find_margin(Item* p_item, const Ref<Font>& p_base_font, int p_base_font_size);
+	PackedFloat32Array _find_tab_stops(Item* p_item);
+	HorizontalAlignment _find_alignment(Item* p_item);
+	BitField<TextServer::JustificationFlag> _find_jst_flags(Item* p_item);
+	TextServer::Direction _find_direction(Item* p_item);
+	TextServer::StructuredTextParser _find_stt(Item* p_item);
+	String _find_language(Item* p_item);
+	Color _find_color(Item* p_item, const Color& p_default_color);
+	Color _find_outline_color(Item* p_item, const Color& p_default_color);
+	bool _find_underline(Item* p_item, Color* r_color = nullptr);
+	bool _find_strikethrough(Item* p_item, Color* r_color = nullptr);
+	bool _find_meta(Item* p_item, Variant* r_meta, ItemMeta** r_item = nullptr);
+	bool _find_hint(Item* p_item, String* r_description);
+	Color _find_bgcolor(Item* p_item);
+	Color _find_fgcolor(Item* p_item);
+	bool _find_layout_subitem(Item* from, Item* to);
+	void _fetch_item_fx_stack(Item* p_item, Vector<ItemFX*>& r_stack);
+	void _normalize_subtags(Vector<String>& subtags);
 
-	void _update_fx(ItemFrame *p_frame, double p_delta_time);
+	void _update_fx(ItemFrame* p_frame, double p_delta_time);
 	void _scroll_changed(double);
 	int _find_first_line(int p_from, int p_to, int p_vofs) const;
 
@@ -711,20 +836,20 @@ private:
 	const real_t auto_scroll_speed = 2.0f;
 #endif
 	Vector2 last_clamped_mouse_pos;
-	Timer *click_select_held = nullptr;
+	Timer* click_select_held = nullptr;
 	Vector2 local_mouse_pos;
 	bool is_selecting_text = false;
 	void _update_selection();
 
-	_FORCE_INLINE_ float _calculate_line_vertical_offset(const Line &line) const;
+	_FORCE_INLINE_ float _calculate_line_vertical_offset(const Line& line) const;
 
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
-	virtual String get_tooltip(const Point2 &p_pos) const override;
-	Item *_get_next_item(Item *p_item, bool p_free = false) const;
-	Item *_get_prev_item(Item *p_item, bool p_free = false) const;
+	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual String get_tooltip(const Point2& p_pos) const override;
+	Item* _get_next_item(Item* p_item, bool p_free = false) const;
+	Item* _get_prev_item(Item* p_item, bool p_free = false) const;
 
 	Rect2 _get_text_rect();
-	int _get_wrap_width(const Rect2 &p_text_rect) const;
+	int _get_wrap_width(const Rect2& p_text_rect) const;
 
 	void _maximum_size_changed();
 
@@ -733,19 +858,21 @@ private:
 
 	void _invalidate_fonts();
 
-	Size2 _get_image_size(const Ref<Texture2D> &p_image, float p_width = 0, float p_height = 0, const Rect2 &p_region = Rect2());
-	Size2 _get_item_image_final_size(ItemImage *p_img, float p_orig_width, float p_base_font_size);
+	Size2 _get_image_size(const Ref<Texture2D>& p_image, float p_width = 0, float p_height = 0,
+		const Rect2& p_region = Rect2());
+	Size2 _get_item_image_final_size(ItemImage* p_img, float p_orig_width, float p_base_font_size);
 
-	String _get_prefix(Item *p_item, const Vector<int> &p_list_index, const Vector<ItemList *> &p_list_items);
-	void _add_list_prefixes(ItemFrame *p_frame, int p_line, Line &r_l);
+	String _get_prefix(
+		Item* p_item, const Vector<int>& p_list_index, const Vector<ItemList*>& p_list_items);
+	void _add_list_prefixes(ItemFrame* p_frame, int p_line, Line& r_l);
 
-	static int _find_unquoted(const String &p_src, char32_t p_chr, int p_from);
-	static Vector<String> _split_unquoted(const String &p_src, char32_t p_splitter);
-	static String _get_tag_value(const String &p_tag);
+	static int _find_unquoted(const String& p_src, char32_t p_chr, int p_from);
+	static Vector<String> _split_unquoted(const String& p_src, char32_t p_splitter);
+	static String _get_tag_value(const String& p_tag);
 
 #ifndef DISABLE_DEPRECATED
 	// Kept for compatibility from 3.x to 4.0.
-	bool _set(const StringName &p_name, const Variant &p_value);
+	bool _set(const StringName& p_name, const Variant& p_value);
 #endif
 	bool use_bbcode = false;
 	String text;
@@ -754,18 +881,20 @@ private:
 	bool internal_stack_editing = false;
 	bool stack_externally_modified = false;
 
-	void _accessibility_action_menu(const Variant &p_data);
-	void _accessibility_scroll_down(const Variant &p_data);
-	void _accessibility_scroll_up(const Variant &p_data);
-	void _accessibility_scroll_set(const Variant &p_data);
-	void _accessibility_focus_item(const Variant &p_data, uint64_t p_item, bool p_line, bool p_foucs);
-	void _accessibility_scroll_to_item(const Variant &p_data, uint64_t p_item);
+	void _accessibility_action_menu(const Variant& p_data);
+	void _accessibility_scroll_down(const Variant& p_data);
+	void _accessibility_scroll_up(const Variant& p_data);
+	void _accessibility_scroll_set(const Variant& p_data);
+	void _accessibility_focus_item(
+		const Variant& p_data, uint64_t p_item, bool p_line, bool p_foucs);
+	void _accessibility_scroll_to_item(const Variant& p_data, uint64_t p_item);
 
 	RID accessibility_scroll_element;
 
 	bool fit_content = false;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> normal_style;
 		Ref<StyleBox> focus_style;
 		Ref<StyleBox> progress_bg_style;
@@ -819,17 +948,31 @@ public:
 	PackedStringArray get_accessibility_configuration_warnings() const override;
 
 	String get_parsed_text() const;
-	void add_text(const String &p_text);
-	void add_hr(int p_width = 90, int p_height = 2, const Color &p_color = Color(1.0, 1.0, 1.0), HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, bool p_width_in_percent = true, bool p_height_in_percent = false);
-	void add_image(const Ref<Texture2D> &p_image, float p_width = 0, float p_height = 0, const Color &p_color = Color(1.0, 1.0, 1.0), InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2 &p_region = Rect2(), const Variant &p_key = Variant(), bool p_pad = false, const String &p_tooltip = String(), ImageUnit p_width_unit = IMAGE_UNIT_PIXEL, ImageUnit p_height_unit = IMAGE_UNIT_PIXEL, const String &p_alt_text = String());
-	void update_image(const Variant &p_key, BitField<ImageUpdateMask> p_mask, const Ref<Texture2D> &p_image, float p_width = 0, float p_height = 0, const Color &p_color = Color(1.0, 1.0, 1.0), InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2 &p_region = Rect2(), bool p_pad = false, const String &p_tooltip = String(), ImageUnit p_width_unit = IMAGE_UNIT_PIXEL, ImageUnit p_height_unit = IMAGE_UNIT_PIXEL);
+	void add_text(const String& p_text);
+	void add_hr(int p_width = 90, int p_height = 2, const Color& p_color = Color(1.0, 1.0, 1.0),
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, bool p_width_in_percent = true,
+		bool p_height_in_percent = false);
+	void add_image(const Ref<Texture2D>& p_image, float p_width = 0, float p_height = 0,
+		const Color& p_color = Color(1.0, 1.0, 1.0),
+		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
+		const Variant& p_key = Variant(), bool p_pad = false, const String& p_tooltip = String(),
+		ImageUnit p_width_unit = IMAGE_UNIT_PIXEL, ImageUnit p_height_unit = IMAGE_UNIT_PIXEL,
+		const String& p_alt_text = String());
+	void update_image(const Variant& p_key, BitField<ImageUpdateMask> p_mask,
+		const Ref<Texture2D>& p_image, float p_width = 0, float p_height = 0,
+		const Color& p_color = Color(1.0, 1.0, 1.0),
+		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
+		bool p_pad = false, const String& p_tooltip = String(),
+		ImageUnit p_width_unit = IMAGE_UNIT_PIXEL, ImageUnit p_height_unit = IMAGE_UNIT_PIXEL);
 	void add_newline();
 	bool remove_paragraph(int p_paragraph, bool p_no_invalidate = false);
 	bool invalidate_paragraph(int p_paragraph);
-	void push_dropcap(const String &p_string, const Ref<Font> &p_font, int p_size, const Rect2 &p_dropcap_margins = Rect2(), const Color &p_color = Color(1, 1, 1), int p_ol_size = 0, const Color &p_ol_color = Color(0, 0, 0, 0));
+	void push_dropcap(const String& p_string, const Ref<Font>& p_font, int p_size,
+		const Rect2& p_dropcap_margins = Rect2(), const Color& p_color = Color(1, 1, 1),
+		int p_ol_size = 0, const Color& p_ol_color = Color(0, 0, 0, 0));
 	void _push_def_font(DefaultFont p_def_font);
-	void _push_def_font_var(DefaultFont p_def_font, const Ref<Font> &p_font, int p_size = -1);
-	void push_font(const Ref<Font> &p_font, int p_size = 0);
+	void _push_def_font_var(DefaultFont p_def_font, const Ref<Font>& p_font, int p_size = -1);
+	void push_font(const Ref<Font>& p_font, int p_size = 0);
 	void push_font_size(int p_font_size);
 	void push_outline_size(int p_font_size);
 	void push_normal();
@@ -837,33 +980,45 @@ public:
 	void push_bold_italics();
 	void push_italics();
 	void push_mono();
-	void push_color(const Color &p_color);
-	void push_outline_color(const Color &p_color);
-	void push_underline(const Color &p_color = Color(0, 0, 0, 0));
-	void push_strikethrough(const Color &p_color = Color(0, 0, 0, 0));
-	void push_language(const String &p_language);
-	void push_paragraph(HorizontalAlignment p_alignment, Control::TextDirection p_direction = Control::TEXT_DIRECTION_INHERITED, const String &p_language = "", TextServer::StructuredTextParser p_st_parser = TextServer::STRUCTURED_TEXT_DEFAULT, BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA | TextServer::JUSTIFICATION_SKIP_LAST_LINE | TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE, const PackedFloat32Array &p_tab_stops = PackedFloat32Array());
+	void push_color(const Color& p_color);
+	void push_outline_color(const Color& p_color);
+	void push_underline(const Color& p_color = Color(0, 0, 0, 0));
+	void push_strikethrough(const Color& p_color = Color(0, 0, 0, 0));
+	void push_language(const String& p_language);
+	void push_paragraph(HorizontalAlignment p_alignment,
+		Control::TextDirection p_direction = Control::TEXT_DIRECTION_INHERITED,
+		const String& p_language = "",
+		TextServer::StructuredTextParser p_st_parser = TextServer::STRUCTURED_TEXT_DEFAULT,
+		BitField<TextServer::JustificationFlag> p_jst_flags =
+			TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+			TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+			TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE,
+		const PackedFloat32Array& p_tab_stops = PackedFloat32Array());
 	void push_indent(int p_level);
-	void push_list(int p_level, ListType p_list, bool p_capitalize, const String &p_bullet = String::utf8("•"));
-	void push_meta(const Variant &p_meta, MetaUnderline p_underline_mode = META_UNDERLINE_ALWAYS, const String &p_tooltip = String());
-	void push_hint(const String &p_string);
-	void push_table(int p_columns, InlineAlignment p_alignment = INLINE_ALIGNMENT_TOP, int p_align_to_row = -1, const String &p_name = String());
+	void push_list(int p_level, ListType p_list, bool p_capitalize,
+		const String& p_bullet = String::utf8("•"));
+	void push_meta(const Variant& p_meta, MetaUnderline p_underline_mode = META_UNDERLINE_ALWAYS,
+		const String& p_tooltip = String());
+	void push_hint(const String& p_string);
+	void push_table(int p_columns, InlineAlignment p_alignment = INLINE_ALIGNMENT_TOP,
+		int p_align_to_row = -1, const String& p_name = String());
 	void push_fade(int p_start_index, int p_length);
 	void push_shake(int p_strength, float p_rate, bool p_connected);
 	void push_wave(float p_frequency, float p_amplitude, bool p_connected);
 	void push_tornado(float p_frequency, float p_radius, bool p_connected);
 	void push_rainbow(float p_saturation, float p_value, float p_frequency, float p_speed);
-	void push_pulse(const Color &p_color, float p_frequency, float p_ease);
-	void push_bgcolor(const Color &p_color);
-	void push_fgcolor(const Color &p_color);
+	void push_pulse(const Color& p_color, float p_frequency, float p_ease);
+	void push_bgcolor(const Color& p_color);
+	void push_fgcolor(const Color& p_color);
 	void push_customfx(Ref<RichTextEffect> p_custom_effect, Dictionary p_environment);
 	void push_context();
-	void set_table_column_expand(int p_column, bool p_expand, int p_ratio = 1, bool p_shrink = true);
-	void set_table_column_name(int p_column, const String &p_name);
-	void set_cell_row_background_color(const Color &p_odd_row_bg, const Color &p_even_row_bg);
-	void set_cell_border_color(const Color &p_color);
-	void set_cell_size_override(const Size2 &p_min_size, const Size2 &p_max_size);
-	void set_cell_padding(const Rect2 &p_padding);
+	void set_table_column_expand(
+		int p_column, bool p_expand, int p_ratio = 1, bool p_shrink = true);
+	void set_table_column_name(int p_column, const String& p_name);
+	void set_cell_row_background_color(const Color& p_odd_row_bg, const Color& p_even_row_bg);
+	void set_cell_border_color(const Color& p_color);
+	void set_cell_size_override(const Size2& p_min_size, const Size2& p_max_size);
+	void set_cell_padding(const Rect2& p_padding);
 	int get_current_table_column() const;
 	void push_cell();
 	void pop();
@@ -901,7 +1056,8 @@ public:
 	void set_fit_content(bool p_enabled);
 	bool is_fit_content_enabled() const;
 
-	bool search(const String &p_string, bool p_from_selection = false, bool p_search_previous = false);
+	bool search(
+		const String& p_string, bool p_from_selection = false, bool p_search_previous = false);
 
 	void scroll_to_paragraph(int p_paragraph);
 	int get_paragraph_count() const;
@@ -925,10 +1081,11 @@ public:
 
 	void scroll_to_selection();
 
-	VScrollBar *get_v_scroll_bar() { return vscroll; }
+	VScrollBar* get_v_scroll_bar() { return vscroll; }
 
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos) const override;
-	virtual Variant get_drag_data(const Point2 &p_point) override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
+	virtual Variant get_drag_data(const Point2& p_point)
+override;
 
 	void set_selection_enabled(bool p_enabled);
 	bool is_selection_enabled() const;
@@ -938,7 +1095,8 @@ public:
 	String get_selected_text() const;
 	void select_all();
 
-	_FORCE_INLINE_ void set_selection_modifier(const Callable &p_modifier) {
+	_FORCE_INLINE_ void set_selection_modifier(const Callable& p_modifier)
+	{
 		selection_modifier = p_modifier;
 	}
 
@@ -962,17 +1120,17 @@ public:
 	int get_progress_bar_delay() const;
 
 	// Context menu.
-	PopupMenu *get_menu() const;
+	PopupMenu* get_menu() const;
 	bool is_menu_visible() const;
 	void menu_option(int p_option);
 
-	void parse_bbcode(const String &p_bbcode);
-	void append_text(const String &p_bbcode);
+	void parse_bbcode(const String& p_bbcode);
+	void append_text(const String& p_bbcode);
 
 	void set_use_bbcode(bool p_enable);
 	bool is_using_bbcode() const;
 
-	void set_text(const String &p_bbcode);
+	void set_text(const String& p_bbcode);
 	String get_text() const;
 
 	void set_horizontal_alignment(HorizontalAlignment p_alignment);
@@ -984,13 +1142,13 @@ public:
 	void set_justification_flags(BitField<TextServer::JustificationFlag> p_flags);
 	BitField<TextServer::JustificationFlag> get_justification_flags() const;
 
-	void set_tab_stops(const PackedFloat32Array &p_tab_stops);
+	void set_tab_stops(const PackedFloat32Array& p_tab_stops);
 	PackedFloat32Array get_tab_stops() const;
 
 	void set_text_direction(TextDirection p_text_direction);
 	TextDirection get_text_direction() const;
 
-	void set_language(const String &p_language);
+	void set_language(const String& p_language);
 	String get_language() const;
 
 	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
@@ -1002,7 +1160,7 @@ public:
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
 
-	void set_structured_text_bidi_override_options(const Array &p_args);
+	void set_structured_text_bidi_override_options(const Array& p_args);
 	Array get_structured_text_bidi_override_options() const;
 
 	void set_visible_characters(int p_visible);
@@ -1018,7 +1176,7 @@ public:
 	TextServer::VisibleCharactersBehavior get_visible_characters_behavior() const;
 	void set_visible_characters_behavior(TextServer::VisibleCharactersBehavior p_behavior);
 
-	void set_effects(const Array &p_effects);
+	void set_effects(const Array& p_effects);
 	Array get_effects();
 
 	void install_effect(const Variant effect);
@@ -1026,7 +1184,7 @@ public:
 
 	virtual Size2 get_minimum_size() const override;
 
-	RichTextLabel(const String &p_text = String());
+	RichTextLabel(const String& p_text = String());
 	~RichTextLabel();
 };
 
@@ -1035,3 +1193,5 @@ VARIANT_ENUM_CAST(RichTextLabel::MenuItems);
 VARIANT_ENUM_CAST(RichTextLabel::MetaUnderline);
 VARIANT_BITFIELD_CAST(RichTextLabel::ImageUpdateMask);
 VARIANT_ENUM_CAST(RichTextLabel::ImageUnit);
+
+

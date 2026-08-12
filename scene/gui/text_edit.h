@@ -37,12 +37,12 @@
 #include "scene/resources/syntax_highlighter.h"
 #include "scene/resources/text_paragraph.h"
 
-class TextEdit : public Control {
-	VLTRCLASS(TextEdit, Control);
-
+class TextEdit : public Control
+{
 public:
 	/* Edit Actions. */
-	enum EditAction {
+	enum EditAction
+	{
 		ACTION_NONE,
 		ACTION_TYPING,
 		ACTION_BACKSPACE,
@@ -50,13 +50,15 @@ public:
 	};
 
 	/* Caret. */
-	enum CaretType {
+	enum CaretType
+	{
 		CARET_TYPE_LINE,
 		CARET_TYPE_BLOCK
 	};
 
 	/* Selection */
-	enum SelectionMode {
+	enum SelectionMode
+	{
 		SELECTION_MODE_NONE,
 		SELECTION_MODE_SHIFT,
 		SELECTION_MODE_POINTER,
@@ -65,20 +67,23 @@ public:
 	};
 
 	/* Line Wrapping.*/
-	enum LineWrappingMode {
+	enum LineWrappingMode
+	{
 		LINE_WRAPPING_NONE,
 		LINE_WRAPPING_BOUNDARY
 	};
 
 	/* Gutters. */
-	enum GutterType {
+	enum GutterType
+	{
 		GUTTER_TYPE_STRING,
 		GUTTER_TYPE_ICON,
 		GUTTER_TYPE_CUSTOM
 	};
 
 	/* Context Menu. */
-	enum MenuItems {
+	enum MenuItems
+	{
 		MENU_CUT,
 		MENU_COPY,
 		MENU_PASTE,
@@ -115,14 +120,16 @@ public:
 	};
 
 	/* Search. */
-	enum SearchFlags {
+	enum SearchFlags
+	{
 		SEARCH_MATCH_CASE = 1,
 		SEARCH_WHOLE_WORDS = 2,
 		SEARCH_BACKWARDS = 4
 	};
 
 private:
-	struct GutterInfo {
+	struct GutterInfo
+	{
 		GutterType type = GutterType::GUTTER_TYPE_STRING;
 		String name = "";
 		int width = 24;
@@ -133,9 +140,11 @@ private:
 		Callable custom_draw_callback;
 	};
 
-	class Text {
+	class Text
+	{
 	public:
-		struct Gutter {
+		struct Gutter
+		{
 			Variant metadata;
 			bool clickable = false;
 
@@ -144,7 +153,8 @@ private:
 			Color color = Color(1, 1, 1);
 		};
 
-		struct Line {
+		struct Line
+		{
 			Vector<Gutter> gutters;
 
 			String data;
@@ -162,9 +172,7 @@ private:
 			int width = 0;
 			float indent_ofs = -1.0;
 
-			Line() {
-				data_buf.instantiate();
-			}
+			Line() { data_buf.instantiate(); }
 		};
 
 	private:
@@ -202,11 +210,12 @@ private:
 		void set_indent_wrapped_lines(bool p_enabled);
 		bool is_indent_wrapped_lines() const;
 
-		void set_font(const Ref<Font> &p_font);
+		void set_font(const Ref<Font>& p_font);
 		void set_font_size(int p_font_size);
-		void set_direction_and_language(TextServer::Direction p_direction, const String &p_language);
+		void set_direction_and_language(
+			TextServer::Direction p_direction, const String& p_language);
 		void set_draw_control_chars(bool p_enabled);
-		void set_inline_object_parser(const Callable &p_parser);
+		void set_inline_object_parser(const Callable& p_parser);
 
 		int get_line_height() const;
 		int get_line_width(int p_line, int p_wrap_index = -1) const;
@@ -219,7 +228,7 @@ private:
 		void set_use_custom_word_separators(bool p_enabled);
 		bool is_custom_word_separators_enabled() const;
 
-		void set_custom_word_separators(const String &p_separators);
+		void set_custom_word_separators(const String& p_separators);
 		String get_enabled_word_separators() const;
 		String get_custom_word_separators() const;
 		String get_default_word_separators() const;
@@ -232,7 +241,9 @@ private:
 
 		const Vector<RID> get_accessibility_elements(int p_line);
 		void update_accessibility(int p_line, RID p_root);
-		void clear_accessibility() {
+
+		void clear_accessibility()
+		{
 			for (int i = 0; i < text.size(); i++) {
 				text.write[i].accessibility_text_root_element.clear();
 			}
@@ -242,13 +253,15 @@ private:
 		const Ref<TextParagraph> get_line_data(int p_line) const;
 		float get_indent_offset(int p_line, bool p_rtl) const;
 
-		void set(int p_line, const String &p_text, const Array &p_bidi_override);
-		void set_ime(int p_line, const String &p_text, const Array &p_bidi_override);
+		void set(int p_line, const String& p_text, const Array& p_bidi_override);
+		void set_ime(int p_line, const String& p_text, const Array& p_bidi_override);
 		void set_hidden(int p_line, bool p_hidden);
 		bool is_hidden(int p_line) const;
-		void insert(int p_at, const Vector<String> &p_text, const Vector<Array> &p_bidi_override);
+		void insert(int p_at, const Vector<String>& p_text, const Vector<Array>& p_bidi_override);
 		void remove_range(int p_from_line, int p_to_line);
+
 		int size() const { return text.size(); }
+
 		void clear();
 
 		void invalidate_cache(int p_line, bool p_text_changed = false);
@@ -256,32 +269,74 @@ private:
 		void invalidate_all();
 		void invalidate_all_lines();
 
-		_FORCE_INLINE_ const String &operator[](int p_line) const;
-		_FORCE_INLINE_ const String &get_text_with_ime(int p_line) const;
+		_FORCE_INLINE_ const String& operator[](int p_line) const;
+		_FORCE_INLINE_ const String& get_text_with_ime(int p_line) const;
 
 		/* Gutters. */
 		void add_gutter(int p_at);
 		void remove_gutter(int p_gutter);
 		void move_gutters(int p_from_line, int p_to_line);
 
-		void set_line_gutter_metadata(int p_line, int p_gutter, const Variant &p_metadata) { text.write[p_line].gutters.write[p_gutter].metadata = p_metadata; }
-		const Variant &get_line_gutter_metadata(int p_line, int p_gutter) const { return text[p_line].gutters[p_gutter].metadata; }
+		void set_line_gutter_metadata(int p_line, int p_gutter, const Variant& p_metadata)
+		{
+			text.write[p_line].gutters.write[p_gutter].metadata = p_metadata;
+		}
 
-		void set_line_gutter_text(int p_line, int p_gutter, const String &p_text) { text.write[p_line].gutters.write[p_gutter].text = p_text; }
-		const String &get_line_gutter_text(int p_line, int p_gutter) const { return text[p_line].gutters[p_gutter].text; }
+		const Variant& get_line_gutter_metadata(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].metadata;
+		}
 
-		void set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D> &p_icon) { text.write[p_line].gutters.write[p_gutter].icon = p_icon; }
-		const Ref<Texture2D> &get_line_gutter_icon(int p_line, int p_gutter) const { return text[p_line].gutters[p_gutter].icon; }
+		void set_line_gutter_text(int p_line, int p_gutter, const String& p_text)
+		{
+			text.write[p_line].gutters.write[p_gutter].text = p_text;
+		}
 
-		void set_line_gutter_item_color(int p_line, int p_gutter, const Color &p_color) { text.write[p_line].gutters.write[p_gutter].color = p_color; }
-		const Color &get_line_gutter_item_color(int p_line, int p_gutter) const { return text[p_line].gutters[p_gutter].color; }
+		const String& get_line_gutter_text(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].text;
+		}
 
-		void set_line_gutter_clickable(int p_line, int p_gutter, bool p_clickable) { text.write[p_line].gutters.write[p_gutter].clickable = p_clickable; }
-		bool is_line_gutter_clickable(int p_line, int p_gutter) const { return text[p_line].gutters[p_gutter].clickable; }
+		void set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D>& p_icon)
+		{
+			text.write[p_line].gutters.write[p_gutter].icon = p_icon;
+		}
+
+		const Ref<Texture2D>& get_line_gutter_icon(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].icon;
+		}
+
+		void set_line_gutter_item_color(int p_line, int p_gutter, const Color& p_color)
+		{
+			text.write[p_line].gutters.write[p_gutter].color = p_color;
+		}
+
+		const Color& get_line_gutter_item_color(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].color;
+		}
+
+		void set_line_gutter_clickable(int p_line, int p_gutter, bool p_clickable)
+		{
+			text.write[p_line].gutters.write[p_gutter].clickable = p_clickable;
+		}
+
+		bool is_line_gutter_clickable(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].clickable;
+		}
 
 		/* Line style. */
-		void set_line_background_color(int p_line, const Color &p_color) { text.write[p_line].background_color = p_color; }
-		const Color get_line_background_color(int p_line) const { return text[p_line].background_color; }
+		void set_line_background_color(int p_line, const Color& p_color)
+		{
+			text.write[p_line].background_color = p_color;
+		}
+
+		const Color get_line_background_color(int p_line) const
+		{
+			return text[p_line].background_color;
+		}
 	};
 
 	/* Text */
@@ -289,7 +344,8 @@ private:
 	RID text_ci;
 	bool setting_text = false;
 
-	enum AltInputMode {
+	enum AltInputMode
+	{
 		ALT_INPUT_NONE,
 		ALT_INPUT_UNICODE,
 		ALT_INPUT_OEM,
@@ -352,25 +408,29 @@ private:
 	String cut_copy_line = "";
 
 	// Context menu.
-	PopupMenu *menu = nullptr;
-	PopupMenu *menu_dir = nullptr;
-	PopupMenu *menu_ctl = nullptr;
+	PopupMenu* menu = nullptr;
+	PopupMenu* menu_dir = nullptr;
+	PopupMenu* menu_ctl = nullptr;
 
 	Callable inline_object_drawer;
 	Callable inline_object_click_handler;
 
-	Key _get_menu_action_accelerator(const String &p_action);
+	Key _get_menu_action_accelerator(const String& p_action);
 	void _generate_context_menu();
 	void _update_context_menu();
 
 	/* Versioning */
 	struct Caret;
-	struct TextOperation {
-		enum Type {
+
+	struct TextOperation
+	{
+		enum Type
+		{
 			TYPE_NONE,
 			TYPE_INSERT,
 			TYPE_REMOVE
 		};
+
 		Vector<Caret> start_carets;
 		Vector<Caret> end_carets;
 
@@ -398,28 +458,30 @@ private:
 
 	TextOperation current_op;
 	List<TextOperation> undo_stack;
-	List<TextOperation>::Element *undo_stack_pos = nullptr;
+	List<TextOperation>::Element* undo_stack_pos = nullptr;
 
-	Timer *idle_detect = nullptr;
+	Timer* idle_detect = nullptr;
 
 	uint32_t version = 0;
 	uint32_t saved_version = 0;
 
 	void _push_current_op();
-	void _do_text_op(const TextOperation &p_op, bool p_reverse);
+	void _do_text_op(const TextOperation& p_op, bool p_reverse);
 	void _clear_redo();
 
 	/* Search */
 	String search_text = "";
 	uint32_t search_flags = 0;
 
-	int _get_column_pos_of_word(const String &p_key, const String &p_search, uint32_t p_search_flags, int p_from_column) const;
+	int _get_column_pos_of_word(const String& p_key, const String& p_search,
+		uint32_t p_search_flags, int p_from_column) const;
 
 	/* Tooltip. */
 	Callable tooltip_callback;
 
 	/* Mouse */
-	struct LineDrawingCache {
+	struct LineDrawingCache
+	{
 		int y_offset = 0;
 		Vector<int> first_visible_chars;
 		Vector<int> last_visible_chars;
@@ -430,7 +492,8 @@ private:
 	int _get_char_pos_for_line(int p_px, int p_line, int p_wrap_index = 0) const;
 
 	/* Caret. */
-	struct Selection {
+	struct Selection
+	{
 		bool active = false;
 
 		int origin_line = 0;
@@ -440,7 +503,8 @@ private:
 		int word_end_column = 0;
 	};
 
-	struct Caret {
+	struct Caret
+	{
 		Selection selection;
 
 		Point2 draw_pos;
@@ -467,7 +531,7 @@ private:
 	bool draw_caret_when_editable_disabled = false;
 
 	bool caret_blink_enabled = false;
-	Timer *caret_blink_timer = nullptr;
+	Timer* caret_blink_timer = nullptr;
 
 	bool move_caret_on_right_click = true;
 
@@ -486,9 +550,11 @@ private:
 	void _toggle_draw_caret();
 
 	int _get_column_x_offset_for_line(int p_char, int p_line, int p_column) const;
-	bool _is_line_col_in_range(int p_line, int p_column, int p_from_line, int p_from_column, int p_to_line, int p_to_column, bool p_include_edges = true) const;
+	bool _is_line_col_in_range(int p_line, int p_column, int p_from_line, int p_from_column,
+		int p_to_line, int p_to_column, bool p_include_edges = true) const;
 
-	void _offset_carets_after(int p_old_line, int p_old_column, int p_new_line, int p_new_column, bool p_include_selection_begin = true, bool p_include_selection_end = true);
+	void _offset_carets_after(int p_old_line, int p_old_column, int p_new_line, int p_new_column,
+		bool p_include_selection_begin = true, bool p_include_selection_end = true);
 
 	void _cancel_drag_and_drop_text();
 
@@ -506,7 +572,7 @@ private:
 	int drag_and_drop_origin_caret_index = -1;
 	int drag_caret_index = -1;
 
-	Timer *click_select_held = nullptr;
+	Timer* click_select_held = nullptr;
 	uint64_t last_dblclk = 0;
 	Vector2 last_dblclk_pos;
 
@@ -520,7 +586,8 @@ private:
 	double time_since_motion = 0.0;
 	bool pan_gesture_performed = false;
 
-	enum SelectionHandleDragType {
+	enum SelectionHandleDragType
+	{
 		SELECTION_HANDLE_NONE,
 		SELECTION_HANDLE_START,
 		SELECTION_HANDLE_END,
@@ -549,7 +616,8 @@ private:
 
 	void _pre_shift_selection(int p_caret);
 
-	bool _selection_contains(int p_caret, int p_line, int p_column, bool p_include_edges = true, bool p_only_selections = true) const;
+	bool _selection_contains(int p_caret, int p_line, int p_column, bool p_include_edges = true,
+		bool p_only_selections = true) const;
 
 	/* Line wrapping. */
 	LineWrappingMode line_wrapping_mode = LineWrappingMode::LINE_WRAPPING_NONE;
@@ -560,8 +628,8 @@ private:
 	void _update_wrap_at_column(bool p_force = false);
 
 	/* Viewport. */
-	HScrollBar *h_scroll = nullptr;
-	VScrollBar *v_scroll = nullptr;
+	HScrollBar* h_scroll = nullptr;
+	VScrollBar* v_scroll = nullptr;
 
 	Vector2i content_size_cache;
 	bool fit_content_height = false;
@@ -625,7 +693,7 @@ private:
 	Vector2i hovered_gutter = Vector2i(-1, -1); // X = gutter index, Y = row.
 
 	void _update_gutter_width();
-	Vector2i _get_hovered_gutter(const Point2 &p_mouse_pos) const;
+	Vector2i _get_hovered_gutter(const Point2& p_mouse_pos) const;
 
 	/* Syntax highlighting. */
 	Ref<SyntaxHighlighter> syntax_highlighter;
@@ -636,7 +704,8 @@ private:
 	void _syntax_highlighter_changed();
 
 	/* Visual. */
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		float base_scale = 1.0;
 
 		/* Search */
@@ -690,7 +759,8 @@ private:
 	bool draw_spaces = false;
 
 	// FIXME: Helper method to draw unfilled rects, should be moved to RenderingServer.
-	void _draw_rect_unfilled(RID p_canvas_item, const Rect2 &p_rect, const Color &p_color, real_t p_width = -1.0, bool p_antialiased = false) const;
+	void _draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const Color& p_color,
+		real_t p_width = -1.0, bool p_antialiased = false) const;
 
 	/* Theme. */
 	Ref<StyleBox> _get_current_stylebox() const;
@@ -700,10 +770,12 @@ private:
 	void _text_changed();
 	void _emit_text_changed();
 
-	void _insert_text(int p_line, int p_char, const String &p_text, int *r_end_line = nullptr, int *r_end_char = nullptr);
+	void _insert_text(int p_line, int p_char, const String& p_text, int* r_end_line = nullptr,
+		int* r_end_char = nullptr);
 	void _remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
 
-	void _base_insert_text(int p_line, int p_char, const String &p_text, int &r_end_line, int &r_end_column);
+	void _base_insert_text(
+		int p_line, int p_char, const String& p_text, int& r_end_line, int& r_end_column);
 	String _base_get_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column) const;
 	void _base_remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
 
@@ -729,19 +801,23 @@ protected:
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	void _set_selection_mode_bind_compat_86978(SelectionMode p_mode, int p_line = -1, int p_column = -1, int p_caret = 0);
-	Point2i _get_line_column_at_pos_bind_compat_100913(const Point2i &p_pos, bool p_allow_out_of_bounds = true) const;
+	void _set_selection_mode_bind_compat_86978(
+		SelectionMode p_mode, int p_line = -1, int p_column = -1, int p_caret = 0);
+	Point2i _get_line_column_at_pos_bind_compat_100913(
+		const Point2i& p_pos, bool p_allow_out_of_bounds = true) const;
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
 	virtual void _draw_guidelines() {}
+
 	virtual void _update_theme_item_cache() override;
 
 	virtual String _get_accessibility_name() const override;
 
 	/* Internal API for CodeEdit, pending public API. */
 	// Brace matching.
-	struct BraceMatchingData {
+	struct BraceMatchingData
+	{
 		int open_match_line = -1;
 		int open_match_column = -1;
 		bool open_matching = false;
@@ -766,16 +842,18 @@ protected:
 	void _unhide_all_lines();
 	virtual void _unhide_carets();
 
-	int _get_wrapped_indent_level(int p_line, int &r_first_wrap) const;
+	int _get_wrapped_indent_level(int p_line, int& r_first_wrap) const;
 	float _get_wrap_indent_offset(int p_line, int p_wrap_index, bool p_rtl) const;
 
 	// Symbol lookup.
 	String lookup_symbol_word;
-	void _set_symbol_lookup_word(const String &p_symbol);
+	void _set_symbol_lookup_word(const String& p_symbol);
 
 	// Theme items.
 	virtual Color _get_brace_mismatch_color() const { return Color(); }
+
 	virtual Color _get_code_folding_color() const { return Color(); }
+
 	virtual Ref<Texture2D> _get_folded_eol_icon() const { return Ref<Texture2D>(); }
 
 	/* Text manipulation */
@@ -789,30 +867,30 @@ protected:
 	virtual void _paste_internal(int p_caret);
 	virtual void _paste_primary_clipboard_internal(int p_caret);
 
-	void _accessibility_action_set_selection(const Variant &p_data);
-	void _accessibility_action_replace_selected(const Variant &p_data);
-	void _accessibility_action_set_value(const Variant &p_data);
-	void _accessibility_action_menu(const Variant &p_data);
-	void _accessibility_scroll_down(const Variant &p_data);
-	void _accessibility_scroll_left(const Variant &p_data);
-	void _accessibility_scroll_right(const Variant &p_data);
-	void _accessibility_scroll_up(const Variant &p_data);
-	void _accessibility_scroll_set(const Variant &p_data);
-	void _accessibility_action_scroll_into_view(const Variant &p_data, int p_line, int p_wrap);
+	void _accessibility_action_set_selection(const Variant& p_data);
+	void _accessibility_action_replace_selected(const Variant& p_data);
+	void _accessibility_action_set_value(const Variant& p_data);
+	void _accessibility_action_menu(const Variant& p_data);
+	void _accessibility_scroll_down(const Variant& p_data);
+	void _accessibility_scroll_left(const Variant& p_data);
+	void _accessibility_scroll_right(const Variant& p_data);
+	void _accessibility_scroll_up(const Variant& p_data);
+	void _accessibility_scroll_set(const Variant& p_data);
+	void _accessibility_action_scroll_into_view(const Variant& p_data, int p_line, int p_wrap);
 
 public:
 	/* General overrides. */
-	virtual void unhandled_key_input(const Ref<InputEvent> &p_event) override;
-	virtual void gui_input(const Ref<InputEvent> &p_gui_input) override;
-	bool alt_input(const Ref<InputEvent> &p_gui_input);
+	virtual void unhandled_key_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_gui_input) override;
+	bool alt_input(const Ref<InputEvent>& p_gui_input);
 	virtual Size2 get_minimum_size() const override;
 	virtual bool is_text_field() const override;
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos = Point2i()) const override;
-	virtual Variant get_drag_data(const Point2 &p_point) override;
-	virtual bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;
-	virtual void drop_data(const Point2 &p_point, const Variant &p_data) override;
-	virtual String get_tooltip(const Point2 &p_pos) const override;
-	void set_tooltip_request_func(const Callable &p_tooltip_callback);
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
+	virtual Variant get_drag_data(const Point2& p_point) override;
+	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
+	virtual void drop_data(const Point2& p_point, const Variant& p_data) override;
+	virtual String get_tooltip(const Point2& p_pos) const override;
+	void set_tooltip_request_func(const Callable& p_tooltip_callback);
 
 	/* Text */
 	// Text properties.
@@ -828,12 +906,12 @@ public:
 	void set_text_direction(TextDirection p_text_direction);
 	TextDirection get_text_direction() const;
 
-	void set_language(const String &p_language);
+	void set_language(const String& p_language);
 	String get_language() const;
 
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
-	void set_structured_text_bidi_override_options(const Array &p_args);
+	void set_structured_text_bidi_override_options(const Array& p_args);
 	Array get_structured_text_bidi_override_options() const;
 
 	void set_tab_size(const int p_size);
@@ -878,16 +956,16 @@ public:
 	// Text manipulation
 	void clear();
 
-	void _set_text(const String &p_text, bool p_emit_signal = false);
-	void set_text(const String &p_text);
+	void _set_text(const String& p_text, bool p_emit_signal = false);
+	void set_text(const String& p_text);
 	String get_text() const;
 
 	int get_line_count() const;
 
-	void set_placeholder(const String &p_text);
+	void set_placeholder(const String& p_text);
 	String get_placeholder() const;
 
-	void set_line(int p_line, const String &p_new_text);
+	void set_line(int p_line, const String& p_new_text);
 	String get_line(int p_line) const;
 	String get_line_with_ime(int p_line) const;
 
@@ -899,18 +977,21 @@ public:
 
 	void swap_lines(int p_from_line, int p_to_line);
 
-	void insert_line_at(int p_line, const String &p_text);
+	void insert_line_at(int p_line, const String& p_text);
 	void remove_line_at(int p_line, bool p_move_carets_down = true);
 
-	void insert_text_at_caret(const String &p_text, int p_caret = -1);
-	void insert_text(const String &p_text, int p_line, int p_column, bool p_before_selection_begin = true, bool p_before_selection_end = false);
+	void insert_text_at_caret(const String& p_text, int p_caret = -1);
+	void insert_text(const String& p_text, int p_line, int p_column,
+		bool p_before_selection_begin = true, bool p_before_selection_end = false);
 	void remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
 
 	int get_last_unhidden_line() const;
 	int get_next_visible_line_offset_from(int p_line_from, int p_visible_amount) const;
-	Point2i get_next_visible_line_index_offset_from(int p_line_from, int p_wrap_index_from, int p_visible_amount) const;
+	Point2i get_next_visible_line_index_offset_from(
+		int p_line_from, int p_wrap_index_from, int p_visible_amount) const;
 
-	void set_inline_object_handlers(const Callable &p_parser, const Callable &p_drawer, const Callable &p_click_handler);
+	void set_inline_object_handlers(
+		const Callable& p_parser, const Callable& p_drawer, const Callable& p_click_handler);
 
 	// Overridable actions
 	void handle_unicode_input(const uint32_t p_unicode, int p_caret = -1);
@@ -922,7 +1003,7 @@ public:
 	void paste_primary_clipboard(int p_caret = -1);
 
 	// Context menu.
-	PopupMenu *get_menu() const;
+	PopupMenu* get_menu() const;
 	bool is_menu_visible() const;
 	void menu_option(int p_option);
 
@@ -948,23 +1029,25 @@ public:
 	uint32_t get_saved_version() const;
 
 	/* Search */
-	void set_search_text(const String &p_search_text);
+	void set_search_text(const String& p_search_text);
 	void set_search_flags(uint32_t p_flags);
 
-	Point2i search(const String &p_key, uint32_t p_search_flags, int p_from_line, int p_from_column) const;
+	Point2i search(
+		const String& p_key, uint32_t p_search_flags, int p_from_line, int p_from_column) const;
 
 	/* Mouse */
 	Point2 get_local_mouse_pos() const;
 
-	String get_word_at_pos(const Vector2 &p_pos) const;
+	String get_word_at_pos(const Vector2& p_pos) const;
 	String get_word(int p_line, int p_column) const;
 
-	Point2i get_line_column_at_pos(const Point2i &p_pos, bool p_clamp_line = true, bool p_clamp_column = true) const;
+	Point2i get_line_column_at_pos(
+		const Point2i& p_pos, bool p_clamp_line = true, bool p_clamp_column = true) const;
 	Point2i get_pos_at_line_column(int p_line, int p_column) const;
 	Rect2i get_rect_at_line_column(int p_line, int p_column) const;
 	int get_line_start_margin() const;
 
-	int get_minimap_line_at_pos(const Point2i &p_pos) const;
+	int get_minimap_line_at_pos(const Point2i& p_pos) const;
 
 	bool is_dragging_cursor() const;
 	bool is_mouse_over_selection(bool p_edges = true, int p_caret = -1) const;
@@ -999,7 +1082,8 @@ public:
 	void add_caret_at_carets(bool p_below);
 
 	Vector<int> get_sorted_carets(bool p_include_ignored_carets = false) const;
-	void collapse_carets(int p_from_line, int p_from_column, int p_to_line, int p_to_column, bool p_inclusive = false);
+	void collapse_carets(int p_from_line, int p_from_column, int p_to_line, int p_to_column,
+		bool p_inclusive = false);
 
 	void merge_overlapping_carets();
 	void begin_multicaret_edit();
@@ -1010,7 +1094,8 @@ public:
 	bool is_caret_visible(int p_caret = 0) const;
 	Point2 get_caret_draw_pos(int p_caret = 0) const;
 
-	void set_caret_line(int p_line, bool p_adjust_viewport = true, bool p_can_be_hidden = true, int p_wrap_index = 0, int p_caret = 0);
+	void set_caret_line(int p_line, bool p_adjust_viewport = true, bool p_can_be_hidden = true,
+		int p_wrap_index = 0, int p_caret = 0);
 	int get_caret_line(int p_caret = 0) const;
 
 	void set_caret_column(int p_column, bool p_adjust_viewport = true, int p_caret = 0);
@@ -1039,16 +1124,21 @@ public:
 	void select_word_under_caret(int p_caret = -1);
 	void add_selection_for_next_occurrence();
 	void skip_selection_for_next_occurrence();
-	void select(int p_origin_line, int p_origin_column, int p_caret_line, int p_caret_column, int p_caret = 0);
+	void select(int p_origin_line, int p_origin_column, int p_caret_line, int p_caret_column,
+		int p_caret = 0);
 
 	bool has_selection(int p_caret = -1) const;
 
 	String get_selected_text(int p_caret = -1);
-	int get_selection_at_line_column(int p_line, int p_column, bool p_include_edges = true, bool p_only_selections = true) const;
-	Vector<Point2i> get_line_ranges_from_carets(bool p_only_selections = false, bool p_merge_adjacent = true) const;
-	TypedArray<Vector2i> get_line_ranges_from_carets_typed_array(bool p_only_selections = false, bool p_merge_adjacent = true) const;
+	int get_selection_at_line_column(
+		int p_line, int p_column, bool p_include_edges = true, bool p_only_selections = true) const;
+	Vector<Point2i> get_line_ranges_from_carets(
+		bool p_only_selections = false, bool p_merge_adjacent = true) const;
+	TypedArray<Vector2i> get_line_ranges_from_carets_typed_array(
+		bool p_only_selections = false, bool p_merge_adjacent = true) const;
 
-	void set_selection_origin_line(int p_line, bool p_can_be_hidden = true, int p_wrap_index = -1, int p_caret = 0);
+	void set_selection_origin_line(
+		int p_line, bool p_can_be_hidden = true, int p_wrap_index = -1, int p_caret = 0);
 	void set_selection_origin_column(int p_column, int p_caret = 0);
 	int get_selection_origin_line(int p_caret = 0) const;
 	int get_selection_origin_column(int p_caret = 0) const;
@@ -1087,8 +1177,8 @@ public:
 	void set_scroll_past_end_of_file_enabled(bool p_enabled);
 	bool is_scroll_past_end_of_file_enabled() const;
 
-	VScrollBar *get_v_scroll_bar() const;
-	HScrollBar *get_h_scroll_bar() const;
+	VScrollBar* get_v_scroll_bar() const;
+	HScrollBar* get_h_scroll_bar() const;
 
 	void set_v_scroll(double p_scroll);
 	double get_v_scroll() const;
@@ -1139,9 +1229,10 @@ public:
 	void add_gutter(int p_at = -1);
 	void remove_gutter(int p_gutter);
 	int get_gutter_count() const;
+
 	Vector2i get_hovered_gutter() const { return hovered_gutter; }
 
-	void set_gutter_name(int p_gutter, const String &p_name);
+	void set_gutter_name(int p_gutter, const String& p_name);
 	String get_gutter_name(int p_gutter) const;
 
 	void set_gutter_type(int p_gutter, GutterType p_type);
@@ -1162,26 +1253,26 @@ public:
 
 	void merge_gutters(int p_from_line, int p_to_line);
 
-	void set_gutter_custom_draw(int p_gutter, const Callable &p_draw_callback);
+	void set_gutter_custom_draw(int p_gutter, const Callable& p_draw_callback);
 
 	// Line gutters.
-	void set_line_gutter_metadata(int p_line, int p_gutter, const Variant &p_metadata);
+	void set_line_gutter_metadata(int p_line, int p_gutter, const Variant& p_metadata);
 	Variant get_line_gutter_metadata(int p_line, int p_gutter) const;
 
-	void set_line_gutter_text(int p_line, int p_gutter, const String &p_text);
+	void set_line_gutter_text(int p_line, int p_gutter, const String& p_text);
 	String get_line_gutter_text(int p_line, int p_gutter) const;
 
-	void set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D> &p_icon);
+	void set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_line_gutter_icon(int p_line, int p_gutter) const;
 
-	void set_line_gutter_item_color(int p_line, int p_gutter, const Color &p_color);
+	void set_line_gutter_item_color(int p_line, int p_gutter, const Color& p_color);
 	Color get_line_gutter_item_color(int p_line, int p_gutter) const;
 
 	void set_line_gutter_clickable(int p_line, int p_gutter, bool p_clickable);
 	bool is_line_gutter_clickable(int p_line, int p_gutter) const;
 
 	// Line style
-	void set_line_background_color(int p_line, const Color &p_color);
+	void set_line_background_color(int p_line, const Color& p_color);
 	Color get_line_background_color(int p_line) const;
 
 	/* Syntax Highlighting. */
@@ -1213,7 +1304,7 @@ public:
 	void set_use_default_word_separators(bool p_enabled);
 	bool is_default_word_separators_enabled() const;
 
-	void set_custom_word_separators(const String &p_separators);
+	void set_custom_word_separators(const String& p_separators);
 	void set_use_custom_word_separators(bool p_enabled);
 	bool is_custom_word_separators_enabled() const;
 
@@ -1222,13 +1313,14 @@ public:
 	/* Deprecated. */
 #ifndef DISABLE_DEPRECATED
 	Vector<int> get_caret_index_edit_order();
-	void adjust_carets_after_edit(int p_caret, int p_from_line, int p_from_col, int p_to_line, int p_to_col);
+	void adjust_carets_after_edit(
+		int p_caret, int p_from_line, int p_from_col, int p_to_line, int p_to_col);
 
 	int get_selection_line(int p_caret = 0) const;
 	int get_selection_column(int p_caret = 0) const;
 #endif
 
-	TextEdit(const String &p_placeholder = String());
+	TextEdit(const String& p_placeholder = String());
 	~TextEdit();
 };
 
@@ -1239,3 +1331,5 @@ VARIANT_ENUM_CAST(TextEdit::SelectionMode);
 VARIANT_ENUM_CAST(TextEdit::GutterType);
 VARIANT_ENUM_CAST(TextEdit::MenuItems);
 VARIANT_ENUM_CAST(TextEdit::SearchFlags);
+
+

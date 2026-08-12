@@ -132,8 +132,6 @@ protected:
 
 class EditorFileSystem : public Node
 {
-	VLTRCLASS(EditorFileSystem, Node);
-
 	_THREAD_SAFE_CLASS_
 
 	struct ItemAction

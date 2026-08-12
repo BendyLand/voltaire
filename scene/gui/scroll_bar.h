@@ -32,10 +32,10 @@
 
 #include "scene/gui/range.h"
 
-class ScrollBar : public Range {
-	VLTRCLASS(ScrollBar, Range);
-
-	enum HighlightStatus {
+class ScrollBar : public Range
+{
+	enum HighlightStatus
+	{
 		HIGHLIGHT_NONE,
 		HIGHLIGHT_DECR,
 		HIGHLIGHT_RANGE,
@@ -53,7 +53,8 @@ class ScrollBar : public Range {
 	bool incr_active = false;
 	bool decr_active = false;
 
-	struct Drag {
+	struct Drag
+	{
 		bool active = false;
 		float pos_at_click = 0.0;
 		float value_at_click = 0.0;
@@ -66,7 +67,7 @@ class ScrollBar : public Range {
 
 	static void set_can_focus_by_default(bool p_can_focus);
 
-	Node *drag_node = nullptr;
+	Node* drag_node = nullptr;
 	NodePath drag_node_path;
 	bool drag_node_enabled = true;
 
@@ -83,12 +84,13 @@ class ScrollBar : public Range {
 	bool smooth_scroll_enabled = false;
 
 	void _drag_node_exit();
-	void _drag_node_input(const Ref<InputEvent> &p_input);
+	void _drag_node_input(const Ref<InputEvent>& p_input);
 
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event) override;
 
 protected:
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> scroll_style;
 		Ref<StyleBox> scroll_focus_style;
 		Ref<StyleBox> scroll_offset_style;
@@ -121,7 +123,7 @@ public:
 	void set_custom_step(float p_custom_step);
 	float get_custom_step() const;
 
-	void set_drag_node(const NodePath &p_path);
+	void set_drag_node(const NodePath& p_path);
 	NodePath get_drag_node() const;
 	void set_drag_node_enabled(bool p_enable);
 
@@ -133,24 +135,22 @@ public:
 	~ScrollBar();
 };
 
-class HScrollBar : public ScrollBar {
-	VLTRCLASS(HScrollBar, ScrollBar);
-
+class HScrollBar : public ScrollBar
+{
 protected:
 	static void _bind_methods();
 
 public:
-	HScrollBar() :
-			ScrollBar(HORIZONTAL) { set_v_size_flags(0); }
+	HScrollBar() : ScrollBar(HORIZONTAL) { set_v_size_flags(0); }
 };
 
-class VScrollBar : public ScrollBar {
-	VLTRCLASS(VScrollBar, ScrollBar);
-
+class VScrollBar : public ScrollBar
+{
 protected:
 	static void _bind_methods();
 
 public:
-	VScrollBar() :
-			ScrollBar(VERTICAL) { set_h_size_flags(0); }
+	VScrollBar() : ScrollBar(VERTICAL) { set_h_size_flags(0); }
 };
+
+

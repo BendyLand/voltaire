@@ -32,9 +32,8 @@
 
 #include "scene/gui/control.h"
 
-class Container : public Control {
-	VLTRCLASS(Container, Control);
-
+class Container : public Control
+{
 	bool pending_sort = false;
 	bool accessibility_region = false;
 	void _sort_children();
@@ -42,29 +41,32 @@ class Container : public Control {
 	void _child_desired_size_changed();
 
 protected:
-	enum class SortableVisibilityMode {
+	enum class SortableVisibilityMode
+	{
 		VISIBLE,
 		VISIBLE_IN_TREE,
 		IGNORE,
 	};
 
 	void queue_sort();
-	Control *as_sortable_control(Node *p_node, SortableVisibilityMode p_visibility_mode = SortableVisibilityMode::VISIBLE_IN_TREE) const;
+	Control* as_sortable_control(Node* p_node,
+		SortableVisibilityMode p_visibility_mode = SortableVisibilityMode::VISIBLE_IN_TREE) const;
 
-	virtual void add_child_notify(Node *p_child) override;
-	virtual void move_child_notify(Node *p_child) override;
-	virtual void remove_child_notify(Node *p_child) override;
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
 
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	enum {
+	enum
+	{
 		NOTIFICATION_PRE_SORT_CHILDREN = 50,
 		NOTIFICATION_SORT_CHILDREN = 51,
 	};
 
-	void fit_child_in_rect(RequiredParam<Control> rp_child, const Rect2 &p_rect);
+	void fit_child_in_rect(RequiredParam<Control> rp_child, const Rect2& p_rect);
 
 	virtual Vector<int> get_allowed_size_flags_horizontal() const;
 	virtual Vector<int> get_allowed_size_flags_vertical() const;
@@ -76,3 +78,5 @@ public:
 
 	Container();
 };
+
+

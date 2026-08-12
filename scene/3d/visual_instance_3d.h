@@ -31,14 +31,14 @@
 #pragma once
 
 #include "scene/3d/node_3d.h"
+#include "scene/resources/environment.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 class Material;
 class TriangleMesh;
 
-class VisualInstance3D : public Node3D {
-	VLTRCLASS(VisualInstance3D, Node3D);
-
+class VisualInstance3D : public Node3D
+{
 	RID base;
 	RID instance;
 	uint32_t layers = 1;
@@ -55,9 +55,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::VISUAL_INSTANCE_3D;
+	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::VISUAL_INSTANCE_3D;
 
-	enum GetFacesFlags {
+	enum GetFacesFlags
+	{
 		FACES_SOLID = 1, // solid geometry
 		FACES_ENCLOSING = 2,
 		FACES_DYNAMIC = 4 // dynamic object geometry
@@ -67,7 +68,7 @@ public:
 	RID get_instance() const;
 	virtual AABB get_aabb() const;
 
-	void set_base(const RID &p_base);
+	void set_base(const RID& p_base);
 	RID get_base() const;
 
 	void set_layer_mask(uint32_t p_mask);
@@ -86,26 +87,28 @@ public:
 	~VisualInstance3D();
 };
 
-class GeometryInstance3D : public VisualInstance3D {
-	VLTRCLASS(GeometryInstance3D, VisualInstance3D);
-
+class GeometryInstance3D : public VisualInstance3D
+{
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::GEOMETRY_INSTANCE_3D;
+	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::GEOMETRY_INSTANCE_3D;
 
-	enum ShadowCastingSetting {
+	enum ShadowCastingSetting
+	{
 		SHADOW_CASTING_SETTING_OFF = RSE::SHADOW_CASTING_SETTING_OFF,
 		SHADOW_CASTING_SETTING_ON = RSE::SHADOW_CASTING_SETTING_ON,
 		SHADOW_CASTING_SETTING_DOUBLE_SIDED = RSE::SHADOW_CASTING_SETTING_DOUBLE_SIDED,
 		SHADOW_CASTING_SETTING_SHADOWS_ONLY = RSE::SHADOW_CASTING_SETTING_SHADOWS_ONLY,
 	};
 
-	enum GIMode {
+	enum GIMode
+	{
 		GI_MODE_DISABLED,
 		GI_MODE_STATIC,
 		GI_MODE_DYNAMIC
 	};
 
-	enum LightmapScale {
+	enum LightmapScale
+	{
 		LIGHTMAP_SCALE_1X,
 		LIGHTMAP_SCALE_2X,
 		LIGHTMAP_SCALE_4X,
@@ -113,7 +116,8 @@ public:
 		LIGHTMAP_SCALE_MAX,
 	};
 
-	enum VisibilityRangeFadeMode {
+	enum VisibilityRangeFadeMode
+	{
 		VISIBILITY_RANGE_FADE_DISABLED = RSE::VISIBILITY_RANGE_FADE_DISABLED,
 		VISIBILITY_RANGE_FADE_SELF = RSE::VISIBILITY_RANGE_FADE_SELF,
 		VISIBILITY_RANGE_FADE_DEPENDENCIES = RSE::VISIBILITY_RANGE_FADE_DEPENDENCIES,
@@ -143,13 +147,13 @@ private:
 	GIMode gi_mode = GI_MODE_STATIC;
 	bool ignore_occlusion_culling = false;
 
-	const StringName *_instance_uniform_get_remap(const StringName &p_name) const;
+	const StringName* _instance_uniform_get_remap(const StringName& p_name) const;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	void _validate_property(PropertyInfo &p_property) const;
+	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _get(const StringName& p_name, Variant& r_ret) const;
+	void _get_property_list(List<PropertyInfo>* p_list) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
 	static void _bind_methods();
 
@@ -175,10 +179,10 @@ public:
 	void set_visibility_range_fade_mode(VisibilityRangeFadeMode p_mode);
 	VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
 
-	void set_material_override(const Ref<Material> &p_material);
+	void set_material_override(const Ref<Material>& p_material);
 	Ref<Material> get_material_override() const;
 
-	void set_material_overlay(const Ref<Material> &p_material);
+	void set_material_overlay(const Ref<Material>& p_material);
 	Ref<Material> get_material_overlay() const;
 
 	void set_extra_cull_margin(float p_margin);
@@ -198,8 +202,8 @@ public:
 	LightmapScale get_lightmap_scale() const;
 #endif // DISABLE_DEPRECATED
 
-	void set_instance_shader_parameter(const StringName &p_name, const Variant &p_value);
-	Variant get_instance_shader_parameter(const StringName &p_name) const;
+	void set_instance_shader_parameter(const StringName& p_name, const Variant& p_value);
+	Variant get_instance_shader_parameter(const StringName& p_name) const;
 
 	void set_custom_aabb(AABB p_aabb);
 	AABB get_custom_aabb() const;
@@ -218,3 +222,5 @@ VARIANT_ENUM_CAST(GeometryInstance3D::ShadowCastingSetting);
 VARIANT_ENUM_CAST(GeometryInstance3D::GIMode);
 VARIANT_ENUM_CAST(GeometryInstance3D::LightmapScale);
 VARIANT_ENUM_CAST(GeometryInstance3D::VisibilityRangeFadeMode);
+
+

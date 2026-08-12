@@ -119,8 +119,8 @@ void AnimationLibraryEditor::_add_library_confirm() {
 		undo_redo->create_action(vformat(TTR("Add Animation to Library: %s"), anim_name));
 		undo_redo->add_do_method(al.ptr(), "add_animation", anim_name, anim);
 		undo_redo->add_undo_method(al.ptr(), "remove_animation", anim_name);
-		undo_redo->add_do_method(this, "_update_editor", mixer);
-		undo_redo->add_undo_method(this, "_update_editor", mixer);
+		undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+		undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 		undo_redo->commit_action();
 
 	} else {
@@ -131,10 +131,10 @@ void AnimationLibraryEditor::_add_library_confirm() {
 		al.instantiate();
 
 		undo_redo->create_action(vformat(TTR("Add Animation Library: %s"), lib_name));
-		undo_redo->add_do_method(mixer, "add_animation_library", lib_name, al);
-		undo_redo->add_undo_method(mixer, "remove_animation_library", lib_name);
-		undo_redo->add_do_method(this, "_update_editor", mixer);
-		undo_redo->add_undo_method(this, "_update_editor", mixer);
+		undo_redo->add_do_method(mixer->obj.get(), "add_animation_library", lib_name, al);
+		undo_redo->add_undo_method(mixer->obj.get(), "remove_animation_library", lib_name);
+		undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+		undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 		undo_redo->commit_action();
 	}
 }
@@ -227,12 +227,12 @@ void AnimationLibraryEditor::_file_popup_selected(int p_id) {
 
 			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->create_action(vformat(TTR("Make Animation Library Unique: %s"), lib_name));
-			undo_redo->add_do_method(mixer, "remove_animation_library", lib_name);
-			undo_redo->add_do_method(mixer, "add_animation_library", lib_name, ald);
-			undo_redo->add_undo_method(mixer, "remove_animation_library", lib_name);
-			undo_redo->add_undo_method(mixer, "add_animation_library", lib_name, al);
-			undo_redo->add_do_method(this, "_update_editor", mixer);
-			undo_redo->add_undo_method(this, "_update_editor", mixer);
+			undo_redo->add_do_method(mixer->obj.get(), "remove_animation_library", lib_name);
+			undo_redo->add_do_method(mixer->obj.get(), "add_animation_library", lib_name, ald);
+			undo_redo->add_undo_method(mixer->obj.get(), "remove_animation_library", lib_name);
+			undo_redo->add_undo_method(mixer->obj.get(), "add_animation_library", lib_name, al);
+			undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+			undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 			undo_redo->commit_action();
 
 			update_tree();
@@ -300,8 +300,8 @@ void AnimationLibraryEditor::_file_popup_selected(int p_id) {
 			undo_redo->add_do_method(al.ptr(), "add_animation", anim_name, animd);
 			undo_redo->add_undo_method(al.ptr(), "remove_animation", anim_name);
 			undo_redo->add_undo_method(al.ptr(), "add_animation", anim_name, anim);
-			undo_redo->add_do_method(this, "_update_editor", mixer);
-			undo_redo->add_undo_method(this, "_update_editor", mixer);
+			undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+			undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 			undo_redo->commit_action();
 
 			update_tree();
@@ -325,8 +325,8 @@ void AnimationLibraryEditor::_load_file(const String &p_path) {
 				undo_redo->create_action(vformat(TTR("Save Animation library to File: %s"), file_dialog_library));
 				undo_redo->add_do_method(al.ptr(), "set_path", al->get_path());
 				undo_redo->add_undo_method(al.ptr(), "set_path", prev_path);
-				undo_redo->add_do_method(this, "_update_editor", mixer);
-				undo_redo->add_undo_method(this, "_update_editor", mixer);
+				undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+				undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 				undo_redo->commit_action();
 			}
 
@@ -346,8 +346,8 @@ void AnimationLibraryEditor::_load_file(const String &p_path) {
 				undo_redo->create_action(vformat(TTR("Save Animation to File: %s"), file_dialog_animation));
 				undo_redo->add_do_method(anim.ptr(), "set_path", anim->get_path());
 				undo_redo->add_undo_method(anim.ptr(), "set_path", prev_path);
-				undo_redo->add_do_method(this, "_update_editor", mixer);
-				undo_redo->add_undo_method(this, "_update_editor", mixer);
+				undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+				undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 				undo_redo->commit_action();
 			}
 		} break;
@@ -410,8 +410,8 @@ void AnimationLibraryEditor::_load_files(const PackedStringArray &p_paths) {
 					has_created_action = true;
 					undo_redo->create_action(p_paths.size() > 1 ? TTR("Add Animation Libraries") : vformat(TTR("Add Animation Library: %s"), name));
 				}
-				undo_redo->add_do_method(mixer, "add_animation_library", name, anim_library);
-				undo_redo->add_undo_method(mixer, "remove_animation_library", name);
+				undo_redo->add_do_method(mixer->obj.get(), "add_animation_library", name, anim_library);
+				undo_redo->add_undo_method(mixer->obj.get(), "remove_animation_library", name);
 			}
 		} break;
 		case FILE_DIALOG_ACTION_OPEN_ANIMATION: {
@@ -465,8 +465,8 @@ void AnimationLibraryEditor::_load_files(const PackedStringArray &p_paths) {
 	}
 
 	if (has_created_action) {
-		undo_redo->add_do_method(this, "_update_editor", mixer);
-		undo_redo->add_undo_method(this, "_update_editor", mixer);
+		undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+		undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 		undo_redo->commit_action();
 	}
 
@@ -492,10 +492,10 @@ void AnimationLibraryEditor::_item_renamed() {
 				restore_text = true;
 			} else {
 				undo_redo->create_action(vformat(TTR("Rename Animation Library: %s"), text));
-				undo_redo->add_do_method(mixer, "rename_animation_library", old_text, text);
-				undo_redo->add_undo_method(mixer, "rename_animation_library", text, old_text);
-				undo_redo->add_do_method(this, "_update_editor", mixer);
-				undo_redo->add_undo_method(this, "_update_editor", mixer);
+				undo_redo->add_do_method(mixer->obj.get(), "rename_animation_library", old_text, text);
+				undo_redo->add_undo_method(mixer->obj.get(), "rename_animation_library", text, old_text);
+				undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+				undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 				updating = true;
 				undo_redo->commit_action();
 				updating = false;
@@ -518,8 +518,8 @@ void AnimationLibraryEditor::_item_renamed() {
 					undo_redo->create_action(vformat(TTR("Rename Animation: %s"), text));
 					undo_redo->add_do_method(al.ptr(), "rename_animation", old_text, text);
 					undo_redo->add_undo_method(al.ptr(), "rename_animation", text, old_text);
-					undo_redo->add_do_method(this, "_update_editor", mixer);
-					undo_redo->add_undo_method(this, "_update_editor", mixer);
+					undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+					undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 					updating = true;
 					undo_redo->commit_action();
 					updating = false;
@@ -602,8 +602,8 @@ void AnimationLibraryEditor::_button_pressed(TreeItem *p_item, int p_column, int
 				undo_redo->create_action(vformat(TTR("Add Animation to Library: %s"), name));
 				undo_redo->add_do_method(al.ptr(), "add_animation", name, anim);
 				undo_redo->add_undo_method(al.ptr(), "remove_animation", name);
-				undo_redo->add_do_method(this, "_update_editor", mixer);
-				undo_redo->add_undo_method(this, "_update_editor", mixer);
+				undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+				undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 				undo_redo->commit_action();
 
 			} break;
@@ -625,10 +625,10 @@ void AnimationLibraryEditor::_button_pressed(TreeItem *p_item, int p_column, int
 			case LIB_BUTTON_DELETE: {
 				EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 				undo_redo->create_action(vformat(TTR("Remove Animation Library: %s"), lib_name));
-				undo_redo->add_do_method(mixer, "remove_animation_library", lib_name);
-				undo_redo->add_undo_method(mixer, "add_animation_library", lib_name, al);
-				undo_redo->add_do_method(this, "_update_editor", mixer);
-				undo_redo->add_undo_method(this, "_update_editor", mixer);
+				undo_redo->add_do_method(mixer->obj.get(), "remove_animation_library", lib_name);
+				undo_redo->add_undo_method(mixer->obj.get(), "add_animation_library", lib_name, al);
+				undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+				undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 				undo_redo->commit_action();
 			} break;
 		}
@@ -668,8 +668,8 @@ void AnimationLibraryEditor::_button_pressed(TreeItem *p_item, int p_column, int
 				undo_redo->create_action(vformat(TTR("Remove Animation from Library: %s"), anim_name));
 				undo_redo->add_do_method(al.ptr(), "remove_animation", anim_name);
 				undo_redo->add_undo_method(al.ptr(), "add_animation", anim_name, anim);
-				undo_redo->add_do_method(this, "_update_editor", mixer);
-				undo_redo->add_undo_method(this, "_update_editor", mixer);
+				undo_redo->add_do_method(this->obj.get(), "_update_editor", mixer);
+				undo_redo->add_undo_method(this->obj.get(), "_update_editor", mixer);
 				undo_redo->commit_action();
 			} break;
 		}
@@ -930,7 +930,7 @@ void AnimationLibraryEditor::_notification(int p_what) {
 }
 
 void AnimationLibraryEditor::_update_editor(Object *p_mixer) {
-	emit_signal("update_editor", p_mixer);
+	this->obj->emit_signal("update_editor", p_mixer);
 }
 
 void AnimationLibraryEditor::shortcut_input(const Ref<InputEvent> &p_event) {

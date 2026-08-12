@@ -36,14 +36,14 @@
 #include "scene/gui/label.h"
 #include "scene/gui/progress_bar.h"
 
-class BackgroundProgress : public HBoxContainer {
-	VLTRCLASS(BackgroundProgress, HBoxContainer);
-
+class BackgroundProgress : public HBoxContainer
+{
 	_THREAD_SAFE_CLASS_
 
-	struct Task {
-		HBoxContainer *hb = nullptr;
-		ProgressBar *progress = nullptr;
+	struct Task
+	{
+		HBoxContainer* hb = nullptr;
+		ProgressBar* progress = nullptr;
 	};
 
 	HashMap<String, Task> tasks;
@@ -51,39 +51,41 @@ class BackgroundProgress : public HBoxContainer {
 	void _update();
 
 protected:
-	void _add_task(const String &p_task, const String &p_label, int p_steps);
-	void _task_step(const String &p_task, int p_step = -1);
-	void _end_task(const String &p_task);
+	void _add_task(const String& p_task, const String& p_label, int p_steps);
+	void _task_step(const String& p_task, int p_step = -1);
+	void _end_task(const String& p_task);
 
 public:
-	void add_task(const String &p_task, const String &p_label, int p_steps);
-	void task_step(const String &p_task, int p_step = -1);
-	void end_task(const String &p_task);
+	void add_task(const String& p_task, const String& p_label, int p_steps);
+	void task_step(const String& p_task, int p_step = -1);
+	void end_task(const String& p_task);
 };
 
 class PanelContainer;
 
-class ProgressDialog : public CenterContainer {
-	VLTRCLASS(ProgressDialog, CenterContainer);
-	struct Task {
+class ProgressDialog : public CenterContainer
+{
+	struct Task
+	{
 		String task;
-		VBoxContainer *vb = nullptr;
-		ProgressBar *progress = nullptr;
-		Label *state = nullptr;
+		VBoxContainer* vb = nullptr;
+		ProgressBar* progress = nullptr;
+		Label* state = nullptr;
 		uint64_t last_progress_tick = 0;
 	};
-	HBoxContainer *cancel_hb = nullptr;
-	Button *cancel = nullptr;
+
+	HBoxContainer* cancel_hb = nullptr;
+	Button* cancel = nullptr;
 
 	HashMap<String, Task> tasks;
-	PanelContainer *center_panel = nullptr;
-	VBoxContainer *main = nullptr;
+	PanelContainer* center_panel = nullptr;
+	VBoxContainer* main = nullptr;
 
 	LocalVector<ObjectID> host_windows;
 
 	Size2 main_border_size;
 
-	static ProgressDialog *singleton;
+	static ProgressDialog* singleton;
 	void _popup();
 
 	void _cancel_pressed();
@@ -96,14 +98,20 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static ProgressDialog *get_singleton() { return singleton; }
-	void add_task(const String &p_task, const String &p_label, int p_steps, bool p_can_cancel = false);
-	bool task_step(const String &p_task, const String &p_state, int p_step = -1, bool p_force_redraw = true);
-	void end_task(const String &p_task);
+	static ProgressDialog* get_singleton() { return singleton; }
+
+	void add_task(
+		const String& p_task, const String& p_label, int p_steps, bool p_can_cancel = false);
+	bool task_step(
+		const String& p_task, const String& p_state, int p_step = -1, bool p_force_redraw = true);
+	void end_task(const String& p_task);
 
 	void add_host_window(ObjectID p_window);
+
 	void remove_host_window(ObjectID p_window);
 
 	ProgressDialog();
 	~ProgressDialog();
 };
+
+

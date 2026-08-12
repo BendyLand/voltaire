@@ -32,11 +32,11 @@
 
 #include "scene/gui/container.h"
 
-class BoxContainer : public Container {
-	VLTRCLASS(BoxContainer, Container);
-
+class BoxContainer : public Container
+{
 public:
-	enum AlignmentMode {
+	enum AlignmentMode
+	{
 		ALIGNMENT_BEGIN,
 		ALIGNMENT_CENTER,
 		ALIGNMENT_END
@@ -46,7 +46,8 @@ private:
 	bool vertical = false;
 	AlignmentMode alignment = ALIGNMENT_BEGIN;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		int separation = 0;
 	} theme_cache;
 
@@ -59,11 +60,11 @@ protected:
 	bool is_fixed = false;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 	static void _bind_methods();
 
 public:
-	Control *add_spacer(bool p_begin = false);
+	Control* add_spacer(bool p_begin = false);
 
 	void set_alignment(AlignmentMode p_alignment);
 	AlignmentMode get_alignment() const;
@@ -83,23 +84,23 @@ public:
 	BoxContainer(bool p_vertical = false);
 };
 
-class HBoxContainer : public BoxContainer {
-	VLTRCLASS(HBoxContainer, BoxContainer);
-
+class HBoxContainer : public BoxContainer
+{
 public:
-	HBoxContainer() :
-			BoxContainer(false) { is_fixed = true; }
+	HBoxContainer() : BoxContainer(false) { is_fixed = true; }
 };
 
 class MarginContainer;
-class VBoxContainer : public BoxContainer {
-	VLTRCLASS(VBoxContainer, BoxContainer);
 
+class VBoxContainer : public BoxContainer
+{
 public:
-	MarginContainer *add_margin_child(const String &p_label, Control *p_control, bool p_expand = false);
+	MarginContainer* add_margin_child(
+		const String& p_label, Control* p_control, bool p_expand = false);
 
-	VBoxContainer() :
-			BoxContainer(true) { is_fixed = true; }
+	VBoxContainer() : BoxContainer(true) { is_fixed = true; }
 };
 
 VARIANT_ENUM_CAST(BoxContainer::AlignmentMode);
+
+

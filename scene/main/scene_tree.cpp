@@ -425,17 +425,17 @@ void SceneTree::call_group_flagsp(uint32_t p_call_flags, const StringName& p_gro
 			Node* node = gr_nodes[i];
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
 				Callable::CallError ce;
-				node->callp(p_function, p_args, p_argcount, ce);
+				node->obj->callp(p_function, p_args, p_argcount, ce);
 				if (unlikely(ce.error != Callable::CallError::CALL_OK &&
 							 ce.error != Callable::CallError::CALL_ERROR_INVALID_METHOD)) {
 					ERR_PRINT(
 						vformat("Error calling group method on node \"%s\": %s.", node->get_name(),
 							Variant::get_callable_error_text(
-								Callable(node, p_function), p_args, p_argcount, ce)));
+								Callable(node->obj.get(), p_function), p_args, p_argcount, ce)));
 				}
 			}
 			else {
-				MessageQueue::get_singleton()->push_callp(node, p_function, p_args, p_argcount);
+				MessageQueue::get_singleton()->push_callp(node->obj.get(), p_function, p_args, p_argcount);
 			}
 		}
 
@@ -449,17 +449,17 @@ void SceneTree::call_group_flagsp(uint32_t p_call_flags, const StringName& p_gro
 			Node* node = gr_nodes[i];
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
 				Callable::CallError ce;
-				node->callp(p_function, p_args, p_argcount, ce);
+				node->obj->callp(p_function, p_args, p_argcount, ce);
 				if (unlikely(ce.error != Callable::CallError::CALL_OK &&
 							 ce.error != Callable::CallError::CALL_ERROR_INVALID_METHOD)) {
 					ERR_PRINT(
 						vformat("Error calling group method on node \"%s\": %s.", node->get_name(),
 							Variant::get_callable_error_text(
-								Callable(node, p_function), p_args, p_argcount, ce)));
+								Callable(node->obj.get(), p_function), p_args, p_argcount, ce)));
 				}
 			}
 			else {
-				MessageQueue::get_singleton()->push_callp(node, p_function, p_args, p_argcount);
+				MessageQueue::get_singleton()->push_callp(node->obj.get(), p_function, p_args, p_argcount);
 			}
 		}
 	}
@@ -508,10 +508,10 @@ void SceneTree::notify_group_flags(
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
-				gr_nodes[i]->notification(p_notification, true);
+				gr_nodes[i]->obj->notification(p_notification, true);
 			}
 			else {
-				MessageQueue::get_singleton()->push_notification(gr_nodes[i], p_notification);
+				MessageQueue::get_singleton()->push_notification(gr_nodes[i]->obj.get(), p_notification);
 			}
 		}
 
@@ -523,10 +523,10 @@ void SceneTree::notify_group_flags(
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
-				gr_nodes[i]->notification(p_notification);
+				gr_nodes[i]->obj->notification(p_notification);
 			}
 			else {
-				MessageQueue::get_singleton()->push_notification(gr_nodes[i], p_notification);
+				MessageQueue::get_singleton()->push_notification(gr_nodes[i]->obj.get(), p_notification);
 			}
 		}
 	}
@@ -575,10 +575,10 @@ void SceneTree::set_group_flags(
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
-				gr_nodes[i]->set(p_name, p_value);
+				gr_nodes[i]->obj->set(p_name, p_value);
 			}
 			else {
-				MessageQueue::get_singleton()->push_set(gr_nodes[i], p_name, p_value);
+				MessageQueue::get_singleton()->push_set(gr_nodes[i]->obj.get(), p_name, p_value);
 			}
 		}
 
@@ -590,10 +590,10 @@ void SceneTree::set_group_flags(
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
-				gr_nodes[i]->set(p_name, p_value);
+				gr_nodes[i]->obj->set(p_name, p_value);
 			}
 			else {
-				MessageQueue::get_singleton()->push_set(gr_nodes[i], p_name, p_value);
+				MessageQueue::get_singleton()->push_set(gr_nodes[i]->obj.get(), p_name, p_value);
 			}
 		}
 	}
@@ -1244,18 +1244,18 @@ void SceneTree::_process_group(ProcessGroup* p_group, bool p_physics)
 
 		if (p_physics) {
 			if (n->is_physics_processing_internal()) {
-				n->notification(Node::NOTIFICATION_INTERNAL_PHYSICS_PROCESS);
+				n->obj->notification(Node::NOTIFICATION_INTERNAL_PHYSICS_PROCESS);
 			}
 			if (n->is_physics_processing()) {
-				n->notification(Node::NOTIFICATION_PHYSICS_PROCESS);
+				n->obj->notification(Node::NOTIFICATION_PHYSICS_PROCESS);
 			}
 		}
 		else {
 			if (n->is_processing_internal()) {
-				n->notification(Node::NOTIFICATION_INTERNAL_PROCESS);
+				n->obj->notification(Node::NOTIFICATION_INTERNAL_PROCESS);
 			}
 			if (n->is_processing()) {
-				n->notification(Node::NOTIFICATION_PROCESS);
+				n->obj->notification(Node::NOTIFICATION_PROCESS);
 			}
 		}
 	}
@@ -1561,7 +1561,7 @@ void SceneTree::_call_input_pause(const StringName& p_group, CallInputType p_cal
 				// Shortcut context (based on focus) only makes sense for controls (UI), so don't
 				// need to worry about it for nodes
 				if (c->get_shortcut_context() == nullptr) {
-					no_context_node_ids.append(n->get_instance_id());
+					no_context_node_ids.append(n->obj->get_instance_id());
 					continue;
 				}
 				if (!c->is_focus_owner_in_shortcut_context()) {
@@ -1722,9 +1722,8 @@ void SceneTree::_flush_delete_queue()
 void SceneTree::queue_delete(Object* rp_object)
 {
 	_THREAD_SAFE_METHOD_
-	EXTRACT_PARAM_OR_FAIL(p_object, rp_object);
-	p_object->_is_queued_for_deletion = true;
-	delete_queue.push_back(p_object->get_instance_id());
+	rp_object->_is_queued_for_deletion = true;
+	delete_queue.push_back(rp_object->get_instance_id());
 }
 
 int SceneTree::get_node_count() const { return nodes_in_tree_count; }
@@ -1795,45 +1794,38 @@ Error SceneTree::change_scene_to_file(const String& p_path)
 		return ERR_CANT_OPEN;
 	}
 
-	return change_scene_to_packed(new_scene);
+	return change_scene_to_packed(new_scene.ptr());
 }
 
-Error SceneTree::change_scene_to_packed(RequiredParam<PackedScene> rp_scene)
+Error SceneTree::change_scene_to_packed(PackedScene* rp_scene)
 {
-	EXTRACT_PARAM_OR_FAIL_V_MSG(p_scene, rp_scene, ERR_INVALID_PARAMETER,
-		"Can't change to a null scene. Use unload_current_scene() if you wish to unload it.");
-
-	Node* new_scene = p_scene->instantiate();
+	Node* new_scene = rp_scene->instantiate();
 	ERR_FAIL_NULL_V(new_scene, ERR_CANT_CREATE);
-
 	return change_scene_to_node(new_scene);
 }
 
-Error SceneTree::change_scene_to_node(RequiredParam<Node> rp_node)
+Error SceneTree::change_scene_to_node(Node* rp_node)
 {
-	EXTRACT_PARAM_OR_FAIL_V_MSG(p_node, rp_node, ERR_INVALID_PARAMETER,
-		"Can't change to a null node. Use unload_current_scene() if you wish to unload it.");
-	ERR_FAIL_COND_V_MSG(p_node->is_inside_tree(), ERR_UNCONFIGURED,
+	ERR_FAIL_COND_V_MSG(rp_node->is_inside_tree(), ERR_UNCONFIGURED,
 		"The new scene node can't already be inside scene tree.");
-
 	// If called again while a change is pending.
 	if (pending_new_scene_id.is_valid()) {
 		Node* pending_new_scene = ObjectDB::get_instance<Node>(pending_new_scene_id);
 		if (pending_new_scene) {
-			queue_delete(pending_new_scene);
+			queue_delete(pending_new_scene->obj.get());
 		}
 		pending_new_scene_id = ObjectID();
 	}
 
 	if (current_scene) {
-		prev_scene_id = current_scene->get_instance_id();
+		prev_scene_id = current_scene->obj->get_instance_id();
 		// Let as many side effects as possible happen or be queued now,
 		// so they are run before the scene is actually deleted.
 		root->remove_child(current_scene);
 	}
 	DEV_ASSERT(!current_scene);
 
-	pending_new_scene_id = p_node->get_instance_id();
+	pending_new_scene_id = rp_node->obj->get_instance_id();
 	return OK;
 }
 
@@ -2000,164 +1992,7 @@ void SceneTree::set_multiplayer_poll_enabled(bool p_enabled)
 
 bool SceneTree::is_multiplayer_poll_enabled() const { return multiplayer_poll; }
 
-void SceneTree::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("get_root"), &SceneTree::get_root);
-	ClassDB::bind_method(D_METHOD("has_group", "name"), &SceneTree::has_group);
-
-	ClassDB::bind_method(
-		D_METHOD("is_accessibility_enabled"), &SceneTree::is_accessibility_enabled);
-	ClassDB::bind_method(
-		D_METHOD("is_accessibility_supported"), &SceneTree::is_accessibility_supported);
-
-	ClassDB::bind_method(D_METHOD("is_auto_accept_quit"), &SceneTree::is_auto_accept_quit);
-	ClassDB::bind_method(
-		D_METHOD("set_auto_accept_quit", "enabled"), &SceneTree::set_auto_accept_quit);
-	ClassDB::bind_method(D_METHOD("is_quit_on_go_back"), &SceneTree::is_quit_on_go_back);
-	ClassDB::bind_method(
-		D_METHOD("set_quit_on_go_back", "enabled"), &SceneTree::set_quit_on_go_back);
-
-	ClassDB::bind_method(
-		D_METHOD("set_debug_collisions_hint", "enable"), &SceneTree::set_debug_collisions_hint);
-	ClassDB::bind_method(
-		D_METHOD("is_debugging_collisions_hint"), &SceneTree::is_debugging_collisions_hint);
-	ClassDB::bind_method(
-		D_METHOD("set_debug_paths_hint", "enable"), &SceneTree::set_debug_paths_hint);
-	ClassDB::bind_method(D_METHOD("is_debugging_paths_hint"), &SceneTree::is_debugging_paths_hint);
-	ClassDB::bind_method(
-		D_METHOD("set_debug_navigation_hint", "enable"), &SceneTree::set_debug_navigation_hint);
-	ClassDB::bind_method(
-		D_METHOD("is_debugging_navigation_hint"), &SceneTree::is_debugging_navigation_hint);
-
-	ClassDB::bind_method(
-		D_METHOD("set_edited_scene_root", "scene"), &SceneTree::set_edited_scene_root);
-	ClassDB::bind_method(D_METHOD("get_edited_scene_root"), &SceneTree::get_edited_scene_root);
-
-	ClassDB::bind_method(D_METHOD("set_pause", "enable"), &SceneTree::set_pause);
-	ClassDB::bind_method(D_METHOD("is_paused"), &SceneTree::is_paused);
-
-	ClassDB::bind_method(D_METHOD("create_timer", "time_sec", "process_always",
-							 "process_in_physics", "ignore_time_scale"),
-		&SceneTree::create_timer, DEFVAL(true), DEFVAL(false), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("create_tween"), &SceneTree::create_tween);
-	ClassDB::bind_method(D_METHOD("get_processed_tweens"), &SceneTree::get_processed_tweens);
-
-	ClassDB::bind_method(D_METHOD("get_node_count"), &SceneTree::get_node_count);
-	ClassDB::bind_method(D_METHOD("get_frame"), &SceneTree::get_frame);
-	ClassDB::bind_method(D_METHOD("quit", "exit_code"), &SceneTree::quit, DEFVAL(EXIT_SUCCESS));
-
-	ClassDB::bind_method(D_METHOD("set_physics_interpolation_enabled", "enabled"),
-		&SceneTree::set_physics_interpolation_enabled);
-	ClassDB::bind_method(
-		D_METHOD("is_physics_interpolation_enabled"), &SceneTree::is_physics_interpolation_enabled);
-
-	ClassDB::bind_method(D_METHOD("queue_delete", "obj"), &SceneTree::queue_delete);
-
-	MethodInfo mi;
-	mi.name = "call_group_flags";
-	mi.arguments.push_back(PropertyInfo(Variant::INT, "flags"));
-	mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "group"));
-	mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "method"));
-
-	ClassDB::bind_vararg_method(
-		METHOD_FLAGS_DEFAULT, "call_group_flags", &SceneTree::_call_group_flags, mi);
-
-	ClassDB::bind_method(D_METHOD("notify_group_flags", "call_flags", "group", "notification"),
-		&SceneTree::notify_group_flags);
-	ClassDB::bind_method(D_METHOD("set_group_flags", "call_flags", "group", "property", "value"),
-		&SceneTree::set_group_flags);
-
-	MethodInfo mi2;
-	mi2.name = "call_group";
-	mi2.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "group"));
-	mi2.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "method"));
-
-	ClassDB::bind_vararg_method(METHOD_FLAGS_DEFAULT, "call_group", &SceneTree::_call_group, mi2);
-
-	ClassDB::bind_method(
-		D_METHOD("notify_group", "group", "notification"), &SceneTree::notify_group);
-	ClassDB::bind_method(
-		D_METHOD("set_group", "group", "property", "value"), &SceneTree::set_group);
-
-	ClassDB::bind_method(D_METHOD("get_nodes_in_group", "group"), &SceneTree::_get_nodes_in_group);
-	ClassDB::bind_method(
-		D_METHOD("get_first_node_in_group", "group"), &SceneTree::get_first_node_in_group);
-	ClassDB::bind_method(
-		D_METHOD("get_node_count_in_group", "group"), &SceneTree::get_node_count_in_group);
-
-	ClassDB::bind_method(
-		D_METHOD("set_current_scene", "child_node"), &SceneTree::set_current_scene);
-	ClassDB::bind_method(D_METHOD("get_current_scene"), &SceneTree::get_current_scene);
-
-	ClassDB::bind_method(
-		D_METHOD("change_scene_to_file", "path"), &SceneTree::change_scene_to_file);
-	ClassDB::bind_method(
-		D_METHOD("change_scene_to_packed", "packed_scene"), &SceneTree::change_scene_to_packed);
-	ClassDB::bind_method(
-		D_METHOD("change_scene_to_node", "node"), &SceneTree::change_scene_to_node);
-
-	ClassDB::bind_method(D_METHOD("reload_current_scene"), &SceneTree::reload_current_scene);
-	ClassDB::bind_method(D_METHOD("unload_current_scene"), &SceneTree::unload_current_scene);
-
-	ClassDB::bind_method(D_METHOD("set_multiplayer", "multiplayer", "root_path"),
-		&SceneTree::set_multiplayer, DEFVAL(NodePath()));
-	ClassDB::bind_method(
-		D_METHOD("get_multiplayer", "for_path"), &SceneTree::get_multiplayer, DEFVAL(NodePath()));
-	ClassDB::bind_method(D_METHOD("set_multiplayer_poll_enabled", "enabled"),
-		&SceneTree::set_multiplayer_poll_enabled);
-	ClassDB::bind_method(
-		D_METHOD("is_multiplayer_poll_enabled"), &SceneTree::is_multiplayer_poll_enabled);
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_accept_quit"), "set_auto_accept_quit",
-		"is_auto_accept_quit");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "quit_on_go_back"), "set_quit_on_go_back",
-		"is_quit_on_go_back");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug_collisions_hint"), "set_debug_collisions_hint",
-		"is_debugging_collisions_hint");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug_paths_hint"), "set_debug_paths_hint",
-		"is_debugging_paths_hint");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug_navigation_hint"), "set_debug_navigation_hint",
-		"is_debugging_navigation_hint");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "paused"), "set_pause", "is_paused");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "edited_scene_root", PROPERTY_HINT_RESOURCE_TYPE,
-					 Node::get_class_static(), PROPERTY_USAGE_NONE),
-		"set_edited_scene_root", "get_edited_scene_root");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "current_scene", PROPERTY_HINT_RESOURCE_TYPE,
-					 Node::get_class_static(), PROPERTY_USAGE_NONE),
-		"set_current_scene", "get_current_scene");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "root", PROPERTY_HINT_RESOURCE_TYPE,
-					 Node::get_class_static(), PROPERTY_USAGE_NONE),
-		"", "get_root");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "multiplayer_poll"), "set_multiplayer_poll_enabled",
-		"is_multiplayer_poll_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "physics_interpolation"),
-		"set_physics_interpolation_enabled", "is_physics_interpolation_enabled");
-
-	ADD_SIGNAL(MethodInfo("tree_changed"));
-	ADD_SIGNAL(MethodInfo("scene_changed"));
-	ADD_SIGNAL(MethodInfo("tree_process_mode_changed")); // editor only signal, but due to API hash
-														 // it can't be removed in run-time
-	ADD_SIGNAL(
-		MethodInfo("node_added", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_RESOURCE_TYPE,
-									 Node::get_class_static())));
-	ADD_SIGNAL(
-		MethodInfo("node_removed", PropertyInfo(Variant::OBJECT, "node",
-									   PROPERTY_HINT_RESOURCE_TYPE, Node::get_class_static())));
-	ADD_SIGNAL(
-		MethodInfo("node_renamed", PropertyInfo(Variant::OBJECT, "node",
-									   PROPERTY_HINT_RESOURCE_TYPE, Node::get_class_static())));
-	ADD_SIGNAL(MethodInfo("node_configuration_warning_changed",
-		PropertyInfo(
-			Variant::OBJECT, "node", PROPERTY_HINT_RESOURCE_TYPE, Node::get_class_static())));
-
-	ADD_SIGNAL(MethodInfo("process_frame"));
-	ADD_SIGNAL(MethodInfo("physics_frame"));
-
-	BIND_ENUM_CONSTANT(GROUP_CALL_DEFAULT);
-	BIND_ENUM_CONSTANT(GROUP_CALL_REVERSE);
-	BIND_ENUM_CONSTANT(GROUP_CALL_DEFERRED);
-	BIND_ENUM_CONSTANT(GROUP_CALL_UNIQUE);
-}
+void SceneTree::_bind_methods() {}
 
 SceneTree* SceneTree::singleton = nullptr;
 

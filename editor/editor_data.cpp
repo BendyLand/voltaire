@@ -745,7 +745,7 @@ void EditorData::remove_scene(int p_idx)
 	}
 
 	if (!edited_scene[p_idx].path.is_empty()) {
-		EditorNode::get_singleton()->emit_signal("scene_closed", edited_scene[p_idx].path);
+		EditorNode::get_singleton()->obj->emit_signal("scene_closed", edited_scene[p_idx].path);
 	}
 
 	if (undo_redo_manager->has_history(
@@ -958,7 +958,7 @@ String EditorData::get_scene_type(int p_idx) const
 	if (!edited_scene[p_idx].root) {
 		return "";
 	}
-	return edited_scene[p_idx].root->get_class();
+	return edited_scene[p_idx].root->obj->get_class();
 }
 
 void EditorData::move_edited_scene_to_index(int p_idx)
@@ -1355,7 +1355,7 @@ EditorData::~EditorData() { memdelete(undo_redo_manager); }
 void EditorSelection::_node_removed(Node* p_node)
 {
 	ERR_FAIL_NULL(p_node);
-	ObjectID nid = p_node->get_instance_id();
+	ObjectID nid = p_node->obj->get_instance_id();
 	if (!selection.has(nid)) {
 		return;
 	}
@@ -1371,7 +1371,7 @@ void EditorSelection::add_node(Node* p_node)
 {
 	ERR_FAIL_NULL(p_node);
 	ERR_FAIL_COND(!p_node->is_inside_tree());
-	ObjectID nid = p_node->get_instance_id();
+	ObjectID nid = p_node->obj->get_instance_id();
 	if (selection.has(nid)) {
 		return;
 	}
@@ -1395,7 +1395,7 @@ void EditorSelection::add_node(Node* p_node)
 void EditorSelection::remove_node(Node* p_node)
 {
 	ERR_FAIL_NULL(p_node);
-	ObjectID nid = p_node->get_instance_id();
+	ObjectID nid = p_node->obj->get_instance_id();
 	if (!selection.has(nid)) {
 		return;
 	}
@@ -1415,7 +1415,7 @@ bool EditorSelection::is_selected(Node* p_node) const
 	if (!p_node) {
 		return false;
 	}
-	return selection.has(p_node->get_instance_id());
+	return selection.has(p_node->obj->get_instance_id());
 }
 
 void EditorSelection::_bind_methods() {}
@@ -1441,7 +1441,7 @@ void EditorSelection::_update_node_list()
 		parent = parent->get_parent();
 		bool skip = false;
 		while (parent) {
-			if (selection.has(parent->get_instance_id())) {
+			if (selection.has(parent->obj->get_instance_id())) {
 				skip = true;
 				break;
 			}
@@ -1531,8 +1531,7 @@ List<Node*> EditorSelection::get_top_selected_node_list()
 List<Node*> EditorSelection::get_full_selected_node_list()
 {
 	List<Node*> node_list;
-	for (const KeyValue<ObjectID
-, Object*>& E : selection) {
+	for (const KeyValue<ObjectID, Object*>& E : selection) {
 		Node* node = ObjectDB::get_instance<Node>(E.key);
 		if (node) {
 			node_list.push_back(node);

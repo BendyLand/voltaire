@@ -294,9 +294,9 @@ void EditorDockManager::_window_close_request(WindowWrapper* p_wrapper)
 
 EditorDock* EditorDockManager::_close_window(WindowWrapper* p_wrapper)
 {
-	p_wrapper->set_block_signals(true);
+	p_wrapper->obj->set_block_signals(true);
 	EditorDock* dock = Object::cast_to<EditorDock>(p_wrapper->release_wrapped_control());
-	p_wrapper->set_block_signals(false);
+	p_wrapper->obj->set_block_signals(false);
 	ERR_FAIL_COND_V(!all_docks.has(dock), nullptr);
 
 	dock->dock_window = nullptr;
@@ -394,9 +394,9 @@ void EditorDockManager::_move_dock(
 					parent_tabs->set_current_tab(parent_tabs->get_previous_tab());
 				}
 			}
-			parent->set_block_signals(true);
+			parent->obj->set_block_signals(true);
 			parent->remove_child(p_dock);
-			parent->set_block_signals(false);
+			parent->obj->set_block_signals(false);
 			if (parent_tabs) {
 				parent_tabs->update_visibility();
 			}
@@ -421,9 +421,9 @@ void EditorDockManager::_move_dock(
 	}
 
 	// Add dock to its new parent, at the given tab index.
-	p_target->set_block_signals(true);
+	p_target->obj->set_block_signals(true);
 	p_target->add_child(p_dock);
-	p_target->set_block_signals(false);
+	p_target->obj->set_block_signals(false);
 
 	if (dock_tab_container) {
 		if (dock_tab_container->is_inside_tree()) {
@@ -803,7 +803,7 @@ void EditorDockManager::focus_dock(EditorDock* p_dock)
 	}
 
 	if (!p_dock->is_open) {
-		p_dock->emit_signal("opened");
+		p_dock->obj->emit_signal("opened");
 		open_dock(p_dock, false);
 	}
 
@@ -993,7 +993,7 @@ void DockContextPopup::_tab_move_right()
 void DockContextPopup::_close_dock()
 {
 	hide();
-	context_dock->emit_signal("closed");
+	context_dock->obj->emit_signal("closed");
 	dock_manager->close_dock(context_dock);
 }
 
@@ -1308,7 +1308,7 @@ void DockSlotGrid::gui_input(const Ref<InputEvent>& p_event)
 		}
 
 		if (mb.is_valid() && mb->get_button_index() == MouseButton::LEFT && mb->is_pressed()) {
-			emit_signal("slot_clicked", over_dock_slot);
+			this->obj->emit_signal("slot_clicked", over_dock_slot);
 		}
 	}
 }

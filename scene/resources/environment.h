@@ -35,11 +35,13 @@
 
 class Sky;
 
-class Environment : public Resource {
+class Environment : public Resource
+{
 	VLTRCLASS(Environment, Resource);
 
 public:
-	enum BGMode {
+	enum BGMode
+	{
 		BG_CLEAR_COLOR,
 		BG_COLOR,
 		BG_SKY,
@@ -49,20 +51,23 @@ public:
 		BG_MAX
 	};
 
-	enum AmbientSource {
+	enum AmbientSource
+	{
 		AMBIENT_SOURCE_BG,
 		AMBIENT_SOURCE_DISABLED,
 		AMBIENT_SOURCE_COLOR,
 		AMBIENT_SOURCE_SKY,
 	};
 
-	enum ReflectionSource {
+	enum ReflectionSource
+	{
 		REFLECTION_SOURCE_BG,
 		REFLECTION_SOURCE_DISABLED,
 		REFLECTION_SOURCE_SKY,
 	};
 
-	enum ToneMapper {
+	enum ToneMapper
+	{
 		TONE_MAPPER_LINEAR,
 		TONE_MAPPER_REINHARDT,
 		TONE_MAPPER_FILMIC,
@@ -70,18 +75,21 @@ public:
 		TONE_MAPPER_AGX,
 	};
 
-	enum SDFGIYScale {
+	enum SDFGIYScale
+	{
 		SDFGI_Y_SCALE_50_PERCENT,
 		SDFGI_Y_SCALE_75_PERCENT,
 		SDFGI_Y_SCALE_100_PERCENT,
 	};
 
-	enum FogMode {
+	enum FogMode
+	{
 		FOG_MODE_EXPONENTIAL,
 		FOG_MODE_DEPTH,
 	};
 
-	enum GlowBlendMode {
+	enum GlowBlendMode
+	{
 		GLOW_BLEND_MODE_ADDITIVE,
 		GLOW_BLEND_MODE_SCREEN,
 		GLOW_BLEND_MODE_SOFTLIGHT,
@@ -116,7 +124,7 @@ private:
 	ToneMapper tone_mapper = TONE_MAPPER_LINEAR;
 	float tonemap_exposure = 1.0;
 	float tonemap_white = 1.0;
-	float tonemap_agx_white = 16.29; // Default to Blender's AgX white.
+	float tonemap_agx_white = 16.29;   // Default to Blender's AgX white.
 	float tonemap_agx_contrast = 1.25; // Default to approximately Blender's AgX contrast.
 	void _update_tonemap();
 
@@ -186,7 +194,7 @@ private:
 	float fog_sun_scatter = 0.0;
 	float fog_density = 0.01;
 	float fog_height = 0.0;
-	float fog_height_density = 0.0; //can be negative to invert effect
+	float fog_height_density = 0.0; // can be negative to invert effect
 	float fog_aerial_perspective = 0.0;
 	float fog_sky_affect = 1.0;
 
@@ -226,10 +234,10 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 #ifndef DISABLE_DEPRECATED
 	// Kept for compatibility from 3.x to 4.0.
-	bool _set(const StringName &p_name, const Variant &p_value);
+	bool _set(const StringName& p_name, const Variant& p_value);
 #endif
 
 public:
@@ -238,13 +246,13 @@ public:
 	// Background
 	void set_background(BGMode p_bg);
 	BGMode get_background() const;
-	void set_sky(const Ref<Sky> &p_sky);
+	void set_sky(const Ref<Sky>& p_sky);
 	Ref<Sky> get_sky() const;
 	void set_sky_custom_fov(float p_scale);
 	float get_sky_custom_fov() const;
-	void set_sky_rotation(const Vector3 &p_rotation);
+	void set_sky_rotation(const Vector3& p_rotation);
 	Vector3 get_sky_rotation() const;
-	void set_bg_color(const Color &p_color);
+	void set_bg_color(const Color& p_color);
 	Color get_bg_color() const;
 	void set_bg_energy_multiplier(float p_energy);
 	float get_bg_energy_multiplier() const;
@@ -256,7 +264,7 @@ public:
 	int get_camera_feed_id() const;
 
 	// Ambient light
-	void set_ambient_light_color(const Color &p_color);
+	void set_ambient_light_color(const Color& p_color);
 	Color get_ambient_light_color() const;
 	void set_ambient_source(AmbientSource p_source);
 	AmbientSource get_ambient_source() const;
@@ -383,7 +391,7 @@ public:
 	bool is_fog_enabled() const;
 	void set_fog_mode(FogMode p_mode);
 	FogMode get_fog_mode() const;
-	void set_fog_light_color(const Color &p_light_color);
+	void set_fog_light_color(const Color& p_light_color);
 	Color get_fog_light_color() const;
 	void set_fog_light_energy(float p_amount);
 	float get_fog_light_energy() const;
@@ -460,3 +468,5 @@ VARIANT_ENUM_CAST(Environment::ToneMapper)
 VARIANT_ENUM_CAST(Environment::SDFGIYScale)
 VARIANT_ENUM_CAST(Environment::GlowBlendMode)
 VARIANT_ENUM_CAST(Environment::FogMode)
+
+

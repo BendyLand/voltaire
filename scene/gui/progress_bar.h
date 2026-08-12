@@ -32,14 +32,14 @@
 
 #include "scene/gui/range.h"
 
-class ProgressBar : public Range {
-	VLTRCLASS(ProgressBar, Range);
-
+class ProgressBar : public Range
+{
 	bool show_percentage = true;
 	bool indeterminate = false;
 	bool editor_preview_indeterminate = false;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> background_style;
 		Ref<StyleBox> fill_style;
 
@@ -52,14 +52,15 @@ class ProgressBar : public Range {
 
 protected:
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
 	static void _bind_methods();
 
 	double indeterminate_min_speed = 200.0;
 
 public:
-	enum FillMode {
+	enum FillMode
+	{
 		FILL_BEGIN_TO_END,
 		FILL_END_TO_BEGIN,
 		FILL_TOP_TO_BOTTOM,
@@ -89,3 +90,5 @@ private:
 };
 
 VARIANT_ENUM_CAST(ProgressBar::FillMode);
+
+

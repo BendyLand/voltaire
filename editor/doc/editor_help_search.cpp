@@ -136,7 +136,7 @@ Dictionary EditorHelpSearch::_native_search_cb(const String &p_search_string, in
 }
 
 void EditorHelpSearch::_native_action_cb(const String &p_item_string) {
-	emit_signal(SNAME("go_to_help"), p_item_string);
+	this->obj->emit_signal(SNAME("go_to_help"), p_item_string);
 }
 
 void EditorHelpSearch::_update_results() {
@@ -191,7 +191,7 @@ void EditorHelpSearch::_confirmed() {
 	// Activate the script editor and emit the signal with the documentation link to display.
 	EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 
-	emit_signal(SNAME("go_to_help"), item->get_metadata(0));
+	this->obj->emit_signal(SNAME("go_to_help"), item->get_metadata(0));
 
 	hide();
 }

@@ -36,17 +36,18 @@
 class ButtonGroup;
 class Timer;
 
-class BaseButton : public Control {
-	VLTRCLASS(BaseButton, Control);
-
+class BaseButton : public Control
+{
 public:
-	enum ActionMode {
+	enum ActionMode
+	{
 		ACTION_MODE_BUTTON_PRESS,
 		ACTION_MODE_BUTTON_RELEASE,
 	};
 
 private:
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		int click_margin = 0;
 	} theme_cache;
 
@@ -60,7 +61,9 @@ private:
 	ObjectID shortcut_context;
 
 	ActionMode action_mode = ACTION_MODE_BUTTON_RELEASE;
-	struct Status {
+
+	struct Status
+	{
 		bool pressed = false;
 		bool hovering = false;
 		bool press_attempt = false;
@@ -78,7 +81,7 @@ private:
 
 	void on_action_event(Ref<InputEvent> p_event);
 
-	Timer *shortcut_feedback_timer = nullptr;
+	Timer* shortcut_feedback_timer = nullptr;
 	bool in_shortcut_feedback = false;
 	void _shortcut_feedback_timeout();
 
@@ -86,15 +89,16 @@ protected:
 	virtual void pressed();
 	virtual void toggled(bool p_pressed);
 	static void _bind_methods();
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void shortcut_input(const Ref<InputEvent>& p_event) override;
 	void _notification(int p_what);
 
 	bool _was_pressed_by_mouse() const;
-	void _accessibility_action_click(const Variant &p_data);
+	void _accessibility_action_click(const Variant& p_data);
 
 public:
-	enum DrawMode {
+	enum DrawMode
+	{
 		DRAW_NORMAL,
 		DRAW_PRESSED,
 		DRAW_HOVER,
@@ -104,11 +108,11 @@ public:
 
 	DrawMode get_draw_mode() const;
 
-	virtual bool has_point(const Point2 &p_point) const override;
+	virtual bool has_point(const Point2& p_point) const override;
 
 	/* Signals */
 
-	bool is_pressed() const; ///< return whether button is pressed (toggled in)
+	bool is_pressed() const;  ///< return whether button is pressed (toggled in)
 	bool is_pressing() const; ///< return whether button is pressed (toggled in)
 	bool is_hovered() const;
 
@@ -135,12 +139,12 @@ public:
 	void set_button_mask(BitField<MouseButtonMask> p_mask);
 	BitField<MouseButtonMask> get_button_mask() const;
 
-	void set_shortcut(const Ref<Shortcut> &p_shortcut);
+	void set_shortcut(const Ref<Shortcut>& p_shortcut);
 	Ref<Shortcut> get_shortcut() const;
 
-	virtual Control *make_custom_tooltip(const String &p_text) const override;
+	virtual Control* make_custom_tooltip(const String& p_text) const override;
 
-	void set_button_group(const Ref<ButtonGroup> &p_group);
+	void set_button_group(const Ref<ButtonGroup>& p_group);
 	Ref<ButtonGroup> get_button_group() const;
 
 	PackedStringArray get_configuration_warnings() const override;
@@ -152,20 +156,23 @@ public:
 VARIANT_ENUM_CAST(BaseButton::DrawMode)
 VARIANT_ENUM_CAST(BaseButton::ActionMode)
 
-class ButtonGroup : public Resource {
+class ButtonGroup : public Resource
+{
 	VLTRCLASS(ButtonGroup, Resource);
 	friend class BaseButton;
-	HashSet<BaseButton *> buttons;
+	HashSet<BaseButton*> buttons;
 	bool allow_unpress = false;
 
 protected:
 	static void _bind_methods();
 
 public:
-	BaseButton *get_pressed_button();
-	void get_buttons(List<BaseButton *> *r_buttons);
+	BaseButton* get_pressed_button();
+	void get_buttons(List<BaseButton*>* r_buttons);
 	TypedArray<BaseButton> _get_buttons();
 	void set_allow_unpress(bool p_enabled);
 	bool is_allow_unpress();
 	ButtonGroup();
 };
+
+

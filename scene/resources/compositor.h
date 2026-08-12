@@ -36,11 +36,13 @@
 
 /* Compositor Effect */
 
-class CompositorEffect : public Resource {
+class CompositorEffect : public Resource
+{
 	VLTRCLASS(CompositorEffect, Resource);
 
 public:
-	enum EffectCallbackType {
+	enum EffectCallbackType
+	{
 		EFFECT_CALLBACK_TYPE_PRE_OPAQUE,
 		EFFECT_CALLBACK_TYPE_POST_OPAQUE,
 		EFFECT_CALLBACK_TYPE_POST_SKY,
@@ -62,9 +64,9 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
-	void _call_render_callback(int p_effect_callback_type, const RenderData *p_render_data);
+	void _call_render_callback(int p_effect_callback_type, const RenderData* p_render_data);
 
 public:
 	virtual RID get_rid() const override { return rid; }
@@ -98,7 +100,8 @@ VARIANT_ENUM_CAST(CompositorEffect::EffectCallbackType)
 
 /* Compositor */
 
-class Compositor : public Resource {
+class Compositor : public Resource
+{
 	VLTRCLASS(Compositor, Resource);
 
 private:
@@ -117,6 +120,8 @@ public:
 	~Compositor();
 
 	// Compositor effects
-	void set_compositor_effects(const TypedArray<CompositorEffect> &p_compositor_effects);
+	void set_compositor_effects(const TypedArray<CompositorEffect>& p_compositor_effects);
 	TypedArray<CompositorEffect> get_compositor_effects() const;
 };
+
+

@@ -32,9 +32,8 @@
 
 #include "scene/main/node.h"
 
-class Timer : public Node {
-	VLTRCLASS(Timer, Node);
-
+class Timer : public Node
+{
 	double wait_time = 1.0;
 	bool one_shot = false;
 	bool autostart = false;
@@ -49,7 +48,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	enum TimerProcessCallback {
+	enum TimerProcessCallback
+	{
 		TIMER_PROCESS_PHYSICS,
 		TIMER_PROCESS_IDLE,
 	};
@@ -87,3 +87,5 @@ private:
 };
 
 VARIANT_ENUM_CAST(Timer::TimerProcessCallback);
+
+

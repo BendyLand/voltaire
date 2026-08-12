@@ -32,8 +32,11 @@
 
 #include "scene/main/node.h"
 #include "scene/resources/3d/world_3d.h"
+#include "scene/resources/environment.h"
+#include "servers/rendering/rendering_server_enums.h"
 
-class Node3DGizmo : public RefCounted {
+class Node3DGizmo : public RefCounted
+{
 	VLTRCLASS(Node3DGizmo, RefCounted);
 
 public:
@@ -44,45 +47,56 @@ public:
 	virtual void free() = 0;
 
 	Node3DGizmo();
+
 	virtual ~Node3DGizmo() {}
 };
 
-class Node3D : public Node {
-	VLTRCLASS(Node3D, Node);
-
+class Node3D : public Node
+{
 	friend class SceneTreeFTI;
 	friend class SceneTreeFTITests;
 
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::NODE_3D;
+	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::NODE_3D;
 
 	// Edit mode for the rotation.
 	// THIS MODE ONLY AFFECTS HOW DATA IS EDITED AND SAVED
 	// IT DOES _NOT_ AFFECT THE TRANSFORM LOGIC (see comment in TransformDirty).
-	enum RotationEditMode {
+	enum RotationEditMode
+	{
 		ROTATION_EDIT_MODE_EULER,
 		ROTATION_EDIT_MODE_QUATERNION,
 		ROTATION_EDIT_MODE_BASIS,
 	};
 
 private:
-	// For the sake of ease of use, Node3D can operate with Transforms (Basis+Origin), Quaternion/Scale and Euler Rotation/Scale.
-	// Transform and Quaternion are stored in data.local_transform Basis (so quaternion is not really stored, but converted back/forth from 3x3 matrix on demand).
-	// Euler needs to be kept separate because converting to Basis and back may result in a different vector (which is troublesome for users
-	// editing in the inspector, not only because of the numerical precision loss but because they expect these rotations to be consistent, or support
-	// "redundant" rotations for animation interpolation, like going from 0 to 720 degrees).
+	// For the sake of ease of use, Node3D can operate with Transforms (Basis+Origin),
+	// Quaternion/Scale and Euler Rotation/Scale. Transform and Quaternion are stored in
+	// data.local_transform Basis (so quaternion is not really stored, but converted back/forth from
+	// 3x3 matrix on demand). Euler needs to be kept separate because converting to Basis and back
+	// may result in a different vector (which is troublesome for users editing in the inspector,
+	// not only because of the numerical precision loss but because they expect these rotations to
+	// be consistent, or support "redundant" rotations for animation interpolation, like going from
+	// 0 to 720 degrees).
 	//
-	// As such, the system works in a way where if the local transform is set (via transform/basis/quaternion), the EULER rotation and scale becomes dirty.
-	// It will remain dirty until reading back is attempted (for performance reasons). Likewise, if the Euler rotation scale are set, the local transform
-	// will become dirty (and again, will not become valid again until read).
+	// As such, the system works in a way where if the local transform is set (via
+	// transform/basis/quaternion), the EULER rotation and scale becomes dirty. It will remain dirty
+	// until reading back is attempted (for performance reasons). Likewise, if the Euler rotation
+	// scale are set, the local transform will become dirty (and again, will not become valid again
+	// until read).
 	//
-	// All this is transparent from outside the Node3D API, which allows everything to works by calling these functions in exchange.
+	// All this is transparent from outside the Node3D API, which allows everything to works by
+	// calling these functions in exchange.
 	//
-	// Additionally, setting either transform, quaternion, Euler rotation or scale makes the global transform dirty, which will be updated when read again.
+	// Additionally, setting either transform, quaternion, Euler rotation or scale makes the global
+	// transform dirty, which will be updated when read again.
 	//
-	// NOTE: Again, RotationEditMode is _independent_ of this mechanism, it is only meant to expose the right set of properties for editing (editor) and saving
-	// (to scene, in order to keep the same values and avoid data loss on conversions). It has zero influence in the logic described above.
-	enum TransformDirty {
+	// NOTE: Again, RotationEditMode is _independent_ of this mechanism, it is only meant to expose
+	// the right set of properties for editing (editor) and saving (to scene, in order to keep the
+	// same values and avoid data loss on conversions). It has zero influence in the logic described
+	// above.
+	enum TransformDirty
+	{
 		DIRTY_NONE = 0,
 		DIRTY_EULER_ROTATION_AND_SCALE = 1,
 		DIRTY_LOCAL_TRANSFORM = 2,
@@ -90,7 +104,8 @@ private:
 		DIRTY_GLOBAL_INTERPOLATED_TRANSFORM = 8,
 	};
 
-	struct ClientPhysicsInterpolationData {
+	struct ClientPhysicsInterpolationData
+	{
 		Transform3D global_xform_curr;
 		Transform3D global_xform_prev;
 		uint64_t current_physics_tick = 0;
@@ -102,7 +117,8 @@ private:
 
 	// This Data struct is to avoid namespace pollution in derived classes.
 
-	struct Data {
+	struct Data
+	{
 		// Interpolated global transform - correct on the frame only.
 		// Only used with FTI.
 		Transform3D global_transform_interpolated;
@@ -123,13 +139,14 @@ private:
 
 		mutable MTNumeric<uint32_t> dirty;
 
-		Viewport *viewport = nullptr;
+		Viewport* viewport = nullptr;
 
 		bool top_level : 1;
 		bool inside_world : 1;
 
 		// This is cached, and only currently kept up to date in visual instances.
-		// This is set if a visual instance is (a) in the tree AND (b) visible via is_visible_in_tree() call.
+		// This is set if a visual instance is (a) in the tree AND (b) visible via
+		// is_visible_in_tree() call.
 		bool vi_visible : 1;
 
 		bool ignore_notification : 1;
@@ -151,15 +168,15 @@ private:
 
 		RID visibility_parent;
 
-		Node3D *parent = nullptr;
+		Node3D* parent = nullptr;
 
 		// An unordered vector of `Spatial` children only.
 		// This is a subset of the `Node::children`, purely
 		// an optimization for faster traversal.
-		LocalVector<Node3D *> node3d_children;
+		LocalVector<Node3D*> node3d_children;
 		uint32_t index_in_parent = UINT32_MAX;
 
-		ClientPhysicsInterpolationData *client_physics_interpolation_data = nullptr;
+		ClientPhysicsInterpolationData* client_physics_interpolation_data = nullptr;
 
 #ifdef TOOLS_ENABLED
 		Vector<Ref<Node3DGizmo>> gizmos;
@@ -173,15 +190,23 @@ private:
 
 	NodePath visibility_parent_path;
 
-	_FORCE_INLINE_ uint32_t _read_dirty_mask() const { return is_group_processing() ? data.dirty.mt.get() : data.dirty.st; }
-	_FORCE_INLINE_ bool _test_dirty_bits(uint32_t p_bits) const { return (is_group_processing() ? data.dirty.mt.get() : data.dirty.st) & p_bits; }
+	_FORCE_INLINE_ uint32_t _read_dirty_mask() const
+	{
+		return is_group_processing() ? data.dirty.mt.get() : data.dirty.st;
+	}
+
+	_FORCE_INLINE_ bool _test_dirty_bits(uint32_t p_bits) const
+	{
+		return (is_group_processing() ? data.dirty.mt.get() : data.dirty.st) & p_bits;
+	}
+
 	void _replace_dirty_mask(uint32_t p_mask) const;
 	void _set_dirty_bits(uint32_t p_bits) const;
 	void _clear_dirty_bits(uint32_t p_bits) const;
 
 	void _update_gizmos();
 	void _notify_dirty();
-	void _propagate_transform_changed(Node3D *p_origin);
+	void _propagate_transform_changed(Node3D* p_origin);
 
 	void _propagate_visibility_changed();
 
@@ -190,15 +215,25 @@ private:
 	void _propagate_transform_changed_deferred();
 
 protected:
-	_FORCE_INLINE_ void set_ignore_transform_notification(bool p_ignore) { data.ignore_notification = p_ignore; }
+	_FORCE_INLINE_ void set_ignore_transform_notification(bool p_ignore)
+	{
+		data.ignore_notification = p_ignore;
+	}
 
 	_FORCE_INLINE_ void _update_local_transform() const;
 	_FORCE_INLINE_ void _update_rotation_and_scale() const;
 
 	void _set_vi_visible(bool p_visible) { data.vi_visible = p_visible; }
+
 	bool _is_vi_visible() const { return data.vi_visible; }
+
 	Transform3D _get_global_transform_interpolated(real_t p_interpolation_fraction);
-	const Transform3D &_get_cached_global_transform_interpolated() const { return data.global_transform_interpolated; }
+
+	const Transform3D& _get_cached_global_transform_interpolated() const
+	{
+		return data.global_transform_interpolated;
+	}
+
 	void _disable_client_physics_interpolation();
 
 	// Calling this announces to the FTI system that a node has been moved,
@@ -212,6 +247,7 @@ protected:
 	// Make sure to call the parent class fti_update_servers(),
 	// so all data is updated to the servers.
 	virtual void fti_update_servers_xform() {}
+
 	virtual void fti_update_servers_property() {}
 
 	// Pump the FTI data, also gives a chance for inherited classes
@@ -220,18 +256,20 @@ protected:
 	// transforms and properties to stored previous values,
 	// and this should take place both on ticks, and during resets.
 	virtual void fti_pump_xform();
+
 	virtual void fti_pump_property() {}
 
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
-	bool _property_can_revert(const StringName &p_name) const;
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
+	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 public:
-	enum {
+	enum
+	{
 		NOTIFICATION_TRANSFORM_CHANGED = 2000, // Keep in sync with SceneTree.
 		NOTIFICATION_ENTER_WORLD = 41,
 		NOTIFICATION_EXIT_WORLD = 42,
@@ -239,24 +277,24 @@ public:
 		NOTIFICATION_LOCAL_TRANSFORM_CHANGED = 44,
 	};
 
-	Node3D *get_parent_node_3d() const;
+	Node3D* get_parent_node_3d() const;
 
 	Ref<World3D> get_world_3d() const;
 
-	void set_position(const Vector3 &p_position);
+	void set_position(const Vector3& p_position);
 
 	void set_rotation_edit_mode(RotationEditMode p_mode);
 	RotationEditMode get_rotation_edit_mode() const;
 
 	void set_rotation_order(EulerOrder p_order);
-	void set_rotation(const Vector3 &p_euler_rad);
-	void set_rotation_degrees(const Vector3 &p_euler_degrees);
-	void set_scale(const Vector3 &p_scale);
+	void set_rotation(const Vector3& p_euler_rad);
+	void set_rotation_degrees(const Vector3& p_euler_degrees);
+	void set_scale(const Vector3& p_scale);
 
-	void set_global_position(const Vector3 &p_position);
-	void set_global_basis(const Basis &p_basis);
-	void set_global_rotation(const Vector3 &p_euler_rad);
-	void set_global_rotation_degrees(const Vector3 &p_euler_degrees);
+	void set_global_position(const Vector3& p_position);
+	void set_global_basis(const Basis& p_basis);
+	void set_global_rotation(const Vector3& p_euler_rad);
+	void set_global_rotation_degrees(const Vector3& p_euler_degrees);
 
 	Vector3 get_position() const;
 
@@ -270,10 +308,10 @@ public:
 	Vector3 get_global_rotation() const;
 	Vector3 get_global_rotation_degrees() const;
 
-	void set_transform(const Transform3D &p_transform);
-	void set_basis(const Basis &p_basis);
-	void set_quaternion(const Quaternion &p_quaternion);
-	void set_global_transform(const Transform3D &p_transform);
+	void set_transform(const Transform3D& p_transform);
+	void set_basis(const Basis& p_basis);
+	void set_quaternion(const Quaternion& p_quaternion);
+	void set_global_transform(const Transform3D& p_transform);
 
 	Transform3D get_transform() const;
 	Basis get_basis() const;
@@ -286,14 +324,19 @@ public:
 #ifdef TOOLS_ENABLED
 	virtual Transform3D get_global_gizmo_transform() const;
 	virtual Transform3D get_local_gizmo_transform() const;
-	virtual void set_transform_gizmo_visible(bool p_enabled) { data.transform_gizmo_visible = p_enabled; }
+
+	virtual void set_transform_gizmo_visible(bool p_enabled)
+	{
+		data.transform_gizmo_visible = p_enabled;
+	}
+
 	virtual bool is_transform_gizmo_visible() const { return data.transform_gizmo_visible; }
 #endif
-	virtual void reparent(RequiredParam<Node> p_parent, bool p_keep_global_transform = true) override;
-
+	void reparent(Node* p_parent, bool p_keep_global_transform);
 	void set_disable_gizmos(bool p_enabled);
 	void update_gizmos();
-	void set_subgizmo_selection(Ref<Node3DGizmo> p_gizmo, int p_id, Transform3D p_transform = Transform3D());
+	void set_subgizmo_selection(
+		Ref<Node3DGizmo> p_gizmo, int p_id, Transform3D p_transform = Transform3D());
 	void clear_subgizmo_selection();
 	Vector<Ref<Node3DGizmo>> get_gizmos() const;
 	TypedArray<Node3DGizmo> get_gizmos_bind() const;
@@ -310,25 +353,27 @@ public:
 
 	_FORCE_INLINE_ bool is_inside_world() const { return data.inside_world; }
 
-	Transform3D get_relative_transform(const Node *p_parent) const;
+	Transform3D get_relative_transform(const Node* p_parent) const;
 
-	void rotate(const Vector3 &p_axis, real_t p_angle);
+	void rotate(const Vector3& p_axis, real_t p_angle);
 	void rotate_x(real_t p_angle);
 	void rotate_y(real_t p_angle);
 	void rotate_z(real_t p_angle);
-	void translate(const Vector3 &p_offset);
-	void scale(const Vector3 &p_ratio);
+	void translate(const Vector3& p_offset);
+	void scale(const Vector3& p_ratio);
 
-	void rotate_object_local(const Vector3 &p_axis, real_t p_angle);
-	void scale_object_local(const Vector3 &p_scale);
-	void translate_object_local(const Vector3 &p_offset);
+	void rotate_object_local(const Vector3& p_axis, real_t p_angle);
+	void scale_object_local(const Vector3& p_scale);
+	void translate_object_local(const Vector3& p_offset);
 
-	void global_rotate(const Vector3 &p_axis, real_t p_angle);
-	void global_scale(const Vector3 &p_scale);
-	void global_translate(const Vector3 &p_offset);
+	void global_rotate(const Vector3& p_axis, real_t p_angle);
+	void global_scale(const Vector3& p_scale);
+	void global_translate(const Vector3& p_offset);
 
-	void look_at(const Vector3 &p_target, const Vector3 &p_up = Vector3::UP, bool p_use_model_front = false);
-	void look_at_from_position(const Vector3 &p_pos, const Vector3 &p_target, const Vector3 &p_up = Vector3::UP, bool p_use_model_front = false);
+	void look_at(
+		const Vector3& p_target, const Vector3& p_up = Vector3::UP, bool p_use_model_front = false);
+	void look_at_from_position(const Vector3& p_pos, const Vector3& p_target,
+		const Vector3& p_up = Vector3::UP, bool p_use_model_front = false);
 
 	Vector3 to_local(Vector3 p_global) const;
 	Vector3 to_global(Vector3 p_local) const;
@@ -350,7 +395,7 @@ public:
 
 	void force_update_transform();
 
-	void set_visibility_parent(const NodePath &p_path);
+	void set_visibility_parent(const NodePath& p_path);
 	NodePath get_visibility_parent() const;
 
 	Node3D();
@@ -358,3 +403,5 @@ public:
 };
 
 VARIANT_ENUM_CAST(Node3D::RotationEditMode)
+
+

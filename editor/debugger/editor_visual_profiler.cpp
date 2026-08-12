@@ -127,7 +127,7 @@ void EditorVisualProfiler::clear() {
 }
 
 String EditorVisualProfiler::_get_time_as_text(float p_time) {
-	const String &lang = _get_locale();
+	const String &lang = this->obj->_get_locale();
 
 	int dmode = display_mode->get_selected();
 
@@ -449,7 +449,7 @@ void EditorVisualProfiler::_activate_pressed() {
 		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
 		activate->set_text(TTRC("Start"));
 	}
-	emit_signal(SNAME("enable_profiling"), activate->is_pressed());
+	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
 void EditorVisualProfiler::_clear_pressed() {
@@ -714,7 +714,7 @@ void EditorVisualProfiler::set_enabled(bool p_enable) {
 void EditorVisualProfiler::set_profiling(bool p_profiling) {
 	activate->set_pressed(p_profiling);
 	_update_button_text();
-	emit_signal(SNAME("enable_profiling"), activate->is_pressed());
+	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
 bool EditorVisualProfiler::is_profiling() {

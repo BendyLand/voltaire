@@ -36,11 +36,11 @@
 class PanelContainer;
 class TextureRect;
 
-class ScrollContainer : public Container {
-	VLTRCLASS(ScrollContainer, Container);
-
+class ScrollContainer : public Container
+{
 public:
-	enum ScrollMode {
+	enum ScrollMode
+	{
 		SCROLL_MODE_DISABLED = 0,
 		SCROLL_MODE_AUTO,
 		SCROLL_MODE_SHOW_ALWAYS,
@@ -49,7 +49,8 @@ public:
 		SCROLL_MODE_MAXIMIZE_FIRST,
 	};
 
-	enum ScrollHintMode {
+	enum ScrollHintMode
+	{
 		SCROLL_HINT_MODE_DISABLED,
 		SCROLL_HINT_MODE_ALL,
 		SCROLL_HINT_MODE_TOP_AND_LEFT,
@@ -57,11 +58,12 @@ public:
 	};
 
 private:
-	HScrollBar *h_scroll = nullptr;
-	VScrollBar *v_scroll = nullptr;
-	PanelContainer *focus_panel = nullptr;
+	HScrollBar* h_scroll = nullptr;
+	VScrollBar* v_scroll = nullptr;
+	PanelContainer* focus_panel = nullptr;
 
-	mutable Size2 largest_child_min_size; // The largest one among the min sizes of all available child controls.
+	mutable Size2 largest_child_min_size; // The largest one among the min sizes of all available
+										  // child controls.
 
 	void _update_scrollbars();
 
@@ -75,8 +77,8 @@ private:
 	bool beyond_deadzone = false;
 	bool scroll_on_drag_hover = false;
 
-	TextureRect *scroll_hint_top_left = nullptr;
-	TextureRect *scroll_hint_bottom_right = nullptr;
+	TextureRect* scroll_hint_top_left = nullptr;
+	TextureRect* scroll_hint_bottom_right = nullptr;
 
 	ScrollMode horizontal_scroll_mode = SCROLL_MODE_AUTO;
 	ScrollMode vertical_scroll_mode = SCROLL_MODE_AUTO;
@@ -95,7 +97,8 @@ private:
 	bool following = false;
 	Vector2 scroll_diff;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> panel_style;
 		Ref<StyleBox> focus_style;
 
@@ -129,7 +132,7 @@ protected:
 	Size2 get_desired_size() const override;
 	Size2 get_inner_combined_maximum_size() const override;
 
-	void _gui_focus_changed(Control *p_control);
+	void _gui_focus_changed(Control* p_control);
 	void _reposition_children();
 
 	void _notification(int p_what);
@@ -139,14 +142,14 @@ protected:
 	void _update_scrollbar_position();
 	void _scroll_moved(float);
 
-	void _accessibility_action_scroll_set(const Variant &p_data);
-	void _accessibility_action_scroll_up(const Variant &p_data);
-	void _accessibility_action_scroll_down(const Variant &p_data);
-	void _accessibility_action_scroll_left(const Variant &p_data);
-	void _accessibility_action_scroll_right(const Variant &p_data);
+	void _accessibility_action_scroll_set(const Variant& p_data);
+	void _accessibility_action_scroll_up(const Variant& p_data);
+	void _accessibility_action_scroll_down(const Variant& p_data);
+	void _accessibility_action_scroll_left(const Variant& p_data);
+	void _accessibility_action_scroll_right(const Variant& p_data);
 
 public:
-	virtual void gui_input(const Ref<InputEvent> &p_gui_input) override;
+	virtual void gui_input(const Ref<InputEvent>& p_gui_input) override;
 
 	void set_h_scroll(int p_pos);
 	int get_h_scroll() const;
@@ -183,9 +186,9 @@ public:
 
 	void set_scroll_on_drag_hover(bool p_scroll);
 
-	HScrollBar *get_h_scroll_bar();
-	VScrollBar *get_v_scroll_bar();
-	void ensure_control_visible(Control *p_control);
+	HScrollBar* get_h_scroll_bar();
+	VScrollBar* get_v_scroll_bar();
+	void ensure_control_visible(Control* p_control);
 
 	PackedStringArray get_configuration_warnings() const override;
 
@@ -197,3 +200,5 @@ public:
 
 VARIANT_ENUM_CAST(ScrollContainer::ScrollMode);
 VARIANT_ENUM_CAST(ScrollContainer::ScrollHintMode);
+
+

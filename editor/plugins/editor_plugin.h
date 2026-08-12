@@ -56,8 +56,8 @@ class EditorTranslationParserPlugin;
 class EditorUndoRedoManager;
 class ScriptCreateDialog;
 
-class EditorPlugin : public Node {
-	VLTRCLASS(EditorPlugin, Node);
+class EditorPlugin : public Node
+{
 	friend class EditorData;
 
 	bool input_event_forwarding_always_enabled = false;
@@ -67,13 +67,14 @@ class EditorPlugin : public Node {
 	String plugin_version;
 
 #ifndef DISABLE_DEPRECATED
-	static inline HashMap<Control *, EditorDock *> legacy_docks;
+	static inline HashMap<Control*, EditorDock*> legacy_docks;
 
 	void _editor_project_settings_changed();
 #endif
 
 public:
-	enum CustomControlContainer {
+	enum CustomControlContainer
+	{
 		CONTAINER_TOOLBAR,
 		CONTAINER_SPATIAL_EDITOR_MENU,
 		CONTAINER_SPATIAL_EDITOR_SIDE_LEFT,
@@ -89,7 +90,8 @@ public:
 	};
 
 #ifndef DISABLE_DEPRECATED
-	enum DockSlot {
+	enum DockSlot
+	{
 		DOCK_SLOT_NONE = -1,
 		DOCK_SLOT_LEFT_UL,
 		DOCK_SLOT_LEFT_BL,
@@ -104,7 +106,8 @@ public:
 	};
 #endif
 
-	enum AfterGUIInput {
+	enum AfterGUIInput
+	{
 		AFTER_GUI_INPUT_PASS,
 		AFTER_GUI_INPUT_STOP,
 		AFTER_GUI_INPUT_CUSTOM,
@@ -114,87 +117,106 @@ protected:
 	void _notification(int p_what);
 
 	static void _bind_methods();
-	EditorUndoRedoManager *get_undo_redo();
+	EditorUndoRedoManager* get_undo_redo();
 
-	void add_custom_type(const String &p_type, const String &p_base, const Ref<Script> &p_script, const Ref<Texture2D> &p_icon);
-	void remove_custom_type(const String &p_type);
+	void add_custom_type(const String& p_type, const String& p_base, const Ref<Script>& p_script,
+		const Ref<Texture2D>& p_icon);
+	void remove_custom_type(const String& p_type);
 
 #ifndef DISABLE_DEPRECATED
-	Button *_add_control_to_bottom_panel_bind_compat_88081(Control *p_control, const String &p_title);
-	void _add_control_to_dock_bind_compat_88081(DockSlot p_slot, Control *p_control);
+	Button* _add_control_to_bottom_panel_bind_compat_88081(
+		Control* p_control, const String& p_title);
+	void _add_control_to_dock_bind_compat_88081(DockSlot p_slot, Control* p_control);
 	static void _bind_compatibility_methods();
 
-	void add_control_to_dock(DockSlot p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut = nullptr);
-	void remove_control_from_docks(Control *p_control);
-	void set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon);
+	void add_control_to_dock(
+		DockSlot p_slot, Control* p_control, const Ref<Shortcut>& p_shortcut = nullptr);
+	void remove_control_from_docks(Control* p_control);
+	void set_dock_tab_icon(Control* p_control, const Ref<Texture2D>& p_icon);
 
-	Button *add_control_to_bottom_panel(Control *p_control, const String &p_title, const Ref<Shortcut> &p_shortcut = nullptr);
-	void remove_control_from_bottom_panel(Control *p_control);
+	Button* add_control_to_bottom_panel(
+		Control* p_control, const String& p_title, const Ref<Shortcut>& p_shortcut = nullptr);
+	void remove_control_from_bottom_panel(Control* p_control);
 #endif
 
 public:
-    virtual ~EditorPlugin();
-	//TODO: send a resource for editing to the editor node?
+	virtual ~EditorPlugin();
+	// TODO: send a resource for editing to the editor node?
 
-	void add_control_to_container(CustomControlContainer p_location, Control *p_control);
-	void remove_control_from_container(CustomControlContainer p_location, Control *p_control);
+	void add_control_to_container(CustomControlContainer p_location, Control* p_control);
+	void remove_control_from_container(CustomControlContainer p_location, Control* p_control);
 
-	void add_dock(EditorDock *p_dock);
-	void remove_dock(EditorDock *p_dock);
+	void add_dock(EditorDock* p_dock);
+	void remove_dock(EditorDock* p_dock);
 
-	void add_tool_menu_item(const String &p_name, const Callable &p_callable);
-	void add_tool_submenu_item(const String &p_name, PopupMenu *p_submenu);
-	void remove_tool_menu_item(const String &p_name);
+	void add_tool_menu_item(const String& p_name, const Callable& p_callable);
+	void add_tool_submenu_item(const String& p_name, PopupMenu* p_submenu);
+	void remove_tool_menu_item(const String& p_name);
 
-	PopupMenu *get_export_as_menu();
+	PopupMenu* get_export_as_menu();
 
 	void set_input_event_forwarding_always_enabled();
-	bool is_input_event_forwarding_always_enabled() { return input_event_forwarding_always_enabled; }
+
+	bool is_input_event_forwarding_always_enabled()
+	{
+		return input_event_forwarding_always_enabled;
+	}
 
 	void set_force_draw_over_forwarding_enabled();
+
 	bool is_force_draw_over_forwarding_enabled() { return force_draw_over_forwarding_enabled; }
 
-	void notify_main_screen_changed(const String &screen_name);
-	void notify_scene_changed(const Node *scn_root);
-	void notify_scene_closed(const String &scene_filepath);
-	void notify_resource_saved(const Ref<Resource> &p_resource);
-	void notify_scene_saved(const String &p_scene_filepath);
+	void notify_main_screen_changed(const String& screen_name);
+	void notify_scene_changed(const Node* scn_root);
+	void notify_scene_closed(const String& scene_filepath);
+	void notify_resource_saved(const Ref<Resource>& p_resource);
+	void notify_scene_saved(const String& p_scene_filepath);
 
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent> &p_event);
-	virtual void forward_canvas_draw_over_viewport(Control *p_overlay);
-	virtual void forward_canvas_force_draw_over_viewport(Control *p_overlay);
+	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event);
+	virtual void forward_canvas_draw_over_viewport(Control* p_overlay);
+	virtual void forward_canvas_force_draw_over_viewport(Control* p_overlay);
 
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event);
-	virtual void forward_3d_draw_over_viewport(Control *p_overlay);
-	virtual void forward_3d_force_draw_over_viewport(Control *p_overlay);
+	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
+		Camera3D* p_camera, const Ref<InputEvent>& p_event);
+	virtual void forward_3d_draw_over_viewport(Control* p_overlay);
+	virtual void forward_3d_force_draw_over_viewport(Control* p_overlay);
 
 	virtual String get_plugin_name() const;
 	virtual const Ref<Texture2D> get_plugin_icon() const;
 	virtual String get_plugin_version() const;
-	virtual void set_plugin_version(const String &p_version);
+	virtual void set_plugin_version(const String& p_version);
 	virtual bool has_main_screen() const;
 	virtual void make_visible(bool p_visible);
+
 	virtual void set_current() {}
-	virtual void selected_notify() {} //notify that it was raised by the user, not the editor
-	virtual void edit(Object *p_object);
-	virtual bool handles(Object *p_object) const;
+
+	virtual void selected_notify() {} // notify that it was raised by the user, not the editor
+
+	virtual void edit(Object* p_object);
+	virtual bool handles(Object* p_object) const;
 	virtual bool can_auto_hide() const;
-	virtual Dictionary get_state() const; //save editor state so it can't be reloaded when reloading scene
-	virtual void set_state(const Dictionary &p_state); //restore editor state (likely was saved with the scene)
-	virtual void clear(); // clear any temporary data in the editor, reset it (likely new scene or load another scene)
-	virtual String get_unsaved_status(const String &p_for_scene = "") const;
+	virtual Dictionary
+	get_state() const; // save editor state so it can't be reloaded when reloading scene
+	virtual void set_state(
+		const Dictionary& p_state); // restore editor state (likely was saved with the scene)
+	virtual void clear(); // clear any temporary data in the editor, reset it (likely new scene or
+						  // load another scene)
+	virtual String get_unsaved_status(const String& p_for_scene = "") const;
 	virtual void save_external_data(); // if editor references external resources/scenes, save them
-	virtual void apply_changes(); // if changes are pending in editor, apply them
-	virtual void get_breakpoints(List<String> *p_breakpoints);
-	virtual bool get_remove_list(List<Node *> *p_list);
+	virtual void apply_changes();	   // if changes are pending in editor, apply them
+	virtual void get_breakpoints(List<String>* p_breakpoints);
+	virtual bool get_remove_list(List<Node*>* p_list);
 	virtual void set_window_layout(Ref<ConfigFile> p_layout);
 	virtual void get_window_layout(Ref<ConfigFile> p_layout);
-	virtual void edited_scene_changed() {} // if changes are pending in editor, apply them
-	virtual bool build(); // builds with external tools. Returns true if safe to continue running scene.
-	virtual void run_scene(const String &p_scene, Vector<String> &r_args);
 
-	EditorInterface *get_editor_interface();
-	ScriptCreateDialog *get_script_create_dialog();
+	virtual void edited_scene_changed() {} // if changes are pending in editor, apply them
+
+	virtual bool
+	build(); // builds with external tools. Returns true if safe to continue running scene.
+	virtual void run_scene(const String& p_scene, Vector<String>& r_args);
+
+	EditorInterface* get_editor_interface();
+	ScriptCreateDialog* get_script_create_dialog();
 
 	void add_undo_redo_inspector_hook_callback(Callable p_callable);
 	void remove_undo_redo_inspector_hook_callback(Callable p_callable);
@@ -203,44 +225,48 @@ public:
 
 	void queue_save_layout();
 
-	void make_bottom_panel_item_visible(Control *p_item);
+	void make_bottom_panel_item_visible(Control* p_item);
 	void hide_bottom_panel();
 
-	void add_translation_parser_plugin(const Ref<EditorTranslationParserPlugin> &p_parser);
-	void remove_translation_parser_plugin(const Ref<EditorTranslationParserPlugin> &p_parser);
+	void add_translation_parser_plugin(const Ref<EditorTranslationParserPlugin>& p_parser);
+	void remove_translation_parser_plugin(const Ref<EditorTranslationParserPlugin>& p_parser);
 
-	void add_import_plugin(const Ref<EditorImportPlugin> &p_importer, bool p_first_priority = false);
-	void remove_import_plugin(const Ref<EditorImportPlugin> &p_importer);
+	void add_import_plugin(
+		const Ref<EditorImportPlugin>& p_importer, bool p_first_priority = false);
+	void remove_import_plugin(const Ref<EditorImportPlugin>& p_importer);
 
-	void add_export_plugin(const Ref<EditorExportPlugin> &p_exporter);
-	void remove_export_plugin(const Ref<EditorExportPlugin> &p_exporter);
+	void add_export_plugin(const Ref<EditorExportPlugin>& p_exporter);
+	void remove_export_plugin(const Ref<EditorExportPlugin>& p_exporter);
 
-	void add_export_platform(const Ref<EditorExportPlatform> &p_platform);
-	void remove_export_platform(const Ref<EditorExportPlatform> &p_platform);
+	void add_export_platform(const Ref<EditorExportPlatform>& p_platform);
+	void remove_export_platform(const Ref<EditorExportPlatform>& p_platform);
 
-	void add_node_3d_gizmo_plugin(const Ref<EditorNode3DGizmoPlugin> &p_gizmo_plugin);
-	void remove_node_3d_gizmo_plugin(const Ref<EditorNode3DGizmoPlugin> &p_gizmo_plugin);
+	void add_node_3d_gizmo_plugin(const Ref<EditorNode3DGizmoPlugin>& p_gizmo_plugin);
+	void remove_node_3d_gizmo_plugin(const Ref<EditorNode3DGizmoPlugin>& p_gizmo_plugin);
 
-	void add_scene_format_importer_plugin(const Ref<EditorSceneFormatImporter> &p_importer, bool p_first_priority = false);
-	void remove_scene_format_importer_plugin(const Ref<EditorSceneFormatImporter> &p_importer);
+	void add_scene_format_importer_plugin(
+		const Ref<EditorSceneFormatImporter>& p_importer, bool p_first_priority = false);
+	void remove_scene_format_importer_plugin(const Ref<EditorSceneFormatImporter>& p_importer);
 
-	void add_scene_post_import_plugin(const Ref<EditorScenePostImportPlugin> &p_importer, bool p_first_priority = false);
-	void remove_scene_post_import_plugin(const Ref<EditorScenePostImportPlugin> &p_importer);
+	void add_scene_post_import_plugin(
+		const Ref<EditorScenePostImportPlugin>& p_importer, bool p_first_priority = false);
+	void remove_scene_post_import_plugin(const Ref<EditorScenePostImportPlugin>& p_importer);
 
-	void add_inspector_plugin(const Ref<EditorInspectorPlugin> &p_plugin);
-	void remove_inspector_plugin(const Ref<EditorInspectorPlugin> &p_plugin);
+	void add_inspector_plugin(const Ref<EditorInspectorPlugin>& p_plugin);
+	void remove_inspector_plugin(const Ref<EditorInspectorPlugin>& p_plugin);
 
-	void add_autoload_singleton(const String &p_name, const String &p_path);
-	void remove_autoload_singleton(const String &p_name);
+	void add_autoload_singleton(const String& p_name, const String& p_path);
+	void remove_autoload_singleton(const String& p_name);
 
-	void add_debugger_plugin(const Ref<EditorDebuggerPlugin> &p_plugin);
-	void remove_debugger_plugin(const Ref<EditorDebuggerPlugin> &p_plugin);
+	void add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
+	void remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
 
-	void add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin);
-	void remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin);
+	void add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin);
+	void remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin);
 
-	void add_context_menu_plugin(EditorContextMenuPlugin::ContextMenuSlot p_slot, const Ref<EditorContextMenuPlugin> &p_plugin);
-	void remove_context_menu_plugin(const Ref<EditorContextMenuPlugin> &p_plugin);
+	void add_context_menu_plugin(EditorContextMenuPlugin::ContextMenuSlot p_slot,
+		const Ref<EditorContextMenuPlugin>& p_plugin);
+	void remove_context_menu_plugin(const Ref<EditorContextMenuPlugin>& p_plugin);
 
 	void enable_plugin();
 	void disable_plugin();
@@ -252,35 +278,36 @@ VARIANT_ENUM_CAST(EditorPlugin::DockSlot);
 VARIANT_ENUM_CAST(EditorPlugin::CustomControlContainer);
 VARIANT_ENUM_CAST(EditorPlugin::AfterGUIInput);
 
-typedef EditorPlugin *(*EditorPluginCreateFunc)();
+typedef EditorPlugin* (*EditorPluginCreateFunc)();
 
-class EditorPlugins {
-	enum {
+class EditorPlugins
+{
+	enum
+	{
 		MAX_CREATE_FUNCS = 128
 	};
 
 	static EditorPluginCreateFunc creation_funcs[MAX_CREATE_FUNCS];
 	static int creation_func_count;
 
-	template <typename T>
-	static EditorPlugin *creator() {
-		return memnew(T);
-	}
+	template <typename T> static EditorPlugin* creator() { return memnew(T); }
 
 public:
 	static int get_plugin_count() { return creation_func_count; }
-	static EditorPlugin *create(int p_idx) {
+
+	static EditorPlugin* create(int p_idx)
+	{
 		ERR_FAIL_INDEX_V(p_idx, creation_func_count, nullptr);
 		return creation_funcs[p_idx]();
 	}
 
-	template <typename T>
-	static void add_by_type() {
-		add_create_func(creator<T>);
-	}
+	template <typename T> static void add_by_type() { add_create_func(creator<T>); }
 
-	static void add_create_func(EditorPluginCreateFunc p_func) {
+	static void add_create_func(EditorPluginCreateFunc p_func)
+	{
 		ERR_FAIL_COND(creation_func_count >= MAX_CREATE_FUNCS);
 		creation_funcs[creation_func_count++] = p_func;
 	}
 };
+
+

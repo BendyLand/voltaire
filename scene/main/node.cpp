@@ -30,6 +30,8 @@
 
 #include "node.compat.inc"
 #include "node.h"
+#include "scene/resources/environment.h"
+#include "core/templates/vector.h"
 
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Mesh);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
@@ -1960,18 +1962,17 @@ Node* Node::get_child(int p_index, bool p_include_internal) const
 	}
 }
 
-TypedArray<Node> Node::get_children(bool p_include_internal) const
+Vector<Node*> Node::get_children(bool p_include_internal) const
 {
-	ERR_THREAD_GUARD_V(TypedArray<Node>());
+	ERR_THREAD_GUARD_V(Vector<Node*>());
 	_update_children_cache();
 
-	TypedArray<Node> children;
+	Vector<Node*> children;
 
 	if (p_include_internal) {
 		children.resize(data.children_cache.size());
-
-		Array::Iterator itr = children.begin();
-		for (const Node* child : data.children_cache) {
+		Vector<Node*>::Iterator itr = children.begin();
+		for (Node* child : data.children_cache) {
 			*itr = child;
 			++itr;
 		}
@@ -1980,7 +1981,7 @@ TypedArray<Node> Node::get_children(bool p_include_internal) const
 		const int size = data.children_cache.size() - data.internal_children_back_count_cache;
 		children.resize(size - data.internal_children_front_count_cache);
 
-		Array::Iterator itr = children.begin();
+		Vector<Node*>::Iterator itr = children.begin();
 		for (int i = data.internal_children_front_count_cache; i < size; i++) {
 			*itr = data.children_cache[i];
 			++itr;
@@ -2125,11 +2126,11 @@ Node* Node::find_child(const String& p_pattern, bool p_recursive, bool p_owned) 
 // Finds child nodes based on their name using pattern matching, or class name,
 // or both (either pattern or type can be left empty).
 // Can be recursive or not, and limited to owned nodes.
-TypedArray<Node> Node::find_children(
+Vector<Node*> Node::find_children(
 	const String& p_pattern, const String& p_type, bool p_recursive, bool p_owned) const
 {
-	ERR_THREAD_GUARD_V(TypedArray<Node>());
-	TypedArray<Node> ret;
+	ERR_THREAD_GUARD_V(Vector<Node*>());
+	Vector<Node*> ret;
 	ERR_FAIL_COND_V(p_pattern.is_empty() && p_type.is_empty(), ret);
 	_update_children_cache();
 	Node* const* cptr = data.children_cache.ptr();
@@ -2205,8 +2206,7 @@ void Node::reparent(Node* rp_parent, bool p_keep_global_transform)
 	}
 
 	data.parent->remove_child(this);
-	// FIX: check args 2 and 3
-	rp_parent->add_child(this, false, Node::InternalMode::INTERNAL_MODE_DISABLED);
+	rp_parent->add_child(this);
 	// Reassign the old owner to those found nodes.
 	if (preserve_owner) {
 		for (Node* E : common_parents) {
@@ -2952,11 +2952,11 @@ Node* Node::_duplicate(int p_flags, HashMap<const Node*, Node*>* r_duplimap) con
 
 	}
 	else {
-		Object* obj = ClassDB::instantiate(this->obj->get_class());
-		ERR_FAIL_NULL_V(obj, nullptr);
-		node = Object::cast_to<Node>(obj);
+		Object* o = ClassDB::instantiate(this->obj->get_class());
+		ERR_FAIL_NULL_V(o, nullptr);
+		node = Object::cast_to<Node>(o);
 		if (!node) {
-			memdelete(obj);
+			memdelete(o);
 		}
 		ERR_FAIL_NULL_V(node, nullptr);
 	}
@@ -3662,12 +3662,12 @@ void Node::queue_free()
 	// There are users which instantiate multiple scene trees for their games.
 	// Use the node's own tree to handle its deletion when relevant.
 	if (data.tree) {
-		data.tree->queue_delete(this);
+		data.tree->queue_delete(this->obj.get());
 	}
 	else {
 		SceneTree* tree = SceneTree::get_singleton();
 		ERR_FAIL_NULL_MSG(tree, "Can't queue free a node when no SceneTree is available.");
-		tree->queue_delete(this);
+		tree->queue_delete(this->obj.get());
 	}
 }
 
@@ -3703,13 +3703,13 @@ void Node::get_argument_options(
 			r_options->push_back(E.key.string().quote());
 		}
 	}
-	Object::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
 void Node::clear_internal_tree_resource_paths()
 {
-	clear_internal_resource_paths();
+	this->obj->clear_internal_resource_paths();
 	for (KeyValue<StringName, Node*>& K : data.children) {
 		K.value->clear_internal_tree_resource_paths();
 	}
@@ -3804,7 +3804,7 @@ void Node::_validate_property(PropertyInfo& p_property) const
 String Node::_to_string()
 {
 	ERR_THREAD_GUARD_V(String());
-	return (get_name() ? String(get_name()) + ":" : "") + Object::_to_string();
+	return (get_name() ? String(get_name()) + ":" : "") + this->obj->_to_string();
 }
 
 void Node::input(const Ref<InputEvent>& p_event) {}
@@ -3870,21 +3870,21 @@ void Node::call_deferred_thread_groupp(
 {
 	ERR_FAIL_COND(!is_inside_tree());
 	SceneTree::ProcessGroup* pg = (SceneTree::ProcessGroup*)data.process_group;
-	pg->call_queue.push_callp(this, p_method, p_args, p_argcount, p_show_error);
+	pg->call_queue.push_callp(this->obj.get(), p_method, p_args, p_argcount, p_show_error);
 }
 
 void Node::set_deferred_thread_group(const StringName& p_property, const Variant& p_value)
 {
 	ERR_FAIL_COND(!is_inside_tree());
 	SceneTree::ProcessGroup* pg = (SceneTree::ProcessGroup*)data.process_group;
-	pg->call_queue.push_set(this, p_property, p_value);
+	pg->call_queue.push_set(this->obj.get(), p_property, p_value);
 }
 
 void Node::notify_deferred_thread_group(int p_notification)
 {
 	ERR_FAIL_COND(!is_inside_tree());
 	SceneTree::ProcessGroup* pg = (SceneTree::ProcessGroup*)data.process_group;
-	pg->call_queue.push_notification(this, p_notification);
+	pg->call_queue.push_notification(this->obj.get(), p_notification);
 }
 
 void Node::call_thread_safep(
@@ -3892,10 +3892,10 @@ void Node::call_thread_safep(
 {
 	if (is_accessible_from_caller_thread()) {
 		Callable::CallError ce;
-		callp(p_method, p_args, p_argcount, ce);
+		this->obj->callp(p_method, p_args, p_argcount, ce);
 		if (p_show_error && ce.error != Callable::CallError::CALL_OK) {
 			ERR_FAIL_MSG("Error calling method from 'call_threadp': " +
-						 Variant::get_call_error_text(this, p_method, p_args, p_argcount, ce) +
+						 Variant::get_call_error_text(this->obj.get(), p_method, p_args, p_argcount, ce) +
 						 ".");
 		}
 	}
@@ -3907,7 +3907,7 @@ void Node::call_thread_safep(
 void Node::set_thread_safe(const StringName& p_property, const Variant& p_value)
 {
 	if (is_accessible_from_caller_thread()) {
-		set(p_property, p_value);
+		this->obj->set(p_property, p_value);
 	}
 	else {
 		set_deferred_thread_group(p_property, p_value);
@@ -3917,7 +3917,7 @@ void Node::set_thread_safe(const StringName& p_property, const Variant& p_value)
 void Node::notify_thread_safe(int p_notification)
 {
 	if (is_accessible_from_caller_thread()) {
-		notification(p_notification);
+		this->obj->notification(p_notification);
 	}
 	else {
 		notify_deferred_thread_group(p_notification);
@@ -3959,404 +3959,7 @@ RID Node::get_accessibility_element() const
 	return data.accessibility_element;
 }
 
-void Node::_bind_methods()
-{
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/node_name_num_separator",
-				   PROPERTY_HINT_ENUM, "None,Space,Underscore,Dash"),
-		0);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/node_name_casing", PROPERTY_HINT_ENUM,
-				   "PascalCase,camelCase,snake_case,kebab-case"),
-		NAME_CASING_PASCAL_CASE);
-
-	ClassDB::bind_static_method("Node", D_METHOD("print_orphan_nodes"), &Node::print_orphan_nodes);
-	ClassDB::bind_static_method(
-		"Node", D_METHOD("get_orphan_node_ids"), &Node::get_orphan_node_ids);
-	ClassDB::bind_method(D_METHOD("add_sibling", "sibling", "force_readable_name"),
-		&Node::add_sibling, DEFVAL(false));
-
-	ClassDB::bind_method(D_METHOD("set_name", "name"), &Node::set_name);
-	ClassDB::bind_method(D_METHOD("get_name"), &Node::get_name);
-	ClassDB::bind_method(D_METHOD("add_child", "node", "force_readable_name", "internal"),
-		&Node::add_child, DEFVAL(false), DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("remove_child", "node"), &Node::remove_child);
-	ClassDB::bind_method(
-		D_METHOD("reparent", "new_parent", "keep_global_transform"), &Node::reparent, DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("get_child_count", "include_internal"), &Node::get_child_count,
-		DEFVAL(false)); // Note that the default value bound for include_internal is false, while
-						// the method is declared with true. This is because internal nodes are
-						// irrelevant for GDSCript.
-	ClassDB::bind_method(
-		D_METHOD("get_children", "include_internal"), &Node::get_children, DEFVAL(false));
-	ClassDB::bind_method(
-		D_METHOD("get_child", "idx", "include_internal"), &Node::get_child, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("has_node", "path"), &Node::has_node);
-	ClassDB::bind_method(D_METHOD("get_node", "path"), &Node::get_node);
-	ClassDB::bind_method(D_METHOD("get_node_or_null", "path"), &Node::get_node_or_null);
-	ClassDB::bind_method(D_METHOD("get_parent"), &Node::get_parent);
-	ClassDB::bind_method(D_METHOD("find_child", "pattern", "recursive", "owned"), &Node::find_child,
-		DEFVAL(true), DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("find_children", "pattern", "type", "recursive", "owned"),
-		&Node::find_children, DEFVAL(""), DEFVAL(true), DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("find_parent", "pattern"), &Node::find_parent);
-	ClassDB::bind_method(D_METHOD("has_node_and_resource", "path"), &Node::has_node_and_resource);
-	ClassDB::bind_method(D_METHOD("get_node_and_resource", "path"), &Node::_get_node_and_resource);
-
-	ClassDB::bind_method(D_METHOD("is_inside_tree"), &Node::is_inside_tree);
-	ClassDB::bind_method(D_METHOD("is_part_of_edited_scene"), &Node::is_part_of_edited_scene);
-	ClassDB::bind_method(D_METHOD("is_ancestor_of", "node"), &Node::is_ancestor_of);
-	ClassDB::bind_method(D_METHOD("is_greater_than", "node"), &Node::is_greater_than);
-	ClassDB::bind_method(D_METHOD("get_path"), &Node::get_path);
-	ClassDB::bind_method(
-		D_METHOD("get_path_to", "node", "use_unique_path"), &Node::get_path_to, DEFVAL(false));
-	ClassDB::bind_method(
-		D_METHOD("add_to_group", "group", "persistent"), &Node::add_to_group, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("remove_from_group", "group"), &Node::remove_from_group);
-	ClassDB::bind_method(D_METHOD("is_in_group", "group"), &Node::is_in_group);
-	ClassDB::bind_method(D_METHOD("move_child", "child_node", "to_index"), &Node::move_child);
-	ClassDB::bind_method(D_METHOD("get_groups"), &Node::_get_groups);
-	ClassDB::bind_method(D_METHOD("set_owner", "owner"), &Node::set_owner);
-	ClassDB::bind_method(D_METHOD("get_owner"), &Node::get_owner);
-	ClassDB::bind_method(
-		D_METHOD("get_index", "include_internal"), &Node::get_index, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("print_tree"), &Node::print_tree);
-	ClassDB::bind_method(D_METHOD("print_tree_pretty"), &Node::print_tree_pretty);
-	ClassDB::bind_method(D_METHOD("get_tree_string"), &Node::get_tree_string);
-	ClassDB::bind_method(D_METHOD("get_tree_string_pretty"), &Node::get_tree_string_pretty);
-	ClassDB::bind_method(
-		D_METHOD("set_scene_file_path", "scene_file_path"), &Node::set_scene_file_path);
-	ClassDB::bind_method(D_METHOD("get_scene_file_path"), &Node::get_scene_file_path);
-	ClassDB::bind_method(D_METHOD("propagate_notification", "what"), &Node::propagate_notification);
-	ClassDB::bind_method(D_METHOD("propagate_call", "method", "args", "parent_first"),
-		&Node::propagate_call, DEFVAL(Array()), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("set_physics_process", "enable"), &Node::set_physics_process);
-	ClassDB::bind_method(
-		D_METHOD("get_physics_process_delta_time"), &Node::get_physics_process_delta_time);
-	ClassDB::bind_method(D_METHOD("is_physics_processing"), &Node::is_physics_processing);
-	ClassDB::bind_method(D_METHOD("get_process_delta_time"), &Node::get_process_delta_time);
-	ClassDB::bind_method(D_METHOD("set_process", "enable"), &Node::set_process);
-	ClassDB::bind_method(D_METHOD("set_process_priority", "priority"), &Node::set_process_priority);
-	ClassDB::bind_method(D_METHOD("get_process_priority"), &Node::get_process_priority);
-	ClassDB::bind_method(
-		D_METHOD("set_physics_process_priority", "priority"), &Node::set_physics_process_priority);
-	ClassDB::bind_method(
-		D_METHOD("get_physics_process_priority"), &Node::get_physics_process_priority);
-	ClassDB::bind_method(D_METHOD("is_processing"), &Node::is_processing);
-	ClassDB::bind_method(D_METHOD("set_process_input", "enable"), &Node::set_process_input);
-	ClassDB::bind_method(D_METHOD("is_processing_input"), &Node::is_processing_input);
-	ClassDB::bind_method(
-		D_METHOD("set_process_shortcut_input", "enable"), &Node::set_process_shortcut_input);
-	ClassDB::bind_method(
-		D_METHOD("is_processing_shortcut_input"), &Node::is_processing_shortcut_input);
-	ClassDB::bind_method(
-		D_METHOD("set_process_unhandled_input", "enable"), &Node::set_process_unhandled_input);
-	ClassDB::bind_method(
-		D_METHOD("is_processing_unhandled_input"), &Node::is_processing_unhandled_input);
-	ClassDB::bind_method(D_METHOD("set_process_unhandled_key_input", "enable"),
-		&Node::set_process_unhandled_key_input);
-	ClassDB::bind_method(
-		D_METHOD("is_processing_unhandled_key_input"), &Node::is_processing_unhandled_key_input);
-	ClassDB::bind_method(D_METHOD("set_process_mode", "mode"), &Node::set_process_mode);
-	ClassDB::bind_method(D_METHOD("get_process_mode"), &Node::get_process_mode);
-	ClassDB::bind_method(D_METHOD("can_process"), &Node::can_process);
-
-	ClassDB::bind_method(
-		D_METHOD("set_process_thread_group", "mode"), &Node::set_process_thread_group);
-	ClassDB::bind_method(D_METHOD("get_process_thread_group"), &Node::get_process_thread_group);
-
-	ClassDB::bind_method(
-		D_METHOD("set_process_thread_messages", "flags"), &Node::set_process_thread_messages);
-	ClassDB::bind_method(
-		D_METHOD("get_process_thread_messages"), &Node::get_process_thread_messages);
-
-	ClassDB::bind_method(
-		D_METHOD("set_process_thread_group_order", "order"), &Node::set_process_thread_group_order);
-	ClassDB::bind_method(
-		D_METHOD("get_process_thread_group_order"), &Node::get_process_thread_group_order);
-
-	ClassDB::bind_method(D_METHOD("queue_accessibility_update"), &Node::queue_accessibility_update);
-	ClassDB::bind_method(D_METHOD("get_accessibility_element"), &Node::get_accessibility_element);
-
-	ClassDB::bind_method(D_METHOD("set_display_folded", "fold"), &Node::set_display_folded);
-	ClassDB::bind_method(D_METHOD("is_displayed_folded"), &Node::is_displayed_folded);
-
-	ClassDB::bind_method(D_METHOD("set_process_internal", "enable"), &Node::set_process_internal);
-	ClassDB::bind_method(D_METHOD("is_processing_internal"), &Node::is_processing_internal);
-
-	ClassDB::bind_method(
-		D_METHOD("set_physics_process_internal", "enable"), &Node::set_physics_process_internal);
-	ClassDB::bind_method(
-		D_METHOD("is_physics_processing_internal"), &Node::is_physics_processing_internal);
-
-	ClassDB::bind_method(
-		D_METHOD("set_physics_interpolation_mode", "mode"), &Node::set_physics_interpolation_mode);
-	ClassDB::bind_method(
-		D_METHOD("get_physics_interpolation_mode"), &Node::get_physics_interpolation_mode);
-	ClassDB::bind_method(D_METHOD("is_physics_interpolated"), &Node::is_physics_interpolated);
-	ClassDB::bind_method(D_METHOD("is_physics_interpolated_and_enabled"),
-		&Node::is_physics_interpolated_and_enabled);
-	ClassDB::bind_method(
-		D_METHOD("reset_physics_interpolation"), &Node::reset_physics_interpolation);
-
-	ClassDB::bind_method(
-		D_METHOD("set_auto_translate_mode", "mode"), &Node::set_auto_translate_mode);
-	ClassDB::bind_method(D_METHOD("get_auto_translate_mode"), &Node::get_auto_translate_mode);
-	ClassDB::bind_method(D_METHOD("can_auto_translate"), &Node::can_auto_translate);
-	ClassDB::bind_method(
-		D_METHOD("set_translation_domain_inherited"), &Node::set_translation_domain_inherited);
-
-	ClassDB::bind_method(D_METHOD("get_window"), &Node::get_window);
-	ClassDB::bind_method(D_METHOD("get_last_exclusive_window"), &Node::get_last_exclusive_window);
-	ClassDB::bind_method(D_METHOD("get_tree"), &Node::get_tree);
-	ClassDB::bind_method(D_METHOD("create_tween"), &Node::create_tween);
-
-	ClassDB::bind_method(
-		D_METHOD("duplicate", "flags"), &Node::duplicate, DEFVAL(DUPLICATE_DEFAULT));
-	ClassDB::bind_method(
-		D_METHOD("replace_by", "node", "keep_groups"), &Node::replace_by, DEFVAL(false));
-
-	ClassDB::bind_method(D_METHOD("set_scene_instance_load_placeholder", "load_placeholder"),
-		&Node::set_scene_instance_load_placeholder);
-	ClassDB::bind_method(D_METHOD("get_scene_instance_load_placeholder"),
-		&Node::get_scene_instance_load_placeholder);
-	ClassDB::bind_method(
-		D_METHOD("set_editable_instance", "node", "is_editable"), &Node::set_editable_instance);
-	ClassDB::bind_method(D_METHOD("is_editable_instance", "node"), &Node::is_editable_instance);
-
-	ClassDB::bind_method(D_METHOD("get_viewport"), &Node::get_viewport);
-
-	ClassDB::bind_method(D_METHOD("queue_free"), &Node::queue_free);
-
-	ClassDB::bind_method(D_METHOD("request_ready"), &Node::request_ready);
-	ClassDB::bind_method(D_METHOD("is_node_ready"), &Node::is_ready);
-
-	ClassDB::bind_method(D_METHOD("set_multiplayer_authority", "id", "recursive"),
-		&Node::set_multiplayer_authority, DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("get_multiplayer_authority"), &Node::get_multiplayer_authority);
-
-	ClassDB::bind_method(D_METHOD("is_multiplayer_authority"), &Node::is_multiplayer_authority);
-
-	ClassDB::bind_method(D_METHOD("get_multiplayer"), &Node::get_multiplayer);
-	ClassDB::bind_method(D_METHOD("rpc_config", "method", "config"), &Node::rpc_config);
-	ClassDB::bind_method(D_METHOD("get_node_rpc_config"), &Node::_get_node_rpc_config_bind);
-
-	ClassDB::bind_method(
-		D_METHOD("set_editor_description", "editor_description"), &Node::set_editor_description);
-	ClassDB::bind_method(D_METHOD("get_editor_description"), &Node::get_editor_description);
-
-	ClassDB::bind_method(
-		D_METHOD("set_unique_name_in_owner", "enable"), &Node::set_unique_name_in_owner);
-	ClassDB::bind_method(D_METHOD("is_unique_name_in_owner"), &Node::is_unique_name_in_owner);
-
-	ClassDB::bind_method(D_METHOD("atr", "message", "context"), &Node::atr, DEFVAL(""));
-	ClassDB::bind_method(
-		D_METHOD("atr_n", "message", "plural_message", "n", "context"), &Node::atr_n, DEFVAL(""));
-
-#ifdef TOOLS_ENABLED
-	ClassDB::bind_method(
-		D_METHOD("_set_property_pinned", "property", "pinned"), &Node::set_property_pinned);
-#endif
-
-	{
-		MethodInfo mi;
-
-		mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "method"));
-
-		mi.name = "rpc";
-		ClassDB::bind_vararg_method(METHOD_FLAGS_DEFAULT, "rpc", &Node::_rpc_bind, mi);
-	}
-
-	{
-		MethodInfo mi;
-
-		mi.arguments.push_back(PropertyInfo(Variant::INT, "peer_id"));
-		mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "method"));
-
-		mi.name = "rpc_id";
-		ClassDB::bind_vararg_method(METHOD_FLAGS_DEFAULT, "rpc_id", &Node::_rpc_id_bind, mi);
-	}
-
-	ClassDB::bind_method(
-		D_METHOD("update_configuration_warnings"), &Node::update_configuration_warnings);
-
-	{
-		MethodInfo mi;
-		mi.name = "call_deferred_thread_group";
-		mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "method"));
-
-		ClassDB::bind_vararg_method(METHOD_FLAGS_DEFAULT, "call_deferred_thread_group",
-			&Node::_call_deferred_thread_group_bind, mi, varray(), false);
-	}
-	ClassDB::bind_method(D_METHOD("set_deferred_thread_group", "property", "value"),
-		&Node::set_deferred_thread_group);
-	ClassDB::bind_method(
-		D_METHOD("notify_deferred_thread_group", "what"), &Node::notify_deferred_thread_group);
-
-	{
-		MethodInfo mi;
-		mi.name = "call_thread_safe";
-		mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "method"));
-
-		ClassDB::bind_vararg_method(METHOD_FLAGS_DEFAULT, "call_thread_safe",
-			&Node::_call_thread_safe_bind, mi, varray(), false);
-	}
-	ClassDB::bind_method(D_METHOD("set_thread_safe", "property", "value"), &Node::set_thread_safe);
-	ClassDB::bind_method(D_METHOD("notify_thread_safe", "what"), &Node::notify_thread_safe);
-
-	BIND_CONSTANT(NOTIFICATION_ENTER_TREE);
-	BIND_CONSTANT(NOTIFICATION_EXIT_TREE);
-	BIND_CONSTANT(NOTIFICATION_MOVED_IN_PARENT);
-	BIND_CONSTANT(NOTIFICATION_READY);
-	BIND_CONSTANT(NOTIFICATION_PAUSED);
-	BIND_CONSTANT(NOTIFICATION_UNPAUSED);
-	BIND_CONSTANT(NOTIFICATION_PHYSICS_PROCESS);
-	BIND_CONSTANT(NOTIFICATION_PROCESS);
-	BIND_CONSTANT(NOTIFICATION_PARENTED);
-	BIND_CONSTANT(NOTIFICATION_UNPARENTED);
-	BIND_CONSTANT(NOTIFICATION_SCENE_INSTANTIATED);
-	BIND_CONSTANT(NOTIFICATION_DRAG_BEGIN);
-	BIND_CONSTANT(NOTIFICATION_DRAG_END);
-	BIND_CONSTANT(NOTIFICATION_PATH_RENAMED);
-	BIND_CONSTANT(NOTIFICATION_CHILD_ORDER_CHANGED);
-	BIND_CONSTANT(NOTIFICATION_INTERNAL_PROCESS);
-	BIND_CONSTANT(NOTIFICATION_INTERNAL_PHYSICS_PROCESS);
-	BIND_CONSTANT(NOTIFICATION_POST_ENTER_TREE);
-	BIND_CONSTANT(NOTIFICATION_DISABLED);
-	BIND_CONSTANT(NOTIFICATION_ENABLED);
-	BIND_CONSTANT(NOTIFICATION_RESET_PHYSICS_INTERPOLATION);
-
-	BIND_CONSTANT(NOTIFICATION_EDITOR_PRE_SAVE);
-	BIND_CONSTANT(NOTIFICATION_EDITOR_POST_SAVE);
-
-	BIND_CONSTANT(NOTIFICATION_WM_MOUSE_ENTER);
-	BIND_CONSTANT(NOTIFICATION_WM_MOUSE_EXIT);
-	BIND_CONSTANT(NOTIFICATION_WM_WINDOW_FOCUS_IN);
-	BIND_CONSTANT(NOTIFICATION_WM_WINDOW_FOCUS_OUT);
-	BIND_CONSTANT(NOTIFICATION_WM_CLOSE_REQUEST);
-	BIND_CONSTANT(NOTIFICATION_WM_GO_BACK_REQUEST);
-	BIND_CONSTANT(NOTIFICATION_WM_SIZE_CHANGED);
-	BIND_CONSTANT(NOTIFICATION_WM_DPI_CHANGE);
-	BIND_CONSTANT(NOTIFICATION_VP_MOUSE_ENTER);
-	BIND_CONSTANT(NOTIFICATION_VP_MOUSE_EXIT);
-	BIND_CONSTANT(NOTIFICATION_WM_POSITION_CHANGED);
-	BIND_CONSTANT(NOTIFICATION_WM_OUTPUT_MAX_LINEAR_VALUE_CHANGED);
-	BIND_CONSTANT(NOTIFICATION_OS_MEMORY_WARNING);
-	BIND_CONSTANT(NOTIFICATION_TRANSLATION_CHANGED);
-	BIND_CONSTANT(NOTIFICATION_WM_ABOUT);
-	BIND_CONSTANT(NOTIFICATION_CRASH);
-	BIND_CONSTANT(NOTIFICATION_OS_IME_UPDATE);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_RESUMED);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_PAUSED);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_FOCUS_IN);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_FOCUS_OUT);
-	BIND_CONSTANT(NOTIFICATION_TEXT_SERVER_CHANGED);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_PIP_MODE_ENTERED);
-	BIND_CONSTANT(NOTIFICATION_APPLICATION_PIP_MODE_EXITED);
-
-	BIND_CONSTANT(NOTIFICATION_ACCESSIBILITY_UPDATE);
-	BIND_CONSTANT(NOTIFICATION_ACCESSIBILITY_INVALIDATE);
-
-	BIND_ENUM_CONSTANT(PROCESS_MODE_INHERIT);
-	BIND_ENUM_CONSTANT(PROCESS_MODE_PAUSABLE);
-	BIND_ENUM_CONSTANT(PROCESS_MODE_WHEN_PAUSED);
-	BIND_ENUM_CONSTANT(PROCESS_MODE_ALWAYS);
-	BIND_ENUM_CONSTANT(PROCESS_MODE_DISABLED);
-
-	BIND_ENUM_CONSTANT(PROCESS_THREAD_GROUP_INHERIT);
-	BIND_ENUM_CONSTANT(PROCESS_THREAD_GROUP_MAIN_THREAD);
-	BIND_ENUM_CONSTANT(PROCESS_THREAD_GROUP_SUB_THREAD);
-
-	BIND_BITFIELD_FLAG(FLAG_PROCESS_THREAD_MESSAGES);
-	BIND_BITFIELD_FLAG(FLAG_PROCESS_THREAD_MESSAGES_PHYSICS);
-	BIND_BITFIELD_FLAG(FLAG_PROCESS_THREAD_MESSAGES_ALL);
-
-	BIND_ENUM_CONSTANT(PHYSICS_INTERPOLATION_MODE_INHERIT);
-	BIND_ENUM_CONSTANT(PHYSICS_INTERPOLATION_MODE_ON);
-	BIND_ENUM_CONSTANT(PHYSICS_INTERPOLATION_MODE_OFF);
-
-	BIND_ENUM_CONSTANT(DUPLICATE_SIGNALS);
-	BIND_ENUM_CONSTANT(DUPLICATE_GROUPS);
-	BIND_ENUM_CONSTANT(DUPLICATE_SCRIPTS);
-	BIND_ENUM_CONSTANT(DUPLICATE_USE_INSTANTIATION);
-	BIND_ENUM_CONSTANT(DUPLICATE_INTERNAL_STATE);
-	BIND_ENUM_CONSTANT(DUPLICATE_DEFAULT);
-
-	BIND_ENUM_CONSTANT(INTERNAL_MODE_DISABLED);
-	BIND_ENUM_CONSTANT(INTERNAL_MODE_FRONT);
-	BIND_ENUM_CONSTANT(INTERNAL_MODE_BACK);
-
-	BIND_ENUM_CONSTANT(AUTO_TRANSLATE_MODE_INHERIT);
-	BIND_ENUM_CONSTANT(AUTO_TRANSLATE_MODE_ALWAYS);
-	BIND_ENUM_CONSTANT(AUTO_TRANSLATE_MODE_DISABLED);
-
-	ADD_SIGNAL(MethodInfo("ready"));
-	ADD_SIGNAL(MethodInfo("renamed"));
-	ADD_SIGNAL(MethodInfo("tree_entered"));
-	ADD_SIGNAL(MethodInfo("tree_exiting"));
-	ADD_SIGNAL(MethodInfo("tree_exited"));
-	ADD_SIGNAL(
-		MethodInfo("child_entered_tree", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_NONE,
-											 "", PROPERTY_USAGE_DEFAULT, "Node")));
-	ADD_SIGNAL(
-		MethodInfo("child_exiting_tree", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_NONE,
-											 "", PROPERTY_USAGE_DEFAULT, "Node")));
-
-	ADD_SIGNAL(MethodInfo("child_order_changed"));
-	ADD_SIGNAL(MethodInfo("replacing_by", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_NONE,
-											  "", PROPERTY_USAGE_DEFAULT, "Node")));
-	ADD_SIGNAL(MethodInfo(
-		"editor_description_changed", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_NONE, "",
-										  PROPERTY_USAGE_DEFAULT, "Node")));
-	ADD_SIGNAL(MethodInfo("editor_state_changed"));
-
-	ADD_PROPERTY(
-		PropertyInfo(Variant::STRING_NAME, "name", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE),
-		"set_name", "get_name");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "unique_name_in_owner", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_NO_EDITOR),
-		"set_unique_name_in_owner", "is_unique_name_in_owner");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "scene_file_path", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_NONE),
-		"set_scene_file_path", "get_scene_file_path");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "owner", PROPERTY_HINT_RESOURCE_TYPE,
-					 Node::get_class_static(), PROPERTY_USAGE_NONE),
-		"set_owner", "get_owner");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "multiplayer", PROPERTY_HINT_RESOURCE_TYPE,
-					 MultiplayerAPI::get_class_static(), PROPERTY_USAGE_NONE),
-		"", "get_multiplayer");
-
-	ADD_GROUP("Process", "process_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "process_mode", PROPERTY_HINT_ENUM,
-					 "Inherit,Pausable,When Paused,Always,Disabled"),
-		"set_process_mode", "get_process_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "process_priority"), "set_process_priority",
-		"get_process_priority");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "process_physics_priority"),
-		"set_physics_process_priority", "get_physics_process_priority");
-
-	ADD_SUBGROUP("Thread Group", "process_thread");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "process_thread_group", PROPERTY_HINT_ENUM,
-					 "Inherit,Main Thread,Sub Thread"),
-		"set_process_thread_group", "get_process_thread_group");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "process_thread_group_order"),
-		"set_process_thread_group_order", "get_process_thread_group_order");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "process_thread_messages", PROPERTY_HINT_FLAGS,
-					 "Process,Physics Process"),
-		"set_process_thread_messages", "get_process_thread_messages");
-
-	ADD_GROUP("Physics Interpolation", "physics_interpolation_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "physics_interpolation_mode", PROPERTY_HINT_ENUM,
-					 "Inherit,On,Off"),
-		"set_physics_interpolation_mode", "get_physics_interpolation_mode");
-
-	ADD_GROUP("Auto Translate", "auto_translate_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "auto_translate_mode", PROPERTY_HINT_ENUM,
-					 "Inherit,Always,Disabled"),
-		"set_auto_translate_mode", "get_auto_translate_mode");
-
-	ADD_GROUP("Editor Description", "editor_");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "editor_description", PROPERTY_HINT_MULTILINE_TEXT),
-		"set_editor_description", "get_editor_description");
-}
+void Node::_bind_methods() {}
 
 String Node::_get_name_num_separator()
 {
@@ -4375,7 +3978,7 @@ String Node::_get_name_num_separator()
 
 Node::Node()
 {
-	_define_ancestry(AncestralClass::NODE);
+	this->obj->_define_ancestry(Environment::AncestralClass::NODE);
 #ifdef DEBUG_ENABLED
 	total_node_count.increment();
 #endif
@@ -4440,105 +4043,104 @@ Node::~Node()
 void Node::set_script(const Variant& p_script)
 {
 	ERR_THREAD_GUARD;
-	Object::set_script(p_script);
+	this->obj->set_script(p_script);
 }
 
 Variant Node::get_script() const
 {
 	ERR_THREAD_GUARD_V(Variant());
-	return Object::get_script();
+	return this->obj->get_script();
 }
 
 bool Node::has_meta(const StringName& p_name) const
 {
 	ERR_THREAD_GUARD_V(false);
-	return Object::has_meta(p_name);
+	return this->obj->has_meta(p_name);
 }
 
-void Node::set_meta(const StringName& p_name, c
-onst Variant& p_value)
+void Node::set_meta(const StringName& p_name, const Variant& p_value)
 {
 	ERR_THREAD_GUARD;
-	Object::set_meta(p_name, p_value);
+	this->obj->set_meta(p_name, p_value);
 	_emit_editor_state_changed();
 }
 
 void Node::remove_meta(const StringName& p_name)
 {
 	ERR_THREAD_GUARD;
-	Object::remove_meta(p_name);
+	this->obj->remove_meta(p_name);
 	_emit_editor_state_changed();
 }
 
 Variant Node::get_meta(const StringName& p_name, const Variant& p_default) const
 {
 	ERR_THREAD_GUARD_V(Variant());
-	return Object::get_meta(p_name, p_default);
+	return this->obj->get_meta(p_name, p_default);
 }
 
 void Node::get_meta_list(List<StringName>* p_list) const
 {
 	ERR_THREAD_GUARD;
-	Object::get_meta_list(p_list);
+	this->obj->get_meta_list(p_list);
 }
 
 Error Node::emit_signalp(const StringName& p_name, const Variant** p_args, int p_argcount)
 {
 	ERR_THREAD_GUARD_V(ERR_INVALID_PARAMETER);
-	return Object::emit_signalp(p_name, p_args, p_argcount);
+	return this->obj->emit_signalp(p_name, p_args, p_argcount);
 }
 
 bool Node::has_signal(const StringName& p_name) const
 {
 	ERR_THREAD_GUARD_V(false);
-	return Object::has_signal(p_name);
+	return this->obj->has_signal(p_name);
 }
 
 void Node::get_signal_list(List<MethodInfo>* p_signals) const
 {
 	ERR_THREAD_GUARD;
-	Object::get_signal_list(p_signals);
+	this->obj->get_signal_list(p_signals);
 }
 
 void Node::get_signal_connection_list(
-	const StringName& p_signal, List<Connection>* p_connections) const
+	const StringName& p_signal, List<Object::Connection>* p_connections) const
 {
 	ERR_THREAD_GUARD;
-	Object::get_signal_connection_list(p_signal, p_connections);
+	this->obj->get_signal_connection_list(p_signal, p_connections);
 }
 
-void Node::get_all_signal_connections(List<Connection>* p_connections) const
+void Node::get_all_signal_connections(List<Object::Connection>* p_connections) const
 {
 	ERR_THREAD_GUARD;
-	Object::get_all_signal_connections(p_connections);
+	this->obj->get_all_signal_connections(p_connections);
 }
 
 int Node::get_persistent_signal_connection_count() const
 {
 	ERR_THREAD_GUARD_V(0);
-	return Object::get_persistent_signal_connection_count();
+	return this->obj->get_persistent_signal_connection_count();
 }
 
 uint32_t Node::get_signal_connection_flags(
 	const StringName& p_signal, const Callable& p_callable) const
 {
 	ERR_THREAD_GUARD_V(0);
-	return Object::get_signal_connection_flags(p_signal, p_callable);
+	return this->obj->get_signal_connection_flags(p_signal, p_callable);
 }
 
-void Node::get_signals_connected_to_this(List<Connection>* p_connections) const
+void Node::get_signals_connected_to_this(List<Object::Connection>* p_connections) const
 {
 	ERR_THREAD_GUARD;
-	Object::get_signals_connected_to_this(p_connections);
+	this->obj->get_signals_connected_to_this(p_connections);
 }
 
 Error Node::connect(const StringName& p_signal, const Callable& p_callable, uint32_t p_flags)
 {
 	ERR_THREAD_GUARD_V(ERR_INVALID_PARAMETER);
 
-	Error retval = Object::connect(p_signal, p_callable, p_flags);
+	Error retval = this->obj->connect(p_signal, p_callable, p_flags);
 #ifdef TOOLS_ENABLED
-	if (p_flags & CONNECT_PERSIST) {
+	if (p_flags & Object::CONNECT_PERSIST) {
 		_emit_editor_state_changed();
 	}
 #endif
@@ -4552,13 +4154,13 @@ void Node::disconnect(const StringName& p_signal, const Callable& p_callable)
 
 #ifdef TOOLS_ENABLED
 	// Already under thread guard, don't check again.
-	uint32_t connection_flags = Object::get_signal_connection_flags(p_signal, p_callable);
+	uint32_t connection_flags = this->obj->get_signal_connection_flags(p_signal, p_callable);
 #endif
 
-	[[maybe_unused]] bool changed = Object::_disconnect(p_signal, p_callable);
+	[[maybe_unused]] bool changed = this->obj->_disconnect(p_signal, p_callable);
 
 #ifdef TOOLS_ENABLED
-	if (changed && connection_flags & CONNECT_PERSIST) {
+	if (changed && connection_flags & Object::CONNECT_PERSIST) {
 		_emit_editor_state_changed();
 	}
 #endif
@@ -4567,13 +4169,13 @@ void Node::disconnect(const StringName& p_signal, const Callable& p_callable)
 bool Node::is_connected(const StringName& p_signal, const Callable& p_callable) const
 {
 	ERR_THREAD_GUARD_V(false);
-	return Object::is_connected(p_signal, p_callable);
+	return this->obj->is_connected(p_signal, p_callable);
 }
 
 bool Node::has_connections(const StringName& p_signal) const
 {
 	ERR_THREAD_GUARD_V(false);
-	return Object::has_connections(p_signal);
+	return this->obj->has_connections(p_signal);
 }
 
 #endif

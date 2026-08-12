@@ -32,6 +32,7 @@
 
 #include "core/object/gdvirtual.gen.h"
 #include "scene/main/canvas_item.h"
+#include "scene/resources/environment.h"
 #include "scene/resources/theme.h"
 #include "servers/display/accessibility_server_enums.h"
 
@@ -42,41 +43,45 @@ class ThemeOwner;
 class Viewport;
 struct Transform2D;
 
-class Control : public CanvasItem {
-	VLTRCLASS(Control, CanvasItem);
-
+class Control : public CanvasItem
+{
 #ifdef TOOLS_ENABLED
 	bool saving = false;
 #endif // TOOLS_ENABLED
 
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::CONTROL;
+	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::CONTROL;
 
-	enum Anchor {
+	enum Anchor
+	{
 		ANCHOR_BEGIN = 0,
 		ANCHOR_END = 1
 	};
 
-	enum GrowDirection {
+	enum GrowDirection
+	{
 		GROW_DIRECTION_BEGIN,
 		GROW_DIRECTION_END,
 		GROW_DIRECTION_BOTH
 	};
 
-	enum FocusMode {
+	enum FocusMode
+	{
 		FOCUS_NONE,
 		FOCUS_CLICK,
 		FOCUS_ALL,
 		FOCUS_ACCESSIBILITY,
 	};
 
-	enum FocusBehaviorRecursive {
+	enum FocusBehaviorRecursive
+	{
 		FOCUS_BEHAVIOR_INHERITED,
 		FOCUS_BEHAVIOR_DISABLED,
 		FOCUS_BEHAVIOR_ENABLED,
 	};
 
-	enum SizeFlags {
+	enum SizeFlags
+	{
 		SIZE_SHRINK_BEGIN = 0,
 		SIZE_FILL = 1,
 		SIZE_EXPAND = 2,
@@ -86,20 +91,23 @@ public:
 		SIZE_EXPAND_FILL = SIZE_EXPAND | SIZE_FILL,
 	};
 
-	enum MouseFilter {
+	enum MouseFilter
+	{
 		MOUSE_FILTER_STOP,
 		MOUSE_FILTER_PASS,
 		MOUSE_FILTER_IGNORE
 	};
 
-	enum MouseBehaviorRecursive {
+	enum MouseBehaviorRecursive
+	{
 		MOUSE_BEHAVIOR_INHERITED,
 		MOUSE_BEHAVIOR_DISABLED,
 		MOUSE_BEHAVIOR_ENABLED,
 	};
 
 	// Keep synced with InputClassEnums and DisplayServerEnums enums.
-	enum CursorShape {
+	enum CursorShape
+	{
 		CURSOR_ARROW,
 		CURSOR_IBEAM,
 		CURSOR_POINTING_HAND,
@@ -120,7 +128,8 @@ public:
 		CURSOR_MAX
 	};
 
-	enum LayoutPreset {
+	enum LayoutPreset
+	{
 		PRESET_TOP_LEFT,
 		PRESET_TOP_RIGHT,
 		PRESET_BOTTOM_LEFT,
@@ -139,21 +148,24 @@ public:
 		PRESET_FULL_RECT
 	};
 
-	enum LayoutPresetMode {
+	enum LayoutPresetMode
+	{
 		PRESET_MODE_MINSIZE,
 		PRESET_MODE_KEEP_WIDTH,
 		PRESET_MODE_KEEP_HEIGHT,
 		PRESET_MODE_KEEP_SIZE
 	};
 
-	enum LayoutMode {
+	enum LayoutMode
+	{
 		LAYOUT_MODE_POSITION,
 		LAYOUT_MODE_ANCHORS,
 		LAYOUT_MODE_CONTAINER,
 		LAYOUT_MODE_UNCONTROLLED,
 	};
 
-	enum LayoutDirection {
+	enum LayoutDirection
+	{
 		LAYOUT_DIRECTION_INHERITED,
 		LAYOUT_DIRECTION_APPLICATION_LOCALE,
 		LAYOUT_DIRECTION_LTR,
@@ -165,7 +177,8 @@ public:
 #endif // DISABLE_DEPRECATED
 	};
 
-	enum TextDirection {
+	enum TextDirection
+	{
 		TEXT_DIRECTION_AUTO = TextServer::DIRECTION_AUTO,
 		TEXT_DIRECTION_LTR = TextServer::DIRECTION_LTR,
 		TEXT_DIRECTION_RTL = TextServer::DIRECTION_RTL,
@@ -173,8 +186,10 @@ public:
 	};
 
 private:
-	struct CComparator {
-		bool operator()(const Control *p_a, const Control *p_b) const {
+	struct CComparator
+	{
+		bool operator()(const Control* p_a, const Control* p_b) const
+		{
 			if (p_a->get_canvas_layer() == p_b->get_canvas_layer()) {
 				return p_b->is_greater_than(p_a);
 			}
@@ -184,8 +199,10 @@ private:
 	};
 
 	// This Data struct is to avoid namespace pollution in derived classes.
-	struct Data {
-		struct OffsetTransform {
+	struct Data
+	{
+		struct OffsetTransform
+		{
 			static constexpr Vector2 DEFAULT_TRANSLATION_ABSOLUTE = Vector2();
 			static constexpr Vector2 DEFAULT_TRANSLATION_RELATIVE = Vector2();
 			static constexpr Vector2 DEFAULT_SCALE = Vector2(1, 1);
@@ -208,11 +225,11 @@ private:
 
 		// Global relations.
 
-		List<Control *>::Element *RI = nullptr;
+		List<Control*>::Element* RI = nullptr;
 
-		Control *parent_control = nullptr;
-		Window *parent_window = nullptr;
-		CanvasItem *parent_canvas_item = nullptr;
+		Control* parent_control = nullptr;
+		Window* parent_window = nullptr;
+		CanvasItem* parent_canvas_item = nullptr;
 		Callable forward_drag;
 		Callable forward_can_drop;
 		Callable forward_drop;
@@ -222,8 +239,8 @@ private:
 		LayoutMode stored_layout_mode = LayoutMode::LAYOUT_MODE_POSITION;
 		bool stored_use_custom_anchors = false;
 
-		real_t offset[4] = { 0.0, 0.0, 0.0, 0.0 };
-		real_t anchor[4] = { ANCHOR_BEGIN, ANCHOR_BEGIN, ANCHOR_BEGIN, ANCHOR_BEGIN };
+		real_t offset[4] = {0.0, 0.0, 0.0, 0.0};
+		real_t anchor[4] = {ANCHOR_BEGIN, ANCHOR_BEGIN, ANCHOR_BEGIN, ANCHOR_BEGIN};
 		FocusMode focus_mode = FOCUS_NONE;
 		FocusBehaviorRecursive focus_behavior_recursive = FOCUS_BEHAVIOR_INHERITED;
 		bool parent_focus_behavior_recursive_enabled = false;
@@ -235,7 +252,7 @@ private:
 		Vector2 pivot_offset;
 		Vector2 pivot_offset_ratio;
 
-		OffsetTransform *offset_transform = nullptr;
+		OffsetTransform* offset_transform = nullptr;
 
 		Point2 pos_cache;
 		Size2 size_cache;
@@ -302,7 +319,8 @@ private:
 
 		String accessibility_name;
 		String accessibility_description;
-		AccessibilityServerEnums::AccessibilityLiveMode accessibility_live = AccessibilityServerEnums::AccessibilityLiveMode::LIVE_OFF;
+		AccessibilityServerEnums::AccessibilityLiveMode accessibility_live =
+			AccessibilityServerEnums::AccessibilityLiveMode::LIVE_OFF;
 
 		TypedArray<NodePath> accessibility_controls_nodes;
 		TypedArray<NodePath> accessibility_described_by_nodes;
@@ -311,7 +329,7 @@ private:
 
 		// Theming.
 
-		ThemeOwner *theme_owner = nullptr;
+		ThemeOwner* theme_owner = nullptr;
 		Ref<Theme> theme;
 		StringName theme_type_variation;
 
@@ -361,9 +379,9 @@ private:
 	Transform2D _get_internal_transform() const;
 
 	void _set_anchor(Side p_side, real_t p_anchor);
-	void _set_position(const Point2 &p_point);
-	void _set_global_position(const Point2 &p_point);
-	void _set_size(const Size2 &p_size);
+	void _set_position(const Point2& p_point);
+	void _set_global_position(const Point2& p_point);
+	void _set_size(const Size2& p_size);
 
 	void _compute_layout_rect(Rect2 p_rect, bool p_keep_offsets = false);
 
@@ -383,14 +401,16 @@ private:
 	void _grow_to_desired_size();
 	void _size_changed();
 
-	void _top_level_changed() override {} // Controls don't need to do anything, only other CanvasItems.
+	void _top_level_changed() override {
+	} // Controls don't need to do anything, only other CanvasItems.
+
 	void _top_level_changed_on_parent() override;
 
 	void _clear_size_warning();
 
 	// Input events.
 
-	void _call_gui_input(const Ref<InputEvent> &p_event);
+	void _call_gui_input(const Ref<InputEvent>& p_event);
 
 	// Mouse Filter.
 
@@ -400,8 +420,9 @@ private:
 
 	// Focus.
 
-	void _window_find_focus_neighbor(const Vector2 &p_dir, Node *p_at, const Rect2 &p_rect, const Rect2 &p_clamp, real_t p_min, real_t &r_closest_dist_squared, Control **r_closest);
-	Control *_get_focus_neighbor(Side p_side, int p_count = 0);
+	void _window_find_focus_neighbor(const Vector2& p_dir, Node* p_at, const Rect2& p_rect,
+		const Rect2& p_clamp, real_t p_min, real_t& r_closest_dist_squared, Control** r_closest);
+	Control* _get_focus_neighbor(Side p_side, int p_count = 0);
 	bool _is_focus_mode_enabled() const;
 	void _update_focus_behavior_recursive();
 	void _propagate_focus_behavior_recursive_recursively(bool p_enabled, bool p_skip_non_inherited);
@@ -421,17 +442,18 @@ private:
 protected:
 	// Dynamic properties.
 
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	void _validate_property(PropertyInfo &p_property) const;
+	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _get(const StringName& p_name, Variant& r_ret) const;
+	void _get_property_list(List<PropertyInfo>* p_list) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
-	bool _property_can_revert(const StringName &p_name) const;
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
+	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 	// Localization
 
-	virtual StringName _get_translation_context_with_override(const StringName &p_context) const override;
+	virtual StringName _get_translation_context_with_override(
+		const StringName& p_context) const override;
 
 	// Theming.
 
@@ -439,35 +461,38 @@ protected:
 
 	// Internationalization.
 
-	virtual TypedArray<Vector3i> structured_text_parser(TextServer::StructuredTextParser p_parser_type, const Array &p_args, const String &p_text) const;
+	virtual TypedArray<Vector3i> structured_text_parser(
+		TextServer::StructuredTextParser p_parser_type, const Array& p_args,
+		const String& p_text) const;
 
 	// Base object overrides.
 
 	void _notification(int p_notification);
 	static void _bind_methods();
 
-	void _accessibility_action_foucs(const Variant &p_data);
-	void _accessibility_action_blur(const Variant &p_data);
-	void _accessibility_action_show_tooltip(const Variant &p_data);
-	void _accessibility_action_hide_tooltip(const Variant &p_data);
-	void _accessibility_action_scroll_into_view(const Variant &p_data);
+	void _accessibility_action_foucs(const Variant& p_data);
+	void _accessibility_action_blur(const Variant& p_data);
+	void _accessibility_action_show_tooltip(const Variant& p_data);
+	void _accessibility_action_hide_tooltip(const Variant& p_data);
+	void _accessibility_action_scroll_into_view(const Variant& p_data);
 
 #ifndef DISABLE_DEPRECATED
 	bool _has_focus_bind_compat_110250() const;
 	void _grab_focus_bind_compat_110250();
 	static void _bind_compatibility_methods();
-#endif //DISABLE_DEPRECATED
+#endif // DISABLE_DEPRECATED
 
 	// Focus.
 	bool _is_focusable() const;
 
 	// Node overrides.
 
-	virtual void add_child_notify(Node *p_child) override;
-	virtual void remove_child_notify(Node *p_child) override;
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
 
 public:
-	enum {
+	enum
+	{
 		NOTIFICATION_RESIZED = 40,
 		NOTIFICATION_MOUSE_ENTER = 41,
 		NOTIFICATION_MOUSE_EXIT = 42,
@@ -486,33 +511,34 @@ public:
 	// TODO: Decouple controls from their editor plugin and get rid of this.
 #ifdef TOOLS_ENABLED
 	virtual Dictionary _edit_get_state() const override;
-	virtual void _edit_set_state(const Dictionary &p_state) override;
+	virtual void _edit_set_state(const Dictionary& p_state) override;
 
-	virtual void _edit_set_position(const Point2 &p_position) override;
+	virtual void _edit_set_position(const Point2& p_position) override;
 	virtual Point2 _edit_get_position() const override;
 
-	virtual void _edit_set_scale(const Size2 &p_scale) override;
+	virtual void _edit_set_scale(const Size2& p_scale) override;
 	virtual Size2 _edit_get_scale() const override;
 
-	virtual void _edit_set_rect(const Rect2 &p_edit_rect) override;
+	virtual void _edit_set_rect(const Rect2& p_edit_rect) override;
 
 	virtual void _edit_set_rotation(real_t p_rotation) override;
 	virtual real_t _edit_get_rotation() const override;
 	virtual bool _edit_use_rotation() const override;
 
-	virtual void _edit_set_pivot(const Point2 &p_pivot) override;
+	virtual void _edit_set_pivot(const Point2& p_pivot) override;
 	virtual Point2 _edit_get_pivot() const override;
 	virtual bool _edit_use_pivot() const override;
 
 	virtual Size2 _edit_get_minimum_size() const override;
-#endif //TOOLS_ENABLED
+#endif // TOOLS_ENABLED
 
 #ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
 #endif // DEBUG_ENABLED
 
-	virtual void reparent(RequiredParam<Node> p_parent, bool p_keep_global_transform = true) override;
+	virtual void reparent(
+		RequiredParam<Node> p_parent, bool p_keep_global_transform = true);
 
 	// Editor integration.
 
@@ -521,16 +547,17 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 	PackedStringArray get_accessibility_configuration_warnings() const override;
 #ifdef TOOLS_ENABLED
-	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
-#endif //TOOLS_ENABLED
+	virtual void get_argument_options(
+		const StringName& p_function, int p_idx, List<String>* r_options) const;
+#endif // TOOLS_ENABLED
 
 	virtual bool is_text_field() const;
 
 	// Global relations.
 
-	Control *get_parent_control() const;
-	Window *get_parent_window() const;
-	Control *get_root_parent_control() const;
+	Control* get_parent_control() const;
+	Window* get_parent_window() const;
+	Control* get_root_parent_control() const;
 
 	Size2 get_parent_area_size() const;
 	Rect2 get_parent_anchorable_rect() const;
@@ -539,16 +566,18 @@ public:
 
 	virtual Transform2D get_transform() const override;
 
-	void set_anchor(Side p_side, real_t p_anchor, bool p_keep_offset = true, bool p_push_opposite_anchor = true);
+	void set_anchor(Side p_side, real_t p_anchor, bool p_keep_offset = true,
+		bool p_push_opposite_anchor = true);
 	real_t get_anchor(Side p_side) const;
 	void set_offset(Side p_side, real_t p_value);
 	real_t get_offset(Side p_side) const;
-	void set_anchor_and_offset(Side p_side, real_t p_anchor, real_t p_pos, bool p_push_opposite_anchor = true);
+	void set_anchor_and_offset(
+		Side p_side, real_t p_anchor, real_t p_pos, bool p_push_opposite_anchor = true);
 
 	// TODO: Rename to set_begin/end_offsets ?
-	void set_begin(const Point2 &p_point);
+	void set_begin(const Point2& p_point);
 	Point2 get_begin() const;
-	void set_end(const Point2 &p_point);
+	void set_end(const Point2& p_point);
 	Point2 get_end() const;
 
 	void set_h_grow_direction(GrowDirection p_direction);
@@ -557,35 +586,38 @@ public:
 	GrowDirection get_v_grow_direction() const;
 
 	void set_anchors_preset(LayoutPreset p_preset, bool p_keep_offsets = true);
-	void set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
-	void set_anchors_and_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
+	void set_offsets_preset(LayoutPreset p_preset,
+		LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
+	void set_anchors_and_offsets_preset(LayoutPreset p_preset,
+		LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
 	void set_grow_direction_preset(LayoutPreset p_preset);
 
-	void set_position(const Point2 &p_point, bool p_keep_offsets = false);
-	void set_global_position(const Point2 &p_point, bool p_keep_offsets = false);
+	void set_position(const Point2& p_point, bool p_keep_offsets = false);
+	void set_global_position(const Point2& p_point, bool p_keep_offsets = false);
 	Point2 get_position() const;
 	Point2 get_global_position() const;
 	Point2 get_screen_position() const;
 
-	void set_size(const Size2 &p_size, bool p_keep_offsets = false);
+	void set_size(const Size2& p_size, bool p_keep_offsets = false);
 	Size2 get_size() const;
 	void reset_size();
 
-	void set_rect(const Rect2 &p_rect); // Reset anchors to begin and set rect, for faster container children sorting.
+	void set_rect(const Rect2&
+			p_rect); // Reset anchors to begin and set rect, for faster container children sorting.
 	Rect2 get_rect() const;
 	Rect2 get_global_rect() const;
 	Rect2 get_screen_rect() const;
 	Rect2 get_anchorable_rect() const override;
 
-	void set_scale(const Vector2 &p_scale);
+	void set_scale(const Vector2& p_scale);
 	Vector2 get_scale() const;
 	void set_rotation(real_t p_radians);
 	void set_rotation_degrees(real_t p_degrees);
 	real_t get_rotation() const;
 	real_t get_rotation_degrees() const;
-	void set_pivot_offset_ratio(const Vector2 &p_ratio);
+	void set_pivot_offset_ratio(const Vector2& p_ratio);
 	Vector2 get_pivot_offset_ratio() const;
-	void set_pivot_offset(const Vector2 &p_pivot);
+	void set_pivot_offset(const Vector2& p_pivot);
 	Vector2 get_pivot_offset() const;
 	Vector2 get_combined_pivot_offset() const;
 
@@ -606,15 +638,15 @@ public:
 	virtual Size2 get_combined_maximum_size() const;
 	virtual Size2 get_inner_combined_maximum_size() const;
 
-	void set_custom_maximum_size(const Size2 &p_custom);
+	void set_custom_maximum_size(const Size2& p_custom);
 	Size2 get_custom_maximum_size() const;
 
-	void set_parent_maximum_size_cache(const Size2 &p_size);
+	void set_parent_maximum_size_cache(const Size2& p_size);
 
 	virtual Size2 get_minimum_size() const;
 	virtual Size2 get_combined_minimum_size() const;
 
-	void set_custom_minimum_size(const Size2 &p_custom);
+	void set_custom_minimum_size(const Size2& p_custom);
 	Size2 get_custom_minimum_size() const;
 
 	virtual Size2 get_bound_minimum_size() const;
@@ -626,8 +658,8 @@ public:
 	bool is_layout_pending_in_tree() const;
 	void layout_pending_start();
 	void layout_pending_finish();
-	Control *get_layout_pending_control_in_tree() const;
-	void call_on_all_layout_pending_finished(const Callable &p_callable);
+	Control* get_layout_pending_control_in_tree() const;
+	void call_on_all_layout_pending_finished(const Callable& p_callable);
 
 	// Container sizing.
 
@@ -642,17 +674,17 @@ public:
 
 	void set_offset_transform_enabled(bool p_enabled);
 	bool is_offset_transform_enabled() const;
-	void set_offset_transform_position(const Vector2 &p_offset);
+	void set_offset_transform_position(const Vector2& p_offset);
 	Vector2 get_offset_transform_position() const;
-	void set_offset_transform_position_ratio(const Vector2 &p_offset);
+	void set_offset_transform_position_ratio(const Vector2& p_offset);
 	Vector2 get_offset_transform_position_ratio() const;
-	void set_offset_transform_scale(const Vector2 &p_scale);
+	void set_offset_transform_scale(const Vector2& p_scale);
 	Vector2 get_offset_transform_scale() const;
 	void set_offset_transform_rotation(real_t p_rotation);
 	real_t get_offset_transform_rotation() const;
-	void set_offset_transform_pivot(const Vector2 &p_pivot);
+	void set_offset_transform_pivot(const Vector2& p_pivot);
 	Vector2 get_offset_transform_pivot() const;
-	void set_offset_transform_pivot_ratio(const Vector2 &p_pivot);
+	void set_offset_transform_pivot_ratio(const Vector2& p_pivot);
 	Vector2 get_offset_transform_pivot_ratio() const;
 	void set_offset_transform_visual_only(bool p_enabled);
 	bool is_offset_transform_visual_only() const;
@@ -660,10 +692,10 @@ public:
 
 	// Input events.
 
-	virtual void gui_input(const Ref<InputEvent> &p_event);
+	virtual void gui_input(const Ref<InputEvent>& p_event);
 	void accept_event();
 
-	virtual bool has_point(const Point2 &p_point) const;
+	virtual bool has_point(const Point2& p_point) const;
 
 	void set_mouse_filter(MouseFilter p_filter);
 	MouseFilter get_mouse_filter() const;
@@ -675,20 +707,21 @@ public:
 	void set_force_pass_scroll_events(bool p_force_pass_scroll_events);
 	bool is_force_pass_scroll_events() const;
 
-	void warp_mouse(const Point2 &p_position);
+	void warp_mouse(const Point2& p_position);
 
 	bool is_focus_owner_in_shortcut_context() const;
-	void set_shortcut_context(const Node *p_node);
-	Node *get_shortcut_context() const;
+	void set_shortcut_context(const Node* p_node);
+	Node* get_shortcut_context() const;
 
 	// Drag and drop handling.
 
-	virtual void set_drag_forwarding(const Callable &p_drag, const Callable &p_can_drop, const Callable &p_drop);
-	virtual Variant get_drag_data(const Point2 &p_point);
-	virtual bool can_drop_data(const Point2 &p_point, const Variant &p_data) const;
-	virtual void drop_data(const Point2 &p_point, const Variant &p_data);
-	void set_drag_preview(Control *p_control);
-	void force_drag(const Variant &p_data, Control *p_control);
+	virtual void set_drag_forwarding(
+		const Callable& p_drag, const Callable& p_can_drop, const Callable& p_drop);
+	virtual Variant get_drag_data(const Point2& p_point);
+	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const;
+	virtual void drop_data(const Point2& p_point, const Variant& p_data);
+	void set_drag_preview(Control* p_control);
+	void force_drag(const Variant& p_data, Control* p_control);
 	void accessibility_drag();
 	void accessibility_drop();
 	bool is_drag_successful() const;
@@ -705,43 +738,43 @@ public:
 	void grab_click_focus();
 	void release_focus();
 
-	Control *find_next_valid_focus() const;
-	Control *find_prev_valid_focus() const;
-	Control *find_valid_focus_neighbor(Side p_size) const;
+	Control* find_next_valid_focus() const;
+	Control* find_prev_valid_focus() const;
+	Control* find_valid_focus_neighbor(Side p_size) const;
 
-	void set_focus_neighbor(Side p_side, const NodePath &p_neighbor);
+	void set_focus_neighbor(Side p_side, const NodePath& p_neighbor);
 	NodePath get_focus_neighbor(Side p_side) const;
 
-	void set_focus_next(const NodePath &p_next);
+	void set_focus_next(const NodePath& p_next);
 	NodePath get_focus_next() const;
-	void set_focus_previous(const NodePath &p_prev);
+	void set_focus_previous(const NodePath& p_prev);
 	NodePath get_focus_previous() const;
 
 	// Accessibility.
 
-	virtual String get_accessibility_container_name(const Node *p_node) const;
+	virtual String get_accessibility_container_name(const Node* p_node) const;
 
-	void set_accessibility_name(const String &p_name);
+	void set_accessibility_name(const String& p_name);
 	String get_accessibility_name() const;
 
 	virtual String _get_accessibility_name() const;
 
-	void set_accessibility_description(const String &p_description);
+	void set_accessibility_description(const String& p_description);
 	String get_accessibility_description() const;
 
 	void set_accessibility_live(AccessibilityServerEnums::AccessibilityLiveMode p_mode);
 	AccessibilityServerEnums::AccessibilityLiveMode get_accessibility_live() const;
 
-	void set_accessibility_controls_nodes(const TypedArray<NodePath> &p_node_path);
+	void set_accessibility_controls_nodes(const TypedArray<NodePath>& p_node_path);
 	TypedArray<NodePath> get_accessibility_controls_nodes() const;
 
-	void set_accessibility_described_by_nodes(const TypedArray<NodePath> &p_node_path);
+	void set_accessibility_described_by_nodes(const TypedArray<NodePath>& p_node_path);
 	TypedArray<NodePath> get_accessibility_described_by_nodes() const;
 
-	void set_accessibility_labeled_by_nodes(const TypedArray<NodePath> &p_node_path);
+	void set_accessibility_labeled_by_nodes(const TypedArray<NodePath>& p_node_path);
 	TypedArray<NodePath> get_accessibility_labeled_by_nodes() const;
 
-	void set_accessibility_flow_to_nodes(const TypedArray<NodePath> &p_node_path);
+	void set_accessibility_flow_to_nodes(const TypedArray<NodePath>& p_node_path);
 	TypedArray<NodePath> get_accessibility_flow_to_nodes() const;
 
 	virtual Transform2D get_accessibility_transform() const override { return get_transform(); }
@@ -750,7 +783,7 @@ public:
 
 	void set_default_cursor_shape(CursorShape p_shape);
 	CursorShape get_default_cursor_shape() const;
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos = Point2()) const;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2()) const;
 
 	void set_clip_contents(bool p_clip);
 	bool is_clipping_contents();
@@ -760,60 +793,74 @@ public:
 
 	// Theming.
 
-	void set_theme_owner_node(Node *p_node);
-	Node *get_theme_owner_node() const;
+	void set_theme_owner_node(Node* p_node);
+	Node* get_theme_owner_node() const;
 	bool has_theme_owner_node() const;
 
-	void set_theme_context(ThemeContext *p_context, bool p_propagate = true);
+	void set_theme_context(ThemeContext* p_context, bool p_propagate = true);
 
-	void set_theme(const Ref<Theme> &p_theme);
+	void set_theme(const Ref<Theme>& p_theme);
 	Ref<Theme> get_theme() const;
 
-	void set_theme_type_variation(const StringName &p_theme_type);
+	void set_theme_type_variation(const StringName& p_theme_type);
 	StringName get_theme_type_variation() const;
 
 	void begin_bulk_theme_override();
 	void end_bulk_theme_override();
 
-	void add_theme_icon_override(const StringName &p_name, RequiredParam<Texture2D> rp_icon);
-	void add_theme_style_override(const StringName &p_name, RequiredParam<StyleBox> rp_style);
-	void add_theme_font_override(const StringName &p_name, RequiredParam<Font> rp_font);
-	void add_theme_font_size_override(const StringName &p_name, int p_font_size);
-	void add_theme_color_override(const StringName &p_name, const Color &p_color);
-	void add_theme_constant_override(const StringName &p_name, int p_constant);
+	void add_theme_icon_override(const StringName& p_name, RequiredParam<Texture2D> rp_icon);
+	void add_theme_style_override(const StringName& p_name, RequiredParam<StyleBox> rp_style);
+	void add_theme_font_override(const StringName& p_name, RequiredParam<Font> rp_font);
+	void add_theme_font_size_override(const StringName& p_name, int p_font_size);
+	void add_theme_color_override(const StringName& p_name, const Color& p_color);
+	void add_theme_constant_override(const StringName& p_name, int p_constant);
 
-	void remove_theme_icon_override(const StringName &p_name);
-	void remove_theme_style_override(const StringName &p_name);
-	void remove_theme_font_override(const StringName &p_name);
-	void remove_theme_font_size_override(const StringName &p_name);
-	void remove_theme_color_override(const StringName &p_name);
-	void remove_theme_constant_override(const StringName &p_name);
+	void remove_theme_icon_override(const StringName& p_name);
+	void remove_theme_style_override(const StringName& p_name);
+	void remove_theme_font_override(const StringName& p_name);
+	void remove_theme_font_size_override(const StringName& p_name);
+	void remove_theme_color_override(const StringName& p_name);
+	void remove_theme_constant_override(const StringName& p_name);
 
-	Ref<Texture2D> get_theme_icon(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	Ref<StyleBox> get_theme_stylebox(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	Ref<Font> get_theme_font(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	int get_theme_font_size(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	Color get_theme_color(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	int get_theme_constant(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	Variant get_theme_item(Theme::DataType p_data_type, const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	Variant get_used_theme_item(const String &p_full_name, const StringName &p_theme_type = StringName()) const;
+	Ref<Texture2D> get_theme_icon(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	Ref<StyleBox> get_theme_stylebox(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	Ref<Font> get_theme_font(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	int get_theme_font_size(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	Color get_theme_color(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	int get_theme_constant(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	Variant get_theme_item(Theme::DataType p_data_type, const StringName& p_name,
+		const StringName& p_theme_type = StringName()) const;
+	Variant get_used_theme_item(
+		const String& p_full_name, const StringName& p_theme_type = StringName()) const;
 #ifdef TOOLS_ENABLED
-	Ref<Texture2D> get_editor_theme_icon(const StringName &p_name) const;
-#endif //TOOLS_ENABLED
+	Ref<Texture2D> get_editor_theme_icon(const StringName& p_name) const;
+#endif // TOOLS_ENABLED
 
-	bool has_theme_icon_override(const StringName &p_name) const;
-	bool has_theme_stylebox_override(const StringName &p_name) const;
-	bool has_theme_font_override(const StringName &p_name) const;
-	bool has_theme_font_size_override(const StringName &p_name) const;
-	bool has_theme_color_override(const StringName &p_name) const;
-	bool has_theme_constant_override(const StringName &p_name) const;
+	bool has_theme_icon_override(const StringName& p_name) const;
+	bool has_theme_stylebox_override(const StringName& p_name) const;
+	bool has_theme_font_override(const StringName& p_name) const;
+	bool has_theme_font_size_override(const StringName& p_name) const;
+	bool has_theme_color_override(const StringName& p_name) const;
+	bool has_theme_constant_override(const StringName& p_name) const;
 
-	bool has_theme_icon(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	bool has_theme_stylebox(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	bool has_theme_font(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	bool has_theme_font_size(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	bool has_theme_color(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
-	bool has_theme_constant(const StringName &p_name, const StringName &p_theme_type = StringName()) const;
+	bool has_theme_icon(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	bool has_theme_stylebox(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	bool has_theme_font(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	bool has_theme_font_size(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	bool has_theme_color(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+	bool has_theme_constant(
+		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 
 	float get_theme_default_base_scale() const;
 	Ref<Font> get_theme_default_font() const;
@@ -831,20 +878,20 @@ public:
 #ifndef DISABLE_DEPRECATED
 	void set_auto_translate(bool p_enable);
 	bool is_auto_translating() const;
-#endif //DISABLE_DEPRECATED
+#endif // DISABLE_DEPRECATED
 
 	void set_tooltip_auto_translate_mode(AutoTranslateMode p_mode);
 	AutoTranslateMode get_tooltip_auto_translate_mode() const;
-	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Vector2 &p_at) const;
+	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Vector2& p_at) const;
 
 	// Extra properties.
 
 	String get_tooltip_text() const;
-	void set_tooltip_text(const String &text);
+	void set_tooltip_text(const String& text);
 	StringName get_translation_context() const;
-	void set_translation_context(const StringName &p_context);
-	virtual String get_tooltip(const Point2 &p_pos) const;
-	virtual Control *make_custom_tooltip(const String &p_text) const;
+	void set_translation_context(const StringName& p_context);
+	virtual String get_tooltip(const Point2& p_pos) const;
+	virtual Control* make_custom_tooltip(const String& p_text) const;
 
 	virtual String accessibility_get_contextual_info() const;
 
@@ -867,7 +914,19 @@ VARIANT_ENUM_CAST(Control::LayoutDirection);
 VARIANT_ENUM_CAST(Control::TextDirection);
 
 // G = get_drag_data_fw, C = can_drop_data_fw, D = drop_data_fw, U = underscore
-#define SET_DRAG_FORWARDING_CD(from, to) from->set_drag_forwarding(Callable(), callable_mp(this, &to::can_drop_data_fw).bind(from), callable_mp(this, &to::drop_data_fw).bind(from));
-#define SET_DRAG_FORWARDING_CDU(from, to) from->set_drag_forwarding(Callable(), callable_mp(this, &to::_can_drop_data_fw).bind(from), callable_mp(this, &to::_drop_data_fw).bind(from));
-#define SET_DRAG_FORWARDING_GCD(from, to) from->set_drag_forwarding(callable_mp(this, &to::get_drag_data_fw).bind(from), callable_mp(this, &to::can_drop_data_fw).bind(from), callable_mp(this, &to::drop_data_fw).bind(from));
-#define SET_DRAG_FORWARDING_GCDU(from, to) from->set_drag_forwarding(callable_mp(this, &to::_get_drag_data_fw).bind(from), callable_mp(this, &to::_can_drop_data_fw).bind(from), callable_mp(this, &to::_drop_data_fw).bind(from));
+#define SET_DRAG_FORWARDING_CD(from, to)                                                           \
+	from->set_drag_forwarding(Callable(), callable_mp(this, &to::can_drop_data_fw).bind(from),     \
+		callable_mp(this, &to::drop_data_fw).bind(from));
+#define SET_DRAG_FORWARDING_CDU(from, to)                                                          \
+	from->set_drag_forwarding(Callable(), callable_mp(this, &to::_can_drop_data_fw).bind(from),    \
+		callable_mp(this, &to::_drop_data_fw).bind(from));
+#define SET_DRAG_FORWARDING_GCD(from, to)                                                          \
+	from->set_drag_forwarding(callable_mp(this, &to::get_drag_data_fw).bind(from),                 \
+		callable_mp(this, &to::can_drop_data_fw).bind(from),                                       \
+		callable_mp(this, &to::drop_data_fw).bind(from));
+#define SET_DRAG_FORWARDING_GCDU(from, to)                                                         \
+	from->set_drag_forwarding(callable_mp(this, &to::_get_drag_data_fw).bind(from),                \
+		callable_mp(this, &to::_can_drop_data_fw).bind(from),                                      \
+		callable_mp(this, &to::_drop_data_fw).bind(from));
+
+

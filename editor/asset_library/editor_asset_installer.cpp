@@ -165,9 +165,9 @@ void EditorAssetInstaller::open_asset(const String &p_path, bool p_autoskip_topl
 	_check_has_toplevel();
 	// Default to false, unless forced. Don't skip "addons" by default
 	skip_toplevel = p_autoskip_toplevel && toplevel_prefix != "addons/";
-	skip_toplevel_check->set_block_signals(true);
+	skip_toplevel_check->obj->set_block_signals(true);
 	skip_toplevel_check->set_pressed(!skip_toplevel_check->is_disabled() && skip_toplevel);
-	skip_toplevel_check->set_block_signals(false);
+	skip_toplevel_check->obj->set_block_signals(false);
 
 	_update_file_mappings();
 	_rebuild_source_tree();
