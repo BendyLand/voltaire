@@ -852,9 +852,9 @@ PackedStringArray EditorInterface::get_unsaved_scenes() const
 	return ret;
 }
 
-TypedArray<Node> EditorInterface::get_open_scene_roots() const
+Vector<Node*> EditorInterface::get_open_scene_roots() const
 {
-	TypedArray<Node> ret;
+	Vector<Node*> ret;
 	Vector<EditorData::EditedScene> scenes = EditorNode::get_editor_data().get_edited_scenes();
 
 	for (EditorData::EditedScene& edited_scene : scenes) {

@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_editor_types.h"
-
 #include "core/config/engine.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
@@ -136,6 +134,7 @@
 #include "editor/shader/shader_file_editor_plugin.h"
 #include "editor/translations/editor_translation_parser.h"
 #include "editor/version_control/editor_vcs_interface.h"
+#include "register_editor_types.h"
 #include "servers/rendering/rendering_server.h"
 
 #ifndef DISABLE_DEPRECATED
@@ -143,7 +142,8 @@
 #include "editor/scene/3d/skeleton_ik_3d_editor_plugin.h"
 #endif
 
-void register_editor_types() {
+void register_editor_types()
+{
 	OS::get_singleton()->benchmark_begin_measure("Editor", "Register Types");
 
 	ResourceLoader::set_timestamp_on_load(true);
@@ -151,23 +151,12 @@ void register_editor_types() {
 
 	EditorStringNames::create();
 
-	VLTR_REGISTER_CLASS(EditorPaths);
-	VLTR_REGISTER_ABSTRACT_CLASS(ScenePaint2DEditor);
-	VLTR_REGISTER_VIRTUAL_CLASS(EditorPlugin);
 	VLTR_REGISTER_CLASS(EditorTranslationParserPlugin);
 	VLTR_REGISTER_CLASS(EditorImportPlugin);
 	VLTR_REGISTER_CLASS(EditorScript);
-	VLTR_REGISTER_CLASS(EditorDock);
-	VLTR_REGISTER_CLASS(EditorFileDialog);
 	VLTR_REGISTER_VIRTUAL_CLASS(EditorSettings);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorToaster);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorResourcePreview);
 	VLTR_REGISTER_CLASS(EditorResourcePreviewGenerator);
 	VLTR_REGISTER_CLASS(EditorResourceTooltipPlugin);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorFileSystem);
-	VLTR_REGISTER_CLASS(EditorFileSystemDirectory);
-	VLTR_REGISTER_ABSTRACT_CLASS(ScriptEditor);
-	VLTR_REGISTER_ABSTRACT_CLASS(ScriptEditorBase);
 	VLTR_REGISTER_CLASS(EditorSyntaxHighlighter);
 	VLTR_REGISTER_CLASS(EditorExportPlugin);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatform);
@@ -178,20 +167,11 @@ void register_editor_types() {
 	register_exporter_types();
 
 	VLTR_REGISTER_CLASS(EditorResourceConversionPlugin);
-	VLTR_REGISTER_CLASS(EditorInspector);
 	VLTR_REGISTER_CLASS(EditorInspectorPlugin);
-	VLTR_REGISTER_CLASS(EditorProperty);
-	VLTR_REGISTER_CLASS(ScriptCreateDialog);
 	VLTR_REGISTER_CLASS(EditorFeatureProfile);
-	VLTR_REGISTER_CLASS(EditorSpinSlider);
-	VLTR_REGISTER_CLASS(EditorResourcePicker);
-	VLTR_REGISTER_CLASS(EditorScriptPicker);
-	VLTR_REGISTER_CLASS(EditorContextMenuPlugin);
 
-	VLTR_REGISTER_ABSTRACT_CLASS(FileSystemDock);
 	VLTR_REGISTER_VIRTUAL_CLASS(EditorFileSystemImportFormatSupportQuery);
 
-	VLTR_REGISTER_VIRTUAL_CLASS(EditorCommandPalette);
 	VLTR_REGISTER_CLASS(EditorDebuggerPlugin);
 	VLTR_REGISTER_ABSTRACT_CLASS(EditorDebuggerSession);
 
@@ -218,7 +198,8 @@ void register_editor_types() {
 	VLTR_REGISTER_CLASS(ResourceImporterTextureAtlas);
 	VLTR_REGISTER_CLASS(ResourceImporterWAV);
 
-	// This list is alphabetized, and plugins that depend on Node2D or Node3D are in their own section below.
+	// This list is alphabetized, and plugins that depend on Node2D or Node3D are in their own
+	// section below.
 	EditorPlugins::add_by_type<AnimationTreeEditorPlugin>();
 	EditorPlugins::add_by_type<AudioStreamEditorPlugin>();
 	EditorPlugins::add_by_type<AudioStreamRandomizerEditorPlugin>();
@@ -294,19 +275,29 @@ void register_editor_types() {
 #endif
 
 	// For correct doc generation.
-	GLOBAL_DEF(PropertyInfo(Variant::STRING, "editor/run/main_run_args", PROPERTY_HINT_NONE, "monospace"), "");
+	GLOBAL_DEF(
+		PropertyInfo(Variant::STRING, "editor/run/main_run_args", PROPERTY_HINT_NONE, "monospace"),
+		"");
 
-	GLOBAL_DEF(PropertyInfo(Variant::STRING, "editor/script/templates_search_path", PROPERTY_HINT_DIR), "res://script_templates");
+	GLOBAL_DEF(
+		PropertyInfo(Variant::STRING, "editor/script/templates_search_path", PROPERTY_HINT_DIR),
+		"res://script_templates");
 
 	GLOBAL_DEF("editor/naming/default_signal_callback_name", "_on_{node_name}_{signal_name}");
 	GLOBAL_DEF("editor/naming/default_signal_callback_to_self_name", "_on_{signal_name}");
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/scene_name_casing", PROPERTY_HINT_ENUM, "Auto,PascalCase,snake_case,kebab-case,camelCase"), EditorNode::SCENE_NAME_CASING_SNAKE_CASE);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/script_name_casing", PROPERTY_HINT_ENUM, "Auto,PascalCase,snake_case,kebab-case,camelCase"), ScriptLanguage::SCRIPT_NAME_CASING_AUTO);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/scene_name_casing", PROPERTY_HINT_ENUM,
+				   "Auto,PascalCase,snake_case,kebab-case,camelCase"),
+		EditorNode::SCENE_NAME_CASING_SNAKE_CASE);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/script_name_casing", PROPERTY_HINT_ENUM,
+				   "Auto,PascalCase,snake_case,kebab-case,camelCase"),
+		ScriptLanguage::SCRIPT_NAME_CASING_AUTO);
 
 	GLOBAL_DEF("editor/import/reimport_missing_imported_files", true);
 	GLOBAL_DEF("editor/import/use_multiple_threads", true);
 
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/import/atlas_max_width", PROPERTY_HINT_RANGE, "128,8192,1,or_greater"), 2048);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/import/atlas_max_width", PROPERTY_HINT_RANGE,
+				   "128,8192,1,or_greater"),
+		2048);
 
 	GLOBAL_DEF("editor/export/convert_text_resources_to_binary", true);
 
@@ -314,7 +305,8 @@ void register_editor_types() {
 	GLOBAL_DEF("editor/version_control/autoload_on_startup", false);
 
 	EditorInterface::create();
-	Engine::Singleton ei_singleton = Engine::Singleton("EditorInterface", EditorInterface::get_singleton()->obj.get());
+	Engine::Singleton ei_singleton =
+		Engine::Singleton("EditorInterface", EditorInterface::get_singleton()->obj.get());
 	ei_singleton.editor_only = true;
 	Engine::get_singleton()->add_singleton(ei_singleton);
 
@@ -332,14 +324,16 @@ void register_editor_types() {
 	OS::get_singleton()->benchmark_end_measure("Editor", "Register Types");
 }
 
-void unregister_editor_types() {
+void unregister_editor_types()
+{
 	OS::get_singleton()->benchmark_begin_measure("Editor", "Unregister Types");
 
 	Texture3DEditor::finish_shaders();
 	TextureLayeredEditor::finish_shaders();
 	TexturePreview::finish_shaders();
 
-	EditorInspector::set_property_clipboard(EditorInspector::PropertyClipboard::Type::EMPTY, Variant());
+	EditorInspector::set_property_clipboard(
+		EditorInspector::PropertyClipboard::Type::EMPTY, Variant());
 	EditorNode::cleanup();
 	EditorInterface::free();
 
@@ -350,3 +344,5 @@ void unregister_editor_types() {
 
 	OS::get_singleton()->benchmark_end_measure("Editor", "Unregister Types");
 }
+
+

@@ -125,12 +125,12 @@ void FindInFilesSearch::start()
 {
 	if (pattern.is_empty()) {
 		print_verbose("Nothing to search, pattern is empty");
-		emit_signal(SceneStringName(finished));
+		this->obj->emit_signal(SceneStringName(finished));
 		return;
 	}
 	if (extension_filter.is_empty()) {
 		print_verbose("Nothing to search, filter matches no files");
-		emit_signal(SceneStringName(finished));
+		this->obj->emit_signal(SceneStringName(finished));
 		return;
 	}
 
@@ -218,7 +218,7 @@ void FindInFilesSearch::_iterate()
 		set_process(false);
 		current_dir = "";
 		searching = false;
-		emit_signal(SceneStringName(finished));
+		this->obj->emit_signal(SceneStringName(finished));
 	}
 }
 
@@ -345,7 +345,7 @@ void FindInFilesSearch::_scan_file(const String& p_fpath)
 		int end = 0;
 
 		while (find_next(line, pattern, end, match_case, whole_words, begin, end)) {
-			emit_signal(SNAME("result_found"), p_fpath, line_number, begin, end, line);
+			this->obj->emit_signal(SNAME("result_found"), p_fpath, line_number, begin, end, line);
 		}
 	}
 }
@@ -514,10 +514,10 @@ void FindInFilesDialog::custom_action(const String& p_action)
 	}
 
 	if (p_action == "find") {
-		emit_signal(SNAME("find_requested"));
+		this->obj->emit_signal(SNAME("find_requested"));
 	}
 	else if (p_action == "replace") {
-		emit_signal(SNAME("replace_requested"));
+		this->obj->emit_signal(SNAME("replace_requested"));
 	}
 	hide();
 }
@@ -1049,7 +1049,10 @@ void FindInFilesPanel::_on_refresh_button_clicked() { start_search(); }
 
 void FindInFilesPanel::_on_cancel_button_clicked() { stop_search(); }
 
-void FindInFilesPanel::_on_close_button_clicked() { emit_signal(SNAME("close_button_clicked")); }
+void FindInFilesPanel::_on_close_button_clicked()
+{
+	this->obj->emit_signal(SNAME("close_button_clicked"));
+}
 
 void FindInFilesPanel::_on_result_selected()
 {
@@ -1064,7 +1067,7 @@ void FindInFilesPanel::_on_result_selected()
 	TreeItem* file_item = item->get_parent();
 	String fpath = file_item->get_metadata(0);
 
-	emit_signal(SNAME("result_selected"), fpath, r.line_number, r.begin, r.end);
+	this->obj->emit_signal(SNAME("result_selected"), fpath, r.line_number, r.begin, r.end);
 }
 
 void FindInFilesPanel::_on_replace_text_changed(const String& p_text) { _update_replace_buttons(); }
@@ -1097,7 +1100,7 @@ void FindInFilesPanel::_on_replace_all_clicked()
 	// Hide replace bar so we can't trigger the action twice without doing a new search.
 	replace_container->hide();
 
-	emit_signal(SNAME("files_modified"));
+	this->obj->emit_signal(SNAME("files_modified"));
 }
 
 void FindInFilesPanel::_on_button_clicked(
@@ -1121,7 +1124,7 @@ void FindInFilesPanel::_on_button_clicked(
 			const String path = p_item->get_parent()->get_metadata(0);
 			_apply_replaces_in_file(path, locations, replace_text);
 		}
-		emit_signal(SNAME("files_modified"));
+		this->obj->emit_signal(SNAME("files_modified"));
 	}
 
 	result_items.erase(p_item);
@@ -1145,10 +1148,10 @@ void FindInFilesPanel::_on_button_clicked(
 		}
 		if (item_parent->get_child_count() < 2 && item_parent != results_display->get_root()) {
 			file_items.erase(item_parent->get_metadata(0));
-			get_tree()->queue_delete(item_parent);
+			get_tree()->queue_delete(item_parent->obj.get());
 		}
 	}
-	get_tree()->queue_delete(p_item);
+	get_tree()->queue_delete(p_item->obj.get());
 	_update_matches_text();
 }
 
@@ -1201,7 +1204,7 @@ void FindInFilesPanel::_apply_replaces_in_file(
 		code_edit->begin_complex_operation();
 		Variant nav_state = code_text_editor->get_navigation_state();
 		code_edit->set_text(final_text);
-		code_edit->emit_signal(SceneStringName(text_changed));
+		code_edit->obj->emit_signal(SceneStringName(text_changed));
 		code_text_editor->set_edit_state(nav_state);
 		code_edit->end_complex_operation();
 	}
@@ -1434,7 +1437,7 @@ FindInFilesPanel* FindInFilesContainer::get_panel_for_results(const String& p_la
 void FindInFilesContainer::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_POSTINITIALIZE: {
+	case Object::NOTIFICATION_POSTINITIALIZE: {
 		connect("closed", callable_mp(this, &FindInFilesContainer::_on_dock_closed));
 	} break;
 	}
@@ -1458,10 +1461,10 @@ void FindInFilesContainer::_on_theme_changed()
 void FindInFilesContainer::_result_selected(
 	const String& p_fpath, int p_line_number, int p_begin, int p_end)
 {
-	emit_signal(SNAME("result_selected"), p_fpath, p_line_number, p_begin, p_end);
+	this->obj->emit_signal(SNAME("result_selected"), p_fpath, p_line_number, p_begin, p_end);
 }
 
-void FindInFilesContainer::_files_modified() { emit_signal(SNAME("files_modified")); }
+void FindInFilesContainer::_files_modified() { this->obj->emit_signal(SNAME("files_modified")); }
 
 void FindInFilesContainer::_close_panel(FindInFilesPanel* p_panel)
 {
@@ -1666,7 +1669,8 @@ void FindInFiles::_bind_methods() {}
 FindInFiles::FindInFiles()
 {
 	dialog = memnew(FindInFilesDialog);
-	dialog->connect("find_requested", callable_mp(this, &FindInFiles::_start_search).bind(false));
+	dialog->connect("find_requested", callable_mp(
+this, &FindInFiles::_start_search).bind(false));
 	dialog->connect("replace_requested", callable_mp(this, &FindInFiles::_start_search).bind(true));
 	EditorNode::get_singleton()->get_gui_base()->add_child(dialog);
 

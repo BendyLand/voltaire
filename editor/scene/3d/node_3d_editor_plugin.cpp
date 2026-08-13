@@ -768,8 +768,8 @@ void Node3DEditor::_xform_dialog_action()
 
 		Node3D* parent = sp->get_parent_node_3d();
 		Transform3D local_tr = parent ? parent->get_global_transform().affine_inverse() * tr : tr;
-		undo_redo->add_do_method(sp, "set_transform", local_tr);
-		undo_redo->add_undo_method(sp, "set_transform", sp->get_transform());
+		undo_redo->add_do_method(sp->obj.get(), "set_transform", local_tr);
+		undo_redo->add_undo_method(sp->obj.get(), "set_transform", sp->get_transform());
 	}
 	undo_redo->commit_action();
 }
@@ -838,8 +838,8 @@ void Node3DEditor::_undo_redo_inspector_callback(
 		Node3D* child = Object::cast_to<Node3D>(node->get_child(i));
 		if (child) {
 			Transform3D child_global = child->get_global_transform();
-			undo_redo->add_do_method(child, "set_global_transform", child_global);
-			undo_redo->add_undo_method(child, "set_global_transform", child_global);
+			undo_redo->add_do_method(child->obj.get(), "set_global_transform", child_global);
+			undo_redo->add_undo_method(child->obj.get(), "set_global_transform", child_global);
 		}
 	}
 }
@@ -1102,16 +1102,16 @@ void Node3DEditor::_menu_item_pressed(int p_option)
 				continue;
 			}
 
-			undo_redo->add_do_method(spatial, "set_meta", "_edit_lock_", true);
-			undo_redo->add_undo_method(spatial, "remove_meta", "_edit_lock_");
-			undo_redo->add_do_method(this, "emit_signal", "item_lock_status_changed");
-			undo_redo->add_undo_method(this, "emit_signal", "item_lock_status_changed");
+			undo_redo->add_do_method(spatial->obj.get(), "set_meta", "_edit_lock_", true);
+			undo_redo->add_undo_method(spatial->obj.get(), "remove_meta", "_edit_lock_");
+			undo_redo->add_do_method(this->obj.get(), "emit_signal", "item_lock_status_changed");
+			undo_redo->add_undo_method(this->obj.get(), "emit_signal", "item_lock_status_changed");
 		}
 
-		undo_redo->add_do_method(this, "_refresh_menu_icons");
-		undo_redo->add_undo_method(this, "_refresh_menu_icons");
-		undo_redo->add_do_method(this, "update_transform_gizmo");
-		undo_redo->add_undo_method(this, "update_transform_gizmo");
+		undo_redo->add_do_method(this->obj.get(), "_refresh_menu_icons");
+		undo_redo->add_undo_method(this->obj.get(), "_refresh_menu_icons");
+		undo_redo->add_do_method(this->obj.get(), "update_transform_gizmo");
+		undo_redo->add_undo_method(this->obj.get(), "update_transform_gizmo");
 		undo_redo->commit_action();
 	} break;
 	case MENU_UNLOCK_SELECTED: {
@@ -1125,16 +1125,16 @@ void Node3DEditor::_menu_item_pressed(int p_option)
 				continue;
 			}
 
-			undo_redo->add_do_method(spatial, "remove_meta", "_edit_lock_");
-			undo_redo->add_undo_method(spatial, "set_meta", "_edit_lock_", true);
-			undo_redo->add_do_method(this, "emit_signal", "item_lock_status_changed");
-			undo_redo->add_undo_method(this, "emit_signal", "item_lock_status_changed");
+			undo_redo->add_do_method(spatial->obj.get(), "remove_meta", "_edit_lock_");
+			undo_redo->add_undo_method(spatial->obj.get(), "set_meta", "_edit_lock_", true);
+			undo_redo->add_do_method(this->obj.get(), "emit_signal", "item_lock_status_changed");
+			undo_redo->add_undo_method(this->obj.get(), "emit_signal", "item_lock_status_changed");
 		}
 
-		undo_redo->add_do_method(this, "_refresh_menu_icons");
-		undo_redo->add_undo_method(this, "_refresh_menu_icons");
-		undo_redo->add_do_method(this, "update_transform_gizmo");
-		undo_redo->add_undo_method(this, "update_transform_gizmo");
+		undo_redo->add_do_method(this->obj.get(), "_refresh_menu_icons");
+		undo_redo->add_undo_method(this->obj.get(), "_refresh_menu_icons");
+		undo_redo->add_do_method(this->obj.get(), "update_transform_gizmo");
+		undo_redo->add_undo_method(this->obj.get(), "update_transform_gizmo");
 		undo_redo->commit_action();
 	} break;
 	case MENU_GROUP_SELECTED: {
@@ -1148,14 +1148,14 @@ void Node3DEditor::_menu_item_pressed(int p_option)
 				continue;
 			}
 
-			undo_redo->add_do_method(spatial, "set_meta", "_edit_group_", true);
-			undo_redo->add_undo_method(spatial, "remove_meta", "_edit_group_");
-			undo_redo->add_do_method(this, "emit_signal", "item_group_status_changed");
-			undo_redo->add_undo_method(this, "emit_signal", "item_group_status_changed");
+			undo_redo->add_do_method(spatial->obj.get(), "set_meta", "_edit_group_", true);
+			undo_redo->add_undo_method(spatial->obj.get(), "remove_meta", "_edit_group_");
+			undo_redo->add_do_method(this->obj.get(), "emit_signal", "item_group_status_changed");
+			undo_redo->add_undo_method(this->obj.get(), "emit_signal", "item_group_status_changed");
 		}
 
-		undo_redo->add_do_method(this, "_refresh_menu_icons");
-		undo_redo->add_undo_method(this, "_refresh_menu_icons");
+		undo_redo->add_do_method(this->obj.get(), "_refresh_menu_icons");
+		undo_redo->add_undo_method(this->obj.get(), "_refresh_menu_icons");
 		undo_redo->commit_action();
 	} break;
 	case MENU_UNGROUP_SELECTED: {
@@ -1168,14 +1168,14 @@ void Node3DEditor::_menu_item_pressed(int p_option)
 				continue;
 			}
 
-			undo_redo->add_do_method(spatial, "remove_meta", "_edit_group_");
-			undo_redo->add_undo_method(spatial, "set_meta", "_edit_group_", true);
-			undo_redo->add_do_method(this, "emit_signal", "item_group_status_changed");
-			undo_redo->add_undo_method(this, "emit_signal", "item_group_status_changed");
+			undo_redo->add_do_method(spatial->obj.get(), "remove_meta", "_edit_group_");
+			undo_redo->add_undo_method(spatial->obj.get(), "set_meta", "_edit_group_", true);
+			undo_redo->add_do_method(this->obj.get(), "emit_signal", "item_group_status_changed");
+			undo_redo->add_undo_method(this->obj.get(), "emit_signal", "item_group_status_changed");
 		}
 
-		undo_redo->add_do_method(this, "_refresh_menu_icons");
-		undo_redo->add_undo_method(this, "_refresh_menu_icons");
+		undo_redo->add_do_method(this->obj.get(), "_refresh_menu_icons");
+		undo_redo->add_undo_method(this->obj.get(), "_refresh_menu_icons");
 		undo_redo->commit_action();
 	} break;
 	case MENU_RULER: {
@@ -2297,7 +2297,7 @@ void Node3DEditor::_refresh_menu_icons()
 template <typename T> HashSet<T*> _get_child_nodes(Node* parent_node)
 {
 	HashSet<T*> nodes = HashSet<T*>();
-	T* node = Node::cast_to<T>(parent_node);
+	T* node = Object::cast_to<T>(parent_node);
 	if (node) {
 		nodes.insert(node);
 	}
@@ -2316,7 +2316,7 @@ template <typename T> HashSet<T*> _get_child_nodes(Node* parent_node)
 HashSet<RID> _get_physics_bodies_rid(Node* node)
 {
 	HashSet<RID> rids = HashSet<RID>();
-	PhysicsBody3D* pb = Node::cast_to<PhysicsBody3D>(node);
+	PhysicsBody3D* pb = Object::cast_to<PhysicsBody3D>(node);
 	if (pb) {
 		rids.insert(pb->get_rid());
 	}
@@ -2458,8 +2458,8 @@ void Node3DEditor::_snap_selected_nodes_to_floor()
 					Transform3D new_local_xform =
 						parent ? parent->get_global_transform().affine_inverse() * new_transform
 							   : new_transform;
-					undo_redo->add_do_method(sp, "set_transform", new_local_xform);
-					undo_redo->add_undo_method(sp, "set_transform", sp->get_transform());
+					undo_redo->add_do_method(sp->obj.get(), "set_transform", new_local_xform);
+					undo_redo->add_undo_method(sp->obj.get(), "set_transform", sp->get_transform());
 				}
 			}
 
@@ -2516,13 +2516,13 @@ void Node3DEditor::_add_sun_to_scene(bool p_already_added_environment)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Add Preview Sun to Scene"));
-	undo_redo->add_do_method(base, "add_child", new_sun, true);
+	undo_redo->add_do_method(base->obj.get(), "add_child", new_sun, true);
 	// Move to the beginning of the scene tree since more "global" nodes
 	// generally look better when placed at the top.
-	undo_redo->add_do_method(base, "move_child", new_sun, 0);
-	undo_redo->add_do_method(new_sun, "set_owner", base);
-	undo_redo->add_undo_method(base, "remove_child", new_sun);
-	undo_redo->add_do_reference(new_sun);
+	undo_redo->add_do_method(base->obj.get(), "move_child", new_sun, 0);
+	undo_redo->add_do_method(new_sun->obj.get(), "set_owner", base);
+	undo_redo->add_undo_method(base->obj.get(), "remove_child", new_sun);
+	undo_redo->add_do_reference(new_sun->obj.get());
 	undo_redo->commit_action();
 }
 
@@ -2553,13 +2553,13 @@ void Node3DEditor::_add_environment_to_scene(bool p_already_added_sun)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Add Preview Environment to Scene"));
-	undo_redo->add_do_method(base, "add_child", new_env, true);
+	undo_redo->add_do_method(base->obj.get(), "add_child", new_env, true);
 	// Move to the beginning of the scene tree since more "global" nodes
 	// generally look better when placed at the top.
-	undo_redo->add_do_method(base, "move_child", new_env, 0);
-	undo_redo->add_do_method(new_env, "set_owner", base);
-	undo_redo->add_undo_method(base, "remove_child", new_env);
-	undo_redo->add_do_reference(new_env);
+	undo_redo->add_do_method(base->obj.get(), "move_child", new_env, 0);
+	undo_redo->add_do_method(new_env->obj.get(), "set_owner", base);
+	undo_redo->add_undo_method(base->obj.get(), "remove_child", new_env);
+	undo_redo->add_do_reference(new_env->obj.get());
 	undo_redo->commit_action();
 }
 
@@ -2666,7 +2666,7 @@ void Node3DEditor::_notification(int p_what)
 		get_tree()->connect("node_added", callable_mp(this, &Node3DEditor::_node_added));
 		SceneTreeDock::get_singleton()->get_tree_editor()->connect(
 			"node_changed", callable_mp(this, &Node3DEditor::_refresh_menu_icons));
-		editor_selection->connect(
+		editor_selection->obj->connect(
 			"selection_changed", callable_mp(this, &Node3DEditor::_selection_changed));
 
 		_update_preview_environment();
@@ -2943,7 +2943,7 @@ void Node3DEditor::_request_gizmo_for_id(ObjectID p_id)
 {
 	Node3D* node = ObjectDB::get_instance<Node3D>(p_id);
 	if (node) {
-		_request_gizmo(node);
+		_request_gizmo(node->obj.get());
 	}
 }
 
@@ -3384,15 +3384,15 @@ void Node3DEditor::_sun_direction_input(const Ref<InputEvent>& p_event)
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Set Preview Sun Direction"), UndoRedo::MergeMode::MERGE_ENDS);
 		undo_redo->add_do_method(
-			sun_angle_altitude, "set_value_no_signal", -Math::rad_to_deg(sun_rotation.x));
+			sun_angle_altitude->obj.get(), "set_value_no_signal", -Math::rad_to_deg(sun_rotation.x));
 		undo_redo->add_undo_method(
-			sun_angle_altitude, "set_value_no_signal", sun_angle_altitude->get_value());
+			sun_angle_altitude->obj.get(), "set_value_no_signal", sun_angle_altitude->get_value());
 		undo_redo->add_do_method(
-			sun_angle_azimuth, "set_value_no_signal", 180.0 - Math::rad_to_deg(sun_rotation.y));
+			sun_angle_azimuth->obj.get(), "set_value_no_signal", 180.0 - Math::rad_to_deg(sun_rotation.y));
 		undo_redo->add_undo_method(
-			sun_angle_azimuth, "set_value_no_signal", sun_angle_azimuth->get_value());
-		undo_redo->add_do_method(this, "_preview_settings_changed");
-		undo_redo->add_undo_method(this, "_preview_settings_changed");
+			sun_angle_azimuth->obj.get(), "set_value_no_signal", sun_angle_azimuth->get_value());
+		undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+		undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 		undo_redo->commit_action();
 	}
 }
@@ -3401,11 +3401,11 @@ void Node3DEditor::_sun_direction_set_altitude(float p_altitude)
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Sun Altitude"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(sun_angle_altitude, "set_value_no_signal", p_altitude);
+	undo_redo->add_do_method(sun_angle_altitude->obj.get(), "set_value_no_signal", p_altitude);
 	undo_redo->add_undo_method(
-		sun_angle_altitude, "set_value_no_signal", -Math::rad_to_deg(sun_rotation.x));
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+		sun_angle_altitude->obj.get(), "set_value_no_signal", -Math::rad_to_deg(sun_rotation.x));
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3413,11 +3413,11 @@ void Node3DEditor::_sun_direction_set_azimuth(float p_azimuth)
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Sun Azimuth"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(sun_angle_azimuth, "set_value_no_signal", p_azimuth);
+	undo_redo->add_do_method(sun_angle_azimuth->obj.get(), "set_value_no_signal", p_azimuth);
 	undo_redo->add_undo_method(
-		sun_angle_azimuth, "set_value_no_signal", 180.0 - Math::rad_to_deg(sun_rotation.y));
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+		sun_angle_azimuth->obj.get(), "set_value_no_signal", 180.0 - Math::rad_to_deg(sun_rotation.y));
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3425,10 +3425,10 @@ void Node3DEditor::_sun_set_color(const Color& p_color)
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Sun Color"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(sun_color, "set_pick_color", p_color);
-	undo_redo->add_undo_method(sun_color, "set_pick_color", preview_sun->get_color());
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+	undo_redo->add_do_method(sun_color->obj.get(), "set_pick_color", p_color);
+	undo_redo->add_undo_method(sun_color->obj.get(), "set_pick_color", preview_sun->get_color());
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3436,11 +3436,11 @@ void Node3DEditor::_sun_set_energy(float p_energy)
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Sun Energy"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(sun_energy, "set_value_no_signal", p_energy);
+	undo_redo->add_do_method(sun_energy->obj.get(), "set_value_no_signal", p_energy);
 	undo_redo->add_undo_method(
-		sun_energy, "set_value_no_signal", preview_sun->get_param(Light3D::PARAM_ENERGY));
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+		sun_energy->obj.get(), "set_value_no_signal", preview_sun->get_param(Light3D::PARAM_ENERGY));
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3449,11 +3449,11 @@ void Node3DEditor::_sun_set_shadow_max_distance(float p_shadow_max_distance)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(
 		TTR("Set Preview Sun Max Shadow Distance"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(sun_shadow_max_distance, "set_value_no_signal", p_shadow_max_distance);
-	undo_redo->add_undo_method(sun_shadow_max_distance, "set_value_no_signal",
+	undo_redo->add_do_method(sun_shadow_max_distance->obj.get(), "set_value_no_signal", p_shadow_max_distance);
+	undo_redo->add_undo_method(sun_shadow_max_distance->obj.get(), "set_value_no_signal",
 		preview_sun->get_param(Light3D::PARAM_SHADOW_MAX_DISTANCE));
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3462,11 +3462,11 @@ void Node3DEditor::_environ_set_sky_color(const Color& p_color)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(
 		TTR("Set Preview Environment Sky Color"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(environ_sky_color, "set_pick_color", p_color);
+	undo_redo->add_do_method(environ_sky_color->obj.get(), "set_pick_color", p_color);
 	undo_redo->add_undo_method(
-		environ_sky_color, "set_pick_color", sky_material->get_sky_top_color());
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+		environ_sky_color->obj.get(), "set_pick_color", sky_material->get_sky_top_color());
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3475,11 +3475,11 @@ void Node3DEditor::_environ_set_ground_color(const Color& p_color)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(
 		TTR("Set Preview Environment Ground Color"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(environ_ground_color, "set_pick_color", p_color);
+	undo_redo->add_do_method(environ_ground_color->obj.get(), "set_pick_color", p_color);
 	undo_redo->add_undo_method(
-		environ_ground_color, "set_pick_color", sky_material->get_ground_bottom_color());
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+		environ_ground_color->obj.get(), "set_pick_color", sky_material->get_ground_bottom_color());
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3488,11 +3488,11 @@ void Node3DEditor::_environ_set_sky_energy(float p_energy)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(
 		TTR("Set Preview Environment Energy"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(environ_energy, "set_value_no_signal", p_energy);
+	undo_redo->add_do_method(environ_energy->obj.get(), "set_value_no_signal", p_energy);
 	undo_redo->add_undo_method(
-		environ_energy, "set_value_no_signal", sky_material->get_energy_multiplier());
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+		environ_energy->obj.get(), "set_value_no_signal", sky_material->get_energy_multiplier());
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3500,10 +3500,10 @@ void Node3DEditor::_environ_set_ao()
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Environment Ambient Occlusion"));
-	undo_redo->add_do_method(environ_ao_button, "set_pressed", environ_ao_button->is_pressed());
-	undo_redo->add_undo_method(environ_ao_button, "set_pressed", !environ_ao_button->is_pressed());
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+	undo_redo->add_do_method(environ_ao_button->obj.get(), "set_pressed", environ_ao_button->is_pressed());
+	undo_redo->add_undo_method(environ_ao_button->obj.get(), "set_pressed", !environ_ao_button->is_pressed());
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3511,11 +3511,11 @@ void Node3DEditor::_environ_set_glow()
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Environment Glow"));
-	undo_redo->add_do_method(environ_glow_button, "set_pressed", environ_glow_button->is_pressed());
+	undo_redo->add_do_method(environ_glow_button->obj.get(), "set_pressed", environ_glow_button->is_pressed());
 	undo_redo->add_undo_method(
-		environ_glow_button, "set_pressed", !environ_glow_button->is_pressed());
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+		environ_glow_button->obj.get(), "set_pressed", !environ_glow_button->is_pressed());
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3524,11 +3524,11 @@ void Node3DEditor::_environ_set_tonemap()
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Environment Tonemap"));
 	undo_redo->add_do_method(
-		environ_tonemap_button, "set_pressed", environ_tonemap_button->is_pressed());
+		environ_tonemap_button->obj.get(), "set_pressed", environ_tonemap_button->is_pressed());
 	undo_redo->add_undo_method(
-		environ_tonemap_button, "set_pressed", !environ_tonemap_button->is_pressed());
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+		environ_tonemap_button->obj.get(), "set_pressed", !environ_tonemap_button->is_pressed());
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3536,10 +3536,10 @@ void Node3DEditor::_environ_set_gi()
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Environment Global Illumination"));
-	undo_redo->add_do_method(environ_gi_button, "set_pressed", environ_gi_button->is_pressed());
-	undo_redo->add_undo_method(environ_gi_button, "set_pressed", !environ_gi_button->is_pressed());
-	undo_redo->add_do_method(this, "_preview_settings_changed");
-	undo_redo->add_undo_method(this, "_preview_settings_changed");
+	undo_redo->add_do_method(environ_gi_button->obj.get(), "set_pressed", environ_gi_button->is_pressed());
+	undo_redo->add_undo_method(environ_gi_button->obj.get(), "set_pressed", !environ_gi_button->is_pressed());
+	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
 }
 
@@ -3578,7 +3578,7 @@ Node3DEditor::Node3DEditor()
 	ERR_FAIL_COND_MSG(singleton != nullptr, "A Node3DEditor singleton already exists.");
 	singleton = this;
 	editor_selection = EditorNode::get_singleton()->get_editor_selection();
-	editor_selection->add_editor_plugin(this);
+	editor_selection->add_editor_plugin(this->obj.get());
 
 	MarginContainer* toolbar_margin = memnew(MarginContainer);
 	toolbar_margin->set_theme_type_variation("MainToolBarMargin");
@@ -3793,7 +3793,7 @@ Node3DEditor::Node3DEditor()
 	sun_button->set_accessibility_name(TTRC("Toggle preview sunlight."));
 	sun_button->set_theme_type_variation(SceneStringName(FlatButton));
 	sun_button->connect(SceneStringName(pressed),
-		callable_mp(this, &Node3DEditor::_update_preview_environment), CONNECT_DEFERRED);
+		callable_mp(this, &Node3DEditor::_update_preview_environment), Object::CONNECT_DEFERRED);
 	// Preview is enabled by default - ensure this applies on editor startup when there is no state
 	// yet.
 	sun_button->set_pressed(true);
@@ -3808,7 +3808,7 @@ Node3DEditor::Node3DEditor()
 	environ_button->set_accessibility_name(TTRC("Toggle preview environment."));
 	environ_button->set_theme_type_variation(SceneStringName(FlatButton));
 	environ_button->connect(SceneStringName(pressed),
-		callable_mp(this, &Node3DEditor::_update_preview_environment), CONNECT_DEFERRED);
+		callable_mp(this, &Node3DEditor::_update_preview_environment), Object::CONNECT_DEFERRED);
 	// Preview is enabled by default - ensure this applies on editor startup when there is no state
 	// yet.
 	environ_button->set_pressed(true);
@@ -4308,28 +4308,28 @@ void fragment() {
 		environ_ao_button->set_h_size_flags(SIZE_EXPAND_FILL);
 		environ_ao_button->set_toggle_mode(true);
 		environ_ao_button->connect(SceneStringName(pressed),
-			callable_mp(this, &Node3DEditor::_environ_set_ao), CONNECT_DEFERRED);
+			callable_mp(this, &Node3DEditor::_environ_set_ao), Object::CONNECT_DEFERRED);
 		fx_vb->add_child(environ_ao_button);
 		environ_glow_button = memnew(Button);
 		environ_glow_button->set_text(TTRC("Glow"));
 		environ_glow_button->set_h_size_flags(SIZE_EXPAND_FILL);
 		environ_glow_button->set_toggle_mode(true);
 		environ_glow_button->connect(SceneStringName(pressed),
-			callable_mp(this, &Node3DEditor::_environ_set_glow), CONNECT_DEFERRED);
+			callable_mp(this, &Node3DEditor::_environ_set_glow), Object::CONNECT_DEFERRED);
 		fx_vb->add_child(environ_glow_button);
 		environ_tonemap_button = memnew(Button);
 		environ_tonemap_button->set_text(TTRC("Tonemap"));
 		environ_tonemap_button->set_h_size_flags(SIZE_EXPAND_FILL);
 		environ_tonemap_button->set_toggle_mode(true);
 		environ_tonemap_button->connect(SceneStringName(pressed),
-			callable_mp(this, &Node3DEditor::_environ_set_tonemap), CONNECT_DEFERRED);
+			callable_mp(this, &Node3DEditor::_environ_set_tonemap), Object::CONNECT_DEFERRED);
 		fx_vb->add_child(environ_tonemap_button);
 		environ_gi_button = memnew(Button);
 		environ_gi_button->set_text(TTRC("GI"));
 		environ_gi_button->set_h_size_flags(SIZE_EXPAND_FILL);
 		environ_gi_button->set_toggle_mode(true);
 		environ_gi_button->connect(SceneStringName(pressed),
-			callable_mp(this, &Node3DEditor::_environ_set_gi), CONNECT_DEFERRED);
+			callable_mp(this, &Node3DEditor::_environ_set_gi), Object::CONNECT_DEFERRED);
 		fx_vb->add_child(environ_gi_button);
 		environ_vb->add_margin_child(TTRC("Post Process"), fx_vb);
 
@@ -4391,7 +4391,7 @@ void Node3DEditorPlugin::edited_scene_changed()
 	for (uint32_t i = 0; i < Node3DEditor::VIEWPORTS_COUNT; i++) {
 		Node3DEditorViewport* viewport = Node3DEditor::get_singleton()->get_editor_viewport(i);
 		if (viewport->is_visible()) {
-			viewport->notification(Control::NOTIFICATION_VISIBILITY_CHANGED);
+			viewport->obj->notification(Control::NOTIFICATION_VISIBILITY_CHANGED);
 		}
 	}
 }

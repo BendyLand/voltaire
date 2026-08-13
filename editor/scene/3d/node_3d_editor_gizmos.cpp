@@ -179,7 +179,8 @@ void EditorNode3DGizmo::Instance::create_instance(Node3D* p_base, bool p_hidden)
 {
 	instance = RS::get_singleton()->instance_create2(
 		mesh->get_rid(), p_base->get_world_3d()->get_scenario());
-	RS::get_singleton()->instance_attach_object_instance_id(instance, p_base->get_instance_id());
+	RS::get_singleton()->instance_attach_object_instance_id(
+		instance, p_base->obj->get_instance_id());
 	if (skin_reference.is_valid()) {
 		RS::get_singleton()->instance_attach_skeleton(instance, skin_reference->get_skeleton());
 	}
@@ -1208,7 +1209,8 @@ void EditorNode3DGizmoPlugin::set_subgizmo_transform(
 {
 }
 
-bool EditorNode3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
+bool EditorNode3DGizmoPlugin
+::has_gizmo(Node3D* p_spatial) { return false; }
 
 Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D* p_spatial) const
 {

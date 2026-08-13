@@ -28,81 +28,92 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "particles_editor_plugin.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/settings/editor_settings.h"
+#include "particles_editor_plugin.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/menu_button.h"
 #include "scene/gui/spin_box.h"
 
-void ParticlesEditorPlugin::_notification(int p_what) {
+void ParticlesEditorPlugin::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			if (handled_type.ends_with("2D")) {
-				add_control_to_container(CONTAINER_CANVAS_EDITOR_MENU, toolbar);
-			} else if (handled_type.ends_with("3D")) {
-				add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, toolbar);
-			} else {
-				DEV_ASSERT(false);
-			}
+	case NOTIFICATION_ENTER_TREE: {
+		if (handled_type.ends_with("2D")) {
+			add_control_to_container(CONTAINER_CANVAS_EDITOR_MENU, toolbar);
+		}
+		else if (handled_type.ends_with("3D")) {
+			add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, toolbar);
+		}
+		else {
+			DEV_ASSERT(false);
+		}
 
-			menu->set_button_icon(menu->get_editor_theme_icon(handled_type));
-			menu->set_text(handled_type);
+		menu->set_button_icon(menu->get_editor_theme_icon(handled_type));
+		menu->set_text(handled_type);
 
-			PopupMenu *popup = menu->get_popup();
-			popup->add_shortcut(ED_SHORTCUT("particles/restart_emission", TTRC("Restart Emission"), KeyModifierMask::CTRL | Key::R), MENU_RESTART);
-			_add_menu_options(popup);
-			popup->add_item(conversion_option_name, MENU_OPTION_CONVERT);
-		} break;
+		PopupMenu* popup = menu->get_popup();
+		popup->add_shortcut(ED_SHORTCUT("particles/restart_emission", TTRC("Restart Emission"),
+								KeyModifierMask::CTRL | Key::R),
+			MENU_RESTART);
+		_add_menu_options(popup);
+		popup->add_item(conversion_option_name, MENU_OPTION_CONVERT);
+	} break;
 	}
 }
 
-bool ParticlesEditorPlugin::need_show_lifetime_dialog(SpinBox *p_seconds) {
-	// Add one second to the default generation lifetime, since the progress is updated every second.
-	p_seconds->set_value(MAX(1.0, std::trunc(edited_node->get("lifetime").operator double()) + 1.0));
+bool ParticlesEditorPlugin::need_show_lifetime_dialog(SpinBox* p_seconds)
+{
+	// Add one second to the default generation lifetime, since the progress is updated every
+	// second.
+	p_seconds->set_value(
+		MAX(1.0, std::trunc(edited_node->obj->get("lifetime").operator double()) + 1.0));
 
 	if (p_seconds->get_value() >= 11.0 + CMP_EPSILON) {
-		// Only pop up the time dialog if the particle's lifetime is long enough to warrant shortening it.
+		// Only pop up the time dialog if the particle's lifetime is long enough to warrant
+		// shortening it.
 		return true;
-	} else {
+	}
+	else {
 		// Generate the visibility rect/AABB immediately.
 		return false;
 	}
 }
 
-void ParticlesEditorPlugin::_menu_callback(int p_idx) {
+void ParticlesEditorPlugin::_menu_callback(int p_idx)
+{
 	switch (p_idx) {
-		case MENU_OPTION_CONVERT: {
-			Node *converted_node = _convert_particles();
+	case MENU_OPTION_CONVERT: {
+		Node* converted_node = _convert_particles();
 
-			EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
-			ur->create_action(conversion_option_name, UndoRedo::MERGE_DISABLE, edited_node);
-			SceneTreeDock::get_singleton()->replace_node(edited_node, converted_node);
-			ur->commit_action(false);
-		} break;
+		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
+		ur->create_action(conversion_option_name, UndoRedo::MERGE_DISABLE, edited_node->obj.get());
+		SceneTreeDock::get_singleton()->replace_node(edited_node, converted_node);
+		ur->commit_action(false);
+	} break;
 
-		case MENU_RESTART: {
-			edited_node->call("restart");
-		}
+	case MENU_RESTART: {
+		edited_node->obj->call("restart");
+	}
 	}
 }
 
-void ParticlesEditorPlugin::edit(Object *p_object) {
+void ParticlesEditorPlugin::edit(Object* p_object)
+{
 	edited_node = Object::cast_to<Node>(p_object);
 }
 
-bool ParticlesEditorPlugin::handles(Object *p_object) const {
+bool ParticlesEditorPlugin::handles(Object* p_object) const
+{
 	return p_object->is_class(handled_type);
 }
 
-void ParticlesEditorPlugin::make_visible(bool p_visible) {
-	toolbar->set_visible(p_visible);
-}
+void ParticlesEditorPlugin::make_visible(bool p_visible) { toolbar->set_visible(p_visible); }
 
-ParticlesEditorPlugin::ParticlesEditorPlugin() {
+ParticlesEditorPlugin::ParticlesEditorPlugin()
+{
 	toolbar = memnew(HBoxContainer);
 	toolbar->hide();
 
@@ -111,5 +122,8 @@ ParticlesEditorPlugin::ParticlesEditorPlugin() {
 	menu->set_flat(false);
 	menu->set_theme_type_variation("FlatMenuButtonNoIconTint");
 	toolbar->add_child(menu);
-	menu->get_popup()->connect(SceneStringName(id_pressed), callable_mp(this, &ParticlesEditorPlugin::_menu_callback));
+	menu->get_popup()->connect(
+		SceneStringName(id_pressed), callable_mp(this, &ParticlesEditorPlugin::_menu_callback));
 }
+
+

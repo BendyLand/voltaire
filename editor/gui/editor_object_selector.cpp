@@ -108,14 +108,14 @@ void EditorObjectSelector::_show_popup()
 
 void EditorObjectSelector::_about_to_show()
 {
-	Object* obj = ObjectDB::get_instance(history->get_path_object(history->get_path_size() - 1));
-	if (!obj) {
+	Object* o = ObjectDB::get_instance(history->get_path_object(history->get_path_size() - 1));
+	if (!o) {
 		return;
 	}
 
 	objects.clear();
 
-	_add_children_to_popup(obj);
+	_add_children_to_popup(o);
 	if (sub_objects_menu->get_item_count() == 0) {
 		sub_objects_menu->add_item(TTR("No sub-resources found."));
 		sub_objects_menu->set_item_disabled(0, true);
@@ -125,23 +125,23 @@ void EditorObjectSelector::_about_to_show()
 void EditorObjectSelector::update_path()
 {
 	for (int i = 0; i < history->get_path_size(); i++) {
-		Object* obj = ObjectDB::get_instance(history->get_path_object(i));
-		if (!obj) {
+		Object* o = ObjectDB::get_instance(history->get_path_object(i));
+		if (!o) {
 			continue;
 		}
 
-		Ref<Texture2D> obj_icon = EditorNode::get_singleton()->get_object_icon(obj);
+		Ref<Texture2D> obj_icon = EditorNode::get_singleton()->get_object_icon(o);
 		if (obj_icon.is_valid()) {
 			current_object_icon->set_texture(obj_icon);
 		}
 
 		if (i == history->get_path_size() - 1) {
 			String name;
-			if (obj->has_method("_get_editor_name")) {
-				name = obj->call("_get_editor_name");
+			if (o->has_method("_get_editor_name")) {
+				name = o->call("_get_editor_name");
 			}
-			else if (Object::cast_to<Resource>(obj)) {
-				Resource* r = Object::cast_to<Resource>(obj);
+			else if (Object::cast_to<Resource>(o)) {
+				Resource* r = Object::cast_to<Resource>(o);
 				if (r->get_path().is_resource_file()) {
 					name = r->get_path().get_file();
 				}
@@ -153,22 +153,22 @@ void EditorObjectSelector::update_path()
 					name = r->get_class();
 				}
 			}
-			else if (obj->is_class("EditorDebuggerRemoteObjects")) {
-				name = obj->call("get_title");
+			else if (o->is_class("EditorDebuggerRemoteObjects")) {
+				name = o->call("get_title");
 			}
-			else if (Object::cast_to<Node>(obj)) {
-				name = Object::cast_to<Node>(obj)->get_name();
+			else if (Object::cast_to<Node>(o)) {
+				name = Object::cast_to<Node>(o)->get_name();
 			}
-			else if (Object::cast_to<Resource>(obj) &&
-					   !Object::cast_to<Resource>(obj)->get_name().is_empty()) {
-				name = Object::cast_to<Resource>(obj)->get_name();
+			else if (Object::cast_to<Resource>(o) &&
+					   !Object::cast_to<Resource>(o)->get_name().is_empty()) {
+				name = Object::cast_to<Resource>(o)->get_name();
 			}
 			else {
-				name = obj->get_class();
+				name = o->get_class();
 			}
 
 			current_object_label->set_text(name);
-			set_tooltip_text(obj->get_class());
+			set_tooltip_text(o->get_class());
 		}
 	}
 }
@@ -193,12 +193,12 @@ void EditorObjectSelector::_id_pressed(int p_idx)
 {
 	ERR_FAIL_INDEX(p_idx, objects.size());
 
-	Object* obj = ObjectDB::get_instance(objects[p_idx]);
-	if (!obj) {
+	Object* o = ObjectDB::get_instance(objects[p_idx]);
+	if (!o) {
 		return;
 	}
 
-	EditorNode::get_singleton()->push_item(obj);
+	EditorNode::get_singleton()->push_item(o);
 }
 
 void EditorObjectSelector::_notification(int p_what)

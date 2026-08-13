@@ -577,7 +577,8 @@ public:
 	// FIX: Check the hardcoded default args; remove if possible
 	void add_child(Node* rp_child, bool p_force_readable_name = false,
 		InternalMode p_internal = InternalMode::INTERNAL_MODE_DISABLED);
-	void add_sibling(Node* rp_sibling, bool p_force_readable_name);
+	// FIX: Check the hardcoded default arg; remove if possible
+	void add_sibling(Node* rp_sibling, bool p_force_readable_name = false);
 	void remove_child(Node* rp_child);
 
 	/// Optimal way to iterate the children of this node.
@@ -828,7 +829,7 @@ public:
 		return binds;
 	}
 
-	void replace_by(Node* rp_node, bool p_keep_groups);
+	void replace_by(Node* rp_node, bool p_keep_groups = true);
 
 	void set_process_mode(ProcessMode p_mode);
 	ProcessMode get_process_mode() const;

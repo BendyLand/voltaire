@@ -28,13 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "input_event_configuration_dialog.h"
-
 #include "core/input/input_map.h"
 #include "core/object/callable_mp.h"
 #include "editor/editor_string_names.h"
 #include "editor/settings/event_listener_line_edit.h"
 #include "editor/themes/editor_scale.h"
+#include "input_event_configuration_dialog.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/margin_container.h"
@@ -42,7 +41,9 @@
 #include "scene/gui/separator.h"
 #include "scene/gui/tree.h"
 
-void InputEventConfigurationDialog::_set_event(const Ref<InputEvent> &p_event, const Ref<InputEvent> &p_original_event, bool p_update_input_list_selection) {
+void InputEventConfigurationDialog::_set_event(const Ref<InputEvent>& p_event,
+	const Ref<InputEvent>& p_original_event, bool p_update_input_list_selection)
+{
 	if (p_event.is_valid()) {
 		// If there is already a binding set, let enter or escape confirm/cancel the popup.
 		if (event.is_valid()) {
@@ -50,7 +51,8 @@ void InputEventConfigurationDialog::_set_event(const Ref<InputEvent> &p_event, c
 			Ref<InputEventWithModifiers> modifiers = p_event;
 			// Without this is_visible() check, the gui would not open if the already bound
 			// keybind was escape.
-			if (current_key.is_valid() && is_visible() && event_listener->has_focus() && !modifiers->get_modifiers_mask()) {
+			if (current_key.is_valid() && is_visible() && event_listener->has_focus() &&
+				!modifiers->get_modifiers_mask()) {
 				if (current_key->get_physical_keycode() == Key::ENTER) {
 					_ok_pressed();
 					return;
@@ -74,11 +76,12 @@ void InputEventConfigurationDialog::_set_event(const Ref<InputEvent> &p_event, c
 		event_as_text->set_text(EventListenerLineEdit::get_event_text(event, true));
 
 		bool exists = false;
-		for (const Variant &v : action_events) {
+		for (const Variant& v : action_events) {
 			Ref<InputEvent> ie = v;
 			if (ie.is_null()) {
 				continue;
-			} else if (ie->is_match(p_event)) {
+			}
+			else if (ie->is_match(p_event)) {
 				exists = true;
 				break;
 			}
@@ -105,23 +108,29 @@ void InputEventConfigurationDialog::_set_event(const Ref<InputEvent> &p_event, c
 			mod_checkboxes[MOD_CTRL]->set_pressed(mod->is_ctrl_pressed());
 			mod_checkboxes[MOD_META]->set_pressed(mod->is_meta_pressed());
 
-			autoremap_command_or_control_checkbox->set_pressed(mod->is_command_or_control_autoremap());
+			autoremap_command_or_control_checkbox->set_pressed(
+				mod->is_command_or_control_autoremap());
 		}
 
 		if (k.is_valid()) {
 			show_key = true;
 			Key phys_key = k->get_physical_keycode();
-			if (k->get_keycode() == Key::NONE && phys_key == Key::NONE && k->get_key_label() != Key::NONE) {
+			if (k->get_keycode() == Key::NONE && phys_key == Key::NONE &&
+				k->get_key_label() != Key::NONE) {
 				key_mode->select(KEYMODE_UNICODE);
-			} else if (k->get_keycode() != Key::NONE) {
+			}
+			else if (k->get_keycode() != Key::NONE) {
 				key_mode->select(KEYMODE_KEYCODE);
-			} else if (phys_key != Key::NONE) {
+			}
+			else if (phys_key != Key::NONE) {
 				key_mode->select(KEYMODE_PHY_KEYCODE);
-				if (phys_key == Key::SHIFT || phys_key == Key::CTRL || phys_key == Key::ALT || phys_key == Key::META) {
+				if (phys_key == Key::SHIFT || phys_key == Key::CTRL || phys_key == Key::ALT ||
+					phys_key == Key::META) {
 					key_location->select((int)k->get_location());
 					show_location = true;
 				}
-			} else {
+			}
+			else {
 				// Invalid key.
 				event = Ref<InputEvent>();
 				original_event = Ref<InputEvent>();
@@ -133,7 +142,8 @@ void InputEventConfigurationDialog::_set_event(const Ref<InputEvent> &p_event, c
 				_update_input_list();
 				return;
 			}
-		} else if (joyb.is_valid() || joym.is_valid() || mb.is_valid()) {
+		}
+		else if (joyb.is_valid() || joym.is_valid() || mb.is_valid()) {
 			show_device = true;
 			_set_current_device(event->get_device());
 		}
@@ -170,38 +180,57 @@ void InputEventConfigurationDialog::_set_event(const Ref<InputEvent> &p_event, c
 					ko->set_key_label(fix_key_label((char32_t)ko->get_keycode(), Key::NONE));
 				}
 				if (ko->get_physical_keycode() != Key::NONE) {
-					ko->set_key_label(fix_key_label((char32_t)ko->get_physical_keycode(), Key::NONE));
+					ko->set_key_label(
+						fix_key_label((char32_t)ko->get_physical_keycode(), Key::NONE));
 				}
 			}
 
 			key_mode->set_item_disabled(KEYMODE_KEYCODE, ko->get_keycode() == Key::NONE);
-			key_mode->set_item_disabled(KEYMODE_PHY_KEYCODE, ko->get_physical_keycode() == Key::NONE);
+			key_mode->set_item_disabled(
+				KEYMODE_PHY_KEYCODE, ko->get_physical_keycode() == Key::NONE);
 			key_mode->set_item_disabled(KEYMODE_UNICODE, ko->get_key_label() == Key::NONE);
 		}
 
 		// Update selected item in input list.
-		if (p_update_input_list_selection && (k.is_valid() || joyb.is_valid() || joym.is_valid() || mb.is_valid())) {
+		if (p_update_input_list_selection &&
+			(k.is_valid() || joyb.is_valid() || joym.is_valid() || mb.is_valid())) {
 			in_tree_update = true;
-			TreeItem *category = input_list_tree->get_root()->get_first_child();
+			TreeItem* category = input_list_tree->get_root()->get_first_child();
 			while (category) {
-				TreeItem *input_item = category->get_first_child();
+				TreeItem* input_item = category->get_first_child();
 
 				if (input_item != nullptr) {
-					// input_type should always be > 0, unless the tree structure has been misconfigured.
-					int input_type = input_item->get_parent()->get_meta("__type", 0);
+					// input_type should always be > 0, unless the tree structure has been
+					// misconfigured.
+					int input_type = input_item->get_parent()->obj->get_meta("__type", 0);
 					if (input_type == 0) {
 						in_tree_update = false;
 						return;
 					}
 
 					// If event type matches input types of this category.
-					if ((k.is_valid() && input_type == INPUT_KEY) || (joyb.is_valid() && input_type == INPUT_JOY_BUTTON) || (joym.is_valid() && input_type == INPUT_JOY_MOTION) || (mb.is_valid() && input_type == INPUT_MOUSE_BUTTON)) {
+					if ((k.is_valid() && input_type == INPUT_KEY) ||
+						(joyb.is_valid() && input_type == INPUT_JOY_BUTTON) ||
+						(joym.is_valid() && input_type == INPUT_JOY_MOTION) ||
+						(mb.is_valid() && input_type == INPUT_MOUSE_BUTTON)) {
 						// Loop through all items of this category until one matches.
 						while (input_item) {
-							bool key_match = k.is_valid() && (Variant(k->get_keycode()) == input_item->get_meta("__keycode") || Variant(k->get_physical_keycode()) == input_item->get_meta("__keycode"));
-							bool joyb_match = joyb.is_valid() && Variant(joyb->get_button_index()) == input_item->get_meta("__index");
-							bool joym_match = joym.is_valid() && Variant(joym->get_axis()) == input_item->get_meta("__axis") && joym->get_axis_value() == (float)input_item->get_meta("__value");
-							bool mb_match = mb.is_valid() && Variant(mb->get_button_index()) == input_item->get_meta("__index");
+							bool key_match =
+								k.is_valid() && (Variant(k->get_keycode()) ==
+														input_item->obj->get_meta("__keycode") ||
+													Variant(k->get_physical_keycode()) ==
+														input_item->obj->get_meta("__keycode"));
+							bool joyb_match =
+								joyb.is_valid() && Variant(joyb->get_button_index()) ==
+													   input_item->obj->get_meta("__index");
+							bool joym_match =
+								joym.is_valid() &&
+								Variant(joym->get_axis()) == input_item->obj->get_meta("__axis") &&
+								joym->get_axis_value() ==
+									(float)input_item->obj->get_meta("__value");
+							bool mb_match =
+								mb.is_valid() && Variant(mb->get_button_index()) ==
+													 input_item->obj->get_meta("__index");
 							if (key_match || joyb_match || joym_match || mb_match) {
 								category->set_collapsed(false);
 								input_item->select(0);
@@ -219,7 +248,8 @@ void InputEventConfigurationDialog::_set_event(const Ref<InputEvent> &p_event, c
 			}
 			in_tree_update = false;
 		}
-	} else {
+	}
+	else {
 		// Event is not valid, reset dialog
 		event = Ref<InputEvent>();
 		original_event = Ref<InputEvent>();
@@ -234,7 +264,8 @@ void InputEventConfigurationDialog::_set_event(const Ref<InputEvent> &p_event, c
 	}
 }
 
-void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEvent> &p_event) {
+void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEvent>& p_event)
+{
 	// Ignore if invalid, echo or not pressed
 	if (p_event.is_null() || p_event->is_echo() || !p_event->is_pressed()) {
 		return;
@@ -253,11 +284,14 @@ void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEven
 	int type = 0;
 	if (k.is_valid()) {
 		type = INPUT_KEY;
-	} else if (joyb.is_valid()) {
+	}
+	else if (joyb.is_valid()) {
 		type = INPUT_JOY_BUTTON;
-	} else if (joym.is_valid()) {
+	}
+	else if (joym.is_valid()) {
 		type = INPUT_JOY_MOTION;
-	} else if (mb.is_valid()) {
+	}
+	else if (mb.is_valid()) {
 		type = INPUT_MOUSE_BUTTON;
 	}
 
@@ -270,14 +304,17 @@ void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEven
 	}
 
 	if (k.is_valid()) {
-		k->set_pressed(false); // To avoid serialization of 'pressed' property - doesn't matter for actions anyway.
+		k->set_pressed(false); // To avoid serialization of 'pressed' property - doesn't matter for
+							   // actions anyway.
 		if (key_mode->get_selected_id() == KEYMODE_KEYCODE) {
 			k->set_physical_keycode(Key::NONE);
 			k->set_key_label(Key::NONE);
-		} else if (key_mode->get_selected_id() == KEYMODE_PHY_KEYCODE) {
+		}
+		else if (key_mode->get_selected_id() == KEYMODE_PHY_KEYCODE) {
 			k->set_keycode(Key::NONE);
 			k->set_key_label(Key::NONE);
-		} else if (key_mode->get_selected_id() == KEYMODE_UNICODE) {
+		}
+		else if (key_mode->get_selected_id() == KEYMODE_UNICODE) {
 			k->set_physical_keycode(Key::NONE);
 			k->set_keycode(Key::NONE);
 		}
@@ -297,24 +334,23 @@ void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEven
 	_set_event(received_event, received_original_event);
 }
 
-void InputEventConfigurationDialog::_search_term_updated(const String &) {
-	_update_input_list();
-}
+void InputEventConfigurationDialog::_search_term_updated(const String&) { _update_input_list(); }
 
-void InputEventConfigurationDialog::_update_input_list() {
+void InputEventConfigurationDialog::_update_input_list()
+{
 	input_list_tree->clear();
 
-	TreeItem *root = input_list_tree->create_item();
+	TreeItem* root = input_list_tree->create_item();
 	String search_term = input_list_search->get_text();
 
 	bool collapse = input_list_search->get_text().is_empty();
 
 	if (allowed_input_types & INPUT_KEY) {
-		TreeItem *kb_root = input_list_tree->create_item(root);
+		TreeItem* kb_root = input_list_tree->create_item(root);
 		kb_root->set_text(0, TTR("Keyboard Keys"));
 		kb_root->set_icon(0, icon_cache.keyboard);
 		kb_root->set_collapsed(collapse);
-		kb_root->set_meta("__type", INPUT_KEY);
+		kb_root->obj->set_meta("__type", INPUT_KEY);
 
 		for (int i = 0; i < keycode_get_count(); i++) {
 			String name = keycode_get_name_by_index(i);
@@ -323,21 +359,26 @@ void InputEventConfigurationDialog::_update_input_list() {
 				continue;
 			}
 
-			TreeItem *item = input_list_tree->create_item(kb_root);
+			TreeItem* item = input_list_tree->create_item(kb_root);
 			item->set_text(0, name);
-			item->set_meta("__keycode", keycode_get_value_by_index(i));
+			item->obj->set_meta("__keycode", keycode_get_value_by_index(i));
 		}
 	}
 
 	if (allowed_input_types & INPUT_MOUSE_BUTTON) {
-		TreeItem *mouse_root = input_list_tree->create_item(root);
+		TreeItem* mouse_root = input_list_tree->create_item(root);
 		mouse_root->set_text(0, TTR("Mouse Buttons"));
 		mouse_root->set_icon(0, icon_cache.mouse);
 		mouse_root->set_collapsed(collapse);
-		mouse_root->set_meta("__type", INPUT_MOUSE_BUTTON);
+		mouse_root->obj->set_meta("__type", INPUT_MOUSE_BUTTON);
 
-		MouseButton mouse_buttons[9] = { MouseButton::LEFT, MouseButton::RIGHT, MouseButton::MIDDLE, MouseButton::WHEEL_UP, MouseButton::WHEEL_DOWN, MouseButton::WHEEL_LEFT, MouseButton::WHEEL_RIGHT, MouseButton::MB_XBUTTON1, MouseButton::MB_XBUTTON2 };
-		Ref<Texture2D> mouse_icons[9] = { icon_cache.mouse_left_button, icon_cache.mouse_right_button, icon_cache.mouse_middle_button, icon_cache.mouse_wheel_up, icon_cache.mouse_wheel_down, icon_cache.mouse_wheel_left, icon_cache.mouse_wheel_right, icon_cache.mouse_xbutton1, icon_cache.mouse_xbutton2 };
+		MouseButton mouse_buttons[9] = {MouseButton::LEFT, MouseButton::RIGHT, MouseButton::MIDDLE,
+			MouseButton::WHEEL_UP, MouseButton::WHEEL_DOWN, MouseButton::WHEEL_LEFT,
+			MouseButton::WHEEL_RIGHT, MouseButton::MB_XBUTTON1, MouseButton::MB_XBUTTON2};
+		Ref<Texture2D> mouse_icons[9] = {icon_cache.mouse_left_button,
+			icon_cache.mouse_right_button, icon_cache.mouse_middle_button,
+			icon_cache.mouse_wheel_up, icon_cache.mouse_wheel_down, icon_cache.mouse_wheel_left,
+			icon_cache.mouse_wheel_right, icon_cache.mouse_xbutton1, icon_cache.mouse_xbutton2};
 		for (int i = 0; i < 9; i++) {
 			Ref<InputEventMouseButton> mb;
 			mb.instantiate();
@@ -348,19 +389,19 @@ void InputEventConfigurationDialog::_update_input_list() {
 				continue;
 			}
 
-			TreeItem *item = input_list_tree->create_item(mouse_root);
+			TreeItem* item = input_list_tree->create_item(mouse_root);
 			item->set_text(0, desc);
 			item->set_icon(0, mouse_icons[i]);
-			item->set_meta("__index", mouse_buttons[i]);
+			item->obj->set_meta("__index", mouse_buttons[i]);
 		}
 	}
 
 	if (allowed_input_types & INPUT_JOY_BUTTON) {
-		TreeItem *joyb_root = input_list_tree->create_item(root);
+		TreeItem* joyb_root = input_list_tree->create_item(root);
 		joyb_root->set_text(0, TTR("Joypad Buttons"));
 		joyb_root->set_icon(0, icon_cache.joypad_button);
 		joyb_root->set_collapsed(collapse);
-		joyb_root->set_meta("__type", INPUT_JOY_BUTTON);
+		joyb_root->obj->set_meta("__type", INPUT_JOY_BUTTON);
 
 		for (int i = 0; i < (int)JoyButton::MAX; i++) {
 			Ref<InputEventJoypadButton> joyb;
@@ -372,18 +413,18 @@ void InputEventConfigurationDialog::_update_input_list() {
 				continue;
 			}
 
-			TreeItem *item = input_list_tree->create_item(joyb_root);
+			TreeItem* item = input_list_tree->create_item(joyb_root);
 			item->set_text(0, desc);
-			item->set_meta("__index", i);
+			item->obj->set_meta("__index", i);
 		}
 	}
 
 	if (allowed_input_types & INPUT_JOY_MOTION) {
-		TreeItem *joya_root = input_list_tree->create_item(root);
+		TreeItem* joya_root = input_list_tree->create_item(root);
 		joya_root->set_text(0, TTR("Joypad Axes"));
 		joya_root->set_icon(0, icon_cache.joypad_axis);
 		joya_root->set_collapsed(collapse);
-		joya_root->set_meta("__type", INPUT_JOY_MOTION);
+		joya_root->obj->set_meta("__type", INPUT_JOY_MOTION);
 
 		for (int i = 0; i < (int)JoyAxis::MAX * 2; i++) {
 			int axis = i / 2;
@@ -398,15 +439,16 @@ void InputEventConfigurationDialog::_update_input_list() {
 				continue;
 			}
 
-			TreeItem *item = input_list_tree->create_item(joya_root);
+			TreeItem* item = input_list_tree->create_item(joya_root);
 			item->set_text(0, desc);
-			item->set_meta("__axis", i >> 1);
-			item->set_meta("__value", (i & 1) ? 1 : -1);
+			item->obj->set_meta("__axis", i >> 1);
+			item->obj->set_meta("__value", (i & 1) ? 1 : -1);
 		}
 	}
 }
 
-void InputEventConfigurationDialog::_mod_toggled(bool p_checked, int p_index) {
+void InputEventConfigurationDialog::_mod_toggled(bool p_checked, int p_index)
+{
 	Ref<InputEventWithModifiers> ie = event;
 
 	// Not event with modifiers
@@ -416,13 +458,16 @@ void InputEventConfigurationDialog::_mod_toggled(bool p_checked, int p_index) {
 
 	if (p_index == 0) {
 		ie->set_alt_pressed(p_checked);
-	} else if (p_index == 1) {
+	}
+	else if (p_index == 1) {
 		ie->set_shift_pressed(p_checked);
-	} else if (p_index == 2) {
+	}
+	else if (p_index == 2) {
 		if (!autoremap_command_or_control_checkbox->is_pressed()) {
 			ie->set_ctrl_pressed(p_checked);
 		}
-	} else if (p_index == 3) {
+	}
+	else if (p_index == 3) {
 		if (!autoremap_command_or_control_checkbox->is_pressed()) {
 			ie->set_meta_pressed(p_checked);
 		}
@@ -431,7 +476,8 @@ void InputEventConfigurationDialog::_mod_toggled(bool p_checked, int p_index) {
 	_set_event(ie, original_event);
 }
 
-void InputEventConfigurationDialog::_autoremap_command_or_control_toggled(bool p_checked) {
+void InputEventConfigurationDialog::_autoremap_command_or_control_toggled(bool p_checked)
+{
 	Ref<InputEventWithModifiers> ie = event;
 	if (ie.is_valid()) {
 		ie->set_command_or_control_autoremap(p_checked);
@@ -441,13 +487,15 @@ void InputEventConfigurationDialog::_autoremap_command_or_control_toggled(bool p
 	if (p_checked) {
 		mod_checkboxes[MOD_META]->hide();
 		mod_checkboxes[MOD_CTRL]->hide();
-	} else {
+	}
+	else {
 		mod_checkboxes[MOD_META]->show();
 		mod_checkboxes[MOD_CTRL]->show();
 	}
 }
 
-void InputEventConfigurationDialog::_key_mode_selected(int p_mode) {
+void InputEventConfigurationDialog::_key_mode_selected(int p_mode)
+{
 	Ref<InputEventKey> k = event;
 	Ref<InputEventKey> ko = original_event;
 	if (k.is_null() || ko.is_null()) {
@@ -458,11 +506,13 @@ void InputEventConfigurationDialog::_key_mode_selected(int p_mode) {
 		k->set_keycode(ko->get_keycode());
 		k->set_physical_keycode(Key::NONE);
 		k->set_key_label(Key::NONE);
-	} else if (key_mode->get_selected_id() == KEYMODE_PHY_KEYCODE) {
+	}
+	else if (key_mode->get_selected_id() == KEYMODE_PHY_KEYCODE) {
 		k->set_keycode(Key::NONE);
 		k->set_physical_keycode(ko->get_physical_keycode());
 		k->set_key_label(Key::NONE);
-	} else if (key_mode->get_selected_id() == KEYMODE_UNICODE) {
+	}
+	else if (key_mode->get_selected_id() == KEYMODE_UNICODE) {
 		k->set_physical_keycode(Key::NONE);
 		k->set_keycode(Key::NONE);
 		k->set_key_label(ko->get_key_label());
@@ -471,7 +521,8 @@ void InputEventConfigurationDialog::_key_mode_selected(int p_mode) {
 	_set_event(k, original_event);
 }
 
-void InputEventConfigurationDialog::_key_location_selected(int p_location) {
+void InputEventConfigurationDialog::_key_location_selected(int p_location)
+{
 	Ref<InputEventKey> k = event;
 	if (k.is_null()) {
 		return;
@@ -482,180 +533,202 @@ void InputEventConfigurationDialog::_key_location_selected(int p_location) {
 	_set_event(k, original_event);
 }
 
-void InputEventConfigurationDialog::_input_list_item_activated() {
-	TreeItem *selected = input_list_tree->get_selected();
+void InputEventConfigurationDialog::_input_list_item_activated()
+{
+	TreeItem* selected = input_list_tree->get_selected();
 	selected->set_collapsed(!selected->is_collapsed());
 }
 
-void InputEventConfigurationDialog::_input_list_item_selected() {
-	TreeItem *selected = input_list_tree->get_selected();
+void InputEventConfigurationDialog::_input_list_item_selected()
+{
+	TreeItem* selected = input_list_tree->get_selected();
 
 	// Called form _set_event, do not update for a second time.
 	if (in_tree_update) {
 		return;
 	}
 
-	// Invalid tree selection - type only exists on the "category" items, which are not a valid selection.
-	if (selected->has_meta("__type")) {
+	// Invalid tree selection - type only exists on the "category" items, which are not a valid
+	// selection.
+	if (selected->obj->has_meta("__type")) {
 		return;
 	}
 
-	InputType input_type = (InputType)(int)selected->get_parent()->get_meta("__type");
+	InputType input_type = (InputType)(int)selected->get_parent()->obj->get_meta("__type");
 
 	switch (input_type) {
-		case INPUT_KEY: {
-			Key keycode = (Key)(int)selected->get_meta("__keycode");
-			Ref<InputEventKey> k;
-			k.instantiate();
+	case INPUT_KEY: {
+		Key keycode = (Key)(int)selected->obj->get_meta("__keycode");
+		Ref<InputEventKey> k;
+		k.instantiate();
 
-			k->set_physical_keycode(keycode);
+		k->set_physical_keycode(keycode);
+		k->set_keycode(keycode);
+		k->set_key_label(keycode);
+
+		// Maintain modifier state from checkboxes.
+		k->set_alt_pressed(mod_checkboxes[MOD_ALT]->is_pressed());
+		k->set_shift_pressed(mod_checkboxes[MOD_SHIFT]->is_pressed());
+		if (autoremap_command_or_control_checkbox->is_pressed()) {
+			k->set_command_or_control_autoremap(true);
+		}
+		else {
+			k->set_ctrl_pressed(mod_checkboxes[MOD_CTRL]->is_pressed());
+			k->set_meta_pressed(mod_checkboxes[MOD_META]->is_pressed());
+		}
+
+		Ref<InputEventKey> ko = k->duplicate();
+
+		if (key_mode->get_selected_id() == KEYMODE_UNICODE) {
+			key_mode->select(KEYMODE_PHY_KEYCODE);
+		}
+
+		if (key_mode->get_selected_id() == KEYMODE_KEYCODE) {
+			k->set_physical_keycode(Key::NONE);
 			k->set_keycode(keycode);
-			k->set_key_label(keycode);
+			k->set_key_label(Key::NONE);
+		}
+		else if (key_mode->get_selected_id() == KEYMODE_PHY_KEYCODE) {
+			k->set_physical_keycode(keycode);
+			k->set_keycode(Key::NONE);
+			k->set_key_label(Key::NONE);
+		}
 
-			// Maintain modifier state from checkboxes.
-			k->set_alt_pressed(mod_checkboxes[MOD_ALT]->is_pressed());
-			k->set_shift_pressed(mod_checkboxes[MOD_SHIFT]->is_pressed());
-			if (autoremap_command_or_control_checkbox->is_pressed()) {
-				k->set_command_or_control_autoremap(true);
-			} else {
-				k->set_ctrl_pressed(mod_checkboxes[MOD_CTRL]->is_pressed());
-				k->set_meta_pressed(mod_checkboxes[MOD_META]->is_pressed());
-			}
+		_set_event(k, ko, false);
+	} break;
+	case INPUT_MOUSE_BUTTON: {
+		MouseButton idx = (MouseButton)(int)selected->obj->get_meta("__index");
+		Ref<InputEventMouseButton> mb;
+		mb.instantiate();
+		mb->set_button_index(idx);
+		// Maintain modifier state from checkboxes
+		mb->set_alt_pressed(mod_checkboxes[MOD_ALT]->is_pressed());
+		mb->set_shift_pressed(mod_checkboxes[MOD_SHIFT]->is_pressed());
+		if (autoremap_command_or_control_checkbox->is_pressed()) {
+			mb->set_command_or_control_autoremap(true);
+		}
+		else {
+			mb->set_ctrl_pressed(mod_checkboxes[MOD_CTRL]->is_pressed());
+			mb->set_meta_pressed(mod_checkboxes[MOD_META]->is_pressed());
+		}
 
-			Ref<InputEventKey> ko = k->duplicate();
+		// Maintain selected device
+		mb->set_device(_get_current_device());
 
-			if (key_mode->get_selected_id() == KEYMODE_UNICODE) {
-				key_mode->select(KEYMODE_PHY_KEYCODE);
-			}
+		_set_event(mb, mb, false);
+	} break;
+	case INPUT_JOY_BUTTON: {
+		JoyButton idx = (JoyButton)(int)selected->obj->get_meta("__index");
+		// Maintain selected device
+		Ref<InputEventJoypadButton> jb =
+			InputEventJoypadButton::create_reference(idx, _get_current_device());
 
-			if (key_mode->get_selected_id() == KEYMODE_KEYCODE) {
-				k->set_physical_keycode(Key::NONE);
-				k->set_keycode(keycode);
-				k->set_key_label(Key::NONE);
-			} else if (key_mode->get_selected_id() == KEYMODE_PHY_KEYCODE) {
-				k->set_physical_keycode(keycode);
-				k->set_keycode(Key::NONE);
-				k->set_key_label(Key::NONE);
-			}
+		_set_event(jb, jb, false);
+	} break;
+	case INPUT_JOY_MOTION: {
+		JoyAxis axis = (JoyAxis)(int)selected->obj->get_meta("__axis");
+		int value = selected->obj->get_meta("__value");
 
-			_set_event(k, ko, false);
-		} break;
-		case INPUT_MOUSE_BUTTON: {
-			MouseButton idx = (MouseButton)(int)selected->get_meta("__index");
-			Ref<InputEventMouseButton> mb;
-			mb.instantiate();
-			mb->set_button_index(idx);
-			// Maintain modifier state from checkboxes
-			mb->set_alt_pressed(mod_checkboxes[MOD_ALT]->is_pressed());
-			mb->set_shift_pressed(mod_checkboxes[MOD_SHIFT]->is_pressed());
-			if (autoremap_command_or_control_checkbox->is_pressed()) {
-				mb->set_command_or_control_autoremap(true);
-			} else {
-				mb->set_ctrl_pressed(mod_checkboxes[MOD_CTRL]->is_pressed());
-				mb->set_meta_pressed(mod_checkboxes[MOD_META]->is_pressed());
-			}
+		Ref<InputEventJoypadMotion> jm;
+		jm.instantiate();
+		jm->set_axis(axis);
+		jm->set_axis_value(value);
 
-			// Maintain selected device
-			mb->set_device(_get_current_device());
+		// Maintain selected device
+		jm->set_device(_get_current_device());
 
-			_set_event(mb, mb, false);
-		} break;
-		case INPUT_JOY_BUTTON: {
-			JoyButton idx = (JoyButton)(int)selected->get_meta("__index");
-			// Maintain selected device
-			Ref<InputEventJoypadButton> jb = InputEventJoypadButton::create_reference(idx, _get_current_device());
-
-			_set_event(jb, jb, false);
-		} break;
-		case INPUT_JOY_MOTION: {
-			JoyAxis axis = (JoyAxis)(int)selected->get_meta("__axis");
-			int value = selected->get_meta("__value");
-
-			Ref<InputEventJoypadMotion> jm;
-			jm.instantiate();
-			jm->set_axis(axis);
-			jm->set_axis_value(value);
-
-			// Maintain selected device
-			jm->set_device(_get_current_device());
-
-			_set_event(jm, jm, false);
-		} break;
+		_set_event(jm, jm, false);
+	} break;
 	}
 }
 
-void InputEventConfigurationDialog::_device_selection_changed(int p_option_button_index) {
+void InputEventConfigurationDialog::_device_selection_changed(int p_option_button_index)
+{
 	// Subtract 1 as option index 0 corresponds to "All Devices" (value of -1)
 	// and option index 1 corresponds to device 0, etc...
 	event->set_device(p_option_button_index - 1);
 	event_as_text->set_text(EventListenerLineEdit::get_event_text(event, true));
 }
 
-void InputEventConfigurationDialog::_set_current_device(int p_device) {
+void InputEventConfigurationDialog::_set_current_device(int p_device)
+{
 	device_id_option->select(p_device + 1);
 }
 
-int InputEventConfigurationDialog::_get_current_device() const {
+int InputEventConfigurationDialog::_get_current_device() const
+{
 	return device_id_option->get_selected() - 1;
 }
 
-void InputEventConfigurationDialog::_notification(int p_what) {
+void InputEventConfigurationDialog::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			event_listener->grab_focus();
-		} break;
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		event_listener->grab_focus();
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED: {
-			input_list_search->set_right_icon(get_editor_theme_icon(SNAME("Search")));
+	case NOTIFICATION_THEME_CHANGED: {
+		input_list_search->set_right_icon(get_editor_theme_icon(SNAME("Search")));
 
-			key_mode->set_item_icon(KEYMODE_KEYCODE, get_editor_theme_icon(SNAME("Keyboard")));
-			key_mode->set_item_icon(KEYMODE_PHY_KEYCODE, get_editor_theme_icon(SNAME("KeyboardPhysical")));
-			key_mode->set_item_icon(KEYMODE_UNICODE, get_editor_theme_icon(SNAME("KeyboardLabel")));
+		key_mode->set_item_icon(KEYMODE_KEYCODE, get_editor_theme_icon(SNAME("Keyboard")));
+		key_mode->set_item_icon(
+			KEYMODE_PHY_KEYCODE, get_editor_theme_icon(SNAME("KeyboardPhysical")));
+		key_mode->set_item_icon(KEYMODE_UNICODE, get_editor_theme_icon(SNAME("KeyboardLabel")));
 
-			icon_cache.keyboard = get_editor_theme_icon(SNAME("Keyboard"));
-			icon_cache.mouse = get_editor_theme_icon(SNAME("Mouse"));
-			icon_cache.mouse_left_button = get_editor_theme_icon(SNAME("MouseButtonLeft"));
-			icon_cache.mouse_right_button = get_editor_theme_icon(SNAME("MouseButtonRight"));
-			icon_cache.mouse_middle_button = get_editor_theme_icon(SNAME("MouseButtonMiddle"));
-			icon_cache.mouse_wheel_up = get_editor_theme_icon(SNAME("MouseButtonWheelUp"));
-			icon_cache.mouse_wheel_down = get_editor_theme_icon(SNAME("MouseButtonWheelDown"));
-			icon_cache.mouse_wheel_left = get_editor_theme_icon(SNAME("MouseButtonWheelLeft"));
-			icon_cache.mouse_wheel_right = get_editor_theme_icon(SNAME("MouseButtonWheelRight"));
-			icon_cache.mouse_xbutton1 = get_editor_theme_icon(SNAME("MouseButtonXButton1"));
-			icon_cache.mouse_xbutton2 = get_editor_theme_icon(SNAME("MouseButtonXButton2"));
-			icon_cache.joypad_button = get_editor_theme_icon(SNAME("JoyButton"));
-			icon_cache.joypad_axis = get_editor_theme_icon(SNAME("JoyAxis"));
+		icon_cache.keyboard = get_editor_theme_icon(SNAME("Keyboard"));
+		icon_cache.mouse = get_editor_theme_icon(SNAME("Mouse"));
+		icon_cache.mouse_left_button = get_editor_theme_icon(SNAME("MouseButtonLeft"));
+		icon_cache.mouse_right_button = get_editor_theme_icon(SNAME("MouseButtonRight"));
+		icon_cache.mouse_middle_button = get_editor_theme_icon(SNAME("MouseButtonMiddle"));
+		icon_cache.mouse_wheel_up = get_editor_theme_icon(SNAME("MouseButtonWheelUp"));
+		icon_cache.mouse_wheel_down = get_editor_theme_icon(SNAME("MouseButtonWheelDown"));
+		icon_cache.mouse_wheel_left = get_editor_theme_icon(SNAME("MouseButtonWheelLeft"));
+		icon_cache.mouse_wheel_right = get_editor_theme_icon(SNAME("MouseButtonWheelRight"));
+		icon_cache.mouse_xbutton1 = get_editor_theme_icon(SNAME("MouseButtonXButton1"));
+		icon_cache.mouse_xbutton2 = get_editor_theme_icon(SNAME("MouseButtonXButton2"));
+		icon_cache.joypad_button = get_editor_theme_icon(SNAME("JoyButton"));
+		icon_cache.joypad_axis = get_editor_theme_icon(SNAME("JoyAxis"));
 
-			event_as_text->add_theme_font_override(SceneStringName(font), get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
-			event_exists->add_theme_color_override(SceneStringName(font_color), get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
+		event_as_text->add_theme_font_override(
+			SceneStringName(font), get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
+		event_exists->add_theme_color_override(SceneStringName(font_color),
+			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 
-			_update_input_list();
-		} break;
+		_update_input_list();
+	} break;
 
-		case NOTIFICATION_TRANSLATION_CHANGED: {
-			key_location->set_item_text(key_location->get_item_index((int)KeyLocation::UNSPECIFIED), TTR("Unspecified", "Key Location"));
-			key_location->set_item_text(key_location->get_item_index((int)KeyLocation::LEFT), TTR("Left", "Key Location"));
-			key_location->set_item_text(key_location->get_item_index((int)KeyLocation::RIGHT), TTR("Right", "Key Location"));
-		} break;
+	case NOTIFICATION_TRANSLATION_CHANGED: {
+		key_location->set_item_text(key_location->get_item_index((int)KeyLocation::UNSPECIFIED),
+			TTR("Unspecified", "Key Location"));
+		key_location->set_item_text(
+			key_location->get_item_index((int)KeyLocation::LEFT), TTR("Left", "Key Location"));
+		key_location->set_item_text(
+			key_location->get_item_index((int)KeyLocation::RIGHT), TTR("Right", "Key Location"));
+	} break;
 	}
 }
 
-void InputEventConfigurationDialog::popup_and_configure(const Ref<InputEvent> &p_event, const String &p_current_action_name, const Dictionary &p_current_action) {
+void InputEventConfigurationDialog::popup_and_configure(const Ref<InputEvent>& p_event,
+	const String& p_current_action_name, const Dictionary& p_current_action)
+{
 	action_events = p_current_action.get("events", Array()).duplicate();
 
 	if (p_event.is_valid()) {
-		// Here we remove one instance of the InputEvent being edited so it doesn't immediately get flagged as duplicated in the dialog.
+		// Here we remove one instance of the InputEvent being edited so it doesn't immediately get
+		// flagged as duplicated in the dialog.
 		for (int i = 0; i < action_events.size(); i++) {
 			Ref<InputEvent> ie = action_events[i];
 			if (ie.is_null()) {
 				continue;
-			} else if (ie->is_match(p_event)) {
+			}
+			else if (ie->is_match(p_event)) {
 				action_events.remove_at(i);
 				break;
 			}
 		}
 		_set_event(p_event->duplicate(), p_event->duplicate());
-	} else {
+	}
+	else {
 		// Clear Event
 		_set_event(Ref<InputEvent>(), Ref<InputEvent>());
 
@@ -680,28 +753,29 @@ void InputEventConfigurationDialog::popup_and_configure(const Ref<InputEvent> &p
 
 	if (!p_current_action_name.is_empty()) {
 		set_title(vformat(TTR("Event Configuration for \"%s\""), p_current_action_name));
-	} else {
+	}
+	else {
 		set_title(TTR("Event Configuration"));
 	}
 
 	popup_centered(Size2(0, 400) * EDSCALE);
 }
 
-Ref<InputEvent> InputEventConfigurationDialog::get_event() const {
-	return event;
-}
+Ref<InputEvent> InputEventConfigurationDialog::get_event() const { return event; }
 
-void InputEventConfigurationDialog::set_allowed_input_types(int p_type_masks) {
+void InputEventConfigurationDialog::set_allowed_input_types(int p_type_masks)
+{
 	allowed_input_types = p_type_masks;
 	event_listener->set_allowed_input_types(p_type_masks);
 }
 
-InputEventConfigurationDialog::InputEventConfigurationDialog() {
+InputEventConfigurationDialog::InputEventConfigurationDialog()
+{
 	allowed_input_types = INPUT_KEY | INPUT_MOUSE_BUTTON | INPUT_JOY_BUTTON | INPUT_JOY_MOTION;
 
 	set_min_size(Size2i(800, 0) * EDSCALE);
 
-	VBoxContainer *main_vbox = memnew(VBoxContainer);
+	VBoxContainer* main_vbox = memnew(VBoxContainer);
 	add_child(main_vbox);
 
 	event_as_text = memnew(Label);
@@ -715,13 +789,14 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	event_listener = memnew(EventListenerLineEdit);
 	event_listener->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	event_listener->set_stretch_ratio(0.75);
-	event_listener->connect("event_changed", callable_mp(this, &InputEventConfigurationDialog::_on_listen_input_changed));
+	event_listener->connect("event_changed",
+		callable_mp(this, &InputEventConfigurationDialog::_on_listen_input_changed));
 	main_vbox->add_child(event_listener);
 
 	main_vbox->add_child(memnew(HSeparator));
 
 	// List of all input options to manually select from.
-	VBoxContainer *manual_vbox = memnew(VBoxContainer);
+	VBoxContainer* manual_vbox = memnew(VBoxContainer);
 	manual_vbox->set_name("Manual Selection");
 	manual_vbox->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	main_vbox->add_child(manual_vbox);
@@ -731,10 +806,11 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	input_list_search->set_placeholder(TTRC("Filter Inputs"));
 	input_list_search->set_accessibility_name(TTRC("Filter Inputs"));
 	input_list_search->set_clear_button_enabled(true);
-	input_list_search->connect(SceneStringName(text_changed), callable_mp(this, &InputEventConfigurationDialog::_search_term_updated));
+	input_list_search->connect(SceneStringName(text_changed),
+		callable_mp(this, &InputEventConfigurationDialog::_search_term_updated));
 	manual_vbox->add_child(input_list_search);
 
-	MarginContainer *mc = memnew(MarginContainer);
+	MarginContainer* mc = memnew(MarginContainer);
 	mc->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	mc->set_theme_type_variation("NoBorderHorizontalWindow");
 	manual_vbox->add_child(mc);
@@ -742,8 +818,10 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	input_list_tree = memnew(Tree);
 	input_list_tree->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	input_list_tree->set_scroll_hint_mode(Tree::SCROLL_HINT_MODE_BOTH);
-	input_list_tree->connect("item_activated", callable_mp(this, &InputEventConfigurationDialog::_input_list_item_activated));
-	input_list_tree->connect(SceneStringName(item_selected), callable_mp(this, &InputEventConfigurationDialog::_input_list_item_selected));
+	input_list_tree->connect("item_activated",
+		callable_mp(this, &InputEventConfigurationDialog::_input_list_item_activated));
+	input_list_tree->connect(SceneStringName(item_selected),
+		callable_mp(this, &InputEventConfigurationDialog::_input_list_item_selected));
 	mc->add_child(input_list_tree);
 
 	input_list_tree->set_hide_root(true);
@@ -755,7 +833,7 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	additional_options_container = memnew(VBoxContainer);
 	additional_options_container->hide();
 
-	Label *opts_label = memnew(Label(TTRC("Additional Options")));
+	Label* opts_label = memnew(Label(TTRC("Additional Options")));
 	opts_label->set_theme_type_variation("HeaderSmall");
 	additional_options_container->add_child(opts_label);
 
@@ -763,7 +841,7 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	device_container = memnew(HBoxContainer);
 	device_container->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 
-	Label *device_label = memnew(Label(TTRC("Device:")));
+	Label* device_label = memnew(Label(TTRC("Device:")));
 	device_label->set_theme_type_variation("HeaderSmall");
 	device_container->add_child(device_label);
 
@@ -772,7 +850,8 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	for (int i = -1; i < 8; i++) {
 		device_id_option->add_item(EventListenerLineEdit::get_device_string(i));
 	}
-	device_id_option->connect(SceneStringName(item_selected), callable_mp(this, &InputEventConfigurationDialog::_device_selection_changed));
+	device_id_option->connect(SceneStringName(item_selected),
+		callable_mp(this, &InputEventConfigurationDialog::_device_selection_changed));
 	device_id_option->set_accessibility_name(TTRC("Device:"));
 	_set_current_device(InputMap::ALL_DEVICES);
 	device_container->add_child(device_id_option);
@@ -785,7 +864,8 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	for (int i = 0; i < MOD_MAX; i++) {
 		String name = mods[i];
 		mod_checkboxes[i] = memnew(CheckBox(name));
-		mod_checkboxes[i]->connect(SceneStringName(toggled), callable_mp(this, &InputEventConfigurationDialog::_mod_toggled).bind(i));
+		mod_checkboxes[i]->connect(SceneStringName(toggled),
+			callable_mp(this, &InputEventConfigurationDialog::_mod_toggled).bind(i));
 		mod_checkboxes[i]->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 		mod_checkboxes[i]->set_tooltip_auto_translate_mode(AUTO_TRANSLATE_MODE_ALWAYS);
 		mod_checkboxes[i]->set_tooltip_text(mods_tip[i]);
@@ -795,9 +875,12 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	mod_container->add_child(memnew(VSeparator));
 
 	autoremap_command_or_control_checkbox = memnew(CheckBox(TTRC("Command / Control (auto)")));
-	autoremap_command_or_control_checkbox->connect(SceneStringName(toggled), callable_mp(this, &InputEventConfigurationDialog::_autoremap_command_or_control_toggled));
+	autoremap_command_or_control_checkbox->connect(SceneStringName(toggled),
+		callable_mp(this, &InputEventConfigurationDialog::_autoremap_command_or_control_toggled));
 	autoremap_command_or_control_checkbox->set_pressed(false);
-	autoremap_command_or_control_checkbox->set_tooltip_text(TTRC("Automatically remaps between 'Meta' ('Command') and 'Control' depending on current platform."));
+	autoremap_command_or_control_checkbox->set_tooltip_text(
+		TTRC("Automatically remaps between 'Meta' ('Command') and 'Control' depending on current "
+			 "platform."));
 	mod_container->add_child(autoremap_command_or_control_checkbox);
 
 	mod_container->hide();
@@ -807,9 +890,11 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 
 	key_mode = memnew(OptionButton);
 	key_mode->add_item(TTRC("Keycode (Latin Equivalent)"), KEYMODE_KEYCODE);
-	key_mode->add_item(TTRC("Physical Keycode (Position on US QWERTY Keyboard)"), KEYMODE_PHY_KEYCODE);
+	key_mode->add_item(
+		TTRC("Physical Keycode (Position on US QWERTY Keyboard)"), KEYMODE_PHY_KEYCODE);
 	key_mode->add_item(TTRC("Key Label (Unicode, Case-Insensitive)"), KEYMODE_UNICODE);
-	key_mode->connect(SceneStringName(item_selected), callable_mp(this, &InputEventConfigurationDialog::_key_mode_selected));
+	key_mode->connect(SceneStringName(item_selected),
+		callable_mp(this, &InputEventConfigurationDialog::_key_mode_selected));
 	key_mode->hide();
 	additional_options_container->add_child(key_mode);
 
@@ -827,7 +912,8 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	key_location->add_item(String(), (int)KeyLocation::UNSPECIFIED);
 	key_location->add_item(String(), (int)KeyLocation::LEFT);
 	key_location->add_item(String(), (int)KeyLocation::RIGHT);
-	key_location->connect(SceneStringName(item_selected), callable_mp(this, &InputEventConfigurationDialog::_key_location_selected));
+	key_location->connect(SceneStringName(item_selected),
+		callable_mp(this, &InputEventConfigurationDialog::_key_location_selected));
 	key_location->set_accessibility_name(TTRC("Physical Location"));
 
 	location_container->add_child(key_location);
@@ -840,3 +926,5 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	event_exists->set_visible(false);
 	main_vbox->add_child(event_exists);
 }
+
+

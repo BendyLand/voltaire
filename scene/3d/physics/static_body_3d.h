@@ -39,7 +39,8 @@ class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 #endif // NAVIGATION_3D_DISABLED
 
-class StaticBody3D : public PhysicsBody3D {
+class StaticBody3D : public PhysicsBody3D
+{
 	VLTRCLASS(StaticBody3D, PhysicsBody3D);
 
 private:
@@ -52,11 +53,11 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_physics_material_override(const Ref<PhysicsMaterial> &p_physics_material_override);
+	void set_physics_material_override(const Ref<PhysicsMaterial>& p_physics_material_override);
 	Ref<PhysicsMaterial> get_physics_material_override() const;
 
-	void set_constant_linear_velocity(const Vector3 &p_vel);
-	void set_constant_angular_velocity(const Vector3 &p_vel);
+	void set_constant_linear_velocity(const Vector3& p_vel);
+	void set_constant_angular_velocity(const Vector3& p_vel);
 
 	Vector3 get_constant_linear_velocity() const;
 	Vector3 get_constant_angular_velocity() const;
@@ -72,6 +73,9 @@ private:
 
 public:
 	static void navmesh_parse_init();
-	static void navmesh_parse_source_geometry(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
+	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
 #endif // NAVIGATION_3D_DISABLED
 };
+
+

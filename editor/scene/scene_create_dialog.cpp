@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene_create_dialog.h"
-
 #include "core/io/dir_access.h"
 #include "core/io/resource_saver.h"
 #include "core/object/callable_mp.h"
@@ -47,64 +45,76 @@
 #include "scene/gui/line_edit.h"
 #include "scene/gui/option_button.h"
 #include "scene/resources/packed_scene.h"
+#include "scene_create_dialog.h"
 
-void SceneCreateDialog::_notification(int p_what) {
+void SceneCreateDialog::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			select_node_button->set_button_icon(get_editor_theme_icon(SNAME("ClassList")));
-			node_type_2d->set_button_icon(get_editor_theme_icon(SNAME("Node2D")));
-			node_type_3d->set_button_icon(get_editor_theme_icon(SNAME("Node3D")));
-			node_type_gui->set_button_icon(get_editor_theme_icon(SNAME("Control")));
-			node_type_other->add_theme_icon_override(SNAME("icon"), get_editor_theme_icon(SNAME("Node")));
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		select_node_button->set_button_icon(get_editor_theme_icon(SNAME("ClassList")));
+		node_type_2d->set_button_icon(get_editor_theme_icon(SNAME("Node2D")));
+		node_type_3d->set_button_icon(get_editor_theme_icon(SNAME("Node3D")));
+		node_type_gui->set_button_icon(get_editor_theme_icon(SNAME("Control")));
+		node_type_other->add_theme_icon_override(
+			SNAME("icon"), get_editor_theme_icon(SNAME("Node")));
+	} break;
 
-		case NOTIFICATION_READY: {
-			select_node_dialog->select_base();
-		} break;
+	case NOTIFICATION_READY: {
+		select_node_dialog->select_base();
+	} break;
 	}
 }
 
-void SceneCreateDialog::config(const String &p_dir, const String &p_scene_name) {
+void SceneCreateDialog::config(const String& p_dir, const String& p_scene_name)
+{
 	directory = p_dir;
 	root_name_edit->set_text("");
 	scene_name_edit->set_text(p_scene_name.get_basename());
-	callable_mp((Control *)scene_name_edit, &Control::grab_focus).call_deferred(false);
+	callable_mp((Control*)scene_name_edit, &Control::grab_focus).call_deferred(false);
 	validation_panel->update();
 
-	Ref<EditorFeatureProfile> profile = EditorFeatureProfileManager::get_singleton()->get_current_profile();
-	node_type_3d->set_visible(profile.is_null() || !profile->is_feature_disabled(EditorFeatureProfile::FEATURE_3D));
+	Ref<EditorFeatureProfile> profile =
+		EditorFeatureProfileManager::get_singleton()->get_current_profile();
+	node_type_3d->set_visible(
+		profile.is_null() || !profile->is_feature_disabled(EditorFeatureProfile::FEATURE_3D));
 	if (!node_type_3d->is_visible() && node_type_3d->is_pressed()) {
 		node_type_2d->set_pressed(true);
 	}
 }
 
-void SceneCreateDialog::accept_create() {
+void SceneCreateDialog::accept_create()
+{
 	if (!get_ok_button()->is_disabled()) {
 		hide();
-		emit_signal(SceneStringName(confirmed));
+		this->obj->emit_signal(SceneStringName(confirmed));
 	}
 }
 
-void SceneCreateDialog::browse_types() {
+void SceneCreateDialog::browse_types()
+{
 	select_node_dialog->popup_create(true);
 	select_node_dialog->set_title(TTR("Pick Root Node Type"));
 	select_node_dialog->set_ok_button_text(TTR("Pick"));
 }
 
-void SceneCreateDialog::on_type_picked() {
+void SceneCreateDialog::on_type_picked()
+{
 	other_type_display->set_text(select_node_dialog->get_selected_type());
 	if (node_type_other->is_pressed()) {
 		validation_panel->update();
-	} else {
+	}
+	else {
 		node_type_other->set_pressed(true); // Calls validation_panel->update() via group.
 	}
 }
 
-void SceneCreateDialog::update_dialog() {
+void SceneCreateDialog::update_dialog()
+{
 	scene_name = scene_name_edit->get_text().strip_edges();
 
 	if (scene_name.is_empty()) {
-		validation_panel->set_message(MSG_ID_PATH, TTRC("Scene name is empty."), EditorValidationPanel::MSG_ERROR);
+		validation_panel->set_message(
+			MSG_ID_PATH, TTRC("Scene name is empty."), EditorValidationPanel::MSG_ERROR);
 	}
 
 	if (validation_panel->is_valid()) {
@@ -115,23 +125,28 @@ void SceneCreateDialog::update_dialog() {
 	}
 
 	if (validation_panel->is_valid() && !scene_name.is_valid_filename()) {
-		validation_panel->set_message(MSG_ID_PATH, TTRC("File name invalid."), EditorValidationPanel::MSG_ERROR);
-	} else if (validation_panel->is_valid() && scene_name[0] == '.') {
-		validation_panel->set_message(MSG_ID_PATH, TTRC("File name begins with a dot."), EditorValidationPanel::MSG_ERROR);
+		validation_panel->set_message(
+			MSG_ID_PATH, TTRC("File name invalid."), EditorValidationPanel::MSG_ERROR);
+	}
+	else if (validation_panel->is_valid() && scene_name[0] == '.') {
+		validation_panel->set_message(
+			MSG_ID_PATH, TTRC("File name begins with a dot."), EditorValidationPanel::MSG_ERROR);
 	}
 
 	if (validation_panel->is_valid()) {
 		scene_name = directory.path_join(scene_name);
 		Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 		if (da->file_exists(scene_name)) {
-			validation_panel->set_message(MSG_ID_PATH, TTRC("File already exists."), EditorValidationPanel::MSG_ERROR);
+			validation_panel->set_message(
+				MSG_ID_PATH, TTRC("File already exists."), EditorValidationPanel::MSG_ERROR);
 		}
 	}
 
 	const StringName root_type_name = StringName(other_type_display->get_text());
 	if (has_theme_icon(root_type_name, EditorStringName(EditorIcons))) {
 		node_type_other->set_button_icon(get_editor_theme_icon(root_type_name));
-	} else {
+	}
+	else {
 		node_type_other->set_button_icon(nullptr);
 	}
 
@@ -141,7 +156,8 @@ void SceneCreateDialog::update_dialog() {
 
 		if (root_name.is_empty()) {
 			root_name_edit->set_placeholder(TTR("Leave empty to derive from scene name"));
-		} else {
+		}
+		else {
 			// Respect the desired root node casing from ProjectSettings.
 			root_name = Node::adjust_name_casing(root_name);
 			root_name_edit->set_placeholder(root_name.validate_node_name());
@@ -149,42 +165,44 @@ void SceneCreateDialog::update_dialog() {
 	}
 
 	if (root_name.is_empty()) {
-		validation_panel->set_message(MSG_ID_ROOT, TTRC("Invalid root node name."), EditorValidationPanel::MSG_ERROR);
-	} else if (root_name != root_name.validate_node_name()) {
-		validation_panel->set_message(MSG_ID_ROOT, TTRC("Invalid root node name characters have been replaced."), EditorValidationPanel::MSG_WARNING);
+		validation_panel->set_message(
+			MSG_ID_ROOT, TTRC("Invalid root node name."), EditorValidationPanel::MSG_ERROR);
+	}
+	else if (root_name != root_name.validate_node_name()) {
+		validation_panel->set_message(MSG_ID_ROOT,
+			TTRC("Invalid root node name characters have been replaced."),
+			EditorValidationPanel::MSG_WARNING);
 	}
 }
 
-String SceneCreateDialog::get_scene_path() const {
-	return scene_name;
-}
+String SceneCreateDialog::get_scene_path() const { return scene_name; }
 
-String SceneCreateDialog::get_root_name() const {
-	return root_name;
-}
+String SceneCreateDialog::get_root_name() const { return root_name; }
 
-Node *SceneCreateDialog::create_scene_root() {
+Node* SceneCreateDialog::create_scene_root()
+{
 	ERR_FAIL_NULL_V(node_type_group->get_pressed_button(), nullptr);
-	RootType type = (RootType)node_type_group->get_pressed_button()->get_meta(type_meta).operator int();
+	RootType type =
+		(RootType)node_type_group->get_pressed_button()->get_meta(type_meta).operator int();
 
-	Node *root = nullptr;
+	Node* root = nullptr;
 	switch (type) {
-		case ROOT_2D_SCENE:
-			root = memnew(Node2D);
-			break;
-		case ROOT_3D_SCENE:
-			root = memnew(Node3D);
-			break;
-		case ROOT_USER_INTERFACE: {
-			Control *gui_ctl = memnew(Control);
-			// Making the root control full rect by default is more useful for resizable UIs.
-			gui_ctl->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-			gui_ctl->set_grow_direction_preset(Control::PRESET_FULL_RECT);
-			root = gui_ctl;
-		} break;
-		case ROOT_OTHER:
-			root = Object::cast_to<Node>(select_node_dialog->instantiate_selected());
-			break;
+	case ROOT_2D_SCENE:
+		root = memnew(Node2D);
+		break;
+	case ROOT_3D_SCENE:
+		root = memnew(Node3D);
+		break;
+	case ROOT_USER_INTERFACE: {
+		Control* gui_ctl = memnew(Control);
+		// Making the root control full rect by default is more useful for resizable UIs.
+		gui_ctl->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
+		gui_ctl->set_grow_direction_preset(Control::PRESET_FULL_RECT);
+		root = gui_ctl;
+	} break;
+	case ROOT_OTHER:
+		root = Object::cast_to<Node>(select_node_dialog->instantiate_selected());
+		break;
 	}
 
 	ERR_FAIL_NULL_V(root, nullptr);
@@ -192,25 +210,26 @@ Node *SceneCreateDialog::create_scene_root() {
 	return root;
 }
 
-SceneCreateDialog::SceneCreateDialog() {
+SceneCreateDialog::SceneCreateDialog()
+{
 	select_node_dialog = memnew(CreateDialog);
 	add_child(select_node_dialog);
 	select_node_dialog->set_base_type("Node");
 	select_node_dialog->connect("create", callable_mp(this, &SceneCreateDialog::on_type_picked));
 
-	VBoxContainer *main_vb = memnew(VBoxContainer);
+	VBoxContainer* main_vb = memnew(VBoxContainer);
 	add_child(main_vb);
 
-	GridContainer *gc = memnew(GridContainer);
+	GridContainer* gc = memnew(GridContainer);
 	main_vb->add_child(gc);
 	gc->set_columns(2);
 
 	{
-		Label *label = memnew(Label(TTR("Root Type:")));
+		Label* label = memnew(Label(TTR("Root Type:")));
 		gc->add_child(label);
 		label->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
 
-		VBoxContainer *vb = memnew(VBoxContainer);
+		VBoxContainer* vb = memnew(VBoxContainer);
 		gc->add_child(vb);
 
 		node_type_group.instantiate();
@@ -237,7 +256,7 @@ SceneCreateDialog::SceneCreateDialog() {
 		node_type_gui->set_button_group(node_type_group);
 		node_type_gui->set_meta(type_meta, ROOT_USER_INTERFACE);
 
-		HBoxContainer *hb = memnew(HBoxContainer);
+		HBoxContainer* hb = memnew(HBoxContainer);
 		vb->add_child(hb);
 
 		node_type_other = memnew(CheckBox);
@@ -247,7 +266,7 @@ SceneCreateDialog::SceneCreateDialog() {
 		node_type_other->set_button_group(node_type_group);
 		node_type_other->set_meta(type_meta, ROOT_OTHER);
 
-		Control *spacing = memnew(Control);
+		Control* spacing = memnew(Control);
 		hb->add_child(spacing);
 		spacing->set_custom_minimum_size(Size2(4 * EDSCALE, 0));
 
@@ -261,21 +280,23 @@ SceneCreateDialog::SceneCreateDialog() {
 		select_node_button = memnew(Button);
 		select_node_button->set_accessibility_name(TTRC("Select Node"));
 		hb->add_child(select_node_button);
-		select_node_button->connect(SceneStringName(pressed), callable_mp(this, &SceneCreateDialog::browse_types));
+		select_node_button->connect(
+			SceneStringName(pressed), callable_mp(this, &SceneCreateDialog::browse_types));
 	}
 
 	{
-		Label *label = memnew(Label(TTR("Scene Name:")));
+		Label* label = memnew(Label(TTR("Scene Name:")));
 		gc->add_child(label);
 
-		HBoxContainer *hb = memnew(HBoxContainer);
+		HBoxContainer* hb = memnew(HBoxContainer);
 		gc->add_child(hb);
 
 		scene_name_edit = memnew(LineEdit);
 		hb->add_child(scene_name_edit);
 		scene_name_edit->set_accessibility_name(TTRC("Scene Name:"));
 		scene_name_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		scene_name_edit->connect(SceneStringName(text_submitted), callable_mp(this, &SceneCreateDialog::accept_create).unbind(1));
+		scene_name_edit->connect(SceneStringName(text_submitted),
+			callable_mp(this, &SceneCreateDialog::accept_create).unbind(1));
 
 		List<String> extensions;
 		Ref<PackedScene> sd = memnew(PackedScene);
@@ -284,25 +305,28 @@ SceneCreateDialog::SceneCreateDialog() {
 		scene_extension_picker = memnew(OptionButton);
 		scene_extension_picker->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 		hb->add_child(scene_extension_picker);
-		for (const String &E : extensions) {
+		for (const String& E : extensions) {
 			scene_extension_picker->add_item("." + E);
 			scene_extension_picker->set_item_metadata(-1, E);
 		}
 	}
 
 	{
-		Label *label = memnew(Label(TTR("Root Name:")));
+		Label* label = memnew(Label(TTR("Root Name:")));
 		gc->add_child(label);
 
 		root_name_edit = memnew(LineEdit);
 		gc->add_child(root_name_edit);
-		root_name_edit->set_tooltip_text(TTR("When empty, the root node name is derived from the scene name based on the \"editor/naming/node_name_casing\" project setting."));
+		root_name_edit->set_tooltip_text(
+			TTR("When empty, the root node name is derived from the scene name based on the "
+				"\"editor/naming/node_name_casing\" project setting."));
 		root_name_edit->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 		root_name_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		root_name_edit->connect(SceneStringName(text_submitted), callable_mp(this, &SceneCreateDialog::accept_create).unbind(1));
+		root_name_edit->connect(SceneStringName(text_submitted),
+			callable_mp(this, &SceneCreateDialog::accept_create).unbind(1));
 	}
 
-	Control *spacing = memnew(Control);
+	Control* spacing = memnew(Control);
 	main_vb->add_child(spacing);
 	spacing->set_custom_minimum_size(Size2(0, 10 * EDSCALE));
 
@@ -313,10 +337,15 @@ SceneCreateDialog::SceneCreateDialog() {
 	validation_panel->set_update_callback(callable_mp(this, &SceneCreateDialog::update_dialog));
 	validation_panel->set_accept_button(get_ok_button());
 
-	node_type_group->connect(SceneStringName(pressed), callable_mp(validation_panel, &EditorValidationPanel::update).unbind(1));
-	scene_name_edit->connect(SceneStringName(text_changed), callable_mp(validation_panel, &EditorValidationPanel::update).unbind(1));
-	root_name_edit->connect(SceneStringName(text_changed), callable_mp(validation_panel, &EditorValidationPanel::update).unbind(1));
+	node_type_group->connect(SceneStringName(pressed),
+		callable_mp(validation_panel, &EditorValidationPanel::update).unbind(1));
+	scene_name_edit->connect(SceneStringName(text_changed),
+		callable_mp(validation_panel, &EditorValidationPanel::update).unbind(1));
+	root_name_edit->connect(SceneStringName(text_changed),
+		callable_mp(validation_panel, &EditorValidationPanel::update).unbind(1));
 
 	set_title(TTR("Create New Scene"));
 	set_min_size(Size2i(400 * EDSCALE, 0));
 }
+
+

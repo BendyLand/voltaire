@@ -927,7 +927,7 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override)
 			break;
 		}
 
-		Array selection = editor_selection->get_selected_nodes();
+		List<Node*> selection = editor_selection->get_full_selected_node_list();
 
 		if (selection.is_empty()) {
 			return;
@@ -937,8 +937,7 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override)
 		undo_redo->create_action(TTR("Detach Script"), UndoRedo::MERGE_DISABLE,
 			EditorNode::get_singleton()->get_edited_scene()->obj.get());
 
-		for (int i = 0; i < selection.size(); i++) {
-			Node* n = Object::cast_to<Node>(selection[i]);
+		for (Node* n : selection) {
 			Ref<Script> existing = n->get_script();
 			Ref<Script> empty =
 				EditorNode::get_singleton()->get_object_custom_type_base(n->obj.get());
@@ -3341,10 +3340,9 @@ void SceneTreeDock::_update_script_button()
 	bool can_extend_script = false;
 
 	if (profile_allow_script_editing) {
-		Array selection = editor_selection->get_selected_nodes();
+		List<Node*> selection = editor_selection->get_full_selected_node_list();
 
-		for (int i = 0; i < selection.size(); i++) {
-			Node* n = Object::cast_to<Node>(selection[i]);
+		for (Node* n : selection) {
 			Ref<Script> s = n->get_script();
 			Ref<Script> cts;
 

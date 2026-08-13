@@ -241,10 +241,10 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_update_mode() {
 		case Mode::RANGE: {
 			min_edit->set_label("min");
 			max_edit->set_label("max");
-			max_edit->set_block_signals(true);
+			max_edit->obj->set_block_signals(true);
 			max_edit->set_min(max_range->get_min());
 			max_edit->set_max(max_range->get_max());
-			max_edit->set_block_signals(false);
+			max_edit->obj->set_block_signals(false);
 
 			min_edit->set_allow_lesser(min_range->is_lesser_allowed());
 			min_edit->set_allow_greater(min_range->is_greater_allowed());
@@ -255,9 +255,9 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_update_mode() {
 		case Mode::MIDPOINT: {
 			min_edit->set_label("val");
 			max_edit->set_label(U"±");
-			max_edit->set_block_signals(true);
+			max_edit->obj->set_block_signals(true);
 			max_edit->set_min(0);
-			max_edit->set_block_signals(false);
+			max_edit->obj->set_block_signals(false);
 
 			min_edit->set_allow_lesser(min_range->is_lesser_allowed());
 			min_edit->set_allow_greater(max_range->is_greater_allowed());
@@ -285,10 +285,10 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_update_slider_values() {
 			min_edit->set_value_no_signal((min_range->get_value() + max_range->get_value()) * 0.5);
 			max_edit->set_value_no_signal((max_range->get_value() - min_range->get_value()) * 0.5);
 
-			max_edit->set_block_signals(true);
+			max_edit->obj->set_block_signals(true);
 			max_edit->set_max(_get_max_spread());
 			max_edit->set_read_only(max_edit->get_max() == 0);
-			max_edit->set_block_signals(false);
+			max_edit->obj->set_block_signals(false);
 		} break;
 	}
 }
@@ -309,10 +309,10 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_sync_sliders(float, const Edi
 
 		case Mode::MIDPOINT: {
 			if (p_changed_slider == min_edit) {
-				max_edit->set_block_signals(true); // If max changes, value may change.
+				max_edit->obj->set_block_signals(true); // If max changes, value may change.
 				max_edit->set_max(_get_max_spread());
 				max_edit->set_read_only(max_edit->get_max() == 0);
-				max_edit->set_block_signals(false);
+				max_edit->obj->set_block_signals(false);
 			}
 			min_range->set_value(min_edit->get_value() - max_edit->get_value());
 			max_range->set_value(min_edit->get_value() + max_edit->get_value());

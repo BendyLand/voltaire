@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "texture_region_editor_plugin.h"
-
 #include "core/input/input.h"
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
@@ -51,8 +49,10 @@
 #include "scene/resources/atlas_texture.h"
 #include "scene/resources/style_box_texture.h"
 #include "servers/rendering/rendering_server.h"
+#include "texture_region_editor_plugin.h"
 
-Transform2D TextureRegionEditor::_get_offset_transform() const {
+Transform2D TextureRegionEditor::_get_offset_transform() const
+{
 	Transform2D mtx;
 	mtx.columns[2] = -draw_ofs * draw_zoom;
 	mtx.scale_basis(Vector2(draw_zoom, draw_zoom));
@@ -60,7 +60,8 @@ Transform2D TextureRegionEditor::_get_offset_transform() const {
 	return mtx;
 }
 
-void TextureRegionEditor::_texture_preview_draw() {
+void TextureRegionEditor::_texture_preview_draw()
+{
 	const Ref<Texture2D> object_texture = _get_edited_object_texture();
 	if (object_texture.is_null()) {
 		return;
@@ -69,12 +70,15 @@ void TextureRegionEditor::_texture_preview_draw() {
 	Transform2D mtx = _get_offset_transform();
 
 	RS::get_singleton()->canvas_item_add_set_transform(texture_preview->get_canvas_item(), mtx);
-	texture_preview->draw_rect(Rect2(Point2(), object_texture->get_size()), Color(0.5, 0.5, 0.5, 0.5), false);
+	texture_preview->draw_rect(
+		Rect2(Point2(), object_texture->get_size()), Color(0.5, 0.5, 0.5, 0.5), false);
 	texture_preview->draw_texture(object_texture, Point2());
-	RS::get_singleton()->canvas_item_add_set_transform(texture_preview->get_canvas_item(), Transform2D());
+	RS::get_singleton()->canvas_item_add_set_transform(
+		texture_preview->get_canvas_item(), Transform2D());
 }
 
-void TextureRegionEditor::_texture_overlay_draw() {
+void TextureRegionEditor::_texture_overlay_draw()
+{
 	const Ref<Texture2D> object_texture = _get_edited_object_texture();
 	if (object_texture.is_null()) {
 		return;
@@ -91,7 +95,9 @@ void TextureRegionEditor::_texture_overlay_draw() {
 		if (snap_step.x != 0) {
 			if (snap_separation.x == 0) {
 				for (int i = 0; i < s.width; i++) {
-					int cell = Math::fast_ftoi(Math::floor((mtx.affine_inverse().xform(Vector2(i, 0)).x - snap_offset.x) / snap_step.x));
+					int cell = Math::fast_ftoi(
+						Math::floor((mtx.affine_inverse().xform(Vector2(i, 0)).x - snap_offset.x) /
+									snap_step.x));
 					if (i == 0) {
 						last_cell = cell;
 					}
@@ -100,14 +106,19 @@ void TextureRegionEditor::_texture_overlay_draw() {
 					}
 					last_cell = cell;
 				}
-			} else {
+			}
+			else {
 				for (int i = 0; i < s.width + snap_separation.x; i++) {
-					int cell = Math::fast_ftoi(Math::floor((mtx.affine_inverse().xform(Vector2(i, 0)).x - snap_offset.x) / (snap_step.x + snap_separation.x)));
+					int cell = Math::fast_ftoi(
+						Math::floor((mtx.affine_inverse().xform(Vector2(i, 0)).x - snap_offset.x) /
+									(snap_step.x + snap_separation.x)));
 					if (i == 0) {
 						last_cell = cell;
 					}
 					if (last_cell != cell) {
-						texture_overlay->draw_rect(Rect2(i - snap_separation.x * draw_zoom, 0, snap_separation.x * draw_zoom, s.height), grid_color);
+						texture_overlay->draw_rect(Rect2(i - snap_separation.x * draw_zoom, 0,
+													   snap_separation.x * draw_zoom, s.height),
+							grid_color);
 					}
 					last_cell = cell;
 				}
@@ -117,7 +128,9 @@ void TextureRegionEditor::_texture_overlay_draw() {
 		if (snap_step.y != 0) {
 			if (snap_separation.y == 0) {
 				for (int i = 0; i < s.height; i++) {
-					int cell = Math::fast_ftoi(Math::floor((mtx.affine_inverse().xform(Vector2(0, i)).y - snap_offset.y) / snap_step.y));
+					int cell = Math::fast_ftoi(
+						Math::floor((mtx.affine_inverse().xform(Vector2(0, i)).y - snap_offset.y) /
+									snap_step.y));
 					if (i == 0) {
 						last_cell = cell;
 					}
@@ -126,30 +139,35 @@ void TextureRegionEditor::_texture_overlay_draw() {
 					}
 					last_cell = cell;
 				}
-			} else {
+			}
+			else {
 				for (int i = 0; i < s.height + snap_separation.y; i++) {
-					int cell = Math::fast_ftoi(Math::floor((mtx.affine_inverse().xform(Vector2(0, i)).y - snap_offset.y) / (snap_step.y + snap_separation.y)));
+					int cell = Math::fast_ftoi(
+						Math::floor((mtx.affine_inverse().xform(Vector2(0, i)).y - snap_offset.y) /
+									(snap_step.y + snap_separation.y)));
 					if (i == 0) {
 						last_cell = cell;
 					}
 					if (last_cell != cell) {
-						texture_overlay->draw_rect(Rect2(0, i - snap_separation.y * draw_zoom, s.width, snap_separation.y * draw_zoom), grid_color);
+						texture_overlay->draw_rect(Rect2(0, i - snap_separation.y * draw_zoom,
+													   s.width, snap_separation.y * draw_zoom),
+							grid_color);
 					}
 					last_cell = cell;
 				}
 			}
 		}
-	} else if (snap_mode == SNAP_AUTOSLICE) {
-		for (const Rect2 &r : autoslice_cache) {
-			const Vector2 endpoints[4] = {
-				mtx.basis_xform(r.position),
+	}
+	else if (snap_mode == SNAP_AUTOSLICE) {
+		for (const Rect2& r : autoslice_cache) {
+			const Vector2 endpoints[4] = {mtx.basis_xform(r.position),
 				mtx.basis_xform(r.position + Vector2(r.size.x, 0)),
 				mtx.basis_xform(r.position + r.size),
-				mtx.basis_xform(r.position + Vector2(0, r.size.y))
-			};
+				mtx.basis_xform(r.position + Vector2(0, r.size.y))};
 			for (int i = 0; i < 4; i++) {
 				int next = (i + 1) % 4;
-				texture_overlay->draw_line(endpoints[i] - draw_ofs * draw_zoom, endpoints[next] - draw_ofs * draw_zoom, Color(0.3, 0.7, 1, 1), 2);
+				texture_overlay->draw_line(endpoints[i] - draw_ofs * draw_zoom,
+					endpoints[next] - draw_ofs * draw_zoom, Color(0.3, 0.7, 1, 1), 2);
 			}
 		}
 	}
@@ -158,36 +176,37 @@ void TextureRegionEditor::_texture_overlay_draw() {
 
 	Rect2 scroll_rect(Point2(), object_texture->get_size());
 
-	const Vector2 raw_endpoints[4] = {
-		rect.position,
-		rect.position + Vector2(rect.size.x, 0),
-		rect.position + rect.size,
-		rect.position + Vector2(0, rect.size.y)
-	};
-	const Vector2 endpoints[4] = {
-		mtx.basis_xform(raw_endpoints[0]),
-		mtx.basis_xform(raw_endpoints[1]),
-		mtx.basis_xform(raw_endpoints[2]),
-		mtx.basis_xform(raw_endpoints[3])
-	};
+	const Vector2 raw_endpoints[4] = {rect.position, rect.position + Vector2(rect.size.x, 0),
+		rect.position + rect.size, rect.position + Vector2(0, rect.size.y)};
+	const Vector2 endpoints[4] = {mtx.basis_xform(raw_endpoints[0]),
+		mtx.basis_xform(raw_endpoints[1]), mtx.basis_xform(raw_endpoints[2]),
+		mtx.basis_xform(raw_endpoints[3])};
 	for (int i = 0; i < 4; i++) {
 		int prev = (i + 3) % 4;
 		int next = (i + 1) % 4;
 
-		Vector2 ofs = ((endpoints[i] - endpoints[prev]).normalized() + ((endpoints[i] - endpoints[next]).normalized())).normalized();
+		Vector2 ofs = ((endpoints[i] - endpoints[prev]).normalized() +
+					   ((endpoints[i] - endpoints[next]).normalized()))
+						  .normalized();
 		ofs *= Math::SQRT2 * (select_handle->get_size().width / 2);
 
-		texture_overlay->draw_line(endpoints[i] - draw_ofs * draw_zoom, endpoints[next] - draw_ofs * draw_zoom, color, 2);
+		texture_overlay->draw_line(
+			endpoints[i] - draw_ofs * draw_zoom, endpoints[next] - draw_ofs * draw_zoom, color, 2);
 
 		if (snap_mode != SNAP_AUTOSLICE) {
-			texture_overlay->draw_texture(select_handle, (endpoints[i] + ofs - (select_handle->get_size() / 2)).floor() - draw_ofs * draw_zoom);
+			texture_overlay->draw_texture(
+				select_handle, (endpoints[i] + ofs - (select_handle->get_size() / 2)).floor() -
+								   draw_ofs * draw_zoom);
 		}
 
 		ofs = (endpoints[next] - endpoints[i]) / 2;
-		ofs += (endpoints[next] - endpoints[i]).orthogonal().normalized() * (select_handle->get_size().width / 2);
+		ofs += (endpoints[next] - endpoints[i]).orthogonal().normalized() *
+			   (select_handle->get_size().width / 2);
 
 		if (snap_mode != SNAP_AUTOSLICE) {
-			texture_overlay->draw_texture(select_handle, (endpoints[i] + ofs - (select_handle->get_size() / 2)).floor() - draw_ofs * draw_zoom);
+			texture_overlay->draw_texture(
+				select_handle, (endpoints[i] + ofs - (select_handle->get_size() / 2)).floor() -
+								   draw_ofs * draw_zoom);
 		}
 
 		scroll_rect.expand_to(raw_endpoints[i]);
@@ -201,9 +220,11 @@ void TextureRegionEditor::_texture_overlay_draw() {
 
 	hscroll->set_min(scroll_rect.position.x);
 	hscroll->set_max(scroll_rect.position.x + scroll_rect.size.x);
-	if (Math::abs(scroll_rect.position.x - (scroll_rect.position.x + scroll_rect.size.x)) <= scroll_margin.x) {
+	if (Math::abs(scroll_rect.position.x - (scroll_rect.position.x + scroll_rect.size.x)) <=
+		scroll_margin.x) {
 		hscroll->hide();
-	} else {
+	}
+	else {
 		hscroll->show();
 		hscroll->set_page(scroll_margin.x);
 		hscroll->set_value(draw_ofs.x);
@@ -211,10 +232,12 @@ void TextureRegionEditor::_texture_overlay_draw() {
 
 	vscroll->set_min(scroll_rect.position.y);
 	vscroll->set_max(scroll_rect.position.y + scroll_rect.size.y);
-	if (Math::abs(scroll_rect.position.y - (scroll_rect.position.y + scroll_rect.size.y)) <= scroll_margin.y) {
+	if (Math::abs(scroll_rect.position.y - (scroll_rect.position.y + scroll_rect.size.y)) <=
+		scroll_margin.y) {
 		vscroll->hide();
 		draw_ofs.y = scroll_rect.position.y;
-	} else {
+	}
+	else {
 		vscroll->show();
 		vscroll->set_page(scroll_margin.y);
 		vscroll->set_value(draw_ofs.y);
@@ -224,8 +247,10 @@ void TextureRegionEditor::_texture_overlay_draw() {
 	Size2 vmin = vscroll->get_combined_minimum_size();
 
 	// Avoid scrollbar overlapping.
-	hscroll->set_anchor_and_offset(SIDE_RIGHT, Control::ANCHOR_END, vscroll->is_visible() ? -vmin.width : 0);
-	vscroll->set_anchor_and_offset(SIDE_BOTTOM, Control::ANCHOR_END, hscroll->is_visible() ? -hmin.height : 0);
+	hscroll->set_anchor_and_offset(
+		SIDE_RIGHT, Control::ANCHOR_END, vscroll->is_visible() ? -vmin.width : 0);
+	vscroll->set_anchor_and_offset(
+		SIDE_BOTTOM, Control::ANCHOR_END, hscroll->is_visible() ? -hmin.height : 0);
 
 	updating_scroll = false;
 
@@ -233,31 +258,35 @@ void TextureRegionEditor::_texture_overlay_draw() {
 		hscroll->set_value((hscroll->get_min() + hscroll->get_max() - hscroll->get_page()) / 2);
 		vscroll->set_value((vscroll->get_min() + vscroll->get_max() - vscroll->get_page()) / 2);
 		// This ensures that the view is updated correctly.
-		callable_mp(this, &TextureRegionEditor::_pan_callback).call_deferred(Vector2(1, 0), Ref<InputEvent>());
+		callable_mp(this, &TextureRegionEditor::_pan_callback)
+			.call_deferred(Vector2(1, 0), Ref<InputEvent>());
 		callable_mp(this, &TextureRegionEditor::_scroll_changed).call_deferred(0.0);
 		request_center = false;
 	}
 
 	if (node_ninepatch || res_stylebox.is_valid()) {
-		float margins[4] = { 0 };
+		float margins[4] = {0};
 		if (node_ninepatch) {
 			margins[0] = node_ninepatch->get_patch_margin(SIDE_TOP);
 			margins[1] = node_ninepatch->get_patch_margin(SIDE_BOTTOM);
 			margins[2] = node_ninepatch->get_patch_margin(SIDE_LEFT);
 			margins[3] = node_ninepatch->get_patch_margin(SIDE_RIGHT);
-		} else if (res_stylebox.is_valid()) {
+		}
+		else if (res_stylebox.is_valid()) {
 			margins[0] = res_stylebox->get_texture_margin(SIDE_TOP);
 			margins[1] = res_stylebox->get_texture_margin(SIDE_BOTTOM);
 			margins[2] = res_stylebox->get_texture_margin(SIDE_LEFT);
 			margins[3] = res_stylebox->get_texture_margin(SIDE_RIGHT);
 		}
 
-		Vector2 pos[4] = {
-			mtx.basis_xform(Vector2(0, margins[0])) + Vector2(0, endpoints[0].y - draw_ofs.y * draw_zoom),
-			-mtx.basis_xform(Vector2(0, margins[1])) + Vector2(0, endpoints[2].y - draw_ofs.y * draw_zoom),
-			mtx.basis_xform(Vector2(margins[2], 0)) + Vector2(endpoints[0].x - draw_ofs.x * draw_zoom, 0),
-			-mtx.basis_xform(Vector2(margins[3], 0)) + Vector2(endpoints[2].x - draw_ofs.x * draw_zoom, 0)
-		};
+		Vector2 pos[4] = {mtx.basis_xform(Vector2(0, margins[0])) +
+							  Vector2(0, endpoints[0].y - draw_ofs.y * draw_zoom),
+			-mtx.basis_xform(Vector2(0, margins[1])) +
+				Vector2(0, endpoints[2].y - draw_ofs.y * draw_zoom),
+			mtx.basis_xform(Vector2(margins[2], 0)) +
+				Vector2(endpoints[0].x - draw_ofs.x * draw_zoom, 0),
+			-mtx.basis_xform(Vector2(margins[3], 0)) +
+				Vector2(endpoints[2].x - draw_ofs.x * draw_zoom, 0)};
 
 		_draw_margin_line(pos[0], pos[0] + Vector2(texture_overlay->get_size().x, 0));
 		_draw_margin_line(pos[1], pos[1] + Vector2(texture_overlay->get_size().x, 0));
@@ -266,7 +295,8 @@ void TextureRegionEditor::_texture_overlay_draw() {
 	}
 }
 
-void TextureRegionEditor::_draw_margin_line(Vector2 p_from, Vector2 p_to) {
+void TextureRegionEditor::_draw_margin_line(Vector2 p_from, Vector2 p_to)
+{
 	// Margin line is a dashed line with a normalized dash length. This method works
 	// for both vertical and horizontal lines.
 
@@ -288,7 +318,8 @@ void TextureRegionEditor::_draw_margin_line(Vector2 p_from, Vector2 p_to) {
 	}
 }
 
-void TextureRegionEditor::_set_grid_parameters_clamping(bool p_enabled) {
+void TextureRegionEditor::_set_grid_parameters_clamping(bool p_enabled)
+{
 	sb_off_x->set_allow_lesser(!p_enabled);
 	sb_off_x->set_allow_greater(!p_enabled);
 	sb_off_y->set_allow_lesser(!p_enabled);
@@ -299,21 +330,20 @@ void TextureRegionEditor::_set_grid_parameters_clamping(bool p_enabled) {
 	sb_sep_y->set_allow_greater(!p_enabled);
 }
 
-int TextureRegionEditor::_get_overlapping_selection_handle(const Point2 &p_mouse_pos) {
+int TextureRegionEditor::_get_overlapping_selection_handle(const Point2& p_mouse_pos)
+{
 	const real_t handle_radius = (16 * EDSCALE) / draw_zoom;
 	const real_t handle_offset = (8 * EDSCALE) / draw_zoom;
 
 	// Position of selection handles.
-	const Vector2 endpoints[8] = {
-		rect.position + Vector2(-handle_offset, -handle_offset),
+	const Vector2 endpoints[8] = {rect.position + Vector2(-handle_offset, -handle_offset),
 		rect.position + Vector2(rect.size.x / 2, 0) + Vector2(0, -handle_offset),
 		rect.position + Vector2(rect.size.x, 0) + Vector2(handle_offset, -handle_offset),
 		rect.position + Vector2(rect.size.x, rect.size.y / 2) + Vector2(handle_offset, 0),
 		rect.position + rect.size + Vector2(handle_offset, handle_offset),
 		rect.position + Vector2(rect.size.x / 2, rect.size.y) + Vector2(0, handle_offset),
 		rect.position + Vector2(0, rect.size.y) + Vector2(-handle_offset, handle_offset),
-		rect.position + Vector2(0, rect.size.y / 2) + Vector2(-handle_offset, 0)
-	};
+		rect.position + Vector2(0, rect.size.y / 2) + Vector2(-handle_offset, 0)};
 
 	const Point2 mouse_pos = _get_offset_transform().affine_inverse().xform(p_mouse_pos);
 	for (int i = 0; i < 8; i++) {
@@ -325,26 +355,25 @@ int TextureRegionEditor::_get_overlapping_selection_handle(const Point2 &p_mouse
 	return -1;
 }
 
-int TextureRegionEditor::_get_overlapping_margin_line(const Point2 &p_mouse_pos, float *r_margin) {
+int TextureRegionEditor::_get_overlapping_margin_line(const Point2& p_mouse_pos, float* r_margin)
+{
 	float margins[4] = {};
 	if (node_ninepatch) {
 		margins[0] = node_ninepatch->get_patch_margin(SIDE_TOP);
 		margins[1] = node_ninepatch->get_patch_margin(SIDE_BOTTOM);
 		margins[2] = node_ninepatch->get_patch_margin(SIDE_LEFT);
 		margins[3] = node_ninepatch->get_patch_margin(SIDE_RIGHT);
-	} else if (res_stylebox.is_valid()) {
+	}
+	else if (res_stylebox.is_valid()) {
 		margins[0] = res_stylebox->get_texture_margin(SIDE_TOP);
 		margins[1] = res_stylebox->get_texture_margin(SIDE_BOTTOM);
 		margins[2] = res_stylebox->get_texture_margin(SIDE_LEFT);
 		margins[3] = res_stylebox->get_texture_margin(SIDE_RIGHT);
 	}
 
-	Vector2 pos[4] = {
-		rect.position + Vector2(0, margins[0]),
-		rect.position + rect.size - Vector2(0, margins[1]),
-		rect.position + Vector2(margins[2], 0),
-		rect.position + rect.size - Vector2(margins[3], 0)
-	};
+	Vector2 pos[4] = {rect.position + Vector2(0, margins[0]),
+		rect.position + rect.size - Vector2(0, margins[1]), rect.position + Vector2(margins[2], 0),
+		rect.position + rect.size - Vector2(margins[3], 0)};
 
 	const Point2 mouse_pos = _get_offset_transform().affine_inverse().xform(p_mouse_pos);
 	const real_t line_thickness = (8 * EDSCALE) / draw_zoom;
@@ -352,11 +381,14 @@ int TextureRegionEditor::_get_overlapping_margin_line(const Point2 &p_mouse_pos,
 	int margin_index = -1;
 	if (Math::abs(mouse_pos.y - pos[0].y) <= line_thickness) {
 		margin_index = 0;
-	} else if (Math::abs(mouse_pos.y - pos[1].y) <= line_thickness) {
+	}
+	else if (Math::abs(mouse_pos.y - pos[1].y) <= line_thickness) {
 		margin_index = 1;
-	} else if (Math::abs(mouse_pos.x - pos[2].x) <= line_thickness) {
+	}
+	else if (Math::abs(mouse_pos.x - pos[2].x) <= line_thickness) {
 		margin_index = 2;
-	} else if (Math::abs(mouse_pos.x - pos[3].x) <= line_thickness) {
+	}
+	else if (Math::abs(mouse_pos.x - pos[3].x) <= line_thickness) {
 		margin_index = 3;
 	}
 
@@ -367,52 +399,69 @@ int TextureRegionEditor::_get_overlapping_margin_line(const Point2 &p_mouse_pos,
 	return margin_index;
 }
 
-void TextureRegionEditor::_commit_drag() {
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+void TextureRegionEditor::_commit_drag()
+{
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	if (edited_margin >= 0) {
 		undo_redo->create_action(TTR("Set Margin"));
-		static Side side[4] = { SIDE_TOP, SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT };
+		static Side side[4] = {SIDE_TOP, SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT};
 		if (node_ninepatch) {
-			undo_redo->add_do_method(node_ninepatch, "set_patch_margin", side[edited_margin], node_ninepatch->get_patch_margin(side[edited_margin]));
-			undo_redo->add_undo_method(node_ninepatch, "set_patch_margin", side[edited_margin], prev_margin);
-		} else if (res_stylebox.is_valid()) {
-			undo_redo->add_do_method(res_stylebox.ptr(), "set_texture_margin", side[edited_margin], res_stylebox->get_texture_margin(side[edited_margin]));
-			undo_redo->add_undo_method(res_stylebox.ptr(), "set_texture_margin", side[edited_margin], prev_margin);
+			undo_redo->add_do_method(node_ninepatch->obj.get(), "set_patch_margin",
+				side[edited_margin], node_ninepatch->get_patch_margin(side[edited_margin]));
+			undo_redo->add_undo_method(
+				node_ninepatch->obj.get(), "set_patch_margin", side[edited_margin], prev_margin);
+		}
+		else if (res_stylebox.is_valid()) {
+			undo_redo->add_do_method(res_stylebox.ptr(), "set_texture_margin", side[edited_margin],
+				res_stylebox->get_texture_margin(side[edited_margin]));
+			undo_redo->add_undo_method(
+				res_stylebox.ptr(), "set_texture_margin", side[edited_margin], prev_margin);
 			res_stylebox->emit_changed();
 		}
 		edited_margin = -1;
-	} else {
+	}
+	else {
 		undo_redo->create_action(TTR("Set Region Rect"));
 		if (node_ninepatch) {
-			undo_redo->add_do_method(node_ninepatch, "set_region_rect", node_ninepatch->get_region_rect());
-			undo_redo->add_undo_method(node_ninepatch, "set_region_rect", rect_prev);
-		} else if (res_stylebox.is_valid()) {
-			undo_redo->add_do_method(res_stylebox.ptr(), "set_region_rect", res_stylebox->get_region_rect());
+			undo_redo->add_do_method(
+				node_ninepatch->obj.get(), "set_region_rect", node_ninepatch->get_region_rect());
+			undo_redo->add_undo_method(node_ninepatch->obj.get(), "set_region_rect", rect_prev);
+		}
+		else if (res_stylebox.is_valid()) {
+			undo_redo->add_do_method(
+				res_stylebox.ptr(), "set_region_rect", res_stylebox->get_region_rect());
 			undo_redo->add_undo_method(res_stylebox.ptr(), "set_region_rect", rect_prev);
-		} else if (res_atlas_texture.is_valid()) {
-			undo_redo->add_do_method(res_atlas_texture.ptr(), "set_region", res_atlas_texture->get_region());
+		}
+		else if (res_atlas_texture.is_valid()) {
+			undo_redo->add_do_method(
+				res_atlas_texture.ptr(), "set_region", res_atlas_texture->get_region());
 			undo_redo->add_undo_method(res_atlas_texture.ptr(), "set_region", rect_prev);
-		} else if (node_sprite_2d) {
-			undo_redo->add_do_method(node_sprite_2d, "set_region_rect", node_sprite_2d->get_region_rect());
-			undo_redo->add_undo_method(node_sprite_2d, "set_region_rect", rect_prev);
-		} else if (node_sprite_3d) {
-			undo_redo->add_do_method(node_sprite_3d, "set_region_rect", node_sprite_3d->get_region_rect());
-			undo_redo->add_undo_method(node_sprite_3d, "set_region_rect", rect_prev);
+		}
+		else if (node_sprite_2d) {
+			undo_redo->add_do_method(
+				node_sprite_2d->obj.get(), "set_region_rect", node_sprite_2d->get_region_rect());
+			undo_redo->add_undo_method(node_sprite_2d->obj.get(), "set_region_rect", rect_prev);
+		}
+		else if (node_sprite_3d) {
+			undo_redo->add_do_method(
+				node_sprite_3d->obj.get(), "set_region_rect", node_sprite_3d->get_region_rect());
+			undo_redo->add_undo_method(node_sprite_3d->obj.get(), "set_region_rect", rect_prev);
 		}
 		drag_index = -1;
 	}
 
-	undo_redo->add_do_method(this, "_update_rect");
-	undo_redo->add_undo_method(this, "_update_rect");
-	undo_redo->add_do_method(texture_overlay, "queue_redraw");
-	undo_redo->add_undo_method(texture_overlay, "queue_redraw");
+	undo_redo->add_do_method(this->obj.get(), "_update_rect");
+	undo_redo->add_undo_method(this->obj.get(), "_update_rect");
+	undo_redo->add_do_method(texture_overlay->obj.get(), "queue_redraw");
+	undo_redo->add_undo_method(texture_overlay->obj.get(), "queue_redraw");
 	undo_redo->commit_action();
 	drag = false;
 	creating = false;
 	moving = false;
 }
 
-void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input) {
+void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent>& p_input)
+{
 	if (panner->gui_input(p_input, texture_overlay->get_global_rect())) {
 		return;
 	}
@@ -430,7 +479,8 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 					drag_from = mtx.affine_inverse().xform(mb->get_position());
 					if (snap_mode == SNAP_PIXEL) {
 						drag_from = drag_from.snappedf(1);
-					} else if (snap_mode == SNAP_GRID) {
+					}
+					else if (snap_mode == SNAP_GRID) {
 						drag_from = snap_point(drag_from);
 					}
 					drag = true;
@@ -456,11 +506,13 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 						// We didn't hit anything, but we're in the autoslice mode. Handle it.
 
 						Vector2 point = mtx.affine_inverse().xform(mb->get_position());
-						EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-						for (const Rect2 &E : autoslice_cache) {
+						EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+						for (const Rect2& E : autoslice_cache) {
 							if (E.has_point(point)) {
 								rect = E;
-								if (Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL) && !(Input::get_singleton()->is_key_pressed(Key(Key::SHIFT | Key::ALT)))) {
+								if (Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL) &&
+									!(Input::get_singleton()->is_key_pressed(
+										Key(Key::SHIFT | Key::ALT)))) {
 									Rect2 r = _get_edited_object_region();
 									rect.expand_to(r.position);
 									rect.expand_to(r.get_end());
@@ -468,48 +520,69 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 
 								undo_redo->create_action(TTR("Set Region Rect"));
 								if (node_ninepatch) {
-									undo_redo->add_do_method(node_ninepatch, "set_region_rect", rect);
-									undo_redo->add_undo_method(node_ninepatch, "set_region_rect", node_ninepatch->get_region_rect());
-								} else if (res_stylebox.is_valid()) {
-									undo_redo->add_do_method(res_stylebox.ptr(), "set_region_rect", rect);
-									undo_redo->add_undo_method(res_stylebox.ptr(), "set_region_rect", res_stylebox->get_region_rect());
-								} else if (res_atlas_texture.is_valid()) {
-									undo_redo->add_do_method(res_atlas_texture.ptr(), "set_region", rect);
-									undo_redo->add_undo_method(res_atlas_texture.ptr(), "set_region", res_atlas_texture->get_region());
-								} else if (node_sprite_2d) {
-									undo_redo->add_do_method(node_sprite_2d, "set_region_rect", rect);
-									undo_redo->add_undo_method(node_sprite_2d, "set_region_rect", node_sprite_2d->get_region_rect());
-								} else if (node_sprite_3d) {
-									undo_redo->add_do_method(node_sprite_3d, "set_region_rect", rect);
-									undo_redo->add_undo_method(node_sprite_3d, "set_region_rect", node_sprite_3d->get_region_rect());
+									undo_redo->add_do_method(
+										node_ninepatch->obj.get(), "set_region_rect", rect);
+									undo_redo->add_undo_method(node_ninepatch->obj.get(),
+										"set_region_rect", node_ninepatch->get_region_rect());
+								}
+								else if (res_stylebox.is_valid()) {
+									undo_redo->add_do_method(
+										res_stylebox.ptr(), "set_region_rect", rect);
+									undo_redo->add_undo_method(res_stylebox.ptr(),
+										"set_region_rect", res_stylebox->get_region_rect());
+								}
+								else if (res_atlas_texture.is_valid()) {
+									undo_redo->add_do_method(
+										res_atlas_texture.ptr(), "set_region", rect);
+									undo_redo->add_undo_method(res_atlas_texture.ptr(),
+										"set_region", res_atlas_texture->get_region());
+								}
+								else if (node_sprite_2d) {
+									undo_redo->add_do_method(
+										node_sprite_2d->obj.get(), "set_region_rect", rect);
+									undo_redo->add_undo_method(node_sprite_2d->obj.get(),
+										"set_region_rect", node_sprite_2d->get_region_rect());
+								}
+								else if (node_sprite_3d) {
+									undo_redo->add_do_method(
+										node_sprite_3d->obj.get(), "set_region_rect", rect);
+									undo_redo->add_undo_method(node_sprite_3d->obj.get(),
+										"set_region_rect", node_sprite_3d->get_region_rect());
 								}
 
-								undo_redo->add_do_method(this, "_update_rect");
-								undo_redo->add_undo_method(this, "_update_rect");
-								undo_redo->add_do_method(texture_overlay, "queue_redraw");
-								undo_redo->add_undo_method(texture_overlay, "queue_redraw");
+								undo_redo->add_do_method(this->obj.get(), "_update_rect");
+								undo_redo->add_undo_method(this->obj.get(), "_update_rect");
+								undo_redo->add_do_method(
+									texture_overlay->obj.get(), "queue_redraw");
+								undo_redo->add_undo_method(
+									texture_overlay->obj.get(), "queue_redraw");
 								undo_redo->commit_action();
 								break;
 							}
 						}
-					} else if (edited_margin < 0) {
+					}
+					else if (edited_margin < 0) {
 						Vector2 point = mtx.affine_inverse().xform(mb->get_position());
 						if (rect.has_point(point)) {
 							drag_from = point;
 							drag = true;
 							moving = true;
-						} else {
-							// We didn't hit anything and it's not autoslice, which means we try to create a new region.
+						}
+						else {
+							// We didn't hit anything and it's not autoslice, which means we try to
+							// create a new region.
 							creating = true;
 							rect = Rect2(drag_from, Size2());
 						}
 					}
 				}
 
-			} else if (!mb->is_pressed() && drag) {
+			}
+			else if (!mb->is_pressed() && drag) {
 				_commit_drag();
 			}
-		} else if (drag && mb->get_button_index() == MouseButton::RIGHT && mb->is_pressed()) {
+		}
+		else if (drag && mb->get_button_index() == MouseButton::RIGHT && mb->is_pressed()) {
 			cancel_drag = true;
 		}
 	}
@@ -521,7 +594,7 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 	if (cancel_drag) {
 		drag = false;
 		if (edited_margin >= 0) {
-			static Side side[4] = { SIDE_TOP, SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT };
+			static Side side[4] = {SIDE_TOP, SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT};
 			if (node_ninepatch) {
 				node_ninepatch->set_patch_margin(side[edited_margin], prev_margin);
 			}
@@ -529,13 +602,15 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 				res_stylebox->set_texture_margin(side[edited_margin], prev_margin);
 			}
 			edited_margin = -1;
-		} else if (moving) {
+		}
+		else if (moving) {
 			moving = false;
 			_apply_rect(rect_prev);
 			rect = rect_prev;
 			texture_preview->queue_redraw();
 			texture_overlay->queue_redraw();
-		} else {
+		}
+		else {
 			_apply_rect(rect_prev);
 			rect = rect_prev;
 			texture_preview->queue_redraw();
@@ -554,32 +629,42 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 				if (snap_mode != SNAP_GRID) {
 					if (edited_margin == 0) {
 						new_margin = prev_margin + (mm->get_position().y - drag_from.y) / draw_zoom;
-					} else if (edited_margin == 1) {
+					}
+					else if (edited_margin == 1) {
 						new_margin = prev_margin - (mm->get_position().y - drag_from.y) / draw_zoom;
-					} else if (edited_margin == 2) {
+					}
+					else if (edited_margin == 2) {
 						new_margin = prev_margin + (mm->get_position().x - drag_from.x) / draw_zoom;
-					} else if (edited_margin == 3) {
+					}
+					else if (edited_margin == 3) {
 						new_margin = prev_margin - (mm->get_position().x - drag_from.x) / draw_zoom;
-					} else {
+					}
+					else {
 						ERR_PRINT("Unexpected edited_margin");
 					}
 
 					if (snap_mode == SNAP_PIXEL) {
 						new_margin = Math::round(new_margin);
 					}
-				} else {
-					Vector2 pos_snapped = snap_point(mtx.affine_inverse().xform(mm->get_position()));
+				}
+				else {
+					Vector2 pos_snapped =
+						snap_point(mtx.affine_inverse().xform(mm->get_position()));
 					Rect2 rect_rounded = Rect2(rect.position.round(), rect.size.round());
 
 					if (edited_margin == 0) {
 						new_margin = pos_snapped.y - rect_rounded.position.y;
-					} else if (edited_margin == 1) {
+					}
+					else if (edited_margin == 1) {
 						new_margin = rect_rounded.size.y + rect_rounded.position.y - pos_snapped.y;
-					} else if (edited_margin == 2) {
+					}
+					else if (edited_margin == 2) {
 						new_margin = pos_snapped.x - rect_rounded.position.x;
-					} else if (edited_margin == 3) {
+					}
+					else if (edited_margin == 3) {
 						new_margin = rect_rounded.size.x + rect_rounded.position.x - pos_snapped.x;
-					} else {
+					}
+					else {
 						ERR_PRINT("Unexpected edited_margin");
 					}
 				}
@@ -587,21 +672,23 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 				if (new_margin < 0) {
 					new_margin = 0;
 				}
-				static Side side[4] = { SIDE_TOP, SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT };
+				static Side side[4] = {SIDE_TOP, SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT};
 				if (node_ninepatch) {
 					node_ninepatch->set_patch_margin(side[edited_margin], new_margin);
 				}
 				if (res_stylebox.is_valid()) {
 					res_stylebox->set_texture_margin(side[edited_margin], new_margin);
 				}
-			} else if (moving) {
+			}
+			else if (moving) {
 				Vector2 new_pos = mtx.affine_inverse().xform(mm->get_position());
 				Vector2 delta = new_pos - drag_from;
 				rect.position = rect_prev.position + delta;
 
 				if (snap_mode == SNAP_PIXEL) {
 					rect.position = rect.position.snappedf(1);
-				} else if (snap_mode == SNAP_GRID) {
+				}
+				else if (snap_mode == SNAP_GRID) {
 					rect.position = snap_point(rect.position);
 				}
 
@@ -609,11 +696,13 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 				texture_preview->queue_redraw();
 				texture_overlay->queue_redraw();
 				return;
-			} else {
+			}
+			else {
 				Vector2 new_pos = mtx.affine_inverse().xform(mm->get_position());
 				if (snap_mode == SNAP_PIXEL) {
 					new_pos = new_pos.snappedf(1);
-				} else if (snap_mode == SNAP_GRID) {
+				}
+				else if (snap_mode == SNAP_GRID) {
 					new_pos = snap_point(new_pos);
 				}
 
@@ -658,14 +747,17 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 						new_pos = pivot + new_size;
 						if (snap_mode == SNAP_PIXEL) {
 							new_pos = new_pos.snappedf(1);
-						} else if (snap_mode == SNAP_GRID) {
+						}
+						else if (snap_mode == SNAP_GRID) {
 							new_pos = snap_point(new_pos);
 						}
-					} else {
+					}
+					else {
 						if (lock_x) {
 							rect.size.x = rect_prev.size.x;
 							new_pos.x = center_prev.x;
-						} else if (lock_y) {
+						}
+						else if (lock_y) {
 							rect.size.y = rect_prev.size.y;
 							new_pos.y = center_prev.y;
 						}
@@ -687,40 +779,50 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent> &p_input)
 			}
 			texture_preview->queue_redraw();
 			texture_overlay->queue_redraw();
-		} else {
+		}
+		else {
 			_commit_drag();
 		}
 	}
 
 	Ref<InputEventMagnifyGesture> magnify_gesture = p_input;
 	if (magnify_gesture.is_valid()) {
-		_zoom_on_position(draw_zoom * magnify_gesture->get_factor(), magnify_gesture->get_position());
+		_zoom_on_position(
+			draw_zoom * magnify_gesture->get_factor(), magnify_gesture->get_position());
 	}
 
 	Ref<InputEventPanGesture> pan_gesture = p_input;
 	if (pan_gesture.is_valid()) {
-		hscroll->set_value(hscroll->get_value() + hscroll->get_page() * pan_gesture->get_delta().x / 8);
-		vscroll->set_value(vscroll->get_value() + vscroll->get_page() * pan_gesture->get_delta().y / 8);
+		hscroll->set_value(
+			hscroll->get_value() + hscroll->get_page() * pan_gesture->get_delta().x / 8);
+		vscroll->set_value(
+			vscroll->get_value() + vscroll->get_page() * pan_gesture->get_delta().y / 8);
 	}
 }
 
-void TextureRegionEditor::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event) {
+void TextureRegionEditor::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event)
+{
 	p_scroll_vec /= draw_zoom;
 	hscroll->set_value(hscroll->get_value() - p_scroll_vec.x);
 	vscroll->set_value(vscroll->get_value() - p_scroll_vec.y);
 }
 
-void TextureRegionEditor::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event) {
+void TextureRegionEditor::_zoom_callback(
+	float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event)
+{
 	_zoom_on_position(draw_zoom * p_zoom_factor, p_origin);
 }
 
-void TextureRegionEditor::_input_from_window(const Ref<InputEvent> &p_event) {
-	if (!drag && p_event.is_valid() && p_event->is_action_pressed(SNAME("ui_cancel"), false, true)) {
+void TextureRegionEditor::_input_from_window(const Ref<InputEvent>& p_event)
+{
+	if (!drag && p_event.is_valid() &&
+		p_event->is_action_pressed(SNAME("ui_cancel"), false, true)) {
 		hide();
 	}
 }
 
-void TextureRegionEditor::_scroll_changed(float) {
+void TextureRegionEditor::_scroll_changed(float)
+{
 	if (updating_scroll) {
 		return;
 	}
@@ -732,7 +834,8 @@ void TextureRegionEditor::_scroll_changed(float) {
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_set_snap_mode(int p_mode) {
+void TextureRegionEditor::_set_snap_mode(int p_mode)
+{
 	snap_mode = (SnapMode)p_mode;
 
 	hb_grid->set_visible(snap_mode == SNAP_GRID);
@@ -743,37 +846,44 @@ void TextureRegionEditor::_set_snap_mode(int p_mode) {
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_set_snap_off_x(float p_val) {
+void TextureRegionEditor::_set_snap_off_x(float p_val)
+{
 	snap_offset.x = p_val;
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_set_snap_off_y(float p_val) {
+void TextureRegionEditor::_set_snap_off_y(float p_val)
+{
 	snap_offset.y = p_val;
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_set_snap_step_x(float p_val) {
+void TextureRegionEditor::_set_snap_step_x(float p_val)
+{
 	snap_step.x = p_val;
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_set_snap_step_y(float p_val) {
+void TextureRegionEditor::_set_snap_step_y(float p_val)
+{
 	snap_step.y = p_val;
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_set_snap_sep_x(float p_val) {
+void TextureRegionEditor::_set_snap_sep_x(float p_val)
+{
 	snap_separation.x = p_val;
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_set_snap_sep_y(float p_val) {
+void TextureRegionEditor::_set_snap_sep_y(float p_val)
+{
 	snap_separation.y = p_val;
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_zoom_on_position(float p_zoom, Point2 p_position) {
+void TextureRegionEditor::_zoom_on_position(float p_zoom, Point2 p_position)
+{
 	if (p_zoom < min_draw_zoom || p_zoom > max_draw_zoom) {
 		return;
 	}
@@ -788,37 +898,44 @@ void TextureRegionEditor::_zoom_on_position(float p_zoom, Point2 p_position) {
 	texture_overlay->queue_redraw();
 }
 
-void TextureRegionEditor::_zoom_in() {
+void TextureRegionEditor::_zoom_in()
+{
 	_zoom_on_position(draw_zoom * 1.5, texture_overlay->get_size() / 2.0);
 }
 
-void TextureRegionEditor::_zoom_reset() {
+void TextureRegionEditor::_zoom_reset()
+{
 	_zoom_on_position(1.0, texture_overlay->get_size() / 2.0);
 }
 
-void TextureRegionEditor::_zoom_out() {
+void TextureRegionEditor::_zoom_out()
+{
 	_zoom_on_position(draw_zoom / 1.5, texture_overlay->get_size() / 2.0);
 }
 
-void TextureRegionEditor::_apply_rect(const Rect2 &p_rect) {
+void TextureRegionEditor::_apply_rect(const Rect2& p_rect)
+{
 	if (node_sprite_2d) {
 		node_sprite_2d->set_region_rect(p_rect);
-	} else if (node_sprite_3d) {
+	}
+	else if (node_sprite_3d) {
 		node_sprite_3d->set_region_rect(p_rect);
-	} else if (node_ninepatch) {
+	}
+	else if (node_ninepatch) {
 		node_ninepatch->set_region_rect(p_rect);
-	} else if (res_stylebox.is_valid()) {
+	}
+	else if (res_stylebox.is_valid()) {
 		res_stylebox->set_region_rect(p_rect);
-	} else if (res_atlas_texture.is_valid()) {
+	}
+	else if (res_atlas_texture.is_valid()) {
 		res_atlas_texture->set_region(p_rect);
 	}
 }
 
-void TextureRegionEditor::_update_rect() {
-	rect = _get_edited_object_region();
-}
+void TextureRegionEditor::_update_rect() { rect = _get_edited_object_region(); }
 
-void TextureRegionEditor::_update_autoslice() {
+void TextureRegionEditor::_update_autoslice()
+{
 	autoslice_is_dirty = false;
 	autoslice_cache.clear();
 
@@ -831,7 +948,7 @@ void TextureRegionEditor::_update_autoslice() {
 		for (int x = 0; x < object_texture->get_width(); x++) {
 			if (object_texture->is_pixel_opaque(x, y)) {
 				bool found = false;
-				for (Rect2 &E : autoslice_cache) {
+				for (Rect2& E : autoslice_cache) {
 					Rect2 grown = E.grow(1.5);
 					if (grown.has_point(Point2(x, y))) {
 						E.expand_to(Point2(x, y));
@@ -841,7 +958,8 @@ void TextureRegionEditor::_update_autoslice() {
 						while (merged) {
 							merged = false;
 							bool queue_erase = false;
-							for (List<Rect2>::Element *F = autoslice_cache.front(); F; F = F->next()) {
+							for (List<Rect2>::Element* F = autoslice_cache.front(); F;
+								 F = F->next()) {
 								if (queue_erase) {
 									autoslice_cache.erase(F->prev());
 									queue_erase = false;
@@ -855,7 +973,8 @@ void TextureRegionEditor::_update_autoslice() {
 									if (F->prev()) {
 										F = F->prev();
 										autoslice_cache.erase(F->next());
-									} else {
+									}
+									else {
 										queue_erase = true;
 										// Can't delete the first rect in the list.
 									}
@@ -877,95 +996,123 @@ void TextureRegionEditor::_update_autoslice() {
 	cache_map[object_texture->get_rid()] = autoslice_cache;
 }
 
-void TextureRegionEditor::_notification(int p_what) {
+void TextureRegionEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-			if (EditorSettings::get_singleton()->check_changed_settings_in_group("editors/panning")) {
-				panner->setup((ViewPanner::ControlScheme)EDITOR_GET("editors/panning/sub_editors_panning_scheme").operator int(), ED_GET_SHORTCUT("canvas_item_editor/pan_view"), bool(EDITOR_GET("editors/panning/simple_panning")));
-				panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
-			}
-		} break;
-
-		case NOTIFICATION_ENTER_TREE: {
-			get_tree()->connect("node_removed", callable_mp(this, &TextureRegionEditor::_node_removed));
-
-			hb_grid->set_visible(snap_mode == SNAP_GRID);
-			if (snap_mode == SNAP_AUTOSLICE && is_visible() && autoslice_is_dirty) {
-				_update_autoslice();
-			}
-
-			panner->setup((ViewPanner::ControlScheme)EDITOR_GET("editors/panning/sub_editors_panning_scheme").operator int(), ED_GET_SHORTCUT("canvas_item_editor/pan_view"), bool(EDITOR_GET("editors/panning/simple_panning")));
+	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+		if (EditorSettings::get_singleton()->check_changed_settings_in_group("editors/panning")) {
+			panner->setup(
+				(ViewPanner::ControlScheme)EDITOR_GET("editors/panning/sub_editors_panning_scheme")
+					.
+					operator int(),
+				ED_GET_SHORTCUT("canvas_item_editor/pan_view"),
+				bool(EDITOR_GET("editors/panning/simple_panning")));
 			panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
-		} break;
+		}
+	} break;
 
-		case NOTIFICATION_EXIT_TREE: {
-			get_tree()->disconnect("node_removed", callable_mp(this, &TextureRegionEditor::_node_removed));
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		get_tree()->connect("node_removed", callable_mp(this, &TextureRegionEditor::_node_removed));
 
-		case NOTIFICATION_THEME_CHANGED: {
-			texture_preview->add_theme_style_override(SceneStringName(panel), get_theme_stylebox(SNAME("TextureRegionPreviewBG"), EditorStringName(EditorStyles)));
-			texture_overlay->add_theme_style_override(SceneStringName(panel), get_theme_stylebox(SNAME("TextureRegionPreviewFG"), EditorStringName(EditorStyles)));
+		hb_grid->set_visible(snap_mode == SNAP_GRID);
+		if (snap_mode == SNAP_AUTOSLICE && is_visible() && autoslice_is_dirty) {
+			_update_autoslice();
+		}
 
-			zoom_out->set_button_icon(get_editor_theme_icon(SNAME("ZoomLess")));
-			zoom_reset->set_button_icon(get_editor_theme_icon(SNAME("ZoomReset")));
-			zoom_in->set_button_icon(get_editor_theme_icon(SNAME("ZoomMore")));
-		} break;
+		panner->setup(
+			(ViewPanner::ControlScheme)EDITOR_GET("editors/panning/sub_editors_panning_scheme")
+				.
+				operator int(),
+			ED_GET_SHORTCUT("canvas_item_editor/pan_view"),
+			bool(EDITOR_GET("editors/panning/simple_panning")));
+		panner->setup_warped_panning(this, EDITOR_GET("editors/panning/warped_mouse_panning"));
+	} break;
 
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			if (snap_mode == SNAP_AUTOSLICE && is_visible() && autoslice_is_dirty) {
-				_update_autoslice();
-			}
+	case NOTIFICATION_EXIT_TREE: {
+		get_tree()->disconnect(
+			"node_removed", callable_mp(this, &TextureRegionEditor::_node_removed));
+	} break;
 
-			if (!is_visible()) {
-				EditorSettings::get_singleton()->set_project_metadata("texture_region_editor", "snap_offset", snap_offset);
-				EditorSettings::get_singleton()->set_project_metadata("texture_region_editor", "snap_step", snap_step);
-				EditorSettings::get_singleton()->set_project_metadata("texture_region_editor", "snap_separation", snap_separation);
-				EditorSettings::get_singleton()->set_project_metadata("texture_region_editor", "snap_mode", snap_mode);
-			}
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		texture_preview->add_theme_style_override(SceneStringName(panel),
+			get_theme_stylebox(SNAME("TextureRegionPreviewBG"), EditorStringName(EditorStyles)));
+		texture_overlay->add_theme_style_override(SceneStringName(panel),
+			get_theme_stylebox(SNAME("TextureRegionPreviewFG"), EditorStringName(EditorStyles)));
 
-		case NOTIFICATION_WM_WINDOW_FOCUS_OUT: {
-			if (drag) {
-				_commit_drag();
-			}
-		} break;
+		zoom_out->set_button_icon(get_editor_theme_icon(SNAME("ZoomLess")));
+		zoom_reset->set_button_icon(get_editor_theme_icon(SNAME("ZoomReset")));
+		zoom_in->set_button_icon(get_editor_theme_icon(SNAME("ZoomMore")));
+	} break;
 
-		case NOTIFICATION_WM_WINDOW_FOCUS_IN: {
-			// This happens when the user leaves the Editor and returns,
-			// they could have changed the textures, so the cache is cleared.
-			cache_map.clear();
-			_edit_region();
-		} break;
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		if (snap_mode == SNAP_AUTOSLICE && is_visible() && autoslice_is_dirty) {
+			_update_autoslice();
+		}
+
+		if (!is_visible()) {
+			EditorSettings::get_singleton()->set_project_metadata(
+				"texture_region_editor", "snap_offset", snap_offset);
+			EditorSettings::get_singleton()->set_project_metadata(
+				"texture_region_editor", "snap_step", snap_step);
+			EditorSettings::get_singleton()->set_project_metadata(
+				"texture_region_editor", "snap_separation", snap_separation);
+			EditorSettings::get_singleton()->set_project_metadata(
+				"texture_region_editor", "snap_mode", snap_mode);
+		}
+	} break;
+
+	case NOTIFICATION_WM_WINDOW_FOCUS_OUT: {
+		if (drag) {
+			_commit_drag();
+		}
+	} break;
+
+	case NOTIFICATION_WM_WINDOW_FOCUS_IN: {
+		// This happens when the user leaves the Editor and returns,
+		// they could have changed the textures, so the cache is cleared.
+		cache_map.clear();
+		_edit_region();
+	} break;
 	}
 }
 
-void TextureRegionEditor::_node_removed(Node *p_node) {
+void TextureRegionEditor::_node_removed(Node* p_node)
+{
 	if (p_node == node_sprite_2d || p_node == node_sprite_3d || p_node == node_ninepatch) {
 		_clear_edited_object();
 		hide();
 	}
 }
 
-void TextureRegionEditor::_clear_edited_object() {
+void TextureRegionEditor::_clear_edited_object()
+{
 	if (node_sprite_2d) {
-		node_sprite_2d->disconnect(SceneStringName(texture_changed), callable_mp(this, &TextureRegionEditor::_texture_changed));
-		node_sprite_2d->disconnect(SceneStringName(item_rect_changed), callable_mp(this, &TextureRegionEditor::_edit_region));
+		node_sprite_2d->disconnect(SceneStringName(texture_changed),
+			callable_mp(this, &TextureRegionEditor::_texture_changed));
+		node_sprite_2d->disconnect(SceneStringName(item_rect_changed),
+			callable_mp(this, &TextureRegionEditor::_edit_region));
 	}
 	if (node_sprite_3d) {
-		node_sprite_3d->disconnect(SceneStringName(texture_changed), callable_mp(this, &TextureRegionEditor::_texture_changed));
-		node_sprite_3d->disconnect(SceneStringName(item_rect_changed), callable_mp(this, &TextureRegionEditor::_edit_region));
+		node_sprite_3d->disconnect(SceneStringName(texture_changed),
+			callable_mp(this, &TextureRegionEditor::_texture_changed));
+		node_sprite_3d->disconnect(SceneStringName(item_rect_changed),
+			callable_mp(this, &TextureRegionEditor::_edit_region));
 	}
 	if (node_ninepatch) {
-		node_ninepatch->disconnect(SceneStringName(texture_changed), callable_mp(this, &TextureRegionEditor::_texture_changed));
-		node_ninepatch->disconnect(SceneStringName(item_rect_changed), callable_mp(this, &TextureRegionEditor::_edit_region));
+		node_ninepatch->disconnect(SceneStringName(texture_changed),
+			callable_mp(this, &TextureRegionEditor::_texture_changed));
+		node_ninepatch->disconnect(SceneStringName(item_rect_changed),
+			callable_mp(this, &TextureRegionEditor::_edit_region));
 	}
 	if (res_stylebox.is_valid()) {
 		res_stylebox->disconnect_changed(callable_mp(this, &TextureRegionEditor::_texture_changed));
 		res_stylebox->disconnect_changed(callable_mp(this, &TextureRegionEditor::_edit_region));
 	}
 	if (res_atlas_texture.is_valid()) {
-		res_atlas_texture->disconnect_changed(callable_mp(this, &TextureRegionEditor::_texture_changed));
-		res_atlas_texture->disconnect_changed(callable_mp(this, &TextureRegionEditor::_edit_region));
+		res_atlas_texture->disconnect_changed(
+			callable_mp(this, &TextureRegionEditor::_texture_changed));
+		res_atlas_texture->disconnect_changed(
+			callable_mp(this, &TextureRegionEditor::_edit_region));
 	}
 
 	node_sprite_2d = nullptr;
@@ -975,7 +1122,8 @@ void TextureRegionEditor::_clear_edited_object() {
 	res_atlas_texture = Ref<AtlasTexture>();
 }
 
-void TextureRegionEditor::edit(Object *p_obj) {
+void TextureRegionEditor::edit(Object* p_obj)
+{
 	_clear_edited_object();
 
 	if (p_obj) {
@@ -994,11 +1142,16 @@ void TextureRegionEditor::edit(Object *p_obj) {
 		}
 
 		if (is_resource) {
-			Object::cast_to<Resource>(p_obj)->connect_changed(callable_mp(this, &TextureRegionEditor::_texture_changed));
-			Object::cast_to<Resource>(p_obj)->connect_changed(callable_mp(this, &TextureRegionEditor::_edit_region));
-		} else {
-			p_obj->connect(SceneStringName(texture_changed), callable_mp(this, &TextureRegionEditor::_texture_changed));
-			p_obj->connect(SceneStringName(item_rect_changed), callable_mp(this, &TextureRegionEditor::_edit_region));
+			Object::cast_to<Resource>(p_obj)->connect_changed(
+				callable_mp(this, &TextureRegionEditor::_texture_changed));
+			Object::cast_to<Resource>(p_obj)->connect_changed(
+				callable_mp(this, &TextureRegionEditor::_edit_region));
+		}
+		else {
+			p_obj->connect(SceneStringName(texture_changed),
+				callable_mp(this, &TextureRegionEditor::_texture_changed));
+			p_obj->connect(SceneStringName(item_rect_changed),
+				callable_mp(this, &TextureRegionEditor::_edit_region));
 		}
 		_edit_region();
 	}
@@ -1009,7 +1162,8 @@ void TextureRegionEditor::edit(Object *p_obj) {
 	request_center = true;
 }
 
-Ref<Texture2D> TextureRegionEditor::_get_edited_object_texture() const {
+Ref<Texture2D> TextureRegionEditor::_get_edited_object_texture() const
+{
 	if (node_sprite_2d) {
 		return node_sprite_2d->get_texture();
 	}
@@ -1029,18 +1183,23 @@ Ref<Texture2D> TextureRegionEditor::_get_edited_object_texture() const {
 	return Ref<Texture2D>();
 }
 
-Rect2 TextureRegionEditor::_get_edited_object_region() const {
+Rect2 TextureRegionEditor::_get_edited_object_region() const
+{
 	Rect2 region;
 
 	if (node_ninepatch) {
 		region = node_ninepatch->get_region_rect();
-	} else if (res_stylebox.is_valid()) {
+	}
+	else if (res_stylebox.is_valid()) {
 		region = res_stylebox->get_region_rect();
-	} else if (res_atlas_texture.is_valid()) {
+	}
+	else if (res_atlas_texture.is_valid()) {
 		region = res_atlas_texture->get_region();
-	} else if (node_sprite_2d) {
+	}
+	else if (node_sprite_2d) {
 		region = node_sprite_2d->get_region_rect();
-	} else if (node_sprite_3d) {
+	}
+	else if (node_sprite_3d) {
 		region = node_sprite_3d->get_region_rect();
 	}
 
@@ -1052,14 +1211,16 @@ Rect2 TextureRegionEditor::_get_edited_object_region() const {
 	return region;
 }
 
-void TextureRegionEditor::_texture_changed() {
+void TextureRegionEditor::_texture_changed()
+{
 	if (!is_visible()) {
 		return;
 	}
 	_edit_region();
 }
 
-void TextureRegionEditor::_edit_region() {
+void TextureRegionEditor::_edit_region()
+{
 	const Ref<Texture2D> object_texture = _get_edited_object_texture();
 	if (object_texture.is_null()) {
 		_set_grid_parameters_clamping(false);
@@ -1074,61 +1235,66 @@ void TextureRegionEditor::_edit_region() {
 	CanvasItem::TextureFilter filter = CanvasItem::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
 	if (node_ninepatch) {
 		filter = node_ninepatch->get_texture_filter_in_tree();
-	} else if (node_sprite_2d) {
+	}
+	else if (node_sprite_2d) {
 		filter = node_sprite_2d->get_texture_filter_in_tree();
-	} else if (node_sprite_3d) {
+	}
+	else if (node_sprite_3d) {
 		StandardMaterial3D::TextureFilter filter_3d = node_sprite_3d->get_texture_filter();
 
 		switch (filter_3d) {
-			case StandardMaterial3D::TEXTURE_FILTER_NEAREST:
-				filter = CanvasItem::TEXTURE_FILTER_NEAREST;
-				break;
-			case StandardMaterial3D::TEXTURE_FILTER_LINEAR:
-				filter = CanvasItem::TEXTURE_FILTER_LINEAR;
-				break;
-			case StandardMaterial3D::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS:
-				filter = CanvasItem::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
-				break;
-			case StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS:
-				filter = CanvasItem::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
-				break;
-			case StandardMaterial3D::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC:
-				filter = CanvasItem::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC;
-				break;
-			case StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC:
-				filter = CanvasItem::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC;
-				break;
-			default:
-				// fallback to project default
-				filter = CanvasItem::TEXTURE_FILTER_PARENT_NODE;
-				break;
+		case StandardMaterial3D::TEXTURE_FILTER_NEAREST:
+			filter = CanvasItem::TEXTURE_FILTER_NEAREST;
+			break;
+		case StandardMaterial3D::TEXTURE_FILTER_LINEAR:
+			filter = CanvasItem::TEXTURE_FILTER_LINEAR;
+			break;
+		case StandardMaterial3D::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS:
+			filter = CanvasItem::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
+			break;
+		case StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS:
+			filter = CanvasItem::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
+			break;
+		case StandardMaterial3D::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC:
+			filter = CanvasItem::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC;
+			break;
+		case StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC:
+			filter = CanvasItem::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC;
+			break;
+		default:
+			// fallback to project default
+			filter = CanvasItem::TEXTURE_FILTER_PARENT_NODE;
+			break;
 		}
 	}
 
 	// occurs when get_texture_filter_in_tree reaches the scene root
 	if (filter == CanvasItem::TEXTURE_FILTER_PARENT_NODE) {
-		SubViewport *root = EditorNode::get_singleton()->get_scene_root();
+		SubViewport* root = EditorNode::get_singleton()->get_scene_root();
 
 		if (root != nullptr) {
-			Viewport::DefaultCanvasItemTextureFilter filter_default = root->get_default_canvas_item_texture_filter();
+			Viewport::DefaultCanvasItemTextureFilter filter_default =
+				root->get_default_canvas_item_texture_filter();
 
-			// depending on default filter, set filter to match, otherwise fall back on nearest w/ mipmaps
+			// depending on default filter, set filter to match, otherwise fall back on nearest w/
+			// mipmaps
 			switch (filter_default) {
-				case DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST:
-					filter = CanvasItem::TEXTURE_FILTER_NEAREST;
-					break;
-				case DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR:
-					filter = CanvasItem::TEXTURE_FILTER_LINEAR;
-					break;
-				case DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS:
-					filter = CanvasItem::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
-					break;
-				case DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS:
-				default:
-					filter = CanvasItem::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
-					break;
+			case DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST:
+				filter = CanvasItem::TEXTURE_FILTER_NEAREST;
+				break;
+			case DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR:
+				filter = CanvasItem::TEXTURE_FILTER_LINEAR;
+				break;
+			case DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS:
+				filter = CanvasItem::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
+				break;
+			case DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS:
+			default:
+				filter = CanvasItem::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
+				break;
 			}
-		} else {
+		}
+		else {
 			filter = CanvasItem::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
 		}
 	}
@@ -1139,10 +1305,12 @@ void TextureRegionEditor::_edit_region() {
 	if (cache_map.has(object_texture->get_rid())) {
 		autoslice_cache = cache_map[object_texture->get_rid()];
 		autoslice_is_dirty = false;
-	} else {
+	}
+	else {
 		if (is_visible() && snap_mode == SNAP_AUTOSLICE) {
 			_update_autoslice();
-		} else {
+		}
+		else {
 			autoslice_is_dirty = true;
 		}
 	}
@@ -1172,16 +1340,20 @@ void TextureRegionEditor::_edit_region() {
 	texture_overlay->queue_redraw();
 }
 
-Vector2 TextureRegionEditor::snap_point(Vector2 p_target) const {
+Vector2 TextureRegionEditor::snap_point(Vector2 p_target) const
+{
 	if (snap_mode == SNAP_GRID) {
-		p_target.x = Math::snap_scalar_separation(snap_offset.x, snap_step.x, p_target.x, snap_separation.x);
-		p_target.y = Math::snap_scalar_separation(snap_offset.y, snap_step.y, p_target.y, snap_separation.y);
+		p_target.x =
+			Math::snap_scalar_separation(snap_offset.x, snap_step.x, p_target.x, snap_separation.x);
+		p_target.y =
+			Math::snap_scalar_separation(snap_offset.y, snap_step.y, p_target.y, snap_separation.y);
 	}
 
 	return p_target;
 }
 
-void TextureRegionEditor::shortcut_input(const Ref<InputEvent> &p_event) {
+void TextureRegionEditor::shortcut_input(const Ref<InputEvent>& p_event)
+{
 	const Ref<InputEventKey> k = p_event;
 	if (k.is_valid() && k->is_pressed()) {
 		bool handled = false;
@@ -1202,11 +1374,13 @@ void TextureRegionEditor::shortcut_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-void TextureRegionEditor::_bind_methods() {
+void TextureRegionEditor::_bind_methods()
+{
 	ClassDB::bind_method(D_METHOD("_update_rect"), &TextureRegionEditor::_update_rect);
 }
 
-TextureRegionEditor::TextureRegionEditor() {
+TextureRegionEditor::TextureRegionEditor()
+{
 	set_title(TTR("Region Editor"));
 	set_flag(FLAG_MAXIMIZE_DISABLED, false);
 	set_process_shortcut_input(true);
@@ -1215,18 +1389,23 @@ TextureRegionEditor::TextureRegionEditor() {
 	set_close_on_escape(false);
 
 	// A power-of-two value works better as a default grid size.
-	snap_offset = EditorSettings::get_singleton()->get_project_metadata("texture_region_editor", "snap_offset", Vector2());
-	snap_step = EditorSettings::get_singleton()->get_project_metadata("texture_region_editor", "snap_step", Vector2(8, 8));
-	snap_separation = EditorSettings::get_singleton()->get_project_metadata("texture_region_editor", "snap_separation", Vector2());
-	snap_mode = (SnapMode)(int)EditorSettings::get_singleton()->get_project_metadata("texture_region_editor", "snap_mode", SNAP_NONE);
+	snap_offset = EditorSettings::get_singleton()->get_project_metadata(
+		"texture_region_editor", "snap_offset", Vector2());
+	snap_step = EditorSettings::get_singleton()->get_project_metadata(
+		"texture_region_editor", "snap_step", Vector2(8, 8));
+	snap_separation = EditorSettings::get_singleton()->get_project_metadata(
+		"texture_region_editor", "snap_separation", Vector2());
+	snap_mode = (SnapMode)(int)EditorSettings::get_singleton()->get_project_metadata(
+		"texture_region_editor", "snap_mode", SNAP_NONE);
 
 	panner.instantiate();
-	panner->set_callbacks(callable_mp(this, &TextureRegionEditor::_pan_callback), callable_mp(this, &TextureRegionEditor::_zoom_callback));
+	panner->set_callbacks(callable_mp(this, &TextureRegionEditor::_pan_callback),
+		callable_mp(this, &TextureRegionEditor::_zoom_callback));
 
-	VBoxContainer *vb = memnew(VBoxContainer);
+	VBoxContainer* vb = memnew(VBoxContainer);
 	add_child(vb);
 
-	HBoxContainer *hb_tools = memnew(HBoxContainer);
+	HBoxContainer* hb_tools = memnew(HBoxContainer);
 	vb->add_child(hb_tools);
 	hb_tools->add_child(memnew(Label(TTR("Snap Mode:"))));
 
@@ -1238,7 +1417,8 @@ TextureRegionEditor::TextureRegionEditor() {
 	snap_mode_button->add_item(TTR("Grid Snap"), 2);
 	snap_mode_button->add_item(TTR("Auto Slice"), 3);
 	snap_mode_button->select(snap_mode);
-	snap_mode_button->connect(SceneStringName(item_selected), callable_mp(this, &TextureRegionEditor::_set_snap_mode));
+	snap_mode_button->connect(
+		SceneStringName(item_selected), callable_mp(this, &TextureRegionEditor::_set_snap_mode));
 
 	hb_grid = memnew(HBoxContainer);
 	hb_tools->add_child(hb_grid);
@@ -1249,14 +1429,16 @@ TextureRegionEditor::TextureRegionEditor() {
 	sb_off_x = memnew(SpinBox);
 	sb_off_x->set_step(1);
 	sb_off_x->set_suffix("px");
-	sb_off_x->connect(SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_off_x));
+	sb_off_x->connect(
+		SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_off_x));
 	sb_off_x->set_accessibility_name(TTRC("Offset X"));
 	hb_grid->add_child(sb_off_x);
 
 	sb_off_y = memnew(SpinBox);
 	sb_off_y->set_step(1);
 	sb_off_y->set_suffix("px");
-	sb_off_y->connect(SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_off_y));
+	sb_off_y->connect(
+		SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_off_y));
 	sb_off_y->set_accessibility_name(TTRC("Offset Y"));
 	hb_grid->add_child(sb_off_y);
 
@@ -1267,7 +1449,8 @@ TextureRegionEditor::TextureRegionEditor() {
 	sb_step_x->set_min(0);
 	sb_step_x->set_step(1);
 	sb_step_x->set_suffix("px");
-	sb_step_x->connect(SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_step_x));
+	sb_step_x->connect(
+		SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_step_x));
 	sb_step_x->set_accessibility_name(TTRC("Step X"));
 	hb_grid->add_child(sb_step_x);
 
@@ -1275,7 +1458,8 @@ TextureRegionEditor::TextureRegionEditor() {
 	sb_step_y->set_min(0);
 	sb_step_y->set_step(1);
 	sb_step_y->set_suffix("px");
-	sb_step_y->connect(SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_step_y));
+	sb_step_y->connect(
+		SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_step_y));
 	sb_step_y->set_accessibility_name(TTRC("Step Y"));
 	hb_grid->add_child(sb_step_y);
 
@@ -1286,7 +1470,8 @@ TextureRegionEditor::TextureRegionEditor() {
 	sb_sep_x->set_min(0);
 	sb_sep_x->set_step(1);
 	sb_sep_x->set_suffix("px");
-	sb_sep_x->connect(SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_sep_x));
+	sb_sep_x->connect(
+		SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_sep_x));
 	sb_sep_x->set_accessibility_name(TTRC("Separation X"));
 	hb_grid->add_child(sb_sep_x);
 
@@ -1294,7 +1479,8 @@ TextureRegionEditor::TextureRegionEditor() {
 	sb_sep_y->set_min(0);
 	sb_sep_y->set_step(1);
 	sb_sep_y->set_suffix("px");
-	sb_sep_y->connect(SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_sep_y));
+	sb_sep_y->connect(
+		SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_set_snap_sep_y));
 	sb_sep_y->set_accessibility_name(TTRC("Separation Y"));
 	hb_grid->add_child(sb_sep_y);
 
@@ -1309,7 +1495,8 @@ TextureRegionEditor::TextureRegionEditor() {
 	sb_sep_x->set_value(snap_separation.x);
 	sb_sep_y->set_value(snap_separation.y);
 
-	// Default the zoom to match the editor scale, but don't dezoom on editor scales below 100% to prevent pixel art from looking bad.
+	// Default the zoom to match the editor scale, but don't dezoom on editor scales below 100% to
+	// prevent pixel art from looking bad.
 	draw_zoom = MAX(1.0f, EDSCALE);
 	max_draw_zoom = 128.0f * MAX(1.0f, EDSCALE);
 	min_draw_zoom = 0.01f * MAX(1.0f, EDSCALE);
@@ -1318,18 +1505,22 @@ TextureRegionEditor::TextureRegionEditor() {
 	vb->add_child(texture_preview);
 	texture_preview->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	texture_preview->set_clip_contents(true);
-	texture_preview->connect(SceneStringName(draw), callable_mp(this, &TextureRegionEditor::_texture_preview_draw));
+	texture_preview->connect(
+		SceneStringName(draw), callable_mp(this, &TextureRegionEditor::_texture_preview_draw));
 
-	TextureRegionEditorOverlay *overlay = memnew(TextureRegionEditorOverlay);
+	TextureRegionEditorOverlay* overlay = memnew(TextureRegionEditorOverlay);
 	overlay->set_editor(this);
 	texture_overlay = overlay;
 	texture_preview->add_child(texture_overlay);
 	texture_overlay->set_focus_mode(Control::FOCUS_CLICK);
-	texture_overlay->connect(SceneStringName(draw), callable_mp(this, &TextureRegionEditor::_texture_overlay_draw));
-	texture_overlay->connect(SceneStringName(gui_input), callable_mp(this, &TextureRegionEditor::_texture_overlay_input));
-	texture_overlay->connect(SceneStringName(focus_exited), callable_mp(panner.ptr(), &ViewPanner::release_pan_key));
+	texture_overlay->connect(
+		SceneStringName(draw), callable_mp(this, &TextureRegionEditor::_texture_overlay_draw));
+	texture_overlay->connect(SceneStringName(gui_input),
+		callable_mp(this, &TextureRegionEditor::_texture_overlay_input));
+	texture_overlay->connect(
+		SceneStringName(focus_exited), callable_mp(panner.ptr(), &ViewPanner::release_pan_key));
 
-	HBoxContainer *zoom_hb = memnew(HBoxContainer);
+	HBoxContainer* zoom_hb = memnew(HBoxContainer);
 	texture_overlay->add_child(zoom_hb);
 	zoom_hb->set_begin(Point2(5, 5));
 
@@ -1342,7 +1533,8 @@ TextureRegionEditor::TextureRegionEditor() {
 	zoom_reset = memnew(Button);
 	zoom_reset->set_flat(true);
 	zoom_reset->set_tooltip_text(TTR("Zoom Reset"));
-	zoom_reset->connect(SceneStringName(pressed), callable_mp(this, &TextureRegionEditor::_zoom_reset));
+	zoom_reset->connect(
+		SceneStringName(pressed), callable_mp(this, &TextureRegionEditor::_zoom_reset));
 	zoom_hb->add_child(zoom_reset);
 
 	zoom_in = memnew(Button);
@@ -1354,80 +1546,101 @@ TextureRegionEditor::TextureRegionEditor() {
 	vscroll = memnew(VScrollBar);
 	vscroll->set_anchors_and_offsets_preset(Control::PRESET_RIGHT_WIDE);
 	vscroll->set_step(0.001);
-	vscroll->connect(SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_scroll_changed));
+	vscroll->connect(
+		SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_scroll_changed));
 	texture_overlay->add_child(vscroll);
 
 	hscroll = memnew(HScrollBar);
 	hscroll->set_anchors_and_offsets_preset(Control::PRESET_BOTTOM_WIDE);
 	hscroll->set_step(0.001);
-	hscroll->connect(SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_scroll_changed));
+	hscroll->connect(
+		SceneStringName(value_changed), callable_mp(this, &TextureRegionEditor::_scroll_changed));
 	texture_overlay->add_child(hscroll);
 }
 
 ////////////////////////
 
-bool EditorInspectorPluginTextureRegion::can_handle(Object *p_object) {
-	return Object::cast_to<Sprite2D>(p_object) || Object::cast_to<Sprite3D>(p_object) || Object::cast_to<NinePatchRect>(p_object) || Object::cast_to<StyleBoxTexture>(p_object) || Object::cast_to<AtlasTexture>(p_object);
+bool EditorInspectorPluginTextureRegion::can_handle(Object* p_object)
+{
+	return Object::cast_to<Sprite2D>(p_object) || Object::cast_to<Sprite3D>(p_object) ||
+		   Object::cast_to<NinePatchRect>(p_object) || Object::cast_to<StyleBoxTexture>(p_object) ||
+		   Object::cast_to<AtlasTexture>(p_object);
 }
 
-void EditorInspectorPluginTextureRegion::_region_edit(Object *p_object) {
+void EditorInspectorPluginTextureRegion::_region_edit(Object* p_object)
+{
 	texture_region_editor->edit(p_object);
 }
 
-bool EditorInspectorPluginTextureRegion::parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide) {
+bool EditorInspectorPluginTextureRegion::parse_property(Object* p_object,
+	const Variant::Type p_type, const String& p_path, const PropertyHint p_hint,
+	const String& p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+{
 	if ((p_type == Variant::RECT2 || p_type == Variant::RECT2I)) {
-		if (((Object::cast_to<Sprite2D>(p_object) || Object::cast_to<Sprite3D>(p_object) || Object::cast_to<NinePatchRect>(p_object) || Object::cast_to<StyleBoxTexture>(p_object)) && p_path == "region_rect") || (Object::cast_to<AtlasTexture>(p_object) && p_path == "region")) {
-			EditorInspectorActionButton *button = memnew(EditorInspectorActionButton(TTRC("Edit Region"), SNAME("RegionEdit")));
-			button->connect(SceneStringName(pressed), callable_mp(this, &EditorInspectorPluginTextureRegion::_region_edit).bind(p_object));
+		if (((Object::cast_to<Sprite2D>(p_object) || Object::cast_to<Sprite3D>(p_object) ||
+				 Object::cast_to<NinePatchRect>(p_object) ||
+				 Object::cast_to<StyleBoxTexture>(p_object)) &&
+				p_path == "region_rect") ||
+			(Object::cast_to<AtlasTexture>(p_object) && p_path == "region")) {
+			EditorInspectorActionButton* button =
+				memnew(EditorInspectorActionButton(TTRC("Edit Region"), SNAME("RegionEdit")));
+			button->connect(SceneStringName(pressed),
+				callable_mp(this, &EditorInspectorPluginTextureRegion::_region_edit)
+					.bind(p_object));
 			add_property_editor(p_path, button, true);
 		}
 	}
-	return false; //not exclusive
+	return false; // not exclusive
 }
 
-EditorInspectorPluginTextureRegion::EditorInspectorPluginTextureRegion() {
+EditorInspectorPluginTextureRegion::EditorInspectorPluginTextureRegion()
+{
 	texture_region_editor = memnew(TextureRegionEditor);
 	EditorNode::get_singleton()->get_gui_base()->add_child(texture_region_editor);
 }
 
-TextureRegionEditorPlugin::TextureRegionEditorPlugin() {
+TextureRegionEditorPlugin::TextureRegionEditorPlugin()
+{
 	Ref<EditorInspectorPluginTextureRegion> inspector_plugin;
 	inspector_plugin.instantiate();
 	add_inspector_plugin(inspector_plugin);
 }
 
-Control::CursorShape TextureRegionEditorOverlay::get_cursor_shape(const Point2 &p_pos) const {
-	int drag_index = editor->drag_index != -1 ? editor->drag_index : editor->_get_overlapping_selection_handle(p_pos);
+Control::CursorShape TextureRegionEditorOverlay::get_cursor_shape(const Point2& p_pos) const
+{
+	int drag_index = editor->drag_index != -1 ? editor->drag_index
+											  : editor->_get_overlapping_selection_handle(p_pos);
 	switch (drag_index) {
+	case 0:
+	case 4:
+		return CURSOR_FDIAGSIZE;
+	case 2:
+	case 6:
+		return CURSOR_BDIAGSIZE;
+	case 1:
+	case 5:
+		return CURSOR_VSIZE;
+	case 3:
+	case 7:
+		return CURSOR_HSIZE;
+	default:
+		break;
+	}
+
+	int margin_index = editor->edited_margin != -1 ? editor->edited_margin
+												   : editor->_get_overlapping_margin_line(p_pos);
+	if (editor->node_ninepatch) {
+		switch (margin_index) {
 		case 0:
-		case 4:
-			return CURSOR_FDIAGSIZE;
-		case 2:
-		case 6:
-			return CURSOR_BDIAGSIZE;
-		case 1:
-		case 5:
 			return CURSOR_VSIZE;
+		case 1:
+			return CURSOR_VSIZE;
+		case 2:
+			return CURSOR_HSIZE;
 		case 3:
-		case 7:
 			return CURSOR_HSIZE;
 		default:
 			break;
-	}
-
-	int margin_index = editor->edited_margin != -1 ? editor->edited_margin : editor->_get_overlapping_margin_line(p_pos);
-	if (editor->node_ninepatch) {
-		switch (margin_index) {
-			case 0:
-				return CURSOR_VSIZE;
-			case 1:
-				return CURSOR_VSIZE;
-			case 2:
-				return CURSOR_HSIZE;
-			case 3:
-				return CURSOR_HSIZE;
-			default:
-				break;
 		};
 	}
 
@@ -1440,3 +1653,5 @@ Control::CursorShape TextureRegionEditorOverlay::get_cursor_shape(const Point2 &
 
 	return CURSOR_ARROW;
 }
+
+

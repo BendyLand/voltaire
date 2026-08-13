@@ -28,13 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "particles_3d_editor_plugin.h"
-
 #include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "editor/editor_node.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/scene/scene_tree_editor.h"
+#include "particles_3d_editor_plugin.h"
 #include "scene/3d/cpu_particles_3d.h"
 #include "scene/3d/gpu_particles_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
@@ -44,21 +43,23 @@
 #include "scene/resources/image_texture.h"
 #include "scene/resources/particle_process_material.h"
 
-void Particles3DEditorPlugin::_generate_aabb() {
+void Particles3DEditorPlugin::_generate_aabb()
+{
 	double time = generate_seconds->get_value();
 
 	double running = 0.0;
 
-	EditorProgress ep("gen_aabb", TTR("Generating Visibility AABB (Waiting for Particle Simulation)"), int(time));
+	EditorProgress ep(
+		"gen_aabb", TTR("Generating Visibility AABB (Waiting for Particle Simulation)"), int(time));
 
-	bool was_emitting = edited_node->get("emitting");
+	bool was_emitting = edited_node->obj->get("emitting");
 	if (!was_emitting) {
-		edited_node->set("emitting", true);
+		edited_node->obj->set("emitting", true);
 		OS::get_singleton()->delay_usec(1000);
 	}
 
 	AABB rect;
-	Callable capture_aabb = Callable(edited_node, "capture_aabb");
+	Callable capture_aabb = Callable(edited_node->obj.get(), "capture_aabb");
 
 	while (running < time) {
 		uint64_t ticks = OS::get_singleton()->get_ticks_usec();
@@ -68,7 +69,8 @@ void Particles3DEditorPlugin::_generate_aabb() {
 		AABB capture = capture_aabb.call();
 		if (rect == AABB()) {
 			rect = capture;
-		} else {
+		}
+		else {
 			rect.merge_with(capture);
 		}
 
@@ -76,43 +78,48 @@ void Particles3DEditorPlugin::_generate_aabb() {
 	}
 
 	if (!was_emitting) {
-		edited_node->set("emitting", false);
+		edited_node->obj->set("emitting", false);
 	}
 
-	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 	ur->create_action(TTR("Generate Visibility AABB"));
-	ur->add_do_property(edited_node, "visibility_aabb", rect);
-	ur->add_undo_property(edited_node, "visibility_aabb", edited_node->get("visibility_aabb"));
+	ur->add_do_property(edited_node->obj.get(), "visibility_aabb", rect);
+	ur->add_undo_property(
+		edited_node->obj.get(), "visibility_aabb", edited_node->obj->get("visibility_aabb"));
 	ur->commit_action();
 }
 
-void Particles3DEditorPlugin::_node_selected(const NodePath &p_path) {
-	Node *sel = get_node(p_path);
+void Particles3DEditorPlugin::_node_selected(const NodePath& p_path)
+{
+	Node* sel = get_node(p_path);
 	if (!sel) {
 		return;
 	}
 
-	if (!sel->is_class("Node3D")) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("\"%s\" doesn't inherit from Node3D."), sel->get_name()));
+	if (!sel->obj->is_class("Node3D")) {
+		EditorNode::get_singleton()->show_warning(
+			vformat(TTR("\"%s\" doesn't inherit from Node3D."), sel->get_name()));
 		return;
 	}
 
-	MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(sel);
+	MeshInstance3D* mi = Object::cast_to<MeshInstance3D>(sel);
 	if (!mi || mi->get_mesh().is_null()) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("\"%s\" doesn't contain geometry."), sel->get_name()));
+		EditorNode::get_singleton()->show_warning(
+			vformat(TTR("\"%s\" doesn't contain geometry."), sel->get_name()));
 		return;
 	}
 
 	geometry = mi->get_mesh()->get_faces();
 	if (geometry.is_empty()) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("\"%s\" doesn't contain face geometry."), sel->get_name()));
+		EditorNode::get_singleton()->show_warning(
+			vformat(TTR("\"%s\" doesn't contain face geometry."), sel->get_name()));
 		return;
 	}
 
-	Transform3D geom_xform = edited_node->get("global_transform");
+	Transform3D geom_xform = edited_node->obj->get("global_transform");
 	geom_xform = geom_xform.affine_inverse() * mi->get_global_transform();
 	int gc = geometry.size();
-	Face3 *w = geometry.ptrw();
+	Face3* w = geometry.ptrw();
 
 	for (int i = 0; i < gc; i++) {
 		for (int j = 0; j < 3; j++) {
@@ -122,34 +129,39 @@ void Particles3DEditorPlugin::_node_selected(const NodePath &p_path) {
 	emission_dialog->popup_centered(Size2(300, 130));
 }
 
-void Particles3DEditorPlugin::_menu_callback(int p_idx) {
+void Particles3DEditorPlugin::_menu_callback(int p_idx)
+{
 	switch (p_idx) {
-		case MENU_OPTION_GENERATE_AABB: {
-			if (need_show_lifetime_dialog(generate_seconds)) {
-				generate_aabb->popup_centered();
-			} else {
-				_generate_aabb();
-			}
-		} break;
-
-		case MENU_OPTION_CREATE_EMISSION_VOLUME_FROM_NODE: {
-			if (_can_generate_points()) {
-				emission_tree_dialog->popup_scenetree_dialog();
-			}
-		} break;
-
-		default: {
-			ParticlesEditorPlugin::_menu_callback(p_idx);
+	case MENU_OPTION_GENERATE_AABB: {
+		if (need_show_lifetime_dialog(generate_seconds)) {
+			generate_aabb->popup_centered();
 		}
+		else {
+			_generate_aabb();
+		}
+	} break;
+
+	case MENU_OPTION_CREATE_EMISSION_VOLUME_FROM_NODE: {
+		if (_can_generate_points()) {
+			emission_tree_dialog->popup_scenetree_dialog();
+		}
+	} break;
+
+	default: {
+		ParticlesEditorPlugin::_menu_callback(p_idx);
+	}
 	}
 }
 
-void Particles3DEditorPlugin::_add_menu_options(PopupMenu *p_menu) {
+void Particles3DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
+{
 	p_menu->add_item(TTR("Generate AABB"), MENU_OPTION_GENERATE_AABB);
-	p_menu->add_item(TTR("Create Emission Points From Node"), MENU_OPTION_CREATE_EMISSION_VOLUME_FROM_NODE);
+	p_menu->add_item(
+		TTR("Create Emission Points From Node"), MENU_OPTION_CREATE_EMISSION_VOLUME_FROM_NODE);
 }
 
-bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector3> &r_normals) {
+bool Particles3DEditorPlugin::_generate(Vector<Vector3>& r_points, Vector<Vector3>& r_normals)
+{
 	bool use_normals = emission_fill->get_selected() == 1;
 
 	if (emission_fill->get_selected() < 2) {
@@ -166,7 +178,8 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 		}
 
 		if (!triangle_area_map.size() || area_accum == 0) {
-			EditorNode::get_singleton()->show_warning(TTR("The geometry's faces don't contain any area."));
+			EditorNode::get_singleton()->show_warning(
+				TTR("The geometry's faces don't contain any area."));
 			return false;
 		}
 
@@ -182,7 +195,7 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 
 			// ok FINALLY get face
 			Face3 face = geometry[index];
-			//now compute some position inside the face...
+			// now compute some position inside the face...
 
 			Vector3 pos = face.get_random_point_inside();
 
@@ -193,15 +206,17 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 				r_normals.push_back(normal);
 			}
 		}
-	} else {
+	}
+	else {
 		int gcount = geometry.size();
 
 		if (gcount == 0) {
-			EditorNode::get_singleton()->show_warning(TTR("The geometry doesn't contain any faces."));
+			EditorNode::get_singleton()->show_warning(
+				TTR("The geometry doesn't contain any faces."));
 			return false;
 		}
 
-		const Face3 *r = geometry.ptr();
+		const Face3* r = geometry.ptr();
 
 		AABB aabb;
 
@@ -209,7 +224,8 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 			for (int j = 0; j < 3; j++) {
 				if (i == 0 && j == 0) {
 					aabb.position = r[i].vertex[j];
-				} else {
+				}
+				else {
 					aabb.expand_to(r[i].vertex[j]);
 				}
 			}
@@ -223,18 +239,20 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 			for (int j = 0; j < attempts; j++) {
 				Vector3 dir;
 				dir[Math::rand() % 3] = 1.0;
-				Vector3 ofs = (Vector3(1, 1, 1) - dir) * Vector3(Math::randf(), Math::randf(), Math::randf()) * aabb.size + aabb.position;
+				Vector3 ofs = (Vector3(1, 1, 1) - dir) *
+								  Vector3(Math::randf(), Math::randf(), Math::randf()) * aabb.size +
+							  aabb.position;
 
 				Vector3 ofsv = ofs + aabb.size * dir;
 
-				//space it a little
+				// space it a little
 				ofs -= dir;
 				ofsv += dir;
 
 				float max = -1e7, min = 1e7;
 
 				for (int k = 0; k < gcount; k++) {
-					const Face3 &f3 = r[k];
+					const Face3& f3 = r[k];
 
 					Vector3 res;
 					if (f3.intersects_segment(ofs, ofsv, &res)) {
@@ -251,7 +269,7 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 				}
 
 				if (max < min) {
-					continue; //lost attempt
+					continue; // lost attempt
 				}
 
 				float val = min + (max - min) * Math::randf();
@@ -266,11 +284,12 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 	return true;
 }
 
-Particles3DEditorPlugin::Particles3DEditorPlugin() {
+Particles3DEditorPlugin::Particles3DEditorPlugin()
+{
 	generate_aabb = memnew(ConfirmationDialog);
 	generate_aabb->set_title(TTR("Generate Visibility AABB"));
 
-	VBoxContainer *genvb = memnew(VBoxContainer);
+	VBoxContainer* genvb = memnew(VBoxContainer);
 	generate_aabb->add_child(genvb);
 
 	generate_seconds = memnew(SpinBox);
@@ -282,20 +301,22 @@ Particles3DEditorPlugin::Particles3DEditorPlugin() {
 
 	EditorNode::get_singleton()->get_gui_base()->add_child(generate_aabb);
 
-	generate_aabb->connect(SceneStringName(confirmed), callable_mp(this, &Particles3DEditorPlugin::_generate_aabb));
+	generate_aabb->connect(
+		SceneStringName(confirmed), callable_mp(this, &Particles3DEditorPlugin::_generate_aabb));
 
 	emission_tree_dialog = memnew(SceneTreeDialog);
 	Vector<StringName> valid_types;
 	valid_types.push_back("MeshInstance3D");
 	emission_tree_dialog->set_valid_types(valid_types);
 	EditorNode::get_singleton()->get_gui_base()->add_child(emission_tree_dialog);
-	emission_tree_dialog->connect("selected", callable_mp(this, &Particles3DEditorPlugin::_node_selected));
+	emission_tree_dialog->connect(
+		"selected", callable_mp(this, &Particles3DEditorPlugin::_node_selected));
 
 	emission_dialog = memnew(ConfirmationDialog);
 	emission_dialog->set_title(TTR("Create Emitter"));
 	EditorNode::get_singleton()->get_gui_base()->add_child(emission_dialog);
 
-	VBoxContainer *emd_vb = memnew(VBoxContainer);
+	VBoxContainer* emd_vb = memnew(VBoxContainer);
 	emission_dialog->add_child(emd_vb);
 
 	emission_amount = memnew(SpinBox);
@@ -313,13 +334,15 @@ Particles3DEditorPlugin::Particles3DEditorPlugin() {
 	emd_vb->add_margin_child(TTR("Emission Source:"), emission_fill);
 
 	emission_dialog->set_ok_button_text(TTR("Create"));
-	emission_dialog->connect(SceneStringName(confirmed), callable_mp(this, &Particles3DEditorPlugin::_generate_emission_points));
+	emission_dialog->connect(SceneStringName(confirmed),
+		callable_mp(this, &Particles3DEditorPlugin::_generate_emission_points));
 }
 
-Node *GPUParticles3DEditorPlugin::_convert_particles() {
-	GPUParticles3D *particles = Object::cast_to<GPUParticles3D>(edited_node);
+Node* GPUParticles3DEditorPlugin::_convert_particles()
+{
+	GPUParticles3D* particles = Object::cast_to<GPUParticles3D>(edited_node);
 
-	CPUParticles3D *cpu_particles = memnew(CPUParticles3D);
+	CPUParticles3D* cpu_particles = memnew(CPUParticles3D);
 	cpu_particles->convert_from_particles(particles);
 	cpu_particles->set_name(particles->get_name());
 	cpu_particles->set_transform(particles->get_transform());
@@ -328,18 +351,21 @@ Node *GPUParticles3DEditorPlugin::_convert_particles() {
 	return cpu_particles;
 }
 
-bool GPUParticles3DEditorPlugin::_can_generate_points() const {
-	GPUParticles3D *particles = Object::cast_to<GPUParticles3D>(edited_node);
+bool GPUParticles3DEditorPlugin::_can_generate_points() const
+{
+	GPUParticles3D* particles = Object::cast_to<GPUParticles3D>(edited_node);
 	Ref<ParticleProcessMaterial> mat = particles->get_process_material();
 	if (mat.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("A processor material of type 'ParticleProcessMaterial' is required."));
+		EditorNode::get_singleton()->show_warning(
+			TTR("A processor material of type 'ParticleProcessMaterial' is required."));
 		return false;
 	}
 	return true;
 }
 
-void GPUParticles3DEditorPlugin::_generate_emission_points() {
-	GPUParticles3D *particles = Object::cast_to<GPUParticles3D>(edited_node);
+void GPUParticles3DEditorPlugin::_generate_emission_points()
+{
+	GPUParticles3D* particles = Object::cast_to<GPUParticles3D>(edited_node);
 
 	/// hacer codigo aca
 	Vector<Vector3> points;
@@ -358,10 +384,10 @@ void GPUParticles3DEditorPlugin::_generate_emission_points() {
 	point_img.resize(w * h * 3 * sizeof(float));
 
 	{
-		uint8_t *iw = point_img.ptrw();
+		uint8_t* iw = point_img.ptrw();
 		memset(iw, 0, w * h * 3 * sizeof(float));
-		const Vector3 *r = points.ptr();
-		float *wf = reinterpret_cast<float *>(iw);
+		const Vector3* r = points.ptr();
+		float* wf = reinterpret_cast<float*>(iw);
 		for (int i = 0; i < point_count; i++) {
 			wf[i * 3 + 0] = r[i].x;
 			wf[i * 3 + 1] = r[i].y;
@@ -375,22 +401,23 @@ void GPUParticles3DEditorPlugin::_generate_emission_points() {
 	Ref<ParticleProcessMaterial> mat = particles->get_process_material();
 	ERR_FAIL_COND(mat.is_null());
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Create Emission Points"));
-	ParticleProcessMaterial *matptr = mat.ptr();
+	ParticleProcessMaterial* matptr = mat.ptr();
 
 	if (!normals.is_empty()) {
-		undo_redo->add_do_property(matptr, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
+		undo_redo->add_do_property(
+			matptr, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
 		undo_redo->add_undo_property(matptr, "emission_shape", matptr->get_emission_shape());
 
 		Vector<uint8_t> point_img2;
 		point_img2.resize(w * h * 3 * sizeof(float));
 
 		{
-			uint8_t *iw = point_img2.ptrw();
+			uint8_t* iw = point_img2.ptrw();
 			memset(iw, 0, w * h * 3 * sizeof(float));
-			const Vector3 *r = normals.ptr();
-			float *wf = reinterpret_cast<float *>(iw);
+			const Vector3* r = normals.ptr();
+			float* wf = reinterpret_cast<float*>(iw);
 			for (int i = 0; i < point_count; i++) {
 				wf[i * 3 + 0] = r[i].x;
 				wf[i * 3 + 1] = r[i].y;
@@ -399,28 +426,36 @@ void GPUParticles3DEditorPlugin::_generate_emission_points() {
 		}
 
 		Ref<Image> image2 = memnew(Image(w, h, false, Image::FORMAT_RGBF, point_img2));
-		undo_redo->add_do_property(matptr, "emission_normal_texture", ImageTexture::create_from_image(image2));
-		undo_redo->add_undo_property(matptr, "emission_normal_texture", matptr->get_emission_normal_texture());
-	} else {
-		undo_redo->add_do_property(matptr, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_POINTS);
+		undo_redo->add_do_property(
+			matptr, "emission_normal_texture", ImageTexture::create_from_image(image2));
+		undo_redo->add_undo_property(
+			matptr, "emission_normal_texture", matptr->get_emission_normal_texture());
+	}
+	else {
+		undo_redo->add_do_property(
+			matptr, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_POINTS);
 		undo_redo->add_undo_property(matptr, "emission_shape", matptr->get_emission_shape());
 	}
 	undo_redo->add_do_property(matptr, "emission_point_count", point_count);
-	undo_redo->add_undo_property(matptr, "emission_point_count", matptr->get_emission_point_count());
+	undo_redo->add_undo_property(
+		matptr, "emission_point_count", matptr->get_emission_point_count());
 	undo_redo->add_do_property(matptr, "emission_point_texture", tex);
-	undo_redo->add_undo_property(matptr, "emission_point_texture", matptr->get_emission_point_texture());
+	undo_redo->add_undo_property(
+		matptr, "emission_point_texture", matptr->get_emission_point_texture());
 	undo_redo->commit_action();
 }
 
-GPUParticles3DEditorPlugin::GPUParticles3DEditorPlugin() {
+GPUParticles3DEditorPlugin::GPUParticles3DEditorPlugin()
+{
 	handled_type = TTRC("GPUParticles3D");
 	conversion_option_name = TTR("Convert to CPUParticles3D");
 }
 
-Node *CPUParticles3DEditorPlugin::_convert_particles() {
-	CPUParticles3D *particles = Object::cast_to<CPUParticles3D>(edited_node);
+Node* CPUParticles3DEditorPlugin::_convert_particles()
+{
+	CPUParticles3D* particles = Object::cast_to<CPUParticles3D>(edited_node);
 
-	GPUParticles3D *gpu_particles = memnew(GPUParticles3D);
+	GPUParticles3D* gpu_particles = memnew(GPUParticles3D);
 	gpu_particles->convert_from_particles(particles);
 	gpu_particles->set_name(particles->get_name());
 	gpu_particles->set_transform(particles->get_transform());
@@ -429,8 +464,9 @@ Node *CPUParticles3DEditorPlugin::_convert_particles() {
 	return gpu_particles;
 }
 
-void CPUParticles3DEditorPlugin::_generate_emission_points() {
-	CPUParticles3D *particles = Object::cast_to<CPUParticles3D>(edited_node);
+void CPUParticles3DEditorPlugin::_generate_emission_points()
+{
+	CPUParticles3D* particles = Object::cast_to<CPUParticles3D>(edited_node);
 
 	/// hacer codigo aca
 	Vector<Vector3> points;
@@ -440,24 +476,34 @@ void CPUParticles3DEditorPlugin::_generate_emission_points() {
 		return;
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Create Emission Points"));
 
 	if (normals.is_empty()) {
-		undo_redo->add_do_property(particles, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_POINTS);
-		undo_redo->add_undo_property(particles, "emission_shape", particles->get_emission_shape());
-	} else {
-		undo_redo->add_do_property(particles, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
-		undo_redo->add_undo_property(particles, "emission_shape", particles->get_emission_shape());
-		undo_redo->add_do_property(particles, "emission_normals", normals);
-		undo_redo->add_undo_property(particles, "emission_normals", particles->get_emission_normals());
+		undo_redo->add_do_property(
+			particles->obj.get(), "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_POINTS);
+		undo_redo->add_undo_property(
+			particles->obj.get(), "emission_shape", particles->get_emission_shape());
 	}
-	undo_redo->add_do_property(particles, "emission_points", points);
-	undo_redo->add_undo_property(particles, "emission_points", particles->get_emission_points());
+	else {
+		undo_redo->add_do_property(particles->obj.get(), "emission_shape",
+			ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
+		undo_redo->add_undo_property(
+			particles->obj.get(), "emission_shape", particles->get_emission_shape());
+		undo_redo->add_do_property(particles->obj.get(), "emission_normals", normals);
+		undo_redo->add_undo_property(
+			particles->obj.get(), "emission_normals", particles->get_emission_normals());
+	}
+	undo_redo->add_do_property(particles->obj.get(), "emission_points", points);
+	undo_redo->add_undo_property(
+		particles->obj.get(), "emission_points", particles->get_emission_points());
 	undo_redo->commit_action();
 }
 
-CPUParticles3DEditorPlugin::CPUParticles3DEditorPlugin() {
+CPUParticles3DEditorPlugin::CPUParticles3DEditorPlugin()
+{
 	handled_type = TTRC("CPUParticles3D");
 	conversion_option_name = TTR("Convert to GPUParticles3D");
 }
+
+

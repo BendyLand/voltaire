@@ -4000,31 +4000,7 @@ ResourceUID::ID EditorFileSystem::_resource_saver_get_resource_id_for_path(
 	}
 }
 
-void EditorFileSystem::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("get_filesystem"), &EditorFileSystem::get_filesystem);
-	ClassDB::bind_method(D_METHOD("is_scanning"), &EditorFileSystem::is_scanning);
-	ClassDB::bind_method(D_METHOD("is_importing"), &EditorFileSystem::is_importing);
-	ClassDB::bind_method(
-		D_METHOD("get_scanning_progress"), &EditorFileSystem::get_scanning_progress);
-	ClassDB::bind_method(D_METHOD("scan"), &EditorFileSystem::scan);
-	ClassDB::bind_method(D_METHOD("scan_sources"), &EditorFileSystem::scan_changes);
-	ClassDB::bind_method(D_METHOD("update_file", "path"), &EditorFileSystem::update_file);
-	ClassDB::bind_method(
-		D_METHOD("get_filesystem_path", "path"), &EditorFileSystem::get_filesystem_path);
-	ClassDB::bind_method(D_METHOD("get_file_type", "path"), &EditorFileSystem::get_file_type);
-	ClassDB::bind_method(D_METHOD("reimport_files", "files"), &EditorFileSystem::reimport_files);
-
-	ADD_SIGNAL(MethodInfo("filesystem_changed")); // May only be emitted on the main thread.
-	ADD_SIGNAL(MethodInfo("script_classes_updated"));
-	ADD_SIGNAL(MethodInfo("sources_changed", PropertyInfo(Variant::BOOL, "exist")));
-	ADD_SIGNAL(MethodInfo(
-		"resources_reimporting", PropertyInfo(Variant::PACKED_STRING_ARRAY, "resources")));
-	ADD_SIGNAL(MethodInfo(
-		"resources_reimported", PropertyInfo(Variant::PACKED_STRING_ARRAY, "resources")));
-	ADD_SIGNAL(
-		MethodInfo("resources_reload", PropertyInfo(Variant::PACKED_STRING_ARRAY, "resources")));
-}
+void EditorFileSystem::_bind_methods(){}
 
 void EditorFileSystem::_update_extensions()
 {

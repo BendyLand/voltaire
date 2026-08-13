@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "reflection_probe_gizmo_plugin.h"
-
 #include "core/math/geometry_3d.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
@@ -37,9 +35,11 @@
 #include "editor/scene/3d/gizmos/gizmo_3d_helper.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
+#include "reflection_probe_gizmo_plugin.h"
 #include "scene/3d/reflection_probe.h"
 
-ReflectionProbeGizmoPlugin::ReflectionProbeGizmoPlugin() {
+ReflectionProbeGizmoPlugin::ReflectionProbeGizmoPlugin()
+{
 	helper.instantiate();
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/reflection_probe");
 
@@ -48,50 +48,57 @@ ReflectionProbeGizmoPlugin::ReflectionProbeGizmoPlugin() {
 	gizmo_color.a = 0.5;
 	create_material("reflection_internal_material", gizmo_color);
 
-	create_icon_material("reflection_probe_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoReflectionProbe"), EditorStringName(EditorIcons)));
+	create_icon_material(
+		"reflection_probe_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(
+									 SNAME("GizmoReflectionProbe"), EditorStringName(EditorIcons)));
 	create_handle_material("handles");
 }
 
-bool ReflectionProbeGizmoPlugin::has_gizmo(Node3D *p_spatial) {
+bool ReflectionProbeGizmoPlugin::has_gizmo(Node3D* p_spatial)
+{
 	return Object::cast_to<ReflectionProbe>(p_spatial) != nullptr;
 }
 
-String ReflectionProbeGizmoPlugin::get_gizmo_name() const {
-	return "ReflectionProbe";
-}
+String ReflectionProbeGizmoPlugin::get_gizmo_name() const { return "ReflectionProbe"; }
 
-int ReflectionProbeGizmoPlugin::get_priority() const {
-	return -1;
-}
+int ReflectionProbeGizmoPlugin::get_priority() const { return -1; }
 
-String ReflectionProbeGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
+String ReflectionProbeGizmoPlugin::get_handle_name(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
 	if (p_id < 6) {
 		return helper->box_get_handle_name(p_id);
 	}
 	switch (p_id) {
-		case 6:
-			return "Origin X";
-		case 7:
-			return "Origin Y";
-		case 8:
-			return "Origin Z";
+	case 6:
+		return "Origin X";
+	case 7:
+		return "Origin Y";
+	case 8:
+		return "Origin Z";
 	}
 	return "";
 }
 
-Variant ReflectionProbeGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	ReflectionProbe *probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
+Variant ReflectionProbeGizmoPlugin::get_handle_value(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	ReflectionProbe* probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
 	return AABB(probe->get_origin_offset(), probe->get_size());
 }
 
-void ReflectionProbeGizmoPlugin::begin_handle_action(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) {
+void ReflectionProbeGizmoPlugin::begin_handle_action(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary)
+{
 	// The initial value is only used for resizing the box, so we only need AABB size.
 	AABB aabb = get_handle_value(p_gizmo, p_id, p_secondary);
 	helper->initialize_handle_action(aabb.size, p_gizmo->get_node_3d()->get_global_transform());
 }
 
-void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	ReflectionProbe *probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
+void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, Camera3D* p_camera, const Point2& p_point)
+{
+	ReflectionProbe* probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
 
 	Vector3 sg[2];
 	helper->get_segment(p_camera, p_point, sg);
@@ -102,7 +109,8 @@ void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, in
 		helper->box_set_handle(sg, p_id, size, position);
 		probe->set_size(size);
 		probe->set_global_position(position);
-	} else {
+	}
+	else {
 		p_id -= 6;
 
 		Vector3 origin = probe->get_origin_offset();
@@ -112,7 +120,8 @@ void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, in
 		axis[p_id] = 1.0;
 
 		Vector3 ra, rb;
-		Geometry3D::get_closest_points_between_segments(origin - axis * 16384, origin + axis * 16384, sg[0], sg[1], ra, rb);
+		Geometry3D::get_closest_points_between_segments(
+			origin - axis * 16384, origin + axis * 16384, sg[0], sg[1], ra, rb);
 		// Adjust the actual position to account for the gizmo handle position
 		float d = ra[p_id] + 0.25;
 		if (Node3DEditor::get_singleton()->is_snap_enabled()) {
@@ -124,11 +133,13 @@ void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, in
 	}
 }
 
-void ReflectionProbeGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	ReflectionProbe *probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
+void ReflectionProbeGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, const Variant& p_restore, bool p_cancel)
+{
+	ReflectionProbe* probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
 
 	if (p_id < 6) {
-		helper->box_commit_handle(TTR("Change Probe Size"), p_cancel, probe);
+		helper->box_commit_handle(TTR("Change Probe Size"), p_cancel, probe->obj.get());
 		return;
 	}
 
@@ -140,18 +151,19 @@ void ReflectionProbeGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo,
 		return;
 	}
 
-	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 	ur->create_action(TTR("Change Probe Origin Offset"));
-	ur->add_do_method(probe, "set_origin_offset", probe->get_origin_offset());
-	ur->add_undo_method(probe, "set_origin_offset", restore.position);
+	ur->add_do_method(probe->obj.get(), "set_origin_offset", probe->get_origin_offset());
+	ur->add_undo_method(probe->obj.get(), "set_origin_offset", restore.position);
 	ur->commit_action();
 }
 
-void ReflectionProbeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
+void ReflectionProbeGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
+{
 	p_gizmo->clear();
 
 	if (p_gizmo->is_selected()) {
-		ReflectionProbe *probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
+		ReflectionProbe* probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
 		Vector<Vector3> lines;
 		Vector<Vector3> internal_lines;
 		Vector3 size = probe->get_size();
@@ -211,3 +223,5 @@ void ReflectionProbeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	Ref<Material> icon = get_material("reflection_probe_icon", p_gizmo);
 	p_gizmo->add_unscaled_billboard(icon, 0.05);
 }
+
+

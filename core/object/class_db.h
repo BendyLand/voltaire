@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <type_traits>
 #include "core/object/method_bind.h"
 #include "core/object/method_bind_common.h"
 #include "core/object/object.h"
@@ -38,21 +39,18 @@
 #include "core/templates/a_hash_map.h"
 #include "core/templates/hash_set.h"
 
-#include <type_traits>
+template <typename T, typename = void> struct is_class_enabled;
 
-template <typename T, typename = void>
-struct is_class_enabled;
+template <> struct is_class_enabled<Object> : std::true_type
+{
+};
 
-template <>
-struct is_class_enabled<Object> : std::true_type {};
-
-template <typename T>
-struct is_class_enabled<T, std::enable_if_t<std::is_base_of_v<Object, T>>> {
+template <typename T> struct is_class_enabled<T, std::enable_if_t<std::is_base_of_v<Object, T>>>
+{
 	static constexpr bool value = is_class_enabled<typename T::super_type>::value;
 };
 
-template <typename T>
-inline constexpr bool is_class_enabled_v = is_class_enabled<T>::value;
+template <typename T> inline constexpr bool is_class_enabled_v = is_class_enabled<T>::value;
 
 #define VLTR_IS_CLASS_ENABLED(m_class) is_class_enabled_v<m_class>
 
@@ -63,27 +61,32 @@ inline constexpr bool is_class_enabled_v = is_class_enabled<T>::value;
 
 #ifdef DEBUG_ENABLED
 
-struct MethodDefinition {
+struct MethodDefinition
+{
 	StringName name;
 	Vector<StringName> args;
+
 	MethodDefinition() {}
-	MethodDefinition(const char *p_name) :
-			name(p_name) {}
-	MethodDefinition(const StringName &p_name) :
-			name(p_name) {}
+
+	MethodDefinition(const char* p_name) : name(p_name) {}
+
+	MethodDefinition(const StringName& p_name) : name(p_name) {}
 };
 
-MethodDefinition D_METHODP(const char *p_name, const char *const **p_args, uint32_t p_argcount);
+MethodDefinition D_METHODP(const char* p_name, const char* const** p_args, uint32_t p_argcount);
 
 template <typename... VarArgs>
-MethodDefinition D_METHOD(const char *p_name, const VarArgs... p_args) {
-	const char *args[sizeof...(p_args) + 1] = { p_args..., nullptr }; // +1 makes sure zero sized arrays are also supported.
-	const char *const *argptrs[sizeof...(p_args) + 1];
+MethodDefinition D_METHOD(const char* p_name, const VarArgs... p_args)
+{
+	const char* args[sizeof...(p_args) + 1] = {
+		p_args..., nullptr}; // +1 makes sure zero sized arrays are also supported.
+	const char* const* argptrs[sizeof...(p_args) + 1];
 	for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 		argptrs[i] = &args[i];
 	}
 
-	return D_METHODP(p_name, sizeof...(p_args) == 0 ? nullptr : (const char *const **)argptrs, sizeof...(p_args));
+	return D_METHODP(
+		p_name, sizeof...(p_args) == 0 ? nullptr : (const char* const**)argptrs, sizeof...(p_args));
 }
 
 #else
@@ -94,12 +97,14 @@ MethodDefinition D_METHOD(const char *p_name, const VarArgs... p_args) {
 
 #endif // DEBUG_ENABLED
 
-class ClassDB {
+class ClassDB
+{
 	friend class Object;
 	friend class VLTRType;
 
 public:
-	enum APIType {
+	enum APIType
+	{
 		API_CORE,
 		API_EDITOR,
 		API_EXTENSION,
@@ -108,23 +113,25 @@ public:
 	};
 
 public:
-	struct PropertySetGet {
+	struct PropertySetGet
+	{
 		int index;
 		StringName setter;
 		StringName getter;
-		MethodBind *_setptr = nullptr;
-		MethodBind *_getptr = nullptr;
+		MethodBind* _setptr = nullptr;
+		MethodBind* _getptr = nullptr;
 		Variant::Type type;
 	};
 
-	struct ClassInfo {
+	struct ClassInfo
+	{
 		APIType api = API_NONE;
-		ClassInfo *inherits_ptr = nullptr;
-		void *class_ptr = nullptr;
-		VLTRType *vltrtype = nullptr;
+		ClassInfo* inherits_ptr = nullptr;
+		void* class_ptr = nullptr;
+		VLTRType* vltrtype = nullptr;
 
-		HashMap<StringName, MethodBind *> method_map;
-		HashMap<StringName, LocalVector<MethodBind *>> method_map_compatibility;
+		HashMap<StringName, MethodBind*> method_map;
+		HashMap<StringName, LocalVector<MethodBind*>> method_map_compatibility;
 
 		List<PropertyInfo> property_list;
 		HashMap<StringName, PropertyInfo> property_map;
@@ -151,13 +158,13 @@ public:
 		bool is_virtual = false;
 		bool is_runtime = false;
 		// The bool argument indicates the need to postinitialize.
-		Object *(*creation_func)(bool) = nullptr;
+		Object* (*creation_func)(bool) = nullptr;
 	};
 
-	template <typename T>
-	static Object *creator(bool p_notify_postinitialize) {
+	template <typename T> static Object* creator(bool p_notify_postinitialize)
+	{
 		// Cannot use memnew here because memnew calls _postinitialize automatically.
-		Object *ret = new (DefaultAllocator{}) T;
+		Object* ret = new (DefaultAllocator{}) T;
 		ret->_initialize();
 		if (p_notify_postinitialize) {
 			ret->_postinitialize();
@@ -167,9 +174,11 @@ public:
 
 	// We need a recursive r/w lock because there are various code paths
 	// that may in turn invoke other entry points with require locking.
-	class Locker {
+	class Locker
+	{
 	public:
-		enum State {
+		enum State
+		{
 			STATE_UNLOCKED,
 			STATE_READ,
 			STATE_WRITE,
@@ -180,7 +189,8 @@ public:
 		inline thread_local static State thread_state = STATE_UNLOCKED;
 
 	public:
-		class Lock {
+		class Lock
+		{
 			State state = STATE_UNLOCKED;
 
 		public:
@@ -194,52 +204,63 @@ public:
 	static HashMap<StringName, StringName> compat_classes;
 
 #ifdef DEBUG_ENABLED
-	static MethodBind *bind_methodfi(uint32_t p_flags, MethodBind *p_bind, bool p_compatibility, const MethodDefinition &p_method_name, const Variant **p_defs, int p_defcount);
+	static MethodBind* bind_methodfi(uint32_t p_flags, MethodBind* p_bind, bool p_compatibility,
+		const MethodDefinition& p_method_name, const Variant** p_defs, int p_defcount);
 #else
-	static MethodBind *bind_methodfi(uint32_t p_flags, MethodBind *p_bind, bool p_compatibility, const char *p_method_name, const Variant **p_defs, int p_defcount);
+	static MethodBind* bind_methodfi(uint32_t p_flags, MethodBind* p_bind, bool p_compatibility,
+		const char* p_method_name, const Variant** p_defs, int p_defcount);
 #endif // DEBUG_ENABLED
 
 	static APIType current_api;
 	static HashMap<APIType, uint32_t> api_hashes_cache;
 
-	static void _add_class(VLTRType &p_class, const VLTRType *p_inherits);
+	static void _add_class(VLTRType& p_class, const VLTRType* p_inherits);
 
 	static HashMap<StringName, HashMap<StringName, Variant>> default_values;
 	static HashSet<StringName> default_values_cached;
 
 	// Native structs, used by binder
-	struct NativeStruct {
-		String ccode; // C code to create the native struct, fields separated by ; Arrays accepted (even containing other structs), also function pointers. All types must be Godot types.
+	struct NativeStruct
+	{
+		String ccode; // C code to create the native struct, fields separated by ; Arrays accepted
+					  // (even containing other structs), also function pointers. All types must be
+					  // Godot types.
 		uint64_t struct_size; // local size of struct, for comparison
 	};
+
 	static HashMap<StringName, NativeStruct> native_structs;
 
 	static Array default_array_arg;
-	static bool is_default_array_arg(const Array &p_array);
+	static bool is_default_array_arg(const Array& p_array);
 
 	// Types added here will be automatically cleaned up on engine shutdown.
 	// Only add types that aren't cleaned up in another way.
-	static LocalVector<VLTRType **> vltrtype_autorelease_pool;
+	static LocalVector<VLTRType**> vltrtype_autorelease_pool;
 
 private:
 	// Non-locking variants of get_parent_class and is_parent_class.
-	static StringName _get_parent_class(const StringName &p_class);
-	static bool _is_parent_class(const StringName &p_class, const StringName &p_inherits);
-	static void _bind_compatibility(ClassInfo *r_type, MethodBind *p_method);
-	static MethodBind *_bind_vararg_method(MethodBind *p_bind, const StringName &p_name, const Vector<Variant> &p_default_args, bool p_compatibility);
-	static void _bind_method_custom(const StringName &p_class, MethodBind *p_method, bool p_compatibility);
+	static StringName _get_parent_class(const StringName& p_class);
+	static bool _is_parent_class(const StringName& p_class, const StringName& p_inherits);
+	static void _bind_compatibility(ClassInfo* r_type, MethodBind* p_method);
+	static MethodBind* _bind_vararg_method(MethodBind* p_bind, const StringName& p_name,
+		const Vector<Variant>& p_default_args, bool p_compatibility);
+	static void _bind_method_custom(
+		const StringName& p_class, MethodBind* p_method, bool p_compatibility);
 
-	static Object *_instantiate_internal(const StringName &p_class, bool p_require_real_class = false, bool p_notify_postinitialize = true, bool p_exposed_only = true, bool p_with_refcount = false);
+	static Object* _instantiate_internal(const StringName& p_class,
+		bool p_require_real_class = false, bool p_notify_postinitialize = true,
+		bool p_exposed_only = true, bool p_with_refcount = false);
 
-	static bool _can_instantiate(ClassInfo *p_class_info, bool p_exposed_only = true);
+	static bool _can_instantiate(ClassInfo* p_class_info, bool p_exposed_only = true);
 
 public:
-	template <typename T>
-	static void register_class(bool p_virtual = false) {
+	template <typename T> static void register_class(bool p_virtual = false)
+	{
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>,
+			"Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
-		ClassInfo *t = classes.getptr(T::get_class_static());
+		ClassInfo* t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
 		t->creation_func = &creator<T>;
 		t->exposed = true;
@@ -249,25 +270,27 @@ public:
 		T::register_custom_data_to_otdb();
 	}
 
-	template <typename T>
-	static void register_abstract_class() {
+	template <typename T> static void register_abstract_class()
+	{
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>,
+			"Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
-		ClassInfo *t = classes.getptr(T::get_class_static());
+		ClassInfo* t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
 		t->exposed = true;
 		t->class_ptr = T::get_class_ptr_static();
 		t->api = current_api;
-		//nothing
+		// nothing
 	}
 
-	template <typename T>
-	static void register_internal_class() {
+	template <typename T> static void register_internal_class()
+	{
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>,
+			"Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
-		ClassInfo *t = classes.getptr(T::get_class_static());
+		ClassInfo* t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
 		t->creation_func = &creator<T>;
 		t->exposed = false;
@@ -277,14 +300,18 @@ public:
 		T::register_custom_data_to_otdb();
 	}
 
-	template <typename T>
-	static void register_runtime_class() {
+	template <typename T> static void register_runtime_class()
+	{
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>,
+			"Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
-		ClassInfo *t = classes.getptr(T::get_class_static());
+		ClassInfo* t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
-		ERR_FAIL_COND_MSG(t->inherits_ptr && !t->inherits_ptr->creation_func, vformat("Cannot register runtime class '%s' that descends from an abstract parent class.", T::get_class_static()));
+		ERR_FAIL_COND_MSG(t->inherits_ptr && !t->inherits_ptr->creation_func,
+			vformat(
+				"Cannot register runtime class '%s' that descends from an abstract parent class.",
+				T::get_class_static()));
 		t->creation_func = &creator<T>;
 		t->exposed = true;
 		t->is_virtual = false;
@@ -294,19 +321,21 @@ public:
 		T::register_custom_data_to_otdb();
 	}
 
-	static void unregister_extension_class(const StringName &p_class, bool p_free_method_binds = true);
+	static void unregister_extension_class(
+		const StringName& p_class, bool p_free_method_binds = true);
 
-	template <typename T>
-	static Object *_create_ptr_func(bool p_notify_postinitialize) {
+	template <typename T> static Object* _create_ptr_func(bool p_notify_postinitialize)
+	{
 		return T::create(p_notify_postinitialize);
 	}
 
-	template <typename T>
-	static void register_custom_instance_class() {
+	template <typename T> static void register_custom_instance_class()
+	{
 		Locker::Lock lock(Locker::STATE_WRITE);
-		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use VLTRCLASS.");
+		static_assert(std::is_same_v<typename T::self_type, T>,
+			"Class not declared properly, please use VLTRCLASS.");
 		T::initialize_class();
-		ClassInfo *t = classes.getptr(T::get_class_static());
+		ClassInfo* t = classes.getptr(T::get_class_static());
 		ERR_FAIL_NULL(t);
 		t->creation_func = &_create_ptr_func<T>;
 		t->exposed = true;
@@ -315,223 +344,301 @@ public:
 		T::register_custom_data_to_otdb();
 	}
 
-	static void get_class_list(LocalVector<StringName> &p_classes);
+	static void get_class_list(LocalVector<StringName>& p_classes);
 #ifdef TOOLS_ENABLED
-	static void get_extensions_class_list(LocalVector<StringName> &p_classes);
-	static void get_extension_class_list(const Ref<GDExtension> &p_extension, List<StringName> *p_classes);
+	static void get_extensions_class_list(LocalVector<StringName>& p_classes);
+	static void get_extension_class_list(
+		const Ref<GDExtension>& p_extension, List<StringName>* p_classes);
 #endif
-	static const VLTRType *get_vltrtype(const StringName &p_class);
-	static void get_inheriters_from_class(const StringName &p_class, LocalVector<StringName> &p_classes);
-	static void get_direct_inheriters_from_class(const StringName &p_class, List<StringName> *p_classes);
-	static StringName get_parent_class_nocheck(const StringName &p_class);
-	static bool get_inheritance_chain_nocheck(const StringName &p_class, Vector<StringName> &r_result);
-	static StringName get_parent_class(const StringName &p_class);
-	static StringName get_compatibility_remapped_class(const StringName &p_class);
-	static bool class_exists(const StringName &p_class);
-	static bool is_parent_class(const StringName &p_class, const StringName &p_inherits);
-	static bool can_instantiate(const StringName &p_class);
-	static bool is_abstract(const StringName &p_class);
-	static bool is_virtual(const StringName &p_class);
-	static bool is_gdextension(const StringName &p_class);
-	static Object *instantiate(const StringName &p_class);
-	static Object *instantiate_no_placeholders(const StringName &p_class);
-	static Object *instantiate_without_postinitialization(const StringName &p_class);
-	static Object *instantiate_without_postinitialization_with_refcount(const StringName &p_class);
+	static const VLTRType* get_vltrtype(const StringName& p_class);
+	static void get_inheriters_from_class(
+		const StringName& p_class, LocalVector<StringName>& p_classes);
+	static void get_direct_inheriters_from_class(
+		const StringName& p_class, List<StringName>* p_classes);
+	static StringName get_parent_class_nocheck(const StringName& p_class);
+	static bool get_inheritance_chain_nocheck(
+		const StringName& p_class, Vector<StringName>& r_result);
+	static StringName get_parent_class(const StringName& p_class);
+	static StringName get_compatibility_remapped_class(const StringName& p_class);
+	static bool class_exists(const StringName& p_class);
+	static bool is_parent_class(const StringName& p_class, const StringName& p_inherits);
+	static bool can_instantiate(const StringName& p_class);
+	static bool is_abstract(const StringName& p_class);
+	static bool is_virtual(const StringName& p_class);
+	static bool is_gdextension(const StringName& p_class);
+	static Object* instantiate(const StringName& p_class);
+	static Object* instantiate_no_placeholders(const StringName& p_class);
+	static Object* instantiate_without_postinitialization(const StringName& p_class);
+	static Object* instantiate_without_postinitialization_with_refcount(const StringName& p_class);
 
-	static APIType get_api_type(const StringName &p_class);
+	static APIType get_api_type(const StringName& p_class);
 
 	static uint32_t get_api_hash(APIType p_api);
 
-	template <typename>
-	struct member_function_traits;
+	template <typename> struct member_function_traits;
 
 	template <typename R, typename T, typename... Args>
-	struct member_function_traits<R (T::*)(Args...)> {
+	struct member_function_traits<R (T::*)(Args...)>
+	{
 		using return_type = R;
 	};
 
 	template <typename R, typename T, typename... Args>
-	struct member_function_traits<R (T::*)(Args...) const> {
+	struct member_function_traits<R (T::*)(Args...) const>
+	{
 		using return_type = R;
 	};
 
-	template <typename R, typename... Args>
-	struct member_function_traits<R (*)(Args...)> {
+	template <typename R, typename... Args> struct member_function_traits<R (*)(Args...)>
+	{
 		using return_type = R;
 	};
 
 	template <typename N, typename M, typename... VarArgs>
-	static MethodBind *bind_method(N p_method_name, M p_method, VarArgs... p_args) {
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		const Variant *argptrs[sizeof...(p_args) + 1];
+	static MethodBind* bind_method(N p_method_name, M p_method, VarArgs... p_args)
+	{
+		Variant args[sizeof...(p_args) + 1] = {
+			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
+		const Variant* argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
-		MethodBind *bind = create_method_bind(p_method);
-		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object *>) {
+		MethodBind* bind = create_method_bind(p_method);
+		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object*>) {
 			bind->set_return_type_is_raw_object_ptr(true);
 		}
-		return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, false, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args));
+		return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, false, p_method_name,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
 	template <typename N, typename M, typename... VarArgs>
-	static MethodBind *bind_static_method(const StringName &p_class, N p_method_name, M p_method, VarArgs... p_args) {
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		const Variant *argptrs[sizeof...(p_args) + 1];
+	static MethodBind* bind_static_method(
+		const StringName& p_class, N p_method_name, M p_method, VarArgs... p_args)
+	{
+		Variant args[sizeof...(p_args) + 1] = {
+			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
+		const Variant* argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
-		MethodBind *bind = create_static_method_bind(p_method);
+		MethodBind* bind = create_static_method_bind(p_method);
 		bind->set_instance_class(p_class);
-		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object *>) {
+		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object*>) {
 			bind->set_return_type_is_raw_object_ptr(true);
 		}
-		return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, false, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args));
+		return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, false, p_method_name,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
 	template <typename N, typename M, typename... VarArgs>
-	static MethodBind *bind_compatibility_method(N p_method_name, M p_method, VarArgs... p_args) {
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		const Variant *argptrs[sizeof...(p_args) + 1];
+	static MethodBind* bind_compatibility_method(N p_method_name, M p_method, VarArgs... p_args)
+	{
+		Variant args[sizeof...(p_args) + 1] = {
+			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
+		const Variant* argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
-		MethodBind *bind = create_method_bind(p_method);
-		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object *>) {
+		MethodBind* bind = create_method_bind(p_method);
+		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object*>) {
 			bind->set_return_type_is_raw_object_ptr(true);
 		}
-		return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, true, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args));
+		return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, true, p_method_name,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
 	template <typename N, typename M, typename... VarArgs>
-	static MethodBind *bind_compatibility_static_method(const StringName &p_class, N p_method_name, M p_method, VarArgs... p_args) {
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		const Variant *argptrs[sizeof...(p_args) + 1];
+	static MethodBind* bind_compatibility_static_method(
+		const StringName& p_class, N p_method_name, M p_method, VarArgs... p_args)
+	{
+		Variant args[sizeof...(p_args) + 1] = {
+			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
+		const Variant* argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
-		MethodBind *bind = create_static_method_bind(p_method);
+		MethodBind* bind = create_static_method_bind(p_method);
 		bind->set_instance_class(p_class);
-		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object *>) {
+		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object*>) {
 			bind->set_return_type_is_raw_object_ptr(true);
 		}
-		return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, true, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args));
+		return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, true, p_method_name,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
 	template <typename M>
-	static MethodBind *bind_vararg_method(uint32_t p_flags, const StringName &p_name, M p_method, const MethodInfo &p_info = MethodInfo(), const Vector<Variant> &p_default_args = Vector<Variant>(), bool p_return_nil_is_variant = true) {
+	static MethodBind* bind_vararg_method(uint32_t p_flags, const StringName& p_name, M p_method,
+		const MethodInfo& p_info = MethodInfo(),
+		const Vector<Variant>& p_default_args = Vector<Variant>(),
+		bool p_return_nil_is_variant = true)
+	{
 		Locker::Lock lock(Locker::STATE_WRITE);
 
-		MethodBind *bind = create_vararg_method_bind(p_method, p_info, p_return_nil_is_variant);
+		MethodBind* bind = create_vararg_method_bind(p_method, p_info, p_return_nil_is_variant);
 		ERR_FAIL_NULL_V(bind, nullptr);
 
-		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object *>) {
+		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object*>) {
 			bind->set_return_type_is_raw_object_ptr(true);
 		}
 		return _bind_vararg_method(bind, p_name, p_default_args, false);
 	}
 
 	template <typename M>
-	static MethodBind *bind_compatibility_vararg_method(uint32_t p_flags, const StringName &p_name, M p_method, const MethodInfo &p_info = MethodInfo(), const Vector<Variant> &p_default_args = Vector<Variant>(), bool p_return_nil_is_variant = true) {
+	static MethodBind* bind_compatibility_vararg_method(uint32_t p_flags, const StringName& p_name,
+		M p_method, const MethodInfo& p_info = MethodInfo(),
+		const Vector<Variant>& p_default_args = Vector<Variant>(),
+		bool p_return_nil_is_variant = true)
+	{
 		Locker::Lock lock(Locker::STATE_WRITE);
 
-		MethodBind *bind = create_vararg_method_bind(p_method, p_info, p_return_nil_is_variant);
+		MethodBind* bind = create_vararg_method_bind(p_method, p_info, p_return_nil_is_variant);
 		ERR_FAIL_NULL_V(bind, nullptr);
 
-		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object *>) {
+		if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object*>) {
 			bind->set_return_type_is_raw_object_ptr(true);
 		}
 		return _bind_vararg_method(bind, p_name, p_default_args, true);
 	}
 
-	static void bind_method_custom(const StringName &p_class, MethodBind *p_method);
-	static void bind_compatibility_method_custom(const StringName &p_class, MethodBind *p_method);
+	static void bind_method_custom(const StringName& p_class, MethodBind* p_method);
+	static void bind_compatibility_method_custom(const StringName& p_class, MethodBind* p_method);
 
-	static void add_signal(const StringName &p_class, const MethodInfo &p_signal);
-	static bool has_signal(const StringName &p_class, const StringName &p_signal, bool p_no_inheritance = false);
-	static bool get_signal(const StringName &p_class, const StringName &p_signal, MethodInfo *r_signal);
-	static void get_signal_list(const StringName &p_class, List<MethodInfo> *p_signals, bool p_no_inheritance = false);
+	static void add_signal(const StringName& p_class, const MethodInfo& p_signal);
+	static bool has_signal(
+		const StringName& p_class, const StringName& p_signal, bool p_no_inheritance = false);
+	static bool get_signal(
+		const StringName& p_class, const StringName& p_signal, MethodInfo* r_signal);
+	static void get_signal_list(
+		const StringName& p_class, List<MethodInfo>* p_signals, bool p_no_inheritance = false);
 
-	static void add_property_group(const StringName &p_class, const String &p_name, const String &p_prefix = "", int p_indent_depth = 0);
-	static void add_property_subgroup(const StringName &p_class, const String &p_name, const String &p_prefix = "", int p_indent_depth = 0);
-	static void add_property_array_count(const StringName &p_class, const String &p_label, const StringName &p_count_property, const StringName &p_count_setter, const StringName &p_count_getter, const String &p_array_element_prefix, uint32_t p_count_usage = PROPERTY_USAGE_DEFAULT);
-	static void add_property_array(const StringName &p_class, const StringName &p_path, const String &p_array_element_prefix);
-	static void add_property(const StringName &p_class, const PropertyInfo &p_pinfo, const StringName &p_setter, const StringName &p_getter, int p_index = -1);
-	static void set_property_default_value(const StringName &p_class, const StringName &p_name, const Variant &p_default);
-	static void add_linked_property(const StringName &p_class, const String &p_property, const String &p_linked_property);
-	static void get_property_list(const StringName &p_class, List<PropertyInfo> *p_list, bool p_no_inheritance = false, const Object *p_validator = nullptr);
-	static bool get_property_info(const StringName &p_class, const StringName &p_property, PropertyInfo *r_info, bool p_no_inheritance = false, const Object *p_validator = nullptr);
-	static void get_linked_properties_info(const StringName &p_class, const StringName &p_property, List<StringName> *r_properties, bool p_no_inheritance = false);
-	static bool set_property(Object *p_object, const StringName &p_property, const Variant &p_value, bool *r_valid = nullptr);
-	static bool get_property(Object *p_object, const StringName &p_property, Variant &r_value);
-	static bool has_property(const StringName &p_class, const StringName &p_property, bool p_no_inheritance = false);
-	static int get_property_index(const StringName &p_class, const StringName &p_property, bool *r_is_valid = nullptr);
-	static Variant::Type get_property_type(const StringName &p_class, const StringName &p_property, bool *r_is_valid = nullptr);
-	static StringName get_property_setter(const StringName &p_class, const StringName &p_property);
-	static StringName get_property_getter(const StringName &p_class, const StringName &p_property);
+	static void add_property_group(const StringName& p_class, const String& p_name,
+		const String& p_prefix = "", int p_indent_depth = 0);
+	static void add_property_subgroup(const StringName& p_class, const String& p_name,
+		const String& p_prefix = "", int p_indent_depth = 0);
+	static void add_property_array_count(const StringName& p_class, const String& p_label,
+		const StringName& p_count_property, const StringName& p_count_setter,
+		const StringName& p_count_getter, const String& p_array_element_prefix,
+		uint32_t p_count_usage = PROPERTY_USAGE_DEFAULT);
+	static void add_property_array(
+		const StringName& p_class, const StringName& p_path, const String& p_array_element_prefix);
+	static void add_property(const StringName& p_class, const PropertyInfo& p_pinfo,
+		const StringName& p_setter, const StringName& p_getter, int p_index = -1);
+	static void set_property_default_value(
+		const StringName& p_class, const StringName& p_name, const Variant& p_default);
+	static void add_linked_property(
+		const StringName& p_class, const String& p_property, const String& p_linked_property);
+	static void get_property_list(const StringName& p_class, List<PropertyInfo>* p_list,
+		bool p_no_inheritance = false, const Object* p_validator = nullptr);
+	static bool get_property_info(const StringName& p_class, const StringName& p_property,
+		PropertyInfo* r_info, bool p_no_inheritance = false, const Object* p_validator = nullptr);
+	static void get_linked_properties_info(const StringName& p_class, const StringName& p_property,
+		List<StringName>* r_properties, bool p_no_inheritance = false);
+	static bool set_property(Object* p_object, const StringName& p_property, const Variant& p_value,
+		bool* r_valid = nullptr);
+	static bool get_property(Object* p_object, const StringName& p_property, Variant& r_value);
+	static bool has_property(
+		const StringName& p_class, const StringName& p_property, bool p_no_inheritance = false);
+	static int get_property_index(
+		const StringName& p_class, const StringName& p_property, bool* r_is_valid = nullptr);
+	static Variant::Type get_property_type(
+		const StringName& p_class, const StringName& p_property, bool* r_is_valid = nullptr);
+	static StringName get_property_setter(const StringName& p_class, const StringName& p_property);
+	static StringName get_property_getter(const StringName& p_class, const StringName& p_property);
 
-	static bool has_method(const StringName &p_class, const StringName &p_method, bool p_no_inheritance = false);
-	static void set_method_flags(const StringName &p_class, const StringName &p_method, int p_flags);
+	static bool has_method(
+		const StringName& p_class, const StringName& p_method, bool p_no_inheritance = false);
+	static void set_method_flags(
+		const StringName& p_class, const StringName& p_method, int p_flags);
 
-	static void get_method_list(const StringName &p_class, List<MethodInfo> *p_methods, bool p_no_inheritance = false, bool p_exclude_from_properties = false);
-	static void get_method_list_with_compatibility(const StringName &p_class, List<Pair<MethodInfo, uint32_t>> *p_methods_with_hash, bool p_no_inheritance = false, bool p_exclude_from_properties = false);
-	static bool get_method_info(const StringName &p_class, const StringName &p_method, MethodInfo *r_info, bool p_no_inheritance = false, bool p_exclude_from_properties = false);
-	static int get_method_argument_count(const StringName &p_class, const StringName &p_method, bool *r_is_valid = nullptr, bool p_no_inheritance = false);
-	static MethodBind *get_method(const StringName &p_class, const StringName &p_name);
-	static MethodBind *get_method_with_compatibility(const StringName &p_class, const StringName &p_name, uint64_t p_hash, bool *r_method_exists = nullptr, bool *r_is_deprecated = nullptr);
-	static Vector<uint32_t> get_method_compatibility_hashes(const StringName &p_class, const StringName &p_name);
+	static void get_method_list(const StringName& p_class, List<MethodInfo>* p_methods,
+		bool p_no_inheritance = false, bool p_exclude_from_properties = false);
+	static void get_method_list_with_compatibility(const StringName& p_class,
+		List<Pair<MethodInfo, uint32_t>>* p_methods_with_hash, bool p_no_inheritance = false,
+		bool p_exclude_from_properties = false);
+	static bool get_method_info(const StringName& p_class, const StringName& p_method,
+		MethodInfo* r_info, bool p_no_inheritance = false, bool p_exclude_from_properties = false);
+	static int get_method_argument_count(const StringName& p_class, const StringName& p_method,
+		bool* r_is_valid = nullptr, bool p_no_inheritance = false);
+	static MethodBind* get_method(const StringName& p_class, const StringName& p_name);
+	static MethodBind* get_method_with_compatibility(const StringName& p_class,
+		const StringName& p_name, uint64_t p_hash, bool* r_method_exists = nullptr,
+		bool* r_is_deprecated = nullptr);
+	static Vector<uint32_t> get_method_compatibility_hashes(
+		const StringName& p_class, const StringName& p_name);
 
-	static void add_virtual_method(const StringName &p_class, const MethodInfo &p_method, bool p_virtual = true, const Vector<String> &p_arg_names = Vector<String>(), bool p_object_core = false);
-	static void add_virtual_compatibility_method(const StringName &p_class, const MethodInfo &p_method, bool p_virtual = true, const Vector<String> &p_arg_names = Vector<String>(), bool p_object_core = false);
-	static void get_virtual_methods(const StringName &p_class, List<MethodInfo> *p_methods, bool p_no_inheritance = false);
-	static Vector<uint32_t> get_virtual_method_compatibility_hashes(const StringName &p_class, const StringName &p_name);
+	static void add_virtual_method(const StringName& p_class, const MethodInfo& p_method,
+		bool p_virtual = true, const Vector<String>& p_arg_names = Vector<String>(),
+		bool p_object_core = false);
+	static void add_virtual_compatibility_method(const StringName& p_class,
+		const MethodInfo& p_method, bool p_virtual = true,
+		const Vector<String>& p_arg_names = Vector<String>(), bool p_object_core = false);
+	static void get_virtual_methods(
+		const StringName& p_class, List<MethodInfo>* p_methods, bool p_no_inheritance = false);
+	static Vector<uint32_t> get_virtual_method_compatibility_hashes(
+		const StringName& p_class, const StringName& p_name);
 
-	static void bind_integer_constant(const StringName &p_class, const StringName &p_enum, const StringName &p_name, int64_t p_constant, bool p_is_bitfield = false);
-	static void get_integer_constant_list(const StringName &p_class, List<String> *p_constants, bool p_no_inheritance = false);
-	static int64_t get_integer_constant(const StringName &p_class, const StringName &p_name, bool *p_success = nullptr);
-	static bool has_integer_constant(const StringName &p_class, const StringName &p_name, bool p_no_inheritance = false);
+	static void bind_integer_constant(const StringName& p_class, const StringName& p_enum,
+		const StringName& p_name, int64_t p_constant, bool p_is_bitfield = false);
+	static void get_integer_constant_list(
+		const StringName& p_class, List<String>* p_constants, bool p_no_inheritance = false);
+	static int64_t get_integer_constant(
+		const StringName& p_class, const StringName& p_name, bool* p_success = nullptr);
+	static bool has_integer_constant(
+		const StringName& p_class, const StringName& p_name, bool p_no_inheritance = false);
 
-	static StringName get_integer_constant_enum(const StringName &p_class, const StringName &p_name, bool p_no_inheritance = false);
-	static void get_enum_list(const StringName &p_class, List<StringName> *p_enums, bool p_no_inheritance = false);
-	static void get_enum_constants(const StringName &p_class, const StringName &p_enum, List<StringName> *p_constants, bool p_no_inheritance = false);
-	static bool has_enum(const StringName &p_class, const StringName &p_name, bool p_no_inheritance = false);
-	static bool is_enum_bitfield(const StringName &p_class, const StringName &p_name, bool p_no_inheritance = false);
+	static StringName get_integer_constant_enum(
+		const StringName& p_class, const StringName& p_name, bool p_no_inheritance = false);
+	static void get_enum_list(
+		const StringName& p_class, List<StringName>* p_enums, bool p_no_inheritance = false);
+	static void get_enum_constants(const StringName& p_class, const StringName& p_enum,
+		List<StringName>* p_constants, bool p_no_inheritance = false);
+	static bool has_enum(
+		const StringName& p_class, const StringName& p_name, bool p_no_inheritance = false);
+	static bool is_enum_bitfield(
+		const StringName& p_class, const StringName& p_name, bool p_no_inheritance = false);
 
-	static void set_method_error_return_values(const StringName &p_class, const StringName &p_method, const Vector<Error> &p_values);
-	static Vector<Error> get_method_error_return_values(const StringName &p_class, const StringName &p_method);
-	static Variant class_get_default_property_value(const StringName &p_class, const StringName &p_property, bool *r_valid = nullptr);
+	static void set_method_error_return_values(
+		const StringName& p_class, const StringName& p_method, const Vector<Error>& p_values);
+	static Vector<Error> get_method_error_return_values(
+		const StringName& p_class, const StringName& p_method);
+	static Variant class_get_default_property_value(
+		const StringName& p_class, const StringName& p_property, bool* r_valid = nullptr);
 
-	static void set_class_enabled(const StringName &p_class, bool p_enable);
-	static bool is_class_enabled(const StringName &p_class);
+	static void set_class_enabled(const StringName& p_class, bool p_enable);
+	static bool is_class_enabled(const StringName& p_class);
 
-	static bool is_class_exposed(const StringName &p_class);
-	static bool is_class_reloadable(const StringName &p_class);
-	static bool is_class_runtime(const StringName &p_class);
+	static bool is_class_exposed(const StringName& p_class);
+	static bool is_class_reloadable(const StringName& p_class);
+	static bool is_class_runtime(const StringName& p_class);
 
 #ifdef TOOLS_ENABLED
-	static void add_class_dependency(const StringName &p_class, const StringName &p_dependency);
-	static void get_class_dependencies(const StringName &p_class, List<StringName> *r_rependencies);
+	static void add_class_dependency(const StringName& p_class, const StringName& p_dependency);
+	static void get_class_dependencies(const StringName& p_class, List<StringName>* r_rependencies);
 #endif
 
-	static void add_resource_base_extension(const StringName &p_extension, const StringName &p_class);
-	static void get_resource_base_extensions(List<String> *p_extensions);
-	static void get_extensions_for_type(const StringName &p_class, List<String> *p_extensions);
-	static bool is_resource_extension(const StringName &p_extension);
+	static void add_resource_base_extension(
+		const StringName& p_extension, const StringName& p_class);
+	static void get_resource_base_extensions(List<String>* p_extensions);
+	static void get_extensions_for_type(const StringName& p_class, List<String>* p_extensions);
+	static bool is_resource_extension(const StringName& p_extension);
 
-	static void add_compatibility_class(const StringName &p_class, const StringName &p_fallback);
-	static StringName get_compatibility_class(const StringName &p_class);
+	static void add_compatibility_class(const StringName& p_class, const StringName& p_fallback);
+	static StringName get_compatibility_class(const StringName& p_class);
 
 	static void set_current_api(APIType p_api);
 	static APIType get_current_api();
 	static void cleanup_defaults();
 	static void cleanup();
 
-	static void register_native_struct(const StringName &p_name, const String &p_code, uint64_t p_current_size);
-	static void get_native_struct_list(List<StringName> *r_names);
-	static String get_native_struct_code(const StringName &p_name);
-	static uint64_t get_native_struct_size(const StringName &p_name); // Used for asserting
+	static void register_native_struct(
+		const StringName& p_name, const String& p_code, uint64_t p_current_size);
+	static void get_native_struct_list(List<StringName>* r_names);
+	static String get_native_struct_code(const StringName& p_name);
+	static uint64_t get_native_struct_size(const StringName& p_name); // Used for asserting
 
-	static Object *_instantiate_allow_unexposed(const StringName &p_class); // Used to create unexposed classes from GDExtension, typically for unexposed EditorPlugin.
+	static Object* _instantiate_allow_unexposed(
+		const StringName& p_class); // Used to create unexposed classes from GDExtension, typically
+									// for unexposed EditorPlugin.
 };
 
 #define BIND_ENUM_CONSTANT(m_constant)
@@ -540,8 +647,9 @@ public:
 
 #ifdef DEBUG_ENABLED
 
-#define BIND_METHOD_ERR_RETURN_DOC(m_method, ...) \
-	::ClassDB::set_method_error_return_values(get_class_static(), m_method, Vector<Error>{ __VA_ARGS__ });
+#define BIND_METHOD_ERR_RETURN_DOC(m_method, ...)                                                  \
+	::ClassDB::set_method_error_return_values(                                                     \
+		get_class_static(), m_method, Vector<Error>{__VA_ARGS__});
 
 #else
 
@@ -549,25 +657,28 @@ public:
 
 #endif // DEBUG_ENABLED
 
-#define VLTR_REGISTER_CLASS(m_class) \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
-		::ClassDB::register_class<m_class>(); \
+#define VLTR_REGISTER_CLASS(m_class)                                                               \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
+		::ClassDB::register_class<m_class>();                                                      \
 	}
-#define VLTR_REGISTER_VIRTUAL_CLASS(m_class) \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
-		::ClassDB::register_class<m_class>(true); \
+#define VLTR_REGISTER_VIRTUAL_CLASS(m_class)                                                       \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
+		::ClassDB::register_class<m_class>(true);                                                  \
 	}
-#define VLTR_REGISTER_ABSTRACT_CLASS(m_class) \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
-		::ClassDB::register_abstract_class<m_class>(); \
+#define VLTR_REGISTER_ABSTRACT_CLASS(m_class)                                                      \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
+		::ClassDB::register_abstract_class<m_class>();                                             \
 	}
-#define VLTR_REGISTER_INTERNAL_CLASS(m_class) \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
-		::ClassDB::register_internal_class<m_class>(); \
+#define VLTR_REGISTER_INTERNAL_CLASS(m_class)                                                      \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
+		::ClassDB::register_internal_class<m_class>();                                             \
 	}
-#define VLTR_REGISTER_RUNTIME_CLASS(m_class) \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) { \
-		::ClassDB::register_runtime_class<m_class>(); \
+#define VLTR_REGISTER_RUNTIME_CLASS(m_class)                                                       \
+	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
+		::ClassDB::register_runtime_class<m_class>();                                              \
 	}
 
-#define VLTR_REGISTER_NATIVE_STRUCT(m_class, m_code) ClassDB::register_native_struct(#m_class, m_code, sizeof(m_class))
+#define VLTR_REGISTER_NATIVE_STRUCT(m_class, m_code)                                               \
+	ClassDB::register_native_struct(#m_class, m_code, sizeof(m_class))
+
+

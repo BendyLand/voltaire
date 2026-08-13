@@ -72,7 +72,7 @@ protected:
 	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
 
 public:
-	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::MESH_INSTANCE_3D;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::MESH_INSTANCE_3D;
 
 #ifndef DISABLE_DEPRECATED
 	static inline bool use_parent_skeleton_compat = false;

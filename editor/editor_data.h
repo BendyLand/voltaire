@@ -356,13 +356,8 @@ public:
 	// That is, if the selection includes some node and a child of that node, only the parent is
 	// returned.
 	List<Node*> get_top_selected_node_list();
-	// Same as get_top_selected_node_list but returns a copy in a TypedArray for binding to scripts.
-	TypedArray<Node> get_top_selected_nodes();
 	// Returns all the selected nodes (list version of "get_selected_nodes").
 	List<Node*> get_full_selected_node_list();
-	// Same as get_full_selected_node_list but returns a copy in a TypedArray for binding to
-	// scripts.
-	TypedArray<Node> get_selected_nodes();
 
 	// Returns the map of selected objects and their metadata.
 	HashMap<ObjectID, Object*>& get_selection() { return selection; }

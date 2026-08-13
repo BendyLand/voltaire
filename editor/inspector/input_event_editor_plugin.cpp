@@ -28,25 +28,27 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "input_event_editor_plugin.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/settings/event_listener_line_edit.h"
 #include "editor/settings/input_event_configuration_dialog.h"
+#include "input_event_editor_plugin.h"
 
-void InputEventConfigContainer::_configure_pressed() {
+void InputEventConfigContainer::_configure_pressed()
+{
 	config_dialog->popup_and_configure(input_event);
 }
 
-void InputEventConfigContainer::_event_changed() {
+void InputEventConfigContainer::_event_changed()
+{
 	input_event_text->set_text(input_event->as_text());
 }
 
-void InputEventConfigContainer::_config_dialog_confirmed() {
+void InputEventConfigContainer::_config_dialog_confirmed()
+{
 	Ref<InputEvent> ie = config_dialog->get_event();
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Event Configured"));
 
 	// When command_or_control_autoremap is toggled to false, it should be set first;
@@ -60,16 +62,19 @@ void InputEventConfigContainer::_config_dialog_confirmed() {
 		if (will_toggle) {
 			pending = new_value;
 			if (pending) {
-				undo_redo->add_undo_property(input_event.ptr(), "command_or_control_autoremap", !pending);
-			} else {
-				undo_redo->add_do_property(input_event.ptr(), "command_or_control_autoremap", pending);
+				undo_redo->add_undo_property(
+					input_event.ptr(), "command_or_control_autoremap", !pending);
+			}
+			else {
+				undo_redo->add_do_property(
+					input_event.ptr(), "command_or_control_autoremap", pending);
 			}
 		}
 	}
 
 	List<PropertyInfo> pi;
 	ie->get_property_list(&pi);
-	for (const PropertyInfo &E : pi) {
+	for (const PropertyInfo& E : pi) {
 		if (E.name == "resource_path") {
 			continue; // Do not change path.
 		}
@@ -88,17 +93,20 @@ void InputEventConfigContainer::_config_dialog_confirmed() {
 	if (will_toggle) {
 		if (pending) {
 			undo_redo->add_do_property(input_event.ptr(), "command_or_control_autoremap", pending);
-		} else {
-			undo_redo->add_undo_property(input_event.ptr(), "command_or_control_autoremap", !pending);
+		}
+		else {
+			undo_redo->add_undo_property(
+				input_event.ptr(), "command_or_control_autoremap", !pending);
 		}
 	}
 
-	undo_redo->add_do_property(input_event_text, "text", ie->as_text());
-	undo_redo->add_undo_property(input_event_text, "text", input_event->as_text());
+	undo_redo->add_do_property(input_event_text->obj.get(), "text", ie->as_text());
+	undo_redo->add_undo_property(input_event_text->obj.get(), "text", input_event->as_text());
 	undo_redo->commit_action();
 }
 
-void InputEventConfigContainer::set_event(const Ref<InputEvent> &p_event) {
+void InputEventConfigContainer::set_event(const Ref<InputEvent>& p_event)
+{
 	Ref<InputEventKey> k = p_event;
 	Ref<InputEventMouseButton> m = p_event;
 	Ref<InputEventJoypadButton> jb = p_event;
@@ -106,11 +114,14 @@ void InputEventConfigContainer::set_event(const Ref<InputEvent> &p_event) {
 
 	if (k.is_valid()) {
 		config_dialog->set_allowed_input_types(INPUT_KEY);
-	} else if (m.is_valid()) {
+	}
+	else if (m.is_valid()) {
 		config_dialog->set_allowed_input_types(INPUT_MOUSE_BUTTON);
-	} else if (jb.is_valid()) {
+	}
+	else if (jb.is_valid()) {
 		config_dialog->set_allowed_input_types(INPUT_JOY_BUTTON);
-	} else if (jm.is_valid()) {
+	}
+	else if (jm.is_valid()) {
 		config_dialog->set_allowed_input_types(INPUT_JOY_MOTION);
 	}
 
@@ -119,7 +130,8 @@ void InputEventConfigContainer::set_event(const Ref<InputEvent> &p_event) {
 	input_event->connect_changed(callable_mp(this, &InputEventConfigContainer::_event_changed));
 }
 
-InputEventConfigContainer::InputEventConfigContainer() {
+InputEventConfigContainer::InputEventConfigContainer()
+{
 	input_event_text = memnew(Label);
 	input_event_text->set_focus_mode(FOCUS_ACCESSIBILITY);
 	input_event_text->set_h_size_flags(SIZE_EXPAND_FILL);
@@ -127,20 +139,24 @@ InputEventConfigContainer::InputEventConfigContainer() {
 	input_event_text->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 	add_child(input_event_text);
 
-	EditorInspectorActionButton *open_config_button = memnew(EditorInspectorActionButton(TTRC("Configure"), SNAME("Edit")));
-	open_config_button->connect(SceneStringName(pressed), callable_mp(this, &InputEventConfigContainer::_configure_pressed));
+	EditorInspectorActionButton* open_config_button =
+		memnew(EditorInspectorActionButton(TTRC("Configure"), SNAME("Edit")));
+	open_config_button->connect(SceneStringName(pressed),
+		callable_mp(this, &InputEventConfigContainer::_configure_pressed));
 	add_child(open_config_button);
 
 	add_child(memnew(Control));
 
 	config_dialog = memnew(InputEventConfigurationDialog);
-	config_dialog->connect(SceneStringName(confirmed), callable_mp(this, &InputEventConfigContainer::_config_dialog_confirmed));
+	config_dialog->connect(SceneStringName(confirmed),
+		callable_mp(this, &InputEventConfigContainer::_config_dialog_confirmed));
 	add_child(config_dialog);
 }
 
 ///////////////////////
 
-bool EditorInspectorPluginInputEvent::can_handle(Object *p_object) {
+bool EditorInspectorPluginInputEvent::can_handle(Object* p_object)
+{
 	Ref<InputEventKey> k = Ref<InputEventKey>(p_object);
 	Ref<InputEventMouseButton> m = Ref<InputEventMouseButton>(p_object);
 	Ref<InputEventJoypadButton> jb = Ref<InputEventJoypadButton>(p_object);
@@ -149,18 +165,22 @@ bool EditorInspectorPluginInputEvent::can_handle(Object *p_object) {
 	return k.is_valid() || m.is_valid() || jb.is_valid() || jm.is_valid();
 }
 
-void EditorInspectorPluginInputEvent::parse_begin(Object *p_object) {
+void EditorInspectorPluginInputEvent::parse_begin(Object* p_object)
+{
 	Ref<InputEvent> ie = Ref<InputEvent>(p_object);
 
-	InputEventConfigContainer *picker_controls = memnew(InputEventConfigContainer);
+	InputEventConfigContainer* picker_controls = memnew(InputEventConfigContainer);
 	picker_controls->set_event(ie);
 	add_custom_control(picker_controls);
 }
 
 ///////////////////////
 
-InputEventEditorPlugin::InputEventEditorPlugin() {
+InputEventEditorPlugin::InputEventEditorPlugin()
+{
 	Ref<EditorInspectorPluginInputEvent> plugin;
 	plugin.instantiate();
 	add_inspector_plugin(plugin);
 }
+
+

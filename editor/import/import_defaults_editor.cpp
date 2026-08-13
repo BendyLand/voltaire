@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "import_defaults_editor.h"
-
 #include "core/config/project_settings.h"
 #include "core/io/resource_importer.h"
 #include "core/object/callable_mp.h"
@@ -37,11 +35,13 @@
 #include "editor/inspector/editor_inspector.h"
 #include "editor/inspector/editor_sectioned_inspector.h"
 #include "editor/settings/action_map_editor.h"
+#include "import_defaults_editor.h"
 #include "scene/gui/center_container.h"
 #include "scene/gui/label.h"
 #include "scene/gui/margin_container.h"
 
-class ImportDefaultsEditorSettings {
+class ImportDefaultsEditorSettings
+{
 	friend class ImportDefaultsEditor;
 	List<PropertyInfo> properties;
 	HashMap<StringName, Variant> values;
@@ -50,76 +50,91 @@ class ImportDefaultsEditorSettings {
 	Ref<ResourceImporter> importer;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value) {
+	bool _set(const StringName& p_name, const Variant& p_value)
+	{
 		if (values.has(p_name)) {
 			values[p_name] = p_value;
 			return true;
-		} else {
+		}
+		else {
 			return false;
 		}
 	}
-	bool _get(const StringName &p_name, Variant &r_ret) const {
+
+	bool _get(const StringName& p_name, Variant& r_ret) const
+	{
 		if (values.has(p_name)) {
 			r_ret = values[p_name];
 			return true;
-		} else {
+		}
+		else {
 			r_ret = Variant();
 			return false;
 		}
 	}
-	void _get_property_list(List<PropertyInfo> *p_list) const {
+
+	void _get_property_list(List<PropertyInfo>* p_list) const
+	{
 		if (importer.is_null()) {
 			return;
 		}
-		for (const PropertyInfo &E : properties) {
+		for (const PropertyInfo& E : properties) {
 			if (importer->get_option_visibility("", E.name, values)) {
 				p_list->push_back(E);
 			}
 		}
 	}
+
 public:
 	mem_unique_ptr<Object> obj;
 };
 
-void ImportDefaultsEditor::_notification(int p_what) {
+void ImportDefaultsEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_PREDELETE: {
-			inspector->edit(nullptr);
-		} break;
+	case Object::NOTIFICATION_PREDELETE: {
+		inspector->edit(nullptr);
+	} break;
 	}
 }
 
-void ImportDefaultsEditor::_reset() {
+void ImportDefaultsEditor::_reset()
+{
 	if (settings->importer.is_valid()) {
 		settings->values = settings->default_values;
 		settings->obj->notify_property_list_changed();
 	}
 }
 
-void ImportDefaultsEditor::_save() {
+void ImportDefaultsEditor::_save()
+{
 	if (settings->importer.is_valid()) {
 		Dictionary modified;
 
-		for (const KeyValue<StringName, Variant> &E : settings->values) {
+		for (const KeyValue<StringName, Variant>& E : settings->values) {
 			if (E.value != settings->default_values[E.key]) {
 				modified[E.key] = E.value;
 			}
 		}
 
 		if (modified.size()) {
-			ProjectSettings::get_singleton()->set("importer_defaults/" + settings->importer->get_importer_name(), modified);
-		} else {
-			ProjectSettings::get_singleton()->set("importer_defaults/" + settings->importer->get_importer_name(), Variant());
+			ProjectSettings::get_singleton()->set(
+				"importer_defaults/" + settings->importer->get_importer_name(), modified);
+		}
+		else {
+			ProjectSettings::get_singleton()->set(
+				"importer_defaults/" + settings->importer->get_importer_name(), Variant());
 		}
 		ProjectSettings::get_singleton()->save();
 	}
 }
 
-void ImportDefaultsEditor::_update_importer() {
+void ImportDefaultsEditor::_update_importer()
+{
 	List<Ref<ResourceImporter>> importer_list;
 	ResourceFormatImporter::get_singleton()->get_importers(&importer_list);
 	Ref<ResourceImporter> importer;
-	for (const Ref<ResourceImporter> &E : importer_list) {
+	for (const Ref<ResourceImporter>& E : importer_list) {
 		if (E->get_visible_name() == importers->get_item_text(importers->get_selected())) {
 			importer = E;
 			break;
@@ -134,15 +149,17 @@ void ImportDefaultsEditor::_update_importer() {
 		List<ResourceImporter::ImportOption> options;
 		importer->get_import_options("", &options);
 		Dictionary d;
-		if (ProjectSettings::get_singleton()->has_setting("importer_defaults/" + importer->get_importer_name())) {
+		if (ProjectSettings::get_singleton()->has_setting(
+				"importer_defaults/" + importer->get_importer_name())) {
 			d = GLOBAL_GET("importer_defaults/" + importer->get_importer_name());
 		}
 
-		for (const ResourceImporter::ImportOption &E : options) {
+		for (const ResourceImporter::ImportOption& E : options) {
 			settings->properties.push_back(E.option);
 			if (d.has(E.option.name)) {
 				settings->values[E.option.name] = d[E.option.name];
-			} else {
+			}
+			else {
 				settings->values[E.option.name] = E.default_value;
 			}
 			settings->default_values[E.option.name] = E.default_value;
@@ -151,7 +168,8 @@ void ImportDefaultsEditor::_update_importer() {
 		save_defaults->set_disabled(false);
 		reset_defaults->set_disabled(false);
 
-	} else {
+	}
+	else {
 		save_defaults->set_disabled(true);
 		reset_defaults->set_disabled(true);
 	}
@@ -164,11 +182,10 @@ void ImportDefaultsEditor::_update_importer() {
 	inspector->edit(settings->obj.get());
 }
 
-void ImportDefaultsEditor::_importer_selected(int p_index) {
-	_update_importer();
-}
+void ImportDefaultsEditor::_importer_selected(int p_index) { _update_importer(); }
 
-void ImportDefaultsEditor::clear() {
+void ImportDefaultsEditor::clear()
+{
 	String last_selected;
 
 	if (importers->get_selected() >= 0) {
@@ -180,7 +197,7 @@ void ImportDefaultsEditor::clear() {
 	List<Ref<ResourceImporter>> importer_list;
 	ResourceFormatImporter::get_singleton()->get_importers(&importer_list);
 	Vector<String> names;
-	for (const Ref<ResourceImporter> &E : importer_list) {
+	for (const Ref<ResourceImporter>& E : importer_list) {
 		String vn = E->get_visible_name();
 		names.push_back(vn);
 	}
@@ -201,23 +218,26 @@ void ImportDefaultsEditor::clear() {
 	}
 }
 
-ImportDefaultsEditor::ImportDefaultsEditor() {
+ImportDefaultsEditor::ImportDefaultsEditor()
+{
 	ProjectSettings::get_singleton()->add_hidden_prefix("importer_defaults/");
 
-	HBoxContainer *hb = memnew(HBoxContainer);
+	HBoxContainer* hb = memnew(HBoxContainer);
 	hb->add_child(memnew(Label(TTRC("Importer:"))));
 	importers = memnew(OptionButton);
 	hb->add_child(importers);
 	hb->add_spacer();
-	importers->connect(SceneStringName(item_selected), callable_mp(this, &ImportDefaultsEditor::_importer_selected));
+	importers->connect(SceneStringName(item_selected),
+		callable_mp(this, &ImportDefaultsEditor::_importer_selected));
 	reset_defaults = memnew(Button);
 	reset_defaults->set_text(TTRC("Reset to Defaults"));
 	reset_defaults->set_disabled(true);
-	reset_defaults->connect(SceneStringName(pressed), callable_mp(this, &ImportDefaultsEditor::_reset));
+	reset_defaults->connect(
+		SceneStringName(pressed), callable_mp(this, &ImportDefaultsEditor::_reset));
 	hb->add_child(reset_defaults);
 	add_child(hb);
 
-	MarginContainer *mc = memnew(MarginContainer);
+	MarginContainer* mc = memnew(MarginContainer);
 	mc->set_theme_type_variation("NoBorderPanel");
 	mc->set_v_size_flags(SIZE_EXPAND_FILL);
 	add_child(mc);
@@ -229,16 +249,17 @@ ImportDefaultsEditor::ImportDefaultsEditor() {
 	inspector->set_use_doc_hints(true);
 	mc->add_child(inspector);
 
-	CenterContainer *cc = memnew(CenterContainer);
+	CenterContainer* cc = memnew(CenterContainer);
 	save_defaults = memnew(Button);
 	save_defaults->set_text(TTRC("Save"));
-	save_defaults->connect(SceneStringName(pressed), callable_mp(this, &ImportDefaultsEditor::_save));
+	save_defaults->connect(
+		SceneStringName(pressed), callable_mp(this, &ImportDefaultsEditor::_save));
 	cc->add_child(save_defaults);
 	add_child(cc);
 
 	settings = memnew(ImportDefaultsEditorSettings);
 }
 
-ImportDefaultsEditor::~ImportDefaultsEditor() {
-	memdelete(settings);
-}
+ImportDefaultsEditor::~ImportDefaultsEditor() { memdelete(settings); }
+
+

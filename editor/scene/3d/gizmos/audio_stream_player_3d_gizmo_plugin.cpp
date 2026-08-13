@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_stream_player_3d_gizmo_plugin.h"
-
 #include "core/math/geometry_3d.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
@@ -37,10 +36,13 @@
 #include "editor/settings/editor_settings.h"
 #include "scene/3d/audio_stream_player_3d.h"
 
-AudioStreamPlayer3DGizmoPlugin::AudioStreamPlayer3DGizmoPlugin() {
+AudioStreamPlayer3DGizmoPlugin::AudioStreamPlayer3DGizmoPlugin()
+{
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/stream_player_3d");
 
-	create_icon_material("stream_player_3d_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Gizmo3DSamplePlayer"), EditorStringName(EditorIcons)));
+	create_icon_material(
+		"stream_player_3d_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(
+									 SNAME("Gizmo3DSamplePlayer"), EditorStringName(EditorIcons)));
 	create_material("stream_player_3d_material_primary", gizmo_color);
 	create_material("stream_player_3d_material_secondary", gizmo_color * Color(1, 1, 1, 0.35));
 	// Enable vertex colors for the billboard material as the gizmo color depends on the
@@ -49,29 +51,32 @@ AudioStreamPlayer3DGizmoPlugin::AudioStreamPlayer3DGizmoPlugin() {
 	create_handle_material("handles");
 }
 
-bool AudioStreamPlayer3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
+bool AudioStreamPlayer3DGizmoPlugin::has_gizmo(Node3D* p_spatial)
+{
 	return Object::cast_to<AudioStreamPlayer3D>(p_spatial) != nullptr;
 }
 
-String AudioStreamPlayer3DGizmoPlugin::get_gizmo_name() const {
-	return "AudioStreamPlayer3D";
-}
+String AudioStreamPlayer3DGizmoPlugin::get_gizmo_name() const { return "AudioStreamPlayer3D"; }
 
-int AudioStreamPlayer3DGizmoPlugin::get_priority() const {
-	return -1;
-}
+int AudioStreamPlayer3DGizmoPlugin::get_priority() const { return -1; }
 
-String AudioStreamPlayer3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
+String AudioStreamPlayer3DGizmoPlugin::get_handle_name(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
 	return "Emission Radius";
 }
 
-Variant AudioStreamPlayer3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	AudioStreamPlayer3D *player = Object::cast_to<AudioStreamPlayer3D>(p_gizmo->get_node_3d());
+Variant AudioStreamPlayer3DGizmoPlugin::get_handle_value(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	AudioStreamPlayer3D* player = Object::cast_to<AudioStreamPlayer3D>(p_gizmo->get_node_3d());
 	return player->get_emission_angle();
 }
 
-void AudioStreamPlayer3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	AudioStreamPlayer3D *player = Object::cast_to<AudioStreamPlayer3D>(p_gizmo->get_node_3d());
+void AudioStreamPlayer3DGizmoPlugin::set_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, Camera3D* p_camera, const Point2& p_point)
+{
+	AudioStreamPlayer3D* player = Object::cast_to<AudioStreamPlayer3D>(p_gizmo->get_node_3d());
 
 	Transform3D gt = player->get_global_transform();
 	Transform3D gi = gt.affine_inverse();
@@ -107,71 +112,78 @@ void AudioStreamPlayer3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo
 	}
 }
 
-void AudioStreamPlayer3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	AudioStreamPlayer3D *player = Object::cast_to<AudioStreamPlayer3D>(p_gizmo->get_node_3d());
+void AudioStreamPlayer3DGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, const Variant& p_restore, bool p_cancel)
+{
+	AudioStreamPlayer3D* player = Object::cast_to<AudioStreamPlayer3D>(p_gizmo->get_node_3d());
 
 	if (p_cancel) {
 		player->set_emission_angle(p_restore);
 
-	} else {
-		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	}
+	else {
+		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change AudioStreamPlayer3D Emission Angle"));
-		ur->add_do_method(player, "set_emission_angle", player->get_emission_angle());
-		ur->add_undo_method(player, "set_emission_angle", p_restore);
+		ur->add_do_method(player->obj.get(), "set_emission_angle", player->get_emission_angle());
+		ur->add_undo_method(player->obj.get(), "set_emission_angle", p_restore);
 		ur->commit_action();
 	}
 }
 
-void AudioStreamPlayer3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
+void AudioStreamPlayer3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
+{
 	p_gizmo->clear();
 
 	if (p_gizmo->is_selected()) {
-		const AudioStreamPlayer3D *player = Object::cast_to<AudioStreamPlayer3D>(p_gizmo->get_node_3d());
+		const AudioStreamPlayer3D* player =
+			Object::cast_to<AudioStreamPlayer3D>(p_gizmo->get_node_3d());
 
-		if (player->get_attenuation_model() != AudioStreamPlayer3D::ATTENUATION_DISABLED || player->get_max_distance() > CMP_EPSILON) {
+		if (player->get_attenuation_model() != AudioStreamPlayer3D::ATTENUATION_DISABLED ||
+			player->get_max_distance() > CMP_EPSILON) {
 			// Draw a circle to represent sound volume attenuation.
 			// Use only a billboard circle to represent radius.
 			// This helps distinguish AudioStreamPlayer3D gizmos from OmniLight3D gizmos.
-			const Ref<Material> lines_billboard_material = get_material("stream_player_3d_material_billboard", p_gizmo);
+			const Ref<Material> lines_billboard_material =
+				get_material("stream_player_3d_material_billboard", p_gizmo);
 
-			// Soft distance cap varies depending on attenuation model, as some will fade out more aggressively than others.
-			// Multipliers were empirically determined through testing.
+			// Soft distance cap varies depending on attenuation model, as some will fade out more
+			// aggressively than others. Multipliers were empirically determined through testing.
 			float soft_multiplier;
 			switch (player->get_attenuation_model()) {
-				case AudioStreamPlayer3D::ATTENUATION_INVERSE_DISTANCE:
-					soft_multiplier = 12.0;
-					break;
-				case AudioStreamPlayer3D::ATTENUATION_INVERSE_SQUARE_DISTANCE:
-					soft_multiplier = 4.0;
-					break;
-				case AudioStreamPlayer3D::ATTENUATION_LOGARITHMIC:
-					soft_multiplier = 3.25;
-					break;
-				default:
-					// Ensures Max Distance's radius visualization is not capped by Unit Size
-					// (when the attenuation mode is Disabled).
-					soft_multiplier = 10000.0;
-					break;
+			case AudioStreamPlayer3D::ATTENUATION_INVERSE_DISTANCE:
+				soft_multiplier = 12.0;
+				break;
+			case AudioStreamPlayer3D::ATTENUATION_INVERSE_SQUARE_DISTANCE:
+				soft_multiplier = 4.0;
+				break;
+			case AudioStreamPlayer3D::ATTENUATION_LOGARITHMIC:
+				soft_multiplier = 3.25;
+				break;
+			default:
+				// Ensures Max Distance's radius visualization is not capped by Unit Size
+				// (when the attenuation mode is Disabled).
+				soft_multiplier = 10000.0;
+				break;
 			}
 
 			// Draw the distance at which the sound can be reasonably heard.
-			// This can be either a hard distance cap with the Max Distance property (if set above 0.0),
-			// or a soft distance cap with the Unit Size property (sound never reaches true zero).
-			// When Max Distance is 0.0, `r` represents the distance above which the
-			// sound can't be heard in *most* (but not all) scenarios.
+			// This can be either a hard distance cap with the Max Distance property (if set above
+			// 0.0), or a soft distance cap with the Unit Size property (sound never reaches true
+			// zero). When Max Distance is 0.0, `r` represents the distance above which the sound
+			// can't be heard in *most* (but not all) scenarios.
 			float radius = player->get_unit_size() * soft_multiplier;
 			if (player->get_max_distance() > CMP_EPSILON) {
 				radius = MIN(radius, player->get_max_distance());
 			}
 
-#define PUSH_QUARTER_XY(m_from_x, m_from_y, m_to_x, m_to_y, m_y) \
-	points_ptrw[index++] = Vector3(m_from_x, -m_from_y - m_y, 0); \
-	points_ptrw[index++] = Vector3(m_to_x, -m_to_y - m_y, 0); \
-	points_ptrw[index++] = Vector3(m_from_x, m_from_y + m_y, 0); \
-	points_ptrw[index++] = Vector3(m_to_x, m_to_y + m_y, 0); \
-	points_ptrw[index++] = Vector3(-m_from_x, -m_from_y - m_y, 0); \
-	points_ptrw[index++] = Vector3(-m_to_x, -m_to_y - m_y, 0); \
-	points_ptrw[index++] = Vector3(-m_from_x, m_from_y + m_y, 0); \
+#define PUSH_QUARTER_XY(m_from_x, m_from_y, m_to_x, m_to_y, m_y)                                   \
+	points_ptrw[index++] = Vector3(m_from_x, -m_from_y - m_y, 0);                                  \
+	points_ptrw[index++] = Vector3(m_to_x, -m_to_y - m_y, 0);                                      \
+	points_ptrw[index++] = Vector3(m_from_x, m_from_y + m_y, 0);                                   \
+	points_ptrw[index++] = Vector3(m_to_x, m_to_y + m_y, 0);                                       \
+	points_ptrw[index++] = Vector3(-m_from_x, -m_from_y - m_y, 0);                                 \
+	points_ptrw[index++] = Vector3(-m_to_x, -m_to_y - m_y, 0);                                     \
+	points_ptrw[index++] = Vector3(-m_from_x, m_from_y + m_y, 0);                                  \
 	points_ptrw[index++] = Vector3(-m_to_x, m_to_y + m_y, 0);
 
 			// Number of points in an octant. So there will be 8 * points_in_octant points in total.
@@ -184,7 +196,7 @@ void AudioStreamPlayer3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 			Vector<Vector3> points_billboard;
 			points_billboard.resize(8 * points_in_octant * 2);
-			Vector3 *points_ptrw = points_billboard.ptrw();
+			Vector3* points_ptrw = points_billboard.ptrw();
 
 			uint32_t index = 0;
 			float previous_x = radius;
@@ -205,24 +217,24 @@ void AudioStreamPlayer3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 			Color color;
 			switch (player->get_attenuation_model()) {
-				// Pick cold colors for all attenuation models (except Disabled),
-				// so that soft caps can be easily distinguished from hard caps
-				// (which use warm colors).
-				case AudioStreamPlayer3D::ATTENUATION_INVERSE_DISTANCE:
-					color = Color(0.4, 0.8, 1);
-					break;
-				case AudioStreamPlayer3D::ATTENUATION_INVERSE_SQUARE_DISTANCE:
-					color = Color(0.4, 0.5, 1);
-					break;
-				case AudioStreamPlayer3D::ATTENUATION_LOGARITHMIC:
-					color = Color(0.4, 0.2, 1);
-					break;
-				default:
-					// Disabled attenuation mode.
-					// This is never reached when Max Distance is 0, but the
-					// hue-inverted form of this color will be used if Max Distance is greater than 0.
-					color = Color(1, 1, 1);
-					break;
+			// Pick cold colors for all attenuation models (except Disabled),
+			// so that soft caps can be easily distinguished from hard caps
+			// (which use warm colors).
+			case AudioStreamPlayer3D::ATTENUATION_INVERSE_DISTANCE:
+				color = Color(0.4, 0.8, 1);
+				break;
+			case AudioStreamPlayer3D::ATTENUATION_INVERSE_SQUARE_DISTANCE:
+				color = Color(0.4, 0.5, 1);
+				break;
+			case AudioStreamPlayer3D::ATTENUATION_LOGARITHMIC:
+				color = Color(0.4, 0.2, 1);
+				break;
+			default:
+				// Disabled attenuation mode.
+				// This is never reached when Max Distance is 0, but the
+				// hue-inverted form of this color will be used if Max Distance is greater than 0.
+				color = Color(1, 1, 1);
+				break;
 			}
 
 			if (player->get_max_distance() > CMP_EPSILON) {
@@ -247,19 +259,19 @@ void AudioStreamPlayer3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 			Vector<Vector3> points_primary;
 			points_primary.resize(8 * points_in_octant * 2);
-			Vector3 *points_ptrw = points_primary.ptrw();
+			Vector3* points_ptrw = points_primary.ptrw();
 
 			uint32_t index = 0;
 			float previous_x = radius;
 			float previous_y = 0.f;
-#define PUSH_QUARTER(m_from_x, m_from_y, m_to_x, m_to_y, m_y) \
-	points_ptrw[index++] = Vector3(m_from_x, -m_from_y, m_y); \
-	points_ptrw[index++] = Vector3(m_to_x, -m_to_y, m_y); \
-	points_ptrw[index++] = Vector3(m_from_x, m_from_y, m_y); \
-	points_ptrw[index++] = Vector3(m_to_x, m_to_y, m_y); \
-	points_ptrw[index++] = Vector3(-m_from_x, -m_from_y, m_y); \
-	points_ptrw[index++] = Vector3(-m_to_x, -m_to_y, m_y); \
-	points_ptrw[index++] = Vector3(-m_from_x, m_from_y, m_y); \
+#define PUSH_QUARTER(m_from_x, m_from_y, m_to_x, m_to_y, m_y)                                      \
+	points_ptrw[index++] = Vector3(m_from_x, -m_from_y, m_y);                                      \
+	points_ptrw[index++] = Vector3(m_to_x, -m_to_y, m_y);                                          \
+	points_ptrw[index++] = Vector3(m_from_x, m_from_y, m_y);                                       \
+	points_ptrw[index++] = Vector3(m_to_x, m_to_y, m_y);                                           \
+	points_ptrw[index++] = Vector3(-m_from_x, -m_from_y, m_y);                                     \
+	points_ptrw[index++] = Vector3(-m_to_x, -m_to_y, m_y);                                         \
+	points_ptrw[index++] = Vector3(-m_from_x, m_from_y, m_y);                                      \
 	points_ptrw[index++] = Vector3(-m_to_x, m_to_y, m_y);
 
 			for (uint32_t i = 0; i < points_in_octant; i++) {
@@ -275,12 +287,13 @@ void AudioStreamPlayer3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 			}
 #undef PUSH_QUARTER
 
-			const Ref<Material> material_primary = get_material("stream_player_3d_material_primary", p_gizmo);
+			const Ref<Material> material_primary =
+				get_material("stream_player_3d_material_primary", p_gizmo);
 			p_gizmo->add_lines(points_primary, material_primary);
 
 			Vector<Vector3> points_secondary;
 			points_secondary.resize(16);
-			Vector3 *points_second_ptrw = points_secondary.ptrw();
+			Vector3* points_second_ptrw = points_secondary.ptrw();
 			uint32_t index2 = 0;
 			// Lines to the circle.
 			points_second_ptrw[index2++] = Vector3();
@@ -301,7 +314,8 @@ void AudioStreamPlayer3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 			points_second_ptrw[index2++] = Vector3();
 			points_second_ptrw[index2++] = Vector3(octant_value, -octant_value, ofs);
 
-			const Ref<Material> material_secondary = get_material("stream_player_3d_material_secondary", p_gizmo);
+			const Ref<Material> material_secondary =
+				get_material("stream_player_3d_material_secondary", p_gizmo);
 			p_gizmo->add_lines(points_secondary, material_secondary);
 
 			Vector<Vector3> handles;
@@ -313,3 +327,5 @@ void AudioStreamPlayer3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	const Ref<Material> icon = get_material("stream_player_3d_icon", p_gizmo);
 	p_gizmo->add_unscaled_billboard(icon, 0.05);
 }
+
+

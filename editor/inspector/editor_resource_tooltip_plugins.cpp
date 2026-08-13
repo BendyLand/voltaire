@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_resource_tooltip_plugins.h"
-
 #include "core/io/resource_loader.h"
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
@@ -38,43 +36,53 @@
 #include "editor/file_system/editor_file_system.h"
 #include "editor/inspector/editor_resource_preview.h"
 #include "editor/themes/editor_scale.h"
+#include "editor_resource_tooltip_plugins.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/label.h"
 #include "scene/gui/texture_rect.h"
 
-void EditorResourceTooltipPlugin::_thumbnail_ready(const String &p_path, const Ref<Texture2D> &p_preview, const Ref<Texture2D> &p_small_preview, ObjectID p_trect_id) {
-	TextureRect *tr = ObjectDB::get_instance<TextureRect>(p_trect_id);
+void EditorResourceTooltipPlugin::_thumbnail_ready(const String& p_path,
+	const Ref<Texture2D>& p_preview, const Ref<Texture2D>& p_small_preview, ObjectID p_trect_id)
+{
+	TextureRect* tr = ObjectDB::get_instance<TextureRect>(p_trect_id);
 	if (tr) {
 		tr->set_texture(p_preview);
 	}
 }
 
-void EditorResourceTooltipPlugin::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("request_thumbnail", "path", "control"), &EditorResourceTooltipPlugin::request_thumbnail);
+void EditorResourceTooltipPlugin::_bind_methods()
+{
+	ClassDB::bind_method(D_METHOD("request_thumbnail", "path", "control"),
+		&EditorResourceTooltipPlugin::request_thumbnail);
 }
 
-VBoxContainer *EditorResourceTooltipPlugin::make_default_tooltip(const String &p_resource_path) {
-	VBoxContainer *vb = memnew(VBoxContainer);
+VBoxContainer* EditorResourceTooltipPlugin::make_default_tooltip(const String& p_resource_path)
+{
+	VBoxContainer* vb = memnew(VBoxContainer);
 	vb->add_theme_constant_override("separation", -4 * EDSCALE);
 	{
-		Label *label = memnew(Label(p_resource_path.get_file()));
+		Label* label = memnew(Label(p_resource_path.get_file()));
 		vb->add_child(label);
 	}
 
 	ResourceUID::ID id = EditorFileSystem::get_singleton()->get_file_uid(p_resource_path);
 	if (id != ResourceUID::INVALID_ID) {
-		Label *label = memnew(Label(ResourceUID::get_singleton()->id_to_text(id)));
+		Label* label = memnew(Label(ResourceUID::get_singleton()->id_to_text(id)));
 		vb->add_child(label);
 	}
 
 	{
 		Ref<FileAccess> f = FileAccess::open(p_resource_path, FileAccess::READ);
 		if (f.is_valid()) {
-			Label *label = memnew(Label(vformat(TTR("Size: %s"), String::humanize_size(f->get_length()))));
+			Label* label =
+				memnew(Label(vformat(TTR("Size: %s"), String::humanize_size(f->get_length()))));
 			vb->add_child(label);
-		} else {
-			Label *label = memnew(Label(TTR("Invalid file or broken link.")));
-			label->add_theme_color_override(SceneStringName(font_color), EditorNode::get_singleton()->get_gui_base()->get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
+		}
+		else {
+			Label* label = memnew(Label(TTR("Invalid file or broken link.")));
+			label->add_theme_color_override(SceneStringName(font_color),
+				EditorNode::get_singleton()->get_gui_base()->get_theme_color(
+					SNAME("error_color"), EditorStringName(Editor)));
 			vb->add_child(label);
 			return vb;
 		}
@@ -82,40 +90,49 @@ VBoxContainer *EditorResourceTooltipPlugin::make_default_tooltip(const String &p
 
 	if (ResourceLoader::exists(p_resource_path)) {
 		String type = ResourceLoader::get_resource_type(p_resource_path);
-		Label *label = memnew(Label(vformat(TTR("Type: %s"), type)));
+		Label* label = memnew(Label(vformat(TTR("Type: %s"), type)));
 		vb->add_child(label);
 	}
 
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 	if (da->is_link(p_resource_path)) {
-		Label *link = memnew(Label(vformat(TTR("Link to: %s"), da->read_link(p_resource_path))));
+		Label* link = memnew(Label(vformat(TTR("Link to: %s"), da->read_link(p_resource_path))));
 		vb->add_child(link);
 	}
 	return vb;
 }
 
-void EditorResourceTooltipPlugin::request_thumbnail(const String &p_path, TextureRect *p_for_control) const {
+void EditorResourceTooltipPlugin::request_thumbnail(
+	const String& p_path, TextureRect* p_for_control) const
+{
 	ERR_FAIL_NULL(p_for_control);
-	EditorResourcePreview::get_singleton()->queue_resource_preview(p_path, callable_mp(const_cast<EditorResourceTooltipPlugin *>(this), &EditorResourceTooltipPlugin::_thumbnail_ready).bind(p_for_control->get_instance_id()));
+	EditorResourcePreview::get_singleton()->queue_resource_preview(
+		p_path, callable_mp(const_cast<EditorResourceTooltipPlugin*>(this),
+					&EditorResourceTooltipPlugin::_thumbnail_ready)
+					.bind(p_for_control->obj->get_instance_id()));
 }
 
 // EditorTextureTooltipPlugin
 
-bool EditorTextureTooltipPlugin::handles(const String &p_resource_type) const {
-	return ClassDB::is_parent_class(p_resource_type, "Texture2D") || ClassDB::is_parent_class(p_resource_type, "Image");
+bool EditorTextureTooltipPlugin::handles(const String& p_resource_type) const
+{
+	return ClassDB::is_parent_class(p_resource_type, "Texture2D") ||
+		   ClassDB::is_parent_class(p_resource_type, "Image");
 }
 
-Control *EditorTextureTooltipPlugin::make_tooltip_for_path(const String &p_resource_path, const Dictionary &p_metadata, Control *p_base) const {
-	HBoxContainer *hb = memnew(HBoxContainer);
-	VBoxContainer *vb = Object::cast_to<VBoxContainer>(p_base);
+Control* EditorTextureTooltipPlugin::make_tooltip_for_path(
+	const String& p_resource_path, const Dictionary& p_metadata, Control* p_base) const
+{
+	HBoxContainer* hb = memnew(HBoxContainer);
+	VBoxContainer* vb = Object::cast_to<VBoxContainer>(p_base);
 	DEV_ASSERT(vb);
 	vb->set_alignment(BoxContainer::ALIGNMENT_CENTER);
 
 	Vector2 dimensions = p_metadata.get("dimensions", Vector2());
-	Label *label = memnew(Label(vformat(TTR(U"Dimensions: %d × %d"), dimensions.x, dimensions.y)));
+	Label* label = memnew(Label(vformat(TTR(U"Dimensions: %d × %d"), dimensions.x, dimensions.y)));
 	vb->add_child(label);
 
-	TextureRect *tr = memnew(TextureRect);
+	TextureRect* tr = memnew(TextureRect);
 	tr->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
 	hb->add_child(tr);
 	request_thumbnail(p_resource_path, tr);
@@ -126,29 +143,42 @@ Control *EditorTextureTooltipPlugin::make_tooltip_for_path(const String &p_resou
 
 // EditorAudioStreamTooltipPlugin
 
-bool EditorAudioStreamTooltipPlugin::handles(const String &p_resource_type) const {
+bool EditorAudioStreamTooltipPlugin::handles(const String& p_resource_type) const
+{
 	return ClassDB::is_parent_class(p_resource_type, "AudioStream");
 }
 
-Control *EditorAudioStreamTooltipPlugin::make_tooltip_for_path(const String &p_resource_path, const Dictionary &p_metadata, Control *p_base) const {
-	VBoxContainer *vb = Object::cast_to<VBoxContainer>(p_base);
+Control* EditorAudioStreamTooltipPlugin::make_tooltip_for_path(
+	const String& p_resource_path, const Dictionary& p_metadata, Control* p_base) const
+{
+	VBoxContainer* vb = Object::cast_to<VBoxContainer>(p_base);
 	DEV_ASSERT(vb);
 
 	double length = p_metadata.get("length", 0.0);
 	if (length >= 60.0) {
-		vb->add_child(memnew(Label(vformat(TTR("Length: %0dm %0ds"), int(length / 60.0), int(std::fmod(length, 60))))));
-	} else if (length >= 1.0) {
+		vb->add_child(memnew(Label(
+			vformat(TTR("Length: %0dm %0ds"), int(length / 60.0), int(std::fmod(length, 60))))));
+	}
+	else if (length >= 1.0) {
 		vb->add_child(memnew(Label(vformat(TTR("Length: %0.1fs"), length))));
-	} else {
+	}
+	else {
 		vb->add_child(memnew(Label(vformat(TTR("Length: %0.3fs"), length))));
 	}
 
-	TextureRect *tr = memnew(TextureRect);
+	TextureRect* tr = memnew(TextureRect);
 	vb->add_child(tr);
 	request_thumbnail(p_resource_path, tr);
 
 	return vb;
 }
 
-bool EditorResourceTooltipPlugin::handles(const String &p_type) const { return false; }
-Control *EditorResourceTooltipPlugin::make_tooltip_for_path(const String &p_path, const Dictionary &p_metadata, Control *p_base) const { return nullptr; }
+bool EditorResourceTooltipPlugin::handles(const String& p_type) const { return false; }
+
+Control* EditorResourceTooltipPlugin::make_tooltip_for_path(
+	const String& p_path, const Dictionary& p_metadata, Control* p_base) const
+{
+	return nullptr;
+}
+
+

@@ -67,7 +67,7 @@ void PostImportPluginSkeletonTrackOrganizer::internal_process(InternalImportCate
 			return;
 		}
 
-		TypedArray<Node> nodes = p_base_scene->find_children("*", "AnimationPlayer");
+		Vector<Node*> nodes = p_base_scene->find_children("*", "AnimationPlayer");
 		while (nodes.size()) {
 			AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(nodes.pop_back());
 

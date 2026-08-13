@@ -33,11 +33,11 @@
 #include "core/templates/vset.h"
 #include "scene/3d/physics/collision_object_3d.h"
 
-class Area3D : public CollisionObject3D {
-	VLTRCLASS(Area3D, CollisionObject3D);
-
+class Area3D : public CollisionObject3D
+{
 public:
-	enum SpaceOverride {
+	enum SpaceOverride
+	{
 		SPACE_OVERRIDE_DISABLED,
 		SPACE_OVERRIDE_COMBINE,
 		SPACE_OVERRIDE_COMBINE_REPLACE,
@@ -67,30 +67,38 @@ private:
 	bool monitorable = false;
 	bool locked = false;
 
-	void _body_inout(int p_status, const RID &p_body, ObjectID p_instance, int p_body_shape, int p_area_shape);
+	void _body_inout(
+		int p_status, const RID& p_body, ObjectID p_instance, int p_body_shape, int p_area_shape);
 
 	void _body_enter_tree(ObjectID p_id);
 	void _body_exit_tree(ObjectID p_id);
 
-	struct ShapePair {
+	struct ShapePair
+	{
 		int body_shape = 0;
 		int area_shape = 0;
-		bool operator<(const ShapePair &p_sp) const {
+
+		bool operator<(const ShapePair& p_sp) const
+		{
 			if (body_shape == p_sp.body_shape) {
 				return area_shape < p_sp.area_shape;
-			} else {
+			}
+			else {
 				return body_shape < p_sp.body_shape;
 			}
 		}
 
 		ShapePair() {}
-		ShapePair(int p_bs, int p_as) {
+
+		ShapePair(int p_bs, int p_as)
+		{
 			body_shape = p_bs;
 			area_shape = p_as;
 		}
 	};
 
-	struct BodyState {
+	struct BodyState
+	{
 		RID rid;
 		int rc = 0;
 		bool in_tree = false;
@@ -99,30 +107,38 @@ private:
 
 	HashMap<ObjectID, BodyState> body_map;
 
-	void _area_inout(int p_status, const RID &p_area, ObjectID p_instance, int p_area_shape, int p_self_shape);
+	void _area_inout(
+		int p_status, const RID& p_area, ObjectID p_instance, int p_area_shape, int p_self_shape);
 
 	void _area_enter_tree(ObjectID p_id);
 	void _area_exit_tree(ObjectID p_id);
 
-	struct AreaShapePair {
+	struct AreaShapePair
+	{
 		int area_shape = 0;
 		int self_shape = 0;
-		bool operator<(const AreaShapePair &p_sp) const {
+
+		bool operator<(const AreaShapePair& p_sp) const
+		{
 			if (area_shape == p_sp.area_shape) {
 				return self_shape < p_sp.self_shape;
-			} else {
+			}
+			else {
 				return area_shape < p_sp.area_shape;
 			}
 		}
 
 		AreaShapePair() {}
-		AreaShapePair(int p_bs, int p_as) {
+
+		AreaShapePair(int p_bs, int p_as)
+		{
 			area_shape = p_bs;
 			self_shape = p_as;
 		}
 	};
 
-	struct AreaState {
+	struct AreaState
+	{
 		RID rid;
 		int rc = 0;
 		bool in_tree = false;
@@ -145,9 +161,9 @@ private:
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
-	virtual void _space_changed(const RID &p_new_space) override;
+	virtual void _space_changed(const RID& p_new_space) override;
 
 public:
 	void set_gravity_space_override_mode(SpaceOverride p_mode);
@@ -159,11 +175,11 @@ public:
 	void set_gravity_point_unit_distance(real_t p_scale);
 	real_t get_gravity_point_unit_distance() const;
 
-	void set_gravity_point_center(const Vector3 &p_center);
-	const Vector3 &get_gravity_point_center() const;
+	void set_gravity_point_center(const Vector3& p_center);
+	const Vector3& get_gravity_point_center() const;
 
-	void set_gravity_direction(const Vector3 &p_direction);
-	const Vector3 &get_gravity_direction() const;
+	void set_gravity_direction(const Vector3& p_direction);
+	const Vector3& get_gravity_direction() const;
 
 	void set_gravity(real_t p_gravity);
 	real_t get_gravity() const;
@@ -189,8 +205,8 @@ public:
 	void set_wind_attenuation_factor(real_t p_wind_attenuation_factor);
 	real_t get_wind_attenuation_factor() const;
 
-	void set_wind_source_path(const NodePath &p_wind_source_path);
-	const NodePath &get_wind_source_path() const;
+	void set_wind_source_path(const NodePath& p_wind_source_path);
+	const NodePath& get_wind_source_path() const;
 
 	void set_monitoring(bool p_enable);
 	bool is_monitoring() const;
@@ -199,7 +215,7 @@ public:
 	bool is_monitorable() const;
 
 	TypedArray<Node3D> get_overlapping_bodies() const;
-	TypedArray<Area3D> get_overlapping_areas() const; //function for script
+	TypedArray<Area3D> get_overlapping_areas() const; // function for script
 
 	bool has_overlapping_bodies() const;
 	bool has_overlapping_areas() const;
@@ -210,13 +226,13 @@ public:
 	void set_audio_bus_override(bool p_override);
 	bool is_overriding_audio_bus() const;
 
-	void set_audio_bus_name(const StringName &p_audio_bus);
+	void set_audio_bus_name(const StringName& p_audio_bus);
 	StringName get_audio_bus_name() const;
 
 	void set_use_reverb_bus(bool p_enable);
 	bool is_using_reverb_bus() const;
 
-	void set_reverb_bus_name(const StringName &p_audio_bus);
+	void set_reverb_bus_name(const StringName& p_audio_bus);
 	StringName get_reverb_bus_name() const;
 
 	void set_reverb_amount(float p_amount);
@@ -230,3 +246,5 @@ public:
 };
 
 VARIANT_ENUM_CAST(Area3D::SpaceOverride);
+
+

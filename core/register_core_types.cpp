@@ -139,7 +139,6 @@ void register_core_types() {
 	VLTR_REGISTER_CLASS(Object);
 	VLTR_REGISTER_CLASS(RefCounted);
 	VLTR_REGISTER_CLASS(WeakRef);
-	VLTR_REGISTER_CLASS(Resource);
 
 	VLTR_REGISTER_CLASS(Time);
 	_time = memnew(Time);

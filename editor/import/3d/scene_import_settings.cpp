@@ -287,8 +287,8 @@ void SceneImportSettingsDialog::_fill_material(
 	}
 	item->set_icon(0, icon);
 
-	item->set_meta("type", "Material");
-	item->set_meta("import_id", import_id);
+	item->obj->set_meta("type", "Material");
+	item->obj->set_meta("import_id", import_id);
 	item->set_tooltip_text(0, vformat(TTR("Import ID: %s"), import_id));
 	item->set_selectable(0, true);
 
@@ -350,8 +350,8 @@ void SceneImportSettingsDialog::_fill_mesh(
 		created = true;
 	}
 
-	item->set_meta("type", "Mesh");
-	item->set_meta("import_id", import_id);
+	item->obj->set_meta("type", "Mesh");
+	item->obj->set_meta("import_id", import_id);
 	item->set_tooltip_text(0, vformat(TTR("Import ID: %s"), import_id));
 
 	item->set_selectable(0, true);
@@ -405,8 +405,8 @@ void SceneImportSettingsDialog::_fill_animation(
 	item->set_text(0, p_name);
 	item->set_icon(0, icon);
 
-	item->set_meta("type", "Animation");
-	item->set_meta("import_id", p_name);
+	item->obj->set_meta("type", "Animation");
+	item->obj->set_meta("import_id", p_name);
 
 	item->set_selectable(0, true);
 
@@ -447,7 +447,7 @@ void SceneImportSettingsDialog::_fill_scene(Node* p_node, TreeItem* p_parent_ite
 		p_node = mesh_node;
 	}
 
-	String type = p_node->get_class();
+	String type = p_node->obj->get_class();
 
 	if (!has_theme_icon(type, EditorStringName(EditorIcons))) {
 		type = "Node3D";
@@ -465,9 +465,9 @@ void SceneImportSettingsDialog::_fill_scene(Node* p_node, TreeItem* p_parent_ite
 
 	item->set_icon(0, icon);
 
-	item->set_meta("type", "Node");
-	item->set_meta("class", type);
-	item->set_meta("import_id", import_id);
+	item->obj->set_meta("type", "Node");
+	item->obj->set_meta("class", type);
+	item->obj->set_meta("import_id", import_id);
 	item->set_tooltip_text(0, vformat(TTR("Type: %s\nImport ID: %s"), type, import_id));
 
 	item->set_selectable(0, true);
@@ -641,14 +641,14 @@ void SceneImportSettingsDialog::_update_view_gizmos()
 		}
 
 		// Get the collider_view MeshInstance3D.
-		TypedArray<Node> descendants =
+		Vector<Node*> descendants =
 			mesh_node->find_children("collider_view", "MeshInstance3D", false);
 		CRASH_COND_MSG(
 			descendants.is_empty(), "This is unreachable, since the collider view is always "
 									"created even when the collision is not used! If this is "
 									"triggered there is a bug on the function `_fill_scene`.");
 		MeshInstance3D* collider_view =
-			Object::cast_to<MeshInstance3D>(descendants[0].operator Object*());
+			Object::cast_to<MeshInstance3D>(descendants[0]);
 
 		// Regenerate the physics collider for this MeshInstance3D if either:
 		// - A regeneration is requested for the selected import node.
@@ -1312,8 +1312,8 @@ void SceneImportSettingsDialog::_material_tree_selected()
 		return;
 	}
 	TreeItem* item = material_tree->get_selected();
-	String type = item->get_meta("type");
-	String import_id = item->get_meta("import_id");
+	String type = item->obj->get_meta("type");
+	String import_id = item->obj->get_meta("import_id");
 
 	_select(material_tree, type, import_id);
 }
@@ -1325,8 +1325,8 @@ void SceneImportSettingsDialog::_mesh_tree_selected()
 	}
 
 	TreeItem* item = mesh_tree->get_selected();
-	String type = item->get_meta("type");
-	String import_id = item->get_meta("import_id");
+	String type = item->obj->get_meta("type");
+	String import_id = item->obj->get_meta("import_id");
 
 	_select(mesh_tree, type, import_id);
 }
@@ -1337,8 +1337,8 @@ void SceneImportSettingsDialog::_scene_tree_selected()
 		return;
 	}
 	TreeItem* item = scene_tree->get_selected();
-	String type = item->get_meta("type");
-	String import_id = item->get_meta("import_id");
+	String type = item->obj->get_meta("type");
+	String import_id = item->obj->get_meta("import_id");
 
 	_select(scene_tree, type, import_id);
 }

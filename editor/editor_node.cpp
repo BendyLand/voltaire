@@ -2599,11 +2599,11 @@ bool EditorNode::_find_and_save_resource(
 }
 
 bool EditorNode::_find_and_save_edited_subresources(
-	Object* obj, HashMap<Ref<Resource>, bool>& processed, int32_t flags)
+	Object* o, HashMap<Ref<Resource>, bool>& processed, int32_t flags)
 {
 	bool ret_changed = false;
 	List<PropertyInfo> pi;
-	obj->get_property_list(&pi);
+	o->get_property_list(&pi);
 	for (const PropertyInfo& E : pi) {
 		if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
 			continue;
@@ -2611,7 +2611,7 @@ bool EditorNode::_find_and_save_edited_subresources(
 
 		switch (E.type) {
 		case Variant::OBJECT: {
-			Ref<Resource> res = obj->get(E.name);
+			Ref<Resource> res = o->get(E.name);
 
 			if (_find_and_save_resource(res, processed, flags)) {
 				ret_changed = true;
@@ -2619,7 +2619,7 @@ bool EditorNode::_find_and_save_edited_subresources(
 
 		} break;
 		case Variant::ARRAY: {
-			Array varray = obj->get(E.name);
+			Array varray = o->get(E.name);
 			int len = varray.size();
 			for (int i = 0; i < len; i++) {
 				const Variant& v = varray.get(i);
@@ -2631,7 +2631,7 @@ bool EditorNode::_find_and_save_edited_subresources(
 
 		} break;
 		case Variant::DICTIONARY: {
-			Dictionary d = obj->get(E.name);
+			Dictionary d = o->get(E.name);
 			for (const KeyValue<Variant, Variant>& kv : d) {
 				Ref<Resource> res = kv.value;
 				if (_find_and_save_resource(res, processed, flags)) {
@@ -5256,8 +5256,8 @@ void EditorNode::set_addon_plugin_enabled(
 			return;
 		}
 
-		Object* obj = ClassDB::instantiate(scr->get_instance_base_type());
-		ep = Object::cast_to<EditorPlugin>(obj);
+		Object* o = ClassDB::instantiate(scr->get_instance_base_type());
+		ep = Object::cast_to<EditorPlugin>(o);
 		ERR_FAIL_NULL(ep);
 		ep->set_script(scr);
 	}

@@ -1482,34 +1482,6 @@ void EditorSelection::_emit_change()
 	emitted = false;
 }
 
-TypedArray<Node> EditorSelection::get_top_selected_nodes()
-{
-	TypedArray<Node> ret;
-
-	for (const ObjectID& nid : top_selected_node_list) {
-		Node* node = ObjectDB::get_instance<Node>(nid);
-		if (node) {
-			ret.push_back(node);
-		}
-	}
-
-	return ret;
-}
-
-TypedArray<Node> EditorSelection::get_selected_nodes()
-{
-	TypedArray<Node> ret;
-
-	for (const KeyValue<ObjectID, Object*>& E : selection) {
-		Node* node = ObjectDB::get_instance<Node>(E.key);
-		if (node) {
-			ret.push_back(node);
-		}
-	}
-
-	return ret;
-}
-
 List<Node*> EditorSelection::get_top_selected_node_list()
 {
 	if (changed) {

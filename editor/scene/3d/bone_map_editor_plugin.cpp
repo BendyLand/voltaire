@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "bone_map_editor_plugin.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "editor/import/3d/post_import_plugin_skeleton_renamer.h"
@@ -39,17 +38,18 @@
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
 #include "editor/themes/editor_theme_manager.h"
+#include "modules/regex/regex.h"
 #include "scene/gui/aspect_ratio_container.h"
 #include "scene/gui/separator.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/resources/texture.h"
 
-#include "modules/regex/regex.h"
-
-void BoneMapperButton::fetch_textures() {
+void BoneMapperButton::fetch_textures()
+{
 	if (selected) {
 		set_texture_normal(get_editor_theme_icon(SNAME("BoneMapperHandleSelected")));
-	} else {
+	}
+	else {
 		set_texture_normal(get_editor_theme_icon(SNAME("BoneMapperHandle")));
 	}
 	set_offset(SIDE_LEFT, 0);
@@ -58,7 +58,8 @@ void BoneMapperButton::fetch_textures() {
 	set_offset(SIDE_BOTTOM, 0);
 
 	// Hack to avoid handle color darkening...
-	set_modulate(EditorThemeManager::is_dark_icon_and_font() ? Color(1, 1, 1) : Color(4.25, 4.25, 4.25));
+	set_modulate(
+		EditorThemeManager::is_dark_icon_and_font() ? Color(1, 1, 1) : Color(4.25, 4.25, 4.25));
 
 	circle = memnew(TextureRect);
 	circle->set_texture(get_editor_theme_icon(SNAME("BoneMapperHandleCircle")));
@@ -66,109 +67,121 @@ void BoneMapperButton::fetch_textures() {
 	set_state(BONE_MAP_STATE_UNSET);
 }
 
-StringName BoneMapperButton::get_profile_bone_name() const {
-	return profile_bone_name;
-}
+StringName BoneMapperButton::get_profile_bone_name() const { return profile_bone_name; }
 
-void BoneMapperButton::set_state(BoneMapState p_state) {
+void BoneMapperButton::set_state(BoneMapState p_state)
+{
 	switch (p_state) {
-		case BONE_MAP_STATE_UNSET: {
-			circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/unset"));
-		} break;
-		case BONE_MAP_STATE_SET: {
-			circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/set"));
-		} break;
-		case BONE_MAP_STATE_MISSING: {
-			circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/missing"));
-		} break;
-		case BONE_MAP_STATE_ERROR: {
-			circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/error"));
-		} break;
-		default: {
-		} break;
+	case BONE_MAP_STATE_UNSET: {
+		circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/unset"));
+	} break;
+	case BONE_MAP_STATE_SET: {
+		circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/set"));
+	} break;
+	case BONE_MAP_STATE_MISSING: {
+		circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/missing"));
+	} break;
+	case BONE_MAP_STATE_ERROR: {
+		circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/error"));
+	} break;
+	default: {
+	} break;
 	}
 }
 
-bool BoneMapperButton::is_require() const {
-	return require;
-}
+bool BoneMapperButton::is_require() const { return require; }
 
-void BoneMapperButton::_notification(int p_what) {
+void BoneMapperButton::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			fetch_textures();
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		fetch_textures();
+	} break;
 	}
 }
 
-BoneMapperButton::BoneMapperButton(const StringName &p_profile_bone_name, bool p_require, bool p_selected) {
+BoneMapperButton::BoneMapperButton(
+	const StringName& p_profile_bone_name, bool p_require, bool p_selected)
+{
 	profile_bone_name = p_profile_bone_name;
 	require = p_require;
 	selected = p_selected;
 }
 
-void BoneMapperItem::create_editor() {
-	HBoxContainer *hbox = memnew(HBoxContainer);
+void BoneMapperItem::create_editor()
+{
+	HBoxContainer* hbox = memnew(HBoxContainer);
 	add_child(hbox);
 
 	skeleton_bone_selector = memnew(EditorPropertyText);
 	skeleton_bone_selector->set_label(profile_bone_name);
 	skeleton_bone_selector->set_selectable(false);
 	skeleton_bone_selector->set_h_size_flags(SIZE_EXPAND_FILL);
-	skeleton_bone_selector->set_object_and_property(bone_map.ptr(), "bone_map/" + String(profile_bone_name));
+	skeleton_bone_selector->set_object_and_property(
+		bone_map.ptr(), "bone_map/" + String(profile_bone_name));
 	skeleton_bone_selector->update_property();
-	skeleton_bone_selector->connect("property_changed", callable_mp(this, &BoneMapperItem::_value_changed));
+	skeleton_bone_selector->connect(
+		"property_changed", callable_mp(this, &BoneMapperItem::_value_changed));
 	hbox->add_child(skeleton_bone_selector);
 
 	picker_button = memnew(Button);
 	picker_button->set_button_icon(get_editor_theme_icon(SNAME("ClassList")));
-	picker_button->connect(SceneStringName(pressed), callable_mp(this, &BoneMapperItem::_open_picker));
+	picker_button->connect(
+		SceneStringName(pressed), callable_mp(this, &BoneMapperItem::_open_picker));
 	hbox->add_child(picker_button);
 
 	add_child(memnew(HSeparator));
 }
 
-void BoneMapperItem::_update_property() {
-	if (skeleton_bone_selector->get_edited_object() && skeleton_bone_selector->get_edited_property()) {
+void BoneMapperItem::_update_property()
+{
+	if (skeleton_bone_selector->get_edited_object() &&
+		skeleton_bone_selector->get_edited_property()) {
 		skeleton_bone_selector->update_property();
 	}
 }
 
-void BoneMapperItem::_open_picker() {
-	emit_signal(SNAME("pick"), profile_bone_name);
-}
+void BoneMapperItem::_open_picker() { this->obj->emit_signal(SNAME("pick"), profile_bone_name); }
 
-void BoneMapperItem::_value_changed(const String &p_property, const Variant &p_value, const String &p_name, bool p_changing) {
+void BoneMapperItem::_value_changed(
+	const String& p_property, const Variant& p_value, const String& p_name, bool p_changing)
+{
 	bone_map->set(p_property, p_value);
 }
 
-void BoneMapperItem::_notification(int p_what) {
+void BoneMapperItem::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			create_editor();
-			bone_map->connect("bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
-		} break;
-		case NOTIFICATION_EXIT_TREE: {
-			if (bone_map.is_valid() && bone_map->is_connected("bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property))) {
-				bone_map->disconnect("bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
-			}
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		create_editor();
+		bone_map->connect("bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		if (bone_map.is_valid() && bone_map->is_connected("bone_map_updated",
+									   callable_mp(this, &BoneMapperItem::_update_property))) {
+			bone_map->disconnect(
+				"bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
+		}
+	} break;
 	}
 }
 
-void BoneMapperItem::_bind_methods() {
+void BoneMapperItem::_bind_methods()
+{
 	ADD_SIGNAL(MethodInfo("pick", PropertyInfo(Variant::STRING_NAME, "profile_bone_name")));
 }
 
-BoneMapperItem::BoneMapperItem(Ref<BoneMap> &p_bone_map, const StringName &p_profile_bone_name) {
+BoneMapperItem::BoneMapperItem(Ref<BoneMap>& p_bone_map, const StringName& p_profile_bone_name)
+{
 	bone_map = p_bone_map;
 	profile_bone_name = p_profile_bone_name;
 }
 
-void BonePicker::create_editors() {
+void BonePicker::create_editors()
+{
 	set_title(TTR("Bone Picker:"));
 
-	VBoxContainer *vbox = memnew(VBoxContainer);
+	VBoxContainer* vbox = memnew(VBoxContainer);
 	add_child(vbox);
 
 	bones = memnew(Tree);
@@ -182,16 +195,17 @@ void BonePicker::create_editors() {
 	create_bones_tree(skeleton);
 }
 
-void BonePicker::create_bones_tree(Skeleton3D *p_skeleton) {
+void BonePicker::create_bones_tree(Skeleton3D* p_skeleton)
+{
 	bones->clear();
 
 	if (!p_skeleton) {
 		return;
 	}
 
-	TreeItem *root = bones->create_item();
+	TreeItem* root = bones->create_item();
 
-	HashMap<int, TreeItem *> items;
+	HashMap<int, TreeItem*> items;
 
 	items.insert(-1, root);
 
@@ -210,9 +224,9 @@ void BonePicker::create_bones_tree(Skeleton3D *p_skeleton) {
 		}
 
 		const int parent_idx = p_skeleton->get_bone_parent(current_bone_idx);
-		TreeItem *parent_item = items.find(parent_idx)->value;
+		TreeItem* parent_item = items.find(parent_idx)->value;
 
-		TreeItem *joint_item = bones->create_item(parent_item);
+		TreeItem* joint_item = bones->create_item(parent_item);
 		items.insert(current_bone_idx, joint_item);
 
 		joint_item->set_text(0, p_skeleton->get_bone_name(current_bone_idx));
@@ -221,52 +235,52 @@ void BonePicker::create_bones_tree(Skeleton3D *p_skeleton) {
 		joint_item->set_metadata(0, "bones/" + itos(current_bone_idx));
 		if (is_first) {
 			is_first = false;
-		} else {
+		}
+		else {
 			joint_item->set_collapsed(true);
 		}
 	}
 }
 
-void BonePicker::_confirm() {
-	_ok_pressed();
-}
+void BonePicker::_confirm() { _ok_pressed(); }
 
-void BonePicker::popup_bones_tree(const Size2i &p_minsize) {
-	popup_centered(p_minsize);
-}
+void BonePicker::popup_bones_tree(const Size2i& p_minsize) { popup_centered(p_minsize); }
 
-bool BonePicker::has_selected_bone() {
-	TreeItem *selected = bones->get_selected();
+bool BonePicker::has_selected_bone()
+{
+	TreeItem* selected = bones->get_selected();
 	if (!selected) {
 		return false;
 	}
 	return true;
 }
 
-StringName BonePicker::get_selected_bone() {
-	TreeItem *selected = bones->get_selected();
+StringName BonePicker::get_selected_bone()
+{
+	TreeItem* selected = bones->get_selected();
 	if (!selected) {
 		return StringName();
 	}
 	return selected->get_text(0);
 }
 
-void BonePicker::_notification(int p_what) {
+void BonePicker::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			create_editors();
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		create_editors();
+	} break;
 	}
 }
 
-BonePicker::BonePicker(Skeleton3D *p_skeleton) {
-	skeleton = p_skeleton;
-}
+BonePicker::BonePicker(Skeleton3D* p_skeleton) { skeleton = p_skeleton; }
 
-void BoneMapper::create_editor() {
+void BoneMapper::create_editor()
+{
 	// Create Bone picker.
 	picker = memnew(BonePicker(skeleton));
-	picker->connect(SceneStringName(confirmed), callable_mp(this, &BoneMapper::_apply_picker_selection));
+	picker->connect(
+		SceneStringName(confirmed), callable_mp(this, &BoneMapper::_apply_picker_selection));
 	add_child(picker, false, INTERNAL_MODE_FRONT);
 
 	profile_selector = memnew(EditorPropertyResource);
@@ -279,22 +293,24 @@ void BoneMapper::create_editor() {
 	add_child(profile_selector);
 	add_child(memnew(HSeparator));
 
-	HBoxContainer *group_hbox = memnew(HBoxContainer);
+	HBoxContainer* group_hbox = memnew(HBoxContainer);
 	add_child(group_hbox);
 
 	profile_group_selector = memnew(EditorPropertyEnum);
 	profile_group_selector->set_label("Group");
 	profile_group_selector->set_selectable(false);
 	profile_group_selector->set_h_size_flags(SIZE_EXPAND_FILL);
-	profile_group_selector->set_object_and_property(this, "current_group_idx");
+	profile_group_selector->set_object_and_property(this->obj.get(), "current_group_idx");
 	profile_group_selector->update_property();
-	profile_group_selector->connect("property_changed", callable_mp(this, &BoneMapper::_value_changed));
+	profile_group_selector->connect(
+		"property_changed", callable_mp(this, &BoneMapper::_value_changed));
 	group_hbox->add_child(profile_group_selector);
 
 	clear_mapping_button = memnew(Button);
 	clear_mapping_button->set_button_icon(get_editor_theme_icon(SNAME("Clear")));
 	clear_mapping_button->set_tooltip_text(TTR("Clear mappings in current group."));
-	clear_mapping_button->connect(SceneStringName(pressed), callable_mp(this, &BoneMapper::_clear_mapping_current_group));
+	clear_mapping_button->connect(
+		SceneStringName(pressed), callable_mp(this, &BoneMapper::_clear_mapping_current_group));
 	group_hbox->add_child(clear_mapping_button);
 
 	bone_mapper_field = memnew(AspectRatioContainer);
@@ -322,7 +338,8 @@ void BoneMapper::create_editor() {
 	recreate_items();
 }
 
-void BoneMapper::update_group_idx() {
+void BoneMapper::update_group_idx()
+{
 	if (bone_map->get_profile().is_null()) {
 		return;
 	}
@@ -342,37 +359,38 @@ void BoneMapper::update_group_idx() {
 	}
 }
 
-void BoneMapper::_pick_bone(const StringName &p_bone_name) {
+void BoneMapper::_pick_bone(const StringName& p_bone_name)
+{
 	picker_key_name = p_bone_name;
 	picker->popup_bones_tree(Size2(500, 500) * EDSCALE);
 }
 
-void BoneMapper::_apply_picker_selection() {
+void BoneMapper::_apply_picker_selection()
+{
 	if (!picker->has_selected_bone()) {
 		return;
 	}
 	bone_map->set_skeleton_bone_name(picker_key_name, picker->get_selected_bone());
 }
 
-void BoneMapper::set_current_group_idx(int p_group_idx) {
+void BoneMapper::set_current_group_idx(int p_group_idx)
+{
 	current_group_idx = p_group_idx;
 	recreate_editor();
 }
 
-int BoneMapper::get_current_group_idx() const {
-	return current_group_idx;
-}
+int BoneMapper::get_current_group_idx() const { return current_group_idx; }
 
-void BoneMapper::set_current_bone_idx(int p_bone_idx) {
+void BoneMapper::set_current_bone_idx(int p_bone_idx)
+{
 	current_bone_idx = p_bone_idx;
 	recreate_editor();
 }
 
-int BoneMapper::get_current_bone_idx() const {
-	return current_bone_idx;
-}
+int BoneMapper::get_current_bone_idx() const { return current_bone_idx; }
 
-void BoneMapper::recreate_editor() {
+void BoneMapper::recreate_editor()
+{
 	// Clear buttons.
 	int len = bone_mapper_buttons.size();
 	for (int i = 0; i < len; i++) {
@@ -389,22 +407,27 @@ void BoneMapper::recreate_editor() {
 
 	Ref<SkeletonProfile> profile = bone_map->get_profile();
 	if (profile.is_valid()) {
-		SkeletonProfileHumanoid *hmn = Object::cast_to<SkeletonProfileHumanoid>(profile.ptr());
+		SkeletonProfileHumanoid* hmn = Object::cast_to<SkeletonProfileHumanoid>(profile.ptr());
 		if (hmn) {
 			StringName hmn_group_name = profile->get_group_name(current_group_idx);
 			if (hmn_group_name == "Body") {
 				profile_texture->set_texture(get_editor_theme_icon(SNAME("BoneMapHumanBody")));
-			} else if (hmn_group_name == "Face") {
+			}
+			else if (hmn_group_name == "Face") {
 				profile_texture->set_texture(get_editor_theme_icon(SNAME("BoneMapHumanFace")));
-			} else if (hmn_group_name == "LeftHand") {
+			}
+			else if (hmn_group_name == "LeftHand") {
 				profile_texture->set_texture(get_editor_theme_icon(SNAME("BoneMapHumanLeftHand")));
-			} else if (hmn_group_name == "RightHand") {
+			}
+			else if (hmn_group_name == "RightHand") {
 				profile_texture->set_texture(get_editor_theme_icon(SNAME("BoneMapHumanRightHand")));
 			}
-		} else {
+		}
+		else {
 			profile_texture->set_texture(profile->get_texture(current_group_idx));
 		}
-	} else {
+	}
+	else {
 		profile_texture->set_texture(Ref<Texture2D>());
 	}
 
@@ -414,8 +437,11 @@ void BoneMapper::recreate_editor() {
 
 	for (int i = 0; i < len; i++) {
 		if (profile->get_group(i) == profile->get_group_name(current_group_idx)) {
-			BoneMapperButton *mb = memnew(BoneMapperButton(profile->get_bone_name(i), profile->is_required(i), current_bone_idx == i));
-			mb->connect(SceneStringName(pressed), callable_mp(this, &BoneMapper::set_current_bone_idx).bind(i), CONNECT_DEFERRED);
+			BoneMapperButton* mb = memnew(BoneMapperButton(
+				profile->get_bone_name(i), profile->is_required(i), current_bone_idx == i));
+			mb->connect(SceneStringName(pressed),
+				callable_mp(this, &BoneMapper::set_current_bone_idx).bind(i),
+				Object::CONNECT_DEFERRED);
 			mb->set_h_grow_direction(GROW_DIRECTION_BOTH);
 			mb->set_v_grow_direction(GROW_DIRECTION_BOTH);
 			Vector2 vc = profile->get_handle_offset(i);
@@ -431,7 +457,8 @@ void BoneMapper::recreate_editor() {
 	_update_state();
 }
 
-void BoneMapper::clear_items() {
+void BoneMapper::clear_items()
+{
 	// Clear items.
 	int len = bone_mapper_items.size();
 	for (int i = 0; i < len; i++) {
@@ -442,7 +469,8 @@ void BoneMapper::clear_items() {
 	bone_mapper_items.clear();
 }
 
-void BoneMapper::recreate_items() {
+void BoneMapper::recreate_items()
+{
 	clear_items();
 	// Create items by profile.
 	Ref<SkeletonProfile> profile = bone_map->get_profile();
@@ -451,7 +479,8 @@ void BoneMapper::recreate_items() {
 		for (int i = 0; i < len; i++) {
 			StringName bn = profile->get_bone_name(i);
 			bone_mapper_items.append(memnew(BoneMapperItem(bone_map, bn)));
-			bone_mapper_items[i]->connect("pick", callable_mp(this, &BoneMapper::_pick_bone), CONNECT_DEFERRED);
+			bone_mapper_items[i]->connect(
+				"pick", callable_mp(this, &BoneMapper::_pick_bone), Object::CONNECT_DEFERRED);
 			mapper_item_vbox->add_child(bone_mapper_items[i]);
 		}
 	}
@@ -460,7 +489,8 @@ void BoneMapper::recreate_items() {
 	recreate_editor();
 }
 
-void BoneMapper::_update_state() {
+void BoneMapper::_update_state()
+{
 	int len = bone_mapper_buttons.size();
 	for (int i = 0; i < len; i++) {
 		StringName pbn = bone_mapper_buttons[i]->get_profile_bone_name();
@@ -473,7 +503,8 @@ void BoneMapper::_update_state() {
 				StringName parent_name = prof->get_bone_parent(prof->find_bone(pbn));
 				Vector<int> prof_parent_bones;
 				while (parent_name != StringName()) {
-					prof_parent_bones.push_back(skeleton->find_bone(bone_map->get_skeleton_bone_name(parent_name)));
+					prof_parent_bones.push_back(
+						skeleton->find_bone(bone_map->get_skeleton_bone_name(parent_name)));
 					if (prof->find_bone(parent_name) == -1) {
 						break;
 					}
@@ -489,30 +520,36 @@ void BoneMapper::_update_state() {
 
 				bool is_broken = false;
 				for (int j = 0; j < prof_parent_bones.size(); j++) {
-					if (prof_parent_bones[j] != -1 && !skel_parent_bones.has(prof_parent_bones[j])) {
+					if (prof_parent_bones[j] != -1 &&
+						!skel_parent_bones.has(prof_parent_bones[j])) {
 						is_broken = true;
 					}
 				}
 
 				if (is_broken) {
 					bone_mapper_buttons[i]->set_state(BoneMapperButton::BONE_MAP_STATE_ERROR);
-				} else {
+				}
+				else {
 					bone_mapper_buttons[i]->set_state(BoneMapperButton::BONE_MAP_STATE_SET);
 				}
-			} else {
+			}
+			else {
 				bone_mapper_buttons[i]->set_state(BoneMapperButton::BONE_MAP_STATE_ERROR);
 			}
-		} else {
+		}
+		else {
 			if (bone_mapper_buttons[i]->is_require()) {
 				bone_mapper_buttons[i]->set_state(BoneMapperButton::BONE_MAP_STATE_MISSING);
-			} else {
+			}
+			else {
 				bone_mapper_buttons[i]->set_state(BoneMapperButton::BONE_MAP_STATE_UNSET);
 			}
 		}
 	}
 }
 
-void BoneMapper::_clear_mapping_current_group() {
+void BoneMapper::_clear_mapping_current_group()
+{
 	if (bone_map.is_valid()) {
 		Ref<SkeletonProfile> profile = bone_map->get_profile();
 		if (profile.is_valid() && profile->get_group_size() > 0) {
@@ -527,12 +564,15 @@ void BoneMapper::_clear_mapping_current_group() {
 	}
 }
 
-bool BoneMapper::is_match_with_bone_name(const String &p_bone_name, const String &p_word) {
+bool BoneMapper::is_match_with_bone_name(const String& p_bone_name, const String& p_word)
+{
 	RegEx re = RegEx(p_word);
 	return re.search(p_bone_name.to_lower()).is_valid();
 }
 
-int BoneMapper::search_bone_by_name(Skeleton3D *p_skeleton, const Vector<String> &p_picklist, BoneSegregation p_segregation, int p_parent, int p_child, int p_children_count) {
+int BoneMapper::search_bone_by_name(Skeleton3D* p_skeleton, const Vector<String>& p_picklist,
+	BoneSegregation p_segregation, int p_parent, int p_child, int p_children_count)
+{
 	// There may be multiple candidates hit by existing the subsidiary bone.
 	// The one with the shortest name is probably the original.
 	LocalVector<String> hit_list;
@@ -540,7 +580,8 @@ int BoneMapper::search_bone_by_name(Skeleton3D *p_skeleton, const Vector<String>
 
 	for (int word_idx = 0; word_idx < p_picklist.size(); word_idx++) {
 		if (p_child == -1) {
-			Vector<int> bones_to_process = p_parent == -1 ? p_skeleton->get_parentless_bones() : p_skeleton->get_bone_children(p_parent);
+			Vector<int> bones_to_process = p_parent == -1 ? p_skeleton->get_parentless_bones()
+														  : p_skeleton->get_bone_children(p_parent);
 			while (bones_to_process.size() > 0) {
 				int idx = bones_to_process[0];
 				bones_to_process.erase(idx);
@@ -557,20 +598,22 @@ int BoneMapper::search_bone_by_name(Skeleton3D *p_skeleton, const Vector<String>
 				}
 
 				String bn = skeleton->get_bone_name(idx);
-				if (is_match_with_bone_name(bn, p_picklist[word_idx]) && guess_bone_segregation(bn) == p_segregation) {
+				if (is_match_with_bone_name(bn, p_picklist[word_idx]) &&
+					guess_bone_segregation(bn) == p_segregation) {
 					hit_list.push_back(bn);
 				}
 			}
 
 			if (hit_list.size() > 0) {
 				shortest = hit_list[0];
-				for (const String &hit : hit_list) {
+				for (const String& hit : hit_list) {
 					if (hit.length() < shortest.length()) {
 						shortest = hit; // Prioritize parent.
 					}
 				}
 			}
-		} else {
+		}
+		else {
 			int idx = skeleton->get_bone_parent(p_child);
 			while (idx != p_parent && idx >= 0) {
 				Vector<int> children = p_skeleton->get_bone_children(idx);
@@ -582,7 +625,8 @@ int BoneMapper::search_bone_by_name(Skeleton3D *p_skeleton, const Vector<String>
 				}
 
 				String bn = skeleton->get_bone_name(idx);
-				if (is_match_with_bone_name(bn, p_picklist[word_idx]) && guess_bone_segregation(bn) == p_segregation) {
+				if (is_match_with_bone_name(bn, p_picklist[word_idx]) &&
+					guess_bone_segregation(bn) == p_segregation) {
 					hit_list.push_back(bn);
 				}
 				idx = skeleton->get_bone_parent(idx);
@@ -590,7 +634,7 @@ int BoneMapper::search_bone_by_name(Skeleton3D *p_skeleton, const Vector<String>
 
 			if (hit_list.size() > 0) {
 				shortest = hit_list[0];
-				for (const String &hit : hit_list) {
+				for (const String& hit : hit_list) {
 					if (hit.length() <= shortest.length()) {
 						shortest = hit; // Prioritize parent.
 					}
@@ -610,7 +654,8 @@ int BoneMapper::search_bone_by_name(Skeleton3D *p_skeleton, const Vector<String>
 	return skeleton->find_bone(shortest);
 }
 
-BoneMapper::BoneSegregation BoneMapper::guess_bone_segregation(const String &p_bone_name) {
+BoneMapper::BoneSegregation BoneMapper::guess_bone_segregation(const String& p_bone_name)
+{
 	String fixed_bn = p_bone_name.to_snake_case();
 
 	LocalVector<String> left_words;
@@ -635,12 +680,14 @@ BoneMapper::BoneSegregation BoneMapper::guess_bone_segregation(const String &p_b
 	return BONE_SEGREGATION_NONE;
 }
 
-void BoneMapper::_run_auto_mapping() {
+void BoneMapper::_run_auto_mapping()
+{
 	auto_mapping_process(bone_map);
 	recreate_items();
 }
 
-void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
+void BoneMapper::auto_mapping_process(Ref<BoneMap>& p_bone_map)
+{
 	WARN_PRINT("Run auto mapping.");
 
 	int bone_idx = -1;
@@ -657,7 +704,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	if (hips == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess Hips. Abort auto mapping.");
 		return; // If there is no Hips, we cannot guess bone after then.
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("Hips", skeleton->get_bone_name(hips));
 	}
 	picklist.clear();
@@ -670,9 +718,11 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	}
 	if (search_path.is_empty()) {
 		bone_idx = -1;
-	} else if (search_path.size() == 1) {
+	}
+	else if (search_path.size() == 1) {
 		bone_idx = search_path[0]; // It is only one bone which can be root.
-	} else {
+	}
+	else {
 		bool found = false;
 		for (int i = 0; i < search_path.size(); i++) {
 			RegEx re = RegEx("root");
@@ -685,19 +735,22 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 		if (!found) {
 			for (int i = 0; i < search_path.size(); i++) {
 				if (skeleton->get_bone_global_rest(search_path[i]).origin.is_zero_approx()) {
-					bone_idx = search_path[i]; // The bone existing at the origin is appropriate as a root.
+					bone_idx =
+						search_path[i]; // The bone existing at the origin is appropriate as a root.
 					found = true;
 					break;
 				}
 			}
 		}
 		if (!found) {
-			bone_idx = search_path[search_path.size() - 1]; // Ambiguous, but most parental bone selected.
+			bone_idx =
+				search_path[search_path.size() - 1]; // Ambiguous, but most parental bone selected.
 		}
 	}
 	if (bone_idx == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess Root."); // Root is not required, so continue.
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("Root", skeleton->get_bone_name(bone_idx));
 	}
 	bone_idx = -1;
@@ -709,13 +762,15 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	int left_foot = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips);
 	if (left_foot == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess LeftFoot.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("LeftFoot", skeleton->get_bone_name(left_foot));
 	}
 	int right_foot = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips);
 	if (right_foot == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess RightFoot.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("RightFoot", skeleton->get_bone_name(right_foot));
 	}
 	picklist.clear();
@@ -728,21 +783,27 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	picklist.push_back("leg");
 	int left_lower_leg = -1;
 	if (left_foot != -1) {
-		left_lower_leg = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips, left_foot);
+		left_lower_leg =
+			search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips, left_foot);
 	}
 	if (left_lower_leg == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess LeftLowerLeg.");
-	} else {
-		p_bone_map->_set_skeleton_bone_name("LeftLowerLeg", skeleton->get_bone_name(left_lower_leg));
+	}
+	else {
+		p_bone_map->_set_skeleton_bone_name(
+			"LeftLowerLeg", skeleton->get_bone_name(left_lower_leg));
 	}
 	int right_lower_leg = -1;
 	if (right_foot != -1) {
-		right_lower_leg = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips, right_foot);
+		right_lower_leg =
+			search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips, right_foot);
 	}
 	if (right_lower_leg == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess RightLowerLeg.");
-	} else {
-		p_bone_map->_set_skeleton_bone_name("RightLowerLeg", skeleton->get_bone_name(right_lower_leg));
+	}
+	else {
+		p_bone_map->_set_skeleton_bone_name(
+			"RightLowerLeg", skeleton->get_bone_name(right_lower_leg));
 	}
 	picklist.clear();
 
@@ -751,20 +812,24 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	picklist.push_back("thigh");
 	picklist.push_back("leg");
 	if (left_lower_leg != -1) {
-		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips, left_lower_leg);
+		bone_idx =
+			search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips, left_lower_leg);
 	}
 	if (bone_idx == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess LeftUpperLeg.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("LeftUpperLeg", skeleton->get_bone_name(bone_idx));
 	}
 	bone_idx = -1;
 	if (right_lower_leg != -1) {
-		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips, right_lower_leg);
+		bone_idx =
+			search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips, right_lower_leg);
 	}
 	if (bone_idx == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess RightUpperLeg.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("RightUpperLeg", skeleton->get_bone_name(bone_idx));
 	}
 	bone_idx = -1;
@@ -785,7 +850,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	}
 	if (bone_idx == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess LeftToes.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("LeftToes", skeleton->get_bone_name(bone_idx));
 	}
 	bone_idx = -1;
@@ -801,7 +867,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	}
 	if (bone_idx == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess RightToes.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("RightToes", skeleton->get_bone_name(bone_idx));
 	}
 	bone_idx = -1;
@@ -812,12 +879,14 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	picklist.push_back("wrist");
 	picklist.push_back("palm");
 	picklist.push_back("fingers");
-	int left_hand_or_palm = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips, -1, 5);
+	int left_hand_or_palm =
+		search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips, -1, 5);
 	if (left_hand_or_palm == -1) {
 		// Ambiguous, but try again for fewer finger models.
 		left_hand_or_palm = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips);
 	}
-	int left_hand = left_hand_or_palm; // Check for the presence of a wrist, since bones with five children may be palmar.
+	int left_hand = left_hand_or_palm; // Check for the presence of a wrist, since bones with five
+									   // children may be palmar.
 	while (left_hand != -1) {
 		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips, left_hand);
 		if (bone_idx == -1) {
@@ -827,18 +896,21 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	}
 	if (left_hand == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess LeftHand.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("LeftHand", skeleton->get_bone_name(left_hand));
 	}
 	bone_idx = -1;
-	int right_hand_or_palm = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips, -1, 5);
+	int right_hand_or_palm =
+		search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips, -1, 5);
 	if (right_hand_or_palm == -1) {
 		// Ambiguous, but try again for fewer finger models.
 		right_hand_or_palm = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips);
 	}
 	int right_hand = right_hand_or_palm;
 	while (right_hand != -1) {
-		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips, right_hand);
+		bone_idx =
+			search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips, right_hand);
 		if (bone_idx == -1) {
 			break;
 		}
@@ -846,7 +918,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	}
 	if (right_hand == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess RightHand.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("RightHand", skeleton->get_bone_name(right_hand));
 	}
 	bone_idx = -1;
@@ -882,7 +955,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 		left_fingers_map[4].push_back("LeftLittleDistal");
 		for (int i = 0; i < 5; i++) {
 			picklist.push_back(fingers[i]);
-			int finger = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, left_hand_or_palm, -1, 0);
+			int finger = search_bone_by_name(
+				skeleton, picklist, BONE_SEGREGATION_LEFT, left_hand_or_palm, -1, 0);
 			if (finger != -1) {
 				while (finger != left_hand_or_palm && finger >= 0) {
 					search_path.push_back(finger);
@@ -890,7 +964,9 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				}
 				// Tips detection by name matching with "distal" from root.
 				for (int j = search_path.size() - 1; j >= 0; j--) {
-					if (RegEx("distal").search(skeleton->get_bone_name(search_path[j]).to_lower()).is_valid()) {
+					if (RegEx("distal")
+							.search(skeleton->get_bone_name(search_path[j]).to_lower())
+							.is_valid()) {
 						tips_index = j - 1;
 						break;
 					}
@@ -898,7 +974,9 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				// Tips detection by name matching with "tip|leaf" from end.
 				if (tips_index < 0) {
 					for (int j = 0; j < search_path.size(); j++) {
-						if (RegEx("tip|leaf").search(skeleton->get_bone_name(search_path[j]).to_lower()).is_valid()) {
+						if (RegEx("tip|leaf")
+								.search(skeleton->get_bone_name(search_path[j]).to_lower())
+								.is_valid()) {
 							tips_index = j;
 							break;
 						}
@@ -917,17 +995,26 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				}
 				search_path.reverse();
 				if (search_path.size() == 1) {
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
 					named_finger_is_found = true;
-				} else if (search_path.size() == 2) {
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
+				}
+				else if (search_path.size() == 2) {
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
 					named_finger_is_found = true;
-				} else if (search_path.size() >= 3) {
-					search_path = search_path.slice(-3); // Eliminate the possibility of carpal bone.
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][2], skeleton->get_bone_name(search_path[2]));
+				}
+				else if (search_path.size() >= 3) {
+					search_path =
+						search_path.slice(-3); // Eliminate the possibility of carpal bone.
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][2], skeleton->get_bone_name(search_path[2]));
 					named_finger_is_found = true;
 				}
 			}
@@ -947,14 +1034,16 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 					finger_names.push_back(bn);
 				}
 			}
-			finger_names.sort(); // Order by lexicographic, normal use cases never have more than 10 fingers in one hand.
+			finger_names.sort(); // Order by lexicographic, normal use cases never have more than 10
+								 // fingers in one hand.
 			search_path.clear();
 			for (int i = 0; i < finger_names.size(); i++) {
 				if (i >= 5) {
 					break;
 				}
 				int finger_root = skeleton->find_bone(finger_names[i]);
-				int finger = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, finger_root, -1, 0);
+				int finger = search_bone_by_name(
+					skeleton, picklist, BONE_SEGREGATION_LEFT, finger_root, -1, 0);
 				if (finger != -1) {
 					while (finger != finger_root && finger >= 0) {
 						search_path.push_back(finger);
@@ -972,15 +1061,24 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				}
 				search_path.reverse();
 				if (search_path.size() == 1) {
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-				} else if (search_path.size() == 2) {
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
-				} else if (search_path.size() >= 3) {
-					search_path = search_path.slice(-3); // Eliminate the possibility of carpal bone.
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
-					p_bone_map->_set_skeleton_bone_name(left_fingers_map[i][2], skeleton->get_bone_name(search_path[2]));
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+				}
+				else if (search_path.size() == 2) {
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
+				}
+				else if (search_path.size() >= 3) {
+					search_path =
+						search_path.slice(-3); // Eliminate the possibility of carpal bone.
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
+					p_bone_map->_set_skeleton_bone_name(
+						left_fingers_map[i][2], skeleton->get_bone_name(search_path[2]));
 				}
 				search_path.clear();
 			}
@@ -1011,7 +1109,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 		right_fingers_map[4].push_back("RightLittleDistal");
 		for (int i = 0; i < 5; i++) {
 			picklist.push_back(fingers[i]);
-			int finger = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, right_hand_or_palm, -1, 0);
+			int finger = search_bone_by_name(
+				skeleton, picklist, BONE_SEGREGATION_RIGHT, right_hand_or_palm, -1, 0);
 			if (finger != -1) {
 				while (finger != right_hand_or_palm && finger >= 0) {
 					search_path.push_back(finger);
@@ -1019,7 +1118,9 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				}
 				// Tips detection by name matching with "distal" from root.
 				for (int j = search_path.size() - 1; j >= 0; j--) {
-					if (RegEx("distal").search(skeleton->get_bone_name(search_path[j]).to_lower()).is_valid()) {
+					if (RegEx("distal")
+							.search(skeleton->get_bone_name(search_path[j]).to_lower())
+							.is_valid()) {
 						tips_index = j - 1;
 						break;
 					}
@@ -1027,7 +1128,9 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				// Tips detection by name matching with "tip|leaf" from end.
 				if (tips_index < 0) {
 					for (int j = 0; j < search_path.size(); j++) {
-						if (RegEx("tip|leaf").search(skeleton->get_bone_name(search_path[j]).to_lower()).is_valid()) {
+						if (RegEx("tip|leaf")
+								.search(skeleton->get_bone_name(search_path[j]).to_lower())
+								.is_valid()) {
 							tips_index = j;
 							break;
 						}
@@ -1046,17 +1149,26 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				}
 				search_path.reverse();
 				if (search_path.size() == 1) {
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
 					named_finger_is_found = true;
-				} else if (search_path.size() == 2) {
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
+				}
+				else if (search_path.size() == 2) {
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
 					named_finger_is_found = true;
-				} else if (search_path.size() >= 3) {
-					search_path = search_path.slice(-3); // Eliminate the possibility of carpal bone.
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][2], skeleton->get_bone_name(search_path[2]));
+				}
+				else if (search_path.size() >= 3) {
+					search_path =
+						search_path.slice(-3); // Eliminate the possibility of carpal bone.
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][2], skeleton->get_bone_name(search_path[2]));
 					named_finger_is_found = true;
 				}
 			}
@@ -1076,14 +1188,16 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 					finger_names.push_back(bn);
 				}
 			}
-			finger_names.sort(); // Order by lexicographic, normal use cases never have more than 10 fingers in one hand.
+			finger_names.sort(); // Order by lexicographic, normal use cases never have more than 10
+								 // fingers in one hand.
 			search_path.clear();
 			for (int i = 0; i < finger_names.size(); i++) {
 				if (i >= 5) {
 					break;
 				}
 				int finger_root = skeleton->find_bone(finger_names[i]);
-				int finger = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, finger_root, -1, 0);
+				int finger = search_bone_by_name(
+					skeleton, picklist, BONE_SEGREGATION_RIGHT, finger_root, -1, 0);
 				if (finger != -1) {
 					while (finger != finger_root && finger >= 0) {
 						search_path.push_back(finger);
@@ -1101,15 +1215,24 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				}
 				search_path.reverse();
 				if (search_path.size() == 1) {
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-				} else if (search_path.size() == 2) {
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
-				} else if (search_path.size() >= 3) {
-					search_path = search_path.slice(-3); // Eliminate the possibility of carpal bone.
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
-					p_bone_map->_set_skeleton_bone_name(right_fingers_map[i][2], skeleton->get_bone_name(search_path[2]));
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+				}
+				else if (search_path.size() == 2) {
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
+				}
+				else if (search_path.size() >= 3) {
+					search_path =
+						search_path.slice(-3); // Eliminate the possibility of carpal bone.
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][0], skeleton->get_bone_name(search_path[0]));
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][1], skeleton->get_bone_name(search_path[1]));
+					p_bone_map->_set_skeleton_bone_name(
+						right_fingers_map[i][2], skeleton->get_bone_name(search_path[2]));
 				}
 				search_path.clear();
 			}
@@ -1124,14 +1247,17 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	int left_shoulder = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, hips);
 	if (left_shoulder == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess LeftShoulder.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("LeftShoulder", skeleton->get_bone_name(left_shoulder));
 	}
 	int right_shoulder = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, hips);
 	if (right_shoulder == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess RightShoulder.");
-	} else {
-		p_bone_map->_set_skeleton_bone_name("RightShoulder", skeleton->get_bone_name(right_shoulder));
+	}
+	else {
+		p_bone_map->_set_skeleton_bone_name(
+			"RightShoulder", skeleton->get_bone_name(right_shoulder));
 	}
 	picklist.clear();
 
@@ -1141,21 +1267,27 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	picklist.push_back("arm");
 	int left_lower_arm = -1;
 	if (left_shoulder != -1 && left_hand_or_palm != -1) {
-		left_lower_arm = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, left_shoulder, left_hand_or_palm);
+		left_lower_arm = search_bone_by_name(
+			skeleton, picklist, BONE_SEGREGATION_LEFT, left_shoulder, left_hand_or_palm);
 	}
 	if (left_lower_arm == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess LeftLowerArm.");
-	} else {
-		p_bone_map->_set_skeleton_bone_name("LeftLowerArm", skeleton->get_bone_name(left_lower_arm));
+	}
+	else {
+		p_bone_map->_set_skeleton_bone_name(
+			"LeftLowerArm", skeleton->get_bone_name(left_lower_arm));
 	}
 	int right_lower_arm = -1;
 	if (right_shoulder != -1 && right_hand_or_palm != -1) {
-		right_lower_arm = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, right_shoulder, right_hand_or_palm);
+		right_lower_arm = search_bone_by_name(
+			skeleton, picklist, BONE_SEGREGATION_RIGHT, right_shoulder, right_hand_or_palm);
 	}
 	if (right_lower_arm == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess RightLowerArm.");
-	} else {
-		p_bone_map->_set_skeleton_bone_name("RightLowerArm", skeleton->get_bone_name(right_lower_arm));
+	}
+	else {
+		p_bone_map->_set_skeleton_bone_name(
+			"RightLowerArm", skeleton->get_bone_name(right_lower_arm));
 	}
 	picklist.clear();
 
@@ -1163,20 +1295,24 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	picklist.push_back("up.*arm");
 	picklist.push_back("arm");
 	if (left_shoulder != -1 && left_lower_arm != -1) {
-		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, left_shoulder, left_lower_arm);
+		bone_idx = search_bone_by_name(
+			skeleton, picklist, BONE_SEGREGATION_LEFT, left_shoulder, left_lower_arm);
 	}
 	if (bone_idx == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess LeftUpperArm.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("LeftUpperArm", skeleton->get_bone_name(bone_idx));
 	}
 	bone_idx = -1;
 	if (right_shoulder != -1 && right_lower_arm != -1) {
-		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, right_shoulder, right_lower_arm);
+		bone_idx = search_bone_by_name(
+			skeleton, picklist, BONE_SEGREGATION_RIGHT, right_shoulder, right_lower_arm);
 	}
 	if (bone_idx == -1) {
 		WARN_PRINT("Auto Mapping couldn't guess RightUpperArm.");
-	} else {
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("RightUpperArm", skeleton->get_bone_name(bone_idx));
 	}
 	bone_idx = -1;
@@ -1189,9 +1325,12 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	int neck = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_NONE, hips);
 	picklist.clear();
 	if (neck == -1) {
-		// If it can't expect by name, search child spine of where the right and left shoulders (or hands) cross.
-		int ls_idx = left_shoulder != -1 ? left_shoulder : (left_hand_or_palm != -1 ? left_hand_or_palm : -1);
-		int rs_idx = right_shoulder != -1 ? right_shoulder : (right_hand_or_palm != -1 ? right_hand_or_palm : -1);
+		// If it can't expect by name, search child spine of where the right and left shoulders (or
+		// hands) cross.
+		int ls_idx = left_shoulder != -1 ? left_shoulder
+										 : (left_hand_or_palm != -1 ? left_hand_or_palm : -1);
+		int rs_idx = right_shoulder != -1 ? right_shoulder
+										  : (right_hand_or_palm != -1 ? right_hand_or_palm : -1);
 		if (ls_idx != -1 && rs_idx != -1) {
 			bool detect = false;
 			while (ls_idx != hips && ls_idx >= 0 && rs_idx != hips && rs_idx >= 0) {
@@ -1206,7 +1345,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 				Vector<int> children = skeleton->get_bone_children(ls_idx);
 				children.erase(ls_idx);
 				children.erase(rs_idx);
-				String word = "spine"; // It would be better to limit the search with "spine" because it could be mistaken with breast, wing and etc...
+				String word = "spine"; // It would be better to limit the search with "spine"
+									   // because it could be mistaken with breast, wing and etc...
 				for (int i = 0; i < children.size(); i++) {
 					bone_idx = children[i];
 					if (is_match_with_bone_name(skeleton->get_bone_name(bone_idx), word)) {
@@ -1236,10 +1376,14 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 			head = neck; // The head animation should have more movement.
 			neck = -1;
 			p_bone_map->_set_skeleton_bone_name("Head", skeleton->get_bone_name(head));
-		} else {
-			WARN_PRINT("Auto Mapping couldn't guess Neck or Head."); // Continued for guessing on the other bones. But abort when guessing spines step.
 		}
-	} else {
+		else {
+			WARN_PRINT("Auto Mapping couldn't guess Neck or Head."); // Continued for guessing on
+																	 // the other bones. But abort
+																	 // when guessing spines step.
+		}
+	}
+	else {
 		p_bone_map->_set_skeleton_bone_name("Neck", skeleton->get_bone_name(neck));
 		p_bone_map->_set_skeleton_bone_name("Head", skeleton->get_bone_name(head));
 	}
@@ -1253,14 +1397,16 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_LEFT, neck_or_head);
 		if (bone_idx == -1) {
 			WARN_PRINT("Auto Mapping couldn't guess LeftEye.");
-		} else {
+		}
+		else {
 			p_bone_map->_set_skeleton_bone_name("LeftEye", skeleton->get_bone_name(bone_idx));
 		}
 
 		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_RIGHT, neck_or_head);
 		if (bone_idx == -1) {
 			WARN_PRINT("Auto Mapping couldn't guess RightEye.");
-		} else {
+		}
+		else {
 			p_bone_map->_set_skeleton_bone_name("RightEye", skeleton->get_bone_name(bone_idx));
 		}
 		picklist.clear();
@@ -1270,7 +1416,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 		bone_idx = search_bone_by_name(skeleton, picklist, BONE_SEGREGATION_NONE, neck_or_head);
 		if (bone_idx == -1) {
 			WARN_PRINT("Auto Mapping couldn't guess Jaw.");
-		} else {
+		}
+		else {
 			p_bone_map->_set_skeleton_bone_name("Jaw", skeleton->get_bone_name(bone_idx));
 		}
 		bone_idx = -1;
@@ -1316,7 +1463,8 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	if (!is_appropriate) {
 		if (skeleton->get_bone_parent(left_shoulder) == skeleton->get_bone_parent(right_shoulder)) {
 			chest_or_upper_chest = skeleton->get_bone_parent(left_shoulder);
-		} else {
+		}
+		else {
 			chest_or_upper_chest = -1;
 		}
 	}
@@ -1333,14 +1481,20 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	}
 	search_path.reverse();
 	if (search_path.is_empty()) {
-		p_bone_map->_set_skeleton_bone_name("Spine", skeleton->get_bone_name(chest_or_upper_chest)); // Maybe chibi model...?
-	} else if (search_path.size() == 1) {
+		p_bone_map->_set_skeleton_bone_name(
+			"Spine", skeleton->get_bone_name(chest_or_upper_chest)); // Maybe chibi model...?
+	}
+	else if (search_path.size() == 1) {
 		p_bone_map->_set_skeleton_bone_name("Spine", skeleton->get_bone_name(search_path[0]));
 		p_bone_map->_set_skeleton_bone_name("Chest", skeleton->get_bone_name(chest_or_upper_chest));
-	} else if (search_path.size() >= 2) {
+	}
+	else if (search_path.size() >= 2) {
 		p_bone_map->_set_skeleton_bone_name("Spine", skeleton->get_bone_name(search_path[0]));
-		p_bone_map->_set_skeleton_bone_name("Chest", skeleton->get_bone_name(search_path[search_path.size() - 1])); // Probably UppeChest's parent is appropriate.
-		p_bone_map->_set_skeleton_bone_name("UpperChest", skeleton->get_bone_name(chest_or_upper_chest));
+		p_bone_map->_set_skeleton_bone_name("Chest",
+			skeleton->get_bone_name(search_path[search_path.size() -
+												1])); // Probably UppeChest's parent is appropriate.
+		p_bone_map->_set_skeleton_bone_name(
+			"UpperChest", skeleton->get_bone_name(chest_or_upper_chest));
 	}
 	bone_idx = -1;
 	search_path.clear();
@@ -1348,60 +1502,76 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap> &p_bone_map) {
 	WARN_PRINT("Finish auto mapping.");
 }
 
-void BoneMapper::_value_changed(const String &p_property, const Variant &p_value, const String &p_name, bool p_changing) {
-	set(p_property, p_value);
+void BoneMapper::_value_changed(
+	const String& p_property, const Variant& p_value, const String& p_name, bool p_changing)
+{
+	this->obj->set(p_property, p_value);
 	recreate_editor();
 }
 
-void BoneMapper::_profile_changed(const String &p_property, const Variant &p_value, const String &p_name, bool p_changing) {
+void BoneMapper::_profile_changed(
+	const String& p_property, const Variant& p_value, const String& p_name, bool p_changing)
+{
 	bone_map->set(p_property, p_value);
 
 	// Run auto mapping when setting SkeletonProfileHumanoid by GUI Editor.
 	Ref<SkeletonProfile> profile = bone_map->get_profile();
 	if (profile.is_valid()) {
-		SkeletonProfileHumanoid *hmn = Object::cast_to<SkeletonProfileHumanoid>(profile.ptr());
+		SkeletonProfileHumanoid* hmn = Object::cast_to<SkeletonProfileHumanoid>(profile.ptr());
 		if (hmn) {
 			_run_auto_mapping();
 		}
 	}
 }
 
-void BoneMapper::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_current_group_idx", "current_group_idx"), &BoneMapper::set_current_group_idx);
+void BoneMapper::_bind_methods()
+{
+	ClassDB::bind_method(
+		D_METHOD("set_current_group_idx", "current_group_idx"), &BoneMapper::set_current_group_idx);
 	ClassDB::bind_method(D_METHOD("get_current_group_idx"), &BoneMapper::get_current_group_idx);
-	ClassDB::bind_method(D_METHOD("set_current_bone_idx", "current_bone_idx"), &BoneMapper::set_current_bone_idx);
+	ClassDB::bind_method(
+		D_METHOD("set_current_bone_idx", "current_bone_idx"), &BoneMapper::set_current_bone_idx);
 	ClassDB::bind_method(D_METHOD("get_current_bone_idx"), &BoneMapper::get_current_bone_idx);
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "current_group_idx"), "set_current_group_idx", "get_current_group_idx");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "current_bone_idx"), "set_current_bone_idx", "get_current_bone_idx");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "current_group_idx"), "set_current_group_idx",
+		"get_current_group_idx");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "current_bone_idx"), "set_current_bone_idx",
+		"get_current_bone_idx");
 }
 
-void BoneMapper::_notification(int p_what) {
+void BoneMapper::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			create_editor();
-			bone_map->connect("bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
-			bone_map->connect("profile_updated", callable_mp(this, &BoneMapper::recreate_items));
-		} break;
-		case NOTIFICATION_EXIT_TREE: {
-			clear_items();
-			if (bone_map.is_valid()) {
-				if (bone_map->is_connected("bone_map_updated", callable_mp(this, &BoneMapper::_update_state))) {
-					bone_map->disconnect("bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
-				}
-				if (bone_map->is_connected("profile_updated", callable_mp(this, &BoneMapper::recreate_items))) {
-					bone_map->disconnect("profile_updated", callable_mp(this, &BoneMapper::recreate_items));
-				}
+	case NOTIFICATION_ENTER_TREE: {
+		create_editor();
+		bone_map->connect("bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
+		bone_map->connect("profile_updated", callable_mp(this, &BoneMapper::recreate_items));
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		clear_items();
+		if (bone_map.is_valid()) {
+			if (bone_map->is_connected(
+					"bone_map_updated", callable_mp(this, &BoneMapper::_update_state))) {
+				bone_map->disconnect(
+					"bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
+			}
+			if (bone_map->is_connected(
+					"profile_updated", callable_mp(this, &BoneMapper::recreate_items))) {
+				bone_map->disconnect(
+					"profile_updated", callable_mp(this, &BoneMapper::recreate_items));
 			}
 		}
 	}
+	}
 }
 
-BoneMapper::BoneMapper(Skeleton3D *p_skeleton, Ref<BoneMap> &p_bone_map) {
+BoneMapper::BoneMapper(Skeleton3D* p_skeleton, Ref<BoneMap>& p_bone_map)
+{
 	skeleton = p_skeleton;
 	bone_map = p_bone_map;
 }
 
-void BoneMapEditor::create_editors() {
+void BoneMapEditor::create_editors()
+{
 	if (!skeleton) {
 		return;
 	}
@@ -1409,51 +1579,54 @@ void BoneMapEditor::create_editors() {
 	add_child(bone_mapper);
 }
 
-void BoneMapEditor::fetch_objects() {
+void BoneMapEditor::fetch_objects()
+{
 	skeleton = nullptr;
 	// Hackey... but it may be the easiest way to get a selected object from "ImporterScene".
-	SceneImportSettingsDialog *si = SceneImportSettingsDialog::get_singleton();
+	SceneImportSettingsDialog* si = SceneImportSettingsDialog::get_singleton();
 	if (!si) {
 		return;
 	}
 	if (!si->is_visible()) {
 		return;
 	}
-	Node *selected = si->get_selected_node();
+	Node* selected = si->get_selected_node();
 	if (selected) {
-		Skeleton3D *sk = Object::cast_to<Skeleton3D>(selected);
+		Skeleton3D* sk = Object::cast_to<Skeleton3D>(selected);
 		if (!sk) {
 			return;
 		}
 		skeleton = sk;
-	} else {
+	}
+	else {
 		// Editor should not exist.
 		skeleton = nullptr;
 	}
 }
 
-void BoneMapEditor::_notification(int p_what) {
+void BoneMapEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			fetch_objects();
-			create_editors();
-		} break;
-		case NOTIFICATION_EXIT_TREE: {
-			skeleton = nullptr;
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		fetch_objects();
+		create_editors();
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		skeleton = nullptr;
+	} break;
 	}
 }
 
-BoneMapEditor::BoneMapEditor(Ref<BoneMap> &p_bone_map) {
-	bone_map = p_bone_map;
-}
+BoneMapEditor::BoneMapEditor(Ref<BoneMap>& p_bone_map) { bone_map = p_bone_map; }
 
-bool EditorInspectorPluginBoneMap::can_handle(Object *p_object) {
+bool EditorInspectorPluginBoneMap::can_handle(Object* p_object)
+{
 	return Object::cast_to<BoneMap>(p_object) != nullptr;
 }
 
-void EditorInspectorPluginBoneMap::parse_begin(Object *p_object) {
-	BoneMap *bm = Object::cast_to<BoneMap>(p_object);
+void EditorInspectorPluginBoneMap::parse_begin(Object* p_object)
+{
+	BoneMap* bm = Object::cast_to<BoneMap>(p_object);
 	if (!bm) {
 		return;
 	}
@@ -1462,7 +1635,8 @@ void EditorInspectorPluginBoneMap::parse_begin(Object *p_object) {
 	add_custom_control(editor);
 }
 
-BoneMapEditorPlugin::BoneMapEditorPlugin() {
+BoneMapEditorPlugin::BoneMapEditorPlugin()
+{
 	Ref<EditorInspectorPluginBoneMap> inspector_plugin;
 	inspector_plugin.instantiate();
 	add_inspector_plugin(inspector_plugin);
@@ -1479,3 +1653,5 @@ BoneMapEditorPlugin::BoneMapEditorPlugin() {
 	post_import_plugin_rest_fixer.instantiate();
 	add_scene_post_import_plugin(post_import_plugin_rest_fixer);
 }
+
+

@@ -55,7 +55,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::VISUAL_INSTANCE_3D;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::VISUAL_INSTANCE_3D;
 
 	enum GetFacesFlags
 	{
@@ -90,7 +90,7 @@ public:
 class GeometryInstance3D : public VisualInstance3D
 {
 public:
-	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::GEOMETRY_INSTANCE_3D;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::GEOMETRY_INSTANCE_3D;
 
 	enum ShadowCastingSetting
 	{

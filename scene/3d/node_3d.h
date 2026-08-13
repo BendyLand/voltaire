@@ -57,7 +57,7 @@ class Node3D : public Node
 	friend class SceneTreeFTITests;
 
 public:
-	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::NODE_3D;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::NODE_3D;
 
 	// Edit mode for the rotation.
 	// THIS MODE ONLY AFFECTS HOW DATA IS EDITED AND SAVED

@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "theme_editor_preview.h"
-
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "core/object/callable_mp.h"
@@ -56,8 +54,10 @@
 #include "scene/gui/tree.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/theme/theme_db.h"
+#include "theme_editor_preview.h"
 
-void ScalableContainer::_notification(int p_what) {
+void ScalableContainer::_notification(int p_what)
+{
 	if (EDSCALE == 1 || p_what != NOTIFICATION_SORT_CHILDREN) {
 		return;
 	}
@@ -66,46 +66,52 @@ void ScalableContainer::_notification(int p_what) {
 	size.width -= get_margin_size(SIDE_LEFT) + get_margin_size(SIDE_RIGHT);
 	size.height -= get_margin_size(SIDE_TOP) + get_margin_size(SIDE_BOTTOM);
 
-	for (Node *child : iterate_children()) {
-		Control *control = as_sortable_control(child);
+	for (Node* child : iterate_children()) {
+		Control* control = as_sortable_control(child);
 		if (control) {
 			fit_child_in_rect(control, Rect2(control->get_position(), size));
 		}
 	}
 }
 
-Size2 ScalableContainer::get_minimum_size() const {
+Size2 ScalableContainer::get_minimum_size() const
+{
 	return MarginContainer::get_minimum_size() * EDSCALE;
 }
 
-ScalableContainer::ScalableContainer() {
+ScalableContainer::ScalableContainer()
+{
 	set_offset_transform_enabled(true);
 	set_offset_transform_pivot_ratio(Point2());
 	set_offset_transform_visual_only(false);
 	set_offset_transform_scale(Size2(EDSCALE, EDSCALE));
 }
 
-void ThemeEditorPreview::set_preview_theme(const Ref<Theme> &p_theme) {
+void ThemeEditorPreview::set_preview_theme(const Ref<Theme>& p_theme)
+{
 	preview_content->set_theme(p_theme);
 }
 
-void ThemeEditorPreview::add_preview_overlay(Control *p_overlay) {
+void ThemeEditorPreview::add_preview_overlay(Control* p_overlay)
+{
 	preview_overlay->add_child(p_overlay);
 	p_overlay->hide();
 }
 
-void ThemeEditorPreview::_picker_button_cbk() {
+void ThemeEditorPreview::_picker_button_cbk()
+{
 	picker_overlay->set_visible(picker_button->is_pressed());
 	if (picker_button->is_pressed()) {
 		_reset_picker_overlay();
 	}
 }
 
-Control *ThemeEditorPreview::_find_hovered_control(Control *p_parent, Vector2 p_mouse_position) {
-	Control *found = nullptr;
+Control* ThemeEditorPreview::_find_hovered_control(Control* p_parent, Vector2 p_mouse_position)
+{
+	Control* found = nullptr;
 
 	for (int i = p_parent->get_child_count() - 1; i >= 0; i--) {
-		Control *cc = Object::cast_to<Control>(p_parent->get_child(i));
+		Control* cc = Object::cast_to<Control>(p_parent->get_child(i));
 		if (!cc || !cc->is_visible()) {
 			continue;
 		}
@@ -128,24 +134,28 @@ Control *ThemeEditorPreview::_find_hovered_control(Control *p_parent, Vector2 p_
 	return found;
 }
 
-void ThemeEditorPreview::_draw_picker_overlay() {
+void ThemeEditorPreview::_draw_picker_overlay()
+{
 	if (!picker_button->is_pressed()) {
 		return;
 	}
 
-	picker_overlay->draw_rect(Rect2(Vector2(0.0, 0.0), picker_overlay->get_size()), theme_cache.preview_picker_overlay_color);
+	picker_overlay->draw_rect(Rect2(Vector2(0.0, 0.0), picker_overlay->get_size()),
+		theme_cache.preview_picker_overlay_color);
 	if (hovered_control) {
 		Rect2 highlight_rect = hovered_control->get_global_rect();
-		highlight_rect.position = picker_overlay->get_global_transform().affine_inverse().xform(highlight_rect.position);
+		highlight_rect.position =
+			picker_overlay->get_global_transform().affine_inverse().xform(highlight_rect.position);
 		picker_overlay->draw_style_box(theme_cache.preview_picker_overlay, highlight_rect);
 
 		String highlight_name = hovered_control->get_theme_type_variation();
 		if (highlight_name == StringName()) {
-			highlight_name = hovered_control->get_class_name();
+			highlight_name = hovered_control->obj->get_class_name();
 		}
 
 		Rect2 highlight_label_rect = highlight_rect;
-		highlight_label_rect.size = theme_cache.preview_picker_font->get_string_size(highlight_name, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size);
+		highlight_label_rect.size = theme_cache.preview_picker_font->get_string_size(
+			highlight_name, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size);
 
 		int margin_top = theme_cache.preview_picker_label->get_margin(SIDE_TOP);
 		int margin_left = theme_cache.preview_picker_label->get_margin(SIDE_LEFT);
@@ -154,18 +164,21 @@ void ThemeEditorPreview::_draw_picker_overlay() {
 		highlight_label_rect.size.x += margin_left + margin_right;
 		highlight_label_rect.size.y += margin_top + margin_bottom;
 
-		highlight_label_rect.position = highlight_label_rect.position.clamp(Vector2(), picker_overlay->get_size());
+		highlight_label_rect.position =
+			highlight_label_rect.position.clamp(Vector2(), picker_overlay->get_size());
 
 		picker_overlay->draw_style_box(theme_cache.preview_picker_label, highlight_label_rect);
 
 		Point2 label_pos = highlight_label_rect.position;
 		label_pos.y += highlight_label_rect.size.y - margin_bottom;
 		label_pos.x += margin_left;
-		picker_overlay->draw_string(theme_cache.preview_picker_font, label_pos, highlight_name, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size);
+		picker_overlay->draw_string(theme_cache.preview_picker_font, label_pos, highlight_name,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size);
 	}
 }
 
-void ThemeEditorPreview::_gui_input_picker_overlay(const Ref<InputEvent> &p_event) {
+void ThemeEditorPreview::_gui_input_picker_overlay(const Ref<InputEvent>& p_event)
+{
 	if (!picker_button->is_pressed()) {
 		return;
 	}
@@ -176,10 +189,10 @@ void ThemeEditorPreview::_gui_input_picker_overlay(const Ref<InputEvent> &p_even
 		if (hovered_control) {
 			StringName theme_type = hovered_control->get_theme_type_variation();
 			if (theme_type == StringName()) {
-				theme_type = hovered_control->get_class_name();
+				theme_type = hovered_control->obj->get_class_name();
 			}
 
-			emit_signal(SNAME("control_picked"), theme_type);
+			this->obj->emit_signal(SNAME("control_picked"), theme_type);
 			picker_button->set_pressed(false);
 			picker_overlay->set_visible(false);
 			return;
@@ -198,44 +211,54 @@ void ThemeEditorPreview::_gui_input_picker_overlay(const Ref<InputEvent> &p_even
 	preview_container->gui_input(p_event);
 }
 
-void ThemeEditorPreview::_reset_picker_overlay() {
+void ThemeEditorPreview::_reset_picker_overlay()
+{
 	hovered_control = nullptr;
 	picker_overlay->queue_redraw();
 }
 
-void ThemeEditorPreview::_update_preview_bg() {
-	if (ProjectSettings::get_singleton()->check_changed_settings_in_group("rendering/environment/defaults/default_clear_color")) {
+void ThemeEditorPreview::_update_preview_bg()
+{
+	if (ProjectSettings::get_singleton()->check_changed_settings_in_group(
+			"rendering/environment/defaults/default_clear_color")) {
 		preview_bg->set_color(GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
 	}
 }
 
-void ThemeEditorPreview::_notification(int p_what) {
+void ThemeEditorPreview::_notification(int p_what)
+{
 	switch (p_what) {
-		// Due to NOTIFICATION_READY being called only once, and theme contexts being destroyed on node removal,
-		// this is the notification needed, as it can be triggered indefinitely.
-		case NOTIFICATION_POST_ENTER_TREE: {
-			Vector<Ref<Theme>> preview_themes;
-			preview_themes.push_back(ThemeDB::get_singleton()->get_default_theme());
-			ThemeDB::get_singleton()->create_theme_context(preview_root, preview_themes);
-		} break;
+	// Due to NOTIFICATION_READY being called only once, and theme contexts being destroyed on node
+	// removal, this is the notification needed, as it can be triggered indefinitely.
+	case NOTIFICATION_POST_ENTER_TREE: {
+		Vector<Ref<Theme>> preview_themes;
+		preview_themes.push_back(ThemeDB::get_singleton()->get_default_theme());
+		ThemeDB::get_singleton()->create_theme_context(preview_root, preview_themes);
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED: {
-			picker_button->set_button_icon(get_editor_theme_icon(SNAME("ColorPick")));
+	case NOTIFICATION_THEME_CHANGED: {
+		picker_button->set_button_icon(get_editor_theme_icon(SNAME("ColorPick")));
 
-			theme_cache.preview_picker_overlay = get_theme_stylebox(SNAME("preview_picker_overlay"), SNAME("ThemeEditor"));
-			theme_cache.preview_picker_overlay_color = get_theme_color(SNAME("preview_picker_overlay_color"), SNAME("ThemeEditor"));
-			theme_cache.preview_picker_label = get_theme_stylebox(SNAME("preview_picker_label"), SNAME("ThemeEditor"));
-			theme_cache.preview_picker_font = get_theme_font(SNAME("status_source"), EditorStringName(EditorFonts));
-			theme_cache.font_size = get_theme_default_font_size();
-		} break;
+		theme_cache.preview_picker_overlay =
+			get_theme_stylebox(SNAME("preview_picker_overlay"), SNAME("ThemeEditor"));
+		theme_cache.preview_picker_overlay_color =
+			get_theme_color(SNAME("preview_picker_overlay_color"), SNAME("ThemeEditor"));
+		theme_cache.preview_picker_label =
+			get_theme_stylebox(SNAME("preview_picker_label"), SNAME("ThemeEditor"));
+		theme_cache.preview_picker_font =
+			get_theme_font(SNAME("status_source"), EditorStringName(EditorFonts));
+		theme_cache.font_size = get_theme_default_font_size();
+	} break;
 	}
 }
 
-void ThemeEditorPreview::_bind_methods() {
+void ThemeEditorPreview::_bind_methods()
+{
 	ADD_SIGNAL(MethodInfo("control_picked", PropertyInfo(Variant::STRING, "class_name")));
 }
 
-ThemeEditorPreview::ThemeEditorPreview() {
+ThemeEditorPreview::ThemeEditorPreview()
+{
 	preview_toolbar = memnew(HBoxContainer);
 	add_child(preview_toolbar);
 
@@ -243,10 +266,12 @@ ThemeEditorPreview::ThemeEditorPreview() {
 	preview_toolbar->add_child(picker_button);
 	picker_button->set_theme_type_variation(SceneStringName(FlatButton));
 	picker_button->set_toggle_mode(true);
-	picker_button->set_tooltip_text(TTR("Toggle the control picker, allowing to visually select control types for edit."));
-	picker_button->connect(SceneStringName(pressed), callable_mp(this, &ThemeEditorPreview::_picker_button_cbk));
+	picker_button->set_tooltip_text(
+		TTR("Toggle the control picker, allowing to visually select control types for edit."));
+	picker_button->connect(
+		SceneStringName(pressed), callable_mp(this, &ThemeEditorPreview::_picker_button_cbk));
 
-	MarginContainer *preview_body = memnew(MarginContainer);
+	MarginContainer* preview_body = memnew(MarginContainer);
 	preview_body->set_v_size_flags(SIZE_EXPAND_FILL);
 	add_child(preview_body);
 
@@ -279,39 +304,48 @@ ThemeEditorPreview::ThemeEditorPreview() {
 
 	picker_overlay = memnew(Control);
 	add_preview_overlay(picker_overlay);
-	picker_overlay->connect(SceneStringName(draw), callable_mp(this, &ThemeEditorPreview::_draw_picker_overlay));
-	picker_overlay->connect(SceneStringName(gui_input), callable_mp(this, &ThemeEditorPreview::_gui_input_picker_overlay));
-	picker_overlay->connect(SceneStringName(mouse_exited), callable_mp(this, &ThemeEditorPreview::_reset_picker_overlay));
+	picker_overlay->connect(
+		SceneStringName(draw), callable_mp(this, &ThemeEditorPreview::_draw_picker_overlay));
+	picker_overlay->connect(SceneStringName(gui_input),
+		callable_mp(this, &ThemeEditorPreview::_gui_input_picker_overlay));
+	picker_overlay->connect(SceneStringName(mouse_exited),
+		callable_mp(this, &ThemeEditorPreview::_reset_picker_overlay));
 
-	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &ThemeEditorPreview::_update_preview_bg));
+	ProjectSettings::get_singleton()->connect(
+		"settings_changed", callable_mp(this, &ThemeEditorPreview::_update_preview_bg));
 }
 
-void DefaultThemeEditorPreview::_notification(int p_what) {
+void DefaultThemeEditorPreview::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			test_color_picker_button->set_custom_minimum_size(Size2(0, get_theme_constant(SNAME("inspector_property_height"), EditorStringName(Editor))) / EDSCALE);
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		test_color_picker_button->set_custom_minimum_size(
+			Size2(0,
+				get_theme_constant(SNAME("inspector_property_height"), EditorStringName(Editor))) /
+			EDSCALE);
+	} break;
 	}
 }
 
-DefaultThemeEditorPreview::DefaultThemeEditorPreview() {
+DefaultThemeEditorPreview::DefaultThemeEditorPreview()
+{
 	set_oversampling_with_scale(OVERSAMPLING_WITH_SCALE_ENABLED);
 
-	Panel *main_panel = memnew(Panel);
+	Panel* main_panel = memnew(Panel);
 	preview_content->add_child(main_panel);
 
-	MarginContainer *main_mc = memnew(MarginContainer);
+	MarginContainer* main_mc = memnew(MarginContainer);
 	main_mc->add_theme_constant_override("margin_right", 4);
 	main_mc->add_theme_constant_override("margin_top", 4);
 	main_mc->add_theme_constant_override("margin_left", 4);
 	main_mc->add_theme_constant_override("margin_bottom", 4);
 	preview_content->add_child(main_mc);
 
-	HBoxContainer *main_hb = memnew(HBoxContainer);
+	HBoxContainer* main_hb = memnew(HBoxContainer);
 	main_mc->add_child(main_hb);
 	main_hb->add_theme_constant_override("separation", 20);
 
-	VBoxContainer *first_vb = memnew(VBoxContainer);
+	VBoxContainer* first_vb = memnew(VBoxContainer);
 	main_hb->add_child(first_vb);
 	first_vb->set_h_size_flags(SIZE_EXPAND_FILL);
 	first_vb->add_theme_constant_override("separation", 10);
@@ -319,7 +353,7 @@ DefaultThemeEditorPreview::DefaultThemeEditorPreview() {
 	first_vb->add_child(memnew(Label("Label")));
 
 	first_vb->add_child(memnew(Button("Button")));
-	Button *bt = memnew(Button);
+	Button* bt = memnew(Button);
 	bt->set_text(TTR("Toggle Button"));
 	bt->set_toggle_mode(true);
 	bt->set_pressed(true);
@@ -328,19 +362,19 @@ DefaultThemeEditorPreview::DefaultThemeEditorPreview() {
 	bt->set_text(TTR("Disabled Button"));
 	bt->set_disabled(true);
 	first_vb->add_child(bt);
-	Button *tb = memnew(Button);
+	Button* tb = memnew(Button);
 	tb->set_flat(true);
 	tb->set_text("Flat Button");
 	first_vb->add_child(tb);
 
-	CheckButton *cb = memnew(CheckButton);
+	CheckButton* cb = memnew(CheckButton);
 	cb->set_text("CheckButton");
 	first_vb->add_child(cb);
-	CheckBox *cbx = memnew(CheckBox);
+	CheckBox* cbx = memnew(CheckBox);
 	cbx->set_text("CheckBox");
 	first_vb->add_child(cbx);
 
-	MenuButton *test_menu_button = memnew(MenuButton);
+	MenuButton* test_menu_button = memnew(MenuButton);
 	test_menu_button->set_text("MenuButton");
 	test_menu_button->get_popup()->add_item(TTR("Item"));
 	test_menu_button->get_popup()->add_item(TTR("Disabled Item"));
@@ -355,13 +389,13 @@ DefaultThemeEditorPreview::DefaultThemeEditorPreview() {
 	test_menu_button->get_popup()->set_item_checked(7, true);
 	test_menu_button->get_popup()->add_separator(TTR("Named Separator"));
 
-	PopupMenu *test_submenu = memnew(PopupMenu);
+	PopupMenu* test_submenu = memnew(PopupMenu);
 	test_menu_button->get_popup()->add_submenu_node_item(TTR("Submenu"), test_submenu);
 	test_submenu->add_item(TTR("Subitem 1"));
 	test_submenu->add_item(TTR("Subitem 2"));
 	first_vb->add_child(test_menu_button);
 
-	OptionButton *test_option_button = memnew(OptionButton);
+	OptionButton* test_option_button = memnew(OptionButton);
 	test_option_button->add_item("OptionButton");
 	test_option_button->add_separator();
 	test_option_button->add_item(TTR("Has"));
@@ -371,56 +405,56 @@ DefaultThemeEditorPreview::DefaultThemeEditorPreview() {
 	test_color_picker_button = memnew(ColorPickerButton);
 	first_vb->add_child(test_color_picker_button);
 
-	VBoxContainer *second_vb = memnew(VBoxContainer);
+	VBoxContainer* second_vb = memnew(VBoxContainer);
 	second_vb->set_h_size_flags(SIZE_EXPAND_FILL);
 	main_hb->add_child(second_vb);
 	second_vb->add_theme_constant_override("separation", 10);
-	LineEdit *le = memnew(LineEdit);
+	LineEdit* le = memnew(LineEdit);
 	le->set_text("LineEdit");
 	second_vb->add_child(le);
 	le = memnew(LineEdit);
 	le->set_text(TTR("Disabled LineEdit"));
 	le->set_editable(false);
 	second_vb->add_child(le);
-	TextEdit *te = memnew(TextEdit);
+	TextEdit* te = memnew(TextEdit);
 	te->set_text("TextEdit");
 	te->set_custom_minimum_size(Size2(0, 100));
 	second_vb->add_child(te);
 	second_vb->add_child(memnew(SpinBox));
 
-	HBoxContainer *vhb = memnew(HBoxContainer);
+	HBoxContainer* vhb = memnew(HBoxContainer);
 	second_vb->add_child(vhb);
 	vhb->set_custom_minimum_size(Size2(0, 100));
 	vhb->add_child(memnew(VSlider));
-	VScrollBar *vsb = memnew(VScrollBar);
+	VScrollBar* vsb = memnew(VScrollBar);
 	vsb->set_page(25);
 	vhb->add_child(vsb);
 	vhb->add_child(memnew(VSeparator));
-	VBoxContainer *hvb = memnew(VBoxContainer);
+	VBoxContainer* hvb = memnew(VBoxContainer);
 	vhb->add_child(hvb);
 	hvb->set_alignment(BoxContainer::ALIGNMENT_CENTER);
 	hvb->set_h_size_flags(SIZE_EXPAND_FILL);
 	hvb->add_child(memnew(HSlider));
-	HScrollBar *hsb = memnew(HScrollBar);
+	HScrollBar* hsb = memnew(HScrollBar);
 	hsb->set_page(25);
 	hvb->add_child(hsb);
-	HSlider *hs = memnew(HSlider);
+	HSlider* hs = memnew(HSlider);
 	hs->set_editable(false);
 	hvb->add_child(hs);
 	hvb->add_child(memnew(HSeparator));
-	ProgressBar *pb = memnew(ProgressBar);
+	ProgressBar* pb = memnew(ProgressBar);
 	pb->set_value(50);
 	hvb->add_child(pb);
 
-	VBoxContainer *third_vb = memnew(VBoxContainer);
+	VBoxContainer* third_vb = memnew(VBoxContainer);
 	third_vb->set_h_size_flags(SIZE_EXPAND_FILL);
 	third_vb->add_theme_constant_override("separation", 10);
 	main_hb->add_child(third_vb);
 
-	TabContainer *tc = memnew(TabContainer);
+	TabContainer* tc = memnew(TabContainer);
 	third_vb->add_child(tc);
 	tc->set_custom_minimum_size(Size2(0, 135));
-	Control *tcc = memnew(Control);
+	Control* tcc = memnew(Control);
 	tcc->set_name(TTR("Tab 1"));
 	tc->add_child(tcc);
 	tcc = memnew(Control);
@@ -431,18 +465,18 @@ DefaultThemeEditorPreview::DefaultThemeEditorPreview() {
 	tc->add_child(tcc);
 	tc->set_tab_disabled(2, true);
 
-	Tree *test_tree = memnew(Tree);
+	Tree* test_tree = memnew(Tree);
 	third_vb->add_child(test_tree);
 	test_tree->set_custom_minimum_size(Size2(0, 175));
 
-	TreeItem *item = test_tree->create_item();
+	TreeItem* item = test_tree->create_item();
 	item->set_text(0, "Tree");
 	item = test_tree->create_item(test_tree->get_root());
 	item->set_text(0, "Item");
 	item = test_tree->create_item(test_tree->get_root());
 	item->set_editable(0, true);
 	item->set_text(0, TTR("Editable Item"));
-	TreeItem *sub_tree = test_tree->create_item(test_tree->get_root());
+	TreeItem* sub_tree = test_tree->create_item(test_tree->get_root());
 	sub_tree->set_text(0, TTR("Subtree"));
 	item = test_tree->create_item(sub_tree);
 	item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
@@ -460,63 +494,71 @@ DefaultThemeEditorPreview::DefaultThemeEditorPreview() {
 	item->set_range(0, 2);
 }
 
-void SceneThemeEditorPreview::_reload_scene() {
+void SceneThemeEditorPreview::_reload_scene()
+{
 	if (loaded_scene.is_null()) {
 		return;
 	}
 
 	if (loaded_scene->get_path().is_empty() || !ResourceLoader::exists(loaded_scene->get_path())) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid path, the PackedScene resource was probably moved or removed."));
-		emit_signal(SNAME("scene_invalidated"));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Invalid path, the PackedScene resource was probably moved or removed."));
+		this->obj->emit_signal(SNAME("scene_invalidated"));
 		return;
 	}
 
 	for (int i = preview_content->get_child_count() - 1; i >= 0; i--) {
-		Node *node = preview_content->get_child(i);
+		Node* node = preview_content->get_child(i);
 		node->queue_free();
 		preview_content->remove_child(node);
 	}
 
-	Node *instance = loaded_scene->instantiate();
+	Node* instance = loaded_scene->instantiate();
 	if (!instance || !Object::cast_to<Control>(instance)) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid PackedScene resource, must have a Control node at its root."));
-		emit_signal(SNAME("scene_invalidated"));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Invalid PackedScene resource, must have a Control node at its root."));
+		this->obj->emit_signal(SNAME("scene_invalidated"));
 		return;
 	}
 
 	preview_content->add_child(instance);
-	emit_signal(SNAME("scene_reloaded"));
+	this->obj->emit_signal(SNAME("scene_reloaded"));
 }
 
-void SceneThemeEditorPreview::_notification(int p_what) {
+void SceneThemeEditorPreview::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			reload_scene_button->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		reload_scene_button->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
+	} break;
 	}
 }
 
-void SceneThemeEditorPreview::_bind_methods() {
+void SceneThemeEditorPreview::_bind_methods()
+{
 	ADD_SIGNAL(MethodInfo("scene_invalidated"));
 	ADD_SIGNAL(MethodInfo("scene_reloaded"));
 }
 
-bool SceneThemeEditorPreview::set_preview_scene(const String &p_path) {
+bool SceneThemeEditorPreview::set_preview_scene(const String& p_path)
+{
 	loaded_scene = ResourceLoader::load(p_path);
 	if (loaded_scene.is_null()) {
 		EditorNode::get_singleton()->show_warning(TTR("Invalid file, not a PackedScene resource."));
 		return false;
 	}
 
-	Node *instance = loaded_scene->instantiate();
+	Node* instance = loaded_scene->instantiate();
 
 	if (!instance) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid PackedScene resource, could not instantiate it."));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Invalid PackedScene resource, could not instantiate it."));
 		return false;
 	}
 
 	if (!Object::cast_to<Control>(instance)) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid PackedScene resource, must have a Control node at its root."));
+		EditorNode::get_singleton()->show_warning(
+			TTR("Invalid PackedScene resource, must have a Control node at its root."));
 		memdelete(instance);
 		return false;
 	}
@@ -525,7 +567,8 @@ bool SceneThemeEditorPreview::set_preview_scene(const String &p_path) {
 	return true;
 }
 
-String SceneThemeEditorPreview::get_preview_scene_path() const {
+String SceneThemeEditorPreview::get_preview_scene_path() const
+{
 	if (loaded_scene.is_null()) {
 		return "";
 	}
@@ -533,12 +576,16 @@ String SceneThemeEditorPreview::get_preview_scene_path() const {
 	return loaded_scene->get_path();
 }
 
-SceneThemeEditorPreview::SceneThemeEditorPreview() {
+SceneThemeEditorPreview::SceneThemeEditorPreview()
+{
 	preview_toolbar->add_child(memnew(VSeparator));
 
 	reload_scene_button = memnew(Button);
 	reload_scene_button->set_flat(true);
-	reload_scene_button->set_tooltip_text(TTR("Reload the scene to reflect its most actual state."));
+	reload_scene_button->set_tooltip_text(
+		TTR("Reload the scene to reflect its most actual state."));
 	preview_toolbar->add_child(reload_scene_button);
-	reload_scene_button->connect(SceneStringName(pressed), callable_mp(this, &SceneThemeEditorPreview::_reload_scene));
+	reload_scene_button->connect(
+		SceneStringName(pressed), callable_mp(this, &SceneThemeEditorPreview::_reload_scene));
 }
+

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "collision_shape_3d_gizmo_plugin.h"
-
 #include "core/math/convex_hull.h"
 #include "core/math/geometry_3d.h"
 #include "editor/editor_node.h"
@@ -48,10 +47,12 @@
 #include "scene/resources/3d/sphere_shape_3d.h"
 #include "scene/resources/3d/world_boundary_shape_3d.h"
 
-CollisionShape3DGizmoPlugin::CollisionShape3DGizmoPlugin() {
+CollisionShape3DGizmoPlugin::CollisionShape3DGizmoPlugin()
+{
 	helper.instantiate();
 
-	show_only_when_selected = EDITOR_GET("editors/3d_gizmos/gizmo_settings/show_collision_shapes_only_when_selected");
+	show_only_when_selected =
+		EDITOR_GET("editors/3d_gizmos/gizmo_settings/show_collision_shapes_only_when_selected");
 
 	create_collision_material("shape_material", 2.0);
 	create_collision_material("shape_material_arraymesh", 0.0625);
@@ -62,7 +63,8 @@ CollisionShape3DGizmoPlugin::CollisionShape3DGizmoPlugin() {
 	create_handle_material("handles");
 }
 
-void CollisionShape3DGizmoPlugin::create_collision_material(const String &p_name, float p_alpha) {
+void CollisionShape3DGizmoPlugin::create_collision_material(const String& p_name, float p_alpha)
+{
 	Vector<Ref<StandardMaterial3D>> mats;
 
 	const Color collision_color(1.0, 1.0, 1.0, p_alpha);
@@ -90,20 +92,19 @@ void CollisionShape3DGizmoPlugin::create_collision_material(const String &p_name
 	materials[p_name] = mats;
 }
 
-bool CollisionShape3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
+bool CollisionShape3DGizmoPlugin::has_gizmo(Node3D* p_spatial)
+{
 	return Object::cast_to<CollisionShape3D>(p_spatial) != nullptr;
 }
 
-String CollisionShape3DGizmoPlugin::get_gizmo_name() const {
-	return "CollisionShape3D";
-}
+String CollisionShape3DGizmoPlugin::get_gizmo_name() const { return "CollisionShape3D"; }
 
-int CollisionShape3DGizmoPlugin::get_priority() const {
-	return -1;
-}
+int CollisionShape3DGizmoPlugin::get_priority() const { return -1; }
 
-String CollisionShape3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	const CollisionShape3D *cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
+String CollisionShape3DGizmoPlugin::get_handle_name(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	const CollisionShape3D* cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
 
 	Ref<Shape3D> s = cs->get_shape();
 	if (s.is_null()) {
@@ -133,8 +134,10 @@ String CollisionShape3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_g
 	return "";
 }
 
-Variant CollisionShape3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	CollisionShape3D *cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
+Variant CollisionShape3DGizmoPlugin::get_handle_value(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	CollisionShape3D* cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
 
 	Ref<Shape3D> s = cs->get_shape();
 	if (s.is_null()) {
@@ -169,12 +172,17 @@ Variant CollisionShape3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p
 	return Variant();
 }
 
-void CollisionShape3DGizmoPlugin::begin_handle_action(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) {
-	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary), p_gizmo->get_node_3d()->get_global_transform());
+void CollisionShape3DGizmoPlugin::begin_handle_action(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary)
+{
+	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary),
+		p_gizmo->get_node_3d()->get_global_transform());
 }
 
-void CollisionShape3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	CollisionShape3D *cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
+void CollisionShape3DGizmoPlugin::set_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, Camera3D* p_camera, const Point2& p_point)
+{
+	CollisionShape3D* cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
 
 	Ref<Shape3D> s = cs->get_shape();
 	if (s.is_null()) {
@@ -187,7 +195,8 @@ void CollisionShape3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, i
 	if (Object::cast_to<SphereShape3D>(*s)) {
 		Ref<SphereShape3D> ss = s;
 		Vector3 ra, rb;
-		Geometry3D::get_closest_points_between_segments(Vector3(), Vector3(4096, 0, 0), sg[0], sg[1], ra, rb);
+		Geometry3D::get_closest_points_between_segments(
+			Vector3(), Vector3(4096, 0, 0), sg[0], sg[1], ra, rb);
 		float d = ra.x;
 		if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 			d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
@@ -203,7 +212,8 @@ void CollisionShape3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, i
 	if (Object::cast_to<SeparationRayShape3D>(*s)) {
 		Ref<SeparationRayShape3D> rs = s;
 		Vector3 ra, rb;
-		Geometry3D::get_closest_points_between_segments(Vector3(), Vector3(0, 0, 4096), sg[0], sg[1], ra, rb);
+		Geometry3D::get_closest_points_between_segments(
+			Vector3(), Vector3(0, 0, 4096), sg[0], sg[1], ra, rb);
 		float d = ra.z;
 		if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 			d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
@@ -250,8 +260,10 @@ void CollisionShape3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, i
 	}
 }
 
-void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	CollisionShape3D *cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
+void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, const Variant& p_restore, bool p_cancel)
+{
+	CollisionShape3D* cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
 
 	Ref<Shape3D> s = cs->get_shape();
 	if (s.is_null()) {
@@ -265,7 +277,7 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 			return;
 		}
 
-		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Sphere Shape Radius"));
 		ur->add_do_method(ss.ptr(), "set_radius", ss->get_radius());
 		ur->add_undo_method(ss.ptr(), "set_radius", p_restore);
@@ -273,17 +285,19 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 	}
 
 	if (Object::cast_to<BoxShape3D>(*s)) {
-		helper->box_commit_handle(TTR("Change Box Shape Size"), p_cancel, cs, s.ptr());
+		helper->box_commit_handle(TTR("Change Box Shape Size"), p_cancel, cs->obj.get(), s.ptr());
 	}
 
 	if (Object::cast_to<CapsuleShape3D>(*s)) {
 		Ref<CapsuleShape3D> ss = s;
-		helper->cylinder_commit_handle(p_id, TTR("Change Capsule Shape Radius"), TTR("Change Capsule Shape Height"), p_cancel, cs, *ss, *ss);
+		helper->cylinder_commit_handle(p_id, TTR("Change Capsule Shape Radius"),
+			TTR("Change Capsule Shape Height"), p_cancel, cs->obj.get(), *ss, *ss);
 	}
 
 	if (Object::cast_to<CylinderShape3D>(*s)) {
 		Ref<CylinderShape3D> ss = s;
-		helper->cylinder_commit_handle(p_id, TTR("Change Cylinder Shape Radius"), TTR("Change Cylinder Shape Height"), p_cancel, cs, *ss, *ss);
+		helper->cylinder_commit_handle(p_id, TTR("Change Cylinder Shape Radius"),
+			TTR("Change Cylinder Shape Height"), p_cancel, cs->obj.get(), *ss, *ss);
 	}
 
 	if (Object::cast_to<SeparationRayShape3D>(*s)) {
@@ -293,7 +307,7 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 			return;
 		}
 
-		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Separation Ray Shape Length"));
 		ur->add_do_method(ss.ptr(), "set_length", ss->get_length());
 		ur->add_undo_method(ss.ptr(), "set_length", p_restore);
@@ -301,8 +315,9 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 	}
 }
 
-void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
-	CollisionShape3D *cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
+void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
+{
+	CollisionShape3D* cs = Object::cast_to<CollisionShape3D>(p_gizmo->get_node_3d());
 
 	p_gizmo->clear();
 
@@ -318,12 +333,14 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	bool shape_readonly = EditorNode::get_singleton()->is_resource_read_only(s);
 
 	const Ref<StandardMaterial3D> material =
-			get_material(!cs->is_disabled() ? "shape_material" : "shape_material_disabled", p_gizmo);
-	const Ref<StandardMaterial3D> material_arraymesh =
-			get_material(!cs->is_disabled() ? "shape_material_arraymesh" : "shape_material_arraymesh_disabled", p_gizmo);
+		get_material(!cs->is_disabled() ? "shape_material" : "shape_material_disabled", p_gizmo);
+	const Ref<StandardMaterial3D> material_arraymesh = get_material(
+		!cs->is_disabled() ? "shape_material_arraymesh" : "shape_material_arraymesh_disabled",
+		p_gizmo);
 	const Ref<Material> handles_material = get_material("handles");
 
-	const Color collision_color = cs->is_disabled() ? Color(1.0, 1.0, 1.0, 0.75) : cs->get_debug_color();
+	const Color collision_color =
+		cs->is_disabled() ? Color(1.0, 1.0, 1.0, 0.75) : cs->get_debug_color();
 
 	if (cs->get_debug_fill_enabled()) {
 		Ref<ArrayMesh> array_mesh = s->get_debug_arraymesh_faces(collision_color);
@@ -336,38 +353,38 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		Ref<SphereShape3D> sp = s;
 		float radius = sp->get_radius();
 
-#define PUSH_QUARTER(from_x, from_y, to_x, to_y, y) \
-	points_ptrw[index++] = Vector3(from_x, y, from_y); \
-	points_ptrw[index++] = Vector3(to_x, y, to_y); \
-	points_ptrw[index++] = Vector3(from_x, y, -from_y); \
-	points_ptrw[index++] = Vector3(to_x, y, -to_y); \
-	points_ptrw[index++] = Vector3(-from_x, y, from_y); \
-	points_ptrw[index++] = Vector3(-to_x, y, to_y); \
-	points_ptrw[index++] = Vector3(-from_x, y, -from_y); \
+#define PUSH_QUARTER(from_x, from_y, to_x, to_y, y)                                                \
+	points_ptrw[index++] = Vector3(from_x, y, from_y);                                             \
+	points_ptrw[index++] = Vector3(to_x, y, to_y);                                                 \
+	points_ptrw[index++] = Vector3(from_x, y, -from_y);                                            \
+	points_ptrw[index++] = Vector3(to_x, y, -to_y);                                                \
+	points_ptrw[index++] = Vector3(-from_x, y, from_y);                                            \
+	points_ptrw[index++] = Vector3(-to_x, y, to_y);                                                \
+	points_ptrw[index++] = Vector3(-from_x, y, -from_y);                                           \
 	points_ptrw[index++] = Vector3(-to_x, y, -to_y);
 
-#define PUSH_QUARTER_XY(from_x, from_y, to_x, to_y, y) \
-	points_ptrw[index++] = Vector3(from_x, -from_y - y, 0); \
-	points_ptrw[index++] = Vector3(to_x, -to_y - y, 0); \
-	points_ptrw[index++] = Vector3(from_x, from_y + y, 0); \
-	points_ptrw[index++] = Vector3(to_x, to_y + y, 0); \
-	points_ptrw[index++] = Vector3(-from_x, -from_y - y, 0); \
-	points_ptrw[index++] = Vector3(-to_x, -to_y - y, 0); \
-	points_ptrw[index++] = Vector3(-from_x, from_y + y, 0); \
+#define PUSH_QUARTER_XY(from_x, from_y, to_x, to_y, y)                                             \
+	points_ptrw[index++] = Vector3(from_x, -from_y - y, 0);                                        \
+	points_ptrw[index++] = Vector3(to_x, -to_y - y, 0);                                            \
+	points_ptrw[index++] = Vector3(from_x, from_y + y, 0);                                         \
+	points_ptrw[index++] = Vector3(to_x, to_y + y, 0);                                             \
+	points_ptrw[index++] = Vector3(-from_x, -from_y - y, 0);                                       \
+	points_ptrw[index++] = Vector3(-to_x, -to_y - y, 0);                                           \
+	points_ptrw[index++] = Vector3(-from_x, from_y + y, 0);                                        \
 	points_ptrw[index++] = Vector3(-to_x, to_y + y, 0);
 
-#define PUSH_QUARTER_YZ(from_x, from_y, to_x, to_y, y) \
-	points_ptrw[index++] = Vector3(0, -from_y - y, from_x); \
-	points_ptrw[index++] = Vector3(0, -to_y - y, to_x); \
-	points_ptrw[index++] = Vector3(0, from_y + y, from_x); \
-	points_ptrw[index++] = Vector3(0, to_y + y, to_x); \
-	points_ptrw[index++] = Vector3(0, -from_y - y, -from_x); \
-	points_ptrw[index++] = Vector3(0, -to_y - y, -to_x); \
-	points_ptrw[index++] = Vector3(0, from_y + y, -from_x); \
+#define PUSH_QUARTER_YZ(from_x, from_y, to_x, to_y, y)                                             \
+	points_ptrw[index++] = Vector3(0, -from_y - y, from_x);                                        \
+	points_ptrw[index++] = Vector3(0, -to_y - y, to_x);                                            \
+	points_ptrw[index++] = Vector3(0, from_y + y, from_x);                                         \
+	points_ptrw[index++] = Vector3(0, to_y + y, to_x);                                             \
+	points_ptrw[index++] = Vector3(0, -from_y - y, -from_x);                                       \
+	points_ptrw[index++] = Vector3(0, -to_y - y, -to_x);                                           \
+	points_ptrw[index++] = Vector3(0, from_y + y, -from_x);                                        \
 	points_ptrw[index++] = Vector3(0, to_y + y, -to_x);
 
-		// Number of points in an octant. So there will be 8 * points_in_octant * 2 points in total for one circle.
-		// This Corresponds to the smoothness of the circle.
+		// Number of points in an octant. So there will be 8 * points_in_octant * 2 points in total
+		// for one circle. This Corresponds to the smoothness of the circle.
 		const uint32_t points_in_octant = 16;
 		const real_t inc = (Math::PI / (4 * points_in_octant));
 		const real_t radius_squared = radius * radius;
@@ -377,7 +394,7 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		uint32_t index = 0;
 		// 3 full circles.
 		points.resize(3 * 8 * points_in_octant * 2);
-		Vector3 *points_ptrw = points.ptrw();
+		Vector3* points_ptrw = points.ptrw();
 
 		float previous_x = radius;
 		float previous_y = 0.f;
@@ -451,7 +468,7 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		Vector<Vector3> points;
 		// 4 vertical lines and 4 full circles.
 		points.resize(4 * 2 + 4 * 8 * points_in_octant * 2);
-		Vector3 *points_ptrw = points.ptrw();
+		Vector3* points_ptrw = points.ptrw();
 
 		uint32_t index = 0;
 		float y_value = height * 0.5 - radius;
@@ -466,34 +483,34 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		points_ptrw[index++] = Vector3(-radius, y_value, 0.f);
 		points_ptrw[index++] = Vector3(-radius, -y_value, 0.f);
 
-#define PUSH_QUARTER(from_x, from_y, to_x, to_y, y) \
-	points_ptrw[index++] = Vector3(from_x, y, from_y); \
-	points_ptrw[index++] = Vector3(to_x, y, to_y); \
-	points_ptrw[index++] = Vector3(from_x, y, -from_y); \
-	points_ptrw[index++] = Vector3(to_x, y, -to_y); \
-	points_ptrw[index++] = Vector3(-from_x, y, from_y); \
-	points_ptrw[index++] = Vector3(-to_x, y, to_y); \
-	points_ptrw[index++] = Vector3(-from_x, y, -from_y); \
+#define PUSH_QUARTER(from_x, from_y, to_x, to_y, y)                                                \
+	points_ptrw[index++] = Vector3(from_x, y, from_y);                                             \
+	points_ptrw[index++] = Vector3(to_x, y, to_y);                                                 \
+	points_ptrw[index++] = Vector3(from_x, y, -from_y);                                            \
+	points_ptrw[index++] = Vector3(to_x, y, -to_y);                                                \
+	points_ptrw[index++] = Vector3(-from_x, y, from_y);                                            \
+	points_ptrw[index++] = Vector3(-to_x, y, to_y);                                                \
+	points_ptrw[index++] = Vector3(-from_x, y, -from_y);                                           \
 	points_ptrw[index++] = Vector3(-to_x, y, -to_y);
 
-#define PUSH_QUARTER_XY(from_x, from_y, to_x, to_y, y) \
-	points_ptrw[index++] = Vector3(from_x, -from_y - y, 0); \
-	points_ptrw[index++] = Vector3(to_x, -to_y - y, 0); \
-	points_ptrw[index++] = Vector3(from_x, from_y + y, 0); \
-	points_ptrw[index++] = Vector3(to_x, to_y + y, 0); \
-	points_ptrw[index++] = Vector3(-from_x, -from_y - y, 0); \
-	points_ptrw[index++] = Vector3(-to_x, -to_y - y, 0); \
-	points_ptrw[index++] = Vector3(-from_x, from_y + y, 0); \
+#define PUSH_QUARTER_XY(from_x, from_y, to_x, to_y, y)                                             \
+	points_ptrw[index++] = Vector3(from_x, -from_y - y, 0);                                        \
+	points_ptrw[index++] = Vector3(to_x, -to_y - y, 0);                                            \
+	points_ptrw[index++] = Vector3(from_x, from_y + y, 0);                                         \
+	points_ptrw[index++] = Vector3(to_x, to_y + y, 0);                                             \
+	points_ptrw[index++] = Vector3(-from_x, -from_y - y, 0);                                       \
+	points_ptrw[index++] = Vector3(-to_x, -to_y - y, 0);                                           \
+	points_ptrw[index++] = Vector3(-from_x, from_y + y, 0);                                        \
 	points_ptrw[index++] = Vector3(-to_x, to_y + y, 0);
 
-#define PUSH_QUARTER_YZ(from_x, from_y, to_x, to_y, y) \
-	points_ptrw[index++] = Vector3(0, -from_y - y, from_x); \
-	points_ptrw[index++] = Vector3(0, -to_y - y, to_x); \
-	points_ptrw[index++] = Vector3(0, from_y + y, from_x); \
-	points_ptrw[index++] = Vector3(0, to_y + y, to_x); \
-	points_ptrw[index++] = Vector3(0, -from_y - y, -from_x); \
-	points_ptrw[index++] = Vector3(0, -to_y - y, -to_x); \
-	points_ptrw[index++] = Vector3(0, from_y + y, -from_x); \
+#define PUSH_QUARTER_YZ(from_x, from_y, to_x, to_y, y)                                             \
+	points_ptrw[index++] = Vector3(0, -from_y - y, from_x);                                        \
+	points_ptrw[index++] = Vector3(0, -to_y - y, to_x);                                            \
+	points_ptrw[index++] = Vector3(0, from_y + y, from_x);                                         \
+	points_ptrw[index++] = Vector3(0, to_y + y, to_x);                                             \
+	points_ptrw[index++] = Vector3(0, -from_y - y, -from_x);                                       \
+	points_ptrw[index++] = Vector3(0, -to_y - y, -to_x);                                           \
+	points_ptrw[index++] = Vector3(0, from_y + y, -from_x);                                        \
 	points_ptrw[index++] = Vector3(0, to_y + y, -to_x);
 
 		float previous_x = radius;
@@ -532,7 +549,8 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		p_gizmo->add_collision_segments(points);
 
 		if (!shape_readonly) {
-			Vector<Vector3> handles = helper->capsule_get_handles(cs2->get_height(), cs2->get_radius());
+			Vector<Vector3> handles =
+				helper->capsule_get_handles(cs2->get_height(), cs2->get_radius());
 			p_gizmo->add_handles(handles, handles_material);
 		}
 	}
@@ -542,18 +560,18 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		float radius = cs2->get_radius();
 		float height = cs2->get_height();
 
-#define PUSH_QUARTER(from_x, from_y, to_x, to_y, y) \
-	points_ptrw[index++] = Vector3(from_x, y, from_y); \
-	points_ptrw[index++] = Vector3(to_x, y, to_y); \
-	points_ptrw[index++] = Vector3(from_x, y, -from_y); \
-	points_ptrw[index++] = Vector3(to_x, y, -to_y); \
-	points_ptrw[index++] = Vector3(-from_x, y, from_y); \
-	points_ptrw[index++] = Vector3(-to_x, y, to_y); \
-	points_ptrw[index++] = Vector3(-from_x, y, -from_y); \
+#define PUSH_QUARTER(from_x, from_y, to_x, to_y, y)                                                \
+	points_ptrw[index++] = Vector3(from_x, y, from_y);                                             \
+	points_ptrw[index++] = Vector3(to_x, y, to_y);                                                 \
+	points_ptrw[index++] = Vector3(from_x, y, -from_y);                                            \
+	points_ptrw[index++] = Vector3(to_x, y, -to_y);                                                \
+	points_ptrw[index++] = Vector3(-from_x, y, from_y);                                            \
+	points_ptrw[index++] = Vector3(-to_x, y, to_y);                                                \
+	points_ptrw[index++] = Vector3(-from_x, y, -from_y);                                           \
 	points_ptrw[index++] = Vector3(-to_x, y, -to_y);
 
-		// Number of points in an octant. So there will be 8 * points_in_octant * 2 points in total for one circle.
-		// This corresponds to the smoothness of the circle.
+		// Number of points in an octant. So there will be 8 * points_in_octant * 2 points in total
+		// for one circle. This corresponds to the smoothness of the circle.
 		const uint32_t points_in_octant = 16;
 		const real_t inc = (Math::PI / (4 * points_in_octant));
 		const real_t radius_squared = radius * radius;
@@ -563,7 +581,7 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		uint32_t index = 0;
 		// 4 vertical lines and 2 full circles.
 		points.resize(4 * 2 + 2 * 8 * points_in_octant * 2);
-		Vector3 *points_ptrw = points.ptrw();
+		Vector3* points_ptrw = points.ptrw();
 		float y_value = height * 0.5;
 
 		// Vertical lines.
@@ -601,14 +619,15 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		p_gizmo->add_collision_segments(points);
 
 		if (!shape_readonly) {
-			Vector<Vector3> handles = helper->cylinder_get_handles(cs2->get_height(), cs2->get_radius());
+			Vector<Vector3> handles =
+				helper->cylinder_get_handles(cs2->get_height(), cs2->get_radius());
 			p_gizmo->add_handles(handles, handles_material);
 		}
 	}
 
 	if (Object::cast_to<WorldBoundaryShape3D>(*s)) {
 		Ref<WorldBoundaryShape3D> wbs = s;
-		const Plane &p = wbs->get_plane();
+		const Plane& p = wbs->get_plane();
 
 		Vector3 n1 = p.get_any_perpendicular_normal();
 		Vector3 n2 = p.normal.cross(n1).normalized();
@@ -620,18 +639,9 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 			p.normal * p.d + n1 * -10.0 + n2 * 10.0,
 		};
 
-		Vector<Vector3> points = {
-			pface[0],
-			pface[1],
-			pface[1],
-			pface[2],
-			pface[2],
-			pface[3],
-			pface[3],
-			pface[0],
-			p.normal * p.d,
-			p.normal * p.d + p.normal * 3
-		};
+
+Vector<Vector3> points = {pface[0], pface[1], pface[1], pface[2], pface[2], pface[3],
+			pface[3], pface[0], p.normal * p.d, p.normal * p.d + p.normal * 3};
 
 		p_gizmo->add_lines(points, material, false, collision_color);
 		p_gizmo->add_collision_segments(points);
@@ -667,10 +677,7 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	if (Object::cast_to<SeparationRayShape3D>(*s)) {
 		Ref<SeparationRayShape3D> rs = s;
 
-		Vector<Vector3> points = {
-			Vector3(),
-			Vector3(0, 0, rs->get_length())
-		};
+		Vector<Vector3> points = {Vector3(), Vector3(0, 0, rs->get_length())};
 		p_gizmo->add_lines(points, material, false, collision_color);
 		p_gizmo->add_collision_segments(points);
 		if (!shape_readonly) {
@@ -688,6 +695,9 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	}
 }
 
-void CollisionShape3DGizmoPlugin::set_show_only_when_selected(bool p_enabled) {
+void CollisionShape3DGizmoPlugin::set_show_only_when_selected(bool p_enabled)
+{
 	show_only_when_selected = p_enabled;
 }
+
+

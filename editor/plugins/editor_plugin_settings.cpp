@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_plugin_settings.h"
-
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/config_file.h"
@@ -39,39 +37,44 @@
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/themes/editor_scale.h"
+#include "editor_plugin_settings.h"
 #include "scene/gui/separator.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/gui/tree.h"
 
-void EditorPluginSettings::_notification(int p_what) {
+void EditorPluginSettings::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_WM_WINDOW_FOCUS_IN: {
+	case NOTIFICATION_WM_WINDOW_FOCUS_IN: {
+		update_plugins();
+	} break;
+
+	case NOTIFICATION_READY: {
+		plugin_config_dialog->connect("plugin_ready",
+			callable_mp(EditorNode::get_singleton(), &EditorNode::_on_plugin_ready));
+		plugin_list->connect(
+			"button_clicked", callable_mp(this, &EditorPluginSettings::_cell_button_pressed));
+	} break;
+
+	case NOTIFICATION_TRANSLATION_CHANGED: {
+		if (plugin_list->get_root()) {
 			update_plugins();
-		} break;
+		}
+	} break;
 
-		case NOTIFICATION_READY: {
-			plugin_config_dialog->connect("plugin_ready", callable_mp(EditorNode::get_singleton(), &EditorNode::_on_plugin_ready));
-			plugin_list->connect("button_clicked", callable_mp(this, &EditorPluginSettings::_cell_button_pressed));
-		} break;
-
-		case NOTIFICATION_TRANSLATION_CHANGED: {
-			if (plugin_list->get_root()) {
-				update_plugins();
-			}
-		} break;
-
-		case NOTIFICATION_THEME_CHANGED: {
-			if (Engine::get_singleton()->is_recovery_mode_hint()) {
-				recovery_mode_icon->set_texture(get_editor_theme_icon(SNAME("NodeWarning")));
-			}
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		if (Engine::get_singleton()->is_recovery_mode_hint()) {
+			recovery_mode_icon->set_texture(get_editor_theme_icon(SNAME("NodeWarning")));
+		}
+	} break;
 	}
 }
 
-void EditorPluginSettings::update_plugins() {
+void EditorPluginSettings::update_plugins()
+{
 	plugin_list->clear();
 	updating = true;
-	TreeItem *root = plugin_list->create_item();
+	TreeItem* root = plugin_list->create_item();
 
 	Vector<String> plugins = _get_plugins("res://addons");
 	plugins.sort();
@@ -79,23 +82,27 @@ void EditorPluginSettings::update_plugins() {
 	for (int i = 0; i < plugins.size(); i++) {
 		Ref<ConfigFile> cfg;
 		cfg.instantiate();
-		const String &path = plugins[i];
+		const String& path = plugins[i];
 
 		Error err = cfg->load(path);
 
 		if (err != OK) {
 			WARN_PRINT("Can't load plugin config at: " + path);
-		} else {
+		}
+		else {
 			Vector<String> missing_keys;
-			for (const String required_key : { "name", "author", "version", "description", "script" }) {
+			for (const String required_key :
+				{"name", "author", "version", "description", "script"}) {
 				if (!cfg->has_section_key("plugin", required_key)) {
 					missing_keys.append("\"plugin/" + required_key + "\"");
 				}
 			}
 
 			if (!missing_keys.is_empty()) {
-				WARN_PRINT(vformat("Plugin config at \"%s\" is missing the following keys: %s", path, String(",").join(missing_keys)));
-			} else {
+				WARN_PRINT(vformat("Plugin config at \"%s\" is missing the following keys: %s",
+					path, String(",").join(missing_keys)));
+			}
+			else {
 				String name = cfg->get_value("plugin", "name");
 				String author = cfg->get_value("plugin", "author");
 				String version = cfg->get_value("plugin", "version");
@@ -103,7 +110,8 @@ void EditorPluginSettings::update_plugins() {
 				String scr = cfg->get_value("plugin", "script");
 
 				bool is_enabled = EditorNode::get_singleton()->is_addon_plugin_enabled(path);
-				Color disabled_color = get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor));
+				Color disabled_color =
+					get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor));
 
 				const PackedInt32Array boundaries = TS->string_get_word_breaks(description, "", 80);
 				String wrapped_description;
@@ -111,20 +119,24 @@ void EditorPluginSettings::update_plugins() {
 				for (int j = 0; j < boundaries.size(); j += 2) {
 					const int start = boundaries[j];
 					const int end = boundaries[j + 1];
-					wrapped_description += "\n" + description.substr(start, end - start + 1).rstrip("\n");
+					wrapped_description +=
+						"\n" + description.substr(start, end - start + 1).rstrip("\n");
 				}
 
-				TreeItem *item = plugin_list->create_item(root);
+				TreeItem* item = plugin_list->create_item(root);
 				item->set_text(COLUMN_NAME, name);
 				item->set_auto_translate_mode(COLUMN_NAME, AUTO_TRANSLATE_MODE_DISABLED);
 				if (!is_enabled) {
 					item->set_custom_color(COLUMN_NAME, disabled_color);
 				}
-				item->set_tooltip_text(COLUMN_NAME, vformat(TTR("Name: %s\nPath: %s\nMain Script: %s\n\n%s"), name, path, scr, wrapped_description));
+				item->set_tooltip_text(
+					COLUMN_NAME, vformat(TTR("Name: %s\nPath: %s\nMain Script: %s\n\n%s"), name,
+									 path, scr, wrapped_description));
 				item->set_metadata(COLUMN_NAME, path);
 				item->set_text(COLUMN_VERSION, version);
 				item->set_auto_translate_mode(COLUMN_VERSION, AUTO_TRANSLATE_MODE_DISABLED);
-				item->set_custom_font(COLUMN_VERSION, get_theme_font("source", EditorStringName(EditorFonts)));
+				item->set_custom_font(
+					COLUMN_VERSION, get_theme_font("source", EditorStringName(EditorFonts)));
 				item->set_metadata(COLUMN_VERSION, scr);
 				item->set_text(COLUMN_AUTHOR, author);
 				item->set_auto_translate_mode(COLUMN_AUTHOR, AUTO_TRANSLATE_MODE_DISABLED);
@@ -133,7 +145,8 @@ void EditorPluginSettings::update_plugins() {
 				item->set_text(COLUMN_STATUS, TTRC("On"));
 				item->set_checked(COLUMN_STATUS, is_enabled);
 				item->set_editable(COLUMN_STATUS, true);
-				item->add_button(COLUMN_EDIT, get_editor_theme_icon(SNAME("Edit")), BUTTON_PLUGIN_EDIT, false, TTRC("Edit Plugin"));
+				item->add_button(COLUMN_EDIT, get_editor_theme_icon(SNAME("Edit")),
+					BUTTON_PLUGIN_EDIT, false, TTRC("Edit Plugin"));
 			}
 		}
 	}
@@ -141,12 +154,13 @@ void EditorPluginSettings::update_plugins() {
 	updating = false;
 }
 
-void EditorPluginSettings::_plugin_activity_changed() {
+void EditorPluginSettings::_plugin_activity_changed()
+{
 	if (updating) {
 		return;
 	}
 
-	TreeItem *ti = plugin_list->get_edited();
+	TreeItem* ti = plugin_list->get_edited();
 	ERR_FAIL_NULL(ti);
 	bool checked = ti->is_checked(COLUMN_STATUS);
 	String name = ti->get_metadata(COLUMN_NAME);
@@ -162,21 +176,26 @@ void EditorPluginSettings::_plugin_activity_changed() {
 	}
 	if (is_enabled) {
 		ti->clear_custom_color(COLUMN_NAME);
-	} else {
-		ti->set_custom_color(COLUMN_NAME, get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor)));
+	}
+	else {
+		ti->set_custom_color(
+			COLUMN_NAME, get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor)));
 	}
 }
 
-void EditorPluginSettings::_create_clicked() {
+void EditorPluginSettings::_create_clicked()
+{
 	plugin_config_dialog->config("");
 	plugin_config_dialog->popup_centered();
 }
 
-void EditorPluginSettings::_cell_button_pressed(Object *p_item, int p_column, int p_id, MouseButton p_button) {
+void EditorPluginSettings::_cell_button_pressed(
+	Object* p_item, int p_column, int p_id, MouseButton p_button)
+{
 	if (p_button != MouseButton::LEFT) {
 		return;
 	}
-	TreeItem *item = Object::cast_to<TreeItem>(p_item);
+	TreeItem* item = Object::cast_to<TreeItem>(p_item);
 	if (!item) {
 		return;
 	}
@@ -189,7 +208,8 @@ void EditorPluginSettings::_cell_button_pressed(Object *p_item, int p_column, in
 	}
 }
 
-Vector<String> EditorPluginSettings::_get_plugins(const String &p_dir) {
+Vector<String> EditorPluginSettings::_get_plugins(const String& p_dir)
+{
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 	Error err = da->change_dir(p_dir);
 	if (err != OK) {
@@ -207,7 +227,8 @@ Vector<String> EditorPluginSettings::_get_plugins(const String &p_dir) {
 		const String plugin_config = full_path.path_join("plugin.cfg");
 		if (FileAccess::exists(plugin_config)) {
 			plugins.push_back(plugin_config);
-		} else {
+		}
+		else {
 			plugins.append_array(_get_plugins(full_path));
 		}
 	}
@@ -216,7 +237,8 @@ Vector<String> EditorPluginSettings::_get_plugins(const String &p_dir) {
 	return plugins;
 }
 
-EditorPluginSettings::EditorPluginSettings() {
+EditorPluginSettings::EditorPluginSettings()
+{
 	ProjectSettings::get_singleton()->add_hidden_prefix("editor_plugins/");
 
 	plugin_config_dialog = memnew(PluginConfigDialog);
@@ -224,29 +246,31 @@ EditorPluginSettings::EditorPluginSettings() {
 	add_child(plugin_config_dialog);
 
 	if (Engine::get_singleton()->is_recovery_mode_hint()) {
-		HBoxContainer *c = memnew(HBoxContainer);
+		HBoxContainer* c = memnew(HBoxContainer);
 		add_child(c);
 
 		recovery_mode_icon = memnew(TextureRect);
 		recovery_mode_icon->set_stretch_mode(TextureRect::STRETCH_KEEP_ASPECT_CENTERED);
 		c->add_child(recovery_mode_icon);
 
-		Label *recovery_mode_label = memnew(Label(TTRC("Recovery mode is enabled. Enabled plugins will not run while this mode is active.")));
+		Label* recovery_mode_label = memnew(Label(TTRC(
+			"Recovery mode is enabled. Enabled plugins will not run while this mode is active.")));
 		recovery_mode_label->set_theme_type_variation("HeaderSmall");
 		recovery_mode_label->set_h_size_flags(SIZE_EXPAND_FILL);
 		c->add_child(recovery_mode_label);
 
-		HSeparator *sep = memnew(HSeparator);
+		HSeparator* sep = memnew(HSeparator);
 		add_child(sep);
 	}
 
-	HBoxContainer *title_hb = memnew(HBoxContainer);
-	Label *label = memnew(Label(TTRC("Installed Plugins:")));
+	HBoxContainer* title_hb = memnew(HBoxContainer);
+	Label* label = memnew(Label(TTRC("Installed Plugins:")));
 	label->set_theme_type_variation("HeaderSmall");
 	title_hb->add_child(label);
 	title_hb->add_spacer();
-	Button *create_plugin_button = memnew(Button(TTRC("Create New Plugin")));
-	create_plugin_button->connect(SceneStringName(pressed), callable_mp(this, &EditorPluginSettings::_create_clicked));
+	Button* create_plugin_button = memnew(Button(TTRC("Create New Plugin")));
+	create_plugin_button->connect(
+		SceneStringName(pressed), callable_mp(this, &EditorPluginSettings::_create_clicked));
 	title_hb->add_child(create_plugin_button);
 	add_child(title_hb);
 
@@ -281,12 +305,16 @@ EditorPluginSettings::EditorPluginSettings() {
 	plugin_list->set_column_custom_minimum_width(COLUMN_AUTHOR, 250 * EDSCALE);
 	plugin_list->set_column_custom_minimum_width(COLUMN_EDIT, 40 * EDSCALE);
 	plugin_list->set_hide_root(true);
-	plugin_list->connect("item_edited", callable_mp(this, &EditorPluginSettings::_plugin_activity_changed), CONNECT_DEFERRED);
+	plugin_list->connect("item_edited",
+		callable_mp(this, &EditorPluginSettings::_plugin_activity_changed),
+		Object::CONNECT_DEFERRED);
 
-	VBoxContainer *mc = memnew(VBoxContainer);
+	VBoxContainer* mc = memnew(VBoxContainer);
 	mc->add_child(plugin_list);
 	mc->set_v_size_flags(SIZE_EXPAND_FILL);
 	mc->set_h_size_flags(SIZE_EXPAND_FILL);
 
 	add_child(mc);
 }
+
+

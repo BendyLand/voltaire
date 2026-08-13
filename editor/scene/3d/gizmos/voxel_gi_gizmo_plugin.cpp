@@ -28,15 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "voxel_gi_gizmo_plugin.h"
-
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/scene/3d/gizmos/gizmo_3d_helper.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/3d/voxel_gi.h"
+#include "voxel_gi_gizmo_plugin.h"
 
-VoxelGIGizmoPlugin::VoxelGIGizmoPlugin() {
+VoxelGIGizmoPlugin::VoxelGIGizmoPlugin()
+{
 	helper.instantiate();
 
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/voxel_gi");
@@ -47,37 +47,45 @@ VoxelGIGizmoPlugin::VoxelGIGizmoPlugin() {
 	gizmo_color.a = 0.02;
 	create_material("voxel_gi_internal_material", gizmo_color);
 
-	create_icon_material("voxel_gi_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoVoxelGI"), EditorStringName(EditorIcons)));
+	create_icon_material(
+		"voxel_gi_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(
+							 SNAME("GizmoVoxelGI"), EditorStringName(EditorIcons)));
 	create_handle_material("handles");
 }
 
-bool VoxelGIGizmoPlugin::has_gizmo(Node3D *p_spatial) {
+bool VoxelGIGizmoPlugin::has_gizmo(Node3D* p_spatial)
+{
 	return Object::cast_to<VoxelGI>(p_spatial) != nullptr;
 }
 
-String VoxelGIGizmoPlugin::get_gizmo_name() const {
-	return "VoxelGI";
-}
+String VoxelGIGizmoPlugin::get_gizmo_name() const { return "VoxelGI"; }
 
-int VoxelGIGizmoPlugin::get_priority() const {
-	return -1;
-}
+int VoxelGIGizmoPlugin::get_priority() const { return -1; }
 
-String VoxelGIGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
+String VoxelGIGizmoPlugin::get_handle_name(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
 	return helper->box_get_handle_name(p_id);
 }
 
-Variant VoxelGIGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	VoxelGI *probe = Object::cast_to<VoxelGI>(p_gizmo->get_node_3d());
+Variant VoxelGIGizmoPlugin::get_handle_value(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	VoxelGI* probe = Object::cast_to<VoxelGI>(p_gizmo->get_node_3d());
 	return probe->get_size();
 }
 
-void VoxelGIGizmoPlugin::begin_handle_action(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) {
-	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary), p_gizmo->get_node_3d()->get_global_transform());
+void VoxelGIGizmoPlugin::begin_handle_action(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary)
+{
+	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary),
+		p_gizmo->get_node_3d()->get_global_transform());
 }
 
-void VoxelGIGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	VoxelGI *probe = Object::cast_to<VoxelGI>(p_gizmo->get_node_3d());
+void VoxelGIGizmoPlugin::set_handle(const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary,
+	Camera3D* p_camera, const Point2& p_point)
+{
+	VoxelGI* probe = Object::cast_to<VoxelGI>(p_gizmo->get_node_3d());
 
 	Vector3 sg[2];
 	helper->get_segment(p_camera, p_point, sg);
@@ -89,22 +97,26 @@ void VoxelGIGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, 
 	probe->set_global_position(position);
 }
 
-void VoxelGIGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	helper->box_commit_handle(TTR("Change Probe Size"), p_cancel, p_gizmo->get_node_3d());
+void VoxelGIGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary,
+	const Variant& p_restore, bool p_cancel)
+{
+	helper->box_commit_handle(
+		TTR("Change Probe Size"), p_cancel, p_gizmo->get_node_3d()->obj.get());
 }
 
-void VoxelGIGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
+void VoxelGIGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
+{
 	p_gizmo->clear();
 
 	if (p_gizmo->is_selected()) {
-		VoxelGI *probe = Object::cast_to<VoxelGI>(p_gizmo->get_node_3d());
+		VoxelGI* probe = Object::cast_to<VoxelGI>(p_gizmo->get_node_3d());
 		Ref<Material> material = get_material("voxel_gi_material", p_gizmo);
 		Ref<Material> material_internal = get_material("voxel_gi_internal_material", p_gizmo);
 
 		Vector<Vector3> lines;
 		Vector3 size = probe->get_size();
 
-		static const int subdivs[VoxelGI::SUBDIV_MAX] = { 64, 128, 256, 512 };
+		static const int subdivs[VoxelGI::SUBDIV_MAX] = {64, 128, 256, 512};
 
 		AABB aabb = AABB(-size / 2, size);
 		int subdiv = subdivs[probe->get_subdiv()];
@@ -137,7 +149,8 @@ void VoxelGIGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 					if (k & 1) {
 						to[j_n1] += aabb.size[j_n1];
-					} else {
+					}
+					else {
 						to[j_n2] += aabb.size[j_n2];
 					}
 
@@ -162,3 +175,5 @@ void VoxelGIGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	Ref<Material> icon = get_material("voxel_gi_icon", p_gizmo);
 	p_gizmo->add_unscaled_billboard(icon, 0.05);
 }
+
+

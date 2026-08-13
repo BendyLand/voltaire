@@ -29,40 +29,48 @@
 /**************************************************************************/
 
 #include "container.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "servers/display/accessibility_server.h"
 
-void Container::_child_minsize_changed() {
+void Container::_child_minsize_changed()
+{
 	update_minimum_size();
 	queue_sort();
 }
 
-void Container::_child_desired_size_changed() {
+void Container::_child_desired_size_changed()
+{
 	update_desired_size();
 	queue_sort();
 }
 
-void Container::add_child_notify(Node *p_child) {
+void Container::add_child_notify(Node* p_child)
+{
 	Control::add_child_notify(p_child);
 
-	Control *control = Object::cast_to<Control>(p_child);
+	Control* control = Object::cast_to<Control>(p_child);
 	if (!control) {
 		return;
 	}
 
-	control->connect(SceneStringName(size_flags_changed), callable_mp(this, &Container::queue_sort));
-	control->connect(SceneStringName(minimum_size_changed), callable_mp(this, &Container::_child_minsize_changed));
-	control->connect(SceneStringName(maximum_size_changed), callable_mp(this, &Container::_child_minsize_changed));
-	control->connect("_desired_size_changed", callable_mp(this, &Container::_child_desired_size_changed));
-	control->connect(SceneStringName(visibility_changed), callable_mp(this, &Container::_child_minsize_changed));
+	control->connect(
+		SceneStringName(size_flags_changed), callable_mp(this, &Container::queue_sort));
+	control->connect(SceneStringName(minimum_size_changed),
+		callable_mp(this, &Container::_child_minsize_changed));
+	control->connect(SceneStringName(maximum_size_changed),
+		callable_mp(this, &Container::_child_minsize_changed));
+	control->connect(
+		"_desired_size_changed", callable_mp(this, &Container::_child_desired_size_changed));
+	control->connect(
+		SceneStringName(visibility_changed), callable_mp(this, &Container::_child_minsize_changed));
 
 	update_minimum_size();
 	queue_sort();
 }
 
-void Container::move_child_notify(Node *p_child) {
+void Container::move_child_notify(Node* p_child)
+{
 	Control::move_child_notify(p_child);
 
 	if (!Object::cast_to<Control>(p_child)) {
@@ -73,50 +81,57 @@ void Container::move_child_notify(Node *p_child) {
 	queue_sort();
 }
 
-void Container::remove_child_notify(Node *p_child) {
+void Container::remove_child_notify(Node* p_child)
+{
 	Control::remove_child_notify(p_child);
 
-	Control *control = Object::cast_to<Control>(p_child);
+	Control* control = Object::cast_to<Control>(p_child);
 	if (!control) {
 		return;
 	}
 
-	control->disconnect(SceneStringName(size_flags_changed), callable_mp(this, &Container::queue_sort));
-	control->disconnect(SceneStringName(minimum_size_changed), callable_mp(this, &Container::_child_minsize_changed));
-	control->disconnect(SceneStringName(maximum_size_changed), callable_mp(this, &Container::_child_minsize_changed));
-	control->disconnect("_desired_size_changed", callable_mp(this, &Container::_child_desired_size_changed));
-	control->disconnect(SceneStringName(visibility_changed), callable_mp(this, &Container::_child_minsize_changed));
+	control->disconnect(
+		SceneStringName(size_flags_changed), callable_mp(this, &Container::queue_sort));
+	control->disconnect(SceneStringName(minimum_size_changed),
+		callable_mp(this, &Container::_child_minsize_changed));
+	control->disconnect(SceneStringName(maximum_size_changed),
+		callable_mp(this, &Container::_child_minsize_changed));
+	control->disconnect(
+		"_desired_size_changed", callable_mp(this, &Container::_child_desired_size_changed));
+	control->disconnect(
+		SceneStringName(visibility_changed), callable_mp(this, &Container::_child_minsize_changed));
 
 	update_minimum_size();
 	queue_sort();
 }
 
-void Container::_sort_children() {
+void Container::_sort_children()
+{
 	if (!is_inside_tree()) {
 		pending_sort = false;
 		return;
 	}
 
-	notification(NOTIFICATION_PRE_SORT_CHILDREN);
-	emit_signal(SceneStringName(pre_sort_children));
+	this->obj->notification(NOTIFICATION_PRE_SORT_CHILDREN);
+	this->obj->emit_signal(SceneStringName(pre_sort_children));
 
-	notification(NOTIFICATION_SORT_CHILDREN);
-	emit_signal(SceneStringName(sort_children));
+	this->obj->notification(NOTIFICATION_SORT_CHILDREN);
+	this->obj->emit_signal(SceneStringName(sort_children));
 	pending_sort = false;
 	layout_pending_finish();
 }
 
-void Container::fit_child_in_rect(RequiredParam<Control> rp_child, const Rect2 &p_rect) {
-	EXTRACT_PARAM_OR_FAIL(p_child, rp_child);
-	ERR_FAIL_COND(p_child->get_parent() != this);
+void Container::fit_child_in_rect(Control* rp_child, const Rect2& p_rect)
+{
+	ERR_FAIL_COND(rp_child->get_parent() != this);
 
 	bool rtl = is_layout_rtl();
-	Size2 minsize = p_child->get_combined_minimum_size();
-	Size2 desired_size = p_child->get_bound_desired_size();
-	Size2 maxsize = p_child->get_combined_maximum_size();
+	Size2 minsize = rp_child->get_combined_minimum_size();
+	Size2 desired_size = rp_child->get_bound_desired_size();
+	Size2 maxsize = rp_child->get_combined_maximum_size();
 	Rect2 r = p_rect;
-	BitField<SizeFlags> h_size_flags = p_child->get_h_size_flags();
-	BitField<SizeFlags> v_size_flags = p_child->get_v_size_flags();
+	BitField<SizeFlags> h_size_flags = rp_child->get_h_size_flags();
+	BitField<SizeFlags> v_size_flags = rp_child->get_v_size_flags();
 
 	if (!h_size_flags.has_flag(SIZE_FILL)) {
 		float final_width = minsize.width;
@@ -127,9 +142,11 @@ void Container::fit_child_in_rect(RequiredParam<Control> rp_child, const Rect2 &
 		r.size.x = final_width;
 		if (h_size_flags.has_flag(SIZE_SHRINK_END)) {
 			r.position.x += rtl ? 0 : (p_rect.size.width - final_width);
-		} else if (h_size_flags.has_flag(SIZE_SHRINK_CENTER)) {
+		}
+		else if (h_size_flags.has_flag(SIZE_SHRINK_CENTER)) {
 			r.position.x += Math::floor((p_rect.size.x - final_width) / 2);
-		} else {
+		}
+		else {
 			r.position.x += rtl ? (p_rect.size.width - final_width) : 0;
 		}
 	}
@@ -143,17 +160,19 @@ void Container::fit_child_in_rect(RequiredParam<Control> rp_child, const Rect2 &
 		r.size.y = final_height;
 		if (v_size_flags.has_flag(SIZE_SHRINK_END)) {
 			r.position.y += p_rect.size.height - final_height;
-		} else if (v_size_flags.has_flag(SIZE_SHRINK_CENTER)) {
+		}
+		else if (v_size_flags.has_flag(SIZE_SHRINK_CENTER)) {
 			r.position.y += Math::floor((p_rect.size.y - final_height) / 2);
 		}
 	}
 
-	p_child->set_rect(r);
-	p_child->set_rotation(0);
-	p_child->set_scale(Vector2(1, 1));
+	rp_child->set_rect(r);
+	rp_child->set_rotation(0);
+	rp_child->set_scale(Vector2(1, 1));
 }
 
-void Container::queue_sort() {
+void Container::queue_sort()
+{
 	if (!is_inside_tree()) {
 		return;
 	}
@@ -167,8 +186,10 @@ void Container::queue_sort() {
 	pending_sort = true;
 }
 
-Control *Container::as_sortable_control(Node *p_node, SortableVisibilityMode p_visibility_mode) const {
-	Control *c = Object::cast_to<Control>(p_node);
+Control* Container::as_sortable_control(
+	Node* p_node, SortableVisibilityMode p_visibility_mode) const
+{
+	Control* c = Object::cast_to<Control>(p_node);
 	if (!c || c->is_set_as_top_level()) {
 		return nullptr;
 	}
@@ -181,7 +202,8 @@ Control *Container::as_sortable_control(Node *p_node, SortableVisibilityMode p_v
 	return c;
 }
 
-Vector<int> Container::get_allowed_size_flags_horizontal() const {
+Vector<int> Container::get_allowed_size_flags_horizontal() const
+{
 	Vector<int> flags;
 	flags.append(SIZE_FILL);
 	flags.append(SIZE_EXPAND);
@@ -191,7 +213,8 @@ Vector<int> Container::get_allowed_size_flags_horizontal() const {
 	return flags;
 }
 
-Vector<int> Container::get_allowed_size_flags_vertical() const {
+Vector<int> Container::get_allowed_size_flags_vertical() const
+{
 	Vector<int> flags;
 	flags.append(SIZE_FILL);
 	flags.append(SIZE_EXPAND);
@@ -201,33 +224,38 @@ Vector<int> Container::get_allowed_size_flags_vertical() const {
 	return flags;
 }
 
-void Container::_notification(int p_what) {
+void Container::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-			RID ae = get_accessibility_element();
-			ERR_FAIL_COND(ae.is_null());
+	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+		RID ae = get_accessibility_element();
+		ERR_FAIL_COND(ae.is_null());
 
-			if (accessibility_region) {
-				AccessibilityServer::get_singleton()->update_set_role(ae, AccessibilityServerEnums::AccessibilityRole::ROLE_REGION);
-			} else {
-				AccessibilityServer::get_singleton()->update_set_role(ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CONTAINER);
-			}
-		} break;
+		if (accessibility_region) {
+			AccessibilityServer::get_singleton()->update_set_role(
+				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_REGION);
+		}
+		else {
+			AccessibilityServer::get_singleton()->update_set_role(
+				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CONTAINER);
+		}
+	} break;
 
-		case NOTIFICATION_RESIZED:
-		case NOTIFICATION_THEME_CHANGED: {
+	case NOTIFICATION_RESIZED:
+	case NOTIFICATION_THEME_CHANGED: {
+		queue_sort();
+	} break;
+
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		if (is_visible_in_tree()) {
 			queue_sort();
-		} break;
-
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			if (is_visible_in_tree()) {
-				queue_sort();
-			}
-		} break;
+		}
+	} break;
 	}
 }
 
-void Container::set_accessibility_region(bool p_region) {
+void Container::set_accessibility_region(bool p_region)
+{
 	ERR_MAIN_THREAD_GUARD;
 	if (accessibility_region != p_region) {
 		accessibility_region = p_region;
@@ -235,38 +263,29 @@ void Container::set_accessibility_region(bool p_region) {
 	}
 }
 
-bool Container::is_accessibility_region() const {
-	return accessibility_region;
-}
+bool Container::is_accessibility_region() const { return accessibility_region; }
 
-PackedStringArray Container::get_configuration_warnings() const {
+PackedStringArray Container::get_configuration_warnings() const
+{
 	PackedStringArray warnings = Control::get_configuration_warnings();
 
-	if (get_class() == "Container" && get_script().is_null()) {
-		warnings.push_back(RTR("Container by itself serves no purpose unless a script configures its children placement behavior.\nIf you don't intend to add a script, use a plain Control node instead."));
+	if (this->obj->get_class() == "Container" && get_script().is_null()) {
+		warnings.push_back(RTR("Container by itself serves no purpose unless a script configures "
+							   "its children placement behavior.\nIf you don't intend to add a "
+							   "script, use a plain Control node instead."));
 	}
 
 	return warnings;
 }
 
-void Container::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("queue_sort"), &Container::queue_sort);
-	ClassDB::bind_method(D_METHOD("fit_child_in_rect", "child", "rect"), &Container::fit_child_in_rect);
-	ClassDB::bind_method(D_METHOD("set_accessibility_region", "region"), &Container::set_accessibility_region);
-	ClassDB::bind_method(D_METHOD("is_accessibility_region"), &Container::is_accessibility_region);
+void Container::_bind_methods() {}
 
-	BIND_CONSTANT(NOTIFICATION_PRE_SORT_CHILDREN);
-	BIND_CONSTANT(NOTIFICATION_SORT_CHILDREN);
-
-	ADD_SIGNAL(MethodInfo("pre_sort_children"));
-	ADD_SIGNAL(MethodInfo("sort_children"));
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "accessibility_region"), "set_accessibility_region", "is_accessibility_region");
-}
-
-Container::Container() {
+Container::Container()
+{
 	// All containers should let mouse events pass by default.
 	set_mouse_filter(MOUSE_FILTER_PASS);
 	// All containers should contain their children within their maximum size by default.
 	set_propagate_maximum_size(true);
 }
+
+

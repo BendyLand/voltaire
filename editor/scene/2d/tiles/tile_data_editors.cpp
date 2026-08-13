@@ -353,33 +353,33 @@ void GenericTilePolygonEditor::_advanced_menu_item_pressed(int p_item_pressed)
 	switch (p_item_pressed) {
 	case RESET_TO_DEFAULT_TILE: {
 		undo_redo->create_action(TTR("Reset Polygons"));
-		undo_redo->add_do_method(this, "clear_polygons");
+		undo_redo->add_do_method(this->obj.get(), "clear_polygons");
 		Vector<Vector2> polygon = tile_set->get_tile_shape_polygon();
 		for (int i = 0; i < polygon.size(); i++) {
 			polygon.write[i] = polygon[i] * tile_set->get_tile_size();
 		}
-		undo_redo->add_do_method(this, "add_polygon", polygon);
-		undo_redo->add_do_method(base_control, "queue_redraw");
-		undo_redo->add_do_method(this, "emit_signal", "polygons_changed");
-		undo_redo->add_undo_method(this, "clear_polygons");
+		undo_redo->add_do_method(this->obj.get(), "add_polygon", polygon);
+		undo_redo->add_do_method(base_control->obj.get(), "queue_redraw");
+		undo_redo->add_do_method(this->obj.get(), "emit_signal", "polygons_changed");
+		undo_redo->add_undo_method(this->obj.get(), "clear_polygons");
 		for (const PackedVector2Array& poly : polygons) {
-			undo_redo->add_undo_method(this, "add_polygon", poly);
+			undo_redo->add_undo_method(this->obj.get(), "add_polygon", poly);
 		}
-		undo_redo->add_undo_method(base_control, "queue_redraw");
-		undo_redo->add_undo_method(this, "emit_signal", "polygons_changed");
+		undo_redo->add_undo_method(base_control->obj.get(), "queue_redraw");
+		undo_redo->add_undo_method(this->obj.get(), "emit_signal", "polygons_changed");
 		undo_redo->commit_action(true);
 	} break;
 	case CLEAR_TILE: {
 		undo_redo->create_action(TTR("Clear Polygons"));
-		undo_redo->add_do_method(this, "clear_polygons");
-		undo_redo->add_do_method(base_control, "queue_redraw");
-		undo_redo->add_do_method(this, "emit_signal", "polygons_changed");
-		undo_redo->add_undo_method(this, "clear_polygons");
+		undo_redo->add_do_method(this->obj.get(), "clear_polygons");
+		undo_redo->add_do_method(base_control->obj.get(), "queue_redraw");
+		undo_redo->add_do_method(this->obj.get(), "emit_signal", "polygons_changed");
+		undo_redo->add_undo_method(this->obj.get(), "clear_polygons");
 		for (const PackedVector2Array& polygon : polygons) {
-			undo_redo->add_undo_method(this, "add_polygon", polygon);
+			undo_redo->add_undo_method(this->obj.get(), "add_polygon", polygon);
 		}
-		undo_redo->add_undo_method(base_control, "queue_redraw");
-		undo_redo->add_undo_method(this, "emit_signal", "polygons_changed");
+		undo_redo->add_undo_method(base_control->obj.get(), "queue_redraw");
+		undo_redo->add_undo_method(this->obj.get(), "emit_signal", "polygons_changed");
 		undo_redo->commit_action(true);
 	} break;
 	case ROTATE_RIGHT:
@@ -424,15 +424,15 @@ void GenericTilePolygonEditor::_advanced_menu_item_pressed(int p_item_pressed)
 				}
 				new_polygon.push_back(point);
 			}
-			undo_redo->add_do_method(this, "set_polygon", i, new_polygon);
+			undo_redo->add_do_method(this->obj.get(), "set_polygon", i, new_polygon);
 		}
-		undo_redo->add_do_method(base_control, "queue_redraw");
-		undo_redo->add_do_method(this, "emit_signal", "polygons_changed");
+		undo_redo->add_do_method(base_control->obj.get(), "queue_redraw");
+		undo_redo->add_do_method(this->obj.get(), "emit_signal", "polygons_changed");
 		for (unsigned int i = 0; i < polygons.size(); i++) {
-			undo_redo->add_undo_method(this, "set_polygon", i, polygons[i]);
+			undo_redo->add_undo_method(this->obj.get(), "set_polygon", i, polygons[i]);
 		}
-		undo_redo->add_undo_method(base_control, "queue_redraw");
-		undo_redo->add_undo_method(this, "emit_signal", "polygons_changed");
+		undo_redo->add_undo_method(base_control->obj.get(), "queue_redraw");
+		undo_redo->add_undo_method(this->obj.get(), "emit_signal", "polygons_changed");
 		undo_redo->commit_action(true);
 	} break;
 	default:
@@ -651,14 +651,14 @@ void GenericTilePolygonEditor::_base_control_gui_input(Ref<InputEvent> p_event)
 						button_edit->set_pressed(true);
 						undo_redo->create_action(TTR("Edit Polygons"));
 						if (!multiple_polygon_mode) {
-							undo_redo->add_do_method(this, "clear_polygons");
+							undo_redo->add_do_method(this->obj.get(), "clear_polygons");
 						}
-						undo_redo->add_do_method(this, "add_polygon", in_creation_polygon);
-						undo_redo->add_do_method(base_control, "queue_redraw");
-						undo_redo->add_undo_method(this, "remove_polygon", added);
-						undo_redo->add_undo_method(base_control, "queue_redraw");
+						undo_redo->add_do_method(this->obj.get(), "add_polygon", in_creation_polygon);
+						undo_redo->add_do_method(base_control->obj.get(), "queue_redraw");
+						undo_redo->add_undo_method(this->obj.get(), "remove_polygon", added);
+						undo_redo->add_undo_method(base_control->obj.get(), "queue_redraw");
 						undo_redo->commit_action(false);
-						emit_signal(SNAME("polygons_changed"));
+						this->obj->emit_signal(SNAME("polygons_changed"));
 					}
 					else {
 						// Create a new point.
@@ -701,20 +701,20 @@ void GenericTilePolygonEditor::_base_control_gui_input(Ref<InputEvent> p_event)
 						undo_redo->create_action(TTR("Edit Polygons"));
 						if (polygons[closest_polygon].size() < 3) {
 							remove_polygon(closest_polygon);
-							undo_redo->add_do_method(this, "remove_polygon", closest_polygon);
+							undo_redo->add_do_method(this->obj.get(), "remove_polygon", closest_polygon);
 							undo_redo->add_undo_method(
-								this, "add_polygon", old_polygon, closest_polygon);
+								this->obj.get(), "add_polygon", old_polygon, closest_polygon);
 						}
 						else {
 							undo_redo->add_do_method(
-								this, "set_polygon", closest_polygon, polygons[closest_polygon]);
+								this->obj.get(), "set_polygon", closest_polygon, polygons[closest_polygon]);
 							undo_redo->add_undo_method(
-								this, "set_polygon", closest_polygon, old_polygon);
+								this->obj.get(), "set_polygon", closest_polygon, old_polygon);
 						}
-						undo_redo->add_do_method(base_control, "queue_redraw");
-						undo_redo->add_undo_method(base_control, "queue_redraw");
+						undo_redo->add_do_method(base_control->obj.get(), "queue_redraw");
+						undo_redo->add_undo_method(base_control->obj.get(), "queue_redraw");
 						undo_redo->commit_action(false);
-						emit_signal(SNAME("polygons_changed"));
+						this->obj->emit_signal(SNAME("polygons_changed"));
 					}
 				}
 			}
@@ -722,13 +722,13 @@ void GenericTilePolygonEditor::_base_control_gui_input(Ref<InputEvent> p_event)
 				if (drag_type == DRAG_TYPE_DRAG_POINT) {
 					undo_redo->create_action(TTR("Edit Polygons"));
 					undo_redo->add_do_method(
-						this, "set_polygon", drag_polygon_index, polygons[drag_polygon_index]);
-					undo_redo->add_do_method(base_control, "queue_redraw");
+						this->obj.get(), "set_polygon", drag_polygon_index, polygons[drag_polygon_index]);
+					undo_redo->add_do_method(base_control->obj.get(), "queue_redraw");
 					undo_redo->add_undo_method(
-						this, "set_polygon", drag_polygon_index, drag_old_polygon);
-					undo_redo->add_undo_method(base_control, "queue_redraw");
+						this->obj.get(), "set_polygon", drag_polygon_index, drag_old_polygon);
+					undo_redo->add_undo_method(base_control->obj.get(), "queue_redraw");
 					undo_redo->commit_action(false);
-					emit_signal(SNAME("polygons_changed"));
+					this->obj->emit_signal(SNAME("polygons_changed"));
 				}
 				else if (drag_type == DRAG_TYPE_CREATE_POINT) {
 					Point2 point = xform.affine_inverse().xform(mb->get_position());
@@ -756,20 +756,20 @@ void GenericTilePolygonEditor::_base_control_gui_input(Ref<InputEvent> p_event)
 						undo_redo->create_action(TTR("Edit Polygons"));
 						if (polygons[closest_polygon].size() < 3) {
 							remove_polygon(closest_polygon);
-							undo_redo->add_do_method(this, "remove_polygon", closest_polygon);
+							undo_redo->add_do_method(this->obj.get(), "remove_polygon", closest_polygon);
 							undo_redo->add_undo_method(
-								this, "add_polygon", old_polygon, closest_polygon);
+								this->obj.get(), "add_polygon", old_polygon, closest_polygon);
 						}
 						else {
 							undo_redo->add_do_method(
-								this, "set_polygon", closest_polygon, polygons[closest_polygon]);
+								this->obj.get(), "set_polygon", closest_polygon, polygons[closest_polygon]);
 							undo_redo->add_undo_method(
-								this, "set_polygon", closest_polygon, old_polygon);
+								this->obj.get(), "set_polygon", closest_polygon, old_polygon);
 						}
-						undo_redo->add_do_method(base_control, "queue_redraw");
-						undo_redo->add_undo_method(base_control, "queue_redraw");
+						undo_redo->add_do_method(base_control->obj.get(), "queue_redraw");
+						undo_redo->add_undo_method(base_control->obj.get(), "queue_redraw");
 						undo_redo->commit_action(false);
-						emit_signal(SNAME("polygons_changed"));
+						this->obj->emit_signal(SNAME("polygons_changed"));
 						drag_type = DRAG_TYPE_NONE;
 					}
 					else {
@@ -1162,7 +1162,7 @@ void TileDataDefaultEditor::_property_value_changed(
 {
 	ERR_FAIL_NULL(dummy_object);
 	dummy_object->obj->set(p_property, p_value);
-	emit_signal(SNAME("needs_redraw"));
+	this->obj->emit_signal(SNAME("needs_redraw"));
 }
 
 Variant TileDataDefaultEditor::_get_painted_value()
@@ -1176,7 +1176,7 @@ void TileDataDefaultEditor::_set_painted_value(
 {
 	TileData* tile_data = p_tile_set_atlas_source->get_tile_data(p_coords, p_alternative_tile);
 	ERR_FAIL_NULL(tile_data);
-	Variant value = tile_data->get(property);
+	Variant value = tile_data->obj->get(property);
 	dummy_object->obj->set(property, value);
 	if (property_editor) {
 		property_editor->update_property();
@@ -1188,7 +1188,7 @@ void TileDataDefaultEditor::_set_value(TileSetAtlasSource* p_tile_set_atlas_sour
 {
 	TileData* tile_data = p_tile_set_atlas_source->get_tile_data(p_coords, p_alternative_tile);
 	ERR_FAIL_NULL(tile_data);
-	tile_data->set(property, p_value);
+	tile_data->obj->set(property, p_value);
 }
 
 Variant TileDataDefaultEditor::_get_value(
@@ -1196,7 +1196,7 @@ Variant TileDataDefaultEditor::_get_value(
 {
 	TileData* tile_data = p_tile_set_atlas_source->get_tile_data(p_coords, p_alternative_tile);
 	ERR_FAIL_NULL_V(tile_data, Variant());
-	return tile_data->get(property);
+	return tile_data->obj->get(property);
 }
 
 void TileDataDefaultEditor::_setup_undo_redo_action(TileSetAtlasSource* p_tile_set_atlas_source,
@@ -1447,7 +1447,7 @@ void TileDataDefaultEditor::draw_over_tile(
 	ERR_FAIL_NULL(tile_data);
 
 	bool valid;
-	Variant value = tile_data->get(property, &valid);
+	Variant value = tile_data->obj->get(property, &valid);
 	if (!valid) {
 		return;
 	}
@@ -1647,7 +1647,7 @@ void TileDataPositionEditor::draw_over_tile(
 	ERR_FAIL_NULL(tile_data);
 
 	bool valid;
-	Variant value = tile_data->get(property, &valid);
+	Variant value = tile_data->obj->get(property, &valid);
 	if (!valid) {
 		return;
 	}
@@ -2280,7 +2280,7 @@ void TileDataTerrainsEditor::_property_value_changed(
 		}
 		_update_terrain_selector();
 	}
-	emit_signal(SNAME("needs_redraw"));
+	this->obj->emit_signal(SNAME("needs_redraw"));
 }
 
 void TileDataTerrainsEditor::_tile_set_changed()

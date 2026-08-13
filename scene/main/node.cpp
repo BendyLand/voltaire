@@ -3978,7 +3978,7 @@ String Node::_get_name_num_separator()
 
 Node::Node()
 {
-	this->obj->_define_ancestry(Environment::AncestralClass::NODE);
+	this->obj->_define_ancestry(Object::AncestralClass::NODE);
 #ifdef DEBUG_ENABLED
 	total_node_count.increment();
 #endif

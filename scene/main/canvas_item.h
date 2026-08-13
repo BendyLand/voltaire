@@ -50,7 +50,7 @@ class CanvasItem : public Node
 	friend class CanvasLayer;
 
 public:
-	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::CANVAS_ITEM;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::CANVAS_ITEM;
 
 	enum TextureFilter
 	{

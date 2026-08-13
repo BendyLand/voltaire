@@ -28,52 +28,60 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "fog_volume_gizmo_plugin.h"
-
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/scene/3d/gizmos/gizmo_3d_helper.h"
 #include "editor/settings/editor_settings.h"
+#include "fog_volume_gizmo_plugin.h"
 #include "scene/3d/fog_volume.h"
 
-FogVolumeGizmoPlugin::FogVolumeGizmoPlugin() {
+FogVolumeGizmoPlugin::FogVolumeGizmoPlugin()
+{
 	helper.instantiate();
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/fog_volume");
 	create_material("shape_material", gizmo_color);
 	gizmo_color.a = 0.15;
 	create_material("shape_material_internal", gizmo_color);
 
-	create_icon_material("fog_volume_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoFogVolume"), EditorStringName(EditorIcons)));
+	create_icon_material(
+		"fog_volume_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(
+							   SNAME("GizmoFogVolume"), EditorStringName(EditorIcons)));
 
 	create_handle_material("handles");
 }
 
-bool FogVolumeGizmoPlugin::has_gizmo(Node3D *p_spatial) {
+bool FogVolumeGizmoPlugin::has_gizmo(Node3D* p_spatial)
+{
 	return (Object::cast_to<FogVolume>(p_spatial) != nullptr);
 }
 
-String FogVolumeGizmoPlugin::get_gizmo_name() const {
-	return "FogVolume";
-}
+String FogVolumeGizmoPlugin::get_gizmo_name() const { return "FogVolume"; }
 
-int FogVolumeGizmoPlugin::get_priority() const {
-	return -1;
-}
+int FogVolumeGizmoPlugin::get_priority() const { return -1; }
 
-String FogVolumeGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
+String FogVolumeGizmoPlugin::get_handle_name(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
 	return helper->box_get_handle_name(p_id);
 }
 
-Variant FogVolumeGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	return Vector3(p_gizmo->get_node_3d()->call("get_size"));
+Variant FogVolumeGizmoPlugin::get_handle_value(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	return Vector3(p_gizmo->get_node_3d()->obj->call("get_size"));
 }
 
-void FogVolumeGizmoPlugin::begin_handle_action(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) {
-	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary), p_gizmo->get_node_3d()->get_global_transform());
+void FogVolumeGizmoPlugin::begin_handle_action(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary)
+{
+	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary),
+		p_gizmo->get_node_3d()->get_global_transform());
 }
 
-void FogVolumeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	FogVolume *fog_volume = Object::cast_to<FogVolume>(p_gizmo->get_node_3d());
+void FogVolumeGizmoPlugin::set_handle(const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary,
+	Camera3D* p_camera, const Point2& p_point)
+{
+	FogVolume* fog_volume = Object::cast_to<FogVolume>(p_gizmo->get_node_3d());
 	Vector3 size = fog_volume->get_size();
 
 	Vector3 sg[2];
@@ -85,20 +93,22 @@ void FogVolumeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id
 	fog_volume->set_global_position(position);
 }
 
-void FogVolumeGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	helper->box_commit_handle(TTR("Change FogVolume Size"), p_cancel, p_gizmo->get_node_3d());
+void FogVolumeGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, const Variant& p_restore, bool p_cancel)
+{
+	helper->box_commit_handle(
+		TTR("Change FogVolume Size"), p_cancel, p_gizmo->get_node_3d()->obj.get());
 }
 
-void FogVolumeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
-	FogVolume *fog_volume = Object::cast_to<FogVolume>(p_gizmo->get_node_3d());
+void FogVolumeGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
+{
+	FogVolume* fog_volume = Object::cast_to<FogVolume>(p_gizmo->get_node_3d());
 
 	p_gizmo->clear();
 
 	if (fog_volume->get_shape() != RSE::FOG_VOLUME_SHAPE_WORLD) {
-		const Ref<Material> material =
-				get_material("shape_material", p_gizmo);
-		const Ref<Material> material_internal =
-				get_material("shape_material_internal", p_gizmo);
+		const Ref<Material> material = get_material("shape_material", p_gizmo);
+		const Ref<Material> material_internal = get_material("shape_material_internal", p_gizmo);
 
 		Ref<Material> handles_material = get_material("handles");
 
@@ -123,3 +133,5 @@ void FogVolumeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		p_gizmo->add_handles(handles, handles_material);
 	}
 }
+
+

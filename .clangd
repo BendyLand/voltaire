@@ -9,11 +9,6 @@ CompileFlags:
     # Some thirdparty includes seem to require a high -ferror-limit to pass checks.
     - -ferror-limit=100
 
-Diagnostics:
-  Includes:
-    IgnoreHeader:
-      - \.compat\.inc
-
 ---
 
 # Header-specific conditions.

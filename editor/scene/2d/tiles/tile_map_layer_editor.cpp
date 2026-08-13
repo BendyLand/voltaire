@@ -310,7 +310,7 @@ void TileMapLayerEditorTilesPlugin::_update_tile_set_sources_list()
 		else {
 			sources_list->set_current(0);
 		}
-		sources_list->emit_signal(SceneStringName(item_selected), sources_list->get_current());
+		sources_list->obj->emit_signal(SceneStringName(item_selected), sources_list->get_current());
 	}
 
 	// Synchronize the lists.
@@ -473,7 +473,7 @@ void TileMapLayerEditorTilesPlugin::_update_atlas_view()
 	ERR_FAIL_NULL(atlas_source);
 
 	tile_atlas_view->set_atlas_source(*tile_set, atlas_source, source_id);
-	TilesEditorUtils::get_singleton()->synchronize_atlas_view(tile_atlas_view);
+	TilesEditorUtils::get_singleton()->synchronize_atlas_view(tile_atlas_view->obj.get());
 	tile_atlas_control->queue_redraw();
 }
 
@@ -662,10 +662,10 @@ bool TileMapLayerEditorTilesPlugin::forward_canvas_gui_input(const Ref<InputEven
 				EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 				undo_redo->create_action(TTR("Delete tiles"));
 				for (const Vector2i& coords : tile_map_selection) {
-					undo_redo->add_do_method(edited_layer, "set_cell", coords,
+					undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", coords,
 						TileSet::INVALID_SOURCE, TileSetSource::INVALID_ATLAS_COORDS,
 						TileSetSource::INVALID_TILE_ALTERNATIVE);
-					undo_redo->add_undo_method(edited_layer, "set_cell", coords,
+					undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", coords,
 						edited_layer->get_cell_source_id(coords),
 						edited_layer->get_cell_atlas_coords(coords),
 						edited_layer->get_cell_alternative_tile(coords));
@@ -701,9 +701,9 @@ bool TileMapLayerEditorTilesPlugin::forward_canvas_gui_input(const Ref<InputEven
 			EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->create_action(TTR("Delete tiles"));
 			for (const Vector2i& coords : tile_map_selection) {
-				undo_redo->add_do_method(edited_layer, "set_cell", coords, TileSet::INVALID_SOURCE,
+				undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", coords, TileSet::INVALID_SOURCE,
 					TileSetSource::INVALID_ATLAS_COORDS, TileSetSource::INVALID_TILE_ALTERNATIVE);
-				undo_redo->add_undo_method(edited_layer, "set_cell", coords,
+				undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", coords,
 					edited_layer->get_cell_source_id(coords),
 					edited_layer->get_cell_atlas_coords(coords),
 					edited_layer->get_cell_alternative_tile(coords));
@@ -731,7 +731,7 @@ bool TileMapLayerEditorTilesPlugin::forward_canvas_gui_input(const Ref<InputEven
 				}
 				else {
 					// Can't press a button without toggle mode, so just emit the signal directly.
-					b->emit_signal(SceneStringName(pressed));
+					b->obj->emit_signal(SceneStringName(pressed));
 				}
 				return true;
 			}
@@ -1680,11 +1680,11 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging()
 			// Move the tiles.
 			undo_redo->create_action(TTR("Move tiles"));
 			for (const KeyValue<Vector2i, TileMapCell>& E : cells_do) {
-				undo_redo->add_do_method(edited_layer, "set_cell", E.key, E.value.source_id,
+				undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 					E.value.get_atlas_coords(), E.value.alternative_tile);
 			}
 			for (const KeyValue<Vector2i, TileMapCell>& E : cells_undo) {
-				undo_redo->add_undo_method(edited_layer, "set_cell", E.key, E.value.source_id,
+				undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 					E.value.get_atlas_coords(), E.value.alternative_tile);
 			}
 
@@ -1748,10 +1748,10 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging()
 	case DRAG_TYPE_PAINT: {
 		undo_redo->create_action(TTR("Paint tiles"));
 		for (const KeyValue<Vector2i, TileMapCell>& E : drag_modified) {
-			undo_redo->add_do_method(edited_layer, "set_cell", E.key,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key,
 				edited_layer->get_cell_source_id(E.key), edited_layer->get_cell_atlas_coords(E.key),
 				edited_layer->get_cell_alternative_tile(E.key));
-			undo_redo->add_undo_method(edited_layer, "set_cell", E.key, E.value.source_id,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 				E.value.get_atlas_coords(), E.value.alternative_tile);
 		}
 		undo_redo->commit_action(false);
@@ -1764,9 +1764,9 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging()
 			if (!drag_erasing && E.value.source_id == TileSet::INVALID_SOURCE) {
 				continue;
 			}
-			undo_redo->add_do_method(edited_layer, "set_cell", E.key, E.value.source_id,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 				E.value.get_atlas_coords(), E.value.alternative_tile);
-			undo_redo->add_undo_method(edited_layer, "set_cell", E.key,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key,
 				edited_layer->get_cell_source_id(E.key), edited_layer->get_cell_atlas_coords(E.key),
 				edited_layer->get_cell_alternative_tile(E.key));
 		}
@@ -1781,9 +1781,9 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging()
 			if (!drag_erasing && E.value.source_id == TileSet::INVALID_SOURCE) {
 				continue;
 			}
-			undo_redo->add_do_method(edited_layer, "set_cell", E.key, E.value.source_id,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 				E.value.get_atlas_coords(), E.value.alternative_tile);
-			undo_redo->add_undo_method(edited_layer, "set_cell", E.key,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key,
 				edited_layer->get_cell_source_id(E.key), edited_layer->get_cell_atlas_coords(E.key),
 				edited_layer->get_cell_alternative_tile(E.key));
 		}
@@ -1792,10 +1792,10 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging()
 	case DRAG_TYPE_BUCKET: {
 		undo_redo->create_action(TTR("Paint tiles"));
 		for (const KeyValue<Vector2i, TileMapCell>& E : drag_modified) {
-			undo_redo->add_do_method(edited_layer, "set_cell", E.key,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key,
 				edited_layer->get_cell_source_id(E.key), edited_layer->get_cell_atlas_coords(E.key),
 				edited_layer->get_cell_alternative_tile(E.key));
-			undo_redo->add_undo_method(edited_layer, "set_cell", E.key, E.value.source_id,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 				E.value.get_atlas_coords(), E.value.alternative_tile);
 		}
 		undo_redo->commit_action(false);
@@ -1808,11 +1808,11 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging()
 		for (int i = 0; i < used_cells.size(); i++) {
 			Vector2i coords = tile_set->map_pattern(
 				tile_set->local_to_map(mpos - mouse_offset), used_cells[i], tile_map_clipboard);
-			undo_redo->add_do_method(edited_layer, "set_cell", coords,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", coords,
 				tile_map_clipboard->get_cell_source_id(used_cells[i]),
 				tile_map_clipboard->get_cell_atlas_coords(used_cells[i]),
 				tile_map_clipboard->get_cell_alternative_tile(used_cells[i]));
-			undo_redo->add_undo_method(edited_layer, "set_cell", coords,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", coords,
 				edited_layer->get_cell_source_id(coords),
 				edited_layer->get_cell_atlas_coords(coords),
 				edited_layer->get_cell_alternative_tile(coords));
@@ -3461,10 +3461,10 @@ void TileMapLayerEditorTerrainsPlugin::_stop_dragging()
 	case DRAG_TYPE_PAINT: {
 		undo_redo->create_action(TTR("Paint terrain"));
 		for (const KeyValue<Vector2i, TileMapCell>& E : drag_modified) {
-			undo_redo->add_do_method(edited_layer, "set_cell", E.key,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key,
 				edited_layer->get_cell_source_id(E.key), edited_layer->get_cell_atlas_coords(E.key),
 				edited_layer->get_cell_alternative_tile(E.key));
-			undo_redo->add_undo_method(edited_layer, "set_cell", E.key, E.value.source_id,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 				E.value.get_atlas_coords(), E.value.alternative_tile);
 		}
 		undo_redo->commit_action(false);
@@ -3478,9 +3478,9 @@ void TileMapLayerEditorTerrainsPlugin::_stop_dragging()
 			if (!drag_erasing && E.value.source_id == TileSet::INVALID_SOURCE) {
 				continue;
 			}
-			undo_redo->add_do_method(edited_layer, "set_cell", E.key, E.value.source_id,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 				E.value.get_atlas_coords(), E.value.alternative_tile);
-			undo_redo->add_undo_method(edited_layer, "set_cell", E.key,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key,
 				edited_layer->get_cell_source_id(E.key), edited_layer->get_cell_atlas_coords(E.key),
 				edited_layer->get_cell_alternative_tile(E.key));
 		}
@@ -3495,9 +3495,9 @@ void TileMapLayerEditorTerrainsPlugin::_stop_dragging()
 			if (!drag_erasing && E.value.source_id == TileSet::INVALID_SOURCE) {
 				continue;
 			}
-			undo_redo->add_do_method(edited_layer, "set_cell", E.key, E.value.source_id,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 				E.value.get_atlas_coords(), E.value.alternative_tile);
-			undo_redo->add_undo_method(edited_layer, "set_cell", E.key,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key,
 				edited_layer->get_cell_source_id(E.key), edited_layer->get_cell_atlas_coords(E.key),
 				edited_layer->get_cell_alternative_tile(E.key));
 		}
@@ -3506,10 +3506,10 @@ void TileMapLayerEditorTerrainsPlugin::_stop_dragging()
 	case DRAG_TYPE_BUCKET: {
 		undo_redo->create_action(TTR("Paint terrain"));
 		for (const KeyValue<Vector2i, TileMapCell>& E : drag_modified) {
-			undo_redo->add_do_method(edited_layer, "set_cell", E.key,
+			undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", E.key,
 				edited_layer->get_cell_source_id(E.key), edited_layer->get_cell_atlas_coords(E.key),
 				edited_layer->get_cell_alternative_tile(E.key));
-			undo_redo->add_undo_method(edited_layer, "set_cell", E.key, E.value.source_id,
+			undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", E.key, E.value.source_id,
 				E.value.get_atlas_coords(), E.value.alternative_tile);
 		}
 		undo_redo->commit_action(false);
@@ -4522,7 +4522,7 @@ void TileMapLayerEditor::_layers_selection_item_selected(int p_index)
 	ERR_FAIL_NULL(tile_map);
 
 	TileMapLayer* new_edited = Object::cast_to<TileMapLayer>(tile_map->get_child(p_index));
-	edit(new_edited);
+	edit(new_edited->obj.get());
 }
 
 void TileMapLayerEditor::_update_layers_selector()
@@ -4711,9 +4711,9 @@ void TileMapLayerEditor::_advanced_menu_button_id_pressed(int p_id)
 			to.set_atlas_coords(to_array[1]);
 			to.alternative_tile = to_array[2];
 			if (from != to) {
-				undo_redo->add_do_method(edited_layer, "set_cell", cell_coords, to.source_id,
+				undo_redo->add_do_method(edited_layer->obj.get(), "set_cell", cell_coords, to.source_id,
 					to.get_atlas_coords(), to.alternative_tile);
-				undo_redo->add_undo_method(edited_layer, "set_cell", cell_coords, from.source_id,
+				undo_redo->add_undo_method(edited_layer->obj.get(), "set_cell", cell_coords, from.source_id,
 					from.get_atlas_coords(), from.alternative_tile);
 			}
 		}
@@ -4733,23 +4733,23 @@ void TileMapLayerEditor::_advanced_menu_button_id_pressed(int p_id)
 
 		TileMap* tile_map = Object::cast_to<TileMap>(edited_layer->get_parent());
 		for (int i = 0; i < tile_map->get_layers_count(); i++) {
-			undo_redo->add_do_method(tile_map, "remove_layer", 0);
+			undo_redo->add_do_method(tile_map->obj.get(), "remove_layer", 0);
 		}
 
 		for (int i = 0; i < tile_map->get_layers_count(); i++) {
 			TileMapLayer* new_layer = tile_map->duplicate_layer_from_internal(i);
-			undo_redo->add_do_method(tile_map, "add_child", new_layer);
-			undo_redo->add_do_method(new_layer, "set_owner", edited_scene_root);
+			undo_redo->add_do_method(tile_map->obj.get(), "add_child", new_layer);
+			undo_redo->add_do_method(new_layer->obj.get(), "set_owner", edited_scene_root);
 			undo_redo->add_do_property(
-				new_layer, "tile_set", tile_map->get_tileset()); // Workaround for a bug: #89947.
-			undo_redo->add_undo_method(tile_map, "remove_child", new_layer);
-			undo_redo->add_do_reference(new_layer);
+				new_layer->obj.get(), "tile_set", tile_map->get_tileset()); // Workaround for a bug: #89947.
+			undo_redo->add_undo_method(tile_map->obj.get(), "remove_child", new_layer);
+			undo_redo->add_do_reference(new_layer->obj.get());
 		}
 
 		List<PropertyInfo> prop_list;
-		tile_map->get_property_list(&prop_list);
+		tile_map->obj->get_property_list(&prop_list);
 		for (PropertyInfo& prop : prop_list) {
-			undo_redo->add_undo_property(tile_map, prop.name, tile_map->get(prop.name));
+			undo_redo->add_undo_property(tile_map->obj.get(), prop.name, tile_map->obj->get(prop.name));
 		}
 		undo_redo->commit_action();
 	}
@@ -4976,7 +4976,7 @@ void TileMapLayerEditor::_layers_select_next_or_previous(bool p_next)
 		en->get_editor_selection()->add_node(new_selected_layer);
 	}
 	else {
-		edit(new_selected_layer);
+		edit(new_selected_layer->obj.get());
 	}
 }
 
@@ -5023,14 +5023,14 @@ void TileMapLayerEditor::_move_tile_map_array_element(Object* p_undo_redo, Objec
 	// Save layers' properties.
 	if (p_from_index < 0) {
 		undo_redo_man->add_undo_method(
-			tile_map, "remove_layer", p_to_pos < 0 ? tile_map->get_layers_count() : p_to_pos);
+			tile_map->obj.get(), "remove_layer", p_to_pos < 0 ? tile_map->get_layers_count() : p_to_pos);
 	}
 	else if (p_to_pos < 0) {
-		undo_redo_man->add_undo_method(tile_map, "add_layer", p_from_index);
+		undo_redo_man->add_undo_method(tile_map->obj.get(), "add_layer", p_from_index);
 	}
 
 	List<PropertyInfo> properties;
-	tile_map->get_property_list(&properties);
+	tile_map->obj->get_property_list(&properties);
 	for (PropertyInfo pi : properties) {
 		if (pi.name.begins_with(p_array_prefix)) {
 			String str = pi.name.trim_prefix(p_array_prefix);
@@ -5044,7 +5044,7 @@ void TileMapLayerEditor::_move_tile_map_array_element(Object* p_undo_redo, Objec
 			if (to_char_index > 0) {
 				int array_index = str.left(to_char_index).to_int();
 				if (array_index >= begin && array_index < end) {
-					ADD_UNDO(tile_map, pi.name);
+					ADD_UNDO(tile_map->obj.get(), pi.name);
 				}
 			}
 		}
@@ -5052,13 +5052,13 @@ void TileMapLayerEditor::_move_tile_map_array_element(Object* p_undo_redo, Objec
 #undef ADD_UNDO
 
 	if (p_from_index < 0) {
-		undo_redo_man->add_do_method(tile_map, "add_layer", p_to_pos);
+		undo_redo_man->add_do_method(tile_map->obj.get(), "add_layer", p_to_pos);
 	}
 	else if (p_to_pos < 0) {
-		undo_redo_man->add_do_method(tile_map, "remove_layer", p_from_index);
+		undo_redo_man->add_do_method(tile_map->obj.get(), "remove_layer", p_from_index);
 	}
 	else {
-		undo_redo_man->add_do_method(tile_map, "move_layer", p_from_index, p_to_pos);
+		undo_redo_man->add_do_method(tile_map->obj.get(), "move_layer", p_from_index, p_to_pos);
 	}
 }
 
@@ -5268,7 +5268,7 @@ void TileMapLayerEditor::edit(Object* p_edited)
 	TileMapLayer* new_layer = Object::cast_to<TileMapLayer>(p_edited);
 	if (new_layer) {
 		// Change the edited object.
-		edited_tile_map_layer_id = new_layer->get_instance_id();
+		edited_tile_map_layer_id = new_layer->obj->get_instance_id();
 
 		tile_map_layer = _get_edited_layer();
 		// Connect to changes.

@@ -59,7 +59,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::NODE_2D;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::NODE_2D;
 
 #ifdef TOOLS_ENABLED
 	virtual Dictionary _edit_get_state() const override;

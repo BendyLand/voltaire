@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "color_channel_selector.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/box_container.h"
@@ -37,11 +36,13 @@
 #include "scene/gui/panel_container.h"
 #include "scene/resources/style_box.h"
 
-ColorChannelSelector::ColorChannelSelector() {
+ColorChannelSelector::ColorChannelSelector()
+{
 	toggle_button = memnew(Button);
 	toggle_button->set_flat(true);
 	toggle_button->set_toggle_mode(true);
-	toggle_button->connect(SceneStringName(toggled), callable_mp(this, &ColorChannelSelector::on_toggled));
+	toggle_button->connect(
+		SceneStringName(toggled), callable_mp(this, &ColorChannelSelector::on_toggled));
 	toggle_button->set_tooltip_text(TTRC("Toggle color channel preview selection."));
 	toggle_button->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
 	toggle_button->set_theme_type_variation("PreviewLightButton");
@@ -50,7 +51,7 @@ ColorChannelSelector::ColorChannelSelector() {
 	panel = memnew(PanelContainer);
 	panel->hide();
 
-	HBoxContainer *container = memnew(HBoxContainer);
+	HBoxContainer* container = memnew(HBoxContainer);
 	container->add_theme_constant_override("separation", 0);
 
 	create_button(0, "R", container);
@@ -66,14 +67,17 @@ ColorChannelSelector::ColorChannelSelector() {
 	add_child(panel);
 }
 
-void ColorChannelSelector::_notification(int p_what) {
+void ColorChannelSelector::_notification(int p_what)
+{
 	if (p_what == NOTIFICATION_THEME_CHANGED) {
 		// PanelContainer's background is invisible in the editor. We need a background.
-		// And we need this in turn because buttons don't look good without background (for example, hover is transparent).
+		// And we need this in turn because buttons don't look good without background (for example,
+		// hover is transparent).
 		Ref<StyleBox> bg_style = get_theme_stylebox(SceneStringName(panel), "TabContainer");
 		ERR_FAIL_COND(bg_style.is_null());
 		bg_style = bg_style->duplicate();
-		// The default content margin makes the widget become a bit too large. It should be like mini-toolbar.
+		// The default content margin makes the widget become a bit too large. It should be like
+		// mini-toolbar.
 		bg_style->set_content_margin(SIDE_LEFT, 1.0f * EDSCALE);
 		bg_style->set_content_margin(SIDE_RIGHT, 1.0f * EDSCALE);
 		bg_style->set_content_margin(SIDE_TOP, 1.0f * EDSCALE);
@@ -85,22 +89,25 @@ void ColorChannelSelector::_notification(int p_what) {
 	}
 }
 
-void ColorChannelSelector::set_available_channels_mask(uint32_t p_mask) {
+void ColorChannelSelector::set_available_channels_mask(uint32_t p_mask)
+{
 	for (unsigned int i = 0; i < CHANNEL_COUNT; ++i) {
 		const bool available = (p_mask & (1u << i)) != 0;
-		Button *button = channel_buttons[i];
+		Button* button = channel_buttons[i];
 		button->set_visible(available);
 	}
 }
 
-void ColorChannelSelector::on_channel_button_toggled(bool p_unused_pressed) {
-	emit_signal("selected_channels_changed");
+void ColorChannelSelector::on_channel_button_toggled(bool p_unused_pressed)
+{
+	this->obj->emit_signal("selected_channels_changed");
 }
 
-uint32_t ColorChannelSelector::get_selected_channels_mask() const {
+uint32_t ColorChannelSelector::get_selected_channels_mask() const
+{
 	uint32_t mask = 0;
 	for (unsigned int i = 0; i < CHANNEL_COUNT; ++i) {
-		Button *button = channel_buttons[i];
+		Button* button = channel_buttons[i];
 		if (button->is_visible() && channel_buttons[i]->is_pressed()) {
 			mask |= (1 << i);
 		}
@@ -109,7 +116,8 @@ uint32_t ColorChannelSelector::get_selected_channels_mask() const {
 }
 
 // Helper
-Vector4 ColorChannelSelector::get_selected_channel_factors() const {
+Vector4 ColorChannelSelector::get_selected_channel_factors() const
+{
 	Vector4 channel_factors;
 	const uint32_t mask = get_selected_channels_mask();
 	for (unsigned int i = 0; i < CHANNEL_COUNT; ++i) {
@@ -120,10 +128,12 @@ Vector4 ColorChannelSelector::get_selected_channel_factors() const {
 	return channel_factors;
 }
 
-void ColorChannelSelector::create_button(unsigned int p_channel_index, const String &p_text, Control *p_parent) {
+void ColorChannelSelector::create_button(
+	unsigned int p_channel_index, const String& p_text, Control* p_parent)
+{
 	ERR_FAIL_COND(p_channel_index >= CHANNEL_COUNT);
 	ERR_FAIL_COND(channel_buttons[p_channel_index] != nullptr);
-	Button *button = memnew(Button);
+	Button* button = memnew(Button);
 	button->set_text(p_text);
 	button->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	button->set_toggle_mode(true);
@@ -135,15 +145,14 @@ void ColorChannelSelector::create_button(unsigned int p_channel_index, const Str
 	// Make it look similar to toolbar buttons.
 	button->set_theme_type_variation(SceneStringName(FlatButton));
 
-	button->connect(SceneStringName(toggled), callable_mp(this, &ColorChannelSelector::on_channel_button_toggled));
+	button->connect(SceneStringName(toggled),
+		callable_mp(this, &ColorChannelSelector::on_channel_button_toggled));
 	p_parent->add_child(button);
 	channel_buttons[p_channel_index] = button;
 }
 
-void ColorChannelSelector::on_toggled(bool p_pressed) {
-	panel->set_visible(p_pressed);
-}
+void ColorChannelSelector::on_toggled(bool p_pressed) { panel->set_visible(p_pressed); }
 
-void ColorChannelSelector::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("selected_channels_changed"));
-}
+void ColorChannelSelector::_bind_methods() { ADD_SIGNAL(MethodInfo("selected_channels_changed")); }
+
+

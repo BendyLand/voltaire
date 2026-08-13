@@ -50,7 +50,7 @@ class Control : public CanvasItem
 #endif // TOOLS_ENABLED
 
 public:
-	static constexpr Environment::AncestralClass static_ancestral_class = Environment::AncestralClass::CONTROL;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::CONTROL;
 
 	enum Anchor
 	{

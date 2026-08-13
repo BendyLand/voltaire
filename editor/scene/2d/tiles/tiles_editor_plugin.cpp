@@ -190,7 +190,7 @@ void TilesEditorUtils::synchronize_sources_list(
 	if (item_list->is_visible_in_tree()) {
 		// Make sure the selection is not overwritten after sorting.
 		int atlas_sources_lists_current_mem = atlas_sources_lists_current;
-		item_list->emit_signal(SNAME("sort_request"));
+		item_list->obj->emit_signal(SNAME("sort_request"));
 		atlas_sources_lists_current = atlas_sources_lists_current_mem;
 
 		if (atlas_sources_lists_current < 0 ||
@@ -200,7 +200,8 @@ void TilesEditorUtils::synchronize_sources_list(
 		else {
 			item_list->set_current(atlas_sources_lists_current);
 			item_list->ensure_current_is_visible();
-			item_list->emit_signal(SceneStringName(item_selected), atlas_sources_lists_current);
+			item_list->obj->emit_signal(
+				SceneStringName(item_selected), atlas_sources_lists_current);
 		}
 	}
 }
@@ -382,7 +383,7 @@ TileSetSourceItemList::TileSetSourceItemList()
 	set_theme_type_variation("ItemListSecondary");
 	set_texture_filter(TEXTURE_FILTER_NEAREST);
 	set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	add_user_signal(MethodInfo("sort_request"));
+	this->obj->add_user_signal(MethodInfo("sort_request"));
 }
 
 void TileMapEditorPlugin::_tile_map_layer_changed()
@@ -400,7 +401,7 @@ void TileMapEditorPlugin::_tile_map_layer_removed()
 	// edited layer.
 	TileMap* tile_map = ObjectDB::get_instance<TileMap>(tile_map_group_id);
 	if (tile_map) {
-		edit(tile_map);
+		edit(tile_map->obj.get());
 	}
 }
 
@@ -432,7 +433,7 @@ void TileMapEditorPlugin::_select_layer(const StringName& p_name)
 	if (parent) {
 		TileMapLayer* new_layer =
 			Object::cast_to<TileMapLayer>(parent->get_node_or_null(String(p_name)));
-		edit(new_layer);
+		edit(new_layer->obj.get());
 	}
 }
 
@@ -441,11 +442,11 @@ void TileMapEditorPlugin::_edit_tile_map_layer(
 {
 	ERR_FAIL_NULL(p_tile_map_layer);
 
-	editor->edit(p_tile_map_layer);
+	editor->edit(p_tile_map_layer->obj.get());
 	editor->set_show_layer_selector(p_show_layer_selector);
 
 	// Update the object IDs.
-	tile_map_layer_id = p_tile_map_layer->get_instance_id();
+	tile_map_layer_id = p_tile_map_layer->obj->get_instance_id();
 	p_tile_map_layer->connect(
 		CoreStringName(changed), callable_mp(this, &TileMapEditorPlugin::_tile_map_layer_changed));
 	p_tile_map_layer->connect(SceneStringName(tree_exited),
@@ -468,7 +469,7 @@ void TileMapEditorPlugin::_edit_tile_map(TileMap* p_tile_map)
 {
 	ERR_FAIL_NULL(p_tile_map);
 
-	tile_map_group_id = p_tile_map->get_instance_id();
+	tile_map_group_id = p_tile_map->obj->get_instance_id();
 	if (!p_tile_map->is_connected(CoreStringName(changed),
 			callable_mp(editor, &TileMapLayerEditor::set_show_layer_selector))) {
 		p_tile_map->connect(CoreStringName(changed),
@@ -639,4 +640,5 @@ TileSetEditorPlugin::TileSetEditorPlugin()
 }
 
 TileSetEditorPlugin::~TileSetEditorPlugin() { tile_set_plugin_singleton = nullptr; }
+
 

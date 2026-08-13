@@ -77,7 +77,7 @@ public:
 	{
 		if (!_cowdata.is_empty()) {
 			const int n = _cowdata.size() - 1;
-			T ret = std::move(_cowdata[n]);
+			T ret = std::move(_cowdata.get(n));
 			_cowdata.resize(n);
 			return ret;
 		}

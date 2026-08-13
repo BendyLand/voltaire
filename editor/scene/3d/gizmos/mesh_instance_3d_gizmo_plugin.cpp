@@ -28,31 +28,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "mesh_instance_3d_gizmo_plugin.h"
-
 #include "editor/scene/3d/node_3d_editor_plugin.h"
+#include "mesh_instance_3d_gizmo_plugin.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/physics/soft_body_3d.h"
 #include "scene/resources/3d/primitive_meshes.h"
 
-bool MeshInstance3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
-	return Object::cast_to<MeshInstance3D>(p_spatial) != nullptr && Object::cast_to<SoftBody3D>(p_spatial) == nullptr;
+bool MeshInstance3DGizmoPlugin::has_gizmo(Node3D* p_spatial)
+{
+	return Object::cast_to<MeshInstance3D>(p_spatial) != nullptr &&
+		   Object::cast_to<SoftBody3D>(p_spatial) == nullptr;
 }
 
-String MeshInstance3DGizmoPlugin::get_gizmo_name() const {
-	return "MeshInstance3D";
-}
+String MeshInstance3DGizmoPlugin::get_gizmo_name() const { return "MeshInstance3D"; }
 
-int MeshInstance3DGizmoPlugin::get_priority() const {
-	return -1;
-}
+int MeshInstance3DGizmoPlugin::get_priority() const { return -1; }
 
-bool MeshInstance3DGizmoPlugin::can_be_hidden() const {
-	return false;
-}
+bool MeshInstance3DGizmoPlugin::can_be_hidden() const { return false; }
 
-String MeshInstance3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	MeshInstance3D *mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
+String MeshInstance3DGizmoPlugin::get_handle_name(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	MeshInstance3D* mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
 
 	if (Object::cast_to<CapsuleMesh>(*mesh->get_mesh())) {
 		return helper->capsule_get_handle_name(p_id);
@@ -69,8 +66,10 @@ String MeshInstance3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_giz
 	return "";
 }
 
-Variant MeshInstance3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	MeshInstance3D *mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
+Variant MeshInstance3DGizmoPlugin::get_handle_value(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	MeshInstance3D* mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
 
 	const Ref<CapsuleMesh> capsule_mesh = mesh->get_mesh();
 	if (capsule_mesh.is_valid()) {
@@ -79,7 +78,8 @@ Variant MeshInstance3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_g
 
 	const Ref<CylinderMesh> cylinder_mesh = mesh->get_mesh();
 	if (cylinder_mesh.is_valid()) {
-		return Vector3(cylinder_mesh->get_top_radius(), cylinder_mesh->get_bottom_radius(), cylinder_mesh->get_height());
+		return Vector3(cylinder_mesh->get_top_radius(), cylinder_mesh->get_bottom_radius(),
+			cylinder_mesh->get_height());
 	}
 
 	const Ref<BoxMesh> box_mesh = mesh->get_mesh();
@@ -90,12 +90,17 @@ Variant MeshInstance3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_g
 	return Variant();
 }
 
-void MeshInstance3DGizmoPlugin::begin_handle_action(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) {
-	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary), p_gizmo->get_node_3d()->get_global_transform());
+void MeshInstance3DGizmoPlugin::begin_handle_action(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary)
+{
+	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary),
+		p_gizmo->get_node_3d()->get_global_transform());
 }
 
-void MeshInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	MeshInstance3D *mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
+void MeshInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, Camera3D* p_camera, const Point2& p_point)
+{
+	MeshInstance3D* mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
 
 	Vector3 segment[2];
 	helper->get_segment(p_camera, p_point, segment);
@@ -130,27 +135,35 @@ void MeshInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int
 	}
 }
 
-void MeshInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	MeshInstance3D *mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
+void MeshInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, const Variant& p_restore, bool p_cancel)
+{
+	MeshInstance3D* mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
 
 	const Ref<CapsuleMesh> capsule_mesh = mesh->get_mesh();
 	if (capsule_mesh.is_valid()) {
-		helper->cylinder_commit_handle(p_id, TTR("Change Capsule Mesh Radius"), TTR("Change Capsule Mesh Height"), p_cancel, mesh, *capsule_mesh, *capsule_mesh);
+		helper->cylinder_commit_handle(p_id, TTR("Change Capsule Mesh Radius"),
+			TTR("Change Capsule Mesh Height"), p_cancel, mesh->obj.get(), *capsule_mesh,
+			*capsule_mesh);
 	}
 
 	const Ref<CylinderMesh> cylinder_mesh = mesh->get_mesh();
 	if (cylinder_mesh.is_valid()) {
-		helper->cone_frustum_commit_handle(p_id, TTR("Change Cylinder Mesh Radius"), TTR("Change Cylinder Mesh Height"), p_cancel, mesh, *cylinder_mesh, *cylinder_mesh, *cylinder_mesh);
+		helper->cone_frustum_commit_handle(p_id, TTR("Change Cylinder Mesh Radius"),
+			TTR("Change Cylinder Mesh Height"), p_cancel, mesh->obj.get(), *cylinder_mesh,
+			*cylinder_mesh, *cylinder_mesh);
 	}
 
 	const Ref<BoxMesh> box_mesh = mesh->get_mesh();
 	if (box_mesh.is_valid()) {
-		helper->box_commit_handle(TTR("Change Box Mesh Size"), p_cancel, mesh, *box_mesh);
+		helper->box_commit_handle(
+			TTR("Change Box Mesh Size"), p_cancel, mesh->obj.get(), *box_mesh);
 	}
 }
 
-void MeshInstance3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
-	MeshInstance3D *mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
+void MeshInstance3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
+{
+	MeshInstance3D* mesh = Object::cast_to<MeshInstance3D>(p_gizmo->get_node_3d());
 
 	p_gizmo->clear();
 
@@ -159,22 +172,25 @@ void MeshInstance3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	const Ref<Material> handles_material = get_material("handles");
 
 	if (m.is_null()) {
-		return; //none
+		return; // none
 	}
 
 	Ref<TriangleMesh> tm;
 
 	Ref<PlaneMesh> plane_mesh = mesh->get_mesh();
-	if (plane_mesh.is_valid() && (plane_mesh->get_subdivide_depth() > 0 || plane_mesh->get_subdivide_width() > 0)) {
-		// PlaneMesh subdiv makes gizmo redraw very slow due to TriangleMesh BVH calculation for every face.
-		// For gizmo collision this is very much unnecessary since a PlaneMesh is always flat, 2 faces is enough.
+	if (plane_mesh.is_valid() &&
+		(plane_mesh->get_subdivide_depth() > 0 || plane_mesh->get_subdivide_width() > 0)) {
+		// PlaneMesh subdiv makes gizmo redraw very slow due to TriangleMesh BVH calculation for
+		// every face. For gizmo collision this is very much unnecessary since a PlaneMesh is always
+		// flat, 2 faces is enough.
 		Ref<PlaneMesh> simple_plane_mesh;
 		simple_plane_mesh.instantiate();
 		simple_plane_mesh->set_orientation(plane_mesh->get_orientation());
 		simple_plane_mesh->set_size(plane_mesh->get_size());
 		simple_plane_mesh->set_center_offset(plane_mesh->get_center_offset());
 		tm = simple_plane_mesh->generate_triangle_mesh();
-	} else {
+	}
+	else {
 		tm = m->generate_triangle_mesh();
 	}
 
@@ -184,13 +200,16 @@ void MeshInstance3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 	const Ref<CapsuleMesh> capsule_mesh = mesh->get_mesh();
 	if (capsule_mesh.is_valid()) {
-		const Vector<Vector3> handles = helper->capsule_get_handles(capsule_mesh->get_height(), capsule_mesh->get_radius());
+		const Vector<Vector3> handles =
+			helper->capsule_get_handles(capsule_mesh->get_height(), capsule_mesh->get_radius());
 		p_gizmo->add_handles(handles, handles_material);
 	}
 
 	const Ref<CylinderMesh> cylinder_mesh = mesh->get_mesh();
 	if (cylinder_mesh.is_valid()) {
-		const Vector<Vector3> handles = helper->cone_frustum_get_handles(cylinder_mesh->get_height(), cylinder_mesh->get_top_radius(), cylinder_mesh->get_bottom_radius());
+		const Vector<Vector3> handles =
+			helper->cone_frustum_get_handles(cylinder_mesh->get_height(),
+				cylinder_mesh->get_top_radius(), cylinder_mesh->get_bottom_radius());
 		p_gizmo->add_handles(handles, handles_material);
 	}
 
@@ -200,3 +219,5 @@ void MeshInstance3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		p_gizmo->add_handles(handles, handles_material);
 	}
 }
+
+

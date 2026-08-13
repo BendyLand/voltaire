@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "property_selector.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "editor/doc/editor_help.h"
@@ -38,28 +36,31 @@
 #include "editor/gui/filter_line_edit.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "property_selector.h"
 #include "scene/gui/margin_container.h"
 #include "scene/gui/tree.h"
 
-void PropertySelector::_text_changed(const String &p_newtext) {
-	_update_search();
-}
+void PropertySelector::_text_changed(const String& p_newtext) { _update_search(); }
 
-void PropertySelector::_update_search() {
+void PropertySelector::_update_search()
+{
 	if (properties) {
 		set_title(TTRC("Select Property"));
-	} else if (virtuals_only) {
+	}
+	else if (virtuals_only) {
 		set_title(TTRC("Select Virtual Method"));
-	} else {
+	}
+	else {
 		set_title(TTRC("Select Method"));
 	}
 
 	search_options->clear();
 	help_bit->set_custom_text(String(), String(), String());
 
-	TreeItem *root = search_options->create_item();
+	TreeItem* root = search_options->create_item();
 
-	// Allow using spaces in place of underscores in the search string (makes the search more fault-tolerant).
+	// Allow using spaces in place of underscores in the search string (makes the search more
+	// fault-tolerant).
 	const String search_text = search_box->get_text().replace_char(' ', '_');
 
 	// Set up font.
@@ -71,34 +72,38 @@ void PropertySelector::_update_search() {
 
 		if (instance) {
 			instance->get_property_list(&props, true);
-		} else if (type != Variant::NIL) {
+		}
+		else if (type != Variant::NIL) {
 			Variant v;
 			Callable::CallError ce;
 			Variant::construct(type, v, nullptr, 0, ce);
 
 			v.get_property_list(&props);
-		} else {
-			Object *obj = ObjectDB::get_instance(script);
-			if (Object::cast_to<Script>(obj)) {
-				props.push_back(PropertyInfo(Variant::NIL, "Script Variables", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_CATEGORY));
-				Object::cast_to<Script>(obj)->get_script_property_list(&props);
+		}
+		else {
+			Object* o = ObjectDB::get_instance(script);
+			if (Object::cast_to<Script>(o)) {
+				props.push_back(PropertyInfo(Variant::NIL, "Script Variables", PROPERTY_HINT_NONE,
+					"", PROPERTY_USAGE_CATEGORY));
+				Object::cast_to<Script>(o)->get_script_property_list(&props);
 			}
 
 			StringName base = base_type;
 			while (base) {
-				props.push_back(PropertyInfo(Variant::NIL, base, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_CATEGORY));
+				props.push_back(PropertyInfo(
+					Variant::NIL, base, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_CATEGORY));
 				ClassDB::get_property_list(base, &props, true);
 				base = ClassDB::get_parent_class(base);
 			}
 		}
 
-		TreeItem *category = nullptr;
+		TreeItem* category = nullptr;
 
 		bool found = false;
-		for (const PropertyInfo &E : props) {
+		for (const PropertyInfo& E : props) {
 			if (E.usage == PROPERTY_USAGE_CATEGORY) {
 				if (category && category->get_first_child() == nullptr) {
-					memdelete(category); //old category was unused
+					memdelete(category); // old category was unused
 				}
 				category = search_options->create_item(root);
 				category->set_text(0, E.name);
@@ -107,7 +112,8 @@ void PropertySelector::_update_search() {
 				Ref<Texture2D> icon;
 				if (E.name == "Script Variables") {
 					icon = search_options->get_editor_theme_icon(SNAME("Script"));
-				} else {
+				}
+				else {
 					icon = EditorNode::get_singleton()->get_class_icon(E.name);
 				}
 				category->set_icon(0, icon);
@@ -126,18 +132,20 @@ void PropertySelector::_update_search() {
 				continue;
 			}
 
-			TreeItem *item = search_options->create_item(category ? category : root);
+			TreeItem* item = search_options->create_item(category ? category : root);
 			item->set_text(0, E.name);
 			if (use_monospace_font) {
 				item->set_custom_font(0, monospace_font);
 			}
 			item->set_metadata(0, E.name);
-			item->set_icon(0, search_options->get_editor_theme_icon(Variant::get_type_name(E.type)));
+			item->set_icon(
+				0, search_options->get_editor_theme_icon(Variant::get_type_name(E.type)));
 
 			if (!found && !search_box->get_text().is_empty() && E.name.containsn(search_text)) {
 				item->select(0);
 				found = true;
-			} else if (!found && search_box->get_text().is_empty() && E.name == selected) {
+			}
+			else if (!found && search_box->get_text().is_empty() && E.name == selected) {
 				item->select(0);
 				found = true;
 			}
@@ -149,15 +157,17 @@ void PropertySelector::_update_search() {
 		}
 
 		if (category && category->get_first_child() == nullptr) {
-			memdelete(category); //old category was unused
+			memdelete(category); // old category was unused
 		}
 
 		if (found) {
 			// As we call this while adding items, defer until list is completely populated.
-			callable_mp(search_options, &Tree::scroll_to_item).call_deferred(search_options->get_selected(), true);
+			callable_mp(search_options, &Tree::scroll_to_item)
+				.call_deferred(search_options->get_selected(), true);
 		}
 
-	} else {
+	}
+	else {
 		List<MethodInfo> methods;
 
 		if (type != Variant::NIL) {
@@ -165,7 +175,8 @@ void PropertySelector::_update_search() {
 			Callable::CallError ce;
 			Variant::construct(type, v, nullptr, 0, ce);
 			v.get_method_list(&methods);
-		} else {
+		}
+		else {
 			Ref<Script> script_ref = ObjectDB::get_ref<Script>(script);
 			if (script_ref.is_valid()) {
 				if (script_ref->is_built_in()) {
@@ -177,11 +188,12 @@ void PropertySelector::_update_search() {
 
 				methods.push_back(MethodInfo("*Script Methods")); // TODO: Split by inheritance.
 
-				for (const MethodInfo &mi : script_methods) {
+				for (const MethodInfo& mi : script_methods) {
 					if (mi.name.begins_with("@")) {
-						// GH-92782. GDScript inline setters/getters are historically present in `get_method_list()`
-						// and can be called using `Object.call()`. However, these functions are meant to be internal
-						// and their names are not valid identifiers, so let's hide them from the user.
+						// GH-92782. GDScript inline setters/getters are historically present in
+						// `get_method_list()` and can be called using `Object.call()`. However,
+						// these functions are meant to be internal and their names are not valid
+						// identifiers, so let's hide them from the user.
 						continue;
 					}
 					methods.push_back(mi);
@@ -196,15 +208,15 @@ void PropertySelector::_update_search() {
 			}
 		}
 
-		TreeItem *category = nullptr;
+		TreeItem* category = nullptr;
 
 		bool found = false;
 		bool script_methods = false;
 
-		for (MethodInfo &mi : methods) {
+		for (MethodInfo& mi : methods) {
 			if (mi.name.begins_with("*")) {
 				if (category && category->get_first_child() == nullptr) {
-					memdelete(category); //old category was unused
+					memdelete(category); // old category was unused
 				}
 				category = search_options->create_item(root);
 				category->set_text(0, mi.name.replace_first("*", ""));
@@ -216,7 +228,8 @@ void PropertySelector::_update_search() {
 				if (mi.name == "*Script Methods") {
 					icon = search_options->get_editor_theme_icon(SNAME("Script"));
 					script_methods = true;
-				} else {
+				}
+				else {
 					icon = EditorNode::get_singleton()->get_class_icon(rep);
 				}
 				category->set_icon(0, icon);
@@ -241,22 +254,24 @@ void PropertySelector::_update_search() {
 				continue;
 			}
 
-			TreeItem *item = search_options->create_item(category ? category : root);
+			TreeItem* item = search_options->create_item(category ? category : root);
 
 			String desc;
 			if (mi.name.contains_char(':')) {
 				desc = mi.name.get_slicec(':', 1) + " ";
 				mi.name = mi.name.get_slicec(':', 0);
-			} else if (mi.return_val.type != Variant::NIL) {
+			}
+			else if (mi.return_val.type != Variant::NIL) {
 				desc = Variant::get_type_name(mi.return_val.type);
-			} else {
+			}
+			else {
 				desc = "void";
 			}
 
 			desc += vformat(" %s(", mi.name);
 
 			for (int64_t i = 0; i < mi.arguments.size(); ++i) {
-				PropertyInfo &arg = mi.arguments.write[i];
+				PropertyInfo& arg = mi.arguments.write[i];
 				if (i > 0) {
 					desc += ", ";
 				}
@@ -265,10 +280,12 @@ void PropertySelector::_update_search() {
 
 				if (arg.type == Variant::NIL) {
 					desc += ": Variant";
-				} else if (arg.name.contains_char(':')) {
+				}
+				else if (arg.name.contains_char(':')) {
 					desc += vformat(": %s", arg.name.get_slicec(':', 1));
 					arg.name = arg.name.get_slicec(':', 0);
-				} else {
+				}
+				else {
 					desc += vformat(": %s", Variant::get_type_name(arg.type));
 				}
 			}
@@ -301,38 +318,42 @@ void PropertySelector::_update_search() {
 			if (!found && !search_box->get_text().is_empty() && name.containsn(search_text)) {
 				item->select(0);
 				found = true;
-			} else if (!found && search_box->get_text().is_empty() && name == selected) {
+			}
+			else if (!found && search_box->get_text().is_empty() && name == selected) {
 				item->select(0);
 				found = true;
 			}
 		}
 
 		if (category && category->get_first_child() == nullptr) {
-			memdelete(category); //old category was unused
+			memdelete(category); // old category was unused
 		}
 
 		if (found) {
 			// As we call this while adding items, defer until list is completely populated.
-			callable_mp(search_options, &Tree::scroll_to_item).call_deferred(search_options->get_selected(), true);
+			callable_mp(search_options, &Tree::scroll_to_item)
+				.call_deferred(search_options->get_selected(), true);
 		}
 	}
 
 	get_ok_button()->set_disabled(search_options->get_selected() == nullptr);
 }
 
-void PropertySelector::_confirmed() {
-	TreeItem *ti = search_options->get_selected();
+void PropertySelector::_confirmed()
+{
+	TreeItem* ti = search_options->get_selected();
 	if (!ti) {
 		return;
 	}
-	emit_signal(SNAME("selected"), ti->get_metadata(0));
+	this->obj->emit_signal(SNAME("selected"), ti->get_metadata(0));
 	hide();
 }
 
-void PropertySelector::_item_selected() {
+void PropertySelector::_item_selected()
+{
 	help_bit->set_custom_text(String(), String(), String());
 
-	TreeItem *item = search_options->get_selected();
+	TreeItem* item = search_options->get_selected();
 	get_ok_button()->set_disabled(item == nullptr);
 
 	if (!item) {
@@ -343,9 +364,11 @@ void PropertySelector::_item_selected() {
 	String class_type;
 	if (type != Variant::NIL) {
 		class_type = Variant::get_type_name(type);
-	} else if (!base_type.is_empty()) {
+	}
+	else if (!base_type.is_empty()) {
 		class_type = base_type;
-	} else if (instance) {
+	}
+	else if (instance) {
 		class_type = instance->get_class();
 	}
 
@@ -355,7 +378,8 @@ void PropertySelector::_item_selected() {
 				help_bit->parse_symbol("property|" + class_type + "|" + name);
 				break;
 			}
-		} else {
+		}
+		else {
 			if (ClassDB::has_method(class_type, name, true)) {
 				help_bit->parse_symbol("method|" + class_type + "|" + name);
 				break;
@@ -367,130 +391,134 @@ void PropertySelector::_item_selected() {
 	}
 }
 
-void PropertySelector::_hide_requested() {
+void PropertySelector::_hide_requested()
+{
 	_cancel_pressed(); // From AcceptDialog.
 }
 
-void PropertySelector::_create_subproperties(TreeItem *p_parent_item, Variant::Type p_type) {
+void PropertySelector::_create_subproperties(TreeItem* p_parent_item, Variant::Type p_type)
+{
 	switch (p_type) {
-		case Variant::VECTOR2: {
-			_create_subproperty(p_parent_item, "x", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "y", Variant::FLOAT);
-		} break;
+	case Variant::VECTOR2: {
+		_create_subproperty(p_parent_item, "x", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "y", Variant::FLOAT);
+	} break;
 
-		case Variant::VECTOR2I: {
-			_create_subproperty(p_parent_item, "x", Variant::INT);
-			_create_subproperty(p_parent_item, "y", Variant::INT);
-		} break;
+	case Variant::VECTOR2I: {
+		_create_subproperty(p_parent_item, "x", Variant::INT);
+		_create_subproperty(p_parent_item, "y", Variant::INT);
+	} break;
 
-		case Variant::RECT2: {
-			_create_subproperty(p_parent_item, "position", Variant::VECTOR2);
-			_create_subproperty(p_parent_item, "size", Variant::VECTOR2);
-			_create_subproperty(p_parent_item, "end", Variant::VECTOR2);
-		} break;
+	case Variant::RECT2: {
+		_create_subproperty(p_parent_item, "position", Variant::VECTOR2);
+		_create_subproperty(p_parent_item, "size", Variant::VECTOR2);
+		_create_subproperty(p_parent_item, "end", Variant::VECTOR2);
+	} break;
 
-		case Variant::RECT2I: {
-			_create_subproperty(p_parent_item, "position", Variant::VECTOR2I);
-			_create_subproperty(p_parent_item, "size", Variant::VECTOR2I);
-			_create_subproperty(p_parent_item, "end", Variant::VECTOR2I);
-		} break;
+	case Variant::RECT2I: {
+		_create_subproperty(p_parent_item, "position", Variant::VECTOR2I);
+		_create_subproperty(p_parent_item, "size", Variant::VECTOR2I);
+		_create_subproperty(p_parent_item, "end", Variant::VECTOR2I);
+	} break;
 
-		case Variant::VECTOR3: {
-			_create_subproperty(p_parent_item, "x", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "y", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "z", Variant::FLOAT);
-		} break;
+	case Variant::VECTOR3: {
+		_create_subproperty(p_parent_item, "x", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "y", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "z", Variant::FLOAT);
+	} break;
 
-		case Variant::VECTOR3I: {
-			_create_subproperty(p_parent_item, "x", Variant::INT);
-			_create_subproperty(p_parent_item, "y", Variant::INT);
-			_create_subproperty(p_parent_item, "z", Variant::INT);
-		} break;
+	case Variant::VECTOR3I: {
+		_create_subproperty(p_parent_item, "x", Variant::INT);
+		_create_subproperty(p_parent_item, "y", Variant::INT);
+		_create_subproperty(p_parent_item, "z", Variant::INT);
+	} break;
 
-		case Variant::TRANSFORM2D: {
-			_create_subproperty(p_parent_item, "origin", Variant::VECTOR2);
-			_create_subproperty(p_parent_item, "x", Variant::VECTOR2);
-			_create_subproperty(p_parent_item, "y", Variant::VECTOR2);
-		} break;
+	case Variant::TRANSFORM2D: {
+		_create_subproperty(p_parent_item, "origin", Variant::VECTOR2);
+		_create_subproperty(p_parent_item, "x", Variant::VECTOR2);
+		_create_subproperty(p_parent_item, "y", Variant::VECTOR2);
+	} break;
 
-		case Variant::VECTOR4: {
-			_create_subproperty(p_parent_item, "x", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "y", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "z", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "w", Variant::FLOAT);
-		} break;
+	case Variant::VECTOR4: {
+		_create_subproperty(p_parent_item, "x", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "y", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "z", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "w", Variant::FLOAT);
+	} break;
 
-		case Variant::VECTOR4I: {
-			_create_subproperty(p_parent_item, "x", Variant::INT);
-			_create_subproperty(p_parent_item, "y", Variant::INT);
-			_create_subproperty(p_parent_item, "z", Variant::INT);
-			_create_subproperty(p_parent_item, "w", Variant::INT);
-		} break;
+	case Variant::VECTOR4I: {
+		_create_subproperty(p_parent_item, "x", Variant::INT);
+		_create_subproperty(p_parent_item, "y", Variant::INT);
+		_create_subproperty(p_parent_item, "z", Variant::INT);
+		_create_subproperty(p_parent_item, "w", Variant::INT);
+	} break;
 
-		case Variant::PLANE: {
-			_create_subproperty(p_parent_item, "x", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "y", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "z", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "normal", Variant::VECTOR3);
-			_create_subproperty(p_parent_item, "d", Variant::FLOAT);
-		} break;
+	case Variant::PLANE: {
+		_create_subproperty(p_parent_item, "x", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "y", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "z", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "normal", Variant::VECTOR3);
+		_create_subproperty(p_parent_item, "d", Variant::FLOAT);
+	} break;
 
-		case Variant::QUATERNION: {
-			_create_subproperty(p_parent_item, "x", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "y", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "z", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "w", Variant::FLOAT);
-		} break;
+	case Variant::QUATERNION: {
+		_create_subproperty(p_parent_item, "x", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "y", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "z", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "w", Variant::FLOAT);
+	} break;
 
-		case Variant::AABB: {
-			_create_subproperty(p_parent_item, "position", Variant::VECTOR3);
-			_create_subproperty(p_parent_item, "size", Variant::VECTOR3);
-			_create_subproperty(p_parent_item, "end", Variant::VECTOR3);
-		} break;
+	case Variant::AABB: {
+		_create_subproperty(p_parent_item, "position", Variant::VECTOR3);
+		_create_subproperty(p_parent_item, "size", Variant::VECTOR3);
+		_create_subproperty(p_parent_item, "end", Variant::VECTOR3);
+	} break;
 
-		case Variant::BASIS: {
-			_create_subproperty(p_parent_item, "x", Variant::VECTOR3);
-			_create_subproperty(p_parent_item, "y", Variant::VECTOR3);
-			_create_subproperty(p_parent_item, "z", Variant::VECTOR3);
-		} break;
+	case Variant::BASIS: {
+		_create_subproperty(p_parent_item, "x", Variant::VECTOR3);
+		_create_subproperty(p_parent_item, "y", Variant::VECTOR3);
+		_create_subproperty(p_parent_item, "z", Variant::VECTOR3);
+	} break;
 
-		case Variant::TRANSFORM3D: {
-			_create_subproperty(p_parent_item, "basis", Variant::BASIS);
-			_create_subproperty(p_parent_item, "origin", Variant::VECTOR3);
-		} break;
+	case Variant::TRANSFORM3D: {
+		_create_subproperty(p_parent_item, "basis", Variant::BASIS);
+		_create_subproperty(p_parent_item, "origin", Variant::VECTOR3);
+	} break;
 
-		case Variant::PROJECTION: {
-			_create_subproperty(p_parent_item, "x", Variant::VECTOR4);
-			_create_subproperty(p_parent_item, "y", Variant::VECTOR4);
-			_create_subproperty(p_parent_item, "z", Variant::VECTOR4);
-			_create_subproperty(p_parent_item, "w", Variant::VECTOR4);
-		} break;
+	case Variant::PROJECTION: {
+		_create_subproperty(p_parent_item, "x", Variant::VECTOR4);
+		_create_subproperty(p_parent_item, "y", Variant::VECTOR4);
+		_create_subproperty(p_parent_item, "z", Variant::VECTOR4);
+		_create_subproperty(p_parent_item, "w", Variant::VECTOR4);
+	} break;
 
-		case Variant::COLOR: {
-			_create_subproperty(p_parent_item, "r", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "g", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "b", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "a", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "r8", Variant::INT);
-			_create_subproperty(p_parent_item, "g8", Variant::INT);
-			_create_subproperty(p_parent_item, "b8", Variant::INT);
-			_create_subproperty(p_parent_item, "a8", Variant::INT);
-			_create_subproperty(p_parent_item, "h", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "s", Variant::FLOAT);
-			_create_subproperty(p_parent_item, "v", Variant::FLOAT);
-		} break;
+	case Variant::COLOR: {
+		_create_subproperty(p_parent_item, "r", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "g", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "b", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "a", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "r8", Variant::INT);
+		_create_subproperty(p_parent_item, "g8", Variant::INT);
+		_create_subproperty(p_parent_item, "b8", Variant::INT);
+		_create_subproperty(p_parent_item, "a8", Variant::INT);
+		_create_subproperty(p_parent_item, "h", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "s", Variant::FLOAT);
+		_create_subproperty(p_parent_item, "v", Variant::FLOAT);
+	} break;
 
-		default: {
-		}
+	default: {
+	}
 	}
 }
 
-void PropertySelector::_create_subproperty(TreeItem *p_parent_item, const String &p_name, Variant::Type p_type) {
+void PropertySelector::_create_subproperty(
+	TreeItem* p_parent_item, const String& p_name, Variant::Type p_type)
+{
 	if (!type_filter.is_empty() && !type_filter.has(p_type)) {
 		return;
 	}
 
-	TreeItem *item = search_options->create_item(p_parent_item);
+	TreeItem* item = search_options->create_item(p_parent_item);
 	item->set_text(0, p_name);
 
 	bool use_monospace_font = EDITOR_GET("interface/theme/use_monospace_font_for_editor_symbols");
@@ -503,23 +531,26 @@ void PropertySelector::_create_subproperty(TreeItem *p_parent_item, const String
 	_create_subproperties(item, p_type);
 }
 
-void PropertySelector::_notification(int p_what) {
+void PropertySelector::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			connect(SceneStringName(confirmed), callable_mp(this, &PropertySelector::_confirmed));
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		connect(SceneStringName(confirmed), callable_mp(this, &PropertySelector::_confirmed));
+	} break;
 
-		case NOTIFICATION_EXIT_TREE: {
-			disconnect(SceneStringName(confirmed), callable_mp(this, &PropertySelector::_confirmed));
-		} break;
+	case NOTIFICATION_EXIT_TREE: {
+		disconnect(SceneStringName(confirmed), callable_mp(this, &PropertySelector::_confirmed));
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED: {
-			search_box->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		search_box->set_right_icon(get_editor_theme_icon(SNAME("Search")));
+	} break;
 	}
 }
 
-void PropertySelector::select_method_from_base_type(const String &p_base, const String &p_current, bool p_virtuals_only) {
+void PropertySelector::select_method_from_base_type(
+	const String& p_base, const String& p_current, bool p_virtuals_only)
+{
 	base_type = p_base;
 	selected = p_current;
 	type = Variant::NIL;
@@ -534,7 +565,9 @@ void PropertySelector::select_method_from_base_type(const String &p_base, const 
 	_update_search();
 }
 
-void PropertySelector::select_method_from_script(const Ref<Script> &p_script, const String &p_current) {
+void PropertySelector::select_method_from_script(
+	const Ref<Script>& p_script, const String& p_current)
+{
 	ERR_FAIL_COND(p_script.is_null());
 	base_type = p_script->get_instance_base_type();
 	selected = p_current;
@@ -550,7 +583,8 @@ void PropertySelector::select_method_from_script(const Ref<Script> &p_script, co
 	_update_search();
 }
 
-void PropertySelector::select_method_from_basic_type(Variant::Type p_type, const String &p_current) {
+void PropertySelector::select_method_from_basic_type(Variant::Type p_type, const String& p_current)
+{
 	ERR_FAIL_COND(p_type == Variant::NIL);
 	base_type = "";
 	selected = p_current;
@@ -566,7 +600,8 @@ void PropertySelector::select_method_from_basic_type(Variant::Type p_type, const
 	_update_search();
 }
 
-void PropertySelector::select_method_from_instance(Object *p_instance, const String &p_current) {
+void PropertySelector::select_method_from_instance(Object* p_instance, const String& p_current)
+{
 	base_type = p_instance->get_class();
 	selected = p_current;
 	type = Variant::NIL;
@@ -587,7 +622,8 @@ void PropertySelector::select_method_from_instance(Object *p_instance, const Str
 	_update_search();
 }
 
-void PropertySelector::select_property_from_base_type(const String &p_base, const String &p_current) {
+void PropertySelector::select_property_from_base_type(const String& p_base, const String& p_current)
+{
 	base_type = p_base;
 	selected = p_current;
 	type = Variant::NIL;
@@ -602,7 +638,9 @@ void PropertySelector::select_property_from_base_type(const String &p_base, cons
 	_update_search();
 }
 
-void PropertySelector::select_property_from_script(const Ref<Script> &p_script, const String &p_current) {
+void PropertySelector::select_property_from_script(
+	const Ref<Script>& p_script, const String& p_current)
+{
 	ERR_FAIL_COND(p_script.is_null());
 
 	base_type = p_script->get_instance_base_type();
@@ -619,7 +657,9 @@ void PropertySelector::select_property_from_script(const Ref<Script> &p_script, 
 	_update_search();
 }
 
-void PropertySelector::select_property_from_basic_type(Variant::Type p_type, const String &p_current) {
+void PropertySelector::select_property_from_basic_type(
+	Variant::Type p_type, const String& p_current)
+{
 	ERR_FAIL_COND(p_type == Variant::NIL);
 	base_type = "";
 	selected = p_current;
@@ -635,7 +675,8 @@ void PropertySelector::select_property_from_basic_type(Variant::Type p_type, con
 	_update_search();
 }
 
-void PropertySelector::select_property_from_instance(Object *p_instance, const String &p_current) {
+void PropertySelector::select_property_from_instance(Object* p_instance, const String& p_current)
+{
 	base_type = "";
 	selected = p_current;
 	type = Variant::NIL;
@@ -650,28 +691,32 @@ void PropertySelector::select_property_from_instance(Object *p_instance, const S
 	_update_search();
 }
 
-void PropertySelector::set_type_filter(const Vector<Variant::Type> &p_type_filter) {
+void PropertySelector::set_type_filter(const Vector<Variant::Type>& p_type_filter)
+{
 	type_filter = p_type_filter;
 }
 
-void PropertySelector::_bind_methods() {
+void PropertySelector::_bind_methods()
+{
 	ADD_SIGNAL(MethodInfo("selected", PropertyInfo(Variant::STRING, "name")));
 }
 
-PropertySelector::PropertySelector() {
-	VBoxContainer *vbc = memnew(VBoxContainer);
+PropertySelector::PropertySelector()
+{
+	VBoxContainer* vbc = memnew(VBoxContainer);
 	add_child(vbc);
 
 	search_box = memnew(FilterLineEdit);
 	search_box->set_accessibility_name(TTRC("Search:"));
 	vbc->add_margin_child(TTRC("Search:"), search_box);
-	search_box->connect(SceneStringName(text_changed), callable_mp(this, &PropertySelector::_text_changed));
+	search_box->connect(
+		SceneStringName(text_changed), callable_mp(this, &PropertySelector::_text_changed));
 
 	search_options = memnew(Tree);
 	search_box->set_forward_control(search_options);
 	search_options->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	search_options->set_scroll_hint_mode(Tree::SCROLL_HINT_MODE_BOTH);
-	MarginContainer *mc = vbc->add_margin_child(TTRC("Matches:"), search_options, true);
+	MarginContainer* mc = vbc->add_margin_child(TTRC("Matches:"), search_options, true);
 	mc->set_theme_type_variation("NoBorderHorizontalWindow");
 
 	search_options->connect("item_activated", callable_mp(this, &PropertySelector::_confirmed));
@@ -688,3 +733,5 @@ PropertySelector::PropertySelector() {
 	register_text_enter(search_box);
 	set_hide_on_ok(false);
 }
+
+
