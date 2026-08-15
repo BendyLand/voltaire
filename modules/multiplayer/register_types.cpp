@@ -28,26 +28,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
+#include "core/object/class_db.h"
 #include "multiplayer_debugger.h"
 #include "multiplayer_spawner.h"
 #include "multiplayer_synchronizer.h"
+#include "register_types.h"
 #include "scene_multiplayer.h"
 #include "scene_replication_interface.h"
 #include "scene_rpc_interface.h"
-
-#include "core/object/class_db.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/multiplayer_editor_plugin.h"
 #endif
 
-void initialize_multiplayer_module(ModuleInitializationLevel p_level) {
+void initialize_multiplayer_module(ModuleInitializationLevel p_level)
+{
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		VLTR_REGISTER_CLASS(SceneReplicationConfig);
-		VLTR_REGISTER_CLASS(MultiplayerSpawner);
-		VLTR_REGISTER_CLASS(MultiplayerSynchronizer);
 		VLTR_REGISTER_CLASS(OfflineMultiplayerPeer);
 		VLTR_REGISTER_CLASS(SceneMultiplayer);
 		if constexpr (VLTR_IS_CLASS_ENABLED(MultiplayerAPI)) {
@@ -62,8 +59,11 @@ void initialize_multiplayer_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_multiplayer_module(ModuleInitializationLevel p_level) {
+void uninitialize_multiplayer_module(ModuleInitializationLevel p_level)
+{
 	if constexpr (VLTR_IS_CLASS_ENABLED(MultiplayerAPI)) {
 		MultiplayerDebugger::deinitialize();
 	}
 }
+
+

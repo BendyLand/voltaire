@@ -1700,7 +1700,7 @@ void EditorProperty::menu_option(int p_option)
 	default: {
 		if (p_option >= EditorContextMenuPlugin::BASE_ID) {
 			EditorContextMenuPluginManager::get_singleton()->activate_custom_option(
-				EditorContextMenuPlugin::CONTEXT_SLOT_INSPECTOR_PROPERTY, p_option, this);
+				EditorContextMenuPlugin::CONTEXT_SLOT_INSPECTOR_PROPERTY, p_option, (Object*)this);
 		}
 	}
 	}
@@ -3794,7 +3794,7 @@ void EditorInspectorArray::_setup()
 
 		ae.panel->set_meta("index", element_position);
 		ae.panel->set_meta("name", ae_name);
-		ae.panel->set_meta("element", this);
+		ae.panel->set_meta("element", (Object*)this);
 		ae.panel->set_tooltip_text(ae_name);
 		ae.panel->connect(SceneStringName(focus_entered),
 			callable_mp(this, &EditorInspectorArray::_panel_gui_focus).bind(i));
@@ -7018,6 +7018,7 @@ EditorInspector* EditorInspector::_get_control_parent_inspector(Control* p_contr
 		}
 	}
 
+	if (!p_control) return nullptr;
 	Control* parent = p_control->get_parent_control();
 	while (parent) {
 		EditorInspector* inspector = Object::cast_to<EditorInspector>(parent);

@@ -1192,16 +1192,16 @@ void CanvasItemEditor::_add_node_pressed(int p_result)
 	} break;
 	default: {
 		if (p_result >= EditorContextMenuPlugin::BASE_ID) {
-			TypedArray<Node> nodes;
+			Vector<Node*> nodes;
 			nodes.resize(selection_results.size());
 
 			int i = 0;
 			for (const SelectResult& result : selection_results) {
-				nodes[i] = result.item;
+				nodes.set(i, result.item);
 				i++;
 			}
 			EditorContextMenuPluginManager::get_singleton()->activate_custom_option(
-				EditorContextMenuPlugin::CONTEXT_SLOT_2D_EDITOR, p_result, nodes);
+				EditorContextMenuPlugin::CONTEXT_SLOT_2D_EDITOR, p_result, nodes.ptr());
 		}
 	}
 	}
@@ -1909,8 +1909,7 @@ bool CanvasItemEditor::_gui_input_rotate(const Ref<InputEvent>& p_event)
 		if (m.is_valid()) {
 			_restore_canvas_item_state(drag_selection);
 			for (CanvasItem* ci : drag_selection) {
-				drag_to = transform.affine_inverse().xform(m->
-get_position());
+				drag_to = transform.affine_inverse().xform(m->get_position());
 				// Rotate the opposite way if the canvas item's compounded scale has an uneven
 				// number of negative elements
 				bool opposite = (ci->get_global_transform().get_scale().sign().dot(

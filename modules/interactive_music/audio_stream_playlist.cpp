@@ -29,11 +29,11 @@
 /**************************************************************************/
 
 #include "audio_stream_playlist.h"
-
 #include "core/math/math_funcs.h"
 #include "core/object/class_db.h"
 
-Ref<AudioStreamPlayback> AudioStreamPlaylist::instantiate_playback() {
+Ref<AudioStreamPlayback> AudioStreamPlaylist::instantiate_playback()
+{
 	Ref<AudioStreamPlaybackPlaylist> playback_playlist;
 	playback_playlist.instantiate();
 	playback_playlist->playlist = Ref<AudioStreamPlaylist>(this);
@@ -42,25 +42,28 @@ Ref<AudioStreamPlayback> AudioStreamPlaylist::instantiate_playback() {
 	return playback_playlist;
 }
 
-void AudioStreamPlaylist::set_list_stream(int p_stream_index, Ref<AudioStream> p_stream) {
+void AudioStreamPlaylist::set_list_stream(int p_stream_index, Ref<AudioStream> p_stream)
+{
 	ERR_FAIL_COND(p_stream == this);
 	ERR_FAIL_INDEX(p_stream_index, MAX_STREAMS);
 
 	AudioServer::get_singleton()->lock();
 	audio_streams[p_stream_index] = p_stream;
-	for (AudioStreamPlaybackPlaylist *E : playbacks) {
+	for (AudioStreamPlaybackPlaylist* E : playbacks) {
 		E->_update_playback_instances();
 	}
 	AudioServer::get_singleton()->unlock();
 }
 
-Ref<AudioStream> AudioStreamPlaylist::get_list_stream(int p_stream_index) const {
+Ref<AudioStream> AudioStreamPlaylist::get_list_stream(int p_stream_index) const
+{
 	ERR_FAIL_INDEX_V(p_stream_index, MAX_STREAMS, Ref<AudioStream>());
 
 	return audio_streams[p_stream_index];
 }
 
-double AudioStreamPlaylist::get_bpm() const {
+double AudioStreamPlaylist::get_bpm() const
+{
 	for (int i = 0; i < stream_count; i++) {
 		if (audio_streams[i].is_valid()) {
 			double bpm = audio_streams[i]->get_bpm();
@@ -72,7 +75,8 @@ double AudioStreamPlaylist::get_bpm() const {
 	return 0.0;
 }
 
-double AudioStreamPlaylist::get_length() const {
+double AudioStreamPlaylist::get_length() const
+{
 	double total_length = 0.0;
 	for (int i = 0; i < stream_count; i++) {
 		if (audio_streams[i].is_valid()) {
@@ -80,7 +84,8 @@ double AudioStreamPlaylist::get_length() const {
 			int beat_count = audio_streams[i]->get_beat_count();
 			if (bpm > 0.0 && beat_count > 0) {
 				total_length += beat_count * 60.0 / bpm;
-			} else {
+			}
+			else {
 				total_length += audio_streams[i]->get_length();
 			}
 		}
@@ -88,7 +93,8 @@ double AudioStreamPlaylist::get_length() const {
 	return total_length;
 }
 
-void AudioStreamPlaylist::set_stream_count(int p_count) {
+void AudioStreamPlaylist::set_stream_count(int p_count)
+{
 	ERR_FAIL_COND(p_count < 0 || p_count > MAX_STREAMS);
 	AudioServer::get_singleton()->lock();
 	stream_count = p_count;
@@ -96,35 +102,22 @@ void AudioStreamPlaylist::set_stream_count(int p_count) {
 	notify_property_list_changed();
 }
 
-int AudioStreamPlaylist::get_stream_count() const {
-	return stream_count;
-}
+int AudioStreamPlaylist::get_stream_count() const { return stream_count; }
 
-void AudioStreamPlaylist::set_fade_time(float p_time) {
-	fade_time = p_time;
-}
+void AudioStreamPlaylist::set_fade_time(float p_time) { fade_time = p_time; }
 
-float AudioStreamPlaylist::get_fade_time() const {
-	return fade_time;
-}
+float AudioStreamPlaylist::get_fade_time() const { return fade_time; }
 
-void AudioStreamPlaylist::set_shuffle(bool p_shuffle) {
-	shuffle = p_shuffle;
-}
+void AudioStreamPlaylist::set_shuffle(bool p_shuffle) { shuffle = p_shuffle; }
 
-bool AudioStreamPlaylist::get_shuffle() const {
-	return shuffle;
-}
+bool AudioStreamPlaylist::get_shuffle() const { return shuffle; }
 
-void AudioStreamPlaylist::set_loop(bool p_loop) {
-	loop = p_loop;
-}
+void AudioStreamPlaylist::set_loop(bool p_loop) { loop = p_loop; }
 
-bool AudioStreamPlaylist::has_loop() const {
-	return loop;
-}
+bool AudioStreamPlaylist::has_loop() const { return loop; }
 
-void AudioStreamPlaylist::_validate_property(PropertyInfo &r_property) const {
+void AudioStreamPlaylist::_validate_property(PropertyInfo& r_property) const
+{
 	if (r_property.name != "stream_count" && r_property.name.begins_with("stream_")) {
 		int stream = r_property.name.get_slicec('/', 0).get_slicec('_', 1).to_int();
 		if (stream >= stream_count) {
@@ -133,47 +126,20 @@ void AudioStreamPlaylist::_validate_property(PropertyInfo &r_property) const {
 	}
 }
 
-void AudioStreamPlaylist::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_stream_count", "stream_count"), &AudioStreamPlaylist::set_stream_count);
-	ClassDB::bind_method(D_METHOD("get_stream_count"), &AudioStreamPlaylist::get_stream_count);
-
-	ClassDB::bind_method(D_METHOD("get_bpm"), &AudioStreamPlaylist::get_bpm);
-
-	ClassDB::bind_method(D_METHOD("set_list_stream", "stream_index", "audio_stream"), &AudioStreamPlaylist::set_list_stream);
-	ClassDB::bind_method(D_METHOD("get_list_stream", "stream_index"), &AudioStreamPlaylist::get_list_stream);
-
-	ClassDB::bind_method(D_METHOD("set_shuffle", "shuffle"), &AudioStreamPlaylist::set_shuffle);
-	ClassDB::bind_method(D_METHOD("get_shuffle"), &AudioStreamPlaylist::get_shuffle);
-
-	ClassDB::bind_method(D_METHOD("set_fade_time", "dec"), &AudioStreamPlaylist::set_fade_time);
-	ClassDB::bind_method(D_METHOD("get_fade_time"), &AudioStreamPlaylist::get_fade_time);
-
-	ClassDB::bind_method(D_METHOD("set_loop", "loop"), &AudioStreamPlaylist::set_loop);
-	ClassDB::bind_method(D_METHOD("has_loop"), &AudioStreamPlaylist::has_loop);
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shuffle"), "set_shuffle", "get_shuffle");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "loop"), "set_loop", "has_loop");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "fade_time", PROPERTY_HINT_RANGE, "0,1,0.01,suffix:s"), "set_fade_time", "get_fade_time");
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "stream_count", PROPERTY_HINT_RANGE, "0," + itos(MAX_STREAMS), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Streams,stream_,unfoldable,page_size=999,add_button_text=" + String(TTRC("Add Stream"))), "set_stream_count", "get_stream_count");
-
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		ADD_PROPERTYI(PropertyInfo(Variant::OBJECT, "stream_" + itos(i), PROPERTY_HINT_RESOURCE_TYPE, AudioStream::get_class_static(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_INTERNAL), "set_list_stream", "get_list_stream", i);
-	}
-
-	BIND_CONSTANT(MAX_STREAMS);
-}
+void AudioStreamPlaylist::_bind_methods() {}
 
 //////////////////////
 //////////////////////
 
-AudioStreamPlaybackPlaylist::~AudioStreamPlaybackPlaylist() {
+AudioStreamPlaybackPlaylist::~AudioStreamPlaybackPlaylist()
+{
 	if (playlist.is_valid()) {
 		playlist->playbacks.erase(this);
 	}
 }
 
-void AudioStreamPlaybackPlaylist::stop() {
+void AudioStreamPlaybackPlaylist::stop()
+{
 	active = false;
 	for (int i = 0; i < playlist->stream_count; i++) {
 		if (playback[i].is_valid()) {
@@ -182,7 +148,8 @@ void AudioStreamPlaybackPlaylist::stop() {
 	}
 }
 
-void AudioStreamPlaybackPlaylist::_update_order() {
+void AudioStreamPlaybackPlaylist::_update_order()
+{
 	for (int i = 0; i < playlist->stream_count; i++) {
 		play_order[i] = i;
 	}
@@ -195,7 +162,8 @@ void AudioStreamPlaybackPlaylist::_update_order() {
 	}
 }
 
-void AudioStreamPlaybackPlaylist::start(double p_from_pos) {
+void AudioStreamPlaybackPlaylist::start(double p_from_pos)
+{
 	if (active) {
 		stop();
 	}
@@ -223,14 +191,16 @@ void AudioStreamPlaybackPlaylist::start(double p_from_pos) {
 			double length;
 			if (bpm > 0.0 && beat_count > 0) {
 				length = beat_count * 60.0 / bpm;
-			} else {
+			}
+			else {
 				length = playlist->audio_streams[idx]->get_length();
 			}
 			if (play_ofs < length) {
 				play_index = i;
 				stream_todo = length - play_ofs;
 				break;
-			} else {
+			}
+			else {
 				play_ofs -= length;
 			}
 		}
@@ -248,12 +218,14 @@ void AudioStreamPlaybackPlaylist::start(double p_from_pos) {
 	active = true;
 }
 
-void AudioStreamPlaybackPlaylist::seek(double p_time) {
+void AudioStreamPlaybackPlaylist::seek(double p_time)
+{
 	stop();
 	start(p_time);
 }
 
-int AudioStreamPlaybackPlaylist::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
+int AudioStreamPlaybackPlaylist::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames)
+{
 	if (!active) {
 		return 0;
 	}
@@ -277,7 +249,7 @@ int AudioStreamPlaybackPlaylist::mix(AudioFrame *p_buffer, float p_rate_scale, i
 			*p_buffer = mix_buffer[i];
 			stream_todo -= time_dec;
 			if (stream_todo < 0) {
-				//find next stream.
+				// find next stream.
 				int prev = play_order[play_index];
 
 				for (int j = 0; j < playlist->stream_count; j++) {
@@ -315,12 +287,14 @@ int AudioStreamPlaybackPlaylist::mix(AudioFrame *p_buffer, float p_rate_scale, i
 
 				bool restart = true;
 				if (prev == play_order[play_index]) {
-					// Went back to the same one, continue loop (if it loops) or restart if it does not.
+					// Went back to the same one, continue loop (if it loops) or restart if it does
+					// not.
 					if (playlist->audio_streams[prev]->has_loop()) {
 						restart = false;
 					}
 					fade_index = -1;
-				} else {
+				}
+				else {
 					// Move current mixed data to fade buffer.
 					for (int j = i; j < to_mix; j++) {
 						fade_buffer[j] = mix_buffer[j];
@@ -343,7 +317,8 @@ int AudioStreamPlaybackPlaylist::mix(AudioFrame *p_buffer, float p_rate_scale, i
 
 				if (bpm > 0.0 && beat_count > 0) {
 					stream_todo = beat_count * 60.0 / bpm;
-				} else {
+				}
+				else {
 					stream_todo = playlist->audio_streams[idx]->get_length();
 				}
 			}
@@ -366,34 +341,34 @@ int AudioStreamPlaybackPlaylist::mix(AudioFrame *p_buffer, float p_rate_scale, i
 	return p_frames;
 }
 
-void AudioStreamPlaybackPlaylist::tag_used_streams() {
+void AudioStreamPlaybackPlaylist::tag_used_streams()
+{
 	if (active) {
-		playlist->audio_streams[play_order[play_index]]->tag_used(playback[play_order[play_index]]->get_playback_position());
+		playlist->audio_streams[play_order[play_index]]->tag_used(
+			playback[play_order[play_index]]->get_playback_position());
 	}
 
 	playlist->tag_used(0);
 }
 
-int AudioStreamPlaybackPlaylist::get_loop_count() const {
-	return loop_count;
-}
+int AudioStreamPlaybackPlaylist::get_loop_count() const { return loop_count; }
 
-double AudioStreamPlaybackPlaylist::get_playback_position() const {
-	return offset;
-}
+double AudioStreamPlaybackPlaylist::get_playback_position() const { return offset; }
 
-bool AudioStreamPlaybackPlaylist::is_playing() const {
-	return active;
-}
+bool AudioStreamPlaybackPlaylist::is_playing() const { return active; }
 
-void AudioStreamPlaybackPlaylist::_update_playback_instances() {
+void AudioStreamPlaybackPlaylist::_update_playback_instances()
+{
 	stop();
 
 	for (int i = 0; i < playlist->stream_count; i++) {
 		if (playlist->audio_streams[i].is_valid()) {
 			playback[i] = playlist->audio_streams[i]->instantiate_playback();
-		} else {
+		}
+		else {
 			playback[i].unref();
 		}
 	}
 }
+
+

@@ -1986,7 +1986,7 @@ void FBXDocument::_process_mesh_instances(Ref<FBXState> p_state, Node *p_scene_r
 			HashMap<GLTFNodeIndex, Node *>::Iterator si_element = p_state->scene_nodes.find(node_i);
 			ERR_CONTINUE_MSG(!si_element, vformat("Unable to find node %d", node_i));
 			mi = Object::cast_to<ImporterMeshInstance3D>(si_element->value);
-			ERR_CONTINUE_MSG(mi == nullptr, vformat("Unable to cast node %d of type %s to ImporterMeshInstance3D", node_i, si_element->value->get_class_name()));
+			ERR_CONTINUE_MSG(mi == nullptr, vformat("Unable to cast node %d of type %s to ImporterMeshInstance3D", node_i, si_element->value->obj->get_class_name()));
 		} else {
 			mi = mi_element->value;
 		}

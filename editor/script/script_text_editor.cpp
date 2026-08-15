@@ -2641,16 +2641,16 @@ void ScriptTextEditor::_assign_dragged_export_variables()
 
 	for (int i = pending_dragged_exports.size() - 1; i >= 0; i--) {
 		const DraggedExport& dragged_export = pending_dragged_exports[i];
-		Object* obj = ObjectDB::get_instance(dragged_export.obj_id);
-		if (!obj) {
+		Object* o = ObjectDB::get_instance(dragged_export.obj_id);
+		if (!o) {
 			WARN_PRINT("Object not found, can't assign export variable.");
 			pending_dragged_exports.remove_at(i);
 			continue;
 		}
 
-		ScriptInstance* si = obj->get_script_instance();
+		ScriptInstance* si = o->get_script_instance();
 		if (!si) {
-			WARN_PRINT("Script on " + obj->to_string() +
+			WARN_PRINT("Script on " + o->to_string() +
 					   " does not exist anymore, can't assign export variable.");
 			pending_dragged_exports.remove_at(i);
 			continue;

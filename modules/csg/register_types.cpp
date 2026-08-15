@@ -28,27 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
-#include "csg_shape.h"
-
 #include "core/object/class_db.h"
+#include "csg_shape.h"
+#include "register_types.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/csg_gizmos.h"
 #endif
 
-void initialize_csg_module(ModuleInitializationLevel p_level) {
+void initialize_csg_module(ModuleInitializationLevel p_level)
+{
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		VLTR_REGISTER_ABSTRACT_CLASS(CSGShape3D);
-		VLTR_REGISTER_ABSTRACT_CLASS(CSGPrimitive3D);
-		VLTR_REGISTER_CLASS(CSGMesh3D);
-		VLTR_REGISTER_CLASS(CSGSphere3D);
-		VLTR_REGISTER_CLASS(CSGBox3D);
-		VLTR_REGISTER_CLASS(CSGCylinder3D);
-		VLTR_REGISTER_CLASS(CSGTorus3D);
-		VLTR_REGISTER_CLASS(CSGPolygon3D);
-		VLTR_REGISTER_CLASS(CSGCombiner3D);
 #ifndef NAVIGATION_3D_DISABLED
 		CSGShape3D::navmesh_parse_init();
 #endif // NAVIGATION_3D_DISABLED
@@ -60,8 +50,10 @@ void initialize_csg_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_csg_module(ModuleInitializationLevel p_level) {
+void uninitialize_csg_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 }
+

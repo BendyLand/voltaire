@@ -209,7 +209,6 @@ private:
 			if (p_base == p_from) {
 				return p_base; // same thing, do nothing
 			}
-
 			if (p_from->reference()) {
 				if (p_base->refcount.unref()) {
 					memdelete(p_base);

@@ -42,35 +42,7 @@
 #include "script_editor_base.h"
 #include "servers/display/display_server.h"
 
-void ScriptEditorBase::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("name_changed"));
-
-	// First use in TextEditorBase.
-	ADD_SIGNAL(MethodInfo("edited_script_changed"));
-	ADD_SIGNAL(MethodInfo("search_in_files_requested", PropertyInfo(Variant::STRING, "text")));
-	ClassDB::bind_method(D_METHOD("add_syntax_highlighter", "highlighter"),
-		&ScriptEditorBase::add_syntax_highlighter);
-	ClassDB::bind_method(D_METHOD("get_base_editor"), &ScriptEditorBase::get_base_editor);
-
-	// First use in ScriptTextEditor.
-	ADD_SIGNAL(MethodInfo("_request_save_new_history", PropertyInfo(Variant::DICTIONARY, "state")));
-	ADD_SIGNAL(
-		MethodInfo("_request_save_previous_state", PropertyInfo(Variant::DICTIONARY, "state")));
-	ADD_SIGNAL(MethodInfo("request_help", PropertyInfo(Variant::STRING, "topic")));
-	ADD_SIGNAL(MethodInfo("request_open_script_at_line", PropertyInfo(Variant::OBJECT, "script"),
-		PropertyInfo(Variant::INT, "line")));
-	ADD_SIGNAL(MethodInfo("go_to_help", PropertyInfo(Variant::STRING, "what")));
-	ADD_SIGNAL(MethodInfo("replace_in_files_requested", PropertyInfo(Variant::STRING, "text")));
-	ADD_SIGNAL(MethodInfo("go_to_method", PropertyInfo(Variant::OBJECT, "script"),
-		PropertyInfo(Variant::STRING, "method")));
-
-#ifndef DISABLE_DEPRECATED
-	ADD_SIGNAL(MethodInfo("request_save_history"));
-	ADD_SIGNAL(
-		MethodInfo("request_save_previous_state", PropertyInfo(Variant::DICTIONARY, "state")));
-#endif
-}
+void ScriptEditorBase::_bind_methods() {}
 
 String ScriptEditorBase::get_name()
 {
@@ -745,7 +717,7 @@ void TextEditorBase::enable_editor()
 
 void TextEditorBase::set_tooltip_request_func(const Callable& p_toolip_callback)
 {
-	Variant args[1] = {this};
+	Variant args[1] = {(Object*)this};
 	const Variant* argp[] = {&args[0]};
 	code_editor->get_text_editor()->set_tooltip_request_func(p_toolip_callback.bindp(argp, 1));
 }

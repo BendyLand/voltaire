@@ -28,15 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_scene_exporter_gltf_settings.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "core/object/script_language.h"
+#include "editor_scene_exporter_gltf_settings.h"
 
 const uint32_t PROP_EDITOR_SCRIPT_VAR = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_SCRIPT_VARIABLE;
 
-bool EditorSceneExporterGLTFSettings::_set(const StringName &p_name, const Variant &p_value) {
+bool EditorSceneExporterGLTFSettings::_set(const StringName& p_name, const Variant& p_value)
+{
 	String name_str = String(p_name);
 	if (name_str.contains_char('/')) {
 		return _set_extension_setting(name_str, p_value);
@@ -70,7 +70,8 @@ bool EditorSceneExporterGLTFSettings::_set(const StringName &p_name, const Varia
 	return false;
 }
 
-bool EditorSceneExporterGLTFSettings::_get(const StringName &p_name, Variant &r_ret) const {
+bool EditorSceneExporterGLTFSettings::_get(const StringName& p_name, Variant& r_ret) const
+{
 	String name_str = String(p_name);
 	if (name_str.contains_char('/')) {
 		return _get_extension_setting(name_str, r_ret);
@@ -102,34 +103,44 @@ bool EditorSceneExporterGLTFSettings::_get(const StringName &p_name, Variant &r_
 	return false;
 }
 
-void EditorSceneExporterGLTFSettings::_get_property_list(List<PropertyInfo> *p_list) const {
+void EditorSceneExporterGLTFSettings::_get_property_list(List<PropertyInfo>* p_list) const
+{
 	for (PropertyInfo prop : _property_list) {
 		if (prop.name == "lossy_quality") {
 			const String image_format = get("image_format");
-			const bool is_image_format_lossy = image_format == "JPEG" || image_format.containsn("Lossy");
+			const bool is_image_format_lossy =
+				image_format == "JPEG" || image_format.containsn("Lossy");
 			prop.usage = is_image_format_lossy ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE;
 		}
 		if (prop.name == "fallback_image_format") {
 			const String image_format = get("image_format");
-			const bool is_image_format_extension = image_format != "None" && image_format != "PNG" && image_format != "JPEG";
-			prop.usage = is_image_format_extension ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE;
+			const bool is_image_format_extension =
+				image_format != "None" && image_format != "PNG" && image_format != "JPEG";
+			prop.usage =
+				is_image_format_extension ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE;
 		}
 		if (prop.name == "fallback_image_quality") {
 			const String image_format = get("image_format");
-			const bool is_image_format_extension = image_format != "None" && image_format != "PNG" && image_format != "JPEG";
+			const bool is_image_format_extension =
+				image_format != "None" && image_format != "PNG" && image_format != "JPEG";
 			const String fallback_format = get("fallback_image_format");
-			prop.usage = (is_image_format_extension && fallback_format != "None") ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE;
+			prop.usage = (is_image_format_extension && fallback_format != "None")
+							 ? PROPERTY_USAGE_DEFAULT
+							 : PROPERTY_USAGE_STORAGE;
 		}
 		p_list->push_back(prop);
 	}
 }
 
-void EditorSceneExporterGLTFSettings::_on_extension_property_list_changed() {
+void EditorSceneExporterGLTFSettings::_on_extension_property_list_changed()
+{
 	generate_property_list(_document);
 	emit_signal(CoreStringName(property_list_changed));
 }
 
-bool EditorSceneExporterGLTFSettings::_set_extension_setting(const String &p_name_str, const Variant &p_value) {
+bool EditorSceneExporterGLTFSettings::_set_extension_setting(
+	const String& p_name_str, const Variant& p_value)
+{
 	PackedStringArray split = String(p_name_str).split("/", true, 1);
 	if (!_config_name_to_extension_map.has(split[0])) {
 		return false;
@@ -140,7 +151,9 @@ bool EditorSceneExporterGLTFSettings::_set_extension_setting(const String &p_nam
 	return valid;
 }
 
-bool EditorSceneExporterGLTFSettings::_get_extension_setting(const String &p_name_str, Variant &r_ret) const {
+bool EditorSceneExporterGLTFSettings::_get_extension_setting(
+	const String& p_name_str, Variant& r_ret) const
+{
 	PackedStringArray split = String(p_name_str).split("/", true, 1);
 	if (!_config_name_to_extension_map.has(split[0])) {
 		return false;
@@ -151,20 +164,24 @@ bool EditorSceneExporterGLTFSettings::_get_extension_setting(const String &p_nam
 	return valid;
 }
 
-String get_friendly_config_prefix(Ref<GLTFDocumentExtension> p_extension) {
+String get_friendly_config_prefix(Ref<GLTFDocumentExtension> p_extension)
+{
 	String config_prefix = p_extension->get_name();
 	if (!config_prefix.is_empty()) {
 		return config_prefix;
 	}
 	const Ref<Script> script = p_extension->get_script();
 	if (script.is_valid()) {
-		config_prefix = String(script->get_global_name()).trim_prefix("GLTFDocumentExtension").trim_suffix("GLTFDocumentExtension");
+		config_prefix = String(script->get_global_name())
+							.trim_prefix("GLTFDocumentExtension")
+							.trim_suffix("GLTFDocumentExtension");
 		if (!config_prefix.is_empty()) {
 			return config_prefix;
 		}
 	}
 	const String class_name = p_extension->get_class_name();
-	config_prefix = class_name.trim_prefix("GLTFDocumentExtension").trim_suffix("GLTFDocumentExtension");
+	config_prefix =
+		class_name.trim_prefix("GLTFDocumentExtension").trim_suffix("GLTFDocumentExtension");
 	if (!config_prefix.is_empty()) {
 		return config_prefix;
 	}
@@ -175,9 +192,10 @@ String get_friendly_config_prefix(Ref<GLTFDocumentExtension> p_extension) {
 	return "Unknown GLTFDocumentExtension";
 }
 
-bool is_any_node_invisible(Node *p_node) {
-	if (p_node->has_method("is_visible")) {
-		bool visible = p_node->call("is_visible");
+bool is_any_node_invisible(Node* p_node)
+{
+	if (p_node->obj->has_method("is_visible")) {
+		bool visible = p_node->obj->call("is_visible");
 		if (!visible) {
 			return true;
 		}
@@ -191,38 +209,48 @@ bool is_any_node_invisible(Node *p_node) {
 }
 
 // Run this before popping up the export settings, because the extensions may have changed.
-void EditorSceneExporterGLTFSettings::generate_property_list(Ref<GLTFDocument> p_document, Node *p_root) {
+void EditorSceneExporterGLTFSettings::generate_property_list(
+	Ref<GLTFDocument> p_document, Node* p_root)
+{
 	_property_list.clear();
 	_document = p_document;
 	String image_format_hint_string = "None,PNG,JPEG";
-	const Vector<Ref<GLTFDocumentExtension>> all_extensions = GLTFDocument::get_all_gltf_document_extensions();
+	const Vector<Ref<GLTFDocumentExtension>> all_extensions =
+		GLTFDocument::get_all_gltf_document_extensions();
 	// If an extension allows saving images in different formats, add to the enum.
-	for (const Ref<GLTFDocumentExtension> &extension : all_extensions) {
+	for (const Ref<GLTFDocumentExtension>& extension : all_extensions) {
 		PackedStringArray saveable_image_formats = extension->get_saveable_image_formats();
 		for (int i = 0; i < saveable_image_formats.size(); i++) {
 			image_format_hint_string += "," + saveable_image_formats[i];
 		}
 	}
 	// Add top-level properties (in addition to what _bind_methods registers).
-	PropertyInfo image_format_prop = PropertyInfo(Variant::STRING, "image_format", PROPERTY_HINT_ENUM, image_format_hint_string);
+	PropertyInfo image_format_prop =
+		PropertyInfo(Variant::STRING, "image_format", PROPERTY_HINT_ENUM, image_format_hint_string);
 	_property_list.push_back(image_format_prop);
-	PropertyInfo lossy_quality_prop = PropertyInfo(Variant::FLOAT, "lossy_quality", PROPERTY_HINT_RANGE, "0,1,0.01");
+	PropertyInfo lossy_quality_prop =
+		PropertyInfo(Variant::FLOAT, "lossy_quality", PROPERTY_HINT_RANGE, "0,1,0.01");
 	_property_list.push_back(lossy_quality_prop);
-	PropertyInfo fallback_image_format_prop = PropertyInfo(Variant::STRING, "fallback_image_format", PROPERTY_HINT_ENUM, "None,PNG,JPEG");
+	PropertyInfo fallback_image_format_prop =
+		PropertyInfo(Variant::STRING, "fallback_image_format", PROPERTY_HINT_ENUM, "None,PNG,JPEG");
 	_property_list.push_back(fallback_image_format_prop);
-	PropertyInfo fallback_image_quality_prop = PropertyInfo(Variant::FLOAT, "fallback_image_quality", PROPERTY_HINT_RANGE, "0,1,0.01");
+	PropertyInfo fallback_image_quality_prop =
+		PropertyInfo(Variant::FLOAT, "fallback_image_quality", PROPERTY_HINT_RANGE, "0,1,0.01");
 	_property_list.push_back(fallback_image_quality_prop);
-	PropertyInfo root_node_mode_prop = PropertyInfo(Variant::INT, "root_node_mode", PROPERTY_HINT_ENUM, "Single Root,Keep Root,Multi Root");
+	PropertyInfo root_node_mode_prop = PropertyInfo(
+		Variant::INT, "root_node_mode", PROPERTY_HINT_ENUM, "Single Root,Keep Root,Multi Root");
 	_property_list.push_back(root_node_mode_prop);
 	// If the scene contains any non-visible nodes, show the visibility mode setting.
 	if (p_root != nullptr && is_any_node_invisible(p_root)) {
-		PropertyInfo visibility_mode_prop = PropertyInfo(Variant::INT, "visibility_mode", PROPERTY_HINT_ENUM, "Include & Required,Include & Optional,Exclude");
+		PropertyInfo visibility_mode_prop = PropertyInfo(Variant::INT, "visibility_mode",
+			PROPERTY_HINT_ENUM, "Include & Required,Include & Optional,Exclude");
 		_property_list.push_back(visibility_mode_prop);
 	}
 	// Now that the above code set up base glTF stuff, add properties from all document extensions.
-	for (const Ref<GLTFDocumentExtension> &extension : all_extensions) {
+	for (const Ref<GLTFDocumentExtension>& extension : all_extensions) {
 		// Set up to listen for property changes.
-		const Callable on_prop_changed = callable_mp(this, &EditorSceneExporterGLTFSettings::_on_extension_property_list_changed);
+		const Callable on_prop_changed = callable_mp(
+			this, &EditorSceneExporterGLTFSettings::_on_extension_property_list_changed);
 		if (!extension->is_connected(CoreStringName(property_list_changed), on_prop_changed)) {
 			extension->connect(CoreStringName(property_list_changed), on_prop_changed);
 		}
@@ -230,14 +258,14 @@ void EditorSceneExporterGLTFSettings::generate_property_list(Ref<GLTFDocument> p
 		_config_name_to_extension_map[config_prefix] = extension;
 		// Look through the extension's properties and find the relevant ones.
 		List<PropertyInfo> export_prop_list = extension->export_get_property_list(p_root);
-		for (const PropertyInfo &prop : export_prop_list) {
+		for (const PropertyInfo& prop : export_prop_list) {
 			PropertyInfo ext_prop = prop;
 			ext_prop.name = config_prefix + "/" + prop.name;
 			_property_list.push_back(ext_prop);
 		}
 		List<PropertyInfo> ext_prop_list;
 		extension->get_property_list(&ext_prop_list);
-		for (const PropertyInfo &prop : ext_prop_list) {
+		for (const PropertyInfo& prop : ext_prop_list) {
 			// We only want properties that will show up in the exporter
 			// settings list. Exclude Resource's properties, as they are
 			// not relevant to the exporter. Include any user-defined script
@@ -251,28 +279,36 @@ void EditorSceneExporterGLTFSettings::generate_property_list(Ref<GLTFDocument> p
 	}
 }
 
-String EditorSceneExporterGLTFSettings::get_copyright() const {
-	return _copyright;
-}
+String EditorSceneExporterGLTFSettings::get_copyright() const { return _copyright; }
 
-void EditorSceneExporterGLTFSettings::set_copyright(const String &p_copyright) {
+void EditorSceneExporterGLTFSettings::set_copyright(const String& p_copyright)
+{
 	_copyright = p_copyright;
 }
 
-void EditorSceneExporterGLTFSettings::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_copyright"), &EditorSceneExporterGLTFSettings::get_copyright);
-	ClassDB::bind_method(D_METHOD("set_copyright", "copyright"), &EditorSceneExporterGLTFSettings::set_copyright);
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "copyright", PROPERTY_HINT_PLACEHOLDER_TEXT, "Example: 2014 Godette"), "set_copyright", "get_copyright");
+void EditorSceneExporterGLTFSettings::_bind_methods()
+{
+	ClassDB::bind_method(
+		D_METHOD("get_copyright"), &EditorSceneExporterGLTFSettings::get_copyright);
+	ClassDB::bind_method(
+		D_METHOD("set_copyright", "copyright"), &EditorSceneExporterGLTFSettings::set_copyright);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "copyright", PROPERTY_HINT_PLACEHOLDER_TEXT,
+					 "Example: 2014 Godette"),
+		"set_copyright", "get_copyright");
 
 	ClassDB::bind_method(D_METHOD("get_bake_fps"), &EditorSceneExporterGLTFSettings::get_bake_fps);
-	ClassDB::bind_method(D_METHOD("set_bake_fps", "bake_fps"), &EditorSceneExporterGLTFSettings::set_bake_fps);
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bake_fps", PROPERTY_HINT_RANGE, "0.001,120,0.0001,or_greater"), "set_bake_fps", "get_bake_fps");
+	ClassDB::bind_method(
+		D_METHOD("set_bake_fps", "bake_fps"), &EditorSceneExporterGLTFSettings::set_bake_fps);
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bake_fps", PROPERTY_HINT_RANGE,
+					 "0.001,120,0.0001,or_greater"),
+		"set_bake_fps", "get_bake_fps");
 }
 
-double EditorSceneExporterGLTFSettings::get_bake_fps() const {
-	return _bake_fps;
-}
+double EditorSceneExporterGLTFSettings::get_bake_fps() const { return _bake_fps; }
 
-void EditorSceneExporterGLTFSettings::set_bake_fps(const double p_bake_fps) {
+void EditorSceneExporterGLTFSettings::set_bake_fps(const double p_bake_fps)
+{
 	_bake_fps = p_bake_fps;
 }
+
+

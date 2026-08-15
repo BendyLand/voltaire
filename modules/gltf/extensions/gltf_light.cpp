@@ -37,35 +37,7 @@
 
 #include <cfloat> // FLT_MAX
 
-void GLTFLight::_bind_methods() {
-	ClassDB::bind_static_method("GLTFLight", D_METHOD("from_node", "light_node"), &GLTFLight::from_node);
-	ClassDB::bind_method(D_METHOD("to_node"), &GLTFLight::to_node);
-
-	ClassDB::bind_static_method("GLTFLight", D_METHOD("from_dictionary", "dictionary"), &GLTFLight::from_dictionary);
-	ClassDB::bind_method(D_METHOD("to_dictionary"), &GLTFLight::to_dictionary);
-
-	ClassDB::bind_method(D_METHOD("get_color"), &GLTFLight::get_color);
-	ClassDB::bind_method(D_METHOD("set_color", "color"), &GLTFLight::set_color);
-	ClassDB::bind_method(D_METHOD("get_intensity"), &GLTFLight::get_intensity);
-	ClassDB::bind_method(D_METHOD("set_intensity", "intensity"), &GLTFLight::set_intensity);
-	ClassDB::bind_method(D_METHOD("get_light_type"), &GLTFLight::get_light_type);
-	ClassDB::bind_method(D_METHOD("set_light_type", "light_type"), &GLTFLight::set_light_type);
-	ClassDB::bind_method(D_METHOD("get_range"), &GLTFLight::get_range);
-	ClassDB::bind_method(D_METHOD("set_range", "range"), &GLTFLight::set_range);
-	ClassDB::bind_method(D_METHOD("get_inner_cone_angle"), &GLTFLight::get_inner_cone_angle);
-	ClassDB::bind_method(D_METHOD("set_inner_cone_angle", "inner_cone_angle"), &GLTFLight::set_inner_cone_angle);
-	ClassDB::bind_method(D_METHOD("get_outer_cone_angle"), &GLTFLight::get_outer_cone_angle);
-	ClassDB::bind_method(D_METHOD("set_outer_cone_angle", "outer_cone_angle"), &GLTFLight::set_outer_cone_angle);
-	ClassDB::bind_method(D_METHOD("get_additional_data", "extension_name"), &GLTFLight::get_additional_data);
-	ClassDB::bind_method(D_METHOD("set_additional_data", "extension_name", "additional_data"), &GLTFLight::set_additional_data);
-
-	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "color"), "set_color", "get_color"); // Color
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "intensity"), "set_intensity", "get_intensity"); // float
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "light_type"), "set_light_type", "get_light_type"); // String
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "range"), "set_range", "get_range"); // float
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inner_cone_angle"), "set_inner_cone_angle", "get_inner_cone_angle"); // float
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "outer_cone_angle"), "set_outer_cone_angle", "get_outer_cone_angle"); // float
-}
+void GLTFLight::_bind_methods() {}
 
 void GLTFLight::set_cone_inner_attenuation_conversion_expressions(Ref<GLTFObjectModelProperty> &r_obj_model_prop) {
 	// Expression to convert glTF innerConeAngle to Godot spot_angle_attenuation.

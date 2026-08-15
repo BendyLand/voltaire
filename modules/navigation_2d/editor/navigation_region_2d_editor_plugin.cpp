@@ -28,17 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "navigation_region_2d_editor_plugin.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/settings/editor_settings.h"
+#include "navigation_region_2d_editor_plugin.h"
 #include "scene/2d/navigation/navigation_region_2d.h"
 #include "scene/gui/dialogs.h"
 #include "scene/main/timer.h"
 
-Ref<NavigationPolygon> NavigationRegion2DEditor::_ensure_navpoly() const {
+Ref<NavigationPolygon> NavigationRegion2DEditor::_ensure_navpoly() const
+{
 	Ref<NavigationPolygon> navpoly = node->get_navigation_polygon();
 	if (navpoly.is_null()) {
 		navpoly.instantiate();
@@ -47,40 +47,46 @@ Ref<NavigationPolygon> NavigationRegion2DEditor::_ensure_navpoly() const {
 	return navpoly;
 }
 
-Node2D *NavigationRegion2DEditor::_get_node() const {
-	return node;
-}
+Node2D* NavigationRegion2DEditor::_get_node() const { return node; }
 
-void NavigationRegion2DEditor::_set_node(Node *p_polygon) {
+void NavigationRegion2DEditor::_set_node(Node* p_polygon)
+{
 	node = Object::cast_to<NavigationRegion2D>(p_polygon);
 	if (node) {
 		Ref<NavigationPolygon> navpoly = node->get_navigation_polygon();
-		if (navpoly.is_valid() && navpoly->get_outline_count() > 0 && navpoly->get_polygon_count() == 0) {
-			// We have outlines drawn / added by the user but no polygons were created for this navmesh yet so let's bake once immediately.
+		if (navpoly.is_valid() && navpoly->get_outline_count() > 0 &&
+			navpoly->get_polygon_count() == 0) {
+			// We have outlines drawn / added by the user but no polygons were created for this
+			// navmesh yet so let's bake once immediately.
 			_rebake_timer_timeout();
 		}
 	}
 }
 
-int NavigationRegion2DEditor::_get_polygon_count() const {
+int NavigationRegion2DEditor::_get_polygon_count() const
+{
 	Ref<NavigationPolygon> navpoly = node->get_navigation_polygon();
 	if (navpoly.is_valid()) {
 		return navpoly->get_outline_count();
-	} else {
+	}
+	else {
 		return 0;
 	}
 }
 
-Variant NavigationRegion2DEditor::_get_polygon(int p_idx) const {
+Variant NavigationRegion2DEditor::_get_polygon(int p_idx) const
+{
 	Ref<NavigationPolygon> navpoly = node->get_navigation_polygon();
 	if (navpoly.is_valid()) {
 		return navpoly->get_outline(p_idx);
-	} else {
+	}
+	else {
 		return Variant(Vector<Vector2>());
 	}
 }
 
-void NavigationRegion2DEditor::_set_polygon(int p_idx, const Variant &p_polygon) const {
+void NavigationRegion2DEditor::_set_polygon(int p_idx, const Variant& p_polygon) const
+{
 	Ref<NavigationPolygon> navpoly = _ensure_navpoly();
 	navpoly->set_outline(p_idx, p_polygon);
 
@@ -89,9 +95,10 @@ void NavigationRegion2DEditor::_set_polygon(int p_idx, const Variant &p_polygon)
 	}
 }
 
-void NavigationRegion2DEditor::_action_add_polygon(const Variant &p_polygon) {
+void NavigationRegion2DEditor::_action_add_polygon(const Variant& p_polygon)
+{
 	Ref<NavigationPolygon> navpoly = _ensure_navpoly();
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->add_do_method(navpoly.ptr(), "add_outline", p_polygon);
 	undo_redo->add_undo_method(navpoly.ptr(), "remove_outline", navpoly->get_outline_count());
 
@@ -100,20 +107,24 @@ void NavigationRegion2DEditor::_action_add_polygon(const Variant &p_polygon) {
 	}
 }
 
-void NavigationRegion2DEditor::_action_remove_polygon(int p_idx) {
+void NavigationRegion2DEditor::_action_remove_polygon(int p_idx)
+{
 	Ref<NavigationPolygon> navpoly = _ensure_navpoly();
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->add_do_method(navpoly.ptr(), "remove_outline", p_idx);
-	undo_redo->add_undo_method(navpoly.ptr(), "add_outline_at_index", navpoly->get_outline(p_idx), p_idx);
+	undo_redo->add_undo_method(
+		navpoly.ptr(), "add_outline_at_index", navpoly->get_outline(p_idx), p_idx);
 
 	if (rebake_timer && _rebake_timer_delay >= 0.0) {
 		rebake_timer->start();
 	}
 }
 
-void NavigationRegion2DEditor::_action_set_polygon(int p_idx, const Variant &p_previous, const Variant &p_polygon) {
+void NavigationRegion2DEditor::_action_set_polygon(
+	int p_idx, const Variant& p_previous, const Variant& p_polygon)
+{
 	Ref<NavigationPolygon> navpoly = _ensure_navpoly();
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->add_do_method(navpoly.ptr(), "set_outline", p_idx, p_polygon);
 	undo_redo->add_undo_method(navpoly.ptr(), "set_outline", p_idx, p_previous);
 
@@ -122,25 +133,30 @@ void NavigationRegion2DEditor::_action_set_polygon(int p_idx, const Variant &p_p
 	}
 }
 
-bool NavigationRegion2DEditor::_has_resource() const {
+bool NavigationRegion2DEditor::_has_resource() const
+{
 	return node && node->get_navigation_polygon().is_valid();
 }
 
-void NavigationRegion2DEditor::_create_resource() {
+void NavigationRegion2DEditor::_create_resource()
+{
 	if (!node) {
 		return;
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Create Navigation Polygon"));
-	undo_redo->add_do_method(node, "set_navigation_polygon", Ref<NavigationPolygon>(memnew(NavigationPolygon)));
-	undo_redo->add_undo_method(node, "set_navigation_polygon", Variant(Ref<RefCounted>()));
+	undo_redo->add_do_method(node->obj.get(), "set_navigation_polygon",
+		Ref<NavigationPolygon>(memnew(NavigationPolygon)));
+	undo_redo->add_undo_method(
+		node->obj.get(), "set_navigation_polygon", Variant(Ref<RefCounted>()));
 	undo_redo->commit_action();
 
 	_menu_option(MODE_CREATE);
 }
 
-NavigationRegion2DEditor::NavigationRegion2DEditor() {
+NavigationRegion2DEditor::NavigationRegion2DEditor()
+{
 	bake_hbox = memnew(HBoxContainer);
 	add_child(bake_hbox);
 
@@ -149,15 +165,20 @@ NavigationRegion2DEditor::NavigationRegion2DEditor() {
 	bake_hbox->add_child(button_bake);
 	button_bake->set_toggle_mode(true);
 	button_bake->set_text(TTR("Bake NavigationPolygon"));
-	button_bake->set_tooltip_text(TTR("Bakes the NavigationPolygon by first parsing the scene for source geometry and then creating the navigation polygon vertices and polygons."));
-	button_bake->connect(SceneStringName(pressed), callable_mp(this, &NavigationRegion2DEditor::_bake_pressed));
+	button_bake->set_tooltip_text(
+		TTR("Bakes the NavigationPolygon by first parsing the scene for source geometry and then "
+			"creating the navigation polygon vertices and polygons."));
+	button_bake->connect(
+		SceneStringName(pressed), callable_mp(this, &NavigationRegion2DEditor::_bake_pressed));
 
 	button_reset = memnew(Button);
 	button_reset->set_flat(true);
 	bake_hbox->add_child(button_reset);
 	button_reset->set_text(TTR("Clear NavigationPolygon"));
-	button_reset->set_tooltip_text(TTR("Clears the internal NavigationPolygon outlines, vertices and polygons."));
-	button_reset->connect(SceneStringName(pressed), callable_mp(this, &NavigationRegion2DEditor::_clear_pressed));
+	button_reset->set_tooltip_text(
+		TTR("Clears the internal NavigationPolygon outlines, vertices and polygons."));
+	button_reset->connect(
+		SceneStringName(pressed), callable_mp(this, &NavigationRegion2DEditor::_clear_pressed));
 
 	bake_info = memnew(Label);
 	bake_info->set_focus_mode(FOCUS_ACCESSIBILITY);
@@ -170,7 +191,8 @@ NavigationRegion2DEditor::NavigationRegion2DEditor() {
 	if (_rebake_timer_delay >= 0.0) {
 		rebake_timer->set_wait_time(_rebake_timer_delay);
 	}
-	rebake_timer->connect("timeout", callable_mp(this, &NavigationRegion2DEditor::_rebake_timer_timeout));
+	rebake_timer->connect(
+		"timeout", callable_mp(this, &NavigationRegion2DEditor::_rebake_timer_timeout));
 
 	err_dialog = memnew(AcceptDialog);
 	err_dialog->set_flag(Window::FLAG_RESIZE_DISABLED, true);
@@ -178,24 +200,26 @@ NavigationRegion2DEditor::NavigationRegion2DEditor() {
 	node = nullptr;
 }
 
-void NavigationRegion2DEditor::_notification(int p_what) {
+void NavigationRegion2DEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			button_bake->set_button_icon(get_editor_theme_icon(SNAME("Bake")));
-			button_reset->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
-		} break;
-		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-			if (rebake_timer) {
-				_rebake_timer_delay = EDITOR_GET("editors/polygon_editor/auto_bake_delay");
-				if (_rebake_timer_delay >= 0.0) {
-					rebake_timer->set_wait_time(_rebake_timer_delay);
-				}
+	case NOTIFICATION_ENTER_TREE: {
+		button_bake->set_button_icon(get_editor_theme_icon(SNAME("Bake")));
+		button_reset->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
+	} break;
+	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+		if (rebake_timer) {
+			_rebake_timer_delay = EDITOR_GET("editors/polygon_editor/auto_bake_delay");
+			if (_rebake_timer_delay >= 0.0) {
+				rebake_timer->set_wait_time(_rebake_timer_delay);
 			}
-		} break;
+		}
+	} break;
 	}
 }
 
-void NavigationRegion2DEditor::_bake_pressed() {
+void NavigationRegion2DEditor::_bake_pressed()
+{
 	if (rebake_timer) {
 		rebake_timer->stop();
 	}
@@ -204,7 +228,8 @@ void NavigationRegion2DEditor::_bake_pressed() {
 	ERR_FAIL_NULL(node);
 	Ref<NavigationPolygon> navigation_polygon = node->get_navigation_polygon();
 	if (navigation_polygon.is_null()) {
-		err_dialog->set_text(TTR("A NavigationPolygon resource must be set or created for this node to work."));
+		err_dialog->set_text(
+			TTR("A NavigationPolygon resource must be set or created for this node to work."));
 		err_dialog->popup_centered();
 		return;
 	}
@@ -214,7 +239,8 @@ void NavigationRegion2DEditor::_bake_pressed() {
 	node->queue_redraw();
 }
 
-void NavigationRegion2DEditor::_clear_pressed() {
+void NavigationRegion2DEditor::_clear_pressed()
+{
 	if (rebake_timer) {
 		rebake_timer->stop();
 	}
@@ -234,19 +260,22 @@ void NavigationRegion2DEditor::_clear_pressed() {
 	}
 }
 
-void NavigationRegion2DEditor::_update_polygon_editing_state() {
+void NavigationRegion2DEditor::_update_polygon_editing_state()
+{
 	if (!_get_node()) {
 		return;
 	}
 
 	if (node != nullptr && node->get_navigation_polygon().is_valid()) {
 		bake_hbox->show();
-	} else {
+	}
+	else {
 		bake_hbox->hide();
 	}
 }
 
-void NavigationRegion2DEditor::_rebake_timer_timeout() {
+void NavigationRegion2DEditor::_rebake_timer_timeout()
+{
 	if (!node) {
 		return;
 	}
@@ -259,6 +288,9 @@ void NavigationRegion2DEditor::_rebake_timer_timeout() {
 	node->queue_redraw();
 }
 
-NavigationRegion2DEditorPlugin::NavigationRegion2DEditorPlugin() :
-		AbstractPolygon2DEditorPlugin(memnew(NavigationRegion2DEditor), "NavigationRegion2D") {
+NavigationRegion2DEditorPlugin::NavigationRegion2DEditorPlugin()
+	: AbstractPolygon2DEditorPlugin(memnew(NavigationRegion2DEditor), "NavigationRegion2D")
+{
 }
+
+

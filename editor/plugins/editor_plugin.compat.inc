@@ -44,13 +44,7 @@ void EditorPlugin::_add_control_to_dock_bind_compat_88081(DockSlot p_slot, Contr
 	return add_control_to_dock(p_slot, p_control, nullptr);
 }
 
-void EditorPlugin::_bind_compatibility_methods()
-{
-	ClassDB::bind_compatibility_method(D_METHOD("add_control_to_bottom_panel", "control", "title"),
-		&EditorPlugin::_add_control_to_bottom_panel_bind_compat_88081);
-	ClassDB::bind_compatibility_method(D_METHOD("add_control_to_dock", "slot", "control"),
-		&EditorPlugin::_add_control_to_dock_bind_compat_88081);
-}
+void EditorPlugin::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 

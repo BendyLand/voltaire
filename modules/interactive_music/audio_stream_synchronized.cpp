@@ -29,14 +29,13 @@
 /**************************************************************************/
 
 #include "audio_stream_synchronized.h"
-
 #include "core/math/math_funcs.h"
 #include "core/object/class_db.h"
 
-AudioStreamSynchronized::AudioStreamSynchronized() {
-}
+AudioStreamSynchronized::AudioStreamSynchronized() {}
 
-Ref<AudioStreamPlayback> AudioStreamSynchronized::instantiate_playback() {
+Ref<AudioStreamPlayback> AudioStreamSynchronized::instantiate_playback()
+{
 	Ref<AudioStreamPlaybackSynchronized> playback_playlist;
 	playback_playlist.instantiate();
 	playback_playlist->stream = Ref<AudioStreamSynchronized>(this);
@@ -45,35 +44,40 @@ Ref<AudioStreamPlayback> AudioStreamSynchronized::instantiate_playback() {
 	return playback_playlist;
 }
 
-void AudioStreamSynchronized::set_sync_stream(int p_stream_index, Ref<AudioStream> p_stream) {
+void AudioStreamSynchronized::set_sync_stream(int p_stream_index, Ref<AudioStream> p_stream)
+{
 	ERR_FAIL_COND(p_stream == this);
 	ERR_FAIL_INDEX(p_stream_index, MAX_STREAMS);
 
 	AudioServer::get_singleton()->lock();
 	audio_streams[p_stream_index] = p_stream;
-	for (AudioStreamPlaybackSynchronized *E : playbacks) {
+	for (AudioStreamPlaybackSynchronized* E : playbacks) {
 		E->_update_playback_instances();
 	}
 	AudioServer::get_singleton()->unlock();
 }
 
-Ref<AudioStream> AudioStreamSynchronized::get_sync_stream(int p_stream_index) const {
+Ref<AudioStream> AudioStreamSynchronized::get_sync_stream(int p_stream_index) const
+{
 	ERR_FAIL_INDEX_V(p_stream_index, MAX_STREAMS, Ref<AudioStream>());
 
 	return audio_streams[p_stream_index];
 }
 
-void AudioStreamSynchronized::set_sync_stream_volume(int p_stream_index, float p_db) {
+void AudioStreamSynchronized::set_sync_stream_volume(int p_stream_index, float p_db)
+{
 	ERR_FAIL_INDEX(p_stream_index, MAX_STREAMS);
 	audio_stream_volume_db[p_stream_index] = p_db;
 }
 
-float AudioStreamSynchronized::get_sync_stream_volume(int p_stream_index) const {
+float AudioStreamSynchronized::get_sync_stream_volume(int p_stream_index) const
+{
 	ERR_FAIL_INDEX_V(p_stream_index, MAX_STREAMS, 0);
 	return audio_stream_volume_db[p_stream_index];
 }
 
-double AudioStreamSynchronized::get_bpm() const {
+double AudioStreamSynchronized::get_bpm() const
+{
 	for (int i = 0; i < stream_count; i++) {
 		if (audio_streams[i].is_valid()) {
 			double bpm = audio_streams[i]->get_bpm();
@@ -85,7 +89,8 @@ double AudioStreamSynchronized::get_bpm() const {
 	return 0.0;
 }
 
-int AudioStreamSynchronized::get_beat_count() const {
+int AudioStreamSynchronized::get_beat_count() const
+{
 	int max_beats = 0;
 	for (int i = 0; i < stream_count; i++) {
 		if (audio_streams[i].is_valid()) {
@@ -95,7 +100,8 @@ int AudioStreamSynchronized::get_beat_count() const {
 	return max_beats;
 }
 
-int AudioStreamSynchronized::get_bar_beats() const {
+int AudioStreamSynchronized::get_bar_beats() const
+{
 	for (int i = 0; i < stream_count; i++) {
 		if (audio_streams[i].is_valid()) {
 			int bar_beats = audio_streams[i]->get_bar_beats();
@@ -107,7 +113,8 @@ int AudioStreamSynchronized::get_bar_beats() const {
 	return 0;
 }
 
-bool AudioStreamSynchronized::has_loop() const {
+bool AudioStreamSynchronized::has_loop() const
+{
 	for (int i = 0; i < stream_count; i++) {
 		if (audio_streams[i].is_valid()) {
 			if (audio_streams[i]->has_loop()) {
@@ -118,7 +125,8 @@ bool AudioStreamSynchronized::has_loop() const {
 	return false;
 }
 
-double AudioStreamSynchronized::get_length() const {
+double AudioStreamSynchronized::get_length() const
+{
 	double max_length = 0.0;
 	for (int i = 0; i < stream_count; i++) {
 		if (audio_streams[i].is_valid()) {
@@ -128,7 +136,8 @@ double AudioStreamSynchronized::get_length() const {
 	return max_length;
 }
 
-void AudioStreamSynchronized::set_stream_count(int p_count) {
+void AudioStreamSynchronized::set_stream_count(int p_count)
+{
 	ERR_FAIL_COND(p_count < 0 || p_count > MAX_STREAMS);
 	AudioServer::get_singleton()->lock();
 	stream_count = p_count;
@@ -136,11 +145,10 @@ void AudioStreamSynchronized::set_stream_count(int p_count) {
 	notify_property_list_changed();
 }
 
-int AudioStreamSynchronized::get_stream_count() const {
-	return stream_count;
-}
+int AudioStreamSynchronized::get_stream_count() const { return stream_count; }
 
-void AudioStreamSynchronized::_validate_property(PropertyInfo &property) const {
+void AudioStreamSynchronized::_validate_property(PropertyInfo& property) const
+{
 	String prop = property.name;
 	if (prop != "stream_count" && prop.begins_with("stream_")) {
 		int stream = prop.get_slicec('/', 0).get_slicec('_', 1).to_int();
@@ -150,38 +158,22 @@ void AudioStreamSynchronized::_validate_property(PropertyInfo &property) const {
 	}
 }
 
-void AudioStreamSynchronized::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_stream_count", "stream_count"), &AudioStreamSynchronized::set_stream_count);
-	ClassDB::bind_method(D_METHOD("get_stream_count"), &AudioStreamSynchronized::get_stream_count);
-
-	ClassDB::bind_method(D_METHOD("set_sync_stream", "stream_index", "audio_stream"), &AudioStreamSynchronized::set_sync_stream);
-	ClassDB::bind_method(D_METHOD("get_sync_stream", "stream_index"), &AudioStreamSynchronized::get_sync_stream);
-	ClassDB::bind_method(D_METHOD("set_sync_stream_volume", "stream_index", "volume_db"), &AudioStreamSynchronized::set_sync_stream_volume);
-	ClassDB::bind_method(D_METHOD("get_sync_stream_volume", "stream_index"), &AudioStreamSynchronized::get_sync_stream_volume);
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "stream_count", PROPERTY_HINT_RANGE, "0," + itos(MAX_STREAMS), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Streams,stream_,unfoldable,page_size=999,add_button_text=" + String(TTRC("Add Stream"))), "set_stream_count", "get_stream_count");
-
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		ADD_PROPERTYI(PropertyInfo(Variant::OBJECT, "stream_" + itos(i) + "/stream", PROPERTY_HINT_RESOURCE_TYPE, AudioStream::get_class_static(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_INTERNAL), "set_sync_stream", "get_sync_stream", i);
-		ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "stream_" + itos(i) + "/volume", PROPERTY_HINT_RANGE, "-60,12,0.01,suffix:db", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_INTERNAL), "set_sync_stream_volume", "get_sync_stream_volume", i);
-	}
-
-	BIND_CONSTANT(MAX_STREAMS);
-}
+void AudioStreamSynchronized::_bind_methods() {}
 
 //////////////////////
 //////////////////////
 
-AudioStreamPlaybackSynchronized::AudioStreamPlaybackSynchronized() {
-}
+AudioStreamPlaybackSynchronized::AudioStreamPlaybackSynchronized() {}
 
-AudioStreamPlaybackSynchronized::~AudioStreamPlaybackSynchronized() {
+AudioStreamPlaybackSynchronized::~AudioStreamPlaybackSynchronized()
+{
 	if (stream.is_valid()) {
 		stream->playbacks.erase(this);
 	}
 }
 
-void AudioStreamPlaybackSynchronized::stop() {
+void AudioStreamPlaybackSynchronized::stop()
+{
 	active = false;
 	for (int i = 0; i < stream->stream_count; i++) {
 		if (playback[i].is_valid()) {
@@ -190,7 +182,8 @@ void AudioStreamPlaybackSynchronized::stop() {
 	}
 }
 
-void AudioStreamPlaybackSynchronized::start(double p_from_pos) {
+void AudioStreamPlaybackSynchronized::start(double p_from_pos)
+{
 	if (active) {
 		stop();
 	}
@@ -203,7 +196,8 @@ void AudioStreamPlaybackSynchronized::start(double p_from_pos) {
 	}
 }
 
-void AudioStreamPlaybackSynchronized::seek(double p_time) {
+void AudioStreamPlaybackSynchronized::seek(double p_time)
+{
 	for (int i = 0; i < stream->stream_count; i++) {
 		if (playback[i].is_valid()) {
 			playback[i]->seek(p_time);
@@ -211,7 +205,8 @@ void AudioStreamPlaybackSynchronized::seek(double p_time) {
 	}
 }
 
-int AudioStreamPlaybackSynchronized::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
+int AudioStreamPlaybackSynchronized::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames)
+{
 	if (!active) {
 		return 0;
 	}
@@ -233,7 +228,8 @@ int AudioStreamPlaybackSynchronized::mix(AudioFrame *p_buffer, float p_rate_scal
 					}
 					first = false;
 					any_active = true;
-				} else {
+				}
+				else {
 					playback[i]->mix(mix_buffer, p_rate_scale, to_mix);
 					for (int j = 0; j < to_mix; j++) {
 						p_buffer[j] += mix_buffer[j] * volume;
@@ -259,7 +255,8 @@ int AudioStreamPlaybackSynchronized::mix(AudioFrame *p_buffer, float p_rate_scal
 	return p_frames;
 }
 
-void AudioStreamPlaybackSynchronized::tag_used_streams() {
+void AudioStreamPlaybackSynchronized::tag_used_streams()
+{
 	if (active) {
 		for (int i = 0; i < stream->stream_count; i++) {
 			if (playback[i].is_valid() && playback[i]->is_playing()) {
@@ -270,7 +267,8 @@ void AudioStreamPlaybackSynchronized::tag_used_streams() {
 	}
 }
 
-int AudioStreamPlaybackSynchronized::get_loop_count() const {
+int AudioStreamPlaybackSynchronized::get_loop_count() const
+{
 	int min_loops = 0;
 	bool min_loops_found = false;
 	for (int i = 0; i < stream->stream_count; i++) {
@@ -285,7 +283,8 @@ int AudioStreamPlaybackSynchronized::get_loop_count() const {
 	return min_loops;
 }
 
-double AudioStreamPlaybackSynchronized::get_playback_position() const {
+double AudioStreamPlaybackSynchronized::get_playback_position() const
+{
 	float max_pos = 0;
 	bool pos_found = false;
 	for (int i = 0; i < stream->stream_count; i++) {
@@ -300,18 +299,20 @@ double AudioStreamPlaybackSynchronized::get_playback_position() const {
 	return max_pos;
 }
 
-bool AudioStreamPlaybackSynchronized::is_playing() const {
-	return active;
-}
+bool AudioStreamPlaybackSynchronized::is_playing() const { return active; }
 
-void AudioStreamPlaybackSynchronized::_update_playback_instances() {
+void AudioStreamPlaybackSynchronized::_update_playback_instances()
+{
 	stop();
 
 	for (int i = 0; i < stream->stream_count; i++) {
 		if (stream->audio_streams[i].is_valid()) {
 			playback[i] = stream->audio_streams[i]->instantiate_playback();
-		} else {
+		}
+		else {
 			playback[i].unref();
 		}
 	}
 }
+
+

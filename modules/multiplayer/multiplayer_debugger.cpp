@@ -28,18 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "multiplayer_debugger.h"
-
-#include "multiplayer_synchronizer.h"
-#include "scene_replication_config.h"
-
 #include "core/debugger/engine_debugger.h"
 #include "core/os/os.h"
+#include "multiplayer_debugger.h"
+#include "multiplayer_synchronizer.h"
 #include "scene/main/node.h"
+#include "scene_replication_config.h"
 
 List<Ref<EngineProfiler>> multiplayer_profilers;
 
-void MultiplayerDebugger::initialize() {
+void MultiplayerDebugger::initialize()
+{
 	Ref<BandwidthProfiler> bandwidth;
 	bandwidth.instantiate();
 	bandwidth->bind("multiplayer:bandwidth");
@@ -55,29 +54,32 @@ void MultiplayerDebugger::initialize() {
 	replication_profiler->bind("multiplayer:replication");
 	multiplayer_profilers.push_back(replication_profiler);
 
-	EngineDebugger::register_message_capture("multiplayer", EngineDebugger::Capture(nullptr, &_capture));
+	EngineDebugger::register_message_capture(
+		"multiplayer", EngineDebugger::Capture(nullptr, &_capture));
 }
 
-void MultiplayerDebugger::deinitialize() {
-	multiplayer_profilers.clear();
-}
+void MultiplayerDebugger::deinitialize() { multiplayer_profilers.clear(); }
 
-Error MultiplayerDebugger::_capture(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured) {
+Error MultiplayerDebugger::_capture(
+	void* p_user, const String& p_msg, const Array& p_args, bool& r_captured)
+{
 	if (p_msg == "cache") {
 		Array out;
 		for (int i = 0; i < p_args.size(); i++) {
 			ObjectID id = p_args[i].operator ObjectID();
-			Object *obj = ObjectDB::get_instance(id);
+			Object* obj = ObjectDB::get_instance(id);
 			ERR_CONTINUE(!obj);
 			if (Object::cast_to<SceneReplicationConfig>(obj)) {
 				out.push_back(id);
 				out.push_back(obj->get_class());
-				out.push_back(((SceneReplicationConfig *)obj)->get_path());
-			} else if (Object::cast_to<Node>(obj)) {
+				out.push_back(((SceneReplicationConfig*)obj)->get_path());
+			}
+			else if (Object::cast_to<Node>(obj)) {
 				out.push_back(id);
 				out.push_back(obj->get_class());
-				out.push_back(String(((Node *)obj)->get_path()));
-			} else {
+				out.push_back(String(((Node*)obj)->get_path()));
+			}
+			else {
 				ERR_FAIL_V(FAILED);
 			}
 		}
@@ -89,7 +91,9 @@ Error MultiplayerDebugger::_capture(void *p_user, const String &p_msg, const Arr
 
 // BandwidthProfiler
 
-int MultiplayerDebugger::BandwidthProfiler::bandwidth_usage(const Vector<BandwidthFrame> &p_buffer, int p_pointer) {
+int MultiplayerDebugger::BandwidthProfiler::bandwidth_usage(
+	const Vector<BandwidthFrame>& p_buffer, int p_pointer)
+{
 	ERR_FAIL_COND_V(p_buffer.is_empty(), 0);
 	int total_bandwidth = 0;
 
@@ -106,15 +110,18 @@ int MultiplayerDebugger::BandwidthProfiler::bandwidth_usage(const Vector<Bandwid
 		i = (i + p_buffer.size() - 1) % p_buffer.size();
 	}
 
-	ERR_FAIL_COND_V_MSG(i == p_pointer, total_bandwidth, "Reached the end of the bandwidth profiler buffer, values might be inaccurate.");
+	ERR_FAIL_COND_V_MSG(i == p_pointer, total_bandwidth,
+		"Reached the end of the bandwidth profiler buffer, values might be inaccurate.");
 	return total_bandwidth;
 }
 
-void MultiplayerDebugger::BandwidthProfiler::toggle(bool p_enable, const Array &p_opts) {
+void MultiplayerDebugger::BandwidthProfiler::toggle(bool p_enable, const Array& p_opts)
+{
 	if (!p_enable) {
 		bandwidth_in.clear();
 		bandwidth_out.clear();
-	} else {
+	}
+	else {
 		bandwidth_in_ptr = 0;
 		bandwidth_in.resize(16384); // ~128kB
 		for (int i = 0; i < bandwidth_in.size(); ++i) {
@@ -128,7 +135,8 @@ void MultiplayerDebugger::BandwidthProfiler::toggle(bool p_enable, const Array &
 	}
 }
 
-void MultiplayerDebugger::BandwidthProfiler::add(const Array &p_data) {
+void MultiplayerDebugger::BandwidthProfiler::add(const Array& p_data)
+{
 	ERR_FAIL_COND(p_data.size() < 3);
 	const String inout = p_data[0];
 	int time = p_data[1];
@@ -137,29 +145,33 @@ void MultiplayerDebugger::BandwidthProfiler::add(const Array &p_data) {
 		bandwidth_in.write[bandwidth_in_ptr].timestamp = time;
 		bandwidth_in.write[bandwidth_in_ptr].packet_size = size;
 		bandwidth_in_ptr = (bandwidth_in_ptr + 1) % bandwidth_in.size();
-	} else if (inout == "out") {
+	}
+	else if (inout == "out") {
 		bandwidth_out.write[bandwidth_out_ptr].timestamp = time;
 		bandwidth_out.write[bandwidth_out_ptr].packet_size = size;
 		bandwidth_out_ptr = (bandwidth_out_ptr + 1) % bandwidth_out.size();
 	}
 }
 
-void MultiplayerDebugger::BandwidthProfiler::tick(double p_frame_time, double p_process_time, double p_physics_time, double p_physics_frame_time) {
+void MultiplayerDebugger::BandwidthProfiler::tick(
+	double p_frame_time, double p_process_time, double p_physics_time, double p_physics_frame_time)
+{
 	uint64_t pt = OS::get_singleton()->get_ticks_msec();
 	if (pt - last_bandwidth_time > 200) {
 		last_bandwidth_time = pt;
 		int incoming_bandwidth = bandwidth_usage(bandwidth_in, bandwidth_in_ptr);
 		int outgoing_bandwidth = bandwidth_usage(bandwidth_out, bandwidth_out_ptr);
 
-		Array arr = { incoming_bandwidth, outgoing_bandwidth };
+		Array arr = {incoming_bandwidth, outgoing_bandwidth};
 		EngineDebugger::get_singleton()->send_message("multiplayer:bandwidth", arr);
 	}
 }
 
 // RPCProfiler
 
-Array MultiplayerDebugger::RPCFrame::serialize() {
-	Array arr = { infos.size() * 6 };
+Array MultiplayerDebugger::RPCFrame::serialize()
+{
+	Array arr = {infos.size() * 6};
 	for (int i = 0; i < infos.size(); ++i) {
 		arr.push_back(uint64_t(infos[i].node));
 		arr.push_back(infos[i].node_path);
@@ -171,7 +183,8 @@ Array MultiplayerDebugger::RPCFrame::serialize() {
 	return arr;
 }
 
-bool MultiplayerDebugger::RPCFrame::deserialize(const Array &p_arr) {
+bool MultiplayerDebugger::RPCFrame::deserialize(const Array& p_arr)
+{
 	ERR_FAIL_COND_V(p_arr.is_empty(), false);
 	uint32_t size = p_arr[0];
 	ERR_FAIL_COND_V(size % 6, false);
@@ -190,7 +203,8 @@ bool MultiplayerDebugger::RPCFrame::deserialize(const Array &p_arr) {
 	return true;
 }
 
-void MultiplayerDebugger::RPCProfiler::init_node(const ObjectID p_node) {
+void MultiplayerDebugger::RPCProfiler::init_node(const ObjectID p_node)
+{
 	if (rpc_node_data.has(p_node)) {
 		return;
 	}
@@ -199,32 +213,37 @@ void MultiplayerDebugger::RPCProfiler::init_node(const ObjectID p_node) {
 	rpc_node_data[p_node].node_path = String(ObjectDB::get_instance<Node>(p_node)->get_path());
 }
 
-void MultiplayerDebugger::RPCProfiler::toggle(bool p_enable, const Array &p_opts) {
+void MultiplayerDebugger::RPCProfiler::toggle(bool p_enable, const Array& p_opts)
+{
 	rpc_node_data.clear();
 }
 
-void MultiplayerDebugger::RPCProfiler::add(const Array &p_data) {
+void MultiplayerDebugger::RPCProfiler::add(const Array& p_data)
+{
 	ERR_FAIL_COND(p_data.size() != 3);
 	const String what = p_data[0];
 	const ObjectID id = p_data[1];
 	const int size = p_data[2];
 	init_node(id);
-	RPCNodeInfo &info = rpc_node_data[id];
+	RPCNodeInfo& info = rpc_node_data[id];
 	if (what == "rpc_in") {
 		info.incoming_rpc++;
 		info.incoming_size += size;
-	} else if (what == "rpc_out") {
+	}
+	else if (what == "rpc_out") {
 		info.outgoing_rpc++;
 		info.outgoing_size += size;
 	}
 }
 
-void MultiplayerDebugger::RPCProfiler::tick(double p_frame_time, double p_process_time, double p_physics_time, double p_physics_frame_time) {
+void MultiplayerDebugger::RPCProfiler::tick(
+	double p_frame_time, double p_process_time, double p_physics_time, double p_physics_frame_time)
+{
 	uint64_t pt = OS::get_singleton()->get_ticks_msec();
 	if (pt - last_profile_time > 100) {
 		last_profile_time = pt;
 		RPCFrame frame;
-		for (const KeyValue<ObjectID, RPCNodeInfo> &E : rpc_node_data) {
+		for (const KeyValue<ObjectID, RPCNodeInfo>& E : rpc_node_data) {
 			frame.infos.push_back(E.value);
 		}
 		rpc_node_data.clear();
@@ -234,18 +253,20 @@ void MultiplayerDebugger::RPCProfiler::tick(double p_frame_time, double p_proces
 
 // ReplicationProfiler
 
-MultiplayerDebugger::SyncInfo::SyncInfo(MultiplayerSynchronizer *p_sync) {
+MultiplayerDebugger::SyncInfo::SyncInfo(MultiplayerSynchronizer* p_sync)
+{
 	ERR_FAIL_NULL(p_sync);
-	synchronizer = p_sync->get_instance_id();
+	synchronizer = p_sync->obj->get_instance_id();
 	if (p_sync->get_replication_config_ptr()) {
 		config = p_sync->get_replication_config_ptr()->get_instance_id();
 	}
 	if (p_sync->get_root_node()) {
-		root_node = p_sync->get_root_node()->get_instance_id();
+		root_node = p_sync->get_root_node()->obj->get_instance_id();
 	}
 }
 
-void MultiplayerDebugger::SyncInfo::write_to_array(Array &r_arr) const {
+void MultiplayerDebugger::SyncInfo::write_to_array(Array& r_arr) const
+{
 	r_arr.push_back(synchronizer);
 	r_arr.push_back(config);
 	r_arr.push_back(root_node);
@@ -255,7 +276,8 @@ void MultiplayerDebugger::SyncInfo::write_to_array(Array &r_arr) const {
 	r_arr.push_back(outgoing_size);
 }
 
-bool MultiplayerDebugger::SyncInfo::read_from_array(const Array &p_arr, int p_offset) {
+bool MultiplayerDebugger::SyncInfo::read_from_array(const Array& p_arr, int p_offset)
+{
 	ERR_FAIL_COND_V(p_arr.size() - p_offset < 7, false);
 	synchronizer = int64_t(p_arr[p_offset]);
 	config = int64_t(p_arr[p_offset + 1]);
@@ -267,15 +289,17 @@ bool MultiplayerDebugger::SyncInfo::read_from_array(const Array &p_arr, int p_of
 	return true;
 }
 
-Array MultiplayerDebugger::ReplicationFrame::serialize() {
-	Array arr = { infos.size() * 7 };
-	for (const KeyValue<ObjectID, SyncInfo> &E : infos) {
+Array MultiplayerDebugger::ReplicationFrame::serialize()
+{
+	Array arr = {infos.size() * 7};
+	for (const KeyValue<ObjectID, SyncInfo>& E : infos) {
 		E.value.write_to_array(arr);
 	}
 	return arr;
 }
 
-bool MultiplayerDebugger::ReplicationFrame::deserialize(const Array &p_arr) {
+bool MultiplayerDebugger::ReplicationFrame::deserialize(const Array& p_arr)
+{
 	ERR_FAIL_COND_V(p_arr.is_empty(), false);
 	uint32_t size = p_arr[0];
 	ERR_FAIL_COND_V(size % 7, false);
@@ -292,39 +316,46 @@ bool MultiplayerDebugger::ReplicationFrame::deserialize(const Array &p_arr) {
 	return true;
 }
 
-void MultiplayerDebugger::ReplicationProfiler::toggle(bool p_enable, const Array &p_opts) {
+void MultiplayerDebugger::ReplicationProfiler::toggle(bool p_enable, const Array& p_opts)
+{
 	sync_data.clear();
 }
 
-void MultiplayerDebugger::ReplicationProfiler::add(const Array &p_data) {
+void MultiplayerDebugger::ReplicationProfiler::add(const Array& p_data)
+{
 	ERR_FAIL_COND(p_data.size() != 3);
 	const String what = p_data[0];
 	const ObjectID id = p_data[1];
 	const uint64_t size = p_data[2];
-	MultiplayerSynchronizer *sync = ObjectDB::get_instance<MultiplayerSynchronizer>(id);
+	MultiplayerSynchronizer* sync = ObjectDB::get_instance<MultiplayerSynchronizer>(id);
 	ERR_FAIL_NULL(sync);
 	if (!sync_data.has(id)) {
 		sync_data[id] = SyncInfo(sync);
 	}
-	SyncInfo &info = sync_data[id];
+	SyncInfo& info = sync_data[id];
 	if (what == "sync_in") {
 		info.incoming_syncs++;
 		info.incoming_size += size;
-	} else if (what == "sync_out") {
+	}
+	else if (what == "sync_out") {
 		info.outgoing_syncs++;
 		info.outgoing_size += size;
 	}
 }
 
-void MultiplayerDebugger::ReplicationProfiler::tick(double p_frame_time, double p_process_time, double p_physics_time, double p_physics_frame_time) {
+void MultiplayerDebugger::ReplicationProfiler::tick(
+	double p_frame_time, double p_process_time, double p_physics_time, double p_physics_frame_time)
+{
 	uint64_t pt = OS::get_singleton()->get_ticks_msec();
 	if (pt - last_profile_time > 100) {
 		last_profile_time = pt;
 		ReplicationFrame frame;
-		for (const KeyValue<ObjectID, SyncInfo> &E : sync_data) {
+		for (const KeyValue<ObjectID, SyncInfo>& E : sync_data) {
 			frame.infos[E.key] = E.value;
 		}
 		sync_data.clear();
 		EngineDebugger::get_singleton()->send_message("multiplayer:syncs", frame.serialize());
 	}
 }
+
+

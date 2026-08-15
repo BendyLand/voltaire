@@ -427,8 +427,8 @@ void ShaderGlobalsEditor::_variable_added()
 	undo_redo->add_do_property(ProjectSettings::get_singleton(), "shader_globals/" + var, gv);
 	undo_redo->add_undo_property(
 		ProjectSettings::get_singleton(), "shader_globals/" + var, Variant());
-	undo_redo->add_do_method(this, "_changed");
-	undo_redo->add_undo_method(this, "_changed");
+	undo_redo->add_do_method(this->obj.get(), "_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_changed");
 	undo_redo->commit_action();
 
 	variable_name->clear();
@@ -448,14 +448,14 @@ void ShaderGlobalsEditor::_variable_deleted(const String& p_variable)
 		ProjectSettings::get_singleton(), "shader_globals/" + p_variable, Variant());
 	undo_redo->add_undo_property(ProjectSettings::get_singleton(), "shader_globals/" + p_variable,
 		GLOBAL_GET("shader_globals/" + p_variable));
-	undo_redo->add_do_method(this, "_changed");
-	undo_redo->add_undo_method(this, "_changed");
+	undo_redo->add_do_method(this->obj.get(), "_changed");
+	undo_redo->add_undo_method(this->obj.get(), "_changed");
 	undo_redo->commit_action();
 }
 
 void ShaderGlobalsEditor::_changed()
 {
-	emit_signal(SNAME("globals_changed"));
+	this->obj->emit_signal(SNAME("globals_changed"));
 	if (!interface->block_update) {
 		interface->obj->notify_property_list_changed();
 	}
@@ -480,7 +480,7 @@ void ShaderGlobalsEditor::_notification(int p_what)
 		variable_add->set_button_icon(get_editor_theme_icon(SNAME("Add")));
 	} break;
 
-	case NOTIFICATION_PREDELETE: {
+	case Object::NOTIFICATION_PREDELETE: {
 		inspector->edit(nullptr);
 	} break;
 	}
@@ -531,11 +531,12 @@ ShaderGlobalsEditor::ShaderGlobalsEditor()
 	inspector->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_TOP_AND_LEFT);
 	mc->add_child(inspector);
 	inspector->connect("property_deleted",
-		callable_mp(this, &ShaderGlobalsEditor::_variable_deleted), CONNECT_DEFERRED);
+		callable_mp(this, &ShaderGlobalsEditor::_variable_deleted), Object::CONNECT_DEFERRED);
 
 	interface = memnew(ShaderGlobalsEditorInterface);
 	interface->obj->connect("var_changed", callable_mp(this, &ShaderGlobalsEditor::_changed));
 }
 
 ShaderGlobalsEditor::~ShaderGlobalsEditor() { memdelete(interface); }
+
 
