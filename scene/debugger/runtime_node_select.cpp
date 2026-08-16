@@ -687,7 +687,7 @@ void RuntimeNodeSelect::_send_ids(const Vector<Node*>& p_picked_nodes, bool p_in
 		}
 
 		for (const Node* node : picked_nodes) {
-			SceneDebuggerObject o(node->get_instance_id());
+			SceneDebuggerObject o(node->obj->get_instance_id());
 			Array arr;
 			o.serialize(arr);
 			message.append(arr);
@@ -702,7 +702,7 @@ void RuntimeNodeSelect::_send_ids(const Vector<Node*>& p_picked_nodes, bool p_in
 	LocalVector<Node*> nodes;
 	LocalVector<ObjectID> ids;
 	for (Node* node : picked_nodes) {
-		ObjectID id = node->get_instance_id();
+		ObjectID id = node->obj->get_instance_id();
 		if (CanvasItem* ci = Object::cast_to<CanvasItem>(node)) {
 			if (selected_ci_nodes.has(id)) {
 				if (p_invert_new_selections) {
@@ -783,7 +783,7 @@ void RuntimeNodeSelect::_set_selected_nodes(const Vector<Node*>& p_nodes)
 #endif // _3D_DISABLED
 
 	for (Node* node : p_nodes) {
-		ObjectID id = node->get_instance_id();
+		ObjectID id = node->obj->get_instance_id();
 		if (Object::cast_to<CanvasItem>(node)) {
 			if (!changed || !selected_ci_nodes.has(id)) {
 				changed = true;
@@ -1120,7 +1120,7 @@ void RuntimeNodeSelect::_open_selection_list(
 	selection_list->reset_size();
 
 	// FIXME: Ugly hack that stops the popup from hiding when the button is released.
-	selection_list->call_deferred(
+	selection_list->obj->call_deferred(
 		SNAME("set_position"), selection_list->get_position() + Point2(1, 0));
 }
 

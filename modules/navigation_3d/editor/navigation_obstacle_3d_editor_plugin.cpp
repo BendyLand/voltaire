@@ -953,8 +953,7 @@ NavigationObstacle3DEditorPlugin::NavigationObstacle3DEditorPlugin()
 	button_edit = memnew(Button);
 	button_edit->set_theme_type_variation(SceneStringName(FlatButton));
 	button_edit->set_accessibility_name(TTRC("Edit"));
-	obstacl
-e_editor->add_child(button_edit);
+	obstacle_editor->add_child(button_edit);
 	button_edit->connect(
 		SceneStringName(pressed), callable_mp(this, &NavigationObstacle3DEditorPlugin::set_mode)
 									  .bind(NavigationObstacle3DEditorPlugin::MODE_EDIT));

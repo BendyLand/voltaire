@@ -28,10 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "mesh_instance_3d.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
+#include "mesh_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/rendering_server.h"
@@ -56,9 +55,10 @@ Callable MeshInstance3D::_navmesh_source_geometry_parsing_callback;
 RID MeshInstance3D::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_3D_DISABLED
 
-bool MeshInstance3D::_set(const StringName &p_name, const Variant &p_value) {
-	//this is not _too_ bad performance wise, really. it only arrives here if the property was not set anywhere else.
-	//add to it that it's probably found on first call to _set anyway.
+bool MeshInstance3D::_set(const StringName& p_name, const Variant& p_value)
+{
+	// this is not _too_ bad performance wise, really. it only arrives here if the property was not
+	// set anywhere else. add to it that it's probably found on first call to _set anyway.
 
 	if (!get_instance().is_valid()) {
 		return false;
@@ -84,7 +84,8 @@ bool MeshInstance3D::_set(const StringName &p_name, const Variant &p_value) {
 	return false;
 }
 
-bool MeshInstance3D::_get(const StringName &p_name, Variant &r_ret) const {
+bool MeshInstance3D::_get(const StringName& p_name, Variant& r_ret) const
+{
 	if (!get_instance().is_valid()) {
 		return false;
 	}
@@ -106,18 +107,25 @@ bool MeshInstance3D::_get(const StringName &p_name, Variant &r_ret) const {
 	return false;
 }
 
-void MeshInstance3D::_get_property_list(List<PropertyInfo> *p_list) const {
+void MeshInstance3D::_get_property_list(List<PropertyInfo>* p_list) const
+{
 	for (uint32_t i = 0; i < blend_shape_tracks.size(); i++) {
-		p_list->push_back(PropertyInfo(Variant::FLOAT, vformat("blend_shapes/%s", String(mesh->get_blend_shape_name(i))), PROPERTY_HINT_RANGE, "-1,1,0.00001"));
+		p_list->push_back(PropertyInfo(Variant::FLOAT,
+			vformat("blend_shapes/%s", String(mesh->get_blend_shape_name(i))), PROPERTY_HINT_RANGE,
+			"-1,1,0.00001"));
 	}
 	if (mesh.is_valid()) {
 		for (int i = 0; i < mesh->get_surface_count(); i++) {
-			p_list->push_back(PropertyInfo(Variant::OBJECT, vformat("%s/%d", PNAME("surface_material_override"), i), PROPERTY_HINT_RESOURCE_TYPE, "BaseMaterial3D,ShaderMaterial", PROPERTY_USAGE_DEFAULT));
+			p_list->push_back(PropertyInfo(Variant::OBJECT,
+				vformat("%s/%d", PNAME("surface_material_override"), i),
+				PROPERTY_HINT_RESOURCE_TYPE, "BaseMaterial3D,ShaderMaterial",
+				PROPERTY_USAGE_DEFAULT));
 		}
 	}
 }
 
-void MeshInstance3D::set_mesh(const Ref<Mesh> &p_mesh) {
+void MeshInstance3D::set_mesh(const Ref<Mesh>& p_mesh)
+{
 	if (mesh == p_mesh) {
 		return;
 	}
@@ -134,29 +142,30 @@ void MeshInstance3D::set_mesh(const Ref<Mesh> &p_mesh) {
 		set_base(mesh->get_rid());
 		mesh->connect_changed(callable_mp(this, &MeshInstance3D::_mesh_changed));
 		_mesh_changed();
-	} else {
+	}
+	else {
 		blend_shape_tracks.clear();
 		blend_shape_properties.clear();
 		set_base(RID());
 		update_gizmos();
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	update_configuration_warnings();
 }
 
-Ref<Mesh> MeshInstance3D::get_mesh() const {
-	return mesh;
-}
+Ref<Mesh> MeshInstance3D::get_mesh() const { return mesh; }
 
-int MeshInstance3D::get_blend_shape_count() const {
+int MeshInstance3D::get_blend_shape_count() const
+{
 	if (mesh.is_null()) {
 		return 0;
 	}
 	return mesh->get_blend_shape_count();
 }
 
-int MeshInstance3D::find_blend_shape_by_name(const StringName &p_name) {
+int MeshInstance3D::find_blend_shape_by_name(const StringName& p_name)
+{
 	if (mesh.is_null()) {
 		return -1;
 	}
@@ -168,31 +177,38 @@ int MeshInstance3D::find_blend_shape_by_name(const StringName &p_name) {
 	return -1;
 }
 
-float MeshInstance3D::get_blend_shape_value(int p_blend_shape) const {
+float MeshInstance3D::get_blend_shape_value(int p_blend_shape) const
+{
 	ERR_FAIL_COND_V(mesh.is_null(), 0.0);
 	ERR_FAIL_INDEX_V(p_blend_shape, (int)blend_shape_tracks.size(), 0);
 	return blend_shape_tracks[p_blend_shape];
 }
 
-void MeshInstance3D::set_blend_shape_value(int p_blend_shape, float p_value) {
+void MeshInstance3D::set_blend_shape_value(int p_blend_shape, float p_value)
+{
 	ERR_FAIL_COND(mesh.is_null());
 	ERR_FAIL_INDEX(p_blend_shape, (int)blend_shape_tracks.size());
 	blend_shape_tracks[p_blend_shape] = p_value;
-	RenderingServer::get_singleton()->instance_set_blend_shape_weight(get_instance(), p_blend_shape, p_value);
+	RenderingServer::get_singleton()->instance_set_blend_shape_weight(
+		get_instance(), p_blend_shape, p_value);
 }
 
-void MeshInstance3D::_resolve_skeleton_path() {
+void MeshInstance3D::_resolve_skeleton_path()
+{
 	Ref<SkinReference> new_skin_reference;
 
 	if (!skeleton_path.is_empty()) {
-		Skeleton3D *skeleton = Object::cast_to<Skeleton3D>(get_node_or_null(skeleton_path)); // skeleton_path may be outdated when reparenting.
+		Skeleton3D* skeleton = Object::cast_to<Skeleton3D>(
+			get_node_or_null(skeleton_path)); // skeleton_path may be outdated when reparenting.
 		if (skeleton) {
 			if (skin_internal.is_null()) {
-				new_skin_reference = skeleton->register_skin(skeleton->create_skin_from_rest_transforms());
-				//a skin was created for us
+				new_skin_reference =
+					skeleton->register_skin(skeleton->create_skin_from_rest_transforms());
+				// a skin was created for us
 				skin_internal = new_skin_reference->get_skin();
-				notify_property_list_changed();
-			} else {
+				this->obj->notify_property_list_changed();
+			}
+			else {
 				new_skin_reference = skeleton->register_skin(skin_internal);
 			}
 		}
@@ -201,13 +217,16 @@ void MeshInstance3D::_resolve_skeleton_path() {
 	skin_ref = new_skin_reference;
 
 	if (skin_ref.is_valid()) {
-		RenderingServer::get_singleton()->instance_attach_skeleton(get_instance(), skin_ref->get_skeleton());
-	} else {
+		RenderingServer::get_singleton()->instance_attach_skeleton(
+			get_instance(), skin_ref->get_skeleton());
+	}
+	else {
 		RenderingServer::get_singleton()->instance_attach_skeleton(get_instance(), RID());
 	}
 }
 
-void MeshInstance3D::set_skin(const Ref<Skin> &p_skin) {
+void MeshInstance3D::set_skin(const Ref<Skin>& p_skin)
+{
 	skin_internal = p_skin;
 	skin = p_skin;
 	if (!is_inside_tree()) {
@@ -216,15 +235,12 @@ void MeshInstance3D::set_skin(const Ref<Skin> &p_skin) {
 	_resolve_skeleton_path();
 }
 
-Ref<Skin> MeshInstance3D::get_skin() const {
-	return skin;
-}
+Ref<Skin> MeshInstance3D::get_skin() const { return skin; }
 
-Ref<SkinReference> MeshInstance3D::get_skin_reference() const {
-	return skin_ref;
-}
+Ref<SkinReference> MeshInstance3D::get_skin_reference() const { return skin_ref; }
 
-void MeshInstance3D::set_skeleton_path(const NodePath &p_skeleton) {
+void MeshInstance3D::set_skeleton_path(const NodePath& p_skeleton)
+{
 	skeleton_path = p_skeleton;
 	if (!is_inside_tree()) {
 		return;
@@ -232,11 +248,10 @@ void MeshInstance3D::set_skeleton_path(const NodePath &p_skeleton) {
 	_resolve_skeleton_path();
 }
 
-NodePath MeshInstance3D::get_skeleton_path() {
-	return skeleton_path;
-}
+NodePath MeshInstance3D::get_skeleton_path() { return skeleton_path; }
 
-AABB MeshInstance3D::get_aabb() const {
+AABB MeshInstance3D::get_aabb() const
+{
 	if (mesh.is_valid()) {
 		return mesh->get_aabb();
 	}
@@ -245,7 +260,8 @@ AABB MeshInstance3D::get_aabb() const {
 }
 
 #ifndef PHYSICS_3D_DISABLED
-Node *MeshInstance3D::create_trimesh_collision_node() {
+Node* MeshInstance3D::create_trimesh_collision_node()
+{
 	if (mesh.is_null()) {
 		return nullptr;
 	}
@@ -255,27 +271,29 @@ Node *MeshInstance3D::create_trimesh_collision_node() {
 		return nullptr;
 	}
 
-	StaticBody3D *static_body = memnew(StaticBody3D);
-	CollisionShape3D *cshape = memnew(CollisionShape3D);
+	StaticBody3D* static_body = memnew(StaticBody3D);
+	CollisionShape3D* cshape = memnew(CollisionShape3D);
 	cshape->set_shape(shape);
 	static_body->add_child(cshape, true);
 	return static_body;
 }
 
-void MeshInstance3D::create_trimesh_collision() {
-	StaticBody3D *static_body = Object::cast_to<StaticBody3D>(create_trimesh_collision_node());
+void MeshInstance3D::create_trimesh_collision()
+{
+	StaticBody3D* static_body = Object::cast_to<StaticBody3D>(create_trimesh_collision_node());
 	ERR_FAIL_NULL(static_body);
 	static_body->set_name(String(get_name()) + "_col");
 
 	add_child(static_body, true);
 	if (get_owner()) {
-		CollisionShape3D *cshape = Object::cast_to<CollisionShape3D>(static_body->get_child(0));
+		CollisionShape3D* cshape = Object::cast_to<CollisionShape3D>(static_body->get_child(0));
 		static_body->set_owner(get_owner());
 		cshape->set_owner(get_owner());
 	}
 }
 
-Node *MeshInstance3D::create_convex_collision_node(bool p_clean, bool p_simplify) {
+Node* MeshInstance3D::create_convex_collision_node(bool p_clean, bool p_simplify)
+{
 	if (mesh.is_null()) {
 		return nullptr;
 	}
@@ -285,27 +303,31 @@ Node *MeshInstance3D::create_convex_collision_node(bool p_clean, bool p_simplify
 		return nullptr;
 	}
 
-	StaticBody3D *static_body = memnew(StaticBody3D);
-	CollisionShape3D *cshape = memnew(CollisionShape3D);
+	StaticBody3D* static_body = memnew(StaticBody3D);
+	CollisionShape3D* cshape = memnew(CollisionShape3D);
 	cshape->set_shape(shape);
 	static_body->add_child(cshape, true);
 	return static_body;
 }
 
-void MeshInstance3D::create_convex_collision(bool p_clean, bool p_simplify) {
-	StaticBody3D *static_body = Object::cast_to<StaticBody3D>(create_convex_collision_node(p_clean, p_simplify));
+void MeshInstance3D::create_convex_collision(bool p_clean, bool p_simplify)
+{
+	StaticBody3D* static_body =
+		Object::cast_to<StaticBody3D>(create_convex_collision_node(p_clean, p_simplify));
 	ERR_FAIL_NULL(static_body);
 	static_body->set_name(String(get_name()) + "_col");
 
 	add_child(static_body, true);
 	if (get_owner()) {
-		CollisionShape3D *cshape = Object::cast_to<CollisionShape3D>(static_body->get_child(0));
+		CollisionShape3D* cshape = Object::cast_to<CollisionShape3D>(static_body->get_child(0));
 		static_body->set_owner(get_owner());
 		cshape->set_owner(get_owner());
 	}
 }
 
-Node *MeshInstance3D::create_multiple_convex_collisions_node(const Ref<MeshConvexDecompositionSettings> &p_settings) {
+Node* MeshInstance3D::create_multiple_convex_collisions_node(
+	const Ref<MeshConvexDecompositionSettings>& p_settings)
+{
 	if (mesh.is_null()) {
 		return nullptr;
 	}
@@ -313,7 +335,8 @@ Node *MeshInstance3D::create_multiple_convex_collisions_node(const Ref<MeshConve
 	Ref<MeshConvexDecompositionSettings> settings;
 	if (p_settings.is_valid()) {
 		settings = p_settings;
-	} else {
+	}
+	else {
 		settings.instantiate();
 	}
 
@@ -322,17 +345,20 @@ Node *MeshInstance3D::create_multiple_convex_collisions_node(const Ref<MeshConve
 		return nullptr;
 	}
 
-	StaticBody3D *static_body = memnew(StaticBody3D);
+	StaticBody3D* static_body = memnew(StaticBody3D);
 	for (int i = 0; i < shapes.size(); i++) {
-		CollisionShape3D *cshape = memnew(CollisionShape3D);
+		CollisionShape3D* cshape = memnew(CollisionShape3D);
 		cshape->set_shape(shapes[i]);
 		static_body->add_child(cshape, true);
 	}
 	return static_body;
 }
 
-void MeshInstance3D::create_multiple_convex_collisions(const Ref<MeshConvexDecompositionSettings> &p_settings) {
-	StaticBody3D *static_body = Object::cast_to<StaticBody3D>(create_multiple_convex_collisions_node(p_settings));
+void MeshInstance3D::create_multiple_convex_collisions(
+	const Ref<MeshConvexDecompositionSettings>& p_settings)
+{
+	StaticBody3D* static_body =
+		Object::cast_to<StaticBody3D>(create_multiple_convex_collisions_node(p_settings));
 	ERR_FAIL_NULL(static_body);
 	static_body->set_name(String(get_name()) + "_col");
 
@@ -341,56 +367,64 @@ void MeshInstance3D::create_multiple_convex_collisions(const Ref<MeshConvexDecom
 		static_body->set_owner(get_owner());
 		int count = static_body->get_child_count();
 		for (int i = 0; i < count; i++) {
-			CollisionShape3D *cshape = Object::cast_to<CollisionShape3D>(static_body->get_child(i));
+			CollisionShape3D* cshape = Object::cast_to<CollisionShape3D>(static_body->get_child(i));
 			cshape->set_owner(get_owner());
 		}
 	}
 }
 #endif // PHYSICS_3D_DISABLED
 
-void MeshInstance3D::_notification(int p_what) {
+void MeshInstance3D::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
+	case NOTIFICATION_ENTER_TREE: {
 #ifndef DISABLE_DEPRECATED
-			if (upgrading_skeleton_compat) {
-				if (skeleton_path.is_empty() && Object::cast_to<Skeleton3D>(get_parent())) {
-					skeleton_path = NodePath("..");
-				}
+		if (upgrading_skeleton_compat) {
+			if (skeleton_path.is_empty() && Object::cast_to<Skeleton3D>(get_parent())) {
+				skeleton_path = NodePath("..");
 			}
+		}
 #endif
-			_resolve_skeleton_path();
-		} break;
-		case NOTIFICATION_TRANSLATION_CHANGED: {
-			if (mesh.is_valid()) {
-				mesh->notification(NOTIFICATION_TRANSLATION_CHANGED);
-			}
-		} break;
+		_resolve_skeleton_path();
+	} break;
+	case NOTIFICATION_TRANSLATION_CHANGED: {
+		if (mesh.is_valid()) {
+			mesh->notification(NOTIFICATION_TRANSLATION_CHANGED);
+		}
+	} break;
 	}
 }
 
-int MeshInstance3D::get_surface_override_material_count() const {
+int MeshInstance3D::get_surface_override_material_count() const
+{
 	return surface_override_materials.size();
 }
 
-void MeshInstance3D::set_surface_override_material(int p_surface, const Ref<Material> &p_material) {
+void MeshInstance3D::set_surface_override_material(int p_surface, const Ref<Material>& p_material)
+{
 	ERR_FAIL_INDEX(p_surface, surface_override_materials.size());
 
 	surface_override_materials.write[p_surface] = p_material;
 
 	if (surface_override_materials[p_surface].is_valid()) {
-		RS::get_singleton()->instance_set_surface_override_material(get_instance(), p_surface, surface_override_materials[p_surface]->get_rid());
-	} else {
-		RS::get_singleton()->instance_set_surface_override_material(get_instance(), p_surface, RID());
+		RS::get_singleton()->instance_set_surface_override_material(
+			get_instance(), p_surface, surface_override_materials[p_surface]->get_rid());
+	}
+	else {
+		RS::get_singleton()->instance_set_surface_override_material(
+			get_instance(), p_surface, RID());
 	}
 }
 
-Ref<Material> MeshInstance3D::get_surface_override_material(int p_surface) const {
+Ref<Material> MeshInstance3D::get_surface_override_material(int p_surface) const
+{
 	ERR_FAIL_INDEX_V(p_surface, surface_override_materials.size(), Ref<Material>());
 
 	return surface_override_materials[p_surface];
 }
 
-Ref<Material> MeshInstance3D::get_active_material(int p_surface) const {
+Ref<Material> MeshInstance3D::get_active_material(int p_surface) const
+{
 	Ref<Material> mat_override = get_material_override();
 	if (mat_override.is_valid()) {
 		return mat_override;
@@ -409,7 +443,8 @@ Ref<Material> MeshInstance3D::get_active_material(int p_surface) const {
 	return m->surface_get_material(p_surface);
 }
 
-void MeshInstance3D::_mesh_changed() {
+void MeshInstance3D::_mesh_changed()
+{
 	ERR_FAIL_COND(mesh.is_null());
 	const int surface_count = mesh->get_surface_count();
 
@@ -423,7 +458,8 @@ void MeshInstance3D::_mesh_changed() {
 			blend_shape_properties["blend_shapes/" + String(mesh->get_blend_shape_name(i))] = i;
 			if (i < initialize_bs_from) {
 				set_blend_shape_value(i, blend_shape_tracks[i]);
-			} else {
+			}
+			else {
 				set_blend_shape_value(i, 0);
 			}
 		}
@@ -431,14 +467,16 @@ void MeshInstance3D::_mesh_changed() {
 
 	for (int surface_index = 0; surface_index < surface_count; ++surface_index) {
 		if (surface_override_materials[surface_index].is_valid()) {
-			RS::get_singleton()->instance_set_surface_override_material(get_instance(), surface_index, surface_override_materials[surface_index]->get_rid());
+			RS::get_singleton()->instance_set_surface_override_material(get_instance(),
+				surface_index, surface_override_materials[surface_index]->get_rid());
 		}
 	}
 
 	update_gizmos();
 }
 
-MeshInstance3D *MeshInstance3D::create_debug_tangents_node() {
+MeshInstance3D* MeshInstance3D::create_debug_tangents_node()
+{
 	Vector<Vector3> lines;
 	Vector<Color> colors;
 
@@ -467,20 +505,20 @@ MeshInstance3D *MeshInstance3D::create_debug_tangents_node() {
 			Vector3 t = Vector3(tangents[j * 4 + 0], tangents[j * 4 + 1], tangents[j * 4 + 2]);
 			Vector3 b = (n.cross(t)).normalized() * tangents[j * 4 + 3];
 
-			lines.push_back(v); //normal
-			colors.push_back(Color(0, 0, 1)); //color
-			lines.push_back(v + n * 0.04); //normal
-			colors.push_back(Color(0, 0, 1)); //color
+			lines.push_back(v);				  // normal
+			colors.push_back(Color(0, 0, 1)); // color
+			lines.push_back(v + n * 0.04);	  // normal
+			colors.push_back(Color(0, 0, 1)); // color
 
-			lines.push_back(v); //tangent
-			colors.push_back(Color(1, 0, 0)); //color
-			lines.push_back(v + t * 0.04); //tangent
-			colors.push_back(Color(1, 0, 0)); //color
+			lines.push_back(v);				  // tangent
+			colors.push_back(Color(1, 0, 0)); // color
+			lines.push_back(v + t * 0.04);	  // tangent
+			colors.push_back(Color(1, 0, 0)); // color
 
-			lines.push_back(v); //binormal
-			colors.push_back(Color(0, 1, 0)); //color
-			lines.push_back(v + b * 0.04); //binormal
-			colors.push_back(Color(0, 1, 0)); //color
+			lines.push_back(v);				  // binormal
+			colors.push_back(Color(0, 1, 0)); // color
+			lines.push_back(v + b * 0.04);	  // binormal
+			colors.push_back(Color(0, 1, 0)); // color
 		}
 	}
 
@@ -503,7 +541,7 @@ MeshInstance3D *MeshInstance3D::create_debug_tangents_node() {
 		am->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, a);
 		am->surface_set_material(0, sm);
 
-		MeshInstance3D *mi = memnew(MeshInstance3D);
+		MeshInstance3D* mi = memnew(MeshInstance3D);
 		mi->set_mesh(am);
 		mi->set_name("DebugTangents");
 		return mi;
@@ -512,8 +550,9 @@ MeshInstance3D *MeshInstance3D::create_debug_tangents_node() {
 	return nullptr;
 }
 
-void MeshInstance3D::create_debug_tangents() {
-	MeshInstance3D *mi = create_debug_tangents_node();
+void MeshInstance3D::create_debug_tangents()
+{
+	MeshInstance3D* mi = create_debug_tangents_node();
 	if (!mi) {
 		return;
 	}
@@ -521,12 +560,14 @@ void MeshInstance3D::create_debug_tangents() {
 	add_child(mi, true);
 	if (is_inside_tree() && this == get_tree()->get_edited_scene_root()) {
 		mi->set_owner(this);
-	} else {
+	}
+	else {
 		mi->set_owner(get_owner());
 	}
 }
 
-bool MeshInstance3D::_property_can_revert(const StringName &p_name) const {
+bool MeshInstance3D::_property_can_revert(const StringName& p_name) const
+{
 	HashMap<StringName, int>::ConstIterator E = blend_shape_properties.find(p_name);
 	if (E) {
 		return true;
@@ -534,7 +575,8 @@ bool MeshInstance3D::_property_can_revert(const StringName &p_name) const {
 	return false;
 }
 
-bool MeshInstance3D::_property_get_revert(const StringName &p_name, Variant &r_property) const {
+bool MeshInstance3D::_property_get_revert(const StringName& p_name, Variant& r_property) const
+{
 	HashMap<StringName, int>::ConstIterator E = blend_shape_properties.find(p_name);
 	if (E) {
 		r_property = 0.0f;
@@ -543,18 +585,23 @@ bool MeshInstance3D::_property_get_revert(const StringName &p_name, Variant &r_p
 	return false;
 }
 
-Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_blend_shape_mix(Ref<ArrayMesh> p_existing) {
+Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_blend_shape_mix(Ref<ArrayMesh> p_existing)
+{
 	Ref<ArrayMesh> source_mesh = get_mesh();
-	ERR_FAIL_COND_V_MSG(source_mesh.is_null(), Ref<ArrayMesh>(), "The source mesh must be a valid ArrayMesh.");
+	ERR_FAIL_COND_V_MSG(
+		source_mesh.is_null(), Ref<ArrayMesh>(), "The source mesh must be a valid ArrayMesh.");
 
 	Ref<ArrayMesh> bake_mesh;
 
 	if (p_existing.is_valid()) {
-		ERR_FAIL_COND_V_MSG(p_existing.is_null(), Ref<ArrayMesh>(), "The existing mesh must be a valid ArrayMesh.");
-		ERR_FAIL_COND_V_MSG(source_mesh == p_existing, Ref<ArrayMesh>(), "The source mesh can not be the same mesh as the existing mesh.");
+		ERR_FAIL_COND_V_MSG(
+			p_existing.is_null(), Ref<ArrayMesh>(), "The existing mesh must be a valid ArrayMesh.");
+		ERR_FAIL_COND_V_MSG(source_mesh == p_existing, Ref<ArrayMesh>(),
+			"The source mesh can not be the same mesh as the existing mesh.");
 
 		bake_mesh = p_existing;
-	} else {
+	}
+	else {
 		bake_mesh.instantiate();
 	}
 
@@ -569,13 +616,13 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_blend_shape_mix(Ref<ArrayM
 
 		ERR_CONTINUE(0 == (surface_format & Mesh::ARRAY_FORMAT_VERTEX));
 
-		const Array &source_mesh_arrays = source_mesh->surface_get_arrays(surface_index);
+		const Array& source_mesh_arrays = source_mesh->surface_get_arrays(surface_index);
 
 		ERR_FAIL_COND_V(source_mesh_arrays.size() != RSE::ARRAY_MAX, Ref<ArrayMesh>());
 
-		const Vector<Vector3> &source_mesh_vertex_array = source_mesh_arrays[Mesh::ARRAY_VERTEX];
-		const Vector<Vector3> &source_mesh_normal_array = source_mesh_arrays[Mesh::ARRAY_NORMAL];
-		const Vector<float> &source_mesh_tangent_array = source_mesh_arrays[Mesh::ARRAY_TANGENT];
+		const Vector<Vector3>& source_mesh_vertex_array = source_mesh_arrays[Mesh::ARRAY_VERTEX];
+		const Vector<Vector3>& source_mesh_normal_array = source_mesh_arrays[Mesh::ARRAY_NORMAL];
+		const Vector<float>& source_mesh_tangent_array = source_mesh_arrays[Mesh::ARRAY_TANGENT];
 
 		Array new_mesh_arrays;
 		new_mesh_arrays.resize(Mesh::ARRAY_MAX);
@@ -587,21 +634,23 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_blend_shape_mix(Ref<ArrayM
 		}
 
 		bool use_normal_array = source_mesh_normal_array.size() == source_mesh_vertex_array.size();
-		bool use_tangent_array = source_mesh_tangent_array.size() / 4 == source_mesh_vertex_array.size();
+		bool use_tangent_array =
+			source_mesh_tangent_array.size() / 4 == source_mesh_vertex_array.size();
 
 		Vector<Vector3> lerped_vertex_array = source_mesh_vertex_array;
 		Vector<Vector3> lerped_normal_array = source_mesh_normal_array;
 		Vector<float> lerped_tangent_array = source_mesh_tangent_array;
 
-		const Vector3 *source_vertices_ptr = source_mesh_vertex_array.ptr();
-		const Vector3 *source_normals_ptr = source_mesh_normal_array.ptr();
-		const float *source_tangents_ptr = source_mesh_tangent_array.ptr();
+		const Vector3* source_vertices_ptr = source_mesh_vertex_array.ptr();
+		const Vector3* source_normals_ptr = source_mesh_normal_array.ptr();
+		const float* source_tangents_ptr = source_mesh_tangent_array.ptr();
 
-		Vector3 *lerped_vertices_ptrw = lerped_vertex_array.ptrw();
-		Vector3 *lerped_normals_ptrw = lerped_normal_array.ptrw();
-		float *lerped_tangents_ptrw = lerped_tangent_array.ptrw();
+		Vector3* lerped_vertices_ptrw = lerped_vertex_array.ptrw();
+		Vector3* lerped_normals_ptrw = lerped_normal_array.ptrw();
+		float* lerped_tangents_ptrw = lerped_tangent_array.ptrw();
 
-		const Array &blendshapes_mesh_arrays = source_mesh->surface_get_blend_shape_arrays(surface_index);
+		const Array& blendshapes_mesh_arrays =
+			source_mesh->surface_get_blend_shape_arrays(surface_index);
 		int blend_shape_count = source_mesh->get_blend_shape_count();
 		ERR_FAIL_COND_V(blendshapes_mesh_arrays.size() != blend_shape_count, Ref<ArrayMesh>());
 
@@ -611,67 +660,76 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_blend_shape_mix(Ref<ArrayM
 				continue;
 			}
 
-			const Array &blendshape_mesh_arrays = blendshapes_mesh_arrays[blendshape_index];
+			const Array& blendshape_mesh_arrays = blendshapes_mesh_arrays[blendshape_index];
 
-			const Vector<Vector3> &blendshape_vertex_array = blendshape_mesh_arrays[Mesh::ARRAY_VERTEX];
-			const Vector<Vector3> &blendshape_normal_array = blendshape_mesh_arrays[Mesh::ARRAY_NORMAL];
-			const Vector<float> &blendshape_tangent_array = blendshape_mesh_arrays[Mesh::ARRAY_TANGENT];
+			const Vector<Vector3>& blendshape_vertex_array =
+				blendshape_mesh_arrays[Mesh::ARRAY_VERTEX];
+			const Vector<Vector3>& blendshape_normal_array =
+				blendshape_mesh_arrays[Mesh::ARRAY_NORMAL];
+			const Vector<float>& blendshape_tangent_array =
+				blendshape_mesh_arrays[Mesh::ARRAY_TANGENT];
 
-			ERR_FAIL_COND_V(source_mesh_vertex_array.size() != blendshape_vertex_array.size(), Ref<ArrayMesh>());
-			ERR_FAIL_COND_V(source_mesh_normal_array.size() != blendshape_normal_array.size(), Ref<ArrayMesh>());
-			ERR_FAIL_COND_V(source_mesh_tangent_array.size() != blendshape_tangent_array.size(), Ref<ArrayMesh>());
+			ERR_FAIL_COND_V(source_mesh_vertex_array.size() != blendshape_vertex_array.size(),
+				Ref<ArrayMesh>());
+			ERR_FAIL_COND_V(source_mesh_normal_array.size() != blendshape_normal_array.size(),
+				Ref<ArrayMesh>());
+			ERR_FAIL_COND_V(source_mesh_tangent_array.size() != blendshape_tangent_array.size(),
+				Ref<ArrayMesh>());
 
-			const Vector3 *blendshape_vertices_ptr = blendshape_vertex_array.ptr();
-			const Vector3 *blendshape_normals_ptr = blendshape_normal_array.ptr();
-			const float *blendshape_tangents_ptr = blendshape_tangent_array.ptr();
+			const Vector3* blendshape_vertices_ptr = blendshape_vertex_array.ptr();
+			const Vector3* blendshape_normals_ptr = blendshape_normal_array.ptr();
+			const float* blendshape_tangents_ptr = blendshape_tangent_array.ptr();
 
 			if (blend_shape_mode == Mesh::BLEND_SHAPE_MODE_NORMALIZED) {
 				for (int i = 0; i < source_mesh_vertex_array.size(); i++) {
-					const Vector3 &source_vertex = source_vertices_ptr[i];
-					const Vector3 &blendshape_vertex = blendshape_vertices_ptr[i];
-					Vector3 lerped_vertex = source_vertex.lerp(blendshape_vertex, blend_weight) - source_vertex;
+					const Vector3& source_vertex = source_vertices_ptr[i];
+					const Vector3& blendshape_vertex = blendshape_vertices_ptr[i];
+					Vector3 lerped_vertex =
+						source_vertex.lerp(blendshape_vertex, blend_weight) - source_vertex;
 					lerped_vertices_ptrw[i] += lerped_vertex;
 
 					if (use_normal_array) {
-						const Vector3 &source_normal = source_normals_ptr[i];
-						const Vector3 &blendshape_normal = blendshape_normals_ptr[i];
-						Vector3 lerped_normal = source_normal.lerp(blendshape_normal, blend_weight) - source_normal;
+						const Vector3& source_normal = source_normals_ptr[i];
+						const Vector3& blendshape_normal = blendshape_normals_ptr[i];
+						Vector3 lerped_normal =
+							source_normal.lerp(blendshape_normal, blend_weight) - source_normal;
 						lerped_normals_ptrw[i] += lerped_normal;
 					}
 
 					if (use_tangent_array) {
 						int tangent_index = i * 4;
-						const Vector4 source_tangent = Vector4(
-								source_tangents_ptr[tangent_index],
-								source_tangents_ptr[tangent_index + 1],
-								source_tangents_ptr[tangent_index + 2],
-								source_tangents_ptr[tangent_index + 3]);
-						const Vector4 blendshape_tangent = Vector4(
-								blendshape_tangents_ptr[tangent_index],
+						const Vector4 source_tangent = Vector4(source_tangents_ptr[tangent_index],
+							source_tangents_ptr[tangent_index + 1],
+							source_tangents_ptr[tangent_index + 2],
+							source_tangents_ptr[tangent_index + 3]);
+						const Vector4 blendshape_tangent =
+							Vector4(blendshape_tangents_ptr[tangent_index],
 								blendshape_tangents_ptr[tangent_index + 1],
 								blendshape_tangents_ptr[tangent_index + 2],
 								blendshape_tangents_ptr[tangent_index + 3]);
-						Vector4 lerped_tangent = source_tangent.lerp(blendshape_tangent, blend_weight);
+						Vector4 lerped_tangent =
+							source_tangent.lerp(blendshape_tangent, blend_weight);
 						lerped_tangents_ptrw[tangent_index] += lerped_tangent.x;
 						lerped_tangents_ptrw[tangent_index + 1] += lerped_tangent.y;
 						lerped_tangents_ptrw[tangent_index + 2] += lerped_tangent.z;
 						lerped_tangents_ptrw[tangent_index + 3] += lerped_tangent.w;
 					}
 				}
-			} else if (blend_shape_mode == Mesh::BLEND_SHAPE_MODE_RELATIVE) {
+			}
+			else if (blend_shape_mode == Mesh::BLEND_SHAPE_MODE_RELATIVE) {
 				for (int i = 0; i < source_mesh_vertex_array.size(); i++) {
-					const Vector3 &blendshape_vertex = blendshape_vertices_ptr[i];
+					const Vector3& blendshape_vertex = blendshape_vertices_ptr[i];
 					lerped_vertices_ptrw[i] += blendshape_vertex * blend_weight;
 
 					if (use_normal_array) {
-						const Vector3 &blendshape_normal = blendshape_normals_ptr[i];
+						const Vector3& blendshape_normal = blendshape_normals_ptr[i];
 						lerped_normals_ptrw[i] += blendshape_normal * blend_weight;
 					}
 
 					if (use_tangent_array) {
 						int tangent_index = i * 4;
-						const Vector4 blendshape_tangent = Vector4(
-								blendshape_tangents_ptr[tangent_index],
+						const Vector4 blendshape_tangent =
+							Vector4(blendshape_tangents_ptr[tangent_index],
 								blendshape_tangents_ptr[tangent_index + 1],
 								blendshape_tangents_ptr[tangent_index + 2],
 								blendshape_tangents_ptr[tangent_index + 3]);
@@ -693,30 +751,38 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_blend_shape_mix(Ref<ArrayM
 			new_mesh_arrays[Mesh::ARRAY_TANGENT] = lerped_tangent_array;
 		}
 
-		bake_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, new_mesh_arrays, Array(), Dictionary(), surface_format);
+		bake_mesh->add_surface_from_arrays(
+			Mesh::PRIMITIVE_TRIANGLES, new_mesh_arrays, Array(), Dictionary(), surface_format);
 	}
 
 	return bake_mesh;
 }
 
-Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMesh> p_existing) {
+Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMesh> p_existing)
+{
 	Ref<ArrayMesh> source_mesh = get_mesh();
-	ERR_FAIL_COND_V_MSG(source_mesh.is_null(), Ref<ArrayMesh>(), "The source mesh must be a valid ArrayMesh.");
+	ERR_FAIL_COND_V_MSG(
+		source_mesh.is_null(), Ref<ArrayMesh>(), "The source mesh must be a valid ArrayMesh.");
 
 	Ref<ArrayMesh> bake_mesh;
 
 	if (p_existing.is_valid()) {
-		ERR_FAIL_COND_V_MSG(source_mesh == p_existing, Ref<ArrayMesh>(), "The source mesh can not be the same mesh as the existing mesh.");
+		ERR_FAIL_COND_V_MSG(source_mesh == p_existing, Ref<ArrayMesh>(),
+			"The source mesh can not be the same mesh as the existing mesh.");
 
 		bake_mesh = p_existing;
-	} else {
+	}
+	else {
 		bake_mesh.instantiate();
 	}
 
-	ERR_FAIL_COND_V_MSG(skin_ref.is_null(), Ref<ArrayMesh>(), "The source mesh must have a valid skin.");
-	ERR_FAIL_COND_V_MSG(skin_internal.is_null(), Ref<ArrayMesh>(), "The source mesh must have a valid skin.");
+	ERR_FAIL_COND_V_MSG(
+		skin_ref.is_null(), Ref<ArrayMesh>(), "The source mesh must have a valid skin.");
+	ERR_FAIL_COND_V_MSG(
+		skin_internal.is_null(), Ref<ArrayMesh>(), "The source mesh must have a valid skin.");
 	RID skeleton = skin_ref->get_skeleton();
-	ERR_FAIL_COND_V_MSG(!skeleton.is_valid(), Ref<ArrayMesh>(), "The source mesh must have its skin registered with a valid skeleton.");
+	ERR_FAIL_COND_V_MSG(!skeleton.is_valid(), Ref<ArrayMesh>(),
+		"The source mesh must have its skin registered with a valid skeleton.");
 
 	const int bone_count = RenderingServer::get_singleton()->skeleton_get_bone_count(skeleton);
 	ERR_FAIL_COND_V(bone_count <= 0, Ref<ArrayMesh>());
@@ -725,7 +791,8 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMes
 	LocalVector<Transform3D> bone_transforms;
 	bone_transforms.resize(bone_count);
 	for (int bone_index = 0; bone_index < bone_count; bone_index++) {
-		bone_transforms[bone_index] = RenderingServer::get_singleton()->skeleton_bone_get_transform(skeleton, bone_index);
+		bone_transforms[bone_index] =
+			RenderingServer::get_singleton()->skeleton_bone_get_transform(skeleton, bone_index);
 	}
 
 	bake_mesh->clear_surfaces();
@@ -733,7 +800,8 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMes
 	int mesh_surface_count = source_mesh->get_surface_count();
 
 	for (int surface_index = 0; surface_index < mesh_surface_count; surface_index++) {
-		ERR_CONTINUE(source_mesh->surface_get_primitive_type(surface_index) != Mesh::PRIMITIVE_TRIANGLES);
+		ERR_CONTINUE(
+			source_mesh->surface_get_primitive_type(surface_index) != Mesh::PRIMITIVE_TRIANGLES);
 
 		uint32_t surface_format = source_mesh->surface_get_format(surface_index);
 
@@ -741,20 +809,21 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMes
 		ERR_CONTINUE(0 == (surface_format & Mesh::ARRAY_FORMAT_BONES));
 		ERR_CONTINUE(0 == (surface_format & Mesh::ARRAY_FORMAT_WEIGHTS));
 
-		unsigned int bones_per_vertex = surface_format & Mesh::ARRAY_FLAG_USE_8_BONE_WEIGHTS ? 8 : 4;
+		unsigned int bones_per_vertex =
+			surface_format & Mesh::ARRAY_FLAG_USE_8_BONE_WEIGHTS ? 8 : 4;
 
 		surface_format &= ~Mesh::ARRAY_FORMAT_BONES;
 		surface_format &= ~Mesh::ARRAY_FORMAT_WEIGHTS;
 
-		const Array &source_mesh_arrays = source_mesh->surface_get_arrays(surface_index);
+		const Array& source_mesh_arrays = source_mesh->surface_get_arrays(surface_index);
 
 		ERR_FAIL_COND_V(source_mesh_arrays.size() != RSE::ARRAY_MAX, Ref<ArrayMesh>());
 
-		const Vector<Vector3> &source_mesh_vertex_array = source_mesh_arrays[Mesh::ARRAY_VERTEX];
-		const Vector<Vector3> &source_mesh_normal_array = source_mesh_arrays[Mesh::ARRAY_NORMAL];
-		const Vector<float> &source_mesh_tangent_array = source_mesh_arrays[Mesh::ARRAY_TANGENT];
-		const Vector<int> &source_mesh_bones_array = source_mesh_arrays[Mesh::ARRAY_BONES];
-		const Vector<float> &source_mesh_weights_array = source_mesh_arrays[Mesh::ARRAY_WEIGHTS];
+		const Vector<Vector3>& source_mesh_vertex_array = source_mesh_arrays[Mesh::ARRAY_VERTEX];
+		const Vector<Vector3>& source_mesh_normal_array = source_mesh_arrays[Mesh::ARRAY_NORMAL];
+		const Vector<float>& source_mesh_tangent_array = source_mesh_arrays[Mesh::ARRAY_TANGENT];
+		const Vector<int>& source_mesh_bones_array = source_mesh_arrays[Mesh::ARRAY_BONES];
+		const Vector<float>& source_mesh_weights_array = source_mesh_arrays[Mesh::ARRAY_WEIGHTS];
 
 		unsigned int vertex_count = source_mesh_vertex_array.size();
 		int expected_bone_array_size = vertex_count * bones_per_vertex;
@@ -764,35 +833,37 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMes
 		Array new_mesh_arrays;
 		new_mesh_arrays.resize(Mesh::ARRAY_MAX);
 		for (int i = 0; i < source_mesh_arrays.size(); i++) {
-			if (i == Mesh::ARRAY_VERTEX || i == Mesh::ARRAY_NORMAL || i == Mesh::ARRAY_TANGENT || i == Mesh::ARRAY_BONES || i == Mesh::ARRAY_WEIGHTS) {
+			if (i == Mesh::ARRAY_VERTEX || i == Mesh::ARRAY_NORMAL || i == Mesh::ARRAY_TANGENT ||
+				i == Mesh::ARRAY_BONES || i == Mesh::ARRAY_WEIGHTS) {
 				continue;
 			}
 			new_mesh_arrays[i] = source_mesh_arrays[i];
 		}
 
 		bool use_normal_array = source_mesh_normal_array.size() == source_mesh_vertex_array.size();
-		bool use_tangent_array = source_mesh_tangent_array.size() / 4 == source_mesh_vertex_array.size();
+		bool use_tangent_array =
+			source_mesh_tangent_array.size() / 4 == source_mesh_vertex_array.size();
 
 		Vector<Vector3> lerped_vertex_array = source_mesh_vertex_array;
 		Vector<Vector3> lerped_normal_array = source_mesh_normal_array;
 		Vector<float> lerped_tangent_array = source_mesh_tangent_array;
 
-		const Vector3 *source_vertices_ptr = source_mesh_vertex_array.ptr();
-		const Vector3 *source_normals_ptr = source_mesh_normal_array.ptr();
-		const float *source_tangents_ptr = source_mesh_tangent_array.ptr();
-		const int *source_bones_ptr = source_mesh_bones_array.ptr();
-		const float *source_weights_ptr = source_mesh_weights_array.ptr();
+		const Vector3* source_vertices_ptr = source_mesh_vertex_array.ptr();
+		const Vector3* source_normals_ptr = source_mesh_normal_array.ptr();
+		const float* source_tangents_ptr = source_mesh_tangent_array.ptr();
+		const int* source_bones_ptr = source_mesh_bones_array.ptr();
+		const float* source_weights_ptr = source_mesh_weights_array.ptr();
 
-		Vector3 *lerped_vertices_ptrw = lerped_vertex_array.ptrw();
-		Vector3 *lerped_normals_ptrw = lerped_normal_array.ptrw();
-		float *lerped_tangents_ptrw = lerped_tangent_array.ptrw();
+		Vector3* lerped_vertices_ptrw = lerped_vertex_array.ptrw();
+		Vector3* lerped_normals_ptrw = lerped_normal_array.ptrw();
+		float* lerped_tangents_ptrw = lerped_tangent_array.ptrw();
 
 		for (unsigned int vertex_index = 0; vertex_index < vertex_count; vertex_index++) {
 			Vector3 lerped_vertex;
 			Vector3 lerped_normal;
 			Vector3 lerped_tangent;
 
-			const Vector3 &source_vertex = source_vertices_ptr[vertex_index];
+			const Vector3& source_vertex = source_vertices_ptr[vertex_index];
 
 			Vector3 source_normal;
 			if (use_normal_array) {
@@ -803,11 +874,9 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMes
 			Vector4 source_tangent;
 			Vector3 source_tangent_vec3;
 			if (use_tangent_array) {
-				source_tangent = Vector4(
-						source_tangents_ptr[tangent_index],
-						source_tangents_ptr[tangent_index + 1],
-						source_tangents_ptr[tangent_index + 2],
-						source_tangents_ptr[tangent_index + 3]);
+				source_tangent = Vector4(source_tangents_ptr[tangent_index],
+					source_tangents_ptr[tangent_index + 1], source_tangents_ptr[tangent_index + 2],
+					source_tangents_ptr[tangent_index + 3]);
 
 				DEV_ASSERT(source_tangent.w == 1.0 || source_tangent.w == -1.0);
 
@@ -815,25 +884,34 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMes
 			}
 
 			for (unsigned int weight_index = 0; weight_index < bones_per_vertex; weight_index++) {
-				float bone_weight = source_weights_ptr[vertex_index * bones_per_vertex + weight_index];
+				float bone_weight =
+					source_weights_ptr[vertex_index * bones_per_vertex + weight_index];
 				if (bone_weight < FLT_EPSILON) {
 					continue;
 				}
-				int vertex_bone_index = source_bones_ptr[vertex_index * bones_per_vertex + weight_index];
-				const Transform3D &bone_transform = bone_transforms[vertex_bone_index];
+				int vertex_bone_index =
+					source_bones_ptr[vertex_index * bones_per_vertex + weight_index];
+				const Transform3D& bone_transform = bone_transforms[vertex_bone_index];
 				const Basis bone_basis = bone_transform.basis.orthonormalized();
 
-				ERR_FAIL_INDEX_V(vertex_bone_index, static_cast<int>(bone_transforms.size()), Ref<ArrayMesh>());
+				ERR_FAIL_INDEX_V(
+					vertex_bone_index, static_cast<int>(bone_transforms.size()), Ref<ArrayMesh>());
 
-				lerped_vertex += source_vertex.lerp(bone_transform.xform(source_vertex), bone_weight) - source_vertex;
+				lerped_vertex +=
+					source_vertex.lerp(bone_transform.xform(source_vertex), bone_weight) -
+					source_vertex;
 				;
 
 				if (use_normal_array) {
-					lerped_normal += source_normal.lerp(bone_basis.xform(source_normal), bone_weight) - source_normal;
+					lerped_normal +=
+						source_normal.lerp(bone_basis.xform(source_normal), bone_weight) -
+						source_normal;
 				}
 
 				if (use_tangent_array) {
-					lerped_tangent += source_tangent_vec3.lerp(bone_basis.xform(source_tangent_vec3), bone_weight) - source_tangent_vec3;
+					lerped_tangent += source_tangent_vec3.lerp(
+										  bone_basis.xform(source_tangent_vec3), bone_weight) -
+									  source_tangent_vec3;
 				}
 			}
 
@@ -859,13 +937,15 @@ Ref<ArrayMesh> MeshInstance3D::bake_mesh_from_current_skeleton_pose(Ref<ArrayMes
 			new_mesh_arrays[Mesh::ARRAY_TANGENT] = lerped_tangent_array;
 		}
 
-		bake_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, new_mesh_arrays, Array(), Dictionary(), surface_format);
+		bake_mesh->add_surface_from_arrays(
+			Mesh::PRIMITIVE_TRIANGLES, new_mesh_arrays, Array(), Dictionary(), surface_format);
 	}
 
 	return bake_mesh;
 }
 
-Ref<TriangleMesh> MeshInstance3D::generate_triangle_mesh() const {
+Ref<TriangleMesh> MeshInstance3D::generate_triangle_mesh() const
+{
 	if (mesh.is_valid()) {
 		return mesh->generate_triangle_mesh();
 	}
@@ -873,25 +953,33 @@ Ref<TriangleMesh> MeshInstance3D::generate_triangle_mesh() const {
 }
 
 #ifndef NAVIGATION_3D_DISABLED
-void MeshInstance3D::navmesh_parse_init() {
+void MeshInstance3D::navmesh_parse_init()
+{
 	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
 	if (!_navmesh_source_geometry_parser.is_valid()) {
-		_navmesh_source_geometry_parsing_callback = callable_mp_static(&MeshInstance3D::navmesh_parse_source_geometry);
-		_navmesh_source_geometry_parser = NavigationServer3D::get_singleton()->source_geometry_parser_create();
-		NavigationServer3D::get_singleton()->source_geometry_parser_set_callback(_navmesh_source_geometry_parser, _navmesh_source_geometry_parsing_callback);
+		_navmesh_source_geometry_parsing_callback =
+			callable_mp_static(&MeshInstance3D::navmesh_parse_source_geometry);
+		_navmesh_source_geometry_parser =
+			NavigationServer3D::get_singleton()->source_geometry_parser_create();
+		NavigationServer3D::get_singleton()->source_geometry_parser_set_callback(
+			_navmesh_source_geometry_parser, _navmesh_source_geometry_parsing_callback);
 	}
 }
 
-void MeshInstance3D::navmesh_parse_source_geometry(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node) {
-	MeshInstance3D *mesh_instance = Object::cast_to<MeshInstance3D>(p_node);
+void MeshInstance3D::navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+	Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node)
+{
+	MeshInstance3D* mesh_instance = Object::cast_to<MeshInstance3D>(p_node);
 
 	if (mesh_instance == nullptr) {
 		return;
 	}
 
-	NavigationMesh::ParsedGeometryType parsed_geometry_type = p_navigation_mesh->get_parsed_geometry_type();
+	NavigationMesh::ParsedGeometryType parsed_geometry_type =
+		p_navigation_mesh->get_parsed_geometry_type();
 
-	if (parsed_geometry_type == NavigationMesh::PARSED_GEOMETRY_MESH_INSTANCES || parsed_geometry_type == NavigationMesh::PARSED_GEOMETRY_BOTH) {
+	if (parsed_geometry_type == NavigationMesh::PARSED_GEOMETRY_MESH_INSTANCES ||
+		parsed_geometry_type == NavigationMesh::PARSED_GEOMETRY_BOTH) {
 		Ref<Mesh> mesh = mesh_instance->get_mesh();
 		if (mesh.is_valid()) {
 			p_source_geometry_data->add_mesh(mesh, mesh_instance->get_global_transform());
@@ -900,59 +988,26 @@ void MeshInstance3D::navmesh_parse_source_geometry(const Ref<NavigationMesh> &p_
 }
 #endif // NAVIGATION_3D_DISABLED
 
-void MeshInstance3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_mesh", "mesh"), &MeshInstance3D::set_mesh);
-	ClassDB::bind_method(D_METHOD("get_mesh"), &MeshInstance3D::get_mesh);
-	ClassDB::bind_method(D_METHOD("set_skeleton_path", "skeleton_path"), &MeshInstance3D::set_skeleton_path);
-	ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MeshInstance3D::get_skeleton_path);
-	ClassDB::bind_method(D_METHOD("set_skin", "skin"), &MeshInstance3D::set_skin);
-	ClassDB::bind_method(D_METHOD("get_skin"), &MeshInstance3D::get_skin);
-	ClassDB::bind_method(D_METHOD("get_skin_reference"), &MeshInstance3D::get_skin_reference);
+void MeshInstance3D::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("get_surface_override_material_count"), &MeshInstance3D::get_surface_override_material_count);
-	ClassDB::bind_method(D_METHOD("set_surface_override_material", "surface", "material"), &MeshInstance3D::set_surface_override_material);
-	ClassDB::bind_method(D_METHOD("get_surface_override_material", "surface"), &MeshInstance3D::get_surface_override_material);
-	ClassDB::bind_method(D_METHOD("get_active_material", "surface"), &MeshInstance3D::get_active_material);
-
-#ifndef PHYSICS_3D_DISABLED
-	ClassDB::bind_method(D_METHOD("create_trimesh_collision"), &MeshInstance3D::create_trimesh_collision);
-	ClassDB::set_method_flags("MeshInstance3D", "create_trimesh_collision", METHOD_FLAGS_DEFAULT);
-	ClassDB::bind_method(D_METHOD("create_convex_collision", "clean", "simplify"), &MeshInstance3D::create_convex_collision, DEFVAL(true), DEFVAL(false));
-	ClassDB::set_method_flags("MeshInstance3D", "create_convex_collision", METHOD_FLAGS_DEFAULT);
-	ClassDB::bind_method(D_METHOD("create_multiple_convex_collisions", "settings"), &MeshInstance3D::create_multiple_convex_collisions, DEFVAL(Ref<MeshConvexDecompositionSettings>()));
-	ClassDB::set_method_flags("MeshInstance3D", "create_multiple_convex_collisions", METHOD_FLAGS_DEFAULT);
-#endif // PHYSICS_3D_DISABLED
-
-	ClassDB::bind_method(D_METHOD("get_blend_shape_count"), &MeshInstance3D::get_blend_shape_count);
-	ClassDB::bind_method(D_METHOD("find_blend_shape_by_name", "name"), &MeshInstance3D::find_blend_shape_by_name);
-	ClassDB::bind_method(D_METHOD("get_blend_shape_value", "blend_shape_idx"), &MeshInstance3D::get_blend_shape_value);
-	ClassDB::bind_method(D_METHOD("set_blend_shape_value", "blend_shape_idx", "value"), &MeshInstance3D::set_blend_shape_value);
-
-	ClassDB::bind_method(D_METHOD("create_debug_tangents"), &MeshInstance3D::create_debug_tangents);
-
-	ClassDB::bind_method(D_METHOD("bake_mesh_from_current_blend_shape_mix", "existing"), &MeshInstance3D::bake_mesh_from_current_blend_shape_mix, DEFVAL(Ref<ArrayMesh>()));
-	ClassDB::bind_method(D_METHOD("bake_mesh_from_current_skeleton_pose", "existing"), &MeshInstance3D::bake_mesh_from_current_skeleton_pose, DEFVAL(Ref<ArrayMesh>()));
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh", PROPERTY_HINT_RESOURCE_TYPE, Mesh::get_class_static()), "set_mesh", "get_mesh");
-	ADD_GROUP("Skeleton", "");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skin", PROPERTY_HINT_RESOURCE_TYPE, Skin::get_class_static()), "set_skin", "get_skin");
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "skeleton", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Skeleton3D"), "set_skeleton_path", "get_skeleton_path");
-	ADD_GROUP("", "");
-}
-
-PackedStringArray MeshInstance3D::get_configuration_warnings() const {
+PackedStringArray MeshInstance3D::get_configuration_warnings() const
+{
 	PackedStringArray warnings = GeometryInstance3D::get_configuration_warnings();
 	if (mesh.is_null()) {
-		warnings.push_back(RTR("MeshInstance3D requires a Mesh to render anything. Please add a mesh resource for it!"));
+		warnings.push_back(RTR("MeshInstance3D requires a Mesh to render anything. Please add a "
+							   "mesh resource for it!"));
 	}
 	return warnings;
 }
 
-MeshInstance3D::MeshInstance3D() {
-	_define_ancestry(AncestralClass::MESH_INSTANCE_3D);
+MeshInstance3D::MeshInstance3D()
+{
+	this->obj->_define_ancestry(Object::AncestralClass::MESH_INSTANCE_3D);
 #ifndef DISABLE_DEPRECATED
 	if (use_parent_skeleton_compat) {
 		skeleton_path = NodePath("..");
 	}
 #endif
 }
+
+

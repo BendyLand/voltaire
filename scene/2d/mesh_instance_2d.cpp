@@ -28,33 +28,33 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "mesh_instance_2d.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
+#include "mesh_instance_2d.h"
 
 #ifndef NAVIGATION_2D_DISABLED
+#include <thirdparty/clipper2/include/clipper2/clipper.h>
 #include "scene/resources/2d/navigation_mesh_source_geometry_data_2d.h"
 #include "scene/resources/2d/navigation_polygon.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-
-#include <thirdparty/clipper2/include/clipper2/clipper.h>
 #endif // NAVIGATION_2D_DISABLED
 
 Callable MeshInstance2D::_navmesh_source_geometry_parsing_callback;
 RID MeshInstance2D::_navmesh_source_geometry_parser;
 
-void MeshInstance2D::_notification(int p_what) {
+void MeshInstance2D::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_DRAW: {
-			if (mesh.is_valid()) {
-				draw_mesh(mesh, texture);
-			}
-		} break;
+	case NOTIFICATION_DRAW: {
+		if (mesh.is_valid()) {
+			draw_mesh(mesh, texture);
+		}
+	} break;
 	}
 }
 
-void MeshInstance2D::_bind_methods() {
+void MeshInstance2D::_bind_methods()
+{
 	ClassDB::bind_method(D_METHOD("set_mesh", "mesh"), &MeshInstance2D::set_mesh);
 	ClassDB::bind_method(D_METHOD("get_mesh"), &MeshInstance2D::get_mesh);
 
@@ -63,17 +63,22 @@ void MeshInstance2D::_bind_methods() {
 
 	ADD_SIGNAL(MethodInfo("texture_changed"));
 
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh", PROPERTY_HINT_RESOURCE_TYPE, Mesh::get_class_static()), "set_mesh", "get_mesh");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, Texture2D::get_class_static()), "set_texture", "get_texture");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh", PROPERTY_HINT_RESOURCE_TYPE,
+					 Mesh::get_class_static()),
+		"set_mesh", "get_mesh");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE,
+					 Texture2D::get_class_static()),
+		"set_texture", "get_texture");
 }
 
-void MeshInstance2D::set_mesh(const Ref<Mesh> &p_mesh) {
+void MeshInstance2D::set_mesh(const Ref<Mesh>& p_mesh)
+{
 	if (mesh == p_mesh) {
 		return;
 	}
 
 	if (mesh.is_valid()) {
-		mesh->disconnect_changed(callable_mp((CanvasItem *)this, &CanvasItem::queue_redraw));
+		mesh->disconnect_changed(callable_mp((CanvasItem*)this, &CanvasItem::queue_redraw));
 	}
 
 	mesh = p_mesh;
@@ -82,32 +87,30 @@ void MeshInstance2D::set_mesh(const Ref<Mesh> &p_mesh) {
 		// If mesh is a PrimitiveMesh, calling get_rid on it can trigger a changed callback
 		// so do this before connecting to the change signal.
 		mesh->get_rid();
-		mesh->connect_changed(callable_mp((CanvasItem *)this, &CanvasItem::queue_redraw));
+		mesh->connect_changed(callable_mp((CanvasItem*)this, &CanvasItem::queue_redraw));
 	}
 
 	queue_redraw();
 	update_configuration_warnings();
 }
 
-Ref<Mesh> MeshInstance2D::get_mesh() const {
-	return mesh;
-}
+Ref<Mesh> MeshInstance2D::get_mesh() const { return mesh; }
 
-void MeshInstance2D::set_texture(const Ref<Texture2D> &p_texture) {
+void MeshInstance2D::set_texture(const Ref<Texture2D>& p_texture)
+{
 	if (p_texture == texture) {
 		return;
 	}
 	texture = p_texture;
 	queue_redraw();
-	emit_signal(SceneStringName(texture_changed));
+	this->obj->emit_signal(SceneStringName(texture_changed));
 }
 
-Ref<Texture2D> MeshInstance2D::get_texture() const {
-	return texture;
-}
+Ref<Texture2D> MeshInstance2D::get_texture() const { return texture; }
 
 #ifdef DEBUG_ENABLED
-Rect2 MeshInstance2D::_edit_get_rect() const {
+Rect2 MeshInstance2D::_edit_get_rect() const
+{
 	if (mesh.is_valid()) {
 		AABB aabb = mesh->get_aabb();
 		return Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
@@ -116,31 +119,37 @@ Rect2 MeshInstance2D::_edit_get_rect() const {
 	return Node2D::_edit_get_rect();
 }
 
-bool MeshInstance2D::_edit_use_rect() const {
-	return mesh.is_valid();
-}
+bool MeshInstance2D::_edit_use_rect() const { return mesh.is_valid(); }
 #endif // DEBUG_ENABLED
 
 #ifndef NAVIGATION_2D_DISABLED
-void MeshInstance2D::navmesh_parse_init() {
+void MeshInstance2D::navmesh_parse_init()
+{
 	ERR_FAIL_NULL(NavigationServer2D::get_singleton());
 	if (!_navmesh_source_geometry_parser.is_valid()) {
-		_navmesh_source_geometry_parsing_callback = callable_mp_static(&MeshInstance2D::navmesh_parse_source_geometry);
-		_navmesh_source_geometry_parser = NavigationServer2D::get_singleton()->source_geometry_parser_create();
-		NavigationServer2D::get_singleton()->source_geometry_parser_set_callback(_navmesh_source_geometry_parser, _navmesh_source_geometry_parsing_callback);
+		_navmesh_source_geometry_parsing_callback =
+			callable_mp_static(&MeshInstance2D::navmesh_parse_source_geometry);
+		_navmesh_source_geometry_parser =
+			NavigationServer2D::get_singleton()->source_geometry_parser_create();
+		NavigationServer2D::get_singleton()->source_geometry_parser_set_callback(
+			_navmesh_source_geometry_parser, _navmesh_source_geometry_parsing_callback);
 	}
 }
 
-void MeshInstance2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node *p_node) {
-	MeshInstance2D *mesh_instance = Object::cast_to<MeshInstance2D>(p_node);
+void MeshInstance2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon>& p_navigation_mesh,
+	Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node* p_node)
+{
+	MeshInstance2D* mesh_instance = Object::cast_to<MeshInstance2D>(p_node);
 
 	if (mesh_instance == nullptr) {
 		return;
 	}
 
-	NavigationPolygon::ParsedGeometryType parsed_geometry_type = p_navigation_mesh->get_parsed_geometry_type();
+	NavigationPolygon::ParsedGeometryType parsed_geometry_type =
+		p_navigation_mesh->get_parsed_geometry_type();
 
-	if (!(parsed_geometry_type == NavigationPolygon::PARSED_GEOMETRY_MESH_INSTANCES || parsed_geometry_type == NavigationPolygon::PARSED_GEOMETRY_BOTH)) {
+	if (!(parsed_geometry_type == NavigationPolygon::PARSED_GEOMETRY_MESH_INSTANCES ||
+			parsed_geometry_type == NavigationPolygon::PARSED_GEOMETRY_BOTH)) {
 		return;
 	}
 
@@ -149,7 +158,8 @@ void MeshInstance2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> 
 		return;
 	}
 
-	const Transform2D mesh_instance_xform = p_source_geometry_data->root_node_transform * mesh_instance->get_global_transform();
+	const Transform2D mesh_instance_xform =
+		p_source_geometry_data->root_node_transform * mesh_instance->get_global_transform();
 
 	using namespace Clipper2Lib;
 
@@ -169,7 +179,8 @@ void MeshInstance2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> 
 		int index_count = 0;
 		if (mesh->surface_get_format(i) & Mesh::ARRAY_FORMAT_INDEX) {
 			index_count = mesh->surface_get_array_index_len(i);
-		} else {
+		}
+		else {
 			index_count = mesh->surface_get_array_len(i);
 		}
 
@@ -182,13 +193,14 @@ void MeshInstance2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> 
 		if (mesh->surface_get_format(i) & Mesh::ARRAY_FORMAT_INDEX) {
 			Vector<int> mesh_indices = a[Mesh::ARRAY_INDEX];
 			for (int vertex_index : mesh_indices) {
-				const Vector2 &vertex = mesh_vertices[vertex_index];
-				const PointD &point = PointD(vertex.x, vertex.y);
+				const Vector2& vertex = mesh_vertices[vertex_index];
+				const PointD& point = PointD(vertex.x, vertex.y);
 				subject_path.push_back(point);
 			}
-		} else {
-			for (const Vector2 &vertex : mesh_vertices) {
-				const PointD &point = PointD(vertex.x, vertex.y);
+		}
+		else {
+			for (const Vector2& vertex : mesh_vertices) {
+				const PointD& point = PointD(vertex.x, vertex.y);
 				subject_path.push_back(point);
 			}
 		}
@@ -199,12 +211,13 @@ void MeshInstance2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> 
 
 	path_solution = Union(subject_paths, dummy_clip_paths, FillRule::NonZero);
 
-	//path_solution = RamerDouglasPeucker(path_solution, 0.025);
+	// path_solution = RamerDouglasPeucker(path_solution, 0.025);
 
-	for (const PathD &scaled_path : path_solution) {
+	for (const PathD& scaled_path : path_solution) {
 		Vector<Vector2> shape_outline;
-		for (const PointD &scaled_point : scaled_path) {
-			shape_outline.push_back(Point2(static_cast<real_t>(scaled_point.x), static_cast<real_t>(scaled_point.y)));
+		for (const PointD& scaled_point : scaled_path) {
+			shape_outline.push_back(
+				Point2(static_cast<real_t>(scaled_point.x), static_cast<real_t>(scaled_point.y)));
 		}
 
 		for (int i = 0; i < shape_outline.size(); i++) {
@@ -216,10 +229,14 @@ void MeshInstance2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> 
 }
 #endif // NAVIGATION_2D_DISABLED
 
-PackedStringArray MeshInstance2D::get_configuration_warnings() const {
+PackedStringArray MeshInstance2D::get_configuration_warnings() const
+{
 	PackedStringArray warnings = Node2D::get_configuration_warnings();
 	if (mesh.is_null()) {
-		warnings.push_back(RTR("MeshInstance2D requires a Mesh to render anything. Please add a mesh resource for it!"));
+		warnings.push_back(RTR("MeshInstance2D requires a Mesh to render anything. Please add a "
+							   "mesh resource for it!"));
 	}
 	return warnings;
 }
+
+

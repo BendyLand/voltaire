@@ -121,7 +121,7 @@ void Bone2D::_notification(int p_what) {
 				bone.bone = this;
 				skeleton->bones.push_back(bone);
 				skeleton->_make_bone_setup_dirty();
-				get_parent()->connect(SNAME("child_order_changed"), callable_mp(skeleton, &Skeleton2D::_make_bone_setup_dirty), CONNECT_REFERENCE_COUNTED);
+				get_parent()->connect(SNAME("child_order_changed"), callable_mp(skeleton, &Skeleton2D::_make_bone_setup_dirty), Object::CONNECT_REFERENCE_COUNTED);
 			}
 
 			cache_transform = get_transform();
@@ -457,7 +457,7 @@ void Bone2D::set_autocalculate_length_and_angle(bool p_autocalculate) {
 	if (autocalculate_length_and_angle) {
 		calculate_length_and_rotation();
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool Bone2D::get_autocalculate_length_and_angle() const {
@@ -574,7 +574,7 @@ void Skeleton2D::_update_bone_setup() {
 
 	transform_dirty = true;
 	_update_transform();
-	emit_signal(SNAME("bone_setup_changed"));
+	this->obj->emit_signal(SNAME("bone_setup_changed"));
 }
 
 void Skeleton2D::_make_transform_dirty() {

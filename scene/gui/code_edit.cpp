@@ -28,9 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "code_edit.h"
 #include "code_edit.compat.inc"
-
+#include "code_edit.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
@@ -45,13 +44,16 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/rendering_server.h"
 
-void CodeEdit::_apply_project_settings() {
+void CodeEdit::_apply_project_settings()
+{
 	symbol_tooltip_timer->set_wait_time(GLOBAL_GET_CACHED(double, "gui/timers/tooltip_delay_sec"));
 }
 
-RID CodeEdit::get_focused_accessibility_element() const {
+RID CodeEdit::get_focused_accessibility_element() const
+{
 	bool draw_code_completion = code_completion_active && !code_completion_options.is_empty();
-	if (draw_code_completion && code_completion_current_selected >= 0 && code_completion_current_selected < code_completion_options.size()) {
+	if (draw_code_completion && code_completion_current_selected >= 0 &&
+		code_completion_current_selected < code_completion_options.size()) {
 		RID item = code_completion_ac_items[code_completion_current_selected];
 		if (item.is_valid()) {
 			return item;
@@ -60,84 +62,344 @@ RID CodeEdit::get_focused_accessibility_element() const {
 	return TextEdit::get_focused_accessibility_element();
 }
 
-void CodeEdit::_notification(int p_what) {
+void CodeEdit::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_READY: {
-			_apply_project_settings();
+	case NOTIFICATION_READY: {
+		_apply_project_settings();
 #ifdef TOOLS_ENABLED
-			if (Engine::get_singleton()->is_editor_hint()) {
-				ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &CodeEdit::_apply_project_settings));
-			}
+		if (Engine::get_singleton()->is_editor_hint()) {
+			ProjectSettings::get_singleton()->connect(
+				"settings_changed", callable_mp(this, &CodeEdit::_apply_project_settings));
+		}
 #endif // TOOLS_ENABLED
-		} break;
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED: {
-			_update_draw_main_gutter();
-			_update_line_number_gutter_width();
-			set_gutter_width(fold_gutter, get_line_height() / 1.2);
-			_clear_line_number_text_cache();
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		_update_draw_main_gutter();
+		_update_line_number_gutter_width();
+		set_gutter_width(fold_gutter, get_line_height() / 1.2);
+		_clear_line_number_text_cache();
+	} break;
 
-		case NOTIFICATION_TRANSLATION_CHANGED:
-			[[fallthrough]];
-		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-			[[fallthrough]];
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			// Avoid having many hidden text editors with unused cache filling up memory.
-			_clear_line_number_text_cache();
-		} break;
-		case NOTIFICATION_ACCESSIBILITY_INVALIDATE: {
-			code_completion_ac_items.clear();
-			code_completion_ac_items.resize_initialized(code_completion_options.size());
-			code_completion_ac_scroll_element = RID();
-			code_completion_ac_root_element = RID();
-		} break;
-		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-			RID ae = get_accessibility_element();
-			ERR_FAIL_COND(ae.is_null());
+	case NOTIFICATION_TRANSLATION_CHANGED:
+		[[fallthrough]];
+	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
+		[[fallthrough]];
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		// Avoid having many hidden text editors with unused cache filling up memory.
+		_clear_line_number_text_cache();
+	} break;
+	case NOTIFICATION_ACCESSIBILITY_INVALIDATE: {
+		code_completion_ac_items.clear();
+		code_completion_ac_items.resize_initialized(code_completion_options.size());
+		code_completion_ac_scroll_element = RID();
+		code_completion_ac_root_element = RID();
+	} break;
+	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+		RID ae = get_accessibility_element();
+		ERR_FAIL_COND(ae.is_null());
 
-			if (code_completion_ac_root_element.is_null()) {
-				code_completion_ac_root_element = AccessibilityServer::get_singleton()->create_sub_element(ae, AccessibilityServerEnums::AccessibilityRole::ROLE_MENU);
+		if (code_completion_ac_root_element.is_null()) {
+			code_completion_ac_root_element =
+				AccessibilityServer::get_singleton()->create_sub_element(
+					ae, AccessibilityServerEnums::AccessibilityRole::ROLE_MENU);
+		}
+
+		if (code_completion_ac_scroll_element.is_null()) {
+			code_completion_ac_scroll_element =
+				AccessibilityServer::get_singleton()->create_sub_element(
+					code_completion_ac_root_element,
+					AccessibilityServerEnums::AccessibilityRole::ROLE_CONTAINER);
+		}
+
+		bool draw_code_completion = code_completion_active && !code_completion_options.is_empty();
+		if (draw_code_completion && code_completion_current_selected >= 0 &&
+			code_completion_current_selected < code_completion_options.size()) {
+			int options_count = code_completion_options.size();
+			int row_height = get_line_height();
+			const bool draw_code_hint = !code_hint.is_empty();
+
+			Size2 code_hint_minsize;
+			if (draw_code_hint) {
+				const int font_height = theme_cache.font->get_height(theme_cache.font_size);
+
+				Vector<String> code_hint_lines = code_hint.split("\n");
+				int line_count = code_hint_lines.size();
+
+				int max_width = 0;
+				for (int i = 0; i < line_count; i++) {
+					max_width =
+						MAX(max_width, theme_cache.font
+										   ->get_string_size(code_hint_lines[i],
+											   HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+										   .x);
+				}
+				code_hint_minsize =
+					theme_cache.code_hint_style->get_minimum_size() +
+					Size2(max_width,
+						line_count * font_height + (theme_cache.line_spacing * line_count - 1));
 			}
 
-			if (code_completion_ac_scroll_element.is_null()) {
-				code_completion_ac_scroll_element = AccessibilityServer::get_singleton()->create_sub_element(code_completion_ac_root_element, AccessibilityServerEnums::AccessibilityRole::ROLE_CONTAINER);
+			int lines = MIN(options_count, theme_cache.code_completion_max_lines);
+			const Size2 icon_area_size(row_height, row_height);
+
+			code_completion_rect.size.width = code_completion_longest_line +
+											  theme_cache.code_completion_icon_separation +
+											  icon_area_size.width + 2;
+			code_completion_rect.size.height = lines * row_height;
+
+			const Point2 caret_pos = get_caret_draw_pos();
+			int total_height = theme_cache.code_completion_style->get_minimum_size().y +
+							   code_completion_rect.size.height;
+			int min_y = caret_pos.y - row_height;
+			int max_y = caret_pos.y + row_height + total_height;
+			if (draw_code_hint) {
+				if (code_hint_draw_below) {
+					max_y += code_hint_minsize.y;
+				}
+				else {
+					min_y -= code_hint_minsize.y;
+				}
 			}
 
-			bool draw_code_completion = code_completion_active && !code_completion_options.is_empty();
-			if (draw_code_completion && code_completion_current_selected >= 0 && code_completion_current_selected < code_completion_options.size()) {
-				int options_count = code_completion_options.size();
-				int row_height = get_line_height();
-				const bool draw_code_hint = !code_hint.is_empty();
+			const bool can_fit_completion_above = min_y > total_height;
+			const bool can_fit_completion_below = max_y <= get_size().height;
 
-				Size2 code_hint_minsize;
-				if (draw_code_hint) {
-					const int font_height = theme_cache.font->get_height(theme_cache.font_size);
+			bool should_place_above = !can_fit_completion_below && can_fit_completion_above;
 
-					Vector<String> code_hint_lines = code_hint.split("\n");
-					int line_count = code_hint_lines.size();
+			if (!can_fit_completion_below && !can_fit_completion_above) {
+				const int space_above = caret_pos.y - row_height;
+				const int space_below = get_size().height - caret_pos.y;
+				should_place_above = space_above > space_below;
 
-					int max_width = 0;
-					for (int i = 0; i < line_count; i++) {
-						max_width = MAX(max_width, theme_cache.font->get_string_size(code_hint_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).x);
-					}
-					code_hint_minsize = theme_cache.code_hint_style->get_minimum_size() + Size2(max_width, line_count * font_height + (theme_cache.line_spacing * line_count - 1));
+				// Reduce the line count and recalculate heights to better fit the completion popup.
+				int space_avail;
+				if (should_place_above) {
+					space_avail =
+						space_above - theme_cache.code_completion_style->get_minimum_size().y;
+				}
+				else {
+					space_avail =
+						space_below - theme_cache.code_completion_style->get_minimum_size().y;
 				}
 
-				int lines = MIN(options_count, theme_cache.code_completion_max_lines);
+				int max_lines_fit = MAX(1, space_avail / row_height);
+				lines = MIN(lines, max_lines_fit);
+				code_completion_rect.size.height = lines * row_height;
+				total_height = theme_cache.code_completion_style->get_minimum_size().y +
+							   code_completion_rect.size.height;
+			}
+
+			if (should_place_above) {
+				code_completion_rect.position.y =
+					(caret_pos.y - total_height - row_height) + theme_cache.line_spacing;
+				if (draw_code_hint && !code_hint_draw_below) {
+					code_completion_rect.position.y -= code_hint_minsize.y;
+				}
+			}
+			else {
+				code_completion_rect.position.y = caret_pos.y + (theme_cache.line_spacing / 2.0f);
+				if (draw_code_hint && code_hint_draw_below) {
+					code_completion_rect.position.y += code_hint_minsize.y;
+				}
+			}
+
+			const int scroll_width = options_count > theme_cache.code_completion_max_lines
+										 ? theme_cache.code_completion_scroll_width
+										 : 0;
+			const int code_completion_base_width =
+				theme_cache.font
+					->get_string_size(
+						code_completion_base, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+					.width;
+			if (caret_pos.x - code_completion_base_width + code_completion_rect.size.width +
+					scroll_width >
+				get_size().width) {
+				code_completion_rect.position.x =
+					get_size().width - code_completion_rect.size.width - scroll_width;
+			}
+			else {
+				code_completion_rect.position.x = caret_pos.x - code_completion_base_width;
+			}
+
+			code_completion_line_ofs =
+				CLAMP((code_completion_force_item_center < 0 ? code_completion_current_selected
+															 : code_completion_force_item_center) -
+						  lines / 2,
+					0, options_count - lines);
+
+			Transform2D scroll_xform;
+			scroll_xform.set_origin(Vector2i(0, -row_height * code_completion_line_ofs));
+			AccessibilityServer::get_singleton()->update_set_flag(code_completion_ac_root_element,
+				AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, false);
+			AccessibilityServer::get_singleton()->update_set_list_item_count(
+				code_completion_ac_root_element, options_count);
+			AccessibilityServer::get_singleton()->update_set_bounds(
+				code_completion_ac_root_element, code_completion_rect);
+			AccessibilityServer::get_singleton()->update_set_name(
+				code_completion_ac_root_element, ETR("Code completion list:"));
+
+			AccessibilityServer::get_singleton()->update_set_flag(code_completion_ac_scroll_element,
+				AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, false);
+			AccessibilityServer::get_singleton()->update_set_transform(
+				code_completion_ac_scroll_element, scroll_xform);
+			AccessibilityServer::get_singleton()->update_set_bounds(
+				code_completion_ac_scroll_element, code_completion_rect);
+
+			for (int i = 0; i < options_count; i++) {
+				if (code_completion_ac_items[i].is_null()) {
+					RID item = AccessibilityServer::get_singleton()->create_sub_element(
+						code_completion_ac_scroll_element,
+						AccessibilityServerEnums::AccessibilityRole::ROLE_MENU_ITEM);
+					code_completion_ac_items.write[i] = item;
+				}
+				RID item = code_completion_ac_items[i];
+				AccessibilityServer::get_singleton()->update_set_role(
+					item, AccessibilityServerEnums::AccessibilityRole::ROLE_MENU_ITEM);
+				AccessibilityServer::get_singleton()->update_set_list_item_index(item, i);
+				AccessibilityServer::get_singleton()->update_set_list_item_level(item, 0);
+				AccessibilityServer::get_singleton()->update_set_list_item_selected(
+					item, i == code_completion_current_selected);
+				AccessibilityServer::get_singleton()->update_set_name(
+					item, code_completion_options[i].display);
+				AccessibilityServer::get_singleton()->update_set_bounds(
+					item, Rect2(code_completion_rect.position.x,
+							  code_completion_rect.position.y + row_height * i,
+							  code_completion_rect.size.x, row_height));
+			}
+		}
+		else {
+			AccessibilityServer::get_singleton()->update_set_flag(code_completion_ac_root_element,
+				AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, true);
+			AccessibilityServer::get_singleton()->update_set_list_item_count(
+				code_completion_ac_root_element, 0);
+			AccessibilityServer::get_singleton()->update_set_bounds(
+				code_completion_ac_root_element, Rect2(0, 0, 1, 1));
+
+			AccessibilityServer::get_singleton()->update_set_flag(code_completion_ac_scroll_element,
+				AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, true);
+			AccessibilityServer::get_singleton()->update_set_bounds(
+				code_completion_ac_scroll_element, Rect2(0, 0, 1, 1));
+		}
+	} break;
+
+	case NOTIFICATION_DRAW: {
+		RID ci = get_text_canvas_item();
+		const bool caret_visible = is_caret_visible();
+		const bool rtl = is_layout_rtl();
+		const int row_height = get_line_height();
+
+		if (caret_visible) {
+			const bool draw_code_completion =
+				code_completion_active && !code_completion_options.is_empty();
+			const bool draw_code_hint = !code_hint.is_empty();
+
+			/* Code hint */
+			Size2 code_hint_minsize;
+			if (draw_code_hint) {
+				const int font_height = theme_cache.font->get_height(theme_cache.font_size);
+
+				Vector<String> code_hint_lines = code_hint.split("\n");
+				int line_count = code_hint_lines.size();
+
+				int max_width = 0;
+				for (int i = 0; i < line_count; i++) {
+					max_width =
+						MAX(max_width, theme_cache.font
+										   ->get_string_size(code_hint_lines[i],
+											   HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+										   .x);
+				}
+				code_hint_minsize =
+					theme_cache.code_hint_style->get_minimum_size() +
+					Size2(max_width,
+						line_count * font_height + (theme_cache.line_spacing * line_count - 1));
+
+				int offset =
+					theme_cache.font
+						->get_string_size(code_hint_lines[0].substr(
+											  0, code_hint_lines[0].find(String::chr(0xFFFF))),
+							HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+						.x;
+				if (code_hint_xpos == -0xFFFF) {
+					code_hint_xpos = get_caret_draw_pos().x - offset;
+				}
+				Point2 hint_ofs = Vector2(code_hint_xpos, get_caret_draw_pos().y);
+				if (code_hint_draw_below) {
+					hint_ofs.y += theme_cache.line_spacing / 2.0f;
+				}
+				else {
+					hint_ofs.y -= (code_hint_minsize.y + row_height) - theme_cache.line_spacing;
+				}
+
+				theme_cache.code_hint_style->draw(ci, Rect2(hint_ofs, code_hint_minsize));
+
+				int yofs = 0;
+				for (int i = 0; i < line_count; i++) {
+					const String& line = code_hint_lines[i];
+
+					int begin = 0;
+					int end = 0;
+					if (line.contains(String::chr(0xFFFF))) {
+						begin =
+							theme_cache.font
+								->get_string_size(line.substr(0, line.find(String::chr(0xFFFF))),
+									HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+								.x;
+						end = theme_cache.font
+								  ->get_string_size(line.substr(0, line.rfind(String::chr(0xFFFF))),
+									  HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+								  .x;
+					}
+
+					Point2 round_ofs =
+						hint_ofs + theme_cache.code_hint_style->get_offset() +
+						Vector2(0, theme_cache.font->get_ascent(theme_cache.font_size) +
+									   font_height * i + yofs);
+					round_ofs = round_ofs.round();
+					theme_cache.font->draw_string(ci, round_ofs, line.remove_char(0xFFFF),
+						HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size,
+						theme_cache.code_hint_color);
+					if (end > 0) {
+						// Draw an underline for the currently edited function parameter.
+						const Vector2 b = hint_ofs + theme_cache.code_hint_style->get_offset() +
+										  Vector2(begin, font_height + font_height * i + yofs);
+						RS::get_singleton()->canvas_item_add_line(
+							ci, b, b + Vector2(end - begin, 0), theme_cache.code_hint_color, 2);
+
+						// Draw a translucent text highlight as well.
+						const Rect2 highlight_rect =
+							Rect2(b - Vector2(0, font_height), Vector2(end - begin, font_height));
+						RS::get_singleton()->canvas_item_add_rect(
+							ci, highlight_rect, theme_cache.code_hint_color * Color(1, 1, 1, 0.2));
+					}
+					yofs += theme_cache.line_spacing;
+				}
+			}
+
+			/* Code completion */
+			if (draw_code_completion) {
+				const int code_completion_options_count = code_completion_options.size();
+				int lines =
+					MIN(code_completion_options_count, theme_cache.code_completion_max_lines);
 				const Size2 icon_area_size(row_height, row_height);
 
-				code_completion_rect.size.width = code_completion_longest_line + theme_cache.code_completion_icon_separation + icon_area_size.width + 2;
+				code_completion_rect.size.width = code_completion_longest_line +
+												  theme_cache.code_completion_icon_separation +
+												  icon_area_size.width + 2;
 				code_completion_rect.size.height = lines * row_height;
 
 				const Point2 caret_pos = get_caret_draw_pos();
-				int total_height = theme_cache.code_completion_style->get_minimum_size().y + code_completion_rect.size.height;
+				int total_height = theme_cache.code_completion_style->get_minimum_size().y +
+								   code_completion_rect.size.height;
 				int min_y = caret_pos.y - row_height;
 				int max_y = caret_pos.y + row_height + total_height;
 				if (draw_code_hint) {
 					if (code_hint_draw_below) {
 						max_y += code_hint_minsize.y;
-					} else {
+					}
+					else {
 						min_y -= code_hint_minsize.y;
 					}
 				}
@@ -152,293 +414,205 @@ void CodeEdit::_notification(int p_what) {
 					const int space_below = get_size().height - caret_pos.y;
 					should_place_above = space_above > space_below;
 
-					// Reduce the line count and recalculate heights to better fit the completion popup.
+					// Reduce the line count and recalculate heights to better fit the completion
+					// popup.
 					int space_avail;
 					if (should_place_above) {
-						space_avail = space_above - theme_cache.code_completion_style->get_minimum_size().y;
-					} else {
-						space_avail = space_below - theme_cache.code_completion_style->get_minimum_size().y;
+						space_avail =
+							space_above - theme_cache.code_completion_style->get_minimum_size().y;
+					}
+					else {
+						space_avail =
+							space_below - theme_cache.code_completion_style->get_minimum_size().y;
 					}
 
 					int max_lines_fit = MAX(1, space_avail / row_height);
 					lines = MIN(lines, max_lines_fit);
 					code_completion_rect.size.height = lines * row_height;
-					total_height = theme_cache.code_completion_style->get_minimum_size().y + code_completion_rect.size.height;
+					total_height = theme_cache.code_completion_style->get_minimum_size().y +
+								   code_completion_rect.size.height;
 				}
 
 				if (should_place_above) {
-					code_completion_rect.position.y = (caret_pos.y - total_height - row_height) + theme_cache.line_spacing;
+					code_completion_rect.position.y =
+						(caret_pos.y - total_height - row_height) + theme_cache.line_spacing;
 					if (draw_code_hint && !code_hint_draw_below) {
 						code_completion_rect.position.y -= code_hint_minsize.y;
 					}
-				} else {
-					code_completion_rect.position.y = caret_pos.y + (theme_cache.line_spacing / 2.0f);
+				}
+				else {
+					code_completion_rect.position.y =
+						caret_pos.y + (theme_cache.line_spacing / 2.0f);
 					if (draw_code_hint && code_hint_draw_below) {
 						code_completion_rect.position.y += code_hint_minsize.y;
 					}
 				}
 
-				const int scroll_width = options_count > theme_cache.code_completion_max_lines ? theme_cache.code_completion_scroll_width : 0;
-				const int code_completion_base_width = theme_cache.font->get_string_size(code_completion_base, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).width;
-				if (caret_pos.x - code_completion_base_width + code_completion_rect.size.width + scroll_width > get_size().width) {
-					code_completion_rect.position.x = get_size().width - code_completion_rect.size.width - scroll_width;
-				} else {
+				const int scroll_width =
+					code_completion_options_count > theme_cache.code_completion_max_lines
+						? theme_cache.code_completion_scroll_width
+						: 0;
+				const int code_completion_base_width =
+					theme_cache.font
+						->get_string_size(code_completion_base, HORIZONTAL_ALIGNMENT_LEFT, -1,
+							theme_cache.font_size)
+						.width;
+				if (caret_pos.x - code_completion_base_width + code_completion_rect.size.width +
+						scroll_width >
+					get_size().width) {
+					code_completion_rect.position.x =
+						get_size().width - code_completion_rect.size.width - scroll_width;
+				}
+				else {
 					code_completion_rect.position.x = caret_pos.x - code_completion_base_width;
 				}
 
-				code_completion_line_ofs = CLAMP((code_completion_force_item_center < 0 ? code_completion_current_selected : code_completion_force_item_center) - lines / 2, 0, options_count - lines);
-
-				Transform2D scroll_xform;
-				scroll_xform.set_origin(Vector2i(0, -row_height * code_completion_line_ofs));
-				AccessibilityServer::get_singleton()->update_set_flag(code_completion_ac_root_element, AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, false);
-				AccessibilityServer::get_singleton()->update_set_list_item_count(code_completion_ac_root_element, options_count);
-				AccessibilityServer::get_singleton()->update_set_bounds(code_completion_ac_root_element, code_completion_rect);
-				AccessibilityServer::get_singleton()->update_set_name(code_completion_ac_root_element, ETR("Code completion list:"));
-
-				AccessibilityServer::get_singleton()->update_set_flag(code_completion_ac_scroll_element, AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, false);
-				AccessibilityServer::get_singleton()->update_set_transform(code_completion_ac_scroll_element, scroll_xform);
-				AccessibilityServer::get_singleton()->update_set_bounds(code_completion_ac_scroll_element, code_completion_rect);
-
-				for (int i = 0; i < options_count; i++) {
-					if (code_completion_ac_items[i].is_null()) {
-						RID item = AccessibilityServer::get_singleton()->create_sub_element(code_completion_ac_scroll_element, AccessibilityServerEnums::AccessibilityRole::ROLE_MENU_ITEM);
-						code_completion_ac_items.write[i] = item;
-					}
-					RID item = code_completion_ac_items[i];
-					AccessibilityServer::get_singleton()->update_set_role(item, AccessibilityServerEnums::AccessibilityRole::ROLE_MENU_ITEM);
-					AccessibilityServer::get_singleton()->update_set_list_item_index(item, i);
-					AccessibilityServer::get_singleton()->update_set_list_item_level(item, 0);
-					AccessibilityServer::get_singleton()->update_set_list_item_selected(item, i == code_completion_current_selected);
-					AccessibilityServer::get_singleton()->update_set_name(item, code_completion_options[i].display);
-					AccessibilityServer::get_singleton()->update_set_bounds(item, Rect2(code_completion_rect.position.x, code_completion_rect.position.y + row_height * i, code_completion_rect.size.x, row_height));
-				}
-			} else {
-				AccessibilityServer::get_singleton()->update_set_flag(code_completion_ac_root_element, AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, true);
-				AccessibilityServer::get_singleton()->update_set_list_item_count(code_completion_ac_root_element, 0);
-				AccessibilityServer::get_singleton()->update_set_bounds(code_completion_ac_root_element, Rect2(0, 0, 1, 1));
-
-				AccessibilityServer::get_singleton()->update_set_flag(code_completion_ac_scroll_element, AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, true);
-				AccessibilityServer::get_singleton()->update_set_bounds(code_completion_ac_scroll_element, Rect2(0, 0, 1, 1));
-			}
-		} break;
-
-		case NOTIFICATION_DRAW: {
-			RID ci = get_text_canvas_item();
-			const bool caret_visible = is_caret_visible();
-			const bool rtl = is_layout_rtl();
-			const int row_height = get_line_height();
-
-			if (caret_visible) {
-				const bool draw_code_completion = code_completion_active && !code_completion_options.is_empty();
-				const bool draw_code_hint = !code_hint.is_empty();
-
-				/* Code hint */
-				Size2 code_hint_minsize;
-				if (draw_code_hint) {
-					const int font_height = theme_cache.font->get_height(theme_cache.font_size);
-
-					Vector<String> code_hint_lines = code_hint.split("\n");
-					int line_count = code_hint_lines.size();
-
-					int max_width = 0;
-					for (int i = 0; i < line_count; i++) {
-						max_width = MAX(max_width, theme_cache.font->get_string_size(code_hint_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).x);
-					}
-					code_hint_minsize = theme_cache.code_hint_style->get_minimum_size() + Size2(max_width, line_count * font_height + (theme_cache.line_spacing * line_count - 1));
-
-					int offset = theme_cache.font->get_string_size(code_hint_lines[0].substr(0, code_hint_lines[0].find(String::chr(0xFFFF))), HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).x;
-					if (code_hint_xpos == -0xFFFF) {
-						code_hint_xpos = get_caret_draw_pos().x - offset;
-					}
-					Point2 hint_ofs = Vector2(code_hint_xpos, get_caret_draw_pos().y);
-					if (code_hint_draw_below) {
-						hint_ofs.y += theme_cache.line_spacing / 2.0f;
-					} else {
-						hint_ofs.y -= (code_hint_minsize.y + row_height) - theme_cache.line_spacing;
-					}
-
-					theme_cache.code_hint_style->draw(ci, Rect2(hint_ofs, code_hint_minsize));
-
-					int yofs = 0;
-					for (int i = 0; i < line_count; i++) {
-						const String &line = code_hint_lines[i];
-
-						int begin = 0;
-						int end = 0;
-						if (line.contains(String::chr(0xFFFF))) {
-							begin = theme_cache.font->get_string_size(line.substr(0, line.find(String::chr(0xFFFF))), HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).x;
-							end = theme_cache.font->get_string_size(line.substr(0, line.rfind(String::chr(0xFFFF))), HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).x;
-						}
-
-						Point2 round_ofs = hint_ofs + theme_cache.code_hint_style->get_offset() + Vector2(0, theme_cache.font->get_ascent(theme_cache.font_size) + font_height * i + yofs);
-						round_ofs = round_ofs.round();
-						theme_cache.font->draw_string(ci, round_ofs, line.remove_char(0xFFFF), HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size, theme_cache.code_hint_color);
-						if (end > 0) {
-							// Draw an underline for the currently edited function parameter.
-							const Vector2 b = hint_ofs + theme_cache.code_hint_style->get_offset() + Vector2(begin, font_height + font_height * i + yofs);
-							RS::get_singleton()->canvas_item_add_line(ci, b, b + Vector2(end - begin, 0), theme_cache.code_hint_color, 2);
-
-							// Draw a translucent text highlight as well.
-							const Rect2 highlight_rect = Rect2(
-									b - Vector2(0, font_height),
-									Vector2(end - begin, font_height));
-							RS::get_singleton()->canvas_item_add_rect(ci, highlight_rect, theme_cache.code_hint_color * Color(1, 1, 1, 0.2));
-						}
-						yofs += theme_cache.line_spacing;
-					}
+				theme_cache.code_completion_style->draw(
+					ci, Rect2(code_completion_rect.position -
+								  theme_cache.code_completion_style->get_offset(),
+							code_completion_rect.size +
+								theme_cache.code_completion_style->get_minimum_size() +
+								Size2(scroll_width, 0)));
+				if (theme_cache.code_completion_background_color.a > 0.01) {
+					RenderingServer::get_singleton()->canvas_item_add_rect(ci,
+						Rect2(code_completion_rect.position,
+							code_completion_rect.size + Size2(scroll_width, 0)),
+						theme_cache.code_completion_background_color);
 				}
 
-				/* Code completion */
-				if (draw_code_completion) {
-					const int code_completion_options_count = code_completion_options.size();
-					int lines = MIN(code_completion_options_count, theme_cache.code_completion_max_lines);
-					const Size2 icon_area_size(row_height, row_height);
+				code_completion_scroll_rect.position =
+					code_completion_rect.position + Vector2(code_completion_rect.size.width, 0);
+				code_completion_scroll_rect.size =
+					Vector2(scroll_width, code_completion_rect.size.height);
 
-					code_completion_rect.size.width = code_completion_longest_line + theme_cache.code_completion_icon_separation + icon_area_size.width + 2;
-					code_completion_rect.size.height = lines * row_height;
+				code_completion_line_ofs = CLAMP(
+					(code_completion_force_item_center < 0 ? code_completion_current_selected
+														   : code_completion_force_item_center) -
+						lines / 2,
+					0, code_completion_options_count - lines);
+				RenderingServer::get_singleton()->canvas_item_add_rect(ci,
+					Rect2(Point2(code_completion_rect.position.x,
+							  code_completion_rect.position.y +
+								  (code_completion_current_selected - code_completion_line_ofs) *
+									  row_height),
+						Size2(code_completion_rect.size.width, row_height)),
+					theme_cache.code_completion_selected_color);
 
-					const Point2 caret_pos = get_caret_draw_pos();
-					int total_height = theme_cache.code_completion_style->get_minimum_size().y + code_completion_rect.size.height;
-					int min_y = caret_pos.y - row_height;
-					int max_y = caret_pos.y + row_height + total_height;
-					if (draw_code_hint) {
-						if (code_hint_draw_below) {
-							max_y += code_hint_minsize.y;
-						} else {
-							min_y -= code_hint_minsize.y;
-						}
+				const String& lang = this->obj->_get_locale();
+				for (int i = 0; i < lines; i++) {
+					int l = code_completion_line_ofs + i;
+					ERR_CONTINUE(l < 0 || l >= code_completion_options_count);
+
+					Ref<TextLine> tl;
+					tl.instantiate();
+					tl->add_string(code_completion_options[l].display, theme_cache.font,
+						theme_cache.font_size, lang);
+
+					int yofs = (row_height - tl->get_size().y) / 2;
+					Point2 title_pos(code_completion_rect.position.x,
+						code_completion_rect.position.y + i * row_height + yofs);
+
+					/* Draw completion icon if it is valid. */
+					const Ref<Texture2D>& icon = code_completion_options[l].icon;
+					Rect2 icon_area(code_completion_rect.position.x,
+						code_completion_rect.position.y + i * row_height, icon_area_size.width,
+						icon_area_size.height);
+					if (icon.is_valid()) {
+						Size2 icon_size = icon_area.size * 0.7;
+						icon->draw_rect(
+							ci, Rect2(icon_area.position + (icon_area.size - icon_size) / 2,
+									icon_size));
 					}
+					title_pos.x = icon_area.position.x + icon_area.size.width +
+								  theme_cache.code_completion_icon_separation;
 
-					const bool can_fit_completion_above = min_y > total_height;
-					const bool can_fit_completion_below = max_y <= get_size().height;
-
-					bool should_place_above = !can_fit_completion_below && can_fit_completion_above;
-
-					if (!can_fit_completion_below && !can_fit_completion_above) {
-						const int space_above = caret_pos.y - row_height;
-						const int space_below = get_size().height - caret_pos.y;
-						should_place_above = space_above > space_below;
-
-						// Reduce the line count and recalculate heights to better fit the completion popup.
-						int space_avail;
-						if (should_place_above) {
-							space_avail = space_above - theme_cache.code_completion_style->get_minimum_size().y;
-						} else {
-							space_avail = space_below - theme_cache.code_completion_style->get_minimum_size().y;
+					tl->set_width(code_completion_rect.size.width -
+								  (icon_area_size.x + theme_cache.code_completion_icon_separation));
+					if (rtl) {
+						if (code_completion_options[l].default_value.get_type() == Variant::COLOR) {
+							RS::get_singleton()->canvas_item_add_rect(ci,
+								Rect2(Point2(code_completion_rect.position.x, icon_area.position.y),
+									icon_area_size),
+								(Color)code_completion_options[l].default_value);
 						}
-
-						int max_lines_fit = MAX(1, space_avail / row_height);
-						lines = MIN(lines, max_lines_fit);
-						code_completion_rect.size.height = lines * row_height;
-						total_height = theme_cache.code_completion_style->get_minimum_size().y + code_completion_rect.size.height;
+						tl->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_RIGHT);
 					}
-
-					if (should_place_above) {
-						code_completion_rect.position.y = (caret_pos.y - total_height - row_height) + theme_cache.line_spacing;
-						if (draw_code_hint && !code_hint_draw_below) {
-							code_completion_rect.position.y -= code_hint_minsize.y;
-						}
-					} else {
-						code_completion_rect.position.y = caret_pos.y + (theme_cache.line_spacing / 2.0f);
-						if (draw_code_hint && code_hint_draw_below) {
-							code_completion_rect.position.y += code_hint_minsize.y;
-						}
-					}
-
-					const int scroll_width = code_completion_options_count > theme_cache.code_completion_max_lines ? theme_cache.code_completion_scroll_width : 0;
-					const int code_completion_base_width = theme_cache.font->get_string_size(code_completion_base, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).width;
-					if (caret_pos.x - code_completion_base_width + code_completion_rect.size.width + scroll_width > get_size().width) {
-						code_completion_rect.position.x = get_size().width - code_completion_rect.size.width - scroll_width;
-					} else {
-						code_completion_rect.position.x = caret_pos.x - code_completion_base_width;
-					}
-
-					theme_cache.code_completion_style->draw(ci, Rect2(code_completion_rect.position - theme_cache.code_completion_style->get_offset(), code_completion_rect.size + theme_cache.code_completion_style->get_minimum_size() + Size2(scroll_width, 0)));
-					if (theme_cache.code_completion_background_color.a > 0.01) {
-						RenderingServer::get_singleton()->canvas_item_add_rect(ci, Rect2(code_completion_rect.position, code_completion_rect.size + Size2(scroll_width, 0)), theme_cache.code_completion_background_color);
-					}
-
-					code_completion_scroll_rect.position = code_completion_rect.position + Vector2(code_completion_rect.size.width, 0);
-					code_completion_scroll_rect.size = Vector2(scroll_width, code_completion_rect.size.height);
-
-					code_completion_line_ofs = CLAMP((code_completion_force_item_center < 0 ? code_completion_current_selected : code_completion_force_item_center) - lines / 2, 0, code_completion_options_count - lines);
-					RenderingServer::get_singleton()->canvas_item_add_rect(ci, Rect2(Point2(code_completion_rect.position.x, code_completion_rect.position.y + (code_completion_current_selected - code_completion_line_ofs) * row_height), Size2(code_completion_rect.size.width, row_height)), theme_cache.code_completion_selected_color);
-
-					const String &lang = _get_locale();
-					for (int i = 0; i < lines; i++) {
-						int l = code_completion_line_ofs + i;
-						ERR_CONTINUE(l < 0 || l >= code_completion_options_count);
-
-						Ref<TextLine> tl;
-						tl.instantiate();
-						tl->add_string(code_completion_options[l].display, theme_cache.font, theme_cache.font_size, lang);
-
-						int yofs = (row_height - tl->get_size().y) / 2;
-						Point2 title_pos(code_completion_rect.position.x, code_completion_rect.position.y + i * row_height + yofs);
-
-						/* Draw completion icon if it is valid. */
-						const Ref<Texture2D> &icon = code_completion_options[l].icon;
-						Rect2 icon_area(code_completion_rect.position.x, code_completion_rect.position.y + i * row_height, icon_area_size.width, icon_area_size.height);
-						if (icon.is_valid()) {
-							Size2 icon_size = icon_area.size * 0.7;
-							icon->draw_rect(ci, Rect2(icon_area.position + (icon_area.size - icon_size) / 2, icon_size));
-						}
-						title_pos.x = icon_area.position.x + icon_area.size.width + theme_cache.code_completion_icon_separation;
-
-						tl->set_width(code_completion_rect.size.width - (icon_area_size.x + theme_cache.code_completion_icon_separation));
-						if (rtl) {
-							if (code_completion_options[l].default_value.get_type() == Variant::COLOR) {
-								RS::get_singleton()->canvas_item_add_rect(ci, Rect2(Point2(code_completion_rect.position.x, icon_area.position.y), icon_area_size), (Color)code_completion_options[l].default_value);
+					else {
+						if (code_completion_options[l].default_value.get_type() == Variant::COLOR) {
+							const Color color = code_completion_options[l].default_value;
+							const Rect2 rect =
+								Rect2(Point2(code_completion_rect.position.x +
+												 code_completion_rect.size.width - icon_area_size.x,
+										  icon_area.position.y),
+									icon_area_size);
+							if (color.a < 1.0) {
+								theme_cache.completion_color_bg->draw_rect(ci, rect, true);
 							}
-							tl->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_RIGHT);
-						} else {
-							if (code_completion_options[l].default_value.get_type() == Variant::COLOR) {
-								const Color color = code_completion_options[l].default_value;
-								const Rect2 rect = Rect2(Point2(code_completion_rect.position.x + code_completion_rect.size.width - icon_area_size.x, icon_area.position.y), icon_area_size);
-								if (color.a < 1.0) {
-									theme_cache.completion_color_bg->draw_rect(ci, rect, true);
-								}
 
-								RS::get_singleton()->canvas_item_add_rect(ci, rect, color);
-							}
-							tl->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_LEFT);
+							RS::get_singleton()->canvas_item_add_rect(ci, rect, color);
 						}
-
-						Point2 match_pos = Point2(code_completion_rect.position.x + icon_area_size.x + theme_cache.code_completion_icon_separation, code_completion_rect.position.y + i * row_height);
-
-						for (int j = 0; j < code_completion_options[l].matches.size(); j++) {
-							Pair<int, int> match_segment = code_completion_options[l].matches[j];
-							int match_offset = theme_cache.font->get_string_size(code_completion_options[l].display.substr(0, match_segment.first), HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).width;
-							int match_len = theme_cache.font->get_string_size(code_completion_options[l].display.substr(match_segment.first, match_segment.second), HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).width;
-
-							RS::get_singleton()->canvas_item_add_rect(ci, Rect2(match_pos + Point2(match_offset, 0), Size2(match_len, row_height)), theme_cache.code_completion_existing_color);
-						}
-						tl->draw(ci, title_pos, code_completion_options[l].font_color);
+						tl->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_LEFT);
 					}
 
-					/* Draw a small scroll rectangle to show a position in the options. */
-					if (scroll_width) {
-						Color scroll_color = is_code_completion_scroll_hovered || is_code_completion_scroll_pressed ? theme_cache.code_completion_scroll_hovered_color : theme_cache.code_completion_scroll_color;
+					Point2 match_pos = Point2(code_completion_rect.position.x + icon_area_size.x +
+												  theme_cache.code_completion_icon_separation,
+						code_completion_rect.position.y + i * row_height);
 
-						float r = (float)theme_cache.code_completion_max_lines / code_completion_options_count;
-						float o = (float)code_completion_line_ofs / code_completion_options_count;
-						RS::get_singleton()->canvas_item_add_rect(ci, Rect2(code_completion_rect.position.x + code_completion_rect.size.width, code_completion_rect.position.y + o * code_completion_rect.size.y, scroll_width, code_completion_rect.size.y * r), scroll_color);
+					for (int j = 0; j < code_completion_options[l].matches.size(); j++) {
+						Pair<int, int> match_segment = code_completion_options[l].matches[j];
+						int match_offset =
+							theme_cache.font
+								->get_string_size(code_completion_options[l].display.substr(
+													  0, match_segment.first),
+									HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+								.width;
+						int match_len =
+							theme_cache.font
+								->get_string_size(code_completion_options[l].display.substr(
+													  match_segment.first, match_segment.second),
+									HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+								.width;
+
+						RS::get_singleton()->canvas_item_add_rect(ci,
+							Rect2(
+								match_pos + Point2(match_offset, 0), Size2(match_len, row_height)),
+							theme_cache.code_completion_existing_color);
 					}
+					tl->draw(ci, title_pos, code_completion_options[l].font_color);
+				}
+
+				/* Draw a small scroll rectangle to show a position in the options. */
+				if (scroll_width) {
+					Color scroll_color =
+						is_code_completion_scroll_hovered || is_code_completion_scroll_pressed
+							? theme_cache.code_completion_scroll_hovered_color
+							: theme_cache.code_completion_scroll_color;
+
+					float r = (float)theme_cache.code_completion_max_lines /
+							  code_completion_options_count;
+					float o = (float)code_completion_line_ofs / code_completion_options_count;
+					RS::get_singleton()->canvas_item_add_rect(ci,
+						Rect2(code_completion_rect.position.x + code_completion_rect.size.width,
+							code_completion_rect.position.y + o * code_completion_rect.size.y,
+							scroll_width, code_completion_rect.size.y * r),
+						scroll_color);
 				}
 			}
-		} break;
+		}
+	} break;
 
-		case NOTIFICATION_DRAG_BEGIN: {
-			cancel_code_completion();
-		} break;
+	case NOTIFICATION_DRAG_BEGIN: {
+		cancel_code_completion();
+	} break;
 
-		case NOTIFICATION_MOUSE_EXIT: {
-			symbol_tooltip_timer->stop();
-		} break;
+	case NOTIFICATION_MOUSE_EXIT: {
+		symbol_tooltip_timer->stop();
+	} break;
 	}
 }
 
-void CodeEdit::_draw_guidelines() {
+void CodeEdit::_draw_guidelines()
+{
 	if (line_length_guideline_columns.is_empty()) {
 		return;
 	}
@@ -449,43 +623,59 @@ void CodeEdit::_draw_guidelines() {
 
 	Ref<StyleBox> style = is_editable() ? theme_cache.style_normal : theme_cache.style_readonly;
 	const int xmargin_beg = style->get_margin(SIDE_LEFT) + get_total_gutter_width();
-	const int xmargin_end = size.width - style->get_margin(SIDE_RIGHT) - (is_drawing_minimap() ? get_minimap_width() : 0);
+	const int xmargin_end = size.width - style->get_margin(SIDE_RIGHT) -
+							(is_drawing_minimap() ? get_minimap_width() : 0);
 
 	for (int i = 0; i < line_length_guideline_columns.size(); i++) {
-		const int column_pos = theme_cache.font->get_string_size(String("0").repeat((int)line_length_guideline_columns[i]), HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).x;
+		const int column_pos =
+			theme_cache.font
+				->get_string_size(String("0").repeat((int)line_length_guideline_columns[i]),
+					HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+				.x;
 		const int xoffset = xmargin_beg + column_pos - get_h_scroll();
 		if (xoffset > xmargin_beg && xoffset < xmargin_end) {
-			Color guideline_color = (i == 0) ? theme_cache.line_length_guideline_color : theme_cache.line_length_guideline_color * Color(1, 1, 1, 0.6);
+			Color guideline_color =
+				(i == 0) ? theme_cache.line_length_guideline_color
+						 : theme_cache.line_length_guideline_color * Color(1, 1, 1, 0.6);
 			if (rtl) {
-				RenderingServer::get_singleton()->canvas_item_add_line(ci, Point2(size.width - xoffset, 0), Point2(size.width - xoffset, size.height), guideline_color);
+				RenderingServer::get_singleton()->canvas_item_add_line(ci,
+					Point2(size.width - xoffset, 0), Point2(size.width - xoffset, size.height),
+					guideline_color);
 				continue;
 			}
-			RenderingServer::get_singleton()->canvas_item_add_line(ci, Point2(xoffset, 0), Point2(xoffset, size.height), guideline_color);
+			RenderingServer::get_singleton()->canvas_item_add_line(
+				ci, Point2(xoffset, 0), Point2(xoffset, size.height), guideline_color);
 		}
 	}
 }
 
-void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
+void CodeEdit::gui_input(const Ref<InputEvent>& p_gui_input)
+{
 	int event_device_id = p_gui_input->get_device();
 	Ref<InputEventScreenTouch> touch = p_gui_input;
 	if (touch.is_valid() && event_device_id != InputEvent::DEVICE_ID_EMULATION) {
 		if (code_completion_active) {
 			Vector2 touch_pos = touch->get_position();
-			if (code_completion_rect.has_point(touch_pos) || code_completion_scroll_rect.has_point(touch_pos)) {
+			if (code_completion_rect.has_point(touch_pos) ||
+				code_completion_scroll_rect.has_point(touch_pos)) {
 				if (touch->is_pressed()) {
 					is_code_completion_drag_started = true;
 					if (code_completion_force_item_center == -1) {
 						code_completion_force_item_center = code_completion_current_selected;
 					}
 
-					code_completion_current_selected = CLAMP(code_completion_line_ofs + (touch_pos.y - code_completion_rect.position.y) / get_line_height(), 0, code_completion_options.size() - 1);
+					code_completion_current_selected = CLAMP(
+						code_completion_line_ofs +
+							(touch_pos.y - code_completion_rect.position.y) / get_line_height(),
+						0, code_completion_options.size() - 1);
 					code_completion_pan_offset = 0.0f;
 					if (touch->is_double_tap()) {
 						confirm_code_completion();
 					}
 					queue_redraw();
 					queue_accessibility_update();
-				} else {
+				}
+				else {
 					// Finger lifted up inside the boundaries.
 					is_code_completion_drag_started = false;
 				}
@@ -497,12 +687,14 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 			if (touch->is_pressed()) {
 				cancel_code_completion();
 				set_code_hint("");
-			} else {
+			}
+			else {
 				is_code_completion_drag_started = false;
 				accept_event();
 				return;
 			}
-		} else {
+		}
+		else {
 			if (touch->is_pressed()) {
 				set_code_hint("");
 			}
@@ -513,13 +705,15 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 	bool is_valid_scroll_event = false;
 
 	Ref<InputEventPanGesture> pan_gesture = p_gui_input;
-	if (pan_gesture.is_valid() && code_completion_active && code_completion_rect.has_point(pan_gesture->get_position())) {
+	if (pan_gesture.is_valid() && code_completion_active &&
+		code_completion_rect.has_point(pan_gesture->get_position())) {
 		delta = pan_gesture->get_delta().y;
 		is_valid_scroll_event = true;
 	}
 
 	Ref<InputEventScreenDrag> drag = p_gui_input;
-	if (drag.is_valid() && event_device_id != InputEvent::DEVICE_ID_EMULATION && code_completion_active && is_code_completion_drag_started) {
+	if (drag.is_valid() && event_device_id != InputEvent::DEVICE_ID_EMULATION &&
+		code_completion_active && is_code_completion_drag_started) {
 		delta = -(drag->get_relative().y / (real_t)get_line_height());
 		is_valid_scroll_event = true;
 	}
@@ -533,7 +727,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 				queue_redraw();
 			}
 			code_completion_pan_offset = 0;
-		} else if (code_completion_pan_offset >= +1.0) {
+		}
+		else if (code_completion_pan_offset >= +1.0) {
 			if (code_completion_current_selected < code_completion_options.size() - 1) {
 				code_completion_current_selected++;
 				code_completion_force_item_center = -1;
@@ -575,42 +770,48 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 			is_code_completion_drag_started = true;
 
 			switch (mb->get_button_index()) {
-				case MouseButton::WHEEL_UP: {
-					if (code_completion_current_selected > 0) {
-						code_completion_current_selected--;
-						code_completion_force_item_center = -1;
-						code_completion_pan_offset = 0.0f;
-						queue_redraw();
-					}
-				} break;
-				case MouseButton::WHEEL_DOWN: {
-					if (code_completion_current_selected < code_completion_options.size() - 1) {
-						code_completion_current_selected++;
-						code_completion_force_item_center = -1;
-						code_completion_pan_offset = 0.0f;
-						queue_redraw();
-					}
-				} break;
-				case MouseButton::LEFT: {
-					if (code_completion_force_item_center == -1) {
-						code_completion_force_item_center = code_completion_current_selected;
-					}
-
-					code_completion_current_selected = CLAMP(code_completion_line_ofs + (mb->get_position().y - code_completion_rect.position.y) / get_line_height(), 0, code_completion_options.size() - 1);
+			case MouseButton::WHEEL_UP: {
+				if (code_completion_current_selected > 0) {
+					code_completion_current_selected--;
+					code_completion_force_item_center = -1;
 					code_completion_pan_offset = 0.0f;
-					if (mb->is_double_click()) {
-						confirm_code_completion();
-					}
 					queue_redraw();
-					queue_accessibility_update();
-				} break;
-				default:
-					break;
+				}
+			} break;
+			case MouseButton::WHEEL_DOWN: {
+				if (code_completion_current_selected < code_completion_options.size() - 1) {
+					code_completion_current_selected++;
+					code_completion_force_item_center = -1;
+					code_completion_pan_offset = 0.0f;
+					queue_redraw();
+				}
+			} break;
+			case MouseButton::LEFT: {
+				if (code_completion_force_item_center == -1) {
+					code_completion_force_item_center = code_completion_current_selected;
+				}
+
+				code_completion_current_selected =
+					CLAMP(code_completion_line_ofs +
+							  (mb->get_position().y - code_completion_rect.position.y) /
+								  get_line_height(),
+						0, code_completion_options.size() - 1);
+				code_completion_pan_offset = 0.0f;
+				if (mb->is_double_click()) {
+					confirm_code_completion();
+				}
+				queue_redraw();
+				queue_accessibility_update();
+			} break;
+			default:
+				break;
 			}
 
 			accept_event();
 			return;
-		} else if (code_completion_active && code_completion_scroll_rect.has_point(mb->get_position())) {
+		}
+		else if (code_completion_active &&
+				   code_completion_scroll_rect.has_point(mb->get_position())) {
 			if (mb->get_button_index() != MouseButton::LEFT) {
 				accept_event();
 				return;
@@ -647,7 +848,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 					int wrap_index = get_line_wrap_index_at_column(line, col);
 					if (wrap_index == get_line_wrap_count(line)) {
 						int eol_icon_width = theme_cache.folded_eol_icon->get_width();
-						int left_margin = get_total_gutter_width() + eol_icon_width + get_line_width(line, wrap_index) - get_h_scroll();
+						int left_margin = get_total_gutter_width() + eol_icon_width +
+										  get_line_width(line, wrap_index) - get_h_scroll();
 						if (mpos.x > left_margin && mpos.x <= left_margin + eol_icon_width + 3) {
 							unfold_line(line);
 							return;
@@ -655,7 +857,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 					}
 				}
 			}
-		} else {
+		}
+		else {
 			if (mb->get_button_index() == MouseButton::LEFT) {
 				if (mb->is_command_or_control_pressed() && !symbol_lookup_word.is_empty()) {
 					Vector2i mpos = mb->get_position();
@@ -668,9 +871,11 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 					int col = pos.x;
 
 					if (line != -1) {
-						emit_signal(SNAME("symbol_lookup"), symbol_lookup_word, line, col);
+						this->obj->emit_signal(
+							SNAME("symbol_lookup"), symbol_lookup_word, line, col);
 					}
-					// Don't return here to pass event to TextEdit so it can clean up the mouse pressed state.
+					// Don't return here to pass event to TextEdit so it can clean up the mouse
+					// pressed state.
 				}
 			}
 		}
@@ -688,9 +893,12 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 				symbol_lookup_pos = get_line_column_at_pos(mpos, false, false);
 				symbol_lookup_new_word = get_lookup_word(symbol_lookup_pos.y, symbol_lookup_pos.x);
 				if (symbol_lookup_new_word != symbol_lookup_word) {
-					emit_signal(SNAME("symbol_validate"), symbol_lookup_new_word);
+					this->obj->emit_signal(SNAME("symbol_validate"), symbol_lookup_new_word);
 				}
-			} else if (!mm->is_command_or_control_pressed() || (!mm->get_button_mask().is_empty() && symbol_lookup_pos != get_line_column_at_pos(mpos, false, false))) {
+			}
+			else if (!mm->is_command_or_control_pressed() ||
+					   (!mm->get_button_mask().is_empty() &&
+						   symbol_lookup_pos != get_line_column_at_pos(mpos, false, false))) {
 				set_symbol_lookup_word_as_valid(false);
 			}
 		}
@@ -740,29 +948,35 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 
 	/* Ctrl + Hover symbols */
 	bool mac_keys = OS::prefer_meta_over_ctrl();
-	if ((mac_keys && k->get_keycode() == Key::META) || (!mac_keys && k->get_keycode() == Key::CTRL)) {
+	if ((mac_keys && k->get_keycode() == Key::META) ||
+		(!mac_keys && k->get_keycode() == Key::CTRL)) {
 		if (symbol_lookup_on_click_enabled) {
 			if (k->is_pressed() && !is_dragging_cursor()) {
 				Point2i lookup_pos = get_line_column_at_pos(get_local_mouse_pos(), false, false);
 				symbol_lookup_new_word = get_lookup_word(lookup_pos.y, lookup_pos.x);
 				if (symbol_lookup_new_word != symbol_lookup_word) {
-					emit_signal(SNAME("symbol_validate"), symbol_lookup_new_word);
+					this->obj->emit_signal(SNAME("symbol_validate"), symbol_lookup_new_word);
 				}
-			} else {
+			}
+			else {
 				set_symbol_lookup_word_as_valid(false);
 			}
 		}
 		return;
 	}
 
-	/* If a modifier has been pressed, and nothing else, return. */
-	if (!k->is_pressed() || k->get_keycode() == Key::CTRL || k->get_keycode() == Key::ALT || k->get_keycode() == Key::SHIFT || k->get_keycode() == Key::META || k->get_keycode() == Key::CAPSLOCK) {
+	/* If a modifier has been pressed, and nothing
+	 else, return. */
+	if (!k->is_pressed() || k->get_keycode() == Key::CTRL || k->get_keycode() == Key::ALT ||
+		k->get_keycode() == Key::SHIFT || k->get_keycode() == Key::META ||
+		k->get_keycode() == Key::CAPSLOCK) {
 		return;
 	}
 
 	// Allow unicode handling if:
 	// No modifiers are pressed (except Shift and CapsLock)
-	bool allow_unicode_handling = !(k->is_ctrl_pressed() || k->is_alt_pressed() || k->is_meta_pressed());
+	bool allow_unicode_handling =
+		!(k->is_ctrl_pressed() || k->is_alt_pressed() || k->is_meta_pressed());
 
 	/* AUTO-COMPLETE */
 	if (code_completion_enabled && k->is_action("ui_text_completion_query", true)) {
@@ -775,7 +989,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 		if (k->is_action("ui_up", true)) {
 			if (code_completion_current_selected > 0) {
 				code_completion_current_selected--;
-			} else {
+			}
+			else {
 				code_completion_current_selected = code_completion_options.size() - 1;
 			}
 			code_completion_force_item_center = -1;
@@ -788,7 +1003,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 		if (k->is_action("ui_down", true)) {
 			if (code_completion_current_selected < code_completion_options.size() - 1) {
 				code_completion_current_selected++;
-			} else {
+			}
+			else {
 				code_completion_current_selected = 0;
 			}
 			code_completion_force_item_center = -1;
@@ -799,7 +1015,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 			return;
 		}
 		if (k->is_action("ui_page_up", true)) {
-			code_completion_current_selected = MAX(0, code_completion_current_selected - theme_cache.code_completion_max_lines);
+			code_completion_current_selected =
+				MAX(0, code_completion_current_selected - theme_cache.code_completion_max_lines);
 			code_completion_force_item_center = -1;
 			code_completion_pan_offset = 0.0f;
 			queue_accessibility_update();
@@ -808,7 +1025,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 			return;
 		}
 		if (k->is_action("ui_page_down", true)) {
-			code_completion_current_selected = MIN(code_completion_options.size() - 1, code_completion_current_selected + theme_cache.code_completion_max_lines);
+			code_completion_current_selected = MIN(code_completion_options.size() - 1,
+				code_completion_current_selected + theme_cache.code_completion_max_lines);
 			code_completion_force_item_center = -1;
 			code_completion_pan_offset = 0.0f;
 			queue_accessibility_update();
@@ -819,7 +1037,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 		if (k->is_action("ui_text_caret_line_end", true)) {
 			cancel_code_completion();
 		}
-		if (k->is_action("ui_text_completion_replace", true) || k->is_action("ui_text_completion_accept", true)) {
+		if (k->is_action("ui_text_completion_replace", true) ||
+			k->is_action("ui_text_completion_accept", true)) {
 			confirm_code_completion(k->is_action("ui_text_completion_replace", true));
 			accept_event();
 			return;
@@ -838,7 +1057,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 
 		if (k->is_action("ui_left", true) || k->is_action("ui_right", true)) {
 			update_code_completion = true;
-		} else {
+		}
+		else {
 			update_code_completion = (allow_unicode_handling && k->get_unicode() >= 32);
 		}
 	}
@@ -887,12 +1107,11 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 	k = k->duplicate();
 	k->set_shift_pressed(false);
 
-	if (k->is_action("ui_text_caret_up", true) ||
-			k->is_action("ui_text_caret_down", true) ||
-			k->is_action("ui_text_caret_line_start", true) ||
-			k->is_action("ui_text_caret_line_end", true) ||
-			k->is_action("ui_text_caret_page_up", true) ||
-			k->is_action("ui_text_caret_page_down", true)) {
+	if (k->is_action("ui_text_caret_up", true) || k->is_action("ui_text_caret_down", true) ||
+		k->is_action("ui_text_caret_line_start", true) ||
+		k->is_action("ui_text_caret_line_end", true) ||
+		k->is_action("ui_text_caret_page_up", true) ||
+		k->is_action("ui_text_caret_page_down", true)) {
 		set_code_hint("");
 	}
 
@@ -904,7 +1123,8 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 }
 
 /* General overrides */
-Control::CursorShape CodeEdit::get_cursor_shape(const Point2 &p_pos) const {
+Control::CursorShape CodeEdit::get_cursor_shape(const Point2& p_pos) const
+{
 	if (!symbol_lookup_word.is_empty()) {
 		return CURSOR_POINTING_HAND;
 	}
@@ -913,7 +1133,8 @@ Control::CursorShape CodeEdit::get_cursor_shape(const Point2 &p_pos) const {
 		return TextEdit::get_cursor_shape(p_pos);
 	}
 
-	if ((code_completion_active && code_completion_rect.has_point(p_pos)) || (!is_editable() && (!is_selecting_enabled() || get_line_count() == 0))) {
+	if ((code_completion_active && code_completion_rect.has_point(p_pos)) ||
+		(!is_editable() && (!is_selecting_enabled() || get_line_count() == 0))) {
 		return CURSOR_ARROW;
 	}
 
@@ -929,7 +1150,8 @@ Control::CursorShape CodeEdit::get_cursor_shape(const Point2 &p_pos) const {
 		int wrap_index = get_line_wrap_index_at_column(line, col);
 		if (wrap_index == get_line_wrap_count(line)) {
 			int eol_icon_width = theme_cache.folded_eol_icon->get_width();
-			int left_margin = get_total_gutter_width() + eol_icon_width + get_line_width(line, wrap_index) - get_h_scroll();
+			int left_margin = get_total_gutter_width() + eol_icon_width +
+							  get_line_width(line, wrap_index) - get_h_scroll();
 			if (p_pos.x > left_margin && p_pos.x <= left_margin + eol_icon_width + 3) {
 				return CURSOR_POINTING_HAND;
 			}
@@ -939,7 +1161,8 @@ Control::CursorShape CodeEdit::get_cursor_shape(const Point2 &p_pos) const {
 	return TextEdit::get_cursor_shape(p_pos);
 }
 
-void CodeEdit::_unhide_carets() {
+void CodeEdit::_unhide_carets()
+{
 	// Unfold caret and selection origin.
 	for (int i = 0; i < get_caret_count(); i++) {
 		if (_is_line_hidden(get_caret_line(i))) {
@@ -954,7 +1177,8 @@ void CodeEdit::_unhide_carets() {
 /* Text manipulation */
 
 // Overridable actions
-void CodeEdit::_handle_unicode_input_internal(const uint32_t p_unicode, int p_caret) {
+void CodeEdit::_handle_unicode_input_internal(const uint32_t p_unicode, int p_caret)
+{
 	start_action(EditAction::ACTION_TYPING);
 	begin_multicaret_edit();
 	for (int i = 0; i < get_caret_count(); i++) {
@@ -976,11 +1200,12 @@ void CodeEdit::_handle_unicode_input_internal(const uint32_t p_unicode, int p_ca
 		if (is_overtype_mode_enabled() && !had_selection) {
 			// Make sure we don't try and remove empty space.
 			if (get_caret_column(i) < get_line(get_caret_line(i)).length()) {
-				remove_text(get_caret_line(i), get_caret_column(i), get_caret_line(i), get_caret_column(i) + 1);
+				remove_text(get_caret_line(i), get_caret_column(i), get_caret_line(i),
+					get_caret_column(i) + 1);
 			}
 		}
 
-		const char32_t chr[2] = { (char32_t)p_unicode, 0 };
+		const char32_t chr[2] = {(char32_t)p_unicode, 0};
 
 		if (auto_brace_completion_enabled) {
 			int cl = get_caret_line(i);
@@ -994,30 +1219,42 @@ void CodeEdit::_handle_unicode_input_internal(const uint32_t p_unicode, int p_ca
 					insert_text_at_caret(selection_text + close_key, i);
 					set_caret_column(get_caret_column(i) - 1, i == 0, i);
 				}
-			} else {
+			}
+			else {
 				int caret_move_offset = 1;
 
-				int post_brace_pair = cc < get_line(cl).length() ? _get_auto_brace_pair_close_at_pos(cl, cc) : -1;
+				int post_brace_pair =
+					cc < get_line(cl).length() ? _get_auto_brace_pair_close_at_pos(cl, cc) : -1;
 
-				if (has_string_delimiter(chr) && cc > 0 && !is_symbol(get_line(cl)[cc - 1]) && post_brace_pair == -1) {
+				if (has_string_delimiter(chr) && cc > 0 && !is_symbol(get_line(cl)[cc - 1]) &&
+					post_brace_pair == -1) {
 					insert_text_at_caret(chr, i);
-				} else if (cc < get_line(cl).length() && !is_symbol(get_line(cl)[cc])) {
+				}
+				else if (cc < get_line(cl).length() && !is_symbol(get_line(cl)[cc])) {
 					insert_text_at_caret(chr, i);
-				} else if (post_brace_pair != -1 && auto_brace_completion_pairs[post_brace_pair].close_key[0] == chr[0]) {
-					caret_move_offset = auto_brace_completion_pairs[post_brace_pair].close_key.length();
-				} else if (is_in_comment(cl, cc) != -1 || (is_in_string(cl, cc) != -1 && has_string_delimiter(chr))) {
+				}
+				else if (post_brace_pair != -1 &&
+						   auto_brace_completion_pairs[post_brace_pair].close_key[0] == chr[0]) {
+					caret_move_offset =
+						auto_brace_completion_pairs[post_brace_pair].close_key.length();
+				}
+				else if (is_in_comment(cl, cc) != -1 ||
+						   (is_in_string(cl, cc) != -1 && has_string_delimiter(chr))) {
 					insert_text_at_caret(chr, i);
-				} else {
+				}
+				else {
 					insert_text_at_caret(chr, i);
 
 					int pre_brace_pair = _get_auto_brace_pair_open_at_pos(cl, cc + 1);
 					if (pre_brace_pair != -1) {
-						insert_text_at_caret(auto_brace_completion_pairs[pre_brace_pair].close_key, i);
+						insert_text_at_caret(
+							auto_brace_completion_pairs[pre_brace_pair].close_key, i);
 					}
 				}
 				set_caret_column(cc + caret_move_offset, i == 0, i);
 			}
-		} else {
+		}
+		else {
 			insert_text_at_caret(chr, i);
 		}
 	}
@@ -1025,7 +1262,8 @@ void CodeEdit::_handle_unicode_input_internal(const uint32_t p_unicode, int p_ca
 	end_action();
 }
 
-void CodeEdit::_backspace_internal(int p_caret) {
+void CodeEdit::_backspace_internal(int p_caret)
+{
 	if (!is_editable()) {
 		return;
 	}
@@ -1060,9 +1298,12 @@ void CodeEdit::_backspace_internal(int p_caret) {
 		int from_column = 0;
 		if (to_column == 0) {
 			from_column = get_line(to_line - 1).length();
-		} else if (TextEdit::is_caret_mid_grapheme_enabled() || !TextEdit::is_backspace_deletes_composite_character_enabled()) {
+		}
+		else if (TextEdit::is_caret_mid_grapheme_enabled() ||
+				   !TextEdit::is_backspace_deletes_composite_character_enabled()) {
 			from_column = to_column - 1;
-		} else {
+		}
+		else {
 			from_column = TextEdit::get_previous_composite_character_column(to_line, to_column);
 		}
 
@@ -1079,7 +1320,8 @@ void CodeEdit::_backspace_internal(int p_caret) {
 			}
 		}
 
-		// For space indentation we need to do a basic unindent if there are no chars to the left, acting the same way as tabs.
+		// For space indentation we need to do a basic unindent if there are no chars to the left,
+		// acting the same way as tabs.
 		if (indent_using_spaces && to_column != 0) {
 			if (get_first_non_whitespace_column(to_line) >= to_column) {
 				from_column = to_column - _calculate_spaces_till_next_left_indent(to_column);
@@ -1097,7 +1339,8 @@ void CodeEdit::_backspace_internal(int p_caret) {
 	end_complex_operation();
 }
 
-void CodeEdit::_cut_internal(int p_caret) {
+void CodeEdit::_cut_internal(int p_caret)
+{
 	// Overridden to unfold lines.
 	_copy_internal(p_caret);
 
@@ -1114,14 +1357,16 @@ void CodeEdit::_cut_internal(int p_caret) {
 	}
 	if (p_caret == -1) {
 		delete_lines();
-	} else {
+	}
+	else {
 		unfold_line(get_caret_line(p_caret));
 		remove_line_at(get_caret_line(p_caret));
 	}
 }
 
 /* Indent management */
-void CodeEdit::set_indent_size(const int p_size) {
+void CodeEdit::set_indent_size(const int p_size)
+{
 	ERR_FAIL_COND_MSG(p_size <= 0, "Indend size must be greater than 0.");
 	if (indent_size == p_size) {
 		return;
@@ -1130,38 +1375,34 @@ void CodeEdit::set_indent_size(const int p_size) {
 	indent_size = p_size;
 	if (indent_using_spaces) {
 		indent_text = String(" ").repeat(p_size);
-	} else {
+	}
+	else {
 		indent_text = "\t";
 	}
 	set_tab_size(p_size);
 }
 
-int CodeEdit::get_indent_size() const {
-	return indent_size;
-}
+int CodeEdit::get_indent_size() const { return indent_size; }
 
-void CodeEdit::set_indent_using_spaces(const bool p_use_spaces) {
+void CodeEdit::set_indent_using_spaces(const bool p_use_spaces)
+{
 	indent_using_spaces = p_use_spaces;
 	if (indent_using_spaces) {
 		indent_text = String(" ").repeat(indent_size);
-	} else {
+	}
+	else {
 		indent_text = "\t";
 	}
 }
 
-bool CodeEdit::is_indent_using_spaces() const {
-	return indent_using_spaces;
-}
+bool CodeEdit::is_indent_using_spaces() const { return indent_using_spaces; }
 
-void CodeEdit::set_auto_indent_enabled(bool p_enabled) {
-	auto_indent = p_enabled;
-}
+void CodeEdit::set_auto_indent_enabled(bool p_enabled) { auto_indent = p_enabled; }
 
-bool CodeEdit::is_auto_indent_enabled() const {
-	return auto_indent;
-}
+bool CodeEdit::is_auto_indent_enabled() const { return auto_indent; }
 
-void CodeEdit::set_auto_indent_prefixes(const TypedArray<String> &p_prefixes) {
+void CodeEdit::set_auto_indent_prefixes(const TypedArray<String>& p_prefixes)
+{
 	auto_indent_prefixes.clear();
 	for (int i = 0; i < p_prefixes.size(); i++) {
 		const String prefix = p_prefixes[i];
@@ -1169,15 +1410,17 @@ void CodeEdit::set_auto_indent_prefixes(const TypedArray<String> &p_prefixes) {
 	}
 }
 
-TypedArray<String> CodeEdit::get_auto_indent_prefixes() const {
+TypedArray<String> CodeEdit::get_auto_indent_prefixes() const
+{
 	TypedArray<String> prefixes;
-	for (const char32_t &E : auto_indent_prefixes) {
+	for (const char32_t& E : auto_indent_prefixes) {
 		prefixes.push_back(String::chr(E));
 	}
 	return prefixes;
 }
 
-void CodeEdit::do_indent() {
+void CodeEdit::do_indent()
+{
 	if (!is_editable()) {
 		return;
 	}
@@ -1207,7 +1450,8 @@ void CodeEdit::do_indent() {
 	end_complex_operation();
 }
 
-void CodeEdit::indent_lines() {
+void CodeEdit::indent_lines()
+{
 	if (!is_editable()) {
 		return;
 	}
@@ -1225,9 +1469,11 @@ void CodeEdit::indent_lines() {
 			}
 
 			if (indent_using_spaces) {
-				int spaces_to_add = _calculate_spaces_till_next_right_indent(get_first_non_whitespace_column(i));
+				int spaces_to_add =
+					_calculate_spaces_till_next_right_indent(get_first_non_whitespace_column(i));
 				insert_text(String(" ").repeat(spaces_to_add), i, 0, false);
-			} else {
+			}
+			else {
 				insert_text("\t", i, 0, false);
 			}
 		}
@@ -1237,7 +1483,8 @@ void CodeEdit::indent_lines() {
 	end_complex_operation();
 }
 
-void CodeEdit::unindent_lines() {
+void CodeEdit::unindent_lines()
+{
 	if (!is_editable()) {
 		return;
 	}
@@ -1252,9 +1499,12 @@ void CodeEdit::unindent_lines() {
 
 			if (line_text.begins_with("\t")) {
 				remove_text(i, 0, i, 1);
-			} else if (line_text.begins_with(" ")) {
-				// Remove only enough spaces to align text to nearest full multiple of indentation_size.
-				int spaces_to_remove = _calculate_spaces_till_next_left_indent(get_first_non_whitespace_column(i));
+			}
+			else if (line_text.begins_with(" ")) {
+				// Remove only enough spaces to align text to nearest full multiple of
+				// indentation_size.
+				int spaces_to_remove =
+					_calculate_spaces_till_next_left_indent(get_first_non_whitespace_column(i));
 				remove_text(i, 0, i, spaces_to_remove);
 			}
 		}
@@ -1264,7 +1514,8 @@ void CodeEdit::unindent_lines() {
 	end_complex_operation();
 }
 
-void CodeEdit::convert_indent(int p_from_line, int p_to_line) {
+void CodeEdit::convert_indent(int p_from_line, int p_to_line)
+{
 	if (!is_editable()) {
 		return;
 	}
@@ -1317,7 +1568,8 @@ void CodeEdit::convert_indent(int p_from_line, int p_to_line) {
 			}
 
 			// Calculate new line.
-			line = line.left(j + ((size_diff < 0) ? size_diff : 0)) + indent_text + line.substr(j + 1);
+			line =
+				line.left(j + ((size_diff < 0) ? size_diff : 0)) + indent_text + line.substr(j + 1);
 
 			space_count = 0;
 			j += size_diff;
@@ -1338,7 +1590,8 @@ void CodeEdit::convert_indent(int p_from_line, int p_to_line) {
 	end_complex_operation();
 }
 
-int CodeEdit::_calculate_spaces_till_next_left_indent(int p_column) const {
+int CodeEdit::_calculate_spaces_till_next_left_indent(int p_column) const
+{
 	int spaces_till_indent = p_column % indent_size;
 	if (spaces_till_indent == 0) {
 		spaces_till_indent = indent_size;
@@ -1346,11 +1599,13 @@ int CodeEdit::_calculate_spaces_till_next_left_indent(int p_column) const {
 	return spaces_till_indent;
 }
 
-int CodeEdit::_calculate_spaces_till_next_right_indent(int p_column) const {
+int CodeEdit::_calculate_spaces_till_next_right_indent(int p_column) const
+{
 	return indent_size - p_column % indent_size;
 }
 
-void CodeEdit::_new_line(bool p_split_current_line, bool p_above) {
+void CodeEdit::_new_line(bool p_split_current_line, bool p_above)
+{
 	if (!is_editable()) {
 		return;
 	}
@@ -1362,8 +1617,10 @@ void CodeEdit::_new_line(bool p_split_current_line, bool p_above) {
 		if (multicaret_edit_ignore_caret(i)) {
 			continue;
 		}
-		// When not splitting the line, we need to factor in indentation from the end of the current line.
-		const int cc = p_split_current_line ? get_caret_column(i) : get_line(get_caret_line(i)).length();
+		// When not splitting the line, we need to factor in indentation from the end of the current
+		// line.
+		const int cc =
+			p_split_current_line ? get_caret_column(i) : get_line(get_caret_line(i)).length();
 		const int cl = get_caret_line(i);
 
 		const String line = get_line(cl);
@@ -1434,7 +1691,8 @@ void CodeEdit::_new_line(bool p_split_current_line, bool p_above) {
 					if (p_split_current_line) {
 						brace_indent = true;
 						ins += "\n" + ins.substr(indent_text.size(), ins.length() - 2);
-					} else {
+					}
+					else {
 						brace_indent = false;
 						ins = "\n" + ins.substr(indent_text.size(), ins.length() - 2);
 					}
@@ -1444,7 +1702,8 @@ void CodeEdit::_new_line(bool p_split_current_line, bool p_above) {
 
 		if (p_split_current_line) {
 			insert_text_at_caret(ins, i);
-		} else {
+		}
+		else {
 			insert_text(ins, cl, p_above ? 0 : get_line(cl).length(), p_above, p_above);
 			deselect(i);
 			set_caret_line(p_above ? cl : cl + 1, false, true, -1, i);
@@ -1462,37 +1721,42 @@ void CodeEdit::_new_line(bool p_split_current_line, bool p_above) {
 }
 
 /* Auto brace completion */
-void CodeEdit::set_auto_brace_completion_enabled(bool p_enabled) {
+void CodeEdit::set_auto_brace_completion_enabled(bool p_enabled)
+{
 	auto_brace_completion_enabled = p_enabled;
 }
 
-bool CodeEdit::is_auto_brace_completion_enabled() const {
-	return auto_brace_completion_enabled;
-}
+bool CodeEdit::is_auto_brace_completion_enabled() const { return auto_brace_completion_enabled; }
 
-void CodeEdit::set_highlight_matching_braces_enabled(bool p_enabled) {
+void CodeEdit::set_highlight_matching_braces_enabled(bool p_enabled)
+{
 	highlight_matching_braces_enabled = p_enabled;
 	queue_redraw();
 }
 
-bool CodeEdit::is_highlight_matching_braces_enabled() const {
+bool CodeEdit::is_highlight_matching_braces_enabled() const
+{
 	return highlight_matching_braces_enabled;
 }
 
-void CodeEdit::add_auto_brace_completion_pair(const String &p_open_key, const String &p_close_key) {
+void CodeEdit::add_auto_brace_completion_pair(const String& p_open_key, const String& p_close_key)
+{
 	ERR_FAIL_COND_MSG(p_open_key.is_empty(), "auto brace completion open key cannot be empty");
 	ERR_FAIL_COND_MSG(p_close_key.is_empty(), "auto brace completion close key cannot be empty");
 
 	for (int i = 0; i < p_open_key.length(); i++) {
-		ERR_FAIL_COND_MSG(!is_symbol(p_open_key[i]), "auto brace completion open key must be a symbol");
+		ERR_FAIL_COND_MSG(
+			!is_symbol(p_open_key[i]), "auto brace completion open key must be a symbol");
 	}
 	for (int i = 0; i < p_close_key.length(); i++) {
-		ERR_FAIL_COND_MSG(!is_symbol(p_close_key[i]), "auto brace completion close key must be a symbol");
+		ERR_FAIL_COND_MSG(
+			!is_symbol(p_close_key[i]), "auto brace completion close key must be a symbol");
 	}
 
 	int at = 0;
 	for (int i = 0; i < auto_brace_completion_pairs.size(); i++) {
-		ERR_FAIL_COND_MSG(auto_brace_completion_pairs[i].open_key == p_open_key, "auto brace completion open key '" + p_open_key + "' already exists.");
+		ERR_FAIL_COND_MSG(auto_brace_completion_pairs[i].open_key == p_open_key,
+			"auto brace completion open key '" + p_open_key + "' already exists.");
 		if (p_open_key.length() < auto_brace_completion_pairs[i].open_key.length()) {
 			at++;
 		}
@@ -1504,23 +1768,27 @@ void CodeEdit::add_auto_brace_completion_pair(const String &p_open_key, const St
 	auto_brace_completion_pairs.insert(at, brace_pair);
 }
 
-void CodeEdit::set_auto_brace_completion_pairs(const Dictionary &p_auto_brace_completion_pairs) {
+void CodeEdit::set_auto_brace_completion_pairs(const Dictionary& p_auto_brace_completion_pairs)
+{
 	auto_brace_completion_pairs.clear();
 
-	for (const KeyValue<Variant, Variant> &kv : p_auto_brace_completion_pairs) {
+	for (const KeyValue<Variant, Variant>& kv : p_auto_brace_completion_pairs) {
 		add_auto_brace_completion_pair(kv.key, kv.value);
 	}
 }
 
-Dictionary CodeEdit::get_auto_brace_completion_pairs() const {
+Dictionary CodeEdit::get_auto_brace_completion_pairs() const
+{
 	Dictionary brace_pairs;
 	for (int i = 0; i < auto_brace_completion_pairs.size(); i++) {
-		brace_pairs[auto_brace_completion_pairs[i].open_key] = auto_brace_completion_pairs[i].close_key;
+		brace_pairs[auto_brace_completion_pairs[i].open_key] =
+			auto_brace_completion_pairs[i].close_key;
 	}
 	return brace_pairs;
 }
 
-bool CodeEdit::has_auto_brace_completion_open_key(const String &p_open_key) const {
+bool CodeEdit::has_auto_brace_completion_open_key(const String& p_open_key) const
+{
 	for (int i = 0; i < auto_brace_completion_pairs.size(); i++) {
 		if (auto_brace_completion_pairs[i].open_key == p_open_key) {
 			return true;
@@ -1529,7 +1797,8 @@ bool CodeEdit::has_auto_brace_completion_open_key(const String &p_open_key) cons
 	return false;
 }
 
-bool CodeEdit::has_auto_brace_completion_close_key(const String &p_close_key) const {
+bool CodeEdit::has_auto_brace_completion_close_key(const String& p_close_key) const
+{
 	for (int i = 0; i < auto_brace_completion_pairs.size(); i++) {
 		if (auto_brace_completion_pairs[i].close_key == p_close_key) {
 			return true;
@@ -1538,7 +1807,8 @@ bool CodeEdit::has_auto_brace_completion_close_key(const String &p_close_key) co
 	return false;
 }
 
-String CodeEdit::get_auto_brace_completion_close_key(const String &p_open_key) const {
+String CodeEdit::get_auto_brace_completion_close_key(const String& p_open_key) const
+{
 	for (int i = 0; i < auto_brace_completion_pairs.size(); i++) {
 		if (auto_brace_completion_pairs[i].open_key == p_open_key) {
 			return auto_brace_completion_pairs[i].close_key;
@@ -1548,41 +1818,40 @@ String CodeEdit::get_auto_brace_completion_close_key(const String &p_open_key) c
 }
 
 /* Main Gutter */
-void CodeEdit::_update_draw_main_gutter() {
+void CodeEdit::_update_draw_main_gutter()
+{
 	set_gutter_draw(main_gutter, draw_breakpoints || draw_bookmarks || draw_executing_lines);
 	int main_gutter_width = get_line_height() / (_is_bookmark_only() ? 2 : 1);
 	set_gutter_width(main_gutter, main_gutter_width);
 }
 
-void CodeEdit::set_draw_breakpoints_gutter(bool p_draw) {
+void CodeEdit::set_draw_breakpoints_gutter(bool p_draw)
+{
 	draw_breakpoints = p_draw;
 	set_gutter_clickable(main_gutter, p_draw);
 	_update_draw_main_gutter();
 }
 
-bool CodeEdit::is_drawing_breakpoints_gutter() const {
-	return draw_breakpoints;
-}
+bool CodeEdit::is_drawing_breakpoints_gutter() const { return draw_breakpoints; }
 
-void CodeEdit::set_draw_bookmarks_gutter(bool p_draw) {
+void CodeEdit::set_draw_bookmarks_gutter(bool p_draw)
+{
 	draw_bookmarks = p_draw;
 	_update_draw_main_gutter();
 }
 
-bool CodeEdit::is_drawing_bookmarks_gutter() const {
-	return draw_bookmarks;
-}
+bool CodeEdit::is_drawing_bookmarks_gutter() const { return draw_bookmarks; }
 
-void CodeEdit::set_draw_executing_lines_gutter(bool p_draw) {
+void CodeEdit::set_draw_executing_lines_gutter(bool p_draw)
+{
 	draw_executing_lines = p_draw;
 	_update_draw_main_gutter();
 }
 
-bool CodeEdit::is_drawing_executing_lines_gutter() const {
-	return draw_executing_lines;
-}
+bool CodeEdit::is_drawing_executing_lines_gutter() const { return draw_executing_lines; }
 
-void CodeEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2 &p_region) {
+void CodeEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2& p_region)
+{
 	bool hovering = get_hovered_gutter() == Vector2i(main_gutter, p_line);
 	RID ci = get_text_canvas_item();
 	if (draw_breakpoints && theme_cache.breakpoint_icon.is_valid()) {
@@ -1622,37 +1891,44 @@ void CodeEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2 
 		}
 	}
 
-	if (draw_executing_lines && is_line_executing(p_line) && theme_cache.executing_line_icon.is_valid()) {
+	if (draw_executing_lines && is_line_executing(p_line) &&
+		theme_cache.executing_line_icon.is_valid()) {
 		int horizontal_padding = p_region.size.x / 10;
 		int vertical_padding = p_region.size.y / 4;
 
 		Rect2 icon_region = p_region;
 		icon_region.position += Point2(horizontal_padding, vertical_padding);
 		icon_region.size -= Point2(horizontal_padding, vertical_padding) * 2;
-		theme_cache.executing_line_icon->draw_rect(ci, icon_region, false, theme_cache.executing_line_color);
+		theme_cache.executing_line_icon->draw_rect(
+			ci, icon_region, false, theme_cache.executing_line_color);
 	}
 }
 
 // Breakpoints
-void CodeEdit::set_line_as_breakpoint(int p_line, bool p_breakpointed) {
+void CodeEdit::set_line_as_breakpoint(int p_line, bool p_breakpointed)
+{
 	ERR_FAIL_INDEX(p_line, get_line_count());
 
 	int mask = get_line_gutter_metadata(p_line, main_gutter);
-	set_line_gutter_metadata(p_line, main_gutter, p_breakpointed ? mask | MAIN_GUTTER_BREAKPOINT : mask & ~MAIN_GUTTER_BREAKPOINT);
+	set_line_gutter_metadata(p_line, main_gutter,
+		p_breakpointed ? mask | MAIN_GUTTER_BREAKPOINT : mask & ~MAIN_GUTTER_BREAKPOINT);
 	if (p_breakpointed) {
 		breakpointed_lines[p_line] = true;
-	} else if (breakpointed_lines.has(p_line)) {
+	}
+	else if (breakpointed_lines.has(p_line)) {
 		breakpointed_lines.erase(p_line);
 	}
-	emit_signal(SNAME("breakpoint_toggled"), p_line);
+	this->obj->emit_signal(SNAME("breakpoint_toggled"), p_line);
 	queue_redraw();
 }
 
-bool CodeEdit::is_line_breakpointed(int p_line) const {
+bool CodeEdit::is_line_breakpointed(int p_line) const
+{
 	return (int)get_line_gutter_metadata(p_line, main_gutter) & MAIN_GUTTER_BREAKPOINT;
 }
 
-void CodeEdit::clear_breakpointed_lines() {
+void CodeEdit::clear_breakpointed_lines()
+{
 	for (int i = 0; i < get_line_count(); i++) {
 		if (is_line_breakpointed(i)) {
 			set_line_as_breakpoint(i, false);
@@ -1660,7 +1936,8 @@ void CodeEdit::clear_breakpointed_lines() {
 	}
 }
 
-PackedInt32Array CodeEdit::get_breakpointed_lines() const {
+PackedInt32Array CodeEdit::get_breakpointed_lines() const
+{
 	PackedInt32Array ret;
 	for (int i = 0; i < get_line_count(); i++) {
 		if (is_line_breakpointed(i)) {
@@ -1671,17 +1948,21 @@ PackedInt32Array CodeEdit::get_breakpointed_lines() const {
 }
 
 // Bookmarks
-void CodeEdit::set_line_as_bookmarked(int p_line, bool p_bookmarked) {
+void CodeEdit::set_line_as_bookmarked(int p_line, bool p_bookmarked)
+{
 	int mask = get_line_gutter_metadata(p_line, main_gutter);
-	set_line_gutter_metadata(p_line, main_gutter, p_bookmarked ? mask | MAIN_GUTTER_BOOKMARK : mask & ~MAIN_GUTTER_BOOKMARK);
+	set_line_gutter_metadata(p_line, main_gutter,
+		p_bookmarked ? mask | MAIN_GUTTER_BOOKMARK : mask & ~MAIN_GUTTER_BOOKMARK);
 	queue_redraw();
 }
 
-bool CodeEdit::is_line_bookmarked(int p_line) const {
+bool CodeEdit::is_line_bookmarked(int p_line) const
+{
 	return (int)get_line_gutter_metadata(p_line, main_gutter) & MAIN_GUTTER_BOOKMARK;
 }
 
-void CodeEdit::clear_bookmarked_lines() {
+void CodeEdit::clear_bookmarked_lines()
+{
 	for (int i = 0; i < get_line_count(); i++) {
 		if (is_line_bookmarked(i)) {
 			set_line_as_bookmarked(i, false);
@@ -1689,7 +1970,8 @@ void CodeEdit::clear_bookmarked_lines() {
 	}
 }
 
-PackedInt32Array CodeEdit::get_bookmarked_lines() const {
+PackedInt32Array CodeEdit::get_bookmarked_lines() const
+{
 	PackedInt32Array ret;
 	for (int i = 0; i < get_line_count(); i++) {
 		if (is_line_bookmarked(i)) {
@@ -1700,17 +1982,21 @@ PackedInt32Array CodeEdit::get_bookmarked_lines() const {
 }
 
 // Executing lines
-void CodeEdit::set_line_as_executing(int p_line, bool p_executing) {
+void CodeEdit::set_line_as_executing(int p_line, bool p_executing)
+{
 	int mask = get_line_gutter_metadata(p_line, main_gutter);
-	set_line_gutter_metadata(p_line, main_gutter, p_executing ? mask | MAIN_GUTTER_EXECUTING : mask & ~MAIN_GUTTER_EXECUTING);
+	set_line_gutter_metadata(p_line, main_gutter,
+		p_executing ? mask | MAIN_GUTTER_EXECUTING : mask & ~MAIN_GUTTER_EXECUTING);
 	queue_redraw();
 }
 
-bool CodeEdit::is_line_executing(int p_line) const {
+bool CodeEdit::is_line_executing(int p_line) const
+{
 	return (int)get_line_gutter_metadata(p_line, main_gutter) & MAIN_GUTTER_EXECUTING;
 }
 
-void CodeEdit::clear_executing_lines() {
+void CodeEdit::clear_executing_lines()
+{
 	for (int i = 0; i < get_line_count(); i++) {
 		if (is_line_executing(i)) {
 			set_line_as_executing(i, false);
@@ -1718,7 +2004,8 @@ void CodeEdit::clear_executing_lines() {
 	}
 }
 
-PackedInt32Array CodeEdit::get_executing_lines() const {
+PackedInt32Array CodeEdit::get_executing_lines() const
+{
 	PackedInt32Array ret;
 	for (int i = 0; i < get_line_count(); i++) {
 		if (is_line_executing(i)) {
@@ -1729,15 +2016,12 @@ PackedInt32Array CodeEdit::get_executing_lines() const {
 }
 
 /* Line numbers */
-void CodeEdit::set_draw_line_numbers(bool p_draw) {
-	set_gutter_draw(line_number_gutter, p_draw);
-}
+void CodeEdit::set_draw_line_numbers(bool p_draw) { set_gutter_draw(line_number_gutter, p_draw); }
 
-bool CodeEdit::is_draw_line_numbers_enabled() const {
-	return is_gutter_drawn(line_number_gutter);
-}
+bool CodeEdit::is_draw_line_numbers_enabled() const { return is_gutter_drawn(line_number_gutter); }
 
-void CodeEdit::set_line_numbers_zero_padded(bool p_zero_padded) {
+void CodeEdit::set_line_numbers_zero_padded(bool p_zero_padded)
+{
 	String new_line_number_padding = p_zero_padded ? "0" : " ";
 	if (line_number_padding == new_line_number_padding) {
 		return;
@@ -1748,11 +2032,10 @@ void CodeEdit::set_line_numbers_zero_padded(bool p_zero_padded) {
 	queue_redraw();
 }
 
-bool CodeEdit::is_line_numbers_zero_padded() const {
-	return line_number_padding == "0";
-}
+bool CodeEdit::is_line_numbers_zero_padded() const { return line_number_padding == "0"; }
 
-void CodeEdit::set_line_numbers_min_digits(int p_count) {
+void CodeEdit::set_line_numbers_min_digits(int p_count)
+{
 	if (line_numbers_min_digits == p_count) {
 		return;
 	}
@@ -1768,11 +2051,10 @@ void CodeEdit::set_line_numbers_min_digits(int p_count) {
 	queue_redraw();
 }
 
-int CodeEdit::get_line_numbers_min_digits() const {
-	return line_numbers_min_digits;
-}
+int CodeEdit::get_line_numbers_min_digits() const { return line_numbers_min_digits; }
 
-void CodeEdit::_line_number_draw_callback(int p_line, int p_gutter, const Rect2 &p_region) {
+void CodeEdit::_line_number_draw_callback(int p_line, int p_gutter, const Rect2& p_region)
+{
 	if (!Rect2(Vector2(0, 0), get_size()).intersects(p_region)) {
 		return;
 	}
@@ -1782,8 +2064,9 @@ void CodeEdit::_line_number_draw_callback(int p_line, int p_gutter, const Rect2 
 	RID text_rid;
 	if (E) {
 		text_rid = E->value;
-	} else {
-		const String &lang = _get_locale();
+	}
+	else {
+		const String& lang = this->obj->_get_locale();
 		String fc = String::num_int64(p_line + 1).lpad(line_number_digits, line_number_padding);
 		if (is_localizing_numeral_system()) {
 			fc = TranslationServer::get_singleton()->format_number(fc, lang);
@@ -1791,7 +2074,8 @@ void CodeEdit::_line_number_draw_callback(int p_line, int p_gutter, const Rect2 
 
 		text_rid = TS->create_shaped_text();
 		if (theme_cache.font.is_valid()) {
-			TS->shaped_text_add_string(text_rid, fc, theme_cache.font->get_rids(), theme_cache.font_size, theme_cache.font->get_opentype_features(), lang);
+			TS->shaped_text_add_string(text_rid, fc, theme_cache.font->get_rids(),
+				theme_cache.font_size, theme_cache.font->get_opentype_features(), lang);
 		}
 		line_number_text_cache.insert(p_line, text_rid);
 	}
@@ -1802,7 +2086,8 @@ void CodeEdit::_line_number_draw_callback(int p_line, int p_gutter, const Rect2 
 
 	if (rtl) {
 		ofs.x = p_region.get_end().x - text_size.width;
-	} else {
+	}
+	else {
 		ofs.x = p_region.position.x;
 	}
 
@@ -1814,29 +2099,34 @@ void CodeEdit::_line_number_draw_callback(int p_line, int p_gutter, const Rect2 
 	TS->shaped_text_draw(text_rid, get_text_canvas_item(), ofs, -1, -1, number_color);
 }
 
-void CodeEdit::_clear_line_number_text_cache() {
-	for (const KeyValue<int, RID> &KV : line_number_text_cache) {
+void CodeEdit::_clear_line_number_text_cache()
+{
+	for (const KeyValue<int, RID>& KV : line_number_text_cache) {
 		TS->free_rid(KV.value);
 	}
 	line_number_text_cache.clear();
 }
 
-void CodeEdit::_update_line_number_gutter_width() {
-	int width_in_chars = line_number_digits + (!is_drawing_fold_gutter() ? 1 : 0); // Extra padding if there is no fold gutter.
-	set_gutter_width(line_number_gutter, width_in_chars * theme_cache.font->get_char_size('0', theme_cache.font_size).width);
+void CodeEdit::_update_line_number_gutter_width()
+{
+	int width_in_chars =
+		line_number_digits +
+		(!is_drawing_fold_gutter() ? 1 : 0); // Extra padding if there is no fold gutter.
+	set_gutter_width(line_number_gutter,
+		width_in_chars * theme_cache.font->get_char_size('0', theme_cache.font_size).width);
 }
 
 /* Fold Gutter */
-void CodeEdit::set_draw_fold_gutter(bool p_draw) {
+void CodeEdit::set_draw_fold_gutter(bool p_draw)
+{
 	set_gutter_draw(fold_gutter, p_draw);
 	_update_line_number_gutter_width();
 }
 
-bool CodeEdit::is_drawing_fold_gutter() const {
-	return is_gutter_drawn(fold_gutter);
-}
+bool CodeEdit::is_drawing_fold_gutter() const { return is_gutter_drawn(fold_gutter); }
 
-void CodeEdit::_fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_region) {
+void CodeEdit::_fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_region)
+{
 	if (!can_fold_line(p_line) && !is_line_folded(p_line)) {
 		set_line_gutter_clickable(p_line, fold_gutter, false);
 		return;
@@ -1856,8 +2146,10 @@ void CodeEdit::_fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_regi
 		Color region_icon_color = theme_cache.folded_code_region_color;
 		region_icon_color.a = MAX(region_icon_color.a, 0.4f);
 		if (can_fold) {
-			theme_cache.can_fold_code_region_icon->draw_rect(ci, p_region, false, region_icon_color);
-		} else {
+			theme_cache.can_fold_code_region_icon->draw_rect(
+				ci, p_region, false, region_icon_color);
+		}
+		else {
 			theme_cache.folded_code_region_icon->draw_rect(ci, p_region, false, region_icon_color);
 		}
 		return;
@@ -1870,16 +2162,16 @@ void CodeEdit::_fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_regi
 }
 
 /* Line Folding */
-void CodeEdit::set_line_folding_enabled(bool p_enabled) {
+void CodeEdit::set_line_folding_enabled(bool p_enabled)
+{
 	line_folding_enabled = p_enabled;
 	_set_hiding_enabled(p_enabled);
 }
 
-bool CodeEdit::is_line_folding_enabled() const {
-	return line_folding_enabled;
-}
+bool CodeEdit::is_line_folding_enabled() const { return line_folding_enabled; }
 
-bool CodeEdit::can_fold_line(int p_line) const {
+bool CodeEdit::can_fold_line(int p_line) const
+{
 	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
 	if (!line_folding_enabled) {
 		return false;
@@ -1931,20 +2223,28 @@ bool CodeEdit::can_fold_line(int p_line) const {
 		if (delimiter_end_line == p_line) {
 			/* Check we are the start of the block. */
 			if (p_line - 1 >= 0) {
-				if ((in_string != -1 && is_in_string(p_line - 1) != -1) || (in_comment != -1 && is_in_comment(p_line - 1) != -1 && !is_line_code_region_start(p_line - 1) && !is_line_code_region_end(p_line - 1))) {
+				if ((in_string != -1 && is_in_string(p_line - 1) != -1) ||
+					(in_comment != -1 && is_in_comment(p_line - 1) != -1 &&
+						!is_line_code_region_start(p_line - 1) &&
+						!is_line_code_region_end(p_line - 1))) {
 					return false;
 				}
 			}
 			/* Check it continues for at least one line. */
-			return ((in_string != -1 && is_in_string(p_line + 1) != -1) || (in_comment != -1 && is_in_comment(p_line + 1) != -1 && !is_line_code_region_start(p_line + 1) && !is_line_code_region_end(p_line + 1)));
+			return ((in_string != -1 && is_in_string(p_line + 1) != -1) ||
+					(in_comment != -1 && is_in_comment(p_line + 1) != -1 &&
+						!is_line_code_region_start(p_line + 1) &&
+						!is_line_code_region_end(p_line + 1)));
 		}
-		return ((in_string != -1 && is_in_string(delimiter_end_line) != -1) || (in_comment != -1 && is_in_comment(delimiter_end_line) != -1));
+		return ((in_string != -1 && is_in_string(delimiter_end_line) != -1) ||
+				(in_comment != -1 && is_in_comment(delimiter_end_line) != -1));
 	}
 
 	/* Otherwise check indent levels. */
 	int start_indent = get_indent_level(p_line);
 	for (int i = p_line + 1; i < get_line_count(); i++) {
-		if (is_in_string(i) != -1 || is_in_comment(i) != -1 || get_line(i).strip_edges().is_empty()) {
+		if (is_in_string(i) != -1 || is_in_comment(i) != -1 ||
+			get_line(i).strip_edges().is_empty()) {
 			continue;
 		}
 		return (get_indent_level(i) > start_indent);
@@ -1952,7 +2252,8 @@ bool CodeEdit::can_fold_line(int p_line) const {
 	return false;
 }
 
-bool CodeEdit::_fold_line(int p_line) {
+bool CodeEdit::_fold_line(int p_line)
+{
 	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
 	if (!is_line_folding_enabled() || !can_fold_line(p_line)) {
 		return false;
@@ -1988,17 +2289,20 @@ bool CodeEdit::_fold_line(int p_line) {
 			// End line is the same therefore we have a block of single line delimiters.
 			if (end_line == p_line) {
 				for (int i = p_line + 1; i <= line_count; i++) {
-					if ((in_string != -1 && is_in_string(i) == -1) || (in_comment != -1 && is_in_comment(i) == -1)) {
+					if ((in_string != -1 && is_in_string(i) == -1) ||
+						(in_comment != -1 && is_in_comment(i) == -1)) {
 						break;
 					}
-					if (in_comment != -1 && (is_line_code_region_start(i) || is_line_code_region_end(i))) {
+					if (in_comment != -1 &&
+						(is_line_code_region_start(i) || is_line_code_region_end(i))) {
 						// A code region tag should split a comment block, ending it early.
 						break;
 					}
 					end_line = i;
 				}
 			}
-		} else {
+		}
+		else {
 			int start_indent = get_indent_level(p_line);
 			for (int i = p_line + 1; i <= line_count; i++) {
 				if (get_line(i).strip_edges().is_empty()) {
@@ -2025,7 +2329,8 @@ bool CodeEdit::_fold_line(int p_line) {
 	return true;
 }
 
-bool CodeEdit::_unfold_line(int p_line) {
+bool CodeEdit::_unfold_line(int p_line)
+{
 	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
 	if (!is_line_folded(p_line) && !_is_line_hidden(p_line)) {
 		return false;
@@ -2051,7 +2356,8 @@ bool CodeEdit::_unfold_line(int p_line) {
 	return true;
 }
 
-void CodeEdit::fold_all_lines() {
+void CodeEdit::fold_all_lines()
+{
 	bool any_line_folded = false;
 
 	for (int i = 0; i < get_line_count(); i++) {
@@ -2059,19 +2365,21 @@ void CodeEdit::fold_all_lines() {
 	}
 
 	if (any_line_folded) {
-		emit_signal(SNAME("_fold_line_updated"));
+		this->obj->emit_signal(SNAME("_fold_line_updated"));
 	}
 }
 
-void CodeEdit::fold_line(int p_line) {
+void CodeEdit::fold_line(int p_line)
+{
 	bool line_folded = _fold_line(p_line);
 
 	if (line_folded) {
-		emit_signal(SNAME("_fold_line_updated"));
+		this->obj->emit_signal(SNAME("_fold_line_updated"));
 	}
 }
 
-void CodeEdit::unfold_all_lines() {
+void CodeEdit::unfold_all_lines()
+{
 	bool any_line_unfolded = false;
 
 	for (int i = 0; i < get_line_count(); i++) {
@@ -2079,19 +2387,21 @@ void CodeEdit::unfold_all_lines() {
 	}
 
 	if (any_line_unfolded) {
-		emit_signal(SNAME("_fold_line_updated"));
+		this->obj->emit_signal(SNAME("_fold_line_updated"));
 	}
 }
 
-void CodeEdit::unfold_line(int p_line) {
+void CodeEdit::unfold_line(int p_line)
+{
 	bool line_unfolded = _unfold_line(p_line);
 
 	if (line_unfolded) {
-		emit_signal(SNAME("_fold_line_updated"));
+		this->obj->emit_signal(SNAME("_fold_line_updated"));
 	}
 }
 
-void CodeEdit::toggle_foldable_line(int p_line) {
+void CodeEdit::toggle_foldable_line(int p_line)
+{
 	ERR_FAIL_INDEX(p_line, get_line_count());
 	if (is_line_folded(p_line)) {
 		unfold_line(p_line);
@@ -2100,7 +2410,8 @@ void CodeEdit::toggle_foldable_line(int p_line) {
 	fold_line(p_line);
 }
 
-void CodeEdit::toggle_foldable_lines_at_carets() {
+void CodeEdit::toggle_foldable_lines_at_carets()
+{
 	begin_multicaret_edit();
 	int previous_line = -1;
 	Vector<int> sorted = get_sorted_carets();
@@ -2117,7 +2428,8 @@ void CodeEdit::toggle_foldable_lines_at_carets() {
 	end_multicaret_edit();
 }
 
-int CodeEdit::get_folded_line_header(int p_line) const {
+int CodeEdit::get_folded_line_header(int p_line) const
+{
 	ERR_FAIL_INDEX_V(p_line, get_line_count(), 0);
 	// Search for the first non hidden line.
 	while (p_line > 0) {
@@ -2129,12 +2441,14 @@ int CodeEdit::get_folded_line_header(int p_line) const {
 	return p_line;
 }
 
-bool CodeEdit::is_line_folded(int p_line) const {
+bool CodeEdit::is_line_folded(int p_line) const
+{
 	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
 	return p_line + 1 < get_line_count() && !_is_line_hidden(p_line) && _is_line_hidden(p_line + 1);
 }
 
-TypedArray<int> CodeEdit::get_folded_lines_bind() const {
+TypedArray<int> CodeEdit::get_folded_lines_bind() const
+{
 	TypedArray<int> folded_lines;
 	for (int i = 0; i < get_line_count(); i++) {
 		if (is_line_folded(i)) {
@@ -2144,7 +2458,8 @@ TypedArray<int> CodeEdit::get_folded_lines_bind() const {
 	return folded_lines;
 }
 
-PackedInt32Array CodeEdit::get_folded_lines() const {
+PackedInt32Array CodeEdit::get_folded_lines() const
+{
 	PackedInt32Array folded_lines;
 	for (int i = 0; i < get_line_count(); i++) {
 		if (is_line_folded(i)) {
@@ -2155,7 +2470,8 @@ PackedInt32Array CodeEdit::get_folded_lines() const {
 }
 
 /* Code region */
-void CodeEdit::create_code_region() {
+void CodeEdit::create_code_region()
+{
 	// Abort if there is no selected text.
 	if (!has_selection()) {
 		return;
@@ -2174,7 +2490,8 @@ void CodeEdit::create_code_region() {
 	// Add start and end region tags.
 	int line_offset = 0;
 	for (Point2i line_range : line_ranges) {
-		insert_text("\n" + code_region_end_string, line_range.y + line_offset, get_line(line_range.y + line_offset).length());
+		insert_text("\n" + code_region_end_string, line_range.y + line_offset,
+			get_line(line_range.y + line_offset).length());
 		insert_line_at(line_range.x + line_offset, code_region_start_string + " " + region_name);
 		fold_line(line_range.x + line_offset);
 		line_offset += 2;
@@ -2184,21 +2501,19 @@ void CodeEdit::create_code_region() {
 	// Select name of the first region to allow quick edit.
 	remove_secondary_carets();
 	int tag_length = code_region_start_string.length() + region_name.length() + 1;
-	select(first_region_start, code_region_start_string.length() + 1, first_region_start, tag_length);
+	select(
+		first_region_start, code_region_start_string.length() + 1, first_region_start, tag_length);
 
 	end_multicaret_edit();
 	end_complex_operation();
 }
 
-String CodeEdit::get_code_region_start_tag() const {
-	return code_region_start_tag;
-}
+String CodeEdit::get_code_region_start_tag() const { return code_region_start_tag; }
 
-String CodeEdit::get_code_region_end_tag() const {
-	return code_region_end_tag;
-}
+String CodeEdit::get_code_region_end_tag() const { return code_region_end_tag; }
 
-void CodeEdit::set_code_region_tags(const String &p_start, const String &p_end) {
+void CodeEdit::set_code_region_tags(const String& p_start, const String& p_end)
+{
 	ERR_FAIL_COND_MSG(p_start == p_end, "Starting and ending region tags cannot be identical.");
 	ERR_FAIL_COND_MSG(p_start.is_empty(), "Starting region tag cannot be empty.");
 	ERR_FAIL_COND_MSG(p_end.is_empty(), "Ending region tag cannot be empty.");
@@ -2207,7 +2522,8 @@ void CodeEdit::set_code_region_tags(const String &p_start, const String &p_end) 
 	_update_code_region_tags();
 }
 
-bool CodeEdit::is_line_code_region_start(int p_line) const {
+bool CodeEdit::is_line_code_region_start(int p_line) const
+{
 	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
 	if (code_region_start_string.is_empty()) {
 		return false;
@@ -2219,7 +2535,8 @@ bool CodeEdit::is_line_code_region_start(int p_line) const {
 	return split.size() > 0 && split[0] == code_region_start_string;
 }
 
-bool CodeEdit::is_line_code_region_end(int p_line) const {
+bool CodeEdit::is_line_code_region_end(int p_line) const
+{
 	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
 	if (code_region_start_string.is_empty()) {
 		return false;
@@ -2233,74 +2550,84 @@ bool CodeEdit::is_line_code_region_end(int p_line) const {
 
 /* Delimiters */
 // Strings
-void CodeEdit::add_string_delimiter(const String &p_start_key, const String &p_end_key, bool p_line_only) {
+void CodeEdit::add_string_delimiter(
+	const String& p_start_key, const String& p_end_key, bool p_line_only)
+{
 	_add_delimiter(p_start_key, p_end_key, p_line_only, TYPE_STRING);
 }
 
-void CodeEdit::remove_string_delimiter(const String &p_start_key) {
+void CodeEdit::remove_string_delimiter(const String& p_start_key)
+{
 	_remove_delimiter(p_start_key, TYPE_STRING);
 }
 
-bool CodeEdit::has_string_delimiter(const String &p_start_key) const {
+bool CodeEdit::has_string_delimiter(const String& p_start_key) const
+{
 	return _has_delimiter(p_start_key, TYPE_STRING);
 }
 
-void CodeEdit::set_string_delimiters(const TypedArray<String> &p_string_delimiters) {
+void CodeEdit::set_string_delimiters(const TypedArray<String>& p_string_delimiters)
+{
 	_set_delimiters(p_string_delimiters, TYPE_STRING);
 }
 
-void CodeEdit::clear_string_delimiters() {
-	_clear_delimiters(TYPE_STRING);
-}
+void CodeEdit::clear_string_delimiters() { _clear_delimiters(TYPE_STRING); }
 
-TypedArray<String> CodeEdit::get_string_delimiters() const {
-	return _get_delimiters(TYPE_STRING);
-}
+TypedArray<String> CodeEdit::get_string_delimiters() const { return _get_delimiters(TYPE_STRING); }
 
-int CodeEdit::is_in_string(int p_line, int p_column) const {
+int CodeEdit::is_in_string(int p_line, int p_column) const
+{
 	return _is_in_delimiter(p_line, p_column, TYPE_STRING);
 }
 
 // Comments
-void CodeEdit::add_comment_delimiter(const String &p_start_key, const String &p_end_key, bool p_line_only) {
+void CodeEdit::add_comment_delimiter(
+	const String& p_start_key, const String& p_end_key, bool p_line_only)
+{
 	_add_delimiter(p_start_key, p_end_key, p_line_only, TYPE_COMMENT);
 }
 
-void CodeEdit::remove_comment_delimiter(const String &p_start_key) {
+void CodeEdit::remove_comment_delimiter(const String& p_start_key)
+{
 	_remove_delimiter(p_start_key, TYPE_COMMENT);
 }
 
-bool CodeEdit::has_comment_delimiter(const String &p_start_key) const {
+bool CodeEdit::has_comment_delimiter(const String& p_start_key) const
+{
 	return _has_delimiter(p_start_key, TYPE_COMMENT);
 }
 
-void CodeEdit::set_comment_delimiters(const TypedArray<String> &p_comment_delimiters) {
+void CodeEdit::set_comment_delimiters(const TypedArray<String>& p_comment_delimiters)
+{
 	_set_delimiters(p_comment_delimiters, TYPE_COMMENT);
 }
 
-void CodeEdit::clear_comment_delimiters() {
-	_clear_delimiters(TYPE_COMMENT);
-}
+void CodeEdit::clear_comment_delimiters() { _clear_delimiters(TYPE_COMMENT); }
 
-TypedArray<String> CodeEdit::get_comment_delimiters() const {
+TypedArray<String> CodeEdit::get_comment_delimiters() const
+{
 	return _get_delimiters(TYPE_COMMENT);
 }
 
-int CodeEdit::is_in_comment(int p_line, int p_column) const {
+int CodeEdit::is_in_comment(int p_line, int p_column) const
+{
 	return _is_in_delimiter(p_line, p_column, TYPE_COMMENT);
 }
 
-String CodeEdit::get_delimiter_start_key(int p_delimiter_idx) const {
+String CodeEdit::get_delimiter_start_key(int p_delimiter_idx) const
+{
 	ERR_FAIL_INDEX_V(p_delimiter_idx, delimiters.size(), "");
 	return delimiters[p_delimiter_idx].start_key;
 }
 
-String CodeEdit::get_delimiter_end_key(int p_delimiter_idx) const {
+String CodeEdit::get_delimiter_end_key(int p_delimiter_idx) const
+{
 	ERR_FAIL_INDEX_V(p_delimiter_idx, delimiters.size(), "");
 	return delimiters[p_delimiter_idx].end_key;
 }
 
-Point2 CodeEdit::get_delimiter_start_position(int p_line, int p_column) const {
+Point2 CodeEdit::get_delimiter_start_position(int p_line, int p_column) const
+{
 	if (delimiters.is_empty()) {
 		return Point2(-1, -1);
 	}
@@ -2311,10 +2638,12 @@ Point2 CodeEdit::get_delimiter_start_position(int p_line, int p_column) const {
 	start_position.y = -1;
 	start_position.x = -1;
 
-	bool in_region = ((p_line <= 0 || delimiter_cache[p_line - 1].size() < 1) ? -1 : delimiter_cache[p_line - 1].back()->get()) != -1;
+	bool in_region = ((p_line <= 0 || delimiter_cache[p_line - 1].size() < 1)
+							 ? -1
+							 : delimiter_cache[p_line - 1].back()->get()) != -1;
 
 	/* Check the keys for this line. */
-	for (const KeyValue<int, int> &E : delimiter_cache[p_line]) {
+	for (const KeyValue<int, int>& E : delimiter_cache[p_line]) {
 		if (E.key > p_column) {
 			break;
 		}
@@ -2351,7 +2680,8 @@ Point2 CodeEdit::get_delimiter_start_position(int p_line, int p_column) const {
 	return start_position;
 }
 
-Point2 CodeEdit::get_delimiter_end_position(int p_line, int p_column) const {
+Point2 CodeEdit::get_delimiter_end_position(int p_line, int p_column) const
+{
 	if (delimiters.is_empty()) {
 		return Point2(-1, -1);
 	}
@@ -2362,10 +2692,12 @@ Point2 CodeEdit::get_delimiter_end_position(int p_line, int p_column) const {
 	end_position.y = -1;
 	end_position.x = -1;
 
-	int region = (p_line <= 0 || delimiter_cache[p_line - 1].size() < 1) ? -1 : delimiter_cache[p_line - 1].back()->value();
+	int region = (p_line <= 0 || delimiter_cache[p_line - 1].size() < 1)
+					 ? -1
+					 : delimiter_cache[p_line - 1].back()->value();
 
 	/* Check the keys for this line. */
-	for (const KeyValue<int, int> &E : delimiter_cache[p_line]) {
+	for (const KeyValue<int, int>& E : delimiter_cache[p_line]) {
 		end_position.x = (E.value == -1) ? E.key : -1;
 		if (E.key > p_column) {
 			break;
@@ -2374,7 +2706,8 @@ Point2 CodeEdit::get_delimiter_end_position(int p_line, int p_column) const {
 	}
 
 	/* Region was found on this line and is not a multiline continuation. */
-	if (region != -1 && end_position.x != -1 && (delimiters[region].line_only || end_position.x != get_line(p_line).length() + 1)) {
+	if (region != -1 && end_position.x != -1 &&
+		(delimiters[region].line_only || end_position.x != get_line(p_line).length() + 1)) {
 		end_position.y = p_line;
 		return end_position;
 	}
@@ -2403,7 +2736,8 @@ Point2 CodeEdit::get_delimiter_end_position(int p_line, int p_column) const {
 }
 
 /* Code hint */
-void CodeEdit::set_code_hint(const String &p_hint) {
+void CodeEdit::set_code_hint(const String& p_hint)
+{
 	if (code_hint == p_hint) {
 		return;
 	}
@@ -2412,7 +2746,8 @@ void CodeEdit::set_code_hint(const String &p_hint) {
 	queue_redraw();
 }
 
-void CodeEdit::set_code_hint_draw_below(bool p_below) {
+void CodeEdit::set_code_hint_draw_below(bool p_below)
+{
 	if (code_hint_draw_below == p_below) {
 		return;
 	}
@@ -2421,15 +2756,12 @@ void CodeEdit::set_code_hint_draw_below(bool p_below) {
 }
 
 /* Code Completion */
-void CodeEdit::set_code_completion_enabled(bool p_enable) {
-	code_completion_enabled = p_enable;
-}
+void CodeEdit::set_code_completion_enabled(bool p_enable) { code_completion_enabled = p_enable; }
 
-bool CodeEdit::is_code_completion_enabled() const {
-	return code_completion_enabled;
-}
+bool CodeEdit::is_code_completion_enabled() const { return code_completion_enabled; }
 
-void CodeEdit::set_code_completion_prefixes(const TypedArray<String> &p_prefixes) {
+void CodeEdit::set_code_completion_prefixes(const TypedArray<String>& p_prefixes)
+{
 	code_completion_prefixes.clear();
 	for (int i = 0; i < p_prefixes.size(); i++) {
 		const String prefix = p_prefixes[i];
@@ -2439,15 +2771,17 @@ void CodeEdit::set_code_completion_prefixes(const TypedArray<String> &p_prefixes
 	}
 }
 
-TypedArray<String> CodeEdit::get_code_completion_prefixes() const {
+TypedArray<String> CodeEdit::get_code_completion_prefixes() const
+{
 	TypedArray<String> prefixes;
-	for (const char32_t &E : code_completion_prefixes) {
+	for (const char32_t& E : code_completion_prefixes) {
 		prefixes.push_back(String::chr(E));
 	}
 	return prefixes;
 }
 
-String CodeEdit::get_text_for_code_completion() const {
+String CodeEdit::get_text_for_code_completion() const
+{
 	StringBuilder completion_text;
 	const int text_size = get_line_count();
 	for (int i = 0; i < text_size; i++) {
@@ -2458,7 +2792,8 @@ String CodeEdit::get_text_for_code_completion() const {
 			/* Not unicode, represents the caret. */
 			completion_text += String::chr(0xFFFF);
 			completion_text += line.substr(get_caret_column());
-		} else {
+		}
+		else {
 			completion_text += line;
 		}
 
@@ -2469,14 +2804,15 @@ String CodeEdit::get_text_for_code_completion() const {
 	return completion_text.as_string();
 }
 
-void CodeEdit::request_code_completion(bool p_force) {
+void CodeEdit::request_code_completion(bool p_force)
+{
 	/* Don't re-query if all existing options are quoted types, eg path, signal. */
 	bool ignored = code_completion_active && !code_completion_options.is_empty();
 	if (ignored) {
 		ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT;
-		const ScriptLanguage::CodeCompletionOption *previous_option = nullptr;
+		const ScriptLanguage::CodeCompletionOption* previous_option = nullptr;
 		for (int i = 0; i < code_completion_options.size(); i++) {
-			const ScriptLanguage::CodeCompletionOption &current_option = code_completion_options[i];
+			const ScriptLanguage::CodeCompletionOption& current_option = code_completion_options[i];
 			if (!previous_option) {
 				previous_option = &current_option;
 				kind = current_option.kind;
@@ -2486,7 +2822,9 @@ void CodeEdit::request_code_completion(bool p_force) {
 				break;
 			}
 		}
-		ignored = ignored && (kind == ScriptLanguage::CODE_COMPLETION_KIND_FILE_PATH || kind == ScriptLanguage::CODE_COMPLETION_KIND_NODE_PATH || kind == ScriptLanguage::CODE_COMPLETION_KIND_SIGNAL);
+		ignored = ignored && (kind == ScriptLanguage::CODE_COMPLETION_KIND_FILE_PATH ||
+								 kind == ScriptLanguage::CODE_COMPLETION_KIND_NODE_PATH ||
+								 kind == ScriptLanguage::CODE_COMPLETION_KIND_SIGNAL);
 	}
 
 	if (ignored) {
@@ -2494,22 +2832,27 @@ void CodeEdit::request_code_completion(bool p_force) {
 	}
 
 	if (p_force) {
-		emit_signal(SNAME("code_completion_requested"));
+		this->obj->emit_signal(SNAME("code_completion_requested"));
 		return;
 	}
 
 	String line = get_line(get_caret_line());
 	int ofs = CLAMP(get_caret_column(), 0, line.length());
 
-	if (ofs > 0 && (is_in_string(get_caret_line(), ofs) != -1 || !is_symbol(line[ofs - 1]) || code_completion_prefixes.has(line[ofs - 1]))) {
-		emit_signal(SNAME("code_completion_requested"));
-	} else if (ofs > 1 && line[ofs - 1] == ' ' && code_completion_prefixes.has(line[ofs - 2])) {
-		emit_signal(SNAME("code_completion_requested"));
+	if (ofs > 0 && (is_in_string(get_caret_line(), ofs) != -1 || !is_symbol(line[ofs - 1]) ||
+					   code_completion_prefixes.has(line[ofs - 1]))) {
+		this->obj->emit_signal(SNAME("code_completion_requested"));
+	}
+	else if (ofs > 1 && line[ofs - 1] == ' ' && code_completion_prefixes.has(line[ofs - 2])) {
+		this->obj->emit_signal(SNAME("code_completion_requested"));
 	}
 	queue_accessibility_update();
 }
 
-void CodeEdit::add_code_completion_option(CodeCompletionKind p_type, const String &p_display_text, const String &p_insert_text, const Color &p_text_color, const Ref<Resource> &p_icon, const Variant &p_value, int p_location) {
+void CodeEdit::add_code_completion_option(CodeCompletionKind p_type, const String& p_display_text,
+	const String& p_insert_text, const Color& p_text_color, const Ref<Resource>& p_icon,
+	const Variant& p_value, int p_location)
+{
 	ScriptLanguage::CodeCompletionOption completion_option;
 	completion_option.kind = (ScriptLanguage::CodeCompletionKind)p_type;
 	completion_option.display = p_display_text;
@@ -2521,7 +2864,8 @@ void CodeEdit::add_code_completion_option(CodeCompletionKind p_type, const Strin
 	code_completion_option_submitted.push_back(completion_option);
 }
 
-void CodeEdit::update_code_completion_options(bool p_forced) {
+void CodeEdit::update_code_completion_options(bool p_forced)
+{
 	code_completion_forced = p_forced;
 	code_completion_option_sources = code_completion_option_submitted;
 	code_completion_option_submitted.clear();
@@ -2529,7 +2873,8 @@ void CodeEdit::update_code_completion_options(bool p_forced) {
 	_filter_code_completion_candidates_impl();
 }
 
-TypedArray<Dictionary> CodeEdit::get_code_completion_options() const {
+TypedArray<Dictionary> CodeEdit::get_code_completion_options() const
+{
 	if (!code_completion_active) {
 		return TypedArray<Dictionary>();
 	}
@@ -2550,7 +2895,8 @@ TypedArray<Dictionary> CodeEdit::get_code_completion_options() const {
 	return completion_options;
 }
 
-Dictionary CodeEdit::get_code_completion_option(int p_index) const {
+Dictionary CodeEdit::get_code_completion_option(int p_index) const
+{
 	if (!code_completion_active) {
 		return Dictionary();
 	}
@@ -2567,11 +2913,13 @@ Dictionary CodeEdit::get_code_completion_option(int p_index) const {
 	return option;
 }
 
-int CodeEdit::get_code_completion_selected_index() const {
+int CodeEdit::get_code_completion_selected_index() const
+{
 	return (code_completion_active) ? code_completion_current_selected : -1;
 }
 
-void CodeEdit::set_code_completion_selected_index(int p_index) {
+void CodeEdit::set_code_completion_selected_index(int p_index)
+{
 	if (!code_completion_active) {
 		return;
 	}
@@ -2583,7 +2931,8 @@ void CodeEdit::set_code_completion_selected_index(int p_index) {
 	queue_redraw();
 }
 
-void CodeEdit::confirm_code_completion(bool p_replace) {
+void CodeEdit::confirm_code_completion(bool p_replace)
+{
 	if (!is_editable() || !code_completion_active) {
 		return;
 	}
@@ -2598,8 +2947,10 @@ void CodeEdit::confirm_code_completion(bool p_replace) {
 		}
 		int caret_line = get_caret_line(i);
 
-		const String &insert_text = code_completion_options[code_completion_current_selected].insert_text;
-		const String &display_text = code_completion_options[code_completion_current_selected].display;
+		const String& insert_text =
+			code_completion_options[code_completion_current_selected].insert_text;
+		const String& display_text =
+			code_completion_options[code_completion_current_selected].display;
 
 		if (p_replace) {
 			// Find end of current section.
@@ -2627,9 +2978,11 @@ void CodeEdit::confirm_code_completion(bool p_replace) {
 			}
 
 			// Replace.
-			remove_text(caret_line, get_caret_column(i) - code_completion_base.length(), caret_remove_line, caret_col);
+			remove_text(caret_line, get_caret_column(i) - code_completion_base.length(),
+				caret_remove_line, caret_col);
 			insert_text_at_caret(insert_text, i);
-		} else {
+		}
+		else {
 			// Get first non-matching char.
 			const String line = get_line(caret_line);
 			int caret_col = get_caret_column(i);
@@ -2642,7 +2995,8 @@ void CodeEdit::confirm_code_completion(bool p_replace) {
 			}
 
 			// Remove base completion text.
-			remove_text(caret_line, get_caret_column(i) - code_completion_base.length(), caret_line, get_caret_column(i));
+			remove_text(caret_line, get_caret_column(i) - code_completion_base.length(), caret_line,
+				get_caret_column(i));
 
 			// Merge with text.
 			insert_text_at_caret(insert_text.substr(0, code_completion_base.length()), i);
@@ -2660,31 +3014,46 @@ void CodeEdit::confirm_code_completion(bool p_replace) {
 		}
 		char32_t last_completion_char_display = display_text[display_text.length() - 1];
 
-		bool last_char_matches = (last_completion_char == next_char || last_completion_char_display == next_char);
-		int pre_brace_pair = get_caret_column(i) > 0 ? _get_auto_brace_pair_open_at_pos(caret_line, get_caret_column(i)) : -1;
-		int post_brace_pair = get_caret_column(i) < get_line(caret_line).length() ? _get_auto_brace_pair_close_at_pos(caret_line, get_caret_column(i)) : -1;
+		bool last_char_matches =
+			(last_completion_char == next_char || last_completion_char_display == next_char);
+		int pre_brace_pair = get_caret_column(i) > 0
+								 ? _get_auto_brace_pair_open_at_pos(caret_line, get_caret_column(i))
+								 : -1;
+		int post_brace_pair =
+			get_caret_column(i) < get_line(caret_line).length()
+				? _get_auto_brace_pair_close_at_pos(caret_line, get_caret_column(i))
+				: -1;
 
 		// Strings do not nest like brackets, so ensure we don't add an additional closing pair.
 		if (has_string_delimiter(String::chr(last_completion_char))) {
 			if (post_brace_pair != -1 && last_char_matches) {
 				remove_text(caret_line, get_caret_column(i), caret_line, get_caret_column(i) + 1);
 			}
-		} else {
+		}
+		else {
 			if (pre_brace_pair != -1 && pre_brace_pair != post_brace_pair && last_char_matches) {
 				remove_text(caret_line, get_caret_column(i), caret_line, get_caret_column(i) + 1);
-			} else if (auto_brace_completion_enabled && pre_brace_pair != -1) {
+			}
+			else if (auto_brace_completion_enabled && pre_brace_pair != -1) {
 				insert_text_at_caret(auto_brace_completion_pairs[pre_brace_pair].close_key, i);
-				set_caret_column(get_caret_column(i) - auto_brace_completion_pairs[pre_brace_pair].close_key.length(), i == 0, i);
+				set_caret_column(get_caret_column(i) -
+									 auto_brace_completion_pairs[pre_brace_pair].close_key.length(),
+					i == 0, i);
 			}
 		}
 
-		if (pre_brace_pair == -1 && post_brace_pair == -1 && get_caret_column(i) > 0 && get_caret_column(i) < get_line(caret_line).length()) {
+		if (pre_brace_pair == -1 && post_brace_pair == -1 && get_caret_column(i) > 0 &&
+			get_caret_column(i) < get_line(caret_line).length()) {
 			pre_brace_pair = _get_auto_brace_pair_open_at_pos(caret_line, get_caret_column(i) + 1);
-			if (pre_brace_pair != -1 && pre_brace_pair == _get_auto_brace_pair_close_at_pos(caret_line, get_caret_column(i) - 1)) {
+			if (pre_brace_pair != -1 &&
+				pre_brace_pair ==
+					_get_auto_brace_pair_close_at_pos(caret_line, get_caret_column(i) - 1)) {
 				remove_text(caret_line, get_caret_column(i) - 2, caret_line, get_caret_column(i));
-				if (_get_auto_brace_pair_close_at_pos(caret_line, get_caret_column(i) + 1) != pre_brace_pair) {
+				if (_get_auto_brace_pair_close_at_pos(caret_line, get_caret_column(i) + 1) !=
+					pre_brace_pair) {
 					set_caret_column(get_caret_column(i) + 1, i == 0, i);
-				} else {
+				}
+				else {
 					set_caret_column(get_caret_column(i) + 2, i == 0, i);
 				}
 			}
@@ -2700,7 +3069,8 @@ void CodeEdit::confirm_code_completion(bool p_replace) {
 	}
 }
 
-void CodeEdit::cancel_code_completion() {
+void CodeEdit::cancel_code_completion()
+{
 	if (!code_completion_active) {
 		return;
 	}
@@ -2712,26 +3082,28 @@ void CodeEdit::cancel_code_completion() {
 }
 
 /* Line length guidelines */
-void CodeEdit::set_line_length_guidelines(TypedArray<int> p_guideline_columns) {
+void CodeEdit::set_line_length_guidelines(TypedArray<int> p_guideline_columns)
+{
 	line_length_guideline_columns = p_guideline_columns;
 	queue_redraw();
 }
 
-TypedArray<int> CodeEdit::get_line_length_guidelines() const {
+TypedArray<int> CodeEdit::get_line_length_guidelines() const
+{
 	return line_length_guideline_columns;
 }
 
 /* Symbol lookup */
-void CodeEdit::set_symbol_lookup_on_click_enabled(bool p_enabled) {
+void CodeEdit::set_symbol_lookup_on_click_enabled(bool p_enabled)
+{
 	symbol_lookup_on_click_enabled = p_enabled;
 	set_symbol_lookup_word_as_valid(false);
 }
 
-bool CodeEdit::is_symbol_lookup_on_click_enabled() const {
-	return symbol_lookup_on_click_enabled;
-}
+bool CodeEdit::is_symbol_lookup_on_click_enabled() const { return symbol_lookup_on_click_enabled; }
 
-String CodeEdit::get_text_for_symbol_lookup() const {
+String CodeEdit::get_text_for_symbol_lookup() const
+{
 	Point2i mp = get_local_mouse_pos();
 	Point2i pos = get_line_column_at_pos(mp, false, false);
 	int line = pos.y;
@@ -2744,7 +3116,8 @@ String CodeEdit::get_text_for_symbol_lookup() const {
 	return get_text_with_cursor_char(line, col);
 }
 
-String CodeEdit::get_text_with_cursor_char(int p_line, int p_column) const {
+String CodeEdit::get_text_with_cursor_char(int p_line, int p_column) const
+{
 	const int text_size = get_line_count();
 	StringBuilder result;
 	for (int i = 0; i < text_size; i++) {
@@ -2754,7 +3127,8 @@ String CodeEdit::get_text_with_cursor_char(int p_line, int p_column) const {
 			/* Not unicode, represents the cursor. */
 			result += String::chr(0xFFFF);
 			result += line_text.substr(p_column);
-		} else {
+		}
+		else {
 			result += line_text;
 		}
 
@@ -2766,7 +3140,8 @@ String CodeEdit::get_text_with_cursor_char(int p_line, int p_column) const {
 	return result.as_string();
 }
 
-String CodeEdit::get_lookup_word(int p_line, int p_column) const {
+String CodeEdit::get_lookup_word(int p_line, int p_column) const
+{
 	if (p_line < 0 || p_column < 0) {
 		return String();
 	}
@@ -2785,7 +3160,8 @@ String CodeEdit::get_lookup_word(int p_line, int p_column) const {
 	return get_word(p_line, p_column);
 }
 
-void CodeEdit::set_symbol_lookup_word_as_valid(bool p_valid) {
+void CodeEdit::set_symbol_lookup_word_as_valid(bool p_valid)
+{
 	symbol_lookup_word = p_valid ? symbol_lookup_new_word : "";
 	symbol_lookup_new_word = "";
 	if (lookup_symbol_word != symbol_lookup_word) {
@@ -2794,27 +3170,32 @@ void CodeEdit::set_symbol_lookup_word_as_valid(bool p_valid) {
 }
 
 /* Symbol tooltip */
-void CodeEdit::set_symbol_tooltip_on_hover_enabled(bool p_enabled) {
+void CodeEdit::set_symbol_tooltip_on_hover_enabled(bool p_enabled)
+{
 	symbol_tooltip_on_hover_enabled = p_enabled;
 	if (!p_enabled) {
 		symbol_tooltip_timer->stop();
 	}
 }
 
-bool CodeEdit::is_symbol_tooltip_on_hover_enabled() const {
+bool CodeEdit::is_symbol_tooltip_on_hover_enabled() const
+{
 	return symbol_tooltip_on_hover_enabled;
 }
 
-void CodeEdit::_on_symbol_tooltip_timer_timeout() {
+void CodeEdit::_on_symbol_tooltip_timer_timeout()
+{
 	const int line = symbol_tooltip_pos.y;
 	const int column = symbol_tooltip_pos.x;
-	if (line >= 0 && column >= 0 && !symbol_tooltip_word.is_empty() && !Input::get_singleton()->is_anything_pressed()) {
-		emit_signal(SNAME("symbol_hovered"), symbol_tooltip_word, line, column);
+	if (line >= 0 && column >= 0 && !symbol_tooltip_word.is_empty() &&
+		!Input::get_singleton()->is_anything_pressed()) {
+		this->obj->emit_signal(SNAME("symbol_hovered"), symbol_tooltip_word, line, column);
 	}
 }
 
 /* Text manipulation */
-void CodeEdit::move_lines_up() {
+void CodeEdit::move_lines_up()
+{
 	begin_complex_operation();
 	begin_multicaret_edit();
 
@@ -2831,10 +3212,12 @@ void CodeEdit::move_lines_up() {
 		}
 		// Fix selection if the last one ends at column 0, since it wasn't moved.
 		for (int i = 0; i < get_caret_count(); i++) {
-			if (has_selection(i) && get_selection_to_column(i) == 0 && get_selection_to_line(i) == line_range.y + 1) {
+			if (has_selection(i) && get_selection_to_column(i) == 0 &&
+				get_selection_to_line(i) == line_range.y + 1) {
 				if (is_caret_after_selection_origin(i)) {
 					set_caret_line(get_caret_line(i) - 1, false, true, -1, i);
-				} else {
+				}
+				else {
 					set_selection_origin_line(get_selection_origin_line(i) - 1, true, -1, i);
 				}
 				break;
@@ -2847,7 +3230,8 @@ void CodeEdit::move_lines_up() {
 	end_complex_operation();
 }
 
-void CodeEdit::move_lines_down() {
+void CodeEdit::move_lines_down()
+{
 	begin_complex_operation();
 	begin_multicaret_edit();
 
@@ -2862,14 +3246,16 @@ void CodeEdit::move_lines_down() {
 		// Fix selection if the last one ends at column 0, since it won't be moved.
 		bool selection_to_line_at_end = false;
 		for (int i = 0; i < get_caret_count(); i++) {
-			if (has_selection(i) && get_selection_to_column(i) == 0 && get_selection_to_line(i) == line_range.y + 1) {
+			if (has_selection(i) && get_selection_to_column(i) == 0 &&
+				get_selection_to_line(i) == line_range.y + 1) {
 				selection_to_line_at_end = get_selection_to_line(i) == get_line_count() - 1;
 				if (selection_to_line_at_end) {
 					break;
 				}
 				if (is_caret_after_selection_origin(i)) {
 					set_caret_line(get_caret_line(i) + 1, false, true, -1, i);
-				} else {
+				}
+				else {
 					set_selection_origin_line(get_selection_origin_line(i) + 1, true, -1, i);
 				}
 				break;
@@ -2891,7 +3277,8 @@ void CodeEdit::move_lines_down() {
 	end_complex_operation();
 }
 
-void CodeEdit::delete_lines() {
+void CodeEdit::delete_lines()
+{
 	begin_complex_operation();
 	begin_multicaret_edit();
 
@@ -2914,7 +3301,8 @@ void CodeEdit::delete_lines() {
 	end_complex_operation();
 }
 
-void CodeEdit::join_lines(const String &p_line_ending) {
+void CodeEdit::join_lines(const String& p_line_ending)
+{
 	ERR_FAIL_COND_MSG(p_line_ending.contains_char('\n'), "Cannot join lines with a newline.");
 
 	begin_complex_operation();
@@ -2922,7 +3310,7 @@ void CodeEdit::join_lines(const String &p_line_ending) {
 
 	Vector<Point2i> line_ranges = get_line_ranges_from_carets();
 	int line_offset = 0;
-	for (const Point2i &line_range : line_ranges) {
+	for (const Point2i& line_range : line_ranges) {
 		for (int32_t line_index = line_range.x; line_index <= line_range.y; line_index++) {
 			int32_t real_line = line_index + line_offset;
 			if (real_line + 1 >= get_line_count()) {
@@ -2931,7 +3319,8 @@ void CodeEdit::join_lines(const String &p_line_ending) {
 			unfold_line(real_line);
 			String line = get_line(real_line);
 			int line_length = line.length();
-			int next_line_leading_whitespace_length = get_first_non_whitespace_column(real_line + 1);
+			int next_line_leading_whitespace_length =
+				get_first_non_whitespace_column(real_line + 1);
 			int next_line_length = get_line(real_line + 1).length();
 			int corrected_line_length = line_length - 1;
 			for (; corrected_line_length >= 0; corrected_line_length--) {
@@ -2940,8 +3329,10 @@ void CodeEdit::join_lines(const String &p_line_ending) {
 				}
 			}
 			corrected_line_length++;
-			remove_text(real_line, corrected_line_length, real_line + 1, next_line_leading_whitespace_length);
-			if (next_line_leading_whitespace_length != next_line_length && corrected_line_length != 0) {
+			remove_text(real_line, corrected_line_length, real_line + 1,
+				next_line_leading_whitespace_length);
+			if (next_line_leading_whitespace_length != next_line_length &&
+				corrected_line_length != 0) {
 				insert_text(p_line_ending, real_line, corrected_line_length);
 			}
 			line_offset--;
@@ -2952,7 +3343,8 @@ void CodeEdit::join_lines(const String &p_line_ending) {
 	end_complex_operation();
 }
 
-void CodeEdit::duplicate_selection() {
+void CodeEdit::duplicate_selection()
+{
 	begin_complex_operation();
 	begin_multicaret_edit();
 
@@ -2990,7 +3382,8 @@ void CodeEdit::duplicate_selection() {
 	end_complex_operation();
 }
 
-void CodeEdit::duplicate_lines() {
+void CodeEdit::duplicate_lines()
+{
 	begin_complex_operation();
 	begin_multicaret_edit();
 
@@ -3015,329 +3408,23 @@ void CodeEdit::duplicate_lines() {
 }
 
 /* Visual */
-Color CodeEdit::_get_brace_mismatch_color() const {
-	return theme_cache.brace_mismatch_color;
-}
+Color CodeEdit::_get_brace_mismatch_color() const { return theme_cache.brace_mismatch_color; }
 
-Color CodeEdit::_get_code_folding_color() const {
-	return theme_cache.code_folding_color;
-}
+Color CodeEdit::_get_code_folding_color() const { return theme_cache.code_folding_color; }
 
-Ref<Texture2D> CodeEdit::_get_folded_eol_icon() const {
-	return theme_cache.folded_eol_icon;
-}
+Ref<Texture2D> CodeEdit::_get_folded_eol_icon() const { return theme_cache.folded_eol_icon; }
 
-void CodeEdit::_bind_methods() {
-	/* Indent management */
-	ClassDB::bind_method(D_METHOD("set_indent_size", "size"), &CodeEdit::set_indent_size);
-	ClassDB::bind_method(D_METHOD("get_indent_size"), &CodeEdit::get_indent_size);
-
-	ClassDB::bind_method(D_METHOD("set_indent_using_spaces", "use_spaces"), &CodeEdit::set_indent_using_spaces);
-	ClassDB::bind_method(D_METHOD("is_indent_using_spaces"), &CodeEdit::is_indent_using_spaces);
-
-	ClassDB::bind_method(D_METHOD("set_auto_indent_enabled", "enable"), &CodeEdit::set_auto_indent_enabled);
-	ClassDB::bind_method(D_METHOD("is_auto_indent_enabled"), &CodeEdit::is_auto_indent_enabled);
-
-	ClassDB::bind_method(D_METHOD("set_auto_indent_prefixes", "prefixes"), &CodeEdit::set_auto_indent_prefixes);
-	ClassDB::bind_method(D_METHOD("get_auto_indent_prefixes"), &CodeEdit::get_auto_indent_prefixes);
-
-	ClassDB::bind_method(D_METHOD("do_indent"), &CodeEdit::do_indent);
-
-	ClassDB::bind_method(D_METHOD("indent_lines"), &CodeEdit::indent_lines);
-	ClassDB::bind_method(D_METHOD("unindent_lines"), &CodeEdit::unindent_lines);
-
-	ClassDB::bind_method(D_METHOD("convert_indent", "from_line", "to_line"), &CodeEdit::convert_indent, DEFVAL(-1), DEFVAL(-1));
-
-	/* Auto brace completion */
-	ClassDB::bind_method(D_METHOD("set_auto_brace_completion_enabled", "enable"), &CodeEdit::set_auto_brace_completion_enabled);
-	ClassDB::bind_method(D_METHOD("is_auto_brace_completion_enabled"), &CodeEdit::is_auto_brace_completion_enabled);
-
-	ClassDB::bind_method(D_METHOD("set_highlight_matching_braces_enabled", "enable"), &CodeEdit::set_highlight_matching_braces_enabled);
-	ClassDB::bind_method(D_METHOD("is_highlight_matching_braces_enabled"), &CodeEdit::is_highlight_matching_braces_enabled);
-
-	ClassDB::bind_method(D_METHOD("add_auto_brace_completion_pair", "start_key", "end_key"), &CodeEdit::add_auto_brace_completion_pair);
-	ClassDB::bind_method(D_METHOD("set_auto_brace_completion_pairs", "pairs"), &CodeEdit::set_auto_brace_completion_pairs);
-	ClassDB::bind_method(D_METHOD("get_auto_brace_completion_pairs"), &CodeEdit::get_auto_brace_completion_pairs);
-
-	ClassDB::bind_method(D_METHOD("has_auto_brace_completion_open_key", "open_key"), &CodeEdit::has_auto_brace_completion_open_key);
-	ClassDB::bind_method(D_METHOD("has_auto_brace_completion_close_key", "close_key"), &CodeEdit::has_auto_brace_completion_close_key);
-
-	ClassDB::bind_method(D_METHOD("get_auto_brace_completion_close_key", "open_key"), &CodeEdit::get_auto_brace_completion_close_key);
-
-	/* Main Gutter */
-	ClassDB::bind_method(D_METHOD("set_draw_breakpoints_gutter", "enable"), &CodeEdit::set_draw_breakpoints_gutter);
-	ClassDB::bind_method(D_METHOD("is_drawing_breakpoints_gutter"), &CodeEdit::is_drawing_breakpoints_gutter);
-
-	ClassDB::bind_method(D_METHOD("set_draw_bookmarks_gutter", "enable"), &CodeEdit::set_draw_bookmarks_gutter);
-	ClassDB::bind_method(D_METHOD("is_drawing_bookmarks_gutter"), &CodeEdit::is_drawing_bookmarks_gutter);
-
-	ClassDB::bind_method(D_METHOD("set_draw_executing_lines_gutter", "enable"), &CodeEdit::set_draw_executing_lines_gutter);
-	ClassDB::bind_method(D_METHOD("is_drawing_executing_lines_gutter"), &CodeEdit::is_drawing_executing_lines_gutter);
-
-	// Breakpoints
-	ClassDB::bind_method(D_METHOD("set_line_as_breakpoint", "line", "breakpointed"), &CodeEdit::set_line_as_breakpoint);
-	ClassDB::bind_method(D_METHOD("is_line_breakpointed", "line"), &CodeEdit::is_line_breakpointed);
-	ClassDB::bind_method(D_METHOD("clear_breakpointed_lines"), &CodeEdit::clear_breakpointed_lines);
-	ClassDB::bind_method(D_METHOD("get_breakpointed_lines"), &CodeEdit::get_breakpointed_lines);
-
-	// Bookmarks
-	ClassDB::bind_method(D_METHOD("set_line_as_bookmarked", "line", "bookmarked"), &CodeEdit::set_line_as_bookmarked);
-	ClassDB::bind_method(D_METHOD("is_line_bookmarked", "line"), &CodeEdit::is_line_bookmarked);
-	ClassDB::bind_method(D_METHOD("clear_bookmarked_lines"), &CodeEdit::clear_bookmarked_lines);
-	ClassDB::bind_method(D_METHOD("get_bookmarked_lines"), &CodeEdit::get_bookmarked_lines);
-
-	// Executing lines
-	ClassDB::bind_method(D_METHOD("set_line_as_executing", "line", "executing"), &CodeEdit::set_line_as_executing);
-	ClassDB::bind_method(D_METHOD("is_line_executing", "line"), &CodeEdit::is_line_executing);
-	ClassDB::bind_method(D_METHOD("clear_executing_lines"), &CodeEdit::clear_executing_lines);
-	ClassDB::bind_method(D_METHOD("get_executing_lines"), &CodeEdit::get_executing_lines);
-
-	/* Line numbers */
-	ClassDB::bind_method(D_METHOD("set_draw_line_numbers", "enable"), &CodeEdit::set_draw_line_numbers);
-	ClassDB::bind_method(D_METHOD("is_draw_line_numbers_enabled"), &CodeEdit::is_draw_line_numbers_enabled);
-	ClassDB::bind_method(D_METHOD("set_line_numbers_zero_padded", "enable"), &CodeEdit::set_line_numbers_zero_padded);
-	ClassDB::bind_method(D_METHOD("is_line_numbers_zero_padded"), &CodeEdit::is_line_numbers_zero_padded);
-	ClassDB::bind_method(D_METHOD("set_line_numbers_min_digits", "count"), &CodeEdit::set_line_numbers_min_digits);
-	ClassDB::bind_method(D_METHOD("get_line_numbers_min_digits"), &CodeEdit::get_line_numbers_min_digits);
-
-	/* Fold Gutter */
-	ClassDB::bind_method(D_METHOD("set_draw_fold_gutter", "enable"), &CodeEdit::set_draw_fold_gutter);
-	ClassDB::bind_method(D_METHOD("is_drawing_fold_gutter"), &CodeEdit::is_drawing_fold_gutter);
-
-	/* Line folding */
-	ClassDB::bind_method(D_METHOD("set_line_folding_enabled", "enabled"), &CodeEdit::set_line_folding_enabled);
-	ClassDB::bind_method(D_METHOD("is_line_folding_enabled"), &CodeEdit::is_line_folding_enabled);
-
-	ClassDB::bind_method(D_METHOD("can_fold_line", "line"), &CodeEdit::can_fold_line);
-
-	ClassDB::bind_method(D_METHOD("fold_line", "line"), &CodeEdit::fold_line);
-	ClassDB::bind_method(D_METHOD("unfold_line", "line"), &CodeEdit::unfold_line);
-	ClassDB::bind_method(D_METHOD("fold_all_lines"), &CodeEdit::fold_all_lines);
-	ClassDB::bind_method(D_METHOD("unfold_all_lines"), &CodeEdit::unfold_all_lines);
-	ClassDB::bind_method(D_METHOD("toggle_foldable_line", "line"), &CodeEdit::toggle_foldable_line);
-	ClassDB::bind_method(D_METHOD("toggle_foldable_lines_at_carets"), &CodeEdit::toggle_foldable_lines_at_carets);
-
-	ClassDB::bind_method(D_METHOD("is_line_folded", "line"), &CodeEdit::is_line_folded);
-	ClassDB::bind_method(D_METHOD("get_folded_lines"), &CodeEdit::get_folded_lines_bind);
-
-	/* Code region */
-	ClassDB::bind_method(D_METHOD("create_code_region"), &CodeEdit::create_code_region);
-	ClassDB::bind_method(D_METHOD("get_code_region_start_tag"), &CodeEdit::get_code_region_start_tag);
-	ClassDB::bind_method(D_METHOD("get_code_region_end_tag"), &CodeEdit::get_code_region_end_tag);
-	ClassDB::bind_method(D_METHOD("set_code_region_tags", "start", "end"), &CodeEdit::set_code_region_tags, DEFVAL("region"), DEFVAL("endregion"));
-	ClassDB::bind_method(D_METHOD("is_line_code_region_start", "line"), &CodeEdit::is_line_code_region_start);
-	ClassDB::bind_method(D_METHOD("is_line_code_region_end", "line"), &CodeEdit::is_line_code_region_end);
-
-	/* Delimiters */
-	// Strings
-	ClassDB::bind_method(D_METHOD("add_string_delimiter", "start_key", "end_key", "line_only"), &CodeEdit::add_string_delimiter, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("remove_string_delimiter", "start_key"), &CodeEdit::remove_string_delimiter);
-	ClassDB::bind_method(D_METHOD("has_string_delimiter", "start_key"), &CodeEdit::has_string_delimiter);
-
-	ClassDB::bind_method(D_METHOD("set_string_delimiters", "string_delimiters"), &CodeEdit::set_string_delimiters);
-	ClassDB::bind_method(D_METHOD("clear_string_delimiters"), &CodeEdit::clear_string_delimiters);
-	ClassDB::bind_method(D_METHOD("get_string_delimiters"), &CodeEdit::get_string_delimiters);
-
-	ClassDB::bind_method(D_METHOD("is_in_string", "line", "column"), &CodeEdit::is_in_string, DEFVAL(-1));
-
-	// Comments
-	ClassDB::bind_method(D_METHOD("add_comment_delimiter", "start_key", "end_key", "line_only"), &CodeEdit::add_comment_delimiter, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("remove_comment_delimiter", "start_key"), &CodeEdit::remove_comment_delimiter);
-	ClassDB::bind_method(D_METHOD("has_comment_delimiter", "start_key"), &CodeEdit::has_comment_delimiter);
-
-	ClassDB::bind_method(D_METHOD("set_comment_delimiters", "comment_delimiters"), &CodeEdit::set_comment_delimiters);
-	ClassDB::bind_method(D_METHOD("clear_comment_delimiters"), &CodeEdit::clear_comment_delimiters);
-	ClassDB::bind_method(D_METHOD("get_comment_delimiters"), &CodeEdit::get_comment_delimiters);
-
-	ClassDB::bind_method(D_METHOD("is_in_comment", "line", "column"), &CodeEdit::is_in_comment, DEFVAL(-1));
-
-	// Util
-	ClassDB::bind_method(D_METHOD("get_delimiter_start_key", "delimiter_index"), &CodeEdit::get_delimiter_start_key);
-	ClassDB::bind_method(D_METHOD("get_delimiter_end_key", "delimiter_index"), &CodeEdit::get_delimiter_end_key);
-
-	ClassDB::bind_method(D_METHOD("get_delimiter_start_position", "line", "column"), &CodeEdit::get_delimiter_start_position);
-	ClassDB::bind_method(D_METHOD("get_delimiter_end_position", "line", "column"), &CodeEdit::get_delimiter_end_position);
-
-	/* Code hint */
-	ClassDB::bind_method(D_METHOD("set_code_hint", "code_hint"), &CodeEdit::set_code_hint);
-	ClassDB::bind_method(D_METHOD("set_code_hint_draw_below", "draw_below"), &CodeEdit::set_code_hint_draw_below);
-
-	/* Code Completion */
-	BIND_ENUM_CONSTANT(KIND_CLASS);
-	BIND_ENUM_CONSTANT(KIND_FUNCTION);
-	BIND_ENUM_CONSTANT(KIND_SIGNAL);
-	BIND_ENUM_CONSTANT(KIND_VARIABLE);
-	BIND_ENUM_CONSTANT(KIND_MEMBER);
-	BIND_ENUM_CONSTANT(KIND_ENUM);
-	BIND_ENUM_CONSTANT(KIND_CONSTANT);
-	BIND_ENUM_CONSTANT(KIND_NODE_PATH);
-	BIND_ENUM_CONSTANT(KIND_FILE_PATH);
-	BIND_ENUM_CONSTANT(KIND_PLAIN_TEXT);
-	BIND_ENUM_CONSTANT(KIND_KEYWORD);
-
-	BIND_ENUM_CONSTANT(LOCATION_LOCAL);
-	BIND_ENUM_CONSTANT(LOCATION_PARENT_MASK);
-	BIND_ENUM_CONSTANT(LOCATION_OTHER_USER_CODE)
-	BIND_ENUM_CONSTANT(LOCATION_OTHER);
-
-	ClassDB::bind_method(D_METHOD("get_text_for_code_completion"), &CodeEdit::get_text_for_code_completion);
-	ClassDB::bind_method(D_METHOD("request_code_completion", "force"), &CodeEdit::request_code_completion, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("add_code_completion_option", "type", "display_text", "insert_text", "text_color", "icon", "value", "location"), &CodeEdit::add_code_completion_option, DEFVAL(Color(1, 1, 1)), DEFVAL(Ref<Resource>()), DEFVAL(Variant()), DEFVAL(LOCATION_OTHER));
-	ClassDB::bind_method(D_METHOD("update_code_completion_options", "force"), &CodeEdit::update_code_completion_options);
-	ClassDB::bind_method(D_METHOD("get_code_completion_options"), &CodeEdit::get_code_completion_options);
-	ClassDB::bind_method(D_METHOD("get_code_completion_option", "index"), &CodeEdit::get_code_completion_option);
-	ClassDB::bind_method(D_METHOD("get_code_completion_selected_index"), &CodeEdit::get_code_completion_selected_index);
-	ClassDB::bind_method(D_METHOD("set_code_completion_selected_index", "index"), &CodeEdit::set_code_completion_selected_index);
-
-	ClassDB::bind_method(D_METHOD("confirm_code_completion", "replace"), &CodeEdit::confirm_code_completion, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("cancel_code_completion"), &CodeEdit::cancel_code_completion);
-
-	ClassDB::bind_method(D_METHOD("set_code_completion_enabled", "enable"), &CodeEdit::set_code_completion_enabled);
-	ClassDB::bind_method(D_METHOD("is_code_completion_enabled"), &CodeEdit::is_code_completion_enabled);
-
-	ClassDB::bind_method(D_METHOD("set_code_completion_prefixes", "prefixes"), &CodeEdit::set_code_completion_prefixes);
-	ClassDB::bind_method(D_METHOD("get_code_completion_prefixes"), &CodeEdit::get_code_completion_prefixes);
-
-	/* Line length guidelines */
-	ClassDB::bind_method(D_METHOD("set_line_length_guidelines", "guideline_columns"), &CodeEdit::set_line_length_guidelines);
-	ClassDB::bind_method(D_METHOD("get_line_length_guidelines"), &CodeEdit::get_line_length_guidelines);
-
-	/* Symbol lookup */
-	ClassDB::bind_method(D_METHOD("set_symbol_lookup_on_click_enabled", "enable"), &CodeEdit::set_symbol_lookup_on_click_enabled);
-	ClassDB::bind_method(D_METHOD("is_symbol_lookup_on_click_enabled"), &CodeEdit::is_symbol_lookup_on_click_enabled);
-
-	ClassDB::bind_method(D_METHOD("get_text_for_symbol_lookup"), &CodeEdit::get_text_for_symbol_lookup);
-	ClassDB::bind_method(D_METHOD("get_text_with_cursor_char", "line", "column"), &CodeEdit::get_text_with_cursor_char);
-
-	ClassDB::bind_method(D_METHOD("set_symbol_lookup_word_as_valid", "valid"), &CodeEdit::set_symbol_lookup_word_as_valid);
-
-	/* Symbol tooltip */
-	ClassDB::bind_method(D_METHOD("set_symbol_tooltip_on_hover_enabled", "enable"), &CodeEdit::set_symbol_tooltip_on_hover_enabled);
-	ClassDB::bind_method(D_METHOD("is_symbol_tooltip_on_hover_enabled"), &CodeEdit::is_symbol_tooltip_on_hover_enabled);
-
-	/* Text manipulation */
-	ClassDB::bind_method(D_METHOD("move_lines_up"), &CodeEdit::move_lines_up);
-	ClassDB::bind_method(D_METHOD("move_lines_down"), &CodeEdit::move_lines_down);
-	ClassDB::bind_method(D_METHOD("delete_lines"), &CodeEdit::delete_lines);
-	ClassDB::bind_method(D_METHOD("join_lines", "line_ending"), &CodeEdit::join_lines, DEFVAL(" "));
-	ClassDB::bind_method(D_METHOD("duplicate_selection"), &CodeEdit::duplicate_selection);
-	ClassDB::bind_method(D_METHOD("duplicate_lines"), &CodeEdit::duplicate_lines);
-
-	/* Inspector */
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "symbol_lookup_on_click"), "set_symbol_lookup_on_click_enabled", "is_symbol_lookup_on_click_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "symbol_tooltip_on_hover"), "set_symbol_tooltip_on_hover_enabled", "is_symbol_tooltip_on_hover_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "line_folding"), "set_line_folding_enabled", "is_line_folding_enabled");
-
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_INT32_ARRAY, "line_length_guidelines"), "set_line_length_guidelines", "get_line_length_guidelines");
-
-	ADD_GROUP("Gutters", "gutters_");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gutters_draw_breakpoints_gutter"), "set_draw_breakpoints_gutter", "is_drawing_breakpoints_gutter");
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gutters_draw_bookmarks"), "set_draw_bookmarks_gutter", "is_drawing_bookmarks_gutter");
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gutters_draw_executing_lines"), "set_draw_executing_lines_gutter", "is_drawing_executing_lines_gutter");
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gutters_draw_line_numbers"), "set_draw_line_numbers", "is_draw_line_numbers_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gutters_zero_pad_line_numbers"), "set_line_numbers_zero_padded", "is_line_numbers_zero_padded");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "gutters_line_numbers_min_digits", PROPERTY_HINT_RANGE, "1,5,1"), "set_line_numbers_min_digits", "get_line_numbers_min_digits");
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gutters_draw_fold_gutter"), "set_draw_fold_gutter", "is_drawing_fold_gutter");
-
-	ADD_GROUP("Delimiters", "delimiter_");
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "delimiter_strings"), "set_string_delimiters", "get_string_delimiters");
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "delimiter_comments"), "set_comment_delimiters", "get_comment_delimiters");
-
-	ADD_GROUP("Code Completion", "code_completion_");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "code_completion_enabled", PROPERTY_HINT_GROUP_ENABLE), "set_code_completion_enabled", "is_code_completion_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "code_completion_prefixes"), "set_code_completion_prefixes", "get_code_completion_prefixes");
-
-	ADD_GROUP("Indentation", "indent_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "indent_size"), "set_indent_size", "get_indent_size");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "indent_use_spaces"), "set_indent_using_spaces", "is_indent_using_spaces");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "indent_automatic"), "set_auto_indent_enabled", "is_auto_indent_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "indent_automatic_prefixes"), "set_auto_indent_prefixes", "get_auto_indent_prefixes");
-
-	ADD_GROUP("Auto Brace Completion", "auto_brace_completion_");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_brace_completion_enabled", PROPERTY_HINT_GROUP_ENABLE), "set_auto_brace_completion_enabled", "is_auto_brace_completion_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_brace_completion_highlight_matching"), "set_highlight_matching_braces_enabled", "is_highlight_matching_braces_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "auto_brace_completion_pairs", PROPERTY_HINT_TYPE_STRING, "String;String"), "set_auto_brace_completion_pairs", "get_auto_brace_completion_pairs");
-
-	/* Signals */
-	/* Gutters */
-	ADD_SIGNAL(MethodInfo("breakpoint_toggled", PropertyInfo(Variant::INT, "line")));
-
-	/* Code Completion */
-	ADD_SIGNAL(MethodInfo("code_completion_requested"));
-
-	/* Symbol lookup */
-	ADD_SIGNAL(MethodInfo("symbol_lookup", PropertyInfo(Variant::STRING, "symbol"), PropertyInfo(Variant::INT, "line"), PropertyInfo(Variant::INT, "column")));
-	ADD_SIGNAL(MethodInfo("symbol_validate", PropertyInfo(Variant::STRING, "symbol")));
-
-	/* Symbol tooltip */
-	ADD_SIGNAL(MethodInfo("symbol_hovered", PropertyInfo(Variant::STRING, "symbol"), PropertyInfo(Variant::INT, "line"), PropertyInfo(Variant::INT, "column")));
-
-	/* Theme items */
-	/* Gutters */
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, code_folding_color);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, folded_code_region_color);
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, can_fold_icon, "can_fold");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, folded_icon, "folded");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, can_fold_code_region_icon, "can_fold_code_region");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, folded_code_region_icon, "folded_code_region");
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CodeEdit, folded_eol_icon);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CodeEdit, completion_color_bg);
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, breakpoint_color);
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, breakpoint_icon, "breakpoint");
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, bookmark_color);
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, bookmark_icon, "bookmark");
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, executing_line_color);
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, executing_line_icon, "executing_line");
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, line_number_color);
-
-	/* Code Completion */
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_STYLEBOX, CodeEdit, code_completion_style, "completion");
-	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_CONSTANT, CodeEdit, code_completion_icon_separation, "h_separation", "ItemList");
-
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_CONSTANT, CodeEdit, code_completion_max_width, "completion_max_width");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_CONSTANT, CodeEdit, code_completion_max_lines, "completion_lines");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_CONSTANT, CodeEdit, code_completion_scroll_width, "completion_scroll_width");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_COLOR, CodeEdit, code_completion_scroll_color, "completion_scroll_color");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_COLOR, CodeEdit, code_completion_scroll_hovered_color, "completion_scroll_hovered_color");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_COLOR, CodeEdit, code_completion_background_color, "completion_background_color");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_COLOR, CodeEdit, code_completion_selected_color, "completion_selected_color");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_COLOR, CodeEdit, code_completion_existing_color, "completion_existing_color");
-
-	/* Code hint */
-	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_STYLEBOX, CodeEdit, code_hint_style, "panel", "TooltipPanel");
-	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_COLOR, CodeEdit, code_hint_color, "font_color", "TooltipLabel");
-
-	/* Line length guideline */
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, line_length_guideline_color);
-
-	/* Other visuals */
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_STYLEBOX, CodeEdit, style_normal, "normal");
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_STYLEBOX, CodeEdit, style_readonly, "read_only");
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, brace_mismatch_color);
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_FONT, CodeEdit, font);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_FONT_SIZE, CodeEdit, font_size);
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, CodeEdit, line_spacing);
-}
+void CodeEdit::_bind_methods() {}
 
 /* Auto brace completion */
-int CodeEdit::_get_auto_brace_pair_open_at_pos(int p_line, int p_col) {
-	const String &line = get_line(p_line);
+int CodeEdit::_get_auto_brace_pair_open_at_pos(int p_line, int p_col)
+{
+	const String& line = get_line(p_line);
 	int caret_col = MIN(p_col, line.length());
 
 	/* Should be fast enough, expecting low amount of pairs... */
 	for (int i = 0; i < auto_brace_completion_pairs.size(); i++) {
-		const String &open_key = auto_brace_completion_pairs[i].open_key;
+		const String& open_key = auto_brace_completion_pairs[i].open_key;
 		if (caret_col < open_key.length()) {
 			continue;
 		}
@@ -3357,8 +3444,9 @@ int CodeEdit::_get_auto_brace_pair_open_at_pos(int p_line, int p_col) {
 	return -1;
 }
 
-int CodeEdit::_get_auto_brace_pair_close_at_pos(int p_line, int p_col) {
-	const String &line = get_line(p_line);
+int CodeEdit::_get_auto_brace_pair_close_at_pos(int p_line, int p_col)
+{
+	const String& line = get_line(p_line);
 
 	/* Should be fast enough, expecting low amount of pairs... */
 	for (int i = 0; i < auto_brace_completion_pairs.size(); i++) {
@@ -3382,13 +3470,15 @@ int CodeEdit::_get_auto_brace_pair_close_at_pos(int p_line, int p_col) {
 }
 
 /* Gutters */
-void CodeEdit::_gutter_clicked(int p_line, int p_gutter) {
+void CodeEdit::_gutter_clicked(int p_line, int p_gutter)
+{
 	bool shift_pressed = Input::get_singleton()->is_key_pressed(Key::SHIFT);
 
 	if (p_gutter == main_gutter) {
 		if (draw_breakpoints && !shift_pressed) {
 			set_line_as_breakpoint(p_line, !is_line_breakpointed(p_line));
-		} else if (draw_bookmarks && shift_pressed) {
+		}
+		else if (draw_bookmarks && shift_pressed) {
 			set_line_as_bookmarked(p_line, !is_line_bookmarked(p_line));
 		}
 		return;
@@ -3399,7 +3489,8 @@ void CodeEdit::_gutter_clicked(int p_line, int p_gutter) {
 		set_selection_mode(TextEdit::SelectionMode::SELECTION_MODE_LINE);
 		if (p_line == get_line_count() - 1) {
 			select(p_line, 0, p_line, INT_MAX);
-		} else {
+		}
+		else {
 			select(p_line, 0, p_line + 1, 0);
 		}
 		return;
@@ -3408,14 +3499,16 @@ void CodeEdit::_gutter_clicked(int p_line, int p_gutter) {
 	if (p_gutter == fold_gutter) {
 		if (is_line_folded(p_line)) {
 			unfold_line(p_line);
-		} else if (can_fold_line(p_line)) {
+		}
+		else if (can_fold_line(p_line)) {
 			fold_line(p_line);
 		}
 		return;
 	}
 }
 
-void CodeEdit::_update_gutter_indexes() {
+void CodeEdit::_update_gutter_indexes()
+{
 	for (int i = 0; i < get_gutter_count(); i++) {
 		if (get_gutter_name(i) == "main_gutter") {
 			main_gutter = i;
@@ -3435,7 +3528,8 @@ void CodeEdit::_update_gutter_indexes() {
 }
 
 /* Code Region */
-void CodeEdit::_update_code_region_tags() {
+void CodeEdit::_update_code_region_tags()
+{
 	code_region_start_string = "";
 	code_region_end_string = "";
 
@@ -3457,7 +3551,8 @@ void CodeEdit::_update_code_region_tags() {
 }
 
 /* Delimiters */
-void CodeEdit::_update_delimiter_cache(int p_from_line, int p_to_line) {
+void CodeEdit::_update_delimiter_cache(int p_from_line, int p_to_line)
+{
 	if (delimiters.is_empty()) {
 		return;
 	}
@@ -3476,7 +3571,8 @@ void CodeEdit::_update_delimiter_cache(int p_from_line, int p_to_line) {
 			for (int i = end_line; i > start_line; i--) {
 				delimiter_cache.remove_at(i);
 			}
-		} else {
+		}
+		else {
 			for (int i = start_line; i < end_line; i++) {
 				delimiter_cache.insert(i, RBMap<int, int>());
 			}
@@ -3485,10 +3581,13 @@ void CodeEdit::_update_delimiter_cache(int p_from_line, int p_to_line) {
 
 	int in_region = -1;
 	for (int i = start_line; i < MIN(end_line + 1, line_count); i++) {
-		int current_end_region = (i < 0 || delimiter_cache[i].size() < 1) ? -1 : delimiter_cache[i].back()->value();
-		in_region = (i <= 0 || delimiter_cache[i - 1].size() < 1) ? -1 : delimiter_cache[i - 1].back()->value();
+		int current_end_region =
+			(i < 0 || delimiter_cache[i].size() < 1) ? -1 : delimiter_cache[i].back()->value();
+		in_region = (i <= 0 || delimiter_cache[i - 1].size() < 1)
+						? -1
+						: delimiter_cache[i - 1].back()->value();
 
-		const String &str = get_line(i);
+		const String& str = get_line(i);
 		const int line_length = str.length();
 		delimiter_cache.write[i].clear();
 
@@ -3528,7 +3627,7 @@ void CodeEdit::_update_delimiter_cache(int p_from_line, int p_to_line) {
 
 					/* search the line */
 					bool match = true;
-					const char32_t *start_key = delimiters[d].start_key.get_data();
+					const char32_t* start_key = delimiters[d].start_key.get_data();
 					for (int k = 0; k < start_key_length; k++) {
 						if (start_key[k] != str[from + k]) {
 							match = false;
@@ -3544,11 +3643,13 @@ void CodeEdit::_update_delimiter_cache(int p_from_line, int p_to_line) {
 					from += start_key_length;
 
 					/* check if it's the whole line */
-					if (end_key_length == 0 || delimiters[d].line_only || from + end_key_length > line_length) {
+					if (end_key_length == 0 || delimiters[d].line_only ||
+						from + end_key_length > line_length) {
 						j = line_length;
 						if (delimiters[d].line_only) {
 							delimiter_cache.write[i][line_length + 1] = -1;
-						} else {
+						}
+						else {
 							end_region = in_region;
 						}
 					}
@@ -3564,21 +3665,18 @@ void CodeEdit::_update_delimiter_cache(int p_from_line, int p_to_line) {
 			/* search the line */
 			int region_end_index = -1;
 			int end_key_length = delimiters[in_region].end_key.length();
-			const char32_t *end_key = delimiters[in_region].end_key.get_data();
+			const char32_t* end_key = delimiters[in_region].end_key.get_data();
 			for (; from < line_length; from++) {
 				if (line_length - from < end_key_length) {
 					break;
 				}
-
 				if (!is_symbol(str[from])) {
 					continue;
 				}
-
 				if (str[from] == '\\') {
 					from++;
 					continue;
 				}
-
 				region_end_index = from;
 				for (int k = 0; k < end_key_length; k++) {
 					if (end_key[k] != str[from + k]) {
@@ -3607,15 +3705,18 @@ void CodeEdit::_update_delimiter_cache(int p_from_line, int p_to_line) {
 	}
 }
 
-int CodeEdit::_is_in_delimiter(int p_line, int p_column, DelimiterType p_type) const {
+int CodeEdit::_is_in_delimiter(int p_line, int p_column, DelimiterType p_type) const
+{
 	if (delimiters.is_empty() || p_line >= delimiter_cache.size()) {
 		return -1;
 	}
 	ERR_FAIL_INDEX_V(p_line, get_line_count(), 0);
 
-	int region = (p_line <= 0 || delimiter_cache[p_line - 1].size() < 1) ? -1 : delimiter_cache[p_line - 1].back()->value();
+	int region = (p_line <= 0 || delimiter_cache[p_line - 1].size() < 1)
+					 ? -1
+					 : delimiter_cache[p_line - 1].back()->value();
 	bool in_region = region != -1 && delimiters[region].type == p_type;
-	for (RBMap<int, int>::Element *E = delimiter_cache[p_line].front(); E; E = E->next()) {
+	for (RBMap<int, int>::Element* E = delimiter_cache[p_line].front(); E; E = E->next()) {
 		/* If column is specified, loop until the key is larger then the column. */
 		if (p_column != -1) {
 			if (E->key() > p_column) {
@@ -3665,8 +3766,11 @@ int CodeEdit::_is_in_delimiter(int p_line, int p_column, DelimiterType p_type) c
 	return in_region ? region : -1;
 }
 
-void CodeEdit::_add_delimiter(const String &p_start_key, const String &p_end_key, bool p_line_only, DelimiterType p_type) {
-	// If we are the editor allow "null" as a valid start key, otherwise users cannot add delimiters via the inspector.
+void CodeEdit::_add_delimiter(
+	const String& p_start_key, const String& p_end_key, bool p_line_only, DelimiterType p_type)
+{
+	// If we are the editor allow "null" as a valid start key, otherwise users cannot add delimiters
+	// via the inspector.
 	if (!(Engine::get_singleton()->is_editor_hint() && p_start_key == "null")) {
 		ERR_FAIL_COND_MSG(p_start_key.is_empty(), "delimiter start key cannot be empty");
 
@@ -3683,10 +3787,12 @@ void CodeEdit::_add_delimiter(const String &p_start_key, const String &p_end_key
 
 	int at = 0;
 	for (int i = 0; i < delimiters.size(); i++) {
-		ERR_FAIL_COND_MSG(delimiters[i].start_key == p_start_key, "delimiter with start key '" + p_start_key + "' already exists.");
+		ERR_FAIL_COND_MSG(delimiters[i].start_key == p_start_key,
+			"delimiter with start key '" + p_start_key + "' already exists.");
 		if (p_start_key.length() < delimiters[i].start_key.length()) {
 			at++;
-		} else {
+		}
+		else {
 			break;
 		}
 	}
@@ -3706,7 +3812,8 @@ void CodeEdit::_add_delimiter(const String &p_start_key, const String &p_end_key
 	}
 }
 
-void CodeEdit::_remove_delimiter(const String &p_start_key, DelimiterType p_type) {
+void CodeEdit::_remove_delimiter(const String& p_start_key, DelimiterType p_type)
+{
 	for (int i = 0; i < delimiters.size(); i++) {
 		if (delimiters[i].start_key != p_start_key) {
 			continue;
@@ -3728,7 +3835,8 @@ void CodeEdit::_remove_delimiter(const String &p_start_key, DelimiterType p_type
 	}
 }
 
-bool CodeEdit::_has_delimiter(const String &p_start_key, DelimiterType p_type) const {
+bool CodeEdit::_has_delimiter(const String& p_start_key, DelimiterType p_type) const
+{
 	for (int i = 0; i < delimiters.size(); i++) {
 		if (delimiters[i].start_key == p_start_key) {
 			return delimiters[i].type == p_type;
@@ -3737,7 +3845,8 @@ bool CodeEdit::_has_delimiter(const String &p_start_key, DelimiterType p_type) c
 	return false;
 }
 
-void CodeEdit::_set_delimiters(const TypedArray<String> &p_delimiters, DelimiterType p_type) {
+void CodeEdit::_set_delimiters(const TypedArray<String>& p_delimiters, DelimiterType p_type)
+{
 	setting_delimiters = true;
 	_clear_delimiters(p_type);
 
@@ -3757,7 +3866,8 @@ void CodeEdit::_set_delimiters(const TypedArray<String> &p_delimiters, Delimiter
 	_update_delimiter_cache();
 }
 
-void CodeEdit::_clear_delimiters(DelimiterType p_type) {
+void CodeEdit::_clear_delimiters(DelimiterType p_type)
+{
 	for (int i = delimiters.size() - 1; i >= 0; i--) {
 		if (delimiters[i].type == p_type) {
 			delimiters.remove_at(i);
@@ -3772,20 +3882,25 @@ void CodeEdit::_clear_delimiters(DelimiterType p_type) {
 	}
 }
 
-TypedArray<String> CodeEdit::_get_delimiters(DelimiterType p_type) const {
+TypedArray<String> CodeEdit::_get_delimiters(DelimiterType p_type) const
+{
 	TypedArray<String> r_delimiters;
 	for (int i = 0; i < delimiters.size(); i++) {
 		if (delimiters[i].type != p_type) {
 			continue;
 		}
-		r_delimiters.push_back(delimiters[i].start_key + (delimiters[i].end_key.is_empty() ? "" : " " + delimiters[i].end_key));
+		r_delimiters.push_back(
+			delimiters[i].start_key +
+			(delimiters[i].end_key.is_empty() ? "" : " " + delimiters[i].end_key));
 	}
 	return r_delimiters;
 }
 
 /* Code Completion */
-void CodeEdit::_update_scroll_selected_line(float p_mouse_y) {
-	float percent = (float)(p_mouse_y - code_completion_scroll_rect.position.y) / code_completion_scroll_rect.size.height;
+void CodeEdit::_update_scroll_selected_line(float p_mouse_y)
+{
+	float percent = (float)(p_mouse_y - code_completion_scroll_rect.position.y) /
+					code_completion_scroll_rect.size.height;
 	percent = CLAMP(percent, 0.0f, 1.0f);
 
 	code_completion_current_selected = (int)(percent * (code_completion_options.size() - 1));
@@ -3793,7 +3908,8 @@ void CodeEdit::_update_scroll_selected_line(float p_mouse_y) {
 	code_completion_pan_offset = 0.0f;
 }
 
-void CodeEdit::_filter_code_completion_candidates_impl() {
+void CodeEdit::_filter_code_completion_candidates_impl()
+{
 	int line_height = get_line_height();
 
 	const int caret_line = get_caret_line();
@@ -3812,7 +3928,8 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 	if (in_string != -1) {
 		Point2 string_start_pos = get_delimiter_start_position(caret_line, caret_column);
 		first_quote_col = (string_start_pos.y == caret_line) ? string_start_pos.x : -1;
-	} else if (caret_column > 0) {
+	}
+	else if (caret_column > 0) {
 		if (is_in_string(caret_line, caret_column - 1) != -1) {
 			first_quote_col = caret_column - 1;
 		}
@@ -3827,31 +3944,38 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 		cancel_code_completion();
 		return;
 		/* In a string, therefore we are trying to complete the string text. */
-	} else if (in_string != -1 && first_quote_col != -1) {
+	}
+	else if (in_string != -1 && first_quote_col != -1) {
 		int key_length = delimiters[in_string].start_key.length();
-		string_to_complete = line.substr(first_quote_col - key_length, (cofs - first_quote_col) + key_length);
+		string_to_complete =
+			line.substr(first_quote_col - key_length, (cofs - first_quote_col) + key_length);
 		/* If we have a space, previous word might be a keyword. eg "func |". */
-	} else if (cofs > 0 && line[cofs - 1] == ' ') {
+	}
+	else if (cofs > 0 && line[cofs - 1] == ' ') {
 		int ofs = cofs - 1;
 		while (ofs > 0 && line[ofs] == ' ') {
 			ofs--;
 		}
 		prev_is_word = !is_symbol(line[ofs]);
 		/* Otherwise get current word and set cofs to the start. */
-	} else {
+	}
+	else {
 		int start_cofs = cofs;
-		while (cofs > 0 && line[cofs - 1] > 32 && (line[cofs - 1] == '/' || !is_symbol(line[cofs - 1]))) {
+		while (cofs > 0 && line[cofs - 1] > 32 &&
+			   (line[cofs - 1] == '/' || !is_symbol(line[cofs - 1]))) {
 			cofs--;
 		}
 		string_to_complete = line.substr(cofs, start_cofs - cofs);
 	}
 
-	/* If all else fails, check for a prefix.         */
+	/* If all
+	 else fails, check for a prefix.         */
 	/* Single space between caret and prefix is okay. */
 	bool prev_is_prefix = false;
 	if (cofs > 0 && code_completion_prefixes.has(line[cofs - 1])) {
 		prev_is_prefix = true;
-	} else if (cofs > 1 && line[cofs - 1] == ' ' && code_completion_prefixes.has(line[cofs - 2])) {
+	}
+	else if (cofs > 1 && line[cofs - 1] == ' ' && code_completion_prefixes.has(line[cofs - 2])) {
 		prev_is_prefix = true;
 	}
 
@@ -3862,7 +3986,8 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 
 	/* Filter Options. */
 	/* For now handle only traditional quoted strings. */
-	bool single_quote = in_string != -1 && first_quote_col > 0 && delimiters[in_string].start_key == "'";
+	bool single_quote =
+		in_string != -1 && first_quote_col > 0 && delimiters[in_string].start_key == "'";
 
 	Vector<ScriptLanguage::CodeCompletionOption> code_completion_options_new;
 	code_completion_base = string_to_complete;
@@ -3876,7 +4001,7 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 	int max_width = 0;
 	String string_to_complete_lower = string_to_complete.to_lower();
 
-	for (ScriptLanguage::CodeCompletionOption &option : code_completion_option_sources) {
+	for (ScriptLanguage::CodeCompletionOption& option : code_completion_option_sources) {
 		option.matches.clear();
 		option.matches_dirty = true;
 		if (single_quote && option.display.is_quoted()) {
@@ -3886,7 +4011,8 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 		int offset = option.default_value.get_type() == Variant::COLOR ? line_height : 0;
 
 		if (in_string != -1) {
-			// The completion string may have a literal behind it, which should be removed before re-quoting.
+			// The completion string may have a literal behind it, which should be removed before
+			// re-quoting.
 			String literal;
 			if (option.insert_text.substr(1).is_quoted()) {
 				literal = option.display.left(1);
@@ -3907,30 +4033,38 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 			code_completion_options_new.push_back(option);
 
 			if (theme_cache.font.is_valid()) {
-				max_width = MAX(max_width, theme_cache.font->get_string_size(option.display, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).width + offset);
+				max_width =
+					MAX(max_width, theme_cache.font
+										   ->get_string_size(option.display,
+											   HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+										   .width +
+									   offset);
 			}
 			continue;
 		}
 
 		String target_lower = option.display.to_lower();
 		int long_option = target_lower.size() > 50;
-		const char32_t *string_to_complete_char_lower = &string_to_complete_lower[0];
-		const char32_t *target_char_lower = &target_lower[0];
+		const char32_t* string_to_complete_char_lower = &string_to_complete_lower[0];
+		const char32_t* target_char_lower = &target_lower[0];
 
 		Vector<Vector<Pair<int, int>>> all_possible_subsequence_matches;
 		for (int i = 0; *target_char_lower; i++, target_char_lower++) {
 			if (*target_char_lower == *string_to_complete_char_lower) {
-				all_possible_subsequence_matches.push_back({ { i, 1 } });
+				all_possible_subsequence_matches.push_back({{i, 1}});
 			}
 		}
 		string_to_complete_char_lower++;
 
-		for (int i = 1; *string_to_complete_char_lower && (all_possible_subsequence_matches.size() > 0); i++, string_to_complete_char_lower++) {
+		for (int i = 1;
+			 *string_to_complete_char_lower && (all_possible_subsequence_matches.size() > 0);
+			 i++, string_to_complete_char_lower++) {
 			// find all occurrences of ssq_lower to avoid looking everywhere each time
 			Vector<int> all_occurrences;
 			if (long_option) {
 				all_occurrences.push_back(target_lower.find_char(*string_to_complete_char_lower));
-			} else {
+			}
+			else {
 				for (int j = i; j < target_lower.length(); j++) {
 					if (target_lower[j] == *string_to_complete_char_lower) {
 						all_occurrences.push_back(j);
@@ -3938,7 +4072,7 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 				}
 			}
 			Vector<Vector<Pair<int, int>>> next_subsequence_matches;
-			for (Vector<Pair<int, int>> &subsequence_match : all_possible_subsequence_matches) {
+			for (Vector<Pair<int, int>>& subsequence_match : all_possible_subsequence_matches) {
 				Pair<int, int> match_last_segment = subsequence_match[subsequence_match.size() - 1];
 				int next_index = match_last_segment.first + match_last_segment.second;
 				// get the last index from current sequence
@@ -3954,14 +4088,15 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 				for (int index : all_occurrences) {
 					if (index > next_index) {
 						Vector<Pair<int, int>> new_match = subsequence_match;
-						new_match.push_back({ index, 1 });
+						new_match.push_back({index, 1});
 						next_subsequence_matches.push_back(new_match);
 					}
 				}
 			}
 			all_possible_subsequence_matches = next_subsequence_matches;
 		}
-		// go through all possible matches to get the best one as defined by CodeCompletionOptionCompare
+		// go through all possible matches to get the best one as defined by
+		// CodeCompletionOptionCompare
 		if (all_possible_subsequence_matches.size() > 0) {
 			option.matches = all_possible_subsequence_matches[0];
 			option.matches_dirty = true;
@@ -3971,7 +4106,7 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 				CodeCompletionOptionCompare compare;
 				ScriptLanguage::CodeCompletionOption compared_option = option;
 				compared_option.clear_characteristics();
-				for (Vector<Pair<int, int>> &matches : all_possible_subsequence_matches) {
+				for (Vector<Pair<int, int>>& matches : all_possible_subsequence_matches) {
 					compared_option.matches = matches;
 					compared_option.matches_dirty = true;
 					compared_option.get_option_characteristics(string_to_complete);
@@ -3984,7 +4119,12 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 
 			code_completion_options_new.push_back(option);
 			if (theme_cache.font.is_valid()) {
-				max_width = MAX(max_width, theme_cache.font->get_string_size(option.display, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size).width + offset);
+				max_width =
+					MAX(max_width, theme_cache.font
+										   ->get_string_size(option.display,
+											   HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+										   .width +
+									   offset);
 			}
 		}
 	}
@@ -3996,7 +4136,8 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 	}
 
 	/* A perfect match, stop completion. */
-	if (code_completion_options_new.size() == 1 && string_to_complete == code_completion_options_new[0].display) {
+	if (code_completion_options_new.size() == 1 &&
+		string_to_complete == code_completion_options_new[0].display) {
 		cancel_code_completion();
 		return;
 	}
@@ -4006,7 +4147,7 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 		code_completion_current_selected = 0;
 		code_completion_pan_offset = 0.0f;
 	}
-	for (RID &E : code_completion_ac_items) {
+	for (RID& E : code_completion_ac_items) {
 		if (E.is_valid()) {
 			AccessibilityServer::get_singleton()->free_element(E);
 		}
@@ -4017,7 +4158,8 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 
 	code_completion_caret_column = caret_column;
 	code_completion_line = line;
-	code_completion_longest_line = MIN(max_width, theme_cache.code_completion_max_width * theme_cache.font_size);
+	code_completion_longest_line =
+		MIN(max_width, theme_cache.code_completion_max_width * theme_cache.font_size);
 	code_completion_force_item_center = -1;
 	code_completion_active = true;
 	queue_accessibility_update();
@@ -4025,7 +4167,9 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 }
 
 // Assumes both the new_options and the code_completion_options are sorted.
-bool CodeEdit::_should_reset_selected_option_for_new_options(const Vector<ScriptLanguage::CodeCompletionOption> &p_new_options) {
+bool CodeEdit::_should_reset_selected_option_for_new_options(
+	const Vector<ScriptLanguage::CodeCompletionOption>& p_new_options)
+{
 	if (code_completion_current_selected >= p_new_options.size()) {
 		return true;
 	}
@@ -4041,7 +4185,8 @@ bool CodeEdit::_should_reset_selected_option_for_new_options(const Vector<Script
 	return false;
 }
 
-void CodeEdit::_lines_edited_from(int p_from_line, int p_to_line) {
+void CodeEdit::_lines_edited_from(int p_from_line, int p_to_line)
+{
 	_update_delimiter_cache(p_from_line, p_to_line);
 
 	if (p_from_line == p_to_line) {
@@ -4049,17 +4194,22 @@ void CodeEdit::_lines_edited_from(int p_from_line, int p_to_line) {
 	}
 
 	lines_edited_changed += p_to_line - p_from_line;
-	lines_edited_from = (lines_edited_from == -1) ? MIN(p_from_line, p_to_line) : MIN(lines_edited_from, MIN(p_from_line, p_to_line));
-	lines_edited_to = (lines_edited_to == -1) ? MAX(p_from_line, p_to_line) : MAX(lines_edited_from, MAX(p_from_line, p_to_line));
+	lines_edited_from = (lines_edited_from == -1)
+							? MIN(p_from_line, p_to_line)
+							: MIN(lines_edited_from, MIN(p_from_line, p_to_line));
+	lines_edited_to = (lines_edited_to == -1) ? MAX(p_from_line, p_to_line)
+											  : MAX(lines_edited_from, MAX(p_from_line, p_to_line));
 }
 
-void CodeEdit::_text_set() {
+void CodeEdit::_text_set()
+{
 	lines_edited_from = 0;
 	lines_edited_to = 9999;
 	_text_changed();
 }
 
-void CodeEdit::_text_changed() {
+void CodeEdit::_text_changed()
+{
 	if (code_completion_active && get_line(get_caret_line()) != code_completion_line) {
 		cancel_code_completion();
 	}
@@ -4077,20 +4227,20 @@ void CodeEdit::_text_changed() {
 	_update_line_number_gutter_width();
 
 	List<int> breakpoints;
-	for (const KeyValue<int, bool> &E : breakpointed_lines) {
+	for (const KeyValue<int, bool>& E : breakpointed_lines) {
 		breakpoints.push_back(E.key);
 	}
-	for (const int &line : breakpoints) {
+	for (const int& line : breakpoints) {
 		if (line < lines_edited_from || (line < lc && is_line_breakpointed(line))) {
 			continue;
 		}
 
 		breakpointed_lines.erase(line);
-		emit_signal(SNAME("breakpoint_toggled"), line);
+		this->obj->emit_signal(SNAME("breakpoint_toggled"), line);
 
 		int next_line = line + lines_edited_changed;
 		if (next_line > -1 && next_line < lc && is_line_breakpointed(next_line)) {
-			emit_signal(SNAME("breakpoint_toggled"), next_line);
+			this->obj->emit_signal(SNAME("breakpoint_toggled"), next_line);
 			breakpointed_lines[next_line] = true;
 			continue;
 		}
@@ -4101,17 +4251,20 @@ void CodeEdit::_text_changed() {
 	lines_edited_changed = 0;
 }
 
-void CodeEdit::_line_col_changed() {
+void CodeEdit::_line_col_changed()
+{
 	if (!code_completion_active) {
 		return;
 	}
 
-	if (get_caret_line() != code_completion_caret_line || get_caret_column() != code_completion_caret_column) {
+	if (get_caret_line() != code_completion_caret_line ||
+		get_caret_column() != code_completion_caret_column) {
 		cancel_code_completion();
 	}
 }
 
-CodeEdit::CodeEdit() {
+CodeEdit::CodeEdit()
+{
 	/* Indent management */
 	auto_indent_prefixes.insert(':');
 	auto_indent_prefixes.insert('{');
@@ -4165,11 +4318,12 @@ CodeEdit::CodeEdit() {
 	symbol_tooltip_timer = memnew(Timer);
 	symbol_tooltip_timer->set_wait_time(0.5); // See `_apply_project_settings()`.
 	symbol_tooltip_timer->set_one_shot(true);
-	symbol_tooltip_timer->connect("timeout", callable_mp(this, &CodeEdit::_on_symbol_tooltip_timer_timeout));
+	symbol_tooltip_timer->connect(
+		"timeout", callable_mp(this, &CodeEdit::_on_symbol_tooltip_timer_timeout));
 	add_child(symbol_tooltip_timer, false, INTERNAL_MODE_FRONT);
 
 	/* Fold Lines Private signal */
-	add_user_signal(MethodInfo("_fold_line_updated"));
+	this->obj->add_user_signal(MethodInfo("_fold_line_updated"));
 
 	connect("lines_edited_from", callable_mp(this, &CodeEdit::_lines_edited_from));
 	connect("text_set", callable_mp(this, &CodeEdit::_text_set));
@@ -4182,12 +4336,12 @@ CodeEdit::CodeEdit() {
 	_update_gutter_indexes();
 }
 
-CodeEdit::~CodeEdit() {
-	_clear_line_number_text_cache();
-}
+CodeEdit::~CodeEdit() { _clear_line_number_text_cache(); }
 
 // Return true if l should come before r
-bool CodeCompletionOptionCompare::operator()(const ScriptLanguage::CodeCompletionOption &l, const ScriptLanguage::CodeCompletionOption &r) const {
+bool CodeCompletionOptionCompare::operator()(const ScriptLanguage::CodeCompletionOption& l,
+	const ScriptLanguage::CodeCompletionOption& r) const
+{
 	TypedArray<int> lcharac = l.get_option_cached_characteristics();
 	TypedArray<int> rcharac = r.get_option_cached_characteristics();
 
@@ -4196,7 +4350,8 @@ bool CodeCompletionOptionCompare::operator()(const ScriptLanguage::CodeCompletio
 	}
 
 	// to get here they need to have the same size so we can take the size of whichever we want
-	for (int i = 0; i < l.matches.size(); ++i) {
+	for (int i = 0; i < l.matches.size(); ++i)
+ {
 		if (l.matches[i].first != r.matches[i].first) {
 			return l.matches[i].first < r.matches[i].first;
 		}
@@ -4206,3 +4361,5 @@ bool CodeCompletionOptionCompare::operator()(const ScriptLanguage::CodeCompletio
 	}
 	return l.display.naturalnocasecmp_to(r.display) < 0;
 }
+
+

@@ -35,7 +35,8 @@
 
 class PhysicsBody3D;
 
-class SoftBodyRenderingServerHandler : public PhysicsServer3DRenderingServerHandler {
+class SoftBodyRenderingServerHandler : public PhysicsServer3DRenderingServerHandler
+{
 	friend class SoftBody3D;
 
 	RID mesh;
@@ -46,11 +47,13 @@ class SoftBodyRenderingServerHandler : public PhysicsServer3DRenderingServerHand
 	uint32_t offset_vertices = 0;
 	uint32_t offset_normal = 0;
 
-	uint8_t *write_buffer = nullptr;
+	uint8_t* write_buffer = nullptr;
 
 private:
 	SoftBodyRenderingServerHandler();
+
 	bool is_ready(RID p_mesh_rid) const { return mesh.is_valid() && mesh == p_mesh_rid; }
+
 	void prepare(RID p_mesh_rid, int p_surface);
 	void clear();
 	void open();
@@ -58,33 +61,34 @@ private:
 	void commit_changes();
 
 public:
-	void set_vertex(int p_vertex_id, const Vector3 &p_vertex) override;
-	void set_normal(int p_vertex_id, const Vector3 &p_normal) override;
-	void set_aabb(const AABB &p_aabb) override;
+	void set_vertex(int p_vertex_id, const Vector3& p_vertex) override;
+	void set_normal(int p_vertex_id, const Vector3& p_normal) override;
+	void set_aabb(const AABB& p_aabb) override;
 };
 
-class SoftBody3D : public MeshInstance3D {
-	VLTRCLASS(SoftBody3D, MeshInstance3D);
-
+class SoftBody3D : public MeshInstance3D
+{
 public:
-	enum DisableMode {
+	enum DisableMode
+	{
 		DISABLE_MODE_REMOVE,
 		DISABLE_MODE_KEEP_ACTIVE,
 	};
 
-	struct PinnedPoint {
+	struct PinnedPoint
+	{
 		int point_index = -1;
 		NodePath spatial_attachment_path;
-		Node3D *spatial_attachment = nullptr; // Cache
+		Node3D* spatial_attachment = nullptr; // Cache
 		Vector3 offset;
 
 		PinnedPoint();
-		PinnedPoint(const PinnedPoint &obj_tocopy);
-		void operator=(const PinnedPoint &obj);
+		PinnedPoint(const PinnedPoint& obj_tocopy);
+		void operator=(const PinnedPoint& obj);
 	};
 
 private:
-	SoftBodyRenderingServerHandler *rendering_server_handler = nullptr;
+	SoftBodyRenderingServerHandler* rendering_server_handler = nullptr;
 
 	RID physics_rid;
 
@@ -99,7 +103,7 @@ private:
 	bool pinned_points_cache_dirty = true;
 
 	Ref<ArrayMesh> debug_mesh_cache;
-	class MeshInstance3D *debug_mesh = nullptr;
+	class MeshInstance3D* debug_mesh = nullptr;
 
 	bool capture_input_on_drag = false;
 	bool ray_pickable = true;
@@ -113,19 +117,21 @@ private:
 	void _become_mesh_owner();
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
+	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _get(const StringName& p_name, Variant& r_ret) const;
+	void _get_property_list(List<PropertyInfo>* p_list) const;
 
-	bool _set_property_pinned_points_indices(const Array &p_indices);
-	bool _set_property_pinned_points_attachment(int p_item, const String &p_what, const Variant &p_value);
-	bool _get_property_pinned_points(int p_item, const String &p_what, Variant &r_ret) const;
+	bool _set_property_pinned_points_indices(const Array& p_indices);
+	bool _set_property_pinned_points_attachment(
+		int p_item, const String& p_what, const Variant& p_value);
+	bool _get_property_pinned_points(int p_item, const String& p_what, Variant& r_ret) const;
 
 	void _notification(int p_what);
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	void _pin_point_bind_compat_94684(int p_point_index, bool pin, const NodePath &p_spatial_attachment_path = NodePath());
+	void _pin_point_bind_compat_94684(
+		int p_point_index, bool pin, const NodePath& p_spatial_attachment_path = NodePath());
 	static void _bind_compatibility_methods();
 #endif
 
@@ -149,8 +155,8 @@ public:
 	void set_disable_mode(DisableMode p_mode);
 	DisableMode get_disable_mode() const;
 
-	void set_parent_collision_ignore(const NodePath &p_parent_collision_ignore);
-	const NodePath &get_parent_collision_ignore() const;
+	void set_parent_collision_ignore(const NodePath& p_parent_collision_ignore);
+	const NodePath& get_parent_collision_ignore() const;
 	int get_point_count() const;
 
 	void set_pinned_points_indices(Vector<PinnedPoint> p_pinned_points_indices);
@@ -177,13 +183,14 @@ public:
 	void set_drag_coefficient(real_t p_drag_coefficient);
 	real_t get_drag_coefficient();
 
-	TypedArray<PhysicsBody3D> get_collision_exceptions();
-	void add_collision_exception_with(RequiredParam<Node> rp_node);
-	void remove_collision_exception_with(RequiredParam<Node> rp_node);
+	Array get_collision_exceptions();
+	void add_collision_exception_with(Node* rp_node);
+	void remove_collision_exception_with(Node* rp_node);
 
 	Vector3 get_point_transform(int p_point_index);
 
-	void pin_point(int p_point_index, bool pin, const NodePath &p_spatial_attachment_path = NodePath(), int p_insert_at = -1);
+	void pin_point(int p_point_index, bool pin,
+		const NodePath& p_spatial_attachment_path = NodePath(), int p_insert_at = -1);
 	bool is_point_pinned(int p_point_index) const;
 
 	void _pin_point_deferred(int p_point_index, bool pin, const NodePath p_spatial_attachment_path);
@@ -191,10 +198,10 @@ public:
 	void set_ray_pickable(bool p_ray_pickable);
 	bool is_ray_pickable() const;
 
-	void apply_impulse(int p_point_index, const Vector3 &p_impulse);
-	void apply_force(int p_point_index, const Vector3 &p_force);
-	void apply_central_impulse(const Vector3 &p_impulse);
-	void apply_central_force(const Vector3 &p_force);
+	void apply_impulse(int p_point_index, const Vector3& p_impulse);
+	void apply_force(int p_point_index, const Vector3& p_force);
+	void apply_central_impulse(const Vector3& p_impulse);
+	void apply_central_force(const Vector3& p_force);
 
 	SoftBody3D();
 	~SoftBody3D();
@@ -204,12 +211,15 @@ private:
 	void _update_cache_pin_points_datas();
 
 	void _pin_point_on_physics_server(int p_point_index, bool pin);
-	void _add_pinned_point(int p_point_index, const NodePath &p_spatial_attachment_path, int p_insert_at = -1);
+	void _add_pinned_point(
+		int p_point_index, const NodePath& p_spatial_attachment_path, int p_insert_at = -1);
 	void _reset_points_offsets();
 
 	void _remove_pinned_point(int p_point_index);
-	int _get_pinned_point(int p_point_index, PinnedPoint *&r_point) const;
+	int _get_pinned_point(int p_point_index, PinnedPoint*& r_point) const;
 	int _has_pinned_point(int p_point_index) const;
 };
 
 VARIANT_ENUM_CAST(SoftBody3D::DisableMode);
+
+

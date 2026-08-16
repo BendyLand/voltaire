@@ -92,7 +92,7 @@ void CollisionPolygon3D::_notification(int p_what) {
 		case NOTIFICATION_PARENTED: {
 			collision_object = Object::cast_to<CollisionObject3D>(get_parent());
 			if (collision_object) {
-				owner_id = collision_object->create_shape_owner(this);
+				owner_id = collision_object->create_shape_owner(this->obj.get());
 				_build_polygon();
 				_update_in_shape_owner();
 			}

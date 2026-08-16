@@ -28,27 +28,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
 #include "action_map/openxr_action.h"
 #include "action_map/openxr_action_map.h"
 #include "action_map/openxr_action_set.h"
 #include "action_map/openxr_haptic_feedback.h"
 #include "action_map/openxr_interaction_profile.h"
 #include "action_map/openxr_interaction_profile_metadata.h"
-#include "openxr_api_extension.h"
-#include "openxr_interface.h"
-
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
-
 #include "modules/modules_enabled.gen.h"
+#include "openxr_api_extension.h"
+#include "openxr_interface.h"
+#include "register_types.h"
 
 #ifndef DISABLE_DEPRECATED
 #include "extensions/openxr_extension_wrapper_extension.h"
-
 #include "scene/openxr_hand.h"
 #endif // DISABLE_DEPRECATED
 
@@ -83,7 +79,6 @@
 #include "extensions/spatial_entities/openxr_spatial_entity_extension.h"
 #include "extensions/spatial_entities/openxr_spatial_marker_tracking.h"
 #include "extensions/spatial_entities/openxr_spatial_plane_tracking.h"
-
 #include "scene/openxr_composition_layer.h"
 #include "scene/openxr_composition_layer_cylinder.h"
 #include "scene/openxr_composition_layer_equirect.h"
@@ -92,7 +87,6 @@
 
 #ifdef MODULE_GLTF_ENABLED
 #include "extensions/openxr_render_model_extension.h"
-
 #include "scene/openxr_render_model.h"
 #include "scene/openxr_render_model_manager.h"
 #endif
@@ -112,12 +106,13 @@
 #include "editor/editor_node.h"
 #endif
 
-static OpenXRAPI *openxr_api = nullptr;
-static OpenXRInteractionProfileMetadata *openxr_interaction_profile_metadata = nullptr;
+static OpenXRAPI* openxr_api = nullptr;
+static OpenXRInteractionProfileMetadata* openxr_interaction_profile_metadata = nullptr;
 static Ref<OpenXRInterface> openxr_interface;
 
 #ifdef TOOLS_ENABLED
-static void _editor_init() {
+static void _editor_init()
+{
 	if (OpenXRAPI::openxr_is_enabled(false)) {
 		if (openxr_interaction_profile_metadata == nullptr) {
 			// If we didn't initialize our actionmap metadata at startup, we initialize it now.
@@ -126,19 +121,22 @@ static void _editor_init() {
 		}
 	}
 
-	OpenXREditorPlugin *openxr_plugin = memnew(OpenXREditorPlugin());
+	OpenXREditorPlugin* openxr_plugin = memnew(OpenXREditorPlugin());
 	EditorNode::get_singleton()->add_editor_plugin(openxr_plugin);
 }
 #endif
 
-void initialize_openxr_module(ModuleInitializationLevel p_level) {
+void initialize_openxr_module(ModuleInitializationLevel p_level)
+{
 	if (p_level == MODULE_INITIALIZATION_LEVEL_CORE) {
 		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRExtensionWrapper);
 #ifndef DISABLE_DEPRECATED
 		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRExtensionWrapperExtension);
 #endif // DISABLE_DEPRECATED
 		VLTR_REGISTER_CLASS(OpenXRInteractionProfileMetadata);
-		VLTR_REGISTER_ABSTRACT_CLASS(OpenXRFutureResult); // Declared abstract, should never be instantiated by a user (Q or should this be internal?)
+		VLTR_REGISTER_ABSTRACT_CLASS(
+			OpenXRFutureResult); // Declared abstract, should never be instantiated by a user (Q or
+								 // should this be internal?)
 		VLTR_REGISTER_CLASS(OpenXRFrameSynthesisExtension);
 		VLTR_REGISTER_CLASS(OpenXRFutureExtension);
 		VLTR_REGISTER_CLASS(OpenXRAPIExtension);
@@ -181,46 +179,61 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {
 			OpenXRAPI::register_extension_wrapper(memnew(OpenXRKHRGenericController));
 
 			// Futures extension has to be registered as a singleton so extensions can access it.
-			OpenXRFutureExtension *future_extension = memnew(OpenXRFutureExtension);
+			OpenXRFutureExtension* future_extension = memnew(OpenXRFutureExtension);
 			OpenXRAPI::register_extension_wrapper(future_extension);
-			Engine::get_singleton()->add_singleton(Engine::Singleton("OpenXRFutureExtension", future_extension));
+			Engine::get_singleton()->add_singleton(
+				Engine::Singleton("OpenXRFutureExtension", future_extension));
 
 			// Register render model extension as a singleton.
 #ifdef MODULE_GLTF_ENABLED
-			OpenXRRenderModelExtension *render_model_extension = memnew(OpenXRRenderModelExtension);
+			OpenXRRenderModelExtension* render_model_extension = memnew(OpenXRRenderModelExtension);
 			OpenXRAPI::register_extension_wrapper(render_model_extension);
-			Engine::get_singleton()->add_singleton(Engine::Singleton("OpenXRRenderModelExtension", render_model_extension));
+			Engine::get_singleton()->add_singleton(
+				Engine::Singleton("OpenXRRenderModelExtension", render_model_extension));
 #endif
 
 			// Register spatial entity extensions
-			OpenXRSpatialEntityExtension *spatial_entity_extension = memnew(OpenXRSpatialEntityExtension);
+			OpenXRSpatialEntityExtension* spatial_entity_extension =
+				memnew(OpenXRSpatialEntityExtension);
 			OpenXRAPI::register_extension_wrapper(spatial_entity_extension);
-			Engine::get_singleton()->add_singleton(Engine::Singleton("OpenXRSpatialEntityExtension", spatial_entity_extension));
+			Engine::get_singleton()->add_singleton(
+				Engine::Singleton("OpenXRSpatialEntityExtension", spatial_entity_extension));
 
-			OpenXRSpatialAnchorCapability *anchor_capability = memnew(OpenXRSpatialAnchorCapability);
+			OpenXRSpatialAnchorCapability* anchor_capability =
+				memnew(OpenXRSpatialAnchorCapability);
 			OpenXRAPI::register_extension_wrapper(anchor_capability);
-			Engine::get_singleton()->add_singleton(Engine::Singleton("OpenXRSpatialAnchorCapability", anchor_capability));
+			Engine::get_singleton()->add_singleton(
+				Engine::Singleton("OpenXRSpatialAnchorCapability", anchor_capability));
 
-			OpenXRSpatialPlaneTrackingCapability *plane_tracking_capability = memnew(OpenXRSpatialPlaneTrackingCapability);
+			OpenXRSpatialPlaneTrackingCapability* plane_tracking_capability =
+				memnew(OpenXRSpatialPlaneTrackingCapability);
 			OpenXRAPI::register_extension_wrapper(plane_tracking_capability);
-			Engine::get_singleton()->add_singleton(Engine::Singleton("OpenXRSpatialPlaneTrackingCapability", plane_tracking_capability));
+			Engine::get_singleton()->add_singleton(Engine::Singleton(
+				"OpenXRSpatialPlaneTrackingCapability", plane_tracking_capability));
 
-			OpenXRSpatialMarkerTrackingCapability *marker_tracking_capability = memnew(OpenXRSpatialMarkerTrackingCapability);
+			OpenXRSpatialMarkerTrackingCapability* marker_tracking_capability =
+				memnew(OpenXRSpatialMarkerTrackingCapability);
 			OpenXRAPI::register_extension_wrapper(marker_tracking_capability);
-			Engine::get_singleton()->add_singleton(Engine::Singleton("OpenXRSpatialMarkerTrackingCapability", marker_tracking_capability));
+			Engine::get_singleton()->add_singleton(Engine::Singleton(
+				"OpenXRSpatialMarkerTrackingCapability", marker_tracking_capability));
 
 			// Register frame synthesis extension as a singleton.
-			OpenXRFrameSynthesisExtension *frame_synthesis_extension = memnew(OpenXRFrameSynthesisExtension);
+			OpenXRFrameSynthesisExtension* frame_synthesis_extension =
+				memnew(OpenXRFrameSynthesisExtension);
 			OpenXRAPI::register_extension_wrapper(frame_synthesis_extension);
-			Engine::get_singleton()->add_singleton(Engine::Singleton("OpenXRFrameSynthesisExtension", frame_synthesis_extension));
+			Engine::get_singleton()->add_singleton(
+				Engine::Singleton("OpenXRFrameSynthesisExtension", frame_synthesis_extension));
 
 			// Register android thread settings extension as a singleton.
-			OpenXRAndroidThreadSettingsExtension *android_thread_settings = memnew(OpenXRAndroidThreadSettingsExtension);
+			OpenXRAndroidThreadSettingsExtension* android_thread_settings =
+				memnew(OpenXRAndroidThreadSettingsExtension);
 			OpenXRAPI::register_extension_wrapper(android_thread_settings);
-			Engine::get_singleton()->add_singleton(Engine::Singleton("OpenXRAndroidThreadSettingsExtension", android_thread_settings));
+			Engine::get_singleton()->add_singleton(
+				Engine::Singleton("OpenXRAndroidThreadSettingsExtension", android_thread_settings));
 
 			// Register user presence extension as a singleton
-			OpenXRUserPresenceExtension *user_presence_extension = memnew(OpenXRUserPresenceExtension);
+			OpenXRUserPresenceExtension* user_presence_extension =
+				memnew(OpenXRUserPresenceExtension);
 			OpenXRAPI::register_extension_wrapper(user_presence_extension);
 
 			// register gated extensions
@@ -247,17 +260,18 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {
 			ERR_FAIL_NULL(openxr_api);
 
 			if (!openxr_api->initialize(OS::get_singleton()->get_current_rendering_driver_name())) {
-				const char *init_error_message =
-						"OpenXR was requested but failed to start.\n"
-						"HMD was not detected or a required feature was not supported.\n\n"
+				const char* init_error_message =
+					"OpenXR was requested but failed to start.\n"
+					"HMD was not detected or a required feature was not supported.\n\n"
 #ifdef TOOLS_ENABLED
-						// Editor only message - this is useful for app developer, but not user
-						"Check logged errors in debugger for more details.\n\n"
+					// Editor only message - this is useful for app developer, but not user
+					"Check logged errors in debugger for more details.\n\n"
 #endif
 #ifdef WINDOWS_ENABLED
-						"When using Windows Mixed Reality, note that WMR only has DirectX support. Make sure SteamVR is your default OpenXR runtime.\n\n"
+					"When using Windows Mixed Reality, note that WMR only has DirectX support. "
+					"Make sure SteamVR is your default OpenXR runtime.\n\n"
 #endif
-						"Godot will start in normal mode.\n";
+					"Godot will start in normal mode.\n";
 
 				WARN_PRINT(init_error_message);
 
@@ -290,21 +304,6 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {
 
 		VLTR_REGISTER_ABSTRACT_CLASS(OpenXRHapticBase);
 		VLTR_REGISTER_CLASS(OpenXRHapticVibration);
-
-		VLTR_REGISTER_ABSTRACT_CLASS(OpenXRCompositionLayer);
-		VLTR_REGISTER_CLASS(OpenXRCompositionLayerEquirect);
-		VLTR_REGISTER_CLASS(OpenXRCompositionLayerCylinder);
-		VLTR_REGISTER_CLASS(OpenXRCompositionLayerQuad);
-
-#ifndef DISABLE_DEPRECATED
-		VLTR_REGISTER_CLASS(OpenXRHand);
-#endif
-
-		VLTR_REGISTER_CLASS(OpenXRVisibilityMask);
-#ifdef MODULE_GLTF_ENABLED
-		VLTR_REGISTER_CLASS(OpenXRRenderModel);
-		VLTR_REGISTER_CLASS(OpenXRRenderModelManager);
-#endif
 
 		VLTR_REGISTER_CLASS(OpenXRSpatialEntityExtension);
 		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRSpatialEntityTracker);
@@ -339,7 +338,7 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {
 		VLTR_REGISTER_CLASS(OpenXRSpatialPlaneTrackingCapability);
 		VLTR_REGISTER_CLASS(OpenXRSpatialMarkerTrackingCapability);
 
-		XRServer *xr_server = XRServer::get_singleton();
+		XRServer* xr_server = XRServer::get_singleton();
 		if (xr_server) {
 			openxr_interface.instantiate();
 			xr_server->add_interface(openxr_interface);
@@ -352,16 +351,13 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		VLTR_REGISTER_ABSTRACT_CLASS(OpenXRInteractionProfileEditorBase);
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRInteractionProfileEditor);
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRBindingModifierEditor);
-
 		EditorNode::add_init_callback(_editor_init);
 	}
 #endif
 }
 
-void uninitialize_openxr_module(ModuleInitializationLevel p_level) {
+void uninitialize_openxr_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
@@ -373,7 +369,7 @@ void uninitialize_openxr_module(ModuleInitializationLevel p_level) {
 		}
 
 		// unregister our interface from the XR server
-		XRServer *xr_server = XRServer::get_singleton();
+		XRServer* xr_server = XRServer::get_singleton();
 		if (xr_server) {
 			if (xr_server->get_primary_interface() == openxr_interface) {
 				xr_server->set_primary_interface(Ref<XRInterface>());
@@ -400,3 +396,5 @@ void uninitialize_openxr_module(ModuleInitializationLevel p_level) {
 	// cleanup our extension wrappers
 	OpenXRAPI::cleanup_extension_wrappers();
 }
+
+

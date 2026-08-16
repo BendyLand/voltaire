@@ -28,15 +28,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "range.h"
-
+#include <thirdparty/misc/r128.h>
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
+#include "range.h"
 #include "servers/display/accessibility_server.h"
 
-#include <thirdparty/misc/r128.h>
-
-double Range::_snapped_r128(double p_value, double p_step) {
+double Range::_snapped_r128(double p_value, double p_step)
+{
 	if (p_step == 0.0) {
 		return p_value;
 	}
@@ -45,15 +44,16 @@ double Range::_snapped_r128(double p_value, double p_step) {
 		return Math::snapped(p_value, p_step);
 	}
 	// Rescale values to better utilize R128's range before snapping.
-	// R128 is fixed-precision with 64 bits after the decimal point, but double already uses 53 of those,
-	// so a step size finer than 2^-11 will lose precision, and in practice even 1e-3 can be problematic.
-	// By rescaling the value and step, we can shift precision into the higher bits (effectively turning R128 into a makeshift float).
+	// R128 is fixed-precision with 64 bits after the decimal point, but double already uses 53 of
+	// those, so a step size finer than 2^-11 will lose precision, and in practice even 1e-3 can be
+	// problematic. By rescaling the value and step, we can shift precision into the higher bits
+	// (effectively turning R128 into a makeshift float).
 	const int decimals = MIN(18, 14 - Math::floor(std::log10(MAX(Math::abs(p_value), p_step))));
 	const double scale = Math::pow(10.0, decimals);
 	p_value *= scale;
 	p_step *= scale;
-	// All these lines are the equivalent of: p_value = Math::floor(p_value / p_step + 0.5) * p_step;
-	// Convert to String to force rounding to a decimal value (not a binary one).
+	// All these lines are the equivalent of: p_value = Math::floor(p_value / p_step + 0.5) *
+	// p_step; Convert to String to force rounding to a decimal value (not a binary one).
 	String step_str = String::num(p_step);
 	String value_str = String::num(p_value);
 	R128 step_r128;
@@ -73,63 +73,79 @@ double Range::_snapped_r128(double p_value, double p_step) {
 	return p_value;
 }
 
-PackedStringArray Range::get_configuration_warnings() const {
+PackedStringArray Range::get_configuration_warnings() const
+{
 	PackedStringArray warnings = Control::get_configuration_warnings();
 
 	if (shared->exp_ratio && shared->min < 0) {
-		warnings.push_back(RTR("If \"Exp Edit\" is enabled, \"Min Value\" must be greater or equal to 0."));
+		warnings.push_back(
+			RTR("If \"Exp Edit\" is enabled, \"Min Value\" must be greater or equal to 0."));
 	}
 
 	return warnings;
 }
 
-void Range::_value_changed_notify() {
+void Range::_value_changed_notify()
+{
 	_value_changed(shared->val);
-	emit_signal(SceneStringName(value_changed), shared->val);
+	this->obj->emit_signal(SceneStringName(value_changed), shared->val);
 	queue_accessibility_update();
 	queue_redraw();
 }
 
-void Range::_accessibility_action_inc(const Variant &p_data) {
+void Range::_accessibility_action_inc(const Variant& p_data)
+{
 	double step = ((shared->step > 0) ? shared->step : 1);
 	set_value(shared->val + step);
 }
 
-void Range::_accessibility_action_dec(const Variant &p_data) {
+void Range::_accessibility_action_dec(const Variant& p_data)
+{
 	double step = ((shared->step > 0) ? shared->step : 1);
 	set_value(shared->val - step);
 }
 
-void Range::_accessibility_action_set_value(const Variant &p_data) {
+void Range::_accessibility_action_set_value(const Variant& p_data)
+{
 	double new_val = p_data;
 	set_value(new_val);
 }
 
-void Range::_notification(int p_what) {
+void Range::_notification(int p_what)
+{
 	ERR_MAIN_THREAD_GUARD;
 	switch (p_what) {
-		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-			RID ae = get_accessibility_element();
-			ERR_FAIL_COND(ae.is_null());
+	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+		RID ae = get_accessibility_element();
+		ERR_FAIL_COND(ae.is_null());
 
-			AccessibilityServer::get_singleton()->update_set_role(ae, AccessibilityServerEnums::AccessibilityRole::ROLE_SPIN_BUTTON);
-			AccessibilityServer::get_singleton()->update_set_num_value(ae, shared->val);
-			AccessibilityServer::get_singleton()->update_set_num_range(ae, shared->min, shared->max);
-			if (shared->step > 0) {
-				AccessibilityServer::get_singleton()->update_set_num_step(ae, shared->step);
-			} else {
-				AccessibilityServer::get_singleton()->update_set_num_step(ae, 1);
-			}
-			AccessibilityServer::get_singleton()->update_add_action(ae, AccessibilityServerEnums::AccessibilityAction::ACTION_DECREMENT, callable_mp(this, &Range::_accessibility_action_dec));
-			AccessibilityServer::get_singleton()->update_add_action(ae, AccessibilityServerEnums::AccessibilityAction::ACTION_INCREMENT, callable_mp(this, &Range::_accessibility_action_inc));
-			AccessibilityServer::get_singleton()->update_add_action(ae, AccessibilityServerEnums::AccessibilityAction::ACTION_SET_VALUE, callable_mp(this, &Range::_accessibility_action_set_value));
-		} break;
+		AccessibilityServer::get_singleton()->update_set_role(
+			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_SPIN_BUTTON);
+		AccessibilityServer::get_singleton()->update_set_num_value(ae, shared->val);
+		AccessibilityServer::get_singleton()->update_set_num_range(ae, shared->min, shared->max);
+		if (shared->step > 0) {
+			AccessibilityServer::get_singleton()->update_set_num_step(ae, shared->step);
+		}
+		else {
+			AccessibilityServer::get_singleton()->update_set_num_step(ae, 1);
+		}
+		AccessibilityServer::get_singleton()->update_add_action(ae,
+			AccessibilityServerEnums::AccessibilityAction::ACTION_DECREMENT,
+			callable_mp(this, &Range::_accessibility_action_dec));
+		AccessibilityServer::get_singleton()->update_add_action(ae,
+			AccessibilityServerEnums::AccessibilityAction::ACTION_INCREMENT,
+			callable_mp(this, &Range::_accessibility_action_inc));
+		AccessibilityServer::get_singleton()->update_add_action(ae,
+			AccessibilityServerEnums::AccessibilityAction::ACTION_SET_VALUE,
+			callable_mp(this, &Range::_accessibility_action_set_value));
+	} break;
 	}
 }
 
-void Range::Shared::emit_value_changed() {
-	for (Range *E : owners) {
-		Range *r = E;
+void Range::Shared::emit_value_changed()
+{
+	for (Range* E : owners) {
+		Range* r = E;
 		if (!r->is_inside_tree()) {
 			continue;
 		}
@@ -137,14 +153,16 @@ void Range::Shared::emit_value_changed() {
 	}
 }
 
-void Range::_changed_notify() {
-	emit_signal(CoreStringName(changed));
+void Range::_changed_notify()
+{
+	this->obj->emit_signal(CoreStringName(changed));
 	queue_redraw();
 }
 
-void Range::Shared::emit_changed() {
-	for (Range *E : owners) {
-		Range *r = E;
+void Range::Shared::emit_changed()
+{
+	for (Range* E : owners) {
+		Range* r = E;
 		if (!r->is_inside_tree()) {
 			continue;
 		}
@@ -152,9 +170,10 @@ void Range::Shared::emit_changed() {
 	}
 }
 
-void Range::Shared::redraw_owners() {
-	for (Range *E : owners) {
-		Range *r = E;
+void Range::Shared::redraw_owners()
+{
+	for (Range* E : owners) {
+		Range* r = E;
 		if (!r->is_inside_tree()) {
 			continue;
 		}
@@ -165,7 +184,8 @@ void Range::Shared::redraw_owners() {
 	}
 }
 
-void Range::set_value(double p_val) {
+void Range::set_value(double p_val)
+{
 	double prev_val = shared->val;
 	_set_value_no_signal(p_val);
 
@@ -175,11 +195,10 @@ void Range::set_value(double p_val) {
 	queue_accessibility_update();
 }
 
-void Range::_set_value_no_signal(double p_val) {
-	shared->val = _calc_value(p_val, shared->step);
-}
+void Range::_set_value_no_signal(double p_val) { shared->val = _calc_value(p_val, shared->step); }
 
-double Range::_calc_value(double p_val, double p_step) const {
+double Range::_calc_value(double p_val, double p_step) const
+{
 	if (Math::is_nan(p_val)) {
 		return p_val;
 	}
@@ -188,8 +207,10 @@ double Range::_calc_value(double p_val, double p_step) const {
 		if (Math::abs(shared->min) > p_step * 1e14) {
 			// Min is too big to use for snapping offset, so snap without it.
 			p_val = _snapped_r128(p_val, p_step);
-		} else {
-			// Subtract min to support cases like min = 0.1, step = 0.2, snaps to 0.1, 0.3, 0.5, etc.
+		}
+		else {
+			// Subtract min to support cases like min = 0.1, step = 0.2, snaps to 0.1, 0.3, 0.5,
+			// etc.
 			p_val = _snapped_r128(p_val - shared->min, p_step) + shared->min;
 		}
 	}
@@ -208,7 +229,8 @@ double Range::_calc_value(double p_val, double p_step) const {
 	return p_val;
 }
 
-void Range::set_value_no_signal(double p_val) {
+void Range::set_value_no_signal(double p_val)
+{
 	double prev_val = shared->val;
 	_set_value_no_signal(p_val);
 
@@ -217,7 +239,8 @@ void Range::set_value_no_signal(double p_val) {
 	}
 }
 
-void Range::set_min(double p_min) {
+void Range::set_min(double p_min)
+{
 	if (shared->min == p_min) {
 		return;
 	}
@@ -234,7 +257,8 @@ void Range::set_min(double p_min) {
 	queue_accessibility_update();
 }
 
-void Range::set_max(double p_max) {
+void Range::set_max(double p_max)
+{
 	double max_validated = MAX(p_max, shared->min);
 	if (shared->max == max_validated) {
 		return;
@@ -249,7 +273,8 @@ void Range::set_max(double p_max) {
 	queue_accessibility_update();
 }
 
-void Range::set_step(double p_step) {
+void Range::set_step(double p_step)
+{
 	if (shared->step == p_step) {
 		return;
 	}
@@ -260,7 +285,8 @@ void Range::set_step(double p_step) {
 	queue_accessibility_update();
 }
 
-void Range::set_page(double p_page) {
+void Range::set_page(double p_page)
+{
 	double page_validated = CLAMP(p_page, 0, shared->max - shared->min);
 	if (shared->page == page_validated) {
 		return;
@@ -274,39 +300,32 @@ void Range::set_page(double p_page) {
 	queue_accessibility_update();
 }
 
-double Range::get_value() const {
-	return shared->val;
-}
+double Range::get_value() const { return shared->val; }
 
-double Range::get_min() const {
-	return shared->min;
-}
+double Range::get_min() const { return shared->min; }
 
-double Range::get_max() const {
-	return shared->max;
-}
+double Range::get_max() const { return shared->max; }
 
-double Range::get_step() const {
-	return shared->step;
-}
+double Range::get_step() const { return shared->step; }
 
-double Range::get_page() const {
-	return shared->page;
-}
+double Range::get_page() const { return shared->page; }
 
-void Range::set_as_ratio(double p_value) {
+void Range::set_as_ratio(double p_value)
+{
 	double v;
 
 	if (shared->exp_ratio && get_min() >= 0) {
 		double exp_min = get_min() == 0 ? 0.0 : Math::log(get_min()) / Math::log((double)2);
 		double exp_max = Math::log(get_max()) / Math::log((double)2);
 		v = Math::pow(2, exp_min + (exp_max - exp_min) * p_value);
-	} else {
+	}
+	else {
 		double percent = (get_max() - get_min()) * p_value;
 		if (get_step() > 0) {
 			double steps = std::round(percent / get_step());
 			v = steps * get_step() + get_min();
-		} else {
+		}
+		else {
 			v = percent + get_min();
 		}
 	}
@@ -314,7 +333,8 @@ void Range::set_as_ratio(double p_value) {
 	set_value(v);
 }
 
-double Range::get_as_ratio() const {
+double Range::get_as_ratio() const
+{
 	if (Math::is_equal_approx(get_max(), get_min())) {
 		// Avoid division by zero.
 		return 1.0;
@@ -327,19 +347,22 @@ double Range::get_as_ratio() const {
 		double v = Math::log(value) / Math::log((double)2);
 
 		return CLAMP((v - exp_min) / (exp_max - exp_min), 0, 1);
-	} else {
+	}
+	else {
 		double value = CLAMP(get_value(), shared->min, shared->max);
 		return CLAMP((value - get_min()) / (get_max() - get_min()), 0, 1);
 	}
 }
 
-void Range::_share(Node *p_range) {
-	Range *r = Object::cast_to<Range>(p_range);
+void Range::_share(Node* p_range)
+{
+	Range* r = Object::cast_to<Range>(p_range);
 	ERR_FAIL_NULL(r);
 	share(r);
 }
 
-void Range::share(Range *p_range) {
+void Range::share(Range* p_range)
+{
 	ERR_FAIL_NULL(p_range);
 
 	p_range->_ref_shared(shared);
@@ -347,8 +370,9 @@ void Range::share(Range *p_range) {
 	p_range->_value_changed_notify();
 }
 
-void Range::unshare() {
-	Shared *nshared = memnew(Shared);
+void Range::unshare()
+{
+	Shared* nshared = memnew(Shared);
 	nshared->min = shared->min;
 	nshared->max = shared->max;
 	nshared->val = shared->val;
@@ -362,7 +386,8 @@ void Range::unshare() {
 	queue_accessibility_update();
 }
 
-void Range::_ref_shared(Shared *p_shared) {
+void Range::_ref_shared(Shared* p_shared)
+{
 	if (shared && p_shared == shared) {
 		return;
 	}
@@ -372,7 +397,8 @@ void Range::_ref_shared(Shared *p_shared) {
 	shared->owners.insert(this);
 }
 
-void Range::_unref_shared() {
+void Range::_unref_shared()
+{
 	if (shared) {
 		shared->owners.erase(this);
 		if (shared->owners.is_empty()) {
@@ -382,62 +408,14 @@ void Range::_unref_shared() {
 	}
 }
 
-void Range::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_value"), &Range::get_value);
-	ClassDB::bind_method(D_METHOD("get_min"), &Range::get_min);
-	ClassDB::bind_method(D_METHOD("get_max"), &Range::get_max);
-	ClassDB::bind_method(D_METHOD("get_step"), &Range::get_step);
-	ClassDB::bind_method(D_METHOD("get_page"), &Range::get_page);
-	ClassDB::bind_method(D_METHOD("get_as_ratio"), &Range::get_as_ratio);
-	ClassDB::bind_method(D_METHOD("set_value", "value"), &Range::set_value);
-	ClassDB::bind_method(D_METHOD("set_value_no_signal", "value"), &Range::set_value_no_signal);
-	ClassDB::bind_method(D_METHOD("set_min", "minimum"), &Range::set_min);
-	ClassDB::bind_method(D_METHOD("set_max", "maximum"), &Range::set_max);
-	ClassDB::bind_method(D_METHOD("set_step", "step"), &Range::set_step);
-	ClassDB::bind_method(D_METHOD("set_page", "pagesize"), &Range::set_page);
-	ClassDB::bind_method(D_METHOD("set_as_ratio", "value"), &Range::set_as_ratio);
-	ClassDB::bind_method(D_METHOD("set_use_rounded_values", "enabled"), &Range::set_use_rounded_values);
-	ClassDB::bind_method(D_METHOD("is_using_rounded_values"), &Range::is_using_rounded_values);
-	ClassDB::bind_method(D_METHOD("set_exp_ratio", "enabled"), &Range::set_exp_ratio);
-	ClassDB::bind_method(D_METHOD("is_ratio_exp"), &Range::is_ratio_exp);
-	ClassDB::bind_method(D_METHOD("set_allow_greater", "allow"), &Range::set_allow_greater);
-	ClassDB::bind_method(D_METHOD("is_greater_allowed"), &Range::is_greater_allowed);
-	ClassDB::bind_method(D_METHOD("set_allow_lesser", "allow"), &Range::set_allow_lesser);
-	ClassDB::bind_method(D_METHOD("is_lesser_allowed"), &Range::is_lesser_allowed);
+void Range::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("share", "with"), &Range::_share);
-	ClassDB::bind_method(D_METHOD("unshare"), &Range::unshare);
+void Range::set_use_rounded_values(bool p_enable) { _rounded_values = p_enable; }
 
-	ADD_SIGNAL(MethodInfo("value_changed", PropertyInfo(Variant::FLOAT, "value")));
-	ADD_SIGNAL(MethodInfo("changed"));
+bool Range::is_using_rounded_values() const { return _rounded_values; }
 
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "min_value"), "set_min", "get_min");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_value"), "set_max", "get_max");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "step"), "set_step", "get_step");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "page"), "set_page", "get_page");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "value"), "set_value", "get_value");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "ratio", PROPERTY_HINT_RANGE, "0,1,0.01", PROPERTY_USAGE_NONE), "set_as_ratio", "get_as_ratio");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "exp_edit"), "set_exp_ratio", "is_ratio_exp");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "rounded"), "set_use_rounded_values", "is_using_rounded_values");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_greater"), "set_allow_greater", "is_greater_allowed");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_lesser"), "set_allow_lesser", "is_lesser_allowed");
-
-	ADD_LINKED_PROPERTY("min_value", "value");
-	ADD_LINKED_PROPERTY("min_value", "max_value");
-	ADD_LINKED_PROPERTY("min_value", "page");
-	ADD_LINKED_PROPERTY("max_value", "value");
-	ADD_LINKED_PROPERTY("max_value", "page");
-}
-
-void Range::set_use_rounded_values(bool p_enable) {
-	_rounded_values = p_enable;
-}
-
-bool Range::is_using_rounded_values() const {
-	return _rounded_values;
-}
-
-void Range::set_exp_ratio(bool p_enable) {
+void Range::set_exp_ratio(bool p_enable)
+{
 	if (shared->exp_ratio == p_enable) {
 		return;
 	}
@@ -447,35 +425,27 @@ void Range::set_exp_ratio(bool p_enable) {
 	update_configuration_warnings();
 }
 
-bool Range::is_ratio_exp() const {
-	return shared->exp_ratio;
-}
+bool Range::is_ratio_exp() const { return shared->exp_ratio; }
 
-void Range::set_allow_greater(bool p_allow) {
-	shared->allow_greater = p_allow;
-}
+void Range::set_allow_greater(bool p_allow) { shared->allow_greater = p_allow; }
 
-bool Range::is_greater_allowed() const {
-	return shared->allow_greater;
-}
+bool Range::is_greater_allowed() const { return shared->allow_greater; }
 
-void Range::set_allow_lesser(bool p_allow) {
-	shared->allow_lesser = p_allow;
-}
+void Range::set_allow_lesser(bool p_allow) { shared->allow_lesser = p_allow; }
 
-bool Range::is_lesser_allowed() const {
-	return shared->allow_lesser;
-}
+bool Range::is_lesser_allowed() const { return shared->allow_lesser; }
 
-Range::Range() {
+Range::Range()
+{
 	shared = memnew(Shared);
 	shared->owners.insert(this);
 }
 
-Range::~Range() {
-	_unref_shared();
-}
+Range::~Range() { _unref_shared(); }
 
-void Range::_value_changed(double p_value) {
+void Range::_value_changed(double p_value)
+{
 	// stub
 }
+
+

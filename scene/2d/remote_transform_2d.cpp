@@ -40,7 +40,7 @@ void RemoteTransform2D::_update_cache() {
 			return;
 		}
 
-		cache = node->get_instance_id();
+		cache = node->obj->get_instance_id();
 	}
 }
 

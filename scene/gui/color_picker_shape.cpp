@@ -28,17 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <thirdparty/misc/ok_color_shader.h>
 #include "color_picker_shape.h"
-
 #include "core/input/input.h"
 #include "core/object/callable_mp.h"
 #include "scene/gui/margin_container.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/rendering_server.h"
 
-#include <thirdparty/misc/ok_color_shader.h>
-
-void ColorPickerShape::init_shaders() {
+void ColorPickerShape::init_shaders()
+{
 	wheel_shader.instantiate();
 	wheel_shader->set_code(R"(
 // ColorPicker wheel shader.
@@ -141,7 +140,8 @@ void fragment() {
 })");
 }
 
-void ColorPickerShape::finish_shaders() {
+void ColorPickerShape::finish_shaders()
+{
 	wheel_shader.unref();
 	circle_shader.unref();
 	circle_ok_color_shader.unref();
@@ -149,11 +149,14 @@ void ColorPickerShape::finish_shaders() {
 	rectangle_ok_color_hl_shader.unref();
 }
 
-void ColorPickerShape::_emit_color_changed() {
-	color_picker->emit_signal(SNAME("color_changed"), color_picker->color);
+void ColorPickerShape::_emit_color_changed()
+{
+	color_picker->obj->emit_signal(SNAME("color_changed"), color_picker->color);
 }
 
-bool ColorPickerShape::can_handle(const Ref<InputEvent> &p_event, Vector2 &r_position, bool *r_is_click) {
+bool ColorPickerShape::can_handle(
+	const Ref<InputEvent>& p_event, Vector2& r_position, bool* r_is_click)
+{
 	Ref<InputEventMouseButton> mb = p_event;
 	if (mb.is_valid()) {
 		if (mb->get_button_index() != MouseButton::LEFT) {
@@ -168,7 +171,8 @@ bool ColorPickerShape::can_handle(const Ref<InputEvent> &p_event, Vector2 &r_pos
 			is_dragging = true;
 			r_position = mb->get_position();
 			return true;
-		} else {
+		}
+		else {
 			_emit_color_changed();
 			color_picker->add_recent_preset(color_picker->color);
 			is_dragging = false;
@@ -184,7 +188,8 @@ bool ColorPickerShape::can_handle(const Ref<InputEvent> &p_event, Vector2 &r_pos
 	return false;
 }
 
-void ColorPickerShape::apply_color() {
+void ColorPickerShape::apply_color()
+{
 	color_picker->_copy_hsv_okhsl_to_normalized();
 	color_picker->_normalized_apply_intensity_to_color();
 	color_picker->hsv_cached = true;
@@ -196,11 +201,10 @@ void ColorPickerShape::apply_color() {
 	}
 }
 
-void ColorPickerShape::cancel_event() {
-	is_dragging = false;
-}
+void ColorPickerShape::cancel_event() { is_dragging = false; }
 
-void ColorPickerShape::draw_focus_rect(Control *p_control, const Rect2 &p_rect) {
+void ColorPickerShape::draw_focus_rect(Control* p_control, const Rect2& p_rect)
+{
 	if (!p_control->has_focus(true)) {
 		return;
 	}
@@ -208,18 +212,21 @@ void ColorPickerShape::draw_focus_rect(Control *p_control, const Rect2 &p_rect) 
 	Rect2 focus_rect;
 	if (p_rect.has_area()) {
 		focus_rect = p_rect;
-	} else {
+	}
+	else {
 		focus_rect = Rect2(Vector2(), p_control->get_size());
 	}
 
 	const RID ci = p_control->get_canvas_item();
 	if (!cursor_editing) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(ci, focus_rect, color_picker->theme_cache.focused_not_editing_cursor_color);
+		RenderingServer::get_singleton()->canvas_item_add_rect(
+			ci, focus_rect, color_picker->theme_cache.focused_not_editing_cursor_color);
 	}
 	color_picker->theme_cache.picker_focus_rectangle->draw(ci, focus_rect);
 }
 
-void ColorPickerShape::draw_focus_circle(Control *p_control) {
+void ColorPickerShape::draw_focus_circle(Control* p_control)
+{
 	if (!p_control->has_focus(true)) {
 		return;
 	}
@@ -227,12 +234,15 @@ void ColorPickerShape::draw_focus_circle(Control *p_control) {
 	const Rect2 focus_rect(Vector2(), p_control->get_size());
 	const RID ci = p_control->get_canvas_item();
 	if (!cursor_editing) {
-		RenderingServer::get_singleton()->canvas_item_add_circle(ci, focus_rect.get_center(), focus_rect.get_size().y * 0.5, color_picker->theme_cache.focused_not_editing_cursor_color);
+		RenderingServer::get_singleton()->canvas_item_add_circle(ci, focus_rect.get_center(),
+			focus_rect.get_size().y * 0.5,
+			color_picker->theme_cache.focused_not_editing_cursor_color);
 	}
 	color_picker->theme_cache.picker_focus_circle->draw(ci, focus_rect);
 }
 
-void ColorPickerShape::draw_sv_square(Control *p_control, const Rect2 &p_square, bool p_draw_focus) {
+void ColorPickerShape::draw_sv_square(Control* p_control, const Rect2& p_square, bool p_draw_focus)
+{
 	const Vector2 end = p_square.get_end();
 	PackedVector2Array points = {
 		p_square.position,
@@ -261,8 +271,10 @@ void ColorPickerShape::draw_sv_square(Control *p_control, const Rect2 &p_square,
 	p_control->draw_polygon(points, colors);
 
 	Vector2 cursor_pos;
-	cursor_pos.x = CLAMP(p_square.position.x + p_square.size.x * color_picker->s, p_square.position.x, end.x);
-	cursor_pos.y = CLAMP(p_square.position.y + p_square.size.y * (1.0 - color_picker->v), p_square.position.y, end.y);
+	cursor_pos.x =
+		CLAMP(p_square.position.x + p_square.size.x * color_picker->s, p_square.position.x, end.x);
+	cursor_pos.y = CLAMP(p_square.position.y + p_square.size.y * (1.0 - color_picker->v),
+		p_square.position.y, end.y);
 
 	if (p_draw_focus) {
 		draw_focus_rect(p_control, p_square);
@@ -270,41 +282,47 @@ void ColorPickerShape::draw_sv_square(Control *p_control, const Rect2 &p_square,
 	draw_cursor(p_control, cursor_pos);
 }
 
-void ColorPickerShape::draw_cursor(Control *p_control, const Vector2 &p_center, bool p_draw_bg) {
+void ColorPickerShape::draw_cursor(Control* p_control, const Vector2& p_center, bool p_draw_bg)
+{
 	const Vector2 position = p_center - color_picker->theme_cache.picker_cursor->get_size() * 0.5;
 	if (p_draw_bg) {
-		p_control->draw_texture(color_picker->theme_cache.picker_cursor_bg, position, Color(color_picker->color, 1.0));
+		p_control->draw_texture(
+			color_picker->theme_cache.picker_cursor_bg, position, Color(color_picker->color, 1.0));
 	}
 	p_control->draw_texture(color_picker->theme_cache.picker_cursor, position);
 }
 
-void ColorPickerShape::draw_circle_cursor(Control *p_control, float p_hue, float p_saturation) {
+void ColorPickerShape::draw_circle_cursor(Control* p_control, float p_hue, float p_saturation)
+{
 	const Vector2 center = p_control->get_size() * 0.5;
-	const Vector2 cursor_pos(
-			center.x + (center.x * Math::cos(p_hue * Math::TAU) * p_saturation),
-			center.y + (center.y * Math::sin(p_hue * Math::TAU) * p_saturation));
+	const Vector2 cursor_pos(center.x + (center.x * Math::cos(p_hue * Math::TAU) * p_saturation),
+		center.y + (center.y * Math::sin(p_hue * Math::TAU) * p_saturation));
 
 	draw_cursor(p_control, cursor_pos);
 }
 
-void ColorPickerShape::connect_shape_focus(Control *p_shape) {
+void ColorPickerShape::connect_shape_focus(Control* p_shape)
+{
 	p_shape->set_focus_mode(Control::FOCUS_ALL);
-	p_shape->connect(SceneStringName(focus_entered), callable_mp(this, &ColorPickerShape::shape_focus_entered));
-	p_shape->connect(SceneStringName(focus_exited), callable_mp(this, &ColorPickerShape::shape_focus_exited));
+	p_shape->connect(
+		SceneStringName(focus_entered), callable_mp(this, &ColorPickerShape::shape_focus_entered));
+	p_shape->connect(
+		SceneStringName(focus_exited), callable_mp(this, &ColorPickerShape::shape_focus_exited));
 }
 
-void ColorPickerShape::shape_focus_entered() {
-	Input *input = Input::get_singleton();
-	if (!(input->is_action_pressed("ui_up") || input->is_action_pressed("ui_down") || input->is_action_pressed("ui_left") || input->is_action_pressed("ui_right"))) {
+void ColorPickerShape::shape_focus_entered()
+{
+	Input* input = Input::get_singleton();
+	if (!(input->is_action_pressed("ui_up") || input->is_action_pressed("ui_down") ||
+			input->is_action_pressed("ui_left") || input->is_action_pressed("ui_right"))) {
 		cursor_editing = true;
 	}
 }
 
-void ColorPickerShape::shape_focus_exited() {
-	cursor_editing = false;
-}
+void ColorPickerShape::shape_focus_exited() { cursor_editing = false; }
 
-void ColorPickerShape::handle_cursor_editing(const Ref<InputEvent> &p_event, Control *p_control) {
+void ColorPickerShape::handle_cursor_editing(const Ref<InputEvent>& p_event, Control* p_control)
+{
 	if (p_event->is_action_pressed("ui_accept", false, true)) {
 		cursor_editing = !cursor_editing;
 		p_control->queue_redraw();
@@ -321,10 +339,13 @@ void ColorPickerShape::handle_cursor_editing(const Ref<InputEvent> &p_event, Con
 		return;
 	}
 
-	Input *input = Input::get_singleton();
-	bool is_joypad_event = Object::cast_to<InputEventJoypadMotion>(p_event.ptr()) || Object::cast_to<InputEventJoypadButton>(p_event.ptr());
+	Input* input = Input::get_singleton();
+	bool is_joypad_event = Object::cast_to<InputEventJoypadMotion>(p_event.ptr()) ||
+						   Object::cast_to<InputEventJoypadButton>(p_event.ptr());
 
-	if (p_event->is_action_pressed("ui_left", true) || p_event->is_action_pressed("ui_right", true) || p_event->is_action_pressed("ui_up", true) || p_event->is_action_pressed("ui_down", true)) {
+	if (p_event->is_action_pressed("ui_left", true) ||
+		p_event->is_action_pressed("ui_right", true) || p_event->is_action_pressed("ui_up", true) ||
+		p_event->is_action_pressed("ui_down", true)) {
 		if (is_joypad_event) {
 			if (color_picker->is_processing_internal()) {
 				color_picker->accept_event();
@@ -333,70 +354,83 @@ void ColorPickerShape::handle_cursor_editing(const Ref<InputEvent> &p_event, Con
 			color_picker->set_process_internal(true);
 		}
 
-		Vector2 color_change_vector = Vector2(
-				input->is_action_pressed("ui_right") - input->is_action_pressed("ui_left"),
+		Vector2 color_change_vector =
+			Vector2(input->is_action_pressed("ui_right") - input->is_action_pressed("ui_left"),
 				input->is_action_pressed("ui_down") - input->is_action_pressed("ui_up"));
 		update_cursor(color_change_vector, p_event->is_echo());
 		color_picker->accept_event();
 	}
 }
 
-int ColorPickerShape::get_edge_h_change(const Vector2 &p_color_change_vector) {
+int ColorPickerShape::get_edge_h_change(const Vector2& p_color_change_vector)
+{
 	int h_change = 0;
 
 	if (color_picker->h > 0 && color_picker->h < 0.5) {
 		h_change -= p_color_change_vector.x;
-	} else if (color_picker->h > 0.5 && color_picker->h < 1) {
+	}
+	else if (color_picker->h > 0.5 && color_picker->h < 1) {
 		h_change += p_color_change_vector.x;
 	}
 
 	if (color_picker->h > 0.25 && color_picker->h < 0.75) {
 		h_change -= p_color_change_vector.y;
-	} else if (color_picker->h < 0.25 || color_picker->h > 0.75) {
+	}
+	else if (color_picker->h < 0.25 || color_picker->h > 0.75) {
 		h_change += p_color_change_vector.y;
 	}
 	return h_change;
 }
 
-float ColorPickerShape::get_h_on_circle_edge(const Vector2 &p_color_change_vector) {
+float ColorPickerShape::get_h_on_circle_edge(const Vector2& p_color_change_vector)
+{
 	int h_change = get_edge_h_change(p_color_change_vector);
 
 	float target_h = Math::wrapf(color_picker->h + h_change / 360.0, 0, 1);
 	int current_quarter = color_picker->h * 4;
 	int future_quarter = target_h * 4;
-	if (p_color_change_vector.y > 0 && ((future_quarter == 0 && current_quarter == 1) || (future_quarter == 1 && current_quarter == 0))) {
+	if (p_color_change_vector.y > 0 && ((future_quarter == 0 && current_quarter == 1) ||
+										   (future_quarter == 1 && current_quarter == 0))) {
 		target_h = 0.25f;
-	} else if (p_color_change_vector.y < 0 && ((future_quarter == 2 && current_quarter == 3) || (future_quarter == 3 && current_quarter == 2))) {
+	}
+	else if (p_color_change_vector.y < 0 && ((future_quarter == 2 && current_quarter == 3) ||
+												  (future_quarter == 3 && current_quarter == 2))) {
 		target_h = 0.75f;
-	} else if (p_color_change_vector.x < 0 && ((future_quarter == 1 && current_quarter == 2) || (future_quarter == 2 && current_quarter == 1))) {
+	}
+	else if (p_color_change_vector.x < 0 && ((future_quarter == 1 && current_quarter == 2) ||
+												  (future_quarter == 2 && current_quarter == 1))) {
 		target_h = 0.5f;
-	} else if (p_color_change_vector.x > 0 && ((future_quarter == 3 && current_quarter == 0) || (future_quarter == 0 && current_quarter == 3))) {
+	}
+	else if (p_color_change_vector.x > 0 && ((future_quarter == 3 && current_quarter == 0) ||
+												  (future_quarter == 0 && current_quarter == 3))) {
 		target_h = 0;
 	}
 	return target_h;
 }
 
-void ColorPickerShape::initialize_controls() {
+void ColorPickerShape::initialize_controls()
+{
 	_initialize_controls();
 	update_theme();
 	is_initialized = true;
 }
 
-void ColorPickerShape::update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) {
+void ColorPickerShape::update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
+{
 	if (p_color_change_vector.is_zero_approx()) {
 		echo_multiplier = 1.0;
-	} else {
+	}
+	else {
 		echo_multiplier = p_is_echo ? CLAMP(echo_multiplier * 1.1, 1, 25) : 1;
 		_update_cursor(p_color_change_vector * echo_multiplier, p_is_echo);
 		apply_color();
 	}
 }
 
-ColorPickerShape::ColorPickerShape(ColorPicker *p_color_picker) {
-	color_picker = p_color_picker;
-}
+ColorPickerShape::ColorPickerShape(ColorPicker* p_color_picker) { color_picker = p_color_picker; }
 
-void ColorPickerShapeRectangle::_sv_square_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeRectangle::_sv_square_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, sv_square);
 
 	Vector2 event_position;
@@ -411,7 +445,8 @@ void ColorPickerShapeRectangle::_sv_square_input(const Ref<InputEvent> &p_event)
 	apply_color();
 }
 
-void ColorPickerShapeRectangle::_hue_slider_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeRectangle::_hue_slider_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, hue_slider);
 
 	Vector2 event_position;
@@ -422,13 +457,16 @@ void ColorPickerShapeRectangle::_hue_slider_input(const Ref<InputEvent> &p_event
 	apply_color();
 }
 
-void ColorPickerShapeRectangle::_sv_square_draw() {
+void ColorPickerShapeRectangle::_sv_square_draw()
+{
 	draw_sv_square(sv_square, Rect2(Vector2(), sv_square->get_size()));
 }
 
-void ColorPickerShapeRectangle::_hue_slider_draw() {
+void ColorPickerShapeRectangle::_hue_slider_draw()
+{
 	const Vector2 size = hue_slider->get_size();
-	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue, Rect2(0, 0, -size.y, size.x), false, Color(1, 1, 1), true);
+	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue, Rect2(0, 0, -size.y, size.x),
+		false, Color(1, 1, 1), true);
 
 	draw_focus_rect(hue_slider);
 
@@ -437,44 +475,52 @@ void ColorPickerShapeRectangle::_hue_slider_draw() {
 	hue_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
 }
 
-void ColorPickerShapeRectangle::_initialize_controls() {
+void ColorPickerShapeRectangle::_initialize_controls()
+{
 	sv_square = memnew(Control);
 	sv_square->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	color_picker->shape_container->add_child(sv_square);
-	sv_square->connect(SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeRectangle::_sv_square_input));
-	sv_square->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeRectangle::_sv_square_draw));
+	sv_square->connect(SceneStringName(gui_input),
+		callable_mp(this, &ColorPickerShapeRectangle::_sv_square_input));
+	sv_square->connect(
+		SceneStringName(draw), callable_mp(this, &ColorPickerShapeRectangle::_sv_square_draw));
 	connect_shape_focus(sv_square);
 
 	hue_slider = memnew(Control);
 	color_picker->shape_container->add_child(hue_slider);
-	hue_slider->connect(SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeRectangle::_hue_slider_input));
-	hue_slider->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeRectangle::_hue_slider_draw));
+	hue_slider->connect(SceneStringName(gui_input),
+		callable_mp(this, &ColorPickerShapeRectangle::_hue_slider_input));
+	hue_slider->connect(
+		SceneStringName(draw), callable_mp(this, &ColorPickerShapeRectangle::_hue_slider_draw));
 	connect_shape_focus(hue_slider);
 
 	controls.append(sv_square);
 	controls.append(hue_slider);
 }
 
-void ColorPickerShapeRectangle::_update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) {
+void ColorPickerShapeRectangle::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
+{
 	if (sv_square->has_focus()) {
 		color_picker->s = CLAMP(color_picker->s + p_color_change_vector.x / 100.0, 0, 1);
 		color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y / 100.0, 0, 1);
-	} else if (hue_slider->has_focus()) {
-		color_picker->h = CLAMP(color_picker->h + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
+	}
+	else if (hue_slider->has_focus()) {
+		color_picker->h =
+			CLAMP(color_picker->h + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
 	}
 }
 
-void ColorPickerShapeRectangle::update_theme() {
-	const ColorPicker::ThemeCache &theme_cache = color_picker->theme_cache;
+void ColorPickerShapeRectangle::update_theme()
+{
+	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
 	sv_square->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
 	hue_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
 }
 
-void ColorPickerShapeRectangle::grab_focus() {
-	hue_slider->grab_focus();
-}
+void ColorPickerShapeRectangle::grab_focus() { hue_slider->grab_focus(); }
 
-void ColorPickerShapeOKHSRectangle::_initialize_controls() {
+void ColorPickerShapeOKHSRectangle::_initialize_controls()
+{
 	rectangle_margin = memnew(MarginContainer);
 	rectangle_margin->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	color_picker->shape_container->add_child(rectangle_margin);
@@ -485,20 +531,25 @@ void ColorPickerShapeOKHSRectangle::_initialize_controls() {
 
 	square = memnew(Control);
 	rectangle_margin->add_child(square);
-	square->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_draw));
+	square->connect(
+		SceneStringName(draw), callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_draw));
 	square->set_material(material);
 
 	square_overlay = memnew(Control);
 	rectangle_margin->add_child(square_overlay);
 	square_overlay->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	square_overlay->connect(SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_overlay_input));
-	square_overlay->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_overlay_draw));
+	square_overlay->connect(SceneStringName(gui_input),
+		callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_overlay_input));
+	square_overlay->connect(SceneStringName(draw),
+		callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_overlay_draw));
 	connect_shape_focus(square_overlay);
 
 	value_slider = memnew(Control);
 	color_picker->shape_container->add_child(value_slider);
-	value_slider->connect(SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeOKHSRectangle::_value_slider_input));
-	value_slider->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeOKHSRectangle::_value_slider_draw));
+	value_slider->connect(SceneStringName(gui_input),
+		callable_mp(this, &ColorPickerShapeOKHSRectangle::_value_slider_input));
+	value_slider->connect(SceneStringName(draw),
+		callable_mp(this, &ColorPickerShapeOKHSRectangle::_value_slider_draw));
 	connect_shape_focus(value_slider);
 
 	controls.append(rectangle_margin);
@@ -507,32 +558,39 @@ void ColorPickerShapeOKHSRectangle::_initialize_controls() {
 	controls.append(value_slider);
 }
 
-void ColorPickerShapeOKHSRectangle::update_theme() {
-	const ColorPicker::ThemeCache &theme_cache = color_picker->theme_cache;
+void ColorPickerShapeOKHSRectangle::update_theme()
+{
+	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
 	rectangle_margin->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
 	value_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
 }
 
-void ColorPickerShapeOKHSRectangle::grab_focus() {
-	square_overlay->grab_focus();
-}
+void ColorPickerShapeOKHSRectangle::grab_focus() { square_overlay->grab_focus(); }
 
-void ColorPickerShapeOKHSRectangle::_update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) {
+void ColorPickerShapeOKHSRectangle::_update_cursor(
+	const Vector2& p_color_change_vector, bool p_is_echo)
+{
 	if (square_overlay->has_focus()) {
-		color_picker->ok_hsl_h = CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
-		color_picker->ok_hsl_s = CLAMP(color_picker->ok_hsl_s - p_color_change_vector.y / 100.0, 0, 1);
-	} else if (value_slider->has_focus()) {
-		color_picker->ok_hsl_l = CLAMP(color_picker->ok_hsl_l + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
+		color_picker->ok_hsl_h =
+			CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
+		color_picker->ok_hsl_s =
+			CLAMP(color_picker->ok_hsl_s - p_color_change_vector.y / 100.0, 0, 1);
+	}
+	else if (value_slider->has_focus()) {
+		color_picker->ok_hsl_l =
+			CLAMP(color_picker->ok_hsl_l + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
 	}
 }
 
-void ColorPickerShapeOKHSRectangle::_square_draw() {
+void ColorPickerShapeOKHSRectangle::_square_draw()
+{
 	Ref<ShaderMaterial> material = square->get_material();
 	material->set_shader_parameter(SNAME("ok_hsl_l"), color_picker->ok_hsl_l);
 	square->draw_rect(Rect2(Point2(), square->get_size()), Color(1, 1, 1));
 }
 
-void ColorPickerShapeOKHSRectangle::_square_overlay_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeOKHSRectangle::_square_overlay_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, square_overlay);
 
 	Vector2 event_position;
@@ -547,18 +605,22 @@ void ColorPickerShapeOKHSRectangle::_square_overlay_input(const Ref<InputEvent> 
 	apply_color();
 }
 
-void ColorPickerShapeOKHSRectangle::_square_overlay_draw() {
+void ColorPickerShapeOKHSRectangle::_square_overlay_draw()
+{
 	const Rect2 rect = Rect2(Vector2(), square_overlay->get_size());
 	const Vector2 end = rect.get_end();
 	Vector2 cursor_pos;
-	cursor_pos.x = CLAMP(rect.position.x + rect.size.x * color_picker->ok_hsl_h, rect.position.x, end.x);
-	cursor_pos.y = CLAMP(rect.position.y + rect.size.y * (1.0 - color_picker->ok_hsl_s), rect.position.y, end.y);
+	cursor_pos.x =
+		CLAMP(rect.position.x + rect.size.x * color_picker->ok_hsl_h, rect.position.x, end.x);
+	cursor_pos.y = CLAMP(
+		rect.position.y + rect.size.y * (1.0 - color_picker->ok_hsl_s), rect.position.y, end.y);
 
 	draw_focus_rect(square_overlay);
 	draw_cursor(square_overlay, cursor_pos);
 }
 
-void ColorPickerShapeOKHSRectangle::_value_slider_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeOKHSRectangle::_value_slider_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, value_slider);
 
 	Vector2 event_position;
@@ -569,7 +631,8 @@ void ColorPickerShapeOKHSRectangle::_value_slider_input(const Ref<InputEvent> &p
 	apply_color();
 }
 
-void ColorPickerShapeOKHSRectangle::_value_slider_draw() {
+void ColorPickerShapeOKHSRectangle::_value_slider_draw()
+{
 	const float ok_hsl_h = color_picker->ok_hsl_h;
 	const float ok_hsl_s = color_picker->ok_hsl_s;
 
@@ -603,16 +666,23 @@ void ColorPickerShapeOKHSRectangle::_value_slider_draw() {
 	value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
 }
 
-void ColorPickerShapeOKHLRectangle::_update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) {
+void ColorPickerShapeOKHLRectangle::_update_cursor(
+	const Vector2& p_color_change_vector, bool p_is_echo)
+{
 	if (square_overlay->has_focus()) {
-		color_picker->ok_hsl_h = CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
-		color_picker->ok_hsl_l = CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y / 100.0, 0, 1);
-	} else if (value_slider->has_focus()) {
-		color_picker->ok_hsl_s = CLAMP(color_picker->ok_hsl_s + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
+		color_picker->ok_hsl_h =
+			CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
+		color_picker->ok_hsl_l =
+			CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y / 100.0, 0, 1);
+	}
+	else if (value_slider->has_focus()) {
+		color_picker->ok_hsl_s =
+			CLAMP(color_picker->ok_hsl_s + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
 	}
 }
 
-void ColorPickerShapeOKHLRectangle::_square_overlay_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeOKHLRectangle::_square_overlay_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, square_overlay);
 
 	Vector2 event_position;
@@ -627,24 +697,29 @@ void ColorPickerShapeOKHLRectangle::_square_overlay_input(const Ref<InputEvent> 
 	apply_color();
 }
 
-void ColorPickerShapeOKHLRectangle::_square_overlay_draw() {
+void ColorPickerShapeOKHLRectangle::_square_overlay_draw()
+{
 	const Rect2 rect = Rect2(Vector2(), square_overlay->get_size());
 	const Vector2 end = rect.get_end();
 	Vector2 cursor_pos;
-	cursor_pos.x = CLAMP(rect.position.x + rect.size.x * color_picker->ok_hsl_h, rect.position.x, end.x);
-	cursor_pos.y = CLAMP(rect.position.y + rect.size.y * (1.0 - color_picker->ok_hsl_l), rect.position.y, end.y);
+	cursor_pos.x =
+		CLAMP(rect.position.x + rect.size.x * color_picker->ok_hsl_h, rect.position.x, end.x);
+	cursor_pos.y = CLAMP(
+		rect.position.y + rect.size.y * (1.0 - color_picker->ok_hsl_l), rect.position.y, end.y);
 
 	draw_focus_rect(square_overlay);
 	draw_cursor(square_overlay, cursor_pos);
 }
 
-void ColorPickerShapeOKHLRectangle::_square_draw() {
+void ColorPickerShapeOKHLRectangle::_square_draw()
+{
 	Ref<ShaderMaterial> material = square->get_material();
 	material->set_shader_parameter(SNAME("ok_hsl_s"), color_picker->ok_hsl_s);
 	square->draw_rect(Rect2(Point2(), square->get_size()), Color(1, 1, 1));
 }
 
-void ColorPickerShapeOKHLRectangle::_value_slider_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeOKHLRectangle::_value_slider_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, value_slider);
 
 	Vector2 event_position;
@@ -655,7 +730,8 @@ void ColorPickerShapeOKHLRectangle::_value_slider_input(const Ref<InputEvent> &p
 	apply_color();
 }
 
-void ColorPickerShapeOKHLRectangle::_value_slider_draw() {
+void ColorPickerShapeOKHLRectangle::_value_slider_draw()
+{
 	const float ok_hsl_h = color_picker->ok_hsl_h;
 	const float ok_hsl_l = color_picker->ok_hsl_l;
 
@@ -689,31 +765,38 @@ void ColorPickerShapeOKHLRectangle::_value_slider_draw() {
 	value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
 }
 
-float ColorPickerShapeWheel::_get_h_on_wheel(const Vector2 &p_color_change_vector) {
+float ColorPickerShapeWheel::_get_h_on_wheel(const Vector2& p_color_change_vector)
+{
 	int h_change = get_edge_h_change(p_color_change_vector);
 
 	float target_h = Math::wrapf(color_picker->h + h_change / 360.0, 0, 1);
 	int current_quarter = color_picker->h * 4;
 	int future_quarter = target_h * 4;
 
-	if (p_color_change_vector.y > 0 && ((future_quarter == 0 && current_quarter == 1) || (future_quarter == 1 && current_quarter == 0))) {
+	if (p_color_change_vector.y > 0 && ((future_quarter == 0 && current_quarter == 1) ||
+										   (future_quarter == 1 && current_quarter == 0))) {
 		rotate_next_echo_event = !rotate_next_echo_event;
-	} else if (p_color_change_vector.y < 0 && ((future_quarter == 2 && current_quarter == 3) || (future_quarter == 3 && current_quarter == 2))) {
+	}
+	else if (p_color_change_vector.y < 0 && ((future_quarter == 2 && current_quarter == 3) ||
+												  (future_quarter == 3 && current_quarter == 2))) {
 		rotate_next_echo_event = !rotate_next_echo_event;
-	} else if (p_color_change_vector.x < 0 && ((future_quarter == 1 && current_quarter == 2) || (future_quarter == 2 && current_quarter == 1))) {
+	}
+	else if (p_color_change_vector.x < 0 && ((future_quarter == 1 && current_quarter == 2) ||
+												  (future_quarter == 2 && current_quarter == 1))) {
 		rotate_next_echo_event = !rotate_next_echo_event;
-	} else if (p_color_change_vector.x > 0 && ((future_quarter == 3 && current_quarter == 0) || (future_quarter == 0 && current_quarter == 3))) {
+	}
+	else if (p_color_change_vector.x > 0 && ((future_quarter == 3 && current_quarter == 0) ||
+												  (future_quarter == 0 && current_quarter == 3))) {
 		rotate_next_echo_event = !rotate_next_echo_event;
 	}
 
 	return target_h;
 }
 
-void ColorPickerShapeWheel::_reset_wheel_focus() {
-	wheel_focused = true;
-}
+void ColorPickerShapeWheel::_reset_wheel_focus() { wheel_focused = true; }
 
-void ColorPickerShapeWheel::_wheel_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeWheel::_wheel_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, wheel_uv);
 	if (!cursor_editing) {
 		// Wheel and inner square are the same control, so focus has to be moved manually.
@@ -722,7 +805,8 @@ void ColorPickerShapeWheel::_wheel_input(const Ref<InputEvent> &p_event) {
 			wheel_uv->queue_redraw();
 			color_picker->accept_event();
 			return;
-		} else if (wheel_focused && p_event->is_action_pressed("ui_up", true)) {
+		}
+		else if (wheel_focused && p_event->is_action_pressed("ui_up", true)) {
 			wheel_focused = false;
 			wheel_uv->queue_redraw();
 			color_picker->accept_event();
@@ -751,7 +835,8 @@ void ColorPickerShapeWheel::_wheel_input(const Ref<InputEvent> &p_event) {
 				cursor_editing = true;
 				wheel_focused = true;
 			}
-		} else if (dist > center.x) {
+		}
+		else if (dist > center.x) {
 			// Clicked outside the wheel.
 			cancel_event();
 			return;
@@ -769,7 +854,8 @@ void ColorPickerShapeWheel::_wheel_input(const Ref<InputEvent> &p_event) {
 	event_position -= uv_rect.position;
 	event_position /= uv_rect.size;
 
-	if (is_click && (event_position.x < 0 || event_position.x > 1 || event_position.y < 0 || event_position.y > 1)) {
+	if (is_click && (event_position.x < 0 || event_position.x > 1 || event_position.y < 0 ||
+						event_position.y > 1)) {
 		// Clicked inside the wheel, but outside the square.
 		cancel_event();
 		return;
@@ -787,11 +873,13 @@ void ColorPickerShapeWheel::_wheel_input(const Ref<InputEvent> &p_event) {
 	apply_color();
 }
 
-void ColorPickerShapeWheel::_wheel_draw() {
+void ColorPickerShapeWheel::_wheel_draw()
+{
 	wheel->draw_rect(Rect2(Point2(), wheel->get_size()), Color(1, 1, 1));
 }
 
-void ColorPickerShapeWheel::_wheel_uv_draw() {
+void ColorPickerShapeWheel::_wheel_uv_draw()
+{
 	const Vector2 uv_size = wheel_uv->get_size();
 	const Vector2 ring_radius = uv_size * Math::SQRT12 * WHEEL_RADIUS;
 	const Vector2 center = uv_size * 0.5;
@@ -804,13 +892,14 @@ void ColorPickerShapeWheel::_wheel_uv_draw() {
 
 	float radius = WHEEL_RADIUS * 2.0;
 	radius += (1.0 - radius) * 0.5;
-	const Vector2 cursor_pos = center +
-			Vector2(center.x * Math::cos(color_picker->h * Math::TAU) * radius,
-					center.y * Math::sin(color_picker->h * Math::TAU) * radius);
+	const Vector2 cursor_pos =
+		center + Vector2(center.x * Math::cos(color_picker->h * Math::TAU) * radius,
+					 center.y * Math::sin(color_picker->h * Math::TAU) * radius);
 	draw_cursor(wheel_uv, cursor_pos, false);
 }
 
-void ColorPickerShapeWheel::_initialize_controls() {
+void ColorPickerShapeWheel::_initialize_controls()
+{
 	Ref<ShaderMaterial> material;
 	material.instantiate();
 	material->set_shader(ColorPickerShape::wheel_shader);
@@ -824,44 +913,52 @@ void ColorPickerShapeWheel::_initialize_controls() {
 	wheel_uv = memnew(Control);
 	wheel_uv->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 	wheel->add_child(wheel_uv);
-	wheel_uv->connect(SceneStringName(focus_entered), callable_mp(this, &ColorPickerShapeWheel::_reset_wheel_focus));
-	wheel_uv->connect(SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeWheel::_wheel_input));
-	wheel_uv->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeWheel::_wheel_uv_draw));
+	wheel_uv->connect(SceneStringName(focus_entered),
+		callable_mp(this, &ColorPickerShapeWheel::_reset_wheel_focus));
+	wheel_uv->connect(
+		SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeWheel::_wheel_input));
+	wheel_uv->connect(
+		SceneStringName(draw), callable_mp(this, &ColorPickerShapeWheel::_wheel_uv_draw));
 	connect_shape_focus(wheel_uv);
 
 	controls.append(wheel);
 	controls.append(wheel_uv);
 }
 
-void ColorPickerShapeWheel::_update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) {
+void ColorPickerShapeWheel::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
+{
 	if (wheel_focused) {
 		if (p_is_echo && rotate_next_echo_event) {
 			color_picker->h = _get_h_on_wheel(-p_color_change_vector);
-		} else {
+		}
+		else {
 			rotate_next_echo_event = false;
 			color_picker->h = _get_h_on_wheel(p_color_change_vector);
 		}
-	} else {
+	}
+	else {
 		color_picker->s = CLAMP(color_picker->s + p_color_change_vector.x / 100.0, 0, 1);
 		color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y / 100.0, 0, 1);
 	}
 }
 
-void ColorPickerShapeWheel::update_theme() {
-	const ColorPicker::ThemeCache &theme_cache = color_picker->theme_cache;
+void ColorPickerShapeWheel::update_theme()
+{
+	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
 	wheel->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
 }
 
-void ColorPickerShapeWheel::grab_focus() {
-	wheel_uv->grab_focus();
-}
+void ColorPickerShapeWheel::grab_focus() { wheel_uv->grab_focus(); }
 
-void ColorPickerShapeCircle::update_circle_cursor(const Vector2 &p_color_change_vector, const Vector2 &p_center, const Vector2 &p_hue_offset) {
+void ColorPickerShapeCircle::update_circle_cursor(
+	const Vector2& p_color_change_vector, const Vector2& p_center, const Vector2& p_hue_offset)
+{
 	if (circle_keyboard_joypad_picker_cursor_position == Vector2i()) {
 		circle_keyboard_joypad_picker_cursor_position = p_center + p_hue_offset;
 	}
 
-	Vector2i potential_cursor_position = circle_keyboard_joypad_picker_cursor_position + p_color_change_vector;
+	Vector2i potential_cursor_position =
+		circle_keyboard_joypad_picker_cursor_position + p_color_change_vector;
 	real_t potential_new_cursor_distance = p_center.distance_to(potential_cursor_position);
 	real_t dist_pre = p_center.distance_to(circle_keyboard_joypad_picker_cursor_position);
 	if (color_picker->s < 1 || potential_new_cursor_distance < dist_pre) {
@@ -870,13 +967,15 @@ void ColorPickerShapeCircle::update_circle_cursor(const Vector2 &p_color_change_
 		real_t rad = p_center.angle_to_point(circle_keyboard_joypad_picker_cursor_position);
 		color_picker->h = ((rad >= 0) ? rad : (Math::TAU + rad)) / Math::TAU;
 		color_picker->s = CLAMP(dist / p_center.x, 0, 1);
-	} else {
+	}
+	else {
 		color_picker->h = get_h_on_circle_edge(p_color_change_vector);
 		circle_keyboard_joypad_picker_cursor_position = Vector2i();
 	}
 }
 
-void ColorPickerShapeCircle::_initialize_controls() {
+void ColorPickerShapeCircle::_initialize_controls()
+{
 	Ref<ShaderMaterial> material;
 	material.instantiate();
 	material->set_shader(_get_shader());
@@ -884,19 +983,24 @@ void ColorPickerShapeCircle::_initialize_controls() {
 	circle = memnew(Control);
 	circle->set_material(material);
 	color_picker->shape_container->add_child(circle);
-	circle->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_circle_draw));
+	circle->connect(
+		SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_circle_draw));
 
 	circle_overlay = memnew(Control);
 	circle_overlay->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 	circle->add_child(circle_overlay);
-	circle_overlay->connect(SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeCircle::_circle_input));
-	circle_overlay->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_circle_overlay_draw));
+	circle_overlay->connect(
+		SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeCircle::_circle_input));
+	circle_overlay->connect(
+		SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_circle_overlay_draw));
 	connect_shape_focus(circle_overlay);
 
 	value_slider = memnew(Control);
 	color_picker->shape_container->add_child(value_slider);
-	value_slider->connect(SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeCircle::_value_slider_input));
-	value_slider->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_value_slider_draw));
+	value_slider->connect(SceneStringName(gui_input),
+		callable_mp(this, &ColorPickerShapeCircle::_value_slider_input));
+	value_slider->connect(
+		SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_value_slider_draw));
 	connect_shape_focus(value_slider);
 
 	controls.append(circle);
@@ -904,17 +1008,17 @@ void ColorPickerShapeCircle::_initialize_controls() {
 	controls.append(value_slider);
 }
 
-void ColorPickerShapeCircle::update_theme() {
-	const ColorPicker::ThemeCache &theme_cache = color_picker->theme_cache;
+void ColorPickerShapeCircle::update_theme()
+{
+	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
 	circle->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
 	value_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
 }
 
-void ColorPickerShapeCircle::grab_focus() {
-	circle_overlay->grab_focus();
-}
+void ColorPickerShapeCircle::grab_focus() { circle_overlay->grab_focus(); }
 
-void ColorPickerShapeVHSCircle::_circle_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeVHSCircle::_circle_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, circle_overlay);
 
 	Vector2 event_position;
@@ -941,7 +1045,8 @@ void ColorPickerShapeVHSCircle::_circle_input(const Ref<InputEvent> &p_event) {
 	apply_color();
 }
 
-void ColorPickerShapeVHSCircle::_value_slider_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeVHSCircle::_value_slider_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, value_slider);
 
 	Vector2 event_position;
@@ -952,18 +1057,21 @@ void ColorPickerShapeVHSCircle::_value_slider_input(const Ref<InputEvent> &p_eve
 	apply_color();
 }
 
-void ColorPickerShapeVHSCircle::_circle_draw() {
+void ColorPickerShapeVHSCircle::_circle_draw()
+{
 	Ref<ShaderMaterial> material = circle->get_material();
 	material->set_shader_parameter(SNAME("v"), color_picker->v);
 	circle->draw_rect(Rect2(Point2(), circle->get_size()), Color(1, 1, 1));
 }
 
-void ColorPickerShapeVHSCircle::_circle_overlay_draw() {
+void ColorPickerShapeVHSCircle::_circle_overlay_draw()
+{
 	draw_focus_circle(circle_overlay);
 	draw_circle_cursor(circle_overlay, color_picker->h, color_picker->s);
 }
 
-void ColorPickerShapeVHSCircle::_value_slider_draw() {
+void ColorPickerShapeVHSCircle::_value_slider_draw()
+{
 	const Vector2 size = value_slider->get_size();
 	PackedVector2Array points{
 		Vector2(),
@@ -989,17 +1097,24 @@ void ColorPickerShapeVHSCircle::_value_slider_draw() {
 	value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
 }
 
-void ColorPickerShapeVHSCircle::_update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) {
+void ColorPickerShapeVHSCircle::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
+{
 	if (circle_overlay->has_focus()) {
 		const Vector2 center = circle_overlay->get_size() / 2.0;
-		const Vector2 hue_offset = center * Vector2(Math::cos(color_picker->h * Math::TAU), Math::sin(color_picker->h * Math::TAU)) * color_picker->s;
+		const Vector2 hue_offset = center *
+								   Vector2(Math::cos(color_picker->h * Math::TAU),
+									   Math::sin(color_picker->h * Math::TAU)) *
+								   color_picker->s;
 		update_circle_cursor(p_color_change_vector, center, hue_offset);
-	} else if (value_slider->has_focus()) {
-		color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
+	}
+	else if (value_slider->has_focus()) {
+		color_picker->v =
+			CLAMP(color_picker->v - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
 	}
 }
 
-void ColorPickerShapeOKHSLCircle::_circle_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeOKHSLCircle::_circle_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, circle_overlay);
 
 	Vector2 event_position;
@@ -1026,29 +1141,34 @@ void ColorPickerShapeOKHSLCircle::_circle_input(const Ref<InputEvent> &p_event) 
 	apply_color();
 }
 
-void ColorPickerShapeOKHSLCircle::_value_slider_input(const Ref<InputEvent> &p_event) {
+void ColorPickerShapeOKHSLCircle::_value_slider_input(const Ref<InputEvent>& p_event)
+{
 	handle_cursor_editing(p_event, value_slider);
 
 	Vector2 event_position;
 	if (!can_handle(p_event, event_position)) {
 		return;
 	}
-	color_picker->ok_hsl_l = 1.0 - CLAMP(event_position.y / value_slider->get_size().y, 0.0, 1.0);
+	color_picker->ok_hsl_l = 1.0 -
+ CLAMP(event_position.y / value_slider->get_size().y, 0.0, 1.0);
 	apply_color();
 }
 
-void ColorPickerShapeOKHSLCircle::_circle_draw() {
+void ColorPickerShapeOKHSLCircle::_circle_draw()
+{
 	Ref<ShaderMaterial> material = circle->get_material();
 	material->set_shader_parameter(SNAME("ok_hsl_l"), color_picker->ok_hsl_l);
 	circle->draw_rect(Rect2(Point2(), circle->get_size()), Color(1, 1, 1));
 }
 
-void ColorPickerShapeOKHSLCircle::_circle_overlay_draw() {
+void ColorPickerShapeOKHSLCircle::_circle_overlay_draw()
+{
 	draw_focus_circle(circle_overlay);
 	draw_circle_cursor(circle_overlay, color_picker->ok_hsl_h, color_picker->ok_hsl_s);
 }
 
-void ColorPickerShapeOKHSLCircle::_value_slider_draw() {
+void ColorPickerShapeOKHSLCircle::_value_slider_draw()
+{
 	const float ok_hsl_h = color_picker->ok_hsl_h;
 	const float ok_hsl_s = color_picker->ok_hsl_s;
 	const float ok_hsl_l = color_picker->ok_hsl_l;
@@ -1079,17 +1199,27 @@ void ColorPickerShapeOKHSLCircle::_value_slider_draw() {
 	draw_focus_rect(value_slider);
 
 	int y = size.y * (1 - CLAMP(ok_hsl_l, 0, 1));
-	value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l).inverted());
+	value_slider->draw_line(
+		Vector2(0, y), Vector2(size.x, y), Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l).inverted());
 }
 
-void ColorPickerShapeOKHSLCircle::_update_cursor(const Vector2 &p_color_change_vector, bool p_is_echo) {
+void ColorPickerShapeOKHSLCircle::_update_cursor(
+	const Vector2& p_color_change_vector, bool p_is_echo)
+{
 	if (circle_overlay->has_focus()) {
 		const Vector2 center = circle_overlay->get_size() / 2.0;
-		const Vector2 hue_offset = center * Vector2(Math::cos(color_picker->ok_hsl_h * Math::TAU), Math::sin(color_picker->ok_hsl_h * Math::TAU)) * color_picker->ok_hsl_s;
+		const Vector2 hue_offset = center *
+								   Vector2(Math::cos(color_picker->ok_hsl_h * Math::TAU),
+									   Math::sin(color_picker->ok_hsl_h * Math::TAU)) *
+								   color_picker->ok_hsl_s;
 		update_circle_cursor(p_color_change_vector, center, hue_offset);
 		color_picker->ok_hsl_h = color_picker->h;
 		color_picker->ok_hsl_s = color_picker->s;
-	} else if (value_slider->has_focus()) {
-		color_picker->ok_hsl_l = CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
+	}
+	else if (value_slider->has_focus()) {
+		color_picker->ok_hsl_l =
+			CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
 	}
 }
+
+

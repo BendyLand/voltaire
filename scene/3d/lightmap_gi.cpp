@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "lightmap_gi.h"
-
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/config_file.h"
@@ -39,6 +37,8 @@
 #include "core/math/geometry_3d.h"
 #include "core/object/class_db.h"
 #include "core/object/object.h"
+#include "lightmap_gi.h"
+#include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For lightmapper_rd.
 #include "scene/3d/light_3d.h"
 #include "scene/3d/lightmap_probe.h"
 #include "scene/3d/mesh_instance_3d.h"
@@ -48,8 +48,6 @@
 #include "scene/resources/sky.h"
 #include "servers/rendering/rendering_server.h"
 
-#include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For lightmapper_rd.
-
 #ifdef MODULE_LIGHTMAPPER_RD_ENABLED
 #include "servers/display/display_server.h"
 #endif
@@ -58,7 +56,9 @@
 #include "core/os/os.h"
 #endif
 
-void LightmapGIData::add_user(const NodePath &p_path, const Rect2 &p_uv_scale, int p_slice_index, int32_t p_sub_instance) {
+void LightmapGIData::add_user(
+	const NodePath& p_path, const Rect2& p_uv_scale, int p_slice_index, int32_t p_sub_instance)
+{
 	User user;
 	user.path = p_path;
 	user.uv_scale = p_uv_scale;
@@ -67,35 +67,36 @@ void LightmapGIData::add_user(const NodePath &p_path, const Rect2 &p_uv_scale, i
 	users.push_back(user);
 }
 
-int LightmapGIData::get_user_count() const {
-	return users.size();
-}
+int LightmapGIData::get_user_count() const { return users.size(); }
 
-NodePath LightmapGIData::get_user_path(int p_user) const {
+NodePath LightmapGIData::get_user_path(int p_user) const
+{
 	ERR_FAIL_INDEX_V(p_user, users.size(), NodePath());
 	return users[p_user].path;
 }
 
-int32_t LightmapGIData::get_user_sub_instance(int p_user) const {
+int32_t LightmapGIData::get_user_sub_instance(int p_user) const
+{
 	ERR_FAIL_INDEX_V(p_user, users.size(), -1);
 	return users[p_user].sub_instance;
 }
 
-Rect2 LightmapGIData::get_user_lightmap_uv_scale(int p_user) const {
+Rect2 LightmapGIData::get_user_lightmap_uv_scale(int p_user) const
+{
 	ERR_FAIL_INDEX_V(p_user, users.size(), Rect2());
 	return users[p_user].uv_scale;
 }
 
-int LightmapGIData::get_user_lightmap_slice_index(int p_user) const {
+int LightmapGIData::get_user_lightmap_slice_index(int p_user) const
+{
 	ERR_FAIL_INDEX_V(p_user, users.size(), -1);
 	return users[p_user].slice_index;
 }
 
-void LightmapGIData::clear_users() {
-	users.clear();
-}
+void LightmapGIData::clear_users() { users.clear(); }
 
-void LightmapGIData::_set_user_data(const Array &p_data) {
+void LightmapGIData::_set_user_data(const Array& p_data)
+{
 	ERR_FAIL_COND((p_data.size() % 4) != 0);
 	users.clear();
 	for (int i = 0; i < p_data.size(); i += 4) {
@@ -103,7 +104,8 @@ void LightmapGIData::_set_user_data(const Array &p_data) {
 	}
 }
 
-Array LightmapGIData::_get_user_data() const {
+Array LightmapGIData::_get_user_data() const
+{
 	Array ret;
 	for (int i = 0; i < users.size(); i++) {
 		ret.push_back(users[i].path);
@@ -114,7 +116,8 @@ Array LightmapGIData::_get_user_data() const {
 	return ret;
 }
 
-void LightmapGIData::set_lightmap_textures(const TypedArray<TextureLayered> &p_data) {
+void LightmapGIData::set_lightmap_textures(const TypedArray<TextureLayered>& p_data)
+{
 	storage_light_textures = p_data;
 	if (p_data.is_empty()) {
 		combined_light_texture = Ref<TextureLayered>();
@@ -124,7 +127,8 @@ void LightmapGIData::set_lightmap_textures(const TypedArray<TextureLayered> &p_d
 
 	if (p_data.size() == 1) {
 		combined_light_texture = p_data[0];
-	} else {
+	}
+	else {
 		Vector<Ref<Image>> images;
 		for (int i = 0; i < p_data.size(); i++) {
 			Ref<TextureLayered> texture = p_data[i];
@@ -143,11 +147,13 @@ void LightmapGIData::set_lightmap_textures(const TypedArray<TextureLayered> &p_d
 	_reset_lightmap_textures();
 }
 
-TypedArray<TextureLayered> LightmapGIData::get_lightmap_textures() const {
+TypedArray<TextureLayered> LightmapGIData::get_lightmap_textures() const
+{
 	return storage_light_textures;
 }
 
-void LightmapGIData::set_shadowmask_textures(const TypedArray<TextureLayered> &p_data) {
+void LightmapGIData::set_shadowmask_textures(const TypedArray<TextureLayered>& p_data)
+{
 	storage_shadowmask_textures = p_data;
 
 	if (p_data.is_empty()) {
@@ -159,7 +165,8 @@ void LightmapGIData::set_shadowmask_textures(const TypedArray<TextureLayered> &p
 	if (p_data.size() == 1) {
 		combined_shadowmask_texture = p_data[0];
 
-	} else {
+	}
+	else {
 		Vector<Ref<Image>> images;
 		for (int i = 0; i < p_data.size(); i++) {
 			Ref<TextureLayered> texture = p_data[i];
@@ -179,72 +186,83 @@ void LightmapGIData::set_shadowmask_textures(const TypedArray<TextureLayered> &p
 	_reset_shadowmask_textures();
 }
 
-TypedArray<TextureLayered> LightmapGIData::get_shadowmask_textures() const {
+TypedArray<TextureLayered> LightmapGIData::get_shadowmask_textures() const
+{
 	return storage_shadowmask_textures;
 }
 
-void LightmapGIData::clear_shadowmask_textures() {
+void LightmapGIData::clear_shadowmask_textures()
+{
 	RS::get_singleton()->lightmap_set_shadowmask_textures(lightmap, RID());
 	storage_shadowmask_textures.clear();
 	combined_shadowmask_texture.unref();
 }
 
-bool LightmapGIData::has_shadowmask_textures() {
+bool LightmapGIData::has_shadowmask_textures()
+{
 	return !storage_shadowmask_textures.is_empty() && combined_shadowmask_texture.is_valid();
 }
 
-RID LightmapGIData::get_rid() const {
-	return lightmap;
+RID LightmapGIData::get_rid() const { return lightmap; }
+
+void LightmapGIData::clear() { users.clear(); }
+
+void LightmapGIData::_reset_lightmap_textures()
+{
+	RS::get_singleton()->lightmap_set_textures(lightmap,
+		combined_light_texture.is_valid() ? combined_light_texture->get_rid() : RID(),
+		uses_spherical_harmonics);
 }
 
-void LightmapGIData::clear() {
-	users.clear();
+void LightmapGIData::_reset_shadowmask_textures()
+{
+	RS::get_singleton()->lightmap_set_shadowmask_textures(lightmap,
+		combined_shadowmask_texture.is_valid() ? combined_shadowmask_texture->get_rid() : RID());
 }
 
-void LightmapGIData::_reset_lightmap_textures() {
-	RS::get_singleton()->lightmap_set_textures(lightmap, combined_light_texture.is_valid() ? combined_light_texture->get_rid() : RID(), uses_spherical_harmonics);
-}
-
-void LightmapGIData::_reset_shadowmask_textures() {
-	RS::get_singleton()->lightmap_set_shadowmask_textures(lightmap, combined_shadowmask_texture.is_valid() ? combined_shadowmask_texture->get_rid() : RID());
-}
-
-void LightmapGIData::set_uses_spherical_harmonics(bool p_enable) {
+void LightmapGIData::set_uses_spherical_harmonics(bool p_enable)
+{
 	uses_spherical_harmonics = p_enable;
 	_reset_lightmap_textures();
 }
 
-bool LightmapGIData::is_using_spherical_harmonics() const {
-	return uses_spherical_harmonics;
-}
+bool LightmapGIData::is_using_spherical_harmonics() const { return uses_spherical_harmonics; }
 
-void LightmapGIData::_set_uses_packed_directional(bool p_enable) {
+void LightmapGIData::_set_uses_packed_directional(bool p_enable)
+{
 	_uses_packed_directional = p_enable;
 }
 
-bool LightmapGIData::_is_using_packed_directional() const {
-	return _uses_packed_directional;
-}
+bool LightmapGIData::_is_using_packed_directional() const { return _uses_packed_directional; }
 
-void LightmapGIData::update_shadowmask_mode(ShadowmaskMode p_mode) {
+void LightmapGIData::update_shadowmask_mode(ShadowmaskMode p_mode)
+{
 	RS::get_singleton()->lightmap_set_shadowmask_mode(lightmap, (RSE::ShadowmaskMode)p_mode);
 }
 
-LightmapGIData::ShadowmaskMode LightmapGIData::get_shadowmask_mode() const {
+LightmapGIData::ShadowmaskMode LightmapGIData::get_shadowmask_mode() const
+{
 	return (ShadowmaskMode)RS::get_singleton()->lightmap_get_shadowmask_mode(lightmap);
 }
 
-void LightmapGIData::set_capture_data(const AABB &p_bounds, bool p_interior, const PackedVector3Array &p_points, const PackedColorArray &p_point_sh, const PackedInt32Array &p_tetrahedra, const PackedInt32Array &p_bsp_tree, float p_baked_exposure, uint32_t p_lightprobe_hash) {
+void LightmapGIData::set_capture_data(const AABB& p_bounds, bool p_interior,
+	const PackedVector3Array& p_points, const PackedColorArray& p_point_sh,
+	const PackedInt32Array& p_tetrahedra, const PackedInt32Array& p_bsp_tree,
+	float p_baked_exposure, uint32_t p_lightprobe_hash)
+{
 	if (p_points.size()) {
 		int pc = p_points.size();
 		ERR_FAIL_COND(pc * 9 != p_point_sh.size());
 		ERR_FAIL_COND((p_tetrahedra.size() % 4) != 0);
 		ERR_FAIL_COND((p_bsp_tree.size() % 6) != 0);
-		RS::get_singleton()->lightmap_set_probe_capture_data(lightmap, p_points, p_point_sh, p_tetrahedra, p_bsp_tree);
+		RS::get_singleton()->lightmap_set_probe_capture_data(
+			lightmap, p_points, p_point_sh, p_tetrahedra, p_bsp_tree);
 		RS::get_singleton()->lightmap_set_probe_bounds(lightmap, p_bounds);
 		RS::get_singleton()->lightmap_set_probe_interior(lightmap, p_interior);
-	} else {
-		RS::get_singleton()->lightmap_set_probe_capture_data(lightmap, PackedVector3Array(), PackedColorArray(), PackedInt32Array(), PackedInt32Array());
+	}
+	else {
+		RS::get_singleton()->lightmap_set_probe_capture_data(lightmap, PackedVector3Array(),
+			PackedColorArray(), PackedInt32Array(), PackedInt32Array());
 		RS::get_singleton()->lightmap_set_probe_bounds(lightmap, AABB());
 		RS::get_singleton()->lightmap_set_probe_interior(lightmap, false);
 	}
@@ -255,39 +273,36 @@ void LightmapGIData::set_capture_data(const AABB &p_bounds, bool p_interior, con
 	bounds = p_bounds;
 }
 
-PackedVector3Array LightmapGIData::get_capture_points() const {
+PackedVector3Array LightmapGIData::get_capture_points() const
+{
 	return RS::get_singleton()->lightmap_get_probe_capture_points(lightmap);
 }
 
-PackedColorArray LightmapGIData::get_capture_sh() const {
+PackedColorArray LightmapGIData::get_capture_sh() const
+{
 	return RS::get_singleton()->lightmap_get_probe_capture_sh(lightmap);
 }
 
-PackedInt32Array LightmapGIData::get_capture_tetrahedra() const {
+PackedInt32Array LightmapGIData::get_capture_tetrahedra() const
+{
 	return RS::get_singleton()->lightmap_get_probe_capture_tetrahedra(lightmap);
 }
 
-PackedInt32Array LightmapGIData::get_capture_bsp_tree() const {
+PackedInt32Array LightmapGIData::get_capture_bsp_tree() const
+{
 	return RS::get_singleton()->lightmap_get_probe_capture_bsp_tree(lightmap);
 }
 
-uint32_t LightmapGIData::get_lightprobe_hash() const {
-	return lightprobe_hash;
-}
+uint32_t LightmapGIData::get_lightprobe_hash() const { return lightprobe_hash; }
 
-AABB LightmapGIData::get_capture_bounds() const {
-	return bounds;
-}
+AABB LightmapGIData::get_capture_bounds() const { return bounds; }
 
-bool LightmapGIData::is_interior() const {
-	return interior;
-}
+bool LightmapGIData::is_interior() const { return interior; }
 
-float LightmapGIData::get_baked_exposure() const {
-	return baked_exposure;
-}
+float LightmapGIData::get_baked_exposure() const { return baked_exposure; }
 
-void LightmapGIData::_set_probe_data(const Dictionary &p_data) {
+void LightmapGIData::_set_probe_data(const Dictionary& p_data)
+{
 	ERR_FAIL_COND(!p_data.has("bounds"));
 	ERR_FAIL_COND(!p_data.has("points"));
 	ERR_FAIL_COND(!p_data.has("tetrahedra"));
@@ -300,10 +315,12 @@ void LightmapGIData::_set_probe_data(const Dictionary &p_data) {
 	if (p_data.has("lightprobe_hash")) { // Older versions will not have it.
 		phash = p_data["lightprobe_hash"];
 	}
-	set_capture_data(p_data["bounds"], p_data["interior"], p_data["points"], p_data["sh"], p_data["tetrahedra"], p_data["bsp"], p_data["baked_exposure"], phash);
+	set_capture_data(p_data["bounds"], p_data["interior"], p_data["points"], p_data["sh"],
+		p_data["tetrahedra"], p_data["bsp"], p_data["baked_exposure"], phash);
 }
 
-Dictionary LightmapGIData::_get_probe_data() const {
+Dictionary LightmapGIData::_get_probe_data() const
+{
 	Dictionary d;
 	d["bounds"] = get_capture_bounds();
 	d["points"] = get_capture_points();
@@ -317,87 +334,44 @@ Dictionary LightmapGIData::_get_probe_data() const {
 }
 
 #ifndef DISABLE_DEPRECATED
-void LightmapGIData::set_light_texture(const Ref<TextureLayered> &p_light_texture) {
-	TypedArray<TextureLayered> arr = { p_light_texture };
+void LightmapGIData::set_light_texture(const Ref<TextureLayered>& p_light_texture)
+{
+	TypedArray<TextureLayered> arr = {p_light_texture};
 	set_lightmap_textures(arr);
 }
 
-Ref<TextureLayered> LightmapGIData::get_light_texture() const {
+Ref<TextureLayered> LightmapGIData::get_light_texture() const
+{
 	if (storage_light_textures.is_empty()) {
 		return Ref<TextureLayered>();
 	}
 	return storage_light_textures.get(0);
 }
 
-void LightmapGIData::_set_light_textures_data(const Array &p_data) {
+void LightmapGIData::_set_light_textures_data(const Array& p_data)
+{
 	set_lightmap_textures(p_data);
 }
 
-Array LightmapGIData::_get_light_textures_data() const {
-	return Array(storage_light_textures);
-}
+Array LightmapGIData::_get_light_textures_data() const { return Array(storage_light_textures); }
 #endif
 
-void LightmapGIData::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_set_user_data", "data"), &LightmapGIData::_set_user_data);
-	ClassDB::bind_method(D_METHOD("_get_user_data"), &LightmapGIData::_get_user_data);
+void LightmapGIData::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_lightmap_textures", "light_textures"), &LightmapGIData::set_lightmap_textures);
-	ClassDB::bind_method(D_METHOD("get_lightmap_textures"), &LightmapGIData::get_lightmap_textures);
+LightmapGIData::LightmapGIData() { lightmap = RS::get_singleton()->lightmap_create(); }
 
-	ClassDB::bind_method(D_METHOD("set_shadowmask_textures", "shadowmask_textures"), &LightmapGIData::set_shadowmask_textures);
-	ClassDB::bind_method(D_METHOD("get_shadowmask_textures"), &LightmapGIData::get_shadowmask_textures);
-
-	ClassDB::bind_method(D_METHOD("set_uses_spherical_harmonics", "uses_spherical_harmonics"), &LightmapGIData::set_uses_spherical_harmonics);
-	ClassDB::bind_method(D_METHOD("is_using_spherical_harmonics"), &LightmapGIData::is_using_spherical_harmonics);
-
-	ClassDB::bind_method(D_METHOD("_set_uses_packed_directional", "_uses_packed_directional"), &LightmapGIData::_set_uses_packed_directional);
-	ClassDB::bind_method(D_METHOD("_is_using_packed_directional"), &LightmapGIData::_is_using_packed_directional);
-
-	ClassDB::bind_method(D_METHOD("add_user", "path", "uv_scale", "slice_index", "sub_instance"), &LightmapGIData::add_user);
-	ClassDB::bind_method(D_METHOD("get_user_count"), &LightmapGIData::get_user_count);
-	ClassDB::bind_method(D_METHOD("get_user_path", "user_idx"), &LightmapGIData::get_user_path);
-	ClassDB::bind_method(D_METHOD("clear_users"), &LightmapGIData::clear_users);
-
-	ClassDB::bind_method(D_METHOD("_set_probe_data", "data"), &LightmapGIData::_set_probe_data);
-	ClassDB::bind_method(D_METHOD("_get_probe_data"), &LightmapGIData::_get_probe_data);
-
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "lightmap_textures", PROPERTY_HINT_ARRAY_TYPE, "TextureLayered", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_lightmap_textures", "get_lightmap_textures");
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "shadowmask_textures", PROPERTY_HINT_ARRAY_TYPE, "TextureLayered", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_shadowmask_textures", "get_shadowmask_textures");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "uses_spherical_harmonics", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "set_uses_spherical_harmonics", "is_using_spherical_harmonics");
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "user_data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_user_data", "_get_user_data");
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "probe_data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_probe_data", "_get_probe_data");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "_uses_packed_directional", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_uses_packed_directional", "_is_using_packed_directional");
-
-#ifndef DISABLE_DEPRECATED
-	ClassDB::bind_method(D_METHOD("set_light_texture", "light_texture"), &LightmapGIData::set_light_texture);
-	ClassDB::bind_method(D_METHOD("get_light_texture"), &LightmapGIData::get_light_texture);
-
-	ClassDB::bind_method(D_METHOD("_set_light_textures_data", "data"), &LightmapGIData::_set_light_textures_data);
-	ClassDB::bind_method(D_METHOD("_get_light_textures_data"), &LightmapGIData::_get_light_textures_data);
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "light_texture", PROPERTY_HINT_RESOURCE_TYPE, TextureLayered::get_class_static(), PROPERTY_USAGE_NONE), "set_light_texture", "get_light_texture");
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "light_textures", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_INTERNAL), "_set_light_textures_data", "_get_light_textures_data");
-#endif
-
-	BIND_ENUM_CONSTANT(SHADOWMASK_MODE_NONE);
-	BIND_ENUM_CONSTANT(SHADOWMASK_MODE_REPLACE);
-	BIND_ENUM_CONSTANT(SHADOWMASK_MODE_OVERLAY);
-}
-
-LightmapGIData::LightmapGIData() {
-	lightmap = RS::get_singleton()->lightmap_create();
-}
-
-LightmapGIData::~LightmapGIData() {
+LightmapGIData::~LightmapGIData()
+{
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RS::get_singleton()->free_rid(lightmap);
 }
 
 ///////////////////////////
 
-void LightmapGI::_find_meshes_and_lights(Node *p_at_node, Vector<MeshesFound> &meshes, Vector<LightsFound> &lights, Vector<Vector3> &probes) {
-	MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(p_at_node);
+void LightmapGI::_find_meshes_and_lights(Node* p_at_node, Vector<MeshesFound>& meshes,
+	Vector<LightsFound>& lights, Vector<Vector3>& probes)
+{
+	MeshInstance3D* mi = Object::cast_to<MeshInstance3D>(p_at_node);
 	if (mi && mi->get_gi_mode() == GeometryInstance3D::GI_MODE_STATIC && mi->is_visible_in_tree()) {
 		Ref<Mesh> mesh = mi->get_mesh();
 		if (mesh.is_valid()) {
@@ -419,7 +393,7 @@ void LightmapGI::_find_meshes_and_lights(Node *p_at_node, Vector<MeshesFound> &m
 			}
 
 			if (surfaces_found && all_have_uv2_and_normal) {
-				//READY TO BAKE! size hint could be computed if not found, actually..
+				// READY TO BAKE! size hint could be computed if not found, actually..
 
 				MeshesFound mf;
 				mf.xform = get_global_transform().affine_inverse() * mi->get_global_transform();
@@ -432,7 +406,8 @@ void LightmapGI::_find_meshes_and_lights(Node *p_at_node, Vector<MeshesFound> &m
 				for (int i = 0; i < mesh->get_surface_count(); i++) {
 					if (all_override.is_valid()) {
 						mf.overrides.push_back(all_override);
-					} else {
+					}
+					else {
 						mf.overrides.push_back(mi->get_surface_override_material(i));
 					}
 				}
@@ -442,10 +417,10 @@ void LightmapGI::_find_meshes_and_lights(Node *p_at_node, Vector<MeshesFound> &m
 		}
 	}
 
-	Node3D *s = Object::cast_to<Node3D>(p_at_node);
+	Node3D* s = Object::cast_to<Node3D>(p_at_node);
 
 	if (!mi && s) {
-		Array bmeshes = p_at_node->call("get_bake_meshes");
+		Array bmeshes = p_at_node->obj->call("get_bake_meshes");
 		if (bmeshes.size() && (bmeshes.size() & 1) == 0) {
 			Transform3D xf = get_global_transform().affine_inverse() * s->get_global_transform();
 			for (int i = 0; i < bmeshes.size(); i += 2) {
@@ -468,7 +443,7 @@ void LightmapGI::_find_meshes_and_lights(Node *p_at_node, Vector<MeshesFound> &m
 		}
 	}
 
-	Light3D *light = Object::cast_to<Light3D>(p_at_node);
+	Light3D* light = Object::cast_to<Light3D>(p_at_node);
 
 	if (light && light->get_bake_mode() != Light3D::BAKE_DISABLED) {
 		LightsFound lf;
@@ -477,7 +452,7 @@ void LightmapGI::_find_meshes_and_lights(Node *p_at_node, Vector<MeshesFound> &m
 		lights.push_back(lf);
 	}
 
-	LightmapProbe *probe = Object::cast_to<LightmapProbe>(p_at_node);
+	LightmapProbe* probe = Object::cast_to<LightmapProbe>(p_at_node);
 
 	if (probe) {
 		Transform3D xf = get_global_transform().affine_inverse() * probe->get_global_transform();
@@ -485,19 +460,21 @@ void LightmapGI::_find_meshes_and_lights(Node *p_at_node, Vector<MeshesFound> &m
 	}
 
 	for (int i = 0; i < p_at_node->get_child_count(); i++) {
-		Node *child = p_at_node->get_child(i);
+		Node* child = p_at_node->get_child(i);
 		if (!child->get_owner()) {
-			continue; //maybe a helper
+			continue; // maybe a helper
 		}
 
 		_find_meshes_and_lights(child, meshes, lights, probes);
 	}
 }
 
-int LightmapGI::_bsp_get_simplex_side(const LocalVector<Vector3> &p_points, const LocalVector<BSPSimplex> &p_simplices, const Plane &p_plane, uint32_t p_simplex) const {
+int LightmapGI::_bsp_get_simplex_side(const LocalVector<Vector3>& p_points,
+	const LocalVector<BSPSimplex>& p_simplices, const Plane& p_plane, uint32_t p_simplex) const
+{
 	int over = 0;
 	int under = 0;
-	const BSPSimplex &s = p_simplices[p_simplex];
+	const BSPSimplex& s = p_simplices[p_simplex];
 	for (int i = 0; i < 4; i++) {
 		const Vector3 v = p_points[s.vertices[i]];
 		// The tolerance used here comes from experiments on scenes up to
@@ -505,84 +482,93 @@ int LightmapGI::_bsp_get_simplex_side(const LocalVector<Vector3> &p_points, cons
 		// appear to self-intersect due to a lack of precision in Plane.
 		if (p_plane.has_point(v, 1.0 / (1 << 13))) {
 			// Coplanar.
-		} else if (p_plane.is_point_over(v)) {
+		}
+		else if (p_plane.is_point_over(v)) {
 			over++;
-		} else {
+		}
+		else {
 			under++;
 		}
 	}
 
-	ERR_FAIL_COND_V(under == 0 && over == 0, -2); //should never happen, we discarded flat simplices before, but in any case drop it from the bsp tree and throw an error
+	ERR_FAIL_COND_V(under == 0 && over == 0,
+		-2); // should never happen, we discarded flat simplices before, but in any case drop it
+			 // from the bsp tree and throw an error
 	if (under == 0) {
 		return 1; // all over
-	} else if (over == 0) {
+	}
+	else if (over == 0) {
 		return -1; // all under
-	} else {
+	}
+	else {
 		return 0; // crossing
 	}
 }
 
-//#define DEBUG_BSP
+// #define DEBUG_BSP
 
-int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, const LocalVector<Plane> &p_planes, LocalVector<int32_t> &planes_tested, const LocalVector<BSPSimplex> &p_simplices, const LocalVector<int32_t> &p_simplex_indices, LocalVector<BSPNode> &bsp_nodes) {
+int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3>& p_points,
+	const LocalVector<Plane>& p_planes, LocalVector<int32_t>& planes_tested,
+	const LocalVector<BSPSimplex>& p_simplices, const LocalVector<int32_t>& p_simplex_indices,
+	LocalVector<BSPNode>& bsp_nodes)
+{
 	ERR_FAIL_COND_V(p_simplex_indices.size() < 2, -1);
 
 	int32_t node_index = (int32_t)bsp_nodes.size();
 	bsp_nodes.push_back(BSPNode());
 
-	//test with all the simplex planes
+	// test with all the simplex planes
 	Plane best_plane;
 	float best_plane_score = -1.0;
 
 	for (const int idx : p_simplex_indices) {
-		const BSPSimplex &s = p_simplices[idx];
+		const BSPSimplex& s = p_simplices[idx];
 		for (int j = 0; j < 4; j++) {
 			uint32_t plane_index = s.planes[j];
 			if (planes_tested[plane_index] == node_index) {
-				continue; //tested this plane already
+				continue; // tested this plane already
 			}
 
 			planes_tested[plane_index] = node_index;
 
-			static const int face_order[4][3] = {
-				{ 0, 1, 2 },
-				{ 0, 2, 3 },
-				{ 0, 1, 3 },
-				{ 1, 2, 3 }
-			};
+			static const int face_order[4][3] = {{0, 1, 2}, {0, 2, 3}, {0, 1, 3}, {1, 2, 3}};
 
-			// despite getting rid of plane duplicates, we should still use here the actual plane to avoid numerical error
-			// from thinking this same simplex is intersecting rather than on a side
+			// despite getting rid of plane duplicates, we should still use here the actual plane to
+			// avoid numerical error from thinking this same simplex is intersecting rather than on
+			// a side
 			Vector3 v0 = p_points[s.vertices[face_order[j][0]]];
 			Vector3 v1 = p_points[s.vertices[face_order[j][1]]];
 			Vector3 v2 = p_points[s.vertices[face_order[j][2]]];
 
 			Plane plane(v0, v1, v2);
 
-			//test with all the simplices
+			// test with all the simplices
 			int over_count = 0;
 			int under_count = 0;
 
-			for (const int &index : p_simplex_indices) {
+			for (const int& index : p_simplex_indices) {
 				int side = _bsp_get_simplex_side(p_points, p_simplices, plane, index);
 				if (side == -2) {
-					continue; //this simplex is invalid, skip for now
-				} else if (side < 0) {
+					continue; // this simplex is invalid, skip for now
+				}
+				else if (side < 0) {
 					under_count++;
-				} else if (side > 0) {
+				}
+				else if (side > 0) {
 					over_count++;
 				}
 			}
 
 			if (under_count == 0 && over_count == 0) {
-				continue; //most likely precision issue with a flat simplex, do not try this plane
+				continue; // most likely precision issue with a flat simplex, do not try this plane
 			}
 
-			if (under_count > over_count) { //make sure under is always less than over, so we can compute the same ratio
+			if (under_count > over_count) { // make sure under is always less than over, so we can
+											// compute the same ratio
 				SWAP(under_count, over_count);
 			}
 
-			float score = 0; //by default, score is 0 (worst)
+			float score = 0; // by default, score is 0 (worst)
 			if (over_count > 0) {
 				// Simplices that are intersected by the plane are moved into both the over
 				// and under subtrees which makes the entire tree deeper, so the best plane
@@ -605,8 +591,8 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 	// with one vertex of the first simplex and two vertices of the second until
 	// we find a winner.
 	if (best_plane_score == 0) {
-		const BSPSimplex &simplex0 = p_simplices[p_simplex_indices[0]];
-		const BSPSimplex &simplex1 = p_simplices[p_simplex_indices[1]];
+		const BSPSimplex& simplex0 = p_simplices[p_simplex_indices[0]];
+		const BSPSimplex& simplex1 = p_simplices[p_simplex_indices[1]];
 
 		for (uint32_t i = 0; i < 4 && !best_plane_score; i++) {
 			Vector3 v0 = p_points[simplex0.vertices[i]];
@@ -622,11 +608,14 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 					Vector3 v2 = p_points[simplex1.vertices[k]];
 
 					Plane plane = Plane(v0, v1, v2);
-					if (plane == Plane()) { // When v0, v1, and v2 are collinear, they can't form a plane.
+					if (plane ==
+						Plane()) { // When v0, v1, and v2 are collinear, they can't form a plane.
 						continue;
 					}
-					int32_t side0 = _bsp_get_simplex_side(p_points, p_simplices, plane, p_simplex_indices[0]);
-					int32_t side1 = _bsp_get_simplex_side(p_points, p_simplices, plane, p_simplex_indices[1]);
+					int32_t side0 =
+						_bsp_get_simplex_side(p_points, p_simplices, plane, p_simplex_indices[0]);
+					int32_t side1 =
+						_bsp_get_simplex_side(p_points, p_simplices, plane, p_simplex_indices[1]);
 					if ((side0 == 1 && side1 == -1) || (side0 == -1 && side1 == 1)) {
 						best_plane = plane;
 						best_plane_score = 1.0;
@@ -640,12 +629,12 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 	LocalVector<int32_t> indices_over;
 	LocalVector<int32_t> indices_under;
 
-	//split again, but add to list
+	// split again, but add to list
 	for (const uint32_t index : p_simplex_indices) {
 		int side = _bsp_get_simplex_side(p_points, p_simplices, best_plane, index);
 
 		if (side == -2) {
-			continue; //simplex sits on the plane, does not make sense to use it
+			continue; // simplex sits on the plane, does not make sense to use it
 		}
 		if (side <= 0) {
 			indices_under.push_back(index);
@@ -657,10 +646,13 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 	}
 
 #ifdef DEBUG_BSP
-	print_line("node " + itos(node_index) + " found plane: " + best_plane + " score:" + rtos(best_plane_score) + " - over " + itos(indices_over.size()) + " under " + itos(indices_under.size()) + " intersecting " + itos(intersecting));
+	print_line("node " + itos(node_index) + " found plane: " + best_plane +
+			   " score:" + rtos(best_plane_score) + " - over " + itos(indices_over.size()) +
+			   " under " + itos(indices_under.size()) + " intersecting " + itos(intersecting));
 #endif
 
-	if (best_plane_score < 0.0 || indices_over.size() == p_simplex_indices.size() || indices_under.size() == p_simplex_indices.size()) {
+	if (best_plane_score < 0.0 || indices_over.size() == p_simplex_indices.size() ||
+		indices_under.size() == p_simplex_indices.size()) {
 		// Failed to separate the tetrahedrons using planes
 		// this means Delaunay broke at some point.
 		// Luckily, because we are using tetrahedrons, we can resort to
@@ -668,9 +660,10 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 		// this will most likely look bad when interpolating, but at least it will not crash.
 		// and the artifact will most likely also be very small, so too difficult to notice.
 
-		//find the longest axis
+		// find the longest axis
 
-		WARN_PRINT("Inconsistency found in triangulation while building BSP, probe interpolation quality may degrade a bit.");
+		WARN_PRINT("Inconsistency found in triangulation while building BSP, probe interpolation "
+				   "quality may degrade a bit.");
 
 		LocalVector<Vector3> centers;
 		AABB bounds_all;
@@ -680,19 +673,21 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 				Vector3 p = p_points[p_simplices[p_simplex_indices[i]].vertices[j]];
 				if (j == 0) {
 					bounds.position = p;
-				} else {
+				}
+				else {
 					bounds.expand_to(p);
 				}
 			}
 			if (i == 0) {
 				centers.push_back(bounds.get_center());
-			} else {
+			}
+			else {
 				bounds_all.merge_with(bounds);
 			}
 		}
 		Vector3::Axis longest_axis = Vector3::Axis(bounds_all.get_longest_axis_index());
 
-		//find the simplex that will go under
+		// find the simplex that will go under
 		uint32_t min_d_idx = 0xFFFFFFFF;
 		float min_d_dist = 1e20;
 
@@ -702,7 +697,7 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 				min_d_dist = centers[i][longest_axis];
 			}
 		}
-		//rebuild best_plane and over/under arrays
+		// rebuild best_plane and over/under arrays
 		best_plane = Plane();
 		best_plane.normal[longest_axis] = 1.0;
 		best_plane.d = min_d_dist;
@@ -724,21 +719,27 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 	node.plane = best_plane;
 
 	if (indices_under.is_empty()) {
-		//nothing to do here
+		// nothing to do here
 		node.under = BSPNode::EMPTY_LEAF;
-	} else if (indices_under.size() == 1) {
+	}
+	else if (indices_under.size() == 1) {
 		node.under = -(indices_under[0] + 1);
-	} else {
-		node.under = _compute_bsp_tree(p_points, p_planes, planes_tested, p_simplices, indices_under, bsp_nodes);
+	}
+	else {
+		node.under = _compute_bsp_tree(
+			p_points, p_planes, planes_tested, p_simplices, indices_under, bsp_nodes);
 	}
 
 	if (indices_over.is_empty()) {
-		//nothing to do here
+		// nothing to do here
 		node.over = BSPNode::EMPTY_LEAF;
-	} else if (indices_over.size() == 1) {
+	}
+	else if (indices_over.size() == 1) {
 		node.over = -(indices_over[0] + 1);
-	} else {
-		node.over = _compute_bsp_tree(p_points, p_planes, planes_tested, p_simplices, indices_over, bsp_nodes);
+	}
+	else {
+		node.over = _compute_bsp_tree(
+			p_points, p_planes, planes_tested, p_simplices, indices_over, bsp_nodes);
 	}
 
 	bsp_nodes[node_index] = node;
@@ -746,16 +747,22 @@ int32_t LightmapGI::_compute_bsp_tree(const LocalVector<Vector3> &p_points, cons
 	return node_index;
 }
 
-bool LightmapGI::_lightmap_bake_step_function(float p_completion, const String &p_text, void *ud, bool p_refresh) {
-	BakeStepUD *bsud = (BakeStepUD *)ud;
+bool LightmapGI::_lightmap_bake_step_function(
+	float p_completion, const String& p_text, void* ud, bool p_refresh)
+{
+	BakeStepUD* bsud = (BakeStepUD*)ud;
 	bool ret = false;
 	if (bsud->func) {
-		ret = bsud->func(bsud->from_percent + p_completion * (bsud->to_percent - bsud->from_percent), p_text, bsud->ud, p_refresh);
+		ret =
+			bsud->func(bsud->from_percent + p_completion * (bsud->to_percent - bsud->from_percent),
+				p_text, bsud->ud, p_refresh);
 	}
 	return ret;
 }
 
-void LightmapGI::_plot_triangle_into_octree(GenProbesOctree *p_cell, float p_cell_size, const Vector3 *p_triangle) {
+void LightmapGI::_plot_triangle_into_octree(
+	GenProbesOctree* p_cell, float p_cell_size, const Vector3* p_triangle)
+{
 	for (int i = 0; i < 8; i++) {
 		Vector3i pos = p_cell->offset;
 		uint32_t half_size = p_cell->size / 2;
@@ -773,25 +780,29 @@ void LightmapGI::_plot_triangle_into_octree(GenProbesOctree *p_cell, float p_cel
 		subcell.position = Vector3(pos) * p_cell_size;
 		subcell.size = Vector3(half_size, half_size, half_size) * p_cell_size;
 
-		if (!Geometry3D::triangle_box_overlap(subcell.get_center(), subcell.size * 0.5, p_triangle)) {
+		if (!Geometry3D::triangle_box_overlap(
+				subcell.get_center(), subcell.size * 0.5, p_triangle)) {
 			continue;
 		}
 
 		if (p_cell->children[i] == nullptr) {
-			GenProbesOctree *child = memnew(GenProbesOctree);
+			GenProbesOctree* child = memnew(GenProbesOctree);
 			child->offset = pos;
 			child->size = half_size;
 			p_cell->children[i] = child;
 		}
 
 		if (half_size > 1) {
-			//still levels missing
+			// still levels missing
 			_plot_triangle_into_octree(p_cell->children[i], p_cell_size, p_triangle);
 		}
 	}
 }
 
-void LightmapGI::_gen_new_positions_from_octree(const GenProbesOctree *p_cell, float p_cell_size, const Vector<Vector3> &probe_positions, LocalVector<Vector3> &new_probe_positions, HashMap<Vector3i, bool> &positions_used, const AABB &p_bounds) {
+void LightmapGI::_gen_new_positions_from_octree(const GenProbesOctree* p_cell, float p_cell_size,
+	const Vector<Vector3>& probe_positions, LocalVector<Vector3>& new_probe_positions,
+	HashMap<Vector3i, bool>& positions_used, const AABB& p_bounds)
+{
 	for (int i = 0; i < 8; i++) {
 		Vector3i pos = p_cell->offset;
 		if (i & 1) {
@@ -805,11 +816,11 @@ void LightmapGI::_gen_new_positions_from_octree(const GenProbesOctree *p_cell, f
 		}
 
 		if (p_cell->size == 1 && !positions_used.has(pos)) {
-			//new position to insert!
+			// new position to insert!
 			Vector3 real_pos = p_bounds.position + Vector3(pos) * p_cell_size;
-			//see if a user submitted probe is too close
+			// see if a user submitted probe is too close
 			int ppcount = probe_positions.size();
-			const Vector3 *pp = probe_positions.ptr();
+			const Vector3* pp = probe_positions.ptr();
 			bool exists = false;
 			for (int j = 0; j < ppcount; j++) {
 				if (pp[j].distance_to(real_pos) < (p_cell_size * 0.5f)) {
@@ -826,17 +837,23 @@ void LightmapGI::_gen_new_positions_from_octree(const GenProbesOctree *p_cell, f
 		}
 
 		if (p_cell->children[i] != nullptr) {
-			_gen_new_positions_from_octree(p_cell->children[i], p_cell_size, probe_positions, new_probe_positions, positions_used, p_bounds);
+			_gen_new_positions_from_octree(p_cell->children[i], p_cell_size, probe_positions,
+				new_probe_positions, positions_used, p_bounds);
 		}
 	}
 }
 
-LightmapGI::BakeError LightmapGI::_save_and_reimport_atlas_textures(const Ref<Lightmapper> p_lightmapper, const String &p_base_name, TypedArray<TextureLayered> &r_textures, bool p_is_shadowmask) const {
+LightmapGI::BakeError LightmapGI::_save_and_reimport_atlas_textures(
+	const Ref<Lightmapper> p_lightmapper, const String& p_base_name,
+	TypedArray<TextureLayered>& r_textures, bool p_is_shadowmask) const
+{
 	Vector<Ref<Image>> images;
-	images.resize(p_is_shadowmask ? p_lightmapper->get_shadowmask_texture_count() : p_lightmapper->get_bake_texture_count());
+	images.resize(p_is_shadowmask ? p_lightmapper->get_shadowmask_texture_count()
+								  : p_lightmapper->get_bake_texture_count());
 
 	for (int i = 0; i < images.size(); i++) {
-		images.set(i, p_is_shadowmask ? p_lightmapper->get_shadowmask_texture(i) : p_lightmapper->get_bake_texture(i));
+		images.set(i, p_is_shadowmask ? p_lightmapper->get_shadowmask_texture(i)
+									  : p_lightmapper->get_bake_texture(i));
 	}
 
 	const int slice_count = images.size();
@@ -850,15 +867,19 @@ LightmapGI::BakeError LightmapGI::_save_and_reimport_atlas_textures(const Ref<Li
 	r_textures.resize(texture_count);
 
 	for (int i = 0; i < texture_count; i++) {
-		const int texture_slice_count = (i == texture_count - 1 && last_count != 0) ? last_count : slices_per_texture;
+		const int texture_slice_count =
+			(i == texture_count - 1 && last_count != 0) ? last_count : slices_per_texture;
 
-		Ref<Image> texture_image = Image::create_empty(slice_width, slice_height * texture_slice_count, false, images[0]->get_format());
+		Ref<Image> texture_image = Image::create_empty(
+			slice_width, slice_height * texture_slice_count, false, images[0]->get_format());
 
 		for (int j = 0; j < texture_slice_count; j++) {
-			texture_image->blit_rect(images[i * slices_per_texture + j], Rect2i(0, 0, slice_width, slice_height), Point2i(0, slice_height * j));
+			texture_image->blit_rect(images[i * slices_per_texture + j],
+				Rect2i(0, 0, slice_width, slice_height), Point2i(0, slice_height * j));
 		}
 
-		const String atlas_path = (texture_count > 1 ? p_base_name + "_" + itos(i) : p_base_name) + (p_is_shadowmask ? ".png" : ".exr");
+		const String atlas_path = (texture_count > 1 ? p_base_name + "_" + itos(i) : p_base_name) +
+								  (p_is_shadowmask ? ".png" : ".exr");
 		const String config_path = atlas_path + ".import";
 
 		Ref<ConfigFile> config;
@@ -883,14 +904,16 @@ LightmapGI::BakeError LightmapGI::_save_and_reimport_atlas_textures(const Ref<Li
 		config->save(config_path);
 
 		if (supersampling_enabled) {
-			texture_image->resize(texture_image->get_width() / supersampling_factor, texture_image->get_height() / supersampling_factor, Image::INTERPOLATE_TRILINEAR);
+			texture_image->resize(texture_image->get_width() / supersampling_factor,
+				texture_image->get_height() / supersampling_factor, Image::INTERPOLATE_TRILINEAR);
 		}
 
 		// Save the file.
 		Error save_err;
 		if (p_is_shadowmask) {
 			save_err = texture_image->save_png(atlas_path);
-		} else {
+		}
+		else {
 			save_err = texture_image->save_exr(atlas_path, false);
 		}
 
@@ -898,7 +921,8 @@ LightmapGI::BakeError LightmapGI::_save_and_reimport_atlas_textures(const Ref<Li
 
 		// Reimport the file.
 		ResourceLoader::import(atlas_path);
-		Ref<TextureLayered> t = ResourceLoader::load(atlas_path); // If already loaded, it will be updated on refocus?
+		Ref<TextureLayered> t =
+			ResourceLoader::load(atlas_path); // If already loaded, it will be updated on refocus?
 		ERR_FAIL_COND_V(t.is_null(), LightmapGI::BAKE_ERROR_CANT_CREATE_IMAGE);
 
 		// Store the atlas in the array.
@@ -908,15 +932,20 @@ LightmapGI::BakeError LightmapGI::_save_and_reimport_atlas_textures(const Ref<Li
 	return LightmapGI::BAKE_ERROR_OK;
 }
 
-void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::LightsFound> &lights_found, HashMap<Ref<Texture2D>, AreaLightAtlasTexture> &r_textures, Size2i &r_atlas_size, int &r_mipmaps) const {
-	if (RenderingServer::get_singleton()->get_current_rendering_method() != "gl_compatibility") { // area light textures unsupported in compat
+void LightmapGI::_build_area_light_texture_atlas(
+	const Vector<LightmapGI::LightsFound>& lights_found,
+	HashMap<Ref<Texture2D>, AreaLightAtlasTexture>& r_textures, Size2i& r_atlas_size,
+	int& r_mipmaps) const
+{
+	if (RenderingServer::get_singleton()->get_current_rendering_method() !=
+		"gl_compatibility") { // area light textures unsupported in compat
 		r_mipmaps = 8;
 		r_atlas_size = Size2i(pow(2, r_mipmaps), pow(2, r_mipmaps));
 
 		for (int i = 0; i < lights_found.size(); i++) {
-			Light3D *light = lights_found[i].light;
+			Light3D* light = lights_found[i].light;
 			if (Object::cast_to<AreaLight3D>(light)) {
-				AreaLight3D *l = Object::cast_to<AreaLight3D>(light);
+				AreaLight3D* l = Object::cast_to<AreaLight3D>(light);
 				if (l->get_area_texture().is_valid() && !r_textures.has(l->get_area_texture())) {
 					r_textures[l->get_area_texture()] = AreaLightAtlasTexture();
 				}
@@ -930,23 +959,26 @@ void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::Lights
 		return;
 	}
 
-	struct SortItem {
+	struct SortItem
+	{
 		Ref<Texture2D> texture;
 		Size2i pixel_size;
 		Size2i size;
 		Point2i pos;
 
-		bool operator<(const SortItem &p_item) const {
-			//sort larger to smaller
+		bool operator<(const SortItem& p_item) const
+		{
+			// sort larger to smaller
 			if (size.height == p_item.size.height) {
 				return size.width > p_item.size.width;
-			} else {
+			}
+			else {
 				return size.height > p_item.size.height;
 			}
 		}
 	};
 
-	//generate atlas
+	// generate atlas
 	Vector<SortItem> itemsv;
 	itemsv.resize(r_textures.size());
 	uint32_t base_size = 1;
@@ -954,13 +986,14 @@ void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::Lights
 	int idx = 0;
 	int border = 1 << (r_mipmaps - 1);
 
-	for (const KeyValue<Ref<Texture2D>, AreaLightAtlasTexture> &E : r_textures) {
+	for (const KeyValue<Ref<Texture2D>, AreaLightAtlasTexture>& E : r_textures) {
 		Ref<Texture2D> tex = E.key;
 		Size2i tex_size = Size2i(tex->get_width(), tex->get_height());
 
-		SortItem &si = itemsv.write[idx];
+		SortItem& si = itemsv.write[idx];
 
-		Vector2i b_size = Vector2i(Math::ceil(float(tex_size.width) / border), Math::ceil(float(tex_size.height) / border));
+		Vector2i b_size = Vector2i(Math::ceil(float(tex_size.width) / border),
+			Math::ceil(float(tex_size.height) / border));
 		si.size.width = b_size.width + 1;
 		si.size.height = b_size.height + 1;
 		si.pixel_size = b_size * border; // components are either small powers of 2 or N * border
@@ -979,12 +1012,12 @@ void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::Lights
 		idx++;
 	}
 
-	//sort items by size
+	// sort items by size
 	itemsv.sort();
 
-	//attempt to create atlas
+	// attempt to create atlas
 	int item_count = itemsv.size();
-	SortItem *items = itemsv.ptrw();
+	SortItem* items = itemsv.ptrw();
 
 	int atlas_height = 0;
 
@@ -992,14 +1025,14 @@ void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::Lights
 		Vector<int> v_offsetsv;
 		v_offsetsv.resize(base_size);
 
-		int *v_offsets = v_offsetsv.ptrw();
+		int* v_offsets = v_offsetsv.ptrw();
 		memset(v_offsets, 0, sizeof(int) * base_size);
 
 		int max_height = 0;
 
 		for (int i = 0; i < item_count; i++) {
-			//best fit
-			SortItem &si = items[i];
+			// best fit
+			SortItem& si = items[i];
 			int best_idx = -1;
 			int best_height = 0x7FFFFFFF;
 			for (uint32_t j = 0; j <= base_size - si.size.width; j++) {
@@ -1009,7 +1042,7 @@ void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::Lights
 					if (h > height) {
 						height = h;
 						if (height > best_height) {
-							break; //already bad
+							break; // already bad
 						}
 					}
 				}
@@ -1020,7 +1053,7 @@ void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::Lights
 				}
 			}
 
-			//update
+			// update
 			for (int k = 0; k < si.size.width; k++) {
 				v_offsets[k + best_idx] = best_height + si.size.height;
 			}
@@ -1035,7 +1068,7 @@ void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::Lights
 
 		if ((uint32_t)max_height <= base_size * 2) {
 			atlas_height = max_height;
-			break; //good ratio, break;
+			break; // good ratio, break;
 		}
 
 		base_size *= 2;
@@ -1052,12 +1085,17 @@ void LightmapGI::_build_area_light_texture_atlas(const Vector<LightmapGI::Lights
 		uv_rect.position /= Size2(r_atlas_size);
 		uv_rect.size /= Size2(r_atlas_size);
 		r_textures[items[i].texture].texture_rect = uv_rect;
-		float max_mipmap = MIN(Math::floor(Math::log2(MAX(MIN(items[i].pixel_size.x, items[i].pixel_size.y), 1.0f))), r_mipmaps) - 1.0f;
+		float max_mipmap = MIN(Math::floor(Math::log2(
+								   MAX(MIN(items[i].pixel_size.x, items[i].pixel_size.y), 1.0f))),
+							   r_mipmaps) -
+						   1.0f;
 		r_textures[items[i].texture].max_mipmap = max_mipmap;
 	}
 }
 
-LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_path, Lightmapper::BakeStepFunc p_bake_step, void *p_bake_userdata) {
+LightmapGI::BakeError LightmapGI::bake(Node* p_from_node, String p_image_data_path,
+	Lightmapper::BakeStepFunc p_bake_step, void* p_bake_userdata)
+{
 	if (p_image_data_path.is_empty()) {
 		if (get_light_data().is_null()) {
 			return BAKE_ERROR_NO_SAVE_PATH;
@@ -1088,21 +1126,24 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 	AABB bounds;
 	{
 		Vector<MeshesFound> meshes_found;
-		_find_meshes_and_lights(p_from_node ? p_from_node : get_parent(), meshes_found, lights_found, probes_found);
+		_find_meshes_and_lights(
+			p_from_node ? p_from_node : get_parent(), meshes_found, lights_found, probes_found);
 
 		if (meshes_found.is_empty()) {
 			return BAKE_ERROR_NO_MESHES;
 		}
 		// create mesh data for insert
 
-		//get the base material textures, help compute atlas size and bounds
+		// get the base material textures, help compute atlas size and bounds
 		for (int m_i = 0; m_i < meshes_found.size(); m_i++) {
 			if (p_bake_step) {
 				float p = (float)(m_i) / meshes_found.size();
-				p_bake_step(p * 0.1, vformat(RTR("Preparing geometry %d/%d"), m_i, meshes_found.size()), p_bake_userdata, false);
+				p_bake_step(p * 0.1,
+					vformat(RTR("Preparing geometry %d/%d"), m_i, meshes_found.size()),
+					p_bake_userdata, false);
 			}
 
-			MeshesFound &mf = meshes_found.write[m_i];
+			MeshesFound& mf = meshes_found.write[m_i];
 
 			Size2i mesh_lightmap_size = mf.mesh->get_lightmap_size_hint();
 			if (mesh_lightmap_size == Size2i(0, 0)) {
@@ -1110,9 +1151,13 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 				// For now set to basic size to avoid crash.
 				mesh_lightmap_size = Size2i(64, 64);
 			}
-			// Double lightmap texel density if downsampling is enabled, as the final texture size will be halved before saving lightmaps.
-			Size2i lightmap_size = Size2i(Size2(mesh_lightmap_size) * mf.lightmap_scale * texel_scale) * (supersampling_enabled ? supersampling_factor : 1.0);
-			ERR_FAIL_COND_V(lightmap_size.x == 0 || lightmap_size.y == 0, BAKE_ERROR_LIGHTMAP_TOO_SMALL);
+			// Double lightmap texel density if downsampling is enabled, as the final texture size
+			// will be halved before saving lightmaps.
+			Size2i lightmap_size =
+				Size2i(Size2(mesh_lightmap_size) * mf.lightmap_scale * texel_scale) *
+				(supersampling_enabled ? supersampling_factor : 1.0);
+			ERR_FAIL_COND_V(
+				lightmap_size.x == 0 || lightmap_size.y == 0, BAKE_ERROR_LIGHTMAP_TOO_SMALL);
 
 			TypedArray<RID> overrides;
 			overrides.resize(mf.overrides.size());
@@ -1121,14 +1166,15 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 					overrides[i] = mf.overrides[i]->get_rid();
 				}
 			}
-			TypedArray<Image> images = RS::get_singleton()->bake_render_uv2(mf.mesh->get_rid(), overrides, lightmap_size);
+			TypedArray<Image> images =
+				RS::get_singleton()->bake_render_uv2(mf.mesh->get_rid(), overrides, lightmap_size);
 
 			ERR_FAIL_COND_V(images.is_empty(), BAKE_ERROR_CANT_CREATE_IMAGE);
 
 			Ref<Image> albedo = images[RSE::BAKE_CHANNEL_ALBEDO_ALPHA];
 			Ref<Image> orm = images[RSE::BAKE_CHANNEL_ORM];
 
-			//multiply albedo by metal
+			// multiply albedo by metal
 
 			Lightmapper::MeshData md;
 
@@ -1154,19 +1200,23 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 				Vector<uint8_t> albedom;
 				uint32_t len = albedo_alpha.size();
 				albedom.resize(len);
-				const uint8_t *r_aa = albedo_alpha.ptr();
-				const uint8_t *r_orm = orm_data.ptr();
-				uint8_t *w_albedo = albedom.ptrw();
+				const uint8_t* r_aa = albedo_alpha.ptr();
+				const uint8_t* r_orm = orm_data.ptr();
+				uint8_t* w_albedo = albedom.ptrw();
 
 				for (uint32_t i = 0; i < len; i += 4) {
-					w_albedo[i + 0] = uint8_t(CLAMP(float(r_aa[i + 0]) * (1.0 - float(r_orm[i + 2] / 255.0)), 0, 255));
-					w_albedo[i + 1] = uint8_t(CLAMP(float(r_aa[i + 1]) * (1.0 - float(r_orm[i + 2] / 255.0)), 0, 255));
-					w_albedo[i + 2] = uint8_t(CLAMP(float(r_aa[i + 2]) * (1.0 - float(r_orm[i + 2] / 255.0)), 0, 255));
+					w_albedo[i + 0] = uint8_t(
+						CLAMP(float(r_aa[i + 0]) * (1.0 - float(r_orm[i + 2] / 255.0)), 0, 255));
+					w_albedo[i + 1] = uint8_t(
+						CLAMP(float(r_aa[i + 1]) * (1.0 - float(r_orm[i + 2] / 255.0)), 0, 255));
+					w_albedo[i + 2] = uint8_t(
+						CLAMP(float(r_aa[i + 2]) * (1.0 - float(r_orm[i + 2] / 255.0)), 0, 255));
 					w_albedo[i + 3] = r_aa[i + 3];
 				}
 
 				md.albedo_on_uv2.instantiate();
-				md.albedo_on_uv2->set_data(lightmap_size.width, lightmap_size.height, false, Image::FORMAT_RGBA8, albedom);
+				md.albedo_on_uv2->set_data(
+					lightmap_size.width, lightmap_size.height, false, Image::FORMAT_RGBA8, albedom);
 			}
 
 			md.emission_on_uv2 = images[RSE::BAKE_CHANNEL_EMISSION];
@@ -1174,7 +1224,7 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 				md.emission_on_uv2->convert(Image::FORMAT_RGBAH);
 			}
 
-			//get geometry
+			// get geometry
 
 			Basis normal_xform = mf.xform.basis.inverse().transposed();
 
@@ -1190,11 +1240,11 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 				}
 
 				Vector<Vector3> vertices = a[Mesh::ARRAY_VERTEX];
-				const Vector3 *vr = vertices.ptr();
+				const Vector3* vr = vertices.ptr();
 				Vector<Vector2> uv = a[Mesh::ARRAY_TEX_UV2];
-				const Vector2 *uvr = nullptr;
+				const Vector2* uvr = nullptr;
 				Vector<Vector3> normals = a[Mesh::ARRAY_NORMAL];
-				const Vector3 *nr = nullptr;
+				const Vector3* nr = nullptr;
 				Vector<int> index = a[Mesh::ARRAY_INDEX];
 
 				ERR_CONTINUE(uv.is_empty());
@@ -1204,12 +1254,13 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 				nr = normals.ptr();
 
 				int facecount;
-				const int *ir = nullptr;
+				const int* ir = nullptr;
 
 				if (index.size()) {
 					facecount = index.size() / 3;
 					ir = index.ptr();
-				} else {
+				}
+				else {
 					facecount = vertices.size() / 3;
 				}
 
@@ -1220,7 +1271,8 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 						for (int k = 0; k < 3; k++) {
 							vidx[k] = ir[j * 3 + k];
 						}
-					} else {
+					}
+					else {
 						for (int k = 0; k < 3; k++) {
 							vidx[k] = j * 3 + k;
 						}
@@ -1230,7 +1282,8 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 						Vector3 v = mf.xform.xform(vr[vidx[k]]);
 						if (bounds == AABB()) {
 							bounds.position = v;
-						} else {
+						}
+						else {
 							bounds.expand_to(v);
 						}
 						md.points.push_back(v);
@@ -1252,7 +1305,7 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		p_bake_step(0.3, RTR("Creating probes"), p_bake_userdata, true);
 	}
 
-	//bounds need to include the user probes
+	// bounds need to include the user probes
 	for (int i = 0; i < probes_found.size(); i++) {
 		bounds.expand_to(probes_found[i]);
 	}
@@ -1264,9 +1317,10 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		for (int i = 0; i < 8; i++) {
 			probes_found.push_back(bounds.get_endpoint(i));
 		}
-	} else {
+	}
+	else {
 		// detect probes from geometry
-		static const int subdiv_values[6] = { 0, 4, 8, 16, 32 };
+		static const int subdiv_values[6] = {0, 4, 8, 16, 32};
 		int subdiv = subdiv_values[gen_probes];
 
 		float subdiv_cell_size;
@@ -1280,7 +1334,7 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 			bound_limit[longest_axis] = subdiv;
 			bound_limit[axis_n1] = int(Math::ceil(bounds.size[axis_n1] / subdiv_cell_size));
 			bound_limit[axis_n2] = int(Math::ceil(bounds.size[axis_n2] / subdiv_cell_size));
-			//compensate bounds
+			// compensate bounds
 			bounds.size[axis_n1] = bound_limit[axis_n1] * subdiv_cell_size;
 			bounds.size[axis_n2] = bound_limit[axis_n2] * subdiv_cell_size;
 		}
@@ -1291,18 +1345,22 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		for (int i = 0; i < mesh_data.size(); i++) {
 			if (p_bake_step) {
 				float p = (float)(i) / mesh_data.size();
-				p_bake_step(0.3 + p * 0.1, vformat(RTR("Creating probes from mesh %d/%d"), i, mesh_data.size()), p_bake_userdata, false);
+				p_bake_step(0.3 + p * 0.1,
+					vformat(RTR("Creating probes from mesh %d/%d"), i, mesh_data.size()),
+					p_bake_userdata, false);
 			}
 
 			for (int j = 0; j < mesh_data[i].points.size(); j += 3) {
-				Vector3 points[3] = { mesh_data[i].points[j + 0] - bounds.position, mesh_data[i].points[j + 1] - bounds.position, mesh_data[i].points[j + 2] - bounds.position };
+				Vector3 points[3] = {mesh_data[i].points[j + 0] - bounds.position,
+					mesh_data[i].points[j + 1] - bounds.position,
+					mesh_data[i].points[j + 2] - bounds.position};
 				_plot_triangle_into_octree(&octree, subdiv_cell_size, points);
 			}
 		}
 
 		LocalVector<Vector3> new_probe_positions;
 		HashMap<Vector3i, bool> positions_used;
-		for (uint32_t i = 0; i < 8; i++) { //insert bounding endpoints
+		for (uint32_t i = 0; i < 8; i++) { // insert bounding endpoints
 			Vector3i pos;
 			if (i & 1) {
 				pos.x += bound_limit.x;
@@ -1315,23 +1373,28 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 			}
 
 			positions_used[pos] = true;
-			Vector3 real_pos = bounds.position + Vector3(pos) * subdiv_cell_size; //use same formula for numerical stability
+			Vector3 real_pos =
+				bounds.position +
+				Vector3(pos) * subdiv_cell_size; // use same formula for numerical stability
 			new_probe_positions.push_back(real_pos);
 		}
-		//skip first level, since probes are always added at bounds endpoints anyway (code above this)
+		// skip first level, since probes are always added at bounds endpoints anyway (code above
+		// this)
 		for (int i = 0; i < 8; i++) {
 			if (octree.children[i]) {
-				_gen_new_positions_from_octree(octree.children[i], subdiv_cell_size, probes_found, new_probe_positions, positions_used, bounds);
+				_gen_new_positions_from_octree(octree.children[i], subdiv_cell_size, probes_found,
+					new_probe_positions, positions_used, bounds);
 			}
 		}
 
-		for (const Vector3 &position : new_probe_positions) {
+		for (const Vector3& position : new_probe_positions) {
 			probes_found.push_back(position);
 		}
 	}
 
 	// Add everything to lightmapper
-	const bool use_physical_light_units = GLOBAL_GET("rendering/lights_and_shadows/use_physical_light_units");
+	const bool use_physical_light_units =
+		GLOBAL_GET("rendering/lights_and_shadows/use_physical_light_units");
 	if (p_bake_step) {
 		p_bake_step(0.4, RTR("Preparing Lightmapper"), p_bake_userdata, true);
 	}
@@ -1341,25 +1404,31 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		int area_light_atlas_mipmaps = 1;
 		HashMap<Ref<Texture2D>, AreaLightAtlasTexture> area_light_atlas_textures;
 		PackedByteArray area_light_atlas_data;
-		_build_area_light_texture_atlas(lights_found, area_light_atlas_textures, area_light_atlas_size, area_light_atlas_mipmaps);
+		_build_area_light_texture_atlas(lights_found, area_light_atlas_textures,
+			area_light_atlas_size, area_light_atlas_mipmaps);
 		if (area_light_atlas_textures.size() > 0) {
 			TypedArray<RID> area_light_textures;
 			TypedArray<Rect2> area_light_texture_rects;
-			for (const KeyValue<Ref<Texture2D>, AreaLightAtlasTexture> &E : area_light_atlas_textures) {
+			for (const KeyValue<Ref<Texture2D>, AreaLightAtlasTexture>& E :
+				area_light_atlas_textures) {
 				area_light_textures.push_back(E.key->get_rid());
 				area_light_texture_rects.push_back(E.value.texture_rect);
 			}
-			area_light_atlas_data = RS::get_singleton()->bake_render_area_light_atlas(area_light_textures, area_light_texture_rects, area_light_atlas_size, area_light_atlas_mipmaps);
-		} else {
+			area_light_atlas_data =
+				RS::get_singleton()->bake_render_area_light_atlas(area_light_textures,
+					area_light_texture_rects, area_light_atlas_size, area_light_atlas_mipmaps);
+		}
+		else {
 			area_light_atlas_data.resize_initialized(4); // 1 pixel
 		}
-		lightmapper->add_area_light_atlas(area_light_atlas_size, area_light_atlas_mipmaps, area_light_atlas_data);
+		lightmapper->add_area_light_atlas(
+			area_light_atlas_size, area_light_atlas_mipmaps, area_light_atlas_data);
 
 		for (int i = 0; i < mesh_data.size(); i++) {
 			lightmapper->add_mesh(mesh_data[i]);
 		}
 		for (int i = 0; i < lights_found.size(); i++) {
-			Light3D *light = lights_found[i].light;
+			Light3D* light = lights_found[i].light;
 			if (light->is_editor_only()) {
 				// Don't include editor-only lights in the lightmap bake,
 				// as this results in inconsistent visuals when running the project.
@@ -1368,7 +1437,8 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 
 			Transform3D xf = lights_found[i].xform;
 
-			// For the lightmapper, the indirect energy represents the multiplier for the indirect bounces caused by the light, so the value is not converted when using physical units.
+			// For the lightmapper, the indirect energy represents the multiplier for the indirect
+			// bounces caused by the light, so the value is not converted when using physical units.
 			float indirect_energy = light->get_param(Light3D::PARAM_INDIRECT_ENERGY);
 			Color linear_color = light->get_color().srgb_to_linear();
 			float energy = light->get_param(Light3D::PARAM_ENERGY);
@@ -1378,29 +1448,49 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 			}
 
 			if (Object::cast_to<DirectionalLight3D>(light)) {
-				DirectionalLight3D *l = Object::cast_to<DirectionalLight3D>(light);
+				DirectionalLight3D* l = Object::cast_to<DirectionalLight3D>(light);
 				if (l->get_sky_mode() != DirectionalLight3D::SKY_MODE_SKY_ONLY) {
-					lightmapper->add_directional_light(light->get_name(), light->get_bake_mode() == Light3D::BAKE_STATIC, -xf.basis.get_column(Vector3::AXIS_Z).normalized(), linear_color, energy, indirect_energy, l->get_param(Light3D::PARAM_SIZE), l->get_param(Light3D::PARAM_SHADOW_BLUR));
+					lightmapper->add_directional_light(light->get_name(),
+						light->get_bake_mode() == Light3D::BAKE_STATIC,
+						-xf.basis.get_column(Vector3::AXIS_Z).normalized(), linear_color, energy,
+						indirect_energy, l->get_param(Light3D::PARAM_SIZE),
+						l->get_param(Light3D::PARAM_SHADOW_BLUR));
 				}
-			} else if (Object::cast_to<OmniLight3D>(light)) {
-				OmniLight3D *l = Object::cast_to<OmniLight3D>(light);
+			}
+			else if (Object::cast_to<OmniLight3D>(light)) {
+				OmniLight3D* l = Object::cast_to<OmniLight3D>(light);
 				if (use_physical_light_units) {
 					energy *= (1.0 / (Math::PI * 4.0));
 				}
-				lightmapper->add_omni_light(light->get_name(), light->get_bake_mode() == Light3D::BAKE_STATIC, xf.origin, linear_color, energy, indirect_energy, l->get_param(Light3D::PARAM_RANGE), l->get_param(Light3D::PARAM_ATTENUATION), l->get_param(Light3D::PARAM_SIZE), l->get_param(Light3D::PARAM_SHADOW_BLUR));
-			} else if (Object::cast_to<SpotLight3D>(light)) {
-				SpotLight3D *l = Object::cast_to<SpotLight3D>(light);
+				lightmapper->add_omni_light(light->get_name(),
+					light->get_bake_mode() == Light3D::BAKE_STATIC, xf.origin, linear_color, energy,
+					indirect_energy, l->get_param(Light3D::PARAM_RANGE),
+					l->get_param(Light3D::PARAM_ATTENUATION), l->get_param(Light3D::PARAM_SIZE),
+					l->get_param(Light3D::PARAM_SHADOW_BLUR));
+			}
+			else if (Object::cast_to<SpotLight3D>(light)) {
+				SpotLight3D* l = Object::cast_to<SpotLight3D>(light);
 				if (use_physical_light_units) {
 					energy *= (1.0 / Math::PI);
 				}
-				lightmapper->add_spot_light(light->get_name(), light->get_bake_mode() == Light3D::BAKE_STATIC, xf.origin, -xf.basis.get_column(Vector3::AXIS_Z).normalized(), linear_color, energy, indirect_energy, l->get_param(Light3D::PARAM_RANGE), l->get_param(Light3D::PARAM_ATTENUATION), l->get_param(Light3D::PARAM_SPOT_ANGLE), l->get_param(Light3D::PARAM_SPOT_ATTENUATION), l->get_param(Light3D::PARAM_SIZE), l->get_param(Light3D::PARAM_SHADOW_BLUR));
-			} else if (Object::cast_to<AreaLight3D>(light)) {
-				AreaLight3D *l = Object::cast_to<AreaLight3D>(light);
+				lightmapper->add_spot_light(light->get_name(),
+					light->get_bake_mode() == Light3D::BAKE_STATIC, xf.origin,
+					-xf.basis.get_column(Vector3::AXIS_Z).normalized(), linear_color, energy,
+					indirect_energy, l->get_param(Light3D::PARAM_RANGE),
+					l->get_param(Light3D::PARAM_ATTENUATION),
+					l->get_param(Light3D::PARAM_SPOT_ANGLE),
+					l->get_param(Light3D::PARAM_SPOT_ATTENUATION),
+					l->get_param(Light3D::PARAM_SIZE), l->get_param(Light3D::PARAM_SHADOW_BLUR));
+			}
+			else if (Object::cast_to<AreaLight3D>(light)) {
+				AreaLight3D* l = Object::cast_to<AreaLight3D>(light);
 				if (use_physical_light_units) {
 					energy *= (1.0 / Math::PI * 2.0);
 				}
-				Vector3 area_vec_x = xf.basis.get_column(Vector3::AXIS_X).normalized() * l->get_area_size().x;
-				Vector3 area_vec_y = xf.basis.get_column(Vector3::AXIS_Y).normalized() * l->get_area_size().y;
+				Vector3 area_vec_x =
+					xf.basis.get_column(Vector3::AXIS_X).normalized() * l->get_area_size().x;
+				Vector3 area_vec_y =
+					xf.basis.get_column(Vector3::AXIS_Y).normalized() * l->get_area_size().y;
 				if (l->is_area_normalizing_energy()) {
 					float surface_area = l->get_area_size().x * l->get_area_size().y;
 					energy /= surface_area;
@@ -1409,7 +1499,13 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 				if (l->get_area_texture().is_valid()) {
 					tex = area_light_atlas_textures[l->get_area_texture()];
 				}
-				lightmapper->add_area_light(light->get_name(), light->get_bake_mode() == Light3D::BAKE_STATIC, xf.origin, -xf.basis.get_column(Vector3::AXIS_Z).normalized(), linear_color, energy, indirect_energy, l->get_param(Light3D::PARAM_RANGE), l->get_param(Light3D::PARAM_ATTENUATION), area_vec_x, area_vec_y, l->get_param(Light3D::PARAM_SIZE), l->get_param(Light3D::PARAM_SHADOW_BLUR), tex.texture_rect, tex.max_mipmap);
+				lightmapper->add_area_light(light->get_name(),
+					light->get_bake_mode() == Light3D::BAKE_STATIC, xf.origin,
+					-xf.basis.get_column(Vector3::AXIS_Z).normalized(), linear_color, energy,
+					indirect_energy, l->get_param(Light3D::PARAM_RANGE),
+					l->get_param(Light3D::PARAM_ATTENUATION), area_vec_x, area_vec_y,
+					l->get_param(Light3D::PARAM_SIZE), l->get_param(Light3D::PARAM_SHADOW_BLUR),
+					tex.texture_rect, tex.max_mipmap);
 			}
 		}
 		for (int i = 0; i < probes_found.size(); i++) {
@@ -1429,39 +1525,42 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		environment_transform = get_global_transform().basis;
 
 		switch (environment_mode) {
-			case ENVIRONMENT_MODE_DISABLED: {
-				//nothing
-			} break;
-			case ENVIRONMENT_MODE_SCENE: {
-				Ref<World3D> world = get_world_3d();
-				if (world.is_valid()) {
-					Ref<Environment> env = world->get_environment();
-					if (env.is_null()) {
-						env = world->get_fallback_environment();
-					}
-
-					if (env.is_valid()) {
-						environment_image = RS::get_singleton()->environment_bake_panorama(env->get_rid(), true, Size2i(128, 64));
-						environment_transform = Basis::from_euler(env->get_sky_rotation()).inverse();
-					}
-				}
-			} break;
-			case ENVIRONMENT_MODE_CUSTOM_SKY: {
-				if (environment_custom_sky.is_valid()) {
-					environment_image = RS::get_singleton()->sky_bake_panorama(environment_custom_sky->get_rid(), environment_custom_energy, true, Size2i(128, 64));
+		case ENVIRONMENT_MODE_DISABLED: {
+			// nothing
+		} break;
+		case ENVIRONMENT_MODE_SCENE: {
+			Ref<World3D> world = get_world_3d();
+			if (world.is_valid()) {
+				Ref<Environment> env = world->get_environment();
+				if (env.is_null()) {
+					env = world->get_fallback_environment();
 				}
 
-			} break;
-			case ENVIRONMENT_MODE_CUSTOM_COLOR: {
-				environment_image.instantiate();
-				environment_image->initialize_data(128, 64, false, Image::FORMAT_RGBAF);
-				Color c = environment_custom_color;
-				c.r *= environment_custom_energy;
-				c.g *= environment_custom_energy;
-				c.b *= environment_custom_energy;
-				environment_image->fill(c);
+				if (env.is_valid()) {
+					environment_image = RS::get_singleton()->environment_bake_panorama(
+						env->get_rid(), true, Size2i(128, 64));
+					environment_transform = Basis::from_euler(env->get_sky_rotation()).inverse();
+				}
+			}
+		} break;
+		case ENVIRONMENT_MODE_CUSTOM_SKY: {
+			if (environment_custom_sky.is_valid()) {
+				environment_image =
+					RS::get_singleton()->sky_bake_panorama(environment_custom_sky->get_rid(),
+						environment_custom_energy, true, Size2i(128, 64));
+			}
 
-			} break;
+		} break;
+		case ENVIRONMENT_MODE_CUSTOM_COLOR: {
+			environment_image.instantiate();
+			environment_image->initialize_data(128, 64, false, Image::FORMAT_RGBAF);
+			Color c = environment_custom_color;
+			c.r *= environment_custom_energy;
+			c.g *= environment_custom_energy;
+			c.b *= environment_custom_energy;
+			environment_image->fill(c);
+
+		} break;
 		}
 	}
 
@@ -1473,17 +1572,23 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		}
 	}
 
-	Lightmapper::BakeError bake_err = lightmapper->bake(Lightmapper::BakeQuality(bake_quality), use_denoiser, denoiser_strength, denoiser_range, bounces,
-			bounce_indirect_energy, bias, max_texture_size, directional, shadowmask_mode != LightmapGIData::SHADOWMASK_MODE_NONE, use_texture_for_bounces,
-			Lightmapper::GenerateProbes(gen_probes), environment_image, environment_transform, _lightmap_bake_step_function, &bsud, exposure_normalization, (supersampling_enabled ? supersampling_factor : 1));
+	Lightmapper::BakeError bake_err = lightmapper->bake(Lightmapper::BakeQuality(bake_quality),
+		use_denoiser, denoiser_strength, denoiser_range, bounces, bounce_indirect_energy, bias,
+		max_texture_size, directional, shadowmask_mode != LightmapGIData::SHADOWMASK_MODE_NONE,
+		use_texture_for_bounces, Lightmapper::GenerateProbes(gen_probes), environment_image,
+		environment_transform, _lightmap_bake_step_function, &bsud, exposure_normalization,
+		(supersampling_enabled ? supersampling_factor : 1));
 
 	if (bake_err == Lightmapper::BAKE_ERROR_TEXTURE_EXCEEDS_MAX_SIZE) {
 		return BAKE_ERROR_TEXTURE_SIZE_TOO_SMALL;
-	} else if (bake_err == Lightmapper::BAKE_ERROR_LIGHTMAP_CANT_PRE_BAKE_MESHES) {
+	}
+	else if (bake_err == Lightmapper::BAKE_ERROR_LIGHTMAP_CANT_PRE_BAKE_MESHES) {
 		return BAKE_ERROR_MESHES_INVALID;
-	} else if (bake_err == Lightmapper::BAKE_ERROR_ATLAS_TOO_SMALL) {
+	}
+	else if (bake_err == Lightmapper::BAKE_ERROR_ATLAS_TOO_SMALL) {
 		return BAKE_ERROR_ATLAS_TOO_SMALL;
-	} else if (bake_err == Lightmapper::BAKE_ERROR_USER_ABORTED) {
+	}
+	else if (bake_err == Lightmapper::BAKE_ERROR_USER_ABORTED) {
 		return BAKE_ERROR_USER_ABORTED;
 	}
 
@@ -1493,15 +1598,18 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 
 	const String texture_filename = p_image_data_path.get_basename();
 	const int shadowmask_texture_count = lightmapper->get_shadowmask_texture_count();
-	const bool save_shadowmask = shadowmask_mode != LightmapGIData::SHADOWMASK_MODE_NONE && shadowmask_texture_count > 0;
+	const bool save_shadowmask =
+		shadowmask_mode != LightmapGIData::SHADOWMASK_MODE_NONE && shadowmask_texture_count > 0;
 
 	// Save the lightmap atlases.
-	BakeError save_err = _save_and_reimport_atlas_textures(lightmapper, texture_filename, lightmap_textures, false);
+	BakeError save_err =
+		_save_and_reimport_atlas_textures(lightmapper, texture_filename, lightmap_textures, false);
 	ERR_FAIL_COND_V(save_err != BAKE_ERROR_OK, save_err);
 
 	if (save_shadowmask) {
 		// Save the shadowmask atlases.
-		save_err = _save_and_reimport_atlas_textures(lightmapper, texture_filename + "_shadow", shadowmask_textures, true);
+		save_err = _save_and_reimport_atlas_textures(
+			lightmapper, texture_filename + "_shadow", shadowmask_textures, true);
 		ERR_FAIL_COND_V(save_err != BAKE_ERROR_OK, save_err);
 	}
 
@@ -1513,7 +1621,8 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		set_light_data(Ref<LightmapGIData>()); // Clear.
 		gi_data->clear();
 
-	} else {
+	}
+	else {
 		gi_data.instantiate();
 	}
 
@@ -1521,12 +1630,14 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 
 	if (save_shadowmask) {
 		gi_data->set_shadowmask_textures(shadowmask_textures);
-	} else {
+	}
+	else {
 		gi_data->clear_shadowmask_textures();
 	}
 
 	gi_data->set_uses_spherical_harmonics(directional);
-	gi_data->_set_uses_packed_directional(directional); // New SH lightmaps are packed automatically.
+	gi_data->_set_uses_packed_directional(
+		directional); // New SH lightmaps are packed automatically.
 
 	for (int i = 0; i < lightmapper->get_bake_mesh_count(); i++) {
 		Dictionary d = lightmapper->get_bake_mesh_userdata(i);
@@ -1572,7 +1683,8 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 			p_bake_step(0.8, RTR("Generating Probe Volumes"), p_bake_userdata, true);
 		}
 
-		Vector<Delaunay3D::OutputSimplex> solved_simplices = Delaunay3D::tetrahedralize(Vector<Vector3>(probe_points));
+		Vector<Delaunay3D::OutputSimplex> solved_simplices =
+			Delaunay3D::tetrahedralize(Vector<Vector3>(probe_points));
 		int64_t simplex_count = solved_simplices.size();
 
 		LocalVector<BSPSimplex> bsp_simplices;
@@ -1581,23 +1693,18 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		PackedInt32Array tetrahedrons;
 
 		for (int i = 0; i < simplex_count; i++) {
-			//Prepare a special representation of the simplex, which uses a BSP Tree
+			// Prepare a special representation of the simplex, which uses a BSP Tree
 			BSPSimplex bsp_simplex;
 			for (int j = 0; j < 4; j++) {
 				bsp_simplex.vertices[j] = solved_simplices[i].points[j];
 			}
 			for (int j = 0; j < 4; j++) {
-				static const int face_order[4][3] = {
-					{ 0, 1, 2 },
-					{ 0, 2, 3 },
-					{ 0, 1, 3 },
-					{ 1, 2, 3 }
-				};
+				static const int face_order[4][3] = {{0, 1, 2}, {0, 2, 3}, {0, 1, 3}, {1, 2, 3}};
 				Vector3 a = probe_points[solved_simplices[i].points[face_order[j][0]]];
 				Vector3 b = probe_points[solved_simplices[i].points[face_order[j][1]]];
 				Vector3 c = probe_points[solved_simplices[i].points[face_order[j][2]]];
 
-				//store planes in an array, but ensure they are reused, to speed up processing
+				// store planes in an array, but ensure they are reused, to speed up processing
 
 				Plane p(a, b, c);
 				int plane_index = -1;
@@ -1615,7 +1722,7 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 
 				bsp_simplex.planes[j] = plane_index;
 
-				//also fill simplex array
+				// also fill simplex array
 				tetrahedrons.push_back(solved_simplices[i].points[j]);
 			}
 
@@ -1623,24 +1730,23 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 			bsp_simplices.push_back(bsp_simplex);
 		}
 
-//#define DEBUG_SIMPLICES_AS_OBJ_FILE
+// #define DEBUG_SIMPLICES_AS_OBJ_FILE
 #ifdef DEBUG_SIMPLICES_AS_OBJ_FILE
 		{
 			Ref<FileAccess> f = FileAccess::open("res://bsp.obj", FileAccess::WRITE);
 			for (uint32_t i = 0; i < bsp_simplices.size(); i++) {
 				f->store_line("o Simplex" + itos(i));
 				for (int j = 0; j < 4; j++) {
-					f->store_line(vformat("v %f %f %f", probe_points[bsp_simplices[i].vertices[j]].x, probe_points[bsp_simplices[i].vertices[j]].y, probe_points[bsp_simplices[i].vertices[j]].z));
+					f->store_line(
+						vformat("v %f %f %f", probe_points[bsp_simplices[i].vertices[j]].x,
+							probe_points[bsp_simplices[i].vertices[j]].y,
+							probe_points[bsp_simplices[i].vertices[j]].z));
 				}
-				static const int face_order[4][3] = {
-					{ 1, 2, 3 },
-					{ 1, 3, 4 },
-					{ 1, 2, 4 },
-					{ 2, 3, 4 }
-				};
+				static const int face_order[4][3] = {{1, 2, 3}, {1, 3, 4}, {1, 2, 4}, {2, 3, 4}};
 
 				for (int j = 0; j < 4; j++) {
-					f->store_line(vformat("f %d %d %d", 4 * i + face_order[j][0], 4 * i + face_order[j][1], 4 * i + face_order[j][2]));
+					f->store_line(vformat("f %d %d %d", 4 * i + face_order[j][0],
+						4 * i + face_order[j][1], 4 * i + face_order[j][2]));
 				}
 			}
 		}
@@ -1649,22 +1755,24 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 		LocalVector<BSPNode> bsp_nodes;
 		LocalVector<int32_t> planes_tested;
 		planes_tested.resize(bsp_planes.size());
-		for (int &index : planes_tested) {
+		for (int& index : planes_tested) {
 			index = 0x7FFFFFFF;
 		}
 
 		if (p_bake_step) {
-			p_bake_step(0.9, RTR("Generating Probe Acceleration Structures"), p_bake_userdata, true);
+			p_bake_step(
+				0.9, RTR("Generating Probe Acceleration Structures"), p_bake_userdata, true);
 		}
 
 		// Compute a BSP tree of the simplices, so it's easy to find the exact one.
-		_compute_bsp_tree(probe_points, bsp_planes, planes_tested, bsp_simplices, bsp_simplex_indices, bsp_nodes);
+		_compute_bsp_tree(
+			probe_points, bsp_planes, planes_tested, bsp_simplices, bsp_simplex_indices, bsp_nodes);
 
 		PackedInt32Array bsp_array;
 		bsp_array.resize(bsp_nodes.size() * 6); // six 32 bits values used for each BSP node
 		{
-			float *fptr = (float *)bsp_array.ptrw();
-			int32_t *iptr = (int32_t *)bsp_array.ptrw();
+			float* fptr = (float*)bsp_array.ptrw();
+			int32_t* iptr = (int32_t*)bsp_array.ptrw();
 			for (uint32_t i = 0; i < bsp_nodes.size(); i++) {
 				fptr[i * 6 + 0] = bsp_nodes[i].plane.normal.x;
 				fptr[i * 6 + 1] = bsp_nodes[i].plane.normal.y;
@@ -1673,18 +1781,24 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 				iptr[i * 6 + 4] = bsp_nodes[i].over;
 				iptr[i * 6 + 5] = bsp_nodes[i].under;
 			}
-//#define DEBUG_BSP_TREE
+// #define DEBUG_BSP_TREE
 #ifdef DEBUG_BSP_TREE
 			Ref<FileAccess> f = FileAccess::open("res://bsp.txt", FileAccess::WRITE);
 			for (uint32_t i = 0; i < bsp_nodes.size(); i++) {
-				f->store_line(itos(i) + " - plane: " + bsp_nodes[i].plane + " over: " + itos(bsp_nodes[i].over) + " under: " + itos(bsp_nodes[i].under));
+				f->store_line(itos(i) + " - plane: " + bsp_nodes[i].plane + " over: " +
+							  itos(bsp_nodes[i].over) + " under: " + itos(bsp_nodes[i].under));
 			}
 #endif
 		}
 
-		gi_data->set_capture_data(bounds, interior, Vector<Vector3>(probe_points), Vector<Color>(probe_sh), tetrahedrons, bsp_array, exposure_normalization, bake_probe_hash);
-	} else {
-		gi_data->set_capture_data(bounds, interior, Vector<Vector3>(probe_points), Vector<Color>(probe_sh), gi_data->get_capture_tetrahedra(), gi_data->get_capture_bsp_tree(), exposure_normalization, bake_probe_hash);
+		gi_data->set_capture_data(bounds, interior, Vector<Vector3>(probe_points),
+			Vector<Color>(probe_sh), tetrahedrons, bsp_array, exposure_normalization,
+			bake_probe_hash);
+	}
+	else {
+		gi_data->set_capture_data(bounds, interior, Vector<Vector3>(probe_points),
+			Vector<Color>(probe_sh), gi_data->get_capture_tetrahedra(),
+			gi_data->get_capture_bsp_tree(), exposure_normalization, bake_probe_hash);
 	}
 
 	gi_data->set_path(p_image_data_path, true);
@@ -1700,56 +1814,64 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 	return BAKE_ERROR_OK;
 }
 
-void LightmapGI::_notification(int p_what) {
+void LightmapGI::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_POST_ENTER_TREE: {
-			if (light_data.is_valid()) {
-				ERR_FAIL_COND_MSG(
-						light_data->is_using_spherical_harmonics() && !light_data->_is_using_packed_directional(),
-						vformat(
-								"%s (%s): The directional lightmap textures are stored in a format that isn't supported anymore. Please bake lightmaps again to make lightmaps display from this node again.",
-								get_light_data()->get_path(), get_name()));
+	case NOTIFICATION_POST_ENTER_TREE: {
+		if (light_data.is_valid()) {
+			ERR_FAIL_COND_MSG(light_data->is_using_spherical_harmonics() &&
+								  !light_data->_is_using_packed_directional(),
+				vformat("%s (%s): The directional lightmap textures are stored in a format that "
+						"isn't supported anymore. Please bake lightmaps again to make lightmaps "
+						"display from this node again.",
+					get_light_data()->get_path(), get_name()));
 
-				if (last_owner && last_owner != get_owner()) {
-					light_data->clear_users();
-				}
-
-				_assign_lightmaps();
+			if (last_owner && last_owner != get_owner()) {
+				light_data->clear_users();
 			}
-		} break;
 
-		case NOTIFICATION_EXIT_TREE: {
-			last_owner = get_owner();
+			_assign_lightmaps();
+		}
+	} break;
 
-			if (light_data.is_valid()) {
-				_clear_lightmaps();
-			}
-		} break;
+	case NOTIFICATION_EXIT_TREE: {
+		last_owner = get_owner();
+
+		if (light_data.is_valid()) {
+			_clear_lightmaps();
+		}
+	} break;
 	}
 }
 
-void LightmapGI::_assign_lightmaps() {
+void LightmapGI::_assign_lightmaps()
+{
 	ERR_FAIL_COND(light_data.is_null());
 
 	Vector<String> missing_node_paths;
 
 	for (int i = 0; i < light_data->get_user_count(); i++) {
 		NodePath user_path = light_data->get_user_path(i);
-		Node *node = get_node_or_null(user_path);
+		Node* node = get_node_or_null(user_path);
 		if (!node) {
 			missing_node_paths.push_back(String(user_path));
 			continue;
 		}
 		int instance_idx = light_data->get_user_sub_instance(i);
 		if (instance_idx >= 0) {
-			RID instance_id = node->call("get_bake_mesh_instance", instance_idx);
+			RID instance_id = node->obj->call("get_bake_mesh_instance", instance_idx);
 			if (instance_id.is_valid()) {
-				RS::get_singleton()->instance_geometry_set_lightmap(instance_id, get_instance(), light_data->get_user_lightmap_uv_scale(i), light_data->get_user_lightmap_slice_index(i));
+				RS::get_singleton()->instance_geometry_set_lightmap(instance_id, get_instance(),
+					light_data->get_user_lightmap_uv_scale(i),
+					light_data->get_user_lightmap_slice_index(i));
 			}
-		} else {
-			VisualInstance3D *vi = Object::cast_to<VisualInstance3D>(node);
+		}
+		else {
+			VisualInstance3D* vi = Object::cast_to<VisualInstance3D>(node);
 			ERR_CONTINUE(!vi);
-			RS::get_singleton()->instance_geometry_set_lightmap(vi->get_instance(), get_instance(), light_data->get_user_lightmap_uv_scale(i), light_data->get_user_lightmap_slice_index(i));
+			RS::get_singleton()->instance_geometry_set_lightmap(vi->get_instance(), get_instance(),
+				light_data->get_user_lightmap_uv_scale(i),
+				light_data->get_user_lightmap_slice_index(i));
 		}
 	}
 
@@ -1757,35 +1879,43 @@ void LightmapGI::_assign_lightmaps() {
 		String missing_paths_text;
 		if (missing_node_paths.size() <= 3) {
 			missing_paths_text = String(", ").join(missing_node_paths);
-		} else {
-			missing_paths_text = vformat("%s and %d more", String(", ").join(missing_node_paths.slice(0, 3)), missing_node_paths.size() - 3);
 		}
-		WARN_PRINT(vformat("%s couldn't find previously baked nodes and needs a rebake (missing nodes: %s).", get_name(), missing_paths_text));
+		else {
+			missing_paths_text = vformat("%s and %d more",
+				String(", ").join(missing_node_paths.slice(0, 3)), missing_node_paths.size() - 3);
+		}
+		WARN_PRINT(vformat(
+			"%s couldn't find previously baked nodes and needs a rebake (missing nodes: %s).",
+			get_name(), missing_paths_text));
 	}
 }
 
-void LightmapGI::_clear_lightmaps() {
+void LightmapGI::_clear_lightmaps()
+{
 	ERR_FAIL_COND(light_data.is_null());
 	for (int i = 0; i < light_data->get_user_count(); i++) {
-		Node *node = get_node_or_null(light_data->get_user_path(i));
+		Node* node = get_node_or_null(light_data->get_user_path(i));
 		if (!node) {
 			continue;
 		}
 		int instance_idx = light_data->get_user_sub_instance(i);
 		if (instance_idx >= 0) {
-			RID instance_id = node->call("get_bake_mesh_instance", instance_idx);
+			RID instance_id = node->obj->call("get_bake_mesh_instance", instance_idx);
 			if (instance_id.is_valid()) {
 				RS::get_singleton()->instance_geometry_set_lightmap(instance_id, RID(), Rect2(), 0);
 			}
-		} else {
-			VisualInstance3D *vi = Object::cast_to<VisualInstance3D>(node);
+		}
+		else {
+			VisualInstance3D* vi = Object::cast_to<VisualInstance3D>(node);
 			ERR_CONTINUE(!vi);
-			RS::get_singleton()->instance_geometry_set_lightmap(vi->get_instance(), RID(), Rect2(), 0);
+			RS::get_singleton()->instance_geometry_set_lightmap(
+				vi->get_instance(), RID(), Rect2(), 0);
 		}
 	}
 }
 
-void LightmapGI::set_light_data(const Ref<LightmapGIData> &p_data) {
+void LightmapGI::set_light_data(const Ref<LightmapGIData>& p_data)
+{
 	if (light_data.is_valid()) {
 		if (is_inside_tree()) {
 			_clear_lightmaps();
@@ -1805,56 +1935,39 @@ void LightmapGI::set_light_data(const Ref<LightmapGIData> &p_data) {
 	update_gizmos();
 }
 
-Ref<LightmapGIData> LightmapGI::get_light_data() const {
-	return light_data;
-}
+Ref<LightmapGIData> LightmapGI::get_light_data() const { return light_data; }
 
-void LightmapGI::set_bake_quality(BakeQuality p_quality) {
-	bake_quality = p_quality;
-}
+void LightmapGI::set_bake_quality(BakeQuality p_quality) { bake_quality = p_quality; }
 
-LightmapGI::BakeQuality LightmapGI::get_bake_quality() const {
-	return bake_quality;
-}
+LightmapGI::BakeQuality LightmapGI::get_bake_quality() const { return bake_quality; }
 
-AABB LightmapGI::get_aabb() const {
-	return AABB();
-}
+AABB LightmapGI::get_aabb() const { return AABB(); }
 
-void LightmapGI::set_use_denoiser(bool p_enable) {
+void LightmapGI::set_use_denoiser(bool p_enable)
+{
 	use_denoiser = p_enable;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
-bool LightmapGI::is_using_denoiser() const {
-	return use_denoiser;
-}
+bool LightmapGI::is_using_denoiser() const { return use_denoiser; }
 
-void LightmapGI::set_denoiser_strength(float p_denoiser_strength) {
+void LightmapGI::set_denoiser_strength(float p_denoiser_strength)
+{
 	denoiser_strength = p_denoiser_strength;
 }
 
-float LightmapGI::get_denoiser_strength() const {
-	return denoiser_strength;
-}
+float LightmapGI::get_denoiser_strength() const { return denoiser_strength; }
 
-void LightmapGI::set_denoiser_range(int p_denoiser_range) {
-	denoiser_range = p_denoiser_range;
-}
+void LightmapGI::set_denoiser_range(int p_denoiser_range) { denoiser_range = p_denoiser_range; }
 
-int LightmapGI::get_denoiser_range() const {
-	return denoiser_range;
-}
+int LightmapGI::get_denoiser_range() const { return denoiser_range; }
 
-void LightmapGI::set_directional(bool p_enable) {
-	directional = p_enable;
-}
+void LightmapGI::set_directional(bool p_enable) { directional = p_enable; }
 
-bool LightmapGI::is_directional() const {
-	return directional;
-}
+bool LightmapGI::is_directional() const { return directional; }
 
-void LightmapGI::set_shadowmask_mode(LightmapGIData::ShadowmaskMode p_mode) {
+void LightmapGI::set_shadowmask_mode(LightmapGIData::ShadowmaskMode p_mode)
+{
 	shadowmask_mode = p_mode;
 	if (light_data.is_valid()) {
 		light_data->update_shadowmask_mode(p_mode);
@@ -1863,164 +1976,157 @@ void LightmapGI::set_shadowmask_mode(LightmapGIData::ShadowmaskMode p_mode) {
 	update_configuration_warnings();
 }
 
-LightmapGIData::ShadowmaskMode LightmapGI::get_shadowmask_mode() const {
-	return shadowmask_mode;
-}
+LightmapGIData::ShadowmaskMode LightmapGI::get_shadowmask_mode() const { return shadowmask_mode; }
 
-void LightmapGI::set_use_texture_for_bounces(bool p_enable) {
-	use_texture_for_bounces = p_enable;
-}
+void LightmapGI::set_use_texture_for_bounces(bool p_enable) { use_texture_for_bounces = p_enable; }
 
-bool LightmapGI::is_using_texture_for_bounces() const {
-	return use_texture_for_bounces;
-}
+bool LightmapGI::is_using_texture_for_bounces() const { return use_texture_for_bounces; }
 
-void LightmapGI::set_interior(bool p_enable) {
-	interior = p_enable;
-}
+void LightmapGI::set_interior(bool p_enable) { interior = p_enable; }
 
-bool LightmapGI::is_interior() const {
-	return interior;
-}
+bool LightmapGI::is_interior() const { return interior; }
 
-void LightmapGI::set_environment_mode(EnvironmentMode p_mode) {
+void LightmapGI::set_environment_mode(EnvironmentMode p_mode)
+{
 	environment_mode = p_mode;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
-LightmapGI::EnvironmentMode LightmapGI::get_environment_mode() const {
-	return environment_mode;
-}
+LightmapGI::EnvironmentMode LightmapGI::get_environment_mode() const { return environment_mode; }
 
-void LightmapGI::set_environment_custom_sky(const Ref<Sky> &p_sky) {
+void LightmapGI::set_environment_custom_sky(const Ref<Sky>& p_sky)
+{
 	environment_custom_sky = p_sky;
 }
 
-Ref<Sky> LightmapGI::get_environment_custom_sky() const {
-	return environment_custom_sky;
-}
+Ref<Sky> LightmapGI::get_environment_custom_sky() const { return environment_custom_sky; }
 
-void LightmapGI::set_environment_custom_color(const Color &p_color) {
+void LightmapGI::set_environment_custom_color(const Color& p_color)
+{
 	environment_custom_color = p_color;
 }
 
-Color LightmapGI::get_environment_custom_color() const {
-	return environment_custom_color;
-}
+Color LightmapGI::get_environment_custom_color() const { return environment_custom_color; }
 
-void LightmapGI::set_environment_custom_energy(float p_energy) {
+void LightmapGI::set_environment_custom_energy(float p_energy)
+{
 	environment_custom_energy = p_energy;
 }
 
-float LightmapGI::get_environment_custom_energy() const {
-	return environment_custom_energy;
-}
+float LightmapGI::get_environment_custom_energy() const { return environment_custom_energy; }
 
-void LightmapGI::set_bounces(int p_bounces) {
+void LightmapGI::set_bounces(int p_bounces)
+{
 	ERR_FAIL_COND(p_bounces < 0 || p_bounces > 16);
 	bounces = p_bounces;
 }
 
-int LightmapGI::get_bounces() const {
-	return bounces;
-}
+int LightmapGI::get_bounces() const { return bounces; }
 
-void LightmapGI::set_bounce_indirect_energy(float p_indirect_energy) {
+void LightmapGI::set_bounce_indirect_energy(float p_indirect_energy)
+{
 	ERR_FAIL_COND(p_indirect_energy < 0.0);
 	bounce_indirect_energy = p_indirect_energy;
 }
 
-float LightmapGI::get_bounce_indirect_energy() const {
-	return bounce_indirect_energy;
-}
+float LightmapGI::get_bounce_indirect_energy() const { return bounce_indirect_energy; }
 
-void LightmapGI::set_bias(float p_bias) {
+void LightmapGI::set_bias(float p_bias)
+{
 	ERR_FAIL_COND(p_bias < 0.00001);
 	bias = p_bias;
 }
 
-float LightmapGI::get_bias() const {
-	return bias;
-}
+float LightmapGI::get_bias() const { return bias; }
 
-void LightmapGI::set_texel_scale(float p_multiplier) {
+void LightmapGI::set_texel_scale(float p_multiplier)
+{
 	ERR_FAIL_COND(p_multiplier < (0.01 - CMP_EPSILON));
 	texel_scale = p_multiplier;
 }
 
-float LightmapGI::get_texel_scale() const {
-	return texel_scale;
-}
+float LightmapGI::get_texel_scale() const { return texel_scale; }
 
-void LightmapGI::set_max_texture_size(int p_size) {
-	ERR_FAIL_COND_MSG(p_size < 2048, vformat("The LightmapGI maximum texture size supplied (%d) is too small. The minimum allowed value is 2048.", p_size));
-	ERR_FAIL_COND_MSG(p_size > 16384, vformat("The LightmapGI maximum texture size supplied (%d) is too large. The maximum allowed value is 16384.", p_size));
+void LightmapGI::set_max_texture_size(int p_size)
+{
+	ERR_FAIL_COND_MSG(p_size < 2048, vformat("The LightmapGI maximum texture size supplied (%d) is "
+											 "too small. The minimum allowed value is 2048.",
+										 p_size));
+	ERR_FAIL_COND_MSG(p_size > 16384, vformat("The LightmapGI maximum texture size supplied (%d) "
+											  "is too large. The maximum allowed value is 16384.",
+										  p_size));
 	max_texture_size = p_size;
 }
 
-int LightmapGI::get_max_texture_size() const {
-	return max_texture_size;
-}
+int LightmapGI::get_max_texture_size() const { return max_texture_size; }
 
-void LightmapGI::set_supersampling_enabled(bool p_enable) {
+void LightmapGI::set_supersampling_enabled(bool p_enable)
+{
 	supersampling_enabled = p_enable;
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
-bool LightmapGI::is_supersampling_enabled() const {
-	return supersampling_enabled;
-}
+bool LightmapGI::is_supersampling_enabled() const { return supersampling_enabled; }
 
-void LightmapGI::set_supersampling_factor(float p_factor) {
+void LightmapGI::set_supersampling_factor(float p_factor)
+{
 	ERR_FAIL_COND(p_factor < 1);
 
 	supersampling_factor = p_factor;
 }
 
-float LightmapGI::get_supersampling_factor() const {
-	return supersampling_factor;
-}
+float LightmapGI::get_supersampling_factor() const { return supersampling_factor; }
 
-void LightmapGI::set_generate_probes(GenerateProbes p_generate_probes) {
+void LightmapGI::set_generate_probes(GenerateProbes p_generate_probes)
+{
 	gen_probes = p_generate_probes;
 }
 
-LightmapGI::GenerateProbes LightmapGI::get_generate_probes() const {
-	return gen_probes;
-}
+LightmapGI::GenerateProbes LightmapGI::get_generate_probes() const { return gen_probes; }
 
-void LightmapGI::set_camera_attributes(const Ref<CameraAttributes> &p_camera_attributes) {
+void LightmapGI::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes)
+{
 	camera_attributes = p_camera_attributes;
 }
 
-Ref<CameraAttributes> LightmapGI::get_camera_attributes() const {
-	return camera_attributes;
-}
+Ref<CameraAttributes> LightmapGI::get_camera_attributes() const { return camera_attributes; }
 
-PackedStringArray LightmapGI::get_configuration_warnings() const {
+PackedStringArray LightmapGI::get_configuration_warnings() const
+{
 	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
 
 #ifdef MODULE_LIGHTMAPPER_RD_ENABLED
 	if (!DisplayServer::get_singleton()->can_create_rendering_device()) {
-		warnings.push_back(vformat(RTR("Lightmaps can only be baked from a GPU that supports the RenderingDevice backends.\nYour GPU (%s) does not support RenderingDevice, as it does not support Vulkan, Direct3D 12, or Metal.\nLightmap baking will not be available on this device, although rendering existing baked lightmaps will work."), RenderingServer::get_singleton()->get_video_adapter_name()));
+		warnings.push_back(vformat(
+			RTR("Lightmaps can only be baked from a GPU that supports the RenderingDevice "
+				"backends.\nYour GPU (%s) does not support RenderingDevice, as it does not support "
+				"Vulkan, Direct3D 12, or Metal.\nLightmap baking will not be available on this "
+				"device, although rendering existing baked lightmaps will work."),
+			RenderingServer::get_singleton()->get_video_adapter_name()));
 		return warnings;
 	}
 
-	if (shadowmask_mode != LightmapGIData::SHADOWMASK_MODE_NONE && light_data.is_valid() && !light_data->has_shadowmask_textures()) {
-		warnings.push_back(RTR("The lightmap has no baked shadowmask textures. Please rebake with the Shadowmask Mode set to anything other than None."));
+	if (shadowmask_mode != LightmapGIData::SHADOWMASK_MODE_NONE && light_data.is_valid() &&
+		!light_data->has_shadowmask_textures()) {
+		warnings.push_back(RTR("The lightmap has no baked shadowmask textures. Please rebake with "
+							   "the Shadowmask Mode set to anything other than None."));
 	}
 
 #elif defined(ANDROID_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
-	warnings.push_back(vformat(RTR("Lightmaps cannot be baked on %s. Rendering existing baked lightmaps will still work."), OS::get_singleton()->get_name()));
+	warnings.push_back(vformat(
+		RTR("Lightmaps cannot be baked on %s. Rendering existing baked lightmaps will still work."),
+		OS::get_singleton()->get_name()));
 #else
-	warnings.push_back(RTR("Lightmaps cannot be baked, as the `lightmapper_rd` module was disabled at compile-time. Rendering existing baked lightmaps will still work."));
+	warnings.push_back(RTR("Lightmaps cannot be baked, as the `lightmapper_rd` module was disabled "
+						   "at compile-time. Rendering existing baked lightmaps will still work."));
 #endif
 
 	return warnings;
 }
 
-void LightmapGI::_validate_property(PropertyInfo &p_property) const {
+void LightmapGI::_validate_property(PropertyInfo& p_property) const
+{
 	if (!Engine::get_singleton()->is_editor_hint()) {
 		return;
 	}
@@ -2028,154 +2134,37 @@ void LightmapGI::_validate_property(PropertyInfo &p_property) const {
 		if (!supersampling_enabled) {
 			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 		}
-	} else if (p_property.name == "environment_custom_sky") {
+	}
+	else if (p_property.name == "environment_custom_sky") {
 		if (environment_mode != ENVIRONMENT_MODE_CUSTOM_SKY) {
 			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 		}
-	} else if (p_property.name == "environment_custom_color") {
+	}
+	else if (p_property.name == "environment_custom_color") {
 		if (environment_mode != ENVIRONMENT_MODE_CUSTOM_COLOR) {
 			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 		}
-	} else if (p_property.name == "environment_custom_energy") {
-		if (environment_mode != ENVIRONMENT_MODE_CUSTOM_COLOR && environment_mode != ENVIRONMENT_MODE_CUSTOM_SKY) {
+	}
+	else if (p_property.name == "environment_custom_energy") {
+		if (environment_mode != ENVIRONMENT_MODE_CUSTOM_COLOR &&
+			environment_mode != ENVIRONMENT_MODE_CUSTOM_SKY) {
 			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 		}
-	} else if (p_property.name == "denoiser_strength") {
+	}
+	else if (p_property.name == "denoiser_strength") {
 		if (!use_denoiser) {
 			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 		}
-	} else if (p_property.name == "denoiser_range") {
+	}
+	else if (p_property.name == "denoiser_range") {
 		if (!use_denoiser) {
 			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 		}
 	}
 }
 
-void LightmapGI::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_light_data", "data"), &LightmapGI::set_light_data);
-	ClassDB::bind_method(D_METHOD("get_light_data"), &LightmapGI::get_light_data);
+void LightmapGI::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_bake_quality", "bake_quality"), &LightmapGI::set_bake_quality);
-	ClassDB::bind_method(D_METHOD("get_bake_quality"), &LightmapGI::get_bake_quality);
+LightmapGI::LightmapGI() {}
 
-	ClassDB::bind_method(D_METHOD("set_bounces", "bounces"), &LightmapGI::set_bounces);
-	ClassDB::bind_method(D_METHOD("get_bounces"), &LightmapGI::get_bounces);
 
-	ClassDB::bind_method(D_METHOD("set_bounce_indirect_energy", "bounce_indirect_energy"), &LightmapGI::set_bounce_indirect_energy);
-	ClassDB::bind_method(D_METHOD("get_bounce_indirect_energy"), &LightmapGI::get_bounce_indirect_energy);
-
-	ClassDB::bind_method(D_METHOD("set_generate_probes", "subdivision"), &LightmapGI::set_generate_probes);
-	ClassDB::bind_method(D_METHOD("get_generate_probes"), &LightmapGI::get_generate_probes);
-
-	ClassDB::bind_method(D_METHOD("set_bias", "bias"), &LightmapGI::set_bias);
-	ClassDB::bind_method(D_METHOD("get_bias"), &LightmapGI::get_bias);
-
-	ClassDB::bind_method(D_METHOD("set_environment_mode", "mode"), &LightmapGI::set_environment_mode);
-	ClassDB::bind_method(D_METHOD("get_environment_mode"), &LightmapGI::get_environment_mode);
-
-	ClassDB::bind_method(D_METHOD("set_environment_custom_sky", "sky"), &LightmapGI::set_environment_custom_sky);
-	ClassDB::bind_method(D_METHOD("get_environment_custom_sky"), &LightmapGI::get_environment_custom_sky);
-
-	ClassDB::bind_method(D_METHOD("set_environment_custom_color", "color"), &LightmapGI::set_environment_custom_color);
-	ClassDB::bind_method(D_METHOD("get_environment_custom_color"), &LightmapGI::get_environment_custom_color);
-
-	ClassDB::bind_method(D_METHOD("set_environment_custom_energy", "energy"), &LightmapGI::set_environment_custom_energy);
-	ClassDB::bind_method(D_METHOD("get_environment_custom_energy"), &LightmapGI::get_environment_custom_energy);
-
-	ClassDB::bind_method(D_METHOD("set_texel_scale", "texel_scale"), &LightmapGI::set_texel_scale);
-	ClassDB::bind_method(D_METHOD("get_texel_scale"), &LightmapGI::get_texel_scale);
-
-	ClassDB::bind_method(D_METHOD("set_max_texture_size", "max_texture_size"), &LightmapGI::set_max_texture_size);
-	ClassDB::bind_method(D_METHOD("get_max_texture_size"), &LightmapGI::get_max_texture_size);
-
-	ClassDB::bind_method(D_METHOD("set_supersampling_enabled", "enable"), &LightmapGI::set_supersampling_enabled);
-	ClassDB::bind_method(D_METHOD("is_supersampling_enabled"), &LightmapGI::is_supersampling_enabled);
-
-	ClassDB::bind_method(D_METHOD("set_supersampling_factor", "factor"), &LightmapGI::set_supersampling_factor);
-	ClassDB::bind_method(D_METHOD("get_supersampling_factor"), &LightmapGI::get_supersampling_factor);
-
-	ClassDB::bind_method(D_METHOD("set_use_denoiser", "use_denoiser"), &LightmapGI::set_use_denoiser);
-	ClassDB::bind_method(D_METHOD("is_using_denoiser"), &LightmapGI::is_using_denoiser);
-
-	ClassDB::bind_method(D_METHOD("set_denoiser_strength", "denoiser_strength"), &LightmapGI::set_denoiser_strength);
-	ClassDB::bind_method(D_METHOD("get_denoiser_strength"), &LightmapGI::get_denoiser_strength);
-
-	ClassDB::bind_method(D_METHOD("set_denoiser_range", "denoiser_range"), &LightmapGI::set_denoiser_range);
-	ClassDB::bind_method(D_METHOD("get_denoiser_range"), &LightmapGI::get_denoiser_range);
-
-	ClassDB::bind_method(D_METHOD("set_interior", "enable"), &LightmapGI::set_interior);
-	ClassDB::bind_method(D_METHOD("is_interior"), &LightmapGI::is_interior);
-
-	ClassDB::bind_method(D_METHOD("set_directional", "directional"), &LightmapGI::set_directional);
-	ClassDB::bind_method(D_METHOD("is_directional"), &LightmapGI::is_directional);
-
-	ClassDB::bind_method(D_METHOD("set_shadowmask_mode", "mode"), &LightmapGI::set_shadowmask_mode);
-	ClassDB::bind_method(D_METHOD("get_shadowmask_mode"), &LightmapGI::get_shadowmask_mode);
-
-	ClassDB::bind_method(D_METHOD("set_use_texture_for_bounces", "use_texture_for_bounces"), &LightmapGI::set_use_texture_for_bounces);
-	ClassDB::bind_method(D_METHOD("is_using_texture_for_bounces"), &LightmapGI::is_using_texture_for_bounces);
-
-	ClassDB::bind_method(D_METHOD("set_camera_attributes", "camera_attributes"), &LightmapGI::set_camera_attributes);
-	ClassDB::bind_method(D_METHOD("get_camera_attributes"), &LightmapGI::get_camera_attributes);
-
-	//	ClassDB::bind_method(D_METHOD("bake", "from_node"), &LightmapGI::bake, DEFVAL(Variant()));
-
-	ADD_GROUP("Tweaks", "");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "quality", PROPERTY_HINT_ENUM, "Low,Medium,High,Ultra"), "set_bake_quality", "get_bake_quality");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "supersampling"), "set_supersampling_enabled", "is_supersampling_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "supersampling_factor", PROPERTY_HINT_RANGE, "1,8,1"), "set_supersampling_factor", "get_supersampling_factor");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "bounces", PROPERTY_HINT_RANGE, "0,6,1,or_greater"), "set_bounces", "get_bounces");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bounce_indirect_energy", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_bounce_indirect_energy", "get_bounce_indirect_energy");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "directional"), "set_directional", "is_directional");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "shadowmask_mode", PROPERTY_HINT_ENUM, "None,Replace,Overlay"), "set_shadowmask_mode", "get_shadowmask_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_texture_for_bounces"), "set_use_texture_for_bounces", "is_using_texture_for_bounces");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interior"), "set_interior", "is_interior");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_denoiser"), "set_use_denoiser", "is_using_denoiser");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "denoiser_strength", PROPERTY_HINT_RANGE, "0.001,0.2,0.001,or_greater"), "set_denoiser_strength", "get_denoiser_strength");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "denoiser_range", PROPERTY_HINT_RANGE, "1,20"), "set_denoiser_range", "get_denoiser_range");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bias", PROPERTY_HINT_RANGE, "0.00001,0.1,0.00001,or_greater"), "set_bias", "get_bias");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "texel_scale", PROPERTY_HINT_RANGE, "0.01,100.0,0.01"), "set_texel_scale", "get_texel_scale");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_texture_size", PROPERTY_HINT_RANGE, "2048,16384,1"), "set_max_texture_size", "get_max_texture_size");
-	ADD_GROUP("Environment", "environment_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "environment_mode", PROPERTY_HINT_ENUM, "Disabled,Scene,Custom Sky,Custom Color"), "set_environment_mode", "get_environment_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "environment_custom_sky", PROPERTY_HINT_RESOURCE_TYPE, Sky::get_class_static()), "set_environment_custom_sky", "get_environment_custom_sky");
-	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "environment_custom_color", PROPERTY_HINT_COLOR_NO_ALPHA), "set_environment_custom_color", "get_environment_custom_color");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "environment_custom_energy", PROPERTY_HINT_RANGE, "0,64,0.01"), "set_environment_custom_energy", "get_environment_custom_energy");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "camera_attributes", PROPERTY_HINT_RESOURCE_TYPE, "CameraAttributesPractical,CameraAttributesPhysical"), "set_camera_attributes", "get_camera_attributes");
-	ADD_GROUP("Gen Probes", "generate_probes_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "generate_probes_subdiv", PROPERTY_HINT_ENUM, "Disabled,4,8,16,32"), "set_generate_probes", "get_generate_probes");
-	ADD_GROUP("Data", "");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "light_data", PROPERTY_HINT_RESOURCE_TYPE, LightmapGIData::get_class_static()), "set_light_data", "get_light_data");
-
-	BIND_ENUM_CONSTANT(BAKE_QUALITY_LOW);
-	BIND_ENUM_CONSTANT(BAKE_QUALITY_MEDIUM);
-	BIND_ENUM_CONSTANT(BAKE_QUALITY_HIGH);
-	BIND_ENUM_CONSTANT(BAKE_QUALITY_ULTRA);
-
-	BIND_ENUM_CONSTANT(GENERATE_PROBES_DISABLED);
-	BIND_ENUM_CONSTANT(GENERATE_PROBES_SUBDIV_4);
-	BIND_ENUM_CONSTANT(GENERATE_PROBES_SUBDIV_8);
-	BIND_ENUM_CONSTANT(GENERATE_PROBES_SUBDIV_16);
-	BIND_ENUM_CONSTANT(GENERATE_PROBES_SUBDIV_32);
-
-	BIND_ENUM_CONSTANT(BAKE_ERROR_OK);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_NO_SCENE_ROOT);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_FOREIGN_DATA);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_NO_LIGHTMAPPER);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_NO_SAVE_PATH);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_NO_MESHES);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_MESHES_INVALID);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_CANT_CREATE_IMAGE);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_USER_ABORTED);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_TEXTURE_SIZE_TOO_SMALL);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_LIGHTMAP_TOO_SMALL);
-	BIND_ENUM_CONSTANT(BAKE_ERROR_ATLAS_TOO_SMALL);
-
-	BIND_ENUM_CONSTANT(ENVIRONMENT_MODE_DISABLED);
-	BIND_ENUM_CONSTANT(ENVIRONMENT_MODE_SCENE);
-	BIND_ENUM_CONSTANT(ENVIRONMENT_MODE_CUSTOM_SKY);
-	BIND_ENUM_CONSTANT(ENVIRONMENT_MODE_CUSTOM_COLOR);
-}
-
-LightmapGI::LightmapGI() {
-}

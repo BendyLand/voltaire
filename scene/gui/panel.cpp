@@ -29,31 +29,33 @@
 /**************************************************************************/
 
 #include "panel.h"
-
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
-void Panel::_notification(int p_what) {
+void Panel::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-			RID ae = get_accessibility_element();
-			ERR_FAIL_COND(ae.is_null());
+	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+		RID ae = get_accessibility_element();
+		ERR_FAIL_COND(ae.is_null());
 
-			AccessibilityServer::get_singleton()->update_set_role(ae, AccessibilityServerEnums::AccessibilityRole::ROLE_PANEL);
-		} break;
+		AccessibilityServer::get_singleton()->update_set_role(
+			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_PANEL);
+	} break;
 
-		case NOTIFICATION_DRAW: {
-			RID ci = get_canvas_item();
-			theme_cache.panel_style->draw(ci, Rect2(Point2(), get_size()));
-		} break;
+	case NOTIFICATION_DRAW: {
+		RID ci = get_canvas_item();
+		theme_cache.panel_style->draw(ci, Rect2(Point2(), get_size()));
+	} break;
 	}
 }
 
-void Panel::_bind_methods() {
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_STYLEBOX, Panel, panel_style, "panel");
-}
+void Panel::_bind_methods() {}
 
-Panel::Panel() {
+Panel::Panel()
+{
 	// Has visible stylebox, so stop by default.
 	set_mouse_filter(MOUSE_FILTER_STOP);
 }
+
+

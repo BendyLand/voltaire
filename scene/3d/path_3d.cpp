@@ -28,17 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "path_3d.h"
-
 #include "core/config/engine.h"
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
+#include "path_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/rendering_server.h"
 
-Path3D::Path3D() {
-	SceneTree *st = SceneTree::get_singleton();
+Path3D::Path3D()
+{
+	SceneTree* st = SceneTree::get_singleton();
 	if (st && st->is_debugging_paths_hint()) {
 		debug_instance = RS::get_singleton()->instance_create();
 		set_notify_transform(true);
@@ -46,7 +46,8 @@ Path3D::Path3D() {
 	}
 }
 
-Path3D::~Path3D() {
+Path3D::~Path3D()
+{
 	if (debug_instance.is_valid()) {
 		ERR_FAIL_NULL(RenderingServer::get_singleton());
 		RS::get_singleton()->free_rid(debug_instance);
@@ -57,40 +58,40 @@ Path3D::~Path3D() {
 	}
 }
 
-void Path3D::set_update_callback(Callable p_callback) {
-	update_callback = p_callback;
-}
+void Path3D::set_update_callback(Callable p_callback) { update_callback = p_callback; }
 
-void Path3D::_notification(int p_what) {
+void Path3D::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			SceneTree *st = SceneTree::get_singleton();
-			if (st && st->is_debugging_paths_hint()) {
-				_update_debug_mesh();
-			}
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		SceneTree* st = SceneTree::get_singleton();
+		if (st && st->is_debugging_paths_hint()) {
+			_update_debug_mesh();
+		}
+	} break;
 
-		case NOTIFICATION_EXIT_TREE: {
-			SceneTree *st = SceneTree::get_singleton();
-			if (st && st->is_debugging_paths_hint()) {
-				RS::get_singleton()->instance_set_visible(debug_instance, false);
-			}
-		} break;
+	case NOTIFICATION_EXIT_TREE: {
+		SceneTree* st = SceneTree::get_singleton();
+		if (st && st->is_debugging_paths_hint()) {
+			RS::get_singleton()->instance_set_visible(debug_instance, false);
+		}
+	} break;
 
-		case NOTIFICATION_TRANSFORM_CHANGED: {
-			if (is_inside_tree()) {
-				if (debug_instance.is_valid()) {
-					RS::get_singleton()->instance_set_transform(debug_instance, get_global_transform());
-				}
-
-				update_callback.call();
+	case NOTIFICATION_TRANSFORM_CHANGED: {
+		if (is_inside_tree()) {
+			if (debug_instance.is_valid()) {
+				RS::get_singleton()->instance_set_transform(debug_instance, get_global_transform());
 			}
-		} break;
+
+			update_callback.call();
+		}
+	} break;
 	}
 }
 
-void Path3D::_update_debug_mesh() {
-	SceneTree *st = SceneTree::get_singleton();
+void Path3D::_update_debug_mesh()
+{
+	SceneTree* st = SceneTree::get_singleton();
 	if (!(st && st->is_debugging_paths_hint())) {
 		return;
 	}
@@ -121,11 +122,11 @@ void Path3D::_update_debug_mesh() {
 
 	Vector<Vector3> ribbon;
 	ribbon.resize(sample_count);
-	Vector3 *ribbon_ptr = ribbon.ptrw();
+	Vector3* ribbon_ptr = ribbon.ptrw();
 
 	Vector<Vector3> bones;
 	bones.resize(sample_count * 4);
-	Vector3 *bones_ptr = bones.ptrw();
+	Vector3* bones_ptr = bones.ptrw();
 
 	for (int i = 0; i < sample_count; i++) {
 		const Transform3D r = curve->sample_baked_with_rotation(i * interval, true, true);
@@ -177,21 +178,19 @@ void Path3D::_update_debug_mesh() {
 	}
 }
 
-void Path3D::set_debug_custom_color(const Color &p_color) {
+void Path3D::set_debug_custom_color(const Color& p_color)
+{
 	debug_custom_color = p_color;
 	_update_debug_path_material();
 }
 
-Ref<StandardMaterial3D> Path3D::get_debug_material() {
-	return debug_material;
-}
+Ref<StandardMaterial3D> Path3D::get_debug_material() { return debug_material; }
 
-const Color &Path3D::get_debug_custom_color() const {
-	return debug_custom_color;
-}
+const Color& Path3D::get_debug_custom_color() const { return debug_custom_color; }
 
-void Path3D::_update_debug_path_material() {
-	SceneTree *st = SceneTree::get_singleton();
+void Path3D::_update_debug_path_material()
+{
+	SceneTree* st = SceneTree::get_singleton();
 	if (!debug_material.is_valid()) {
 		Ref<StandardMaterial3D> material = memnew(StandardMaterial3D);
 		debug_material = material;
@@ -210,35 +209,38 @@ void Path3D::_update_debug_path_material() {
 	}
 
 	get_debug_material()->set_albedo(color);
-	emit_signal(SNAME("debug_color_changed"));
+	this->obj->emit_signal(SNAME("debug_color_changed"));
 }
 
-void Path3D::_curve_changed() {
+void Path3D::_curve_changed()
+{
 	if (is_inside_tree() && Engine::get_singleton()->is_editor_hint()) {
 		update_gizmos();
 	}
 	if (is_inside_tree()) {
-		emit_signal(SNAME("curve_changed"));
+		this->obj->emit_signal(SNAME("curve_changed"));
 	}
 
 	// Update the configuration warnings of all children of type PathFollow
-	// previously used for PathFollowOriented (now enforced orientation is done in PathFollow). Also trigger transform update on PathFollow3Ds in deferred mode.
+	// previously used for PathFollowOriented (now enforced orientation is done in PathFollow). Also
+	// trigger transform update on PathFollow3Ds in deferred mode.
 	if (is_inside_tree()) {
 		for (int i = 0; i < get_child_count(); i++) {
-			PathFollow3D *child = Object::cast_to<PathFollow3D>(get_child(i));
+			PathFollow3D* child = Object::cast_to<PathFollow3D>(get_child(i));
 			if (child) {
 				child->update_configuration_warnings();
 				child->update_transform();
 			}
 		}
 	}
-	SceneTree *st = SceneTree::get_singleton();
+	SceneTree* st = SceneTree::get_singleton();
 	if (st && st->is_debugging_paths_hint()) {
 		_update_debug_mesh();
 	}
 }
 
-void Path3D::set_curve(const Ref<Curve3D> &p_curve) {
+void Path3D::set_curve(const Ref<Curve3D>& p_curve)
+{
 	if (curve.is_valid()) {
 		curve->disconnect_changed(callable_mp(this, &Path3D::_curve_changed));
 	}
@@ -251,47 +253,29 @@ void Path3D::set_curve(const Ref<Curve3D> &p_curve) {
 	_curve_changed();
 }
 
-Ref<Curve3D> Path3D::get_curve() const {
-	return curve;
-}
+Ref<Curve3D> Path3D::get_curve() const { return curve; }
 
-void Path3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_curve", "curve"), &Path3D::set_curve);
-	ClassDB::bind_method(D_METHOD("get_curve"), &Path3D::get_curve);
+void Path3D::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_debug_custom_color", "debug_custom_color"), &Path3D::set_debug_custom_color);
-	ClassDB::bind_method(D_METHOD("get_debug_custom_color"), &Path3D::get_debug_custom_color);
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "curve", PROPERTY_HINT_RESOURCE_TYPE, Curve3D::get_class_static(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT), "set_curve", "get_curve");
-
-	ADD_GROUP("Debug Shape", "debug_");
-	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "debug_custom_color"), "set_debug_custom_color", "get_debug_custom_color");
-
-	ADD_SIGNAL(MethodInfo("curve_changed"));
-	ADD_SIGNAL(MethodInfo("debug_color_changed"));
-}
-
-void PathFollow3D::update_transform() {
+void PathFollow3D::update_transform()
+{
 	if (!path) {
 		return;
 	}
-
 	Ref<Curve3D> c = path->get_curve();
 	if (c.is_null()) {
 		return;
 	}
-
 	real_t bl = c->get_baked_length();
 	if (bl == 0.0) {
 		return;
 	}
-
 	Transform3D t;
-
 	if (rotation_mode == ROTATION_NONE) {
 		Vector3 pos = c->sample_baked(progress, cubic);
 		t.origin = pos;
-	} else {
+	}
+	else {
 		t = c->sample_baked_with_rotation(progress, cubic, false);
 		Vector3 tangent = -t.basis.get_column(2); // Retain tangent for applying tilt.
 		t = PathFollow3D::correct_posture(t, rotation_mode);
@@ -318,31 +302,29 @@ void PathFollow3D::update_transform() {
 	set_transform(t);
 }
 
-void PathFollow3D::_notification(int p_what) {
+void PathFollow3D::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			Node *parent = get_parent();
-			if (parent) {
-				path = Object::cast_to<Path3D>(parent);
-				update_transform();
-			}
-		} break;
+	case NOTIFICATION_ENTER_TREE: {
+		Node* parent = get_parent();
+		if (parent) {
+			path = Object::cast_to<Path3D>(parent);
+			update_transform();
+		}
+	} break;
 
-		case NOTIFICATION_EXIT_TREE: {
-			path = nullptr;
-		} break;
+	case NOTIFICATION_EXIT_TREE: {
+		path = nullptr;
+	} break;
 	}
 }
 
-void PathFollow3D::set_cubic_interpolation_enabled(bool p_enabled) {
-	cubic = p_enabled;
-}
+void PathFollow3D::set_cubic_interpolation_enabled(bool p_enabled) { cubic = p_enabled; }
 
-bool PathFollow3D::is_cubic_interpolation_enabled() const {
-	return cubic;
-}
+bool PathFollow3D::is_cubic_interpolation_enabled() const { return cubic; }
 
-void PathFollow3D::_validate_property(PropertyInfo &p_property) const {
+void PathFollow3D::_validate_property(PropertyInfo& p_property) const
+{
 	if (!Engine::get_singleton()->is_editor_hint()) {
 		return;
 	}
@@ -356,16 +338,21 @@ void PathFollow3D::_validate_property(PropertyInfo &p_property) const {
 	}
 }
 
-PackedStringArray PathFollow3D::get_configuration_warnings() const {
+PackedStringArray PathFollow3D::get_configuration_warnings() const
+{
 	PackedStringArray warnings = Node3D::get_configuration_warnings();
 
 	if (is_visible_in_tree() && is_inside_tree()) {
 		if (!Object::cast_to<Path3D>(get_parent())) {
-			warnings.push_back(RTR("PathFollow3D only works when set as a child of a Path3D node."));
-		} else {
-			Path3D *p = Object::cast_to<Path3D>(get_parent());
-			if (p->get_curve().is_valid() && !p->get_curve()->is_up_vector_enabled() && rotation_mode == ROTATION_ORIENTED) {
-				warnings.push_back(RTR("PathFollow3D's ROTATION_ORIENTED requires \"Up Vector\" to be enabled in its parent Path3D's Curve resource."));
+			warnings.push_back(
+				RTR("PathFollow3D only works when set as a child of a Path3D node."));
+		}
+		else {
+			Path3D* p = Object::cast_to<Path3D>(get_parent());
+			if (p->get_curve().is_valid() && !p->get_curve()->is_up_vector_enabled() &&
+				rotation_mode == ROTATION_ORIENTED) {
+				warnings.push_back(RTR("PathFollow3D's ROTATION_ORIENTED requires \"Up Vector\" to "
+									   "be enabled in its parent Path3D's Curve resource."));
 			}
 		}
 	}
@@ -373,26 +360,31 @@ PackedStringArray PathFollow3D::get_configuration_warnings() const {
 	return warnings;
 }
 
-Transform3D PathFollow3D::correct_posture(Transform3D p_transform, PathFollow3D::RotationMode p_rotation_mode) {
+Transform3D PathFollow3D::correct_posture(
+	Transform3D p_transform, PathFollow3D::RotationMode p_rotation_mode)
+{
 	Transform3D t = p_transform;
 
 	// Modify frame according to rotation mode.
 	if (p_rotation_mode == PathFollow3D::ROTATION_NONE) {
 		// Clear rotation.
 		t.basis = Basis();
-	} else if (p_rotation_mode == PathFollow3D::ROTATION_ORIENTED) {
+	}
+	else if (p_rotation_mode == PathFollow3D::ROTATION_ORIENTED) {
 		Vector3 tangent = -t.basis.get_column(2);
 
 		// Y-axis points up by default.
 		t.basis = Basis::looking_at(tangent);
-	} else {
+	}
+	else {
 		// Lock some euler axes.
 		Vector3 euler = t.basis.get_euler_normalized(EulerOrder::YXZ);
 		if (p_rotation_mode == PathFollow3D::ROTATION_Y) {
 			// Only Y-axis allowed.
 			euler[0] = 0;
 			euler[2] = 0;
-		} else if (p_rotation_mode == PathFollow3D::ROTATION_XY) {
+		}
+		else if (p_rotation_mode == PathFollow3D::ROTATION_XY) {
 			// XY allowed.
 			euler[2] = 0;
 		}
@@ -404,7 +396,8 @@ Transform3D PathFollow3D::correct_posture(Transform3D p_transform, PathFollow3D:
 	return t;
 }
 
-void PathFollow3D::_bind_methods() {
+void PathFollow3D::_bind_methods()
+{
 	ClassDB::bind_method(D_METHOD("set_progress", "progress"), &PathFollow3D::set_progress);
 	ClassDB::bind_method(D_METHOD("get_progress"), &PathFollow3D::get_progress);
 
@@ -414,16 +407,21 @@ void PathFollow3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_v_offset", "v_offset"), &PathFollow3D::set_v_offset);
 	ClassDB::bind_method(D_METHOD("get_v_offset"), &PathFollow3D::get_v_offset);
 
-	ClassDB::bind_method(D_METHOD("set_progress_ratio", "ratio"), &PathFollow3D::set_progress_ratio);
+	ClassDB::bind_method(
+		D_METHOD("set_progress_ratio", "ratio"), &PathFollow3D::set_progress_ratio);
 	ClassDB::bind_method(D_METHOD("get_progress_ratio"), &PathFollow3D::get_progress_ratio);
 
-	ClassDB::bind_method(D_METHOD("set_rotation_mode", "rotation_mode"), &PathFollow3D::set_rotation_mode);
+	ClassDB::bind_method(
+		D_METHOD("set_rotation_mode", "rotation_mode"), &PathFollow3D::set_rotation_mode);
 	ClassDB::bind_method(D_METHOD("get_rotation_mode"), &PathFollow3D::get_rotation_mode);
 
-	ClassDB::bind_method(D_METHOD("set_cubic_interpolation", "enabled"), &PathFollow3D::set_cubic_interpolation_enabled);
-	ClassDB::bind_method(D_METHOD("get_cubic_interpolation"), &PathFollow3D::is_cubic_interpolation_enabled);
+	ClassDB::bind_method(D_METHOD("set_cubic_interpolation", "enabled"),
+		&PathFollow3D::set_cubic_interpolation_enabled);
+	ClassDB::bind_method(
+		D_METHOD("get_cubic_interpolation"), &PathFollow3D::is_cubic_interpolation_enabled);
 
-	ClassDB::bind_method(D_METHOD("set_use_model_front", "enabled"), &PathFollow3D::set_use_model_front);
+	ClassDB::bind_method(
+		D_METHOD("set_use_model_front", "enabled"), &PathFollow3D::set_use_model_front);
 	ClassDB::bind_method(D_METHOD("is_using_model_front"), &PathFollow3D::is_using_model_front);
 
 	ClassDB::bind_method(D_METHOD("set_loop", "loop"), &PathFollow3D::set_loop);
@@ -432,17 +430,29 @@ void PathFollow3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_tilt_enabled", "enabled"), &PathFollow3D::set_tilt_enabled);
 	ClassDB::bind_method(D_METHOD("is_tilt_enabled"), &PathFollow3D::is_tilt_enabled);
 
-	ClassDB::bind_static_method("PathFollow3D", D_METHOD("correct_posture", "transform", "rotation_mode"), &PathFollow3D::correct_posture);
+	ClassDB::bind_static_method("PathFollow3D",
+		D_METHOD("correct_posture", "transform", "rotation_mode"), &PathFollow3D::correct_posture);
 
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "progress", PROPERTY_HINT_RANGE, "0,10000,0.01,or_less,or_greater,suffix:m"), "set_progress", "get_progress");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "progress_ratio", PROPERTY_HINT_RANGE, "0,1,0.0001,or_less,or_greater", PROPERTY_USAGE_EDITOR), "set_progress_ratio", "get_progress_ratio");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "h_offset", PROPERTY_HINT_NONE, "suffix:m"), "set_h_offset", "get_h_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "v_offset", PROPERTY_HINT_NONE, "suffix:m"), "set_v_offset", "get_v_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "rotation_mode", PROPERTY_HINT_ENUM, "None,Y,XY,XYZ,Oriented"), "set_rotation_mode", "get_rotation_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_model_front"), "set_use_model_front", "is_using_model_front");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cubic_interp"), "set_cubic_interpolation", "get_cubic_interpolation");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "progress", PROPERTY_HINT_RANGE,
+					 "0,10000,0.01,or_less,or_greater,suffix:m"),
+		"set_progress", "get_progress");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "progress_ratio", PROPERTY_HINT_RANGE,
+					 "0,1,0.0001,or_less,or_greater", PROPERTY_USAGE_EDITOR),
+		"set_progress_ratio", "get_progress_ratio");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "h_offset", PROPERTY_HINT_NONE, "suffix:m"),
+		"set_h_offset", "get_h_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "v_offset", PROPERTY_HINT_NONE, "suffix:m"),
+		"set_v_offset", "get_v_offset");
+	ADD_PROPERTY(
+		PropertyInfo(Variant::INT, "rotation_mode", PROPERTY_HINT_ENUM, "None,Y,XY,XYZ,Oriented"),
+		"set_rotation_mode", "get_rotation_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_model_front"), "set_use_model_front",
+		"is_using_model_front");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cubic_interp"), "set_cubic_interpolation",
+		"get_cubic_interpolation");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "loop"), "set_loop", "has_loop");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "tilt_enabled"), "set_tilt_enabled", "is_tilt_enabled");
+	ADD_PROPERTY(
+		PropertyInfo(Variant::BOOL, "tilt_enabled"), "set_tilt_enabled", "is_tilt_enabled");
 
 	BIND_ENUM_CONSTANT(ROTATION_NONE);
 	BIND_ENUM_CONSTANT(ROTATION_Y);
@@ -451,14 +461,16 @@ void PathFollow3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(ROTATION_ORIENTED);
 }
 
-void PathFollow3D::set_progress(real_t p_progress) {
+void PathFollow3D::set_progress(real_t p_progress)
+{
 	ERR_FAIL_COND(!std::isfinite(p_progress));
 	if (progress == p_progress) {
 		return;
 	}
 	progress = p_progress;
 
-	if (path) {
+	if (path)
+ {
 		if (path->get_curve().is_valid()) {
 			real_t path_length = path->get_curve()->get_baked_length();
 
@@ -467,7 +479,8 @@ void PathFollow3D::set_progress(real_t p_progress) {
 				if (!Math::is_zero_approx(p_progress) && Math::is_zero_approx(progress)) {
 					progress = path_length;
 				}
-			} else {
+			}
+			else {
 				progress = CLAMP(progress, 0, path_length);
 			}
 		}
@@ -476,7 +489,8 @@ void PathFollow3D::set_progress(real_t p_progress) {
 	}
 }
 
-void PathFollow3D::set_h_offset(real_t p_h_offset) {
+void PathFollow3D::set_h_offset(real_t p_h_offset)
+{
 	if (h_offset == p_h_offset) {
 		return;
 	}
@@ -484,11 +498,10 @@ void PathFollow3D::set_h_offset(real_t p_h_offset) {
 	update_transform();
 }
 
-real_t PathFollow3D::get_h_offset() const {
-	return h_offset;
-}
+real_t PathFollow3D::get_h_offset() const { return h_offset; }
 
-void PathFollow3D::set_v_offset(real_t p_v_offset) {
+void PathFollow3D::set_v_offset(real_t p_v_offset)
+{
 	if (v_offset == p_v_offset) {
 		return;
 	}
@@ -496,30 +509,33 @@ void PathFollow3D::set_v_offset(real_t p_v_offset) {
 	update_transform();
 }
 
-real_t PathFollow3D::get_v_offset() const {
-	return v_offset;
-}
+real_t PathFollow3D::get_v_offset() const { return v_offset; }
 
-real_t PathFollow3D::get_progress() const {
-	return progress;
-}
+real_t PathFollow3D::get_progress() const { return progress; }
 
-void PathFollow3D::set_progress_ratio(real_t p_ratio) {
-	ERR_FAIL_NULL_MSG(path, "Can only set progress ratio on a PathFollow3D that is the child of a Path3D which is itself part of the scene tree.");
-	ERR_FAIL_COND_MSG(path->get_curve().is_null(), "Can't set progress ratio on a PathFollow3D that does not have a Curve.");
-	ERR_FAIL_COND_MSG(!path->get_curve()->get_baked_length(), "Can't set progress ratio on a PathFollow3D that has a 0 length curve.");
+void PathFollow3D::set_progress_ratio(real_t p_ratio)
+{
+	ERR_FAIL_NULL_MSG(path, "Can only set progress ratio on a PathFollow3D that is the child of a "
+							"Path3D which is itself part of the scene tree.");
+	ERR_FAIL_COND_MSG(path->get_curve().is_null(),
+		"Can't set progress ratio on a PathFollow3D that does not have a Curve.");
+	ERR_FAIL_COND_MSG(!path->get_curve()->get_baked_length(),
+		"Can't set progress ratio on a PathFollow3D that has a 0 length curve.");
 	set_progress(p_ratio * path->get_curve()->get_baked_length());
 }
 
-real_t PathFollow3D::get_progress_ratio() const {
+real_t PathFollow3D::get_progress_ratio() const
+{
 	if (path && path->get_curve().is_valid() && path->get_curve()->get_baked_length()) {
 		return get_progress() / path->get_curve()->get_baked_length();
-	} else {
+	}
+	else {
 		return 0;
 	}
 }
 
-void PathFollow3D::set_rotation_mode(RotationMode p_rotation_mode) {
+void PathFollow3D::set_rotation_mode(RotationMode p_rotation_mode)
+{
 	if (rotation_mode == p_rotation_mode) {
 		return;
 	}
@@ -529,11 +545,10 @@ void PathFollow3D::set_rotation_mode(RotationMode p_rotation_mode) {
 	update_transform();
 }
 
-PathFollow3D::RotationMode PathFollow3D::get_rotation_mode() const {
-	return rotation_mode;
-}
+PathFollow3D::RotationMode PathFollow3D::get_rotation_mode() const { return rotation_mode; }
 
-void PathFollow3D::set_use_model_front(bool p_use_model_front) {
+void PathFollow3D::set_use_model_front(bool p_use_model_front)
+{
 	if (use_model_front == p_use_model_front) {
 		return;
 	}
@@ -541,11 +556,10 @@ void PathFollow3D::set_use_model_front(bool p_use_model_front) {
 	update_transform();
 }
 
-bool PathFollow3D::is_using_model_front() const {
-	return use_model_front;
-}
+bool PathFollow3D::is_using_model_front() const { return use_model_front; }
 
-void PathFollow3D::set_loop(bool p_loop) {
+void PathFollow3D::set_loop(bool p_loop)
+{
 	if (loop == p_loop) {
 		return;
 	}
@@ -553,11 +567,10 @@ void PathFollow3D::set_loop(bool p_loop) {
 	update_transform();
 }
 
-bool PathFollow3D::has_loop() const {
-	return loop;
-}
+bool PathFollow3D::has_loop() const { return loop; }
 
-void PathFollow3D::set_tilt_enabled(bool p_enabled) {
+void PathFollow3D::set_tilt_enabled(bool p_enabled)
+{
 	if (tilt_enabled == p_enabled) {
 		return;
 	}
@@ -565,6 +578,6 @@ void PathFollow3D::set_tilt_enabled(bool p_enabled) {
 	update_transform();
 }
 
-bool PathFollow3D::is_tilt_enabled() const {
-	return tilt_enabled;
-}
+bool PathFollow3D::is_tilt_enabled() const { return tilt_enabled; }
+
+

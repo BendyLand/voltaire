@@ -231,7 +231,7 @@ public:
 	void set_show_drag_area_enabled(bool p_enabled);
 	bool is_show_drag_area_enabled() const;
 
-	TypedArray<Control> get_drag_area_controls();
+	Array get_drag_area_controls();
 
 	void set_touch_dragger_enabled(bool p_enabled);
 	bool is_touch_dragger_enabled() const;

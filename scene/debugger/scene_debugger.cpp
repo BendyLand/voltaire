@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene_debugger.h"
-
 #include "core/config/engine.h"
 #include "core/debugger/debugger_marshalls.h"
 #include "core/debugger/engine_debugger.h"
@@ -51,6 +49,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/packed_scene.h"
+#include "scene_debugger.h"
 #include "servers/audio/audio_server.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_device.h"
@@ -64,18 +63,21 @@
 #include "scene/debugger/runtime_node_select.h"
 #endif
 
-SceneDebugger::SceneDebugger() {
+SceneDebugger::SceneDebugger()
+{
 	singleton = this;
 
 #ifdef DEBUG_ENABLED
 	LiveEditor::singleton = memnew(LiveEditor);
 	RuntimeNodeSelect::singleton = memnew(RuntimeNodeSelect);
 
-	EngineDebugger::register_message_capture("scene", EngineDebugger::Capture(nullptr, SceneDebugger::parse_message));
+	EngineDebugger::register_message_capture(
+		"scene", EngineDebugger::Capture(nullptr, SceneDebugger::parse_message));
 #endif
 }
 
-SceneDebugger::~SceneDebugger() {
+SceneDebugger::~SceneDebugger()
+{
 #ifdef DEBUG_ENABLED
 	if (LiveEditor::singleton) {
 		EngineDebugger::unregister_message_capture("scene");
@@ -92,7 +94,8 @@ SceneDebugger::~SceneDebugger() {
 	singleton = nullptr;
 }
 
-void SceneDebugger::initialize() {
+void SceneDebugger::initialize()
+{
 	if (EngineDebugger::is_active()) {
 #ifdef DEBUG_ENABLED
 		_init_message_handlers();
@@ -101,26 +104,29 @@ void SceneDebugger::initialize() {
 	}
 }
 
-void SceneDebugger::deinitialize() {
-	memdelete(singleton);
-}
+void SceneDebugger::deinitialize() { memdelete(singleton); }
 
 #ifdef DEBUG_ENABLED
 
-void SceneDebugger::_handle_input(const Ref<InputEvent> &p_event, const Ref<Shortcut> &p_shortcut) {
+void SceneDebugger::_handle_input(const Ref<InputEvent>& p_event, const Ref<Shortcut>& p_shortcut)
+{
 	Ref<InputEventKey> k = p_event;
-	if (p_shortcut.is_valid() && k.is_valid() && k->is_pressed() && !k->is_echo() && p_shortcut->matches_event(k)) {
+	if (p_shortcut.is_valid() && k.is_valid() && k->is_pressed() && !k->is_echo() &&
+		p_shortcut->matches_event(k)) {
 		EngineDebugger::get_singleton()->send_message("request_quit", Array());
 	}
 }
 
-void SceneDebugger::_handle_embed_input(const Ref<InputEvent> &p_event, const Dictionary &p_settings) {
+void SceneDebugger::_handle_embed_input(
+	const Ref<InputEvent>& p_event, const Dictionary& p_settings)
+{
 	Ref<InputEventKey> k = p_event;
 	if (k.is_null() || !k->is_pressed()) {
 		return;
 	}
 
-	Ref<Shortcut> p_shortcut = p_settings.get("editor/next_frame_embedded_project", Ref<Shortcut>());
+	Ref<Shortcut> p_shortcut =
+		p_settings.get("editor/next_frame_embedded_project", Ref<Shortcut>());
 	if (p_shortcut.is_valid() && p_shortcut->matches_event(k)) {
 		EngineDebugger::get_singleton()->send_message("request_embed_next_frame", Array());
 		return;
@@ -137,45 +143,52 @@ void SceneDebugger::_handle_embed_input(const Ref<InputEvent> &p_event, const Di
 	}
 }
 
-void SceneDebugger::_on_window_size_changed() {
-	_msg_window_request_size(Array());
-}
+void SceneDebugger::_on_window_size_changed() { _msg_window_request_size(Array()); }
 
-void SceneDebugger::_on_output_max_linear_value_changed(float max_linear_value) {
+void SceneDebugger::_on_output_max_linear_value_changed(float max_linear_value)
+{
 	_msg_hdr_output_request_state(Array());
 }
 
-Error SceneDebugger::_msg_setup_scene(const Array &p_args) {
-	SceneTree::get_singleton()->get_root()->connect(SceneStringName(window_input), callable_mp_static(SceneDebugger::_handle_input).bind(DebuggerMarshalls::deserialize_key_shortcut(p_args)));
+Error SceneDebugger::_msg_setup_scene(const Array& p_args)
+{
+	SceneTree::get_singleton()->get_root()->connect(SceneStringName(window_input),
+		callable_mp_static(SceneDebugger::_handle_input)
+			.bind(DebuggerMarshalls::deserialize_key_shortcut(p_args)));
 	return OK;
 }
 
-Error SceneDebugger::_msg_setup_game_view(const Array &p_args) {
-	Window *root = SceneTree::get_singleton()->get_root();
+Error SceneDebugger::_msg_setup_game_view(const Array& p_args)
+{
+	Window* root = SceneTree::get_singleton()->get_root();
 	root->connect("size_changed", callable_mp_static(SceneDebugger::_on_window_size_changed));
-	root->connect("output_max_linear_value_changed", callable_mp_static(SceneDebugger::_on_output_max_linear_value_changed));
+	root->connect("output_max_linear_value_changed",
+		callable_mp_static(SceneDebugger::_on_output_max_linear_value_changed));
 	EngineDebugger::get_singleton()->send_message("game_view:setup_complete", Array());
 	return OK;
 }
 
-Error SceneDebugger::_msg_request_scene_tree(const Array &p_args) {
+Error SceneDebugger::_msg_request_scene_tree(const Array& p_args)
+{
 	LiveEditor::get_singleton()->_send_tree();
 	return OK;
 }
 
-Error SceneDebugger::_msg_save_node(const Array &p_args) {
+Error SceneDebugger::_msg_save_node(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	_save_node(p_args[0], p_args[1]);
 	Array arr;
 	arr.append(p_args[1]);
-	EngineDebugger::get_singleton()->send_message("filesystem:update_file", { arr });
+	EngineDebugger::get_singleton()->send_message("filesystem:update_file", {arr});
 	return OK;
 }
 
-Error SceneDebugger::_msg_inspect_objects(const Array &p_args) {
+Error SceneDebugger::_msg_inspect_objects(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	Vector<ObjectID> ids;
-	for (const Variant &id : (Array)p_args[0]) {
+	for (const Variant& id : (Array)p_args[0]) {
 		ids.append(ObjectID(id.operator uint64_t()));
 	}
 	_send_object_ids(ids, p_args[1]);
@@ -183,9 +196,11 @@ Error SceneDebugger::_msg_inspect_objects(const Array &p_args) {
 }
 
 #ifndef DISABLE_DEPRECATED
-Error SceneDebugger::_msg_inspect_object(const Array &p_args) {
+Error SceneDebugger::_msg_inspect_object(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
-	// Legacy compatibility: convert single object ID to new format, then send single object response.
+	// Legacy compatibility: convert single object ID to new format, then send single object
+	// response.
 	Vector<ObjectID> ids;
 	ids.append(ObjectID(p_args[0].operator uint64_t()));
 
@@ -202,12 +217,14 @@ Error SceneDebugger::_msg_inspect_object(const Array &p_args) {
 }
 #endif // DISABLE_DEPRECATED
 
-Error SceneDebugger::_msg_clear_selection(const Array &p_args) {
+Error SceneDebugger::_msg_clear_selection(const Array& p_args)
+{
 	RuntimeNodeSelect::get_singleton()->_clear_selection();
 	return OK;
 }
 
-Error SceneDebugger::_msg_suspend_changed(const Array &p_args) {
+Error SceneDebugger::_msg_suspend_changed(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	bool suspended = p_args[0];
 	SceneTree::get_singleton()->set_suspend(suspended);
@@ -215,37 +232,42 @@ Error SceneDebugger::_msg_suspend_changed(const Array &p_args) {
 	return OK;
 }
 
-Error SceneDebugger::_msg_next_frame(const Array &p_args) {
+Error SceneDebugger::_msg_next_frame(const Array& p_args)
+{
 	_next_frame();
 	return OK;
 }
 
-Error SceneDebugger::_msg_speed_changed(const Array &p_args) {
+Error SceneDebugger::_msg_speed_changed(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	double time_scale_user = p_args[0];
 	Engine::get_singleton()->set_user_time_scale(time_scale_user);
 	return OK;
 }
 
-Error SceneDebugger::_msg_debug_mute_audio(const Array &p_args) {
+Error SceneDebugger::_msg_debug_mute_audio(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	bool do_mute = p_args[0];
 	AudioServer::get_singleton()->set_debug_mute(do_mute);
 	return OK;
 }
 
-Error SceneDebugger::_msg_window_request_size(const Array &p_args) {
+Error SceneDebugger::_msg_window_request_size(const Array& p_args)
+{
 	Array size;
 	size.append(SceneTree::get_singleton()->get_root()->get_size());
 	EngineDebugger::get_singleton()->send_message("game_view:window_size", size);
 	return OK;
 }
 
-Error SceneDebugger::_msg_hdr_output_request_state(const Array &p_args) {
-	DisplayServer *ds = DisplayServer::get_singleton();
+Error SceneDebugger::_msg_hdr_output_request_state(const Array& p_args)
+{
+	DisplayServer* ds = DisplayServer::get_singleton();
 	bool renderer_supports_hdr_output = false;
 #if defined(RD_ENABLED)
-	RenderingDevice *rendering_device = RD::get_singleton();
+	RenderingDevice* rendering_device = RD::get_singleton();
 	if (rendering_device && rendering_device->has_feature(RD::SUPPORTS_HDR_OUTPUT)) {
 		renderer_supports_hdr_output = true;
 	}
@@ -264,13 +286,15 @@ Error SceneDebugger::_msg_hdr_output_request_state(const Array &p_args) {
 	return OK;
 }
 
-Error SceneDebugger::_msg_hdr_output_toggle_requested(const Array &p_args) {
-	DisplayServer *ds = DisplayServer::get_singleton();
+Error SceneDebugger::_msg_hdr_output_toggle_requested(const Array& p_args)
+{
+	DisplayServer* ds = DisplayServer::get_singleton();
 	ds->window_request_hdr_output(!ds->window_is_hdr_output_requested());
 	return OK;
 }
 
-Error SceneDebugger::_msg_override_cameras(const Array &p_args) {
+Error SceneDebugger::_msg_override_cameras(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	bool enable = p_args[0];
 	bool from_editor = p_args[1];
@@ -282,151 +306,175 @@ Error SceneDebugger::_msg_override_cameras(const Array &p_args) {
 	return OK;
 }
 
-Error SceneDebugger::_msg_set_object_property(const Array &p_args) {
+Error SceneDebugger::_msg_set_object_property(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 	_set_object_property(p_args[0], p_args[1], p_args[2]);
 	RuntimeNodeSelect::get_singleton()->_queue_selection_update();
 	return OK;
 }
 
-Error SceneDebugger::_msg_set_object_property_field(const Array &p_args) {
+Error SceneDebugger::_msg_set_object_property_field(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 4, ERR_INVALID_DATA);
 	_set_object_property(p_args[0], p_args[1], p_args[2], p_args[3]);
 	RuntimeNodeSelect::get_singleton()->_queue_selection_update();
 	return OK;
 }
 
-Error SceneDebugger::_msg_reload_cached_files(const Array &p_args) {
+Error SceneDebugger::_msg_reload_cached_files(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	PackedStringArray files = p_args[0];
 	reload_cached_files(files);
 	return OK;
 }
 
-Error SceneDebugger::_msg_setup_embedded_shortcuts(const Array &p_args) {
-	ERR_FAIL_COND_V(p_args.is_empty() || p_args[0].get_type() != Variant::DICTIONARY, ERR_INVALID_DATA);
+Error SceneDebugger::_msg_setup_embedded_shortcuts(const Array& p_args)
+{
+	ERR_FAIL_COND_V(
+		p_args.is_empty() || p_args[0].get_type() != Variant::DICTIONARY, ERR_INVALID_DATA);
 	Dictionary dict = p_args[0];
 	LocalVector<Variant> keys = dict.get_key_list();
 
-	for (const Variant &key : keys) {
+	for (const Variant& key : keys) {
 		dict[key] = DebuggerMarshalls::deserialize_key_shortcut(dict[key]);
 	}
 
-	SceneTree::get_singleton()->get_root()->connect(SceneStringName(window_input), callable_mp_static(SceneDebugger::_handle_embed_input).bind(dict));
+	SceneTree::get_singleton()->get_root()->connect(SceneStringName(window_input),
+		callable_mp_static(SceneDebugger::_handle_embed_input).bind(dict));
 	return OK;
 }
 
 // region Live editing.
 
-Error SceneDebugger::_msg_live_set_root(const Array &p_args) {
+Error SceneDebugger::_msg_live_set_root(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_root_func(p_args[0], p_args[1]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_node_path(const Array &p_args) {
+Error SceneDebugger::_msg_live_node_path(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_node_path_func(p_args[0], p_args[1]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_res_path(const Array &p_args) {
+Error SceneDebugger::_msg_live_res_path(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_res_path_func(p_args[0], p_args[1]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_node_prop_res(const Array &p_args) {
+Error SceneDebugger::_msg_live_node_prop_res(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_node_set_res_func(p_args[0], p_args[1], p_args[2]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_node_prop(const Array &p_args) {
+Error SceneDebugger::_msg_live_node_prop(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_node_set_func(p_args[0], p_args[1], p_args[2]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_res_prop_res(const Array &p_args) {
+Error SceneDebugger::_msg_live_res_prop_res(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_res_set_res_func(p_args[0], p_args[1], p_args[2]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_res_prop(const Array &p_args) {
+Error SceneDebugger::_msg_live_res_prop(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_res_set_func(p_args[0], p_args[1], p_args[2]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_node_call(const Array &p_args) {
+Error SceneDebugger::_msg_live_node_call(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	LocalVector<Variant> args;
-	LocalVector<Variant *> argptrs;
+	LocalVector<Variant*> argptrs;
 	args.resize(p_args.size() - 2);
 	argptrs.resize(args.size());
 	for (uint32_t i = 0; i < args.size(); i++) {
 		args[i] = p_args[i + 2];
 		argptrs[i] = &args[i];
 	}
-	LiveEditor::get_singleton()->_node_call_func(p_args[0], p_args[1], argptrs.size() ? (const Variant **)argptrs.ptr() : nullptr, argptrs.size());
+	LiveEditor::get_singleton()->_node_call_func(p_args[0], p_args[1],
+		argptrs.size() ? (const Variant**)argptrs.ptr() : nullptr, argptrs.size());
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_res_call(const Array &p_args) {
+Error SceneDebugger::_msg_live_res_call(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	LocalVector<Variant> args;
-	LocalVector<Variant *> argptrs;
+	LocalVector<Variant*> argptrs;
 	args.resize(p_args.size() - 2);
 	argptrs.resize(args.size());
 	for (uint32_t i = 0; i < args.size(); i++) {
 		args[i] = p_args[i + 2];
 		argptrs[i] = &args[i];
 	}
-	LiveEditor::get_singleton()->_res_call_func(p_args[0], p_args[1], argptrs.size() ? (const Variant **)argptrs.ptr() : nullptr, argptrs.size());
+	LiveEditor::get_singleton()->_res_call_func(p_args[0], p_args[1],
+		argptrs.size() ? (const Variant**)argptrs.ptr() : nullptr, argptrs.size());
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_create_node(const Array &p_args) {
+Error SceneDebugger::_msg_live_create_node(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_create_node_func(p_args[0], p_args[1], p_args[2]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_instantiate_node(const Array &p_args) {
+Error SceneDebugger::_msg_live_instantiate_node(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_instance_node_func(p_args[0], p_args[1], p_args[2]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_remove_node(const Array &p_args) {
+Error SceneDebugger::_msg_live_remove_node(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_remove_node_func(p_args[0]);
 	RuntimeNodeSelect::get_singleton()->_queue_selection_update();
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_remove_and_keep_node(const Array &p_args) {
+Error SceneDebugger::_msg_live_remove_and_keep_node(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_remove_and_keep_node_func(p_args[0], p_args[1]);
 	RuntimeNodeSelect::get_singleton()->_queue_selection_update();
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_restore_node(const Array &p_args) {
+Error SceneDebugger::_msg_live_restore_node(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_restore_node_func(p_args[0], p_args[1], p_args[2]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_duplicate_node(const Array &p_args) {
+Error SceneDebugger::_msg_live_duplicate_node(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_duplicate_node_func(p_args[0], p_args[1]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_live_reparent_node(const Array &p_args) {
+Error SceneDebugger::_msg_live_reparent_node(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 4, ERR_INVALID_DATA);
 	LiveEditor::get_singleton()->_reparent_node_func(p_args[0], p_args[1], p_args[2], p_args[3]);
 	return OK;
@@ -436,57 +484,67 @@ Error SceneDebugger::_msg_live_reparent_node(const Array &p_args) {
 
 // region Runtime Node Selection.
 
-Error SceneDebugger::_msg_runtime_node_select_setup(const Array &p_args) {
-	ERR_FAIL_COND_V(p_args.is_empty() || p_args[0].get_type() != Variant::DICTIONARY, ERR_INVALID_DATA);
+Error SceneDebugger::_msg_runtime_node_select_setup(const Array& p_args)
+{
+	ERR_FAIL_COND_V(
+		p_args.is_empty() || p_args[0].get_type() != Variant::DICTIONARY, ERR_INVALID_DATA);
 	RuntimeNodeSelect::get_singleton()->_setup(p_args[0]);
 	return OK;
 }
 
-Error SceneDebugger::_msg_runtime_node_select_set_type(const Array &p_args) {
+Error SceneDebugger::_msg_runtime_node_select_set_type(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	RuntimeNodeSelect::NodeType type = (RuntimeNodeSelect::NodeType)(int)p_args[0];
 	RuntimeNodeSelect::get_singleton()->_node_set_type(type);
 	return OK;
 }
 
-Error SceneDebugger::_msg_runtime_node_select_set_mode(const Array &p_args) {
+Error SceneDebugger::_msg_runtime_node_select_set_mode(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	RuntimeNodeSelect::SelectMode mode = (RuntimeNodeSelect::SelectMode)(int)p_args[0];
 	RuntimeNodeSelect::get_singleton()->_select_set_mode(mode);
 	return OK;
 }
 
-Error SceneDebugger::_msg_runtime_node_select_set_visible(const Array &p_args) {
+Error SceneDebugger::_msg_runtime_node_select_set_visible(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	bool visible = p_args[0];
 	RuntimeNodeSelect::get_singleton()->_set_selection_visible(visible);
 	return OK;
 }
 
-Error SceneDebugger::_msg_runtime_node_select_set_avoid_locked(const Array &p_args) {
+Error SceneDebugger::_msg_runtime_node_select_set_avoid_locked(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	bool avoid_locked = p_args[0];
 	RuntimeNodeSelect::get_singleton()->_set_avoid_locked(avoid_locked);
 	return OK;
 }
 
-Error SceneDebugger::_msg_runtime_node_select_set_prefer_group(const Array &p_args) {
+Error SceneDebugger::_msg_runtime_node_select_set_prefer_group(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 	bool prefer_group = p_args[0];
 	RuntimeNodeSelect::get_singleton()->_set_prefer_group(prefer_group);
 	return OK;
 }
 
-Error SceneDebugger::_msg_runtime_node_select_reset_camera_2d(const Array &p_args) {
+Error SceneDebugger::_msg_runtime_node_select_reset_camera_2d(const Array& p_args)
+{
 	RuntimeNodeSelect::get_singleton()->_reset_camera_2d();
 	return OK;
 }
 
-Error SceneDebugger::_msg_transform_camera_2d(const Array &p_args) {
+Error SceneDebugger::_msg_transform_camera_2d(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
-	ERR_FAIL_COND_V(!SceneTree::get_singleton()->get_root()->is_camera_2d_override_enabled(), ERR_BUG);
+	ERR_FAIL_COND_V(
+		!SceneTree::get_singleton()->get_root()->is_camera_2d_override_enabled(), ERR_BUG);
 	Transform2D transform = p_args[0];
-	Camera2D *override_camera = SceneTree::get_singleton()->get_root()->get_override_camera_2d();
+	Camera2D* override_camera = SceneTree::get_singleton()->get_root()->get_override_camera_2d();
 	override_camera->set_offset(transform.affine_inverse().get_origin());
 	override_camera->set_zoom(transform.get_scale());
 	RuntimeNodeSelect::get_singleton()->_queue_selection_update();
@@ -494,24 +552,28 @@ Error SceneDebugger::_msg_transform_camera_2d(const Array &p_args) {
 }
 
 #ifndef _3D_DISABLED
-Error SceneDebugger::_msg_runtime_node_select_reset_camera_3d(const Array &p_args) {
+Error SceneDebugger::_msg_runtime_node_select_reset_camera_3d(const Array& p_args)
+{
 	RuntimeNodeSelect::get_singleton()->_reset_camera_3d();
 	return OK;
 }
 
-Error SceneDebugger::_msg_transform_camera_3d(const Array &p_args) {
+Error SceneDebugger::_msg_transform_camera_3d(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.size() < 5, ERR_INVALID_DATA);
-	ERR_FAIL_COND_V(!SceneTree::get_singleton()->get_root()->is_camera_3d_override_enabled(), ERR_BUG);
+	ERR_FAIL_COND_V(
+		!SceneTree::get_singleton()->get_root()->is_camera_3d_override_enabled(), ERR_BUG);
 	Transform3D transform = p_args[0];
 	bool is_perspective = p_args[1];
 	float size_or_fov = p_args[2];
 	float depth_near = p_args[3];
 	float depth_far = p_args[4];
 
-	Camera3D *override_camera = SceneTree::get_singleton()->get_root()->get_override_camera_3d();
+	Camera3D* override_camera = SceneTree::get_singleton()->get_root()->get_override_camera_3d();
 	if (is_perspective) {
 		override_camera->set_perspective(size_or_fov, depth_near, depth_far);
-	} else {
+	}
+	else {
 		override_camera->set_orthogonal(size_or_fov, depth_near, depth_far);
 	}
 	override_camera->set_transform(transform);
@@ -524,22 +586,26 @@ Error SceneDebugger::_msg_transform_camera_3d(const Array &p_args) {
 
 // region Embedded process screenshot.
 
-Error SceneDebugger::_msg_rq_screenshot(const Array &p_args) {
+Error SceneDebugger::_msg_rq_screenshot(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 
-	Viewport *viewport = SceneTree::get_singleton()->get_root();
+	Viewport* viewport = SceneTree::get_singleton()->get_root();
 	ERR_FAIL_NULL_V_MSG(viewport, ERR_UNCONFIGURED, "Cannot get a viewport from the main screen.");
 	Ref<ViewportTexture> texture = viewport->get_texture();
-	ERR_FAIL_COND_V_MSG(texture.is_null(), ERR_UNCONFIGURED, "Cannot get a viewport texture from the main screen.");
+	ERR_FAIL_COND_V_MSG(
+		texture.is_null(), ERR_UNCONFIGURED, "Cannot get a viewport texture from the main screen.");
 	Ref<Image> img = texture->get_image();
-	ERR_FAIL_COND_V_MSG(img.is_null(), ERR_UNCONFIGURED, "Cannot get an image from a viewport texture of the main screen.");
+	ERR_FAIL_COND_V_MSG(img.is_null(), ERR_UNCONFIGURED,
+		"Cannot get an image from a viewport texture of the main screen.");
 	img->clear_mipmaps();
 
 	const String TEMP_DIR = OS::get_singleton()->get_temp_path();
 	uint32_t suffix_i = 0;
 	String path;
 	while (true) {
-		String datetime = Time::get_singleton()->get_datetime_string_from_system().remove_chars("-T:");
+		String datetime =
+			Time::get_singleton()->get_datetime_string_from_system().remove_chars("-T:");
 		datetime += itos(Time::get_singleton()->get_ticks_usec());
 		String suffix = datetime + (suffix_i > 0 ? itos(suffix_i) : "");
 		path = TEMP_DIR.path_join("scr-" + suffix + ".png");
@@ -550,8 +616,9 @@ Error SceneDebugger::_msg_rq_screenshot(const Array &p_args) {
 	}
 	img->convert(Image::FORMAT_RGBA8);
 #ifdef RD_ENABLED
-	RenderingDevice *rendering_device = RD::get_singleton();
-	if (rendering_device && RenderingServer::get_singleton()->viewport_is_using_hdr_2d(viewport->get_viewport_rid())) {
+	RenderingDevice* rendering_device = RD::get_singleton();
+	if (rendering_device &&
+		RenderingServer::get_singleton()->viewport_is_using_hdr_2d(viewport->get_viewport_rid())) {
 		img->linear_to_srgb();
 	}
 #endif
@@ -567,7 +634,8 @@ Error SceneDebugger::_msg_rq_screenshot(const Array &p_args) {
 	return OK;
 }
 
-Error SceneDebugger::_msg_report_window_focused(const Array &p_args) {
+Error SceneDebugger::_msg_report_window_focused(const Array& p_args)
+{
 	ERR_FAIL_COND_V(p_args.is_empty(), ERR_INVALID_DATA);
 
 	bool focused = p_args[0];
@@ -580,20 +648,22 @@ Error SceneDebugger::_msg_report_window_focused(const Array &p_args) {
 
 HashMap<String, SceneDebugger::ParseMessageFunc> SceneDebugger::message_handlers;
 
-Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured) {
+Error SceneDebugger::parse_message(
+	void* p_user, const String& p_msg, const Array& p_args, bool& r_captured)
+{
 	ERR_FAIL_NULL_V(SceneTree::get_singleton(), ERR_UNCONFIGURED);
 	ERR_FAIL_NULL_V(LiveEditor::get_singleton(), ERR_UNCONFIGURED);
 	ERR_FAIL_NULL_V(RuntimeNodeSelect::get_singleton(), ERR_UNCONFIGURED);
 
-	ParseMessageFunc *fn_ptr = message_handlers.getptr(p_msg);
+	ParseMessageFunc* fn_ptr = message_handlers.getptr(p_msg);
 	if (fn_ptr) {
 		r_captured = true;
 		return (*fn_ptr)(p_args);
 	}
 
 	if (p_msg.begins_with("live_") || p_msg.begins_with("runtime_node_select_")) {
-		// Messages with these prefixes are reserved and should be handled by the LiveEditor or RuntimeNodeSelect classes,
-		// so return ERR_SKIP.
+		// Messages with these prefixes are reserved and should be handled by the LiveEditor or
+		// RuntimeNodeSelect classes, so return ERR_SKIP.
 		r_captured = true;
 		return ERR_SKIP;
 	}
@@ -603,7 +673,8 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 	return OK;
 }
 
-void SceneDebugger::_init_message_handlers() {
+void SceneDebugger::_init_message_handlers()
+{
 	message_handlers["setup_scene"] = _msg_setup_scene;
 	message_handlers["setup_game_view"] = _msg_setup_game_view;
 	message_handlers["setup_embedded_shortcuts"] = _msg_setup_embedded_shortcuts;
@@ -649,25 +720,30 @@ void SceneDebugger::_init_message_handlers() {
 	message_handlers["runtime_node_select_set_type"] = _msg_runtime_node_select_set_type;
 	message_handlers["runtime_node_select_set_mode"] = _msg_runtime_node_select_set_mode;
 	message_handlers["runtime_node_select_set_visible"] = _msg_runtime_node_select_set_visible;
-	message_handlers["runtime_node_select_set_avoid_locked"] = _msg_runtime_node_select_set_avoid_locked;
-	message_handlers["runtime_node_select_set_prefer_group"] = _msg_runtime_node_select_set_prefer_group;
-	message_handlers["runtime_node_select_reset_camera_2d"] = _msg_runtime_node_select_reset_camera_2d;
+	message_handlers["runtime_node_select_set_avoid_locked"] =
+		_msg_runtime_node_select_set_avoid_locked;
+	message_handlers["runtime_node_select_set_prefer_group"] =
+		_msg_runtime_node_select_set_prefer_group;
+	message_handlers["runtime_node_select_reset_camera_2d"] =
+		_msg_runtime_node_select_reset_camera_2d;
 #ifndef _3D_DISABLED
-	message_handlers["runtime_node_select_reset_camera_3d"] = _msg_runtime_node_select_reset_camera_3d;
+	message_handlers["runtime_node_select_reset_camera_3d"] =
+		_msg_runtime_node_select_reset_camera_3d;
 #endif
 	message_handlers["rq_screenshot"] = _msg_rq_screenshot;
 	message_handlers["report_window_focused"] = _msg_report_window_focused;
 }
 
-void SceneDebugger::_save_node(ObjectID id, const String &p_path) {
-	Node *node = ObjectDB::get_instance<Node>(id);
+void SceneDebugger::_save_node(ObjectID id, const String& p_path)
+{
+	Node* node = ObjectDB::get_instance<Node>(id);
 	ERR_FAIL_NULL(node);
 
 #ifdef TOOLS_ENABLED
-	HashMap<const Node *, Node *> duplimap;
-	Node *copy = node->duplicate_from_editor(duplimap);
+	HashMap<const Node*, Node*> duplimap;
+	Node* copy = node->duplicate_from_editor(duplimap);
 #else
-	Node *copy = node->duplicate();
+	Node* copy = node->duplicate();
 #endif // TOOLS_ENABLED
 
 	// Handle Unique Nodes.
@@ -684,7 +760,8 @@ void SceneDebugger::_save_node(ObjectID id, const String &p_path) {
 	memdelete(copy);
 }
 
-void SceneDebugger::_set_node_owner_recursive(Node *p_node, Node *p_owner) {
+void SceneDebugger::_set_node_owner_recursive(Node* p_node, Node* p_owner)
+{
 	if (!p_node->get_owner()) {
 		p_node->set_owner(p_owner);
 	}
@@ -694,17 +771,18 @@ void SceneDebugger::_set_node_owner_recursive(Node *p_node, Node *p_owner) {
 	}
 }
 
-void SceneDebugger::_send_object_ids(const Vector<ObjectID> &p_ids, bool p_update_selection) {
+void SceneDebugger::_send_object_ids(const Vector<ObjectID>& p_ids, bool p_update_selection)
+{
 	Vector<ObjectID> ids = p_ids;
 	if (ids.size() > RuntimeNodeSelect::get_singleton()->max_selection) {
 		ids.resize(RuntimeNodeSelect::get_singleton()->max_selection);
 		EngineDebugger::get_singleton()->send_message("show_selection_limit_warning", Array());
 	}
 
-	LocalVector<Node *> nodes;
+	LocalVector<Node*> nodes;
 	Array objs;
 	bool objs_missing = false;
-	for (const ObjectID &id : ids) {
+	for (const ObjectID& id : ids) {
 		SceneDebuggerObject obj(id);
 		if (obj.id.is_null()) {
 			objs_missing = true;
@@ -712,7 +790,7 @@ void SceneDebugger::_send_object_ids(const Vector<ObjectID> &p_ids, bool p_updat
 		}
 
 		if (p_update_selection) {
-			if (Node *node = ObjectDB::get_instance<Node>(id)) {
+			if (Node* node = ObjectDB::get_instance<Node>(id)) {
 				nodes.push_back(node);
 			}
 		}
@@ -723,12 +801,12 @@ void SceneDebugger::_send_object_ids(const Vector<ObjectID> &p_ids, bool p_updat
 	}
 
 	if (p_update_selection) {
-		RuntimeNodeSelect::get_singleton()->_set_selected_nodes(Vector<Node *>(nodes));
+		RuntimeNodeSelect::get_singleton()->_set_selected_nodes(Vector<Node*>(nodes));
 	}
 
 	if (objs_missing) {
 		Array invalid_selection;
-		for (const ObjectID &id : ids) {
+		for (const ObjectID& id : ids) {
 			invalid_selection.append(id);
 		}
 
@@ -736,14 +814,19 @@ void SceneDebugger::_send_object_ids(const Vector<ObjectID> &p_ids, bool p_updat
 		arr.append(invalid_selection);
 		EngineDebugger::get_singleton()->send_message("remote_selection_invalidated", arr);
 
-		EngineDebugger::get_singleton()->send_message(objs.is_empty() ? "remote_nothing_selected" : "remote_objects_selected", objs);
-	} else {
-		EngineDebugger::get_singleton()->send_message(p_update_selection ? "remote_objects_selected" : "scene:inspect_objects", objs);
+		EngineDebugger::get_singleton()->send_message(
+			objs.is_empty() ? "remote_nothing_selected" : "remote_objects_selected", objs);
+	}
+	else {
+		EngineDebugger::get_singleton()->send_message(
+			p_update_selection ? "remote_objects_selected" : "scene:inspect_objects", objs);
 	}
 }
 
-void SceneDebugger::_set_object_property(ObjectID p_id, const String &p_property, const Variant &p_value, const String &p_field) {
-	Object *obj = ObjectDB::get_instance(p_id);
+void SceneDebugger::_set_object_property(
+	ObjectID p_id, const String& p_property, const Variant& p_value, const String& p_field)
+{
+	Object* obj = ObjectDB::get_instance(p_id);
 	if (!obj) {
 		return;
 	}
@@ -751,12 +834,14 @@ void SceneDebugger::_set_object_property(ObjectID p_id, const String &p_property
 	String prop_name;
 	if (p_property.begins_with("Members/")) {
 		prop_name = p_property.get_slicec('/', p_property.get_slice_count("/") - 1);
-	} else {
+	}
+	else {
 		prop_name = p_property;
 	}
 
 	Variant value = p_value;
-	if (p_value.is_string() && (obj->get_static_property_type(prop_name) == Variant::OBJECT || p_property == "script")) {
+	if (p_value.is_string() &&
+		(obj->get_static_property_type(prop_name) == Variant::OBJECT || p_property == "script")) {
 		value = ResourceLoader::load(p_value);
 	}
 
@@ -768,18 +853,21 @@ void SceneDebugger::_set_object_property(ObjectID p_id, const String &p_property
 	obj->set(prop_name, value);
 }
 
-void SceneDebugger::_next_frame() {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void SceneDebugger::_next_frame()
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree->is_suspended()) {
 		return;
 	}
 
 	scene_tree->set_suspend(false);
-	RenderingServer::get_singleton()->connect("frame_post_draw", callable_mp(scene_tree, &SceneTree::set_suspend).bind(true), Object::CONNECT_ONE_SHOT);
+	RenderingServer::get_singleton()->connect("frame_post_draw",
+		callable_mp(scene_tree, &SceneTree::set_suspend).bind(true), Object::CONNECT_ONE_SHOT);
 }
 
-void SceneDebugger::add_to_cache(const String &p_filename, Node *p_node) {
-	LiveEditor *debugger = LiveEditor::get_singleton();
+void SceneDebugger::add_to_cache(const String& p_filename, Node* p_node)
+{
+	LiveEditor* debugger = LiveEditor::get_singleton();
 	if (!debugger) {
 		return;
 	}
@@ -789,14 +877,15 @@ void SceneDebugger::add_to_cache(const String &p_filename, Node *p_node) {
 	}
 }
 
-void SceneDebugger::remove_from_cache(const String &p_filename, Node *p_node) {
-	LiveEditor *debugger = LiveEditor::get_singleton();
+void SceneDebugger::remove_from_cache(const String& p_filename, Node* p_node)
+{
+	LiveEditor* debugger = LiveEditor::get_singleton();
 	if (!debugger) {
 		return;
 	}
 
-	HashMap<String, HashSet<Node *>> &edit_cache = debugger->live_scene_edit_cache;
-	HashMap<String, HashSet<Node *>>::Iterator E = edit_cache.find(p_filename);
+	HashMap<String, HashSet<Node*>>& edit_cache = debugger->live_scene_edit_cache;
+	HashMap<String, HashSet<Node*>>::Iterator E = edit_cache.find(p_filename);
 	if (E) {
 		E->value.erase(p_node);
 		if (E->value.is_empty()) {
@@ -804,18 +893,19 @@ void SceneDebugger::remove_from_cache(const String &p_filename, Node *p_node) {
 		}
 	}
 
-	HashMap<Node *, HashMap<ObjectID, Node *>> &remove_list = debugger->live_edit_remove_list;
-	HashMap<Node *, HashMap<ObjectID, Node *>>::Iterator F = remove_list.find(p_node);
+	HashMap<Node*, HashMap<ObjectID, Node*>>& remove_list = debugger->live_edit_remove_list;
+	HashMap<Node*, HashMap<ObjectID, Node*>>::Iterator F = remove_list.find(p_node);
 	if (F) {
-		for (const KeyValue<ObjectID, Node *> &G : F->value) {
+		for (const KeyValue<ObjectID, Node*>& G : F->value) {
 			memdelete(G.value);
 		}
 		remove_list.remove(F);
 	}
 }
 
-void SceneDebugger::reload_cached_files(const PackedStringArray &p_files) {
-	for (const String &file : p_files) {
+void SceneDebugger::reload_cached_files(const PackedStringArray& p_files)
+{
+	for (const String& file : p_files) {
 		Ref<Resource> res = ResourceCache::get_ref(file);
 		if (res.is_valid()) {
 			res->reload_from_file();
@@ -823,17 +913,17 @@ void SceneDebugger::reload_cached_files(const PackedStringArray &p_files) {
 	}
 }
 
-SceneDebuggerObject::SceneDebuggerObject(ObjectID p_id) :
-		SceneDebuggerObject(ObjectDB::get_instance(p_id)) {
+SceneDebuggerObject::SceneDebuggerObject(ObjectID p_id)
+	: SceneDebuggerObject(ObjectDB::get_instance(p_id))
+{
 }
 
 /// LiveEditor
-LiveEditor *LiveEditor::get_singleton() {
-	return singleton;
-}
+LiveEditor* LiveEditor::get_singleton() { return singleton; }
 
-void LiveEditor::_send_tree() {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_send_tree()
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
@@ -845,16 +935,19 @@ void LiveEditor::_send_tree() {
 	EngineDebugger::get_singleton()->send_message("scene:scene_tree", arr);
 }
 
-void LiveEditor::_node_path_func(const NodePath &p_path, int p_id) {
+void LiveEditor::_node_path_func(const NodePath& p_path, int p_id)
+{
 	live_edit_node_path_cache[p_id] = p_path;
 }
 
-void LiveEditor::_res_path_func(const String &p_path, int p_id) {
+void LiveEditor::_res_path_func(const String& p_path, int p_id)
+{
 	live_edit_resource_cache[p_id] = p_path;
 }
 
-void LiveEditor::_node_set_func(int p_id, const StringName &p_prop, const Variant &p_value) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_node_set_func(int p_id, const StringName& p_prop, const Variant& p_value)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
@@ -864,18 +957,18 @@ void LiveEditor::_node_set_func(int p_id, const StringName &p_prop, const Varian
 	}
 
 	NodePath np = live_edit_node_path_cache[p_id];
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	for (Node *F : E->value) {
-		Node *n = F;
+	for (Node* F : E->value) {
+		Node* n = F;
 
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
@@ -884,7 +977,7 @@ void LiveEditor::_node_set_func(int p_id, const StringName &p_prop, const Varian
 		if (!n->has_node(np)) {
 			continue;
 		}
-		Node *n2 = n->get_node(np);
+		Node* n2 = n->get_node(np);
 
 		// Do not change transform of edited scene root, unless it's the scene being played.
 		// See GH-86659 for additional context.
@@ -892,32 +985,35 @@ void LiveEditor::_node_set_func(int p_id, const StringName &p_prop, const Varian
 		Variant orig_tf;
 
 		if (keep_transform) {
-			if (n2->is_class("Node3D")) {
-				orig_tf = n2->call("get_transform");
-			} else if (n2->is_class("CanvasItem")) {
-				orig_tf = n2->call("_edit_get_state");
+			if (n2->obj->is_class("Node3D")) {
+				orig_tf = n2->obj->call("get_transform");
+			}
+			else if (n2->obj->is_class("CanvasItem")) {
+				orig_tf = n2->obj->call("_edit_get_state");
 			}
 		}
 
-		n2->set(p_prop, p_value);
+		n2->obj->set(p_prop, p_value);
 
 		if (keep_transform) {
-			if (n2->is_class("Node3D")) {
-				Variant new_tf = n2->call("get_transform");
+			if (n2->obj->is_class("Node3D")) {
+				Variant new_tf = n2->obj->call("get_transform");
 				if (new_tf != orig_tf) {
-					n2->call("set_transform", orig_tf);
+					n2->obj->call("set_transform", orig_tf);
 				}
-			} else if (n2->is_class("CanvasItem")) {
-				Variant new_tf = n2->call("_edit_get_state");
+			}
+			else if (n2->obj->is_class("CanvasItem")) {
+				Variant new_tf = n2->obj->call("_edit_get_state");
 				if (new_tf != orig_tf) {
-					n2->call("_edit_set_state", orig_tf);
+					n2->obj->call("_edit_set_state", orig_tf);
 				}
 			}
 		}
 	}
 }
 
-void LiveEditor::_node_set_res_func(int p_id, const StringName &p_prop, const String &p_value) {
+void LiveEditor::_node_set_res_func(int p_id, const StringName& p_prop, const String& p_value)
+{
 	Ref<Resource> r = ResourceLoader::load(p_value);
 	if (r.is_null()) {
 		return;
@@ -925,8 +1021,10 @@ void LiveEditor::_node_set_res_func(int p_id, const StringName &p_prop, const St
 	_node_set_func(p_id, p_prop, r);
 }
 
-void LiveEditor::_node_call_func(int p_id, const StringName &p_method, const Variant **p_args, int p_argcount) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_node_call_func(
+	int p_id, const StringName& p_method, const Variant** p_args, int p_argcount)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
@@ -935,18 +1033,18 @@ void LiveEditor::_node_call_func(int p_id, const StringName &p_method, const Var
 	}
 
 	NodePath np = live_edit_node_path_cache[p_id];
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	for (Node *F : E->value) {
-		Node *n = F;
+	for (Node* F : E->value) {
+		Node* n = F;
 
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
@@ -955,7 +1053,7 @@ void LiveEditor::_node_call_func(int p_id, const StringName &p_method, const Var
 		if (!n->has_node(np)) {
 			continue;
 		}
-		Node *n2 = n->get_node(np);
+		Node* n2 = n->get_node(np);
 
 		// Do not change transform of edited scene root, unless it's the scene being played.
 		// See GH-86659 for additional context.
@@ -963,33 +1061,36 @@ void LiveEditor::_node_call_func(int p_id, const StringName &p_method, const Var
 		Variant orig_tf;
 
 		if (keep_transform) {
-			if (n2->is_class("Node3D")) {
-				orig_tf = n2->call("get_transform");
-			} else if (n2->is_class("CanvasItem")) {
-				orig_tf = n2->call("_edit_get_state");
+			if (n2->obj->is_class("Node3D")) {
+				orig_tf = n2->obj->call("get_transform");
+			}
+			else if (n2->obj->is_class("CanvasItem")) {
+				orig_tf = n2->obj->call("_edit_get_state");
 			}
 		}
 
 		Callable::CallError ce;
-		n2->callp(p_method, p_args, p_argcount, ce);
+		n2->obj->callp(p_method, p_args, p_argcount, ce);
 
 		if (keep_transform) {
-			if (n2->is_class("Node3D")) {
-				Variant new_tf = n2->call("get_transform");
+			if (n2->obj->is_class("Node3D")) {
+				Variant new_tf = n2->obj->call("get_transform");
 				if (new_tf != orig_tf) {
-					n2->call("set_transform", orig_tf);
+					n2->obj->call("set_transform", orig_tf);
 				}
-			} else if (n2->is_class("CanvasItem")) {
-				Variant new_tf = n2->call("_edit_get_state");
+			}
+			else if (n2->obj->is_class("CanvasItem")) {
+				Variant new_tf = n2->obj->call("_edit_get_state");
 				if (new_tf != orig_tf) {
-					n2->call("_edit_set_state", orig_tf);
+					n2->obj->call("_edit_set_state", orig_tf);
 				}
 			}
 		}
 	}
 }
 
-void LiveEditor::_res_set_func(int p_id, const StringName &p_prop, const Variant &p_value) {
+void LiveEditor::_res_set_func(int p_id, const StringName& p_prop, const Variant& p_value)
+{
 	if (!live_edit_resource_cache.has(p_id)) {
 		return;
 	}
@@ -1008,7 +1109,8 @@ void LiveEditor::_res_set_func(int p_id, const StringName &p_prop, const Variant
 	r->set(p_prop, p_value);
 }
 
-void LiveEditor::_res_set_res_func(int p_id, const StringName &p_prop, const String &p_value) {
+void LiveEditor::_res_set_res_func(int p_id, const StringName& p_prop, const String& p_value)
+{
 	Ref<Resource> r = ResourceLoader::load(p_value);
 	if (r.is_null()) {
 		return;
@@ -1016,7 +1118,9 @@ void LiveEditor::_res_set_res_func(int p_id, const StringName &p_prop, const Str
 	_res_set_func(p_id, p_prop, r);
 }
 
-void LiveEditor::_res_call_func(int p_id, const StringName &p_method, const Variant **p_args, int p_argcount) {
+void LiveEditor::_res_call_func(
+	int p_id, const StringName& p_method, const Variant** p_args, int p_argcount)
+{
 	if (!live_edit_resource_cache.has(p_id)) {
 		return;
 	}
@@ -1036,29 +1140,32 @@ void LiveEditor::_res_call_func(int p_id, const StringName &p_method, const Vari
 	r->callp(p_method, p_args, p_argcount, ce);
 }
 
-void LiveEditor::_root_func(const NodePath &p_scene_path, const String &p_scene_from) {
+void LiveEditor::_root_func(const NodePath& p_scene_path, const String& p_scene_from)
+{
 	live_edit_root = p_scene_path;
 	live_edit_scene = p_scene_from;
 }
 
-void LiveEditor::_create_node_func(const NodePath &p_parent, const String &p_type, const String &p_name) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_create_node_func(
+	const NodePath& p_parent, const String& p_type, const String& p_name)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
 
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	for (Node *F : E->value) {
-		Node *n = F;
+	for (Node* F : E->value) {
+		Node* n = F;
 
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
@@ -1067,9 +1174,9 @@ void LiveEditor::_create_node_func(const NodePath &p_parent, const String &p_typ
 		if (!n->has_node(p_parent)) {
 			continue;
 		}
-		Node *n2 = n->get_node(p_parent);
+		Node* n2 = n->get_node(p_parent);
 
-		Node *no = Object::cast_to<Node>(ClassDB::instantiate(p_type));
+		Node* no = Object::cast_to<Node>(ClassDB::instantiate(p_type));
 		if (!no) {
 			continue;
 		}
@@ -1079,8 +1186,10 @@ void LiveEditor::_create_node_func(const NodePath &p_parent, const String &p_typ
 	}
 }
 
-void LiveEditor::_instance_node_func(const NodePath &p_parent, const String &p_path, const String &p_name) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_instance_node_func(
+	const NodePath& p_parent, const String& p_path, const String& p_name)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
@@ -1091,18 +1200,18 @@ void LiveEditor::_instance_node_func(const NodePath &p_parent, const String &p_p
 		return;
 	}
 
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	for (Node *F : E->value) {
-		Node *n = F;
+	for (Node* F : E->value) {
+		Node* n = F;
 
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
@@ -1111,9 +1220,9 @@ void LiveEditor::_instance_node_func(const NodePath &p_parent, const String &p_p
 		if (!n->has_node(p_parent)) {
 			continue;
 		}
-		Node *n2 = n->get_node(p_parent);
+		Node* n2 = n->get_node(p_parent);
 
-		Node *no = ps->instantiate();
+		Node* no = ps->instantiate();
 		if (!no) {
 			continue;
 		}
@@ -1123,25 +1232,26 @@ void LiveEditor::_instance_node_func(const NodePath &p_parent, const String &p_p
 	}
 }
 
-void LiveEditor::_remove_node_func(const NodePath &p_at) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_remove_node_func(const NodePath& p_at)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
 
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	LocalVector<Node *> to_delete;
+	LocalVector<Node*> to_delete;
 
-	for (const Node *n : E->value) {
+	for (const Node* n : E->value) {
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
 		}
@@ -1149,34 +1259,35 @@ void LiveEditor::_remove_node_func(const NodePath &p_at) {
 		if (!n->has_node(p_at)) {
 			continue;
 		}
-		Node *n2 = n->get_node(p_at);
+		Node* n2 = n->get_node(p_at);
 
 		to_delete.push_back(n2);
 	}
 
-	for (Node *node : to_delete) {
+	for (Node* node : to_delete) {
 		memdelete(node);
 	}
 }
 
-void LiveEditor::_remove_and_keep_node_func(const NodePath &p_at, ObjectID p_keep_id) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_remove_and_keep_node_func(const NodePath& p_at, ObjectID p_keep_id)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
 
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	LocalVector<Node *> to_remove;
-	for (Node *n : E->value) {
+	LocalVector<Node*> to_remove;
+	for (Node* n : E->value) {
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
 		}
@@ -1188,34 +1299,35 @@ void LiveEditor::_remove_and_keep_node_func(const NodePath &p_at, ObjectID p_kee
 		to_remove.push_back(n);
 	}
 
-	for (Node *n : to_remove) {
-		Node *n2 = n->get_node(p_at);
+	for (Node* n : to_remove) {
+		Node* n2 = n->get_node(p_at);
 		n2->get_parent()->remove_child(n2);
 		live_edit_remove_list[n][p_keep_id] = n2;
 	}
 }
 
-void LiveEditor::_restore_node_func(ObjectID p_id, const NodePath &p_at, int p_at_pos) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_restore_node_func(ObjectID p_id, const NodePath& p_at, int p_at_pos)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
 
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	for (HashSet<Node *>::Iterator F = E->value.begin(); F;) {
-		HashSet<Node *>::Iterator N = F;
+	for (HashSet<Node*>::Iterator F = E->value.begin(); F;) {
+		HashSet<Node*>::Iterator N = F;
 		++N;
 
-		Node *n = *F;
+		Node* n = *F;
 
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
@@ -1224,15 +1336,15 @@ void LiveEditor::_restore_node_func(ObjectID p_id, const NodePath &p_at, int p_a
 		if (!n->has_node(p_at)) {
 			continue;
 		}
-		Node *n2 = n->get_node(p_at);
+		Node* n2 = n->get_node(p_at);
 
-		HashMap<Node *, HashMap<ObjectID, Node *>>::Iterator EN = live_edit_remove_list.find(n);
+		HashMap<Node*, HashMap<ObjectID, Node*>>::Iterator EN = live_edit_remove_list.find(n);
 
 		if (!EN) {
 			continue;
 		}
 
-		HashMap<ObjectID, Node *>::Iterator FN = EN->value.find(p_id);
+		HashMap<ObjectID, Node*>::Iterator FN = EN->value.find(p_id);
 
 		if (!FN) {
 			continue;
@@ -1249,24 +1361,25 @@ void LiveEditor::_restore_node_func(ObjectID p_id, const NodePath &p_at, int p_a
 	}
 }
 
-void LiveEditor::_duplicate_node_func(const NodePath &p_at, const String &p_new_name) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_duplicate_node_func(const NodePath& p_at, const String& p_new_name)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
 
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	for (Node *F : E->value) {
-		Node *n = F;
+	for (Node* F : E->value) {
+		Node* n = F;
 
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
@@ -1275,9 +1388,10 @@ void LiveEditor::_duplicate_node_func(const NodePath &p_at, const String &p_new_
 		if (!n->has_node(p_at)) {
 			continue;
 		}
-		Node *n2 = n->get_node(p_at);
+		Node* n2 = n->get_node(p_at);
 
-		Node *dup = n2->duplicate(Node::DUPLICATE_SIGNALS | Node::DUPLICATE_GROUPS | Node::DUPLICATE_SCRIPTS);
+		Node* dup = n2->duplicate(
+			Node::DUPLICATE_SIGNALS | Node::DUPLICATE_GROUPS | Node::DUPLICATE_SCRIPTS);
 
 		if (!dup) {
 			continue;
@@ -1288,24 +1402,26 @@ void LiveEditor::_duplicate_node_func(const NodePath &p_at, const String &p_new_
 	}
 }
 
-void LiveEditor::_reparent_node_func(const NodePath &p_at, const NodePath &p_new_place, const String &p_new_name, int p_at_pos) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
+void LiveEditor::_reparent_node_func(
+	const NodePath& p_at, const NodePath& p_new_place, const String& p_new_name, int p_at_pos)
+{
+	SceneTree* scene_tree = SceneTree::get_singleton();
 	if (!scene_tree) {
 		return;
 	}
 
-	Node *base = nullptr;
+	Node* base = nullptr;
 	if (scene_tree->root->has_node(live_edit_root)) {
 		base = scene_tree->root->get_node(live_edit_root);
 	}
 
-	HashMap<String, HashSet<Node *>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
+	HashMap<String, HashSet<Node*>>::Iterator E = live_scene_edit_cache.find(live_edit_scene);
 	if (!E) {
-		return; //scene not editable
+		return; // scene not editable
 	}
 
-	for (Node *F : E->value) {
-		Node *n = F;
+	for (Node* F : E->value) {
+		Node* n = F;
 
 		if (base && !base->is_ancestor_of(n)) {
 			continue;
@@ -1314,12 +1430,12 @@ void LiveEditor::_reparent_node_func(const NodePath &p_at, const NodePath &p_new
 		if (!n->has_node(p_at)) {
 			continue;
 		}
-		Node *nfrom = n->get_node(p_at);
+		Node* nfrom = n->get_node(p_at);
 
 		if (!n->has_node(p_new_place)) {
 			continue;
 		}
-		Node *nto = n->get_node(p_new_place);
+		Node* nto = n->get_node(p_new_place);
 
 		nfrom->get_parent()->remove_child(nfrom);
 		nfrom->set_name(p_new_name);
@@ -1331,3 +1447,5 @@ void LiveEditor::_reparent_node_func(const NodePath &p_at, const NodePath &p_new
 	}
 }
 #endif // DEBUG_ENABLED
+
+

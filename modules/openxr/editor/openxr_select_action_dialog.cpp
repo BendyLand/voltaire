@@ -28,31 +28,34 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "openxr_select_action_dialog.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/themes/editor_scale.h"
+#include "openxr_select_action_dialog.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/label.h"
 #include "scene/gui/scroll_container.h"
 
-void OpenXRSelectActionDialog::_bind_methods() {
+void OpenXRSelectActionDialog::_bind_methods()
+{
 	ADD_SIGNAL(MethodInfo("action_selected", PropertyInfo(Variant::STRING, "action")));
 }
 
-void OpenXRSelectActionDialog::_notification(int p_what) {
+void OpenXRSelectActionDialog::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			scroll->add_theme_style_override(SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		scroll->add_theme_style_override(
+			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+	} break;
 	}
 }
 
-void OpenXRSelectActionDialog::_on_select_action(const String &p_action) {
+void OpenXRSelectActionDialog::_on_select_action(const String& p_action)
+{
 	if (selected_action != "") {
 		NodePath button_path = action_buttons[selected_action];
-		Button *button = Object::cast_to<Button>(get_node(button_path));
+		Button* button = Object::cast_to<Button>(get_node(button_path));
 		if (button != nullptr) {
 			button->set_flat(true);
 		}
@@ -62,14 +65,15 @@ void OpenXRSelectActionDialog::_on_select_action(const String &p_action) {
 
 	if (selected_action != "") {
 		NodePath button_path = action_buttons[selected_action];
-		Button *button = Object::cast_to<Button>(get_node(button_path));
+		Button* button = Object::cast_to<Button>(get_node(button_path));
 		if (button != nullptr) {
 			button->set_flat(false);
 		}
 	}
 }
 
-void OpenXRSelectActionDialog::open() {
+void OpenXRSelectActionDialog::open()
+{
 	ERR_FAIL_COND(action_map.is_null());
 
 	// Out with the old.
@@ -85,7 +89,7 @@ void OpenXRSelectActionDialog::open() {
 	for (int i = 0; i < action_sets.size(); i++) {
 		Ref<OpenXRActionSet> action_set = action_sets[i];
 
-		Label *action_set_label = memnew(Label);
+		Label* action_set_label = memnew(Label);
 		action_set_label->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 		action_set_label->set_text(action_set->get_localized_name());
 		main_vb->add_child(action_set_label);
@@ -94,18 +98,19 @@ void OpenXRSelectActionDialog::open() {
 		for (int j = 0; j < actions.size(); j++) {
 			Ref<OpenXRAction> action = actions[j];
 
-			HBoxContainer *action_hb = memnew(HBoxContainer);
+			HBoxContainer* action_hb = memnew(HBoxContainer);
 			main_vb->add_child(action_hb);
 
-			Control *indent_node = memnew(Control);
+			Control* indent_node = memnew(Control);
 			indent_node->set_custom_minimum_size(Size2(10.0, 0.0));
 			action_hb->add_child(indent_node);
 
-			Button *action_button = memnew(Button);
+			Button* action_button = memnew(Button);
 			String action_name = action->get_name_with_set();
 			action_button->set_flat(true);
 			action_button->set_text(action->get_name() + ": " + action->get_localized_name());
-			action_button->connect(SceneStringName(pressed), callable_mp(this, &OpenXRSelectActionDialog::_on_select_action).bind(action_name));
+			action_button->connect(SceneStringName(pressed),
+				callable_mp(this, &OpenXRSelectActionDialog::_on_select_action).bind(action_name));
 			action_hb->add_child(action_button);
 
 			action_buttons[action_name] = action_button->get_path();
@@ -115,17 +120,17 @@ void OpenXRSelectActionDialog::open() {
 	popup_centered();
 }
 
-void OpenXRSelectActionDialog::ok_pressed() {
+void OpenXRSelectActionDialog::ok_pressed()
+{
 	if (selected_action == "") {
 		return;
 	}
-
-	emit_signal("action_selected", selected_action);
-
+	this->obj->emit_signal("action_selected", selected_action);
 	hide();
 }
 
-OpenXRSelectActionDialog::OpenXRSelectActionDialog(const Ref<OpenXRActionMap> &p_action_map) {
+OpenXRSelectActionDialog::OpenXRSelectActionDialog(const Ref<OpenXRActionMap>& p_action_map)
+{
 	action_map = p_action_map;
 
 	set_title(TTR("Select an action"));
@@ -138,3 +143,5 @@ OpenXRSelectActionDialog::OpenXRSelectActionDialog(const Ref<OpenXRActionMap> &p
 	main_vb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	scroll->add_child(main_vb);
 }
+
+

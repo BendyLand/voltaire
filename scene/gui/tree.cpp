@@ -310,7 +310,7 @@ void TreeItem::propagate_check(int p_column, bool p_emit_signal)
 	bool ch = cells[p_column].checked;
 
 	if (p_emit_signal) {
-		tree->emit_signal(SNAME("check_propagated_to_item"), this, p_column);
+		tree->obj->emit_signal(SNAME("check_propagated_to_item"), this, p_column);
 	}
 	_propagate_check_through_children(p_column, ch, p_emit_signal);
 	_propagate_check_through_parents(p_column, p_emit_signal);
@@ -325,7 +325,7 @@ String TreeItem::atr(int p_column, const String& p_text) const
 		return tree->atr(p_text);
 	} break;
 	case Node::AUTO_TRANSLATE_MODE_ALWAYS: {
-		return tree->tr(p_text);
+		return tree->obj->tr(p_text);
 	} break;
 	case Node::AUTO_TRANSLATE_MODE_DISABLED: {
 		return p_text;
@@ -342,7 +342,7 @@ void TreeItem::_propagate_check_through_children(int p_column, bool p_checked, b
 	while (current) {
 		current->set_checked(p_column, p_checked);
 		if (p_emit_signal) {
-			current->tree->emit_signal(SNAME("check_propagated_to_item"), current, p_column);
+			current->tree->obj->emit_signal(SNAME("check_propagated_to_item"), current, p_column);
 		}
 		current->_propagate_check_through_children(p_column, p_checked, p_emit_signal);
 		current = current->get_next();
@@ -386,7 +386,7 @@ void TreeItem::_propagate_check_through_parents(int p_column, bool p_emit_signal
 	}
 
 	if (p_emit_signal) {
-		current->tree->emit_signal(SNAME("check_propagated_to_item"), current, p_column);
+		current->tree->obj->emit_signal(SNAME("check_propagated_to_item"), current, p_column);
 	}
 	current->_propagate_check_through_parents(p_column, p_emit_signal);
 }
@@ -855,7 +855,7 @@ void TreeItem::set_collapsed(bool p_collapsed)
 	}
 
 	_changed_notify();
-	tree->emit_signal(SNAME("item_collapsed"), this);
+	tree->obj->emit_signal(SNAME("item_collapsed"), this);
 }
 
 bool TreeItem::is_collapsed() { return collapsed; }
@@ -2207,7 +2207,7 @@ void Tree::update_column(int p_col)
 
 	columns.write[p_col].xl_title = atr(columns[p_col].title);
 	const String& lang =
-		columns[p_col].language.is_empty() ? _get_locale() : columns[p_col].language;
+		columns[p_col].language.is_empty() ? this->obj->_get_locale() : columns[p_col].language;
 	columns.write[p_col].text_buf->add_string(
 		columns[p_col].xl_title, theme_cache.tb_font, theme_cache.tb_font_size, lang);
 	columns.write[p_col].cached_minimum_width_dirty = true;
@@ -2291,7 +2291,7 @@ void Tree::update_item_cell(TreeItem* p_item, int p_col) const
 		font_size = theme_cache.font_size;
 	}
 	const String& lang =
-		p_item->cells[p_col].language.is_empty() ? _get_locale() : p_item->cells[p_col].language;
+		p_item->cells[p_col].language.is_empty() ? this->obj->_get_locale() : p_item->cells[p_col].language;
 	p_item->cells.write[p_col].text_buf->add_string(valtext, font, font_size, lang);
 
 	BitField<TextServer::LineBreakFlag> break_flags =
@@ -3240,7 +3240,7 @@ void Tree::select_single_item(TreeItem* p_selected, TreeItem* p_current, int p_c
 				c.selected = true;
 				selected_item = p_selected;
 				if (!emitted_row) {
-					emit_signal(SceneStringName(item_selected));
+					this->obj->emit_signal(SceneStringName(item_selected));
 					emitted_row = true;
 				}
 			}
@@ -3263,12 +3263,12 @@ void Tree::select_single_item(TreeItem* p_selected, TreeItem* p_current, int p_c
 					selected_col = i;
 					selected_button = -1;
 
-					emit_signal(SNAME("cell_selected"));
+					this->obj->emit_signal(SNAME("cell_selected"));
 					if (select_mode == SELECT_MULTI) {
-						emit_signal(SNAME("multi_selected"), p_current, i, true);
+						this->obj->emit_signal(SNAME("multi_selected"), p_current, i, true);
 					}
 					else if (select_mode == SELECT_SINGLE) {
-						emit_signal(SceneStringName(item_selected));
+						this->obj->emit_signal(SceneStringName(item_selected));
 					}
 
 				}
@@ -3277,20 +3277,20 @@ void Tree::select_single_item(TreeItem* p_selected, TreeItem* p_current, int p_c
 					selected_item = p_selected;
 					selected_col = i;
 					selected_button = -1;
-					emit_signal(SNAME("cell_selected"));
+					this->obj->emit_signal(SNAME("cell_selected"));
 				}
 			}
 			else {
 				if (r_in_range && *r_in_range && !p_force_deselect) {
 					if (!c.selected && c.selectable) {
 						c.selected = true;
-						emit_signal(SNAME("multi_selected"), p_current, i, true);
+						this->obj->emit_signal(SNAME("multi_selected"), p_current, i, true);
 					}
 
 				}
 				else if (!r_in_range || p_force_deselect) {
 					if (select_mode == SELECT_MULTI && c.selected) {
-						emit_signal(SNAME("multi_selected"), p_current, i, false);
+						this->obj->emit_signal(SNAME("multi_selected"), p_current, i, false);
 					}
 					c.selected = false;
 				}
@@ -3361,7 +3361,7 @@ void Tree::_range_click_timeout()
 		}
 
 		if (propagate_mouse_activated) {
-			emit_signal(SNAME("item_activated"));
+			this->obj->emit_signal(SNAME("item_activated"));
 			propagate_mouse_activated = false;
 		}
 
@@ -3492,12 +3492,12 @@ int Tree::propagate_mouse_event(const Point2i& p_pos, int x_ofs, int y_ofs, int 
 				if (select_mode == SELECT_MULTI && p_mod->is_command_or_control_pressed()) {
 					if (c.selected && p_button == MouseButton::LEFT) {
 						p_item->deselect(col);
-						emit_signal(SNAME("multi_selected"), p_item, col, false);
+						this->obj->emit_signal(SNAME("multi_selected"), p_item, col, false);
 					}
 					else {
 						p_item->select(col);
-						emit_signal(SNAME("multi_selected"), p_item, col, true);
-						emit_signal(
+						this->obj->emit_signal(SNAME("multi_selected"), p_item, col, true);
+						this->obj->emit_signal(
 							SNAME("item_mouse_selected"), get_local_mouse_position(), p_button);
 					}
 				}
@@ -3507,7 +3507,7 @@ int Tree::propagate_mouse_event(const Point2i& p_pos, int x_ofs, int y_ofs, int 
 						bool inrange = false;
 
 						select_single_item(p_item, root, col, selected_item, &inrange);
-						emit_signal(
+						this->obj->emit_signal(
 							SNAME("item_mouse_selected"), get_local_mouse_position(), p_button);
 					}
 					else {
@@ -3532,7 +3532,7 @@ int Tree::propagate_mouse_event(const Point2i& p_pos, int x_ofs, int y_ofs, int 
 								}
 							}
 
-							emit_signal(
+							this->obj->emit_signal(
 								SNAME("item_mouse_selected"), get_local_mouse_position(), p_button);
 						}
 					}
@@ -3661,7 +3661,7 @@ int Tree::propagate_mouse_event(const Point2i& p_pos, int x_ofs, int y_ofs, int 
 					Size2(get_column_width(col), item_h));
 
 			if (on_arrow || !p_item->cells[col].custom_button) {
-				emit_signal(SNAME("custom_popup_edited"), ((bool)(x >= (col_width - item_h / 2))));
+				this->obj->emit_signal(SNAME("custom_popup_edited"), ((bool)(x >= (col_width - item_h / 2))));
 			}
 
 			if (!p_item->cells[col].custom_button || !on_arrow) {
@@ -3712,7 +3712,7 @@ int Tree::propagate_mouse_event(const Point2i& p_pos, int x_ofs, int y_ofs, int 
 			}
 		}
 		if (p_item == root) {
-			emit_signal(SNAME("empty_clicked"), get_local_mouse_position(), p_button);
+			this->obj->emit_signal(SNAME("empty_clicked"), get_local_mouse_position(), p_button);
 		}
 	}
 
@@ -3935,7 +3935,7 @@ void Tree::_go_left()
 		selected_button = -1;
 		if (select_mode == SELECT_MULTI) {
 			selected_col--;
-			emit_signal(SNAME("cell_selected"));
+			this->obj->emit_signal(SNAME("cell_selected"));
 		}
 		else {
 			selected_item->select(selected_col - 1);
@@ -3969,7 +3969,7 @@ void Tree::_go_right()
 		selected_button = -1;
 		if (select_mode == SELECT_MULTI) {
 			selected_col++;
-			emit_signal(SNAME("cell_selected"));
+			this->obj->emit_signal(SNAME("cell_selected"));
 		}
 		else {
 			selected_item->select(selected_col + 1);
@@ -4001,7 +4001,7 @@ void Tree::_go_up()
 		}
 
 		selected_item = prev;
-		emit_signal(SNAME("cell_selected"));
+		this->obj->emit_signal(SNAME("cell_selected"));
 		queue_redraw();
 	}
 	else {
@@ -4044,12 +4044,12 @@ void Tree::_shift_select_range(TreeItem* new_item)
 			if (in_range || at_range_edge) {
 				if (!item->is_selected(selected_col) && item->is_selectable(selected_col)) {
 					item->select(selected_col);
-					emit_signal(SNAME("multi_selected"), item, selected_col, true);
+					this->obj->emit_signal(SNAME("multi_selected"), item, selected_col, true);
 				}
 			}
 			else if (item->is_selected(selected_col)) {
 				item->deselect(selected_col);
-				emit_signal(SNAME("multi_selected"), item, selected_col, false);
+				this->obj->emit_signal(SNAME("multi_selected"), item, selected_col, false);
 			}
 		}
 		item = item->get_next_in_tree(false);
@@ -4082,7 +4082,7 @@ void Tree::_go_down()
 		}
 
 		selected_item = next;
-		emit_signal(SNAME("cell_selected"));
+		this->obj->emit_signal(SNAME("cell_selected"));
 		queue_redraw();
 	}
 	else {
@@ -4262,7 +4262,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 	}
 	else if (p_event->is_action("ui_menu") && p_event->is_pressed()) {
 		if (allow_rmb_select && selected_item) {
-			emit_signal(SNAME("item_mouse_selected"), get_item_rect(selected_item).position,
+			this->obj->emit_signal(SNAME("item_mouse_selected"), get_item_rect(selected_item).position,
 				MouseButton::RIGHT);
 		}
 
@@ -4294,7 +4294,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 
 		if (select_mode == SELECT_MULTI) {
 			selected_item = next;
-			emit_signal(SNAME("cell_selected"));
+			this->obj->emit_signal(SNAME("cell_selected"));
 			queue_accessibility_update();
 			queue_redraw();
 		}
@@ -4336,7 +4336,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 
 		if (select_mode == SELECT_MULTI) {
 			selected_item = prev;
-			emit_signal(SNAME("cell_selected"));
+			this->obj->emit_signal(SNAME("cell_selected"));
 			queue_accessibility_update();
 			queue_redraw();
 		}
@@ -4369,7 +4369,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 
 		if (select_mode == SELECT_MULTI) {
 			selected_item = first;
-			emit_signal(SNAME("cell_selected"));
+			this->obj->emit_signal(SNAME("cell_selected"));
 			queue_accessibility_update();
 			queue_redraw();
 		}
@@ -4403,7 +4403,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 
 		if (select_mode == SELECT_MULTI) {
 			selected_item = last;
-			emit_signal(SNAME("cell_selected"));
+			this->obj->emit_signal(SNAME("cell_selected"));
 			queue_accessibility_update();
 			queue_redraw();
 		}
@@ -4426,21 +4426,21 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 			}
 			if (selected_item && selected_col != -1 && selected_button != -1) {
 				const TreeItem::Cell& c = selected_item->cells[selected_col];
-				emit_signal("button_clicked", selected_item, selected_col,
+				this->obj->emit_signal("button_clicked", selected_item, selected_col,
 					c.buttons[selected_button].id, MouseButton::LEFT);
 			}
 			else if (selected_item->is_selected(selected_col)) {
 				selected_item->deselect(selected_col);
-				emit_signal(SNAME("multi_selected"), selected_item, selected_col, false);
+				this->obj->emit_signal(SNAME("multi_selected"), selected_item, selected_col, false);
 			}
 			else if (selected_item->is_selectable(selected_col)) {
 				selected_item->select(selected_col);
-				emit_signal(SNAME("multi_selected"), selected_item, selected_col, true);
+				this->obj->emit_signal(SNAME("multi_selected"), selected_item, selected_col, true);
 			}
 		}
 		else if (selected_item && selected_col != -1 && selected_button != -1) {
 			const TreeItem::Cell& c = selected_item->cells[selected_col];
-			emit_signal("button_clicked", selected_item, selected_col,
+			this->obj->emit_signal("button_clicked", selected_item, selected_col,
 				c.buttons[selected_button].id, MouseButton::LEFT);
 		}
 		accept_event();
@@ -4450,11 +4450,11 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 			// Bring up editor if possible.
 			if (selected_item && selected_col != -1 && selected_button != -1) {
 				const TreeItem::Cell& c = selected_item->cells[selected_col];
-				emit_signal("button_clicked", selected_item, selected_col,
+				this->obj->emit_signal("button_clicked", selected_item, selected_col,
 					c.buttons[selected_button].id, MouseButton::LEFT);
 			}
 			else if (!edit_selected()) {
-				emit_signal(SNAME("item_activated"));
+				this->obj->emit_signal(SNAME("item_activated"));
 				incr_search.clear();
 			}
 		}
@@ -4558,7 +4558,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 						for (int i = 0; i < columns.size(); i++) {
 							len += get_column_width(i);
 							if (pos.x < static_cast<real_t>(len)) {
-								emit_signal(
+								this->obj->emit_signal(
 									SNAME("column_title_clicked"), i, mb->get_button_index());
 								break;
 							}
@@ -4601,11 +4601,11 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 						}
 						if (rect.has_point(mpos)) {
 							if (!edit_selected()) {
-								emit_signal(SNAME("item_icon_double_clicked"));
+								this->obj->emit_signal(SNAME("item_icon_double_clicked"));
 							}
 						}
 						else {
-							emit_signal(SNAME("item_icon_double_clicked"));
+							this->obj->emit_signal(SNAME("item_icon_double_clicked"));
 						}
 					}
 					pressing_for_editor = false;
@@ -4634,7 +4634,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 					current_section);
 				if (current_item == cache.click_item && current_column == cache.click_column &&
 					current_index == cache.click_index) {
-					emit_signal("button_clicked", cache.click_item, cache.click_column,
+					this->obj->emit_signal("button_clicked", cache.click_item, cache.click_column,
 						cache.click_id, mb->get_button_index());
 				}
 			}
@@ -4683,7 +4683,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 			}
 
 			if (!root || (!root->get_first_child() && hide_root)) {
-				emit_signal(
+				this->obj->emit_signal(
 					SNAME("empty_clicked"), get_local_mouse_position(), mb->get_button_index());
 				break;
 			}
@@ -4709,7 +4709,7 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 			}
 			else if (mb->is_double_click() && cache.click_type != Cache::CLICK_BUTTON &&
 					   get_item_at_position(mb->get_position()) != nullptr) {
-				emit_signal(SNAME("item_icon_double_clicked"));
+				this->obj->emit_signal(SNAME("item_icon_double_clicked"));
 			}
 
 			if (mb->get_button_index() == MouseButton::RIGHT) {
@@ -4739,13 +4739,13 @@ void Tree::gui_input(const Ref<InputEvent>& p_event)
 				if (mb->get_button_index() == MouseButton::LEFT) {
 					if (get_item_at_position(mb->get_position()) == nullptr &&
 						!mb->is_shift_pressed() && !mb->is_command_or_control_pressed()) {
-						emit_signal(SNAME("nothing_selected"));
+						this->obj->emit_signal(SNAME("nothing_selected"));
 					}
 				}
 			}
 
 			if (propagate_mouse_activated) {
-				emit_signal(SNAME("item_activated"));
+				this->obj->emit_signal(SNAME("item_activated"));
 				propagate_mouse_activated = false;
 			}
 
@@ -5009,7 +5009,7 @@ bool Tree::edit_selected(bool p_force_edit)
 		edited_item = s;
 		edited_col = col;
 		custom_popup_rect = Rect2i(get_global_position() + rect.position, rect.size);
-		emit_signal(SNAME("custom_popup_edited"), false);
+		this->obj->emit_signal(SNAME("custom_popup_edited"), false);
 		item_edited(col, s);
 
 		return true;
@@ -5383,7 +5383,7 @@ void Tree::_accessibility_action_edit_custom(const Variant& p_data, TreeItem* p_
 	edited_item = p_item;
 	edited_col = p_col;
 	custom_popup_rect = Rect2i(get_global_position() + rect.position, rect.size);
-	emit_signal(SNAME("custom_popup_edited"), false);
+	this->obj->emit_signal(SNAME("custom_popup_edited"), false);
 	item_edited(p_col, p_item);
 }
 
@@ -5400,7 +5400,7 @@ void Tree::_accessibility_action_set_dec(const Variant& p_data, TreeItem* p_item
 void Tree::_accessibility_action_button_press(
 	const Variant& p_data, TreeItem* p_item, int p_col, int p_btn)
 {
-	emit_signal("button_clicked", p_item, p_col, p_btn, MouseButton::LEFT);
+	this->obj->emit_signal("button_clicked", p_item, p_col, p_btn, MouseButton::LEFT);
 }
 
 RID Tree::get_focused_accessibility_element() const
@@ -6480,9 +6480,9 @@ void Tree::item_edited(int p_column, TreeItem* p_item, MouseButton p_custom_mous
 		edited_item->cells.write[p_column].dirty = true;
 		edited_item->cells.write[p_column].cached_minimum_size_dirty = true;
 	}
-	emit_signal(SNAME("item_edited"));
+	this->obj->emit_signal(SNAME("item_edited"));
 	if (p_custom_mouse_index != MouseButton::NONE) {
-		emit_signal(SNAME("custom_item_clicked"), p_custom_mouse_index);
+		this->obj->emit_signal(SNAME("custom_item_clicked"), p_custom_mouse_index);
 	}
 	queue_accessibility_update();
 }

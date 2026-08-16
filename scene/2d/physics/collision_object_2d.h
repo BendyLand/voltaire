@@ -36,13 +36,16 @@
 #include "scene/resources/2d/shape_2d.h"
 #include "servers/physics_2d/physics_server_2d_enums.h"
 
-class CollisionObject2D : public Node2D {
+class CollisionObject2D : public Node2D
+{
 	VLTRCLASS(CollisionObject2D, Node2D);
 
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::COLLISION_OBJECT_2D;
+	static constexpr Object::AncestralClass static_ancestral_class =
+		Object::AncestralClass::COLLISION_OBJECT_2D;
 
-	enum DisableMode {
+	enum DisableMode
+	{
 		DISABLE_MODE_REMOVE,
 		DISABLE_MODE_MAKE_STATIC,
 		DISABLE_MODE_KEEP_ACTIVE,
@@ -62,10 +65,13 @@ private:
 
 	PS2DE::BodyMode body_mode = PS2DE::BODY_MODE_STATIC;
 
-	struct ShapeData {
+	struct ShapeData
+	{
 		ObjectID owner_id;
 		Transform2D xform;
-		struct Shape {
+
+		struct Shape
+		{
 			Ref<Shape2D> shape;
 			int index = 0;
 		};
@@ -88,7 +94,9 @@ private:
 
 protected:
 	_FORCE_INLINE_ void lock_callback() { callback_lock++; }
-	_FORCE_INLINE_ void unlock_callback() {
+
+	_FORCE_INLINE_ void unlock_callback()
+	{
 		ERR_FAIL_COND(callback_lock == 0);
 		callback_lock--;
 	}
@@ -100,7 +108,7 @@ protected:
 
 	void _update_pickable();
 	friend class Viewport;
-	void _input_event_call(Viewport *p_viewport, const Ref<InputEvent> &p_input_event, int p_shape);
+	void _input_event_call(Viewport* p_viewport, const Ref<InputEvent>& p_input_event, int p_shape);
 	void _mouse_enter();
 	void _mouse_exit();
 
@@ -112,7 +120,7 @@ protected:
 
 	void set_body_mode(PS2DE::BodyMode p_mode);
 
-	virtual void _space_changed(const RID &p_new_space);
+	virtual void _space_changed(const RID& p_new_space);
 
 public:
 	void set_collision_layer(uint32_t p_layer);
@@ -133,14 +141,14 @@ public:
 	void set_disable_mode(DisableMode p_mode);
 	DisableMode get_disable_mode() const;
 
-	uint32_t create_shape_owner(Object *p_owner);
+	uint32_t create_shape_owner(Object* p_owner);
 	void remove_shape_owner(uint32_t owner);
-	void get_shape_owners(List<uint32_t> *r_owners);
+	void get_shape_owners(List<uint32_t>* r_owners);
 	PackedInt32Array _get_shape_owners();
 
-	void shape_owner_set_transform(uint32_t p_owner, const Transform2D &p_transform);
+	void shape_owner_set_transform(uint32_t p_owner, const Transform2D& p_transform);
 	Transform2D shape_owner_get_transform(uint32_t p_owner) const;
-	Object *shape_owner_get_owner(uint32_t p_owner) const;
+	Object* shape_owner_get_owner(uint32_t p_owner) const;
 
 	void shape_owner_set_disabled(uint32_t p_owner, bool p_disabled);
 	bool is_shape_owner_disabled(uint32_t p_owner) const;
@@ -151,7 +159,7 @@ public:
 	void shape_owner_set_one_way_collision_margin(uint32_t p_owner, real_t p_margin);
 	real_t get_shape_owner_one_way_collision_margin(uint32_t p_owner) const;
 
-	void shape_owner_set_one_way_collision_direction(uint32_t p_owner, const Vector2 &p_direction);
+	void shape_owner_set_one_way_collision_direction(uint32_t p_owner, const Vector2& p_direction);
 	Vector2 get_shape_owner_one_way_collision_direction(uint32_t p_owner) const;
 
 	void shape_owner_add_shape(uint32_t p_owner, RequiredParam<Shape2D> rp_shape);
@@ -176,3 +184,5 @@ public:
 };
 
 VARIANT_ENUM_CAST(CollisionObject2D::DisableMode);
+
+

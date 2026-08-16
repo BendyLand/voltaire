@@ -169,7 +169,7 @@ protected:
 public:
 	BaseButton* get_pressed_button();
 	void get_buttons(List<BaseButton*>* r_buttons);
-	TypedArray<BaseButton> _get_buttons();
+	Array _get_buttons();
 	void set_allow_unpress(bool p_enabled);
 	bool is_allow_unpress();
 	ButtonGroup();

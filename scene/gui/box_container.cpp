@@ -29,13 +29,13 @@
 /**************************************************************************/
 
 #include "box_container.h"
-
 #include "core/object/class_db.h"
 #include "scene/gui/label.h"
 #include "scene/gui/margin_container.h"
 #include "scene/theme/theme_db.h"
 
-struct _MinSizeCache {
+struct _MinSizeCache
+{
 	int min_size = 0;
 	int desired_size = 0;
 	int max_size = -1;
@@ -44,10 +44,13 @@ struct _MinSizeCache {
 	int final_size = 0;
 };
 
-void BoxContainer::_resort() {
+void BoxContainer::_resort()
+{
 	Size2i new_size = get_size();
 	Size2i combined_max_size = get_combined_maximum_size();
-	bool propagating_max_size = vertical ? is_propagating_maximum_size() && combined_max_size.height >= 0 : is_propagating_maximum_size() && combined_max_size.width >= 0;
+	bool propagating_max_size = vertical
+									? is_propagating_maximum_size() && combined_max_size.height >= 0
+									: is_propagating_maximum_size() && combined_max_size.width >= 0;
 
 	bool rtl = is_layout_rtl();
 
@@ -57,10 +60,10 @@ void BoxContainer::_resort() {
 	int stretch_space = 0;
 	float stretch_ratio_total = 0.0;
 	int desired_extra_space = 0;
-	HashMap<Control *, _MinSizeCache> min_size_cache;
+	HashMap<Control*, _MinSizeCache> min_size_cache;
 
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i));
+		Control* c = as_sortable_control(get_child(i));
 		if (!c) {
 			continue;
 		}
@@ -79,7 +82,8 @@ void BoxContainer::_resort() {
 			msc.max_size = max_size.height;
 			msc.will_stretch = c->get_v_size_flags().has_flag(SIZE_EXPAND);
 
-		} else { /* HORIZONTAL */
+		}
+		else { /* HORIZONTAL */
 			msc.min_size = min_size.width;
 			msc.desired_size = desired_size.width;
 			msc.max_size = max_size.width;
@@ -110,31 +114,35 @@ void BoxContainer::_resort() {
 	max_space -= theme_cache.separation * (children_count - 1);
 	int stretch_diff = max_space - combined_min;
 	if (stretch_diff < 0) {
-		//avoid negative stretch space
+		// avoid negative stretch space
 		stretch_diff = 0;
 	}
 
-	stretch_space += stretch_diff; //available stretch space.
+	stretch_space += stretch_diff; // available stretch space.
 
-	// First, allocate extra space to Controls which have a desired size larger than their minimum size, up to their desired size, in proportion to how much extra space they want.
+	// First, allocate extra space to Controls which have a desired size larger than their minimum
+	// size, up to their desired size, in proportion to how much extra space they want.
 	if (stretch_diff > 0 && desired_extra_space > 0) {
 		real_t space_available_ratio = MIN(real_t(stretch_diff) / real_t(desired_extra_space), 1.0);
 
-		for (Node *child : iterate_children()) {
-			Control *c = as_sortable_control(child, SortableVisibilityMode::VISIBLE);
+		for (Node* child : iterate_children()) {
+			Control* c = as_sortable_control(child, SortableVisibilityMode::VISIBLE);
 			if (!c) {
 				continue;
 			}
 
-			_MinSizeCache &msc = min_size_cache[c];
+			_MinSizeCache& msc = min_size_cache[c];
 
 			if (msc.desired_size > msc.min_size) {
-				int desired_size_increase = floor((msc.desired_size - msc.min_size) * space_available_ratio);
+				int desired_size_increase =
+					floor((msc.desired_size - msc.min_size) * space_available_ratio);
 
 				if (msc.will_stretch) {
-					// Increase the minimum size to reflect the desired size allocation, so that the SIZE_EXPAND allocation does not shrink them back down.
+					// Increase the minimum size to reflect the desired size allocation, so that the
+					// SIZE_EXPAND allocation does not shrink them back down.
 					msc.min_size += desired_size_increase;
-				} else {
+				}
+				else {
 					// If the Control isn't stretchable
 					stretch_space -= desired_size_increase;
 				}
@@ -144,19 +152,20 @@ void BoxContainer::_resort() {
 		}
 	}
 
-	// Second, allocate stretch space to Controls with the SIZE_EXPAND flag, in proportion to their stretch ratio.
+	// Second, allocate stretch space to Controls with the SIZE_EXPAND flag, in proportion to their
+	// stretch ratio.
 	while (stretch_ratio_total > 0) {
 		bool refit_successful = true;
 		float error = 0.0; // Keep track of accumulated error in pixels
 
 		for (int i = 0; i < get_child_count(); i++) {
-			Control *c = as_sortable_control(get_child(i));
+			Control* c = as_sortable_control(get_child(i));
 			if (!c) {
 				continue;
 			}
 
 			ERR_FAIL_COND(!min_size_cache.has(c));
-			_MinSizeCache &msc = min_size_cache[c];
+			_MinSizeCache& msc = min_size_cache[c];
 
 			if (msc.will_stretch) {
 				float stretch_ratio = c->get_stretch_ratio();
@@ -170,28 +179,32 @@ void BoxContainer::_resort() {
 				}
 
 				if (final_pixel_size < msc.min_size) {
-					// If stretching would make the Control smaller than its minimum size, cap it and redistribute its unused share.
+					// If stretching would make the Control smaller than its minimum size, cap it
+					// and redistribute its unused share.
 					msc.will_stretch = false;
 					stretch_ratio_total -= stretch_ratio;
 					refit_successful = false;
 					stretch_space -= msc.min_size;
 					msc.final_size = msc.min_size;
 					break;
-				} else if (msc.max_size >= 0 && final_pixel_size > msc.max_size) {
-					// If stretching would exceed the Control's maximum size, cap it and redistribute its unused share.
+				}
+				else if (msc.max_size >= 0 && final_pixel_size > msc.max_size) {
+					// If stretching would exceed the Control's maximum size, cap it and
+					// redistribute its unused share.
 					msc.will_stretch = false;
 					stretch_ratio_total -= stretch_ratio;
 					refit_successful = false;
 					stretch_space -= msc.max_size;
 					msc.final_size = msc.max_size;
 					break;
-				} else {
+				}
+				else {
 					msc.final_size = final_pixel_size;
 				}
 			}
 		}
 
-		if (refit_successful) { //uf refit went well, break
+		if (refit_successful) { // uf refit went well, break
 			break;
 		}
 	}
@@ -201,13 +214,13 @@ void BoxContainer::_resort() {
 	int ofs = 0;
 	int final_stretch_diff = max_space - combined_min;
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i));
+		Control* c = as_sortable_control(get_child(i));
 		if (!c) {
 			continue;
 		}
 
 		ERR_FAIL_COND(!min_size_cache.has(c));
-		_MinSizeCache &msc = min_size_cache[c];
+		_MinSizeCache& msc = min_size_cache[c];
 		final_stretch_diff -= msc.final_size - msc.min_size;
 	}
 
@@ -217,30 +230,31 @@ void BoxContainer::_resort() {
 
 	if (!vertical) {
 		switch (alignment) {
-			case ALIGNMENT_BEGIN:
-				if (rtl) {
-					ofs = final_stretch_diff;
-				}
-				break;
-			case ALIGNMENT_CENTER:
-				ofs = final_stretch_diff / 2;
-				break;
-			case ALIGNMENT_END:
-				if (!rtl) {
-					ofs = final_stretch_diff;
-				}
-				break;
-		}
-	} else {
-		switch (alignment) {
-			case ALIGNMENT_BEGIN:
-				break;
-			case ALIGNMENT_CENTER:
-				ofs = final_stretch_diff / 2;
-				break;
-			case ALIGNMENT_END:
+		case ALIGNMENT_BEGIN:
+			if (rtl) {
 				ofs = final_stretch_diff;
-				break;
+			}
+			break;
+		case ALIGNMENT_CENTER:
+			ofs = final_stretch_diff / 2;
+			break;
+		case ALIGNMENT_END:
+			if (!rtl) {
+				ofs = final_stretch_diff;
+			}
+			break;
+		}
+	}
+	else {
+		switch (alignment) {
+		case ALIGNMENT_BEGIN:
+			break;
+		case ALIGNMENT_CENTER:
+			ofs = final_stretch_diff / 2;
+			break;
+		case ALIGNMENT_END:
+			ofs = final_stretch_diff;
+			break;
 		}
 	}
 
@@ -255,7 +269,8 @@ void BoxContainer::_resort() {
 		start = get_child_count() - 1;
 		end = -1;
 		delta = -1;
-	} else {
+	}
+	else {
 		start = 0;
 		end = get_child_count();
 		delta = +1;
@@ -263,16 +278,17 @@ void BoxContainer::_resort() {
 
 	int accumulated_size = 0;
 	for (int i = start; i != end; i += delta) {
-		Control *c = as_sortable_control(get_child(i));
+		Control* c = as_sortable_control(get_child(i));
 		if (!c) {
 			continue;
 		}
 
-		_MinSizeCache &msc = min_size_cache[c];
+		_MinSizeCache& msc = min_size_cache[c];
 
 		if (first) {
 			first = false;
-		} else {
+		}
+		else {
 			ofs += theme_cache.separation;
 		}
 
@@ -280,8 +296,8 @@ void BoxContainer::_resort() {
 		int to = ofs + msc.final_size;
 
 		if (msc.will_stretch && idx == children_count - 1) {
-			//adjust so the last one always fits perfect
-			//compensating for numerical imprecision
+			// adjust so the last one always fits perfect
+			// compensating for numerical imprecision
 
 			to = vertical ? new_size.height : new_size.width;
 		}
@@ -292,15 +308,19 @@ void BoxContainer::_resort() {
 
 		if (vertical) {
 			rect = Rect2(0, from, new_size.width, size);
-		} else {
+		}
+		else {
 			rect = Rect2(from, 0, size, new_size.height);
 		}
 
 		if (propagating_max_size) {
 			if (vertical) {
-				c->set_parent_maximum_size_cache(Size2(combined_max_size.width, MAX(combined_max_size.height - accumulated_size, 0)));
-			} else {
-				c->set_parent_maximum_size_cache(Size2(MAX(combined_max_size.width - accumulated_size, 0), combined_max_size.height));
+				c->set_parent_maximum_size_cache(Size2(
+					combined_max_size.width, MAX(combined_max_size.height - accumulated_size, 0)));
+			}
+			else {
+				c->set_parent_maximum_size_cache(Size2(
+					MAX(combined_max_size.width - accumulated_size, 0), combined_max_size.height));
 			}
 		}
 
@@ -312,7 +332,8 @@ void BoxContainer::_resort() {
 	}
 }
 
-Size2 BoxContainer::_get_minimum_size(bool p_use_desired_sizes) const {
+Size2 BoxContainer::_get_minimum_size(bool p_use_desired_sizes) const
+{
 	/* Calculate MINIMUM SIZE */
 
 	Size2i minimum;
@@ -320,12 +341,13 @@ Size2 BoxContainer::_get_minimum_size(bool p_use_desired_sizes) const {
 	bool first = true;
 
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
+		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
 		if (!c) {
 			continue;
 		}
 
-		Size2i size = p_use_desired_sizes ? c->get_bound_desired_size().ceil() : c->get_bound_minimum_size().ceil();
+		Size2i size = p_use_desired_sizes ? c->get_bound_desired_size().ceil()
+										  : c->get_bound_minimum_size().ceil();
 
 		if (vertical) { /* VERTICAL */
 
@@ -335,7 +357,8 @@ Size2 BoxContainer::_get_minimum_size(bool p_use_desired_sizes) const {
 
 			minimum.height += size.height + (first ? 0 : theme_cache.separation);
 
-		} else { /* HORIZONTAL */
+		}
+		else { /* HORIZONTAL */
 
 			if (size.height > minimum.height) {
 				minimum.height = size.height;
@@ -350,38 +373,37 @@ Size2 BoxContainer::_get_minimum_size(bool p_use_desired_sizes) const {
 	return minimum;
 }
 
-Size2 BoxContainer::get_minimum_size() const {
-	return _get_minimum_size(false);
-}
+Size2 BoxContainer::get_minimum_size() const { return _get_minimum_size(false); }
 
-Size2 BoxContainer::get_desired_size() const {
-	return _get_minimum_size(true);
-}
+Size2 BoxContainer::get_desired_size() const { return _get_minimum_size(true); }
 
-void BoxContainer::_notification(int p_what) {
+void BoxContainer::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_SORT_CHILDREN: {
-			_resort();
-		} break;
+	case NOTIFICATION_SORT_CHILDREN: {
+		_resort();
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED: {
-			update_minimum_size();
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		update_minimum_size();
+	} break;
 
-		case NOTIFICATION_TRANSLATION_CHANGED:
-		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
-			queue_sort();
-		} break;
+	case NOTIFICATION_TRANSLATION_CHANGED:
+	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
+		queue_sort();
+	} break;
 	}
 }
 
-void BoxContainer::_validate_property(PropertyInfo &p_property) const {
+void BoxContainer::_validate_property(PropertyInfo& p_property) const
+{
 	if (is_fixed && p_property.name == "vertical") {
 		p_property.usage = PROPERTY_USAGE_NONE;
 	}
 }
 
-void BoxContainer::set_alignment(AlignmentMode p_alignment) {
+void BoxContainer::set_alignment(AlignmentMode p_alignment)
+{
 	if (alignment == p_alignment) {
 		return;
 	}
@@ -389,22 +411,20 @@ void BoxContainer::set_alignment(AlignmentMode p_alignment) {
 	_resort();
 }
 
-BoxContainer::AlignmentMode BoxContainer::get_alignment() const {
-	return alignment;
-}
+BoxContainer::AlignmentMode BoxContainer::get_alignment() const { return alignment; }
 
-void BoxContainer::set_vertical(bool p_vertical) {
-	ERR_FAIL_COND_MSG(is_fixed, "Can't change orientation of " + get_class() + ".");
+void BoxContainer::set_vertical(bool p_vertical)
+{
+	ERR_FAIL_COND_MSG(is_fixed, "Can't change orientation of " + this->obj->get_class() + ".");
 	vertical = p_vertical;
 	update_minimum_size();
 	_resort();
 }
 
-bool BoxContainer::is_vertical() const {
-	return vertical;
-}
+bool BoxContainer::is_vertical() const { return vertical; }
 
-void BoxContainer::set_reverse_sort(bool p_reverse_sort) {
+void BoxContainer::set_reverse_sort(bool p_reverse_sort)
+{
 	if (reverse_sort == p_reverse_sort) {
 		return;
 	}
@@ -412,17 +432,17 @@ void BoxContainer::set_reverse_sort(bool p_reverse_sort) {
 	queue_sort();
 }
 
-bool BoxContainer::is_reverse_sort() const {
-	return reverse_sort;
-}
+bool BoxContainer::is_reverse_sort() const { return reverse_sort; }
 
-Control *BoxContainer::add_spacer(bool p_begin) {
-	Control *c = memnew(Control);
-	c->set_mouse_filter(MOUSE_FILTER_PASS); //allow spacer to pass mouse events
+Control* BoxContainer::add_spacer(bool p_begin)
+{
+	Control* c = memnew(Control);
+	c->set_mouse_filter(MOUSE_FILTER_PASS); // allow spacer to pass mouse events
 
 	if (vertical) {
 		c->set_v_size_flags(SIZE_EXPAND_FILL);
-	} else {
+	}
+	else {
 		c->set_h_size_flags(SIZE_EXPAND_FILL);
 	}
 
@@ -434,7 +454,8 @@ Control *BoxContainer::add_spacer(bool p_begin) {
 	return c;
 }
 
-Vector<int> BoxContainer::get_allowed_size_flags_horizontal() const {
+Vector<int> BoxContainer::get_allowed_size_flags_horizontal() const
+{
 	Vector<int> flags;
 	flags.append(SIZE_FILL);
 	if (!vertical) {
@@ -446,7 +467,8 @@ Vector<int> BoxContainer::get_allowed_size_flags_horizontal() const {
 	return flags;
 }
 
-Vector<int> BoxContainer::get_allowed_size_flags_vertical() const {
+Vector<int> BoxContainer::get_allowed_size_flags_vertical() const
+{
 	Vector<int> flags;
 	flags.append(SIZE_FILL);
 	if (vertical) {
@@ -458,36 +480,18 @@ Vector<int> BoxContainer::get_allowed_size_flags_vertical() const {
 	return flags;
 }
 
-BoxContainer::BoxContainer(bool p_vertical) {
-	vertical = p_vertical;
-}
+BoxContainer::BoxContainer(bool p_vertical) { vertical = p_vertical; }
 
-void BoxContainer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("add_spacer", "begin"), &BoxContainer::add_spacer);
-	ClassDB::bind_method(D_METHOD("set_alignment", "alignment"), &BoxContainer::set_alignment);
-	ClassDB::bind_method(D_METHOD("get_alignment"), &BoxContainer::get_alignment);
-	ClassDB::bind_method(D_METHOD("set_vertical", "vertical"), &BoxContainer::set_vertical);
-	ClassDB::bind_method(D_METHOD("is_vertical"), &BoxContainer::is_vertical);
-	ClassDB::bind_method(D_METHOD("set_reverse_sort", "reverse_sort"), &BoxContainer::set_reverse_sort);
-	ClassDB::bind_method(D_METHOD("is_reverse_sort"), &BoxContainer::is_reverse_sort);
+void BoxContainer::_bind_methods() {}
 
-	BIND_ENUM_CONSTANT(ALIGNMENT_BEGIN);
-	BIND_ENUM_CONSTANT(ALIGNMENT_CENTER);
-	BIND_ENUM_CONSTANT(ALIGNMENT_END);
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "alignment", PROPERTY_HINT_ENUM, "Begin,Center,End"), "set_alignment", "get_alignment");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "vertical"), "set_vertical", "is_vertical");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "reverse_sort"), "set_reverse_sort", "is_reverse_sort");
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, BoxContainer, separation);
-}
-
-MarginContainer *VBoxContainer::add_margin_child(const String &p_label, Control *p_control, bool p_expand) {
-	Label *l = memnew(Label);
+MarginContainer* VBoxContainer::add_margin_child(
+	const String& p_label, Control* p_control, bool p_expand)
+{
+	Label* l = memnew(Label);
 	l->set_theme_type_variation("HeaderSmall");
 	l->set_text(p_label);
 	add_child(l);
-	MarginContainer *mc = memnew(MarginContainer);
+	MarginContainer* mc = memnew(MarginContainer);
 	mc->add_child(p_control, true);
 	add_child(mc);
 	if (p_expand) {
@@ -497,3 +501,5 @@ MarginContainer *VBoxContainer::add_margin_child(const String &p_label, Control 
 
 	return mc;
 }
+
+

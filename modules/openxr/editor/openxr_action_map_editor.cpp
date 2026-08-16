@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "openxr_action_map_editor.h"
-
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/resource_loader.h"
@@ -40,65 +38,90 @@
 #include "editor/settings/editor_command_palette.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "openxr_action_map_editor.h"
 #include "scene/gui/separator.h"
 
 HashMap<String, String> OpenXRActionMapEditor::interaction_profile_editors;
 HashMap<String, String> OpenXRActionMapEditor::binding_modifier_editors;
 
-void OpenXRActionMapEditor::_bind_methods() {
+void OpenXRActionMapEditor::_bind_methods()
+{
 	ClassDB::bind_method("_add_action_set_editor", &OpenXRActionMapEditor::_add_action_set_editor);
-	ClassDB::bind_method("_add_interaction_profile_editor", &OpenXRActionMapEditor::_add_interaction_profile_editor);
+	ClassDB::bind_method(
+		"_add_interaction_profile_editor", &OpenXRActionMapEditor::_add_interaction_profile_editor);
 
-	ClassDB::bind_method(D_METHOD("_add_action_set", "name"), &OpenXRActionMapEditor::_add_action_set);
-	ClassDB::bind_method(D_METHOD("_remove_action_set", "name"), &OpenXRActionMapEditor::_remove_action_set);
+	ClassDB::bind_method(
+		D_METHOD("_add_action_set", "name"), &OpenXRActionMapEditor::_add_action_set);
+	ClassDB::bind_method(
+		D_METHOD("_remove_action_set", "name"), &OpenXRActionMapEditor::_remove_action_set);
 
-	ClassDB::bind_method(D_METHOD("_do_add_action_set_editor", "action_set_editor"), &OpenXRActionMapEditor::_do_add_action_set_editor);
-	ClassDB::bind_method(D_METHOD("_do_remove_action_set_editor", "action_set_editor"), &OpenXRActionMapEditor::_do_remove_action_set_editor);
-	ClassDB::bind_method(D_METHOD("_do_add_interaction_profile_editor", "interaction_profile_editor"), &OpenXRActionMapEditor::_do_add_interaction_profile_editor);
-	ClassDB::bind_method(D_METHOD("_do_remove_interaction_profile_editor", "interaction_profile_editor"), &OpenXRActionMapEditor::_do_remove_interaction_profile_editor);
+	ClassDB::bind_method(D_METHOD("_do_add_action_set_editor", "action_set_editor"),
+		&OpenXRActionMapEditor::_do_add_action_set_editor);
+	ClassDB::bind_method(D_METHOD("_do_remove_action_set_editor", "action_set_editor"),
+		&OpenXRActionMapEditor::_do_remove_action_set_editor);
+	ClassDB::bind_method(
+		D_METHOD("_do_add_interaction_profile_editor", "interaction_profile_editor"),
+		&OpenXRActionMapEditor::_do_add_interaction_profile_editor);
+	ClassDB::bind_method(
+		D_METHOD("_do_remove_interaction_profile_editor", "interaction_profile_editor"),
+		&OpenXRActionMapEditor::_do_remove_interaction_profile_editor);
 
-	ClassDB::bind_static_method("OpenXRActionMapEditor", D_METHOD("register_interaction_profile_editor", "interaction_profile_path", "editor_class"), &OpenXRActionMapEditor::register_interaction_profile_editor);
-	ClassDB::bind_static_method("OpenXRActionMapEditor", D_METHOD("register_binding_modifier_editor", "binding_modifier_class", "editor_class"), &OpenXRActionMapEditor::register_binding_modifier_editor);
+	ClassDB::bind_static_method("OpenXRActionMapEditor",
+		D_METHOD("register_interaction_profile_editor", "interaction_profile_path", "editor_class"),
+		&OpenXRActionMapEditor::register_interaction_profile_editor);
+	ClassDB::bind_static_method("OpenXRActionMapEditor",
+		D_METHOD("register_binding_modifier_editor", "binding_modifier_class", "editor_class"),
+		&OpenXRActionMapEditor::register_binding_modifier_editor);
 }
 
-void OpenXRActionMapEditor::_notification(int p_what) {
+void OpenXRActionMapEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			const bool is_theme_classic = EDITOR_GET("interface/theme/style") == "Classic";
-			tabs->set_theme_type_variation(is_theme_classic ? "TabContainerOdd" : "TabContainerInner");
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		const bool is_theme_classic = EDITOR_GET("interface/theme/style") == "Classic";
+		tabs->set_theme_type_variation(is_theme_classic ? "TabContainerOdd" : "TabContainerInner");
+	} break;
 
-		case NOTIFICATION_READY: {
-			_create_action_sets();
-			_create_interaction_profiles();
-		} break;
+	case NOTIFICATION_READY: {
+		_create_action_sets();
+		_create_interaction_profiles();
+	} break;
 	}
 }
 
-void OpenXRActionMapEditor::update_layout(EditorDock::DockLayout p_layout, int p_slot) {
+void OpenXRActionMapEditor::update_layout(EditorDock::DockLayout p_layout, int p_slot)
+{
 	if (p_slot != EditorDock::DOCK_SLOT_BOTTOM) {
 		actionsets_mc->set_theme_type_variation("NoBorderBottomWideWindow");
 		actionsets_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_TOP_AND_LEFT);
-	} else {
+	}
+	else {
 		actionsets_mc->set_theme_type_variation("NoBorderOpenXR");
 		actionsets_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_ALL);
 	}
 }
 
-OpenXRActionSetEditor *OpenXRActionMapEditor::_add_action_set_editor(const Ref<OpenXRActionSet> &p_action_set) {
+OpenXRActionSetEditor* OpenXRActionMapEditor::_add_action_set_editor(
+	const Ref<OpenXRActionSet>& p_action_set)
+{
 	ERR_FAIL_COND_V(p_action_set.is_null(), nullptr);
 
-	OpenXRActionSetEditor *action_set_editor = memnew(OpenXRActionSetEditor(action_map, p_action_set));
-	action_set_editor->connect("remove", callable_mp(this, &OpenXRActionMapEditor::_on_remove_action_set));
-	action_set_editor->connect("action_removed", callable_mp(this, &OpenXRActionMapEditor::_on_action_removed));
-	action_set_editor->connect("action_renamed", callable_mp(this, &OpenXRActionMapEditor::_on_action_renamed));
+	OpenXRActionSetEditor* action_set_editor =
+		memnew(OpenXRActionSetEditor(action_map, p_action_set));
+	action_set_editor->connect(
+		"remove", callable_mp(this, &OpenXRActionMapEditor::_on_remove_action_set));
+	action_set_editor->connect(
+		"action_removed", callable_mp(this, &OpenXRActionMapEditor::_on_action_removed));
+	action_set_editor->connect(
+		"action_renamed", callable_mp(this, &OpenXRActionMapEditor::_on_action_renamed));
 
 	actionsets_vb->add_child(action_set_editor);
 
 	return action_set_editor;
 }
 
-void OpenXRActionMapEditor::_create_action_sets() {
+void OpenXRActionMapEditor::_create_action_sets()
+{
 	if (action_map.is_valid()) {
 		Array action_sets = action_map->get_action_sets();
 		for (int i = 0; i < action_sets.size(); i++) {
@@ -108,15 +131,17 @@ void OpenXRActionMapEditor::_create_action_sets() {
 	}
 }
 
-OpenXRInteractionProfileEditorBase *OpenXRActionMapEditor::_add_interaction_profile_editor(const Ref<OpenXRInteractionProfile> &p_interaction_profile) {
+OpenXRInteractionProfileEditorBase* OpenXRActionMapEditor::_add_interaction_profile_editor(
+	const Ref<OpenXRInteractionProfile>& p_interaction_profile)
+{
 	ERR_FAIL_COND_V(p_interaction_profile.is_null(), nullptr);
 
 	String profile_path = p_interaction_profile->get_interaction_profile_path();
 
 	// need to instance the correct editor for our profile
-	OpenXRInteractionProfileEditorBase *new_profile_editor = nullptr;
+	OpenXRInteractionProfileEditorBase* new_profile_editor = nullptr;
 	if (interaction_profile_editors.has(profile_path)) {
-		Object *new_editor = ClassDB::instantiate(interaction_profile_editors[profile_path]);
+		Object* new_editor = ClassDB::instantiate(interaction_profile_editors[profile_path]);
 		if (new_editor) {
 			new_profile_editor = Object::cast_to<OpenXRInteractionProfileEditorBase>(new_editor);
 			if (!new_profile_editor) {
@@ -134,8 +159,10 @@ OpenXRInteractionProfileEditorBase *OpenXRActionMapEditor::_add_interaction_prof
 	ERR_FAIL_NULL_V(new_profile_editor, nullptr);
 	new_profile_editor->setup(action_map, p_interaction_profile);
 	tabs->add_child(new_profile_editor);
-	new_profile_editor->add_theme_style_override(SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
-	tabs->set_tab_button_icon(tabs->get_tab_count() - 1, get_theme_icon(SNAME("close"), SNAME("TabBar")));
+	new_profile_editor->add_theme_style_override(
+		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+	tabs->set_tab_button_icon(
+		tabs->get_tab_count() - 1, get_theme_icon(SNAME("close"), SNAME("TabBar")));
 
 	if (!new_profile_editor->tooltip.is_empty()) {
 		tabs->set_tab_tooltip(tabs->get_tab_count() - 1, new_profile_editor->tooltip);
@@ -144,7 +171,8 @@ OpenXRInteractionProfileEditorBase *OpenXRActionMapEditor::_add_interaction_prof
 	return new_profile_editor;
 }
 
-void OpenXRActionMapEditor::_create_interaction_profiles() {
+void OpenXRActionMapEditor::_create_interaction_profiles()
+{
 	if (action_map.is_valid()) {
 		Array new_interaction_profiles = action_map->get_interaction_profiles();
 		for (int i = 0; i < new_interaction_profiles.size(); i++) {
@@ -154,7 +182,8 @@ void OpenXRActionMapEditor::_create_interaction_profiles() {
 	}
 }
 
-OpenXRActionSetEditor *OpenXRActionMapEditor::_add_action_set(const String &p_name) {
+OpenXRActionSetEditor* OpenXRActionMapEditor::_add_action_set(const String& p_name)
+{
 	ERR_FAIL_COND_V(action_map.is_null(), nullptr);
 	Ref<OpenXRActionSet> new_action_set;
 
@@ -166,30 +195,33 @@ OpenXRActionSetEditor *OpenXRActionMapEditor::_add_action_set(const String &p_na
 	action_map->set_edited(true);
 
 	// update our editor right away
-	OpenXRActionSetEditor *action_set_editor = _add_action_set_editor(new_action_set);
+	OpenXRActionSetEditor* action_set_editor = _add_action_set_editor(new_action_set);
 
 	undo_redo->create_action(TTR("Add action set"));
-	undo_redo->add_do_method(this, "_do_add_action_set_editor", action_set_editor);
-	undo_redo->add_undo_method(this, "_do_remove_action_set_editor", action_set_editor);
+	undo_redo->add_do_method(this->obj.get(), "_do_add_action_set_editor", action_set_editor);
+	undo_redo->add_undo_method(this->obj.get(), "_do_remove_action_set_editor", action_set_editor);
 	undo_redo->commit_action(false);
 
 	return action_set_editor;
 }
 
-void OpenXRActionMapEditor::_remove_action_set(const String &p_name) {
+void OpenXRActionMapEditor::_remove_action_set(const String& p_name)
+{
 	ERR_FAIL_COND(action_map.is_null());
 	Ref<OpenXRActionSet> action_set = action_map->find_action_set(p_name);
 	ERR_FAIL_COND(action_set.is_null());
 
 	for (int i = 0; i < actionsets_vb->get_child_count(); i++) {
-		OpenXRActionSetEditor *action_set_editor = Object::cast_to<OpenXRActionSetEditor>(actionsets_vb->get_child(i));
+		OpenXRActionSetEditor* action_set_editor =
+			Object::cast_to<OpenXRActionSetEditor>(actionsets_vb->get_child(i));
 		if (action_set_editor && action_set_editor->get_action_set() == action_set) {
-			_on_remove_action_set(action_set_editor);
+			_on_remove_action_set(action_set_editor->obj.get());
 		}
 	}
 }
 
-void OpenXRActionMapEditor::_on_add_action_set() {
+void OpenXRActionMapEditor::_on_add_action_set()
+{
 	ERR_FAIL_COND(action_map.is_null());
 	String new_name = "New";
 	int count = 0;
@@ -198,15 +230,17 @@ void OpenXRActionMapEditor::_on_add_action_set() {
 		new_name = "New_" + itos(count++);
 	}
 
-	OpenXRActionSetEditor *new_action_set_editor = _add_action_set(new_name);
+	OpenXRActionSetEditor* new_action_set_editor = _add_action_set(new_name);
 
 	// Make sure our action set is the current tab
 	tabs->set_current_tab(0);
 
-	callable_mp(this, &OpenXRActionMapEditor::_set_focus_on_action_set).call_deferred(new_action_set_editor);
+	callable_mp(this, &OpenXRActionMapEditor::_set_focus_on_action_set)
+		.call_deferred(new_action_set_editor);
 }
 
-void OpenXRActionMapEditor::_set_focus_on_action_set(OpenXRActionSetEditor *p_action_set_editor) {
+void OpenXRActionMapEditor::_set_focus_on_action_set(OpenXRActionSetEditor* p_action_set_editor)
+{
 	// Scroll down to our new entry
 	actionsets_scroll->ensure_control_visible(p_action_set_editor);
 
@@ -214,10 +248,12 @@ void OpenXRActionMapEditor::_set_focus_on_action_set(OpenXRActionSetEditor *p_ac
 	p_action_set_editor->set_focus_on_entry();
 }
 
-void OpenXRActionMapEditor::_on_remove_action_set(Object *p_action_set_editor) {
+void OpenXRActionMapEditor::_on_remove_action_set(Object* p_action_set_editor)
+{
 	ERR_FAIL_COND(action_map.is_null());
 
-	OpenXRActionSetEditor *action_set_editor = Object::cast_to<OpenXRActionSetEditor>(p_action_set_editor);
+	OpenXRActionSetEditor* action_set_editor =
+		Object::cast_to<OpenXRActionSetEditor>(p_action_set_editor);
 	ERR_FAIL_NULL(action_set_editor);
 	ERR_FAIL_COND(action_set_editor->get_parent() != actionsets_vb);
 	Ref<OpenXRActionSet> action_set = action_set_editor->get_action_set();
@@ -229,7 +265,8 @@ void OpenXRActionMapEditor::_on_remove_action_set(Object *p_action_set_editor) {
 	// Make sure we update our interaction profiles.
 	for (int i = 0; i < tabs->get_tab_count(); i++) {
 		// First tab won't be an interaction profile editor, but being thorough..
-		OpenXRInteractionProfileEditorBase *interaction_profile_editor = Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(i));
+		OpenXRInteractionProfileEditorBase* interaction_profile_editor =
+			Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(i));
 		if (interaction_profile_editor) {
 			interaction_profile_editor->remove_all_for_action_set(action_set);
 		}
@@ -237,45 +274,52 @@ void OpenXRActionMapEditor::_on_remove_action_set(Object *p_action_set_editor) {
 
 	// And now we can remove our action set.
 	undo_redo->create_action(TTR("Remove action set"));
-	undo_redo->add_do_method(this, "_do_remove_action_set_editor", action_set_editor);
-	undo_redo->add_undo_method(this, "_do_add_action_set_editor", action_set_editor);
+	undo_redo->add_do_method(this->obj.get(), "_do_remove_action_set_editor", action_set_editor);
+	undo_redo->add_undo_method(this->obj.get(), "_do_add_action_set_editor", action_set_editor);
 	undo_redo->commit_action(true);
 
 	action_map->set_edited(true);
 }
 
-void OpenXRActionMapEditor::_on_action_removed(const Ref<OpenXRAction> &p_action) {
+void OpenXRActionMapEditor::_on_action_removed(const Ref<OpenXRAction>& p_action)
+{
 	for (int i = 0; i < tabs->get_tab_count(); i++) {
 		// First tab won't be an interaction profile editor, but being thorough..
-		OpenXRInteractionProfileEditorBase *interaction_profile_editor = Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(i));
+		OpenXRInteractionProfileEditorBase* interaction_profile_editor =
+			Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(i));
 		if (interaction_profile_editor) {
 			interaction_profile_editor->remove_all_for_action(p_action);
 		}
 	}
 }
 
-void OpenXRActionMapEditor::_on_action_renamed(const Ref<OpenXRAction> &p_action) {
+void OpenXRActionMapEditor::_on_action_renamed(const Ref<OpenXRAction>& p_action)
+{
 	for (int i = 0; i < tabs->get_tab_count(); i++) {
-		OpenXRInteractionProfileEditorBase *interaction_profile_editor = Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(i));
+		OpenXRInteractionProfileEditorBase* interaction_profile_editor =
+			Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(i));
 		if (interaction_profile_editor) {
 			interaction_profile_editor->_set_dirty();
 		}
 	}
 }
 
-void OpenXRActionMapEditor::_on_add_interaction_profile() {
+void OpenXRActionMapEditor::_on_add_interaction_profile()
+{
 	ERR_FAIL_COND(action_map.is_null());
 
 	PackedStringArray already_selected;
 
 	for (int i = 0; i < action_map->get_interaction_profile_count(); i++) {
-		already_selected.push_back(action_map->get_interaction_profile(i)->get_interaction_profile_path());
+		already_selected.push_back(
+			action_map->get_interaction_profile(i)->get_interaction_profile_path());
 	}
 
 	select_interaction_profile_dialog->open(already_selected);
 }
 
-void OpenXRActionMapEditor::_on_interaction_profile_selected(const String &p_path) {
+void OpenXRActionMapEditor::_on_interaction_profile_selected(const String& p_path)
+{
 	ERR_FAIL_COND(action_map.is_null());
 
 	Ref<OpenXRInteractionProfile> new_profile;
@@ -284,29 +328,35 @@ void OpenXRActionMapEditor::_on_interaction_profile_selected(const String &p_pat
 	action_map->add_interaction_profile(new_profile);
 	action_map->set_edited(true);
 
-	OpenXRInteractionProfileEditorBase *interaction_profile_editor = _add_interaction_profile_editor(new_profile);
+	OpenXRInteractionProfileEditorBase* interaction_profile_editor =
+		_add_interaction_profile_editor(new_profile);
 
 	undo_redo->create_action(TTR("Add interaction profile"));
-	undo_redo->add_do_method(this, "_do_add_interaction_profile_editor", interaction_profile_editor);
-	undo_redo->add_undo_method(this, "_do_remove_interaction_profile_editor", interaction_profile_editor);
+	undo_redo->add_do_method(
+		this->obj.get(), "_do_add_interaction_profile_editor", interaction_profile_editor);
+	undo_redo->add_undo_method(
+		this->obj.get(), "_do_remove_interaction_profile_editor", interaction_profile_editor);
 	undo_redo->commit_action(false);
 
 	tabs->set_current_tab(tabs->get_tab_count() - 1);
 }
 
-void OpenXRActionMapEditor::_load_action_map(const String &p_path, bool p_create_new_if_missing) {
+void OpenXRActionMapEditor::_load_action_map(const String& p_path, bool p_create_new_if_missing)
+{
 	Error err = OK;
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 	if (da->file_exists(p_path)) {
 		action_map = ResourceLoader::load(p_path, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err);
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Error loading %s: %s."), edited_path, TTR(error_names[err])));
+			EditorNode::get_singleton()->show_warning(
+				vformat(TTR("Error loading %s: %s."), edited_path, TTR(error_names[err])));
 
 			edited_path = "";
 			header_label->set_text("");
 			return;
 		}
-	} else if (p_create_new_if_missing) {
+	}
+	else if (p_create_new_if_missing) {
 		action_map.instantiate();
 		action_map->create_default_action_sets();
 
@@ -314,7 +364,8 @@ void OpenXRActionMapEditor::_load_action_map(const String &p_path, bool p_create
 		err = ResourceSaver::save(action_map, p_path);
 		if (err != OK) {
 			// Show warning but continue.
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving file %s: %s"), p_path, TTR(error_names[err])));
+			EditorNode::get_singleton()->show_warning(
+				vformat(TTR("Error saving file %s: %s"), p_path, TTR(error_names[err])));
 		}
 	}
 
@@ -322,10 +373,12 @@ void OpenXRActionMapEditor::_load_action_map(const String &p_path, bool p_create
 	header_label->set_text(TTR("OpenXR Action map:") + " " + edited_path.get_file());
 }
 
-void OpenXRActionMapEditor::_on_save_action_map() {
+void OpenXRActionMapEditor::_on_save_action_map()
+{
 	Error err = ResourceSaver::save(action_map, edited_path);
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving file %s: %s"), edited_path, TTR(error_names[err])));
+		EditorNode::get_singleton()->show_warning(
+			vformat(TTR("Error saving file %s: %s"), edited_path, TTR(error_names[err])));
 		return;
 	}
 
@@ -338,7 +391,8 @@ void OpenXRActionMapEditor::_on_save_action_map() {
 	_create_interaction_profiles();
 }
 
-void OpenXRActionMapEditor::_on_reset_to_default_layout() {
+void OpenXRActionMapEditor::_on_reset_to_default_layout()
+{
 	// TODO should clear undo/redo history
 
 	// out with the old
@@ -354,8 +408,10 @@ void OpenXRActionMapEditor::_on_reset_to_default_layout() {
 	_create_interaction_profiles();
 }
 
-void OpenXRActionMapEditor::_on_tabs_tab_changed(int p_tab) {
-	OpenXRInteractionProfileEditorBase *interaction_profile_editor = Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(p_tab));
+void OpenXRActionMapEditor::_on_tabs_tab_changed(int p_tab)
+{
+	OpenXRInteractionProfileEditorBase* interaction_profile_editor =
+		Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(p_tab));
 
 	if (!interaction_profile_editor) {
 		return;
@@ -364,19 +420,24 @@ void OpenXRActionMapEditor::_on_tabs_tab_changed(int p_tab) {
 	interaction_profile_editor->_update_interaction_profile();
 }
 
-void OpenXRActionMapEditor::_on_tab_button_pressed(int p_tab) {
-	OpenXRInteractionProfileEditorBase *interaction_profile_editor = Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(p_tab));
+void OpenXRActionMapEditor::_on_tab_button_pressed(int p_tab)
+{
+	OpenXRInteractionProfileEditorBase* interaction_profile_editor =
+		Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(p_tab));
 	ERR_FAIL_NULL(interaction_profile_editor);
 
 	undo_redo->create_action(TTR("Remove interaction profile"));
-	undo_redo->add_do_method(this, "_do_remove_interaction_profile_editor", interaction_profile_editor);
-	undo_redo->add_undo_method(this, "_do_add_interaction_profile_editor", interaction_profile_editor);
+	undo_redo->add_do_method(
+		this->obj.get(), "_do_remove_interaction_profile_editor", interaction_profile_editor);
+	undo_redo->add_undo_method(
+		this->obj.get(), "_do_add_interaction_profile_editor", interaction_profile_editor);
 	undo_redo->commit_action(true);
 
 	action_map->set_edited(true);
 }
 
-void OpenXRActionMapEditor::_do_add_action_set_editor(OpenXRActionSetEditor *p_action_set_editor) {
+void OpenXRActionMapEditor::_do_add_action_set_editor(OpenXRActionSetEditor* p_action_set_editor)
+{
 	Ref<OpenXRActionSet> action_set = p_action_set_editor->get_action_set();
 	ERR_FAIL_COND(action_set.is_null());
 
@@ -384,7 +445,8 @@ void OpenXRActionMapEditor::_do_add_action_set_editor(OpenXRActionSetEditor *p_a
 	actionsets_vb->add_child(p_action_set_editor);
 }
 
-void OpenXRActionMapEditor::_do_remove_action_set_editor(OpenXRActionSetEditor *p_action_set_editor) {
+void OpenXRActionMapEditor::_do_remove_action_set_editor(OpenXRActionSetEditor* p_action_set_editor)
+{
 	Ref<OpenXRActionSet> action_set = p_action_set_editor->get_action_set();
 	ERR_FAIL_COND(action_set.is_null());
 
@@ -392,26 +454,34 @@ void OpenXRActionMapEditor::_do_remove_action_set_editor(OpenXRActionSetEditor *
 	action_map->remove_action_set(action_set);
 }
 
-void OpenXRActionMapEditor::_do_add_interaction_profile_editor(OpenXRInteractionProfileEditorBase *p_interaction_profile_editor) {
-	Ref<OpenXRInteractionProfile> interaction_profile = p_interaction_profile_editor->get_interaction_profile();
+void OpenXRActionMapEditor::_do_add_interaction_profile_editor(
+	OpenXRInteractionProfileEditorBase* p_interaction_profile_editor)
+{
+	Ref<OpenXRInteractionProfile> interaction_profile =
+		p_interaction_profile_editor->get_interaction_profile();
 	ERR_FAIL_COND(interaction_profile.is_null());
 
 	action_map->add_interaction_profile(interaction_profile);
 	tabs->add_child(p_interaction_profile_editor);
-	tabs->set_tab_button_icon(tabs->get_tab_count() - 1, get_theme_icon(SNAME("close"), SNAME("TabBar")));
+	tabs->set_tab_button_icon(
+		tabs->get_tab_count() - 1, get_theme_icon(SNAME("close"), SNAME("TabBar")));
 
 	tabs->set_current_tab(tabs->get_tab_count() - 1);
 }
 
-void OpenXRActionMapEditor::_do_remove_interaction_profile_editor(OpenXRInteractionProfileEditorBase *p_interaction_profile_editor) {
-	Ref<OpenXRInteractionProfile> interaction_profile = p_interaction_profile_editor->get_interaction_profile();
+void OpenXRActionMapEditor::_do_remove_interaction_profile_editor(
+	OpenXRInteractionProfileEditorBase* p_interaction_profile_editor)
+{
+	Ref<OpenXRInteractionProfile> interaction_profile =
+		p_interaction_profile_editor->get_interaction_profile();
 	ERR_FAIL_COND(interaction_profile.is_null());
 
 	tabs->remove_child(p_interaction_profile_editor);
 	action_map->remove_interaction_profile(interaction_profile);
 }
 
-void OpenXRActionMapEditor::open_action_map(const String &p_path) {
+void OpenXRActionMapEditor::open_action_map(const String& p_path)
+{
 	make_visible();
 
 	// out with the old...
@@ -424,16 +494,18 @@ void OpenXRActionMapEditor::open_action_map(const String &p_path) {
 	_create_interaction_profiles();
 }
 
-void OpenXRActionMapEditor::_clear_action_map() {
+void OpenXRActionMapEditor::_clear_action_map()
+{
 	while (actionsets_vb->get_child_count() > 0) {
-		Node *child = actionsets_vb->get_child(0);
+		Node* child = actionsets_vb->get_child(0);
 		actionsets_vb->remove_child(child);
 		child->queue_free();
 	}
 
 	for (int i = tabs->get_tab_count() - 1; i >= 0; --i) {
 		// First tab won't be an interaction profile editor, but being thorough..
-		OpenXRInteractionProfileEditorBase *interaction_profile_editor = Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(i));
+		OpenXRInteractionProfileEditorBase* interaction_profile_editor =
+			Object::cast_to<OpenXRInteractionProfileEditorBase>(tabs->get_tab_control(i));
 		if (interaction_profile_editor) {
 			tabs->remove_child(interaction_profile_editor);
 			interaction_profile_editor->queue_free();
@@ -441,15 +513,21 @@ void OpenXRActionMapEditor::_clear_action_map() {
 	}
 }
 
-void OpenXRActionMapEditor::register_interaction_profile_editor(const String &p_for_path, const String &p_editor_class) {
+void OpenXRActionMapEditor::register_interaction_profile_editor(
+	const String& p_for_path, const String& p_editor_class)
+{
 	interaction_profile_editors[p_for_path] = p_editor_class;
 }
 
-void OpenXRActionMapEditor::register_binding_modifier_editor(const String &p_binding_modifier_class, const String &p_editor_class) {
+void OpenXRActionMapEditor::register_binding_modifier_editor(
+	const String& p_binding_modifier_class, const String& p_editor_class)
+{
 	binding_modifier_editors[p_binding_modifier_class] = p_editor_class;
 }
 
-String OpenXRActionMapEditor::get_binding_modifier_editor_class(const String &p_binding_modifier_class) {
+String OpenXRActionMapEditor::get_binding_modifier_editor_class(
+	const String& p_binding_modifier_class)
+{
 	if (binding_modifier_editors.has(p_binding_modifier_class)) {
 		return binding_modifier_editors[p_binding_modifier_class];
 	}
@@ -457,17 +535,19 @@ String OpenXRActionMapEditor::get_binding_modifier_editor_class(const String &p_
 	return OpenXRBindingModifierEditor::get_class_static();
 }
 
-OpenXRActionMapEditor::OpenXRActionMapEditor() {
+OpenXRActionMapEditor::OpenXRActionMapEditor()
+{
 	set_name(TTRC("OpenXR Action Map"));
 	set_icon_name("OpenXRActionMap");
-	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_openxr_action_map_bottom_panel", TTRC("Toggle OpenXR Action Map Dock")));
+	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_openxr_action_map_bottom_panel",
+		TTRC("Toggle OpenXR Action Map Dock")));
 	set_default_slot(EditorDock::DOCK_SLOT_BOTTOM);
 	set_available_layouts(EditorDock::DOCK_LAYOUT_HORIZONTAL | EditorDock::DOCK_LAYOUT_FLOATING);
 	set_custom_minimum_size(Size2(0.0, 300.0 * EDSCALE));
 
 	undo_redo = EditorUndoRedoManager::get_singleton();
 
-	VBoxContainer *main_vb = memnew(VBoxContainer);
+	VBoxContainer* main_vb = memnew(VBoxContainer);
 	add_child(main_vb);
 
 	top_hb = memnew(HBoxContainer);
@@ -482,35 +562,40 @@ OpenXRActionMapEditor::OpenXRActionMapEditor() {
 	add_action_set = memnew(Button);
 	add_action_set->set_text(TTR("Add Action Set"));
 	add_action_set->set_tooltip_text(TTR("Add an action set."));
-	add_action_set->connect(SceneStringName(pressed), callable_mp(this, &OpenXRActionMapEditor::_on_add_action_set));
+	add_action_set->connect(
+		SceneStringName(pressed), callable_mp(this, &OpenXRActionMapEditor::_on_add_action_set));
 	top_hb->add_child(add_action_set);
 
 	add_interaction_profile = memnew(Button);
 	add_interaction_profile->set_text(TTR("Add profile"));
 	add_interaction_profile->set_tooltip_text(TTR("Add an interaction profile."));
-	add_interaction_profile->connect(SceneStringName(pressed), callable_mp(this, &OpenXRActionMapEditor::_on_add_interaction_profile));
+	add_interaction_profile->connect(SceneStringName(pressed),
+		callable_mp(this, &OpenXRActionMapEditor::_on_add_interaction_profile));
 	top_hb->add_child(add_interaction_profile);
 
-	VSeparator *vseparator = memnew(VSeparator);
+	VSeparator* vseparator = memnew(VSeparator);
 	top_hb->add_child(vseparator);
 
 	save_as = memnew(Button);
 	save_as->set_text(TTR("Save"));
 	save_as->set_tooltip_text(TTR("Save this OpenXR action map."));
-	save_as->connect(SceneStringName(pressed), callable_mp(this, &OpenXRActionMapEditor::_on_save_action_map));
+	save_as->connect(
+		SceneStringName(pressed), callable_mp(this, &OpenXRActionMapEditor::_on_save_action_map));
 	top_hb->add_child(save_as);
 
 	_default = memnew(Button);
 	_default->set_text(TTR("Reset to Default"));
 	_default->set_tooltip_text(TTR("Reset to default OpenXR action map."));
-	_default->connect(SceneStringName(pressed), callable_mp(this, &OpenXRActionMapEditor::_on_reset_to_default_layout));
+	_default->connect(SceneStringName(pressed),
+		callable_mp(this, &OpenXRActionMapEditor::_on_reset_to_default_layout));
 	top_hb->add_child(_default);
 
 	tabs = memnew(TabContainer);
 	tabs->set_h_size_flags(SIZE_EXPAND_FILL);
 	tabs->set_v_size_flags(SIZE_EXPAND_FILL);
 	tabs->connect("tab_changed", callable_mp(this, &OpenXRActionMapEditor::_on_tabs_tab_changed));
-	tabs->connect("tab_button_pressed", callable_mp(this, &OpenXRActionMapEditor::_on_tab_button_pressed));
+	tabs->connect(
+		"tab_button_pressed", callable_mp(this, &OpenXRActionMapEditor::_on_tab_button_pressed));
 	main_vb->add_child(tabs);
 
 	actionsets_mc = memnew(MarginContainer);
@@ -530,10 +615,13 @@ OpenXRActionMapEditor::OpenXRActionMapEditor() {
 	actionsets_scroll->add_child(actionsets_vb);
 
 	select_interaction_profile_dialog = memnew(OpenXRSelectInteractionProfileDialog);
-	select_interaction_profile_dialog->connect("interaction_profile_selected", callable_mp(this, &OpenXRActionMapEditor::_on_interaction_profile_selected));
+	select_interaction_profile_dialog->connect("interaction_profile_selected",
+		callable_mp(this, &OpenXRActionMapEditor::_on_interaction_profile_selected));
 	add_child(select_interaction_profile_dialog);
 
 	// Our Action map editor is only shown if openxr is enabled in project settings
 	// So load our action map and if it doesn't exist, create it right away.
 	_load_action_map(ResourceUID::ensure_path(GLOBAL_GET("xr/openxr/default_action_map")), true);
 }
+
+

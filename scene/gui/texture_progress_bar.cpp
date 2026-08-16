@@ -77,7 +77,7 @@ void TextureProgressBar::set_nine_patch_stretch(bool p_stretch) {
 	nine_patch_stretch = p_stretch;
 	queue_redraw();
 	update_minimum_size();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool TextureProgressBar::get_nine_patch_stretch() const {
@@ -174,7 +174,7 @@ void TextureProgressBar::_set_texture(Ref<Texture2D> *p_destination, const Ref<T
 	destination = p_texture;
 	if (destination.is_valid()) {
 		// Pass `CONNECT_REFERENCE_COUNTED` to avoid early disconnect in case the same texture is assigned to different "slots".
-		destination->connect_changed(callable_mp(this, &TextureProgressBar::_texture_changed), CONNECT_REFERENCE_COUNTED);
+		destination->connect_changed(callable_mp(this, &TextureProgressBar::_texture_changed), Object::CONNECT_REFERENCE_COUNTED);
 	}
 	_texture_changed();
 }
@@ -587,7 +587,7 @@ void TextureProgressBar::set_fill_mode(int p_fill) {
 
 	mode = (FillMode)p_fill;
 	queue_redraw();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int TextureProgressBar::get_fill_mode() {
