@@ -28,9 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
 #include "3d/godot_navigation_server_3d.h"
+#include "register_types.h"
 
 #ifndef DISABLE_DEPRECATED
 #include "3d/navigation_mesh_generator.h"
@@ -48,22 +47,25 @@
 #include "servers/navigation_3d/navigation_server_3d.h"
 
 #ifndef DISABLE_DEPRECATED
-NavigationMeshGenerator *_nav_mesh_generator = nullptr;
+NavigationMeshGenerator* _nav_mesh_generator = nullptr;
 #endif // DISABLE_DEPRECATED
 
-static NavigationServer3D *_createGodotNavigation3DCallback() {
+static NavigationServer3D* _createGodotNavigation3DCallback()
+{
 	return memnew(GodotNavigationServer3D);
 }
 
-void initialize_navigation_3d_module(ModuleInitializationLevel p_level) {
+void initialize_navigation_3d_module(ModuleInitializationLevel p_level)
+{
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
-		NavigationServer3DManager::get_singleton()->register_server("GodotNavigation3D", callable_mp_static(_createGodotNavigation3DCallback));
+		NavigationServer3DManager::get_singleton()->register_server(
+			"GodotNavigation3D", callable_mp_static(_createGodotNavigation3DCallback));
 		NavigationServer3DManager::get_singleton()->set_default_server("GodotNavigation3D");
 
 #ifndef DISABLE_DEPRECATED
 		_nav_mesh_generator = memnew(NavigationMeshGenerator);
-		VLTR_REGISTER_CLASS(NavigationMeshGenerator);
-		Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationMeshGenerator", NavigationMeshGenerator::get_singleton()));
+		Engine::get_singleton()->add_singleton(
+			Engine::Singleton("NavigationMeshGenerator", NavigationMeshGenerator::get_singleton()));
 #endif // DISABLE_DEPRECATED
 	}
 
@@ -76,7 +78,8 @@ void initialize_navigation_3d_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level) {
+void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
 		return;
 	}
@@ -85,3 +88,5 @@ void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level) {
 	memdelete(_nav_mesh_generator);
 #endif // DISABLE_DEPRECATED
 }
+
+

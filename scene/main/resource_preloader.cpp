@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_preloader.h"
-
 #include "core/object/class_db.h"
 #include "core/templates/rb_set.h"
+#include "resource_preloader.h"
 
-void ResourcePreloader::_set_resources(const Array &p_data) {
+void ResourcePreloader::_set_resources(const Array& p_data)
+{
 	resources.clear();
 
 	ERR_FAIL_COND(p_data.size() != 2);
@@ -47,11 +47,12 @@ void ResourcePreloader::_set_resources(const Array &p_data) {
 		ERR_CONTINUE(resource.is_null());
 		resources[names[i]] = resource;
 
-		//add_resource(names[i],resource);
+		// add_resource(names[i],resource);
 	}
 }
 
-Array ResourcePreloader::_get_resources() const {
+Array ResourcePreloader::_get_resources() const
+{
 	Vector<String> names;
 	Array arr;
 	arr.resize(resources.size());
@@ -59,21 +60,22 @@ Array ResourcePreloader::_get_resources() const {
 
 	RBSet<String> sorted_names;
 
-	for (const KeyValue<StringName, Ref<Resource>> &E : resources) {
+	for (const KeyValue<StringName, Ref<Resource>>& E : resources) {
 		sorted_names.insert(E.key);
 	}
 
 	int i = 0;
-	for (const String &E : sorted_names) {
+	for (const String& E : sorted_names) {
 		names.set(i, E);
 		arr[i] = resources[E];
 		i++;
 	}
 
-	return Array{ names, arr };
+	return Array{names, arr};
 }
 
-void ResourcePreloader::add_resource(const StringName &p_name, const Ref<Resource> &p_resource) {
+void ResourcePreloader::add_resource(const StringName& p_name, const Ref<Resource>& p_resource)
+{
 	ERR_FAIL_COND(p_resource.is_null());
 	if (resources.has(p_name)) {
 		StringName new_name;
@@ -90,46 +92,53 @@ void ResourcePreloader::add_resource(const StringName &p_name, const Ref<Resourc
 		}
 
 		add_resource(new_name, p_resource);
-	} else {
+	}
+	else {
 		resources[p_name] = p_resource;
 #ifdef TOOLS_ENABLED
-		emit_signal("_resource_changed");
+		this->obj->emit_signal("_resource_changed");
 #endif
 	}
 }
 
-void ResourcePreloader::remove_resource(const StringName &p_name) {
+void ResourcePreloader::remove_resource(const StringName& p_name)
+{
 	ERR_FAIL_COND(!resources.has(p_name));
 	if (resources.erase(p_name)) {
 #ifdef TOOLS_ENABLED
-		emit_signal("_resource_changed");
+		this->obj->emit_signal("_resource_changed");
 #endif
 	}
 }
 
-void ResourcePreloader::rename_resource(const StringName &p_from_name, const StringName &p_to_name) {
+void ResourcePreloader::rename_resource(const StringName& p_from_name, const StringName& p_to_name)
+{
 	ERR_FAIL_COND(!resources.has(p_from_name));
 
-	Ref<Resource> res = resources[p_from_name];
+	Ref<Resource> res = resources
+[p_from_name];
 
 	resources.erase(p_from_name);
 	add_resource(p_to_name, res);
 }
 
-bool ResourcePreloader::has_resource(const StringName &p_name) const {
+bool ResourcePreloader::has_resource(const StringName& p_name) const
+{
 	return resources.has(p_name);
 }
 
-Ref<Resource> ResourcePreloader::get_resource(const StringName &p_name) const {
+Ref<Resource> ResourcePreloader::get_resource(const StringName& p_name) const
+{
 	ERR_FAIL_COND_V(!resources.has(p_name), Ref<Resource>());
 	return resources[p_name];
 }
 
-Vector<String> ResourcePreloader::_get_resource_list() const {
+Vector<String> ResourcePreloader::_get_resource_list() const
+{
 	Vector<String> res;
 	res.resize(resources.size());
 	int i = 0;
-	for (const KeyValue<StringName, Ref<Resource>> &E : resources) {
+	for (const KeyValue<StringName, Ref<Resource>>& E : resources) {
 		res.set(i, E.key);
 		i++;
 	}
@@ -137,29 +146,14 @@ Vector<String> ResourcePreloader::_get_resource_list() const {
 	return res;
 }
 
-void ResourcePreloader::get_resource_list(List<StringName> *p_list) {
-	for (const KeyValue<StringName, Ref<Resource>> &E : resources) {
+void ResourcePreloader::get_resource_list(List<StringName>* p_list)
+{
+	for (const KeyValue<StringName, Ref<Resource>>& E : resources) {
 		p_list->push_back(E.key);
 	}
 }
 
-void ResourcePreloader::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_set_resources", "resources"), &ResourcePreloader::_set_resources);
-	ClassDB::bind_method(D_METHOD("_get_resources"), &ResourcePreloader::_get_resources);
+void ResourcePreloader::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("add_resource", "name", "resource"), &ResourcePreloader::add_resource);
-	ClassDB::bind_method(D_METHOD("remove_resource", "name"), &ResourcePreloader::remove_resource);
-	ClassDB::bind_method(D_METHOD("rename_resource", "name", "newname"), &ResourcePreloader::rename_resource);
-	ClassDB::bind_method(D_METHOD("has_resource", "name"), &ResourcePreloader::has_resource);
-	ClassDB::bind_method(D_METHOD("get_resource", "name"), &ResourcePreloader::get_resource);
-	ClassDB::bind_method(D_METHOD("get_resource_list"), &ResourcePreloader::_get_resource_list);
+ResourcePreloader::ResourcePreloader() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "resources", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_resources", "_get_resources");
-
-#ifdef TOOLS_ENABLED
-	ADD_SIGNAL(MethodInfo("_resource_changed"));
-#endif
-}
-
-ResourcePreloader::ResourcePreloader() {
-}

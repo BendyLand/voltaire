@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "register_types.h"
-
 #include "remote_debugger_peer_websocket.h"
 #include "websocket_multiplayer_peer.h"
 #include "websocket_peer.h"
@@ -54,22 +53,20 @@
 #endif
 
 #ifdef TOOLS_ENABLED
-static void _editor_init_callback() {
+static void _editor_init_callback()
+{
 	EditorDebuggerServer::register_protocol_handler("ws://", EditorDebuggerServerWebSocket::create);
 }
 #endif
 
-void initialize_websocket_module(ModuleInitializationLevel p_level) {
+void initialize_websocket_module(ModuleInitializationLevel p_level)
+{
 	if (p_level == MODULE_INITIALIZATION_LEVEL_CORE) {
 #ifdef WEB_ENABLED
 		EMWSPeer::initialize();
 #else
 		WSLPeer::initialize();
 #endif
-
-		VLTR_REGISTER_CLASS(WebSocketMultiplayerPeer);
-		ClassDB::register_custom_instance_class<WebSocketPeer>();
-
 		EngineDebugger::register_uri_handler("ws://", RemoteDebuggerPeerWebSocket::create);
 		EngineDebugger::register_uri_handler("wss://", RemoteDebuggerPeerWebSocket::create);
 	}
@@ -81,8 +78,11 @@ void initialize_websocket_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_websocket_module(ModuleInitializationLevel p_level) {
+void uninitialize_websocket_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_CORE) {
 		return;
 	}
 }
+
+

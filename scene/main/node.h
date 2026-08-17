@@ -57,14 +57,16 @@ class Node
 protected:
 	// During group processing, these are thread-safe.
 	// Outside group processing, these avoid the cost of sync by working as plain primitive types.
-	union MTFlag {
+	union MTFlag
+	{
 		SafeFlag mt;
 		bool st;
 
 		MTFlag() : mt{} {}
 	};
 
-	template <typename T> union MTNumeric {
+	template <typename T> union MTNumeric
+	{
 		SafeNumeric<T> mt;
 		T st;
 
@@ -72,7 +74,7 @@ protected:
 	};
 
 public:
-	static mem_unique_ptr<Object> obj;
+	mem_unique_ptr<Object> obj;
 	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::NODE;
 
 	// N.B. Any enum stored as a bitfield should be specified as UNSIGNED to work around
@@ -594,8 +596,8 @@ public:
 	Node* get_node(const NodePath& p_path) const;
 	Node* get_node_or_null(const NodePath& p_path) const;
 	Node* find_child(const String& p_pattern, bool p_recursive = true, bool p_owned = true) const;
-	Vector<Node*> find_children(
-		const String& p_pattern, const String& p_type, bool p_recursive = true, bool p_owned = true) const;
+	Vector<Node*> find_children(const String& p_pattern, const String& p_type,
+		bool p_recursive = true, bool p_owned = true) const;
 	bool has_node_and_resource(const NodePath& p_path) const;
 	Node* get_node_and_resource(const NodePath& p_path, Ref<Resource>& r_res,
 		Vector<StringName>& r_leftover_subpath, bool p_last_is_property = true) const;

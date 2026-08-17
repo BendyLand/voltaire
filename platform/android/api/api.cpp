@@ -45,8 +45,6 @@ void register_android_api()
 	// `platform/android/java_godot_lib_jni.cpp#Java_org_godotengine_godot_GodotLib_setup`
 	java_class_wrapper = memnew(JavaClassWrapper);
 #endif
-	VLTR_REGISTER_CLASS(JavaClass);
-	VLTR_REGISTER_CLASS(JavaObject);
 	Engine::get_singleton()->add_singleton(
 		Engine::Singleton("JavaClassWrapper", JavaClassWrapper::get_singleton()->obj.get()));
 }

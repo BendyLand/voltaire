@@ -12,6 +12,7 @@ BreakBeforeBraces: Custom
 BraceWrapping:
   AfterClass: true
   AfterStruct: true
+  AfterUnion: true
   AfterFunction: true
   AfterExternBlock: true
   AfterNamespace: true

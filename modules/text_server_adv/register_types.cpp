@@ -28,19 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "register_types.h"
-
 #include "text_server_adv.h"
 
-#include "core/object/class_db.h"
-
-void initialize_text_server_adv_module(ModuleInitializationLevel p_level) {
+void initialize_text_server_adv_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
 		return;
 	}
-
-	VLTR_REGISTER_CLASS(TextServerAdvanced);
-	TextServerManager *tsman = TextServerManager::get_singleton();
+	TextServerManager* tsman = TextServerManager::get_singleton();
 	if (tsman) {
 		Ref<TextServerAdvanced> ts;
 		ts.instantiate();
@@ -48,8 +45,10 @@ void initialize_text_server_adv_module(ModuleInitializationLevel p_level) {
 	}
 }
 
-void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level) {
+void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
 		return;
 	}
 }
+

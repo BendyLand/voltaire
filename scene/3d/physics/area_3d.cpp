@@ -744,3 +744,4 @@ void Area3D::_validate_property(PropertyInfo& p_property) const
 
 void Area3D::_bind_methods() {}
 
+Area3D::Area3D() {}

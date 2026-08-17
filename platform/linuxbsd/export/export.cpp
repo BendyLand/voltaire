@@ -28,18 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "export.h"
-
-#include "export_plugin.h"
-
 #include "core/object/class_db.h"
 #include "editor/export/editor_export.h"
+#include "export.h"
+#include "export_plugin.h"
 
-void register_linuxbsd_exporter_types() {
-	VLTR_REGISTER_VIRTUAL_CLASS(EditorExportPlatformLinuxBSD);
-}
+void register_linuxbsd_exporter_types() {}
 
-void register_linuxbsd_exporter() {
+void register_linuxbsd_exporter()
+{
 	Ref<EditorExportPlatformLinuxBSD> platform;
 	platform.instantiate();
 	platform->set_name("Linux");
@@ -48,3 +45,5 @@ void register_linuxbsd_exporter() {
 
 	EditorExport::get_singleton()->add_export_platform(platform);
 }
+
+

@@ -645,40 +645,7 @@ public:
 #define BIND_BITFIELD_FLAG(m_constant)
 #define BIND_ENUM_CONSTANT_NO_VAL(m_constant)
 
-#ifdef DEBUG_ENABLED
-
-#define BIND_METHOD_ERR_RETURN_DOC(m_method, ...)                                                  \
-	::ClassDB::set_method_error_return_values(                                                     \
-		get_class_static(), m_method, Vector<Error>{__VA_ARGS__});
-
-#else
-
+#ifndef DEBUG_ENABLED
 #define BIND_METHOD_ERR_RETURN_DOC(m_method, ...)
-
 #endif // DEBUG_ENABLED
-
-#define VLTR_REGISTER_CLASS(m_class)                                                               \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
-		::ClassDB::register_class<m_class>();                                                      \
-	}
-#define VLTR_REGISTER_VIRTUAL_CLASS(m_class)                                                       \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
-		::ClassDB::register_class<m_class>(true);                                                  \
-	}
-#define VLTR_REGISTER_ABSTRACT_CLASS(m_class)                                                      \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
-		::ClassDB::register_abstract_class<m_class>();                                             \
-	}
-#define VLTR_REGISTER_INTERNAL_CLASS(m_class)                                                      \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
-		::ClassDB::register_internal_class<m_class>();                                             \
-	}
-#define VLTR_REGISTER_RUNTIME_CLASS(m_class)                                                       \
-	if constexpr (VLTR_IS_CLASS_ENABLED(m_class)) {                                                \
-		::ClassDB::register_runtime_class<m_class>();                                              \
-	}
-
-#define VLTR_REGISTER_NATIVE_STRUCT(m_class, m_code)                                               \
-	ClassDB::register_native_struct(#m_class, m_code, sizeof(m_class))
-
 

@@ -151,52 +151,7 @@ void register_editor_types()
 
 	EditorStringNames::create();
 
-	VLTR_REGISTER_CLASS(EditorTranslationParserPlugin);
-	VLTR_REGISTER_CLASS(EditorImportPlugin);
-	VLTR_REGISTER_CLASS(EditorScript);
-	VLTR_REGISTER_VIRTUAL_CLASS(EditorSettings);
-	VLTR_REGISTER_CLASS(EditorResourcePreviewGenerator);
-	VLTR_REGISTER_CLASS(EditorResourceTooltipPlugin);
-	VLTR_REGISTER_CLASS(EditorSyntaxHighlighter);
-	VLTR_REGISTER_CLASS(EditorExportPlugin);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatform);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatformPC);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPlatformAppleEmbedded);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorExportPreset);
-
 	register_exporter_types();
-
-	VLTR_REGISTER_CLASS(EditorResourceConversionPlugin);
-	VLTR_REGISTER_CLASS(EditorInspectorPlugin);
-	VLTR_REGISTER_CLASS(EditorFeatureProfile);
-
-	VLTR_REGISTER_VIRTUAL_CLASS(EditorFileSystemImportFormatSupportQuery);
-
-	VLTR_REGISTER_CLASS(EditorDebuggerPlugin);
-	VLTR_REGISTER_ABSTRACT_CLASS(EditorDebuggerSession);
-
-	// 3D editor foundational classes.
-	VLTR_REGISTER_CLASS(EditorNode3DGizmo);
-	VLTR_REGISTER_CLASS(EditorNode3DGizmoPlugin);
-	VLTR_REGISTER_CLASS(EditorSceneFormatImporter);
-	VLTR_REGISTER_CLASS(EditorScenePostImportPlugin);
-	VLTR_REGISTER_CLASS(EditorScenePostImport);
-
-	// Required to document import options in the class reference.
-	VLTR_REGISTER_CLASS(ResourceImporterBitMap);
-	VLTR_REGISTER_CLASS(ResourceImporterBMFont);
-	VLTR_REGISTER_CLASS(ResourceImporterCSVTranslation);
-	VLTR_REGISTER_CLASS(ResourceImporterDynamicFont);
-	VLTR_REGISTER_CLASS(ResourceImporterImage);
-	VLTR_REGISTER_CLASS(ResourceImporterImageFont);
-	VLTR_REGISTER_CLASS(ResourceImporterSVG);
-	VLTR_REGISTER_CLASS(ResourceImporterLayeredTexture);
-	VLTR_REGISTER_CLASS(ResourceImporterOBJ);
-	VLTR_REGISTER_CLASS(ResourceImporterScene);
-	VLTR_REGISTER_CLASS(ResourceImporterShaderFile);
-	VLTR_REGISTER_CLASS(ResourceImporterTexture);
-	VLTR_REGISTER_CLASS(ResourceImporterTextureAtlas);
-	VLTR_REGISTER_CLASS(ResourceImporterWAV);
 
 	// This list is alphabetized, and plugins that depend on Node2D or Node3D are in their own
 	// section below.

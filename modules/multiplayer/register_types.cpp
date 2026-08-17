@@ -44,9 +44,6 @@
 void initialize_multiplayer_module(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		VLTR_REGISTER_CLASS(SceneReplicationConfig);
-		VLTR_REGISTER_CLASS(OfflineMultiplayerPeer);
-		VLTR_REGISTER_CLASS(SceneMultiplayer);
 		if constexpr (VLTR_IS_CLASS_ENABLED(MultiplayerAPI)) {
 			MultiplayerAPI::set_default_interface("SceneMultiplayer");
 			MultiplayerDebugger::initialize();

@@ -28,26 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "export.h"
-
-#include "export_plugin.h"
-
 #include "core/object/class_db.h"
 #include "editor/export/editor_export.h"
+#include "export.h"
+#include "export_plugin.h"
 
 #ifdef MACOS_ENABLED
 #include "editor/settings/editor_settings.h"
 #endif
 
-void register_ios_exporter_types() {
-	VLTR_REGISTER_VIRTUAL_CLASS(EditorExportPlatformIOS);
-}
+void register_ios_exporter_types() {}
 
-void register_ios_exporter() {
+void register_ios_exporter()
+{
 	// TODO: Move to editor_settings.cpp
 #ifdef MACOS_ENABLED
 	EDITOR_DEF("export/ios/ios_deploy", "");
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "export/ios/ios_deploy", PROPERTY_HINT_GLOBAL_FILE, "*"));
+	EditorSettings::get_singleton()->add_property_hint(
+		PropertyInfo(Variant::STRING, "export/ios/ios_deploy", PROPERTY_HINT_GLOBAL_FILE, "*"));
 #endif
 
 	Ref<EditorExportPlatformIOS> platform;
@@ -55,3 +53,5 @@ void register_ios_exporter() {
 
 	EditorExport::get_singleton()->add_export_platform(platform);
 }
+
+

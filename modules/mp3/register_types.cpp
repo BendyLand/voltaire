@@ -28,38 +28,32 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
 #include "audio_stream_mp3.h"
-
 #include "core/io/resource_importer.h"
 #include "core/object/class_db.h"
+#include "register_types.h"
 
 #ifdef TOOLS_ENABLED
+#include "editor/editor_node.h"
 #include "resource_importer_mp3.h"
 
-#include "editor/editor_node.h"
-
-static void _editor_init() {
+static void _editor_init()
+{
 	Ref<ResourceImporterMP3> mp3_import;
 	mp3_import.instantiate();
 	ResourceFormatImporter::get_singleton()->add_importer(mp3_import);
 }
 #endif
 
-void initialize_mp3_module(ModuleInitializationLevel p_level) {
-	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		VLTR_REGISTER_CLASS(AudioStreamMP3);
-	}
-
+void initialize_mp3_module(ModuleInitializationLevel p_level)
+{
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		VLTR_REGISTER_CLASS(ResourceImporterMP3);
-
 		EditorNode::add_init_callback(_editor_init);
 	}
 #endif
 }
 
-void uninitialize_mp3_module(ModuleInitializationLevel p_level) {
-}
+void uninitialize_mp3_module(ModuleInitializationLevel p_level) {}
+
+

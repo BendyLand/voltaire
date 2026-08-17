@@ -28,34 +28,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
+#include "core/error/error_macros.h"
+#include "core/object/class_db.h"
 #include "enet_connection.h"
 #include "enet_multiplayer_peer.h"
 #include "enet_packet_peer.h"
-
-#include "core/error/error_macros.h"
-#include "core/object/class_db.h"
+#include "register_types.h"
 
 static bool enet_ok = false;
 
-void initialize_enet_module(ModuleInitializationLevel p_level) {
+void initialize_enet_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
 	if (enet_initialize() != 0) {
 		ERR_PRINT("ENet initialization failure");
-	} else {
+	}
+	else {
 		enet_ok = true;
 	}
-
-	VLTR_REGISTER_CLASS(ENetMultiplayerPeer);
-	VLTR_REGISTER_ABSTRACT_CLASS(ENetPacketPeer);
-	VLTR_REGISTER_CLASS(ENetConnection);
 }
 
-void uninitialize_enet_module(ModuleInitializationLevel p_level) {
+void uninitialize_enet_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
@@ -64,3 +61,4 @@ void uninitialize_enet_module(ModuleInitializationLevel p_level) {
 		enet_deinitialize();
 	}
 }
+

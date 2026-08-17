@@ -37,7 +37,6 @@ static JavaScriptBridge* javascript_bridge_singleton;
 
 void register_web_api()
 {
-	VLTR_REGISTER_ABSTRACT_CLASS(JavaScriptObject);
 	javascript_bridge_singleton = memnew(JavaScriptBridge);
 	Engine::get_singleton()->add_singleton(
 		Engine::Singleton("JavaScriptBridge", javascript_bridge_singleton->obj.get()));

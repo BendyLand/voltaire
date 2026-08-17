@@ -28,27 +28,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
 #include "audio_stream_interactive.h"
 #include "audio_stream_playlist.h"
 #include "audio_stream_synchronized.h"
-
 #include "core/object/class_db.h"
+#include "register_types.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/audio_stream_interactive_editor_plugin.h"
 #endif
 
-void initialize_interactive_music_module(ModuleInitializationLevel p_level) {
-	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		VLTR_REGISTER_CLASS(AudioStreamPlaylist);
-		VLTR_REGISTER_ABSTRACT_CLASS(AudioStreamPlaybackPlaylist);
-		VLTR_REGISTER_CLASS(AudioStreamInteractive);
-		VLTR_REGISTER_ABSTRACT_CLASS(AudioStreamPlaybackInteractive);
-		VLTR_REGISTER_CLASS(AudioStreamSynchronized);
-		VLTR_REGISTER_ABSTRACT_CLASS(AudioStreamPlaybackSynchronized);
-	}
+void initialize_interactive_music_module(ModuleInitializationLevel p_level)
+{
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		EditorPlugins::add_by_type<AudioStreamInteractiveEditorPlugin>();
@@ -56,6 +47,9 @@ void initialize_interactive_music_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_interactive_music_module(ModuleInitializationLevel p_level) {
+void uninitialize_interactive_music_module(ModuleInitializationLevel p_level)
+{
 	// Nothing to do here.
 }
+
+

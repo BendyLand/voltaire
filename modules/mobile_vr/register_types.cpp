@@ -28,28 +28,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
-#include "mobile_vr_interface.h"
-
 #include "core/object/class_db.h"
+#include "mobile_vr_interface.h"
+#include "register_types.h"
 
 Ref<MobileVRInterface> mobile_vr;
 
-void initialize_mobile_vr_module(ModuleInitializationLevel p_level) {
+void initialize_mobile_vr_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-
-	VLTR_REGISTER_CLASS(MobileVRInterface);
-
 	if (XRServer::get_singleton()) {
 		mobile_vr.instantiate();
 		XRServer::get_singleton()->add_interface(mobile_vr);
 	}
 }
 
-void uninitialize_mobile_vr_module(ModuleInitializationLevel p_level) {
+void uninitialize_mobile_vr_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
@@ -69,3 +66,5 @@ void uninitialize_mobile_vr_module(ModuleInitializationLevel p_level) {
 		mobile_vr.unref();
 	}
 }
+
+

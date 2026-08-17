@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/templates/mem_unique_ptr.h"
 #include "node.compat.inc"
 #include "node.h"
 #include "scene/resources/environment.h"
@@ -3978,6 +3979,7 @@ String Node::_get_name_num_separator()
 
 Node::Node()
 {
+	this->obj = mem_make_unique<Object>();
 	this->obj->_define_ancestry(Object::AncestralClass::NODE);
 #ifdef DEBUG_ENABLED
 	total_node_count.increment();

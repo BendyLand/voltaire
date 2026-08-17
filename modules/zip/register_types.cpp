@@ -28,24 +28,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "register_types.h"
-
 #include "zip_packer.h"
 #include "zip_reader.h"
 
-#include "core/object/class_db.h"
-
-void initialize_zip_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-
-	VLTR_REGISTER_CLASS(ZIPPacker);
-	VLTR_REGISTER_CLASS(ZIPReader);
-}
-
-void uninitialize_zip_module(ModuleInitializationLevel p_level) {
+void initialize_zip_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 }
+
+void uninitialize_zip_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+

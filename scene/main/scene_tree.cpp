@@ -72,16 +72,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "servers/physics_3d/physics_server_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
-void SceneTreeTimer::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_time_left", "time"), &SceneTreeTimer::set_time_left);
-	ClassDB::bind_method(D_METHOD("get_time_left"), &SceneTreeTimer::get_time_left);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "time_left", PROPERTY_HINT_NONE, "suffix:s"),
-		"set_time_left", "get_time_left");
-
-	ADD_SIGNAL(MethodInfo("timeout"));
-}
+void SceneTreeTimer::_bind_methods() {}
 
 void SceneTreeTimer::set_time_left(double p_time) { time_left = p_time; }
 
@@ -435,7 +426,8 @@ void SceneTree::call_group_flagsp(uint32_t p_call_flags, const StringName& p_gro
 				}
 			}
 			else {
-				MessageQueue::get_singleton()->push_callp(node->obj.get(), p_function, p_args, p_argcount);
+				MessageQueue::get_singleton()->push_callp(
+					node->obj.get(), p_function, p_args, p_argcount);
 			}
 		}
 
@@ -459,7 +451,8 @@ void SceneTree::call_group_flagsp(uint32_t p_call_flags, const StringName& p_gro
 				}
 			}
 			else {
-				MessageQueue::get_singleton()->push_callp(node->obj.get(), p_function, p_args, p_argcount);
+				MessageQueue::get_singleton()->push_callp(
+					node->obj.get(), p_function, p_args, p_argcount);
 			}
 		}
 	}
@@ -511,7 +504,8 @@ void SceneTree::notify_group_flags(
 				gr_nodes[i]->obj->notification(p_notification, true);
 			}
 			else {
-				MessageQueue::get_singleton()->push_notification(gr_nodes[i]->obj.get(), p_notification);
+				MessageQueue::get_singleton()->push_notification(
+					gr_nodes[i]->obj.get(), p_notification);
 			}
 		}
 
@@ -526,7 +520,8 @@ void SceneTree::notify_group_flags(
 				gr_nodes[i]->obj->notification(p_notification);
 			}
 			else {
-				MessageQueue::get_singleton()->push_notification(gr_nodes[i]->obj.get(), p_notification);
+				MessageQueue::get_singleton()->push_notification(
+					gr_nodes[i]->obj.get(), p_notification);
 			}
 		}
 	}
@@ -764,7 +759,7 @@ bool SceneTree::process(double p_time)
 	_flush_ugc();
 	MessageQueue::get_singleton()->flush(); // small little hack
 	flush_transform_notifications();		// transforms after world update, to avoid unnecessary
-									 // enter/exit notifications
+											// enter/exit notifications
 
 	if (unlikely(pending_new_scene_id.is_valid())) {
 		_flush_scene_change();
@@ -1632,10 +1627,10 @@ void SceneTree::_call_group(const Variant** p_args, int p_argcount, Callable::Ca
 
 int64_t SceneTree::get_frame() const { return current_frame; }
 
-TypedArray<Node> SceneTree::_get_nodes_in_group(const StringName& p_group)
+Array SceneTree::_get_nodes_in_group(const StringName& p_group)
 {
 	_THREAD_SAFE_METHOD_
-	TypedArray<Node> ret;
+	Array ret;
 	HashMap<StringName, SceneTreeGroup>::Iterator E = group_map.find(p_group);
 	if (!E) {
 		return ret;
@@ -2031,8 +2026,7 @@ void SceneTree::get_argument_options(
 		add_options = names.has(p_function);
 	}
 	else if (p_idx == 1) {
-		static const Vector<StringName> names
- = {
+		static const Vector<StringName> names = {
 			StringName("call_group_flags", true),
 			StringName("notify_group_flags", true),
 			StringName("set_group_flags", true),
@@ -2239,8 +2233,7 @@ SceneTree::SceneTree()
 
 	Viewport::SDFOversize sdf_oversize =
 		Viewport::SDFOversize(int(GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/2d/sdf/oversize",
-												 PROPERTY_HINT_ENUM
-, "100%,120%,150%,200%"),
+												 PROPERTY_HINT_ENUM, "100%,120%,150%,200%"),
 			1)));
 	root->set_sdf_oversize(sdf_oversize);
 	Viewport::SDFScale sdf_scale = Viewport::SDFScale(int(GLOBAL_DEF(

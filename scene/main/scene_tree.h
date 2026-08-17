@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <cstdlib>
 #include "core/object/message_queue.h"
 #include "core/object/ref_counted.h"
 #include "core/os/main_loop.h"
@@ -37,8 +38,6 @@
 #include "core/templates/paged_allocator.h"
 #include "core/templates/self_list.h"
 #include "scene/main/scene_tree_fti.h"
-
-#include <cstdlib>
 
 class ArrayMesh;
 class InputEvent;
@@ -54,7 +53,8 @@ class Window;
 class Node3D;
 #endif
 
-class SceneTreeTimer : public RefCounted {
+class SceneTreeTimer : public RefCounted
+{
 	VLTRCLASS(SceneTreeTimer, RefCounted);
 
 	double time_left = 0.0;
@@ -81,42 +81,46 @@ public:
 	void release_connections();
 };
 
-struct SceneTreeGroup {
-	Vector<Node *> nodes;
+struct SceneTreeGroup
+{
+	Vector<Node*> nodes;
 	bool changed = false;
 };
 
-class SceneTree : public MainLoop {
+class SceneTree : public MainLoop
+{
 	_THREAD_SAFE_CLASS_
-
-	VLTRCLASS(SceneTree, MainLoop);
-
 public:
 	typedef void (*IdleCallback)();
 
 private:
-	CallQueue::Allocator *process_group_call_queue_allocator = nullptr;
+	CallQueue::Allocator* process_group_call_queue_allocator = nullptr;
 
-	struct ProcessGroup {
+	struct ProcessGroup
+	{
 		CallQueue call_queue;
-		Vector<Node *> nodes;
-		Vector<Node *> physics_nodes;
+		Vector<Node*> nodes;
+		Vector<Node*> physics_nodes;
 		bool node_order_dirty = true;
 		bool physics_node_order_dirty = true;
 		bool removed = false;
-		Node *owner = nullptr;
+		Node* owner = nullptr;
 		uint64_t last_pass = 0;
 	};
 
-	struct ProcessGroupSort {
-		_FORCE_INLINE_ bool operator()(const ProcessGroup *p_left, const ProcessGroup *p_right) const;
+	struct ProcessGroupSort
+	{
+		_FORCE_INLINE_ bool operator()(
+			const ProcessGroup* p_left, const ProcessGroup* p_right) const;
 	};
 
-	PagedAllocator<ProcessGroup, true> group_allocator; // Allocate groups on pages, to enhance cache usage.
+	PagedAllocator<ProcessGroup, true>
+		group_allocator; // Allocate groups on pages, to enhance cache usage.
 
-	LocalVector<ProcessGroup *> process_groups;
+	LocalVector<ProcessGroup*> process_groups;
 	bool process_groups_dirty = true;
-	LocalVector<ProcessGroup *> local_process_group_cache; // Used when processing to group what needs to
+	LocalVector<ProcessGroup*>
+		local_process_group_cache; // Used when processing to group what needs to
 	uint64_t process_last_pass = 1;
 
 	ProcessGroup default_process_group;
@@ -124,13 +128,14 @@ private:
 	bool node_threading_disabled = false;
 
 #ifndef _3D_DISABLED
-	struct ClientPhysicsInterpolation {
+	struct ClientPhysicsInterpolation
+	{
 		SelfList<Node3D>::List _node_3d_list;
 		void physics_process();
 	} _client_physics_interpolation;
 #endif
 
-	Window *root = nullptr;
+	Window* root = nullptr;
 
 	double physics_process_time = 0.0;
 	double process_time = 0.0;
@@ -167,23 +172,30 @@ private:
 	int nodes_in_tree_count = 0;
 
 #ifdef TOOLS_ENABLED
-	Node *edited_scene_root = nullptr;
+	Node* edited_scene_root = nullptr;
 #endif
-	struct UGCall {
+	struct UGCall
+	{
 		StringName group;
 		StringName call;
 
-		static uint32_t hash(const UGCall &p_val) {
-			return p_val.group.hash() ^ p_val.call.hash();
+		static uint32_t hash(const UGCall& p_val) { return p_val.group.hash() ^ p_val.call.hash(); }
+
+		bool operator==(const UGCall& p_with) const
+		{
+			return group == p_with.group && call == p_with.call;
 		}
-		bool operator==(const UGCall &p_with) const { return group == p_with.group && call == p_with.call; }
-		bool operator<(const UGCall &p_with) const { return group == p_with.group ? call < p_with.call : group < p_with.group; }
+
+		bool operator<(const UGCall& p_with) const
+		{
+			return group == p_with.group ? call < p_with.call : group < p_with.group;
+		}
 	};
 
 	// Safety for when a node is deleted while a group is being called.
 
 	int nodes_removed_on_group_call_lock = 0;
-	HashSet<Node *> nodes_removed_on_group_call; // Skip erased nodes.
+	HashSet<Node*> nodes_removed_on_group_call; // Skip erased nodes.
 
 	List<ObjectID> delete_queue;
 
@@ -196,11 +208,11 @@ private:
 	bool ugc_locked = false;
 	void _flush_ugc();
 
-	_FORCE_INLINE_ void _update_group_order(SceneTreeGroup &g);
+	_FORCE_INLINE_ void _update_group_order(SceneTreeGroup& g);
 
-	TypedArray<Node> _get_nodes_in_group(const StringName &p_group);
+	Array _get_nodes_in_group(const StringName& p_group);
 
-	Node *current_scene = nullptr;
+	Node* current_scene = nullptr;
 	ObjectID prev_scene_id;
 	ObjectID pending_new_scene_id;
 
@@ -218,36 +230,36 @@ private:
 	List<Ref<SceneTreeTimer>> timers;
 	List<Ref<Tween>> tweens;
 
-	///network///
+	/// network///
 
 	Ref<MultiplayerAPI> multiplayer;
 	HashMap<NodePath, Ref<MultiplayerAPI>> custom_multiplayers;
 	bool multiplayer_poll = true;
 
-	static SceneTree *singleton;
+	static SceneTree* singleton;
 	friend class Node;
 
 	void tree_changed();
-	void node_added(Node *p_node);
-	void node_removed(Node *p_node);
-	void node_renamed(Node *p_node);
+	void node_added(Node* p_node);
+	void node_removed(Node* p_node);
+	void node_renamed(Node* p_node);
 	void process_timers(double p_delta, bool p_physics_frame);
 	void process_tweens(double p_delta, bool p_physics_frame);
 
-	SceneTreeGroup *add_to_group(const StringName &p_group, Node *p_node);
-	void remove_from_group(const StringName &p_group, Node *p_node);
+	SceneTreeGroup* add_to_group(const StringName& p_group, Node* p_node);
+	void remove_from_group(const StringName& p_group, Node* p_node);
 
-	void _process_group(ProcessGroup *p_group, bool p_physics);
+	void _process_group(ProcessGroup* p_group, bool p_physics);
 	void _process_groups_thread(uint32_t p_index, bool p_physics);
 	void _process(bool p_physics);
 
-	void _remove_process_group(Node *p_node);
-	void _add_process_group(Node *p_node);
-	void _remove_node_from_process_group(Node *p_node, Node *p_owner);
-	void _add_node_to_process_group(Node *p_node, Node *p_owner);
+	void _remove_process_group(Node* p_node);
+	void _add_process_group(Node* p_node);
+	void _remove_node_from_process_group(Node* p_node, Node* p_owner);
+	void _add_node_to_process_group(Node* p_node, Node* p_owner);
 
-	void _call_group_flags(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
-	void _call_group(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+	void _call_group_flags(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
+	void _call_group(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
 
 	void _flush_delete_queue();
 	// Optimization.
@@ -261,7 +273,8 @@ private:
 	friend class LiveEditor;
 #endif
 
-	enum {
+	enum
+	{
 		MAX_IDLE_CALLBACKS = 256
 	};
 
@@ -273,27 +286,31 @@ private:
 	void _main_window_close();
 	void _main_window_go_back();
 
-	enum CallInputType {
+	enum CallInputType
+	{
 		CALL_INPUT_TYPE_INPUT,
 		CALL_INPUT_TYPE_SHORTCUT_INPUT,
 		CALL_INPUT_TYPE_UNHANDLED_INPUT,
 		CALL_INPUT_TYPE_UNHANDLED_KEY_INPUT,
 	};
 
-	//used by viewport
-	void _call_input_pause(const StringName &p_group, CallInputType p_call_type, const Ref<InputEvent> &p_input, Viewport *p_viewport);
+	// used by viewport
+	void _call_input_pause(const StringName& p_group, CallInputType p_call_type,
+		const Ref<InputEvent>& p_input, Viewport* p_viewport);
 
 protected:
 	void _notification(int p_notification);
 	static void _bind_methods();
 
 public:
-	enum {
+	enum
+	{
 		// Keep in sync with CanvasItem and Node3D.
 		NOTIFICATION_TRANSFORM_CHANGED = 2000
 	};
 
-	enum GroupCallFlags {
+	enum GroupCallFlags
+	{
 		GROUP_CALL_DEFAULT = 0,
 		GROUP_CALL_REVERSE = 1,
 		GROUP_CALL_DEFERRED = 2,
@@ -302,34 +319,43 @@ public:
 
 	Window* get_root() const;
 
-	void call_group_flagsp(uint32_t p_call_flags, const StringName &p_group, const StringName &p_function, const Variant **p_args, int p_argcount);
-	void notify_group_flags(uint32_t p_call_flags, const StringName &p_group, int p_notification);
-	void set_group_flags(uint32_t p_call_flags, const StringName &p_group, const String &p_name, const Variant &p_value);
+	void call_group_flagsp(uint32_t p_call_flags, const StringName& p_group,
+		const StringName& p_function, const Variant** p_args, int p_argcount);
+	void notify_group_flags(uint32_t p_call_flags, const StringName& p_group, int p_notification);
+	void set_group_flags(uint32_t p_call_flags, const StringName& p_group, const String& p_name,
+		const Variant& p_value);
 
 	// `notify_group()` is immediate by default since Godot 4.0.
-	void notify_group(const StringName &p_group, int p_notification);
+	void notify_group(const StringName& p_group, int p_notification);
 	// `set_group()` is immediate by default since Godot 4.0.
-	void set_group(const StringName &p_group, const String &p_name, const Variant &p_value);
+	void set_group(const StringName& p_group, const String& p_name, const Variant& p_value);
 
 	template <typename... VarArgs>
 	// `call_group()` is immediate by default since Godot 4.0.
-	void call_group(const StringName &p_group, const StringName &p_function, VarArgs... p_args) {
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		const Variant *argptrs[sizeof...(p_args) + 1];
+	void call_group(const StringName& p_group, const StringName& p_function, VarArgs... p_args)
+	{
+		Variant args[sizeof...(p_args) + 1] = {
+			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
+		const Variant* argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
-		call_group_flagsp(GROUP_CALL_DEFAULT, p_group, p_function, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args));
+		call_group_flagsp(GROUP_CALL_DEFAULT, p_group, p_function,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
 	template <typename... VarArgs>
-	void call_group_flags(uint32_t p_flags, const StringName &p_group, const StringName &p_function, VarArgs... p_args) {
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		const Variant *argptrs[sizeof...(p_args) + 1];
+	void call_group_flags(uint32_t p_flags, const StringName& p_group, const StringName& p_function,
+		VarArgs... p_args)
+	{
+		Variant args[sizeof...(p_args) + 1] = {
+			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
+		const Variant* argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
-		call_group_flagsp(p_flags, p_group, p_function, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args));
+		call_group_flagsp(p_flags, p_group, p_function,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
 	void flush_transform_notifications();
@@ -337,9 +363,10 @@ public:
 	bool is_accessibility_enabled() const;
 	bool is_accessibility_supported() const;
 	void _accessibility_force_update();
-	void _accessibility_notify_change(const Node *p_node, bool p_remove = false);
+	void _accessibility_notify_change(const Node* p_node, bool p_remove = false);
 	void _flush_accessibility_changes();
-	void _process_accessibility_changes(int p_window_id); // Effectively DisplayServerEnums::WindowID
+	void _process_accessibility_changes(
+		int p_window_id); // Effectively DisplayServerEnums::WindowID
 
 	virtual void initialize() override;
 
@@ -360,9 +387,11 @@ public:
 	void quit(int p_exit_code = EXIT_SUCCESS);
 
 	_FORCE_INLINE_ double get_physics_process_time() const { return physics_process_time; }
+
 	_FORCE_INLINE_ double get_process_time() const { return process_time; }
 
-	void set_pause(bool p_enabled);
+	void set_pause(bool
+p_enabled);
 	bool is_paused() const;
 	void set_suspend(bool p_enabled);
 	bool is_suspended() const;
@@ -378,22 +407,25 @@ public:
 	bool is_debugging_navigation_hint() const;
 #else
 	void set_debug_collisions_hint(bool p_enabled) {}
+
 	bool is_debugging_collisions_hint() const { return false; }
 
 	void set_debug_paths_hint(bool p_enabled) {}
+
 	bool is_debugging_paths_hint() const { return false; }
 
 	void set_debug_navigation_hint(bool p_enabled) {}
+
 	bool is_debugging_navigation_hint() const { return false; }
 #endif
 
-	void set_debug_collisions_color(const Color &p_color);
+	void set_debug_collisions_color(const Color& p_color);
 	Color get_debug_collisions_color() const;
 
-	void set_debug_collision_contact_color(const Color &p_color);
+	void set_debug_collision_contact_color(const Color& p_color);
 	Color get_debug_collision_contact_color() const;
 
-	void set_debug_paths_color(const Color &p_color);
+	void set_debug_paths_color(const Color& p_color);
 	Color get_debug_paths_color() const;
 
 	void set_debug_paths_width(float p_width);
@@ -411,67 +443,74 @@ public:
 
 	void queue_delete(Object* rp_object);
 
-	Vector<Node *> get_nodes_in_group(const StringName &p_group);
-	Node *get_first_node_in_group(const StringName &p_group);
-	bool has_group(const StringName &p_identifier) const;
-	int get_node_count_in_group(const StringName &p_group) const;
+	Vector<Node*> get_nodes_in_group(const StringName& p_group);
+	Node* get_first_node_in_group(const StringName& p_group);
+	bool has_group(const StringName& p_identifier) const;
+	int get_node_count_in_group(const StringName& p_group) const;
 
-	//void change_scene(const String& p_path);
-	//Node *get_loaded_scene();
+	// void change_scene(const String& p_path);
+	// Node *get_loaded_scene();
 
-	void set_edited_scene_root(Node *p_node);
-	Node *get_edited_scene_root() const;
+	void set_edited_scene_root(Node* p_node);
+	Node* get_edited_scene_root() const;
 
-	void set_current_scene(Node *p_scene);
-	Node *get_current_scene() const;
-	Error change_scene_to_file(const String &p_path);
+	void set_current_scene(Node* p_scene);
+	Node* get_current_scene() const;
+	Error change_scene_to_file(const String& p_path);
 	Error change_scene_to_packed(PackedScene* rp_scene);
 	Error change_scene_to_node(Node* rp_node);
 	Error reload_current_scene();
 	void unload_current_scene();
 
-	RequiredResult<SceneTreeTimer> create_timer(double p_delay_sec, bool p_process_always = true, bool p_process_in_physics = false, bool p_ignore_time_scale = false);
+	RequiredResult<SceneTreeTimer> create_timer(double p_delay_sec, bool p_process_always = true,
+		bool p_process_in_physics = false, bool p_ignore_time_scale = false);
 	RequiredResult<Tween> create_tween();
-	void remove_tween(const Ref<Tween> &p_tween);
+	void remove_tween(const Ref<Tween>& p_tween);
 	TypedArray<Tween> get_processed_tweens();
 
-	//used by Main::start, don't use otherwise
-	void add_current_scene(Node *p_current);
+	// used by Main::start, don't use otherwise
+	void add_current_scene(Node* p_current);
 
-	static SceneTree *get_singleton() { return singleton; }
+	static SceneTree* get_singleton() { return singleton; }
 
 #ifdef TOOLS_ENABLED
-	void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
+	void get_argument_options(
+		const StringName& p_function, int p_idx, List<String>* r_options) const override;
 #endif
 
-	//network API
+	// network API
 
-	RequiredResult<MultiplayerAPI> get_multiplayer(const NodePath &p_for_path = NodePath()) const;
-	void set_multiplayer(Ref<MultiplayerAPI> p_multiplayer, const NodePath &p_root_path = NodePath());
+	RequiredResult<MultiplayerAPI> get_multiplayer(const NodePath& p_for_path = NodePath()) const;
+	void set_multiplayer(
+		Ref<MultiplayerAPI> p_multiplayer, const NodePath& p_root_path = NodePath());
 	void set_multiplayer_poll_enabled(bool p_enabled);
 	bool is_multiplayer_poll_enabled() const;
 
 	static void add_idle_callback(IdleCallback p_callback);
 
 	void set_disable_node_threading(bool p_disable);
-	//default texture settings
+	// default texture settings
 
 	void set_physics_interpolation_enabled(bool p_enabled);
+
 	bool is_physics_interpolation_enabled() const { return _physics_interpolation_enabled; }
 
 	// Different name to disambiguate fast static versions from the user bound versions.
 	static bool is_fti_enabled() { return _physics_interpolation_enabled; }
+
 	static bool is_fti_enabled_in_project() { return _physics_interpolation_enabled_in_project; }
 
 #ifndef _3D_DISABLED
-	void client_physics_interpolation_add_node_3d(SelfList<Node3D> *p_elem);
-	void client_physics_interpolation_remove_node_3d(SelfList<Node3D> *p_elem);
+	void client_physics_interpolation_add_node_3d(SelfList<Node3D>* p_elem);
+	void client_physics_interpolation_remove_node_3d(SelfList<Node3D>* p_elem);
 #endif
 
-	SceneTreeFTI &get_scene_tree_fti() { return scene_tree_fti; }
+	SceneTreeFTI& get_scene_tree_fti() { return scene_tree_fti; }
 
 	SceneTree();
 	~SceneTree();
 };
 
 VARIANT_ENUM_CAST(SceneTree::GroupCallFlags);
+
+

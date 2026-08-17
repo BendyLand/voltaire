@@ -28,39 +28,32 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
 #include "audio_stream_ogg_vorbis.h"
-
 #include "core/io/resource_importer.h"
 #include "core/object/class_db.h"
+#include "register_types.h"
 
 #ifdef TOOLS_ENABLED
+#include "editor/editor_node.h"
 #include "resource_importer_ogg_vorbis.h"
 
-#include "editor/editor_node.h"
-
-static void _editor_init() {
+static void _editor_init()
+{
 	Ref<ResourceImporterOggVorbis> ogg_vorbis_importer;
 	ogg_vorbis_importer.instantiate();
 	ResourceFormatImporter::get_singleton()->add_importer(ogg_vorbis_importer);
 }
 #endif
 
-void initialize_vorbis_module(ModuleInitializationLevel p_level) {
-	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		VLTR_REGISTER_CLASS(AudioStreamOggVorbis);
-		VLTR_REGISTER_CLASS(AudioStreamPlaybackOggVorbis);
-	}
-
+void initialize_vorbis_module(ModuleInitializationLevel p_level)
+{
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		VLTR_REGISTER_CLASS(ResourceImporterOggVorbis);
-
 		EditorNode::add_init_callback(_editor_init);
 	}
 #endif
 }
 
-void uninitialize_vorbis_module(ModuleInitializationLevel p_level) {
-}
+void uninitialize_vorbis_module(ModuleInitializationLevel p_level) {}
+
+

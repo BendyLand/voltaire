@@ -10202,8 +10202,7 @@ void TextEdit::_base_remove_text(int p_from_line, int p_from_column, int p_to_li
 	ERR_FAIL_INDEX(p_to_line, text.size());
 	ERR_FAIL_INDEX(p_to_column, text[p_to_line].length() + 1);
 	ERR_FAIL_COND(p_to_line < p_from_line);									// 'from > to'.
-	ERR_
-FAIL_COND(p_to_line == p_from_line && p_to_column < p_from_column); // 'from > to'.
+	ERR_FAIL_COND(p_to_line == p_from_line && p_to_column < p_from_column); // 'from > to'.
 
 	String pre_text = text[p_from_line].substr(0, p_from_column);
 	String post_text = text[p_to_line].substr(p_to_column);

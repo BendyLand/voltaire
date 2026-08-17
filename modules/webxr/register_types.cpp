@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "register_types.h"
-
 #include "webxr_interface.h"
 
 #ifdef WEB_ENABLED
@@ -42,13 +41,11 @@
 Ref<WebXRInterfaceJS> webxr;
 #endif
 
-void initialize_webxr_module(ModuleInitializationLevel p_level) {
+void initialize_webxr_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-
-	VLTR_REGISTER_ABSTRACT_CLASS(WebXRInterface);
-
 #ifdef WEB_ENABLED
 	if (XRServer::get_singleton()) {
 		webxr.instantiate();
@@ -57,7 +54,8 @@ void initialize_webxr_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_webxr_module(ModuleInitializationLevel p_level) {
+void uninitialize_webxr_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
@@ -79,3 +77,5 @@ void uninitialize_webxr_module(ModuleInitializationLevel p_level) {
 	}
 #endif
 }
+
+

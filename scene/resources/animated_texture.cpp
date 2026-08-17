@@ -29,21 +29,22 @@
 /**************************************************************************/
 
 #include "animated_texture.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "core/object/message_queue.h"
 #include "core/os/os.h"
 #include "servers/rendering/rendering_server.h"
 
-void AnimatedTexture::_update_proxy() {
+void AnimatedTexture::_update_proxy()
+{
 	RWLockRead r(rw_lock);
 
 	float delta;
 	if (prev_ticks == 0) {
 		delta = 0;
 		prev_ticks = OS::get_singleton()->get_ticks_usec();
-	} else {
+	}
+	else {
 		uint64_t ticks = OS::get_singleton()->get_ticks_usec();
 		delta = float(double(ticks - prev_ticks) / 1000000.0);
 		prev_ticks = ticks;
@@ -60,36 +61,43 @@ void AnimatedTexture::_update_proxy() {
 		if (time > frame_limit) {
 			if (speed_scale > 0.0) {
 				current_frame++;
-			} else {
+			}
+			else {
 				current_frame--;
 			}
 			if (current_frame >= frame_count) {
 				if (one_shot) {
 					current_frame = frame_count - 1;
-				} else {
+				}
+				else {
 					current_frame = 0;
 				}
-			} else if (current_frame < 0) {
+			}
+			else if (current_frame < 0) {
 				if (one_shot) {
 					current_frame = 0;
-				} else {
+				}
+				else {
 					current_frame = frame_count - 1;
 				}
 			}
 			time -= frame_limit;
 
-		} else {
+		}
+		else {
 			break;
 		}
 		iter_max--;
 	}
 
 	if (frames[current_frame].texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_proxy_update(proxy, frames[current_frame].texture->get_rid());
+		RenderingServer::get_singleton()->texture_proxy_update(
+			proxy, frames[current_frame].texture->get_rid());
 	}
 }
 
-void AnimatedTexture::set_frames(int p_frames) {
+void AnimatedTexture::set_frames(int p_frames)
+{
 	ERR_FAIL_COND(p_frames < 1 || p_frames > MAX_FRAMES);
 
 	RWLockWrite r(rw_lock);
@@ -97,11 +105,10 @@ void AnimatedTexture::set_frames(int p_frames) {
 	frame_count = p_frames;
 }
 
-int AnimatedTexture::get_frames() const {
-	return frame_count;
-}
+int AnimatedTexture::get_frames() const { return frame_count; }
 
-void AnimatedTexture::set_current_frame(int p_frame) {
+void AnimatedTexture::set_current_frame(int p_frame)
+{
 	ERR_FAIL_COND(p_frame < 0 || p_frame >= frame_count);
 
 	RWLockWrite r(rw_lock);
@@ -110,29 +117,26 @@ void AnimatedTexture::set_current_frame(int p_frame) {
 	time = 0;
 }
 
-int AnimatedTexture::get_current_frame() const {
-	return current_frame;
-}
+int AnimatedTexture::get_current_frame() const { return current_frame; }
 
-void AnimatedTexture::set_pause(bool p_pause) {
+void AnimatedTexture::set_pause(bool p_pause)
+{
 	RWLockWrite r(rw_lock);
 	pause = p_pause;
 }
 
-bool AnimatedTexture::get_pause() const {
-	return pause;
-}
+bool AnimatedTexture::get_pause() const { return pause; }
 
-void AnimatedTexture::set_one_shot(bool p_one_shot) {
+void AnimatedTexture::set_one_shot(bool p_one_shot)
+{
 	RWLockWrite r(rw_lock);
 	one_shot = p_one_shot;
 }
 
-bool AnimatedTexture::get_one_shot() const {
-	return one_shot;
-}
+bool AnimatedTexture::get_one_shot() const { return one_shot; }
 
-void AnimatedTexture::set_frame_texture(int p_frame, const Ref<Texture2D> &p_texture) {
+void AnimatedTexture::set_frame_texture(int p_frame, const Ref<Texture2D>& p_texture)
+{
 	ERR_FAIL_COND(p_texture == this);
 	ERR_FAIL_INDEX(p_frame, MAX_FRAMES);
 
@@ -141,7 +145,8 @@ void AnimatedTexture::set_frame_texture(int p_frame, const Ref<Texture2D> &p_tex
 	frames[p_frame].texture = p_texture;
 }
 
-Ref<Texture2D> AnimatedTexture::get_frame_texture(int p_frame) const {
+Ref<Texture2D> AnimatedTexture::get_frame_texture(int p_frame) const
+{
 	ERR_FAIL_INDEX_V(p_frame, MAX_FRAMES, Ref<Texture2D>());
 
 	RWLockRead r(rw_lock);
@@ -149,7 +154,8 @@ Ref<Texture2D> AnimatedTexture::get_frame_texture(int p_frame) const {
 	return frames[p_frame].texture;
 }
 
-void AnimatedTexture::set_frame_duration(int p_frame, float p_duration) {
+void AnimatedTexture::set_frame_duration(int p_frame, float p_duration)
+{
 	ERR_FAIL_INDEX(p_frame, MAX_FRAMES);
 
 	RWLockWrite r(rw_lock);
@@ -157,7 +163,8 @@ void AnimatedTexture::set_frame_duration(int p_frame, float p_duration) {
 	frames[p_frame].duration = p_duration;
 }
 
-float AnimatedTexture::get_frame_duration(int p_frame) const {
+float AnimatedTexture::get_frame_duration(int p_frame) const
+{
 	ERR_FAIL_INDEX_V(p_frame, MAX_FRAMES, 0);
 
 	RWLockRead r(rw_lock);
@@ -165,7 +172,8 @@ float AnimatedTexture::get_frame_duration(int p_frame) const {
 	return frames[p_frame].duration;
 }
 
-void AnimatedTexture::set_speed_scale(float p_scale) {
+void AnimatedTexture::set_speed_scale(float p_scale)
+{
 	ERR_FAIL_COND(p_scale < -1000 || p_scale >= 1000);
 
 	RWLockWrite r(rw_lock);
@@ -173,11 +181,10 @@ void AnimatedTexture::set_speed_scale(float p_scale) {
 	speed_scale = p_scale;
 }
 
-float AnimatedTexture::get_speed_scale() const {
-	return speed_scale;
-}
+float AnimatedTexture::get_speed_scale() const { return speed_scale; }
 
-int AnimatedTexture::get_width() const {
+int AnimatedTexture::get_width() const
+{
 	RWLockRead r(rw_lock);
 
 	if (frames[current_frame].texture.is_null()) {
@@ -187,7 +194,8 @@ int AnimatedTexture::get_width() const {
 	return frames[current_frame].texture->get_width();
 }
 
-int AnimatedTexture::get_height() const {
+int AnimatedTexture::get_height() const
+{
 	RWLockRead r(rw_lock);
 
 	if (frames[current_frame].texture.is_null()) {
@@ -197,11 +205,10 @@ int AnimatedTexture::get_height() const {
 	return frames[current_frame].texture->get_height();
 }
 
-RID AnimatedTexture::get_rid() const {
-	return proxy;
-}
+RID AnimatedTexture::get_rid() const { return proxy; }
 
-bool AnimatedTexture::has_alpha() const {
+bool AnimatedTexture::has_alpha() const
+{
 	RWLockRead r(rw_lock);
 
 	if (frames[current_frame].texture.is_null()) {
@@ -211,7 +218,8 @@ bool AnimatedTexture::has_alpha() const {
 	return frames[current_frame].texture->has_alpha();
 }
 
-Ref<Image> AnimatedTexture::get_image() const {
+Ref<Image> AnimatedTexture::get_image() const
+{
 	RWLockRead r(rw_lock);
 
 	if (frames[current_frame].texture.is_null()) {
@@ -221,7 +229,8 @@ Ref<Image> AnimatedTexture::get_image() const {
 	return frames[current_frame].texture->get_image();
 }
 
-bool AnimatedTexture::is_pixel_opaque(int p_x, int p_y) const {
+bool AnimatedTexture::is_pixel_opaque(int p_x, int p_y) const
+{
 	RWLockRead r(rw_lock);
 
 	if (frames[current_frame].texture.is_valid()) {
@@ -230,7 +239,8 @@ bool AnimatedTexture::is_pixel_opaque(int p_x, int p_y) const {
 	return true;
 }
 
-void AnimatedTexture::_validate_property(PropertyInfo &p_property) const {
+void AnimatedTexture::_validate_property(PropertyInfo& p_property) const
+{
 	String prop = p_property.name;
 	if (prop.begins_with("frame_")) {
 		int frame = prop.get_slicec('/', 0).get_slicec('_', 1).to_int();
@@ -240,58 +250,31 @@ void AnimatedTexture::_validate_property(PropertyInfo &p_property) const {
 	}
 }
 
-void AnimatedTexture::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_frames", "frames"), &AnimatedTexture::set_frames);
-	ClassDB::bind_method(D_METHOD("get_frames"), &AnimatedTexture::get_frames);
+void AnimatedTexture::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_current_frame", "frame"), &AnimatedTexture::set_current_frame);
-	ClassDB::bind_method(D_METHOD("get_current_frame"), &AnimatedTexture::get_current_frame);
-
-	ClassDB::bind_method(D_METHOD("set_pause", "pause"), &AnimatedTexture::set_pause);
-	ClassDB::bind_method(D_METHOD("get_pause"), &AnimatedTexture::get_pause);
-
-	ClassDB::bind_method(D_METHOD("set_one_shot", "one_shot"), &AnimatedTexture::set_one_shot);
-	ClassDB::bind_method(D_METHOD("get_one_shot"), &AnimatedTexture::get_one_shot);
-
-	ClassDB::bind_method(D_METHOD("set_speed_scale", "scale"), &AnimatedTexture::set_speed_scale);
-	ClassDB::bind_method(D_METHOD("get_speed_scale"), &AnimatedTexture::get_speed_scale);
-
-	ClassDB::bind_method(D_METHOD("set_frame_texture", "frame", "texture"), &AnimatedTexture::set_frame_texture);
-	ClassDB::bind_method(D_METHOD("get_frame_texture", "frame"), &AnimatedTexture::get_frame_texture);
-
-	ClassDB::bind_method(D_METHOD("set_frame_duration", "frame", "duration"), &AnimatedTexture::set_frame_duration);
-	ClassDB::bind_method(D_METHOD("get_frame_duration", "frame"), &AnimatedTexture::get_frame_duration);
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "frames", PROPERTY_HINT_RANGE, "1," + itos(MAX_FRAMES), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), "set_frames", "get_frames");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "current_frame", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_current_frame", "get_current_frame");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "pause"), "set_pause", "get_pause");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "one_shot"), "set_one_shot", "get_one_shot");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "-60,60,0.1,or_less,or_greater"), "set_speed_scale", "get_speed_scale");
-
-	for (int i = 0; i < MAX_FRAMES; i++) {
-		ADD_PROPERTYI(PropertyInfo(Variant::OBJECT, "frame_" + itos(i) + "/texture", PROPERTY_HINT_RESOURCE_TYPE, Texture2D::get_class_static(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_INTERNAL), "set_frame_texture", "get_frame_texture", i);
-		ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "frame_" + itos(i) + "/duration", PROPERTY_HINT_RANGE, "0.0,16.0,0.01,or_greater,suffix:s", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_INTERNAL), "set_frame_duration", "get_frame_duration", i);
-	}
-
-	BIND_CONSTANT(MAX_FRAMES);
+void AnimatedTexture::_finish_non_thread_safe_setup()
+{
+	RenderingServer::get_singleton()->connect(
+		"frame_pre_draw", callable_mp(this, &AnimatedTexture::_update_proxy));
 }
 
-void AnimatedTexture::_finish_non_thread_safe_setup() {
-	RenderingServer::get_singleton()->connect("frame_pre_draw", callable_mp(this, &AnimatedTexture::_update_proxy));
-}
-
-AnimatedTexture::AnimatedTexture() {
-	//proxy = RS::get_singleton()->texture_create();
+AnimatedTexture::AnimatedTexture()
+{
+	// proxy = RS::get_singleton()->texture_create();
 	proxy_ph = RS::get_singleton()->texture_2d_placeholder_create();
 	proxy = RS::get_singleton()->texture_proxy_create(proxy_ph);
 
 	RenderingServer::get_singleton()->texture_set_force_redraw_if_visible(proxy, true);
 
-	MessageQueue::get_main_singleton()->push_callable(callable_mp(this, &AnimatedTexture::_finish_non_thread_safe_setup));
+	MessageQueue::get_main_singleton()->push_callable(
+		callable_mp(this, &AnimatedTexture::_finish_non_thread_safe_setup));
 }
 
-AnimatedTexture::~AnimatedTexture() {
+AnimatedTexture::~AnimatedTexture()
+{
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RS::get_singleton()->free_rid(proxy);
 	RS::get_singleton()->free_rid(proxy_ph);
 }
+
+

@@ -28,14 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
+#include "core/object/class_db.h"
 #include "fastnoise_lite.h"
 #include "noise.h"
 #include "noise_texture_2d.h"
 #include "noise_texture_3d.h"
-
-#include "core/object/class_db.h"
+#include "register_types.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/noise_editor_plugin.h"
@@ -45,15 +43,8 @@
 #include "editor/plugins/editor_plugin.h"
 #endif
 
-void initialize_noise_module(ModuleInitializationLevel p_level) {
-	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		VLTR_REGISTER_CLASS(NoiseTexture3D);
-		VLTR_REGISTER_CLASS(NoiseTexture2D);
-		VLTR_REGISTER_ABSTRACT_CLASS(Noise);
-		VLTR_REGISTER_CLASS(FastNoiseLite);
-		ClassDB::add_compatibility_class("NoiseTexture", "NoiseTexture2D");
-	}
-
+void initialize_noise_module(ModuleInitializationLevel p_level)
+{
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		EditorPlugins::add_by_type<NoiseEditorPlugin>();
@@ -61,8 +52,10 @@ void initialize_noise_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_noise_module(ModuleInitializationLevel p_level) {
+void uninitialize_noise_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 }
+

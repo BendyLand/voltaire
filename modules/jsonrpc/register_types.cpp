@@ -28,22 +28,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
+#include "jsonrpc.h"
 #include "register_types.h"
 
-#include "jsonrpc.h"
-
-#include "core/object/class_db.h"
-
-void initialize_jsonrpc_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-
-	VLTR_REGISTER_CLASS(JSONRPC);
-}
-
-void uninitialize_jsonrpc_module(ModuleInitializationLevel p_level) {
+void initialize_jsonrpc_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 }
+
+void uninitialize_jsonrpc_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+

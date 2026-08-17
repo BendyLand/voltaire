@@ -28,14 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_scene_types.h"
-
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
+#include "register_scene_types.h"
 #include "scene/animation/animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_space_2d.h"
 #include "scene/animation/animation_blend_tree.h"
@@ -387,7 +386,8 @@ static Ref<ResourceFormatLoaderShader> resource_loader_shader;
 static Ref<ResourceFormatSaverShaderInclude> resource_saver_shader_include;
 static Ref<ResourceFormatLoaderShaderInclude> resource_loader_shader_include;
 
-void register_scene_types() {
+void register_scene_types()
+{
 	OS::get_singleton()->benchmark_begin_measure("Scene", "Register Types");
 
 	SceneStringNames::create();
@@ -435,138 +435,21 @@ void register_scene_types() {
 
 	OS::get_singleton()->yield(); // may take time to init
 
-	VLTR_REGISTER_CLASS(Node);
-	VLTR_REGISTER_CLASS(MissingNode);
-	VLTR_REGISTER_ABSTRACT_CLASS(InstancePlaceholder);
-
-	VLTR_REGISTER_ABSTRACT_CLASS(CanvasItem);
-
-	VLTR_REGISTER_VIRTUAL_CLASS(Texture);
-	VLTR_REGISTER_VIRTUAL_CLASS(Texture2D);
-
-	VLTR_REGISTER_VIRTUAL_CLASS(Material);
-	VLTR_REGISTER_CLASS(PlaceholderMaterial);
-
-	VLTR_REGISTER_ABSTRACT_CLASS(Viewport);
-	VLTR_REGISTER_CLASS(SubViewport);
-	VLTR_REGISTER_CLASS(ViewportTexture);
-
-	VLTR_REGISTER_VIRTUAL_CLASS(CompositorEffect);
-
-	VLTR_REGISTER_ABSTRACT_CLASS(MultiplayerPeer);
-	VLTR_REGISTER_ABSTRACT_CLASS(MultiplayerAPI);
-
-	VLTR_REGISTER_CLASS(HTTPRequest);
-	VLTR_REGISTER_CLASS(Timer);
-	VLTR_REGISTER_CLASS(CanvasLayer);
-	VLTR_REGISTER_CLASS(ResourcePreloader);
-	VLTR_REGISTER_CLASS(Window);
-
-	VLTR_REGISTER_CLASS(StatusIndicator);
-
 	/* REGISTER GUI */
 
 	OS::get_singleton()->yield(); // may take time to init
 
-	VLTR_REGISTER_CLASS(Control);
-	VLTR_REGISTER_VIRTUAL_CLASS(BaseButton);
-	VLTR_REGISTER_CLASS(Button);
-	VLTR_REGISTER_CLASS(Label);
-	VLTR_REGISTER_VIRTUAL_CLASS(Range);
-	VLTR_REGISTER_ABSTRACT_CLASS(ScrollBar);
-	VLTR_REGISTER_CLASS(HScrollBar);
-	VLTR_REGISTER_CLASS(VScrollBar);
-	VLTR_REGISTER_CLASS(ProgressBar);
-	VLTR_REGISTER_ABSTRACT_CLASS(Slider);
-	VLTR_REGISTER_CLASS(HSlider);
-	VLTR_REGISTER_CLASS(VSlider);
-	VLTR_REGISTER_CLASS(Popup);
-	VLTR_REGISTER_CLASS(PopupPanel);
-	VLTR_REGISTER_CLASS(CheckBox);
-	VLTR_REGISTER_CLASS(CheckButton);
-	VLTR_REGISTER_CLASS(LinkButton);
-	VLTR_REGISTER_CLASS(Panel);
-	VLTR_REGISTER_CLASS(ButtonGroup);
-
 	OS::get_singleton()->yield(); // may take time to init
 
-	VLTR_REGISTER_CLASS(Container);
-	VLTR_REGISTER_CLASS(TextureRect);
-	VLTR_REGISTER_CLASS(ColorRect);
-	VLTR_REGISTER_CLASS(NinePatchRect);
-	VLTR_REGISTER_CLASS(ReferenceRect);
-	VLTR_REGISTER_CLASS(AspectRatioContainer);
-	VLTR_REGISTER_CLASS(TabContainer);
-	VLTR_REGISTER_CLASS(TabBar);
-	VLTR_REGISTER_ABSTRACT_CLASS(Separator);
-	VLTR_REGISTER_CLASS(HSeparator);
-	VLTR_REGISTER_CLASS(VSeparator);
-	VLTR_REGISTER_CLASS(TextureButton);
-	VLTR_REGISTER_CLASS(BoxContainer);
-	VLTR_REGISTER_CLASS(HBoxContainer);
-	VLTR_REGISTER_CLASS(VBoxContainer);
-	VLTR_REGISTER_CLASS(GridContainer);
-	VLTR_REGISTER_CLASS(CenterContainer);
-	VLTR_REGISTER_CLASS(ScrollContainer);
-	VLTR_REGISTER_CLASS(PanelContainer);
-	VLTR_REGISTER_CLASS(FlowContainer);
-	VLTR_REGISTER_CLASS(HFlowContainer);
-	VLTR_REGISTER_CLASS(VFlowContainer);
-	VLTR_REGISTER_CLASS(MarginContainer);
-
 	OS::get_singleton()->yield(); // may take time to init
-
-	VLTR_REGISTER_CLASS(TextureProgressBar);
-	VLTR_REGISTER_CLASS(ItemList);
-
-	VLTR_REGISTER_CLASS(LineEdit);
-	VLTR_REGISTER_CLASS(VideoStreamPlayer);
-	VLTR_REGISTER_VIRTUAL_CLASS(VideoStreamPlayback);
-	VLTR_REGISTER_VIRTUAL_CLASS(VideoStream);
 
 #ifndef ADVANCED_GUI_DISABLED
-	VLTR_REGISTER_CLASS(AcceptDialog);
-	VLTR_REGISTER_CLASS(ConfirmationDialog);
-
-	VLTR_REGISTER_CLASS(FileDialog);
-
-	VLTR_REGISTER_CLASS(PopupMenu);
-	VLTR_REGISTER_CLASS(Tree);
-
-	VLTR_REGISTER_CLASS(TextEdit);
-	VLTR_REGISTER_CLASS(CodeEdit);
-	VLTR_REGISTER_CLASS(SyntaxHighlighter);
-	VLTR_REGISTER_CLASS(CodeHighlighter);
-
-	VLTR_REGISTER_ABSTRACT_CLASS(TreeItem);
-	VLTR_REGISTER_CLASS(MenuBar);
-	VLTR_REGISTER_CLASS(MenuButton);
-	VLTR_REGISTER_CLASS(OptionButton);
-	VLTR_REGISTER_CLASS(SpinBox);
-	VLTR_REGISTER_CLASS(ColorPicker);
-	VLTR_REGISTER_CLASS(ColorPickerButton);
-	VLTR_REGISTER_CLASS(RichTextLabel);
-	VLTR_REGISTER_CLASS(RichTextEffect);
-	VLTR_REGISTER_CLASS(CharFXTransform);
-
-	VLTR_REGISTER_CLASS(SubViewportContainer);
-	VLTR_REGISTER_CLASS(SplitContainer);
-	VLTR_REGISTER_CLASS(HSplitContainer);
-	VLTR_REGISTER_CLASS(VSplitContainer);
-
-	VLTR_REGISTER_CLASS(GraphElement);
-	VLTR_REGISTER_CLASS(GraphNode);
-	VLTR_REGISTER_CLASS(GraphFrame);
-	VLTR_REGISTER_CLASS(GraphEdit);
-
-	VLTR_REGISTER_CLASS(FoldableGroup);
-	VLTR_REGISTER_CLASS(FoldableContainer);
-
-	VLTR_REGISTER_CLASS(VirtualJoystick);
 
 	OS::get_singleton()->yield(); // may take time to init
 
-	int swap_cancel_ok = GLOBAL_DEF(PropertyInfo(Variant::INT, "gui/common/swap_cancel_ok", PROPERTY_HINT_ENUM, "Auto,Cancel First,OK First"), 0);
+	int swap_cancel_ok = GLOBAL_DEF(PropertyInfo(Variant::INT, "gui/common/swap_cancel_ok",
+										PROPERTY_HINT_ENUM, "Auto,Cancel First,OK First"),
+		0);
 	if (DisplayServer::get_singleton() && swap_cancel_ok == 0) {
 		swap_cancel_ok = DisplayServer::get_singleton()->get_swap_cancel_ok() ? 2 : 1;
 	}
@@ -578,477 +461,77 @@ void register_scene_types() {
 	Window::set_root_layout_direction(root_dir);
 
 	/* REGISTER ANIMATION */
-	VLTR_REGISTER_CLASS(Tween);
-	VLTR_REGISTER_ABSTRACT_CLASS(Tweener);
-	VLTR_REGISTER_CLASS(PropertyTweener);
-	VLTR_REGISTER_CLASS(IntervalTweener);
-	VLTR_REGISTER_CLASS(CallbackTweener);
-	VLTR_REGISTER_CLASS(MethodTweener);
-	VLTR_REGISTER_CLASS(SubtweenTweener);
-	VLTR_REGISTER_CLASS(AwaitTweener);
-
-	VLTR_REGISTER_ABSTRACT_CLASS(AnimationMixer);
-	VLTR_REGISTER_CLASS(AnimationPlayer);
-	VLTR_REGISTER_CLASS(AnimationTree);
-	VLTR_REGISTER_CLASS(AnimationNode);
-	VLTR_REGISTER_CLASS(AnimationRootNode);
-	VLTR_REGISTER_CLASS(AnimationNodeBlendTree);
-	VLTR_REGISTER_CLASS(AnimationNodeBlendSpace1D);
-	VLTR_REGISTER_CLASS(AnimationNodeBlendSpace2D);
-	VLTR_REGISTER_CLASS(AnimationNodeStateMachine);
-	VLTR_REGISTER_CLASS(AnimationNodeStateMachinePlayback);
-
-	VLTR_REGISTER_CLASS(AnimationNodeSync);
-	VLTR_REGISTER_CLASS(AnimationNodeStateMachineTransition);
-	VLTR_REGISTER_CLASS(AnimationNodeOutput);
-	VLTR_REGISTER_CLASS(AnimationNodeOneShot);
-	VLTR_REGISTER_CLASS(AnimationNodeAnimation);
-	VLTR_REGISTER_CLASS(AnimationNodeAdd2);
-	VLTR_REGISTER_CLASS(AnimationNodeAdd3);
-	VLTR_REGISTER_CLASS(AnimationNodeBlend2);
-	VLTR_REGISTER_CLASS(AnimationNodeBlend3);
-	VLTR_REGISTER_CLASS(AnimationNodeSub2);
-	VLTR_REGISTER_CLASS(AnimationNodeTimeScale);
-	VLTR_REGISTER_CLASS(AnimationNodeTimeSeek);
-	VLTR_REGISTER_CLASS(AnimationNodeTransition);
-
-	VLTR_REGISTER_CLASS(ShaderGlobalsOverride); // can be used in any shader
 
 	OS::get_singleton()->yield(); // may take time to init
 
 	/* REGISTER 3D */
 
 #ifndef _3D_DISABLED
-	VLTR_REGISTER_CLASS(Node3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(Node3DGizmo);
-	VLTR_REGISTER_CLASS(Skin);
-	VLTR_REGISTER_ABSTRACT_CLASS(SkinReference);
-	VLTR_REGISTER_CLASS(Skeleton3D);
-	VLTR_REGISTER_CLASS(ImporterMesh);
-	VLTR_REGISTER_CLASS(ImporterMeshInstance3D);
-	VLTR_REGISTER_VIRTUAL_CLASS(VisualInstance3D);
-	VLTR_REGISTER_VIRTUAL_CLASS(GeometryInstance3D);
-	VLTR_REGISTER_CLASS(Camera3D);
-	VLTR_REGISTER_CLASS(AudioListener3D);
-	VLTR_REGISTER_CLASS(MeshInstance3D);
 #ifndef DISABLE_DEPRECATED
-	MeshInstance3D::use_parent_skeleton_compat = GLOBAL_GET("animation/compatibility/default_parent_skeleton_in_mesh_instance_3d");
+	MeshInstance3D::use_parent_skeleton_compat =
+		GLOBAL_GET("animation/compatibility/default_parent_skeleton_in_mesh_instance_3d");
 #endif
-	VLTR_REGISTER_CLASS(OccluderInstance3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(Occluder3D);
-	VLTR_REGISTER_CLASS(ArrayOccluder3D);
-	VLTR_REGISTER_CLASS(QuadOccluder3D);
-	VLTR_REGISTER_CLASS(BoxOccluder3D);
-	VLTR_REGISTER_CLASS(SphereOccluder3D);
-	VLTR_REGISTER_CLASS(PolygonOccluder3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(SpriteBase3D);
-	VLTR_REGISTER_CLASS(Sprite3D);
-	VLTR_REGISTER_CLASS(AnimatedSprite3D);
-	VLTR_REGISTER_CLASS(Label3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(Light3D);
-	VLTR_REGISTER_CLASS(DirectionalLight3D);
-	VLTR_REGISTER_CLASS(OmniLight3D);
-	VLTR_REGISTER_CLASS(SpotLight3D);
-	VLTR_REGISTER_CLASS(AreaLight3D);
-	VLTR_REGISTER_CLASS(ReflectionProbe);
-	VLTR_REGISTER_CLASS(Decal);
-	VLTR_REGISTER_CLASS(VoxelGI);
-	VLTR_REGISTER_CLASS(VoxelGIData);
-	VLTR_REGISTER_CLASS(LightmapGI);
-	VLTR_REGISTER_CLASS(LightmapGIData);
-	VLTR_REGISTER_CLASS(LightmapProbe);
-	VLTR_REGISTER_ABSTRACT_CLASS(Lightmapper);
-	VLTR_REGISTER_CLASS(GPUParticles3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(GPUParticlesCollision3D);
-	VLTR_REGISTER_CLASS(GPUParticlesCollisionBox3D);
-	VLTR_REGISTER_CLASS(GPUParticlesCollisionSphere3D);
-	VLTR_REGISTER_CLASS(GPUParticlesCollisionSDF3D);
-	VLTR_REGISTER_CLASS(GPUParticlesCollisionHeightField3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(GPUParticlesAttractor3D);
-	VLTR_REGISTER_CLASS(GPUParticlesAttractorBox3D);
-	VLTR_REGISTER_CLASS(GPUParticlesAttractorSphere3D);
-	VLTR_REGISTER_CLASS(GPUParticlesAttractorVectorField3D);
-	VLTR_REGISTER_CLASS(CPUParticles3D);
-	VLTR_REGISTER_CLASS(Marker3D);
-	VLTR_REGISTER_CLASS(RootMotionView);
-	VLTR_REGISTER_VIRTUAL_CLASS(SkeletonModifier3D);
-	VLTR_REGISTER_CLASS(ModifierBoneTarget3D);
-	VLTR_REGISTER_CLASS(RetargetModifier3D);
-	VLTR_REGISTER_VIRTUAL_CLASS(JointLimitation3D);
-	VLTR_REGISTER_CLASS(JointLimitationCone3D);
-	VLTR_REGISTER_CLASS(SpringBoneSimulator3D);
-	VLTR_REGISTER_VIRTUAL_CLASS(SpringBoneCollision3D);
-	VLTR_REGISTER_CLASS(SpringBoneCollisionSphere3D);
-	VLTR_REGISTER_CLASS(SpringBoneCollisionCapsule3D);
-	VLTR_REGISTER_CLASS(SpringBoneCollisionPlane3D);
-	VLTR_REGISTER_VIRTUAL_CLASS(BoneConstraint3D);
-	VLTR_REGISTER_CLASS(CopyTransformModifier3D);
-	VLTR_REGISTER_CLASS(ConvertTransformModifier3D);
-	VLTR_REGISTER_CLASS(AimModifier3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(IKModifier3D);
-	VLTR_REGISTER_CLASS(TwoBoneIK3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(ChainIK3D);
-	VLTR_REGISTER_CLASS(SplineIK3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(IterateIK3D);
-	VLTR_REGISTER_CLASS(FABRIK3D);
-	VLTR_REGISTER_CLASS(CCDIK3D);
-	VLTR_REGISTER_CLASS(JacobianIK3D);
-	VLTR_REGISTER_CLASS(LimitAngularVelocityModifier3D);
-	VLTR_REGISTER_CLASS(BoneTwistDisperser3D);
-
-#ifndef XR_DISABLED
-	VLTR_REGISTER_CLASS(XRCamera3D);
-	VLTR_REGISTER_CLASS(XRNode3D);
-	VLTR_REGISTER_CLASS(XRController3D);
-	VLTR_REGISTER_CLASS(XRAnchor3D);
-	VLTR_REGISTER_CLASS(XROrigin3D);
-	VLTR_REGISTER_CLASS(XRBodyModifier3D);
-	VLTR_REGISTER_CLASS(XRHandModifier3D);
-	VLTR_REGISTER_CLASS(XRFaceModifier3D);
-#endif // XR_DISABLED
 
 	OS::get_singleton()->yield(); // may take time to init
 
-#ifndef PHYSICS_3D_DISABLED
-	VLTR_REGISTER_ABSTRACT_CLASS(CollisionObject3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(PhysicsBody3D);
-	VLTR_REGISTER_CLASS(StaticBody3D);
-	VLTR_REGISTER_CLASS(AnimatableBody3D);
-	VLTR_REGISTER_CLASS(RigidBody3D);
-	VLTR_REGISTER_CLASS(KinematicCollision3D);
-	VLTR_REGISTER_CLASS(CharacterBody3D);
-	VLTR_REGISTER_CLASS(SpringArm3D);
-
-	VLTR_REGISTER_CLASS(PhysicalBoneSimulator3D);
-	VLTR_REGISTER_CLASS(PhysicalBone3D);
-	VLTR_REGISTER_CLASS(SoftBody3D);
-#endif // PHYSICS_3D_DISABLED
-
-	VLTR_REGISTER_CLASS(BoneAttachment3D);
-	VLTR_REGISTER_CLASS(LookAtModifier3D);
-#ifndef DISABLE_DEPRECATED
-	VLTR_REGISTER_CLASS(SkeletonIK3D);
-#endif
-
-#ifndef PHYSICS_3D_DISABLED
-	VLTR_REGISTER_CLASS(VehicleBody3D);
-	VLTR_REGISTER_CLASS(VehicleWheel3D);
-	VLTR_REGISTER_CLASS(Area3D);
-	VLTR_REGISTER_CLASS(CollisionShape3D);
-	VLTR_REGISTER_CLASS(CollisionPolygon3D);
-	VLTR_REGISTER_CLASS(RayCast3D);
-	VLTR_REGISTER_CLASS(ShapeCast3D);
-#endif // PHYSICS_3D_DISABLED
-	VLTR_REGISTER_CLASS(MultiMeshInstance3D);
-
-	VLTR_REGISTER_CLASS(Curve3D);
-	VLTR_REGISTER_CLASS(Path3D);
-	VLTR_REGISTER_CLASS(PathFollow3D);
-	VLTR_REGISTER_CLASS(VisibleOnScreenNotifier3D);
-	VLTR_REGISTER_CLASS(VisibleOnScreenEnabler3D);
-	VLTR_REGISTER_CLASS(WorldEnvironment);
-	VLTR_REGISTER_CLASS(FogVolume);
-	VLTR_REGISTER_CLASS(FogMaterial);
-	VLTR_REGISTER_CLASS(RemoteTransform3D);
-
-#ifndef PHYSICS_3D_DISABLED
-	VLTR_REGISTER_ABSTRACT_CLASS(Joint3D);
-	VLTR_REGISTER_CLASS(PinJoint3D);
-	VLTR_REGISTER_CLASS(HingeJoint3D);
-	VLTR_REGISTER_CLASS(SliderJoint3D);
-	VLTR_REGISTER_CLASS(ConeTwistJoint3D);
-	VLTR_REGISTER_CLASS(Generic6DOFJoint3D);
-#endif // PHYSICS_3D_DISABLED
-
 #ifndef NAVIGATION_3D_DISABLED
-	VLTR_REGISTER_CLASS(NavigationMeshSourceGeometryData3D);
-	VLTR_REGISTER_CLASS(NavigationRegion3D);
-	VLTR_REGISTER_CLASS(NavigationAgent3D);
-	VLTR_REGISTER_CLASS(NavigationObstacle3D);
-	VLTR_REGISTER_CLASS(NavigationLink3D);
 #endif // NAVIGATION_3D_DISABLED
 
 	OS::get_singleton()->yield(); // may take time to init
-#endif // _3D_DISABLED
+#endif							  // _3D_DISABLED
 
 	/* REGISTER SHADER */
 
-	VLTR_REGISTER_CLASS(Shader);
-	VLTR_REGISTER_CLASS(ShaderInclude);
-
-	VLTR_REGISTER_CLASS(ShaderMaterial);
-	VLTR_REGISTER_CLASS(CanvasTexture);
-	VLTR_REGISTER_CLASS(CanvasItemMaterial);
-
 	SceneTree::add_idle_callback(CanvasItemMaterial::flush_changes);
 	CanvasItemMaterial::init_shaders();
-	VLTR_REGISTER_CLASS(BlitMaterial);
 
 	/* REGISTER 2D */
 
-	VLTR_REGISTER_CLASS(Node2D);
-	VLTR_REGISTER_CLASS(CanvasGroup);
-	VLTR_REGISTER_CLASS(CPUParticles2D);
-	VLTR_REGISTER_CLASS(GPUParticles2D);
-	VLTR_REGISTER_CLASS(Sprite2D);
-	VLTR_REGISTER_CLASS(SpriteFrames);
-	VLTR_REGISTER_CLASS(AnimatedSprite2D);
-	VLTR_REGISTER_CLASS(Marker2D);
-	VLTR_REGISTER_CLASS(Line2D);
-	VLTR_REGISTER_CLASS(MeshInstance2D);
-	VLTR_REGISTER_CLASS(MultiMeshInstance2D);
 #ifndef PHYSICS_2D_DISABLED
-	VLTR_REGISTER_ABSTRACT_CLASS(CollisionObject2D);
-	VLTR_REGISTER_ABSTRACT_CLASS(PhysicsBody2D);
-	VLTR_REGISTER_CLASS(StaticBody2D);
-	VLTR_REGISTER_CLASS(AnimatableBody2D);
-	VLTR_REGISTER_CLASS(RigidBody2D);
-	VLTR_REGISTER_CLASS(CharacterBody2D);
-	VLTR_REGISTER_CLASS(KinematicCollision2D);
-	VLTR_REGISTER_CLASS(Area2D);
-	VLTR_REGISTER_CLASS(CollisionShape2D);
-	VLTR_REGISTER_CLASS(CollisionPolygon2D);
-	VLTR_REGISTER_CLASS(RayCast2D);
-	VLTR_REGISTER_CLASS(ShapeCast2D);
 #endif // PHYSICS_2D_DISABLED
-	VLTR_REGISTER_CLASS(VisibleOnScreenNotifier2D);
-	VLTR_REGISTER_CLASS(VisibleOnScreenEnabler2D);
-	VLTR_REGISTER_CLASS(Polygon2D);
-	VLTR_REGISTER_CLASS(Skeleton2D);
-	VLTR_REGISTER_CLASS(Bone2D);
-	VLTR_REGISTER_ABSTRACT_CLASS(Light2D);
-	VLTR_REGISTER_CLASS(PointLight2D);
-	VLTR_REGISTER_CLASS(DirectionalLight2D);
-	VLTR_REGISTER_CLASS(LightOccluder2D);
-	VLTR_REGISTER_CLASS(OccluderPolygon2D);
-	VLTR_REGISTER_CLASS(BackBufferCopy);
-	VLTR_REGISTER_CLASS(CanvasModulate);
 
 	OS::get_singleton()->yield(); // may take time to init
 
-	VLTR_REGISTER_CLASS(Camera2D);
-	VLTR_REGISTER_CLASS(AudioListener2D);
 #ifndef PHYSICS_2D_DISABLED
-	VLTR_REGISTER_ABSTRACT_CLASS(Joint2D);
-	VLTR_REGISTER_CLASS(PinJoint2D);
-	VLTR_REGISTER_CLASS(GrooveJoint2D);
-	VLTR_REGISTER_CLASS(DampedSpringJoint2D);
-	VLTR_REGISTER_CLASS(TouchScreenButton);
-#endif // PHYSICS_2D_DISABLED
-	VLTR_REGISTER_CLASS(TileSet);
-	VLTR_REGISTER_ABSTRACT_CLASS(TileSetSource);
-	VLTR_REGISTER_CLASS(TileSetAtlasSource);
-	VLTR_REGISTER_CLASS(TileSetScenesCollectionSource);
-	VLTR_REGISTER_CLASS(TileMapPattern);
-	VLTR_REGISTER_CLASS(TileData);
-	VLTR_REGISTER_CLASS(TileMapLayer);
-	VLTR_REGISTER_CLASS(Parallax2D);
-	VLTR_REGISTER_CLASS(RemoteTransform2D);
-
-#ifndef DISABLE_DEPRECATED
-	VLTR_REGISTER_CLASS(ParallaxBackground);
-	VLTR_REGISTER_CLASS(ParallaxLayer);
-	VLTR_REGISTER_CLASS(TileMap);
-#endif
-
-	VLTR_REGISTER_CLASS(SkeletonModificationStack2D);
-	VLTR_REGISTER_CLASS(SkeletonModification2D);
-	VLTR_REGISTER_CLASS(SkeletonModification2DLookAt);
-	VLTR_REGISTER_CLASS(SkeletonModification2DCCDIK);
-	VLTR_REGISTER_CLASS(SkeletonModification2DFABRIK);
-	VLTR_REGISTER_CLASS(SkeletonModification2DTwoBoneIK);
-	VLTR_REGISTER_CLASS(SkeletonModification2DStackHolder);
-
-#ifndef PHYSICS_2D_DISABLED
-	VLTR_REGISTER_CLASS(PhysicalBone2D);
-	VLTR_REGISTER_CLASS(SkeletonModification2DJiggle);
-	VLTR_REGISTER_CLASS(SkeletonModification2DPhysicalBones);
 #endif // PHYSICS_2D_DISABLED
 
 	OS::get_singleton()->yield(); // may take time to init
 
 	/* REGISTER RESOURCES */
 
-	VLTR_REGISTER_ABSTRACT_CLASS(Shader);
-	VLTR_REGISTER_CLASS(ParticleProcessMaterial);
 	SceneTree::add_idle_callback(ParticleProcessMaterial::flush_changes);
 	ParticleProcessMaterial::init_shaders();
 
-	VLTR_REGISTER_VIRTUAL_CLASS(Mesh);
-	VLTR_REGISTER_CLASS(MeshConvexDecompositionSettings);
-	VLTR_REGISTER_CLASS(ArrayMesh);
-	VLTR_REGISTER_CLASS(PlaceholderMesh);
-	VLTR_REGISTER_CLASS(ImmediateMesh);
-	VLTR_REGISTER_CLASS(MultiMesh);
-	VLTR_REGISTER_CLASS(SurfaceTool);
-	VLTR_REGISTER_CLASS(MeshDataTool);
-
 #ifndef _3D_DISABLED
-	VLTR_REGISTER_CLASS(AudioStreamPlayer3D);
-	VLTR_REGISTER_VIRTUAL_CLASS(PrimitiveMesh);
-	VLTR_REGISTER_CLASS(BoxMesh);
-	VLTR_REGISTER_CLASS(CapsuleMesh);
-	VLTR_REGISTER_CLASS(CylinderMesh);
-	VLTR_REGISTER_CLASS(PlaneMesh);
-	VLTR_REGISTER_CLASS(PrismMesh);
-	VLTR_REGISTER_CLASS(QuadMesh);
-	VLTR_REGISTER_CLASS(SphereMesh);
-	VLTR_REGISTER_CLASS(TextMesh);
-	VLTR_REGISTER_CLASS(TorusMesh);
-	VLTR_REGISTER_CLASS(TubeTrailMesh);
-	VLTR_REGISTER_CLASS(RibbonTrailMesh);
-	VLTR_REGISTER_CLASS(PointMesh);
-	VLTR_REGISTER_ABSTRACT_CLASS(BaseMaterial3D);
-	VLTR_REGISTER_CLASS(StandardMaterial3D);
-	VLTR_REGISTER_CLASS(ORMMaterial3D);
-	VLTR_REGISTER_CLASS(ProceduralSkyMaterial);
-	VLTR_REGISTER_CLASS(PanoramaSkyMaterial);
-	VLTR_REGISTER_CLASS(PhysicalSkyMaterial);
 	SceneTree::add_idle_callback(BaseMaterial3D::flush_changes);
 	BaseMaterial3D::init_shaders();
-
-	VLTR_REGISTER_CLASS(MeshLibrary);
 
 	OS::get_singleton()->yield(); // may take time to init
 
 #ifndef PHYSICS_3D_DISABLED
-	VLTR_REGISTER_ABSTRACT_CLASS(Shape3D);
-	VLTR_REGISTER_CLASS(SeparationRayShape3D);
-	VLTR_REGISTER_CLASS(SphereShape3D);
-	VLTR_REGISTER_CLASS(BoxShape3D);
-	VLTR_REGISTER_CLASS(CapsuleShape3D);
-	VLTR_REGISTER_CLASS(CylinderShape3D);
-	VLTR_REGISTER_CLASS(HeightMapShape3D);
-	VLTR_REGISTER_CLASS(WorldBoundaryShape3D);
-	VLTR_REGISTER_CLASS(ConvexPolygonShape3D);
-	VLTR_REGISTER_CLASS(ConcavePolygonShape3D);
 #endif // PHYSICS_3D_DISABLED
-	VLTR_REGISTER_CLASS(World3D);
 
 	OS::get_singleton()->yield(); // may take time to init
-#endif // _3D_DISABLED
+#endif							  // _3D_DISABLED
 
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
-	VLTR_REGISTER_CLASS(PhysicsMaterial);
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
-	VLTR_REGISTER_CLASS(Compositor);
-	VLTR_REGISTER_CLASS(Environment);
-	VLTR_REGISTER_VIRTUAL_CLASS(CameraAttributes);
-	VLTR_REGISTER_CLASS(CameraAttributesPhysical);
-	VLTR_REGISTER_CLASS(CameraAttributesPractical);
-	VLTR_REGISTER_CLASS(World2D);
-	VLTR_REGISTER_CLASS(Sky);
-	VLTR_REGISTER_CLASS(CompressedTexture2D);
-	VLTR_REGISTER_CLASS(PortableCompressedTexture2D);
-	VLTR_REGISTER_CLASS(ImageTexture);
-	VLTR_REGISTER_CLASS(AtlasTexture);
-	VLTR_REGISTER_CLASS(MeshTexture);
-	VLTR_REGISTER_CLASS(CurveTexture);
-	VLTR_REGISTER_CLASS(CurveXYZTexture);
-	VLTR_REGISTER_CLASS(GradientTexture1D);
-	VLTR_REGISTER_CLASS(GradientTexture2D);
-	VLTR_REGISTER_CLASS(CameraTexture);
-	VLTR_REGISTER_CLASS(ExternalTexture);
-	VLTR_REGISTER_CLASS(DrawableTexture2D);
-	VLTR_REGISTER_VIRTUAL_CLASS(TextureLayered);
-	VLTR_REGISTER_ABSTRACT_CLASS(ImageTextureLayered);
-	VLTR_REGISTER_VIRTUAL_CLASS(Texture3D);
-	VLTR_REGISTER_CLASS(ImageTexture3D);
-	VLTR_REGISTER_CLASS(CompressedTexture3D);
-	VLTR_REGISTER_CLASS(Cubemap);
-	VLTR_REGISTER_CLASS(CubemapArray);
-	VLTR_REGISTER_CLASS(Texture2DArray);
-	VLTR_REGISTER_ABSTRACT_CLASS(CompressedTextureLayered);
-	VLTR_REGISTER_CLASS(CompressedCubemap);
-	VLTR_REGISTER_CLASS(CompressedCubemapArray);
-	VLTR_REGISTER_CLASS(CompressedTexture2DArray);
-	VLTR_REGISTER_CLASS(PlaceholderTexture2D);
-	VLTR_REGISTER_CLASS(PlaceholderTexture3D);
-	VLTR_REGISTER_ABSTRACT_CLASS(PlaceholderTextureLayered);
-	VLTR_REGISTER_CLASS(PlaceholderTexture2DArray);
-	VLTR_REGISTER_CLASS(PlaceholderCubemap);
-	VLTR_REGISTER_CLASS(PlaceholderCubemapArray);
-	VLTR_REGISTER_CLASS(DPITexture);
 #ifndef DISABLE_DEPRECATED
-	VLTR_REGISTER_CLASS(AnimatedTexture);
 #endif
 
 	// These classes are part of renderer_rd
-	VLTR_REGISTER_CLASS(Texture2DRD);
-	VLTR_REGISTER_ABSTRACT_CLASS(TextureLayeredRD);
-	VLTR_REGISTER_CLASS(Texture2DArrayRD);
-	VLTR_REGISTER_CLASS(TextureCubemapRD);
-	VLTR_REGISTER_CLASS(TextureCubemapArrayRD);
-	VLTR_REGISTER_CLASS(Texture3DRD);
-
-	VLTR_REGISTER_CLASS(Animation);
-	VLTR_REGISTER_CLASS(AnimationLibrary);
-
-	VLTR_REGISTER_ABSTRACT_CLASS(Font);
-	VLTR_REGISTER_CLASS(FontFile);
-	VLTR_REGISTER_CLASS(FontVariation);
-	VLTR_REGISTER_CLASS(SystemFont);
-	VLTR_REGISTER_CLASS(ColorPalette);
-
-	VLTR_REGISTER_CLASS(Curve);
-
-	VLTR_REGISTER_CLASS(LabelSettings);
-
-	VLTR_REGISTER_CLASS(TextLine);
-	VLTR_REGISTER_CLASS(TextParagraph);
-
-	VLTR_REGISTER_VIRTUAL_CLASS(StyleBox);
-	VLTR_REGISTER_CLASS(StyleBoxEmpty);
-	VLTR_REGISTER_CLASS(StyleBoxTexture);
-	VLTR_REGISTER_CLASS(StyleBoxFlat);
-	VLTR_REGISTER_CLASS(StyleBoxLine);
-	VLTR_REGISTER_CLASS(Theme);
-
-	VLTR_REGISTER_CLASS(BitMap);
-	VLTR_REGISTER_CLASS(Gradient);
-
-	VLTR_REGISTER_CLASS(SkeletonProfile);
-	VLTR_REGISTER_CLASS(SkeletonProfileHumanoid);
-	VLTR_REGISTER_CLASS(BoneMap);
 
 	OS::get_singleton()->yield(); // may take time to init
 
-	VLTR_REGISTER_CLASS(AudioStreamPlayer);
-	VLTR_REGISTER_CLASS(AudioStreamWAV);
-	VLTR_REGISTER_CLASS(AudioStreamPolyphonic);
-	VLTR_REGISTER_ABSTRACT_CLASS(AudioStreamPlaybackPolyphonic);
-
 	OS::get_singleton()->yield(); // may take time to init
-
-	VLTR_REGISTER_CLASS(AudioStreamPlayer2D);
-	VLTR_REGISTER_CLASS(Curve2D);
-	VLTR_REGISTER_CLASS(Path2D);
-	VLTR_REGISTER_CLASS(PathFollow2D);
 
 #ifndef PHYSICS_2D_DISABLED
-	VLTR_REGISTER_ABSTRACT_CLASS(Shape2D);
-	VLTR_REGISTER_CLASS(WorldBoundaryShape2D);
-	VLTR_REGISTER_CLASS(SegmentShape2D);
-	VLTR_REGISTER_CLASS(SeparationRayShape2D);
-	VLTR_REGISTER_CLASS(CircleShape2D);
-	VLTR_REGISTER_CLASS(RectangleShape2D);
-	VLTR_REGISTER_CLASS(CapsuleShape2D);
-	VLTR_REGISTER_CLASS(ConvexPolygonShape2D);
-	VLTR_REGISTER_CLASS(ConcavePolygonShape2D);
 #endif // PHYSICS_2D_DISABLED
 
 #if !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
-	VLTR_REGISTER_CLASS(NavigationMesh);
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
 
 #ifndef NAVIGATION_2D_DISABLED
-	VLTR_REGISTER_CLASS(NavigationMeshSourceGeometryData2D);
-	VLTR_REGISTER_CLASS(NavigationPolygon);
-	VLTR_REGISTER_CLASS(NavigationRegion2D);
-	VLTR_REGISTER_CLASS(NavigationAgent2D);
-	VLTR_REGISTER_CLASS(NavigationObstacle2D);
-	VLTR_REGISTER_CLASS(NavigationLink2D);
-	VLTR_REGISTER_CLASS(PolygonPathFinder);
 
 	OS::get_singleton()->yield(); // may take time to init
 
@@ -1079,12 +562,6 @@ void register_scene_types() {
 #if !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
 	OS::get_singleton()->yield(); // may take time to init
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
-
-	VLTR_REGISTER_ABSTRACT_CLASS(SceneState);
-	VLTR_REGISTER_CLASS(PackedScene);
-
-	VLTR_REGISTER_CLASS(SceneTree);
-	VLTR_REGISTER_ABSTRACT_CLASS(SceneTreeTimer); // sorry, you can't create it
 
 #ifndef DISABLE_DEPRECATED
 	// Dropped in 4.0, near approximation.
@@ -1190,7 +667,8 @@ void register_scene_types() {
 	ClassDB::add_compatibility_class("Physics2DDirectBodyState", "PhysicsDirectBodyState2D");
 	ClassDB::add_compatibility_class("Physics2DDirectSpaceState", "PhysicsDirectSpaceState2D");
 	ClassDB::add_compatibility_class("Physics2DServer", "PhysicsServer2D");
-	ClassDB::add_compatibility_class("Physics2DShapeQueryParameters", "PhysicsShapeQueryParameters2D");
+	ClassDB::add_compatibility_class(
+		"Physics2DShapeQueryParameters", "PhysicsShapeQueryParameters2D");
 	ClassDB::add_compatibility_class("Physics2DTestMotionResult", "PhysicsTestMotionResult2D");
 	ClassDB::add_compatibility_class("RayShape2D", "SeparationRayShape2D");
 #endif // PHYSICS_2D_DISABLED
@@ -1221,7 +699,8 @@ void register_scene_types() {
 	ClassDB::add_compatibility_class("PhysicsDirectBodyState", "PhysicsDirectBodyState3D");
 	ClassDB::add_compatibility_class("PhysicsDirectSpaceState", "PhysicsDirectSpaceState3D");
 	ClassDB::add_compatibility_class("PhysicsServer", "PhysicsServer3D");
-	ClassDB::add_compatibility_class("PhysicsShapeQueryParameters", "PhysicsShapeQueryParameters3D");
+	ClassDB::add_compatibility_class(
+		"PhysicsShapeQueryParameters", "PhysicsShapeQueryParameters3D");
 	ClassDB::add_compatibility_class("PinJoint", "PinJoint3D");
 	ClassDB::add_compatibility_class("PlaneShape", "WorldBoundaryShape3D");
 	ClassDB::add_compatibility_class("RayCast", "RayCast3D");
@@ -1240,7 +719,8 @@ void register_scene_types() {
 #endif // PHYSICS_3D_DISABLED
 
 	// VisualShader classes.
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarConstant", "VisualShaderNodeFloatConstant");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeScalarConstant", "VisualShaderNodeFloatConstant");
 	ClassDB::add_compatibility_class("VisualShaderNodeScalarFunc", "VisualShaderNodeFloatFunc");
 	ClassDB::add_compatibility_class("VisualShaderNodeScalarOp", "VisualShaderNodeFloatOp");
 	ClassDB::add_compatibility_class("VisualShaderNodeScalarClamp", "VisualShaderNodeClamp");
@@ -1248,23 +728,37 @@ void register_scene_types() {
 	ClassDB::add_compatibility_class("VisualShaderNodeScalarInterp", "VisualShaderNodeMix");
 	ClassDB::add_compatibility_class("VisualShaderNodeVectorInterp", "VisualShaderNodeMix");
 	ClassDB::add_compatibility_class("VisualShaderNodeVectorScalarMix", "VisualShaderNodeMix");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarSmoothStep", "VisualShaderNodeSmoothStep");
-	ClassDB::add_compatibility_class("VisualShaderNodeVectorSmoothStep", "VisualShaderNodeSmoothStep");
-	ClassDB::add_compatibility_class("VisualShaderNodeVectorScalarSmoothStep", "VisualShaderNodeSmoothStep");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeScalarSmoothStep", "VisualShaderNodeSmoothStep");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeVectorSmoothStep", "VisualShaderNodeSmoothStep");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeVectorScalarSmoothStep", "VisualShaderNodeSmoothStep");
 	ClassDB::add_compatibility_class("VisualShaderNodeVectorScalarStep", "VisualShaderNodeStep");
 	ClassDB::add_compatibility_class("VisualShaderNodeScalarSwitch", "VisualShaderNodeSwitch");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarTransformMult", "VisualShaderNodeTransformOp");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarDerivativeFunc", "VisualShaderNodeDerivativeFunc");
-	ClassDB::add_compatibility_class("VisualShaderNodeVectorDerivativeFunc", "VisualShaderNodeDerivativeFunc");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeScalarTransformMult", "VisualShaderNodeTransformOp");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeScalarDerivativeFunc", "VisualShaderNodeDerivativeFunc");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeVectorDerivativeFunc", "VisualShaderNodeDerivativeFunc");
 
-	ClassDB::add_compatibility_class("VisualShaderNodeBooleanUniform", "VisualShaderNodeBooleanParameter");
-	ClassDB::add_compatibility_class("VisualShaderNodeColorUniform", "VisualShaderNodeColorParameter");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarUniform", "VisualShaderNodeFloatParameter");
-	ClassDB::add_compatibility_class("VisualShaderNodeCubeMapUniform", "VisualShaderNodeCubeMapParameter");
-	ClassDB::add_compatibility_class("VisualShaderNodeTextureUniform", "VisualShaderNodeTexture2DParameter");
-	ClassDB::add_compatibility_class("VisualShaderNodeTextureUniformTriplanar", "VisualShaderNodeTextureParameterTriplanar");
-	ClassDB::add_compatibility_class("VisualShaderNodeTransformUniform", "VisualShaderNodeTransformParameter");
-	ClassDB::add_compatibility_class("VisualShaderNodeVec3Uniform", "VisualShaderNodeVec3Parameter");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeBooleanUniform", "VisualShaderNodeBooleanParameter");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeColorUniform", "VisualShaderNodeColorParameter");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeScalarUniform", "VisualShaderNodeFloatParameter");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeCubeMapUniform", "VisualShaderNodeCubeMapParameter");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeTextureUniform", "VisualShaderNodeTexture2DParameter");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeTextureUniformTriplanar", "VisualShaderNodeTextureParameterTriplanar");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeTransformUniform", "VisualShaderNodeTransformParameter");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeVec3Uniform", "VisualShaderNodeVec3Parameter");
 	ClassDB::add_compatibility_class("VisualShaderNodeUniform", "VisualShaderNodeParameter");
 	ClassDB::add_compatibility_class("VisualShaderNodeUniformRef", "VisualShaderNodeParameterRef");
 
@@ -1278,7 +772,8 @@ void register_scene_types() {
 	ClassDB::add_compatibility_class("StreamTexture2DArray", "CompressedTexture2DArray");
 	ClassDB::add_compatibility_class("StreamTexture3D", "CompressedTexture3D");
 	ClassDB::add_compatibility_class("StreamTextureLayered", "CompressedTextureLayered");
-	ClassDB::add_compatibility_class("VisualShaderNodeFloatUniform", "VisualShaderNodeFloatParameter");
+	ClassDB::add_compatibility_class(
+		"VisualShaderNodeFloatUniform", "VisualShaderNodeFloatParameter");
 #endif /* DISABLE_DEPRECATED */
 
 	OS::get_singleton()->yield(); // may take time to init
@@ -1314,7 +809,8 @@ void register_scene_types() {
 	OS::get_singleton()->benchmark_end_measure("Scene", "Register Types");
 }
 
-void unregister_scene_types() {
+void unregister_scene_types()
+{
 	OS::get_singleton()->benchmark_begin_measure("Scene", "Unregister Types");
 
 	SceneDebugger::deinitialize();
@@ -1356,7 +852,8 @@ void unregister_scene_types() {
 		resource_loader_shader_include.unref();
 	}
 
-	// StandardMaterial3D is not initialized when 3D is disabled, so it shouldn't be cleaned up either
+	// StandardMaterial3D is not initialized when 3D is disabled, so it shouldn't be cleaned up
+	// either
 #ifndef _3D_DISABLED
 	BaseMaterial3D::finish_shaders();
 	PhysicalSkyMaterial::cleanup_shader();
@@ -1375,12 +872,14 @@ void unregister_scene_types() {
 	OS::get_singleton()->benchmark_end_measure("Scene", "Unregister Types");
 }
 
-void register_scene_singletons() {
+void register_scene_singletons()
+{
 	OS::get_singleton()->benchmark_begin_measure("Scene", "Register Singletons");
 
-	VLTR_REGISTER_CLASS(ThemeDB);
-
-	Engine::get_singleton()->add_singleton(Engine::Singleton("ThemeDB", ThemeDB::get_singleton()));
+	Engine::get_singleton()->add_singleton(
+		Engine::Singleton("ThemeDB", ThemeDB::get_singleton()->obj.get()));
 
 	OS::get_singleton()->benchmark_end_measure("Scene", "Register Singletons");
 }
+
+

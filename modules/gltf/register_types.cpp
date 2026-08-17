@@ -28,18 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
+#include "core/config/engine.h"
+#include "core/object/class_db.h"
 #include "extensions/gltf_document_extension_convert_importer_mesh.h"
 #include "extensions/gltf_document_extension_texture_ktx.h"
 #include "extensions/gltf_document_extension_texture_webp.h"
 #include "extensions/gltf_spec_gloss.h"
 #include "gltf_document.h"
 #include "gltf_state.h"
+#include "register_types.h"
 #include "structures/gltf_object_model_property.h"
-
-#include "core/config/engine.h"
-#include "core/object/class_db.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "extensions/physics/gltf_document_extension_physics.h"
@@ -57,7 +55,8 @@
 #include "editor/editor_node.h"
 #include "editor/settings/editor_settings.h"
 
-static void _editor_init() {
+static void _editor_init()
+{
 	Ref<EditorSceneFormatImporterGLTF> import_gltf;
 	import_gltf.instantiate();
 	ResourceImporterScene::add_scene_importer(import_gltf);
@@ -65,14 +64,16 @@ static void _editor_init() {
 	// Blend to glTF importer.
 
 	String blender_path = EDITOR_GET("filesystem/import/blender/blender_path");
-	if (blender_path.is_empty() && EditorSettings::get_singleton()->has_setting("filesystem/import/blender/blender3_path")) {
+	if (blender_path.is_empty() &&
+		EditorSettings::get_singleton()->has_setting("filesystem/import/blender/blender3_path")) {
 		blender_path = EDITOR_GET("filesystem/import/blender/blender3_path");
 
 		if (!blender_path.is_empty()) {
 #if defined(MACOS_ENABLED)
 			if (blender_path.contains(".app")) {
 				blender_path += "/Contents/MacOS/Blender";
-			} else {
+			}
+			else {
 				blender_path += "/blender";
 			}
 #elif defined(WINDOWS_ENABLED)
@@ -81,7 +82,8 @@ static void _editor_init() {
 			blender_path += "/blender";
 #endif
 
-			EditorSettings::get_singleton()->set("filesystem/import/blender/blender_path", blender_path);
+			EditorSettings::get_singleton()->set(
+				"filesystem/import/blender/blender_path", blender_path);
 		}
 
 		EditorSettings::get_singleton()->erase("filesystem/import/blender/blender3_path");
@@ -103,38 +105,19 @@ static void _editor_init() {
 }
 #endif // TOOLS_ENABLED
 
-#define GLTF_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class) \
-	Ref<m_doc_ext_class> extension_##m_doc_ext_class; \
-	extension_##m_doc_ext_class.instantiate(); \
+#define GLTF_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                          \
+	Ref<m_doc_ext_class> extension_##m_doc_ext_class;                                              \
+	extension_##m_doc_ext_class.instantiate();                                                     \
 	GLTFDocument::register_gltf_document_extension(extension_##m_doc_ext_class);
 
-void initialize_gltf_module(ModuleInitializationLevel p_level) {
+void initialize_gltf_module(ModuleInitializationLevel p_level)
+{
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		// glTF API available at runtime.
-		VLTR_REGISTER_CLASS(GLTFAccessor);
-		VLTR_REGISTER_CLASS(GLTFAnimation);
-		VLTR_REGISTER_CLASS(GLTFBufferView);
-		VLTR_REGISTER_CLASS(GLTFCamera);
-		VLTR_REGISTER_CLASS(GLTFDocument);
-		VLTR_REGISTER_CLASS(GLTFDocumentExtension);
-		VLTR_REGISTER_CLASS(GLTFDocumentExtensionConvertImporterMesh);
-		VLTR_REGISTER_CLASS(GLTFLight);
-		VLTR_REGISTER_CLASS(GLTFMesh);
-		VLTR_REGISTER_CLASS(GLTFNode);
-		VLTR_REGISTER_CLASS(GLTFObjectModelProperty);
-#ifndef PHYSICS_3D_DISABLED
-		VLTR_REGISTER_CLASS(GLTFPhysicsBody);
-		VLTR_REGISTER_CLASS(GLTFPhysicsShape);
-#endif // PHYSICS_3D_DISABLED
-		VLTR_REGISTER_CLASS(GLTFSkeleton);
-		VLTR_REGISTER_CLASS(GLTFSkin);
-		VLTR_REGISTER_CLASS(GLTFSpecGloss);
-		VLTR_REGISTER_CLASS(GLTFState);
-		VLTR_REGISTER_CLASS(GLTFTexture);
-		VLTR_REGISTER_CLASS(GLTFTextureSampler);
 // Register GLTFDocumentExtension classes with GLTFDocument.
 #ifndef PHYSICS_3D_DISABLED
-		// Ensure physics is first in this list so that physics nodes are created before other nodes.
+		// Ensure physics is first in this list so that physics nodes are created before other
+		// nodes.
 		GLTF_REGISTER_DOCUMENT_EXTENSION(GLTFDocumentExtensionPhysics);
 #endif // PHYSICS_3D_DISABLED
 		GLTF_REGISTER_DOCUMENT_EXTENSION(GLTFDocumentExtensionTextureKTX);
@@ -147,12 +130,10 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		VLTR_REGISTER_CLASS(EditorSceneFormatImporterGLTF);
 		EditorPlugins::add_by_type<SceneExporterGLTFPlugin>();
 
 		// Project settings defined here so doctool finds them.
 		GLOBAL_DEF_RST_BASIC("filesystem/import/blender/enabled", true);
-		VLTR_REGISTER_CLASS(EditorSceneFormatImporterBlend);
 		// Can't (a priori) run external app on these platforms.
 		GLOBAL_DEF_RST("filesystem/import/blender/enabled.android", false);
 		GLOBAL_DEF_RST("filesystem/import/blender/enabled.web", false);
@@ -162,9 +143,12 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {
 #endif // TOOLS_ENABLED
 }
 
-void uninitialize_gltf_module(ModuleInitializationLevel p_level) {
+void uninitialize_gltf_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 	GLTFDocument::unregister_all_gltf_document_extensions();
 }
+
+

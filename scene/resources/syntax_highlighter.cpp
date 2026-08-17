@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "syntax_highlighter.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "scene/gui/text_edit.h"
+#include "syntax_highlighter.h"
 
-Dictionary SyntaxHighlighter::get_line_syntax_highlighting(int p_line) {
+Dictionary SyntaxHighlighter::get_line_syntax_highlighting(int p_line)
+{
 	if (highlighting_cache.has(p_line)) {
 		return highlighting_cache[p_line];
 	}
@@ -48,7 +48,8 @@ Dictionary SyntaxHighlighter::get_line_syntax_highlighting(int p_line) {
 	return color_map;
 }
 
-void SyntaxHighlighter::_lines_edited_from(int p_from_line, int p_to_line) {
+void SyntaxHighlighter::_lines_edited_from(int p_from_line, int p_to_line)
+{
 	if (highlighting_cache.size() < 1) {
 		return;
 	}
@@ -61,12 +62,14 @@ void SyntaxHighlighter::_lines_edited_from(int p_from_line, int p_to_line) {
 	}
 }
 
-void SyntaxHighlighter::clear_highlighting_cache() {
+void SyntaxHighlighter::clear_highlighting_cache()
+{
 	highlighting_cache.clear();
 	_clear_highlighting_cache();
 }
 
-void SyntaxHighlighter::update_cache() {
+void SyntaxHighlighter::update_cache()
+{
 	clear_highlighting_cache();
 
 	if (text_edit == nullptr) {
@@ -75,34 +78,31 @@ void SyntaxHighlighter::update_cache() {
 	_update_cache();
 }
 
-void SyntaxHighlighter::set_text_edit(TextEdit *p_text_edit) {
+void SyntaxHighlighter::set_text_edit(TextEdit* p_text_edit)
+{
 	if (text_edit && ObjectDB::get_instance(text_edit_instance_id)) {
-		text_edit->disconnect("lines_edited_from", callable_mp(this, &SyntaxHighlighter::_lines_edited_from));
+		text_edit->disconnect(
+			"lines_edited_from", callable_mp(this, &SyntaxHighlighter::_lines_edited_from));
 	}
 
 	text_edit = p_text_edit;
 	if (p_text_edit == nullptr) {
 		return;
 	}
-	text_edit_instance_id = text_edit->get_instance_id();
-	text_edit->connect("lines_edited_from", callable_mp(this, &SyntaxHighlighter::_lines_edited_from));
+	text_edit_instance_id = text_edit->obj->get_instance_id();
+	text_edit->connect(
+		"lines_edited_from", callable_mp(this, &SyntaxHighlighter::_lines_edited_from));
 	update_cache();
 }
 
-TextEdit *SyntaxHighlighter::get_text_edit() const {
-	return text_edit;
-}
+TextEdit* SyntaxHighlighter::get_text_edit() const { return text_edit; }
 
-void SyntaxHighlighter::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_line_syntax_highlighting", "line"), &SyntaxHighlighter::get_line_syntax_highlighting);
-	ClassDB::bind_method(D_METHOD("update_cache"), &SyntaxHighlighter::update_cache);
-	ClassDB::bind_method(D_METHOD("clear_highlighting_cache"), &SyntaxHighlighter::clear_highlighting_cache);
-	ClassDB::bind_method(D_METHOD("get_text_edit"), &SyntaxHighlighter::get_text_edit);
-}
+void SyntaxHighlighter::_bind_methods() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
+Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line)
+{
 	Dictionary color_map;
 
 	bool prev_is_char = false;
@@ -131,7 +131,7 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 		in_region = color_region_cache[p_line - 1];
 	}
 
-	const String &str = text_edit->get_line_with_ime(p_line);
+	const String& str = text_edit->get_line_with_ime(p_line);
 	const int line_length = str.length();
 	Color prev_color;
 
@@ -174,7 +174,7 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 
 						/* search the line */
 						bool match = true;
-						const char32_t *start_key = color_regions[c].start_key.get_data();
+						const char32_t* start_key = color_regions[c].start_key.get_data();
 						for (int k = 0; k < start_key_length; k++) {
 							if (start_key[k] != str[from + k]) {
 								match = false;
@@ -188,9 +188,13 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 						from += start_key_length;
 
 						/* check if it's the whole line */
-						if (end_key_length == 0 || color_regions[c].line_only || from + end_key_length > line_length) {
-							if (from + end_key_length > line_length && (color_regions[in_region].start_key == "\"" || color_regions[in_region].start_key == "\'")) {
-								// If it's key length and there is a '\', dont skip to highlight esc chars.
+						if (end_key_length == 0 || color_regions[c].line_only ||
+							from + end_key_length > line_length) {
+							if (from + end_key_length > line_length &&
+								(color_regions[in_region].start_key == "\"" ||
+									color_regions[in_region].start_key == "\'")) {
+								// If it's key length and there is a '\', dont skip to highlight esc
+								// chars.
 								if (str.find_char('\\', from) >= 0) {
 									break;
 								}
@@ -214,7 +218,8 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 
 				/* if we are in one find the end key */
 				if (in_region != -1) {
-					bool is_string = (color_regions[in_region].start_key == "\"" || color_regions[in_region].start_key == "\'");
+					bool is_string = (color_regions[in_region].start_key == "\"" ||
+									  color_regions[in_region].start_key == "\'");
 
 					Color region_color = color_regions[in_region].color;
 					prev_color = region_color;
@@ -224,7 +229,7 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 					/* search the line */
 					int region_end_index = -1;
 					int end_key_length = color_regions[in_region].end_key.length();
-					const char32_t *end_key = color_regions[in_region].end_key.get_data();
+					const char32_t* end_key = color_regions[in_region].end_key.get_data();
 					for (; from < line_length; from++) {
 						if (line_length - from < end_key_length) {
 							// Don't break if '\' to highlight esc chars.
@@ -284,12 +289,16 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 		// Allow ABCDEF in hex notation.
 		if (is_hex_notation && (is_hex_digit(str[j]) || is_number)) {
 			is_number = true;
-		} else {
+		}
+		else {
 			is_hex_notation = false;
 		}
 
-		// Check for dot or underscore or 'x' for hex notation in floating point number or 'e' for scientific notation.
-		if ((str[j] == '.' || str[j] == 'x' || str[j] == 'X' || str[j] == '_' || str[j] == 'f' || str[j] == 'e' || str[j] == 'E' || (uint_suffix_enabled && str[j] == 'u')) && !in_word && prev_is_number && !is_number) {
+		// Check for dot or underscore or 'x' for hex notation in floating point number or 'e' for
+		// scientific notation.
+		if ((str[j] == '.' || str[j] == 'x' || str[j] == 'X' || str[j] == '_' || str[j] == 'f' ||
+				str[j] == 'e' || str[j] == 'E' || (uint_suffix_enabled && str[j] == 'u')) &&
+			!in_word && prev_is_number && !is_number) {
 			is_number = true;
 			is_a_symbol = false;
 			is_char = false;
@@ -325,13 +334,15 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 			Color col;
 			if (keywords.has(word)) {
 				col = keywords[word];
-			} else if (member_keywords.has(word)) {
+			}
+			else if (member_keywords.has(word)) {
 				col = member_keywords[word];
 				for (int k = j - 1; k >= 0; k--) {
 					if (str[k] == '.') {
-						col = Color(); //member indexing not allowed
+						col = Color(); // member indexing not allowed
 						break;
-					} else if (str[k] > 32) {
+					}
+					else if (str[k] > 32) {
 						break;
 					}
 				}
@@ -377,13 +388,17 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 
 		if (in_keyword) {
 			color = keyword_color;
-		} else if (in_member_variable) {
+		}
+		else if (in_member_variable) {
 			color = member_color;
-		} else if (in_function_name) {
+		}
+		else if (in_function_name) {
 			color = function_color;
-		} else if (is_a_symbol) {
+		}
+		else if (is_a_symbol) {
 			color = symbol_color;
-		} else if (is_number) {
+		}
+		else if (is_number) {
 			color = number_color;
 		}
 
@@ -400,81 +415,87 @@ Dictionary CodeHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
 	return color_map;
 }
 
-void CodeHighlighter::_clear_highlighting_cache() {
-	color_region_cache.clear();
-}
+void CodeHighlighter::_clear_highlighting_cache() { color_region_cache.clear(); }
 
-void CodeHighlighter::_update_cache() {
-	font_color = text_edit->get_font_color();
-}
+void CodeHighlighter::_update_cache() { font_color = text_edit->get_font_color(); }
 
-void CodeHighlighter::add_keyword_color(const String &p_keyword, const Color &p_color) {
+void CodeHighlighter::add_keyword_color(const String& p_keyword, const Color& p_color)
+{
 	keywords[p_keyword] = p_color;
 	clear_highlighting_cache();
 }
 
-void CodeHighlighter::remove_keyword_color(const String &p_keyword) {
+void CodeHighlighter::remove_keyword_color(const String& p_keyword)
+{
 	keywords.erase(p_keyword);
 	clear_highlighting_cache();
 }
 
-bool CodeHighlighter::has_keyword_color(const String &p_keyword) const {
+bool CodeHighlighter::has_keyword_color(const String& p_keyword) const
+{
 	return keywords.has(p_keyword);
 }
 
-Color CodeHighlighter::get_keyword_color(const String &p_keyword) const {
+Color CodeHighlighter::get_keyword_color(const String& p_keyword) const
+{
 	ERR_FAIL_COND_V(!keywords.has(p_keyword), Color());
 	return keywords[p_keyword];
 }
 
-void CodeHighlighter::set_keyword_colors(const Dictionary p_keywords) {
+void CodeHighlighter::set_keyword_colors(const Dictionary p_keywords)
+{
 	keywords = p_keywords;
 	clear_highlighting_cache();
 }
 
-void CodeHighlighter::clear_keyword_colors() {
+void CodeHighlighter::clear_keyword_colors()
+{
 	keywords.clear();
 	clear_highlighting_cache();
 }
 
-Dictionary CodeHighlighter::get_keyword_colors() const {
-	return keywords;
-}
+Dictionary CodeHighlighter::get_keyword_colors() const { return keywords; }
 
-void CodeHighlighter::add_member_keyword_color(const String &p_member_keyword, const Color &p_color) {
+void CodeHighlighter::add_member_keyword_color(const String& p_member_keyword, const Color& p_color)
+{
 	member_keywords[p_member_keyword] = p_color;
 	clear_highlighting_cache();
 }
 
-void CodeHighlighter::remove_member_keyword_color(const String &p_member_keyword) {
+void CodeHighlighter::remove_member_keyword_color(const String& p_member_keyword)
+{
 	member_keywords.erase(p_member_keyword);
 	clear_highlighting_cache();
 }
 
-bool CodeHighlighter::has_member_keyword_color(const String &p_member_keyword) const {
+bool CodeHighlighter::has_member_keyword_color(const String& p_member_keyword) const
+{
 	return member_keywords.has(p_member_keyword);
 }
 
-Color CodeHighlighter::get_member_keyword_color(const String &p_member_keyword) const {
+Color CodeHighlighter::get_member_keyword_color(const String& p_member_keyword) const
+{
 	ERR_FAIL_COND_V(!member_keywords.has(p_member_keyword), Color());
 	return member_keywords[p_member_keyword];
 }
 
-void CodeHighlighter::set_member_keyword_colors(const Dictionary &p_member_keywords) {
+void CodeHighlighter::set_member_keyword_colors(const Dictionary& p_member_keywords)
+{
 	member_keywords = p_member_keywords;
 	clear_highlighting_cache();
 }
 
-void CodeHighlighter::clear_member_keyword_colors() {
+void CodeHighlighter::clear_member_keyword_colors()
+{
 	member_keywords.clear();
 	clear_highlighting_cache();
 }
 
-Dictionary CodeHighlighter::get_member_keyword_colors() const {
-	return member_keywords;
-}
+Dictionary CodeHighlighter::get_member_keyword_colors() const { return member_keywords; }
 
-void CodeHighlighter::add_color_region(const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only) {
+void CodeHighlighter::add_color_region(
+	const String& p_start_key, const String& p_end_key, const Color& p_color, bool p_line_only)
+{
 	for (int i = 0; i < p_start_key.length(); i++) {
 		ERR_FAIL_COND_MSG(!is_symbol(p_start_key[i]), "color regions must start with a symbol");
 	}
@@ -487,7 +508,8 @@ void CodeHighlighter::add_color_region(const String &p_start_key, const String &
 
 	int at = 0;
 	for (int i = 0; i < color_regions.size(); i++) {
-		ERR_FAIL_COND_MSG(color_regions[i].start_key == p_start_key, "color region with start key '" + p_start_key + "' already exists.");
+		ERR_FAIL_COND_MSG(color_regions[i].start_key == p_start_key,
+			"color region with start key '" + p_start_key + "' already exists.");
 		if (p_start_key.length() < color_regions[i].start_key.length()) {
 			at++;
 		}
@@ -502,7 +524,8 @@ void CodeHighlighter::add_color_region(const String &p_start_key, const String &
 	clear_highlighting_cache();
 }
 
-void CodeHighlighter::remove_color_region(const String &p_start_key) {
+void CodeHighlighter::remove_color_region(const String& p_start_key)
+{
 	for (int i = 0; i < color_regions.size(); i++) {
 		if (color_regions[i].start_key == p_start_key) {
 			color_regions.remove_at(i);
@@ -512,7 +535,8 @@ void CodeHighlighter::remove_color_region(const String &p_start_key) {
 	clear_highlighting_cache();
 }
 
-bool CodeHighlighter::has_color_region(const String &p_start_key) const {
+bool CodeHighlighter::has_color_region(const String& p_start_key) const
+{
 	for (int i = 0; i < color_regions.size(); i++) {
 		if (color_regions[i].start_key == p_start_key) {
 			return true;
@@ -521,10 +545,11 @@ bool CodeHighlighter::has_color_region(const String &p_start_key) const {
 	return false;
 }
 
-void CodeHighlighter::set_color_regions(const Dictionary &p_color_regions) {
+void CodeHighlighter::set_color_regions(const Dictionary& p_color_regions)
+{
 	color_regions.clear();
 
-	for (const KeyValue<Variant, Variant> &kv : p_color_regions) {
+	for (const KeyValue<Variant, Variant>& kv : p_color_regions) {
 		String key = kv.key;
 
 		String start_key = key.get_slicec(' ', 0);
@@ -535,105 +560,57 @@ void CodeHighlighter::set_color_regions(const Dictionary &p_color_regions) {
 	clear_highlighting_cache();
 }
 
-void CodeHighlighter::clear_color_regions() {
+void CodeHighlighter::clear_color_regions()
+{
 	color_regions.clear();
 	clear_highlighting_cache();
 }
 
-Dictionary CodeHighlighter::get_color_regions() const {
+Dictionary CodeHighlighter::get_color_regions() const
+{
 	Dictionary r_color_regions;
 	for (int i = 0; i < color_regions.size(); i++) {
 		ColorRegion region = color_regions[i];
-		r_color_regions[region.start_key + (region.end_key.is_empty() ? "" : " " + region.end_key)] = region.color;
+		r_color_regions[region.start_key +
+						(region.end_key.is_empty() ? "" : " " + region.end_key)] = region.color;
 	}
 	return r_color_regions;
 }
 
-void CodeHighlighter::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("add_keyword_color", "keyword", "color"), &CodeHighlighter::add_keyword_color);
-	ClassDB::bind_method(D_METHOD("remove_keyword_color", "keyword"), &CodeHighlighter::remove_keyword_color);
-	ClassDB::bind_method(D_METHOD("has_keyword_color", "keyword"), &CodeHighlighter::has_keyword_color);
-	ClassDB::bind_method(D_METHOD("get_keyword_color", "keyword"), &CodeHighlighter::get_keyword_color);
+void CodeHighlighter::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_keyword_colors", "keywords"), &CodeHighlighter::set_keyword_colors);
-	ClassDB::bind_method(D_METHOD("clear_keyword_colors"), &CodeHighlighter::clear_keyword_colors);
-	ClassDB::bind_method(D_METHOD("get_keyword_colors"), &CodeHighlighter::get_keyword_colors);
+void CodeHighlighter::set_uint_suffix_enabled(bool p_enabled) { uint_suffix_enabled = p_enabled; }
 
-	ClassDB::bind_method(D_METHOD("add_member_keyword_color", "member_keyword", "color"), &CodeHighlighter::add_member_keyword_color);
-	ClassDB::bind_method(D_METHOD("remove_member_keyword_color", "member_keyword"), &CodeHighlighter::remove_member_keyword_color);
-	ClassDB::bind_method(D_METHOD("has_member_keyword_color", "member_keyword"), &CodeHighlighter::has_member_keyword_color);
-	ClassDB::bind_method(D_METHOD("get_member_keyword_color", "member_keyword"), &CodeHighlighter::get_member_keyword_color);
-
-	ClassDB::bind_method(D_METHOD("set_member_keyword_colors", "member_keyword"), &CodeHighlighter::set_member_keyword_colors);
-	ClassDB::bind_method(D_METHOD("clear_member_keyword_colors"), &CodeHighlighter::clear_member_keyword_colors);
-	ClassDB::bind_method(D_METHOD("get_member_keyword_colors"), &CodeHighlighter::get_member_keyword_colors);
-
-	ClassDB::bind_method(D_METHOD("add_color_region", "start_key", "end_key", "color", "line_only"), &CodeHighlighter::add_color_region, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("remove_color_region", "start_key"), &CodeHighlighter::remove_color_region);
-	ClassDB::bind_method(D_METHOD("has_color_region", "start_key"), &CodeHighlighter::has_color_region);
-
-	ClassDB::bind_method(D_METHOD("set_color_regions", "color_regions"), &CodeHighlighter::set_color_regions);
-	ClassDB::bind_method(D_METHOD("clear_color_regions"), &CodeHighlighter::clear_color_regions);
-	ClassDB::bind_method(D_METHOD("get_color_regions"), &CodeHighlighter::get_color_regions);
-
-	ClassDB::bind_method(D_METHOD("set_function_color", "color"), &CodeHighlighter::set_function_color);
-	ClassDB::bind_method(D_METHOD("get_function_color"), &CodeHighlighter::get_function_color);
-
-	ClassDB::bind_method(D_METHOD("set_number_color", "color"), &CodeHighlighter::set_number_color);
-	ClassDB::bind_method(D_METHOD("get_number_color"), &CodeHighlighter::get_number_color);
-
-	ClassDB::bind_method(D_METHOD("set_symbol_color", "color"), &CodeHighlighter::set_symbol_color);
-	ClassDB::bind_method(D_METHOD("get_symbol_color"), &CodeHighlighter::get_symbol_color);
-
-	ClassDB::bind_method(D_METHOD("set_member_variable_color", "color"), &CodeHighlighter::set_member_variable_color);
-	ClassDB::bind_method(D_METHOD("get_member_variable_color"), &CodeHighlighter::get_member_variable_color);
-
-	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "number_color"), "set_number_color", "get_number_color");
-	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "symbol_color"), "set_symbol_color", "get_symbol_color");
-	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "function_color"), "set_function_color", "get_function_color");
-	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "member_variable_color"), "set_member_variable_color", "get_member_variable_color");
-
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "keyword_colors", PROPERTY_HINT_TYPE_STRING, "String;Color"), "set_keyword_colors", "get_keyword_colors");
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "member_keyword_colors", PROPERTY_HINT_TYPE_STRING, "String;Color"), "set_member_keyword_colors", "get_member_keyword_colors");
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "color_regions", PROPERTY_HINT_TYPE_STRING, "String;Color"), "set_color_regions", "get_color_regions");
-}
-
-void CodeHighlighter::set_uint_suffix_enabled(bool p_enabled) {
-	uint_suffix_enabled = p_enabled;
-}
-
-void CodeHighlighter::set_number_color(Color p_color) {
+void CodeHighlighter::set_number_color(Color p_color)
+{
 	number_color = p_color;
 	clear_highlighting_cache();
 }
 
-Color CodeHighlighter::get_number_color() const {
-	return number_color;
-}
+Color CodeHighlighter::get_number_color() const { return number_color; }
 
-void CodeHighlighter::set_symbol_color(Color p_color) {
+void CodeHighlighter::set_symbol_color(Color p_color)
+{
 	symbol_color = p_color;
 	clear_highlighting_cache();
 }
 
-Color CodeHighlighter::get_symbol_color() const {
-	return symbol_color;
-}
+Color CodeHighlighter::get_symbol_color() const { return symbol_color; }
 
-void CodeHighlighter::set_function_color(Color p_color) {
+void CodeHighlighter::set_function_color(Color p_color)
+{
 	function_color = p_color;
 	clear_highlighting_cache();
 }
 
-Color CodeHighlighter::get_function_color() const {
-	return function_color;
-}
+Color CodeHighlighter::get_function_color() const { return function_color; }
 
-void CodeHighlighter::set_member_variable_color(Color p_color) {
+void CodeHighlighter::set_member_variable_color(Color p_color)
+{
 	member_color = p_color;
 	clear_highlighting_cache();
 }
 
-Color CodeHighlighter::get_member_variable_color() const {
-	return member_color;
-}
+Color CodeHighlighter::get_member_variable_color() const { return member_color; }
+
+

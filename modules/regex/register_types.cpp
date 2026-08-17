@@ -28,23 +28,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
+#include "regex.h"
 #include "register_types.h"
 
-#include "regex.h"
-
-#include "core/object/class_db.h"
-
-void initialize_regex_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-
-	VLTR_REGISTER_CLASS(RegExMatch);
-	VLTR_REGISTER_CLASS(RegEx);
-}
-
-void uninitialize_regex_module(ModuleInitializationLevel p_level) {
+void initialize_regex_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 }
+
+void uninitialize_regex_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+

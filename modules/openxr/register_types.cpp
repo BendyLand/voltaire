@@ -129,21 +129,11 @@ static void _editor_init()
 void initialize_openxr_module(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_CORE) {
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRExtensionWrapper);
 #ifndef DISABLE_DEPRECATED
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRExtensionWrapperExtension);
 #endif // DISABLE_DEPRECATED
-		VLTR_REGISTER_CLASS(OpenXRInteractionProfileMetadata);
-		VLTR_REGISTER_ABSTRACT_CLASS(
-			OpenXRFutureResult); // Declared abstract, should never be instantiated by a user (Q or
-								 // should this be internal?)
-		VLTR_REGISTER_CLASS(OpenXRFrameSynthesisExtension);
-		VLTR_REGISTER_CLASS(OpenXRFutureExtension);
-		VLTR_REGISTER_CLASS(OpenXRAPIExtension);
+	   // should this be internal?)
 #ifdef MODULE_GLTF_ENABLED
-		VLTR_REGISTER_CLASS(OpenXRRenderModelExtension);
 #endif
-		VLTR_REGISTER_CLASS(OpenXRAndroidThreadSettingsExtension);
 
 		// Note, we're not registering all wrapper classes here, there is no point in exposing them
 		// if there isn't specific logic to expose.
@@ -288,56 +278,6 @@ void initialize_openxr_module(ModuleInitializationLevel p_level)
 	}
 
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		VLTR_REGISTER_CLASS(OpenXRInterface);
-
-		VLTR_REGISTER_CLASS(OpenXRAction);
-		VLTR_REGISTER_CLASS(OpenXRActionSet);
-		VLTR_REGISTER_CLASS(OpenXRActionMap);
-		VLTR_REGISTER_CLASS(OpenXRIPBinding);
-		VLTR_REGISTER_CLASS(OpenXRInteractionProfile);
-
-		VLTR_REGISTER_ABSTRACT_CLASS(OpenXRBindingModifier);
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRIPBindingModifier);
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRActionBindingModifier);
-		VLTR_REGISTER_CLASS(OpenXRAnalogThresholdModifier);
-		VLTR_REGISTER_CLASS(OpenXRDpadBindingModifier);
-
-		VLTR_REGISTER_ABSTRACT_CLASS(OpenXRHapticBase);
-		VLTR_REGISTER_CLASS(OpenXRHapticVibration);
-
-		VLTR_REGISTER_CLASS(OpenXRSpatialEntityExtension);
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRSpatialEntityTracker);
-		VLTR_REGISTER_CLASS(OpenXRAnchorTracker);
-		VLTR_REGISTER_CLASS(OpenXRPlaneTracker);
-		VLTR_REGISTER_CLASS(OpenXRMarkerTracker);
-
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRStructureBase);
-
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRSpatialCapabilityConfigurationBaseHeader);
-		VLTR_REGISTER_CLASS(OpenXRSpatialCapabilityConfigurationAnchor);
-		VLTR_REGISTER_CLASS(OpenXRSpatialCapabilityConfigurationQrCode);
-		VLTR_REGISTER_CLASS(OpenXRSpatialCapabilityConfigurationMicroQrCode);
-		VLTR_REGISTER_CLASS(OpenXRSpatialCapabilityConfigurationAruco);
-		VLTR_REGISTER_CLASS(OpenXRSpatialCapabilityConfigurationAprilTag);
-		VLTR_REGISTER_CLASS(OpenXRSpatialContextPersistenceConfig);
-		VLTR_REGISTER_CLASS(OpenXRSpatialCapabilityConfigurationPlaneTracking);
-		VLTR_REGISTER_VIRTUAL_CLASS(OpenXRSpatialComponentData);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentBounded2DList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentBounded3DList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentParentList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentMesh2DList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentMesh3DList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentPlaneAlignmentList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentPolygon2DList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentPlaneSemanticLabelList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentMarkerList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialQueryResultData);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentAnchorList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialComponentPersistenceList);
-		VLTR_REGISTER_CLASS(OpenXRSpatialAnchorCapability);
-		VLTR_REGISTER_CLASS(OpenXRSpatialPlaneTrackingCapability);
-		VLTR_REGISTER_CLASS(OpenXRSpatialMarkerTrackingCapability);
-
 		XRServer* xr_server = XRServer::get_singleton();
 		if (xr_server) {
 			openxr_interface.instantiate();
