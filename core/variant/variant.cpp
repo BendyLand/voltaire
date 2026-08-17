@@ -977,7 +977,7 @@ void Variant::ObjData::ref(const ObjData& p_from)
 
 	*this = p_from;
 	if (id.is_ref_counted()) {
-		RefCounted* reference = static_cast<RefCounted*>(obj);
+		RefCounted* reference = dynamic_cast<RefCounted*>(obj);
 		// Assuming reference is not null because id.is_ref_counted() was true.
 		if (!reference->reference()) {
 			*this = ObjData();
@@ -999,7 +999,7 @@ void Variant::ObjData::ref_pointer(Object* p_object)
 	if (p_object) {
 		*this = ObjData{p_object->get_instance_id(), p_object};
 		if (p_object->is_ref_counted()) {
-			RefCounted* reference = static_cast<RefCounted*>(p_object);
+			RefCounted* reference = dynamic_cast<RefCounted*>(p_object);
 			if (!reference->init_ref()) {
 				*this = ObjData();
 			}
@@ -1016,7 +1016,7 @@ void Variant::ObjData::unref()
 {
 	// Mirrors Ref::unref in refcounted.h
 	if (id.is_ref_counted()) {
-		RefCounted* reference = static_cast<RefCounted*>(obj);
+		RefCounted* reference = dynamic_cast<RefCounted*>(obj);
 		// Assuming reference is not null because id.is_ref_counted() was true.
 		if (reference->unreference()) {
 			memdelete(reference);

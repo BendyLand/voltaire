@@ -55,7 +55,7 @@ private:
 class Resource : public RefCounted
 {
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::RESOURCE;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::RESOURCE;
 
 	static void register_custom_data_to_otdb();
 
@@ -126,7 +126,7 @@ protected:
 	virtual void reset_local_to_scene();
 
 	virtual Ref<Resource> _duplicate(const DuplicateParams& p_params) const;
-	virtual String _to_string() override;
+	virtual String _to_string();
 
 public:
 	static Node* (*_get_local_scene_func)();		// Used by the editor.

@@ -34,20 +34,24 @@
 #include "core/object/script_language.h"
 #include "core/variant/variant.h"
 
-struct ContainerType {
+struct ContainerType
+{
 	Variant::Type builtin_type = Variant::NIL;
 	StringName class_name;
 	Ref<Script> script;
 };
 
-struct ContainerTypeValidate {
+struct ContainerTypeValidate
+{
 	Variant::Type type = Variant::NIL;
 	StringName class_name;
 	Ref<Script> script;
-	const char *where = "container";
+	const char* where = "container";
 
 private:
-	_FORCE_INLINE_ bool _internal_validate(Variant &r_inout_variant, const char *p_operation, bool p_output_errors) const {
+	_FORCE_INLINE_ bool _internal_validate(
+		Variant& r_inout_variant, const char* p_operation, bool p_output_errors) const
+	{
 		if (type == Variant::NIL) {
 			return true;
 		}
@@ -59,7 +63,7 @@ private:
 
 			if (Variant::can_convert_strict(r_inout_variant.get_type(), type)) {
 				Variant converted_to;
-				const Variant *converted_from = &r_inout_variant;
+				const Variant* converted_from = &r_inout_variant;
 				Callable::CallError call_error;
 				Variant::construct(type, converted_to, &converted_from, 1, call_error);
 
@@ -70,8 +74,13 @@ private:
 			}
 
 			if (p_output_errors) {
-				ERR_FAIL_V_MSG(false, vformat("Attempted to %s a variable of type '%s' into a %s of incompatible type '%s'.", String(p_operation), Variant::get_type_name(r_inout_variant.get_type()), where, Variant::get_type_name(type)));
-			} else {
+				ERR_FAIL_V_MSG(false,
+					vformat("Attempted to %s a variable of type '%s' into a %s of incompatible "
+							"type '%s'.",
+						String(p_operation), Variant::get_type_name(r_inout_variant.get_type()),
+						where, Variant::get_type_name(type)));
+			}
+			else {
 				return false;
 			}
 		}
@@ -83,43 +92,55 @@ private:
 		return _internal_validate_object(r_inout_variant, p_operation, p_output_errors);
 	}
 
-	_FORCE_INLINE_ bool _internal_validate_object(const Variant &p_variant, const char *p_operation, bool p_output_errors) const {
+	_FORCE_INLINE_ bool _internal_validate_object(
+		const Variant& p_variant, const char* p_operation, bool p_output_errors) const
+	{
 		ERR_FAIL_COND_V(p_variant.get_type() != Variant::OBJECT, false);
 
 #ifdef DEBUG_ENABLED
 		ObjectID object_id = p_variant;
 		if (object_id == ObjectID()) {
-			return true; // This is fine, it's null.
+
+return true; // This is fine, it's null.
 		}
-		Object *object = ObjectDB::get_instance(object_id);
+		Object* object = ObjectDB::get_instance(object_id);
 		if (object == nullptr) {
 			if (p_output_errors) {
-				ERR_FAIL_V_MSG(false, vformat("Attempted to %s an invalid (previously freed?) object instance into a '%s'.", String(p_operation), String(where)));
-			} else {
+				ERR_FAIL_V_MSG(false, vformat("Attempted to %s an invalid (previously freed?) "
+											  "object instance into a '%s'.",
+										  String(p_operation), String(where)));
+			}
+			else {
 				return false;
 			}
 		}
 #else
-		Object *object = p_variant;
+		Object* object = p_variant;
 		if (object == nullptr) {
-			return true; //fine
+			return true; // fine
 		}
 #endif
 		if (class_name == StringName()) {
 			return true; // All good, no class type requested.
 		}
 
-		const StringName &obj_class = object->get_class_name();
+		const StringName& obj_class = object->get_class_name();
 		if (obj_class != class_name && !object->is_class(class_name)) {
 			if (p_output_errors) {
 				String object_class_name = object->get_class();
-				if (const Ref<Script> other_script = object->get_script(); other_script.is_valid()) {
-					if (const StringName &script_global_name = other_script->get_global_name(); !script_global_name.is_empty()) {
+				if (const Ref<Script> other_script = object->get_script();
+					other_script.is_valid()) {
+					if (const StringName& script_global_name = other_script->get_global_name();
+						!script_global_name.is_empty()) {
 						object_class_name = script_global_name;
 					}
 				}
-				ERR_FAIL_V_MSG(false, vformat("Attempted to %s an object of type '%s' into a %s of incompatible type '%s'.", String(p_operation), object_class_name, where, String(class_name)));
-			} else {
+				ERR_FAIL_V_MSG(
+					false, vformat("Attempted to %s an object of type '%s' into a %s of "
+								   "incompatible type '%s'.",
+							   String(p_operation), object_class_name, where, String(class_name)));
+			}
+			else {
 				return false;
 			}
 		}
@@ -133,15 +154,21 @@ private:
 		// Check base script..
 		if (other_script.is_null()) {
 			if (p_output_errors) {
-				ERR_FAIL_V_MSG(false, vformat("Attempted to %s an object into a %s of incompatible type '%s'.", String(p_operation), String(where), String(script->get_class_name())));
-			} else {
+				ERR_FAIL_V_MSG(false,
+					vformat("Attempted to %s an object into a %s of incompatible type '%s'.",
+						String(p_operation), String(where), String(script->obj->get_class_name())));
+			}
+			else {
 				return false;
 			}
 		}
 		if (!other_script->inherits_script(script)) {
 			if (p_output_errors) {
-				ERR_FAIL_V_MSG(false, vformat("Attempted to %s an object into a %s of incompatible type '%s'.", String(p_operation), String(where), String(script->get_class_name())));
-			} else {
+				ERR_FAIL_V_MSG(false,
+					vformat("Attempted to %s an object into a %s of incompatible type '%s'.",
+						String(p_operation), String(where), String(script->obj->get_class_name())));
+			}
+			else {
 				return false;
 			}
 		}
@@ -150,49 +177,64 @@ private:
 	}
 
 public:
-	_FORCE_INLINE_ bool validate(Variant &r_inout_variant, const char *p_operation = "use") const {
+	_FORCE_INLINE_ bool validate(Variant& r_inout_variant, const char* p_operation = "use") const
+	{
 		return _internal_validate(r_inout_variant, p_operation, true);
 	}
 
-	_FORCE_INLINE_ bool validate_object(const Variant &p_variant, const char *p_operation = "use") const {
+	_FORCE_INLINE_ bool validate_object(
+		const Variant& p_variant, const char* p_operation = "use") const
+	{
 		return _internal_validate_object(p_variant, p_operation, true);
 	}
 
-	_FORCE_INLINE_ bool test_validate(const Variant &p_variant) const {
+	_FORCE_INLINE_ bool test_validate(const Variant& p_variant) const
+	{
 		Variant tmp = p_variant;
 		return _internal_validate(tmp, "", false);
 	}
 
-	_FORCE_INLINE_ bool can_reference(const ContainerTypeValidate &p_type) const {
+	_FORCE_INLINE_ bool can_reference(const ContainerTypeValidate& p_type) const
+	{
 		if (type != p_type.type) {
 			return false;
-		} else if (type != Variant::OBJECT) {
+		}
+		else if (type != Variant::OBJECT) {
 			return true;
 		}
 
 		if (class_name == StringName()) {
 			return true;
-		} else if (p_type.class_name == StringName()) {
+		}
+		else if (p_type.class_name == StringName()) {
 			return false;
-		} else if (class_name != p_type.class_name && !ClassDB::is_parent_class(p_type.class_name, class_name)) {
+		}
+		else if (class_name != p_type.class_name) {
 			return false;
 		}
 
 		if (script.is_null()) {
 			return true;
-		} else if (p_type.script.is_null()) {
+		}
+		else if (p_type.script.is_null()) {
 			return false;
-		} else if (script != p_type.script && !p_type.script->inherits_script(script)) {
+		}
+		else if (script != p_type.script && !p_type.script->inherits_script(script)) {
 			return false;
 		}
 
 		return true;
 	}
 
-	_FORCE_INLINE_ bool operator==(const ContainerTypeValidate &p_type) const {
+	_FORCE_INLINE_ bool operator==(const ContainerTypeValidate& p_type) const
+	{
 		return type == p_type.type && class_name == p_type.class_name && script == p_type.script;
 	}
-	_FORCE_INLINE_ bool operator!=(const ContainerTypeValidate &p_type) const {
+
+	_FORCE_INLINE_ bool operator!=(const ContainerTypeValidate& p_type) const
+	{
 		return type != p_type.type || class_name != p_type.class_name || script != p_type.script;
 	}
 };
+
+

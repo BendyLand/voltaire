@@ -34,15 +34,18 @@
 #include "core/object/object.h"
 #include "core/os/keyboard.h"
 #include "core/os/thread_safe.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
 #include "core/variant/typed_array.h"
 
 class GamepadMotion;
 
-namespace InputClassEnums {
+namespace InputClassEnums
+{
 // Keep synced with DisplayServerEnums::MouseMode enum.
-enum MouseMode : int {
+enum MouseMode : int
+{
 	MOUSE_MODE_VISIBLE,
 	MOUSE_MODE_HIDDEN,
 	MOUSE_MODE_CAPTURED,
@@ -53,7 +56,9 @@ enum MouseMode : int {
 
 // Keep synced with DisplayServerEnums and Control enums.
 #undef CursorShape
-enum CursorShape : int {
+
+enum CursorShape : int
+{
 	CURSOR_ARROW,
 	CURSOR_IBEAM,
 	CURSOR_POINTING_HAND,
@@ -73,31 +78,38 @@ enum CursorShape : int {
 	CURSOR_HELP,
 	CURSOR_MAX
 };
-} //namespace InputClassEnums
+} // namespace InputClassEnums
 
-class Input : public Object {
+class Input
+{
 	VLTRCLASS(Input, Object);
 	_THREAD_SAFE_CLASS_
 
-	static inline Input *singleton = nullptr;
+	static inline Input* singleton = nullptr;
 
 	static constexpr uint64_t MAX_EVENT = 32;
 
 public:
-	// TODO: When we migrate to C++20, replace these with "using enum" and skip prefixing MouseMode and CursorShape in other files.
+	// TODO: When we migrate to C++20, replace these with "using enum" and skip prefixing MouseMode
+	// and CursorShape in other files.
 	using MouseMode = InputClassEnums::MouseMode;
 	using CursorShape = InputClassEnums::CursorShape;
 
-	class JoypadFeatures {
+	mem_unique_ptr<Object> obj;
+
+	class JoypadFeatures
+	{
 	public:
 		virtual ~JoypadFeatures() {}
 
 		virtual bool has_joy_vibration() const { return false; }
 
 		virtual bool has_joy_light() const { return false; }
-		virtual void set_joy_light(const Color &p_color) {}
+
+		virtual void set_joy_light(const Color& p_color) {}
 
 		virtual bool has_joy_motion_sensors() const { return false; }
+
 		virtual void set_joy_motion_sensors_enabled(bool p_enable) {}
 
 		virtual int get_joy_num_touchpads() const { return 0; }
@@ -105,7 +117,7 @@ public:
 
 	static constexpr int32_t JOYPADS_MAX = 16;
 
-	typedef void (*EventDispatchFunc)(const Ref<InputEvent> &p_event);
+	typedef void (*EventDispatchFunc)(const Ref<InputEvent>& p_event);
 
 private:
 	BitField<MouseButtonMask> mouse_button_mask = MouseButtonMask::NONE;
@@ -115,7 +127,7 @@ private:
 	RBSet<Key> keys_pressed;
 	RBSet<JoyButton> joy_buttons_pressed;
 	RBMap<JoyAxis, float> _joy_axis;
-	//RBMap<StringName,int> custom_action_press;
+	// RBMap<StringName,int> custom_action_press;
 	bool gravity_enabled = false;
 	Vector3 gravity;
 	bool accelerometer_enabled = false;
@@ -132,7 +144,8 @@ private:
 	bool application_focused = true;
 	bool embedder_focused = false;
 
-	struct ActionState {
+	struct ActionState
+	{
 		uint64_t pressed_physics_frame = UINT64_MAX;
 		uint64_t pressed_process_frame = UINT64_MAX;
 		uint64_t released_physics_frame = UINT64_MAX;
@@ -141,18 +154,21 @@ private:
 		ObjectID released_event_id;
 		bool exact = true;
 
-		struct DeviceState {
-			bool pressed[MAX_EVENT] = { false };
-			float strength[MAX_EVENT] = { 0.0 };
-			float raw_strength[MAX_EVENT] = { 0.0 };
-			InputEventType event_type[MAX_EVENT] = { InputEventType::INVALID };
+		struct DeviceState
+		{
+			bool pressed[MAX_EVENT] = {false};
+			float strength[MAX_EVENT] = {0.0};
+			float raw_strength[MAX_EVENT] = {0.0};
+			InputEventType event_type[MAX_EVENT] = {InputEventType::INVALID};
 		};
+
 		bool api_pressed = false;
 		float api_strength = 0.0;
 		HashMap<int, DeviceState> device_states;
 
 		// Cache.
-		struct ActionStateCache {
+		struct ActionStateCache
+		{
 			bool pressed = false;
 			float strength = false;
 			float raw_strength = false;
@@ -168,7 +184,8 @@ private:
 
 	int mouse_from_touch_index = -1;
 
-	struct VibrationInfo {
+	struct VibrationInfo
+	{
 		float weak_magnitude;
 		float strong_magnitude;
 		float duration; // Duration in seconds
@@ -177,15 +194,17 @@ private:
 
 	HashMap<int, VibrationInfo> joy_vibration;
 
-	struct MotionInfo {
+	struct MotionInfo
+	{
 		bool sensors_enabled : 1;
 		bool calibrating : 1;
 		bool calibrated : 1;
 		float sensor_data_rate = 0.0f;
 		uint64_t last_timestamp = 0;
-		GamepadMotion *gamepad_motion = nullptr;
+		GamepadMotion* gamepad_motion = nullptr;
 
-		MotionInfo() {
+		MotionInfo()
+		{
 			sensors_enabled = false;
 			calibrating = false;
 			calibrated = false;
@@ -194,19 +213,22 @@ private:
 
 	HashMap<int, MotionInfo> joy_motion;
 
-	struct TouchpadFingerInfo {
+	struct TouchpadFingerInfo
+	{
 		Vector2 position;
 		float pressure;
 	};
 
-	struct TouchpadInfo {
+	struct TouchpadInfo
+	{
 		int num_touchpads = 0;
 		HashMap<uint16_t, TouchpadFingerInfo> finger_info;
 	};
 
 	HashMap<int, TouchpadInfo> joy_touch;
 
-	struct VelocityTrack {
+	struct VelocityTrack
+	{
 		uint64_t last_tick = 0;
 		Vector2 velocity;
 		Vector2 screen_velocity;
@@ -216,25 +238,26 @@ private:
 		float min_ref_frame;
 		float max_ref_frame;
 
-		void update(const Vector2 &p_delta_p, const Vector2 &p_screen_delta_p);
+		void update(const Vector2& p_delta_p, const Vector2& p_screen_delta_p);
 		void reset();
 		VelocityTrack();
 	};
 
-	struct Joypad {
+	struct Joypad
+	{
 		StringName name;
 		StringName uid;
 		bool connected = false;
 		bool is_known = false;
-		bool last_buttons[(size_t)JoyButton::MAX] = { false };
-		float last_axis[(size_t)JoyAxis::MAX] = { 0.0f };
+		bool last_buttons[(size_t)JoyButton::MAX] = {false};
+		float last_axis[(size_t)JoyAxis::MAX] = {0.0f};
 		HatMask last_hat = HatMask::CENTER;
 		int mapping = -1;
 		int hat_current = 0;
 		Dictionary info;
 		bool has_light = false;
 		bool has_vibration = false;
-		Input::JoypadFeatures *features = nullptr;
+		Input::JoypadFeatures* features = nullptr;
 	};
 
 	VelocityTrack mouse_velocity_track;
@@ -247,37 +270,45 @@ private:
 
 	CursorShape default_shape = CursorShape::CURSOR_ARROW;
 
-	enum JoyType {
+	enum JoyType
+	{
 		TYPE_BUTTON,
 		TYPE_AXIS,
 		TYPE_HAT,
 		TYPE_MAX,
 	};
 
-	enum JoyAxisRange {
+	enum JoyAxisRange
+	{
 		NEGATIVE_HALF_AXIS = -1,
 		FULL_AXIS = 0,
 		POSITIVE_HALF_AXIS = 1
 	};
 
-	struct JoyEvent {
+	struct JoyEvent
+	{
 		int type = TYPE_MAX;
 		int index = -1; // Can be either JoyAxis or JoyButton.
 		float value = 0.f;
 	};
 
-	struct JoyBinding {
+	struct JoyBinding
+	{
 		JoyType inputType;
-		union {
+
+		union
+		{
 			JoyButton button;
 
-			struct {
+			struct
+			{
 				JoyAxis axis;
 				JoyAxisRange range;
 				bool invert;
 			} axis;
 
-			struct {
+			struct
+			{
 				HatDir hat;
 				HatMask hat_mask;
 			} hat;
@@ -285,10 +316,13 @@ private:
 		} input;
 
 		JoyType outputType;
-		union {
+
+		union
+		{
 			JoyButton button;
 
-			struct {
+			struct
+			{
 				JoyAxis axis;
 				JoyAxisRange range;
 			} axis;
@@ -296,7 +330,8 @@ private:
 		} output;
 	};
 
-	struct JoyDeviceMapping {
+	struct JoyDeviceMapping
+	{
 		String uid;
 		String name;
 		Vector<JoyBinding> bindings;
@@ -304,19 +339,21 @@ private:
 
 	Vector<JoyDeviceMapping> map_db;
 
-	void _set_joypad_mapping(Joypad &p_js, int p_map_index);
+	void _set_joypad_mapping(Joypad& p_js, int p_map_index);
 
-	JoyEvent _get_mapped_button_event(const JoyDeviceMapping &p_mapping, JoyButton p_button);
-	JoyEvent _get_mapped_axis_event(const JoyDeviceMapping &p_mapping, JoyAxis p_axis, float p_value, JoyAxisRange &r_range);
-	void _get_mapped_hat_events(const JoyDeviceMapping &p_mapping, HatDir p_hat, JoyEvent r_events[(size_t)HatDir::MAX]);
-	JoyButton _get_output_button(const String &p_output);
-	JoyAxis _get_output_axis(const String &p_output);
+	JoyEvent _get_mapped_button_event(const JoyDeviceMapping& p_mapping, JoyButton p_button);
+	JoyEvent _get_mapped_axis_event(
+		const JoyDeviceMapping& p_mapping, JoyAxis p_axis, float p_value, JoyAxisRange& r_range);
+	void _get_mapped_hat_events(
+		const JoyDeviceMapping& p_mapping, HatDir p_hat, JoyEvent r_events[(size_t)HatDir::MAX]);
+	JoyButton _get_output_button(const String& p_output);
+	JoyAxis _get_output_axis(const String& p_output);
 	void _button_event(int p_device, JoyButton p_index, bool p_pressed);
 	void _axis_event(int p_device, JoyAxis p_axis, float p_value);
-	void _update_action_cache(const StringName &p_action_name, ActionState &r_action_state);
+	void _update_action_cache(const StringName& p_action_name, ActionState& r_action_state);
 	void _update_joypad_features(int p_device);
 
-	void _parse_input_event_impl(const Ref<InputEvent> &p_event, bool p_is_emulated);
+	void _parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_emulated);
 
 	List<Ref<InputEvent>> buffered_events;
 #ifdef DEBUG_ENABLED
@@ -334,10 +371,10 @@ private:
 	static MouseMode (*get_mouse_mode_override_func)();
 	static void (*set_mouse_mode_override_enabled_func)(bool);
 	static bool (*is_mouse_mode_override_enabled_func)();
-	static void (*warp_mouse_func)(const Vector2 &p_position);
+	static void (*warp_mouse_func)(const Vector2& p_position);
 
 	static CursorShape (*get_current_cursor_shape_func)();
-	static void (*set_custom_mouse_cursor_func)(const Ref<Resource> &, CursorShape, const Vector2 &);
+	static void (*set_custom_mouse_cursor_func)(const Ref<Resource>&, CursorShape, const Vector2&);
 
 	EventDispatchFunc event_dispatch_function = nullptr;
 
@@ -360,10 +397,11 @@ public:
 	bool is_mouse_mode_override_enabled();
 
 #ifdef TOOLS_ENABLED
-	void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
+	void get_argument_options(
+		const StringName& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
-	static Input *get_singleton();
+	static Input* get_singleton();
 
 	bool is_anything_pressed() const;
 	bool is_any_key_pressed() const;
@@ -372,16 +410,20 @@ public:
 	bool is_key_label_pressed(Key p_keycode) const;
 	bool is_mouse_button_pressed(MouseButton p_button) const;
 	bool is_joy_button_pressed(int p_device, JoyButton p_button) const;
-	bool is_action_pressed(const StringName &p_action, bool p_exact = false) const;
-	bool is_action_just_pressed(const StringName &p_action, bool p_exact = false) const;
-	bool is_action_just_released(const StringName &p_action, bool p_exact = false) const;
-	bool is_action_just_pressed_by_event(const StringName &p_action, RequiredParam<InputEvent> rp_event, bool p_exact = false) const;
-	bool is_action_just_released_by_event(const StringName &p_action, RequiredParam<InputEvent> rp_event, bool p_exact = false) const;
-	float get_action_strength(const StringName &p_action, bool p_exact = false) const;
-	float get_action_raw_strength(const StringName &p_action, bool p_exact = false) const;
+	bool is_action_pressed(const StringName& p_action, bool p_exact = false) const;
+	bool is_action_just_pressed(const StringName& p_action, bool p_exact = false) const;
+	bool is_action_just_released(const StringName& p_action, bool p_exact = false) const;
+	bool is_action_just_pressed_by_event(
+		const StringName& p_action, InputEvent* rp_event, bool p_exact = false) const;
+	bool is_action_just_released_by_event(
+		const StringName& p_action, InputEvent* rp_event, bool p_exact = false) const;
+	float get_action_strength(const StringName& p_action, bool p_exact = false) const;
+	float get_action_raw_strength(const StringName& p_action, bool p_exact = false) const;
 
-	float get_axis(const StringName &p_negative_action, const StringName &p_positive_action) const;
-	Vector2 get_vector(const StringName &p_negative_x, const StringName &p_positive_x, const StringName &p_negative_y, const StringName &p_positive_y, float p_deadzone = -1.0f) const;
+	float get_axis(const StringName& p_negative_action, const StringName& p_positive_action) const;
+	Vector2 get_vector(const StringName& p_negative_x, const StringName& p_positive_x,
+		const StringName& p_negative_y, const StringName& p_positive_y,
+		float p_deadzone = -1.0f) const;
 
 	float get_joy_axis(int p_device, JoyAxis p_axis) const;
 	String get_joy_name(int p_idx);
@@ -392,7 +434,8 @@ public:
 	uint64_t get_joy_vibration_timestamp(int p_device);
 	bool is_joy_vibrating(int p_device);
 	bool has_joy_vibration(int p_device) const;
-	void joy_connection_changed(int p_idx, bool p_connected, const String &p_name, const String &p_guid = "", const Dictionary &p_joypad_info = Dictionary());
+	void joy_connection_changed(int p_idx, bool p_connected, const String& p_name,
+		const String& p_guid = "", const Dictionary& p_joypad_info = Dictionary());
 
 	Vector3 get_gravity() const;
 	Vector3 get_accelerometer() const;
@@ -406,20 +449,20 @@ public:
 	Vector2 get_last_mouse_screen_velocity();
 	BitField<MouseButtonMask> get_mouse_button_mask() const;
 
-	void warp_mouse(const Vector2 &p_position);
-	Point2 warp_mouse_motion(const Ref<InputEventMouseMotion> &p_motion, const Rect2 &p_rect);
+	void warp_mouse(const Vector2& p_position);
+	Point2 warp_mouse_motion(const Ref<InputEventMouseMotion>& p_motion, const Rect2& p_rect);
 
-	void parse_input_event(RequiredParam<InputEvent> rp_event);
+	void parse_input_event(InputEvent* rp_event);
 
-	void set_gravity(const Vector3 &p_gravity);
-	void set_accelerometer(const Vector3 &p_accel);
-	void set_magnetometer(const Vector3 &p_magnetometer);
-	void set_gyroscope(const Vector3 &p_gyroscope);
+	void set_gravity(const Vector3& p_gravity);
+	void set_accelerometer(const Vector3& p_accel);
+	void set_magnetometer(const Vector3& p_magnetometer);
+	void set_gyroscope(const Vector3& p_gyroscope);
 	void set_joy_axis(int p_device, JoyAxis p_axis, float p_value);
 
-	void set_joy_features(int p_device, JoypadFeatures *p_features);
+	void set_joy_features(int p_device, JoypadFeatures* p_features);
 
-	void set_joy_light(int p_device, const Color &p_color);
+	void set_joy_light(int p_device, const Color& p_color);
 	bool has_joy_light(int p_device) const;
 
 	Vector3 get_joy_accelerometer(int p_device) const;
@@ -437,7 +480,7 @@ public:
 	void clear_joy_motion_sensors_calibration(int p_device);
 
 	Dictionary get_joy_motion_sensors_calibration(int p_device) const;
-	void set_joy_motion_sensors_calibration(int p_device, const Dictionary &p_calibration_info);
+	void set_joy_motion_sensors_calibration(int p_device, const Dictionary& p_calibration_info);
 
 	bool is_joy_motion_sensors_calibrating(int p_device) const;
 	bool is_joy_motion_sensors_calibrated(int p_device) const;
@@ -448,17 +491,18 @@ public:
 	float get_joy_touchpad_finger_pressure(int p_device, int p_finger, int p_touchpad = 0) const;
 	PackedInt32Array get_joy_touchpad_fingers(int p_device, int p_touchpad = 0) const;
 
-	void start_joy_vibration(int p_device, float p_weak_magnitude, float p_strong_magnitude, float p_duration = 0);
+	void start_joy_vibration(
+		int p_device, float p_weak_magnitude, float p_strong_magnitude, float p_duration = 0);
 	void stop_joy_vibration(int p_device);
 	void vibrate_handheld(int p_duration_ms = 500, float p_amplitude = -1.0);
 
 	void set_ignore_joypad_on_unfocused_application(bool p_ignore);
 	bool is_ignoring_joypad_on_unfocused_application() const;
 
-	void set_mouse_position(const Point2 &p_posf);
+	void set_mouse_position(const Point2& p_posf);
 
-	void action_press(const StringName &p_action, float p_strength = 1.f);
-	void action_release(const StringName &p_action);
+	void action_press(const StringName& p_action, float p_strength = 1.f);
+	void action_release(const StringName& p_action);
 
 	void set_emulate_touch_from_mouse(bool p_emulate);
 	bool is_emulating_touch_from_mouse() const;
@@ -470,17 +514,21 @@ public:
 	CursorShape get_default_cursor_shape() const;
 	void set_default_cursor_shape(CursorShape p_shape);
 	CursorShape get_current_cursor_shape() const;
-	void set_custom_mouse_cursor(const Ref<Resource> &p_cursor, CursorShape p_shape = Input::CursorShape::CURSOR_ARROW, const Vector2 &p_hotspot = Vector2());
+	void set_custom_mouse_cursor(const Ref<Resource>& p_cursor,
+		CursorShape p_shape = Input::CursorShape::CURSOR_ARROW,
+		const Vector2& p_hotspot = Vector2());
 
-	void parse_mapping(const String &p_mapping);
+	void parse_mapping(const String& p_mapping);
 	void joy_button(int p_device, JoyButton p_button, bool p_pressed);
 	void joy_axis(int p_device, JoyAxis p_axis, float p_value);
 	void joy_hat(int p_device, BitField<HatMask> p_val);
-	void joy_motion_sensors(int p_device, const Vector3 &p_accelerometer, const Vector3 &p_gyroscope);
-	void joy_touchpad(int p_device, int p_touchpad, int p_finger, const Vector2 &p_position, float p_pressure, bool p_pressed);
+	void joy_motion_sensors(
+		int p_device, const Vector3& p_accelerometer, const Vector3& p_gyroscope);
+	void joy_touchpad(int p_device, int p_touchpad, int p_finger, const Vector2& p_position,
+		float p_pressure, bool p_pressed);
 
-	void add_joy_mapping(const String &p_mapping, bool p_update_existing = false);
-	void remove_joy_mapping(const String &p_guid);
+	void add_joy_mapping(const String& p_mapping, bool p_update_existing = false);
+	void remove_joy_mapping(const String& p_guid);
 
 	int get_unused_joy_id();
 
@@ -488,7 +536,7 @@ public:
 	String get_joy_guid(int p_device) const;
 	bool should_ignore_device(int p_vendor_id, int p_product_id) const;
 	Dictionary get_joy_info(int p_device) const;
-	void set_fallback_mapping(const String &p_guid);
+	void set_fallback_mapping(const String& p_guid);
 
 #ifdef DEBUG_ENABLED
 	void flush_frame_parsed_events();
@@ -512,3 +560,5 @@ public:
 
 VARIANT_ENUM_CAST(Input::MouseMode);
 VARIANT_ENUM_CAST(Input::CursorShape);
+
+

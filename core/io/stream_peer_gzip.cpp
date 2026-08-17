@@ -28,30 +28,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <zlib.h>
 #include "core/io/stream_peer_gzip.h"
-
 #include "core/io/zip_io.h"
 #include "core/object/class_db.h"
 
-#include <zlib.h>
+void StreamPeerGZIP::_bind_methods() {}
 
-void StreamPeerGZIP::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("start_compression", "use_deflate", "buffer_size"), &StreamPeerGZIP::start_compression, DEFVAL(false), DEFVAL(65535));
-	ClassDB::bind_method(D_METHOD("start_decompression", "use_deflate", "buffer_size"), &StreamPeerGZIP::start_decompression, DEFVAL(false), DEFVAL(65535));
-	ClassDB::bind_method(D_METHOD("finish"), &StreamPeerGZIP::finish);
-	ClassDB::bind_method(D_METHOD("clear"), &StreamPeerGZIP::clear);
-}
+StreamPeerGZIP::~StreamPeerGZIP() { _close(); }
 
-StreamPeerGZIP::~StreamPeerGZIP() {
-	_close();
-}
-
-void StreamPeerGZIP::_close() {
+void StreamPeerGZIP::_close()
+{
 	if (ctx) {
-		z_stream *strm = (z_stream *)ctx;
+		z_stream* strm = (z_stream*)ctx;
 		if (compressing) {
 			deflateEnd(strm);
-		} else {
+		}
+		else {
 			inflateEnd(strm);
 		}
 		memfree(strm);
@@ -59,23 +52,28 @@ void StreamPeerGZIP::_close() {
 	}
 }
 
-void StreamPeerGZIP::clear() {
+void StreamPeerGZIP::clear()
+{
 	_close();
 	rb.clear();
 	buffer.clear();
 }
 
-Error StreamPeerGZIP::start_compression(bool p_is_deflate, int p_buffer_size) {
+Error StreamPeerGZIP::start_compression(bool p_is_deflate, int p_buffer_size)
+{
 	return _start(true, p_is_deflate, p_buffer_size);
 }
 
-Error StreamPeerGZIP::start_decompression(bool p_is_deflate, int p_buffer_size) {
+Error StreamPeerGZIP::start_decompression(bool p_is_deflate, int p_buffer_size)
+{
 	return _start(false, p_is_deflate, p_buffer_size);
 }
 
-Error StreamPeerGZIP::_start(bool p_compress, bool p_is_deflate, int p_buffer_size) {
+Error StreamPeerGZIP::_start(bool p_compress, bool p_is_deflate, int p_buffer_size)
+{
 	ERR_FAIL_COND_V(ctx != nullptr, ERR_ALREADY_IN_USE);
-	ERR_FAIL_COND_V_MSG(p_buffer_size <= 0, ERR_INVALID_PARAMETER, "Invalid buffer size. It should be a positive integer.");
+	ERR_FAIL_COND_V_MSG(p_buffer_size <= 0, ERR_INVALID_PARAMETER,
+		"Invalid buffer size. It should be a positive integer.");
 	clear();
 	compressing = p_compress;
 	rb.resize(Math::nearest_shift(uint32_t(p_buffer_size - 1)));
@@ -83,7 +81,7 @@ Error StreamPeerGZIP::_start(bool p_compress, bool p_is_deflate, int p_buffer_si
 
 	// Create ctx.
 	ctx = memalloc(sizeof(z_stream));
-	z_stream &strm = *(z_stream *)ctx;
+	z_stream& strm = *(z_stream*)ctx;
 	strm.next_in = Z_NULL;
 	strm.avail_in = 0;
 	strm.zalloc = zipio_alloc;
@@ -94,25 +92,29 @@ Error StreamPeerGZIP::_start(bool p_compress, bool p_is_deflate, int p_buffer_si
 	int level = Z_DEFAULT_COMPRESSION;
 	if (compressing) {
 		err = deflateInit2(&strm, level, Z_DEFLATED, window_bits, 8, Z_DEFAULT_STRATEGY);
-	} else {
+	}
+	else {
 		err = inflateInit2(&strm, window_bits);
 	}
 	ERR_FAIL_COND_V(err != Z_OK, FAILED);
 	return OK;
 }
 
-Error StreamPeerGZIP::_process(uint8_t *p_dst, int p_dst_size, const uint8_t *p_src, int p_src_size, int &r_consumed, int &r_out, bool p_close) {
+Error StreamPeerGZIP::_process(uint8_t* p_dst, int p_dst_size, const uint8_t* p_src, int p_src_size,
+	int& r_consumed, int& r_out, bool p_close)
+{
 	ERR_FAIL_NULL_V(ctx, ERR_UNCONFIGURED);
-	z_stream &strm = *(z_stream *)ctx;
+	z_stream& strm = *(z_stream*)ctx;
 	strm.avail_in = p_src_size;
 	strm.avail_out = p_dst_size;
-	strm.next_in = (Bytef *)p_src;
-	strm.next_out = (Bytef *)p_dst;
+	strm.next_in = (Bytef*)p_src;
+	strm.next_out = (Bytef*)p_dst;
 	int flush = p_close ? Z_FINISH : Z_NO_FLUSH;
 	if (compressing) {
 		int err = deflate(&strm, flush);
 		ERR_FAIL_COND_V(err != (p_close ? Z_STREAM_END : Z_OK), FAILED);
-	} else {
+	}
+	else {
 		int err = inflate(&strm, flush);
 		ERR_FAIL_COND_V(err != Z_OK && err != Z_STREAM_END, FAILED);
 	}
@@ -121,7 +123,8 @@ Error StreamPeerGZIP::_process(uint8_t *p_dst, int p_dst_size, const uint8_t *p_
 	return OK;
 }
 
-Error StreamPeerGZIP::put_data(const uint8_t *p_data, int p_bytes) {
+Error StreamPeerGZIP::put_data(const uint8_t* p_data, int p_bytes)
+{
 	int wrote = 0;
 	Error err = put_partial_data(p_data, p_bytes, wrote);
 	if (err != OK) {
@@ -131,7 +134,8 @@ Error StreamPeerGZIP::put_data(const uint8_t *p_data, int p_bytes) {
 	return OK;
 }
 
-Error StreamPeerGZIP::put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) {
+Error StreamPeerGZIP::put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent)
+{
 	ERR_FAIL_NULL_V(ctx, ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(p_bytes < 0, ERR_INVALID_PARAMETER);
 
@@ -145,7 +149,8 @@ Error StreamPeerGZIP::put_partial_data(const uint8_t *p_data, int p_bytes, int &
 		int sent = 0;
 		int to_write = 0;
 		// Compress or decompress
-		Error err = _process(buffer.ptrw(), MIN(buffer.size(), rb.space_left()), p_data + r_sent, p_bytes - r_sent, sent, to_write);
+		Error err = _process(buffer.ptrw(), MIN(buffer.size(), rb.space_left()), p_data + r_sent,
+			p_bytes - r_sent, sent, to_write);
 		if (err != OK) {
 			return err;
 		}
@@ -165,7 +170,8 @@ Error StreamPeerGZIP::put_partial_data(const uint8_t *p_data, int p_bytes, int &
 	return OK;
 }
 
-Error StreamPeerGZIP::get_data(uint8_t *p_buffer, int p_bytes) {
+Error StreamPeerGZIP::get_data(uint8_t* p_buffer, int p_bytes)
+{
 	int received = 0;
 	Error err = get_partial_data(p_buffer, p_bytes, received);
 	if (err != OK) {
@@ -175,7 +181,8 @@ Error StreamPeerGZIP::get_data(uint8_t *p_buffer, int p_bytes) {
 	return OK;
 }
 
-Error StreamPeerGZIP::get_partial_data(uint8_t *p_buffer, int p_bytes, int &r_received) {
+Error StreamPeerGZIP::get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received)
+{
 	ERR_FAIL_COND_V(p_bytes < 0, ERR_INVALID_PARAMETER);
 
 	r_received = MIN(p_bytes, rb.data_left());
@@ -187,19 +194,20 @@ Error StreamPeerGZIP::get_partial_data(uint8_t *p_buffer, int p_bytes, int &r_re
 	return OK;
 }
 
-int StreamPeerGZIP::get_available_bytes() const {
-	return rb.data_left();
-}
+int StreamPeerGZIP::get_available_bytes() const { return rb.data_left(); }
 
-Error StreamPeerGZIP::finish() {
+Error StreamPeerGZIP::finish()
+{
 	ERR_FAIL_COND_V(!ctx || !compressing, ERR_UNAVAILABLE);
 	// Ensure we have enough space in temporary buffer.
 	if (buffer.size() < get_available_bytes()) {
-		buffer.resize(get_available_bytes()); // get_available_bytes() is what we can store in RingBuffer.
+		buffer.resize(
+			get_available_bytes()); // get_available_bytes() is what we can store in RingBuffer.
 	}
 	int consumed = 0;
 	int to_write = 0;
-	Error err = _process(buffer.ptrw(), buffer.size(), nullptr, 0, consumed, to_write, true); // compress
+	Error err =
+		_process(buffer.ptrw(), buffer.size(), nullptr, 0, consumed, to_write, true); // compress
 	if (err != OK) {
 		return err;
 	}
@@ -207,3 +215,5 @@ Error StreamPeerGZIP::finish() {
 	ERR_FAIL_COND_V(wrote != to_write, ERR_OUT_OF_MEMORY);
 	return OK;
 }
+
+

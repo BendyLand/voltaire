@@ -40,14 +40,14 @@ scene/theme/theme_db.h:class ThemeContext : public Object {
 editor/file_system/editor_file_system.h:class EditorFileSystemDirectory : public Object {
 editor/file_system/editor_paths.h:class EditorPaths : public Object {
 scene/resources/2d/tile_set.h:class TileData : public Object {
+scene/main/node.h:class Node : public Object {
+core/input/input.h:class Input : public Object {
+core/string/translation_server.h:class TranslationServer : public Object {
 
 Kinda done?:
 editor/shader/shader_globals_editor.cpp:class ShaderGlobalsEditorInterface : public Object {
 
 Not done:
-scene/main/node.h:class Node : public Object {
-core/input/input.h:class Input : public Object {
-core/string/translation_server.h:class TranslationServer : public Object {
 core/object/ref_counted.h:class RefCounted : public Object {
 core/object/script_language.h:class ScriptLanguage : public Object {
 core/string/plural_rules.h:class PluralRules : public Object {

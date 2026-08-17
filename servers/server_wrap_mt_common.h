@@ -300,6 +300,21 @@
 		} \
 	}
 
+#define FUNC3R_NO(m_r, m_type, m_arg1, m_arg2, m_arg3) \
+	virtual m_r m_type(m_arg1 p1, m_arg2 p2, m_arg3 p3) { \
+		WRITE_ACTION \
+		if (ASYNC_COND_PUSH_AND_RET) { \
+			m_r ret; \
+			command_queue.push_and_ret(server_name, &ServerName::m_type, &ret, p1, p2, p3); \
+			SYNC_DEBUG \
+			MAIN_THREAD_SYNC_CHECK \
+			return ret; \
+		} else { \
+			command_queue.flush_if_pending(); \
+			return server_name->m_type(p1, p2, p3); \
+		} \
+	}
+
 #define FUNC3RC(m_r, m_type, m_arg1, m_arg2, m_arg3) \
 	virtual m_r m_type(m_arg1 p1, m_arg2 p2, m_arg3 p3) const override { \
 		if (ASYNC_COND_PUSH_AND_RET) { \

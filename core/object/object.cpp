@@ -196,13 +196,6 @@ void Object::set(const StringName& p_name, const Variant& p_value, bool* r_valid
 		}
 	}
 
-	// Try built-in setter.
-	{
-		if (ClassDB::set_property(this, p_name, p_value, r_valid)) {
-			return;
-		}
-	}
-
 	if (p_name == CoreStringName(script)) {
 		set_script(p_value);
 		if (r_valid) {
@@ -263,16 +256,6 @@ Variant Object::get(const StringName& p_name, bool* r_valid) const
 
 	if (script_instance) {
 		if (script_instance->get(p_name, ret)) {
-			if (r_valid) {
-				*r_valid = true;
-			}
-			return ret;
-		}
-	}
-
-	// Try built-in getter.
-	{
-		if (ClassDB::get_property(const_cast<Object*>(this), p_name, ret)) {
 			if (r_valid) {
 				*r_valid = true;
 			}
@@ -485,7 +468,6 @@ Variant Object::property_get_revert(const StringName& p_name) const
 
 void Object::get_method_list(List<MethodInfo>* p_list) const
 {
-	ClassDB::get_method_list(get_class_name(), p_list);
 	if (script_instance) {
 		script_instance->get_method_list(p_list);
 	}
@@ -547,11 +529,6 @@ bool Object::has_method(const StringName& p_method) const
 		return true;
 	}
 
-	MethodBind* method = ClassDB::get_method(get_class_name(), p_method);
-	if (method != nullptr) {
-		return true;
-	}
-
 	const Script* scr = Object::cast_to<Script>(this);
 	if (scr != nullptr) {
 		return scr->has_static_method(p_method);
@@ -577,17 +554,6 @@ int Object::get_method_argument_count(const StringName& p_method, bool* r_is_val
 	if (script_instance) {
 		bool valid = false;
 		int ret = script_instance->get_method_argument_count(p_method, &valid);
-		if (valid) {
-			if (r_is_valid) {
-				*r_is_valid = true;
-			}
-			return ret;
-		}
-	}
-
-	{
-		bool valid = false;
-		int ret = ClassDB::get_method_argument_count(get_class_name(), p_method, &valid);
 		if (valid) {
 			if (r_is_valid) {
 				*r_is_valid = true;
@@ -709,18 +675,6 @@ Variant Object::callp(const StringName& p_method, const Variant** p_args, int p_
 		}
 		}
 	}
-
-	// extension does not need this, because all methods are registered in MethodBind
-
-	MethodBind* method = ClassDB::get_method(get_class_name(), p_method);
-
-	if (method) {
-		ret = method->call(this, p_args, p_argcount, r_error);
-	}
-	else {
-		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
-	}
-
 	return ret;
 }
 
@@ -755,21 +709,6 @@ Variant Object::call_const(const StringName& p_method, const Variant** p_args, i
 		case Callable::CallError::CALL_ERROR_INSTANCE_IS_NULL: {
 		}
 		}
-	}
-
-	// extension does not need this, because all methods are registered in MethodBind
-
-	MethodBind* method = ClassDB::get_method(get_class_name(), p_method);
-
-	if (method) {
-		if (!method->is_const()) {
-			r_error.error = Callable::CallError::CALL_ERROR_METHOD_NOT_CONST;
-			return ret;
-		}
-		ret = method->call(this, p_args, p_argcount, r_error);
-	}
-	else {
-		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
 	}
 
 	return ret;
@@ -1188,8 +1127,7 @@ Error Object::emit_signalp(const StringName& p_name, const Variant** p_args, int
 					}
 				}
 #endif
-				if (ce.error == Callable::CallError::CALL_ERROR_INVALID_METHOD && target &&
-					!ClassDB::class_exists(target->get_class_name())) {
+				if (ce.error == Callable::CallError::CALL_ERROR_INVALID_METHOD && target) {
 					// Most likely object is not initialized yet, do not throw error.
 				}
 				else {
@@ -1231,7 +1169,6 @@ void Object::_reset_vltrtype() const
 
 void Object::autorelease_vltrtype(VLTRType** r_type)
 {
-	ClassDB::vltrtype_autorelease_pool.push_back(r_type);
 }
 
 void Object::_add_user_signal(const String& p_name, const Array& p_args)
@@ -1332,7 +1269,6 @@ void Object::get_signal_list(List<MethodInfo>* p_signals) const
 		script_instance->get_script()->get_script_signal_list(p_signals);
 	}
 
-	ClassDB::get_signal_list(get_class_name(), p_signals);
 	// find maybe usersignals?
 
 	for (const KeyValue<StringName, SignalData>& E : signal_map) {
@@ -1693,7 +1629,7 @@ void Object::_clear_internal_resource_paths(const Variant& p_var)
 		}
 
 		r->set_path("");
-		r->clear_internal_resource_paths();
+		r->obj->clear_internal_resource_paths();
 	} break;
 	case Variant::ARRAY: {
 		Array a = p_var;
@@ -1717,13 +1653,11 @@ void Object::_clear_internal_resource_paths(const Variant& p_var)
 
 void Object::_add_class_to_classdb(VLTRType& p_type, const VLTRType* p_inherits)
 {
-	ClassDB::_add_class(p_type, p_inherits);
 }
 
 void Object::_get_property_list_from_classdb(const StringName& p_class, List<PropertyInfo>* p_list,
 	bool p_no_inheritance, const Object* p_validator)
 {
-	ClassDB::get_property_list(p_class, p_list, p_no_inheritance, p_validator);
 }
 
 #ifdef TOOLS_ENABLED
@@ -1783,15 +1717,6 @@ bool Object::is_blocking_signals() const { return _block_signals; }
 
 Variant::Type Object::get_static_property_type(const StringName& p_property, bool* r_valid) const
 {
-	bool valid;
-	Variant::Type t = ClassDB::get_property_type(get_class_name(), p_property, &valid);
-	if (valid) {
-		if (r_valid) {
-			*r_valid = true;
-		}
-		return t;
-	}
-
 	if (get_script_instance()) {
 		return get_script_instance()->get_property_type(p_property, r_valid);
 	}
@@ -1887,21 +1812,6 @@ const StringName& Object::get_class_name() const { return get_vltrtype().get_nam
 
 StringName Object::get_class_name_for_extension(const GDExtension* p_library) const
 {
-	// Extensions only have wrapper classes for classes exposed in ClassDB.
-	const StringName& class_name = get_class_name();
-	if (ClassDB::is_class_exposed(class_name)) {
-		return class_name;
-	}
-
-	// Find the nearest parent class that's exposed.
-	StringName parent_class = ClassDB::get_parent_class(class_name);
-	while (parent_class != StringName()) {
-		if (ClassDB::is_class_exposed(parent_class)) {
-			return parent_class;
-		}
-		parent_class = ClassDB::get_parent_class(parent_class);
-	}
-
 	return SNAME("Object");
 }
 
@@ -2118,7 +2028,6 @@ void Object::get_argument_options(
 			// But a parameter's PropertyInfo does not store the enum they come from, so this will
 			// do for now.
 			List<StringName> constants;
-			ClassDB::get_enum_constants("Object", "ConnectFlags", &constants);
 			for (const StringName& E : constants) {
 				r_options->push_back(String(E));
 			}
@@ -2230,8 +2139,6 @@ void ObjectDB::cleanup()
 			// Ensure calling the native classes because if a leaked instance has a script
 			// that overrides any of those methods, it'd not be OK to call them at this point,
 			// now the scripting languages have already been terminated.
-			MethodBind* node_get_path = ClassDB::get_method("Node", "get_path");
-			MethodBind* resource_get_path = ClassDB::get_method("Resource", "get_path");
 			Callable::CallError call_error;
 
 			for (uint32_t i = 0, count = slot_count; i < slot_max && count != 0; i++) {
@@ -2239,17 +2146,9 @@ void ObjectDB::cleanup()
 					Object* obj = object_slots[i].object;
 
 					String extra_info;
-					if (obj->is_class("Node")) {
-						extra_info = " - Node path: " +
-									 String(node_get_path->call(obj, nullptr, 0, call_error));
-					}
-					if (obj->is_class("Resource")) {
-						extra_info = " - Resource path: " +
-									 String(resource_get_path->call(obj, nullptr, 0, call_error));
-					}
 					if (obj->is_class("RefCounted")) {
 						extra_info = " - Reference count: " +
-									 itos((static_cast<RefCounted*>(obj))->get_reference_count());
+									 itos((dynamic_cast<RefCounted*>(obj))->get_reference_count());
 					}
 
 					uint64_t id =

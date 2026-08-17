@@ -28,18 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "socket_server.h"
 
-#include "core/object/class_db.h"
+void SocketServer::_bind_methods() {}
 
-void SocketServer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("is_connection_available"), &SocketServer::is_connection_available);
-	ClassDB::bind_method(D_METHOD("is_listening"), &SocketServer::is_listening);
-	ClassDB::bind_method(D_METHOD("stop"), &SocketServer::stop);
-	ClassDB::bind_method(D_METHOD("take_socket_connection"), &SocketServer::take_socket_connection);
-}
-
-Error SocketServer::_listen(const NetSocket::Address &p_addr) {
+Error SocketServer::_listen(const NetSocket::Address& p_addr)
+{
 	DEV_ASSERT(_sock.is_valid());
 	DEV_ASSERT(_sock->is_open());
 
@@ -60,13 +55,15 @@ Error SocketServer::_listen(const NetSocket::Address &p_addr) {
 	return OK;
 }
 
-bool SocketServer::is_listening() const {
+bool SocketServer::is_listening() const
+{
 	ERR_FAIL_COND_V(_sock.is_null(), false);
 
 	return _sock->is_open();
 }
 
-bool SocketServer::is_connection_available() const {
+bool SocketServer::is_connection_available() const
+{
 	ERR_FAIL_COND_V(_sock.is_null(), false);
 
 	if (!_sock->is_open()) {
@@ -77,16 +74,15 @@ bool SocketServer::is_connection_available() const {
 	return (err == OK);
 }
 
-void SocketServer::stop() {
+void SocketServer::stop()
+{
 	if (_sock.is_valid()) {
 		_sock->close();
 	}
 }
 
-SocketServer::SocketServer() :
-		_sock(NetSocket::create()) {
-}
+SocketServer::SocketServer() : _sock(NetSocket::create()) {}
 
-SocketServer::~SocketServer() {
-	stop();
-}
+SocketServer::~SocketServer() { stop(); }
+
+

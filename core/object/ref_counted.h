@@ -31,9 +31,11 @@
 #pragma once
 
 #include "core/object/object.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/safe_refcount.h"
 
-class RefCounted : public Object {
+class RefCounted
+{
 	VLTRCLASS(RefCounted, Object);
 	SafeRefCount refcount;
 	SafeRefCount refcount_init;
@@ -43,28 +45,28 @@ protected:
 	static void _bind_methods();
 
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::REF_COUNTED;
+	mem_unique_ptr<Object> obj;
+	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::REF_COUNTED;
 
 	_FORCE_INLINE_ bool is_referenced() const { return refcount_init.get() != 1; }
+
 	bool init_ref();
 	void deinit_ref(); // Effectively decrements refcount by increasing refcount_init by one.
-	bool reference(); // returns false if refcount is at zero and didn't get increased
+	bool reference();  // returns false if refcount is at zero and didn't get increased
 	bool unreference();
 	int get_reference_count() const;
 
 	RefCounted();
 };
 
-template <typename T>
-class Ref {
-	T *reference = nullptr;
+template <typename T> class Ref
+{
+	T* reference = nullptr;
 
-	_FORCE_INLINE_ void ref(const Ref &p_from) {
-		ref_pointer<false>(p_from.reference);
-	}
+	_FORCE_INLINE_ void ref(const Ref& p_from) { ref_pointer<false>(p_from.reference); }
 
-	template <bool Init>
-	_FORCE_INLINE_ void ref_pointer(T *p_refcounted) {
+	template <bool Init> _FORCE_INLINE_ void ref_pointer(T* p_refcounted)
+	{
 		if (p_refcounted == reference) {
 			return;
 		}
@@ -78,7 +80,8 @@ class Ref {
 				if (!reference->init_ref()) {
 					reference = nullptr;
 				}
-			} else {
+			}
+			else {
 				if (!reference->reference()) {
 					reference = nullptr;
 				}
@@ -86,55 +89,37 @@ class Ref {
 		}
 	}
 
-	//virtual RefCounted * get_reference() const { return reference; }
+	// virtual RefCounted * get_reference() const { return reference; }
 public:
-	static _FORCE_INLINE_ String get_class_static() {
-		return T::get_class_static();
-	}
+	static _FORCE_INLINE_ String get_class_static() { return T::get_class_static(); }
 
-	_FORCE_INLINE_ bool operator==(const T *p_ptr) const {
-		return reference == p_ptr;
-	}
-	_FORCE_INLINE_ bool operator!=(const T *p_ptr) const {
-		return reference != p_ptr;
-	}
+	_FORCE_INLINE_ bool operator==(const T* p_ptr) const { return reference == p_ptr; }
+
+	_FORCE_INLINE_ bool operator!=(const T* p_ptr) const { return reference != p_ptr; }
 #ifdef STRICT_CHECKS
 	// Delete these to prevent raw comparisons with `nullptr`.
 	bool operator==(std::nullptr_t) const = delete;
 	bool operator!=(std::nullptr_t) const = delete;
 #endif // STRICT_CHECKS
 
-	_FORCE_INLINE_ bool operator<(const Ref<T> &p_r) const {
-		return reference < p_r.reference;
-	}
-	_FORCE_INLINE_ bool operator==(const Ref<T> &p_r) const {
-		return reference == p_r.reference;
-	}
-	_FORCE_INLINE_ bool operator!=(const Ref<T> &p_r) const {
-		return reference != p_r.reference;
-	}
+	_FORCE_INLINE_ bool operator<(const Ref<T>& p_r) const { return reference < p_r.reference; }
 
-	_FORCE_INLINE_ T *operator*() const {
-		return reference;
-	}
+	_FORCE_INLINE_ bool operator==(const Ref<T>& p_r) const { return reference == p_r.reference; }
 
-	_FORCE_INLINE_ T *operator->() const {
-		return reference;
-	}
+	_FORCE_INLINE_ bool operator!=(const Ref<T>& p_r) const { return reference != p_r.reference; }
 
-	_FORCE_INLINE_ T *ptr() const {
-		return reference;
-	}
+	_FORCE_INLINE_ T* operator*() const { return reference; }
 
-	operator Variant() const {
-		return Variant(reference);
-	}
+	_FORCE_INLINE_ T* operator->() const { return reference; }
 
-	void operator=(const Ref &p_from) {
-		ref(p_from);
-	}
+	_FORCE_INLINE_ T* ptr() const { return reference; }
 
-	void operator=(Ref &&p_from) {
+	operator Variant() const { return Variant(reference); }
+
+	void operator=(const Ref& p_from) { ref(p_from); }
+
+	void operator=(Ref&& p_from)
+	{
 		if (reference == p_from.reference) {
 			return;
 		}
@@ -143,27 +128,26 @@ public:
 		p_from.reference = nullptr;
 	}
 
-	template <typename T_Other>
-	void operator=(const Ref<T_Other> &p_from) {
+	template <typename T_Other> void operator=(const Ref<T_Other>& p_from)
+	{
 		ref_pointer<false>(Object::cast_to<T>(p_from.ptr()));
 	}
 
-	void operator=(T *p_from) {
-		ref_pointer<true>(p_from);
-	}
+	void operator=(T* p_from) { ref_pointer<true>(p_from); }
 
-	void operator=(const Variant &p_variant) {
-		Object *object = p_variant.get_validated_object();
+	void operator=(const Variant& p_variant)
+	{
+		Object* object = p_variant.get_validated_object();
 
-		if (object == reference) {
+		if (object == reference->obj.get()) {
 			return;
 		}
 
 		ref_pointer<false>(Object::cast_to<T>(object));
 	}
 
-	template <typename T_Other>
-	void reference_ptr(T_Other *p_ptr) {
+	template <typename T_Other> void reference_ptr(T_Other* p_ptr)
+	{
 		if (reference == p_ptr) {
 			return;
 		}
@@ -171,32 +155,26 @@ public:
 		ref_pointer<true>(Object::cast_to<T>(p_ptr));
 	}
 
-	Ref(const Ref &p_from) {
-		this->operator=(p_from);
-	}
+	Ref(const Ref& p_from) { this->operator=(p_from); }
 
-	Ref(Ref &&p_from) {
+	Ref(Ref&& p_from)
+	{
 		reference = p_from.reference;
 		p_from.reference = nullptr;
 	}
 
-	template <typename T_Other>
-	Ref(const Ref<T_Other> &p_from) {
-		this->operator=(p_from);
-	}
+	template <typename T_Other> Ref(const Ref<T_Other>& p_from) { this->operator=(p_from); }
 
-	Ref(T *p_from) {
-		this->operator=(p_from);
-	}
+	Ref(T* p_from) { this->operator=(p_from); }
 
-	Ref(const Variant &p_from) {
-		this->operator=(p_from);
-	}
+	Ref(const Variant& p_from) { this->operator=(p_from); }
 
 	inline bool is_valid() const { return reference != nullptr; }
+
 	inline bool is_null() const { return reference == nullptr; }
 
-	void unref() {
+	void unref()
+	{
 		// TODO: this should be moved to mutexes, since this engine does not really
 		// do a lot of referencing on references and stuff
 		// mutexes will avoid more crashes?
@@ -205,15 +183,15 @@ public:
 			// NOTE: `reinterpret_cast` is "safe" here because we know `T` has simple linear
 			// inheritance to `RefCounted`. This guarantees that `T * == `RefCounted *`, which
 			// allows us to declare `Ref<T>` with forward declared `T` types.
-			if (reinterpret_cast<RefCounted *>(reference)->unreference()) {
-				memdelete(reinterpret_cast<RefCounted *>(reference));
+			if (reinterpret_cast<RefCounted*>(reference)->unreference()) {
+				memdelete(reinterpret_cast<RefCounted*>(reference));
 			}
 			reference = nullptr;
 		}
 	}
 
-	template <typename... VarArgs>
-	void instantiate(VarArgs... p_params) {
+	template <typename... VarArgs> void instantiate(VarArgs... p_params)
+	{
 		Ref<T> ref = memnew(T(p_params...));
 		// Appropriate the new Ref, and if the previous one was set, free it.
 		SWAP(reference, ref.reference);
@@ -223,22 +201,21 @@ public:
 
 	Ref() = default;
 
-	~Ref() {
-		unref();
-	}
+	~Ref() { unref(); }
 };
 
-template <typename T>
-struct memnew_result<T, std::enable_if_t<std::is_base_of_v<RefCounted, T>>> {
+template <typename T> struct memnew_result<T, std::enable_if_t<std::is_base_of_v<RefCounted, T>>>
+{
 	using class_name = Ref<T>;
 };
 
-template <typename T>
-void postinitialize_handler(Ref<T> &p_object) {
+template <typename T> void postinitialize_handler(Ref<T>& p_object)
+{
 	postinitialize_handler(p_object.ptr());
 }
 
-class WeakRef : public RefCounted {
+class WeakRef : public RefCounted
+{
 	VLTRCLASS(WeakRef, RefCounted);
 
 	ObjectID ref;
@@ -248,15 +225,18 @@ protected:
 
 public:
 	Variant get_ref() const;
-	void set_obj(Object *p_object);
-	void set_ref(const Ref<RefCounted> &p_ref);
+	void set_obj(Object* p_object);
+	void set_ref(const Ref<RefCounted>& p_ref);
 };
 
 // Zero-constructing Ref initializes reference to nullptr (and thus empty).
-template <typename T>
-struct is_zero_constructible<Ref<T>> : std::true_type {};
+template <typename T> struct is_zero_constructible<Ref<T>> : std::true_type
+{
+};
 
-template <typename T>
-Ref<T> ObjectDB::get_ref(ObjectID p_instance_id) {
+template <typename T> Ref<T> ObjectDB::get_ref(ObjectID p_instance_id)
+{
 	return Ref<T>(get_instance(p_instance_id));
 }
+
+

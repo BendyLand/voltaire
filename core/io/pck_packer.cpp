@@ -28,16 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "pck_packer.h"
-
 #include "core/crypto/crypto_core.h"
 #include "core/io/file_access.h"
 #include "core/io/file_access_encrypted.h"
 #include "core/io/file_access_pack.h" // PACK_HEADER_MAGIC, PACK_FORMAT_VERSION
 #include "core/object/class_db.h"
 #include "core/version.h"
+#include "pck_packer.h"
 
-static int _get_pad(int p_alignment, int p_n) {
+static int _get_pad(int p_alignment, int p_n)
+{
 	int rest = p_n % p_alignment;
 	int pad = 0;
 	if (rest > 0) {
@@ -47,17 +47,16 @@ static int _get_pad(int p_alignment, int p_n) {
 	return pad;
 }
 
-void PCKPacker::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("pck_start", "pck_path", "alignment", "key", "encrypt_directory"), &PCKPacker::pck_start, DEFVAL(32), DEFVAL("0000000000000000000000000000000000000000000000000000000000000000"), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("add_file", "target_path", "source_path", "encrypt"), &PCKPacker::add_file, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("add_file_from_buffer", "target_path", "data", "encrypt"), &PCKPacker::add_file_from_buffer, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("add_file_removal", "target_path"), &PCKPacker::add_file_removal);
-	ClassDB::bind_method(D_METHOD("flush", "verbose"), &PCKPacker::flush, DEFVAL(false));
-}
+void PCKPacker::_bind_methods() {}
 
-Error PCKPacker::pck_start(const String &p_pck_path, int p_alignment, const String &p_key, bool p_encrypt_directory) {
-	ERR_FAIL_COND_V_MSG((p_key.is_empty() || !p_key.is_valid_hex_number(false) || p_key.length() != 64), ERR_CANT_CREATE, "Invalid Encryption Key (must be 64 characters long).");
-	ERR_FAIL_COND_V_MSG(p_alignment <= 0, ERR_CANT_CREATE, "Invalid alignment, must be greater then 0.");
+Error PCKPacker::pck_start(
+	const String& p_pck_path, int p_alignment, const String& p_key, bool p_encrypt_directory)
+{
+	ERR_FAIL_COND_V_MSG(
+		(p_key.is_empty() || !p_key.is_valid_hex_number(false) || p_key.length() != 64),
+		ERR_CANT_CREATE, "Invalid Encryption Key (must be 64 characters long).");
+	ERR_FAIL_COND_V_MSG(
+		p_alignment <= 0, ERR_CANT_CREATE, "Invalid alignment, must be greater then 0.");
 
 	String _key = p_key.to_lower();
 	key.resize(32);
@@ -67,7 +66,8 @@ Error PCKPacker::pck_start(const String &p_pck_path, int p_alignment, const Stri
 			char32_t ct = _key[i * 2];
 			if (is_digit(ct)) {
 				ct = ct - '0';
-			} else if (ct >= 'a' && ct <= 'f') {
+			}
+			else if (ct >= 'a' && ct <= 'f') {
 				ct = 10 + ct - 'a';
 			}
 			v |= ct << 4;
@@ -77,7 +77,8 @@ Error PCKPacker::pck_start(const String &p_pck_path, int p_alignment, const Stri
 			char32_t ct = _key[i * 2 + 1];
 			if (is_digit(ct)) {
 				ct = ct - '0';
-			} else if (ct >= 'a' && ct <= 'f') {
+			}
+			else if (ct >= 'a' && ct <= 'f') {
 				ct = 10 + ct - 'a';
 			}
 			v |= ct;
@@ -87,7 +88,8 @@ Error PCKPacker::pck_start(const String &p_pck_path, int p_alignment, const Stri
 	enc_dir = p_encrypt_directory;
 
 	file = FileAccess::open(p_pck_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_CANT_CREATE, vformat("Can't open file to write: '%s'.", String(p_pck_path)));
+	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_CANT_CREATE,
+		vformat("Can't open file to write: '%s'.", String(p_pck_path)));
 
 	alignment = p_alignment;
 
@@ -129,7 +131,8 @@ Error PCKPacker::pck_start(const String &p_pck_path, int p_alignment, const Stri
 	return OK;
 }
 
-Error PCKPacker::add_file_removal(const String &p_target_path) {
+Error PCKPacker::add_file_removal(const String& p_target_path)
+{
 	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_INVALID_PARAMETER, "File must be opened before use.");
 
 	File pf;
@@ -147,7 +150,8 @@ Error PCKPacker::add_file_removal(const String &p_target_path) {
 	return OK;
 }
 
-Error PCKPacker::add_file(const String &p_target_path, const String &p_source_path, bool p_encrypt) {
+Error PCKPacker::add_file(const String& p_target_path, const String& p_source_path, bool p_encrypt)
+{
 	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_INVALID_PARAMETER, "File must be opened before use.");
 
 	Ref<FileAccess> f = FileAccess::open(p_source_path, FileAccess::READ);
@@ -159,11 +163,15 @@ Error PCKPacker::add_file(const String &p_target_path, const String &p_source_pa
 	return _add_file(p_target_path, p_source_path, data, p_encrypt);
 }
 
-Error PCKPacker::add_file_from_buffer(const String &p_target_path, const Vector<uint8_t> &p_data, bool p_encrypt) {
+Error PCKPacker::add_file_from_buffer(
+	const String& p_target_path, const Vector<uint8_t>& p_data, bool p_encrypt)
+{
 	return _add_file(p_target_path, "<PackedByteArray>", p_data, p_encrypt);
 }
 
-Error PCKPacker::_add_file(const String &p_target_path, const String &p_source_path, const Vector<uint8_t> &p_data, bool p_encrypt) {
+Error PCKPacker::_add_file(const String& p_target_path, const String& p_source_path,
+	const Vector<uint8_t>& p_data, bool p_encrypt)
+{
 	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_INVALID_PARAMETER, "File must be opened before use.");
 
 	File pf;
@@ -213,7 +221,8 @@ Error PCKPacker::_add_file(const String &p_target_path, const String &p_source_p
 	return OK;
 }
 
-Error PCKPacker::flush(bool p_verbose) {
+Error PCKPacker::flush(bool p_verbose)
+{
 	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_INVALID_PARAMETER, "File must be opened before use.");
 
 	int dir_padding = _get_pad(alignment, file->get_position());
@@ -249,7 +258,7 @@ Error PCKPacker::flush(bool p_verbose) {
 		int pad = _get_pad(4, string_len);
 
 		fhead->store_32(uint32_t(string_len + pad));
-		fhead->store_buffer((const uint8_t *)utf8_string.get_data(), string_len);
+		fhead->store_buffer((const uint8_t*)utf8_string.get_data(), string_len);
 		for (int j = 0; j < pad; j++) {
 			fhead->store_8(0);
 		}
@@ -268,7 +277,8 @@ Error PCKPacker::flush(bool p_verbose) {
 		fhead->store_32(flags);
 
 		if (p_verbose) {
-			print_line(vformat("[%d/%d - %d%%] PCKPacker flush: %s -> %s", i + 1, file_num, float(i + 1) / file_num * 100, files[i].src_path, files[i].path));
+			print_line(vformat("[%d/%d - %d%%] PCKPacker flush: %s -> %s", i + 1, file_num,
+				float(i + 1) / file_num * 100, files[i].src_path, files[i].path));
 		}
 	}
 
@@ -281,8 +291,11 @@ Error PCKPacker::flush(bool p_verbose) {
 	return OK;
 }
 
-PCKPacker::~PCKPacker() {
+PCKPacker::~PCKPacker()
+{
 	if (file.is_valid()) {
 		flush();
 	}
 }
+
+

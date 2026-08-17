@@ -166,7 +166,7 @@ void RotatedFileLogger::rotate_file() {
 	}
 
 	file = FileAccess::open(base_path, FileAccess::WRITE);
-	file->detach_from_objectdb(); // Note: This FileAccess instance will exist longer than ObjectDB, therefore can't be registered in ObjectDB.
+	file->obj->detach_from_objectdb(); // Note: This FileAccess instance will exist longer than ObjectDB, therefore can't be registered in ObjectDB.
 }
 
 RotatedFileLogger::RotatedFileLogger(const String &p_base_path, int p_max_files) :
@@ -176,7 +176,7 @@ RotatedFileLogger::RotatedFileLogger(const String &p_base_path, int p_max_files)
 
 #ifdef MODULE_REGEX_ENABLED
 	strip_ansi_regex.instantiate();
-	strip_ansi_regex->detach_from_objectdb(); // Note: This RegEx instance will exist longer than ObjectDB, therefore can't be registered in ObjectDB.
+	strip_ansi_regex->obj->detach_from_objectdb(); // Note: This RegEx instance will exist longer than ObjectDB, therefore can't be registered in ObjectDB.
 	strip_ansi_regex->compile("\u001b\\[((?:\\d|;)*)([a-zA-Z])");
 #endif // MODULE_REGEX_ENABLED
 }

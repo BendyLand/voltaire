@@ -28,16 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/io/marshalls.h"
 #include "debugger_marshalls.h"
 
-#include "core/io/marshalls.h"
+#define CHECK_SIZE(arr, expected, what)                                                            \
+	ERR_FAIL_COND_V_MSG((uint32_t)arr.size() < (uint32_t)(expected), false,                        \
+		String("Malformed ") + what +                                                              \
+			" message from script debugger, message too short. Expected size: " + itos(expected) + \
+			", actual size: " + itos(arr.size()))
+#define CHECK_END(arr, expected, what)                                                             \
+	ERR_FAIL_COND_V_MSG((uint32_t)arr.size() > (uint32_t)expected, false,                          \
+		String("Malformed ") + what +                                                              \
+			" message from script debugger, message too long. Expected size: " + itos(expected) +  \
+			", actual size: " + itos(arr.size()))
 
-#define CHECK_SIZE(arr, expected, what) ERR_FAIL_COND_V_MSG((uint32_t)arr.size() < (uint32_t)(expected), false, String("Malformed ") + what + " message from script debugger, message too short. Expected size: " + itos(expected) + ", actual size: " + itos(arr.size()))
-#define CHECK_END(arr, expected, what) ERR_FAIL_COND_V_MSG((uint32_t)arr.size() > (uint32_t)expected, false, String("Malformed ") + what + " message from script debugger, message too long. Expected size: " + itos(expected) + ", actual size: " + itos(arr.size()))
-
-Array DebuggerMarshalls::ScriptStackDump::serialize() {
-	Array arr = { frames.size() * 3 };
-	for (const ScriptLanguage::StackInfo &frame : frames) {
+Array DebuggerMarshalls::ScriptStackDump::serialize()
+{
+	Array arr = {frames.size() * 3};
+	for (const ScriptLanguage::StackInfo& frame : frames) {
 		arr.push_back(frame.file);
 		arr.push_back(frame.line);
 		arr.push_back(frame.func);
@@ -45,7 +53,8 @@ Array DebuggerMarshalls::ScriptStackDump::serialize() {
 	return arr;
 }
 
-bool DebuggerMarshalls::ScriptStackDump::deserialize(const Array &p_arr) {
+bool DebuggerMarshalls::ScriptStackDump::deserialize(const Array& p_arr)
+{
 	CHECK_SIZE(p_arr, 1, "ScriptStackDump");
 	uint32_t size = p_arr[0];
 	CHECK_SIZE(p_arr, size, "ScriptStackDump");
@@ -62,8 +71,9 @@ bool DebuggerMarshalls::ScriptStackDump::deserialize(const Array &p_arr) {
 	return true;
 }
 
-Array DebuggerMarshalls::ScriptStackVariable::serialize(int p_max_size) {
-	Array arr = { name, type, value.get_type() };
+Array DebuggerMarshalls::ScriptStackVariable::serialize(int p_max_size)
+{
+	Array arr = {name, type, value.get_type()};
 
 	Variant var = value;
 	if (value.get_type() == Variant::OBJECT && value.get_validated_object() == nullptr) {
@@ -78,7 +88,8 @@ Array DebuggerMarshalls::ScriptStackVariable::serialize(int p_max_size) {
 
 	if (len > p_max_size) {
 		arr.push_back(Variant());
-	} else {
+	}
+	else {
 		arr.push_back(var);
 	}
 
@@ -87,7 +98,8 @@ Array DebuggerMarshalls::ScriptStackVariable::serialize(int p_max_size) {
 	return arr;
 }
 
-bool DebuggerMarshalls::ScriptStackVariable::deserialize(const Array &p_arr) {
+bool DebuggerMarshalls::ScriptStackVariable::deserialize(const Array& p_arr)
+{
 	CHECK_SIZE(p_arr, 5, "ScriptStackVariable");
 	name = p_arr[0];
 	type = p_arr[1];
@@ -98,21 +110,12 @@ bool DebuggerMarshalls::ScriptStackVariable::deserialize(const Array &p_arr) {
 	return true;
 }
 
-Array DebuggerMarshalls::OutputError::serialize() {
+Array DebuggerMarshalls::OutputError::serialize()
+{
 	unsigned int size = callstack.size();
-	Array arr = {
-		hr,
-		min,
-		sec, msec,
-		source_file,
-		source_func,
-		source_line,
-		error,
-		error_descr,
-		warning,
-		size * 3
-	};
-	const ScriptLanguage::StackInfo *r = callstack.ptr();
+	Array arr = {hr, min, sec, msec, source_file, source_func, source_line, error, error_descr,
+		warning, size * 3};
+	const ScriptLanguage::StackInfo* r = callstack.ptr();
 	for (int i = 0; i < callstack.size(); i++) {
 		arr.push_back(r[i].file);
 		arr.push_back(r[i].func);
@@ -121,7 +124,8 @@ Array DebuggerMarshalls::OutputError::serialize() {
 	return arr;
 }
 
-bool DebuggerMarshalls::OutputError::deserialize(const Array &p_arr) {
+bool DebuggerMarshalls::OutputError::deserialize(const Array& p_arr)
+{
 	CHECK_SIZE(p_arr, 11, "OutputError");
 	hr = p_arr[0];
 	min = p_arr[1];
@@ -137,7 +141,7 @@ bool DebuggerMarshalls::OutputError::deserialize(const Array &p_arr) {
 	CHECK_SIZE(p_arr, stack_size, "OutputError");
 	int idx = 11;
 	callstack.resize(stack_size / 3);
-	ScriptLanguage::StackInfo *w = callstack.ptrw();
+	ScriptLanguage::StackInfo* w = callstack.ptrw();
 	for (unsigned int i = 0; i < stack_size / 3; i++) {
 		w[i].file = p_arr[idx];
 		w[i].func = p_arr[idx + 1];
@@ -148,7 +152,8 @@ bool DebuggerMarshalls::OutputError::deserialize(const Array &p_arr) {
 	return true;
 }
 
-Array DebuggerMarshalls::serialize_key_shortcut(const Ref<Shortcut> &p_shortcut) {
+Array DebuggerMarshalls::serialize_key_shortcut(const Ref<Shortcut>& p_shortcut)
+{
 	ERR_FAIL_COND_V(p_shortcut.is_null(), Array());
 	Array keys;
 	for (const Ref<InputEvent> ev : p_shortcut->get_events()) {
@@ -157,7 +162,8 @@ Array DebuggerMarshalls::serialize_key_shortcut(const Ref<Shortcut> &p_shortcut)
 		if (kev->get_physical_keycode() != Key::NONE) {
 			keys.push_back(true);
 			keys.push_back(kev->get_physical_keycode_with_modifiers());
-		} else {
+		}
+		else {
 			keys.push_back(false);
 			keys.push_back(kev->get_keycode_with_modifiers());
 		}
@@ -165,13 +171,15 @@ Array DebuggerMarshalls::serialize_key_shortcut(const Ref<Shortcut> &p_shortcut)
 	return keys;
 }
 
-Ref<Shortcut> DebuggerMarshalls::deserialize_key_shortcut(const Array &p_keys) {
+Ref<Shortcut> DebuggerMarshalls::deserialize_key_shortcut(const Array& p_keys)
+{
 	Array key_events;
 	ERR_FAIL_COND_V(p_keys.size() % 2 != 0, Ref<Shortcut>());
 	for (int i = 0; i < p_keys.size(); i += 2) {
 		ERR_CONTINUE(p_keys[i].get_type() != Variant::BOOL);
 		ERR_CONTINUE(p_keys[i + 1].get_type() != Variant::INT);
-		key_events.push_back(InputEventKey::create_reference((Key)p_keys[i + 1].operator int(), p_keys[i].operator bool()));
+		key_events.push_back(InputEventKey::create_reference(
+			(Key)p_keys[i + 1].operator int(), p_keys[i].operator bool()));
 	}
 	if (key_events.is_empty()) {
 		return Ref<Shortcut>();
@@ -182,13 +190,14 @@ Ref<Shortcut> DebuggerMarshalls::deserialize_key_shortcut(const Array &p_keys) {
 	return shortcut;
 }
 
-String DebuggerMarshalls::parse_type_from_variant(const Variant &p_variant) {
+String DebuggerMarshalls::parse_type_from_variant(const Variant& p_variant)
+{
 	String name;
 
 	if (p_variant.get_type() == Variant::OBJECT) {
-		const Object *obj = p_variant.get_validated_object();
+		const Object* obj = p_variant.get_validated_object();
 		if (obj) {
-			const ScriptInstance *script_instance = obj->get_script_instance();
+			const ScriptInstance* script_instance = obj->get_script_instance();
 
 			if (script_instance) {
 				Ref<Script> script = script_instance->get_script();
@@ -205,3 +214,5 @@ String DebuggerMarshalls::parse_type_from_variant(const Variant &p_variant) {
 
 	return name;
 }
+
+

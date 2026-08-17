@@ -28,9 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "translation_server.h"
-#include "translation_server.compat.inc"
-
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
@@ -39,8 +36,11 @@
 #include "core/os/os.h"
 #include "core/string/locales.h"
 #include "core/variant/typed_array.h"
+#include "translation_server.compat.inc"
+#include "translation_server.h"
 
-void TranslationServer::init_locale_info() {
+void TranslationServer::init_locale_info()
+{
 	// Init locale info.
 	language_map.clear();
 	int idx = 0;
@@ -95,9 +95,9 @@ void TranslationServer::init_locale_info() {
 	language_script_map.clear();
 	idx = 0;
 	while (language_script_list[idx][0] != nullptr) {
-		HashSet<String> &set = language_script_map[language_script_list[idx][0]];
+		HashSet<String>& set = language_script_map[language_script_list[idx][0]];
 		Vector<String> scripts = String(language_script_list[idx][1]).split(" ");
-		for (const String &s : scripts) {
+		for (const String& s : scripts) {
 			set.insert(s);
 		}
 		idx++;
@@ -127,7 +127,7 @@ void TranslationServer::init_locale_info() {
 	while (plural_rules[idx][0] != nullptr) {
 		const Vector<String> rule_locs = String(plural_rules[idx][0]).split(" ");
 		const String rule = String(plural_rules[idx][1]);
-		for (const String &l : rule_locs) {
+		for (const String& l : rule_locs) {
 			plural_rules_map[l] = rule;
 		}
 		idx++;
@@ -137,7 +137,7 @@ void TranslationServer::init_locale_info() {
 	num_system_map.clear();
 	idx = 0;
 	while (num_system_data[idx].locales != nullptr) {
-		const NumSystemData &nsd = num_system_data[idx];
+		const NumSystemData& nsd = num_system_data[idx];
 
 		// These fields must not be empty.
 		DEV_ASSERT(nsd.percent_sign && nsd.percent_sign[0] != '\0');
@@ -147,14 +147,15 @@ void TranslationServer::init_locale_info() {
 		DEV_ASSERT(strlen(nsd.digits) == 11);
 
 		const Vector<String> locales = String(nsd.locales).split(" ");
-		for (const String &l : locales) {
+		for (const String& l : locales) {
 			num_system_map[l] = idx;
 		}
 		idx++;
 	}
 }
 
-TranslationServer::Locale::operator String() const {
+TranslationServer::Locale::operator String() const
+{
 	String out = language;
 	if (!script.is_empty()) {
 		out = out + "_" + script;
@@ -168,7 +169,9 @@ TranslationServer::Locale::operator String() const {
 	return out;
 }
 
-TranslationServer::Locale::Locale(const TranslationServer &p_server, const String &p_locale, bool p_add_defaults) {
+TranslationServer::Locale::Locale(
+	const TranslationServer& p_server, const String& p_locale, bool p_add_defaults)
+{
 	// Replaces '-' with '_' for macOS style locales.
 	String univ_locale = p_locale.replace_char('-', '_');
 
@@ -176,22 +179,30 @@ TranslationServer::Locale::Locale(const TranslationServer &p_server, const Strin
 	Vector<String> locale_elements = univ_locale.get_slicec('@', 0).split("_");
 	language = locale_elements[0];
 	if (locale_elements.size() >= 2) {
-		if (locale_elements[1].length() == 4 && is_ascii_upper_case(locale_elements[1][0]) && is_ascii_lower_case(locale_elements[1][1]) && is_ascii_lower_case(locale_elements[1][2]) && is_ascii_lower_case(locale_elements[1][3])) {
+		if (locale_elements[1].length() == 4 && is_ascii_upper_case(locale_elements[1][0]) &&
+			is_ascii_lower_case(locale_elements[1][1]) &&
+			is_ascii_lower_case(locale_elements[1][2]) &&
+			is_ascii_lower_case(locale_elements[1][3])) {
 			script = locale_elements[1];
 		}
-		if (locale_elements[1].length() == 2 && is_ascii_upper_case(locale_elements[1][0]) && is_ascii_upper_case(locale_elements[1][1])) {
+		if (locale_elements[1].length() == 2 && is_ascii_upper_case(locale_elements[1][0]) &&
+			is_ascii_upper_case(locale_elements[1][1])) {
 			country = locale_elements[1];
 		}
 	}
 	if (locale_elements.size() >= 3) {
-		if (locale_elements[2].length() == 2 && is_ascii_upper_case(locale_elements[2][0]) && is_ascii_upper_case(locale_elements[2][1])) {
+		if (locale_elements[2].length() == 2 && is_ascii_upper_case(locale_elements[2][0]) &&
+			is_ascii_upper_case(locale_elements[2][1])) {
 			country = locale_elements[2];
-		} else if (p_server.variant_map.has(locale_elements[2].to_lower()) && p_server.variant_map[locale_elements[2].to_lower()] == language) {
+		}
+		else if (p_server.variant_map.has(locale_elements[2].to_lower()) &&
+				   p_server.variant_map[locale_elements[2].to_lower()] == language) {
 			variant = locale_elements[2].to_lower();
 		}
 	}
 	if (locale_elements.size() >= 4) {
-		if (p_server.variant_map.has(locale_elements[3].to_lower()) && p_server.variant_map[locale_elements[3].to_lower()] == language) {
+		if (p_server.variant_map.has(locale_elements[3].to_lower()) &&
+			p_server.variant_map[locale_elements[3].to_lower()] == language) {
 			variant = locale_elements[3].to_lower();
 		}
 	}
@@ -202,13 +213,17 @@ TranslationServer::Locale::Locale(const TranslationServer &p_server, const Strin
 		if (script_extra[i].to_lower() == "cyrillic") {
 			script = "Cyrl";
 			break;
-		} else if (script_extra[i].to_lower() == "latin") {
+		}
+		else if (script_extra[i].to_lower() == "latin") {
 			script = "Latn";
 			break;
-		} else if (script_extra[i].to_lower() == "devanagari") {
+		}
+		else if (script_extra[i].to_lower() == "devanagari") {
 			script = "Deva";
 			break;
-		} else if (p_server.variant_map.has(script_extra[i].to_lower()) && p_server.variant_map[script_extra[i].to_lower()] == language) {
+		}
+		else if (p_server.variant_map.has(script_extra[i].to_lower()) &&
+				   p_server.variant_map[script_extra[i].to_lower()] == language) {
 			variant = script_extra[i].to_lower();
 		}
 	}
@@ -232,7 +247,7 @@ TranslationServer::Locale::Locale(const TranslationServer &p_server, const Strin
 	if (p_add_defaults) {
 		if (script.is_empty()) {
 			for (int i = 0; i < p_server.locale_script_info.size(); i++) {
-				const LocaleScriptInfo &info = p_server.locale_script_info[i];
+				const LocaleScriptInfo& info = p_server.locale_script_info[i];
 				if (info.name == language) {
 					if (country.is_empty() || info.supported_countries.has(country)) {
 						script = info.script;
@@ -244,7 +259,7 @@ TranslationServer::Locale::Locale(const TranslationServer &p_server, const Strin
 		if (!script.is_empty() && country.is_empty()) {
 			// Add conntry code based on script for some ambiguous cases.
 			for (int i = 0; i < p_server.locale_script_info.size(); i++) {
-				const LocaleScriptInfo &info = p_server.locale_script_info[i];
+				const LocaleScriptInfo& info = p_server.locale_script_info[i];
 				if (info.name == language && info.script == script) {
 					country = info.default_country;
 					break;
@@ -254,46 +269,50 @@ TranslationServer::Locale::Locale(const TranslationServer &p_server, const Strin
 	}
 }
 
-String TranslationServer::format_number(const String &p_string, const String &p_locale) const {
+String TranslationServer::format_number(const String& p_string, const String& p_locale) const
+{
 	ERR_FAIL_COND_V(p_locale.is_empty(), p_string);
 	if (!num_system_map.has(p_locale)) {
 		return p_string;
 	}
 
 	int index = num_system_map[p_locale];
-	const NumSystemData &nsd = num_system_data[index];
+	const NumSystemData& nsd = num_system_data[index];
 
 	String res = p_string;
 	res = res.replace("e", nsd.exp_l);
 	res = res.replace("E", nsd.exp_u);
-	char32_t *data = res.ptrw();
+	char32_t* data = res.ptrw();
 	for (int j = 0; j < res.length(); j++) {
 		if (data[j] >= 0x30 && data[j] <= 0x39) {
 			data[j] = nsd.digits[data[j] - 0x30];
-		} else if (data[j] == '.' || data[j] == ',') {
+		}
+		else if (data[j] == '.' || data[j] == ',') {
 			data[j] = nsd.digits[10];
 		}
 	}
 	return res;
 }
 
-String TranslationServer::parse_number(const String &p_string, const String &p_locale) const {
+String TranslationServer::parse_number(const String& p_string, const String& p_locale) const
+{
 	ERR_FAIL_COND_V(p_locale.is_empty(), p_string);
 	if (!num_system_map.has(p_locale)) {
 		return p_string;
 	}
 
 	int index = num_system_map[p_locale];
-	const NumSystemData &nsd = num_system_data[index];
+	const NumSystemData& nsd = num_system_data[index];
 
 	String res = p_string;
 	res = res.replace(nsd.exp_l, "e");
 	res = res.replace(nsd.exp_u, "E");
-	char32_t *data = res.ptrw();
+	char32_t* data = res.ptrw();
 	for (int j = 0; j < res.length(); j++) {
 		if (data[j] == nsd.digits[10]) {
 			data[j] = '.';
-		} else {
+		}
+		else {
 			for (int k = 0; k < 10; k++) {
 				if (data[j] == nsd.digits[k]) {
 					data[j] = 0x30 + k;
@@ -304,7 +323,8 @@ String TranslationServer::parse_number(const String &p_string, const String &p_l
 	return res;
 }
 
-String TranslationServer::get_percent_sign(const String &p_locale) const {
+String TranslationServer::get_percent_sign(const String& p_locale) const
+{
 	ERR_FAIL_COND_V(p_locale.is_empty(), "%");
 	if (!num_system_map.has(p_locale)) {
 		return "%";
@@ -314,18 +334,20 @@ String TranslationServer::get_percent_sign(const String &p_locale) const {
 	return num_system_data[index].percent_sign;
 }
 
-String TranslationServer::standardize_locale(const String &p_locale, bool p_add_defaults) const {
+String TranslationServer::standardize_locale(const String& p_locale, bool p_add_defaults) const
+{
 	return Locale(*this, p_locale, p_add_defaults).operator String();
 }
 
-int TranslationServer::compare_locales(const String &p_locale_a, const String &p_locale_b) const {
+int TranslationServer::compare_locales(const String& p_locale_a, const String& p_locale_b) const
+{
 	if (p_locale_a == p_locale_b) {
 		// Exact match.
 		return 10;
 	}
 
 	const String cache_key = p_locale_a + "|" + p_locale_b;
-	const int *cached_result = locale_compare_cache.getptr(cache_key);
+	const int* cached_result = locale_compare_cache.getptr(cache_key);
 	if (cached_result) {
 		return *cached_result;
 	}
@@ -353,21 +375,24 @@ int TranslationServer::compare_locales(const String &p_locale_a, const String &p
 	if (!locale_a.script.is_empty() && !locale_b.script.is_empty()) {
 		if (locale_a.script == locale_b.script) {
 			score++;
-		} else {
+		}
+		else {
 			score--;
 		}
 	}
 	if (!locale_a.country.is_empty() && !locale_b.country.is_empty()) {
 		if (locale_a.country == locale_b.country) {
 			score++;
-		} else {
+		}
+		else {
 			score--;
 		}
 	}
 	if (!locale_a.variant.is_empty() && !locale_b.variant.is_empty()) {
 		if (locale_a.variant == locale_b.variant) {
 			score++;
-		} else {
+		}
+		else {
 			score--;
 		}
 	}
@@ -376,20 +401,26 @@ int TranslationServer::compare_locales(const String &p_locale_a, const String &p
 	return score;
 }
 
-String TranslationServer::get_locale_name(const String &p_locale) const {
+String TranslationServer::get_locale_name(const String& p_locale) const
+{
 	String lang_name, script_name, country_name;
 	Vector<String> locale_elements = standardize_locale(p_locale).split("_");
 	lang_name = locale_elements[0];
 	if (locale_elements.size() >= 2) {
-		if (locale_elements[1].length() == 4 && is_ascii_upper_case(locale_elements[1][0]) && is_ascii_lower_case(locale_elements[1][1]) && is_ascii_lower_case(locale_elements[1][2]) && is_ascii_lower_case(locale_elements[1][3])) {
+		if (locale_elements[1].length() == 4 && is_ascii_upper_case(locale_elements[1][0]) &&
+			is_ascii_lower_case(locale_elements[1][1]) &&
+			is_ascii_lower_case(locale_elements[1][2]) &&
+			is_ascii_lower_case(locale_elements[1][3])) {
 			script_name = locale_elements[1];
 		}
-		if (locale_elements[1].length() == 2 && is_ascii_upper_case(locale_elements[1][0]) && is_ascii_upper_case(locale_elements[1][1])) {
+		if (locale_elements[1].length() == 2 && is_ascii_upper_case(locale_elements[1][0]) &&
+			is_ascii_upper_case(locale_elements[1][1])) {
 			country_name = locale_elements[1];
 		}
 	}
 	if (locale_elements.size() >= 3) {
-		if (locale_elements[2].length() == 2 && is_ascii_upper_case(locale_elements[2][0]) && is_ascii_upper_case(locale_elements[2][1])) {
+		if (locale_elements[2].length() == 2 && is_ascii_upper_case(locale_elements[2][0]) &&
+			is_ascii_upper_case(locale_elements[2][1])) {
 			country_name = locale_elements[2];
 		}
 	}
@@ -404,8 +435,9 @@ String TranslationServer::get_locale_name(const String &p_locale) const {
 	return name;
 }
 
-String TranslationServer::get_plural_rules(const String &p_locale) const {
-	const String *rule = plural_rules_map.getptr(p_locale);
+String TranslationServer::get_plural_rules(const String& p_locale) const
+{
+	const String* rule = plural_rules_map.getptr(p_locale);
 	if (rule) {
 		return *rule;
 	}
@@ -424,61 +456,71 @@ String TranslationServer::get_plural_rules(const String &p_locale) const {
 	return String();
 }
 
-Vector<String> TranslationServer::get_all_languages() const {
+Vector<String> TranslationServer::get_all_languages() const
+{
 	Vector<String> languages;
 
-	for (const KeyValue<String, String> &E : language_map) {
+	for (const KeyValue<String, String>& E : language_map) {
 		languages.push_back(E.key);
 	}
 
 	return languages;
 }
 
-String TranslationServer::get_language_name(const String &p_language) const {
+String TranslationServer::get_language_name(const String& p_language) const
+{
 	if (language_map.has(p_language)) {
 		return language_map[p_language];
-	} else {
+	}
+	else {
 		return p_language;
 	}
 }
 
-Vector<String> TranslationServer::get_all_scripts() const {
+Vector<String> TranslationServer::get_all_scripts() const
+{
 	Vector<String> scripts;
 
-	for (const KeyValue<String, String> &E : script_map) {
+	for (const KeyValue<String, String>& E : script_map) {
 		scripts.push_back(E.key);
 	}
 
 	return scripts;
 }
 
-String TranslationServer::get_script_name(const String &p_script) const {
+String TranslationServer::get_script_name(const String& p_script) const
+{
 	if (script_map.has(p_script)) {
 		return script_map[p_script];
-	} else {
+	}
+	else {
 		return p_script;
 	}
 }
 
-Vector<String> TranslationServer::get_all_countries() const {
+Vector<String> TranslationServer::get_all_countries() const
+{
 	Vector<String> countries;
 
-	for (const KeyValue<String, String> &E : country_name_map) {
+	for (const KeyValue<String, String>& E : country_name_map) {
 		countries.push_back(E.key);
 	}
 
 	return countries;
 }
 
-String TranslationServer::get_country_name(const String &p_country) const {
+String TranslationServer::get_country_name(const String& p_country) const
+{
 	if (country_name_map.has(p_country)) {
 		return country_name_map[p_country];
-	} else {
+	}
+	else {
 		return p_country;
 	}
 }
 
-void TranslationServer::set_locale(const String &p_locale) {
+void TranslationServer::set_locale(const String& p_locale)
+{
 	ERR_FAIL_COND_MSG(p_locale.is_empty(), "Locale cannot be an empty string.");
 
 	String new_locale = standardize_locale(p_locale);
@@ -490,31 +532,24 @@ void TranslationServer::set_locale(const String &p_locale) {
 	ResourceLoader::reload_translation_remaps();
 
 	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
+		OS::get_singleton()->get_main_loop()->notification(
+			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 	}
 }
 
-String TranslationServer::get_locale() const {
-	return locale;
-}
+String TranslationServer::get_locale() const { return locale; }
 
-void TranslationServer::set_fallback_allowed(const bool &p_allow) {
-	allow_fallback = p_allow;
-}
+void TranslationServer::set_fallback_allowed(const bool& p_allow) { allow_fallback = p_allow; }
 
-bool TranslationServer::is_fallback_allowed() const {
-	return allow_fallback;
-}
+bool TranslationServer::is_fallback_allowed() const { return allow_fallback; }
 
-void TranslationServer::set_fallback_locale(const String &p_locale) {
-	fallback = p_locale;
-}
+void TranslationServer::set_fallback_locale(const String& p_locale) { fallback = p_locale; }
 
-String TranslationServer::get_fallback_locale() const {
-	return fallback;
-}
+String TranslationServer::get_fallback_locale() const { return fallback; }
 
-bool TranslationServer::is_script_suppored_by_locale(const String &p_locale, const String &p_script) const {
+bool TranslationServer::is_script_suppored_by_locale(
+	const String& p_locale, const String& p_script) const
+{
 	Locale l = Locale(*this, p_locale, true);
 	if (l.script == p_script) {
 		return true;
@@ -525,64 +560,77 @@ bool TranslationServer::is_script_suppored_by_locale(const String &p_locale, con
 	return language_script_map[l.language].has(p_script);
 }
 
-PackedStringArray TranslationServer::get_loaded_locales() const {
+PackedStringArray TranslationServer::get_loaded_locales() const
+{
 	return main_domain->get_loaded_locales();
 }
 
-void TranslationServer::add_translation(const Ref<Translation> &p_translation) {
+void TranslationServer::add_translation(const Ref<Translation>& p_translation)
+{
 	main_domain->add_translation(p_translation);
 }
 
-void TranslationServer::remove_translation(const Ref<Translation> &p_translation) {
+void TranslationServer::remove_translation(const Ref<Translation>& p_translation)
+{
 	main_domain->remove_translation(p_translation);
 }
 
 #ifndef DISABLE_DEPRECATED
-Ref<Translation> TranslationServer::get_translation_object(const String &p_locale) {
+Ref<Translation> TranslationServer::get_translation_object(const String& p_locale)
+{
 	return main_domain->get_translation_object(p_locale);
 }
 #endif
 
-TypedArray<Translation> TranslationServer::get_translations() const {
+Array TranslationServer::get_translations() const
+{
 	return main_domain->get_translations_bind();
 }
 
-TypedArray<Translation> TranslationServer::find_translations(const String &p_locale, bool p_exact) const {
+Array TranslationServer::find_translations(
+	const String& p_locale, bool p_exact) const
+{
 	return main_domain->find_translations_bind(p_locale, p_exact);
 }
 
-bool TranslationServer::has_translation(const Ref<Translation> &p_translation) const {
+bool TranslationServer::has_translation(const Ref<Translation>& p_translation) const
+{
 	return main_domain->has_translation(p_translation);
 }
 
-bool TranslationServer::has_translation_for_locale(const String &p_locale, bool p_exact) const {
+bool TranslationServer::has_translation_for_locale(const String& p_locale, bool p_exact) const
+{
 	return main_domain->has_translation_for_locale(p_locale, p_exact);
 }
 
-void TranslationServer::clear() {
-	main_domain->clear();
-}
+void TranslationServer::clear() { main_domain->clear(); }
 
-StringName TranslationServer::translate(const StringName &p_message, const StringName &p_context) const {
+StringName TranslationServer::translate(
+	const StringName& p_message, const StringName& p_context) const
+{
 	return main_domain->translate(p_message, p_context);
 }
 
-StringName TranslationServer::translate_plural(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context) const {
+StringName TranslationServer::translate_plural(const StringName& p_message,
+	const StringName& p_message_plural, int p_n, const StringName& p_context) const
+{
 	return main_domain->translate_plural(p_message, p_message_plural, p_n, p_context);
 }
 
-bool TranslationServer::has_domain(const StringName &p_domain) const {
+bool TranslationServer::has_domain(const StringName& p_domain) const
+{
 	if (p_domain == StringName()) {
 		return true;
 	}
 	return custom_domains.has(p_domain);
 }
 
-Ref<TranslationDomain> TranslationServer::get_or_add_domain(const StringName &p_domain) {
+Ref<TranslationDomain> TranslationServer::get_or_add_domain(const StringName& p_domain)
+{
 	if (p_domain == StringName()) {
 		return main_domain;
 	}
-	const Ref<TranslationDomain> *domain = custom_domains.getptr(p_domain);
+	const Ref<TranslationDomain>* domain = custom_domains.getptr(p_domain);
 	if (domain) {
 		if (domain->is_valid()) {
 			return *domain;
@@ -594,41 +642,57 @@ Ref<TranslationDomain> TranslationServer::get_or_add_domain(const StringName &p_
 	return new_domain;
 }
 
-void TranslationServer::remove_domain(const StringName &p_domain) {
+void TranslationServer::remove_domain(const StringName& p_domain)
+{
 	ERR_FAIL_COND_MSG(p_domain == StringName(), "Cannot remove main translation domain.");
 	custom_domains.erase(p_domain);
 }
 
-void TranslationServer::setup() {
+void TranslationServer::setup()
+{
 	String test = GLOBAL_DEF("internationalization/locale/test", "");
 	test = test.strip_edges();
 	if (!test.is_empty()) {
 		set_locale(test);
-	} else {
+	}
+	else {
 		set_locale(OS::get_singleton()->get_locale());
 	}
 
 	fallback = GLOBAL_DEF("internationalization/locale/fallback", "en");
 	allow_fallback = GLOBAL_DEF("internationalization/locale/allow_fallback", true);
-	main_domain->set_pseudolocalization_enabled(GLOBAL_DEF("internationalization/pseudolocalization/use_pseudolocalization", false));
-	main_domain->set_pseudolocalization_accents_enabled(GLOBAL_DEF("internationalization/pseudolocalization/replace_with_accents", true));
-	main_domain->set_pseudolocalization_double_vowels_enabled(GLOBAL_DEF("internationalization/pseudolocalization/double_vowels", false));
-	main_domain->set_pseudolocalization_fake_bidi_enabled(GLOBAL_DEF("internationalization/pseudolocalization/fake_bidi", false));
-	main_domain->set_pseudolocalization_override_enabled(GLOBAL_DEF("internationalization/pseudolocalization/override", false));
-	main_domain->set_pseudolocalization_expansion_ratio(GLOBAL_DEF("internationalization/pseudolocalization/expansion_ratio", 0.0));
-	main_domain->set_pseudolocalization_prefix(GLOBAL_DEF("internationalization/pseudolocalization/prefix", "["));
-	main_domain->set_pseudolocalization_suffix(GLOBAL_DEF("internationalization/pseudolocalization/suffix", "]"));
-	main_domain->set_pseudolocalization_skip_placeholders_enabled(GLOBAL_DEF("internationalization/pseudolocalization/skip_placeholders", true));
+	main_domain->set_pseudolocalization_enabled(
+		GLOBAL_DEF("internationalization/pseudolocalization/use_pseudolocalization", false));
+	main_domain->set_pseudolocalization_accents_enabled(
+		GLOBAL_DEF("internationalization/pseudolocalization/replace_with_accents", true));
+	main_domain->set_pseudolocalization_double_vowels_enabled(
+		GLOBAL_DEF("internationalization/pseudolocalization/double_vowels", false));
+	main_domain->set_pseudolocalization_fake_bidi_enabled(
+		GLOBAL_DEF("internationalization/pseudolocalization/fake_bidi", false));
+	main_domain->set_pseudolocalization_override_enabled(
+		GLOBAL_DEF("internationalization/pseudolocalization/override", false));
+	main_domain->set_pseudolocalization_expansion_ratio(
+		GLOBAL_DEF("internationalization/pseudolocalization/expansion_ratio", 0.0));
+	main_domain->set_pseudolocalization_prefix(
+		GLOBAL_DEF("internationalization/pseudolocalization/prefix", "["));
+	main_domain->set_pseudolocalization_suffix(
+		GLOBAL_DEF("internationalization/pseudolocalization/suffix", "]"));
+	main_domain->set_pseudolocalization_skip_placeholders_enabled(
+		GLOBAL_DEF("internationalization/pseudolocalization/skip_placeholders", true));
 
 #ifdef TOOLS_ENABLED
-	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(Variant::STRING, "internationalization/locale/test", PROPERTY_HINT_LOCALE_ID, ""));
-	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(Variant::STRING, "internationalization/locale/fallback", PROPERTY_HINT_LOCALE_ID, ""));
+	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(
+		Variant::STRING, "internationalization/locale/test", PROPERTY_HINT_LOCALE_ID, ""));
+	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(
+		Variant::STRING, "internationalization/locale/fallback", PROPERTY_HINT_LOCALE_ID, ""));
 #endif
 }
 
-String TranslationServer::get_tool_locale() {
+String TranslationServer::get_tool_locale()
+{
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() || Engine::get_singleton()->is_project_manager_hint()) {
+	if (Engine::get_singleton()->is_editor_hint() ||
+		Engine::get_singleton()->is_project_manager_hint()) {
 		if (editor_domain->has_translation_for_locale(locale, true)) {
 			return locale;
 		}
@@ -639,7 +703,7 @@ String TranslationServer::get_tool_locale() {
 	Ref<Translation> res;
 	int best_score = 0;
 
-	for (const Ref<Translation> &E : main_domain->get_translations()) {
+	for (const Ref<Translation>& E : main_domain->get_translations()) {
 		int score = TranslationServer::get_singleton()->compare_locales(locale, E->get_locale());
 		if (score > 0 && score >= best_score) {
 			res = E;
@@ -652,119 +716,86 @@ String TranslationServer::get_tool_locale() {
 	return res.is_valid() ? res->get_locale() : fallback;
 }
 
-bool TranslationServer::is_pseudolocalization_enabled() const {
+bool TranslationServer::is_pseudolocalization_enabled() const
+{
 	return main_domain->is_pseudolocalization_enabled();
 }
 
-void TranslationServer::set_pseudolocalization_enabled(bool p_enabled) {
+void TranslationServer::set_pseudolocalization_enabled(bool p_enabled)
+{
 	main_domain->set_pseudolocalization_enabled(p_enabled);
 
 	ResourceLoader::reload_translation_remaps();
 
 	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
+		OS::get_singleton()->get_main_loop()->notification(
+			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 	}
 }
 
-void TranslationServer::reload_pseudolocalization() {
-	main_domain->set_pseudolocalization_accents_enabled(GLOBAL_GET("internationalization/pseudolocalization/replace_with_accents"));
-	main_domain->set_pseudolocalization_double_vowels_enabled(GLOBAL_GET("internationalization/pseudolocalization/double_vowels"));
-	main_domain->set_pseudolocalization_fake_bidi_enabled(GLOBAL_GET("internationalization/pseudolocalization/fake_bidi"));
-	main_domain->set_pseudolocalization_override_enabled(GLOBAL_GET("internationalization/pseudolocalization/override"));
-	main_domain->set_pseudolocalization_expansion_ratio(GLOBAL_GET("internationalization/pseudolocalization/expansion_ratio"));
-	main_domain->set_pseudolocalization_prefix(GLOBAL_GET("internationalization/pseudolocalization/prefix"));
-	main_domain->set_pseudolocalization_suffix(GLOBAL_GET("internationalization/pseudolocalization/suffix"));
-	main_domain->set_pseudolocalization_skip_placeholders_enabled(GLOBAL_GET("internationalization/pseudolocalization/skip_placeholders"));
+void TranslationServer::reload_pseudolocalization()
+{
+	main_domain->set_pseudolocalization_accents_enabled(
+		GLOBAL_GET("internationalization/pseudolocalization/replace_with_accents"));
+	main_domain->set_pseudolocalization_double_vowels_enabled(
+		GLOBAL_GET("internationalization/pseudolocalization/double_vowels"));
+	main_domain->set_pseudolocalization_fake_bidi_enabled(
+		GLOBAL_GET("internationalization/pseudolocalization/fake_bidi"));
+	main_domain->set_pseudolocalization_override_enabled(
+		GLOBAL_GET("internationalization/pseudolocalization/override"));
+	main_domain->set_pseudolocalization_expansion_ratio(
+		GLOBAL_GET("internationalization/pseudolocalization/expansion_ratio"));
+	main_domain->set_pseudolocalization_prefix(
+		GLOBAL_GET("internationalization/pseudolocalization/prefix"));
+	main_domain->set_pseudolocalization_suffix(
+		GLOBAL_GET("internationalization/pseudolocalization/suffix"));
+	main_domain->set_pseudolocalization_skip_placeholders_enabled(
+		GLOBAL_GET("internationalization/pseudolocalization/skip_placeholders"));
 
 	ResourceLoader::reload_translation_remaps();
 
 	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
+		OS::get_singleton()->get_main_loop()->notification(
+			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 	}
 }
 
-StringName TranslationServer::pseudolocalize(const StringName &p_message) const {
+StringName TranslationServer::pseudolocalize(const StringName& p_message) const
+{
 	return main_domain->pseudolocalize(p_message);
 }
 
 #ifdef TOOLS_ENABLED
-void TranslationServer::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
+void TranslationServer::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const
+{
 	const String pf = p_function;
 	if (p_idx == 0) {
-		HashMap<String, String> *target_hash_map = nullptr;
+		HashMap<String, String>* target_hash_map = nullptr;
 		if (pf == "get_language_name") {
 			target_hash_map = &language_map;
-		} else if (pf == "get_script_name") {
+		}
+		else if (pf == "get_script_name") {
 			target_hash_map = &script_map;
-		} else if (pf == "get_country_name") {
+		}
+		else if (pf == "get_country_name") {
 			target_hash_map = &country_name_map;
 		}
 
 		if (target_hash_map) {
-			for (const KeyValue<String, String> &E : *target_hash_map) {
+			for (const KeyValue<String, String>& E : *target_hash_map) {
 				r_options->push_back(E.key.quote());
 			}
 		}
 	}
-	Object::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif // TOOLS_ENABLED
 
-void TranslationServer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_locale", "locale"), &TranslationServer::set_locale);
-	ClassDB::bind_method(D_METHOD("get_locale"), &TranslationServer::get_locale);
-	ClassDB::bind_method(D_METHOD("get_tool_locale"), &TranslationServer::get_tool_locale);
+void TranslationServer::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("compare_locales", "locale_a", "locale_b"), &TranslationServer::compare_locales);
-	ClassDB::bind_method(D_METHOD("standardize_locale", "locale", "add_defaults"), &TranslationServer::standardize_locale, DEFVAL(false));
-
-	ClassDB::bind_method(D_METHOD("get_all_languages"), &TranslationServer::get_all_languages);
-	ClassDB::bind_method(D_METHOD("get_language_name", "language"), &TranslationServer::get_language_name);
-
-	ClassDB::bind_method(D_METHOD("get_all_scripts"), &TranslationServer::get_all_scripts);
-	ClassDB::bind_method(D_METHOD("get_script_name", "script"), &TranslationServer::get_script_name);
-
-	ClassDB::bind_method(D_METHOD("get_all_countries"), &TranslationServer::get_all_countries);
-	ClassDB::bind_method(D_METHOD("get_country_name", "country"), &TranslationServer::get_country_name);
-
-	ClassDB::bind_method(D_METHOD("get_locale_name", "locale"), &TranslationServer::get_locale_name);
-	ClassDB::bind_method(D_METHOD("get_plural_rules", "locale"), &TranslationServer::get_plural_rules);
-
-	ClassDB::bind_method(D_METHOD("translate", "message", "context"), &TranslationServer::translate, DEFVAL(StringName()));
-	ClassDB::bind_method(D_METHOD("translate_plural", "message", "plural_message", "n", "context"), &TranslationServer::translate_plural, DEFVAL(StringName()));
-
-	ClassDB::bind_method(D_METHOD("add_translation", "translation"), &TranslationServer::add_translation);
-	ClassDB::bind_method(D_METHOD("remove_translation", "translation"), &TranslationServer::remove_translation);
-
-#ifndef DISABLE_DEPRECATED
-	ClassDB::bind_method(D_METHOD("get_translation_object", "locale"), &TranslationServer::get_translation_object);
-#endif
-
-	ClassDB::bind_method(D_METHOD("get_translations"), &TranslationServer::get_translations);
-	ClassDB::bind_method(D_METHOD("find_translations", "locale", "exact"), &TranslationServer::find_translations);
-	ClassDB::bind_method(D_METHOD("has_translation_for_locale", "locale", "exact"), &TranslationServer::has_translation_for_locale);
-	ClassDB::bind_method(D_METHOD("has_translation", "translation"), &TranslationServer::has_translation);
-
-	ClassDB::bind_method(D_METHOD("has_domain", "domain"), &TranslationServer::has_domain);
-	ClassDB::bind_method(D_METHOD("get_or_add_domain", "domain"), &TranslationServer::get_or_add_domain);
-	ClassDB::bind_method(D_METHOD("remove_domain", "domain"), &TranslationServer::remove_domain);
-
-	ClassDB::bind_method(D_METHOD("clear"), &TranslationServer::clear);
-
-	ClassDB::bind_method(D_METHOD("get_loaded_locales"), &TranslationServer::get_loaded_locales);
-
-	ClassDB::bind_method(D_METHOD("format_number", "number", "locale"), &TranslationServer::format_number);
-	ClassDB::bind_method(D_METHOD("get_percent_sign", "locale"), &TranslationServer::get_percent_sign);
-	ClassDB::bind_method(D_METHOD("parse_number", "number", "locale"), &TranslationServer::parse_number);
-
-	ClassDB::bind_method(D_METHOD("is_pseudolocalization_enabled"), &TranslationServer::is_pseudolocalization_enabled);
-	ClassDB::bind_method(D_METHOD("set_pseudolocalization_enabled", "enabled"), &TranslationServer::set_pseudolocalization_enabled);
-	ClassDB::bind_method(D_METHOD("reload_pseudolocalization"), &TranslationServer::reload_pseudolocalization);
-	ClassDB::bind_method(D_METHOD("pseudolocalize", "message"), &TranslationServer::pseudolocalize);
-	ADD_PROPERTY(PropertyInfo(Variant::Type::BOOL, "pseudolocalization_enabled"), "set_pseudolocalization_enabled", "is_pseudolocalization_enabled");
-}
-
-void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domain) {
+void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domain)
+{
 	DEV_ASSERT(p_domain.is_valid());
 
 	p_domain->clear();
@@ -772,16 +803,18 @@ void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domai
 	if (!ProjectSettings::get_singleton()->has_setting(prop)) {
 		return;
 	}
-	const Vector<String> &translations = GLOBAL_GET(prop);
-	for (const String &path : translations) {
+	const Vector<String>& translations = GLOBAL_GET(prop);
+	for (const String& path : translations) {
 		Ref<Translation> tr = ResourceLoader::load(path);
-		if (tr.is_valid()) {
+		if (tr.is_valid
+()) {
 			p_domain->add_translation(tr);
 		}
 	}
 }
 
-TranslationServer::TranslationServer() {
+TranslationServer::TranslationServer()
+{
 	singleton = this;
 
 	main_domain.instantiate();
@@ -794,3 +827,5 @@ TranslationServer::TranslationServer() {
 
 	init_locale_info();
 }
+
+

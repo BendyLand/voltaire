@@ -28,16 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "script_backtrace.h"
-
 #include "core/object/class_db.h"
 #include "core/object/script_language.h"
+#include "script_backtrace.h"
 
-void ScriptBacktrace::_store_variables(const List<String> &p_names, const List<Variant> &p_values, LocalVector<StackVariable> &r_variables) {
+void ScriptBacktrace::_store_variables(const List<String>& p_names, const List<Variant>& p_values,
+	LocalVector<StackVariable>& r_variables)
+{
 	r_variables.reserve(p_names.size());
 
-	const List<String>::Element *name = p_names.front();
-	const List<Variant>::Element *value = p_values.front();
+	const List<String>::Element* name = p_names.front();
+	const List<Variant>::Element* value = p_values.front();
 
 	for (int i = 0; i < p_names.size(); i++) {
 		StackVariable variable;
@@ -50,31 +51,10 @@ void ScriptBacktrace::_store_variables(const List<String> &p_names, const List<V
 	}
 }
 
-void ScriptBacktrace::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_language_name"), &ScriptBacktrace::get_language_name);
+void ScriptBacktrace::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("is_empty"), &ScriptBacktrace::is_empty);
-	ClassDB::bind_method(D_METHOD("get_frame_count"), &ScriptBacktrace::get_frame_count);
-	ClassDB::bind_method(D_METHOD("get_frame_function", "index"), &ScriptBacktrace::get_frame_function);
-	ClassDB::bind_method(D_METHOD("get_frame_file", "index"), &ScriptBacktrace::get_frame_file);
-	ClassDB::bind_method(D_METHOD("get_frame_line", "index"), &ScriptBacktrace::get_frame_line);
-
-	ClassDB::bind_method(D_METHOD("get_global_variable_count"), &ScriptBacktrace::get_global_variable_count);
-	ClassDB::bind_method(D_METHOD("get_global_variable_name", "variable_index"), &ScriptBacktrace::get_global_variable_name);
-	ClassDB::bind_method(D_METHOD("get_global_variable_value", "variable_index"), &ScriptBacktrace::get_global_variable_value);
-
-	ClassDB::bind_method(D_METHOD("get_local_variable_count", "frame_index"), &ScriptBacktrace::get_local_variable_count);
-	ClassDB::bind_method(D_METHOD("get_local_variable_name", "frame_index", "variable_index"), &ScriptBacktrace::get_local_variable_name);
-	ClassDB::bind_method(D_METHOD("get_local_variable_value", "frame_index", "variable_index"), &ScriptBacktrace::get_local_variable_value);
-
-	ClassDB::bind_method(D_METHOD("get_member_variable_count", "frame_index"), &ScriptBacktrace::get_member_variable_count);
-	ClassDB::bind_method(D_METHOD("get_member_variable_name", "frame_index", "variable_index"), &ScriptBacktrace::get_member_variable_name);
-	ClassDB::bind_method(D_METHOD("get_member_variable_value", "frame_index", "variable_index"), &ScriptBacktrace::get_member_variable_value);
-
-	ClassDB::bind_method(D_METHOD("format", "indent_all", "indent_frames"), &ScriptBacktrace::format, DEFVAL(0), DEFVAL(4));
-}
-
-ScriptBacktrace::ScriptBacktrace(ScriptLanguage *p_language, bool p_include_variables) {
+ScriptBacktrace::ScriptBacktrace(ScriptLanguage* p_language, bool p_include_variables)
+{
 	language_name = p_language->get_name();
 
 	Vector<ScriptLanguage::StackInfo> stack_infos = p_language->debug_get_current_stack_info();
@@ -88,7 +68,7 @@ ScriptBacktrace::ScriptBacktrace(ScriptLanguage *p_language, bool p_include_vari
 	}
 
 	for (int i = 0; i < stack_infos.size(); i++) {
-		const ScriptLanguage::StackInfo &stack_info = stack_infos[i];
+		const ScriptLanguage::StackInfo& stack_info = stack_infos[i];
 
 		StackFrame stack_frame;
 		stack_frame.function = stack_info.func;
@@ -111,70 +91,82 @@ ScriptBacktrace::ScriptBacktrace(ScriptLanguage *p_language, bool p_include_vari
 	}
 }
 
-String ScriptBacktrace::get_frame_function(int p_index) const {
+String ScriptBacktrace::get_frame_function(int p_index) const
+{
 	ERR_FAIL_INDEX_V(p_index, (int)stack_frames.size(), String());
 	return stack_frames[p_index].function;
 }
 
-String ScriptBacktrace::get_frame_file(int p_index) const {
+String ScriptBacktrace::get_frame_file(int p_index) const
+{
 	ERR_FAIL_INDEX_V(p_index, (int)stack_frames.size(), String());
 	return stack_frames[p_index].file;
 }
 
-int ScriptBacktrace::get_frame_line(int p_index) const {
+int ScriptBacktrace::get_frame_line(int p_index) const
+{
 	ERR_FAIL_INDEX_V(p_index, (int)stack_frames.size(), -1);
 	return stack_frames[p_index].line;
 }
 
-String ScriptBacktrace::get_global_variable_name(int p_variable_index) const {
+String ScriptBacktrace::get_global_variable_name(int p_variable_index) const
+{
 	ERR_FAIL_INDEX_V(p_variable_index, (int)global_variables.size(), String());
 	return global_variables[p_variable_index].name;
 }
 
-Variant ScriptBacktrace::get_global_variable_value(int p_variable_index) const {
+Variant ScriptBacktrace::get_global_variable_value(int p_variable_index) const
+{
 	ERR_FAIL_INDEX_V(p_variable_index, (int)global_variables.size(), String());
 	return global_variables[p_variable_index].value;
 }
 
-int ScriptBacktrace::get_local_variable_count(int p_frame_index) const {
+int ScriptBacktrace::get_local_variable_count(int p_frame_index) const
+{
 	ERR_FAIL_INDEX_V(p_frame_index, (int)stack_frames.size(), 0);
 	return (int)stack_frames[p_frame_index].local_variables.size();
 }
 
-String ScriptBacktrace::get_local_variable_name(int p_frame_index, int p_variable_index) const {
+String ScriptBacktrace::get_local_variable_name(int p_frame_index, int p_variable_index) const
+{
 	ERR_FAIL_INDEX_V(p_frame_index, (int)stack_frames.size(), String());
-	const LocalVector<StackVariable> &local_variables = stack_frames[p_frame_index].local_variables;
+	const LocalVector<StackVariable>& local_variables = stack_frames[p_frame_index].local_variables;
 	ERR_FAIL_INDEX_V(p_variable_index, (int)local_variables.size(), String());
 	return local_variables[p_variable_index].name;
 }
 
-Variant ScriptBacktrace::get_local_variable_value(int p_frame_index, int p_variable_index) const {
+Variant ScriptBacktrace::get_local_variable_value(int p_frame_index, int p_variable_index) const
+{
 	ERR_FAIL_INDEX_V(p_frame_index, (int)stack_frames.size(), String());
-	const LocalVector<StackVariable> &variables = stack_frames[p_frame_index].local_variables;
+	const LocalVector<StackVariable>& variables = stack_frames[p_frame_index].local_variables;
 	ERR_FAIL_INDEX_V(p_variable_index, (int)variables.size(), String());
 	return variables[p_variable_index].value;
 }
 
-int ScriptBacktrace::get_member_variable_count(int p_frame_index) const {
+int ScriptBacktrace::get_member_variable_count(int p_frame_index) const
+{
 	ERR_FAIL_INDEX_V(p_frame_index, (int)stack_frames.size(), 0);
 	return (int)stack_frames[p_frame_index].member_variables.size();
 }
 
-String ScriptBacktrace::get_member_variable_name(int p_frame_index, int p_variable_index) const {
+String ScriptBacktrace::get_member_variable_name(int p_frame_index, int p_variable_index) const
+{
 	ERR_FAIL_INDEX_V(p_frame_index, (int)stack_frames.size(), String());
-	const LocalVector<StackVariable> &variables = stack_frames[p_frame_index].member_variables;
+	const LocalVector<StackVariable>& variables = stack_frames[p_frame_index].member_variables;
 	ERR_FAIL_INDEX_V(p_variable_index, (int)variables.size(), String());
 	return variables[p_variable_index].name;
 }
 
-Variant ScriptBacktrace::get_member_variable_value(int p_frame_index, int p_variable_index) const {
+Variant ScriptBacktrace::get_member_variable_value(int p_frame_index, int p_variable_index) const
+{
 	ERR_FAIL_INDEX_V(p_frame_index, (int)stack_frames.size(), String());
-	const LocalVector<StackVariable> &variables = stack_frames[p_frame_index].member_variables;
+	const LocalVector<StackVariable>& variables = stack_frames[p_frame_index].member_variables;
 	ERR_FAIL_INDEX_V(p_variable_index, (int)variables.size(), String());
 	return variables[p_variable_index].value;
 }
 
-String ScriptBacktrace::format(int p_indent_all, int p_indent_frames) const {
+String ScriptBacktrace::format(int p_indent_all, int p_indent_frames) const
+{
 	if (is_empty()) {
 		return String();
 	}
@@ -186,7 +178,7 @@ String ScriptBacktrace::format(int p_indent_all, int p_indent_frames) const {
 
 	String result = indent_all + language_name + " backtrace (most recent call first):";
 	for (int i = 0; i < (int)stack_frames.size(); i++) {
-		const StackFrame &stack_frame = stack_frames[i];
+		const StackFrame& stack_frame = stack_frames[i];
 		result += "\n" + indent_total + "[" + itos(i) + "] " + stack_frame.function;
 
 		if (!stack_frame.file.is_empty()) {
@@ -196,3 +188,5 @@ String ScriptBacktrace::format(int p_indent_all, int p_indent_frames) const {
 
 	return result;
 }
+
+

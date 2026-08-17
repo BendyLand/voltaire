@@ -30,16 +30,16 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "translation_server.h"
 
-#include "core/object/class_db.h"
-
-String TranslationServer::_standardize_locale_bind_compat_98972(const String &p_locale) const {
+String TranslationServer::_standardize_locale_bind_compat_98972(const String& p_locale) const
+{
 	return standardize_locale(p_locale, false);
 }
 
-void TranslationServer::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("standardize_locale", "locale"), &TranslationServer::_standardize_locale_bind_compat_98972);
-}
+void TranslationServer::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

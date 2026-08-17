@@ -209,22 +209,7 @@ void FuzzySearchMatch::_add_token_match(const FuzzyTokenMatch &p_match) {
 	token_matches.append(p_match);
 }
 
-void FuzzySearchMatch::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_target", "target"), &FuzzySearchMatch::set_target);
-	ClassDB::bind_method(D_METHOD("get_target"), &FuzzySearchMatch::get_target);
-
-	ClassDB::bind_method(D_METHOD("set_score", "score"), &FuzzySearchMatch::set_score);
-	ClassDB::bind_method(D_METHOD("get_score"), &FuzzySearchMatch::get_score);
-
-	ClassDB::bind_method(D_METHOD("set_original_index", "original_index"), &FuzzySearchMatch::set_original_index);
-	ClassDB::bind_method(D_METHOD("get_original_index"), &FuzzySearchMatch::get_original_index);
-
-	ClassDB::bind_method(D_METHOD("get_matched_substrings"), &FuzzySearchMatch::get_matched_substrings);
-
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "target"), "set_target", "get_target");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "score"), "set_score", "get_score");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "original_index"), "set_original_index", "get_original_index");
-}
+void FuzzySearchMatch::_bind_methods() {}
 
 TypedArray<Vector2i> FuzzySearchMatch::get_matched_substrings() const {
 	TypedArray<Vector2i> substrings;
@@ -411,9 +396,9 @@ Vector<Ref<FuzzySearchMatch>> FuzzySearch::search_all(const String &p_query, con
 	return results;
 }
 
-TypedArray<FuzzySearchMatch> FuzzySearch::_search_all_bind(const String &p_query, const PackedStringArray &p_targets) const {
+Array FuzzySearch::_search_all_bind(const String &p_query, const PackedStringArray &p_targets) const {
 	Vector<Ref<FuzzySearchMatch>> results = search_all(p_query, p_targets);
-	TypedArray<FuzzySearchMatch> wrapped_results;
+	Array wrapped_results;
 	wrapped_results.reserve(results.size());
 	for (Ref<FuzzySearchMatch> &result : results) {
 		wrapped_results.append(result);
@@ -422,40 +407,5 @@ TypedArray<FuzzySearchMatch> FuzzySearch::_search_all_bind(const String &p_query
 	return wrapped_results;
 }
 
-void FuzzySearch::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_start_offset", "start_offset"), &FuzzySearch::set_start_offset);
-	ClassDB::bind_method(D_METHOD("get_start_offset"), &FuzzySearch::get_start_offset);
+void FuzzySearch::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_max_results", "max_results"), &FuzzySearch::set_max_results);
-	ClassDB::bind_method(D_METHOD("get_max_results"), &FuzzySearch::get_max_results);
-
-	ClassDB::bind_method(D_METHOD("set_max_misses", "max_misses"), &FuzzySearch::set_max_misses);
-	ClassDB::bind_method(D_METHOD("get_max_misses"), &FuzzySearch::get_max_misses);
-
-	ClassDB::bind_method(D_METHOD("set_use_exact_tokens", "use_exact_tokens"), &FuzzySearch::set_use_exact_tokens);
-	ClassDB::bind_method(D_METHOD("get_use_exact_tokens"), &FuzzySearch::get_use_exact_tokens);
-
-	ClassDB::bind_method(D_METHOD("set_case_sensitive", "case_sensitive"), &FuzzySearch::set_case_sensitive);
-	ClassDB::bind_method(D_METHOD("get_case_sensitive"), &FuzzySearch::get_case_sensitive);
-
-	ClassDB::bind_method(D_METHOD("set_filter_low_scores", "filter_low_scores"), &FuzzySearch::set_filter_low_scores);
-	ClassDB::bind_method(D_METHOD("get_filter_low_scores"), &FuzzySearch::get_filter_low_scores);
-
-	ClassDB::bind_method(D_METHOD("set_filter_factor", "filter_factor"), &FuzzySearch::set_filter_factor);
-	ClassDB::bind_method(D_METHOD("get_filter_factor"), &FuzzySearch::get_filter_factor);
-
-	ClassDB::bind_method(D_METHOD("set_filter_cutoff", "filter_cutoff"), &FuzzySearch::set_filter_cutoff);
-	ClassDB::bind_method(D_METHOD("get_filter_cutoff"), &FuzzySearch::get_filter_cutoff);
-
-	ClassDB::bind_method(D_METHOD("search", "query", "target"), &FuzzySearch::search);
-	ClassDB::bind_method(D_METHOD("search_all", "query", "targets"), &FuzzySearch::_search_all_bind);
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "start_offset"), "set_start_offset", "get_start_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_results"), "set_max_results", "get_max_results");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_misses"), "set_max_misses", "get_max_misses");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_exact_tokens"), "set_use_exact_tokens", "get_use_exact_tokens");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "case_sensitive"), "set_case_sensitive", "get_case_sensitive");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "filter_low_scores"), "set_filter_low_scores", "get_filter_low_scores");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "filter_factor"), "set_filter_factor", "get_filter_factor");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "filter_cutoff"), "set_filter_cutoff", "get_filter_cutoff");
-}

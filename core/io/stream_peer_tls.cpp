@@ -28,34 +28,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "stream_peer_tls.h"
 
-#include "core/object/class_db.h"
+StreamPeerTLS* (*StreamPeerTLS::_create)(bool p_notify_postinitialize) = nullptr;
 
-StreamPeerTLS *(*StreamPeerTLS::_create)(bool p_notify_postinitialize) = nullptr;
-
-StreamPeerTLS *StreamPeerTLS::create(bool p_notify_postinitialize) {
+StreamPeerTLS* StreamPeerTLS::create(bool p_notify_postinitialize)
+{
 	if (_create) {
 		return _create(p_notify_postinitialize);
 	}
 	return nullptr;
 }
 
-bool StreamPeerTLS::is_available() {
-	return _create != nullptr;
-}
+bool StreamPeerTLS::is_available() { return _create != nullptr; }
 
-void StreamPeerTLS::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("poll"), &StreamPeerTLS::poll);
-	ClassDB::bind_method(D_METHOD("accept_stream", "stream", "server_options"), &StreamPeerTLS::accept_stream);
-	ClassDB::bind_method(D_METHOD("connect_to_stream", "stream", "common_name", "client_options"), &StreamPeerTLS::connect_to_stream, DEFVAL(Ref<TLSOptions>()));
-	ClassDB::bind_method(D_METHOD("get_status"), &StreamPeerTLS::get_status);
-	ClassDB::bind_method(D_METHOD("get_stream"), &StreamPeerTLS::get_stream);
-	ClassDB::bind_method(D_METHOD("disconnect_from_stream"), &StreamPeerTLS::disconnect_from_stream);
+void StreamPeerTLS::_bind_methods() {}
 
-	BIND_ENUM_CONSTANT(STATUS_DISCONNECTED);
-	BIND_ENUM_CONSTANT(STATUS_HANDSHAKING);
-	BIND_ENUM_CONSTANT(STATUS_CONNECTED);
-	BIND_ENUM_CONSTANT(STATUS_ERROR);
-	BIND_ENUM_CONSTANT(STATUS_ERROR_HOSTNAME_MISMATCH);
-}
+

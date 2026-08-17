@@ -117,7 +117,7 @@ class FuzzySearch : public RefCounted {
 	Vector<FuzzySearchToken> _get_tokens(const String &p_query) const;
 	void _sort_and_filter(Vector<Ref<FuzzySearchMatch>> &p_results) const;
 	bool _search_tokens(const Vector<FuzzySearchToken> &p_tokens, const String &p_target, Ref<FuzzySearchMatch> &r_result) const;
-	TypedArray<FuzzySearchMatch> _search_all_bind(const String &p_query, const PackedStringArray &p_targets) const;
+	Array _search_all_bind(const String &p_query, const PackedStringArray &p_targets) const;
 
 protected:
 	static void _bind_methods();

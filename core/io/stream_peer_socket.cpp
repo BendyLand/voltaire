@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "stream_peer_socket.h"
-#include "stream_peer_socket.compat.inc"
-
 #include "core/object/class_db.h"
 #include "core/os/os.h"
+#include "stream_peer_socket.compat.inc"
+#include "stream_peer_socket.h"
 
-Error StreamPeerSocket::poll() {
+Error StreamPeerSocket::poll()
+{
 	if (status == STATUS_CONNECTED) {
 		Error err;
 		err = _sock->poll(NetSocket::POLL_TYPE_IN, 0);
@@ -54,7 +54,8 @@ Error StreamPeerSocket::poll() {
 			return err;
 		}
 		return OK;
-	} else if (status != STATUS_CONNECTING) {
+	}
+	else if (status != STATUS_CONNECTING) {
 		return OK;
 	}
 
@@ -63,7 +64,8 @@ Error StreamPeerSocket::poll() {
 	if (err == OK) {
 		status = STATUS_CONNECTED;
 		return OK;
-	} else if (err == ERR_BUSY) {
+	}
+	else if (err == ERR_BUSY) {
 		// Check for connect timeout
 		if (OS::get_singleton()->get_ticks_msec() > timeout) {
 			disconnect_from_host();
@@ -79,7 +81,8 @@ Error StreamPeerSocket::poll() {
 	return ERR_CONNECTION_ERROR;
 }
 
-Error StreamPeerSocket::write(const uint8_t *p_data, int p_bytes, int &r_sent, bool p_block) {
+Error StreamPeerSocket::write(const uint8_t* p_data, int p_bytes, int& r_sent, bool p_block)
+{
 	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
 
 	if (status != STATUS_CONNECTED) {
@@ -88,7 +91,7 @@ Error StreamPeerSocket::write(const uint8_t *p_data, int p_bytes, int &r_sent, b
 
 	Error err;
 	int data_to_send = p_bytes;
-	const uint8_t *offset = p_data;
+	const uint8_t* offset = p_data;
 	int total_sent = 0;
 
 	while (data_to_send) {
@@ -112,7 +115,8 @@ Error StreamPeerSocket::write(const uint8_t *p_data, int p_bytes, int &r_sent, b
 				disconnect_from_host();
 				return FAILED;
 			}
-		} else {
+		}
+		else {
 			data_to_send -= sent_amount;
 			offset += sent_amount;
 			total_sent += sent_amount;
@@ -124,7 +128,8 @@ Error StreamPeerSocket::write(const uint8_t *p_data, int p_bytes, int &r_sent, b
 	return OK;
 }
 
-Error StreamPeerSocket::read(uint8_t *p_buffer, int p_bytes, int &r_received, bool p_block) {
+Error StreamPeerSocket::read(uint8_t* p_buffer, int p_bytes, int& r_received, bool p_block)
+{
 	if (status != STATUS_CONNECTED) {
 		return FAILED;
 	}
@@ -156,12 +161,14 @@ Error StreamPeerSocket::read(uint8_t *p_buffer, int p_bytes, int &r_received, bo
 				return FAILED;
 			}
 
-		} else if (read == 0) {
+		}
+		else if (read == 0) {
 			disconnect_from_host();
 			r_received = total_read;
 			return ERR_FILE_EOF;
 
-		} else {
+		}
+		else {
 			to_read -= read;
 			total_read += read;
 
@@ -177,11 +184,10 @@ Error StreamPeerSocket::read(uint8_t *p_buffer, int p_bytes, int &r_received, bo
 	return OK;
 }
 
-StreamPeerSocket::Status StreamPeerSocket::get_status() const {
-	return status;
-}
+StreamPeerSocket::Status StreamPeerSocket::get_status() const { return status; }
 
-void StreamPeerSocket::disconnect_from_host() {
+void StreamPeerSocket::disconnect_from_host()
+{
 	if (_sock.is_valid() && _sock->is_open()) {
 		_sock->close();
 	}
@@ -191,49 +197,44 @@ void StreamPeerSocket::disconnect_from_host() {
 	peer_address = NetSocket::Address();
 }
 
-Error StreamPeerSocket::wait(NetSocket::PollType p_type, int p_timeout) {
+Error StreamPeerSocket::wait(NetSocket::PollType p_type, int p_timeout)
+{
 	ERR_FAIL_COND_V(_sock.is_null() || !_sock->is_open(), ERR_UNAVAILABLE);
 	return _sock->poll(p_type, p_timeout);
 }
 
-Error StreamPeerSocket::put_data(const uint8_t *p_data, int p_bytes) {
+Error StreamPeerSocket::put_data(const uint8_t* p_data, int p_bytes)
+{
 	int total;
 	return write(p_data, p_bytes, total, true);
 }
 
-Error StreamPeerSocket::put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) {
+Error StreamPeerSocket::put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent)
+{
 	return write(p_data, p_bytes, r_sent, false);
 }
 
-Error StreamPeerSocket::get_data(uint8_t *p_buffer, int p_bytes) {
+Error StreamPeerSocket::get_data(uint8_t* p_buffer, int p_bytes)
+{
 	int total;
 	return read(p_buffer, p_bytes, total, true);
 }
 
-Error StreamPeerSocket::get_partial_data(uint8_t *p_buffer, int p_bytes, int &r_received) {
+Error StreamPeerSocket::get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received)
+{
 	return read(p_buffer, p_bytes, r_received, false);
 }
 
-int StreamPeerSocket::get_available_bytes() const {
+int StreamPeerSocket::get_available_bytes() const
+{
 	ERR_FAIL_COND_V(_sock.is_null(), -1);
 	return _sock->get_available_bytes();
 }
 
-void StreamPeerSocket::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("poll"), &StreamPeerSocket::poll);
-	ClassDB::bind_method(D_METHOD("get_status"), &StreamPeerSocket::get_status);
-	ClassDB::bind_method(D_METHOD("disconnect_from_host"), &StreamPeerSocket::disconnect_from_host);
+void StreamPeerSocket::_bind_methods() {}
 
-	BIND_ENUM_CONSTANT(STATUS_NONE);
-	BIND_ENUM_CONSTANT(STATUS_CONNECTING);
-	BIND_ENUM_CONSTANT(STATUS_CONNECTED);
-	BIND_ENUM_CONSTANT(STATUS_ERROR);
-}
+StreamPeerSocket::StreamPeerSocket() : _sock(NetSocket::create()) {}
 
-StreamPeerSocket::StreamPeerSocket() :
-		_sock(NetSocket::create()) {
-}
+StreamPeerSocket::~StreamPeerSocket() { disconnect_from_host(); }
 
-StreamPeerSocket::~StreamPeerSocket() {
-	disconnect_from_host();
-}
+

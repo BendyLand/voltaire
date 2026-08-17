@@ -34,10 +34,12 @@
 
 class Translation;
 
-class TranslationDomain : public RefCounted {
+class TranslationDomain : public RefCounted
+{
 	VLTRCLASS(TranslationDomain, RefCounted);
 
-	struct PseudolocalizationConfig {
+	struct PseudolocalizationConfig
+	{
 		bool enabled = false;
 		bool accents_enabled = true;
 		bool double_vowels_enabled = false;
@@ -55,46 +57,49 @@ class TranslationDomain : public RefCounted {
 	HashSet<Ref<Translation>> translations;
 	PseudolocalizationConfig pseudolocalization;
 
-	String _get_override_string(const String &p_message) const;
-	String _double_vowels(const String &p_message) const;
-	String _replace_with_accented_string(const String &p_message) const;
-	String _wrap_with_fakebidi_characters(const String &p_message) const;
-	String _add_padding(const String &p_message, int p_length) const;
-	const char32_t *_get_accented_version(char32_t p_character) const;
-	bool _is_placeholder(const String &p_message, int p_index) const;
+	String _get_override_string(const String& p_message) const;
+	String _double_vowels(const String& p_message) const;
+	String _replace_with_accented_string(const String& p_message) const;
+	String _wrap_with_fakebidi_characters(const String& p_message) const;
+	String _add_padding(const String& p_message, int p_length) const;
+	const char32_t* _get_accented_version(char32_t p_character) const;
+	bool _is_placeholder(const String& p_message, int p_index) const;
 
 protected:
 	static void _bind_methods();
 
 public:
 	// Methods in this section are not intended for scripting.
-	StringName get_message_from_translations(const String &p_locale, const StringName &p_message, const StringName &p_context) const;
-	StringName get_message_from_translations(const String &p_locale, const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context) const;
+	StringName get_message_from_translations(
+		const String& p_locale, const StringName& p_message, const StringName& p_context) const;
+	StringName get_message_from_translations(const String& p_locale, const StringName& p_message,
+		const StringName& p_message_plural, int p_n, const StringName& p_context) const;
 	PackedStringArray get_loaded_locales() const;
 
 public:
 	// These two methods are public for easier TranslationServer bindings.
-	TypedArray<Translation> get_translations_bind() const;
-	TypedArray<Translation> find_translations_bind(const String &p_locale, bool p_exact) const;
+	Array get_translations_bind() const;
+	Array find_translations_bind(const String& p_locale, bool p_exact) const;
 
 #ifndef DISABLE_DEPRECATED
-	Ref<Translation> get_translation_object(const String &p_locale) const;
+	Ref<Translation> get_translation_object(const String& p_locale) const;
 #endif
 
-	void add_translation(const Ref<Translation> &p_translation);
-	void remove_translation(const Ref<Translation> &p_translation);
+	void add_translation(const Ref<Translation>& p_translation);
+	void remove_translation(const Ref<Translation>& p_translation);
 	void clear();
 
-	bool has_translation(const Ref<Translation> &p_translation) const;
+	bool has_translation(const Ref<Translation>& p_translation) const;
 	const HashSet<Ref<Translation>> get_translations() const;
-	HashSet<Ref<Translation>> find_translations(const String &p_locale, bool p_exact) const;
-	bool has_translation_for_locale(const String &p_locale, bool p_exact) const;
+	HashSet<Ref<Translation>> find_translations(const String& p_locale, bool p_exact) const;
+	bool has_translation_for_locale(const String& p_locale, bool p_exact) const;
 
-	StringName translate(const StringName &p_message, const StringName &p_context) const;
-	StringName translate_plural(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context) const;
+	StringName translate(const StringName& p_message, const StringName& p_context) const;
+	StringName translate_plural(const StringName& p_message, const StringName& p_message_plural,
+		int p_n, const StringName& p_context) const;
 
 	String get_locale_override() const;
-	void set_locale_override(const String &p_locale);
+	void set_locale_override(const String& p_locale);
 
 	bool is_enabled() const;
 	void set_enabled(bool p_enabled);
@@ -114,9 +119,11 @@ public:
 	float get_pseudolocalization_expansion_ratio() const;
 	void set_pseudolocalization_expansion_ratio(float p_ratio);
 	String get_pseudolocalization_prefix() const;
-	void set_pseudolocalization_prefix(const String &p_prefix);
+	void set_pseudolocalization_prefix(const String& p_prefix);
 	String get_pseudolocalization_suffix() const;
-	void set_pseudolocalization_suffix(const String &p_suffix);
+	void set_pseudolocalization_suffix(const String& p_suffix);
 
-	StringName pseudolocalize(const StringName &p_message) const;
+	StringName pseudolocalize(const StringName& p_message) const;
 };
+
+

@@ -32,8 +32,10 @@
 
 #include "core/string/translation.h"
 #include "core/string/translation_domain.h"
+#include "core/templates/mem_unique_ptr.h"
 
-class TranslationServer : public Object {
+class TranslationServer
+{
 	VLTRCLASS(TranslationServer, Object);
 
 	String locale = "en";
@@ -50,39 +52,41 @@ class TranslationServer : public Object {
 
 	mutable HashMap<String, int> locale_compare_cache;
 
-	static inline TranslationServer *singleton = nullptr;
+	static inline TranslationServer* singleton = nullptr;
 
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	String _standardize_locale_bind_compat_98972(const String &p_locale) const;
+	String _standardize_locale_bind_compat_98972(const String& p_locale) const;
 	static void _bind_compatibility_methods();
 #endif
 
-	struct LocaleScriptInfo {
+	struct LocaleScriptInfo
+	{
 		String name;
 		String script;
 		String default_country;
 		HashSet<String> supported_countries;
 	};
+
 	static inline Vector<LocaleScriptInfo> locale_script_info;
 
-	struct Locale {
+	struct Locale
+	{
 		String language;
 		String script;
 		String country;
 		String variant;
 
-		bool operator==(const Locale &p_locale) const {
-			return (p_locale.language == language) &&
-					(p_locale.script == script) &&
-					(p_locale.country == country) &&
-					(p_locale.variant == variant);
+		bool operator==(const Locale& p_locale) const
+		{
+			return (p_locale.language == language) && (p_locale.script == script) &&
+				   (p_locale.country == country) && (p_locale.variant == variant);
 		}
 
 		explicit operator String() const;
 
-		Locale(const TranslationServer &p_server, const String &p_locale, bool p_add_defaults);
+		Locale(const TranslationServer& p_server, const String& p_locale, bool p_add_defaults);
 	};
 
 	static inline HashMap<String, String> language_map;
@@ -98,73 +102,79 @@ class TranslationServer : public Object {
 	void init_locale_info();
 
 public:
-	_FORCE_INLINE_ static TranslationServer *get_singleton() { return singleton; }
+	mem_unique_ptr<Object> obj;
 
-	// Built-in domain accessors. For engine code only, user code should use `get_or_add_domain()` instead.
+	_FORCE_INLINE_ static TranslationServer* get_singleton() { return singleton; }
+
+	// Built-in domain accessors. For engine code only, user code should use `get_or_add_domain()`
+	// instead.
 	Ref<TranslationDomain> get_main_domain() const { return main_domain; }
 #ifdef TOOLS_ENABLED
 	Ref<TranslationDomain> get_editor_domain() const { return editor_domain; }
+
 	Ref<TranslationDomain> get_property_domain() const { return property_domain; }
+
 	Ref<TranslationDomain> get_doc_domain() const { return doc_domain; }
 #endif // TOOLS_ENABLED
 
-	void set_locale(const String &p_locale);
+	void set_locale(const String& p_locale);
 	String get_locale() const;
-	void set_fallback_allowed(const bool &p_allow);
+	void set_fallback_allowed(const bool& p_allow);
 	bool is_fallback_allowed() const;
-	void set_fallback_locale(const String &p_locale);
+	void set_fallback_locale(const String& p_locale);
 	String get_fallback_locale() const;
 
 #ifndef DISABLE_DEPRECATED
-	Ref<Translation> get_translation_object(const String &p_locale);
+	Ref<Translation> get_translation_object(const String& p_locale);
 #endif
 
-	bool has_translation(const Ref<Translation> &p_translation) const;
-	TypedArray<Translation> get_translations() const;
-	TypedArray<Translation> find_translations(const String &p_locale, bool p_exact) const;
-	bool has_translation_for_locale(const String &p_locale, bool p_exact) const;
+	bool has_translation(const Ref<Translation>& p_translation) const;
+	Array get_translations() const;
+	Array find_translations(const String& p_locale, bool p_exact) const;
+	bool has_translation_for_locale(const String& p_locale, bool p_exact) const;
 
 	Vector<String> get_all_languages() const;
-	String get_language_name(const String &p_language) const;
+	String get_language_name(const String& p_language) const;
 
 	Vector<String> get_all_scripts() const;
-	String get_script_name(const String &p_script) const;
+	String get_script_name(const String& p_script) const;
 
 	Vector<String> get_all_countries() const;
-	String get_country_name(const String &p_country) const;
+	String get_country_name(const String& p_country) const;
 
-	String get_locale_name(const String &p_locale) const;
-	String get_plural_rules(const String &p_locale) const;
+	String get_locale_name(const String& p_locale) const;
+	String get_plural_rules(const String& p_locale) const;
 
-	bool is_script_suppored_by_locale(const String &p_locale, const String &p_script) const;
+	bool is_script_suppored_by_locale(const String& p_locale, const String& p_script) const;
 
 	PackedStringArray get_loaded_locales() const;
 
-	void add_translation(const Ref<Translation> &p_translation);
-	void remove_translation(const Ref<Translation> &p_translation);
+	void add_translation(const Ref<Translation>& p_translation);
+	void remove_translation(const Ref<Translation>& p_translation);
 
-	StringName translate(const StringName &p_message, const StringName &p_context = "") const;
-	StringName translate_plural(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context = "") const;
+	StringName translate(const StringName& p_message, const StringName& p_context = "") const;
+	StringName translate_plural(const StringName& p_message, const StringName& p_message_plural,
+		int p_n, const StringName& p_context = "") const;
 
-	StringName pseudolocalize(const StringName &p_message) const;
+	StringName pseudolocalize(const StringName& p_message) const;
 
 	bool is_pseudolocalization_enabled() const;
 	void set_pseudolocalization_enabled(bool p_enabled);
 	void reload_pseudolocalization();
 
-	String format_number(const String &p_string, const String &p_locale) const;
-	String parse_number(const String &p_string, const String &p_locale) const;
-	String get_percent_sign(const String &p_locale) const;
+	String format_number(const String& p_string, const String& p_locale) const;
+	String parse_number(const String& p_string, const String& p_locale) const;
+	String get_percent_sign(const String& p_locale) const;
 
-	String standardize_locale(const String &p_locale, bool p_add_defaults = false) const;
+	String standardize_locale(const String& p_locale, bool p_add_defaults = false) const;
 
-	int compare_locales(const String &p_locale_a, const String &p_locale_b) const;
+	int compare_locales(const String& p_locale_a, const String& p_locale_b) const;
 
 	String get_tool_locale();
 
-	bool has_domain(const StringName &p_domain) const;
-	Ref<TranslationDomain> get_or_add_domain(const StringName &p_domain);
-	void remove_domain(const StringName &p_domain);
+	bool has_domain(const StringName& p_domain) const;
+	Ref<TranslationDomain> get_or_add_domain(const StringName& p_domain);
+	void remove_domain(const StringName& p_domain);
 
 	void setup();
 
@@ -173,8 +183,11 @@ public:
 	void load_project_translations(Ref<TranslationDomain> p_domain);
 
 #ifdef TOOLS_ENABLED
-	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
+	virtual void get_argument_options(
+		const StringName& p_function, int p_idx, List<String>* r_options) const;
 #endif // TOOLS_ENABLED
 
 	TranslationServer();
 };
+
+

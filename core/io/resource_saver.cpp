@@ -28,13 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_saver.h"
-
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/object/class_db.h"
 #include "core/object/script_language.h"
+#include "resource_saver.h"
 
 Ref<ResourceFormatSaver> ResourceSaver::saver[MAX_SAVERS];
 
@@ -43,34 +42,42 @@ bool ResourceSaver::timestamp_on_save = false;
 ResourceSavedCallback ResourceSaver::save_callback = nullptr;
 ResourceSaverGetResourceIDForPath ResourceSaver::save_get_id_for_path = nullptr;
 
-Error ResourceFormatSaver::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
+Error ResourceFormatSaver::save(
+	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
+{
 	Error err = ERR_METHOD_NOT_FOUND;
 	return err;
 }
 
-Error ResourceFormatSaver::set_uid(const String &p_path, ResourceUID::ID p_uid) {
+Error ResourceFormatSaver::set_uid(const String& p_path, ResourceUID::ID p_uid)
+{
 	Error err = ERR_FILE_UNRECOGNIZED;
 	return err;
 }
 
-bool ResourceFormatSaver::recognize(const Ref<Resource> &p_resource) const {
+bool ResourceFormatSaver::recognize(const Ref<Resource>& p_resource) const
+{
 	bool success = false;
 	return success;
 }
 
-void ResourceFormatSaver::get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) const {
+void ResourceFormatSaver::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
 	PackedStringArray exts;
-	const String *r = exts.ptr();
+	const String* r = exts.ptr();
 	for (int i = 0; i < exts.size(); ++i) {
 		p_extensions->push_back(r[i]);
 	}
 }
 
-bool ResourceFormatSaver::recognize_path(const Ref<Resource> &p_resource, const String &p_path) const {
+bool ResourceFormatSaver::recognize_path(
+	const Ref<Resource>& p_resource, const String& p_path) const
+{
 	String extension = p_path.get_extension();
 	List<String> extensions;
 	get_recognized_extensions(p_resource, &extensions);
-	for (const String &E : extensions) {
+	for (const String& E : extensions) {
 		if (E.nocasecmp_to(extension) == 0) {
 			return true;
 		}
@@ -78,50 +85,51 @@ bool ResourceFormatSaver::recognize_path(const Ref<Resource> &p_resource, const 
 	return false;
 }
 
-Error ResourceSaver::save(RequiredParam<Resource> rp_resource, const String &p_path, uint32_t p_flags) {
-	EXTRACT_PARAM_OR_FAIL_V_MSG(p_resource, rp_resource, ERR_INVALID_PARAMETER, vformat("Can't save empty resource to path '%s'.", p_path));
+Error ResourceSaver::save(Resource* rp_resource, const String& p_path, uint32_t p_flags)
+{
 	String path = p_path;
 	if (path.is_empty()) {
-		path = p_resource->get_path();
+		path = rp_resource->get_path();
 	}
-	ERR_FAIL_COND_V_MSG(path.is_empty(), ERR_INVALID_PARAMETER, "Can't save resource to empty path. Provide non-empty path or a Resource with non-empty resource_path.");
+	ERR_FAIL_COND_V_MSG(path.is_empty(), ERR_INVALID_PARAMETER,
+		"Can't save resource to empty path. Provide non-empty path or a Resource with non-empty "
+		"resource_path.");
 	Error err = ERR_FILE_UNRECOGNIZED;
 	for (int i = 0; i < saver_count; i++) {
-		if (!saver[i]->recognize(p_resource)) {
+		if (!saver[i]->recognize(rp_resource)) {
 			continue;
 		}
 
-		if (!saver[i]->recognize_path(p_resource, path)) {
+		if (!saver[i]->recognize_path(rp_resource, path)) {
 			continue;
 		}
 
-		String old_path = p_resource->get_path();
+		String old_path = rp_resource->get_path();
 
 		String local_path = ProjectSettings::get_singleton()->localize_path(path);
 
 		if (p_flags & FLAG_CHANGE_PATH) {
-			p_resource->set_path(local_path);
+			rp_resource->set_path(local_path);
 		}
 
-		err = saver[i]->save(p_resource, path, p_flags);
+		err = saver[i]->save(rp_resource, path, p_flags);
 
 		if (err == OK) {
 #ifdef TOOLS_ENABLED
-
-			((Resource *)p_resource.ptr())->set_edited(false);
+			(rp_resource)->obj->set_edited(false);
 			if (timestamp_on_save) {
 				uint64_t mt = FileAccess::get_modified_time(path);
 
-				((Resource *)p_resource.ptr())->set_last_modified_time(mt);
+				(rp_resource)->set_last_modified_time(mt);
 			}
 #endif
 
 			if (p_flags & FLAG_CHANGE_PATH) {
-				p_resource->set_path(old_path);
+				rp_resource->set_path(old_path);
 			}
 
 			if (save_callback && path.begins_with("res://")) {
-				save_callback(p_resource, path);
+				save_callback(rp_resource, path);
 			}
 
 			return OK;
@@ -131,10 +139,12 @@ Error ResourceSaver::save(RequiredParam<Resource> rp_resource, const String &p_p
 	return err;
 }
 
-Error ResourceSaver::set_uid(const String &p_path, ResourceUID::ID p_uid) {
+Error ResourceSaver::set_uid(const String& p_path, ResourceUID::ID p_uid)
+{
 	String path = p_path;
 
-	ERR_FAIL_COND_V_MSG(path.is_empty(), ERR_INVALID_PARAMETER, "Can't update UID to empty path. Provide non-empty path.");
+	ERR_FAIL_COND_V_MSG(path.is_empty(), ERR_INVALID_PARAMETER,
+		"Can't update UID to empty path. Provide non-empty path.");
 
 	Error err = ERR_FILE_UNRECOGNIZED;
 
@@ -148,19 +158,25 @@ Error ResourceSaver::set_uid(const String &p_path, ResourceUID::ID p_uid) {
 	return err;
 }
 
-void ResourceSaver::set_save_callback(ResourceSavedCallback p_callback) {
+void ResourceSaver::set_save_callback(ResourceSavedCallback p_callback)
+{
 	save_callback = p_callback;
 }
 
-void ResourceSaver::get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) {
+void ResourceSaver::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions)
+{
 	ERR_FAIL_COND_MSG(p_resource.is_null(), "It's not a reference to a valid Resource object.");
 	for (int i = 0; i < saver_count; i++) {
 		saver[i]->get_recognized_extensions(p_resource, p_extensions);
 	}
 }
 
-void ResourceSaver::add_resource_format_saver(Ref<ResourceFormatSaver> p_format_saver, bool p_at_front) {
-	ERR_FAIL_COND_MSG(p_format_saver.is_null(), "It's not a reference to a valid ResourceFormatSaver object.");
+void ResourceSaver::add_resource_format_saver(
+	Ref<ResourceFormatSaver> p_format_saver, bool p_at_front)
+{
+	ERR_FAIL_COND_MSG(
+		p_format_saver.is_null(), "It's not a reference to a valid ResourceFormatSaver object.");
 	ERR_FAIL_COND(saver_count >= MAX_SAVERS);
 
 	if (p_at_front) {
@@ -169,13 +185,16 @@ void ResourceSaver::add_resource_format_saver(Ref<ResourceFormatSaver> p_format_
 		}
 		saver[0] = p_format_saver;
 		saver_count++;
-	} else {
+	}
+	else {
 		saver[saver_count++] = p_format_saver;
 	}
 }
 
-void ResourceSaver::remove_resource_format_saver(Ref<ResourceFormatSaver> p_format_saver) {
-	ERR_FAIL_COND_MSG(p_format_saver.is_null(), "It's not a reference to a valid ResourceFormatSaver object.");
+void ResourceSaver::remove_resource_format_saver(Ref<ResourceFormatSaver> p_format_saver)
+{
+	ERR_FAIL_COND_MSG(
+		p_format_saver.is_null(), "It's not a reference to a valid ResourceFormatSaver object.");
 
 	// Find saver
 	int i = 0;
@@ -195,40 +214,35 @@ void ResourceSaver::remove_resource_format_saver(Ref<ResourceFormatSaver> p_form
 	--saver_count;
 }
 
-Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const String &p_path) {
+Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const String& p_path)
+{
 	for (int i = 0; i < saver_count; ++i) {
-		if (saver[i]->get_script_instance() && saver[i]->get_script_instance()->get_script()->get_path() == p_path) {
+		if (saver[i]->obj->get_script_instance() &&
+			saver[i]->obj->get_script_instance()->get_script()->get_path() == p_path) {
 			return saver[i];
 		}
 	}
 	return Ref<ResourceFormatSaver>();
 }
 
-bool ResourceSaver::add_custom_resource_format_saver(const String &p_script_path) {
+bool ResourceSaver::add_custom_resource_format_saver(const String& p_script_path)
+{
 	if (_find_custom_resource_format_saver(p_script_path).is_valid()) {
 		return false;
 	}
 
 	Ref<Resource> res = ResourceLoader::load(p_script_path);
 	ERR_FAIL_COND_V(res.is_null(), false);
-	ERR_FAIL_COND_V(!res->is_class("Script"), false);
+	ERR_FAIL_COND_V(!res->obj->is_class("Script"), false);
 
 	Ref<Script> s = res;
 	StringName ibt = s->get_instance_base_type();
-	bool valid_type = ClassDB::is_parent_class(ibt, "ResourceFormatSaver");
-	ERR_FAIL_COND_V_MSG(!valid_type, false, vformat("Failed to add a custom resource saver, script '%s' does not inherit 'ResourceFormatSaver'.", p_script_path));
-
-	Object *obj = ClassDB::instantiate(ibt);
-	ERR_FAIL_NULL_V_MSG(obj, false, vformat("Failed to add a custom resource saver, cannot instantiate '%s'.", ibt));
-
-	Ref<ResourceFormatSaver> crl = Object::cast_to<ResourceFormatSaver>(obj);
-	crl->set_script(s);
-	ResourceSaver::add_resource_format_saver(crl);
 
 	return true;
 }
 
-void ResourceSaver::add_custom_savers() {
+void ResourceSaver::add_custom_savers()
+{
 	// Custom resource savers exploits global class names
 
 	String custom_saver_base_class = ResourceFormatSaver::get_class_static();
@@ -236,7 +250,7 @@ void ResourceSaver::add_custom_savers() {
 	LocalVector<StringName> global_classes;
 	ScriptServer::get_global_class_list(global_classes);
 
-	for (const StringName &class_name : global_classes) {
+	for (const StringName& class_name : global_classes) {
 		StringName base_class = ScriptServer::get_global_class_native_base(class_name);
 
 		if (base_class == custom_saver_base_class) {
@@ -246,10 +260,11 @@ void ResourceSaver::add_custom_savers() {
 	}
 }
 
-void ResourceSaver::remove_custom_savers() {
+void ResourceSaver::remove_custom_savers()
+{
 	Vector<Ref<ResourceFormatSaver>> custom_savers;
 	for (int i = 0; i < saver_count; ++i) {
-		if (saver[i]->get_script_instance()) {
+		if (saver[i]->obj->get_script_instance()) {
 			custom_savers.push_back(saver[i]);
 		}
 	}
@@ -259,15 +274,18 @@ void ResourceSaver::remove_custom_savers() {
 	}
 }
 
-ResourceUID::ID ResourceSaver::get_resource_id_for_path(const String &p_path, bool p_generate) {
+ResourceUID::ID ResourceSaver::get_resource_id_for_path(const String& p_path, bool p_generate)
+{
 	if (save_get_id_for_path) {
 		return save_get_id_for_path(p_path, p_generate);
 	}
 	return ResourceUID::INVALID_ID;
 }
 
-void ResourceSaver::set_get_resource_id_for_path(ResourceSaverGetResourceIDForPath p_callback) {
+void ResourceSaver::set_get_resource_id_for_path(ResourceSaverGetResourceIDForPath p_callback)
+{
 	save_get_id_for_path = p_callback;
 }
 
 void ResourceFormatSaver::_bind_methods() {}
+

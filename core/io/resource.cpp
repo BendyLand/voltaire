@@ -39,13 +39,11 @@
 
 void Resource::register_custom_data_to_otdb()
 {
-	ClassDB::add_resource_base_extension("res", get_class_static());
 }
 
 void Resource::_add_resource_base_extension_to_classdb(
 	const String& p_extension, const String& p_class)
 {
-	ClassDB::add_resource_base_extension(p_extension, p_class);
 }
 
 void Resource::emit_changed()
@@ -59,7 +57,7 @@ void Resource::emit_changed()
 		return;
 	}
 
-	emit_signal(CoreStringName(changed));
+	this->obj->emit_signal(CoreStringName(changed));
 }
 
 void Resource::_block_emit_changed()
@@ -216,8 +214,8 @@ void Resource::connect_changed(const Callable& p_callable, uint32_t p_flags)
 		return;
 	}
 
-	if (!is_connected(CoreStringName(changed), p_callable) || p_flags & CONNECT_REFERENCE_COUNTED) {
-		connect(CoreStringName(changed), p_callable, p_flags);
+	if (!this->obj->is_connected(CoreStringName(changed), p_callable) || p_flags & Object::CONNECT_REFERENCE_COUNTED) {
+		this->obj->connect(CoreStringName(changed), p_callable, p_flags);
 	}
 }
 
@@ -228,15 +226,15 @@ void Resource::disconnect_changed(const Callable& p_callable)
 		return;
 	}
 
-	if (is_connected(CoreStringName(changed), p_callable)) {
-		disconnect(CoreStringName(changed), p_callable);
+	if (this->obj->is_connected(CoreStringName(changed), p_callable)) {
+		this->obj->disconnect(CoreStringName(changed), p_callable);
 	}
 }
 
 Error Resource::copy_from(const Ref<Resource>& p_resource)
 {
 	ERR_FAIL_COND_V(p_resource.is_null(), ERR_INVALID_PARAMETER);
-	if (get_class() != p_resource->get_class()) {
+	if (this->obj->get_class() != p_resource->obj->get_class()) {
 		return ERR_INVALID_PARAMETER;
 	}
 
@@ -245,7 +243,7 @@ Error Resource::copy_from(const Ref<Resource>& p_resource)
 	reset_state(); // May want to reset state.
 
 	List<PropertyInfo> pi;
-	p_resource->get_property_list(&pi);
+	p_resource->obj->get_property_list(&pi);
 
 	for (const PropertyInfo& E : pi) {
 		if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
@@ -255,7 +253,7 @@ Error Resource::copy_from(const Ref<Resource>& p_resource)
 			continue; // do not change path
 		}
 
-		set(E.name, p_resource->get(E.name));
+		this->obj->set(E.name, p_resource->obj->get(E.name));
 	}
 
 	_unblock_emit_changed();
@@ -271,7 +269,7 @@ void Resource::reload_from_file()
 	}
 
 	Ref<Resource> s = ResourceLoader::load(
-		ResourceLoader::path_remap(path), get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
+		ResourceLoader::path_remap(path), this->obj->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
 
 	if (s.is_null()) {
 		return;
@@ -402,10 +400,10 @@ Ref<Resource> Resource::_duplicate(const DuplicateParams& p_params) const
 	thread_duplicate_remap_cache_needs_deallocation = remap_cache_needs_deallocation_backup;
 
 	List<PropertyInfo> plist;
-	get_property_list(&plist);
+	this->obj->get_property_list(&plist);
 
 	BEFORE_USER_CODE
-	Ref<Resource> r = Object::cast_to<Resource>(ClassDB::instantiate(get_class()));
+	Ref<Resource> r = memnew(Resource);
 	AFTER_USER_CODE
 	ERR_FAIL_COND_V(r.is_null(), Ref<Resource>());
 
@@ -417,7 +415,7 @@ Ref<Resource> Resource::_duplicate(const DuplicateParams& p_params) const
 
 	// Duplicate script first, so the scripted properties are considered.
 	BEFORE_USER_CODE
-	r->set_script(get_script());
+	r->obj->set_script(this->obj->get_script());
 	AFTER_USER_CODE
 
 	for (const PropertyInfo& E : plist) {
@@ -429,13 +427,13 @@ Ref<Resource> Resource::_duplicate(const DuplicateParams& p_params) const
 		}
 
 		BEFORE_USER_CODE
-		Variant p = get(E.name);
+		Variant p = this->obj->get(E.name);
 		AFTER_USER_CODE
 
 		p = _duplicate_recursive(p, p_params, E.usage);
 
 		BEFORE_USER_CODE
-		r->set(E.name, p);
+		r->obj->set(E.name, p);
 		AFTER_USER_CODE
 	}
 
@@ -510,7 +508,7 @@ void Resource::_find_sub_resources(
 void Resource::configure_for_local_scene(Node* p_for_scene, DuplicateRemapCacheT& p_remap_cache)
 {
 	List<PropertyInfo> plist;
-	get_property_list(&plist);
+	this->obj->get_property_list(&plist);
 
 	reset_local_to_scene();
 	local_scene = p_for_scene;
@@ -519,7 +517,7 @@ void Resource::configure_for_local_scene(Node* p_for_scene, DuplicateRemapCacheT
 		if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
 			continue;
 		}
-		Variant p = get(E.name);
+		Variant p = this->obj->get(E.name);
 
 		HashSet<Ref<Resource>> sub_resources;
 		_find_sub_resources(p, sub_resources);
@@ -647,15 +645,15 @@ void Resource::_take_over_path(const String& p_path) { set_path(p_path, true); }
 
 uint32_t Resource::hash_edited_version_for_preview() const
 {
-	uint32_t hash = hash_murmur3_one_32(get_edited_version());
+	uint32_t hash = hash_murmur3_one_32(this->obj->get_edited_version());
 
 	List<PropertyInfo> plist;
-	get_property_list(&plist);
+	this->obj->get_property_list(&plist);
 
 	for (const PropertyInfo& E : plist) {
 		if (E.usage & PROPERTY_USAGE_STORAGE && E.type == Variant::OBJECT &&
 			E.hint == PROPERTY_HINT_RESOURCE_TYPE) {
-			Ref<Resource> res = get(E.name);
+			Ref<Resource> res = this->obj->get(E.name);
 			if (res.is_valid()) {
 				hash = hash_murmur3_one_32(res->hash_edited_version_for_preview(), hash);
 			}
@@ -684,7 +682,7 @@ Node* Resource::get_local_scene() const
 	return nullptr;
 }
 
-void Resource::setup_local_to_scene() { emit_signal(SNAME("setup_local_to_scene_requested")); }
+void Resource::setup_local_to_scene() { this->obj->emit_signal(SNAME("setup_local_to_scene_requested")); }
 
 void Resource::reset_local_to_scene()
 {
@@ -694,7 +692,7 @@ void Resource::reset_local_to_scene()
 String Resource::_to_string()
 {
 	return (name.is_empty() ? "" : String(name) + " ") + "(" + path_cache +
-		   "):" + Object::_to_string();
+		   "):" + this->obj->to_string();
 }
 
 Node* (*Resource::_get_local_scene_func)() = nullptr;
@@ -755,7 +753,7 @@ String Resource::get_id_for_path(const String& p_referrer_path) const
 
 void Resource::_bind_methods() {}
 
-Resource::Resource() : remapped_list(this) { _define_ancestry(AncestralClass::RESOURCE); }
+Resource::Resource() : remapped_list(this) { this->obj->_define_ancestry(Object::AncestralClass::RESOURCE); }
 
 Resource::~Resource()
 {
@@ -788,7 +786,7 @@ void ResourceCache::clear()
 		if (OS::get_singleton()->is_stdout_verbose()) {
 			ERR_PRINT(vformat("%d resources still in use at exit.", resources.size()));
 			for (const KeyValue<String, Resource*>& E : resources) {
-				print_line(vformat("Resource still in use: %s (%s)", E.key, E.value->get_class()));
+				print_line(vformat("Resource still in use: %s (%s)", E.key, E.value->obj->get_class()));
 			}
 		}
 		else {

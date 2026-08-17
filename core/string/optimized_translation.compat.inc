@@ -30,16 +30,16 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "optimized_translation.h"
 
-#include "core/object/class_db.h"
-
-void OptimizedTranslation::_generate_bind_compat_119563(const Ref<Translation> &p_from) {
+void OptimizedTranslation::_generate_bind_compat_119563(const Ref<Translation>& p_from)
+{
 	generate(p_from);
 }
 
-void OptimizedTranslation::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("generate", "from"), &OptimizedTranslation::_generate_bind_compat_119563);
-}
+void OptimizedTranslation::_bind_compatibility_methods() {}
 
 #endif
+
+

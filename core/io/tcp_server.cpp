@@ -28,20 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "tcp_server.h"
 
-#include "core/object/class_db.h"
+void TCPServer::_bind_methods() {}
 
-void TCPServer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("listen", "port", "bind_address"), &TCPServer::listen, DEFVAL("*"));
-	ClassDB::bind_method(D_METHOD("get_local_port"), &TCPServer::get_local_port);
-	ClassDB::bind_method(D_METHOD("take_connection"), &TCPServer::take_connection);
-}
-
-Error TCPServer::listen(uint16_t p_port, const IPAddress &p_bind_address) {
+Error TCPServer::listen(uint16_t p_port, const IPAddress& p_bind_address)
+{
 	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
 	ERR_FAIL_COND_V(_sock->is_open(), ERR_ALREADY_IN_USE);
-	ERR_FAIL_COND_V(!p_bind_address.is_valid() && !p_bind_address.is_wildcard(), ERR_INVALID_PARAMETER);
+	ERR_FAIL_COND_V(
+		!p_bind_address.is_valid() && !p_bind_address.is_wildcard(), ERR_INVALID_PARAMETER);
 
 	Error err;
 	IP::Type ip_type = IP::TYPE_ANY;
@@ -60,12 +57,13 @@ Error TCPServer::listen(uint16_t p_port, const IPAddress &p_bind_address) {
 	return _listen(NetSocket::Address(p_bind_address, p_port));
 }
 
-int TCPServer::get_local_port() const {
+int TCPServer::get_local_port() const
+{
 	NetSocket::Address addr;
 	_sock->get_socket_address(&addr);
 	return addr.port();
 }
 
-Ref<StreamPeerTCP> TCPServer::take_connection() {
-	return _take_connection<StreamPeerTCP>();
-}
+Ref<StreamPeerTCP> TCPServer::take_connection() { return _take_connection<StreamPeerTCP>(); }
+
+

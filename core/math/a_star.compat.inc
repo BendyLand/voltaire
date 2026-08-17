@@ -31,33 +31,31 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "a_star.h"
-
 #include "core/object/class_db.h"
 
-Vector<int64_t> AStar3D::_get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id) {
+Vector<int64_t> AStar3D::_get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id)
+{
 	return get_id_path(p_from_id, p_to_id, false);
 }
 
-Vector<Vector3> AStar3D::_get_point_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id) {
+Vector<Vector3> AStar3D::_get_point_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id)
+{
 	return get_point_path(p_from_id, p_to_id, false);
 }
 
-void AStar3D::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("get_id_path", "from_id", "to_id"), &AStar3D::_get_id_path_bind_compat_88047);
-	ClassDB::bind_compatibility_method(D_METHOD("get_point_path", "from_id", "to_id"), &AStar3D::_get_point_path_bind_compat_88047);
-}
+void AStar3D::_bind_compatibility_methods() {}
 
-Vector<int64_t> AStar2D::_get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id) {
+Vector<int64_t> AStar2D::_get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id)
+{
 	return get_id_path(p_from_id, p_to_id, false);
 }
 
-Vector<Vector2> AStar2D::_get_point_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id) {
+Vector<Vector2> AStar2D::_get_point_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id)
+{
 	return get_point_path(p_from_id, p_to_id, false);
 }
 
-void AStar2D::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("get_id_path", "from_id", "to_id"), &AStar2D::_get_id_path_bind_compat_88047);
-	ClassDB::bind_compatibility_method(D_METHOD("get_point_path", "from_id", "to_id"), &AStar2D::_get_point_path_bind_compat_88047);
-}
+void AStar2D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+

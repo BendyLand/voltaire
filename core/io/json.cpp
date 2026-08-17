@@ -684,30 +684,7 @@ Variant JSON::parse_string(const String& p_json_string)
 	return json->get_data();
 }
 
-void JSON::_bind_methods()
-{
-	ClassDB::bind_static_method("JSON",
-		D_METHOD("stringify", "data", "indent", "sort_keys", "full_precision"), &JSON::stringify,
-		DEFVAL(""), DEFVAL(true), DEFVAL(false));
-	ClassDB::bind_static_method(
-		"JSON", D_METHOD("parse_string", "json_string"), &JSON::parse_string);
-	ClassDB::bind_method(D_METHOD("parse", "json_text", "keep_text"), &JSON::parse, DEFVAL(false));
-
-	ClassDB::bind_method(D_METHOD("get_data"), &JSON::get_data);
-	ClassDB::bind_method(D_METHOD("set_data", "data"), &JSON::set_data);
-	ClassDB::bind_method(D_METHOD("get_parsed_text"), &JSON::get_parsed_text);
-	ClassDB::bind_method(D_METHOD("get_error_line"), &JSON::get_error_line);
-	ClassDB::bind_method(D_METHOD("get_error_message"), &JSON::get_error_message);
-
-	ClassDB::bind_static_method("JSON", D_METHOD("from_native", "variant", "full_objects"),
-		&JSON::from_native, DEFVAL(false));
-	ClassDB::bind_static_method(
-		"JSON", D_METHOD("to_native", "json", "allow_objects"), &JSON::to_native, DEFVAL(false));
-
-	ADD_PROPERTY(PropertyInfo(Variant::NIL, "data", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_NIL_IS_VARIANT),
-		"set_data", "get_data"); // Ensures that it can be serialized as binary.
-}
+void JSON::_bind_methods() {}
 
 #define TYPE "type"
 #define ELEM_TYPE "elem_type"
@@ -882,8 +859,6 @@ Variant JSON::_from_native(const Variant& p_variant, bool p_full_objects, int p_
 		if (obj == nullptr) {
 			return Variant();
 		}
-
-		ERR_FAIL_COND_V(!ClassDB::can_instantiate(obj->get_class()), Variant());
 
 		List<PropertyInfo> prop_list;
 		obj->get_property_list(&prop_list);
@@ -1110,14 +1085,6 @@ static bool _decode_container_type(
 	const Variant::Type builtin_type = Variant::get_type_by_name(type_name);
 	if (builtin_type < Variant::VARIANT_MAX && builtin_type != Variant::OBJECT) {
 		r_type.builtin_type = builtin_type;
-		return true;
-	}
-
-	if (ClassDB::class_exists(type_name)) {
-		ERR_FAIL_COND_V(!p_allow_objects, false);
-
-		r_type.builtin_type = Variant::OBJECT;
-		r_type.class_name = type_name;
 		return true;
 	}
 
@@ -1568,57 +1535,6 @@ Variant JSON::_to_native(const Variant& p_json, bool p_allow_objects, int p_dept
 #undef LOAD_ARGS
 #undef LOAD_ARGS_CHECK_SIZE
 #undef LOAD_ARGS_CHECK_FACTOR
-
-		if (ClassDB::class_exists(dict[TYPE])) {
-			ERR_FAIL_COND_V(!p_allow_objects, Variant());
-
-			ERR_FAIL_COND_V_MSG(
-				p_depth > Variant::MAX_RECURSION_DEPTH, Variant(), "Variant is too deep. Bailing.");
-
-			ERR_FAIL_COND_V(!dict.has(PROPS), Variant());
-			const Array props = dict[PROPS];
-			ERR_FAIL_COND_V(props.size() % 2 != 0, Variant());
-
-			ERR_FAIL_COND_V(!ClassDB::can_instantiate(dict[TYPE]), Variant());
-
-			Object* obj = ClassDB::instantiate(dict[TYPE]);
-			ERR_FAIL_NULL_V(obj, Variant());
-
-			// Avoid premature free `RefCounted`. This must be done before properties are
-			// initialized, since script functions (setters, implicit initializer) may be called.
-			// See GH-68666.
-			Variant variant;
-			if (Object::cast_to<RefCounted>(obj)) {
-				const Ref<RefCounted> ref = Ref<RefCounted>(Object::cast_to<RefCounted>(obj));
-				variant = ref;
-			}
-			else {
-				variant = obj;
-			}
-
-			for (int i = 0; i < props.size() / 2; i++) {
-				const StringName name = props[i * 2 + 0];
-				const Variant value = _to_native(props[i * 2 + 1], p_allow_objects, p_depth + 1);
-
-				if (name == CoreStringName(script) && value.get_type() != Variant::NIL) {
-					const String path = value;
-					ERR_FAIL_COND_V_MSG(path.is_empty() || !path.begins_with("res://") ||
-											!ResourceLoader::exists(path, "Script"),
-						Variant(), vformat(R"(Invalid script path "%s".)", path));
-
-					const Ref<Script> script = ResourceLoader::load(path, "Script");
-					ERR_FAIL_COND_V_MSG(script.is_null(), Variant(),
-						vformat(R"(Can't load script at path "%s".)", path));
-
-					obj->set_script(script);
-				}
-				else {
-					obj->set(name, value);
-				}
-			}
-
-			return variant;
-		}
 
 		ERR_FAIL_V_MSG(Variant(), vformat(R"(Invalid type "%s".)", dict[TYPE]));
 	} break;

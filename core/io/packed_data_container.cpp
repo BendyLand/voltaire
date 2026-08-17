@@ -40,7 +40,7 @@ Variant PackedDataContainer::getvar(const Variant& p_key, bool* r_valid) const
 		*r_valid = !err;
 	}
 	if (err) {
-		return Object::getvar(p_key, r_valid);
+		return this->obj->getvar(p_key, r_valid);
 	}
 	return ret;
 }
@@ -283,8 +283,7 @@ uint32_t PackedDataContainer::_pack(
 		uint32_t pos = r_tmpdata.size();
 		int len = d.size();
 		r_tmpdata.resize(r_tmpdata.size() + len * 12 + 8);
-		encode_uint32(TYPE_DICT, &r_tmpdata
-.write[pos + 0]);
+		encode_uint32(TYPE_DICT, &r_tmpdata.write[pos + 0]);
 		encode_uint32(len, &r_tmpdata.write[pos + 4]);
 
 		List<DictKey> sortk;

@@ -28,74 +28,72 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "ref_counted.h"
-
 #include "core/object/class_db.h"
 #include "core/object/script_instance.h"
+#include "ref_counted.h"
 
-bool RefCounted::init_ref() {
+bool RefCounted::init_ref()
+{
 	if (reference()) {
 		if (!is_referenced() && refcount_init.unref()) {
 			unreference(); // first referencing is already 1, so compensate for the ref above
 		}
 
 		return true;
-	} else {
+	}
+	else {
 		return false;
 	}
 }
 
-void RefCounted::deinit_ref() {
+void RefCounted::deinit_ref()
+{
 	// Somewhat unsafe since we're doing tests in sync, but it's probably fine
 	// since this function is called from the creation thread, so nobody else should have access.
 
 	// If this succeeds, refcount_init is 2 (or more).
-	// This would be unexpected, since callers should already have consumed it, or never established it.
-	// It's a little unsafe to bring it above 1, since it means init_ref must be called more than once,
-	// but the alternative would be decrementing refcount instead, which is also unsafe since the object
-	// might unexpectedly destruct early. Better to risk zombying than to risk a crash.
+	// This would be unexpected, since callers should already have consumed it, or never established
+	// it. It's a little unsafe to bring it above 1, since it means init_ref must be called more
+	// than once, but the alternative would be decrementing refcount instead, which is also unsafe
+	// since the object might unexpectedly destruct early. Better to risk zombying than to risk a
+	// crash.
 	if (!refcount_init.ref()) {
 		// refcount_init already dead, must re-establish (expected).
 		refcount_init.init(1);
 	}
 }
 
-void RefCounted::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("init_ref"), &RefCounted::init_ref);
-	ClassDB::bind_method(D_METHOD("reference"), &RefCounted::reference);
-	ClassDB::bind_method(D_METHOD("unreference"), &RefCounted::unreference);
-	ClassDB::bind_method(D_METHOD("get_reference_count"), &RefCounted::get_reference_count);
-}
+void RefCounted::_bind_methods() {}
 
-int RefCounted::get_reference_count() const {
-	return refcount.get();
-}
+int RefCounted::get_reference_count() const { return refcount.get(); }
 
-bool RefCounted::reference() {
+bool RefCounted::reference()
+{
 	uint32_t rc_val = refcount.refval();
 	bool success = rc_val != 0;
 
 	if (success && rc_val <= 2 /* higher is not relevant */) {
-		if (get_script_instance()) {
-			get_script_instance()->refcount_incremented();
+		if (this->obj->get_script_instance()) {
+			this->obj->get_script_instance()->refcount_incremented();
 		}
-		_instance_binding_reference(true);
+		this->obj->_instance_binding_reference(true);
 	}
 
 	return success;
 }
 
-bool RefCounted::unreference() {
+bool RefCounted::unreference()
+{
 	dereference_count.increment();
 	uint32_t rc_val = refcount.unrefval();
 	bool die = rc_val == 0;
 
 	if (rc_val <= 1 /* higher is not relevant */) {
-		if (get_script_instance()) {
-			bool script_ret = get_script_instance()->refcount_decremented();
+		if (this->obj->get_script_instance()) {
+			bool script_ret = this->obj->get_script_instance()->refcount_decremented();
 			die = die && script_ret;
 		}
-		bool binding_ret = _instance_binding_reference(false);
+		bool binding_ret = this->obj->_instance_binding_reference(false);
 		die = die && binding_ret;
 	}
 
@@ -118,24 +116,25 @@ bool RefCounted::unreference() {
 	return die;
 }
 
-RefCounted::RefCounted() :
-		Object(true) {
-	_define_ancestry(AncestralClass::REF_COUNTED);
+RefCounted::RefCounted()
+{
+	this->obj->_define_ancestry(Object::AncestralClass::REF_COUNTED);
 	refcount.init();
 	refcount_init.init();
 	dereference_count.set(0);
 }
 
-Variant WeakRef::get_ref() const {
+Variant WeakRef::get_ref() const
+{
 	if (ref.is_null()) {
 		return Variant();
 	}
 
-	Object *obj = ObjectDB::get_instance(ref);
+	Object* obj = ObjectDB::get_instance(ref);
 	if (!obj) {
 		return Variant();
 	}
-	RefCounted *r = cast_to<RefCounted>(obj);
+	RefCounted* r = Object::cast_to<RefCounted>(obj);
 	if (r) {
 		return Ref<RefCounted>(r);
 	}
@@ -143,14 +142,16 @@ Variant WeakRef::get_ref() const {
 	return obj;
 }
 
-void WeakRef::set_obj(Object *p_object) {
+void WeakRef::set_obj(Object* p_object)
+{
 	ref = p_object ? p_object->get_instance_id() : ObjectID();
 }
 
-void WeakRef::set_ref(const Ref<RefCounted> &p_ref) {
-	ref = p_ref.is_valid() ? p_ref->get_instance_id() : ObjectID();
+void WeakRef::set_ref(const Ref<RefCounted>& p_ref)
+{
+	ref = p_ref.is_valid() ? p_ref->obj->get_instance_id() : ObjectID();
 }
 
-void WeakRef::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_ref"), &WeakRef::get_ref);
-}
+void WeakRef::_bind_methods() {}
+
+

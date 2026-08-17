@@ -101,7 +101,6 @@ static CoreBind::ResourceLoader* _resource_loader = nullptr;
 static CoreBind::ResourceSaver* _resource_saver = nullptr;
 static CoreBind::OS* _os = nullptr;
 static CoreBind::Engine* _engine = nullptr;
-static CoreBind::Special::ClassDB* _classdb = nullptr;
 static CoreBind::Marshalls* _marshalls = nullptr;
 static CoreBind::EngineDebugger* _engine_debugger = nullptr;
 
@@ -141,10 +140,8 @@ void register_core_types()
 
 	Variant::register_types();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Translation)) {
-		resource_format_po.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_format_po);
-	}
+	resource_format_po.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_format_po);
 
 	resource_saver_binary.instantiate();
 	ResourceSaver::add_resource_format_saver(resource_saver_binary);
@@ -157,26 +154,20 @@ void register_core_types()
 	resource_format_importer_saver.instantiate();
 	ResourceSaver::add_resource_format_saver(resource_format_importer_saver);
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Image)) {
-		resource_format_image.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_format_image);
-	}
+	resource_format_image.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_format_image);
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Crypto)) {
-		resource_format_saver_crypto.instantiate();
-		ResourceSaver::add_resource_format_saver(resource_format_saver_crypto);
+	resource_format_saver_crypto.instantiate();
+	ResourceSaver::add_resource_format_saver(resource_format_saver_crypto);
 
-		resource_format_loader_crypto.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_format_loader_crypto);
-	}
+	resource_format_loader_crypto.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_format_loader_crypto);
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(JSON)) {
-		resource_saver_json.instantiate();
-		ResourceSaver::add_resource_format_saver(resource_saver_json);
+	resource_saver_json.instantiate();
+	ResourceSaver::add_resource_format_saver(resource_saver_json);
 
-		resource_loader_json.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_loader_json);
-	}
+	resource_loader_json.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_json);
 
 #ifndef DISABLE_DEPRECATED
 #endif
@@ -192,7 +183,6 @@ void register_core_types()
 	_resource_saver = memnew(CoreBind::ResourceSaver);
 	_os = memnew(CoreBind::OS);
 	_engine = memnew(CoreBind::Engine);
-	_classdb = memnew(CoreBind::Special::ClassDB);
 	_marshalls = memnew(CoreBind::Marshalls);
 	_engine_debugger = memnew(CoreBind::EngineDebugger);
 
@@ -229,7 +219,6 @@ void register_early_core_singletons()
 		Engine::Singleton("ProjectSettings", ProjectSettings::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("OS", CoreBind::OS::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Time", Time::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("ClassDB", _classdb));
 }
 
 void register_core_singletons()
@@ -248,10 +237,11 @@ void register_core_singletons()
 	Engine::get_singleton()->add_singleton(
 		Engine::Singleton("Marshalls", CoreBind::Marshalls::get_singleton()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("TranslationServer", TranslationServer::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("Input", Input::get_singleton()));
+		Engine::Singleton("TranslationServer", TranslationServer::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("InputMap", InputMap::get_singleton()));
+		Engine::Singleton("Input", Input::get_singleton()->obj.get()));
+	Engine::get_singleton()->add_singleton(
+		Engine::Singleton("InputMap", InputMap::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
 		Engine::Singleton("EngineDebugger", CoreBind::EngineDebugger::get_singleton()));
 	Engine::get_singleton()->add_singleton(
@@ -288,7 +278,6 @@ void unregister_core_types()
 
 	memdelete(_engine_debugger);
 	memdelete(_marshalls);
-	memdelete(_classdb);
 	memdelete(_engine);
 	memdelete(_os);
 	memdelete(_resource_saver);
@@ -301,10 +290,8 @@ void unregister_core_types()
 
 	memdelete(ip);
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Image)) {
-		ResourceLoader::remove_resource_format_loader(resource_format_image);
-		resource_format_image.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_format_image);
+	resource_format_image.unref();
 
 	ResourceSaver::remove_resource_format_saver(resource_saver_binary);
 	resource_saver_binary.unref();
@@ -318,26 +305,20 @@ void unregister_core_types()
 	ResourceSaver::remove_resource_format_saver(resource_format_importer_saver);
 	resource_format_importer_saver.unref();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Translation)) {
-		ResourceLoader::remove_resource_format_loader(resource_format_po);
-		resource_format_po.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_format_po);
+	resource_format_po.unref();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Crypto)) {
-		ResourceSaver::remove_resource_format_saver(resource_format_saver_crypto);
-		resource_format_saver_crypto.unref();
+	ResourceSaver::remove_resource_format_saver(resource_format_saver_crypto);
+	resource_format_saver_crypto.unref();
 
-		ResourceLoader::remove_resource_format_loader(resource_format_loader_crypto);
-		resource_format_loader_crypto.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_format_loader_crypto);
+	resource_format_loader_crypto.unref();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(JSON)) {
-		ResourceSaver::remove_resource_format_saver(resource_saver_json);
-		resource_saver_json.unref();
+	ResourceSaver::remove_resource_format_saver(resource_saver_json);
+	resource_saver_json.unref();
 
-		ResourceLoader::remove_resource_format_loader(resource_loader_json);
-		resource_loader_json.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_loader_json);
+	resource_loader_json.unref();
 
 	ResourceLoader::finalize();
 

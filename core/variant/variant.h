@@ -180,7 +180,7 @@ private:
 		template <typename T> _ALWAYS_INLINE_ void ref(const Ref<T>& p_from)
 		{
 			if (p_from.is_valid()) {
-				ref(ObjData{p_from->get_instance_id(), p_from.ptr()});
+				ref(ObjData{p_from->obj->get_instance_id(), p_from->obj.get()});
 			}
 			else {
 				unref();
