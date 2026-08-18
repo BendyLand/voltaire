@@ -28,54 +28,47 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_importer_shader_file.h"
-
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
 #include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/shader/shader_file_editor_plugin.h"
+#include "resource_importer_shader_file.h"
 #include "servers/rendering/rendering_device_binds.h"
 
-String ResourceImporterShaderFile::get_importer_name() const {
-	return "glsl";
-}
+String ResourceImporterShaderFile::get_importer_name() const { return "glsl"; }
 
-String ResourceImporterShaderFile::get_visible_name() const {
-	return "GLSL Shader File";
-}
+String ResourceImporterShaderFile::get_visible_name() const { return "GLSL Shader File"; }
 
-void ResourceImporterShaderFile::get_recognized_extensions(List<String> *p_extensions) const {
+void ResourceImporterShaderFile::get_recognized_extensions(List<String>* p_extensions) const
+{
 	p_extensions->push_back("glsl");
 }
 
-String ResourceImporterShaderFile::get_save_extension() const {
-	return "res";
+String ResourceImporterShaderFile::get_save_extension() const { return "res"; }
+
+String ResourceImporterShaderFile::get_resource_type() const { return "RDShaderFile"; }
+
+int ResourceImporterShaderFile::get_preset_count() const { return 0; }
+
+String ResourceImporterShaderFile::get_preset_name(int p_idx) const { return String(); }
+
+void ResourceImporterShaderFile::get_import_options(
+	const String& p_path, List<ImportOption>* r_options, int p_preset) const
+{
 }
 
-String ResourceImporterShaderFile::get_resource_type() const {
-	return "RDShaderFile";
-}
-
-int ResourceImporterShaderFile::get_preset_count() const {
-	return 0;
-}
-
-String ResourceImporterShaderFile::get_preset_name(int p_idx) const {
-	return String();
-}
-
-void ResourceImporterShaderFile::get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset) const {
-}
-
-bool ResourceImporterShaderFile::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+bool ResourceImporterShaderFile::get_option_visibility(const String& p_path, const String& p_option,
+	const HashMap<StringName, Variant>& p_options) const
+{
 	return true;
 }
 
-static String _include_function(const String &p_path, void *userpointer) {
+static String _include_function(const String& p_path, void* userpointer)
+{
 	Error err;
 
-	String *base_path = (String *)userpointer;
+	String* base_path = (String*)userpointer;
 
 	String include = p_path;
 	if (include.is_relative_path()) {
@@ -89,7 +82,10 @@ static String _include_function(const String &p_path, void *userpointer) {
 	return file_inc->get_as_utf8_string();
 }
 
-Error ResourceImporterShaderFile::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+Error ResourceImporterShaderFile::import(ResourceUID::ID p_source_id, const String& p_source_file,
+	const String& p_save_path, const HashMap<StringName, Variant>& p_options,
+	List<String>* r_platform_variants, List<String>* r_gen_files, Variant* r_metadata)
+{
 	Error err;
 	Ref<FileAccess> file = FileAccess::open(p_source_file, FileAccess::READ, &err);
 	ERR_FAIL_COND_V(err != OK, ERR_CANT_OPEN);
@@ -103,11 +99,16 @@ Error ResourceImporterShaderFile::import(ResourceUID::ID p_source_id, const Stri
 
 	if (err != OK) {
 		if (!ShaderFileEditor::singleton->is_visible_in_tree()) {
-			callable_mp_static(&EditorNode::add_io_error).call_deferred(vformat(TTR("Error importing GLSL shader file: '%s'. Open the file in the filesystem dock in order to see the reason."), p_source_file));
+			callable_mp_static(&EditorNode::add_io_error)
+				.call_deferred(vformat(TTR("Error importing GLSL shader file: '%s'. Open the file "
+										   "in the filesystem dock in order to see the reason."),
+					p_source_file));
 		}
 	}
 
-	ResourceSaver::save(shader_file, p_save_path + ".res");
+	ResourceSaver::save(shader_file.ptr(), p_save_path + ".res");
 
 	return OK;
 }
+
+

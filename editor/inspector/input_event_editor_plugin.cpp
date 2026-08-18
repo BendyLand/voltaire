@@ -57,23 +57,23 @@ void InputEventConfigContainer::_config_dialog_confirmed()
 	bool pending = false;
 	Ref<InputEventWithModifiers> iewm = input_event;
 	if (iewm.is_valid()) {
-		Variant new_value = ie->get("command_or_control_autoremap");
-		will_toggle = new_value != input_event->get("command_or_control_autoremap");
+		Variant new_value = ie->obj->get("command_or_control_autoremap");
+		will_toggle = new_value != input_event->obj->get("command_or_control_autoremap");
 		if (will_toggle) {
 			pending = new_value;
 			if (pending) {
 				undo_redo->add_undo_property(
-					input_event.ptr(), "command_or_control_autoremap", !pending);
+					input_event->obj.get(), "command_or_control_autoremap", !pending);
 			}
 			else {
 				undo_redo->add_do_property(
-					input_event.ptr(), "command_or_control_autoremap", pending);
+					input_event->obj.get(), "command_or_control_autoremap", pending);
 			}
 		}
 	}
 
 	List<PropertyInfo> pi;
-	ie->get_property_list(&pi);
+	ie->obj->get_property_list(&pi);
 	for (const PropertyInfo& E : pi) {
 		if (E.name == "resource_path") {
 			continue; // Do not change path.
@@ -81,22 +81,22 @@ void InputEventConfigContainer::_config_dialog_confirmed()
 		if (E.name == "command_or_control_autoremap") {
 			continue; // Handle it separately.
 		}
-		Variant old_value = input_event->get(E.name);
-		Variant new_value = ie->get(E.name);
+		Variant old_value = input_event->obj->get(E.name);
+		Variant new_value = ie->obj->get(E.name);
 		if (old_value == new_value) {
 			continue;
 		}
-		undo_redo->add_do_property(input_event.ptr(), E.name, new_value);
-		undo_redo->add_undo_property(input_event.ptr(), E.name, old_value);
+		undo_redo->add_do_property(input_event->obj.get(), E.name, new_value);
+		undo_redo->add_undo_property(input_event->obj.get(), E.name, old_value);
 	}
 
 	if (will_toggle) {
 		if (pending) {
-			undo_redo->add_do_property(input_event.ptr(), "command_or_control_autoremap", pending);
+			undo_redo->add_do_property(input_event->obj.get(), "command_or_control_autoremap", pending);
 		}
 		else {
 			undo_redo->add_undo_property(
-				input_event.ptr(), "command_or_control_autoremap", !pending);
+				input_event->obj.get(), "command_or_control_autoremap", !pending);
 		}
 	}
 

@@ -82,7 +82,7 @@ void ColorChannelSelector::_notification(int p_what)
 		bg_style->set_content_margin(SIDE_RIGHT, 1.0f * EDSCALE);
 		bg_style->set_content_margin(SIDE_TOP, 1.0f * EDSCALE);
 		bg_style->set_content_margin(SIDE_BOTTOM, 1.0f * EDSCALE);
-		panel->add_theme_style_override(SceneStringName(panel), bg_style);
+		panel->add_theme_style_override(SceneStringName(panel), bg_style.ptr());
 
 		Ref<Texture2D> icon = get_editor_theme_icon(SNAME("TexturePreviewChannels"));
 		toggle_button->set_button_icon(icon);
@@ -140,7 +140,7 @@ void ColorChannelSelector::create_button(
 	button->set_pressed(true);
 
 	// Don't show focus, it stands out too much and remains visible which can be confusing.
-	button->add_theme_style_override("focus", memnew(StyleBoxEmpty));
+	button->add_theme_style_override("focus", memnew(StyleBoxEmpty).ptr());
 
 	// Make it look similar to toolbar buttons.
 	button->set_theme_type_variation(SceneStringName(FlatButton));
@@ -153,6 +153,6 @@ void ColorChannelSelector::create_button(
 
 void ColorChannelSelector::on_toggled(bool p_pressed) { panel->set_visible(p_pressed); }
 
-void ColorChannelSelector::_bind_methods() { ADD_SIGNAL(MethodInfo("selected_channels_changed")); }
+void ColorChannelSelector::_bind_methods() {}
 
 

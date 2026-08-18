@@ -363,7 +363,8 @@ void ViewportRotationControl::_draw_axis(const Axis2D& p_axis)
 			get_theme_font_size(SNAME("rotation_control_size"), EditorStringName(EditorFonts));
 		const Size2 char_size = font->get_char_size(axis_name[0], font_size);
 		const Vector2 char_offset = Vector2(-char_size.width / 2.0, char_size.height * 0.25);
-		draw_char(font, p_axis.screen_point + char_offset, axis_name, font_size, c_positive_axis);
+		draw_char(
+			font.ptr(), p_axis.screen_point + char_offset, axis_name, font_size, c_positive_axis);
 	}
 	else {
 		// Draw an outline around the negative axes.
@@ -383,8 +384,8 @@ void ViewportRotationControl::_draw_axis(const Axis2D& p_axis)
 		const float font_descent = font->get_descent(font_size);
 		const float string_height = font_ascent + font_descent;
 		const Vector2 offset(-string_size.width / 2.0, string_height * 0.25);
-		draw_string(font, p_axis.screen_point + offset, axis_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0f,
-			font_size, c_negative_axis);
+		draw_string(font.ptr(), p_axis.screen_point + offset, axis_name, HORIZONTAL_ALIGNMENT_LEFT,
+			-1.0f, font_size, c_negative_axis);
 	}
 }
 
@@ -2196,9 +2197,9 @@ static bool _redirect_freelook_input(
 
 	Control* target_surface = freelook_vp->get_surface();
 
-	target_surface->obj->emit_signal(SceneStringName(gui_input), p_event);
+	target_surface->obj->emit_signal(SceneStringName(gui_input), p_event)
+;
 	return true;
-
 }
 
 // This is only active during instant transforms,
@@ -3569,18 +3570,18 @@ static void override_label_colors(Control* p_control)
 static void override_button_stylebox(Button* p_button, const Ref<StyleBox> p_stylebox)
 {
 	p_button->begin_bulk_theme_override();
-	p_button->add_theme_style_override(CoreStringName(normal), p_stylebox);
-	p_button->add_theme_style_override("normal_mirrored", p_stylebox);
-	p_button->add_theme_style_override(SceneStringName(hover), p_stylebox);
-	p_button->add_theme_style_override("hover_mirrored", p_stylebox);
-	p_button->add_theme_style_override("hover_pressed", p_stylebox);
-	p_button->add_theme_style_override("hover_pressed_mirrored", p_stylebox);
-	p_button->add_theme_style_override(SceneStringName(pressed), p_stylebox);
-	p_button->add_theme_style_override("pressed_mirrored", p_stylebox);
-	p_button->add_theme_style_override("focus", p_stylebox);
-	p_button->add_theme_style_override("focus_mirrored", p_stylebox);
-	p_button->add_theme_style_override("disabled", p_stylebox);
-	p_button->add_theme_style_override("disabled_mirrored", p_stylebox);
+	p_button->add_theme_style_override(CoreStringName(normal), p_stylebox.ptr());
+	p_button->add_theme_style_override("normal_mirrored", p_stylebox.ptr());
+	p_button->add_theme_style_override(SceneStringName(hover), p_stylebox.ptr());
+	p_button->add_theme_style_override("hover_mirrored", p_stylebox.ptr());
+	p_button->add_theme_style_override("hover_pressed", p_stylebox.ptr());
+	p_button->add_theme_style_override("hover_pressed_mirrored", p_stylebox.ptr());
+	p_button->add_theme_style_override(SceneStringName(pressed), p_stylebox.ptr());
+	p_button->add_theme_style_override("pressed_mirrored", p_stylebox.ptr());
+	p_button->add_theme_style_override("focus", p_stylebox.ptr());
+	p_button->add_theme_style_override("focus_mirrored", p_stylebox.ptr());
+	p_button->add_theme_style_override("disabled", p_stylebox.ptr());
+	p_button->add_theme_style_override("disabled_mirrored", p_stylebox.ptr());
 	p_button->end_bulk_theme_override();
 }
 
@@ -4146,7 +4147,8 @@ void Node3DEditorViewport::_notification(int p_what)
 				last_message = message;
 			}
 
-			message_time -= get_process_delta_time();
+
+	message_time -= get_process_delta_time();
 			if (message_time < 0) {
 				surface->queue_redraw();
 			}
@@ -4401,11 +4403,13 @@ void Node3DEditorViewport::_notification(int p_what)
 		override_button_stylebox(pilot_camera, information_3d_stylebox);
 		override_label_colors(pilot_camera);
 
-		info_panel->add_theme_style_override(SceneStringName(panel), information_3d_stylebox);
+		info_panel->add_theme_style_override(SceneStringName(panel), information_3d_stylebox.ptr());
 		override_label_colors(info_label);
-		tooltip_panel->add_theme_style_override(CoreStringName(normal), information_3d_stylebox);
+		tooltip_panel->add_theme_style_override(
+			CoreStringName(normal), information_3d_stylebox.ptr());
 
-		frame_time_panel->add_theme_style_override(SceneStringName(panel), information_3d_stylebox);
+		frame_time_panel->add_theme_style_override(
+			SceneStringName(panel), information_3d_stylebox.ptr());
 		// Set a minimum width to prevent the width from changing all the time
 		// when numbers vary rapidly. This minimum width is set based on a
 		// GPU time of 999.99 ms in the current editor language.
@@ -4415,34 +4419,36 @@ void Node3DEditorViewport::_notification(int p_what)
 		frame_time_panel->set_custom_minimum_size(Size2(min_width, 0) * EDSCALE);
 		frame_time_vbox->add_theme_constant_override("separation", Math::round(-1 * EDSCALE));
 
-		cinema_label->add_theme_style_override(CoreStringName(normal), information_3d_stylebox);
-		locked_label->add_theme_style_override(CoreStringName(normal), information_3d_stylebox);
+		cinema_label->add_theme_style_override(
+			CoreStringName(normal), information_3d_stylebox.ptr());
+		locked_label->add_theme_style_override(
+			CoreStringName(normal), information_3d_stylebox.ptr());
 
 		ruler_label->add_theme_color_override(
 			SceneStringName(font_color), Color(1.0, 0.9, 0.0, 1.0));
 		ruler_label->add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0));
 		ruler_label->add_theme_constant_override("outline_size", 4 * EDSCALE);
 		ruler_label->add_theme_font_size_override(SceneStringName(font_size), 15 * EDSCALE);
-		ruler_label->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
+		ruler_label->add_theme_font_override(SceneStringName(font),
+			get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)).ptr());
 
 		ruler_label_x->add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0));
 		ruler_label_x->add_theme_constant_override("outline_size", 4 * EDSCALE);
 		ruler_label_x->add_theme_font_size_override(SceneStringName(font_size), 15 * EDSCALE);
-		ruler_label_x->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
+		ruler_label_x->add_theme_font_override(SceneStringName(font),
+			get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)).ptr());
 
 		ruler_label_y->add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0));
 		ruler_label_y->add_theme_constant_override("outline_size", 4 * EDSCALE);
 		ruler_label_y->add_theme_font_size_override(SceneStringName(font_size), 15 * EDSCALE);
-		ruler_label_y->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
+		ruler_label_y->add_theme_font_override(SceneStringName(font),
+			get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)).ptr());
 
 		ruler_label_z->add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0));
 		ruler_label_z->add_theme_constant_override("outline_size", 4 * EDSCALE);
 		ruler_label_z->add_theme_font_size_override(SceneStringName(font_size), 15 * EDSCALE);
-		ruler_label_z->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
+		ruler_label_z->add_theme_font_override(SceneStringName(font),
+			get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)).ptr());
 	} break;
 
 	case NOTIFICATION_DRAG_END: {
@@ -4599,14 +4605,15 @@ static void draw_indicator_bar(Control& p_surface, real_t p_fill, const Ref<Text
 	const Vector2 icon_size = p_icon->get_size();
 	const Vector2 icon_pos =
 		Vector2(r.position.x - (icon_size.x - r.size.x) / 2, r.position.y + r.size.y + 2 * EDSCALE);
-	p_surface.draw_texture(p_icon, icon_pos, p_color);
+	p_surface.draw_texture(p_icon.ptr(), icon_pos, p_color);
 
 	// Draw text below the bar (for speed/zoom information).
-	p_surface.draw_string_outline(p_font,
+	p_surface.draw_string_outline(p_font.ptr(),
 		Vector2(icon_pos.x, icon_pos.y + icon_size.y + 16 * EDSCALE), p_text,
 		HORIZONTAL_ALIGNMENT_LEFT, -1.f, p_font_size, Math::round(4 * EDSCALE), Color(0, 0, 0));
-	p_surface.draw_string(p_font, Vector2(icon_pos.x, icon_pos.y + icon_size.y + 16 * EDSCALE),
-		p_text, HORIZONTAL_ALIGNMENT_LEFT, -1.f, p_font_size, p_color);
+	p_surface.draw_string(p_font.ptr(),
+		Vector2(icon_pos.x, icon_pos.y + icon_size.y + 16 * EDSCALE), p_text,
+		HORIZONTAL_ALIGNMENT_LEFT, -1.f, p_font_size, p_color);
 }
 
 void Node3DEditorViewport::_draw()
@@ -6063,11 +6070,7 @@ Dictionary Node3DEditorViewport::get_state() const
 	return d;
 }
 
-void Node3DEditorViewport::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("toggle_maximize_view", PropertyInfo(Variant::OBJECT, "viewport")));
-	ADD_SIGNAL(MethodInfo("clicked"));
-}
+void Node3DEditorViewport::_bind_methods() {}
 
 void Node3DEditorViewport::reset()
 {
@@ -6779,83 +6782,6 @@ bool Node3DEditorViewport::can_drop_data_fw(
 
 	int instantiate_type = 0;
 
-	// Track whether a type other than PackedScene is valid to stop checking them and only
-	// continue to check if the rest of the scenes are valid (don't have cyclic dependencies).
-	bool is_other_valid = false;
-	// Check if at least one of the dragged files is a mesh, material, texture, or scene.
-	for (int i = 0; i < files.size(); i++) {
-		const String& res_type = ResourceLoader::get_resource_type(files[i]);
-		bool is_scene = ClassDB::is_parent_class(res_type, "PackedScene");
-		bool is_mesh = ClassDB::is_parent_class(res_type, "Mesh");
-		bool is_material = ClassDB::is_parent_class(res_type, "Material");
-		bool is_texture = ClassDB::is_parent_class(res_type, "Texture");
-		bool is_audio = ClassDB::is_parent_class(res_type, "AudioStream");
-
-		if (is_mesh || is_scene || is_material || is_texture || is_audio) {
-			Ref<Resource> res = ResourceLoader::load(files[i]);
-			if (res.is_null()) {
-				continue;
-			}
-			Ref<PackedScene> scn = res;
-			Ref<Mesh> mesh = res;
-			Ref<Material> mat = res;
-			Ref<Texture2D> tex = res;
-			Ref<AudioStream> audio = res;
-			if (scn.is_valid()) {
-				Node* instantiated_scene = scn->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE);
-				if (!instantiated_scene) {
-					continue;
-				}
-				Node* edited_scene = EditorNode::get_singleton()->get_edited_scene();
-				if (edited_scene && !edited_scene->get_scene_file_path().is_empty() &&
-					_cyclical_dependency_exists(
-						edited_scene->get_scene_file_path(), instantiated_scene)) {
-					memdelete(instantiated_scene);
-					is_cyclical_dep = true;
-					error_file = files[i].get_file();
-					break;
-				}
-				memdelete(instantiated_scene);
-				instantiate_type |= SCENE;
-			}
-			else if (!is_other_valid && mat.is_valid()) {
-				Ref<BaseMaterial3D> base_mat = res;
-				Ref<ShaderMaterial> shader_mat = res;
-
-				if (base_mat.is_null() && shader_mat.is_null()) {
-					continue;
-				}
-
-				spatial_editor->set_preview_material(mat);
-				is_other_valid = true;
-				instantiate_type |= MATERIAL;
-				continue;
-			}
-			else if (!is_other_valid && mesh.is_valid()) {
-				// Let the mesh pass.
-				is_other_valid = true;
-				instantiate_type |= MESH;
-			}
-			else if (!is_other_valid && tex.is_valid()) {
-				Ref<StandardMaterial3D> new_mat;
-				new_mat.instantiate();
-				new_mat->set_texture(BaseMaterial3D::TEXTURE_ALBEDO, tex);
-
-				spatial_editor->set_preview_material(new_mat);
-				is_other_valid = true;
-				instantiate_type |= TEXTURE;
-				continue;
-			}
-			else if (!is_other_valid && audio.is_valid()) {
-				is_other_valid = true;
-				instantiate_type |= AUDIO;
-			}
-			else {
-				continue;
-			}
-		}
-	}
-
 	String title = TTRN("Can't drop the file...", "Can't drop the files...", files.size());
 	if (is_cyclical_dep) {
 		_show_tooltip(title, vformat(TTR("Circular dependency found at %s."), error_file));
@@ -7545,7 +7471,8 @@ void Node3DEditorViewport::shortcut_changed_callback(
 	}
 
 	for (int i = 0; i < p_shortcut->get_events().size(); i++) {
-		im->action_add_event(p_shortcut_path, p_shortcut->get_events()[i]);
+		im->action_add_event(
+			p_shortcut_path, Object::cast_to<InputEvent>(p_shortcut->get_events()[i]));
 	}
 
 	if (view_3d_controller.is_valid()) {
@@ -7880,7 +7807,7 @@ Node3DEditorViewport::Node3DEditorViewport(Node3DEditor* p_spatial_editor, int p
 	view_display_menu->set_disable_shortcuts(true);
 
 	_load_viewport_inputs();
-	InputMap::get_singleton()->connect(
+	InputMap::get_singleton()->obj->connect(
 		"project_settings_loaded", callable_mp(this, &Node3DEditorViewport::_load_viewport_inputs));
 
 	ED_SHORTCUT("spatial_editor/lock_transform_x", TTRC("Lock Transformation to X axis"), Key::X);
@@ -8180,19 +8107,19 @@ Node3DEditorViewport::Node3DEditorViewport(Node3DEditor* p_spatial_editor, int p
 	viewport->add_child(ruler_label_z);
 
 	view_3d_controller.instantiate();
-	view_3d_controller->connect(
+	view_3d_controller->obj->connect(
 		"view_state_changed", callable_mp(this, &Node3DEditorViewport::_view_state_changed));
-	view_3d_controller->connect(
+	view_3d_controller->obj->connect(
 		"fov_scaled", callable_mp((CanvasItem*)surface, &CanvasItem::queue_redraw));
-	view_3d_controller->connect(
+	view_3d_controller->obj->connect(
 		"freelook_changed", callable_mp(this, &Node3DEditorViewport::_freelook_changed));
-	view_3d_controller->connect(
+	view_3d_controller->obj->connect(
 		"freelook_speed_scaled", callable_mp(this, &Node3DEditorViewport::_freelook_speed_scaled));
-	view_3d_controller->connect(
+	view_3d_controller->obj->connect(
 		"cursor_panned", callable_mp(this, &Node3DEditorViewport::_disable_follow_mode));
-	view_3d_controller->connect(
+	view_3d_controller->obj->connect(
 		"cursor_interpolated", callable_mp(this, &Node3DEditorViewport::_cursor_interpolated));
-	view_3d_controller->connect("cursor_distance_scaled",
+	view_3d_controller->obj->connect("cursor_distance_scaled",
 		callable_mp(this, &Node3DEditorViewport::_cursor_distance_scaled));
 	_update_view_3d_controller(true);
 

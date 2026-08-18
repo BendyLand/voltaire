@@ -96,7 +96,7 @@ void ShaderEditorPlugin::_update_shader_list()
 			text += "(*)";
 		}
 
-		String _class = shader->get_class();
+		String _class = shader->obj->get_class();
 		if (!shader_list->has_theme_icon(_class, EditorStringName(EditorIcons))) {
 			_class = "TextFile";
 		}
@@ -279,7 +279,7 @@ void ShaderEditorPlugin::set_window_layout(Ref<ConfigFile> p_layout)
 		String path = shaders[i];
 		Ref<Resource> res = ResourceLoader::load(path);
 		if (res.is_valid()) {
-			edit(res.ptr());
+			edit(res->obj.get());
 		}
 		if (selected_shader == path) {
 			selected_shader_idx = i;
@@ -417,11 +417,11 @@ void ShaderEditorPlugin::_shader_selected(int p_index, bool p_push_item)
 		// Avoid `Shader` being edited when editing `ShaderInclude` due to inspector refreshing.
 		if (edited_shaders[p_index].shader.is_valid()) {
 			EditorNode::get_singleton()->push_item_no_inspector(
-				edited_shaders[p_index].shader.ptr());
+				edited_shaders[p_index].shader->obj.get());
 		}
 		else {
 			EditorNode::get_singleton()->push_item_no_inspector(
-				edited_shaders[p_index].shader_inc.ptr());
+				edited_shaders[p_index].shader_inc->obj.get());
 		}
 	}
 }
@@ -554,7 +554,7 @@ void ShaderEditorPlugin::_resource_saved(Object* o)
 {
 	// May have been renamed on save.
 	for (EditedShader& edited_shader : edited_shaders) {
-		if (edited_shader.shader.ptr() == o || edited_shader.shader_inc.ptr() == o) {
+		if (edited_shader.shader->obj.get() == o || edited_shader.shader_inc->obj.get() == o) {
 			_update_shader_list();
 			return;
 		}
@@ -642,10 +642,10 @@ void ShaderEditorPlugin::_menu_item_pressed(int p_index)
 		int index = shader_tabs->get_current_tab();
 		ERR_FAIL_INDEX(index, shader_tabs->get_tab_count());
 		if (edited_shaders[index].shader.is_valid()) {
-			EditorNode::get_singleton()->push_item(edited_shaders[index].shader.ptr());
+			EditorNode::get_singleton()->push_item(edited_shaders[index].shader->obj.get());
 		}
 		else {
-			EditorNode::get_singleton()->push_item(edited_shaders[index].shader_inc.ptr());
+			EditorNode::get_singleton()->push_item(edited_shaders[index].shader_inc->obj.get());
 		}
 	} break;
 	case FILE_MENU_INSPECT_NATIVE_SHADER_CODE: {
@@ -698,12 +698,12 @@ void ShaderEditorPlugin::_menu_item_pressed(int p_index)
 
 void ShaderEditorPlugin::_shader_created(Ref<Shader> p_shader)
 {
-	EditorNode::get_singleton()->push_item(p_shader.ptr());
+	EditorNode::get_singleton()->push_item(p_shader->obj.get());
 }
 
 void ShaderEditorPlugin::_shader_include_created(Ref<ShaderInclude> p_shader_inc)
 {
-	EditorNode::get_singleton()->push_item(p_shader_inc.ptr());
+	EditorNode::get_singleton()->push_item(p_shader_inc->obj.get());
 }
 
 Variant ShaderEditorPlugin::get_drag_data_fw(const Point2& p_point, Control* p_from)
@@ -830,7 +830,7 @@ void ShaderEditorPlugin::drop_data_fw(const Point2& p_point, const Variant& p_da
 				res = ResourceLoader::load(file);
 			}
 			if (res.is_valid()) {
-				edit(res.ptr());
+				edit(res->obj.get());
 			}
 		}
 	}
@@ -1007,7 +1007,7 @@ ShaderEditorPlugin::ShaderEditorPlugin()
 	shader_tabs->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	Ref<StyleBoxEmpty> empty;
 	empty.instantiate();
-	shader_tabs->add_theme_style_override(SceneStringName(panel), empty);
+	shader_tabs->add_theme_style_override(SceneStringName(panel), empty.ptr());
 	shader_tabs->hide();
 	files_split->add_child(shader_tabs);
 

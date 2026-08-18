@@ -379,7 +379,7 @@ void EditorSpinSlider::_update_value_input_stylebox()
 		SNAME("EditorSpinSlider"));
 	stylebox->set_content_margin(is_layout_rtl() ? SIDE_RIGHT : SIDE_LEFT, margin);
 
-	value_input->add_theme_style_override(CoreStringName(normal), stylebox);
+	value_input->add_theme_style_override(CoreStringName(normal), stylebox.ptr());
 }
 
 void EditorSpinSlider::_draw_spin_slider()
@@ -393,7 +393,7 @@ void EditorSpinSlider::_draw_spin_slider()
 	Ref<StyleBox> sb = get_theme_stylebox(
 		read_only ? SNAME("read_only") : CoreStringName(normal), SNAME("LineEdit"));
 	if (!flat) {
-		draw_style_box(sb, Rect2(Vector2(), size));
+		draw_style_box(sb.ptr(), Rect2(Vector2(), size));
 	}
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("LineEdit"));
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("LineEdit"));
@@ -416,27 +416,28 @@ void EditorSpinSlider::_draw_spin_slider()
 	if (flat && !label.is_empty()) {
 		Ref<StyleBox> label_bg = get_theme_stylebox(SNAME("label_bg"), SNAME("EditorSpinSlider"));
 		if (rtl) {
-			draw_style_box(
-				label_bg, Rect2(Vector2(size.width - (sb->get_offset().x * 2 + label_width), 0),
-							  Vector2(sb->get_offset().x * 2 + label_width, size.height)));
+			draw_style_box(label_bg.ptr(),
+				Rect2(Vector2(size.width - (sb->get_offset().x * 2 + label_width), 0),
+					Vector2(sb->get_offset().x * 2 + label_width, size.height)));
 		}
 		else {
-			draw_style_box(label_bg,
+			draw_style_box(label_bg.ptr(),
 				Rect2(Vector2(), Vector2(sb->get_offset().x * 2 + label_width, size.height)));
 		}
 	}
 
 	if (has_focus(true)) {
 		Ref<StyleBox> focus = get_theme_stylebox(SNAME("focus"), SNAME("LineEdit"));
-		draw_style_box(focus, Rect2(Vector2(), size));
+		draw_style_box(focus.ptr(), Rect2(Vector2(), size));
 	}
 
 	if (rtl) {
-		draw_string(font, Vector2(Math::round(size.width - sb->get_offset().x - label_width), vofs),
-			label, HORIZONTAL_ALIGNMENT_RIGHT, -1, font_size, lc * Color(1, 1, 1, 0.5));
+		draw_string(font.ptr(),
+			Vector2(Math::round(size.width - sb->get_offset().x - label_width), vofs), label,
+			HORIZONTAL_ALIGNMENT_RIGHT, -1, font_size, lc * Color(1, 1, 1, 0.5));
 	}
 	else {
-		draw_string(font, Vector2(Math::round(sb->get_offset().x), vofs), label,
+		draw_string(font.ptr(), Vector2(Math::round(sb->get_offset().x), vofs), label,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, lc * Color(1, 1, 1, 0.5));
 	}
 
@@ -494,7 +495,7 @@ void EditorSpinSlider::_draw_spin_slider()
 			if (hover_updown) {
 				c *= Color(1.2, 1.2, 1.2);
 			}
-			draw_texture(updown2, Vector2(updown_offset, updown_vofs), c);
+			draw_texture(updown2.ptr(), Vector2(updown_offset, updown_vofs), c);
 			if (rtl) {
 				updown_offset += updown2->get_width();
 			}
@@ -818,66 +819,7 @@ void EditorSpinSlider::_focus_entered(bool p_hide_focus)
 	this->obj->emit_signal("value_focus_entered");
 }
 
-void EditorSpinSlider::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_label", "label"), &EditorSpinSlider::set_label);
-	ClassDB::bind_method(D_METHOD("get_label"), &EditorSpinSlider::get_label);
-
-	ClassDB::bind_method(D_METHOD("set_suffix", "suffix"), &EditorSpinSlider::set_suffix);
-	ClassDB::bind_method(D_METHOD("get_suffix"), &EditorSpinSlider::get_suffix);
-
-	ClassDB::bind_method(D_METHOD("set_read_only", "read_only"), &EditorSpinSlider::set_read_only);
-	ClassDB::bind_method(D_METHOD("is_read_only"), &EditorSpinSlider::is_read_only);
-
-	ClassDB::bind_method(D_METHOD("set_flat", "flat"), &EditorSpinSlider::set_flat);
-	ClassDB::bind_method(D_METHOD("is_flat"), &EditorSpinSlider::is_flat);
-
-	ClassDB::bind_method(
-		D_METHOD("set_control_state", "state"), &EditorSpinSlider::set_control_state);
-	ClassDB::bind_method(D_METHOD("get_control_state"), &EditorSpinSlider::get_control_state);
-#ifndef DISABLE_DEPRECATED
-	ClassDB::bind_method(
-		D_METHOD("set_hide_slider", "hide_slider"), &EditorSpinSlider::set_hide_slider);
-	ClassDB::bind_method(D_METHOD("is_hiding_slider"), &EditorSpinSlider::is_hiding_slider);
-#endif
-
-	ClassDB::bind_method(
-		D_METHOD("set_editing_integer", "editing_integer"), &EditorSpinSlider::set_editing_integer);
-	ClassDB::bind_method(D_METHOD("is_editing_integer"), &EditorSpinSlider::is_editing_integer);
-
-	ClassDB::bind_method(D_METHOD("set_deferred_drag_mode_enabled", "enabled"),
-		&EditorSpinSlider::set_deferred_drag_mode_enabled, DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("is_deferred_drag_mode_enabled"),
-		&EditorSpinSlider::is_deferred_drag_mode_enabled);
-
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "label"), "set_label", "get_label");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "suffix"), "set_suffix", "get_suffix");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "read_only"), "set_read_only", "is_read_only");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flat"), "set_flat", "is_flat");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "control_state"), "set_control_state", "get_control_state");
-#ifndef DISABLE_DEPRECATED
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hide_slider"), "set_hide_slider", "is_hiding_slider");
-#endif
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "editing_integer"), "set_editing_integer",
-		"is_editing_integer");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "deferred_drag_mode"),
-		"set_deferred_drag_mode_enabled", "is_deferred_drag_mode_enabled");
-
-	BIND_ENUM_CONSTANT(CONTROL_STATE_DEFAULT);
-	BIND_ENUM_CONSTANT(CONTROL_STATE_PREFER_SLIDER);
-	BIND_ENUM_CONSTANT(CONTROL_STATE_HIDE);
-
-	ADD_SIGNAL(MethodInfo("grabbed"));
-	ADD_SIGNAL(MethodInfo("ungrabbed"));
-	ADD_SIGNAL(MethodInfo("updown_pressed"));
-	ADD_SIGNAL(MethodInfo("value_focus_entered"));
-	ADD_SIGNAL(MethodInfo("value_focus_exited"));
-
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, EditorSpinSlider, updown_icon, "updown");
-	BIND_THEME_ITEM_CUSTOM(
-		Theme::DATA_TYPE_ICON, EditorSpinSlider, updown_disabled_icon, "updown_disabled");
-}
+void EditorSpinSlider::_bind_methods() {}
 
 void EditorSpinSlider::_ensure_value_input()
 {

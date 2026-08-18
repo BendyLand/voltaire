@@ -178,7 +178,7 @@ public:
 	static constexpr int DEFAULT_FONT_SIZE = 16;
 
 	// Fallbacks.
-	virtual void set_fallbacks(const TypedArray<Font>& p_fallbacks);
+	virtual void set_fallbacks(const Array& p_fallbacks);
 	virtual TypedArray<Font> get_fallbacks() const;
 
 	// Output.

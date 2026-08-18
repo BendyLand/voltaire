@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "animation_track_editor_plugins.h"
-
 #include "core/io/resource_loader.h"
 #include "core/object/callable_mp.h"
 #include "editor/audio/audio_stream_preview.h"
@@ -45,21 +44,23 @@
 #include "servers/rendering/rendering_server.h"
 
 /// BOOL ///
-int AnimationTrackEditBool::get_key_height() const {
+int AnimationTrackEditBool::get_key_height() const
+{
 	Ref<Texture2D> checked = get_theme_icon(SNAME("checked"), SNAME("CheckBox"));
 	return checked->get_height();
 }
 
-Rect2 AnimationTrackEditBool::get_key_rect(int p_index, float p_pixels_sec) {
+Rect2 AnimationTrackEditBool::get_key_rect(int p_index, float p_pixels_sec)
+{
 	Ref<Texture2D> checked = get_theme_icon(SNAME("checked"), SNAME("CheckBox"));
 	return Rect2(-checked->get_width() / 2, 0, checked->get_width(), get_size().height);
 }
 
-bool AnimationTrackEditBool::is_key_selectable_by_distance() const {
-	return false;
-}
+bool AnimationTrackEditBool::is_key_selectable_by_distance() const { return false; }
 
-void AnimationTrackEditBool::draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
+void AnimationTrackEditBool::draw_key(
+	int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right)
+{
 	bool checked = get_animation()->track_get_key_value(get_track(), p_index);
 	Ref<Texture2D> icon = get_theme_icon(checked ? "checked" : "unchecked", "CheckBox");
 
@@ -73,7 +74,7 @@ void AnimationTrackEditBool::draw_key(int p_index, float p_pixels_sec, int p_x, 
 		return;
 	}
 
-	draw_texture(icon, ofs);
+	draw_texture(icon.ptr(), ofs);
 
 	if (p_selected) {
 		Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
@@ -83,24 +84,26 @@ void AnimationTrackEditBool::draw_key(int p_index, float p_pixels_sec, int p_x, 
 
 /// COLOR ///
 
-int AnimationTrackEditColor::get_key_height() const {
+int AnimationTrackEditColor::get_key_height() const
+{
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 	return font->get_height(font_size) * 0.8;
 }
 
-Rect2 AnimationTrackEditColor::get_key_rect(int p_index, float p_pixels_sec) {
+Rect2 AnimationTrackEditColor::get_key_rect(int p_index, float p_pixels_sec)
+{
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 	int fh = font->get_height(font_size) * 0.8;
 	return Rect2(-fh / 2, 0, fh, get_size().height);
 }
 
-bool AnimationTrackEditColor::is_key_selectable_by_distance() const {
-	return false;
-}
+bool AnimationTrackEditColor::is_key_selectable_by_distance() const { return false; }
 
-void AnimationTrackEditColor::draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec, int p_x, int p_next_x, int p_clip_left, int p_clip_right) {
+void AnimationTrackEditColor::draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec,
+	int p_x, int p_next_x, int p_clip_left, int p_clip_right)
+{
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 	int fh = (font->get_height(font_size) * 0.8);
@@ -122,10 +125,14 @@ void AnimationTrackEditColor::draw_key_link(int p_index_from, int p_index_to, fl
 	color_samples.append(get_animation()->track_get_key_value(get_track(), p_index_from));
 
 	if (get_animation()->track_get_type(get_track()) == Animation::TYPE_VALUE) {
-		if (get_animation()->track_get_interpolation_type(get_track()) != Animation::INTERPOLATION_NEAREST &&
-				(get_animation()->value_track_get_update_mode(get_track()) == Animation::UPDATE_CONTINUOUS ||
-						get_animation()->value_track_get_update_mode(get_track()) == Animation::UPDATE_CAPTURE) &&
-				!Math::is_zero_approx(get_animation()->track_get_key_transition(get_track(), p_index_from))) {
+		if (get_animation()->track_get_interpolation_type(get_track()) !=
+				Animation::INTERPOLATION_NEAREST &&
+			(get_animation()->value_track_get_update_mode(get_track()) ==
+					Animation::UPDATE_CONTINUOUS ||
+				get_animation()->value_track_get_update_mode(get_track()) ==
+					Animation::UPDATE_CAPTURE) &&
+			!Math::is_zero_approx(
+				get_animation()->track_get_key_transition(get_track(), p_index_from))) {
 			float start_time = get_animation()->track_get_key_time(get_track(), p_index_from);
 			float end_time = get_animation()->track_get_key_time(get_track(), p_index_to);
 
@@ -136,15 +143,16 @@ void AnimationTrackEditColor::draw_key_link(int p_index_from, int p_index_to, fl
 				for (int i = 1; i < color_samples.size(); i++) {
 					float j = i;
 					color_samples.write[i] = get_animation()->value_track_interpolate(
-							get_track(),
-							Math::lerp(start_time, end_time, j / color_samples.size()));
+						get_track(), Math::lerp(start_time, end_time, j / color_samples.size()));
 				}
 			}
 			color_samples.append(color_next);
-		} else {
+		}
+		else {
 			color_samples.append(color_samples[0]);
 		}
-	} else {
+	}
+	else {
 		color_samples.append(get_animation()->track_get_key_value(get_track(), p_index_to));
 	}
 
@@ -152,22 +160,20 @@ void AnimationTrackEditColor::draw_key_link(int p_index_from, int p_index_to, fl
 		Vector<Vector2> points = {
 			Vector2(Math::lerp(x_from, x_to, float(i) / (color_samples.size() - 1)), y_from),
 			Vector2(Math::lerp(x_from, x_to, float(i + 1) / (color_samples.size() - 1)), y_from),
-			Vector2(Math::lerp(x_from, x_to, float(i + 1) / (color_samples.size() - 1)), y_from + fh),
-			Vector2(Math::lerp(x_from, x_to, float(i) / (color_samples.size() - 1)), y_from + fh)
-		};
+			Vector2(
+				Math::lerp(x_from, x_to, float(i + 1) / (color_samples.size() - 1)), y_from + fh),
+			Vector2(Math::lerp(x_from, x_to, float(i) / (color_samples.size() - 1)), y_from + fh)};
 
 		Vector<Color> colors = {
-			color_samples[i],
-			color_samples[i + 1],
-			color_samples[i + 1],
-			color_samples[i]
-		};
+			color_samples[i], color_samples[i + 1], color_samples[i + 1], color_samples[i]};
 
 		draw_primitive(points, colors, Vector<Vector2>());
 	}
 }
 
-void AnimationTrackEditColor::draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
+void AnimationTrackEditColor::draw_key(
+	int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right)
+{
 	Color color = get_animation()->track_get_key_value(get_track(), p_index);
 
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
@@ -178,8 +184,10 @@ void AnimationTrackEditColor::draw_key(int p_index, float p_pixels_sec, int p_x,
 
 	draw_rect_clipped(Rect2(rect.position, rect.size / 2), Color(0.4, 0.4, 0.4));
 	draw_rect_clipped(Rect2(rect.position + rect.size / 2, rect.size / 2), Color(0.4, 0.4, 0.4));
-	draw_rect_clipped(Rect2(rect.position + Vector2(rect.size.x / 2, 0), rect.size / 2), Color(0.6, 0.6, 0.6));
-	draw_rect_clipped(Rect2(rect.position + Vector2(0, rect.size.y / 2), rect.size / 2), Color(0.6, 0.6, 0.6));
+	draw_rect_clipped(
+		Rect2(rect.position + Vector2(rect.size.x / 2, 0), rect.size / 2), Color(0.6, 0.6, 0.6));
+	draw_rect_clipped(
+		Rect2(rect.position + Vector2(0, rect.size.y / 2), rect.size / 2), Color(0.6, 0.6, 0.6));
 	draw_rect_clipped(rect, color);
 
 	if (p_selected) {
@@ -193,8 +201,9 @@ void AnimationTrackEditColor::draw_key(int p_index, float p_pixels_sec, int p_x,
 
 /// AUDIO ///
 
-void AnimationTrackEditAudio::_preview_changed(ObjectID p_which) {
-	Object *object = ObjectDB::get_instance(id);
+void AnimationTrackEditAudio::_preview_changed(ObjectID p_which)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
 		return;
@@ -202,12 +211,13 @@ void AnimationTrackEditAudio::_preview_changed(ObjectID p_which) {
 
 	Ref<AudioStream> stream = object->call("get_stream");
 
-	if (stream.is_valid() && stream->get_instance_id() == p_which) {
+	if (stream.is_valid() && stream->obj->get_instance_id() == p_which) {
 		queue_redraw();
 	}
 }
 
-int AnimationTrackEditAudio::get_key_height() const {
+int AnimationTrackEditAudio::get_key_height() const
+{
 	if (!ObjectDB::get_instance(id)) {
 		return AnimationTrackEdit::get_key_height();
 	}
@@ -217,8 +227,9 @@ int AnimationTrackEditAudio::get_key_height() const {
 	return int(font->get_height(font_size) * 1.5);
 }
 
-Rect2 AnimationTrackEditAudio::get_key_rect(int p_index, float p_pixels_sec) {
-	Object *object = ObjectDB::get_instance(id);
+Rect2 AnimationTrackEditAudio::get_key_rect(int p_index, float p_pixels_sec)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
@@ -235,16 +246,19 @@ Rect2 AnimationTrackEditAudio::get_key_rect(int p_index, float p_pixels_sec) {
 		float len = stream->get_length();
 
 		if (len == 0) {
-			Ref<AudioStreamPreview> preview = AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
+			Ref<AudioStreamPreview> preview =
+				AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
 			len = preview->get_length();
 		}
 
 		if (get_animation()->track_get_key_count(get_track()) > p_index + 1) {
-			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) - get_animation()->track_get_key_time(get_track(), p_index));
+			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) -
+							   get_animation()->track_get_key_time(get_track(), p_index));
 		}
 
 		return Rect2(0, 0, len * p_pixels_sec, get_size().height);
-	} else {
+	}
+	else {
 		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 		int fh = font->get_height(font_size) * 0.8;
@@ -252,22 +266,24 @@ Rect2 AnimationTrackEditAudio::get_key_rect(int p_index, float p_pixels_sec) {
 	}
 }
 
-bool AnimationTrackEditAudio::is_key_selectable_by_distance() const {
-	return false;
-}
+bool AnimationTrackEditAudio::is_key_selectable_by_distance() const { return false; }
 
-void AnimationTrackEditAudio::draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
-	Object *object = ObjectDB::get_instance(id);
+void AnimationTrackEditAudio::draw_key(
+	int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 		return;
 	}
 
 	Ref<AudioStream> stream = object->call("get_stream");
 
 	if (stream.is_null()) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 		return;
 	}
 
@@ -275,7 +291,8 @@ void AnimationTrackEditAudio::draw_key(int p_index, float p_pixels_sec, int p_x,
 	if (play) {
 		float len = stream->get_length();
 
-		Ref<AudioStreamPreview> preview = AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
+		Ref<AudioStreamPreview> preview =
+			AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
 
 		float preview_len = preview->get_length();
 
@@ -300,7 +317,8 @@ void AnimationTrackEditAudio::draw_key(int p_index, float p_pixels_sec, int p_x,
 		int to_x = MIN(pixel_end, p_clip_right);
 
 		if (get_animation()->track_get_key_count(get_track()) > p_index + 1) {
-			float limit = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) - get_animation()->track_get_key_time(get_track(), p_index));
+			float limit = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) -
+									   get_animation()->track_get_key_time(get_track(), p_index));
 			int limit_x = pixel_begin + limit * p_pixels_sec;
 			to_x = MIN(limit_x, to_x);
 		}
@@ -330,7 +348,7 @@ void AnimationTrackEditAudio::draw_key(int p_index, float p_pixels_sec, int p_x,
 			points.write[idx * 2 + 1] = Vector2(i, rect.position.y + max * rect.size.y);
 		}
 
-		Vector<Color> colors = { Color(0.75, 0.75, 0.75) };
+		Vector<Color> colors = {Color(0.75, 0.75, 0.75)};
 
 		RS::get_singleton()->canvas_item_add_multiline(get_canvas_item(), points, colors);
 
@@ -338,7 +356,8 @@ void AnimationTrackEditAudio::draw_key(int p_index, float p_pixels_sec, int p_x,
 			Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 			draw_rect(rect, accent, false);
 		}
-	} else {
+	}
+	else {
 		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 		int fh = font->get_height(font_size) * 0.8;
@@ -354,17 +373,18 @@ void AnimationTrackEditAudio::draw_key(int p_index, float p_pixels_sec, int p_x,
 	}
 }
 
-void AnimationTrackEditAudio::set_node(Object *p_object) {
-	id = p_object->get_instance_id();
-}
+void AnimationTrackEditAudio::set_node(Object* p_object) { id = p_object->get_instance_id(); }
 
-AnimationTrackEditAudio::AnimationTrackEditAudio() {
-	AudioStreamPreviewGenerator::get_singleton()->connect("preview_updated", callable_mp(this, &AnimationTrackEditAudio::_preview_changed));
+AnimationTrackEditAudio::AnimationTrackEditAudio()
+{
+	AudioStreamPreviewGenerator::get_singleton()->connect(
+		"preview_updated", callable_mp(this, &AnimationTrackEditAudio::_preview_changed));
 }
 
 /// SPRITE FRAME / FRAME_COORDS ///
 
-int AnimationTrackEditSpriteFrame::get_key_height() const {
+int AnimationTrackEditSpriteFrame::get_key_height() const
+{
 	if (!ObjectDB::get_instance(id)) {
 		return AnimationTrackEdit::get_key_height();
 	}
@@ -374,8 +394,9 @@ int AnimationTrackEditSpriteFrame::get_key_height() const {
 	return int(font->get_height(font_size) * 2);
 }
 
-Rect2 AnimationTrackEditSpriteFrame::get_key_rect(int p_index, float p_pixels_sec) {
-	Object *object = ObjectDB::get_instance(id);
+Rect2 AnimationTrackEditSpriteFrame::get_key_rect(int p_index, float p_pixels_sec)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
@@ -404,7 +425,9 @@ Rect2 AnimationTrackEditSpriteFrame::get_key_rect(int p_index, float p_pixels_se
 		if (vframes > 1) {
 			size.y /= vframes;
 		}
-	} else if (Object::cast_to<AnimatedSprite2D>(object) || Object::cast_to<AnimatedSprite3D>(object)) {
+	}
+	else if (Object::cast_to<AnimatedSprite2D>(object) ||
+			   Object::cast_to<AnimatedSprite3D>(object)) {
 		Ref<SpriteFrames> sf = object->call("get_sprite_frames");
 		if (sf.is_null()) {
 			return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
@@ -417,17 +440,20 @@ Rect2 AnimationTrackEditSpriteFrame::get_key_rect(int p_index, float p_pixels_se
 		String animation_name;
 		if (animations.size() == 1) {
 			animation_name = animations.front()->get();
-		} else {
+		}
+		else {
 			// Go through other track to find if animation is set
 			String animation_path = String(get_animation()->track_get_path(get_track()));
 			animation_path = animation_path.replace(":frame", ":animation");
-			int animation_track = get_animation()->find_track(animation_path, get_animation()->track_get_type(get_track()));
+			int animation_track = get_animation()->find_track(
+				animation_path, get_animation()->track_get_type(get_track()));
 
 			if (animation_track != -1) {
 				float track_time = get_animation()->track_get_key_time(get_track(), p_index);
 				int animation_index = get_animation()->track_find_key(animation_track, track_time);
 				if (animation_index != -1) {
-					animation_name = get_animation()->track_get_key_value(animation_track, animation_index);
+					animation_name =
+						get_animation()->track_get_key_value(animation_track, animation_index);
 				}
 			}
 		}
@@ -453,15 +479,16 @@ Rect2 AnimationTrackEditSpriteFrame::get_key_rect(int p_index, float p_pixels_se
 	return Rect2(0, 0, width, get_size().height);
 }
 
-bool AnimationTrackEditSpriteFrame::is_key_selectable_by_distance() const {
-	return false;
-}
+bool AnimationTrackEditSpriteFrame::is_key_selectable_by_distance() const { return false; }
 
-void AnimationTrackEditSpriteFrame::draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
-	Object *object = ObjectDB::get_instance(id);
+void AnimationTrackEditSpriteFrame::draw_key(
+	int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 		return;
 	}
 
@@ -471,7 +498,8 @@ void AnimationTrackEditSpriteFrame::draw_key(int p_index, float p_pixels_sec, in
 	if (Object::cast_to<Sprite2D>(object) || Object::cast_to<Sprite3D>(object)) {
 		texture = object->call("get_texture");
 		if (texture.is_null()) {
-			AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+			AnimationTrackEdit::draw_key(
+				p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 			return;
 		}
 
@@ -481,7 +509,8 @@ void AnimationTrackEditSpriteFrame::draw_key(int p_index, float p_pixels_sec, in
 		Vector2 coords;
 		if (is_coords) {
 			coords = get_animation()->track_get_key_value(get_track(), p_index);
-		} else {
+		}
+		else {
 			int frame = get_animation()->track_get_key_value(get_track(), p_index);
 			coords.x = frame % hframes;
 			coords.y = frame / hframes;
@@ -503,10 +532,13 @@ void AnimationTrackEditSpriteFrame::draw_key(int p_index, float p_pixels_sec, in
 		region.position.x += region.size.x * coords.x;
 		region.position.y += region.size.y * coords.y;
 
-	} else if (Object::cast_to<AnimatedSprite2D>(object) || Object::cast_to<AnimatedSprite3D>(object)) {
+	}
+	else if (Object::cast_to<AnimatedSprite2D>(object) ||
+			   Object::cast_to<AnimatedSprite3D>(object)) {
 		Ref<SpriteFrames> sf = object->call("get_sprite_frames");
 		if (sf.is_null()) {
-			AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+			AnimationTrackEdit::draw_key(
+				p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 			return;
 		}
 
@@ -517,17 +549,20 @@ void AnimationTrackEditSpriteFrame::draw_key(int p_index, float p_pixels_sec, in
 		String animation_name;
 		if (animations.size() == 1) {
 			animation_name = animations.front()->get();
-		} else {
+		}
+		else {
 			// Go through other track to find if animation is set
 			String animation_path = String(get_animation()->track_get_path(get_track()));
 			animation_path = animation_path.replace(":frame", ":animation");
-			int animation_track = get_animation()->find_track(animation_path, get_animation()->track_get_type(get_track()));
+			int animation_track = get_animation()->find_track(
+				animation_path, get_animation()->track_get_type(get_track()));
 
 			if (animation_track != -1) {
 				float track_time = get_animation()->track_get_key_time(get_track(), p_index);
 				int animation_index = get_animation()->track_find_key(animation_track, track_time);
 				if (animation_index != -1) {
-					animation_name = get_animation()->track_get_key_value(animation_track, animation_index);
+					animation_name =
+						get_animation()->track_get_key_value(animation_track, animation_index);
 				}
 			}
 		}
@@ -537,7 +572,8 @@ void AnimationTrackEditSpriteFrame::draw_key(int p_index, float p_pixels_sec, in
 		}
 
 		if (texture.is_null()) {
-			AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+			AnimationTrackEdit::draw_key(
+				p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 			return;
 		}
 
@@ -573,17 +609,14 @@ void AnimationTrackEditSpriteFrame::draw_key(int p_index, float p_pixels_sec, in
 	}
 }
 
-void AnimationTrackEditSpriteFrame::set_node(Object *p_object) {
-	id = p_object->get_instance_id();
-}
+void AnimationTrackEditSpriteFrame::set_node(Object* p_object) { id = p_object->get_instance_id(); }
 
-void AnimationTrackEditSpriteFrame::set_as_coords() {
-	is_coords = true;
-}
+void AnimationTrackEditSpriteFrame::set_as_coords() { is_coords = true; }
 
 /// SUB ANIMATION ///
 
-int AnimationTrackEditSubAnim::get_key_height() const {
+int AnimationTrackEditSubAnim::get_key_height() const
+{
 	if (!ObjectDB::get_instance(id)) {
 		return AnimationTrackEdit::get_key_height();
 	}
@@ -593,14 +626,15 @@ int AnimationTrackEditSubAnim::get_key_height() const {
 	return int(font->get_height(font_size) * 1.5);
 }
 
-Rect2 AnimationTrackEditSubAnim::get_key_rect(int p_index, float p_pixels_sec) {
-	Object *object = ObjectDB::get_instance(id);
+Rect2 AnimationTrackEditSubAnim::get_key_rect(int p_index, float p_pixels_sec)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
 	}
 
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(object);
+	AnimationPlayer* ap = Object::cast_to<AnimationPlayer>(object);
 
 	if (!ap) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
@@ -612,11 +646,13 @@ Rect2 AnimationTrackEditSubAnim::get_key_rect(int p_index, float p_pixels_sec) {
 		float len = ap->get_animation(anim)->get_length();
 
 		if (get_animation()->track_get_key_count(get_track()) > p_index + 1) {
-			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) - get_animation()->track_get_key_time(get_track(), p_index));
+			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) -
+							   get_animation()->track_get_key_time(get_track(), p_index));
 		}
 
 		return Rect2(0, 0, len * p_pixels_sec, get_size().height);
-	} else {
+	}
+	else {
 		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 		int fh = font->get_height(font_size) * 0.8;
@@ -624,22 +660,24 @@ Rect2 AnimationTrackEditSubAnim::get_key_rect(int p_index, float p_pixels_sec) {
 	}
 }
 
-bool AnimationTrackEditSubAnim::is_key_selectable_by_distance() const {
-	return false;
-}
+bool AnimationTrackEditSubAnim::is_key_selectable_by_distance() const { return false; }
 
-void AnimationTrackEditSubAnim::draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
-	Object *object = ObjectDB::get_instance(id);
+void AnimationTrackEditSubAnim::draw_key(
+	int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 		return;
 	}
 
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(object);
+	AnimationPlayer* ap = Object::cast_to<AnimationPlayer>(object);
 
 	if (!ap) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 		return;
 	}
 
@@ -649,7 +687,8 @@ void AnimationTrackEditSubAnim::draw_key(int p_index, float p_pixels_sec, int p_
 		float len = ap->get_animation(anim)->get_length();
 
 		if (get_animation()->track_get_key_count(get_track()) > p_index + 1) {
-			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) - get_animation()->track_get_key_time(get_track(), p_index));
+			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) -
+							   get_animation()->track_get_key_time(get_track(), p_index));
 		}
 
 		int pixel_len = len * p_pixels_sec;
@@ -686,7 +725,7 @@ void AnimationTrackEditSubAnim::draw_key(int p_index, float p_pixels_sec, int p_
 		draw_rect(rect, bg);
 
 		Vector<Vector2> points;
-		Vector<Color> colors = { color };
+		Vector<Color> colors = {color};
 		{
 			Ref<Animation> ap_anim = ap->get_animation(anim);
 
@@ -715,14 +754,18 @@ void AnimationTrackEditSubAnim::draw_key(int p_index, float p_pixels_sec, int p_
 
 		int limit = to_x - from_x - 4;
 		if (limit > 0) {
-			draw_string(font, Point2(from_x + 2, int(get_size().height - font->get_height(font_size)) / 2 + font->get_ascent(font_size)), anim, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color);
+			draw_string(font.ptr(),
+				Point2(from_x + 2, int(get_size().height - font->get_height(font_size)) / 2 +
+									   font->get_ascent(font_size)),
+				anim, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color);
 		}
 
 		if (p_selected) {
 			Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 			draw_rect(rect, accent, false);
 		}
-	} else {
+	}
+	else {
 		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 		int fh = font->get_height(font_size) * 0.8;
@@ -738,18 +781,18 @@ void AnimationTrackEditSubAnim::draw_key(int p_index, float p_pixels_sec, int p_
 	}
 }
 
-void AnimationTrackEditSubAnim::set_node(Object *p_object) {
-	id = p_object->get_instance_id();
-}
+void AnimationTrackEditSubAnim::set_node(Object* p_object) { id = p_object->get_instance_id(); }
 
 //// VOLUME DB ////
 
-int AnimationTrackEditVolumeDB::get_key_height() const {
+int AnimationTrackEditVolumeDB::get_key_height() const
+{
 	Ref<Texture2D> volume_texture = get_editor_theme_icon(SNAME("ColorTrackVu"));
 	return volume_texture->get_height() * 1.2;
 }
 
-void AnimationTrackEditVolumeDB::draw_bg(int p_clip_left, int p_clip_right) {
+void AnimationTrackEditVolumeDB::draw_bg(int p_clip_left, int p_clip_right)
+{
 	Ref<Texture2D> volume_texture = get_editor_theme_icon(SNAME("ColorTrackVu"));
 	int tex_h = volume_texture->get_height();
 
@@ -757,10 +800,12 @@ void AnimationTrackEditVolumeDB::draw_bg(int p_clip_left, int p_clip_right) {
 	int y_size = tex_h;
 
 	Color color(1, 1, 1, 0.3);
-	draw_texture_rect(volume_texture, Rect2(p_clip_left, y_from, p_clip_right - p_clip_left, y_from + y_size), false, color);
+	draw_texture_rect(volume_texture.ptr(),
+		Rect2(p_clip_left, y_from, p_clip_right - p_clip_left, y_from + y_size), false, color);
 }
 
-void AnimationTrackEditVolumeDB::draw_fg(int p_clip_left, int p_clip_right) {
+void AnimationTrackEditVolumeDB::draw_fg(int p_clip_left, int p_clip_right)
+{
 	Ref<Texture2D> volume_texture = get_editor_theme_icon(SNAME("ColorTrackVu"));
 	int tex_h = volume_texture->get_height();
 	int y_from = (get_size().height - tex_h) / 2;
@@ -769,7 +814,9 @@ void AnimationTrackEditVolumeDB::draw_fg(int p_clip_left, int p_clip_right) {
 	draw_line(Vector2(p_clip_left, db0), Vector2(p_clip_right, db0), Color(1, 1, 1, 0.3));
 }
 
-void AnimationTrackEditVolumeDB::draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec, int p_x, int p_next_x, int p_clip_left, int p_clip_right) {
+void AnimationTrackEditVolumeDB::draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec,
+	int p_x, int p_next_x, int p_clip_left, int p_clip_right)
+{
 	if (p_x > p_clip_right || p_next_x < p_clip_left) {
 		return;
 	}
@@ -811,23 +858,26 @@ void AnimationTrackEditVolumeDB::draw_key_link(int p_index_from, int p_index_to,
 
 /// AUDIO ///
 
-void AnimationTrackEditTypeAudio::_preview_changed(ObjectID p_which) {
+void AnimationTrackEditTypeAudio::_preview_changed(ObjectID p_which)
+{
 	for (int i = 0; i < get_animation()->track_get_key_count(get_track()); i++) {
 		Ref<AudioStream> stream = get_animation()->audio_track_get_key_stream(get_track(), i);
-		if (stream.is_valid() && stream->get_instance_id() == p_which) {
+		if (stream.is_valid() && stream->obj->get_instance_id() == p_which) {
 			queue_redraw();
 			return;
 		}
 	}
 }
 
-int AnimationTrackEditTypeAudio::get_key_height() const {
+int AnimationTrackEditTypeAudio::get_key_height() const
+{
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 	return int(font->get_height(font_size) * 1.5);
 }
 
-Rect2 AnimationTrackEditTypeAudio::get_key_rect(int p_index, float p_pixels_sec) {
+Rect2 AnimationTrackEditTypeAudio::get_key_rect(int p_index, float p_pixels_sec)
+{
 	Ref<AudioStream> stream = get_animation()->audio_track_get_key_stream(get_track(), p_index);
 
 	if (stream.is_null()) {
@@ -840,7 +890,8 @@ Rect2 AnimationTrackEditTypeAudio::get_key_rect(int p_index, float p_pixels_sec)
 	float len = stream->get_length();
 
 	if (len == 0) {
-		Ref<AudioStreamPreview> preview = AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
+		Ref<AudioStreamPreview> preview =
+			AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
 		len = preview->get_length();
 	}
 
@@ -851,26 +902,29 @@ Rect2 AnimationTrackEditTypeAudio::get_key_rect(int p_index, float p_pixels_sec)
 	}
 
 	if (get_animation()->track_get_key_count(get_track()) > p_index + 1) {
-		len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) - get_animation()->track_get_key_time(get_track(), p_index));
+		len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) -
+						   get_animation()->track_get_key_time(get_track(), p_index));
 	}
 
 	return Rect2(0, 0, len * p_pixels_sec, get_size().height);
 }
 
-bool AnimationTrackEditTypeAudio::is_key_selectable_by_distance() const {
-	return false;
-}
+bool AnimationTrackEditTypeAudio::is_key_selectable_by_distance() const { return false; }
 
-void AnimationTrackEditTypeAudio::draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
+void AnimationTrackEditTypeAudio::draw_key(
+	int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right)
+{
 	Ref<AudioStream> stream = get_animation()->audio_track_get_key_stream(get_track(), p_index);
 	if (stream.is_null()) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right); // Draw diamond.
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right); // Draw diamond.
 		return;
 	}
 
 	float len = stream->get_length();
 	if (len == 0) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right); // Draw diamond.
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right); // Draw diamond.
 		return;
 	}
 
@@ -883,7 +937,8 @@ void AnimationTrackEditTypeAudio::draw_key(int p_index, float p_pixels_sec, int 
 		if (len_resizing_start) {
 			start_ofs += ofs_local;
 			px_offset = ofs_local * p_pixels_sec;
-		} else {
+		}
+		else {
 			end_ofs -= ofs_local;
 		}
 	}
@@ -892,7 +947,8 @@ void AnimationTrackEditTypeAudio::draw_key(int p_index, float p_pixels_sec, int 
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 	float fh = int(font->get_height(font_size) * 1.5);
 
-	Ref<AudioStreamPreview> preview = AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
+	Ref<AudioStreamPreview> preview =
+		AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
 
 	int pixel_total_len = len * p_pixels_sec;
 
@@ -920,7 +976,8 @@ void AnimationTrackEditTypeAudio::draw_key(int p_index, float p_pixels_sec, int 
 	int to_x = MIN(pixel_end, p_clip_right);
 
 	if (get_animation()->track_get_key_count(get_track()) > p_index + 1) {
-		float limit = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) - get_animation()->track_get_key_time(get_track(), p_index));
+		float limit = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) -
+								   get_animation()->track_get_key_time(get_track(), p_index));
 		int limit_x = pixel_begin + limit * p_pixels_sec;
 		to_x = MIN(limit_x, to_x);
 	}
@@ -951,7 +1008,7 @@ void AnimationTrackEditTypeAudio::draw_key(int p_index, float p_pixels_sec, int 
 		points.write[idx * 2 + 1] = Vector2(i, rect.position.y + max * rect.size.y);
 	}
 
-	Vector<Color> colors = { Color(0.75, 0.75, 0.75) };
+	Vector<Color> colors = {Color(0.75, 0.75, 0.75)};
 
 	RS::get_singleton()->canvas_item_add_multiline(get_canvas_item(), points, colors);
 
@@ -970,12 +1027,16 @@ void AnimationTrackEditTypeAudio::draw_key(int p_index, float p_pixels_sec, int 
 	}
 }
 
-AnimationTrackEditTypeAudio::AnimationTrackEditTypeAudio() {
-	AudioStreamPreviewGenerator::get_singleton()->connect("preview_updated", callable_mp(this, &AnimationTrackEditTypeAudio::_preview_changed));
+AnimationTrackEditTypeAudio::AnimationTrackEditTypeAudio()
+{
+	AudioStreamPreviewGenerator::get_singleton()->connect(
+		"preview_updated", callable_mp(this, &AnimationTrackEditTypeAudio::_preview_changed));
 }
 
-bool AnimationTrackEditTypeAudio::can_drop_data(const Point2 &p_point, const Variant &p_data) const {
-	if (p_point.x > get_timeline()->get_name_limit() && p_point.x < get_size().width - get_timeline()->get_buttons_width()) {
+bool AnimationTrackEditTypeAudio::can_drop_data(const Point2& p_point, const Variant& p_data) const
+{
+	if (p_point.x > get_timeline()->get_name_limit() &&
+		p_point.x < get_size().width - get_timeline()->get_buttons_width()) {
 		Dictionary drag_data = p_data;
 		if (drag_data.has("type") && String(drag_data["type"]) == "resource") {
 			Ref<AudioStream> res = drag_data["resource"];
@@ -999,13 +1060,16 @@ bool AnimationTrackEditTypeAudio::can_drop_data(const Point2 &p_point, const Var
 	return AnimationTrackEdit::can_drop_data(p_point, p_data);
 }
 
-void AnimationTrackEditTypeAudio::drop_data(const Point2 &p_point, const Variant &p_data) {
-	if (p_point.x > get_timeline()->get_name_limit() && p_point.x < get_size().width - get_timeline()->get_buttons_width()) {
+void AnimationTrackEditTypeAudio::drop_data(const Point2& p_point, const Variant& p_data)
+{
+	if (p_point.x > get_timeline()->get_name_limit() &&
+		p_point.x < get_size().width - get_timeline()->get_buttons_width()) {
 		Ref<AudioStream> stream;
 		Dictionary drag_data = p_data;
 		if (drag_data.has("type") && String(drag_data["type"]) == "resource") {
 			stream = drag_data["resource"];
-		} else if (drag_data.has("type") && String(drag_data["type"]) == "files") {
+		}
+		else if (drag_data.has("type") && String(drag_data["type"]) == "files") {
 			Vector<String> files = drag_data["files"];
 
 			if (files.size() == 1) {
@@ -1020,14 +1084,17 @@ void AnimationTrackEditTypeAudio::drop_data(const Point2 &p_point, const Variant
 
 			ofs = get_editor()->snap_time(ofs);
 
-			while (get_animation()->track_find_key(get_track(), ofs, Animation::FIND_MODE_APPROX) != -1) { //make sure insertion point is valid
+			while (get_animation()->track_find_key(get_track(), ofs, Animation::FIND_MODE_APPROX) !=
+				   -1) { // make sure insertion point is valid
 				ofs += 0.0001;
 			}
 
-			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+			EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->create_action(TTR("Add Audio Track Clip"));
-			undo_redo->add_do_method(get_animation().ptr(), "audio_track_insert_key", get_track(), ofs, stream);
-			undo_redo->add_undo_method(get_animation().ptr(), "track_remove_key_at_time", get_track(), ofs);
+			undo_redo->add_do_method(
+				get_animation()->obj.get(), "audio_track_insert_key", get_track(), ofs, stream);
+			undo_redo->add_undo_method(
+				get_animation()->obj.get(), "track_remove_key_at_time", get_track(), ofs);
 			undo_redo->commit_action();
 
 			queue_redraw();
@@ -1038,7 +1105,8 @@ void AnimationTrackEditTypeAudio::drop_data(const Point2 &p_point, const Variant
 	AnimationTrackEdit::drop_data(p_point, p_data);
 }
 
-void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent> &p_event) {
+void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent>& p_event)
+{
 	ERR_FAIL_COND(p_event.is_null());
 
 	Ref<InputEventMouseMotion> mm = p_event;
@@ -1062,7 +1130,8 @@ void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent> &p_event) {
 			len -= start_ofs;
 
 			if (get_animation()->track_get_key_count(get_track()) > i + 1) {
-				len = MIN(len, get_animation()->track_get_key_time(get_track(), i + 1) - get_animation()->track_get_key_time(get_track(), i));
+				len = MIN(len, get_animation()->track_get_key_time(get_track(), i + 1) -
+								   get_animation()->track_get_key_time(get_track(), i));
 			}
 
 			float ofs = get_animation()->track_get_key_time(get_track(), i);
@@ -1073,13 +1142,17 @@ void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent> &p_event) {
 
 			int end = ofs + len * get_timeline()->get_zoom_scale();
 
-			if (end >= get_timeline()->get_name_limit() && end <= get_size().width - get_timeline()->get_buttons_width() && Math::abs(mm->get_position().x - end) < 5 * EDSCALE) {
+			if (end >= get_timeline()->get_name_limit() &&
+				end <= get_size().width - get_timeline()->get_buttons_width() &&
+				Math::abs(mm->get_position().x - end) < 5 * EDSCALE) {
 				len_resizing_start = false;
 				use_hsize_cursor = true;
 				len_resizing_index = i;
 			}
 
-			if (ofs >= get_timeline()->get_name_limit() && ofs <= get_size().width - get_timeline()->get_buttons_width() && Math::abs(mm->get_position().x - ofs) < 5 * EDSCALE) {
+			if (ofs >= get_timeline()->get_name_limit() &&
+				ofs <= get_size().width - get_timeline()->get_buttons_width() &&
+				Math::abs(mm->get_position().x - ofs) < 5 * EDSCALE) {
 				len_resizing_start = true;
 				use_hsize_cursor = true;
 				len_resizing_index = i;
@@ -1092,20 +1165,29 @@ void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent> &p_event) {
 		// Rezising index is some.
 		len_resizing_rel += mm->get_relative().x;
 		float ofs_local = len_resizing_rel / get_timeline()->get_zoom_scale();
-		float prev_ofs_start = get_animation()->audio_track_get_key_start_offset(get_track(), len_resizing_index);
-		float prev_ofs_end = get_animation()->audio_track_get_key_end_offset(get_track(), len_resizing_index);
-		Ref<AudioStream> stream = get_animation()->audio_track_get_key_stream(get_track(), len_resizing_index);
+		float prev_ofs_start =
+			get_animation()->audio_track_get_key_start_offset(get_track(), len_resizing_index);
+		float prev_ofs_end =
+			get_animation()->audio_track_get_key_end_offset(get_track(), len_resizing_index);
+		Ref<AudioStream> stream =
+			get_animation()->audio_track_get_key_stream(get_track(), len_resizing_index);
 		float len = stream->get_length();
 		if (len == 0) {
-			Ref<AudioStreamPreview> preview = AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
+			Ref<AudioStreamPreview> preview =
+				AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
 			float preview_len = preview->get_length();
 			len = preview_len;
 		}
 
 		if (len_resizing_start) {
-			len_resizing_rel = CLAMP(ofs_local, -prev_ofs_start, len - prev_ofs_end - prev_ofs_start) * get_timeline()->get_zoom_scale();
-		} else {
-			len_resizing_rel = CLAMP(ofs_local, -(len - prev_ofs_end - prev_ofs_start), prev_ofs_end) * get_timeline()->get_zoom_scale();
+			len_resizing_rel =
+				CLAMP(ofs_local, -prev_ofs_start, len - prev_ofs_end - prev_ofs_start) *
+				get_timeline()->get_zoom_scale();
+		}
+		else {
+			len_resizing_rel =
+				CLAMP(ofs_local, -(len - prev_ofs_end - prev_ofs_start), prev_ofs_end) *
+				get_timeline()->get_zoom_scale();
 		}
 
 		queue_redraw();
@@ -1114,7 +1196,8 @@ void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent> &p_event) {
 	}
 
 	Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && over_drag_position) {
+	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT &&
+		over_drag_position) {
 		len_resizing = true;
 		// In case if resizing index is not set yet reset the flag.
 		if (len_resizing_index < 0) {
@@ -1128,8 +1211,9 @@ void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent> &p_event) {
 		return;
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-	if (len_resizing && mb.is_valid() && !mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
+	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
+	if (len_resizing && mb.is_valid() && !mb->is_pressed() &&
+		mb->get_button_index() == MouseButton::LEFT) {
 		if (len_resizing_rel == 0 || len_resizing_index < 0) {
 			len_resizing = false;
 			return;
@@ -1137,29 +1221,38 @@ void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent> &p_event) {
 
 		if (len_resizing_start) {
 			float ofs_local = len_resizing_rel / get_timeline()->get_zoom_scale();
-			float prev_ofs = get_animation()->audio_track_get_key_start_offset(get_track(), len_resizing_index);
+			float prev_ofs =
+				get_animation()->audio_track_get_key_start_offset(get_track(), len_resizing_index);
 			float prev_time = get_animation()->track_get_key_time(get_track(), len_resizing_index);
 			float new_ofs = prev_ofs + ofs_local;
 			float new_time = prev_time + ofs_local;
 			if (prev_time != new_time) {
 				undo_redo->create_action(TTR("Change Audio Track Clip Start Offset"));
 
-				undo_redo->add_do_method(get_animation().ptr(), "track_set_key_time", get_track(), len_resizing_index, new_time);
-				undo_redo->add_undo_method(get_animation().ptr(), "track_set_key_time", get_track(), len_resizing_index, prev_time);
+				undo_redo->add_do_method(get_animation()->obj.get(), "track_set_key_time",
+					get_track(), len_resizing_index, new_time);
+				undo_redo->add_undo_method(get_animation()->obj.get(), "track_set_key_time",
+					get_track(), len_resizing_index, prev_time);
 
-				undo_redo->add_do_method(get_animation().ptr(), "audio_track_set_key_start_offset", get_track(), len_resizing_index, new_ofs);
-				undo_redo->add_undo_method(get_animation().ptr(), "audio_track_set_key_start_offset", get_track(), len_resizing_index, prev_ofs);
+				undo_redo->add_do_method(get_animation()->obj.get(),
+					"audio_track_set_key_start_offset", get_track(), len_resizing_index, new_ofs);
+				undo_redo->add_undo_method(get_animation()->obj.get(),
+					"audio_track_set_key_start_offset", get_track(), len_resizing_index, prev_ofs);
 
 				undo_redo->commit_action();
 			}
-		} else {
+		}
+		else {
 			float ofs_local = -len_resizing_rel / get_timeline()->get_zoom_scale();
-			float prev_ofs = get_animation()->audio_track_get_key_end_offset(get_track(), len_resizing_index);
+			float prev_ofs =
+				get_animation()->audio_track_get_key_end_offset(get_track(), len_resizing_index);
 			float new_ofs = prev_ofs + ofs_local;
 			if (prev_ofs != new_ofs) {
 				undo_redo->create_action(TTR("Change Audio Track Clip End Offset"));
-				undo_redo->add_do_method(get_animation().ptr(), "audio_track_set_key_end_offset", get_track(), len_resizing_index, new_ofs);
-				undo_redo->add_undo_method(get_animation().ptr(), "audio_track_set_key_end_offset", get_track(), len_resizing_index, prev_ofs);
+				undo_redo->add_do_method(get_animation()->obj.get(),
+					"audio_track_set_key_end_offset", get_track(), len_resizing_index, new_ofs);
+				undo_redo->add_undo_method(get_animation()->obj.get(),
+					"audio_track_set_key_end_offset", get_track(), len_resizing_index, prev_ofs);
 				undo_redo->commit_action();
 			}
 		}
@@ -1174,10 +1267,12 @@ void AnimationTrackEditTypeAudio::gui_input(const Ref<InputEvent> &p_event) {
 	AnimationTrackEdit::gui_input(p_event);
 }
 
-Control::CursorShape AnimationTrackEditTypeAudio::get_cursor_shape(const Point2 &p_pos) const {
+Control::CursorShape AnimationTrackEditTypeAudio::get_cursor_shape(const Point2& p_pos) const
+{
 	if (over_drag_position || len_resizing) {
 		return Control::CURSOR_HSIZE;
-	} else {
+	}
+	else {
 		return get_default_cursor_shape();
 	}
 }
@@ -1185,7 +1280,8 @@ Control::CursorShape AnimationTrackEditTypeAudio::get_cursor_shape(const Point2 
 ////////////////////
 /// SUB ANIMATION ///
 
-int AnimationTrackEditTypeAnimation::get_key_height() const {
+int AnimationTrackEditTypeAnimation::get_key_height() const
+{
 	if (!ObjectDB::get_instance(id)) {
 		return AnimationTrackEdit::get_key_height();
 	}
@@ -1195,14 +1291,15 @@ int AnimationTrackEditTypeAnimation::get_key_height() const {
 	return int(font->get_height(font_size) * 1.5);
 }
 
-Rect2 AnimationTrackEditTypeAnimation::get_key_rect(int p_index, float p_pixels_sec) {
-	Object *object = ObjectDB::get_instance(id);
+Rect2 AnimationTrackEditTypeAnimation::get_key_rect(int p_index, float p_pixels_sec)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
 	}
 
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(object);
+	AnimationPlayer* ap = Object::cast_to<AnimationPlayer>(object);
 
 	if (!ap) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
@@ -1214,11 +1311,13 @@ Rect2 AnimationTrackEditTypeAnimation::get_key_rect(int p_index, float p_pixels_
 		float len = ap->get_animation(anim)->get_length();
 
 		if (get_animation()->track_get_key_count(get_track()) > p_index + 1) {
-			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) - get_animation()->track_get_key_time(get_track(), p_index));
+			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) -
+							   get_animation()->track_get_key_time(get_track(), p_index));
 		}
 
 		return Rect2(0, 0, len * p_pixels_sec, get_size().height);
-	} else {
+	}
+	else {
 		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 		int fh = font->get_height(font_size) * 0.8;
@@ -1226,22 +1325,24 @@ Rect2 AnimationTrackEditTypeAnimation::get_key_rect(int p_index, float p_pixels_
 	}
 }
 
-bool AnimationTrackEditTypeAnimation::is_key_selectable_by_distance() const {
-	return false;
-}
+bool AnimationTrackEditTypeAnimation::is_key_selectable_by_distance() const { return false; }
 
-void AnimationTrackEditTypeAnimation::draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right) {
-	Object *object = ObjectDB::get_instance(id);
+void AnimationTrackEditTypeAnimation::draw_key(
+	int p_index, float p_pixels_sec, int p_x, bool p_selected, int p_clip_left, int p_clip_right)
+{
+	Object* object = ObjectDB::get_instance(id);
 
 	if (!object) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 		return;
 	}
 
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(object);
+	AnimationPlayer* ap = Object::cast_to<AnimationPlayer>(object);
 
 	if (!ap) {
-		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
+		AnimationTrackEdit::draw_key(
+			p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
 		return;
 	}
 
@@ -1251,7 +1352,8 @@ void AnimationTrackEditTypeAnimation::draw_key(int p_index, float p_pixels_sec, 
 		float len = ap->get_animation(anim)->get_length();
 
 		if (get_animation()->track_get_key_count(get_track()) > p_index + 1) {
-			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) - get_animation()->track_get_key_time(get_track(), p_index));
+			len = MIN(len, get_animation()->track_get_key_time(get_track(), p_index + 1) -
+							   get_animation()->track_get_key_time(get_track(), p_index));
 		}
 
 		int pixel_len = len * p_pixels_sec;
@@ -1288,7 +1390,7 @@ void AnimationTrackEditTypeAnimation::draw_key(int p_index, float p_pixels_sec, 
 		draw_rect(rect, bg);
 
 		Vector<Vector2> points;
-		Vector<Color> colors = { color };
+		Vector<Color> colors = {color};
 		{
 			Ref<Animation> ap_anim = ap->get_animation(anim);
 
@@ -1317,14 +1419,18 @@ void AnimationTrackEditTypeAnimation::draw_key(int p_index, float p_pixels_sec, 
 
 		int limit = to_x - from_x - 4;
 		if (limit > 0) {
-			draw_string(font, Point2(from_x + 2, int(get_size().height - font->get_height(font_size)) / 2 + font->get_ascent(font_size)), anim, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color);
+			draw_string(font.ptr(),
+				Point2(from_x + 2, int(get_size().height - font->get_height(font_size)) / 2 +
+									   font->get_ascent(font_size)),
+				anim, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color);
 		}
 
 		if (p_selected) {
 			Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 			draw_rect(rect, accent, false);
 		}
-	} else {
+	}
+	else {
 		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
 		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 		int fh = font->get_height(font_size) * 0.8;
@@ -1340,39 +1446,48 @@ void AnimationTrackEditTypeAnimation::draw_key(int p_index, float p_pixels_sec, 
 	}
 }
 
-void AnimationTrackEditTypeAnimation::set_node(Object *p_object) {
+void AnimationTrackEditTypeAnimation::set_node(Object* p_object)
+{
 	id = p_object->get_instance_id();
 }
 
 /////////
-AnimationTrackEdit *AnimationTrackEditDefaultPlugin::create_value_track_edit(Object *p_object, Variant::Type p_type, const String &p_property, PropertyHint p_hint, const String &p_hint_string, int p_usage) {
-	if (p_property == "playing" && (p_object->is_class("AudioStreamPlayer") || p_object->is_class("AudioStreamPlayer2D") || p_object->is_class("AudioStreamPlayer3D"))) {
-		AnimationTrackEditAudio *audio = memnew(AnimationTrackEditAudio);
+AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_value_track_edit(Object* p_object,
+	Variant::Type p_type, const String& p_property, PropertyHint p_hint,
+	const String& p_hint_string, int p_usage)
+{
+	if (p_property == "playing" &&
+		(p_object->is_class("AudioStreamPlayer") || p_object->is_class("AudioStreamPlayer2D") ||
+			p_object->is_class("AudioStreamPlayer3D"))) {
+		AnimationTrackEditAudio* audio = memnew(AnimationTrackEditAudio);
 		audio->set_node(p_object);
 		return audio;
 	}
 
-	if (p_property == "frame" && (p_object->is_class("Sprite2D") || p_object->is_class("Sprite3D") || p_object->is_class("AnimatedSprite2D") || p_object->is_class("AnimatedSprite3D"))) {
-		AnimationTrackEditSpriteFrame *sprite = memnew(AnimationTrackEditSpriteFrame);
+	if (p_property == "frame" &&
+		(p_object->is_class("Sprite2D") || p_object->is_class("Sprite3D") ||
+			p_object->is_class("AnimatedSprite2D") || p_object->is_class("AnimatedSprite3D"))) {
+		AnimationTrackEditSpriteFrame* sprite = memnew(AnimationTrackEditSpriteFrame);
 		sprite->set_node(p_object);
 		return sprite;
 	}
 
-	if (p_property == "frame_coords" && (p_object->is_class("Sprite2D") || p_object->is_class("Sprite3D"))) {
-		AnimationTrackEditSpriteFrame *sprite = memnew(AnimationTrackEditSpriteFrame);
+	if (p_property == "frame_coords" &&
+		(p_object->is_class("Sprite2D") || p_object->is_class("Sprite3D"))) {
+		AnimationTrackEditSpriteFrame* sprite = memnew(AnimationTrackEditSpriteFrame);
 		sprite->set_as_coords();
 		sprite->set_node(p_object);
 		return sprite;
 	}
 
 	if (p_property == "current_animation" && (p_object->is_class("AnimationPlayer"))) {
-		AnimationTrackEditSubAnim *player = memnew(AnimationTrackEditSubAnim);
+		AnimationTrackEditSubAnim* player = memnew(AnimationTrackEditSubAnim);
 		player->set_node(p_object);
 		return player;
 	}
 
 	if (p_property == "volume_db") {
-		AnimationTrackEditVolumeDB *vu = memnew(AnimationTrackEditVolumeDB);
+		AnimationTrackEditVolumeDB* vu = memnew(AnimationTrackEditVolumeDB);
 		return vu;
 	}
 
@@ -1386,12 +1501,16 @@ AnimationTrackEdit *AnimationTrackEditDefaultPlugin::create_value_track_edit(Obj
 	return nullptr;
 }
 
-AnimationTrackEdit *AnimationTrackEditDefaultPlugin::create_audio_track_edit() {
+AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_audio_track_edit()
+{
 	return memnew(AnimationTrackEditTypeAudio);
 }
 
-AnimationTrackEdit *AnimationTrackEditDefaultPlugin::create_animation_track_edit(Object *p_object) {
-	AnimationTrackEditTypeAnimation *an = memnew(AnimationTrackEditTypeAnimation);
+AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_animation_track_edit(Object* p_object)
+{
+	AnimationTrackEditTypeAnimation* an = memnew(AnimationTrackEditTypeAnimation);
 	an->set_node(p_object);
 	return an;
 }
+
+

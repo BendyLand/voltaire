@@ -231,7 +231,7 @@ void AnimationTreeEditor::_update_error_message()
 		error_label->push_cell();
 		error_label->push_color(
 			error_label->get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		error_label->append_text(vformat(RTR("%s at "), node->get_class()));
+		error_label->append_text(vformat(RTR("%s at "), node->obj->get_class()));
 		error_label->push_meta(String(kv.key));
 		error_label->append_text(vformat(RTR("'%s':"), kv.key));
 		error_label->pop(); // Meta.
@@ -300,7 +300,7 @@ void AnimationTreeEditor::edit(AnimationTree* p_tree)
 					  callable_mp(this, &AnimationTreeEditor::_animation_list_changed))) {
 		p_tree->connect("animation_list_changed",
 			callable_mp(this, &AnimationTreeEditor::_animation_list_changed),
-			Animation::CONNECT_DEFERRED);
+			Object::CONNECT_DEFERRED);
 	}
 
 	if (tree == p_tree) {
@@ -392,13 +392,13 @@ void AnimationTreeEditor::edit_path(const Vector<String>& p_path)
 	Ref<AnimationNode> node = tree->get_root_animation_node();
 
 	if (node.is_valid()) {
-		current_root = node->get_instance_id();
+		current_root = node->obj->get_instance_id();
 
 		for (int i = 0; i < p_path.size(); i++) {
 			Ref<AnimationNode> child = node->get_child_by_name(p_path[i]);
 			ERR_BREAK_MSG(child.is_null(),
 				vformat("Cannot edit path '%s': node '%s' not found as child of '%s'.",
-					String("/").join(p_path), p_path[i], node->get_class()));
+					String("/").join(p_path), p_path[i], node->obj->get_class()));
 			node = child;
 			button_path.push_back(p_path[i]);
 		}
@@ -456,26 +456,26 @@ void AnimationTreeEditor::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		Ref<StyleBoxEmpty> empty_style;
 		empty_style.instantiate();
-		error_scroll->add_theme_style_override(SceneStringName(panel), empty_style);
+		error_scroll->add_theme_style_override(SceneStringName(panel), empty_style.ptr());
 		error_label->add_theme_color_override(SNAME("default_color"),
 			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 		error_button->set_button_icon(get_editor_theme_icon(SNAME("StatusError")));
 		error_button->add_theme_color_override(SceneStringName(font_color),
 			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		current_scope_error_label->add_theme_font_override(
-			SNAME("normal_font"), get_theme_font(SNAME("main"), EditorStringName(EditorFonts)));
+		current_scope_error_label->add_theme_font_override(SNAME("normal_font"),
+			get_theme_font(SNAME("main"), EditorStringName(EditorFonts)).ptr());
 		current_scope_error_label->add_theme_font_size_override(SNAME("normal_font_size"),
 			get_theme_font_size(SNAME("main_size"), EditorStringName(EditorFonts)));
 		current_scope_error_label->add_theme_color_override(SNAME("default_color"),
 			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 		current_scope_error_label->add_theme_style_override(
-			SNAME("normal"), get_theme_stylebox(SNAME("normal"), SNAME("Label")));
+			SNAME("normal"), get_theme_stylebox(SNAME("normal"), SNAME("Label")).ptr());
 	} break;
 
 	case NOTIFICATION_PROCESS: {
 		ObjectID root;
 		if (tree && tree->get_root_animation_node().is_valid()) {
-			root = tree->get_root_animation_node()->get_instance_id();
+			root = tree->get_root_animation_node()->obj->get_instance_id();
 		}
 
 		if (root != current_root) {

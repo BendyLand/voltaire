@@ -418,7 +418,7 @@ void ExportTemplateManager::_tpz_file_selected(const String& p_file)
 
 	unzClose(pkg);
 
-	EditorSettings::get_singleton()->set(
+	EditorSettings::get_singleton()->obj->set(
 		"_export_template_download_directory", p_file.get_base_dir());
 
 	const String selected_version = version_list->get_item_text(version_list->get_current());
@@ -1546,7 +1546,7 @@ void ExportTemplateManager::_notification(int p_what)
 String ExportTemplateManager::get_android_build_directory(const Ref<EditorExportPreset>& p_preset)
 {
 	if (p_preset.is_valid()) {
-		String gradle_build_dir = p_preset->get("gradle_build/gradle_build_directory");
+		String gradle_build_dir = p_preset->obj->get("gradle_build/gradle_build_directory");
 		if (!gradle_build_dir.is_empty()) {
 			return gradle_build_dir.path_join("build");
 		}
@@ -1557,7 +1557,7 @@ String ExportTemplateManager::get_android_build_directory(const Ref<EditorExport
 String ExportTemplateManager::get_android_source_zip(const Ref<EditorExportPreset>& p_preset)
 {
 	if (p_preset.is_valid()) {
-		String android_source_zip = p_preset->get("gradle_build/android_source_template");
+		String android_source_zip = p_preset->obj->get("gradle_build/android_source_template");
 		if (!android_source_zip.is_empty()) {
 			return android_source_zip;
 		}
@@ -1574,7 +1574,7 @@ String ExportTemplateManager::get_android_template_identifier(
 	// The template identifier is the Godot version for the default template, and the full path plus
 	// md5 hash for custom templates.
 	if (p_preset.is_valid()) {
-		String android_source_zip = p_preset->get("gradle_build/android_source_template");
+		String android_source_zip = p_preset->obj->get("gradle_build/android_source_template");
 		if (!android_source_zip.is_empty()) {
 			return android_source_zip + String(" [") + FileAccess::get_md5(android_source_zip) +
 				   String("]");
@@ -2374,11 +2374,7 @@ void TemplateDownloader::_notification(int p_what)
 	}
 }
 
-void TemplateDownloader::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("download_completed"));
-	ADD_SIGNAL(MethodInfo("download_failed"));
-}
+void TemplateDownloader::_bind_methods() {}
 
 Error TemplateDownloader::download_template(const String& p_file_name, const String& p_source)
 {

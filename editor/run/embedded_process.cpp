@@ -102,7 +102,7 @@ void EmbeddedProcessBase::_draw()
 		r.position -= get_window()->get_position();
 #endif
 		if (transp_enabled) {
-			draw_texture_rect(checkerboard, r, true);
+			draw_texture_rect(checkerboard.ptr(), r, true);
 		}
 		else {
 			draw_rect(r, clear_color, true);

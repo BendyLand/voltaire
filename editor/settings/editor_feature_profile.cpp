@@ -107,8 +107,7 @@ bool EditorFeatureProfile::is_class_disabled(const StringName& p_class) const
 	if (p_class == StringName()) {
 		return false;
 	}
-	return disabled_classes.has(p_class) ||
-		   is_class_disabled(ClassDB::get_parent_class_nocheck(p_class));
+	return disabled_classes.has(p_class);
 }
 
 void EditorFeatureProfile::set_disable_class_editor(const StringName& p_class, bool p_disabled)
@@ -126,8 +125,7 @@ bool EditorFeatureProfile::is_class_editor_disabled(const StringName& p_class) c
 	if (p_class == StringName()) {
 		return false;
 	}
-	return disabled_editors.has(p_class) ||
-		   is_class_editor_disabled(ClassDB::get_parent_class_nocheck(p_class));
+	return disabled_editors.has(p_class);
 }
 
 void EditorFeatureProfile::set_disable_class_property(
@@ -324,50 +322,7 @@ Error EditorFeatureProfile::load_from_file(const String& p_path)
 	return OK;
 }
 
-void EditorFeatureProfile::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_disable_class", "class_name", "disable"),
-		&EditorFeatureProfile::set_disable_class);
-	ClassDB::bind_method(
-		D_METHOD("is_class_disabled", "class_name"), &EditorFeatureProfile::is_class_disabled);
-
-	ClassDB::bind_method(D_METHOD("set_disable_class_editor", "class_name", "disable"),
-		&EditorFeatureProfile::set_disable_class_editor);
-	ClassDB::bind_method(D_METHOD("is_class_editor_disabled", "class_name"),
-		&EditorFeatureProfile::is_class_editor_disabled);
-
-	ClassDB::bind_method(
-		D_METHOD("set_disable_class_property", "class_name", "property", "disable"),
-		&EditorFeatureProfile::set_disable_class_property);
-	ClassDB::bind_method(D_METHOD("is_class_property_disabled", "class_name", "property"),
-		&EditorFeatureProfile::is_class_property_disabled);
-
-	ClassDB::bind_method(D_METHOD("set_disable_feature", "feature", "disable"),
-		&EditorFeatureProfile::set_disable_feature);
-	ClassDB::bind_method(
-		D_METHOD("is_feature_disabled", "feature"), &EditorFeatureProfile::is_feature_disabled);
-
-	ClassDB::bind_method(
-		D_METHOD("get_feature_name", "feature"), &EditorFeatureProfile::_get_feature_name);
-
-	ClassDB::bind_method(D_METHOD("save_to_file", "path"), &EditorFeatureProfile::save_to_file);
-	ClassDB::bind_method(D_METHOD("load_from_file", "path"), &EditorFeatureProfile::load_from_file);
-
-	BIND_ENUM_CONSTANT(FEATURE_3D);
-	BIND_ENUM_CONSTANT(FEATURE_SCRIPT);
-	BIND_ENUM_CONSTANT(FEATURE_ASSET_LIB);
-	BIND_ENUM_CONSTANT(FEATURE_SCENE_TREE);
-#ifndef DISABLE_DEPRECATED
-	BIND_ENUM_CONSTANT(FEATURE_NODE_DOCK);
-#endif
-	BIND_ENUM_CONSTANT(FEATURE_FILESYSTEM_DOCK);
-	BIND_ENUM_CONSTANT(FEATURE_IMPORT_DOCK);
-	BIND_ENUM_CONSTANT(FEATURE_HISTORY_DOCK);
-	BIND_ENUM_CONSTANT(FEATURE_GAME);
-	BIND_ENUM_CONSTANT(FEATURE_SIGNALS_DOCK);
-	BIND_ENUM_CONSTANT(FEATURE_GROUPS_DOCK);
-	BIND_ENUM_CONSTANT(FEATURE_MAX);
-}
+void EditorFeatureProfile::_bind_methods() {}
 
 EditorFeatureProfile::EditorFeatureProfile()
 {
@@ -616,17 +571,6 @@ void EditorFeatureProfileManager::_fill_classes_from(
 	}
 
 	class_item->set_checked(0, true); // If it's not disabled, it's checked.
-
-	List<StringName> child_classes;
-	ClassDB::get_direct_inheriters_from_class(p_class, &child_classes);
-	child_classes.sort_custom<StringName::AlphCompare>();
-
-	for (const StringName& name : child_classes) {
-		if (ClassDB::get_api_type(name) != ClassDB::API_CORE) {
-			continue;
-		}
-		_fill_classes_from(class_item, name, p_selected);
-	}
 }
 
 void EditorFeatureProfileManager::_class_list_item_selected()
@@ -677,16 +621,7 @@ void EditorFeatureProfileManager::_class_list_item_selected()
 		option->set_metadata(0, CLASS_OPTION_DISABLE_EDITOR);
 	}
 
-	List<PropertyInfo> props;
-	ClassDB::get_property_list(class_name, &props, true);
-
 	bool has_editor_props = false;
-	for (const PropertyInfo& E : props) {
-		if (E.usage & PROPERTY_USAGE_EDITOR) {
-			has_editor_props = true;
-			break;
-		}
-	}
 
 	if (has_editor_props) {
 		TreeItem* properties = property_list->create_item(root);
@@ -696,28 +631,6 @@ void EditorFeatureProfileManager::_class_list_item_selected()
 			EditorPropertyNameProcessor::get_settings_style();
 		const EditorPropertyNameProcessor::Style tooltip_style =
 			EditorPropertyNameProcessor::get_tooltip_style(text_style);
-
-		for (const PropertyInfo& E : props) {
-			String name = E.name;
-			if (!(E.usage & PROPERTY_USAGE_EDITOR)) {
-				continue;
-			}
-			const String text = EditorPropertyNameProcessor::get_singleton()->process_name(
-				name, text_style, name, class_name);
-			const String tooltip = EditorPropertyNameProcessor::get_singleton()->process_name(
-				name, tooltip_style, name, class_name);
-
-			TreeItem* property = property_list->create_item(properties);
-			property->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-			property->set_editable(0, true);
-			property->set_selectable(0, true);
-			property->set_checked(0, !edited->is_class_property_disabled(class_name, name));
-			property->set_text(0, text);
-			property->set_tooltip_text(0, tooltip);
-			property->set_metadata(0, name);
-			String icon_type = Variant::get_type_name(E.type);
-			property->set_icon(0, EditorNode::get_singleton()->get_class_icon(icon_type));
-		}
 	}
 
 	updating_features = false;
@@ -1017,7 +930,7 @@ void EditorFeatureProfileManager::set_current_profile(
 	}
 
 	// Store in editor settings.
-	EditorSettings::get_singleton()->set("_default_feature_profile", p_profile_name);
+	EditorSettings::get_singleton()->obj->set("_default_feature_profile", p_profile_name);
 	EditorSettings::get_singleton()->save();
 
 	current_profile = p_profile_name;
@@ -1033,10 +946,7 @@ void EditorFeatureProfileManager::set_current_profile(
 
 EditorFeatureProfileManager* EditorFeatureProfileManager::singleton = nullptr;
 
-void EditorFeatureProfileManager::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("current_feature_profile_changed"));
-}
+void EditorFeatureProfileManager::_bind_methods() {}
 
 EditorFeatureProfileManager::EditorFeatureProfileManager()
 {
@@ -1154,10 +1064,10 @@ EditorFeatureProfileManager::EditorFeatureProfileManager()
 	no_profile_selected_help =
 		memnew(Label(TTR("Create or import a profile to edit available classes and properties.")));
 
-// Add some spacing above the help label.
+	// Add some spacing above the help label.
 	Ref<StyleBoxEmpty> sb = memnew(StyleBoxEmpty);
 	sb->set_content_margin(SIDE_TOP, 20 * EDSCALE);
-	no_profile_selected_help->add_theme_style_override(CoreStringName(normal), sb);
+	no_profile_selected_help->add_theme_style_override(CoreStringName(normal), sb.ptr());
 	no_profile_selected_help->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 	no_profile_selected_help->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	h_split->add_child(no_profile_selected_help);

@@ -132,7 +132,7 @@ void EditorAudioBus::_notification(int p_what)
 		audio_value_preview_label->add_theme_color_override("font_shadow_color",
 			get_theme_color(SNAME("font_shadow_color"), SNAME("TooltipLabel")));
 		audio_value_preview_box->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("TooltipPanel")));
+			get_theme_stylebox(SceneStringName(panel), SNAME("TooltipPanel")).ptr());
 
 		for (int i = 0; i < effect_options->get_item_count(); i++) {
 			String class_name = effect_options->get_item_metadata(i);
@@ -148,15 +148,15 @@ void EditorAudioBus::_notification(int p_what)
 
 	case NOTIFICATION_DRAW: {
 		if (is_master) {
-			draw_style_box(get_theme_stylebox(SNAME("master"), SNAME("EditorAudioBus")),
+			draw_style_box(get_theme_stylebox(SNAME("master"), SNAME("EditorAudioBus")).ptr(),
 				Rect2(Vector2(), get_size()));
 		}
 		else if (has_focus()) {
-			draw_style_box(get_theme_stylebox(SNAME("focus"), SNAME("EditorAudioBus")),
+			draw_style_box(get_theme_stylebox(SNAME("focus"), SNAME("EditorAudioBus")).ptr(),
 				Rect2(Vector2(), get_size()));
 		}
 		else {
-			draw_style_box(get_theme_stylebox(SNAME("normal"), SNAME("EditorAudioBus")),
+			draw_style_box(get_theme_stylebox(SNAME("normal"), SNAME("EditorAudioBus")).ptr(),
 				Rect2(Vector2(), get_size()));
 		}
 
@@ -696,7 +696,7 @@ void EditorAudioBus::_effect_selected()
 		int index = effect->get_metadata(0);
 		Ref<AudioEffect> effect2 = AudioServer::get_singleton()->get_bus_effect(get_index(), index);
 		if (effect2.is_valid()) {
-			EditorNode::get_singleton()->push_item(effect2.ptr());
+			EditorNode::get_singleton()->push_item(effect2->obj.get());
 		}
 	}
 
@@ -749,9 +749,7 @@ void EditorAudioBus::_effect_add(int p_which)
 
 	StringName name = effect_options->get_item_metadata(p_which);
 
-	Object* fx = ClassDB::instantiate(name);
-	ERR_FAIL_NULL(fx);
-	AudioEffect* afx = Object::cast_to<AudioEffect>(fx);
+	AudioEffect* afx = memnew(AudioEffect).ptr();
 	ERR_FAIL_NULL(afx);
 	Ref<AudioEffect> afxr = Ref<AudioEffect>(afx);
 
@@ -826,7 +824,7 @@ Variant EditorAudioBus::get_drag_data(const Point2& p_point)
 	c->add_child(p);
 	p->set_modulate(Color(1, 1, 1, 0.7));
 	p->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SNAME("focus"), SNAME("Button")));
+		SceneStringName(panel), get_theme_stylebox(SNAME("focus"), SNAME("Button")).ptr());
 	p->set_size(get_size());
 	p->set_position((p_point == Vector2(Math::INF, Math::INF)) ? Vector2() : -p_point);
 	set_drag_preview(c);
@@ -1024,17 +1022,7 @@ void EditorAudioBus::_effect_rmb(const Vector2& p_pos, MouseButton p_button)
 	delete_effect_popup->popup();
 }
 
-void EditorAudioBus::_bind_methods()
-{
-	ClassDB::bind_method("update_bus", &EditorAudioBus::update_bus);
-	ClassDB::bind_method("update_send", &EditorAudioBus::update_send);
-
-	ADD_SIGNAL(MethodInfo("duplicate_request"));
-	ADD_SIGNAL(MethodInfo("delete_request"));
-	ADD_SIGNAL(MethodInfo("vol_reset_request"));
-	ADD_SIGNAL(MethodInfo("drop_end_request"));
-	ADD_SIGNAL(MethodInfo("dropped"));
-}
+void EditorAudioBus::_bind_methods() {}
 
 EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 {
@@ -1086,20 +1074,20 @@ EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 	for (int i = 0; i < hbc->get_child_count(); i++) {
 		Control* child = Object::cast_to<Control>(hbc->get_child(i));
 		child->begin_bulk_theme_override();
-		child->add_theme_style_override(CoreStringName(normal), sbempty);
-		child->add_theme_style_override(SceneStringName(hover), sbempty);
-		child->add_theme_style_override("hover_mirrored", sbempty);
-		child->add_theme_style_override("focus", sbempty);
-		child->add_theme_style_override("focus_mirrored", sbempty);
+		child->add_theme_style_override(CoreStringName(normal), sbempty.ptr());
+		child->add_theme_style_override(SceneStringName(hover), sbempty.ptr());
+		child->add_theme_style_override("hover_mirrored", sbempty.ptr());
+		child->add_theme_style_override("focus", sbempty.ptr());
+		child->add_theme_style_override("focus_mirrored", sbempty.ptr());
 
 		Ref<StyleBoxFlat> sbflat = memnew(StyleBoxFlat);
 		sbflat->set_content_margin_all(0);
 		sbflat->set_bg_color(Color(1, 1, 1, 0));
 		sbflat->set_border_width(Side::SIDE_BOTTOM, Math::round(3 * EDSCALE));
-		child->add_theme_style_override(SceneStringName(pressed), sbflat);
-		child->add_theme_style_override("pressed_mirrored", sbflat);
-		child->add_theme_style_override("hover_pressed", sbflat);
-		child->add_theme_style_override("hover_pressed_mirrored", sbflat);
+		child->add_theme_style_override(SceneStringName(pressed), sbflat.ptr());
+		child->add_theme_style_override("pressed_mirrored", sbflat.ptr());
+		child->add_theme_style_override("hover_pressed", sbflat.ptr());
+		child->add_theme_style_override("hover_pressed_mirrored", sbflat.ptr());
 
 		child->end_bulk_theme_override();
 	}
@@ -1207,7 +1195,7 @@ EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 		channel[i].peak_indicator_l = memnew(Panel);
 		channel[i].peak_indicator_l->set_custom_minimum_size(Size2(vu_width * EDSCALE, 2.0));
 		channel[i].peak_indicator_l->add_theme_style_override(
-			SceneStringName(panel), peak_indicator_stylebox_l);
+			SceneStringName(panel), peak_indicator_stylebox_l.ptr());
 		channel[i].vu_l->add_child(channel[i].peak_indicator_l);
 		channel[i].peak_indicator_l->set_position(Point2(0.0, peak_indicator_range));
 		channel[i].peak_timer_l = memnew(Timer);
@@ -1235,7 +1223,7 @@ EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 		channel[i].peak_indicator_r = memnew(Panel);
 		channel[i].peak_indicator_r->set_custom_minimum_size(Size2(vu_width * EDSCALE, 2.0));
 		channel[i].peak_indicator_r->add_theme_style_override(
-			SceneStringName(panel), peak_indicator_stylebox_r);
+			SceneStringName(panel), peak_indicator_stylebox_r.ptr());
 		channel[i].vu_r->add_child(channel[i].peak_indicator_r);
 		channel[i].peak_indicator_r->set_position(Point2(0.0, peak_indicator_range));
 		channel[i].peak_timer_r = memnew(Timer);
@@ -1297,7 +1285,6 @@ EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 	effect_options->connect("index_pressed", callable_mp(this, &EditorAudioBus::_effect_add));
 	add_child(effect_options);
 	LocalVector<StringName> effect_list;
-	ClassDB::get_inheriters_from_class("AudioEffect", effect_list);
 #ifndef DISABLE_DEPRECATED
 	effect_list.erase("AudioEffectLimiter");
 #endif
@@ -1306,10 +1293,6 @@ EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 	effect_list.erase("AudioEffectFilter");
 	effect_list.sort_custom<StringName::AlphCompare>();
 	for (const StringName& E : effect_list) {
-		if (!ClassDB::can_instantiate(E) || ClassDB::is_virtual(E)) {
-			continue;
-		}
-
 		String name = E.string().replace("AudioEffect", "");
 		effect_options->add_item(name);
 		effect_options->set_item_metadata(-1, E);
@@ -1342,7 +1325,7 @@ void EditorAudioBusDrop::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_DRAW: {
-		draw_style_box(get_theme_stylebox(CoreStringName(normal), SNAME("Button")),
+		draw_style_box(get_theme_stylebox(CoreStringName(normal), SNAME("Button")).ptr(),
 			Rect2(Vector2(), get_size()));
 
 		if (hovering_drop) {
@@ -1378,10 +1361,11 @@ bool EditorAudioBusDrop::can_drop_data(const Point2& p_point, const Variant& p_d
 void EditorAudioBusDrop::drop_data(const Point2& p_point, const Variant& p_data)
 {
 	Dictionary d = p_data;
-	this->obj->emit_signal(SNAME("dropped"), d["index"], AudioServer::get_singleton()->get_bus_count());
+	this->obj->emit_signal(
+		SNAME("dropped"), d["index"], AudioServer::get_singleton()->get_bus_count());
 }
 
-void EditorAudioBusDrop::_bind_methods() { ADD_SIGNAL(MethodInfo("dropped")); }
+void EditorAudioBusDrop::_bind_methods() {}
 
 void EditorAudioBuses::_update_file_label()
 {
@@ -1421,16 +1405,17 @@ void EditorAudioBuses::_rebuild_buses()
 		EditorAudioBus* audio_bus = memnew(EditorAudioBus(this, is_master));
 		bus_hb->add_child(audio_bus);
 		audio_bus->connect("delete_request",
-			callable_mp(this, &EditorAudioBuses::_delete_bus).bind(audio_bus), AudioEffect::CONNECT_DEFERRED);
+			callable_mp(this, &EditorAudioBuses::_delete_bus).bind(audio_bus),
+			Object::CONNECT_DEFERRED);
 		audio_bus->connect("duplicate_request",
-			callable_mp(this, &EditorAudioBuses::_duplicate_bus), AudioEffect::CONNECT_DEFERRED);
+			callable_mp(this, &EditorAudioBuses::_duplicate_bus), Object::CONNECT_DEFERRED);
 		audio_bus->connect("vol_reset_request",
 			callable_mp(this, &EditorAudioBuses::_reset_bus_volume).bind(audio_bus),
-			AudioEffect::CONNECT_DEFERRED);
+			Object::CONNECT_DEFERRED);
 		audio_bus->connect(
 			"drop_end_request", callable_mp(this, &EditorAudioBuses::_request_drop_end));
-		audio_bus->connect(
-			"dropped", callable_mp(this, &EditorAudioBuses::_drop_at_index), AudioEffect::CONNECT_DEFERRED);
+		audio_bus->connect("dropped", callable_mp(this, &EditorAudioBuses::_drop_at_index),
+			Object::CONNECT_DEFERRED);
 	}
 }
 
@@ -1450,8 +1435,8 @@ void EditorAudioBuses::_notification(int p_what)
 		menu->get_popup()->set_item_icon((int)MenuOption::LOAD, get_editor_theme_icon("Load"));
 		menu->get_popup()->set_item_icon((int)MenuOption::SAVE_AS, get_editor_theme_icon("Save"));
 
-		bus_scroll->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+		bus_scroll->add_theme_style_override(SceneStringName(panel),
+			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 		if (is_visible_in_tree()) {
 			_update_file_label_size();
 		}
@@ -1476,9 +1461,9 @@ void EditorAudioBuses::_notification(int p_what)
 		for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
 			for (int j = 0; j < AudioServer::get_singleton()->get_bus_effect_count(i); j++) {
 				Ref<AudioEffect> effect = AudioServer::get_singleton()->get_bus_effect(i, j);
-				if (effect->is_edited()) {
+				if (effect->obj->is_edited()) {
 					edited = true;
-					effect->set_edited(false);
+					effect->obj->set_edited(false);
 				}
 			}
 		}
@@ -1611,8 +1596,8 @@ void EditorAudioBuses::_request_drop_end()
 		bus_hb->add_child(drop_end);
 		drop_end->set_custom_minimum_size(
 			Object::cast_to<Control>(bus_hb->get_child(0))->get_size());
-		drop_end->connect(
-			"dropped", callable_mp(this, &EditorAudioBuses::_drop_at_index), AudioEffect::CONNECT_DEFERRED);
+		drop_end->connect("dropped", callable_mp(this, &EditorAudioBuses::_drop_at_index),
+			Object::CONNECT_DEFERRED);
 	}
 }
 
@@ -1633,20 +1618,20 @@ void EditorAudioBuses::_server_save()
 {
 	Ref<AudioBusLayout> state = AudioServer::get_singleton()->generate_bus_layout();
 	if (edited_path.is_empty()) {
-		ResourceSaver::save(state, "res://default_bus_layout.tres");
+		ResourceSaver::save(state.ptr(), "res://default_bus_layout.tres");
 		edited_path = ResourceUID::path_to_uid("res://default_bus_layout.tres");
 		ProjectSettings::get_singleton()->set_setting(
 			"audio/buses/default_bus_layout", edited_path);
 		_update_file_label();
 	}
 	else if (!edited_path.begins_with("uid://")) {
-		ResourceSaver::save(state, edited_path);
+		ResourceSaver::save(state.ptr(), edited_path);
 		edited_path = ResourceUID::path_to_uid(edited_path);
 		ProjectSettings::get_singleton()->set_setting(
 			"audio/buses/default_bus_layout", edited_path);
 	}
 	else {
-		ResourceSaver::save(state, ResourceUID::ensure_path(edited_path));
+		ResourceSaver::save(state.ptr(), ResourceUID::ensure_path(edited_path));
 	}
 }
 
@@ -1724,8 +1709,8 @@ void EditorAudioBuses::_file_dialog_callback(const String& p_string)
 			AudioServer::get_singleton()->set_bus_layout(empty_state);
 		}
 
-		Error err =
-			ResourceSaver::save(AudioServer::get_singleton()->generate_bus_layout(), p_string);
+		Error err = ResourceSaver::save(
+			AudioServer::get_singleton()->generate_bus_layout().ptr(), p_string);
 		if (err != OK) {
 			EditorNode::get_singleton()->show_warning(
 				vformat(TTR("Error saving file: %s"), p_string));
@@ -1747,11 +1732,7 @@ void EditorAudioBuses::update_layout(EditorDock::DockLayout p_layout, int p_slot
 	}
 }
 
-void EditorAudioBuses::_bind_methods()
-{
-	ClassDB::bind_method("_update_bus", &EditorAudioBuses::_update_bus);
-	ClassDB::bind_method("_update_sends", &EditorAudioBuses::_update_sends);
-}
+void EditorAudioBuses::_bind_methods() {}
 
 EditorAudioBuses::EditorAudioBuses()
 {
@@ -1854,8 +1835,7 @@ void EditorAudioBuses::open_layout(const String& p_path)
 
 	const String path = ResourceUID::ensure_path(p_path);
 	if (!ResourceLoader::exists(path)) {
-		EditorNode::
-get_singleton()->show_warning(
+		EditorNode::get_singleton()->show_warning(
 			vformat(TTR(R"(Can't open audio bus layout: "%s" doesn't exist.)"), path));
 		return;
 	}
@@ -1942,11 +1922,7 @@ void EditorAudioMeterNotches::_update_theme_item_cache()
 	theme_cache.font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 }
 
-void EditorAudioMeterNotches::_bind_methods()
-{
-	ClassDB::bind_method("add_notch", &EditorAudioMeterNotches::add_notch);
-	ClassDB::bind_method("_draw_audio_notches", &EditorAudioMeterNotches::_draw_audio_notches);
-}
+void EditorAudioMeterNotches::_bind_methods() {}
 
 void EditorAudioMeterNotches::_notification(int p_what)
 {
@@ -1968,7 +1944,7 @@ void EditorAudioMeterNotches::_draw_audio_notches()
 
 		if (n.render_db_value) {
 			char sign = n.db_value >= 0 ? '+' : '-';
-			draw_string(theme_cache.font,
+			draw_string(theme_cache.font.ptr(),
 				Vector2((line_length + label_space) * EDSCALE,
 					(1.0f - n.relative_position) * get_size().y + (font_height / 4)),
 				sign + String::num(Math::abs(n.db_value), 0) + " dB", HORIZONTAL_ALIGNMENT_LEFT, -1,

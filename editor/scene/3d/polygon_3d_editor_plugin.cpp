@@ -566,10 +566,7 @@ void Polygon3DEditor::edit(Node* p_node)
 	}
 }
 
-void Polygon3DEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_polygon_draw"), &Polygon3DEditor::_polygon_draw);
-}
+void Polygon3DEditor::_bind_methods() {}
 
 Polygon3DEditor::Polygon3DEditor()
 {
@@ -629,8 +626,7 @@ Polygon3DEditor::Polygon3DEditor()
 	snap_ignore = false;
 }
 
-Polygon3DEditor::~Polygon3DEditor() { memdelete
-(imgeom); }
+Polygon3DEditor::~Polygon3DEditor() { memdelete(imgeom); }
 
 void Polygon3DEditorPlugin::edit(Object* p_object)
 {

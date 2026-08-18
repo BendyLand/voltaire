@@ -485,7 +485,7 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 
 					int h = MAX(text_buf.get_size().y, icon->get_height());
 
-					draw_texture(icon, Point2(ofs, vofs + int(h - icon->get_height()) / 2.0));
+					draw_texture(icon.ptr(), Point2(ofs, vofs + int(h - icon->get_height()) / 2.0));
 					ofs += icon->get_width() + h_separation;
 
 					margin = icon->get_width();
@@ -497,10 +497,10 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 					Rect2 remove_rect(limit - h_separation - remove->get_width(), vofs,
 						remove->get_width(), remove->get_height());
 					if (read_only) {
-						draw_texture(remove, remove_rect.position, dc);
+						draw_texture(remove.ptr(), remove_rect.position, dc);
 					}
 					else {
-						draw_texture(remove, remove_rect.position);
+						draw_texture(remove.ptr(), remove_rect.position);
 					}
 
 					bool all_tracks_locked = true;
@@ -515,10 +515,10 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 						lock->get_width(), lock->get_height());
 
 					if (all_tracks_locked) {
-						draw_texture(lock, lock_rect.position);
+						draw_texture(lock.ptr(), lock_rect.position);
 					}
 					else {
-						draw_texture(unlock, lock_rect.position);
+						draw_texture(unlock.ptr(), lock_rect.position);
 					}
 
 					bool all_tracks_hidden = true;
@@ -534,15 +534,15 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 						visibility_visible->get_width(), visibility_visible->get_height());
 
 					if (all_tracks_hidden) {
-						draw_texture(visibility_hidden, visibility_rect.position);
+						draw_texture(visibility_hidden.ptr(), visibility_rect.position);
 					}
 					else {
-						draw_texture(visibility_visible, visibility_rect.position);
+						draw_texture(visibility_visible.ptr(), visibility_rect.position);
 					}
 
 					Rect2 solo_rect(visibility_rect.position.x - h_separation - solo->get_width(),
 						vofs, solo->get_width(), solo->get_height());
-					draw_texture(solo, solo_rect.position);
+					draw_texture(solo.ptr(), solo_rect.position);
 
 					RBMap<int, Rect2> icon_rects;
 					icon_rects[REMOVE_ICON] = remove_rect;
@@ -633,31 +633,31 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 				static const Color texture_modulate = Color(1, 1, 1, .75);
 
 				if (read_only) {
-					draw_texture(remove, remove_rect.position, dc);
+					draw_texture(remove.ptr(), remove_rect.position, dc);
 				}
 				else {
-					draw_texture(remove, remove_rect.position, texture_modulate);
+					draw_texture(remove.ptr(), remove_rect.position, texture_modulate);
 				}
 
 				Rect2 lock_rect = Rect2(lock_hpos, vofs, lock->get_width(), lock->get_height());
 				if (locked_tracks.has(current_track)) {
-					draw_texture(lock, lock_rect.position, texture_modulate);
+					draw_texture(lock.ptr(), lock_rect.position, texture_modulate);
 				}
 				else {
-					draw_texture(unlock, lock_rect.position, texture_modulate);
+					draw_texture(unlock.ptr(), lock_rect.position, texture_modulate);
 				}
 
 				Rect2 visible_rect = Rect2(visibility_hpos, vofs, visibility_visible->get_width(),
 					visibility_visible->get_height());
 				if (hidden_tracks.has(current_track)) {
-					draw_texture(visibility_hidden, visible_rect.position, texture_modulate);
+					draw_texture(visibility_hidden.ptr(), visible_rect.position, texture_modulate);
 				}
 				else {
-					draw_texture(visibility_visible, visible_rect.position, texture_modulate);
+					draw_texture(visibility_visible.ptr(), visible_rect.position, texture_modulate);
 				}
 
 				Rect2 solo_rect = Rect2(solo_hpos, vofs, solo->get_width(), solo->get_height());
-				draw_texture(solo, solo_rect.position, texture_modulate);
+				draw_texture(solo.ptr(), solo_rect.position, texture_modulate);
 
 				RBMap<int, Rect2> track_icons;
 				track_icons[REMOVE_ICON] = remove_rect;
@@ -707,7 +707,7 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 
 					const String& formatted = TranslationServer::get_singleton()->format_number(
 						rtos(Math::snapped((iv + 1) * scale, step)), lang);
-					draw_string(font, Point2(limit + 8, i - 2), formatted,
+					draw_string(font.ptr(), Point2(limit + 8, i - 2), formatted,
 						HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, c);
 				}
 
@@ -734,7 +734,7 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 						_bezier_h_to_pixel(value));
 
 					if (pos.x >= limit && pos.x <= right_limit) {
-						draw_texture(point, pos - point->get_size() / 2.0, E.value);
+						draw_texture(point.ptr(), pos - point->get_size() / 2.0, E.value);
 					}
 				}
 			}
@@ -861,12 +861,12 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 						ep.point_rect.position = (pos - bezier_icon->get_size() / 2.0).floor();
 						ep.point_rect.size = bezier_icon->get_size();
 						if (is_selected) {
-							draw_texture(selected_icon, ep.point_rect.position);
+							draw_texture(selected_icon.ptr(), ep.point_rect.position);
 
 							const String& formatted_offset =
 								TranslationServer::get_singleton()->format_number(
 									rtos(Math::snapped(offset, 0.0001)), lang);
-							draw_string(font,
+							draw_string(font.ptr(),
 								ep.point_rect.position +
 									Vector2(8, -font->get_height(font_size) - 8),
 								TTR("Time:") + " " + formatted_offset, HORIZONTAL_ALIGNMENT_LEFT,
@@ -875,7 +875,7 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 							const String& formatted_value =
 								TranslationServer::get_singleton()->format_number(
 									rtos(Math::snapped(value, 0.001)), lang);
-							draw_string(font, ep.point_rect.position + Vector2(8, -8),
+							draw_string(font.ptr(), ep.point_rect.position + Vector2(8, -8),
 								TTR("Value:") + " " + formatted_value, HORIZONTAL_ALIGNMENT_LEFT,
 								-1, font_size, accent);
 						}
@@ -884,7 +884,7 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 							if (i != selected_track) {
 								track_color = subtrack_colors[i];
 							}
-							draw_texture(bezier_icon, ep.point_rect.position, track_color);
+							draw_texture(bezier_icon.ptr(), ep.point_rect.position, track_color);
 						}
 						ep.point_rect = ep.point_rect.grow(ep.point_rect.size.width * 0.5);
 					}
@@ -897,14 +897,14 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 								ep.in_rect.position =
 									(pos_in - bezier_handle_icon->get_size() / 2.0).floor();
 								ep.in_rect.size = bezier_handle_icon->get_size();
-								draw_texture(bezier_handle_icon, ep.in_rect.position);
+								draw_texture(bezier_handle_icon.ptr(), ep.in_rect.position);
 								ep.in_rect = ep.in_rect.grow(ep.in_rect.size.width * 0.5);
 							}
 							if (pos_out.x >= limit && pos_out.x <= right_limit) {
 								ep.out_rect.position =
 									(pos_out - bezier_handle_icon->get_size() / 2.0).floor();
 								ep.out_rect.size = bezier_handle_icon->get_size();
-								draw_texture(bezier_handle_icon, ep.out_rect.position);
+								draw_texture(bezier_handle_icon.ptr(), ep.out_rect.position);
 								ep.out_rect = ep.out_rect.grow(ep.out_rect.size.width * 0.5);
 							}
 						}
@@ -1107,9 +1107,9 @@ void AnimationBezierTrackEdit::set_editor(AnimationTrackEditor* p_editor)
 	connect("clear_selection",
 		callable_mp(editor, &AnimationTrackEditor::_clear_selection).bind(false));
 	connect("select_key", callable_mp(editor, &AnimationTrackEditor::_key_selected),
-		Animation::CONNECT_DEFERRED);
+		Object::CONNECT_DEFERRED);
 	connect("deselect_key", callable_mp(editor, &AnimationTrackEditor::_key_deselected),
-		Animation::CONNECT_DEFERRED);
+		Object::CONNECT_DEFERRED);
 }
 
 void AnimationBezierTrackEdit::_play_position_draw()
@@ -1331,7 +1331,7 @@ void AnimationBezierTrackEdit::_change_selected_keys_handle_mode(
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(
-		TTR("Update Selected Key Handles"), UndoRedo::MERGE_DISABLE, animation.ptr());
+		TTR("Update Selected Key Handles"), UndoRedo::MERGE_DISABLE, animation->obj.get());
 	for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
 		const IntPair track_key_pair = E->get();
 		undo_redo->add_undo_method(editor->obj.get(), "_bezier_track_set_key_handle_mode",
@@ -1339,10 +1339,10 @@ void AnimationBezierTrackEdit::_change_selected_keys_handle_mode(
 			animation->bezier_track_get_key_handle_mode(
 				track_key_pair.first, track_key_pair.second),
 			Animation::HANDLE_SET_MODE_NONE);
-		undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_in_handle",
+		undo_redo->add_undo_method(animation->obj.get(), "bezier_track_set_key_in_handle",
 			track_key_pair.first, track_key_pair.second,
 			animation->bezier_track_get_key_in_handle(track_key_pair.first, track_key_pair.second));
-		undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_out_handle",
+		undo_redo->add_undo_method(animation->obj.get(), "bezier_track_set_key_out_handle",
 			track_key_pair.first, track_key_pair.second,
 			animation->bezier_track_get_key_out_handle(
 				track_key_pair.first, track_key_pair.second));
@@ -1605,16 +1605,16 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 							EditorUndoRedoManager* undo_redo =
 								EditorUndoRedoManager::get_singleton();
 							undo_redo->create_action(
-								"Remove Bezier Track", UndoRedo::MERGE_DISABLE, animation.ptr());
+								"Remove Bezier Track", UndoRedo::MERGE_DISABLE, animation->obj.get());
 
 							undo_redo->add_do_method(this->obj.get(), "_update_locked_tracks_after", track);
 							undo_redo->add_do_method(this->obj.get(), "_update_hidden_tracks_after", track);
 
-							undo_redo->add_do_method(animation.ptr(), "remove_track", track);
+							undo_redo->add_do_method(animation->obj.get(), "remove_track", track);
 
-							undo_redo->add_undo_method(animation.ptr(), "add_track",
+							undo_redo->add_undo_method(animation->obj.get(), "add_track",
 								Animation::TrackType::TYPE_BEZIER, track);
-							undo_redo->add_undo_method(animation.ptr(), "track_set_path", track,
+							undo_redo->add_undo_method(animation->obj.get(), "track_set_path", track,
 								animation->track_get_path(track));
 
 							if (locked_tracks.has(track)) {
@@ -1702,7 +1702,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 							EditorUndoRedoManager* undo_redo =
 								EditorUndoRedoManager::get_singleton();
 							undo_redo->create_action("Remove Bezier Track", UndoRedo::MERGE_DISABLE,
-								animation.ptr(), true);
+								animation->obj.get(), true);
 
 							for (int i = animation->get_track_count() - 1; i >= 0; --i) {
 								if (animation->track_get_path(i).get_concatenated_names() !=
@@ -1716,7 +1716,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 
 								undo_redo->add_do_method(this->obj.get(), "_update_locked_tracks_after", i);
 								undo_redo->add_do_method(this->obj.get(), "_update_hidden_tracks_after", i);
-								undo_redo->add_do_method(animation.ptr(), "remove_track", i);
+								undo_redo->add_do_method(animation->obj.get(), "remove_track", i);
 
 								for (int j = animation->track_get_key_count(i) - 1; j >= 0; --j) {
 									undo_redo->add_undo_method(this->obj.get(),
@@ -1736,9 +1736,9 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 									undo_redo->add_undo_method(this->obj.get(), "_lock_track", i);
 								}
 
-								undo_redo->add_undo_method(animation.ptr(), "track_set_path", i,
+								undo_redo->add_undo_method(animation->obj.get(), "track_set_path", i,
 									animation->track_get_path(i));
-								undo_redo->add_undo_method(animation.ptr(), "add_track",
+								undo_redo->add_undo_method(animation->obj.get(), "add_track",
 									Animation::TrackType::TYPE_BEZIER, i);
 							}
 
@@ -1970,7 +1970,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 
 			EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->create_action(TTR("Add Bezier Point"));
-			undo_redo->add_do_method(animation.ptr(), "bezier_track_insert_key", selected_track,
+			undo_redo->add_do_method(animation->obj.get(), "bezier_track_insert_key", selected_track,
 				time, new_point[0], Vector2(new_point[1], new_point[2]),
 				Vector2(new_point[3], new_point[4]));
 			undo_redo->add_do_method(editor->obj.get(), "_bezier_track_set_key_handle_mode_at_time",
@@ -1978,7 +1978,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 				(Animation::HandleMode)editor->bezier_key_mode->get_selected_id(),
 				Animation::HANDLE_SET_MODE_AUTO);
 			undo_redo->add_undo_method(
-				animation.ptr(), "track_remove_key_at_time", selected_track, time);
+				animation->obj.get(), "track_remove_key_at_time", selected_track, time);
 			undo_redo->commit_action();
 
 			// Then attempt to move.
@@ -2095,7 +2095,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 				// 1 - Remove the keys.
 				for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
 					undo_redo->add_do_method(
-						animation.ptr(), "track_remove_key", E->get().first, E->get().second);
+						animation->obj.get(), "track_remove_key", E->get().first, E->get().second);
 				}
 				// 2 - Remove overlapped keys.
 				for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
@@ -2114,7 +2114,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 					}
 
 					undo_redo->add_do_method(
-						animation.ptr(), "track_remove_key_at_time", E->get().first, newtime);
+						animation->obj.get(), "track_remove_key_at_time", E->get().first, newtime);
 					AnimMoveRestore amr;
 
 					amr.key = animation->track_get_key_value(E->get().first, idx);
@@ -2154,7 +2154,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 					real_t newpos = animation->track_get_key_time(E->get().first, E->get().second) +
 									moving_selection_offset.x;
 					undo_redo->add_undo_method(
-						animation.ptr(), "track_remove_key_at_time", E->get().first, newpos);
+						animation->obj.get(), "track_remove_key_at_time", E->get().first, newpos);
 				}
 
 				// 5 - (undo) Reinsert keys.
@@ -2178,7 +2178,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 					const AnimMoveRestore& amr = *restore_itr;
 					Array key = amr.key;
 					undo_redo->add_undo_method(
-						animation.ptr(), "track_insert_key", amr.track, amr.time, amr.key, 1);
+						animation->obj.get(), "track_insert_key", amr.track, amr.time, amr.key, 1);
 					undo_redo->add_undo_method(this->obj.get(), "_bezier_track_insert_key_at_anim", animation,
 						amr.track, amr.time, key[0], Vector2(key[1], key[2]),
 						Vector2(key[3], key[4]), *handle_itr);
@@ -2238,7 +2238,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			// 1 - Remove the keys.
 			for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
 				undo_redo->add_do_method(
-					animation.ptr(), "track_remove_key", E->get().first, E->get().second);
+					animation->obj.get(), "track_remove_key", E->get().first, E->get().second);
 			}
 			// 2 - Remove overlapped keys.
 			for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
@@ -2257,7 +2257,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 				}
 
 				undo_redo->add_do_method(
-					animation.ptr(), "track_remove_key_at_time", E->get().first, newtime);
+					animation->obj.get(), "track_remove_key_at_time", E->get().first, newtime);
 				AnimMoveRestore amr;
 
 				amr.key = animation->track_get_key_value(E->get().first, idx);
@@ -2293,7 +2293,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 				newpos += -scaling_selection_offset.x +
 						  (newpos - scaling_selection_pivot.x) * (scaling_selection_scale.x - 1);
 				undo_redo->add_undo_method(
-					animation.ptr(), "track_remove_key_at_time", E->get().first, newpos);
+					animation->obj.get(), "track_remove_key_at_time", E->get().first, newpos);
 			}
 
 			// 5 - (undo) Reinsert keys.
@@ -2314,7 +2314,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 				const AnimMoveRestore& amr = *restore_itr;
 				Array key = amr.key;
 				undo_redo->add_undo_method(
-					animation.ptr(), "track_insert_key", amr.track, amr.time, amr.key, 1);
+					animation->obj.get(), "track_insert_key", amr.track, amr.time, amr.key, 1);
 				undo_redo->add_undo_method(this->obj.get(), "_bezier_track_insert_key_at_anim", animation,
 					amr.track, amr.time, key[0], Vector2(key[1], key[2]), Vector2(key[3], key[4]),
 					*handle_itr);
@@ -2594,9 +2594,9 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			undo_redo->create_action(TTR("Move Bezier Points"));
 			if (moving_handle == -1) {
 				real_t ratio = timeline->get_zoom_scale() * timeline_v_zoom;
-				undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_in_handle",
+				undo_redo->add_do_method(animation->obj.get(), "bezier_track_set_key_in_handle",
 					moving_handle_track, moving_handle_key, moving_handle_left, ratio);
-				undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_in_handle",
+				undo_redo->add_undo_method(animation->obj.get(), "bezier_track_set_key_in_handle",
 					moving_handle_track, moving_handle_key,
 					animation->bezier_track_get_key_in_handle(
 						moving_handle_track, moving_handle_key),
@@ -2604,9 +2604,9 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			}
 			else if (moving_handle == 1) {
 				real_t ratio = timeline->get_zoom_scale() * timeline_v_zoom;
-				undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_out_handle",
+				undo_redo->add_do_method(animation->obj.get(), "bezier_track_set_key_out_handle",
 					moving_handle_track, moving_handle_key, moving_handle_right, ratio);
-				undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_out_handle",
+				undo_redo->add_undo_method(animation->obj.get(), "bezier_track_set_key_out_handle",
 					moving_handle_track, moving_handle_key,
 					animation->bezier_track_get_key_out_handle(
 						moving_handle_track, moving_handle_key),
@@ -2756,13 +2756,13 @@ void AnimationBezierTrackEdit::_menu_selected(int p_index)
 			EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->create_action(TTR("Add Bezier Point"));
 			undo_redo->add_do_method(
-				animation.ptr(), "track_insert_key", selected_track, time, new_point);
+				animation->obj.get(), "track_insert_key", selected_track, time, new_point);
 			undo_redo->add_do_method(editor->obj.get(), "_bezier_track_set_key_handle_mode_at_time",
 				animation.ptr(), selected_track, time, handle_mode,
 				Animation::HANDLE_SET_MODE_AUTO);
 			undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
 			undo_redo->add_undo_method(
-				animation.ptr(), "track_remove_key_at_time", selected_track, time);
+				animation->obj.get(), "track_remove_key_at_time", selected_track, time);
 			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 			if (ape) {
 				undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
@@ -2841,11 +2841,11 @@ void AnimationBezierTrackEdit::duplicate_selected_keys(real_t p_ofs, bool p_ofs_
 		int existing_idx =
 			animation->track_find_key(E->get().first, dst_time, Animation::FIND_MODE_APPROX);
 
-		undo_redo->add_do_method(animation.ptr(), "track_insert_key", E->get().first, dst_time,
+		undo_redo->add_do_method(animation->obj.get(), "track_insert_key", E->get().first, dst_time,
 			animation->track_get_key_value(E->get().first, E->get().second),
 			animation->track_get_key_transition(E->get().first, E->get().second));
 		undo_redo->add_undo_method(
-			animation.ptr(), "track_remove_key_at_time", E->get().first, dst_time);
+			animation->obj.get(), "track_remove_key_at_time", E->get().first, dst_time);
 
 		Pair<int, real_t> p;
 		p.first = E->get().first;
@@ -2853,7 +2853,7 @@ void AnimationBezierTrackEdit::duplicate_selected_keys(real_t p_ofs, bool p_ofs_
 		new_selection_values.push_back(p);
 
 		if (existing_idx != -1) {
-			undo_redo->add_undo_method(animation.ptr(), "track_insert_key", E->get().first,
+			undo_redo->add_undo_method(animation->obj.get(), "track_insert_key", E->get().first,
 				dst_time, animation->track_get_key_value(E->get().first, existing_idx),
 				animation->track_get_key_transition(E->get().first, existing_idx));
 		}
@@ -2914,7 +2914,7 @@ void AnimationBezierTrackEdit::copy_selected_keys(bool p_cut)
 	if (p_cut) {
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(
-			TTR("Animation Cut Keys"), UndoRedo::MERGE_DISABLE, animation.ptr());
+			TTR("Animation Cut Keys"), UndoRedo::MERGE_DISABLE, animation->obj.get());
 		undo_redo->add_do_method(this->obj.get(), "_clear_selection_for_anim", animation);
 		undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
 		int i = 0;
@@ -2924,8 +2924,8 @@ void AnimationBezierTrackEdit::copy_selected_keys(bool p_cut)
 			int track_idx = E->key().track;
 			int key_idx = E->key().key;
 			float time = E->value().pos;
-			undo_redo->add_do_method(animation.ptr(), "track_remove_key_at_time", track_idx, time);
-			undo_redo->add_undo_method(animation.ptr(), "track_insert_key", track_idx, time,
+			undo_redo->add_do_method(animation->obj.get(), "track_remove_key_at_time", track_idx, time);
+			undo_redo->add_undo_method(animation->obj.get(), "track_insert_key", track_idx, time,
 				animation->track_get_key_value(track_idx, key_idx),
 				animation->track_get_key_transition(track_idx, key_idx));
 			undo_redo->add_undo_method(this->obj.get(), "_select_at_anim", animation, track_idx, time, i == 0);
@@ -3003,10 +3003,10 @@ void AnimationBezierTrackEdit::paste_keys(real_t p_ofs, bool p_ofs_valid)
 				value = animation->make_default_bezier_key(key.value);
 			}
 
-			undo_redo->add_do_method(animation.ptr(), "track_insert_key", selected_track, dst_time,
+			undo_redo->add_do_method(animation->obj.get(), "track_insert_key", selected_track, dst_time,
 				value, key.transition);
 			undo_redo->add_undo_method(
-				animation.ptr(), "track_remove_key_at_time", selected_track, dst_time);
+				animation->obj.get(), "track_remove_key_at_time", selected_track, dst_time);
 
 			Pair<int, float> p;
 			p.first = selected_track;
@@ -3014,7 +3014,7 @@ void AnimationBezierTrackEdit::paste_keys(real_t p_ofs, bool p_ofs_valid)
 			new_selection_values.push_back(p);
 
 			if (existing_idx != -1) {
-				undo_redo->add_undo_method(animation.ptr(), "track_insert_key", selected_track,
+				undo_redo->add_undo_method(animation->obj.get(), "track_insert_key", selected_track,
 					dst_time, animation->track_get_key_value(selected_track, existing_idx),
 					animation->track_get_key_transition(selected_track, existing_idx));
 			}
@@ -3056,8 +3056,8 @@ void AnimationBezierTrackEdit::delete_selection()
 
 		for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
 			undo_redo->add_do_method(
-				animation.ptr(), "track_remove_key", E->get().first, E->get().second);
-			undo_redo->add_undo_method(animation.ptr(), "track_insert_key", E->get().first,
+				animation->obj.get(), "track_remove_key", E->get().first, E->get().second);
+			undo_redo->add_undo_method(animation->obj.get(), "track_insert_key", E->get().first,
 				animation->track_get_key_time(E->get().first, E->get().second),
 				animation->track_get_key_value(E->get().first, E->get().second), 1);
 		}
@@ -3083,30 +3083,7 @@ void AnimationBezierTrackEdit::_bezier_track_insert_key_at_anim(const Ref<Animat
 	p_anim->bezier_track_set_key_handle_mode(p_track, idx, p_handle_mode, p_handle_set_mode);
 }
 
-void AnimationBezierTrackEdit::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_clear_selection"), &AnimationBezierTrackEdit::_clear_selection);
-	ClassDB::bind_method(D_METHOD("_clear_selection_for_anim"),
-		&AnimationBezierTrackEdit::_clear_selection_for_anim);
-	ClassDB::bind_method(D_METHOD("_select_at_anim"), &AnimationBezierTrackEdit::_select_at_anim);
-	ClassDB::bind_method(D_METHOD("_update_hidden_tracks_after"),
-		&AnimationBezierTrackEdit::_update_hidden_tracks_after);
-	ClassDB::bind_method(D_METHOD("_update_locked_tracks_after"),
-		&AnimationBezierTrackEdit::_update_locked_tracks_after);
-	ClassDB::bind_method(D_METHOD("_lock_track"), &AnimationBezierTrackEdit::_lock_track);
-	ClassDB::bind_method(D_METHOD("_hide_track"), &AnimationBezierTrackEdit::_hide_track);
-	ClassDB::bind_method(D_METHOD("_bezier_track_insert_key_at_anim"),
-		&AnimationBezierTrackEdit::_bezier_track_insert_key_at_anim,
-		DEFVAL(Animation::HANDLE_SET_MODE_NONE));
-
-	ADD_SIGNAL(MethodInfo("select_key", PropertyInfo(Variant::INT, "index"),
-		PropertyInfo(Variant::BOOL, "single"), PropertyInfo(Variant::INT, "track")));
-	ADD_SIGNAL(MethodInfo(
-		"deselect_key", PropertyInfo(Variant::INT, "index"), PropertyInfo(Variant::INT, "track")));
-	ADD_SIGNAL(MethodInfo("clear_selection"));
-	ADD_SIGNAL(MethodInfo("timeline_changed", PropertyInfo(Variant::FLOAT, "position"),
-		PropertyInfo(Variant::BOOL, "timeline_only")));
-}
+void AnimationBezierTrackEdit::_bind_methods() {}
 
 AnimationBezierTrackEdit::AnimationBezierTrackEdit()
 {

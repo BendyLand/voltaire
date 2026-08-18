@@ -400,7 +400,7 @@ class ScriptEditor : public PanelContainer
 	void _file_dialog_action(const String& p_file);
 
 	Ref<Script> _get_current_script();
-	TypedArray<Script> _get_open_scripts() const;
+	Array _get_open_scripts() const;
 
 	HashSet<String> textfile_extensions;
 	Ref<TextFile> _load_text_file(const String& p_path, Error* r_error) const;

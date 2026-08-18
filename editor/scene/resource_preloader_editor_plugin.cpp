@@ -168,7 +168,7 @@ void ResourcePreloaderEditor::_paste_pressed()
 		name = r->get_path().get_file();
 	}
 	if (name.is_empty()) {
-		name = r->get_class();
+		name = r->obj->get_class();
 	}
 
 	String basename = name;
@@ -238,7 +238,7 @@ void ResourcePreloaderEditor::_update_library()
 
 		ERR_CONTINUE(r.is_null());
 
-		String type = r->get_class();
+		String type = r->obj->get_class();
 		ti->set_icon(0, EditorNode::get_singleton()->get_class_icon(type));
 		ti->set_tooltip_text(
 			0, TTR("Instance:") + " " + r->get_path() + "\n" + TTR("Type:") + " " + type);
@@ -407,12 +407,7 @@ void ResourcePreloaderEditor::update_layout(EditorDock::DockLayout p_layout, int
 	}
 }
 
-void ResourcePreloaderEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_update_library"), &ResourcePreloaderEditor::_update_library);
-	ClassDB::bind_method(
-		D_METHOD("_remove_resource", "to_remove"), &ResourcePreloaderEditor::_remove_resource);
-}
+void ResourcePreloaderEditor::_bind_methods() {}
 
 ResourcePreloaderEditor::ResourcePreloaderEditor()
 {

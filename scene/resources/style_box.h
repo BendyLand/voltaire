@@ -35,15 +35,17 @@
 
 class CanvasItem;
 
-class StyleBox : public Resource {
+class StyleBox : public Resource
+{
 	VLTRCLASS(StyleBox, Resource);
 	RES_BASE_EXTENSION("stylebox");
-	OBJ_SAVE_TYPE(StyleBox);
+	OBJ_SAVE_TYPE_NO(StyleBox);
 
 	float content_margin[4];
 
 protected:
 	static void _bind_methods();
+
 	virtual float get_style_margin(Side p_side) const { return 0; }
 
 public:
@@ -57,20 +59,24 @@ public:
 	float get_margin(Side p_side) const;
 	Point2 get_offset() const;
 
-	virtual void draw(RID p_canvas_item, const Rect2 &p_rect) const;
-	virtual Rect2 get_draw_rect(const Rect2 &p_rect) const;
+	virtual void draw(RID p_canvas_item, const Rect2& p_rect) const;
+	virtual Rect2 get_draw_rect(const Rect2& p_rect) const;
 
-	CanvasItem *get_current_item_drawn() const;
+	CanvasItem* get_current_item_drawn() const;
 
-	virtual bool test_mask(const Point2 &p_point, const Rect2 &p_rect) const;
+	virtual bool test_mask(const Point2& p_point, const Rect2& p_rect) const;
 
 	StyleBox();
 };
 
-class StyleBoxEmpty : public StyleBox {
+class StyleBoxEmpty : public StyleBox
+{
 	VLTRCLASS(StyleBoxEmpty, StyleBox);
+
 	virtual float get_style_margin(Side p_side) const override { return 0; }
 
 public:
-	virtual void draw(RID p_canvas_item, const Rect2 &p_rect) const override {}
+	virtual void draw(RID p_canvas_item, const Rect2& p_rect) const override {}
 };
+
+

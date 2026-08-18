@@ -259,9 +259,9 @@ void ProjectManager::_update_theme(bool p_skip_creation)
 		main_vbox->add_theme_constant_override("separation", top_bar_separation);
 
 		background_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox("Background", EditorStringName(EditorStyles)));
+			get_theme_stylebox("Background", EditorStringName(EditorStyles)).ptr());
 		main_view_container->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox("panel_container", "ProjectManager"));
+			SceneStringName(panel), get_theme_stylebox("panel_container", "ProjectManager").ptr());
 
 		title_bar_logo->set_button_icon(get_editor_theme_icon("TitleBarLogo"));
 
@@ -271,16 +271,16 @@ void ProjectManager::_update_theme(bool p_skip_creation)
 		// Project list.
 		{
 			loading_label->add_theme_font_override(
-				SceneStringName(font), get_theme_font("bold", EditorStringName(EditorFonts)));
+				SceneStringName(font), get_theme_font("bold", EditorStringName(EditorFonts)).ptr());
 			project_list_panel->add_theme_style_override(
-				SceneStringName(panel), get_theme_stylebox("project_list", "ProjectManager"));
+				SceneStringName(panel), get_theme_stylebox("project_list", "ProjectManager").ptr());
 
 			empty_list_create_project->set_button_icon(get_editor_theme_icon("Add"));
 			empty_list_import_project->set_button_icon(get_editor_theme_icon("Load"));
 			empty_list_open_assetlib->set_button_icon(get_editor_theme_icon("AssetStore"));
 
-			empty_list_online_warning->add_theme_font_override(
-				SceneStringName(font), get_theme_font("italic", EditorStringName(EditorFonts)));
+			empty_list_online_warning->add_theme_font_override(SceneStringName(font),
+				get_theme_font("italic", EditorStringName(EditorFonts)).ptr());
 			empty_list_online_warning->add_theme_color_override(SceneStringName(font_color),
 				get_theme_color("font_placeholder_color", EditorStringName(Editor)));
 
@@ -332,7 +332,8 @@ void ProjectManager::_update_theme(bool p_skip_creation)
 		// Asset store popup.
 		if (asset_library && EDITOR_GET("interface/theme/style") == "Classic") {
 			// Removes extra border margins.
-			asset_library->add_theme_style_override(SceneStringName(panel), memnew(StyleBoxEmpty));
+			asset_library->add_theme_style_override(
+				SceneStringName(panel), memnew(StyleBoxEmpty).ptr());
 		}
 	}
 #ifdef ANDROID_ENABLED
@@ -1835,7 +1836,7 @@ ProjectManager::ProjectManager()
 				empty_list_message->set_fit_content(true);
 				empty_list_message->set_h_size_flags(SIZE_EXPAND_FILL);
 				empty_list_message->add_theme_style_override(
-					CoreStringName(normal), memnew(StyleBoxEmpty));
+					CoreStringName(normal), memnew(StyleBoxEmpty).ptr());
 
 				empty_list_placeholder->add_child(empty_list_message);
 
@@ -1911,8 +1912,8 @@ ProjectManager::ProjectManager()
 			open_options_btn->set_accessibility_name(TTRC("Options"));
 			open_options_btn->set_icon_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
 			open_options_btn->connect(
-				SceneStringName(pressed), callable_mp(this
-, &ProjectManager::_open_options_popup));
+
+				SceneStringName(pressed), callable_mp(this, &ProjectManager::_open_options_popup));
 			open_btn_container->add_child(open_options_btn);
 
 			open_options_popup = memnew(PopupMenu);

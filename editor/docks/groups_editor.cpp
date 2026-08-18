@@ -951,20 +951,7 @@ void GroupsEditor::_groups_gui_input(Ref<InputEvent> p_event)
 	}
 }
 
-void GroupsEditor::_bind_methods()
-{
-	ClassDB::bind_method("_update_tree", &GroupsEditor::_update_tree);
-	ClassDB::bind_method("_update_groups", &GroupsEditor::_update_groups);
-	ClassDB::bind_method("_update_groups_and_tree", &GroupsEditor::_update_groups_and_tree);
-
-	ClassDB::bind_method("_add_scene_group", &GroupsEditor::_add_scene_group);
-	ClassDB::bind_method("_rename_scene_group", &GroupsEditor::_rename_scene_group);
-	ClassDB::bind_method("_remove_scene_group", &GroupsEditor::_remove_scene_group);
-	ClassDB::bind_method("_set_group_checked", &GroupsEditor::_set_group_checked);
-
-	ClassDB::bind_method("_add_to_group", &GroupsEditor::_add_to_group);
-	ClassDB::bind_method("_remove_from_group", &GroupsEditor::_remove_from_group);
-}
+void GroupsEditor::_bind_methods() {}
 
 void GroupsEditor::_node_removed(Node* p_node)
 {

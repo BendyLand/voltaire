@@ -54,10 +54,7 @@ CurveEdit::CurveEdit()
 	set_clip_contents(true);
 }
 
-void CurveEdit::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_selected_index", "index"), &CurveEdit::set_selected_index);
-}
+void CurveEdit::_bind_methods() {}
 
 void CurveEdit::set_curve(Ref<Curve> p_curve)
 {
@@ -67,9 +64,9 @@ void CurveEdit::set_curve(Ref<Curve> p_curve)
 
 	if (curve.is_valid()) {
 		curve->disconnect_changed(callable_mp(this, &CurveEdit::_curve_changed));
-		curve->disconnect(
+		curve->obj->disconnect(
 			Curve::SIGNAL_RANGE_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
-		curve->disconnect(
+		curve->obj->disconnect(
 			Curve::SIGNAL_DOMAIN_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
 	}
 
@@ -77,8 +74,10 @@ void CurveEdit::set_curve(Ref<Curve> p_curve)
 
 	if (curve.is_valid()) {
 		curve->connect_changed(callable_mp(this, &CurveEdit::_curve_changed));
-		curve->connect(Curve::SIGNAL_RANGE_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
-		curve->connect(Curve::SIGNAL_DOMAIN_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
+		curve->obj->connect(
+			Curve::SIGNAL_RANGE_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
+		curve->obj->connect(
+			Curve::SIGNAL_DOMAIN_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
 	}
 
 	// Note: if you edit a curve, then set another, and try to undo,
@@ -93,10 +92,10 @@ void CurveEdit::set_snap_enabled(bool p_enabled)
 	queue_redraw();
 	if (curve.is_valid()) {
 		if (snap_enabled) {
-			curve->set_meta(SNAME("_snap_enabled"), true);
+			curve->obj->set_meta(SNAME("_snap_enabled"), true);
 		}
 		else {
-			curve->remove_meta(SNAME("_snap_enabled"));
+			curve->obj->remove_meta(SNAME("_snap_enabled"));
 		}
 	}
 }
@@ -107,10 +106,10 @@ void CurveEdit::set_snap_count(int p_snap_count)
 	queue_redraw();
 	if (curve.is_valid()) {
 		if (snap_count != CurveEditor::DEFAULT_SNAP) {
-			curve->set_meta(SNAME("_snap_count"), snap_count);
+			curve->obj->set_meta(SNAME("_snap_count"), snap_count);
 		}
 		else {
-			curve->remove_meta(SNAME("_snap_count"));
+			curve->obj->remove_meta(SNAME("_snap_count"));
 		}
 	}
 }
@@ -470,9 +469,9 @@ void CurveEdit::use_preset(int p_preset_id)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Load Curve Preset"));
-	undo_redo->add_do_method(*curve, "_set_data", curve->get_data());
+	undo_redo->add_do_method(curve->obj.get(), "_set_data", curve->get_data());
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", -1);
-	undo_redo->add_undo_method(*curve, "_set_data", previous_data);
+	undo_redo->add_undo_method(curve->obj.get(), "_set_data", previous_data);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", selected_index);
 	undo_redo->commit_action();
 }
@@ -581,9 +580,9 @@ void CurveEdit::add_point(const Vector2& p_pos)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Add Curve Point"));
-	undo_redo->add_do_method(*curve, "add_point", p_pos);
+	undo_redo->add_do_method(curve->obj.get(), "add_point", p_pos);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_idx);
-	undo_redo->add_undo_method(*curve, "remove_point", new_idx);
+	undo_redo->add_undo_method(curve->obj.get(), "remove_point", new_idx);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", -1);
 	undo_redo->commit_action();
 }
@@ -607,10 +606,10 @@ void CurveEdit::remove_point(int p_index)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Remove Curve Point"));
-	undo_redo->add_do_method(*curve, "remove_point", p_index);
+	undo_redo->add_do_method(curve->obj.get(), "remove_point", p_index);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_selected_index);
-	undo_redo->add_undo_method(
-		*curve, "add_point", old_pos, p.left_tangent, p.right_tangent, p.left_mode, p.right_mode);
+	undo_redo->add_undo_method(curve->obj.get(), "add_point", old_pos, p.left_tangent,
+		p.right_tangent, p.left_mode, p.right_mode);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", selected_index);
 	undo_redo->commit_action();
 }
@@ -630,11 +629,11 @@ void CurveEdit::set_point_position(int p_index, const Vector2& p_pos)
 	// Note: Changing the offset may modify the order.
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Modify Curve Point"));
-	undo_redo->add_do_method(*curve, "set_point_value", initial_grab_index, p_pos.y);
-	undo_redo->add_do_method(*curve, "set_point_offset", initial_grab_index, p_pos.x);
+	undo_redo->add_do_method(curve->obj.get(), "set_point_value", initial_grab_index, p_pos.y);
+	undo_redo->add_do_method(curve->obj.get(), "set_point_offset", initial_grab_index, p_pos.x);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", p_index);
-	undo_redo->add_undo_method(*curve, "set_point_value", p_index, initial_grab_pos.y);
-	undo_redo->add_undo_method(*curve, "set_point_offset", p_index, initial_grab_pos.x);
+	undo_redo->add_undo_method(curve->obj.get(), "set_point_value", p_index, initial_grab_pos.y);
+	undo_redo->add_undo_method(curve->obj.get(), "set_point_offset", p_index, initial_grab_pos.x);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", initial_grab_index);
 	undo_redo->commit_action();
 }
@@ -657,13 +656,13 @@ void CurveEdit::set_point_tangents(int p_index, float p_left, float p_right)
 	curve->set_point_right_tangent(p_index, initial_grab_right_tangent);
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Modify Curve Point's Tangents"));
-	undo_redo->add_do_method(*curve, "set_point_left_tangent", p_index, p_left);
-	undo_redo->add_do_method(*curve, "set_point_right_tangent", p_index, p_right);
+	undo_redo->add_do_method(curve->obj.get(), "set_point_left_tangent", p_index, p_left);
+	undo_redo->add_do_method(curve->obj.get(), "set_point_right_tangent", p_index, p_right);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", p_index);
 	undo_redo->add_undo_method(
-		*curve, "set_point_left_tangent", p_index, initial_grab_left_tangent);
+		curve->obj.get(), "set_point_left_tangent", p_index, initial_grab_left_tangent);
 	undo_redo->add_undo_method(
-		*curve, "set_point_right_tangent", p_index, initial_grab_right_tangent);
+		curve->obj.get(), "set_point_right_tangent", p_index, initial_grab_right_tangent);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", p_index);
 	undo_redo->commit_action();
 }
@@ -680,10 +679,10 @@ void CurveEdit::set_point_left_tangent(int p_index, float p_tangent)
 	curve->set_point_left_tangent(p_index, initial_grab_left_tangent);
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Modify Curve Point's Left Tangent"));
-	undo_redo->add_do_method(*curve, "set_point_left_tangent", p_index, p_tangent);
+	undo_redo->add_do_method(curve->obj.get(), "set_point_left_tangent", p_index, p_tangent);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", p_index);
 	undo_redo->add_undo_method(
-		*curve, "set_point_left_tangent", p_index, initial_grab_left_tangent);
+		curve->obj.get(), "set_point_left_tangent", p_index, initial_grab_left_tangent);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", p_index);
 	undo_redo->commit_action();
 }
@@ -700,10 +699,10 @@ void CurveEdit::set_point_right_tangent(int p_index, float p_tangent)
 	curve->set_point_right_tangent(p_index, initial_grab_right_tangent);
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Modify Curve Point's Right Tangent"));
-	undo_redo->add_do_method(*curve, "set_point_right_tangent", p_index, p_tangent);
+	undo_redo->add_do_method(curve->obj.get(), "set_point_right_tangent", p_index, p_tangent);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", p_index);
 	undo_redo->add_undo_method(
-		*curve, "set_point_right_tangent", p_index, initial_grab_right_tangent);
+		curve->obj.get(), "set_point_right_tangent", p_index, initial_grab_right_tangent);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", p_index);
 	undo_redo->commit_action();
 }
@@ -730,14 +729,15 @@ void CurveEdit::toggle_linear(int p_index, TangentIndex p_tangent)
 
 	// Add different methods in the UndoRedo based on the tangent passed.
 	if (p_tangent == TANGENT_LEFT) {
-		undo_redo->add_do_method(*curve, "set_point_left_mode", p_index, mode);
-		undo_redo->add_undo_method(*curve, "set_point_left_mode", p_index, prev_mode);
-		undo_redo->add_undo_method(*curve, "set_point_left_tangent", p_index, prev_angle);
+		undo_redo->add_do_method(curve->obj.get(), "set_point_left_mode", p_index, mode);
+		undo_redo->add_undo_method(curve->obj.get(), "set_point_left_mode", p_index, prev_mode);
+		undo_redo->add_undo_method(curve->obj.get(), "set_point_left_tangent", p_index, prev_angle);
 	}
 	else {
-		undo_redo->add_do_method(*curve, "set_point_right_mode", p_index, mode);
-		undo_redo->add_undo_method(*curve, "set_point_right_mode", p_index, prev_mode);
-		undo_redo->add_undo_method(*curve, "set_point_right_tangent", p_index, prev_angle);
+		undo_redo->add_do_method(curve->obj.get(), "set_point_right_mode", p_index, mode);
+		undo_redo->add_undo_method(curve->obj.get(), "set_point_right_mode", p_index, prev_mode);
+		undo_redo->add_undo_method(
+			curve->obj.get(), "set_point_right_tangent", p_index, prev_angle);
 	}
 
 	undo_redo->commit_action();
@@ -887,8 +887,8 @@ void CurveEdit::_redraw()
 	// Draw background.
 
 	Vector2 view_size = get_rect().size;
-	draw_style_box(
-		get_theme_stylebox(SceneStringName(panel), SNAME("Tree")), Rect2(Point2(), view_size));
+	draw_style_box(get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr(),
+		Rect2(Point2(), view_size));
 
 	// Draw primary grid.
 	draw_set_transform_matrix(_world_to_view);
@@ -936,14 +936,15 @@ void CurveEdit::_redraw()
 
 	for (int i = 0; i <= grid_steps.x; ++i) {
 		real_t x = curve->get_min_domain() + i * step_size.x;
-		draw_string(font,
+		draw_string(font.ptr(),
 			get_view_pos(Vector2(x, curve->get_min_value())) + Vector2(pad, font_height - pad),
 			String::num(x, 2), HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, text_color);
 	}
 
 	for (int i = 0; i <= grid_steps.y; ++i) {
 		real_t y = curve->get_min_value() + i * step_size.y;
-		draw_string(font, get_view_pos(Vector2(curve->get_min_domain(), y)) + Vector2(pad, -pad),
+		draw_string(font.ptr(),
+			get_view_pos(Vector2(curve->get_min_domain(), y)) + Vector2(pad, -pad),
 			String::num(y, 2), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, text_color);
 	}
 
@@ -1056,7 +1057,8 @@ void CurveEdit::_redraw()
 		float width = view_size.x - 50 * EDSCALE;
 		text_color.a *= 0.4;
 
-		draw_multiline_string(font, Vector2(25 * EDSCALE, font_height - Math::round(2 * EDSCALE)),
+		draw_multiline_string(font.ptr(),
+			Vector2(25 * EDSCALE, font_height - Math::round(2 * EDSCALE)),
 			TTR("Hold Shift to edit tangents individually"), HORIZONTAL_ALIGNMENT_CENTER, width,
 			font_size, -1, text_color);
 
@@ -1066,7 +1068,7 @@ void CurveEdit::_redraw()
 		float width = view_size.x - 50 * EDSCALE;
 		text_color.a *= 0.8;
 
-		draw_string(font, Vector2(25 * EDSCALE, font_height - Math::round(2 * EDSCALE)),
+		draw_string(font.ptr(), Vector2(25 * EDSCALE, font_height - Math::round(2 * EDSCALE)),
 			vformat("(%.2f, %.2f)", point_pos.x, point_pos.y), HORIZONTAL_ALIGNMENT_CENTER, width,
 			font_size, text_color);
 
@@ -1079,7 +1081,7 @@ void CurveEdit::_redraw()
 											? -1 * curve->get_point_left_tangent(selected_index)
 											: curve->get_point_right_tangent(selected_index)));
 
-		draw_string(font, Vector2(25 * EDSCALE, font_height - Math::round(2 * EDSCALE)),
+		draw_string(font.ptr(), Vector2(25 * EDSCALE, font_height - Math::round(2 * EDSCALE)),
 			String::num(theta, 1) + String::utf8(" °"), HORIZONTAL_ALIGNMENT_CENTER, width,
 			font_size, text_color);
 	}
@@ -1157,8 +1159,8 @@ void CurveEditor::_notification(int p_what)
 		Ref<Curve> curve = curve_editor_rect->get_curve();
 		if (curve.is_valid()) {
 			// Set snapping settings based on the curve's meta.
-			snap_button->set_pressed(curve->get_meta("_snap_enabled", false));
-			snap_count_edit->set_value(curve->get_meta("_snap_count", DEFAULT_SNAP));
+			snap_button->set_pressed(curve->obj->get_meta("_snap_enabled", false));
+			snap_count_edit->set_value(curve->obj->get_meta("_snap_count", DEFAULT_SNAP));
 		}
 	} break;
 	case NOTIFICATION_RESIZED:
@@ -1251,7 +1253,6 @@ Ref<Texture2D> CurvePreviewGenerator::generate(
 	if (curve.is_null()) {
 		return Ref<Texture2D>();
 	}
-
 	Ref<Image> img_ref;
 	img_ref.instantiate();
 	Image& im = **img_ref;

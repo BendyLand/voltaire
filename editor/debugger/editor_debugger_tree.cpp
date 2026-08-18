@@ -70,7 +70,7 @@ EditorDebuggerTree::EditorDebuggerTree()
 void EditorDebuggerTree::_notification(int p_what)
 {
 	switch (p_what) {
-	case Animation::NOTIFICATION_POSTINITIALIZE: {
+	case Object::NOTIFICATION_POSTINITIALIZE: {
 		set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 
 		connect("cell_selected", callable_mp(this, &EditorDebuggerTree::_scene_tree_selected));
@@ -89,15 +89,7 @@ void EditorDebuggerTree::_notification(int p_what)
 	}
 }
 
-void EditorDebuggerTree::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("objects_selected", PropertyInfo(Variant::ARRAY, "object_ids"),
-		PropertyInfo(Variant::INT, "debugger")));
-	ADD_SIGNAL(MethodInfo("selection_cleared", PropertyInfo(Variant::INT, "debugger")));
-	ADD_SIGNAL(MethodInfo("save_node", PropertyInfo(Variant::INT, "object_id"),
-		PropertyInfo(Variant::STRING, "filename"), PropertyInfo(Variant::INT, "debugger")));
-	ADD_SIGNAL(MethodInfo("open"));
-}
+void EditorDebuggerTree::_bind_methods() {}
 
 void EditorDebuggerTree::_scene_tree_selected()
 {
@@ -363,14 +355,7 @@ void EditorDebuggerTree::update_scene_tree(const SceneDebuggerTree* p_tree, int 
 
 			item->obj->set_meta("visible", node_visible);
 			item->add_button(0, button_icon, BUTTON_VISIBILITY, false, tooltip);
-			if (ClassDB::is_parent_class(node.type_name, "CanvasItem") ||
-				ClassDB::is_parent_class(node.type_name, "Node3D")) {
-				item->set_button_color(0, item->get_button_count(0) - 1,
-					node_visible_in_tree ? remote_button_color : Color(1, 1, 1, 0.6));
-			}
-			else {
-				item->set_button_color(0, item->get_button_count(0) - 1, remote_button_color);
-			}
+			item->set_button_color(0, item->get_button_count(0) - 1, remote_button_color);
 		}
 
 		// Add in front of the parents stack if children are expected.

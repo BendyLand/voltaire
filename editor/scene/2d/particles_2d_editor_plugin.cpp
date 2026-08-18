@@ -670,10 +670,10 @@ void GPUParticles2DEditorPlugin::_generate_emission_mask()
 	img.instantiate();
 	img->set_data(w, h, false, Image::FORMAT_RGF, mask_texture_data);
 	undo_redo->add_do_property(
-		pmptr, "emission_point_texture", ImageTexture::create_from_image(img));
-	undo_redo->add_undo_property(pmptr, "emission_point_texture", pm->get_emission_point_texture());
-	undo_redo->add_do_property(pmptr, "emission_point_count", valid_positions_count);
-	undo_redo->add_undo_property(pmptr, "emission_point_count", pm->get_emission_point_count());
+		pmptr->obj.get(), "emission_point_texture", ImageTexture::create_from_image(img));
+	undo_redo->add_undo_property(pmptr->obj.get(), "emission_point_texture", pm->get_emission_point_texture());
+	undo_redo->add_do_property(pmptr->obj.get(), "emission_point_count", valid_positions_count);
+	undo_redo->add_undo_property(pmptr->obj.get(), "emission_point_count", pm->get_emission_point_count());
 
 	if (emission_mask_colors->is_pressed()) {
 		Vector<uint8_t> color_texture_data;
@@ -689,15 +689,15 @@ void GPUParticles2DEditorPlugin::_generate_emission_mask()
 		img.instantiate();
 		img->set_data(w, h, false, Image::FORMAT_RGBA8, color_texture_data);
 		undo_redo->add_do_property(
-			pmptr, "emission_color_texture", ImageTexture::create_from_image(img));
+			pmptr->obj.get(), "emission_color_texture", ImageTexture::create_from_image(img));
 		undo_redo->add_undo_property(
-			pmptr, "emission_color_texture", pm->get_emission_color_texture());
+			pmptr->obj.get(), "emission_color_texture", pm->get_emission_color_texture());
 	}
 
 	if (emission_normals.size()) {
 		undo_redo->add_do_property(
-			pmptr, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
-		undo_redo->add_undo_property(pmptr, "emission_shape", pm->get_emission_shape());
+			pmptr->obj.get(), "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
+		undo_redo->add_undo_property(pmptr->obj.get(), "emission_shape", pm->get_emission_shape());
 		pm->set_emission_shape(ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
 
 		Vector<uint8_t> normal_texture_data;
@@ -715,14 +715,14 @@ void GPUParticles2DEditorPlugin::_generate_emission_mask()
 		img.instantiate();
 		img->set_data(w, h, false, Image::FORMAT_RGF, normal_texture_data);
 		undo_redo->add_do_property(
-			pmptr, "emission_normal_texture", ImageTexture::create_from_image(img));
+			pmptr->obj.get(), "emission_normal_texture", ImageTexture::create_from_image(img));
 		undo_redo->add_undo_property(
-			pmptr, "emission_normal_texture", pm->get_emission_normal_texture());
+			pmptr->obj.get(), "emission_normal_texture", pm->get_emission_normal_texture());
 	}
 	else {
 		undo_redo->add_do_property(
-			pmptr, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_POINTS);
-		undo_redo->add_undo_property(pmptr, "emission_shape", pm->get_emission_shape());
+			pmptr->obj.get(), "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_POINTS);
+		undo_redo->add_undo_property(pmptr->obj.get(), "emission_shape", pm->get_emission_shape());
 	}
 	undo_redo->commit_action();
 }

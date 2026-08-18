@@ -874,7 +874,7 @@ Ref<Texture2D> ScriptTextEditor::get_theme_icon()
 {
 	Ref<Script> script = edited_res;
 	if (get_parent_control()) {
-		String icon_name = script->get_class();
+		String icon_name = script->obj->get_class();
 		if (script->is_built_in()) {
 			icon_name += "Internal";
 		}
@@ -883,17 +883,17 @@ Ref<Texture2D> ScriptTextEditor::get_theme_icon()
 			return get_parent_control()->get_editor_theme_icon(icon_name);
 		}
 		else if (get_parent_control()->has_theme_icon(
-					   script->get_class(), EditorStringName(EditorIcons))) {
-			return get_parent_control()->get_editor_theme_icon(script->get_class());
+					   script->obj->get_class(), EditorStringName(EditorIcons))) {
+			return get_parent_control()->get_editor_theme_icon(script->obj->get_class());
 		}
 	}
 
 	Ref<Texture2D> extension_language_icon =
-		EditorNode::get_editor_data().extension_class_get_icon(script->get_class());
+		EditorNode::get_editor_data().extension_class_get_icon(script->obj->get_class());
 	Ref<Texture2D> extension_language_alt_icon;
 	if (script->is_built_in()) {
 		extension_language_alt_icon = EditorNode::get_editor_data().extension_class_get_icon(
-			script->get_class() + "Internal");
+			script->obj->get_class() + "Internal");
 	}
 
 	if (extension_language_alt_icon.is_valid()) {
@@ -1244,7 +1244,7 @@ void ScriptEditor::_update_modified_scripts_for_external_editor(Ref<Script> p_fo
 
 		if (last_date != date) {
 			Ref<Script> rel_scr = ResourceLoader::load(
-				scr->get_path(), scr->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
+				scr->get_path(), scr->obj->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
 			ERR_CONTINUE(rel_scr.is_null());
 			scr->set_source_code(rel_scr->get_source_code());
 			scr->set_last_modified_time(rel_scr->get_last_modified_time());
@@ -1351,61 +1351,26 @@ void ScriptTextEditor::_lookup_symbol(const String& p_symbol, int p_row, int p_c
 			} break;
 			case EditorLanguage::LookupResult::Type::CLASS_CONSTANT: {
 				StringName cname = result.class_name;
-				while (ClassDB::class_exists(cname)) {
-					if (ClassDB::has_integer_constant(cname, result.class_member, true)) {
-						result.class_name = cname;
-						break;
-					}
-					cname = ClassDB::get_parent_class(cname);
-				}
 				this->obj->emit_signal(SNAME("go_to_help"),
 					"class_constant:" + result.class_name + ":" + result.class_member);
 			} break;
 			case EditorLanguage::LookupResult::Type::CLASS_PROPERTY: {
 				StringName cname = result.class_name;
-				while (ClassDB::class_exists(cname)) {
-					if (ClassDB::has_property(cname, result.class_member, true)) {
-						result.class_name = cname;
-						break;
-					}
-					cname = ClassDB::get_parent_class(cname);
-				}
 				this->obj->emit_signal(SNAME("go_to_help"),
 					"class_property:" + result.class_name + ":" + result.class_member);
 			} break;
 			case EditorLanguage::LookupResult::Type::CLASS_METHOD: {
 				StringName cname = result.class_name;
-				while (ClassDB::class_exists(cname)) {
-					if (ClassDB::has_method(cname, result.class_member, true)) {
-						result.class_name = cname;
-						break;
-					}
-					cname = ClassDB::get_parent_class(cname);
-				}
 				this->obj->emit_signal(SNAME("go_to_help"),
 					"class_method:" + result.class_name + ":" + result.class_member);
 			} break;
 			case EditorLanguage::LookupResult::Type::CLASS_SIGNAL: {
 				StringName cname = result.class_name;
-				while (ClassDB::class_exists(cname)) {
-					if (ClassDB::has_signal(cname, result.class_member, true)) {
-						result.class_name = cname;
-						break;
-					}
-					cname = ClassDB::get_parent_class(cname);
-				}
 				this->obj->emit_signal(SNAME("go_to_help"),
 					"class_signal:" + result.class_name + ":" + result.class_member);
 			} break;
 			case EditorLanguage::LookupResult::Type::CLASS_ENUM: {
 				StringName cname = result.class_name;
-				while (ClassDB::class_exists(cname)) {
-					if (ClassDB::has_enum(cname, result.class_member, true)) {
-						result.class_name = cname;
-						break;
-					}
-					cname = ClassDB::get_parent_class(cname);
-				}
 				this->obj->emit_signal(SNAME("go_to_help"),
 					"class_enum:" + result.class_name + ":" + result.class_member);
 			} break;
@@ -1522,57 +1487,22 @@ void ScriptTextEditor::_show_symbol_tooltip(
 		} break;
 		case EditorLanguage::LookupResult::Type::CLASS_CONSTANT: {
 			StringName cname = result.class_name;
-			while (ClassDB::class_exists(cname)) {
-				if (ClassDB::has_integer_constant(cname, result.class_member, true)) {
-					result.class_name = cname;
-					break;
-				}
-				cname = ClassDB::get_parent_class(cname);
-			}
 			doc_symbol = "constant|" + result.class_name + "|" + result.class_member;
 		} break;
 		case EditorLanguage::LookupResult::Type::CLASS_PROPERTY: {
 			StringName cname = result.class_name;
-			while (ClassDB::class_exists(cname)) {
-				if (ClassDB::has_property(cname, result.class_member, true)) {
-					result.class_name = cname;
-					break;
-				}
-				cname = ClassDB::get_parent_class(cname);
-			}
 			doc_symbol = "property|" + result.class_name + "|" + result.class_member;
 		} break;
 		case EditorLanguage::LookupResult::Type::CLASS_METHOD: {
 			StringName cname = result.class_name;
-			while (ClassDB::class_exists(cname)) {
-				if (ClassDB::has_method(cname, result.class_member, true)) {
-					result.class_name = cname;
-					break;
-				}
-				cname = ClassDB::get_parent_class(cname);
-			}
 			doc_symbol = "method|" + result.class_name + "|" + result.class_member;
 		} break;
 		case EditorLanguage::LookupResult::Type::CLASS_SIGNAL: {
 			StringName cname = result.class_name;
-			while (ClassDB::class_exists(cname)) {
-				if (ClassDB::has_signal(cname, result.class_member, true)) {
-					result.class_name = cname;
-					break;
-				}
-				cname = ClassDB::get_parent_class(cname);
-			}
 			doc_symbol = "signal|" + result.class_name + "|" + result.class_member;
 		} break;
 		case EditorLanguage::LookupResult::Type::CLASS_ENUM: {
 			StringName cname = result.class_name;
-			while (ClassDB::class_exists(cname)) {
-				if (ClassDB::has_enum(cname, result.class_member, true)) {
-					result.class_name = cname;
-					break;
-				}
-				cname = ClassDB::get_parent_class(cname);
-			}
 			doc_symbol = "enum|" + result.class_name + "|" + result.class_member;
 		} break;
 		case EditorLanguage::LookupResult::Type::CLASS_ANNOTATION: {
@@ -1680,46 +1610,6 @@ void ScriptTextEditor::_update_connected_methods()
 			if (methods_found.has(method)) {
 				continue;
 			}
-
-			if (!ClassDB::has_method(script->get_instance_base_type(), method)) {
-				int line = -1;
-
-				for (int j = 0; j < functions.size(); j++) {
-					String name = functions[j].get_slicec(':', 0);
-					if (name == method) {
-						Dictionary line_meta;
-						line_meta["type"] = "connection";
-						line_meta["method"] = method;
-						line = functions[j].get_slicec(':', 1).to_int() - 1;
-						text_edit->set_line_gutter_metadata(line, connection_gutter, line_meta);
-						text_edit->set_line_gutter_icon(line, connection_gutter,
-							get_parent_control()->get_editor_theme_icon(SNAME("Slot")));
-						text_edit->set_line_gutter_clickable(line, connection_gutter, true);
-						methods_found.insert(method);
-						break;
-					}
-				}
-
-				if (line >= 0) {
-					continue;
-				}
-
-				// There is a chance that the method is inherited from another script.
-				bool found_inherited_function = false;
-				Ref<Script> inherited_script = script->get_base_script();
-				while (inherited_script.is_valid()) {
-					if (inherited_script->has_method(method)) {
-						found_inherited_function = true;
-						break;
-					}
-
-					inherited_script = inherited_script->get_base_script();
-				}
-
-				if (!found_inherited_function) {
-					missing_connections.push_back(connection);
-				}
-			}
 		}
 	}
 
@@ -1750,26 +1640,6 @@ void ScriptTextEditor::_update_connected_methods()
 
 			base_class = inherited_script->get_instance_base_type();
 			inherited_script = inherited_script->get_base_script();
-		}
-
-		if (found_base_class.is_empty()) {
-			while (base_class) {
-				List<MethodInfo> methods;
-				ClassDB::get_method_list(base_class, &methods, true);
-				for (const MethodInfo& mi : methods) {
-					if (mi.name == name) {
-						found_base_class = "builtin:" + base_class;
-						break;
-					}
-				}
-
-				ClassDB::ClassInfo* base_class_ptr =
-					ClassDB::classes.getptr(base_class)->inherits_ptr;
-				if (base_class_ptr == nullptr) {
-					break;
-				}
-				base_class = base_class_ptr->vltrtype->get_name();
-			}
 		}
 
 		if (!found_base_class.is_empty()) {
@@ -2055,7 +1925,8 @@ bool ScriptTextEditor::_edit_option(int p_op)
 			EditorContextMenuPluginManager::get_singleton()->activate_custom_option(
 				EditorContextMenuPlugin::CONTEXT_SLOT_SCRIPT_EDITOR_CODE, p_op, tx);
 		}
-	}
+
+}
 	}
 	return true;
 }
@@ -2103,7 +1974,7 @@ void ScriptTextEditor::_notification(int p_what)
 		code_editor->get_text_editor()->set_gutter_width(
 			connection_gutter, code_editor->get_text_editor()->get_line_height());
 		Ref<Font> code_font = get_theme_font("font", "CodeEdit");
-		inline_color_options->add_theme_font_override("font", code_font);
+		inline_color_options->add_theme_font_override("font", code_font.ptr());
 		inline_color_options->get_popup()->add_theme_font_override("font", code_font);
 	} break;
 	case NOTIFICATION_DRAG_END: {
@@ -2249,7 +2120,7 @@ static String _get_dropped_resource_as_member(
 			path = ResourceUID::get_singleton()->id_to_text(id);
 		}
 	}
-	const bool is_script = p_resource->is_class(SNAME("Script"));
+	const bool is_script = p_resource->obj->is_class(SNAME("Script"));
 
 	if (!p_create_field) {
 		return vformat("preload(%s)", _quote_drop_data(path));
@@ -2279,8 +2150,8 @@ String ScriptTextEditor::_get_dropped_resource_as_exported_member(
 
 	variable_name = variable_name.to_snake_case().validate_unicode_identifier();
 
-	StringName class_name = p_resource->get_class();
-	Ref<Script> resource_script = p_resource->get_script();
+	StringName class_name = p_resource->obj->get_class();
+	Ref<Script> resource_script = p_resource->obj->get_script();
 
 	if (resource_script.is_valid()) {
 		StringName global_resource_script_name = resource_script->get_global_name();
@@ -2432,13 +2303,6 @@ void ScriptTextEditor::drop_data_fw(const Point2& p_point, const Variant& p_data
 		}
 
 		Ref<Script> script = edited_res;
-		if (!ClassDB::is_parent_class(script->get_instance_base_type(), "Node")) {
-			EditorToaster::get_singleton()->popup_str(
-				vformat(
-					TTR("Can't drop nodes because script '%s' does not inherit Node."), get_name()),
-				EditorToaster::SEVERITY_WARNING);
-			return;
-		}
 
 		Node* sn = _find_script_node(scene_root, script);
 		if (!sn) {
@@ -2590,8 +2454,7 @@ Vector<ObjectID> ScriptTextEditor::_get_objects_for_export_assignment() const
 	Vector<ObjectID> objects;
 	Node* scene_root = get_tree()->get_edited_scene_root();
 	Ref<Script> script = edited_res;
-	bool assign_export_variables =
-		scene_root && ClassDB::is_parent_class(script->get_instance_base_type(), "Node");
+	bool assign_export_variables = scene_root;
 
 	if (!assign_export_variables) {
 		return objects;
@@ -3110,7 +2973,7 @@ ScriptTextEditor::ScriptTextEditor()
 	drag_info_sb->set_corner_radius_all(5 * EDSCALE);
 	drag_info_sb->set_corner_detail(5);
 	drag_info_sb->set_expand_margin_all(5);
-	drag_info_label->add_theme_style_override(CoreStringName(normal), drag_info_sb);
+	drag_info_label->add_theme_style_override(CoreStringName(normal), drag_info_sb.ptr());
 
 	code_editor->get_text_editor()->connect(
 		SceneStringName(mouse_exited), callable_mp(this, &ScriptTextEditor::_on_mouse_exited));

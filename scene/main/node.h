@@ -683,7 +683,7 @@ public:
 		}
 	}
 
-	RequiredResult<Tween> create_tween();
+	Tween* create_tween();
 
 	void print_tree();
 	void print_tree_pretty();

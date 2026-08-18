@@ -119,12 +119,7 @@ void WindowWrapper::_window_close_request()
 	}
 }
 
-void WindowWrapper::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("window_visibility_changed", PropertyInfo(Variant::BOOL, "visible")));
-	ADD_SIGNAL(MethodInfo("window_close_requested"));
-	ADD_SIGNAL(MethodInfo("window_size_changed"));
-}
+void WindowWrapper::_bind_methods() {}
 
 void WindowWrapper::_notification(int p_what)
 {
@@ -142,7 +137,7 @@ void WindowWrapper::_notification(int p_what)
 	} break;
 	case NOTIFICATION_THEME_CHANGED: {
 		window_background->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox("PanelForeground", EditorStringName(EditorStyles)));
+			get_theme_stylebox("PanelForeground", EditorStringName(EditorStyles)).ptr());
 	} break;
 	}
 }
@@ -434,10 +429,7 @@ void ScreenSelect::_emit_screen_signal(int p_screen_idx)
 	}
 }
 
-void ScreenSelect::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("request_open_in_screen", PropertyInfo(Variant::INT, "screen")));
-}
+void ScreenSelect::_bind_methods() {}
 
 void ScreenSelect::_notification(int p_what)
 {

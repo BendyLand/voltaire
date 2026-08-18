@@ -113,29 +113,10 @@ Variant EditorSceneFormatImporter::get_option_visibility(const String& p_path,
 	return ret;
 }
 
-void EditorSceneFormatImporter::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("add_import_option", "name", "value"),
-		&EditorSceneFormatImporter::add_import_option);
-	ClassDB::bind_method(D_METHOD("add_import_option_advanced", "type", "name", "default_value",
-							 "hint", "hint_string", "usage_flags"),
-		&EditorSceneFormatImporter::add_import_option_advanced, DEFVAL(PROPERTY_HINT_NONE),
-		DEFVAL(""), DEFVAL(PROPERTY_USAGE_DEFAULT));
-
-	BIND_BITFIELD_FLAG(IMPORT_SCENE);
-	BIND_BITFIELD_FLAG(IMPORT_ANIMATION);
-	BIND_BITFIELD_FLAG(IMPORT_FAIL_ON_MISSING_DEPENDENCIES);
-	BIND_BITFIELD_FLAG(IMPORT_GENERATE_TANGENT_ARRAYS);
-	BIND_BITFIELD_FLAG(IMPORT_USE_NAMED_SKIN_BINDS);
-	BIND_BITFIELD_FLAG(IMPORT_DISCARD_MESHES_AND_MATERIALS);
-	BIND_BITFIELD_FLAG(IMPORT_FORCE_DISABLE_MESH_COMPRESSION);
-}
+void EditorSceneFormatImporter::_bind_methods() {}
 
 /////////////////////////////////
-void EditorScenePostImport::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("get_source_file"), &EditorScenePostImport::get_source_file);
-}
+void EditorScenePostImport::_bind_methods() {}
 
 String EditorScenePostImport::get_source_file() const { return source_file; }
 
@@ -244,27 +225,7 @@ void EditorScenePostImportPlugin::post_process(
 	current_options = nullptr;
 }
 
-void EditorScenePostImportPlugin::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("get_option_value", "name"), &EditorScenePostImportPlugin::get_option_value);
-
-	ClassDB::bind_method(D_METHOD("add_import_option", "name", "value"),
-		&EditorScenePostImportPlugin::add_import_option);
-	ClassDB::bind_method(D_METHOD("add_import_option_advanced", "type", "name", "default_value",
-							 "hint", "hint_string", "usage_flags"),
-		&EditorScenePostImportPlugin::add_import_option_advanced, DEFVAL(PROPERTY_HINT_NONE),
-		DEFVAL(""), DEFVAL(PROPERTY_USAGE_DEFAULT));
-
-	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_NODE);
-	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_MESH_3D_NODE);
-	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_MESH);
-	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_MATERIAL);
-	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_ANIMATION);
-	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_ANIMATION_NODE);
-	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_SKELETON_3D_NODE);
-	BIND_ENUM_CONSTANT(INTERNAL_IMPORT_CATEGORY_MAX);
-}
+void EditorScenePostImportPlugin::_bind_methods() {}
 
 /////////////////////////////////////////////////////////
 
@@ -409,14 +370,14 @@ void ResourceImporterScene::_pre_fix_global(
 		}
 		Ref<Animation> reset_anim;
 		for (int i = 0; i < anim_players.size(); i++) {
-			AnimationPlayer* player = cast_to<AnimationPlayer>(anim_players[i]);
+			AnimationPlayer* player = Object::cast_to<AnimationPlayer>(anim_players[i]);
 			if (player->has_animation(SceneStringName(RESET))) {
 				reset_anim = player->get_animation(SceneStringName(RESET));
 				break;
 			}
 		}
 		if (reset_anim.is_null()) {
-			AnimationPlayer* anim_player = cast_to<AnimationPlayer>(anim_players[0]);
+			AnimationPlayer* anim_player = Object::cast_to<AnimationPlayer>(anim_players[0]);
 			reset_anim.instantiate();
 			Ref<AnimationLibrary> anim_library;
 			if (anim_player->has_animation_library(StringName())) {
@@ -430,7 +391,7 @@ void ResourceImporterScene::_pre_fix_global(
 		}
 		Vector<Node*> skeletons = p_scene->find_children("*", "Skeleton3D");
 		for (int i = 0; i < skeletons.size(); i++) {
-			Skeleton3D* skeleton = cast_to<Skeleton3D>(skeletons[i]);
+			Skeleton3D* skeleton = Object::cast_to<Skeleton3D>(skeletons[i]);
 			NodePath skeleton_path = p_scene->get_path_to(skeleton);
 
 			HashSet<NodePath> existing_pos_tracks;
@@ -754,7 +715,7 @@ Node* ResourceImporterScene::_pre_fix_node(Node* p_node, Node* p_root,
 		p_root->get_path_to(p_node); // Used to detect renames due to import hints.
 
 	Ref<Resource> original_meta = memnew(Resource); // Create temp resource to hold original meta
-	original_meta->merge_meta_from(p_node->obj.get());
+	original_meta->obj->merge_meta_from(p_node->obj.get());
 
 	bool isroot = p_node == p_root;
 
@@ -1175,7 +1136,7 @@ Node* ResourceImporterScene::_pre_fix_node(Node* p_node, Node* p_root,
 			r_node_renames.push_back({original_path, p_node});
 		}
 		// If we created new node instead, merge meta values from the original node.
-		p_node->obj->merge_meta_from(*original_meta);
+		p_node->obj->merge_meta_from(original_meta->obj.get());
 	}
 
 	return p_node;
@@ -1526,12 +1487,6 @@ Node* ResourceImporterScene::_replace_node_with_type_and_script(
 	if (p_script.is_valid()) {
 		// Ensure the node type supports the script, or pick one that does.
 		String script_base_type = p_script->get_instance_base_type();
-		if (ClassDB::is_parent_class(script_base_type, "Node")) {
-			if (p_node_type.is_empty() ||
-				!ClassDB::is_parent_class(p_node_type, script_base_type)) {
-				p_node_type = script_base_type;
-			}
-		}
 	}
 	if (!p_node_type.is_empty() && ScriptServer::is_global_class(p_node_type)) {
 		// If the user specified a script class, we need to get the base node type.
@@ -1551,7 +1506,7 @@ Node* ResourceImporterScene::_replace_node_with_type_and_script(
 	if (!p_node_type.is_empty() && p_node->obj->get_class_name() != p_node_type) {
 		// If the user specified a Godot node type that does not match
 		// what the scene import gave us, replace the root node.
-		Node* new_base_node = Object::cast_to<Node>(ClassDB::instantiate(p_node_type));
+		Node* new_base_node = memnew(Node);
 		if (new_base_node) {
 			List<PropertyInfo> old_properties;
 			p_node->obj->get_property_list(&old_properties);
@@ -1682,7 +1637,8 @@ Node* ResourceImporterScene::_post_fix_node(Node* p_node, Node* p_root,
 			if (int(node_settings["rest_pose/load_pose"]) == 1) {
 				Vector<Node*> children = p_root->find_children("*", "AnimationPlayer", true, false);
 				for (int node_i = 0; node_i < children.size(); node_i++) {
-					AnimationPlayer* anim_player = cast_to<AnimationPlayer>(children[node_i]);
+					AnimationPlayer* anim_player =
+						Object::cast_to<AnimationPlayer>(children[node_i]);
 					ERR_CONTINUE(anim_player == nullptr);
 					LocalVector<StringName> anim_list;
 					anim_player->get_animation_list(&anim_list);
@@ -1775,7 +1731,7 @@ Node* ResourceImporterScene::_post_fix_node(Node* p_node, Node* p_root,
 					if (mat.is_null()) {
 						continue;
 					}
-					const String mat_id = mat->get_meta("import_id", mat->get_name());
+					const String mat_id = mat->obj->get_meta("import_id", mat->get_name());
 					if (mat_id.is_empty()) {
 						continue;
 					}
@@ -1840,7 +1796,7 @@ Node* ResourceImporterScene::_post_fix_node(Node* p_node, Node* p_root,
 						// Write the file if it doesn't exist, or if the user has selected to
 						// overwrite existing files.
 						if (!FileAccess::exists(file_path) || extract_mat == 2 /*overwrite*/) {
-							ResourceSaver::save(mat, file_path);
+							ResourceSaver::save(mat.ptr(), file_path);
 						}
 
 						Ref<Material> external_mat = ResourceLoader::load(
@@ -2190,7 +2146,7 @@ Ref<Animation> ResourceImporterScene::_save_animation_to_file(Ref<Animation> ani
 		}
 	}
 	anim->set_path(res_path, true); // Set path to save externally.
-	Error err = ResourceSaver::save(anim, res_path, ResourceSaver::FLAG_CHANGE_PATH);
+	Error err = ResourceSaver::save(anim.ptr(), res_path, ResourceSaver::FLAG_CHANGE_PATH);
 
 	ERR_FAIL_COND_V_MSG(err != OK, anim, "Saving of animation failed: " + res_path);
 	if (p_save_to_path.begins_with("uid://")) {
@@ -2447,7 +2403,7 @@ Error ResourceImporterScene::_save_scene_as_mesh_library(const String& p_source_
 		mesh_library->set_item_category(id, kv.value);
 	}
 
-	return ResourceSaver::save(mesh_library, p_save_path + ".res", p_flags);
+	return ResourceSaver::save(mesh_library.ptr(), p_save_path + ".res", p_flags);
 }
 
 Error ResourceImporterScene::_save_scene_as_single_mesh(const String& p_source_file,
@@ -2468,13 +2424,13 @@ Error ResourceImporterScene::_save_scene_as_single_mesh(const String& p_source_f
 		Ref<ArrayMesh> array_mesh = mesh_inst_node->get_mesh();
 		if (array_mesh.is_valid()) {
 			array_mesh->set_path(save_file_path, true);
-			return ResourceSaver::save(array_mesh, save_file_path, p_flags);
+			return ResourceSaver::save(array_mesh.ptr(), save_file_path, p_flags);
 		}
 	}
 	// If the file contains multiple meshes, we have to merge them into a single mesh, based on
 	// their positions in the scene.
-	TypedArray<ImporterMesh> importer_mesh_instances;
-	TypedArray<Transform3D> relative_transforms;
+	Array importer_mesh_instances;
+	Array relative_transforms;
 	for (int i = 0; i < mesh_inst_count; i++) {
 		MeshInstance3D* mesh_inst_node = Object::cast_to<MeshInstance3D>(mesh_instance_nodes[i]);
 		Ref<ArrayMesh> array_mesh = mesh_inst_node->get_mesh();
@@ -2493,7 +2449,7 @@ Error ResourceImporterScene::_save_scene_as_single_mesh(const String& p_source_f
 									  p_options["array_mesh/deduplicate_surfaces"];
 	Ref<ImporterMesh> merged_mesh = ImporterMesh::merge_importer_meshes(
 		importer_mesh_instances, relative_transforms, deduplicate_surfaces);
-	return ResourceSaver::save(merged_mesh->get_mesh(), save_file_path, p_flags);
+	return ResourceSaver::save(merged_mesh->get_mesh().ptr(), save_file_path, p_flags);
 }
 
 void ResourceImporterScene::get_internal_import_options(
@@ -3308,7 +3264,8 @@ Node* ResourceImporterScene::_generate_meshes(Node* p_node, const Dictionary& p_
 				bool bake_lightmaps = p_light_bake_mode == LIGHT_BAKE_STATIC_LIGHTMAPS;
 				String save_to_file;
 
-				String mesh_id = importer_mesh->get_meta("import_id", importer_mesh->get_name());
+				String mesh_id =
+					importer_mesh->obj->get_meta("import_id", importer_mesh->get_name());
 
 				if (!mesh_id.is_empty() && p_mesh_data.has(mesh_id)) {
 					Dictionary mesh_settings = p_mesh_data[mesh_id];
@@ -3427,7 +3384,7 @@ Node* ResourceImporterScene::_generate_meshes(Node* p_node, const Dictionary& p_
 					}
 					mesh = importer_mesh->get_mesh(existing);
 
-					Error err = ResourceSaver::save(mesh, save_res_path); // override
+					Error err = ResourceSaver::save(mesh.ptr(), save_res_path); // override
 					if (err != OK) {
 						WARN_PRINT(vformat(
 							"Failed to save mesh %s to '%s'.", mesh->get_name(), save_res_path));
@@ -3450,13 +3407,13 @@ Node* ResourceImporterScene::_generate_meshes(Node* p_node, const Dictionary& p_
 			}
 
 			if (mesh.is_valid()) {
-				_copy_meta(importer_mesh.ptr(), mesh.ptr());
+				_copy_meta(importer_mesh->obj.get(), mesh->obj.get());
 				mesh_node->set_mesh(mesh);
 				for (int i = 0; i < mesh->get_surface_count(); i++) {
 					mesh_node->set_surface_override_material(
 						i, src_mesh_node->get_surface_material(i));
 				}
-				mesh->merge_meta_from(*importer_mesh);
+				mesh->obj->merge_meta_from(importer_mesh->obj.get());
 			}
 		}
 
@@ -3600,7 +3557,7 @@ void ResourceImporterScene::_optimize_track_usage(
 							int track_idx = anim->add_track(track_types[j]);
 							anim->track_set_path(track_idx, path);
 
-						anim->track_set_imported(track_idx, true);
+							anim->track_set_imported(track_idx, true);
 							anim->blend_shape_track_insert_key(track_idx, 0, value);
 						}
 					}
@@ -4041,8 +3998,8 @@ Error ResourceImporterScene::import(ResourceUID::ID p_source_id, const String& p
 		}
 		else {
 			post_import_script.instantiate();
-			post_import_script->set_script(scr);
-			if (!post_import_script->get_script_instance()) {
+			post_import_script->obj->set_script(scr);
+			if (!post_import_script->obj->get_script_instance()) {
 				EditorNode::add_io_error(
 					TTR("Invalid/broken script for post-import (check console):") + " " +
 					post_import_script_path);
@@ -4107,7 +4064,7 @@ Error ResourceImporterScene::import(ResourceUID::ID p_source_id, const String& p
 		}
 
 		print_verbose("Saving animation to: " + p_save_path + ".res");
-		err = ResourceSaver::save(library, p_save_path + ".res",
+		err = ResourceSaver::save(library.ptr(), p_save_path + ".res",
 			flags); // do not take over, let the changed files reload themselves
 		ERR_FAIL_COND_V_MSG(
 			err != OK, err, "Cannot save animation to file '" + p_save_path + ".res'.");
@@ -4116,7 +4073,7 @@ Error ResourceImporterScene::import(ResourceUID::ID p_source_id, const String& p
 		Ref<PackedScene> packer = memnew(PackedScene);
 		packer->pack(scene);
 		print_verbose("Saving scene to: " + p_save_path + ".scn");
-		err = ResourceSaver::save(packer, p_save_path + ".scn",
+		err = ResourceSaver::save(packer.ptr(), p_save_path + ".scn",
 			flags); // do not take over, let the changed files reload themselves
 		ERR_FAIL_COND_V_MSG(err != OK, err, "Cannot save scene to file '" + p_save_path + ".scn'.");
 		EditorInterface::get_singleton()->make_scene_preview(p_source_file, scene, 1024);
@@ -4219,12 +4176,11 @@ Node* EditorSceneFormatImporterESCN::import_scene(const String& p_path, uint32_t
 	Node* scene = ps->instantiate();
 	Vector<Node*> nodes = scene->find_children("*", "MeshInstance3D");
 	for (int32_t node_i = 0; node_i < nodes.size(); node_i++) {
-		MeshInstance3D* mesh_3d = cast_to<MeshInstance3D>(nodes[node_i]);
+		MeshInstance3D* mesh_3d = Object::cast_to<MeshInstance3D>(nodes[node_i]);
 		Ref<ImporterMesh> mesh;
 		mesh.instantiate();
 		// Ignore the aabb, it will be recomputed.
-		ImporterMeshInstance3D*
- importer_mesh_3d = memnew(ImporterMeshInstance3D);
+		ImporterMeshInstance3D* importer_mesh_3d = memnew(ImporterMeshInstance3D);
 		importer_mesh_3d->set_name(mesh_3d->get_name());
 		importer_mesh_3d->set_transform(mesh_3d->get_relative_transform(mesh_3d->get_parent()));
 		importer_mesh_3d->set_skin(mesh_3d->get_skin());
@@ -4261,7 +4217,8 @@ Node* EditorSceneFormatImporterESCN::import_scene(const String& p_path, uint32_t
 			for (int32_t surface_i = 0; surface_i < mesh_3d_mesh->get_surface_count();
 				 surface_i++) {
 				mesh->add_surface(mesh_3d_mesh->surface_get_primitive_type(surface_i),
-					mesh_3d_mesh->surface_get_arrays(surface_i), Array(),
+					mesh_3d_mesh->surface_get_arrays
+(surface_i), Array(),
 					mesh_3d_mesh->surface_get_lods(surface_i),
 					mesh_3d_mesh->surface_get_material(surface_i),
 					mesh_3d_mesh->surface_get_material(surface_i).is_valid()

@@ -55,7 +55,7 @@ void EditorFolding::save_resource_folding(const Ref<Resource>& p_resource, const
 {
 	Ref<ConfigFile> config;
 	config.instantiate();
-	Vector<String> unfolds = _get_unfolds(p_resource.ptr());
+	Vector<String> unfolds = _get_unfolds(p_resource->obj.get());
 	config->set_value("folding", "sections_unfolded", unfolds);
 
 	Ref<Animation> as_anim = p_resource;
@@ -101,7 +101,7 @@ void EditorFolding::load_resource_folding(Ref<Resource> p_resource, const String
 	if (config->has_section_key("folding", "sections_unfolded")) {
 		unfolds = config->get_value("folding", "sections_unfolded");
 	}
-	_set_unfolds(p_resource.ptr(), unfolds);
+	_set_unfolds(p_resource->obj.get(), unfolds);
 
 	Ref<Animation> anim = p_resource;
 	if (anim.is_valid() && config->has_section_key("folding", "animation_groups_folded")) {
@@ -165,7 +165,7 @@ void EditorFolding::_fill_folds(const Node* p_root, const Node* p_node, Array& p
 				Ref<Resource> res = p_node->obj->get(E.name);
 				if (res.is_valid() && !resources.has(res) && !res->get_path().is_empty() &&
 					!res->get_path().is_resource_file()) {
-					Vector<String> res_unfolds = _get_unfolds(res.ptr());
+					Vector<String> res_unfolds = _get_unfolds(res->obj.get());
 					resource_folds.push_back(res->get_path());
 					resource_folds.push_back(res_unfolds);
 					resources.insert(res);
@@ -269,7 +269,7 @@ void EditorFolding::load_scene_folding(Node* p_scene, const String& p_path)
 		}
 
 		Vector<String> unfolds2 = res_unfolds[i + 1];
-		_set_unfolds(res.ptr(), unfolds2);
+		_set_unfolds(res->obj.get(), unfolds2);
 	}
 
 	for (int i = 0; i < nodes_folded.size(); i++) {
@@ -346,13 +346,14 @@ void EditorFolding::_do_object_unfolds(Object* p_object, HashSet<Ref<Resource>>&
 				if (res.is_valid() && !resources.has(res) && !res->get_path().is_empty() &&
 					!res->get_path().is_resource_file()) {
 					resources.insert(res);
-					_do_object_unfolds(res.ptr(), resources);
+					_do_object_unfolds(res->obj.get(), resources);
 				}
 			}
 		}
 	}
 
-	for (const String& E : unfold_group) {
+	for
+(const String& E : unfold_group) {
 		p_object->editor_set_section_unfold(E, true);
 	}
 }

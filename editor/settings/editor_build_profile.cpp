@@ -353,8 +353,7 @@ bool EditorBuildProfile::is_class_disabled(const StringName& p_class) const
 	if (p_class == StringName()) {
 		return false;
 	}
-	return disabled_classes.has(p_class) ||
-		   is_class_disabled(ClassDB::get_parent_class_nocheck(p_class));
+	return disabled_classes.has(p_class);
 }
 
 void EditorBuildProfile::set_item_collapsed(const StringName& p_class, bool p_collapsed)
@@ -651,57 +650,7 @@ Error EditorBuildProfile::load_from_file(const String& p_path)
 	return OK;
 }
 
-void EditorBuildProfile::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_disable_class", "class_name", "disable"),
-		&EditorBuildProfile::set_disable_class);
-	ClassDB::bind_method(
-		D_METHOD("is_class_disabled", "class_name"), &EditorBuildProfile::is_class_disabled);
-
-	ClassDB::bind_method(D_METHOD("set_disable_build_option", "build_option", "disable"),
-		&EditorBuildProfile::set_disable_build_option);
-	ClassDB::bind_method(D_METHOD("is_build_option_disabled", "build_option"),
-		&EditorBuildProfile::is_build_option_disabled);
-
-	ClassDB::bind_method(D_METHOD("get_build_option_name", "build_option"),
-		&EditorBuildProfile::_get_build_option_name);
-
-	ClassDB::bind_method(D_METHOD("save_to_file", "path"), &EditorBuildProfile::save_to_file);
-	ClassDB::bind_method(D_METHOD("load_from_file", "path"), &EditorBuildProfile::load_from_file);
-
-	BIND_ENUM_CONSTANT(BUILD_OPTION_3D);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_NAVIGATION_2D);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_NAVIGATION_3D);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_XR);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_OPENXR);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_WAYLAND);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_X11);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_RENDERING_DEVICE);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_FORWARD_RENDERER);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_MOBILE_RENDERER);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_VULKAN);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_D3D12);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_METAL);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_OPENGL);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_PHYSICS_2D);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_PHYSICS_GODOT_2D);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_PHYSICS_3D);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_PHYSICS_GODOT_3D);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_PHYSICS_JOLT);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_TEXT_SERVER_FALLBACK);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_TEXT_SERVER_ADVANCED);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_DYNAMIC_FONTS);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_WOFF2_FONTS);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_GRAPHITE_FONTS);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_MSDFGEN);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_MAX);
-
-	BIND_ENUM_CONSTANT(BUILD_OPTION_CATEGORY_GENERAL);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_CATEGORY_GRAPHICS);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_CATEGORY_PHYSICS);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_CATEGORY_TEXT_SERVER);
-	BIND_ENUM_CONSTANT(BUILD_OPTION_CATEGORY_MAX);
-}
+void EditorBuildProfile::_bind_methods() {}
 
 EditorBuildProfile::EditorBuildProfile()
 {
@@ -1028,7 +977,6 @@ void EditorBuildProfileManager::_detect_from_project()
 		used_classes.insert(hc_class);
 
 		LocalVector<StringName> inheriters;
-		ClassDB::get_inheriters_from_class(hc_class, inheriters);
 		for (const StringName& inheriter : inheriters) {
 			used_classes.insert(inheriter);
 		}
@@ -1050,58 +998,13 @@ void EditorBuildProfileManager::_detect_from_project()
 
 	for (const StringName& E : used_classes) {
 		StringName c = E;
-		if (!ClassDB::class_exists(c)) {
-			// Maybe this is an old class that got replaced? Try getting compat class.
-			c = ClassDB::get_compatibility_class(c);
-			if (!c) {
-				// No luck, skip.
-				continue;
-			}
-		}
-
-		List<StringName> dependencies;
-		ClassDB::get_class_dependencies(E, &dependencies);
-		for (const StringName& dep : dependencies) {
-			if (!all_used_classes.has(dep)) {
-				// Add classes which this class depends upon.
-				all_used_classes.insert(dep);
-			}
-		}
 
 		while (c) {
 			all_used_classes.insert(c);
-			c = ClassDB::get_parent_class(c);
 		}
 	}
 
 	edited->clear_disabled_classes();
-
-	LocalVector<StringName> all_classes;
-	ClassDB::get_class_list(all_classes);
-
-	for (const StringName& class_name : all_classes) {
-		if (ClassDB::get_api_type(class_name) != ClassDB::API_CORE) {
-			continue; // This class is editor-only or not from Godot itself.
-		}
-
-		if (class_name != "Resource" && class_name != "Node" &&
-			!ClassDB::is_parent_class(class_name, "Resource") &&
-			!ClassDB::is_parent_class(class_name, "Node")) {
-			continue;
-		}
-
-		if (all_used_classes.has(class_name)) {
-			continue;
-		}
-
-		StringName p = ClassDB::get_parent_class(class_name);
-		if (!p || all_used_classes.has(p)) {
-			// If no parent, or if the parent is enabled, then add to disabled classes.
-			// This way we avoid disabling redundant classes.
-			edited->set_disable_class(class_name, true);
-		}
-	}
-
 	edited->reset_build_options();
 
 	for (int i = 0; i < EditorBuildProfile::BUILD_OPTION_MAX; i++) {
@@ -1264,16 +1167,6 @@ void EditorBuildProfileManager::_fill_classes_from(
 	}
 
 	class_item->set_checked(0, true); // If it's not disabled, its checked.
-
-	List<StringName> child_classes;
-	ClassDB::get_direct_inheriters_from_class(p_class, &child_classes);
-	child_classes.sort_custom<StringName::AlphCompare>();
-
-	for (const StringName& name : child_classes) {
-		if (ClassDB::get_api_type(name) == ClassDB::API_CORE) {
-			_fill_classes_from(class_item, name, p_selected);
-		}
-	}
 }
 
 void EditorBuildProfileManager::_class_list_item_selected()
@@ -1458,11 +1351,7 @@ Ref<EditorBuildProfile> EditorBuildProfileManager::get_current_profile() { retur
 
 EditorBuildProfileManager* EditorBuildProfileManager::singleton = nullptr;
 
-void EditorBuildProfileManager::_bind_methods()
-{
-	ClassDB::bind_method(
-		"_update_selected_profile", &EditorBuildProfileManager::_update_edited_profile);
-}
+void EditorBuildProfileManager::_bind_methods() {}
 
 EditorBuildProfileManager::EditorBuildProfileManager()
 {
@@ -1549,7 +1438,8 @@ EditorBuildProfileManager::EditorBuildProfileManager()
 	main_vbc->add_margin_child(TTRC("Description:"), description_bit, false);
 
 	confirm_dialog = memnew(ConfirmationDialog);
-	confirm_dialog->set_flag(Window::FLAG_RESIZE_DISABLED, true);
+	confirm_dialog->set_flag(Window::
+FLAG_RESIZE_DISABLED, true);
 	add_child(confirm_dialog);
 	confirm_dialog->set_title(TTRC("Please Confirm:"));
 	confirm_dialog->set_autowrap(true);

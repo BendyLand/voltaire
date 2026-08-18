@@ -83,27 +83,7 @@ void EditorContextMenuPlugin::add_context_submenu_item(
 	context_menu_items.insert(p_name, item);
 }
 
-void EditorContextMenuPlugin::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("add_menu_shortcut", "shortcut", "callback"),
-		&EditorContextMenuPlugin::add_menu_shortcut);
-	ClassDB::bind_method(D_METHOD("add_context_menu_item", "name", "callback", "icon"),
-		&EditorContextMenuPlugin::add_context_menu_item, DEFVAL(Ref<Texture2D>()));
-	ClassDB::bind_method(
-		D_METHOD("add_context_menu_item_from_shortcut", "name", "shortcut", "icon"),
-		&EditorContextMenuPlugin::add_context_menu_item_from_shortcut, DEFVAL(Ref<Texture2D>()));
-	ClassDB::bind_method(D_METHOD("add_context_submenu_item", "name", "menu", "icon"),
-		&EditorContextMenuPlugin::add_context_submenu_item, DEFVAL(Ref<Texture2D>()));
-
-	BIND_ENUM_CONSTANT(CONTEXT_SLOT_SCENE_TREE);
-	BIND_ENUM_CONSTANT(CONTEXT_SLOT_FILESYSTEM);
-	BIND_ENUM_CONSTANT(CONTEXT_SLOT_SCRIPT_EDITOR);
-	BIND_ENUM_CONSTANT(CONTEXT_SLOT_FILESYSTEM_CREATE);
-	BIND_ENUM_CONSTANT(CONTEXT_SLOT_SCRIPT_EDITOR_CODE);
-	BIND_ENUM_CONSTANT(CONTEXT_SLOT_SCENE_TABS);
-	BIND_ENUM_CONSTANT(CONTEXT_SLOT_2D_EDITOR);
-	BIND_ENUM_CONSTANT(CONTEXT_SLOT_INSPECTOR_PROPERTY);
-}
+void EditorContextMenuPlugin::_bind_methods() {}
 
 void EditorContextMenuPluginManager::add_plugin(
 	EditorContextMenuPlugin::ContextMenuSlot p_slot, const Ref<EditorContextMenuPlugin>& p_plugin)

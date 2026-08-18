@@ -74,7 +74,7 @@ void ControlPositioningWarning::_update_warning()
 	}
 
 	bg_panel->add_theme_style_override(SceneStringName(panel),
-		get_theme_stylebox(SNAME("bg_group_note"), SNAME("EditorProperty")));
+		get_theme_stylebox(SNAME("bg_group_note"), SNAME("EditorProperty")).ptr());
 }
 
 void ControlPositioningWarning::_update_toggler()
@@ -599,7 +599,7 @@ void ControlEditorPopupButton::_notification(int p_what)
 				arrow_pos.x = get_size().x - arrow_pos.x - arrow_icon->get_width();
 			}
 			arrow_pos.y = get_size().y / 2 - arrow_icon->get_height() / 2;
-			draw_texture(arrow_icon, arrow_pos);
+			draw_texture(arrow_icon.ptr(), arrow_pos);
 		}
 	} break;
 
@@ -737,10 +737,7 @@ void AnchorPresetPicker::set_selected_preset(int p_preset)
 	_update_preset_button_state(p_preset);
 }
 
-void AnchorPresetPicker::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("anchors_preset_selected", PropertyInfo(Variant::INT, "preset")));
-}
+void AnchorPresetPicker::_bind_methods() {}
 
 AnchorPresetPicker::AnchorPresetPicker()
 {
@@ -867,11 +864,7 @@ void SizeFlagPresetPicker::_notification(int p_notification)
 	}
 }
 
-void SizeFlagPresetPicker::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("size_flags_selected", PropertyInfo(Variant::INT, "size_flags")));
-	ADD_SIGNAL(MethodInfo("expand_flag_toggled", PropertyInfo(Variant::BOOL, "expand_flag")));
-}
+void SizeFlagPresetPicker::_bind_methods() {}
 
 SizeFlagPresetPicker::SizeFlagPresetPicker(bool p_vertical)
 {
@@ -1516,11 +1509,13 @@ ControlEditorPlugin::ControlEditorPlugin()
 	toolbar->hide();
 	add_control_to_container(CONTAINER_CANVAS_EDITOR_MENU, toolbar);
 
-	offset_transform_preview = memnew(ControlOffsetTransformPreview(this));
+	offset_transform_preview
+ = memnew(ControlOffsetTransformPreview(this));
 	EditorNode::get_singleton()->get_gui_base()->add_child(offset_transform_preview);
 
 	Ref<EditorInspectorPluginControl> plugin;
 	plugin.instantiate();
 	add_inspector_plugin(plugin);
 }
+
 

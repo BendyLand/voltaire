@@ -535,8 +535,9 @@ void MeshInstance3DEditor::_menu_option(int p_option)
 		if (primitive_mesh.is_valid()) {
 			EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 			ur->create_action(TTR("Unwrap UV2"));
-			ur->add_do_method(*primitive_mesh, "set_add_uv2", true);
-			ur->add_undo_method(*primitive_mesh, "set_add_uv2", primitive_mesh->get_add_uv2());
+			ur->add_do_method(primitive_mesh->obj.get(), "set_add_uv2", true);
+			ur->add_undo_method(
+				primitive_mesh->obj.get(), "set_add_uv2", primitive_mesh->get_add_uv2());
 			ur->commit_action();
 		}
 		else {
@@ -587,7 +588,7 @@ void MeshInstance3DEditor::_menu_option(int p_option)
 			ur->create_action(TTR("Unwrap UV2"));
 
 			ur->add_do_method(node->obj.get(), "set_mesh", unwrapped_mesh);
-			ur->add_do_reference(unwrapped_mesh.ptr());
+			ur->add_do_reference(unwrapped_mesh->obj.get());
 			ur->add_undo_method(node->obj.get(), "set_mesh", array_mesh);
 
 			ur->commit_action();

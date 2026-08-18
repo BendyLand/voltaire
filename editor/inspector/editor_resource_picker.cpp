@@ -58,12 +58,12 @@
 static bool _has_sub_resources(const Ref<Resource>& p_res)
 {
 	List<PropertyInfo> property_list;
-	p_res->get_property_list(&property_list);
+	p_res->obj->get_property_list(&property_list);
 	for (const PropertyInfo& p : property_list) {
-		Variant value = p_res->get(p.name);
+		Variant value = p_res->obj->get(p.name);
 		if (p.type == Variant::OBJECT && p.hint == PROPERTY_HINT_RESOURCE_TYPE &&
 			!(p.usage & PROPERTY_USAGE_NEVER_DUPLICATE) &&
-			p_res->get(p.name).get_validated_object()) {
+			p_res->obj->get(p.name).get_validated_object()) {
 			return true;
 		}
 		else if (p.type == Variant::ARRAY) {
@@ -108,7 +108,7 @@ void EditorResourcePicker::_update_resource()
 		}
 		else {
 			assign_button->set_button_icon(
-				EditorNode::get_singleton()->get_object_icon(edited_resource.operator->()));
+				EditorNode::get_singleton()->get_object_icon(edited_resource.operator->()->obj.get()));
 
 			if (!edited_resource->get_name().is_empty()) {
 				assign_button->set_text(edited_resource->get_name());
@@ -128,12 +128,12 @@ void EditorResourcePicker::_update_resource()
 			// Preview will override the above, so called at the end.
 			EditorResourcePreview::get_singleton()->queue_edited_resource_preview(
 				edited_resource, callable_mp(this, &EditorResourcePicker::_update_resource_preview)
-									 .bind(edited_resource->get_instance_id()));
+									 .bind(edited_resource->obj->get_instance_id()));
 		}
 	}
 	else if (edited_resource.is_valid()) {
 		assign_button->set_tooltip_text(
-			resource_path + TTR("Type:") + " " + edited_resource->get_class());
+			resource_path + TTR("Type:") + " " + edited_resource->obj->get_class());
 	}
 
 	if (edited_resource.is_null()) {
@@ -156,11 +156,11 @@ void EditorResourcePicker::_update_resource()
 
 		String resource_name = "resource";
 		if (edited_resource.is_valid()) {
-			resource_name = edited_resource->get_class();
+			resource_name = edited_resource->obj->get_class();
 
-			if (edited_resource->has_meta(SceneStringName(_custom_type_script))) {
+			if (edited_resource->obj->has_meta(SceneStringName(_custom_type_script))) {
 				const Ref<Script> custom_script =
-					PropertyUtils::get_custom_type_script(edited_resource.ptr());
+					PropertyUtils::get_custom_type_script(edited_resource->obj.get());
 				if (custom_script.is_valid()) {
 					const String global_name = custom_script->get_global_name();
 					if (!global_name.is_empty()) {
@@ -212,7 +212,7 @@ void EditorResourcePicker::_update_resource()
 void EditorResourcePicker::_update_resource_preview(const String& p_path,
 	const Ref<Texture2D>& p_preview, const Ref<Texture2D>& p_small_preview, ObjectID p_obj)
 {
-	if (edited_resource.is_null() || edited_resource->get_instance_id() != p_obj) {
+	if (edited_resource.is_null() || edited_resource->obj->get_instance_id() != p_obj) {
 		return;
 	}
 
@@ -281,8 +281,8 @@ void EditorResourcePicker::_file_selected(const String& p_path)
 	if (!base_type.is_empty()) {
 		bool any_type_matches = false;
 
-		String res_type = loaded_resource->get_class();
-		Ref<Script> res_script = loaded_resource->get_script();
+		String res_type = loaded_resource->obj->get_class();
+		Ref<Script> res_script = loaded_resource->obj->get_script();
 		bool is_global_class = false;
 		if (res_script.is_valid()) {
 			String script_type =
@@ -299,7 +299,7 @@ void EditorResourcePicker::_file_selected(const String& p_path)
 			any_type_matches =
 				is_global_class
 					? EditorNode::get_editor_data().script_class_is_parent(res_type, base)
-					: loaded_resource->is_class(base);
+					: loaded_resource->obj->is_class(base);
 
 			if (any_type_matches) {
 				break;
@@ -321,7 +321,7 @@ void EditorResourcePicker::_file_selected(const String& p_path)
 
 void EditorResourcePicker::_resource_saved(Object* p_resource)
 {
-	if (edited_resource.is_valid() && p_resource == edited_resource.ptr()) {
+	if (edited_resource.is_valid() && p_resource == edited_resource->obj.get()) {
 		this->obj->emit_signal(SNAME("resource_changed"), edited_resource);
 		_update_resource();
 	}
@@ -473,8 +473,7 @@ void EditorResourcePicker::_update_menu_items()
 			for (int i = 0; i < base_type.get_slice_count(","); i++) {
 				String base = base_type.get_slicec(',', i);
 
-				paste_valid = ClassDB::is_parent_class(res_type, base) ||
-							  EditorNode::get_editor_data().script_class_is_parent(res_type, base);
+				paste_valid = EditorNode::get_editor_data().script_class_is_parent(res_type, base);
 
 				if (paste_valid) {
 					break;
@@ -733,10 +732,6 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which)
 		if (ScriptServer::is_global_class(intype)) {
 			o = EditorNode::get_editor_data().script_class_instance(intype);
 		}
-		else {
-			o = ClassDB::instantiate(intype);
-		}
-
 		if (!o) {
 			o = EditorNode::get_editor_data().instantiate_custom_type(intype, "Resource");
 		}
@@ -779,10 +774,6 @@ void EditorResourcePicker::set_create_options(Object* p_menu_node)
 
 		for (const StringName& E : allowed_types) {
 			const String& t = E;
-
-			if (!ClassDB::can_instantiate(t)) {
-				continue;
-			}
 
 			inheritors_array.push_back(t);
 
@@ -896,9 +887,9 @@ String EditorResourcePicker::_get_resource_type(const Ref<Resource>& p_resource)
 	if (p_resource.is_null()) {
 		return String();
 	}
-	String res_type = p_resource->get_class();
+	String res_type = p_resource->obj->get_class();
 
-	Ref<Script> res_script = p_resource->get_script();
+	Ref<Script> res_script = p_resource->obj->get_script();
 	if (res_script.is_null()) {
 		return res_type;
 	}
@@ -914,10 +905,6 @@ String EditorResourcePicker::_get_resource_type(const Ref<Resource>& p_resource)
 
 static bool _should_hide_type(const StringName& p_type)
 {
-	if (ClassDB::is_virtual(p_type)) {
-		return true;
-	}
-
 	if (p_type == SNAME("MissingResource")) {
 		return true;
 	}
@@ -932,23 +919,7 @@ static void _add_allowed_type(const StringName& p_type, List<StringName>* p_vect
 		return;
 	}
 
-	if (ClassDB::class_exists(p_type)) {
-		// Engine class.
-
-		if (!_should_hide_type(p_type)) {
-			p_vector->push_back(p_type);
-		}
-
-		LocalVector<StringName> inheriters;
-		ClassDB::get_inheriters_from_class(p_type, inheriters);
-		for (const StringName& S : inheriters) {
-			_add_allowed_type(S, p_vector);
-		}
-	}
-	else {
-		// Script class.
-		p_vector->push_back(p_type);
-	}
+	p_vector->push_back(p_type);
 
 	List<StringName> inheriters;
 	ScriptServer::get_inheriters_list(p_type, &inheriters);
@@ -988,12 +959,6 @@ void EditorResourcePicker::_ensure_allowed_types() const
 		if (base == "BaseMaterial3D") {
 			allowed_types_with_convert.insert("Texture2D");
 		}
-		else if (ClassDB::is_parent_class("ShaderMaterial", base)) {
-			allowed_types_with_convert.insert("Shader");
-		}
-		else if (ClassDB::is_parent_class("ImageTexture", base)) {
-			allowed_types_with_convert.insert("Image");
-		}
 	}
 }
 
@@ -1024,9 +989,9 @@ bool EditorResourcePicker::_is_drop_valid(const Dictionary& p_drag_data) const
 		return true;
 	}
 
-	if (res->get_script()) {
+	if (res->obj->get_script()) {
 		StringName custom_class =
-			EditorNode::get_singleton()->get_object_custom_type_name(res->get_script());
+			EditorNode::get_singleton()->get_object_custom_type_name(res->obj->get_script());
 		if (_is_type_valid(custom_class, allowed_types)) {
 			return true;
 		}
@@ -1039,8 +1004,7 @@ bool EditorResourcePicker::_is_type_valid(
 {
 	for (const StringName& E : p_allowed_types) {
 		String at = E;
-		if (p_type_name == at || ClassDB::is_parent_class(p_type_name, at) ||
-			EditorNode::get_editor_data().script_class_is_parent(p_type_name, at)) {
+		if (p_type_name == at || EditorNode::get_editor_data().script_class_is_parent(p_type_name, at)) {
 			return true;
 		}
 	}
@@ -1184,43 +1148,7 @@ void EditorResourcePicker::drop_data_fw(
 	}
 }
 
-void EditorResourcePicker::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_base_type", "base_type"), &EditorResourcePicker::set_base_type);
-	ClassDB::bind_method(D_METHOD("get_base_type"), &EditorResourcePicker::get_base_type);
-	ClassDB::bind_method(D_METHOD("get_allowed_types"), &EditorResourcePicker::get_allowed_types);
-	ClassDB::bind_method(
-		D_METHOD("set_edited_resource", "resource"), &EditorResourcePicker::set_edited_resource);
-	ClassDB::bind_method(
-		D_METHOD("get_edited_resource"), &EditorResourcePicker::get_edited_resource);
-	ClassDB::bind_method(
-		D_METHOD("set_toggle_mode", "enable"), &EditorResourcePicker::set_toggle_mode);
-	ClassDB::bind_method(D_METHOD("is_toggle_mode"), &EditorResourcePicker::is_toggle_mode);
-	ClassDB::bind_method(
-		D_METHOD("set_toggle_pressed", "pressed"), &EditorResourcePicker::set_toggle_pressed);
-	ClassDB::bind_method(D_METHOD("set_editable", "enable"), &EditorResourcePicker::set_editable);
-	ClassDB::bind_method(D_METHOD("is_editable"), &EditorResourcePicker::is_editable);
-
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "base_type"), "set_base_type", "get_base_type");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "edited_resource", PROPERTY_HINT_RESOURCE_TYPE,
-					 Resource::get_class_static(), PROPERTY_USAGE_NONE),
-		"set_edited_resource", "get_edited_resource");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "editable"), "set_editable", "is_editable");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "toggle_mode"), "set_toggle_mode", "is_toggle_mode");
-
-	ADD_SIGNAL(MethodInfo("resource_selected",
-		PropertyInfo(
-			Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, Resource::get_class_static()),
-		PropertyInfo(Variant::BOOL, "inspect")));
-	ADD_SIGNAL(MethodInfo(
-		"resource_changed", PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE,
-								Resource::get_class_static())));
-	ADD_SIGNAL(MethodInfo("_resource_expand_requested",
-		PropertyInfo(
-			Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, Resource::get_class_static()),
-		PropertyInfo(Variant::BOOL, "inspect")));
-}
+void EditorResourcePicker::_bind_methods() {}
 
 void EditorResourcePicker::_notification(int p_what)
 {
@@ -1246,7 +1174,7 @@ void EditorResourcePicker::_notification(int p_what)
 
 	case NOTIFICATION_DRAW: {
 		draw_style_box(
-			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")), Rect2(Point2(), get_size()));
+			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr(), Rect2(Point2(), get_size()));
 	} break;
 
 	case NOTIFICATION_SORT_CHILDREN: {
@@ -1301,16 +1229,16 @@ void EditorResourcePicker::set_base_type(const String& p_base_type)
 
 		StringName custom_class;
 		bool is_custom = false;
-		if (edited_resource->get_script()) {
+		if (edited_resource->obj->get_script()) {
 			custom_class = EditorNode::get_singleton()->get_object_custom_type_name(
-				edited_resource->get_script());
+				edited_resource->obj->get_script());
 			is_custom = _is_type_valid(custom_class, allowed_types);
 		}
 
-		if (!is_custom && !_is_type_valid(edited_resource->get_class(), allowed_types)) {
-			String class_str = (custom_class == StringName() ? edited_resource->get_class()
+		if (!is_custom && !_is_type_valid(edited_resource->obj->get_class(), allowed_types)) {
+			String class_str = (custom_class == StringName() ? edited_resource->obj->get_class()
 															 : vformat("%s (%s)", custom_class,
-																   edited_resource->get_class()));
+																   edited_resource->obj->get_class()));
 			WARN_PRINT(
 				vformat("Value mismatch between the new base type of this EditorResourcePicker, "
 						"'%s', and the type of the value it already has, '%s'.",
@@ -1351,13 +1279,13 @@ bool EditorResourcePicker::is_resource_allowed(const Ref<Resource>& p_resource)
 
 		StringName custom_class;
 		bool is_custom = false;
-		if (p_resource->get_script()) {
+		if (p_resource->obj->get_script()) {
 			custom_class =
-				EditorNode::get_singleton()->get_object_custom_type_name(p_resource->get_script());
+				EditorNode::get_singleton()->get_object_custom_type_name(p_resource->obj->get_script());
 			is_custom = _is_type_valid(custom_class, allowed_types);
 		}
 
-		if (!is_custom && !_is_type_valid(p_resource->get_class(), allowed_types)) {
+		if (!is_custom && !_is_type_valid(p_resource->obj->get_class(), allowed_types)) {
 			return false;
 		}
 	}
@@ -1368,13 +1296,13 @@ void EditorResourcePicker::set_edited_resource(Ref<Resource> p_resource)
 {
 	if (!is_resource_allowed(p_resource)) {
 		StringName custom_class;
-		if (p_resource->get_script()) {
+		if (p_resource->obj->get_script()) {
 			custom_class =
-				EditorNode::get_singleton()->get_object_custom_type_name(p_resource->get_script());
+				EditorNode::get_singleton()->get_object_custom_type_name(p_resource->obj->get_script());
 		}
 		const String class_str =
-			(custom_class.is_empty() ? p_resource->get_class()
-									 : vformat("%s (%s)", custom_class, p_resource->get_class()));
+			(custom_class.is_empty() ? p_resource->obj->get_class()
+									 : vformat("%s (%s)", custom_class, p_resource->obj->get_class()));
 		ERR_FAIL_MSG(vformat("Failed to set a resource of the type '%s' because this "
 							 "EditorResourcePicker only accepts '%s' and its derivatives.",
 			class_str, base_type));
@@ -1454,7 +1382,7 @@ void EditorResourcePicker::_gather_resources_to_duplicate(
 		p_item->set_text(0, vformat("%s (%s)", _get_resource_type(p_resource), res_name));
 	}
 
-	p_item->set_icon(0, EditorNode::get_singleton()->get_object_icon(p_resource.ptr()));
+	p_item->set_icon(0, EditorNode::get_singleton()->get_object_icon(p_resource->obj.get()));
 	p_item->set_editable(0, true);
 
 	Array meta = {p_resource};
@@ -1465,13 +1393,13 @@ void EditorResourcePicker::_gather_resources_to_duplicate(
 	}
 
 	static Vector<String> unique_exceptions = {"Image", "Shader", "Mesh", "FontFile"};
-	if (!unique_exceptions.has(p_resource->get_class())) {
+	if (!unique_exceptions.has(p_resource->obj->get_class())) {
 		// Automatically select resource, unless it's something that shouldn't be duplicated.
 		p_item->set_checked(0, true);
 	}
 
 	List<PropertyInfo> plist;
-	p_resource->get_property_list(&plist);
+	p_resource->obj->get_property_list(&plist);
 
 	for (const PropertyInfo& E : plist) {
 		if (!(E.usage & PROPERTY_USAGE_STORAGE) ||
@@ -1480,7 +1408,7 @@ void EditorResourcePicker::_gather_resources_to_duplicate(
 			continue;
 		}
 
-		Variant value = p_resource->get(E.name);
+		Variant value = p_resource->obj->get(E.name);
 		TreeItem* child = nullptr;
 
 		if (E.type == Variant::ARRAY) {
@@ -1521,7 +1449,7 @@ void EditorResourcePicker::_gather_resources_to_duplicate(
 			continue;
 		}
 
-		Ref<Resource> res = p_resource->get(E.name);
+		Ref<Resource> res = p_resource->obj->get(E.name);
 		if (res.is_null()) {
 			continue;
 		}
@@ -1559,18 +1487,18 @@ void EditorResourcePicker::_duplicate_selected_resources()
 		}
 		Array parent_meta = item->get_parent()->get_metadata(0);
 		Ref<Resource> parent = parent_meta[0];
-		Variant::Type property_type = parent->get(meta[1]).get_type();
+		Variant::Type property_type = parent->obj->get(meta[1]).get_type();
 
 		if (property_type == Variant::OBJECT) {
-			parent->set(meta[1], unique_resource);
+			parent->obj->set(meta[1], unique_resource);
 			continue;
 		}
 
-		Variant property = parent->get(meta[1]);
+		Variant property = parent->obj->get(meta[1]);
 
 		if (!parent_meta.has(property)) {
 			property = property.duplicate();
-			parent->set(meta[1], property);
+			parent->obj->set(meta[1], property);
 			parent_meta.push_back(property); // Append Duplicated Type so we can check if it's
 											 // already been duplicated.
 		}
@@ -1972,7 +1900,7 @@ void EditorAudioStreamPicker::_preview_draw()
 		}
 	}
 	else {
-		icon = EditorNode::get_singleton()->get_object_icon(audio_stream.operator->());
+		icon = EditorNode::get_singleton()->get_object_icon(audio_stream.operator->()->obj.get());
 	}
 	String text;
 	if (!audio_stream->get_name().is_empty()) {
@@ -1981,20 +1909,20 @@ void EditorAudioStreamPicker::_preview_draw()
 	else if (audio_stream->get_path().is_resource_file()) {
 		text = audio_stream->get_path().get_file();
 	}
-	else if (audio_stream->get_class() != "AudioStream") {
-		text = audio_stream->get_class().replace_first("AudioStream", "");
+	else if (audio_stream->obj->get_class() != "AudioStream") {
+		text = audio_stream->obj->get_class().replace_first("AudioStream", "");
 	}
 	else {
-		text = audio_stream->get_class();
+		text = audio_stream->obj->get_class();
 	}
 
-	stream_preview_rect->draw_texture(icon,
+	stream_preview_rect->draw_texture(icon.ptr(),
 		Point2i(EDSCALE * 4, rect.position.y + (rect.size.height - icon->get_height()) / 2),
 		icon_modulate);
 
 	float text_width = size.width - 4 * EDSCALE - icon->get_width();
 	if (text_width > 0) {
-		stream_preview_rect->draw_string(font,
+		stream_preview_rect->draw_string(font.ptr(),
 			Point2i(
 				size.width - text_width, rect.position.y + font->get_ascent(font_size) +
 											 (rect.size.height - font->get_height(font_size)) / 2),

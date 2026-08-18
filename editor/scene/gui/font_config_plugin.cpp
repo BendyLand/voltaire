@@ -274,7 +274,7 @@ void EditorPropertyFontMetaOverride::update_property()
 		for (int i = 0; i < amount; i++) {
 			String name = dict.get_key_at_index(i);
 			EditorProperty* prop = memnew(EditorPropertyCheck);
-			prop->set_object_and_property(object.ptr(), "keys/" + name);
+			prop->set_object_and_property(object->obj.get(), "keys/" + name);
 
 			if (script_editor) {
 				prop->set_label(TranslationServer::get_singleton()->get_script_name(name));
@@ -505,7 +505,7 @@ void EditorPropertyOTVariation::update_property()
 			hint.or_greater = false;
 			hint.or_less = false;
 			prop->setup(hint);
-			prop->set_object_and_property(object.ptr(), "keys/" + itos(name_tag));
+			prop->set_object_and_property(object->obj.get(), "keys/" + itos(name_tag));
 
 			String name = TS->tag_to_name(name_tag);
 			String name_cap;
@@ -829,7 +829,7 @@ void EditorPropertyOTFeatures::update_property()
 											   Variant::get_type_name(vtype)));
 				}
 				}
-				prop->set_object_and_property(object.ptr(), "keys/" + itos(name_tag));
+				prop->set_object_and_property(object->obj.get(), "keys/" + itos(name_tag));
 
 				String name = TS->tag_to_name(name_tag);
 				String disp_name = name.capitalize();
@@ -998,7 +998,7 @@ void FontPreview::_notification(int p_what)
 					name = vformat(
 						"%s (%s)", prev_font->get_font_name(), prev_font->get_font_style_name());
 				}
-				if (prev_font->is_class("FontVariation")) {
+				if (prev_font->obj->is_class("FontVariation")) {
 					// TRANSLATORS: This refers to variable font config, appended to the font name.
 					name += " - " + TTR("Variation");
 				}
@@ -1061,7 +1061,8 @@ void FontPreview::set_data(const Ref<Font>& p_f)
 
 void FontPreview::_preview_changed() { queue_redraw(); }
 
-/***********************************
+/***************
+********************
 **************************************/
 /* EditorInspectorPluginFontPreview                                      */
 /*************************************************************************/

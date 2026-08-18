@@ -138,7 +138,7 @@ void Cast2DEditor::forward_canvas_draw_over_viewport(Control* p_overlay)
 
 	const Ref<Texture2D> handle = get_editor_theme_icon(SNAME("EditorHandle"));
 	p_overlay->draw_texture(
-		handle, gt.xform((Vector2)node->obj->get("target_position")) - handle->get_size() / 2);
+		handle.ptr(), gt.xform((Vector2)node->obj->get("target_position")) - handle->get_size() / 2);
 }
 
 void Cast2DEditor::edit(Node2D* p_node)

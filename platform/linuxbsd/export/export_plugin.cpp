@@ -28,11 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "export_plugin.h"
-
-#include "logo_svg.gen.h"
-#include "run_icon_svg.gen.h"
-
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/zip_io.h"
@@ -43,13 +38,18 @@
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
-
+#include "export_plugin.h"
+#include "logo_svg.gen.h"
 #include "modules/svg/image_loader_svg.h"
+#include "run_icon_svg.gen.h"
 
-Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportPreset> &p_preset, const String &p_app_name, const String &p_pkg_name, const String &p_path) {
+Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportPreset>& p_preset,
+	const String& p_app_name, const String& p_pkg_name, const String& p_path)
+{
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
 	if (f.is_null()) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Debug Script Export"), vformat(TTR("Could not open file \"%s\"."), p_path));
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Debug Script Export"),
+			vformat(TTR("Could not open file \"%s\"."), p_path));
 		return ERR_CANT_CREATE;
 	}
 
@@ -61,24 +61,31 @@ Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportP
 	return OK;
 }
 
-Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, BitField<EditorExportPlatform::DebugFlags> p_flags, bool p_notify) {
-	String custom_debug = p_preset->get("custom_template/debug");
-	String custom_release = p_preset->get("custom_template/release");
-	String arch = p_preset->get("binary_format/architecture");
+Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>& p_preset,
+	bool p_debug, const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags,
+	bool p_notify)
+{
+	String custom_debug = p_preset->obj->get("custom_template/debug");
+	String custom_release = p_preset->obj->get("custom_template/release");
+	String arch = p_preset->obj->get("binary_format/architecture");
 
 	String template_path = p_debug ? custom_debug : custom_release;
 	template_path = template_path.strip_edges();
 	if (!template_path.is_empty()) {
 		String exe_arch = _get_exe_arch(template_path);
 		if (arch != exe_arch) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"), vformat(TTR("Mismatching custom export template executable architecture: found \"%s\", expected \"%s\"."), exe_arch, arch));
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"),
+				vformat(TTR("Mismatching custom export template executable architecture: found "
+							"\"%s\", expected \"%s\"."),
+					exe_arch, arch));
 			return ERR_CANT_CREATE;
 		}
 	}
 
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	if (da->file_exists(template_path.get_base_dir().path_join("libaccesskit." + arch + ".so"))) {
-		da->copy(template_path.get_base_dir().path_join("libaccesskit." + arch + ".so"), p_path.get_base_dir().path_join("libaccesskit." + arch + ".so"), get_chmod_flags());
+		da->copy(template_path.get_base_dir().path_join("libaccesskit." + arch + ".so"),
+			p_path.get_base_dir().path_join("libaccesskit." + arch + ".so"), get_chmod_flags());
 	}
 
 	bool export_as_zip = p_path.ends_with("zip");
@@ -86,7 +93,8 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 	String pkg_name;
 	if (String(get_project_setting(p_preset, "application/config/name")) != "") {
 		pkg_name = String(get_project_setting(p_preset, "application/config/name"));
-	} else {
+	}
+	else {
 		pkg_name = "Unnamed";
 	}
 
@@ -99,7 +107,8 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 	Ref<DirAccess> tmp_app_dir = DirAccess::create_for_path(tmp_dir_path);
 	if (export_as_zip) {
 		if (tmp_app_dir.is_null()) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"), vformat(TTR("Could not create and open the directory: \"%s\""), tmp_dir_path));
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"),
+				vformat(TTR("Could not create and open the directory: \"%s\""), tmp_dir_path));
 			return ERR_CANT_CREATE;
 		}
 		if (DirAccess::exists(tmp_dir_path)) {
@@ -113,20 +122,22 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags, export_as_zip);
 	// Export project.
-	Error err = EditorExportPlatformPC::export_project(p_preset, p_debug, path, p_flags, !export_as_zip);
+	Error err =
+		EditorExportPlatformPC::export_project(p_preset, p_debug, path, p_flags, !export_as_zip);
 	if (err != OK) {
 		// Message is supplied by the subroutine method.
 		return err;
 	}
 
 	// Save console wrapper.
-	int con_scr = p_preset->get("debug/export_console_wrapper");
+	int con_scr = p_preset->obj->get("debug/export_console_wrapper");
 	if ((con_scr == 1 && p_debug) || (con_scr == 2)) {
 		String scr_path = path.get_basename() + ".sh";
 		err = _export_debug_script(p_preset, pkg_name, path.get_file(), scr_path);
 		FileAccess::set_unix_permissions(scr_path, 0755);
 		if (err != OK) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Debug Console Export"), TTR("Could not create console wrapper."));
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Debug Console Export"),
+				TTR("Could not create console wrapper."));
 		}
 	}
 
@@ -154,19 +165,25 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 	return err;
 }
 
-String EditorExportPlatformLinuxBSD::get_template_file_name(const String &p_target, const String &p_arch) const {
+String EditorExportPlatformLinuxBSD::get_template_file_name(
+	const String& p_target, const String& p_arch) const
+{
 	return "linux_" + p_target + "." + p_arch;
 }
 
-List<String> EditorExportPlatformLinuxBSD::get_binary_extensions(const Ref<EditorExportPreset> &p_preset) const {
+List<String> EditorExportPlatformLinuxBSD::get_binary_extensions(
+	const Ref<EditorExportPreset>& p_preset) const
+{
 	List<String> list;
-	list.push_back(p_preset->get("binary_format/architecture"));
+	list.push_back(p_preset->obj->get("binary_format/architecture"));
 	list.push_back("zip");
 
 	return list;
 }
 
-bool EditorExportPlatformLinuxBSD::get_export_option_visibility(const EditorExportPreset *p_preset, const String &p_option) const {
+bool EditorExportPlatformLinuxBSD::get_export_option_visibility(
+	const EditorExportPreset* p_preset, const String& p_option) const
+{
 	if (p_preset == nullptr) {
 		return true;
 	}
@@ -174,22 +191,26 @@ bool EditorExportPlatformLinuxBSD::get_export_option_visibility(const EditorExpo
 	bool advanced_options_enabled = p_preset->are_advanced_options_enabled();
 
 	// Hide SSH options.
-	bool ssh = p_preset->get("ssh_remote_deploy/enabled");
-	if (!ssh && p_option != "ssh_remote_deploy/enabled" && p_option.begins_with("ssh_remote_deploy/")) {
+	bool ssh = p_preset->obj->get("ssh_remote_deploy/enabled");
+	if (!ssh && p_option != "ssh_remote_deploy/enabled" &&
+		p_option.begins_with("ssh_remote_deploy/")) {
 		return false;
 	}
-	if (p_option == "dotnet/embed_build_outputs" ||
-			p_option == "custom_template/debug" ||
-			p_option == "custom_template/release") {
+	if (p_option == "dotnet/embed_build_outputs" || p_option == "custom_template/debug" ||
+		p_option == "custom_template/release") {
 		return advanced_options_enabled;
 	}
 	return true;
 }
 
-void EditorExportPlatformLinuxBSD::get_export_options(List<ExportOption> *r_options) const {
+void EditorExportPlatformLinuxBSD::get_export_options(List<ExportOption>* r_options) const
+{
 	EditorExportPlatformPC::get_export_options(r_options);
 
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "binary_format/architecture", PROPERTY_HINT_ENUM, "x86_64,x86_32,arm64,arm32,rv64,ppc64,loongarch64"), "x86_64"));
+	r_options->push_back(
+		ExportOption(PropertyInfo(Variant::STRING, "binary_format/architecture", PROPERTY_HINT_ENUM,
+						 "x86_64,x86_32,arm64,arm32,rv64,ppc64,loongarch64"),
+			"x86_64"));
 
 	String run_script = "#!/usr/bin/env bash\n"
 						"export DISPLAY=:0\n"
@@ -200,58 +221,88 @@ void EditorExportPlatformLinuxBSD::get_export_options(List<ExportOption> *r_opti
 							"pkill -x -f \"{temp_dir}/{exe_name} {cmd_args}\"\n"
 							"rm -rf \"{temp_dir}\"";
 
-	r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "ssh_remote_deploy/enabled"), false, true));
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/host"), "user@host_ip"));
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/port"), "22"));
+	r_options->push_back(
+		ExportOption(PropertyInfo(Variant::BOOL, "ssh_remote_deploy/enabled"), false, true));
+	r_options->push_back(
+		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/host"), "user@host_ip"));
+	r_options->push_back(
+		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/port"), "22"));
 
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/extra_args_ssh", PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"), ""));
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/extra_args_scp", PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"), ""));
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/run_script", PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"), run_script));
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/cleanup_script", PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"), cleanup_script));
+	r_options->push_back(
+		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/extra_args_ssh",
+						 PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"),
+			""));
+	r_options->push_back(
+		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/extra_args_scp",
+						 PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"),
+			""));
+	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/run_script",
+										  PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"),
+		run_script));
+	r_options->push_back(
+		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/cleanup_script",
+						 PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"),
+			cleanup_script));
 }
 
-bool EditorExportPlatformLinuxBSD::is_elf(const String &p_path) const {
+bool EditorExportPlatformLinuxBSD::is_elf(const String& p_path) const
+{
 	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
 	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("Can't open file: \"%s\".", p_path));
 	uint32_t magic = fb->get_32();
 	return (magic == 0x464c457f);
 }
 
-bool EditorExportPlatformLinuxBSD::is_shebang(const String &p_path) const {
+bool EditorExportPlatformLinuxBSD::is_shebang(const String& p_path) const
+{
 	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
 	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("Can't open file: \"%s\".", p_path));
 	uint16_t magic = fb->get_16();
 	return (magic == 0x2123);
 }
 
-bool EditorExportPlatformLinuxBSD::is_executable(const String &p_path) const {
+bool EditorExportPlatformLinuxBSD::is_executable(const String& p_path) const
+{
 	return is_elf(p_path) || is_shebang(p_path);
 }
 
-void EditorExportPlatformLinuxBSD::get_platform_features(List<String> *r_features) const {
+void EditorExportPlatformLinuxBSD::get_platform_features(List<String>* r_features) const
+{
 	EditorExportPlatformPC::get_platform_features(r_features);
 	r_features->push_back("linux");
 	r_features->push_back("linuxbsd");
 }
 
-bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
+bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
+	bool p_debug) const
+{
 	String err;
-	bool valid = EditorExportPlatformPC::has_valid_export_configuration(p_preset, err, r_missing_templates, p_debug);
+	bool valid = EditorExportPlatformPC::has_valid_export_configuration(
+		p_preset, err, r_missing_templates, p_debug);
 
-	String custom_debug = p_preset->get("custom_template/debug").operator String().strip_edges();
-	String custom_release = p_preset->get("custom_template/release").operator String().strip_edges();
-	String arch = p_preset->get("binary_format/architecture");
+	String custom_debug =
+		p_preset->obj->get("custom_template/debug").operator String().strip_edges();
+	String custom_release =
+		p_preset->obj->get("custom_template/release").operator String().strip_edges();
+	String arch = p_preset->obj->get("binary_format/architecture");
 
 	if (!custom_debug.is_empty() && FileAccess::exists(custom_debug)) {
 		String exe_arch = _get_exe_arch(custom_debug);
 		if (arch != exe_arch) {
-			err += vformat(TTR("Mismatching custom debug export template executable architecture: found \"%s\", expected \"%s\"."), exe_arch, arch) + "\n";
+			err += vformat(TTR("Mismatching custom debug export template executable architecture: "
+							   "found \"%s\", expected \"%s\"."),
+					   exe_arch, arch) +
+				   "\n";
 		}
 	}
 	if (!custom_release.is_empty() && FileAccess::exists(custom_release)) {
 		String exe_arch = _get_exe_arch(custom_release);
 		if (arch != exe_arch) {
-			err += vformat(TTR("Mismatching custom release export template executable architecture: found \"%s\", expected \"%s\"."), exe_arch, arch) + "\n";
+			err += vformat(TTR("Mismatching custom release export template executable "
+							   "architecture: found \"%s\", expected \"%s\"."),
+					   exe_arch, arch) +
+				   "\n";
 		}
 	}
 
@@ -262,7 +313,8 @@ bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(const Ref<Edit
 	return valid;
 }
 
-String EditorExportPlatformLinuxBSD::_get_exe_arch(const String &p_path) const {
+String EditorExportPlatformLinuxBSD::_get_exe_arch(const String& p_path) const
+{
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
 	if (f.is_null()) {
 		return "invalid";
@@ -283,31 +335,35 @@ String EditorExportPlatformLinuxBSD::_get_exe_arch(const String &p_path) const {
 	f->close();
 
 	switch (machine) {
-		case 0x0003:
-			return "x86_32";
-		case 0x003e:
-			return "x86_64";
-		case 0x0015:
-			return "ppc64";
-		case 0x0028:
-			return "arm32";
-		case 0x00b7:
-			return "arm64";
-		case 0x00f3:
-			return "rv64";
-		case 0x0102:
-			return "loongarch64";
-		default:
-			return "unknown";
+	case 0x0003:
+		return "x86_32";
+	case 0x003e:
+		return "x86_64";
+	case 0x0015:
+		return "ppc64";
+	case 0x0028:
+		return "arm32";
+	case 0x00b7:
+		return "arm64";
+	case 0x00f3:
+		return "rv64";
+	case 0x0102:
+		return "loongarch64";
+	default:
+		return "unknown";
 	}
 }
 
-Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int64_t p_embedded_start, int64_t p_embedded_size) {
-	// Patch the header of the "pck" section in the ELF file so that it corresponds to the embedded data.
+Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(
+	const String& p_path, int64_t p_embedded_start, int64_t p_embedded_size)
+{
+	// Patch the header of the "pck" section in the ELF file so that it corresponds to the embedded
+	// data.
 
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ_WRITE);
 	if (f.is_null()) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"), vformat(TTR("Failed to open executable file \"%s\"."), p_path));
+		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"),
+			vformat(TTR("Failed to open executable file \"%s\"."), p_path));
 		return ERR_CANT_OPEN;
 	}
 
@@ -315,7 +371,8 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 	{
 		uint32_t magic = f->get_32();
 		if (magic != 0x464c457f) { // 0x7F + "ELF"
-			add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"), TTR("Executable file header corrupted."));
+			add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"),
+				TTR("Executable file header corrupted."));
 			return ERR_FILE_CORRUPT;
 		}
 	}
@@ -325,7 +382,8 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 	int bits = f->get_8() * 32;
 
 	if (bits == 32 && p_embedded_size >= 0x100000000) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"), TTR("32-bit executables cannot have embedded data >= 4 GiB."));
+		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"),
+			TTR("32-bit executables cannot have embedded data >= 4 GiB."));
 	}
 
 	// Get info about the section header table.
@@ -337,7 +395,8 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 		f->seek(0x20);
 		section_table_pos = f->get_32();
 		f->seek(0x30);
-	} else { // 64
+	}
+	else { // 64
 		section_header_size = 64;
 		f->seek(0x28);
 		section_table_pos = f->get_64();
@@ -347,7 +406,7 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 	int string_section_idx = f->get_16();
 
 	// Load the strings table.
-	uint8_t *strings;
+	uint8_t* strings;
 	{
 		// Jump to the strings section header.
 		f->seek(section_table_pos + string_section_idx * section_header_size);
@@ -359,7 +418,8 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 			f->seek(f->get_position() + 0x10);
 			string_data_pos = f->get_32();
 			string_data_size = f->get_32();
-		} else { // 64
+		}
+		else { // 64
 			f->seek(f->get_position() + 0x18);
 			string_data_pos = f->get_64();
 			string_data_size = f->get_64();
@@ -367,7 +427,7 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 
 		// Read strings data.
 		f->seek(string_data_pos);
-		strings = (uint8_t *)memalloc(string_data_size);
+		strings = (uint8_t*)memalloc(string_data_size);
 		if (!strings) {
 			return ERR_OUT_OF_MEMORY;
 		}
@@ -382,14 +442,15 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 		f->seek(section_header_pos);
 
 		uint32_t name_offset = f->get_32();
-		if (strcmp((char *)strings + name_offset, "pck") == 0) {
+		if (strcmp((char*)strings + name_offset, "pck") == 0) {
 			// "pck" section found, let's patch!
 
 			if (bits == 32) {
 				f->seek(section_header_pos + 0x10);
 				f->store_32(p_embedded_start);
 				f->store_32(p_embedded_size);
-			} else { // 64
+			}
+			else { // 64
 				f->seek(section_header_pos + 0x18);
 				f->store_64(p_embedded_start);
 				f->store_64(p_embedded_size);
@@ -403,52 +464,59 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(const String &p_path, int
 	memfree(strings);
 
 	if (!found) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"), TTR("Executable \"pck\" section not found."));
+		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"),
+			TTR("Executable \"pck\" section not found."));
 		return ERR_FILE_CORRUPT;
 	}
 	return OK;
 }
 
-Ref<Texture2D> EditorExportPlatformLinuxBSD::get_run_icon() const {
-	return run_icon;
-}
+Ref<Texture2D> EditorExportPlatformLinuxBSD::get_run_icon() const { return run_icon; }
 
-bool EditorExportPlatformLinuxBSD::poll_export() {
-	Ref<EditorExportPreset> preset = EditorExport::get_singleton()->get_runnable_preset_for_platform(this);
+bool EditorExportPlatformLinuxBSD::poll_export()
+{
+	Ref<EditorExportPreset> preset =
+		EditorExport::get_singleton()->get_runnable_preset_for_platform(this);
 
 	int prev = menu_options;
-	menu_options = (preset.is_valid() && preset->get("ssh_remote_deploy/enabled").operator bool());
+	menu_options =
+		(preset.is_valid() && preset->obj->get("ssh_remote_deploy/enabled").operator bool());
 	if (ssh_pid != 0 || !cleanup_commands.is_empty()) {
 		if (menu_options == 0) {
 			cleanup();
-		} else {
+		}
+		else {
 			menu_options += 1;
 		}
 	}
 	return menu_options != prev;
 }
 
-Ref<Texture2D> EditorExportPlatformLinuxBSD::get_option_icon(int p_index) const {
+Ref<Texture2D> EditorExportPlatformLinuxBSD::get_option_icon(int p_index) const
+{
 	if (p_index == 1) {
 		return stop_icon;
-	} else {
+	}
+	else {
 		return EditorExportPlatform::get_option_icon(p_index);
 	}
 }
 
-int EditorExportPlatformLinuxBSD::get_options_count() const {
-	return menu_options;
-}
+int EditorExportPlatformLinuxBSD::get_options_count() const { return menu_options; }
 
-String EditorExportPlatformLinuxBSD::get_option_label(int p_index) const {
+String EditorExportPlatformLinuxBSD::get_option_label(int p_index) const
+{
 	return (p_index) ? TTR("Stop and uninstall") : TTR("Run on remote Linux/BSD system");
 }
 
-String EditorExportPlatformLinuxBSD::get_option_tooltip(int p_index) const {
-	return (p_index) ? TTR("Stop and uninstall running project from the remote system") : TTR("Run exported project on remote Linux/BSD system");
+String EditorExportPlatformLinuxBSD::get_option_tooltip(int p_index) const
+{
+	return (p_index) ? TTR("Stop and uninstall running project from the remote system")
+					 : TTR("Run exported project on remote Linux/BSD system");
 }
 
-void EditorExportPlatformLinuxBSD::cleanup() {
+void EditorExportPlatformLinuxBSD::cleanup()
+{
 	if (ssh_pid != 0 && OS::get_singleton()->is_process_running(ssh_pid)) {
 		print_line("Terminating connection...");
 		OS::get_singleton()->kill(ssh_pid);
@@ -457,10 +525,11 @@ void EditorExportPlatformLinuxBSD::cleanup() {
 
 	if (!cleanup_commands.is_empty()) {
 		print_line("Stopping and deleting previous version...");
-		for (const SSHCleanupCommand &cmd : cleanup_commands) {
+		for (const SSHCleanupCommand& cmd : cleanup_commands) {
 			if (cmd.wait) {
 				ssh_run_on_remote(cmd.host, cmd.port, cmd.ssh_args, cmd.cmd_args);
-			} else {
+			}
+			else {
 				ssh_run_on_remote_no_wait(cmd.host, cmd.port, cmd.ssh_args, cmd.cmd_args);
 			}
 		}
@@ -469,7 +538,9 @@ void EditorExportPlatformLinuxBSD::cleanup() {
 	cleanup_commands.clear();
 }
 
-Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset, int p_device, BitField<EditorExportPlatform::DebugFlags> p_debug_flags) {
+Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset>& p_preset, int p_device,
+	BitField<EditorExportPlatform::DebugFlags> p_debug_flags)
+{
 	cleanup();
 	if (p_device) { // Stop command, cleanup only.
 		return OK;
@@ -482,34 +553,37 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 	if (!da->dir_exists(dest)) {
 		Error err = da->make_dir_recursive(dest);
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(TTR("Could not create temp directory:") + "\n" + dest);
+			EditorNode::get_singleton()->show_warning(
+				TTR("Could not create temp directory:") + "\n" + dest);
 			return err;
 		}
 	}
 
-	String host = p_preset->get("ssh_remote_deploy/host").operator String();
-	String port = p_preset->get("ssh_remote_deploy/port").operator String();
+	String host = p_preset->obj->get("ssh_remote_deploy/host").operator String();
+	String port = p_preset->obj->get("ssh_remote_deploy/port").operator String();
 	if (port.is_empty()) {
 		port = "22";
 	}
-	Vector<String> extra_args_ssh = p_preset->get("ssh_remote_deploy/extra_args_ssh").operator String().split(" ", false);
-	Vector<String> extra_args_scp = p_preset->get("ssh_remote_deploy/extra_args_scp").operator String().split(" ", false);
+	Vector<String> extra_args_ssh =
+		p_preset->obj->get("ssh_remote_deploy/extra_args_ssh").operator String().split(" ", false);
+	Vector<String> extra_args_scp =
+		p_preset->obj->get("ssh_remote_deploy/extra_args_scp").operator String().split(" ", false);
 
 	const String basepath = dest.path_join("tmp_linuxbsd_export");
 
-#define CLEANUP_AND_RETURN(m_err) \
-	{ \
-		if (da->file_exists(basepath + ".zip")) { \
-			da->remove(basepath + ".zip"); \
-		} \
-		if (da->file_exists(basepath + "_start.sh")) { \
-			da->remove(basepath + "_start.sh"); \
-		} \
-		if (da->file_exists(basepath + "_clean.sh")) { \
-			da->remove(basepath + "_clean.sh"); \
-		} \
-		return m_err; \
-	} \
+#define CLEANUP_AND_RETURN(m_err)                                                                  \
+	{                                                                                              \
+		if (da->file_exists(basepath + ".zip")) {                                                  \
+			da->remove(basepath + ".zip");                                                         \
+		}                                                                                          \
+		if (da->file_exists(basepath + "_start.sh")) {                                             \
+			da->remove(basepath + "_start.sh");                                                    \
+		}                                                                                          \
+		if (da->file_exists(basepath + "_clean.sh")) {                                             \
+			da->remove(basepath + "_clean.sh");                                                    \
+		}                                                                                          \
+		return m_err;                                                                              \
+	}                                                                                              \
 	((void)0)
 
 	if (ep.step(TTR("Exporting project..."), 1)) {
@@ -532,7 +606,8 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 		}
 	}
 
-	const bool use_remote = p_debug_flags.has_flag(DEBUG_FLAG_REMOTE_DEBUG) || p_debug_flags.has_flag(DEBUG_FLAG_DUMB_CLIENT);
+	const bool use_remote = p_debug_flags.has_flag(DEBUG_FLAG_REMOTE_DEBUG) ||
+							p_debug_flags.has_flag(DEBUG_FLAG_DUMB_CLIENT);
 	int dbg_port = EDITOR_GET("network/debug/remote_port");
 
 	print_line("Creating temporary directory...");
@@ -551,7 +626,7 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 	}
 
 	{
-		String run_script = p_preset->get("ssh_remote_deploy/run_script");
+		String run_script = p_preset->obj->get("ssh_remote_deploy/run_script");
 		run_script = run_script.replace("{temp_dir}", temp_dir);
 		run_script = run_script.replace("{archive_name}", basepath.get_file() + ".zip");
 		run_script = run_script.replace("{exe_name}", basepath.get_file());
@@ -566,7 +641,7 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 	}
 
 	{
-		String clean_script = p_preset->get("ssh_remote_deploy/cleanup_script");
+		String clean_script = p_preset->obj->get("ssh_remote_deploy/cleanup_script");
 		clean_script = clean_script.replace("{temp_dir}", temp_dir);
 		clean_script = clean_script.replace("{archive_name}", basepath.get_file() + ".zip");
 		clean_script = clean_script.replace("{exe_name}", basepath.get_file());
@@ -586,7 +661,8 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 	if (err != OK) {
 		CLEANUP_AND_RETURN(err);
 	}
-	err = ssh_run_on_remote(host, port, extra_args_ssh, vformat("chmod +x \"%s/%s\"", temp_dir, basepath.get_file() + "_start.sh"));
+	err = ssh_run_on_remote(host, port, extra_args_ssh,
+		vformat("chmod +x \"%s/%s\"", temp_dir, basepath.get_file() + "_start.sh"));
 	if (err != OK || temp_dir.is_empty()) {
 		CLEANUP_AND_RETURN(err);
 	}
@@ -594,20 +670,24 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 	if (err != OK) {
 		CLEANUP_AND_RETURN(err);
 	}
-	err = ssh_run_on_remote(host, port, extra_args_ssh, vformat("chmod +x \"%s/%s\"", temp_dir, basepath.get_file() + "_clean.sh"));
+	err = ssh_run_on_remote(host, port, extra_args_ssh,
+		vformat("chmod +x \"%s/%s\"", temp_dir, basepath.get_file() + "_clean.sh"));
 	if (err != OK || temp_dir.is_empty()) {
 		CLEANUP_AND_RETURN(err);
 	}
 
 	print_line("Starting project...");
 	ep.step(TTR("Starting project..."), 5);
-	err = ssh_run_on_remote_no_wait(host, port, extra_args_ssh, vformat("\"%s/%s\"", temp_dir, basepath.get_file() + "_start.sh"), &ssh_pid, (use_remote) ? dbg_port : -1);
+	err = ssh_run_on_remote_no_wait(host, port, extra_args_ssh,
+		vformat("\"%s/%s\"", temp_dir, basepath.get_file() + "_start.sh"), &ssh_pid,
+		(use_remote) ? dbg_port : -1);
 	if (err != OK) {
 		CLEANUP_AND_RETURN(err);
 	}
 
 	cleanup_commands.clear();
-	cleanup_commands.push_back(SSHCleanupCommand(host, port, extra_args_ssh, vformat("\"%s/%s\"", temp_dir, basepath.get_file() + "_clean.sh")));
+	cleanup_commands.push_back(SSHCleanupCommand(host, port, extra_args_ssh,
+		vformat("\"%s/%s\"", temp_dir, basepath.get_file() + "_clean.sh")));
 
 	print_line("Project started.");
 
@@ -615,7 +695,8 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 #undef CLEANUP_AND_RETURN
 }
 
-void EditorExportPlatformLinuxBSD::initialize() {
+void EditorExportPlatformLinuxBSD::initialize()
+{
 	if (EditorNode::get_singleton()) {
 		Ref<Image> img = memnew(Image);
 		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
@@ -623,14 +704,18 @@ void EditorExportPlatformLinuxBSD::initialize() {
 		ImageLoaderSVG::create_image_from_string(img, _linuxbsd_logo_svg, EDSCALE, upsample, false);
 		set_logo(ImageTexture::create_from_image(img));
 
-		ImageLoaderSVG::create_image_from_string(img, _linuxbsd_run_icon_svg, EDSCALE, upsample, false);
+		ImageLoaderSVG::create_image_from_string(
+			img, _linuxbsd_run_icon_svg, EDSCALE, upsample, false);
 		run_icon = ImageTexture::create_from_image(img);
 
 		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
 		if (theme.is_valid()) {
 			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
-		} else {
+		}
+		else {
 			stop_icon.instantiate();
 		}
 	}
 }
+
+

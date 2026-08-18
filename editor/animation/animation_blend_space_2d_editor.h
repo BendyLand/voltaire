@@ -44,7 +44,8 @@ class SpinBox;
 class Timer;
 class VSeparator;
 
-class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin {
+class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
+{
 	VLTRCLASS(AnimationNodeBlendSpace2DEditor, AnimationTreeNodeEditorPlugin);
 
 	Ref<AnimationNodeBlendSpace2D> blend_space;
@@ -54,46 +55,46 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin {
 	static constexpr double STEP_UNIT = 0.01;
 	static constexpr double ABS_MAX = 10000;
 
-	PanelContainer *panel = nullptr;
-	Button *tool_blend = nullptr;
-	Button *tool_select = nullptr;
-	Button *tool_create = nullptr;
-	Button *tool_triangle = nullptr;
-	VSeparator *tool_erase_sep = nullptr;
-	Button *tool_erase = nullptr;
-	Button *snap = nullptr;
-	SpinBox *snap_x = nullptr;
-	SpinBox *snap_y = nullptr;
-	OptionButton *sync = nullptr;
-	SpinBox *cyclic_length_value = nullptr;
-	OptionButton *interpolation = nullptr;
+	PanelContainer* panel = nullptr;
+	Button* tool_blend = nullptr;
+	Button* tool_select = nullptr;
+	Button* tool_create = nullptr;
+	Button* tool_triangle = nullptr;
+	VSeparator* tool_erase_sep = nullptr;
+	Button* tool_erase = nullptr;
+	Button* snap = nullptr;
+	SpinBox* snap_x = nullptr;
+	SpinBox* snap_y = nullptr;
+	OptionButton* sync = nullptr;
+	SpinBox* cyclic_length_value = nullptr;
+	OptionButton* interpolation = nullptr;
 
-	Button *auto_triangles = nullptr;
+	Button* auto_triangles = nullptr;
 
-	LineEdit *label_x = nullptr;
-	LineEdit *label_y = nullptr;
-	SpinBox *max_x_value = nullptr;
-	SpinBox *min_x_value = nullptr;
-	SpinBox *max_y_value = nullptr;
-	SpinBox *min_y_value = nullptr;
+	LineEdit* label_x = nullptr;
+	LineEdit* label_y = nullptr;
+	SpinBox* max_x_value = nullptr;
+	SpinBox* min_x_value = nullptr;
+	SpinBox* max_y_value = nullptr;
+	SpinBox* min_y_value = nullptr;
 
-	HBoxContainer *edit_hb = nullptr;
-	SpinBox *edit_x = nullptr;
-	SpinBox *edit_y = nullptr;
-	Button *open_editor = nullptr;
-	VSeparator *open_editor_sep = nullptr;
-	SpinBox *index_edit = nullptr;
+	HBoxContainer* edit_hb = nullptr;
+	SpinBox* edit_x = nullptr;
+	SpinBox* edit_y = nullptr;
+	Button* open_editor = nullptr;
+	VSeparator* open_editor_sep = nullptr;
+	SpinBox* index_edit = nullptr;
 
 	int selected_point;
 	int selected_triangle;
 
-	Control *blend_space_draw = nullptr;
+	Control* blend_space_draw = nullptr;
 
 	bool updating;
 
-	static AnimationNodeBlendSpace2DEditor *singleton;
+	static AnimationNodeBlendSpace2DEditor* singleton;
 
-	void _blend_space_gui_input(const Ref<InputEvent> &p_event);
+	void _blend_space_gui_input(const Ref<InputEvent>& p_event);
 	void _blend_space_draw();
 
 	void _update_space();
@@ -102,8 +103,8 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin {
 	void _labels_changed(String);
 	void _snap_toggled();
 
-	PopupMenu *menu = nullptr;
-	PopupMenu *animations_menu = nullptr;
+	PopupMenu* menu = nullptr;
+	PopupMenu* animations_menu = nullptr;
 	Vector<StringName> animations_to_add;
 	Vector2 add_point_pos;
 	Vector<Vector2> points;
@@ -116,11 +117,11 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin {
 
 	Vector<Rect2> text_rects;
 	int editing_point = -1;
-	LineEdit *inline_editor = nullptr;
+	LineEdit* inline_editor = nullptr;
 	float inline_editor_point_x = 0.0f;
 	bool index_edit_has_focus = false;
 	bool show_indices = false;
-	Timer *index_focus_cooldown_timer = nullptr;
+	Timer* index_focus_cooldown_timer = nullptr;
 
 	Vector<int> making_triangle;
 
@@ -133,14 +134,14 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin {
 	void _update_tool_erase();
 	void _erase_selected();
 	void _edit_point_pos(double);
-	void _edit_point_name(const String &p_name);
+	void _edit_point_name(const String& p_name);
 	void _edit_point_index(double p_index);
 	void _set_selected_point(int p_index);
 	void _start_inline_edit(int p_point);
 	void _finish_inline_edit();
-	void _finish_inline_edit_with_text(const String &p_text);
+	void _finish_inline_edit_with_text(const String& p_text);
 	void _cancel_inline_edit();
-	void _inline_editor_text_changed(const String &p_text);
+	void _inline_editor_text_changed(const String& p_text);
 	void _open_editor();
 	void _index_edit_focus_entered();
 	void _index_edit_focus_exited();
@@ -150,13 +151,15 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin {
 	void _auto_triangles_toggled();
 
 	StringName get_blend_position_path() const;
-	String _get_safe_name(const Ref<AnimationNodeBlendSpace2D> &p_blend_space, const String &p_name);
+	String _get_safe_name(
+		const Ref<AnimationNodeBlendSpace2D>& p_blend_space, const String& p_name);
 
-	EditorFileDialog *open_file = nullptr;
+	EditorFileDialog* open_file = nullptr;
 	Ref<AnimationNode> file_loaded;
-	void _file_opened(const String &p_file);
+	void _file_opened(const String& p_file);
 
-	enum {
+	enum
+	{
 		MENU_LOAD_FILE = 1000,
 		MENU_PASTE = 1001,
 		MENU_LOAD_FILE_CONFIRM = 1002
@@ -169,9 +172,13 @@ protected:
 	static void _bind_methods();
 
 public:
-	static AnimationNodeBlendSpace2DEditor *get_singleton() { return singleton; }
+	static AnimationNodeBlendSpace2DEditor* get_singleton() { return singleton; }
+
 	void refresh_editor() { _update_space(); }
-	virtual bool can_edit(const Ref<AnimationNode> &p_node) override;
-	virtual void edit(const Ref<AnimationNode> &p_node) override;
+
+	virtual bool can_edit(const Ref<AnimationNode>& p_node) override;
+	virtual void edit(const Ref<AnimationNode>& p_node) override;
 	AnimationNodeBlendSpace2DEditor();
 };
+
+

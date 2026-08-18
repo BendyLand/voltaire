@@ -196,7 +196,7 @@ void FileSystemList::_text_editor_popup_modal_close()
 	_line_editor_submit(line_editor->get_text());
 }
 
-void FileSystemList::_bind_methods() { ADD_SIGNAL(MethodInfo("item_edited")); }
+void FileSystemList::_bind_methods() {}
 
 FileSystemList::FileSystemList()
 {
@@ -743,7 +743,7 @@ void FileSystemDock::_notification(int p_what)
 		}
 
 		overwrite_dialog_scroll->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), "Tree"));
+			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), "Tree").ptr());
 	} break;
 
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
@@ -1067,7 +1067,7 @@ bool FileSystemDock::_is_file_type_disabled_by_feature_profile(const StringName&
 {
 	Ref<EditorFeatureProfile> profile =
 		EditorFeatureProfileManager::get_singleton()->get_current_profile();
-	if (profile.is_null() || !ClassDB::class_exists(p_class)) {
+	if (profile.is_null()) {
 		return false;
 	}
 
@@ -1077,9 +1077,7 @@ bool FileSystemDock::_is_file_type_disabled_by_feature_profile(const StringName&
 		if (profile->is_class_disabled(class_name)) {
 			return true;
 		}
-		class_name = ClassDB::get_parent_class(class_name);
 	}
-
 	return false;
 }
 
@@ -1998,8 +1996,7 @@ void FileSystemDock::_update_favorites_after_move(const HashMap<String, String>&
 	Vector<String> new_favorite_files;
 	for (const String& old_path : favorite_files) {
 		if (p_folders_renames.has(old_path)) {
-			new_favorite_files.push_back(p_folders_renames[
-old_path]);
+			new_favorite_files.push_back(p_folders_renames[old_path]);
 		}
 		else if (p_files_renames.has(old_path)) {
 			new_favorite_files.push_back(p_files_renames[old_path]);
@@ -2204,7 +2201,8 @@ void FileSystemDock::_duplicate_operation_confirm(const String& p_path)
 void FileSystemDock::_move_confirm()
 {
 	if (confirm_before_move_checkbox->is_pressed()) {
-		EditorSettings::get_singleton()->set("docks/filesystem/ask_before_moving_files", false);
+		EditorSettings::get_singleton()->obj->set(
+			"docks/filesystem/ask_before_moving_files", false);
 		confirm_before_move_checkbox->set_pressed(false);
 	}
 
@@ -2248,7 +2246,7 @@ void FileSystemDock::_convert_dialog_action()
 	// Clear history for the objects being replaced.
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	for (Ref<Resource> res : resources_to_erase_history_for) {
-		undo_redo->clear_history(true, undo_redo->get_history_id_for_object(res.ptr()));
+		undo_redo->clear_history(true, undo_redo->get_history_id_for_object(res->obj.get()));
 	}
 
 	// Updates all the resources existing as node properties.
@@ -2265,7 +2263,7 @@ void FileSystemDock::_convert_dialog_action()
 		// Overwrite the path.
 		new_resource->set_path(original_resource->get_path(), true);
 
-		ResourceSaver::save(new_resource);
+		ResourceSaver::save(new_resource.ptr());
 	}
 }
 
@@ -2546,11 +2544,7 @@ void FileSystemDock::_file_option(int p_option, const Vector<String>& p_selected
 			const String resource_type = ResourceLoader::get_resource_type(fpath);
 			String external_program;
 
-			if (ClassDB::is_parent_class(resource_type, "Script") || extension == "tres" ||
-				extension == "tscn") {
-				external_program = EDITOR_GET("text_editor/external/exec_path");
-			}
-			else if (extension == "res" || extension == "scn") {
+			if (extension == "res" || extension == "scn") {
 				// Binary resources have no meaningful editor outside Godot, so just fallback to
 				// something default.
 			}
@@ -2563,9 +2557,6 @@ void FileSystemDock::_file_option(int p_option, const Vector<String>& p_selected
 					external_program =
 						EDITOR_GET("filesystem/external_programs/raster_image_editor");
 				}
-			}
-			else if (ClassDB::is_parent_class(resource_type, "AudioStream")) {
-				external_program = EDITOR_GET("filesystem/external_programs/audio_editor");
 			}
 			else if (resource_type == "PackedScene") {
 				external_program = EDITOR_GET("filesystem/external_programs/3d_model_editor");
@@ -3160,12 +3151,6 @@ void FileSystemDock::_resource_created()
 		make_shader_dialog->popup_centered();
 		return;
 	}
-	else if (ClassDB::is_parent_class(type_name, "Script")) {
-		make_script_dialog->config("Node", fpath.path_join("new_script"), false, false);
-		make_script_dialog->popup_centered();
-		return;
-	}
-
 	Variant c = new_resource_dialog->instantiate_selected();
 
 	ERR_FAIL_COND(!c);
@@ -3180,7 +3165,7 @@ void FileSystemDock::_resource_created()
 		memdelete(node);
 	}
 
-	EditorNode::get_singleton()->push_item(r);
+	EditorNode::get_singleton()->push_item(r->obj.get());
 	EditorNode::get_singleton()->save_resource_as(Ref<Resource>(r), fpath);
 }
 
@@ -3190,7 +3175,7 @@ void FileSystemDock::_script_or_shader_created(const Ref<Resource>& p_resource)
 		!EDITOR_GET("docks/filesystem/automatically_open_created_scripts").operator bool()) {
 		return;
 	}
-	EditorNode::get_singleton()->push_item(p_resource.ptr());
+	EditorNode::get_singleton()->push_item(p_resource->obj.get());
 }
 
 void FileSystemDock::_search_changed(const String& p_text, const Control* p_from)
@@ -3609,7 +3594,7 @@ void FileSystemDock::drop_data_fw(const Point2& p_point, const Variant& p_data, 
 		}
 
 		if (res.is_valid() && !to_dir.is_empty()) {
-			EditorNode::get_singleton()->push_item(res.ptr());
+			EditorNode::get_singleton()->push_item(res->obj.get());
 			EditorNode::get_singleton()->save_resource_as(res, to_dir);
 		}
 	}
@@ -3882,15 +3867,6 @@ void FileSystemDock::_file_and_folders_fill_popup(
 				get_editor_theme_icon(SNAME("Load")), TTRC("Open"), FILE_MENU_OPEN);
 
 			String type = EditorFileSystem::get_singleton()->get_file_type(filenames[0]);
-			if (ClassDB::is_parent_class(type, "Script")) {
-				Ref<Script> scr = ResourceLoader::load(filenames[0]);
-				if (scr.is_valid()) {
-					if (ClassDB::is_parent_class(scr->get_instance_base_type(), "EditorScript")) {
-						p_popup->add_icon_item(get_editor_theme_icon(SNAME("MainPlay")),
-							TTRC("Run"), FILE_MENU_RUN_SCRIPT);
-					}
-				}
-			}
 			p_popup->add_separator();
 		}
 
@@ -4939,32 +4915,7 @@ void FileSystemDock::_on_open_editor_settings_file_exts()
 	ed_settings->set_current_section("docks/filesystem");
 }
 
-void FileSystemDock::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("navigate_to_path", "path"), &FileSystemDock::navigate_to_path);
-
-	ClassDB::bind_method(D_METHOD("add_resource_tooltip_plugin", "plugin"),
-		&FileSystemDock::add_resource_tooltip_plugin);
-	ClassDB::bind_method(D_METHOD("remove_resource_tooltip_plugin", "plugin"),
-		&FileSystemDock::remove_resource_tooltip_plugin);
-
-	ADD_SIGNAL(MethodInfo("inherit", PropertyInfo(Variant::STRING, "file")));
-	ADD_SIGNAL(MethodInfo("instantiate", PropertyInfo(Variant::PACKED_STRING_ARRAY, "files")));
-
-	ADD_SIGNAL(MethodInfo(
-		"resource_removed", PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE,
-								Resource::get_class_static())));
-	ADD_SIGNAL(MethodInfo("file_removed", PropertyInfo(Variant::STRING, "file")));
-	ADD_SIGNAL(MethodInfo("folder_removed", PropertyInfo(Variant::STRING, "folder")));
-	ADD_SIGNAL(MethodInfo("files_moved", PropertyInfo(Variant::STRING, "old_file"),
-		PropertyInfo(Variant::STRING, "new_file")));
-	ADD_SIGNAL(MethodInfo("folder_moved", PropertyInfo(Variant::STRING, "old_folder"),
-		PropertyInfo(Variant::STRING, "new_folder")));
-	ADD_SIGNAL(MethodInfo("folder_color_changed"));
-	ADD_SIGNAL(MethodInfo("selection_changed"));
-
-	ADD_SIGNAL(MethodInfo("display_mode_changed"));
-}
+void FileSystemDock::_bind_methods() {}
 
 FileSystemDock::FileSystemDock()
 {
@@ -5268,8 +5219,7 @@ FileSystemDock::FileSystemDock()
 	move_confirm_dialog = memnew(ConfirmationDialog);
 	add_child(move_confirm_dialog);
 	move_confirm_dialog->connect(
-		SceneStringName(confirmed), callable_mp
-(this, &FileSystemDock::_move_confirm));
+		SceneStringName(confirmed), callable_mp(this, &FileSystemDock::_move_confirm));
 
 	VBoxContainer* vb = memnew(VBoxContainer);
 	move_confirm_dialog->add_child(vb);
@@ -5310,12 +5260,13 @@ FileSystemDock::FileSystemDock()
 
 	ProjectSettings::get_singleton()->connect(
 		"settings_changed", callable_mp(this, &FileSystemDock::_project_settings_changed));
-	EditorSettings::get_singleton()->connect(
+	EditorSettings::get_singleton()->obj->connect(
 		"_favorites_changed", callable_mp(this, &FileSystemDock::update_all));
 	main_scene_path = ResourceUID::ensure_path(GLOBAL_GET("application/run/main_scene"));
 
 	add_resource_tooltip_plugin(memnew(EditorTextureTooltipPlugin));
-	add_resource_tooltip_plugin(memnew(EditorAudioStreamTooltipPlugin));
+	add_resource_tooltip_plugin(memnew(EditorAudioStreamTooltipPlugin)
+);
 }
 
 FileSystemDock::~FileSystemDock() { singleton = nullptr; }

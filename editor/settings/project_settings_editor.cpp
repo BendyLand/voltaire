@@ -164,7 +164,7 @@ void ProjectSettingsEditor::_on_editor_override_deleted(const String& p_setting)
 
 void ProjectSettingsEditor::_advanced_toggled(bool p_button_pressed)
 {
-	EditorSettings::get_singleton()->set("_project_settings_advanced_mode", p_button_pressed);
+	EditorSettings::get_singleton()->obj->set("_project_settings_advanced_mode", p_button_pressed);
 	EditorSettings::get_singleton()->save();
 	_update_advanced(p_button_pressed);
 }
@@ -705,7 +705,7 @@ void ProjectSettingsEditor::_update_theme()
 	search_box->set_right_icon(get_editor_theme_icon(SNAME("Search")));
 	restart_close_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
 	restart_container->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 	restart_icon->set_texture(get_editor_theme_icon(SNAME("StatusWarning")));
 	restart_label->add_theme_color_override(SceneStringName(font_color),
 		get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
@@ -719,7 +719,7 @@ void ProjectSettingsEditor::_notification(int p_what)
 			HashMap<String, PropertyInfo> editor_settings_info;
 
 			List<PropertyInfo> infos;
-			EditorSettings::get_singleton()->get_property_list(&infos);
+			EditorSettings::get_singleton()->obj->get_property_list(&infos);
 
 			for (const PropertyInfo& pi : infos) {
 				editor_settings_info[pi.name] = pi;
@@ -756,13 +756,7 @@ void ProjectSettingsEditor::_notification(int p_what)
 	}
 }
 
-void ProjectSettingsEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("queue_save"), &ProjectSettingsEditor::queue_save);
-
-	ClassDB::bind_method(
-		D_METHOD("_update_action_map_editor"), &ProjectSettingsEditor::_update_action_map_editor);
-}
+void ProjectSettingsEditor::_bind_methods() {}
 
 ProjectSettingsEditor::ProjectSettingsEditor(EditorData* p_data)
 {

@@ -1826,7 +1826,8 @@ void fragment() {
 		trackball_sphere_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 		trackball_sphere_material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
 		trackball_sphere_material->set_albedo(Color(1.0, 1.0, 1.0, 0.0));
-		trackball_sphere_material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
+
+	trackball_sphere_material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
 
 		trackball_sphere_material_hl = trackball_sphere_material->duplicate();
 		trackball_sphere_material_hl->set_albedo(Color(1.0, 1.0, 1.0, TRACKBALL_HIGHLIGHT_ALPHA));
@@ -2610,9 +2611,9 @@ void Node3DEditor::_update_theme()
 	sun_environ_settings->set_button_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
 
 	sun_title->add_theme_font_override(
-		SceneStringName(font), get_theme_font(SNAME("title_font"), SNAME("Window")));
+		SceneStringName(font), get_theme_font(SNAME("title_font"), SNAME("Window")).ptr());
 	environ_title->add_theme_font_override(
-		SceneStringName(font), get_theme_font(SNAME("title_font"), SNAME("Window")));
+		SceneStringName(font), get_theme_font(SNAME("title_font"), SNAME("Window")).ptr());
 
 	sun_color->set_custom_minimum_size(
 		Size2(0, get_theme_constant(SNAME("inspector_property_height"), EditorStringName(Editor))));
@@ -2622,7 +2623,7 @@ void Node3DEditor::_update_theme()
 		Size2(0, get_theme_constant(SNAME("inspector_property_height"), EditorStringName(Editor))));
 
 	context_toolbar_panel->add_theme_style_override(SceneStringName(panel),
-		get_theme_stylebox(SNAME("ContextualToolbar"), EditorStringName(EditorStyles)));
+		get_theme_stylebox(SNAME("ContextualToolbar"), EditorStringName(EditorStyles)).ptr());
 }
 
 void Node3DEditor::_notification(int p_what)
@@ -2693,9 +2694,9 @@ void Node3DEditor::_notification(int p_what)
 		_update_theme();
 		_update_gizmos_menu_theme();
 		sun_title->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("title_font"), SNAME("Window")));
+			SceneStringName(font), get_theme_font(SNAME("title_font"), SNAME("Window")).ptr());
 		environ_title->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("title_font"), SNAME("Window")));
+			SceneStringName(font), get_theme_font(SNAME("title_font"), SNAME("Window")).ptr());
 	} break;
 
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
@@ -3165,23 +3166,7 @@ void Node3DEditor::_register_all_gizmos()
 	add_gizmo_plugin(Ref<RayCast3DGizmoPlugin>(memnew(RayCast3DGizmoPlugin)));
 }
 
-void Node3DEditor::_bind_methods()
-{
-	ClassDB::bind_method("_get_editor_data", &Node3DEditor::_get_editor_data);
-	ClassDB::bind_method("_request_gizmo", &Node3DEditor::_request_gizmo);
-	ClassDB::bind_method("_request_gizmo_for_id", &Node3DEditor::_request_gizmo_for_id);
-	ClassDB::bind_method("_set_subgizmo_selection", &Node3DEditor::_set_subgizmo_selection);
-	ClassDB::bind_method("_clear_subgizmo_selection", &Node3DEditor::_clear_subgizmo_selection);
-	ClassDB::bind_method("_refresh_menu_icons", &Node3DEditor::_refresh_menu_icons);
-	ClassDB::bind_method("_preview_settings_changed", &Node3DEditor::_preview_settings_changed);
-
-	ClassDB::bind_method("update_all_gizmos", &Node3DEditor::update_all_gizmos);
-	ClassDB::bind_method("update_transform_gizmo", &Node3DEditor::update_transform_gizmo);
-
-	ADD_SIGNAL(MethodInfo("transform_3d_key_request"));
-	ADD_SIGNAL(MethodInfo("item_lock_status_changed"));
-	ADD_SIGNAL(MethodInfo("item_group_status_changed"));
-}
+void Node3DEditor::_bind_methods() {}
 
 void Node3DEditor::clear()
 {
@@ -3383,12 +3368,12 @@ void Node3DEditor::_sun_direction_input(const Ref<InputEvent>& p_event)
 
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Set Preview Sun Direction"), UndoRedo::MergeMode::MERGE_ENDS);
-		undo_redo->add_do_method(
-			sun_angle_altitude->obj.get(), "set_value_no_signal", -Math::rad_to_deg(sun_rotation.x));
+		undo_redo->add_do_method(sun_angle_altitude->obj.get(), "set_value_no_signal",
+			-Math::rad_to_deg(sun_rotation.x));
 		undo_redo->add_undo_method(
 			sun_angle_altitude->obj.get(), "set_value_no_signal", sun_angle_altitude->get_value());
-		undo_redo->add_do_method(
-			sun_angle_azimuth->obj.get(), "set_value_no_signal", 180.0 - Math::rad_to_deg(sun_rotation.y));
+		undo_redo->add_do_method(sun_angle_azimuth->obj.get(), "set_value_no_signal",
+			180.0 - Math::rad_to_deg(sun_rotation.y));
 		undo_redo->add_undo_method(
 			sun_angle_azimuth->obj.get(), "set_value_no_signal", sun_angle_azimuth->get_value());
 		undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
@@ -3414,8 +3399,8 @@ void Node3DEditor::_sun_direction_set_azimuth(float p_azimuth)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Sun Azimuth"), UndoRedo::MergeMode::MERGE_ENDS);
 	undo_redo->add_do_method(sun_angle_azimuth->obj.get(), "set_value_no_signal", p_azimuth);
-	undo_redo->add_undo_method(
-		sun_angle_azimuth->obj.get(), "set_value_no_signal", 180.0 - Math::rad_to_deg(sun_rotation.y));
+	undo_redo->add_undo_method(sun_angle_azimuth->obj.get(), "set_value_no_signal",
+		180.0 - Math::rad_to_deg(sun_rotation.y));
 	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
@@ -3437,8 +3422,8 @@ void Node3DEditor::_sun_set_energy(float p_energy)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Sun Energy"), UndoRedo::MergeMode::MERGE_ENDS);
 	undo_redo->add_do_method(sun_energy->obj.get(), "set_value_no_signal", p_energy);
-	undo_redo->add_undo_method(
-		sun_energy->obj.get(), "set_value_no_signal", preview_sun->get_param(Light3D::PARAM_ENERGY));
+	undo_redo->add_undo_method(sun_energy->obj.get(), "set_value_no_signal",
+		preview_sun->get_param(Light3D::PARAM_ENERGY));
 	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
@@ -3449,7 +3434,8 @@ void Node3DEditor::_sun_set_shadow_max_distance(float p_shadow_max_distance)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(
 		TTR("Set Preview Sun Max Shadow Distance"), UndoRedo::MergeMode::MERGE_ENDS);
-	undo_redo->add_do_method(sun_shadow_max_distance->obj.get(), "set_value_no_signal", p_shadow_max_distance);
+	undo_redo->add_do_method(
+		sun_shadow_max_distance->obj.get(), "set_value_no_signal", p_shadow_max_distance);
 	undo_redo->add_undo_method(sun_shadow_max_distance->obj.get(), "set_value_no_signal",
 		preview_sun->get_param(Light3D::PARAM_SHADOW_MAX_DISTANCE));
 	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
@@ -3500,8 +3486,10 @@ void Node3DEditor::_environ_set_ao()
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Environment Ambient Occlusion"));
-	undo_redo->add_do_method(environ_ao_button->obj.get(), "set_pressed", environ_ao_button->is_pressed());
-	undo_redo->add_undo_method(environ_ao_button->obj.get(), "set_pressed", !environ_ao_button->is_pressed());
+	undo_redo->add_do_method(
+		environ_ao_button->obj.get(), "set_pressed", environ_ao_button->is_pressed());
+	undo_redo->add_undo_method(
+		environ_ao_button->obj.get(), "set_pressed", !environ_ao_button->is_pressed());
 	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
@@ -3511,7 +3499,8 @@ void Node3DEditor::_environ_set_glow()
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Environment Glow"));
-	undo_redo->add_do_method(environ_glow_button->obj.get(), "set_pressed", environ_glow_button->is_pressed());
+	undo_redo->add_do_method(
+		environ_glow_button->obj.get(), "set_pressed", environ_glow_button->is_pressed());
 	undo_redo->add_undo_method(
 		environ_glow_button->obj.get(), "set_pressed", !environ_glow_button->is_pressed());
 	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
@@ -3536,8 +3525,10 @@ void Node3DEditor::_environ_set_gi()
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Set Preview Environment Global Illumination"));
-	undo_redo->add_do_method(environ_gi_button->obj.get(), "set_pressed", environ_gi_button->is_pressed());
-	undo_redo->add_undo_method(environ_gi_button->obj.get(), "set_pressed", !environ_gi_button->is_pressed());
+	undo_redo->add_do_method(
+		environ_gi_button->obj.get(), "set_pressed", environ_gi_button->is_pressed());
+	undo_redo->add_undo_method(
+		environ_gi_button->obj.get(), "set_pressed", !environ_gi_button->is_pressed());
 	undo_redo->add_do_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->add_undo_method(this->obj.get(), "_preview_settings_changed");
 	undo_redo->commit_action();
@@ -4595,7 +4586,8 @@ Vector<Node3D*> Node3DEditor::gizmo_bvh_frustum_query(const Vector<Plane>& p_fru
 
 	struct Result
 	{
-		Vector<Node3D*> nodes;
+		Vector
+<Node3D*> nodes;
 
 		bool operator()(void* p_data)
 		{

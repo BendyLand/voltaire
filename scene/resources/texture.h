@@ -40,7 +40,7 @@ class Texture : public Resource {
 
 class Texture2D : public Texture {
 	VLTRCLASS(Texture2D, Texture);
-	OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
+	OBJ_SAVE_TYPE_NO(Texture2D); // Saves derived classes with common type so they can be interchanged.
 
 protected:
 	static void _bind_methods();

@@ -260,21 +260,21 @@ void CollisionShape2DEditor::commit_handle(int idx, Variant& p_org)
 		Vector2 values = p_org;
 
 		if (idx == 0) {
-			undo_redo->add_do_method(capsule.ptr(), "set_radius", capsule->get_radius());
+			undo_redo->add_do_method(capsule->obj.get(), "set_radius", capsule->get_radius());
 		}
 		else if (idx == 1) {
-			undo_redo->add_do_method(capsule.ptr(), "set_height", capsule->get_height());
+			undo_redo->add_do_method(capsule->obj.get(), "set_height", capsule->get_height());
 		}
-		undo_redo->add_undo_method(capsule.ptr(), "set_radius", values[0]);
-		undo_redo->add_undo_method(capsule.ptr(), "set_height", values[1]);
+		undo_redo->add_undo_method(capsule->obj.get(), "set_radius", values[0]);
+		undo_redo->add_undo_method(capsule->obj.get(), "set_height", values[1]);
 
 	} break;
 
 	case CIRCLE_SHAPE: {
 		Ref<CircleShape2D> circle = node->get_shape();
 
-		undo_redo->add_do_method(circle.ptr(), "set_radius", circle->get_radius());
-		undo_redo->add_undo_method(circle.ptr(), "set_radius", p_org);
+		undo_redo->add_do_method(circle->obj.get(), "set_radius", circle->get_radius());
+		undo_redo->add_undo_method(circle->obj.get(), "set_radius", p_org);
 
 	} break;
 
@@ -289,8 +289,8 @@ void CollisionShape2DEditor::commit_handle(int idx, Variant& p_org)
 		undo_segments.write[idx] = values;
 
 		undo_redo->add_do_method(
-			concave_shape.ptr(), "set_segments", concave_shape->get_segments());
-		undo_redo->add_undo_method(concave_shape.ptr(), "set_segments", undo_segments);
+			concave_shape->obj.get(), "set_segments", concave_shape->get_segments());
+		undo_redo->add_undo_method(concave_shape->obj.get(), "set_segments", undo_segments);
 
 	} break;
 
@@ -304,8 +304,8 @@ void CollisionShape2DEditor::commit_handle(int idx, Variant& p_org)
 		ERR_FAIL_INDEX(idx, undo_points.size());
 		undo_points.write[idx] = values;
 
-		undo_redo->add_do_method(convex_shape.ptr(), "set_points", convex_shape->get_points());
-		undo_redo->add_undo_method(convex_shape.ptr(), "set_points", undo_points);
+		undo_redo->add_do_method(convex_shape->obj.get(), "set_points", convex_shape->get_points());
+		undo_redo->add_undo_method(convex_shape->obj.get(), "set_points", undo_points);
 
 	} break;
 
@@ -314,13 +314,13 @@ void CollisionShape2DEditor::commit_handle(int idx, Variant& p_org)
 
 		if (idx == 0) {
 			undo_redo->add_do_method(
-				world_boundary.ptr(), "set_distance", world_boundary->get_distance());
-			undo_redo->add_undo_method(world_boundary.ptr(), "set_distance", p_org);
+				world_boundary->obj.get(), "set_distance", world_boundary->get_distance());
+			undo_redo->add_undo_method(world_boundary->obj.get(), "set_distance", p_org);
 		}
 		else {
 			undo_redo->add_do_method(
-				world_boundary.ptr(), "set_normal", world_boundary->get_normal());
-			undo_redo->add_undo_method(world_boundary.ptr(), "set_normal", p_org);
+				world_boundary->obj.get(), "set_normal", world_boundary->get_normal());
+			undo_redo->add_undo_method(world_boundary->obj.get(), "set_normal", p_org);
 		}
 
 	} break;
@@ -328,18 +328,18 @@ void CollisionShape2DEditor::commit_handle(int idx, Variant& p_org)
 	case SEPARATION_RAY_SHAPE: {
 		Ref<SeparationRayShape2D> ray = node->get_shape();
 
-		undo_redo->add_do_method(ray.ptr(), "set_length", ray->get_length());
-		undo_redo->add_undo_method(ray.ptr(), "set_length", p_org);
+		undo_redo->add_do_method(ray->obj.get(), "set_length", ray->get_length());
+		undo_redo->add_undo_method(ray->obj.get(), "set_length", p_org);
 
 	} break;
 
 	case RECTANGLE_SHAPE: {
 		Ref<RectangleShape2D> rect = node->get_shape();
 
-		undo_redo->add_do_method(rect.ptr(), "set_size", rect->get_size());
+		undo_redo->add_do_method(rect->obj.get(), "set_size", rect->get_size());
 		undo_redo->add_do_method(
 			node->obj.get(), "set_global_transform", node->get_global_transform());
-		undo_redo->add_undo_method(rect.ptr(), "set_size", p_org);
+		undo_redo->add_undo_method(rect->obj.get(), "set_size", p_org);
 		undo_redo->add_undo_method(node->obj.get(), "set_global_transform", original_transform);
 
 	} break;
@@ -347,12 +347,12 @@ void CollisionShape2DEditor::commit_handle(int idx, Variant& p_org)
 	case SEGMENT_SHAPE: {
 		Ref<SegmentShape2D> seg = node->get_shape();
 		if (idx == 0) {
-			undo_redo->add_do_method(seg.ptr(), "set_a", seg->get_a());
-			undo_redo->add_undo_method(seg.ptr(), "set_a", p_org);
+			undo_redo->add_do_method(seg->obj.get(), "set_a", seg->get_a());
+			undo_redo->add_undo_method(seg->obj.get(), "set_a", p_org);
 		}
 		else if (idx == 1) {
-			undo_redo->add_do_method(seg.ptr(), "set_b", seg->get_b());
-			undo_redo->add_undo_method(seg.ptr(), "set_b", p_org);
+			undo_redo->add_do_method(seg->obj.get(), "set_b", seg->get_b());
+			undo_redo->add_undo_method(seg->obj.get(), "set_b", p_org);
 		}
 
 	} break;
@@ -565,8 +565,8 @@ void CollisionShape2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		handles.write[0] = Point2(radius, 0);
 		handles.write[1] = Point2(0, height);
 
-		p_overlay->draw_texture(h, gt.xform(handles[0]) - size);
-		p_overlay->draw_texture(h, gt.xform(handles[1]) - size);
+		p_overlay->draw_texture(h.ptr(), gt.xform(handles[0]) - size);
+		p_overlay->draw_texture(h.ptr(), gt.xform(handles[1]) - size);
 
 	} break;
 
@@ -576,7 +576,7 @@ void CollisionShape2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		handles.resize(1);
 		handles.write[0] = Point2(shape->get_radius(), 0);
 
-		p_overlay->draw_texture(h, gt.xform(handles[0]) - size);
+		p_overlay->draw_texture(h.ptr(), gt.xform(handles[0]) - size);
 
 	} break;
 
@@ -588,7 +588,7 @@ void CollisionShape2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		handles.resize(segments.size());
 		for (int i = 0; i < handles.size(); i++) {
 			handles.write[i] = segments[i];
-			p_overlay->draw_texture(h, gt.xform(handles[i]) - size);
+			p_overlay->draw_texture(h.ptr(), gt.xform(handles[i]) - size);
 		}
 
 	} break;
@@ -601,7 +601,7 @@ void CollisionShape2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		handles.resize(points.size());
 		for (int i = 0; i < handles.size(); i++) {
 			handles.write[i] = points[i];
-			p_overlay->draw_texture(h, gt.xform(handles[i]) - size);
+			p_overlay->draw_texture(h.ptr(), gt.xform(handles[i]) - size);
 		}
 
 	} break;
@@ -613,8 +613,8 @@ void CollisionShape2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		handles.write[0] = shape->get_normal() * shape->get_distance();
 		handles.write[1] = shape->get_normal() * (shape->get_distance() + 30.0);
 
-		p_overlay->draw_texture(h, gt.xform(handles[0]) - size);
-		p_overlay->draw_texture(h, gt.xform(handles[1]) - size);
+		p_overlay->draw_texture(h.ptr(), gt.xform(handles[0]) - size);
+		p_overlay->draw_texture(h.ptr(), gt.xform(handles[1]) - size);
 
 	} break;
 
@@ -624,7 +624,7 @@ void CollisionShape2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		handles.resize(1);
 		handles.write[0] = Point2(0, shape->get_length());
 
-		p_overlay->draw_texture(h, gt.xform(handles[0]) - size);
+		p_overlay->draw_texture(h.ptr(), gt.xform(handles[0]) - size);
 
 	} break;
 
@@ -635,7 +635,7 @@ void CollisionShape2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		Vector2 ext = shape->get_size() / 2;
 		for (int i = 0; i < handles.size(); i++) {
 			handles.write[i] = RECT_HANDLES[i] * ext;
-			p_overlay->draw_texture(h, gt.xform(handles[i]) - size);
+			p_overlay->draw_texture(h.ptr(), gt.xform(handles[i]) - size);
 		}
 
 	} break;
@@ -647,8 +647,8 @@ void CollisionShape2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		handles.write[0] = shape->get_a();
 		handles.write[1] = shape->get_b();
 
-		p_overlay->draw_texture(h, gt.xform(handles[0]) - size);
-		p_overlay->draw_texture(h, gt.xform(handles[1]) - size);
+		p_overlay->draw_texture(h.ptr(), gt.xform(handles[0]) - size);
+		p_overlay->draw_texture(h.ptr(), gt.xform(handles[1]) - size);
 
 	} break;
 	}

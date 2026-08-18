@@ -369,7 +369,7 @@ void SceneTreeEditor::_cell_button_pressed(
 void SceneTreeEditor::_update_ask_before_revoking_unique_name()
 {
 	if (ask_before_revoke_checkbox->is_pressed()) {
-		EditorSettings::get_singleton()->set(
+		EditorSettings::get_singleton()->obj->set(
 			"docks/scene_tree/ask_before_revoking_unique_name", false);
 		ask_before_revoke_checkbox->set_pressed(false);
 	}
@@ -1422,10 +1422,7 @@ bool SceneTreeEditor::_node_matches_class_term(const Node* p_item_node, const St
 		if (type.to_lower().contains(p_term)) {
 			return true;
 		}
-
-		type = ClassDB::get_parent_class(type);
 	}
-
 	return false;
 }
 
@@ -2291,7 +2288,7 @@ bool SceneTreeEditor::can_drop_data_fw(
 			if (ftype != "PackedScene") {
 				scene_drop = false;
 			}
-			if (audio_drop && !ClassDB::is_parent_class(ftype, "AudioStream")) {
+			if (audio_drop) {
 				audio_drop = false;
 			}
 		}
@@ -2431,7 +2428,7 @@ void SceneTreeEditor::_warning_changed(Node* p_for_node)
 void SceneTreeEditor::set_auto_expand_selected(bool p_auto, bool p_update_settings)
 {
 	if (p_update_settings) {
-		EditorSettings::get_singleton()->set("docks/scene_tree/auto_expand_to_selected", p_auto);
+		EditorSettings::get_singleton()->obj->set("docks/scene_tree/auto_expand_to_selected", p_auto);
 	}
 	auto_expand_selected = p_auto;
 }
@@ -2443,7 +2440,7 @@ void SceneTreeEditor::set_hide_filtered_out_parents(bool p_hide, bool p_update_s
 	}
 
 	if (p_update_settings) {
-		EditorSettings::get_singleton()->set("docks/scene_tree/hide_filtered_out_parents", p_hide);
+		EditorSettings::get_singleton()->obj->set("docks/scene_tree/hide_filtered_out_parents", p_hide);
 	}
 	hide_filtered_out_parents = p_hide;
 
@@ -2459,7 +2456,7 @@ void SceneTreeEditor::set_hide_filtered_out_parents(bool p_hide, bool p_update_s
 void SceneTreeEditor::set_accessibility_warnings(bool p_enable, bool p_update_settings)
 {
 	if (p_update_settings) {
-		EditorSettings::get_singleton()->set("docks/scene_tree/accessibility_warnings", p_enable);
+		EditorSettings::get_singleton()->obj->set("docks/scene_tree/accessibility_warnings", p_enable);
 	}
 	accessibility_warnings = p_enable;
 }
@@ -2482,29 +2479,7 @@ void SceneTreeEditor::set_update_when_invisible(bool p_enable)
 	_update_tree();
 }
 
-void SceneTreeEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_update_tree"), &SceneTreeEditor::_update_tree,
-		DEFVAL(false)); // Still used by UndoRedo.
-
-	ClassDB::bind_method(D_METHOD("update_tree"), &SceneTreeEditor::update_tree);
-
-	ADD_SIGNAL(MethodInfo("node_selected"));
-	ADD_SIGNAL(MethodInfo("node_renamed"));
-	ADD_SIGNAL(MethodInfo("node_prerename"));
-	ADD_SIGNAL(MethodInfo("node_changed"));
-	ADD_SIGNAL(MethodInfo("nodes_dragged"));
-	ADD_SIGNAL(MethodInfo("nodes_rearranged", PropertyInfo(Variant::ARRAY, "paths"),
-		PropertyInfo(Variant::NODE_PATH, "to_path"), PropertyInfo(Variant::INT, "type")));
-	ADD_SIGNAL(MethodInfo("files_dropped", PropertyInfo(Variant::PACKED_STRING_ARRAY, "files"),
-		PropertyInfo(Variant::NODE_PATH, "to_path"), PropertyInfo(Variant::INT, "type")));
-	ADD_SIGNAL(MethodInfo("script_dropped", PropertyInfo(Variant::STRING, "file"),
-		PropertyInfo(Variant::NODE_PATH, "to_path")));
-	ADD_SIGNAL(MethodInfo("rmb_pressed", PropertyInfo(Variant::VECTOR2, "position")));
-
-	ADD_SIGNAL(MethodInfo("open"));
-	ADD_SIGNAL(MethodInfo("open_script"));
-}
+void SceneTreeEditor::_bind_methods() {}
 
 SceneTreeEditor::SceneTreeEditor(bool p_label, bool p_can_rename, bool p_can_open_instance)
 	: node_cache(this)
@@ -2588,7 +2563,6 @@ SceneTreeEditor::SceneTreeEditor(bool p_label, bool p_can_rename, bool p_can_ope
 	vb->add_child(ask_before_revoke_checkbox);
 
 	script_types = memnew(LocalVector<StringName>);
-	ClassDB::get_inheriters_from_class("Script", *script_types);
 }
 
 SceneTreeEditor::~SceneTreeEditor() { memdelete(script_types); }
@@ -2651,7 +2625,7 @@ void SceneTreeDialog::set_valid_types(const Vector<StringName>& p_valid)
 			Ref<Script> node_script = ResourceLoader::load(type);
 			if (node_script.is_valid()) {
 				name = name.get_file();
-				icon = EditorNode::get_singleton()->get_object_icon(node_script.ptr());
+				icon = EditorNode::get_singleton()->get_object_icon(node_script->obj.get());
 			}
 		}
 
@@ -2725,12 +2699,7 @@ void SceneTreeDialog::_selected_changed() { get_ok_button()->set_disabled(!tree-
 
 void SceneTreeDialog::_filter_changed(const String& p_filter) { tree->set_filter(p_filter); }
 
-void SceneTreeDialog::_bind_methods()
-{
-	ClassDB::bind_method("_cancel", &SceneTreeDialog::_cancel);
-
-	ADD_SIGNAL(MethodInfo("selected", PropertyInfo(Variant::NODE_PATH, "path")));
-}
+void SceneTreeDialog::_bind_methods() {}
 
 LineEdit* SceneTreeDialog::get_filter_line_edit() { return filter; }
 

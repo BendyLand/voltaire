@@ -30,7 +30,9 @@
 
 #include "dedicated_server_export_plugin.h"
 
-EditorExportPreset::FileExportMode DedicatedServerExportPlugin::_get_export_mode_for_path(const String &p_path) {
+EditorExportPreset::FileExportMode DedicatedServerExportPlugin::_get_export_mode_for_path(
+	const String& p_path)
+{
 	Ref<EditorExportPreset> preset = get_export_preset();
 	ERR_FAIL_COND_V(preset.is_null(), EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED);
 
@@ -63,7 +65,9 @@ EditorExportPreset::FileExportMode DedicatedServerExportPlugin::_get_export_mode
 	return mode;
 }
 
-PackedStringArray DedicatedServerExportPlugin::_get_export_features(const Ref<EditorExportPlatform> &p_platform, bool p_debug) const {
+PackedStringArray DedicatedServerExportPlugin::_get_export_features(
+	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
+{
 	PackedStringArray ret;
 
 	Ref<EditorExportPreset> preset = get_export_preset();
@@ -75,7 +79,8 @@ PackedStringArray DedicatedServerExportPlugin::_get_export_features(const Ref<Ed
 	return ret;
 }
 
-uint64_t DedicatedServerExportPlugin::_get_customization_configuration_hash() const {
+uint64_t DedicatedServerExportPlugin::_get_customization_configuration_hash() const
+{
 	Ref<EditorExportPreset> preset = get_export_preset();
 	ERR_FAIL_COND_V(preset.is_null(), 0);
 
@@ -86,7 +91,9 @@ uint64_t DedicatedServerExportPlugin::_get_customization_configuration_hash() co
 	return preset->get_customized_files().hash();
 }
 
-bool DedicatedServerExportPlugin::_begin_customize_scenes(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features) {
+bool DedicatedServerExportPlugin::_begin_customize_scenes(
+	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
+{
 	Ref<EditorExportPreset> preset = get_export_preset();
 	ERR_FAIL_COND_V(preset.is_null(), false);
 
@@ -95,7 +102,9 @@ bool DedicatedServerExportPlugin::_begin_customize_scenes(const Ref<EditorExport
 	return preset->get_export_filter() == EditorExportPreset::EXPORT_CUSTOMIZED;
 }
 
-bool DedicatedServerExportPlugin::_begin_customize_resources(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features) {
+bool DedicatedServerExportPlugin::_begin_customize_resources(
+	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
+{
 	Ref<EditorExportPreset> preset = get_export_preset();
 	ERR_FAIL_COND_V(preset.is_null(), false);
 
@@ -104,14 +113,17 @@ bool DedicatedServerExportPlugin::_begin_customize_resources(const Ref<EditorExp
 	return preset->get_export_filter() == EditorExportPreset::EXPORT_CUSTOMIZED;
 }
 
-Node *DedicatedServerExportPlugin::_customize_scene(Node *p_root, const String &p_path) {
+Node* DedicatedServerExportPlugin::_customize_scene(Node* p_root, const String& p_path)
+{
 	// Simply set the export mode based on the scene path. All the real
 	// customization happens in _customize_resource().
 	current_export_mode = _get_export_mode_for_path(p_path);
 	return nullptr;
 }
 
-Ref<Resource> DedicatedServerExportPlugin::_customize_resource(const Ref<Resource> &p_resource, const String &p_path) {
+Ref<Resource> DedicatedServerExportPlugin::_customize_resource(
+	const Ref<Resource>& p_resource, const String& p_path)
+{
 	// If the resource has a path, we use that to get our export mode. But if it
 	// doesn't, we assume that this resource is embedded in the last resource with
 	// a path.
@@ -119,9 +131,10 @@ Ref<Resource> DedicatedServerExportPlugin::_customize_resource(const Ref<Resourc
 		current_export_mode = _get_export_mode_for_path(p_path);
 	}
 
-	if (p_resource.is_valid() && current_export_mode == EditorExportPreset::MODE_FILE_STRIP && p_resource->has_method("create_placeholder")) {
+	if (p_resource.is_valid() && current_export_mode == EditorExportPreset::MODE_FILE_STRIP &&
+		p_resource->obj->has_method("create_placeholder")) {
 		Callable::CallError err;
-		Ref<Resource> result = p_resource->callp("create_placeholder", nullptr, 0, err);
+		Ref<Resource> result = p_resource->obj->callp("create_placeholder", nullptr, 0, err);
 		if (err.error == Callable::CallError::CALL_OK) {
 			return result;
 		}
@@ -130,10 +143,14 @@ Ref<Resource> DedicatedServerExportPlugin::_customize_resource(const Ref<Resourc
 	return Ref<Resource>();
 }
 
-void DedicatedServerExportPlugin::_end_customize_scenes() {
+void DedicatedServerExportPlugin::_end_customize_scenes()
+{
 	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
 }
 
-void DedicatedServerExportPlugin::_end_customize_resources() {
+void DedicatedServerExportPlugin::_end_customize_resources()
+{
 	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
 }
+
+

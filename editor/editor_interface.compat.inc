@@ -30,26 +30,28 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "editor_interface.h"
 
-#include "core/object/class_db.h"
-
-void EditorInterface::_popup_node_selector_bind_compat_94323(const Callable &p_callback, const TypedArray<StringName> &p_valid_types) {
+void EditorInterface::_popup_node_selector_bind_compat_94323(
+	const Callable& p_callback, const TypedArray<StringName>& p_valid_types)
+{
 	popup_node_selector(p_callback, p_valid_types, nullptr);
 }
 
-void EditorInterface::_popup_property_selector_bind_compat_94323(Object *p_object, const Callable &p_callback, const PackedInt32Array &p_type_filter) {
+void EditorInterface::_popup_property_selector_bind_compat_94323(
+	Object* p_object, const Callable& p_callback, const PackedInt32Array& p_type_filter)
+{
 	popup_property_selector(p_object, p_callback, p_type_filter, String());
 }
 
-void EditorInterface::_open_scene_from_path_bind_compat_90057(const String &scene_path) {
+void EditorInterface::_open_scene_from_path_bind_compat_90057(const String& scene_path)
+{
 	return open_scene_from_path(scene_path, false);
 }
 
-void EditorInterface::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("popup_node_selector", "callback", "valid_types"), &EditorInterface::_popup_node_selector_bind_compat_94323, DEFVAL(TypedArray<StringName>()));
-	ClassDB::bind_compatibility_method(D_METHOD("popup_property_selector", "object", "callback", "type_filter"), &EditorInterface::_popup_property_selector_bind_compat_94323, DEFVAL(PackedInt32Array()));
-	ClassDB::bind_compatibility_method(D_METHOD("open_scene_from_path", "scene_path"), &EditorInterface::_open_scene_from_path_bind_compat_90057);
-}
+void EditorInterface::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

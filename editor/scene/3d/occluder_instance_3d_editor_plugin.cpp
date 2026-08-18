@@ -112,10 +112,7 @@ void OccluderInstance3DEditorPlugin::make_visible(bool p_visible)
 	}
 }
 
-void OccluderInstance3DEditorPlugin::_bind_methods()
-{
-	ClassDB::bind_method("_bake", &OccluderInstance3DEditorPlugin::_bake);
-}
+void OccluderInstance3DEditorPlugin::_bind_methods() {}
 
 OccluderInstance3DEditorPlugin::OccluderInstance3DEditorPlugin()
 {

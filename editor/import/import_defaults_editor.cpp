@@ -178,7 +178,7 @@ void ImportDefaultsEditor::_update_importer()
 
 	// Set the importer class to fetch the correct class in the XML class reference.
 	// This allows tooltips to display when hovering properties.
-	inspector->set_object_class(importer->get_class_name());
+	inspector->set_object_class(importer->obj->get_class_name());
 	inspector->edit(settings->obj.get());
 }
 

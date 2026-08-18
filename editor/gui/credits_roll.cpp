@@ -61,12 +61,12 @@ Label* CreditsRoll::_create_label(const String& p_with_text, LabelSize p_size)
 
 	case LabelSize::HEADER: {
 		label->add_theme_font_size_override(SceneStringName(font_size), font_size_header);
-		label->add_theme_font_override(SceneStringName(font), bold_font);
+		label->add_theme_font_override(SceneStringName(font), bold_font.ptr());
 	} break;
 
 	case LabelSize::BIG_HEADER: {
 		label->add_theme_font_size_override(SceneStringName(font_size), font_size_big_header);
-		label->add_theme_font_override(SceneStringName(font), bold_font);
+		label->add_theme_font_override(SceneStringName(font), bold_font.ptr());
 	} break;
 	}
 	content->add_child(label);

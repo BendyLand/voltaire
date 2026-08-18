@@ -77,7 +77,7 @@ void EditorBottomPanel::_theme_changed()
 	}
 	else {
 		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("BottomPanel"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("BottomPanel"), EditorStringName(EditorStyles)).ptr());
 	}
 }
 
@@ -387,7 +387,7 @@ void ProgressIndicator::_notification(int p_what)
 	}
 }
 
-void ProgressIndicator::_bind_methods() { ADD_SIGNAL(MethodInfo("clicked")); }
+void ProgressIndicator::_bind_methods() {}
 
 void ProgressIndicator::gui_input(const Ref<InputEvent>& p_event)
 {

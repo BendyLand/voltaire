@@ -158,20 +158,12 @@ EditorDebuggerInspector::~EditorDebuggerInspector()
 	memdelete(variables);
 }
 
-void EditorDebuggerInspector::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("object_selected", PropertyInfo(Variant::INT, "id")));
-	ADD_SIGNAL(MethodInfo("objects_edited", PropertyInfo(Variant::ARRAY, "ids"),
-		PropertyInfo(Variant::STRING, "property"), PropertyInfo("value"),
-		PropertyInfo(Variant::STRING, "field")));
-	ADD_SIGNAL(MethodInfo("object_property_updated", PropertyInfo(Variant::INT, "id"),
-		PropertyInfo(Variant::STRING, "property")));
-}
+void EditorDebuggerInspector::_bind_methods() {}
 
 void EditorDebuggerInspector::_notification(int p_what)
 {
 	switch (p_what) {
-	case CompositorEffect::NOTIFICATION_POSTINITIALIZE: {
+	case Object::NOTIFICATION_POSTINITIALIZE: {
 		connect(
 			"object_id_selected", callable_mp(this, &EditorDebuggerInspector::_object_selected));
 	} break;
@@ -394,14 +386,12 @@ EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p
 
 			// Check that all objects inherit from type_name.
 			for (const SceneDebuggerObject& o : objects) {
-				if (o.class_name == class_name ||
-					ClassDB::is_parent_class(o.class_name, class_name)) {
+				if (o.class_name == class_name) {
 					continue; // class_name is the same or a parent of the object's class.
 				}
 
 				// class_name is not a parent of the node's class, so check again with the parent
 				// class.
-				class_name = ClassDB::get_parent_class(class_name);
 				check_type_again = true;
 				break;
 			}

@@ -32,11 +32,14 @@
 
 #include "scene/gui/base_button.h"
 #include "scene/resources/bit_map.h"
-class TextureButton : public BaseButton {
+
+class TextureButton : public BaseButton
+{
 	VLTRCLASS(TextureButton, BaseButton);
 
 public:
-	enum StretchMode {
+	enum StretchMode
+	{
 		STRETCH_SCALE,
 		STRETCH_TILE,
 		STRETCH_KEEP,
@@ -63,22 +66,22 @@ private:
 	bool hflip = false;
 	bool vflip = false;
 
-	void _set_texture(Ref<Texture2D> *p_destination, const Ref<Texture2D> &p_texture);
+	void _set_texture(Ref<Texture2D>* p_destination, const Ref<Texture2D>& p_texture);
 	void _texture_changed();
 
 protected:
 	virtual Size2 get_minimum_size() const override;
-	virtual bool has_point(const Point2 &p_point) const override;
+	virtual bool has_point(const Point2& p_point) const override;
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	void set_texture_normal(const Ref<Texture2D> &p_normal);
-	void set_texture_pressed(const Ref<Texture2D> &p_pressed);
-	void set_texture_hover(const Ref<Texture2D> &p_hover);
-	void set_texture_disabled(const Ref<Texture2D> &p_disabled);
-	void set_texture_focused(const Ref<Texture2D> &p_focused);
-	void set_click_mask(const Ref<BitMap> &p_click_mask);
+	void set_texture_normal(const Ref<Texture2D>& p_normal);
+	void set_texture_pressed(const Ref<Texture2D>& p_pressed);
+	void set_texture_hover(const Ref<Texture2D>& p_hover);
+	void set_texture_disabled(const Ref<Texture2D>& p_disabled);
+	void set_texture_focused(const Ref<Texture2D>& p_focused);
+	void set_click_mask(const Ref<BitMap>& p_click_mask);
 
 	Ref<Texture2D> get_texture_normal() const;
 	Ref<Texture2D> get_texture_pressed() const;
@@ -101,3 +104,5 @@ public:
 };
 
 VARIANT_ENUM_CAST(TextureButton::StretchMode);
+
+

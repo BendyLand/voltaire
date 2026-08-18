@@ -3654,7 +3654,7 @@ void CanvasItemEditor::_draw_text_at_position(
 		break;
 	}
 	viewport->draw_string(
-		font, p_position, p_string, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color);
+		font.ptr(), p_position, p_string, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color);
 }
 
 void CanvasItemEditor::_draw_margin_at_position(int p_value, Point2 p_position, Side p_side)
@@ -3726,10 +3726,10 @@ void CanvasItemEditor::_draw_guides()
 		int font_size =
 			1.3 * get_theme_font_size(SNAME("bold_size"), EditorStringName(EditorFonts));
 		Size2 text_size = font->get_string_size(str, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
-		viewport->draw_string_outline(font,
+		viewport->draw_string_outline(font.ptr(),
 			Point2(dragged_guide_pos.x + 10, ruler_width_scaled + text_size.y / 2 + 10), str,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-		viewport->draw_string(font,
+		viewport->draw_string(font.ptr(),
 			Point2(dragged_guide_pos.x + 10, ruler_width_scaled + text_size.y / 2 + 10), str,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, text_color);
 		viewport->draw_line(Point2(dragged_guide_pos.x, 0),
@@ -3742,10 +3742,10 @@ void CanvasItemEditor::_draw_guides()
 		int font_size =
 			1.3 * get_theme_font_size(SNAME("bold_size"), EditorStringName(EditorFonts));
 		Size2 text_size = font->get_string_size(str, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
-		viewport->draw_string_outline(font,
+		viewport->draw_string_outline(font.ptr(),
 			Point2(ruler_width_scaled + 10, dragged_guide_pos.y + text_size.y / 2 + 10), str,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-		viewport->draw_string(font,
+		viewport->draw_string(font.ptr(),
 			Point2(ruler_width_scaled + 10, dragged_guide_pos.y + text_size.y / 2 + 10), str,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, text_color);
 		viewport->draw_line(Point2(0, dragged_guide_pos.y),
@@ -3839,7 +3839,7 @@ void CanvasItemEditor::_draw_rulers()
 				(ruler_transform * major_subdivide * minor_subdivide).xform(Point2(i, 0)).x;
 			const String& formatted = TranslationServer::get_singleton()->format_number(
 				vformat(((int)val == val) ? "%d" : "%.1f", val), lang);
-			viewport->draw_string(font,
+			viewport->draw_string(font.ptr(),
 				Point2(position.x + MAX(Math::round(ruler_font_size / 8.0), 2),
 					font->get_ascent(ruler_font_size) + Math::round(EDSCALE)),
 				formatted, HORIZONTAL_ALIGNMENT_LEFT, -1, ruler_font_size, font_color);
@@ -3875,7 +3875,7 @@ void CanvasItemEditor::_draw_rulers()
 			viewport->draw_set_transform_matrix(viewport->get_transform() * text_xform);
 			const String& formatted = TranslationServer::get_singleton()->format_number(
 				vformat(((int)val == val) ? "%d" : "%.1f", val), lang);
-			viewport->draw_string(font, Point2(), formatted, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			viewport->draw_string(font.ptr(), Point2(), formatted, HORIZONTAL_ALIGNMENT_LEFT, -1,
 				ruler_font_size, font_color);
 			viewport->draw_set_transform_matrix(viewport->get_transform());
 
@@ -4072,19 +4072,19 @@ void CanvasItemEditor::_draw_ruler_tool()
 
 		// Draw text.
 		if (begin.is_equal_approx(end)) {
-			viewport->draw_string_outline(font, text_pos, (String)ruler_tool_origin,
+			viewport->draw_string_outline(font.ptr(), text_pos, (String)ruler_tool_origin,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-			viewport->draw_string(font, text_pos, (String)ruler_tool_origin,
+			viewport->draw_string(font.ptr(), text_pos, (String)ruler_tool_origin,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_color);
-			viewport->draw_texture(position_icon,
+			viewport->draw_texture(position_icon.ptr(),
 				(ruler_tool_origin - view_offset) * zoom - position_icon->get_size() / 2);
 			return;
 		}
 
-		viewport->draw_string_outline(font, text_pos,
+		viewport->draw_string_outline(font.ptr(), text_pos,
 			ts->format_number(vformat("%.1f px", length_vector.length()), lang),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-		viewport->draw_string(font, text_pos,
+		viewport->draw_string(font.ptr(), text_pos,
 			ts->format_number(vformat("%.1f px", length_vector.length()), lang),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_color);
 
@@ -4096,10 +4096,10 @@ void CanvasItemEditor::_draw_ruler_tool()
 			text_pos2.x = begin.x < text_pos.x
 							  ? MIN(text_pos.x - text_width, begin.x - text_width / 2)
 							  : MAX(text_pos.x + text_width, begin.x - text_width / 2);
-			viewport->draw_string_outline(font, text_pos2,
+			viewport->draw_string_outline(font.ptr(), text_pos2,
 				ts->format_number(vformat("%.1f px", length_vector.y), lang),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-			viewport->draw_string(font, text_pos2,
+			viewport->draw_string(font.ptr(), text_pos2,
 				ts->format_number(vformat("%.1f px", length_vector.y), lang),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_secondary_color);
 
@@ -4109,10 +4109,10 @@ void CanvasItemEditor::_draw_ruler_tool()
 			v_angle_text_pos.y =
 				begin.y < end.y ? MIN(text_pos2.y - 2 * text_height, begin.y - text_height * 0.5)
 								: MAX(text_pos2.y + text_height * 3, begin.y + text_height * 1.5);
-			viewport->draw_string_outline(font, v_angle_text_pos,
+			viewport->draw_string_outline(font.ptr(), v_angle_text_pos,
 				ts->format_number(vformat(U"%d°", vertical_angle), lang), HORIZONTAL_ALIGNMENT_LEFT,
 				-1, font_size, outline_size, outline_color);
-			viewport->draw_string(font, v_angle_text_pos,
+			viewport->draw_string(font.ptr(), v_angle_text_pos,
 				ts->format_number(vformat(U"%d°", vertical_angle), lang), HORIZONTAL_ALIGNMENT_LEFT,
 				-1, font_size, font_secondary_color);
 
@@ -4120,10 +4120,10 @@ void CanvasItemEditor::_draw_ruler_tool()
 			text_pos2.y = end.y < text_pos.y
 							  ? MIN(text_pos.y - text_height * 2, end.y - text_height / 2)
 							  : MAX(text_pos.y + text_height * 2, end.y - text_height / 2);
-			viewport->draw_string_outline(font, text_pos2,
+			viewport->draw_string_outline(font.ptr(), text_pos2,
 				ts->format_number(vformat("%.1f px", length_vector.x), lang),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-			viewport->draw_string(font, text_pos2,
+			viewport->draw_string(font.ptr(), text_pos2,
 				ts->format_number(vformat("%.1f px", length_vector.x), lang),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_secondary_color);
 
@@ -4148,10 +4148,10 @@ void CanvasItemEditor::_draw_ruler_tool()
 							text_pos2.y - height_multiplier * text_height));
 				}
 			}
-			viewport->draw_string_outline(font, h_angle_text_pos,
+			viewport->draw_string_outline(font.ptr(), h_angle_text_pos,
 				ts->format_number(vformat(U"%d°", horizontal_angle), lang),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-			viewport->draw_string(font, h_angle_text_pos,
+			viewport->draw_string(font.ptr(), h_angle_text_pos,
 				ts->format_number(vformat(U"%d°", horizontal_angle), lang),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_secondary_color);
 		}
@@ -4164,12 +4164,12 @@ void CanvasItemEditor::_draw_ruler_tool()
 				CLAMP(text_pos.y, text_height * 2.5, viewport->get_rect().size.y - text_height / 2);
 
 			if (draw_secondary_lines) {
-				viewport->draw_string_outline(font, text_pos,
+				viewport->draw_string_outline(font.ptr(), text_pos,
 					ts->format_number(
 						vformat("%.2f " + TTR("units"), (length_vector / grid_step).length()),
 						lang),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-				viewport->draw_string(font, text_pos,
+				viewport->draw_string(font.ptr(), text_pos,
 					ts->format_number(
 						vformat("%.2f " + TTR("units"), (length_vector / grid_step).length()),
 						lang),
@@ -4179,12 +4179,12 @@ void CanvasItemEditor::_draw_ruler_tool()
 				text_pos2.x = begin.x < text_pos.x
 								  ? MIN(text_pos.x - text_width, begin.x - text_width / 2)
 								  : MAX(text_pos.x + text_width, begin.x - text_width / 2);
-				viewport->draw_string_outline(font, text_pos2,
+				viewport->draw_string_outline(font.ptr(), text_pos2,
 					ts->format_number(
 						vformat("%d " + TTR("units"), std::round(length_vector.y / grid_step.y)),
 						lang),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-				viewport->draw_string(font, text_pos2,
+				viewport->draw_string(font.ptr(), text_pos2,
 					ts->format_number(
 						vformat("%d " + TTR("units"), std::round(length_vector.y / grid_step.y)),
 						lang),
@@ -4194,24 +4194,24 @@ void CanvasItemEditor::_draw_ruler_tool()
 				text_pos2.y = end.y < text_pos.y
 								  ? MIN(text_pos.y - text_height * 2, end.y + text_height / 2)
 								  : MAX(text_pos.y + text_height * 2, end.y + text_height / 2);
-				viewport->draw_string_outline(font, text_pos2,
+				viewport->draw_string_outline(font.ptr(), text_pos2,
 					ts->format_number(
 						vformat("%d " + TTR("units"), std::round(length_vector.x / grid_step.x)),
 						lang),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-				viewport->draw_string(font, text_pos2,
+				viewport->draw_string(font.ptr(), text_pos2,
 					ts->format_number(
 						vformat("%d " + TTR("units"), std::round(length_vector.x / grid_step.x)),
 						lang),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_secondary_color);
 			}
 			else {
-				viewport->draw_string_outline(font, text_pos,
+				viewport->draw_string_outline(font.ptr(), text_pos,
 					ts->format_number(vformat("%d " + TTR("units"),
 										  std::round((length_vector / grid_step).length())),
 						lang),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-				viewport->draw_string(font, text_pos,
+				viewport->draw_string(font.ptr(), text_pos,
 					ts->format_number(vformat("%d " + TTR("units"),
 										  std::round((length_vector / grid_step).length())),
 						lang),
@@ -4221,7 +4221,7 @@ void CanvasItemEditor::_draw_ruler_tool()
 	}
 	else {
 		if (grid_snap_active) {
-			viewport->draw_texture(position_icon,
+			viewport->draw_texture(position_icon.ptr(),
 				(ruler_tool_origin - view_offset) * zoom - position_icon->get_size() / 2);
 		}
 	}
@@ -4539,7 +4539,7 @@ void CanvasItemEditor::_draw_selection()
 				}
 			}
 			else {
-				viewport->draw_texture(previous_position_icon,
+				viewport->draw_texture(previous_position_icon.ptr(),
 					(pre_drag_xform.xform(Point2()) - (previous_position_icon->get_size() / 2))
 						.floor());
 			}
@@ -4576,7 +4576,7 @@ void CanvasItemEditor::_draw_selection()
 			}
 
 			viewport->draw_set_transform_matrix(simple_xform);
-			viewport->draw_texture(position_icon, -(position_icon->get_size() / 2));
+			viewport->draw_texture(position_icon.ptr(), -(position_icon->get_size() / 2));
 			viewport->draw_set_transform_matrix(viewport->get_transform());
 		}
 
@@ -4597,7 +4597,7 @@ void CanvasItemEditor::_draw_selection()
 				}
 
 				viewport->draw_set_transform_matrix(simple_xform);
-				viewport->draw_texture(pivot_icon, -(pivot_icon->get_size() / 2).floor());
+				viewport->draw_texture(pivot_icon.ptr(), -(pivot_icon->get_size() / 2).floor());
 				viewport->draw_set_transform_matrix(viewport->get_transform());
 			}
 
@@ -4776,7 +4776,7 @@ void CanvasItemEditor::_draw_selection()
 	}
 
 	if (!Math::is_inf(temp_pivot.x) || !Math::is_inf(temp_pivot.y)) {
-		viewport->draw_texture(pivot_icon,
+		viewport->draw_texture(pivot_icon.ptr(),
 			(temp_pivot - view_offset) * zoom - (pivot_icon->get_size() / 2).floor(),
 			get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
 	}
@@ -4916,7 +4916,7 @@ void CanvasItemEditor::_draw_invisible_nodes_positions(
 
 		viewport->draw_set_transform_matrix(simple_xform);
 		viewport->draw_texture(
-			position_icon, -position_icon->get_size() / 2, Color(1.0, 1.0, 1.0, 0.5));
+			position_icon.ptr(), -position_icon->get_size() / 2, Color(1.0, 1.0, 1.0, 0.5));
 		viewport->draw_set_transform_matrix(viewport->get_transform());
 	}
 }
@@ -4951,10 +4951,10 @@ void CanvasItemEditor::_draw_hover()
 
 		// Draw icon
 		viewport->draw_texture_rect(
-			node_icon, Rect2(pos, icon_size), false, Color(1.0, 1.0, 1.0, 0.5));
+			node_icon.ptr(), Rect2(pos, icon_size), false, Color(1.0, 1.0, 1.0, 0.5));
 
 		// Draw name
-		viewport->draw_string(font, pos + Point2(icon_size.x + 4, item_size.y - 3), node_name,
+		viewport->draw_string(font.ptr(), pos + Point2(icon_size.x + 4, item_size.y - 3), node_name,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1.0, 1.0, 1.0, 0.5));
 	}
 }
@@ -5027,12 +5027,12 @@ void CanvasItemEditor::_draw_message()
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 	Point2 msgpos =
 		Point2(ruler_width_scaled + 10 * EDSCALE, viewport->get_size().y - 14 * EDSCALE);
-	viewport->draw_string(font, msgpos + Point2(1, 1), message, HORIZONTAL_ALIGNMENT_LEFT, -1,
+	viewport->draw_string(font.ptr(), msgpos + Point2(1, 1), message, HORIZONTAL_ALIGNMENT_LEFT, -1,
 		font_size, Color(0, 0, 0, 0.8));
-	viewport->draw_string(font, msgpos + Point2(-1, -1), message, HORIZONTAL_ALIGNMENT_LEFT, -1,
+	viewport->draw_string(font.ptr(), msgpos + Point2(-1, -1), message, HORIZONTAL_ALIGNMENT_LEFT, -1,
 		font_size, Color(0, 0, 0, 0.8));
 	viewport->draw_string(
-		font, msgpos, message, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1, 1, 1, 1));
+		font.ptr(), msgpos, message, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1, 1, 1, 1));
 }
 
 void CanvasItemEditor::_draw_locks_and_groups(
@@ -5181,7 +5181,7 @@ void CanvasItemEditor::_update_editor_settings()
 	locked_selection_rectangle_color = EDITOR_GET("editors/2d/locked_selection_rectangle_color");
 
 	context_toolbar_panel->add_theme_style_override(SceneStringName(panel),
-		get_theme_stylebox(SNAME("ContextualToolbar"), EditorStringName(EditorStyles)));
+		get_theme_stylebox(SNAME("ContextualToolbar"), EditorStringName(EditorStyles)).ptr());
 
 	simple_panning = EDITOR_GET("editors/panning/simple_panning");
 	panner->setup((ViewPanner::ControlScheme)EDITOR_GET("editors/panning/2d_editor_panning_scheme")
@@ -6182,21 +6182,7 @@ void CanvasItemEditor::_reset_drag()
 }
 
 void CanvasItemEditor::_bind_methods()
-{
-	ClassDB::bind_method("_get_editor_data", &CanvasItemEditor::_get_editor_data);
-
-	ClassDB::bind_method(D_METHOD("update_viewport"), &CanvasItemEditor::update_viewport);
-	ClassDB::bind_method(D_METHOD("center_at", "position"), &CanvasItemEditor::center_at);
-
-	ClassDB::bind_method(
-		"_set_owner_for_node_and_children", &CanvasItemEditor::_set_owner_for_node_and_children);
-
-	ADD_SIGNAL(MethodInfo("snap_changed"));
-	ADD_SIGNAL(MethodInfo("grid_visibility_changed", PropertyInfo(Variant::BOOL, "visible")));
-	ADD_SIGNAL(MethodInfo("item_lock_status_changed"));
-	ADD_SIGNAL(MethodInfo("item_group_status_changed"));
-	ADD_SIGNAL(MethodInfo("canvas_item_tool_changed", PropertyInfo(Variant::INT, "tool")));
-}
+{}
 
 Dictionary CanvasItemEditor::get_state() const
 {
@@ -7626,7 +7612,7 @@ void CanvasItemEditorViewport::_perform_drop_data()
 
 		Ref<Texture2D> texture = res;
 		if (texture.is_valid()) {
-			Node* child = Object::cast_to<Node>(ClassDB::instantiate(default_texture_node_type));
+			Node* child = memnew(Node);
 			_create_texture_node(target_node, child, path, drop_pos);
 		}
 
@@ -7694,51 +7680,6 @@ bool CanvasItemEditorViewport::can_drop_data(const Point2& p_point, const Varian
 		MESH = 1 << 3,
 	};
 
-	int instantiate_type = 0;
-
-	String error_message;
-	for (const String& path : files) {
-		const StringName res_type = ResourceLoader::get_resource_type(path);
-
-		if (ClassDB::is_parent_class(res_type, SNAME("PackedScene"))) {
-			Ref<PackedScene> scn = ResourceLoader::load(path);
-			ERR_CONTINUE(scn.is_null());
-
-			Node* instantiated_scene = scn->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE);
-			if (!instantiated_scene) {
-				continue;
-			}
-			if (edited_scene && !edited_scene->get_scene_file_path().is_empty() &&
-				_cyclical_dependency_exists(
-					edited_scene->get_scene_file_path(), instantiated_scene)) {
-				error_message = vformat(TTR("Circular dependency found at %s."), path.get_file());
-				break;
-			}
-			memdelete(instantiated_scene);
-			instantiate_type |= SCENE;
-		}
-		else if (ClassDB::is_parent_class(res_type, SNAME("Texture2D"))) {
-			instantiate_type |= TEXTURE;
-		}
-		else if (ClassDB::is_parent_class(res_type, SNAME("AudioStream"))) {
-			instantiate_type |= AUDIO;
-		}
-		else if (ClassDB::is_parent_class(res_type, "Mesh")) {
-			instantiate_type |= MESH;
-		}
-	}
-
-	String title = TTRN("Can't drop the file...", "Can't drop the files...", files.size());
-	if (!error_message.is_empty()) {
-		set_hint_label(title, error_message);
-		canvas_item_editor->update_viewport();
-		return false;
-	}
-	if (instantiate_type == 0) {
-		set_hint_label(title, TTR("This file format is not supported."));
-		return false;
-	}
-
 	if (!preview_node->get_parent()) { // create preview only once
 		_create_preview(files);
 	}
@@ -7747,7 +7688,7 @@ bool CanvasItemEditorViewport::can_drop_data(const Point2& p_point, const Varian
 	const Transform2D trans = canvas_item_editor->get_canvas_transform();
 	preview_node->set_position((p_point - trans.get_origin()) / trans.get_scale().x);
 
-	if (!edited_scene && instantiate_type & SCENE) {
+	if (!edited_scene) {
 		String scene_file_path = preview_node->get_child(0)->get_scene_file_path();
 		// TRANSLATORS: The placeholder is the file path of the scene being instantiated.
 		canvas_item_editor->message =
@@ -7778,28 +7719,7 @@ bool CanvasItemEditorViewport::can_drop_data(const Point2& p_point, const Varian
 		TTRN("[b]Hold Alt:[/b] Add as child of root node.",
 			"[b]Hold Alt:[/b] Add as children of root node.", files.size());
 
-	if (files.size() > 1) {
-		title = TTR("Dropping multiple files...");
-	}
-	else if (instantiate_type & SCENE) {
-		title = TTR("Dropping a Scene file...");
-	}
-	else if (instantiate_type & AUDIO) {
-		title = TTR("Dropping an Audio file...");
-	}
-	else if (instantiate_type & TEXTURE) {
-		// TRANSLATORS: The placeholders are the types of nodes being instantiated.
-		title = vformat(TTR("Dropping a Texture file as a %s node..."), default_texture_node_type);
-	}
-	else if (instantiate_type & MESH) {
-		title = TTR("Dropping a Mesh file...");
-	}
-	if (instantiate_type & TEXTURE) {
-		desc += "\n" + TTR("[b]Hold Alt + Shift:[/b] Add Texture as a different node type.");
-	}
 	desc += "[/ul]";
-
-	set_hint_label(title, desc);
 
 	return true;
 }
@@ -7820,12 +7740,6 @@ void CanvasItemEditorViewport::_show_texture_node_type_selector()
 
 bool CanvasItemEditorViewport::_is_any_texture_selected() const
 {
-	for (int i = 0; i < selected_files.size(); ++i) {
-		if (ClassDB::is_parent_class(
-				ResourceLoader::get_resource_type(selected_files[i]), "Texture2D")) {
-			return true;
-		}
-	}
 	return false;
 }
 
@@ -7892,7 +7806,7 @@ void CanvasItemEditorViewport::_update_theme()
 	Control* gui_base = EditorNode::get_singleton()->get_gui_base();
 	const Ref<StyleBox>& information_3d_stylebox = gui_base->get_theme_stylebox(
 		SNAME("Information3dViewport"), EditorStringName(EditorStyles));
-	tooltip_panel->add_theme_style_override(CoreStringName(normal), information_3d_stylebox);
+	tooltip_panel->add_theme_style_override(CoreStringName(normal), information_3d_stylebox.ptr());
 }
 
 void CanvasItemEditorViewport::_notification(int p_what)

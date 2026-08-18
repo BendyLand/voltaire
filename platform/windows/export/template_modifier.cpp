@@ -28,41 +28,45 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "template_modifier.h"
-
 #include "core/io/dir_access.h"
 #include "core/io/image.h"
 #include "editor/export/editor_export_preset.h"
+#include "template_modifier.h"
 
-void TemplateModifier::ByteStream::save(uint8_t p_value, Vector<uint8_t> &r_bytes) const {
+void TemplateModifier::ByteStream::save(uint8_t p_value, Vector<uint8_t>& r_bytes) const
+{
 	save(p_value, r_bytes, 1);
 }
 
-void TemplateModifier::ByteStream::save(uint16_t p_value, Vector<uint8_t> &r_bytes) const {
+void TemplateModifier::ByteStream::save(uint16_t p_value, Vector<uint8_t>& r_bytes) const
+{
 	save(p_value, r_bytes, 2);
 }
 
-void TemplateModifier::ByteStream::save(uint32_t p_value, Vector<uint8_t> &r_bytes) const {
+void TemplateModifier::ByteStream::save(uint32_t p_value, Vector<uint8_t>& r_bytes) const
+{
 	save(p_value, r_bytes, 4);
 }
 
-void TemplateModifier::ByteStream::save(const String &p_value, Vector<uint8_t> &r_bytes) const {
+void TemplateModifier::ByteStream::save(const String& p_value, Vector<uint8_t>& r_bytes) const
+{
 	r_bytes.append_array(p_value.to_utf16_buffer());
 	save((uint16_t)0, r_bytes);
 }
 
-void TemplateModifier::ByteStream::save(uint32_t p_value, Vector<uint8_t> &r_bytes, uint32_t p_count) const {
+void TemplateModifier::ByteStream::save(
+	uint32_t p_value, Vector<uint8_t>& r_bytes, uint32_t p_count) const
+{
 	for (uint32_t i = 0; i < p_count; i++) {
 		r_bytes.append((uint8_t)(p_value & 0xff));
 		p_value >>= 8;
 	}
 }
 
-Vector<uint8_t> TemplateModifier::ByteStream::save() const {
-	return Vector<uint8_t>();
-}
+Vector<uint8_t> TemplateModifier::ByteStream::save() const { return Vector<uint8_t>(); }
 
-Vector<uint8_t> TemplateModifier::Structure::save() const {
+Vector<uint8_t> TemplateModifier::Structure::save() const
+{
 	Vector<uint8_t> bytes;
 	ByteStream::save(length, bytes);
 	ByteStream::save(value_length, bytes);
@@ -74,13 +78,15 @@ Vector<uint8_t> TemplateModifier::Structure::save() const {
 	return bytes;
 }
 
-Vector<uint8_t> &TemplateModifier::Structure::add_length(Vector<uint8_t> &r_bytes) const {
+Vector<uint8_t>& TemplateModifier::Structure::add_length(Vector<uint8_t>& r_bytes) const
+{
 	r_bytes.write[0] = r_bytes.size() & 0xff;
 	r_bytes.write[1] = r_bytes.size() >> 8 & 0xff;
 	return r_bytes;
 }
 
-Vector<uint8_t> TemplateModifier::ResourceDirectoryTable::save() const {
+Vector<uint8_t> TemplateModifier::ResourceDirectoryTable::save() const
+{
 	Vector<uint8_t> bytes;
 	bytes.resize_initialized(12);
 	ByteStream::save(name_entry_count, bytes);
@@ -88,14 +94,16 @@ Vector<uint8_t> TemplateModifier::ResourceDirectoryTable::save() const {
 	return bytes;
 }
 
-Vector<uint8_t> TemplateModifier::ResourceDirectoryEntry::save() const {
+Vector<uint8_t> TemplateModifier::ResourceDirectoryEntry::save() const
+{
 	Vector<uint8_t> bytes;
 	ByteStream::save(id | (name ? HIGH_BIT : 0), bytes);
 	ByteStream::save(data_offset | (subdirectory ? HIGH_BIT : 0), bytes);
 	return bytes;
 }
 
-Vector<uint8_t> TemplateModifier::FixedFileInfo::save() const {
+Vector<uint8_t> TemplateModifier::FixedFileInfo::save() const
+{
 	Vector<uint8_t> bytes;
 	ByteStream::save(signature, bytes);
 	ByteStream::save(struct_version, bytes);
@@ -113,7 +121,8 @@ Vector<uint8_t> TemplateModifier::FixedFileInfo::save() const {
 	return bytes;
 }
 
-void TemplateModifier::FixedFileInfo::set_file_version(const String &p_file_version) {
+void TemplateModifier::FixedFileInfo::set_file_version(const String& p_file_version)
+{
 	Vector<String> parts = p_file_version.split(".");
 	while (parts.size() < 4) {
 		parts.append("0");
@@ -122,7 +131,8 @@ void TemplateModifier::FixedFileInfo::set_file_version(const String &p_file_vers
 	file_version_ls = parts[2].to_int() << 16 | (parts[3].to_int() & 0xffff);
 }
 
-void TemplateModifier::FixedFileInfo::set_product_version(const String &p_product_version) {
+void TemplateModifier::FixedFileInfo::set_product_version(const String& p_product_version)
+{
 	Vector<String> parts = p_product_version.split(".");
 	while (parts.size() < 4) {
 		parts.append("0");
@@ -131,26 +141,27 @@ void TemplateModifier::FixedFileInfo::set_product_version(const String &p_produc
 	product_version_ls = parts[2].to_int() << 16 | (parts[3].to_int() & 0xffff);
 }
 
-Vector<uint8_t> TemplateModifier::StringStructure::save() const {
+Vector<uint8_t> TemplateModifier::StringStructure::save() const
+{
 	Vector<uint8_t> bytes = Structure::save();
 	ByteStream::save(value, bytes);
 	return add_length(bytes);
 }
 
-TemplateModifier::StringStructure::StringStructure() {
-	type = 1;
-}
+TemplateModifier::StringStructure::StringStructure() { type = 1; }
 
-TemplateModifier::StringStructure::StringStructure(const String &p_key, const String &p_value) {
+TemplateModifier::StringStructure::StringStructure(const String& p_key, const String& p_value)
+{
 	type = 1;
 	value_length = p_value.length() + 1;
 	key = p_key;
 	value = p_value;
 }
 
-Vector<uint8_t> TemplateModifier::StringTable::save() const {
+Vector<uint8_t> TemplateModifier::StringTable::save() const
+{
 	Vector<uint8_t> bytes = Structure::save();
-	for (const StringStructure &string : strings) {
+	for (const StringStructure& string : strings) {
 		bytes.append_array(string.save());
 		while (bytes.size() % 4) {
 			bytes.append(0);
@@ -159,50 +170,59 @@ Vector<uint8_t> TemplateModifier::StringTable::save() const {
 	return add_length(bytes);
 }
 
-void TemplateModifier::StringTable::put(const String &p_key, const String &p_value) {
+void TemplateModifier::StringTable::put(const String& p_key, const String& p_value)
+{
 	strings.append(StringStructure(p_key, p_value));
 }
 
-TemplateModifier::StringTable::StringTable() {
+TemplateModifier::StringTable::StringTable()
+{
 	key = "040904b0";
 	type = 1;
 }
 
-TemplateModifier::StringFileInfo::StringFileInfo() {
+TemplateModifier::StringFileInfo::StringFileInfo()
+{
 	key = "StringFileInfo";
 	value_length = 0;
 	type = 1;
 }
 
-Vector<uint8_t> TemplateModifier::StringFileInfo::save() const {
+Vector<uint8_t> TemplateModifier::StringFileInfo::save() const
+{
 	Vector<uint8_t> bytes = Structure::save();
 	bytes.append_array(string_table.save());
 	return add_length(bytes);
 }
 
-Vector<uint8_t> TemplateModifier::Var::save() const {
+Vector<uint8_t> TemplateModifier::Var::save() const
+{
 	Vector<uint8_t> bytes = Structure::save();
 	ByteStream::save(value, bytes);
 	return add_length(bytes);
 }
 
-TemplateModifier::Var::Var() {
+TemplateModifier::Var::Var()
+{
 	value_length = 4;
 	key = "Translation";
 }
 
-Vector<uint8_t> TemplateModifier::VarFileInfo::save() const {
+Vector<uint8_t> TemplateModifier::VarFileInfo::save() const
+{
 	Vector<uint8_t> bytes = Structure::save();
 	bytes.append_array(var.save());
 	return add_length(bytes);
 }
 
-TemplateModifier::VarFileInfo::VarFileInfo() {
+TemplateModifier::VarFileInfo::VarFileInfo()
+{
 	type = 1;
 	key = "VarFileInfo";
 }
 
-Vector<uint8_t> TemplateModifier::VersionInfo::save() const {
+Vector<uint8_t> TemplateModifier::VersionInfo::save() const
+{
 	Vector<uint8_t> fixed_file_info = value.save();
 	Vector<uint8_t> bytes = Structure::save();
 	bytes.append_array(fixed_file_info);
@@ -214,17 +234,20 @@ Vector<uint8_t> TemplateModifier::VersionInfo::save() const {
 	return add_length(bytes);
 }
 
-TemplateModifier::VersionInfo::VersionInfo() {
+TemplateModifier::VersionInfo::VersionInfo()
+{
 	key = "VS_VERSION_INFO";
 	value_length = 52;
 }
 
-Vector<uint8_t> TemplateModifier::ManifestInfo::save() const {
+Vector<uint8_t> TemplateModifier::ManifestInfo::save() const
+{
 	Vector<uint8_t> bytes = manifest.to_utf8_buffer();
 	return bytes;
 }
 
-Vector<uint8_t> TemplateModifier::IconEntry::save() const {
+Vector<uint8_t> TemplateModifier::IconEntry::save() const
+{
 	Vector<uint8_t> bytes;
 	ByteStream::save(width, bytes);
 	ByteStream::save(height, bytes);
@@ -237,29 +260,32 @@ Vector<uint8_t> TemplateModifier::IconEntry::save() const {
 	return bytes;
 }
 
-void TemplateModifier::IconEntry::load(Ref<FileAccess> p_file) {
-	width = p_file->get_8(); // Width in pixels.
-	height = p_file->get_8(); // Height in pixels.
-	colors = p_file->get_8(); // Number of colors in the palette (0 - no palette).
-	p_file->get_8(); // Reserved.
-	planes = p_file->get_16(); // Number of color planes.
+void TemplateModifier::IconEntry::load(Ref<FileAccess> p_file)
+{
+	width = p_file->get_8();		   // Width in pixels.
+	height = p_file->get_8();		   // Height in pixels.
+	colors = p_file->get_8();		   // Number of colors in the palette (0 - no palette).
+	p_file->get_8();				   // Reserved.
+	planes = p_file->get_16();		   // Number of color planes.
 	bits_per_pixel = p_file->get_16(); // Bits per pixel.
-	image_size = p_file->get_32(); // Image data size in bytes.
-	image_offset = p_file->get_32(); // Image data offset.
+	image_size = p_file->get_32();	   // Image data size in bytes.
+	image_offset = p_file->get_32();   // Image data offset.
 }
 
-Vector<uint8_t> TemplateModifier::GroupIcon::save() const {
+Vector<uint8_t> TemplateModifier::GroupIcon::save() const
+{
 	Vector<uint8_t> bytes;
 	ByteStream::save(reserved, bytes);
 	ByteStream::save(type, bytes);
 	ByteStream::save(image_count, bytes);
-	for (const IconEntry &icon_entry : icon_entries) {
+	for (const IconEntry& icon_entry : icon_entries) {
 		bytes.append_array(icon_entry.save());
 	}
 	return bytes;
 }
 
-void TemplateModifier::GroupIcon::load(Ref<FileAccess> p_icon_file) {
+void TemplateModifier::GroupIcon::load(Ref<FileAccess> p_icon_file)
+{
 	if (p_icon_file->get_32() != 0x10000) { // Wrong reserved bytes
 		ERR_FAIL_MSG("Wrong icon file type.");
 	}
@@ -272,7 +298,7 @@ void TemplateModifier::GroupIcon::load(Ref<FileAccess> p_icon_file) {
 	}
 
 	int id = 1;
-	for (IconEntry &icon_entry : icon_entries) {
+	for (IconEntry& icon_entry : icon_entries) {
 		Vector<uint8_t> image;
 		image.resize(icon_entry.image_size);
 		p_icon_file->seek(icon_entry.image_offset);
@@ -282,10 +308,12 @@ void TemplateModifier::GroupIcon::load(Ref<FileAccess> p_icon_file) {
 	}
 }
 
-void TemplateModifier::GroupIcon::fill_with_godot_blue() {
+void TemplateModifier::GroupIcon::fill_with_godot_blue()
+{
 	uint32_t id = 1;
 	for (uint8_t size : SIZES) {
-		Ref<Image> image = Image::create_empty(size ? size : 256, size ? size : 256, false, Image::FORMAT_RGB8);
+		Ref<Image> image =
+			Image::create_empty(size ? size : 256, size ? size : 256, false, Image::FORMAT_RGB8);
 		image->fill(Color::hex(0x478cbfff));
 		Vector<uint8_t> data = image->save_png_to_buffer();
 		IconEntry icon_entry;
@@ -299,7 +327,8 @@ void TemplateModifier::GroupIcon::fill_with_godot_blue() {
 	}
 }
 
-Vector<uint8_t> TemplateModifier::SectionEntry::save() const {
+Vector<uint8_t> TemplateModifier::SectionEntry::save() const
+{
 	Vector<uint8_t> bytes;
 	bytes.append_array(name.to_utf8_buffer());
 	while (bytes.size() < 8) {
@@ -317,10 +346,11 @@ Vector<uint8_t> TemplateModifier::SectionEntry::save() const {
 	return bytes;
 }
 
-void TemplateModifier::SectionEntry::load(Ref<FileAccess> p_file) {
+void TemplateModifier::SectionEntry::load(Ref<FileAccess> p_file)
+{
 	uint8_t section_name[8];
 	p_file->get_buffer(section_name, 8);
-	name = String::utf8((char *)section_name, 8);
+	name = String::utf8((char*)section_name, 8);
 	virtual_size = p_file->get_32();
 	virtual_address = p_file->get_32();
 	size_of_raw_data = p_file->get_32();
@@ -332,7 +362,8 @@ void TemplateModifier::SectionEntry::load(Ref<FileAccess> p_file) {
 	characteristics = p_file->get_32();
 }
 
-Vector<uint8_t> TemplateModifier::ResourceDataEntry::save() const {
+Vector<uint8_t> TemplateModifier::ResourceDataEntry::save() const
+{
 	Vector<uint8_t> bytes;
 	ByteStream::save(rva, bytes);
 	ByteStream::save(size, bytes);
@@ -340,7 +371,8 @@ Vector<uint8_t> TemplateModifier::ResourceDataEntry::save() const {
 	return bytes;
 }
 
-uint32_t TemplateModifier::_get_pe_header_offset(Ref<FileAccess> p_executable) const {
+uint32_t TemplateModifier::_get_pe_header_offset(Ref<FileAccess> p_executable) const
+{
 	p_executable->seek(POINTER_TO_PE_HEADER_OFFSET);
 	uint32_t pe_header_offset = p_executable->get_32();
 
@@ -350,13 +382,18 @@ uint32_t TemplateModifier::_get_pe_header_offset(Ref<FileAccess> p_executable) c
 	return magic == 0x00004550 ? pe_header_offset : 0;
 }
 
-uint32_t TemplateModifier::_snap(uint32_t p_value, uint32_t p_size) const {
+uint32_t TemplateModifier::_snap(uint32_t p_value, uint32_t p_size) const
+{
 	return p_value + (p_value % p_size ? p_size - (p_value % p_size) : 0);
 }
 
-Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, const GroupIcon &p_group_icon, const VersionInfo &p_version_info, const ManifestInfo &p_manifest_info) const {
+Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address,
+	const GroupIcon& p_group_icon, const VersionInfo& p_version_info,
+	const ManifestInfo& p_manifest_info) const
+{
 	// 0x04, 0x00 as string length ICON in UTF16 and padding to 32 bits
-	const uint8_t ICON_DIRECTORY_STRING[] = { 0x04, 0x00, 0x49, 0x00, 0x43, 0x00, 0x4f, 0x00, 0x4e, 0x00, 0x00, 0x00 };
+	const uint8_t ICON_DIRECTORY_STRING[] = {
+		0x04, 0x00, 0x49, 0x00, 0x43, 0x00, 0x4f, 0x00, 0x4e, 0x00, 0x00, 0x00};
 	const uint16_t RT_ENTRY_COUNT = 4;
 	const uint32_t icon_count = p_group_icon.images.size();
 
@@ -367,25 +404,32 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 
 	ResourceDirectoryEntry rt_icon_entry;
 	rt_icon_entry.id = ResourceDirectoryEntry::ICON;
-	rt_icon_entry.data_offset = ResourceDirectoryTable::SIZE + RT_ENTRY_COUNT * ResourceDirectoryEntry::SIZE;
+	rt_icon_entry.data_offset =
+		ResourceDirectoryTable::SIZE + RT_ENTRY_COUNT * ResourceDirectoryEntry::SIZE;
 	rt_icon_entry.subdirectory = true;
 	resources.append_array(rt_icon_entry.save());
 
 	ResourceDirectoryEntry rt_group_icon_entry;
 	rt_group_icon_entry.id = ResourceDirectoryEntry::GROUP_ICON;
-	rt_group_icon_entry.data_offset = (2 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count) * ResourceDirectoryEntry::SIZE;
+	rt_group_icon_entry.data_offset =
+		(2 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count) * ResourceDirectoryEntry::SIZE;
 	rt_group_icon_entry.subdirectory = true;
 	resources.append_array(rt_group_icon_entry.save());
 
 	ResourceDirectoryEntry rt_version_entry;
 	rt_version_entry.id = ResourceDirectoryEntry::VERSION;
-	rt_version_entry.data_offset = (4 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count + 2) * ResourceDirectoryEntry::SIZE;
+	rt_version_entry.data_offset =
+		(4 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count + 2) * ResourceDirectoryEntry::SIZE;
 	rt_version_entry.subdirectory = true;
 	resources.append_array(rt_version_entry.save());
 
 	ResourceDirectoryEntry rt_manifest_entry;
 	rt_manifest_entry.id = ResourceDirectoryEntry::MANIFEST;
-	rt_manifest_entry.data_offset = (6 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count + 4) * ResourceDirectoryEntry::SIZE;
+	rt_manifest_entry.data_offset =
+		(6 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count + 4) * ResourceDirectoryEntry::SIZE;
 	rt_manifest_entry.subdirectory = true;
 	resources.append_array(rt_manifest_entry.save());
 
@@ -396,7 +440,8 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 	for (uint32_t i = 0; i < icon_count; i++) {
 		ResourceDirectoryEntry icon_entry;
 		icon_entry.id = i + 1;
-		icon_entry.data_offset = (2 + i) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + icon_count + i) * ResourceDirectoryEntry::SIZE;
+		icon_entry.data_offset = (2 + i) * ResourceDirectoryTable::SIZE +
+								 (RT_ENTRY_COUNT + icon_count + i) * ResourceDirectoryEntry::SIZE;
 		icon_entry.subdirectory = true;
 		resources.append_array(icon_entry.save());
 	}
@@ -408,7 +453,10 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 
 		ResourceDirectoryEntry language_icon_entry;
 		language_icon_entry.id = ResourceDirectoryEntry::ENGLISH;
-		language_icon_entry.data_offset = (8 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + icon_count * 2 + 6) * ResourceDirectoryEntry::SIZE + sizeof(ICON_DIRECTORY_STRING) + i * ResourceDataEntry::SIZE;
+		language_icon_entry.data_offset =
+			(8 + icon_count) * ResourceDirectoryTable::SIZE +
+			(RT_ENTRY_COUNT + icon_count * 2 + 6) * ResourceDirectoryEntry::SIZE +
+			sizeof(ICON_DIRECTORY_STRING) + i * ResourceDataEntry::SIZE;
 		resources.append_array(language_icon_entry.save());
 	}
 
@@ -417,8 +465,11 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 	resources.append_array(group_icon_name_table.save());
 
 	ResourceDirectoryEntry group_icon_name_entry;
-	group_icon_name_entry.id = (6 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + icon_count * 2 + 4) * ResourceDirectoryEntry::SIZE;
-	group_icon_name_entry.data_offset = (3 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count + 1) * ResourceDirectoryEntry::SIZE;
+	group_icon_name_entry.id = (6 + icon_count) * ResourceDirectoryTable::SIZE +
+							   (RT_ENTRY_COUNT + icon_count * 2 + 4) * ResourceDirectoryEntry::SIZE;
+	group_icon_name_entry.data_offset =
+		(3 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count + 1) * ResourceDirectoryEntry::SIZE;
 	group_icon_name_entry.name = true;
 	group_icon_name_entry.subdirectory = true;
 	resources.append_array(group_icon_name_entry.save());
@@ -429,7 +480,10 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 
 	ResourceDirectoryEntry group_icon_language_entry;
 	group_icon_language_entry.id = ResourceDirectoryEntry::ENGLISH;
-	group_icon_language_entry.data_offset = (8 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE + sizeof(ICON_DIRECTORY_STRING) + icon_count * ResourceDataEntry::SIZE;
+	group_icon_language_entry.data_offset =
+		(8 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE +
+		sizeof(ICON_DIRECTORY_STRING) + icon_count * ResourceDataEntry::SIZE;
 	resources.append_array(group_icon_language_entry.save());
 
 	ResourceDirectoryTable version_table;
@@ -438,7 +492,9 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 
 	ResourceDirectoryEntry version_entry;
 	version_entry.id = 1;
-	version_entry.data_offset = (5 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count + 3) * ResourceDirectoryEntry::SIZE;
+	version_entry.data_offset =
+		(5 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count + 3) * ResourceDirectoryEntry::SIZE;
 	version_entry.subdirectory = true;
 	resources.append_array(version_entry.save());
 
@@ -448,7 +504,10 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 
 	ResourceDirectoryEntry version_language_entry;
 	version_language_entry.id = ResourceDirectoryEntry::ENGLISH;
-	version_language_entry.data_offset = (8 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE + sizeof(ICON_DIRECTORY_STRING) + (icon_count + 1) * ResourceDataEntry::SIZE;
+	version_language_entry.data_offset =
+		(8 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE +
+		sizeof(ICON_DIRECTORY_STRING) + (icon_count + 1) * ResourceDataEntry::SIZE;
 	resources.append_array(version_language_entry.save());
 
 	ResourceDirectoryTable manifest_table;
@@ -457,7 +516,9 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 
 	ResourceDirectoryEntry manifest_entry;
 	manifest_entry.id = 1;
-	manifest_entry.data_offset = (7 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count + 5) * ResourceDirectoryEntry::SIZE;
+	manifest_entry.data_offset =
+		(7 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count + 5) * ResourceDirectoryEntry::SIZE;
 	manifest_entry.subdirectory = true;
 	resources.append_array(manifest_entry.save());
 
@@ -467,7 +528,10 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 
 	ResourceDirectoryEntry manifest_language_entry;
 	manifest_language_entry.id = ResourceDirectoryEntry::ENGLISH;
-	manifest_language_entry.data_offset = (8 + icon_count) * ResourceDirectoryTable::SIZE + (RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE + sizeof(ICON_DIRECTORY_STRING) + (icon_count + 2) * ResourceDataEntry::SIZE;
+	manifest_language_entry.data_offset =
+		(8 + icon_count) * ResourceDirectoryTable::SIZE +
+		(RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE +
+		sizeof(ICON_DIRECTORY_STRING) + (icon_count + 2) * ResourceDataEntry::SIZE;
 	resources.append_array(manifest_language_entry.save());
 
 	Vector<uint8_t> icon_directory_string;
@@ -476,7 +540,7 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 	resources.append_array(icon_directory_string);
 
 	Vector<Vector<uint8_t>> data_entries;
-	for (const Vector<uint8_t> &image : p_group_icon.images) {
+	for (const Vector<uint8_t>& image : p_group_icon.images) {
 		data_entries.append(image);
 	}
 	data_entries.append(p_group_icon.save());
@@ -485,7 +549,7 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 
 	uint32_t offset = resources.size() + data_entries.size() * ResourceDataEntry::SIZE;
 
-	for (const Vector<uint8_t> &data_entry : data_entries) {
+	for (const Vector<uint8_t>& data_entry : data_entries) {
 		ResourceDataEntry resource_data_entry;
 		resource_data_entry.rva = p_virtual_address + offset;
 		resource_data_entry.size = data_entry.size();
@@ -496,7 +560,7 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 		}
 	}
 
-	for (const Vector<uint8_t> &data_entry : data_entries) {
+	for (const Vector<uint8_t>& data_entry : data_entries) {
 		resources.append_array(data_entry);
 		while (resources.size() % 4) {
 			resources.append(0);
@@ -506,9 +570,11 @@ Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address, 
 	return resources;
 }
 
-TemplateModifier::VersionInfo TemplateModifier::_create_version_info(const HashMap<String, String> &p_strings) const {
+TemplateModifier::VersionInfo TemplateModifier::_create_version_info(
+	const HashMap<String, String>& p_strings) const
+{
 	StringTable string_table;
-	for (const KeyValue<String, String> &E : p_strings) {
+	for (const KeyValue<String, String>& E : p_strings) {
 		string_table.put(E.key, E.value);
 	}
 
@@ -530,7 +596,8 @@ TemplateModifier::VersionInfo TemplateModifier::_create_version_info(const HashM
 	return version_info;
 }
 
-TemplateModifier::ManifestInfo TemplateModifier::_create_manifest_info() const {
+TemplateModifier::ManifestInfo TemplateModifier::_create_manifest_info() const
+{
 	ManifestInfo manifest_info;
 	manifest_info.manifest = R"MANIFEST(<?xml version="1.0" encoding="utf-8"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
@@ -548,7 +615,8 @@ TemplateModifier::ManifestInfo TemplateModifier::_create_manifest_info() const {
 	return manifest_info;
 }
 
-TemplateModifier::GroupIcon TemplateModifier::_create_group_icon(const String &p_icon_path) const {
+TemplateModifier::GroupIcon TemplateModifier::_create_group_icon(const String& p_icon_path) const
+{
 	GroupIcon group_icon;
 
 	Ref<FileAccess> icon_file = FileAccess::open(p_icon_path, FileAccess::READ);
@@ -562,7 +630,8 @@ TemplateModifier::GroupIcon TemplateModifier::_create_group_icon(const String &p
 	return group_icon;
 }
 
-Error TemplateModifier::_truncate(const String &p_path, uint32_t p_size) const {
+Error TemplateModifier::_truncate(const String& p_path, uint32_t p_size) const
+{
 	Error error;
 
 	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::READ, &error);
@@ -583,14 +652,16 @@ Error TemplateModifier::_truncate(const String &p_path, uint32_t p_size) const {
 	return error;
 }
 
-HashMap<String, String> TemplateModifier::_get_strings(const Ref<EditorExportPreset> &p_preset) const {
+HashMap<String, String> TemplateModifier::_get_strings(
+	const Ref<EditorExportPreset>& p_preset) const
+{
 	String file_version = p_preset->get_version("application/file_version", true);
 	String product_version = p_preset->get_version("application/product_version", true);
-	String company_name = p_preset->get("application/company_name");
-	String product_name = p_preset->get("application/product_name");
-	String file_description = p_preset->get("application/file_description");
-	String copyright = p_preset->get("application/copyright");
-	String trademarks = p_preset->get("application/trademarks");
+	String company_name = p_preset->obj->get("application/company_name");
+	String product_name = p_preset->obj->get("application/product_name");
+	String file_description = p_preset->obj->get("application/file_description");
+	String copyright = p_preset->obj->get("application/copyright");
+	String trademarks = p_preset->obj->get("application/trademarks");
 
 	HashMap<String, String> strings;
 	if (!file_version.is_empty()) {
@@ -618,21 +689,26 @@ HashMap<String, String> TemplateModifier::_get_strings(const Ref<EditorExportPre
 	return strings;
 }
 
-Error TemplateModifier::_modify_template(const Ref<EditorExportPreset> &p_preset, const String &p_template_path, const String &p_icon_path) const {
+Error TemplateModifier::_modify_template(const Ref<EditorExportPreset>& p_preset,
+	const String& p_template_path, const String& p_icon_path) const
+{
 	Error error;
-	Ref<FileAccess> template_file = FileAccess::open(p_template_path, FileAccess::READ_WRITE, &error);
+	Ref<FileAccess> template_file =
+		FileAccess::open(p_template_path, FileAccess::READ_WRITE, &error);
 	ERR_FAIL_COND_V(error != OK, ERR_CANT_OPEN);
 
 	Vector<SectionEntry> section_entries = _get_section_entries(template_file);
 	ERR_FAIL_COND_V(section_entries.size() < 2, ERR_CANT_OPEN);
 
-	// Find resource (".rsrc") and relocation (".reloc") sections, usually last two, but ".debug_*" sections (referenced as "/[n]"), symbol table, and string table can follow.
+	// Find resource (".rsrc") and relocation (".reloc") sections, usually last two, but ".debug_*"
+	// sections (referenced as "/[n]"), symbol table, and string table can follow.
 	int resource_index = section_entries.size() - 2;
 	int relocations_index = section_entries.size() - 1;
 	for (int i = 0; i < section_entries.size(); i++) {
 		if (section_entries[i].name == ".rsrc") {
 			resource_index = i;
-		} else if (section_entries[i].name == ".reloc") {
+		}
+		else if (section_entries[i].name == ".reloc") {
 			relocations_index = i;
 		}
 	}
@@ -647,30 +723,36 @@ Error TemplateModifier::_modify_template(const Ref<EditorExportPreset> &p_preset
 	VersionInfo version_info = _create_version_info(_get_strings(p_preset));
 	ManifestInfo manifest_info = _create_manifest_info();
 
-	SectionEntry &resources_section_entry = section_entries.write[resource_index];
+	SectionEntry& resources_section_entry = section_entries.write[resource_index];
 	uint32_t old_resources_size_of_raw_data = resources_section_entry.size_of_raw_data;
-	Vector<uint8_t> resources = _create_resources(resources_section_entry.virtual_address, group_icon, version_info, manifest_info);
+	Vector<uint8_t> resources = _create_resources(
+		resources_section_entry.virtual_address, group_icon, version_info, manifest_info);
 	resources_section_entry.virtual_size = resources.size();
 	resources.resize_initialized(_snap(resources.size(), BLOCK_SIZE));
 	resources_section_entry.size_of_raw_data = resources.size();
 
-	int32_t raw_size_delta = resources_section_entry.size_of_raw_data - old_resources_size_of_raw_data;
-	uint32_t old_last_section_virtual_address = section_entries.get(section_entries.size() - 1).virtual_address;
+	int32_t raw_size_delta =
+		resources_section_entry.size_of_raw_data - old_resources_size_of_raw_data;
+	uint32_t old_last_section_virtual_address =
+		section_entries.get(section_entries.size() - 1).virtual_address;
 
 	// Some data (e.g. DWARF debug symbols) can be placed after the last section.
-	uint32_t old_footer_offset = section_entries.get(section_entries.size() - 1).pointer_to_raw_data + section_entries.get(section_entries.size() - 1).size_of_raw_data;
+	uint32_t old_footer_offset =
+		section_entries.get(section_entries.size() - 1).pointer_to_raw_data +
+		section_entries.get(section_entries.size() - 1).size_of_raw_data;
 
 	// Copy and update sections after ".rsrc".
 	Vector<Vector<uint8_t>> moved_section_data;
 	uint32_t prev_virtual_address = resources_section_entry.virtual_address;
 	uint32_t prev_virtual_size = resources_section_entry.virtual_size;
 	for (int i = resource_index + 1; i < section_entries.size(); i++) {
-		SectionEntry &section_entry = section_entries.write[i];
+		SectionEntry& section_entry = section_entries.write[i];
 		template_file->seek(section_entry.pointer_to_raw_data);
 		Vector<uint8_t> data = template_file->get_buffer(section_entry.size_of_raw_data);
 		moved_section_data.push_back(data);
 		section_entry.pointer_to_raw_data += raw_size_delta;
-		section_entry.virtual_address = prev_virtual_address + _snap(prev_virtual_size, PE_PAGE_SIZE);
+		section_entry.virtual_address =
+			prev_virtual_address + _snap(prev_virtual_size, PE_PAGE_SIZE);
 		prev_virtual_address = section_entry.virtual_address;
 		prev_virtual_size = section_entry.virtual_size;
 	}
@@ -695,19 +777,22 @@ Error TemplateModifier::_modify_template(const Ref<EditorExportPreset> &p_preset
 
 	template_file->seek(pe_header_offset + MAGIC_NUMBER_OFFSET);
 	uint16_t magic_number = template_file->get_16();
-	ERR_FAIL_COND_V_MSG(magic_number != 0x10b && magic_number != 0x20b, ERR_CANT_OPEN, vformat("Magic number has wrong value: %04x", magic_number));
+	ERR_FAIL_COND_V_MSG(magic_number != 0x10b && magic_number != 0x20b, ERR_CANT_OPEN,
+		vformat("Magic number has wrong value: %04x", magic_number));
 	bool pe32plus = magic_number == 0x20b;
 
 	// Update image size.
 	template_file->seek(pe_header_offset + SIZE_OF_INITIALIZED_DATA_OFFSET);
 	uint32_t size_of_initialized_data = template_file->get_32();
-	size_of_initialized_data += resources_section_entry.size_of_raw_data - old_resources_size_of_raw_data;
+	size_of_initialized_data +=
+		resources_section_entry.size_of_raw_data - old_resources_size_of_raw_data;
 	template_file->seek(pe_header_offset + SIZE_OF_INITIALIZED_DATA_OFFSET);
 	template_file->store_32(size_of_initialized_data);
 
 	template_file->seek(pe_header_offset + SIZE_OF_IMAGE_OFFSET);
 	uint32_t size_of_image = template_file->get_32();
-	size_of_image += section_entries.get(section_entries.size() - 1).virtual_address - old_last_section_virtual_address;
+	size_of_image += section_entries.get(section_entries.size() - 1).virtual_address -
+					 old_last_section_virtual_address;
 	template_file->seek(pe_header_offset + SIZE_OF_IMAGE_OFFSET);
 	template_file->store_32(size_of_image);
 
@@ -722,10 +807,13 @@ Error TemplateModifier::_modify_template(const Ref<EditorExportPreset> &p_preset
 	template_file->store_32(section_entries[relocations_index].virtual_address);
 	template_file->store_32(section_entries[relocations_index].virtual_size);
 
-	template_file->seek(optional_header_offset + (pe32plus ? 240 : 224) + SectionEntry::SIZE * resource_index);
+	template_file->seek(
+		optional_header_offset + (pe32plus ? 240 : 224) + SectionEntry::SIZE * resource_index);
 	template_file->store_buffer(resources_section_entry.save());
-	for (int i = resource_index + 1; i < section_entries.size(); i++) {
-		template_file->seek(optional_header_offset + (pe32plus ? 240 : 224) + SectionEntry::SIZE * i);
+	for (int i = resource_index + 1; i < section_entries.size();
+ i++) {
+		template_file->seek(
+			optional_header_offset + (pe32plus ? 240 : 224) + SectionEntry::SIZE * i);
 		template_file->store_buffer(section_entries[i].save());
 	}
 
@@ -733,7 +821,7 @@ Error TemplateModifier::_modify_template(const Ref<EditorExportPreset> &p_preset
 	template_file->seek(resources_section_entry.pointer_to_raw_data);
 	template_file->store_buffer(resources);
 	// Write the rest of sections.
-	for (const Vector<uint8_t> &data : moved_section_data) {
+	for (const Vector<uint8_t>& data : moved_section_data) {
 		template_file->store_buffer(data);
 	}
 	// Write footer data.
@@ -743,13 +831,17 @@ Error TemplateModifier::_modify_template(const Ref<EditorExportPreset> &p_preset
 
 	if (template_file->get_position() < original_template_size) {
 		template_file->close();
-		_truncate(p_template_path, section_entries.get(section_entries.size() - 1).pointer_to_raw_data + section_entries.get(section_entries.size() - 1).size_of_raw_data + footer_size);
+		_truncate(p_template_path,
+			section_entries.get(section_entries.size() - 1).pointer_to_raw_data +
+				section_entries.get(section_entries.size() - 1).size_of_raw_data + footer_size);
 	}
 
 	return OK;
 }
 
-Vector<TemplateModifier::SectionEntry> TemplateModifier::_get_section_entries(Ref<FileAccess> p_executable) const {
+Vector<TemplateModifier::SectionEntry> TemplateModifier::_get_section_entries(
+	Ref<FileAccess> p_executable) const
+{
 	Vector<SectionEntry> section_entries;
 
 	uint32_t pe_header_offset = _get_pe_header_offset(p_executable);
@@ -772,7 +864,11 @@ Vector<TemplateModifier::SectionEntry> TemplateModifier::_get_section_entries(Re
 	return section_entries;
 }
 
-Error TemplateModifier::modify(const Ref<EditorExportPreset> &p_preset, const String &p_template_path, const String &p_icon_path) {
+Error TemplateModifier::modify(const Ref<EditorExportPreset>& p_preset,
+	const String& p_template_path, const String& p_icon_path)
+{
 	TemplateModifier template_modifier;
 	return template_modifier._modify_template(p_preset, p_template_path, p_icon_path);
 }
+
+

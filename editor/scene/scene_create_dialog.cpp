@@ -56,7 +56,7 @@ void SceneCreateDialog::_notification(int p_what)
 		node_type_3d->set_button_icon(get_editor_theme_icon(SNAME("Node3D")));
 		node_type_gui->set_button_icon(get_editor_theme_icon(SNAME("Control")));
 		node_type_other->add_theme_icon_override(
-			SNAME("icon"), get_editor_theme_icon(SNAME("Node")));
+			SNAME("icon"), get_editor_theme_icon(SNAME("Node")).ptr());
 	} break;
 
 	case NOTIFICATION_READY: {
@@ -337,7 +337,7 @@ SceneCreateDialog::SceneCreateDialog()
 	validation_panel->set_update_callback(callable_mp(this, &SceneCreateDialog::update_dialog));
 	validation_panel->set_accept_button(get_ok_button());
 
-	node_type_group->connect(SceneStringName(pressed),
+	node_type_group->obj->connect(SceneStringName(pressed),
 		callable_mp(validation_panel, &EditorValidationPanel::update).unbind(1));
 	scene_name_edit->connect(SceneStringName(text_changed),
 		callable_mp(validation_panel, &EditorValidationPanel::update).unbind(1));

@@ -510,7 +510,7 @@ void Sprite2DEditor::_debug_uv_draw()
 	Ref<Texture2D> tex = node->get_texture();
 	ERR_FAIL_COND(tex.is_null());
 
-	debug_uv->draw_texture(tex, Point2());
+	debug_uv->draw_texture(tex.ptr(), Point2());
 
 	Color color = Color(1.0, 0.8, 0.7);
 
@@ -646,10 +646,7 @@ void Sprite2DEditor::_notification(int p_what)
 	}
 }
 
-void Sprite2DEditor::_bind_methods()
-{
-	ClassDB::bind_method("_add_as_sibling_or_child", &Sprite2DEditor::_add_as_sibling_or_child);
-}
+void Sprite2DEditor::_bind_methods() {}
 
 void Sprite2DEditor::edit(Sprite2D* p_sprite)
 {
@@ -736,11 +733,11 @@ Sprite2DEditor::Sprite2DEditor()
 	zoom_widget->set_anchors_and_offsets_preset(
 		Control::PRESET_TOP_LEFT, Control::PRESET_MODE_MINSIZE, 2 * EDSCALE);
 	zoom_widget->connect("zoom_changed",
-		callable_mp(this, &Sprite2DEditor::_update_zoom_and_pan)
-.unbind(1).bind(true));
+		callable_mp(this, &Sprite2DEditor::_update_zoom_and_pan).unbind(1).bind(true));
 	zoom_widget->set_shortcut_context(nullptr);
 
-	v_scroll = memnew(VScrollBar);
+	v_scroll = memnew(
+VScrollBar);
 	debug_uv->add_child(v_scroll);
 	v_scroll->connect(SceneStringName(value_changed),
 		callable_mp(this, &Sprite2DEditor::_update_zoom_and_pan).unbind(1).bind(false));

@@ -28,51 +28,48 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_importer_bitmask.h"
-
 #include "core/io/image.h"
 #include "core/io/image_loader.h"
 #include "core/io/resource_saver.h"
+#include "resource_importer_bitmask.h"
 #include "scene/resources/bit_map.h"
 
-String ResourceImporterBitMap::get_importer_name() const {
-	return "bitmap";
-}
+String ResourceImporterBitMap::get_importer_name() const { return "bitmap"; }
 
-String ResourceImporterBitMap::get_visible_name() const {
-	return "BitMap";
-}
+String ResourceImporterBitMap::get_visible_name() const { return "BitMap"; }
 
-void ResourceImporterBitMap::get_recognized_extensions(List<String> *p_extensions) const {
+void ResourceImporterBitMap::get_recognized_extensions(List<String>* p_extensions) const
+{
 	ImageLoader::get_recognized_extensions(p_extensions);
 }
 
-String ResourceImporterBitMap::get_save_extension() const {
-	return "res";
-}
+String ResourceImporterBitMap::get_save_extension() const { return "res"; }
 
-String ResourceImporterBitMap::get_resource_type() const {
-	return "BitMap";
-}
+String ResourceImporterBitMap::get_resource_type() const { return "BitMap"; }
 
-bool ResourceImporterBitMap::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+bool ResourceImporterBitMap::get_option_visibility(const String& p_path, const String& p_option,
+	const HashMap<StringName, Variant>& p_options) const
+{
 	return true;
 }
 
-int ResourceImporterBitMap::get_preset_count() const {
-	return 0;
+int ResourceImporterBitMap::get_preset_count() const { return 0; }
+
+String ResourceImporterBitMap::get_preset_name(int p_idx) const { return String(); }
+
+void ResourceImporterBitMap::get_import_options(
+	const String& p_path, List<ImportOption>* r_options, int p_preset) const
+{
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::INT, "create_from", PROPERTY_HINT_ENUM, "Black & White,Alpha"), 0));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::FLOAT, "threshold", PROPERTY_HINT_RANGE, "0,1,0.01"), 0.5));
 }
 
-String ResourceImporterBitMap::get_preset_name(int p_idx) const {
-	return String();
-}
-
-void ResourceImporterBitMap::get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset) const {
-	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "create_from", PROPERTY_HINT_ENUM, "Black & White,Alpha"), 0));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "threshold", PROPERTY_HINT_RANGE, "0,1,0.01"), 0.5));
-}
-
-Error ResourceImporterBitMap::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+Error ResourceImporterBitMap::import(ResourceUID::ID p_source_id, const String& p_source_file,
+	const String& p_save_path, const HashMap<StringName, Variant>& p_options,
+	List<String>* r_platform_variants, List<String>* r_gen_files, Variant* r_metadata)
+{
 	int create_from = p_options["create_from"];
 	float threshold = p_options["threshold"];
 	Ref<Image> image;
@@ -93,9 +90,10 @@ Error ResourceImporterBitMap::import(ResourceUID::ID p_source_id, const String &
 		for (int j = 0; j < w; j++) {
 			bool bit;
 			Color c = image->get_pixel(j, i);
-			if (create_from == 0) { //b&W
+			if (create_from == 0) { // b&W
 				bit = c.get_v() > threshold;
-			} else {
+			}
+			else {
 				bit = c.a > threshold;
 			}
 
@@ -103,5 +101,7 @@ Error ResourceImporterBitMap::import(ResourceUID::ID p_source_id, const String &
 		}
 	}
 
-	return ResourceSaver::save(bitmap, p_save_path + ".res");
+	return ResourceSaver::save(bitmap.ptr(), p_save_path + ".res");
 }
+
+

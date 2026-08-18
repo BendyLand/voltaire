@@ -97,12 +97,12 @@ void TileMapLayerSubEditorPlugin::draw_tile_coords_over_viewport(Control* p_over
 	Ref<Font> font = p_overlay->get_theme_font(SceneStringName(font), SNAME("Label"));
 	int font_size = p_overlay->get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 
-	p_overlay->draw_string(font, msgpos + Point2(1, 1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+	p_overlay->draw_string(font.ptr(), msgpos + Point2(1, 1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
 		font_size, Color(0, 0, 0, 0.8));
-	p_overlay->draw_string(font, msgpos + Point2(-1, -1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+	p_overlay->draw_string(font.ptr(), msgpos + Point2(-1, -1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
 		font_size, Color(0, 0, 0, 0.8));
 	p_overlay->draw_string(
-		font, msgpos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1, 1, 1, 1));
+		font.ptr(), msgpos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1, 1, 1, 1));
 }
 
 void TileMapLayerEditorTilesPlugin::tile_set_changed()
@@ -387,8 +387,8 @@ void TileMapLayerEditorTilesPlugin::_patterns_item_list_gui_input(const Ref<Inpu
 		int new_pattern_index = tile_set->get_patterns_count();
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Add TileSet pattern"));
-		undo_redo->add_do_method(*tile_set, "add_pattern", tile_map_clipboard, new_pattern_index);
-		undo_redo->add_undo_method(*tile_set, "remove_pattern", new_pattern_index);
+		undo_redo->add_do_method(tile_set->obj.get(), "add_pattern", tile_map_clipboard, new_pattern_index);
+		undo_redo->add_undo_method(tile_set->obj.get(), "remove_pattern", new_pattern_index);
 		undo_redo->commit_action();
 		patterns_item_list->accept_event();
 	}
@@ -400,9 +400,9 @@ void TileMapLayerEditorTilesPlugin::_patterns_item_list_gui_input(const Ref<Inpu
 		undo_redo->create_action(TTR("Remove TileSet patterns"));
 		for (int i = 0; i < selected.size(); i++) {
 			int pattern_index = selected[i];
-			undo_redo->add_do_method(*tile_set, "remove_pattern", pattern_index);
+			undo_redo->add_do_method(tile_set->obj.get(), "remove_pattern", pattern_index);
 			undo_redo->add_undo_method(
-				*tile_set, "add_pattern", tile_set->get_pattern(pattern_index), pattern_index);
+				tile_set->obj.get(), "add_pattern", tile_set->get_pattern(pattern_index), pattern_index);
 		}
 		undo_redo->commit_action();
 		patterns_item_list->accept_event();
@@ -1192,7 +1192,7 @@ void TileMapLayerEditorTilesPlugin::forward_canvas_draw_over_viewport(Control* p
 
 						// Draw the tile.
 						p_overlay->draw_set_transform_matrix(xform);
-						p_overlay->draw_texture_rect_region(atlas_source->get_texture(), dest_rect,
+						p_overlay->draw_texture_rect_region(atlas_source->get_texture().ptr(), dest_rect,
 							source_rect, modulate * Color(1.0, 1.0, 1.0, 0.5), transpose,
 							tile_set->is_uv_clipping());
 						p_overlay->draw_set_transform_matrix(Transform2D());
@@ -1621,8 +1621,8 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging()
 				int new_pattern_index = tile_set->get_patterns_count();
 				undo_redo->create_action(TTR("Add TileSet pattern"));
 				undo_redo->add_do_method(
-					*tile_set, "add_pattern", selection_pattern, new_pattern_index);
-				undo_redo->add_undo_method(*tile_set, "remove_pattern", new_pattern_index);
+					tile_set->obj.get(), "add_pattern", selection_pattern, new_pattern_index);
+				undo_redo->add_undo_method(tile_set->obj.get(), "remove_pattern", new_pattern_index);
 				undo_redo->commit_action();
 			}
 		}
@@ -2985,7 +2985,7 @@ TileMapLayerEditorTilesPlugin::TileMapLayerEditorTilesPlugin()
 	_update_source_display();
 
 	_update_translation();
-	EditorSettings::get_singleton()->connect("_translation_changed",
+	EditorSettings::get_singleton()->obj->connect("_translation_changed",
 		callable_mp(this, &TileMapLayerEditorTilesPlugin::_update_translation));
 }
 
@@ -4338,7 +4338,7 @@ TileMapLayerEditorTerrainsPlugin::TileMapLayerEditorTerrainsPlugin()
 	tools_settings->add_child(bucket_contiguous_checkbox);
 
 	_update_translation();
-	EditorSettings::get_singleton()->connect("_translation_changed",
+	EditorSettings::get_singleton()->obj->connect("_translation_changed",
 		callable_mp(this, &TileMapLayerEditorTerrainsPlugin::_update_translation));
 }
 
@@ -4480,7 +4480,7 @@ void TileMapLayerEditor::_notification(int p_what)
 
 void TileMapLayerEditor::_on_grid_toggled(bool p_pressed)
 {
-	EditorSettings::get_singleton()->set("editors/tiles_editor/display_grid", p_pressed);
+	EditorSettings::get_singleton()->obj->set("editors/tiles_editor/display_grid", p_pressed);
 	CanvasItemEditor::get_singleton()->update_viewport();
 }
 
@@ -4509,7 +4509,7 @@ void TileMapLayerEditor::_select_all_layers_pressed()
 			multi_node_edit->add_node(edited_scene_root->get_path_to(layer));
 			en->get_editor_selection()->add_node(layer);
 		}
-		en->push_item(multi_node_edit.ptr());
+		en->push_item(multi_node_edit->obj.get());
 	}
 }
 
@@ -4675,7 +4675,7 @@ void TileMapLayerEditor::_highlight_selected_layer_button_toggled(bool p_pressed
 		return;
 	}
 
-	EditorSettings::get_singleton()->set(
+	EditorSettings::get_singleton()->obj->set(
 		"editors/tiles_editor/highlight_selected_layer", p_pressed);
 	if (p_pressed) {
 		_update_all_layers_highlighting();
@@ -5158,7 +5158,7 @@ void TileMapLayerEditor::_draw_overlay()
 										   (icon_size * xform.get_scale() / 2),
 						icon_size * xform.get_scale());
 					custom_overlay->draw_texture_rect(
-						missing_tile_texture, rect, false, Color(1, 1, 1, scale_fading));
+						missing_tile_texture.ptr(), rect, false, Color(1, 1, 1, scale_fading));
 				}
 			}
 		}

@@ -88,14 +88,6 @@ bool EditorAutoloadSettings::_autoload_name_is_valid(const String& p_name, Strin
 		return false;
 	}
 
-	if (ClassDB::class_exists(p_name)) {
-		if (r_error) {
-			*r_error = TTR("Must not collide with an existing engine class name.");
-		}
-
-		return false;
-	}
-
 	if (ScriptServer::is_global_class(p_name)) {
 		if (r_error) {
 			*r_error = TTR("Must not collide with an existing global script class name.");
@@ -371,16 +363,8 @@ Node* EditorAutoloadSettings::_create_autoload(const String& p_path)
 				vformat("Failed to create an autoload, script '%s' is not compiling.", p_path));
 
 			StringName ibt = scr->get_instance_base_type();
-			bool valid_type = ClassDB::is_parent_class(ibt, "Node");
-			ERR_FAIL_COND_V_MSG(!valid_type, nullptr,
-				vformat("Failed to create an autoload, script '%s' does not inherit from 'Node'.",
-					p_path));
 
-			Object* o = ClassDB::instantiate(ibt);
-			ERR_FAIL_NULL_V_MSG(o, nullptr,
-				vformat("Failed to create an autoload, cannot instantiate '%s'.", ibt));
-
-			n = Object::cast_to<Node>(o);
+			n = memnew(Node);
 			n->set_script(scr);
 		}
 	}
@@ -476,7 +460,7 @@ void EditorAutoloadSettings::_scene_created()
 	ps.instantiate();
 	ps->pack(root);
 
-	Error err = ResourceSaver::save(ps, scene_create_dialog->get_scene_path());
+	Error err = ResourceSaver::save(ps.ptr(), scene_create_dialog->get_scene_path());
 	if (err != OK) {
 		EditorNode::get_singleton()->show_warning(
 			vformat(TTR("Failed to create scene. Error: %d."), err));
@@ -912,12 +896,7 @@ void EditorAutoloadSettings::autoload_remove(const StringName& p_name)
 	this->obj->emit_signal(autoload_changed);
 }
 
-void EditorAutoloadSettings::_bind_methods()
-{
-	ClassDB::bind_method("update_autoload", &EditorAutoloadSettings::update_autoload);
-
-	ADD_SIGNAL(MethodInfo("autoload_changed"));
-}
+void EditorAutoloadSettings::_bind_methods() {}
 
 EditorAutoloadSettings::EditorAutoloadSettings()
 {

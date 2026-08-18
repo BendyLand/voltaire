@@ -180,19 +180,19 @@ Ref<AudioStreamPreview> AudioStreamPreviewGenerator::generate_preview(
 {
 	ERR_FAIL_COND_V(p_stream.is_null(), Ref<AudioStreamPreview>());
 
-	if (previews.has(p_stream->get_instance_id())) {
-		return previews[p_stream->get_instance_id()].preview;
+	if (previews.has(p_stream->obj->get_instance_id())) {
+		return previews[p_stream->obj->get_instance_id()].preview;
 	}
 
 	// no preview exists
 
-	previews[p_stream->get_instance_id()] = Preview();
+	previews[p_stream->obj->get_instance_id()] = Preview();
 
-	Preview* preview = &previews[p_stream->get_instance_id()];
+	Preview* preview = &previews[p_stream->obj->get_instance_id()];
 	preview->base_stream = p_stream;
 	preview->playback = preview->base_stream->instantiate_playback();
 	preview->generating.set();
-	preview->id = p_stream->get_instance_id();
+	preview->id = p_stream->obj->get_instance_id();
 
 	float len_s = preview->base_stream->get_length();
 	if (len_s == 0) {
@@ -224,13 +224,7 @@ Ref<AudioStreamPreview> AudioStreamPreviewGenerator::generate_preview(
 	return preview->preview;
 }
 
-void AudioStreamPreviewGenerator::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("generate_preview", "stream"), &AudioStreamPreviewGenerator::generate_preview);
-
-	ADD_SIGNAL(MethodInfo("preview_updated", PropertyInfo(Variant::INT, "obj_id")));
-}
+void AudioStreamPreviewGenerator::_bind_methods() {}
 
 AudioStreamPreviewGenerator* AudioStreamPreviewGenerator::singleton = nullptr;
 

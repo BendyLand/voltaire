@@ -256,7 +256,7 @@ void EditorSettingsDialog::popup_edit_settings()
 
 	_update_dynamic_property_hints();
 
-	inspector->edit(EditorSettings::get_singleton());
+	inspector->edit(EditorSettings::get_singleton()->obj.get());
 	inspector->get_inspector()->update_tree();
 
 	_update_shortcuts();
@@ -429,7 +429,7 @@ void EditorSettingsDialog::_update_icons()
 
 	restart_close_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
 	restart_container->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 	restart_icon->set_texture(get_editor_theme_icon(SNAME("StatusWarning")));
 	restart_label->add_theme_color_override(SceneStringName(font_color),
 		get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
@@ -484,14 +484,14 @@ void EditorSettingsDialog::_update_builtin_action(const String& p_name, const Ar
 	else {
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(vformat(TTR("Edit Built-in Action: %s"), p_name));
-		undo_redo->add_do_method(
-			EditorSettings::get_singleton(), "mark_setting_changed", "builtin_action_overrides");
-		undo_redo->add_undo_method(
-			EditorSettings::get_singleton(), "mark_setting_changed", "builtin_action_overrides");
-		undo_redo->add_do_method(
-			EditorSettings::get_singleton(), "set_builtin_action_override", p_name, p_events);
-		undo_redo->add_undo_method(EditorSettings::get_singleton(), "set_builtin_action_override",
-			p_name, old_input_array);
+		undo_redo->add_do_method(EditorSettings::get_singleton()->obj.get(), "mark_setting_changed",
+			"builtin_action_overrides");
+		undo_redo->add_undo_method(EditorSettings::get_singleton()->obj.get(),
+			"mark_setting_changed", "builtin_action_overrides");
+		undo_redo->add_do_method(EditorSettings::get_singleton()->obj.get(),
+			"set_builtin_action_override", p_name, p_events);
+		undo_redo->add_undo_method(EditorSettings::get_singleton()->obj.get(),
+			"set_builtin_action_override", p_name, old_input_array);
 		undo_redo->add_do_method(this->obj.get(), "_update_shortcuts");
 		undo_redo->add_undo_method(this->obj.get(), "_update_shortcuts");
 		undo_redo->add_do_method(this->obj.get(), "_settings_changed");
@@ -514,16 +514,16 @@ void EditorSettingsDialog::_update_shortcut_events(const String& p_path, const A
 	else {
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(vformat(TTR("Edit Shortcut: %s"), p_path), UndoRedo::MERGE_DISABLE,
-			EditorSettings::get_singleton());
+			EditorSettings::get_singleton()->obj.get());
 		// History must be fixed based on the EditorSettings object because current_sc would
 		// incorrectly make this action use the scene history.
 		undo_redo->force_fixed_history();
-		undo_redo->add_do_method(current_sc.ptr(), "set_events", p_events);
-		undo_redo->add_undo_method(current_sc.ptr(), "set_events", current_sc->get_events());
+		undo_redo->add_do_method(current_sc->obj.get(), "set_events", p_events);
+		undo_redo->add_undo_method(current_sc->obj.get(), "set_events", current_sc->get_events());
 		undo_redo->add_do_method(
-			EditorSettings::get_singleton(), "mark_setting_changed", "shortcuts");
+			EditorSettings::get_singleton()->obj.get(), "mark_setting_changed", "shortcuts");
 		undo_redo->add_undo_method(
-			EditorSettings::get_singleton(), "mark_setting_changed", "shortcuts");
+			EditorSettings::get_singleton()->obj.get(), "mark_setting_changed", "shortcuts");
 		undo_redo->add_do_method(this->obj.get(), "_update_shortcuts");
 		undo_redo->add_undo_method(this->obj.get(), "_update_shortcuts");
 		undo_redo->add_do_method(this->obj.get(), "_settings_changed");
@@ -815,7 +815,7 @@ void EditorSettingsDialog::_update_shortcuts()
 	// Add shortcuts to sections.
 	for (const String& E : slist) {
 		Ref<Shortcut> sc = EditorSettings::get_singleton()->get_shortcut(E);
-		if (!sc->has_meta("original")) {
+		if (!sc->obj->has_meta("original")) {
 			continue;
 		}
 
@@ -826,7 +826,7 @@ void EditorSettingsDialog::_update_shortcuts()
 			continue;
 		}
 
-		Array original = sc->get_meta("original");
+		Array original = sc->obj->get_meta("original");
 		Array shortcuts_array = sc->get_events().duplicate(true);
 		bool same_as_defaults = Shortcut::is_event_array_equal(original, shortcuts_array);
 		bool collapse = !collapsed.has(E) || (collapsed.has(E) && collapsed[E]);
@@ -920,7 +920,7 @@ void EditorSettingsDialog::_shortcut_button_pressed(
 		else {
 			Ref<Shortcut> sc =
 				EditorSettings::get_singleton()->get_shortcut(current_edited_identifier);
-			Array original = sc->get_meta("original");
+			Array original = sc->obj->get_meta("original");
 			_update_shortcut_events(current_edited_identifier, original);
 		}
 	} break;
@@ -1123,7 +1123,7 @@ void EditorSettingsDialog::_focus_current_search_box()
 
 void EditorSettingsDialog::_advanced_toggled(bool p_button_pressed)
 {
-	EditorSettings::get_singleton()->set("_editor_settings_advanced_mode", p_button_pressed);
+	EditorSettings::get_singleton()->obj->set("_editor_settings_advanced_mode", p_button_pressed);
 }
 
 void EditorSettingsDialog::_editor_restart() { this->obj->emit_signal("restart_requested"); }
@@ -1132,17 +1132,7 @@ void EditorSettingsDialog::_editor_restart_request() { restart_container->show()
 
 void EditorSettingsDialog::_editor_restart_close() { restart_container->hide(); }
 
-void EditorSettingsDialog::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_update_shortcuts"), &EditorSettingsDialog::_update_shortcuts);
-	ClassDB::bind_method(D_METHOD("_settings_changed"), &EditorSettingsDialog::_settings_changed);
-	ClassDB::bind_method(
-		D_METHOD("_create_setting_override"), &EditorSettingsDialog::_create_setting_override);
-	ClassDB::bind_method(
-		D_METHOD("_remove_setting_override"), &EditorSettingsDialog::_remove_setting_override);
-
-	ADD_SIGNAL(MethodInfo("restart_requested"));
-}
+void EditorSettingsDialog::_bind_methods() {}
 
 EditorSettingsDialog::EditorSettingsDialog()
 {
@@ -1228,7 +1218,7 @@ EditorSettingsDialog::EditorSettingsDialog()
 	restart_container->hide();
 
 	// Needs to be done via the signal instead of the notification, otherwise it happens too late.
-	EditorSettings::get_singleton()->connect(
+	EditorSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &EditorSettingsDialog::_settings_property_edited));
 
 	// Shortcuts Tab
@@ -1278,7 +1268,7 @@ EditorSettingsDialog::EditorSettingsDialog()
 	timer->connect("timeout", callable_mp(this, &EditorSettingsDialog::_settings_save));
 	timer->set_one_shot(true);
 	add_child(timer);
-	EditorSettings::get_singleton()->connect(
+	EditorSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &EditorSettingsDialog::_settings_changed));
 	set_ok_button_text(TTRC("Close"));
 

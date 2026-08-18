@@ -443,11 +443,7 @@ void Skeleton3DEditor::set_bone_options_enabled(const bool p_bone_options_enable
 		SKELETON_OPTION_SELECTED_POSES_TO_RESTS, !p_bone_options_enabled);
 }
 
-void Skeleton3DEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("update_all"), &Skeleton3DEditor::update_all);
-	ClassDB::bind_method(D_METHOD("update_joint_tree"), &Skeleton3DEditor::update_joint_tree);
-}
+void Skeleton3DEditor::_bind_methods() {}
 
 void Skeleton3DEditor::_on_click_skeleton_option(int p_skeleton_option)
 {
@@ -816,7 +812,7 @@ void Skeleton3DEditor::_file_selected(const String& p_file)
 		}
 	}
 
-	Error err = ResourceSaver::save(sp, p_file);
+	Error err = ResourceSaver::save(sp.ptr(), p_file);
 
 	if (err != OK) {
 		EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving file: %s"), p_file));
@@ -2233,7 +2229,7 @@ Ref<ArrayMesh> Skeleton3DGizmoPlugin::get_bones_mesh(
 						v1 + (p_skeleton->get_bone_global_rest(child_bone_idx).basis.inverse())[j]
 									 .normalized() *
 
-					 dist * bone_axis_length);
+								 dist * bone_axis_length);
 
 					if (j == closest) {
 						continue;
@@ -2242,7 +2238,8 @@ Ref<ArrayMesh> Skeleton3DGizmoPlugin::get_bones_mesh(
 			}
 
 			// Add the bone's children to the list of bones to be processed.
-			bones_to_process.push_back(child_bones_vector[i]);
+
+	bones_to_process.push_back(child_bones_vector[i]);
 		}
 	}
 

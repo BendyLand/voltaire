@@ -92,8 +92,8 @@ void LightOccluder2DEditor::_action_set_polygon(
 {
 	Ref<OccluderPolygon2D> occluder = _ensure_occluder();
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->add_do_method(occluder.ptr(), "set_polygon", p_polygon);
-	undo_redo->add_undo_method(occluder.ptr(), "set_polygon", p_previous);
+	undo_redo->add_do_method(occluder->obj.get(), "set_polygon", p_polygon);
+	undo_redo->add_undo_method(occluder->obj.get(), "set_polygon", p_previous);
 }
 
 bool LightOccluder2DEditor::_has_resource() const

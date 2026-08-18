@@ -57,7 +57,7 @@ void EditorSceneTabs::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
 		tabbar_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("tabbar_background"), SNAME("TabContainer")));
+			get_theme_stylebox(SNAME("tabbar_background"), SNAME("TabContainer")).ptr());
 		scene_tabs->add_theme_constant_override("icon_max_width",
 			get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor)));
 
@@ -516,11 +516,7 @@ void EditorSceneTabs::_project_settings_changed()
 	}
 }
 
-void EditorSceneTabs::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("tab_changed", PropertyInfo(Variant::INT, "tab_index")));
-	ADD_SIGNAL(MethodInfo("tab_closed", PropertyInfo(Variant::INT, "tab_index")));
-}
+void EditorSceneTabs::_bind_methods() {}
 
 EditorSceneTabs::EditorSceneTabs()
 {

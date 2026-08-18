@@ -36,13 +36,16 @@
 class Texture;
 class Texture2D;
 
-class Shader : public Resource {
+class Shader : public Resource
+{
 	VLTRCLASS(Shader, Resource);
-	OBJ_SAVE_TYPE(Shader);
+	OBJ_SAVE_TYPE_NO(Shader);
 
 public:
-	// Must be kept in sync with the List<String> of shader types in `servers/rendering/shader_types.cpp`.
-	enum Mode {
+	// Must be kept in sync with the List<String> of shader types in
+	// `servers/rendering/shader_types.cpp`.
+	enum Mode
+	{
 		MODE_SPATIAL,
 		MODE_CANVAS_ITEM,
 		MODE_PARTICLES,
@@ -67,35 +70,38 @@ private:
 	void _check_shader_rid() const;
 	void _dependency_changed();
 	void _recompile();
-	virtual void _update_shader() const; //used for visual shader
+	virtual void _update_shader() const; // used for visual shader
 	Array _get_shader_uniform_list(bool p_get_groups = false);
 
 protected:
 #ifndef DISABLE_DEPRECATED
-	void _set_default_texture_parameter_bind_compat_95126(const StringName &p_name, const Ref<Texture2D> &p_texture, int p_index = 0);
-	Ref<Texture2D> _get_default_texture_parameter_bind_compat_95126(const StringName &p_name, int p_index = 0) const;
+	void _set_default_texture_parameter_bind_compat_95126(
+		const StringName& p_name, const Ref<Texture2D>& p_texture, int p_index = 0);
+	Ref<Texture2D> _get_default_texture_parameter_bind_compat_95126(
+		const StringName& p_name, int p_index = 0) const;
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
 	static void _bind_methods();
 
 public:
-	//void set_mode(Mode p_mode);
+	// void set_mode(Mode p_mode);
 	virtual Mode get_mode() const;
 
-	virtual void set_path(const String &p_path, bool p_take_over = false) override;
-	void set_include_path(const String &p_path);
+	virtual void set_path(const String& p_path, bool p_take_over = false) override;
+	void set_include_path(const String& p_path);
 
-	void set_code(const String &p_code);
+	void set_code(const String& p_code);
 	String get_code() const;
 
 	void inspect_native_shader_code();
 
-	void get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_groups = false) const;
+	void get_shader_uniform_list(List<PropertyInfo>* p_params, bool p_get_groups = false) const;
 
-	void set_default_texture_parameter(const StringName &p_name, const Ref<Texture> &p_texture, int p_index = 0);
-	Ref<Texture> get_default_texture_parameter(const StringName &p_name, int p_index = 0) const;
-	void get_default_texture_parameter_list(List<StringName> *r_textures) const;
+	void set_default_texture_parameter(
+		const StringName& p_name, const Ref<Texture>& p_texture, int p_index = 0);
+	Ref<Texture> get_default_texture_parameter(const StringName& p_name, int p_index = 0) const;
+	void get_default_texture_parameter_list(List<StringName>* r_textures) const;
 
 	virtual bool is_text_shader() const;
 
@@ -106,3 +112,5 @@ public:
 };
 
 VARIANT_ENUM_CAST(Shader::Mode);
+
+

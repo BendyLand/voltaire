@@ -39,20 +39,25 @@
 class ShaderRD;
 class RenderingShaderContainerFormat;
 
-class ShaderBakerExportPluginPlatform : public RefCounted {
+class ShaderBakerExportPluginPlatform : public RefCounted
+{
 	VLTRCLASS(ShaderBakerExportPluginPlatform, RefCounted);
 
 public:
-	virtual RenderingShaderContainerFormat *create_shader_container_format(const Ref<EditorExportPlatform> &p_platform, const Ref<EditorExportPreset> &p_preset) = 0;
-	virtual bool matches_driver(const String &p_driver) = 0;
+	virtual RenderingShaderContainerFormat* create_shader_container_format(
+		const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset) = 0;
+	virtual bool matches_driver(const String& p_driver) = 0;
+
 	virtual ~ShaderBakerExportPluginPlatform() {}
 };
 
-class ShaderBakerExportPlugin : public EditorExportPlugin {
+class ShaderBakerExportPlugin : public EditorExportPlugin
+{
 	VLTRSOFTCLASS(ShaderBakerExportPlugin, EditorExportPlugin);
 
 protected:
-	struct WorkItem {
+	struct WorkItem
+	{
 		String cache_path;
 		String shader_name;
 		Vector<String> stage_sources;
@@ -60,12 +65,15 @@ protected:
 		int64_t variant = 0;
 	};
 
-	struct WorkResult {
-		// Since this result is per group, this vector will have gaps in the data it covers as the indices must stay relative to all variants.
+	struct WorkResult
+	{
+		// Since this result is per group, this vector will have gaps in the data it covers as the
+		// indices must stay relative to all variants.
 		Vector<PackedByteArray> variant_data;
 	};
 
-	struct ShaderGroupItem {
+	struct ShaderGroupItem
+	{
 		String cache_path;
 		LocalVector<int> variants;
 		LocalVector<WorkerThreadPool::TaskID> variant_tasks;
@@ -78,7 +86,7 @@ protected:
 	HashMap<String, WorkResult> shader_work_results;
 	Mutex shader_work_results_mutex;
 	LocalVector<ShaderGroupItem> shader_group_items;
-	RenderingShaderContainerFormat *shader_container_format = nullptr;
+	RenderingShaderContainerFormat* shader_container_format = nullptr;
 	String shader_container_driver;
 	Vector<Ref<ShaderBakerExportPluginPlatform>> platforms;
 	uint64_t customization_configuration_hash = 0;
@@ -89,22 +97,28 @@ protected:
 	ConditionVariable tasks_condition;
 
 	virtual String get_name() const override;
-	virtual bool _is_active(const Vector<String> &p_features) const;
-	virtual bool _initialize_container_format(const Ref<EditorExportPlatform> &p_platform, const Ref<EditorExportPreset> &p_preset);
+	virtual bool _is_active(const Vector<String>& p_features) const;
+	virtual bool _initialize_container_format(
+		const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset);
 	virtual void _cleanup_container_format();
 	virtual bool _initialize_cache_directory();
-	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features) override;
-	virtual bool _begin_customize_scenes(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features) override;
+	virtual bool _begin_customize_resources(
+		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
+	virtual bool _begin_customize_scenes(
+		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
 	virtual void _end_customize_resources() override;
-	virtual Ref<Resource> _customize_resource(const Ref<Resource> &p_resource, const String &p_path) override;
-	virtual Node *_customize_scene(Node *p_root, const String &p_path) override;
+	virtual Ref<Resource> _customize_resource(
+		const Ref<Resource>& p_resource, const String& p_path) override;
+	virtual Node* _customize_scene(Node* p_root, const String& p_path) override;
 	virtual uint64_t _get_customization_configuration_hash() const override;
-	virtual void _customize_shader_version(ShaderRD *p_shader, RID p_version);
+	virtual void _customize_shader_version(ShaderRD* p_shader, RID p_version);
 	void _process_work_item(WorkItem p_work_item);
 
 public:
 	ShaderBakerExportPlugin();
-	virtual ~ShaderBakerExportPlugin() override;
+	virtual ~ShaderBakerExportPlugin();
 	void add_platform(Ref<ShaderBakerExportPluginPlatform> p_platform);
 	void remove_platform(Ref<ShaderBakerExportPluginPlatform> p_platform);
 };
+
+

@@ -35,7 +35,8 @@
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
 
-class AudioStreamPolyphonic : public AudioStream {
+class AudioStreamPolyphonic : public AudioStream
+{
 	VLTRCLASS(AudioStreamPolyphonic, AudioStream)
 	int polyphony = 32;
 
@@ -55,12 +56,14 @@ public:
 	AudioStreamPolyphonic();
 };
 
-class AudioStreamPlaybackPolyphonic : public AudioStreamPlayback {
+class AudioStreamPlaybackPolyphonic : public AudioStreamPlayback
+{
 	VLTRCLASS(AudioStreamPlaybackPolyphonic, AudioStreamPlayback)
 
 	constexpr static uint32_t INTERNAL_BUFFER_LEN = 128;
 
-	struct Stream {
+	struct Stream
+	{
 		SafeFlag active;
 		SafeFlag pending_play;
 		SafeFlag finish_request;
@@ -72,8 +75,7 @@ class AudioStreamPlaybackPolyphonic : public AudioStreamPlayback {
 		float volume_db = 0;
 		uint32_t id = 0;
 
-		Stream() :
-				active(false), pending_play(false), finish_request(false) {}
+		Stream() : active(false), pending_play(false), finish_request(false) {}
 	};
 
 	LocalVector<Stream> streams;
@@ -85,8 +87,8 @@ class AudioStreamPlaybackPolyphonic : public AudioStreamPlayback {
 	bool _is_sample = false;
 	Ref<AudioSamplePlayback> sample_playback;
 
-	_FORCE_INLINE_ Stream *_find_stream(int64_t p_id);
-	_FORCE_INLINE_ const Stream *_find_stream(int64_t p_id) const;
+	_FORCE_INLINE_ Stream* _find_stream(int64_t p_id);
+	_FORCE_INLINE_ const Stream* _find_stream(int64_t p_id) const;
 
 	friend class AudioStreamPolyphonic;
 
@@ -95,7 +97,9 @@ protected:
 
 public:
 	typedef int64_t ID;
-	enum {
+
+	enum
+	{
 		INVALID_ID = -1
 	};
 
@@ -103,16 +107,20 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; // times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 
 	virtual void tag_used_streams() override;
 
-	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;
+	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
 
-	ID play_stream(const Ref<AudioStream> &p_stream, float p_from_offset = 0, float p_volume_db = 0, float p_pitch_scale = 1.0, AudioServer::PlaybackType p_playback_type = AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT, const StringName &p_bus = SceneStringName(Master));
+	ID play_stream(const Ref<AudioStream>& p_stream, float p_from_offset = 0, float p_volume_db = 0,
+		float p_pitch_scale = 1.0,
+		AudioServer::PlaybackType p_playback_type =
+			AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT,
+		const StringName& p_bus = SceneStringName(Master));
 	void set_stream_volume(ID p_stream_id, float p_volume_db);
 	void set_stream_pitch_scale(ID p_stream_id, float p_pitch_scale);
 	bool is_stream_playing(ID p_stream_id) const;
@@ -121,14 +129,17 @@ public:
 	virtual void set_is_sample(bool p_is_sample) override;
 	virtual bool get_is_sample() const override;
 	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
-	virtual void set_sample_playback(const Ref<AudioSamplePlayback> &p_playback) override;
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
 
 private:
 #ifndef DISABLE_DEPRECATED
-	ID _play_stream_bind_compat_91382(const Ref<AudioStream> &p_stream, float p_from_offset = 0, float p_volume_db = 0, float p_pitch_scale = 1.0);
+	ID _play_stream_bind_compat_91382(const Ref<AudioStream>& p_stream, float p_from_offset = 0,
+		float p_volume_db = 0, float p_pitch_scale = 1.0);
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
 public:
 	AudioStreamPlaybackPolyphonic();
 };
+
+

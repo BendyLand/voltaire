@@ -162,9 +162,9 @@ void Polygon2DEditor::_notification(int p_what)
 	}
 	case NOTIFICATION_THEME_CHANGED: {
 		canvas->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 		bone_scroll->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 	} break;
 	case NOTIFICATION_VISIBILITY_CHANGED: {
 		if (is_visible()) {
@@ -1203,7 +1203,7 @@ void Polygon2DEditor::_canvas_draw()
 			texture_transform.affine_invert();
 			RS::get_singleton()->canvas_item_add_set_transform(
 				canvas->get_canvas_item(), mtx * texture_transform);
-			canvas->draw_texture(base_tex, Point2());
+			canvas->draw_texture(base_tex.ptr(), Point2());
 			RS::get_singleton()->canvas_item_add_set_transform(
 				canvas->get_canvas_item(), Transform2D());
 		}
@@ -1372,10 +1372,10 @@ void Polygon2DEditor::_canvas_draw()
 		Color hovered_mod(0.65, 0.65, 0.65);
 		for (int i = 0; i < uv_draw_max; i++) {
 			if (i == hovered_point && selected_action != ACTION_REMOVE_INTERNAL) {
-				canvas->draw_texture(handle, mtx.xform(uvs[i]) - texture_size_half, hovered_mod);
+				canvas->draw_texture(handle.ptr(), mtx.xform(uvs[i]) - texture_size_half, hovered_mod);
 			}
 			else {
-				canvas->draw_texture(handle, mtx.xform(uvs[i]) - texture_size_half, mod);
+				canvas->draw_texture(handle.ptr(), mtx.xform(uvs[i]) - texture_size_half, mod);
 			}
 		}
 		// Internal vertices.
@@ -1383,10 +1383,10 @@ void Polygon2DEditor::_canvas_draw()
 		hovered_mod = Color(0.35, 0.55, 0.75);
 		for (int i = uv_draw_max; i < uvs.size(); i++) {
 			if (i == hovered_point) {
-				canvas->draw_texture(handle, mtx.xform(uvs[i]) - texture_size_half, hovered_mod);
+				canvas->draw_texture(handle.ptr(), mtx.xform(uvs[i]) - texture_size_half, hovered_mod);
 			}
 			else {
-				canvas->draw_texture(handle, mtx.xform(uvs[i]) - texture_size_half, mod);
+				canvas->draw_texture(handle.ptr(), mtx.xform(uvs[i]) - texture_size_half, mod);
 			}
 		}
 	}

@@ -437,15 +437,15 @@ bool Control::_set(const StringName& p_name, const Variant& p_value)
 	else {
 		if (name.begins_with("theme_override_icons/")) {
 			String dname = name.get_slicec('/', 1);
-			add_theme_icon_override(dname, p_value);
+			add_theme_icon_override(dname, Object::cast_to<Texture2D>(p_value));
 		}
 		else if (name.begins_with("theme_override_styles/")) {
 			String dname = name.get_slicec('/', 1);
-			add_theme_style_override(dname, p_value);
+			add_theme_style_override(dname, Object::cast_to<StyleBox>(p_value));
 		}
 		else if (name.begins_with("theme_override_fonts/")) {
 			String dname = name.get_slicec('/', 1);
-			add_theme_font_override(dname, p_value);
+			add_theme_font_override(dname, Object::cast_to<Font>(p_value));
 		}
 		else if (name.begins_with("theme_override_font_sizes/")) {
 			String dname = name.get_slicec('/', 1);
@@ -4511,49 +4511,43 @@ bool Control::has_theme_constant(const StringName& p_name, const StringName& p_t
 
 /// Local property overrides.
 
-void Control::add_theme_icon_override(const StringName& p_name, RequiredParam<Texture2D> rp_icon)
+void Control::add_theme_icon_override(const StringName& p_name, Texture2D* rp_icon)
 {
 	ERR_MAIN_THREAD_GUARD;
-	EXTRACT_PARAM_OR_FAIL(p_icon, rp_icon);
-
 	if (data.theme_icon_override.has(p_name)) {
 		data.theme_icon_override[p_name]->disconnect_changed(
 			callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.theme_icon_override[p_name] = p_icon;
+	data.theme_icon_override[p_name] = rp_icon;
 	data.theme_icon_override[p_name]->connect_changed(
 		callable_mp(this, &Control::_notify_theme_override_changed), Object::CONNECT_REFERENCE_COUNTED);
 	_notify_theme_override_changed();
 }
 
-void Control::add_theme_style_override(const StringName& p_name, RequiredParam<StyleBox> rp_style)
+void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style)
 {
 	ERR_MAIN_THREAD_GUARD;
-	EXTRACT_PARAM_OR_FAIL(p_style, rp_style);
-
 	if (data.theme_style_override.has(p_name)) {
 		data.theme_style_override[p_name]->disconnect_changed(
 			callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.theme_style_override[p_name] = p_style;
+	data.theme_style_override[p_name] = rp_style;
 	data.theme_style_override[p_name]->connect_changed(
 		callable_mp(this, &Control::_notify_theme_override_changed), Object::CONNECT_REFERENCE_COUNTED);
 	_notify_theme_override_changed();
 }
 
-void Control::add_theme_font_override(const StringName& p_name, RequiredParam<Font> rp_font)
+void Control::add_theme_font_override(const StringName& p_name, Font* rp_font)
 {
 	ERR_MAIN_THREAD_GUARD;
-	EXTRACT_PARAM_OR_FAIL(p_font, rp_font);
-
 	if (data.theme_font_override.has(p_name)) {
 		data.theme_font_override[p_name]->disconnect_changed(
 			callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.theme_font_override[p_name] = p_font;
+	data.theme_font_override[p_name] = rp_font;
 	data.theme_font_override[p_name]->connect_changed(
 		callable_mp(this, &Control::_notify_theme_override_changed), Object::CONNECT_REFERENCE_COUNTED);
 	_notify_theme_override_changed();

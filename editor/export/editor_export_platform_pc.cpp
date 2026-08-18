@@ -38,21 +38,21 @@
 #include "scene/resources/image_texture.h" // IWYU pragma: keep. Misdetection of `logo`.
 
 void EditorExportPlatformPC::get_preset_features(const Ref<EditorExportPreset> &p_preset, List<String> *r_features) const {
-	if (p_preset->get("texture_format/s3tc_bptc")) {
+	if (p_preset->obj->get("texture_format/s3tc_bptc")) {
 		r_features->push_back("s3tc");
 		r_features->push_back("bptc");
 	}
-	if (p_preset->get("texture_format/etc2_astc")) {
+	if (p_preset->obj->get("texture_format/etc2_astc")) {
 		r_features->push_back("etc2");
 		r_features->push_back("astc");
 	}
-	if (!p_preset->is_dedicated_server() && p_preset->get("shader_baker/enabled")) {
+	if (!p_preset->is_dedicated_server() && p_preset->obj->get("shader_baker/enabled")) {
 		// Don't use the shader baker if exporting as a dedicated server, as no rendering is performed.
 		r_features->push_back("shader_baker");
 	}
 	// PC platforms only have one architecture per export, since
 	// we export a single executable instead of a bundle.
-	r_features->push_back(p_preset->get("binary_format/architecture"));
+	r_features->push_back(p_preset->obj->get("binary_format/architecture"));
 }
 
 void EditorExportPlatformPC::get_export_options(List<ExportOption> *r_options) const {
@@ -71,7 +71,7 @@ void EditorExportPlatformPC::get_export_options(List<ExportOption> *r_options) c
 }
 
 String EditorExportPlatformPC::get_export_option_warning(const EditorExportPreset *p_preset, const StringName &p_name) const {
-	if (p_name == "shader_baker/enabled" && bool(p_preset->get("shader_baker/enabled"))) {
+	if (p_name == "shader_baker/enabled" && bool(p_preset->obj->get("shader_baker/enabled"))) {
 		String export_renderer = GLOBAL_GET("rendering/renderer/rendering_method");
 		if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
 			return TTR("\"Shader Baker\" is not supported when using the Compatibility renderer.");
@@ -100,18 +100,18 @@ bool EditorExportPlatformPC::has_valid_export_configuration(const Ref<EditorExpo
 	bool valid = false;
 
 	// Look for export templates (first official, and if defined custom templates).
-	String arch = p_preset->get("binary_format/architecture");
+	String arch = p_preset->obj->get("binary_format/architecture");
 	bool dvalid = exists_export_template(get_template_file_name("debug", arch), &err);
 	bool rvalid = exists_export_template(get_template_file_name("release", arch), &err);
 
-	if (p_preset->get("custom_template/debug") != "") {
-		dvalid = FileAccess::exists(p_preset->get("custom_template/debug"));
+	if (p_preset->obj->get("custom_template/debug") != "") {
+		dvalid = FileAccess::exists(p_preset->obj->get("custom_template/debug"));
 		if (!dvalid) {
 			err += TTR("Custom debug template not found.") + "\n";
 		}
 	}
-	if (p_preset->get("custom_template/release") != "") {
-		rvalid = FileAccess::exists(p_preset->get("custom_template/release"));
+	if (p_preset->obj->get("custom_template/release") != "") {
+		rvalid = FileAccess::exists(p_preset->obj->get("custom_template/release"));
 		if (!rvalid) {
 			err += TTR("Custom release template not found.") + "\n";
 		}
@@ -120,8 +120,8 @@ bool EditorExportPlatformPC::has_valid_export_configuration(const Ref<EditorExpo
 	valid = dvalid || rvalid;
 	r_missing_templates = !valid;
 
-	bool uses_s3tc_bptc = p_preset->get("texture_format/s3tc_bptc");
-	bool uses_etc2_astc = p_preset->get("texture_format/etc2_astc");
+	bool uses_s3tc_bptc = p_preset->obj->get("texture_format/s3tc_bptc");
+	bool uses_etc2_astc = p_preset->obj->get("texture_format/etc2_astc");
 
 	if (!uses_s3tc_bptc && !uses_etc2_astc) {
 		valid = false;
@@ -158,15 +158,15 @@ Error EditorExportPlatformPC::prepare_template(const Ref<EditorExportPreset> &p_
 		return ERR_FILE_BAD_PATH;
 	}
 
-	String custom_debug = p_preset->get("custom_template/debug");
-	String custom_release = p_preset->get("custom_template/release");
+	String custom_debug = p_preset->obj->get("custom_template/debug");
+	String custom_release = p_preset->obj->get("custom_template/release");
 
 	String template_path = p_debug ? custom_debug : custom_release;
 
 	template_path = template_path.strip_edges();
 
 	if (template_path.is_empty()) {
-		template_path = find_export_template(get_template_file_name(p_debug ? "debug" : "release", p_preset->get("binary_format/architecture")));
+		template_path = find_export_template(get_template_file_name(p_debug ? "debug" : "release", p_preset->obj->get("binary_format/architecture")));
 	}
 
 	if (!template_path.is_empty() && !FileAccess::exists(template_path)) {
@@ -182,7 +182,7 @@ Error EditorExportPlatformPC::prepare_template(const Ref<EditorExportPreset> &p_
 		"console.exe",
 		nullptr,
 	};
-	int con_wrapper_mode = p_preset->get("debug/export_console_wrapper");
+	int con_wrapper_mode = p_preset->obj->get("debug/export_console_wrapper");
 	bool copy_wrapper = (con_wrapper_mode == 1 && p_debug) || (con_wrapper_mode == 2);
 
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
@@ -207,7 +207,7 @@ Error EditorExportPlatformPC::prepare_template(const Ref<EditorExportPreset> &p_
 
 Error EditorExportPlatformPC::export_project_data(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, BitField<EditorExportPlatform::DebugFlags> p_flags) {
 	String pck_path;
-	if (p_preset->get("binary_format/embed_pck")) {
+	if (p_preset->obj->get("binary_format/embed_pck")) {
 		pck_path = p_path;
 	} else {
 		pck_path = p_path.get_basename() + ".pck";
@@ -217,9 +217,9 @@ Error EditorExportPlatformPC::export_project_data(const Ref<EditorExportPreset> 
 
 	int64_t embedded_pos;
 	int64_t embedded_size;
-	Error err = save_pack(p_preset, p_debug, pck_path, &so_files, nullptr, nullptr, p_preset->get("binary_format/embed_pck"), &embedded_pos, &embedded_size);
-	if (err == OK && p_preset->get("binary_format/embed_pck")) {
-		if (embedded_size >= 0x100000000 && String(p_preset->get("binary_format/architecture")).contains("32")) {
+	Error err = save_pack(p_preset, p_debug, pck_path, &so_files, nullptr, nullptr, p_preset->obj->get("binary_format/embed_pck"), &embedded_pos, &embedded_size);
+	if (err == OK && p_preset->obj->get("binary_format/embed_pck")) {
+		if (embedded_size >= 0x100000000 && String(p_preset->obj->get("binary_format/architecture")).contains("32")) {
 			add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"), TTR("On 32-bit exports the embedded PCK cannot be bigger than 4 GiB."));
 			return ERR_INVALID_PARAMETER;
 		}

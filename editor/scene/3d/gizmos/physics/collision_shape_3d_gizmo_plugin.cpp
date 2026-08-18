@@ -279,25 +279,28 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo
 
 		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Sphere Shape Radius"));
-		ur->add_do_method(ss.ptr(), "set_radius", ss->get_radius());
-		ur->add_undo_method(ss.ptr(), "set_radius", p_restore);
+		ur->add_do_method(ss->obj.get(), "set_radius", ss->get_radius());
+		ur->add_undo_method(ss->obj.get(), "set_radius", p_restore);
 		ur->commit_action();
 	}
 
 	if (Object::cast_to<BoxShape3D>(*s)) {
-		helper->box_commit_handle(TTR("Change Box Shape Size"), p_cancel, cs->obj.get(), s.ptr());
+		helper->box_commit_handle(
+			TTR("Change Box Shape Size"), p_cancel, cs->obj.get(), s->obj.get());
 	}
 
 	if (Object::cast_to<CapsuleShape3D>(*s)) {
 		Ref<CapsuleShape3D> ss = s;
 		helper->cylinder_commit_handle(p_id, TTR("Change Capsule Shape Radius"),
-			TTR("Change Capsule Shape Height"), p_cancel, cs->obj.get(), *ss, *ss);
+			TTR("Change Capsule Shape Height"), p_cancel, cs->obj.get(), ss->obj.get(),
+			ss->obj.get());
 	}
 
 	if (Object::cast_to<CylinderShape3D>(*s)) {
 		Ref<CylinderShape3D> ss = s;
 		helper->cylinder_commit_handle(p_id, TTR("Change Cylinder Shape Radius"),
-			TTR("Change Cylinder Shape Height"), p_cancel, cs->obj.get(), *ss, *ss);
+			TTR("Change Cylinder Shape Height"), p_cancel, cs->obj.get(), ss->obj.get(),
+			ss->obj.get());
 	}
 
 	if (Object::cast_to<SeparationRayShape3D>(*s)) {
@@ -309,8 +312,8 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo
 
 		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Separation Ray Shape Length"));
-		ur->add_do_method(ss.ptr(), "set_length", ss->get_length());
-		ur->add_undo_method(ss.ptr(), "set_length", p_restore);
+		ur->add_do_method(ss->obj.get(), "set_length", ss->get_length());
+		ur->add_undo_method(ss->obj.get(), "set_length", p_restore);
 		ur->commit_action();
 	}
 }
@@ -635,12 +638,12 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
 		Vector3 pface[4] = {
 			p.normal * p.d + n1 * 10.0 + n2 * 10.0,
 			p.normal * p.d + n1 * 10.0 + n2 * -10.0,
-			p.normal * p.d + n1 * -10.0 + n2 * -10.0,
+			p.normal * p.d + n1
+ * -10.0 + n2 * -10.0,
 			p.normal * p.d + n1 * -10.0 + n2 * 10.0,
 		};
 
-
-Vector<Vector3> points = {pface[0], pface[1], pface[1], pface[2], pface[2], pface[3],
+		Vector<Vector3> points = {pface[0], pface[1], pface[1], pface[2], pface[2], pface[3],
 			pface[3], pface[0], p.normal * p.d, p.normal * p.d + p.normal * 3};
 
 		p_gizmo->add_lines(points, material, false, collision_color);

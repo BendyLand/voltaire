@@ -244,11 +244,6 @@ void EditorPropertyArray::initialize_array(Variant& p_array)
 		Array array;
 		StringName subtype_class;
 		Ref<Script> subtype_script;
-		if (subtype == Variant::OBJECT && !subtype_hint_string.is_empty()) {
-			if (ClassDB::class_exists(subtype_hint_string)) {
-				subtype_class = subtype_hint_string;
-			}
-		}
 		array.set_typed(subtype, subtype_class, subtype_script);
 		p_array = array;
 	}
@@ -693,10 +688,6 @@ bool EditorPropertyArray::_is_drop_valid(const Dictionary& p_drag_data) const
 			for (String at : allowed_type.split(",", false)) {
 				at = at.strip_edges();
 				// Fail if one of the files is not of allowed type.
-				if (!ClassDB::is_parent_class(ftype, at) &&
-					!EditorNode::get_editor_data().script_class_is_parent(script_class, at)) {
-					return false;
-				}
 			}
 		}
 
@@ -711,14 +702,14 @@ bool EditorPropertyArray::_is_drop_valid(const Dictionary& p_drag_data) const
 		}
 
 		StringName script_class;
-		if (res->get_script()) {
+		if (res->obj->get_script()) {
 			script_class =
-				EditorNode::get_singleton()->get_object_custom_type_name(res->get_script());
+				EditorNode::get_singleton()->get_object_custom_type_name(res->obj->get_script());
 		}
 
 		for (String at : allowed_type.split(",", false)) {
 			at = at.strip_edges();
-			if (res->is_class(at) ||
+			if (res->obj->is_class(at) ||
 				EditorNode::get_editor_data().script_class_is_parent(script_class, at)) {
 				return true;
 			}
@@ -1121,14 +1112,12 @@ void EditorPropertyDictionary::initialize_dictionary(Variant& p_dictionary)
 		Dictionary dict;
 		StringName key_subtype_class;
 		Ref<Script> key_subtype_script;
-		if (key_subtype == Variant::OBJECT && !key_subtype_hint_string.is_empty() &&
-			ClassDB::class_exists(key_subtype_hint_string)) {
+		if (key_subtype == Variant::OBJECT && !key_subtype_hint_string.is_empty()) {
 			key_subtype_class = key_subtype_hint_string;
 		}
 		StringName value_subtype_class;
 		Ref<Script> value_subtype_script;
-		if (value_subtype == Variant::OBJECT && !value_subtype_hint_string.is_empty() &&
-			ClassDB::class_exists(value_subtype_hint_string)) {
+		if (value_subtype == Variant::OBJECT && !value_subtype_hint_string.is_empty()) {
 			value_subtype_class = value_subtype_hint_string;
 		}
 		dict.set_typed(key_subtype, key_subtype_class, key_subtype_script, value_subtype,
@@ -1147,7 +1136,7 @@ void EditorPropertyDictionary::_property_changed(
 		p_value = Variant(); // `EditorResourcePicker` resets to `Ref<Resource>()`. See GH-82716.
 	}
 
-	object->set(p_property, p_value);
+	object->obj->set(p_property, p_value);
 	bool new_item_or_key = !p_property.begins_with("indices");
 	emit_changed(get_edited_property(), object->get_dict(), p_name, p_changing || new_item_or_key);
 	if (new_item_or_key) {
@@ -1478,7 +1467,7 @@ void EditorPropertyDictionary::update_property()
 			add_panel = memnew(PanelContainer);
 			property_vbox->add_child(add_panel);
 			add_panel->add_theme_style_override(
-				SceneStringName(panel), get_theme_stylebox(SNAME("DictionaryAddItem")));
+				SceneStringName(panel), get_theme_stylebox(SNAME("DictionaryAddItem")).ptr());
 			VBoxContainer* add_vbox = memnew(VBoxContainer);
 			add_vbox->set_theme_type_variation(SNAME("EditorPropertyContainer"));
 			add_panel->add_child(add_vbox);
@@ -1688,7 +1677,7 @@ void EditorPropertyDictionary::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		if (button_add_item) {
 			add_panel->add_theme_style_override(
-				SceneStringName(panel), get_theme_stylebox(SNAME("DictionaryAddItem")));
+				SceneStringName(panel), get_theme_stylebox(SNAME("DictionaryAddItem")).ptr());
 		}
 	} break;
 	}
@@ -1881,7 +1870,7 @@ void EditorPropertyLocalizableString::update_property()
 
 			EditorProperty* prop = memnew(EditorPropertyText);
 
-			prop->set_object_and_property(object.ptr(), prop_name);
+			prop->set_object_and_property(object->obj.get(), prop_name);
 			int remove_index = 0;
 
 			String cs = key.get_construct_string();
@@ -1906,10 +1895,8 @@ void EditorPropertyLocalizableString::update_property()
 			edit_btn->connect(SceneStringName(pressed),
 				callable_mp(this, &EditorPropertyLocalizableString::_remove_item)
 					.bind(edit_btn, remove_index));
-
 			prop->update_property();
 		}
-
 		if (page_index == max_page) {
 			button_add_item =
 				memnew(EditorInspectorActionButton(TTRC("Add Translation"), SNAME("Add")));
@@ -1918,9 +1905,7 @@ void EditorPropertyLocalizableString::update_property()
 				callable_mp(this, &EditorPropertyLocalizableString::_add_locale_popup));
 			property_vbox->add_child(button_add_item);
 		}
-
 		updating = false;
-
 	}
 	else {
 		if (container) {

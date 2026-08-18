@@ -118,7 +118,7 @@ void BoneMapperItem::create_editor()
 	skeleton_bone_selector->set_selectable(false);
 	skeleton_bone_selector->set_h_size_flags(SIZE_EXPAND_FILL);
 	skeleton_bone_selector->set_object_and_property(
-		bone_map.ptr(), "bone_map/" + String(profile_bone_name));
+		bone_map->obj.get(), "bone_map/" + String(profile_bone_name));
 	skeleton_bone_selector->update_property();
 	skeleton_bone_selector->connect(
 		"property_changed", callable_mp(this, &BoneMapperItem::_value_changed));
@@ -146,7 +146,7 @@ void BoneMapperItem::_open_picker() { this->obj->emit_signal(SNAME("pick"), prof
 void BoneMapperItem::_value_changed(
 	const String& p_property, const Variant& p_value, const String& p_name, bool p_changing)
 {
-	bone_map->set(p_property, p_value);
+	bone_map->obj->set(p_property, p_value);
 }
 
 void BoneMapperItem::_notification(int p_what)
@@ -154,22 +154,20 @@ void BoneMapperItem::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
 		create_editor();
-		bone_map->connect("bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
+		bone_map->obj->connect(
+			"bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
 	} break;
 	case NOTIFICATION_EXIT_TREE: {
-		if (bone_map.is_valid() && bone_map->is_connected("bone_map_updated",
+		if (bone_map.is_valid() && bone_map->obj->is_connected("bone_map_updated",
 									   callable_mp(this, &BoneMapperItem::_update_property))) {
-			bone_map->disconnect(
+			bone_map->obj->disconnect(
 				"bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
 		}
 	} break;
 	}
 }
 
-void BoneMapperItem::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("pick", PropertyInfo(Variant::STRING_NAME, "profile_bone_name")));
-}
+void BoneMapperItem::_bind_methods() {}
 
 BoneMapperItem::BoneMapperItem(Ref<BoneMap>& p_bone_map, const StringName& p_profile_bone_name)
 {
@@ -284,10 +282,10 @@ void BoneMapper::create_editor()
 	add_child(picker, false, INTERNAL_MODE_FRONT);
 
 	profile_selector = memnew(EditorPropertyResource);
-	profile_selector->setup(bone_map.ptr(), "profile", "SkeletonProfile");
+	profile_selector->setup(bone_map->obj.get(), "profile", "SkeletonProfile");
 	profile_selector->set_label("Profile");
 	profile_selector->set_selectable(false);
-	profile_selector->set_object_and_property(bone_map.ptr(), "profile");
+	profile_selector->set_object_and_property(bone_map->obj.get(), "profile");
 	profile_selector->update_property();
 	profile_selector->connect("property_changed", callable_mp(this, &BoneMapper::_profile_changed));
 	add_child(profile_selector);
@@ -1512,7 +1510,7 @@ void BoneMapper::_value_changed(
 void BoneMapper::_profile_changed(
 	const String& p_property, const Variant& p_value, const String& p_name, bool p_changing)
 {
-	bone_map->set(p_property, p_value);
+	bone_map->obj->set(p_property, p_value);
 
 	// Run auto mapping when setting SkeletonProfileHumanoid by GUI Editor.
 	Ref<SkeletonProfile> profile = bone_map->get_profile();
@@ -1524,39 +1522,27 @@ void BoneMapper::_profile_changed(
 	}
 }
 
-void BoneMapper::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_current_group_idx", "current_group_idx"), &BoneMapper::set_current_group_idx);
-	ClassDB::bind_method(D_METHOD("get_current_group_idx"), &BoneMapper::get_current_group_idx);
-	ClassDB::bind_method(
-		D_METHOD("set_current_bone_idx", "current_bone_idx"), &BoneMapper::set_current_bone_idx);
-	ClassDB::bind_method(D_METHOD("get_current_bone_idx"), &BoneMapper::get_current_bone_idx);
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "current_group_idx"), "set_current_group_idx",
-		"get_current_group_idx");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "current_bone_idx"), "set_current_bone_idx",
-		"get_current_bone_idx");
-}
+void BoneMapper::_bind_methods() {}
 
 void BoneMapper::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
 		create_editor();
-		bone_map->connect("bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
-		bone_map->connect("profile_updated", callable_mp(this, &BoneMapper::recreate_items));
+		bone_map->obj->connect("bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
+		bone_map->obj->connect("profile_updated", callable_mp(this, &BoneMapper::recreate_items));
 	} break;
 	case NOTIFICATION_EXIT_TREE: {
 		clear_items();
 		if (bone_map.is_valid()) {
-			if (bone_map->is_connected(
+			if (bone_map->obj->is_connected(
 					"bone_map_updated", callable_mp(this, &BoneMapper::_update_state))) {
-				bone_map->disconnect(
+				bone_map->obj->disconnect(
 					"bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
 			}
-			if (bone_map->is_connected(
+			if (bone_map->obj->is_connected(
 					"profile_updated", callable_mp(this, &BoneMapper::recreate_items))) {
-				bone_map->disconnect(
+				bone_map->obj->disconnect(
 					"profile_updated", callable_mp(this, &BoneMapper::recreate_items));
 			}
 		}

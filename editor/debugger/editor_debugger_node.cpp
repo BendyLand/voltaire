@@ -89,7 +89,7 @@ EditorDebuggerNode::EditorDebuggerNode()
 
 	Ref<StyleBoxEmpty> empty;
 	empty.instantiate();
-	tabs->add_theme_style_override(SceneStringName(panel), empty);
+	tabs->add_theme_style_override(SceneStringName(panel), empty.ptr());
 
 	auto_switch_remote_scene_tree = EDITOR_GET("debugger/auto_switch_to_remote_scene_tree");
 	_add_debugger();
@@ -166,7 +166,7 @@ ScriptEditorDebugger* EditorDebuggerNode::_add_debugger()
 		tabs->set_tabs_visible(true);
 		tabs->add_theme_style_override(
 			SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-										SNAME("DebuggerPanel"), EditorStringName(EditorStyles)));
+										SNAME("DebuggerPanel"), EditorStringName(EditorStyles)).ptr());
 	}
 
 	if (!debugger_plugins.is_empty()) {
@@ -248,33 +248,7 @@ void EditorDebuggerNode::_text_editor_stack_clear(const ScriptEditorDebugger* p_
 	stack_script.unref(); // Why?!?
 }
 
-void EditorDebuggerNode::_bind_methods()
-{
-	// LiveDebug.
-	ClassDB::bind_method("live_debug_create_node", &EditorDebuggerNode::live_debug_create_node);
-	ClassDB::bind_method(
-		"live_debug_instantiate_node", &EditorDebuggerNode::live_debug_instantiate_node);
-	ClassDB::bind_method("live_debug_remove_node", &EditorDebuggerNode::live_debug_remove_node);
-	ClassDB::bind_method(
-		"live_debug_remove_and_keep_node", &EditorDebuggerNode::live_debug_remove_and_keep_node);
-	ClassDB::bind_method("live_debug_restore_node", &EditorDebuggerNode::live_debug_restore_node);
-	ClassDB::bind_method(
-		"live_debug_duplicate_node", &EditorDebuggerNode::live_debug_duplicate_node);
-	ClassDB::bind_method("live_debug_reparent_node", &EditorDebuggerNode::live_debug_reparent_node);
-
-	ADD_SIGNAL(MethodInfo("goto_script_line"));
-	ADD_SIGNAL(
-		MethodInfo("set_execution", PropertyInfo("script"), PropertyInfo(Variant::INT, "line")));
-	ADD_SIGNAL(MethodInfo("clear_execution", PropertyInfo("script")));
-	ADD_SIGNAL(MethodInfo("breaked", PropertyInfo(Variant::BOOL, "reallydid"),
-		PropertyInfo(Variant::BOOL, "can_debug")));
-	ADD_SIGNAL(MethodInfo("breakpoint_toggled", PropertyInfo(Variant::STRING, "path"),
-		PropertyInfo(Variant::INT, "line"), PropertyInfo(Variant::BOOL, "enabled")));
-	ADD_SIGNAL(MethodInfo("breakpoint_set_in_tree", PropertyInfo("script"),
-		PropertyInfo(Variant::INT, "line"), PropertyInfo(Variant::BOOL, "enabled"),
-		PropertyInfo(Variant::INT, "debugger")));
-	ADD_SIGNAL(MethodInfo("breakpoints_cleared_in_tree", PropertyInfo(Variant::INT, "debugger")));
-}
+void EditorDebuggerNode::_bind_methods() {}
 
 void EditorDebuggerNode::update_layout(EditorDock::DockLayout p_layout, int p_slot)
 {
@@ -412,7 +386,7 @@ void EditorDebuggerNode::_notification(int p_what)
 		if (tabs->get_tab_count() > 1) {
 			tabs->add_theme_style_override(SceneStringName(panel),
 				EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-					SNAME("DebuggerPanel"), EditorStringName(EditorStyles)));
+					SNAME("DebuggerPanel"), EditorStringName(EditorStyles)).ptr());
 		}
 		_update_margins();
 

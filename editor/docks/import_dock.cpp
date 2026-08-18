@@ -190,7 +190,7 @@ void ImportDock::_update_options(const String& p_path, const Ref<ConfigFile>& p_
 	// This allows tooltips to display when hovering properties.
 	if (params->importer.is_valid()) {
 		// Null check to avoid crashing if the "Keep File (exported as is)" mode is selected.
-		import_opts->set_object_class(params->importer->get_class_name());
+		import_opts->set_object_class(params->importer->obj->get_class_name());
 	}
 
 	List<ResourceImporter::ImportOption> options;
@@ -634,7 +634,7 @@ void ImportDock::_reimport_and_cleanup()
 	for (const String& path : need_cleanup) {
 		Ref<Resource> res = ResourceLoader::load(path);
 		res->set_path("");
-		res->set_meta(SNAME("_skip_save_"), true);
+		res->obj->set_meta(SNAME("_skip_save_"), true);
 		old_resources[path] = res;
 	}
 
@@ -671,7 +671,7 @@ void ImportDock::_reimport_and_cleanup()
 
 	for (Ref<Resource> res : external_resources) {
 		EditorNode::get_singleton()->replace_resources_in_object(
-			res.ptr(), old_resources_to_replace, new_resources_to_replace);
+			res->obj.get(), old_resources_to_replace, new_resources_to_replace);
 	}
 
 	need_cleanup.clear();
@@ -759,7 +759,7 @@ void ImportDock::_notification(int p_what)
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 		if (EditorThemeManager::is_generated_theme_outdated()) {
 			imported->add_theme_style_override(CoreStringName(normal),
-				get_theme_stylebox(CoreStringName(normal), SNAME("LineEdit")));
+				get_theme_stylebox(CoreStringName(normal), SNAME("LineEdit")).ptr());
 		}
 	} break;
 
@@ -804,10 +804,7 @@ void ImportDock::_property_toggled(const StringName& p_prop, bool p_checked)
 	}
 }
 
-void ImportDock::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_reimport"), &ImportDock::_reimport);
-}
+void ImportDock::_bind_methods() {}
 
 void ImportDock::initialize_import_options() const
 {
@@ -835,8 +832,10 @@ ImportDock::ImportDock()
 	imported = memnew(Label);
 	imported->set_focus_mode(FOCUS_ACCESSIBILITY);
 	imported->add_theme_style_override(
-		CoreStringName(normal), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-									CoreStringName(normal), SNAME("LineEdit")));
+		CoreStringName(normal), EditorNode::get_singleton()
+									->get_editor_theme()
+									->get_stylebox(CoreStringName(normal), SNAME("LineEdit"))
+									.ptr());
 	imported->set_clip_text(true);
 	content->add_child(imported);
 	HBoxContainer* hb = memnew(HBoxContainer);

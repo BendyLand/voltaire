@@ -57,7 +57,7 @@ void QuickSettingsDialog::_fetch_setting_values()
 
 	{
 		List<PropertyInfo> editor_settings_properties;
-		EditorSettings::get_singleton()->get_property_list(&editor_settings_properties);
+		EditorSettings::get_singleton()->obj->get_property_list(&editor_settings_properties);
 
 		for (const PropertyInfo& pi : editor_settings_properties) {
 			if (pi.name == "interface/editor/localization/editor_language") {
@@ -254,7 +254,7 @@ void QuickSettingsDialog::_directory_naming_convention_selected(int p_id)
 void QuickSettingsDialog::_set_setting_value(
 	const String& p_setting, const Variant& p_value, bool p_restart_required)
 {
-	EditorSettings::get_singleton()->set(p_setting, p_value);
+	EditorSettings::get_singleton()->obj->set(p_setting, p_value);
 	EditorSettings::get_singleton()->notify_changes();
 	EditorSettings::get_singleton()->save();
 
@@ -304,7 +304,7 @@ void QuickSettingsDialog::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
 		settings_list_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("quick_settings_panel"), SNAME("ProjectManager")));
+			get_theme_stylebox(SNAME("quick_settings_panel"), SNAME("ProjectManager")).ptr());
 
 		restart_required_label->add_theme_color_override(SceneStringName(font_color),
 			get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));

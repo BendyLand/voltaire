@@ -64,8 +64,6 @@ Ref<Texture2D> EditorResourcePreviewGenerator::generate_from_path(
 
 void EditorResourcePreviewGenerator::_bind_methods()
 {
-	ClassDB::bind_method(D_METHOD("request_draw_and_wait", "viewport"),
-		&EditorResourcePreviewGenerator::request_draw_and_wait);
 }
 
 void EditorResourcePreviewGenerator::DrawRequester::request_and_wait(RID p_viewport)
@@ -163,7 +161,7 @@ void EditorResourcePreview::_generate_preview(Ref<ImageTexture>& r_texture,
 	uint64_t started_at = OS::get_singleton()->get_ticks_usec();
 
 	if (p_item.resource.is_valid()) {
-		type = p_item.resource->get_class();
+		type = p_item.resource->obj->get_class();
 	}
 	else {
 		type = ResourceLoader::get_resource_type(p_item.path);
@@ -254,9 +252,9 @@ void EditorResourcePreview::_generate_preview(Ref<ImageTexture>& r_texture,
 		if (r_texture.is_valid()) {
 			// Wow it generated a preview... save cache.
 			bool has_small_texture = r_small_texture.is_valid();
-			ResourceSaver::save(r_texture, cache_base + ".png");
+			ResourceSaver::save(r_texture.ptr(), cache_base + ".png");
 			if (has_small_texture) {
-				ResourceSaver::save(r_small_texture, cache_base + "_small.png");
+				ResourceSaver::save(r_small_texture.ptr(), cache_base + "_small.png");
 			}
 			Ref<FileAccess> f = FileAccess::open(cache_base + ".txt", FileAccess::WRITE);
 			ERR_FAIL_COND_MSG(f.is_null(),
@@ -514,7 +512,7 @@ void EditorResourcePreview::queue_edited_resource_preview(
 	{
 		MutexLock lock(preview_mutex);
 
-		String path_id = "ID:" + itos(p_res->get_instance_id());
+		String path_id = "ID:" + itos(p_res->obj->get_instance_id());
 		HashMap<String, EditorResourcePreview::Item>::Iterator I = cache.find(path_id);
 
 		if (I && I->value.last_hash == p_res->hash_edited_version_for_preview()) {

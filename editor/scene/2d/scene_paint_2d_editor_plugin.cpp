@@ -855,16 +855,7 @@ void ScenePaint2DEditor::_grid_step_changed()
 	grid_offset = CanvasItemEditor::get_singleton()->get_grid_offset();
 }
 
-void ScenePaint2DEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("register_scene_provider", "control", "callback"),
-		&ScenePaint2DEditor::register_scene_provider);
-	ClassDB::bind_method(D_METHOD("unregister_scene_provider", "control"),
-		&ScenePaint2DEditor::unregister_scene_provider);
-	ClassDB::bind_method(
-		D_METHOD("set_painted_scene", "scene"), &ScenePaint2DEditor::set_painted_scene);
-	ClassDB::bind_method(D_METHOD("get_painted_scene"), &ScenePaint2DEditor::get_painted_scene);
-}
+void ScenePaint2DEditor::_bind_methods() {}
 
 void ScenePaint2DEditor::_notification(int p_what)
 {

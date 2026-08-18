@@ -124,7 +124,7 @@ Error EditorRunNative::start_run_native(int p_id)
 	String architecture = eep->get_device_architecture(idx);
 	if (!run_confirmed && !architecture.is_empty()) {
 		String preset_arch = "architectures/" + architecture;
-		bool is_arch_enabled = preset->get(preset_arch);
+		bool is_arch_enabled = preset->obj->get(preset_arch);
 
 		if (!is_arch_enabled) {
 			run_native_confirm->set_text(
@@ -179,12 +179,7 @@ Error EditorRunNative::start_run_native(int p_id)
 
 void EditorRunNative::resume_run_native() { start_run_native(resume_id); }
 
-void EditorRunNative::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo(
-		"native_run", PropertyInfo(Variant::OBJECT, "preset", PROPERTY_HINT_RESOURCE_TYPE,
-						  EditorExportPreset::get_class_static())));
-}
+void EditorRunNative::_bind_methods() {}
 
 bool EditorRunNative::is_deploy_debug_remote_enabled() const
 {

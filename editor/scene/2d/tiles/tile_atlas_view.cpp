@@ -218,7 +218,7 @@ void TileAtlasView::_draw_base_tiles()
 						texture_region_size + separation);
 					rect = rect.intersection(Rect2i(Vector2(), texture->get_size()));
 					if (rect.size.x > 0 && rect.size.y > 0) {
-						base_tiles_draw->draw_texture_rect_region(texture, rect, rect);
+						base_tiles_draw->draw_texture_rect_region(texture.ptr(), rect, rect);
 					}
 				}
 			}
@@ -246,7 +246,7 @@ void TileAtlasView::_draw_base_tiles()
 		// Top.
 		rect.position = Vector2i();
 		rect.set_end(Vector2i(texture->get_size().x, margins.y));
-		base_tiles_draw->draw_texture_rect_region(texture, rect, rect);
+		base_tiles_draw->draw_texture_rect_region(texture.ptr(), rect, rect);
 		base_tiles_draw->draw_rect(rect, Color(0.0, 0.0, 0.0, 0.5));
 
 		// Bottom
@@ -254,7 +254,7 @@ void TileAtlasView::_draw_base_tiles()
 		if (bottom_border < texture->get_size().y) {
 			rect.position = Vector2i(0, bottom_border);
 			rect.set_end(texture->get_size());
-			base_tiles_draw->draw_texture_rect_region(texture, rect, rect);
+			base_tiles_draw->draw_texture_rect_region(texture.ptr(), rect, rect);
 			base_tiles_draw->draw_rect(rect, Color(0.0, 0.0, 0.0, 0.5));
 		}
 
@@ -262,7 +262,7 @@ void TileAtlasView::_draw_base_tiles()
 		rect.position = Vector2i(0, margins.y);
 		rect.set_end(Vector2i(
 			margins.x, margins.y + (grid_size.y * (texture_region_size.y + separation.y))));
-		base_tiles_draw->draw_texture_rect_region(texture, rect, rect);
+		base_tiles_draw->draw_texture_rect_region(texture.ptr(), rect, rect);
 		base_tiles_draw->draw_rect(rect, Color(0.0, 0.0, 0.0, 0.5));
 
 		// Right.
@@ -271,7 +271,7 @@ void TileAtlasView::_draw_base_tiles()
 			rect.position = Vector2i(right_border, margins.y);
 			rect.set_end(Vector2i(texture->get_size().x,
 				margins.y + (grid_size.y * (texture_region_size.y + separation.y))));
-			base_tiles_draw->draw_texture_rect_region(texture, rect, rect);
+			base_tiles_draw->draw_texture_rect_region(texture.ptr(), rect, rect);
 			base_tiles_draw->draw_rect(rect, Color(0.0, 0.0, 0.0, 0.5));
 		}
 
@@ -526,13 +526,13 @@ void TileAtlasView::_draw_alternatives()
 void TileAtlasView::_draw_background_left()
 {
 	background_left->draw_texture_rect(
-		theme_cache.checkerboard, Rect2(Vector2(), background_left->get_size()), true);
+		theme_cache.checkerboard.ptr(), Rect2(Vector2(), background_left->get_size()), true);
 }
 
 void TileAtlasView::_draw_background_right()
 {
 	background_right->draw_texture_rect(
-		theme_cache.checkerboard, Rect2(Vector2(), background_right->get_size()), true);
+		theme_cache.checkerboard.ptr(), Rect2(Vector2(), background_right->get_size()), true);
 }
 
 void TileAtlasView::set_atlas_source(
@@ -723,11 +723,7 @@ void TileAtlasView::_notification(int p_what)
 	}
 }
 
-void TileAtlasView::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("transform_changed", PropertyInfo(Variant::FLOAT, "zoom"),
-		PropertyInfo(Variant::VECTOR2, "scroll")));
-}
+void TileAtlasView::_bind_methods() {}
 
 TileAtlasView::TileAtlasView()
 {

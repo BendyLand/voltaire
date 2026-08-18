@@ -112,7 +112,7 @@ void GradientEdit::_color_changed(const Color& p_color) { set_color(selected_ind
 void GradientEdit::set_gradient(const Ref<Gradient>& p_gradient)
 {
 	gradient = p_gradient;
-	gradient->connect(
+	gradient->obj->connect(
 		CoreStringName(changed), callable_mp((CanvasItem*)this, &CanvasItem::queue_redraw));
 }
 
@@ -124,9 +124,9 @@ void GradientEdit::add_point(float p_offset, const Color& p_color)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Add Gradient Point"));
-	undo_redo->add_do_method(*gradient, "add_point", p_offset, p_color);
+	undo_redo->add_do_method(gradient->obj.get(), "add_point", p_offset, p_color);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_idx);
-	undo_redo->add_undo_method(*gradient, "remove_point", new_idx);
+	undo_redo->add_undo_method(gradient->obj.get(), "remove_point", new_idx);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", -1);
 	undo_redo->commit_action();
 }
@@ -154,9 +154,9 @@ void GradientEdit::remove_point(int p_index)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Remove Gradient Point"));
-	undo_redo->add_do_method(*gradient, "remove_point", p_index);
+	undo_redo->add_do_method(gradient->obj.get(), "remove_point", p_index);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_selected_index);
-	undo_redo->add_undo_method(*gradient, "add_point", old_offset, old_color);
+	undo_redo->add_undo_method(gradient->obj.get(), "add_point", old_offset, old_color);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", selected_index);
 	undo_redo->commit_action();
 }
@@ -175,9 +175,9 @@ void GradientEdit::set_offset(int p_index, float p_offset)
 	gradient->set_offset(p_index, pre_grab_offset); // Pretend the point started from its old place.
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Move Gradient Point"));
-	undo_redo->add_do_method(*gradient, "set_offset", pre_grab_index, p_offset);
+	undo_redo->add_do_method(gradient->obj.get(), "set_offset", pre_grab_index, p_offset);
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_idx);
-	undo_redo->add_undo_method(*gradient, "set_offset", new_idx, pre_grab_offset);
+	undo_redo->add_undo_method(gradient->obj.get(), "set_offset", new_idx, pre_grab_offset);
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", pre_grab_index);
 	undo_redo->commit_action();
 	queue_redraw();
@@ -194,8 +194,8 @@ void GradientEdit::set_color(int p_index, const Color& p_color)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Recolor Gradient Point"), UndoRedo::MERGE_ENDS);
-	undo_redo->add_do_method(*gradient, "set_color", p_index, p_color);
-	undo_redo->add_undo_method(*gradient, "set_color", p_index, old_color);
+	undo_redo->add_do_method(gradient->obj.get(), "set_color", p_index, p_color);
+	undo_redo->add_undo_method(gradient->obj.get(), "set_color", p_index, old_color);
 	undo_redo->commit_action();
 	queue_redraw();
 }
@@ -205,10 +205,10 @@ void GradientEdit::reverse_gradient()
 	int new_selected_idx =
 		(selected_index == -1) ? -1 : (gradient->get_point_count() - selected_index - 1);
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Reverse Gradient"), UndoRedo::MERGE_DISABLE, *gradient);
-	undo_redo->add_do_method(*gradient, "reverse");
+	undo_redo->create_action(TTR("Reverse Gradient"), UndoRedo::MERGE_DISABLE, gradient->obj.get());
+	undo_redo->add_do_method(gradient->obj.get(), "reverse");
 	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_selected_idx);
-	undo_redo->add_undo_method(*gradient, "reverse");
+	undo_redo->add_undo_method(gradient->obj.get(), "reverse");
 	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", selected_index);
 	undo_redo->commit_action();
 }
@@ -225,10 +225,10 @@ void GradientEdit::set_snap_enabled(bool p_enabled)
 	queue_redraw();
 	if (gradient.is_valid()) {
 		if (snap_enabled) {
-			gradient->set_meta(SNAME("_snap_enabled"), true);
+			gradient->obj->set_meta(SNAME("_snap_enabled"), true);
 		}
 		else {
-			gradient->remove_meta(SNAME("_snap_enabled"));
+			gradient->obj->remove_meta(SNAME("_snap_enabled"));
 		}
 	}
 }
@@ -239,10 +239,10 @@ void GradientEdit::set_snap_count(int p_count)
 	queue_redraw();
 	if (gradient.is_valid()) {
 		if (snap_count != GradientEditor::DEFAULT_SNAP) {
-			gradient->set_meta(SNAME("_snap_count"), snap_count);
+			gradient->obj->set_meta(SNAME("_snap_count"), snap_count);
 		}
 		else {
-			gradient->remove_meta(SNAME("_snap_count"));
+			gradient->obj->remove_meta(SNAME("_snap_count"));
 		}
 	}
 }
@@ -489,10 +489,10 @@ void GradientEdit::_redraw()
 	int half_handle_width = handle_width * 0.5;
 
 	// Draw gradient.
-	draw_texture_rect(get_editor_theme_icon(SNAME("GuiMiniCheckerboard")),
+	draw_texture_rect(get_editor_theme_icon(SNAME("GuiMiniCheckerboard")).ptr(),
 		Rect2(half_handle_width, 0, total_w, h), true);
 	preview_texture->set_gradient(gradient);
-	draw_texture_rect(preview_texture, Rect2(half_handle_width, 0, total_w, h));
+	draw_texture_rect(preview_texture.ptr(), Rect2(half_handle_width, 0, total_w, h));
 
 	// Draw vertical snap lines.
 	if (snap_enabled ||
@@ -530,7 +530,8 @@ void GradientEdit::_redraw()
 		if (inside_col.a < 1) {
 			// If the color is translucent, draw a little opaque rectangle at the bottom to more
 			// easily see it.
-			draw_texture_rect(get_editor_theme_icon(SNAME("GuiMiniCheckerboard")), rect, true);
+			draw_texture_rect(
+				get_editor_theme_icon(SNAME("GuiMiniCheckerboard")).ptr(), rect, true);
 			draw_rect(rect, inside_col, true);
 			Color inside_col_opaque = inside_col;
 			inside_col_opaque.a = 1.0;
@@ -590,13 +591,13 @@ void GradientEdit::_redraw()
 	if (selected_index != -1) {
 		Color grabbed_col = gradient->get_color(selected_index);
 		if (grabbed_col.a < 1) {
-			draw_texture_rect(get_editor_theme_icon(SNAME("GuiMiniCheckerboard")),
+			draw_texture_rect(get_editor_theme_icon(SNAME("GuiMiniCheckerboard")).ptr(),
 				Rect2(button_offset, 0, h, h), true);
 		}
 		draw_rect(Rect2(button_offset, 0, h, h), grabbed_col);
 		if (grabbed_col.r > 1 || grabbed_col.g > 1 || grabbed_col.b > 1) {
 			// Draw an indicator to denote that the currently selected color is "overbright".
-			draw_texture(get_theme_icon(SNAME("overbright_indicator"), SNAME("ColorPicker")),
+			draw_texture(get_theme_icon(SNAME("overbright_indicator"), SNAME("ColorPicker")).ptr(),
 				Point2(button_offset, 0));
 		}
 	}
@@ -632,11 +633,7 @@ void GradientEdit::_notification(int p_what)
 	}
 }
 
-void GradientEdit::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_selected_index", "index"), &GradientEdit::set_selected_index);
-}
+void GradientEdit::_bind_methods() {}
 
 GradientEdit::GradientEdit()
 {
@@ -690,8 +687,8 @@ void GradientEditor::_notification(int p_what)
 		Ref<Gradient> gradient = gradient_editor_rect->get_gradient();
 		if (gradient.is_valid()) {
 			// Set snapping settings based on the gradient's meta.
-			snap_button->set_pressed(gradient->get_meta("_snap_enabled", false));
-			snap_count_edit->set_value(gradient->get_meta("_snap_count", DEFAULT_SNAP));
+			snap_button->set_pressed(gradient->obj->get_meta("_snap_enabled", false));
+			snap_count_edit->set_value(gradient->obj->get_meta("_snap_count", DEFAULT_SNAP));
 		}
 	} break;
 	}

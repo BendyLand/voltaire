@@ -147,8 +147,7 @@ AABB EditorInterface::_calculate_aabb_for_scene(Node* p_node, AABB& p_scene_aabb
 	return p_scene_aabb;
 }
 
-TypedArray<Texture2D> EditorInterface::_make_mesh_previews(
-	const TypedArray<Mesh>& p_meshes, int p_preview_size)
+Array EditorInterface::_make_mesh_previews(const Array& p_meshes, int p_preview_size)
 {
 	Vector<Ref<Mesh>> meshes;
 
@@ -157,7 +156,7 @@ TypedArray<Texture2D> EditorInterface::_make_mesh_previews(
 	}
 
 	Vector<Ref<Texture2D>> textures = make_mesh_previews(meshes, nullptr, p_preview_size);
-	TypedArray<Texture2D> ret;
+	Array ret;
 	for (int i = 0; i < textures.size(); i++) {
 		ret.push_back(textures[i]);
 	}
@@ -617,10 +616,6 @@ void EditorInterface::popup_quick_open(
 	else {
 		for (int i = 0; i < p_base_types.size(); i++) {
 			StringName type = p_base_types[i];
-			ERR_FAIL_COND_MSG(
-				!(ClassDB::is_parent_class(type, required_type) ||
-					EditorNode::get_editor_data().script_class_is_parent(type, required_type)),
-				"Only types deriving from Resource are supported in the quick open dialog.");
 			base_types.append(type);
 		}
 	}
@@ -648,8 +643,7 @@ void EditorInterface::popup_create_dialog(const Callable& p_callback, const Stri
 	create_dialog->set_type_blocklist(blocklist);
 
 	String safe_base_type = p_base_type;
-	if (p_base_type.is_empty() ||
-		(!ClassDB::class_exists(p_base_type) && !ScriptServer::is_global_class(p_base_type))) {
+	if (p_base_type.is_empty() || !ScriptServer::is_global_class(p_base_type)) {
 		ERR_PRINT(vformat(
 			"Invalid base type '%s'. The base type has fallen back to 'Object'.", p_base_type));
 		safe_base_type = "Object";

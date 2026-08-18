@@ -39,7 +39,8 @@
 
 class AudioStream;
 
-class AudioSamplePlayback : public RefCounted {
+class AudioSamplePlayback : public RefCounted
+{
 	VLTRCLASS(AudioSamplePlayback, RefCounted);
 
 public:
@@ -52,11 +53,13 @@ public:
 	StringName bus;
 };
 
-class AudioSample : public RefCounted {
+class AudioSample : public RefCounted
+{
 	VLTRCLASS(AudioSample, RefCounted)
 
 public:
-	enum LoopMode {
+	enum LoopMode
+	{
 		LOOP_DISABLED,
 		LOOP_FORWARD,
 		LOOP_PINGPONG,
@@ -74,7 +77,8 @@ public:
 
 ///////////
 
-class AudioStreamPlayback : public RefCounted {
+class AudioStreamPlayback : public RefCounted
+{
 	VLTRCLASS(AudioStreamPlayback, RefCounted);
 
 protected:
@@ -86,22 +90,25 @@ public:
 	virtual void stop();
 	virtual bool is_playing() const;
 
-	virtual int get_loop_count() const; //times it looped
+	virtual int get_loop_count() const; // times it looped
 
 	virtual double get_playback_position() const;
 	virtual void seek(double p_time);
 
 	virtual void tag_used_streams();
 
-	virtual void set_parameter(const StringName &p_name, const Variant &p_value);
-	virtual Variant get_parameter(const StringName &p_name) const;
+	virtual void set_parameter(const StringName& p_name, const Variant& p_value);
+	virtual Variant get_parameter(const StringName& p_name) const;
 
-	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames);
+	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames);
 
 	virtual void set_is_sample(bool p_is_sample) {}
+
 	virtual bool get_is_sample() const { return false; }
+
 	virtual Ref<AudioSamplePlayback> get_sample_playback() const;
-	virtual void set_sample_playback(const Ref<AudioSamplePlayback> &p_playback) {}
+
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) {}
 
 	AudioStreamPlayback();
 	~AudioStreamPlayback();
@@ -112,11 +119,13 @@ public:
 	void seek_playback(double p_time);
 };
 
-class AudioStreamPlaybackResampled : public AudioStreamPlayback {
+class AudioStreamPlaybackResampled : public AudioStreamPlayback
+{
 	VLTRCLASS(AudioStreamPlaybackResampled, AudioStreamPlayback);
 
-	enum {
-		FP_BITS = 16, //fixed point used for resampling
+	enum
+	{
+		FP_BITS = 16, // fixed point used for resampling
 		FP_LEN = (1 << FP_BITS),
 		FP_MASK = FP_LEN - 1,
 		INTERNAL_BUFFER_LEN = 128, // 128 warrants 3ms positional jitter at much at 44100hz
@@ -130,23 +139,26 @@ class AudioStreamPlaybackResampled : public AudioStreamPlayback {
 protected:
 	void begin_resample();
 	// Returns the number of frames that were mixed.
-	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames);
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames);
 	virtual float get_stream_sampling_rate();
 
 	static void _bind_methods();
 
 public:
-	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;
+	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
 	virtual float get_stream_sampling_rate() const;
 
 	AudioStreamPlaybackResampled() { mix_offset = 0; }
 };
 
-class AudioStream : public Resource {
+class AudioStream : public Resource
+{
 	VLTRCLASS(AudioStream, Resource);
-	OBJ_SAVE_TYPE(AudioStream); // Saves derived classes with common type so they can be interchanged.
+	OBJ_SAVE_TYPE_NO(
+		AudioStream); // Saves derived classes with common type so they can be interchanged.
 
-	enum {
+	enum
+	{
 		MAX_TAGGED_OFFSETS = 8
 	};
 
@@ -175,18 +187,23 @@ public:
 	uint32_t get_tagged_frame_count() const;
 	float get_tagged_frame_offset(int p_index) const;
 
-	struct Parameter {
+	struct Parameter
+	{
 		PropertyInfo property;
 		Variant default_value;
-		Parameter(const PropertyInfo &p_info = PropertyInfo(), const Variant &p_default_value = Variant()) {
+
+		Parameter(
+			const PropertyInfo& p_info = PropertyInfo(), const Variant& p_default_value = Variant())
+		{
 			property = p_info;
 			default_value = p_default_value;
 		}
 	};
 
-	virtual void get_parameter_list(List<Parameter> *r_parameters);
+	virtual void get_parameter_list(List<Parameter>* r_parameters);
 
 	virtual bool can_be_sampled() const { return false; }
+
 	virtual Ref<AudioSample> generate_sample() const;
 
 	virtual bool is_meta_stream() const { return false; }
@@ -196,21 +213,23 @@ public:
 
 class AudioStreamPlaybackMicrophone;
 
-class AudioStreamMicrophone : public AudioStream {
+class AudioStreamMicrophone : public AudioStream
+{
 	VLTRCLASS(AudioStreamMicrophone, AudioStream);
 	friend class AudioStreamPlaybackMicrophone;
 
-	HashSet<AudioStreamPlaybackMicrophone *> playbacks;
+	HashSet<AudioStreamPlaybackMicrophone*> playbacks;
 
 public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 
-	virtual double get_length() const override; //if supported, otherwise return 0
+	virtual double get_length() const override; // if supported, otherwise return 0
 
 	virtual bool is_monophonic() const override;
 };
 
-class AudioStreamPlaybackMicrophone : public AudioStreamPlaybackResampled {
+class AudioStreamPlaybackMicrophone : public AudioStreamPlaybackResampled
+{
 	VLTRCLASS(AudioStreamPlaybackMicrophone, AudioStreamPlaybackResampled);
 	friend class AudioStreamMicrophone;
 
@@ -220,18 +239,18 @@ class AudioStreamPlaybackMicrophone : public AudioStreamPlaybackResampled {
 	Ref<AudioStreamMicrophone> microphone;
 
 protected:
-	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames) override;
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
 	virtual float get_stream_sampling_rate() override;
 	virtual double get_playback_position() const override;
 
 public:
-	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;
+	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
 
 	virtual void start(double p_from_pos = 0.0) override;
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; // times it looped
 
 	virtual void seek(double p_time) override;
 
@@ -245,11 +264,13 @@ public:
 
 class AudioStreamPlaybackRandomizer;
 
-class AudioStreamRandomizer : public AudioStream {
+class AudioStreamRandomizer : public AudioStream
+{
 	VLTRCLASS(AudioStreamRandomizer, AudioStream);
 
 public:
-	enum PlaybackMode {
+	enum PlaybackMode
+	{
 		PLAYBACK_RANDOM_NO_REPEATS,
 		PLAYBACK_RANDOM,
 		PLAYBACK_SEQUENTIAL,
@@ -258,7 +279,8 @@ public:
 private:
 	friend class AudioStreamPlaybackRandomizer;
 
-	struct PoolEntry {
+	struct PoolEntry
+	{
 		Ref<AudioStream> stream;
 		float weight = 1.0;
 	};
@@ -266,7 +288,7 @@ private:
 	static inline PropertyListHelper base_property_helper;
 	PropertyListHelper property_helper;
 
-	HashSet<AudioStreamPlaybackRandomizer *> playbacks;
+	HashSet<AudioStreamPlaybackRandomizer*> playbacks;
 	Vector<PoolEntry> audio_stream_pool;
 	float random_pitch_scale = 1.0f;
 	float random_volume_offset_db = 0.0f;
@@ -281,11 +303,30 @@ private:
 protected:
 	static void _bind_methods();
 
-	bool _set(const StringName &p_name, const Variant &p_value) { return property_helper.property_set_value(p_name, p_value); }
-	bool _get(const StringName &p_name, Variant &r_ret) const { return property_helper.property_get_value(p_name, r_ret); }
-	void _get_property_list(List<PropertyInfo> *p_list) const { property_helper.get_property_list(p_list); }
-	bool _property_can_revert(const StringName &p_name) const { return property_helper.property_can_revert(p_name); }
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const { return property_helper.property_get_revert(p_name, r_property); }
+	bool _set(const StringName& p_name, const Variant& p_value)
+	{
+		return property_helper.property_set_value(p_name, p_value);
+	}
+
+	bool _get(const StringName& p_name, Variant& r_ret) const
+	{
+		return property_helper.property_get_value(p_name, r_ret);
+	}
+
+	void _get_property_list(List<PropertyInfo>* p_list) const
+	{
+		property_helper.get_property_list(p_list);
+	}
+
+	bool _property_can_revert(const StringName& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+	bool _property_get_revert(const StringName& p_name, Variant& r_property) const
+	{
+		return property_helper.property_get_revert(p_name, r_property);
+	}
 
 public:
 	void add_stream(int p_index, Ref<AudioStream> p_stream, float p_weight = 1.0);
@@ -314,7 +355,7 @@ public:
 
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 
-	virtual double get_length() const override; //if supported, otherwise return 0
+	virtual double get_length() const override; // if supported, otherwise return 0
 	virtual bool is_monophonic() const override;
 
 	virtual bool is_meta_stream() const override { return true; }
@@ -322,7 +363,8 @@ public:
 	AudioStreamRandomizer();
 };
 
-class AudioStreamPlaybackRandomizer : public AudioStreamPlayback {
+class AudioStreamPlaybackRandomizer : public AudioStreamPlayback
+{
 	VLTRCLASS(AudioStreamPlaybackRandomizer, AudioStreamPlayback);
 	friend class AudioStreamRandomizer;
 
@@ -338,12 +380,12 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; // times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 
-	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;
+	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
 
 	virtual void tag_used_streams() override;
 
@@ -351,3 +393,5 @@ public:
 };
 
 VARIANT_ENUM_CAST(AudioStreamRandomizer::PlaybackMode);
+
+

@@ -35,10 +35,12 @@
 
 class CanvasItemEditor;
 
-class CollisionShape2DEditor : public Control {
+class CollisionShape2DEditor : public Control
+{
 	VLTRCLASS(CollisionShape2DEditor, Control);
 
-	enum ShapeType {
+	enum ShapeType
+	{
 		CAPSULE_SHAPE,
 		CIRCLE_SHAPE,
 		CONCAVE_POLYGON_SHAPE,
@@ -60,8 +62,8 @@ class CollisionShape2DEditor : public Control {
 		Point2(1, -1),
 	};
 
-	CanvasItemEditor *canvas_item_editor = nullptr;
-	CollisionShape2D *node = nullptr;
+	CanvasItemEditor* canvas_item_editor = nullptr;
+	CollisionShape2D* node = nullptr;
 
 	Vector<Point2> handles;
 
@@ -78,36 +80,47 @@ class CollisionShape2DEditor : public Control {
 	Ref<Shape2D> current_shape;
 
 	Variant get_handle_value(int idx) const;
-	void set_handle(int idx, Point2 &p_point);
-	void commit_handle(int idx, Variant &p_org);
+	void set_handle(int idx, Point2& p_point);
+	void commit_handle(int idx, Variant& p_org);
 
 	void _shape_changed();
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 
 public:
-	bool forward_canvas_gui_input(const Ref<InputEvent> &p_event);
-	void forward_canvas_draw_over_viewport(Control *p_overlay);
-	void edit(Node *p_node);
+	bool forward_canvas_gui_input(const Ref<InputEvent>& p_event);
+	void forward_canvas_draw_over_viewport(Control* p_overlay);
+	void edit(Node* p_node);
 
 	CollisionShape2DEditor();
 };
 
-class CollisionShape2DEditorPlugin : public EditorPlugin {
+class CollisionShape2DEditorPlugin : public EditorPlugin
+{
 	VLTRCLASS(CollisionShape2DEditorPlugin, EditorPlugin);
 
-	CollisionShape2DEditor *collision_shape_2d_editor = nullptr;
+	CollisionShape2DEditor* collision_shape_2d_editor = nullptr;
 
 public:
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent> &p_event) override { return collision_shape_2d_editor->forward_canvas_gui_input(p_event); }
-	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override { collision_shape_2d_editor->forward_canvas_draw_over_viewport(p_overlay); }
+	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override
+	{
+		return collision_shape_2d_editor->forward_canvas_gui_input(p_event);
+	}
+
+	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override
+	{
+		collision_shape_2d_editor->forward_canvas_draw_over_viewport(p_overlay);
+	}
 
 	virtual String get_plugin_name() const override { return "CollisionShape2D"; }
-	virtual void edit(Object *p_obj) override;
-	virtual bool handles(Object *p_obj) const override;
+
+	virtual void edit(Object* p_obj) override;
+	virtual bool handles(Object* p_obj) const override;
 	virtual void make_visible(bool visible) override;
 
 	CollisionShape2DEditorPlugin();
 };
+
+

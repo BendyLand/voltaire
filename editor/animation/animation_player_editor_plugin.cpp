@@ -168,17 +168,21 @@ void AnimationPlayerEditor::_notification(int p_what)
 			"scene_changed", callable_mp(this, &AnimationPlayerEditor::_find_player));
 
 		add_theme_style_override(
-			SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-										SceneStringName(panel), SNAME("Panel")));
+			SceneStringName(panel), EditorNode::get_singleton()
+										->get_editor_theme()
+										->get_stylebox(SceneStringName(panel), SNAME("Panel"))
+										.ptr());
 
 		_update_playback_tooltips();
 	} break;
 
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 		if (EditorThemeManager::is_generated_theme_outdated()) {
-			add_theme_style_override(SceneStringName(panel),
-				EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-					SceneStringName(panel), SNAME("Panel")));
+			add_theme_style_override(
+				SceneStringName(panel), EditorNode::get_singleton()
+											->get_editor_theme()
+											->get_stylebox(SceneStringName(panel), SNAME("Panel"))
+											.ptr());
 		}
 
 		_update_playback_tooltips();
@@ -527,8 +531,9 @@ void AnimationPlayerEditor::_animation_selected(int p_which)
 				}
 			}
 			else {
-				cached_root_node_id = root->obj->get_instance_id(); // Caching as `track_editor` can lose
-															   // track of player's root node.
+				cached_root_node_id =
+					root->obj->get_instance_id(); // Caching as `track_editor` can lose
+												  // track of player's root node.
 				track_editor->set_root(root);
 			}
 		}
@@ -641,8 +646,8 @@ void AnimationPlayerEditor::_animation_remove_confirmed()
 		// player.
 		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
 	}
-	undo_redo->add_do_method(al.ptr(), "remove_animation", current);
-	undo_redo->add_undo_method(al.ptr(), "add_animation", current, anim);
+	undo_redo->add_do_method(al->obj.get(), "remove_animation", current);
+	undo_redo->add_undo_method(al->obj.get(), "add_animation", current, anim);
 	undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
 	undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
 	if (animation->has_selectable_items() &&
@@ -733,10 +738,10 @@ void AnimationPlayerEditor::_animation_name_edited()
 		}
 
 		undo_redo->create_action(TTR("Rename Animation"));
-		undo_redo->add_do_method(al.ptr(), "rename_animation", current, new_name);
-		undo_redo->add_do_method(anim.ptr(), "set_name", new_name);
-		undo_redo->add_undo_method(al.ptr(), "rename_animation", new_name, current);
-		undo_redo->add_undo_method(anim.ptr(), "set_name", current);
+		undo_redo->add_do_method(al->obj.get(), "rename_animation", current, new_name);
+		undo_redo->add_do_method(anim->obj.get(), "set_name", new_name);
+		undo_redo->add_undo_method(al->obj.get(), "rename_animation", new_name, current);
+		undo_redo->add_undo_method(anim->obj.get(), "set_name", current);
 		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
 		undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
 		undo_redo->commit_action();
@@ -777,12 +782,13 @@ void AnimationPlayerEditor::_animation_name_edited()
 		if (al.is_null()) {
 			al.instantiate();
 			lib_added = true;
-			undo_redo->add_do_method(fetch_mixer_for_library()->obj.get(), "add_animation_library", "", al);
+			undo_redo->add_do_method(
+				fetch_mixer_for_library()->obj.get(), "add_animation_library", "", al);
 			library_name = "";
 		}
 
-		undo_redo->add_do_method(al.ptr(), "add_animation", new_name, new_anim);
-		undo_redo->add_undo_method(al.ptr(), "remove_animation", new_name);
+		undo_redo->add_do_method(al->obj.get(), "add_animation", new_name, new_anim);
+		undo_redo->add_undo_method(al->obj.get(), "remove_animation", new_name);
 		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
 		undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
 		if (!animation->has_selectable_items()) {
@@ -790,7 +796,8 @@ void AnimationPlayerEditor::_animation_name_edited()
 			undo_redo->add_undo_method(this->obj.get(), "_stop_onion_skinning");
 		}
 		if (lib_added) {
-			undo_redo->add_undo_method(fetch_mixer_for_library()->obj.get(), "remove_animation_library", "");
+			undo_redo->add_undo_method(
+				fetch_mixer_for_library()->obj.get(), "remove_animation_library", "");
 		}
 		undo_redo->commit_action();
 
@@ -838,8 +845,8 @@ void AnimationPlayerEditor::_animation_name_edited()
 			library_name = "";
 		}
 
-		undo_redo->add_do_method(al.ptr(), "add_animation", new_name, new_anim);
-		undo_redo->add_undo_method(al.ptr(), "remove_animation", new_name);
+		undo_redo->add_do_method(al->obj.get(), "add_animation", new_name, new_anim);
+		undo_redo->add_undo_method(al->obj.get(), "remove_animation", new_name);
 		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
 		undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
 		if (lib_added) {
@@ -1018,7 +1025,7 @@ void AnimationPlayerEditor::set_state(const Dictionary& p_state)
 						callable_mp(this, &AnimationPlayerEditor::_animation_libraries_updated))) {
 					player->connect(SNAME("animation_list_changed"),
 						callable_mp(this, &AnimationPlayerEditor::_animation_libraries_updated),
-						Animation::CONNECT_DEFERRED);
+						Object::CONNECT_DEFERRED);
 				}
 				if (!player->is_connected(SNAME("current_animation_changed"),
 						callable_mp(this, &AnimationPlayerEditor::_current_animation_changed))) {
@@ -1427,7 +1434,7 @@ void AnimationPlayerEditor::edit(AnimationMixer* p_node, AnimationPlayer* p_play
 				callable_mp(this, &AnimationPlayerEditor::_animation_libraries_updated))) {
 			player->connect(SNAME("animation_list_changed"),
 				callable_mp(this, &AnimationPlayerEditor::_animation_libraries_updated),
-				Animation::CONNECT_DEFERRED);
+				Object::CONNECT_DEFERRED);
 		}
 		if (!player->is_connected(SceneStringName(animation_finished),
 				callable_mp(this, &AnimationPlayerEditor::_animation_finished))) {
@@ -1573,11 +1580,11 @@ Ref<Animation> AnimationPlayerEditor::_animation_clone(Ref<Animation> p_anim)
 {
 	Ref<Animation> new_anim = memnew(Animation);
 	List<PropertyInfo> plist;
-	p_anim->get_property_list(&plist);
+	p_anim->obj->get_property_list(&plist);
 
 	for (const PropertyInfo& E : plist) {
 		if (E.usage & PROPERTY_USAGE_STORAGE) {
-			new_anim->set(E.name, p_anim->get(E.name));
+			new_anim->obj->set(E.name, p_anim->obj->get(E.name));
 		}
 	}
 	new_anim->set_path("");
@@ -1632,7 +1639,10 @@ void AnimationPlayerEditor::_animation_player_changed(Object* p_pl)
 	}
 }
 
-void AnimationPlayerEditor::_animation_libraries_updated() { _animation_player_changed(player->obj.get()); }
+void AnimationPlayerEditor::_animation_libraries_updated()
+{
+	_animation_player_changed(player->obj.get());
+}
 
 void AnimationPlayerEditor::_list_changed()
 {
@@ -2286,20 +2296,7 @@ bool AnimationPlayerEditor::_validate_tracks(const Ref<Animation> p_anim)
 	return is_valid;
 }
 
-void AnimationPlayerEditor::_bind_methods()
-{
-	// Needed for UndoRedo.
-	ClassDB::bind_method(
-		D_METHOD("_animation_player_changed"), &AnimationPlayerEditor::_animation_player_changed);
-	ClassDB::bind_method(D_METHOD("_animation_update_key_frame"),
-		&AnimationPlayerEditor::_animation_update_key_frame);
-	ClassDB::bind_method(
-		D_METHOD("_start_onion_skinning"), &AnimationPlayerEditor::_start_onion_skinning);
-	ClassDB::bind_method(
-		D_METHOD("_stop_onion_skinning"), &AnimationPlayerEditor::_stop_onion_skinning);
-
-	ADD_SIGNAL(MethodInfo("animation_selected", PropertyInfo(Variant::STRING, "name")));
-}
+void AnimationPlayerEditor::_bind_methods() {}
 
 AnimationPlayerEditor* AnimationPlayerEditor::singleton = nullptr;
 
@@ -2711,14 +2708,14 @@ void AnimationPlayerEditorPlugin::edit(Object* p_object)
 			src_node->connect(SNAME("mixer_updated"),
 				callable_mp(this, &AnimationPlayerEditorPlugin::_update_dummy_player)
 					.bind(src_node),
-				Animation::CONNECT_DEFERRED);
+				Object::CONNECT_DEFERRED);
 		}
 		if (!src_node->is_connected(SNAME("animation_libraries_updated"),
 				callable_mp(this, &AnimationPlayerEditorPlugin::_update_dummy_player))) {
 			src_node->connect(SNAME("animation_libraries_updated"),
 				callable_mp(this, &AnimationPlayerEditorPlugin::_update_dummy_player)
 					.bind(src_node),
-				Animation::CONNECT_DEFERRED);
+				Object::CONNECT_DEFERRED);
 		}
 	}
 	else {

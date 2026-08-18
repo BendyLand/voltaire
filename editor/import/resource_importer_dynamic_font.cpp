@@ -28,24 +28,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_importer_dynamic_font.h"
-
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "editor/import/dynamic_font_import_settings.h"
+#include "resource_importer_dynamic_font.h"
 #include "scene/resources/font.h"
 #include "servers/text/text_server.h"
 
-String ResourceImporterDynamicFont::get_importer_name() const {
-	return "font_data_dynamic";
-}
+String ResourceImporterDynamicFont::get_importer_name() const { return "font_data_dynamic"; }
 
-String ResourceImporterDynamicFont::get_visible_name() const {
-	return "Font Data (Dynamic Font)";
-}
+String ResourceImporterDynamicFont::get_visible_name() const { return "Font Data (Dynamic Font)"; }
 
-void ResourceImporterDynamicFont::get_recognized_extensions(List<String> *p_extensions) const {
+void ResourceImporterDynamicFont::get_recognized_extensions(List<String>* p_extensions) const
+{
 	if (p_extensions) {
 		p_extensions->push_back("ttf");
 		p_extensions->push_back("ttc");
@@ -58,22 +54,22 @@ void ResourceImporterDynamicFont::get_recognized_extensions(List<String> *p_exte
 	}
 }
 
-String ResourceImporterDynamicFont::get_save_extension() const {
-	return "fontdata";
-}
+String ResourceImporterDynamicFont::get_save_extension() const { return "fontdata"; }
 
-String ResourceImporterDynamicFont::get_resource_type() const {
-	return "FontFile";
-}
+String ResourceImporterDynamicFont::get_resource_type() const { return "FontFile"; }
 
-void ResourceImporterDynamicFont::get_build_dependencies(const String &p_path, HashSet<String> *r_dependencies) {
+void ResourceImporterDynamicFont::get_build_dependencies(
+	const String& p_path, HashSet<String>* r_dependencies)
+{
 	Ref<FontFile> font = ResourceLoader::load(p_path);
 	if (font.is_valid() && font->is_multichannel_signed_distance_field()) {
 		r_dependencies->insert("module_msdfgen_enabled");
 	}
 }
 
-bool ResourceImporterDynamicFont::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+bool ResourceImporterDynamicFont::get_option_visibility(const String& p_path,
+	const String& p_option, const HashMap<StringName, Variant>& p_options) const
+{
 	if (p_option == "msdf_pixel_range" && !bool(p_options["multichannel_signed_distance_field"])) {
 		return false;
 	}
@@ -86,71 +82,110 @@ bool ResourceImporterDynamicFont::get_option_visibility(const String &p_path, co
 	if (p_option == "oversampling" && bool(p_options["multichannel_signed_distance_field"])) {
 		return false;
 	}
-	if (p_option == "subpixel_positioning" && bool(p_options["multichannel_signed_distance_field"])) {
+	if (p_option == "subpixel_positioning" &&
+		bool(p_options["multichannel_signed_distance_field"])) {
 		return false;
 	}
-	if (p_option == "keep_rounding_remainders" && bool(p_options["multichannel_signed_distance_field"])) {
+	if (p_option == "keep_rounding_remainders" &&
+		bool(p_options["multichannel_signed_distance_field"])) {
 		return false;
 	}
 	return true;
 }
 
-int ResourceImporterDynamicFont::get_preset_count() const {
-	return PRESET_MAX;
-}
+int ResourceImporterDynamicFont::get_preset_count() const { return PRESET_MAX; }
 
-String ResourceImporterDynamicFont::get_preset_name(int p_idx) const {
+String ResourceImporterDynamicFont::get_preset_name(int p_idx) const
+{
 	switch (p_idx) {
-		case PRESET_DYNAMIC:
-			return TTR("Dynamically rendered TrueType/OpenType font");
-		case PRESET_MSDF:
-			return TTR("Prerendered multichannel(+true) signed distance field");
-		default:
-			return String();
+	case PRESET_DYNAMIC:
+		return TTR("Dynamically rendered TrueType/OpenType font");
+	case PRESET_MSDF:
+		return TTR("Prerendered multichannel(+true) signed distance field");
+	default:
+		return String();
 	}
 }
 
-void ResourceImporterDynamicFont::get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset) const {
+void ResourceImporterDynamicFont::get_import_options(
+	const String& p_path, List<ImportOption>* r_options, int p_preset) const
+{
 	bool msdf = p_preset == PRESET_MSDF;
 
-	r_options->push_back(ImportOption(PropertyInfo(Variant::NIL, "Rendering", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP), Variant()));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::NIL, "Rendering", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP),
+		Variant()));
 
-	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "antialiasing", PROPERTY_HINT_ENUM, "None,Grayscale,LCD Subpixel"), 1));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "antialiasing", PROPERTY_HINT_ENUM,
+										  "None,Grayscale,LCD Subpixel"),
+		1));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "generate_mipmaps"), false));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "disable_embedded_bitmaps"), true));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "multichannel_signed_distance_field", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), (msdf) ? true : false));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "msdf_pixel_range", PROPERTY_HINT_RANGE, "1,100,1"), 8));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "msdf_size", PROPERTY_HINT_RANGE, "1,250,1"), 48));
+	r_options->push_back(
+		ImportOption(PropertyInfo(Variant::BOOL, "disable_embedded_bitmaps"), true));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::BOOL, "multichannel_signed_distance_field", PROPERTY_HINT_NONE, "",
+			PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED),
+		(msdf) ? true : false));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::INT, "msdf_pixel_range", PROPERTY_HINT_RANGE, "1,100,1"), 8));
+	r_options->push_back(
+		ImportOption(PropertyInfo(Variant::INT, "msdf_size", PROPERTY_HINT_RANGE, "1,250,1"), 48));
 
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "allow_system_fallback"), true));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "force_autohinter"), false));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "modulate_color_glyphs"), false));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "hinting", PROPERTY_HINT_ENUM, "None,Light,Normal,Light (Except Pixel Fonts),Normal (Except Pixel Fonts)"), 3));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "subpixel_positioning", PROPERTY_HINT_ENUM, "Disabled,Auto,One Half of a Pixel,One Quarter of a Pixel,Auto (Except Pixel Fonts)"), 4));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "keep_rounding_remainders"), true));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "oversampling", PROPERTY_HINT_RANGE, "0,10,0.1"), 0.0));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::INT, "hinting", PROPERTY_HINT_ENUM,
+			"None,Light,Normal,Light (Except Pixel Fonts),Normal (Except Pixel Fonts)"),
+		3));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::INT, "subpixel_positioning", PROPERTY_HINT_ENUM,
+			"Disabled,Auto,One Half of a Pixel,One Quarter of a Pixel,Auto (Except Pixel Fonts)"),
+		4));
+	r_options->push_back(
+		ImportOption(PropertyInfo(Variant::BOOL, "keep_rounding_remainders"), true));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::FLOAT, "oversampling", PROPERTY_HINT_RANGE, "0,10,0.1"), 0.0));
 
-	r_options->push_back(ImportOption(PropertyInfo(Variant::NIL, "Fallbacks", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP), Variant()));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::ARRAY, "fallbacks", PROPERTY_HINT_ARRAY_TYPE, MAKE_RESOURCE_TYPE_HINT("Font")), Array()));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::NIL, "Fallbacks", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP),
+		Variant()));
+	r_options->push_back(
+		ImportOption(PropertyInfo(Variant::ARRAY, "fallbacks", PROPERTY_HINT_ARRAY_TYPE,
+						 MAKE_RESOURCE_TYPE_HINT("Font")),
+			Array()));
 
-	r_options->push_back(ImportOption(PropertyInfo(Variant::NIL, "Compress", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP), Variant()));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::NIL, "Compress", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP),
+		Variant()));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "compress"), true));
 
 	// Hide from the main UI, only for advanced import dialog.
-	r_options->push_back(ImportOption(PropertyInfo(Variant::ARRAY, "preload", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), Array()));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::DICTIONARY, "language_support", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), Dictionary()));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::DICTIONARY, "script_support", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), Dictionary()));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::DICTIONARY, "opentype_features", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), Dictionary()));
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::ARRAY, "preload", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE),
+		Array()));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::DICTIONARY, "language_support",
+										  PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE),
+		Dictionary()));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::DICTIONARY, "script_support",
+										  PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE),
+		Dictionary()));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::DICTIONARY, "opentype_features",
+										  PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE),
+		Dictionary()));
 }
 
-bool ResourceImporterDynamicFont::has_advanced_options() const {
-	return true;
-}
-void ResourceImporterDynamicFont::show_advanced_options(const String &p_path) {
+bool ResourceImporterDynamicFont::has_advanced_options() const { return true; }
+
+void ResourceImporterDynamicFont::show_advanced_options(const String& p_path)
+{
 	DynamicFontImportSettingsDialog::get_singleton()->open_settings(p_path);
 }
 
-Error ResourceImporterDynamicFont::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+Error ResourceImporterDynamicFont::import(ResourceUID::ID p_source_id, const String& p_source_file,
+	const String& p_save_path, const HashMap<StringName, Variant>& p_options,
+	List<String>* r_platform_variants, List<String>* r_gen_files, Variant* r_metadata)
+{
 	print_verbose("Importing dynamic font from: " + p_source_file);
 
 	int antialiasing = p_options["antialiasing"];
@@ -204,7 +239,9 @@ Error ResourceImporterDynamicFont::import(ResourceUID::ID p_source_id, const Str
 				for (int i = 0; i < contours.size(); i++) {
 					for (int j = prev_start; j <= contours[i]; j++) {
 						int next_point = (j < contours[i]) ? (j + 1) : prev_start;
-						if ((points[j].z != (real_t)TextServer::CONTOUR_CURVE_TAG_ON) || (!Math::is_equal_approx(points[j].x, points[next_point].x) && !Math::is_equal_approx(points[j].y, points[next_point].y))) {
+						if ((points[j].z != (real_t)TextServer::CONTOUR_CURVE_TAG_ON) ||
+							(!Math::is_equal_approx(points[j].x, points[next_point].x) &&
+								!Math::is_equal_approx(points[j].y, points[next_point].y))) {
 							is_pixel = false;
 							break;
 						}
@@ -220,24 +257,31 @@ Error ResourceImporterDynamicFont::import(ResourceUID::ID p_source_id, const Str
 			}
 			if (subpixel_positioning == 4) { // Auto (Except Pixel Fonts)
 				if (is_pixel && !glyphs.is_empty()) {
-					print_line(vformat("%s: Pixel font detected, disabling subpixel positioning.", p_source_file));
+					print_line(vformat(
+						"%s: Pixel font detected, disabling subpixel positioning.", p_source_file));
 					subpixel_positioning = TextServer::SUBPIXEL_POSITIONING_DISABLED;
-				} else {
+				}
+				else {
 					subpixel_positioning = TextServer::SUBPIXEL_POSITIONING_AUTO;
 				}
 			}
 			if (hinting == 3) { // Light (Except Pixel Fonts)
 				if (is_pixel && !glyphs.is_empty()) {
-					print_line(vformat("%s: Pixel font detected, disabling hinting.", p_source_file));
+					print_line(
+						vformat("%s: Pixel font detected, disabling hinting.", p_source_file));
 					hinting = TextServer::HINTING_NONE;
-				} else {
+				}
+				else {
 					hinting = TextServer::HINTING_LIGHT;
 				}
-			} else if (hinting == 4) { // Normal (Except Pixel Fonts)
+			}
+			else if (hinting == 4) { // Normal (Except Pixel Fonts)
 				if (is_pixel && !glyphs.is_empty()) {
-					print_line(vformat("%s: Pixel font detected, disabling hinting.", p_source_file));
+					print_line(
+						vformat("%s: Pixel font detected, disabling hinting.", p_source_file));
 					hinting = TextServer::HINTING_NONE;
-				} else {
+				}
+				else {
 					hinting = TextServer::HINTING_NORMAL;
 				}
 			}
@@ -248,14 +292,14 @@ Error ResourceImporterDynamicFont::import(ResourceUID::ID p_source_id, const Str
 	font->set_keep_rounding_remainders(keep_rounding_remainders);
 
 	Dictionary langs = p_options["language_support"];
-	for (const KeyValue<Variant, Variant> &kv : langs) {
+	for (const KeyValue<Variant, Variant>& kv : langs) {
 		String key = kv.key;
 		bool enabled = kv.value;
 		font->set_language_support_override(key, enabled);
 	}
 
 	Dictionary scripts = p_options["script_support"];
-	for (const KeyValue<Variant, Variant> &kv : scripts) {
+	for (const KeyValue<Variant, Variant>& kv : scripts) {
 		String key = kv.key;
 		bool enabled = kv.value;
 		font->set_script_support_override(key, enabled);
@@ -266,11 +310,20 @@ Error ResourceImporterDynamicFont::import(ResourceUID::ID p_source_id, const Str
 	for (int i = 0; i < preload_configurations.size(); i++) {
 		Dictionary preload_config = preload_configurations[i];
 
-		Dictionary variation = preload_config.has("variation_opentype") ? preload_config["variation_opentype"].operator Dictionary() : Dictionary();
-		double embolden = preload_config.has("variation_embolden") ? preload_config["variation_embolden"].operator double() : 0;
-		int face_index = preload_config.has("variation_face_index") ? preload_config["variation_face_index"].operator int() : 0;
-		Transform2D transform = preload_config.has("variation_transform") ? preload_config["variation_transform"].operator Transform2D() : Transform2D();
-		Vector2i size = preload_config.has("size") ? preload_config["size"].operator Vector2i() : Vector2i(16, 0);
+		Dictionary variation = preload_config.has("variation_opentype")
+								   ? preload_config["variation_opentype"].operator Dictionary()
+								   : Dictionary();
+		double embolden = preload_config.has("variation_embolden")
+							  ? preload_config["variation_embolden"].operator double()
+							  : 0;
+		int face_index = preload_config.has("variation_face_index")
+							 ? preload_config["variation_face_index"].operator int()
+							 : 0;
+		Transform2D transform = preload_config.has("variation_transform")
+									? preload_config["variation_transform"].operator Transform2D()
+									: Transform2D();
+		Vector2i size = preload_config.has("size") ? preload_config["size"].operator Vector2i()
+												   : Vector2i(16, 0);
 
 		RID conf_rid = font->find_variation(variation, face_index, embolden, transform);
 
@@ -293,8 +346,9 @@ Error ResourceImporterDynamicFont::import(ResourceUID::ID p_source_id, const Str
 	}
 
 	print_verbose("Saving to: " + p_save_path + ".fontdata");
-	Error err = ResourceSaver::save(font, p_save_path + ".fontdata", flg);
+	Error err = ResourceSaver::save(font.ptr(), p_save_path + ".fontdata", flg);
 	ERR_FAIL_COND_V_MSG(err != OK, err, "Cannot save font to file \"" + p_save_path + ".res\".");
 	print_verbose("Done saving to: " + p_save_path + ".fontdata");
 	return OK;
 }
+

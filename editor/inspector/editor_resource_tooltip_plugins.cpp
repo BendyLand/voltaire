@@ -52,8 +52,6 @@ void EditorResourceTooltipPlugin::_thumbnail_ready(const String& p_path,
 
 void EditorResourceTooltipPlugin::_bind_methods()
 {
-	ClassDB::bind_method(D_METHOD("request_thumbnail", "path", "control"),
-		&EditorResourceTooltipPlugin::request_thumbnail);
 }
 
 VBoxContainer* EditorResourceTooltipPlugin::make_default_tooltip(const String& p_resource_path)
@@ -116,8 +114,7 @@ void EditorResourceTooltipPlugin::request_thumbnail(
 
 bool EditorTextureTooltipPlugin::handles(const String& p_resource_type) const
 {
-	return ClassDB::is_parent_class(p_resource_type, "Texture2D") ||
-		   ClassDB::is_parent_class(p_resource_type, "Image");
+	return true;
 }
 
 Control* EditorTextureTooltipPlugin::make_tooltip_for_path(
@@ -145,7 +142,7 @@ Control* EditorTextureTooltipPlugin::make_tooltip_for_path(
 
 bool EditorAudioStreamTooltipPlugin::handles(const String& p_resource_type) const
 {
-	return ClassDB::is_parent_class(p_resource_type, "AudioStream");
+	return true;
 }
 
 Control* EditorAudioStreamTooltipPlugin::make_tooltip_for_path(

@@ -181,17 +181,7 @@ void EditorZoomWidget::_notification(int p_what)
 	}
 }
 
-void EditorZoomWidget::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_zoom", "zoom"), &EditorZoomWidget::set_zoom);
-	ClassDB::bind_method(D_METHOD("get_zoom"), &EditorZoomWidget::get_zoom);
-	ClassDB::bind_method(D_METHOD("set_zoom_by_increments", "increment", "integer_only"),
-		&EditorZoomWidget::set_zoom_by_increments);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "zoom"), "set_zoom", "get_zoom");
-
-	ADD_SIGNAL(MethodInfo("zoom_changed", PropertyInfo(Variant::FLOAT, "zoom")));
-}
+void EditorZoomWidget::_bind_methods() {}
 
 void EditorZoomWidget::set_shortcut_context(Node* p_node) const
 {
@@ -220,10 +210,10 @@ EditorZoomWidget::EditorZoomWidget()
 	zoom_reset->set_accessibility_name(TTRC("Reset Zoom"));
 
 	Ref<StyleBoxEmpty> empty_stylebox = memnew(StyleBoxEmpty);
-	zoom_reset->add_theme_style_override(CoreStringName(normal), empty_stylebox);
-	zoom_reset->add_theme_style_override(SceneStringName(hover), empty_stylebox);
-	zoom_reset->add_theme_style_override("focus", empty_stylebox);
-	zoom_reset->add_theme_style_override(SceneStringName(pressed), empty_stylebox);
+	zoom_reset->add_theme_style_override(CoreStringName(normal), empty_stylebox.ptr());
+	zoom_reset->add_theme_style_override(SceneStringName(hover), empty_stylebox.ptr());
+	zoom_reset->add_theme_style_override("focus", empty_stylebox.ptr());
+	zoom_reset->add_theme_style_override(SceneStringName(pressed), empty_stylebox.ptr());
 	zoom_reset->add_theme_constant_override("outline_size", Math::ceil(2 * EDSCALE));
 	zoom_reset->add_theme_color_override("font_outline_color", Color(0, 0, 0));
 	zoom_reset->add_theme_color_override(SceneStringName(font_color), Color(1, 1, 1));

@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "material_editor_plugin.h"
-
 #include "core/config/project_settings.h"
 #include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
@@ -37,6 +35,7 @@
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "material_editor_plugin.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/color_rect.h"
@@ -54,7 +53,9 @@
 #include "scene/3d/light_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 
-Ref<ShaderMaterial> MaterialEditor::make_shader_material(const Ref<Material> &p_from, bool p_copy_params) {
+Ref<ShaderMaterial> MaterialEditor::make_shader_material(
+	const Ref<Material>& p_from, bool p_copy_params)
+{
 	ERR_FAIL_COND_V(p_from.is_null(), Ref<ShaderMaterial>());
 
 	Ref<ShaderMaterial> smat;
@@ -71,7 +72,7 @@ Ref<ShaderMaterial> MaterialEditor::make_shader_material(const Ref<Material> &p_
 		List<PropertyInfo> params;
 		RS::get_singleton()->get_shader_parameter_list(p_from->get_shader_rid(), &params);
 
-		for (const PropertyInfo &E : params) {
+		for (const PropertyInfo& E : params) {
 			Variant value = RS::get_singleton()->material_get_param(p_from->get_rid(), E.name);
 			smat->set_shader_parameter(E.name, value);
 		}
@@ -83,7 +84,8 @@ Ref<ShaderMaterial> MaterialEditor::make_shader_material(const Ref<Material> &p_
 	return smat;
 }
 
-void MaterialEditor::gui_input(const Ref<InputEvent> &p_event) {
+void MaterialEditor::gui_input(const Ref<InputEvent>& p_event)
+{
 	ERR_FAIL_COND(p_event.is_null());
 
 	Ref<InputEventMouseMotion> mm = p_event;
@@ -94,7 +96,8 @@ void MaterialEditor::gui_input(const Ref<InputEvent> &p_event) {
 			// Clamp rotation so the quad is always visible.
 			const real_t limit = Math::deg_to_rad(80.0);
 			rot = rot.clampf(-limit, limit);
-		} else {
+		}
+		else {
 			rot.x = CLAMP(rot.x, -Math::PI / 2, Math::PI / 2);
 		}
 		_update_rotation();
@@ -102,16 +105,19 @@ void MaterialEditor::gui_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-void MaterialEditor::set_autohide_buttons(bool p_autohide) {
+void MaterialEditor::set_autohide_buttons(bool p_autohide)
+{
 	autohide_buttons = p_autohide;
 	if (autohide_buttons) {
 		layout_3d->hide();
-	} else {
+	}
+	else {
 		layout_3d->show();
 	}
 }
 
-void MaterialEditor::_update_theme_item_cache() {
+void MaterialEditor::_update_theme_item_cache()
+{
 	Control::_update_theme_item_cache();
 
 	theme_cache.light_1_icon = get_editor_theme_icon(SNAME("MaterialPreviewLight1"));
@@ -124,64 +130,74 @@ void MaterialEditor::_update_theme_item_cache() {
 	theme_cache.checkerboard = get_editor_theme_icon(SNAME("Checkerboard"));
 }
 
-void MaterialEditor::_notification(int p_what) {
+void MaterialEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			light_1_switch->set_button_icon(theme_cache.light_1_icon);
-			light_2_switch->set_button_icon(theme_cache.light_2_icon);
+	case NOTIFICATION_THEME_CHANGED: {
+		light_1_switch->set_button_icon(theme_cache.light_1_icon);
+		light_2_switch->set_button_icon(theme_cache.light_2_icon);
 
-			sphere_switch->set_button_icon(theme_cache.sphere_icon);
-			box_switch->set_button_icon(theme_cache.box_icon);
-			quad_switch->set_button_icon(theme_cache.quad_icon);
+		sphere_switch->set_button_icon(theme_cache.sphere_icon);
+		box_switch->set_button_icon(theme_cache.box_icon);
+		quad_switch->set_button_icon(theme_cache.quad_icon);
 
-			error_label->add_theme_color_override(SceneStringName(font_color), get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		} break;
+		error_label->add_theme_color_override(SceneStringName(font_color),
+			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
+	} break;
 
-		case NOTIFICATION_DRAW: {
-			if (!is_unsupported_shader_mode) {
-				Size2 size = get_size();
-				draw_rect(Rect2(Point2(), size), Color(0, 0, 0, 1)); // Since checkerboard texture is transluscent, draw opaque black behind it.
-				draw_texture_rect(theme_cache.checkerboard, Rect2(Point2(), size), true);
+	case NOTIFICATION_DRAW: {
+		if (!is_unsupported_shader_mode) {
+			Size2 size = get_size();
+			draw_rect(Rect2(Point2(), size),
+				Color(0, 0, 0,
+					1)); // Since checkerboard texture is transluscent, draw opaque black behind it.
+			draw_texture_rect(theme_cache.checkerboard.ptr(), Rect2(Point2(), size), true);
+		}
+	} break;
+
+	case NOTIFICATION_MOUSE_ENTER: {
+		if (autohide_buttons) {
+			Shader::Mode mode =
+				material.is_valid() ? material->get_shader_mode() : Shader::MODE_MAX;
+			if (mode == Shader::MODE_SPATIAL) {
+				layout_3d->show();
 			}
-		} break;
+		}
+	} break;
 
-		case NOTIFICATION_MOUSE_ENTER: {
-			if (autohide_buttons) {
-				Shader::Mode mode = material.is_valid() ? material->get_shader_mode() : Shader::MODE_MAX;
-				if (mode == Shader::MODE_SPATIAL) {
-					layout_3d->show();
-				}
-			}
-		} break;
-
-		case NOTIFICATION_MOUSE_EXIT: {
-			if (autohide_buttons) {
-				layout_3d->hide();
-			}
-		} break;
+	case NOTIFICATION_MOUSE_EXIT: {
+		if (autohide_buttons) {
+			layout_3d->hide();
+		}
+	} break;
 	}
 }
 
-void MaterialEditor::_set_rotation(real_t p_x_degrees, real_t p_y_degrees) {
+void MaterialEditor::_set_rotation(real_t p_x_degrees, real_t p_y_degrees)
+{
 	rot.x = Math::deg_to_rad(p_x_degrees);
 	rot.y = Math::deg_to_rad(p_y_degrees);
 	_update_rotation();
 }
 
 // Store the rotation so it can persist when switching between materials.
-void MaterialEditor::_store_rotation_metadata() {
+void MaterialEditor::_store_rotation_metadata()
+{
 	Vector2 rotation_degrees = Vector2(Math::rad_to_deg(rot.x), Math::rad_to_deg(rot.y));
-	EditorSettings::get_singleton()->set_project_metadata("inspector_options", "material_preview_rotation", rotation_degrees);
+	EditorSettings::get_singleton()->set_project_metadata(
+		"inspector_options", "material_preview_rotation", rotation_degrees);
 }
 
-void MaterialEditor::_update_rotation() {
+void MaterialEditor::_update_rotation()
+{
 	Transform3D t;
 	t.basis.rotate(Vector3(0, 1, 0), -rot.y);
 	t.basis.rotate(Vector3(1, 0, 0), -rot.x);
 	rotation->set_transform(t);
 }
 
-void MaterialEditor::edit(Ref<Material> p_material, const Ref<Environment> &p_env) {
+void MaterialEditor::edit(Ref<Material> p_material, const Ref<Environment>& p_env)
+{
 	material = p_material;
 	camera->set_environment(p_env);
 
@@ -189,46 +205,50 @@ void MaterialEditor::edit(Ref<Material> p_material, const Ref<Environment> &p_en
 	if (material.is_valid()) {
 		Shader::Mode mode = p_material->get_shader_mode();
 		switch (mode) {
-			case Shader::MODE_CANVAS_ITEM:
-				layout_error->hide();
-				layout_3d->hide();
-				layout_2d->show();
-				rect_instance->set_material(material);
-				vc->hide();
-				break;
-			case Shader::MODE_SPATIAL:
-				layout_error->hide();
-				layout_2d->hide();
-				if (!autohide_buttons) {
-					layout_3d->show();
-				}
-				sphere_instance->set_material_override(material);
-				box_instance->set_material_override(material);
-				quad_instance->set_material_override(material);
-				vc->show();
-				break;
-			default:
-				layout_error->show();
-				layout_2d->hide();
-				layout_3d->hide();
-				is_unsupported_shader_mode = true;
-				vc->hide();
-				break;
+		case Shader::MODE_CANVAS_ITEM:
+			layout_error->hide();
+			layout_3d->hide();
+			layout_2d->show();
+			rect_instance->set_material(material);
+			vc->hide();
+			break;
+		case Shader::MODE_SPATIAL:
+			layout_error->hide();
+			layout_2d->hide();
+			if (!autohide_buttons) {
+				layout_3d->show();
+			}
+			sphere_instance->set_material_override(material);
+			box_instance->set_material_override(material);
+			quad_instance->set_material_override(material);
+			vc->show();
+			break;
+		default:
+			layout_error->show();
+			layout_2d->hide();
+			layout_3d->hide();
+			is_unsupported_shader_mode = true;
+			vc->hide();
+			break;
 		}
-	} else {
+	}
+	else {
 		hide();
 	}
 }
 
-void MaterialEditor::_on_light_1_switch_pressed() {
+void MaterialEditor::_on_light_1_switch_pressed()
+{
 	light1->set_visible(light_1_switch->is_pressed());
 }
 
-void MaterialEditor::_on_light_2_switch_pressed() {
+void MaterialEditor::_on_light_2_switch_pressed()
+{
 	light2->set_visible(light_2_switch->is_pressed());
 }
 
-void MaterialEditor::_on_sphere_switch_pressed() {
+void MaterialEditor::_on_sphere_switch_pressed()
+{
 	sphere_instance->show();
 	box_instance->hide();
 	quad_instance->hide();
@@ -236,10 +256,12 @@ void MaterialEditor::_on_sphere_switch_pressed() {
 	quad_switch->set_pressed(false);
 	_set_rotation(-15.0, 30.0);
 	_store_rotation_metadata();
-	EditorSettings::get_singleton()->set_project_metadata("inspector_options", "material_preview_mesh", "sphere");
+	EditorSettings::get_singleton()->set_project_metadata(
+		"inspector_options", "material_preview_mesh", "sphere");
 }
 
-void MaterialEditor::_on_box_switch_pressed() {
+void MaterialEditor::_on_box_switch_pressed()
+{
 	sphere_instance->hide();
 	box_instance->show();
 	quad_instance->hide();
@@ -247,10 +269,12 @@ void MaterialEditor::_on_box_switch_pressed() {
 	quad_switch->set_pressed(false);
 	_set_rotation(-15.0, 30.0);
 	_store_rotation_metadata();
-	EditorSettings::get_singleton()->set_project_metadata("inspector_options", "material_preview_mesh", "box");
+	EditorSettings::get_singleton()->set_project_metadata(
+		"inspector_options", "material_preview_mesh", "box");
 }
 
-void MaterialEditor::_on_quad_switch_pressed() {
+void MaterialEditor::_on_quad_switch_pressed()
+{
 	sphere_instance->hide();
 	box_instance->hide();
 	quad_instance->show();
@@ -258,10 +282,12 @@ void MaterialEditor::_on_quad_switch_pressed() {
 	box_switch->set_pressed(false);
 	_set_rotation(0.0, 0.0);
 	_store_rotation_metadata();
-	EditorSettings::get_singleton()->set_project_metadata("inspector_options", "material_preview_mesh", "quad");
+	EditorSettings::get_singleton()->set_project_metadata(
+		"inspector_options", "material_preview_mesh", "quad");
 }
 
-MaterialEditor::MaterialEditor() {
+MaterialEditor::MaterialEditor()
+{
 	set_custom_minimum_size(Size2(1, 100) * EDSCALE);
 
 	// Canvas item
@@ -367,9 +393,10 @@ MaterialEditor::MaterialEditor() {
 	if (autohide_buttons) {
 		layout_3d->hide();
 	}
-	layout_3d->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, 2);
+	layout_3d->set_anchors_and_offsets_preset(
+		Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, 2);
 
-	VBoxContainer *vb_shape = memnew(VBoxContainer);
+	VBoxContainer* vb_shape = memnew(VBoxContainer);
 	layout_3d->add_child(vb_shape);
 
 	Ref<ButtonGroup> bg;
@@ -382,7 +409,8 @@ MaterialEditor::MaterialEditor() {
 	sphere_switch->set_button_group(bg);
 	sphere_switch->set_accessibility_name(TTRC("Sphere"));
 	vb_shape->add_child(sphere_switch);
-	sphere_switch->connect(SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_sphere_switch_pressed));
+	sphere_switch->connect(
+		SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_sphere_switch_pressed));
 
 	box_switch = memnew(Button);
 	box_switch->set_mouse_filter(Control::MOUSE_FILTER_PASS);
@@ -391,7 +419,8 @@ MaterialEditor::MaterialEditor() {
 	box_switch->set_button_group(bg);
 	box_switch->set_accessibility_name(TTRC("Box"));
 	vb_shape->add_child(box_switch);
-	box_switch->connect(SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_box_switch_pressed));
+	box_switch->connect(
+		SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_box_switch_pressed));
 
 	quad_switch = memnew(Button);
 	quad_switch->set_mouse_filter(Control::MOUSE_FILTER_PASS);
@@ -400,11 +429,12 @@ MaterialEditor::MaterialEditor() {
 	quad_switch->set_button_group(bg);
 	quad_switch->set_accessibility_name(TTRC("Quad"));
 	vb_shape->add_child(quad_switch);
-	quad_switch->connect(SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_quad_switch_pressed));
+	quad_switch->connect(
+		SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_quad_switch_pressed));
 
 	layout_3d->add_spacer();
 
-	VBoxContainer *vb_light = memnew(VBoxContainer);
+	VBoxContainer* vb_light = memnew(VBoxContainer);
 	layout_3d->add_child(vb_light);
 
 	light_1_switch = memnew(Button);
@@ -414,7 +444,8 @@ MaterialEditor::MaterialEditor() {
 	light_1_switch->set_pressed(true);
 	light_1_switch->set_accessibility_name(TTRC("First Light"));
 	vb_light->add_child(light_1_switch);
-	light_1_switch->connect(SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_light_1_switch_pressed));
+	light_1_switch->connect(
+		SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_light_1_switch_pressed));
 
 	light_2_switch = memnew(Button);
 	light_2_switch->set_mouse_filter(Control::MOUSE_FILTER_PASS);
@@ -423,24 +454,29 @@ MaterialEditor::MaterialEditor() {
 	light_2_switch->set_pressed(true);
 	light_2_switch->set_accessibility_name(TTRC("Second Light"));
 	vb_light->add_child(light_2_switch);
-	light_2_switch->connect(SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_light_2_switch_pressed));
+	light_2_switch->connect(
+		SceneStringName(pressed), callable_mp(this, &MaterialEditor::_on_light_2_switch_pressed));
 
-	String shape = EditorSettings::get_singleton()->get_project_metadata("inspector_options", "material_preview_mesh", "sphere");
+	String shape = EditorSettings::get_singleton()->get_project_metadata(
+		"inspector_options", "material_preview_mesh", "sphere");
 	if (shape == "sphere") {
 		box_instance->hide();
 		quad_instance->hide();
 		sphere_switch->set_pressed_no_signal(true);
-	} else if (shape == "box") {
+	}
+	else if (shape == "box") {
 		sphere_instance->hide();
 		quad_instance->hide();
 		box_switch->set_pressed_no_signal(true);
-	} else {
+	}
+	else {
 		sphere_instance->hide();
 		box_instance->hide();
 		quad_switch->set_pressed_no_signal(true);
 	}
 
-	Vector2 stored_rot = EditorSettings::get_singleton()->get_project_metadata("inspector_options", "material_preview_rotation", Vector2());
+	Vector2 stored_rot = EditorSettings::get_singleton()->get_project_metadata(
+		"inspector_options", "material_preview_rotation", Vector2());
 	_set_rotation(stored_rot.x, stored_rot.y);
 
 	EditorNode::get_singleton()->register_hdr_viewport(viewport);
@@ -449,8 +485,9 @@ MaterialEditor::MaterialEditor() {
 
 ///////////////////////
 
-bool EditorInspectorPluginMaterial::can_handle(Object *p_object) {
-	Material *material = Object::cast_to<Material>(p_object);
+bool EditorInspectorPluginMaterial::can_handle(Object* p_object)
+{
+	Material* material = Object::cast_to<Material>(p_object);
 	if (!material) {
 		return false;
 	}
@@ -458,27 +495,30 @@ bool EditorInspectorPluginMaterial::can_handle(Object *p_object) {
 	return mode == Shader::MODE_SPATIAL || mode == Shader::MODE_CANVAS_ITEM;
 }
 
-void EditorInspectorPluginMaterial::parse_begin(Object *p_object) {
-	Material *material = Object::cast_to<Material>(p_object);
+void EditorInspectorPluginMaterial::parse_begin(Object* p_object)
+{
+	Material* material = Object::cast_to<Material>(p_object);
 	if (!material) {
 		return;
 	}
 	Ref<Material> m(material);
 
-	MaterialEditor *editor = memnew(MaterialEditor);
+	MaterialEditor* editor = memnew(MaterialEditor);
 	editor->edit(m, env);
 	add_custom_control(editor);
 }
 
-void EditorInspectorPluginMaterial::_undo_redo_inspector_callback(Object *p_undo_redo, Object *p_edited, const String &p_property, const Variant &p_new_value) {
-	EditorUndoRedoManager *undo_redo = Object::cast_to<EditorUndoRedoManager>(p_undo_redo);
+void EditorInspectorPluginMaterial::_undo_redo_inspector_callback(
+	Object* p_undo_redo, Object* p_edited, const String& p_property, const Variant& p_new_value)
+{
+	EditorUndoRedoManager* undo_redo = Object::cast_to<EditorUndoRedoManager>(p_undo_redo);
 	ERR_FAIL_NULL(undo_redo);
 
 	// For BaseMaterial3D, if a roughness or metallic textures is being assigned to an empty slot,
 	// set the respective metallic or roughness factor to 1.0 as a convenience feature
-	BaseMaterial3D *base_material = Object::cast_to<StandardMaterial3D>(p_edited);
+	BaseMaterial3D* base_material = Object::cast_to<StandardMaterial3D>(p_edited);
 	if (base_material) {
-		Texture2D *texture = Object::cast_to<Texture2D>(p_new_value);
+		Texture2D* texture = Object::cast_to<Texture2D>(p_new_value);
 		if (texture) {
 			if (p_property == "roughness_texture") {
 				if (base_material->get_texture(StandardMaterial3D::TEXTURE_ROUGHNESS).is_null()) {
@@ -490,7 +530,8 @@ void EditorInspectorPluginMaterial::_undo_redo_inspector_callback(Object *p_undo
 						undo_redo->add_undo_property(p_edited, "roughness", value);
 					}
 				}
-			} else if (p_property == "metallic_texture") {
+			}
+			else if (p_property == "metallic_texture") {
 				if (base_material->get_texture(StandardMaterial3D::TEXTURE_METALLIC).is_null()) {
 					undo_redo->add_do_property(p_edited, "metallic", 1.0);
 
@@ -505,7 +546,8 @@ void EditorInspectorPluginMaterial::_undo_redo_inspector_callback(Object *p_undo
 	}
 }
 
-EditorInspectorPluginMaterial::EditorInspectorPluginMaterial() {
+EditorInspectorPluginMaterial::EditorInspectorPluginMaterial()
+{
 	env.instantiate();
 	Ref<Sky> sky = memnew(Sky());
 	env->set_sky(sky);
@@ -513,52 +555,57 @@ EditorInspectorPluginMaterial::EditorInspectorPluginMaterial() {
 	env->set_ambient_source(Environment::AMBIENT_SOURCE_SKY);
 	env->set_reflection_source(Environment::REFLECTION_SOURCE_SKY);
 
-	EditorNode::get_editor_data().add_undo_redo_inspector_hook_callback(callable_mp(this, &EditorInspectorPluginMaterial::_undo_redo_inspector_callback));
+	EditorNode::get_editor_data().add_undo_redo_inspector_hook_callback(
+		callable_mp(this, &EditorInspectorPluginMaterial::_undo_redo_inspector_callback));
 }
 
-MaterialEditorPlugin::MaterialEditorPlugin() {
+MaterialEditorPlugin::MaterialEditorPlugin()
+{
 	Ref<EditorInspectorPluginMaterial> plugin;
 	plugin.instantiate();
 	add_inspector_plugin(plugin);
 }
 
-String ParticleProcessMaterialConversionPlugin::converts_to() const {
-	return "ShaderMaterial";
-}
+String ParticleProcessMaterialConversionPlugin::converts_to() const { return "ShaderMaterial"; }
 
-bool ParticleProcessMaterialConversionPlugin::handles(const Ref<Resource> &p_resource) const {
+bool ParticleProcessMaterialConversionPlugin::handles(const Ref<Resource>& p_resource) const
+{
 	Ref<ParticleProcessMaterial> mat = p_resource;
 	return mat.is_valid();
 }
 
-Ref<Resource> ParticleProcessMaterialConversionPlugin::convert(const Ref<Resource> &p_resource) const {
+Ref<Resource> ParticleProcessMaterialConversionPlugin::convert(
+	const Ref<Resource>& p_resource) const
+{
 	return MaterialEditor::make_shader_material(p_resource);
 }
 
-String CanvasItemMaterialConversionPlugin::converts_to() const {
-	return "ShaderMaterial";
-}
+String CanvasItemMaterialConversionPlugin::converts_to() const { return "ShaderMaterial"; }
 
-bool CanvasItemMaterialConversionPlugin::handles(const Ref<Resource> &p_resource) const {
+bool CanvasItemMaterialConversionPlugin::handles(const Ref<Resource>& p_resource) const
+{
 	Ref<CanvasItemMaterial> mat = p_resource;
 	return mat.is_valid();
 }
 
-Ref<Resource> CanvasItemMaterialConversionPlugin::convert(const Ref<Resource> &p_resource) const {
-	ERR_FAIL_COND_V(!Object::cast_to<CanvasItemMaterial>(*p_resource) || !Object::cast_to<CanvasItemMaterial>(*p_resource)->_is_initialized(), Ref<CanvasItemMaterial>());
+Ref<Resource> CanvasItemMaterialConversionPlugin::convert(const Ref<Resource>& p_resource) const
+{
+	ERR_FAIL_COND_V(!Object::cast_to<CanvasItemMaterial>(*p_resource) ||
+						!Object::cast_to<CanvasItemMaterial>(*p_resource)->_is_initialized(),
+		Ref<CanvasItemMaterial>());
 	return MaterialEditor::make_shader_material(p_resource);
 }
 
-String BlitMaterialConversionPlugin::converts_to() const {
-	return "ShaderMaterial";
-}
+String BlitMaterialConversionPlugin::converts_to() const { return "ShaderMaterial"; }
 
-bool BlitMaterialConversionPlugin::handles(const Ref<Resource> &p_resource) const {
+bool BlitMaterialConversionPlugin::handles(const Ref<Resource>& p_resource) const
+{
 	Ref<BlitMaterial> mat = p_resource;
 	return mat.is_valid();
 }
 
-Ref<Resource> BlitMaterialConversionPlugin::convert(const Ref<Resource> &p_resource) const {
+Ref<Resource> BlitMaterialConversionPlugin::convert(const Ref<Resource>& p_resource) const
+{
 	Ref<BlitMaterial> mat = p_resource;
 	ERR_FAIL_COND_V(mat.is_null(), Ref<Resource>());
 
@@ -577,7 +624,7 @@ Ref<Resource> BlitMaterialConversionPlugin::convert(const Ref<Resource> &p_resou
 	List<PropertyInfo> params;
 	RS::get_singleton()->get_shader_parameter_list(mat->get_shader_rid(), &params);
 
-	for (const PropertyInfo &E : params) {
+	for (const PropertyInfo& E : params) {
 		Variant value = RS::get_singleton()->material_get_param(mat->get_rid(), E.name);
 		smat->set_shader_parameter(E.name, value);
 	}
@@ -587,3 +634,5 @@ Ref<Resource> BlitMaterialConversionPlugin::convert(const Ref<Resource> &p_resou
 	smat->set_name(mat->get_name());
 	return smat;
 }
+
+

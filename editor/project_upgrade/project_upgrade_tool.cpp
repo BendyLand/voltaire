@@ -169,7 +169,7 @@ void ProjectUpgradeTool::finish_upgrade()
 			Ref<Resource> res =
 				ResourceLoader::load(file_path, "", ResourceFormatLoader::CACHE_MODE_REPLACE);
 			if (res.is_valid()) {
-				ResourceSaver::save(res);
+				ResourceSaver::save(res.ptr());
 			}
 		}
 		EditorSettings::get_singleton()->set_project_metadata(
@@ -179,9 +179,5 @@ void ProjectUpgradeTool::finish_upgrade()
 
 ProjectUpgradeTool::ProjectUpgradeTool() { this->obj = mem_make_unique<Object>(); }
 
-void ProjectUpgradeTool::_bind_methods()
-{
-	// ClassDB member bindings removed for composed architecture
-}
-
+void ProjectUpgradeTool::_bind_methods() {}
 

@@ -150,6 +150,13 @@ public:                                                                         
 	{                                                                                              \
 		return #m_class;                                                                           \
 	}                                                                                              \
+
+#define OBJ_SAVE_TYPE_NO(m_class)                                                                  \
+public:                                                                                            \
+	virtual String get_save_class() const                                                          \
+	{                                                                                              \
+		return #m_class;                                                                           \
+	}                                                                                              \
                                                                                                    \
 private:
 

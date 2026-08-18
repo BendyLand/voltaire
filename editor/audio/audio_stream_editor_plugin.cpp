@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_stream_editor_plugin.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/audio/audio_stream_preview.h"
 #include "editor/editor_string_names.h"
@@ -40,41 +39,44 @@
 
 // AudioStreamEditor
 
-void AudioStreamEditor::_notification(int p_what) {
+void AudioStreamEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_READY: {
-			AudioStreamPreviewGenerator::get_singleton()->connect(SNAME("preview_updated"), callable_mp(this, &AudioStreamEditor::_preview_changed));
-		} break;
-		case NOTIFICATION_THEME_CHANGED: {
-			Ref<Font> font = get_theme_font(SNAME("status_source"), EditorStringName(EditorFonts));
+	case NOTIFICATION_READY: {
+		AudioStreamPreviewGenerator::get_singleton()->connect(
+			SNAME("preview_updated"), callable_mp(this, &AudioStreamEditor::_preview_changed));
+	} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		Ref<Font> font = get_theme_font(SNAME("status_source"), EditorStringName(EditorFonts));
 
-			_current_label->add_theme_font_override(SceneStringName(font), font);
-			_duration_label->add_theme_font_override(SceneStringName(font), font);
+		_current_label->add_theme_font_override(SceneStringName(font), font.ptr());
+		_duration_label->add_theme_font_override(SceneStringName(font), font.ptr());
 
-			_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-			_stop_button->set_button_icon(get_editor_theme_icon(SNAME("Stop")));
-			_preview->set_color(get_theme_color(SNAME("dark_color_2"), EditorStringName(Editor)));
+		_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
+		_stop_button->set_button_icon(get_editor_theme_icon(SNAME("Stop")));
+		_preview->set_color(get_theme_color(SNAME("dark_color_2"), EditorStringName(Editor)));
 
-			set_color(get_theme_color(SNAME("dark_color_1"), EditorStringName(Editor)));
+		set_color(get_theme_color(SNAME("dark_color_1"), EditorStringName(Editor)));
 
-			_indicator->queue_redraw();
-			_preview->queue_redraw();
-		} break;
-		case NOTIFICATION_PROCESS: {
-			_current = _player->get_playback_position();
-			_indicator->queue_redraw();
-		} break;
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			if (!is_visible_in_tree()) {
-				_stop();
-			}
-		} break;
-		default: {
-		} break;
+		_indicator->queue_redraw();
+		_preview->queue_redraw();
+	} break;
+	case NOTIFICATION_PROCESS: {
+		_current = _player->get_playback_position();
+		_indicator->queue_redraw();
+	} break;
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		if (!is_visible_in_tree()) {
+			_stop();
+		}
+	} break;
+	default: {
+	} break;
 	}
 }
 
-void AudioStreamEditor::_draw_preview() {
+void AudioStreamEditor::_draw_preview()
+{
 	Size2 size = get_size();
 	int width = size.width;
 	if (width <= 0) {
@@ -83,7 +85,8 @@ void AudioStreamEditor::_draw_preview() {
 
 	Rect2 rect = _preview->get_rect();
 
-	Ref<AudioStreamPreview> preview = AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
+	Ref<AudioStreamPreview> preview =
+		AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
 	float preview_len = preview->get_length();
 
 	Vector<Vector2> points;
@@ -100,31 +103,35 @@ void AudioStreamEditor::_draw_preview() {
 		points.write[idx * 2 + 1] = Vector2(i + 1, rect.position.y + max * rect.size.y);
 	}
 
-	Vector<Color> colors = { get_theme_color(SNAME("contrast_color_2"), EditorStringName(Editor)) };
+	Vector<Color> colors = {get_theme_color(SNAME("contrast_color_2"), EditorStringName(Editor))};
 
 	RS::get_singleton()->canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
 }
 
-void AudioStreamEditor::_preview_changed(ObjectID p_which) {
-	if (stream.is_valid() && stream->get_instance_id() == p_which) {
+void AudioStreamEditor::_preview_changed(ObjectID p_which)
+{
+	if (stream.is_valid() && stream->obj->get_instance_id() == p_which) {
 		_preview->queue_redraw();
 	}
 }
 
-void AudioStreamEditor::_stream_changed() {
+void AudioStreamEditor::_stream_changed()
+{
 	if (!is_visible()) {
 		return;
 	}
 	queue_redraw();
 }
 
-void AudioStreamEditor::_play() {
+void AudioStreamEditor::_play()
+{
 	if (_player->is_playing()) {
 		_pausing = true;
 		_player->stop();
 		_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
 		set_process(false);
-	} else {
+	}
+	else {
 		_pausing = false;
 		_player->play(_current);
 		_play_button->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
@@ -132,7 +139,8 @@ void AudioStreamEditor::_play() {
 	}
 }
 
-void AudioStreamEditor::_stop() {
+void AudioStreamEditor::_stop()
+{
 	_player->stop();
 	_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
 	_current = 0;
@@ -140,18 +148,21 @@ void AudioStreamEditor::_stop() {
 	set_process(false);
 }
 
-void AudioStreamEditor::_on_finished() {
+void AudioStreamEditor::_on_finished()
+{
 	_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
 	if (!_pausing) {
 		_current = 0;
 		_indicator->queue_redraw();
-	} else {
+	}
+	else {
 		_pausing = false;
 	}
 	set_process(false);
 }
 
-void AudioStreamEditor::_draw_indicator() {
+void AudioStreamEditor::_draw_indicator()
+{
 	if (stream.is_null()) {
 		return;
 	}
@@ -161,16 +172,15 @@ void AudioStreamEditor::_draw_indicator() {
 	float ofs_x = _current / len * rect.size.width;
 	const Color col = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 	Ref<Texture2D> icon = get_editor_theme_icon(SNAME("TimelineIndicator"));
-	_indicator->draw_line(Point2(ofs_x, 0), Point2(ofs_x, rect.size.height), col, Math::round(2 * EDSCALE));
-	_indicator->draw_texture(
-			icon,
-			Point2(ofs_x - icon->get_width() * 0.5, 0),
-			col);
+	_indicator->draw_line(
+		Point2(ofs_x, 0), Point2(ofs_x, rect.size.height), col, Math::round(2 * EDSCALE));
+	_indicator->draw_texture(icon.ptr(), Point2(ofs_x - icon->get_width() * 0.5, 0), col);
 
 	_current_label->set_text(String::num(_current, 2).pad_decimals(2) + " /");
 }
 
-void AudioStreamEditor::_on_input_indicator(Ref<InputEvent> p_event) {
+void AudioStreamEditor::_on_input_indicator(Ref<InputEvent> p_event)
+{
 	const Ref<InputEventMouseButton> mb = p_event;
 	if (mb.is_valid() && mb->get_button_index() == MouseButton::LEFT) {
 		if (mb->is_pressed()) {
@@ -187,14 +197,16 @@ void AudioStreamEditor::_on_input_indicator(Ref<InputEvent> p_event) {
 	}
 }
 
-void AudioStreamEditor::_seek_to(real_t p_x) {
+void AudioStreamEditor::_seek_to(real_t p_x)
+{
 	_current = p_x / _preview->get_rect().size.x * stream->get_length();
 	_current = CLAMP(_current, 0, stream->get_length());
 	_player->seek(_current);
 	_indicator->queue_redraw();
 }
 
-void AudioStreamEditor::set_stream(const Ref<AudioStream> &p_stream) {
+void AudioStreamEditor::set_stream(const Ref<AudioStream>& p_stream)
+{
 	if (stream.is_valid()) {
 		stream->disconnect_changed(callable_mp(this, &AudioStreamEditor::_stream_changed));
 	}
@@ -215,14 +227,16 @@ void AudioStreamEditor::set_stream(const Ref<AudioStream> &p_stream) {
 	queue_redraw();
 }
 
-AudioStreamEditor::AudioStreamEditor() {
+AudioStreamEditor::AudioStreamEditor()
+{
 	set_custom_minimum_size(Size2(1, 100) * EDSCALE);
 
 	_player = memnew(AudioStreamPlayer);
-	_player->connect(SceneStringName(finished), callable_mp(this, &AudioStreamEditor::_on_finished));
+	_player->connect(
+		SceneStringName(finished), callable_mp(this, &AudioStreamEditor::_on_finished));
 	add_child(_player);
 
-	VBoxContainer *vbox = memnew(VBoxContainer);
+	VBoxContainer* vbox = memnew(VBoxContainer);
 	vbox->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 	add_child(vbox);
 
@@ -233,11 +247,13 @@ AudioStreamEditor::AudioStreamEditor() {
 
 	_indicator = memnew(Control);
 	_indicator->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	_indicator->connect(SceneStringName(draw), callable_mp(this, &AudioStreamEditor::_draw_indicator));
-	_indicator->connect(SceneStringName(gui_input), callable_mp(this, &AudioStreamEditor::_on_input_indicator));
+	_indicator->connect(
+		SceneStringName(draw), callable_mp(this, &AudioStreamEditor::_draw_indicator));
+	_indicator->connect(
+		SceneStringName(gui_input), callable_mp(this, &AudioStreamEditor::_on_input_indicator));
 	_preview->add_child(_indicator);
 
-	HBoxContainer *hbox = memnew(HBoxContainer);
+	HBoxContainer* hbox = memnew(HBoxContainer);
 	hbox->add_theme_constant_override("separation", 0);
 	vbox->add_child(hbox);
 
@@ -246,7 +262,8 @@ AudioStreamEditor::AudioStreamEditor() {
 	_play_button->set_flat(true);
 	_play_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 	_play_button->connect(SceneStringName(pressed), callable_mp(this, &AudioStreamEditor::_play));
-	_play_button->set_shortcut(ED_SHORTCUT("audio_stream_editor/audio_preview_play_pause", TTRC("Audio Preview Play/Pause"), Key::SPACE));
+	_play_button->set_shortcut(ED_SHORTCUT("audio_stream_editor/audio_preview_play_pause",
+		TTRC("Audio Preview Play/Pause"), Key::SPACE));
 	_play_button->set_accessibility_name(TTRC("Play"));
 
 	_stop_button = memnew(Button);
@@ -268,12 +285,14 @@ AudioStreamEditor::AudioStreamEditor() {
 
 // EditorInspectorPluginAudioStream
 
-bool EditorInspectorPluginAudioStream::can_handle(Object *p_object) {
+bool EditorInspectorPluginAudioStream::can_handle(Object* p_object)
+{
 	return Object::cast_to<AudioStreamWAV>(p_object) != nullptr;
 }
 
-void EditorInspectorPluginAudioStream::parse_begin(Object *p_object) {
-	AudioStream *stream = Object::cast_to<AudioStream>(p_object);
+void EditorInspectorPluginAudioStream::parse_begin(Object* p_object)
+{
+	AudioStream* stream = Object::cast_to<AudioStream>(p_object);
 
 	editor = memnew(AudioStreamEditor);
 	editor->set_stream(Ref<AudioStream>(stream));
@@ -283,8 +302,11 @@ void EditorInspectorPluginAudioStream::parse_begin(Object *p_object) {
 
 // AudioStreamEditorPlugin
 
-AudioStreamEditorPlugin::AudioStreamEditorPlugin() {
+AudioStreamEditorPlugin::AudioStreamEditorPlugin()
+{
 	Ref<EditorInspectorPluginAudioStream> plugin;
 	plugin.instantiate();
 	add_inspector_plugin(plugin);
 }
+
+

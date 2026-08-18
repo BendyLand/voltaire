@@ -262,17 +262,6 @@ bool MultiNodeEdit::_property_can_revert(const StringName& p_name) const
 		return false;
 	}
 
-	if (ClassDB::has_property(get_edited_class_name(), p_name)) {
-		for (const NodePath& E : nodes) {
-			Node* node = es->get_node_or_null(E);
-			if (node) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	// Don't show the revert button if the edited class doesn't have the property.
 	return false;
 }
@@ -298,10 +287,6 @@ bool MultiNodeEdit::_property_get_revert(const StringName& p_name, Variant& r_pr
 			bool is_valid = false;
 			r_property =
 				PropertyUtils::get_property_default_value(node->obj.get(), p_name, &is_valid);
-			if (!is_valid) {
-				r_property =
-					ClassDB::class_get_default_property_value(node->obj->get_class_name(), p_name);
-			}
 		}
 		return true;
 	}
@@ -321,7 +306,7 @@ void MultiNodeEdit::_queue_notify_property_list_changed()
 void MultiNodeEdit::_notify_property_list_changed()
 {
 	notify_property_list_changed_pending = false;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 void MultiNodeEdit::add_node(const NodePath& p_node)
@@ -386,14 +371,12 @@ StringName MultiNodeEdit::get_edited_class_name() const
 			}
 
 			const StringName node_class_name = node->obj->get_class_name();
-			if (class_name == node_class_name ||
-				ClassDB::is_parent_class(node_class_name, class_name)) {
+			if (class_name == node_class_name) {
 				// class_name is the same or a parent of the node's class.
 				continue;
 			}
 
 			// class_name is not a parent of the node's class, so check again with the parent class.
-			class_name = ClassDB::get_parent_class(class_name);
 			check_again = true;
 			break;
 		}
@@ -415,13 +398,5 @@ void MultiNodeEdit::set_property_field(
 	}
 }
 
-void MultiNodeEdit::_bind_methods()
-{
-	ClassDB::bind_method(
-		"_hide_script_from_inspector", &MultiNodeEdit::_hide_script_from_inspector);
-	ClassDB::bind_method(
-		"_hide_metadata_from_inspector", &MultiNodeEdit::_hide_metadata_from_inspector);
-	ClassDB::bind_method("_get_editor_name", &MultiNodeEdit::_get_editor_name);
-}
-
+void MultiNodeEdit::_bind_methods() {}
 

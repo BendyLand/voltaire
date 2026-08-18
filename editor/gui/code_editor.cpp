@@ -183,7 +183,7 @@ void FindReplaceBar::_notification(int p_what)
 							  : get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 	} break;
 
-	case CodeHighlighter::NOTIFICATION_PREDELETE: {
+	case Object::NOTIFICATION_PREDELETE: {
 		if (base_text_editor) {
 			base_text_editor->remove_find_replace_bar();
 			base_text_editor = nullptr;
@@ -834,10 +834,7 @@ void FindReplaceBar::set_text_edit(CodeTextEditor* p_text_editor)
 	_editor_text_changed();
 }
 
-void FindReplaceBar::_bind_methods()
-{
-	ClassDB::bind_method("_search_current", &FindReplaceBar::search_current);
-}
+void FindReplaceBar::_bind_methods() {}
 
 FindReplaceBar::FindReplaceBar()
 {
@@ -1828,10 +1825,10 @@ void CodeTextEditor::_update_text_editor_theme()
 		get_theme_stylebox(SNAME("normal"), SNAME("Label")); // Empty stylebox.
 
 	error->begin_bulk_theme_override();
-	error->add_theme_font_override(SNAME("normal_font"), status_bar_font);
+	error->add_theme_font_override(SNAME("normal_font"), status_bar_font.ptr());
 	error->add_theme_font_size_override(SNAME("normal_font_size"), status_bar_font_size);
 	error->add_theme_color_override(SNAME("default_color"), error_color);
-	error->add_theme_style_override(SNAME("normal"), label_stylebox);
+	error->add_theme_style_override(SNAME("normal"), label_stylebox.ptr());
 	error->end_bulk_theme_override();
 
 	error_button->set_button_icon(get_editor_theme_icon(SNAME("StatusError")));
@@ -1845,7 +1842,7 @@ void CodeTextEditor::_update_text_editor_theme()
 		Control* child = Object::cast_to<Control>(status_bar->get_child(i));
 		if (child) {
 			child->begin_bulk_theme_override();
-			child->add_theme_font_override(SceneStringName(font), status_bar_font);
+			child->add_theme_font_override(SceneStringName(font), status_bar_font.ptr());
 			child->add_theme_font_size_override(SceneStringName(font_size), status_bar_font_size);
 			child->end_bulk_theme_override();
 		}
@@ -2007,7 +2004,7 @@ void CodeTextEditor::_notification(int p_what)
 		set_process_input(is_visible_in_tree());
 	} break;
 
-	case CodeHighlighter::NOTIFICATION_PREDELETE: {
+	case Object::NOTIFICATION_PREDELETE: {
 		if (find_replace_bar) {
 			find_replace_bar->set_text_edit(nullptr);
 		}
@@ -2155,17 +2152,7 @@ void CodeTextEditor::_emit_request_save_new_history()
 	this->obj->emit_signal(SNAME("_request_save_new_history"));
 }
 
-void CodeTextEditor::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("validate_script"));
-	ADD_SIGNAL(MethodInfo("load_theme_settings"));
-	ADD_SIGNAL(MethodInfo("show_errors_panel"));
-	ADD_SIGNAL(MethodInfo("show_warnings_panel"));
-	ADD_SIGNAL(MethodInfo("show_goto_popup"));
-	ADD_SIGNAL(MethodInfo("navigation_preview_ended"));
-	ADD_SIGNAL(MethodInfo("zoomed", PropertyInfo(Variant::FLOAT, "zoom_factor")));
-	ADD_SIGNAL(MethodInfo("_request_save_new_history", PropertyInfo(Variant::DICTIONARY, "state")));
-}
+void CodeTextEditor::_bind_methods() {}
 
 void CodeTextEditor::set_code_complete_func(
 	CodeTextEditorCodeCompleteFunc p_code_complete_func, void* p_ud)

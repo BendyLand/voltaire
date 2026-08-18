@@ -199,9 +199,9 @@ void InspectorDock::_menu_option_confirm(int p_option, bool p_confirmed)
 				Ref<Resource> dupe = duplicates[res];
 
 				undo_redo->add_do_property(current, property, dupe);
-				undo_redo->add_do_reference(dupe.ptr());
+				undo_redo->add_do_reference(dupe->obj.get());
 				undo_redo->add_undo_property(current, property, res);
-				undo_redo->add_undo_reference(res.ptr());
+				undo_redo->add_undo_reference(res->obj.get());
 			}
 			undo_redo->commit_action();
 		}
@@ -276,7 +276,7 @@ void InspectorDock::_resource_file_selected(const String& p_file)
 		return;
 	};
 
-	EditorNode::get_singleton()->push_item(res.operator->());
+	EditorNode::get_singleton()->push_item(res.operator->()->obj.get());
 }
 
 void InspectorDock::_save_resource(bool save_as)
@@ -312,7 +312,7 @@ void InspectorDock::_paste_resource()
 	Ref<Resource> r = EditorSettings::get_singleton()->get_resource_clipboard();
 	if (r.is_valid()) {
 		EditorNode::get_singleton()->push_item(
-			EditorSettings::get_singleton()->get_resource_clipboard().ptr(), String());
+			EditorSettings::get_singleton()->get_resource_clipboard()->obj.get(), String());
 	}
 }
 
@@ -373,7 +373,7 @@ void InspectorDock::_prepare_history()
 				text = r->get_name();
 			}
 			else {
-				text = r->get_class();
+				text = r->obj->get_class();
 			}
 		}
 		else if (Object::cast_to<Node>(o)) {
@@ -419,7 +419,7 @@ void InspectorDock::_resource_created()
 	Resource* r = Object::cast_to<Resource>(c);
 	ERR_FAIL_NULL(r);
 
-	EditorNode::get_singleton()->push_item(r);
+	EditorNode::get_singleton()->push_item(r->obj.get());
 }
 
 void InspectorDock::_resource_selected(const Ref<Resource>& p_res, const String& p_property)
@@ -429,7 +429,7 @@ void InspectorDock::_resource_selected(const Ref<Resource>& p_res, const String&
 	}
 
 	Ref<Resource> r = p_res;
-	EditorNode::get_singleton()->push_item(r.operator->(), p_property);
+	EditorNode::get_singleton()->push_item(r.operator->()->obj.get(), p_property);
 }
 
 void InspectorDock::_files_moved(const String& p_old_file, const String& p_new_file)
@@ -553,13 +553,7 @@ void InspectorDock::_notification(int p_what)
 	}
 }
 
-void InspectorDock::_bind_methods()
-{
-	ClassDB::bind_method("store_script_properties", &InspectorDock::store_script_properties);
-	ClassDB::bind_method("apply_script_properties", &InspectorDock::apply_script_properties);
-
-	ADD_SIGNAL(MethodInfo("request_help"));
-}
+void InspectorDock::_bind_methods() {}
 
 void InspectorDock::edit_resource(const Ref<Resource>& p_resource)
 {
@@ -934,7 +928,8 @@ InspectorDock::InspectorDock(EditorData& p_editor_data)
 	unique_resources_confirmation->add_child(container);
 
 	Label* unique_resources_label = memnew(Label);
-	unique_resources_label->set_text(TTRC("The following resources will be duplicated and embedded within this resource/object:"));
+	unique_resources_label->set_text(TTRC(
+		"The following resources will be duplicated and embedded within this resource/object:"));
 	unique_resources_label->set_focus_mode(FOCUS_ACCESSIBILITY);
 	container->add_child(unique_resources_label);
 

@@ -110,7 +110,7 @@ class EditorPropertyArray : public EditorProperty
 		void set_index(int p_idx)
 		{
 			String prop_name = "indices/" + itos(p_idx);
-			prop->set_object_and_property(object.ptr(), prop_name);
+			prop->set_object_and_property(object->obj.get(), prop_name);
 			prop->set_label(itos(p_idx));
 			index = p_idx;
 		}
@@ -231,9 +231,9 @@ class EditorPropertyDictionary : public EditorProperty
 
 		void update_prop_or_index()
 		{
-			prop->set_object_and_property(object.ptr(), prop_name);
+			prop->set_object_and_property(object->obj.get(), prop_name);
 			if (prop_key) {
-				prop_key->set_object_and_property(object.ptr(), key_name);
+				prop_key->set_object_and_property(object->obj.get(), key_name);
 			}
 			else {
 				prop->set_label(object->get_label_for_index(index));

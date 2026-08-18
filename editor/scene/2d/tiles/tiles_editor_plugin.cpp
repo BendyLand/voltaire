@@ -410,10 +410,10 @@ void TileMapEditorPlugin::_update_tile_map()
 	TileMapLayer* edited_layer = ObjectDB::get_instance<TileMapLayer>(tile_map_layer_id);
 	if (edited_layer) {
 		Ref<TileSet> tile_set = edited_layer->get_tile_set();
-		if (tile_set.is_valid() && tile_set_id != tile_set->get_instance_id()) {
-			tile_set_plugin_singleton->edit(tile_set.ptr());
+		if (tile_set.is_valid() && tile_set_id != tile_set->obj->get_instance_id()) {
+			tile_set_plugin_singleton->edit(tile_set->obj.get());
 			tile_set_plugin_singleton->make_visible(true);
-			tile_set_id = tile_set->get_instance_id();
+			tile_set_id = tile_set->obj->get_instance_id();
 		}
 		else if (tile_set.is_null()) {
 			tile_set_plugin_singleton->edit(nullptr);
@@ -455,9 +455,9 @@ void TileMapEditorPlugin::_edit_tile_map_layer(
 	// Update the edited tileset.
 	Ref<TileSet> tile_set = p_tile_map_layer->get_tile_set();
 	if (tile_set.is_valid()) {
-		tile_set_plugin_singleton->edit(tile_set.ptr());
+		tile_set_plugin_singleton->edit(tile_set->obj.get());
 		tile_set_plugin_singleton->open_editor();
-		tile_set_id = tile_set->get_instance_id();
+		tile_set_id = tile_set->obj->get_instance_id();
 	}
 	else {
 		tile_set_plugin_singleton->edit(nullptr);
@@ -524,7 +524,7 @@ void TileMapEditorPlugin::edit(Object* p_object)
 		_edit_tile_map_layer(tile_map_layer, false);
 	}
 	else if (multi_node_edit) {
-		editor->edit(multi_node_edit);
+		editor->edit(multi_node_edit->obj.get());
 	}
 	else {
 		editor->edit(nullptr);

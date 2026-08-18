@@ -30,30 +30,38 @@
 
 #include "property_list_helper.h"
 
-HashMap<StringName, Vector<PropertyListHelper *>> PropertyListHelper::base_helpers; // static
+HashMap<StringName, Vector<PropertyListHelper*>> PropertyListHelper::base_helpers; // static
 
-void PropertyListHelper::clear_base_helpers() { // static
-	for (KeyValue<StringName, Vector<PropertyListHelper *>> &E : base_helpers) {
-		for (PropertyListHelper *helper : E.value) {
+void PropertyListHelper::clear_base_helpers()
+{ // static
+	for (KeyValue<StringName, Vector<PropertyListHelper*>>& E : base_helpers) {
+		for (PropertyListHelper* helper : E.value) {
 			helper->clear();
 		}
 	}
 	base_helpers.clear();
 }
 
-void PropertyListHelper::register_base_helper(const StringName &p_class_name, PropertyListHelper *p_helper) { // static
+void PropertyListHelper::register_base_helper(
+	const StringName& p_class_name, PropertyListHelper* p_helper)
+{ // static
 	base_helpers[p_class_name].push_back(p_helper);
 }
 
-Vector<PropertyListHelper *> PropertyListHelper::get_helpers_for_class(const StringName &p_class_name) {
+Vector<PropertyListHelper*> PropertyListHelper::get_helpers_for_class(
+	const StringName& p_class_name)
+{
 	if (base_helpers.has(p_class_name)) {
 		return base_helpers[p_class_name];
-	} else {
-		return Vector<PropertyListHelper *>();
+	}
+	else {
+		return Vector<PropertyListHelper*>();
 	}
 }
 
-const PropertyListHelper::Property *PropertyListHelper::_get_property(const String &p_property, int *r_index, bool p_allow_oob) const {
+const PropertyListHelper::Property* PropertyListHelper::_get_property(
+	const String& p_property, int* r_index, bool p_allow_oob) const
+{
 	const Vector<String> components = p_property.rsplit("/", true, 1);
 	if (components.size() < 2 || !components[0].begins_with(prefix)) {
 		return nullptr;
@@ -73,35 +81,38 @@ const PropertyListHelper::Property *PropertyListHelper::_get_property(const Stri
 	return property_list.getptr(components[1]);
 }
 
-void PropertyListHelper::_call_setter(const MethodBind *p_setter, int p_index, const Variant &p_value) const {
+void PropertyListHelper::_call_setter(
+	const MethodBind* p_setter, int p_index, const Variant& p_value) const
+{
 	DEV_ASSERT(p_setter);
-	Variant args[] = { p_index, p_value };
-	const Variant *argptrs[] = { &args[0], &args[1] };
+	Variant args[] = {p_index, p_value};
+	const Variant* argptrs[] = {&args[0], &args[1]};
 	Callable::CallError ce;
 	p_setter->call(object, argptrs, 2, ce);
 }
 
-Variant PropertyListHelper::_call_getter(const Property *p_property, int p_index) const {
+Variant PropertyListHelper::_call_getter(const Property* p_property, int p_index) const
+{
 	if (!p_property->getter) {
 		return object->get(prefix + itos(p_index) + "/" + p_property->info.name);
 	}
 
 	Callable::CallError ce;
-	Variant args[] = { p_index };
-	const Variant *argptrs[] = { &args[0] };
+	Variant args[] = {p_index};
+	const Variant* argptrs[] = {&args[0]};
 	return p_property->getter->call(object, argptrs, 1, ce);
 }
 
-int PropertyListHelper::_call_array_length_getter() const {
+int PropertyListHelper::_call_array_length_getter() const
+{
 	Callable::CallError ce;
 	return array_length_getter->call(object, nullptr, 0, ce);
 }
 
-void PropertyListHelper::set_prefix(const String &p_prefix) {
-	prefix = p_prefix;
-}
+void PropertyListHelper::set_prefix(const String& p_prefix) { prefix = p_prefix; }
 
-void PropertyListHelper::register_property(const PropertyInfo &p_info, const Variant &p_default) {
+void PropertyListHelper::register_property(const PropertyInfo& p_info, const Variant& p_default)
+{
 	Property property;
 	property.info = p_info;
 	property.default_value = p_default;
@@ -109,11 +120,10 @@ void PropertyListHelper::register_property(const PropertyInfo &p_info, const Var
 	property_list[p_info.name] = property;
 }
 
-bool PropertyListHelper::is_initialized() const {
-	return !property_list.is_empty();
-}
+bool PropertyListHelper::is_initialized() const { return !property_list.is_empty(); }
 
-void PropertyListHelper::setup_for_instance(const PropertyListHelper &p_base, Object *p_object) {
+void PropertyListHelper::setup_for_instance(const PropertyListHelper& p_base, Object* p_object)
+{
 	DEV_ASSERT(!p_base.prefix.is_empty());
 	DEV_ASSERT(p_base.array_length_getter != nullptr);
 	DEV_ASSERT(!p_base.property_list.is_empty());
@@ -126,7 +136,8 @@ void PropertyListHelper::setup_for_instance(const PropertyListHelper &p_base, Ob
 	object = p_object;
 }
 
-bool PropertyListHelper::is_property_valid(const String &p_property, int *r_index) const {
+bool PropertyListHelper::is_property_valid(const String& p_property, int* r_index) const
+{
 	const Vector<String> components = p_property.rsplit("/", true, 1);
 	if (components.size() < 2 || !components[0].begins_with(prefix)) {
 		return false;
@@ -146,13 +157,14 @@ bool PropertyListHelper::is_property_valid(const String &p_property, int *r_inde
 	return property_list.has(components[1]);
 }
 
-void PropertyListHelper::add_properties_for_index(int p_index, List<PropertyInfo> *p_list) const {
-	for (const KeyValue<String, Property> &E : property_list) {
-		const Property &property = E.value;
+void PropertyListHelper::add_properties_for_index(int p_index, List<PropertyInfo>* p_list) const
+{
+	for (const KeyValue<String, Property>& E : property_list) {
+		const Property& property = E.value;
 		if (property_filter) {
 			Callable::CallError ce;
-			Variant args[] = { property.info.name, p_index };
-			const Variant *argptrs[] = { &args[0], &args[1] };
+			Variant args[] = {property.info.name, p_index};
+			const Variant* argptrs[] = {&args[0], &args[1]};
 
 			bool property_valid = property_filter->call(object, argptrs, 2, ce);
 			if (!property_valid) {
@@ -161,7 +173,8 @@ void PropertyListHelper::add_properties_for_index(int p_index, List<PropertyInfo
 		}
 
 		PropertyInfo info = property.info;
-		if (!(info.usage & PROPERTY_USAGE_STORE_IF_NULL) && _call_getter(&property, p_index) == property.default_value) {
+		if (!(info.usage & PROPERTY_USAGE_STORE_IF_NULL) &&
+			_call_getter(&property, p_index) == property.default_value) {
 			info.usage &= (~PROPERTY_USAGE_STORAGE);
 		}
 
@@ -170,7 +183,8 @@ void PropertyListHelper::add_properties_for_index(int p_index, List<PropertyInfo
 	}
 }
 
-void PropertyListHelper::get_property_list(List<PropertyInfo> *p_list) const {
+void PropertyListHelper::get_property_list(List<PropertyInfo>* p_list) const
+{
 	DEV_ASSERT(array_length_getter);
 	const int property_count = _call_array_length_getter();
 	for (int i = 0; i < property_count; i++) {
@@ -180,34 +194,40 @@ void PropertyListHelper::get_property_list(List<PropertyInfo> *p_list) const {
 
 #ifdef TOOLS_ENABLED
 
-void PropertyListHelper::documentation_get_property_list(List<PropertyInfo> *r_list) const {
-	for (const KeyValue<String, Property> &E : property_list) {
-		const Property &property = E.value;
+void PropertyListHelper::documentation_get_property_list(List<PropertyInfo>* r_list) const
+{
+	for (const KeyValue<String, Property>& E : property_list) {
+		const Property& property = E.value;
 
 		PropertyInfo info = property.info;
 		info.name = vformat("%s{index}/%s", prefix, info.name);
 		r_list->push_back(info);
 	}
 }
-bool PropertyListHelper::documentation_has_property(const String &p_property) const {
+
+bool PropertyListHelper::documentation_has_property(const String& p_property) const
+{
 	String name = p_property.trim_prefix(vformat("%s{index}/", prefix));
 	return property_list.has(name);
 }
 
-Variant PropertyListHelper::documentation_get_default_value(const String &p_property) const {
+Variant PropertyListHelper::documentation_get_default_value(const String& p_property) const
+{
 	String name = p_property.trim_prefix(vformat("%s{index}/", prefix));
 	if (property_list.has(name)) {
 		return property_list[name].default_value;
-	} else {
+	}
+	else {
 		return Variant();
 	}
 }
 
 #endif
 
-bool PropertyListHelper::property_get_value(const String &p_property, Variant &r_ret) const {
+bool PropertyListHelper::property_get_value(const String& p_property, Variant& r_ret) const
+{
 	int index;
-	const Property *property = _get_property(p_property, &index);
+	const Property* property = _get_property(p_property, &index);
 
 	if (property) {
 		r_ret = _call_getter(property, index);
@@ -216,9 +236,10 @@ bool PropertyListHelper::property_get_value(const String &p_property, Variant &r
 	return false;
 }
 
-bool PropertyListHelper::property_set_value(const String &p_property, const Variant &p_value) const {
+bool PropertyListHelper::property_set_value(const String& p_property, const Variant& p_value) const
+{
 	int index;
-	const Property *property = _get_property(p_property, &index, allow_oob_assign);
+	const Property* property = _get_property(p_property, &index, allow_oob_assign);
 
 	if (property) {
 		_call_setter(property->setter, index, p_value);
@@ -227,13 +248,15 @@ bool PropertyListHelper::property_set_value(const String &p_property, const Vari
 	return false;
 }
 
-bool PropertyListHelper::property_can_revert(const String &p_property) const {
+bool PropertyListHelper::property_can_revert(const String& p_property) const
+{
 	return is_property_valid(p_property);
 }
 
-bool PropertyListHelper::property_get_revert(const String &p_property, Variant &r_value) const {
+bool PropertyListHelper::property_get_revert(const String& p_property, Variant& r_value) const
+{
 	int index;
-	const Property *property = _get_property(p_property, &index);
+	const Property* property = _get_property(p_property, &index);
 
 	if (property) {
 		r_value = property->default_value;
@@ -242,12 +265,13 @@ bool PropertyListHelper::property_get_revert(const String &p_property, Variant &
 	return false;
 }
 
-void PropertyListHelper::clear() {
+void PropertyListHelper::clear()
+{
 	if (is_initialized()) {
 		memdelete(array_length_getter);
 		memdelete(property_filter);
 
-		for (const KeyValue<String, Property> &E : property_list) {
+		for (const KeyValue<String, Property>& E : property_list) {
 			if (E.value.setter) {
 				memdelete(E.value.setter);
 				memdelete(E.value.getter);
@@ -256,3 +280,5 @@ void PropertyListHelper::clear() {
 		property_list.clear();
 	}
 }
+
+

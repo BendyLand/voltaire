@@ -379,9 +379,7 @@ List<MethodInfo> ConnectDialog::_filter_method_list(const List<MethodInfo>& p_me
 					break;
 				}
 
-				if (stype == Variant::OBJECT && mtype == Variant::OBJECT &&
-					!ClassDB::is_parent_class(
-						effective_args[i].second, mi.arguments[i].class_name)) {
+				if (stype == Variant::OBJECT && mtype == Variant::OBJECT) {
 					type_mismatch = true;
 					break;
 				}
@@ -463,16 +461,9 @@ void ConnectDialog::_update_method_tree()
 		class_item->set_selectable(0, false);
 
 		List<MethodInfo> methods;
-		ClassDB::get_method_list(current_class, &methods, true);
-		methods = _filter_method_list(methods, signal_info, search_string);
-
 		if (methods.is_empty()) {
 			class_item->set_custom_color(0, disabled_color);
 		}
-		else {
-			_create_method_tree_items(methods, class_item);
-		}
-		current_class = ClassDB::get_parent_class_nocheck(current_class);
 	} while (current_class != StringName());
 
 	empty_tree_label->set_visible(root_item->get_first_child() == nullptr);
@@ -569,8 +560,8 @@ void ConnectDialog::_notification(int p_what)
 		Ref<Font> monospace_font = get_theme_font(SNAME("source"), EditorStringName(EditorFonts));
 
 		if (use_monospace_font) {
-			from_signal->add_theme_font_override(SceneStringName(font), monospace_font);
-			dst_method->add_theme_font_override(SceneStringName(font), monospace_font);
+			from_signal->add_theme_font_override(SceneStringName(font), monospace_font.ptr());
+			dst_method->add_theme_font_override(SceneStringName(font), monospace_font.ptr());
 		}
 		else {
 			from_signal->remove_theme_font_override(SceneStringName(font));
@@ -1068,7 +1059,7 @@ void ConnectionsDock::_make_or_edit_connection()
 	bool add_script_function_request = false;
 	Ref<Script> scr = target->get_script();
 
-	if (scr.is_valid() && !ClassDB::has_method(target->obj->get_class(), cd.method)) {
+	if (scr.is_valid()) {
 		// Check in target's own script.
 		int32_t line = scr->get_language()->get_editor_language()->find_function(
 			cd.method, scr->get_source_code());
@@ -1124,18 +1115,6 @@ void ConnectionsDock::_make_or_edit_connection()
 					class_name = source_script->get_global_name();
 				}
 			}
-
-			if (!found) {
-				while (!class_name.is_empty()) {
-					// Search in ClassDB according to the inheritance chain.
-					found = ClassDB::has_signal(class_name, cd.signal, true);
-					if (found) {
-						break;
-					}
-					class_name = ClassDB::get_parent_class(class_name);
-				}
-			}
-
 			script_function_args.push_back("source:" + class_name);
 		}
 
@@ -1638,10 +1617,7 @@ void ConnectionsDock::_notification(int p_what)
 	}
 }
 
-void ConnectionsDock::_bind_methods()
-{
-	ClassDB::bind_method("update_tree", &ConnectionsDock::update_tree);
-}
+void ConnectionsDock::_bind_methods() {}
 
 void ConnectionsDock::set_object(Object* p_object)
 {
@@ -1740,8 +1716,6 @@ void ConnectionsDock::update_tree()
 				class_icon = get_editor_theme_icon(native_base);
 			}
 
-			ClassDB::get_signal_list(native_base, &class_signals, true);
-
 			// Hide underscored native signals as they are meant to be private.
 			for (List<MethodInfo>::Element* E = class_signals.front(); E;) {
 				List<MethodInfo>::Element* N = E->next();
@@ -1753,8 +1727,6 @@ void ConnectionsDock::update_tree()
 
 				E = N;
 			}
-
-			native_base = ClassDB::get_parent_class(native_base);
 		}
 
 		if (class_icon.is_null()) {

@@ -143,21 +143,21 @@ void MeshInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, 
 	const Ref<CapsuleMesh> capsule_mesh = mesh->get_mesh();
 	if (capsule_mesh.is_valid()) {
 		helper->cylinder_commit_handle(p_id, TTR("Change Capsule Mesh Radius"),
-			TTR("Change Capsule Mesh Height"), p_cancel, mesh->obj.get(), *capsule_mesh,
-			*capsule_mesh);
+			TTR("Change Capsule Mesh Height"), p_cancel, mesh->obj.get(), capsule_mesh->obj.get(),
+			capsule_mesh->obj.get());
 	}
 
 	const Ref<CylinderMesh> cylinder_mesh = mesh->get_mesh();
 	if (cylinder_mesh.is_valid()) {
 		helper->cone_frustum_commit_handle(p_id, TTR("Change Cylinder Mesh Radius"),
-			TTR("Change Cylinder Mesh Height"), p_cancel, mesh->obj.get(), *cylinder_mesh,
-			*cylinder_mesh, *cylinder_mesh);
+			TTR("Change Cylinder Mesh Height"), p_cancel, mesh->obj.get(), cylinder_mesh->obj.get(),
+			cylinder_mesh->obj.get(), cylinder_mesh->obj.get());
 	}
 
 	const Ref<BoxMesh> box_mesh = mesh->get_mesh();
 	if (box_mesh.is_valid()) {
 		helper->box_commit_handle(
-			TTR("Change Box Mesh Size"), p_cancel, mesh->obj.get(), *box_mesh);
+			TTR("Change Box Mesh Size"), p_cancel, mesh->obj.get(), box_mesh->obj.get());
 	}
 }
 

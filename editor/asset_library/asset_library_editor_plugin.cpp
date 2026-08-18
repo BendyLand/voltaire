@@ -150,12 +150,7 @@ void EditorAssetLibraryItem::_license_clicked()
 	OS::get_singleton()->shell_open(license_url);
 }
 
-void EditorAssetLibraryItem::_bind_methods()
-{
-	ClassDB::bind_method("set_image", &EditorAssetLibraryItem::set_image);
-	ADD_SIGNAL(MethodInfo("asset_selected"));
-	ADD_SIGNAL(MethodInfo("author_selected"));
-}
+void EditorAssetLibraryItem::_bind_methods() {}
 
 EditorAssetLibraryItem::EditorAssetLibraryItem(bool p_clickable)
 {
@@ -211,7 +206,7 @@ EditorAssetLibraryItem::EditorAssetLibraryItem(bool p_clickable)
 	label_margin->set_content_margin_all(0);
 
 	title = memnew(Label);
-	title->add_theme_style_override(CoreStringName(normal), label_margin);
+	title->add_theme_style_override(CoreStringName(normal), label_margin.ptr());
 	title->set_accessibility_name(TTRC("Title"));
 	title->set_auto_translate_mode(AutoTranslateMode::AUTO_TRANSLATE_MODE_DISABLED);
 	title->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
@@ -391,21 +386,21 @@ void EditorAssetLibraryItemDescription::set_image(
 void EditorAssetLibraryItemDescription::_notification(int p_what)
 {
 	switch (p_what) {
-	case BitMap::NOTIFICATION_POSTINITIALIZE: {
+	case Object::NOTIFICATION_POSTINITIALIZE: {
 		connect(SceneStringName(confirmed),
 			callable_mp(this, &EditorAssetLibraryItemDescription::_confirmed));
 	} break;
 
 	case NOTIFICATION_THEME_CHANGED: {
-		version_label->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
+		version_label->add_theme_font_override(SceneStringName(font),
+			get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)).ptr());
 		Ref<Texture2D> link_icon = get_editor_theme_icon(SNAME("ExternalLink"));
 		store->set_button_icon(link_icon);
 		source->set_button_icon(link_icon);
 		previous_preview->set_button_icon(get_editor_theme_icon(SNAME("Back")));
 		next_preview->set_button_icon(get_editor_theme_icon(SNAME("Forward")));
 		previews_bg->add_theme_style_override(SceneStringName(panel),
-			previews->get_theme_stylebox(CoreStringName(normal), SNAME("TextEdit")));
+			previews->get_theme_stylebox(CoreStringName(normal), SNAME("TextEdit")).ptr());
 		zoom_button->set_button_icon(get_editor_theme_icon(SNAME("DistractionFree")));
 
 		Ref<StyleBox> sb = get_theme_stylebox(CoreStringName(normal), SNAME("OptionButton"));
@@ -425,15 +420,7 @@ void EditorAssetLibraryItemDescription::_notification(int p_what)
 	}
 }
 
-void EditorAssetLibraryItemDescription::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_image"), &EditorAssetLibraryItemDescription::set_image);
-
-	ADD_SIGNAL(MethodInfo("install_requested", PropertyInfo(Variant::STRING, "asset_id"),
-		PropertyInfo(Variant::STRING, "version"), PropertyInfo(Variant::STRING, "dpownload_url"),
-		PropertyInfo(Variant::STRING, "sha256")));
-	ADD_SIGNAL(MethodInfo("tag_clicked", PropertyInfo(Variant::STRING, "tag")));
-}
+void EditorAssetLibraryItemDescription::_bind_methods() {}
 
 void EditorAssetLibraryItemDescription::_confirmed()
 {
@@ -444,7 +431,8 @@ void EditorAssetLibraryItemDescription::_confirmed()
 	}
 
 	Release release = releases[version_list->get_selected()];
-	this->obj->emit_signal(SNAME("install_requested"), asset_id, release.version, release.url, release.sha256);
+	this->obj->emit_signal(
+		SNAME("install_requested"), asset_id, release.version, release.url, release.sha256);
 }
 
 void EditorAssetLibraryItemDescription::_version_selected(int p_index)
@@ -941,8 +929,8 @@ void EditorAssetLibraryItemDownload::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		panel->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("AssetLib")));
+		panel->add_theme_style_override(SceneStringName(panel),
+			get_theme_stylebox(SceneStringName(panel), SNAME("AssetLib")).ptr());
 		version->add_theme_color_override(
 			SceneStringName(font_color), get_theme_color(SNAME("faded_text"), SNAME("AssetLib")));
 		dismiss_button->set_texture_normal(get_theme_icon(SNAME("dismiss"), SNAME("AssetLib")));
@@ -1048,11 +1036,7 @@ void EditorAssetLibraryItemDownload::_make_request()
 	}
 }
 
-void EditorAssetLibraryItemDownload::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("install_asset", PropertyInfo(Variant::STRING, "zip_path"),
-		PropertyInfo(Variant::STRING, "name")));
-}
+void EditorAssetLibraryItemDownload::_bind_methods() {}
 
 EditorAssetLibraryItemDownload::EditorAssetLibraryItemDownload()
 {
@@ -1150,7 +1134,7 @@ void EditorAssetLibrary::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_READY: {
 		add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SNAME("bg"), SNAME("AssetLib")));
+			SceneStringName(panel), get_theme_stylebox(SNAME("bg"), SNAME("AssetLib")).ptr());
 		error_label->move_to_front();
 	} break;
 
@@ -1163,10 +1147,10 @@ void EditorAssetLibrary::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		error_tr->set_texture(get_editor_theme_icon(SNAME("Error")));
 		filter->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-		library_scroll->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
-		downloads_scroll->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SNAME("downloads"), SNAME("AssetLib")));
+		library_scroll->add_theme_style_override(SceneStringName(panel),
+			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
+		downloads_scroll->add_theme_style_override(SceneStringName(panel),
+			get_theme_stylebox(SNAME("downloads"), SNAME("AssetLib")).ptr());
 		error_label->add_theme_color_override(
 			"color", get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 	} break;
@@ -1197,8 +1181,7 @@ void EditorAssetLibrary::_notification(int p_what)
 			Object* o = ObjectDB::get_instance(E.value.target);
 			if (o) {
 				if (E.value.texture.is_valid()) {
-					o->call(
-						"set_image", E.value.image_type, E.value.image_index, E.value.texture);
+					o->call("set_image", E.value.image_type, E.value.image_index, E.value.texture);
 				}
 				else {
 					o->call("set_image", E.value.image_type, E.value.image_index,
@@ -2073,8 +2056,8 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code,
 			item->connect("asset_selected", callable_mp(this, &EditorAssetLibrary::_select_asset));
 
 			if (r.has("thumbnail") && !r["thumbnail"].operator String().is_empty()) {
-				_request_image(
-					item->obj->get_instance_id(), r["slug"], r["thumbnail"], IMAGE_QUEUE_THUMBNAIL, 0);
+				_request_image(item->obj->get_instance_id(), r["slug"], r["thumbnail"],
+					IMAGE_QUEUE_THUMBNAIL, 0);
 			}
 		}
 
@@ -2358,11 +2341,7 @@ void EditorAssetLibrary::_force_online_mode()
 	EditorSettings::get_singleton()->save();
 }
 
-void EditorAssetLibrary::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("install_asset", PropertyInfo(Variant::STRING, "zip_path"),
-		PropertyInfo(Variant::STRING, "name")));
-}
+void EditorAssetLibrary::_bind_methods() {}
 
 EditorAssetLibrary::EditorAssetLibrary(bool p_templates_only)
 {
@@ -2501,7 +2480,7 @@ EditorAssetLibrary::EditorAssetLibrary(bool p_templates_only)
 
 	PanelContainer* library_vb_border = memnew(PanelContainer);
 	library_scroll->add_child(library_vb_border);
-	library_vb_border->add_theme_style_override(SceneStringName(panel), border2);
+	library_vb_border->add_theme_style_override(SceneStringName(panel), border2.ptr());
 	library_vb_border->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 
 	library_vb = memnew(VBoxContainer);

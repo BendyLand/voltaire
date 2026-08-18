@@ -656,7 +656,8 @@ void ProjectDialog::ok_pressed()
 			renderer_button_group->get_pressed_button()->get_meta(SNAME("rendering_method"));
 		initial_settings["rendering/renderer/rendering_method"] = renderer_type;
 
-		EditorSettings::get_singleton()->set("project_manager/default_renderer", renderer_type);
+		EditorSettings::get_singleton()->obj->set(
+			"project_manager/default_renderer", renderer_type);
 		EditorSettings::get_singleton()->save();
 
 		if (renderer_type == "forward_plus") {
@@ -1119,12 +1120,7 @@ void ProjectDialog::_notification(int p_what)
 	}
 }
 
-void ProjectDialog::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("project_created"));
-	ADD_SIGNAL(MethodInfo("project_duplicated"));
-	ADD_SIGNAL(MethodInfo("projects_updated"));
-}
+void ProjectDialog::_bind_methods() {}
 
 ProjectDialog::ProjectDialog()
 {
@@ -1356,8 +1352,7 @@ ProjectDialog::ProjectDialog()
 	project_path->connect(SceneStringName(text_changed),
 		callable_mp(this, &ProjectDialog::_project_path_changed).unbind(1));
 	project_path->connect(
-		SceneStringName(text_submitted), callable_mp(this, &ProjectDialog::ok_pressed).
-unbind(1));
+		SceneStringName(text_submitted), callable_mp(this, &ProjectDialog::ok_pressed).unbind(1));
 
 	install_path->connect(SceneStringName(text_changed),
 		callable_mp(this, &ProjectDialog::_install_path_changed).unbind(1));

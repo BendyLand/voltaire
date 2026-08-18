@@ -35,7 +35,7 @@
 
 class PhysicsMaterial : public Resource {
 	VLTRCLASS(PhysicsMaterial, Resource);
-	OBJ_SAVE_TYPE(PhysicsMaterial);
+	OBJ_SAVE_TYPE_NO(PhysicsMaterial);
 	RES_BASE_EXTENSION("phymat");
 
 	real_t friction = 1.0;

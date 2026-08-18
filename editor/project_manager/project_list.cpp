@@ -66,8 +66,8 @@ void ProjectListItemControl::_notification(int p_what)
 		}
 
 		project_title->begin_bulk_theme_override();
-		project_title->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("title"), EditorStringName(EditorFonts)));
+		project_title->add_theme_font_override(SceneStringName(font),
+			get_theme_font(SNAME("title"), EditorStringName(EditorFonts)).ptr());
 		project_title->add_theme_font_size_override(SceneStringName(font_size),
 			get_theme_font_size(SNAME("title_size"), EditorStringName(EditorFonts)));
 		project_title->add_theme_color_override(SceneStringName(font_color),
@@ -180,21 +180,21 @@ void ProjectListItemControl::_notification(int p_what)
 
 	case NOTIFICATION_DRAW: {
 		if (is_selected && is_hovering) {
-			draw_style_box(get_theme_stylebox(SNAME("hover_pressed"), SNAME("ProjectList")),
+			draw_style_box(get_theme_stylebox(SNAME("hover_pressed"), SNAME("ProjectList")).ptr(),
 				Rect2(Point2(), get_size()));
 		}
 		else if (is_selected) {
-			draw_style_box(get_theme_stylebox(SNAME("selected"), SNAME("ProjectList")),
+			draw_style_box(get_theme_stylebox(SNAME("selected"), SNAME("ProjectList")).ptr(),
 				Rect2(Point2(), get_size()));
 		}
 		else if (is_hovering) {
-			draw_style_box(get_theme_stylebox(SNAME("hovered"), SNAME("ProjectList")),
+			draw_style_box(get_theme_stylebox(SNAME("hovered"), SNAME("ProjectList")).ptr(),
 				Rect2(Point2(), get_size()));
 		}
 		// Due to how this control works, we can't rely on the built-in way of checking for focus
 		// visibility.
 		if (has_focus() && !is_focus_hidden) {
-			draw_style_box(get_theme_stylebox(SNAME("focus"), SNAME("ProjectList")),
+			draw_style_box(get_theme_stylebox(SNAME("focus"), SNAME("ProjectList")).ptr(),
 				Rect2(Point2(), get_size()));
 		}
 
@@ -576,12 +576,7 @@ void ProjectListItemControl::resize_project_title()
 	}
 }
 
-void ProjectListItemControl::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("favorite_pressed"));
-	ADD_SIGNAL(MethodInfo("explore_pressed"));
-	ADD_SIGNAL(MethodInfo("request_menu"));
-}
+void ProjectListItemControl::_bind_methods() {}
 
 ProjectListItemControl::ProjectListItemControl()
 {
@@ -862,7 +857,7 @@ void ProjectList::_migrate_config()
 	}
 
 	List<PropertyInfo> properties;
-	EditorSettings::get_singleton()->get_property_list(&properties);
+	EditorSettings::get_singleton()->obj->get_property_list(&properties);
 
 	for (const PropertyInfo& E : properties) {
 		// This is actually something like "projects/C:::Documents::Godot::Projects::MyGame"
@@ -1862,7 +1857,7 @@ void ProjectList::set_order_option(int p_option, bool p_save)
 {
 	FilterOption selected = (FilterOption)p_option;
 	if (p_save) {
-		EditorSettings::get_singleton()->set("project_manager/sorting_order", p_option);
+		EditorSettings::get_singleton()->obj->set("project_manager/sorting_order", p_option);
 		EditorSettings::get_singleton()->save();
 	}
 	_order_option = selected;
@@ -1927,13 +1922,7 @@ void ProjectList::_global_menu_open_project(const Variant& p_tag)
 
 // Object methods.
 
-void ProjectList::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo(SIGNAL_LIST_CHANGED));
-	ADD_SIGNAL(MethodInfo(SIGNAL_SELECTION_CHANGED));
-	ADD_SIGNAL(MethodInfo(SIGNAL_PROJECT_ASK_OPEN));
-	ADD_SIGNAL(MethodInfo(SIGNAL_MENU_OPTION_SELECTED));
-}
+void ProjectList::_bind_methods() {}
 
 ProjectList::ProjectList()
 {

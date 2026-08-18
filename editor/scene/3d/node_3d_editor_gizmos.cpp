@@ -852,34 +852,7 @@ void EditorNode3DGizmo::set_hidden(bool p_hidden)
 
 void EditorNode3DGizmo::set_plugin(EditorNode3DGizmoPlugin* p_plugin) { gizmo_plugin = p_plugin; }
 
-void EditorNode3DGizmo::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("add_lines", "lines", "material", "billboard", "modulate"),
-		&EditorNode3DGizmo::add_lines, DEFVAL(false), DEFVAL(Color(1, 1, 1)));
-	ClassDB::bind_method(D_METHOD("add_mesh", "mesh", "material", "transform", "skeleton"),
-		&EditorNode3DGizmo::add_mesh, DEFVAL(Variant()), DEFVAL(Transform3D()),
-		DEFVAL(Ref<SkinReference>()));
-	ClassDB::bind_method(
-		D_METHOD("add_collision_segments", "segments"), &EditorNode3DGizmo::add_collision_segments);
-	ClassDB::bind_method(D_METHOD("add_collision_triangles", "triangles"),
-		&EditorNode3DGizmo::add_collision_triangles);
-	ClassDB::bind_method(
-		D_METHOD("add_unscaled_billboard", "material", "default_scale", "modulate"),
-		&EditorNode3DGizmo::add_unscaled_billboard, DEFVAL(1), DEFVAL(Color(1, 1, 1)));
-	ClassDB::bind_method(
-		D_METHOD("add_handles", "handles", "material", "ids", "billboard", "secondary"),
-		&EditorNode3DGizmo::add_handles, DEFVAL(false), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("set_node_3d", "node"), &EditorNode3DGizmo::_set_node_3d);
-	ClassDB::bind_method(D_METHOD("get_node_3d"), &EditorNode3DGizmo::get_node_3d);
-	ClassDB::bind_method(D_METHOD("get_plugin"), &EditorNode3DGizmo::get_plugin);
-	ClassDB::bind_method(D_METHOD("clear"), &EditorNode3DGizmo::clear);
-	ClassDB::bind_method(D_METHOD("set_hidden", "hidden"), &EditorNode3DGizmo::set_hidden);
-	ClassDB::bind_method(
-		D_METHOD("is_subgizmo_selected", "id"), &EditorNode3DGizmo::is_subgizmo_selected);
-	ClassDB::bind_method(
-		D_METHOD("get_subgizmo_selection"), &EditorNode3DGizmo::get_subgizmo_selection);
-	ClassDB::bind_method(D_METHOD("is_selected"), &EditorNode3DGizmo::is_selected);
-}
+void EditorNode3DGizmo::_bind_methods() {}
 
 EditorNode3DGizmo::EditorNode3DGizmo()
 {
@@ -1060,8 +1033,9 @@ String EditorNode3DGizmoPlugin::get_gizmo_name() const
 
 Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::get_gizmo(Node3D* p_spatial)
 {
-	if (get_script_instance() && get_script_instance()->has_method("_get_gizmo")) {
-		return get_script_instance()->call("_get_gizmo", p_spatial);
+	if (this->obj->get_script_instance() &&
+		this->obj->get_script_instance()->has_method("_get_gizmo")) {
+		return this->obj->get_script_instance()->call("_get_gizmo", p_spatial);
 	}
 
 	Ref<EditorNode3DGizmo> ref = create_gizmo(p_spatial);
@@ -1078,20 +1052,7 @@ Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::get_gizmo(Node3D* p_spatial)
 	return ref;
 }
 
-void EditorNode3DGizmoPlugin::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("create_material", "name", "color", "billboard", "on_top", "use_vertex_color"),
-		&EditorNode3DGizmoPlugin::create_material, DEFVAL(false), DEFVAL(false), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("create_icon_material", "name", "texture", "on_top", "color"),
-		&EditorNode3DGizmoPlugin::create_icon_material, DEFVAL(false), DEFVAL(Color(1, 1, 1, 1)));
-	ClassDB::bind_method(D_METHOD("create_handle_material", "name", "billboard", "texture"),
-		&EditorNode3DGizmoPlugin::create_handle_material, DEFVAL(false), DEFVAL(Variant()));
-	ClassDB::bind_method(
-		D_METHOD("add_material", "name", "material"), &EditorNode3DGizmoPlugin::add_material);
-	ClassDB::bind_method(D_METHOD("get_material", "name", "gizmo"),
-		&EditorNode3DGizmoPlugin::get_material, DEFVAL(Ref<EditorNode3DGizmo>()));
-}
+void EditorNode3DGizmoPlugin::_bind_methods() {}
 
 Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D* p_spatial)
 {
@@ -1209,8 +1170,7 @@ void EditorNode3DGizmoPlugin::set_subgizmo_transform(
 {
 }
 
-bool EditorNode3DGizmoPlugin
-::has_gizmo(Node3D* p_spatial) { return false; }
+bool EditorNode3DGizmoPlugin ::has_gizmo(Node3D* p_spatial) { return false; }
 
 Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D* p_spatial) const
 {

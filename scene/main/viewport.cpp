@@ -112,7 +112,7 @@ void ViewportTexture::setup_local_to_scene()
 	else {
 		loc_scene->connect(SceneStringName(ready),
 			callable_mp(this, &ViewportTexture::_setup_local_to_scene).bind(loc_scene),
-			CONNECT_ONE_SHOT);
+			Object::CONNECT_ONE_SHOT);
 		vp_pending = true;
 	}
 }
@@ -2358,7 +2358,7 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event)
 						gui.tooltip_pos = new_tooltip_pos;
 						gui.tooltip_timer = get_tree()->create_timer(gui.tooltip_delay);
 						gui.tooltip_timer->set_ignore_time_scale(true);
-						gui.tooltip_timer->connect(
+						gui.tooltip_timer->obj->connect(
 							"timeout", callable_mp(this, &Viewport::_gui_show_tooltip));
 					}
 				}
@@ -2569,20 +2569,20 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event)
 				Input* input = Input::get_singleton();
 
 				if (p_event->is_action_pressed(SNAME("ui_focus_next")) &&
-					input->is_action_just_pressed_by_event(SNAME("ui_focus_next"), p_event)) {
+					input->is_action_just_pressed_by_event(SNAME("ui_focus_next"), p_event.ptr())) {
 					next = from->find_next_valid_focus();
 					show_focus = true;
 				}
 
 				if (p_event->is_action_pressed(SNAME("ui_focus_prev")) &&
-					input->is_action_just_pressed_by_event(SNAME("ui_focus_prev"), p_event)) {
+					input->is_action_just_pressed_by_event(SNAME("ui_focus_prev"), p_event.ptr())) {
 					next = from->find_prev_valid_focus();
 					show_focus = true;
 				}
 
 				if (p_event->is_action_pressed(SNAME("ui_accessibility_drag_and_drop")) &&
 					input->is_action_just_pressed_by_event(
-						SNAME("ui_accessibility_drag_and_drop"), p_event)) {
+						SNAME("ui_accessibility_drag_and_drop"), p_event.ptr())) {
 					if (gui_is_dragging()) {
 						from->accessibility_drop();
 					}
@@ -2592,25 +2592,25 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event)
 				}
 
 				if (p_event->is_action_pressed(SNAME("ui_up")) &&
-					input->is_action_just_pressed_by_event(SNAME("ui_up"), p_event)) {
+					input->is_action_just_pressed_by_event(SNAME("ui_up"), p_event.ptr())) {
 					next = from->_get_focus_neighbor(SIDE_TOP);
 					show_focus = true;
 				}
 
 				if (p_event->is_action_pressed(SNAME("ui_left")) &&
-					input->is_action_just_pressed_by_event(SNAME("ui_left"), p_event)) {
+					input->is_action_just_pressed_by_event(SNAME("ui_left"), p_event.ptr())) {
 					next = from->_get_focus_neighbor(SIDE_LEFT);
 					show_focus = true;
 				}
 
 				if (p_event->is_action_pressed(SNAME("ui_right")) &&
-					input->is_action_just_pressed_by_event(SNAME("ui_right"), p_event)) {
+					input->is_action_just_pressed_by_event(SNAME("ui_right"), p_event.ptr())) {
 					next = from->_get_focus_neighbor(SIDE_RIGHT);
 					show_focus = true;
 				}
 
 				if (p_event->is_action_pressed(SNAME("ui_down")) &&
-					input->is_action_just_pressed_by_event(SNAME("ui_down"), p_event)) {
+					input->is_action_just_pressed_by_event(SNAME("ui_down"), p_event.ptr())) {
 					next = from->_get_focus_neighbor(SIDE_BOTTOM);
 					show_focus = true;
 				}
@@ -3804,11 +3804,10 @@ void Viewport::_drop_mouse_over(Control* p_until_control)
 	gui.sending_mouse_enter_exit_notifications = false;
 }
 
-void Viewport::push_input(RequiredParam<InputEvent> rp_event, bool p_local_coords)
+void Viewport::push_input(InputEvent* rp_event, bool p_local_coords)
 {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_COND(!is_inside_tree());
-	EXTRACT_PARAM_OR_FAIL(p_event, rp_event);
 
 	if (disable_input || disable_input_override) {
 		return;
@@ -3833,10 +3832,10 @@ void Viewport::push_input(RequiredParam<InputEvent> rp_event, bool p_local_coord
 
 	Ref<InputEvent> ev;
 	if (!p_local_coords) {
-		ev = _make_input_local(p_event);
+		ev = _make_input_local(rp_event);
 	}
 	else {
-		ev = p_event;
+		ev = rp_event;
 	}
 
 	Ref<InputEventMouse> me = ev;
@@ -3877,13 +3876,12 @@ void Viewport::push_input(RequiredParam<InputEvent> rp_event, bool p_local_coord
 }
 
 #ifndef DISABLE_DEPRECATED
-void Viewport::push_unhandled_input(RequiredParam<InputEvent> rp_event, bool p_local_coords)
+void Viewport::push_unhandled_input(InputEvent* rp_event, bool p_local_coords)
 {
 	ERR_MAIN_THREAD_GUARD;
 	WARN_DEPRECATED_MSG(
 		R"*(The "push_unhandled_input()" method is deprecated, use "push_input()" instead.)*");
 	ERR_FAIL_COND(!is_inside_tree());
-	EXTRACT_PARAM_OR_FAIL(p_event, rp_event);
 
 	local_input_handled = false;
 
@@ -3898,10 +3896,10 @@ void Viewport::push_unhandled_input(RequiredParam<InputEvent> rp_event, bool p_l
 
 	Ref<InputEvent> ev;
 	if (!p_local_coords) {
-		ev = _make_input_local(p_event);
+		ev = _make_input_local(rp_event);
 	}
 	else {
-		ev = p_event;
+		ev = rp_event;
 	}
 
 	_push_unhandled_input_internal(ev);

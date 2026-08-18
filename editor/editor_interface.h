@@ -81,7 +81,7 @@ class EditorInterface
 
 	// Editor tools.
 
-	TypedArray<Texture2D> _make_mesh_previews(const TypedArray<Mesh>& p_meshes, int p_preview_size);
+	Array _make_mesh_previews(const Array& p_meshes, int p_preview_size);
 	AABB _calculate_aabb_for_scene(Node* p_node, AABB& p_scene_aabb);
 
 protected:

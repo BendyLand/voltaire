@@ -388,21 +388,21 @@ void TextShaderPreview::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		panel->add_theme_style_override(SceneStringName(panel), panel_style);
+		panel->add_theme_style_override(SceneStringName(panel), panel_style.ptr());
 
 		error_icon->set_texture(get_editor_theme_icon(SNAME("Error")));
 
 		Ref<StyleBoxEmpty> no_margins;
 		no_margins.instantiate();
 		no_margins->set_content_margin_all(0);
-		error_label->add_theme_style_override(CoreStringName(normal), no_margins);
+		error_label->add_theme_style_override(CoreStringName(normal), no_margins.ptr());
 		error_label->add_theme_color_override(SceneStringName(font_color),
 			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 
 		delete_button->set_button_icon(get_editor_theme_icon(SNAME("GuiClose")));
 
-		goto_button->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("source"), EditorStringName(EditorFonts)));
+		goto_button->add_theme_font_override(SceneStringName(font),
+			get_theme_font(SNAME("source"), EditorStringName(EditorFonts)).ptr());
 		goto_button->add_theme_font_size_override(
 			SceneStringName(font_size), Math::round(12 * EDSCALE));
 
@@ -417,9 +417,9 @@ void TextShaderPreview::_notification(int p_what)
 		sq_hover_pressed->set_corner_radius_all(0);
 
 		for (Button* btn : {delete_button, goto_button}) {
-			btn->add_theme_style_override(SceneStringName(hover), sq_hover);
-			btn->add_theme_style_override(SceneStringName(pressed), sq_pressed);
-			btn->add_theme_style_override("hover_pressed", sq_hover_pressed);
+			btn->add_theme_style_override(SceneStringName(hover), sq_hover.ptr());
+			btn->add_theme_style_override(SceneStringName(pressed), sq_pressed.ptr());
+			btn->add_theme_style_override("hover_pressed", sq_hover_pressed.ptr());
 		}
 
 		surface_container->add_theme_constant_override("margin_left", 0 * EDSCALE);
@@ -435,11 +435,7 @@ void TextShaderPreview::_notification(int p_what)
 	}
 }
 
-void TextShaderPreview::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("goto_btn_pressed"));
-	ADD_SIGNAL(MethodInfo("remove_btn_pressed"));
-}
+void TextShaderPreview::_bind_methods() {}
 
 void TextShaderPreview::_goto_pressed() { this->obj->emit_signal("goto_btn_pressed"); }
 
@@ -844,7 +840,7 @@ void ShaderTextEditor::_notification(int p_what)
 			"breakpoint_color", EditorNode::get_singleton()->get_editor_theme()->get_color(
 									SceneStringName(font_color), EditorStringName(Editor)));
 		get_text_editor()->add_theme_icon_override(
-			"breakpoint", get_editor_theme_icon(SNAME("GuiVisibilityVisible")));
+			"breakpoint", get_editor_theme_icon(SNAME("GuiVisibilityVisible")).ptr());
 
 		if (is_visible_in_tree()) {
 			_load_theme_settings();
@@ -1588,10 +1584,7 @@ void ShaderTextEditor::_update_warning_panel()
 	set_warning_count(warning_count);
 }
 
-void ShaderTextEditor::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("script_validated", PropertyInfo(Variant::BOOL, "valid")));
-}
+void ShaderTextEditor::_bind_methods() {}
 
 ShaderTextEditor::ShaderTextEditor()
 {
@@ -1833,7 +1826,7 @@ void TextShaderEditor::_notification(int p_what)
 		preview_style->set_bg_color(
 			get_theme_color(SNAME("dark_color_1"), EditorStringName(Editor)));
 		preview_style->set_corner_radius_all(tab_style->get_corner_radius(CORNER_TOP_LEFT));
-		preview_panel->add_theme_style_override(SceneStringName(panel), preview_style);
+		preview_panel->add_theme_style_override(SceneStringName(panel), preview_style.ptr());
 
 		update_params_btn->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
 		remove_all_btn->set_button_icon(get_editor_theme_icon(SNAME("Remove")));
@@ -1864,13 +1857,7 @@ void TextShaderEditor::_warning_clicked(const Variant& p_line)
 	}
 }
 
-void TextShaderEditor::_bind_methods()
-{
-	ClassDB::bind_method("_show_warnings_panel", &TextShaderEditor::_show_warnings_panel);
-	ClassDB::bind_method("_warning_clicked", &TextShaderEditor::_warning_clicked);
-
-	ADD_SIGNAL(MethodInfo("validation_changed"));
-}
+void TextShaderEditor::_bind_methods() {}
 
 void TextShaderEditor::goto_line_selection(int p_line, int p_begin, int p_end)
 {
@@ -1965,7 +1952,7 @@ void TextShaderEditor::_check_for_external_edit()
 void TextShaderEditor::_reload_shader_from_disk()
 {
 	Ref<Shader> rel_shader = ResourceLoader::load(
-		shader->get_path(), shader->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
+		shader->get_path(), shader->obj->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
 	ERR_FAIL_COND(rel_shader.is_null());
 
 	code_editor->set_block_shader_changed(true);
@@ -1978,7 +1965,7 @@ void TextShaderEditor::_reload_shader_from_disk()
 void TextShaderEditor::_reload_shader_include_from_disk()
 {
 	Ref<ShaderInclude> rel_shader_include = ResourceLoader::load(
-		shader_inc->get_path(), shader_inc->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
+		shader_inc->get_path(), shader_inc->obj->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
 	ERR_FAIL_COND(rel_shader_include.is_null());
 
 	code_editor->set_block_shader_changed(true);
@@ -2056,18 +2043,18 @@ void TextShaderEditor::save_external_data(const String& p_str)
 
 	Ref<Shader> edited_shader = code_editor->get_edited_shader();
 	if (edited_shader.is_valid()) {
-		ResourceSaver::save(edited_shader);
+		ResourceSaver::save(edited_shader.ptr());
 	}
 	if (shader.is_valid() && shader != edited_shader) {
-		ResourceSaver::save(shader);
+		ResourceSaver::save(shader.ptr());
 	}
 
 	Ref<ShaderInclude> edited_shader_inc = code_editor->get_edited_shader_include();
 	if (edited_shader_inc.is_valid()) {
-		ResourceSaver::save(edited_shader_inc);
+		ResourceSaver::save(edited_shader_inc.ptr());
 	}
 	if (shader_inc.is_valid() && shader_inc != edited_shader_inc) {
-		ResourceSaver::save(shader_inc);
+		ResourceSaver::save(shader_inc.ptr());
 	}
 	code_editor->get_text_editor()->tag_saved_version();
 
@@ -2105,7 +2092,7 @@ void TextShaderEditor::apply_shaders()
 			code_editor->set_block_shader_changed(true);
 			shader->set_code(editor_code);
 			code_editor->set_block_shader_changed(false);
-			shader->set_edited(true);
+			shader->obj->set_edited(true);
 		}
 	}
 	if (shader_inc.is_valid()) {
@@ -2115,7 +2102,7 @@ void TextShaderEditor::apply_shaders()
 			code_editor->set_block_shader_changed(true);
 			shader_inc->set_code(editor_code);
 			code_editor->set_block_shader_changed(false);
-			shader_inc->set_edited(true);
+			shader_inc->obj->set_edited(true);
 		}
 	}
 
@@ -2142,7 +2129,8 @@ void TextShaderEditor::_text_edit_gui_input(const Ref<InputEvent>& ev)
 			if (tx->is_move_caret_on_right_click_enabled()) {
 				tx->remove_secondary_carets();
 				if (tx->has_selection()) {
-					int from_line = tx->get_selection_from_line();
+					int from_line =
+tx->get_selection_from_line();
 					int to_line = tx->get_selection_to_line();
 					int from_column = tx->get_selection_from_column();
 					int to_column = tx->get_selection_to_column();
@@ -2504,7 +2492,7 @@ TextShaderEditor::TextShaderEditor()
 
 	menu_bar_hbox->add_theme_style_override(
 		SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-									SNAME("ScriptEditorPanel"), EditorStringName(EditorStyles)));
+									SNAME("ScriptEditorPanel"), EditorStringName(EditorStyles)).ptr());
 
 	HSplitContainer* main_box = memnew(HSplitContainer);
 	main_box->set_h_size_flags(SIZE_EXPAND_FILL);

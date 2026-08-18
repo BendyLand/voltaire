@@ -953,7 +953,7 @@ bool EditorExportPlatform::_export_customize_dictionary(
 
 				// If it was not replaced, go through and see if there is something to replace.
 				if (res.is_valid() && !res->get_path().is_resource_file() &&
-					_export_customize_object(res.ptr(), customize_resources_plugins)) {
+					_export_customize_object(res->obj.get(), customize_resources_plugins)) {
 					changed = true;
 				}
 			}
@@ -1003,7 +1003,7 @@ bool EditorExportPlatform::_export_customize_array(
 
 				// If it was not replaced, go through and see if there is something to replace.
 				if (res.is_valid() && !res->get_path().is_resource_file() &&
-					_export_customize_object(res.ptr(), customize_resources_plugins)) {
+					_export_customize_object(res->obj.get(), customize_resources_plugins)) {
 					changed = true;
 				}
 			}
@@ -1053,7 +1053,7 @@ bool EditorExportPlatform::_export_customize_object(
 
 				// If it was not replaced, go through and see if there is something to replace.
 				if (res.is_valid() && !res->get_path().is_resource_file() &&
-					_export_customize_object(res.ptr(), customize_resources_plugins)) {
+					_export_customize_object(res->obj.get(), customize_resources_plugins)) {
 					changed = true;
 				}
 			}
@@ -1213,7 +1213,7 @@ String EditorExportPlatform::_export_customize(const String& p_path,
 			Ref<PackedScene> s;
 			s.instantiate();
 			s->pack(node);
-			Error err = ResourceSaver::save(s, save_path);
+			Error err = ResourceSaver::save(s.ptr(), save_path);
 			ERR_FAIL_COND_V_MSG(
 				err != OK, p_path, "Unable to save export scene file to: " + save_path);
 		}
@@ -1237,7 +1237,7 @@ String EditorExportPlatform::_export_customize(const String& p_path,
 				}
 			}
 
-			if (_export_customize_object(res.ptr(), customize_resources_plugins)) {
+			if (_export_customize_object(res->obj.get(), customize_resources_plugins)) {
 				modified = true;
 			}
 		}
@@ -1249,7 +1249,7 @@ String EditorExportPlatform::_export_customize(const String& p_path,
 				p_path.get_file().get_basename() + ".res"; // use RES for saving (binary)
 			save_path = export_base_path.path_join("export-" + p_path.md5_text() + "-" + base_file);
 
-			Error err = ResourceSaver::save(res, save_path);
+			Error err = ResourceSaver::save(res.ptr(), save_path);
 			ERR_FAIL_COND_V_MSG(
 				err != OK, p_path, "Unable to save export resource file to: " + save_path);
 		}
@@ -1354,13 +1354,15 @@ Dictionary EditorExportPlatform::get_internal_export_files(
 						EditorPaths::get_singleton()->get_export_templates_dir().path_join(
 							current_version);
 					if (p_debug && p_preset->has("custom_template/debug") &&
-						p_preset->get("custom_template/debug") != "") {
-						template_path =
-							p_preset->get("custom_template/debug").operator String().get_base_dir();
+						p_preset->obj->get("custom_template/debug") != "") {
+						template_path = p_preset->obj->get("custom_template/debug")
+											.
+											operator String()
+											.get_base_dir();
 					}
 					else if (!p_debug && p_preset->has("custom_template/release") &&
-							   p_preset->get("custom_template/release") != "") {
-						template_path = p_preset->get("custom_template/release")
+							   p_preset->obj->get("custom_template/release") != "") {
+						template_path = p_preset->obj->get("custom_template/release")
 											.
 											operator String()
 											.get_base_dir();
@@ -2222,8 +2224,8 @@ void EditorExportPlatform::zip_folder_recursive(
 			zipOpenNewFileInZip4(p_zip, p_folder.path_join(f).utf8().get_data(), &zipfi, nullptr, 0,
 				nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS,
 				DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
-						// required to store Unix file permissions
+				0x0314,	  // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
+						  // required to store Unix file permissions
 				1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment
 						  // fields must be encoded using UTF-8.
 
@@ -2262,8 +2264,8 @@ void EditorExportPlatform::zip_folder_recursive(
 			zipOpenNewFileInZip4(p_zip, p_folder.path_join(f).utf8().get_data(), &zipfi, nullptr, 0,
 				nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS,
 				DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
-						// required to store Unix file permissions
+				0x0314,	  // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
+						  // required to store Unix file permissions
 				1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment
 						  // fields must be encoded using UTF-8.
 
@@ -2974,6 +2976,7 @@ Error EditorExportPlatform::ssh_push_to_remote(const String& p_host, const Strin
 	args.push_back(vformat("%s:%s", p_host, p_dst_file));
 
 	String out;
+
 	int exit_code = -1;
 
 	if (OS::get_singleton()->is_stdout_verbose()) {
@@ -3034,5 +3037,45 @@ Variant EditorExportPlatform::get_project_setting(
 }
 
 void EditorExportPlatform::_bind_methods() {}
+
+void EditorExportPlatform::get_preset_features(
+	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
+{
+}
+
+void EditorExportPlatform::get_export_options(List<ExportOption>* r_options) const {}
+
+String EditorExportPlatform::get_os_name() const { return "CustomOS"; }
+
+String EditorExportPlatform::get_name() const { return "Custom Platform"; }
+
+Ref<Texture2D> EditorExportPlatform::get_logo() const { return Ref<Texture2D>(); }
+
+bool EditorExportPlatform::has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
+	String& r_error, bool& r_missing_templates, bool p_debug) const
+{
+	r_missing_templates = false;
+	return true;
+}
+
+bool EditorExportPlatform::has_valid_project_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error) const
+{
+	return true;
+}
+
+List<String> EditorExportPlatform::get_binary_extensions(
+	const Ref<EditorExportPreset>& p_preset) const
+{
+	return List<String>();
+}
+
+Error EditorExportPlatform::export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
+	const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags, bool p_notify)
+{
+	return OK;
+}
+
+void EditorExportPlatform::get_platform_features(List<String>* r_features) const {}
 
 

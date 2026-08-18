@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "touch_actions_panel.h"
-
 #include "core/input/input.h"
 #include "core/object/callable_mp.h"
 #include "editor/settings/editor_settings.h"
@@ -39,145 +37,168 @@
 #include "scene/gui/texture_rect.h"
 #include "scene/resources/style_box_flat.h"
 #include "servers/display/display_server.h"
+#include "touch_actions_panel.h"
 
-void TouchActionsPanel::_notification(int p_what) {
+void TouchActionsPanel::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			DisplayServer::get_singleton()->set_hardware_keyboard_connection_change_callback(callable_mp(this, &TouchActionsPanel::_hardware_keyboard_connected));
-			_hardware_keyboard_connected(DisplayServer::get_singleton()->has_hardware_keyboard());
-			if (!is_floating) {
-				get_parent()->move_child(this, embedded_panel_index);
+	case NOTIFICATION_ENTER_TREE: {
+		DisplayServer::get_singleton()->set_hardware_keyboard_connection_change_callback(
+			callable_mp(this, &TouchActionsPanel::_hardware_keyboard_connected));
+		_hardware_keyboard_connected(DisplayServer::get_singleton()->has_hardware_keyboard());
+		if (!is_floating) {
+			get_parent()->move_child(this, embedded_panel_index);
+		}
+	} break;
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		set_process_input(is_visible_in_tree());
+	} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		if (is_floating) {
+			drag_handle->set_texture(get_editor_theme_icon(SNAME("DragHandle")));
+			layout_toggle_button->set_button_icon(get_editor_theme_icon(SNAME("Orientation")));
+			lock_panel_button->set_button_icon(get_editor_theme_icon(SNAME("Lock")));
+		}
+		else {
+			if (embedded_panel_index == 1) {
+				panel_pos_button->set_button_icon(
+					get_editor_theme_icon(SNAME("ControlAlignLeftWide")));
 			}
-		} break;
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			set_process_input(is_visible_in_tree());
-		} break;
-		case NOTIFICATION_THEME_CHANGED: {
-			if (is_floating) {
-				drag_handle->set_texture(get_editor_theme_icon(SNAME("DragHandle")));
-				layout_toggle_button->set_button_icon(get_editor_theme_icon(SNAME("Orientation")));
-				lock_panel_button->set_button_icon(get_editor_theme_icon(SNAME("Lock")));
-			} else {
-				if (embedded_panel_index == 1) {
-					panel_pos_button->set_button_icon(get_editor_theme_icon(SNAME("ControlAlignLeftWide")));
-				} else {
-					panel_pos_button->set_button_icon(get_editor_theme_icon(SNAME("ControlAlignRightWide")));
-				}
+			else {
+				panel_pos_button->set_button_icon(
+					get_editor_theme_icon(SNAME("ControlAlignRightWide")));
 			}
-			save_button->set_button_icon(get_editor_theme_icon(SNAME("Save")));
-			delete_button->set_button_icon(get_editor_theme_icon(SNAME("Remove")));
-			undo_button->set_button_icon(get_editor_theme_icon(SNAME("UndoRedo")));
-			redo_button->set_button_icon(get_editor_theme_icon(SNAME("Redo")));
-			cut_button->set_button_icon(get_editor_theme_icon(SNAME("ActionCut")));
-			copy_button->set_button_icon(get_editor_theme_icon(SNAME("ActionCopy")));
-			paste_button->set_button_icon(get_editor_theme_icon(SNAME("ActionPaste")));
-		} break;
+		}
+		save_button->set_button_icon(get_editor_theme_icon(SNAME("Save")));
+		delete_button->set_button_icon(get_editor_theme_icon(SNAME("Remove")));
+		undo_button->set_button_icon(get_editor_theme_icon(SNAME("UndoRedo")));
+		redo_button->set_button_icon(get_editor_theme_icon(SNAME("Redo")));
+		cut_button->set_button_icon(get_editor_theme_icon(SNAME("ActionCut")));
+		copy_button->set_button_icon(get_editor_theme_icon(SNAME("ActionCopy")));
+		paste_button->set_button_icon(get_editor_theme_icon(SNAME("ActionPaste")));
+	} break;
 	}
 }
 
-void TouchActionsPanel::input(const Ref<InputEvent> &event) {
+void TouchActionsPanel::input(const Ref<InputEvent>& event)
+{
 	if (ctrl_btn_pressed) {
-		event->call(SNAME("set_ctrl_pressed"), true);
+		event->obj->call(SNAME("set_ctrl_pressed"), true);
 	}
 
 	if (shift_btn_pressed) {
-		event->call(SNAME("set_shift_pressed"), true);
+		event->obj->call(SNAME("set_shift_pressed"), true);
 	}
 
 	if (alt_btn_pressed) {
-		event->call(SNAME("set_alt_pressed"), true);
+		event->obj->call(SNAME("set_alt_pressed"), true);
 	}
 }
 
-void TouchActionsPanel::_hardware_keyboard_connected(bool p_connected) {
+void TouchActionsPanel::_hardware_keyboard_connected(bool p_connected)
+{
 	set_visible(!p_connected);
 }
 
-void TouchActionsPanel::_simulate_editor_shortcut(const String &p_shortcut_name) {
+void TouchActionsPanel::_simulate_editor_shortcut(const String& p_shortcut_name)
+{
 	Ref<Shortcut> shortcut = ED_GET_SHORTCUT(p_shortcut_name);
 
 	if (shortcut.is_valid() && !shortcut->get_events().is_empty()) {
 		Ref<InputEventKey> event = shortcut->get_events()[0];
 		if (event.is_valid()) {
 			event->set_pressed(true);
-			Input::get_singleton()->parse_input_event(event);
+			Input::get_singleton()->parse_input_event(event.ptr());
 		}
 	}
 }
 
-void TouchActionsPanel::_simulate_key_press(Key p_keycode) {
+void TouchActionsPanel::_simulate_key_press(Key p_keycode)
+{
 	Ref<InputEventKey> event;
 	event.instantiate();
 	event->set_keycode(p_keycode);
 	event->set_pressed(true);
-	Input::get_singleton()->parse_input_event(event);
+	Input::get_singleton()->parse_input_event(event.ptr());
 }
 
-void TouchActionsPanel::_on_modifier_button_toggled(bool p_pressed, int p_modifier) {
+void TouchActionsPanel::_on_modifier_button_toggled(bool p_pressed, int p_modifier)
+{
 	switch ((Modifier)p_modifier) {
-		case MODIFIER_CTRL:
-			ctrl_btn_pressed = p_pressed;
-			break;
-		case MODIFIER_SHIFT:
-			shift_btn_pressed = p_pressed;
-			break;
-		case MODIFIER_ALT:
-			alt_btn_pressed = p_pressed;
-			break;
+	case MODIFIER_CTRL:
+		ctrl_btn_pressed = p_pressed;
+		break;
+	case MODIFIER_SHIFT:
+		shift_btn_pressed = p_pressed;
+		break;
+	case MODIFIER_ALT:
+		alt_btn_pressed = p_pressed;
+		break;
 	}
 }
 
-Button *TouchActionsPanel::_add_new_action_button(const String &p_shortcut, const String &p_name, Key p_keycode) {
-	Button *action_button = memnew(Button);
+Button* TouchActionsPanel::_add_new_action_button(
+	const String& p_shortcut, const String& p_name, Key p_keycode)
+{
+	Button* action_button = memnew(Button);
 	action_button->set_theme_type_variation("FlatMenuButton");
 	action_button->set_accessibility_name(p_name);
 	action_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	action_button->set_icon_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 	if (p_keycode == Key::NONE) {
-		action_button->connect(SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_simulate_editor_shortcut).bind(p_shortcut));
-	} else {
-		action_button->connect(SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_simulate_key_press).bind(p_keycode));
+		action_button->connect(SceneStringName(pressed),
+			callable_mp(this, &TouchActionsPanel::_simulate_editor_shortcut).bind(p_shortcut));
+	}
+	else {
+		action_button->connect(SceneStringName(pressed),
+			callable_mp(this, &TouchActionsPanel::_simulate_key_press).bind(p_keycode));
 	}
 	box->add_child(action_button);
 	return action_button;
 }
 
-void TouchActionsPanel::_add_new_modifier_button(Modifier p_modifier) {
+void TouchActionsPanel::_add_new_modifier_button(Modifier p_modifier)
+{
 	String text;
 	switch (p_modifier) {
-		case MODIFIER_CTRL:
-			text = "Ctrl";
-			break;
-		case MODIFIER_SHIFT:
-			text = "Shift";
-			break;
-		case MODIFIER_ALT:
-			text = "Alt";
-			break;
+	case MODIFIER_CTRL:
+		text = "Ctrl";
+		break;
+	case MODIFIER_SHIFT:
+		text = "Shift";
+		break;
+	case MODIFIER_ALT:
+		text = "Alt";
+		break;
 	}
-	Button *toggle_button = memnew(Button);
+	Button* toggle_button = memnew(Button);
 	toggle_button->set_text(text);
 	toggle_button->set_toggle_mode(true);
 	toggle_button->set_theme_type_variation("FlatMenuButton");
 	toggle_button->set_accessibility_name(text);
 	toggle_button->set_focus_mode(FOCUS_ACCESSIBILITY);
-	toggle_button->connect(SceneStringName(toggled), callable_mp(this, &TouchActionsPanel::_on_modifier_button_toggled).bind((int)p_modifier));
+	toggle_button->connect(SceneStringName(toggled),
+		callable_mp(this, &TouchActionsPanel::_on_modifier_button_toggled).bind((int)p_modifier));
 	box->add_child(toggle_button);
 }
 
-void TouchActionsPanel::_on_drag_handle_gui_input(const Ref<InputEvent> &p_event) {
+void TouchActionsPanel::_on_drag_handle_gui_input(const Ref<InputEvent>& p_event)
+{
 	if (locked_panel) {
 		return;
 	}
 	Ref<InputEventMouseButton> mouse_button_event = p_event;
-	if (mouse_button_event.is_valid() && mouse_button_event->get_button_index() == MouseButton::LEFT) {
+	if (mouse_button_event.is_valid() &&
+		mouse_button_event->get_button_index() == MouseButton::LEFT) {
 		if (mouse_button_event->is_pressed()) {
 			dragging = true;
 			drag_offset = mouse_button_event->get_position();
-		} else {
+		}
+		else {
 			if (dragging) {
 				dragging = false;
-				EditorSettings::get_singleton()->set("_touch_actions_panel_position", get_position());
+				EditorSettings::get_singleton()->obj->set(
+					"_touch_actions_panel_position", get_position());
 				EditorSettings::get_singleton()->save();
 			}
 		}
@@ -189,20 +210,24 @@ void TouchActionsPanel::_on_drag_handle_gui_input(const Ref<InputEvent> &p_event
 		const float margin = 25.0;
 		Vector2 parent_size = get_parent_area_size();
 		Vector2 panel_size = get_size();
-		new_position = new_position.clamp(Vector2(margin, margin), parent_size - panel_size - Vector2(margin, margin));
+		new_position = new_position.clamp(
+			Vector2(margin, margin), parent_size - panel_size - Vector2(margin, margin));
 		set_position(new_position);
 	}
 }
 
-void TouchActionsPanel::_switch_layout() {
+void TouchActionsPanel::_switch_layout()
+{
 	box->set_vertical(!box->is_vertical());
 	reset_size();
 	queue_redraw();
-	EditorSettings::get_singleton()->set("_touch_actions_panel_vertical_layout", box->is_vertical());
+	EditorSettings::get_singleton()->obj->set(
+		"_touch_actions_panel_vertical_layout", box->is_vertical());
 	EditorSettings::get_singleton()->save();
 }
 
-void TouchActionsPanel::_lock_panel_toggled(bool p_pressed) {
+void TouchActionsPanel::_lock_panel_toggled(bool p_pressed)
+{
 	locked_panel = p_pressed;
 	layout_toggle_button->set_visible(!p_pressed);
 	drag_handle->set_visible(!p_pressed);
@@ -210,20 +235,26 @@ void TouchActionsPanel::_lock_panel_toggled(bool p_pressed) {
 	queue_redraw();
 }
 
-void TouchActionsPanel::_switch_embedded_panel_side() {
+void TouchActionsPanel::_switch_embedded_panel_side()
+{
 	if (embedded_panel_index == 0) {
 		embedded_panel_index = 1;
 		panel_pos_button->set_button_icon(get_editor_theme_icon(SNAME("ControlAlignLeftWide")));
-	} else {
+	}
+	else {
 		embedded_panel_index = 0;
 		panel_pos_button->set_button_icon(get_editor_theme_icon(SNAME("ControlAlignRightWide")));
 	}
-	get_parent()->move_child(this, embedded_panel_index); // Parent is a hbox with only two children -- TouchActionsPanel and main Editor UI.
-	EditorSettings::get_singleton()->set("_touch_actions_panel_embed_index", embedded_panel_index);
+	get_parent()->move_child(
+		this, embedded_panel_index); // Parent is a hbox with only two children -- TouchActionsPanel
+									 // and main Editor UI.
+	EditorSettings::get_singleton()->obj->set(
+		"_touch_actions_panel_embed_index", embedded_panel_index);
 	EditorSettings::get_singleton()->save();
 }
 
-TouchActionsPanel::TouchActionsPanel() {
+TouchActionsPanel::TouchActionsPanel()
+{
 	int panel_mode = EDITOR_GET("interface/touchscreen/touch_actions_panel");
 	is_floating = panel_mode == 2;
 
@@ -235,16 +266,18 @@ TouchActionsPanel::TouchActionsPanel() {
 		panel_style->set_border_width_all(3);
 		panel_style->set_corner_radius_all(10);
 		panel_style->set_content_margin_all(12);
-		add_theme_style_override(SceneStringName(panel), panel_style);
+		add_theme_style_override(SceneStringName(panel), panel_style.ptr());
 
-		set_position(EDITOR_DEF("_touch_actions_panel_position", Point2(480, 480))); // Dropped it here for no good reason — users can move it anyway.
+		set_position(EDITOR_DEF("_touch_actions_panel_position",
+			Point2(480, 480))); // Dropped it here for no good reason — users can move it anyway.
 	}
 
 	box = memnew(BoxContainer);
 	box->add_theme_constant_override("separation", 20);
 	if (is_floating) {
 		box->set_vertical(EDITOR_DEF("_touch_actions_panel_vertical_layout", false));
-	} else {
+	}
+	else {
 		box->set_vertical(true);
 	}
 	add_child(box);
@@ -253,7 +286,8 @@ TouchActionsPanel::TouchActionsPanel() {
 		drag_handle = memnew(TextureRect);
 		drag_handle->set_custom_minimum_size(Size2(40, 40));
 		drag_handle->set_stretch_mode(TextureRect::STRETCH_KEEP_CENTERED);
-		drag_handle->connect(SceneStringName(gui_input), callable_mp(this, &TouchActionsPanel::_on_drag_handle_gui_input));
+		drag_handle->connect(SceneStringName(gui_input),
+			callable_mp(this, &TouchActionsPanel::_on_drag_handle_gui_input));
 		box->add_child(drag_handle);
 
 		layout_toggle_button = memnew(Button);
@@ -261,7 +295,8 @@ TouchActionsPanel::TouchActionsPanel() {
 		layout_toggle_button->set_accessibility_name(TTRC("Switch Layout"));
 		layout_toggle_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 		layout_toggle_button->set_icon_alignment(HORIZONTAL_ALIGNMENT_CENTER);
-		layout_toggle_button->connect(SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_switch_layout));
+		layout_toggle_button->connect(
+			SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_switch_layout));
 		box->add_child(layout_toggle_button);
 
 		lock_panel_button = memnew(Button);
@@ -270,21 +305,24 @@ TouchActionsPanel::TouchActionsPanel() {
 		lock_panel_button->set_accessibility_name(TTRC("Lock Panel"));
 		lock_panel_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 		lock_panel_button->set_icon_alignment(HORIZONTAL_ALIGNMENT_CENTER);
-		lock_panel_button->connect(SceneStringName(toggled), callable_mp(this, &TouchActionsPanel::_lock_panel_toggled));
+		lock_panel_button->connect(
+			SceneStringName(toggled), callable_mp(this, &TouchActionsPanel::_lock_panel_toggled));
 		box->add_child(lock_panel_button);
-	} else {
+	}
+	else {
 		panel_pos_button = memnew(Button);
 		panel_pos_button->set_theme_type_variation("FlatMenuButton");
 		panel_pos_button->set_accessibility_name(TTRC("Switch Embedded Panel Position"));
 		panel_pos_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 		panel_pos_button->set_icon_alignment(HORIZONTAL_ALIGNMENT_CENTER);
-		panel_pos_button->connect(SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_switch_embedded_panel_side));
+		panel_pos_button->connect(SceneStringName(pressed),
+			callable_mp(this, &TouchActionsPanel::_switch_embedded_panel_side));
 		box->add_child(panel_pos_button);
 
 		embedded_panel_index = EDITOR_DEF("_touch_actions_panel_embed_index", 0);
 	}
 
-	ColorRect *separator = memnew(ColorRect);
+	ColorRect* separator = memnew(ColorRect);
 	separator->set_color(Color(0.5, 0.5, 0.5));
 	separator->set_custom_minimum_size(Size2(2, 2));
 	box->add_child(separator);
@@ -302,3 +340,5 @@ TouchActionsPanel::TouchActionsPanel() {
 	_add_new_modifier_button(MODIFIER_SHIFT);
 	_add_new_modifier_button(MODIFIER_ALT);
 }
+
+

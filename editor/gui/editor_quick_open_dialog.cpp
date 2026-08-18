@@ -756,11 +756,8 @@ void QuickOpenResultContainer::_find_uids_in_folder(
 		const StringName& actual_type = is_engine_type ? engine_type : script_type;
 
 		for (const StringName& parent_type : base_types) {
-			bool is_valid =
-				ClassDB::is_parent_class(engine_type, parent_type) ||
-				(!is_engine_type &&
-					EditorNode::get_editor_data().script_class_is_parent(script_type, parent_type));
-
+			bool is_valid = !is_engine_type && EditorNode::get_editor_data().script_class_is_parent(
+												   script_type, parent_type);
 			if (is_valid) {
 				uids.push_back(uid);
 				filetypes.insert(uid, actual_type);
@@ -1126,12 +1123,13 @@ void QuickOpenResultContainer::_item_input(const Ref<InputEvent>& p_ev, int p_in
 
 void QuickOpenResultContainer::_toggle_instant_preview(bool p_pressed)
 {
-	EditorSettings::get_singleton()->set("filesystem/quick_open_dialog/instant_preview", p_pressed);
+	EditorSettings::get_singleton()->obj->set(
+		"filesystem/quick_open_dialog/instant_preview", p_pressed);
 }
 
 void QuickOpenResultContainer::_toggle_fuzzy_search(bool p_pressed)
 {
-	EditorSettings::get_singleton()->set(
+	EditorSettings::get_singleton()->obj->set(
 		"filesystem/quick_open_dialog/enable_fuzzy_matching", p_pressed);
 	update_results();
 }
@@ -1144,7 +1142,8 @@ String QuickOpenResultContainer::_get_cache_file_path() const
 
 void QuickOpenResultContainer::_toggle_include_addons(bool p_pressed)
 {
-	EditorSettings::get_singleton()->set("filesystem/quick_open_dialog/include_addons", p_pressed);
+	EditorSettings::get_singleton()->obj->set(
+		"filesystem/quick_open_dialog/include_addons", p_pressed);
 	cleanup();
 	_create_initial_results();
 }
@@ -1242,7 +1241,7 @@ QuickOpenDisplayMode QuickOpenResultContainer::get_adaptive_display_mode(
 
 	for (const StringName& type : grid_preferred_types) {
 		for (const StringName& base_type : p_base_types) {
-			if (base_type == type || ClassDB::is_parent_class(base_type, type)) {
+			if (base_type == type) {
 				return QuickOpenDisplayMode::GRID;
 			}
 		}
@@ -1340,8 +1339,8 @@ void QuickOpenResultContainer::_notification(int p_what)
 		file_context_menu->set_item_icon(
 			FILE_SHOW_IN_FILE_MANAGER, get_editor_theme_icon(SNAME("Filesystem")));
 
-		panel_container->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+		panel_container->add_theme_style_override(SceneStringName(panel),
+			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 
 		if (content_display_mode == QuickOpenDisplayMode::LIST) {
 			display_mode_toggle->set_button_icon(get_editor_theme_icon(SNAME("FileThumbnail")));
@@ -1353,11 +1352,7 @@ void QuickOpenResultContainer::_notification(int p_what)
 	}
 }
 
-void QuickOpenResultContainer::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("selection_changed"));
-	ADD_SIGNAL(MethodInfo("result_clicked", PropertyInfo(Variant::BOOL, "double_click")));
-}
+void QuickOpenResultContainer::_bind_methods() {}
 
 //------------------------- Result Item
 
@@ -1460,10 +1455,10 @@ void QuickOpenResultItem::_notification(int p_what)
 	} break;
 	case NOTIFICATION_DRAW: {
 		if (is_selected) {
-			draw_style_box(selected_stylebox, Rect2(Point2(), get_size()));
+			draw_style_box(selected_stylebox.ptr(), Rect2(Point2(), get_size()));
 		}
 		else if (is_hovering) {
-			draw_style_box(hovering_stylebox, Rect2(Point2(), get_size()));
+			draw_style_box(hovering_stylebox.ptr(), Rect2(Point2(), get_size()));
 		}
 	} break;
 	}

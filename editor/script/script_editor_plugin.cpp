@@ -202,7 +202,7 @@ void DocumentOutline::_item_list_selected(int p_idx)
 
 void DocumentOutline::_toggle_sort(bool p_alphabetic_sort)
 {
-	EditorSettings::get_singleton()->set(
+	EditorSettings::get_singleton()->obj->set(
 		"text_editor/script_list/sort_members_outline_alphabetically", p_alphabetic_sort);
 	update_outline();
 }
@@ -276,7 +276,7 @@ void DocumentOutline::update_visibility()
 	if (use_monospace_font) {
 		Ref<Font> monospace_font = get_theme_font(SNAME("source"), EditorStringName(EditorFonts));
 		if (item_list->get_theme_font(SceneStringName(font)) != monospace_font) {
-			item_list->add_theme_font_override(SceneStringName(font), monospace_font);
+			item_list->add_theme_font_override(SceneStringName(font), monospace_font.ptr());
 		}
 	}
 	else if (item_list->has_theme_font_override(SceneStringName(font))) {
@@ -349,7 +349,7 @@ String ScriptEditor::_get_debug_tooltip(const String& p_text, Node* p_se)
 
 void ScriptEditor::_script_created(Ref<Script> p_script)
 {
-	EditorNode::get_singleton()->push_item(p_script.operator->());
+	EditorNode::get_singleton()->push_item(p_script.operator->()->obj.get());
 }
 
 void ScriptEditor::_goto_script_line2(int p_line)
@@ -366,7 +366,7 @@ void ScriptEditor::_goto_script_line(Ref<RefCounted> p_script, int p_line)
 	Ref<Script> scr = Object::cast_to<Script>(*p_script);
 	if (scr.is_valid() && (scr->has_source_code() || scr->get_path().is_resource_file())) {
 		if (edit(p_script, p_line, 0)) {
-			EditorNode::get_singleton()->push_item(p_script.ptr());
+			EditorNode::get_singleton()->push_item(p_script->obj.get());
 		}
 	}
 }
@@ -1277,9 +1277,9 @@ Ref<Script> ScriptEditor::_get_current_script()
 	}
 }
 
-TypedArray<Script> ScriptEditor::_get_open_scripts() const
+Array ScriptEditor::_get_open_scripts() const
 {
-	TypedArray<Script> ret;
+	Array ret;
 	Vector<Ref<Script>> scripts = get_open_scripts();
 	int scripts_amount = scripts.size();
 	for (int idx_script = 0; idx_script < scripts_amount; idx_script++) {
@@ -1488,7 +1488,7 @@ void ScriptEditor::_menu_option(int p_option)
 				clear_docs_from_script(scr);
 			}
 
-			EditorNode::get_singleton()->push_item(resource.ptr());
+			EditorNode::get_singleton()->push_item(resource->obj.get());
 			EditorNode::get_singleton()->save_resource_as(resource);
 
 			if (scr.is_valid()) {
@@ -1771,7 +1771,7 @@ void ScriptEditor::_notification(int p_what)
 	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
 	case NOTIFICATION_THEME_CHANGED: {
 		tab_container->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("ScriptEditor"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("ScriptEditor"), EditorStringName(EditorStyles)).ptr());
 
 		_calculate_script_name_button_size();
 
@@ -1811,7 +1811,7 @@ void ScriptEditor::_notification(int p_what)
 	case NOTIFICATION_READY: {
 		// Can't set own styles in NOTIFICATION_THEME_CHANGED, so for now this will do.
 		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("ScriptEditorPanel"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("ScriptEditorPanel"), EditorStringName(EditorStyles)).ptr());
 
 		InspectorDock::get_singleton()->connect(
 			"request_help", callable_mp(this, &ScriptEditor::_help_class_open));
@@ -2866,7 +2866,7 @@ void ScriptEditor::_reload_scripts(bool p_refresh_only)
 			Ref<Script> scr = edited_res;
 			if (scr.is_valid()) {
 				Ref<Script> rel_scr = ResourceLoader::load(
-					scr->get_path(), scr->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
+					scr->get_path(), scr->obj->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
 				ERR_CONTINUE(rel_scr.is_null());
 				scr->set_source_code(rel_scr->get_source_code());
 				scr->reload(true);
@@ -2877,7 +2877,7 @@ void ScriptEditor::_reload_scripts(bool p_refresh_only)
 			Ref<JSON> json = edited_res;
 			if (json.is_valid()) {
 				Ref<JSON> rel_json = ResourceLoader::load(
-					json->get_path(), json->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
+					json->get_path(), json->obj->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
 				ERR_CONTINUE(rel_json.is_null());
 				json->parse(rel_json->get_parsed_text(), true);
 			}
@@ -2989,7 +2989,7 @@ void ScriptEditor::_add_callback(
 		return;
 	}
 
-	EditorNode::get_singleton()->push_item(scr.ptr());
+	EditorNode::get_singleton()->push_item(scr->obj.get());
 
 	for (int i = 0; i < tab_container->get_tab_count(); i++) {
 		ScriptTextEditor* ste =
@@ -4142,7 +4142,7 @@ void ScriptEditor::_on_find_in_files_result_selected(
 		if (fpath.has_extension("gdshader") || fpath.has_extension("gdshaderinc")) {
 			ShaderEditorPlugin* shader_editor = Object::cast_to<ShaderEditorPlugin>(
 				EditorNode::get_editor_data().get_editor_by_name("Shader"));
-			shader_editor->edit(res.ptr());
+			shader_editor->edit(res->obj.get());
 			shader_editor->make_visible(true);
 			TextShaderEditor* text_shader_editor =
 				Object::cast_to<TextShaderEditor>(shader_editor->get_shader_editor(res));
@@ -4716,11 +4716,11 @@ void ScriptEditorPlugin::_window_visibility_changed(bool p_visible)
 	if (p_visible) {
 		script_editor->add_theme_style_override(
 			SceneStringName(panel), script_editor->get_theme_stylebox("ScriptEditorPanelFloating",
-										EditorStringName(EditorStyles)));
+										EditorStringName(EditorStyles)).ptr());
 	}
 	else {
 		script_editor->add_theme_style_override(SceneStringName(panel),
-			script_editor->get_theme_stylebox("ScriptEditorPanel", EditorStringName(EditorStyles)));
+			script_editor->get_theme_stylebox("ScriptEditorPanel", EditorStringName(EditorStyles)).ptr());
 	}
 }
 

@@ -225,7 +225,7 @@ void EditorPropertyText::_update_theme()
 		font_size = get_theme_font_size(SceneStringName(font_size), SNAME("LineEdit"));
 	}
 
-	text->add_theme_font_override(SceneStringName(font), font);
+	text->add_theme_font_override(SceneStringName(font), font.ptr());
 	text->add_theme_font_size_override(SceneStringName(font_size), font_size);
 }
 
@@ -409,12 +409,12 @@ void EditorPropertyMultilineText::_update_theme()
 			font_size = get_theme_font_size(SceneStringName(font_size), SNAME("TextEdit"));
 		}
 	}
-	text->add_theme_font_override(SceneStringName(font), font);
+	text->add_theme_font_override(SceneStringName(font), font.ptr());
 	text->add_theme_font_size_override(SceneStringName(font_size), font_size);
 	text->set_line_wrapping_mode(wrap_lines ? TextEdit::LineWrappingMode::LINE_WRAPPING_BOUNDARY
 											: TextEdit::LineWrappingMode::LINE_WRAPPING_NONE);
 	if (big_text) {
-		big_text->add_theme_font_override(SceneStringName(font), font);
+		big_text->add_theme_font_override(SceneStringName(font), font.ptr());
 		big_text->add_theme_font_size_override(SceneStringName(font_size), font_size);
 		big_text->set_line_wrapping_mode(wrap_lines
 											 ? TextEdit::LineWrappingMode::LINE_WRAPPING_BOUNDARY
@@ -1449,7 +1449,7 @@ void EditorPropertyLayersGrid::_notification(int p_what)
 					Vector2 offset;
 					offset.y = rect2.size.y * 0.75;
 
-					draw_string(font, rect2.position + offset, itos(layer_index + 1),
+					draw_string(font.ptr(), rect2.position + offset, itos(layer_index + 1),
 						HORIZONTAL_ALIGNMENT_CENTER, rect2.size.x, font_size,
 						on ? text_color_on : text_color);
 
@@ -2212,7 +2212,7 @@ EditorPropertyEasing::EditorPropertyEasing()
 	add_child(preset);
 	preset->connect(
 
-	SceneStringName(id_pressed), callable_mp(this, &EditorPropertyEasing::_set_preset));
+		SceneStringName(id_pressed), callable_mp(this, &EditorPropertyEasing::_set_preset));
 
 	spin = memnew(EditorSpinSlider);
 	spin->set_flat(true);
@@ -3824,7 +3824,7 @@ void EditorPropertyResource::_resource_changed(const Ref<Resource>& p_resource)
 	if (get_edited_object() && s.is_valid() && get_edited_property() == CoreStringName(script)) {
 		is_script = true;
 		InspectorDock::get_singleton()->store_script_properties(get_edited_object());
-		s->call("set_instance_base_type", get_edited_object()->get_class());
+		s->obj->call("set_instance_base_type", get_edited_object()->get_class());
 	}
 
 	// Prevent the creation of invalid ViewportTextures when possible.
@@ -3916,7 +3916,7 @@ void EditorPropertyResource::_open_editor_pressed()
 {
 	Ref<Resource> res = get_edited_property_value();
 	if (res.is_valid()) {
-		EditorNode::get_singleton()->edit_item(res.ptr(), this->obj.get(), user_opened_editor);
+		EditorNode::get_singleton()->edit_item(res->obj.get(), this->obj.get(), user_opened_editor);
 	}
 }
 
@@ -4037,10 +4037,6 @@ void EditorPropertyResource::setup(
 		connect(SceneStringName(ready),
 			callable_mp(this, &EditorPropertyResource::_update_preferred_shader));
 	}
-	else if (ClassDB::is_parent_class(p_base_type, "AudioStream")) {
-		EditorAudioStreamPicker* astream_picker = memnew(EditorAudioStreamPicker);
-		resource_picker = astream_picker;
-	}
 	else {
 		resource_picker = memnew(EditorResourcePicker);
 	}
@@ -4116,7 +4112,7 @@ void EditorPropertyResource::update_property()
 				Array editor_list;
 				for (int i = 0; i < EditorNode::get_editor_data().get_editor_plugin_count(); i++) {
 					EditorPlugin* ep = EditorNode::get_editor_data().get_editor_plugin(i);
-					if (ep->handles(res.ptr())) {
+					if (ep->handles(res->obj.get())) {
 						editor_list.push_back(ep);
 					}
 				}
@@ -4130,8 +4126,8 @@ void EditorPropertyResource::update_property()
 
 			sub_inspector->set_read_only(is_checkable() && !is_checked());
 
-			if (res.ptr() != sub_inspector->get_edited_object()) {
-				sub_inspector->edit(res.ptr());
+			if (res->obj.get() != sub_inspector->get_edited_object()) {
+				sub_inspector->edit(res->obj.get());
 				_update_property_bg();
 			}
 			sub_inspector->set_category_color_level(get_sub_inspector_color_level());
@@ -4733,15 +4729,6 @@ EditorProperty* EditorInspectorDefaultPlugin::get_editor_for_property(Object* p_
 			if (p_hint == PROPERTY_HINT_RESOURCE_TYPE) {
 				const PackedStringArray open_in_new_inspector =
 					EDITOR_GET("interface/inspector/resources_to_open_in_new_inspector");
-
-				for (const String& type : open_in_new_inspector) {
-					for (int j = 0; j < p_hint_text.get_slice_count(","); j++) {
-						const String inherits = p_hint_text.get_slicec(',', j);
-						if (ClassDB::is_parent_class(inherits, type)) {
-							editor->set_use_sub_inspector(false);
-						}
-					}
-				}
 			}
 
 			return editor;
@@ -4789,7 +4776,8 @@ EditorProperty* EditorInspectorDefaultPlugin::get_editor_for_property(Object* p_
 	} break;
 	case Variant::PACKED_FLOAT32_ARRAY: {
 		EditorPropertyArray* editor = memnew(EditorPropertyArray);
-		editor->setup(Variant::PACKED_FLOAT32_ARRAY, p_hint_text);
+		editor->
+setup(Variant::PACKED_FLOAT32_ARRAY, p_hint_text);
 		return editor;
 	} break;
 	case Variant::PACKED_FLOAT64_ARRAY: {

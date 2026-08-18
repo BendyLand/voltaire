@@ -89,7 +89,7 @@ bool EditorSettings::_set(const StringName& p_name, const Variant& p_value)
 				changed_settings.insert(exec_args_name);
 			}
 		}
-		emit_signal(SNAME("settings_changed"));
+		this->obj->emit_signal(SNAME("settings_changed"));
 	}
 	return true;
 }
@@ -127,7 +127,7 @@ bool EditorSettings::_set_only(const StringName& p_name, const Variant& p_value)
 
 			builtin_action_overrides[action_name].clear();
 			for (int ev_idx = 0; ev_idx < events.size(); ev_idx++) {
-				im->action_add_event(action_name, events[ev_idx]);
+				im->action_add_event(action_name, Object::cast_to<InputEvent>(events[ev_idx]));
 				builtin_action_overrides[action_name].push_back(events[ev_idx]);
 			}
 		}
@@ -196,7 +196,7 @@ bool EditorSettings::_get(const StringName& p_name, Variant& r_ret) const
 			dict["name"] = shortcut_definition.key;
 			dict["shortcuts"] = shortcut_events;
 
-			if (!sc->has_meta("original")) {
+			if (!sc->obj->has_meta("original")) {
 				// Getting the meta when it doesn't exist will return an empty array. If the
 				// 'shortcut_events' have been cleared, we still want save the shortcut in this case
 				// so that shortcuts that the user has customized are not reset, even if the
@@ -206,7 +206,7 @@ bool EditorSettings::_get(const StringName& p_name, Variant& r_ret) const
 				continue;
 			}
 
-			Array original_events = sc->get_meta("original");
+			Array original_events = sc->obj->get_meta("original");
 
 			bool is_same = Shortcut::is_event_array_equal(original_events, shortcut_events);
 			if (is_same) {
@@ -274,7 +274,7 @@ bool EditorSettings::_get(const StringName& p_name, Variant& r_ret) const
 
 void EditorSettings::_initial_set(const StringName& p_name, const Variant& p_value, bool p_basic)
 {
-	set(p_name, p_value);
+	this->obj->set(p_name, p_value);
 	props[p_name].initial = p_value;
 	props[p_name].has_default_value = true;
 	props[p_name].basic = p_basic;
@@ -1398,7 +1398,8 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config)
 	_initial_set("editors/animation/default_create_reset_tracks", true, true);
 	_initial_set("editors/animation/insert_at_current_time", false, true);
 	_initial_set("editors/animation/onion_layers_past_color", Color(1, 0, 0));
-	_initial_set("editors/animation/onion_layers_future_color", Color(0, 1, 0));
+	_initial_set("editors/animation/onion_layers_future_color", Color(0,
+ 1, 0));
 
 	// Audio buses
 	EDITOR_SETTING(Variant::COLOR, PROPERTY_HINT_NONE, "editors/audio_buses/active_max_db_color",
@@ -1599,7 +1600,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config)
 			Vector<String> list = p_extra_config->get_value("init_projects", "list");
 			for (int i = 0; i < list.size(); i++) {
 				String proj_name = list[i].replace("/", "::");
-				set("projects/" + proj_name, list[i]);
+				this->obj->set("projects/" + proj_name, list[i]);
 			}
 		}
 
@@ -1608,7 +1609,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config)
 
 			for (const String& key : keys) {
 				Variant val = p_extra_config->get_value("presets", key);
-				set(key, val);
+				this->obj->set(key, val);
 			}
 		}
 	}
@@ -1949,7 +1950,7 @@ void EditorSettings::setup_language(bool p_initial_setup)
 
 	if (lang == "en") {
 		TranslationServer::get_singleton()->set_locale(lang);
-		emit_signal("_translation_changed");
+		this->obj->emit_signal("_translation_changed");
 		return; // Default, nothing to do.
 	}
 
@@ -1957,7 +1958,7 @@ void EditorSettings::setup_language(bool p_initial_setup)
 	load_doc_translations(lang);
 
 	TranslationServer::get_singleton()->set_locale(lang);
-	emit_signal("_translation_changed");
+	this->obj->emit_signal("_translation_changed");
 }
 
 void EditorSettings::setup_network()
@@ -1966,7 +1967,7 @@ void EditorSettings::setup_network()
 	IP::get_singleton()->get_local_addresses(&local_ip);
 	String hint;
 	String current =
-		has_setting("network/debug/remote_host") ? get("network/debug/remote_host") : "";
+		has_setting("network/debug/remote_host") ? this->obj->get("network/debug/remote_host") : "";
 	String selected = "127.0.0.1";
 
 	// Check that current remote_host is a valid interface address and populate hints.
@@ -1995,8 +1996,8 @@ void EditorSettings::setup_network()
 	add_property_hint(PropertyInfo(
 		Variant::STRING, "network/language_server/remote_host", PROPERTY_HINT_ENUM, hint));
 	// Fix potentially invalid remote_host due to network change.
-	set("network/debug/remote_host", selected);
-	set("network/language_server/remote_host", selected);
+	this->obj->set("network/debug/remote_host", selected);
+	this->obj->set("network/language_server/remote_host", selected);
 }
 
 void EditorSettings::save()
@@ -2007,7 +2008,7 @@ void EditorSettings::save()
 		return;
 	}
 
-	Error err = ResourceSaver::save(singleton);
+	Error err = ResourceSaver::save(singleton.ptr());
 
 	if (err != OK) {
 		ERR_PRINT("Error saving editor settings to " + singleton->get_path());
@@ -2060,7 +2061,7 @@ void EditorSettings::set_optimize_save(bool p_optimize) { optimize_save = p_opti
 void EditorSettings::set_setting(const String& p_setting, const Variant& p_value)
 {
 	_THREAD_SAFE_METHOD_
-	set(p_setting, p_value);
+	this->obj->set(p_setting, p_value);
 }
 
 Variant EditorSettings::get_setting(const String& p_setting) const
@@ -2069,7 +2070,7 @@ Variant EditorSettings::get_setting(const String& p_setting) const
 	if (ProjectSettings::get_singleton()->has_editor_setting_override(p_setting)) {
 		return ProjectSettings::get_singleton()->get_editor_setting_override(p_setting);
 	}
-	return get(p_setting);
+	return this->obj->get(p_setting);
 }
 
 bool EditorSettings::has_setting(const String& p_setting) const
@@ -2129,7 +2130,7 @@ void EditorSettings::set_initial_value(
 	props[p_setting].initial = p_value;
 	props[p_setting].has_default_value = true;
 	if (p_update_current) {
-		set(p_setting, p_value);
+		this->obj->set(p_setting, p_value);
 	}
 }
 
@@ -2241,7 +2242,7 @@ void EditorSettings::set_favorites(const Vector<String>& p_favorites, bool p_upd
 	if (p_update_file_dialog) {
 		FileDialog::set_favorite_list(get_favorite_folders());
 	}
-	emit_signal(SNAME("_favorites_changed"));
+	this->obj->emit_signal(SNAME("_favorites_changed"));
 }
 
 void EditorSettings::set_favorites_bind(const Vector<String>& p_favorites)
@@ -2645,20 +2646,20 @@ void EditorSettings::add_shortcut(const String& p_path, const Ref<Shortcut>& p_s
 	Array use_events = p_shortcut->get_events();
 	if (shortcuts.has(p_path)) {
 		Ref<Shortcut> existing = shortcuts.get(p_path);
-		if (!existing->has_meta("original")) {
+		if (!existing->obj->has_meta("original")) {
 			// Loaded from editor settings, but plugin not loaded yet.
 			// Keep the events from editor settings but still override the shortcut in the shortcuts
 			// map
 			use_events = existing->get_events();
 		}
 		else if (!Shortcut::is_event_array_equal(
-					   existing->get_events(), existing->get_meta("original"))) {
+					   existing->get_events(), existing->obj->get_meta("original"))) {
 			// Shortcut exists and is customized - don't override with default.
 			return;
 		}
 	}
 
-	p_shortcut->set_meta("original", p_shortcut->get_events());
+	p_shortcut->obj->set_meta("original", p_shortcut->get_events());
 	p_shortcut->set_events(use_events);
 	if (p_shortcut->get_name().is_empty()) {
 		String shortcut_name = p_path.get_slicec('/', 1);
@@ -2811,11 +2812,11 @@ void ED_SHORTCUT_OVERRIDE_ARRAY(const String& p_path, const String& p_feature,
 	}
 
 	// Override the existing shortcut only if it wasn't customized by the user.
-	if (Shortcut::is_event_array_equal(sc->get_events(), sc->get_meta("original"))) {
+	if (Shortcut::is_event_array_equal(sc->get_events(), sc->obj->get_meta("original"))) {
 		sc->set_events(events);
 	}
 
-	sc->set_meta("original", events.duplicate(true));
+	sc->obj->set_meta("original", events.duplicate(true));
 }
 
 Ref<Shortcut> ED_SHORTCUT(
@@ -2853,28 +2854,28 @@ Ref<Shortcut> ED_SHORTCUT_ARRAY(
 		sc.instantiate();
 		sc->set_name(p_name);
 		sc->set_events(events);
-		sc->set_meta("original", events.duplicate(true));
+		sc->obj->set_meta("original", events.duplicate(true));
 		return sc;
 	}
 
 	Ref<Shortcut> sc = EditorSettings::get_singleton()->get_shortcut(p_path);
 	if (sc.is_valid()) {
 		sc->set_name(p_name); // keep name (the ones that come from disk have no name)
-		sc->set_meta("original", events.duplicate(true)); // to compare against changes
+		sc->obj->set_meta("original", events.duplicate(true)); // to compare against changes
 		return sc;
 	}
 
 	sc.instantiate();
 	sc->set_name(p_name);
 	sc->set_events(events);
-	sc->set_meta("original", events.duplicate(true)); // to compare against changes
+	sc->obj->set_meta("original", events.duplicate(true)); // to compare against changes
 	EditorSettings::get_singleton()->_add_shortcut_default(p_path, sc);
 
 	return sc;
 }
 
 void EditorSettings::set_builtin_action_override(
-	const String& p_name, const TypedArray<InputEvent>& p_events)
+	const String& p_name, const Array p_events)
 {
 	List<Ref<InputEvent>> event_list;
 
@@ -2883,7 +2884,8 @@ void EditorSettings::set_builtin_action_override(
 	InputMap::get_singleton()->action_erase_events(p_name);
 	for (int i = 0; i < p_events.size(); i++) {
 		event_list.push_back(p_events[i]);
-		InputMap::get_singleton()->action_add_event(p_name, p_events[i]);
+		InputMap::get_singleton()->action_add_event(
+			p_name, Object::cast_to<InputEvent>(p_events[i]));
 	}
 
 	// Check if the provided event array is same as built-in. If it is, it does not need to be added
@@ -2999,7 +3001,7 @@ void EditorSettings::get_argument_options(
 			}
 		}
 	}
-	Object::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 
 void EditorSettings::_bind_methods() {}

@@ -150,7 +150,7 @@ void EditorObjectSelector::update_path()
 				}
 
 				if (name.is_empty()) {
-					name = r->get_class();
+					name = r->obj->get_class();
 				}
 			}
 			else if (o->is_class("EditorDebuggerRemoteObjects")) {
@@ -210,8 +210,8 @@ void EditorObjectSelector::_notification(int p_what)
 		int icon_size = get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
 
 		current_object_icon->set_custom_minimum_size(Size2(icon_size, icon_size));
-		current_object_label->add_theme_font_override(
-			SceneStringName(font), get_theme_font(SNAME("main"), EditorStringName(EditorFonts)));
+		current_object_label->add_theme_font_override(SceneStringName(font),
+			get_theme_font(SNAME("main"), EditorStringName(EditorFonts)).ptr());
 		sub_objects_icon->set_texture(get_theme_icon(SNAME("arrow"), SNAME("OptionButton")));
 		sub_objects_menu->add_theme_constant_override("icon_max_width", icon_size);
 	} break;
@@ -264,4 +264,5 @@ EditorObjectSelector::EditorObjectSelector(EditorSelectionHistory* p_history)
 
 	set_tooltip_text(TTR("Open a list of sub-resources."));
 }
+
 

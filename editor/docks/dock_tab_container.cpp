@@ -217,7 +217,7 @@ void EditorDockDragHint::_notification(int p_what)
 		}
 		// Draw highlights around docks that can be dropped.
 		dock_rect = dock_rect.grow(2 * EDSCALE);
-		draw_style_box(dock_drop_highlight, dock_rect);
+		draw_style_box(dock_drop_highlight.ptr(), dock_rect);
 
 		// Only display tabbar hint if the mouse is over the tabbar.
 		if (mouse_inside_tabbar) {

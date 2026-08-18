@@ -67,17 +67,18 @@ void TileProxiesManagerDialog::_delete_selected_bindings()
 	for (int i = 0; i < source_level_selected.size(); i++) {
 		int key = source_level_list->get_item_metadata(source_level_selected[i]);
 		int val = tile_set->get_source_level_tile_proxy(key);
-		undo_redo->add_do_method(*tile_set, "remove_source_level_tile_proxy", key);
-		undo_redo->add_undo_method(*tile_set, "set_source_level_tile_proxy", key, val);
+		undo_redo->add_do_method(tile_set->obj.get(), "remove_source_level_tile_proxy", key);
+		undo_redo->add_undo_method(tile_set->obj.get(), "set_source_level_tile_proxy", key, val);
 	}
 
 	Vector<int> coords_level_selected = coords_level_list->get_selected_items();
 	for (int i = 0; i < coords_level_selected.size(); i++) {
 		Array key = coords_level_list->get_item_metadata(coords_level_selected[i]);
 		Array val = tile_set->get_coords_level_tile_proxy(key[0], key[1]);
-		undo_redo->add_do_method(*tile_set, "remove_coords_level_tile_proxy", key[0], key[1]);
+		undo_redo->add_do_method(
+			tile_set->obj.get(), "remove_coords_level_tile_proxy", key[0], key[1]);
 		undo_redo->add_undo_method(
-			*tile_set, "set_coords_level_tile_proxy", key[0], key[1], val[0], val[1]);
+			tile_set->obj.get(), "set_coords_level_tile_proxy", key[0], key[1], val[0], val[1]);
 	}
 
 	Vector<int> alternative_level_selected = alternative_level_list->get_selected_items();
@@ -85,9 +86,9 @@ void TileProxiesManagerDialog::_delete_selected_bindings()
 		Array key = alternative_level_list->get_item_metadata(alternative_level_selected[i]);
 		Array val = tile_set->get_alternative_level_tile_proxy(key[0], key[1], key[2]);
 		undo_redo->add_do_method(
-			*tile_set, "remove_alternative_level_tile_proxy", key[0], key[1], key[2]);
-		undo_redo->add_undo_method(*tile_set, "set_alternative_level_tile_proxy", key[0], key[1],
-			key[2], val[0], val[1], val[2]);
+			tile_set->obj.get(), "remove_alternative_level_tile_proxy", key[0], key[1], key[2]);
+		undo_redo->add_undo_method(tile_set->obj.get(), "set_alternative_level_tile_proxy", key[0],
+			key[1], key[2], val[0], val[1], val[2]);
 	}
 	undo_redo->add_do_method(this->obj.get(), "_update_lists");
 	undo_redo->add_undo_method(this->obj.get(), "_update_lists");
@@ -180,49 +181,51 @@ void TileProxiesManagerDialog::_add_button_pressed()
 			if (from.alternative_tile != TileSetSource::INVALID_TILE_ALTERNATIVE &&
 				to.alternative_tile != TileSetSource::INVALID_TILE_ALTERNATIVE) {
 				undo_redo->create_action(TTR("Create Alternative-level Tile Proxy"));
-				undo_redo->add_do_method(*tile_set, "set_alternative_level_tile_proxy",
+				undo_redo->add_do_method(tile_set->obj.get(), "set_alternative_level_tile_proxy",
 					from.source_id, from.get_atlas_coords(), from.alternative_tile, to.source_id,
 					to.get_atlas_coords(), to.alternative_tile);
 				if (tile_set->has_alternative_level_tile_proxy(
 						from.source_id, from.get_atlas_coords(), from.alternative_tile)) {
 					Array a = tile_set->get_alternative_level_tile_proxy(
 						from.source_id, from.get_atlas_coords(), from.alternative_tile);
-					undo_redo->add_undo_method(*tile_set, "set_alternative_level_tile_proxy",
-						to.source_id, to.get_atlas_coords(), to.alternative_tile, a[0], a[1], a[2]);
+					undo_redo->add_undo_method(tile_set->obj.get(),
+						"set_alternative_level_tile_proxy", to.source_id, to.get_atlas_coords(),
+						to.alternative_tile, a[0], a[1], a[2]);
 				}
 				else {
-					undo_redo->add_undo_method(*tile_set, "remove_alternative_level_tile_proxy",
-						from.source_id, from.get_atlas_coords(), from.alternative_tile);
+					undo_redo->add_undo_method(tile_set->obj.get(),
+						"remove_alternative_level_tile_proxy", from.source_id,
+						from.get_atlas_coords(), from.alternative_tile);
 				}
 			}
 			else {
 				undo_redo->create_action(TTR("Create Coords-level Tile Proxy"));
-				undo_redo->add_do_method(*tile_set, "set_coords_level_tile_proxy", from.source_id,
-					from.get_atlas_coords(), to.source_id, to.get_atlas_coords());
+				undo_redo->add_do_method(tile_set->obj.get(), "set_coords_level_tile_proxy",
+					from.source_id, from.get_atlas_coords(), to.source_id, to.get_atlas_coords());
 				if (tile_set->has_coords_level_tile_proxy(
 						from.source_id, from.get_atlas_coords())) {
 					Array a = tile_set->get_coords_level_tile_proxy(
 						from.source_id, from.get_atlas_coords());
-					undo_redo->add_undo_method(*tile_set, "set_coords_level_tile_proxy",
+					undo_redo->add_undo_method(tile_set->obj.get(), "set_coords_level_tile_proxy",
 						to.source_id, to.get_atlas_coords(), a[0], a[1]);
 				}
 				else {
-					undo_redo->add_undo_method(*tile_set, "remove_coords_level_tile_proxy",
-						from.source_id, from.get_atlas_coords());
+					undo_redo->add_undo_method(tile_set->obj.get(),
+						"remove_coords_level_tile_proxy", from.source_id, from.get_atlas_coords());
 				}
 			}
 		}
 		else {
 			undo_redo->create_action(TTR("Create source-level Tile Proxy"));
 			undo_redo->add_do_method(
-				*tile_set, "set_source_level_tile_proxy", from.source_id, to.source_id);
+				tile_set->obj.get(), "set_source_level_tile_proxy", from.source_id, to.source_id);
 			if (tile_set->has_source_level_tile_proxy(from.source_id)) {
-				undo_redo->add_undo_method(*tile_set, "set_source_level_tile_proxy", to.source_id,
-					tile_set->get_source_level_tile_proxy(from.source_id));
+				undo_redo->add_undo_method(tile_set->obj.get(), "set_source_level_tile_proxy",
+					to.source_id, tile_set->get_source_level_tile_proxy(from.source_id));
 			}
 			else {
 				undo_redo->add_undo_method(
-					*tile_set, "remove_source_level_tile_proxy", from.source_id);
+					tile_set->obj.get(), "remove_source_level_tile_proxy", from.source_id);
 			}
 		}
 		undo_redo->add_do_method(this->obj.get(), "_update_lists");
@@ -237,26 +240,27 @@ void TileProxiesManagerDialog::_clear_invalid_button_pressed()
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Delete All Invalid Tile Proxies"));
 
-	undo_redo->add_do_method(*tile_set, "cleanup_invalid_tile_proxies");
+	undo_redo->add_do_method(tile_set->obj.get(), "cleanup_invalid_tile_proxies");
 
 	Array proxies = tile_set->get_source_level_tile_proxies();
 	for (int i = 0; i < proxies.size(); i++) {
 		Array proxy = proxies[i];
-		undo_redo->add_undo_method(*tile_set, "set_source_level_tile_proxy", proxy[0], proxy[1]);
+		undo_redo->add_undo_method(
+			tile_set->obj.get(), "set_source_level_tile_proxy", proxy[0], proxy[1]);
 	}
 
 	proxies = tile_set->get_coords_level_tile_proxies();
 	for (int i = 0; i < proxies.size(); i++) {
 		Array proxy = proxies[i];
-		undo_redo->add_undo_method(
-			*tile_set, "set_coords_level_tile_proxy", proxy[0], proxy[1], proxy[2], proxy[3]);
+		undo_redo->add_undo_method(tile_set->obj.get(), "set_coords_level_tile_proxy", proxy[0],
+			proxy[1], proxy[2], proxy[3]);
 	}
 
 	proxies = tile_set->get_alternative_level_tile_proxies();
 	for (int i = 0; i < proxies.size(); i++) {
 		Array proxy = proxies[i];
-		undo_redo->add_undo_method(*tile_set, "set_alternative_level_tile_proxy", proxy[0],
-			proxy[1], proxy[2], proxy[3], proxy[4], proxy[5]);
+		undo_redo->add_undo_method(tile_set->obj.get(), "set_alternative_level_tile_proxy",
+			proxy[0], proxy[1], proxy[2], proxy[3], proxy[4], proxy[5]);
 	}
 	undo_redo->add_do_method(this->obj.get(), "_update_lists");
 	undo_redo->add_undo_method(this->obj.get(), "_update_lists");
@@ -268,26 +272,27 @@ void TileProxiesManagerDialog::_clear_all_button_pressed()
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Delete All Tile Proxies"));
 
-	undo_redo->add_do_method(*tile_set, "clear_tile_proxies");
+	undo_redo->add_do_method(tile_set->obj.get(), "clear_tile_proxies");
 
 	Array proxies = tile_set->get_source_level_tile_proxies();
 	for (int i = 0; i < proxies.size(); i++) {
 		Array proxy = proxies[i];
-		undo_redo->add_undo_method(*tile_set, "set_source_level_tile_proxy", proxy[0], proxy[1]);
+		undo_redo->add_undo_method(
+			tile_set->obj.get(), "set_source_level_tile_proxy", proxy[0], proxy[1]);
 	}
 
 	proxies = tile_set->get_coords_level_tile_proxies();
 	for (int i = 0; i < proxies.size(); i++) {
 		Array proxy = proxies[i];
-		undo_redo->add_undo_method(
-			*tile_set, "set_coords_level_tile_proxy", proxy[0], proxy[1], proxy[2], proxy[3]);
+		undo_redo->add_undo_method(tile_set->obj.get(), "set_coords_level_tile_proxy", proxy[0],
+			proxy[1], proxy[2], proxy[3]);
 	}
 
 	proxies = tile_set->get_alternative_level_tile_proxies();
 	for (int i = 0; i < proxies.size(); i++) {
 		Array proxy = proxies[i];
-		undo_redo->add_undo_method(*tile_set, "set_alternative_level_tile_proxy", proxy[0],
-			proxy[1], proxy[2], proxy[3], proxy[4], proxy[5]);
+		undo_redo->add_undo_method(tile_set->obj.get(), "set_alternative_level_tile_proxy",
+			proxy[0], proxy[1], proxy[2], proxy[3], proxy[4], proxy[5]);
 	}
 	undo_redo->add_do_method(this->obj.get(), "_update_lists");
 	undo_redo->add_undo_method(this->obj.get(), "_update_lists");
@@ -374,12 +379,7 @@ void TileProxiesManagerDialog::cancel_pressed()
 	committed_actions_count = 0;
 }
 
-void TileProxiesManagerDialog::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_update_lists"), &TileProxiesManagerDialog::_update_lists);
-	ClassDB::bind_method(
-		D_METHOD("_unhandled_key_input"), &TileProxiesManagerDialog::_unhandled_key_input);
-}
+void TileProxiesManagerDialog::_bind_methods() {}
 
 void TileProxiesManagerDialog::update_tile_set(Ref<TileSet> p_tile_set)
 {

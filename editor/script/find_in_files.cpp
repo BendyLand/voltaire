@@ -304,14 +304,14 @@ CodeTextEditor* get_code_edit(const String& p_fpath)
 	ShaderEditorPlugin* shader_editor_plugin = ShaderEditorPlugin::get_singleton();
 	ScriptEditorPlugin* script_editor_plugin = ScriptEditorPlugin::get_singleton();
 
-	if (shader_editor_plugin && shader_editor_plugin->handles(res.ptr())) {
+	if (shader_editor_plugin && shader_editor_plugin->handles(res->obj.get())) {
 		TextShaderEditor* tse =
 			Object::cast_to<TextShaderEditor>(shader_editor_plugin->get_shader_editor(res));
 		if (tse) {
 			return tse->get_code_editor();
 		}
 	}
-	else if (script_editor_plugin && script_editor_plugin->handles(res.ptr())) {
+	else if (script_editor_plugin && script_editor_plugin->handles(res->obj.get())) {
 		ScriptEditor* script_editor = ScriptEditor::get_singleton();
 		TextEditorBase* teb =
 			Object::cast_to<TextEditorBase>(script_editor->get_script_editor(res));
@@ -366,14 +366,7 @@ bool FindInFilesSearch::_is_file_matched(
 	return false;
 }
 
-void FindInFilesSearch::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("result_found", PropertyInfo(Variant::STRING, "path"),
-		PropertyInfo(Variant::INT, "line_number"), PropertyInfo(Variant::INT, "begin"),
-		PropertyInfo(Variant::INT, "end"), PropertyInfo(Variant::STRING, "text")));
-
-	ADD_SIGNAL(MethodInfo("finished"));
-}
+void FindInFilesSearch::_bind_methods() {}
 
 //-----------------------------------------------------------------------------
 
@@ -584,11 +577,7 @@ String FindInFilesDialog::_validate_filter_wildcard(const String& p_expression) 
 	return ret;
 }
 
-void FindInFilesDialog::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("find_requested"));
-	ADD_SIGNAL(MethodInfo("replace_requested"));
-}
+void FindInFilesDialog::_bind_methods() {}
 
 FindInFilesDialog::FindInFilesDialog()
 {
@@ -938,8 +927,8 @@ void FindInFilesPanel::_on_result_found(
 
 void FindInFilesPanel::_on_theme_changed()
 {
-	results_display->add_theme_font_override(
-		SceneStringName(font), get_theme_font(SNAME("source"), EditorStringName(EditorFonts)));
+	results_display->add_theme_font_override(SceneStringName(font),
+		get_theme_font(SNAME("source"), EditorStringName(EditorFonts)).ptr());
 	results_display->add_theme_font_size_override(SceneStringName(font_size),
 		get_theme_font_size(SNAME("source_size"), EditorStringName(EditorFonts)));
 
@@ -1254,16 +1243,7 @@ void FindInFilesPanel::_update_matches_text()
 	}
 }
 
-void FindInFilesPanel::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("result_selected", PropertyInfo(Variant::STRING, "path"),
-		PropertyInfo(Variant::INT, "line_number"), PropertyInfo(Variant::INT, "begin"),
-		PropertyInfo(Variant::INT, "end")));
-
-	ADD_SIGNAL(MethodInfo("files_modified"));
-
-	ADD_SIGNAL(MethodInfo("close_button_clicked"));
-}
+void FindInFilesPanel::_bind_methods() {}
 
 FindInFilesPanel::FindInFilesPanel()
 {
@@ -1579,14 +1559,7 @@ void FindInFilesContainer::update_layout(EditorDock::DockLayout p_layout, int p_
 	}
 }
 
-void FindInFilesContainer::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("result_selected", PropertyInfo(Variant::STRING, "path"),
-		PropertyInfo(Variant::INT, "line_number"), PropertyInfo(Variant::INT, "begin"),
-		PropertyInfo(Variant::INT, "end")));
-
-	ADD_SIGNAL(MethodInfo("files_modified"));
-}
+void FindInFilesContainer::_bind_methods() {}
 
 FindInFilesContainer::FindInFilesContainer()
 {
@@ -1669,8 +1642,7 @@ void FindInFiles::_bind_methods() {}
 FindInFiles::FindInFiles()
 {
 	dialog = memnew(FindInFilesDialog);
-	dialog->connect("find_requested", callable_mp(
-this, &FindInFiles::_start_search).bind(false));
+	dialog->connect("find_requested", callable_mp(this, &FindInFiles::_start_search).bind(false));
 	dialog->connect("replace_requested", callable_mp(this, &FindInFiles::_start_search).bind(true));
 	EditorNode::get_singleton()->get_gui_base()->add_child(dialog);
 

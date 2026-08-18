@@ -2760,19 +2760,19 @@ void Node::_propagate_replace_owner(Node* p_owner, Node* p_by_owner)
 	data.blocked--;
 }
 
-RequiredResult<Tween> Node::create_tween()
+Tween* Node::create_tween()
 {
-	ERR_THREAD_GUARD_V(Ref<Tween>());
+	ERR_THREAD_GUARD_V(Ref<Tween>().ptr());
 
 	SceneTree* tree = data.tree;
 	if (!tree) {
 		tree = SceneTree::get_singleton();
 	}
-	ERR_FAIL_NULL_V_MSG(tree, Ref<Tween>(), "No available SceneTree to create the Tween.");
+	ERR_FAIL_NULL_V_MSG(tree, Ref<Tween>().ptr(), "No available SceneTree to create the Tween.");
 
 	Ref<Tween> tween = tree->create_tween();
 	tween->bind_node(this);
-	return tween;
+	return tween.ptr();
 }
 
 void Node::set_scene_file_path(const String& p_scene_file_path)
@@ -2953,12 +2953,12 @@ Node* Node::_duplicate(int p_flags, HashMap<const Node*, Node*>* r_duplimap) con
 
 	}
 	else {
-		Object* o = ClassDB::instantiate(this->obj->get_class());
-		ERR_FAIL_NULL_V(o, nullptr);
-		node = Object::cast_to<Node>(o);
+		Node* n = memnew(Node);
+		ERR_FAIL_NULL_V(n, nullptr);
 		if (!node) {
-			memdelete(o);
+			memdelete(n);
 		}
+		node = n;
 		ERR_FAIL_NULL_V(node, nullptr);
 	}
 
@@ -3188,19 +3188,19 @@ void Node::remap_nested_resources(
 	Ref<Resource> p_resource, HashMap<Ref<Resource>, Ref<Resource>>& p_resource_remap) const
 {
 	List<PropertyInfo> props;
-	p_resource->get_property_list(&props);
+	p_resource->obj->get_property_list(&props);
 
 	for (const PropertyInfo& E : props) {
 		if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
 			continue;
 		}
 
-		Variant v = p_resource->get(E.name);
+		Variant v = p_resource->obj->get(E.name);
 		if (v.is_ref_counted()) {
 			Ref<Resource> res = v;
 			if (res.is_valid()) {
 				if (p_resource_remap.has(res)) {
-					p_resource->set(E.name, p_resource_remap[res]);
+					p_resource->obj->set(E.name, p_resource_remap[res]);
 					remap_nested_resources(res, p_resource_remap);
 				}
 			}
@@ -3521,7 +3521,7 @@ Node* Node::get_node_and_resource(const NodePath& p_path, Ref<Resource>& r_res,
 		for (; j < p_path.get_subname_count() - (int)p_last_is_property; j++) {
 			bool is_valid = false;
 			Variant new_res_v = j == 0 ? node->obj->get(p_path.get_subname(j), &is_valid)
-									   : r_res->get(p_path.get_subname(j), &is_valid);
+									   : r_res->obj->get(p_path.get_subname(j), &is_valid);
 
 			if (!is_valid) { // Found nothing on that path
 				return nullptr;

@@ -74,11 +74,14 @@ void EditorRunBar::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		if (Engine::get_singleton()->is_recovery_mode_hint()) {
 			main_panel->add_theme_style_override(SceneStringName(panel),
-				get_theme_stylebox(SNAME("LaunchPadRecoveryMode"), EditorStringName(EditorStyles)));
+				get_theme_stylebox(SNAME("LaunchPadRecoveryMode"), EditorStringName(EditorStyles))
+					.ptr());
 			recovery_mode_panel->add_theme_style_override(SceneStringName(panel),
-				get_theme_stylebox(SNAME("RecoveryModeButton"), EditorStringName(EditorStyles)));
+				get_theme_stylebox(SNAME("RecoveryModeButton"), EditorStringName(EditorStyles))
+					.ptr());
 			recovery_mode_button->add_theme_style_override("hover",
-				get_theme_stylebox(SNAME("RecoveryModeButton"), EditorStringName(EditorStyles)));
+				get_theme_stylebox(SNAME("RecoveryModeButton"), EditorStringName(EditorStyles))
+					.ptr());
 
 			recovery_mode_button->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
 			recovery_mode_reload_button->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
@@ -112,21 +115,23 @@ void EditorRunBar::_notification(int p_what)
 
 		if (is_movie_maker_enabled()) {
 			main_panel->add_theme_style_override(SceneStringName(panel),
-				get_theme_stylebox(SNAME("LaunchPadMovieMode"), EditorStringName(EditorStyles)));
+				get_theme_stylebox(SNAME("LaunchPadMovieMode"), EditorStringName(EditorStyles))
+					.ptr());
 			write_movie_button->set_theme_type_variation("RunBarButtonMovieMakerEnabled");
 
 			write_movie_panel->add_theme_style_override(
 				SceneStringName(panel), get_theme_stylebox(SNAME("MovieWriterButtonPressed"),
-											EditorStringName(EditorStyles)));
+											EditorStringName(EditorStyles))
+											.ptr());
 		}
 		else {
 			main_panel->add_theme_style_override(SceneStringName(panel),
-				get_theme_stylebox(SNAME("LaunchPadNormal"), EditorStringName(EditorStyles)));
+				get_theme_stylebox(SNAME("LaunchPadNormal"), EditorStringName(EditorStyles)).ptr());
 			write_movie_button->set_theme_type_variation("RunBarButtonMovieMakerDisabled");
 
-			write_movie_panel->add_theme_style_override(
-				SceneStringName(panel), get_theme_stylebox(SNAME("MovieWriterButtonNormal"),
-											EditorStringName(EditorStyles)));
+			write_movie_panel->add_theme_style_override(SceneStringName(panel),
+				get_theme_stylebox(SNAME("MovieWriterButtonNormal"), EditorStringName(EditorStyles))
+					.ptr());
 		}
 
 		write_movie_button->set_button_icon(get_editor_theme_icon(SNAME("MainMovieWrite")));
@@ -207,15 +212,17 @@ void EditorRunBar::_write_movie_toggled(bool p_enabled)
 {
 	if (p_enabled) {
 		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("LaunchPadMovieMode"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("LaunchPadMovieMode"), EditorStringName(EditorStyles)).ptr());
 		write_movie_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("MovieWriterButtonPressed"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("MovieWriterButtonPressed"), EditorStringName(EditorStyles))
+				.ptr());
 	}
 	else {
 		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("LaunchPadNormal"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("LaunchPadNormal"), EditorStringName(EditorStyles)).ptr());
 		write_movie_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("MovieWriterButtonNormal"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("MovieWriterButtonNormal"), EditorStringName(EditorStyles))
+				.ptr());
 	}
 }
 
@@ -632,11 +639,7 @@ void EditorRunBar::update_profiler_autostart_indicator()
 
 HBoxContainer* EditorRunBar::get_buttons_container() { return main_hbox; }
 
-void EditorRunBar::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("play_pressed"));
-	ADD_SIGNAL(MethodInfo("stop_pressed"));
-}
+void EditorRunBar::_bind_methods() {}
 
 EditorRunBar::EditorRunBar()
 {

@@ -33,9 +33,10 @@
 #include "core/io/resource.h"
 #include "core/templates/hash_set.h"
 
-class ShaderInclude : public Resource {
+class ShaderInclude : public Resource
+{
 	VLTRCLASS(ShaderInclude, Resource);
-	OBJ_SAVE_TYPE(ShaderInclude);
+	OBJ_SAVE_TYPE_NO(ShaderInclude);
 
 private:
 	String code;
@@ -47,8 +48,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_code(const String &p_text);
+	void set_code(const String& p_text);
 	String get_code() const;
 
-	void set_include_path(const String &p_path);
+	void set_include_path(const String& p_path);
 };
+
+

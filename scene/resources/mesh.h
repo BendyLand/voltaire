@@ -47,18 +47,20 @@ class Shape3D;
 #endif // PHYSICS_3D_DISABLED
 class MeshConvexDecompositionSettings;
 
-class Mesh : public Resource {
+class Mesh : public Resource
+{
 	VLTRCLASS(Mesh, Resource);
 
-	mutable Ref<TriangleMesh> triangle_mesh; //cached
-	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; //cached
+	mutable Ref<TriangleMesh> triangle_mesh;				   // cached
+	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; // cached
 	mutable Vector<Vector3> debug_lines;
 	Size2i lightmap_size_hint;
 
 	Vector<Vector3> _get_faces() const;
 
 public:
-	enum PrimitiveType {
+	enum PrimitiveType
+	{
 		PRIMITIVE_POINTS = RSE::PRIMITIVE_POINTS,
 		PRIMITIVE_LINES = RSE::PRIMITIVE_LINES,
 		PRIMITIVE_LINE_STRIP = RSE::PRIMITIVE_LINE_STRIP,
@@ -71,17 +73,20 @@ protected:
 	static void _bind_methods();
 
 public:
-	enum {
+	enum
+	{
 		NO_INDEX_ARRAY = RSE::NO_INDEX_ARRAY,
 		ARRAY_WEIGHTS_SIZE = RSE::ARRAY_WEIGHTS_SIZE
 	};
 
-	enum BlendShapeMode {
+	enum BlendShapeMode
+	{
 		BLEND_SHAPE_MODE_NORMALIZED = RSE::BLEND_SHAPE_MODE_NORMALIZED,
 		BLEND_SHAPE_MODE_RELATIVE = RSE::BLEND_SHAPE_MODE_RELATIVE,
 	};
 
-	enum ArrayType {
+	enum ArrayType
+	{
 		ARRAY_VERTEX = RSE::ARRAY_VERTEX,
 		ARRAY_NORMAL = RSE::ARRAY_NORMAL,
 		ARRAY_TANGENT = RSE::ARRAY_TANGENT,
@@ -99,7 +104,8 @@ public:
 
 	};
 
-	enum ArrayCustomFormat {
+	enum ArrayCustomFormat
+	{
 		ARRAY_CUSTOM_RGBA8_UNORM = RSE::ARRAY_CUSTOM_RGBA8_UNORM,
 		ARRAY_CUSTOM_RGBA8_SNORM = RSE::ARRAY_CUSTOM_RGBA8_SNORM,
 		ARRAY_CUSTOM_RG_HALF = RSE::ARRAY_CUSTOM_RG_HALF,
@@ -111,7 +117,8 @@ public:
 		ARRAY_CUSTOM_MAX = RSE::ARRAY_CUSTOM_MAX
 	};
 
-	enum ArrayFormat : uint64_t {
+	enum ArrayFormat : uint64_t
+	{
 		ARRAY_FORMAT_VERTEX = RSE::ARRAY_FORMAT_VERTEX,
 		ARRAY_FORMAT_NORMAL = RSE::ARRAY_FORMAT_NORMAL,
 		ARRAY_FORMAT_TANGENT = RSE::ARRAY_FORMAT_TANGENT,
@@ -162,33 +169,38 @@ public:
 	virtual Dictionary surface_get_lods(int p_surface) const;
 	virtual BitField<ArrayFormat> surface_get_format(int p_idx) const;
 	virtual PrimitiveType surface_get_primitive_type(int p_idx) const;
-	virtual void surface_set_material(int p_idx, const Ref<Material> &p_material);
+	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material);
 	virtual Ref<Material> surface_get_material(int p_idx) const;
 	virtual int get_blend_shape_count() const;
 	virtual StringName get_blend_shape_name(int p_index) const;
-	virtual void set_blend_shape_name(int p_index, const StringName &p_name);
+	virtual void set_blend_shape_name(int p_index, const StringName& p_name);
 	virtual AABB get_aabb() const;
 
 	Vector<Face3> get_faces() const;
 	Vector<Face3> get_surface_faces(int p_surface) const;
 	Ref<TriangleMesh> generate_triangle_mesh() const;
 	Ref<TriangleMesh> generate_surface_triangle_mesh(int p_surface) const;
-	void generate_debug_mesh_lines(Vector<Vector3> &r_lines);
-	void generate_debug_mesh_indices(Vector<Vector3> &r_points);
+	void generate_debug_mesh_lines(Vector<Vector3>& r_lines);
+	void generate_debug_mesh_indices(Vector<Vector3>& r_points);
 
 	Ref<Mesh> create_outline(float p_margin) const;
 
-	void set_lightmap_size_hint(const Size2i &p_size);
+	void set_lightmap_size_hint(const Size2i& p_size);
 	Size2i get_lightmap_size_hint() const;
 	void clear_cache() const;
 
 #ifndef PHYSICS_3D_DISABLED
-	typedef Vector<Vector<Vector3>> (*ConvexDecompositionFunc)(const real_t *p_vertices, int p_vertex_count, const uint32_t *p_triangles, int p_triangle_count, const Ref<MeshConvexDecompositionSettings> &p_settings, Vector<Vector<uint32_t>> *r_convex_indices);
+	typedef Vector<Vector<Vector3>> (*ConvexDecompositionFunc)(const real_t* p_vertices,
+		int p_vertex_count, const uint32_t* p_triangles, int p_triangle_count,
+		const Ref<MeshConvexDecompositionSettings>& p_settings,
+		Vector<Vector<uint32_t>>* r_convex_indices);
 
 	static ConvexDecompositionFunc convex_decomposition_function;
 
-	Vector<Ref<Shape3D>> convex_decompose(const Ref<MeshConvexDecompositionSettings> &p_settings) const;
-	Ref<ConvexPolygonShape3D> create_convex_shape(bool p_clean = true, bool p_simplify = false) const;
+	Vector<Ref<Shape3D>> convex_decompose(
+		const Ref<MeshConvexDecompositionSettings>& p_settings) const;
+	Ref<ConvexPolygonShape3D> create_convex_shape(
+		bool p_clean = true, bool p_simplify = false) const;
 	Ref<ConcavePolygonShape3D> create_trimesh_shape() const;
 #endif // PHYSICS_3D_DISABLED
 
@@ -200,11 +212,13 @@ public:
 	Mesh();
 };
 
-class MeshConvexDecompositionSettings : public RefCounted {
+class MeshConvexDecompositionSettings : public RefCounted
+{
 	VLTRCLASS(MeshConvexDecompositionSettings, RefCounted);
 
 public:
-	enum Mode : int {
+	enum Mode : int
+	{
 		CONVEX_DECOMPOSITION_MODE_VOXEL = 0,
 		CONVEX_DECOMPOSITION_MODE_TETRAHEDRON = 1
 	};
@@ -283,19 +297,21 @@ public:
 
 VARIANT_ENUM_CAST(MeshConvexDecompositionSettings::Mode);
 
-class ArrayMesh : public Mesh {
+class ArrayMesh : public Mesh
+{
 	VLTRCLASS(ArrayMesh, Mesh);
 	RES_BASE_EXTENSION("mesh");
 
 	PackedStringArray _get_blend_shape_names() const;
-	void _set_blend_shape_names(const PackedStringArray &p_names);
+	void _set_blend_shape_names(const PackedStringArray& p_names);
 
 	Array _get_surfaces() const;
-	void _set_surfaces(const Array &p_data);
+	void _set_surfaces(const Array& p_data);
 	Ref<ArrayMesh> shadow_mesh;
 
 private:
-	struct Surface {
+	struct Surface
+	{
 		uint64_t format = 0;
 		int array_length = 0;
 		int index_array_length = 0;
@@ -306,6 +322,7 @@ private:
 		Ref<Material> material;
 		bool is_2d = false;
 	};
+
 	Vector<Surface> surfaces;
 	mutable RID mesh;
 	AABB aabb;
@@ -319,9 +336,9 @@ private:
 protected:
 	virtual bool _is_generated() const { return false; }
 
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
+	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _get(const StringName& p_name, Variant& r_ret) const;
+	void _get_property_list(List<PropertyInfo>* p_list) const;
 	bool surface_index_0 = false;
 
 	virtual void reset_state() override;
@@ -329,47 +346,58 @@ protected:
 	static void _bind_methods();
 
 public:
-	void add_surface_from_arrays(PrimitiveType p_primitive, const Array &p_arrays, const TypedArray<Array> &p_blend_shapes = TypedArray<Array>(), const Dictionary &p_lods = Dictionary(), BitField<ArrayFormat> p_flags = 0);
+	void add_surface_from_arrays(PrimitiveType p_primitive, const Array& p_arrays,
+		const TypedArray<Array>& p_blend_shapes = TypedArray<Array>(),
+		const Dictionary& p_lods = Dictionary(), BitField<ArrayFormat> p_flags = 0);
 
-	void add_surface(BitField<ArrayFormat> p_format, PrimitiveType p_primitive, const Vector<uint8_t> &p_array, const Vector<uint8_t> &p_attribute_array, const Vector<uint8_t> &p_skin_array, int p_vertex_count, const Vector<uint8_t> &p_index_array, int p_index_count, const AABB &p_aabb, const Vector<uint8_t> &p_blend_shape_data = Vector<uint8_t>(), const Vector<AABB> &p_bone_aabbs = Vector<AABB>(), const Vector<RenderingServerTypes::SurfaceData::LOD> &p_lods = Vector<RenderingServerTypes::SurfaceData::LOD>(), const Vector4 p_uv_scale = Vector4());
+	void add_surface(BitField<ArrayFormat> p_format, PrimitiveType p_primitive,
+		const Vector<uint8_t>& p_array, const Vector<uint8_t>& p_attribute_array,
+		const Vector<uint8_t>& p_skin_array, int p_vertex_count,
+		const Vector<uint8_t>& p_index_array, int p_index_count, const AABB& p_aabb,
+		const Vector<uint8_t>& p_blend_shape_data = Vector<uint8_t>(),
+		const Vector<AABB>& p_bone_aabbs = Vector<AABB>(),
+		const Vector<RenderingServerTypes::SurfaceData::LOD>& p_lods =
+			Vector<RenderingServerTypes::SurfaceData::LOD>(),
+		const Vector4 p_uv_scale = Vector4());
 
 	Array surface_get_arrays(int p_surface) const override;
 	TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const override;
 	Dictionary surface_get_lods(int p_surface) const override;
 
-	void add_blend_shape(const StringName &p_name);
+	void add_blend_shape(const StringName& p_name);
 	int get_blend_shape_count() const override;
 	StringName get_blend_shape_name(int p_index) const override;
-	void set_blend_shape_name(int p_index, const StringName &p_name) override;
+	void set_blend_shape_name(int p_index, const StringName& p_name) override;
 	void clear_blend_shapes();
 
 	void set_blend_shape_mode(BlendShapeMode p_mode);
 	BlendShapeMode get_blend_shape_mode() const;
 
-	void surface_update_vertex_region(int p_surface, int p_offset, const Vector<uint8_t> &p_data);
-	void surface_update_attribute_region(int p_surface, int p_offset, const Vector<uint8_t> &p_data);
-	void surface_update_skin_region(int p_surface, int p_offset, const Vector<uint8_t> &p_data);
+	void surface_update_vertex_region(int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+	void surface_update_attribute_region(
+		int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+	void surface_update_skin_region(int p_surface, int p_offset, const Vector<uint8_t>& p_data);
 
 	int get_surface_count() const override;
 
 	void surface_remove(int p_surface);
 	void clear_surfaces();
 
-	void surface_set_custom_aabb(int p_idx, const AABB &p_aabb); //only recognized by driver
+	void surface_set_custom_aabb(int p_idx, const AABB& p_aabb); // only recognized by driver
 
 	int surface_get_array_len(int p_idx) const override;
 	int surface_get_array_index_len(int p_idx) const override;
 	BitField<ArrayFormat> surface_get_format(int p_idx) const override;
 	PrimitiveType surface_get_primitive_type(int p_idx) const override;
 
-	virtual void surface_set_material(int p_idx, const Ref<Material> &p_material) override;
+	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material) override;
 	virtual Ref<Material> surface_get_material(int p_idx) const override;
 
-	int surface_find_by_name(const String &p_name) const;
-	void surface_set_name(int p_idx, const String &p_name);
+	int surface_find_by_name(const String& p_name) const;
+	void surface_set_name(int p_idx, const String& p_name);
 	String surface_get_name(int p_idx) const;
 
-	void set_custom_aabb(const AABB &p_custom);
+	void set_custom_aabb(const AABB& p_custom);
 	AABB get_custom_aabb() const;
 
 	AABB get_aabb() const override;
@@ -377,12 +405,15 @@ public:
 
 	void regen_normal_maps();
 
-	Error lightmap_unwrap(const Transform3D &p_base_transform = Transform3D(), float p_texel_size = 0.05);
-	Error lightmap_unwrap_cached(const Transform3D &p_base_transform, float p_texel_size, const Vector<uint8_t> &p_src_cache, Vector<uint8_t> &r_dst_cache, bool p_generate_cache = true);
+	Error lightmap_unwrap(
+		const Transform3D& p_base_transform = Transform3D(), float p_texel_size = 0.05);
+	Error lightmap_unwrap_cached(const Transform3D& p_base_transform, float p_texel_size,
+		const Vector<uint8_t>& p_src_cache, Vector<uint8_t>& r_dst_cache,
+		bool p_generate_cache = true);
 
 	virtual void reload_from_file() override;
 
-	void set_shadow_mesh(const Ref<ArrayMesh> &p_mesh);
+	void set_shadow_mesh(const Ref<ArrayMesh>& p_mesh);
 	Ref<ArrayMesh> get_shadow_mesh() const;
 
 	ArrayMesh();
@@ -396,7 +427,8 @@ VARIANT_ENUM_CAST(Mesh::ArrayCustomFormat);
 VARIANT_ENUM_CAST(Mesh::PrimitiveType);
 VARIANT_ENUM_CAST(Mesh::BlendShapeMode);
 
-class PlaceholderMesh : public Mesh {
+class PlaceholderMesh : public Mesh
+{
 	VLTRCLASS(PlaceholderMesh, Mesh);
 
 	RID rid;
@@ -407,25 +439,49 @@ protected:
 
 public:
 	virtual int get_surface_count() const override { return 0; }
+
 	virtual int surface_get_array_len(int p_idx) const override { return 0; }
+
 	virtual int surface_get_array_index_len(int p_idx) const override { return 0; }
+
 	virtual Array surface_get_arrays(int p_surface) const override { return Array(); }
-	virtual TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const override { return TypedArray<Array>(); }
+
+	virtual TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const override
+	{
+		return TypedArray<Array>();
+	}
+
 	virtual Dictionary surface_get_lods(int p_surface) const override { return Dictionary(); }
+
 	virtual BitField<ArrayFormat> surface_get_format(int p_idx) const override { return 0; }
-	virtual PrimitiveType surface_get_primitive_type(int p_idx) const override { return PRIMITIVE_TRIANGLES; }
-	virtual void surface_set_material(int p_idx, const Ref<Material> &p_material) override {}
+
+	virtual PrimitiveType surface_get_primitive_type(int p_idx) const override
+	{
+		return PRIMITIVE_TRIANGLES;
+	}
+
+	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material) override {}
+
 	virtual Ref<Material> surface_get_material(int p_idx) const override { return Ref<Material>(); }
+
 	virtual int get_blend_shape_count() const override { return 0; }
+
 	virtual StringName get_blend_shape_name(int p_index) const override { return StringName(); }
-	virtual void set_blend_shape_name(int p_index, const StringName &p_name) override {}
+
+	virtual void set_blend_shape_name(int p_index, const StringName& p_name) override {}
+
 	virtual RID get_rid() const override { return rid; }
+
 	virtual AABB get_aabb() const override { return aabb; }
-	void set_aabb(const AABB &p_aabb) { aabb = p_aabb; }
+
+	void set_aabb(const AABB& p_aabb) { aabb = p_aabb; }
 
 	virtual int get_builtin_bind_pose_count() const override { return 0; }
+
 	virtual Transform3D get_builtin_bind_pose(int p_index) const override { return Transform3D(); }
 
 	PlaceholderMesh();
 	~PlaceholderMesh();
 };
+
+

@@ -267,7 +267,7 @@ void EditorHelp::_update_theme_item_cache()
 
 	class_desc->begin_bulk_theme_override();
 
-	class_desc->add_theme_font_override("normal_font", theme_cache.doc_font);
+	class_desc->add_theme_font_override("normal_font", theme_cache.doc_font.ptr());
 	class_desc->add_theme_font_size_override("normal_font_size", theme_cache.doc_font_size);
 
 	class_desc->add_theme_constant_override(SceneStringName(line_separation),
@@ -302,7 +302,7 @@ void EditorHelp::_class_desc_finished()
 		class_desc->connect(SceneStringName(draw),
 			callable_mp(this, &EditorHelp::_class_desc_scroll_to_paragraph)
 				.bind(scroll_to, need_save_new_history),
-			CodeHighlighter::CONNECT_ONE_SHOT | CodeHighlighter::CONNECT_DEFERRED);
+			Object::CONNECT_ONE_SHOT | Object::CONNECT_DEFERRED);
 	}
 	scroll_to = -1;
 	need_save_new_history = false;
@@ -463,8 +463,8 @@ void EditorHelp::_class_desc_resized(bool p_force_update_theme)
 		Ref<StyleBox> class_desc_stylebox = theme_cache.background_style->duplicate();
 		class_desc_stylebox->set_content_margin(SIDE_LEFT, display_margin);
 		class_desc_stylebox->set_content_margin(SIDE_RIGHT, display_margin);
-		class_desc->add_theme_style_override(CoreStringName(normal), class_desc_stylebox);
-		class_desc->add_theme_style_override("focused", class_desc_stylebox);
+		class_desc->add_theme_style_override(CoreStringName(normal), class_desc_stylebox.ptr());
+		class_desc->add_theme_style_override("focused", class_desc_stylebox.ptr());
 	}
 }
 
@@ -617,8 +617,8 @@ void EditorHelp::_add_type_icon(const String& p_type, int p_size, const String& 
 	class_desc->add_text(" ");                                                                     \
 	if ((m_message).is_empty()) {                                                                  \
 		class_desc->add_text(m_default_message);                                                   \
-	} \
-	else {                                                                                       \
+	}                                                                                              \
+	else {                                                                                         \
 		_add_text(m_message);                                                                      \
 	}
 
@@ -634,8 +634,8 @@ void EditorHelp::_add_type_icon(const String& p_type, int p_size, const String& 
 	class_desc->add_text(" ");                                                                     \
 	if ((m_message).is_empty()) {                                                                  \
 		class_desc->add_text(m_default_message);                                                   \
-	} \
-	else {                                                                                       \
+	}                                                                                              \
+	else {                                                                                         \
 		_add_text(m_message);                                                                      \
 	}
 
@@ -1165,7 +1165,7 @@ void EditorHelp::_update_doc()
 	}
 
 	// Descendants
-	if ((cd.is_script_doc || ClassDB::class_exists(cd.name)) && doc->inheriting.has(cd.name)) {
+	if (cd.is_script_doc && doc->inheriting.has(cd.name)) {
 		class_desc->add_newline();
 
 		_push_normal_font();
@@ -3284,9 +3284,6 @@ void EditorHelp::_wait_for_thread(Thread& p_thread)
 void EditorHelp::_compute_doc_version_hash()
 {
 	uint32_t version_hash = Engine::get_singleton()->get_version_info().hash();
-	doc_version_hash =
-		vformat("%d/%d/%d/%s", version_hash, ClassDB::get_api_hash(ClassDB::API_CORE),
-			ClassDB::get_api_hash(ClassDB::API_EDITOR), _doc_data_hash);
 }
 
 String EditorHelp::get_cache_full_path()
@@ -3374,8 +3371,8 @@ void EditorHelp::_load_doc_thread(void* p_udata)
 {
 	bool use_script_cache = (bool)p_udata;
 	Ref<Resource> cache_res = ResourceLoader::load(get_cache_full_path());
-	if (cache_res.is_valid() && cache_res->get_meta("version_hash", "") == doc_version_hash) {
-		Array classes = cache_res->get_meta("classes", Array());
+	if (cache_res.is_valid() && cache_res->obj->get_meta("version_hash", "") == doc_version_hash) {
+		Array classes = cache_res->obj->get_meta("classes", Array());
 		for (int i = 0; i < classes.size(); i++) {
 			doc->add_doc(DocData::ClassDoc::from_dict(classes[i]));
 		}
@@ -3404,19 +3401,14 @@ void EditorHelp::_gen_doc_thread(void* p_udata)
 
 	Ref<Resource> cache_res;
 	cache_res.instantiate();
-	cache_res->set_meta("version_hash", doc_version_hash);
+	cache_res->obj->set_meta("version_hash", doc_version_hash);
 	Array classes;
 	for (const KeyValue<String, DocData::ClassDoc>& E : doc->class_list) {
-		if (ClassDB::class_exists(E.value.name)) {
-			ClassDB::APIType api = ClassDB::get_api_type(E.value.name);
-			if (api == ClassDB::API_EXTENSION || api == ClassDB::API_EDITOR_EXTENSION) {
-				continue;
-			}
-		}
 		classes.push_back(DocData::ClassDoc::to_dict(E.value));
 	}
-	cache_res->set_meta("classes", classes);
-	Error err = ResourceSaver::save(cache_res, get_cache_full_path(), ResourceSaver::FLAG_COMPRESS);
+	cache_res->obj->set_meta("classes", classes);
+	Error err =
+		ResourceSaver::save(cache_res.ptr(), get_cache_full_path(), ResourceSaver::FLAG_COMPRESS);
 	if (err) {
 		ERR_PRINT("Cannot save editor help cache (" + get_cache_full_path() + ").");
 	}
@@ -3467,8 +3459,8 @@ void EditorHelp::load_script_doc_cache()
 	if (EditorFileSystem::get_singleton()->is_scanning()) {
 		// This is assuming EditorFileSystem is performing first scan. We must wait until it is
 		// done.
-		EditorFileSystem::get_singleton()->connect(
-			SNAME("sources_changed"), callable_mp_static(_load_script_doc_cache), CodeHighlighter::CONNECT_ONE_SHOT);
+		EditorFileSystem::get_singleton()->connect(SNAME("sources_changed"),
+			callable_mp_static(_load_script_doc_cache), Object::CONNECT_ONE_SHOT);
 		return;
 	}
 
@@ -3507,7 +3499,7 @@ void EditorHelp::_load_script_doc_cache_thread(void* p_udata)
 		return;
 	}
 
-	Array classes = script_doc_cache_res->get_meta("classes", Array());
+	Array classes = script_doc_cache_res->obj->get_meta("classes", Array());
 	for (const Dictionary dict : classes) {
 		doc->add_doc(DocData::ClassDoc::from_dict(dict));
 	}
@@ -3536,7 +3528,7 @@ void EditorHelp::regenerate_script_doc_cache()
 	if (EditorFileSystem::get_singleton()->is_scanning()) {
 		// Wait until EditorFileSystem scanning is complete to use updated filesystem structure.
 		EditorFileSystem::get_singleton()->connect(SNAME("sources_changed"),
-			callable_mp_static(_regenerate_script_doc_cache), CodeHighlighter::CONNECT_ONE_SHOT);
+			callable_mp_static(_regenerate_script_doc_cache), Object::CONNECT_ONE_SHOT);
 		return;
 	}
 
@@ -3584,17 +3576,6 @@ void EditorHelp::_reload_scripts_documentation(EditorFileSystemDirectory* p_dir)
 	for (int i = 0; i < p_dir->get_subdir_count(); i++) {
 		_reload_scripts_documentation(p_dir->get_subdir(i));
 	}
-
-	for (int i = 0; i < p_dir->get_file_count(); i++) {
-		if (ClassDB::is_parent_class(p_dir->get_file_type(i), SNAME("Script"))) {
-			Ref<Script> scr = ResourceLoader::load(p_dir->get_file_path(i));
-			if (scr.is_valid()) {
-				for (const DocData::ClassDoc& cd : scr->get_documentation()) {
-					_docs_to_add.push_back(cd);
-				}
-			}
-		}
-	}
 }
 
 void EditorHelp::_delete_script_doc_cache()
@@ -3622,9 +3603,9 @@ void EditorHelp::save_script_doc_cache()
 		}
 	}
 
-	cache_res->set_meta("classes", classes);
+	cache_res->obj->set_meta("classes", classes);
 	Error err = ResourceSaver::save(
-		cache_res, get_script_doc_cache_full_path(), ResourceSaver::FLAG_COMPRESS);
+		cache_res.ptr(), get_script_doc_cache_full_path(), ResourceSaver::FLAG_COMPRESS);
 	ERR_FAIL_COND_MSG(err != OK,
 		vformat("Cannot save script documentation cache in %s.", get_script_doc_cache_full_path()));
 }
@@ -3665,7 +3646,7 @@ void EditorHelp::_toggle_files_pressed()
 void EditorHelp::_notification(int p_what)
 {
 	switch (p_what) {
-	case CodeHighlighter::NOTIFICATION_POSTINITIALIZE: {
+	case Object::NOTIFICATION_POSTINITIALIZE: {
 		// Requires theme to be up to date.
 		_class_desc_resized(false);
 	} break;
@@ -3831,16 +3812,7 @@ void EditorHelp::update_toggle_files_button()
 		ED_GET_SHORTCUT("script_editor/toggle_files_panel")->get_as_text()));
 }
 
-void EditorHelp::_bind_methods()
-{
-	ClassDB::bind_method("_class_list_select", &EditorHelp::_class_list_select);
-	ClassDB::bind_method("_request_help", &EditorHelp::_request_help);
-	ClassDB::bind_method("_search", &EditorHelp::_search);
-	ClassDB::bind_method("_help_callback", &EditorHelp::_help_callback);
-
-	ADD_SIGNAL(MethodInfo("go_to_help"));
-	ADD_SIGNAL(MethodInfo("_request_save_new_history", PropertyInfo(Variant::DICTIONARY, "state")));
-}
+void EditorHelp::_bind_methods() {}
 
 EditorHelp::EditorHelp()
 {
@@ -4308,7 +4280,8 @@ EditorHelpBit::HelpData EditorHelpBit::_get_method_help_data(
 EditorHelpBit::HelpData EditorHelpBit::_get_signal_help_data(
 	const StringName& p_class_name, const StringName& p_signal_name)
 {
-	if (doc_signal_cache.has(p_class_name) && doc_signal_cache[p_class_name].has(p_signal_name)) {
+	if (doc_signal_cache.has(p_class_name) && doc_signal_cache[p_class_name].has(p_signal_name
+)) {
 		return doc_signal_cache[p_class_name][p_signal_name];
 	}
 
@@ -4903,7 +4876,7 @@ void EditorHelpBit::_meta_clicked(const String& p_select)
 	}
 }
 
-void EditorHelpBit::_bind_methods() { ADD_SIGNAL(MethodInfo("request_hide")); }
+void EditorHelpBit::_bind_methods() {}
 
 void EditorHelpBit::_notification(int p_what)
 {

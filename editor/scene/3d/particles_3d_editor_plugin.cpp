@@ -406,9 +406,10 @@ void GPUParticles3DEditorPlugin::_generate_emission_points()
 	ParticleProcessMaterial* matptr = mat.ptr();
 
 	if (!normals.is_empty()) {
-		undo_redo->add_do_property(
-			matptr, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
-		undo_redo->add_undo_property(matptr, "emission_shape", matptr->get_emission_shape());
+		undo_redo->add_do_property(matptr->obj.get(), "emission_shape",
+			ParticleProcessMaterial::EMISSION_SHAPE_DIRECTED_POINTS);
+		undo_redo->add_undo_property(
+			matptr->obj.get(), "emission_shape", matptr->get_emission_shape());
 
 		Vector<uint8_t> point_img2;
 		point_img2.resize(w * h * 3 * sizeof(float));
@@ -427,21 +428,22 @@ void GPUParticles3DEditorPlugin::_generate_emission_points()
 
 		Ref<Image> image2 = memnew(Image(w, h, false, Image::FORMAT_RGBF, point_img2));
 		undo_redo->add_do_property(
-			matptr, "emission_normal_texture", ImageTexture::create_from_image(image2));
+			matptr->obj.get(), "emission_normal_texture", ImageTexture::create_from_image(image2));
 		undo_redo->add_undo_property(
-			matptr, "emission_normal_texture", matptr->get_emission_normal_texture());
+			matptr->obj.get(), "emission_normal_texture", matptr->get_emission_normal_texture());
 	}
 	else {
 		undo_redo->add_do_property(
-			matptr, "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_POINTS);
-		undo_redo->add_undo_property(matptr, "emission_shape", matptr->get_emission_shape());
+			matptr->obj.get(), "emission_shape", ParticleProcessMaterial::EMISSION_SHAPE_POINTS);
+		undo_redo->add_undo_property(
+			matptr->obj.get(), "emission_shape", matptr->get_emission_shape());
 	}
-	undo_redo->add_do_property(matptr, "emission_point_count", point_count);
+	undo_redo->add_do_property(matptr->obj.get(), "emission_point_count", point_count);
 	undo_redo->add_undo_property(
-		matptr, "emission_point_count", matptr->get_emission_point_count());
-	undo_redo->add_do_property(matptr, "emission_point_texture", tex);
+		matptr->obj.get(), "emission_point_count", matptr->get_emission_point_count());
+	undo_redo->add_do_property(matptr->obj.get(), "emission_point_texture", tex);
 	undo_redo->add_undo_property(
-		matptr, "emission_point_texture", matptr->get_emission_point_texture());
+		matptr->obj.get(), "emission_point_texture", matptr->get_emission_point_texture());
 	undo_redo->commit_action();
 }
 

@@ -234,7 +234,7 @@ void MeshLibraryEditor::_update_mesh_items(bool p_reselect, Ref<MeshLibrary> p_l
 		return;
 	}
 
-	mesh_library->set_edited(true);
+	mesh_library->obj->set_edited(true);
 	mesh_items->clear();
 	remove_item->set_disabled(true);
 	update_items_delay->stop();
@@ -373,7 +373,7 @@ void MeshLibraryEditor::_select_item(int p_id, Ref<MeshLibrary> p_lib_check)
 	mesh_library_item.instantiate();
 	mesh_library_item->mesh_library = mesh_library;
 	mesh_library_item->mesh_id = selected_item;
-	inspector->edit(*mesh_library_item);
+	inspector->edit(mesh_library_item->obj.get());
 }
 
 void MeshLibraryEditor::_select_item_and_button(int p_id, Ref<MeshLibrary> p_lib_check)
@@ -432,8 +432,8 @@ void MeshLibraryEditor::_menu_cbk(int p_option)
 		undo_redo->create_action(TTR("Add MeshLibrary item"));
 
 		int to_create = mesh_library->get_last_unused_item_id();
-		undo_redo->add_do_method(*mesh_library, "create_item", to_create);
-		undo_redo->add_undo_method(*mesh_library, "remove_item", to_create);
+		undo_redo->add_do_method(mesh_library->obj.get(), "create_item", to_create);
+		undo_redo->add_undo_method(mesh_library->obj.get(), "remove_item", to_create);
 
 		undo_redo->add_do_method(this->obj.get(), "_update_mesh_items", false, *mesh_library);
 		undo_redo->add_undo_method(this->obj.get(), "_update_mesh_items", false, *mesh_library);
@@ -457,7 +457,7 @@ void MeshLibraryEditor::_menu_cbk(int p_option)
 				this->obj.get(), "_select_prev_item_and_button", selected_item, *mesh_library);
 		}
 
-		undo_redo->add_do_method(*mesh_library, "remove_item", selected_item);
+		undo_redo->add_do_method(mesh_library->obj.get(), "remove_item", selected_item);
 
 		Ref<Mesh> mesh = mesh_library->get_item_mesh(selected_item);
 		int mesh_shadow = mesh_library->get_item_mesh_cast_shadow(selected_item);
@@ -468,23 +468,26 @@ void MeshLibraryEditor::_menu_cbk(int p_option)
 		Transform3D nav_mesh_transform =
 			mesh_library->get_item_navigation_mesh_transform(selected_item);
 		Ref<Texture2D> preview = mesh_library->get_item_preview(selected_item);
-		Array shapes = mesh_library->call("get_item_shapes", selected_item);
+		Array shapes = mesh_library->obj->call("get_item_shapes", selected_item);
 
-		undo_redo->add_undo_method(*mesh_library, "create_item", selected_item);
-		undo_redo->add_undo_method(*mesh_library, "set_item_mesh", selected_item, mesh);
+		undo_redo->add_undo_method(mesh_library->obj.get(), "create_item", selected_item);
+		undo_redo->add_undo_method(mesh_library->obj.get(), "set_item_mesh", selected_item, mesh);
 		undo_redo->add_undo_method(
-			*mesh_library, "set_item_mesh_cast_shadow", selected_item, mesh_shadow);
+			mesh_library->obj.get(), "set_item_mesh_cast_shadow", selected_item, mesh_shadow);
 		undo_redo->add_undo_method(
-			*mesh_library, "set_item_mesh_transform", selected_item, mesh_transform);
-		undo_redo->add_undo_method(*mesh_library, "set_item_name", selected_item, mesh_name);
+			mesh_library->obj.get(), "set_item_mesh_transform", selected_item, mesh_transform);
 		undo_redo->add_undo_method(
-			*mesh_library, "set_item_navigation_layers", selected_item, nav_layers);
+			mesh_library->obj.get(), "set_item_name", selected_item, mesh_name);
 		undo_redo->add_undo_method(
-			*mesh_library, "set_item_navigation_mesh", selected_item, nav_mesh);
+			mesh_library->obj.get(), "set_item_navigation_layers", selected_item, nav_layers);
 		undo_redo->add_undo_method(
-			*mesh_library, "set_item_navigation_mesh_transform", selected_item, nav_mesh_transform);
-		undo_redo->add_undo_method(*mesh_library, "set_item_preview", selected_item, preview);
-		undo_redo->add_undo_method(*mesh_library, "set_item_shapes", selected_item, shapes);
+			mesh_library->obj.get(), "set_item_navigation_mesh", selected_item, nav_mesh);
+		undo_redo->add_undo_method(mesh_library->obj.get(), "set_item_navigation_mesh_transform",
+			selected_item, nav_mesh_transform);
+		undo_redo->add_undo_method(
+			mesh_library->obj.get(), "set_item_preview", selected_item, preview);
+		undo_redo->add_undo_method(
+			mesh_library->obj.get(), "set_item_shapes", selected_item, shapes);
 
 		undo_redo->add_do_method(this->obj.get(), "_update_mesh_items", true, *mesh_library);
 		undo_redo->add_undo_method(this->obj.get(), "_update_mesh_items", false, *mesh_library);
@@ -510,7 +513,7 @@ void MeshLibraryEditor::_menu_cbk(int p_option)
 	case MENU_OPTION_UPDATE_FROM_SCENE: {
 		import_update = true;
 		cd_update->set_text(vformat(TTR("Update from existing scene?:\n%s"),
-			String(mesh_library->get_meta("_editor_source_scene"))));
+			String(mesh_library->obj->get_meta("_editor_source_scene"))));
 		cd_update->popup_centered(Size2(500, 60));
 	} break;
 	}
@@ -520,7 +523,7 @@ void MeshLibraryEditor::_menu_update_confirm(bool p_apply_xforms)
 {
 	cd_update->hide();
 	apply_xforms = p_apply_xforms;
-	String existing = mesh_library->get_meta("_editor_source_scene");
+	String existing = mesh_library->obj->get_meta("_editor_source_scene");
 	ERR_FAIL_COND(existing.is_empty());
 	_import_scene_cbk(existing);
 }
@@ -576,12 +579,13 @@ void MeshLibraryEditor::_import_scene_cbk(const String& p_str)
 	_import_scene(scene, mesh_library, import_update, apply_xforms);
 
 	memdelete(scene);
-	mesh_library->set_meta("_editor_source_scene", p_str);
+	mesh_library->obj->set_meta("_editor_source_scene", p_str);
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Import MeshLibrary from scene"));
-	undo_redo->add_do_method(*mesh_library, "copy_from_resource", *mesh_library->duplicate());
-	undo_redo->add_undo_method(*mesh_library, "copy_from_resource", old_lib);
+	undo_redo->add_do_method(
+		mesh_library->obj.get(), "copy_from_resource", *mesh_library->duplicate());
+	undo_redo->add_undo_method(mesh_library->obj.get(), "copy_from_resource", old_lib);
 	undo_redo->commit_action(false);
 
 	import_scene->get_popup()->set_item_disabled(
@@ -758,15 +762,7 @@ void MeshLibraryEditor::_notification(int p_what)
 	}
 }
 
-void MeshLibraryEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_update_mesh_items", "reselect"),
-		&MeshLibraryEditor::_update_mesh_items, DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("_select_item_and_button", "id", "library"),
-		&MeshLibraryEditor::_select_item_and_button, DEFVAL(Ref<MeshLibrary>()));
-	ClassDB::bind_method(D_METHOD("_select_prev_item_and_button", "id", "library"),
-		&MeshLibraryEditor::_select_prev_item_and_button, DEFVAL(Ref<MeshLibrary>()));
-}
+void MeshLibraryEditor::_bind_methods() {}
 
 MeshLibraryEditor::MeshLibraryEditor()
 {
@@ -834,7 +830,7 @@ MeshLibraryEditor::MeshLibraryEditor()
 	toolbar->add_child(search_box);
 	search_box->connect(SceneStringName(text_changed),
 
-	callable_mp(update_items_delay, &Timer::start).bind(UPDATE_ITEMS_DELAY_TIMEOUT).unbind(1));
+		callable_mp(update_items_delay, &Timer::start).bind(UPDATE_ITEMS_DELAY_TIMEOUT).unbind(1));
 
 	zoom_widget = memnew(EditorZoomWidget);
 	zoom_widget->setup_zoom_limits(0.2, 4);

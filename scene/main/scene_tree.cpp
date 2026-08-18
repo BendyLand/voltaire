@@ -98,11 +98,11 @@ bool SceneTreeTimer::is_ignoring_time_scale() { return ignore_time_scale; }
 
 void SceneTreeTimer::release_connections()
 {
-	List<Connection> signal_connections;
-	get_all_signal_connections(&signal_connections);
+	List<Object::Connection> signal_connections;
+	this->obj->get_all_signal_connections(&signal_connections);
 
-	for (const Connection& connection : signal_connections) {
-		disconnect(connection.signal.get_name(), connection.callable);
+	for (const Object::Connection& connection : signal_connections) {
+		this->obj->disconnect(connection.signal.get_name(), connection.callable);
 	}
 }
 
@@ -857,7 +857,7 @@ void SceneTree::process_timers(double p_delta, bool p_physics_frame)
 		timer->set_time_left(time_left);
 
 		if (time_left <= 0) {
-			E->get()->emit_signal(SNAME("timeout"));
+			E->get()->obj->emit_signal(SNAME("timeout"));
 			timers.erase(E);
 		}
 		if (E == L) {
@@ -1851,7 +1851,7 @@ void SceneTree::add_current_scene(Node* p_current)
 	root->add_child(p_current);
 }
 
-RequiredResult<SceneTreeTimer> SceneTree::create_timer(
+SceneTreeTimer* SceneTree::create_timer(
 	double p_delay_sec, bool p_process_always, bool p_process_in_physics, bool p_ignore_time_scale)
 {
 	_THREAD_SAFE_METHOD_
@@ -1862,16 +1862,16 @@ RequiredResult<SceneTreeTimer> SceneTree::create_timer(
 	stt->set_process_in_physics(p_process_in_physics);
 	stt->set_ignore_time_scale(p_ignore_time_scale);
 	timers.push_back(stt);
-	return stt;
+	return stt.ptr();
 }
 
-RequiredResult<Tween> SceneTree::create_tween()
+Tween* SceneTree::create_tween()
 {
 	_THREAD_SAFE_METHOD_
 	Ref<Tween> tween;
 	tween.instantiate(this);
 	tweens.push_back(tween);
-	return tween;
+	return tween.ptr();
 }
 
 void SceneTree::remove_tween(const Ref<Tween>& p_tween)
@@ -1900,12 +1900,12 @@ TypedArray<Tween> SceneTree::get_processed_tweens()
 	return ret;
 }
 
-RequiredResult<MultiplayerAPI> SceneTree::get_multiplayer(const NodePath& p_for_path) const
+MultiplayerAPI* SceneTree::get_multiplayer(const NodePath& p_for_path) const
 {
-	ERR_FAIL_COND_V_MSG(!Thread::is_main_thread(), Ref<MultiplayerAPI>(),
+	ERR_FAIL_COND_V_MSG(!Thread::is_main_thread(), Ref<MultiplayerAPI>().ptr(),
 		"Multiplayer can only be manipulated from the main thread.");
 	if (p_for_path.is_empty()) {
-		return multiplayer;
+		return multiplayer.ptr();
 	}
 
 	const Vector<StringName> tnames = p_for_path.get_names();
@@ -1924,11 +1924,11 @@ RequiredResult<MultiplayerAPI> SceneTree::get_multiplayer(const NodePath& p_for_
 			}
 		}
 		if (valid) {
-			return E.value;
+			return E.value.ptr();
 		}
 	}
 
-	return multiplayer;
+	return multiplayer.ptr();
 }
 
 void SceneTree::set_multiplayer(Ref<MultiplayerAPI> p_multiplayer, const NodePath& p_root_path)

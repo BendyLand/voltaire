@@ -28,67 +28,70 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_importer_csv_translation.h"
-
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
 #include "core/string/optimized_translation.h"
 #include "core/string/translation_server.h"
+#include "resource_importer_csv_translation.h"
 
-String ResourceImporterCSVTranslation::get_importer_name() const {
-	return "csv_translation";
-}
+String ResourceImporterCSVTranslation::get_importer_name() const { return "csv_translation"; }
 
-String ResourceImporterCSVTranslation::get_visible_name() const {
-	return "CSV Translation";
-}
+String ResourceImporterCSVTranslation::get_visible_name() const { return "CSV Translation"; }
 
-void ResourceImporterCSVTranslation::get_recognized_extensions(List<String> *p_extensions) const {
+void ResourceImporterCSVTranslation::get_recognized_extensions(List<String>* p_extensions) const
+{
 	p_extensions->push_back("csv");
 }
 
-String ResourceImporterCSVTranslation::get_save_extension() const {
-	return ""; //does not save a single resource
+String ResourceImporterCSVTranslation::get_save_extension() const
+{
+	return ""; // does not save a single resource
 }
 
-String ResourceImporterCSVTranslation::get_resource_type() const {
-	return "Translation";
-}
+String ResourceImporterCSVTranslation::get_resource_type() const { return "Translation"; }
 
-bool ResourceImporterCSVTranslation::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+bool ResourceImporterCSVTranslation::get_option_visibility(const String& p_path,
+	const String& p_option, const HashMap<StringName, Variant>& p_options) const
+{
 	return true;
 }
 
-int ResourceImporterCSVTranslation::get_preset_count() const {
-	return 0;
-}
+int ResourceImporterCSVTranslation::get_preset_count() const { return 0; }
 
-String ResourceImporterCSVTranslation::get_preset_name(int p_idx) const {
-	return "";
-}
+String ResourceImporterCSVTranslation::get_preset_name(int p_idx) const { return ""; }
 
-void ResourceImporterCSVTranslation::get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset) const {
-	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "compress", PROPERTY_HINT_ENUM, "Disabled,Auto"), 1)); // Enum for compatibility with previous versions.
-	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "delimiter", PROPERTY_HINT_ENUM, "Comma,Semicolon,Tab"), 0));
+void ResourceImporterCSVTranslation::get_import_options(
+	const String& p_path, List<ImportOption>* r_options, int p_preset) const
+{
+	r_options->push_back(
+		ImportOption(PropertyInfo(Variant::INT, "compress", PROPERTY_HINT_ENUM, "Disabled,Auto"),
+			1)); // Enum for compatibility with previous versions.
+	r_options->push_back(ImportOption(
+		PropertyInfo(Variant::INT, "delimiter", PROPERTY_HINT_ENUM, "Comma,Semicolon,Tab"), 0));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "unescape_keys"), false));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "unescape_translations"), true));
 }
 
-Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id,
+	const String& p_source_file, const String& p_save_path,
+	const HashMap<StringName, Variant>& p_options, List<String>* r_platform_variants,
+	List<String>* r_gen_files, Variant* r_metadata)
+{
 	Ref<FileAccess> f = FileAccess::open(p_source_file, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_INVALID_PARAMETER, "Cannot open file from path '" + p_source_file + "'.");
+	ERR_FAIL_COND_V_MSG(
+		f.is_null(), ERR_INVALID_PARAMETER, "Cannot open file from path '" + p_source_file + "'.");
 
 	String delimiter;
 	switch ((int)p_options["delimiter"]) {
-		case 1: {
-			delimiter = ";";
-		} break;
-		case 2: {
-			delimiter = "\t";
-		} break;
-		default: {
-			delimiter = ",";
-		} break;
+	case 1: {
+		delimiter = ";";
+	} break;
+	case 2: {
+		delimiter = "\t";
+	} break;
+	default: {
+		delimiter = ",";
+	} break;
 	}
 
 	// Parse the header row.
@@ -102,18 +105,25 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 				continue;
 			}
 			if (line[i].to_lower() == "?context") {
-				ERR_CONTINUE_MSG(context_column != -1, "Error importing CSV translation: Multiple '?context' columns found. Only one is allowed. Subsequent ones will be ignored.");
+				ERR_CONTINUE_MSG(context_column != -1,
+					"Error importing CSV translation: Multiple '?context' columns found. Only one "
+					"is allowed. Subsequent ones will be ignored.");
 				context_column = i;
 				continue;
 			}
 			if (line[i].to_lower() == "?plural") {
-				ERR_CONTINUE_MSG(plural_column != -1, "Error importing CSV translation: Multiple '?plural' columns found. Only one is allowed. Subsequent ones will be ignored.");
+				ERR_CONTINUE_MSG(plural_column != -1,
+					"Error importing CSV translation: Multiple '?plural' columns found. Only one "
+					"is allowed. Subsequent ones will be ignored.");
 				plural_column = i;
 				continue;
 			}
 
 			const String locale = TranslationServer::get_singleton()->standardize_locale(line[i]);
-			ERR_CONTINUE_MSG(locale.is_empty(), vformat("Error importing CSV translation: Invalid locale format '%s', should be 'language_Script_COUNTRY_VARIANT@extra'. This column will be ignored.", line[i]));
+			ERR_CONTINUE_MSG(locale.is_empty(),
+				vformat("Error importing CSV translation: Invalid locale format '%s', should be "
+						"'language_Script_COUNTRY_VARIANT@extra'. This column will be ignored.",
+					line[i]));
 
 			Ref<Translation> translation;
 			translation.instantiate();
@@ -131,8 +141,11 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 	bool context_used = false;
 	bool plural_used = false;
 	{
-		const bool unescape_keys = p_options.has("unescape_keys") ? bool(p_options["unescape_keys"]) : false;
-		const bool unescape_translations = p_options.has("unescape_translations") ? bool(p_options["unescape_translations"]) : true;
+		const bool unescape_keys =
+			p_options.has("unescape_keys") ? bool(p_options["unescape_keys"]) : false;
+		const bool unescape_translations = p_options.has("unescape_translations")
+											   ? bool(p_options["unescape_translations"])
+											   : true;
 
 		bool reading_plural_rows = false;
 		String plural_msgid;
@@ -153,7 +166,11 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 						continue;
 					}
 					Ref<Translation> translation = column_to_translation[i];
-					ERR_CONTINUE_MSG(!translation->get_plural_rules_override().is_empty(), vformat("Error importing CSV translation: Multiple '?pluralrule' definitions found for locale '%s'. Only one is allowed. Subsequent ones will be ignored.", translation->get_locale()));
+					ERR_CONTINUE_MSG(!translation->get_plural_rules_override().is_empty(),
+						vformat("Error importing CSV translation: Multiple '?pluralrule' "
+								"definitions found for locale '%s'. Only one is allowed. "
+								"Subsequent ones will be ignored.",
+							translation->get_locale()));
 					translation->set_plural_rules_override(line[i]);
 				}
 				continue;
@@ -165,22 +182,27 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 			}
 
 			// It's okay if you define context or plural columns but don't use them.
-			const String msgctxt = (context_column != -1 && context_column < line.size()) ? line[context_column] : String();
+			const String msgctxt = (context_column != -1 && context_column < line.size())
+									   ? line[context_column]
+									   : String();
 			if (!msgctxt.is_empty()) {
 				context_used = true;
 			}
-			const String msgid_plural = (plural_column != -1 && plural_column < line.size()) ? line[plural_column] : String();
+			const String msgid_plural = (plural_column != -1 && plural_column < line.size())
+											? line[plural_column]
+											: String();
 			if (!msgid_plural.is_empty()) {
 				plural_used = true;
 			}
 
 			// End of plural rows.
-			if (reading_plural_rows && (!msgid.is_empty() || !msgctxt.is_empty() || !msgid_plural.is_empty())) {
+			if (reading_plural_rows &&
+				(!msgid.is_empty() || !msgctxt.is_empty() || !msgid_plural.is_empty())) {
 				reading_plural_rows = false;
 
 				for (KeyValue<int, Ref<Translation>> E : column_to_translation) {
 					Ref<Translation> translation = E.value;
-					const Vector<String> &msgstrs = plural_msgstrs[E.key];
+					const Vector<String>& msgstrs = plural_msgstrs[E.key];
 					if (!msgstrs.is_empty()) {
 						translation->add_plural_message(plural_msgid, msgstrs, plural_msgctxt);
 					}
@@ -205,7 +227,8 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 				}
 				if (reading_plural_rows) {
 					plural_msgstrs[i].push_back(msgstr);
-				} else {
+				}
+				else {
 					column_to_translation[i]->add_message(msgid, msgstr, msgctxt);
 				}
 			}
@@ -214,7 +237,7 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 		if (reading_plural_rows) {
 			for (KeyValue<int, Ref<Translation>> E : column_to_translation) {
 				Ref<Translation> translation = E.value;
-				const Vector<String> &msgstrs = plural_msgstrs[E.key];
+				const Vector<String>& msgstrs = plural_msgstrs[E.key];
 				if (!msgstrs.is_empty()) {
 					translation->add_plural_message(plural_msgid, msgstrs, plural_msgctxt);
 				}
@@ -224,19 +247,21 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 
 	bool compress;
 	switch ((int)p_options["compress"]) {
-		case 0: { // Disabled.
-			compress = false;
-		} break;
-		default: { // Auto.
-			compress = !context_used && !plural_used;
-		} break;
+	case 0: { // Disabled.
+		compress = false;
+	} break;
+	default: { // Auto.
+		compress = !context_used && !plural_used;
+	} break;
 	}
 
 	for (KeyValue<int, Ref<Translation>> E : column_to_translation) {
 		Ref<Translation> xlt = E.value;
 
 		if (xlt->get_message_count() == 0) {
-			WARN_PRINT(vformat("Locale '%s' does not contain any translation. This locale will be ignored.", xlt->get_locale()));
+			WARN_PRINT(vformat(
+				"Locale '%s' does not contain any translation. This locale will be ignored.",
+				xlt->get_locale()));
 			continue;
 		}
 
@@ -244,13 +269,15 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 			Ref<OptimizedTranslation> cxl = memnew(OptimizedTranslation);
 			if (cxl->generate(xlt)) {
 				xlt = cxl;
-			} else {
+			}
+			else {
 				WARN_PRINT(vformat("Failed to compress locale '%s'.", xlt->get_locale()));
 			}
 		}
 
 		String save_path = p_source_file.get_basename() + "." + xlt->get_locale() + ".translation";
-		ResourceUID::ID save_id = hash64_murmur3_64(xlt->get_locale().hash64(), p_source_id) & 0x7FFFFFFFFFFFFFFF;
+		ResourceUID::ID save_id =
+			hash64_murmur3_64(xlt->get_locale().hash64(), p_source_id) & 0x7FFFFFFFFFFFFFFF;
 		bool uid_already_exists = ResourceUID::get_singleton()->has_id(save_id);
 		if (uid_already_exists) {
 			// Avoid creating a new file with a duplicate UID.
@@ -258,7 +285,7 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 			save_path = ResourceUID::get_singleton()->get_id_path(save_id);
 		}
 
-		ResourceSaver::save(xlt, save_path);
+		ResourceSaver::save(xlt.ptr(), save_path);
 		if (r_gen_files) {
 			r_gen_files->push_back(save_path);
 		}
@@ -270,3 +297,5 @@ Error ResourceImporterCSVTranslation::import(ResourceUID::ID p_source_id, const 
 
 	return OK;
 }
+
+

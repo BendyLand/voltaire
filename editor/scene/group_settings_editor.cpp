@@ -144,15 +144,7 @@ void GroupSettingsEditor::_check_rename()
 	}
 }
 
-void GroupSettingsEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("remove_references"), &GroupSettingsEditor::remove_references);
-	ClassDB::bind_method(D_METHOD("rename_references"), &GroupSettingsEditor::rename_references);
-
-	ClassDB::bind_method(D_METHOD("update_groups"), &GroupSettingsEditor::update_groups);
-
-	ADD_SIGNAL(MethodInfo("group_changed"));
-}
+void GroupSettingsEditor::_bind_methods() {}
 
 void GroupSettingsEditor::_add_group(const String& p_name, const String& p_description)
 {
@@ -264,12 +256,12 @@ void GroupSettingsEditor::_modify_references(
 		ERR_CONTINUE(packed_scene.is_null());
 		if (p_is_rename) {
 			if (packed_scene->get_state()->rename_group_references(p_name, p_new_name)) {
-				ResourceSaver::save(packed_scene, E);
+				ResourceSaver::save(packed_scene.ptr(), E);
 			}
 		}
 		else {
 			if (packed_scene->get_state()->remove_group_references(p_name)) {
-				ResourceSaver::save(packed_scene, E);
+				ResourceSaver::save(packed_scene.ptr(), E);
 			}
 		}
 	}

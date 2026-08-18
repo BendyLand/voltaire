@@ -714,22 +714,23 @@ void AbstractPolygon2DEditor::forward_canvas_draw_over_viewport(Control* p_overl
 		const Vector2& center = _get_geometric_center();
 		if (!center.is_zero_approx()) {
 			const Vector2 point = xform.xform(center);
-			p_overlay->draw_texture(nhandle, point - nhandle->get_size() * 0.5, Color(1, 1, 0.4));
+			p_overlay->draw_texture(
+				nhandle.ptr(), point - nhandle->get_size() * 0.5, Color(1, 1, 0.4));
 			Size2 lbl_size = font->get_string_size("c", HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
-			p_overlay->draw_string_outline(font, point - lbl_size * 0.5, "c",
+			p_overlay->draw_string_outline(font.ptr(), point - lbl_size * 0.5, "c",
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-			p_overlay->draw_string(font, point - lbl_size * 0.5, "c", HORIZONTAL_ALIGNMENT_LEFT, -1,
-				font_size, font_color);
+			p_overlay->draw_string(font.ptr(), point - lbl_size * 0.5, "c",
+				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_color);
 		}
 		{
 			const Vector2 point = xform.xform(Vector2());
-			p_overlay->draw_texture(nhandle, point - nhandle->get_size() * 0.5,
+			p_overlay->draw_texture(nhandle.ptr(), point - nhandle->get_size() * 0.5,
 				center.is_equal_approx(Vector2()) ? Color(1, 1, 0.4) : Color(1, 0.4, 1));
 			Size2 lbl_size = font->get_string_size("o", HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
-			p_overlay->draw_string_outline(font, point - lbl_size * 0.5, "o",
+			p_overlay->draw_string_outline(font.ptr(), point - lbl_size * 0.5, "o",
 				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-			p_overlay->draw_string(font, point - lbl_size * 0.5, "o", HORIZONTAL_ALIGNMENT_LEFT, -1,
-				font_size, font_color);
+			p_overlay->draw_string(font.ptr(), point - lbl_size * 0.5, "o",
+				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_color);
 		}
 	}
 
@@ -802,23 +803,24 @@ void AbstractPolygon2DEditor::forward_canvas_draw_over_viewport(Control* p_overl
 
 			const Color overlay_modulate =
 				vertex == active_point ? Color(0.4, 1, 1) : Color(1, 1, 1);
-			p_overlay->draw_texture(handle, point - handle->get_size() * 0.5, overlay_modulate);
+			p_overlay->draw_texture(
+				handle.ptr(), point - handle->get_size() * 0.5, overlay_modulate);
 
 			if (vertex == hover_point) {
 				String num = String::num_int64(vertex.vertex);
 				Size2 num_size =
 					font->get_string_size(num, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
-				p_overlay->draw_string_outline(font, point - num_size * 0.5, num,
+				p_overlay->draw_string_outline(font.ptr(), point - num_size * 0.5, num,
 					HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline_size, outline_color);
-				p_overlay->draw_string(font, point - num_size * 0.5, num, HORIZONTAL_ALIGNMENT_LEFT,
-					-1, font_size, font_color);
+				p_overlay->draw_string(font.ptr(), point - num_size * 0.5, num,
+					HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, font_color);
 			}
 		}
 	}
 
 	if (edge_point.valid()) {
 		Ref<Texture2D> add_handle = get_editor_theme_icon(SNAME("EditorHandleAdd"));
-		p_overlay->draw_texture(add_handle, edge_point.pos - add_handle->get_size() * 0.5);
+		p_overlay->draw_texture(add_handle.ptr(), edge_point.pos - add_handle->get_size() * 0.5);
 	}
 }
 

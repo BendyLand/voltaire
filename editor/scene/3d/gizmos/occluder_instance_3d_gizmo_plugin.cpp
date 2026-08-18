@@ -28,33 +28,32 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "occluder_instance_3d_gizmo_plugin.h"
-
 #include "core/math/geometry_3d.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
+#include "occluder_instance_3d_gizmo_plugin.h"
 #include "scene/3d/occluder_instance_3d.h"
 
-OccluderInstance3DGizmoPlugin::OccluderInstance3DGizmoPlugin() {
+OccluderInstance3DGizmoPlugin::OccluderInstance3DGizmoPlugin()
+{
 	create_material("line_material", EDITOR_GET("editors/3d_gizmos/gizmo_colors/occluder"));
 	create_handle_material("handles");
 }
 
-bool OccluderInstance3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
+bool OccluderInstance3DGizmoPlugin::has_gizmo(Node3D* p_spatial)
+{
 	return Object::cast_to<OccluderInstance3D>(p_spatial) != nullptr;
 }
 
-String OccluderInstance3DGizmoPlugin::get_gizmo_name() const {
-	return "OccluderInstance3D";
-}
+String OccluderInstance3DGizmoPlugin::get_gizmo_name() const { return "OccluderInstance3D"; }
 
-int OccluderInstance3DGizmoPlugin::get_priority() const {
-	return -1;
-}
+int OccluderInstance3DGizmoPlugin::get_priority() const { return -1; }
 
-String OccluderInstance3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	const OccluderInstance3D *cs = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
+String OccluderInstance3DGizmoPlugin::get_handle_name(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	const OccluderInstance3D* cs = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
 
 	Ref<Occluder3D> o = cs->get_occluder();
 	if (o.is_null()) {
@@ -72,8 +71,10 @@ String OccluderInstance3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p
 	return "";
 }
 
-Variant OccluderInstance3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	OccluderInstance3D *oi = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
+Variant OccluderInstance3DGizmoPlugin::get_handle_value(
+	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
+{
+	OccluderInstance3D* oi = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
 
 	Ref<Occluder3D> o = oi->get_occluder();
 	if (o.is_null()) {
@@ -98,8 +99,10 @@ Variant OccluderInstance3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo 
 	return Variant();
 }
 
-void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
-	OccluderInstance3D *oi = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
+void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, Camera3D* p_camera, const Point2& p_point)
+{
+	OccluderInstance3D* oi = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
 
 	Ref<Occluder3D> o = oi->get_occluder();
 	if (o.is_null()) {
@@ -112,7 +115,7 @@ void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo,
 	Vector3 ray_from = p_camera->project_ray_origin(p_point);
 	Vector3 ray_dir = p_camera->project_ray_normal(p_point);
 
-	Vector3 sg[2] = { gi.xform(ray_from), gi.xform(ray_from + ray_dir * 4096) };
+	Vector3 sg[2] = {gi.xform(ray_from), gi.xform(ray_from + ray_dir * 4096)};
 
 	bool snap_enabled = Node3DEditor::get_singleton()->is_snap_enabled();
 	float snap = Node3DEditor::get_singleton()->get_translate_snap();
@@ -120,7 +123,8 @@ void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo,
 	if (Object::cast_to<SphereOccluder3D>(*o)) {
 		Ref<SphereOccluder3D> so = o;
 		Vector3 ra, rb;
-		Geometry3D::get_closest_points_between_segments(Vector3(), Vector3(4096, 0, 0), sg[0], sg[1], ra, rb);
+		Geometry3D::get_closest_points_between_segments(
+			Vector3(), Vector3(4096, 0, 0), sg[0], sg[1], ra, rb);
 		float d = ra.x;
 		if (snap_enabled) {
 			d = Math::snapped(d, snap);
@@ -138,7 +142,8 @@ void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo,
 		axis[p_id] = 1.0;
 		Ref<BoxOccluder3D> bo = o;
 		Vector3 ra, rb;
-		Geometry3D::get_closest_points_between_segments(Vector3(), axis * 4096, sg[0], sg[1], ra, rb);
+		Geometry3D::get_closest_points_between_segments(
+			Vector3(), axis * 4096, sg[0], sg[1], ra, rb);
 		float d = ra[p_id] * 2;
 		if (snap_enabled) {
 			d = Math::snapped(d, snap);
@@ -168,7 +173,8 @@ void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo,
 			}
 			s = s.maxf(0.001);
 			qo->set_size(s);
-		} else {
+		}
+		else {
 			float d = intersection[p_id];
 			if (snap_enabled) {
 				d = Math::snapped(d, snap);
@@ -185,8 +191,10 @@ void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo,
 	}
 }
 
-void OccluderInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
-	OccluderInstance3D *oi = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
+void OccluderInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
+	bool p_secondary, const Variant& p_restore, bool p_cancel)
+{
+	OccluderInstance3D* oi = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
 
 	Ref<Occluder3D> o = oi->get_occluder();
 	if (o.is_null()) {
@@ -200,10 +208,10 @@ void OccluderInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_giz
 			return;
 		}
 
-		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Sphere Shape Radius"));
-		ur->add_do_method(so.ptr(), "set_radius", so->get_radius());
-		ur->add_undo_method(so.ptr(), "set_radius", p_restore);
+		ur->add_do_method(so->obj.get(), "set_radius", so->get_radius());
+		ur->add_undo_method(so->obj.get(), "set_radius", p_restore);
 		ur->commit_action();
 	}
 
@@ -214,10 +222,10 @@ void OccluderInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_giz
 			return;
 		}
 
-		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Box Shape Size"));
-		ur->add_do_method(bo.ptr(), "set_size", bo->get_size());
-		ur->add_undo_method(bo.ptr(), "set_size", p_restore);
+		ur->add_do_method(bo->obj.get(), "set_size", bo->get_size());
+		ur->add_undo_method(bo->obj.get(), "set_size", p_restore);
 		ur->commit_action();
 	}
 
@@ -228,16 +236,18 @@ void OccluderInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_giz
 			return;
 		}
 
-		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Box Shape Size"));
-		ur->add_do_method(qo.ptr(), "set_size", qo->get_size());
-		ur->add_undo_method(qo.ptr(), "set_size", p_restore);
+		ur->add_do_method(qo->obj.get(), "set_size", qo->get_size());
+		ur->add_undo_method(qo->obj.get(), "set_size", p_restore);
 		ur->commit_action();
 	}
 }
 
-void OccluderInstance3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
-	OccluderInstance3D *occluder_instance = Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
+void OccluderInstance3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
+{
+	OccluderInstance3D* occluder_instance =
+		Object::cast_to<OccluderInstance3D>(p_gizmo->get_node_3d());
 
 	p_gizmo->clear();
 
@@ -258,7 +268,7 @@ void OccluderInstance3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	if (Object::cast_to<SphereOccluder3D>(*o)) {
 		Ref<SphereOccluder3D> so = o;
 		float r = so->get_radius();
-		Vector<Vector3> handles = { Vector3(r, 0, 0) };
+		Vector<Vector3> handles = {Vector3(r, 0, 0)};
 		p_gizmo->add_handles(handles, handles_material);
 	}
 
@@ -279,7 +289,10 @@ void OccluderInstance3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		Ref<QuadOccluder3D> qo = o;
 		Vector2 size = qo->get_size();
 		Vector3 s = Vector3(size.x, size.y, 0.0f) / 2.0f;
-		Vector<Vector3> handles = { Vector3(s.x, 0.0f, 0.0f), Vector3(0.0f, s.y, 0.0f), Vector3(s.x, s.y, 0.0f) };
+		Vector<Vector3> handles = {
+			Vector3(s.x, 0.0f, 0.0f), Vector3(0.0f, s.y, 0.0f), Vector3(s.x, s.y, 0.0f)};
 		p_gizmo->add_handles(handles, handles_material);
 	}
 }
+
+

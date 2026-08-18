@@ -36,15 +36,19 @@
 
 /*************************************************************************/
 
-class LabelSettings : public Resource {
+class LabelSettings : public Resource
+{
 	VLTRCLASS(LabelSettings, Resource);
 
 public:
-	struct StackedOutlineData {
+	struct StackedOutlineData
+	{
 		int32_t size = 0;
 		Color color;
 	};
-	struct StackedShadowData {
+
+	struct StackedShadowData
+	{
 		Vector2 offset = Vector2(1, 1);
 		Color color;
 		int32_t outline_size = 0;
@@ -77,21 +81,35 @@ private:
 
 protected:
 	static void _bind_methods();
-	bool _set(const StringName &p_name, const Variant &p_value) {
-		return stacked_outline_property_helper.property_set_value(p_name, p_value) || stacked_shadow_property_helper.property_set_value(p_name, p_value);
+
+	bool _set(const StringName& p_name, const Variant& p_value)
+	{
+		return stacked_outline_property_helper.property_set_value(p_name, p_value) ||
+			   stacked_shadow_property_helper.property_set_value(p_name, p_value);
 	}
-	bool _get(const StringName &p_name, Variant &r_ret) const {
-		return stacked_outline_property_helper.property_get_value(p_name, r_ret) || stacked_shadow_property_helper.property_get_value(p_name, r_ret);
+
+	bool _get(const StringName& p_name, Variant& r_ret) const
+	{
+		return stacked_outline_property_helper.property_get_value(p_name, r_ret) ||
+			   stacked_shadow_property_helper.property_get_value(p_name, r_ret);
 	}
-	void _get_property_list(List<PropertyInfo> *p_list) const {
+
+	void _get_property_list(List<PropertyInfo>* p_list) const
+	{
 		stacked_outline_property_helper.get_property_list(p_list);
 		stacked_shadow_property_helper.get_property_list(p_list);
 	}
-	bool _property_can_revert(const StringName &p_name) const {
-		return stacked_outline_property_helper.property_can_revert(p_name) || stacked_shadow_property_helper.property_can_revert(p_name);
+
+	bool _property_can_revert(const StringName& p_name) const
+	{
+		return stacked_outline_property_helper.property_can_revert(p_name) ||
+			   stacked_shadow_property_helper.property_can_revert(p_name);
 	}
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const {
-		return stacked_outline_property_helper.property_get_revert(p_name, r_property) || stacked_shadow_property_helper.property_get_revert(p_name, r_property);
+
+	bool _property_get_revert(const StringName& p_name, Variant& r_property) const
+	{
+		return stacked_outline_property_helper.property_get_revert(p_name, r_property) ||
+			   stacked_shadow_property_helper.property_get_revert(p_name, r_property);
 	}
 
 public:
@@ -101,28 +119,28 @@ public:
 	void set_paragraph_spacing(real_t p_spacing);
 	real_t get_paragraph_spacing() const;
 
-	void set_font(const Ref<Font> &p_font);
+	void set_font(const Ref<Font>& p_font);
 	Ref<Font> get_font() const;
 
 	void set_font_size(int p_size);
 	int get_font_size() const;
 
-	void set_font_color(const Color &p_color);
+	void set_font_color(const Color& p_color);
 	Color get_font_color() const;
 
 	void set_outline_size(int p_size);
 	int get_outline_size() const;
 
-	void set_outline_color(const Color &p_color);
+	void set_outline_color(const Color& p_color);
 	Color get_outline_color() const;
 
 	void set_shadow_size(int p_size);
 	int get_shadow_size() const;
 
-	void set_shadow_color(const Color &p_color);
+	void set_shadow_color(const Color& p_color);
 	Color get_shadow_color() const;
 
-	void set_shadow_offset(const Vector2 &p_offset);
+	void set_shadow_offset(const Vector2& p_offset);
 	Vector2 get_shadow_offset() const;
 
 	Vector<StackedOutlineData> get_stacked_outline_data() const;
@@ -133,7 +151,7 @@ public:
 	void remove_stacked_outline(int p_index);
 	void set_stacked_outline_size(int p_index, int p_size);
 	int get_stacked_outline_size(int p_index) const;
-	void set_stacked_outline_color(int p_index, const Color &p_color);
+	void set_stacked_outline_color(int p_index, const Color& p_color);
 	Color get_stacked_outline_color(int p_index) const;
 
 	Vector<StackedShadowData> get_stacked_shadow_data() const;
@@ -142,15 +160,20 @@ public:
 	void add_stacked_shadow(int p_index = -1);
 	void move_stacked_shadow(int p_from_index, int p_to_position);
 	void remove_stacked_shadow(int p_index);
-	void set_stacked_shadow_offset(int p_index, const Vector2 &p_offset);
+	void set_stacked_shadow_offset(int p_index, const Vector2& p_offset);
 	Vector2 get_stacked_shadow_offset(int p_index) const;
-	void set_stacked_shadow_color(int p_index, const Color &p_color);
+	void set_stacked_shadow_color(int p_index, const Color& p_color);
 	Color get_stacked_shadow_color(int p_index) const;
 	void set_stacked_shadow_outline_size(int p_index, int p_size);
 	int get_stacked_shadow_outline_size(int p_index) const;
 
-	LabelSettings() {
-		stacked_outline_property_helper.setup_for_instance(stacked_outline_base_property_helper, this);
-		stacked_shadow_property_helper.setup_for_instance(stacked_shadow_base_property_helper, this);
+	LabelSettings()
+	{
+		stacked_outline_property_helper.setup_for_instance(
+			stacked_outline_base_property_helper, this->obj.get());
+		stacked_shadow_property_helper.setup_for_instance(
+			stacked_shadow_base_property_helper, this->obj.get());
 	}
 };
+
+

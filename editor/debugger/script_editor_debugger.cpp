@@ -546,19 +546,6 @@ void ScriptEditorDebugger::_msg_servers_memory_usage(uint64_t p_thread_id, const
 		it->set_text(2, E.format);
 		it->set_text(3, String::humanize_size(bytes));
 		total += bytes;
-
-		// If it does not have a theme icon, just go up the inheritance tree until we find one.
-		if (!has_theme_icon(type, EditorStringName(EditorIcons))) {
-			StringName base_type = type;
-			while (base_type != "Resource" || base_type != "") {
-				base_type = ClassDB::get_parent_class(base_type);
-				if (has_theme_icon(base_type, EditorStringName(EditorIcons))) {
-					type = base_type;
-					break;
-				}
-			}
-		}
-
 		it->set_icon(0, get_editor_theme_icon(type));
 	}
 
@@ -1217,7 +1204,7 @@ void ScriptEditorDebugger::_update_reason_content_height()
 void ScriptEditorDebugger::_notification(int p_what)
 {
 	switch (p_what) {
-	case BaseMaterial3D::NOTIFICATION_POSTINITIALIZE: {
+	case Object::NOTIFICATION_POSTINITIALIZE: {
 		connect("started", callable_mp(expression_evaluator, &EditorExpressionEvaluator::on_start));
 	} break;
 
@@ -1237,7 +1224,7 @@ void ScriptEditorDebugger::_notification(int p_what)
 
 	case NOTIFICATION_THEME_CHANGED: {
 		tabs->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("DebuggerPanel"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("DebuggerPanel"), EditorStringName(EditorStyles)).ptr());
 
 		skip_breakpoints->set_button_icon(
 			get_editor_theme_icon(skip_breakpoints_value ? SNAME("DebugSkipBreakpointsOn")
@@ -1270,12 +1257,12 @@ void ScriptEditorDebugger::_notification(int p_what)
 		reason->add_theme_color_override(SNAME("default_color"),
 			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 		reason->add_theme_style_override(SNAME("normal"),
-			get_theme_stylebox(SNAME("normal"), SNAME("Label"))); // Empty stylebox.
+			get_theme_stylebox(SNAME("normal"), SNAME("Label")).ptr()); // Empty stylebox.
 
 		const Ref<Font> source_font =
 			get_theme_font(SNAME("output_source"), EditorStringName(EditorFonts));
 		if (source_font.is_valid()) {
-			error_tree->add_theme_font_override("font", source_font);
+			error_tree->add_theme_font_override("font", source_font.ptr());
 		}
 		const int font_size =
 			get_theme_font_size(SNAME("output_source_size"), EditorStringName(EditorFonts));
@@ -2270,61 +2257,7 @@ void ScriptEditorDebugger::_tab_changed(int p_tab)
 	}
 }
 
-void ScriptEditorDebugger::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("live_debug_create_node"), &ScriptEditorDebugger::live_debug_create_node);
-	ClassDB::bind_method(D_METHOD("live_debug_instantiate_node"),
-		&ScriptEditorDebugger::live_debug_instantiate_node);
-	ClassDB::bind_method(
-		D_METHOD("live_debug_remove_node"), &ScriptEditorDebugger::live_debug_remove_node);
-	ClassDB::bind_method(D_METHOD("live_debug_remove_and_keep_node"),
-		&ScriptEditorDebugger::live_debug_remove_and_keep_node);
-	ClassDB::bind_method(
-		D_METHOD("live_debug_restore_node"), &ScriptEditorDebugger::live_debug_restore_node);
-	ClassDB::bind_method(
-		D_METHOD("live_debug_duplicate_node"), &ScriptEditorDebugger::live_debug_duplicate_node);
-	ClassDB::bind_method(
-		D_METHOD("live_debug_reparent_node"), &ScriptEditorDebugger::live_debug_reparent_node);
-	ClassDB::bind_method(D_METHOD("update_remote_object", "id", "property", "value", "field"),
-		&ScriptEditorDebugger::update_remote_object);
-
-	ADD_SIGNAL(MethodInfo("started"));
-	ADD_SIGNAL(MethodInfo("stopped"));
-	ADD_SIGNAL(MethodInfo("stop_requested"));
-	ADD_SIGNAL(MethodInfo("stack_frame_selected", PropertyInfo(Variant::INT, "frame")));
-	ADD_SIGNAL(MethodInfo("error_selected", PropertyInfo(Variant::INT, "error")));
-	ADD_SIGNAL(MethodInfo(
-		"breakpoint_selected", PropertyInfo("script"), PropertyInfo(Variant::INT, "line")));
-	ADD_SIGNAL(
-		MethodInfo("set_execution", PropertyInfo("script"), PropertyInfo(Variant::INT, "line")));
-	ADD_SIGNAL(MethodInfo("clear_execution", PropertyInfo("script")));
-	ADD_SIGNAL(MethodInfo("breaked", PropertyInfo(Variant::BOOL, "reallydid"),
-		PropertyInfo(Variant::BOOL, "can_debug"), PropertyInfo(Variant::STRING, "reason"),
-		PropertyInfo(Variant::BOOL, "has_stackdump")));
-	ADD_SIGNAL(MethodInfo("remote_objects_requested", PropertyInfo(Variant::ARRAY, "ids")));
-	ADD_SIGNAL(
-		MethodInfo("remote_objects_updated", PropertyInfo(Variant::OBJECT, "remote_objects")));
-	ADD_SIGNAL(MethodInfo("remote_object_property_updated", PropertyInfo(Variant::INT, "id"),
-		PropertyInfo(Variant::STRING, "property")));
-	ADD_SIGNAL(MethodInfo("remote_window_title_changed", PropertyInfo(Variant::STRING, "title")));
-	ADD_SIGNAL(MethodInfo("remote_tree_updated"));
-	ADD_SIGNAL(MethodInfo("remote_tree_select_requested", PropertyInfo(Variant::ARRAY, "ids")));
-	ADD_SIGNAL(MethodInfo("remote_tree_clear_selection_requested"));
-	ADD_SIGNAL(MethodInfo(
-		"output", PropertyInfo(Variant::STRING, "msg"), PropertyInfo(Variant::INT, "level")));
-	ADD_SIGNAL(MethodInfo("stack_dump", PropertyInfo(Variant::ARRAY, "stack_dump")));
-	ADD_SIGNAL(MethodInfo("stack_frame_vars", PropertyInfo(Variant::INT, "num_vars")));
-	ADD_SIGNAL(MethodInfo("stack_frame_var", PropertyInfo(Variant::ARRAY, "data")));
-	ADD_SIGNAL(MethodInfo(
-		"debug_data", PropertyInfo(Variant::STRING, "msg"), PropertyInfo(Variant::ARRAY, "data")));
-	ADD_SIGNAL(MethodInfo("set_breakpoint", PropertyInfo("script"),
-		PropertyInfo(Variant::INT, "line"), PropertyInfo(Variant::BOOL, "enabled")));
-	ADD_SIGNAL(MethodInfo("clear_breakpoints"));
-	ADD_SIGNAL(MethodInfo("errors_cleared"));
-	ADD_SIGNAL(MethodInfo(
-		"embed_shortcut_requested", PropertyInfo(Variant::INT, "embed_shortcut_action")));
-}
+void ScriptEditorDebugger::_bind_methods() {}
 
 void ScriptEditorDebugger::add_debugger_tab(Control* p_control) { tabs->add_child(p_control); }
 
@@ -2397,7 +2330,7 @@ ScriptEditorDebugger::ScriptEditorDebugger()
 		reason->set_v_size_flags(SIZE_SHRINK_CENTER);
 		reason->connect(SceneStringName(resized),
 			callable_mp(this, &ScriptEditorDebugger::_update_reason_content_height),
-			BaseMaterial3D::CONNECT_DEFERRED);
+			Object::CONNECT_DEFERRED);
 		hbc->add_child(reason);
 
 		HBoxContainer* buttons = memnew(HBoxContainer);

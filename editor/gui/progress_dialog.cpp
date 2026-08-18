@@ -28,31 +28,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "progress_dialog.h"
-
 #include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
 #include "main/main.h"
+#include "progress_dialog.h"
 #include "scene/gui/panel_container.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "servers/display/display_server.h"
 
-void BackgroundProgress::_add_task(const String &p_task, const String &p_label, int p_steps) {
+void BackgroundProgress::_add_task(const String& p_task, const String& p_label, int p_steps)
+{
 	_THREAD_SAFE_METHOD_
 	ERR_FAIL_COND_MSG(tasks.has(p_task), "Task '" + p_task + "' already exists.");
 	BackgroundProgress::Task t;
 	t.hb = memnew(HBoxContainer);
-	Label *l = memnew(Label);
+	Label* l = memnew(Label);
 	l->set_text(p_label + " ");
 	t.hb->add_child(l);
 	t.progress = memnew(ProgressBar);
 	t.progress->set_theme_type_variation("PopupProgressBar");
 	t.progress->set_max(p_steps);
 	t.progress->set_value(p_steps);
-	Control *ec = memnew(Control);
+	Control* ec = memnew(Control);
 	ec->set_h_size_flags(SIZE_EXPAND_FILL);
 	ec->set_v_size_flags(SIZE_EXPAND_FILL);
 	t.progress->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
@@ -65,10 +65,11 @@ void BackgroundProgress::_add_task(const String &p_task, const String &p_label, 
 	tasks[p_task] = t;
 }
 
-void BackgroundProgress::_update() {
+void BackgroundProgress::_update()
+{
 	_THREAD_SAFE_METHOD_
 
-	for (const KeyValue<String, int> &E : updates) {
+	for (const KeyValue<String, int>& E : updates) {
 		if (tasks.has(E.key)) {
 			_task_step(E.key, E.value);
 		}
@@ -77,35 +78,40 @@ void BackgroundProgress::_update() {
 	updates.clear();
 }
 
-void BackgroundProgress::_task_step(const String &p_task, int p_step) {
+void BackgroundProgress::_task_step(const String& p_task, int p_step)
+{
 	_THREAD_SAFE_METHOD_
 
 	ERR_FAIL_COND(!tasks.has(p_task));
 
-	Task &t = tasks[p_task];
+	Task& t = tasks[p_task];
 	if (p_step < 0) {
 		t.progress->set_value(t.progress->get_value() + 1);
-	} else {
+	}
+	else {
 		t.progress->set_value(p_step);
 	}
 }
 
-void BackgroundProgress::_end_task(const String &p_task) {
+void BackgroundProgress::_end_task(const String& p_task)
+{
 	_THREAD_SAFE_METHOD_
 
 	ERR_FAIL_COND(!tasks.has(p_task));
-	Task &t = tasks[p_task];
+	Task& t = tasks[p_task];
 
 	memdelete(t.hb);
 	tasks.erase(p_task);
 }
 
-void BackgroundProgress::add_task(const String &p_task, const String &p_label, int p_steps) {
+void BackgroundProgress::add_task(const String& p_task, const String& p_label, int p_steps)
+{
 	callable_mp(this, &BackgroundProgress::_add_task).call_deferred(p_task, p_label, p_steps);
 }
 
-void BackgroundProgress::task_step(const String &p_task, int p_step) {
-	//this code is weird, but it prevents deadlock.
+void BackgroundProgress::task_step(const String& p_task, int p_step)
+{
+	// this code is weird, but it prevents deadlock.
 	bool no_updates = true;
 	{
 		_THREAD_SAFE_METHOD_
@@ -122,30 +128,34 @@ void BackgroundProgress::task_step(const String &p_task, int p_step) {
 	}
 }
 
-void BackgroundProgress::end_task(const String &p_task) {
+void BackgroundProgress::end_task(const String& p_task)
+{
 	callable_mp(this, &BackgroundProgress::_end_task).call_deferred(p_task);
 }
 
 ////////////////////////////////////////////////
 
-ProgressDialog *ProgressDialog::singleton = nullptr;
+ProgressDialog* ProgressDialog::singleton = nullptr;
 
-void ProgressDialog::_notification(int p_what) {
+void ProgressDialog::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			Ref<StyleBox> style = main->get_theme_stylebox(SceneStringName(panel), SNAME("PopupMenu"));
-			main_border_size = style->get_minimum_size();
-			main->set_offset(SIDE_LEFT, style->get_margin(SIDE_LEFT));
-			main->set_offset(SIDE_RIGHT, -style->get_margin(SIDE_RIGHT));
-			main->set_offset(SIDE_TOP, style->get_margin(SIDE_TOP));
-			main->set_offset(SIDE_BOTTOM, -style->get_margin(SIDE_BOTTOM));
+	case NOTIFICATION_THEME_CHANGED: {
+		Ref<StyleBox> style = main->get_theme_stylebox(SceneStringName(panel), SNAME("PopupMenu"));
+		main_border_size = style->get_minimum_size();
+		main->set_offset(SIDE_LEFT, style->get_margin(SIDE_LEFT));
+		main->set_offset(SIDE_RIGHT, -style->get_margin(SIDE_RIGHT));
+		main->set_offset(SIDE_TOP, style->get_margin(SIDE_TOP));
+		main->set_offset(SIDE_BOTTOM, -style->get_margin(SIDE_BOTTOM));
 
-			center_panel->add_theme_style_override(SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), "PopupPanel"));
-		} break;
+		center_panel->add_theme_style_override(
+			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), "PopupPanel").ptr());
+	} break;
 	}
 }
 
-void ProgressDialog::_update_ui() {
+void ProgressDialog::_update_ui()
+{
 	// Run main loop for two frames.
 	if (is_inside_tree()) {
 		DisplayServer::get_singleton()->process_events();
@@ -153,13 +163,14 @@ void ProgressDialog::_update_ui() {
 	}
 }
 
-void ProgressDialog::_popup() {
+void ProgressDialog::_popup()
+{
 	// Activate processing of all inputs in EditorNode, and the EditorNode::input method
 	// will discard every key input.
 	EditorNode::get_singleton()->set_process_input(true);
 	// Disable all other windows to prevent interaction with them.
 	for (ObjectID wid : host_windows) {
-		Window *w = ObjectDB::get_instance<Window>(wid);
+		Window* w = ObjectDB::get_instance<Window>(wid);
 		if (w) {
 			w->set_process_mode(PROCESS_MODE_DISABLED);
 		}
@@ -173,13 +184,15 @@ void ProgressDialog::_popup() {
 
 	if (is_ready()) {
 		_reparent_and_show();
-	} else {
+	}
+	else {
 		callable_mp(this, &ProgressDialog::_reparent_and_show).call_deferred();
 	}
 }
 
-void ProgressDialog::_reparent_and_show() {
-	Window *current_window = SceneTree::get_singleton()->get_root()->get_last_exclusive_window();
+void ProgressDialog::_reparent_and_show()
+{
+	Window* current_window = SceneTree::get_singleton()->get_root()->get_last_exclusive_window();
 	ERR_FAIL_NULL(current_window);
 	reparent(current_window);
 
@@ -191,16 +204,19 @@ void ProgressDialog::_reparent_and_show() {
 	show();
 }
 
-void ProgressDialog::add_task(const String &p_task, const String &p_label, int p_steps, bool p_can_cancel) {
+void ProgressDialog::add_task(
+	const String& p_task, const String& p_label, int p_steps, bool p_can_cancel)
+{
 	if (MessageQueue::get_singleton()->is_flushing()) {
-		ERR_PRINT("Do not use progress dialog (task) while flushing the message queue or using call_deferred()!");
+		ERR_PRINT("Do not use progress dialog (task) while flushing the message queue or using "
+				  "call_deferred()!");
 		return;
 	}
 
 	ERR_FAIL_COND_MSG(tasks.has(p_task), "Task '" + p_task + "' already exists.");
 	ProgressDialog::Task t;
 	t.vb = memnew(VBoxContainer);
-	VBoxContainer *vb2 = memnew(VBoxContainer);
+	VBoxContainer* vb2 = memnew(VBoxContainer);
 	t.vb->add_margin_child(p_label, vb2);
 	t.progress = memnew(ProgressBar);
 	t.progress->set_theme_type_variation("PopupProgressBar");
@@ -215,7 +231,8 @@ void ProgressDialog::add_task(const String &p_task, const String &p_label, int p
 	tasks[p_task] = t;
 	if (p_can_cancel) {
 		cancel_hb->show();
-	} else {
+	}
+	else {
 		cancel_hb->hide();
 	}
 	cancel_hb->move_to_front();
@@ -227,19 +244,22 @@ void ProgressDialog::add_task(const String &p_task, const String &p_label, int p
 	_update_ui();
 }
 
-bool ProgressDialog::task_step(const String &p_task, const String &p_state, int p_step, bool p_force_redraw) {
+bool ProgressDialog::task_step(
+	const String& p_task, const String& p_state, int p_step, bool p_force_redraw)
+{
 	ERR_FAIL_COND_V(!tasks.has(p_task), canceled);
 
-	Task &t = tasks[p_task];
+	Task& t = tasks[p_task];
 	if (!p_force_redraw) {
 		uint64_t tus = OS::get_singleton()->get_ticks_usec();
-		if (tus - t.last_progress_tick < 200000) { //200ms
+		if (tus - t.last_progress_tick < 200000) { // 200ms
 			return canceled;
 		}
 	}
 	if (p_step < 0) {
 		t.progress->set_value(t.progress->get_value() + 1);
-	} else {
+	}
+	else {
 		t.progress->set_value(p_step);
 	}
 
@@ -250,9 +270,10 @@ bool ProgressDialog::task_step(const String &p_task, const String &p_state, int 
 	return canceled;
 }
 
-void ProgressDialog::end_task(const String &p_task) {
+void ProgressDialog::end_task(const String& p_task)
+{
 	ERR_FAIL_COND(!tasks.has(p_task));
-	Task &t = tasks[p_task];
+	Task& t = tasks[p_task];
 
 	memdelete(t.vb);
 	tasks.erase(p_task);
@@ -261,29 +282,25 @@ void ProgressDialog::end_task(const String &p_task) {
 		hide();
 		EditorNode::get_singleton()->set_process_input(false);
 		for (ObjectID wid : host_windows) {
-			Window *w = ObjectDB::get_instance<Window>(wid);
+			Window* w = ObjectDB::get_instance<Window>(wid);
 			if (w) {
 				w->set_process_mode(PROCESS_MODE_INHERIT);
 			}
 		}
-	} else {
+	}
+	else {
 		_popup();
 	}
 }
 
-void ProgressDialog::add_host_window(ObjectID p_window) {
-	host_windows.push_back(p_window);
-}
+void ProgressDialog::add_host_window(ObjectID p_window) { host_windows.push_back(p_window); }
 
-void ProgressDialog::remove_host_window(ObjectID p_window) {
-	host_windows.erase(p_window);
-}
+void ProgressDialog::remove_host_window(ObjectID p_window) { host_windows.erase(p_window); }
 
-void ProgressDialog::_cancel_pressed() {
-	canceled = true;
-}
+void ProgressDialog::_cancel_pressed() { canceled = true; }
 
-ProgressDialog::ProgressDialog() {
+ProgressDialog::ProgressDialog()
+{
 	// We want to cover the entire screen to prevent the user from interacting with the Editor.
 	set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 	// Be sure it's the top most component.
@@ -310,6 +327,6 @@ ProgressDialog::ProgressDialog() {
 	cancel->connect(SceneStringName(pressed), callable_mp(this, &ProgressDialog::_cancel_pressed));
 }
 
-ProgressDialog::~ProgressDialog() {
-	singleton = nullptr;
-}
+ProgressDialog::~ProgressDialog() { singleton = nullptr; }
+
+

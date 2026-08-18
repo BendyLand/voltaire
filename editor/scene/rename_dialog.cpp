@@ -379,7 +379,7 @@ RenameDialog::RenameDialog(SceneTreeEditor* p_scene_tree_editor)
 	_features_toggled(false);
 }
 
-void RenameDialog::_bind_methods() { ClassDB::bind_method("rename", &RenameDialog::rename); }
+void RenameDialog::_bind_methods() {}
 
 void RenameDialog::_update_substitute()
 {

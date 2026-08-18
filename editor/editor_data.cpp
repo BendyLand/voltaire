@@ -615,23 +615,9 @@ Variant EditorData::instantiate_custom_type(const String& p_type, const String& 
 		for (int i = 0; i < get_custom_types()[p_inherits].size(); i++) {
 			if (get_custom_types()[p_inherits][i].name == p_type) {
 				Ref<Script> script = get_custom_types()[p_inherits][i].script;
-
-				// Store in a variant to initialize the refcount if needed.
-				Variant v = ClassDB::instantiate(p_inherits);
-				ERR_FAIL_COND_V(!v, Variant());
-				Object* ob = v;
-
-				Node* n = Object::cast_to<Node>(ob);
-				if (n) {
-					n->set_name(p_type);
-				}
-				PropertyUtils::assign_custom_type_script(ob, script);
-				ob->set_script(script);
-				return v;
 			}
 		}
 	}
-
 	return Variant();
 }
 
@@ -661,8 +647,7 @@ const EditorData::CustomType* EditorData::get_custom_type_by_path(const String& 
 
 bool EditorData::is_type_recognized(const String& p_type) const
 {
-	return ClassDB::class_exists(p_type) || ScriptServer::is_global_class(p_type) ||
-		   get_custom_type_by_name(p_type);
+	return ScriptServer::is_global_class(p_type) || get_custom_type_by_name(p_type);
 }
 
 void EditorData::remove_custom_type(const String& p_type)
@@ -686,13 +671,6 @@ void EditorData::instantiate_object_properties(Object* p_object)
 	// Check if any Object-type property should be instantiated.
 	List<PropertyInfo> pinfo;
 	p_object->get_property_list(&pinfo);
-
-	for (const PropertyInfo& pi : pinfo) {
-		if (pi.type == Variant::OBJECT && pi.usage & PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT) {
-			Object* prop = ClassDB::instantiate(pi.class_name);
-			p_object->set(pi.name, prop);
-		}
-	}
 }
 
 int EditorData::add_edited_scene(int p_at_pos)
@@ -1127,10 +1105,7 @@ bool EditorData::script_class_is_parent(const String& p_class, const String& p_i
 
 	String base = p_class;
 	while (base != p_inherits) {
-		if (ClassDB::class_exists(base)) {
-			return ClassDB::is_parent_class(base, p_inherits);
-		}
-		else if (ScriptServer::is_global_class(base)) {
+		if (ScriptServer::is_global_class(base)) {
 			base = ScriptServer::get_global_class_base(base);
 		}
 		else {
@@ -1140,23 +1115,7 @@ bool EditorData::script_class_is_parent(const String& p_class, const String& p_i
 	return true;
 }
 
-Variant EditorData::script_class_instance(const String& p_class)
-{
-	if (ScriptServer::is_global_class(p_class)) {
-		Ref<Script> script = script_class_load_script(p_class);
-		if (script.is_valid()) {
-			// Store in a variant to initialize the refcount if needed.
-			Variant v = ClassDB::instantiate(script->get_instance_base_type());
-			if (v) {
-				Object* obj = v;
-				PropertyUtils::assign_custom_type_script(obj, script);
-				obj->set_script(script);
-			}
-			return v;
-		}
-	}
-	return Variant();
-}
+Variant EditorData::script_class_instance(const String& p_class) { return Variant(); }
 
 Ref<Script> EditorData::script_class_load_script(const String& p_class) const
 {
@@ -1179,9 +1138,6 @@ String EditorData::script_class_get_icon_path(const String& p_class, bool* r_val
 	while (true) {
 		if (!ScriptServer::is_global_class(current)) {
 			// If the classnames chain has a native class ancestor, we're done with success.
-			if (r_valid) {
-				*r_valid = ClassDB::class_exists(current);
-			}
 			return String();
 		}
 		HashMap<StringName, String>::ConstIterator E = _script_class_icon_paths.find(current);

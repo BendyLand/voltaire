@@ -220,12 +220,6 @@ void AtlasMergingDialog::_generate_merged(
 
 						// Only copy over properties that are not default.
 						Variant value = src_tile_data->obj->get(property.name);
-						Variant default_value =
-							ClassDB::class_get_default_property_value("TileData", property.name);
-						if (default_value.get_type() != Variant::NIL &&
-							bool(Variant::evaluate(Variant::OP_EQUAL, value, default_value))) {
-							continue;
-						}
 
 						// DO NOT try to copy "script" properties that are null
 						// as this causes a crash - see issue #101132.
@@ -285,8 +279,8 @@ void AtlasMergingDialog::_merge_confirmed(const String& p_path)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Merge TileSetAtlasSource"));
 	int next_id = tile_set->get_next_source_id();
-	undo_redo->add_do_method(*tile_set, "add_source", merged, next_id);
-	undo_redo->add_undo_method(*tile_set, "remove_source", next_id);
+	undo_redo->add_do_method(tile_set->obj.get(), "add_source", merged, next_id);
+	undo_redo->add_undo_method(tile_set->obj.get(), "remove_source", next_id);
 
 	if (delete_original_atlases) {
 		// Delete originals if needed.
@@ -294,22 +288,22 @@ void AtlasMergingDialog::_merge_confirmed(const String& p_path)
 		for (int i = 0; i < selected.size(); i++) {
 			int source_id = atlas_merging_atlases_list->get_item_metadata(selected[i]);
 			Ref<TileSetAtlasSource> tas = tile_set->get_source(source_id);
-			undo_redo->add_do_method(*tile_set, "remove_source", source_id);
-			undo_redo->add_undo_method(*tile_set, "add_source", tas, source_id);
+			undo_redo->add_do_method(tile_set->obj.get(), "remove_source", source_id);
+			undo_redo->add_undo_method(tile_set->obj.get(), "add_source", tas, source_id);
 
 			// Add the tile proxies.
 			for (int tile_index = 0; tile_index < tas->get_tiles_count(); tile_index++) {
 				Vector2i tile_id = tas->get_tile_id(tile_index);
-				undo_redo->add_do_method(*tile_set, "set_coords_level_tile_proxy", source_id,
-					tile_id, next_id, merged_mapping[i][tile_id]);
+				undo_redo->add_do_method(tile_set->obj.get(), "set_coords_level_tile_proxy",
+					source_id, tile_id, next_id, merged_mapping[i][tile_id]);
 				if (tile_set->has_coords_level_tile_proxy(source_id, tile_id)) {
 					Array a = tile_set->get_coords_level_tile_proxy(source_id, tile_id);
 					undo_redo->add_undo_method(
-						*tile_set, "set_coords_level_tile_proxy", a[0], a[1]);
+						tile_set->obj.get(), "set_coords_level_tile_proxy", a[0], a[1]);
 				}
 				else {
 					undo_redo->add_undo_method(
-						*tile_set, "remove_coords_level_tile_proxy", source_id, tile_id);
+						tile_set->obj.get(), "remove_coords_level_tile_proxy", source_id, tile_id);
 				}
 			}
 		}

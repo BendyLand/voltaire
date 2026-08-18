@@ -350,13 +350,7 @@ void Camera2DEditor::_notification(int p_what)
 	}
 }
 
-void Camera2DEditor::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("_snap_limits_to_viewport", "camera"), &Camera2DEditor::_snap_limits_to_viewport);
-	ClassDB::bind_method(D_METHOD("_update_overlays_if_needed", "camera"),
-		&Camera2DEditor::_update_overlays_if_needed);
-}
+void Camera2DEditor::_bind_methods() {}
 
 Camera2DEditor::Camera2DEditor(EditorPlugin* p_plugin)
 {

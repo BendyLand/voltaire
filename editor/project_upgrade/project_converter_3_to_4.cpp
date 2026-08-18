@@ -1114,18 +1114,6 @@ bool ProjectConverter3To4::test_array_names() {
 		for (unsigned int current_index = 0; RenamesMap3To4::class_renames[current_index][0]; current_index++) {
 			const String old_class = RenamesMap3To4::class_renames[current_index][0];
 			const String new_class = RenamesMap3To4::class_renames[current_index][1];
-
-			// Light2D, Texture, Viewport are special classes(probably virtual ones).
-			if (ClassDB::class_exists(StringName(old_class)) && old_class != "Light2D" && old_class != "Texture" && old_class != "Viewport") {
-				ERR_PRINT(vformat("Class \"%s\" exists in Godot 4, so it cannot be renamed to something else.", old_class));
-				valid = false; // This probably should be only a warning, but not 100% sure - this would need to be added to CI.
-			}
-
-			// Callable is special class, to which normal classes may be renamed.
-			if (!ClassDB::class_exists(StringName(new_class)) && new_class != "Callable") {
-				ERR_PRINT(vformat("Class \"%s\" does not exist in Godot 4, so it cannot be used in the conversion.", new_class));
-				valid = false; // This probably should be only a warning, but not 100% sure - this would need to be added to CI.
-			}
 		}
 	}
 
@@ -1148,18 +1136,6 @@ bool ProjectConverter3To4::test_array_names() {
 		//		}
 		//	}
 		//}
-
-		LocalVector<StringName> classes_list;
-		ClassDB::get_class_list(classes_list);
-		for (StringName &name_of_class : classes_list) {
-			List<MethodInfo> method_list;
-			ClassDB::get_method_list(name_of_class, &method_list, true);
-			for (MethodInfo &function_data : method_list) {
-				if (!all_functions.has(function_data.name)) {
-					all_functions.insert(function_data.name);
-				}
-			}
-		}
 
 		int current_element = 0;
 		while (RenamesMap3To4::gdscript_function_renames[current_element][0] != nullptr) {

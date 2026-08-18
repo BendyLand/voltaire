@@ -56,6 +56,7 @@ class SceneImportSettingsData
 {
 public:
 	mem_unique_ptr<Object> obj;
+
 private:
 	friend class SceneImportSettingsDialog;
 	HashMap<StringName, Variant>* settings = nullptr;
@@ -225,8 +226,8 @@ void SceneImportSettingsDialog::_fill_material(
 	String import_id;
 	bool has_import_id = false;
 
-	if (p_material->has_meta("import_id")) {
-		import_id = p_material->get_meta("import_id");
+	if (p_material->obj->has_meta("import_id")) {
+		import_id = p_material->obj->get_meta("import_id");
 		has_import_id = true;
 	}
 	else if (!p_material->get_name().is_empty()) {
@@ -313,8 +314,8 @@ void SceneImportSettingsDialog::_fill_mesh(
 	String import_id;
 
 	bool has_import_id = false;
-	if (p_mesh->has_meta("import_id")) {
-		import_id = p_mesh->get_meta("import_id");
+	if (p_mesh->obj->has_meta("import_id")) {
+		import_id = p_mesh->obj->get_meta("import_id");
 		has_import_id = true;
 	}
 	else if (!p_mesh->get_name().is_empty()) {
@@ -643,12 +644,11 @@ void SceneImportSettingsDialog::_update_view_gizmos()
 		// Get the collider_view MeshInstance3D.
 		Vector<Node*> descendants =
 			mesh_node->find_children("collider_view", "MeshInstance3D", false);
-		CRASH_COND_MSG(
-			descendants.is_empty(), "This is unreachable, since the collider view is always "
-									"created even when the collision is not used! If this is "
-									"triggered there is a bug on the function `_fill_scene`.");
-		MeshInstance3D* collider_view =
-			Object::cast_to<MeshInstance3D>(descendants[0]);
+		CRASH_COND_MSG(descendants.is_empty(),
+			"This is unreachable, since the collider view is always "
+			"created even when the collision is not used! If this is "
+			"triggered there is a bug on the function `_fill_scene`.");
+		MeshInstance3D* collider_view = Object::cast_to<MeshInstance3D>(descendants[0]);
 
 		// Regenerate the physics collider for this MeshInstance3D if either:
 		// - A regeneration is requested for the selected import node.
@@ -1827,7 +1827,7 @@ void SceneImportSettingsDialog::_save_dir_confirm()
 			ERR_CONTINUE(!material_map.has(id));
 			MaterialData& md = material_map[id];
 
-			Error err = ResourceSaver::save(md.material, path);
+			Error err = ResourceSaver::save(md.material.ptr(), path);
 			if (err != OK) {
 				EditorNode::get_singleton()->add_io_error(
 					TTR("Can't make material external to file, write error:") + "\n\t" + path);
@@ -2042,7 +2042,6 @@ SceneImportSettingsDialog::SceneImportSettingsDialog()
 	camera = memnew(Camera3D);
 	base_viewport->add_child(camera);
 	camera->make_current();
-
 
 	if (GLOBAL_GET("rendering/lights_and_shadows/use_physical_light_units")) {
 		camera_attributes.instantiate();

@@ -603,13 +603,7 @@ static bool _bind_is_committing_action()
 	return false;
 }
 
-void EditorUndoRedoManager::_bind_methods()
-{
-	ClassDB::bind_static_method("EditorUndoRedoManager", D_METHOD("commit_action", "execute"),
-		&_bind_commit_action, DEFVAL(true));
-	ClassDB::bind_static_method(
-		"EditorUndoRedoManager", D_METHOD("is_committing_action"), &_bind_is_committing_action);
-}
+void EditorUndoRedoManager::_bind_methods() {}
 
 EditorUndoRedoManager* EditorUndoRedoManager::get_singleton() { return singleton; }
 
@@ -634,4 +628,5 @@ void EditorUndoRedoManager::_bind_compatibility_methods()
 	// intentionally empty; legacy compatibility bindings removed
 }
 #endif
+
 

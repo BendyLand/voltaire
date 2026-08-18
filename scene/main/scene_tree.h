@@ -462,9 +462,9 @@ p_enabled);
 	Error reload_current_scene();
 	void unload_current_scene();
 
-	RequiredResult<SceneTreeTimer> create_timer(double p_delay_sec, bool p_process_always = true,
+	SceneTreeTimer* create_timer(double p_delay_sec, bool p_process_always = true,
 		bool p_process_in_physics = false, bool p_ignore_time_scale = false);
-	RequiredResult<Tween> create_tween();
+	Tween* create_tween();
 	void remove_tween(const Ref<Tween>& p_tween);
 	TypedArray<Tween> get_processed_tweens();
 
@@ -480,7 +480,7 @@ p_enabled);
 
 	// network API
 
-	RequiredResult<MultiplayerAPI> get_multiplayer(const NodePath& p_for_path = NodePath()) const;
+	MultiplayerAPI* get_multiplayer(const NodePath& p_for_path = NodePath()) const;
 	void set_multiplayer(
 		Ref<MultiplayerAPI> p_multiplayer, const NodePath& p_root_path = NodePath());
 	void set_multiplayer_poll_enabled(bool p_enabled);

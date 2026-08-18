@@ -35,16 +35,18 @@
 #include "scene/resources/shader.h"
 #include "servers/rendering/rendering_server_enums.h"
 
-class Material : public Resource {
+class Material : public Resource
+{
 	VLTRCLASS(Material, Resource);
 	RES_BASE_EXTENSION("material")
-	OBJ_SAVE_TYPE(Material);
+	OBJ_SAVE_TYPE_NO(Material);
 
 	mutable RID material;
 	Ref<Material> next_pass;
 	int render_priority;
 
-	enum {
+	enum
+	{
 		INIT_STATE_UNINITIALIZED,
 		INIT_STATE_INITIALIZING,
 		INIT_STATE_READY,
@@ -54,25 +56,28 @@ class Material : public Resource {
 
 protected:
 	_FORCE_INLINE_ void _set_material(RID p_material) const { material = p_material; }
+
 	_FORCE_INLINE_ RID _get_material() const { return material; }
+
 	static void _bind_methods();
 	virtual bool _can_do_next_pass() const;
 	virtual bool _can_use_render_priority() const;
 
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
 	void _mark_ready();
-	void _mark_initialized(const Callable &p_add_to_dirty_list, const Callable &p_update_shader);
+	void _mark_initialized(const Callable& p_add_to_dirty_list, const Callable& p_update_shader);
 
 public:
-	enum {
+	enum
+	{
 		RENDER_PRIORITY_MAX = RSE::MATERIAL_RENDER_PRIORITY_MAX,
 		RENDER_PRIORITY_MIN = RSE::MATERIAL_RENDER_PRIORITY_MIN,
 	};
 
 	bool _is_initialized() { return init_state == INIT_STATE_READY; }
 
-	void set_next_pass(const Ref<Material> &p_pass);
+	void set_next_pass(const Ref<Material>& p_pass);
 	Ref<Material> get_next_pass() const;
 
 	void set_render_priority(int p_priority);
@@ -88,7 +93,8 @@ public:
 	virtual ~Material();
 };
 
-class ShaderMaterial : public Material {
+class ShaderMaterial : public Material
+{
 	VLTRCLASS(ShaderMaterial, Material);
 	Ref<Shader> shader;
 
@@ -97,16 +103,17 @@ class ShaderMaterial : public Material {
 	mutable Mutex material_rid_mutex;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	bool _property_can_revert(const StringName &p_name) const;
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
+	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _get(const StringName& p_name, Variant& r_ret) const;
+	void _get_property_list(List<PropertyInfo>* p_list) const;
+	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 	static void _bind_methods();
 
 #ifdef TOOLS_ENABLED
-	void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
+	void get_argument_options(
+		const StringName& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	virtual bool _can_do_next_pass() const override;
@@ -116,11 +123,11 @@ protected:
 	void _check_material_rid() const;
 
 public:
-	void set_shader(const Ref<Shader> &p_shader);
+	void set_shader(const Ref<Shader>& p_shader);
 	Ref<Shader> get_shader() const;
 
-	void set_shader_parameter(const StringName &p_param, const Variant &p_value);
-	Variant get_shader_parameter(const StringName &p_param) const;
+	void set_shader_parameter(const StringName& p_param, const Variant& p_value);
+	Variant get_shader_parameter(const StringName& p_param) const;
 
 	virtual Shader::Mode get_shader_mode() const override;
 
@@ -133,14 +140,16 @@ public:
 
 class StandardMaterial3D;
 
-class BaseMaterial3D : public Material {
+class BaseMaterial3D : public Material
+{
 	VLTRCLASS(BaseMaterial3D, Material);
 
 private:
 	mutable Mutex material_rid_mutex;
 
 public:
-	enum TextureParam {
+	enum TextureParam
+	{
 		TEXTURE_ALBEDO,
 		TEXTURE_METALLIC,
 		TEXTURE_ROUGHNESS,
@@ -163,7 +172,8 @@ public:
 		TEXTURE_MAX
 	};
 
-	enum TextureFilter {
+	enum TextureFilter
+	{
 		TEXTURE_FILTER_NEAREST,
 		TEXTURE_FILTER_LINEAR,
 		TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
@@ -173,13 +183,15 @@ public:
 		TEXTURE_FILTER_MAX
 	};
 
-	enum DetailUV {
+	enum DetailUV
+	{
 		DETAIL_UV_1,
 		DETAIL_UV_2,
 		DETAIL_UV_MAX
 	};
 
-	enum Transparency {
+	enum Transparency
+	{
 		TRANSPARENCY_DISABLED,
 		TRANSPARENCY_ALPHA,
 		TRANSPARENCY_ALPHA_SCISSOR,
@@ -188,21 +200,24 @@ public:
 		TRANSPARENCY_MAX,
 	};
 
-	enum AlphaAntiAliasing {
+	enum AlphaAntiAliasing
+	{
 		ALPHA_ANTIALIASING_OFF,
 		ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE,
 		ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE,
 		ALPHA_ANTIALIASING_MAX
 	};
 
-	enum ShadingMode {
+	enum ShadingMode
+	{
 		SHADING_MODE_UNSHADED,
 		SHADING_MODE_PER_PIXEL,
 		SHADING_MODE_PER_VERTEX,
 		SHADING_MODE_MAX
 	};
 
-	enum Feature {
+	enum Feature
+	{
 		FEATURE_EMISSION,
 		FEATURE_NORMAL_MAPPING,
 		FEATURE_RIM,
@@ -219,7 +234,8 @@ public:
 		FEATURE_MAX
 	};
 
-	enum BlendMode {
+	enum BlendMode
+	{
 		BLEND_MODE_MIX,
 		BLEND_MODE_ADD,
 		BLEND_MODE_SUB,
@@ -228,27 +244,31 @@ public:
 		BLEND_MODE_MAX
 	};
 
-	enum DepthDrawMode {
+	enum DepthDrawMode
+	{
 		DEPTH_DRAW_OPAQUE_ONLY,
 		DEPTH_DRAW_ALWAYS,
 		DEPTH_DRAW_DISABLED,
 		DEPTH_DRAW_MAX
 	};
 
-	enum DepthTest {
+	enum DepthTest
+	{
 		DEPTH_TEST_DEFAULT,
 		DEPTH_TEST_INVERTED,
 		DEPTH_TEST_MAX
 	};
 
-	enum CullMode {
+	enum CullMode
+	{
 		CULL_BACK,
 		CULL_FRONT,
 		CULL_DISABLED,
 		CULL_MAX
 	};
 
-	enum Flags {
+	enum Flags
+	{
 		FLAG_DISABLE_DEPTH_TEST,
 		FLAG_ALBEDO_FROM_VERTEX_COLOR,
 		FLAG_SRGB_VERTEX_COLOR,
@@ -277,7 +297,8 @@ public:
 		FLAG_MAX
 	};
 
-	enum DiffuseMode {
+	enum DiffuseMode
+	{
 		DIFFUSE_BURLEY,
 		DIFFUSE_LAMBERT,
 		DIFFUSE_LAMBERT_WRAP,
@@ -285,14 +306,16 @@ public:
 		DIFFUSE_MAX
 	};
 
-	enum SpecularMode {
+	enum SpecularMode
+	{
 		SPECULAR_SCHLICK_GGX,
 		SPECULAR_TOON,
 		SPECULAR_DISABLED,
 		SPECULAR_MAX
 	};
 
-	enum BillboardMode {
+	enum BillboardMode
+	{
 		BILLBOARD_DISABLED,
 		BILLBOARD_ENABLED,
 		BILLBOARD_FIXED_Y,
@@ -300,7 +323,8 @@ public:
 		BILLBOARD_MAX
 	};
 
-	enum TextureChannel {
+	enum TextureChannel
+	{
 		TEXTURE_CHANNEL_RED,
 		TEXTURE_CHANNEL_GREEN,
 		TEXTURE_CHANNEL_BLUE,
@@ -309,13 +333,15 @@ public:
 		TEXTURE_CHANNEL_MAX
 	};
 
-	enum EmissionOperator {
+	enum EmissionOperator
+	{
 		EMISSION_OP_ADD,
 		EMISSION_OP_MULTIPLY,
 		EMISSION_OP_MAX
 	};
 
-	enum DistanceFadeMode {
+	enum DistanceFadeMode
+	{
 		DISTANCE_FADE_DISABLED,
 		DISTANCE_FADE_PIXEL_ALPHA,
 		DISTANCE_FADE_PIXEL_DITHER,
@@ -323,7 +349,8 @@ public:
 		DISTANCE_FADE_MAX
 	};
 
-	enum StencilMode {
+	enum StencilMode
+	{
 		STENCIL_MODE_DISABLED,
 		STENCIL_MODE_OUTLINE,
 		STENCIL_MODE_XRAY,
@@ -331,7 +358,8 @@ public:
 		STENCIL_MODE_MAX // Not an actual mode, just the amount of modes.
 	};
 
-	enum StencilFlags {
+	enum StencilFlags
+	{
 		STENCIL_FLAG_READ = 1,
 		STENCIL_FLAG_WRITE = 2,
 		STENCIL_FLAG_WRITE_DEPTH_FAIL = 4,
@@ -339,7 +367,8 @@ public:
 		STENCIL_FLAG_NUM_BITS = 3 // Not an actual mode, just the amount of bits.
 	};
 
-	enum StencilCompare {
+	enum StencilCompare
+	{
 		STENCIL_COMPARE_ALWAYS,
 		STENCIL_COMPARE_LESS,
 		STENCIL_COMPARE_EQUAL,
@@ -351,7 +380,8 @@ public:
 	};
 
 private:
-	struct MaterialKey {
+	struct MaterialKey
+	{
 		// enum values
 		uint64_t texture_filter : Math::get_num_bits(TEXTURE_FILTER_MAX - 1);
 		uint64_t detail_uv : Math::get_num_bits(DETAIL_UV_MAX - 1);
@@ -387,23 +417,26 @@ private:
 		uint32_t feature_mask;
 		uint32_t flags;
 
-		MaterialKey() {
-			memset(this, 0, sizeof(MaterialKey));
+		MaterialKey() { memset(this, 0, sizeof(MaterialKey)); }
+
+		static uint32_t hash(const MaterialKey& p_key)
+		{
+			return hash_djb2_buffer((const uint8_t*)&p_key, sizeof(MaterialKey));
 		}
 
-		static uint32_t hash(const MaterialKey &p_key) {
-			return hash_djb2_buffer((const uint8_t *)&p_key, sizeof(MaterialKey));
-		}
-		bool operator==(const MaterialKey &p_key) const {
+		bool operator==(const MaterialKey& p_key) const
+		{
 			return memcmp(this, &p_key, sizeof(MaterialKey)) == 0;
 		}
 
-		bool operator<(const MaterialKey &p_key) const {
+		bool operator<(const MaterialKey& p_key) const
+		{
 			return memcmp(this, &p_key, sizeof(MaterialKey)) < 0;
 		}
 	};
 
-	struct ShaderData {
+	struct ShaderData
+	{
 		RID shader;
 		int users = 0;
 	};
@@ -413,7 +446,8 @@ private:
 
 	MaterialKey current_key;
 
-	_FORCE_INLINE_ MaterialKey _compute_key() const {
+	_FORCE_INLINE_ MaterialKey _compute_key() const
+	{
 		MaterialKey mk;
 
 		mk.detail_uv = detail_uv;
@@ -457,7 +491,8 @@ private:
 		return mk;
 	}
 
-	struct ShaderNames {
+	struct ShaderNames
+	{
 		StringName albedo;
 		StringName specular;
 		StringName metallic;
@@ -518,14 +553,14 @@ private:
 
 	static Mutex material_mutex;
 	static SelfList<BaseMaterial3D>::List dirty_materials;
-	static ShaderNames *shader_names;
+	static ShaderNames* shader_names;
 
 	SelfList<BaseMaterial3D> element;
 
 	void _update_shader();
 	_FORCE_INLINE_ void _queue_shader_change();
 	void _check_material_rid();
-	void _material_set_param(const StringName &p_name, const Variant &p_value);
+	void _material_set_param(const StringName& p_name, const Variant& p_value);
 
 	bool orm;
 	RID shader_rid;
@@ -629,16 +664,19 @@ private:
 	void _prepare_stencil_effect();
 	Ref<BaseMaterial3D> _get_stencil_next_pass() const;
 
-	static HashMap<uint64_t, Ref<StandardMaterial3D>> materials_for_2d; //used by Sprite3D, Label3D and other stuff
+	static HashMap<uint64_t, Ref<StandardMaterial3D>>
+		materials_for_2d; // used by Sprite3D, Label3D and other stuff
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
+
 	virtual bool _can_do_next_pass() const override { return true; }
+
 	virtual bool _can_use_render_priority() const override { return true; }
 
 public:
-	void set_albedo(const Color &p_albedo);
+	void set_albedo(const Color& p_albedo);
 	Color get_albedo() const;
 
 	void set_specular(float p_specular);
@@ -650,7 +688,7 @@ public:
 	void set_roughness(float p_roughness);
 	float get_roughness() const;
 
-	void set_emission(const Color &p_emission);
+	void set_emission(const Color& p_emission);
 	Color get_emission() const;
 
 	void set_emission_energy_multiplier(float p_emission_energy_multiplier);
@@ -701,7 +739,7 @@ public:
 	void set_subsurface_scattering_strength(float p_subsurface_scattering_strength);
 	float get_subsurface_scattering_strength() const;
 
-	void set_transmittance_color(const Color &p_color);
+	void set_transmittance_color(const Color& p_color);
 	Color get_transmittance_color() const;
 
 	void set_transmittance_depth(float p_depth);
@@ -710,7 +748,7 @@ public:
 	void set_transmittance_boost(float p_boost);
 	float get_transmittance_boost() const;
 
-	void set_backlight(const Color &p_backlight);
+	void set_backlight(const Color& p_backlight);
 	Color get_backlight() const;
 
 	void set_refraction(float p_refraction);
@@ -758,10 +796,10 @@ public:
 	void set_flag(Flags p_flag, bool p_enabled);
 	bool get_flag(Flags p_flag) const;
 
-	void set_texture(TextureParam p_param, const Ref<Texture2D> &p_texture);
+	void set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture(TextureParam p_param) const;
 	// Used only for shader material conversion
-	Ref<Texture2D> get_texture_by_name(const StringName &p_name) const;
+	Ref<Texture2D> get_texture_by_name(const StringName& p_name) const;
 
 	void set_texture_filter(TextureFilter p_filter);
 	TextureFilter get_texture_filter() const;
@@ -769,19 +807,19 @@ public:
 	void set_feature(Feature p_feature, bool p_enabled);
 	bool get_feature(Feature p_feature) const;
 
-	void set_uv1_scale(const Vector3 &p_scale);
+	void set_uv1_scale(const Vector3& p_scale);
 	Vector3 get_uv1_scale() const;
 
-	void set_uv1_offset(const Vector3 &p_offset);
+	void set_uv1_offset(const Vector3& p_offset);
 	Vector3 get_uv1_offset() const;
 
 	void set_uv1_triplanar_blend_sharpness(float p_sharpness);
 	float get_uv1_triplanar_blend_sharpness() const;
 
-	void set_uv2_scale(const Vector3 &p_scale);
+	void set_uv2_scale(const Vector3& p_scale);
 	Vector3 get_uv2_scale() const;
 
-	void set_uv2_offset(const Vector3 &p_offset);
+	void set_uv2_offset(const Vector3& p_offset);
 	Vector3 get_uv2_offset() const;
 
 	void set_uv2_triplanar_blend_sharpness(float p_sharpness);
@@ -848,7 +886,7 @@ public:
 	void set_stencil_reference(int p_reference);
 	int get_stencil_reference() const;
 
-	void set_stencil_effect_color(const Color &p_color);
+	void set_stencil_effect_color(const Color& p_color);
 	Color get_stencil_effect_color() const;
 
 	void set_stencil_effect_outline_thickness(float p_outline_thickness);
@@ -872,7 +910,12 @@ public:
 	static void finish_shaders();
 	static void flush_changes();
 
-	static Ref<Material> get_material_for_2d(bool p_shaded, Transparency p_transparency, bool p_double_sided, bool p_billboard = false, bool p_billboard_y = false, bool p_msdf = false, bool p_no_depth = false, bool p_fixed_size = false, TextureFilter p_filter = TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, AlphaAntiAliasing p_alpha_antialiasing_mode = ALPHA_ANTIALIASING_OFF, bool p_texture_repeat = false, RID *r_shader_rid = nullptr);
+	static Ref<Material> get_material_for_2d(bool p_shaded, Transparency p_transparency,
+		bool p_double_sided, bool p_billboard = false, bool p_billboard_y = false,
+		bool p_msdf = false, bool p_no_depth = false, bool p_fixed_size = false,
+		TextureFilter p_filter = TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+		AlphaAntiAliasing p_alpha_antialiasing_mode = ALPHA_ANTIALIASING_OFF,
+		bool p_texture_repeat = false, RID* r_shader_rid = nullptr);
 
 	virtual RID get_rid() const override;
 	virtual RID get_shader_rid() const override;
@@ -905,31 +948,35 @@ VARIANT_ENUM_CAST(BaseMaterial3D::StencilMode)
 VARIANT_ENUM_CAST(BaseMaterial3D::StencilFlags)
 VARIANT_ENUM_CAST(BaseMaterial3D::StencilCompare)
 
-class StandardMaterial3D : public BaseMaterial3D {
+class StandardMaterial3D : public BaseMaterial3D
+{
 	VLTRCLASS(StandardMaterial3D, BaseMaterial3D)
 protected:
 #ifndef DISABLE_DEPRECATED
 	// Kept for compatibility from 3.x to 4.0.
-	bool _set(const StringName &p_name, const Variant &p_value);
+	bool _set(const StringName& p_name, const Variant& p_value);
 #endif
 
 public:
-	StandardMaterial3D() :
-			BaseMaterial3D(false) {}
+	StandardMaterial3D() : BaseMaterial3D(false) {}
 };
 
-class ORMMaterial3D : public BaseMaterial3D {
+class ORMMaterial3D : public BaseMaterial3D
+{
 	VLTRCLASS(ORMMaterial3D, BaseMaterial3D)
 public:
-	ORMMaterial3D() :
-			BaseMaterial3D(true) {}
+	ORMMaterial3D() : BaseMaterial3D(true) {}
 };
 
-class PlaceholderMaterial : public Material {
+class PlaceholderMaterial : public Material
+{
 	VLTRCLASS(PlaceholderMaterial, Material)
 public:
 	virtual RID get_shader_rid() const override { return RID(); }
+
 	virtual Shader::Mode get_shader_mode() const override { return Shader::MODE_CANVAS_ITEM; }
 };
 
 //////////////////////
+
+
