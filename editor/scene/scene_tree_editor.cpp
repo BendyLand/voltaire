@@ -1651,13 +1651,16 @@ void SceneTreeEditor::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		get_tree()->connect("tree_changed", callable_mp(this, &SceneTreeEditor::_tree_changed));
-		get_tree()->connect("tree_process_mode_changed",
+		get_tree()->obj->connect(
+			"tree_changed", callable_mp(this, &SceneTreeEditor::_tree_changed));
+		get_tree()->obj->connect("tree_process_mode_changed",
 			callable_mp(this, &SceneTreeEditor::_tree_process_mode_changed));
-		get_tree()->connect("node_added", callable_mp(this, &SceneTreeEditor::_node_added));
-		get_tree()->connect("node_removed", callable_mp(this, &SceneTreeEditor::_node_removed));
-		get_tree()->connect("node_renamed", callable_mp(this, &SceneTreeEditor::_node_renamed));
-		get_tree()->connect(SceneStringName(node_configuration_warning_changed),
+		get_tree()->obj->connect("node_added", callable_mp(this, &SceneTreeEditor::_node_added));
+		get_tree()->obj->connect(
+			"node_removed", callable_mp(this, &SceneTreeEditor::_node_removed));
+		get_tree()->obj->connect(
+			"node_renamed", callable_mp(this, &SceneTreeEditor::_node_renamed));
+		get_tree()->obj->connect(SceneStringName(node_configuration_warning_changed),
 			callable_mp(this, &SceneTreeEditor::_warning_changed));
 
 		tree->connect("item_collapsed", callable_mp(this, &SceneTreeEditor::_cell_collapsed));
@@ -1666,14 +1669,17 @@ void SceneTreeEditor::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		get_tree()->disconnect("tree_changed", callable_mp(this, &SceneTreeEditor::_tree_changed));
-		get_tree()->disconnect("tree_process_mode_changed",
+		get_tree()->obj->disconnect(
+			"tree_changed", callable_mp(this, &SceneTreeEditor::_tree_changed));
+		get_tree()->obj->disconnect("tree_process_mode_changed",
 			callable_mp(this, &SceneTreeEditor::_tree_process_mode_changed));
-		get_tree()->disconnect("node_added", callable_mp(this, &SceneTreeEditor::_node_added));
-		get_tree()->disconnect("node_removed", callable_mp(this, &SceneTreeEditor::_node_removed));
-		get_tree()->disconnect("node_renamed", callable_mp(this, &SceneTreeEditor::_node_renamed));
+		get_tree()->obj->disconnect("node_added", callable_mp(this, &SceneTreeEditor::_node_added));
+		get_tree()->obj->disconnect(
+			"node_removed", callable_mp(this, &SceneTreeEditor::_node_removed));
+		get_tree()->obj->disconnect(
+			"node_renamed", callable_mp(this, &SceneTreeEditor::_node_renamed));
 		tree->disconnect("item_collapsed", callable_mp(this, &SceneTreeEditor::_cell_collapsed));
-		get_tree()->disconnect(SceneStringName(node_configuration_warning_changed),
+		get_tree()->obj->disconnect(SceneStringName(node_configuration_warning_changed),
 			callable_mp(this, &SceneTreeEditor::_warning_changed));
 	} break;
 
@@ -2428,7 +2434,8 @@ void SceneTreeEditor::_warning_changed(Node* p_for_node)
 void SceneTreeEditor::set_auto_expand_selected(bool p_auto, bool p_update_settings)
 {
 	if (p_update_settings) {
-		EditorSettings::get_singleton()->obj->set("docks/scene_tree/auto_expand_to_selected", p_auto);
+		EditorSettings::get_singleton()->obj->set(
+			"docks/scene_tree/auto_expand_to_selected", p_auto);
 	}
 	auto_expand_selected = p_auto;
 }
@@ -2440,7 +2447,8 @@ void SceneTreeEditor::set_hide_filtered_out_parents(bool p_hide, bool p_update_s
 	}
 
 	if (p_update_settings) {
-		EditorSettings::get_singleton()->obj->set("docks/scene_tree/hide_filtered_out_parents", p_hide);
+		EditorSettings::get_singleton()->obj->set(
+			"docks/scene_tree/hide_filtered_out_parents", p_hide);
 	}
 	hide_filtered_out_parents = p_hide;
 
@@ -2456,7 +2464,8 @@ void SceneTreeEditor::set_hide_filtered_out_parents(bool p_hide, bool p_update_s
 void SceneTreeEditor::set_accessibility_warnings(bool p_enable, bool p_update_settings)
 {
 	if (p_update_settings) {
-		EditorSettings::get_singleton()->obj->set("docks/scene_tree/accessibility_warnings", p_enable);
+		EditorSettings::get_singleton()->obj->set(
+			"docks/scene_tree/accessibility_warnings", p_enable);
 	}
 	accessibility_warnings = p_enable;
 }

@@ -30,99 +30,75 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "gltf_accessor.h"
-
 #include "core/object/class_db.h"
+#include "gltf_accessor.h"
 
 // 32-bit versions for compatibility.
 
-GLTFBufferViewIndex GLTFAccessor::_get_buffer_view_bind_compat_106220() {
+GLTFBufferViewIndex GLTFAccessor::_get_buffer_view_bind_compat_106220()
+{
 	return get_buffer_view();
 }
 
-int GLTFAccessor::_get_byte_offset_bind_compat_106220() {
-	return get_byte_offset();
-}
+int GLTFAccessor::_get_byte_offset_bind_compat_106220() { return get_byte_offset(); }
 
-int GLTFAccessor::_get_component_type_bind_compat_106220() {
-	return (int)get_component_type();
-}
+int GLTFAccessor::_get_component_type_bind_compat_106220() { return (int)get_component_type(); }
 
-void GLTFAccessor::_set_component_type_bind_compat_106220(int p_component_type) {
+void GLTFAccessor::_set_component_type_bind_compat_106220(int p_component_type)
+{
 	set_component_type((GLTFComponentType)p_component_type);
 }
 
-bool GLTFAccessor::_get_normalized_bind_compat_106220() {
-	return get_normalized();
-}
+bool GLTFAccessor::_get_normalized_bind_compat_106220() { return get_normalized(); }
 
-int GLTFAccessor::_get_count_bind_compat_106220() {
-	return get_count();
-}
+int GLTFAccessor::_get_count_bind_compat_106220() { return get_count(); }
 
-GLTFAccessor::GLTFAccessorType GLTFAccessor::_get_accessor_type_bind_compat_106220() {
+GLTFAccessor::GLTFAccessorType GLTFAccessor::_get_accessor_type_bind_compat_106220()
+{
 	return get_accessor_type();
 }
 
-int GLTFAccessor::_get_type_bind_compat_106220() {
-	return (int)get_accessor_type();
-}
+int GLTFAccessor::_get_type_bind_compat_106220() { return (int)get_accessor_type(); }
 
-Vector<double> GLTFAccessor::_get_min_bind_compat_106220() {
-	return get_min();
-}
+Vector<double> GLTFAccessor::_get_min_bind_compat_106220() { return get_min(); }
 
-Vector<double> GLTFAccessor::_get_max_bind_compat_106220() {
-	return get_max();
-}
+Vector<double> GLTFAccessor::_get_max_bind_compat_106220() { return get_max(); }
 
-int GLTFAccessor::_get_sparse_count_bind_compat_106220() {
-	return get_sparse_count();
-}
+int GLTFAccessor::_get_sparse_count_bind_compat_106220() { return get_sparse_count(); }
 
-int GLTFAccessor::_get_sparse_indices_buffer_view_bind_compat_106220() {
+int GLTFAccessor::_get_sparse_indices_buffer_view_bind_compat_106220()
+{
 	return get_sparse_indices_buffer_view();
 }
 
-int GLTFAccessor::_get_sparse_indices_byte_offset_bind_compat_106220() {
+int GLTFAccessor::_get_sparse_indices_byte_offset_bind_compat_106220()
+{
 	return get_sparse_indices_byte_offset();
 }
 
-int GLTFAccessor::_get_sparse_indices_component_type_bind_compat_106220() {
+int GLTFAccessor::_get_sparse_indices_component_type_bind_compat_106220()
+{
 	return (int)get_sparse_indices_component_type();
 }
 
-void GLTFAccessor::_set_sparse_indices_component_type_bind_compat_106220(int p_sparse_indices_component_type) {
+void GLTFAccessor::_set_sparse_indices_component_type_bind_compat_106220(
+	int p_sparse_indices_component_type)
+{
 	set_sparse_indices_component_type((GLTFComponentType)p_sparse_indices_component_type);
 }
 
-int GLTFAccessor::_get_sparse_values_buffer_view_bind_compat_106220() {
+int GLTFAccessor::_get_sparse_values_buffer_view_bind_compat_106220()
+{
 	return get_sparse_values_buffer_view();
 }
 
-int GLTFAccessor::_get_sparse_values_byte_offset_bind_compat_106220() {
+int GLTFAccessor::_get_sparse_values_byte_offset_bind_compat_106220()
+{
 	return get_sparse_values_byte_offset();
 }
 
-void GLTFAccessor::_bind_compatibility_methods() {
-	// 32-bit versions for compatibility.
-	ClassDB::bind_compatibility_method(D_METHOD("get_buffer_view"), &GLTFAccessor::_get_buffer_view_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_byte_offset"), &GLTFAccessor::_get_byte_offset_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_component_type"), &GLTFAccessor::_get_component_type_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("set_component_type", "component_type"), &GLTFAccessor::_set_component_type_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_normalized"), &GLTFAccessor::_get_normalized_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_count"), &GLTFAccessor::_get_count_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_accessor_type"), &GLTFAccessor::_get_accessor_type_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_type"), &GLTFAccessor::_get_type_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_min"), &GLTFAccessor::_get_min_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_max"), &GLTFAccessor::_get_max_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_sparse_count"), &GLTFAccessor::_get_sparse_count_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_sparse_indices_buffer_view"), &GLTFAccessor::_get_sparse_indices_buffer_view_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_sparse_indices_byte_offset"), &GLTFAccessor::_get_sparse_indices_byte_offset_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_sparse_indices_component_type"), &GLTFAccessor::_get_sparse_indices_component_type_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("set_sparse_indices_component_type", "sparse_indices_component_type"), &GLTFAccessor::_set_sparse_indices_component_type_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_sparse_values_buffer_view"), &GLTFAccessor::_get_sparse_values_buffer_view_bind_compat_106220);
-	ClassDB::bind_compatibility_method(D_METHOD("get_sparse_values_byte_offset"), &GLTFAccessor::_get_sparse_values_byte_offset_bind_compat_106220);
-}
+void GLTFAccessor::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

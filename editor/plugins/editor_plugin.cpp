@@ -569,62 +569,19 @@ void EditorPlugin::_notification(int p_what)
 #ifndef DISABLE_DEPRECATED
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		ProjectSettings::get_singleton()->connect(
+		ProjectSettings::get_singleton()->obj->connect(
 			"settings_changed", callable_mp(this, &EditorPlugin::_editor_project_settings_changed));
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		ProjectSettings::get_singleton()->disconnect(
+		ProjectSettings::get_singleton()->obj->disconnect(
 			"settings_changed", callable_mp(this, &EditorPlugin::_editor_project_settings_changed));
 	} break;
 	}
 #endif
 }
 
-void EditorPlugin::_bind_methods()
-{
-	ADD_SIGNAL(
-		MethodInfo("scene_changed", PropertyInfo(Variant::OBJECT, "scene_root",
-										PROPERTY_HINT_RESOURCE_TYPE, Node::get_class_static())));
-	ADD_SIGNAL(MethodInfo("scene_closed", PropertyInfo(Variant::STRING, "filepath")));
-	ADD_SIGNAL(MethodInfo("main_screen_changed", PropertyInfo(Variant::STRING, "screen_name")));
-	ADD_SIGNAL(MethodInfo(
-		"resource_saved", PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE,
-							  Resource::get_class_static())));
-	ADD_SIGNAL(MethodInfo("scene_saved", PropertyInfo(Variant::STRING, "filepath")));
-	ADD_SIGNAL(MethodInfo("project_settings_changed"));
-
-	BIND_ENUM_CONSTANT(CONTAINER_TOOLBAR);
-	BIND_ENUM_CONSTANT(CONTAINER_SPATIAL_EDITOR_MENU);
-	BIND_ENUM_CONSTANT(CONTAINER_SPATIAL_EDITOR_SIDE_LEFT);
-	BIND_ENUM_CONSTANT(CONTAINER_SPATIAL_EDITOR_SIDE_RIGHT);
-	BIND_ENUM_CONSTANT(CONTAINER_SPATIAL_EDITOR_BOTTOM);
-	BIND_ENUM_CONSTANT(CONTAINER_CANVAS_EDITOR_MENU);
-	BIND_ENUM_CONSTANT(CONTAINER_CANVAS_EDITOR_SIDE_LEFT);
-	BIND_ENUM_CONSTANT(CONTAINER_CANVAS_EDITOR_SIDE_RIGHT);
-	BIND_ENUM_CONSTANT(CONTAINER_CANVAS_EDITOR_BOTTOM);
-	BIND_ENUM_CONSTANT(CONTAINER_INSPECTOR_BOTTOM);
-	BIND_ENUM_CONSTANT(CONTAINER_PROJECT_SETTING_TAB_LEFT);
-	BIND_ENUM_CONSTANT(CONTAINER_PROJECT_SETTING_TAB_RIGHT);
-
-#ifndef DISABLE_DEPRECATED
-	BIND_ENUM_CONSTANT(DOCK_SLOT_NONE);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_UL);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_BL);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_UR);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_BR);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_UL);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_BL);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_UR);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_BR);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_BOTTOM);
-	BIND_ENUM_CONSTANT(DOCK_SLOT_MAX);
-#endif
-
-	BIND_ENUM_CONSTANT(AFTER_GUI_INPUT_PASS);
-	BIND_ENUM_CONSTANT(AFTER_GUI_INPUT_STOP);
-	BIND_ENUM_CONSTANT(AFTER_GUI_INPUT_CUSTOM);
-}
+void EditorPlugin::_bind_methods() {}
 
 void EditorPlugin::enable_plugin()
 {
@@ -653,8 +610,7 @@ bool EditorPlugin::handles(Object* p_object) const { return false; }
 
 void EditorPlugin::make_visible(bool p_visible) {}
 
-String EditorPlugin::get_unsaved_status(const String& p_for_scene) const { return String();
- }
+String EditorPlugin::get_unsaved_status(const String& p_for_scene) const { return String(); }
 
 void EditorPlugin::save_external_data() {}
 

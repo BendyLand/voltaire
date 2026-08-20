@@ -532,7 +532,7 @@ void TranslationServer::set_locale(const String& p_locale)
 	ResourceLoader::reload_translation_remaps();
 
 	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(
+		OS::get_singleton()->get_main_loop()->obj->notification(
 			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 	}
 }
@@ -728,7 +728,7 @@ void TranslationServer::set_pseudolocalization_enabled(bool p_enabled)
 	ResourceLoader::reload_translation_remaps();
 
 	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(
+		OS::get_singleton()->get_main_loop()->obj->notification(
 			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 	}
 }
@@ -755,7 +755,7 @@ void TranslationServer::reload_pseudolocalization()
 	ResourceLoader::reload_translation_remaps();
 
 	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(
+		OS::get_singleton()->get_main_loop()->obj->notification(
 			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
 	}
 }

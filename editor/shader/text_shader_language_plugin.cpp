@@ -37,7 +37,7 @@
 bool TextShaderLanguagePlugin::handles_shader(const Ref<Shader> &p_shader) const {
 	// The text shader editor only edits the base Shader class,
 	// not classes that inherit from it like VisualShader.
-	return p_shader->get_class_name() == Shader::get_class_static();
+	return p_shader->obj->get_class_name() == Shader::get_class_static();
 }
 
 bool TextShaderLanguagePlugin::handles_shader_include(const Ref<ShaderInclude> &p_shader_inc) const {

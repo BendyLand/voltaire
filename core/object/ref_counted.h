@@ -36,7 +36,6 @@
 
 class RefCounted
 {
-	VLTRCLASS(RefCounted, Object);
 	SafeRefCount refcount;
 	SafeRefCount refcount_init;
 	SafeNumeric<uint32_t> dereference_count;

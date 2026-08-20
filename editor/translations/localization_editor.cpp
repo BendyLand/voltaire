@@ -110,9 +110,9 @@ void LocalizationEditor::_translation_add(const PackedStringArray& p_paths)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(
 		vformat(TTRN("Add %d Translation", "Add %d Translations", count), count));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/translations", translations);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/translations", translations);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translations",
 		GLOBAL_GET("internationalization/locale/translations"));
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
@@ -144,9 +144,9 @@ void LocalizationEditor::_translation_delete(
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Remove Translation"));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/translations", translations);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/translations", translations);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translations",
 		GLOBAL_GET("internationalization/locale/translations"));
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
@@ -189,10 +189,10 @@ void LocalizationEditor::_translation_res_add(const PackedStringArray& p_paths)
 	undo_redo->create_action(vformat(TTRN("Translation Resource Remap: Add %d Path",
 										 "Translation Resource Remap: Add %d Paths", count),
 		count));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/translation_remaps", remaps);
-	undo_redo->add_undo_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/translation_remaps", prev);
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/translation_remaps", remaps);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/translation_remaps", prev);
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
 	undo_redo->add_undo_method(this->obj.get(), "update_translations");
 	undo_redo->add_do_method(this->obj.get(), "emit_signal", localization_changed);
@@ -229,9 +229,9 @@ void LocalizationEditor::_translation_res_option_add(const PackedStringArray& p_
 		vformat(TTRN("Translation Resource Remap: Add %d Remap",
 					"Translation Resource Remap: Add %d Remaps", p_paths.size()),
 			p_paths.size()));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/translation_remaps", remaps);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/translation_remaps", remaps);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translation_remaps",
 		GLOBAL_GET("internationalization/locale/translation_remaps"));
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
@@ -301,9 +301,9 @@ void LocalizationEditor::_translation_res_option_changed()
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Change Resource Remap Language"));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/translation_remaps", remaps);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/translation_remaps", remaps);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translation_remaps",
 		GLOBAL_GET("internationalization/locale/translation_remaps"));
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
@@ -341,9 +341,9 @@ void LocalizationEditor::_translation_res_delete(
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Remove Resource Remap"));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/translation_remaps", remaps);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/translation_remaps", remaps);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translation_remaps",
 		GLOBAL_GET("internationalization/locale/translation_remaps"));
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
@@ -387,9 +387,9 @@ void LocalizationEditor::_translation_res_option_delete(
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Remove Resource Remap Option"));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/translation_remaps", remaps);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/translation_remaps", remaps);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translation_remaps",
 		GLOBAL_GET("internationalization/locale/translation_remaps"));
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
@@ -417,9 +417,9 @@ void LocalizationEditor::_template_source_add(const PackedStringArray& p_paths)
 	undo_redo->create_action(vformat(
 		TTRN("Add %d file for template generation", "Add %d files for template generation", count),
 		count));
-	undo_redo->add_do_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translations_pot_files", sources);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(),
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translations_pot_files",
 		GLOBAL_GET("internationalization/locale/translations_pot_files"));
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
@@ -449,9 +449,9 @@ void LocalizationEditor::_template_source_delete(
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Remove file from template generation"));
-	undo_redo->add_do_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translations_pot_files", sources);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(),
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/translations_pot_files",
 		GLOBAL_GET("internationalization/locale/translations_pot_files"));
 	undo_redo->add_do_method(this->obj.get(), "update_translations");
@@ -710,12 +710,13 @@ void LocalizationEditor::drop_data_fw(const Point2& p_point, const Variant& p_da
 
 	EditorUndoRedoManager* ur_man = EditorUndoRedoManager::get_singleton();
 	ur_man->create_action(TTR("Rearrange Localization Items"));
-	ur_man->add_do_method(ProjectSettings::get_singleton(), "set", setting, setting_value);
-	ur_man->add_do_method(ProjectSettings::get_singleton(), "save");
+	ur_man->add_do_method(
+		ProjectSettings::get_singleton()->obj.get(), "set", setting, setting_value);
+	ur_man->add_do_method(ProjectSettings::get_singleton()->obj.get(), "save");
 	ur_man->add_do_method(this->obj.get(), "update_translations");
 	ur_man->add_undo_method(
-		ProjectSettings::get_singleton(), "set", setting, original_setting_value);
-	ur_man->add_undo_method(ProjectSettings::get_singleton(), "save");
+		ProjectSettings::get_singleton()->obj.get(), "set", setting, original_setting_value);
+	ur_man->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "save");
 	ur_man->add_undo_method(this->obj.get(), "update_translations");
 	ur_man->commit_action();
 }
@@ -835,12 +836,7 @@ void LocalizationEditor::update_translations()
 	updating_translations = false;
 }
 
-void LocalizationEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("update_translations"), &LocalizationEditor::update_translations);
-
-	ADD_SIGNAL(MethodInfo("localization_changed"));
-}
+void LocalizationEditor::_bind_methods() {}
 
 LocalizationEditor::LocalizationEditor()
 {
@@ -998,6 +994,7 @@ LocalizationEditor::LocalizationEditor()
 		thb->add_child(template_generate_button);
 
 		MarginContainer* mc = memnew(MarginContainer);
+
 		mc->set_theme_type_variation("NoBorderHorizontalWide");
 		mc->set_v_size_flags(SIZE_EXPAND_FILL);
 		tvb->add_child(mc);

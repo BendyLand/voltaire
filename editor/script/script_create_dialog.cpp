@@ -84,14 +84,6 @@ static Vector<String> _get_hierarchy(const String& p_class_name)
 
 	String class_name = p_class_name;
 	while (true) {
-		// A registered class.
-		if (ClassDB::class_exists(class_name)) {
-			hierarchy.push_back(class_name);
-
-			class_name = ClassDB::get_parent_class(class_name);
-			continue;
-		}
-
 		// A class defined in script with class_name.
 		if (ScriptServer::is_global_class(class_name)) {
 			hierarchy.push_back(class_name);
@@ -348,7 +340,7 @@ void ScriptCreateDialog::_template_changed(int p_template)
 			// Save template info to editor dictionary (not a project template).
 			Dictionary dic_templates = EDITOR_GET("_script_setup_templates_dictionary");
 			dic_templates[parent_name->get_text()] = sinfo.get_hash();
-			EditorSettings::get_singleton()->set(
+			EditorSettings::get_singleton()->obj->set(
 				"_script_setup_templates_dictionary", dic_templates);
 			// Remove template from project dictionary as we last used an editor level template.
 			Dictionary dic_templates_project =
@@ -399,8 +391,7 @@ void ScriptCreateDialog::_create_new()
 	const ScriptLanguage::ScriptTemplate sinfo = _get_current_template();
 
 	String parent_class = parent_name->get_text();
-	if (!parent_name->get_text().is_quoted() && !ClassDB::class_exists(parent_class) &&
-		!ScriptServer::is_global_class(parent_class)) {
+	if (!parent_name->get_text().is_quoted() && !ScriptServer::is_global_class(parent_class)) {
 		// If base is a custom type, replace with script path instead.
 		const EditorData::CustomType* type =
 			EditorNode::get_editor_data().get_custom_type_by_name(parent_class);
@@ -420,7 +411,7 @@ void ScriptCreateDialog::_create_new()
 	else {
 		String lpath = ProjectSettings::get_singleton()->localize_path(file_path->get_text());
 		scr->set_path(lpath);
-		Error err = ResourceSaver::save(scr, lpath, ResourceSaver::FLAG_CHANGE_PATH);
+		Error err = ResourceSaver::save(scr.ptr(), lpath, ResourceSaver::FLAG_CHANGE_PATH);
 		if (err != OK) {
 			alert->set_text(TTR("Error - Could not create script in filesystem."));
 			alert->popup_centered();
@@ -487,7 +478,7 @@ void ScriptCreateDialog::_built_in_pressed()
 void ScriptCreateDialog::_use_template_pressed()
 {
 	is_using_templates = use_templates->is_pressed();
-	EditorSettings::get_singleton()->set("_script_setup_use_script_templates", is_using_templates);
+	EditorSettings::get_singleton()->obj->set("_script_setup_use_script_templates", is_using_templates);
 	validation_panel->update();
 }
 
@@ -954,15 +945,7 @@ String ScriptCreateDialog::_get_script_origin_label(
 	return "";
 }
 
-void ScriptCreateDialog::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("config", "inherits", "path", "built_in_enabled", "load_enabled"),
-		&ScriptCreateDialog::config, DEFVAL(true), DEFVAL(true));
-
-	ADD_SIGNAL(
-		MethodInfo("script_created", PropertyInfo(Variant::OBJECT, "script",
-										 PROPERTY_HINT_RESOURCE_TYPE, Script::get_class_static())));
-}
+void ScriptCreateDialog::_bind_methods() {}
 
 ScriptCreateDialog::ScriptCreateDialog()
 {
@@ -1122,8 +1105,7 @@ ScriptCreateDialog::ScriptCreateDialog()
 	/* Name */
 
 	built_in_name = memnew(LineEdit);
-	built_in_name->set_h_size_flags
-(Control::SIZE_EXPAND_FILL);
+	built_in_name->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	built_in_name->set_accessibility_name(TTRC("Name:"));
 	register_text_enter(built_in_name);
 	label = memnew(Label(TTR("Name:")));

@@ -63,8 +63,6 @@ void AudioStreamInteractiveTransitionEditor::_notification(int p_what)
 
 void AudioStreamInteractiveTransitionEditor::_bind_methods()
 {
-	ClassDB::bind_method(
-		"_update_transitions", &AudioStreamInteractiveTransitionEditor::_update_transitions);
 }
 
 void AudioStreamInteractiveTransitionEditor::_edited()
@@ -90,17 +88,17 @@ void AudioStreamInteractiveTransitionEditor::_edited()
 		if (!enabled) {
 			if (audio_stream_interactive->has_transition(selected[i].x, selected[i].y)) {
 				EditorUndoRedoManager::get_singleton()->add_do_method(
-					audio_stream_interactive, "erase_transition", selected[i].x, selected[i].y);
+					audio_stream_interactive->obj.get(), "erase_transition", selected[i].x, selected[i].y);
 			}
 		}
 		else {
-			EditorUndoRedoManager::get_singleton()->add_do_method(audio_stream_interactive,
+			EditorUndoRedoManager::get_singleton()->add_do_method(audio_stream_interactive->obj.get(),
 				"add_transition", selected[i].x, selected[i].y, from, to, fade, beats, use_filler,
 				filler, hold);
 		}
 	}
 	EditorUndoRedoManager::get_singleton()->add_undo_property(
-		audio_stream_interactive, "_transitions", audio_stream_interactive->get("_transitions"));
+		audio_stream_interactive->obj.get(), "_transitions", audio_stream_interactive->obj->get("_transitions"));
 	EditorUndoRedoManager::get_singleton()->add_do_method(this->obj.get(), "_update_transitions");
 	EditorUndoRedoManager::get_singleton()->add_undo_method(this->obj.get(), "_update_transitions");
 	EditorUndoRedoManager::get_singleton()->commit_action();

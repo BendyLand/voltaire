@@ -31,27 +31,35 @@
 #pragma once
 
 #include "core/object/ref_counted.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "core/variant/type_info.h"
 
-class UndoRedo : public Object {
-	VLTRCLASS(UndoRedo, Object);
-	OBJ_SAVE_TYPE(UndoRedo);
+class UndoRedo
+{
+	OBJ_SAVE_TYPE_NO(UndoRedo);
 
 public:
-	enum MergeMode {
+	mem_unique_ptr<Object> obj;
+
+	enum MergeMode
+	{
 		MERGE_DISABLE,
 		MERGE_ENDS,
 		MERGE_ALL
 	};
 
-	typedef void (*CommitNotifyCallback)(void *p_ud, const String &p_name);
+	typedef void (*CommitNotifyCallback)(void* p_ud, const String& p_name);
 
-	typedef void (*MethodNotifyCallback)(void *p_ud, Object *p_base, const StringName &p_name, const Variant **p_args, int p_argcount);
-	typedef void (*PropertyNotifyCallback)(void *p_ud, Object *p_base, const StringName &p_property, const Variant &p_value);
+	typedef void (*MethodNotifyCallback)(void* p_ud, Object* p_base, const StringName& p_name,
+		const Variant** p_args, int p_argcount);
+	typedef void (*PropertyNotifyCallback)(
+		void* p_ud, Object* p_base, const StringName& p_property, const Variant& p_value);
 
 private:
-	struct Operation {
-		enum Type {
+	struct Operation
+	{
+		enum Type
+		{
 			TYPE_METHOD,
 			TYPE_PROPERTY,
 			TYPE_REFERENCE
@@ -67,7 +75,8 @@ private:
 		void delete_reference();
 	};
 
-	struct Action {
+	struct Action
+	{
 		String name;
 		List<Operation> do_ops;
 		List<Operation> undo_ops;
@@ -86,14 +95,14 @@ private:
 	int merge_total = 0;
 
 	void _pop_history_tail();
-	void _process_operation_list(List<Operation>::Element *r_elements, bool p_execute);
+	void _process_operation_list(List<Operation>::Element* r_elements, bool p_execute);
 	void _discard_redo();
 	bool _redo(bool p_execute);
 
 	CommitNotifyCallback callback = nullptr;
-	void *callback_ud = nullptr;
-	void *method_callback_ud = nullptr;
-	void *prop_callback_ud = nullptr;
+	void* callback_ud = nullptr;
+	void* method_callback_ud = nullptr;
+	void* prop_callback_ud = nullptr;
 
 	MethodNotifyCallback method_callback = nullptr;
 	PropertyNotifyCallback property_callback = nullptr;
@@ -104,14 +113,15 @@ protected:
 	static void _bind_methods();
 
 public:
-	void create_action(const String &p_name = "", MergeMode p_mode = MERGE_DISABLE, bool p_backward_undo_ops = false);
+	void create_action(const String& p_name = "", MergeMode p_mode = MERGE_DISABLE,
+		bool p_backward_undo_ops = false);
 
-	void add_do_method(const Callable &p_callable);
-	void add_undo_method(const Callable &p_callable);
-	void add_do_property(Object *p_object, const StringName &p_property, const Variant &p_value);
-	void add_undo_property(Object *p_object, const StringName &p_property, const Variant &p_value);
-	void add_do_reference(Object *p_object);
-	void add_undo_reference(Object *p_object);
+	void add_do_method(const Callable& p_callable);
+	void add_undo_method(const Callable& p_callable);
+	void add_do_property(Object* p_object, const StringName& p_property, const Variant& p_value);
+	void add_undo_property(Object* p_object, const StringName& p_property, const Variant& p_value);
+	void add_do_reference(Object* p_object);
+	void add_undo_reference(Object* p_object);
 
 	void start_force_keep_in_merge_ends();
 	void end_force_keep_in_merge_ends();
@@ -140,12 +150,14 @@ public:
 	void set_max_steps(int p_max_steps);
 	int get_max_steps() const;
 
-	void set_commit_notify_callback(CommitNotifyCallback p_callback, void *p_ud);
+	void set_commit_notify_callback(CommitNotifyCallback p_callback, void* p_ud);
 
-	void set_method_notify_callback(MethodNotifyCallback p_method_callback, void *p_ud);
-	void set_property_notify_callback(PropertyNotifyCallback p_property_callback, void *p_ud);
+	void set_method_notify_callback(MethodNotifyCallback p_method_callback, void* p_ud);
+	void set_property_notify_callback(PropertyNotifyCallback p_property_callback, void* p_ud);
 
 	~UndoRedo();
 };
 
 VARIANT_ENUM_CAST(UndoRedo::MergeMode);
+
+

@@ -1611,7 +1611,7 @@ void Engine::get_argument_options(
 			r_options->push_back(E.quote());
 		}
 	}
-	Object::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 

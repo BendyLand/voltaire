@@ -38,8 +38,6 @@ template <typename T> class TypedArray;
 
 class InputMap
 {
-	VLTRCLASS(InputMap, Object);
-
 public:
 	mem_unique_ptr<Object> obj;
 	/**

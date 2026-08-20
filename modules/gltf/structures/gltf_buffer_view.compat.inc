@@ -30,37 +30,21 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "gltf_buffer_view.h"
 
-#include "core/object/class_db.h"
+GLTFBufferIndex GLTFBufferView::_get_buffer_bind_compat_86907() { return get_buffer(); }
 
-GLTFBufferIndex GLTFBufferView::_get_buffer_bind_compat_86907() {
-	return get_buffer();
-}
+int GLTFBufferView::_get_byte_offset_bind_compat_86907() { return get_byte_offset(); }
 
-int GLTFBufferView::_get_byte_offset_bind_compat_86907() {
-	return get_byte_offset();
-}
+int GLTFBufferView::_get_byte_length_bind_compat_86907() { return get_byte_length(); }
 
-int GLTFBufferView::_get_byte_length_bind_compat_86907() {
-	return get_byte_length();
-}
+int GLTFBufferView::_get_byte_stride_bind_compat_86907() { return get_byte_stride(); }
 
-int GLTFBufferView::_get_byte_stride_bind_compat_86907() {
-	return get_byte_stride();
-}
+bool GLTFBufferView::_get_indices_bind_compat_86907() { return get_indices(); }
 
-bool GLTFBufferView::_get_indices_bind_compat_86907() {
-	return get_indices();
-}
-
-void GLTFBufferView::_bind_compatibility_methods() {
-	// Non-const versions for compatibility.
-	ClassDB::bind_compatibility_method(D_METHOD("get_buffer"), &GLTFBufferView::_get_buffer_bind_compat_86907);
-	ClassDB::bind_compatibility_method(D_METHOD("get_byte_offset"), &GLTFBufferView::_get_byte_offset_bind_compat_86907);
-	ClassDB::bind_compatibility_method(D_METHOD("get_byte_length"), &GLTFBufferView::_get_byte_length_bind_compat_86907);
-	ClassDB::bind_compatibility_method(D_METHOD("get_byte_stride"), &GLTFBufferView::_get_byte_stride_bind_compat_86907);
-	ClassDB::bind_compatibility_method(D_METHOD("get_indices"), &GLTFBufferView::_get_indices_bind_compat_86907);
-}
+void GLTFBufferView::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

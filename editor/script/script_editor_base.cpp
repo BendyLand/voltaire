@@ -71,7 +71,7 @@ String ScriptEditorBase::get_name()
 
 Ref<Texture2D> ScriptEditorBase::get_theme_icon()
 {
-	return EditorNode::get_singleton()->get_object_icon(edited_res.ptr());
+	return EditorNode::get_singleton()->get_object_icon(edited_res->obj.get());
 }
 
 void ScriptEditorBase::tag_saved_version()

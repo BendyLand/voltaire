@@ -42,11 +42,11 @@ void Cast2DEditor::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		get_tree()->connect("node_removed", callable_mp(this, &Cast2DEditor::_node_removed));
+		get_tree()->obj->connect("node_removed", callable_mp(this, &Cast2DEditor::_node_removed));
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		get_tree()->disconnect("node_removed", callable_mp(this, &Cast2DEditor::_node_removed));
+		get_tree()->obj->disconnect("node_removed", callable_mp(this, &Cast2DEditor::_node_removed));
 	} break;
 	}
 }

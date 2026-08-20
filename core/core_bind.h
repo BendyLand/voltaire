@@ -38,6 +38,7 @@
 #include "core/object/script_backtrace.h"
 #include "core/os/semaphore.h"
 #include "core/os/thread.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/safe_refcount.h"
 #include "core/variant/typed_array.h"
 
@@ -46,15 +47,14 @@ class MainLoop;
 namespace CoreBind
 {
 
-class ResourceLoader : public Object
+class ResourceLoader
 {
-	VLTRCLASS(ResourceLoader, Object);
-
 protected:
 	static void _bind_methods();
 	static inline ResourceLoader* singleton = nullptr;
 
 public:
+	mem_unique_ptr<Object> obj;
 	enum ThreadLoadStatus
 	{
 		THREAD_LOAD_INVALID_RESOURCE,
@@ -97,15 +97,14 @@ public:
 	ResourceLoader() { singleton = this; }
 };
 
-class ResourceSaver : public Object
+class ResourceSaver
 {
-	VLTRCLASS(ResourceSaver, Object);
-
 protected:
 	static void _bind_methods();
 	static inline ResourceSaver* singleton = nullptr;
 
 public:
+	mem_unique_ptr<Object> obj;
 	enum SaverFlags
 	{
 		FLAG_NONE = 0,
@@ -155,10 +154,8 @@ public:
 	virtual void log_message(const String& p_text, bool p_error);
 };
 
-class OS : public Object
+class OS
 {
-	VLTRCLASS(OS, Object);
-
 	mutable HashMap<String, bool> feature_cache;
 
 	class LoggerBind : public ::Logger
@@ -191,6 +188,7 @@ protected:
 #endif
 
 public:
+	mem_unique_ptr<Object> obj;
 	enum RenderingDriver
 	{
 		RENDERING_DRIVER_VULKAN,
@@ -351,16 +349,15 @@ public:
 	~OS();
 };
 
-class Geometry2D : public Object
+class Geometry2D
 {
-	VLTRCLASS(Geometry2D, Object);
-
 	static inline Geometry2D* singleton = nullptr;
 
 protected:
 	static void _bind_methods();
 
 public:
+	mem_unique_ptr<Object> obj;
 	static Geometry2D* get_singleton();
 	Variant segment_intersects_segment(const Vector2& p_from_a, const Vector2& p_to_a,
 		const Vector2& p_from_b, const Vector2& p_to_b);
@@ -440,16 +437,15 @@ public:
 	Geometry2D() { singleton = this; }
 };
 
-class Geometry3D : public Object
+class Geometry3D
 {
-	VLTRCLASS(Geometry3D, Object);
-
 	static inline Geometry3D* singleton = nullptr;
 
 protected:
 	static void _bind_methods();
 
 public:
+	mem_unique_ptr<Object> obj;
 	static Geometry3D* get_singleton();
 	Vector<Vector3> compute_convex_mesh_points(const TypedArray<Plane>& p_planes);
 	TypedArray<Plane> build_box_planes(const Vector3& p_extents);
@@ -483,16 +479,15 @@ public:
 	Geometry3D() { singleton = this; }
 };
 
-class Marshalls : public Object
+class Marshalls
 {
-	VLTRCLASS(Marshalls, Object);
-
 	static inline Marshalls* singleton = nullptr;
 
 protected:
 	static void _bind_methods();
 
 public:
+	mem_unique_ptr<Object> obj;
 	static Marshalls* get_singleton();
 
 	String variant_to_base64(const Variant& p_var, bool p_full_objects = false);
@@ -571,15 +566,14 @@ public:
 	static bool is_main_thread();
 };
 
-class Engine : public Object
+class Engine
 {
-	VLTRCLASS(Engine, Object);
-
 protected:
 	static void _bind_methods();
 	static inline Engine* singleton = nullptr;
 
 public:
+	mem_unique_ptr<Object> obj;
 	static Engine* get_singleton() { return singleton; }
 
 	void set_physics_ticks_per_second(int p_ips);
@@ -646,16 +640,14 @@ public:
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const override;
+		const StringName& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	Engine() { singleton = this; }
 };
 
-class EngineDebugger : public Object
+class EngineDebugger
 {
-	VLTRCLASS(EngineDebugger, Object);
-
 	HashMap<StringName, Callable> captures;
 	HashMap<StringName, Ref<EngineProfiler>> profilers;
 
@@ -664,6 +656,7 @@ protected:
 	static inline EngineDebugger* singleton = nullptr;
 
 public:
+	mem_unique_ptr<Object> obj;
 	static EngineDebugger* get_singleton() { return singleton; }
 
 	bool is_active();

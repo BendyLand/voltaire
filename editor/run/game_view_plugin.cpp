@@ -1462,7 +1462,7 @@ void GameView::_notification(int p_what)
 			EditorRun::instance_rq_screenshot_callback = _instance_rq_screenshot_static;
 
 			// Listen for project settings changes to update the window size and aspect ratio.
-			ProjectSettings::get_singleton()->connect("settings_changed",
+			ProjectSettings::get_singleton()->obj->connect("settings_changed",
 				callable_mp(this, &GameView::_editor_or_project_settings_changed));
 			EditorSettings::get_singleton()->obj->connect("settings_changed",
 				callable_mp(this, &GameView::_editor_or_project_settings_changed));

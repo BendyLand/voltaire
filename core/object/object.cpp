@@ -423,7 +423,7 @@ void Object::get_property_list(List<PropertyInfo>* p_list, bool p_reversed) cons
 				pi.usage |= PROPERTY_USAGE_NEVER_DUPLICATE;
 			}
 			else {
-				pi.hint_string = Resource::get_class_static();
+				pi.hint_string = get_class_static();
 			}
 		}
 		p_list->push_back(pi);

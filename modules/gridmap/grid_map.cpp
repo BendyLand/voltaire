@@ -1919,9 +1919,9 @@ GridMap::GridMap()
 {
 	set_notify_transform(true);
 #if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-	NavigationServer3D::get_singleton()->connect(
+	NavigationServer3D::get_singleton()->obj->connect(
 		"map_changed", callable_mp(this, &GridMap::_navigation_map_changed));
-	NavigationServer3D::get_singleton()->connect("navigation_debug_changed",
+	NavigationServer3D::get_singleton()->obj->connect("navigation_debug_changed",
 		callable_mp(this, &GridMap::_update_navigation_debug_edge_connections));
 #endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
 }
@@ -2157,9 +2157,9 @@ GridMap::~GridMap()
 	}
 
 #ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3D::get_singleton()->disconnect(
+	NavigationServer3D::get_singleton()->obj->disconnect(
 		"map_changed", callable_mp(this, &GridMap::_navigation_map_changed));
-	NavigationServer3D::get_singleton()->disconnect("navigation_debug_changed",
+	NavigationServer3D::get_singleton()->obj->disconnect("navigation_debug_changed",
 		callable_mp(this, &GridMap::_update_navigation_debug_edge_connections));
 #endif // NAVIGATION_3D_DISABLED
 

@@ -159,7 +159,7 @@ void Sprite2DEditor::_popup_debug_uv_dialog()
 
 	_update_mesh_data();
 	debug_uv_dialog->popup_centered();
-	get_tree()->connect("process_frame", callable_mp(this, &Sprite2DEditor::_center_view),
+	get_tree()->obj->connect("process_frame", callable_mp(this, &Sprite2DEditor::_center_view),
 		Object::CONNECT_ONE_SHOT);
 	debug_uv->set_texture_filter(node->get_texture_filter_in_tree());
 	debug_uv->queue_redraw();

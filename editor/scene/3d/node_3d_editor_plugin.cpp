@@ -2663,8 +2663,8 @@ void Node3DEditor::_notification(int p_what)
 
 		_refresh_menu_icons();
 
-		get_tree()->connect("node_removed", callable_mp(this, &Node3DEditor::_node_removed));
-		get_tree()->connect("node_added", callable_mp(this, &Node3DEditor::_node_added));
+		get_tree()->obj->connect("node_removed", callable_mp(this, &Node3DEditor::_node_removed));
+		get_tree()->obj->connect("node_added", callable_mp(this, &Node3DEditor::_node_added));
 		SceneTreeDock::get_singleton()->get_tree_editor()->connect(
 			"node_changed", callable_mp(this, &Node3DEditor::_refresh_menu_icons));
 		editor_selection->obj->connect(
@@ -2675,7 +2675,7 @@ void Node3DEditor::_notification(int p_what)
 		sun_state->set_custom_minimum_size(sun_vb->get_combined_minimum_size());
 		environ_state->set_custom_minimum_size(environ_vb->get_combined_minimum_size());
 
-		ProjectSettings::get_singleton()->connect("settings_changed",
+		ProjectSettings::get_singleton()->obj->connect("settings_changed",
 			callable_mp(this, &Node3DEditor::update_all_gizmos).bind(Variant()));
 	} break;
 

@@ -154,7 +154,7 @@ void EditorPropertyVariant::update_property()
 			}
 			else {
 				sub_property = EditorInspector::instantiate_property_editor(nullptr, current_type,
-					"", PROPERTY_HINT_RESOURCE_TYPE, Resource::get_class_static(),
+					"", PROPERTY_HINT_RESOURCE_TYPE, this->obj->get_class_static(),
 					PROPERTY_USAGE_NONE);
 			}
 		}
@@ -1641,7 +1641,7 @@ void EditorPropertyLayers::set_layer_name(int p_index, const String& p_name)
 {
 	const String property_name = basename + vformat("/layer_%d", p_index + 1);
 	if (ProjectSettings::get_singleton()->has_setting(property_name)) {
-		ProjectSettings::get_singleton()->set(property_name, p_name);
+		ProjectSettings::get_singleton()->obj->set(property_name, p_name);
 		ProjectSettings::get_singleton()->save();
 	}
 }
@@ -1729,7 +1729,7 @@ EditorPropertyLayers::EditorPropertyLayers()
 		SceneStringName(id_pressed), callable_mp(this, &EditorPropertyLayers::_menu_pressed));
 	layers->connect(
 		"popup_hide", callable_mp((BaseButton*)button, &BaseButton::set_pressed).bind(false));
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &EditorPropertyLayers::_refresh_names));
 }
 
@@ -4345,7 +4345,7 @@ static EditorProperty* get_input_action_editor(const String& p_hint_text, bool i
 	Vector<String> options;
 	Vector<String> builtin_options;
 	List<PropertyInfo> pinfo;
-	ProjectSettings::get_singleton()->get_property_list(&pinfo);
+	ProjectSettings::get_singleton()->obj->get_property_list(&pinfo);
 	Vector<String> hints = p_hint_text.remove_char(' ').split(",", false);
 
 	HashMap<String, List<Ref<InputEvent>>> builtins(InputMap::get_singleton()->get_builtins());

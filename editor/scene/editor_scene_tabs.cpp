@@ -610,7 +610,7 @@ EditorSceneTabs::EditorSceneTabs()
 	tab_preview->set_position(Point2(2, 2) * EDSCALE);
 	tab_preview_panel->add_child(tab_preview);
 
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &EditorSceneTabs::_project_settings_changed));
 }
 

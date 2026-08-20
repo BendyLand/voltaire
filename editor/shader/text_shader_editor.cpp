@@ -2356,7 +2356,7 @@ TextShaderEditor::TextShaderEditor()
 		"show_warnings_panel", callable_mp(this, &TextShaderEditor::_show_warnings_panel));
 	code_editor->connect(
 		CoreStringName(script_changed), callable_mp(this, &TextShaderEditor::apply_shaders));
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &TextShaderEditor::_project_settings_changed));
 
 	code_editor->get_text_editor()->set_symbol_lookup_on_click_enabled(true);

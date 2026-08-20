@@ -1427,7 +1427,7 @@ void Skeleton3DEditor::_notification(int p_what)
 		skeleton->connect(SceneStringName(show_rest_only_changed),
 			callable_mp(this, &Skeleton3DEditor::_update_gizmo_visible));
 
-		get_tree()->connect("node_removed", callable_mp(this, &Skeleton3DEditor::_node_removed));
+		get_tree()->obj->connect("node_removed", callable_mp(this, &Skeleton3DEditor::_node_removed));
 	} break;
 	case NOTIFICATION_READY: {
 		// Will trigger NOTIFICATION_THEME_CHANGED, but won't cause any loops if called here.
@@ -1522,8 +1522,8 @@ void Skeleton3DEditor::_disconnect_from_tree()
 		return;
 	}
 
-	if (tree->is_connected("node_removed", callable_mp(this, &Skeleton3DEditor::_node_removed))) {
-		tree->disconnect("node_removed", callable_mp(this, &Skeleton3DEditor::_node_removed));
+	if (tree->obj->is_connected("node_removed", callable_mp(this, &Skeleton3DEditor::_node_removed))) {
+		tree->obj->disconnect("node_removed", callable_mp(this, &Skeleton3DEditor::_node_removed));
 	}
 }
 

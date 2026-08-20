@@ -154,12 +154,12 @@ void AnimationPlayerEditor::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_ENTER_TREE: {
-		get_tree()->connect(
+		get_tree()->obj->connect(
 			SNAME("node_removed"), callable_mp(this, &AnimationPlayerEditor::_node_removed));
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		get_tree()->disconnect(
+		get_tree()->obj->disconnect(
 			SNAME("node_removed"), callable_mp(this, &AnimationPlayerEditor::_node_removed));
 	} break;
 
@@ -2063,7 +2063,8 @@ void AnimationPlayerEditor::_prepare_onion_layers_2_prolog()
 		onion.capture.canvas_item, onion.capture.material->get_rid());
 	onion.capture.material->set_shader_parameter(
 		"bkg_color", GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
-	onion.capture.material->set_shader_parameter("differences_only", onion.differences_only);
+	onion.capture.material->set_shader_parameter("differences_only", onion.differences_only)
+;
 	onion.capture.material->set_shader_parameter("present",
 		onion.differences_only ? RS::get_singleton()->viewport_get_texture(present_rid) : RID());
 	onion.capture.material->set_shader_parameter(
@@ -2185,18 +2186,18 @@ void AnimationPlayerEditor::_start_onion_skinning()
 		onion_toggle->set_pressed_no_signal(false);
 		return;
 	}
-	if (!get_tree()->is_connected(SNAME("process_frame"),
+	if (!get_tree()->obj->is_connected(SNAME("process_frame"),
 			callable_mp(this, &AnimationPlayerEditor::_prepare_onion_layers_1))) {
-		get_tree()->connect(SNAME("process_frame"),
+		get_tree()->obj->connect(SNAME("process_frame"),
 			callable_mp(this, &AnimationPlayerEditor::_prepare_onion_layers_1));
 	}
 }
 
 void AnimationPlayerEditor::_stop_onion_skinning()
 {
-	if (get_tree()->is_connected(SNAME("process_frame"),
+	if (get_tree()->obj->is_connected(SNAME("process_frame"),
 			callable_mp(this, &AnimationPlayerEditor::_prepare_onion_layers_1))) {
-		get_tree()->disconnect(SNAME("process_frame"),
+		get_tree()->obj->disconnect(SNAME("process_frame"),
 			callable_mp(this, &AnimationPlayerEditor::_prepare_onion_layers_1));
 
 		_free_onion_layers();

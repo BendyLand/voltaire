@@ -1539,11 +1539,11 @@ void GridMapEditor::_update_mesh_library()
 	MeshLibraryEditorPlugin* mesh_library_editor_plugin = MeshLibraryEditorPlugin::get_singleton();
 	if (mesh_library.is_valid()) {
 		mesh_library->connect_changed(callable_mp(this, &GridMapEditor::update_palette));
-		mesh_library->connect(
+		mesh_library->obj->connect(
 			CoreStringName(changed), callable_mp(this, &GridMapEditor::_rebuild_categories));
 
 		if (mesh_library_editor_plugin) {
-			mesh_library_editor_plugin->edit(*mesh_library);
+			mesh_library_editor_plugin->edit(mesh_library->obj.get());
 			mesh_library_editor_plugin->open_editor();
 		}
 	}
@@ -1770,7 +1770,7 @@ void GridMapEditor::_notification(int p_what)
 		last_viewport = Node3DEditor::get_singleton()->get_editor_viewport(0)->get_viewport_node();
 		for (uint32_t i = 0; i < Node3DEditor::VIEWPORTS_COUNT; i++) {
 			Node3DEditorViewport* viewport = Node3DEditor::get_singleton()->get_editor_viewport(i);
-			viewport->get_controller()->connect("view_state_changed",
+			viewport->get_controller()->obj->connect("view_state_changed",
 				callable_mp(this, &GridMapEditor::_view_state_changed).bind(viewport));
 		}
 	} break;
@@ -1923,12 +1923,7 @@ void GridMapEditor::_floor_changed(float p_value)
 
 void GridMapEditor::_floor_mouse_exited() { floor->get_line_edit()->release_focus(); }
 
-void GridMapEditor::_bind_methods()
-{
-	ClassDB::bind_method("_set_selection", &GridMapEditor::_set_selection);
-
-	ADD_SIGNAL(MethodInfo("overlay_update_requested"));
-}
+void GridMapEditor::_bind_methods() {}
 
 GridMapEditor::GridMapEditor()
 {
@@ -2494,21 +2489,7 @@ void GridMapEditorPlugin::_notification(int p_what)
 	}
 }
 
-void GridMapEditorPlugin::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("get_current_grid_map"), &GridMapEditorPlugin::get_current_grid_map);
-	ClassDB::bind_method(
-		D_METHOD("set_selection", "begin", "end"), &GridMapEditorPlugin::set_selection);
-	ClassDB::bind_method(D_METHOD("clear_selection"), &GridMapEditorPlugin::clear_selection);
-	ClassDB::bind_method(D_METHOD("get_selection"), &GridMapEditorPlugin::get_selection);
-	ClassDB::bind_method(D_METHOD("has_selection"), &GridMapEditorPlugin::has_selection);
-	ClassDB::bind_method(D_METHOD("get_selected_cells"), &GridMapEditorPlugin::get_selected_cells);
-	ClassDB::bind_method(D_METHOD("set_selected_palette_item", "item"),
-		&GridMapEditorPlugin::set_selected_palette_item);
-	ClassDB::bind_method(
-		D_METHOD("get_selected_palette_item"), &GridMapEditorPlugin::get_selected_palette_item);
-}
+void GridMapEditorPlugin::_bind_methods() {}
 
 void GridMapEditorPlugin::forward_3d_draw_over_viewport(Control* p_overlay)
 {
@@ -2521,12 +2502,12 @@ void GridMapEditorPlugin::forward_3d_draw_over_viewport(Control* p_overlay)
 	Ref<Font> font = p_overlay->get_theme_font(SceneStringName(font), SNAME("Label"));
 	int font_size = p_overlay->get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 
-	p_overlay->draw_string(font, msgpos + Point2(1, 1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+	p_overlay->draw_string(font.ptr(), msgpos + Point2(1, 1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
 		font_size, Color(0, 0, 0, 0.8));
-	p_overlay->draw_string(font, msgpos + Point2(-1, -1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+	p_overlay->draw_string(font.ptr(), msgpos + Point2(-1, -1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
 		font_size, Color(0, 0, 0, 0.8));
 	p_overlay->draw_string(
-		font, msgpos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1, 1, 1, 1));
+		font.ptr(), msgpos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1, 1, 1, 1));
 }
 
 void GridMapEditorPlugin::edit(Object* p_object)

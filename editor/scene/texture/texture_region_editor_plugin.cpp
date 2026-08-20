@@ -72,7 +72,7 @@ void TextureRegionEditor::_texture_preview_draw()
 	RS::get_singleton()->canvas_item_add_set_transform(texture_preview->get_canvas_item(), mtx);
 	texture_preview->draw_rect(
 		Rect2(Point2(), object_texture->get_size()), Color(0.5, 0.5, 0.5, 0.5), false);
-	texture_preview->draw_texture(object_texture, Point2());
+	texture_preview->draw_texture(object_texture.ptr(), Point2());
 	RS::get_singleton()->canvas_item_add_set_transform(
 		texture_preview->get_canvas_item(), Transform2D());
 }
@@ -194,9 +194,9 @@ void TextureRegionEditor::_texture_overlay_draw()
 			endpoints[i] - draw_ofs * draw_zoom, endpoints[next] - draw_ofs * draw_zoom, color, 2);
 
 		if (snap_mode != SNAP_AUTOSLICE) {
-			texture_overlay->draw_texture(
-				select_handle, (endpoints[i] + ofs - (select_handle->get_size() / 2)).floor() -
-								   draw_ofs * draw_zoom);
+			texture_overlay->draw_texture(select_handle.ptr(),
+				(endpoints[i] + ofs - (select_handle->get_size() / 2)).floor() -
+					draw_ofs * draw_zoom);
 		}
 
 		ofs = (endpoints[next] - endpoints[i]) / 2;
@@ -204,9 +204,9 @@ void TextureRegionEditor::_texture_overlay_draw()
 			   (select_handle->get_size().width / 2);
 
 		if (snap_mode != SNAP_AUTOSLICE) {
-			texture_overlay->draw_texture(
-				select_handle, (endpoints[i] + ofs - (select_handle->get_size() / 2)).floor() -
-								   draw_ofs * draw_zoom);
+			texture_overlay->draw_texture(select_handle.ptr(),
+				(endpoints[i] + ofs - (select_handle->get_size() / 2)).floor() -
+					draw_ofs * draw_zoom);
 		}
 
 		scroll_rect.expand_to(raw_endpoints[i]);
@@ -412,10 +412,10 @@ void TextureRegionEditor::_commit_drag()
 				node_ninepatch->obj.get(), "set_patch_margin", side[edited_margin], prev_margin);
 		}
 		else if (res_stylebox.is_valid()) {
-			undo_redo->add_do_method(res_stylebox.ptr(), "set_texture_margin", side[edited_margin],
-				res_stylebox->get_texture_margin(side[edited_margin]));
+			undo_redo->add_do_method(res_stylebox->obj.get(), "set_texture_margin",
+				side[edited_margin], res_stylebox->get_texture_margin(side[edited_margin]));
 			undo_redo->add_undo_method(
-				res_stylebox.ptr(), "set_texture_margin", side[edited_margin], prev_margin);
+				res_stylebox->obj.get(), "set_texture_margin", side[edited_margin], prev_margin);
 			res_stylebox->emit_changed();
 		}
 		edited_margin = -1;
@@ -429,13 +429,13 @@ void TextureRegionEditor::_commit_drag()
 		}
 		else if (res_stylebox.is_valid()) {
 			undo_redo->add_do_method(
-				res_stylebox.ptr(), "set_region_rect", res_stylebox->get_region_rect());
-			undo_redo->add_undo_method(res_stylebox.ptr(), "set_region_rect", rect_prev);
+				res_stylebox->obj.get(), "set_region_rect", res_stylebox->get_region_rect());
+			undo_redo->add_undo_method(res_stylebox->obj.get(), "set_region_rect", rect_prev);
 		}
 		else if (res_atlas_texture.is_valid()) {
 			undo_redo->add_do_method(
-				res_atlas_texture.ptr(), "set_region", res_atlas_texture->get_region());
-			undo_redo->add_undo_method(res_atlas_texture.ptr(), "set_region", rect_prev);
+				res_atlas_texture->obj.get(), "set_region", res_atlas_texture->get_region());
+			undo_redo->add_undo_method(res_atlas_texture->obj.get(), "set_region", rect_prev);
 		}
 		else if (node_sprite_2d) {
 			undo_redo->add_do_method(
@@ -527,14 +527,14 @@ void TextureRegionEditor::_texture_overlay_input(const Ref<InputEvent>& p_input)
 								}
 								else if (res_stylebox.is_valid()) {
 									undo_redo->add_do_method(
-										res_stylebox.ptr(), "set_region_rect", rect);
-									undo_redo->add_undo_method(res_stylebox.ptr(),
+										res_stylebox->obj.get(), "set_region_rect", rect);
+									undo_redo->add_undo_method(res_stylebox->obj.get(),
 										"set_region_rect", res_stylebox->get_region_rect());
 								}
 								else if (res_atlas_texture.is_valid()) {
 									undo_redo->add_do_method(
-										res_atlas_texture.ptr(), "set_region", rect);
-									undo_redo->add_undo_method(res_atlas_texture.ptr(),
+										res_atlas_texture->obj.get(), "set_region", rect);
+									undo_redo->add_undo_method(res_atlas_texture->obj.get(),
 										"set_region", res_atlas_texture->get_region());
 								}
 								else if (node_sprite_2d) {
@@ -1012,7 +1012,8 @@ void TextureRegionEditor::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_ENTER_TREE: {
-		get_tree()->connect("node_removed", callable_mp(this, &TextureRegionEditor::_node_removed));
+		get_tree()->obj->connect(
+			"node_removed", callable_mp(this, &TextureRegionEditor::_node_removed));
 
 		hb_grid->set_visible(snap_mode == SNAP_GRID);
 		if (snap_mode == SNAP_AUTOSLICE && is_visible() && autoslice_is_dirty) {
@@ -1029,15 +1030,17 @@ void TextureRegionEditor::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		get_tree()->disconnect(
+		get_tree()->obj->disconnect(
 			"node_removed", callable_mp(this, &TextureRegionEditor::_node_removed));
 	} break;
 
 	case NOTIFICATION_THEME_CHANGED: {
 		texture_preview->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("TextureRegionPreviewBG"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("TextureRegionPreviewBG"), EditorStringName(EditorStyles))
+				.ptr());
 		texture_overlay->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("TextureRegionPreviewFG"), EditorStringName(EditorStyles)));
+			get_theme_stylebox(SNAME("TextureRegionPreviewFG"), EditorStringName(EditorStyles))
+				.ptr());
 
 		zoom_out->set_button_icon(get_editor_theme_icon(SNAME("ZoomLess")));
 		zoom_reset->set_button_icon(get_editor_theme_icon(SNAME("ZoomReset")));
@@ -1357,27 +1360,21 @@ void TextureRegionEditor::shortcut_input(const Ref<InputEvent>& p_event)
 	const Ref<InputEventKey> k = p_event;
 	if (k.is_valid() && k->is_pressed()) {
 		bool handled = false;
-
 		if (ED_IS_SHORTCUT("ui_undo", p_event)) {
 			EditorNode::get_singleton()->undo();
 			handled = true;
 		}
-
 		if (ED_IS_SHORTCUT("ui_redo", p_event)) {
 			EditorNode::get_singleton()->redo();
 			handled = true;
 		}
-
 		if (handled) {
 			set_input_as_handled();
 		}
 	}
 }
 
-void TextureRegionEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_update_rect"), &TextureRegionEditor::_update_rect);
-}
+void TextureRegionEditor::_bind_methods() {}
 
 TextureRegionEditor::TextureRegionEditor()
 {

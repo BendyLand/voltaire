@@ -118,11 +118,11 @@ void ImportDefaultsEditor::_save()
 		}
 
 		if (modified.size()) {
-			ProjectSettings::get_singleton()->set(
+			ProjectSettings::get_singleton()->obj->set(
 				"importer_defaults/" + settings->importer->get_importer_name(), modified);
 		}
 		else {
-			ProjectSettings::get_singleton()->set(
+			ProjectSettings::get_singleton()->obj->set(
 				"importer_defaults/" + settings->importer->get_importer_name(), Variant());
 		}
 		ProjectSettings::get_singleton()->save();

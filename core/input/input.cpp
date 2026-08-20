@@ -133,7 +133,7 @@ void Input::get_argument_options(
 				pf == "get_action_strength" || pf == "get_action_raw_strength")) ||
 		(p_idx < 2 && pf == "get_axis") || (p_idx < 4 && pf == "get_vector")) {
 		List<PropertyInfo> pinfo;
-		ProjectSettings::get_singleton()->get_property_list(&pinfo);
+		ProjectSettings::get_singleton()->obj->get_property_list(&pinfo);
 
 		for (const PropertyInfo& pi : pinfo) {
 			if (!pi.name.begins_with("input/")) {

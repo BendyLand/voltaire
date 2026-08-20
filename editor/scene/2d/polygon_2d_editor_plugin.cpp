@@ -1172,7 +1172,7 @@ void Polygon2DEditor::_center_view_on_draw(bool p_enabled)
 	if (center_view_on_draw) {
 		// Ensure that the view is centered even if the canvas is redrawn multiple times in the
 		// frame.
-		get_tree()->connect("process_frame",
+		get_tree()->obj->connect("process_frame",
 			callable_mp(this, &Polygon2DEditor::_center_view_on_draw).bind(false),
 			Object::CONNECT_ONE_SHOT);
 	}

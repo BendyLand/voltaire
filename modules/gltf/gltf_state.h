@@ -31,6 +31,8 @@
 #pragma once
 
 #include "extensions/gltf_light.h"
+#include "scene/3d/importer_mesh_instance_3d.h"
+#include "scene/animation/animation_player.h"
 #include "structures/gltf_accessor.h"
 #include "structures/gltf_animation.h"
 #include "structures/gltf_buffer_view.h"
@@ -43,20 +45,21 @@
 #include "structures/gltf_texture.h"
 #include "structures/gltf_texture_sampler.h"
 
-#include "scene/3d/importer_mesh_instance_3d.h"
-#include "scene/animation/animation_player.h"
-
-class GLTFState : public Resource {
+class GLTFState : public Resource
+{
 	VLTRCLASS(GLTFState, Resource);
 	friend class GLTFDocument;
 	friend class GLTFNode;
 
 public:
-	enum HandleBinaryImageMode {
+	enum HandleBinaryImageMode
+	{
 		HANDLE_BINARY_IMAGE_MODE_DISCARD_TEXTURES = 0,
 		HANDLE_BINARY_IMAGE_MODE_EXTRACT_TEXTURES,
 		HANDLE_BINARY_IMAGE_MODE_EMBED_AS_BASISU,
-		HANDLE_BINARY_IMAGE_MODE_EMBED_AS_UNCOMPRESSED, // If this value changes from 3, ResourceImporterScene::pre_import must be changed as well.
+		HANDLE_BINARY_IMAGE_MODE_EMBED_AS_UNCOMPRESSED, // If this value changes from 3,
+														// ResourceImporterScene::pre_import must be
+														// changed as well.
 	};
 
 protected:
@@ -88,7 +91,7 @@ protected:
 
 	Vector<Ref<GLTFMesh>> meshes; // Meshes are loaded directly, no reason not to.
 
-	Vector<AnimationPlayer *> animation_players;
+	Vector<AnimationPlayer*> animation_players;
 	HashMap<Ref<Material>, GLTFMaterialIndex> material_cache;
 	Vector<Ref<Material>> materials;
 
@@ -110,8 +113,8 @@ protected:
 
 	Vector<Ref<GLTFSkeleton>> skeletons;
 	Vector<Ref<GLTFAnimation>> animations;
-	HashMap<GLTFNodeIndex, Node *> scene_nodes;
-	HashMap<GLTFNodeIndex, ImporterMeshInstance3D *> scene_mesh_instances;
+	HashMap<GLTFNodeIndex, Node*> scene_nodes;
+	HashMap<GLTFNodeIndex, ImporterMeshInstance3D*> scene_mesh_instances;
 	HashMap<String, Ref<GLTFObjectModelProperty>> object_model_properties;
 
 	HashMap<ObjectID, GLTFSkeletonIndex> skeleton3d_to_gltf_skeleton;
@@ -130,68 +133,75 @@ protected:
 	Vector<uint8_t> _get_glb_data_bind_compat_113172();
 	bool _get_use_named_skin_binds_bind_compat_113172();
 	bool _get_discard_meshes_and_materials_bind_compat_113172();
-	TypedArray<GLTFNode> _get_nodes_bind_compat_113172();
-	TypedArray<PackedByteArray> _get_buffers_bind_compat_113172();
-	TypedArray<GLTFBufferView> _get_buffer_views_bind_compat_113172();
-	TypedArray<GLTFAccessor> _get_accessors_bind_compat_113172();
-	TypedArray<GLTFMesh> _get_meshes_bind_compat_113172();
-	TypedArray<Material> _get_materials_bind_compat_113172();
+	Array _get_nodes_bind_compat_113172();
+	Array _get_buffers_bind_compat_113172();
+	Array _get_buffer_views_bind_compat_113172();
+	Array _get_accessors_bind_compat_113172();
+	Array _get_meshes_bind_compat_113172();
+	Array _get_materials_bind_compat_113172();
 	String _get_scene_name_bind_compat_113172();
 	String _get_base_path_bind_compat_113172();
 	String _get_extract_path_bind_compat_113172();
 	String _get_extract_prefix_bind_compat_113172();
 	PackedInt32Array _get_root_nodes_bind_compat_113172();
-	TypedArray<GLTFTexture> _get_textures_bind_compat_113172();
-	TypedArray<GLTFTextureSampler> _get_texture_samplers_bind_compat_113172();
-	TypedArray<Texture2D> _get_images_bind_compat_113172();
-	TypedArray<GLTFSkin> _get_skins_bind_compat_113172();
-	TypedArray<GLTFCamera> _get_cameras_bind_compat_113172();
-	TypedArray<GLTFLight> _get_lights_bind_compat_113172();
-	TypedArray<String> _get_unique_names_bind_compat_113172();
-	TypedArray<String> _get_unique_animation_names_bind_compat_113172();
-	TypedArray<GLTFSkeleton> _get_skeletons_bind_compat_113172();
+	Array _get_textures_bind_compat_113172();
+	Array _get_texture_samplers_bind_compat_113172();
+	Array _get_images_bind_compat_113172();
+	Array _get_skins_bind_compat_113172();
+	Array _get_cameras_bind_compat_113172();
+	Array _get_lights_bind_compat_113172();
+	Array _get_unique_names_bind_compat_113172();
+	Array _get_unique_animation_names_bind_compat_113172();
+	Array _get_skeletons_bind_compat_113172();
 	bool _get_create_animations_bind_compat_113172();
 	bool _get_import_as_skeleton_bones_bind_compat_113172();
-	TypedArray<GLTFAnimation> _get_animations_bind_compat_113172();
-	Node *_get_scene_node_bind_compat_113172(GLTFNodeIndex p_gltf_node_index);
-	GLTFNodeIndex _get_node_index_bind_compat_113172(Node *p_node);
+	Array _get_animations_bind_compat_113172();
+	Node* _get_scene_node_bind_compat_113172(GLTFNodeIndex p_gltf_node_index);
+	GLTFNodeIndex _get_node_index_bind_compat_113172(Node* p_node);
 	int _get_animation_players_count_bind_compat_113172(int p_anim_player_index);
-	AnimationPlayer *_get_animation_player_bind_compat_113172(int p_anim_player_index);
-	Variant _get_additional_data_bind_compat_113172(const StringName &p_extension_name);
+	AnimationPlayer* _get_animation_player_bind_compat_113172(int p_anim_player_index);
+	Variant _get_additional_data_bind_compat_113172(const StringName& p_extension_name);
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
 public:
-	double get_bake_fps() const {
-		return bake_fps;
-	}
+	double get_bake_fps() const { return bake_fps; }
 
-	void set_bake_fps(double value) {
-		bake_fps = value;
-	}
+	void set_bake_fps(double value) { bake_fps = value; }
 
-	void add_used_extension(const String &p_extension, bool p_required = false);
-	GLTFBufferViewIndex append_data_to_buffers(const Vector<uint8_t> &p_data, const bool p_deduplication);
-	GLTFNodeIndex append_gltf_node(Ref<GLTFNode> p_gltf_node, Node *p_godot_scene_node, GLTFNodeIndex p_parent_node_index);
+	void add_used_extension(const String& p_extension, bool p_required = false);
+	GLTFBufferViewIndex append_data_to_buffers(
+		const Vector<uint8_t>& p_data, const bool p_deduplication);
+	GLTFNodeIndex append_gltf_node(
+		Ref<GLTFNode> p_gltf_node, Node* p_godot_scene_node, GLTFNodeIndex p_parent_node_index);
 
 	// Deprecated, use HandleBinaryImageMode instead.
-	enum GLTFHandleBinary {
+	enum GLTFHandleBinary
+	{
 		HANDLE_BINARY_DISCARD_TEXTURES = 0,
 		HANDLE_BINARY_EXTRACT_TEXTURES,
 		HANDLE_BINARY_EMBED_AS_BASISU,
-		HANDLE_BINARY_EMBED_AS_UNCOMPRESSED, // If this value changes from 3, ResourceImporterScene::pre_import must be changed as well.
+		HANDLE_BINARY_EMBED_AS_UNCOMPRESSED, // If this value changes from 3,
+											 // ResourceImporterScene::pre_import must be changed as
+											 // well.
 	};
-	int32_t get_handle_binary_image() const {
-		return handle_binary_image_mode;
-	}
-	void set_handle_binary_image(int32_t p_handle_binary_image) {
+
+	int32_t get_handle_binary_image() const { return handle_binary_image_mode; }
+
+	void set_handle_binary_image(int32_t p_handle_binary_image)
+	{
 		handle_binary_image_mode = (HandleBinaryImageMode)p_handle_binary_image;
 	}
+
 	HandleBinaryImageMode get_handle_binary_image_mode() const { return handle_binary_image_mode; }
-	void set_handle_binary_image_mode(HandleBinaryImageMode p_handle_binary_image) { handle_binary_image_mode = p_handle_binary_image; }
+
+	void set_handle_binary_image_mode(HandleBinaryImageMode p_handle_binary_image)
+	{
+		handle_binary_image_mode = p_handle_binary_image;
+	}
 
 	Dictionary get_json() const;
-	void set_json(const Dictionary &p_json);
+	void set_json(const Dictionary& p_json);
 
 	int get_major_version() const;
 	void set_major_version(int p_major_version);
@@ -200,10 +210,10 @@ public:
 	void set_minor_version(int p_minor_version);
 
 	String get_copyright() const;
-	void set_copyright(const String &p_copyright);
+	void set_copyright(const String& p_copyright);
 
 	Vector<uint8_t> get_glb_data() const;
-	void set_glb_data(const Vector<uint8_t> &p_glb_data);
+	void set_glb_data(const Vector<uint8_t>& p_glb_data);
 
 	bool get_use_named_skin_binds() const;
 	void set_use_named_skin_binds(bool p_use_named_skin_binds);
@@ -211,98 +221,137 @@ public:
 	bool get_discard_meshes_and_materials() const;
 	void set_discard_meshes_and_materials(bool p_discard_meshes_and_materials);
 
-	const Vector<Ref<GLTFNode>> &get_nodes() const { return nodes; }
-	void set_nodes(const Vector<Ref<GLTFNode>> &p_nodes) { nodes = p_nodes; }
-	TypedArray<GLTFNode> get_nodes_bind() const;
-	void set_nodes_bind(const TypedArray<GLTFNode> &p_nodes);
+	const Vector<Ref<GLTFNode>>& get_nodes() const { return nodes; }
 
-	const Vector<PackedByteArray> &get_buffers() const { return buffers; }
-	void set_buffers(const Vector<PackedByteArray> &p_buffers) { buffers = p_buffers; }
-	TypedArray<PackedByteArray> get_buffers_bind() const;
-	void set_buffers_bind(const TypedArray<PackedByteArray> &p_buffers);
+	void set_nodes(const Vector<Ref<GLTFNode>>& p_nodes) { nodes = p_nodes; }
 
-	const Vector<Ref<GLTFBufferView>> &get_buffer_views() const { return buffer_views; }
-	void set_buffer_views(const Vector<Ref<GLTFBufferView>> &p_buffer_views) { buffer_views = p_buffer_views; }
-	TypedArray<GLTFBufferView> get_buffer_views_bind() const;
-	void set_buffer_views_bind(const TypedArray<GLTFBufferView> &p_buffer_views);
+	Array get_nodes_bind() const;
+	void set_nodes_bind(const Array& p_nodes);
 
-	const Vector<Ref<GLTFAccessor>> &get_accessors() const { return accessors; }
-	void set_accessors(const Vector<Ref<GLTFAccessor>> &p_accessors) { accessors = p_accessors; }
-	TypedArray<GLTFAccessor> get_accessors_bind() const;
-	void set_accessors_bind(const TypedArray<GLTFAccessor> &p_accessors);
+	const Vector<PackedByteArray>& get_buffers() const { return buffers; }
 
-	const Vector<Ref<GLTFMesh>> &get_meshes() const { return meshes; }
-	void set_meshes(const Vector<Ref<GLTFMesh>> &p_meshes) { meshes = p_meshes; }
-	TypedArray<GLTFMesh> get_meshes_bind() const;
-	void set_meshes_bind(const TypedArray<GLTFMesh> &p_meshes);
+	void set_buffers(const Vector<PackedByteArray>& p_buffers) { buffers = p_buffers; }
 
-	const Vector<Ref<Material>> &get_materials() const { return materials; }
-	void set_materials(const Vector<Ref<Material>> &p_materials) { materials = p_materials; }
-	TypedArray<Material> get_materials_bind() const;
-	void set_materials_bind(const TypedArray<Material> &p_materials);
+	Array get_buffers_bind() const;
+	void set_buffers_bind(const Array& p_buffers);
+
+	const Vector<Ref<GLTFBufferView>>& get_buffer_views() const { return buffer_views; }
+
+	void set_buffer_views(const Vector<Ref<GLTFBufferView>>& p_buffer_views)
+	{
+		buffer_views = p_buffer_views;
+	}
+
+	Array get_buffer_views_bind() const;
+	void set_buffer_views_bind(const Array& p_buffer_views);
+
+	const Vector<Ref<GLTFAccessor>>& get_accessors() const { return accessors; }
+
+	void set_accessors(const Vector<Ref<GLTFAccessor>>& p_accessors) { accessors = p_accessors; }
+
+	Array get_accessors_bind() const;
+	void set_accessors_bind(const Array& p_accessors);
+
+	const Vector<Ref<GLTFMesh>>& get_meshes() const { return meshes; }
+
+	void set_meshes(const Vector<Ref<GLTFMesh>>& p_meshes) { meshes = p_meshes; }
+
+	Array get_meshes_bind() const;
+	void set_meshes_bind(const Array& p_meshes);
+
+	const Vector<Ref<Material>>& get_materials() const { return materials; }
+
+	void set_materials(const Vector<Ref<Material>>& p_materials) { materials = p_materials; }
+
+	Array get_materials_bind() const;
+	void set_materials_bind(const Array& p_materials);
 
 	String get_scene_name() const;
-	void set_scene_name(const String &p_scene_name);
+	void set_scene_name(const String& p_scene_name);
 
 	String get_base_path() const;
-	void set_base_path(const String &p_base_path);
+	void set_base_path(const String& p_base_path);
 
 	String get_extract_path() const;
-	void set_extract_path(const String &p_extract_path);
+	void set_extract_path(const String& p_extract_path);
 
 	String get_extract_prefix() const;
-	void set_extract_prefix(const String &p_extract_prefix);
+	void set_extract_prefix(const String& p_extract_prefix);
 
 	String get_filename() const;
-	void set_filename(const String &p_filename);
+	void set_filename(const String& p_filename);
 
 	PackedInt32Array get_root_nodes() const;
-	void set_root_nodes(const PackedInt32Array &p_root_nodes);
+	void set_root_nodes(const PackedInt32Array& p_root_nodes);
 
-	const Vector<Ref<GLTFTexture>> &get_textures() const { return textures; }
-	void set_textures(const Vector<Ref<GLTFTexture>> &p_textures) { textures = p_textures; }
-	TypedArray<GLTFTexture> get_textures_bind() const;
-	void set_textures_bind(const TypedArray<GLTFTexture> &p_textures);
+	const Vector<Ref<GLTFTexture>>& get_textures() const { return textures; }
 
-	const Vector<Ref<GLTFTextureSampler>> &get_texture_samplers() const { return texture_samplers; }
-	void set_texture_samplers(const Vector<Ref<GLTFTextureSampler>> &p_texture_samplers) { texture_samplers = p_texture_samplers; }
-	TypedArray<GLTFTextureSampler> get_texture_samplers_bind() const;
-	void set_texture_samplers_bind(const TypedArray<GLTFTextureSampler> &p_texture_samplers);
+	void set_textures(const Vector<Ref<GLTFTexture>>& p_textures) { textures = p_textures; }
 
-	const Vector<Ref<Texture2D>> &get_images() const { return images; }
-	void set_images(const Vector<Ref<Texture2D>> &p_images) { images = p_images; }
-	TypedArray<Texture2D> get_images_bind() const;
-	void set_images_bind(const TypedArray<Texture2D> &p_images);
+	Array get_textures_bind() const;
+	void set_textures_bind(const Array& p_textures);
 
-	const Vector<Ref<GLTFSkin>> &get_skins() const { return skins; }
-	void set_skins(const Vector<Ref<GLTFSkin>> &p_skins) { skins = p_skins; }
-	TypedArray<GLTFSkin> get_skins_bind() const;
-	void set_skins_bind(const TypedArray<GLTFSkin> &p_skins);
+	const Vector<Ref<GLTFTextureSampler>>& get_texture_samplers() const { return texture_samplers; }
 
-	const Vector<Ref<GLTFCamera>> &get_cameras() const { return cameras; }
-	void set_cameras(const Vector<Ref<GLTFCamera>> &p_cameras) { cameras = p_cameras; }
-	TypedArray<GLTFCamera> get_cameras_bind() const;
-	void set_cameras_bind(const TypedArray<GLTFCamera> &p_cameras);
+	void set_texture_samplers(const Vector<Ref<GLTFTextureSampler>>& p_texture_samplers)
+	{
+		texture_samplers = p_texture_samplers;
+	}
 
-	const Vector<Ref<GLTFLight>> &get_lights() const { return lights; }
-	void set_lights(const Vector<Ref<GLTFLight>> &p_lights) { lights = p_lights; }
-	TypedArray<GLTFLight> get_lights_bind() const;
-	void set_lights_bind(const TypedArray<GLTFLight> &p_lights);
+	Array get_texture_samplers_bind() const;
+	void set_texture_samplers_bind(const Array& p_texture_samplers);
 
-	const HashSet<String> &get_unique_names() const { return unique_names; }
-	void set_unique_names(const HashSet<String> &p_unique_names) { unique_names = p_unique_names; }
-	TypedArray<String> get_unique_names_bind() const;
-	void set_unique_names_bind(const TypedArray<String> &p_unique_names);
+	const Vector<Ref<Texture2D>>& get_images() const { return images; }
 
-	const HashSet<String> &get_unique_animation_names() const { return unique_animation_names; }
-	void set_unique_animation_names(const HashSet<String> &p_unique_animation_names) { unique_animation_names = p_unique_animation_names; }
-	TypedArray<String> get_unique_animation_names_bind() const;
-	void set_unique_animation_names_bind(const TypedArray<String> &p_unique_names);
+	void set_images(const Vector<Ref<Texture2D>>& p_images) { images = p_images; }
 
-	const Vector<Ref<GLTFSkeleton>> &get_skeletons() const { return skeletons; }
-	void set_skeletons(const Vector<Ref<GLTFSkeleton>> &p_skeletons) { skeletons = p_skeletons; }
-	TypedArray<GLTFSkeleton> get_skeletons_bind() const;
-	void set_skeletons_bind(const TypedArray<GLTFSkeleton> &p_skeletons);
+	Array get_images_bind() const;
+	void set_images_bind(const Array& p_images);
+
+	const Vector<Ref<GLTFSkin>>& get_skins() const { return skins; }
+
+	void set_skins(const Vector<Ref<GLTFSkin>>& p_skins) { skins = p_skins; }
+
+	Array get_skins_bind() const;
+	void set_skins_bind(const Array& p_skins);
+
+	const Vector<Ref<GLTFCamera>>& get_cameras() const { return cameras; }
+
+	void set_cameras(const Vector<Ref<GLTFCamera>>& p_cameras) { cameras = p_cameras; }
+
+	Array get_cameras_bind() const;
+	void set_cameras_bind(const Array& p_cameras);
+
+	const Vector<Ref<GLTFLight>>& get_lights() const { return lights; }
+
+	void set_lights(const Vector<Ref<GLTFLight>>& p_lights) { lights = p_lights; }
+
+	Array get_lights_bind() const;
+	void set_lights_bind(const Array& p_lights);
+
+	const HashSet<String>& get_unique_names() const { return unique_names; }
+
+	void set_unique_names(const HashSet<String>& p_unique_names) { unique_names = p_unique_names; }
+
+	Array get_unique_names_bind() const;
+	void set_unique_names_bind(const Array& p_unique_names);
+
+	const HashSet<String>& get_unique_animation_names() const { return unique_animation_names; }
+
+	void set_unique_animation_names(const HashSet<String>& p_unique_animation_names)
+	{
+		unique_animation_names = p_unique_animation_names;
+	}
+
+	Array get_unique_animation_names_bind() const;
+	void set_unique_animation_names_bind(const Array& p_unique_names);
+
+	const Vector<Ref<GLTFSkeleton>>& get_skeletons() const { return skeletons; }
+
+	void set_skeletons(const Vector<Ref<GLTFSkeleton>>& p_skeletons) { skeletons = p_skeletons; }
+
+	Array get_skeletons_bind() const;
+	void set_skeletons_bind(const Array& p_skeletons);
 
 	bool get_create_animations() const;
 	void set_create_animations(bool p_create_animations);
@@ -310,20 +359,27 @@ public:
 	bool get_import_as_skeleton_bones() const;
 	void set_import_as_skeleton_bones(bool p_import_as_skeleton_bones);
 
-	const Vector<Ref<GLTFAnimation>> &get_animations() const { return animations; }
-	void set_animations(const Vector<Ref<GLTFAnimation>> &p_animations) { animations = p_animations; }
-	TypedArray<GLTFAnimation> get_animations_bind() const;
-	void set_animations_bind(const TypedArray<GLTFAnimation> &p_animations);
+	const Vector<Ref<GLTFAnimation>>& get_animations() const { return animations; }
 
-	Node *get_scene_node(GLTFNodeIndex p_gltf_node_index) const;
-	GLTFNodeIndex get_node_index(Node *p_node) const;
+	void set_animations(const Vector<Ref<GLTFAnimation>>& p_animations)
+	{
+		animations = p_animations;
+	}
+
+	Array get_animations_bind() const;
+	void set_animations_bind(const Array& p_animations);
+
+	Node* get_scene_node(GLTFNodeIndex p_gltf_node_index) const;
+	GLTFNodeIndex get_node_index(Node* p_node) const;
 
 	int get_animation_players_count(int p_anim_player_index) const;
 
-	AnimationPlayer *get_animation_player(int p_anim_player_index) const;
+	AnimationPlayer* get_animation_player(int p_anim_player_index) const;
 
-	Variant get_additional_data(const StringName &p_extension_name) const;
-	void set_additional_data(const StringName &p_extension_name, Variant p_additional_data);
+	Variant get_additional_data(const StringName& p_extension_name) const;
+	void set_additional_data(const StringName& p_extension_name, Variant p_additional_data);
 };
 
 VARIANT_ENUM_CAST(GLTFState::HandleBinaryImageMode);
+
+

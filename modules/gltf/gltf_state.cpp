@@ -33,100 +33,7 @@
 #include "gltf_state.h"
 #include "gltf_template_convert.h"
 
-void GLTFState::_bind_methods()
-{
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "json"), "set_json", "get_json"); // Dictionary
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "major_version"), "set_major_version",
-		"get_major_version"); // int
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "minor_version"), "set_minor_version",
-		"get_minor_version"); // int
-	ADD_PROPERTY(
-		PropertyInfo(Variant::STRING, "copyright"), "set_copyright", "get_copyright"); // String
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "glb_data"), "set_glb_data",
-		"get_glb_data"); // Vector<uint8_t>
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_named_skin_binds"), "set_use_named_skin_binds",
-		"get_use_named_skin_binds"); // bool
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "nodes", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_nodes", "get_nodes"); // Vector<Ref<GLTFNode>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "buffers"), "set_buffers",
-		"get_buffers"); // Vector<Vector<uint8_t>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "buffer_views", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_buffer_views", "get_buffer_views"); // Vector<Ref<GLTFBufferView>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "accessors", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_accessors", "get_accessors"); // Vector<Ref<GLTFAccessor>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "meshes", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_meshes", "get_meshes"); // Vector<Ref<GLTFMesh>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "materials", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_materials", "get_materials"); // Vector<Ref<Material>
-	ADD_PROPERTY(
-		PropertyInfo(Variant::STRING, "scene_name"), "set_scene_name", "get_scene_name"); // String
-	ADD_PROPERTY(
-		PropertyInfo(Variant::STRING, "base_path"), "set_base_path", "get_base_path"); // String
-	ADD_PROPERTY(
-		PropertyInfo(Variant::STRING, "filename"), "set_filename", "get_filename"); // String
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_INT32_ARRAY, "root_nodes"), "set_root_nodes",
-		"get_root_nodes"); // Vector<int>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "textures", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_textures", "get_textures"); // Vector<Ref<GLTFTexture>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "texture_samplers", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_texture_samplers", "get_texture_samplers"); // Vector<Ref<GLTFTextureSampler>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "images", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_images", "get_images"); // Vector<Ref<Texture>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "skins", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_skins", "get_skins"); // Vector<Ref<GLTFSkin>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "cameras", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_cameras", "get_cameras"); // Vector<Ref<GLTFCamera>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "lights", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_lights", "get_lights"); // Vector<Ref<GLTFLight>>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "unique_names", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_unique_names", "get_unique_names"); // Set<String>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "unique_animation_names", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_unique_animation_names", "get_unique_animation_names"); // Set<String>
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "skeletons", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_skeletons", "get_skeletons"); // Vector<Ref<GLTFSkeleton>>
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "create_animations"), "set_create_animations",
-		"get_create_animations"); // bool
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "import_as_skeleton_bones"),
-		"set_import_as_skeleton_bones", "get_import_as_skeleton_bones"); // bool
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "animations", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR),
-		"set_animations", "get_animations"); // Vector<Ref<GLTFAnimation>>
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "handle_binary_image_mode", PROPERTY_HINT_ENUM,
-			"Discard All Textures,Extract Textures,Embed as Basis Universal,Embed as Uncompressed"),
-		"set_handle_binary_image_mode", "get_handle_binary_image_mode"); // enum
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bake_fps", PROPERTY_HINT_RANGE,
-					 "0.001,120,0.0001,or_greater"),
-		"set_bake_fps", "get_bake_fps");
-
-	BIND_ENUM_CONSTANT(HANDLE_BINARY_IMAGE_MODE_DISCARD_TEXTURES);
-	BIND_ENUM_CONSTANT(HANDLE_BINARY_IMAGE_MODE_EXTRACT_TEXTURES);
-	BIND_ENUM_CONSTANT(HANDLE_BINARY_IMAGE_MODE_EMBED_AS_BASISU);
-	BIND_ENUM_CONSTANT(HANDLE_BINARY_IMAGE_MODE_EMBED_AS_UNCOMPRESSED);
-
-#ifndef DISABLE_DEPRECATED
-	// Deprecated non-type-safe versions for backward compatibility, remove in Godot 5.0.
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "handle_binary_image", PROPERTY_HINT_ENUM,
-			"Discard All Textures,Extract Textures,Embed as Basis Universal,Embed as Uncompressed",
-			PROPERTY_USAGE_INTERNAL),
-		"set_handle_binary_image", "get_handle_binary_image"); // enum as int
-#endif														   // DISABLE_DEPRECATED
-}
+void GLTFState::_bind_methods() {}
 
 void GLTFState::add_used_extension(const String& p_extension_name, bool p_required)
 {
@@ -170,62 +77,62 @@ void GLTFState::set_use_named_skin_binds(bool p_use_named_skin_binds)
 	use_named_skin_binds = p_use_named_skin_binds;
 }
 
-TypedArray<GLTFNode> GLTFState::get_nodes_bind() const
+Array GLTFState::get_nodes_bind() const
 {
 	return GLTFTemplateConvert::to_array(nodes);
 }
 
-void GLTFState::set_nodes_bind(const TypedArray<GLTFNode>& p_nodes)
+void GLTFState::set_nodes_bind(const Array& p_nodes)
 {
 	GLTFTemplateConvert::set_from_array(nodes, p_nodes);
 }
 
-TypedArray<PackedByteArray> GLTFState::get_buffers_bind() const
+Array GLTFState::get_buffers_bind() const
 {
 	return GLTFTemplateConvert::to_array(buffers);
 }
 
-void GLTFState::set_buffers_bind(const TypedArray<PackedByteArray>& p_buffers)
+void GLTFState::set_buffers_bind(const Array& p_buffers)
 {
 	GLTFTemplateConvert::set_from_array(buffers, p_buffers);
 }
 
-TypedArray<GLTFBufferView> GLTFState::get_buffer_views_bind() const
+Array GLTFState::get_buffer_views_bind() const
 {
 	return GLTFTemplateConvert::to_array(buffer_views);
 }
 
-void GLTFState::set_buffer_views_bind(const TypedArray<GLTFBufferView>& p_buffer_views)
+void GLTFState::set_buffer_views_bind(const Array& p_buffer_views)
 {
 	GLTFTemplateConvert::set_from_array(buffer_views, p_buffer_views);
 }
 
-TypedArray<GLTFAccessor> GLTFState::get_accessors_bind() const
+Array GLTFState::get_accessors_bind() const
 {
 	return GLTFTemplateConvert::to_array(accessors);
 }
 
-void GLTFState::set_accessors_bind(const TypedArray<GLTFAccessor>& p_accessors)
+void GLTFState::set_accessors_bind(const Array& p_accessors)
 {
 	GLTFTemplateConvert::set_from_array(accessors, p_accessors);
 }
 
-TypedArray<GLTFMesh> GLTFState::get_meshes_bind() const
+Array GLTFState::get_meshes_bind() const
 {
 	return GLTFTemplateConvert::to_array(meshes);
 }
 
-void GLTFState::set_meshes_bind(const TypedArray<GLTFMesh>& p_meshes)
+void GLTFState::set_meshes_bind(const Array& p_meshes)
 {
 	GLTFTemplateConvert::set_from_array(meshes, p_meshes);
 }
 
-TypedArray<Material> GLTFState::get_materials_bind() const
+Array GLTFState::get_materials_bind() const
 {
 	return GLTFTemplateConvert::to_array(materials);
 }
 
-void GLTFState::set_materials_bind(const TypedArray<Material>& p_materials)
+void GLTFState::set_materials_bind(const Array& p_materials)
 {
 	GLTFTemplateConvert::set_from_array(materials, p_materials);
 }
@@ -241,92 +148,92 @@ void GLTFState::set_root_nodes(const PackedInt32Array& p_root_nodes)
 	root_nodes = PackedInt32Array(p_root_nodes);
 }
 
-TypedArray<GLTFTexture> GLTFState::get_textures_bind() const
+Array GLTFState::get_textures_bind() const
 {
 	return GLTFTemplateConvert::to_array(textures);
 }
 
-void GLTFState::set_textures_bind(const TypedArray<GLTFTexture>& p_textures)
+void GLTFState::set_textures_bind(const Array& p_textures)
 {
 	GLTFTemplateConvert::set_from_array(textures, p_textures);
 }
 
-TypedArray<GLTFTextureSampler> GLTFState::get_texture_samplers_bind() const
+Array GLTFState::get_texture_samplers_bind() const
 {
 	return GLTFTemplateConvert::to_array(texture_samplers);
 }
 
-void GLTFState::set_texture_samplers_bind(const TypedArray<GLTFTextureSampler>& p_texture_samplers)
+void GLTFState::set_texture_samplers_bind(const Array& p_texture_samplers)
 {
 	GLTFTemplateConvert::set_from_array(texture_samplers, p_texture_samplers);
 }
 
-TypedArray<Texture2D> GLTFState::get_images_bind() const
+Array GLTFState::get_images_bind() const
 {
 	return GLTFTemplateConvert::to_array(images);
 }
 
-void GLTFState::set_images_bind(const TypedArray<Texture2D>& p_images)
+void GLTFState::set_images_bind(const Array& p_images)
 {
 	GLTFTemplateConvert::set_from_array(images, p_images);
 }
 
-TypedArray<GLTFSkin> GLTFState::get_skins_bind() const
+Array GLTFState::get_skins_bind() const
 {
 	return GLTFTemplateConvert::to_array(skins);
 }
 
-void GLTFState::set_skins_bind(const TypedArray<GLTFSkin>& p_skins)
+void GLTFState::set_skins_bind(const Array& p_skins)
 {
 	GLTFTemplateConvert::set_from_array(skins, p_skins);
 }
 
-TypedArray<GLTFCamera> GLTFState::get_cameras_bind() const
+Array GLTFState::get_cameras_bind() const
 {
 	return GLTFTemplateConvert::to_array(cameras);
 }
 
-void GLTFState::set_cameras_bind(const TypedArray<GLTFCamera>& p_cameras)
+void GLTFState::set_cameras_bind(const Array& p_cameras)
 {
 	GLTFTemplateConvert::set_from_array(cameras, p_cameras);
 }
 
-TypedArray<GLTFLight> GLTFState::get_lights_bind() const
+Array GLTFState::get_lights_bind() const
 {
 	return GLTFTemplateConvert::to_array(lights);
 }
 
-void GLTFState::set_lights_bind(const TypedArray<GLTFLight>& p_lights)
+void GLTFState::set_lights_bind(const Array& p_lights)
 {
 	GLTFTemplateConvert::set_from_array(lights, p_lights);
 }
 
-TypedArray<String> GLTFState::get_unique_names_bind() const
+Array GLTFState::get_unique_names_bind() const
 {
 	return GLTFTemplateConvert::to_array(unique_names);
 }
 
-void GLTFState::set_unique_names_bind(const TypedArray<String>& p_unique_names)
+void GLTFState::set_unique_names_bind(const Array& p_unique_names)
 {
 	GLTFTemplateConvert::set_from_array(unique_names, p_unique_names);
 }
 
-TypedArray<String> GLTFState::get_unique_animation_names_bind() const
+Array GLTFState::get_unique_animation_names_bind() const
 {
 	return GLTFTemplateConvert::to_array(unique_animation_names);
 }
 
-void GLTFState::set_unique_animation_names_bind(const TypedArray<String>& p_unique_animation_names)
+void GLTFState::set_unique_animation_names_bind(const Array& p_unique_animation_names)
 {
 	GLTFTemplateConvert::set_from_array(unique_animation_names, p_unique_animation_names);
 }
 
-TypedArray<GLTFSkeleton> GLTFState::get_skeletons_bind() const
+Array GLTFState::get_skeletons_bind() const
 {
 	return GLTFTemplateConvert::to_array(skeletons);
 }
 
-void GLTFState::set_skeletons_bind(const TypedArray<GLTFSkeleton>& p_skeletons)
+void GLTFState::set_skeletons_bind(const Array& p_skeletons)
 {
 	GLTFTemplateConvert::set_from_array(skeletons, p_skeletons);
 }
@@ -345,12 +252,12 @@ void GLTFState::set_import_as_skeleton_bones(bool p_import_as_skeleton_bones)
 	import_as_skeleton_bones = p_import_as_skeleton_bones;
 }
 
-TypedArray<GLTFAnimation> GLTFState::get_animations_bind() const
+Array GLTFState::get_animations_bind() const
 {
 	return GLTFTemplateConvert::to_array(animations);
 }
 
-void GLTFState::set_animations_bind(const TypedArray<GLTFAnimation>& p_animations)
+void GLTFState::set_animations_bind(const Array& p_animations)
 {
 	GLTFTemplateConvert::set_from_array(animations, p_animations);
 }

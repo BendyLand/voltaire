@@ -137,7 +137,7 @@ void FBXImporterManager::_cancel_setup()
 		return; // No worry.
 	}
 	// No escape.
-	ProjectSettings::get_singleton()->set("filesystem/import/fbx2gltf/enabled", false);
+	ProjectSettings::get_singleton()->obj->set("filesystem/import/fbx2gltf/enabled", false);
 	ProjectSettings::get_singleton()->save();
 	EditorNode::get_singleton()->save_all_scenes();
 	EditorNode::get_singleton()->restart_editor();

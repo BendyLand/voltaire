@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "texture_editor_plugin.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/editor_string_names.h"
 #include "editor/scene/texture/color_channel_selector.h"
@@ -49,8 +47,9 @@
 #include "scene/resources/portable_compressed_texture.h"
 #include "scene/resources/texture_rd.h"
 #include "servers/rendering/rendering_device.h"
+#include "texture_editor_plugin.h"
 
-constexpr const char *texture_2d_shader_code = R"(
+constexpr const char* texture_2d_shader_code = R"(
 shader_type canvas_item;
 render_mode blend_mix;
 
@@ -80,7 +79,8 @@ void fragment() {
 }
 )";
 
-void TexturePreview::init_shaders() {
+void TexturePreview::init_shaders()
+{
 	texture_material.instantiate();
 
 	Ref<Shader> texture_shader;
@@ -90,62 +90,69 @@ void TexturePreview::init_shaders() {
 	texture_material->set_shader(texture_shader);
 }
 
-void TexturePreview::finish_shaders() {
-	texture_material.unref();
-}
+void TexturePreview::finish_shaders() { texture_material.unref(); }
 
-TextureRect *TexturePreview::get_texture_display() {
-	return texture_display;
-}
+TextureRect* TexturePreview::get_texture_display() { return texture_display; }
 
-void TexturePreview::_notification(int p_what) {
+void TexturePreview::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			if (!is_inside_tree()) {
-				// TODO: This is a workaround because `NOTIFICATION_THEME_CHANGED`
-				// is getting called for some reason when the `TexturePreview` is
-				// getting destroyed, which causes `get_theme_font()` to return `nullptr`.
-				// See https://github.com/godotengine/godot/issues/50743.
-				break;
-			}
+	case NOTIFICATION_THEME_CHANGED: {
+		if (!is_inside_tree()) {
+			// TODO: This is a workaround because `NOTIFICATION_THEME_CHANGED`
+			// is getting called for some reason when the `TexturePreview` is
+			// getting destroyed, which causes `get_theme_font()` to return `nullptr`.
+			// See https://github.com/godotengine/godot/issues/50743.
+			break;
+		}
 
-			if (metadata_label) {
-				Ref<Font> metadata_label_font = get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
-				metadata_label->add_theme_font_override(SceneStringName(font), metadata_label_font);
-			}
+		if (metadata_label) {
+			Ref<Font> metadata_label_font =
+				get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
+			metadata_label->add_theme_font_override(
+				SceneStringName(font), metadata_label_font.ptr());
+		}
 
-			bg_rect->set_color(get_theme_color(SNAME("dark_color_2"), EditorStringName(Editor)));
-			checkerboard->set_texture(get_editor_theme_icon(SNAME("Checkerboard")));
-			theme_cache.outline_color = get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
-		} break;
+		bg_rect->set_color(get_theme_color(SNAME("dark_color_2"), EditorStringName(Editor)));
+		checkerboard->set_texture(get_editor_theme_icon(SNAME("Checkerboard")));
+		theme_cache.outline_color =
+			get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
+	} break;
 	}
 }
 
-void TexturePreview::_draw_outline() {
+void TexturePreview::_draw_outline()
+{
 	const float outline_width = Math::round(EDSCALE);
-	const Rect2 outline_rect = Rect2(Vector2(), outline_overlay->get_size()).grow(outline_width * 0.5);
+	const Rect2 outline_rect =
+		Rect2(Vector2(), outline_overlay->get_size()).grow(outline_width * 0.5);
 	outline_overlay->draw_rect(outline_rect, theme_cache.outline_color, false, outline_width);
 }
 
-void TexturePreview::_update_texture_display_ratio() {
+void TexturePreview::_update_texture_display_ratio()
+{
 	if (texture_display->get_texture().is_valid()) {
 		centering_container->set_ratio(texture_display->get_texture()->get_size().aspect());
 	}
 }
 
-static Image::Format get_texture_2d_format(const Ref<Texture2D> &p_texture) {
+static Image::Format get_texture_2d_format(const Ref<Texture2D>& p_texture)
+{
 	const Ref<Texture2DRD> rd_texture = p_texture;
-	if (rd_texture.is_valid() && RD::get_singleton() && RD::get_singleton()->texture_is_valid(rd_texture->get_texture_rd_rid())) {
+	if (rd_texture.is_valid() && RD::get_singleton() &&
+		RD::get_singleton()->texture_is_valid(rd_texture->get_texture_rd_rid())) {
 		return rd_texture->get_image()->get_format();
 	}
 
 	return p_texture->get_format();
 }
 
-static int get_texture_mipmaps_count(const Ref<Texture2D> &p_texture) {
+static int get_texture_mipmaps_count(const Ref<Texture2D>& p_texture)
+{
 	ERR_FAIL_COND_V(p_texture.is_null(), -1);
 
-	// We are having to download the image only to get its mipmaps count. It would be nice if we didn't have to.
+	// We are having to download the image only to get its mipmaps count. It would be nice if we
+	// didn't have to.
 	Ref<Image> image;
 	Ref<AtlasTexture> at = p_texture;
 	Ref<Texture2DRD> rd_texture = p_texture;
@@ -157,12 +164,15 @@ static int get_texture_mipmaps_count(const Ref<Texture2D> &p_texture) {
 		if (atlas.is_valid()) {
 			image = atlas->get_image();
 		}
-	} else if (rd_texture.is_valid()) {
-		if (RD::get_singleton() && RD::get_singleton()->texture_is_valid(rd_texture->get_texture_rd_rid())) {
+	}
+	else if (rd_texture.is_valid()) {
+		if (RD::get_singleton() &&
+			RD::get_singleton()->texture_is_valid(rd_texture->get_texture_rd_rid())) {
 			return -1;
 		}
 		image = p_texture->get_image();
-	} else {
+	}
+	else {
 		image = p_texture->get_image();
 	}
 
@@ -172,7 +182,8 @@ static int get_texture_mipmaps_count(const Ref<Texture2D> &p_texture) {
 	return -1;
 }
 
-void TexturePreview::_update_metadata_label_text() {
+void TexturePreview::_update_metadata_label_text()
+{
 	const Ref<Texture2D> texture = texture_display->get_texture();
 	ERR_FAIL_COND(texture.is_null());
 
@@ -183,18 +194,22 @@ void TexturePreview::_update_metadata_label_text() {
 	if (image.is_valid()) {
 		format = image->get_format();
 		mipmaps = image->get_mipmap_count();
-	} else {
+	}
+	else {
 		format = get_texture_2d_format(texture.ptr());
 		mipmaps = get_texture_mipmaps_count(texture);
 	}
 
-	const String format_name = format != Image::FORMAT_MAX ? Image::get_format_name(format) : texture->get_class();
+	const String format_name =
+		format != Image::FORMAT_MAX ? Image::get_format_name(format) : texture->obj->get_class();
 
 	const Vector2i resolution = texture->get_size();
 
 	if (format != Image::FORMAT_MAX) {
-		// Avoid signed integer overflow that could occur with huge texture sizes by casting everything to uint64_t.
-		uint64_t memory = uint64_t(resolution.x) * uint64_t(resolution.y) * uint64_t(Image::get_format_pixel_size(format));
+		// Avoid signed integer overflow that could occur with huge texture sizes by casting
+		// everything to uint64_t.
+		uint64_t memory = uint64_t(resolution.x) * uint64_t(resolution.y) *
+						  uint64_t(Image::get_format_pixel_size(format));
 		// Handle VRAM-compressed formats.
 		memory = Image::get_format_pixels_shifted(format, memory);
 
@@ -210,40 +225,38 @@ void TexturePreview::_update_metadata_label_text() {
 
 		if (mipmaps >= 1) {
 			metadata_label->set_text(
-					vformat(String::utf8("%d×%d %s\n") + TTR("%s Mipmaps") + "\n" + TTR("Memory: %s"),
-							texture->get_width(),
-							texture->get_height(),
-							format_name,
-							mipmaps,
-							String::humanize_size(memory)));
-		} else {
+				vformat(String::utf8("%d×%d %s\n") + TTR("%s Mipmaps") + "\n" + TTR("Memory: %s"),
+					texture->get_width(), texture->get_height(), format_name, mipmaps,
+					String::humanize_size(memory)));
+		}
+		else {
 			// "No Mipmaps" is easier to distinguish than "0 Mipmaps",
 			// especially since 0, 6, and 8 look quite close with the default code font.
 			metadata_label->set_text(
-					vformat(String::utf8("%d×%d %s\n") + TTR("No Mipmaps") + "\n" + TTR("Memory: %s"),
-							texture->get_width(),
-							texture->get_height(),
-							format_name,
-							String::humanize_size(memory)));
+				vformat(String::utf8("%d×%d %s\n") + TTR("No Mipmaps") + "\n" + TTR("Memory: %s"),
+					texture->get_width(), texture->get_height(), format_name,
+					String::humanize_size(memory)));
 		}
-	} else {
-		metadata_label->set_text(
-				vformat(String::utf8("%d×%d %s"),
-						texture->get_width(),
-						texture->get_height(),
-						format_name));
+	}
+	else {
+		metadata_label->set_text(vformat(
+			String::utf8("%d×%d %s"), texture->get_width(), texture->get_height(), format_name));
 	}
 }
 
-void TexturePreview::on_selected_channels_changed() {
-	texture_display->set_instance_shader_parameter("u_channel_factors", channel_selector->get_selected_channel_factors());
+void TexturePreview::on_selected_channels_changed()
+{
+	texture_display->set_instance_shader_parameter(
+		"u_channel_factors", channel_selector->get_selected_channel_factors());
 }
 
-void TexturePreview::on_selected_mipmap_changed(double p_value) {
+void TexturePreview::on_selected_mipmap_changed(double p_value)
+{
 	texture_display->set_instance_shader_parameter("lod", mipmap_spinbox->get_value());
 }
 
-TexturePreview::TexturePreview(Ref<Texture2D> p_texture, bool p_show_metadata) {
+TexturePreview::TexturePreview(Ref<Texture2D> p_texture, bool p_show_metadata)
+{
 	const float outline_width = Math::round(EDSCALE);
 
 	set_custom_minimum_size(Size2(0.0, 256 * EDSCALE) + Size2(outline_width, outline_width) * 2);
@@ -279,16 +292,20 @@ TexturePreview::TexturePreview(Ref<Texture2D> p_texture, bool p_show_metadata) {
 	outline_overlay = memnew(Control);
 	centering_container->add_child(outline_overlay);
 
-	outline_overlay->connect(SceneStringName(draw), callable_mp(this, &TexturePreview::_draw_outline));
+	outline_overlay->connect(
+		SceneStringName(draw), callable_mp(this, &TexturePreview::_draw_outline));
 
 	if (p_texture.is_valid()) {
 		_update_texture_display_ratio();
-		p_texture->connect_changed(callable_mp(this, &TexturePreview::_update_texture_display_ratio));
+		p_texture->connect_changed(
+			callable_mp(this, &TexturePreview::_update_texture_display_ratio));
 	}
 
 	// Null can be passed by `Camera3DPreview` (which immediately after sets a texture anyways).
-	const Image::Format format = p_texture.is_valid() ? get_texture_2d_format(p_texture.ptr()) : Image::FORMAT_MAX;
-	const uint32_t components_mask = format != Image::FORMAT_MAX ? Image::get_format_component_mask(format) : 0xf;
+	const Image::Format format =
+		p_texture.is_valid() ? get_texture_2d_format(p_texture.ptr()) : Image::FORMAT_MAX;
+	const uint32_t components_mask =
+		format != Image::FORMAT_MAX ? Image::get_format_component_mask(format) : 0xf;
 
 	// Setup Mipmap selector.
 	const int mipmaps = get_texture_mipmaps_count(p_texture);
@@ -301,14 +318,16 @@ TexturePreview::TexturePreview(Ref<Texture2D> p_texture, bool p_show_metadata) {
 		mipmap_spinbox->set_h_size_flags(Control::SIZE_SHRINK_END);
 		mipmap_spinbox->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
 		mipmap_spinbox->set_anchors_preset(Control::PRESET_TOP_RIGHT);
-		mipmap_spinbox->connect(SceneStringName(value_changed), callable_mp(this, &TexturePreview::on_selected_mipmap_changed));
+		mipmap_spinbox->connect(SceneStringName(value_changed),
+			callable_mp(this, &TexturePreview::on_selected_mipmap_changed));
 		add_child(mipmap_spinbox);
 	}
 
 	// Add color channel selector at the bottom left if more than 1 channel is available.
 	if (p_show_metadata && !Math::is_power_of_2(components_mask)) {
 		channel_selector = memnew(ColorChannelSelector);
-		channel_selector->connect("selected_channels_changed", callable_mp(this, &TexturePreview::on_selected_channels_changed));
+		channel_selector->connect("selected_channels_changed",
+			callable_mp(this, &TexturePreview::on_selected_channels_changed));
 		channel_selector->set_h_size_flags(Control::SIZE_SHRINK_BEGIN);
 		channel_selector->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
 		channel_selector->set_available_channels_mask(components_mask);
@@ -321,7 +340,8 @@ TexturePreview::TexturePreview(Ref<Texture2D> p_texture, bool p_show_metadata) {
 
 		if (p_texture.is_valid()) {
 			_update_metadata_label_text();
-			p_texture->connect_changed(callable_mp(this, &TexturePreview::_update_metadata_label_text));
+			p_texture->connect_changed(
+				callable_mp(this, &TexturePreview::_update_metadata_label_text));
 		}
 
 		// It's okay that these colors are static since the grid color is static too.
@@ -339,19 +359,21 @@ TexturePreview::TexturePreview(Ref<Texture2D> p_texture, bool p_show_metadata) {
 	}
 }
 
-bool EditorInspectorPluginTexture::can_handle(Object *p_object) {
-	if (Object::cast_to<GradientTexture1D>(p_object) || Object::cast_to<GradientTexture2D>(p_object)) {
+bool EditorInspectorPluginTexture::can_handle(Object* p_object)
+{
+	if (Object::cast_to<GradientTexture1D>(p_object) ||
+		Object::cast_to<GradientTexture2D>(p_object)) {
 		return false;
 	}
 
 	if (Object::cast_to<Image>(p_object) != nullptr ||
-			Object::cast_to<ImageTexture>(p_object) != nullptr ||
-			Object::cast_to<AtlasTexture>(p_object) != nullptr ||
-			Object::cast_to<CompressedTexture2D>(p_object) != nullptr ||
-			Object::cast_to<PortableCompressedTexture2D>(p_object) != nullptr ||
-			Object::cast_to<AnimatedTexture>(p_object) != nullptr ||
-			Object::cast_to<DPITexture>(p_object) != nullptr ||
-			Object::cast_to<Texture2DRD>(p_object) != nullptr) {
+		Object::cast_to<ImageTexture>(p_object) != nullptr ||
+		Object::cast_to<AtlasTexture>(p_object) != nullptr ||
+		Object::cast_to<CompressedTexture2D>(p_object) != nullptr ||
+		Object::cast_to<PortableCompressedTexture2D>(p_object) != nullptr ||
+		Object::cast_to<AnimatedTexture>(p_object) != nullptr ||
+		Object::cast_to<DPITexture>(p_object) != nullptr ||
+		Object::cast_to<Texture2DRD>(p_object) != nullptr) {
 		return true;
 	}
 
@@ -363,7 +385,8 @@ bool EditorInspectorPluginTexture::can_handle(Object *p_object) {
 	return false;
 }
 
-void EditorInspectorPluginTexture::parse_begin(Object *p_object) {
+void EditorInspectorPluginTexture::parse_begin(Object* p_object)
+{
 	Ref<Texture> texture(Object::cast_to<Texture>(p_object));
 	if (texture.is_null()) {
 		Ref<Image> image(Object::cast_to<Image>(p_object));
@@ -375,8 +398,11 @@ void EditorInspectorPluginTexture::parse_begin(Object *p_object) {
 	add_custom_control(memnew(TexturePreview(texture, true)));
 }
 
-TextureEditorPlugin::TextureEditorPlugin() {
+TextureEditorPlugin::TextureEditorPlugin()
+{
 	Ref<EditorInspectorPluginTexture> plugin;
 	plugin.instantiate();
 	add_inspector_plugin(plugin);
 }
+
+

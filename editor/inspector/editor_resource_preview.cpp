@@ -62,14 +62,12 @@ Ref<Texture2D> EditorResourcePreviewGenerator::generate_from_path(
 	return generate(res, p_size, p_metadata);
 }
 
-void EditorResourcePreviewGenerator::_bind_methods()
-{
-}
+void EditorResourcePreviewGenerator::_bind_methods() {}
 
 void EditorResourcePreviewGenerator::DrawRequester::request_and_wait(RID p_viewport)
 {
 	if (EditorResourcePreview::get_singleton()->is_threaded()) {
-		RS::get_singleton()->connect(SNAME("frame_pre_draw"),
+		RS::get_singleton()->obj->connect(SNAME("frame_pre_draw"),
 			callable_mp(this, &EditorResourcePreviewGenerator::DrawRequester::_prepare_draw)
 				.bind(p_viewport),
 			Object::CONNECT_ONE_SHOT);

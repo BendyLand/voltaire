@@ -3638,7 +3638,7 @@ void Node3DEditorViewport::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_READY: {
-		ProjectSettings::get_singleton()->connect("settings_changed",
+		ProjectSettings::get_singleton()->obj->connect("settings_changed",
 			callable_mp(this, &Node3DEditorViewport::_project_settings_changed));
 		_update_navigation_controls_visibility();
 	} break;

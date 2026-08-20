@@ -32,16 +32,19 @@
 
 #include "core/object/gdvirtual.gen.h"
 #include "core/object/object.h"
+#include "core/templates/mem_unique_ptr.h"
 
-class MainLoop : public Object {
-	VLTRCLASS(MainLoop, Object);
-
+class MainLoop
+{
 protected:
 	static void _bind_methods();
 
 public:
-	enum {
-		//make sure these are replicated in Node
+	mem_unique_ptr<Object> obj;
+
+	enum
+	{
+		// make sure these are replicated in Node
 		NOTIFICATION_OS_MEMORY_WARNING = 2009,
 		NOTIFICATION_TRANSLATION_CHANGED = 2010,
 		NOTIFICATION_WM_ABOUT = 2011,
@@ -57,11 +60,17 @@ public:
 	};
 
 	virtual void initialize();
+
 	virtual void iteration_prepare() {}
+
 	virtual bool physics_process(double p_time);
+
 	virtual void iteration_end() {}
+
 	virtual bool process(double p_time);
 	virtual void finalize();
 
 	virtual ~MainLoop() {}
 };
+
+

@@ -82,7 +82,7 @@ static void _editor_init()
 			blender_path += "/blender";
 #endif
 
-			EditorSettings::get_singleton()->set(
+			EditorSettings::get_singleton()->obj->set(
 				"filesystem/import/blender/blender_path", blender_path);
 		}
 

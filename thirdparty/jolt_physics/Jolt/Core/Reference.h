@@ -5,6 +5,7 @@
 #pragma once
 
 #include <Jolt/Core/Atomics.h>
+#include "thirdparty/jolt_physics/Jolt/Core/Core.h"
 
 JPH_NAMESPACE_BEGIN
 

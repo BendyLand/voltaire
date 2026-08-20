@@ -1218,7 +1218,7 @@ void ProjectManager::_apply_project_tags()
 	}
 	else {
 		tags.sort();
-		cfg->set("application/config/tags", tags);
+		cfg->obj->set("application/config/tags", tags);
 		Error err = cfg->save_custom(project_godot);
 		memdelete(cfg);
 

@@ -39,25 +39,7 @@
 #include "core/templates/a_hash_map.h"
 #include "core/templates/hash_set.h"
 
-template <typename T, typename = void> struct is_class_enabled;
-
-template <> struct is_class_enabled<Object> : std::true_type
-{
-};
-
-template <typename T> struct is_class_enabled<T, std::enable_if_t<std::is_base_of_v<Object, T>>>
-{
-	static constexpr bool value = is_class_enabled<typename T::super_type>::value;
-};
-
-template <typename T> inline constexpr bool is_class_enabled_v = is_class_enabled<T>::value;
-
-#define VLTR_IS_CLASS_ENABLED(m_class) is_class_enabled_v<m_class>
-
-#include "core/disabled_classes.gen.h" // IWYU pragma: keep.
-
 #define DEFVAL(m_defval) (m_defval)
-#define DEFVAL_ARRAY DEFVAL(ClassDB::default_array_arg)
 
 #ifdef DEBUG_ENABLED
 

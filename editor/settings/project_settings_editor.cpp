@@ -191,9 +191,9 @@ void ProjectSettingsEditor::_add_setting()
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Add Project Setting"));
-	undo_redo->add_do_property(ps, setting, value);
+	undo_redo->add_do_property(ps->obj.get(), setting, value);
 	undo_redo->add_undo_property(
-		ps, setting, ps->has_setting(setting) ? ps->get(setting) : Variant());
+		ps->obj.get(), setting, ps->has_setting(setting) ? ps->obj->get(setting) : Variant());
 
 	undo_redo->add_do_method(general_settings_inspector->obj.get(), "update_category_list");
 	undo_redo->add_undo_method(general_settings_inspector->obj.get(), "update_category_list");
@@ -208,15 +208,15 @@ void ProjectSettingsEditor::_add_setting()
 void ProjectSettingsEditor::_delete_setting()
 {
 	String setting = _get_setting_name();
-	Variant value = ps->get(setting);
+	Variant value = ps->obj->get(setting);
 	int order = ps->get_order(setting);
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Delete Item"));
 
-	undo_redo->add_do_method(ps, "clear", setting);
-	undo_redo->add_undo_method(ps, "set", setting, value);
-	undo_redo->add_undo_method(ps, "set_order", setting, order);
+	undo_redo->add_do_method(ps->obj.get(), "clear", setting);
+	undo_redo->add_undo_method(ps->obj.get(), "set", setting, value);
+	undo_redo->add_undo_method(ps->obj.get(), "set_order", setting, order);
 
 	undo_redo->add_do_method(general_settings_inspector->obj.get(), "update_category_list");
 	undo_redo->add_undo_method(general_settings_inspector->obj.get(), "update_category_list");
@@ -484,8 +484,8 @@ void ProjectSettingsEditor::_action_added(const String& p_name)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Add Input Action"));
-	undo_redo->add_do_method(ProjectSettings::get_singleton(), "set", name, action);
-	undo_redo->add_undo_method(ProjectSettings::get_singleton(), "clear", name);
+	undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "set", name, action);
+	undo_redo->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "clear", name);
 
 	undo_redo->add_do_method(this->obj.get(), "_update_action_map_editor");
 	undo_redo->add_undo_method(this->obj.get(), "_update_action_map_editor");
@@ -503,15 +503,19 @@ void ProjectSettingsEditor::_action_edited(const String& p_name, const Dictionar
 	if (old_val["deadzone"] != p_action["deadzone"]) {
 		// Deadzone Changed
 		undo_redo->create_action(TTR("Change Action deadzone"));
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "set", property_name, p_action);
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set", property_name, old_val);
+		undo_redo->add_do_method(
+			ProjectSettings::get_singleton()->obj.get(), "set", property_name, p_action);
+		undo_redo->add_undo_method(
+			ProjectSettings::get_singleton()->obj.get(), "set", property_name, old_val);
 
 	}
 	else {
 		// Events changed
 		undo_redo->create_action(TTR("Change Input Action Event(s)"));
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "set", property_name, p_action);
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set", property_name, old_val);
+		undo_redo->add_do_method(
+			ProjectSettings::get_singleton()->obj.get(), "set", property_name, p_action);
+		undo_redo->add_undo_method(
+			ProjectSettings::get_singleton()->obj.get(), "set", property_name, old_val);
 	}
 
 	undo_redo->add_do_method(this->obj.get(), "_update_action_map_editor");
@@ -530,9 +534,11 @@ void ProjectSettingsEditor::_action_removed(const String& p_name)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Erase Input Action"));
-	undo_redo->add_do_method(ProjectSettings::get_singleton(), "clear", property_name);
-	undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set", property_name, old_val);
-	undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set_order", property_name, order);
+	undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "clear", property_name);
+	undo_redo->add_undo_method(
+		ProjectSettings::get_singleton()->obj.get(), "set", property_name, old_val);
+	undo_redo->add_undo_method(
+		ProjectSettings::get_singleton()->obj.get(), "set_order", property_name, order);
 
 	undo_redo->add_do_method(this->obj.get(), "_update_action_map_editor");
 	undo_redo->add_undo_method(this->obj.get(), "_update_action_map_editor");
@@ -555,15 +561,19 @@ void ProjectSettingsEditor::_action_renamed(const String& p_old_name, const Stri
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Rename Input Action"));
 	// Do: clear old, set new
-	undo_redo->add_do_method(ProjectSettings::get_singleton(), "clear", old_property_name);
-	undo_redo->add_do_method(ProjectSettings::get_singleton(), "set", new_property_name, action);
 	undo_redo->add_do_method(
-		ProjectSettings::get_singleton(), "set_order", new_property_name, order);
+		ProjectSettings::get_singleton()->obj.get(), "clear", old_property_name);
+	undo_redo->add_do_method(
+		ProjectSettings::get_singleton()->obj.get(), "set", new_property_name, action);
+	undo_redo->add_do_method(
+		ProjectSettings::get_singleton()->obj.get(), "set_order", new_property_name, order);
 	// Undo: clear new, set old
-	undo_redo->add_undo_method(ProjectSettings::get_singleton(), "clear", new_property_name);
-	undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set", old_property_name, action);
 	undo_redo->add_undo_method(
-		ProjectSettings::get_singleton(), "set_order", old_property_name, order);
+		ProjectSettings::get_singleton()->obj.get(), "clear", new_property_name);
+	undo_redo->add_undo_method(
+		ProjectSettings::get_singleton()->obj.get(), "set", old_property_name, action);
+	undo_redo->add_undo_method(
+		ProjectSettings::get_singleton()->obj.get(), "set_order", old_property_name, order);
 
 	undo_redo->add_do_method(this->obj.get(), "_update_action_map_editor");
 	undo_redo->add_undo_method(this->obj.get(), "_update_action_map_editor");
@@ -580,12 +590,12 @@ void ProjectSettingsEditor::_action_reordered(
 
 	// It is much easier to rebuild the custom "input" properties rather than messing around with
 	// the "order" values of them.
-	Variant action_value = ps->get(action_name);
-	Variant target_value = ps->get(target_name);
+	Variant action_value = ps->obj->get(action_name);
+	Variant target_value = ps->obj->get(target_name);
 
 	List<PropertyInfo> props;
 	HashMap<String, Variant> action_values;
-	ProjectSettings::get_singleton()->get_property_list(&props);
+	ProjectSettings::get_singleton()->obj->get_property_list(&props);
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Update Input Action Order"));
@@ -599,10 +609,10 @@ void ProjectSettingsEditor::_action_reordered(
 			continue;
 		}
 
-		action_values.insert(prop.name, ps->get(prop.name));
+		action_values.insert(prop.name, ps->obj->get(prop.name));
 
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "clear", prop.name);
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "clear", prop.name);
+		undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "clear", prop.name);
+		undo_redo->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "clear", prop.name);
 	}
 
 	for (const KeyValue<String, Variant>& E : action_values) {
@@ -613,32 +623,34 @@ void ProjectSettingsEditor::_action_reordered(
 			if (p_before) {
 				// Insert before target
 				undo_redo->add_do_method(
-					ProjectSettings::get_singleton(), "set", action_name, action_value);
+					ProjectSettings::get_singleton()->obj.get(), "set", action_name, action_value);
 				undo_redo->add_do_method(
-					ProjectSettings::get_singleton(), "set", target_name, target_value);
+					ProjectSettings::get_singleton()->obj.get(), "set", target_name, target_value);
 
 				undo_redo->add_undo_method(
-					ProjectSettings::get_singleton(), "set", target_name, target_value);
+					ProjectSettings::get_singleton()->obj.get(), "set", target_name, target_value);
 				undo_redo->add_undo_method(
-					ProjectSettings::get_singleton(), "set", action_name, action_value);
+					ProjectSettings::get_singleton()->obj.get(), "set", action_name, action_value);
 			}
 			else {
 				// Insert after target
 				undo_redo->add_do_method(
-					ProjectSettings::get_singleton(), "set", target_name, target_value);
+					ProjectSettings::get_singleton()->obj.get(), "set", target_name, target_value);
 				undo_redo->add_do_method(
-					ProjectSettings::get_singleton(), "set", action_name, action_value);
+					ProjectSettings::get_singleton()->obj.get(), "set", action_name, action_value);
 
 				undo_redo->add_undo_method(
-					ProjectSettings::get_singleton(), "set", action_name, action_value);
+					ProjectSettings::get_singleton()->obj.get(), "set", action_name, action_value);
 				undo_redo->add_undo_method(
-					ProjectSettings::get_singleton(), "set", target_name, target_value);
+					ProjectSettings::get_singleton()->obj.get(), "set", target_name, target_value);
 			}
 
 		}
 		else if (name != action_name) {
-			undo_redo->add_do_method(ProjectSettings::get_singleton(), "set", name, value);
-			undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set", name, value);
+			undo_redo->add_do_method(
+				ProjectSettings::get_singleton()->obj.get(), "set", name, value);
+			undo_redo->add_undo_method(
+				ProjectSettings::get_singleton()->obj.get(), "set", name, value);
 		}
 	}
 
@@ -654,7 +666,7 @@ void ProjectSettingsEditor::_update_action_map_editor()
 	Vector<ActionMapEditor::ActionInfo> actions;
 
 	List<PropertyInfo> props;
-	ProjectSettings::get_singleton()->get_property_list(&props);
+	ProjectSettings::get_singleton()->obj->get_property_list(&props);
 
 	const Ref<Texture2D> builtin_icon = get_editor_theme_icon(SNAME("PinPressed"));
 	for (const PropertyInfo& E : props) {
@@ -689,7 +701,7 @@ void ProjectSettingsEditor::_update_action_map_editor()
 			action_info.icon = builtin_icon;
 			action_info.has_initial = true;
 			action_info.action_initial =
-				ProjectSettings::get_singleton()->property_get_revert(property_name);
+				ProjectSettings::get_singleton()->obj->property_get_revert(property_name);
 		}
 
 		actions.push_back(action_info);
@@ -737,7 +749,7 @@ void ProjectSettingsEditor::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_ENTER_TREE: {
-		general_settings_inspector->edit(ps);
+		general_settings_inspector->edit(ps->obj.get());
 		_update_action_map_editor();
 		_update_theme();
 	} break;

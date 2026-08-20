@@ -31,10 +31,12 @@
 #pragma once
 
 #include "core/object/object.h"
+#include "core/templates/mem_unique_ptr.h"
 
 class TTSDriver
 {
 public:
+	mem_unique_ptr<Object> obj;
 	virtual bool is_speaking() const = 0;
 	virtual bool is_paused() const = 0;
 	virtual Array get_voices() const = 0;

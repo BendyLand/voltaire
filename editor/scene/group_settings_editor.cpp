@@ -83,8 +83,10 @@ void GroupSettingsEditor::_item_edited()
 
 		undo_redo->create_action(TTR("Set Group Description"));
 
-		undo_redo->add_do_property(ProjectSettings::get_singleton(), name, new_description);
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), name, old_description);
+		undo_redo->add_do_property(
+			ProjectSettings::get_singleton()->obj.get(), name, new_description);
+		undo_redo->add_undo_property(
+			ProjectSettings::get_singleton()->obj.get(), name, old_description);
 
 		undo_redo->add_do_method(this->obj.get(), CoreStringName(call_deferred), "update_groups");
 		undo_redo->add_undo_method(this->obj.get(), CoreStringName(call_deferred), "update_groups");
@@ -161,8 +163,8 @@ void GroupSettingsEditor::_add_group(const String& p_name, const String& p_descr
 
 	name = GLOBAL_GROUP_PREFIX + name;
 
-	undo_redo->add_do_property(ProjectSettings::get_singleton(), name, p_description);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(), name, Variant());
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(), name, p_description);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(), name, Variant());
 
 	undo_redo->add_do_method(this->obj.get(), CoreStringName(call_deferred), "update_groups");
 	undo_redo->add_undo_method(this->obj.get(), CoreStringName(call_deferred), "update_groups");
@@ -373,11 +375,15 @@ void GroupSettingsEditor::_confirm_rename()
 
 	String description = ti->obj->get_meta("__description");
 
-	undo_redo->add_do_property(ProjectSettings::get_singleton(), property_new_name, description);
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(), property_new_name, Variant());
+	undo_redo->add_do_property(
+		ProjectSettings::get_singleton()->obj.get(), property_new_name, description);
+	undo_redo->add_undo_property(
+		ProjectSettings::get_singleton()->obj.get(), property_new_name, Variant());
 
-	undo_redo->add_do_property(ProjectSettings::get_singleton(), property_old_name, Variant());
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(), property_old_name, description);
+	undo_redo->add_do_property(
+		ProjectSettings::get_singleton()->obj.get(), property_old_name, Variant());
+	undo_redo->add_undo_property(
+		ProjectSettings::get_singleton()->obj.get(), property_old_name, description);
 
 	if (rename_check_box->is_pressed()) {
 		undo_redo->add_do_method(this->obj.get(), "rename_references", old_name, new_name);
@@ -407,8 +413,10 @@ void GroupSettingsEditor::_confirm_delete()
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Remove Group"));
 
-	undo_redo->add_do_property(ProjectSettings::get_singleton(), property_name, Variant());
-	undo_redo->add_undo_property(ProjectSettings::get_singleton(), property_name, description);
+	undo_redo->add_do_property(
+		ProjectSettings::get_singleton()->obj.get(), property_name, Variant());
+	undo_redo->add_undo_property(
+		ProjectSettings::get_singleton()->obj.get(), property_name, description);
 
 	if (remove_check_box->is_pressed()) {
 		undo_redo->add_do_method(this->obj.get(), "remove_references", name);

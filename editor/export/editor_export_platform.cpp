@@ -1524,7 +1524,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset>& 
 
 		// Add autoload resources and their dependencies
 		List<PropertyInfo> props;
-		ProjectSettings::get_singleton()->get_property_list(&props);
+		ProjectSettings::get_singleton()->obj->get_property_list(&props);
 
 		for (const PropertyInfo& pi : props) {
 			if (!pi.name.begins_with("autoload/")) {

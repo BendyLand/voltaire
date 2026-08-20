@@ -1545,14 +1545,14 @@ void EditorNode::_on_plugin_ready(Object* p_script, const String& p_activate_nam
 void EditorNode::_remove_plugin_from_enabled(const String& p_name)
 {
 	ProjectSettings* ps = ProjectSettings::get_singleton();
-	PackedStringArray enabled_plugins = ps->get("editor_plugins/enabled");
+	PackedStringArray enabled_plugins = ps->obj->get("editor_plugins/enabled");
 	for (int i = 0; i < enabled_plugins.size(); ++i) {
 		if (enabled_plugins.get(i) == p_name) {
 			enabled_plugins.remove_at(i);
 			break;
 		}
 	}
-	ps->set("editor_plugins/enabled", enabled_plugins);
+	ps->obj->set("editor_plugins/enabled", enabled_plugins);
 }
 
 void EditorNode::_plugin_over_edit(EditorPlugin* p_plugin, Object* p_object, bool p_set_current)
@@ -2098,8 +2098,8 @@ void EditorNode::save_resource_in_path(const Ref<Resource>& p_resource, const St
 	}
 
 	String path = ProjectSettings::get_singleton()->localize_path(p_path);
-	Error err =
-		ResourceSaver::save(p_resource.ptr(), path, flg | ResourceSaver::FLAG_REPLACE_SUBRESOURCE_PATHS);
+	Error err = ResourceSaver::save(
+		p_resource.ptr(), path, flg | ResourceSaver::FLAG_REPLACE_SUBRESOURCE_PATHS);
 
 	if (err != OK) {
 		if (ResourceLoader::is_imported(p_resource->get_path())) {
@@ -3169,7 +3169,7 @@ void EditorNode::_dialog_action(String p_file)
 		open_scene(p_file);
 	} break;
 	case SETTINGS_PICK_MAIN_SCENE: {
-		ProjectSettings::get_singleton()->set(
+		ProjectSettings::get_singleton()->obj->set(
 			"application/run/main_scene", ResourceUID::path_to_uid(p_file));
 		ProjectSettings::get_singleton()->save();
 		// TODO: Would be nice to show the project manager opened with the highlighted field.
@@ -3242,7 +3242,7 @@ void EditorNode::_dialog_action(String p_file)
 	} break;
 
 	case SAVE_AND_RUN_MAIN_SCENE: {
-		ProjectSettings::get_singleton()->set(
+		ProjectSettings::get_singleton()->obj->set(
 			"application/run/main_scene", ResourceUID::path_to_uid(p_file));
 		ProjectSettings::get_singleton()->save();
 
@@ -3793,8 +3793,7 @@ void EditorNode::_edit_current(bool p_skip_foreign, bool p_skip_inspector_update
 			}
 		}
 
-		if (!current_obj->is_class("EditorDebuggerRemoteObjects"))
-{
+		if (!current_obj->is_class("EditorDebuggerRemoteObjects")) {
 			EditorDebuggerNode::get_singleton()->clear_remote_tree_selection();
 		}
 
@@ -4136,7 +4135,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed)
 			file->set_title(TTR("Save new main scene..."));
 		}
 		else {
-			ProjectSettings::get_singleton()->set(
+			ProjectSettings::get_singleton()->obj->set(
 				"application/run/main_scene", ResourceUID::path_to_uid(scene_path));
 			ProjectSettings::get_singleton()->save();
 			FileSystemDock::get_singleton()->update_all();
@@ -4498,13 +4497,15 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed)
 		_discard_changes();
 	} break;
 	case SPINNER_UPDATE_CONTINUOUSLY: {
-		EditorSettings::get_singleton()->obj->set("interface/editor/display/update_continuously", true);
+		EditorSettings::get_singleton()->obj->set(
+			"interface/editor/display/update_continuously", true);
 		_update_update_spinner();
 		show_warning(TTR("This option is deprecated. Situations where refresh must be forced are "
 						 "now considered a bug. Please report."));
 	} break;
 	case SPINNER_UPDATE_WHEN_CHANGED: {
-		EditorSettings::get_singleton()->obj->set("interface/editor/display/update_continuously", false);
+		EditorSettings::get_singleton()->obj->set(
+			"interface/editor/display/update_continuously", false);
 		_update_update_spinner();
 	} break;
 	case SPINNER_UPDATE_SPINNER_HIDE: {
@@ -5127,11 +5128,11 @@ void EditorNode::_update_addon_config()
 	}
 
 	if (enabled_addons.is_empty()) {
-		ProjectSettings::get_singleton()->set("editor_plugins/enabled", Variant());
+		ProjectSettings::get_singleton()->obj->set("editor_plugins/enabled", Variant());
 	}
 	else {
 		enabled_addons.sort();
-		ProjectSettings::get_singleton()->set("editor_plugins/enabled", enabled_addons);
+		ProjectSettings::get_singleton()->obj->set("editor_plugins/enabled", enabled_addons);
 	}
 
 	project_settings_editor->queue_save();
@@ -5816,7 +5817,8 @@ HashMap<StringName, Variant> EditorNode::get_modified_properties_for_node(
 					// If this property is a direct node reference, save a NodePath instead to
 					// prevent corrupted references.
 					if (node_reference) {
-						Node* target_node = Object::cast_to<Node>(current_value);
+						Node* target_node =
+Object::cast_to<Node>(current_value);
 						if (target_node) {
 							modified_property_map[E.name] = p_node->get_path_to(target_node);
 						}
@@ -7969,7 +7971,8 @@ Dictionary EditorNode::drag_files_and_dirs(const Vector<String>& p_paths, Contro
 		p_paths.size() > max_rows
 			? max_rows - 1
 			: p_paths.size(); // Don't waste a row to say "1 more file" - list it instead.
-	VBoxContainer* vbox = memnew(VBoxContainer);
+	VBoxContainer* vbox
+ = memnew(VBoxContainer);
 	for (int i = 0; i < num_rows; i++) {
 		HBoxContainer* hbox = memnew(HBoxContainer);
 		TextureRect* icon = memnew(TextureRect);
@@ -8903,19 +8906,19 @@ String EditorNode::_to_rendering_method_display_name(const String& p_rendering_m
 
 void EditorNode::_set_renderer_name_save_and_restart(const String& p_rendering_method)
 {
-	ProjectSettings::get_singleton()->set(
+	ProjectSettings::get_singleton()->obj->set(
 		"rendering/renderer/rendering_method", p_rendering_method);
 
 	if (p_rendering_method == "mobile" || p_rendering_method == "gl_compatibility") {
 		// Also change the mobile override if changing to a compatible renderer.
 		// This prevents visual discrepancies between desktop and mobile platforms.
-		ProjectSettings::get_singleton()->set(
+		ProjectSettings::get_singleton()->obj->set(
 			"rendering/renderer/rendering_method.mobile", p_rendering_method);
 	}
 	else if (p_rendering_method == "forward_plus") {
 		// Use the equivalent mobile renderer. This prevents the renderer from staying
 		// on its old choice if moving from `gl_compatibility` to `forward_plus`.
-		ProjectSettings::get_singleton()->set(
+		ProjectSettings::get_singleton()->obj->set(
 			"rendering/renderer/rendering_method.mobile", "mobile");
 	}
 
@@ -9593,7 +9596,7 @@ EditorNode::EditorNode()
 		"history_changed", callable_mp(this, &EditorNode::_update_undo_redo_allowed));
 	EditorUndoRedoManager::get_singleton()->obj->connect(
 		"history_changed", callable_mp(this, &EditorNode::_update_unsaved_cache));
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &EditorNode::_update_from_settings));
 
 	Ref<TranslationDomain> domain = TranslationServer::get_singleton()->get_main_domain();
@@ -9747,7 +9750,8 @@ EditorNode::EditorNode()
 		ResourceFormatImporter::get_singleton()->add_importer(import_font_data_bmfont);
 
 		Ref<ResourceImporterImageFont> import_font_data_image;
-		import_font_data_image.instantiate();
+		import_font_data_image.
+instantiate();
 		ResourceFormatImporter::get_singleton()->add_importer(import_font_data_image);
 
 		Ref<ResourceImporterCSVTranslation> import_csv_translation;
@@ -10975,6 +10979,7 @@ EditorNode::EditorNode()
 			"editor_metadata", "executable_path", "");
 		// Save editor executable path for third-party tools.
 		if (exec != old_exec) {
+
 			EditorSettings::get_singleton()->set_project_metadata(
 				"editor_metadata", "executable_path", exec);
 		}

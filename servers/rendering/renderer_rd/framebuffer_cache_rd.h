@@ -31,15 +31,16 @@
 #pragma once
 
 #include "core/templates/local_vector.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/paged_allocator.h"
 #include "servers/rendering/rendering_device.h"
 
-class FramebufferCacheRD : public Object {
-	VLTRCLASS(FramebufferCacheRD, Object)
-
-	struct Cache {
-		Cache *prev = nullptr;
-		Cache *next = nullptr;
+class FramebufferCacheRD
+{
+	struct Cache
+	{
+		Cache* prev = nullptr;
+		Cache* next = nullptr;
 		uint32_t hash = 0;
 		RID cache;
 		LocalVector<RID> textures;
@@ -49,13 +50,15 @@ class FramebufferCacheRD : public Object {
 
 	PagedAllocator<Cache> cache_allocator;
 
-	enum {
+	enum
+	{
 		HASH_TABLE_SIZE = 16381 // Prime
 	};
 
-	Cache *hash_table[HASH_TABLE_SIZE] = {};
+	Cache* hash_table[HASH_TABLE_SIZE] = {};
 
-	static _FORCE_INLINE_ uint32_t _hash_pass(const RD::FramebufferPass &p, uint32_t h) {
+	static _FORCE_INLINE_ uint32_t _hash_pass(const RD::FramebufferPass& p, uint32_t h)
+	{
 		h = hash_murmur3_one_32(p.depth_attachment, h);
 		h = hash_murmur3_one_32(p.depth_resolve_attachment, h);
 
@@ -77,7 +80,9 @@ class FramebufferCacheRD : public Object {
 		return h;
 	}
 
-	static _FORCE_INLINE_ bool _compare_pass(const RD::FramebufferPass &a, const RD::FramebufferPass &b) {
+	static _FORCE_INLINE_ bool _compare_pass(
+		const RD::FramebufferPass& a, const RD::FramebufferPass& b)
+	{
 		if (a.depth_attachment != b.depth_attachment) {
 			return false;
 		}
@@ -119,46 +124,55 @@ class FramebufferCacheRD : public Object {
 		return true;
 	}
 
-	_FORCE_INLINE_ uint32_t _hash_rids(uint32_t h, const RID &arg) {
+	_FORCE_INLINE_ uint32_t _hash_rids(uint32_t h, const RID& arg)
+	{
 		return hash_murmur3_one_64(arg.get_id(), h);
 	}
 
-	template <typename... Args>
-	uint32_t _hash_rids(uint32_t h, const RID &arg, Args... args) {
+	template <typename... Args> uint32_t _hash_rids(uint32_t h, const RID& arg, Args... args)
+	{
 		h = hash_murmur3_one_64(arg.get_id(), h);
 		return _hash_rids(h, args...);
 	}
 
-	_FORCE_INLINE_ bool _compare_args(uint32_t idx, const LocalVector<RID> &textures, const RID &arg) {
+	_FORCE_INLINE_ bool _compare_args(
+		uint32_t idx, const LocalVector<RID>& textures, const RID& arg)
+	{
 		return textures[idx] == arg;
 	}
 
 	template <typename... Args>
-	_FORCE_INLINE_ bool _compare_args(uint32_t idx, const LocalVector<RID> &textures, const RID &arg, Args... args) {
+	_FORCE_INLINE_ bool _compare_args(
+		uint32_t idx, const LocalVector<RID>& textures, const RID& arg, Args... args)
+	{
 		if (textures[idx] != arg) {
 			return false;
 		}
 		return _compare_args(idx + 1, textures, args...);
 	}
 
-	static FramebufferCacheRD *singleton;
+	static FramebufferCacheRD* singleton;
 
 	uint32_t cache_instances_used = 0;
 
-	void _invalidate(Cache *p_cache);
-	static void _framebuffer_invalidation_callback(void *p_userdata);
+	void _invalidate(Cache* p_cache);
+	static void _framebuffer_invalidation_callback(void* p_userdata);
 
-	RID _allocate_from_data(uint32_t p_views, uint32_t p_hash, uint32_t p_table_idx, const Vector<RID> &p_textures, const Vector<RD::FramebufferPass> &p_passes) {
+	RID _allocate_from_data(uint32_t p_views, uint32_t p_hash, uint32_t p_table_idx,
+		const Vector<RID>& p_textures, const Vector<RD::FramebufferPass>& p_passes)
+	{
 		RID rid;
 		if (p_passes.size()) {
-			rid = RD::get_singleton()->framebuffer_create_multipass(p_textures, p_passes, RD::INVALID_ID, p_views);
-		} else {
+			rid = RD::get_singleton()->framebuffer_create_multipass(
+				p_textures, p_passes, RD::INVALID_ID, p_views);
+		}
+		else {
 			rid = RD::get_singleton()->framebuffer_create(p_textures, RD::INVALID_ID, p_views);
 		}
 
 		ERR_FAIL_COND_V(rid.is_null(), rid);
 
-		Cache *c = cache_allocator.alloc();
+		Cache* c = cache_allocator.alloc();
 		c->views = p_views;
 		c->cache = rid;
 		c->hash = p_hash;
@@ -177,7 +191,8 @@ class FramebufferCacheRD : public Object {
 		}
 		hash_table[p_table_idx] = c;
 
-		RD::get_singleton()->framebuffer_set_invalidation_callback(rid, _framebuffer_invalidation_callback, c);
+		RD::get_singleton()->framebuffer_set_invalidation_callback(
+			rid, _framebuffer_invalidation_callback, c);
 
 		cache_instances_used++;
 
@@ -188,9 +203,11 @@ private:
 	static void _bind_methods();
 
 public:
-	template <typename... Args>
-	RID get_cache(Args... args) {
-		uint32_t h = hash_murmur3_one_32(1); //1 view
+	mem_unique_ptr<Object> obj;
+
+	template <typename... Args> RID get_cache(Args... args)
+	{
+		uint32_t h = hash_murmur3_one_32(1); // 1 view
 		h = hash_murmur3_one_32(sizeof...(Args), h);
 		h = _hash_rids(h, args...);
 		h = hash_murmur3_one_32(0, h); // 0 passes
@@ -198,10 +215,11 @@ public:
 
 		uint32_t table_idx = h % HASH_TABLE_SIZE;
 		{
-			const Cache *c = hash_table[table_idx];
+			const Cache* c = hash_table[table_idx];
 
 			while (c) {
-				if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) && c->views == 1 && _compare_args(0, c->textures, args...)) {
+				if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) &&
+					c->views == 1 && _compare_args(0, c->textures, args...)) {
 					return c->cache;
 				}
 				c = c->next;
@@ -210,11 +228,12 @@ public:
 
 		// Not in cache, create:
 
-		return _allocate_from_data(1, h, table_idx, Vector<RID>{ args... }, Vector<RD::FramebufferPass>());
+		return _allocate_from_data(
+			1, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
 	}
 
-	template <typename... Args>
-	RID get_cache_multiview(uint32_t p_views, Args... args) {
+	template <typename... Args> RID get_cache_multiview(uint32_t p_views, Args... args)
+	{
 		uint32_t h = hash_murmur3_one_32(p_views);
 		h = hash_murmur3_one_32(sizeof...(Args), h);
 		h = _hash_rids(h, args...);
@@ -223,10 +242,11 @@ public:
 
 		uint32_t table_idx = h % HASH_TABLE_SIZE;
 		{
-			const Cache *c = hash_table[table_idx];
+			const Cache* c = hash_table[table_idx];
 
 			while (c) {
-				if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) && c->views == p_views && _compare_args(0, c->textures, args...)) {
+				if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) &&
+					c->views == p_views && _compare_args(0, c->textures, args...)) {
 					return c->cache;
 				}
 				c = c->next;
@@ -235,10 +255,13 @@ public:
 
 		// Not in cache, create:
 
-		return _allocate_from_data(p_views, h, table_idx, Vector<RID>{ args... }, Vector<RD::FramebufferPass>());
+		return _allocate_from_data(
+			p_views, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
 	}
 
-	RID get_cache_multipass(const Vector<RID> &p_textures, const Vector<RD::FramebufferPass> &p_passes, uint32_t p_views = 1) {
+	RID get_cache_multipass(const Vector<RID>& p_textures,
+		const Vector<RD::FramebufferPass>& p_passes, uint32_t p_views = 1)
+	{
 		uint32_t h = hash_murmur3_one_32(p_views);
 		h = hash_murmur3_one_32(p_textures.size(), h);
 		for (int i = 0; i < p_textures.size(); i++) {
@@ -253,10 +276,12 @@ public:
 
 		uint32_t table_idx = h % HASH_TABLE_SIZE;
 		{
-			const Cache *c = hash_table[table_idx];
+			const Cache* c = hash_table[table_idx];
 
 			while (c) {
-				if (c->hash == h && c->views == p_views && c->textures.size() == (uint32_t)p_textures.size() && c->passes.size() == (uint32_t)p_passes.size()) {
+				if (c->hash == h && c->views == p_views &&
+					c->textures.size() == (uint32_t)p_textures.size() &&
+					c->passes.size() == (uint32_t)p_passes.size()) {
 					bool all_ok = true;
 
 					for (int i = 0; i < p_textures.size(); i++) {
@@ -287,10 +312,13 @@ public:
 		return _allocate_from_data(p_views, h, table_idx, p_textures, p_passes);
 	}
 
-	static RID get_cache_multipass_array(const TypedArray<RID> &p_textures, const TypedArray<RDFramebufferPass> &p_passes, uint32_t p_views = 1);
+	static RID get_cache_multipass_array(const TypedArray<RID>& p_textures,
+		const TypedArray<RDFramebufferPass>& p_passes, uint32_t p_views = 1);
 
-	static FramebufferCacheRD *get_singleton() { return singleton; }
+	static FramebufferCacheRD* get_singleton() { return singleton; }
 
 	FramebufferCacheRD();
 	~FramebufferCacheRD();
 };
+
+

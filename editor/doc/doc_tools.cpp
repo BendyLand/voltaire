@@ -475,7 +475,7 @@ void DocTools::generate(BitField<GenerateFlags> p_flags)
 				own_properties = properties;
 			}
 			else if (name == "ProjectSettings") {
-				ProjectSettings::get_singleton()->get_property_list(&properties);
+				ProjectSettings::get_singleton()->obj->get_property_list(&properties);
 				own_properties = properties;
 			}
 			else if (name.begins_with("EditorExportPlatform")) {
@@ -543,7 +543,7 @@ void DocTools::generate(BitField<GenerateFlags> p_flags)
 					if (E.usage & PROPERTY_USAGE_EDITOR) {
 						if (!ProjectSettings::get_singleton()->get_ignore_value_in_docs(E.name)) {
 							default_value =
-								ProjectSettings::get_singleton()->property_get_revert(E.name);
+								ProjectSettings::get_singleton()->obj->property_get_revert(E.name);
 							default_value_valid = true;
 						}
 					}

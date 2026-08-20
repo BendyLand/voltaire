@@ -32,19 +32,23 @@
 
 #include "core/object/gdvirtual.gen.h"
 #include "core/object/object.h"
+#include "core/templates/mem_unique_ptr.h"
 
 struct AABB;
 struct Vector3;
 
-class PhysicsServer3DRenderingServerHandler : public Object {
-	VLTRCLASS(PhysicsServer3DRenderingServerHandler, Object)
+class PhysicsServer3DRenderingServerHandler
+{
 protected:
 	static void _bind_methods();
 
 public:
-	virtual void set_vertex(int p_vertex_id, const Vector3 &p_vertex);
-	virtual void set_normal(int p_vertex_id, const Vector3 &p_normal);
-	virtual void set_aabb(const AABB &p_aabb);
+	mem_unique_ptr<Object> obj;
+	virtual void set_vertex(int p_vertex_id, const Vector3& p_vertex);
+	virtual void set_normal(int p_vertex_id, const Vector3& p_normal);
+	virtual void set_aabb(const AABB& p_aabb);
 
 	virtual ~PhysicsServer3DRenderingServerHandler() {}
 };
+
+

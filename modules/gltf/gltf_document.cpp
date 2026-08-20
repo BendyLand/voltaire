@@ -78,14 +78,14 @@
 static void _attach_extras_to_meta(const Dictionary& p_extras, Ref<Resource> p_node)
 {
 	if (!p_extras.is_empty()) {
-		p_node->set_meta("extras", p_extras);
+		p_node->obj->set_meta("extras", p_extras);
 	}
 }
 
 static void _attach_meta_to_extras(Ref<Resource> p_node, Dictionary& p_json)
 {
-	if (p_node->has_meta("extras")) {
-		Dictionary node_extras = p_node->get_meta("extras");
+	if (p_node->obj->has_meta("extras")) {
+		Dictionary node_extras = p_node->obj->get_meta("extras");
 		if (p_json.has("extras")) {
 			Dictionary extras = p_json["extras"];
 			extras.merge(node_extras);
@@ -1569,7 +1569,7 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> p_state)
 		import_mesh->set_name(
 			_gen_unique_name(p_state, vformat("%s_%s", p_state->scene_name, mesh_name)));
 		mesh->set_name(import_mesh->get_name());
-		TypedArray<Material> instance_materials;
+		Array instance_materials;
 
 		for (int j = 0; j < primitives.size(); j++) {
 			uint64_t flags = RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES;
@@ -1588,15 +1588,16 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> p_state)
 					ERR_FAIL_COND_V(mat3d.is_null(), ERR_FILE_CORRUPT);
 					// Remap the glTF file's UV texture coordinates to Godot's UV and UV2 as best as
 					// possible.
-					if (mat3d->has_meta("_gltf_primary_texture_coord")) {
-						const int tex_coord = mat3d->get_meta("_gltf_primary_texture_coord");
+					if (mat3d->obj->has_meta("_gltf_primary_texture_coord")) {
+						const int tex_coord = mat3d->obj->get_meta("_gltf_primary_texture_coord");
 						mat_primary_texture_coord = "TEXCOORD_" + itos(tex_coord);
-						if (tex_coord != 0 && !mat3d->has_meta("_gltf_secondary_texture_coord")) {
+						if (tex_coord != 0 &&
+							!mat3d->obj->has_meta("_gltf_secondary_texture_coord")) {
 							mat_secondary_texture_coord = "TEXCOORD_0";
 						}
 					}
-					if (mat3d->has_meta("_gltf_secondary_texture_coord")) {
-						const int tex_coord = mat3d->get_meta("_gltf_secondary_texture_coord");
+					if (mat3d->obj->has_meta("_gltf_secondary_texture_coord")) {
+						const int tex_coord = mat3d->obj->get_meta("_gltf_secondary_texture_coord");
 						mat_secondary_texture_coord = "TEXCOORD_" + itos(tex_coord);
 					}
 					Ref<BaseMaterial3D> base_material = mat3d;
@@ -1902,7 +1903,8 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> p_state)
 					int wc = weights.size();
 					float* w = weights.ptrw();
 
-					for (int k = 0; k < wc; k += weight_8_count) {
+					for
+(int k = 0; k < wc; k += weight_8_count) {
 						float total = 0.0;
 						total += w[k + 0];
 						total += w[k + 1];
@@ -3634,10 +3636,10 @@ Error GLTFDocument::_parse_materials(Ref<GLTFState> p_state)
 		}
 		if (_texture_map_mode == TEXTURE_MAP_MODE_REMAP_TO_STANDARD_MATERIAL) {
 			if (primary_texture_coord != -1) {
-				material->set_meta("_gltf_primary_texture_coord", primary_texture_coord);
+				material->obj->set_meta("_gltf_primary_texture_coord", primary_texture_coord);
 			}
 			if (secondary_texture_coord != -1) {
-				material->set_meta("_gltf_secondary_texture_coord", secondary_texture_coord);
+				material->obj->set_meta("_gltf_secondary_texture_coord", secondary_texture_coord);
 			}
 		}
 		p_state->materials.push_back(material);
@@ -3668,7 +3670,8 @@ void GLTFDocument::_set_texture_transform_uv1(
 					const Array scale_arr = texture_transform["scale"];
 					if (scale_arr.size() == 2) {
 						const Vector3 scale_vector3 = Vector3(scale_arr[0], scale_arr[1], 1.0f);
-						p_material->set_uv1_scale(scale_vector3);
+						p_material->set_uv1_scale(scale_vector3
+);
 					}
 				}
 			}
@@ -4654,7 +4657,7 @@ GLTFMeshIndex GLTFDocument::_convert_mesh_to_gltf(
 	ERR_FAIL_COND_V_MSG(mesh_resource->get_surface_count() == 0, -1,
 		"glTF: Tried to export a MeshInstance3D node named " + p_mesh_instance->get_name() +
 			", but its mesh has no surfaces. This node will be exported without a mesh.");
-	TypedArray<Material> instance_materials;
+	Array instance_materials;
 	for (int32_t surface_i = 0; surface_i < mesh_resource->get_surface_count(); surface_i++) {
 		Ref<Material> mat = p_mesh_instance->get_active_material(surface_i);
 		instance_materials.append(mat);
@@ -4700,7 +4703,7 @@ ImporterMeshInstance3D* GLTFDocument::_generate_mesh_instance(
 		return mi;
 	}
 	mi->set_mesh(import_mesh);
-	import_mesh->merge_meta_from(*mesh);
+	import_mesh->obj->merge_meta_from(mesh->obj.get());
 	return mi;
 }
 
@@ -4788,7 +4791,7 @@ void GLTFDocument::_convert_scene_node(Ref<GLTFState> p_state, Node* p_current,
 	}
 	gltf_node->set_original_name(p_current->get_name());
 	gltf_node->set_name(_gen_unique_name(p_state, p_current->get_name()));
-	gltf_node->merge_meta_from(p_current->obj.get());
+	gltf_node->obj->merge_meta_from(p_current->obj.get());
 	if (Object::cast_to<Node3D>(p_current)) {
 		Node3D* spatial = Object::cast_to<Node3D>(p_current);
 		_convert_spatial(p_state, spatial, gltf_node);
@@ -5060,7 +5063,7 @@ void GLTFDocument::_convert_skeleton_to_gltf(Skeleton3D* p_skeleton3d, Ref<GLTFS
 		joint_node->joint = true;
 
 		if (p_skeleton3d->has_bone_meta(bone_i, "extras")) {
-			joint_node->set_meta("extras", p_skeleton3d->get_bone_meta(bone_i, "extras"));
+			joint_node->obj->set_meta("extras", p_skeleton3d->get_bone_meta(bone_i, "extras"));
 		}
 		GLTFNodeIndex current_node_i = p_state->nodes.size();
 		p_state->scene_nodes.insert(current_node_i, skeleton);
@@ -5282,7 +5285,7 @@ void GLTFDocument::_generate_scene_node(Ref<GLTFState> p_state, const GLTFNodeIn
 	_set_node_tree_owner(current_node, p_scene_root);
 	current_node->set_transform(gltf_node->transform);
 	current_node->set_visible(gltf_node->visible);
-	current_node->obj->merge_meta_from(*gltf_node);
+	current_node->obj->merge_meta_from(gltf_node->obj.get());
 	p_state->scene_nodes.insert(p_node_index, current_node);
 	for (int i = 0; i < gltf_node->children.size(); ++i) {
 		_generate_scene_node(p_state, gltf_node->children[i], current_node, p_scene_root);
@@ -5344,7 +5347,7 @@ void GLTFDocument::_attach_node_to_skeleton(Ref<GLTFState> p_state,
 			BoneAttachment3D* bone_attachment =
 				_generate_bone_attachment(p_godot_skeleton, attachment_gltf_node);
 			bone_attachment->set_owner(p_scene_root);
-			bone_attachment->obj->merge_meta_from(*p_state->nodes[attachment_node_index]);
+			bone_attachment->obj->merge_meta_from(p_state->nodes[attachment_node_index]->obj.get());
 			p_state->scene_nodes.insert(attachment_node_index, bone_attachment);
 			attachment_godot_node = bone_attachment;
 		}
@@ -5369,7 +5372,7 @@ void GLTFDocument::_attach_node_to_skeleton(Ref<GLTFState> p_state,
 		p_current_node = p_godot_skeleton;
 	}
 	_set_node_tree_owner(p_current_node, p_scene_root);
-	p_current_node->obj->merge_meta_from(*gltf_node);
+	p_current_node->obj->merge_meta_from(gltf_node->obj.get());
 	p_state->scene_nodes.insert(p_node_index, p_current_node);
 	for (int i = 0; i < gltf_node->children.size(); ++i) {
 		_generate_scene_node(p_state, gltf_node->children[i], p_current_node, p_scene_root);
@@ -5477,7 +5480,7 @@ void GLTFDocument::_generate_scene_node_compat_4pt4(Ref<GLTFState> p_state,
 		current_node->set_transform(gltf_node->transform);
 	}
 
-	current_node->obj->merge_meta_from(*gltf_node);
+	current_node->obj->merge_meta_from(gltf_node->obj.get());
 
 	p_state->scene_nodes.insert(p_node_index, current_node);
 	for (int i = 0; i < gltf_node->children.size(); ++i) {
@@ -5749,7 +5752,7 @@ NodePath GLTFDocument::_find_material_node_path(
 {
 	int mesh_index = 0;
 	for (Ref<GLTFMesh> gltf_mesh : p_state->meshes) {
-		TypedArray<Material> materials = gltf_mesh->get_instance_materials();
+		Array materials = gltf_mesh->get_instance_materials();
 		for (int mat_index = 0; mat_index < materials.size(); mat_index++) {
 			if (materials[mat_index] == p_material) {
 				for (Ref<GLTFNode> gltf_node : p_state->nodes) {
@@ -5789,7 +5792,7 @@ Ref<GLTFObjectModelProperty> GLTFDocument::import_object_model_property(
 	ret->set_json_pointers({split});
 	// Partial paths are passed to GLTFDocumentExtension classes if GLTFDocument cannot handle a
 	// given JSON pointer.
-	TypedArray<NodePath> partial_paths;
+	Array partial_paths;
 	// Note: This might not be an integer, but in that case, we don't use this value anyway.
 	const int top_level_index = split[1].to_int();
 	// For JSON pointers present in the core glTF Object Model, hard-code them in GLTFDocument.
@@ -6138,7 +6141,7 @@ Ref<GLTFObjectModelProperty> GLTFDocument::export_object_model_property(Ref<GLTF
 	PackedStringArray split_json_pointer;
 	if (Object::cast_to<BaseMaterial3D>(target_object)) {
 		for (int i = 0; i < p_state->materials.size(); i++) {
-			if (p_state->materials[i].ptr() == target_object) {
+			if (p_state->materials[i]->obj.get() == target_object) {
 				split_json_pointer.append("materials");
 				split_json_pointer.append(itos(i));
 				if (target_prop == "alpha_scissor_threshold") {
@@ -6755,7 +6758,7 @@ void GLTFDocument::_import_animation(Ref<GLTFState> p_state, AnimationPlayer* p_
 					scene_root->get_node_and_resource(node_path, resource, leftover_subpath)
 						->obj.get();
 				if (resource.is_valid()) {
-					base_instance = resource.ptr();
+					base_instance = resource->obj.get();
 				}
 			}
 			// Add a track and insert all keys and values.
@@ -6828,7 +6831,7 @@ void GLTFDocument::_convert_mesh_instances(Ref<GLTFState> p_state)
 
 			ObjectID gltf_skin_key;
 			if (skin.is_valid()) {
-				gltf_skin_key = skin->get_instance_id();
+				gltf_skin_key = skin->obj->get_instance_id();
 			}
 			ObjectID gltf_skel_key = godot_skeleton->obj->get_instance_id();
 			GLTFSkinIndex skin_gltf_i = -1;
@@ -7677,7 +7680,7 @@ void GLTFDocument::_convert_animation(Ref<GLTFState> p_state, AnimationPlayer* p
 									->get_node_and_resource(track_path, resource, leftover_subpath)
 									->obj.get();
 				if (resource.is_valid()) {
-					base_instance = resource.ptr();
+					base_instance = resource->obj.get();
 				}
 			}
 			// Convert the Godot animation values into glTF animation values (still Variant).
@@ -7742,9 +7745,6 @@ Error GLTFDocument::_parse(Ref<GLTFState> p_state, const String& p_path, Ref<Fil
 	for (Ref<GLTFDocumentExtension> ext : get_all_gltf_document_extensions()) {
 		ERR_CONTINUE(ext.is_null());
 		Ref<GLTFDocumentExtension> ext_dup = ext;
-		if (ClassDB::is_class_exposed(ext->get_class_name())) {
-			ext_dup = ext->duplicate();
-		}
 		err = ext_dup->import_preflight(p_state, p_state->json["extensionsUsed"]);
 		if (err == OK) {
 			document_extensions.push_back(ext_dup);
@@ -8314,9 +8314,6 @@ Error GLTFDocument::append_from_scene(Node* p_node, Ref<GLTFState> p_state, uint
 	for (Ref<GLTFDocumentExtension> ext : get_all_gltf_document_extensions()) {
 		ERR_CONTINUE(ext.is_null());
 		Ref<GLTFDocumentExtension> ext_dup = ext;
-		if (ClassDB::is_class_exposed(ext->get_class_name())) {
-			ext_dup = ext->duplicate();
-		}
 		Error err = ext_dup->export_preflight(p_state, p_node);
 		if (err == OK) {
 			document_extensions.push_back(ext_dup);
@@ -8435,6 +8432,7 @@ void GLTFDocument::set_root_node_mode(GLTFDocument::RootNodeMode p_root_node_mod
 }
 
 GLTFDocument::RootNodeMode GLTFDocument::get_root_node_mode() const { return _root_node_mode; }
+
 
 void GLTFDocument::set_texture_map_mode(GLTFDocument::TextureMapMode p_texture_map_mode)
 {

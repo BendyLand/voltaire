@@ -32,11 +32,11 @@
 
 #include "core/io/image.h"
 #include "core/templates/local_vector.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "servers/audio/audio_server.h"
 
-class MovieWriter : public Object {
-	VLTRCLASS(MovieWriter, Object);
-
+class MovieWriter
+{
 	uint64_t fps = 0;
 	uint64_t mix_rate = 0;
 	uint32_t audio_channels = 0;
@@ -53,33 +53,39 @@ class MovieWriter : public Object {
 
 	LocalVector<int32_t> audio_mix_buffer;
 
-	enum {
+	enum
+	{
 		MAX_WRITERS = 8
 	};
-	static MovieWriter *writers[];
+
+	static MovieWriter* writers[];
 	static uint32_t writer_count;
 
 protected:
 	virtual uint32_t get_audio_mix_rate() const;
 	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const;
 
-	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path);
-	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data);
+	virtual Error write_begin(
+		const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
+	virtual Error write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data);
 	virtual void write_end();
 
 	static void _bind_methods();
 
 public:
-	virtual bool handles_file(const String &p_path) const;
-	virtual void get_supported_extensions(List<String> *r_extensions) const;
+	mem_unique_ptr<Object> obj;
+	virtual bool handles_file(const String& p_path) const;
+	virtual void get_supported_extensions(List<String>* r_extensions) const;
 
-	static void add_writer(MovieWriter *p_writer);
-	static MovieWriter *find_writer_for_file(const String &p_file);
+	static void add_writer(MovieWriter* p_writer);
+	static MovieWriter* find_writer_for_file(const String& p_file);
 
-	void begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path);
+	void begin(const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
 	void add_frame();
 
 	static void set_extensions_hint();
 
 	void end();
 };
+
+

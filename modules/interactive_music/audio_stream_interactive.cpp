@@ -78,8 +78,8 @@ void AudioStreamInteractive::set_clip_count(int p_count)
 	clip_count = p_count;
 	AudioServer::get_singleton()->unlock();
 
-	notify_property_list_changed();
-	emit_signal(SNAME("parameter_list_changed"));
+	this->obj->notify_property_list_changed();
+	this->obj->emit_signal(SNAME("parameter_list_changed"));
 }
 
 void AudioStreamInteractive::set_initial_clip(int p_clip)
@@ -138,8 +138,8 @@ void AudioStreamInteractive::set_clip_stream(int p_clip, const Ref<AudioStream>&
 
 #ifdef TOOLS_ENABLED
 	stream_name_cache = "";
-	notify_property_list_changed(); // Hints change if stream changes.
-	emit_signal(SNAME("parameter_list_changed"));
+	this->obj->notify_property_list_changed(); // Hints change if stream changes.
+	this->obj->emit_signal(SNAME("parameter_list_changed"));
 #endif
 }
 
@@ -154,7 +154,7 @@ void AudioStreamInteractive::set_clip_auto_advance(int p_clip, AutoAdvanceMode p
 	ERR_FAIL_INDEX(p_clip, MAX_CLIPS);
 	ERR_FAIL_INDEX(p_mode, 3);
 	clips[p_clip].auto_advance = p_mode;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 AudioStreamInteractive::AutoAdvanceMode AudioStreamInteractive::get_clip_auto_advance(
@@ -413,8 +413,8 @@ void AudioStreamInteractive::_inspector_array_swap_clip(uint32_t p_item_a, uint3
 
 	stream_name_cache = "";
 
-	notify_property_list_changed();
-	emit_signal(SNAME("parameter_list_changed"));
+	this->obj->notify_property_list_changed();
+	this->obj->emit_signal(SNAME("parameter_list_changed"));
 }
 
 String AudioStreamInteractive::_get_streams_hint() const
@@ -958,8 +958,7 @@ void AudioStreamPlaybackInteractive::_mix_internal_state(int p_state_idx, int p_
 			if (state.fade_volume <= 0.0) {
 				state.fade_speed = 0.0;
 				frame_fade_inc = 0.0;
-				state.fade_volume = 0.0
-;
+				state.fade_volume = 0.0;
 				state.playback->stop(); // Stop playback and break, no point to continue mixing
 				break;
 			}
@@ -1045,14 +1044,6 @@ double AudioStreamPlaybackInteractive::get_playback_position() const { return 0.
 
 bool AudioStreamPlaybackInteractive::is_playing() const { return active; }
 
-void AudioStreamPlaybackInteractive::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("switch_to_clip_by_name", "clip_name"),
-		&AudioStreamPlaybackInteractive::switch_to_clip_by_name);
-	ClassDB::bind_method(
-		D_METHOD("switch_to_clip", "clip_index"), &AudioStreamPlaybackInteractive::switch_to_clip);
-	ClassDB::bind_method(D_METHOD("get_current_clip_index"),
-		&AudioStreamPlaybackInteractive::get_current_clip_index);
-}
+void AudioStreamPlaybackInteractive::_bind_methods() {}
 
 

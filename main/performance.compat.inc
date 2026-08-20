@@ -30,16 +30,17 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "performance.h"
 
-#include "core/object/class_db.h"
-
-void Performance::_add_custom_monitor_bind_compat_110433(const StringName &p_id, const Callable &p_callable, const Vector<Variant> &p_args) {
+void Performance::_add_custom_monitor_bind_compat_110433(
+	const StringName& p_id, const Callable& p_callable, const Vector<Variant>& p_args)
+{
 	add_custom_monitor(p_id, p_callable, p_args, MONITOR_TYPE_QUANTITY);
 }
 
-void Performance::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("add_custom_monitor", "id", "callable", "arguments"), &Performance::_add_custom_monitor_bind_compat_110433, DEFVAL(Array()));
-}
+void Performance::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

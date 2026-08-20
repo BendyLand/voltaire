@@ -121,7 +121,7 @@ Ref<GLTFPhysicsShape> GLTFPhysicsShape::from_node(const CollisionShape3D* p_godo
 	gltf_shape = from_resource(shape_resource);
 	// Check if the shape is part of a trigger.
 	Node* parent = p_godot_shape_node->get_parent();
-	if (cast_to<const Area3D>(parent)) {
+	if (Object::cast_to<const Area3D>(parent)) {
 		gltf_shape->set_is_trigger(true);
 	}
 	return gltf_shape;
@@ -142,29 +142,29 @@ Ref<GLTFPhysicsShape> GLTFPhysicsShape::from_resource(const Ref<Shape3D>& p_shap
 	ERR_FAIL_COND_V_MSG(p_shape_resource.is_null(), gltf_shape,
 		"Tried to create a GLTFPhysicsShape from a Shape3D resource, but the given resource was "
 		"null.");
-	if (cast_to<BoxShape3D>(p_shape_resource.ptr())) {
+	if (Object::cast_to<BoxShape3D>(p_shape_resource.ptr())) {
 		gltf_shape->shape_type = "box";
 		Ref<BoxShape3D> box = p_shape_resource;
 		gltf_shape->set_size(box->get_size());
 	}
-	else if (cast_to<const CapsuleShape3D>(p_shape_resource.ptr())) {
+	else if (Object::cast_to<const CapsuleShape3D>(p_shape_resource.ptr())) {
 		gltf_shape->shape_type = "capsule";
 		Ref<CapsuleShape3D> capsule = p_shape_resource;
 		gltf_shape->set_radius(capsule->get_radius());
 		gltf_shape->set_height(capsule->get_height());
 	}
-	else if (cast_to<const CylinderShape3D>(p_shape_resource.ptr())) {
+	else if (Object::cast_to<const CylinderShape3D>(p_shape_resource.ptr())) {
 		gltf_shape->shape_type = "cylinder";
 		Ref<CylinderShape3D> cylinder = p_shape_resource;
 		gltf_shape->set_radius(cylinder->get_radius());
 		gltf_shape->set_height(cylinder->get_height());
 	}
-	else if (cast_to<const SphereShape3D>(p_shape_resource.ptr())) {
+	else if (Object::cast_to<const SphereShape3D>(p_shape_resource.ptr())) {
 		gltf_shape->shape_type = "sphere";
 		Ref<SphereShape3D> sphere = p_shape_resource;
 		gltf_shape->set_radius(sphere->get_radius());
 	}
-	else if (cast_to<const ConvexPolygonShape3D>(p_shape_resource.ptr())) {
+	else if (Object::cast_to<const ConvexPolygonShape3D>(p_shape_resource.ptr())) {
 		gltf_shape->shape_type = "convex";
 		Ref<ConvexPolygonShape3D> convex = p_shape_resource;
 		Vector<Vector3> hull_points = convex->get_points();
@@ -173,7 +173,7 @@ Ref<GLTFPhysicsShape> GLTFPhysicsShape::from_resource(const Ref<Shape3D>& p_shap
 			"GLTFPhysicsShape: Failed to convert convex hull points to a mesh.");
 		gltf_shape->set_importer_mesh(importer_mesh);
 	}
-	else if (cast_to<const ConcavePolygonShape3D>(p_shape_resource.ptr())) {
+	else if (Object::cast_to<const ConcavePolygonShape3D>(p_shape_resource.ptr())) {
 		gltf_shape->shape_type = "trimesh";
 		Ref<ConcavePolygonShape3D> concave = p_shape_resource;
 		Ref<ImporterMesh> importer_mesh;

@@ -44,7 +44,7 @@ void EmbeddedProcessBase::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_READY: {
-		ProjectSettings::get_singleton()->connect(
+		ProjectSettings::get_singleton()->obj->connect(
 			"settings_changed", callable_mp(this, &EmbeddedProcessBase::_project_settings_changed));
 	} break;
 	case NOTIFICATION_ENTER_TREE: {
@@ -87,12 +87,7 @@ void EmbeddedProcessBase::_project_settings_changed()
 	queue_redraw();
 }
 
-void EmbeddedProcessBase::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("embedding_completed"));
-	ADD_SIGNAL(MethodInfo("embedding_failed"));
-	ADD_SIGNAL(MethodInfo("embedded_process_focused"));
-}
+void EmbeddedProcessBase::_bind_methods() {}
 
 void EmbeddedProcessBase::_draw()
 {

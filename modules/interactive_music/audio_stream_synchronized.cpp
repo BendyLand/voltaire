@@ -142,7 +142,7 @@ void AudioStreamSynchronized::set_stream_count(int p_count)
 	AudioServer::get_singleton()->lock();
 	stream_count = p_count;
 	AudioServer::get_singleton()->unlock();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int AudioStreamSynchronized::get_stream_count() const { return stream_count; }

@@ -146,7 +146,7 @@ void ThemeEditorPreview::_draw_picker_overlay()
 		Rect2 highlight_rect = hovered_control->get_global_rect();
 		highlight_rect.position =
 			picker_overlay->get_global_transform().affine_inverse().xform(highlight_rect.position);
-		picker_overlay->draw_style_box(theme_cache.preview_picker_overlay, highlight_rect);
+		picker_overlay->draw_style_box(theme_cache.preview_picker_overlay.ptr(), highlight_rect);
 
 		String highlight_name = hovered_control->get_theme_type_variation();
 		if (highlight_name == StringName()) {
@@ -167,13 +167,14 @@ void ThemeEditorPreview::_draw_picker_overlay()
 		highlight_label_rect.position =
 			highlight_label_rect.position.clamp(Vector2(), picker_overlay->get_size());
 
-		picker_overlay->draw_style_box(theme_cache.preview_picker_label, highlight_label_rect);
+		picker_overlay->draw_style_box(
+			theme_cache.preview_picker_label.ptr(), highlight_label_rect);
 
 		Point2 label_pos = highlight_label_rect.position;
 		label_pos.y += highlight_label_rect.size.y - margin_bottom;
 		label_pos.x += margin_left;
-		picker_overlay->draw_string(theme_cache.preview_picker_font, label_pos, highlight_name,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size);
+		picker_overlay->draw_string(theme_cache.preview_picker_font.ptr(), label_pos,
+			highlight_name, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size);
 	}
 }
 
@@ -252,10 +253,7 @@ void ThemeEditorPreview::_notification(int p_what)
 	}
 }
 
-void ThemeEditorPreview::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("control_picked", PropertyInfo(Variant::STRING, "class_name")));
-}
+void ThemeEditorPreview::_bind_methods() {}
 
 ThemeEditorPreview::ThemeEditorPreview()
 {
@@ -311,7 +309,7 @@ ThemeEditorPreview::ThemeEditorPreview()
 	picker_overlay->connect(SceneStringName(mouse_exited),
 		callable_mp(this, &ThemeEditorPreview::_reset_picker_overlay));
 
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &ThemeEditorPreview::_update_preview_bg));
 }
 
@@ -534,11 +532,7 @@ void SceneThemeEditorPreview::_notification(int p_what)
 	}
 }
 
-void SceneThemeEditorPreview::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("scene_invalidated"));
-	ADD_SIGNAL(MethodInfo("scene_reloaded"));
-}
+void SceneThemeEditorPreview::_bind_methods() {}
 
 bool SceneThemeEditorPreview::set_preview_scene(const String& p_path)
 {
@@ -588,4 +582,5 @@ SceneThemeEditorPreview::SceneThemeEditorPreview()
 	reload_scene_button->connect(
 		SceneStringName(pressed), callable_mp(this, &SceneThemeEditorPreview::_reload_scene));
 }
+
 

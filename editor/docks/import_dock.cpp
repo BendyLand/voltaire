@@ -486,7 +486,7 @@ void ImportDock::_preset_selected(int p_idx)
 			import_settings[E.name] = params->values[E.name];
 		}
 
-		ProjectSettings::get_singleton()->set(setting_name, import_settings);
+		ProjectSettings::get_singleton()->obj->set(setting_name, import_settings);
 		ProjectSettings::get_singleton()->save();
 		_update_preset_menu();
 	} break;
@@ -507,7 +507,7 @@ void ImportDock::_preset_selected(int p_idx)
 		params->update();
 	} break;
 	case ITEM_CLEAR_DEFAULT: {
-		ProjectSettings::get_singleton()->set(setting_name, Variant());
+		ProjectSettings::get_singleton()->obj->set(setting_name, Variant());
 		ProjectSettings::get_singleton()->save();
 		_update_preset_menu();
 	} break;

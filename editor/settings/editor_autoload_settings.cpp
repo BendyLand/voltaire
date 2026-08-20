@@ -191,14 +191,17 @@ void EditorAutoloadSettings::_autoload_edited()
 
 		undo_redo->create_action(TTR("Rename Autoload"));
 
-		undo_redo->add_do_property(ProjectSettings::get_singleton(), name, scr_path);
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "set_order", name, order);
-		undo_redo->add_do_property(ProjectSettings::get_singleton(), selected_autoload, Variant());
+		undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(), name, scr_path);
+		undo_redo->add_do_method(
+			ProjectSettings::get_singleton()->obj.get(), "set_order", name, order);
+		undo_redo->add_do_property(
+			ProjectSettings::get_singleton()->obj.get(), selected_autoload, Variant());
 
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), selected_autoload, scr_path);
+		undo_redo->add_undo_property(
+			ProjectSettings::get_singleton()->obj.get(), selected_autoload, scr_path);
 		undo_redo->add_undo_method(
-			ProjectSettings::get_singleton(), "set_order", selected_autoload, order);
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), name, Variant());
+			ProjectSettings::get_singleton()->obj.get(), "set_order", selected_autoload, order);
+		undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(), name, Variant());
 
 		undo_redo->add_do_method(this->obj.get(), CoreStringName(call_deferred), "update_autoload");
 		undo_redo->add_undo_method(
@@ -231,11 +234,14 @@ void EditorAutoloadSettings::_autoload_edited()
 
 		undo_redo->create_action(TTR("Toggle Autoload Globals"));
 
-		undo_redo->add_do_property(ProjectSettings::get_singleton(), base, scr_path);
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), base, GLOBAL_GET(base));
+		undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(), base, scr_path);
+		undo_redo->add_undo_property(
+			ProjectSettings::get_singleton()->obj.get(), base, GLOBAL_GET(base));
 
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "set_order", base, order);
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set_order", base, order);
+		undo_redo->add_do_method(
+			ProjectSettings::get_singleton()->obj.get(), "set_order", base, order);
+		undo_redo->add_undo_method(
+			ProjectSettings::get_singleton()->obj.get(), "set_order", base, order);
 
 		undo_redo->add_do_method(this->obj.get(), CoreStringName(call_deferred), "update_autoload");
 		undo_redo->add_undo_method(
@@ -285,12 +291,15 @@ void EditorAutoloadSettings::_autoload_button_pressed(
 
 		undo_redo->create_action(TTR("Move Autoload"));
 
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "set_order", name, swap_order);
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set_order", name, order);
-
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "set_order", swap_name, order);
+		undo_redo->add_do_method(
+			ProjectSettings::get_singleton()->obj.get(), "set_order", name, swap_order);
 		undo_redo->add_undo_method(
-			ProjectSettings::get_singleton(), "set_order", swap_name, swap_order);
+			ProjectSettings::get_singleton()->obj.get(), "set_order", name, order);
+
+		undo_redo->add_do_method(
+			ProjectSettings::get_singleton()->obj.get(), "set_order", swap_name, order);
+		undo_redo->add_undo_method(
+			ProjectSettings::get_singleton()->obj.get(), "set_order", swap_name, swap_order);
 
 		undo_redo->add_do_method(this->obj.get(), "update_autoload");
 		undo_redo->add_undo_method(this->obj.get(), "update_autoload");
@@ -305,10 +314,12 @@ void EditorAutoloadSettings::_autoload_button_pressed(
 
 		undo_redo->create_action(TTR("Remove Autoload"));
 
-		undo_redo->add_do_property(ProjectSettings::get_singleton(), name, Variant());
+		undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(), name, Variant());
 
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), name, GLOBAL_GET(name));
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set_order", name, order);
+		undo_redo->add_undo_property(
+			ProjectSettings::get_singleton()->obj.get(), name, GLOBAL_GET(name));
+		undo_redo->add_undo_method(
+			ProjectSettings::get_singleton()->obj.get(), "set_order", name, order);
 
 		undo_redo->add_do_method(this->obj.get(), "update_autoload");
 		undo_redo->add_undo_method(this->obj.get(), "update_autoload");
@@ -517,7 +528,7 @@ void EditorAutoloadSettings::update_autoload()
 	TreeItem* root = tree->create_item();
 
 	List<PropertyInfo> props;
-	ProjectSettings::get_singleton()->get_property_list(&props);
+	ProjectSettings::get_singleton()->obj->get_property_list(&props);
 
 	for (const PropertyInfo& pi : props) {
 		if (!pi.name.begins_with("autoload/")) {
@@ -811,10 +822,10 @@ void EditorAutoloadSettings::drop_data_fw(
 
 	idx = 0;
 	for (const AutoloadInfo& F : autoload_cache) {
-		undo_redo->add_do_method(
-			ProjectSettings::get_singleton(), "set_order", "autoload/" + F.name, orders[idx++]);
-		undo_redo->add_undo_method(
-			ProjectSettings::get_singleton(), "set_order", "autoload/" + F.name, F.order);
+		undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "set_order",
+			"autoload/" + F.name, orders[idx++]);
+		undo_redo->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "set_order",
+			"autoload/" + F.name, F.order);
 	}
 
 	orders.clear();
@@ -858,7 +869,7 @@ bool EditorAutoloadSettings::autoload_add(
 	name = "autoload/" + name;
 
 	if (!p_use_undo) {
-		ProjectSettings::get_singleton()->set(name, "*" + p_path);
+		ProjectSettings::get_singleton()->obj->set(name, "*" + p_path);
 		update_autoload();
 		this->obj->emit_signal(autoload_changed);
 		return true;
@@ -868,14 +879,15 @@ bool EditorAutoloadSettings::autoload_add(
 
 	undo_redo->create_action(TTR("Add Autoload"));
 	// Singleton autoloads are represented with a leading "*" in their path.
-	undo_redo->add_do_property(ProjectSettings::get_singleton(), name,
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(), name,
 		"*" + ResourceUID::get_singleton()->path_to_uid(p_path));
 
 	if (ProjectSettings::get_singleton()->has_setting(name)) {
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), name, GLOBAL_GET(name));
+		undo_redo->add_undo_property(
+			ProjectSettings::get_singleton()->obj.get(), name, GLOBAL_GET(name));
 	}
 	else {
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), name, Variant());
+		undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(), name, Variant());
 	}
 
 	undo_redo->add_do_method(this->obj.get(), "update_autoload");
@@ -904,7 +916,7 @@ EditorAutoloadSettings::EditorAutoloadSettings()
 
 	// Make first cache
 	List<PropertyInfo> props;
-	ProjectSettings::get_singleton()->get_property_list(&props);
+	ProjectSettings::get_singleton()->obj->get_property_list(&props);
 	for (const PropertyInfo& pi : props) {
 		if (!pi.name.begins_with("autoload/")) {
 			continue;

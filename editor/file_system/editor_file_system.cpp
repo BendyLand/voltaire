@@ -3409,7 +3409,7 @@ void EditorFileSystem::_queue_refresh_filesystem()
 		return;
 	}
 	refresh_queued = true;
-	get_tree()->connect(SNAME("process_frame"),
+	get_tree()->obj->connect(SNAME("process_frame"),
 		callable_mp(this, &EditorFileSystem::_refresh_filesystem), Object::CONNECT_ONE_SHOT);
 }
 

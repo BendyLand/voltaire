@@ -33,12 +33,14 @@
 #include "core/io/image.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/templates/command_queue_mt.h"
+#include "core/templates/mem_unique_ptr.h"
 
 class RDShaderFile;
 class RenderingDevice;
 class RenderingContextDriver;
 
-enum BetsyFormat {
+enum BetsyFormat
+{
 	BETSY_FORMAT_BC1,
 	BETSY_FORMAT_BC1_DITHER,
 	BETSY_FORMAT_BC3,
@@ -51,7 +53,8 @@ enum BetsyFormat {
 	BETSY_FORMAT_MAX,
 };
 
-enum BetsyShaderType {
+enum BetsyShaderType
+{
 	BETSY_SHADER_BC1_STANDARD,
 	BETSY_SHADER_BC1_DITHER,
 	BETSY_SHADER_BC4_SIGNED,
@@ -66,23 +69,27 @@ enum BetsyShaderType {
 	BETSY_SHADER_MAX,
 };
 
-struct BC6PushConstant {
+struct BC6PushConstant
+{
 	float sizeX;
 	float sizeY;
-	uint32_t padding[2] = { 0 };
+	uint32_t padding[2] = {0};
 };
 
-struct BC1PushConstant {
+struct BC1PushConstant
+{
 	uint32_t num_refines;
-	uint32_t padding[3] = { 0 };
+	uint32_t padding[3] = {0};
 };
 
-struct BC4PushConstant {
+struct BC4PushConstant
+{
 	uint32_t channel_idx;
-	uint32_t padding[3] = { 0 };
+	uint32_t padding[3] = {0};
 };
 
-struct RGBToRGBAPushConstant {
+struct RGBToRGBAPushConstant
+{
 	uint32_t width;
 	uint32_t height;
 	uint32_t padding[2];
@@ -90,24 +97,25 @@ struct RGBToRGBAPushConstant {
 
 void free_device();
 
-Error _betsy_compress_bptc(Image *r_img, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format);
-Error _betsy_compress_s3tc(Image *r_img, Image::UsedChannels p_channels);
+Error _betsy_compress_bptc(
+	Image* r_img, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format);
+Error _betsy_compress_s3tc(Image* r_img, Image::UsedChannels p_channels);
 
-class BetsyCompressor : public Object {
-	VLTRSOFTCLASS(BetsyCompressor, Object);
-
+class BetsyCompressor
+{
 	mutable CommandQueueMT command_queue;
 	bool exit = false;
 	WorkerThreadPool::TaskID task_id = WorkerThreadPool::INVALID_TASK_ID;
 
-	struct BetsyShader {
+	struct BetsyShader
+	{
 		RID compiled;
 		RID pipeline;
 	};
 
 	// Resources shared by all compression formats.
-	RenderingDevice *compress_rd = nullptr;
-	RenderingContextDriver *compress_rcd = nullptr;
+	RenderingDevice* compress_rd = nullptr;
+	RenderingContextDriver* compress_rcd = nullptr;
 	BetsyShader cached_shaders[BETSY_SHADER_MAX];
 	RID src_sampler;
 
@@ -119,16 +127,20 @@ class BetsyCompressor : public Object {
 	void _thread_loop();
 	void _thread_exit();
 
-	Error _get_shader(BetsyFormat p_format, const String &p_version, BetsyShader &r_shader);
-	Error _compress(BetsyFormat p_format, Image *r_img);
+	Error _get_shader(BetsyFormat p_format, const String& p_version, BetsyShader& r_shader);
+	Error _compress(BetsyFormat p_format, Image* r_img);
 
 public:
+	mem_unique_ptr<Object> obj;
 	void init();
 	void finish();
 
-	Error compress(BetsyFormat p_format, Image *r_img) {
+	Error compress(BetsyFormat p_format, Image* r_img)
+	{
 		Error err;
 		command_queue.push_and_ret(this, &BetsyCompressor::_compress, &err, p_format, r_img);
 		return err;
 	}
 };
+
+

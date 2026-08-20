@@ -28,32 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "gltf_texture.h"
 
-#include "core/object/class_db.h"
+void GLTFTexture::_bind_methods() {}
 
-void GLTFTexture::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_src_image"), &GLTFTexture::get_src_image);
-	ClassDB::bind_method(D_METHOD("set_src_image", "src_image"), &GLTFTexture::set_src_image);
-	ClassDB::bind_method(D_METHOD("get_sampler"), &GLTFTexture::get_sampler);
-	ClassDB::bind_method(D_METHOD("set_sampler", "sampler"), &GLTFTexture::set_sampler);
+GLTFImageIndex GLTFTexture::get_src_image() const { return src_image; }
 
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "src_image"), "set_src_image", "get_src_image"); // int
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "sampler"), "set_sampler", "get_sampler"); // int
-}
+void GLTFTexture::set_src_image(GLTFImageIndex val) { src_image = val; }
 
-GLTFImageIndex GLTFTexture::get_src_image() const {
-	return src_image;
-}
+GLTFTextureSamplerIndex GLTFTexture::get_sampler() const { return sampler; }
 
-void GLTFTexture::set_src_image(GLTFImageIndex val) {
-	src_image = val;
-}
+void GLTFTexture::set_sampler(GLTFTextureSamplerIndex val) { sampler = val; }
 
-GLTFTextureSamplerIndex GLTFTexture::get_sampler() const {
-	return sampler;
-}
 
-void GLTFTexture::set_sampler(GLTFTextureSamplerIndex val) {
-	sampler = val;
-}

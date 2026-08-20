@@ -31,16 +31,18 @@
 #pragma once
 
 #include "../jsonrpc.h"
-
 #include "core/object/callable_mp.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "tests/test_macros.h"
 #include "tests/test_utils.h"
 
-namespace TestJSONRPC {
+namespace TestJSONRPC
+{
 
-void check_invalid(const Dictionary &p_dict);
+void check_invalid(const Dictionary& p_dict);
 
-TEST_CASE("[JSONRPC] process_action invalid") {
+TEST_CASE("[JSONRPC] process_action invalid")
+{
 	JSONRPC json_rpc = JSONRPC();
 
 	check_invalid(json_rpc.process_action("String is invalid"));
@@ -50,9 +52,10 @@ TEST_CASE("[JSONRPC] process_action invalid") {
 	check_invalid(json_rpc.process_action(Array()));
 }
 
-void check_invalid_string(const String &p_str);
+void check_invalid_string(const String& p_str);
 
-TEST_CASE("[JSONRPC] process_string invalid") {
+TEST_CASE("[JSONRPC] process_string invalid")
+{
 	JSONRPC json_rpc = JSONRPC();
 
 	check_invalid_string(json_rpc.process_string("\"String is invalid\""));
@@ -62,18 +65,19 @@ TEST_CASE("[JSONRPC] process_string invalid") {
 	check_invalid_string(json_rpc.process_string("[]"));
 }
 
-class TestClassJSONRPC : public JSONRPC {
+class TestClassJSONRPC : public JSONRPC
+{
 public:
-	TestClassJSONRPC() {
-		set_method("something", callable_mp(this, &TestClassJSONRPC::something));
-	}
+	TestClassJSONRPC() { set_method("something", callable_mp(this, &TestClassJSONRPC::something)); }
 
-	String something(const String &p_in);
+	String something(const String& p_in);
 };
 
-void test_process_action(const Variant &p_in, const Variant &p_expected, bool p_process_array_elements = false);
+void test_process_action(
+	const Variant& p_in, const Variant& p_expected, bool p_process_array_elements = false);
 
-TEST_CASE("[JSONRPC] process_action Dictionary") {
+TEST_CASE("[JSONRPC] process_action Dictionary")
+{
 	Dictionary in_dict = Dictionary();
 	in_dict["method"] = "something";
 	in_dict["id"] = "ID";
@@ -87,7 +91,8 @@ TEST_CASE("[JSONRPC] process_action Dictionary") {
 	test_process_action(in_dict, expected_dict);
 }
 
-TEST_CASE("[JSONRPC] process_action Array") {
+TEST_CASE("[JSONRPC] process_action Array")
+{
 	Array in;
 	Dictionary in_1;
 	in_1["method"] = "something";
@@ -115,18 +120,20 @@ TEST_CASE("[JSONRPC] process_action Array") {
 	test_process_action(in, expected, true);
 }
 
-void test_process_string(const String &p_in, const String &p_expected);
+void test_process_string(const String& p_in, const String& p_expected);
 
-TEST_CASE("[JSONRPC] process_string Dictionary") {
+TEST_CASE("[JSONRPC] process_string Dictionary")
+{
 	const String in = "{\"method\":\"something\",\"id\":\"ID\",\"params\":\"yes\"}";
 	const String expected = "{\"id\":\"ID\",\"jsonrpc\":\"2.0\",\"result\":\"yes, please\"}";
 
 	test_process_string(in, expected);
 }
 
-void test_process_action_bad_method(const Dictionary &p_in);
+void test_process_action_bad_method(const Dictionary& p_in);
 
-TEST_CASE("[JSONRPC] process_action bad method") {
+TEST_CASE("[JSONRPC] process_action bad method")
+{
 	Dictionary in_dict;
 	in_dict["id"] = 1;
 	in_dict["method"] = "nothing";
@@ -134,9 +141,10 @@ TEST_CASE("[JSONRPC] process_action bad method") {
 	test_process_action_bad_method(in_dict);
 }
 
-void test_no_response(const Variant &p_in);
+void test_no_response(const Variant& p_in);
 
-TEST_CASE("[JSONRPC] process_action notification") {
+TEST_CASE("[JSONRPC] process_action notification")
+{
 	Dictionary in_dict = Dictionary();
 	in_dict["method"] = "something";
 	in_dict["params"] = "yes";
@@ -144,14 +152,16 @@ TEST_CASE("[JSONRPC] process_action notification") {
 	test_no_response(in_dict);
 }
 
-TEST_CASE("[JSONRPC] process_action notification bad method") {
+TEST_CASE("[JSONRPC] process_action notification bad method")
+{
 	Dictionary in_dict;
 	in_dict["method"] = "nothing";
 
 	test_no_response(in_dict);
 }
 
-TEST_CASE("[JSONRPC] process_action notification batch") {
+TEST_CASE("[JSONRPC] process_action notification batch")
+{
 	Array in;
 	Dictionary in_1;
 	in_1["method"] = "something";
@@ -165,7 +175,8 @@ TEST_CASE("[JSONRPC] process_action notification batch") {
 	test_no_response(in);
 }
 
-TEST_CASE("[JSONRPC] mixed batch") {
+TEST_CASE("[JSONRPC] mixed batch")
+{
 	Array in;
 	Dictionary in_1;
 	in_1["method"] = "something";
@@ -197,23 +208,22 @@ TEST_CASE("[JSONRPC] mixed batch") {
 	test_process_action(in, expected, true);
 }
 
-class TestHandlerJSONRPC : public Object {
+class TestHandlerJSONRPC
+{
 public:
+	mem_unique_ptr<Object> obj;
 	bool called_1 = false;
 	bool called_2 = false;
 
-	void method1(const Variant &p_arg) {
-		called_1 = true;
-	}
+	void method1(const Variant& p_arg) { called_1 = true; }
 
-	void method2(const Variant &p_arg) {
-		called_2 = true;
-	}
+	void method2(const Variant& p_arg) { called_2 = true; }
 };
 
-TEST_CASE("[JSONRPC] process response") {
-	TestHandlerJSONRPC *handler = memnew(TestHandlerJSONRPC);
-	JSONRPC *jsonrpc = memnew(JSONRPC);
+TEST_CASE("[JSONRPC] process response")
+{
+	TestHandlerJSONRPC* handler = memnew(TestHandlerJSONRPC);
+	JSONRPC* jsonrpc = memnew(JSONRPC);
 
 	jsonrpc->set_response_handler(1, callable_mp(handler, &TestHandlerJSONRPC::method1));
 	jsonrpc->set_response_handler(2, callable_mp(handler, &TestHandlerJSONRPC::method2));
@@ -228,3 +238,5 @@ TEST_CASE("[JSONRPC] process response") {
 }
 
 } // namespace TestJSONRPC
+
+

@@ -869,7 +869,7 @@ void DependencyRemoveDialog::ok_pressed()
 		// or audio bus layout, we must clear its definition in Project Settings.
 		const StringName* setting_name = setting_path_map.getptr(file);
 		if (setting_name) {
-			ProjectSettings::get_singleton()->set(*setting_name, "");
+			ProjectSettings::get_singleton()->obj->set(*setting_name, "");
 			project_settings_modified = true;
 		}
 	}
@@ -937,12 +937,7 @@ void DependencyRemoveDialog::ok_pressed()
 	}
 }
 
-void DependencyRemoveDialog::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("resource_removed", PropertyInfo(Variant::OBJECT, "obj")));
-	ADD_SIGNAL(MethodInfo("file_removed", PropertyInfo(Variant::STRING, "file")));
-	ADD_SIGNAL(MethodInfo("folder_removed", PropertyInfo(Variant::STRING, "folder")));
-}
+void DependencyRemoveDialog::_bind_methods() {}
 
 DependencyRemoveDialog::DependencyRemoveDialog()
 {
@@ -997,7 +992,7 @@ DependencyRemoveDialog::DependencyRemoveDialog()
 	owners->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 
 	List<PropertyInfo> property_list;
-	ProjectSettings::get_singleton()->get_property_list(&property_list);
+	ProjectSettings::get_singleton()->obj->get_property_list(&property_list);
 	for (const PropertyInfo& pi : property_list) {
 		if (pi.type == Variant::STRING && pi.hint == PROPERTY_HINT_FILE) {
 			path_project_settings.push_back(pi.name);
@@ -1288,7 +1283,8 @@ void OrphanResourcesDialog::_find_to_delete(TreeItem* p_item, List<String>& r_pa
 			_find_to_delete(p_item->get_first_child(), r_paths);
 		}
 
-		p_item = p_item->get_next();
+		p_item = p_item->get_next()
+;
 	}
 }
 

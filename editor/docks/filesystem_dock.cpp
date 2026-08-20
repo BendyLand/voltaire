@@ -1933,7 +1933,7 @@ void FileSystemDock::_update_project_settings_after_move(
 
 	// Also search for the file in autoload, as they are stored differently from normal files.
 	List<PropertyInfo> property_list;
-	ProjectSettings::get_singleton()->get_property_list(&property_list);
+	ProjectSettings::get_singleton()->obj->get_property_list(&property_list);
 	for (const PropertyInfo& E : property_list) {
 		if (E.name.begins_with("autoload/")) {
 			// If the autoload resource paths has a leading "*", it indicates that it is a
@@ -2783,7 +2783,7 @@ void FileSystemDock::_file_option(int p_option, const Vector<String>& p_selected
 		// Set as main scene with selected scene file.
 		if (p_selected.size() == 1) {
 			main_scene_path = ResourceUID::path_to_uid(p_selected[0]);
-			ProjectSettings::get_singleton()->set("application/run/main_scene", main_scene_path);
+			ProjectSettings::get_singleton()->obj->set("application/run/main_scene", main_scene_path);
 			ProjectSettings::get_singleton()->save();
 			_update_tree(get_uncollapsed_paths());
 			_update_file_list(true);
@@ -5258,7 +5258,7 @@ FileSystemDock::FileSystemDock()
 	old_display_mode = DISPLAY_MODE_TREE_ONLY;
 	file_list_display_mode = FILE_LIST_DISPLAY_THUMBNAILS;
 
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &FileSystemDock::_project_settings_changed));
 	EditorSettings::get_singleton()->obj->connect(
 		"_favorites_changed", callable_mp(this, &FileSystemDock::update_all));

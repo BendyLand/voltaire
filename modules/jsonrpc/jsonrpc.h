@@ -31,12 +31,12 @@
 #pragma once
 
 #include "core/object/object.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "core/variant/type_info.h"
 #include "core/variant/variant.h"
 
-class JSONRPC : public Object {
-	VLTRCLASS(JSONRPC, Object)
-
+class JSONRPC
+{
 	HashMap<String, Callable> methods;
 	HashMap<int, Callable> response_handlers;
 
@@ -44,7 +44,7 @@ protected:
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	void _set_scope_bind_compat_104890(const String &p_scope, Object *p_obj);
+	void _set_scope_bind_compat_104890(const String& p_scope, Object* p_obj);
 	static void _bind_compatibility_methods();
 #endif
 
@@ -52,7 +52,10 @@ public:
 	JSONRPC();
 	~JSONRPC();
 
-	enum ErrorCode {
+	mem_unique_ptr<Object> obj;
+
+	enum ErrorCode
+	{
 		PARSE_ERROR = -32700,
 		INVALID_REQUEST = -32600,
 		METHOD_NOT_FOUND = -32601,
@@ -60,18 +63,19 @@ public:
 		INTERNAL_ERROR = -32603,
 	};
 
-	Dictionary make_response_error(int p_code, const String &p_message, const Variant &p_id = Variant()) const;
-	Dictionary make_response(const Variant &p_value, const Variant &p_id);
-	Dictionary make_notification(const String &p_method, const Variant &p_params);
-	Dictionary make_request(const String &p_method, const Variant &p_params, const Variant &p_id);
+	Dictionary make_response_error(
+		int p_code, const String& p_message, const Variant& p_id = Variant()) const;
+	Dictionary make_response(const Variant& p_value, const Variant& p_id);
+	Dictionary make_notification(const String& p_method, const Variant& p_params);
+	Dictionary make_request(const String& p_method, const Variant& p_params, const Variant& p_id);
 
-	Variant process_action(const Variant &p_action, bool p_process_arr_elements = false);
-	String process_string(const String &p_input);
+	Variant process_action(const Variant& p_action, bool p_process_arr_elements = false);
+	String process_string(const String& p_input);
 
-	Variant process_request(const Dictionary &p_request_object);
-	void process_response(const Dictionary &p_response_object);
+	Variant process_request(const Dictionary& p_request_object);
+	void process_response(const Dictionary& p_response_object);
 
-	void set_method(const String &p_name, const Callable &p_callback);
+	void set_method(const String& p_name, const Callable& p_callback);
 
 	/**
 	 * Registers a callback to be called when processing response objects.
@@ -80,7 +84,9 @@ public:
 	 * field as per the JSON-RPC spec. The callback will not be called for
 	 * error responses.
 	 */
-	void set_response_handler(int p_id, const Callable &p_callback);
+	void set_response_handler(int p_id, const Callable& p_callback);
 };
 
 VARIANT_ENUM_CAST(JSONRPC::ErrorCode);
+
+

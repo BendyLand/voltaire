@@ -259,7 +259,7 @@ void AudioStreamImportSettingsDialog::_reset_master()
 	AudioServer::get_singleton()->set_bus_volume_db(0, 0);
 
 	// Prevent the modifications from being saved.
-	AudioServer::get_singleton()->set_edited(false);
+	AudioServer::get_singleton()->obj->set_edited(false);
 }
 
 void AudioStreamImportSettingsDialog::_load_master_state()
@@ -269,7 +269,7 @@ void AudioStreamImportSettingsDialog::_load_master_state()
 	AudioServer::get_singleton()->set_bus_volume_db(0, master_state.volume);
 
 	// Prevent the modifications from being saved.
-	AudioServer::get_singleton()->set_edited(false);
+	AudioServer::get_singleton()->obj->set_edited(false);
 }
 
 void AudioStreamImportSettingsDialog::_audio_changed()

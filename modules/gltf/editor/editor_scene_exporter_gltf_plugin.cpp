@@ -28,10 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_scene_exporter_gltf_plugin.h"
-
-#include "editor_scene_exporter_gltf_settings.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/file_system/editor_file_system.h"
@@ -39,18 +35,20 @@
 #include "editor/import/3d/scene_import_settings.h"
 #include "editor/inspector/editor_inspector.h"
 #include "editor/themes/editor_scale.h"
+#include "editor_scene_exporter_gltf_plugin.h"
+#include "editor_scene_exporter_gltf_settings.h"
 #include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 
-String SceneExporterGLTFPlugin::get_plugin_name() const {
-	return "ConvertGLTF2";
-}
+String SceneExporterGLTFPlugin::get_plugin_name() const { return "ConvertGLTF2"; }
 
-SceneExporterGLTFPlugin::SceneExporterGLTFPlugin() {
+SceneExporterGLTFPlugin::SceneExporterGLTFPlugin()
+{
 	_gltf_document.instantiate();
 	// Set up the file dialog.
 	_file_dialog = memnew(EditorFileDialog);
-	_file_dialog->connect("file_selected", callable_mp(this, &SceneExporterGLTFPlugin::_popup_gltf_settings_dialog));
+	_file_dialog->connect(
+		"file_selected", callable_mp(this, &SceneExporterGLTFPlugin::_popup_gltf_settings_dialog));
 	_file_dialog->set_title(TTR("Export Library"));
 	_file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
 	_file_dialog->set_access(EditorFileDialog::ACCESS_FILESYSTEM);
@@ -63,7 +61,8 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin() {
 	_config_dialog = memnew(ConfirmationDialog);
 	_config_dialog->set_title(TTRC("Export Settings"));
 	EditorNode::get_singleton()->get_gui_base()->add_child(_config_dialog);
-	_config_dialog->connect(SceneStringName(confirmed), callable_mp(this, &SceneExporterGLTFPlugin::_export_scene_as_gltf));
+	_config_dialog->connect(SceneStringName(confirmed),
+		callable_mp(this, &SceneExporterGLTFPlugin::_export_scene_as_gltf));
 
 	_export_settings.instantiate();
 	_export_settings->generate_property_list(_gltf_document);
@@ -71,29 +70,33 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin() {
 	_settings_inspector->set_custom_minimum_size(Size2(350, 300) * EDSCALE);
 	_config_dialog->add_child(_settings_inspector);
 	// Add a button to the Scene -> Export menu to pop up the settings dialog.
-	PopupMenu *menu = get_export_as_menu();
+	PopupMenu* menu = get_export_as_menu();
 	int idx = menu->get_item_count();
 	menu->add_item(TTRC("glTF 2.0 Scene..."));
-	menu->set_item_metadata(idx, callable_mp(this, &SceneExporterGLTFPlugin::_popup_gltf_export_dialog));
+	menu->set_item_metadata(
+		idx, callable_mp(this, &SceneExporterGLTFPlugin::_popup_gltf_export_dialog));
 }
 
-void SceneExporterGLTFPlugin::_popup_gltf_settings_dialog(const String &p_selected_path) {
+void SceneExporterGLTFPlugin::_popup_gltf_settings_dialog(const String& p_selected_path)
+{
 	export_path = p_selected_path;
 
-	Node *root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
+	Node* root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
 	ERR_FAIL_NULL(root);
 	// Generate and refresh the export settings.
 	_export_settings->generate_property_list(_gltf_document, root);
 	_settings_inspector->edit(nullptr);
-	_settings_inspector->edit(_export_settings.ptr());
+	_settings_inspector->edit(_export_settings->obj.get());
 	// Show the config dialog.
 	_config_dialog->popup_centered();
 }
 
-void SceneExporterGLTFPlugin::_popup_gltf_export_dialog() {
-	Node *root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
+void SceneExporterGLTFPlugin::_popup_gltf_export_dialog()
+{
+	Node* root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
 	if (!root) {
-		EditorNode::get_singleton()->show_warning(TTR("This operation can't be done without a scene."));
+		EditorNode::get_singleton()->show_warning(
+			TTR("This operation can't be done without a scene."));
 		return;
 	}
 	// Set the file dialog's file name to the scene name.
@@ -106,8 +109,9 @@ void SceneExporterGLTFPlugin::_popup_gltf_export_dialog() {
 	_file_dialog->popup_file_dialog();
 }
 
-void SceneExporterGLTFPlugin::_export_scene_as_gltf() {
-	Node *root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
+void SceneExporterGLTFPlugin::_export_scene_as_gltf()
+{
+	Node* root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
 	ERR_FAIL_NULL(root);
 	Ref<GLTFState> state;
 	state.instantiate();
@@ -125,3 +129,5 @@ void SceneExporterGLTFPlugin::_export_scene_as_gltf() {
 	}
 	EditorFileSystem::get_singleton()->scan_changes();
 }
+
+

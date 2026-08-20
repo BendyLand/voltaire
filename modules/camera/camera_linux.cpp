@@ -28,24 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "camera_linux.h"
-
-#include "camera_feed_linux.h"
-
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "camera_feed_linux.h"
+#include "camera_linux.h"
 
-void CameraLinux::camera_thread_func(void *p_camera_linux) {
+void CameraLinux::camera_thread_func(void* p_camera_linux)
+{
 	if (p_camera_linux) {
-		CameraLinux *camera_linux = (CameraLinux *)p_camera_linux;
+		CameraLinux* camera_linux = (CameraLinux*)p_camera_linux;
 		camera_linux->_update_devices();
 	}
 }
 
-void CameraLinux::_update_devices() {
+void CameraLinux::_update_devices()
+{
 	while (!exit_flag.is_set()) {
 		{
 			MutexLock lock(camera_mutex);
@@ -61,12 +61,12 @@ void CameraLinux::_update_devices() {
 				}
 			}
 
-			struct dirent **devices;
+			struct dirent** devices;
 			int count = scandir("/dev", &devices, nullptr, alphasort);
 
 			if (count != -1) {
 				for (int i = 0; i < count; i++) {
-					struct dirent *device = devices[i];
+					struct dirent* device = devices[i];
 					if (strncmp(device->d_name, "video", 5) == 0) {
 						String device_name = String("/dev/") + String(device->d_name);
 						if (!_has_device(device_name)) {
@@ -80,12 +80,13 @@ void CameraLinux::_update_devices() {
 			free(devices);
 		}
 
-		call_deferred("emit_signal", SNAME(CameraServer::feeds_updated_signal_name));
+		this->obj->call_deferred("emit_signal", SNAME(CameraServer::feeds_updated_signal_name));
 		usleep(1000000);
 	}
 }
 
-bool CameraLinux::_has_device(const String &p_device_name) {
+bool CameraLinux::_has_device(const String& p_device_name)
+{
 	for (int i = 0; i < feeds.size(); i++) {
 		Ref<CameraFeedLinux> feed = (Ref<CameraFeedLinux>)feeds[i];
 		if (feed.is_null()) {
@@ -98,7 +99,8 @@ bool CameraLinux::_has_device(const String &p_device_name) {
 	return false;
 }
 
-void CameraLinux::_add_device(const String &p_device_name) {
+void CameraLinux::_add_device(const String& p_device_name)
+{
 	int file_descriptor = _open_device(p_device_name);
 
 	if (file_descriptor != -1) {
@@ -111,7 +113,8 @@ void CameraLinux::_add_device(const String &p_device_name) {
 	close(file_descriptor);
 }
 
-int CameraLinux::_open_device(const String &p_device_name) {
+int CameraLinux::_open_device(const String& p_device_name)
+{
 	struct stat s;
 
 	if (stat(p_device_name.ascii().get_data(), &s) == -1) {
@@ -126,7 +129,8 @@ int CameraLinux::_open_device(const String &p_device_name) {
 }
 
 // TODO any cheaper/cleaner way to check if file descriptor is invalid?
-bool CameraLinux::_is_active(const String &p_device_name) {
+bool CameraLinux::_is_active(const String& p_device_name)
+{
 	struct v4l2_capability capability;
 	bool result = false;
 	int file_descriptor = _open_device(p_device_name);
@@ -137,7 +141,8 @@ bool CameraLinux::_is_active(const String &p_device_name) {
 	return result;
 }
 
-bool CameraLinux::_is_video_capture_device(int p_file_descriptor) {
+bool CameraLinux::_is_video_capture_device(int p_file_descriptor)
+{
 	struct v4l2_capability capability;
 
 	if (ioctl(p_file_descriptor, VIDIOC_QUERYCAP, &capability) == -1) {
@@ -155,7 +160,8 @@ bool CameraLinux::_is_video_capture_device(int p_file_descriptor) {
 	return _can_query_format(p_file_descriptor, V4L2_BUF_TYPE_VIDEO_CAPTURE);
 }
 
-bool CameraLinux::_can_query_format(int p_file_descriptor, int p_type) {
+bool CameraLinux::_can_query_format(int p_file_descriptor, int p_type)
+{
 	struct v4l2_format format;
 	memset(&format, 0, sizeof(format));
 	format.type = p_type;
@@ -163,7 +169,8 @@ bool CameraLinux::_can_query_format(int p_file_descriptor, int p_type) {
 	return ioctl(p_file_descriptor, VIDIOC_G_FMT, &format) != -1;
 }
 
-inline void CameraLinux::set_monitoring_feeds(bool p_monitoring_feeds) {
+inline void CameraLinux::set_monitoring_feeds(bool p_monitoring_feeds)
+{
 	if (p_monitoring_feeds == monitoring_feeds) {
 		return;
 	}
@@ -172,7 +179,8 @@ inline void CameraLinux::set_monitoring_feeds(bool p_monitoring_feeds) {
 	if (p_monitoring_feeds) {
 		exit_flag.clear();
 		camera_thread.start(CameraLinux::camera_thread_func, this);
-	} else {
+	}
+	else {
 		exit_flag.set();
 		if (camera_thread.is_started()) {
 			camera_thread.wait_to_finish();
@@ -180,9 +188,12 @@ inline void CameraLinux::set_monitoring_feeds(bool p_monitoring_feeds) {
 	}
 }
 
-CameraLinux::~CameraLinux() {
+CameraLinux::~CameraLinux()
+{
 	exit_flag.set();
 	if (camera_thread.is_started()) {
 		camera_thread.wait_to_finish();
 	}
 }
+
+

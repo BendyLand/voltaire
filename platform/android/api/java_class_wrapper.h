@@ -207,7 +207,7 @@ protected:
 
 public:
 	virtual Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount,
-		Callable::CallError& r_error) override;
+		Callable::CallError& r_error);
 
 	String get_java_class_name() const;
 	TypedArray<Dictionary> get_java_method_list() const;
@@ -238,7 +238,7 @@ protected:
 
 public:
 	virtual Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount,
-		Callable::CallError& r_error) override;
+		Callable::CallError& r_error);
 
 	Ref<JavaClass> get_java_class() const;
 	bool has_java_method(const StringName& p_method) const;

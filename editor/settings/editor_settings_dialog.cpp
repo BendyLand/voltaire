@@ -1291,9 +1291,9 @@ void EditorSettingsPropertyWrapper::_setup_override_info()
 	Variant::Type type =
 		ProjectSettings::get_singleton()->get_editor_setting_override(property).get_type();
 	override_editor_property =
-		get_parent_inspector()->instantiate_property_editor(ProjectSettings::get_singleton(), type,
+		get_parent_inspector()->instantiate_property_editor(ProjectSettings::get_singleton()->obj.get(), type,
 			ProjectSettings::EDITOR_SETTING_OVERRIDE_PREFIX + property, hint, hint_text, usage);
-	override_editor_property->set_object_and_property(ProjectSettings::get_singleton(),
+	override_editor_property->set_object_and_property(ProjectSettings::get_singleton()->obj.get(),
 		ProjectSettings::EDITOR_SETTING_OVERRIDE_PREFIX + property);
 	override_editor_property->set_read_only(true);
 	override_editor_property->set_label(TTR("Overridden in project"));

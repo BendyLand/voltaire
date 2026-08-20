@@ -1231,98 +1231,7 @@ Ref<TriangleMesh> CSGShape3D::generate_triangle_mesh() const
 	return Ref<TriangleMesh>();
 }
 
-void CSGShape3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("is_root_shape"), &CSGShape3D::is_root_shape);
-
-	ClassDB::bind_method(D_METHOD("set_operation", "operation"), &CSGShape3D::set_operation);
-	ClassDB::bind_method(D_METHOD("get_operation"), &CSGShape3D::get_operation);
-
-#ifndef DISABLE_DEPRECATED
-	ClassDB::bind_method(D_METHOD("_update_shape"), &CSGShape3D::update_shape);
-	ClassDB::bind_method(D_METHOD("set_snap", "snap"), &CSGShape3D::set_snap);
-	ClassDB::bind_method(D_METHOD("get_snap"), &CSGShape3D::get_snap);
-#endif // DISABLE_DEPRECATED
-
-#ifndef PHYSICS_3D_DISABLED
-	ClassDB::bind_method(
-		D_METHOD("set_use_collision", "operation"), &CSGShape3D::set_use_collision);
-	ClassDB::bind_method(D_METHOD("is_using_collision"), &CSGShape3D::is_using_collision);
-
-	ClassDB::bind_method(
-		D_METHOD("set_collision_layer", "layer"), &CSGShape3D::set_collision_layer);
-	ClassDB::bind_method(D_METHOD("get_collision_layer"), &CSGShape3D::get_collision_layer);
-
-	ClassDB::bind_method(D_METHOD("set_collision_mask", "mask"), &CSGShape3D::set_collision_mask);
-	ClassDB::bind_method(D_METHOD("get_collision_mask"), &CSGShape3D::get_collision_mask);
-
-	ClassDB::bind_method(D_METHOD("set_collision_mask_value", "layer_number", "value"),
-		&CSGShape3D::set_collision_mask_value);
-	ClassDB::bind_method(D_METHOD("get_collision_mask_value", "layer_number"),
-		&CSGShape3D::get_collision_mask_value);
-
-	ClassDB::bind_method(
-		D_METHOD("_get_root_collision_instance"), &CSGShape3D::_get_root_collision_instance);
-
-	ClassDB::bind_method(D_METHOD("set_collision_layer_value", "layer_number", "value"),
-		&CSGShape3D::set_collision_layer_value);
-	ClassDB::bind_method(D_METHOD("get_collision_layer_value", "layer_number"),
-		&CSGShape3D::get_collision_layer_value);
-
-	ClassDB::bind_method(
-		D_METHOD("set_collision_priority", "priority"), &CSGShape3D::set_collision_priority);
-	ClassDB::bind_method(D_METHOD("get_collision_priority"), &CSGShape3D::get_collision_priority);
-
-	ClassDB::bind_method(D_METHOD("bake_collision_shape"), &CSGShape3D::bake_collision_shape);
-#endif // PHYSICS_3D_DISABLED
-
-	ClassDB::bind_method(
-		D_METHOD("set_calculate_tangents", "enabled"), &CSGShape3D::set_calculate_tangents);
-	ClassDB::bind_method(D_METHOD("is_calculating_tangents"), &CSGShape3D::is_calculating_tangents);
-
-	ClassDB::bind_method(D_METHOD("get_meshes"), &CSGShape3D::get_meshes);
-
-	ClassDB::bind_method(D_METHOD("bake_static_mesh"), &CSGShape3D::bake_static_mesh);
-
-	ClassDB::bind_method(D_METHOD("set_autosmooth", "autosmooth"), &CSGShape3D::set_autosmooth);
-	ClassDB::bind_method(D_METHOD("is_autosmooth"), &CSGShape3D::is_autosmooth);
-
-	ClassDB::bind_method(
-		D_METHOD("set_smoothing_angle", "smoothing_angle"), &CSGShape3D::set_smoothing_angle);
-	ClassDB::bind_method(D_METHOD("get_smoothing_angle"), &CSGShape3D::get_smoothing_angle);
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "autosmooth"), "set_autosmooth", "is_autosmooth");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "smoothing_angle", PROPERTY_HINT_RANGE, "0,180,0.1,degrees"),
-		"set_smoothing_angle", "get_smoothing_angle");
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "operation", PROPERTY_HINT_ENUM,
-					 "Union,Intersection,Subtraction"),
-		"set_operation", "get_operation");
-#ifndef DISABLE_DEPRECATED
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "snap", PROPERTY_HINT_RANGE,
-					 "0.000001,1,0.000001,suffix:m", PROPERTY_USAGE_NONE),
-		"set_snap", "get_snap");
-#endif // DISABLE_DEPRECATED
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "calculate_tangents"), "set_calculate_tangents",
-		"is_calculating_tangents");
-
-#ifndef PHYSICS_3D_DISABLED
-	ADD_GROUP("Collision", "collision_");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "use_collision"), "set_use_collision", "is_using_collision");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS),
-		"set_collision_layer", "get_collision_layer");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS),
-		"set_collision_mask", "get_collision_mask");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "collision_priority"), "set_collision_priority",
-		"get_collision_priority");
-#endif // PHYSICS_3D_DISABLED
-
-	BIND_ENUM_CONSTANT(OPERATION_UNION);
-	BIND_ENUM_CONSTANT(OPERATION_INTERSECTION);
-	BIND_ENUM_CONSTANT(OPERATION_SUBTRACTION);
-}
+void CSGShape3D::_bind_methods() {}
 
 CSGShape3D::CSGShape3D() { set_notify_local_transform(true); }
 
@@ -1365,13 +1274,7 @@ CSGBrush* CSGPrimitive3D::_create_brush_from_arrays(const Vector<Vector3>& p_ver
 	return new_brush;
 }
 
-void CSGPrimitive3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_flip_faces", "flip_faces"), &CSGPrimitive3D::set_flip_faces);
-	ClassDB::bind_method(D_METHOD("get_flip_faces"), &CSGPrimitive3D::get_flip_faces);
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_faces"), "set_flip_faces", "get_flip_faces");
-}
+void CSGPrimitive3D::_bind_methods() {}
 
 void CSGPrimitive3D::set_flip_faces(bool p_invert)
 {
@@ -1560,22 +1463,7 @@ void CSGMesh3D::set_material(const Ref<Material>& p_material)
 
 Ref<Material> CSGMesh3D::get_material() const { return material; }
 
-void CSGMesh3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_mesh", "mesh"), &CSGMesh3D::set_mesh);
-	ClassDB::bind_method(D_METHOD("get_mesh"), &CSGMesh3D::get_mesh);
-
-	ClassDB::bind_method(D_METHOD("set_material", "material"), &CSGMesh3D::set_material);
-	ClassDB::bind_method(D_METHOD("get_material"), &CSGMesh3D::get_material);
-
-	// Hide PrimitiveMeshes that are always non-manifold and therefore can't be used as CSG meshes.
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh", PROPERTY_HINT_RESOURCE_TYPE,
-					 "Mesh,-PlaneMesh,-PointMesh,-QuadMesh,-RibbonTrailMesh"),
-		"set_mesh", "get_mesh");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE,
-					 "BaseMaterial3D,ShaderMaterial"),
-		"set_material", "get_material");
-}
+void CSGMesh3D::_bind_methods() {}
 
 void CSGMesh3D::set_mesh(const Ref<Mesh>& p_mesh)
 {
@@ -1730,37 +1618,7 @@ CSGBrush* CSGSphere3D::_build_brush()
 	return new_brush;
 }
 
-void CSGSphere3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &CSGSphere3D::set_radius);
-	ClassDB::bind_method(D_METHOD("get_radius"), &CSGSphere3D::get_radius);
-
-	ClassDB::bind_method(
-		D_METHOD("set_radial_segments", "radial_segments"), &CSGSphere3D::set_radial_segments);
-	ClassDB::bind_method(D_METHOD("get_radial_segments"), &CSGSphere3D::get_radial_segments);
-	ClassDB::bind_method(D_METHOD("set_rings", "rings"), &CSGSphere3D::set_rings);
-	ClassDB::bind_method(D_METHOD("get_rings"), &CSGSphere3D::get_rings);
-
-	ClassDB::bind_method(
-		D_METHOD("set_smooth_faces", "smooth_faces"), &CSGSphere3D::set_smooth_faces);
-	ClassDB::bind_method(D_METHOD("get_smooth_faces"), &CSGSphere3D::get_smooth_faces);
-
-	ClassDB::bind_method(D_METHOD("set_material", "material"), &CSGSphere3D::set_material);
-	ClassDB::bind_method(D_METHOD("get_material"), &CSGSphere3D::get_material);
-
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0.001,100.0,0.001,suffix:m"),
-		"set_radius", "get_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "radial_segments", PROPERTY_HINT_RANGE, "1,100,1"),
-		"set_radial_segments", "get_radial_segments");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "rings", PROPERTY_HINT_RANGE, "1,100,1"), "set_rings",
-		"get_rings");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "smooth_faces"), "set_smooth_faces", "get_smooth_faces");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE,
-					 "BaseMaterial3D,ShaderMaterial"),
-		"set_material", "get_material");
-}
+void CSGSphere3D::_bind_methods() {}
 
 void CSGSphere3D::set_radius(const float p_radius)
 {
@@ -1919,20 +1777,7 @@ CSGBrush* CSGBox3D::_build_brush()
 	return new_brush;
 }
 
-void CSGBox3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_size", "size"), &CSGBox3D::set_size);
-	ClassDB::bind_method(D_METHOD("get_size"), &CSGBox3D::get_size);
-
-	ClassDB::bind_method(D_METHOD("set_material", "material"), &CSGBox3D::set_material);
-	ClassDB::bind_method(D_METHOD("get_material"), &CSGBox3D::get_material);
-
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "size", PROPERTY_HINT_NONE, "suffix:m"), "set_size",
-		"get_size");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE,
-					 "BaseMaterial3D,ShaderMaterial"),
-		"set_material", "get_material");
-}
+void CSGBox3D::_bind_methods() {}
 
 void CSGBox3D::set_size(const Vector3& p_size)
 {
@@ -2122,42 +1967,7 @@ CSGBrush* CSGCylinder3D::_build_brush()
 	return new_brush;
 }
 
-void CSGCylinder3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &CSGCylinder3D::set_radius);
-	ClassDB::bind_method(D_METHOD("get_radius"), &CSGCylinder3D::get_radius);
-
-	ClassDB::bind_method(D_METHOD("set_height", "height"), &CSGCylinder3D::set_height);
-	ClassDB::bind_method(D_METHOD("get_height"), &CSGCylinder3D::get_height);
-
-	ClassDB::bind_method(D_METHOD("set_sides", "sides"), &CSGCylinder3D::set_sides);
-	ClassDB::bind_method(D_METHOD("get_sides"), &CSGCylinder3D::get_sides);
-
-	ClassDB::bind_method(D_METHOD("set_cone", "cone"), &CSGCylinder3D::set_cone);
-	ClassDB::bind_method(D_METHOD("is_cone"), &CSGCylinder3D::is_cone);
-
-	ClassDB::bind_method(D_METHOD("set_material", "material"), &CSGCylinder3D::set_material);
-	ClassDB::bind_method(D_METHOD("get_material"), &CSGCylinder3D::get_material);
-
-	ClassDB::bind_method(
-		D_METHOD("set_smooth_faces", "smooth_faces"), &CSGCylinder3D::set_smooth_faces);
-	ClassDB::bind_method(D_METHOD("get_smooth_faces"), &CSGCylinder3D::get_smooth_faces);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE,
-					 "0.001,1000.0,0.001,or_greater,exp,suffix:m"),
-		"set_radius", "get_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "height", PROPERTY_HINT_RANGE,
-					 "0.001,1000.0,0.001,or_greater,exp,suffix:m"),
-		"set_height", "get_height");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "sides", PROPERTY_HINT_RANGE, "3,64,1"), "set_sides",
-		"get_sides");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cone"), "set_cone", "is_cone");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "smooth_faces"), "set_smooth_faces", "get_smooth_faces");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE,
-					 "BaseMaterial3D,ShaderMaterial"),
-		"set_material", "get_material");
-}
+void CSGCylinder3D::_bind_methods() {}
 
 void CSGCylinder3D::set_radius(const float p_radius)
 {
@@ -2353,43 +2163,7 @@ CSGBrush* CSGTorus3D::_build_brush()
 	return new_brush;
 }
 
-void CSGTorus3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_inner_radius", "radius"), &CSGTorus3D::set_inner_radius);
-	ClassDB::bind_method(D_METHOD("get_inner_radius"), &CSGTorus3D::get_inner_radius);
-
-	ClassDB::bind_method(D_METHOD("set_outer_radius", "radius"), &CSGTorus3D::set_outer_radius);
-	ClassDB::bind_method(D_METHOD("get_outer_radius"), &CSGTorus3D::get_outer_radius);
-
-	ClassDB::bind_method(D_METHOD("set_sides", "sides"), &CSGTorus3D::set_sides);
-	ClassDB::bind_method(D_METHOD("get_sides"), &CSGTorus3D::get_sides);
-
-	ClassDB::bind_method(D_METHOD("set_ring_sides", "sides"), &CSGTorus3D::set_ring_sides);
-	ClassDB::bind_method(D_METHOD("get_ring_sides"), &CSGTorus3D::get_ring_sides);
-
-	ClassDB::bind_method(D_METHOD("set_material", "material"), &CSGTorus3D::set_material);
-	ClassDB::bind_method(D_METHOD("get_material"), &CSGTorus3D::get_material);
-
-	ClassDB::bind_method(
-		D_METHOD("set_smooth_faces", "smooth_faces"), &CSGTorus3D::set_smooth_faces);
-	ClassDB::bind_method(D_METHOD("get_smooth_faces"), &CSGTorus3D::get_smooth_faces);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inner_radius", PROPERTY_HINT_RANGE,
-					 "0.001,1000.0,0.001,or_greater,exp,suffix:m"),
-		"set_inner_radius", "get_inner_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "outer_radius", PROPERTY_HINT_RANGE,
-					 "0.001,1000.0,0.001,or_greater,exp,suffix:m"),
-		"set_outer_radius", "get_outer_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "sides", PROPERTY_HINT_RANGE, "3,64,1"), "set_sides",
-		"get_sides");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "ring_sides", PROPERTY_HINT_RANGE, "3,64,1"),
-		"set_ring_sides", "get_ring_sides");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "smooth_faces"), "set_smooth_faces", "get_smooth_faces");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE,
-					 "BaseMaterial3D,ShaderMaterial"),
-		"set_material", "get_material");
-}
+void CSGTorus3D::_bind_methods() {}
 
 void CSGTorus3D::set_inner_radius(const float p_inner_radius)
 {
@@ -2865,60 +2639,7 @@ void CSGPolygon3D::_path_changed()
 
 void CSGPolygon3D::_path_exited() { path = nullptr; }
 
-void CSGPolygon3D::_bind_methods()
-{
-	ADD_PROPERTY(
-		PropertyInfo(Variant::PACKED_VECTOR2_ARRAY, "polygon"), "set_polygon", "get_polygon");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "mode", PROPERTY_HINT_ENUM, "Depth,Spin,Path"),
-		"set_mode", "get_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "depth", PROPERTY_HINT_RANGE,
-					 "0.01,100.0,0.01,or_greater,exp,suffix:m"),
-		"set_depth", "get_depth");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "spin_degrees", PROPERTY_HINT_RANGE, "1,360,0.1"),
-		"set_spin_degrees", "get_spin_degrees");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "spin_sides", PROPERTY_HINT_RANGE, "3,64,1"),
-		"set_spin_sides", "get_spin_sides");
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "path_node", PROPERTY_HINT_NODE_PATH_VALID_TYPES,
-					 "Path3D"),
-		"set_path_node", "get_path_node");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "path_interval_type", PROPERTY_HINT_ENUM, "Distance,Subdivide"),
-		"set_path_interval_type", "get_path_interval_type");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "path_interval", PROPERTY_HINT_RANGE,
-					 "0.01,1.0,0.01,exp,or_greater"),
-		"set_path_interval", "get_path_interval");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "path_simplify_angle", PROPERTY_HINT_RANGE, "0.0,180.0,0.1"),
-		"set_path_simplify_angle", "get_path_simplify_angle");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "path_rotation", PROPERTY_HINT_ENUM, "Polygon,Path,PathFollow"),
-		"set_path_rotation", "get_path_rotation");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "path_rotation_accurate"),
-		"set_path_rotation_accurate", "get_path_rotation_accurate");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "path_local"), "set_path_local", "is_path_local");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "path_continuous_u"), "set_path_continuous_u",
-		"is_path_continuous_u");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "path_u_distance", PROPERTY_HINT_RANGE,
-					 "0.0,10.0,0.01,or_greater,suffix:m"),
-		"set_path_u_distance", "get_path_u_distance");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "path_joined"), "set_path_joined", "is_path_joined");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "smooth_faces"), "set_smooth_faces", "get_smooth_faces");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE,
-					 "BaseMaterial3D,ShaderMaterial"),
-		"set_material", "get_material");
-
-	BIND_ENUM_CONSTANT(MODE_DEPTH);
-	BIND_ENUM_CONSTANT(MODE_SPIN);
-	BIND_ENUM_CONSTANT(MODE_PATH);
-
-	BIND_ENUM_CONSTANT(PATH_ROTATION_POLYGON);
-	BIND_ENUM_CONSTANT(PATH_ROTATION_PATH);
-	BIND_ENUM_CONSTANT(PATH_ROTATION_PATH_FOLLOW);
-
-	BIND_ENUM_CONSTANT(PATH_INTERVAL_DISTANCE);
-	BIND_ENUM_CONSTANT(PATH_INTERVAL_SUBDIVIDE);
-}
+void CSGPolygon3D::_bind_methods() {}
 
 void CSGPolygon3D::set_polygon(const Vector<Vector2>& p_polygon)
 {
@@ -2961,7 +2682,8 @@ void CSGPolygon3D::set_path_u_distance(real_t p_path_u_distance)
 {
 	path_u_distance = p_path_u_distance;
 	_make_dirty();
-	update_gizmos();
+	update_gizmos()
+;
 }
 
 real_t CSGPolygon3D::get_path_u_distance() const { return path_u_distance; }

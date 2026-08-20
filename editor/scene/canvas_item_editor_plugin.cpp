@@ -5029,8 +5029,8 @@ void CanvasItemEditor::_draw_message()
 		Point2(ruler_width_scaled + 10 * EDSCALE, viewport->get_size().y - 14 * EDSCALE);
 	viewport->draw_string(font.ptr(), msgpos + Point2(1, 1), message, HORIZONTAL_ALIGNMENT_LEFT, -1,
 		font_size, Color(0, 0, 0, 0.8));
-	viewport->draw_string(font.ptr(), msgpos + Point2(-1, -1), message, HORIZONTAL_ALIGNMENT_LEFT, -1,
-		font_size, Color(0, 0, 0, 0.8));
+	viewport->draw_string(font.ptr(), msgpos + Point2(-1, -1), message, HORIZONTAL_ALIGNMENT_LEFT,
+		-1, font_size, Color(0, 0, 0, 0.8));
 	viewport->draw_string(
 		font.ptr(), msgpos, message, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1, 1, 1, 1));
 }
@@ -5249,7 +5249,7 @@ void CanvasItemEditor::_notification(int p_what)
 	case NOTIFICATION_READY: {
 		_update_lock_and_group_button();
 
-		ProjectSettings::get_singleton()->connect(
+		ProjectSettings::get_singleton()->obj->connect(
 			"settings_changed", callable_mp(this, &CanvasItemEditor::_project_settings_changed));
 	} break;
 
@@ -5675,7 +5675,8 @@ void CanvasItemEditor::_insert_animation_keys(
 							te->insert_node_value_key(F, "rotation", p_on_existing);
 						}
 						if (key_scale) {
-							te->insert_node_value_key(F, "scale", p_on_existing);
+							te->insert_node_value_key(F, "scale", p_on_existing)
+;
 						}
 					}
 				}
@@ -6181,8 +6182,7 @@ void CanvasItemEditor::_reset_drag()
 	drag_selection.clear();
 }
 
-void CanvasItemEditor::_bind_methods()
-{}
+void CanvasItemEditor::_bind_methods() {}
 
 Dictionary CanvasItemEditor::get_state() const
 {
@@ -7738,10 +7738,7 @@ void CanvasItemEditorViewport::_show_texture_node_type_selector()
 	texture_node_type_selector->popup_centered();
 }
 
-bool CanvasItemEditorViewport::_is_any_texture_selected() const
-{
-	return false;
-}
+bool CanvasItemEditorViewport::_is_any_texture_selected() const { return false; }
 
 void CanvasItemEditorViewport::drop_data(const Point2& p_point, const Variant& p_data)
 {

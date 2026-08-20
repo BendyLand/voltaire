@@ -47,513 +47,539 @@ using namespace GLES3;
 ///////////////////////////////////////////////////////////////////////////
 // UBI helper functions
 
-static void _fill_std140_variant_ubo_value(ShaderLanguage::DataType type, int p_array_size, const Variant &value, uint8_t *data) {
+static void _fill_std140_variant_ubo_value(
+	ShaderLanguage::DataType type, int p_array_size, const Variant& value, uint8_t* data)
+{
 	switch (type) {
-		case ShaderLanguage::TYPE_BOOL: {
-			uint32_t *gui = (uint32_t *)data;
+	case ShaderLanguage::TYPE_BOOL: {
+		uint32_t* gui = (uint32_t*)data;
 
-			if (p_array_size > 0) {
-				PackedInt32Array ba = value;
-				for (int i = 0; i < ba.size(); i++) {
-					ba.set(i, ba[i] ? 1 : 0);
-				}
-				write_array_std140<int32_t>(ba, gui, p_array_size, 4);
-			} else {
-				bool v = value;
-				gui[0] = v ? 1 : 0;
+		if (p_array_size > 0) {
+			PackedInt32Array ba = value;
+			for (int i = 0; i < ba.size(); i++) {
+				ba.set(i, ba[i] ? 1 : 0);
 			}
-		} break;
-		case ShaderLanguage::TYPE_BVEC2: {
-			uint32_t *gui = (uint32_t *)data;
-
-			if (p_array_size > 0) {
-				PackedInt32Array ba = convert_array_std140<Vector2i, int32_t>(value);
-				for (int i = 0; i < ba.size(); i++) {
-					ba.set(i, ba[i] ? 1 : 0);
-				}
-				write_array_std140<Vector2i>(ba, gui, p_array_size, 4);
-			} else {
-				uint32_t v = value;
-				gui[0] = v & 1 ? 1 : 0;
-				gui[1] = v & 2 ? 1 : 0;
-			}
-		} break;
-		case ShaderLanguage::TYPE_BVEC3: {
-			uint32_t *gui = (uint32_t *)data;
-
-			if (p_array_size > 0) {
-				PackedInt32Array ba = convert_array_std140<Vector3i, int32_t>(value);
-				for (int i = 0; i < ba.size(); i++) {
-					ba.set(i, ba[i] ? 1 : 0);
-				}
-				write_array_std140<Vector3i>(ba, gui, p_array_size, 4);
-			} else {
-				uint32_t v = value;
-				gui[0] = (v & 1) ? 1 : 0;
-				gui[1] = (v & 2) ? 1 : 0;
-				gui[2] = (v & 4) ? 1 : 0;
-			}
-		} break;
-		case ShaderLanguage::TYPE_BVEC4: {
-			uint32_t *gui = (uint32_t *)data;
-
-			if (p_array_size > 0) {
-				PackedInt32Array ba = convert_array_std140<Vector4i, int32_t>(value);
-				for (int i = 0; i < ba.size(); i++) {
-					ba.set(i, ba[i] ? 1 : 0);
-				}
-				write_array_std140<Vector4i>(ba, gui, p_array_size, 4);
-			} else {
-				uint32_t v = value;
-				gui[0] = (v & 1) ? 1 : 0;
-				gui[1] = (v & 2) ? 1 : 0;
-				gui[2] = (v & 4) ? 1 : 0;
-				gui[3] = (v & 8) ? 1 : 0;
-			}
-		} break;
-		case ShaderLanguage::TYPE_INT: {
-			int32_t *gui = (int32_t *)data;
-
-			if (p_array_size > 0) {
-				const PackedInt32Array &iv = value;
-				write_array_std140<int32_t>(iv, gui, p_array_size, 4);
-			} else {
-				int v = value;
-				gui[0] = v;
-			}
-		} break;
-		case ShaderLanguage::TYPE_IVEC2: {
-			int32_t *gui = (int32_t *)data;
-
-			if (p_array_size > 0) {
-				const PackedInt32Array &iv = convert_array_std140<Vector2i, int32_t>(value);
-				write_array_std140<Vector2i>(iv, gui, p_array_size, 4);
-			} else {
-				Vector2i v = convert_to_vector<Vector2i>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-			}
-		} break;
-		case ShaderLanguage::TYPE_IVEC3: {
-			int32_t *gui = (int32_t *)data;
-
-			if (p_array_size > 0) {
-				const PackedInt32Array &iv = convert_array_std140<Vector3i, int32_t>(value);
-				write_array_std140<Vector3i>(iv, gui, p_array_size, 4);
-			} else {
-				Vector3i v = convert_to_vector<Vector3i>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-				gui[2] = v.z;
-			}
-		} break;
-		case ShaderLanguage::TYPE_IVEC4: {
-			int32_t *gui = (int32_t *)data;
-
-			if (p_array_size > 0) {
-				const PackedInt32Array &iv = convert_array_std140<Vector4i, int32_t>(value);
-				write_array_std140<Vector4i>(iv, gui, p_array_size, 4);
-			} else {
-				Vector4i v = convert_to_vector<Vector4i>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-				gui[2] = v.z;
-				gui[3] = v.w;
-			}
-		} break;
-		case ShaderLanguage::TYPE_UINT: {
-			uint32_t *gui = (uint32_t *)data;
-
-			if (p_array_size > 0) {
-				const PackedInt32Array &iv = value;
-				write_array_std140<uint32_t>(iv, gui, p_array_size, 4);
-			} else {
-				int v = value;
-				gui[0] = v;
-			}
-		} break;
-		case ShaderLanguage::TYPE_UVEC2: {
-			uint32_t *gui = (uint32_t *)data;
-
-			if (p_array_size > 0) {
-				const PackedInt32Array &iv = convert_array_std140<Vector2i, int32_t>(value);
-				write_array_std140<Vector2i>(iv, gui, p_array_size, 4);
-			} else {
-				Vector2i v = convert_to_vector<Vector2i>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-			}
-		} break;
-		case ShaderLanguage::TYPE_UVEC3: {
-			uint32_t *gui = (uint32_t *)data;
-
-			if (p_array_size > 0) {
-				const PackedInt32Array &iv = convert_array_std140<Vector3i, int32_t>(value);
-				write_array_std140<Vector3i>(iv, gui, p_array_size, 4);
-			} else {
-				Vector3i v = convert_to_vector<Vector3i>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-				gui[2] = v.z;
-			}
-		} break;
-		case ShaderLanguage::TYPE_UVEC4: {
-			uint32_t *gui = (uint32_t *)data;
-
-			if (p_array_size > 0) {
-				const PackedInt32Array &iv = convert_array_std140<Vector4i, int32_t>(value);
-				write_array_std140<Vector4i>(iv, gui, p_array_size, 4);
-			} else {
-				Vector4i v = convert_to_vector<Vector4i>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-				gui[2] = v.z;
-				gui[3] = v.w;
-			}
-		} break;
-		case ShaderLanguage::TYPE_FLOAT: {
-			float *gui = (float *)data;
-
-			if (p_array_size > 0) {
-				const PackedFloat32Array &a = value;
-				write_array_std140<float>(a, gui, p_array_size, 4);
-			} else {
-				float v = value;
-				gui[0] = v;
-			}
-		} break;
-		case ShaderLanguage::TYPE_VEC2: {
-			float *gui = (float *)data;
-
-			if (p_array_size > 0) {
-				const PackedFloat32Array &a = convert_array_std140<Vector2, float>(value);
-				write_array_std140<Vector2>(a, gui, p_array_size, 4);
-			} else {
-				Vector2 v = convert_to_vector<Vector2>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-			}
-		} break;
-		case ShaderLanguage::TYPE_VEC3: {
-			float *gui = (float *)data;
-
-			if (p_array_size > 0) {
-				const PackedFloat32Array &a = convert_array_std140<Vector3, float>(value);
-				write_array_std140<Vector3>(a, gui, p_array_size, 4);
-			} else {
-				Vector3 v = convert_to_vector<Vector3>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-				gui[2] = v.z;
-			}
-		} break;
-		case ShaderLanguage::TYPE_VEC4: {
-			float *gui = (float *)data;
-
-			if (p_array_size > 0) {
-				const PackedFloat32Array &a = convert_array_std140<Vector4, float>(value);
-				write_array_std140<Vector4>(a, gui, p_array_size, 4);
-			} else {
-				Vector4 v = convert_to_vector<Vector4>(value);
-				gui[0] = v.x;
-				gui[1] = v.y;
-				gui[2] = v.z;
-				gui[3] = v.w;
-			}
-		} break;
-		case ShaderLanguage::TYPE_MAT2: {
-			float *gui = (float *)data;
-
-			if (p_array_size > 0) {
-				const PackedFloat32Array &a = value;
-				int s = a.size();
-
-				for (int i = 0, j = 0; i < p_array_size * 4; i += 4, j += 8) {
-					if (i + 3 < s) {
-						gui[j] = a[i];
-						gui[j + 1] = a[i + 1];
-
-						gui[j + 4] = a[i + 2];
-						gui[j + 5] = a[i + 3];
-					} else {
-						gui[j] = 1;
-						gui[j + 1] = 0;
-
-						gui[j + 4] = 0;
-						gui[j + 5] = 1;
-					}
-					gui[j + 2] = 0; // ignored
-					gui[j + 3] = 0; // ignored
-					gui[j + 6] = 0; // ignored
-					gui[j + 7] = 0; // ignored
-				}
-			} else {
-				Transform2D v = value;
-
-				//in std140 members of mat2 are treated as vec4s
-				gui[0] = v.columns[0][0];
-				gui[1] = v.columns[0][1];
-				gui[2] = 0; // ignored
-				gui[3] = 0; // ignored
-
-				gui[4] = v.columns[1][0];
-				gui[5] = v.columns[1][1];
-				gui[6] = 0; // ignored
-				gui[7] = 0; // ignored
-			}
-		} break;
-		case ShaderLanguage::TYPE_MAT3: {
-			float *gui = (float *)data;
-
-			if (p_array_size > 0) {
-				const PackedFloat32Array &a = convert_array_std140<Basis, float>(value);
-				const Basis default_basis;
-				const int s = a.size();
-
-				for (int i = 0, j = 0; i < p_array_size * 9; i += 9, j += 12) {
-					if (i + 8 < s) {
-						gui[j] = a[i];
-						gui[j + 1] = a[i + 1];
-						gui[j + 2] = a[i + 2];
-						gui[j + 3] = 0; // Ignored.
-
-						gui[j + 4] = a[i + 3];
-						gui[j + 5] = a[i + 4];
-						gui[j + 6] = a[i + 5];
-						gui[j + 7] = 0; // Ignored.
-
-						gui[j + 8] = a[i + 6];
-						gui[j + 9] = a[i + 7];
-						gui[j + 10] = a[i + 8];
-						gui[j + 11] = 0; // Ignored.
-					} else {
-						convert_item_std140(default_basis, gui + j);
-					}
-				}
-			} else {
-				convert_item_std140<Basis>(value, gui);
-			}
-		} break;
-		case ShaderLanguage::TYPE_MAT4: {
-			float *gui = (float *)data;
-
-			if (p_array_size > 0) {
-				const PackedFloat32Array &a = convert_array_std140<Projection, float>(value);
-				write_array_std140<Projection>(a, gui, p_array_size, 16);
-			} else {
-				convert_item_std140<Projection>(value, gui);
-			}
-		} break;
-		default: {
+			write_array_std140<int32_t>(ba, gui, p_array_size, 4);
 		}
+		else {
+			bool v = value;
+			gui[0] = v ? 1 : 0;
+		}
+	} break;
+	case ShaderLanguage::TYPE_BVEC2: {
+		uint32_t* gui = (uint32_t*)data;
+
+		if (p_array_size > 0) {
+			PackedInt32Array ba = convert_array_std140<Vector2i, int32_t>(value);
+			for (int i = 0; i < ba.size(); i++) {
+				ba.set(i, ba[i] ? 1 : 0);
+			}
+			write_array_std140<Vector2i>(ba, gui, p_array_size, 4);
+		}
+		else {
+			uint32_t v = value;
+			gui[0] = v & 1 ? 1 : 0;
+			gui[1] = v & 2 ? 1 : 0;
+		}
+	} break;
+	case ShaderLanguage::TYPE_BVEC3: {
+		uint32_t* gui = (uint32_t*)data;
+
+		if (p_array_size > 0) {
+			PackedInt32Array ba = convert_array_std140<Vector3i, int32_t>(value);
+			for (int i = 0; i < ba.size(); i++) {
+				ba.set(i, ba[i] ? 1 : 0);
+			}
+			write_array_std140<Vector3i>(ba, gui, p_array_size, 4);
+		}
+		else {
+			uint32_t v = value;
+			gui[0] = (v & 1) ? 1 : 0;
+			gui[1] = (v & 2) ? 1 : 0;
+			gui[2] = (v & 4) ? 1 : 0;
+		}
+	} break;
+	case ShaderLanguage::TYPE_BVEC4: {
+		uint32_t* gui = (uint32_t*)data;
+
+		if (p_array_size > 0) {
+			PackedInt32Array ba = convert_array_std140<Vector4i, int32_t>(value);
+			for (int i = 0; i < ba.size(); i++) {
+				ba.set(i, ba[i] ? 1 : 0);
+			}
+			write_array_std140<Vector4i>(ba, gui, p_array_size, 4);
+		}
+		else {
+			uint32_t v = value;
+			gui[0] = (v & 1) ? 1 : 0;
+			gui[1] = (v & 2) ? 1 : 0;
+			gui[2] = (v & 4) ? 1 : 0;
+			gui[3] = (v & 8) ? 1 : 0;
+		}
+	} break;
+	case ShaderLanguage::TYPE_INT: {
+		int32_t* gui = (int32_t*)data;
+
+		if (p_array_size > 0) {
+			const PackedInt32Array& iv = value;
+			write_array_std140<int32_t>(iv, gui, p_array_size, 4);
+		}
+		else {
+			int v = value;
+			gui[0] = v;
+		}
+	} break;
+	case ShaderLanguage::TYPE_IVEC2: {
+		int32_t* gui = (int32_t*)data;
+
+		if (p_array_size > 0) {
+			const PackedInt32Array& iv = convert_array_std140<Vector2i, int32_t>(value);
+			write_array_std140<Vector2i>(iv, gui, p_array_size, 4);
+		}
+		else {
+			Vector2i v = convert_to_vector<Vector2i>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+		}
+	} break;
+	case ShaderLanguage::TYPE_IVEC3: {
+		int32_t* gui = (int32_t*)data;
+
+		if (p_array_size > 0) {
+			const PackedInt32Array& iv = convert_array_std140<Vector3i, int32_t>(value);
+			write_array_std140<Vector3i>(iv, gui, p_array_size, 4);
+		}
+		else {
+			Vector3i v = convert_to_vector<Vector3i>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+			gui[2] = v.z;
+		}
+	} break;
+	case ShaderLanguage::TYPE_IVEC4: {
+		int32_t* gui = (int32_t*)data;
+
+		if (p_array_size > 0) {
+			const PackedInt32Array& iv = convert_array_std140<Vector4i, int32_t>(value);
+			write_array_std140<Vector4i>(iv, gui, p_array_size, 4);
+		}
+		else {
+			Vector4i v = convert_to_vector<Vector4i>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+			gui[2] = v.z;
+			gui[3] = v.w;
+		}
+	} break;
+	case ShaderLanguage::TYPE_UINT: {
+		uint32_t* gui = (uint32_t*)data;
+
+		if (p_array_size > 0) {
+			const PackedInt32Array& iv = value;
+			write_array_std140<uint32_t>(iv, gui, p_array_size, 4);
+		}
+		else {
+			int v = value;
+			gui[0] = v;
+		}
+	} break;
+	case ShaderLanguage::TYPE_UVEC2: {
+		uint32_t* gui = (uint32_t*)data;
+
+		if (p_array_size > 0) {
+			const PackedInt32Array& iv = convert_array_std140<Vector2i, int32_t>(value);
+			write_array_std140<Vector2i>(iv, gui, p_array_size, 4);
+		}
+		else {
+			Vector2i v = convert_to_vector<Vector2i>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+		}
+	} break;
+	case ShaderLanguage::TYPE_UVEC3: {
+		uint32_t* gui = (uint32_t*)data;
+
+		if (p_array_size > 0) {
+			const PackedInt32Array& iv = convert_array_std140<Vector3i, int32_t>(value);
+			write_array_std140<Vector3i>(iv, gui, p_array_size, 4);
+		}
+		else {
+			Vector3i v = convert_to_vector<Vector3i>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+			gui[2] = v.z;
+		}
+	} break;
+	case ShaderLanguage::TYPE_UVEC4: {
+		uint32_t* gui = (uint32_t*)data;
+
+		if (p_array_size > 0) {
+			const PackedInt32Array& iv = convert_array_std140<Vector4i, int32_t>(value);
+			write_array_std140<Vector4i>(iv, gui, p_array_size, 4);
+		}
+		else {
+			Vector4i v = convert_to_vector<Vector4i>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+			gui[2] = v.z;
+			gui[3] = v.w;
+		}
+	} break;
+	case ShaderLanguage::TYPE_FLOAT: {
+		float* gui = (float*)data;
+
+		if (p_array_size > 0) {
+			const PackedFloat32Array& a = value;
+			write_array_std140<float>(a, gui, p_array_size, 4);
+		}
+		else {
+			float v = value;
+			gui[0] = v;
+		}
+	} break;
+	case ShaderLanguage::TYPE_VEC2: {
+		float* gui = (float*)data;
+
+		if (p_array_size > 0) {
+			const PackedFloat32Array& a = convert_array_std140<Vector2, float>(value);
+			write_array_std140<Vector2>(a, gui, p_array_size, 4);
+		}
+		else {
+			Vector2 v = convert_to_vector<Vector2>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+		}
+	} break;
+	case ShaderLanguage::TYPE_VEC3: {
+		float* gui = (float*)data;
+
+		if (p_array_size > 0) {
+			const PackedFloat32Array& a = convert_array_std140<Vector3, float>(value);
+			write_array_std140<Vector3>(a, gui, p_array_size, 4);
+		}
+		else {
+			Vector3 v = convert_to_vector<Vector3>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+			gui[2] = v.z;
+		}
+	} break;
+	case ShaderLanguage::TYPE_VEC4: {
+		float* gui = (float*)data;
+
+		if (p_array_size > 0) {
+			const PackedFloat32Array& a = convert_array_std140<Vector4, float>(value);
+			write_array_std140<Vector4>(a, gui, p_array_size, 4);
+		}
+		else {
+			Vector4 v = convert_to_vector<Vector4>(value);
+			gui[0] = v.x;
+			gui[1] = v.y;
+			gui[2] = v.z;
+			gui[3] = v.w;
+		}
+	} break;
+	case ShaderLanguage::TYPE_MAT2: {
+		float* gui = (float*)data;
+
+		if (p_array_size > 0) {
+			const PackedFloat32Array& a = value;
+			int s = a.size();
+
+			for (int i = 0, j = 0; i < p_array_size * 4; i += 4, j += 8) {
+				if (i + 3 < s) {
+					gui[j] = a[i];
+					gui[j + 1] = a[i + 1];
+
+					gui[j + 4] = a[i + 2];
+					gui[j + 5] = a[i + 3];
+				}
+				else {
+					gui[j] = 1;
+					gui[j + 1] = 0;
+
+					gui[j + 4] = 0;
+					gui[j + 5] = 1;
+				}
+				gui[j + 2] = 0; // ignored
+				gui[j + 3] = 0; // ignored
+				gui[j + 6] = 0; // ignored
+				gui[j + 7] = 0; // ignored
+			}
+		}
+		else {
+			Transform2D v = value;
+
+			// in std140 members of mat2 are treated as vec4s
+			gui[0] = v.columns[0][0];
+			gui[1] = v.columns[0][1];
+			gui[2] = 0; // ignored
+			gui[3] = 0; // ignored
+
+			gui[4] = v.columns[1][0];
+			gui[5] = v.columns[1][1];
+			gui[6] = 0; // ignored
+			gui[7] = 0; // ignored
+		}
+	} break;
+	case ShaderLanguage::TYPE_MAT3: {
+		float* gui = (float*)data;
+
+		if (p_array_size > 0) {
+			const PackedFloat32Array& a = convert_array_std140<Basis, float>(value);
+			const Basis default_basis;
+			const int s = a.size();
+
+			for (int i = 0, j = 0; i < p_array_size * 9; i += 9, j += 12) {
+				if (i + 8 < s) {
+					gui[j] = a[i];
+					gui[j + 1] = a[i + 1];
+					gui[j + 2] = a[i + 2];
+					gui[j + 3] = 0; // Ignored.
+
+					gui[j + 4] = a[i + 3];
+					gui[j + 5] = a[i + 4];
+					gui[j + 6] = a[i + 5];
+					gui[j + 7] = 0; // Ignored.
+
+					gui[j + 8] = a[i + 6];
+					gui[j + 9] = a[i + 7];
+					gui[j + 10] = a[i + 8];
+					gui[j + 11] = 0; // Ignored.
+				}
+				else {
+					convert_item_std140(default_basis, gui + j);
+				}
+			}
+		}
+		else {
+			convert_item_std140<Basis>(value, gui);
+		}
+	} break;
+	case ShaderLanguage::TYPE_MAT4: {
+		float* gui = (float*)data;
+
+		if (p_array_size > 0) {
+			const PackedFloat32Array& a = convert_array_std140<Projection, float>(value);
+			write_array_std140<Projection>(a, gui, p_array_size, 16);
+		}
+		else {
+			convert_item_std140<Projection>(value, gui);
+		}
+	} break;
+	default: {
+	}
 	}
 }
 
-_FORCE_INLINE_ static void _fill_std140_ubo_value(ShaderLanguage::DataType type, const Vector<ShaderLanguage::Scalar> &value, uint8_t *data) {
+_FORCE_INLINE_ static void _fill_std140_ubo_value(
+	ShaderLanguage::DataType type, const Vector<ShaderLanguage::Scalar>& value, uint8_t* data)
+{
 	switch (type) {
-		case ShaderLanguage::TYPE_BOOL: {
-			uint32_t *gui = (uint32_t *)data;
-			gui[0] = value[0].boolean ? 1 : 0;
-		} break;
-		case ShaderLanguage::TYPE_BVEC2: {
-			uint32_t *gui = (uint32_t *)data;
-			gui[0] = value[0].boolean ? 1 : 0;
-			gui[1] = value[1].boolean ? 1 : 0;
+	case ShaderLanguage::TYPE_BOOL: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].boolean ? 1 : 0;
+	} break;
+	case ShaderLanguage::TYPE_BVEC2: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].boolean ? 1 : 0;
+		gui[1] = value[1].boolean ? 1 : 0;
 
-		} break;
-		case ShaderLanguage::TYPE_BVEC3: {
-			uint32_t *gui = (uint32_t *)data;
-			gui[0] = value[0].boolean ? 1 : 0;
-			gui[1] = value[1].boolean ? 1 : 0;
-			gui[2] = value[2].boolean ? 1 : 0;
+	} break;
+	case ShaderLanguage::TYPE_BVEC3: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].boolean ? 1 : 0;
+		gui[1] = value[1].boolean ? 1 : 0;
+		gui[2] = value[2].boolean ? 1 : 0;
 
-		} break;
-		case ShaderLanguage::TYPE_BVEC4: {
-			uint32_t *gui = (uint32_t *)data;
-			gui[0] = value[0].boolean ? 1 : 0;
-			gui[1] = value[1].boolean ? 1 : 0;
-			gui[2] = value[2].boolean ? 1 : 0;
-			gui[3] = value[3].boolean ? 1 : 0;
+	} break;
+	case ShaderLanguage::TYPE_BVEC4: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].boolean ? 1 : 0;
+		gui[1] = value[1].boolean ? 1 : 0;
+		gui[2] = value[2].boolean ? 1 : 0;
+		gui[3] = value[3].boolean ? 1 : 0;
 
-		} break;
-		case ShaderLanguage::TYPE_INT: {
-			int32_t *gui = (int32_t *)data;
-			gui[0] = value[0].sint;
+	} break;
+	case ShaderLanguage::TYPE_INT: {
+		int32_t* gui = (int32_t*)data;
+		gui[0] = value[0].sint;
 
-		} break;
-		case ShaderLanguage::TYPE_IVEC2: {
-			int32_t *gui = (int32_t *)data;
+	} break;
+	case ShaderLanguage::TYPE_IVEC2: {
+		int32_t* gui = (int32_t*)data;
 
-			for (int i = 0; i < 2; i++) {
-				gui[i] = value[i].sint;
-			}
-
-		} break;
-		case ShaderLanguage::TYPE_IVEC3: {
-			int32_t *gui = (int32_t *)data;
-
-			for (int i = 0; i < 3; i++) {
-				gui[i] = value[i].sint;
-			}
-
-		} break;
-		case ShaderLanguage::TYPE_IVEC4: {
-			int32_t *gui = (int32_t *)data;
-
-			for (int i = 0; i < 4; i++) {
-				gui[i] = value[i].sint;
-			}
-
-		} break;
-		case ShaderLanguage::TYPE_UINT: {
-			uint32_t *gui = (uint32_t *)data;
-			gui[0] = value[0].uint;
-
-		} break;
-		case ShaderLanguage::TYPE_UVEC2: {
-			int32_t *gui = (int32_t *)data;
-
-			for (int i = 0; i < 2; i++) {
-				gui[i] = value[i].uint;
-			}
-		} break;
-		case ShaderLanguage::TYPE_UVEC3: {
-			int32_t *gui = (int32_t *)data;
-
-			for (int i = 0; i < 3; i++) {
-				gui[i] = value[i].uint;
-			}
-
-		} break;
-		case ShaderLanguage::TYPE_UVEC4: {
-			int32_t *gui = (int32_t *)data;
-
-			for (int i = 0; i < 4; i++) {
-				gui[i] = value[i].uint;
-			}
-		} break;
-		case ShaderLanguage::TYPE_FLOAT: {
-			float *gui = (float *)data;
-			gui[0] = value[0].real;
-
-		} break;
-		case ShaderLanguage::TYPE_VEC2: {
-			float *gui = (float *)data;
-
-			for (int i = 0; i < 2; i++) {
-				gui[i] = value[i].real;
-			}
-
-		} break;
-		case ShaderLanguage::TYPE_VEC3: {
-			float *gui = (float *)data;
-
-			for (int i = 0; i < 3; i++) {
-				gui[i] = value[i].real;
-			}
-
-		} break;
-		case ShaderLanguage::TYPE_VEC4: {
-			float *gui = (float *)data;
-
-			for (int i = 0; i < 4; i++) {
-				gui[i] = value[i].real;
-			}
-		} break;
-		case ShaderLanguage::TYPE_MAT2: {
-			float *gui = (float *)data;
-
-			//in std140 members of mat2 are treated as vec4s
-			gui[0] = value[0].real;
-			gui[1] = value[1].real;
-			gui[2] = 0;
-			gui[3] = 0;
-			gui[4] = value[2].real;
-			gui[5] = value[3].real;
-			gui[6] = 0;
-			gui[7] = 0;
-		} break;
-		case ShaderLanguage::TYPE_MAT3: {
-			float *gui = (float *)data;
-
-			gui[0] = value[0].real;
-			gui[1] = value[1].real;
-			gui[2] = value[2].real;
-			gui[3] = 0;
-			gui[4] = value[3].real;
-			gui[5] = value[4].real;
-			gui[6] = value[5].real;
-			gui[7] = 0;
-			gui[8] = value[6].real;
-			gui[9] = value[7].real;
-			gui[10] = value[8].real;
-			gui[11] = 0;
-		} break;
-		case ShaderLanguage::TYPE_MAT4: {
-			float *gui = (float *)data;
-
-			for (int i = 0; i < 16; i++) {
-				gui[i] = value[i].real;
-			}
-		} break;
-		default: {
+		for (int i = 0; i < 2; i++) {
+			gui[i] = value[i].sint;
 		}
+
+	} break;
+	case ShaderLanguage::TYPE_IVEC3: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 3; i++) {
+			gui[i] = value[i].sint;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_IVEC4: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 4; i++) {
+			gui[i] = value[i].sint;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_UINT: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].uint;
+
+	} break;
+	case ShaderLanguage::TYPE_UVEC2: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 2; i++) {
+			gui[i] = value[i].uint;
+		}
+	} break;
+	case ShaderLanguage::TYPE_UVEC3: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 3; i++) {
+			gui[i] = value[i].uint;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_UVEC4: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 4; i++) {
+			gui[i] = value[i].uint;
+		}
+	} break;
+	case ShaderLanguage::TYPE_FLOAT: {
+		float* gui = (float*)data;
+		gui[0] = value[0].real;
+
+	} break;
+	case ShaderLanguage::TYPE_VEC2: {
+		float* gui = (float*)data;
+
+		for (int i = 0; i < 2; i++) {
+			gui[i] = value[i].real;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_VEC3: {
+		float* gui = (float*)data;
+
+		for (int i = 0; i < 3; i++) {
+			gui[i] = value[i].real;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_VEC4: {
+		float* gui = (float*)data;
+
+		for (int i = 0; i < 4; i++) {
+			gui[i] = value[i].real;
+		}
+	} break;
+	case ShaderLanguage::TYPE_MAT2: {
+		float* gui = (float*)data;
+
+		// in std140 members of mat2 are treated as vec4s
+		gui[0] = value[0].real;
+		gui[1] = value[1].real;
+		gui[2] = 0;
+		gui[3] = 0;
+		gui[4] = value[2].real;
+		gui[5] = value[3].real;
+		gui[6] = 0;
+		gui[7] = 0;
+	} break;
+	case ShaderLanguage::TYPE_MAT3: {
+		float* gui = (float*)data;
+
+		gui[0] = value[0].real;
+		gui[1] = value[1].real;
+		gui[2] = value[2].real;
+		gui[3] = 0;
+		gui[4] = value[3].real;
+		gui[5] = value[4].real;
+		gui[6] = value[5].real;
+		gui[7] = 0;
+		gui[8] = value[6].real;
+		gui[9] = value[7].real;
+		gui[10] = value[8].real;
+		gui[11] = 0;
+	} break;
+	case ShaderLanguage::TYPE_MAT4: {
+		float* gui = (float*)data;
+
+		for (int i = 0; i < 16; i++) {
+			gui[i] = value[i].real;
+		}
+	} break;
+	default: {
+	}
 	}
 }
 
-_FORCE_INLINE_ static void _fill_std140_ubo_empty(ShaderLanguage::DataType type, int p_array_size, uint8_t *data) {
+_FORCE_INLINE_ static void _fill_std140_ubo_empty(
+	ShaderLanguage::DataType type, int p_array_size, uint8_t* data)
+{
 	if (p_array_size <= 0) {
 		p_array_size = 1;
 	}
 
 	switch (type) {
-		case ShaderLanguage::TYPE_BOOL:
-		case ShaderLanguage::TYPE_INT:
-		case ShaderLanguage::TYPE_UINT:
-		case ShaderLanguage::TYPE_FLOAT: {
-			memset(data, 0, 4 * p_array_size);
-		} break;
-		case ShaderLanguage::TYPE_BVEC2:
-		case ShaderLanguage::TYPE_IVEC2:
-		case ShaderLanguage::TYPE_UVEC2:
-		case ShaderLanguage::TYPE_VEC2: {
-			memset(data, 0, 8 * p_array_size);
-		} break;
-		case ShaderLanguage::TYPE_BVEC3:
-		case ShaderLanguage::TYPE_IVEC3:
-		case ShaderLanguage::TYPE_UVEC3:
-		case ShaderLanguage::TYPE_VEC3: {
-			memset(data, 0, 12 * p_array_size);
-		} break;
-		case ShaderLanguage::TYPE_BVEC4:
-		case ShaderLanguage::TYPE_IVEC4:
-		case ShaderLanguage::TYPE_UVEC4:
-		case ShaderLanguage::TYPE_VEC4: {
-			memset(data, 0, 16 * p_array_size);
-		} break;
-		case ShaderLanguage::TYPE_MAT2: {
-			memset(data, 0, 32 * p_array_size);
-		} break;
-		case ShaderLanguage::TYPE_MAT3: {
-			memset(data, 0, 48 * p_array_size);
-		} break;
-		case ShaderLanguage::TYPE_MAT4: {
-			memset(data, 0, 64 * p_array_size);
-		} break;
+	case ShaderLanguage::TYPE_BOOL:
+	case ShaderLanguage::TYPE_INT:
+	case ShaderLanguage::TYPE_UINT:
+	case ShaderLanguage::TYPE_FLOAT: {
+		memset(data, 0, 4 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_BVEC2:
+	case ShaderLanguage::TYPE_IVEC2:
+	case ShaderLanguage::TYPE_UVEC2:
+	case ShaderLanguage::TYPE_VEC2: {
+		memset(data, 0, 8 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_BVEC3:
+	case ShaderLanguage::TYPE_IVEC3:
+	case ShaderLanguage::TYPE_UVEC3:
+	case ShaderLanguage::TYPE_VEC3: {
+		memset(data, 0, 12 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_BVEC4:
+	case ShaderLanguage::TYPE_IVEC4:
+	case ShaderLanguage::TYPE_UVEC4:
+	case ShaderLanguage::TYPE_VEC4: {
+		memset(data, 0, 16 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_MAT2: {
+		memset(data, 0, 32 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_MAT3: {
+		memset(data, 0, 48 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_MAT4: {
+		memset(data, 0, 64 * p_array_size);
+	} break;
 
-		default: {
-		}
+	default: {
+	}
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // ShaderData
 
-void ShaderData::set_path_hint(const String &p_hint) {
-	path = p_hint;
-}
+void ShaderData::set_path_hint(const String& p_hint) { path = p_hint; }
 
-void ShaderData::set_default_texture_parameter(const StringName &p_name, RID p_texture, int p_index) {
+void ShaderData::set_default_texture_parameter(const StringName& p_name, RID p_texture, int p_index)
+{
 	if (!p_texture.is_valid()) {
 		if (default_texture_params.has(p_name) && default_texture_params[p_name].has(p_index)) {
 			default_texture_params[p_name].erase(p_index);
@@ -562,7 +588,8 @@ void ShaderData::set_default_texture_parameter(const StringName &p_name, RID p_t
 				default_texture_params.erase(p_name);
 			}
 		}
-	} else {
+	}
+	else {
 		if (!default_texture_params.has(p_name)) {
 			default_texture_params[p_name] = HashMap<int, RID>();
 		}
@@ -570,23 +597,27 @@ void ShaderData::set_default_texture_parameter(const StringName &p_name, RID p_t
 	}
 }
 
-Variant ShaderData::get_default_parameter(const StringName &p_parameter) const {
+Variant ShaderData::get_default_parameter(const StringName& p_parameter) const
+{
 	if (uniforms.has(p_parameter)) {
 		ShaderLanguage::ShaderNode::Uniform uniform = uniforms[p_parameter];
 		Vector<ShaderLanguage::Scalar> default_value = uniform.default_value;
 		if (default_value.is_empty()) {
-			return ShaderLanguage::get_default_datatype_value(uniform.type, uniform.array_size, uniform.hint);
+			return ShaderLanguage::get_default_datatype_value(
+				uniform.type, uniform.array_size, uniform.hint);
 		}
-		return ShaderLanguage::constant_value_to_variant(default_value, uniform.type, uniform.array_size, uniform.hint);
+		return ShaderLanguage::constant_value_to_variant(
+			default_value, uniform.type, uniform.array_size, uniform.hint);
 	}
 	return Variant();
 }
 
-void ShaderData::get_shader_uniform_list(List<PropertyInfo> *p_param_list) const {
+void ShaderData::get_shader_uniform_list(List<PropertyInfo>* p_param_list) const
+{
 	SortArray<Pair<StringName, int>, ShaderLanguage::UniformOrderComparator> sorter;
 	LocalVector<Pair<StringName, int>> filtered_uniforms;
 
-	for (const KeyValue<StringName, ShaderLanguage::ShaderNode::Uniform> &E : uniforms) {
+	for (const KeyValue<StringName, ShaderLanguage::ShaderNode::Uniform>& E : uniforms) {
 		if (E.value.scope != ShaderLanguage::ShaderNode::Uniform::SCOPE_LOCAL) {
 			continue;
 		}
@@ -597,8 +628,8 @@ void ShaderData::get_shader_uniform_list(List<PropertyInfo> *p_param_list) const
 
 	String last_group;
 	for (int i = 0; i < uniform_count; i++) {
-		const StringName &uniform_name = filtered_uniforms[i].first;
-		const ShaderLanguage::ShaderNode::Uniform &uniform = uniforms[uniform_name];
+		const StringName& uniform_name = filtered_uniforms[i].first;
+		const ShaderLanguage::ShaderNode::Uniform& uniform = uniforms[uniform_name];
 
 		String group = uniform.group;
 
@@ -617,22 +648,26 @@ void ShaderData::get_shader_uniform_list(List<PropertyInfo> *p_param_list) const
 	}
 }
 
-void ShaderData::get_instance_param_list(List<RendererMaterialStorage::InstanceShaderParam> *p_param_list) const {
-	for (const KeyValue<StringName, ShaderLanguage::ShaderNode::Uniform> &E : uniforms) {
+void ShaderData::get_instance_param_list(
+	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const
+{
+	for (const KeyValue<StringName, ShaderLanguage::ShaderNode::Uniform>& E : uniforms) {
 		if (E.value.scope != ShaderLanguage::ShaderNode::Uniform::SCOPE_INSTANCE) {
 			continue;
 		}
 
 		RendererMaterialStorage::InstanceShaderParam p;
 		p.info = ShaderLanguage::uniform_to_property_info(E.value);
-		p.info.name = E.key; //supply name
+		p.info.name = E.key; // supply name
 		p.index = E.value.instance_index;
-		p.default_value = ShaderLanguage::constant_value_to_variant(E.value.default_value, E.value.type, E.value.array_size, E.value.hint);
+		p.default_value = ShaderLanguage::constant_value_to_variant(
+			E.value.default_value, E.value.type, E.value.array_size, E.value.hint);
 		p_param_list->push_back(p);
 	}
 }
 
-bool ShaderData::is_parameter_texture(const StringName &p_param) const {
+bool ShaderData::is_parameter_texture(const StringName& p_param) const
+{
 	if (!uniforms.has(p_param)) {
 		return false;
 	}
@@ -645,104 +680,137 @@ bool ShaderData::is_parameter_texture(const StringName &p_param) const {
 
 // Look up table to translate ShaderLanguage::DataType to GL_TEXTURE_*
 static const GLenum target_from_type[ShaderLanguage::TYPE_MAX] = {
-	GL_TEXTURE_2D, // TYPE_VOID,
-	GL_TEXTURE_2D, // TYPE_BOOL,
-	GL_TEXTURE_2D, // TYPE_BVEC2,
-	GL_TEXTURE_2D, // TYPE_BVEC3,
-	GL_TEXTURE_2D, // TYPE_BVEC4,
-	GL_TEXTURE_2D, // TYPE_INT,
-	GL_TEXTURE_2D, // TYPE_IVEC2,
-	GL_TEXTURE_2D, // TYPE_IVEC3,
-	GL_TEXTURE_2D, // TYPE_IVEC4,
-	GL_TEXTURE_2D, // TYPE_UINT,
-	GL_TEXTURE_2D, // TYPE_UVEC2,
-	GL_TEXTURE_2D, // TYPE_UVEC3,
-	GL_TEXTURE_2D, // TYPE_UVEC4,
-	GL_TEXTURE_2D, // TYPE_FLOAT,
-	GL_TEXTURE_2D, // TYPE_VEC2,
-	GL_TEXTURE_2D, // TYPE_VEC3,
-	GL_TEXTURE_2D, // TYPE_VEC4,
-	GL_TEXTURE_2D, // TYPE_MAT2,
-	GL_TEXTURE_2D, // TYPE_MAT3,
-	GL_TEXTURE_2D, // TYPE_MAT4,
-	GL_TEXTURE_2D, // TYPE_SAMPLER2D,
-	GL_TEXTURE_2D, // TYPE_ISAMPLER2D,
-	GL_TEXTURE_2D, // TYPE_USAMPLER2D,
-	GL_TEXTURE_2D_ARRAY, // TYPE_SAMPLER2DARRAY,
-	GL_TEXTURE_2D_ARRAY, // TYPE_ISAMPLER2DARRAY,
-	GL_TEXTURE_2D_ARRAY, // TYPE_USAMPLER2DARRAY,
-	GL_TEXTURE_3D, // TYPE_SAMPLER3D,
-	GL_TEXTURE_3D, // TYPE_ISAMPLER3D,
-	GL_TEXTURE_3D, // TYPE_USAMPLER3D,
-	GL_TEXTURE_CUBE_MAP, // TYPE_SAMPLERCUBE,
-	GL_TEXTURE_CUBE_MAP, // TYPE_SAMPLERCUBEARRAY,
+	GL_TEXTURE_2D,			  // TYPE_VOID,
+	GL_TEXTURE_2D,			  // TYPE_BOOL,
+	GL_TEXTURE_2D,			  // TYPE_BVEC2,
+	GL_TEXTURE_2D,			  // TYPE_BVEC3,
+	GL_TEXTURE_2D,			  // TYPE_BVEC4,
+	GL_TEXTURE_2D,			  // TYPE_INT,
+	GL_TEXTURE_2D,			  // TYPE_IVEC2,
+	GL_TEXTURE_2D,			  // TYPE_IVEC3,
+	GL_TEXTURE_2D,			  // TYPE_IVEC4,
+	GL_TEXTURE_2D,			  // TYPE_UINT,
+	GL_TEXTURE_2D,			  // TYPE_UVEC2,
+	GL_TEXTURE_2D,			  // TYPE_UVEC3,
+	GL_TEXTURE_2D,			  // TYPE_UVEC4,
+	GL_TEXTURE_2D,			  // TYPE_FLOAT,
+	GL_TEXTURE_2D,			  // TYPE_VEC2,
+	GL_TEXTURE_2D,			  // TYPE_VEC3,
+	GL_TEXTURE_2D,			  // TYPE_VEC4,
+	GL_TEXTURE_2D,			  // TYPE_MAT2,
+	GL_TEXTURE_2D,			  // TYPE_MAT3,
+	GL_TEXTURE_2D,			  // TYPE_MAT4,
+	GL_TEXTURE_2D,			  // TYPE_SAMPLER2D,
+	GL_TEXTURE_2D,			  // TYPE_ISAMPLER2D,
+	GL_TEXTURE_2D,			  // TYPE_USAMPLER2D,
+	GL_TEXTURE_2D_ARRAY,	  // TYPE_SAMPLER2DARRAY,
+	GL_TEXTURE_2D_ARRAY,	  // TYPE_ISAMPLER2DARRAY,
+	GL_TEXTURE_2D_ARRAY,	  // TYPE_USAMPLER2DARRAY,
+	GL_TEXTURE_3D,			  // TYPE_SAMPLER3D,
+	GL_TEXTURE_3D,			  // TYPE_ISAMPLER3D,
+	GL_TEXTURE_3D,			  // TYPE_USAMPLER3D,
+	GL_TEXTURE_CUBE_MAP,	  // TYPE_SAMPLERCUBE,
+	GL_TEXTURE_CUBE_MAP,	  // TYPE_SAMPLERCUBEARRAY,
 	_GL_TEXTURE_EXTERNAL_OES, // TYPE_SAMPLEREXT
-	GL_TEXTURE_2D, // TYPE_STRUCT
+	GL_TEXTURE_2D,			  // TYPE_STRUCT
 };
 
-static const RSE::CanvasItemTextureRepeat repeat_from_uniform[ShaderLanguage::REPEAT_DEFAULT + 1] = {
-	RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED, // ShaderLanguage::TextureRepeat::REPEAT_DISABLE,
-	RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED, // ShaderLanguage::TextureRepeat::REPEAT_ENABLE,
-	RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED, // ShaderLanguage::TextureRepeat::REPEAT_DEFAULT,
+static const RSE::CanvasItemTextureRepeat repeat_from_uniform[ShaderLanguage::REPEAT_DEFAULT + 1] =
+	{
+		RSE::CanvasItemTextureRepeat::
+			CANVAS_ITEM_TEXTURE_REPEAT_DISABLED, // ShaderLanguage::TextureRepeat::REPEAT_DISABLE,
+		RSE::CanvasItemTextureRepeat::
+			CANVAS_ITEM_TEXTURE_REPEAT_ENABLED, // ShaderLanguage::TextureRepeat::REPEAT_ENABLE,
+		RSE::CanvasItemTextureRepeat::
+			CANVAS_ITEM_TEXTURE_REPEAT_ENABLED, // ShaderLanguage::TextureRepeat::REPEAT_DEFAULT,
 };
 
-static const RSE::CanvasItemTextureRepeat repeat_from_uniform_canvas[ShaderLanguage::REPEAT_DEFAULT + 1] = {
-	RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED, // ShaderLanguage::TextureRepeat::REPEAT_DISABLE,
-	RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED, // ShaderLanguage::TextureRepeat::REPEAT_ENABLE,
-	RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED, // ShaderLanguage::TextureRepeat::REPEAT_DEFAULT,
+static const RSE::CanvasItemTextureRepeat
+	repeat_from_uniform_canvas[ShaderLanguage::REPEAT_DEFAULT + 1] = {
+		RSE::CanvasItemTextureRepeat::
+			CANVAS_ITEM_TEXTURE_REPEAT_DISABLED, // ShaderLanguage::TextureRepeat::REPEAT_DISABLE,
+		RSE::CanvasItemTextureRepeat::
+			CANVAS_ITEM_TEXTURE_REPEAT_ENABLED, // ShaderLanguage::TextureRepeat::REPEAT_ENABLE,
+		RSE::CanvasItemTextureRepeat::
+			CANVAS_ITEM_TEXTURE_REPEAT_DISABLED, // ShaderLanguage::TextureRepeat::REPEAT_DEFAULT,
 };
 
-static const RSE::CanvasItemTextureFilter filter_from_uniform[ShaderLanguage::FILTER_DEFAULT + 1] = {
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, // ShaderLanguage::TextureFilter::FILTER_NEAREST,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, // ShaderLanguage::TextureFilter::FILTER_LINEAR,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_NEAREST_MIPMAP,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_LINEAR_MIPMAP,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC, // ShaderLanguage::TextureFilter::FILTER_NEAREST_MIPMAP_ANISOTROPIC,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC, // ShaderLanguage::TextureFilter::FILTER_LINEAR_MIPMAP_ANISOTROPIC,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_DEFAULT,
+static const RSE::CanvasItemTextureFilter filter_from_uniform[ShaderLanguage::FILTER_DEFAULT +
+															  1] = {
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST, // ShaderLanguage::TextureFilter::FILTER_NEAREST,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR, // ShaderLanguage::TextureFilter::FILTER_LINEAR,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_NEAREST_MIPMAP,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_LINEAR_MIPMAP,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC, // ShaderLanguage::TextureFilter::FILTER_NEAREST_MIPMAP_ANISOTROPIC,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC, // ShaderLanguage::TextureFilter::FILTER_LINEAR_MIPMAP_ANISOTROPIC,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_DEFAULT,
 };
 
-static const RSE::CanvasItemTextureFilter filter_from_uniform_canvas[ShaderLanguage::FILTER_DEFAULT + 1] = {
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, // ShaderLanguage::TextureFilter::FILTER_NEAREST,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, // ShaderLanguage::TextureFilter::FILTER_LINEAR,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_NEAREST_MIPMAP,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_LINEAR_MIPMAP,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC, // ShaderLanguage::TextureFilter::FILTER_NEAREST_MIPMAP_ANISOTROPIC,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC, // ShaderLanguage::TextureFilter::FILTER_LINEAR_MIPMAP_ANISOTROPIC,
-	RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, // ShaderLanguage::TextureFilter::FILTER_DEFAULT,
+static const RSE::CanvasItemTextureFilter filter_from_uniform_canvas[ShaderLanguage::
+																		 FILTER_DEFAULT +
+																	 1] = {
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST, // ShaderLanguage::TextureFilter::FILTER_NEAREST,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR, // ShaderLanguage::TextureFilter::FILTER_LINEAR,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_NEAREST_MIPMAP,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, // ShaderLanguage::TextureFilter::FILTER_LINEAR_MIPMAP,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC, // ShaderLanguage::TextureFilter::FILTER_NEAREST_MIPMAP_ANISOTROPIC,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC, // ShaderLanguage::TextureFilter::FILTER_LINEAR_MIPMAP_ANISOTROPIC,
+	RSE::CanvasItemTextureFilter::
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR, // ShaderLanguage::TextureFilter::FILTER_DEFAULT,
 };
 
-void MaterialData::update_uniform_buffer(const HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const HashMap<StringName, Variant> &p_parameters, uint8_t *p_buffer, uint32_t p_buffer_size) {
-	MaterialStorage *material_storage = MaterialStorage::get_singleton();
+void MaterialData::update_uniform_buffer(
+	const HashMap<StringName, ShaderLanguage::ShaderNode::Uniform>& p_uniforms,
+	const uint32_t* p_uniform_offsets, const HashMap<StringName, Variant>& p_parameters,
+	uint8_t* p_buffer, uint32_t p_buffer_size)
+{
+	MaterialStorage* material_storage = MaterialStorage::get_singleton();
 	bool uses_global_buffer = false;
 
-	for (const KeyValue<StringName, ShaderLanguage::ShaderNode::Uniform> &E : p_uniforms) {
+	for (const KeyValue<StringName, ShaderLanguage::ShaderNode::Uniform>& E : p_uniforms) {
 		if (E.value.is_texture()) {
 			continue; // texture, does not go here
 		}
 
 		if (E.value.scope == ShaderLanguage::ShaderNode::Uniform::SCOPE_INSTANCE) {
-			continue; //instance uniforms don't appear in the buffer
+			continue; // instance uniforms don't appear in the buffer
 		}
 
 		if (E.value.scope == ShaderLanguage::ShaderNode::Uniform::SCOPE_GLOBAL) {
-			//this is a global variable, get the index to it
-			GlobalShaderUniforms::Variable *gv = material_storage->global_shader_uniforms.variables.getptr(E.key);
+			// this is a global variable, get the index to it
+			GlobalShaderUniforms::Variable* gv =
+				material_storage->global_shader_uniforms.variables.getptr(E.key);
 			uint32_t index = 0;
 			if (gv) {
 				index = gv->buffer_index;
-			} else {
-				WARN_PRINT("Shader uses global parameter '" + E.key + "', but it was removed at some point. Material will not display correctly.");
+			}
+			else {
+				WARN_PRINT(
+					"Shader uses global parameter '" + E.key +
+					"', but it was removed at some point. Material will not display correctly.");
 			}
 
 			uint32_t offset = p_uniform_offsets[E.value.order];
-			uint32_t *intptr = (uint32_t *)&p_buffer[offset];
+			uint32_t* intptr = (uint32_t*)&p_buffer[offset];
 			*intptr = index;
 			uses_global_buffer = true;
 			continue;
 		}
 
-		//regular uniform
+		// regular uniform
 		uint32_t offset = p_uniform_offsets[E.value.order];
 #ifdef DEBUG_ENABLED
 		uint32_t size = 0U;
@@ -753,39 +821,56 @@ void MaterialData::update_uniform_buffer(const HashMap<StringName, ShaderLanguag
 			if ((size % m) != 0U) {
 				size += m - (size % m);
 			}
-		} else {
+		}
+		else {
 			size = ShaderLanguage::get_datatype_size(E.value.type);
 		}
 		ERR_CONTINUE(offset + size > p_buffer_size);
 #endif
-		uint8_t *data = &p_buffer[offset];
+		uint8_t* data = &p_buffer[offset];
 		HashMap<StringName, Variant>::ConstIterator V = p_parameters.find(E.key);
 
 		if (V) {
-			//user provided
+			// user provided
 			_fill_std140_variant_ubo_value(E.value.type, E.value.array_size, V->value, data);
 
-		} else if (E.value.default_value.size()) {
-			//default value
+		}
+		else if (E.value.default_value.size()) {
+			// default value
 			_fill_std140_ubo_value(E.value.type, E.value.default_value, data);
-			//value=E.value.default_value;
-		} else {
-			//zero because it was not provided
-			if ((E.value.type == ShaderLanguage::TYPE_VEC3 || E.value.type == ShaderLanguage::TYPE_VEC4) && E.value.hint == ShaderLanguage::ShaderNode::Uniform::HINT_SOURCE_COLOR) {
-				//colors must be set as black, with alpha as 1.0
-				_fill_std140_variant_ubo_value(E.value.type, E.value.array_size, Color(0, 0, 0, 1), data);
-			} else if ((E.value.type == ShaderLanguage::TYPE_VEC3 || E.value.type == ShaderLanguage::TYPE_VEC4) && E.value.hint == ShaderLanguage::ShaderNode::Uniform::HINT_COLOR_CONVERSION_DISABLED) {
-				//colors must be set as black, with alpha as 1.0
-				_fill_std140_variant_ubo_value(E.value.type, E.value.array_size, Color(0, 0, 0, 1), data);
-			} else if (E.value.type == ShaderLanguage::TYPE_MAT2) {
+			// value=E.value.default_value;
+		}
+		else {
+			// zero because it was not provided
+			if ((E.value.type == ShaderLanguage::TYPE_VEC3 ||
+					E.value.type == ShaderLanguage::TYPE_VEC4) &&
+				E.value.hint == ShaderLanguage::ShaderNode::Uniform::HINT_SOURCE_COLOR) {
+				// colors must be set as black, with alpha as 1.0
+				_fill_std140_variant_ubo_value(
+					E.value.type, E.value.array_size, Color(0, 0, 0, 1), data);
+			}
+			else if ((E.value.type == ShaderLanguage::TYPE_VEC3 ||
+						   E.value.type == ShaderLanguage::TYPE_VEC4) &&
+					   E.value.hint ==
+						   ShaderLanguage::ShaderNode::Uniform::HINT_COLOR_CONVERSION_DISABLED) {
+				// colors must be set as black, with alpha as 1.0
+				_fill_std140_variant_ubo_value(
+					E.value.type, E.value.array_size, Color(0, 0, 0, 1), data);
+			}
+			else if (E.value.type == ShaderLanguage::TYPE_MAT2) {
 				// mat uniforms are identity matrix by default.
-				_fill_std140_variant_ubo_value(E.value.type, E.value.array_size, Transform2D(), data);
-			} else if (E.value.type == ShaderLanguage::TYPE_MAT3) {
+				_fill_std140_variant_ubo_value(
+					E.value.type, E.value.array_size, Transform2D(), data);
+			}
+			else if (E.value.type == ShaderLanguage::TYPE_MAT3) {
 				_fill_std140_variant_ubo_value(E.value.type, E.value.array_size, Basis(), data);
-			} else if (E.value.type == ShaderLanguage::TYPE_MAT4) {
-				_fill_std140_variant_ubo_value(E.value.type, E.value.array_size, Projection(), data);
-			} else {
-				//else just zero it out
+			}
+			else if (E.value.type == ShaderLanguage::TYPE_MAT4) {
+				_fill_std140_variant_ubo_value(
+					E.value.type, E.value.array_size, Projection(), data);
+			}
+			else {
+				// else just zero it out
 				_fill_std140_ubo_empty(E.value.type, E.value.array_size, data);
 			}
 		}
@@ -793,32 +878,36 @@ void MaterialData::update_uniform_buffer(const HashMap<StringName, ShaderLanguag
 
 	if (uses_global_buffer != (global_buffer_E != nullptr)) {
 		if (uses_global_buffer) {
-			global_buffer_E = material_storage->global_shader_uniforms.materials_using_buffer.push_back(self);
-		} else {
+			global_buffer_E =
+				material_storage->global_shader_uniforms.materials_using_buffer.push_back(self);
+		}
+		else {
 			material_storage->global_shader_uniforms.materials_using_buffer.erase(global_buffer_E);
 			global_buffer_E = nullptr;
 		}
 	}
 }
 
-MaterialData::~MaterialData() {
-	MaterialStorage *material_storage = MaterialStorage::get_singleton();
+MaterialData::~MaterialData()
+{
+	MaterialStorage* material_storage = MaterialStorage::get_singleton();
 
 	if (global_buffer_E) {
-		//unregister global buffers
+		// unregister global buffers
 		material_storage->global_shader_uniforms.materials_using_buffer.erase(global_buffer_E);
 	}
 
 	if (global_texture_E) {
-		//unregister global textures
+		// unregister global textures
 
-		for (const KeyValue<StringName, uint64_t> &E : used_global_textures) {
-			GlobalShaderUniforms::Variable *v = material_storage->global_shader_uniforms.variables.getptr(E.key);
+		for (const KeyValue<StringName, uint64_t>& E : used_global_textures) {
+			GlobalShaderUniforms::Variable* v =
+				material_storage->global_shader_uniforms.variables.getptr(E.key);
 			if (v) {
 				v->texture_materials.erase(self);
 			}
 		}
-		//unregister material from those using global textures
+		// unregister material from those using global textures
 		material_storage->global_shader_uniforms.materials_using_texture.erase(global_texture_E);
 	}
 
@@ -828,51 +917,63 @@ MaterialData::~MaterialData() {
 	}
 }
 
-void MaterialData::update_textures(const HashMap<StringName, Variant> &p_parameters, const HashMap<StringName, HashMap<int, RID>> &p_default_textures, const Vector<ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, RID *p_textures, bool p_is_3d_shader_type) {
-	MaterialStorage *material_storage = MaterialStorage::get_singleton();
+void MaterialData::update_textures(const HashMap<StringName, Variant>& p_parameters,
+	const HashMap<StringName, HashMap<int, RID>>& p_default_textures,
+	const Vector<ShaderCompiler::GeneratedCode::Texture>& p_texture_uniforms, RID* p_textures,
+	bool p_is_3d_shader_type)
+{
+	MaterialStorage* material_storage = MaterialStorage::get_singleton();
 
 #ifdef TOOLS_ENABLED
-	Texture *roughness_detect_texture = nullptr;
+	Texture* roughness_detect_texture = nullptr;
 	RSE::TextureDetectRoughnessChannel roughness_channel = RSE::TEXTURE_DETECT_ROUGHNESS_R;
-	Texture *normal_detect_texture = nullptr;
+	Texture* normal_detect_texture = nullptr;
 #endif
 
 	bool uses_global_textures = false;
 	global_textures_pass++;
 
 	for (int i = 0, k = 0; i < p_texture_uniforms.size(); i++) {
-		const StringName &uniform_name = p_texture_uniforms[i].name;
+		const StringName& uniform_name = p_texture_uniforms[i].name;
 		int uniform_array_size = p_texture_uniforms[i].array_size;
 
 		Vector<RID> textures;
 
-		if (p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_SCREEN_TEXTURE ||
-				p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE ||
-				p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_DEPTH_TEXTURE) {
+		if (p_texture_uniforms[i].hint ==
+				ShaderLanguage::ShaderNode::Uniform::HINT_SCREEN_TEXTURE ||
+			p_texture_uniforms[i].hint ==
+				ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE ||
+			p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_DEPTH_TEXTURE) {
 			continue;
 		}
 
 		if (p_texture_uniforms[i].global) {
 			uses_global_textures = true;
 
-			GlobalShaderUniforms::Variable *v = material_storage->global_shader_uniforms.variables.getptr(uniform_name);
+			GlobalShaderUniforms::Variable* v =
+				material_storage->global_shader_uniforms.variables.getptr(uniform_name);
 			if (v) {
 				if (v->buffer_index >= 0) {
-					WARN_PRINT("Shader uses global parameter texture '" + String(uniform_name) + "', but it changed type and is no longer a texture!");
+					WARN_PRINT("Shader uses global parameter texture '" + String(uniform_name) +
+							   "', but it changed type and is no longer a texture!");
 
-				} else {
-					HashMap<StringName, uint64_t>::Iterator E = used_global_textures.find(uniform_name);
+				}
+				else {
+					HashMap<StringName, uint64_t>::Iterator E =
+						used_global_textures.find(uniform_name);
 					if (!E) {
 						E = used_global_textures.insert(uniform_name, global_textures_pass);
 						v->texture_materials.insert(self);
-					} else {
+					}
+					else {
 						E->value = global_textures_pass;
 					}
 
 					RID override_rid = v->override;
 					if (override_rid.is_valid()) {
 						textures.push_back(override_rid);
-					} else {
+					}
+					else {
 						RID value_rid = v->value;
 						if (value_rid.is_valid()) {
 							textures.push_back(value_rid);
@@ -880,10 +981,14 @@ void MaterialData::update_textures(const HashMap<StringName, Variant> &p_paramet
 					}
 				}
 
-			} else {
-				WARN_PRINT("Shader uses global parameter texture '" + String(uniform_name) + "', but it was removed at some point. Material will not display correctly.");
 			}
-		} else {
+			else {
+				WARN_PRINT(
+					"Shader uses global parameter texture '" + String(uniform_name) +
+					"', but it was removed at some point. Material will not display correctly.");
+			}
+		}
+		else {
 			HashMap<StringName, Variant>::ConstIterator V = p_parameters.find(uniform_name);
 			if (V) {
 				if (V->value.is_array()) {
@@ -893,29 +998,35 @@ void MaterialData::update_textures(const HashMap<StringName, Variant> &p_paramet
 						for (int j = 0; j < size; j++) {
 							textures.push_back(array[j]);
 						}
-					} else {
+					}
+					else {
 						if (array.size() > 0) {
 							textures.push_back(array[0]);
 						}
 					}
-				} else {
+				}
+				else {
 					textures.push_back(V->value);
 				}
 			}
 
 			if (uniform_array_size > 0) {
 				if (textures.size() < uniform_array_size) {
-					HashMap<StringName, HashMap<int, RID>>::ConstIterator W = p_default_textures.find(uniform_name);
+					HashMap<StringName, HashMap<int, RID>>::ConstIterator W =
+						p_default_textures.find(uniform_name);
 					for (int j = textures.size(); j < uniform_array_size; j++) {
 						if (W && W->value.has(j)) {
 							textures.push_back(W->value[j]);
-						} else {
+						}
+						else {
 							textures.push_back(RID());
 						}
 					}
 				}
-			} else if (textures.is_empty()) {
-				HashMap<StringName, HashMap<int, RID>>::ConstIterator W = p_default_textures.find(uniform_name);
+			}
+			else if (textures.is_empty()) {
+				HashMap<StringName, HashMap<int, RID>>::ConstIterator W =
+					p_default_textures.find(uniform_name);
 				if (W && W->value.has(0)) {
 					textures.push_back(W->value[0]);
 				}
@@ -923,25 +1034,31 @@ void MaterialData::update_textures(const HashMap<StringName, Variant> &p_paramet
 		}
 
 		if (textures.is_empty()) {
-			//check default usage
-			RID gl_texture = get_default_texture_id(p_texture_uniforms[i].type, p_texture_uniforms[i].hint);
+			// check default usage
+			RID gl_texture =
+				get_default_texture_id(p_texture_uniforms[i].type, p_texture_uniforms[i].hint);
 #ifdef TOOLS_ENABLED
-			if (roughness_detect_texture && normal_detect_texture && !normal_detect_texture->path.is_empty()) {
-				roughness_detect_texture->detect_roughness_callback(roughness_detect_texture->detect_roughness_callback_ud, normal_detect_texture->path, roughness_channel);
+			if (roughness_detect_texture && normal_detect_texture &&
+				!normal_detect_texture->path.is_empty()) {
+				roughness_detect_texture->detect_roughness_callback(
+					roughness_detect_texture->detect_roughness_callback_ud,
+					normal_detect_texture->path, roughness_channel);
 			}
 #endif
 			if (uniform_array_size > 0) {
 				for (int j = 0; j < uniform_array_size; j++) {
 					p_textures[k++] = gl_texture;
 				}
-			} else {
+			}
+			else {
 				p_textures[k++] = gl_texture;
 			}
-		} else {
+		}
+		else {
 			RID gl_default;
 
 			for (int j = 0; j < textures.size(); j++) {
-				Texture *tex = TextureStorage::get_singleton()->get_texture(textures[j]);
+				Texture* tex = TextureStorage::get_singleton()->get_texture(textures[j]);
 				RID gl_texture;
 
 				if (tex) {
@@ -950,27 +1067,42 @@ void MaterialData::update_textures(const HashMap<StringName, Variant> &p_paramet
 					if (tex->detect_3d_callback && p_is_3d_shader_type) {
 						tex->detect_3d_callback(tex->detect_3d_callback_ud);
 					}
-					if (tex->detect_normal_callback && (p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL || p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL)) {
-						if (p_texture_uniforms[i].hint == ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL) {
+					if (tex->detect_normal_callback &&
+						(p_texture_uniforms[i].hint ==
+								ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL ||
+							p_texture_uniforms[i].hint ==
+								ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL)) {
+						if (p_texture_uniforms[i].hint ==
+							ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL) {
 							normal_detect_texture = tex;
 						}
 						tex->detect_normal_callback(tex->detect_normal_callback_ud);
 					}
-					if (tex->detect_roughness_callback && (p_texture_uniforms[i].hint >= ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R || p_texture_uniforms[i].hint <= ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_GRAY)) {
-						//find the normal texture
+					if (tex->detect_roughness_callback &&
+						(p_texture_uniforms[i].hint >=
+								ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R ||
+							p_texture_uniforms[i].hint <=
+								ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_GRAY)) {
+						// find the normal texture
 						roughness_detect_texture = tex;
-						roughness_channel = RSE::TextureDetectRoughnessChannel(p_texture_uniforms[i].hint - ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R);
+						roughness_channel = RSE::TextureDetectRoughnessChannel(
+							p_texture_uniforms[i].hint -
+							ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R);
 					}
 #endif
 				}
 #ifdef TOOLS_ENABLED
-				if (roughness_detect_texture && normal_detect_texture && !normal_detect_texture->path.is_empty()) {
-					roughness_detect_texture->detect_roughness_callback(roughness_detect_texture->detect_roughness_callback_ud, normal_detect_texture->path, roughness_channel);
+				if (roughness_detect_texture && normal_detect_texture &&
+					!normal_detect_texture->path.is_empty()) {
+					roughness_detect_texture->detect_roughness_callback(
+						roughness_detect_texture->detect_roughness_callback_ud,
+						normal_detect_texture->path, roughness_channel);
 				}
 #endif
 				if (gl_texture.is_null()) {
 					if (gl_default.is_null()) {
-						gl_default = get_default_texture_id(p_texture_uniforms[i].type, p_texture_uniforms[i].hint);
+						gl_default = get_default_texture_id(
+							p_texture_uniforms[i].type, p_texture_uniforms[i].hint);
 					}
 					gl_texture = gl_default;
 				}
@@ -979,13 +1111,14 @@ void MaterialData::update_textures(const HashMap<StringName, Variant> &p_paramet
 		}
 	}
 	{
-		//for textures no longer used, unregister them
+		// for textures no longer used, unregister them
 		List<StringName> to_delete;
-		for (KeyValue<StringName, uint64_t> &E : used_global_textures) {
+		for (KeyValue<StringName, uint64_t>& E : used_global_textures) {
 			if (E.value != global_textures_pass) {
 				to_delete.push_back(E.key);
 
-				GlobalShaderUniforms::Variable *v = material_storage->global_shader_uniforms.variables.getptr(E.key);
+				GlobalShaderUniforms::Variable* v =
+					material_storage->global_shader_uniforms.variables.getptr(E.key);
 				if (v) {
 					v->texture_materials.erase(self);
 				}
@@ -996,108 +1129,124 @@ void MaterialData::update_textures(const HashMap<StringName, Variant> &p_paramet
 			used_global_textures.erase(to_delete.front()->get());
 			to_delete.pop_front();
 		}
-		//handle registering/unregistering global textures
+		// handle registering/unregistering global textures
 		if (uses_global_textures != (global_texture_E != nullptr)) {
 			if (uses_global_textures) {
-				global_texture_E = material_storage->global_shader_uniforms.materials_using_texture.push_back(self);
-			} else {
-				material_storage->global_shader_uniforms.materials_using_texture.erase(global_texture_E);
+				global_texture_E =
+					material_storage->global_shader_uniforms.materials_using_texture.push_back(
+						self);
+			}
+			else {
+				material_storage->global_shader_uniforms.materials_using_texture.erase(
+					global_texture_E);
 				global_texture_E = nullptr;
 			}
 		}
 	}
 }
 
-RID MaterialData::get_default_texture_id(ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint) {
-	TextureStorage *texture_storage = TextureStorage::get_singleton();
+RID MaterialData::get_default_texture_id(
+	ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint)
+{
+	TextureStorage* texture_storage = TextureStorage::get_singleton();
 	RID gl_texture;
 
 	switch (p_type) {
-		case ShaderLanguage::TYPE_ISAMPLER2D:
-		case ShaderLanguage::TYPE_USAMPLER2D:
-		case ShaderLanguage::TYPE_SAMPLER2D: {
-			switch (p_hint) {
-				case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_BLACK);
-				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_TRANSPARENT);
-				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_ANISOTROPY: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_ANISO);
-				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_NORMAL);
-				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_NORMAL);
-				} break;
-				default: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_WHITE);
-				} break;
-			}
+	case ShaderLanguage::TYPE_ISAMPLER2D:
+	case ShaderLanguage::TYPE_USAMPLER2D:
+	case ShaderLanguage::TYPE_SAMPLER2D: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_BLACK);
 		} break;
-
-		case ShaderLanguage::TYPE_SAMPLERCUBE: {
-			switch (p_hint) {
-				case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_BLACK);
-				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_TRANSPARENT);
-				} break;
-				default: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_WHITE);
-				} break;
-			}
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_TRANSPARENT);
 		} break;
-		case ShaderLanguage::TYPE_SAMPLERCUBEARRAY: {
-			ERR_PRINT_ONCE("Type: SamplerCubeArray is not supported in the Compatibility renderer, please use another type.");
+		case ShaderLanguage::ShaderNode::Uniform::HINT_ANISOTROPY: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_ANISO);
 		} break;
-		case ShaderLanguage::TYPE_SAMPLEREXT: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_EXT);
+		case ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_NORMAL);
 		} break;
-
-		case ShaderLanguage::TYPE_ISAMPLER3D:
-		case ShaderLanguage::TYPE_USAMPLER3D:
-		case ShaderLanguage::TYPE_SAMPLER3D: {
-			switch (p_hint) {
-				case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_BLACK);
-				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_TRANSPARENT);
-				} break;
-				default: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_WHITE);
-				} break;
-			}
+		case ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_NORMAL);
 		} break;
-
-		case ShaderLanguage::TYPE_ISAMPLER2DARRAY:
-		case ShaderLanguage::TYPE_USAMPLER2DARRAY:
-		case ShaderLanguage::TYPE_SAMPLER2DARRAY: {
-			switch (p_hint) {
-				case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_BLACK);
-				} break;
-				case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_TRANSPARENT);
-				} break;
-				default: {
-					gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_WHITE);
-				} break;
-			}
-		} break;
-
 		default: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_WHITE);
+		} break;
 		}
+	} break;
+
+	case ShaderLanguage::TYPE_SAMPLERCUBE: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_BLACK);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			gl_texture =
+				texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_TRANSPARENT);
+		} break;
+		default: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_WHITE);
+		} break;
+		}
+	} break;
+	case ShaderLanguage::TYPE_SAMPLERCUBEARRAY: {
+		ERR_PRINT_ONCE("Type: SamplerCubeArray is not supported in the Compatibility renderer, "
+					   "please use another type.");
+	} break;
+	case ShaderLanguage::TYPE_SAMPLEREXT: {
+		gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_EXT);
+	} break;
+
+	case ShaderLanguage::TYPE_ISAMPLER3D:
+	case ShaderLanguage::TYPE_USAMPLER3D:
+	case ShaderLanguage::TYPE_SAMPLER3D: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_BLACK);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_TRANSPARENT);
+		} break;
+		default: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_WHITE);
+		} break;
+		}
+	} break;
+
+	case ShaderLanguage::TYPE_ISAMPLER2DARRAY:
+	case ShaderLanguage::TYPE_USAMPLER2DARRAY:
+	case ShaderLanguage::TYPE_SAMPLER2DARRAY: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_BLACK);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			gl_texture =
+				texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_TRANSPARENT);
+		} break;
+		default: {
+			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_WHITE);
+		} break;
+		}
+	} break;
+
+	default: {
+	}
 	}
 
 	return gl_texture;
 }
 
-void MaterialData::update_parameters_internal(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty, const HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const Vector<ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, const HashMap<StringName, HashMap<int, RID>> &p_default_texture_params, uint32_t p_ubo_size, bool p_is_3d_shader_type) {
+void MaterialData::update_parameters_internal(const HashMap<StringName, Variant>& p_parameters,
+	bool p_uniform_dirty, bool p_textures_dirty,
+	const HashMap<StringName, ShaderLanguage::ShaderNode::Uniform>& p_uniforms,
+	const uint32_t* p_uniform_offsets,
+	const Vector<ShaderCompiler::GeneratedCode::Texture>& p_texture_uniforms,
+	const HashMap<StringName, HashMap<int, RID>>& p_default_texture_params, uint32_t p_ubo_size,
+	bool p_is_3d_shader_type)
+{
 	if ((uint32_t)ubo_data.size() != p_ubo_size) {
 		p_uniform_dirty = true;
 		if (!uniform_buffer) {
@@ -1107,13 +1256,14 @@ void MaterialData::update_parameters_internal(const HashMap<StringName, Variant>
 		ubo_data.resize(p_ubo_size);
 		if (ubo_data.size()) {
 			ERR_FAIL_COND(p_ubo_size > uint32_t(Config::get_singleton()->max_uniform_buffer_size));
-			memset(ubo_data.ptrw(), 0, ubo_data.size()); //clear
+			memset(ubo_data.ptrw(), 0, ubo_data.size()); // clear
 		}
 	}
 
-	//check whether buffer changed
+	// check whether buffer changed
 	if (p_uniform_dirty && ubo_data.size()) {
-		update_uniform_buffer(p_uniforms, p_uniform_offsets, p_parameters, ubo_data.ptrw(), ubo_data.size());
+		update_uniform_buffer(
+			p_uniforms, p_uniform_offsets, p_parameters, ubo_data.ptrw(), ubo_data.size());
 		glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
 		glBufferData(GL_UNIFORM_BUFFER, ubo_data.size(), ubo_data.ptrw(), GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -1121,7 +1271,8 @@ void MaterialData::update_parameters_internal(const HashMap<StringName, Variant>
 
 	uint32_t tex_uniform_count = 0U;
 	for (int i = 0; i < p_texture_uniforms.size(); i++) {
-		tex_uniform_count += uint32_t(p_texture_uniforms[i].array_size > 0 ? p_texture_uniforms[i].array_size : 1);
+		tex_uniform_count +=
+			uint32_t(p_texture_uniforms[i].array_size > 0 ? p_texture_uniforms[i].array_size : 1);
 	}
 
 	if ((uint32_t)texture_cache.size() != tex_uniform_count || p_textures_dirty) {
@@ -1130,20 +1281,20 @@ void MaterialData::update_parameters_internal(const HashMap<StringName, Variant>
 	}
 
 	if (p_textures_dirty && tex_uniform_count) {
-		update_textures(p_parameters, p_default_texture_params, p_texture_uniforms, texture_cache.ptrw(), p_is_3d_shader_type);
+		update_textures(p_parameters, p_default_texture_params, p_texture_uniforms,
+			texture_cache.ptrw(), p_is_3d_shader_type);
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // Material Storage
 
-MaterialStorage *MaterialStorage::singleton = nullptr;
+MaterialStorage* MaterialStorage::singleton = nullptr;
 
-MaterialStorage *MaterialStorage::get_singleton() {
-	return singleton;
-}
+MaterialStorage* MaterialStorage::get_singleton() { return singleton; }
 
-MaterialStorage::MaterialStorage() {
+MaterialStorage::MaterialStorage()
+{
 	singleton = this;
 
 	shader_data_request_func[RSE::SHADER_SPATIAL] = _create_scene_shader_func;
@@ -1162,20 +1313,32 @@ MaterialStorage::MaterialStorage() {
 
 	static_assert(sizeof(GlobalShaderUniforms::Value) == 16);
 
-	global_shader_uniforms.buffer_size = MAX(16, (int)GLOBAL_GET("rendering/limits/global_shader_variables/buffer_size"));
-	if (global_shader_uniforms.buffer_size * sizeof(GlobalShaderUniforms::Value) > uint32_t(Config::get_singleton()->max_uniform_buffer_size)) {
+	global_shader_uniforms.buffer_size =
+		MAX(16, (int)GLOBAL_GET("rendering/limits/global_shader_variables/buffer_size"));
+	if (global_shader_uniforms.buffer_size * sizeof(GlobalShaderUniforms::Value) >
+		uint32_t(Config::get_singleton()->max_uniform_buffer_size)) {
 		// Limit to maximum support UBO size.
-		global_shader_uniforms.buffer_size = uint32_t(Config::get_singleton()->max_uniform_buffer_size) / sizeof(GlobalShaderUniforms::Value);
+		global_shader_uniforms.buffer_size =
+			uint32_t(Config::get_singleton()->max_uniform_buffer_size) /
+			sizeof(GlobalShaderUniforms::Value);
 	}
 
-	global_shader_uniforms.buffer_values = memnew_arr(GlobalShaderUniforms::Value, global_shader_uniforms.buffer_size);
-	memset(global_shader_uniforms.buffer_values, 0, sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size);
-	global_shader_uniforms.buffer_usage = memnew_arr(GlobalShaderUniforms::ValueUsage, global_shader_uniforms.buffer_size);
-	global_shader_uniforms.buffer_dirty_regions = memnew_arr(bool, 1 + (global_shader_uniforms.buffer_size / GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE));
-	memset(global_shader_uniforms.buffer_dirty_regions, 0, sizeof(bool) * (1 + (global_shader_uniforms.buffer_size / GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE)));
+	global_shader_uniforms.buffer_values =
+		memnew_arr(GlobalShaderUniforms::Value, global_shader_uniforms.buffer_size);
+	memset(global_shader_uniforms.buffer_values, 0,
+		sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size);
+	global_shader_uniforms.buffer_usage =
+		memnew_arr(GlobalShaderUniforms::ValueUsage, global_shader_uniforms.buffer_size);
+	global_shader_uniforms.buffer_dirty_regions = memnew_arr(bool,
+		1 + (global_shader_uniforms.buffer_size / GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE));
+	memset(global_shader_uniforms.buffer_dirty_regions, 0,
+		sizeof(bool) * (1 + (global_shader_uniforms.buffer_size /
+								GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE)));
 	glGenBuffers(1, &global_shader_uniforms.buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, global_shader_uniforms.buffer);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER,
+		sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size, nullptr,
+		GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	{
@@ -1254,7 +1417,7 @@ MaterialStorage::MaterialStorage() {
 	{
 		// Setup Scene compiler
 
-		//shader compiler
+		// shader compiler
 		ShaderCompiler::DefaultIdentifierActions actions;
 
 		actions.renames["MODEL_MATRIX"] = "model_matrix";
@@ -1265,7 +1428,8 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["INV_PROJECTION_MATRIX"] = "inv_projection_matrix";
 		actions.renames["MODELVIEW_MATRIX"] = "modelview";
 		actions.renames["MODELVIEW_NORMAL_MATRIX"] = "modelview_normal";
-		actions.renames["MAIN_CAM_INV_VIEW_MATRIX"] = "scene_data_block.data.main_cam_inv_view_matrix";
+		actions.renames["MAIN_CAM_INV_VIEW_MATRIX"] =
+			"scene_data_block.data.main_cam_inv_view_matrix";
 
 		actions.renames["VERTEX"] = "vertex";
 		actions.renames["NORMAL"] = "normal";
@@ -1285,10 +1449,11 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["ALPHA_ANTIALIASING_EDGE"] = "alpha_antialiasing_edge";
 		actions.renames["ALPHA_TEXTURE_COORDINATE"] = "alpha_texture_coordinate";
 
-		//builtins
+		// builtins
 
 		actions.renames["TIME"] = "scene_data_block.data.time";
-		actions.renames["EXPOSURE"] = "(1.0 / scene_data_block.data.emissive_exposure_normalization)";
+		actions.renames["EXPOSURE"] =
+			"(1.0 / scene_data_block.data.emissive_exposure_normalization)";
 		actions.renames["PI"] = String::num(Math::PI);
 		actions.renames["TAU"] = String::num(Math::TAU);
 		actions.renames["E"] = String::num(Math::E);
@@ -1341,7 +1506,8 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["CAMERA_POSITION_WORLD"] = "scene_data_block.data.inv_view_matrix[3].xyz";
 		actions.renames["CAMERA_DIRECTION_WORLD"] = "scene_data_block.data.inv_view_matrix[2].xyz";
 		actions.renames["CAMERA_VISIBLE_LAYERS"] = "scene_data_block.data.camera_visible_layers";
-		actions.renames["NODE_POSITION_VIEW"] = "(scene_data_block.data.view_matrix * model_matrix)[3].xyz";
+		actions.renames["NODE_POSITION_VIEW"] =
+			"(scene_data_block.data.view_matrix * model_matrix)[3].xyz";
 
 		actions.renames["IS_MULTIVIEW"] = "OUTPUT_IS_MULTIVIEW";
 		actions.renames["VIEW_INDEX"] = "ViewIndex";
@@ -1349,7 +1515,7 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["VIEW_RIGHT"] = "uint(1)";
 		actions.renames["EYE_OFFSET"] = "eye_offset";
 
-		//for light
+		// for light
 		actions.renames["VIEW"] = "view";
 		actions.renames["SPECULAR_AMOUNT"] = "specular_amount";
 		actions.renames["LIGHT_COLOR"] = "light_color";
@@ -1440,7 +1606,8 @@ MaterialStorage::MaterialStorage() {
 		}
 		actions.render_mode_defines["fog_disabled"] = "#define FOG_DISABLED\n";
 
-		actions.render_mode_defines["specular_occlusion_disabled"] = "#define SPECULAR_OCCLUSION_DISABLED\n";
+		actions.render_mode_defines["specular_occlusion_disabled"] =
+			"#define SPECULAR_OCCLUSION_DISABLED\n";
 
 		actions.default_filter = ShaderLanguage::FILTER_LINEAR_MIPMAP;
 		actions.default_repeat = ShaderLanguage::REPEAT_ENABLE;
@@ -1479,7 +1646,7 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["NUMBER"] = "particle_number";
 		actions.renames["INDEX"] = "index";
 		actions.renames["AMOUNT_RATIO"] = "amount_ratio";
-		//actions.renames["GRAVITY"] = "current_gravity";
+		// actions.renames["GRAVITY"] = "current_gravity";
 		actions.renames["EMISSION_TRANSFORM"] = "emission_transform";
 		actions.renames["RANDOM_SEED"] = "random_seed";
 		actions.renames["RESTART_POSITION"] = "restart_position";
@@ -1494,14 +1661,17 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["EMITTER_VELOCITY"] = "emitter_velocity";
 		actions.renames["INTERPOLATE_TO_END"] = "interp_to_end";
 
-		// These are unsupported, but may be used by users. To avoid compile time overhead, we add the stub only when used.
+		// These are unsupported, but may be used by users. To avoid compile time overhead, we add
+		// the stub only when used.
 		actions.renames["FLAG_EMIT_POSITION"] = "uint(1)";
 		actions.renames["FLAG_EMIT_ROT_SCALE"] = "uint(2)";
 		actions.renames["FLAG_EMIT_VELOCITY"] = "uint(4)";
 		actions.renames["FLAG_EMIT_COLOR"] = "uint(8)";
 		actions.renames["FLAG_EMIT_CUSTOM"] = "uint(16)";
 		actions.renames["emit_subparticle"] = "emit_subparticle";
-		actions.usage_defines["emit_subparticle"] = "\nbool emit_subparticle(mat4 p_xform, vec3 p_velocity, vec4 p_color, vec4 p_custom, uint p_flags) {\n\treturn false;\n}\n";
+		actions.usage_defines["emit_subparticle"] =
+			"\nbool emit_subparticle(mat4 p_xform, vec3 p_velocity, vec4 p_color, vec4 p_custom, "
+			"uint p_flags) {\n\treturn false;\n}\n";
 
 		actions.render_mode_defines["disable_force"] = "#define DISABLE_FORCE\n";
 		actions.render_mode_defines["disable_velocity"] = "#define DISABLE_VELOCITY\n";
@@ -1535,22 +1705,26 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["QUARTER_RES_COLOR"] = "quarter_res_color";
 		actions.renames["RADIANCE"] = "radiance";
 		actions.renames["FOG"] = "custom_fog";
-		actions.renames["LIGHT0_ENABLED"] = "bool(directional_lights.data[0].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
+		actions.renames["LIGHT0_ENABLED"] =
+			"bool(directional_lights.data[0].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
 		actions.renames["LIGHT0_DIRECTION"] = "directional_lights.data[0].direction_energy.xyz";
 		actions.renames["LIGHT0_ENERGY"] = "directional_lights.data[0].direction_energy.w";
 		actions.renames["LIGHT0_COLOR"] = "directional_lights.data[0].color_size.xyz";
 		actions.renames["LIGHT0_SIZE"] = "directional_lights.data[0].color_size.w";
-		actions.renames["LIGHT1_ENABLED"] = "bool(directional_lights.data[1].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
+		actions.renames["LIGHT1_ENABLED"] =
+			"bool(directional_lights.data[1].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
 		actions.renames["LIGHT1_DIRECTION"] = "directional_lights.data[1].direction_energy.xyz";
 		actions.renames["LIGHT1_ENERGY"] = "directional_lights.data[1].direction_energy.w";
 		actions.renames["LIGHT1_COLOR"] = "directional_lights.data[1].color_size.xyz";
 		actions.renames["LIGHT1_SIZE"] = "directional_lights.data[1].color_size.w";
-		actions.renames["LIGHT2_ENABLED"] = "bool(directional_lights.data[2].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
+		actions.renames["LIGHT2_ENABLED"] =
+			"bool(directional_lights.data[2].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
 		actions.renames["LIGHT2_DIRECTION"] = "directional_lights.data[2].direction_energy.xyz";
 		actions.renames["LIGHT2_ENERGY"] = "directional_lights.data[2].direction_energy.w";
 		actions.renames["LIGHT2_COLOR"] = "directional_lights.data[2].color_size.xyz";
 		actions.renames["LIGHT2_SIZE"] = "directional_lights.data[2].color_size.w";
-		actions.renames["LIGHT3_ENABLED"] = "bool(directional_lights.data[3].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
+		actions.renames["LIGHT3_ENABLED"] =
+			"bool(directional_lights.data[3].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
 		actions.renames["LIGHT3_DIRECTION"] = "directional_lights.data[3].direction_energy.xyz";
 		actions.renames["LIGHT3_ENERGY"] = "directional_lights.data[3].direction_energy.w";
 		actions.renames["LIGHT3_COLOR"] = "directional_lights.data[3].color_size.xyz";
@@ -1594,8 +1768,9 @@ MaterialStorage::MaterialStorage() {
 	}
 }
 
-MaterialStorage::~MaterialStorage() {
-	//shaders.copy.version_free(shaders.copy_version);
+MaterialStorage::~MaterialStorage()
+{
+	// shaders.copy.version_free(shaders.copy_version);
 
 	memdelete_arr(global_shader_uniforms.buffer_values);
 	memdelete_arr(global_shader_uniforms.buffer_usage);
@@ -1607,7 +1782,8 @@ MaterialStorage::~MaterialStorage() {
 
 /* GLOBAL SHADER UNIFORM API */
 
-int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements) {
+int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
+{
 	int32_t idx = 0;
 	while (idx + p_elements <= global_shader_uniforms.buffer_size) {
 		if (global_shader_uniforms.buffer_usage[idx].elements == 0) {
@@ -1621,11 +1797,12 @@ int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements) {
 			}
 
 			if (!valid) {
-				continue; //if not valid, idx is in new position
+				continue; // if not valid, idx is in new position
 			}
 
 			return idx;
-		} else {
+		}
+		else {
 			idx += global_shader_uniforms.buffer_usage[idx].elements;
 		}
 	}
@@ -1633,217 +1810,230 @@ int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements) {
 	return -1;
 }
 
-void MaterialStorage::_global_shader_uniform_store_in_buffer(int32_t p_index, RSE::GlobalShaderParameterType p_type, const Variant &p_value) {
+void MaterialStorage::_global_shader_uniform_store_in_buffer(
+	int32_t p_index, RSE::GlobalShaderParameterType p_type, const Variant& p_value)
+{
 	switch (p_type) {
-		case RSE::GLOBAL_VAR_TYPE_BOOL: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			bool b = p_value;
-			bv.x = b ? 1.0 : 0.0;
-			bv.y = 0.0;
-			bv.z = 0.0;
-			bv.w = 0.0;
+	case RSE::GLOBAL_VAR_TYPE_BOOL: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		bool b = p_value;
+		bv.x = b ? 1.0 : 0.0;
+		bv.y = 0.0;
+		bv.z = 0.0;
+		bv.w = 0.0;
 
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_BVEC2: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			uint32_t bvec = p_value;
-			bv.x = (bvec & 1) ? 1.0 : 0.0;
-			bv.y = (bvec & 2) ? 1.0 : 0.0;
-			bv.z = 0.0;
-			bv.w = 0.0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_BVEC3: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			uint32_t bvec = p_value;
-			bv.x = (bvec & 1) ? 1.0 : 0.0;
-			bv.y = (bvec & 2) ? 1.0 : 0.0;
-			bv.z = (bvec & 4) ? 1.0 : 0.0;
-			bv.w = 0.0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_BVEC4: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			uint32_t bvec = p_value;
-			bv.x = (bvec & 1) ? 1.0 : 0.0;
-			bv.y = (bvec & 2) ? 1.0 : 0.0;
-			bv.z = (bvec & 4) ? 1.0 : 0.0;
-			bv.w = (bvec & 8) ? 1.0 : 0.0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_INT: {
-			GlobalShaderUniforms::ValueInt &bv = *(GlobalShaderUniforms::ValueInt *)&global_shader_uniforms.buffer_values[p_index];
-			int32_t v = p_value;
-			bv.x = v;
-			bv.y = 0;
-			bv.z = 0;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_IVEC2: {
-			GlobalShaderUniforms::ValueInt &bv = *(GlobalShaderUniforms::ValueInt *)&global_shader_uniforms.buffer_values[p_index];
-			Vector2i v = convert_to_vector<Vector2i>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = 0;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_IVEC3: {
-			GlobalShaderUniforms::ValueInt &bv = *(GlobalShaderUniforms::ValueInt *)&global_shader_uniforms.buffer_values[p_index];
-			Vector3i v = convert_to_vector<Vector3i>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = v.z;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_IVEC4: {
-			GlobalShaderUniforms::ValueInt &bv = *(GlobalShaderUniforms::ValueInt *)&global_shader_uniforms.buffer_values[p_index];
-			Vector4i v = convert_to_vector<Vector4i>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = v.z;
-			bv.w = v.w;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_RECT2I: {
-			GlobalShaderUniforms::ValueInt &bv = *(GlobalShaderUniforms::ValueInt *)&global_shader_uniforms.buffer_values[p_index];
-			Rect2i v = p_value;
-			bv.x = v.position.x;
-			bv.y = v.position.y;
-			bv.z = v.size.x;
-			bv.w = v.size.y;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_UINT: {
-			GlobalShaderUniforms::ValueUInt &bv = *(GlobalShaderUniforms::ValueUInt *)&global_shader_uniforms.buffer_values[p_index];
-			uint32_t v = p_value;
-			bv.x = v;
-			bv.y = 0;
-			bv.z = 0;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_UVEC2: {
-			GlobalShaderUniforms::ValueUInt &bv = *(GlobalShaderUniforms::ValueUInt *)&global_shader_uniforms.buffer_values[p_index];
-			Vector2i v = convert_to_vector<Vector2i>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = 0;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_UVEC3: {
-			GlobalShaderUniforms::ValueUInt &bv = *(GlobalShaderUniforms::ValueUInt *)&global_shader_uniforms.buffer_values[p_index];
-			Vector3i v = convert_to_vector<Vector3i>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = v.z;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_UVEC4: {
-			GlobalShaderUniforms::ValueUInt &bv = *(GlobalShaderUniforms::ValueUInt *)&global_shader_uniforms.buffer_values[p_index];
-			Vector4i v = convert_to_vector<Vector4i>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = v.z;
-			bv.w = v.w;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_FLOAT: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			float v = p_value;
-			bv.x = v;
-			bv.y = 0;
-			bv.z = 0;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_VEC2: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			Vector2 v = convert_to_vector<Vector2>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = 0;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_VEC3: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			Vector3 v = convert_to_vector<Vector3>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = v.z;
-			bv.w = 0;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_VEC4: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			Vector4 v = convert_to_vector<Vector4>(p_value);
-			bv.x = v.x;
-			bv.y = v.y;
-			bv.z = v.z;
-			bv.w = v.w;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_COLOR: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			Color v = p_value;
-			bv.x = v.r;
-			bv.y = v.g;
-			bv.z = v.b;
-			bv.w = v.a;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_BVEC2: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		uint32_t bvec = p_value;
+		bv.x = (bvec & 1) ? 1.0 : 0.0;
+		bv.y = (bvec & 2) ? 1.0 : 0.0;
+		bv.z = 0.0;
+		bv.w = 0.0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_BVEC3: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		uint32_t bvec = p_value;
+		bv.x = (bvec & 1) ? 1.0 : 0.0;
+		bv.y =
+(bvec & 2) ? 1.0 : 0.0;
+		bv.z = (bvec & 4) ? 1.0 : 0.0;
+		bv.w = 0.0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_BVEC4: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		uint32_t bvec = p_value;
+		bv.x = (bvec & 1) ? 1.0 : 0.0;
+		bv.y = (bvec & 2) ? 1.0 : 0.0;
+		bv.z = (bvec & 4) ? 1.0 : 0.0;
+		bv.w = (bvec & 8) ? 1.0 : 0.0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_INT: {
+		GlobalShaderUniforms::ValueInt& bv =
+			*(GlobalShaderUniforms::ValueInt*)&global_shader_uniforms.buffer_values[p_index];
+		int32_t v = p_value;
+		bv.x = v;
+		bv.y = 0;
+		bv.z = 0;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_IVEC2: {
+		GlobalShaderUniforms::ValueInt& bv =
+			*(GlobalShaderUniforms::ValueInt*)&global_shader_uniforms.buffer_values[p_index];
+		Vector2i v = convert_to_vector<Vector2i>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = 0;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_IVEC3: {
+		GlobalShaderUniforms::ValueInt& bv =
+			*(GlobalShaderUniforms::ValueInt*)&global_shader_uniforms.buffer_values[p_index];
+		Vector3i v = convert_to_vector<Vector3i>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = v.z;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_IVEC4: {
+		GlobalShaderUniforms::ValueInt& bv =
+			*(GlobalShaderUniforms::ValueInt*)&global_shader_uniforms.buffer_values[p_index];
+		Vector4i v = convert_to_vector<Vector4i>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = v.z;
+		bv.w = v.w;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_RECT2I: {
+		GlobalShaderUniforms::ValueInt& bv =
+			*(GlobalShaderUniforms::ValueInt*)&global_shader_uniforms.buffer_values[p_index];
+		Rect2i v = p_value;
+		bv.x = v.position.x;
+		bv.y = v.position.y;
+		bv.z = v.size.x;
+		bv.w = v.size.y;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_UINT: {
+		GlobalShaderUniforms::ValueUInt& bv =
+			*(GlobalShaderUniforms::ValueUInt*)&global_shader_uniforms.buffer_values[p_index];
+		uint32_t v = p_value;
+		bv.x = v;
+		bv.y = 0;
+		bv.z = 0;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_UVEC2: {
+		GlobalShaderUniforms::ValueUInt& bv =
+			*(GlobalShaderUniforms::ValueUInt*)&global_shader_uniforms.buffer_values[p_index];
+		Vector2i v = convert_to_vector<Vector2i>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = 0;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_UVEC3: {
+		GlobalShaderUniforms::ValueUInt& bv =
+			*(GlobalShaderUniforms::ValueUInt*)&global_shader_uniforms.buffer_values[p_index];
+		Vector3i v = convert_to_vector<Vector3i>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = v.z;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_UVEC4: {
+		GlobalShaderUniforms::ValueUInt& bv =
+			*(GlobalShaderUniforms::ValueUInt*)&global_shader_uniforms.buffer_values[p_index];
+		Vector4i v = convert_to_vector<Vector4i>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = v.z;
+		bv.w = v.w;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_FLOAT: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		float v = p_value;
+		bv.x = v;
+		bv.y = 0;
+		bv.z = 0;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_VEC2: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		Vector2 v = convert_to_vector<Vector2>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = 0;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_VEC3: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		Vector3 v = convert_to_vector<Vector3>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = v.z;
+		bv.w = 0;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_VEC4: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		Vector4 v = convert_to_vector<Vector4>(p_value);
+		bv.x = v.x;
+		bv.y = v.y;
+		bv.z = v.z;
+		bv.w = v.w;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_COLOR: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		Color v = p_value;
+		bv.x = v.r;
+		bv.y = v.g;
+		bv.z = v.b;
+		bv.w = v.a;
 
-			GlobalShaderUniforms::Value &bv_linear = global_shader_uniforms.buffer_values[p_index + 1];
-			//v = v.srgb_to_linear();
-			bv_linear.x = v.r;
-			bv_linear.y = v.g;
-			bv_linear.z = v.b;
-			bv_linear.w = v.a;
+		GlobalShaderUniforms::Value& bv_linear = global_shader_uniforms.buffer_values[p_index + 1];
+		// v = v.srgb_to_linear();
+		bv_linear.x = v.r;
+		bv_linear.y = v.g;
+		bv_linear.z = v.b;
+		bv_linear.w = v.a;
 
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_RECT2: {
-			GlobalShaderUniforms::Value &bv = global_shader_uniforms.buffer_values[p_index];
-			Rect2 v = p_value;
-			bv.x = v.position.x;
-			bv.y = v.position.y;
-			bv.z = v.size.x;
-			bv.w = v.size.y;
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_MAT2: {
-			GlobalShaderUniforms::Value *bv = &global_shader_uniforms.buffer_values[p_index];
-			Vector<float> m2 = p_value;
-			if (m2.size() < 4) {
-				m2.resize(4);
-			}
-			bv[0].x = m2[0];
-			bv[0].y = m2[1];
-			bv[0].z = 0;
-			bv[0].w = 0;
-
-			bv[1].x = m2[2];
-			bv[1].y = m2[3];
-			bv[1].z = 0;
-			bv[1].w = 0;
-
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_MAT3: {
-			GlobalShaderUniforms::Value *bv = &global_shader_uniforms.buffer_values[p_index];
-			Basis v = p_value;
-			convert_item_std140<Basis>(v, &bv->x);
-
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_MAT4: {
-			GlobalShaderUniforms::Value *bv = &global_shader_uniforms.buffer_values[p_index];
-			Projection m = p_value;
-			convert_item_std140<Projection>(m, &bv->x);
-
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_TRANSFORM_2D: {
-			GlobalShaderUniforms::Value *bv = &global_shader_uniforms.buffer_values[p_index];
-			Transform2D v = p_value;
-			convert_item_std140<Transform2D>(v, &bv->x);
-
-		} break;
-		case RSE::GLOBAL_VAR_TYPE_TRANSFORM: {
-			GlobalShaderUniforms::Value *bv = &global_shader_uniforms.buffer_values[p_index];
-			Transform3D v = p_value;
-			convert_item_std140<Transform3D>(v, &bv->x);
-
-		} break;
-		default: {
-			ERR_FAIL();
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_RECT2: {
+		GlobalShaderUniforms::Value& bv = global_shader_uniforms.buffer_values[p_index];
+		Rect2 v = p_value;
+		bv.x = v.position.x;
+		bv.y = v.position.y;
+		bv.z = v.size.x;
+		bv.w = v.size.y;
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_MAT2: {
+		GlobalShaderUniforms::Value* bv = &global_shader_uniforms.buffer_values[p_index];
+		Vector<float> m2 = p_value;
+		if (m2.size() < 4) {
+			m2.resize(4);
 		}
+		bv[0].x = m2[0];
+		bv[0].y = m2[1];
+		bv[0].z = 0;
+		bv[0].w = 0;
+
+		bv[1].x = m2[2];
+		bv[1].y = m2[3];
+		bv[1].z = 0;
+		bv[1].w = 0;
+
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_MAT3: {
+		GlobalShaderUniforms::Value* bv = &global_shader_uniforms.buffer_values[p_index];
+		Basis v = p_value;
+		convert_item_std140<Basis>(v, &bv->x);
+
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_MAT4: {
+		GlobalShaderUniforms::Value* bv = &global_shader_uniforms.buffer_values[p_index];
+		Projection m = p_value;
+		convert_item_std140<Projection>(m, &bv->x);
+
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_TRANSFORM_2D: {
+		GlobalShaderUniforms::Value* bv = &global_shader_uniforms.buffer_values[p_index];
+		Transform2D v = p_value;
+		convert_item_std140<Transform2D>(v, &bv->x);
+
+	} break;
+	case RSE::GLOBAL_VAR_TYPE_TRANSFORM: {
+		GlobalShaderUniforms::Value* bv = &global_shader_uniforms.buffer_values[p_index];
+		Transform3D v = p_value;
+		convert_item_std140<Transform3D>(v, &bv->x);
+
+	} break;
+	default: {
+		ERR_FAIL();
+	}
 	}
 }
 
-void MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements) {
+void MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements)
+{
 	int32_t prev_chunk = -1;
 
 	for (int32_t i = 0; i < p_elements; i++) {
@@ -1859,7 +2049,9 @@ void MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, 
 	}
 }
 
-void MaterialStorage::global_shader_parameter_add(const StringName &p_name, RSE::GlobalShaderParameterType p_type, const Variant &p_value) {
+void MaterialStorage::global_shader_parameter_add(
+	const StringName& p_name, RSE::GlobalShaderParameterType p_type, const Variant& p_value)
+{
 	ERR_FAIL_COND(global_shader_uniforms.variables.has(p_name));
 	GlobalShaderUniforms::Variable gv;
 	gv.type = p_type;
@@ -1867,79 +2059,94 @@ void MaterialStorage::global_shader_parameter_add(const StringName &p_name, RSE:
 	gv.buffer_index = -1;
 
 	if (p_type >= RSE::GLOBAL_VAR_TYPE_SAMPLER2D) {
-		//is texture
-		global_shader_uniforms.must_update_texture_materials = true; //normally there are none
-	} else {
+		// is texture
+		global_shader_uniforms.must_update_texture_materials = true; // normally there are none
+	}
+	else {
 		gv.buffer_elements = 1;
 		if (p_type == RSE::GLOBAL_VAR_TYPE_COLOR || p_type == RSE::GLOBAL_VAR_TYPE_MAT2) {
-			//color needs to elements to store srgb and linear
+			// color needs to elements to store srgb and linear
 			gv.buffer_elements = 2;
 		}
 		if (p_type == RSE::GLOBAL_VAR_TYPE_MAT3 || p_type == RSE::GLOBAL_VAR_TYPE_TRANSFORM_2D) {
-			//color needs to elements to store srgb and linear
+			// color needs to elements to store srgb and linear
 			gv.buffer_elements = 3;
 		}
 		if (p_type == RSE::GLOBAL_VAR_TYPE_MAT4 || p_type == RSE::GLOBAL_VAR_TYPE_TRANSFORM) {
-			//color needs to elements to store srgb and linear
+			// color needs to elements to store srgb and linear
 			gv.buffer_elements = 4;
 		}
 
-		//is vector, allocate in buffer and update index
+		// is vector, allocate in buffer and update index
 		gv.buffer_index = _global_shader_uniform_allocate(gv.buffer_elements);
-		ERR_FAIL_COND_MSG(gv.buffer_index < 0, vformat("Failed allocating global variable '%s' out of buffer memory. Consider increasing rendering/limits/global_shader_variables/buffer_size in the Project Settings. Maximum items supported by this hardware is: %d.", String(p_name), Config::get_singleton()->max_uniform_buffer_size / sizeof(GlobalShaderUniforms::Value)));
+		ERR_FAIL_COND_MSG(gv.buffer_index < 0,
+			vformat("Failed allocating global variable '%s' out of buffer memory. Consider "
+					"increasing rendering/limits/global_shader_variables/buffer_size in the "
+					"Project Settings. Maximum items supported by this hardware is: %d.",
+				String(p_name),
+				Config::get_singleton()->max_uniform_buffer_size /
+					sizeof(GlobalShaderUniforms::Value)));
 		global_shader_uniforms.buffer_usage[gv.buffer_index].elements = gv.buffer_elements;
 		_global_shader_uniform_store_in_buffer(gv.buffer_index, gv.type, gv.value);
 		_global_shader_uniform_mark_buffer_dirty(gv.buffer_index, gv.buffer_elements);
 
-		global_shader_uniforms.must_update_buffer_materials = true; //normally there are none
+		global_shader_uniforms.must_update_buffer_materials = true; // normally there are none
 	}
 
 	global_shader_uniforms.variables[p_name] = gv;
 }
 
-void MaterialStorage::global_shader_parameter_remove(const StringName &p_name) {
+void MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
+{
 	if (!global_shader_uniforms.variables.has(p_name)) {
 		return;
 	}
-	GlobalShaderUniforms::Variable &gv = global_shader_uniforms.variables[p_name];
+	GlobalShaderUniforms::Variable& gv = global_shader_uniforms.variables[p_name];
 
 	if (gv.buffer_index >= 0) {
 		global_shader_uniforms.buffer_usage[gv.buffer_index].elements = 0;
 		global_shader_uniforms.must_update_buffer_materials = true;
-	} else {
+	}
+	else {
 		global_shader_uniforms.must_update_texture_materials = true;
 	}
 
 	global_shader_uniforms.variables.erase(p_name);
 }
 
-Vector<StringName> MaterialStorage::global_shader_parameter_get_list() const {
-	if (!Engine::get_singleton()->is_editor_hint() && !Engine::get_singleton()->is_project_manager_hint()) {
-		ERR_FAIL_V_MSG(Vector<StringName>(), "This function should never be used outside the editor, it can severely damage performance.");
+Vector<StringName> MaterialStorage::global_shader_parameter_get_list() const
+{
+	if (!Engine::get_singleton()->is_editor_hint() &&
+		!Engine::get_singleton()->is_project_manager_hint()) {
+		ERR_FAIL_V_MSG(Vector<StringName>(), "This function should never be used outside the "
+											 "editor, it can severely damage performance.");
 	}
 
 	Vector<StringName> names;
-	for (const KeyValue<StringName, GlobalShaderUniforms::Variable> &E : global_shader_uniforms.variables) {
+	for (const KeyValue<StringName, GlobalShaderUniforms::Variable>& E :
+		global_shader_uniforms.variables) {
 		names.push_back(E.key);
 	}
 	names.sort_custom<StringName::AlphCompare>();
 	return names;
 }
 
-void MaterialStorage::global_shader_parameter_set(const StringName &p_name, const Variant &p_value) {
+void MaterialStorage::global_shader_parameter_set(const StringName& p_name, const Variant& p_value)
+{
 	ERR_FAIL_COND(!global_shader_uniforms.variables.has(p_name));
-	GlobalShaderUniforms::Variable &gv = global_shader_uniforms.variables[p_name];
+	GlobalShaderUniforms::Variable& gv = global_shader_uniforms.variables[p_name];
 	gv.value = p_value;
 	if (gv.override.get_type() == Variant::NIL) {
 		if (gv.buffer_index >= 0) {
-			//buffer
+			// buffer
 			_global_shader_uniform_store_in_buffer(gv.buffer_index, gv.type, gv.value);
 			_global_shader_uniform_mark_buffer_dirty(gv.buffer_index, gv.buffer_elements);
-		} else {
-			//texture
-			MaterialStorage *material_storage = MaterialStorage::get_singleton();
-			for (const RID &E : gv.texture_materials) {
-				Material *material = material_storage->get_material(E);
+		}
+		else {
+			// texture
+			MaterialStorage* material_storage = MaterialStorage::get_singleton();
+			for (const RID& E : gv.texture_materials) {
+				Material* material = material_storage->get_material(E);
 				ERR_CONTINUE(!material);
 				material_storage->_material_queue_update(material, false, true);
 			}
@@ -1947,40 +2154,46 @@ void MaterialStorage::global_shader_parameter_set(const StringName &p_name, cons
 	}
 }
 
-void MaterialStorage::global_shader_parameter_set_override(const StringName &p_name, const Variant &p_value) {
+void MaterialStorage::global_shader_parameter_set_override(
+	const StringName& p_name, const Variant& p_value)
+{
 	if (!global_shader_uniforms.variables.has(p_name)) {
-		return; //variable may not exist
+		return; // variable may not exist
 	}
 
 	ERR_FAIL_COND(p_value.get_type() == Variant::OBJECT);
 
-	GlobalShaderUniforms::Variable &gv = global_shader_uniforms.variables[p_name];
+	GlobalShaderUniforms::Variable& gv = global_shader_uniforms.variables[p_name];
 
 	gv.override = p_value;
 
 	if (gv.buffer_index >= 0) {
-		//buffer
+		// buffer
 		if (gv.override.get_type() == Variant::NIL) {
 			_global_shader_uniform_store_in_buffer(gv.buffer_index, gv.type, gv.value);
-		} else {
+		}
+		else {
 			_global_shader_uniform_store_in_buffer(gv.buffer_index, gv.type, gv.override);
 		}
 
 		_global_shader_uniform_mark_buffer_dirty(gv.buffer_index, gv.buffer_elements);
-	} else {
-		//texture
-		MaterialStorage *material_storage = MaterialStorage::get_singleton();
-		for (const RID &E : gv.texture_materials) {
-			Material *material = material_storage->get_material(E);
+	}
+	else {
+		// texture
+		MaterialStorage* material_storage = MaterialStorage::get_singleton();
+		for (const RID& E : gv.texture_materials) {
+			Material* material = material_storage->get_material(E);
 			ERR_CONTINUE(!material);
 			material_storage->_material_queue_update(material, false, true);
 		}
 	}
 }
 
-Variant MaterialStorage::global_shader_parameter_get(const StringName &p_name) const {
+Variant MaterialStorage::global_shader_parameter_get(const StringName& p_name) const
+{
 	if (!Engine::get_singleton()->is_editor_hint()) {
-		ERR_FAIL_V_MSG(Variant(), "This function should never be used outside the editor, it can severely damage performance.");
+		ERR_FAIL_V_MSG(Variant(), "This function should never be used outside the editor, it can "
+								  "severely damage performance.");
 	}
 
 	if (!global_shader_uniforms.variables.has(p_name)) {
@@ -1990,7 +2203,9 @@ Variant MaterialStorage::global_shader_parameter_get(const StringName &p_name) c
 	return global_shader_uniforms.variables[p_name].value;
 }
 
-RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type_internal(const StringName &p_name) const {
+RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type_internal(
+	const StringName& p_name) const
+{
 	if (!global_shader_uniforms.variables.has(p_name)) {
 		return RSE::GLOBAL_VAR_TYPE_MAX;
 	}
@@ -1998,19 +2213,23 @@ RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type
 	return global_shader_uniforms.variables[p_name].type;
 }
 
-RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type(const StringName &p_name) const {
+RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type(
+	const StringName& p_name) const
+{
 	if (!Engine::get_singleton()->is_editor_hint()) {
-		ERR_FAIL_V_MSG(RSE::GLOBAL_VAR_TYPE_MAX, "This function should never be used outside the editor, it can severely damage performance.");
+		ERR_FAIL_V_MSG(RSE::GLOBAL_VAR_TYPE_MAX, "This function should never be used outside the "
+												 "editor, it can severely damage performance.");
 	}
 
 	return global_shader_parameter_get_type_internal(p_name);
 }
 
-void MaterialStorage::global_shader_parameters_load_settings(bool p_load_textures) {
+void MaterialStorage::global_shader_parameters_load_settings(bool p_load_textures)
+{
 	List<PropertyInfo> settings;
-	ProjectSettings::get_singleton()->get_property_list(&settings);
+	ProjectSettings::get_singleton()->obj->get_property_list(&settings);
 
-	for (const PropertyInfo &E : settings) {
+	for (const PropertyInfo& E : settings) {
 		if (E.name.begins_with("shader_globals/")) {
 			StringName name = E.name.get_slicec('/', 1);
 			Dictionary d = GLOBAL_GET(E.name);
@@ -2020,37 +2239,11 @@ void MaterialStorage::global_shader_parameters_load_settings(bool p_load_texture
 
 			String type = d["type"];
 
-			static const char *global_var_type_names[RSE::GLOBAL_VAR_TYPE_MAX] = {
-				"bool",
-				"bvec2",
-				"bvec3",
-				"bvec4",
-				"int",
-				"ivec2",
-				"ivec3",
-				"ivec4",
-				"rect2i",
-				"uint",
-				"uvec2",
-				"uvec3",
-				"uvec4",
-				"float",
-				"vec2",
-				"vec3",
-				"vec4",
-				"color",
-				"rect2",
-				"mat2",
-				"mat3",
-				"mat4",
-				"transform_2d",
-				"transform",
-				"sampler2D",
-				"sampler2DArray",
-				"sampler3D",
-				"samplerCube",
-				"samplerExternalOES"
-			};
+			static const char* global_var_type_names[RSE::GLOBAL_VAR_TYPE_MAX] = {"bool", "bvec2",
+				"bvec3", "bvec4", "int", "ivec2", "ivec3", "ivec4", "rect2i", "uint", "uvec2",
+				"uvec3", "uvec4", "float", "vec2", "vec3", "vec4", "color", "rect2", "mat2", "mat3",
+				"mat4", "transform_2d", "transform", "sampler2D", "sampler2DArray", "sampler3D",
+				"samplerCube", "samplerExternalOES"};
 
 			RSE::GlobalShaderParameterType gvtype = RSE::GLOBAL_VAR_TYPE_MAX;
 
@@ -2061,49 +2254,59 @@ void MaterialStorage::global_shader_parameters_load_settings(bool p_load_texture
 				}
 			}
 
-			ERR_CONTINUE(gvtype == RSE::GLOBAL_VAR_TYPE_MAX); //type invalid
+			ERR_CONTINUE(gvtype == RSE::GLOBAL_VAR_TYPE_MAX); // type invalid
 
 			Variant value = d["value"];
 
 			if (gvtype >= RSE::GLOBAL_VAR_TYPE_SAMPLER2D) {
 				String path = value;
-				// Don't load the textures, but still add the parameter so shaders compile correctly while loading.
+				// Don't load the textures, but still add the parameter so shaders compile correctly
+				// while loading.
 				if (!p_load_textures || path.is_empty()) {
 					value = RID();
-				} else {
+				}
+				else {
 					Ref<Resource> resource = ResourceLoader::load(path);
 					value = resource;
 				}
 			}
 
 			if (global_shader_uniforms.variables.has(name)) {
-				//has it, update it
+				// has it, update it
 				global_shader_parameter_set(name, value);
-			} else {
+			}
+			else {
 				global_shader_parameter_add(name, gvtype, value);
 			}
 		}
 	}
 }
 
-void MaterialStorage::global_shader_parameters_clear() {
-	global_shader_uniforms.variables.clear();
-}
+void MaterialStorage::global_shader_parameters_clear() { global_shader_uniforms.variables.clear(); }
 
-GLuint MaterialStorage::global_shader_parameters_get_uniform_buffer() const {
+GLuint MaterialStorage::global_shader_parameters_get_uniform_buffer() const
+{
 	return global_shader_uniforms.buffer;
 }
 
-int32_t MaterialStorage::global_shader_parameters_instance_allocate(RID p_instance) {
+int32_t MaterialStorage::global_shader_parameters_instance_allocate(RID p_instance)
+{
 	ERR_FAIL_COND_V(global_shader_uniforms.instance_buffer_pos.has(p_instance), -1);
 	int32_t pos = _global_shader_uniform_allocate(ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES);
-	global_shader_uniforms.instance_buffer_pos[p_instance] = pos; //save anyway
-	ERR_FAIL_COND_V_MSG(pos < 0, -1, vformat("Too many instances using shader instance variables. Consider increasing rendering/limits/global_shader_variables/buffer_size in the Project Settings. Maximum items supported by this hardware is: %d.", Config::get_singleton()->max_uniform_buffer_size / sizeof(GlobalShaderUniforms::Value)));
-	global_shader_uniforms.buffer_usage[pos].elements = ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES;
+	global_shader_uniforms.instance_buffer_pos[p_instance] = pos; // save anyway
+	ERR_FAIL_COND_V_MSG(pos < 0, -1,
+		vformat("Too many instances using shader instance variables. Consider increasing "
+				"rendering/limits/global_shader_variables/buffer_size in the Project Settings. "
+				"Maximum items supported by this hardware is: %d.",
+			Config::get_singleton()->max_uniform_buffer_size /
+				sizeof(GlobalShaderUniforms::Value)));
+	global_shader_uniforms.buffer_usage[pos].elements =
+		ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES;
 	return pos;
 }
 
-void MaterialStorage::global_shader_parameters_instance_free(RID p_instance) {
+void MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
+{
 	ERR_FAIL_COND(!global_shader_uniforms.instance_buffer_pos.has(p_instance));
 	int32_t pos = global_shader_uniforms.instance_buffer_pos[p_instance];
 	if (pos >= 0) {
@@ -2112,85 +2315,101 @@ void MaterialStorage::global_shader_parameters_instance_free(RID p_instance) {
 	global_shader_uniforms.instance_buffer_pos.erase(p_instance);
 }
 
-void MaterialStorage::global_shader_parameters_instance_update(RID p_instance, int p_index, const Variant &p_value, int p_flags_count) {
+void MaterialStorage::global_shader_parameters_instance_update(
+	RID p_instance, int p_index, const Variant& p_value, int p_flags_count)
+{
 	if (!global_shader_uniforms.instance_buffer_pos.has(p_instance)) {
-		return; //just not allocated, ignore
+		return; // just not allocated, ignore
 	}
 	int32_t pos = global_shader_uniforms.instance_buffer_pos[p_instance];
 
 	if (pos < 0) {
-		return; //again, not allocated, ignore
+		return; // again, not allocated, ignore
 	}
 	ERR_FAIL_INDEX(p_index, ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES);
 
 	Variant::Type value_type = p_value.get_type();
-	ERR_FAIL_COND_MSG(p_value.get_type() > Variant::COLOR, "Unsupported variant type for instance parameter: " + Variant::get_type_name(value_type)); //anything greater not supported
+	ERR_FAIL_COND_MSG(p_value.get_type() > Variant::COLOR,
+		"Unsupported variant type for instance parameter: " +
+			Variant::get_type_name(value_type)); // anything greater not supported
 
 	ShaderLanguage::DataType datatype_from_value[Variant::COLOR + 1] = {
-		ShaderLanguage::TYPE_MAX, //nil
-		ShaderLanguage::TYPE_BOOL, //bool
-		ShaderLanguage::TYPE_INT, //int
-		ShaderLanguage::TYPE_FLOAT, //float
-		ShaderLanguage::TYPE_MAX, //string
-		ShaderLanguage::TYPE_VEC2, //vec2
-		ShaderLanguage::TYPE_IVEC2, //vec2i
-		ShaderLanguage::TYPE_VEC4, //rect2
-		ShaderLanguage::TYPE_IVEC4, //rect2i
-		ShaderLanguage::TYPE_VEC3, // vec3
-		ShaderLanguage::TYPE_IVEC3, //vec3i
-		ShaderLanguage::TYPE_MAX, //xform2d not supported here
-		ShaderLanguage::TYPE_VEC4, //vec4
-		ShaderLanguage::TYPE_IVEC4, //vec4i
-		ShaderLanguage::TYPE_VEC4, //plane
-		ShaderLanguage::TYPE_VEC4, //quat
-		ShaderLanguage::TYPE_MAX, //aabb not supported here
-		ShaderLanguage::TYPE_MAX, //basis not supported here
-		ShaderLanguage::TYPE_MAX, //xform not supported here
-		ShaderLanguage::TYPE_MAX, //projection not supported here
-		ShaderLanguage::TYPE_VEC4 //color
+		ShaderLanguage::TYPE_MAX,	// nil
+		ShaderLanguage::TYPE_BOOL,	// bool
+		ShaderLanguage::TYPE_INT,	// int
+		ShaderLanguage::TYPE_FLOAT, // float
+		ShaderLanguage::TYPE_MAX,	// string
+		ShaderLanguage::TYPE_VEC2,	// vec2
+		ShaderLanguage::TYPE_IVEC2, // vec2i
+		ShaderLanguage::TYPE_VEC4,	// rect2
+		ShaderLanguage::TYPE_IVEC4, // rect2i
+		ShaderLanguage::TYPE_VEC3,	// vec3
+		ShaderLanguage::TYPE_IVEC3, // vec3i
+		ShaderLanguage::TYPE_MAX,	// xform2d not supported here
+		ShaderLanguage::TYPE_VEC4,	// vec4
+		ShaderLanguage::TYPE_IVEC4, // vec4i
+		ShaderLanguage::TYPE_VEC4,	// plane
+		ShaderLanguage::TYPE_VEC4,	// quat
+		ShaderLanguage::TYPE_MAX,	// aabb not supported here
+		ShaderLanguage::TYPE_MAX,	// basis not supported here
+		ShaderLanguage::TYPE_MAX,	// xform not supported here
+		ShaderLanguage::TYPE_MAX,	// projection not supported here
+		ShaderLanguage::TYPE_VEC4	// color
 	};
 
 	ShaderLanguage::DataType datatype = ShaderLanguage::TYPE_MAX;
 	if (value_type == Variant::INT && p_flags_count > 0) {
 		switch (p_flags_count) {
-			case 1:
-				datatype = ShaderLanguage::TYPE_BVEC2;
-				break;
-			case 2:
-				datatype = ShaderLanguage::TYPE_BVEC3;
-				break;
-			case 3:
-				datatype = ShaderLanguage::TYPE_BVEC4;
-				break;
+		case 1:
+			datatype = ShaderLanguage::TYPE_BVEC2;
+			break;
+		case 2:
+			datatype = ShaderLanguage::TYPE_BVEC3;
+			break;
+		case 3:
+			datatype = ShaderLanguage::TYPE_BVEC4;
+			break;
 		}
-	} else {
+	}
+	else {
 		datatype = datatype_from_value[value_type];
 	}
 
-	ERR_FAIL_COND_MSG(datatype == ShaderLanguage::TYPE_MAX, "Unsupported variant type for instance parameter: " + Variant::get_type_name(value_type)); //anything greater not supported
+	ERR_FAIL_COND_MSG(datatype == ShaderLanguage::TYPE_MAX,
+		"Unsupported variant type for instance parameter: " +
+			Variant::get_type_name(value_type)); // anything greater not supported
 
 	pos += p_index;
 
-	_fill_std140_variant_ubo_value(datatype, 0, p_value, (uint8_t *)&global_shader_uniforms.buffer_values[pos]);
+	_fill_std140_variant_ubo_value(
+		datatype, 0, p_value, (uint8_t*)&global_shader_uniforms.buffer_values[pos]);
 	_global_shader_uniform_mark_buffer_dirty(pos, 1);
 }
 
-void MaterialStorage::_update_global_shader_uniforms() {
-	MaterialStorage *material_storage = MaterialStorage::get_singleton();
+void MaterialStorage::_update_global_shader_uniforms()
+{
+	MaterialStorage* material_storage = MaterialStorage::get_singleton();
 	if (global_shader_uniforms.buffer_dirty_region_count > 0) {
-		uint32_t total_regions = 1 + (global_shader_uniforms.buffer_size / GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE);
+		uint32_t total_regions = 1 + (global_shader_uniforms.buffer_size /
+										 GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE);
 		if (total_regions / global_shader_uniforms.buffer_dirty_region_count <= 4) {
 			// 25% of regions dirty, just update all buffer
 			glBindBuffer(GL_UNIFORM_BUFFER, global_shader_uniforms.buffer);
-			glBufferData(GL_UNIFORM_BUFFER, sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size, global_shader_uniforms.buffer_values, GL_DYNAMIC_DRAW);
+			glBufferData(GL_UNIFORM_BUFFER,
+				sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size,
+				global_shader_uniforms.buffer_values, GL_DYNAMIC_DRAW);
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);
 			memset(global_shader_uniforms.buffer_dirty_regions, 0, sizeof(bool) * total_regions);
-		} else {
-			uint32_t region_byte_size = sizeof(GlobalShaderUniforms::Value) * GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE;
+		}
+		else {
+			uint32_t region_byte_size = sizeof(GlobalShaderUniforms::Value) *
+										GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE;
 			glBindBuffer(GL_UNIFORM_BUFFER, global_shader_uniforms.buffer);
 			for (uint32_t i = 0; i < total_regions; i++) {
 				if (global_shader_uniforms.buffer_dirty_regions[i]) {
-					glBufferSubData(GL_UNIFORM_BUFFER, i * region_byte_size, region_byte_size, &global_shader_uniforms.buffer_values[i * GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE]);
+					glBufferSubData(GL_UNIFORM_BUFFER, i * region_byte_size, region_byte_size,
+						&global_shader_uniforms
+							 .buffer_values[i * GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE]);
 					global_shader_uniforms.buffer_dirty_regions[i] = false;
 				}
 			}
@@ -2203,9 +2422,9 @@ void MaterialStorage::_update_global_shader_uniforms() {
 	if (global_shader_uniforms.must_update_buffer_materials) {
 		// only happens in the case of a buffer variable added or removed,
 		// so not often.
-		for (const RID &E : global_shader_uniforms.materials_using_buffer) {
-			Material *material = material_storage->get_material(E);
-			ERR_CONTINUE(!material); //wtf
+		for (const RID& E : global_shader_uniforms.materials_using_buffer) {
+			Material* material = material_storage->get_material(E);
+			ERR_CONTINUE(!material); // wtf
 
 			material_storage->_material_queue_update(material, true, false);
 		}
@@ -2216,9 +2435,9 @@ void MaterialStorage::_update_global_shader_uniforms() {
 	if (global_shader_uniforms.must_update_texture_materials) {
 		// only happens in the case of a buffer variable added or removed,
 		// so not often.
-		for (const RID &E : global_shader_uniforms.materials_using_texture) {
-			Material *material = material_storage->get_material(E);
-			ERR_CONTINUE(!material); //wtf
+		for (const RID& E : global_shader_uniforms.materials_using_texture) {
+			Material* material = material_storage->get_material(E);
+			ERR_CONTINUE(!material); // wtf
 
 			material_storage->_material_queue_update(material, false, true);
 		}
@@ -2229,11 +2448,10 @@ void MaterialStorage::_update_global_shader_uniforms() {
 
 /* SHADER API */
 
-RID MaterialStorage::shader_allocate() {
-	return shader_owner.allocate_rid();
-}
+RID MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
 
-void MaterialStorage::shader_initialize(RID p_rid, bool p_embedded) {
+void MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
+{
 	Shader shader;
 	shader.data = nullptr;
 	shader.mode = RSE::SHADER_MAX;
@@ -2241,22 +2459,24 @@ void MaterialStorage::shader_initialize(RID p_rid, bool p_embedded) {
 	shader_owner.initialize_rid(p_rid, shader);
 }
 
-void MaterialStorage::shader_free(RID p_rid) {
-	GLES3::Shader *shader = shader_owner.get_or_null(p_rid);
+void MaterialStorage::shader_free(RID p_rid)
+{
+	GLES3::Shader* shader = shader_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(shader);
 
-	//make material unreference this
+	// make material unreference this
 	while (shader->owners.size()) {
 		material_set_shader((*shader->owners.begin())->self, RID());
 	}
 
-	//clear data if exists
+	// clear data if exists
 	memdelete(shader->data);
 	shader_owner.free(p_rid);
 }
 
-void MaterialStorage::shader_set_code(RID p_shader, const String &p_code) {
-	GLES3::Shader *shader = shader_owner.get_or_null(p_shader);
+void MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
+{
+	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
 
 	shader->code = p_code;
@@ -2266,17 +2486,25 @@ void MaterialStorage::shader_set_code(RID p_shader, const String &p_code) {
 	RSE::ShaderMode new_mode;
 	if (mode_string == "canvas_item") {
 		new_mode = RSE::SHADER_CANVAS_ITEM;
-	} else if (mode_string == "particles") {
+	}
+	else if (mode_string == "particles") {
 		new_mode = RSE::SHADER_PARTICLES;
-	} else if (mode_string == "spatial") {
+	}
+	else if (mode_string == "spatial") {
 		new_mode = RSE::SHADER_SPATIAL;
-	} else if (mode_string == "sky") {
+	}
+	else if (mode_string == "sky") {
 		new_mode = RSE::SHADER_SKY;
-		//} else if (mode_string == "fog") {
-		//	new_mode = RSE::SHADER_FOG;
-	} else if (mode_string == "texture_blit") {
+		/*
+		}
+		else if (mode_string == "fog") {
+			new_mode = RSE::SHADER_FOG;
+			*/
+	}
+	else if (mode_string == "texture_blit") {
 		new_mode = RSE::SHADER_TEXTURE_BLIT;
-	} else {
+	}
+	else {
 		new_mode = RSE::SHADER_MAX;
 		ERR_PRINT("shader type " + mode_string + " not supported in OpenGL renderer");
 	}
@@ -2287,8 +2515,8 @@ void MaterialStorage::shader_set_code(RID p_shader, const String &p_code) {
 			shader->data = nullptr;
 		}
 
-		for (Material *E : shader->owners) {
-			Material *material = E;
+		for (Material* E : shader->owners) {
+			Material* material = E;
 			material->shader_mode = new_mode;
 			if (material->data) {
 				memdelete(material->data);
@@ -2300,12 +2528,13 @@ void MaterialStorage::shader_set_code(RID p_shader, const String &p_code) {
 
 		if (new_mode < RSE::SHADER_MAX && shader_data_request_func[new_mode]) {
 			shader->data = shader_data_request_func[new_mode]();
-		} else {
-			shader->mode = RSE::SHADER_MAX; //invalid
+		}
+		else {
+			shader->mode = RSE::SHADER_MAX; // invalid
 		}
 
-		for (Material *E : shader->owners) {
-			Material *material = E;
+		for (Material* E : shader->owners) {
+			Material* material = E;
 			if (shader->data) {
 				material->data = material_data_request_func[new_mode](shader->data);
 				material->data->self = material->self;
@@ -2316,8 +2545,9 @@ void MaterialStorage::shader_set_code(RID p_shader, const String &p_code) {
 		}
 
 		if (shader->data) {
-			for (const KeyValue<StringName, HashMap<int, RID>> &E : shader->default_texture_parameter) {
-				for (const KeyValue<int, RID> &E2 : E.value) {
+			for (const KeyValue<StringName, HashMap<int, RID>>& E :
+				shader->default_texture_parameter) {
+				for (const KeyValue<int, RID>& E2 : E.value) {
 					shader->data->set_default_texture_parameter(E.key, E2.value, E2.key);
 				}
 			}
@@ -2329,15 +2559,16 @@ void MaterialStorage::shader_set_code(RID p_shader, const String &p_code) {
 		shader->data->set_code(p_code);
 	}
 
-	for (Material *E : shader->owners) {
-		Material *material = E;
+	for (Material* E : shader->owners) {
+		Material* material = E;
 		material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 		_material_queue_update(material, true, true);
 	}
 }
 
-void MaterialStorage::shader_set_path_hint(RID p_shader, const String &p_path) {
-	GLES3::Shader *shader = shader_owner.get_or_null(p_shader);
+void MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
+{
+	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
 
 	shader->path_hint = p_path;
@@ -2346,22 +2577,27 @@ void MaterialStorage::shader_set_path_hint(RID p_shader, const String &p_path) {
 	}
 }
 
-String MaterialStorage::shader_get_code(RID p_shader) const {
-	const GLES3::Shader *shader = shader_owner.get_or_null(p_shader);
+String MaterialStorage::shader_get_code(RID p_shader) const
+{
+	const GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, String());
 	return shader->code;
 }
 
-void MaterialStorage::get_shader_parameter_list(RID p_shader, List<PropertyInfo> *p_param_list) const {
-	GLES3::Shader *shader = shader_owner.get_or_null(p_shader);
+void MaterialStorage::get_shader_parameter_list(
+	RID p_shader, List<PropertyInfo>* p_param_list) const
+{
+	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
 	if (shader->data) {
 		return shader->data->get_shader_uniform_list(p_param_list);
 	}
 }
 
-void MaterialStorage::shader_set_default_texture_parameter(RID p_shader, const StringName &p_name, RID p_texture, int p_index) {
-	GLES3::Shader *shader = shader_owner.get_or_null(p_shader);
+void MaterialStorage::shader_set_default_texture_parameter(
+	RID p_shader, const StringName& p_name, RID p_texture, int p_index)
+{
+	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
 
 	if (p_texture.is_valid() && TextureStorage::get_singleton()->owns_texture(p_texture)) {
@@ -2369,8 +2605,10 @@ void MaterialStorage::shader_set_default_texture_parameter(RID p_shader, const S
 			shader->default_texture_parameter[p_name] = HashMap<int, RID>();
 		}
 		shader->default_texture_parameter[p_name][p_index] = p_texture;
-	} else {
-		if (shader->default_texture_parameter.has(p_name) && shader->default_texture_parameter[p_name].has(p_index)) {
+	}
+	else {
+		if (shader->default_texture_parameter.has(p_name) &&
+			shader->default_texture_parameter[p_name].has(p_index)) {
 			shader->default_texture_parameter[p_name].erase(p_index);
 
 			if (shader->default_texture_parameter[p_name].is_empty()) {
@@ -2381,24 +2619,28 @@ void MaterialStorage::shader_set_default_texture_parameter(RID p_shader, const S
 	if (shader->data) {
 		shader->data->set_default_texture_parameter(p_name, p_texture, p_index);
 	}
-	for (Material *E : shader->owners) {
-		Material *material = E;
+	for (Material* E : shader->owners) {
+		Material* material = E;
 		_material_queue_update(material, false, true);
 	}
 }
 
-RID MaterialStorage::shader_get_default_texture_parameter(RID p_shader, const StringName &p_name, int p_index) const {
-	const GLES3::Shader *shader = shader_owner.get_or_null(p_shader);
+RID MaterialStorage::shader_get_default_texture_parameter(
+	RID p_shader, const StringName& p_name, int p_index) const
+{
+	const GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, RID());
-	if (shader->default_texture_parameter.has(p_name) && shader->default_texture_parameter[p_name].has(p_index)) {
+	if (shader->default_texture_parameter.has(p_name) &&
+		shader->default_texture_parameter[p_name].has(p_index)) {
 		return shader->default_texture_parameter[p_name][p_index];
 	}
 
 	return RID();
 }
 
-Variant MaterialStorage::shader_get_parameter_default(RID p_shader, const StringName &p_param) const {
-	Shader *shader = shader_owner.get_or_null(p_shader);
+Variant MaterialStorage::shader_get_parameter_default(RID p_shader, const StringName& p_param) const
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, Variant());
 	if (shader->data) {
 		return shader->data->get_default_parameter(p_param);
@@ -2406,8 +2648,10 @@ Variant MaterialStorage::shader_get_parameter_default(RID p_shader, const String
 	return Variant();
 }
 
-RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_source_code(RID p_shader) const {
-	Shader *shader = shader_owner.get_or_null(p_shader);
+RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_source_code(
+	RID p_shader) const
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, RenderingServerTypes::ShaderNativeSourceCode());
 	if (shader->data) {
 		return shader->data->get_native_source_code();
@@ -2417,7 +2661,9 @@ RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_
 
 /* MATERIAL API */
 
-void MaterialStorage::_material_queue_update(GLES3::Material *material, bool p_uniform, bool p_texture) {
+void MaterialStorage::_material_queue_update(
+	GLES3::Material* material, bool p_uniform, bool p_texture)
+{
 	material->uniform_dirty = material->uniform_dirty || p_uniform;
 	material->texture_dirty = material->texture_dirty || p_texture;
 
@@ -2428,12 +2674,14 @@ void MaterialStorage::_material_queue_update(GLES3::Material *material, bool p_u
 	material_update_list.add(&material->update_element);
 }
 
-void MaterialStorage::_update_queued_materials() {
+void MaterialStorage::_update_queued_materials()
+{
 	while (material_update_list.first()) {
-		Material *material = material_update_list.first()->self();
+		Material* material = material_update_list.first()->self();
 
 		if (material->data) {
-			material->data->update_parameters(material->params, material->uniform_dirty, material->texture_dirty);
+			material->data->update_parameters(
+				material->params, material->uniform_dirty, material->texture_dirty);
 		}
 		material->texture_dirty = false;
 		material->uniform_dirty = false;
@@ -2442,37 +2690,38 @@ void MaterialStorage::_update_queued_materials() {
 	}
 }
 
-RID MaterialStorage::material_allocate() {
-	return material_owner.allocate_rid();
-}
+RID MaterialStorage::material_allocate() { return material_owner.allocate_rid(); }
 
-void MaterialStorage::material_initialize(RID p_rid) {
+void MaterialStorage::material_initialize(RID p_rid)
+{
 	material_owner.initialize_rid(p_rid);
-	Material *material = material_owner.get_or_null(p_rid);
+	Material* material = material_owner.get_or_null(p_rid);
 	material->self = p_rid;
 }
 
-void MaterialStorage::material_free(RID p_rid) {
-	Material *material = material_owner.get_or_null(p_rid);
+void MaterialStorage::material_free(RID p_rid)
+{
+	Material* material = material_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(material);
 
 	// Need to clear texture arrays to prevent spin locking of their RID's.
 	// This happens when the app is being closed.
-	for (KeyValue<StringName, Variant> &E : material->params) {
+	for (KeyValue<StringName, Variant>& E : material->params) {
 		if (E.value.get_type() == Variant::ARRAY) {
 			// Clear the array for this material only (the array may be shared).
 			E.value = Variant();
 		}
 	}
 
-	material_set_shader(p_rid, RID()); //clean up shader
+	material_set_shader(p_rid, RID()); // clean up shader
 	material->dependency.deleted_notify(p_rid);
 
 	material_owner.free(p_rid);
 }
 
-void MaterialStorage::material_set_shader(RID p_material, RID p_shader) {
-	GLES3::Material *material = material_owner.get_or_null(p_material);
+void MaterialStorage::material_set_shader(RID p_material, RID p_shader)
+{
+	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
 
 	if (material->data) {
@@ -2492,7 +2741,7 @@ void MaterialStorage::material_set_shader(RID p_material, RID p_shader) {
 		return;
 	}
 
-	Shader *shader = get_shader(p_shader);
+	Shader* shader = get_shader(p_shader);
 	ERR_FAIL_NULL(shader);
 	material->shader = shader;
 	material->shader_mode = shader->mode;
@@ -2509,42 +2758,49 @@ void MaterialStorage::material_set_shader(RID p_material, RID p_shader) {
 	material->data->self = p_material;
 	material->data->set_next_pass(material->next_pass);
 	material->data->set_render_priority(material->priority);
-	//updating happens later
+	// updating happens later
 	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 	_material_queue_update(material, true, true);
 }
 
-void MaterialStorage::material_set_param(RID p_material, const StringName &p_param, const Variant &p_value) {
-	GLES3::Material *material = material_owner.get_or_null(p_material);
+void MaterialStorage::material_set_param(
+	RID p_material, const StringName& p_param, const Variant& p_value)
+{
+	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
 
 	if (p_value.get_type() == Variant::NIL) {
 		material->params.erase(p_param);
-	} else {
-		ERR_FAIL_COND(p_value.get_type() == Variant::OBJECT); //object not allowed
+	}
+	else {
+		ERR_FAIL_COND(p_value.get_type() == Variant::OBJECT); // object not allowed
 		material->params[p_param] = p_value;
 	}
 
-	if (material->shader && material->shader->data) { //shader is valid
+	if (material->shader && material->shader->data) { // shader is valid
 		bool is_texture = material->shader->data->is_parameter_texture(p_param);
 		_material_queue_update(material, !is_texture, is_texture);
-	} else {
+	}
+	else {
 		_material_queue_update(material, true, true);
 	}
 }
 
-Variant MaterialStorage::material_get_param(RID p_material, const StringName &p_param) const {
-	const GLES3::Material *material = material_owner.get_or_null(p_material);
+Variant MaterialStorage::material_get_param(RID p_material, const StringName& p_param) const
+{
+	const GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, Variant());
 	if (material->params.has(p_param)) {
 		return material->params[p_param];
-	} else {
+	}
+	else {
 		return Variant();
 	}
 }
 
-void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material) {
-	GLES3::Material *material = material_owner.get_or_null(p_material);
+void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
+{
+	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
 
 	if (material->next_pass == p_next_material) {
@@ -2559,11 +2815,12 @@ void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material
 	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 }
 
-void MaterialStorage::material_set_render_priority(RID p_material, int priority) {
+void MaterialStorage::material_set_render_priority(RID p_material, int priority)
+{
 	ERR_FAIL_COND(priority < RSE::MATERIAL_RENDER_PRIORITY_MIN);
 	ERR_FAIL_COND(priority > RSE::MATERIAL_RENDER_PRIORITY_MAX);
 
-	GLES3::Material *material = material_owner.get_or_null(p_material);
+	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
 	material->priority = priority;
 	if (material->data) {
@@ -2572,38 +2829,43 @@ void MaterialStorage::material_set_render_priority(RID p_material, int priority)
 	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 }
 
-bool MaterialStorage::material_is_animated(RID p_material) {
-	GLES3::Material *material = material_owner.get_or_null(p_material);
+bool MaterialStorage::material_is_animated(RID p_material)
+{
+	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, false);
 	if (material->shader && material->shader->data) {
 		if (material->shader->data->is_animated()) {
 			return true;
-		} else if (material->next_pass.is_valid()) {
+		}
+		else if (material->next_pass.is_valid()) {
 			return material_is_animated(material->next_pass);
 		}
 	}
-	return false; //by default nothing is animated
+	return false; // by default nothing is animated
 }
 
-bool MaterialStorage::material_casts_shadows(RID p_material) {
-	GLES3::Material *material = material_owner.get_or_null(p_material);
+bool MaterialStorage::material_casts_shadows(RID p_material)
+{
+	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, true);
 	if (material->shader && material->shader->data) {
 		if (material->shader->data->casts_shadows()) {
 			return true;
-		} else if (material->next_pass.is_valid()) {
+		}
+		else if (material->next_pass.is_valid()) {
 			return material_casts_shadows(material->next_pass);
 		}
 	}
-	return true; //by default everything casts shadows
+	return true; // by default everything casts shadows
 }
 
-RSE::CullMode MaterialStorage::material_get_cull_mode(RID p_material) const {
-	const GLES3::Material *material = material_owner.get_or_null(p_material);
+RSE::CullMode MaterialStorage::material_get_cull_mode(RID p_material) const
+{
+	const GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, RSE::CULL_MODE_DISABLED);
 	ERR_FAIL_NULL_V(material->shader, RSE::CULL_MODE_DISABLED);
 	if (material->shader->data) {
-		SceneShaderData *data = dynamic_cast<SceneShaderData *>(material->shader->data);
+		SceneShaderData* data = dynamic_cast<SceneShaderData*>(material->shader->data);
 		if (data) {
 			return (RSE::CullMode)data->cull_mode;
 		}
@@ -2611,8 +2873,10 @@ RSE::CullMode MaterialStorage::material_get_cull_mode(RID p_material) const {
 	return RSE::CULL_MODE_DISABLED;
 }
 
-void MaterialStorage::material_get_instance_shader_parameters(RID p_material, List<InstanceShaderParam> *r_parameters) {
-	GLES3::Material *material = material_owner.get_or_null(p_material);
+void MaterialStorage::material_get_instance_shader_parameters(
+	RID p_material, List<InstanceShaderParam>* r_parameters)
+{
+	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
 	if (material->shader && material->shader->data) {
 		material->shader->data->get_instance_param_list(r_parameters);
@@ -2623,8 +2887,9 @@ void MaterialStorage::material_get_instance_shader_parameters(RID p_material, Li
 	}
 }
 
-void MaterialStorage::material_update_dependency(RID p_material, DependencyTracker *p_instance) {
-	Material *material = material_owner.get_or_null(p_material);
+void MaterialStorage::material_update_dependency(RID p_material, DependencyTracker* p_instance)
+{
+	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
 	p_instance->update_dependency(&material->dependency);
 	if (material->next_pass.is_valid()) {
@@ -2632,21 +2897,24 @@ void MaterialStorage::material_update_dependency(RID p_material, DependencyTrack
 	}
 }
 
-LocalVector<ShaderGLES3::TextureUniformData> get_texture_uniform_data(const Vector<ShaderCompiler::GeneratedCode::Texture> &texture_uniforms) {
+LocalVector<ShaderGLES3::TextureUniformData> get_texture_uniform_data(
+	const Vector<ShaderCompiler::GeneratedCode::Texture>& texture_uniforms)
+{
 	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data;
 	for (int i = 0; i < texture_uniforms.size(); i++) {
 		int num_textures = texture_uniforms[i].array_size;
 		if (num_textures == 0) {
 			num_textures = 1;
 		}
-		texture_uniform_data.push_back({ texture_uniforms[i].name, num_textures });
+		texture_uniform_data.push_back({texture_uniforms[i].name, num_textures});
 	}
 	return texture_uniform_data;
 }
 
 /* Canvas Shader Data */
 
-void CanvasShaderData::set_code(const String &p_code) {
+void CanvasShaderData::set_code(const String& p_code)
+{
 	// Initialize and compile the shader.
 
 	code = p_code;
@@ -2675,12 +2943,14 @@ void CanvasShaderData::set_code(const String &p_code) {
 	actions.entry_point_stages["fragment"] = ShaderCompiler::STAGE_FRAGMENT;
 	actions.entry_point_stages["light"] = ShaderCompiler::STAGE_FRAGMENT;
 
-	actions.render_mode_values["blend_add"] = Pair<int *, int>(&blend_modei, BLEND_MODE_ADD);
-	actions.render_mode_values["blend_mix"] = Pair<int *, int>(&blend_modei, BLEND_MODE_MIX);
-	actions.render_mode_values["blend_sub"] = Pair<int *, int>(&blend_modei, BLEND_MODE_SUB);
-	actions.render_mode_values["blend_mul"] = Pair<int *, int>(&blend_modei, BLEND_MODE_MUL);
-	actions.render_mode_values["blend_premul_alpha"] = Pair<int *, int>(&blend_modei, BLEND_MODE_PMALPHA);
-	actions.render_mode_values["blend_disabled"] = Pair<int *, int>(&blend_modei, BLEND_MODE_DISABLED);
+	actions.render_mode_values["blend_add"] = Pair<int*, int>(&blend_modei, BLEND_MODE_ADD);
+	actions.render_mode_values["blend_mix"] = Pair<int*, int>(&blend_modei, BLEND_MODE_MIX);
+	actions.render_mode_values["blend_sub"] = Pair<int*, int>(&blend_modei, BLEND_MODE_SUB);
+	actions.render_mode_values["blend_mul"] = Pair<int*, int>(&blend_modei, BLEND_MODE_MUL);
+	actions.render_mode_values["blend_premul_alpha"] =
+		Pair<int*, int>(&blend_modei, BLEND_MODE_PMALPHA);
+	actions.render_mode_values["blend_disabled"] =
+		Pair<int*, int>(&blend_modei, BLEND_MODE_DISABLED);
 
 	actions.usage_flag_pointers["texture_sdf"] = &uses_sdf;
 	actions.usage_flag_pointers["texture_sdf_normal"] = &uses_sdf;
@@ -2689,7 +2959,8 @@ void CanvasShaderData::set_code(const String &p_code) {
 	actions.usage_flag_pointers["CUSTOM1"] = &uses_custom1;
 
 	actions.uniforms = &uniforms;
-	Error err = MaterialStorage::get_singleton()->shaders.compiler_canvas.compile(RSE::SHADER_CANVAS_ITEM, code, &actions, path, gen_code);
+	Error err = MaterialStorage::get_singleton()->shaders.compiler_canvas.compile(
+		RSE::SHADER_CANVAS_ITEM, code, &actions, path, gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 
 	if (version.is_null()) {
@@ -2718,12 +2989,18 @@ void CanvasShaderData::set_code(const String &p_code) {
 	print_line("\n**fragment_globals:\n" + gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT]);
 #endif
 
-	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data = get_texture_uniform_data(gen_code.texture_uniforms);
+	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data =
+		get_texture_uniform_data(gen_code.texture_uniforms);
 
-	MaterialStorage::get_singleton()->shaders.canvas_shader.version_set_code(version, gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX], gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines, texture_uniform_data);
-	ERR_FAIL_COND(!MaterialStorage::get_singleton()->shaders.canvas_shader.version_is_valid(version));
+	MaterialStorage::get_singleton()->shaders.canvas_shader.version_set_code(version, gen_code.code,
+		gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX],
+		gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines,
+		texture_uniform_data);
+	ERR_FAIL_COND(
+		!MaterialStorage::get_singleton()->shaders.canvas_shader.version_is_valid(version));
 
-	vertex_input_mask = RSE::ARRAY_FORMAT_VERTEX | RSE::ARRAY_FORMAT_COLOR | RSE::ARRAY_FORMAT_TEX_UV;
+	vertex_input_mask =
+		RSE::ARRAY_FORMAT_VERTEX | RSE::ARRAY_FORMAT_COLOR | RSE::ARRAY_FORMAT_TEX_UV;
 	vertex_input_mask |= uses_custom0 << RSE::ARRAY_CUSTOM0;
 	vertex_input_mask |= uses_custom1 << RSE::ARRAY_CUSTOM1;
 
@@ -2734,52 +3011,65 @@ void CanvasShaderData::set_code(const String &p_code) {
 	valid = true;
 }
 
-bool CanvasShaderData::is_animated() const {
-	return false;
+bool CanvasShaderData::is_animated() const { return false; }
+
+bool CanvasShaderData::casts_shadows() const { return false; }
+
+RenderingServerTypes::ShaderNativeSourceCode CanvasShaderData::get_native_source_code() const
+{
+	return MaterialStorage::get_singleton()->shaders.canvas_shader.version_get_native_source_code(
+		version);
 }
 
-bool CanvasShaderData::casts_shadows() const {
-	return false;
-}
-
-RenderingServerTypes::ShaderNativeSourceCode CanvasShaderData::get_native_source_code() const {
-	return MaterialStorage::get_singleton()->shaders.canvas_shader.version_get_native_source_code(version);
-}
-
-CanvasShaderData::CanvasShaderData() {
+CanvasShaderData::CanvasShaderData()
+{
 	valid = false;
 	uses_screen_texture = false;
 	uses_sdf = false;
 }
 
-CanvasShaderData::~CanvasShaderData() {
+CanvasShaderData::~CanvasShaderData()
+{
 	if (version.is_valid()) {
 		MaterialStorage::get_singleton()->shaders.canvas_shader.version_free(version);
 	}
 }
 
-GLES3::ShaderData *GLES3::_create_canvas_shader_func() {
-	CanvasShaderData *shader_data = memnew(CanvasShaderData);
+GLES3::ShaderData* GLES3::_create_canvas_shader_func()
+{
+	CanvasShaderData* shader_data = memnew(CanvasShaderData);
 	return shader_data;
 }
 
-void CanvasMaterialData::update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty) {
-	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty, shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms, shader_data->default_texture_params, shader_data->ubo_size, false);
+void CanvasMaterialData::update_parameters(
+	const HashMap<StringName, Variant>& p_parameters, bool p_uniform_dirty, bool p_textures_dirty)
+{
+	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty,
+		shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms,
+		shader_data->default_texture_params, shader_data->ubo_size, false);
 }
 
-static void bind_uniforms_generic(const Vector<RID> &p_textures, const Vector<ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, int texture_offset = 0, const RSE::CanvasItemTextureFilter *filter_mapping = filter_from_uniform, const RSE::CanvasItemTextureRepeat *repeat_mapping = repeat_from_uniform) {
-	const RID *textures = p_textures.ptr();
-	const ShaderCompiler::GeneratedCode::Texture *texture_uniforms = p_texture_uniforms.ptr();
+static void bind_uniforms_generic(const Vector<RID>& p_textures,
+	const Vector<ShaderCompiler::GeneratedCode::Texture>& p_texture_uniforms,
+	int texture_offset = 0,
+	const RSE::CanvasItemTextureFilter* filter_mapping = filter_from_uniform,
+	const RSE::CanvasItemTextureRepeat* repeat_mapping = repeat_from_uniform)
+{
+	const RID* textures = p_textures.ptr();
+	const ShaderCompiler::GeneratedCode::Texture* texture_uniforms = p_texture_uniforms.ptr();
 	int texture_uniform_index = 0;
 	int texture_uniform_count = 0;
 	for (int ti = 0; ti < p_textures.size(); ti++) {
-		ERR_FAIL_COND_MSG(texture_uniform_index >= p_texture_uniforms.size(), "texture_uniform_index out of bounds");
-		GLES3::Texture *texture = TextureStorage::get_singleton()->get_texture(textures[ti]);
-		const ShaderCompiler::GeneratedCode::Texture &texture_uniform = texture_uniforms[texture_uniform_index];
+		ERR_FAIL_COND_MSG(texture_uniform_index >= p_texture_uniforms.size(),
+			"texture_uniform_index out of bounds");
+		GLES3::Texture* texture = TextureStorage::get_singleton()->get_texture(textures[ti]);
+		const ShaderCompiler::GeneratedCode::Texture& texture_uniform =
+			texture_uniforms[texture_uniform_index];
 		if (texture) {
 			glActiveTexture(GL_TEXTURE0 + texture_offset + ti);
 			GLenum target = target_from_type[texture_uniform.type];
-			if (target == _GL_TEXTURE_EXTERNAL_OES && !GLES3::Config::get_singleton()->external_texture_supported) {
+			if (target == _GL_TEXTURE_EXTERNAL_OES &&
+				!GLES3::Config::get_singleton()->external_texture_supported) {
 				target = GL_TEXTURE_2D;
 			}
 			glBindTexture(target, texture->tex_id);
@@ -2798,27 +3088,33 @@ static void bind_uniforms_generic(const Vector<RID> &p_textures, const Vector<Sh
 	}
 }
 
-void CanvasMaterialData::bind_uniforms() {
+void CanvasMaterialData::bind_uniforms()
+{
 	// Bind Material Uniforms
-	glBindBufferBase(GL_UNIFORM_BUFFER, RasterizerCanvasGLES3::MATERIAL_UNIFORM_LOCATION, uniform_buffer);
+	glBindBufferBase(
+		GL_UNIFORM_BUFFER, RasterizerCanvasGLES3::MATERIAL_UNIFORM_LOCATION, uniform_buffer);
 
-	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1, filter_from_uniform_canvas, repeat_from_uniform_canvas); // Start at GL_TEXTURE1 because texture slot 0 is used by the base texture
+	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1,
+		filter_from_uniform_canvas,
+		repeat_from_uniform_canvas); // Start at GL_TEXTURE1 because texture slot 0 is used by the
+									 // base texture
 }
 
-CanvasMaterialData::~CanvasMaterialData() {
-}
+CanvasMaterialData::~CanvasMaterialData() {}
 
-GLES3::MaterialData *GLES3::_create_canvas_material_func(ShaderData *p_shader) {
-	CanvasMaterialData *material_data = memnew(CanvasMaterialData);
-	material_data->shader_data = static_cast<CanvasShaderData *>(p_shader);
-	//update will happen later anyway so do nothing.
+GLES3::MaterialData* GLES3::_create_canvas_material_func(ShaderData* p_shader)
+{
+	CanvasMaterialData* material_data = memnew(CanvasMaterialData);
+	material_data->shader_data = static_cast<CanvasShaderData*>(p_shader);
+	// update will happen later anyway so do nothing.
 	return material_data;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // SKY SHADER
 
-void SkyShaderData::set_code(const String &p_code) {
+void SkyShaderData::set_code(const String& p_code)
+{
 	// Initialize and compile the shader.
 
 	code = p_code;
@@ -2869,7 +3165,8 @@ void SkyShaderData::set_code(const String &p_code) {
 
 	actions.uniforms = &uniforms;
 
-	Error err = MaterialStorage::get_singleton()->shaders.compiler_sky.compile(RSE::SHADER_SKY, code, &actions, path, gen_code);
+	Error err = MaterialStorage::get_singleton()->shaders.compiler_sky.compile(
+		RSE::SHADER_SKY, code, &actions, path, gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 
 	if (version.is_null()) {
@@ -2894,9 +3191,13 @@ void SkyShaderData::set_code(const String &p_code) {
 	print_line("\n**fragment_globals:\n" + gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT]);
 #endif
 
-	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data = get_texture_uniform_data(gen_code.texture_uniforms);
+	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data =
+		get_texture_uniform_data(gen_code.texture_uniforms);
 
-	MaterialStorage::get_singleton()->shaders.sky_shader.version_set_code(version, gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX], gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines, texture_uniform_data);
+	MaterialStorage::get_singleton()->shaders.sky_shader.version_set_code(version, gen_code.code,
+		gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX],
+		gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines,
+		texture_uniform_data);
 	ERR_FAIL_COND(!MaterialStorage::get_singleton()->shaders.sky_shader.version_is_valid(version));
 
 	ubo_size = gen_code.uniform_total_size;
@@ -2906,51 +3207,55 @@ void SkyShaderData::set_code(const String &p_code) {
 	valid = true;
 }
 
-bool SkyShaderData::is_animated() const {
-	return false;
+bool SkyShaderData::is_animated() const { return false; }
+
+bool SkyShaderData::casts_shadows() const { return false; }
+
+RenderingServerTypes::ShaderNativeSourceCode SkyShaderData::get_native_source_code() const
+{
+	return MaterialStorage::get_singleton()->shaders.sky_shader.version_get_native_source_code(
+		version);
 }
 
-bool SkyShaderData::casts_shadows() const {
-	return false;
-}
+SkyShaderData::SkyShaderData() { valid = false; }
 
-RenderingServerTypes::ShaderNativeSourceCode SkyShaderData::get_native_source_code() const {
-	return MaterialStorage::get_singleton()->shaders.sky_shader.version_get_native_source_code(version);
-}
-
-SkyShaderData::SkyShaderData() {
-	valid = false;
-}
-
-SkyShaderData::~SkyShaderData() {
+SkyShaderData::~SkyShaderData()
+{
 	if (version.is_valid()) {
 		MaterialStorage::get_singleton()->shaders.sky_shader.version_free(version);
 	}
 }
 
-GLES3::ShaderData *GLES3::_create_sky_shader_func() {
-	SkyShaderData *shader_data = memnew(SkyShaderData);
+GLES3::ShaderData* GLES3::_create_sky_shader_func()
+{
+	SkyShaderData* shader_data = memnew(SkyShaderData);
 	return shader_data;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Sky material
 
-void SkyMaterialData::update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty) {
+void SkyMaterialData::update_parameters(
+	const HashMap<StringName, Variant>& p_parameters, bool p_uniform_dirty, bool p_textures_dirty)
+{
 	uniform_set_updated = true;
-	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty, shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms, shader_data->default_texture_params, shader_data->ubo_size, true);
+	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty,
+		shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms,
+		shader_data->default_texture_params, shader_data->ubo_size, true);
 }
 
-SkyMaterialData::~SkyMaterialData() {
-}
-GLES3::MaterialData *GLES3::_create_sky_material_func(ShaderData *p_shader) {
-	SkyMaterialData *material_data = memnew(SkyMaterialData);
-	material_data->shader_data = static_cast<SkyShaderData *>(p_shader);
-	//update will happen later anyway so do nothing.
+SkyMaterialData::~SkyMaterialData() {}
+
+GLES3::MaterialData* GLES3::_create_sky_material_func(ShaderData* p_shader)
+{
+	SkyMaterialData* material_data = memnew(SkyMaterialData);
+	material_data->shader_data = static_cast<SkyShaderData*>(p_shader);
+	// update will happen later anyway so do nothing.
 	return material_data;
 }
 
-void SkyMaterialData::bind_uniforms() {
+void SkyMaterialData::bind_uniforms()
+{
 	// Bind Material Uniforms
 	glBindBufferBase(GL_UNIFORM_BUFFER, SKY_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
 
@@ -2960,7 +3265,8 @@ void SkyMaterialData::bind_uniforms() {
 ////////////////////////////////////////////////////////////////////////////////
 // Scene SHADER
 
-void SceneShaderData::set_code(const String &p_code) {
+void SceneShaderData::set_code(const String& p_code)
+{
 	// Initialize and compile the shader.
 
 	code = p_code;
@@ -3031,25 +3337,32 @@ void SceneShaderData::set_code(const String &p_code) {
 	actions.entry_point_stages["fragment"] = ShaderCompiler::STAGE_FRAGMENT;
 	actions.entry_point_stages["light"] = ShaderCompiler::STAGE_FRAGMENT;
 
-	actions.render_mode_values["blend_add"] = Pair<int *, int>(&blend_modei, BLEND_MODE_ADD);
-	actions.render_mode_values["blend_mix"] = Pair<int *, int>(&blend_modei, BLEND_MODE_MIX);
-	actions.render_mode_values["blend_sub"] = Pair<int *, int>(&blend_modei, BLEND_MODE_SUB);
-	actions.render_mode_values["blend_mul"] = Pair<int *, int>(&blend_modei, BLEND_MODE_MUL);
-	actions.render_mode_values["blend_premul_alpha"] = Pair<int *, int>(&blend_modei, BLEND_MODE_PREMULT_ALPHA);
+	actions.render_mode_values["blend_add"] = Pair<int*, int>(&blend_modei, BLEND_MODE_ADD);
+	actions.render_mode_values["blend_mix"] = Pair<int*, int>(&blend_modei, BLEND_MODE_MIX);
+	actions.render_mode_values["blend_sub"] = Pair<int*, int>(&blend_modei, BLEND_MODE_SUB);
+	actions.render_mode_values["blend_mul"] = Pair<int*, int>(&blend_modei, BLEND_MODE_MUL);
+	actions.render_mode_values["blend_premul_alpha"] =
+		Pair<int*, int>(&blend_modei, BLEND_MODE_PREMULT_ALPHA);
 
-	actions.render_mode_values["alpha_to_coverage"] = Pair<int *, int>(&alpha_antialiasing_modei, ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE);
-	actions.render_mode_values["alpha_to_coverage_and_one"] = Pair<int *, int>(&alpha_antialiasing_modei, ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE);
+	actions.render_mode_values["alpha_to_coverage"] =
+		Pair<int*, int>(&alpha_antialiasing_modei, ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE);
+	actions.render_mode_values["alpha_to_coverage_and_one"] =
+		Pair<int*, int>(&alpha_antialiasing_modei, ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE);
 
-	actions.render_mode_values["depth_draw_never"] = Pair<int *, int>(&depth_drawi, DEPTH_DRAW_DISABLED);
-	actions.render_mode_values["depth_draw_opaque"] = Pair<int *, int>(&depth_drawi, DEPTH_DRAW_OPAQUE);
-	actions.render_mode_values["depth_draw_always"] = Pair<int *, int>(&depth_drawi, DEPTH_DRAW_ALWAYS);
+	actions.render_mode_values["depth_draw_never"] =
+		Pair<int*, int>(&depth_drawi, DEPTH_DRAW_DISABLED);
+	actions.render_mode_values["depth_draw_opaque"] =
+		Pair<int*, int>(&depth_drawi, DEPTH_DRAW_OPAQUE);
+	actions.render_mode_values["depth_draw_always"] =
+		Pair<int*, int>(&depth_drawi, DEPTH_DRAW_ALWAYS);
 
-	actions.render_mode_values["depth_test_disabled"] = Pair<int *, int>(&depth_test_disabledi, 1);
-	actions.render_mode_values["depth_test_inverted"] = Pair<int *, int>(&depth_test_invertedi, 1);
+	actions.render_mode_values["depth_test_disabled"] = Pair<int*, int>(&depth_test_disabledi, 1);
+	actions.render_mode_values["depth_test_inverted"] = Pair<int*, int>(&depth_test_invertedi, 1);
 
-	actions.render_mode_values["cull_disabled"] = Pair<int *, int>(&cull_modei, RSE::CULL_MODE_DISABLED);
-	actions.render_mode_values["cull_front"] = Pair<int *, int>(&cull_modei, RSE::CULL_MODE_FRONT);
-	actions.render_mode_values["cull_back"] = Pair<int *, int>(&cull_modei, RSE::CULL_MODE_BACK);
+	actions.render_mode_values["cull_disabled"] =
+		Pair<int*, int>(&cull_modei, RSE::CULL_MODE_DISABLED);
+	actions.render_mode_values["cull_front"] = Pair<int*, int>(&cull_modei, RSE::CULL_MODE_FRONT);
+	actions.render_mode_values["cull_back"] = Pair<int*, int>(&cull_modei, RSE::CULL_MODE_BACK);
 
 	actions.render_mode_flags["unshaded"] = &unshaded;
 	actions.render_mode_flags["wireframe"] = &wireframe;
@@ -3059,7 +3372,8 @@ void SceneShaderData::set_code(const String &p_code) {
 	actions.usage_flag_pointers["ALPHA"] = &uses_alpha;
 	actions.usage_flag_pointers["ALPHA_SCISSOR_THRESHOLD"] = &uses_alpha_clip;
 	// Use alpha clip pipeline for alpha hash/dither.
-	// This prevents sorting issues inherent to alpha blending and allows such materials to cast shadows.
+	// This prevents sorting issues inherent to alpha blending and allows such materials to cast
+	// shadows.
 	actions.usage_flag_pointers["ALPHA_HASH_SCALE"] = &uses_alpha_clip;
 	actions.render_mode_flags["depth_prepass_alpha"] = &uses_depth_prepass_alpha;
 
@@ -3097,23 +3411,32 @@ void SceneShaderData::set_code(const String &p_code) {
 	actions.usage_flag_pointers["BONE_INDICES"] = &uses_bones;
 	actions.usage_flag_pointers["BONE_WEIGHTS"] = &uses_weights;
 
-	actions.stencil_mode_values["read"] = Pair<int *, int>(&stencil_readi, STENCIL_FLAG_READ);
-	actions.stencil_mode_values["write"] = Pair<int *, int>(&stencil_writei, STENCIL_FLAG_WRITE);
-	actions.stencil_mode_values["write_depth_fail"] = Pair<int *, int>(&stencil_write_depth_faili, STENCIL_FLAG_WRITE_DEPTH_FAIL);
+	actions.stencil_mode_values["read"] = Pair<int*, int>(&stencil_readi, STENCIL_FLAG_READ);
+	actions.stencil_mode_values["write"] = Pair<int*, int>(&stencil_writei, STENCIL_FLAG_WRITE);
+	actions.stencil_mode_values["write_depth_fail"] =
+		Pair<int*, int>(&stencil_write_depth_faili, STENCIL_FLAG_WRITE_DEPTH_FAIL);
 
-	actions.stencil_mode_values["compare_less"] = Pair<int *, int>(&stencil_comparei, STENCIL_COMPARE_LESS);
-	actions.stencil_mode_values["compare_equal"] = Pair<int *, int>(&stencil_comparei, STENCIL_COMPARE_EQUAL);
-	actions.stencil_mode_values["compare_less_or_equal"] = Pair<int *, int>(&stencil_comparei, STENCIL_COMPARE_LESS_OR_EQUAL);
-	actions.stencil_mode_values["compare_greater"] = Pair<int *, int>(&stencil_comparei, STENCIL_COMPARE_GREATER);
-	actions.stencil_mode_values["compare_not_equal"] = Pair<int *, int>(&stencil_comparei, STENCIL_COMPARE_NOT_EQUAL);
-	actions.stencil_mode_values["compare_greater_or_equal"] = Pair<int *, int>(&stencil_comparei, STENCIL_COMPARE_GREATER_OR_EQUAL);
-	actions.stencil_mode_values["compare_always"] = Pair<int *, int>(&stencil_comparei, STENCIL_COMPARE_ALWAYS);
+	actions.stencil_mode_values["compare_less"] =
+		Pair<int*, int>(&stencil_comparei, STENCIL_COMPARE_LESS);
+	actions.stencil_mode_values["compare_equal"] =
+		Pair<int*, int>(&stencil_comparei, STENCIL_COMPARE_EQUAL);
+	actions.stencil_mode_values["compare_less_or_equal"] =
+		Pair<int*, int>(&stencil_comparei, STENCIL_COMPARE_LESS_OR_EQUAL);
+	actions.stencil_mode_values["compare_greater"] =
+		Pair<int*, int>(&stencil_comparei, STENCIL_COMPARE_GREATER);
+	actions.stencil_mode_values["compare_not_equal"] =
+		Pair<int*, int>(&stencil_comparei, STENCIL_COMPARE_NOT_EQUAL);
+	actions.stencil_mode_values["compare_greater_or_equal"] =
+		Pair<int*, int>(&stencil_comparei, STENCIL_COMPARE_GREATER_OR_EQUAL);
+	actions.stencil_mode_values["compare_always"] =
+		Pair<int*, int>(&stencil_comparei, STENCIL_COMPARE_ALWAYS);
 
 	actions.stencil_reference = &stencil_referencei;
 
 	actions.uniforms = &uniforms;
 
-	Error err = MaterialStorage::get_singleton()->shaders.compiler_scene.compile(RSE::SHADER_SPATIAL, code, &actions, path, gen_code);
+	Error err = MaterialStorage::get_singleton()->shaders.compiler_scene.compile(
+		RSE::SHADER_SPATIAL, code, &actions, path, gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 
 	if (version.is_null()) {
@@ -3125,14 +3448,17 @@ void SceneShaderData::set_code(const String &p_code) {
 	depth_draw = DepthDraw(depth_drawi);
 	if (depth_test_disabledi) {
 		depth_test = DEPTH_TEST_DISABLED;
-	} else if (depth_test_invertedi) {
+	}
+	else if (depth_test_invertedi) {
 		depth_test = DEPTH_TEST_ENABLED_INVERTED;
-	} else {
+	}
+	else {
 		depth_test = DEPTH_TEST_ENABLED;
 	}
 	cull_mode = RSE::CullMode(cull_modei);
 
-	vertex_input_mask = RSE::ARRAY_FORMAT_VERTEX | RSE::ARRAY_FORMAT_NORMAL; // We can always read vertices and normals.
+	vertex_input_mask = RSE::ARRAY_FORMAT_VERTEX |
+						RSE::ARRAY_FORMAT_NORMAL; // We can always read vertices and normals.
 	vertex_input_mask |= uses_tangent << RSE::ARRAY_TANGENT;
 	vertex_input_mask |= uses_color << RSE::ARRAY_COLOR;
 	vertex_input_mask |= uses_uv << RSE::ARRAY_TEX_UV;
@@ -3158,11 +3484,13 @@ void SceneShaderData::set_code(const String &p_code) {
 
 #ifdef DEBUG_ENABLED
 	if (uses_particle_trails) {
-		WARN_PRINT_ONCE_ED("Particle trails are only available when using the Forward+ or Mobile renderer.");
+		WARN_PRINT_ONCE_ED(
+			"Particle trails are only available when using the Forward+ or Mobile renderer.");
 	}
 
 	if (uses_sss) {
-		WARN_PRINT_ONCE_ED("Subsurface scattering is only available when using the Forward+ renderer.");
+		WARN_PRINT_ONCE_ED(
+			"Subsurface scattering is only available when using the Forward+ renderer.");
 	}
 
 	if (uses_transmittance) {
@@ -3170,7 +3498,8 @@ void SceneShaderData::set_code(const String &p_code) {
 	}
 
 	if (uses_normal_texture) {
-		WARN_PRINT_ONCE_ED("Reading from the normal-roughness texture is only available when using the Forward+ or Mobile renderer.");
+		WARN_PRINT_ONCE_ED("Reading from the normal-roughness texture is only available when using "
+						   "the Forward+ or Mobile renderer.");
 	}
 #endif
 
@@ -3192,10 +3521,15 @@ void SceneShaderData::set_code(const String &p_code) {
 	print_line("\n**fragment_globals:\n" + gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT]);
 #endif
 
-	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data = get_texture_uniform_data(gen_code.texture_uniforms);
+	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data =
+		get_texture_uniform_data(gen_code.texture_uniforms);
 
-	MaterialStorage::get_singleton()->shaders.scene_shader.version_set_code(version, gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX], gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines, texture_uniform_data);
-	ERR_FAIL_COND(!MaterialStorage::get_singleton()->shaders.scene_shader.version_is_valid(version));
+	MaterialStorage::get_singleton()->shaders.scene_shader.version_set_code(version, gen_code.code,
+		gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX],
+		gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines,
+		texture_uniform_data);
+	ERR_FAIL_COND(
+		!MaterialStorage::get_singleton()->shaders.scene_shader.version_is_valid(version));
 
 	ubo_size = gen_code.uniform_total_size;
 	ubo_offsets = gen_code.uniform_offsets;
@@ -3206,68 +3540,81 @@ void SceneShaderData::set_code(const String &p_code) {
 		blend_mode = BLEND_MODE_ALPHA_TO_COVERAGE;
 	}
 
-	if (blend_mode == BLEND_MODE_ADD || blend_mode == BLEND_MODE_SUB || blend_mode == BLEND_MODE_MUL) {
+	if (blend_mode == BLEND_MODE_ADD || blend_mode == BLEND_MODE_SUB ||
+		blend_mode == BLEND_MODE_MUL) {
 		uses_blend_alpha = true; // Force alpha used because of blend.
 	}
 
 	valid = true;
 }
 
-bool SceneShaderData::is_animated() const {
+bool SceneShaderData::is_animated() const
+{
 	return (uses_fragment_time && uses_discard) || (uses_vertex_time && uses_vertex);
 }
 
-bool SceneShaderData::casts_shadows() const {
+bool SceneShaderData::casts_shadows() const
+{
 	bool has_read_screen_alpha = uses_screen_texture || uses_depth_texture || uses_normal_texture;
 	bool has_base_alpha = (uses_alpha && !uses_alpha_clip) || has_read_screen_alpha;
 	bool has_alpha = has_base_alpha || uses_blend_alpha;
 
-	return !has_alpha || (uses_depth_prepass_alpha && !(depth_draw == DEPTH_DRAW_DISABLED || depth_test != DEPTH_TEST_ENABLED));
+	return !has_alpha || (uses_depth_prepass_alpha && !(depth_draw == DEPTH_DRAW_DISABLED ||
+														  depth_test != DEPTH_TEST_ENABLED));
 }
 
-RenderingServerTypes::ShaderNativeSourceCode SceneShaderData::get_native_source_code() const {
-	return MaterialStorage::get_singleton()->shaders.scene_shader.version_get_native_source_code(version);
+RenderingServerTypes::ShaderNativeSourceCode SceneShaderData::get_native_source_code() const
+{
+	return MaterialStorage::get_singleton()->shaders.scene_shader.version_get_native_source_code(
+		version);
 }
 
-SceneShaderData::SceneShaderData() {
+SceneShaderData::SceneShaderData()
+{
 	valid = false;
 	uses_screen_texture = false;
 }
 
-SceneShaderData::~SceneShaderData() {
+SceneShaderData::~SceneShaderData()
+{
 	if (version.is_valid()) {
 		MaterialStorage::get_singleton()->shaders.scene_shader.version_free(version);
 	}
 }
 
-GLES3::ShaderData *GLES3::_create_scene_shader_func() {
-	SceneShaderData *shader_data = memnew(SceneShaderData);
+GLES3::ShaderData* GLES3::_create_scene_shader_func()
+{
+	SceneShaderData* shader_data = memnew(SceneShaderData);
 	return shader_data;
 }
 
-void SceneMaterialData::set_render_priority(int p_priority) {
-	priority = p_priority - RSE::MATERIAL_RENDER_PRIORITY_MIN; //8 bits
+void SceneMaterialData::set_render_priority(int p_priority)
+{
+	priority = p_priority - RSE::MATERIAL_RENDER_PRIORITY_MIN; // 8 bits
 }
 
-void SceneMaterialData::set_next_pass(RID p_pass) {
-	next_pass = p_pass;
+void SceneMaterialData::set_next_pass(RID p_pass) { next_pass = p_pass; }
+
+void SceneMaterialData::update_parameters(
+	const HashMap<StringName, Variant>& p_parameters, bool p_uniform_dirty, bool p_textures_dirty)
+{
+	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty,
+		shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms,
+		shader_data->default_texture_params, shader_data->ubo_size, true);
 }
 
-void SceneMaterialData::update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty) {
-	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty, shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms, shader_data->default_texture_params, shader_data->ubo_size, true);
-}
+SceneMaterialData::~SceneMaterialData() {}
 
-SceneMaterialData::~SceneMaterialData() {
-}
-
-GLES3::MaterialData *GLES3::_create_scene_material_func(ShaderData *p_shader) {
-	SceneMaterialData *material_data = memnew(SceneMaterialData);
-	material_data->shader_data = static_cast<SceneShaderData *>(p_shader);
-	//update will happen later anyway so do nothing.
+GLES3::MaterialData* GLES3::_create_scene_material_func(ShaderData* p_shader)
+{
+	SceneMaterialData* material_data = memnew(SceneMaterialData);
+	material_data->shader_data = static_cast<SceneShaderData*>(p_shader);
+	// update will happen later anyway so do nothing.
 	return material_data;
 }
 
-void SceneMaterialData::bind_uniforms() {
+void SceneMaterialData::bind_uniforms()
+{
 	// Bind Material Uniforms
 	glBindBufferBase(GL_UNIFORM_BUFFER, SCENE_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
 
@@ -3276,7 +3623,8 @@ void SceneMaterialData::bind_uniforms() {
 
 /* Particles SHADER */
 
-void ParticlesShaderData::set_code(const String &p_code) {
+void ParticlesShaderData::set_code(const String& p_code)
+{
 	// Initialize and compile the shader.
 
 	code = p_code;
@@ -3307,11 +3655,13 @@ void ParticlesShaderData::set_code(const String &p_code) {
 
 	actions.uniforms = &uniforms;
 
-	Error err = MaterialStorage::get_singleton()->shaders.compiler_particles.compile(RSE::SHADER_PARTICLES, code, &actions, path, gen_code);
+	Error err = MaterialStorage::get_singleton()->shaders.compiler_particles.compile(
+		RSE::SHADER_PARTICLES, code, &actions, path, gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 
 	if (version.is_null()) {
-		version = MaterialStorage::get_singleton()->shaders.particles_process_shader.version_create();
+		version =
+			MaterialStorage::get_singleton()->shaders.particles_process_shader.version_create();
 	}
 
 	for (uint32_t i = 0; i < PARTICLES_MAX_USERDATAS; i++) {
@@ -3320,10 +3670,16 @@ void ParticlesShaderData::set_code(const String &p_code) {
 		}
 	}
 
-	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data = get_texture_uniform_data(gen_code.texture_uniforms);
+	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data =
+		get_texture_uniform_data(gen_code.texture_uniforms);
 
-	MaterialStorage::get_singleton()->shaders.particles_process_shader.version_set_code(version, gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX], gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines, texture_uniform_data);
-	ERR_FAIL_COND(!MaterialStorage::get_singleton()->shaders.particles_process_shader.version_is_valid(version));
+	MaterialStorage::get_singleton()->shaders.particles_process_shader.version_set_code(version,
+		gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX],
+		gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines,
+		texture_uniform_data);
+	ERR_FAIL_COND(
+		!MaterialStorage::get_singleton()->shaders.particles_process_shader.version_is_valid(
+			version));
 
 	ubo_size = gen_code.uniform_total_size;
 	ubo_offsets = gen_code.uniform_offsets;
@@ -3332,53 +3688,60 @@ void ParticlesShaderData::set_code(const String &p_code) {
 	valid = true;
 }
 
-bool ParticlesShaderData::is_animated() const {
-	return false;
+bool ParticlesShaderData::is_animated() const { return false; }
+
+bool ParticlesShaderData::casts_shadows() const { return false; }
+
+RenderingServerTypes::ShaderNativeSourceCode ParticlesShaderData::get_native_source_code() const
+{
+	return MaterialStorage::get_singleton()
+		->shaders.particles_process_shader.version_get_native_source_code(version);
 }
 
-bool ParticlesShaderData::casts_shadows() const {
-	return false;
-}
-
-RenderingServerTypes::ShaderNativeSourceCode ParticlesShaderData::get_native_source_code() const {
-	return MaterialStorage::get_singleton()->shaders.particles_process_shader.version_get_native_source_code(version);
-}
-
-ParticlesShaderData::~ParticlesShaderData() {
+ParticlesShaderData::~ParticlesShaderData()
+{
 	if (version.is_valid()) {
 		MaterialStorage::get_singleton()->shaders.particles_process_shader.version_free(version);
 	}
 }
 
-GLES3::ShaderData *GLES3::_create_particles_shader_func() {
-	ParticlesShaderData *shader_data = memnew(ParticlesShaderData);
+GLES3::ShaderData* GLES3::_create_particles_shader_func()
+{
+	ParticlesShaderData* shader_data = memnew(ParticlesShaderData);
 	return shader_data;
 }
 
-void ParticleProcessMaterialData::update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty) {
-	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty, shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms, shader_data->default_texture_params, shader_data->ubo_size, true);
+void ParticleProcessMaterialData::update_parameters(
+	const HashMap<StringName, Variant>& p_parameters, bool p_uniform_dirty, bool p_textures_dirty)
+{
+	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty,
+		shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms,
+		shader_data->default_texture_params, shader_data->ubo_size, true);
 }
 
-ParticleProcessMaterialData::~ParticleProcessMaterialData() {
-}
+ParticleProcessMaterialData::~ParticleProcessMaterialData() {}
 
-GLES3::MaterialData *GLES3::_create_particles_material_func(ShaderData *p_shader) {
-	ParticleProcessMaterialData *material_data = memnew(ParticleProcessMaterialData);
-	material_data->shader_data = static_cast<ParticlesShaderData *>(p_shader);
-	//update will happen later anyway so do nothing.
+GLES3::MaterialData* GLES3::_create_particles_material_func(ShaderData* p_shader)
+{
+	ParticleProcessMaterialData* material_data = memnew(ParticleProcessMaterialData);
+	material_data->shader_data = static_cast<ParticlesShaderData*>(p_shader);
+	// update will happen later anyway so do nothing.
 	return material_data;
 }
 
-void ParticleProcessMaterialData::bind_uniforms() {
+void ParticleProcessMaterialData::bind_uniforms()
+{
 	// Bind Material Uniforms
 	glBindBufferBase(GL_UNIFORM_BUFFER, GLES3::PARTICLES_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
 
-	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1); // Start at GL_TEXTURE1 because texture slot 0 is reserved for the heightmap texture.
+	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms,
+		1); // Start at GL_TEXTURE1 because texture slot 0 is reserved for the heightmap texture.
 }
 
 /* TextureBlit SHADER */
 
-void TexBlitShaderData::set_code(const String &p_code) {
+void TexBlitShaderData::set_code(const String& p_code)
+{
 	// Initialize and compile the shader.
 
 	code = p_code;
@@ -3398,14 +3761,16 @@ void TexBlitShaderData::set_code(const String &p_code) {
 	ShaderCompiler::IdentifierActions actions;
 	actions.entry_point_stages["blit"] = ShaderCompiler::STAGE_FRAGMENT;
 
-	actions.render_mode_values["blend_add"] = Pair<int *, int>(&blend_modei, BLEND_MODE_ADD);
-	actions.render_mode_values["blend_mix"] = Pair<int *, int>(&blend_modei, BLEND_MODE_MIX);
-	actions.render_mode_values["blend_sub"] = Pair<int *, int>(&blend_modei, BLEND_MODE_SUB);
-	actions.render_mode_values["blend_mul"] = Pair<int *, int>(&blend_modei, BLEND_MODE_MUL);
-	actions.render_mode_values["blend_disabled"] = Pair<int *, int>(&blend_modei, BLEND_MODE_DISABLED);
+	actions.render_mode_values["blend_add"] = Pair<int*, int>(&blend_modei, BLEND_MODE_ADD);
+	actions.render_mode_values["blend_mix"] = Pair<int*, int>(&blend_modei, BLEND_MODE_MIX);
+	actions.render_mode_values["blend_sub"] = Pair<int*, int>(&blend_modei, BLEND_MODE_SUB);
+	actions.render_mode_values["blend_mul"] = Pair<int*, int>(&blend_modei, BLEND_MODE_MUL);
+	actions.render_mode_values["blend_disabled"] =
+		Pair<int*, int>(&blend_modei, BLEND_MODE_DISABLED);
 
 	actions.uniforms = &uniforms;
-	Error err = MaterialStorage::get_singleton()->shaders.compiler_tex_blit.compile(RSE::SHADER_TEXTURE_BLIT, code, &actions, path, gen_code);
+	Error err = MaterialStorage::get_singleton()->shaders.compiler_tex_blit.compile(
+		RSE::SHADER_TEXTURE_BLIT, code, &actions, path, gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 
 	if (version.is_null()) {
@@ -3432,63 +3797,72 @@ void TexBlitShaderData::set_code(const String &p_code) {
 	print_line("\n**fragment_globals:\n" + gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT]);
 #endif
 
-	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data = get_texture_uniform_data(gen_code.texture_uniforms);
+	LocalVector<ShaderGLES3::TextureUniformData> texture_uniform_data =
+		get_texture_uniform_data(gen_code.texture_uniforms);
 
-	MaterialStorage::get_singleton()->shaders.tex_blit_shader.version_set_code(version, gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX], gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines, texture_uniform_data);
-	ERR_FAIL_COND(!MaterialStorage::get_singleton()->shaders.tex_blit_shader.version_is_valid(version));
+	MaterialStorage::get_singleton()->shaders.tex_blit_shader.version_set_code(version,
+		gen_code.code, gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX],
+		gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines,
+		texture_uniform_data);
+	ERR_FAIL_COND(
+		!MaterialStorage::get_singleton()->shaders.tex_blit_shader.version_is_valid(version));
 
 	ubo_size = gen_code.uniform_total_size;
 	ubo_offsets = gen_code.uniform_offsets;
 	texture_uniforms = gen_code.texture_uniforms;
-
 	valid = true;
 }
 
-bool TexBlitShaderData::is_animated() const {
-	return false;
+bool TexBlitShaderData::is_animated() const { return false; }
+
+bool TexBlitShaderData::casts_shadows() const { return false; }
+
+RenderingServerTypes::ShaderNativeSourceCode TexBlitShaderData::get_native_source_code() const
+{
+	return MaterialStorage::get_singleton()->shaders.tex_blit_shader.version_get_native_source_code(
+		version);
 }
 
-bool TexBlitShaderData::casts_shadows() const {
-	return false;
-}
+TexBlitShaderData::TexBlitShaderData() { valid = false; }
 
-RenderingServerTypes::ShaderNativeSourceCode TexBlitShaderData::get_native_source_code() const {
-	return MaterialStorage::get_singleton()->shaders.tex_blit_shader.version_get_native_source_code(version);
-}
-
-TexBlitShaderData::TexBlitShaderData() {
-	valid = false;
-}
-
-TexBlitShaderData::~TexBlitShaderData() {
+TexBlitShaderData::~TexBlitShaderData()
+{
 	if (version.is_valid()) {
 		MaterialStorage::get_singleton()->shaders.tex_blit_shader.version_free(version);
 	}
 }
 
-GLES3::ShaderData *GLES3::_create_tex_blit_shader_func() {
-	TexBlitShaderData *shader_data = memnew(TexBlitShaderData);
+GLES3::ShaderData* GLES3::_create_tex_blit_shader_func()
+{
+	TexBlitShaderData* shader_data = memnew(TexBlitShaderData);
 	return shader_data;
 }
 
-void TexBlitMaterialData::update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty) {
-	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty, shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms, shader_data->default_texture_params, shader_data->ubo_size, false);
+void TexBlitMaterialData::update_parameters(
+	const HashMap<StringName, Variant>& p_parameters, bool p_uniform_dirty, bool p_textures_dirty)
+{
+	update_parameters_internal(p_parameters, p_uniform_dirty, p_textures_dirty,
+		shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms,
+		shader_data->default_texture_params, shader_data->ubo_size, false);
 }
 
-void TexBlitMaterialData::bind_uniforms() {
+void TexBlitMaterialData::bind_uniforms()
+{
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
 
 	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1);
 }
 
-TexBlitMaterialData::~TexBlitMaterialData() {
-}
+TexBlitMaterialData::~TexBlitMaterialData() {}
 
-GLES3::MaterialData *GLES3::_create_tex_blit_material_func(ShaderData *p_shader) {
-	TexBlitMaterialData *material_data = memnew(TexBlitMaterialData);
-	material_data->shader_data = static_cast<TexBlitShaderData *>(p_shader);
-	//update will happen later anyway so do nothing.
+GLES3::MaterialData* GLES3::_create_tex_blit_material_func(ShaderData* p_shader)
+{
+	TexBlitMaterialData* material_data = memnew(TexBlitMaterialData);
+	material_data->shader_data = static_cast<TexBlitShaderData*>(p_shader);
+	// update will happen later anyway so do nothing.
 	return material_data;
 }
 
 #endif // !GLES3_ENABLED
+
+

@@ -214,28 +214,28 @@ void register_core_settings()
 void register_early_core_singletons()
 {
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Engine", CoreBind::Engine::get_singleton()));
+		Engine::Singleton("Engine", CoreBind::Engine::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("ProjectSettings", ProjectSettings::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("OS", CoreBind::OS::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("Time", Time::get_singleton()));
+		Engine::Singleton("ProjectSettings", ProjectSettings::get_singleton()->obj.get()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("OS", CoreBind::OS::get_singleton()->obj.get()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("Time", Time::get_singleton()->obj.get()));
 }
 
 void register_core_singletons()
 {
 	OS::get_singleton()->benchmark_begin_measure("Core", "Register Singletons");
 
-	Engine::get_singleton()->add_singleton(Engine::Singleton("IP", IP::get_singleton(), "IP"));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("IP", IP::get_singleton()->obj.get(), "IP"));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Geometry2D", CoreBind::Geometry2D::get_singleton()));
+		Engine::Singleton("Geometry2D", CoreBind::Geometry2D::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Geometry3D", CoreBind::Geometry3D::get_singleton()));
+		Engine::Singleton("Geometry3D", CoreBind::Geometry3D::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("ResourceLoader", CoreBind::ResourceLoader::get_singleton()));
+		Engine::Singleton("ResourceLoader", CoreBind::ResourceLoader::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("ResourceSaver", CoreBind::ResourceSaver::get_singleton()));
+		Engine::Singleton("ResourceSaver", CoreBind::ResourceSaver::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Marshalls", CoreBind::Marshalls::get_singleton()));
+		Engine::Singleton("Marshalls", CoreBind::Marshalls::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
 		Engine::Singleton("TranslationServer", TranslationServer::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
@@ -243,11 +243,11 @@ void register_core_singletons()
 	Engine::get_singleton()->add_singleton(
 		Engine::Singleton("InputMap", InputMap::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("EngineDebugger", CoreBind::EngineDebugger::get_singleton()));
+		Engine::Singleton("EngineDebugger", CoreBind::EngineDebugger::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("ResourceUID", ResourceUID::get_singleton()));
+		Engine::Singleton("ResourceUID", ResourceUID::get_singleton()->obj.get()));
 	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("WorkerThreadPool", worker_thread_pool));
+		Engine::Singleton("WorkerThreadPool", worker_thread_pool->obj.get()));
 
 	OS::get_singleton()->benchmark_end_measure("Core", "Register Singletons");
 }

@@ -30,14 +30,13 @@
 
 #pragma once
 
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Body/Body.h>
 #include "../jolt_physics_server_3d.h"
 #include "jolt_joint_3d.h"
 
-#include <Jolt/Jolt.h>
-
-#include <Jolt/Physics/Body/Body.h>
-
-class JoltConeTwistJoint3D final : public JoltJoint3D {
+class JoltConeTwistJoint3D final : public JoltJoint3D
+{
 	typedef PS3DE::ConeTwistJointParam Parameter;
 	typedef JoltPhysicsServer3D::ConeTwistJointParamJolt JoltParameter;
 	typedef JoltPhysicsServer3D::ConeTwistJointFlagJolt JoltFlag;
@@ -58,7 +57,9 @@ class JoltConeTwistJoint3D final : public JoltJoint3D {
 	bool swing_motor_enabled = false;
 	bool twist_motor_enabled = false;
 
-	JPH::Constraint *_build_swing_twist(JPH::Body *p_jolt_body_a, JPH::Body *p_jolt_body_b, const Transform3D &p_shifted_ref_a, const Transform3D &p_shifted_ref_b, float p_swing_limit_span, float p_twist_limit_span) const;
+	JPH::Constraint* _build_swing_twist(JPH::Body* p_jolt_body_a, JPH::Body* p_jolt_body_b,
+		const Transform3D& p_shifted_ref_a, const Transform3D& p_shifted_ref_b,
+		float p_swing_limit_span, float p_twist_limit_span) const;
 
 	void _update_swing_motor_state();
 	void _update_twist_motor_state();
@@ -74,7 +75,8 @@ class JoltConeTwistJoint3D final : public JoltJoint3D {
 	void _twist_motor_limit_changed();
 
 public:
-	JoltConeTwistJoint3D(const JoltJoint3D &p_old_joint, JoltBody3D *p_body_a, JoltBody3D *p_body_b, const Transform3D &p_local_ref_a, const Transform3D &p_local_ref_b);
+	JoltConeTwistJoint3D(const JoltJoint3D& p_old_joint, JoltBody3D* p_body_a, JoltBody3D* p_body_b,
+		const Transform3D& p_local_ref_a, const Transform3D& p_local_ref_b);
 
 	virtual PS3DE::JointType get_type() const override { return PS3DE::JOINT_TYPE_CONE_TWIST; }
 
@@ -92,3 +94,5 @@ public:
 
 	virtual void rebuild() override;
 };
+
+

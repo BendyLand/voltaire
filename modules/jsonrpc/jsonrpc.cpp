@@ -28,36 +28,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "jsonrpc.h"
-#include "jsonrpc.compat.inc"
-
 #include "core/io/json.h"
 #include "core/object/class_db.h"
+#include "jsonrpc.compat.inc"
+#include "jsonrpc.h"
 
-JSONRPC::JSONRPC() {
-}
+JSONRPC::JSONRPC() {}
 
-JSONRPC::~JSONRPC() {
-}
+JSONRPC::~JSONRPC() {}
 
-void JSONRPC::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_method", "name", "callback"), &JSONRPC::set_method);
-	ClassDB::bind_method(D_METHOD("process_action", "action", "recurse"), &JSONRPC::process_action, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("process_string", "action"), &JSONRPC::process_string);
+void JSONRPC::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("make_request", "method", "params", "id"), &JSONRPC::make_request);
-	ClassDB::bind_method(D_METHOD("make_response", "result", "id"), &JSONRPC::make_response);
-	ClassDB::bind_method(D_METHOD("make_notification", "method", "params"), &JSONRPC::make_notification);
-	ClassDB::bind_method(D_METHOD("make_response_error", "code", "message", "id"), &JSONRPC::make_response_error, DEFVAL(Variant()));
-
-	BIND_ENUM_CONSTANT(PARSE_ERROR);
-	BIND_ENUM_CONSTANT(INVALID_REQUEST);
-	BIND_ENUM_CONSTANT(METHOD_NOT_FOUND);
-	BIND_ENUM_CONSTANT(INVALID_PARAMS);
-	BIND_ENUM_CONSTANT(INTERNAL_ERROR);
-}
-
-Dictionary JSONRPC::make_response_error(int p_code, const String &p_message, const Variant &p_id) const {
+Dictionary JSONRPC::make_response_error(
+	int p_code, const String& p_message, const Variant& p_id) const
+{
 	Dictionary dict;
 	dict["jsonrpc"] = "2.0";
 
@@ -71,7 +55,8 @@ Dictionary JSONRPC::make_response_error(int p_code, const String &p_message, con
 	return dict;
 }
 
-Dictionary JSONRPC::make_response(const Variant &p_value, const Variant &p_id) {
+Dictionary JSONRPC::make_response(const Variant& p_value, const Variant& p_id)
+{
 	Dictionary dict;
 	dict["jsonrpc"] = "2.0";
 	dict["id"] = p_id;
@@ -79,7 +64,8 @@ Dictionary JSONRPC::make_response(const Variant &p_value, const Variant &p_id) {
 	return dict;
 }
 
-Dictionary JSONRPC::make_notification(const String &p_method, const Variant &p_params) {
+Dictionary JSONRPC::make_notification(const String& p_method, const Variant& p_params)
+{
 	Dictionary dict;
 	dict["jsonrpc"] = "2.0";
 	dict["method"] = p_method;
@@ -87,7 +73,9 @@ Dictionary JSONRPC::make_notification(const String &p_method, const Variant &p_p
 	return dict;
 }
 
-Dictionary JSONRPC::make_request(const String &p_method, const Variant &p_params, const Variant &p_id) {
+Dictionary JSONRPC::make_request(
+	const String& p_method, const Variant& p_params, const Variant& p_id)
+{
 	Dictionary dict;
 	dict["jsonrpc"] = "2.0";
 	dict["method"] = p_method;
@@ -96,26 +84,30 @@ Dictionary JSONRPC::make_request(const String &p_method, const Variant &p_params
 	return dict;
 }
 
-static inline bool _is_response(const Variant &p_obj) {
+static inline bool _is_response(const Variant& p_obj)
+{
 	return p_obj.get_type() == Variant::DICTIONARY && !p_obj.operator Dictionary().has("method");
 }
 
-Variant JSONRPC::process_action(const Variant &p_action, bool p_process_arr_elements) {
+Variant JSONRPC::process_action(const Variant& p_action, bool p_process_arr_elements)
+{
 	if (p_action.get_type() == Variant::DICTIONARY) {
 		if (!_is_response(p_action)) {
 			return process_request(p_action);
 		}
 		process_response(p_action);
-	} else if (p_action.get_type() == Variant::ARRAY && p_process_arr_elements) {
+	}
+	else if (p_action.get_type() == Variant::ARRAY && p_process_arr_elements) {
 		Array arr = p_action;
 		if (!arr.is_empty()) {
 			Array arr_ret;
 
 			bool response_mode = _is_response(arr[0]);
 
-			for (const Variant &var : arr) {
+			for (const Variant& var : arr) {
 				if (_is_response(var) != response_mode) {
-					return make_response_error(JSONRPC::INVALID_REQUEST, "Batch Request with mixed response and request objects.");
+					return make_response_error(JSONRPC::INVALID_REQUEST,
+						"Batch Request with mixed response and request objects.");
 				}
 
 				Variant res = process_action(var);
@@ -125,21 +117,27 @@ Variant JSONRPC::process_action(const Variant &p_action, bool p_process_arr_elem
 				}
 			}
 
-			/// If there are no Response objects contained within the Response array as it is to be sent to the client, the server MUST NOT return an empty Array and should return nothing at all.
+			/// If there are no Response objects contained within the Response array as it is to be
+			/// sent to the client, the server MUST NOT return an empty Array and should return
+			/// nothing at all.
 			if (!arr_ret.is_empty()) {
 				return arr_ret;
 			}
-		} else {
-			/// If the batch rpc call itself fails to be recognized ... as an Array with at least one value, the response from the Server MUST be a single Response object.
+		}
+		else {
+			/// If the batch rpc call itself fails to be recognized ... as an Array with at least
+			/// one value, the response from the Server MUST be a single Response object.
 			return make_response_error(JSONRPC::INVALID_REQUEST, "Invalid Request");
 		}
-	} else {
+	}
+	else {
 		return make_response_error(JSONRPC::INVALID_REQUEST, "Invalid Request");
 	}
 	return Variant();
 }
 
-Variant JSONRPC::process_request(const Dictionary &p_request_object) {
+Variant JSONRPC::process_request(const Dictionary& p_request_object)
+{
 	ERR_FAIL_COND_V(!p_request_object.has("method"), Variant());
 
 	Variant ret;
@@ -150,7 +148,8 @@ Variant JSONRPC::process_request(const Dictionary &p_request_object) {
 		Variant params = p_request_object["params"];
 		if (params.get_type() == Variant::ARRAY) {
 			args = params;
-		} else {
+		}
+		else {
 			args.push_back(params);
 		}
 	}
@@ -162,7 +161,8 @@ Variant JSONRPC::process_request(const Dictionary &p_request_object) {
 	if (!is_notification) {
 		id = p_request_object["id"];
 
-		// Account for implementations that discern between int and float on the json serialization level, by using an int if there is a .0 fraction. See #100914
+		// Account for implementations that discern between int and float on the json serialization
+		// level, by using an int if there is a .0 fraction. See #100914
 		if (id.get_type() == Variant::FLOAT && id.operator float() == (float)(id.operator int())) {
 			id = id.operator int();
 		}
@@ -171,7 +171,8 @@ Variant JSONRPC::process_request(const Dictionary &p_request_object) {
 	if (methods.has(method)) {
 		Variant call_ret = methods[method].callv(args);
 		ret = make_response(call_ret, id);
-	} else {
+	}
+	else {
 		ret = make_response_error(JSONRPC::METHOD_NOT_FOUND, "Method not found: " + method, id);
 	}
 
@@ -182,26 +183,34 @@ Variant JSONRPC::process_request(const Dictionary &p_request_object) {
 	return ret;
 }
 
-void JSONRPC::process_response(const Dictionary &p_response_object) {
-	ERR_FAIL_COND_MSG(!p_response_object.has("id"), "JSONRPC: Received response object without id.");
+void JSONRPC::process_response(const Dictionary& p_response_object)
+{
+	ERR_FAIL_COND_MSG(
+		!p_response_object.has("id"), "JSONRPC: Received response object without id.");
 
 	const Variant id_var = p_response_object["id"];
-	ERR_FAIL_COND_MSG(!id_var.is_num(), "JSONRPC: Received response object with non-numeric id: " + id_var.operator String());
+	ERR_FAIL_COND_MSG(!id_var.is_num(),
+		"JSONRPC: Received response object with non-numeric id: " + id_var.operator String());
 	const int id = id_var.operator int();
-	ERR_FAIL_COND_MSG(!response_handlers.has(id), "JSONRPC: No response handler registered for id: " + id_var.operator String());
+	ERR_FAIL_COND_MSG(!response_handlers.has(id),
+		"JSONRPC: No response handler registered for id: " + id_var.operator String());
 
 	if (p_response_object.has("result")) {
 		response_handlers[id].call(p_response_object["result"]);
-	} else if (p_response_object.has("error")) {
-		ERR_PRINT("JSONRPC: Received error response object: " + p_response_object["error"].to_json_string());
-	} else {
+	}
+	else if (p_response_object.has("error")) {
+		ERR_PRINT("JSONRPC: Received error response object: " +
+				  p_response_object["error"].to_json_string());
+	}
+	else {
 		ERR_PRINT("JSONRPC: Received response object without 'result' or 'error' field.");
 	}
 
 	response_handlers.erase(id);
 }
 
-String JSONRPC::process_string(const String &p_input) {
+String JSONRPC::process_string(const String& p_input)
+{
 	if (p_input.is_empty()) {
 		return String();
 	}
@@ -210,7 +219,8 @@ String JSONRPC::process_string(const String &p_input) {
 	JSON json;
 	if (json.parse(p_input) == OK) {
 		ret = process_action(json.get_data(), true);
-	} else {
+	}
+	else {
 		ret = make_response_error(JSONRPC::PARSE_ERROR, "Parse error");
 	}
 
@@ -220,10 +230,14 @@ String JSONRPC::process_string(const String &p_input) {
 	return ret.to_json_string();
 }
 
-void JSONRPC::set_method(const String &p_name, const Callable &p_callback) {
+void JSONRPC::set_method(const String& p_name, const Callable& p_callback)
+{
 	methods[p_name] = p_callback;
 }
 
-void JSONRPC::set_response_handler(int p_id, const Callable &p_callback) {
+void JSONRPC::set_response_handler(int p_id, const Callable& p_callback)
+{
 	response_handlers[p_id] = p_callback;
 }
+
+

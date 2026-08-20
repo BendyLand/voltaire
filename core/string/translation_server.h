@@ -36,8 +36,6 @@
 
 class TranslationServer
 {
-	VLTRCLASS(TranslationServer, Object);
-
 	String locale = "en";
 	bool allow_fallback = true;
 	String fallback;

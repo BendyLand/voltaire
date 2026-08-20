@@ -52,10 +52,7 @@ void EditorLocaleDialog::_notification(int p_what)
 	}
 }
 
-void EditorLocaleDialog::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("locale_selected", PropertyInfo(Variant::STRING, "locale")));
-}
+void EditorLocaleDialog::_bind_methods() {}
 
 void EditorLocaleDialog::ok_pressed()
 {
@@ -165,10 +162,10 @@ void EditorLocaleDialog::_filter_lang_option_changed()
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Changed Locale Language Filter"));
-	undo_redo->add_do_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/language_filter", f_lang_all);
-	undo_redo->add_undo_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/language_filter", prev);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/language_filter", prev);
 	undo_redo->commit_action();
 }
 
@@ -204,10 +201,10 @@ void EditorLocaleDialog::_filter_script_option_changed()
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Changed Locale Script Filter"));
-	undo_redo->add_do_property(ProjectSettings::get_singleton(),
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
 		"internationalization/locale/script_filter", f_script_all);
-	undo_redo->add_undo_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/script_filter", prev);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/script_filter", prev);
 	undo_redo->commit_action();
 }
 
@@ -243,10 +240,10 @@ void EditorLocaleDialog::_filter_cnt_option_changed()
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Changed Locale Country Filter"));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/country_filter", f_cnt_all);
-	undo_redo->add_undo_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/country_filter", prev);
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/country_filter", f_cnt_all);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/country_filter", prev);
 	undo_redo->commit_action();
 }
 
@@ -262,10 +259,10 @@ void EditorLocaleDialog::_filter_mode_changed(int p_mode)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Changed Locale Filter Mode"));
-	undo_redo->add_do_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/locale_filter_mode", f_mode);
-	undo_redo->add_undo_property(
-		ProjectSettings::get_singleton(), "internationalization/locale/locale_filter_mode", prev);
+	undo_redo->add_do_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/locale_filter_mode", f_mode);
+	undo_redo->add_undo_property(ProjectSettings::get_singleton()->obj.get(),
+		"internationalization/locale/locale_filter_mode", prev);
 	undo_redo->commit_action();
 
 	_update_tree();

@@ -43,7 +43,7 @@ bool EditorSceneExporterGLTFSettings::_set(const StringName& p_name, const Varia
 	}
 	if (p_name == StringName("image_format")) {
 		_document->set_image_format(p_value);
-		emit_signal(CoreStringName(property_list_changed));
+		this->obj->emit_signal(CoreStringName(property_list_changed));
 		return true;
 	}
 	if (p_name == StringName("lossy_quality")) {
@@ -52,7 +52,7 @@ bool EditorSceneExporterGLTFSettings::_set(const StringName& p_name, const Varia
 	}
 	if (p_name == StringName("fallback_image_format")) {
 		_document->set_fallback_image_format(p_value);
-		emit_signal(CoreStringName(property_list_changed));
+		this->obj->emit_signal(CoreStringName(property_list_changed));
 		return true;
 	}
 	if (p_name == StringName("fallback_image_quality")) {
@@ -107,23 +107,23 @@ void EditorSceneExporterGLTFSettings::_get_property_list(List<PropertyInfo>* p_l
 {
 	for (PropertyInfo prop : _property_list) {
 		if (prop.name == "lossy_quality") {
-			const String image_format = get("image_format");
+			const String image_format = this->obj->get("image_format");
 			const bool is_image_format_lossy =
 				image_format == "JPEG" || image_format.containsn("Lossy");
 			prop.usage = is_image_format_lossy ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE;
 		}
 		if (prop.name == "fallback_image_format") {
-			const String image_format = get("image_format");
+			const String image_format = this->obj->get("image_format");
 			const bool is_image_format_extension =
 				image_format != "None" && image_format != "PNG" && image_format != "JPEG";
 			prop.usage =
 				is_image_format_extension ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE;
 		}
 		if (prop.name == "fallback_image_quality") {
-			const String image_format = get("image_format");
+			const String image_format = this->obj->get("image_format");
 			const bool is_image_format_extension =
 				image_format != "None" && image_format != "PNG" && image_format != "JPEG";
-			const String fallback_format = get("fallback_image_format");
+			const String fallback_format = this->obj->get("fallback_image_format");
 			prop.usage = (is_image_format_extension && fallback_format != "None")
 							 ? PROPERTY_USAGE_DEFAULT
 							 : PROPERTY_USAGE_STORAGE;
@@ -135,7 +135,7 @@ void EditorSceneExporterGLTFSettings::_get_property_list(List<PropertyInfo>* p_l
 void EditorSceneExporterGLTFSettings::_on_extension_property_list_changed()
 {
 	generate_property_list(_document);
-	emit_signal(CoreStringName(property_list_changed));
+	this->obj->emit_signal(CoreStringName(property_list_changed));
 }
 
 bool EditorSceneExporterGLTFSettings::_set_extension_setting(
@@ -147,7 +147,7 @@ bool EditorSceneExporterGLTFSettings::_set_extension_setting(
 	}
 	Ref<GLTFDocumentExtension> extension = _config_name_to_extension_map[split[0]];
 	bool valid;
-	extension->set(split[1], p_value, &valid);
+	extension->obj->set(split[1], p_value, &valid);
 	return valid;
 }
 
@@ -160,7 +160,7 @@ bool EditorSceneExporterGLTFSettings::_get_extension_setting(
 	}
 	Ref<GLTFDocumentExtension> extension = _config_name_to_extension_map[split[0]];
 	bool valid;
-	r_ret = extension->get(split[1], &valid);
+	r_ret = extension->obj->get(split[1], &valid);
 	return valid;
 }
 
@@ -170,7 +170,7 @@ String get_friendly_config_prefix(Ref<GLTFDocumentExtension> p_extension)
 	if (!config_prefix.is_empty()) {
 		return config_prefix;
 	}
-	const Ref<Script> script = p_extension->get_script();
+	const Ref<Script> script = p_extension->obj->get_script();
 	if (script.is_valid()) {
 		config_prefix = String(script->get_global_name())
 							.trim_prefix("GLTFDocumentExtension")
@@ -179,7 +179,7 @@ String get_friendly_config_prefix(Ref<GLTFDocumentExtension> p_extension)
 			return config_prefix;
 		}
 	}
-	const String class_name = p_extension->get_class_name();
+	const String class_name = p_extension->obj->get_class_name();
 	config_prefix =
 		class_name.trim_prefix("GLTFDocumentExtension").trim_suffix("GLTFDocumentExtension");
 	if (!config_prefix.is_empty()) {
@@ -251,8 +251,8 @@ void EditorSceneExporterGLTFSettings::generate_property_list(
 		// Set up to listen for property changes.
 		const Callable on_prop_changed = callable_mp(
 			this, &EditorSceneExporterGLTFSettings::_on_extension_property_list_changed);
-		if (!extension->is_connected(CoreStringName(property_list_changed), on_prop_changed)) {
-			extension->connect(CoreStringName(property_list_changed), on_prop_changed);
+		if (!extension->obj->is_connected(CoreStringName(property_list_changed), on_prop_changed)) {
+			extension->obj->connect(CoreStringName(property_list_changed), on_prop_changed);
 		}
 		const String config_prefix = get_friendly_config_prefix(extension);
 		_config_name_to_extension_map[config_prefix] = extension;
@@ -264,7 +264,7 @@ void EditorSceneExporterGLTFSettings::generate_property_list(
 			_property_list.push_back(ext_prop);
 		}
 		List<PropertyInfo> ext_prop_list;
-		extension->get_property_list(&ext_prop_list);
+		extension->obj->get_property_list(&ext_prop_list);
 		for (const PropertyInfo& prop : ext_prop_list) {
 			// We only want properties that will show up in the exporter
 			// settings list. Exclude Resource's properties, as they are
@@ -286,23 +286,7 @@ void EditorSceneExporterGLTFSettings::set_copyright(const String& p_copyright)
 	_copyright = p_copyright;
 }
 
-void EditorSceneExporterGLTFSettings::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("get_copyright"), &EditorSceneExporterGLTFSettings::get_copyright);
-	ClassDB::bind_method(
-		D_METHOD("set_copyright", "copyright"), &EditorSceneExporterGLTFSettings::set_copyright);
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "copyright", PROPERTY_HINT_PLACEHOLDER_TEXT,
-					 "Example: 2014 Godette"),
-		"set_copyright", "get_copyright");
-
-	ClassDB::bind_method(D_METHOD("get_bake_fps"), &EditorSceneExporterGLTFSettings::get_bake_fps);
-	ClassDB::bind_method(
-		D_METHOD("set_bake_fps", "bake_fps"), &EditorSceneExporterGLTFSettings::set_bake_fps);
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bake_fps", PROPERTY_HINT_RANGE,
-					 "0.001,120,0.0001,or_greater"),
-		"set_bake_fps", "get_bake_fps");
-}
+void EditorSceneExporterGLTFSettings::_bind_methods() {}
 
 double EditorSceneExporterGLTFSettings::get_bake_fps() const { return _bake_fps; }
 

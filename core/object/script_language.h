@@ -34,6 +34,7 @@
 #include "core/io/resource.h"
 #include "core/object/script_backtrace.h"
 #include "core/object/script_instance.h"
+#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/pair.h"
 #include "core/variant/typed_array.h"
 
@@ -227,14 +228,13 @@ public:
 #endif // !DISABLE_DEPRECATED
 };
 
-class ScriptLanguage : public Object
+class ScriptLanguage
 {
-	VLTRCLASS(ScriptLanguage, Object)
-
 protected:
 	static void _bind_methods();
 
 public:
+	mem_unique_ptr<Object> obj;
 	virtual String get_name() const = 0;
 
 	/* LANGUAGE FUNCTIONS */

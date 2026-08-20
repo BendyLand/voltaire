@@ -171,7 +171,7 @@ void ShaderCreateDialog::_create_new()
 		String lpath = ProjectSettings::get_singleton()->localize_path(file_path->get_text());
 		shader_inc->set_path(lpath);
 
-		Error error = ResourceSaver::save(shader_inc, lpath, ResourceSaver::FLAG_CHANGE_PATH);
+		Error error = ResourceSaver::save(shader_inc.ptr(), lpath, ResourceSaver::FLAG_CHANGE_PATH);
 		if (error != OK) {
 			alert->set_text(TTR("Error - Could not create shader include in filesystem."));
 			alert->popup_centered();
@@ -191,7 +191,7 @@ void ShaderCreateDialog::_create_new()
 			String lpath = ProjectSettings::get_singleton()->localize_path(file_path->get_text());
 			shader->set_path(lpath);
 
-			Error error = ResourceSaver::save(shader, lpath, ResourceSaver::FLAG_CHANGE_PATH);
+			Error error = ResourceSaver::save(shader.ptr(), lpath, ResourceSaver::FLAG_CHANGE_PATH);
 			if (error != OK) {
 				alert->set_text(TTR("Error - Could not create shader in filesystem."));
 				alert->popup_centered();
@@ -530,18 +530,7 @@ void ShaderCreateDialog::_update_dialog()
 	}
 }
 
-void ShaderCreateDialog::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("config", "path", "built_in_enabled", "load_enabled"),
-		&ShaderCreateDialog::config, DEFVAL(true), DEFVAL(true));
-
-	ADD_SIGNAL(
-		MethodInfo("shader_created", PropertyInfo(Variant::OBJECT, "shader",
-										 PROPERTY_HINT_RESOURCE_TYPE, Shader::get_class_static())));
-	ADD_SIGNAL(MethodInfo("shader_include_created",
-		PropertyInfo(Variant::OBJECT, "shader_include", PROPERTY_HINT_RESOURCE_TYPE,
-			ShaderInclude::get_class_static())));
-}
+void ShaderCreateDialog::_bind_methods() {}
 
 ShaderCreateDialog::ShaderCreateDialog()
 {

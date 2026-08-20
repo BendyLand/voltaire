@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid_owner.h"
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
 #include "scene/resources/navigation_mesh.h"
@@ -38,21 +39,22 @@
 
 class Node;
 
-struct NavMeshGeometryParser3D {
+struct NavMeshGeometryParser3D
+{
 	RID self;
 	Callable callback;
 };
 
-class NavigationServer3D : public Object {
-	VLTRCLASS(NavigationServer3D, Object);
-
-	static NavigationServer3D *singleton;
+class NavigationServer3D
+{
+	static NavigationServer3D* singleton;
 
 protected:
 	static void _bind_methods();
 
 public:
-	static NavigationServer3D *get_singleton();
+	mem_unique_ptr<Object> obj;
+	static NavigationServer3D* get_singleton();
 
 	virtual TypedArray<RID> get_maps() const = 0;
 
@@ -84,12 +86,14 @@ public:
 	virtual void map_set_link_connection_radius(RID p_map, real_t p_connection_radius) = 0;
 	virtual real_t map_get_link_connection_radius(RID p_map) const = 0;
 
-	virtual Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize, uint32_t p_navigation_layers = 1) = 0;
+	virtual Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination,
+		bool p_optimize, uint32_t p_navigation_layers = 1) = 0;
 
-	virtual Vector3 map_get_closest_point_to_segment(RID p_map, const Vector3 &p_from, const Vector3 &p_to, const bool p_use_collision = false) const = 0;
-	virtual Vector3 map_get_closest_point(RID p_map, const Vector3 &p_point) const = 0;
-	virtual Vector3 map_get_closest_point_normal(RID p_map, const Vector3 &p_point) const = 0;
-	virtual RID map_get_closest_point_owner(RID p_map, const Vector3 &p_point) const = 0;
+	virtual Vector3 map_get_closest_point_to_segment(RID p_map, const Vector3& p_from,
+		const Vector3& p_to, const bool p_use_collision = false) const = 0;
+	virtual Vector3 map_get_closest_point(RID p_map, const Vector3& p_point) const = 0;
+	virtual Vector3 map_get_closest_point_normal(RID p_map, const Vector3& p_point) const = 0;
+	virtual RID map_get_closest_point_owner(RID p_map, const Vector3& p_point) const = 0;
 
 	virtual TypedArray<RID> map_get_links(RID p_map) const = 0;
 	virtual TypedArray<RID> map_get_regions(RID p_map) const = 0;
@@ -102,7 +106,8 @@ public:
 	virtual void map_set_use_async_iterations(RID p_map, bool p_enabled) = 0;
 	virtual bool map_get_use_async_iterations(RID p_map) const = 0;
 
-	virtual Vector3 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
+	virtual Vector3 map_get_random_point(
+		RID p_map, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
 
 	/* REGION API */
 
@@ -127,7 +132,7 @@ public:
 	virtual void region_set_owner_id(RID p_region, ObjectID p_owner_id) = 0;
 	virtual ObjectID region_get_owner_id(RID p_region) const = 0;
 
-	virtual bool region_owns_point(RID p_region, const Vector3 &p_point) const = 0;
+	virtual bool region_owns_point(RID p_region, const Vector3& p_point) const = 0;
 
 	virtual void region_set_map(RID p_region, RID p_map) = 0;
 	virtual RID region_get_map(RID p_region) const = 0;
@@ -138,20 +143,25 @@ public:
 	virtual void region_set_transform(RID p_region, Transform3D p_transform) = 0;
 	virtual Transform3D region_get_transform(RID p_region) const = 0;
 
-	virtual void region_set_navigation_mesh(RID p_region, Ref<NavigationMesh> p_navigation_mesh) = 0;
+	virtual void region_set_navigation_mesh(
+		RID p_region, Ref<NavigationMesh> p_navigation_mesh) = 0;
 
 #ifndef DISABLE_DEPRECATED
-	virtual void region_bake_navigation_mesh(Ref<NavigationMesh> p_navigation_mesh, Node *p_root_node) = 0;
+	virtual void region_bake_navigation_mesh(
+		Ref<NavigationMesh> p_navigation_mesh, Node* p_root_node) = 0;
 #endif // DISABLE_DEPRECATED
 
 	virtual int region_get_connections_count(RID p_region) const = 0;
-	virtual Vector3 region_get_connection_pathway_start(RID p_region, int p_connection_id) const = 0;
+	virtual Vector3 region_get_connection_pathway_start(
+		RID p_region, int p_connection_id) const = 0;
 	virtual Vector3 region_get_connection_pathway_end(RID p_region, int p_connection_id) const = 0;
 
-	virtual Vector3 region_get_closest_point_to_segment(RID p_region, const Vector3 &p_from, const Vector3 &p_to, bool p_use_collision = false) const = 0;
-	virtual Vector3 region_get_closest_point(RID p_region, const Vector3 &p_point) const = 0;
-	virtual Vector3 region_get_closest_point_normal(RID p_region, const Vector3 &p_point) const = 0;
-	virtual Vector3 region_get_random_point(RID p_region, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
+	virtual Vector3 region_get_closest_point_to_segment(RID p_region, const Vector3& p_from,
+		const Vector3& p_to, bool p_use_collision = false) const = 0;
+	virtual Vector3 region_get_closest_point(RID p_region, const Vector3& p_point) const = 0;
+	virtual Vector3 region_get_closest_point_normal(RID p_region, const Vector3& p_point) const = 0;
+	virtual Vector3 region_get_random_point(
+		RID p_region, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
 
 	virtual AABB region_get_bounds(RID p_region) const = 0;
 
@@ -270,35 +280,44 @@ public:
 	virtual Vector3 obstacle_get_velocity(RID p_obstacle) const = 0;
 	virtual void obstacle_set_position(RID p_obstacle, Vector3 p_position) = 0;
 	virtual Vector3 obstacle_get_position(RID p_obstacle) const = 0;
-	virtual void obstacle_set_vertices(RID p_obstacle, const Vector<Vector3> &p_vertices) = 0;
+	virtual void obstacle_set_vertices(RID p_obstacle, const Vector<Vector3>& p_vertices) = 0;
 	virtual Vector<Vector3> obstacle_get_vertices(RID p_obstacle) const = 0;
 	virtual void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers) = 0;
 	virtual uint32_t obstacle_get_avoidance_layers(RID p_obstacle) const = 0;
 
 	/* QUERY API */
 
-	virtual void query_path(const Ref<NavigationPathQueryParameters3D> &p_query_parameters, Ref<NavigationPathQueryResult3D> p_query_result, const Callable &p_callback = Callable()) = 0;
+	virtual void query_path(const Ref<NavigationPathQueryParameters3D>& p_query_parameters,
+		Ref<NavigationPathQueryResult3D> p_query_result,
+		const Callable& p_callback = Callable()) = 0;
 
 	/* NAVMESH BAKE API */
 
 #ifndef _3D_DISABLED
-	virtual void parse_source_geometry_data(const Ref<NavigationMesh> &p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData3D> &p_source_geometry_data, Node *p_root_node, const Callable &p_callback = Callable()) = 0;
-	virtual void bake_from_source_geometry_data(const Ref<NavigationMesh> &p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData3D> &p_source_geometry_data, const Callable &p_callback = Callable()) = 0;
-	virtual void bake_from_source_geometry_data_async(const Ref<NavigationMesh> &p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData3D> &p_source_geometry_data, const Callable &p_callback = Callable()) = 0;
+	virtual void parse_source_geometry_data(const Ref<NavigationMesh>& p_navigation_mesh,
+		const Ref<NavigationMeshSourceGeometryData3D>& p_source_geometry_data, Node* p_root_node,
+		const Callable& p_callback = Callable()) = 0;
+	virtual void bake_from_source_geometry_data(const Ref<NavigationMesh>& p_navigation_mesh,
+		const Ref<NavigationMeshSourceGeometryData3D>& p_source_geometry_data,
+		const Callable& p_callback = Callable()) = 0;
+	virtual void bake_from_source_geometry_data_async(const Ref<NavigationMesh>& p_navigation_mesh,
+		const Ref<NavigationMeshSourceGeometryData3D>& p_source_geometry_data,
+		const Callable& p_callback = Callable()) = 0;
 	virtual bool is_baking_navigation_mesh(Ref<NavigationMesh> p_navigation_mesh) const = 0;
-	virtual String get_baking_navigation_mesh_state_msg(Ref<NavigationMesh> p_navigation_mesh) const = 0;
+	virtual String get_baking_navigation_mesh_state_msg(
+		Ref<NavigationMesh> p_navigation_mesh) const = 0;
 #endif // _3D_DISABLED
 
 protected:
 	static RWLock geometry_parser_rwlock;
 	static RID_Owner<NavMeshGeometryParser3D> geometry_parser_owner;
-	static LocalVector<NavMeshGeometryParser3D *> generator_parsers;
+	static LocalVector<NavMeshGeometryParser3D*> generator_parsers;
 
 public:
 	virtual RID source_geometry_parser_create() = 0;
-	virtual void source_geometry_parser_set_callback(RID p_parser, const Callable &p_callback) = 0;
+	virtual void source_geometry_parser_set_callback(RID p_parser, const Callable& p_callback) = 0;
 
-	virtual Vector<Vector3> simplify_path(const Vector<Vector3> &p_path, real_t p_epsilon) = 0;
+	virtual Vector<Vector3> simplify_path(const Vector<Vector3>& p_path, real_t p_epsilon) = 0;
 
 	/* SERVER API */
 
@@ -310,17 +329,16 @@ public:
 	virtual void finish() = 0;
 	virtual void free_rid(RID p_rid) = 0;
 #ifndef DISABLE_DEPRECATED
-	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) {
-		free_rid(p_rid);
-	}
+	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
 #endif // DISABLE_DEPRECATED
 
 	NavigationServer3D();
-	~NavigationServer3D() override;
+	~NavigationServer3D();
 
 	/* DEBUG API */
 
-	enum ProcessInfo {
+	enum ProcessInfo
+	{
 		INFO_ACTIVE_MAPS,
 		INFO_REGION_COUNT,
 		INFO_AGENT_COUNT,
@@ -340,8 +358,11 @@ public:
 
 protected:
 #ifndef DISABLE_DEPRECATED
-	Vector<Vector3> _map_get_path_bind_compat_100129(RID p_map, Vector3 p_origin, Vector3 p_destination, bool p_optimize, uint32_t p_navigation_layers = 1) const;
-	void _query_path_bind_compat_100129(const Ref<NavigationPathQueryParameters3D> &p_query_parameters, Ref<NavigationPathQueryResult3D> p_query_result) const;
+	Vector<Vector3> _map_get_path_bind_compat_100129(RID p_map, Vector3 p_origin,
+		Vector3 p_destination, bool p_optimize, uint32_t p_navigation_layers = 1) const;
+	void _query_path_bind_compat_100129(
+		const Ref<NavigationPathQueryParameters3D>& p_query_parameters,
+		Ref<NavigationPathQueryResult3D> p_query_result) const;
 	static void _bind_compatibility_methods();
 #endif
 
@@ -417,46 +438,46 @@ public:
 	void set_debug_avoidance_enabled(bool p_enabled);
 	bool get_debug_avoidance_enabled() const;
 
-	void set_debug_navigation_edge_connection_color(const Color &p_color);
+	void set_debug_navigation_edge_connection_color(const Color& p_color);
 	Color get_debug_navigation_edge_connection_color() const;
 
-	void set_debug_navigation_geometry_edge_color(const Color &p_color);
+	void set_debug_navigation_geometry_edge_color(const Color& p_color);
 	Color get_debug_navigation_geometry_edge_color() const;
 
-	void set_debug_navigation_geometry_face_color(const Color &p_color);
+	void set_debug_navigation_geometry_face_color(const Color& p_color);
 	Color get_debug_navigation_geometry_face_color() const;
 
-	void set_debug_navigation_geometry_edge_disabled_color(const Color &p_color);
+	void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
 	Color get_debug_navigation_geometry_edge_disabled_color() const;
 
-	void set_debug_navigation_geometry_face_disabled_color(const Color &p_color);
+	void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
 	Color get_debug_navigation_geometry_face_disabled_color() const;
 
-	void set_debug_navigation_link_connection_color(const Color &p_color);
+	void set_debug_navigation_link_connection_color(const Color& p_color);
 	Color get_debug_navigation_link_connection_color() const;
 
-	void set_debug_navigation_link_connection_disabled_color(const Color &p_color);
+	void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
 	Color get_debug_navigation_link_connection_disabled_color() const;
 
-	void set_debug_navigation_agent_path_color(const Color &p_color);
+	void set_debug_navigation_agent_path_color(const Color& p_color);
 	Color get_debug_navigation_agent_path_color() const;
 
-	void set_debug_navigation_avoidance_agents_radius_color(const Color &p_color);
+	void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
 	Color get_debug_navigation_avoidance_agents_radius_color() const;
 
-	void set_debug_navigation_avoidance_obstacles_radius_color(const Color &p_color);
+	void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
 	Color get_debug_navigation_avoidance_obstacles_radius_color() const;
 
-	void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(const Color &p_color);
+	void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(const Color& p_color);
 	Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color() const;
 
-	void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(const Color &p_color);
+	void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(const Color& p_color);
 	Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color() const;
 
-	void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(const Color &p_color);
+	void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(const Color& p_color);
 	Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color() const;
 
-	void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(const Color &p_color);
+	void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(const Color& p_color);
 	Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color() const;
 
 	void set_debug_navigation_enable_edge_connections(const bool p_value);
@@ -520,26 +541,26 @@ public:
 };
 
 /// Manager used for the server singleton registration
-class NavigationServer3DManager : public Object {
-	VLTRCLASS(NavigationServer3DManager, Object);
+class NavigationServer3DManager
+{
+	static inline NavigationServer3DManager* singleton = nullptr;
 
-	static inline NavigationServer3DManager *singleton = nullptr;
-
-	struct ClassInfo {
+	struct ClassInfo
+	{
 		String name;
 		Callable create_callback;
 
 		ClassInfo() {}
 
-		ClassInfo(const String &p_name, const Callable &p_create_callback) :
-				name(p_name),
-				create_callback(p_create_callback) {}
+		ClassInfo(const String& p_name, const Callable& p_create_callback)
+			: name(p_name), create_callback(p_create_callback)
+		{
+		}
 
-		ClassInfo(const ClassInfo &p_ci) :
-				name(p_ci.name),
-				create_callback(p_ci.create_callback) {}
+		ClassInfo(const ClassInfo& p_ci) : name(p_ci.name), create_callback(p_ci.create_callback) {}
 
-		void operator=(const ClassInfo &p_ci) {
+		void operator=(const ClassInfo& p_ci)
+		{
 			name = p_ci.name;
 			create_callback = p_ci.create_callback;
 		}
@@ -555,17 +576,18 @@ protected:
 	static void _bind_methods();
 
 public:
+	mem_unique_ptr<Object> obj;
 	static const String setting_property_name;
 
-	static NavigationServer3DManager *get_singleton();
+	static NavigationServer3DManager* get_singleton();
 
-	void register_server(const String &p_name, const Callable &p_create_callback);
-	void set_default_server(const String &p_name, int p_priority = 0);
-	int find_server_id(const String &p_name);
+	void register_server(const String& p_name, const Callable& p_create_callback);
+	void set_default_server(const String& p_name, int p_priority = 0);
+	int find_server_id(const String& p_name);
 	int get_servers_count();
 	String get_server_name(int p_id);
-	NavigationServer3D *new_default_server();
-	NavigationServer3D *new_server(const String &p_name);
+	NavigationServer3D* new_default_server();
+	NavigationServer3D* new_server(const String& p_name);
 
 	NavigationServer3DManager();
 	~NavigationServer3DManager();
@@ -575,7 +597,9 @@ public:
 
 	static void initialize_server_manager();
 	static void finalize_server_manager();
-	static NavigationServer3D *create_dummy_server_callback();
+	static NavigationServer3D* create_dummy_server_callback();
 };
 
 VARIANT_ENUM_CAST(NavigationServer3D::ProcessInfo);
+
+

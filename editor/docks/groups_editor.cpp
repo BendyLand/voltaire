@@ -456,8 +456,9 @@ void GroupsEditor::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_READY: {
-		get_tree()->connect("node_added", callable_mp(this, &GroupsEditor::_load_scene_groups));
-		get_tree()->connect("node_removed", callable_mp(this, &GroupsEditor::_node_removed));
+		get_tree()->obj->connect(
+			"node_added", callable_mp(this, &GroupsEditor::_load_scene_groups));
+		get_tree()->obj->connect("node_removed", callable_mp(this, &GroupsEditor::_node_removed));
 	} break;
 	case NOTIFICATION_THEME_CHANGED: {
 		filter->set_right_icon(get_editor_theme_icon("Search"));
@@ -502,12 +503,13 @@ void GroupsEditor::_menu_id_pressed(int p_id)
 		if (is_local) {
 			undo_redo->create_action(TTR("Convert to Global Group"));
 
-			undo_redo->add_do_property(ProjectSettings::get_singleton(), property_name, "");
+			undo_redo->add_do_property(
+				ProjectSettings::get_singleton()->obj.get(), property_name, "");
 			undo_redo->add_undo_property(
-				ProjectSettings::get_singleton(), property_name, Variant());
+				ProjectSettings::get_singleton()->obj.get(), property_name, Variant());
 
-			undo_redo->add_do_method(ProjectSettings::get_singleton(), "save");
-			undo_redo->add_undo_method(ProjectSettings::get_singleton(), "save");
+			undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "save");
+			undo_redo->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "save");
 
 			undo_redo->add_undo_method(this->obj.get(), "_add_scene_group", group_name);
 
@@ -519,12 +521,13 @@ void GroupsEditor::_menu_id_pressed(int p_id)
 		else {
 			undo_redo->create_action(TTR("Convert to Scene Group"));
 
-			undo_redo->add_do_property(ProjectSettings::get_singleton(), property_name, Variant());
+			undo_redo->add_do_property(
+				ProjectSettings::get_singleton()->obj.get(), property_name, Variant());
 			undo_redo->add_undo_property(
-				ProjectSettings::get_singleton(), property_name, description);
+				ProjectSettings::get_singleton()->obj.get(), property_name, description);
 
-			undo_redo->add_do_method(ProjectSettings::get_singleton(), "save");
-			undo_redo->add_undo_method(ProjectSettings::get_singleton(), "save");
+			undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "save");
+			undo_redo->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "save");
 
 			undo_redo->add_do_method(this->obj.get(), "_add_scene_group", group_name);
 
@@ -600,11 +603,13 @@ void GroupsEditor::_confirm_add()
 	else {
 		String property_name = GLOBAL_GROUP_PREFIX + name;
 
-		undo_redo->add_do_property(ProjectSettings::get_singleton(), property_name, description);
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), property_name, Variant());
+		undo_redo->add_do_property(
+			ProjectSettings::get_singleton()->obj.get(), property_name, description);
+		undo_redo->add_undo_property(
+			ProjectSettings::get_singleton()->obj.get(), property_name, Variant());
 
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "save");
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "save");
+		undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "save");
+		undo_redo->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "save");
 
 		undo_redo->add_do_method(this->obj.get(), "_update_groups");
 		undo_redo->add_undo_method(this->obj.get(), "_update_groups");
@@ -651,13 +656,14 @@ void GroupsEditor::_confirm_rename()
 		String description = ti->obj->get_meta("__description");
 
 		undo_redo->add_do_property(
-			ProjectSettings::get_singleton(), property_new_name, description);
+			ProjectSettings::get_singleton()->obj.get(), property_new_name, description);
 		undo_redo->add_undo_property(
-			ProjectSettings::get_singleton(), property_new_name, Variant());
+			ProjectSettings::get_singleton()->obj.get(), property_new_name, Variant());
 
-		undo_redo->add_do_property(ProjectSettings::get_singleton(), property_old_name, Variant());
+		undo_redo->add_do_property(
+			ProjectSettings::get_singleton()->obj.get(), property_old_name, Variant());
 		undo_redo->add_undo_property(
-			ProjectSettings::get_singleton(), property_old_name, description);
+			ProjectSettings::get_singleton()->obj.get(), property_old_name, description);
 
 		if (rename_check_box->is_pressed()) {
 			undo_redo->add_do_method(
@@ -668,8 +674,8 @@ void GroupsEditor::_confirm_rename()
 				"rename_references", new_name, old_name);
 		}
 
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "save");
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "save");
+		undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "save");
+		undo_redo->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "save");
 
 		undo_redo->add_do_method(this->obj.get(), "_update_groups");
 		undo_redo->add_undo_method(this->obj.get(), "_update_groups");
@@ -704,8 +710,10 @@ void GroupsEditor::_confirm_delete()
 		String property_name = GLOBAL_GROUP_PREFIX + name;
 		String description = ti->obj->get_meta("__description");
 
-		undo_redo->add_do_property(ProjectSettings::get_singleton(), property_name, Variant());
-		undo_redo->add_undo_property(ProjectSettings::get_singleton(), property_name, description);
+		undo_redo->add_do_property(
+			ProjectSettings::get_singleton()->obj.get(), property_name, Variant());
+		undo_redo->add_undo_property(
+			ProjectSettings::get_singleton()->obj.get(), property_name, description);
 
 		if (remove_check_box->is_pressed()) {
 			undo_redo->add_do_method(
@@ -713,8 +721,8 @@ void GroupsEditor::_confirm_delete()
 				"remove_references", name);
 		}
 
-		undo_redo->add_do_method(ProjectSettings::get_singleton(), "save");
-		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "save");
+		undo_redo->add_do_method(ProjectSettings::get_singleton()->obj.get(), "save");
+		undo_redo->add_undo_method(ProjectSettings::get_singleton()->obj.get(), "save");
 
 		undo_redo->add_do_method(this->obj.get(), "_update_groups");
 		undo_redo->add_undo_method(this->obj.get(), "_update_groups");
@@ -1029,7 +1037,8 @@ GroupsEditor::GroupsEditor()
 	select_a_node->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
 	add_child(select_a_node);
 
-	ProjectSettingsEditor::get_singleton()->get_group_settings()->connect(
+	ProjectSettingsEditor::get_singleton
+()->get_group_settings()->connect(
 		"group_changed", callable_mp(this, &GroupsEditor::_update_groups_and_tree));
 }
 

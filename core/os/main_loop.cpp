@@ -35,8 +35,8 @@ void MainLoop::_bind_methods() {}
 
 void MainLoop::finalize()
 {
-	if (get_script_instance()) {
-		set_script(Variant()); // clear script
+	if (this->obj->get_script_instance()) {
+		this->obj->set_script(Variant()); // clear script
 	}
 }
 

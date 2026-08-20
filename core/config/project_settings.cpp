@@ -624,7 +624,7 @@ void ProjectSettings::_emit_changed()
 	is_changed = false;
 
 	// Emit the general settings_changed signal to indicate changes are complete.
-	emit_signal("settings_changed");
+	this->obj->emit_signal("settings_changed");
 
 	// Clear the changed settings after emitting the signal
 	changed_settings.clear();
@@ -1023,7 +1023,7 @@ Error ProjectSettings::_load_settings_binary(const String& p_path)
 		Variant value;
 		err = decode_variant(value, d.ptr(), d.size(), nullptr, true);
 		ERR_CONTINUE_MSG(err != OK, vformat("Error decoding property: '%s'.", key));
-		set(key, value);
+		this->obj->set(key, value);
 	}
 
 	return OK;
@@ -1082,10 +1082,10 @@ Error ProjectSettings::_load_settings_text(const String& p_path)
 			}
 			else {
 				if (section.is_empty()) {
-					set(assign, value);
+					this->obj->set(assign, value);
 				}
 				else {
-					set(section + "/" + assign, value);
+					this->obj->set(section + "/" + assign, value);
 				}
 			}
 		}
@@ -1248,7 +1248,7 @@ Error ProjectSettings::_save_settings_binary(const String& p_file,
 				value = p_custom[k];
 			}
 			else {
-				value = get(k);
+				value = this->obj->get(k);
 			}
 
 			file->store_pascal_string(k);
@@ -1314,7 +1314,7 @@ Error ProjectSettings::_save_settings_text(const String& p_file,
 				value = p_custom[key];
 			}
 			else {
-				value = get(key);
+				value = this->obj->get(key);
 			}
 
 			String vstr;
@@ -1473,7 +1473,7 @@ Variant _GLOBAL_DEF(const String& p_var, const Variant& p_default, bool p_restar
 {
 	Variant ret;
 	if (!ProjectSettings::get_singleton()->has_setting(p_var)) {
-		ProjectSettings::get_singleton()->set(p_var, p_default);
+		ProjectSettings::get_singleton()->obj->set(p_var, p_default);
 	}
 	ret = GLOBAL_GET(p_var);
 
@@ -1553,13 +1553,13 @@ bool ProjectSettings::_property_get_revert(const StringName& p_name, Variant& r_
 
 void ProjectSettings::set_setting(const String& p_setting, const Variant& p_value)
 {
-	set(p_setting, p_value);
+	this->obj->set(p_setting, p_value);
 }
 
 Variant ProjectSettings::get_setting(const String& p_setting, const Variant& p_default_value) const
 {
 	if (has_setting(p_setting)) {
-		return get(p_setting);
+		return this->obj->get(p_setting);
 	}
 	else {
 		return p_default_value;
@@ -1786,7 +1786,7 @@ void ProjectSettings::get_argument_options(
 			}
 		}
 	}
-	Object::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 

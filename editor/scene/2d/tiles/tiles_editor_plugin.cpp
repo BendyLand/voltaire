@@ -138,7 +138,7 @@ void TilesEditorUtils::_thread()
 				callable_mp((Node*)EditorNode::get_singleton(), &Node::add_child)
 					.call_deferred(viewport, false, Node::INTERNAL_MODE_DISABLED);
 
-				RS::get_singleton()->connect(SNAME("frame_pre_draw"),
+				RS::get_singleton()->obj->connect(SNAME("frame_pre_draw"),
 					callable_mp(this, &TilesEditorUtils::_preview_frame_started),
 					Object::CONNECT_ONE_SHOT);
 

@@ -48,6 +48,7 @@
 #include "editor/settings/editor_command_palette.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "editor/version_control/editor_vcs_interface.h"
 #include "scene/gui/flow_container.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/separator.h"
@@ -59,10 +60,7 @@
 
 VersionControlEditorPlugin* VersionControlEditorPlugin::singleton = nullptr;
 
-void VersionControlEditorPlugin::_bind_methods()
-{
-	// No binds required so far.
-}
+void VersionControlEditorPlugin::_bind_methods() {}
 
 void VersionControlEditorPlugin::_create_vcs_metadata_files()
 {
@@ -196,8 +194,9 @@ void VersionControlEditorPlugin::_initialize_vcs()
 	String selected_plugin = set_up_choice->get_item_text(id);
 
 	if (_load_plugin(selected_plugin)) {
-		ProjectSettings::get_singleton()->set("editor/version_control/autoload_on_startup", true);
-		ProjectSettings::get_singleton()->set(
+		ProjectSettings::get_singleton()->obj->set(
+			"editor/version_control/autoload_on_startup", true);
+		ProjectSettings::get_singleton()->obj->set(
 			"editor/version_control/plugin_name", selected_plugin);
 		ProjectSettings::get_singleton()->save();
 	}
@@ -232,11 +231,7 @@ void VersionControlEditorPlugin::_set_credentials()
 
 bool VersionControlEditorPlugin::_load_plugin(const String& p_name)
 {
-	Object* extension_instance = ClassDB::instantiate(p_name);
-	ERR_FAIL_NULL_V_MSG(extension_instance, false,
-		"Received a nullptr VCS extension instance during construction.");
-
-	EditorVCSInterface* vcs_plugin = Object::cast_to<EditorVCSInterface>(extension_instance);
+	EditorVCSInterface* vcs_plugin = memnew(EditorVCSInterface);
 	ERR_FAIL_NULL_V_MSG(vcs_plugin, false,
 		vformat("Could not cast VCS extension instance to %s.", this->obj->get_class_static()));
 
@@ -1131,11 +1126,7 @@ void VersionControlEditorPlugin::_toggle_vcs_integration(bool p_toggled)
 	}
 }
 
-void VersionControlEditorPlugin::fetch_available_vcs_plugin_names()
-{
-	available_plugins.clear();
-	ClassDB::get_direct_inheriters_from_class(this->obj->get_class_static(), &available_plugins);
-}
+void VersionControlEditorPlugin::fetch_available_vcs_plugin_names() { available_plugins.clear(); }
 
 void VersionControlEditorPlugin::register_editor()
 {
@@ -1825,7 +1816,8 @@ VersionControlEditorPlugin::VersionControlEditorPlugin()
 	vbc->add_child(diff);
 
 	_update_set_up_warning("");
-	EditorNode::get_singleton()->get_gui_base()->connect(SceneStringName(theme_changed),
+	EditorNode::get_singleton(
+)->get_gui_base()->connect(SceneStringName(theme_changed),
 		callable_mp(this, &VersionControlEditorPlugin::_update_theme));
 }
 

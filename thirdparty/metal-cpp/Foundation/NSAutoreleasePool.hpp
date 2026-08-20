@@ -26,14 +26,16 @@
 #include "NSObject.hpp"
 #include "NSPrivate.hpp"
 #include "NSTypes.hpp"
+#include "core/templates/mem_unique_ptr.h"
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 namespace NS
 {
-class AutoreleasePool : public Object
+class AutoreleasePool
 {
 public:
+	mem_unique_ptr<Object> obj;
     static AutoreleasePool* alloc();
     AutoreleasePool*        init();
 

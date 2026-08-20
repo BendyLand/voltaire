@@ -30,10 +30,10 @@
 
 #pragma once
 
+#include "core/templates/mem_unique_ptr.h"
+#include <cstdint>
 #include "core/object/object.h"
 #include "core/string/ustring.h"
-
-#include <cstdint>
 
 #ifndef GD_CLR_STDCALL
 #ifdef WIN32
@@ -43,13 +43,16 @@
 #endif
 #endif
 
-namespace gdmono {
+namespace gdmono
+{
 
 #ifdef TOOLS_ENABLED
-struct PluginCallbacks {
-	using FuncLoadProjectAssemblyCallback = bool(GD_CLR_STDCALL *)(const char16_t *, String *);
-	using FuncLoadToolsAssemblyCallback = Object *(GD_CLR_STDCALL *)(const char16_t *, const void **, int32_t);
-	using FuncUnloadProjectPluginCallback = bool(GD_CLR_STDCALL *)();
+struct PluginCallbacks
+{
+	using FuncLoadProjectAssemblyCallback = bool(GD_CLR_STDCALL*)(const char16_t*, String*);
+	using FuncLoadToolsAssemblyCallback = Object*(
+		GD_CLR_STDCALL*)(const char16_t*, const void**, int32_t);
+	using FuncUnloadProjectPluginCallback = bool(GD_CLR_STDCALL*)();
 	FuncLoadProjectAssemblyCallback LoadProjectAssemblyCallback = nullptr;
 	FuncLoadToolsAssemblyCallback LoadToolsAssemblyCallback = nullptr;
 	FuncUnloadProjectPluginCallback UnloadProjectPluginCallback = nullptr;
@@ -58,13 +61,14 @@ struct PluginCallbacks {
 
 } // namespace gdmono
 
-class GDMono {
+class GDMono
+{
 	bool initialized = false;
 	bool runtime_initialized = false;
 	bool finalizing_scripts_domain = false;
 
-	void *hostfxr_dll_handle = nullptr;
-	void *coreclr_dll_handle = nullptr;
+	void* hostfxr_dll_handle = nullptr;
+	void* coreclr_dll_handle = nullptr;
 
 	String project_assembly_path;
 	uint64_t project_assembly_modified_time = 0;
@@ -90,7 +94,7 @@ class GDMono {
 #endif
 
 protected:
-	static GDMono *singleton;
+	static GDMono* singleton;
 
 public:
 #ifdef DEBUG_ENABLED
@@ -100,7 +104,8 @@ public:
 #endif // TOOLS_ENABLED
 #endif // DEBUG_ENABLED
 
-	_FORCE_INLINE_ static String get_expected_api_build_config() {
+	_FORCE_INLINE_ static String get_expected_api_build_config()
+	{
 #ifdef TOOLS_ENABLED
 		return "Debug";
 #else
@@ -112,31 +117,23 @@ public:
 #endif
 	}
 
-	static GDMono *get_singleton() {
-		return singleton;
-	}
+	static GDMono* get_singleton() { return singleton; }
 
-	_FORCE_INLINE_ bool is_initialized() const {
-		return initialized;
-	}
-	_FORCE_INLINE_ bool is_runtime_initialized() const {
-		return runtime_initialized;
-	}
-	_FORCE_INLINE_ bool is_finalizing_scripts_domain() {
-		return finalizing_scripts_domain;
-	}
+	_FORCE_INLINE_ bool is_initialized() const { return initialized; }
 
-	_FORCE_INLINE_ const String &get_project_assembly_path() const {
-		return project_assembly_path;
-	}
-	_FORCE_INLINE_ uint64_t get_project_assembly_modified_time() const {
+	_FORCE_INLINE_ bool is_runtime_initialized() const { return runtime_initialized; }
+
+	_FORCE_INLINE_ bool is_finalizing_scripts_domain() { return finalizing_scripts_domain; }
+
+	_FORCE_INLINE_ const String& get_project_assembly_path() const { return project_assembly_path; }
+
+	_FORCE_INLINE_ uint64_t get_project_assembly_modified_time() const
+	{
 		return project_assembly_modified_time;
 	}
 
 #ifdef TOOLS_ENABLED
-	const gdmono::PluginCallbacks &get_plugin_callbacks() {
-		return plugin_callbacks;
-	}
+	const gdmono::PluginCallbacks& get_plugin_callbacks() { return plugin_callbacks; }
 #endif
 
 #ifdef GD_MONO_HOT_RELOAD
@@ -152,16 +149,17 @@ public:
 	~GDMono();
 };
 
-namespace MonoBind {
+namespace MonoBind
+{
 
-class GodotSharp : public Object {
-	VLTRCLASS(GodotSharp, Object);
-
+class GodotSharp
+{
 protected:
-	static GodotSharp *singleton;
+	static GodotSharp* singleton;
 
 public:
-	static GodotSharp *get_singleton() { return singleton; }
+	mem_unique_ptr<Object> obj;
+	static GodotSharp* get_singleton() { return singleton; }
 
 	void reload_assemblies(bool p_soft_reload);
 
@@ -170,3 +168,5 @@ public:
 };
 
 } // namespace MonoBind
+
+
