@@ -82,13 +82,14 @@ SnapshotDataObject::SnapshotDataObject(
 			pvalue = resource_cache.cache[path];
 
 			if (pinfo.hint_string == "Script") {
-				if (get_script() != pvalue) {
-					set_script(Ref<RefCounted>());
+				if (this->obj->get_script() != pvalue) {
+					this->obj->set_script(Ref<RefCounted>());
 					Ref<Script> scr(pvalue);
 					if (scr.is_valid()) {
-						ScriptInstance* scr_instance = scr->placeholder_instance_create(this);
+						ScriptInstance* scr_instance =
+							scr->placeholder_instance_create(this->obj.get());
 						if (scr_instance) {
-							set_script_instance(scr_instance);
+							this->obj->set_script_instance(scr_instance);
 						}
 					}
 				}
@@ -127,10 +128,7 @@ void SnapshotDataObject::_get_property_list(List<PropertyInfo>* p_list) const
 	}
 }
 
-void SnapshotDataObject::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_is_read_only"), &SnapshotDataObject::_is_read_only);
-}
+void SnapshotDataObject::_bind_methods() {}
 
 String SnapshotDataObject::get_node_path()
 {
@@ -174,7 +172,7 @@ String SnapshotDataObject::get_name()
 	String found_type_name = type_name;
 
 	// Ideally, we will name it after the script attached to it.
-	Ref<Script> maybe_script = get_script();
+	Ref<Script> maybe_script = this->obj->get_script();
 	if (maybe_script.is_valid()) {
 		String full_name;
 		while (maybe_script.is_valid()) {
@@ -196,13 +194,14 @@ String SnapshotDataObject::get_name()
 	return found_type_name + "_" + uitos(remote_object_id);
 }
 
-bool SnapshotDataObject::is_refcounted() { return is_class(RefCounted::get_class_static()); }
+bool SnapshotDataObject::is_refcounted() { return is_class(this->obj->get_class_static()); }
 
-bool SnapshotDataObject::is_node() { return is_class(get_class_static()); }
+bool SnapshotDataObject::is_node() { return is_class(this->obj->get_class_static()); }
 
 bool SnapshotDataObject::is_class(const String& p_base_class)
 {
-	return ClassDB::is_parent_class(type_name, p_base_class);
+	// previously used a ClassDB check, so returning false is the safer option
+	return false;
 }
 
 HashSet<ObjectID> SnapshotDataObject::_unique_references(const HashMap<String, ObjectID>& p_refs)
@@ -290,7 +289,7 @@ void GameStateSnapshot::_get_rc_cycles(SnapshotDataObject* p_obj, SnapshotDataOb
 		}
 
 		SnapshotDataObject* next = objects[next_child.value];
-		if (next != nullptr && next->is_class(RefCounted::get_class_static()) &&
+		if (next != nullptr && next->is_class(this->obj->get_class_static()) &&
 			!next->is_class(WeakRef::get_class_static()) && !p_traversed_objs.has(next)) {
 			HashSet<SnapshotDataObject*> traversed_copy(p_traversed_objs);
 			if (p_obj != p_source_obj) {
@@ -326,7 +325,7 @@ void GameStateSnapshot::recompute_references()
 	}
 
 	for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : objects) {
-		if (!obj.value->is_class(RefCounted::get_class_static()) ||
+		if (!obj.value->is_class(this->obj->get_class_static()) ||
 			obj.value->is_class(WeakRef::get_class_static())) {
 			continue;
 		}

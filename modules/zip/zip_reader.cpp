@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "zip_reader.h"
-
 #include "core/error/error_macros.h"
 #include "core/io/zip_io.h"
 #include "core/object/class_db.h"
+#include "zip_reader.h"
 
-Error ZIPReader::open(const String &p_path) {
+Error ZIPReader::open(const String& p_path)
+{
 	if (fa.is_valid()) {
 		close();
 	}
@@ -44,7 +44,8 @@ Error ZIPReader::open(const String &p_path) {
 	return uzf != nullptr ? OK : FAILED;
 }
 
-Error ZIPReader::close() {
+Error ZIPReader::close()
+{
 	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPReader cannot be closed because it is not open.");
 
 	Error err = unzClose(uzf) == UNZ_OK ? OK : FAILED;
@@ -56,7 +57,8 @@ Error ZIPReader::close() {
 	return err;
 }
 
-PackedStringArray ZIPReader::get_files() {
+PackedStringArray ZIPReader::get_files()
+{
 	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedStringArray(), "ZIPReader must be opened before use.");
 
 	unz_global_info gi;
@@ -83,38 +85,45 @@ PackedStringArray ZIPReader::get_files() {
 	PackedStringArray arr;
 	arr.resize(s.size());
 	int idx = 0;
-	for (const List<String>::Element *E = s.front(); E; E = E->next()) {
+	for (const List<String>::Element* E = s.front(); E; E = E->next()) {
 		arr.set(idx++, E->get());
 	}
 	return arr;
 }
 
-PackedByteArray ZIPReader::read_file(const String &p_path, bool p_case_sensitive) {
+PackedByteArray ZIPReader::read_file(const String& p_path, bool p_case_sensitive)
+{
 	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedByteArray(), "ZIPReader must be opened before use.");
 
 	int err = UNZ_OK;
 
 	// Locate and open the file.
 	err = godot_unzip_locate_file(uzf, p_path, p_case_sensitive);
-	ERR_FAIL_COND_V_MSG(err != UNZ_OK, PackedByteArray(), "File does not exist in zip archive: " + p_path);
+	ERR_FAIL_COND_V_MSG(
+		err != UNZ_OK, PackedByteArray(), "File does not exist in zip archive: " + p_path);
 	err = unzOpenCurrentFile(uzf);
-	ERR_FAIL_COND_V_MSG(err != UNZ_OK, PackedByteArray(), "Could not open file within zip archive.");
+	ERR_FAIL_COND_V_MSG(
+		err != UNZ_OK, PackedByteArray(), "Could not open file within zip archive.");
 
 	// Read the file info.
 	unz_file_info info;
 	err = unzGetCurrentFileInfo(uzf, &info, nullptr, 0, nullptr, 0, nullptr, 0);
-	ERR_FAIL_COND_V_MSG(err != UNZ_OK, PackedByteArray(), "Unable to read file information from zip archive.");
-	ERR_FAIL_COND_V_MSG(info.uncompressed_size > INT_MAX, PackedByteArray(), "File contents too large to read from zip archive (>2 GB).");
+	ERR_FAIL_COND_V_MSG(
+		err != UNZ_OK, PackedByteArray(), "Unable to read file information from zip archive.");
+	ERR_FAIL_COND_V_MSG(info.uncompressed_size > INT_MAX, PackedByteArray(),
+		"File contents too large to read from zip archive (>2 GB).");
 
 	// Read the file data.
 	PackedByteArray data;
 	data.resize(info.uncompressed_size);
-	uint8_t *buffer = data.ptrw();
+	uint8_t* buffer = data.ptrw();
 	int to_read = data.size();
 	while (to_read > 0) {
 		int bytes_read = unzReadCurrentFile(uzf, buffer, to_read);
-		ERR_FAIL_COND_V_MSG(bytes_read < 0, PackedByteArray(), "IO/zlib error reading file from zip archive.");
-		ERR_FAIL_COND_V_MSG(bytes_read == UNZ_EOF && to_read != 0, PackedByteArray(), "Incomplete file read from zip archive.");
+		ERR_FAIL_COND_V_MSG(
+			bytes_read < 0, PackedByteArray(), "IO/zlib error reading file from zip archive.");
+		ERR_FAIL_COND_V_MSG(bytes_read == UNZ_EOF && to_read != 0, PackedByteArray(),
+			"Incomplete file read from zip archive.");
 		DEV_ASSERT(bytes_read <= to_read);
 		buffer += bytes_read;
 		to_read -= bytes_read;
@@ -122,11 +131,13 @@ PackedByteArray ZIPReader::read_file(const String &p_path, bool p_case_sensitive
 
 	// Verify the data and return.
 	err = unzCloseCurrentFile(uzf);
-	ERR_FAIL_COND_V_MSG(err != UNZ_OK, PackedByteArray(), "CRC error reading file from zip archive.");
+	ERR_FAIL_COND_V_MSG(
+		err != UNZ_OK, PackedByteArray(), "CRC error reading file from zip archive.");
 	return data;
 }
 
-bool ZIPReader::file_exists(const String &p_path, bool p_case_sensitive) {
+bool ZIPReader::file_exists(const String& p_path, bool p_case_sensitive)
+{
 	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "ZIPReader must be opened before use.");
 
 	int cs = p_case_sensitive ? 1 : 2;
@@ -141,7 +152,8 @@ bool ZIPReader::file_exists(const String &p_path, bool p_case_sensitive) {
 	return true;
 }
 
-int ZIPReader::get_compression_level(const String &p_path, bool p_case_sensitive) {
+int ZIPReader::get_compression_level(const String& p_path, bool p_case_sensitive)
+{
 	ERR_FAIL_COND_V_MSG(fa.is_null(), -1, "ZIPReader must be opened before use.");
 
 	int cs = p_case_sensitive ? 1 : 2;
@@ -162,17 +174,13 @@ int ZIPReader::get_compression_level(const String &p_path, bool p_case_sensitive
 
 ZIPReader::ZIPReader() {}
 
-ZIPReader::~ZIPReader() {
+ZIPReader::~ZIPReader()
+{
 	if (fa.is_valid()) {
 		close();
 	}
 }
 
-void ZIPReader::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("open", "path"), &ZIPReader::open);
-	ClassDB::bind_method(D_METHOD("close"), &ZIPReader::close);
-	ClassDB::bind_method(D_METHOD("get_files"), &ZIPReader::get_files);
-	ClassDB::bind_method(D_METHOD("read_file", "path", "case_sensitive"), &ZIPReader::read_file, DEFVAL(Variant(true)));
-	ClassDB::bind_method(D_METHOD("file_exists", "path", "case_sensitive"), &ZIPReader::file_exists, DEFVAL(Variant(true)));
-	ClassDB::bind_method(D_METHOD("get_compression_level", "path", "case_sensitive"), &ZIPReader::get_compression_level, DEFVAL(Variant(true)));
-}
+void ZIPReader::_bind_methods() {}
+
+

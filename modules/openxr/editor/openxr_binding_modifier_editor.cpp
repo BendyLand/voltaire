@@ -259,13 +259,6 @@ bool EditorInspectorPluginBindingModifier::parse_property(Object* p_object,
 
 void OpenXRBindingModifierEditor::_bind_methods()
 {
-	ClassDB::bind_method(
-		D_METHOD("get_binding_modifier"), &OpenXRBindingModifierEditor::get_binding_modifier);
-	ClassDB::bind_method(
-		D_METHOD("setup", "action_map", "binding_modifier"), &OpenXRBindingModifierEditor::setup);
-
-	ADD_SIGNAL(MethodInfo(
-		"binding_modifier_removed", PropertyInfo(Variant::OBJECT, "binding_modifier_editor")));
 }
 
 void OpenXRBindingModifierEditor::_notification(int p_what)
@@ -328,8 +321,8 @@ void OpenXRBindingModifierEditor::setup(
 	if (p_binding_modifier.is_valid()) {
 		binding_modifier_title->set_text(p_binding_modifier->get_description());
 
-		editor_inspector->set_object_class(p_binding_modifier->get_class());
-		editor_inspector->edit(p_binding_modifier.ptr());
+		editor_inspector->set_object_class(p_binding_modifier->obj->get_class());
+		editor_inspector->edit(p_binding_modifier->obj.get());
 	}
 }
 

@@ -88,7 +88,7 @@ void OpenXRRenderModel::_notification(int p_what)
 		}
 
 		set_process_internal(true);
-		render_model_extension->connect("render_model_top_level_path_changed",
+		render_model_extension->obj->connect("render_model_top_level_path_changed",
 			callable_mp(this, &OpenXRRenderModel::_on_render_model_top_level_path_changed));
 	} break;
 	case NOTIFICATION_EXIT_TREE: {
@@ -105,7 +105,7 @@ void OpenXRRenderModel::_notification(int p_what)
 		OpenXRRenderModelExtension* render_model_extension =
 			OpenXRRenderModelExtension::get_singleton();
 		if (render_model_extension) {
-			render_model_extension->disconnect("render_model_top_level_path_changed",
+			render_model_extension->obj->disconnect("render_model_top_level_path_changed",
 				callable_mp(this, &OpenXRRenderModel::_on_render_model_top_level_path_changed));
 		}
 	} break;

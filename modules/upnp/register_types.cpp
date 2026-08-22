@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "register_types.h"
-
 #include "upnp.h"
 #include "upnp_device.h"
 
@@ -40,22 +39,22 @@
 
 #include "core/object/class_db.h"
 
-void initialize_upnp_module(ModuleInitializationLevel p_level) {
+void initialize_upnp_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-
-	ClassDB::register_custom_instance_class<UPNP>();
-	ClassDB::register_custom_instance_class<UPNPDevice>();
-
 #ifndef WEB_ENABLED
 	UPNPMiniUPNP::make_default();
 	UPNPDeviceMiniUPNP::make_default();
 #endif
 }
 
-void uninitialize_upnp_module(ModuleInitializationLevel p_level) {
+void uninitialize_upnp_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 }
+
+

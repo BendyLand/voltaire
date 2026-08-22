@@ -30,17 +30,16 @@
 
 #pragma once
 
-#include "crypto_mbedtls.h"
-
-#include "core/object/ref_counted.h"
-
 #include <mbedtls/debug.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/ssl_cookie.h>
+#include "core/object/ref_counted.h"
+#include "crypto_mbedtls.h"
 
 class TLSContextMbedTLS;
 
-class CookieContextMbedTLS : public RefCounted {
+class CookieContextMbedTLS : public RefCounted
+{
 	VLTRSOFTCLASS(CookieContextMbedTLS, RefCounted);
 
 	friend class TLSContextMbedTLS;
@@ -54,10 +53,11 @@ public:
 	void clear();
 
 	CookieContextMbedTLS();
-	~CookieContextMbedTLS() override;
+	~CookieContextMbedTLS();
 };
 
-class TLSContextMbedTLS : public RefCounted {
+class TLSContextMbedTLS : public RefCounted
+{
 	VLTRSOFTCLASS(TLSContextMbedTLS, RefCounted);
 
 private:
@@ -73,12 +73,15 @@ private:
 public:
 	static void print_mbedtls_error(int p_ret);
 
-	Error init_server(int p_transport, Ref<TLSOptions> p_options, Ref<CookieContextMbedTLS> p_cookies = Ref<CookieContextMbedTLS>());
-	Error init_client(int p_transport, const String &p_hostname, Ref<TLSOptions> p_options);
+	Error init_server(int p_transport, Ref<TLSOptions> p_options,
+		Ref<CookieContextMbedTLS> p_cookies = Ref<CookieContextMbedTLS>());
+	Error init_client(int p_transport, const String& p_hostname, Ref<TLSOptions> p_options);
 	void clear();
 
-	mbedtls_ssl_context *get_context();
+	mbedtls_ssl_context* get_context();
 
 	TLSContextMbedTLS();
-	~TLSContextMbedTLS() override;
+	~TLSContextMbedTLS();
 };
+
+

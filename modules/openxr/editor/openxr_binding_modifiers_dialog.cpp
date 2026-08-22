@@ -35,13 +35,7 @@
 #include "openxr_action_map_editor.h"
 #include "openxr_binding_modifiers_dialog.h"
 
-void OpenXRBindingModifiersDialog::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_do_add_binding_modifier_editor", "binding_modifier_editor"),
-		&OpenXRBindingModifiersDialog::_do_add_binding_modifier_editor);
-	ClassDB::bind_method(D_METHOD("_do_remove_binding_modifier_editor", "binding_modifier_editor"),
-		&OpenXRBindingModifiersDialog::_do_remove_binding_modifier_editor);
-}
+void OpenXRBindingModifiersDialog::_bind_methods() {}
 
 void OpenXRBindingModifiersDialog::_notification(int p_what)
 {
@@ -53,7 +47,7 @@ void OpenXRBindingModifiersDialog::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		if (binding_modifier_sc) {
 			binding_modifier_sc->add_theme_style_override(
-				SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+				SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 		}
 	} break;
 	}
@@ -64,20 +58,17 @@ OpenXRBindingModifierEditor* OpenXRBindingModifiersDialog::_add_binding_modifier
 {
 	ERR_FAIL_COND_V(p_binding_modifier.is_null(), nullptr);
 
-	String class_name = p_binding_modifier->get_class();
+	String class_name = p_binding_modifier->obj->get_class();
 	ERR_FAIL_COND_V(class_name.is_empty(), nullptr);
 	String editor_class = OpenXRActionMapEditor::get_binding_modifier_editor_class(class_name);
 	ERR_FAIL_COND_V(editor_class.is_empty(), nullptr);
 
 	OpenXRBindingModifierEditor* new_editor = nullptr;
 
-	Object* obj = ClassDB::instantiate(editor_class);
-	if (obj) {
-		new_editor = Object::cast_to<OpenXRBindingModifierEditor>(obj);
-		if (!new_editor) {
-			// Not of correct type?? Free it.
-			memfree(obj);
-		}
+	new_editor = memnew(OpenXRBindingModifierEditor);
+	if (!new_editor) {
+		// Not of correct type?? Free it.
+		memfree(new_editor);
 	}
 	ERR_FAIL_NULL_V(new_editor, nullptr);
 
@@ -87,7 +78,7 @@ OpenXRBindingModifierEditor* OpenXRBindingModifiersDialog::_add_binding_modifier
 
 	binding_modifiers_vb->add_child(new_editor);
 	new_editor->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 
 	return new_editor;
 }
@@ -120,10 +111,10 @@ void OpenXRBindingModifiersDialog::_on_add_binding_modifier()
 void OpenXRBindingModifiersDialog::_on_remove_binding_modifier(Object* p_binding_modifier_editor)
 {
 	if (ip_binding.is_valid()) {
-		ip_binding->set_edited(true);
+		ip_binding->obj->set_edited(true);
 	}
 	else if (interaction_profile.is_valid()) {
-		interaction_profile->set_edited(true);
+		interaction_profile->obj->set_edited(true);
 	}
 	else {
 		ERR_FAIL_MSG("No binding nor interaction profile specified.");
@@ -154,12 +145,12 @@ void OpenXRBindingModifiersDialog::_on_dialog_created()
 	if (ip_binding.is_valid()) {
 		// Add it to our binding.
 		ip_binding->add_binding_modifier(new_binding_modifier);
-		ip_binding->set_edited(true);
+		ip_binding->obj->set_edited(true);
 	}
 	else if (interaction_profile.is_valid()) {
 		// Add it to our interaction profile.
 		interaction_profile->add_binding_modifier(new_binding_modifier);
-		interaction_profile->set_edited(true);
+		interaction_profile->obj->set_edited(true);
 	}
 	else {
 		ERR_FAIL_MSG("No binding nor interaction profile specified.");

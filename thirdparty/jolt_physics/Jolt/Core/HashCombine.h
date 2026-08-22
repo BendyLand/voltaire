@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <Jolt/Core/STLAllocator.h>
+
 JPH_NAMESPACE_BEGIN
 
 /// Implements the FNV-1a hash algorithm

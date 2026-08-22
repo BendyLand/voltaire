@@ -28,47 +28,46 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "nav_map_2d.h"
-
+#include <Obstacle2d.h>
 #include "2d/nav_map_builder_2d.h"
 #include "2d/nav_mesh_queries_2d.h"
 #include "2d/nav_region_iteration_2d.h"
-#include "nav_agent_2d.h"
-#include "nav_link_2d.h"
-#include "nav_obstacle_2d.h"
-#include "nav_region_2d.h"
-
 #include "core/config/project_settings.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/os/os.h"
+#include "nav_agent_2d.h"
+#include "nav_link_2d.h"
+#include "nav_map_2d.h"
+#include "nav_obstacle_2d.h"
+#include "nav_region_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-
-#include <Obstacle2d.h>
 
 using namespace Nav2D;
 
 #ifdef DEBUG_ENABLED
-#define NAVMAP_ITERATION_ZERO_ERROR_MSG() \
-	ERR_PRINT_ONCE("NavigationServer navigation map query failed because it was made before first map synchronization.\n\
+#define NAVMAP_ITERATION_ZERO_ERROR_MSG()                                                          \
+	ERR_PRINT_ONCE(                                                                                \
+		"NavigationServer navigation map query failed because it was made before first map synchronization.\n\
 	NavigationServer 'map_changed' signal can be used to receive update notifications.\n\
 	NavigationServer 'map_get_iteration_id()' can be used to check if a map has finished its newest iteration.");
 #else
 #define NAVMAP_ITERATION_ZERO_ERROR_MSG()
 #endif // DEBUG_ENABLED
 
-#define GET_MAP_ITERATION() \
-	iteration_slot_rwlock.read_lock(); \
-	NavMapIteration2D &map_iteration = iteration_slots[iteration_slot_index]; \
-	NavMapIterationRead2D iteration_read_lock(map_iteration); \
+#define GET_MAP_ITERATION()                                                                        \
+	iteration_slot_rwlock.read_lock();                                                             \
+	NavMapIteration2D& map_iteration = iteration_slots[iteration_slot_index];                      \
+	NavMapIterationRead2D iteration_read_lock(map_iteration);                                      \
 	iteration_slot_rwlock.read_unlock();
 
-#define GET_MAP_ITERATION_CONST() \
-	iteration_slot_rwlock.read_lock(); \
-	const NavMapIteration2D &map_iteration = iteration_slots[iteration_slot_index]; \
-	NavMapIterationRead2D iteration_read_lock(map_iteration); \
+#define GET_MAP_ITERATION_CONST()                                                                  \
+	iteration_slot_rwlock.read_lock();                                                             \
+	const NavMapIteration2D& map_iteration = iteration_slots[iteration_slot_index];                \
+	NavMapIterationRead2D iteration_read_lock(map_iteration);                                      \
 	iteration_slot_rwlock.read_unlock();
 
-void NavMap2D::set_cell_size(real_t p_cell_size) {
+void NavMap2D::set_cell_size(real_t p_cell_size)
+{
 	if (cell_size == p_cell_size) {
 		return;
 	}
@@ -77,16 +76,19 @@ void NavMap2D::set_cell_size(real_t p_cell_size) {
 	map_settings_dirty = true;
 }
 
-void NavMap2D::set_merge_rasterizer_cell_scale(float p_value) {
+void NavMap2D::set_merge_rasterizer_cell_scale(float p_value)
+{
 	if (merge_rasterizer_cell_scale == p_value) {
 		return;
 	}
-	merge_rasterizer_cell_scale = MAX(MIN(p_value, 0.1), NavigationDefaults2D::NAV_MESH_CELL_SIZE_MIN);
+	merge_rasterizer_cell_scale =
+		MAX(MIN(p_value, 0.1), NavigationDefaults2D::NAV_MESH_CELL_SIZE_MIN);
 	_update_merge_rasterizer_cell_dimensions();
 	map_settings_dirty = true;
 }
 
-void NavMap2D::set_use_edge_connections(bool p_enabled) {
+void NavMap2D::set_use_edge_connections(bool p_enabled)
+{
 	if (use_edge_connections == p_enabled) {
 		return;
 	}
@@ -94,7 +96,8 @@ void NavMap2D::set_use_edge_connections(bool p_enabled) {
 	iteration_dirty = true;
 }
 
-void NavMap2D::set_edge_connection_margin(real_t p_edge_connection_margin) {
+void NavMap2D::set_edge_connection_margin(real_t p_edge_connection_margin)
+{
 	if (edge_connection_margin == p_edge_connection_margin) {
 		return;
 	}
@@ -102,7 +105,8 @@ void NavMap2D::set_edge_connection_margin(real_t p_edge_connection_margin) {
 	iteration_dirty = true;
 }
 
-void NavMap2D::set_link_connection_radius(real_t p_link_connection_radius) {
+void NavMap2D::set_link_connection_radius(real_t p_link_connection_radius)
+{
 	if (link_connection_radius == p_link_connection_radius) {
 		return;
 	}
@@ -110,11 +114,13 @@ void NavMap2D::set_link_connection_radius(real_t p_link_connection_radius) {
 	iteration_dirty = true;
 }
 
-const Vector2 &NavMap2D::get_merge_rasterizer_cell_size() const {
+const Vector2& NavMap2D::get_merge_rasterizer_cell_size() const
+{
 	return merge_rasterizer_cell_size;
 }
 
-PointKey NavMap2D::get_point_key(const Vector2 &p_pos) const {
+PointKey NavMap2D::get_point_key(const Vector2& p_pos) const
+{
 	const int x = static_cast<int>(Math::floor(p_pos.x / merge_rasterizer_cell_size.x));
 	const int y = static_cast<int>(Math::floor(p_pos.y / merge_rasterizer_cell_size.y));
 
@@ -125,7 +131,8 @@ PointKey NavMap2D::get_point_key(const Vector2 &p_pos) const {
 	return p;
 }
 
-void NavMap2D::query_path(NavMeshQueries2D::NavMeshPathQueryTask2D &p_query_task) {
+void NavMap2D::query_path(NavMeshQueries2D::NavMeshPathQueryTask2D& p_query_task)
+{
 	if (iteration_id == 0) {
 		return;
 	}
@@ -135,7 +142,7 @@ void NavMap2D::query_path(NavMeshQueries2D::NavMeshPathQueryTask2D &p_query_task
 	map_iteration.path_query_slots_semaphore.wait();
 
 	map_iteration.path_query_slots_mutex.lock();
-	for (NavMeshQueries2D::PathQuerySlot &p_path_query_slot : map_iteration.path_query_slots) {
+	for (NavMeshQueries2D::PathQuerySlot& p_path_query_slot : map_iteration.path_query_slots) {
 		if (!p_path_query_slot.in_use) {
 			p_path_query_slot.in_use = true;
 			p_query_task.path_query_slot = &p_path_query_slot;
@@ -146,7 +153,8 @@ void NavMap2D::query_path(NavMeshQueries2D::NavMeshPathQueryTask2D &p_query_task
 
 	if (p_query_task.path_query_slot == nullptr) {
 		map_iteration.path_query_slots_semaphore.post();
-		ERR_FAIL_NULL_MSG(p_query_task.path_query_slot, "No unused NavMap2D path query slot found! This should never happen :(.");
+		ERR_FAIL_NULL_MSG(p_query_task.path_query_slot,
+			"No unused NavMap2D path query slot found! This should never happen :(.");
 	}
 
 	NavMeshQueries2D::query_task_map_iteration_get_path(p_query_task, map_iteration);
@@ -160,7 +168,8 @@ void NavMap2D::query_path(NavMeshQueries2D::NavMeshPathQueryTask2D &p_query_task
 	map_iteration.path_query_slots_semaphore.post();
 }
 
-Vector2 NavMap2D::get_closest_point(const Vector2 &p_point) const {
+Vector2 NavMap2D::get_closest_point(const Vector2& p_point) const
+{
 	if (iteration_id == 0) {
 		NAVMAP_ITERATION_ZERO_ERROR_MSG();
 		return Vector2();
@@ -171,7 +180,8 @@ Vector2 NavMap2D::get_closest_point(const Vector2 &p_point) const {
 	return NavMeshQueries2D::map_iteration_get_closest_point(map_iteration, p_point);
 }
 
-RID NavMap2D::get_closest_point_owner(const Vector2 &p_point) const {
+RID NavMap2D::get_closest_point_owner(const Vector2& p_point) const
+{
 	if (iteration_id == 0) {
 		NAVMAP_ITERATION_ZERO_ERROR_MSG();
 		return RID();
@@ -182,61 +192,65 @@ RID NavMap2D::get_closest_point_owner(const Vector2 &p_point) const {
 	return NavMeshQueries2D::map_iteration_get_closest_point_owner(map_iteration, p_point);
 }
 
-ClosestPointQueryResult NavMap2D::get_closest_point_info(const Vector2 &p_point) const {
+ClosestPointQueryResult NavMap2D::get_closest_point_info(const Vector2& p_point) const
+{
 	GET_MAP_ITERATION_CONST();
 
 	return NavMeshQueries2D::map_iteration_get_closest_point_info(map_iteration, p_point);
 }
 
-void NavMap2D::add_region(NavRegion2D *p_region) {
+void NavMap2D::add_region(NavRegion2D* p_region)
+{
 	DEV_ASSERT(!regions.has(p_region));
 
 	regions.push_back(p_region);
 	iteration_dirty = true;
 }
 
-void NavMap2D::remove_region(NavRegion2D *p_region) {
+void NavMap2D::remove_region(NavRegion2D* p_region)
+{
 	if (regions.erase_unordered(p_region)) {
 		iteration_dirty = true;
 	}
 }
 
-void NavMap2D::add_link(NavLink2D *p_link) {
+void NavMap2D::add_link(NavLink2D* p_link)
+{
 	DEV_ASSERT(!links.has(p_link));
 
 	links.push_back(p_link);
 	iteration_dirty = true;
 }
 
-void NavMap2D::remove_link(NavLink2D *p_link) {
+void NavMap2D::remove_link(NavLink2D* p_link)
+{
 	if (links.erase_unordered(p_link)) {
 		iteration_dirty = true;
 	}
 }
 
-bool NavMap2D::has_agent(NavAgent2D *p_agent) const {
-	return agents.has(p_agent);
-}
+bool NavMap2D::has_agent(NavAgent2D* p_agent) const { return agents.has(p_agent); }
 
-void NavMap2D::add_agent(NavAgent2D *p_agent) {
+void NavMap2D::add_agent(NavAgent2D* p_agent)
+{
 	if (!has_agent(p_agent)) {
 		agents.push_back(p_agent);
 		agents_dirty = true;
 	}
 }
 
-void NavMap2D::remove_agent(NavAgent2D *p_agent) {
+void NavMap2D::remove_agent(NavAgent2D* p_agent)
+{
 	remove_agent_as_controlled(p_agent);
 	if (agents.erase_unordered(p_agent)) {
 		agents_dirty = true;
 	}
 }
 
-bool NavMap2D::has_obstacle(NavObstacle2D *p_obstacle) const {
-	return obstacles.has(p_obstacle);
-}
+bool NavMap2D::has_obstacle(NavObstacle2D* p_obstacle) const { return obstacles.has(p_obstacle); }
 
-void NavMap2D::add_obstacle(NavObstacle2D *p_obstacle) {
+void NavMap2D::add_obstacle(NavObstacle2D* p_obstacle)
+{
 	if (p_obstacle->get_paused()) {
 		// No point in adding a paused obstacle, it will add itself when unpaused again.
 		return;
@@ -248,13 +262,15 @@ void NavMap2D::add_obstacle(NavObstacle2D *p_obstacle) {
 	}
 }
 
-void NavMap2D::remove_obstacle(NavObstacle2D *p_obstacle) {
+void NavMap2D::remove_obstacle(NavObstacle2D* p_obstacle)
+{
 	if (obstacles.erase_unordered(p_obstacle)) {
 		obstacles_dirty = true;
 	}
 }
 
-void NavMap2D::set_agent_as_controlled(NavAgent2D *p_agent) {
+void NavMap2D::set_agent_as_controlled(NavAgent2D* p_agent)
+{
 	remove_agent_as_controlled(p_agent);
 
 	if (p_agent->get_paused()) {
@@ -269,26 +285,30 @@ void NavMap2D::set_agent_as_controlled(NavAgent2D *p_agent) {
 	}
 }
 
-void NavMap2D::remove_agent_as_controlled(NavAgent2D *p_agent) {
+void NavMap2D::remove_agent_as_controlled(NavAgent2D* p_agent)
+{
 	if (active_avoidance_agents.erase_unordered(p_agent)) {
 		agents_dirty = true;
 	}
 }
 
-Vector2 NavMap2D::get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const {
+Vector2 NavMap2D::get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const
+{
 	GET_MAP_ITERATION_CONST();
 
-	return NavMeshQueries2D::map_iteration_get_random_point(map_iteration, p_navigation_layers, p_uniformly);
+	return NavMeshQueries2D::map_iteration_get_random_point(
+		map_iteration, p_navigation_layers, p_uniformly);
 }
 
-void NavMap2D::_build_iteration() {
+void NavMap2D::_build_iteration()
+{
 	if (!iteration_dirty || iteration_building || iteration_ready) {
 		return;
 	}
 
 	// Get the next free iteration slot that should be potentially unused.
 	iteration_slot_rwlock.read_lock();
-	NavMapIteration2D &next_map_iteration = iteration_slots[(iteration_slot_index + 1) % 2];
+	NavMapIteration2D& next_map_iteration = iteration_slots[(iteration_slot_index + 1) % 2];
 	// Check if the iteration slot is truly free or still used by an external thread.
 	bool iteration_is_free = next_map_iteration.users.get() == 0;
 	iteration_slot_rwlock.read_unlock();
@@ -324,12 +344,12 @@ void NavMap2D::_build_iteration() {
 	uint32_t region_id_count = 0;
 	uint32_t link_id_count = 0;
 
-	for (NavRegion2D *region : regions) {
+	for (NavRegion2D* region : regions) {
 		const Ref<NavRegionIteration2D> region_iteration = region->get_iteration();
 		next_map_iteration.region_iterations[region_id_count++] = region_iteration;
 		next_map_iteration.region_ptr_to_region_iteration[region] = region_iteration;
 	}
-	for (NavLink2D *link : links) {
+	for (NavLink2D* link : links) {
 		const Ref<NavLinkIteration2D> link_iteration = link->get_iteration();
 		next_map_iteration.link_iterations[link_id_count++] = link_iteration;
 	}
@@ -337,8 +357,10 @@ void NavMap2D::_build_iteration() {
 	iteration_build.map_iteration = &next_map_iteration;
 
 	if (use_async_iterations) {
-		iteration_build_thread_task_id = WorkerThreadPool::get_singleton()->add_native_task(&NavMap2D::_build_iteration_threaded, &iteration_build, true, SNAME("NavMapBuilder2D"));
-	} else {
+		iteration_build_thread_task_id = WorkerThreadPool::get_singleton()->add_native_task(
+			&NavMap2D::_build_iteration_threaded, &iteration_build, true, SNAME("NavMapBuilder2D"));
+	}
+	else {
 		NavMapBuilder2D::build_navmap_iteration(iteration_build);
 
 		iteration_building = false;
@@ -346,18 +368,21 @@ void NavMap2D::_build_iteration() {
 	}
 }
 
-void NavMap2D::_build_iteration_threaded(void *p_arg) {
-	NavMapIterationBuild2D *_iteration_build = static_cast<NavMapIterationBuild2D *>(p_arg);
+void NavMap2D::_build_iteration_threaded(void* p_arg)
+{
+	NavMapIterationBuild2D* _iteration_build = static_cast<NavMapIterationBuild2D*>(p_arg);
 
 	NavMapBuilder2D::build_navmap_iteration(*_iteration_build);
 }
 
-void NavMap2D::_sync_iteration() {
+void NavMap2D::_sync_iteration()
+{
 	if (iteration_building || !iteration_ready) {
 		return;
 	}
 
-	performance_data.pm_edge_connection_count = iteration_build.performance_data.pm_edge_connection_count;
+	performance_data.pm_edge_connection_count =
+		iteration_build.performance_data.pm_edge_connection_count;
 	performance_data.pm_edge_free_count = iteration_build.performance_data.pm_edge_free_count;
 
 	iteration_id = iteration_id % UINT32_MAX + 1;
@@ -371,7 +396,8 @@ void NavMap2D::_sync_iteration() {
 	iteration_ready = false;
 }
 
-void NavMap2D::sync() {
+void NavMap2D::sync()
+{
 	// Performance Monitor.
 	performance_data.pm_region_count = regions.size();
 	performance_data.pm_agent_count = agents.size();
@@ -385,9 +411,11 @@ void NavMap2D::sync() {
 	if (iteration_dirty && !iteration_building && !iteration_ready) {
 		_build_iteration();
 	}
-	if (use_async_iterations && iteration_build_thread_task_id != WorkerThreadPool::INVALID_TASK_ID) {
+	if (use_async_iterations &&
+		iteration_build_thread_task_id != WorkerThreadPool::INVALID_TASK_ID) {
 		if (WorkerThreadPool::get_singleton()->is_task_completed(iteration_build_thread_task_id)) {
-			WorkerThreadPool::get_singleton()->wait_for_task_completion(iteration_build_thread_task_id);
+			WorkerThreadPool::get_singleton()->wait_for_task_completion(
+				iteration_build_thread_task_id);
 
 			iteration_build_thread_task_id = WorkerThreadPool::INVALID_TASK_ID;
 			iteration_building = false;
@@ -397,7 +425,7 @@ void NavMap2D::sync() {
 	if (iteration_ready) {
 		_sync_iteration();
 
-		NavigationServer2D::get_singleton()->emit_signal(SNAME("map_changed"), get_self());
+		NavigationServer2D::get_singleton()->obj->emit_signal(SNAME("map_changed"), get_self());
 	}
 
 	map_settings_dirty = false;
@@ -408,14 +436,15 @@ void NavMap2D::sync() {
 	performance_data.pm_edge_count = 0;
 	performance_data.pm_edge_merge_count = 0;
 
-	for (NavRegion2D *region : regions) {
+	for (NavRegion2D* region : regions) {
 		performance_data.pm_polygon_count += region->get_pm_polygon_count();
 		performance_data.pm_edge_count += region->get_pm_edge_count();
 		performance_data.pm_edge_merge_count += region->get_pm_edge_merge_count();
 	}
 }
 
-void NavMap2D::_sync_avoidance() {
+void NavMap2D::_sync_avoidance()
+{
 	_sync_dirty_avoidance_update_requests();
 
 	if (obstacles_dirty || agents_dirty) {
@@ -426,9 +455,10 @@ void NavMap2D::_sync_avoidance() {
 	agents_dirty = false;
 }
 
-void NavMap2D::_update_rvo_obstacles_tree() {
+void NavMap2D::_update_rvo_obstacles_tree()
+{
 	int obstacle_vertex_count = 0;
-	for (NavObstacle2D *obstacle : obstacles) {
+	for (NavObstacle2D* obstacle : obstacles) {
 		obstacle_vertex_count += obstacle->get_vertices().size();
 	}
 
@@ -439,17 +469,17 @@ void NavMap2D::_update_rvo_obstacles_tree() {
 	rvo_simulation.obstacles_.clear();
 
 	// Cannot use LocalVector here as RVO library expects std::vector to build KdTree
-	std::vector<RVO2D::Obstacle2D *> &raw_obstacles = rvo_simulation.obstacles_;
+	std::vector<RVO2D::Obstacle2D*>& raw_obstacles = rvo_simulation.obstacles_;
 	raw_obstacles.reserve(obstacle_vertex_count);
 
 	// The following block is modified copy from RVO2D::AddObstacle()
 	// Obstacles are linked and depend on all other obstacles.
-	for (NavObstacle2D *obstacle : obstacles) {
+	for (NavObstacle2D* obstacle : obstacles) {
 		if (!obstacle->is_avoidance_enabled()) {
 			continue;
 		}
-		const Vector2 &_obstacle_position = obstacle->get_position();
-		const Vector<Vector2> &_obstacle_vertices = obstacle->get_vertices();
+		const Vector2& _obstacle_position = obstacle->get_position();
+		const Vector<Vector2>& _obstacle_vertices = obstacle->get_vertices();
 
 		if (_obstacle_vertices.size() < 2) {
 			continue;
@@ -460,14 +490,15 @@ void NavMap2D::_update_rvo_obstacles_tree() {
 
 		uint32_t _obstacle_avoidance_layers = obstacle->get_avoidance_layers();
 
-		for (const Vector2 &_obstacle_vertex : _obstacle_vertices) {
-			rvo_vertices.push_back(RVO2D::Vector2(_obstacle_vertex.x + _obstacle_position.x, _obstacle_vertex.y + _obstacle_position.y));
+		for (const Vector2& _obstacle_vertex : _obstacle_vertices) {
+			rvo_vertices.push_back(RVO2D::Vector2(_obstacle_vertex.x + _obstacle_position.x,
+				_obstacle_vertex.y + _obstacle_position.y));
 		}
 
 		const size_t obstacleNo = raw_obstacles.size();
 
 		for (size_t i = 0; i < rvo_vertices.size(); i++) {
-			RVO2D::Obstacle2D *rvo_obstacle = new RVO2D::Obstacle2D();
+			RVO2D::Obstacle2D* rvo_obstacle = new RVO2D::Obstacle2D();
 			rvo_obstacle->point_ = rvo_vertices[i];
 
 			rvo_obstacle->avoidance_layers_ = _obstacle_avoidance_layers;
@@ -482,12 +513,17 @@ void NavMap2D::_update_rvo_obstacles_tree() {
 				rvo_obstacle->nextObstacle_->prevObstacle_ = rvo_obstacle;
 			}
 
-			rvo_obstacle->unitDir_ = normalize(rvo_vertices[(i == rvo_vertices.size() - 1 ? 0 : i + 1)] - rvo_vertices[i]);
+			rvo_obstacle->unitDir_ = normalize(
+				rvo_vertices[(i == rvo_vertices.size() - 1 ? 0 : i + 1)] - rvo_vertices[i]);
 
 			if (rvo_vertices.size() == 2) {
 				rvo_obstacle->isConvex_ = true;
-			} else {
-				rvo_obstacle->isConvex_ = (leftOf(rvo_vertices[(i == 0 ? rvo_vertices.size() - 1 : i - 1)], rvo_vertices[i], rvo_vertices[(i == rvo_vertices.size() - 1 ? 0 : i + 1)]) >= 0.0f);
+			}
+			else {
+				rvo_obstacle->isConvex_ =
+					(leftOf(rvo_vertices[(i == 0 ? rvo_vertices.size() - 1 : i - 1)],
+						 rvo_vertices[i],
+						 rvo_vertices[(i == rvo_vertices.size() - 1 ? 0 : i + 1)]) >= 0.0f);
 			}
 
 			rvo_obstacle->id_ = raw_obstacles.size();
@@ -499,17 +535,19 @@ void NavMap2D::_update_rvo_obstacles_tree() {
 	rvo_simulation.kdTree_->buildObstacleTree(raw_obstacles);
 }
 
-void NavMap2D::_update_rvo_agents_tree() {
+void NavMap2D::_update_rvo_agents_tree()
+{
 	// Cannot use LocalVector here as RVO library expects std::vector to build KdTree.
-	std::vector<RVO2D::Agent2D *> raw_agents;
+	std::vector<RVO2D::Agent2D*> raw_agents;
 	raw_agents.reserve(active_avoidance_agents.size());
-	for (NavAgent2D *agent : active_avoidance_agents) {
+	for (NavAgent2D* agent : active_avoidance_agents) {
 		raw_agents.push_back(agent->get_rvo_agent());
 	}
 	rvo_simulation.kdTree_->buildAgentTree(raw_agents);
 }
 
-void NavMap2D::_update_rvo_simulation() {
+void NavMap2D::_update_rvo_simulation()
+{
 	if (obstacles_dirty) {
 		_update_rvo_obstacles_tree();
 	}
@@ -518,22 +556,28 @@ void NavMap2D::_update_rvo_simulation() {
 	}
 }
 
-void NavMap2D::compute_single_avoidance_step(uint32_t p_index, NavAgent2D **p_agent) {
+void NavMap2D::compute_single_avoidance_step(uint32_t p_index, NavAgent2D** p_agent)
+{
 	(*(p_agent + p_index))->get_rvo_agent()->computeNeighbors(&rvo_simulation);
 	(*(p_agent + p_index))->get_rvo_agent()->computeNewVelocity(&rvo_simulation);
 	(*(p_agent + p_index))->get_rvo_agent()->update(&rvo_simulation);
 	(*(p_agent + p_index))->update();
 }
 
-void NavMap2D::step(double p_delta_time) {
+void NavMap2D::step(double p_delta_time)
+{
 	rvo_simulation.setTimeStep(float(p_delta_time));
 
 	if (active_avoidance_agents.size() > 0) {
 		if (use_threads && avoidance_use_multiple_threads) {
-			WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &NavMap2D::compute_single_avoidance_step, active_avoidance_agents.ptr(), active_avoidance_agents.size(), -1, true, SNAME("RVOAvoidanceAgents2D"));
+			WorkerThreadPool::GroupID group_task =
+				WorkerThreadPool::get_singleton()->add_template_group_task(this,
+					&NavMap2D::compute_single_avoidance_step, active_avoidance_agents.ptr(),
+					active_avoidance_agents.size(), -1, true, SNAME("RVOAvoidanceAgents2D"));
 			WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
-		} else {
-			for (NavAgent2D *agent : active_avoidance_agents) {
+		}
+		else {
+			for (NavAgent2D* agent : active_avoidance_agents) {
 				agent->get_rvo_agent()->computeNeighbors(&rvo_simulation);
 				agent->get_rvo_agent()->computeNewVelocity(&rvo_simulation);
 				agent->get_rvo_agent()->update(&rvo_simulation);
@@ -543,25 +587,31 @@ void NavMap2D::step(double p_delta_time) {
 	}
 }
 
-void NavMap2D::dispatch_callbacks() {
-	for (NavAgent2D *agent : active_avoidance_agents) {
+void NavMap2D::dispatch_callbacks()
+{
+	for (NavAgent2D* agent : active_avoidance_agents) {
 		agent->dispatch_avoidance_callback();
 	}
 }
 
-void NavMap2D::_update_merge_rasterizer_cell_dimensions() {
+void NavMap2D::_update_merge_rasterizer_cell_dimensions()
+{
 	merge_rasterizer_cell_size.x = cell_size * merge_rasterizer_cell_scale;
 	merge_rasterizer_cell_size.y = cell_size * merge_rasterizer_cell_scale;
 }
 
-int NavMap2D::get_region_connections_count(NavRegion2D *p_region) const {
+int NavMap2D::get_region_connections_count(NavRegion2D* p_region) const
+{
 	ERR_FAIL_NULL_V(p_region, 0);
 
 	GET_MAP_ITERATION_CONST();
 
-	HashMap<NavRegion2D *, Ref<NavRegionIteration2D>>::ConstIterator found_id = map_iteration.region_ptr_to_region_iteration.find(p_region);
+	HashMap<NavRegion2D*, Ref<NavRegionIteration2D>>::ConstIterator found_id =
+		map_iteration.region_ptr_to_region_iteration.find(p_region);
 	if (found_id) {
-		HashMap<const NavBaseIteration2D *, LocalVector<Connection>>::ConstIterator found_connections = map_iteration.external_region_connections.find(found_id->value.ptr());
+		HashMap<const NavBaseIteration2D*, LocalVector<Connection>>::ConstIterator
+			found_connections =
+				map_iteration.external_region_connections.find(found_id->value.ptr());
 		if (found_connections) {
 			return found_connections->value.size();
 		}
@@ -570,14 +620,19 @@ int NavMap2D::get_region_connections_count(NavRegion2D *p_region) const {
 	return 0;
 }
 
-Vector2 NavMap2D::get_region_connection_pathway_start(NavRegion2D *p_region, int p_connection_id) const {
+Vector2 NavMap2D::get_region_connection_pathway_start(
+	NavRegion2D* p_region, int p_connection_id) const
+{
 	ERR_FAIL_NULL_V(p_region, Vector2());
 
 	GET_MAP_ITERATION_CONST();
 
-	HashMap<NavRegion2D *, Ref<NavRegionIteration2D>>::ConstIterator found_id = map_iteration.region_ptr_to_region_iteration.find(p_region);
+	HashMap<NavRegion2D*, Ref<NavRegionIteration2D>>::ConstIterator found_id =
+		map_iteration.region_ptr_to_region_iteration.find(p_region);
 	if (found_id) {
-		HashMap<const NavBaseIteration2D *, LocalVector<Connection>>::ConstIterator found_connections = map_iteration.external_region_connections.find(found_id->value.ptr());
+		HashMap<const NavBaseIteration2D*, LocalVector<Connection>>::ConstIterator
+			found_connections =
+				map_iteration.external_region_connections.find(found_id->value.ptr());
 		if (found_connections) {
 			ERR_FAIL_INDEX_V(p_connection_id, int(found_connections->value.size()), Vector2());
 			return found_connections->value[p_connection_id].pathway_start;
@@ -587,14 +642,19 @@ Vector2 NavMap2D::get_region_connection_pathway_start(NavRegion2D *p_region, int
 	return Vector2();
 }
 
-Vector2 NavMap2D::get_region_connection_pathway_end(NavRegion2D *p_region, int p_connection_id) const {
+Vector2 NavMap2D::get_region_connection_pathway_end(
+	NavRegion2D* p_region, int p_connection_id) const
+{
 	ERR_FAIL_NULL_V(p_region, Vector2());
 
 	GET_MAP_ITERATION_CONST();
 
-	HashMap<NavRegion2D *, Ref<NavRegionIteration2D>>::ConstIterator found_id = map_iteration.region_ptr_to_region_iteration.find(p_region);
+	HashMap<NavRegion2D*, Ref<NavRegionIteration2D>>::ConstIterator found_id =
+		map_iteration.region_ptr_to_region_iteration.find(p_region);
 	if (found_id) {
-		HashMap<const NavBaseIteration2D *, LocalVector<Connection>>::ConstIterator found_connections = map_iteration.external_region_connections.find(found_id->value.ptr());
+		HashMap<const NavBaseIteration2D*, LocalVector<Connection>>::ConstIterator
+			found_connections =
+				map_iteration.external_region_connections.find(found_id->value.ptr());
 		if (found_connections) {
 			ERR_FAIL_INDEX_V(p_connection_id, int(found_connections->value.size()), Vector2());
 			return found_connections->value[p_connection_id].pathway_end;
@@ -604,7 +664,8 @@ Vector2 NavMap2D::get_region_connection_pathway_end(NavRegion2D *p_region, int p
 	return Vector2();
 }
 
-void NavMap2D::add_region_sync_dirty_request(SelfList<NavRegion2D> *p_sync_request) {
+void NavMap2D::add_region_sync_dirty_request(SelfList<NavRegion2D>* p_sync_request)
+{
 	if (p_sync_request->in_list()) {
 		return;
 	}
@@ -612,7 +673,8 @@ void NavMap2D::add_region_sync_dirty_request(SelfList<NavRegion2D> *p_sync_reque
 	sync_dirty_requests.regions.list.add(p_sync_request);
 }
 
-void NavMap2D::add_link_sync_dirty_request(SelfList<NavLink2D> *p_sync_request) {
+void NavMap2D::add_link_sync_dirty_request(SelfList<NavLink2D>* p_sync_request)
+{
 	if (p_sync_request->in_list()) {
 		return;
 	}
@@ -620,21 +682,24 @@ void NavMap2D::add_link_sync_dirty_request(SelfList<NavLink2D> *p_sync_request) 
 	sync_dirty_requests.links.list.add(p_sync_request);
 }
 
-void NavMap2D::add_agent_sync_dirty_request(SelfList<NavAgent2D> *p_sync_request) {
+void NavMap2D::add_agent_sync_dirty_request(SelfList<NavAgent2D>* p_sync_request)
+{
 	if (p_sync_request->in_list()) {
 		return;
 	}
 	sync_dirty_requests.agents.list.add(p_sync_request);
 }
 
-void NavMap2D::add_obstacle_sync_dirty_request(SelfList<NavObstacle2D> *p_sync_request) {
+void NavMap2D::add_obstacle_sync_dirty_request(SelfList<NavObstacle2D>* p_sync_request)
+{
 	if (p_sync_request->in_list()) {
 		return;
 	}
 	sync_dirty_requests.obstacles.list.add(p_sync_request);
 }
 
-void NavMap2D::remove_region_sync_dirty_request(SelfList<NavRegion2D> *p_sync_request) {
+void NavMap2D::remove_region_sync_dirty_request(SelfList<NavRegion2D>* p_sync_request)
+{
 	if (!p_sync_request->in_list()) {
 		return;
 	}
@@ -642,7 +707,8 @@ void NavMap2D::remove_region_sync_dirty_request(SelfList<NavRegion2D> *p_sync_re
 	sync_dirty_requests.regions.list.remove(p_sync_request);
 }
 
-void NavMap2D::remove_link_sync_dirty_request(SelfList<NavLink2D> *p_sync_request) {
+void NavMap2D::remove_link_sync_dirty_request(SelfList<NavLink2D>* p_sync_request)
+{
 	if (!p_sync_request->in_list()) {
 		return;
 	}
@@ -650,24 +716,27 @@ void NavMap2D::remove_link_sync_dirty_request(SelfList<NavLink2D> *p_sync_reques
 	sync_dirty_requests.links.list.remove(p_sync_request);
 }
 
-void NavMap2D::remove_agent_sync_dirty_request(SelfList<NavAgent2D> *p_sync_request) {
+void NavMap2D::remove_agent_sync_dirty_request(SelfList<NavAgent2D>* p_sync_request)
+{
 	if (!p_sync_request->in_list()) {
 		return;
 	}
 	sync_dirty_requests.agents.list.remove(p_sync_request);
 }
 
-void NavMap2D::remove_obstacle_sync_dirty_request(SelfList<NavObstacle2D> *p_sync_request) {
+void NavMap2D::remove_obstacle_sync_dirty_request(SelfList<NavObstacle2D>* p_sync_request)
+{
 	if (!p_sync_request->in_list()) {
 		return;
 	}
 	sync_dirty_requests.obstacles.list.remove(p_sync_request);
 }
 
-void NavMap2D::_sync_dirty_map_update_requests() {
+void NavMap2D::_sync_dirty_map_update_requests()
+{
 	// If entire map settings changed make all regions dirty.
 	if (map_settings_dirty) {
-		for (NavRegion2D *region : regions) {
+		for (NavRegion2D* region : regions) {
 			region->scratch_polygons();
 		}
 		iteration_dirty = true;
@@ -675,7 +744,8 @@ void NavMap2D::_sync_dirty_map_update_requests() {
 
 	// Sync NavRegions.
 	RWLockWrite write_lock_regions(sync_dirty_requests.regions.rwlock);
-	for (SelfList<NavRegion2D> *element = sync_dirty_requests.regions.list.first(); element; element = element->next()) {
+	for (SelfList<NavRegion2D>* element = sync_dirty_requests.regions.list.first(); element;
+		 element = element->next()) {
 		bool requires_map_update = element->self()->sync();
 		if (requires_map_update) {
 			iteration_dirty = true;
@@ -685,7 +755,8 @@ void NavMap2D::_sync_dirty_map_update_requests() {
 
 	// Sync NavLinks.
 	RWLockWrite write_lock_links(sync_dirty_requests.links.rwlock);
-	for (SelfList<NavLink2D> *element = sync_dirty_requests.links.list.first(); element; element = element->next()) {
+	for (SelfList<NavLink2D>* element = sync_dirty_requests.links.list.first(); element;
+		 element = element->next()) {
 		bool requires_map_update = element->self()->sync();
 		if (requires_map_update) {
 			iteration_dirty = true;
@@ -694,12 +765,14 @@ void NavMap2D::_sync_dirty_map_update_requests() {
 	sync_dirty_requests.links.list.clear();
 }
 
-void NavMap2D::_sync_dirty_avoidance_update_requests() {
+void NavMap2D::_sync_dirty_avoidance_update_requests()
+{
 	// Sync NavAgents.
 	if (!agents_dirty) {
 		agents_dirty = sync_dirty_requests.agents.list.first();
 	}
-	for (SelfList<NavAgent2D> *element = sync_dirty_requests.agents.list.first(); element; element = element->next()) {
+	for (SelfList<NavAgent2D>* element = sync_dirty_requests.agents.list.first(); element;
+		 element = element->next()) {
 		element->self()->sync();
 	}
 	sync_dirty_requests.agents.list.clear();
@@ -708,13 +781,15 @@ void NavMap2D::_sync_dirty_avoidance_update_requests() {
 	if (!obstacles_dirty) {
 		obstacles_dirty = sync_dirty_requests.obstacles.list.first();
 	}
-	for (SelfList<NavObstacle2D> *element = sync_dirty_requests.obstacles.list.first(); element; element = element->next()) {
+	for (SelfList<NavObstacle2D>* element = sync_dirty_requests.obstacles.list.first(); element;
+		 element = element->next()) {
 		element->self()->sync();
 	}
 	sync_dirty_requests.obstacles.list.clear();
 }
 
-void NavMap2D::add_region_async_thread_join_request(SelfList<NavRegion2D> *p_async_request) {
+void NavMap2D::add_region_async_thread_join_request(SelfList<NavRegion2D>* p_async_request)
+{
 	if (p_async_request->in_list()) {
 		return;
 	}
@@ -722,7 +797,8 @@ void NavMap2D::add_region_async_thread_join_request(SelfList<NavRegion2D> *p_asy
 	async_dirty_requests.regions.list.add(p_async_request);
 }
 
-void NavMap2D::remove_region_async_thread_join_request(SelfList<NavRegion2D> *p_async_request) {
+void NavMap2D::remove_region_async_thread_join_request(SelfList<NavRegion2D>* p_async_request)
+{
 	if (!p_async_request->in_list()) {
 		return;
 	}
@@ -730,15 +806,18 @@ void NavMap2D::remove_region_async_thread_join_request(SelfList<NavRegion2D> *p_
 	async_dirty_requests.regions.list.remove(p_async_request);
 }
 
-void NavMap2D::_sync_async_tasks() {
+void NavMap2D::_sync_async_tasks()
+{
 	// Sync NavRegions that run async thread tasks.
 	RWLockWrite write_lock_regions(async_dirty_requests.regions.rwlock);
-	for (SelfList<NavRegion2D> *element = async_dirty_requests.regions.list.first(); element; element = element->next()) {
+	for (SelfList<NavRegion2D>* element = async_dirty_requests.regions.list.first(); element;
+		 element = element->next()) {
 		element->self()->sync_async_tasks();
 	}
 }
 
-void NavMap2D::set_use_async_iterations(bool p_enabled) {
+void NavMap2D::set_use_async_iterations(bool p_enabled)
+{
 	if (use_async_iterations == p_enabled) {
 		return;
 	}
@@ -747,13 +826,14 @@ void NavMap2D::set_use_async_iterations(bool p_enabled) {
 #endif
 }
 
-bool NavMap2D::get_use_async_iterations() const {
-	return use_async_iterations;
-}
+bool NavMap2D::get_use_async_iterations() const { return use_async_iterations; }
 
-NavMap2D::NavMap2D() {
-	avoidance_use_multiple_threads = GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_multiple_threads");
-	avoidance_use_high_priority_threads = GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_high_priority_threads");
+NavMap2D::NavMap2D()
+{
+	avoidance_use_multiple_threads =
+		GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_multiple_threads");
+	avoidance_use_high_priority_threads =
+		GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_high_priority_threads");
 
 	path_query_slots_max = GLOBAL_GET("navigation/pathfinding/max_threads");
 
@@ -770,7 +850,7 @@ NavMap2D::NavMap2D() {
 
 	iteration_slots.resize(2);
 
-	for (NavMapIteration2D &iteration_slot : iteration_slots) {
+	for (NavMapIteration2D& iteration_slot : iteration_slots) {
 		iteration_slot.path_query_slots.resize(path_query_slots_max);
 		for (uint32_t i = 0; i < iteration_slot.path_query_slots.size(); i++) {
 			iteration_slot.path_query_slots[i].slot_index = i;
@@ -785,14 +865,17 @@ NavMap2D::NavMap2D() {
 #endif
 }
 
-NavMap2D::~NavMap2D() {
+NavMap2D::~NavMap2D()
+{
 	if (iteration_build_thread_task_id != WorkerThreadPool::INVALID_TASK_ID) {
 		WorkerThreadPool::get_singleton()->wait_for_task_completion(iteration_build_thread_task_id);
 		iteration_build_thread_task_id = WorkerThreadPool::INVALID_TASK_ID;
 	}
 
 	RWLockWrite write_lock(iteration_slot_rwlock);
-	for (NavMapIteration2D &iteration_slot : iteration_slots) {
+	for (NavMapIteration2D& iteration_slot : iteration_slots) {
 		iteration_slot.clear();
 	}
 }
+
+

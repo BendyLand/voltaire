@@ -76,7 +76,7 @@ public:
 		}
 		_noise = noise;
 		if (_noise.is_valid()) {
-			if (_noise->has_meta("_preview_in_3d_space_")) {
+			if (_noise->obj->has_meta("_preview_in_3d_space_")) {
 				_3d_space_switch->set_pressed(true);
 			}
 
@@ -87,9 +87,9 @@ public:
 private:
 	void _on_3d_button_pressed() {
 		if (_3d_space_switch->is_pressed()) {
-			_noise->set_meta("_preview_in_3d_space_", true);
+			_noise->obj->set_meta("_preview_in_3d_space_", true);
 		} else {
-			_noise->remove_meta("_preview_in_3d_space_");
+			_noise->obj->remove_meta("_preview_in_3d_space_");
 		}
 	}
 

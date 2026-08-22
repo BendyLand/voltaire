@@ -30,32 +30,36 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "extensions/openxr_extension_wrapper_extension.h"
 #include "openxr_api_extension.h"
 
-#include "core/object/class_db.h"
-
-void OpenXRAPIExtension::_register_composition_layer_provider_bind_compat_104087(OpenXRExtensionWrapperExtension *p_extension) {
+void OpenXRAPIExtension::_register_composition_layer_provider_bind_compat_104087(
+	OpenXRExtensionWrapperExtension* p_extension)
+{
 	register_composition_layer_provider(p_extension);
 }
 
-void OpenXRAPIExtension::_unregister_composition_layer_provider_bind_compat_104087(OpenXRExtensionWrapperExtension *p_extension) {
+void OpenXRAPIExtension::_unregister_composition_layer_provider_bind_compat_104087(
+	OpenXRExtensionWrapperExtension* p_extension)
+{
 	unregister_composition_layer_provider(p_extension);
 }
 
-void OpenXRAPIExtension::_register_projection_views_extension_bind_compat_104087(OpenXRExtensionWrapperExtension *p_extension) {
+void OpenXRAPIExtension::_register_projection_views_extension_bind_compat_104087(
+	OpenXRExtensionWrapperExtension* p_extension)
+{
 	register_projection_views_extension(p_extension);
 }
 
-void OpenXRAPIExtension::_unregister_projection_views_extension_bind_compat_104087(OpenXRExtensionWrapperExtension *p_extension) {
+void OpenXRAPIExtension::_unregister_projection_views_extension_bind_compat_104087(
+	OpenXRExtensionWrapperExtension* p_extension)
+{
 	unregister_projection_views_extension(p_extension);
 }
 
-void OpenXRAPIExtension::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("register_composition_layer_provider", "extension"), &OpenXRAPIExtension::_register_composition_layer_provider_bind_compat_104087);
-	ClassDB::bind_compatibility_method(D_METHOD("unregister_composition_layer_provider", "extension"), &OpenXRAPIExtension::_unregister_composition_layer_provider_bind_compat_104087);
-	ClassDB::bind_compatibility_method(D_METHOD("register_projection_views_extension", "extension"), &OpenXRAPIExtension::_register_projection_views_extension_bind_compat_104087);
-	ClassDB::bind_compatibility_method(D_METHOD("unregister_projection_views_extension", "extension"), &OpenXRAPIExtension::_unregister_projection_views_extension_bind_compat_104087);
-}
+void OpenXRAPIExtension::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

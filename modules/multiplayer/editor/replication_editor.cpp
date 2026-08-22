@@ -147,8 +147,8 @@ void ReplicationEditor::_add_sync_property(String p_path)
 		_update_config();
 	}
 
-	undo_redo->add_do_method(config.ptr(), "add_property", p_path);
-	undo_redo->add_undo_method(config.ptr(), "remove_property", p_path);
+	undo_redo->add_do_method(config->obj.get(), "add_property", p_path);
+	undo_redo->add_undo_method(config->obj.get(), "remove_property", p_path);
 	undo_redo->add_do_method(this->obj.get(), "_update_config");
 	undo_redo->add_undo_method(this->obj.get(), "_update_config");
 	undo_redo->commit_action();
@@ -316,12 +316,7 @@ ReplicationEditor::ReplicationEditor()
 	SET_DRAG_FORWARDING_CDU(tree, ReplicationEditor);
 }
 
-void ReplicationEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_update_config"), &ReplicationEditor::_update_config);
-	ClassDB::bind_method(D_METHOD("_update_value", "property", "column", "value"),
-		&ReplicationEditor::_update_value);
-}
+void ReplicationEditor::_bind_methods() {}
 
 bool ReplicationEditor::_can_drop_data_fw(
 	const Point2& p_point, const Variant& p_data, Control* p_from) const
@@ -410,7 +405,7 @@ void ReplicationEditor::_notification(int p_what)
 	case NOTIFICATION_ENTER_TREE: {
 		add_theme_style_override(
 			SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-										SceneStringName(panel), SNAME("Panel")));
+										SceneStringName(panel), SNAME("Panel")).ptr());
 		add_pick_button->set_button_icon(
 			get_theme_icon(SNAME("Add"), EditorStringName(EditorIcons)));
 		pin->set_button_icon(get_theme_icon(SNAME("Pin"), EditorStringName(EditorIcons)));
@@ -470,8 +465,8 @@ void ReplicationEditor::_tree_item_edited()
 	if (column == 1) {
 		undo_redo->create_action(TTR("Set spawn property"));
 		bool value = ti->is_checked(column);
-		undo_redo->add_do_method(config.ptr(), "property_set_spawn", prop, value);
-		undo_redo->add_undo_method(config.ptr(), "property_set_spawn", prop, !value);
+		undo_redo->add_do_method(config->obj.get(), "property_set_spawn", prop, value);
+		undo_redo->add_undo_method(config->obj.get(), "property_set_spawn", prop, !value);
 		undo_redo->add_do_method(this->obj.get(), "_update_value", prop, column, value ? 1 : 0);
 		undo_redo->add_undo_method(this->obj.get(), "_update_value", prop, column, value ? 0 : 1);
 		undo_redo->commit_action();
@@ -488,8 +483,8 @@ void ReplicationEditor::_tree_item_edited()
 			ti->set_range(column, old_value);
 			return;
 		}
-		undo_redo->add_do_method(config.ptr(), "property_set_replication_mode", prop, value);
-		undo_redo->add_undo_method(config.ptr(), "property_set_replication_mode", prop, old_value);
+		undo_redo->add_do_method(config->obj.get(), "property_set_replication_mode", prop, value);
+		undo_redo->add_undo_method(config->obj.get(), "property_set_replication_mode", prop, old_value);
 		undo_redo->add_do_method(this->obj.get(), "_update_value", prop, column, value);
 		undo_redo->add_undo_method(this->obj.get(), "_update_value", prop, column, old_value);
 		undo_redo->commit_action();
@@ -527,10 +522,10 @@ void ReplicationEditor::_dialog_closed(bool p_confirmed)
 		SceneReplicationConfig::ReplicationMode mode = config->property_get_replication_mode(prop);
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Remove Property"));
-		undo_redo->add_do_method(config.ptr(), "remove_property", prop);
-		undo_redo->add_undo_method(config.ptr(), "add_property", prop, idx);
-		undo_redo->add_undo_method(config.ptr(), "property_set_spawn", prop, spawn);
-		undo_redo->add_undo_method(config.ptr(), "property_set_replication_mode", prop, mode);
+		undo_redo->add_do_method(config->obj.get(), "remove_property", prop);
+		undo_redo->add_undo_method(config->obj.get(), "add_property", prop, idx);
+		undo_redo->add_undo_method(config->obj.get(), "property_set_spawn", prop, spawn);
+		undo_redo->add_undo_method(config->obj.get(), "property_set_replication_mode", prop, mode);
 		undo_redo->add_do_method(this->obj.get(), "_update_config");
 		undo_redo->add_undo_method(this->obj.get(), "_update_config");
 		undo_redo->commit_action();

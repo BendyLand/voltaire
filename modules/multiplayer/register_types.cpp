@@ -44,10 +44,8 @@
 void initialize_multiplayer_module(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		if constexpr (VLTR_IS_CLASS_ENABLED(MultiplayerAPI)) {
-			MultiplayerAPI::set_default_interface("SceneMultiplayer");
-			MultiplayerDebugger::initialize();
-		}
+		MultiplayerAPI::set_default_interface("SceneMultiplayer");
+		MultiplayerDebugger::initialize();
 	}
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
@@ -58,9 +56,7 @@ void initialize_multiplayer_module(ModuleInitializationLevel p_level)
 
 void uninitialize_multiplayer_module(ModuleInitializationLevel p_level)
 {
-	if constexpr (VLTR_IS_CLASS_ENABLED(MultiplayerAPI)) {
-		MultiplayerDebugger::deinitialize();
-	}
+	MultiplayerDebugger::deinitialize();
 }
 
 

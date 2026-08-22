@@ -71,7 +71,7 @@ void OpenXRActionEditor::_on_action_name_changed(const String& p_new_text)
 		}
 
 		action->set_name(p_new_text);
-		action->set_edited(true);
+		action->obj->set_edited(true);
 		action_name_dirty = true;
 	}
 }
@@ -79,7 +79,7 @@ void OpenXRActionEditor::_on_action_name_changed(const String& p_new_text)
 void OpenXRActionEditor::_do_set_name(const String& p_new_text)
 {
 	action->set_name(p_new_text);
-	action->set_edited(true);
+	action->obj->set_edited(true);
 	action_name->set_text(p_new_text);
 }
 
@@ -93,14 +93,14 @@ void OpenXRActionEditor::_on_action_localized_name_changed(const String& p_new_t
 		undo_redo->commit_action(false);
 
 		action->set_localized_name(p_new_text);
-		action->set_edited(true);
+		action->obj->set_edited(true);
 	}
 }
 
 void OpenXRActionEditor::_do_set_localized_name(const String& p_new_text)
 {
 	action->set_localized_name(p_new_text);
-	action->set_edited(true);
+	action->obj->set_edited(true);
 	action_localized_name->set_text(p_new_text);
 }
 
@@ -118,14 +118,14 @@ void OpenXRActionEditor::_on_item_selected(int p_idx)
 		undo_redo->commit_action(false);
 
 		action->set_action_type(action_type);
-		action->set_edited(true);
+		action->obj->set_edited(true);
 	}
 }
 
 void OpenXRActionEditor::_do_set_action_type(OpenXRAction::ActionType p_action_type)
 {
 	action->set_action_type(p_action_type);
-	action->set_edited(true);
+	action->obj->set_edited(true);
 	action_type_button->select(int(action->get_action_type()));
 }
 

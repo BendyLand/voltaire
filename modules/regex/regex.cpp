@@ -28,34 +28,35 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "regex.h"
-#include "regex.compat.inc"
-
 #include "core/object/class_db.h"
 #include "core/os/memory.h"
+#include "regex.compat.inc"
+#include "regex.h"
 
-extern "C" {
+extern "C"
+{
 #include <pcre2.h>
 }
 
-static void *_regex_malloc(PCRE2_SIZE size, void *user) {
-	return memalloc(size);
-}
+static void* _regex_malloc(PCRE2_SIZE size, void* user) { return memalloc(size); }
 
-static void _regex_free(void *ptr, void *user) {
+static void _regex_free(void* ptr, void* user)
+{
 	if (ptr) {
 		memfree(ptr);
 	}
 }
 
-int RegExMatch::_find(const Variant &p_name) const {
+int RegExMatch::_find(const Variant& p_name) const
+{
 	if (p_name.is_num()) {
 		int i = (int)p_name;
 		if (i >= data.size()) {
 			return -1;
 		}
 		return i;
-	} else if (p_name.is_string()) {
+	}
+	else if (p_name.is_string()) {
 		HashMap<String, int>::ConstIterator found = names.find(p_name);
 		if (found) {
 			return found->value;
@@ -65,28 +66,29 @@ int RegExMatch::_find(const Variant &p_name) const {
 	return -1;
 }
 
-String RegExMatch::get_subject() const {
-	return subject;
-}
+String RegExMatch::get_subject() const { return subject; }
 
-int RegExMatch::get_group_count() const {
+int RegExMatch::get_group_count() const
+{
 	if (data.is_empty()) {
 		return 0;
 	}
 	return data.size() - 1;
 }
 
-Dictionary RegExMatch::get_names() const {
+Dictionary RegExMatch::get_names() const
+{
 	Dictionary result;
 
-	for (const KeyValue<String, int> &E : names) {
+	for (const KeyValue<String, int>& E : names) {
 		result[E.key] = E.value;
 	}
 
 	return result;
 }
 
-PackedStringArray RegExMatch::get_strings() const {
+PackedStringArray RegExMatch::get_strings() const
+{
 	PackedStringArray result;
 
 	int size = data.size();
@@ -107,7 +109,8 @@ PackedStringArray RegExMatch::get_strings() const {
 	return result;
 }
 
-String RegExMatch::get_string(const Variant &p_name) const {
+String RegExMatch::get_string(const Variant& p_name) const
+{
 	int id = _find(p_name);
 
 	if (id < 0) {
@@ -125,7 +128,8 @@ String RegExMatch::get_string(const Variant &p_name) const {
 	return subject.substr(start, length);
 }
 
-int RegExMatch::get_start(const Variant &p_name) const {
+int RegExMatch::get_start(const Variant& p_name) const
+{
 	int id = _find(p_name);
 
 	if (id < 0) {
@@ -135,7 +139,8 @@ int RegExMatch::get_start(const Variant &p_name) const {
 	return data[id].start;
 }
 
-int RegExMatch::get_end(const Variant &p_name) const {
+int RegExMatch::get_end(const Variant& p_name) const
+{
 	int id = _find(p_name);
 
 	if (id < 0) {
@@ -145,39 +150,31 @@ int RegExMatch::get_end(const Variant &p_name) const {
 	return data[id].end;
 }
 
-void RegExMatch::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_subject"), &RegExMatch::get_subject);
-	ClassDB::bind_method(D_METHOD("get_group_count"), &RegExMatch::get_group_count);
-	ClassDB::bind_method(D_METHOD("get_names"), &RegExMatch::get_names);
-	ClassDB::bind_method(D_METHOD("get_strings"), &RegExMatch::get_strings);
-	ClassDB::bind_method(D_METHOD("get_string", "name"), &RegExMatch::get_string, DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("get_start", "name"), &RegExMatch::get_start, DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("get_end", "name"), &RegExMatch::get_end, DEFVAL(0));
+void RegExMatch::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "subject"), "", "get_subject");
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "names"), "", "get_names");
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "strings"), "", "get_strings");
+void RegEx::_pattern_info(uint32_t what, void* where) const
+{
+	pcre2_pattern_info_32((pcre2_code_32*)code, what, where);
 }
 
-void RegEx::_pattern_info(uint32_t what, void *where) const {
-	pcre2_pattern_info_32((pcre2_code_32 *)code, what, where);
-}
-
-Ref<RegEx> RegEx::create_from_string(const String &p_pattern, bool p_show_error) {
+Ref<RegEx> RegEx::create_from_string(const String& p_pattern, bool p_show_error)
+{
 	Ref<RegEx> ret;
 	ret.instantiate();
 	ret->compile(p_pattern, p_show_error);
 	return ret;
 }
 
-void RegEx::clear() {
+void RegEx::clear()
+{
 	if (code) {
-		pcre2_code_free_32((pcre2_code_32 *)code);
+		pcre2_code_free_32((pcre2_code_32*)code);
 		code = nullptr;
 	}
 }
 
-Error RegEx::compile(const String &p_pattern, bool p_show_error) {
+Error RegEx::compile(const String& p_pattern, bool p_show_error)
+{
 	pattern = p_pattern;
 	clear();
 
@@ -185,8 +182,8 @@ Error RegEx::compile(const String &p_pattern, bool p_show_error) {
 	PCRE2_SIZE offset;
 	uint32_t flags = PCRE2_DUPNAMES;
 
-	pcre2_general_context_32 *gctx = (pcre2_general_context_32 *)general_ctx;
-	pcre2_compile_context_32 *cctx = pcre2_compile_context_create_32(gctx);
+	pcre2_general_context_32* gctx = (pcre2_general_context_32*)general_ctx;
+	pcre2_compile_context_32* cctx = pcre2_compile_context_create_32(gctx);
 	PCRE2_SPTR32 p = (PCRE2_SPTR32)pattern.get_data();
 
 	code = pcre2_compile_32(p, pattern.length(), flags, &err, &offset, cctx);
@@ -197,7 +194,7 @@ Error RegEx::compile(const String &p_pattern, bool p_show_error) {
 		if (p_show_error) {
 			PCRE2_UCHAR32 buf[256];
 			pcre2_get_error_message_32(err, buf, 256);
-			String message = String::num_int64(offset) + ": " + String((const char32_t *)buf);
+			String message = String::num_int64(offset) + ": " + String((const char32_t*)buf);
 			ERR_PRINT(message);
 		}
 		return FAILED;
@@ -205,7 +202,8 @@ Error RegEx::compile(const String &p_pattern, bool p_show_error) {
 	return OK;
 }
 
-Ref<RegExMatch> RegEx::search(const String &p_subject, int p_offset, int p_end) const {
+Ref<RegExMatch> RegEx::search(const String& p_subject, int p_offset, int p_end) const
+{
 	ERR_FAIL_COND_V(!is_valid(), nullptr);
 	ERR_FAIL_COND_V_MSG(p_offset < 0, nullptr, "RegEx search offset must be >= 0");
 
@@ -216,12 +214,12 @@ Ref<RegExMatch> RegEx::search(const String &p_subject, int p_offset, int p_end) 
 		length = p_end;
 	}
 
-	pcre2_code_32 *c = (pcre2_code_32 *)code;
-	pcre2_general_context_32 *gctx = (pcre2_general_context_32 *)general_ctx;
-	pcre2_match_context_32 *mctx = pcre2_match_context_create_32(gctx);
+	pcre2_code_32* c = (pcre2_code_32*)code;
+	pcre2_general_context_32* gctx = (pcre2_general_context_32*)general_ctx;
+	pcre2_match_context_32* mctx = pcre2_match_context_create_32(gctx);
 	PCRE2_SPTR32 s = (PCRE2_SPTR32)p_subject.get_data();
 
-	pcre2_match_data_32 *match = pcre2_match_data_create_from_pattern_32(c, gctx);
+	pcre2_match_data_32* match = pcre2_match_data_create_from_pattern_32(c, gctx);
 
 	int res = pcre2_match_32(c, s, length, p_offset, 0, match, mctx);
 
@@ -233,7 +231,7 @@ Ref<RegExMatch> RegEx::search(const String &p_subject, int p_offset, int p_end) 
 	}
 
 	uint32_t size = pcre2_get_ovector_count_32(match);
-	PCRE2_SIZE *ovector = pcre2_get_ovector_pointer_32(match);
+	PCRE2_SIZE* ovector = pcre2_get_ovector_pointer_32(match);
 
 	result->data.resize(size);
 
@@ -248,7 +246,7 @@ Ref<RegExMatch> RegEx::search(const String &p_subject, int p_offset, int p_end) 
 	result->subject = p_subject;
 
 	uint32_t count;
-	const char32_t *table;
+	const char32_t* table;
 	uint32_t entry_size;
 
 	_pattern_info(PCRE2_INFO_NAMECOUNT, &count);
@@ -271,11 +269,12 @@ Ref<RegExMatch> RegEx::search(const String &p_subject, int p_offset, int p_end) 
 	return result;
 }
 
-TypedArray<RegExMatch> RegEx::search_all(const String &p_subject, int p_offset, int p_end) const {
-	ERR_FAIL_COND_V_MSG(p_offset < 0, TypedArray<RegExMatch>(), "RegEx search offset must be >= 0");
+Array RegEx::search_all(const String& p_subject, int p_offset, int p_end) const
+{
+	ERR_FAIL_COND_V_MSG(p_offset < 0, Array(), "RegEx search offset must be >= 0");
 
 	int last_end = 0;
-	TypedArray<RegExMatch> result;
+	Array result;
 	Ref<RegExMatch> match = search(p_subject, p_offset, p_end);
 
 	while (match.is_valid()) {
@@ -290,14 +289,18 @@ TypedArray<RegExMatch> RegEx::search_all(const String &p_subject, int p_offset, 
 	return result;
 }
 
-int RegEx::_sub(const String &p_subject, const String &p_replacement, int p_offset, int p_end, uint32_t p_flags, String &r_output) const {
-	// `safety_zone` is the number of chars we allocate in addition to the number of chars expected in order to
-	// guard against the PCRE API writing one additional `\0` at the end. PCRE's API docs are unclear on whether
-	// PCRE understands outlength in `pcre2_substitute(`) as counting an implicit additional terminating char or
-	// not. Always allocating one char more than telling PCRE has us on the safe side.
+int RegEx::_sub(const String& p_subject, const String& p_replacement, int p_offset, int p_end,
+	uint32_t p_flags, String& r_output) const
+{
+	// `safety_zone` is the number of chars we allocate in addition to the number of chars expected
+	// in order to guard against the PCRE API writing one additional `\0` at the end. PCRE's API
+	// docs are unclear on whether PCRE understands outlength in `pcre2_substitute(`) as counting an
+	// implicit additional terminating char or not. Always allocating one char more than telling
+	// PCRE has us on the safe side.
 	const int safety_zone = 1;
 
-	PCRE2_SIZE olength = p_subject.length() + 1; // Space for output string and one terminating `\0` character.
+	PCRE2_SIZE olength =
+		p_subject.length() + 1; // Space for output string and one terminating `\0` character.
 	Vector<char32_t> output;
 	output.resize(olength + safety_zone);
 
@@ -306,21 +309,23 @@ int RegEx::_sub(const String &p_subject, const String &p_replacement, int p_offs
 		length = p_end;
 	}
 
-	pcre2_code_32 *c = (pcre2_code_32 *)code;
-	pcre2_general_context_32 *gctx = (pcre2_general_context_32 *)general_ctx;
-	pcre2_match_context_32 *mctx = pcre2_match_context_create_32(gctx);
+	pcre2_code_32* c = (pcre2_code_32*)code;
+	pcre2_general_context_32* gctx = (pcre2_general_context_32*)general_ctx;
+	pcre2_match_context_32* mctx = pcre2_match_context_create_32(gctx);
 	PCRE2_SPTR32 s = (PCRE2_SPTR32)p_subject.get_data();
 	PCRE2_SPTR32 r = (PCRE2_SPTR32)p_replacement.get_data();
-	PCRE2_UCHAR32 *o = (PCRE2_UCHAR32 *)output.ptrw();
+	PCRE2_UCHAR32* o = (PCRE2_UCHAR32*)output.ptrw();
 
-	pcre2_match_data_32 *match = pcre2_match_data_create_from_pattern_32(c, gctx);
+	pcre2_match_data_32* match = pcre2_match_data_create_from_pattern_32(c, gctx);
 
-	int res = pcre2_substitute_32(c, s, length, p_offset, p_flags, match, mctx, r, p_replacement.length(), o, &olength);
+	int res = pcre2_substitute_32(
+		c, s, length, p_offset, p_flags, match, mctx, r, p_replacement.length(), o, &olength);
 
 	if (res == PCRE2_ERROR_NOMEMORY) {
 		output.resize(olength + safety_zone);
-		o = (PCRE2_UCHAR32 *)output.ptrw();
-		res = pcre2_substitute_32(c, s, length, p_offset, p_flags, match, mctx, r, p_replacement.length(), o, &olength);
+		o = (PCRE2_UCHAR32*)output.ptrw();
+		res = pcre2_substitute_32(
+			c, s, length, p_offset, p_flags, match, mctx, r, p_replacement.length(), o, &olength);
 	}
 
 	pcre2_match_data_free_32(match);
@@ -333,7 +338,9 @@ int RegEx::_sub(const String &p_subject, const String &p_replacement, int p_offs
 	return res;
 }
 
-String RegEx::sub(const String &p_subject, const String &p_replacement, bool p_all, int p_offset, int p_end) const {
+String RegEx::sub(
+	const String& p_subject, const String& p_replacement, bool p_all, int p_offset, int p_end) const
+{
 	ERR_FAIL_COND_V(!is_valid(), String());
 	ERR_FAIL_COND_V_MSG(p_offset < 0, String(), "RegEx sub offset must be >= 0");
 
@@ -348,7 +355,7 @@ String RegEx::sub(const String &p_subject, const String &p_replacement, bool p_a
 	if (res < 0) {
 		PCRE2_UCHAR32 buf[256];
 		pcre2_get_error_message_32(res, buf, 256);
-		String message = "PCRE2 Error: " + String((const char32_t *)buf);
+		String message = "PCRE2 Error: " + String((const char32_t*)buf);
 		ERR_PRINT(message);
 
 		if (res == PCRE2_ERROR_NOSUBSTRING) {
@@ -360,15 +367,12 @@ String RegEx::sub(const String &p_subject, const String &p_replacement, bool p_a
 	return output;
 }
 
-bool RegEx::is_valid() const {
-	return (code != nullptr);
-}
+bool RegEx::is_valid() const { return (code != nullptr); }
 
-String RegEx::get_pattern() const {
-	return pattern;
-}
+String RegEx::get_pattern() const { return pattern; }
 
-int RegEx::get_group_count() const {
+int RegEx::get_group_count() const
+{
 	ERR_FAIL_COND_V(!is_valid(), 0);
 
 	uint32_t count;
@@ -378,13 +382,14 @@ int RegEx::get_group_count() const {
 	return count;
 }
 
-PackedStringArray RegEx::get_names() const {
+PackedStringArray RegEx::get_names() const
+{
 	PackedStringArray result;
 
 	ERR_FAIL_COND_V(!is_valid(), result);
 
 	uint32_t count;
-	const char32_t *table;
+	const char32_t* table;
 	uint32_t entry_size;
 
 	_pattern_info(PCRE2_INFO_NAMECOUNT, &count);
@@ -401,32 +406,25 @@ PackedStringArray RegEx::get_names() const {
 	return result;
 }
 
-RegEx::RegEx() {
+RegEx::RegEx()
+{
 	general_ctx = pcre2_general_context_create_32(&_regex_malloc, &_regex_free, nullptr);
 }
 
-RegEx::RegEx(const String &p_pattern) {
+RegEx::RegEx(const String& p_pattern)
+{
 	general_ctx = pcre2_general_context_create_32(&_regex_malloc, &_regex_free, nullptr);
 	compile(p_pattern);
 }
 
-RegEx::~RegEx() {
+RegEx::~RegEx()
+{
 	if (code) {
-		pcre2_code_free_32((pcre2_code_32 *)code);
+		pcre2_code_free_32((pcre2_code_32*)code);
 	}
-	pcre2_general_context_free_32((pcre2_general_context_32 *)general_ctx);
+	pcre2_general_context_free_32((pcre2_general_context_32*)general_ctx);
 }
 
-void RegEx::_bind_methods() {
-	ClassDB::bind_static_method("RegEx", D_METHOD("create_from_string", "pattern", "show_error"), &RegEx::create_from_string, DEFVAL(true));
+void RegEx::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("clear"), &RegEx::clear);
-	ClassDB::bind_method(D_METHOD("compile", "pattern", "show_error"), &RegEx::compile, DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("search", "subject", "offset", "end"), &RegEx::search, DEFVAL(0), DEFVAL(-1));
-	ClassDB::bind_method(D_METHOD("search_all", "subject", "offset", "end"), &RegEx::search_all, DEFVAL(0), DEFVAL(-1));
-	ClassDB::bind_method(D_METHOD("sub", "subject", "replacement", "all", "offset", "end"), &RegEx::sub, DEFVAL(false), DEFVAL(0), DEFVAL(-1));
-	ClassDB::bind_method(D_METHOD("is_valid"), &RegEx::is_valid);
-	ClassDB::bind_method(D_METHOD("get_pattern"), &RegEx::get_pattern);
-	ClassDB::bind_method(D_METHOD("get_group_count"), &RegEx::get_group_count);
-	ClassDB::bind_method(D_METHOD("get_names"), &RegEx::get_names);
-}
+

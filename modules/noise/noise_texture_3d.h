@@ -30,14 +30,14 @@
 
 #pragma once
 
-#include "noise.h"
-
 #include "core/object/ref_counted.h"
 #include "core/object/worker_thread_pool.h"
+#include "noise.h"
 #include "scene/resources/gradient.h"
 #include "scene/resources/texture.h"
 
-class NoiseTexture3D : public Texture3D {
+class NoiseTexture3D : public Texture3D
+{
 	VLTRCLASS(NoiseTexture3D, Texture3D);
 
 private:
@@ -62,19 +62,19 @@ private:
 
 	Image::Format format = Image::FORMAT_L8;
 
-	void _thread_done(const TypedArray<Image> &p_data);
+	void _thread_done(const Array& p_data);
 	void _thread_function();
 
 	void _queue_update();
-	TypedArray<Image> _generate_texture();
+	Array _generate_texture();
 	void _update_texture();
-	void _set_texture_data(const TypedArray<Image> &p_data);
+	void _set_texture_data(const Array& p_data);
 
 	Ref<Image> _modulate_with_gradient(Ref<Image> p_image, Ref<Gradient> p_gradient);
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
 public:
 	void set_noise(Ref<Noise> p_noise);
@@ -96,7 +96,7 @@ public:
 	void set_normalize(bool p_normalize);
 	bool is_normalized() const;
 
-	void set_color_ramp(const Ref<Gradient> &p_gradient);
+	void set_color_ramp(const Ref<Gradient>& p_gradient);
 	Ref<Gradient> get_color_ramp() const;
 
 	virtual int get_width() const override;
@@ -113,3 +113,5 @@ public:
 	NoiseTexture3D();
 	virtual ~NoiseTexture3D();
 };
+
+

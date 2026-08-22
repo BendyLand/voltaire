@@ -36,17 +36,14 @@
 #include "scene/gui/label.h"
 #include "scene/gui/scroll_container.h"
 
-void OpenXRSelectActionDialog::_bind_methods()
-{
-	ADD_SIGNAL(MethodInfo("action_selected", PropertyInfo(Variant::STRING, "action")));
-}
+void OpenXRSelectActionDialog::_bind_methods() {}
 
 void OpenXRSelectActionDialog::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		scroll->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+		scroll->add_theme_style_override(SceneStringName(panel),
+			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 	} break;
 	}
 }
@@ -98,7 +95,8 @@ void OpenXRSelectActionDialog::open()
 		for (int j = 0; j < actions.size(); j++) {
 			Ref<OpenXRAction> action = actions[j];
 
-			HBoxContainer* action_hb = memnew(HBoxContainer);
+
+HBoxContainer* action_hb = memnew(HBoxContainer);
 			main_vb->add_child(action_hb);
 
 			Control* indent_node = memnew(Control);

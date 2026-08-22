@@ -30,16 +30,17 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "webxr_interface.h"
 
-#include "core/object/class_db.h"
-
-Ref<XRPositionalTracker> WebXRInterface::_get_input_source_tracker_bind_compat_90645(int p_input_source_id) const {
+Ref<XRPositionalTracker> WebXRInterface::_get_input_source_tracker_bind_compat_90645(
+	int p_input_source_id) const
+{
 	return get_input_source_tracker(p_input_source_id);
 }
 
-void WebXRInterface::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("get_input_source_tracker", "input_source_id"), &WebXRInterface::_get_input_source_tracker_bind_compat_90645);
-}
+void WebXRInterface::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

@@ -44,25 +44,7 @@ OpenXRRenderModelExtension *OpenXRRenderModelExtension::get_singleton() {
 	return singleton;
 }
 
-void OpenXRRenderModelExtension::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("is_active"), &OpenXRRenderModelExtension::is_active);
-	ClassDB::bind_method(D_METHOD("render_model_create", "render_model_id"), &OpenXRRenderModelExtension::render_model_create);
-	ClassDB::bind_method(D_METHOD("render_model_destroy", "render_model"), &OpenXRRenderModelExtension::render_model_destroy);
-	ClassDB::bind_method(D_METHOD("render_model_get_all"), &OpenXRRenderModelExtension::render_model_get_all);
-	ClassDB::bind_method(D_METHOD("render_model_new_scene_instance", "render_model"), &OpenXRRenderModelExtension::render_model_new_scene_instance);
-	ClassDB::bind_method(D_METHOD("render_model_get_subaction_paths", "render_model"), &OpenXRRenderModelExtension::render_model_get_subaction_paths);
-	ClassDB::bind_method(D_METHOD("render_model_get_top_level_path", "render_model"), &OpenXRRenderModelExtension::render_model_get_top_level_path_as_string);
-	ClassDB::bind_method(D_METHOD("render_model_get_confidence", "render_model"), &OpenXRRenderModelExtension::render_model_get_confidence);
-	ClassDB::bind_method(D_METHOD("render_model_get_root_transform", "render_model"), &OpenXRRenderModelExtension::render_model_get_root_transform);
-	ClassDB::bind_method(D_METHOD("render_model_get_animatable_node_count", "render_model"), &OpenXRRenderModelExtension::render_model_get_animatable_node_count);
-	ClassDB::bind_method(D_METHOD("render_model_get_animatable_node_name", "render_model", "index"), &OpenXRRenderModelExtension::render_model_get_animatable_node_name);
-	ClassDB::bind_method(D_METHOD("render_model_is_animatable_node_visible", "render_model", "index"), &OpenXRRenderModelExtension::render_model_is_animatable_node_visible);
-	ClassDB::bind_method(D_METHOD("render_model_get_animatable_node_transform", "render_model", "index"), &OpenXRRenderModelExtension::render_model_get_animatable_node_transform);
-
-	ADD_SIGNAL(MethodInfo("render_model_added", PropertyInfo(Variant::RID, "render_model")));
-	ADD_SIGNAL(MethodInfo("render_model_removed", PropertyInfo(Variant::RID, "render_model")));
-	ADD_SIGNAL(MethodInfo("render_model_top_level_path_changed", PropertyInfo(Variant::RID, "render_model")));
-}
+void OpenXRRenderModelExtension::_bind_methods() {}
 
 OpenXRRenderModelExtension::OpenXRRenderModelExtension() {
 	singleton = this;
@@ -242,7 +224,7 @@ void OpenXRRenderModelExtension::on_sync_actions() {
 
 				// And broadcast it
 				// Note, converting an XrPath to a String has overhead, so we won't do this automatically.
-				emit_signal(SNAME("render_model_top_level_path_changed"), rid);
+				this->obj->emit_signal(SNAME("render_model_top_level_path_changed"), rid);
 			}
 		}
 	}
@@ -416,7 +398,7 @@ RID OpenXRRenderModelExtension::render_model_create(XrRenderModelIdEXT p_render_
 
 	RID new_rid = render_model_owner.make_rid(render_model);
 
-	emit_signal(SNAME("render_model_added"), new_rid);
+	this->obj->emit_signal(SNAME("render_model_added"), new_rid);
 
 	return new_rid;
 }
@@ -439,7 +421,7 @@ void OpenXRRenderModelExtension::render_model_destroy(RID p_render_model) {
 	RenderModel *render_model = render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL(render_model);
 
-	emit_signal(SNAME("render_model_removed"), p_render_model);
+	this->obj->emit_signal(SNAME("render_model_removed"), p_render_model);
 
 	// Clean up.
 	if (render_model->xr_space != XR_NULL_HANDLE) {

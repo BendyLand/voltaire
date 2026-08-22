@@ -121,7 +121,7 @@ bool ObjectDBProfilerPanel::handle_debug_message(
 		take_snapshot->set_text(TTRC("Visualizing Snapshot"));
 		// Wait a frame just so the button has a chance to update its text so the user knows what's
 		// going on.
-		get_tree()->connect("process_frame",
+		get_tree()->obj->connect("process_frame",
 			callable_mp(this, &ObjectDBProfilerPanel::receive_snapshot).bind(request_id),
 			Object::CONNECT_ONE_SHOT);
 		return true;

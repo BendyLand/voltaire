@@ -40,13 +40,6 @@
 
 void OpenXRInteractionProfileEditorBase::_bind_methods()
 {
-	ClassDB::bind_method(D_METHOD("setup", "action_map", "interaction_profile"),
-		&OpenXRInteractionProfileEditorBase::setup);
-
-	ClassDB::bind_method(D_METHOD("_add_binding", "action", "path"),
-		&OpenXRInteractionProfileEditorBase::_add_binding);
-	ClassDB::bind_method(D_METHOD("_remove_binding", "action", "path"),
-		&OpenXRInteractionProfileEditorBase::_remove_binding);
 }
 
 void OpenXRInteractionProfileEditorBase::_notification(int p_what)
@@ -90,9 +83,9 @@ void OpenXRInteractionProfileEditorBase::_add_binding(const String& p_action, co
 
 		// add it to our interaction profile
 		interaction_profile->add_binding(binding);
-		interaction_profile->set_edited(true);
+		interaction_profile->obj->set_edited(true);
 
-		binding->set_edited(true);
+		binding->obj->set_edited(true);
 	}
 
 	// Update our toplevel paths
@@ -113,7 +106,7 @@ void OpenXRInteractionProfileEditorBase::_remove_binding(
 	Ref<OpenXRIPBinding> binding = interaction_profile->find_binding(action, p_path);
 	if (binding.is_valid()) {
 		interaction_profile->remove_binding(binding);
-		interaction_profile->set_edited(true);
+		interaction_profile->obj->set_edited(true);
 
 		// Update our toplevel paths
 		action->set_toplevel_paths(action_map->get_top_level_paths(action));
@@ -172,7 +165,7 @@ void OpenXRInteractionProfileEditorBase::remove_all_for_action(const Ref<OpenXRA
 		for (const Ref<OpenXRIPBinding>& binding : bindings) {
 			interaction_profile->remove_binding(binding);
 		}
-		interaction_profile->set_edited(true);
+		interaction_profile->obj->set_edited(true);
 
 		// Update our toplevel paths
 		p_action->set_toplevel_paths(action_map->get_top_level_paths(p_action));
@@ -413,7 +406,7 @@ void OpenXRInteractionProfileEditor::_update_interaction_profile()
 		panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 		interaction_profile_hb->add_child(panel);
 		panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")));
+			get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")).ptr());
 
 		VBoxContainer* container = memnew(VBoxContainer);
 		panel->add_child(container);
@@ -450,14 +443,14 @@ void OpenXRInteractionProfileEditor::_theme_changed()
 	const bool is_theme_classic = EDITOR_GET("interface/theme/style") == "Classic";
 	if (is_theme_classic) {
 		interaction_profile_sc->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 	}
 
 	for (int i = 0; i < interaction_profile_hb->get_child_count(); i++) {
 		Control* panel = Object::cast_to<Control>(interaction_profile_hb->get_child(i));
 		if (panel) {
 			panel->add_theme_style_override(SceneStringName(panel),
-				get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")));
+				get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")).ptr());
 		}
 	}
 }

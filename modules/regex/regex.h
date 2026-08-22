@@ -95,7 +95,7 @@ public:
 	Error compile(const String &p_pattern, bool p_show_error = true);
 
 	Ref<RegExMatch> search(const String &p_subject, int p_offset = 0, int p_end = -1) const;
-	TypedArray<RegExMatch> search_all(const String &p_subject, int p_offset = 0, int p_end = -1) const;
+	Array search_all(const String &p_subject, int p_offset = 0, int p_end = -1) const;
 	String sub(const String &p_subject, const String &p_replacement, bool p_all = false, int p_offset = 0, int p_end = -1) const;
 
 	bool is_valid() const;

@@ -28,54 +28,37 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "openxr_composition_layer_cylinder.h"
-
 #include "../extensions/openxr_composition_layer_extension.h"
-
 #include "core/object/class_db.h"
+#include "openxr_composition_layer_cylinder.h"
 #include "scene/resources/mesh.h"
 
-OpenXRCompositionLayerCylinder::OpenXRCompositionLayerCylinder() {
+OpenXRCompositionLayerCylinder::OpenXRCompositionLayerCylinder()
+{
 	if (composition_layer_extension) {
 		XrCompositionLayerCylinderKHR openxr_composition_layer = {
 			XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR, // type
-			nullptr, // next
-			0, // layerFlags
-			XR_NULL_HANDLE, // space
-			XR_EYE_VISIBILITY_BOTH, // eyeVisibility
-			{}, // subImage
-			{ { 0, 0, 0, 0 }, { 0, 0, 0 } }, // pose
-			radius, // radius
-			central_angle, // centralAngle
-			aspect_ratio, // aspectRatio
+			nullptr,								// next
+			0,										// layerFlags
+			XR_NULL_HANDLE,							// space
+			XR_EYE_VISIBILITY_BOTH,					// eyeVisibility
+			{},										// subImage
+			{{0, 0, 0, 0}, {0, 0, 0}},				// pose
+			radius,									// radius
+			central_angle,							// centralAngle
+			aspect_ratio,							// aspectRatio
 		};
-		composition_layer = composition_layer_extension->composition_layer_create((XrCompositionLayerBaseHeader *)&openxr_composition_layer);
+		composition_layer = composition_layer_extension->composition_layer_create(
+			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
 	}
 }
 
-OpenXRCompositionLayerCylinder::~OpenXRCompositionLayerCylinder() {
-}
+OpenXRCompositionLayerCylinder::~OpenXRCompositionLayerCylinder() {}
 
-void OpenXRCompositionLayerCylinder::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &OpenXRCompositionLayerCylinder::set_radius);
-	ClassDB::bind_method(D_METHOD("get_radius"), &OpenXRCompositionLayerCylinder::get_radius);
+void OpenXRCompositionLayerCylinder::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_aspect_ratio", "aspect_ratio"), &OpenXRCompositionLayerCylinder::set_aspect_ratio);
-	ClassDB::bind_method(D_METHOD("get_aspect_ratio"), &OpenXRCompositionLayerCylinder::get_aspect_ratio);
-
-	ClassDB::bind_method(D_METHOD("set_central_angle", "angle"), &OpenXRCompositionLayerCylinder::set_central_angle);
-	ClassDB::bind_method(D_METHOD("get_central_angle"), &OpenXRCompositionLayerCylinder::get_central_angle);
-
-	ClassDB::bind_method(D_METHOD("set_fallback_segments", "segments"), &OpenXRCompositionLayerCylinder::set_fallback_segments);
-	ClassDB::bind_method(D_METHOD("get_fallback_segments"), &OpenXRCompositionLayerCylinder::get_fallback_segments);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_NONE, ""), "set_radius", "get_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "aspect_ratio", PROPERTY_HINT_RANGE, "0,100"), "set_aspect_ratio", "get_aspect_ratio");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "central_angle", PROPERTY_HINT_RANGE, "0,360,0.1,or_less,or_greater,radians_as_degrees"), "set_central_angle", "get_central_angle");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "fallback_segments", PROPERTY_HINT_NONE, ""), "set_fallback_segments", "get_fallback_segments");
-}
-
-Ref<Mesh> OpenXRCompositionLayerCylinder::_create_fallback_mesh() {
+Ref<Mesh> OpenXRCompositionLayerCylinder::_create_fallback_mesh()
+{
 	Ref<ArrayMesh> mesh;
 	mesh.instantiate();
 
@@ -127,56 +110,57 @@ Ref<Mesh> OpenXRCompositionLayerCylinder::_create_fallback_mesh() {
 	return mesh;
 }
 
-void OpenXRCompositionLayerCylinder::set_radius(float p_radius) {
+void OpenXRCompositionLayerCylinder::set_radius(float p_radius)
+{
 	ERR_FAIL_COND(p_radius <= 0);
 	radius = p_radius;
 	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_cylinder_radius(composition_layer, p_radius);
+		composition_layer_extension->composition_layer_set_cylinder_radius(
+			composition_layer, p_radius);
 	}
 	update_fallback_mesh();
 }
 
-float OpenXRCompositionLayerCylinder::get_radius() const {
-	return radius;
-}
+float OpenXRCompositionLayerCylinder::get_radius() const { return radius; }
 
-void OpenXRCompositionLayerCylinder::set_aspect_ratio(float p_aspect_ratio) {
+void OpenXRCompositionLayerCylinder::set_aspect_ratio(float p_aspect_ratio)
+{
 	ERR_FAIL_COND(p_aspect_ratio <= 0);
 	aspect_ratio = p_aspect_ratio;
 	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_cylinder_aspect_ratio(composition_layer, p_aspect_ratio);
+		composition_layer_extension->composition_layer_set_cylinder_aspect_ratio(
+			composition_layer, p_aspect_ratio);
 	}
 	update_fallback_mesh();
 }
 
-float OpenXRCompositionLayerCylinder::get_aspect_ratio() const {
-	return aspect_ratio;
-}
+float OpenXRCompositionLayerCylinder::get_aspect_ratio() const { return aspect_ratio; }
 
-void OpenXRCompositionLayerCylinder::set_central_angle(float p_central_angle) {
+void OpenXRCompositionLayerCylinder::set_central_angle(float p_central_angle)
+{
 	ERR_FAIL_COND(p_central_angle <= 0);
 	central_angle = p_central_angle;
 	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_cylinder_central_angle(composition_layer, p_central_angle);
+		composition_layer_extension->composition_layer_set_cylinder_central_angle(
+			composition_layer, p_central_angle);
 	}
 	update_fallback_mesh();
 }
 
-float OpenXRCompositionLayerCylinder::get_central_angle() const {
-	return central_angle;
-}
+float OpenXRCompositionLayerCylinder::get_central_angle() const { return central_angle; }
 
-void OpenXRCompositionLayerCylinder::set_fallback_segments(uint32_t p_fallback_segments) {
+void OpenXRCompositionLayerCylinder::set_fallback_segments(uint32_t p_fallback_segments)
+{
 	ERR_FAIL_COND(p_fallback_segments == 0);
 	fallback_segments = p_fallback_segments;
 	update_fallback_mesh();
 }
 
-uint32_t OpenXRCompositionLayerCylinder::get_fallback_segments() const {
-	return fallback_segments;
-}
+uint32_t OpenXRCompositionLayerCylinder::get_fallback_segments() const { return fallback_segments; }
 
-Vector2 OpenXRCompositionLayerCylinder::intersects_ray(const Vector3 &p_origin, const Vector3 &p_direction) const {
+Vector2 OpenXRCompositionLayerCylinder::intersects_ray(
+	const Vector3& p_origin, const Vector3& p_direction) const
+{
 	Transform3D cylinder_transform = get_global_transform();
 	Vector3 cylinder_axis = cylinder_transform.basis.get_column(1);
 
@@ -220,3 +204,5 @@ Vector2 OpenXRCompositionLayerCylinder::intersects_ray(const Vector3 &p_origin, 
 
 	return Vector2(u, v);
 }
+
+

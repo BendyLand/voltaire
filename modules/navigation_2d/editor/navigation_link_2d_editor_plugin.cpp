@@ -41,12 +41,12 @@ void NavigationLink2DEditor::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		get_tree()->connect(
+		get_tree()->obj->connect(
 			"node_removed", callable_mp(this, &NavigationLink2DEditor::_node_removed));
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		get_tree()->disconnect(
+		get_tree()->obj->disconnect(
 			"node_removed", callable_mp(this, &NavigationLink2DEditor::_node_removed));
 	} break;
 	}
@@ -175,8 +175,8 @@ void NavigationLink2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 
 	// Only drawing the handles here, since the debug rendering will fill in the rest.
 	const Ref<Texture2D> handle = get_editor_theme_icon(SNAME("EditorHandle"));
-	p_overlay->draw_texture(handle, global_start_position - handle->get_size() / 2);
-	p_overlay->draw_texture(handle, global_end_position - handle->get_size() / 2);
+	p_overlay->draw_texture(handle.ptr(), global_start_position - handle->get_size() / 2);
+	p_overlay->draw_texture(handle.ptr(), global_end_position - handle->get_size() / 2);
 }
 
 void NavigationLink2DEditor::edit(NavigationLink2D* p_node)

@@ -42,35 +42,7 @@
 #include "scene/3d/xr/xr_nodes.h"
 #include "servers/xr/xr_server.h"
 
-void OpenXRRenderModelManager::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("get_tracker"), &OpenXRRenderModelManager::get_tracker);
-	ClassDB::bind_method(
-		D_METHOD("set_tracker", "tracker"), &OpenXRRenderModelManager::set_tracker);
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "tracker", PROPERTY_HINT_ENUM,
-					 "Any,None set,Left Hand,Right Hand"),
-		"set_tracker", "get_tracker");
-
-	ClassDB::bind_method(
-		D_METHOD("get_make_local_to_pose"), &OpenXRRenderModelManager::get_make_local_to_pose);
-	ClassDB::bind_method(D_METHOD("set_make_local_to_pose", "make_local_to_pose"),
-		&OpenXRRenderModelManager::set_make_local_to_pose);
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "make_local_to_pose", PROPERTY_HINT_ENUM_SUGGESTION,
-					 "aim,grip"),
-		"set_make_local_to_pose", "get_make_local_to_pose");
-
-	ADD_SIGNAL(MethodInfo("render_model_added",
-		PropertyInfo(Variant::OBJECT, "render_model", PROPERTY_HINT_RESOURCE_TYPE,
-			OpenXRRenderModel::get_class_static())));
-	ADD_SIGNAL(MethodInfo("render_model_removed",
-		PropertyInfo(Variant::OBJECT, "render_model", PROPERTY_HINT_RESOURCE_TYPE,
-			OpenXRRenderModel::get_class_static())));
-
-	BIND_ENUM_CONSTANT(RENDER_MODEL_TRACKER_ANY);
-	BIND_ENUM_CONSTANT(RENDER_MODEL_TRACKER_NONE_SET);
-	BIND_ENUM_CONSTANT(RENDER_MODEL_TRACKER_LEFT_HAND);
-	BIND_ENUM_CONSTANT(RENDER_MODEL_TRACKER_RIGHT_HAND);
-}
+void OpenXRRenderModelManager::_bind_methods() {}
 
 bool OpenXRRenderModelManager::_has_filters() { return tracker != 0; }
 
@@ -182,11 +154,11 @@ void OpenXRRenderModelManager::_notification(int p_what)
 	case NOTIFICATION_ENTER_TREE: {
 		_update_models();
 
-		render_model_extension->connect(SNAME("render_model_added"),
+		render_model_extension->obj->connect(SNAME("render_model_added"),
 			callable_mp(this, &OpenXRRenderModelManager::_on_render_model_added));
-		render_model_extension->connect(SNAME("render_model_removed"),
+		render_model_extension->obj->connect(SNAME("render_model_removed"),
 			callable_mp(this, &OpenXRRenderModelManager::_on_render_model_removed));
-		render_model_extension->connect(SNAME("render_model_top_level_path_changed"),
+		render_model_extension->obj->connect(SNAME("render_model_top_level_path_changed"),
 			callable_mp(this, &OpenXRRenderModelManager::_on_render_model_top_level_path_changed));
 
 		if (_has_filters()) {
@@ -194,11 +166,11 @@ void OpenXRRenderModelManager::_notification(int p_what)
 		}
 	} break;
 	case NOTIFICATION_EXIT_TREE: {
-		render_model_extension->disconnect(SNAME("render_model_added"),
+		render_model_extension->obj->disconnect(SNAME("render_model_added"),
 			callable_mp(this, &OpenXRRenderModelManager::_on_render_model_added));
-		render_model_extension->disconnect(SNAME("render_model_removed"),
+		render_model_extension->obj->disconnect(SNAME("render_model_removed"),
 			callable_mp(this, &OpenXRRenderModelManager::_on_render_model_removed));
-		render_model_extension->disconnect(SNAME("render_model_top_level_path_changed"),
+		render_model_extension->obj->disconnect(SNAME("render_model_top_level_path_changed"),
 			callable_mp(this, &OpenXRRenderModelManager::_on_render_model_top_level_path_changed));
 
 		set_process_internal(false);

@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <Jolt/Jolt.h>
 #include <Jolt/Physics/Constraints/SwingTwistConstraint.h>
 #include "../misc/jolt_type_conversions.h"
 #include "../objects/jolt_body_3d.h"

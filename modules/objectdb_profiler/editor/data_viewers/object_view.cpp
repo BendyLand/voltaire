@@ -28,19 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "object_view.h"
-
 #include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
+#include "object_view.h"
 #include "scene/gui/rich_text_label.h"
 #include "scene/gui/split_container.h"
 
-SnapshotObjectView::SnapshotObjectView() {
-	set_name(TTRC("Objects"));
-}
+SnapshotObjectView::SnapshotObjectView() { set_name(TTRC("Objects")); }
 
-void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {
+void SnapshotObjectView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data)
+{
 	SnapshotView::show_snapshot(p_data, p_diff_data);
 
 	item_data_map.clear();
@@ -53,7 +51,7 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	add_child(objects_view);
 	objects_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 
-	VBoxContainer *object_column = memnew(VBoxContainer);
+	VBoxContainer* object_column = memnew(VBoxContainer);
 	object_column->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 	objects_view->add_child(object_column);
 	object_column->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -65,13 +63,17 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	object_column->add_child(filter_bar);
 	int sort_idx = 0;
 	if (diff_data) {
-		filter_bar->add_sort_option(TTRC("Snapshot"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+		filter_bar->add_sort_option(
+			TTRC("Snapshot"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
 	}
-	filter_bar->add_sort_option(TTRC("Class"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
-	filter_bar->add_sort_option(TTRC("Name"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
-	filter_bar->add_sort_option(TTRC("Inbound References"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
+	filter_bar->add_sort_option(
+		TTRC("Class"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+	filter_bar->add_sort_option(
+		TTRC("Name"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+	filter_bar->add_sort_option(
+		TTRC("Inbound References"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
 	TreeSortAndFilterBar::SortOptionIndexes default_sort = filter_bar->add_sort_option(
-			TTRC("Outbound References"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
+		TTRC("Outbound References"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
 
 	// Tree of objects.
 	object_list->set_select_mode(Tree::SelectMode::SELECT_ROW);
@@ -87,7 +89,8 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	if (diff_data) {
 		object_list->set_column_title(0, TTRC("Snapshot"));
 		object_list->set_column_expand(0, false);
-		object_list->set_column_title_tooltip_text(0, "A: " + snapshot_data->name + ", B: " + diff_data->name);
+		object_list->set_column_title_tooltip_text(
+			0, "A: " + snapshot_data->name + ", B: " + diff_data->name);
 		offset++;
 	}
 
@@ -108,7 +111,8 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	object_list->set_column_clip_content(offset + 3, false);
 	object_list->set_column_title_tooltip_text(offset + 3, TTRC("Number of outbound references"));
 	object_list->set_column_custom_minimum_width(offset + 2, 30 * EDSCALE);
-	object_list->connect(SceneStringName(item_selected), callable_mp(this, &SnapshotObjectView::_object_selected));
+	object_list->connect(
+		SceneStringName(item_selected), callable_mp(this, &SnapshotObjectView::_object_selected));
 	object_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	object_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
@@ -127,15 +131,16 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	filter_bar->select_sort(default_sort.descending);
 	filter_bar->apply();
 	object_list->set_selected(object_list->get_root()->get_first_child());
-	// Expand the left panel as wide as we can. Passing `INT_MAX` or any very large int will have the opposite effect
-	// and shrink the left panel as small as it can go. So, pass an int we know is larger than the current panel, but not
-	// 'very' large (whatever that exact number is).
+	// Expand the left panel as wide as we can. Passing `INT_MAX` or any very large int will have
+	// the opposite effect and shrink the left panel as small as it can go. So, pass an int we know
+	// is larger than the current panel, but not 'very' large (whatever that exact number is).
 	objects_view->set_split_offset(get_viewport_rect().size.x);
 }
 
-void SnapshotObjectView::_insert_data(GameStateSnapshot *p_snapshot, const String &p_name) {
-	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_snapshot->objects) {
-		TreeItem *item = object_list->create_item(object_list->get_root());
+void SnapshotObjectView::_insert_data(GameStateSnapshot* p_snapshot, const String& p_name)
+{
+	for (const KeyValue<ObjectID, SnapshotDataObject*>& pair : p_snapshot->objects) {
+		TreeItem* item = object_list->create_item(object_list->get_root());
 		int offset = 0;
 		if (diff_data) {
 			item->set_text(0, p_name);
@@ -154,70 +159,78 @@ void SnapshotObjectView::_insert_data(GameStateSnapshot *p_snapshot, const Strin
 	}
 }
 
-void SnapshotObjectView::_object_selected() {
+void SnapshotObjectView::_object_selected()
+{
 	reference_item_map.clear();
 
 	for (int i = 0; i < object_details->get_child_count(); i++) {
 		object_details->get_child(i)->queue_free();
 	}
 
-	SnapshotDataObject *d = item_data_map[object_list->get_selected()];
-	EditorNode::get_singleton()->push_item(static_cast<Object *>(d));
+	SnapshotDataObject* d = item_data_map[object_list->get_selected()];
+	EditorNode::get_singleton()->push_item(static_cast<Object*>(d->obj.get()));
 
-	DarkPanelContainer *object_panel = memnew(DarkPanelContainer);
-	VBoxContainer *object_panel_content = memnew(VBoxContainer);
+	DarkPanelContainer* object_panel = memnew(DarkPanelContainer);
+	VBoxContainer* object_panel_content = memnew(VBoxContainer);
 	object_panel_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	object_panel_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	object_details->add_child(object_panel);
 	object_panel->add_child(object_panel_content);
 	object_panel_content->add_child(memnew(SpanningHeader(d->get_name())));
 
-	ScrollContainer *properties_scroll = memnew(ScrollContainer);
+	ScrollContainer* properties_scroll = memnew(ScrollContainer);
 	properties_scroll->set_horizontal_scroll_mode(ScrollContainer::SCROLL_MODE_DISABLED);
 	properties_scroll->set_vertical_scroll_mode(ScrollContainer::SCROLL_MODE_AUTO);
 	properties_scroll->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	properties_scroll->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	object_panel_content->add_child(properties_scroll);
 
-	VBoxContainer *properties_container = memnew(VBoxContainer);
+	VBoxContainer* properties_container = memnew(VBoxContainer);
 	properties_container->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	properties_scroll->add_child(properties_container);
 	properties_container->add_theme_constant_override("separation", 8);
 
-	inbound_tree = _make_references_list(properties_container, TTRC("Inbound References"), TTRC("Source"), TTRC("Other object referencing this object"), TTRC("Property"), TTRC("Property of other object referencing this object"));
-	inbound_tree->connect(SceneStringName(item_selected), callable_mp(this, &SnapshotObjectView::_reference_selected).bind(inbound_tree));
-	TreeItem *ib_root = inbound_tree->create_item();
-	for (const KeyValue<String, ObjectID> &ob : d->inbound_references) {
-		TreeItem *i = inbound_tree->create_item(ib_root);
+	inbound_tree = _make_references_list(properties_container, TTRC("Inbound References"),
+		TTRC("Source"), TTRC("Other object referencing this object"), TTRC("Property"),
+		TTRC("Property of other object referencing this object"));
+	inbound_tree->connect(SceneStringName(item_selected),
+		callable_mp(this, &SnapshotObjectView::_reference_selected).bind(inbound_tree));
+	TreeItem* ib_root = inbound_tree->create_item();
+	for (const KeyValue<String, ObjectID>& ob : d->inbound_references) {
+		TreeItem* i = inbound_tree->create_item(ib_root);
 		i->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_DISABLED);
 		i->set_auto_translate_mode(1, AUTO_TRANSLATE_MODE_DISABLED);
 
-		SnapshotDataObject *target = d->snapshot->objects[ob.value];
+		SnapshotDataObject* target = d->snapshot->objects[ob.value];
 		i->set_text(0, target->get_name());
 		i->set_text(1, ob.key);
 		reference_item_map[i] = data_item_map[target];
 	}
 
-	outbound_tree = _make_references_list(properties_container, TTRC("Outbound References"), TTRC("Property"), TTRC("Property of this object referencing other object"), TTRC("Target"), TTRC("Other object being referenced"));
-	outbound_tree->connect(SceneStringName(item_selected), callable_mp(this, &SnapshotObjectView::_reference_selected).bind(outbound_tree));
-	TreeItem *ob_root = outbound_tree->create_item();
-	for (const KeyValue<String, ObjectID> &ob : d->outbound_references) {
-		TreeItem *i = outbound_tree->create_item(ob_root);
+	outbound_tree = _make_references_list(properties_container, TTRC("Outbound References"),
+		TTRC("Property"), TTRC("Property of this object referencing other object"), TTRC("Target"),
+		TTRC("Other object being referenced"));
+	outbound_tree->connect(SceneStringName(item_selected),
+		callable_mp(this, &SnapshotObjectView::_reference_selected).bind(outbound_tree));
+	TreeItem* ob_root = outbound_tree->create_item();
+	for (const KeyValue<String, ObjectID>& ob : d->outbound_references) {
+		TreeItem* i = outbound_tree->create_item(ob_root);
 		i->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_DISABLED);
 		i->set_auto_translate_mode(1, AUTO_TRANSLATE_MODE_DISABLED);
 
-		SnapshotDataObject *target = d->snapshot->objects[ob.value];
+		SnapshotDataObject* target = d->snapshot->objects[ob.value];
 		i->set_text(0, ob.key);
 		i->set_text(1, target->get_name());
 		reference_item_map[i] = data_item_map[target];
 	}
 }
 
-void SnapshotObjectView::_reference_selected(Tree *p_source_tree) {
-	TreeItem *ref_item = p_source_tree->get_selected();
-	Tree *other_tree = p_source_tree == inbound_tree ? outbound_tree : inbound_tree;
+void SnapshotObjectView::_reference_selected(Tree* p_source_tree)
+{
+	TreeItem* ref_item = p_source_tree->get_selected();
+	Tree* other_tree = p_source_tree == inbound_tree ? outbound_tree : inbound_tree;
 	other_tree->deselect_all();
-	TreeItem *other = reference_item_map[ref_item];
+	TreeItem* other = reference_item_map[ref_item];
 	if (other) {
 		if (!other->is_visible()) {
 			// Clear the filter if we can't see the node we just chose.
@@ -229,8 +242,11 @@ void SnapshotObjectView::_reference_selected(Tree *p_source_tree) {
 	}
 }
 
-Tree *SnapshotObjectView::_make_references_list(Control *p_container, const String &p_name, const String &p_col_1, const String &p_col_1_tooltip, const String &p_col_2, const String &p_col_2_tooltip) {
-	VBoxContainer *vbox = memnew(VBoxContainer);
+Tree* SnapshotObjectView::_make_references_list(Control* p_container, const String& p_name,
+	const String& p_col_1, const String& p_col_1_tooltip, const String& p_col_2,
+	const String& p_col_2_tooltip)
+{
+	VBoxContainer* vbox = memnew(VBoxContainer);
 	vbox->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	vbox->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	vbox->add_theme_constant_override("separation", 4);
@@ -238,11 +254,11 @@ Tree *SnapshotObjectView::_make_references_list(Control *p_container, const Stri
 
 	vbox->set_custom_minimum_size(Vector2(300, 0) * EDSCALE);
 
-	RichTextLabel *lbl = memnew(RichTextLabel("[center]" + p_name + "[center]"));
+	RichTextLabel* lbl = memnew(RichTextLabel("[center]" + p_name + "[center]"));
 	lbl->set_fit_content(true);
 	lbl->set_use_bbcode(true);
 	vbox->add_child(lbl);
-	Tree *tree = memnew(Tree);
+	Tree* tree = memnew(Tree);
 	tree->set_hide_folding(true);
 	vbox->add_child(tree);
 	tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
@@ -262,3 +278,5 @@ Tree *SnapshotObjectView::_make_references_list(Control *p_container, const Stri
 
 	return tree;
 }
+
+

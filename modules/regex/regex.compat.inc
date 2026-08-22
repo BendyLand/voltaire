@@ -30,21 +30,21 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "regex.h"
 
-#include "core/object/class_db.h"
-
-Ref<RegEx> RegEx::_create_from_string_bind_compat_95212(const String &p_pattern) {
+Ref<RegEx> RegEx::_create_from_string_bind_compat_95212(const String& p_pattern)
+{
 	return create_from_string(p_pattern, true);
 }
 
-Error RegEx::_compile_bind_compat_95212(const String &p_pattern) {
+Error RegEx::_compile_bind_compat_95212(const String& p_pattern)
+{
 	return compile(p_pattern, true);
 }
 
-void RegEx::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_static_method("RegEx", D_METHOD("create_from_string", "pattern"), &RegEx::_create_from_string_bind_compat_95212);
-	ClassDB::bind_compatibility_method(D_METHOD("compile", "pattern"), &RegEx::_compile_bind_compat_95212);
-}
+void RegEx::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

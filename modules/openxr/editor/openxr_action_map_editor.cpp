@@ -44,35 +44,7 @@
 HashMap<String, String> OpenXRActionMapEditor::interaction_profile_editors;
 HashMap<String, String> OpenXRActionMapEditor::binding_modifier_editors;
 
-void OpenXRActionMapEditor::_bind_methods()
-{
-	ClassDB::bind_method("_add_action_set_editor", &OpenXRActionMapEditor::_add_action_set_editor);
-	ClassDB::bind_method(
-		"_add_interaction_profile_editor", &OpenXRActionMapEditor::_add_interaction_profile_editor);
-
-	ClassDB::bind_method(
-		D_METHOD("_add_action_set", "name"), &OpenXRActionMapEditor::_add_action_set);
-	ClassDB::bind_method(
-		D_METHOD("_remove_action_set", "name"), &OpenXRActionMapEditor::_remove_action_set);
-
-	ClassDB::bind_method(D_METHOD("_do_add_action_set_editor", "action_set_editor"),
-		&OpenXRActionMapEditor::_do_add_action_set_editor);
-	ClassDB::bind_method(D_METHOD("_do_remove_action_set_editor", "action_set_editor"),
-		&OpenXRActionMapEditor::_do_remove_action_set_editor);
-	ClassDB::bind_method(
-		D_METHOD("_do_add_interaction_profile_editor", "interaction_profile_editor"),
-		&OpenXRActionMapEditor::_do_add_interaction_profile_editor);
-	ClassDB::bind_method(
-		D_METHOD("_do_remove_interaction_profile_editor", "interaction_profile_editor"),
-		&OpenXRActionMapEditor::_do_remove_interaction_profile_editor);
-
-	ClassDB::bind_static_method("OpenXRActionMapEditor",
-		D_METHOD("register_interaction_profile_editor", "interaction_profile_path", "editor_class"),
-		&OpenXRActionMapEditor::register_interaction_profile_editor);
-	ClassDB::bind_static_method("OpenXRActionMapEditor",
-		D_METHOD("register_binding_modifier_editor", "binding_modifier_class", "editor_class"),
-		&OpenXRActionMapEditor::register_binding_modifier_editor);
-}
+void OpenXRActionMapEditor::_bind_methods() {}
 
 void OpenXRActionMapEditor::_notification(int p_what)
 {
@@ -141,13 +113,10 @@ OpenXRInteractionProfileEditorBase* OpenXRActionMapEditor::_add_interaction_prof
 	// need to instance the correct editor for our profile
 	OpenXRInteractionProfileEditorBase* new_profile_editor = nullptr;
 	if (interaction_profile_editors.has(profile_path)) {
-		Object* new_editor = ClassDB::instantiate(interaction_profile_editors[profile_path]);
-		if (new_editor) {
-			new_profile_editor = Object::cast_to<OpenXRInteractionProfileEditorBase>(new_editor);
-			if (!new_profile_editor) {
-				WARN_PRINT("Interaction profile editor type mismatch for " + profile_path);
-				memfree(new_editor);
-			}
+		new_profile_editor = memnew(OpenXRInteractionProfileEditorBase);
+		if (!new_profile_editor) {
+			WARN_PRINT("Interaction profile editor type mismatch for " + profile_path);
+			memfree(new_profile_editor);
 		}
 	}
 	if (!new_profile_editor) {
@@ -160,7 +129,7 @@ OpenXRInteractionProfileEditorBase* OpenXRActionMapEditor::_add_interaction_prof
 	new_profile_editor->setup(action_map, p_interaction_profile);
 	tabs->add_child(new_profile_editor);
 	new_profile_editor->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")));
+		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
 	tabs->set_tab_button_icon(
 		tabs->get_tab_count() - 1, get_theme_icon(SNAME("close"), SNAME("TabBar")));
 
@@ -192,7 +161,7 @@ OpenXRActionSetEditor* OpenXRActionMapEditor::_add_action_set(const String& p_na
 	new_action_set->set_name(p_name);
 	new_action_set->set_localized_name(p_name);
 	action_map->add_action_set(new_action_set);
-	action_map->set_edited(true);
+	action_map->obj->set_edited(true);
 
 	// update our editor right away
 	OpenXRActionSetEditor* action_set_editor = _add_action_set_editor(new_action_set);
@@ -278,7 +247,7 @@ void OpenXRActionMapEditor::_on_remove_action_set(Object* p_action_set_editor)
 	undo_redo->add_undo_method(this->obj.get(), "_do_add_action_set_editor", action_set_editor);
 	undo_redo->commit_action(true);
 
-	action_map->set_edited(true);
+	action_map->obj->set_edited(true);
 }
 
 void OpenXRActionMapEditor::_on_action_removed(const Ref<OpenXRAction>& p_action)
@@ -326,7 +295,7 @@ void OpenXRActionMapEditor::_on_interaction_profile_selected(const String& p_pat
 	new_profile.instantiate();
 	new_profile->set_interaction_profile_path(p_path);
 	action_map->add_interaction_profile(new_profile);
-	action_map->set_edited(true);
+	action_map->obj->set_edited(true);
 
 	OpenXRInteractionProfileEditorBase* interaction_profile_editor =
 		_add_interaction_profile_editor(new_profile);
@@ -361,7 +330,7 @@ void OpenXRActionMapEditor::_load_action_map(const String& p_path, bool p_create
 		action_map->create_default_action_sets();
 
 		// Save it immediately
-		err = ResourceSaver::save(action_map, p_path);
+		err = ResourceSaver::save(action_map.ptr(), p_path);
 		if (err != OK) {
 			// Show warning but continue.
 			EditorNode::get_singleton()->show_warning(
@@ -375,7 +344,7 @@ void OpenXRActionMapEditor::_load_action_map(const String& p_path, bool p_create
 
 void OpenXRActionMapEditor::_on_save_action_map()
 {
-	Error err = ResourceSaver::save(action_map, edited_path);
+	Error err = ResourceSaver::save(action_map.ptr(), edited_path);
 	if (err != OK) {
 		EditorNode::get_singleton()->show_warning(
 			vformat(TTR("Error saving file %s: %s"), edited_path, TTR(error_names[err])));
@@ -402,7 +371,7 @@ void OpenXRActionMapEditor::_on_reset_to_default_layout()
 	action_map.unref();
 	action_map.instantiate();
 	action_map->create_default_action_sets();
-	action_map->set_edited(true);
+	action_map->obj->set_edited(true);
 
 	_create_action_sets();
 	_create_interaction_profiles();
@@ -433,7 +402,7 @@ void OpenXRActionMapEditor::_on_tab_button_pressed(int p_tab)
 		this->obj.get(), "_do_add_interaction_profile_editor", interaction_profile_editor);
 	undo_redo->commit_action(true);
 
-	action_map->set_edited(true);
+	action_map->obj->set_edited(true);
 }
 
 void OpenXRActionMapEditor::_do_add_action_set_editor(OpenXRActionSetEditor* p_action_set_editor)

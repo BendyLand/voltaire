@@ -172,54 +172,54 @@ void initialize_openxr_module(ModuleInitializationLevel p_level)
 			OpenXRFutureExtension* future_extension = memnew(OpenXRFutureExtension);
 			OpenXRAPI::register_extension_wrapper(future_extension);
 			Engine::get_singleton()->add_singleton(
-				Engine::Singleton("OpenXRFutureExtension", future_extension));
+				Engine::Singleton("OpenXRFutureExtension", future_extension->obj.get()));
 
 			// Register render model extension as a singleton.
 #ifdef MODULE_GLTF_ENABLED
 			OpenXRRenderModelExtension* render_model_extension = memnew(OpenXRRenderModelExtension);
 			OpenXRAPI::register_extension_wrapper(render_model_extension);
 			Engine::get_singleton()->add_singleton(
-				Engine::Singleton("OpenXRRenderModelExtension", render_model_extension));
+				Engine::Singleton("OpenXRRenderModelExtension", render_model_extension->obj.get()));
 #endif
 
 			// Register spatial entity extensions
 			OpenXRSpatialEntityExtension* spatial_entity_extension =
 				memnew(OpenXRSpatialEntityExtension);
 			OpenXRAPI::register_extension_wrapper(spatial_entity_extension);
-			Engine::get_singleton()->add_singleton(
-				Engine::Singleton("OpenXRSpatialEntityExtension", spatial_entity_extension));
+			Engine::get_singleton()->add_singleton(Engine::Singleton(
+				"OpenXRSpatialEntityExtension", spatial_entity_extension->obj.get()));
 
 			OpenXRSpatialAnchorCapability* anchor_capability =
 				memnew(OpenXRSpatialAnchorCapability);
 			OpenXRAPI::register_extension_wrapper(anchor_capability);
 			Engine::get_singleton()->add_singleton(
-				Engine::Singleton("OpenXRSpatialAnchorCapability", anchor_capability));
+				Engine::Singleton("OpenXRSpatialAnchorCapability", anchor_capability->obj.get()));
 
 			OpenXRSpatialPlaneTrackingCapability* plane_tracking_capability =
 				memnew(OpenXRSpatialPlaneTrackingCapability);
 			OpenXRAPI::register_extension_wrapper(plane_tracking_capability);
 			Engine::get_singleton()->add_singleton(Engine::Singleton(
-				"OpenXRSpatialPlaneTrackingCapability", plane_tracking_capability));
+				"OpenXRSpatialPlaneTrackingCapability", plane_tracking_capability->obj.get()));
 
 			OpenXRSpatialMarkerTrackingCapability* marker_tracking_capability =
 				memnew(OpenXRSpatialMarkerTrackingCapability);
 			OpenXRAPI::register_extension_wrapper(marker_tracking_capability);
 			Engine::get_singleton()->add_singleton(Engine::Singleton(
-				"OpenXRSpatialMarkerTrackingCapability", marker_tracking_capability));
+				"OpenXRSpatialMarkerTrackingCapability", marker_tracking_capability->obj.get()));
 
 			// Register frame synthesis extension as a singleton.
 			OpenXRFrameSynthesisExtension* frame_synthesis_extension =
 				memnew(OpenXRFrameSynthesisExtension);
 			OpenXRAPI::register_extension_wrapper(frame_synthesis_extension);
-			Engine::get_singleton()->add_singleton(
-				Engine::Singleton("OpenXRFrameSynthesisExtension", frame_synthesis_extension));
+			Engine::get_singleton()->add_singleton(Engine::Singleton(
+				"OpenXRFrameSynthesisExtension", frame_synthesis_extension->obj.get()));
 
 			// Register android thread settings extension as a singleton.
 			OpenXRAndroidThreadSettingsExtension* android_thread_settings =
 				memnew(OpenXRAndroidThreadSettingsExtension);
 			OpenXRAPI::register_extension_wrapper(android_thread_settings);
-			Engine::get_singleton()->add_singleton(
-				Engine::Singleton("OpenXRAndroidThreadSettingsExtension", android_thread_settings));
+			Engine::get_singleton()->add_singleton(Engine::Singleton(
+				"OpenXRAndroidThreadSettingsExtension", android_thread_settings->obj.get()));
 
 			// Register user presence extension as a singleton
 			OpenXRUserPresenceExtension* user_presence_extension =

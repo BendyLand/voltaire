@@ -265,73 +265,7 @@ MultiplayerSynchronizer::get_visibility_update_mode() const
 	return visibility_update_mode;
 }
 
-void MultiplayerSynchronizer::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_root_path", "path"), &MultiplayerSynchronizer::set_root_path);
-	ClassDB::bind_method(D_METHOD("get_root_path"), &MultiplayerSynchronizer::get_root_path);
-
-	ClassDB::bind_method(D_METHOD("set_replication_interval", "milliseconds"),
-		&MultiplayerSynchronizer::set_replication_interval);
-	ClassDB::bind_method(
-		D_METHOD("get_replication_interval"), &MultiplayerSynchronizer::get_replication_interval);
-
-	ClassDB::bind_method(D_METHOD("set_delta_interval", "milliseconds"),
-		&MultiplayerSynchronizer::set_delta_interval);
-	ClassDB::bind_method(
-		D_METHOD("get_delta_interval"), &MultiplayerSynchronizer::get_delta_interval);
-
-	ClassDB::bind_method(D_METHOD("set_replication_config", "config"),
-		&MultiplayerSynchronizer::set_replication_config);
-	ClassDB::bind_method(
-		D_METHOD("get_replication_config"), &MultiplayerSynchronizer::get_replication_config);
-
-	ClassDB::bind_method(D_METHOD("set_visibility_update_mode", "mode"),
-		&MultiplayerSynchronizer::set_visibility_update_mode);
-	ClassDB::bind_method(D_METHOD("get_visibility_update_mode"),
-		&MultiplayerSynchronizer::get_visibility_update_mode);
-	ClassDB::bind_method(D_METHOD("update_visibility", "for_peer"),
-		&MultiplayerSynchronizer::update_visibility, DEFVAL(0));
-
-	ClassDB::bind_method(D_METHOD("set_visibility_public", "visible"),
-		&MultiplayerSynchronizer::set_visibility_public);
-	ClassDB::bind_method(
-		D_METHOD("is_visibility_public"), &MultiplayerSynchronizer::is_visibility_public);
-
-	ClassDB::bind_method(D_METHOD("add_visibility_filter", "filter"),
-		&MultiplayerSynchronizer::add_visibility_filter);
-	ClassDB::bind_method(D_METHOD("remove_visibility_filter", "filter"),
-		&MultiplayerSynchronizer::remove_visibility_filter);
-	ClassDB::bind_method(D_METHOD("set_visibility_for", "peer", "visible"),
-		&MultiplayerSynchronizer::set_visibility_for);
-	ClassDB::bind_method(
-		D_METHOD("get_visibility_for", "peer"), &MultiplayerSynchronizer::get_visibility_for);
-
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "root_path"), "set_root_path", "get_root_path");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "replication_interval", PROPERTY_HINT_RANGE,
-					 "0,5,0.001,suffix:s"),
-		"set_replication_interval", "get_replication_interval");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "delta_interval", PROPERTY_HINT_RANGE, "0,5,0.001,suffix:s"),
-		"set_delta_interval", "get_delta_interval");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "replication_config", PROPERTY_HINT_RESOURCE_TYPE,
-					 SceneReplicationConfig::get_class_static(),
-					 PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT),
-		"set_replication_config", "get_replication_config");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "visibility_update_mode", PROPERTY_HINT_ENUM,
-					 "Idle,Physics,None"),
-		"set_visibility_update_mode", "get_visibility_update_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "public_visibility"), "set_visibility_public",
-		"is_visibility_public");
-
-	BIND_ENUM_CONSTANT(VISIBILITY_PROCESS_IDLE);
-	BIND_ENUM_CONSTANT(VISIBILITY_PROCESS_PHYSICS);
-	BIND_ENUM_CONSTANT(VISIBILITY_PROCESS_NONE);
-
-	ADD_SIGNAL(MethodInfo("synchronized"));
-	ADD_SIGNAL(MethodInfo("delta_synchronized"));
-	ADD_SIGNAL(MethodInfo("visibility_changed", PropertyInfo(Variant::INT, "for_peer")));
-}
+void MultiplayerSynchronizer::_bind_methods() {}
 
 void MultiplayerSynchronizer::_notification(int p_what)
 {

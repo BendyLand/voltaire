@@ -112,10 +112,6 @@ void OpenXRSelectRuntime::_notification(int p_notification) {
 }
 
 String OpenXRSelectRuntime::_try_and_get_runtime_name(const String &p_config_file) {
-	if constexpr (!VLTR_IS_CLASS_ENABLED(JSON)) {
-		return "";
-	}
-
 	// Attempt to get a valid runtime name from the json file
 	String file_contents = FileAccess::get_file_as_string(p_config_file);
 	Dictionary root_node = JSON::parse_string(file_contents);

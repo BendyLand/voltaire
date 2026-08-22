@@ -28,24 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "video_stream_theora.h"
-
+#include <thirdparty/misc/yuv2rgb.h>
 #include "core/config/project_settings.h"
 #include "core/io/image.h"
 #include "core/object/class_db.h"
 #include "scene/resources/image_texture.h"
+#include "video_stream_theora.h"
 
-#include <thirdparty/misc/yuv2rgb.h>
+int VideoStreamPlaybackTheora::buffer_data()
+{
+	char* buffer = ogg_sync_buffer(&oy, 4096);
 
-int VideoStreamPlaybackTheora::buffer_data() {
-	char *buffer = ogg_sync_buffer(&oy, 4096);
-
-	uint64_t bytes = file->get_buffer((uint8_t *)buffer, 4096);
+	uint64_t bytes = file->get_buffer((uint8_t*)buffer, 4096);
 	ogg_sync_wrote(&oy, bytes);
 	return bytes;
 }
 
-int VideoStreamPlaybackTheora::queue_page(ogg_page *page) {
+int VideoStreamPlaybackTheora::queue_page(ogg_page* page)
+{
 	ogg_stream_pagein(&to, page);
 	if (to.e_o_s) {
 		theora_eos = true;
@@ -59,7 +59,8 @@ int VideoStreamPlaybackTheora::queue_page(ogg_page *page) {
 	return 0;
 }
 
-int VideoStreamPlaybackTheora::read_page(ogg_page *page) {
+int VideoStreamPlaybackTheora::read_page(ogg_page* page)
+{
 	int ret = 0;
 
 	while (ret <= 0) {
@@ -75,7 +76,8 @@ int VideoStreamPlaybackTheora::read_page(ogg_page *page) {
 	return ret;
 }
 
-double VideoStreamPlaybackTheora::get_page_time(ogg_page *page) {
+double VideoStreamPlaybackTheora::get_page_time(ogg_page* page)
+{
 	uint64_t granulepos = ogg_page_granulepos(page);
 	int page_serialno = ogg_page_serialno(page);
 	double page_time = -1;
@@ -91,7 +93,8 @@ double VideoStreamPlaybackTheora::get_page_time(ogg_page *page) {
 }
 
 // Read one buffer worth of pages and feed them to the streams.
-int VideoStreamPlaybackTheora::feed_pages() {
+int VideoStreamPlaybackTheora::feed_pages()
+{
 	int pages = 0;
 	ogg_page og;
 
@@ -111,9 +114,12 @@ int VideoStreamPlaybackTheora::feed_pages() {
 	return pages;
 }
 
-// Seek the video and audio streams simultaneously to find the granulepos where we should start decoding.
-// It will return the position where we should start reading pages, and the video and audio granulepos.
-int64_t VideoStreamPlaybackTheora::seek_streams(double p_time, int64_t &cur_video_granulepos, int64_t &cur_audio_granulepos) {
+// Seek the video and audio streams simultaneously to find the granulepos where we should start
+// decoding. It will return the position where we should start reading pages, and the video and
+// audio granulepos.
+int64_t VideoStreamPlaybackTheora::seek_streams(
+	double p_time, int64_t& cur_video_granulepos, int64_t& cur_audio_granulepos)
+{
 	// Backtracking less than this is probably a waste of time.
 	const int64_t min_seek = 512 * 1024;
 	int64_t target_video_granulepos;
@@ -122,18 +128,24 @@ int64_t VideoStreamPlaybackTheora::seek_streams(double p_time, int64_t &cur_vide
 	int64_t seek_pos;
 
 	// Make a guess where we should start reading in the file, and scan from there.
-	// We base the guess on the mean bitrate of the streams. It would be theoretically faster to use the bisect method but
-	// in practice there's a lot of linear scanning to do to find the right pages.
-	// We want to catch the previous keyframe to the seek time. Since we only know the max GOP, we use that.
-	if (p_time == -1) { // This is a special case to find the last packets and calculate the video length.
+	// We base the guess on the mean bitrate of the streams. It would be theoretically faster to use
+	// the bisect method but in practice there's a lot of linear scanning to do to find the right
+	// pages. We want to catch the previous keyframe to the seek time. Since we only know the max
+	// GOP, we use that.
+	if (p_time ==
+		-1) { // This is a special case to find the last packets and calculate the video length.
 		seek_pos = MAX(stream_data_size - min_seek, stream_data_offset);
 		target_video_granulepos = INT64_MAX;
 		target_audio_granulepos = INT64_MAX;
-	} else {
+	}
+	else {
 		int64_t video_frame = (int64_t)(p_time / frame_duration);
-		target_video_granulepos = MAX(1LL, video_frame - (1LL << ti.keyframe_granule_shift)) << ti.keyframe_granule_shift;
+		target_video_granulepos = MAX(1LL, video_frame - (1LL << ti.keyframe_granule_shift))
+								  << ti.keyframe_granule_shift;
 		target_audio_granulepos = 0;
-		seek_pos = MAX(((target_video_granulepos >> ti.keyframe_granule_shift) - 1) * frame_duration * stream_data_size / stream_length, stream_data_offset);
+		seek_pos = MAX(((target_video_granulepos >> ti.keyframe_granule_shift) - 1) *
+						   frame_duration * stream_data_size / stream_length,
+			stream_data_offset);
 		target_time = th_granule_time(td, target_video_granulepos);
 		if (has_audio) {
 			target_audio_granulepos = video_frame * frame_duration * vi.rate;
@@ -166,7 +178,7 @@ int64_t VideoStreamPlaybackTheora::seek_streams(double p_time, int64_t &cur_vide
 			ogg_page page;
 			uint64_t last_seek_pos = file->get_position() - oy.fill + oy.returned;
 			int ret = read_page(&page);
-			if (ret <= 0) { // End of file.
+			if (ret <= 0) {							 // End of file.
 				if (seek_pos < stream_data_offset) { // We've already searched the whole file
 					return -1;
 				}
@@ -180,10 +192,13 @@ int64_t VideoStreamPlaybackTheora::seek_streams(double p_time, int64_t &cur_vide
 					if (cur_granulepos >= target_video_granulepos) {
 						video_catch = true;
 						if (cur_video_granulepos < 0) {
-							// Adding 1s helps catching the start of the page and avoids backtrack_time = 0.
-							backtrack_time = MAX(backtrack_time, 1 + th_granule_time(td, cur_granulepos) - target_time);
+							// Adding 1s helps catching the start of the page and avoids
+							// backtrack_time = 0.
+							backtrack_time = MAX(backtrack_time,
+								1 + th_granule_time(td, cur_granulepos) - target_time);
 						}
-					} else {
+					}
+					else {
 						video_seek_pos = last_video_granule_seek_pos;
 						cur_video_granulepos = cur_granulepos;
 					}
@@ -193,10 +208,13 @@ int64_t VideoStreamPlaybackTheora::seek_streams(double p_time, int64_t &cur_vide
 					if (cur_granulepos >= target_audio_granulepos) {
 						audio_catch = true;
 						if (cur_audio_granulepos < 0) {
-							// Adding 1s helps catching the start of the page and avoids backtrack_time = 0.
-							backtrack_time = MAX(backtrack_time, 1 + vorbis_granule_time(&vd, cur_granulepos) - target_time);
+							// Adding 1s helps catching the start of the page and avoids
+							// backtrack_time = 0.
+							backtrack_time = MAX(backtrack_time,
+								1 + vorbis_granule_time(&vd, cur_granulepos) - target_time);
 						}
-					} else {
+					}
+					else {
 						audio_seek_pos = last_audio_granule_seek_pos;
 						cur_audio_granulepos = cur_granulepos;
 					}
@@ -225,37 +243,49 @@ int64_t VideoStreamPlaybackTheora::seek_streams(double p_time, int64_t &cur_vide
 			cur_audio_granulepos = 0;
 		}
 		seek_pos = MIN(video_seek_pos, audio_seek_pos);
-	} else {
+	}
+	else {
 		seek_pos = video_seek_pos;
 	}
 
 	return seek_pos;
 }
 
-void VideoStreamPlaybackTheora::video_write(th_ycbcr_buffer yuv) {
-	uint8_t *w = frame_data.ptrw();
-	char *dst = (char *)w;
+void VideoStreamPlaybackTheora::video_write(th_ycbcr_buffer yuv)
+{
+	uint8_t* w = frame_data.ptrw();
+	char* dst = (char*)w;
 	uint32_t y_offset = region.position.y * yuv[0].stride + region.position.x;
 	uint32_t uv_offset = 0;
 
 	if (px_fmt == TH_PF_444) {
 		uv_offset += region.position.y * yuv[1].stride + region.position.x;
-		yuv444_2_rgb8888((uint8_t *)dst, (uint8_t *)yuv[0].data + y_offset, (uint8_t *)yuv[1].data + uv_offset, (uint8_t *)yuv[2].data + uv_offset, region.size.x, region.size.y, yuv[0].stride, yuv[1].stride, region.size.x << 2);
-	} else if (px_fmt == TH_PF_422) {
+		yuv444_2_rgb8888((uint8_t*)dst, (uint8_t*)yuv[0].data + y_offset,
+			(uint8_t*)yuv[1].data + uv_offset, (uint8_t*)yuv[2].data + uv_offset, region.size.x,
+			region.size.y, yuv[0].stride, yuv[1].stride, region.size.x << 2);
+	}
+	else if (px_fmt == TH_PF_422) {
 		uv_offset += region.position.y * yuv[1].stride + region.position.x / 2;
-		yuv422_2_rgb8888((uint8_t *)dst, (uint8_t *)yuv[0].data + y_offset, (uint8_t *)yuv[1].data + uv_offset, (uint8_t *)yuv[2].data + uv_offset, region.size.x, region.size.y, yuv[0].stride, yuv[1].stride, region.size.x << 2);
-	} else if (px_fmt == TH_PF_420) {
+		yuv422_2_rgb8888((uint8_t*)dst, (uint8_t*)yuv[0].data + y_offset,
+			(uint8_t*)yuv[1].data + uv_offset, (uint8_t*)yuv[2].data + uv_offset, region.size.x,
+			region.size.y, yuv[0].stride, yuv[1].stride, region.size.x << 2);
+	}
+	else if (px_fmt == TH_PF_420) {
 		uv_offset += region.position.y * yuv[1].stride / 2 + region.position.x / 2;
-		yuv420_2_rgb8888((uint8_t *)dst, (uint8_t *)yuv[0].data + y_offset, (uint8_t *)yuv[1].data + uv_offset, (uint8_t *)yuv[2].data + uv_offset, region.size.x, region.size.y, yuv[0].stride, yuv[1].stride, region.size.x << 2);
+		yuv420_2_rgb8888((uint8_t*)dst, (uint8_t*)yuv[0].data + y_offset,
+			(uint8_t*)yuv[1].data + uv_offset, (uint8_t*)yuv[2].data + uv_offset, region.size.x,
+			region.size.y, yuv[0].stride, yuv[1].stride, region.size.x << 2);
 	}
 
 	Ref<Image> img;
-	img.instantiate(region.size.x, region.size.y, false, Image::FORMAT_RGBA8, frame_data); //zero copy image creation
+	img.instantiate(region.size.x, region.size.y, false, Image::FORMAT_RGBA8,
+		frame_data); // zero copy image creation
 
 	texture->update(img); // Zero-copy send to rendering server.
 }
 
-void VideoStreamPlaybackTheora::clear() {
+void VideoStreamPlaybackTheora::clear()
+{
 	if (!file.is_null()) {
 		file.unref();
 	}
@@ -285,7 +315,8 @@ void VideoStreamPlaybackTheora::clear() {
 	vorbis_eos = false;
 }
 
-void VideoStreamPlaybackTheora::find_streams(th_setup_info *&ts) {
+void VideoStreamPlaybackTheora::find_streams(th_setup_info*& ts)
+{
 	ogg_stream_state test;
 	ogg_packet op;
 	ogg_page og;
@@ -316,7 +347,8 @@ void VideoStreamPlaybackTheora::find_streams(th_setup_info *&ts) {
 				/* it is theora */
 				memcpy(&to, &test, sizeof(test));
 				has_video = true;
-			} else if (!has_audio && vorbis_synthesis_headerin(&vi, &vc, &op) >= 0) {
+			}
+			else if (!has_audio && vorbis_synthesis_headerin(&vi, &vc, &op) >= 0) {
 				/* it is vorbis */
 				if (audio_track_skip) {
 					vorbis_info_clear(&vi);
@@ -325,11 +357,13 @@ void VideoStreamPlaybackTheora::find_streams(th_setup_info *&ts) {
 					vorbis_info_init(&vi);
 					vorbis_comment_init(&vc);
 					audio_track_skip--;
-				} else {
+				}
+				else {
 					memcpy(&vo, &test, sizeof(test));
 					has_audio = true;
 				}
-			} else {
+			}
+			else {
 				/* whatever it is, we don't care about it */
 				ogg_stream_clear(&test);
 			}
@@ -337,7 +371,8 @@ void VideoStreamPlaybackTheora::find_streams(th_setup_info *&ts) {
 	}
 }
 
-void VideoStreamPlaybackTheora::read_headers(th_setup_info *&ts) {
+void VideoStreamPlaybackTheora::read_headers(th_setup_info*& ts)
+{
 	ogg_packet op;
 	int theora_header_packets = 1;
 	int vorbis_header_packets = 1;
@@ -359,12 +394,15 @@ void VideoStreamPlaybackTheora::read_headers(th_setup_info *&ts) {
 			}
 		}
 
-		/* The header pages/packets will arrive before anything else we care about, or the stream is not obeying spec */
+		/* The header pages/packets will arrive before anything
+		 else we care about, or the stream is
+		 * not obeying spec */
 		if (theora_header_packets < 3 || (has_audio && vorbis_header_packets < 3)) {
 			ogg_page page;
 			if (read_page(&page)) {
 				queue_page(&page);
-			} else {
+			}
+			else {
 				fprintf(stderr, "End of file while searching for codec headers.\n");
 				break;
 			}
@@ -375,9 +413,10 @@ void VideoStreamPlaybackTheora::read_headers(th_setup_info *&ts) {
 	has_audio = vorbis_header_packets == 3;
 }
 
-void VideoStreamPlaybackTheora::set_file(const String &p_file) {
+void VideoStreamPlaybackTheora::set_file(const String& p_file)
+{
 	ERR_FAIL_COND(playing);
-	th_setup_info *ts = nullptr;
+	th_setup_info* ts = nullptr;
 
 	clear();
 
@@ -438,13 +477,13 @@ void VideoStreamPlaybackTheora::set_file(const String &p_file) {
 	th_setup_free(ts);
 	px_fmt = ti.pixel_fmt;
 	switch (ti.pixel_fmt) {
-		case TH_PF_420:
-		case TH_PF_422:
-		case TH_PF_444:
-			break;
-		default:
-			WARN_PRINT(" video\n  (UNKNOWN Chroma sampling!)\n");
-			break;
+	case TH_PF_420:
+	case TH_PF_422:
+	case TH_PF_444:
+		break;
+	default:
+		WARN_PRINT(" video\n  (UNKNOWN Chroma sampling!)\n");
+		break;
 	}
 	th_decode_ctl(td, TH_DECCTL_GET_PPLEVEL_MAX, &pp_level_max, sizeof(pp_level_max));
 	pp_level = 0;
@@ -494,18 +533,18 @@ void VideoStreamPlaybackTheora::set_file(const String &p_file) {
 	seek(0);
 }
 
-double VideoStreamPlaybackTheora::get_time() const {
+double VideoStreamPlaybackTheora::get_time() const
+{
 	// FIXME: AudioServer output latency was fixed in af9bb0e, previously it used to
 	// systematically return 0. Now that it gives a proper latency, it broke this
 	// code where the delay compensation likely never really worked.
 	return time - /* AudioServer::get_singleton()->get_output_latency() - */ delay_compensation;
 }
 
-Ref<Texture2D> VideoStreamPlaybackTheora::get_texture() const {
-	return texture;
-}
+Ref<Texture2D> VideoStreamPlaybackTheora::get_texture() const { return texture; }
 
-void VideoStreamPlaybackTheora::update(double p_delta) {
+void VideoStreamPlaybackTheora::update(double p_delta)
+{
 	if (file.is_null()) {
 		return;
 	}
@@ -530,7 +569,7 @@ void VideoStreamPlaybackTheora::update(double p_delta) {
 				break;
 			}
 
-			float **pcm;
+			float** pcm;
 			int ret = vorbis_synthesis_pcmout(&vd, &pcm);
 			if (ret > 0) {
 				int frames_read = 0;
@@ -550,13 +589,15 @@ void VideoStreamPlaybackTheora::update(double p_delta) {
 					}
 				}
 				vorbis_synthesis_read(&vd, frames_read);
-			} else {
+			}
+			else {
 				/* no pending audio; is there a pending packet to decode? */
 				if (ogg_stream_packetout(&vo, &op) > 0) {
 					if (vorbis_synthesis(&vb, &op) == 0) { /* test for success! */
 						vorbis_synthesis_blockin(&vd, &vb);
 					}
-				} else { /* we need more data; break out to suck in another page */
+				}
+				else { /* we need more data; break out to suck in another page */
 					audio_done = vorbis_eos;
 					break;
 				}
@@ -575,12 +616,14 @@ void VideoStreamPlaybackTheora::update(double p_delta) {
 					if (next_frame_time > comp_time) {
 						dup_frame = (ret == TH_DUPFRAME);
 						video_ready = true;
-					} else {
+					}
+					else {
 						/*If we are too slow, reduce the pp level.*/
 						pp_inc = pp_level > 0 ? -1 : 0;
 					}
 				}
-			} else { /* we need more data; break out to suck in another page */
+			}
+			else { /* we need more data; break out to suck in another page */
 				video_done = theora_eos;
 				break;
 			}
@@ -599,7 +642,8 @@ void VideoStreamPlaybackTheora::update(double p_delta) {
 		/*If we have lots of extra time, increase the post-processing level.*/
 		if (tdiff > ti.fps_denominator * 0.25 / ti.fps_numerator) {
 			pp_inc = pp_level < pp_level_max ? 1 : 0;
-		} else if (tdiff < ti.fps_denominator * 0.05 / ti.fps_numerator) {
+		}
+		else if (tdiff < ti.fps_denominator * 0.05 / ti.fps_numerator) {
 			pp_inc = pp_level > 0 ? -1 : 0;
 		}
 	}
@@ -622,7 +666,8 @@ void VideoStreamPlaybackTheora::update(double p_delta) {
 	}
 }
 
-void VideoStreamPlaybackTheora::play() {
+void VideoStreamPlaybackTheora::play()
+{
 	if (playing) {
 		return;
 	}
@@ -632,32 +677,24 @@ void VideoStreamPlaybackTheora::play() {
 	delay_compensation /= 1000.0;
 }
 
-void VideoStreamPlaybackTheora::stop() {
+void VideoStreamPlaybackTheora::stop()
+{
 	playing = false;
 	seek(0);
 }
 
-bool VideoStreamPlaybackTheora::is_playing() const {
-	return playing;
-}
+bool VideoStreamPlaybackTheora::is_playing() const { return playing; }
 
-void VideoStreamPlaybackTheora::set_paused(bool p_paused) {
-	paused = p_paused;
-}
+void VideoStreamPlaybackTheora::set_paused(bool p_paused) { paused = p_paused; }
 
-bool VideoStreamPlaybackTheora::is_paused() const {
-	return paused;
-}
+bool VideoStreamPlaybackTheora::is_paused() const { return paused; }
 
-double VideoStreamPlaybackTheora::get_length() const {
-	return stream_length;
-}
+double VideoStreamPlaybackTheora::get_length() const { return stream_length; }
 
-double VideoStreamPlaybackTheora::get_playback_position() const {
-	return get_time();
-}
+double VideoStreamPlaybackTheora::get_playback_position() const { return get_time(); }
 
-void VideoStreamPlaybackTheora::seek(double p_time) {
+void VideoStreamPlaybackTheora::seek(double p_time)
+{
 	if (file.is_null()) {
 		return;
 	}
@@ -703,10 +740,10 @@ void VideoStreamPlaybackTheora::seek(double p_time) {
 	bool keyframe_found = false;
 	uint64_t current_frame = 0;
 
-	// Read from the streams skipping pages until we reach the granules we want. We won't skip pages from both video and
-	// audio streams, only one of them, until decoding of both starts.
-	// video_granulepos and audio_granulepos are guaranteed to be found by checking the granulepos in the packets, no
-	// need to keep track of packets with granulepos == -1 until decoding starts.
+	// Read from the streams skipping pages until we reach the granules we want. We won't skip pages
+	// from both video and audio streams, only one of them, until decoding of both starts.
+	// video_granulepos and audio_granulepos are guaranteed to be found by checking the granulepos
+	// in the packets, no need to keep track of packets with granulepos == -1 until decoding starts.
 	while ((has_audio && last_audio_time < p_time) || (last_video_time <= p_time)) {
 		ogg_packet op;
 		if (feed_pages() == 0) {
@@ -716,16 +753,18 @@ void VideoStreamPlaybackTheora::seek(double p_time) {
 			if (start_audio) {
 				if (vorbis_synthesis(&vb, &op) == 0) { /* test for success! */
 					vorbis_synthesis_blockin(&vd, &vb);
-					float **pcm;
+					float** pcm;
 					int samples_left = ceil((p_time - last_audio_time) * vi.rate);
 					int samples_read = vorbis_synthesis_pcmout(&vd, &pcm);
 					int samples_consumed = MIN(samples_left, samples_read);
 					vorbis_synthesis_read(&vd, samples_consumed);
 					last_audio_time += (double)samples_consumed / vi.rate;
 				}
-			} else if (op.granulepos >= audio_granulepos) {
+			}
+			else if (op.granulepos >= audio_granulepos) {
 				last_audio_time = vorbis_granule_time(&vd, op.granulepos);
-				// Start tracking audio now. This won't produce any samples but will update the decoder state.
+				// Start tracking audio now. This won't produce any samples but will update the
+				// decoder state.
 				if (vorbis_synthesis_trackonly(&vb, &op) == 0) {
 					vorbis_synthesis_blockin(&vd, &vb);
 				}
@@ -733,7 +772,8 @@ void VideoStreamPlaybackTheora::seek(double p_time) {
 			}
 		}
 		while (last_video_time <= p_time && ogg_stream_packetout(&to, &op) > 0) {
-			if (!start_video && (op.granulepos >= video_granulepos || video_granulepos == (1LL << ti.keyframe_granule_shift))) {
+			if (!start_video && (op.granulepos >= video_granulepos ||
+									video_granulepos == (1LL << ti.keyframe_granule_shift))) {
 				if (op.granulepos > 0) {
 					current_frame = th_granule_frame(td, op.granulepos);
 				}
@@ -744,19 +784,22 @@ void VideoStreamPlaybackTheora::seek(double p_time) {
 				if (!keyframe_found && th_packet_iskeyframe(&op)) {
 					keyframe_found = true;
 					int64_t cur_granulepos = (current_frame + 1) << ti.keyframe_granule_shift;
-					th_decode_ctl(td, TH_DECCTL_SET_GRANPOS, &cur_granulepos, sizeof(cur_granulepos));
+					th_decode_ctl(
+						td, TH_DECCTL_SET_GRANPOS, &cur_granulepos, sizeof(cur_granulepos));
 				}
 				if (keyframe_found) {
 					int64_t videobuf_granulepos;
 					if (op.granulepos >= 0) {
-						th_decode_ctl(td, TH_DECCTL_SET_GRANPOS, &op.granulepos, sizeof(op.granulepos));
+						th_decode_ctl(
+							td, TH_DECCTL_SET_GRANPOS, &op.granulepos, sizeof(op.granulepos));
 					}
 					int ret = th_decode_packetin(td, &op, &videobuf_granulepos);
 					if (ret == 0 || ret == TH_DUPFRAME) {
 						last_video_time = th_granule_time(td, videobuf_granulepos);
 						first_frame_decoded = true;
 					}
-				} else {
+				}
+				else {
 					current_frame++;
 				}
 			}
@@ -770,36 +813,29 @@ void VideoStreamPlaybackTheora::seek(double p_time) {
 			th_decode_ycbcr_out(td, yuv);
 			video_write(yuv);
 			current_frame_time = last_video_time;
-		} else {
+		}
+		else {
 			next_frame_time = current_frame_time;
 			video_ready = true;
 		}
 	}
 }
 
-int VideoStreamPlaybackTheora::get_channels() const {
-	return vi.channels;
-}
+int VideoStreamPlaybackTheora::get_channels() const { return vi.channels; }
 
-void VideoStreamPlaybackTheora::set_audio_track(int p_idx) {
-	audio_track = p_idx;
-}
+void VideoStreamPlaybackTheora::set_audio_track(int p_idx) { audio_track = p_idx; }
 
-int VideoStreamPlaybackTheora::get_mix_rate() const {
-	return vi.rate;
-}
+int VideoStreamPlaybackTheora::get_mix_rate() const { return vi.rate; }
 
-VideoStreamPlaybackTheora::VideoStreamPlaybackTheora() {
-	texture.instantiate();
-}
+VideoStreamPlaybackTheora::VideoStreamPlaybackTheora() { texture.instantiate(); }
 
-VideoStreamPlaybackTheora::~VideoStreamPlaybackTheora() {
-	clear();
-}
+VideoStreamPlaybackTheora::~VideoStreamPlaybackTheora() { clear(); }
 
 void VideoStreamTheora::_bind_methods() {}
 
-Ref<Resource> ResourceFormatLoaderTheora::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
+Ref<Resource> ResourceFormatLoaderTheora::load(const String& p_path, const String& p_original_path,
+	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
+{
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
 	if (f.is_null()) {
 		if (r_error) {
@@ -821,17 +857,23 @@ Ref<Resource> ResourceFormatLoaderTheora::load(const String &p_path, const Strin
 	return ogv_stream;
 }
 
-void ResourceFormatLoaderTheora::get_recognized_extensions(List<String> *p_extensions) const {
+void ResourceFormatLoaderTheora::get_recognized_extensions(List<String>* p_extensions) const
+{
 	p_extensions->push_back("ogv");
 }
 
-bool ResourceFormatLoaderTheora::handles_type(const String &p_type) const {
-	return ClassDB::is_parent_class(p_type, "VideoStream");
+bool ResourceFormatLoaderTheora::handles_type(const String& p_type) const
+{
+	// original used ClassDB so defaulting to false is safer.
+	return false;
 }
 
-String ResourceFormatLoaderTheora::get_resource_type(const String &p_path) const {
+String ResourceFormatLoaderTheora::get_resource_type(const String& p_path) const
+{
 	if (p_path.has_extension("ogv")) {
 		return "VideoStreamTheora";
 	}
 	return "";
 }
+
+

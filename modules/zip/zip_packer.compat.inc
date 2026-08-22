@@ -30,16 +30,16 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "zip_packer.h"
 
-#include "core/object/class_db.h"
-
-Error ZIPPacker::_start_file_bind_compat_115946(const String &p_path) {
+Error ZIPPacker::_start_file_bind_compat_115946(const String& p_path)
+{
 	return start_file(p_path, 0644, 0);
 }
 
-void ZIPPacker::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("start_file", "path"), &ZIPPacker::_start_file_bind_compat_115946);
-}
+void ZIPPacker::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

@@ -317,32 +317,5 @@ Ref<AudioStreamMP3> AudioStreamMP3::load_from_file(const String &p_path) {
 	return load_from_buffer(stream_data);
 }
 
-void AudioStreamMP3::_bind_methods() {
-	ClassDB::bind_static_method("AudioStreamMP3", D_METHOD("load_from_buffer", "stream_data"), &AudioStreamMP3::load_from_buffer);
-	ClassDB::bind_static_method("AudioStreamMP3", D_METHOD("load_from_file", "path"), &AudioStreamMP3::load_from_file);
+void AudioStreamMP3::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_data", "data"), &AudioStreamMP3::set_data);
-	ClassDB::bind_method(D_METHOD("get_data"), &AudioStreamMP3::get_data);
-
-	ClassDB::bind_method(D_METHOD("set_loop", "enable"), &AudioStreamMP3::set_loop);
-	ClassDB::bind_method(D_METHOD("has_loop"), &AudioStreamMP3::has_loop);
-
-	ClassDB::bind_method(D_METHOD("set_loop_offset", "seconds"), &AudioStreamMP3::set_loop_offset);
-	ClassDB::bind_method(D_METHOD("get_loop_offset"), &AudioStreamMP3::get_loop_offset);
-
-	ClassDB::bind_method(D_METHOD("set_bpm", "bpm"), &AudioStreamMP3::set_bpm);
-	ClassDB::bind_method(D_METHOD("get_bpm"), &AudioStreamMP3::get_bpm);
-
-	ClassDB::bind_method(D_METHOD("set_beat_count", "count"), &AudioStreamMP3::set_beat_count);
-	ClassDB::bind_method(D_METHOD("get_beat_count"), &AudioStreamMP3::get_beat_count);
-
-	ClassDB::bind_method(D_METHOD("set_bar_beats", "count"), &AudioStreamMP3::set_bar_beats);
-	ClassDB::bind_method(D_METHOD("get_bar_beats"), &AudioStreamMP3::get_bar_beats);
-
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_data", "get_data");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bpm", PROPERTY_HINT_RANGE, "0,400,0.01,or_greater"), "set_bpm", "get_bpm");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "beat_count", PROPERTY_HINT_RANGE, "0,512,1,or_greater"), "set_beat_count", "get_beat_count");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "bar_beats", PROPERTY_HINT_RANGE, "2,32,1,or_greater"), "set_bar_beats", "get_bar_beats");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "loop"), "set_loop", "has_loop");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "loop_offset"), "set_loop_offset", "get_loop_offset");
-}

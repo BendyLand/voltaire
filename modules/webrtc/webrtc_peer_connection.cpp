@@ -38,80 +38,73 @@
 
 StringName WebRTCPeerConnection::default_extension;
 
-void WebRTCPeerConnection::set_default_extension(const StringName &p_extension) {
+void WebRTCPeerConnection::set_default_extension(const StringName& p_extension)
+{
 	default_extension = StringName(p_extension, true);
 }
 
-WebRTCPeerConnection *WebRTCPeerConnection::create(bool p_notify_postinitialize) {
+WebRTCPeerConnection* WebRTCPeerConnection::create(bool p_notify_postinitialize)
+{
 #ifdef WEB_ENABLED
-	return static_cast<WebRTCPeerConnection *>(ClassDB::creator<WebRTCPeerConnectionJS>(p_notify_postinitialize));
+	return static_cast<WebRTCPeerConnection*>(
+		ClassDB::creator<WebRTCPeerConnectionJS>(p_notify_postinitialize));
 #else
 	if (default_extension == StringName()) {
 		WARN_PRINT_ONCE("No default WebRTC extension configured.");
 	}
-	Object *obj = nullptr;
-	if (p_notify_postinitialize) {
-		obj = ClassDB::instantiate(default_extension);
-	} else {
-		obj = ClassDB::instantiate_without_postinitialization(default_extension);
-	}
-	return Object::cast_to<WebRTCPeerConnection>(obj);
+	return memnew(WebRTCPeerConnection).ptr();
 #endif
 }
 
-void WebRTCPeerConnection::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("initialize", "configuration"), &WebRTCPeerConnection::initialize, DEFVAL(Dictionary()));
-	ClassDB::bind_method(D_METHOD("create_data_channel", "label", "options"), &WebRTCPeerConnection::create_data_channel, DEFVAL(Dictionary()));
-	ClassDB::bind_method(D_METHOD("create_offer"), &WebRTCPeerConnection::create_offer);
-	ClassDB::bind_method(D_METHOD("set_local_description", "type", "sdp"), &WebRTCPeerConnection::set_local_description);
-	ClassDB::bind_method(D_METHOD("set_remote_description", "type", "sdp"), &WebRTCPeerConnection::set_remote_description);
-	ClassDB::bind_method(D_METHOD("add_ice_candidate", "media", "index", "name"), &WebRTCPeerConnection::add_ice_candidate);
-	ClassDB::bind_method(D_METHOD("poll"), &WebRTCPeerConnection::poll);
-	ClassDB::bind_method(D_METHOD("close"), &WebRTCPeerConnection::close);
+void WebRTCPeerConnection::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("get_connection_state"), &WebRTCPeerConnection::get_connection_state);
-	ClassDB::bind_method(D_METHOD("get_gathering_state"), &WebRTCPeerConnection::get_gathering_state);
-	ClassDB::bind_method(D_METHOD("get_signaling_state"), &WebRTCPeerConnection::get_signaling_state);
-
-	ADD_SIGNAL(MethodInfo("session_description_created", PropertyInfo(Variant::STRING, "type"), PropertyInfo(Variant::STRING, "sdp")));
-	ADD_SIGNAL(MethodInfo("ice_candidate_created", PropertyInfo(Variant::STRING, "media"), PropertyInfo(Variant::INT, "index"), PropertyInfo(Variant::STRING, "name")));
-	ADD_SIGNAL(MethodInfo("data_channel_received", PropertyInfo(Variant::OBJECT, "channel", PROPERTY_HINT_RESOURCE_TYPE, WebRTCDataChannel::get_class_static())));
-
-	BIND_ENUM_CONSTANT(STATE_NEW);
-	BIND_ENUM_CONSTANT(STATE_CONNECTING);
-	BIND_ENUM_CONSTANT(STATE_CONNECTED);
-	BIND_ENUM_CONSTANT(STATE_DISCONNECTED);
-	BIND_ENUM_CONSTANT(STATE_FAILED);
-	BIND_ENUM_CONSTANT(STATE_CLOSED);
-
-	BIND_ENUM_CONSTANT(GATHERING_STATE_NEW);
-	BIND_ENUM_CONSTANT(GATHERING_STATE_GATHERING);
-	BIND_ENUM_CONSTANT(GATHERING_STATE_COMPLETE);
-
-	BIND_ENUM_CONSTANT(SIGNALING_STATE_STABLE);
-	BIND_ENUM_CONSTANT(SIGNALING_STATE_HAVE_LOCAL_OFFER);
-	BIND_ENUM_CONSTANT(SIGNALING_STATE_HAVE_REMOTE_OFFER);
-	BIND_ENUM_CONSTANT(SIGNALING_STATE_HAVE_LOCAL_PRANSWER);
-	BIND_ENUM_CONSTANT(SIGNALING_STATE_HAVE_REMOTE_PRANSWER);
-	BIND_ENUM_CONSTANT(SIGNALING_STATE_CLOSED);
+WebRTCPeerConnection::ConnectionState WebRTCPeerConnection::get_connection_state() const
+{
+	return STATE_DISCONNECTED;
 }
 
-WebRTCPeerConnection::ConnectionState WebRTCPeerConnection::get_connection_state() const { return STATE_DISCONNECTED; }
-WebRTCPeerConnection::GatheringState WebRTCPeerConnection::get_gathering_state() const { return GATHERING_STATE_NEW; }
-WebRTCPeerConnection::SignalingState WebRTCPeerConnection::get_signaling_state() const { return SIGNALING_STATE_STABLE; }
-Error WebRTCPeerConnection::initialize(const Dictionary &p_config) { return OK; }
-Ref<WebRTCDataChannel> WebRTCPeerConnection::create_data_channel(const String &p_label, const Dictionary &p_options) { return nullptr; }
+WebRTCPeerConnection::GatheringState WebRTCPeerConnection::get_gathering_state() const
+{
+	return GATHERING_STATE_NEW;
+}
+
+WebRTCPeerConnection::SignalingState WebRTCPeerConnection::get_signaling_state() const
+{
+	return SIGNALING_STATE_STABLE;
+}
+
+Error WebRTCPeerConnection::initialize(const Dictionary& p_config) { return OK; }
+
+Ref<WebRTCDataChannel> WebRTCPeerConnection::create_data_channel(
+	const String& p_label, const Dictionary& p_options)
+{
+	return nullptr;
+}
+
 Error WebRTCPeerConnection::create_offer() { return OK; }
-Error WebRTCPeerConnection::set_remote_description(const String &p_type, const String &p_sdp) { return OK; }
-Error WebRTCPeerConnection::set_local_description(const String &p_type, const String &p_sdp) { return OK; }
-Error WebRTCPeerConnection::add_ice_candidate(const String &p_sdp_mid, int p_sdp_mline_index_name, const String &p_sdp_name) { return OK; }
+
+Error WebRTCPeerConnection::set_remote_description(const String& p_type, const String& p_sdp)
+{
+	return OK;
+}
+
+Error WebRTCPeerConnection::set_local_description(const String& p_type, const String& p_sdp)
+{
+	return OK;
+}
+
+Error WebRTCPeerConnection::add_ice_candidate(
+	const String& p_sdp_mid, int p_sdp_mline_index_name, const String& p_sdp_name)
+{
+	return OK;
+}
+
 Error WebRTCPeerConnection::poll() { return OK; }
 
-WebRTCPeerConnection::WebRTCPeerConnection() {
-}
+WebRTCPeerConnection::WebRTCPeerConnection() {}
 
-WebRTCPeerConnection::~WebRTCPeerConnection() {
-}
+WebRTCPeerConnection::~WebRTCPeerConnection() {}
 
-void WebRTCPeerConnection::close() {
-}
+void WebRTCPeerConnection::close() {}
+
+

@@ -28,33 +28,30 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "openxr_extension_wrapper.h"
-
 #include "../openxr_api.h"
 #include "../openxr_api_extension.h"
-
 #include "core/object/class_db.h"
+#include "openxr_extension_wrapper.h"
 
-void OpenXRExtensionWrapper::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_openxr_api"), &OpenXRExtensionWrapper::_gdextension_get_openxr_api);
-	ClassDB::bind_method(D_METHOD("register_extension_wrapper"), &OpenXRExtensionWrapper::_gdextension_register_extension_wrapper);
+void OpenXRExtensionWrapper::_bind_methods() {}
+
+HashMap<String, bool*> OpenXRExtensionWrapper::get_requested_extensions(XrVersion p_xr_version)
+{
+	return HashMap<String, bool*>();
 }
 
-HashMap<String, bool *> OpenXRExtensionWrapper::get_requested_extensions(XrVersion p_xr_version) {
-	return HashMap<String, bool *>();
-}
-
-Ref<OpenXRAPIExtension> OpenXRExtensionWrapper::_gdextension_get_openxr_api() {
+Ref<OpenXRAPIExtension> OpenXRExtensionWrapper::_gdextension_get_openxr_api()
+{
 	return openxr_api_extension;
 }
 
-void OpenXRExtensionWrapper::_gdextension_register_extension_wrapper() {
+void OpenXRExtensionWrapper::_gdextension_register_extension_wrapper()
+{
 	OpenXRAPI::register_extension_wrapper(this);
 }
 
-OpenXRExtensionWrapper::OpenXRExtensionWrapper() {
-	openxr_api_extension.instantiate();
-}
+OpenXRExtensionWrapper::OpenXRExtensionWrapper() { openxr_api_extension.instantiate(); }
 
-OpenXRExtensionWrapper::~OpenXRExtensionWrapper() {
-}
+OpenXRExtensionWrapper::~OpenXRExtensionWrapper() {}
+
+

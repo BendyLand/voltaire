@@ -39,18 +39,24 @@
 #endif
 
 // Plane tracking capability configuration
-class OpenXRSpatialCapabilityConfigurationPlaneTracking : public OpenXRSpatialCapabilityConfigurationBaseHeader {
-	VLTRCLASS(OpenXRSpatialCapabilityConfigurationPlaneTracking, OpenXRSpatialCapabilityConfigurationBaseHeader);
+class OpenXRSpatialCapabilityConfigurationPlaneTracking
+	: public OpenXRSpatialCapabilityConfigurationBaseHeader
+{
+	VLTRCLASS(OpenXRSpatialCapabilityConfigurationPlaneTracking,
+		OpenXRSpatialCapabilityConfigurationBaseHeader);
 
 public:
 	virtual bool has_valid_configuration() const override;
-	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT *get_configuration() override;
+	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
 
 	bool get_supports_mesh_2d();
 	bool get_supports_polygons();
 	bool get_supports_labels();
 
-	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return plane_enabled_components; }
+	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const
+	{
+		return plane_enabled_components;
+	}
 
 protected:
 	static void _bind_methods();
@@ -61,17 +67,21 @@ private:
 	int supports_labels = -1;
 
 	Vector<XrSpatialComponentTypeEXT> plane_enabled_components;
-	XrSpatialCapabilityConfigurationPlaneTrackingEXT plane_config = { XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_PLANE_TRACKING_EXT, nullptr, XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT, 0, nullptr };
+	XrSpatialCapabilityConfigurationPlaneTrackingEXT plane_config = {
+		XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_PLANE_TRACKING_EXT, nullptr,
+		XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT, 0, nullptr};
 
 	PackedInt64Array _get_enabled_components() const;
 };
 
 // Plane alignment component data
-class OpenXRSpatialComponentPlaneAlignmentList : public OpenXRSpatialComponentData {
+class OpenXRSpatialComponentPlaneAlignmentList : public OpenXRSpatialComponentData
+{
 	VLTRCLASS(OpenXRSpatialComponentPlaneAlignmentList, OpenXRSpatialComponentData);
 
 public:
-	enum PlaneAlignment {
+	enum PlaneAlignment
+	{
 		PLANE_ALIGNMENT_HORIZONTAL_UPWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_UPWARD_EXT,
 		PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD_EXT,
 		PLANE_ALIGNMENT_VERTICAL = XR_SPATIAL_PLANE_ALIGNMENT_VERTICAL_EXT,
@@ -80,7 +90,7 @@ public:
 
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	XrSpatialPlaneAlignmentEXT get_plane_alignment(int64_t p_index) const;
 
@@ -90,14 +100,16 @@ protected:
 private:
 	Vector<XrSpatialPlaneAlignmentEXT> plane_alignment_data;
 
-	XrSpatialComponentPlaneAlignmentListEXT plane_alignment_list = { XR_TYPE_SPATIAL_COMPONENT_PLANE_ALIGNMENT_LIST_EXT, nullptr, 0, nullptr };
+	XrSpatialComponentPlaneAlignmentListEXT plane_alignment_list = {
+		XR_TYPE_SPATIAL_COMPONENT_PLANE_ALIGNMENT_LIST_EXT, nullptr, 0, nullptr};
 
 	PlaneAlignment _get_plane_alignment(int64_t p_index) const;
 };
 
 VARIANT_ENUM_CAST(OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment);
 
-class OpenXRSpatialComponentPolygon2DList : public OpenXRSpatialComponentData {
+class OpenXRSpatialComponentPolygon2DList : public OpenXRSpatialComponentData
+{
 	VLTRCLASS(OpenXRSpatialComponentPolygon2DList, OpenXRSpatialComponentData);
 
 protected:
@@ -106,7 +118,7 @@ protected:
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	Transform3D get_transform(int64_t p_index) const;
 	PackedVector2Array get_vertices(RID p_snapshot, int64_t p_index) const;
@@ -114,15 +126,18 @@ public:
 private:
 	Vector<XrSpatialPolygon2DDataEXT> polygon2d_data;
 
-	XrSpatialComponentPolygon2DListEXT polygon2d_list = { XR_TYPE_SPATIAL_COMPONENT_POLYGON_2D_LIST_EXT, nullptr, 0, nullptr };
+	XrSpatialComponentPolygon2DListEXT polygon2d_list = {
+		XR_TYPE_SPATIAL_COMPONENT_POLYGON_2D_LIST_EXT, nullptr, 0, nullptr};
 };
 
 // Plane semantic label component data.
-class OpenXRSpatialComponentPlaneSemanticLabelList : public OpenXRSpatialComponentData {
+class OpenXRSpatialComponentPlaneSemanticLabelList : public OpenXRSpatialComponentData
+{
 	VLTRCLASS(OpenXRSpatialComponentPlaneSemanticLabelList, OpenXRSpatialComponentData);
 
 public:
-	enum PlaneSemanticLabel {
+	enum PlaneSemanticLabel
+	{
 		PLANE_SEMANTIC_LABEL_UNCATEGORIZED = XR_SPATIAL_PLANE_SEMANTIC_LABEL_UNCATEGORIZED_EXT,
 		PLANE_SEMANTIC_LABEL_FLOOR = XR_SPATIAL_PLANE_SEMANTIC_LABEL_FLOOR_EXT,
 		PLANE_SEMANTIC_LABEL_WALL = XR_SPATIAL_PLANE_SEMANTIC_LABEL_WALL_EXT,
@@ -132,7 +147,7 @@ public:
 
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	XrSpatialPlaneSemanticLabelEXT get_plane_semantic_label(int64_t p_index) const;
 
@@ -142,7 +157,8 @@ protected:
 private:
 	Vector<XrSpatialPlaneSemanticLabelEXT> plane_semantic_label_data;
 
-	XrSpatialComponentPlaneSemanticLabelListEXT plane_semantic_label_list = { XR_TYPE_SPATIAL_COMPONENT_PLANE_SEMANTIC_LABEL_LIST_EXT, nullptr, 0, nullptr };
+	XrSpatialComponentPlaneSemanticLabelListEXT plane_semantic_label_list = {
+		XR_TYPE_SPATIAL_COMPONENT_PLANE_SEMANTIC_LABEL_LIST_EXT, nullptr, 0, nullptr};
 
 	PlaneSemanticLabel _get_plane_semantic_label(int64_t p_index) const;
 };
@@ -150,20 +166,23 @@ private:
 VARIANT_ENUM_CAST(OpenXRSpatialComponentPlaneSemanticLabelList::PlaneSemanticLabel);
 
 // Plane tracker
-class OpenXRPlaneTracker : public OpenXRSpatialEntityTracker {
+class OpenXRPlaneTracker : public OpenXRSpatialEntityTracker
+{
 	VLTRCLASS(OpenXRPlaneTracker, OpenXRSpatialEntityTracker);
 
 public:
-	void set_bounds_size(const Vector2 &p_bounds_size);
+	void set_bounds_size(const Vector2& p_bounds_size);
 	Vector2 get_bounds_size() const;
 
-	void set_plane_alignment(OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment p_plane_alignment);
+	void set_plane_alignment(
+		OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment p_plane_alignment);
 	OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment get_plane_alignment() const;
 
-	void set_plane_label(const String &p_plane_label);
+	void set_plane_label(const String& p_plane_label);
 	String get_plane_label() const;
 
-	void set_mesh_data(const Transform3D &p_origin, const PackedVector2Array &p_vertices, const PackedInt32Array &p_indices = PackedInt32Array());
+	void set_mesh_data(const Transform3D& p_origin, const PackedVector2Array& p_vertices,
+		const PackedInt32Array& p_indices = PackedInt32Array());
 	void clear_mesh_data();
 
 	Transform3D get_mesh_offset() const;
@@ -177,11 +196,13 @@ protected:
 
 private:
 	Vector2 bounds_size;
-	OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment plane_alignment = OpenXRSpatialComponentPlaneAlignmentList::PLANE_ALIGNMENT_HORIZONTAL_UPWARD;
+	OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment plane_alignment =
+		OpenXRSpatialComponentPlaneAlignmentList::PLANE_ALIGNMENT_HORIZONTAL_UPWARD;
 	String plane_label;
 
 	// Mesh data (if we have this)
-	struct MeshData {
+	struct MeshData
+	{
 		bool has_mesh_data = false;
 		Transform3D origin;
 		PackedVector2Array vertices;
@@ -193,18 +214,21 @@ private:
 #endif
 	} mesh;
 
-	struct Edge {
+	struct Edge
+	{
 		int32_t a;
 		int32_t b;
-		static _FORCE_INLINE_ uint32_t hash(const Edge &p_edge) {
+
+		static _FORCE_INLINE_ uint32_t hash(const Edge& p_edge)
+		{
 			uint32_t h = hash_murmur3_one_32(p_edge.a);
 			return hash_murmur3_one_32(p_edge.b, h);
 		}
-		bool operator==(const Edge &p_edge) const {
-			return (a == p_edge.a && b == p_edge.b);
-		}
 
-		Edge(int32_t p_a = 0, int32_t p_b = 0) {
+		bool operator==(const Edge& p_edge) const { return (a == p_edge.a && b == p_edge.b); }
+
+		Edge(int32_t p_a = 0, int32_t p_b = 0)
+		{
 			a = p_a;
 			b = p_b;
 			if (a < b) {
@@ -215,31 +239,36 @@ private:
 };
 
 // Plane tracking logic
-class OpenXRSpatialPlaneTrackingCapability : public OpenXRExtensionWrapper {
+class OpenXRSpatialPlaneTrackingCapability : public OpenXRExtensionWrapper
+{
 	VLTRCLASS(OpenXRSpatialPlaneTrackingCapability, OpenXRExtensionWrapper);
 
 protected:
 	static void _bind_methods();
 
 public:
-	static OpenXRSpatialPlaneTrackingCapability *get_singleton();
+	static OpenXRSpatialPlaneTrackingCapability* get_singleton();
 
 	OpenXRSpatialPlaneTrackingCapability();
 	virtual ~OpenXRSpatialPlaneTrackingCapability() override;
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version) override;
 
 	virtual void on_session_created(const XrSession p_session) override;
 	virtual void on_session_destroyed() override;
 
 	virtual void on_process() override;
 
-	Ref<OpenXRFutureResult> start_entity_discovery(RID p_spatial_context, TypedArray<OpenXRSpatialComponentData> p_component_data, Ref<OpenXRStructureBase> p_next_snapshot_create = nullptr, Ref<OpenXRStructureBase> p_next_snapshot_query = nullptr, const Callable &p_user_callback = Callable());
+	Ref<OpenXRFutureResult> start_entity_discovery(RID p_spatial_context,
+		Array p_component_data,
+		Ref<OpenXRStructureBase> p_next_snapshot_create = nullptr,
+		Ref<OpenXRStructureBase> p_next_snapshot_query = nullptr,
+		const Callable& p_user_callback = Callable());
 
 	bool is_supported();
 
 private:
-	static OpenXRSpatialPlaneTrackingCapability *singleton;
+	static OpenXRSpatialPlaneTrackingCapability* singleton;
 	bool spatial_plane_tracking_ext = false;
 	bool spatial_plane_tracking_supported = false;
 
@@ -249,7 +278,7 @@ private:
 	Ref<OpenXRFutureResult> discovery_query_result;
 
 	Ref<OpenXRSpatialCapabilityConfigurationPlaneTracking> plane_configuration;
-	TypedArray<OpenXRSpatialComponentData> plane_component_data;
+	Array plane_component_data;
 
 	// Discovery logic
 	Ref<OpenXRFutureResult> _create_spatial_context();
@@ -257,8 +286,12 @@ private:
 
 	void _on_spatial_discovery_recommended(RID p_spatial_context);
 
-	void _process_snapshot(RID p_snapshot, RID p_spatial_context, TypedArray<OpenXRSpatialComponentData> p_component_data, Ref<OpenXRStructureBase> p_next_snapshot_query, const Callable &p_user_callback);
+	void _process_snapshot(RID p_snapshot, RID p_spatial_context,
+		Array p_component_data,
+		Ref<OpenXRStructureBase> p_next_snapshot_query, const Callable& p_user_callback);
 
 	// Trackers; maps each Spatial Context RID to their plane entities and trackers
 	HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRPlaneTracker>>> plane_trackers;
 };
+
+

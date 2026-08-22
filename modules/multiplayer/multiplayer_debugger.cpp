@@ -258,7 +258,7 @@ MultiplayerDebugger::SyncInfo::SyncInfo(MultiplayerSynchronizer* p_sync)
 	ERR_FAIL_NULL(p_sync);
 	synchronizer = p_sync->obj->get_instance_id();
 	if (p_sync->get_replication_config_ptr()) {
-		config = p_sync->get_replication_config_ptr()->get_instance_id();
+		config = p_sync->get_replication_config_ptr()->obj->get_instance_id();
 	}
 	if (p_sync->get_root_node()) {
 		root_node = p_sync->get_root_node()->obj->get_instance_id();

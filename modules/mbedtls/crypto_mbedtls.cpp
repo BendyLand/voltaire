@@ -28,36 +28,36 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "crypto_mbedtls.h"
-
-#include "mbedtls_cpp_compat.h"
-
+#include <mbedtls/debug.h>
+#include <mbedtls/md.h>
+#include <mbedtls/pem.h>
+#include <mbedtls/psa_util.h>
 #include "core/io/certs_compressed.gen.h"
 #include "core/io/compression.h"
 #include "core/io/file_access.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
-
-#include <mbedtls/debug.h>
-#include <mbedtls/md.h>
-#include <mbedtls/pem.h>
-#include <mbedtls/psa_util.h>
+#include "crypto_mbedtls.h"
+#include "mbedtls_cpp_compat.h"
 
 #define PEM_BEGIN_CRT "-----BEGIN CERTIFICATE-----\n"
 #define PEM_END_CRT "-----END CERTIFICATE-----\n"
 #define PEM_MIN_SIZE 54
 
 #if MBEDTLS_VERSION_MAJOR < 4
-int godot_mbedtls_random_compat(void *p_rng, unsigned char *r_output, size_t p_output_len) {
+int godot_mbedtls_random_compat(void* p_rng, unsigned char* r_output, size_t p_output_len)
+{
 	return psa_generate_random(r_output, p_output_len);
 }
 #endif
 
-CryptoKey *CryptoKeyMbedTLS::create(bool p_notify_postinitialize) {
-	return static_cast<CryptoKey *>(ClassDB::creator<CryptoKeyMbedTLS>(p_notify_postinitialize));
+CryptoKey* CryptoKeyMbedTLS::create(bool p_notify_postinitialize)
+{
+	return static_cast<CryptoKey*>(memnew(CryptoKeyMbedTLS).ptr());
 }
 
-Ref<CryptoKeyMbedTLS> CryptoKeyMbedTLS::generate(psa_key_type_t p_type, size_t p_size) {
+Ref<CryptoKeyMbedTLS> CryptoKeyMbedTLS::generate(psa_key_type_t p_type, size_t p_size)
+{
 	psa_key_id_t slot = PSA_KEY_ID_NULL;
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 	psa_set_key_type(&attr, p_type);
@@ -74,10 +74,12 @@ Ref<CryptoKeyMbedTLS> CryptoKeyMbedTLS::generate(psa_key_type_t p_type, size_t p
 	return out;
 }
 
-Error CryptoKeyMbedTLS::load(const String &p_path, bool p_public_only) {
+Error CryptoKeyMbedTLS::load(const String& p_path, bool p_public_only)
+{
 	PackedByteArray out;
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_INVALID_PARAMETER, "Cannot open CryptoKeyMbedTLS file '" + p_path + "'.");
+	ERR_FAIL_COND_V_MSG(
+		f.is_null(), ERR_INVALID_PARAMETER, "Cannot open CryptoKeyMbedTLS file '" + p_path + "'.");
 
 	uint64_t flen = f->get_length();
 	out.resize(flen + 1);
@@ -93,17 +95,21 @@ Error CryptoKeyMbedTLS::load(const String &p_path, bool p_public_only) {
 	return OK;
 }
 
-Error CryptoKeyMbedTLS::save(const String &p_path, bool p_public_only) {
-	ERR_FAIL_COND_V_MSG(public_only && !p_public_only, ERR_INVALID_PARAMETER, "The key only has the public part. Cannot save as a private key.");
+Error CryptoKeyMbedTLS::save(const String& p_path, bool p_public_only)
+{
+	ERR_FAIL_COND_V_MSG(public_only && !p_public_only, ERR_INVALID_PARAMETER,
+		"The key only has the public part. Cannot save as a private key.");
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_INVALID_PARAMETER, "Cannot save CryptoKeyMbedTLS file '" + p_path + "'.");
+	ERR_FAIL_COND_V_MSG(
+		f.is_null(), ERR_INVALID_PARAMETER, "Cannot save CryptoKeyMbedTLS file '" + p_path + "'.");
 
 	mbedtls_pk_context ctx;
 	mbedtls_pk_init(&ctx);
 	int ret = 0;
 	if (p_public_only) {
 		ret = mbedtls_pk_copy_public_from_psa(pk_slot, &ctx);
-	} else {
+	}
+	else {
 		ret = mbedtls_pk_copy_from_psa(pk_slot, &ctx);
 	}
 	if (ret) {
@@ -115,7 +121,8 @@ Error CryptoKeyMbedTLS::save(const String &p_path, bool p_public_only) {
 	memset(w, 0, sizeof(w));
 	if (p_public_only) {
 		ret = mbedtls_pk_write_pubkey_pem(&ctx, w, sizeof(w));
-	} else {
+	}
+	else {
 		ret = mbedtls_pk_write_key_pem(&ctx, w, sizeof(w));
 	}
 	mbedtls_pk_free(&ctx);
@@ -125,29 +132,34 @@ Error CryptoKeyMbedTLS::save(const String &p_path, bool p_public_only) {
 		ERR_FAIL_V_MSG(FAILED, "Error writing key '" + itos(ret) + "'.");
 	}
 
-	size_t len = strlen((char *)w);
+	size_t len = strlen((char*)w);
 	f->store_buffer(w, len);
 	mbedtls_platform_zeroize(w, sizeof(w)); // Zeroize temporary buffer.
 	return OK;
 }
 
-Error CryptoKeyMbedTLS::load_from_string(const String &p_string_key, bool p_public_only) {
+Error CryptoKeyMbedTLS::load_from_string(const String& p_string_key, bool p_public_only)
+{
 	const CharString string_key_utf8 = p_string_key.utf8();
-	int ret = _parse_key((const unsigned char *)string_key_utf8.get_data(), string_key_utf8.size(), p_public_only);
+	int ret = _parse_key(
+		(const unsigned char*)string_key_utf8.get_data(), string_key_utf8.size(), p_public_only);
 	ERR_FAIL_COND_V_MSG(ret, FAILED, "Error parsing key '" + itos(ret) + "'.");
 
 	public_only = p_public_only;
 	return OK;
 }
 
-String CryptoKeyMbedTLS::save_to_string(bool p_public_only) {
-	ERR_FAIL_COND_V_MSG(public_only && !p_public_only, "", "The key only has the public part. Cannot save as a private key.");
+String CryptoKeyMbedTLS::save_to_string(bool p_public_only)
+{
+	ERR_FAIL_COND_V_MSG(public_only && !p_public_only, "",
+		"The key only has the public part. Cannot save as a private key.");
 	mbedtls_pk_context ctx;
 	mbedtls_pk_init(&ctx);
 	int ret = 0;
 	if (p_public_only) {
 		ret = mbedtls_pk_copy_public_from_psa(pk_slot, &ctx);
-	} else {
+	}
+	else {
 		ret = mbedtls_pk_copy_from_psa(pk_slot, &ctx);
 	}
 	if (ret) {
@@ -159,7 +171,8 @@ String CryptoKeyMbedTLS::save_to_string(bool p_public_only) {
 	memset(w, 0, sizeof(w));
 	if (p_public_only) {
 		ret = mbedtls_pk_write_pubkey_pem(&ctx, w, sizeof(w));
-	} else {
+	}
+	else {
 		ret = mbedtls_pk_write_key_pem(&ctx, w, sizeof(w));
 	}
 	mbedtls_pk_free(&ctx);
@@ -167,18 +180,19 @@ String CryptoKeyMbedTLS::save_to_string(bool p_public_only) {
 		mbedtls_platform_zeroize(w, sizeof(w));
 		ERR_FAIL_V_MSG("", "Error saving key '" + itos(ret) + "'.");
 	}
-	String s = String::utf8((char *)w);
+	String s = String::utf8((char*)w);
 	return s;
 }
 
-psa_key_id_t CryptoKeyMbedTLS::reimport(psa_key_usage_t p_usage, psa_algorithm_t p_alg) {
+psa_key_id_t CryptoKeyMbedTLS::reimport(psa_key_usage_t p_usage, psa_algorithm_t p_alg)
+{
 	ERR_FAIL_COND_V(pk_slot == PSA_KEY_ID_NULL, PSA_KEY_ID_NULL);
 
 	// We can't copy the key, as we are not allowed to change the usage/algorithm.
 	// We will need to export and reimport the key.
 	psa_key_id_t slot = PSA_KEY_ID_NULL;
 	int size = PSA_EXPORT_KEY_OUTPUT_SIZE(pk_type, pk_size);
-	uint8_t *buf = (uint8_t *)alloca(size);
+	uint8_t* buf = (uint8_t*)alloca(size);
 	size_t out_size = 0;
 	int ret = psa_export_key(pk_slot, buf, size, &out_size);
 	ERR_FAIL_COND_V_MSG(ret, slot, "Failed to export the key: " + itos(ret));
@@ -195,14 +209,16 @@ psa_key_id_t CryptoKeyMbedTLS::reimport(psa_key_usage_t p_usage, psa_algorithm_t
 	return slot;
 }
 
-void CryptoKeyMbedTLS::_clear() {
+void CryptoKeyMbedTLS::_clear()
+{
 	psa_destroy_key(pk_slot);
 	pk_slot = PSA_KEY_ID_NULL;
 	pk_type = PSA_KEY_TYPE_NONE;
 	pk_size = 0;
 }
 
-int CryptoKeyMbedTLS::_parse_key(const uint8_t *p_buf, int p_size, bool p_public_only) {
+int CryptoKeyMbedTLS::_parse_key(const uint8_t* p_buf, int p_size, bool p_public_only)
+{
 	_clear();
 
 	// Not yet fully supported via PSA
@@ -213,7 +229,8 @@ int CryptoKeyMbedTLS::_parse_key(const uint8_t *p_buf, int p_size, bool p_public
 	int ret = -1;
 	if (p_public_only) {
 		ret = mbedtls_pk_parse_public_key(&ctx, p_buf, p_size);
-	} else {
+	}
+	else {
 		flags = PSA_KEY_USAGE_SIGN_HASH;
 		ret = mbedtls_pk_parse_key(&ctx, p_buf, p_size, nullptr, GODOT_MBEDTLS_COMPAT_ARGS(0));
 	}
@@ -243,16 +260,19 @@ int CryptoKeyMbedTLS::_parse_key(const uint8_t *p_buf, int p_size, bool p_public
 	return ret;
 }
 
-X509Certificate *X509CertificateMbedTLS::create(bool p_notify_postinitialize) {
-	return static_cast<X509Certificate *>(ClassDB::creator<X509CertificateMbedTLS>(p_notify_postinitialize));
+X509Certificate* X509CertificateMbedTLS::create(bool p_notify_postinitialize)
+{
+	return static_cast<X509Certificate*>(memnew(X509CertificateMbedTLS).ptr());
 }
 
-Error X509CertificateMbedTLS::load(const String &p_path) {
+Error X509CertificateMbedTLS::load(const String& p_path)
+{
 	ERR_FAIL_COND_V_MSG(locks, ERR_ALREADY_IN_USE, "Certificate is already in use.");
 
 	PackedByteArray out;
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_INVALID_PARAMETER, vformat("Cannot open X509CertificateMbedTLS file '%s'.", p_path));
+	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_INVALID_PARAMETER,
+		vformat("Cannot open X509CertificateMbedTLS file '%s'.", p_path));
 
 	uint64_t flen = f->get_length();
 	out.resize(flen + 1);
@@ -260,34 +280,42 @@ Error X509CertificateMbedTLS::load(const String &p_path) {
 	out.write[flen] = 0; // string terminator
 
 	int ret = mbedtls_x509_crt_parse(&cert, out.ptr(), out.size());
-	ERR_FAIL_COND_V_MSG(ret < 0, FAILED, vformat("Error parsing X509 certificates from file '%s': %d.", p_path, ret));
+	ERR_FAIL_COND_V_MSG(ret < 0, FAILED,
+		vformat("Error parsing X509 certificates from file '%s': %d.", p_path, ret));
 	if (ret > 0) { // Some certs parsed fine, don't error.
-		print_verbose(vformat("MbedTLS: Some X509 certificates could not be parsed from file '%s' (%d certificates skipped).", p_path, ret));
+		print_verbose(vformat("MbedTLS: Some X509 certificates could not be parsed from file '%s' "
+							  "(%d certificates skipped).",
+			p_path, ret));
 	}
 
 	return OK;
 }
 
-Error X509CertificateMbedTLS::load_from_memory(const uint8_t *p_buffer, int p_len) {
+Error X509CertificateMbedTLS::load_from_memory(const uint8_t* p_buffer, int p_len)
+{
 	ERR_FAIL_COND_V_MSG(locks, ERR_ALREADY_IN_USE, "Certificate is already in use.");
 
 	int ret = mbedtls_x509_crt_parse(&cert, p_buffer, p_len);
 	ERR_FAIL_COND_V_MSG(ret < 0, FAILED, vformat("Error parsing X509 certificates: %d.", ret));
 	if (ret > 0) { // Some certs parsed fine, don't error.
-		print_verbose(vformat("MbedTLS: Some X509 certificates could not be parsed (%d certificates skipped).", ret));
+		print_verbose(vformat(
+			"MbedTLS: Some X509 certificates could not be parsed (%d certificates skipped).", ret));
 	}
 	return OK;
 }
 
-Error X509CertificateMbedTLS::save(const String &p_path) {
+Error X509CertificateMbedTLS::save(const String& p_path)
+{
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_INVALID_PARAMETER, vformat("Cannot save X509CertificateMbedTLS file '%s'.", p_path));
+	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_INVALID_PARAMETER,
+		vformat("Cannot save X509CertificateMbedTLS file '%s'.", p_path));
 
-	mbedtls_x509_crt *crt = &cert;
+	mbedtls_x509_crt* crt = &cert;
 	while (crt) {
 		unsigned char w[4096];
 		size_t wrote = 0;
-		int ret = mbedtls_pem_write_buffer(PEM_BEGIN_CRT, PEM_END_CRT, cert.raw.p, cert.raw.len, w, sizeof(w), &wrote);
+		int ret = mbedtls_pem_write_buffer(
+			PEM_BEGIN_CRT, PEM_END_CRT, cert.raw.p, cert.raw.len, w, sizeof(w), &wrote);
 		if (ret != 0 || wrote == 0) {
 			ERR_FAIL_V_MSG(FAILED, "Error writing certificate '" + itos(ret) + "'.");
 		}
@@ -298,55 +326,64 @@ Error X509CertificateMbedTLS::save(const String &p_path) {
 	return OK;
 }
 
-String X509CertificateMbedTLS::save_to_string() {
+String X509CertificateMbedTLS::save_to_string()
+{
 	String buffer;
-	mbedtls_x509_crt *crt = &cert;
+	mbedtls_x509_crt* crt = &cert;
 	while (crt) {
 		unsigned char w[4096];
 		size_t wrote = 0;
-		int ret = mbedtls_pem_write_buffer(PEM_BEGIN_CRT, PEM_END_CRT, cert.raw.p, cert.raw.len, w, sizeof(w), &wrote);
+		int ret = mbedtls_pem_write_buffer(
+			PEM_BEGIN_CRT, PEM_END_CRT, cert.raw.p, cert.raw.len, w, sizeof(w), &wrote);
 		ERR_FAIL_COND_V_MSG(ret != 0 || wrote == 0, String(), "Error saving the certificate.");
 
 		// PEM is base64, aka ascii
-		buffer += String::ascii(Span((char *)w, wrote));
+		buffer += String::ascii(Span((char*)w, wrote));
 		crt = crt->next;
 	}
 	if (buffer.length() <= PEM_MIN_SIZE) {
-		// When the returned value of variable 'buffer' would consist of no Base-64 data, return an empty String instead.
+		// When the returned value of variable 'buffer' would consist of no Base-64 data, return an
+		// empty String instead.
 		return String();
 	}
 	return buffer;
 }
 
-Error X509CertificateMbedTLS::load_from_string(const String &p_string_key) {
+Error X509CertificateMbedTLS::load_from_string(const String& p_string_key)
+{
 	ERR_FAIL_COND_V_MSG(locks, ERR_ALREADY_IN_USE, "Certificate is already in use.");
 	CharString cs = p_string_key.utf8();
 
-	int ret = mbedtls_x509_crt_parse(&cert, (const unsigned char *)cs.get_data(), cs.size());
+	int ret = mbedtls_x509_crt_parse(&cert, (const unsigned char*)cs.get_data(), cs.size());
 	ERR_FAIL_COND_V_MSG(ret < 0, FAILED, vformat("Error parsing X509 certificates: %d.", ret));
 	if (ret > 0) { // Some certs parsed fine, don't error.
-		print_verbose(vformat("MbedTLS: Some X509 certificates could not be parsed (%d certificates skipped).", ret));
+		print_verbose(vformat(
+			"MbedTLS: Some X509 certificates could not be parsed (%d certificates skipped).", ret));
 	}
 
 	return OK;
 }
 
-bool HMACContextMbedTLS::is_hash_type_allowed(HashingContext::HashType p_hash_type) {
+bool HMACContextMbedTLS::is_hash_type_allowed(HashingContext::HashType p_hash_type)
+{
 	switch (p_hash_type) {
-		case HashingContext::HASH_SHA1:
-		case HashingContext::HASH_SHA256:
-			return true;
-		default:
-			return false;
+	case HashingContext::HASH_SHA1:
+	case HashingContext::HASH_SHA256:
+		return true;
+	default:
+		return false;
 	}
 }
 
-HMACContext *HMACContextMbedTLS::create(bool p_notify_postinitialize) {
-	return static_cast<HMACContext *>(ClassDB::creator<HMACContextMbedTLS>(p_notify_postinitialize));
+HMACContext* HMACContextMbedTLS::create(bool p_notify_postinitialize)
+{
+	return static_cast<HMACContext*>(memnew(HMACContextMbedTLS).ptr());
 }
 
-Error HMACContextMbedTLS::start(HashingContext::HashType p_hash_type, const PackedByteArray &p_key) {
-	ERR_FAIL_COND_V_MSG(key_slot != PSA_KEY_ID_NULL, ERR_FILE_ALREADY_IN_USE, "HMACContext already started.");
+Error HMACContextMbedTLS::start(HashingContext::HashType p_hash_type, const PackedByteArray& p_key)
+{
+	ERR_FAIL_COND_V_MSG(
+		key_slot != PSA_KEY_ID_NULL, ERR_FILE_ALREADY_IN_USE, "HMACContext already started.");
 
 	// HMAC keys can be any size.
 	ERR_FAIL_COND_V_MSG(p_key.is_empty(), ERR_INVALID_PARAMETER, "Key must not be empty.");
@@ -370,18 +407,22 @@ Error HMACContextMbedTLS::start(HashingContext::HashType p_hash_type, const Pack
 	return OK;
 }
 
-Error HMACContextMbedTLS::update(const PackedByteArray &p_data) {
-	ERR_FAIL_COND_V_MSG(key_slot == PSA_KEY_ID_NULL, ERR_INVALID_DATA, "Start must be called before update.");
+Error HMACContextMbedTLS::update(const PackedByteArray& p_data)
+{
+	ERR_FAIL_COND_V_MSG(
+		key_slot == PSA_KEY_ID_NULL, ERR_INVALID_DATA, "Start must be called before update.");
 
 	ERR_FAIL_COND_V_MSG(p_data.is_empty(), ERR_INVALID_PARAMETER, "Src must not be empty.");
 
-	int ret = psa_mac_update(&mac_op, (const uint8_t *)p_data.ptr(), (size_t)p_data.size());
+	int ret = psa_mac_update(&mac_op, (const uint8_t*)p_data.ptr(), (size_t)p_data.size());
 	ERR_FAIL_COND_V_MSG(ret != PSA_SUCCESS, FAILED, "Failed to update HMAC: " + itos(ret));
 	return OK;
 }
 
-PackedByteArray HMACContextMbedTLS::finish() {
-	ERR_FAIL_COND_V_MSG(key_slot == PSA_KEY_ID_NULL, PackedByteArray(), "Start must be called before finish.");
+PackedByteArray HMACContextMbedTLS::finish()
+{
+	ERR_FAIL_COND_V_MSG(
+		key_slot == PSA_KEY_ID_NULL, PackedByteArray(), "Start must be called before finish.");
 	ERR_FAIL_COND_V_MSG(hash_len == 0, PackedByteArray(), "Unsupported hash type.");
 
 	PackedByteArray out;
@@ -394,7 +435,8 @@ PackedByteArray HMACContextMbedTLS::finish() {
 	return out;
 }
 
-void HMACContextMbedTLS::_clear() {
+void HMACContextMbedTLS::_clear()
+{
 	if (key_slot == PSA_KEY_ID_NULL) {
 		return;
 	}
@@ -405,15 +447,15 @@ void HMACContextMbedTLS::_clear() {
 	key_slot = PSA_KEY_ID_NULL;
 }
 
-HMACContextMbedTLS::~HMACContextMbedTLS() {
-	_clear();
+HMACContextMbedTLS::~HMACContextMbedTLS() { _clear(); }
+
+Crypto* CryptoMbedTLS::create(bool p_notify_postinitialize)
+{
+	return static_cast<Crypto*>(memnew(CryptoMbedTLS).ptr());
 }
 
-Crypto *CryptoMbedTLS::create(bool p_notify_postinitialize) {
-	return static_cast<Crypto *>(ClassDB::creator<CryptoMbedTLS>(p_notify_postinitialize));
-}
-
-void CryptoMbedTLS::initialize_crypto() {
+void CryptoMbedTLS::initialize_crypto()
+{
 	Crypto::_create = create;
 	Crypto::_load_default_certificates = load_default_certificates;
 	X509CertificateMbedTLS::make_default();
@@ -421,7 +463,8 @@ void CryptoMbedTLS::initialize_crypto() {
 	HMACContextMbedTLS::make_default();
 }
 
-void CryptoMbedTLS::finalize_crypto() {
+void CryptoMbedTLS::finalize_crypto()
+{
 	Crypto::_create = nullptr;
 	Crypto::_load_default_certificates = nullptr;
 	default_certs = nullptr;
@@ -430,19 +473,16 @@ void CryptoMbedTLS::finalize_crypto() {
 	HMACContextMbedTLS::finalize();
 }
 
-CryptoMbedTLS::CryptoMbedTLS() {
-}
+CryptoMbedTLS::CryptoMbedTLS() {}
 
-CryptoMbedTLS::~CryptoMbedTLS() {
-}
+CryptoMbedTLS::~CryptoMbedTLS() {}
 
 Ref<X509CertificateMbedTLS> CryptoMbedTLS::default_certs;
 
-Ref<X509CertificateMbedTLS> CryptoMbedTLS::get_default_certificates() {
-	return default_certs;
-}
+Ref<X509CertificateMbedTLS> CryptoMbedTLS::get_default_certificates() { return default_certs; }
 
-void CryptoMbedTLS::load_default_certificates(const String &p_path) {
+void CryptoMbedTLS::load_default_certificates(const String& p_path)
+{
 	ERR_FAIL_COND(default_certs.is_valid());
 
 	default_certs = memnew(X509CertificateMbedTLS);
@@ -451,12 +491,13 @@ void CryptoMbedTLS::load_default_certificates(const String &p_path) {
 	if (!p_path.is_empty()) {
 		// Use certs defined in project settings.
 		default_certs->load(p_path);
-	} else {
+	}
+	else {
 		// Try to use system certs otherwise.
 		String system_certs = OS::get_singleton()->get_system_ca_certificates();
 		if (!system_certs.is_empty()) {
 			CharString cs = system_certs.utf8();
-			default_certs->load_from_memory((const uint8_t *)cs.get_data(), cs.size());
+			default_certs->load_from_memory((const uint8_t*)cs.get_data(), cs.size());
 			print_verbose("Loaded system CA certificates");
 		}
 #ifdef BUILTIN_CERTS_ENABLED
@@ -464,8 +505,12 @@ void CryptoMbedTLS::load_default_certificates(const String &p_path) {
 			// Use builtin certs if there are no system certs.
 			PackedByteArray certs;
 			certs.resize(_certs_uncompressed_size + 1);
-			const int64_t decompressed_size = Compression::decompress(certs.ptrw(), _certs_uncompressed_size, _certs_compressed, _certs_compressed_size, Compression::MODE_DEFLATE);
-			ERR_FAIL_COND_MSG(decompressed_size != _certs_uncompressed_size, "Error decompressing builtin CA certificates. Decompressed size did not match expected size.");
+			const int64_t decompressed_size =
+				Compression::decompress(certs.ptrw(), _certs_uncompressed_size, _certs_compressed,
+					_certs_compressed_size, Compression::MODE_DEFLATE);
+			ERR_FAIL_COND_MSG(decompressed_size != _certs_uncompressed_size,
+				"Error decompressing builtin CA certificates. Decompressed size did not match "
+				"expected size.");
 			certs.write[_certs_uncompressed_size] = 0; // Make sure it ends with string terminator
 			default_certs->load_from_memory(certs.ptr(), certs.size());
 			print_verbose("Loaded builtin CA certificates");
@@ -474,11 +519,14 @@ void CryptoMbedTLS::load_default_certificates(const String &p_path) {
 	}
 }
 
-Ref<CryptoKey> CryptoMbedTLS::generate_rsa(int p_bits) {
+Ref<CryptoKey> CryptoMbedTLS::generate_rsa(int p_bits)
+{
 	return CryptoKeyMbedTLS::generate(PSA_KEY_TYPE_RSA_KEY_PAIR, p_bits);
 }
 
-Ref<X509Certificate> CryptoMbedTLS::generate_self_signed_certificate(Ref<CryptoKey> p_key, const String &p_issuer_name, const String &p_not_before, const String &p_not_after) {
+Ref<X509Certificate> CryptoMbedTLS::generate_self_signed_certificate(Ref<CryptoKey> p_key,
+	const String& p_issuer_name, const String& p_not_before, const String& p_not_after)
+{
 	Ref<CryptoKeyMbedTLS> key = static_cast<Ref<CryptoKeyMbedTLS>>(p_key);
 	ERR_FAIL_COND_V_MSG(key.is_null(), nullptr, "Invalid private key argument.");
 
@@ -503,7 +551,8 @@ Ref<X509Certificate> CryptoMbedTLS::generate_self_signed_certificate(Ref<CryptoK
 	mbedtls_x509write_crt_set_version(&crt, MBEDTLS_X509_CRT_VERSION_3);
 	mbedtls_x509write_crt_set_md_alg(&crt, MBEDTLS_MD_SHA256);
 	mbedtls_x509write_crt_set_serial_raw(&crt, rand_serial, sizeof(rand_serial));
-	mbedtls_x509write_crt_set_validity(&crt, p_not_before.utf8().get_data(), p_not_after.utf8().get_data());
+	mbedtls_x509write_crt_set_validity(
+		&crt, p_not_before.utf8().get_data(), p_not_after.utf8().get_data());
 	mbedtls_x509write_crt_set_basic_constraints(&crt, 1, 0);
 
 	unsigned char buf[4096];
@@ -517,11 +566,12 @@ Ref<X509Certificate> CryptoMbedTLS::generate_self_signed_certificate(Ref<CryptoK
 
 	Ref<X509CertificateMbedTLS> out;
 	out.instantiate();
-	out->load_from_memory(buf, strlen((char *)buf) + 1); // Use strlen to find correct output size.
+	out->load_from_memory(buf, strlen((char*)buf) + 1); // Use strlen to find correct output size.
 	return out;
 }
 
-PackedByteArray CryptoMbedTLS::generate_random_bytes(int p_bytes) {
+PackedByteArray CryptoMbedTLS::generate_random_bytes(int p_bytes)
+{
 	ERR_FAIL_COND_V(p_bytes < 0, PackedByteArray());
 	PackedByteArray out;
 	out.resize(p_bytes);
@@ -530,56 +580,66 @@ PackedByteArray CryptoMbedTLS::generate_random_bytes(int p_bytes) {
 	return out;
 }
 
-psa_algorithm_t CryptoMbedTLS::psa_alg_from_hashtype(HashingContext::HashType p_hash_type, int &r_size) {
+psa_algorithm_t CryptoMbedTLS::psa_alg_from_hashtype(
+	HashingContext::HashType p_hash_type, int& r_size)
+{
 	switch (p_hash_type) {
-		case HashingContext::HASH_MD5:
-			r_size = 16;
-			return PSA_ALG_MD5;
-		case HashingContext::HASH_SHA1:
-			r_size = 20;
-			return PSA_ALG_SHA_1;
-		case HashingContext::HASH_SHA256:
-			r_size = 32;
-			return PSA_ALG_SHA_256;
-		default:
-			r_size = 0;
-			ERR_FAIL_V_MSG(PSA_ALG_NONE, "Invalid hash type.");
+	case HashingContext::HASH_MD5:
+		r_size = 16;
+		return PSA_ALG_MD5;
+	case HashingContext::HASH_SHA1:
+		r_size = 20;
+		return PSA_ALG_SHA_1;
+	case HashingContext::HASH_SHA256:
+		r_size = 32;
+		return PSA_ALG_SHA_256;
+	default:
+		r_size = 0;
+		ERR_FAIL_V_MSG(PSA_ALG_NONE, "Invalid hash type.");
 	}
 }
 
-mbedtls_md_type_t CryptoMbedTLS::md_type_from_hashtype(HashingContext::HashType p_hash_type, int &r_size) {
+mbedtls_md_type_t CryptoMbedTLS::md_type_from_hashtype(
+	HashingContext::HashType p_hash_type, int& r_size)
+{
 	switch (p_hash_type) {
-		case HashingContext::HASH_MD5:
-			r_size = 16;
-			return MBEDTLS_MD_MD5;
-		case HashingContext::HASH_SHA1:
-			r_size = 20;
-			return MBEDTLS_MD_SHA1;
-		case HashingContext::HASH_SHA256:
-			r_size = 32;
-			return MBEDTLS_MD_SHA256;
-		default:
-			r_size = 0;
-			ERR_FAIL_V_MSG(MBEDTLS_MD_NONE, "Invalid hash type.");
+	case HashingContext::HASH_MD5:
+		r_size = 16;
+		return MBEDTLS_MD_MD5;
+	case HashingContext::HASH_SHA1:
+		r_size = 20;
+		return MBEDTLS_MD_SHA1;
+	case HashingContext::HASH_SHA256:
+		r_size = 32;
+		return MBEDTLS_MD_SHA256;
+	default:
+		r_size = 0;
+		ERR_FAIL_V_MSG(MBEDTLS_MD_NONE, "Invalid hash type.");
 	}
 }
 
-Vector<uint8_t> CryptoMbedTLS::sign(HashingContext::HashType p_hash_type, const Vector<uint8_t> &p_hash, Ref<CryptoKey> p_key) {
+Vector<uint8_t> CryptoMbedTLS::sign(
+	HashingContext::HashType p_hash_type, const Vector<uint8_t>& p_hash, Ref<CryptoKey> p_key)
+{
 	int size;
 	psa_algorithm_t hash_type = CryptoMbedTLS::psa_alg_from_hashtype(p_hash_type, size);
 	ERR_FAIL_COND_V_MSG(hash_type == PSA_ALG_NONE, Vector<uint8_t>(), "Invalid hash type.");
-	ERR_FAIL_COND_V_MSG(p_hash.size() != size, Vector<uint8_t>(), "Invalid hash provided. Size must be " + itos(size));
+	ERR_FAIL_COND_V_MSG(p_hash.size() != size, Vector<uint8_t>(),
+		"Invalid hash provided. Size must be " + itos(size));
 	Ref<CryptoKeyMbedTLS> key = static_cast<Ref<CryptoKeyMbedTLS>>(p_key);
 	ERR_FAIL_COND_V_MSG(key.is_null(), Vector<uint8_t>(), "Invalid key provided.");
-	ERR_FAIL_COND_V_MSG(key->is_public_only(), Vector<uint8_t>(), "Invalid key provided. Cannot sign with public_only keys.");
+	ERR_FAIL_COND_V_MSG(key->is_public_only(), Vector<uint8_t>(),
+		"Invalid key provided. Cannot sign with public_only keys.");
 	psa_key_type_t key_type = key->get_key_type();
 	psa_algorithm_t alg = PSA_ALG_NONE;
 	if (PSA_KEY_TYPE_IS_RSA(key_type)) {
 		alg = PSA_ALG_RSA_PKCS1V15_SIGN(hash_type);
-	} else if (PSA_KEY_TYPE_IS_ECC(key_type)) {
+	}
+	else if (PSA_KEY_TYPE_IS_ECC(key_type)) {
 		alg = PSA_ALG_ECDSA(hash_type);
 	}
-	ERR_FAIL_COND_V_MSG(alg == PSA_ALG_NONE, Vector<uint8_t>(), "Unknown key type: " + itos(key_type));
+	ERR_FAIL_COND_V_MSG(
+		alg == PSA_ALG_NONE, Vector<uint8_t>(), "Unknown key type: " + itos(key_type));
 	unsigned char buf[PSA_SIGNATURE_MAX_SIZE];
 	psa_key_id_t pk = key->reimport(PSA_KEY_USAGE_SIGN_HASH, alg);
 	size_t sig_size = 0;
@@ -595,21 +655,26 @@ Vector<uint8_t> CryptoMbedTLS::sign(HashingContext::HashType p_hash_type, const 
 		size_t out_size = 0;
 		uint8_t der[GODOT_MBEDTLS_ECDSA_DER_MAX_LEN];
 		ret = godot_mbedtls_ecdsa_raw_to_der(key_size, buf, sig_size, der, sizeof(der), &out_size);
-		ERR_FAIL_COND_V_MSG(ret, Vector<uint8_t>(), "Failed to convert signature to DER format: " + itos(ret));
+		ERR_FAIL_COND_V_MSG(
+			ret, Vector<uint8_t>(), "Failed to convert signature to DER format: " + itos(ret));
 		out.resize(out_size);
 		memcpy(out.ptrw(), der, out_size);
-	} else {
+	}
+	else {
 		out.resize(sig_size);
 		memcpy(out.ptrw(), buf, sig_size);
 	}
 	return out;
 }
 
-bool CryptoMbedTLS::verify(HashingContext::HashType p_hash_type, const Vector<uint8_t> &p_hash, const Vector<uint8_t> &p_signature, Ref<CryptoKey> p_key) {
+bool CryptoMbedTLS::verify(HashingContext::HashType p_hash_type, const Vector<uint8_t>& p_hash,
+	const Vector<uint8_t>& p_signature, Ref<CryptoKey> p_key)
+{
 	int size;
 	psa_algorithm_t hash_type = CryptoMbedTLS::psa_alg_from_hashtype(p_hash_type, size);
 	ERR_FAIL_COND_V_MSG(hash_type == PSA_ALG_NONE, false, "Invalid hash type.");
-	ERR_FAIL_COND_V_MSG(p_hash.size() != size, false, "Invalid hash provided. Size must be " + itos(size));
+	ERR_FAIL_COND_V_MSG(
+		p_hash.size() != size, false, "Invalid hash provided. Size must be " + itos(size));
 	Ref<CryptoKeyMbedTLS> key = static_cast<Ref<CryptoKeyMbedTLS>>(p_key);
 	ERR_FAIL_COND_V_MSG(key.is_null(), false, "Invalid key provided.");
 	psa_key_type_t key_type = key->get_key_type();
@@ -618,14 +683,16 @@ bool CryptoMbedTLS::verify(HashingContext::HashType p_hash_type, const Vector<ui
 	if (PSA_KEY_TYPE_IS_RSA(key_type)) {
 		alg = PSA_ALG_RSA_PKCS1V15_SIGN(hash_type);
 		sig = p_signature;
-	} else if (PSA_KEY_TYPE_IS_ECC(key_type)) {
+	}
+	else if (PSA_KEY_TYPE_IS_ECC(key_type)) {
 		alg = PSA_ALG_ECDSA(hash_type);
 		// Historically, mbedTLS used DER format for ECDA signatures.
 		// We need to convert the input from DER to raw before returning it for compatility.
 		size_t key_size = key->get_key_size();
 		size_t out_size = 0;
 		uint8_t raw_sig[PSA_SIGNATURE_MAX_SIZE];
-		int ret = godot_mbedtls_ecdsa_der_to_raw(key_size, p_signature.ptr(), p_signature.size(), raw_sig, sizeof(raw_sig), &out_size);
+		int ret = godot_mbedtls_ecdsa_der_to_raw(
+			key_size, p_signature.ptr(), p_signature.size(), raw_sig, sizeof(raw_sig), &out_size);
 		if (ret) {
 			return false;
 		}
@@ -639,13 +706,15 @@ bool CryptoMbedTLS::verify(HashingContext::HashType p_hash_type, const Vector<ui
 	return ret == PSA_SUCCESS;
 }
 
-Vector<uint8_t> CryptoMbedTLS::encrypt(Ref<CryptoKey> p_key, const Vector<uint8_t> &p_plaintext) {
+Vector<uint8_t> CryptoMbedTLS::encrypt(Ref<CryptoKey> p_key, const Vector<uint8_t>& p_plaintext)
+{
 	Ref<CryptoKeyMbedTLS> key = static_cast<Ref<CryptoKeyMbedTLS>>(p_key);
 	ERR_FAIL_COND_V_MSG(key.is_null(), Vector<uint8_t>(), "Invalid key provided.");
 	uint8_t buf[PSA_ASYMMETRIC_ENCRYPT_OUTPUT_MAX_SIZE];
 	size_t size;
 	psa_key_id_t pk = key->reimport(PSA_KEY_USAGE_ENCRYPT, PSA_ALG_RSA_PKCS1V15_CRYPT);
-	int ret = psa_asymmetric_encrypt(pk, PSA_ALG_RSA_PKCS1V15_CRYPT, p_plaintext.ptr(), p_plaintext.size(), nullptr, 0, buf, sizeof(buf), &size);
+	int ret = psa_asymmetric_encrypt(pk, PSA_ALG_RSA_PKCS1V15_CRYPT, p_plaintext.ptr(),
+		p_plaintext.size(), nullptr, 0, buf, sizeof(buf), &size);
 	psa_destroy_key(pk);
 	ERR_FAIL_COND_V_MSG(ret, Vector<uint8_t>(), "Error while encrypting: " + itos(ret));
 	Vector<uint8_t> out;
@@ -654,14 +723,17 @@ Vector<uint8_t> CryptoMbedTLS::encrypt(Ref<CryptoKey> p_key, const Vector<uint8_
 	return out;
 }
 
-Vector<uint8_t> CryptoMbedTLS::decrypt(Ref<CryptoKey> p_key, const Vector<uint8_t> &p_ciphertext) {
+Vector<uint8_t> CryptoMbedTLS::decrypt(Ref<CryptoKey> p_key, const Vector<uint8_t>& p_ciphertext)
+{
 	Ref<CryptoKeyMbedTLS> key = static_cast<Ref<CryptoKeyMbedTLS>>(p_key);
 	ERR_FAIL_COND_V_MSG(key.is_null(), Vector<uint8_t>(), "Invalid key provided.");
-	ERR_FAIL_COND_V_MSG(key->is_public_only(), Vector<uint8_t>(), "Invalid key provided. Cannot decrypt using a public_only key.");
+	ERR_FAIL_COND_V_MSG(key->is_public_only(), Vector<uint8_t>(),
+		"Invalid key provided. Cannot decrypt using a public_only key.");
 	psa_key_id_t pk = key->reimport(PSA_KEY_USAGE_DECRYPT, PSA_ALG_RSA_PKCS1V15_CRYPT);
 	uint8_t buf[PSA_ASYMMETRIC_DECRYPT_OUTPUT_MAX_SIZE];
 	size_t size;
-	int ret = psa_asymmetric_decrypt(pk, PSA_ALG_RSA_PKCS1V15_CRYPT, p_ciphertext.ptr(), p_ciphertext.size(), nullptr, 0, buf, sizeof(buf), &size);
+	int ret = psa_asymmetric_decrypt(pk, PSA_ALG_RSA_PKCS1V15_CRYPT, p_ciphertext.ptr(),
+		p_ciphertext.size(), nullptr, 0, buf, sizeof(buf), &size);
 	psa_destroy_key(pk);
 	ERR_FAIL_COND_V_MSG(ret, Vector<uint8_t>(), "Error while decrypting: " + itos(ret));
 	Vector<uint8_t> out;
@@ -669,3 +741,5 @@ Vector<uint8_t> CryptoMbedTLS::decrypt(Ref<CryptoKey> p_key, const Vector<uint8_
 	memcpy(out.ptrw(), buf, size);
 	return out;
 }
+
+

@@ -30,17 +30,17 @@
 
 #pragma once
 
+#include <theora/theoradec.h>
+#include <vorbis/codec.h>
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/os/thread.h"
 #include "scene/resources/video_stream.h"
 
-#include <theora/theoradec.h>
-#include <vorbis/codec.h>
-
 class ImageTexture;
 
-class VideoStreamPlaybackTheora : public VideoStreamPlayback {
+class VideoStreamPlaybackTheora : public VideoStreamPlayback
+{
 	VLTRCLASS(VideoStreamPlaybackTheora, VideoStreamPlayback);
 
 	Image::Format format = Image::Format::FORMAT_L8;
@@ -51,19 +51,19 @@ class VideoStreamPlaybackTheora : public VideoStreamPlayback {
 	Point2i size;
 	Rect2i region;
 
-	float *audio_buffer = nullptr;
+	float* audio_buffer = nullptr;
 	int audio_buffer_size = 0;
 	int audio_ptr_start = 0;
 	int audio_ptr_end = 0;
 
 	int buffer_data();
-	int queue_page(ogg_page *page);
-	int read_page(ogg_page *page);
+	int queue_page(ogg_page* page);
+	int read_page(ogg_page* page);
 	int feed_pages();
-	double get_page_time(ogg_page *page);
-	int64_t seek_streams(double p_time, int64_t &video_granulepos, int64_t &audio_granulepos);
-	void find_streams(th_setup_info *&ts);
-	void read_headers(th_setup_info *&ts);
+	double get_page_time(ogg_page* page);
+	int64_t seek_streams(double p_time, int64_t& video_granulepos, int64_t& audio_granulepos);
+	void find_streams(th_setup_info*& ts);
+	void read_headers(th_setup_info*& ts);
 	void video_write(th_ycbcr_buffer yuv);
 	double get_time() const;
 
@@ -75,7 +75,7 @@ class VideoStreamPlaybackTheora : public VideoStreamPlayback {
 	ogg_stream_state to;
 	th_info ti;
 	th_comment tc;
-	th_dec_ctx *td = nullptr;
+	th_dec_ctx* td = nullptr;
 	vorbis_info vi = {};
 	vorbis_dsp_state vd;
 	vorbis_block vb;
@@ -112,14 +112,17 @@ class VideoStreamPlaybackTheora : public VideoStreamPlayback {
 protected:
 	void clear();
 
-	_FORCE_INLINE_ bool send_audio() {
+	_FORCE_INLINE_ bool send_audio()
+	{
 		if (audio_ptr_end > 0) {
-			int mixed = mix_callback(mix_udata, &audio_buffer[audio_ptr_start * vi.channels], audio_ptr_end - audio_ptr_start);
+			int mixed = mix_callback(mix_udata, &audio_buffer[audio_ptr_start * vi.channels],
+				audio_ptr_end - audio_ptr_start);
 			audio_ptr_start += mixed;
 			if (audio_ptr_start == audio_ptr_end) {
 				audio_ptr_start = 0;
 				audio_ptr_end = 0;
-			} else {
+			}
+			else {
 				return false;
 			}
 		}
@@ -139,7 +142,7 @@ public:
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 
-	void set_file(const String &p_file);
+	void set_file(const String& p_file);
 
 	virtual Ref<Texture2D> get_texture() const override;
 	virtual void update(double p_delta) override;
@@ -153,14 +156,16 @@ public:
 	~VideoStreamPlaybackTheora();
 };
 
-class VideoStreamTheora : public VideoStream {
+class VideoStreamTheora : public VideoStream
+{
 	VLTRCLASS(VideoStreamTheora, VideoStream);
 
 protected:
 	static void _bind_methods();
 
 public:
-	Ref<VideoStreamPlayback> instantiate_playback() override {
+	Ref<VideoStreamPlayback> instantiate_playback() override
+	{
 		Ref<VideoStreamPlaybackTheora> pb = memnew(VideoStreamPlaybackTheora);
 		pb->set_audio_track(audio_track);
 		pb->set_file(file);
@@ -172,12 +177,17 @@ public:
 	VideoStreamTheora() { audio_track = 0; }
 };
 
-class ResourceFormatLoaderTheora : public ResourceFormatLoader {
+class ResourceFormatLoaderTheora : public ResourceFormatLoader
+{
 	VLTRSOFTCLASS(ResourceFormatLoaderTheora, ResourceFormatLoader);
 
 public:
-	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
-	virtual bool handles_type(const String &p_type) const override;
-	virtual String get_resource_type(const String &p_path) const override;
+	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
+		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
+		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual bool handles_type(const String& p_type) const override;
+	virtual String get_resource_type(const String& p_path) const override;
 };
+
+

@@ -30,39 +30,36 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "visual_shader_nodes.h"
-
 #include "core/object/class_db.h"
 #include "scene/resources/image_texture.h"
+#include "visual_shader_nodes.h"
 
 // VisualShaderNodeCubemap
 
-void VisualShaderNodeCubemap::_set_cube_map_bind_compat_95126(Ref<Cubemap> p_cube_map) {
+void VisualShaderNodeCubemap::_set_cube_map_bind_compat_95126(Ref<Cubemap> p_cube_map)
+{
 	set_cube_map(p_cube_map);
 }
 
-Ref<Cubemap> VisualShaderNodeCubemap::_get_cube_map_bind_compat_95126() const {
-	return cube_map;
-}
+Ref<Cubemap> VisualShaderNodeCubemap::_get_cube_map_bind_compat_95126() const { return cube_map; }
 
-void VisualShaderNodeCubemap::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("set_cube_map", "value"), &VisualShaderNodeCubemap::_set_cube_map_bind_compat_95126);
-	ClassDB::bind_compatibility_method(D_METHOD("get_cube_map"), &VisualShaderNodeCubemap::_get_cube_map_bind_compat_95126);
-}
+void VisualShaderNodeCubemap::_bind_compatibility_methods() {}
 
 // VisualShaderNodeTexture2DArray
 
-void VisualShaderNodeTexture2DArray::_set_texture_array_bind_compat_95126(Ref<Texture2DArray> p_texture_array) {
+void VisualShaderNodeTexture2DArray::_set_texture_array_bind_compat_95126(
+	Ref<Texture2DArray> p_texture_array)
+{
 	set_texture_array(p_texture_array);
 }
 
-Ref<Texture2DArray> VisualShaderNodeTexture2DArray::_get_texture_array_bind_compat_95126() const {
+Ref<Texture2DArray> VisualShaderNodeTexture2DArray::_get_texture_array_bind_compat_95126() const
+{
 	return texture_array;
 }
 
-void VisualShaderNodeTexture2DArray::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("set_texture_array", "value"), &VisualShaderNodeTexture2DArray::_set_texture_array_bind_compat_95126);
-	ClassDB::bind_compatibility_method(D_METHOD("get_texture_array"), &VisualShaderNodeTexture2DArray::_get_texture_array_bind_compat_95126);
-}
+void VisualShaderNodeTexture2DArray::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

@@ -40,22 +40,7 @@
 #include "scene/gui/line_edit.h"
 #include "scene/gui/panel_container.h"
 
-void OpenXRActionSetEditor::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("_do_set_name", "name"), &OpenXRActionSetEditor::_do_set_name);
-	ClassDB::bind_method(
-		D_METHOD("_do_set_localized_name", "name"), &OpenXRActionSetEditor::_do_set_localized_name);
-	ClassDB::bind_method(
-		D_METHOD("_do_set_priority", "value"), &OpenXRActionSetEditor::_do_set_priority);
-	ClassDB::bind_method(D_METHOD("_do_add_action_editor", "action_editor"),
-		&OpenXRActionSetEditor::_do_add_action_editor);
-	ClassDB::bind_method(D_METHOD("_do_remove_action_editor", "action_editor"),
-		&OpenXRActionSetEditor::_do_remove_action_editor);
-
-	ADD_SIGNAL(MethodInfo("remove", PropertyInfo(Variant::OBJECT, "action_set_editor")));
-	ADD_SIGNAL(MethodInfo("action_removed", PropertyInfo(Variant::OBJECT, "action")));
-	ADD_SIGNAL(MethodInfo("action_renamed", PropertyInfo(Variant::OBJECT, "action")));
-}
+void OpenXRActionSetEditor::_bind_methods() {}
 
 void OpenXRActionSetEditor::_set_fold_icon()
 {
@@ -82,7 +67,7 @@ void OpenXRActionSetEditor::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		_theme_changed();
 		panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")));
+			get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")).ptr());
 	} break;
 	}
 }
@@ -127,7 +112,7 @@ void OpenXRActionSetEditor::_on_action_set_name_changed(const String& p_new_text
 
 		this->obj->emit_signal("action_renamed", this);
 		action_set->set_name(p_new_text);
-		action_set->set_edited(true);
+		action_set->obj->set_edited(true);
 	}
 }
 
@@ -148,7 +133,7 @@ void OpenXRActionSetEditor::_on_action_set_localized_name_changed(const String& 
 		undo_redo->commit_action(false);
 
 		action_set->set_localized_name(p_new_text);
-		action_set->set_edited(true);
+		action_set->obj->set_edited(true);
 	}
 }
 
@@ -169,7 +154,7 @@ void OpenXRActionSetEditor::_on_action_set_priority_changed(const double p_new_v
 		undo_redo->commit_action(false);
 
 		action_set->set_priority(value);
-		action_set->set_edited(true);
+		action_set->obj->set_edited(true);
 	}
 }
 
@@ -187,7 +172,7 @@ void OpenXRActionSetEditor::_on_add_action()
 	new_action->set_name("New");
 	new_action->set_localized_name("New");
 	action_set->add_action(new_action);
-	action_set->set_edited(true);
+	action_set->obj->set_edited(true);
 
 	OpenXRActionEditor* action_editor = _add_action_editor(new_action);
 
@@ -216,7 +201,7 @@ void OpenXRActionSetEditor::_on_remove_action(Object* p_action_editor)
 	undo_redo->add_undo_method(this->obj.get(), "_do_add_action_editor", action_editor);
 	undo_redo->commit_action(true);
 
-	action_set->set_edited(true);
+	action_set->obj->set_edited(true);
 }
 
 void OpenXRActionSetEditor::_on_rename_action(Object* p_action_editor)

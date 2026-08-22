@@ -38,7 +38,7 @@ typedef fastnoiselite::FastNoiseLite _FastNoiseLite;
 
 class FastNoiseLite : public Noise {
 	VLTRCLASS(FastNoiseLite, Noise);
-	OBJ_SAVE_TYPE(FastNoiseLite);
+	OBJ_SAVE_TYPE_NO(FastNoiseLite);
 
 public:
 	enum NoiseType {
