@@ -99,7 +99,7 @@ public:
 
 class RichTextEffect : public Resource {
 	VLTRCLASS(RichTextEffect, Resource);
-	OBJ_SAVE_TYPE(RichTextEffect);
+	OBJ_SAVE_TYPE_NO(RichTextEffect);
 
 protected:
 	static void _bind_methods();

@@ -104,7 +104,7 @@ void FoldableContainer::set_folded(bool p_folded)
 		if (!changing_group && foldable_group.is_valid()) {
 			if (!p_folded) {
 				_update_group();
-				foldable_group->emit_signal(SNAME("expanded"), this);
+				foldable_group->obj->emit_signal(SNAME("expanded"), this);
 			}
 			else if (!foldable_group->updating_group &&
 					   foldable_group->get_expanded_container() == this &&

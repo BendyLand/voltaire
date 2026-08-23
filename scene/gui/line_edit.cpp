@@ -1340,9 +1340,9 @@ void LineEdit::_notification(int p_what)
 			set_caret_blink_interval(
 				EDITOR_GET("text_editor/appearance/caret/caret_blink_interval"));
 
-			if (!EditorSettings::get_singleton()->is_connected(
+			if (!EditorSettings::get_singleton()->obj->is_connected(
 					"settings_changed", callable_mp(this, &LineEdit::_editor_settings_changed))) {
-				EditorSettings::get_singleton()->connect(
+				EditorSettings::get_singleton()->obj->connect(
 					"settings_changed", callable_mp(this, &LineEdit::_editor_settings_changed));
 			}
 		}
@@ -1619,7 +1619,7 @@ void LineEdit::_notification(int p_what)
 				icon_pos.x = style->get_margin(SIDE_LEFT);
 			}
 			Rect2 icon_region = Rect2(icon_pos, right_icon_size);
-			draw_texture_rect(r_icon, icon_region, false, color_icon);
+			draw_texture_rect(r_icon.ptr(), icon_region, false, color_icon);
 
 			if (alignment == HORIZONTAL_ALIGNMENT_CENTER) {
 				if (Math::is_zero_approx(scroll_offset)) {

@@ -28,38 +28,29 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "kinematic_collision_2d.h"
-
 #include "core/object/class_db.h"
+#include "kinematic_collision_2d.h"
 #include "scene/2d/physics/physics_body_2d.h"
 
-Vector2 KinematicCollision2D::get_position() const {
-	return result.collision_point;
-}
+Vector2 KinematicCollision2D::get_position() const { return result.collision_point; }
 
-Vector2 KinematicCollision2D::get_normal() const {
-	return result.collision_normal;
-}
+Vector2 KinematicCollision2D::get_normal() const { return result.collision_normal; }
 
-Vector2 KinematicCollision2D::get_travel() const {
-	return result.travel;
-}
+Vector2 KinematicCollision2D::get_travel() const { return result.travel; }
 
-Vector2 KinematicCollision2D::get_remainder() const {
-	return result.remainder;
-}
+Vector2 KinematicCollision2D::get_remainder() const { return result.remainder; }
 
-real_t KinematicCollision2D::get_angle(const Vector2 &p_up_direction) const {
+real_t KinematicCollision2D::get_angle(const Vector2& p_up_direction) const
+{
 	ERR_FAIL_COND_V(p_up_direction == Vector2(), 0);
 	return result.get_angle(p_up_direction);
 }
 
-real_t KinematicCollision2D::get_depth() const {
-	return result.collision_depth;
-}
+real_t KinematicCollision2D::get_depth() const { return result.collision_depth; }
 
-Object *KinematicCollision2D::get_local_shape() const {
-	PhysicsBody2D *owner = ObjectDB::get_instance<PhysicsBody2D>(owner_id);
+Object* KinematicCollision2D::get_local_shape() const
+{
+	PhysicsBody2D* owner = ObjectDB::get_instance<PhysicsBody2D>(owner_id);
 	if (!owner) {
 		return nullptr;
 	}
@@ -67,7 +58,8 @@ Object *KinematicCollision2D::get_local_shape() const {
 	return owner->shape_owner_get_owner(ownerid);
 }
 
-Object *KinematicCollision2D::get_collider() const {
+Object* KinematicCollision2D::get_collider() const
+{
 	if (result.collider_id.is_valid()) {
 		return ObjectDB::get_instance(result.collider_id);
 	}
@@ -75,18 +67,15 @@ Object *KinematicCollision2D::get_collider() const {
 	return nullptr;
 }
 
-ObjectID KinematicCollision2D::get_collider_id() const {
-	return result.collider_id;
-}
+ObjectID KinematicCollision2D::get_collider_id() const { return result.collider_id; }
 
-RID KinematicCollision2D::get_collider_rid() const {
-	return result.collider;
-}
+RID KinematicCollision2D::get_collider_rid() const { return result.collider; }
 
-Object *KinematicCollision2D::get_collider_shape() const {
-	Object *collider = get_collider();
+Object* KinematicCollision2D::get_collider_shape() const
+{
+	Object* collider = get_collider();
 	if (collider) {
-		CollisionObject2D *obj2d = Object::cast_to<CollisionObject2D>(collider);
+		CollisionObject2D* obj2d = Object::cast_to<CollisionObject2D>(collider);
 		if (obj2d) {
 			uint32_t ownerid = obj2d->shape_find_owner(result.collider_shape);
 			return obj2d->shape_owner_get_owner(ownerid);
@@ -96,26 +85,10 @@ Object *KinematicCollision2D::get_collider_shape() const {
 	return nullptr;
 }
 
-int KinematicCollision2D::get_collider_shape_index() const {
-	return result.collider_shape;
-}
+int KinematicCollision2D::get_collider_shape_index() const { return result.collider_shape; }
 
-Vector2 KinematicCollision2D::get_collider_velocity() const {
-	return result.collider_velocity;
-}
+Vector2 KinematicCollision2D::get_collider_velocity() const { return result.collider_velocity; }
 
-void KinematicCollision2D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_position"), &KinematicCollision2D::get_position);
-	ClassDB::bind_method(D_METHOD("get_normal"), &KinematicCollision2D::get_normal);
-	ClassDB::bind_method(D_METHOD("get_travel"), &KinematicCollision2D::get_travel);
-	ClassDB::bind_method(D_METHOD("get_remainder"), &KinematicCollision2D::get_remainder);
-	ClassDB::bind_method(D_METHOD("get_angle", "up_direction"), &KinematicCollision2D::get_angle, DEFVAL(Vector2(0.0, -1.0)));
-	ClassDB::bind_method(D_METHOD("get_depth"), &KinematicCollision2D::get_depth);
-	ClassDB::bind_method(D_METHOD("get_local_shape"), &KinematicCollision2D::get_local_shape);
-	ClassDB::bind_method(D_METHOD("get_collider"), &KinematicCollision2D::get_collider);
-	ClassDB::bind_method(D_METHOD("get_collider_id"), &KinematicCollision2D::get_collider_id);
-	ClassDB::bind_method(D_METHOD("get_collider_rid"), &KinematicCollision2D::get_collider_rid);
-	ClassDB::bind_method(D_METHOD("get_collider_shape"), &KinematicCollision2D::get_collider_shape);
-	ClassDB::bind_method(D_METHOD("get_collider_shape_index"), &KinematicCollision2D::get_collider_shape_index);
-	ClassDB::bind_method(D_METHOD("get_collider_velocity"), &KinematicCollision2D::get_collider_velocity);
-}
+void KinematicCollision2D::_bind_methods() {}
+
+

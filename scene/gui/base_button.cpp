@@ -129,7 +129,7 @@ void BaseButton::_accessibility_action_click(const Variant& p_data)
 		if (status.pressed) {
 			_unpress_group();
 			if (button_group.is_valid()) {
-				button_group->emit_signal(SceneStringName(pressed), this);
+				button_group->obj->emit_signal(SceneStringName(pressed), this);
 			}
 		}
 
@@ -281,7 +281,7 @@ void BaseButton::on_action_event(Ref<InputEvent> p_event)
 				status.pressed = !status.pressed;
 				_unpress_group();
 				if (button_group.is_valid()) {
-					button_group->emit_signal(SceneStringName(pressed), this);
+					button_group->obj->emit_signal(SceneStringName(pressed), this);
 				}
 				_toggled(status.pressed);
 				_pressed();
@@ -349,7 +349,7 @@ void BaseButton::set_pressed(bool p_pressed)
 	if (p_pressed) {
 		_unpress_group();
 		if (button_group.is_valid()) {
-			button_group->emit_signal(SceneStringName(pressed), this);
+			button_group->obj->emit_signal(SceneStringName(pressed), this);
 		}
 	}
 	_toggled(status.pressed);
@@ -488,7 +488,7 @@ void BaseButton::shortcut_input(const Ref<InputEvent>& p_event)
 
 			_unpress_group();
 			if (button_group.is_valid()) {
-				button_group->emit_signal(SceneStringName(pressed), this);
+				button_group->obj->emit_signal(SceneStringName(pressed), this);
 			}
 
 			_toggled(status.pressed);

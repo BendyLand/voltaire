@@ -435,14 +435,14 @@ void SoftBody3D::_prepare_physics_server()
 			mesh_rid = mesh->get_rid();
 		}
 		PhysicsServer3D::get_singleton()->soft_body_set_mesh(physics_rid, mesh_rid);
-		RS::get_singleton()->connect(
+		RS::get_singleton()->obj->connect(
 			"frame_pre_draw", callable_mp(this, &SoftBody3D::_draw_soft_mesh));
 	}
 	else {
 		PhysicsServer3D::get_singleton()->soft_body_set_mesh(physics_rid, RID());
-		if (RS::get_singleton()->is_connected(
+		if (RS::get_singleton()->obj->is_connected(
 				"frame_pre_draw", callable_mp(this, &SoftBody3D::_draw_soft_mesh))) {
-			RS::get_singleton()->disconnect(
+			RS::get_singleton()->obj->disconnect(
 				"frame_pre_draw", callable_mp(this, &SoftBody3D::_draw_soft_mesh));
 		}
 	}
@@ -594,9 +594,9 @@ Array SoftBody3D::get_collision_exceptions()
 void SoftBody3D::add_collision_exception_with(Node* rp_node)
 {
 	CollisionObject3D* collision_object = Object::cast_to<CollisionObject3D>(rp_node);
-	ERR_FAIL_NULL_MSG(
-		collision_object, "Collision exception only works between two nodes that inherit from "
-						  "CollisionObject3D (such as Area3D or PhysicsBody3D).");
+	ERR_FAIL_NULL_MSG(collision_object,
+		"Collision exception only works between two nodes that inherit from "
+		"CollisionObject3D (such as Area3D or PhysicsBody3D).");
 	PhysicsServer3D::get_singleton()->soft_body_add_collision_exception(
 		physics_rid, collision_object->get_rid());
 }
@@ -604,9 +604,9 @@ void SoftBody3D::add_collision_exception_with(Node* rp_node)
 void SoftBody3D::remove_collision_exception_with(Node* rp_node)
 {
 	CollisionObject3D* collision_object = Object::cast_to<CollisionObject3D>(rp_node->obj.get());
-	ERR_FAIL_NULL_MSG(
-		collision_object, "Collision exception only works between two nodes that inherit from "
-						  "CollisionObject3D (such as Area3D or PhysicsBody3D).");
+	ERR_FAIL_NULL_MSG(collision_object,
+		"Collision exception only works between two nodes that inherit from "
+		"CollisionObject3D (such as Area3D or PhysicsBody3D).");
 	PhysicsServer3D::get_singleton()->soft_body_remove_collision_exception(
 		physics_rid, collision_object->get_rid());
 }

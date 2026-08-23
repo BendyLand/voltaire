@@ -248,10 +248,10 @@ void TextureButton::_notification(int p_what)
 			}
 			else if (texdraw.is_valid()) {
 				if (_tile) {
-					draw_texture_rect(texdraw, Rect2(ofs, size), _tile);
+					draw_texture_rect(texdraw.ptr(), Rect2(ofs, size), _tile);
 				}
 				else {
-					draw_texture_rect_region(texdraw, Rect2(ofs, size), _texture_region);
+					draw_texture_rect_region(texdraw.ptr(), Rect2(ofs, size), _texture_region);
 				}
 			}
 		}
@@ -260,7 +260,7 @@ void TextureButton::_notification(int p_what)
 		}
 
 		if (draw_focus) {
-			draw_texture_rect(focused, Rect2(ofs, size), false);
+			draw_texture_rect(focused.ptr(), Rect2(ofs, size), false);
 		};
 	} break;
 	}

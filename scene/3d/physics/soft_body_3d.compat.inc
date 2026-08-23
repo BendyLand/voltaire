@@ -30,16 +30,17 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "soft_body_3d.h"
 
-#include "core/object/class_db.h"
-
-void SoftBody3D::_pin_point_bind_compat_94684(int p_point_index, bool pin, const NodePath &p_spatial_attachment_path) {
+void SoftBody3D::_pin_point_bind_compat_94684(
+	int p_point_index, bool pin, const NodePath& p_spatial_attachment_path)
+{
 	pin_point(p_point_index, pin, p_spatial_attachment_path, -1);
 }
 
-void SoftBody3D::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("set_point_pinned", "point_index", "pinned", "attachment_path"), &SoftBody3D::_pin_point_bind_compat_94684, DEFVAL(NodePath()));
-}
+void SoftBody3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

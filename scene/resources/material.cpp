@@ -395,7 +395,7 @@ void ShaderMaterial::set_shader(const Ref<Shader>& p_shader)
 		RS::get_singleton()->material_set_shader(material_rid, rid);
 	}
 
-	notify_property_list_changed(); // properties for shader exposed
+	this->obj->notify_property_list_changed(); // properties for shader exposed
 	emit_changed();
 }
 
@@ -452,7 +452,7 @@ Variant ShaderMaterial::get_shader_parameter(const StringName& p_param) const
 
 void ShaderMaterial::_shader_changed()
 {
-	notify_property_list_changed(); // update all properties
+	this->obj->notify_property_list_changed(); // update all properties
 }
 
 void ShaderMaterial::_check_material_rid() const
@@ -501,7 +501,7 @@ void ShaderMaterial::get_argument_options(
 			}
 		}
 	}
-	Material::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
@@ -2135,8 +2135,7 @@ void fragment() {)";
 
 		code += R"(	vec3 detail_norm = mix(NORMAL_MAP, detail_norm_tex.rgb, detail_tex.a);
 	NORMAL_MAP = mix(NORMAL_MAP, detail_norm, detail_mask_tex.r);
-	ALBEDO.rgb = mix(ALBEDO.rgb, detail, detail_mask_tex.r);
-)";
+	ALBEDO.rgb = mix(ALBEDO.rgb, detail, detail_mask_tex.r);)";
 	}
 
 	code += "}\n";
@@ -2145,9 +2144,7 @@ void fragment() {)";
 	// other tasks in the WorkerThreadPool simultaneously creating materials, which
 	// may also hold the shared shader_map_mutex lock.
 	RID new_shader = RS::get_singleton()->shader_create_from_code(code);
-
 	MutexLock lock(shader_map_mutex);
-
 	ShaderData* v = shader_map.getptr(mk);
 	if (unlikely(v)) {
 		// We raced and managed to create the same key concurrently, so we'll free the shader we
@@ -2456,7 +2453,7 @@ void BaseMaterial3D::set_transparency(Transparency p_transparency)
 
 	transparency = p_transparency;
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 BaseMaterial3D::Transparency BaseMaterial3D::get_transparency() const { return transparency; }
@@ -2469,7 +2466,7 @@ void BaseMaterial3D::set_alpha_antialiasing(AlphaAntiAliasing p_alpha_aa)
 
 	alpha_antialiasing_mode = p_alpha_aa;
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 BaseMaterial3D::AlphaAntiAliasing BaseMaterial3D::get_alpha_antialiasing() const
@@ -2485,7 +2482,7 @@ void BaseMaterial3D::set_shading_mode(ShadingMode p_shading_mode)
 
 	shading_mode = p_shading_mode;
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 BaseMaterial3D::ShadingMode BaseMaterial3D::get_shading_mode() const { return shading_mode; }
@@ -2568,7 +2565,7 @@ void BaseMaterial3D::set_flag(Flags p_flag, bool p_enabled)
 		p_flag == FLAG_UV1_USE_TRIPLANAR || p_flag == FLAG_UV2_USE_TRIPLANAR ||
 		p_flag == FLAG_USE_Z_CLIP_SCALE || p_flag == FLAG_USE_FOV_OVERRIDE ||
 		p_flag == FLAG_DISABLE_DEPTH_TEST) {
-		notify_property_list_changed();
+		this->obj->notify_property_list_changed();
 	}
 
 	if (p_flag == FLAG_PARTICLE_TRAILS_MODE) {
@@ -2614,7 +2611,7 @@ void BaseMaterial3D::set_texture(TextureParam p_param, const Ref<Texture2D>& p_t
 			Vector2i(p_texture->get_width(), p_texture->get_height()));
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	_queue_shader_change();
 }
 
@@ -2905,7 +2902,7 @@ void BaseMaterial3D::set_billboard_mode(BillboardMode p_mode)
 {
 	billboard_mode = p_mode;
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 BaseMaterial3D::BillboardMode BaseMaterial3D::get_billboard_mode() const { return billboard_mode; }
@@ -2938,7 +2935,7 @@ void BaseMaterial3D::set_heightmap_deep_parallax(bool p_enable)
 {
 	deep_parallax = p_enable;
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool BaseMaterial3D::is_heightmap_deep_parallax_enabled() const { return deep_parallax; }
@@ -2995,7 +2992,7 @@ void BaseMaterial3D::set_grow_enabled(bool p_enable)
 {
 	grow_enabled = p_enable;
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool BaseMaterial3D::is_grow_enabled() const { return grow_enabled; }
@@ -3173,7 +3170,7 @@ void BaseMaterial3D::set_proximity_fade_enabled(bool p_enable)
 {
 	proximity_fade_enabled = p_enable;
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool BaseMaterial3D::is_proximity_fade_enabled() const { return proximity_fade_enabled; }
@@ -3206,7 +3203,7 @@ void BaseMaterial3D::set_distance_fade(DistanceFadeMode p_mode)
 {
 	distance_fade = p_mode;
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 BaseMaterial3D::DistanceFadeMode BaseMaterial3D::get_distance_fade() const { return distance_fade; }
@@ -3253,7 +3250,7 @@ void BaseMaterial3D::_prepare_stencil_effect()
 	const Ref<Material> current_next_pass = get_next_pass();
 
 	if (stencil_mode == STENCIL_MODE_DISABLED || stencil_mode == STENCIL_MODE_CUSTOM) {
-		if (current_next_pass.is_valid() && current_next_pass->has_meta("_stencil_owned")) {
+		if (current_next_pass.is_valid() && current_next_pass->obj->has_meta("_stencil_owned")) {
 			set_next_pass(current_next_pass->get_next_pass());
 		}
 		return;
@@ -3261,9 +3258,9 @@ void BaseMaterial3D::_prepare_stencil_effect()
 
 	Ref<BaseMaterial3D> stencil_next_pass;
 
-	if (current_next_pass.is_null() || !current_next_pass->has_meta("_stencil_owned")) {
+	if (current_next_pass.is_null() || !current_next_pass->obj->has_meta("_stencil_owned")) {
 		stencil_next_pass = Ref<BaseMaterial3D>(memnew(StandardMaterial3D));
-		stencil_next_pass->set_meta("_stencil_owned", true);
+		stencil_next_pass->obj->set_meta("_stencil_owned", true);
 		stencil_next_pass->set_next_pass(current_next_pass);
 		set_next_pass(stencil_next_pass);
 	}
@@ -3316,7 +3313,7 @@ Ref<BaseMaterial3D> BaseMaterial3D::_get_stencil_next_pass() const
 	const Ref<Material> current_next_pass = get_next_pass();
 	Ref<BaseMaterial3D> stencil_next_pass;
 
-	if (current_next_pass.is_valid() && current_next_pass->has_meta("_stencil_owned")) {
+	if (current_next_pass.is_valid() && current_next_pass->obj->has_meta("_stencil_owned")) {
 		stencil_next_pass = current_next_pass;
 	}
 
@@ -3340,7 +3337,7 @@ void BaseMaterial3D::set_stencil_mode(StencilMode p_stencil_mode)
 	stencil_mode = p_stencil_mode;
 	_prepare_stencil_effect();
 	_queue_shader_change();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 BaseMaterial3D::StencilMode BaseMaterial3D::get_stencil_mode() const { return stencil_mode; }
@@ -3643,7 +3640,7 @@ bool StandardMaterial3D::_set(const StringName& p_name, const Variant& p_value)
 		int idx = 0;
 		while (remaps[idx].first) {
 			if (p_name == remaps[idx].first) {
-				set(remaps[idx].second, p_value);
+				this->obj->set(remaps[idx].second, p_value);
 				return true;
 			}
 			idx++;

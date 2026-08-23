@@ -928,7 +928,7 @@ void GraphEdit::_notification(int p_what)
 
 		zoom_label->set_custom_minimum_size(Size2(48, 0) * theme_cache.base_scale);
 
-		menu_panel->add_theme_style_override(SceneStringName(panel), theme_cache.menu_panel);
+		menu_panel->add_theme_style_override(SceneStringName(panel), theme_cache.menu_panel.ptr());
 	} break;
 	case NOTIFICATION_READY: {
 		Size2 hmin = h_scrollbar->get_bound_minimum_size();
@@ -946,10 +946,10 @@ void GraphEdit::_notification(int p_what)
 	} break;
 	case NOTIFICATION_DRAW: {
 		// Draw background fill.
-		draw_style_box(theme_cache.panel, Rect2(Point2(), get_size()));
+		draw_style_box(theme_cache.panel.ptr(), Rect2(Point2(), get_size()));
 
 		if (has_focus(true)) {
-			draw_style_box(theme_cache.panel_focus, Rect2(Point2(), get_size()));
+			draw_style_box(theme_cache.panel_focus.ptr(), Rect2(Point2(), get_size()));
 		}
 
 		// Draw background grid.
@@ -2005,7 +2005,7 @@ void GraphEdit::_minimap_draw()
 
 	// Draw the minimap background.
 	Rect2 minimap_rect = Rect2(Point2(), minimap->get_size());
-	minimap->draw_style_box(minimap->theme_cache.panel, minimap_rect);
+	minimap->draw_style_box(minimap->theme_cache.panel.ptr(), minimap_rect);
 
 	Vector2 graph_offset = minimap->_get_graph_offset();
 	Vector2 minimap_offset = minimap->minimap_offset;
@@ -2037,7 +2037,7 @@ void GraphEdit::_minimap_draw()
 			sb_minimap->set_bg_color(node_color);
 		}
 
-		minimap->draw_style_box(sb_minimap, node_rect);
+		minimap->draw_style_box(sb_minimap.ptr(), node_rect);
 	}
 
 	// Draw regular graph nodes.
@@ -2065,7 +2065,7 @@ void GraphEdit::_minimap_draw()
 			sb_minimap->set_bg_color(node_color);
 		}
 
-		minimap->draw_style_box(sb_minimap, node_rect);
+		minimap->draw_style_box(sb_minimap.ptr(), node_rect);
 	}
 
 	// Draw node connections.
@@ -2085,12 +2085,12 @@ void GraphEdit::_minimap_draw()
 
 	// Draw the "camera" viewport.
 	Rect2 camera_rect = minimap->get_camera_rect();
-	minimap->draw_style_box(minimap->theme_cache.camera_style, camera_rect);
+	minimap->draw_style_box(minimap->theme_cache.camera_style.ptr(), camera_rect);
 
 	// Draw the resizer control.
 	Ref<Texture2D> resizer = minimap->theme_cache.resizer;
 	Color resizer_color = minimap->theme_cache.resizer_color;
-	minimap->draw_texture(resizer, Point2(), resizer_color);
+	minimap->draw_texture(resizer.ptr(), Point2(), resizer_color);
 }
 
 void GraphEdit::_draw_grid()

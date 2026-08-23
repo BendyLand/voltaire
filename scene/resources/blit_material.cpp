@@ -29,38 +29,39 @@
 /**************************************************************************/
 
 #include "blit_material.h"
-
 #include "core/object/class_db.h"
 #include "core/version.h"
 #include "servers/rendering/rendering_server.h"
 
-void BlitMaterial::_update_shader(BlendMode p_blend) {
+void BlitMaterial::_update_shader(BlendMode p_blend)
+{
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_blend);
 	if (shader_cache[p_blend].is_null()) {
 		shader_cache[p_blend] = RS::get_singleton()->shader_create();
-		String code = "// NOTE: Shader automatically converted from " VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG "'s BlitMaterial.\n\n";
+		String code = "// NOTE: Shader automatically converted from " VLTR_VERSION_NAME
+					  " " VLTR_VERSION_FULL_CONFIG "'s BlitMaterial.\n\n";
 
 		code += "shader_type texture_blit;\nrender_mode ";
 		switch (p_blend) {
-			case BLEND_MODE_MIX:
-				code += "blend_mix";
-				break;
-			case BLEND_MODE_ADD:
-				code += "blend_add";
-				break;
-			case BLEND_MODE_SUB:
-				code += "blend_sub";
-				break;
-			case BLEND_MODE_MUL:
-				code += "blend_mul";
-				break;
-			case BLEND_MODE_DISABLED:
-				code += "blend_disabled";
-				break;
-			default:
-				code += "blend_mix";
-				break;
+		case BLEND_MODE_MIX:
+			code += "blend_mix";
+			break;
+		case BLEND_MODE_ADD:
+			code += "blend_add";
+			break;
+		case BLEND_MODE_SUB:
+			code += "blend_sub";
+			break;
+		case BLEND_MODE_MUL:
+			code += "blend_mul";
+			break;
+		case BLEND_MODE_DISABLED:
+			code += "blend_disabled";
+			break;
+		default:
+			code += "blend_mix";
+			break;
 		}
 		code += ";\n\n";
 
@@ -79,7 +80,8 @@ void BlitMaterial::_update_shader(BlendMode p_blend) {
 	}
 }
 
-void BlitMaterial::set_blend_mode(BlendMode p_blend_mode) {
+void BlitMaterial::set_blend_mode(BlendMode p_blend_mode)
+{
 	blend_mode = p_blend_mode;
 	_update_shader(blend_mode);
 	if (shader_set) {
@@ -87,20 +89,18 @@ void BlitMaterial::set_blend_mode(BlendMode p_blend_mode) {
 	}
 }
 
-BlitMaterial::BlendMode BlitMaterial::get_blend_mode() const {
-	return blend_mode;
-}
+BlitMaterial::BlendMode BlitMaterial::get_blend_mode() const { return blend_mode; }
 
-RID BlitMaterial::get_shader_rid() const {
+RID BlitMaterial::get_shader_rid() const
+{
 	_update_shader(blend_mode);
 	return shader_cache[int(blend_mode)];
 }
 
-Shader::Mode BlitMaterial::get_shader_mode() const {
-	return Shader::MODE_TEXTURE_BLIT;
-}
+Shader::Mode BlitMaterial::get_shader_mode() const { return Shader::MODE_TEXTURE_BLIT; }
 
-RID BlitMaterial::get_rid() const {
+RID BlitMaterial::get_rid() const
+{
 	_update_shader(blend_mode);
 	if (!shader_set) {
 		RS::get_singleton()->material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
@@ -112,7 +112,8 @@ RID BlitMaterial::get_rid() const {
 Mutex BlitMaterial::shader_mutex;
 RID BlitMaterial::shader_cache[5];
 
-void BlitMaterial::cleanup_shader() {
+void BlitMaterial::cleanup_shader()
+{
 	for (int i = 0; i < 5; i++) {
 		if (shader_cache[i].is_valid()) {
 			RS::get_singleton()->free_rid(shader_cache[i]);
@@ -120,23 +121,14 @@ void BlitMaterial::cleanup_shader() {
 	}
 }
 
-void BlitMaterial::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_blend_mode", "blend_mode"), &BlitMaterial::set_blend_mode);
-	ClassDB::bind_method(D_METHOD("get_blend_mode"), &BlitMaterial::get_blend_mode);
+void BlitMaterial::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "blend_mode", PROPERTY_HINT_ENUM, "Mix,Add,Subtract,Multiply,Disabled"), "set_blend_mode", "get_blend_mode");
-
-	BIND_ENUM_CONSTANT(BLEND_MODE_MIX);
-	BIND_ENUM_CONSTANT(BLEND_MODE_ADD);
-	BIND_ENUM_CONSTANT(BLEND_MODE_SUB);
-	BIND_ENUM_CONSTANT(BLEND_MODE_MUL);
-	BIND_ENUM_CONSTANT(BLEND_MODE_DISABLED);
-}
-
-BlitMaterial::BlitMaterial() {
+BlitMaterial::BlitMaterial()
+{
 	_set_material(RS::get_singleton()->material_create());
 	set_blend_mode(BLEND_MODE_MIX);
 }
 
-BlitMaterial::~BlitMaterial() {
-}
+BlitMaterial::~BlitMaterial() {}
+
+

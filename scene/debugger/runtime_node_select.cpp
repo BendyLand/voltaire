@@ -214,8 +214,8 @@ void RuntimeNodeSelect::_setup(const Dictionary& p_settings)
 	view_3d_controller->set_warped_mouse_panning(
 		p_settings.get("editors/3d/navigation/warped_mouse_panning", true));
 
-	view_3d_controller->connect("fov_scaled", callable_mp(this, &RuntimeNodeSelect::_fov_scaled));
-	view_3d_controller->connect(
+	view_3d_controller->obj->connect("fov_scaled", callable_mp(this, &RuntimeNodeSelect::_fov_scaled));
+	view_3d_controller->obj->connect(
 		"cursor_interpolated", callable_mp(this, &RuntimeNodeSelect::_cursor_interpolated));
 
 	freelook_toggle = DebuggerMarshalls::deserialize_key_shortcut(
@@ -314,9 +314,9 @@ void RuntimeNodeSelect::_setup(const Dictionary& p_settings)
 	sbox_mesh_xray = st_xray->commit();
 #endif // _3D_DISABLED
 
-	SceneTree::get_singleton()->connect(
+	SceneTree::get_singleton()->obj->connect(
 		"process_frame", callable_mp(this, &RuntimeNodeSelect::_process_frame));
-	SceneTree::get_singleton()->connect(
+	SceneTree::get_singleton()->obj->connect(
 		"physics_frame", callable_mp(this, &RuntimeNodeSelect::_physics_frame));
 
 	// This function will be called before the root enters the tree at first when the Game view is
@@ -366,7 +366,7 @@ void RuntimeNodeSelect::_root_window_input(const Ref<InputEvent>& p_event)
 		// Workaround for platforms that don't allow subwindows.
 		if (selection_list && selection_list->is_visible() && selection_list->is_embedded()) {
 			root->set_disable_input_override(false);
-			selection_list->push_input(p_event);
+			selection_list->push_input(p_event.ptr());
 			callable_mp(root->get_viewport(), &Viewport::set_disable_input_override)
 				.call_deferred(true);
 		}

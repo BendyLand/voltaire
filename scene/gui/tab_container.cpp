@@ -234,17 +234,20 @@ void TabContainer::_on_theme_changed()
 
 	tab_bar->begin_bulk_theme_override();
 
-	tab_bar->add_theme_style_override(SNAME("tab_unselected"), theme_cache.tab_unselected_style);
-	tab_bar->add_theme_style_override(SNAME("tab_hovered"), theme_cache.tab_hovered_style);
-	tab_bar->add_theme_style_override(SNAME("tab_selected"), theme_cache.tab_selected_style);
-	tab_bar->add_theme_style_override(SNAME("tab_disabled"), theme_cache.tab_disabled_style);
-	tab_bar->add_theme_style_override(SNAME("tab_focus"), theme_cache.tab_focus_style);
+	tab_bar->add_theme_style_override(
+		SNAME("tab_unselected"), theme_cache.tab_unselected_style.ptr());
+	tab_bar->add_theme_style_override(SNAME("tab_hovered"), theme_cache.tab_hovered_style.ptr());
+	tab_bar->add_theme_style_override(SNAME("tab_selected"), theme_cache.tab_selected_style.ptr());
+	tab_bar->add_theme_style_override(SNAME("tab_disabled"), theme_cache.tab_disabled_style.ptr());
+	tab_bar->add_theme_style_override(SNAME("tab_focus"), theme_cache.tab_focus_style.ptr());
 
-	tab_bar->add_theme_icon_override(SNAME("increment"), theme_cache.increment_icon);
-	tab_bar->add_theme_icon_override(SNAME("increment_highlight"), theme_cache.increment_hl_icon);
-	tab_bar->add_theme_icon_override(SNAME("decrement"), theme_cache.decrement_icon);
-	tab_bar->add_theme_icon_override(SNAME("decrement_highlight"), theme_cache.decrement_hl_icon);
-	tab_bar->add_theme_icon_override(SNAME("drop_mark"), theme_cache.drop_mark_icon);
+	tab_bar->add_theme_icon_override(SNAME("increment"), theme_cache.increment_icon.ptr());
+	tab_bar->add_theme_icon_override(
+		SNAME("increment_highlight"), theme_cache.increment_hl_icon.ptr());
+	tab_bar->add_theme_icon_override(SNAME("decrement"), theme_cache.decrement_icon.ptr());
+	tab_bar->add_theme_icon_override(
+		SNAME("decrement_highlight"), theme_cache.decrement_hl_icon.ptr());
+	tab_bar->add_theme_icon_override(SNAME("drop_mark"), theme_cache.drop_mark_icon.ptr());
 	tab_bar->add_theme_color_override(SNAME("drop_mark_color"), theme_cache.drop_mark_color);
 
 	tab_bar->add_theme_color_override(
@@ -264,7 +267,7 @@ void TabContainer::_on_theme_changed()
 	tab_bar->add_theme_color_override(
 		SNAME("icon_disabled_color"), theme_cache.icon_disabled_color);
 
-	tab_bar->add_theme_font_override(SceneStringName(font), theme_cache.tab_font);
+	tab_bar->add_theme_font_override(SceneStringName(font), theme_cache.tab_font.ptr());
 	tab_bar->add_theme_font_size_override(SceneStringName(font_size), theme_cache.tab_font_size);
 
 	tab_bar->add_theme_constant_override(SNAME("h_separation"), theme_cache.icon_separation);

@@ -408,7 +408,7 @@ void PopupPanel::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		panel->add_theme_style_override(SceneStringName(panel), theme_cache.panel_style);
+		panel->add_theme_style_override(SceneStringName(panel), theme_cache.panel_style.ptr());
 
 		if (is_visible()) {
 			_update_shadow_offsets();
@@ -482,7 +482,7 @@ PopupPanel::PopupPanel()
 	add_child(panel, false, INTERNAL_MODE_FRONT);
 
 #ifdef TOOLS_ENABLED
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp((Node*)this, &Node::update_configuration_warnings));
 #endif
 }

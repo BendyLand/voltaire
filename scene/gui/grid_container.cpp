@@ -28,24 +28,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "grid_container.h"
-
 #include "core/object/class_db.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
+#include "grid_container.h"
 #include "scene/theme/theme_db.h"
 
-void GridContainer::_resort() {
+void GridContainer::_resort()
+{
 	RBMap<int, int> col_minw; // Max of min_width of all controls in each col (indexed by col).
 	RBMap<int, int> row_minh; // Max of min_height of all controls in each row (indexed by row).
-	RBMap<int, int> col_desiredw; // Max of desired_width of all controls in each col (indexed by col).
-	RBMap<int, int> row_desiredh; // Max of desired_height of all controls in each row (indexed by row).
-	RBMap<int, int> col_maxw; // Min positive max_width of all controls in each col (indexed by col).
-	RBMap<int, int> row_maxh; // Min positive max_height of all controls in each row (indexed by row).
+	RBMap<int, int>
+		col_desiredw; // Max of desired_width of all controls in each col (indexed by col).
+	RBMap<int, int>
+		row_desiredh; // Max of desired_height of all controls in each row (indexed by row).
+	RBMap<int, int>
+		col_maxw; // Min positive max_width of all controls in each col (indexed by col).
+	RBMap<int, int>
+		row_maxh; // Min positive max_height of all controls in each row (indexed by row).
 	RBMap<int, int> col_fixed_size; // Final fixed width for non-expanded columns.
 	RBMap<int, int> row_fixed_size; // Final fixed height for non-expanded rows.
-	RBSet<int> col_expanded; // Columns which have the SIZE_EXPAND flag set.
-	RBSet<int> row_expanded; // Rows which have the SIZE_EXPAND flag set.
+	RBSet<int> col_expanded;		// Columns which have the SIZE_EXPAND flag set.
+	RBSet<int> row_expanded;		// Rows which have the SIZE_EXPAND flag set.
 
 	// Compute the per-column/per-row data.
 	int valid_controls_index = 0;
@@ -53,7 +57,7 @@ void GridContainer::_resort() {
 	Size2i combined_max_size = Size2i(get_combined_maximum_size());
 
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i));
+		Control* c = as_sortable_control(get_child(i));
 		if (!c) {
 			continue;
 		}
@@ -70,37 +74,48 @@ void GridContainer::_resort() {
 		Size2i max_size = c->get_combined_maximum_size().floor();
 		if (col_minw.has(col)) {
 			col_minw[col] = MAX(col_minw[col], ms.width);
-		} else {
+		}
+		else {
 			col_minw[col] = ms.width;
 		}
 		if (row_minh.has(row)) {
 			row_minh[row] = MAX(row_minh[row], ms.height);
-		} else {
+		}
+		else {
 			row_minh[row] = ms.height;
 		}
 
 		if (col_desiredw.has(col)) {
 			col_desiredw[col] = MAX(col_desiredw[col], desired_size.width);
-		} else {
+		}
+		else {
 			col_desiredw[col] = desired_size.width;
 		}
 		if (row_desiredh.has(row)) {
 			row_desiredh[row] = MAX(row_desiredh[row], desired_size.height);
-		} else {
+		}
+		else {
 			row_desiredh[row] = desired_size.height;
 		}
 
-		int max_width = int(max_size.width) >= 0 ? int(max_size.width) : (combined_max_size.width >= 0 ? combined_max_size.width : size.width);
+		int max_width = int(max_size.width) >= 0
+							? int(max_size.width)
+							: (combined_max_size.width >= 0 ? combined_max_size.width : size.width);
 		if (col_maxw.has(col)) {
 			col_maxw[col] = MAX(col_maxw[col], max_width);
-		} else {
+		}
+		else {
 			col_maxw[col] = max_width;
 		}
 
-		int max_height = int(max_size.height) >= 0 ? int(max_size.height) : (combined_max_size.height >= 0 ? combined_max_size.height : size.height);
+		int max_height =
+			int(max_size.height) >= 0
+				? int(max_size.height)
+				: (combined_max_size.height >= 0 ? combined_max_size.height : size.height);
 		if (row_maxh.has(row)) {
 			row_maxh[row] = MAX(row_maxh[row], max_height);
-		} else {
+		}
+		else {
 			row_maxh[row] = max_height;
 		}
 
@@ -112,13 +127,13 @@ void GridContainer::_resort() {
 		}
 	}
 
-	for (const KeyValue<int, int> &E : col_maxw) {
+	for (const KeyValue<int, int>& E : col_maxw) {
 		if (col_maxw[E.key] < col_minw[E.key]) {
 			col_maxw[E.key] = col_minw[E.key];
 		}
 	}
 
-	for (const KeyValue<int, int> &E : row_maxh) {
+	for (const KeyValue<int, int>& E : row_maxh) {
 		if (row_maxh[E.key] < row_minh[E.key]) {
 			row_maxh[E.key] = row_minh[E.key];
 		}
@@ -135,14 +150,14 @@ void GridContainer::_resort() {
 	// Evaluate the remaining space for expanded columns/rows.
 	Size2 remaining_space = get_size();
 	Size2 empty_space = remaining_space;
-	for (const KeyValue<int, int> &E : col_minw) {
+	for (const KeyValue<int, int>& E : col_minw) {
 		if (!col_expanded.has(E.key)) {
 			remaining_space.width -= E.value;
 		}
 		empty_space.width -= E.value;
 	}
 
-	for (const KeyValue<int, int> &E : row_minh) {
+	for (const KeyValue<int, int>& E : row_minh) {
 		if (!row_expanded.has(E.key)) {
 			remaining_space.height -= E.value;
 		}
@@ -153,17 +168,19 @@ void GridContainer::_resort() {
 	empty_space.height -= theme_cache.v_separation * MAX(max_row - 1, 0);
 	empty_space.width -= theme_cache.h_separation * MAX(max_col - 1, 0);
 
-	// Distribute the remaining space to cols/rows which have a desired size larger than their minimum size, up to their desired size, in proportion to how much extra space they want.
+	// Distribute the remaining space to cols/rows which have a desired size larger than their
+	// minimum size, up to their desired size, in proportion to how much extra space they want.
 	int total_desired_extra_space = 0;
-	for (const KeyValue<int, int> &E : col_desiredw) {
+	for (const KeyValue<int, int>& E : col_desiredw) {
 		int desired_extra_space = E.value - col_minw[E.key];
 		if (desired_extra_space > 0) {
 			total_desired_extra_space += desired_extra_space;
 		}
 	}
 	if (empty_space.width > 0 && total_desired_extra_space > 0) {
-		real_t space_available_ratio = MIN(real_t(empty_space.width) / real_t(total_desired_extra_space), 1.0);
-		for (const KeyValue<int, int> &E : col_desiredw) {
+		real_t space_available_ratio =
+			MIN(real_t(empty_space.width) / real_t(total_desired_extra_space), 1.0);
+		for (const KeyValue<int, int>& E : col_desiredw) {
 			int desired_extra_space = E.value - col_minw[E.key];
 			if (desired_extra_space > 0) {
 				int desired_size_increase = floor(desired_extra_space * space_available_ratio);
@@ -175,15 +192,16 @@ void GridContainer::_resort() {
 		}
 	}
 	total_desired_extra_space = 0;
-	for (const KeyValue<int, int> &E : row_desiredh) {
+	for (const KeyValue<int, int>& E : row_desiredh) {
 		int desired_extra_space = E.value - row_minh[E.key];
 		if (desired_extra_space > 0) {
 			total_desired_extra_space += desired_extra_space;
 		}
 	}
 	if (empty_space.height > 0 && total_desired_extra_space > 0) {
-		real_t space_available_ratio = MIN(real_t(empty_space.height) / real_t(total_desired_extra_space), 1.0);
-		for (const KeyValue<int, int> &E : row_desiredh) {
+		real_t space_available_ratio =
+			MIN(real_t(empty_space.height) / real_t(total_desired_extra_space), 1.0);
+		for (const KeyValue<int, int>& E : row_desiredh) {
 			int desired_extra_space = E.value - row_minh[E.key];
 			if (desired_extra_space > 0) {
 				int desired_size_increase = floor(desired_extra_space * space_available_ratio);
@@ -200,7 +218,7 @@ void GridContainer::_resort() {
 		// Check if all minwidth constraints are OK if we use the remaining space.
 		can_fit = true;
 		int max_index = col_expanded.front()->get();
-		for (const int &E : col_expanded) {
+		for (const int& E : col_expanded) {
 			if (col_minw[E] > col_minw[max_index]) {
 				max_index = E;
 			}
@@ -222,7 +240,7 @@ void GridContainer::_resort() {
 		// Check if all minheight constraints are OK if we use the remaining space.
 		can_fit = true;
 		int max_index = row_expanded.front()->get();
-		for (const int &E : row_expanded) {
+		for (const int& E : row_expanded) {
 			if (row_minh[E] > row_minh[max_index]) {
 				max_index = E;
 			}
@@ -243,7 +261,7 @@ void GridContainer::_resort() {
 	while (!max_fit && col_expanded.size() > 0) {
 		max_fit = true;
 		int capped_col = -1;
-		for (const int &E : col_expanded) {
+		for (const int& E : col_expanded) {
 			if (col_maxw.has(E) && (remaining_space.width / col_expanded.size()) > col_maxw[E]) {
 				capped_col = E;
 				max_fit = false;
@@ -262,7 +280,7 @@ void GridContainer::_resort() {
 	while (!max_fit && row_expanded.size() > 0) {
 		max_fit = true;
 		int capped_row = -1;
-		for (const int &E : row_expanded) {
+		for (const int& E : row_expanded) {
 			if (row_maxh.has(E) && (remaining_space.height / row_expanded.size()) > row_maxh[E]) {
 				capped_row = E;
 				max_fit = false;
@@ -323,7 +341,7 @@ void GridContainer::_resort() {
 	int accumulated_height = 0;
 	valid_controls_index = 0;
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i));
+		Control* c = as_sortable_control(get_child(i));
 		if (!c) {
 			continue;
 		}
@@ -334,11 +352,13 @@ void GridContainer::_resort() {
 		if (col == 0) {
 			if (rtl) {
 				col_ofs = get_size().width;
-			} else {
+			}
+			else {
 				col_ofs = 0;
 			}
 			if (row > 0) {
-				row_ofs += (row_expanded.has(row - 1) ? row_expand : row_minh[row - 1]) + theme_cache.v_separation;
+				row_ofs += (row_expanded.has(row - 1) ? row_expand : row_minh[row - 1]) +
+						   theme_cache.v_separation;
 
 				if (row_expanded.has(row - 1) && row - 1 < row_remaining_pixel_index) {
 					// Apply the remaining pixel of the previous row.
@@ -347,9 +367,12 @@ void GridContainer::_resort() {
 			}
 		}
 
-		Size2 s(
-				col_expanded.has(col) ? col_expand : (col_fixed_size.has(col) ? col_fixed_size[col] : col_minw[col]),
-				row_expanded.has(row) ? row_expand : (row_fixed_size.has(row) ? row_fixed_size[row] : row_minh[row]));
+		Size2 s(col_expanded.has(col)
+					? col_expand
+					: (col_fixed_size.has(col) ? col_fixed_size[col] : col_minw[col]),
+			row_expanded.has(row)
+				? row_expand
+				: (row_fixed_size.has(row) ? row_fixed_size[row] : row_minh[row]));
 
 		// Add the remaining pixel to the expanding columns and rows, starting from left and top.
 		if (col_expanded.has(col) && col < col_remaining_pixel_index) {
@@ -376,7 +399,8 @@ void GridContainer::_resort() {
 			Point2 p(col_ofs - s.width, row_ofs);
 			fit_child_in_rect(c, Rect2(p, s));
 			col_ofs -= s.width + theme_cache.h_separation;
-		} else {
+		}
+		else {
 			Point2 p(col_ofs, row_ofs);
 			fit_child_in_rect(c, Rect2(p, s));
 			col_ofs += s.width + theme_cache.h_separation;
@@ -385,31 +409,34 @@ void GridContainer::_resort() {
 		if (col == columns - 1) {
 			accumulated_height += s.height + theme_cache.v_separation;
 			accumulated_width = 0;
-		} else {
+		}
+		else {
 			accumulated_width += s.width + theme_cache.h_separation;
 		}
 	}
 }
 
-void GridContainer::_notification(int p_what) {
+void GridContainer::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_SORT_CHILDREN: {
-			_resort();
-			update_minimum_size();
-		} break;
+	case NOTIFICATION_SORT_CHILDREN: {
+		_resort();
+		update_minimum_size();
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED: {
-			update_minimum_size();
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		update_minimum_size();
+	} break;
 
-		case NOTIFICATION_TRANSLATION_CHANGED:
-		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
-			queue_sort();
-		} break;
+	case NOTIFICATION_TRANSLATION_CHANGED:
+	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
+		queue_sort();
+	} break;
 	}
 }
 
-void GridContainer::set_columns(int p_columns) {
+void GridContainer::set_columns(int p_columns)
+{
 	ERR_FAIL_COND(p_columns < 1);
 
 	if (columns == p_columns) {
@@ -421,25 +448,14 @@ void GridContainer::set_columns(int p_columns) {
 	update_minimum_size();
 }
 
-int GridContainer::get_columns() const {
-	return columns;
-}
+int GridContainer::get_columns() const { return columns; }
 
-int GridContainer::get_h_separation() const {
-	return theme_cache.h_separation;
-}
+int GridContainer::get_h_separation() const { return theme_cache.h_separation; }
 
-void GridContainer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_columns", "columns"), &GridContainer::set_columns);
-	ClassDB::bind_method(D_METHOD("get_columns"), &GridContainer::get_columns);
+void GridContainer::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "columns", PROPERTY_HINT_RANGE, "1,1024,1"), "set_columns", "get_columns");
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, GridContainer, h_separation);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, GridContainer, v_separation);
-}
-
-Size2 GridContainer::_get_minimum_size(bool p_use_desired_sizes) const {
+Size2 GridContainer::_get_minimum_size(bool p_use_desired_sizes) const
+{
 	RBMap<int, int> col_minw;
 	RBMap<int, int> row_minh;
 
@@ -448,7 +464,7 @@ Size2 GridContainer::_get_minimum_size(bool p_use_desired_sizes) const {
 
 	int valid_controls_index = 0;
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
+		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
 		if (!c) {
 			continue;
 		}
@@ -459,13 +475,15 @@ Size2 GridContainer::_get_minimum_size(bool p_use_desired_sizes) const {
 		Size2i ms = p_use_desired_sizes ? c->get_bound_desired_size() : c->get_bound_minimum_size();
 		if (col_minw.has(col)) {
 			col_minw[col] = MAX(col_minw[col], ms.width);
-		} else {
+		}
+		else {
 			col_minw[col] = ms.width;
 		}
 
 		if (row_minh.has(row)) {
 			row_minh[row] = MAX(row_minh[row], ms.height);
-		} else {
+		}
+		else {
 			row_minh[row] = ms.height;
 		}
 		max_col = MAX(col, max_col);
@@ -474,11 +492,11 @@ Size2 GridContainer::_get_minimum_size(bool p_use_desired_sizes) const {
 
 	Size2 ms;
 
-	for (const KeyValue<int, int> &E : col_minw) {
+	for (const KeyValue<int, int>& E : col_minw) {
 		ms.width += E.value;
 	}
 
-	for (const KeyValue<int, int> &E : row_minh) {
+	for (const KeyValue<int, int>& E : row_minh) {
 		ms.height += E.value;
 	}
 
@@ -488,10 +506,8 @@ Size2 GridContainer::_get_minimum_size(bool p_use_desired_sizes) const {
 	return ms;
 }
 
-Size2 GridContainer::get_minimum_size() const {
-	return _get_minimum_size(false);
-}
+Size2 GridContainer::get_minimum_size() const { return _get_minimum_size(false); }
 
-Size2 GridContainer::get_desired_size() const {
-	return _get_minimum_size(true);
-}
+Size2 GridContainer::get_desired_size() const { return _get_minimum_size(true); }
+
+

@@ -193,9 +193,9 @@ NavigationObstacle3D::NavigationObstacle3D()
 	rs->instance_set_base(fake_agent_radius_debug_instance_rid, fake_agent_radius_debug_mesh_rid);
 	rs->instance_set_base(static_obstacle_debug_instance_rid, static_obstacle_debug_mesh_rid);
 
-	ns3d->connect("avoidance_debug_changed",
+	ns3d->obj->connect("avoidance_debug_changed",
 		callable_mp(this, &NavigationObstacle3D::_update_fake_agent_radius_debug));
-	ns3d->connect("avoidance_debug_changed",
+	ns3d->obj->connect("avoidance_debug_changed",
 		callable_mp(this, &NavigationObstacle3D::_update_static_obstacle_debug));
 	_update_fake_agent_radius_debug();
 	_update_static_obstacle_debug();
@@ -215,9 +215,9 @@ NavigationObstacle3D::~NavigationObstacle3D()
 	obstacle = RID();
 
 #ifdef DEBUG_ENABLED
-	ns3d->disconnect("avoidance_debug_changed",
+	ns3d->obj->disconnect("avoidance_debug_changed",
 		callable_mp(this, &NavigationObstacle3D::_update_fake_agent_radius_debug));
-	ns3d->disconnect("avoidance_debug_changed",
+	ns3d->obj->disconnect("avoidance_debug_changed",
 		callable_mp(this, &NavigationObstacle3D::_update_static_obstacle_debug));
 
 	RenderingServer* rs = RenderingServer::get_singleton();

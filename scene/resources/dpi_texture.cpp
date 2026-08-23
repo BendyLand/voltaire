@@ -28,14 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "dpi_texture.h"
-
 #include "core/object/class_db.h"
+#include "dpi_texture.h"
+#include "modules/modules_enabled.gen.h" // For svg.
 #include "scene/resources/bit_map.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/text/text_server.h"
-
-#include "modules/modules_enabled.gen.h" // For svg.
 #ifdef MODULE_SVG_ENABLED
 #include "modules/svg/image_loader_svg.h"
 #endif
@@ -43,7 +41,8 @@
 Mutex DPITexture::mutex;
 HashMap<double, DPITexture::ScalingLevel> DPITexture::scaling_levels;
 
-void DPITexture::reference_scaling_level(double p_scale) {
+void DPITexture::reference_scaling_level(double p_scale)
+{
 	uint32_t oversampling = CLAMP(p_scale, 0.1, 100.0) * 64;
 	if (oversampling == 64) {
 		return;
@@ -51,16 +50,18 @@ void DPITexture::reference_scaling_level(double p_scale) {
 	double scale = double(oversampling) / 64.0;
 
 	MutexLock lock(mutex);
-	ScalingLevel *sl = scaling_levels.getptr(scale);
+	ScalingLevel* sl = scaling_levels.getptr(scale);
 	if (sl) {
 		sl->refcount++;
-	} else {
+	}
+	else {
 		ScalingLevel new_sl;
 		scaling_levels.insert(scale, new_sl);
 	}
 }
 
-void DPITexture::unreference_scaling_level(double p_scale) {
+void DPITexture::unreference_scaling_level(double p_scale)
+{
 	uint32_t oversampling = CLAMP(p_scale, 0.1, 100.0) * 64;
 	if (oversampling == 64) {
 		return;
@@ -68,11 +69,11 @@ void DPITexture::unreference_scaling_level(double p_scale) {
 	double scale = double(oversampling) / 64.0;
 
 	MutexLock lock(mutex);
-	ScalingLevel *sl = scaling_levels.getptr(scale);
+	ScalingLevel* sl = scaling_levels.getptr(scale);
 	if (sl) {
 		sl->refcount--;
 		if (sl->refcount == 0) {
-			for (DPITexture *tx : sl->textures) {
+			for (DPITexture* tx : sl->textures) {
 				tx->_remove_scale(scale);
 			}
 			sl->textures.clear();
@@ -81,7 +82,9 @@ void DPITexture::unreference_scaling_level(double p_scale) {
 	}
 }
 
-Ref<DPITexture> DPITexture::create_from_string(const String &p_source, float p_scale, float p_saturation, const Dictionary &p_color_map) {
+Ref<DPITexture> DPITexture::create_from_string(
+	const String& p_source, float p_scale, float p_saturation, const Dictionary& p_color_map)
+{
 	Ref<DPITexture> dpi_texture;
 	dpi_texture.instantiate();
 	dpi_texture->set_source(p_source);
@@ -91,7 +94,8 @@ Ref<DPITexture> DPITexture::create_from_string(const String &p_source, float p_s
 	return dpi_texture;
 }
 
-void DPITexture::set_source(const String &p_source) {
+void DPITexture::set_source(const String& p_source)
+{
 	if (source == p_source) {
 		return;
 	}
@@ -99,11 +103,10 @@ void DPITexture::set_source(const String &p_source) {
 	_update_texture();
 }
 
-String DPITexture::get_source() const {
-	return source;
-}
+String DPITexture::get_source() const { return source; }
 
-void DPITexture::set_fix_alpha_border(bool p_enabled) {
+void DPITexture::set_fix_alpha_border(bool p_enabled)
+{
 	if (fix_alpha_border == p_enabled) {
 		return;
 	}
@@ -111,11 +114,10 @@ void DPITexture::set_fix_alpha_border(bool p_enabled) {
 	_update_texture();
 }
 
-bool DPITexture::get_fix_alpha_border() const {
-	return fix_alpha_border;
-}
+bool DPITexture::get_fix_alpha_border() const { return fix_alpha_border; }
 
-void DPITexture::set_premult_alpha(bool p_enabled) {
+void DPITexture::set_premult_alpha(bool p_enabled)
+{
 	if (premult_alpha == p_enabled) {
 		return;
 	}
@@ -123,11 +125,10 @@ void DPITexture::set_premult_alpha(bool p_enabled) {
 	_update_texture();
 }
 
-bool DPITexture::get_premult_alpha() const {
-	return premult_alpha;
-}
+bool DPITexture::get_premult_alpha() const { return premult_alpha; }
 
-void DPITexture::set_base_scale(float p_scale) {
+void DPITexture::set_base_scale(float p_scale)
+{
 	if (base_scale == p_scale) {
 		return;
 	}
@@ -137,11 +138,10 @@ void DPITexture::set_base_scale(float p_scale) {
 	_update_texture();
 }
 
-float DPITexture::get_base_scale() const {
-	return base_scale;
-}
+float DPITexture::get_base_scale() const { return base_scale; }
 
-void DPITexture::set_saturation(float p_saturation) {
+void DPITexture::set_saturation(float p_saturation)
+{
 	if (saturation == p_saturation) {
 		return;
 	}
@@ -150,32 +150,30 @@ void DPITexture::set_saturation(float p_saturation) {
 	_update_texture();
 }
 
-float DPITexture::get_saturation() const {
-	return saturation;
-}
+float DPITexture::get_saturation() const { return saturation; }
 
-void DPITexture::set_color_map(const Dictionary &p_color_map) {
+void DPITexture::set_color_map(const Dictionary& p_color_map)
+{
 	if (color_map == p_color_map) {
 		return;
 	}
 	color_map = p_color_map;
 	cmap.clear();
-	for (const Variant *E = color_map.next(); E; E = color_map.next(E)) {
+	for (const Variant* E = color_map.next(); E; E = color_map.next(E)) {
 		cmap[*E] = color_map[*E];
 	}
 	_update_texture();
 }
 
-Dictionary DPITexture::get_color_map() const {
-	return color_map;
-}
+Dictionary DPITexture::get_color_map() const { return color_map; }
 
-void DPITexture::_remove_scale(double p_scale) {
+void DPITexture::_remove_scale(double p_scale)
+{
 	if (Math::is_equal_approx(p_scale, 1.0)) {
 		return;
 	}
 
-	RID *rid = texture_cache.getptr(p_scale);
+	RID* rid = texture_cache.getptr(p_scale);
 	if (rid) {
 		if (rid->is_valid()) {
 			RenderingServer::get_singleton()->free_rid(*rid);
@@ -184,7 +182,8 @@ void DPITexture::_remove_scale(double p_scale) {
 	}
 }
 
-RID DPITexture::_ensure_scale(double p_scale) const {
+RID DPITexture::_ensure_scale(double p_scale) const
+{
 	uint32_t oversampling = CLAMP(p_scale, 0.1, 100.0) * 64;
 	if (oversampling == 64) {
 		if (base_texture.is_null()) {
@@ -194,33 +193,37 @@ RID DPITexture::_ensure_scale(double p_scale) const {
 	}
 	double scale = double(oversampling) / 64.0;
 
-	RID *rid = texture_cache.getptr(scale);
+	RID* rid = texture_cache.getptr(scale);
 	if (rid) {
 		return *rid;
 	}
 
 	MutexLock lock(mutex);
-	ScalingLevel *sl = scaling_levels.getptr(scale);
+	ScalingLevel* sl = scaling_levels.getptr(scale);
 	ERR_FAIL_NULL_V_MSG(sl, RID(), "Invalid scaling level");
-	sl->textures.insert(const_cast<DPITexture *>(this));
+	sl->textures.insert(const_cast<DPITexture*>(this));
 
 	RID new_rid = _load_at_scale(scale, false);
 	texture_cache[scale] = new_rid;
 	return new_rid;
 }
 
-RID DPITexture::_load_at_scale(double p_scale, bool p_set_size) const {
+RID DPITexture::_load_at_scale(double p_scale, bool p_set_size) const
+{
 	Ref<Image> img;
 	img.instantiate();
 #ifdef MODULE_SVG_ENABLED
-	const bool upsample = !Math::is_equal_approx(Math::round(p_scale * base_scale), p_scale * base_scale);
+	const bool upsample =
+		!Math::is_equal_approx(Math::round(p_scale * base_scale), p_scale * base_scale);
 
-	Error err = ImageLoaderSVG::create_image_from_string(img, source, p_scale * base_scale, upsample, cmap);
+	Error err =
+		ImageLoaderSVG::create_image_from_string(img, source, p_scale * base_scale, upsample, cmap);
 	if (err != OK) {
 		return RID();
 	}
 #else
-	img = Image::create_empty(Math::round(16 * p_scale * base_scale), Math::round(16 * p_scale * base_scale), false, Image::FORMAT_RGBA8);
+	img = Image::create_empty(Math::round(16 * p_scale * base_scale),
+		Math::round(16 * p_scale * base_scale), false, Image::FORMAT_RGBA8);
 #endif
 	if (saturation != 1.0) {
 		img->adjust_bcs(1.0, 1.0, saturation);
@@ -256,12 +259,14 @@ RID DPITexture::_load_at_scale(double p_scale, bool p_set_size) const {
 	}
 
 	RID rid = RenderingServer::get_singleton()->texture_2d_create(img);
-	RenderingServer::get_singleton()->texture_set_size_override(rid, current_size.x, current_size.y);
+	RenderingServer::get_singleton()->texture_set_size_override(
+		rid, current_size.x, current_size.y);
 	return rid;
 }
 
-void DPITexture::_clear() {
-	for (KeyValue<double, RID> &tx : texture_cache) {
+void DPITexture::_clear()
+{
+	for (KeyValue<double, RID>& tx : texture_cache) {
 		if (tx.value.is_valid()) {
 			RenderingServer::get_singleton()->free_rid(tx.value);
 		}
@@ -274,39 +279,41 @@ void DPITexture::_clear() {
 	alpha_cache.unref();
 }
 
-void DPITexture::_update_texture() {
+void DPITexture::_update_texture()
+{
 	_clear();
 	emit_changed();
 }
 
-Ref<Image> DPITexture::get_image() const {
+Ref<Image> DPITexture::get_image() const
+{
 	RID rid = _ensure_scale(1.0);
 	if (rid.is_valid()) {
 		return RenderingServer::get_singleton()->texture_2d_get(rid);
-	} else {
+	}
+	else {
 		return Ref<Image>();
 	}
 }
 
-int DPITexture::get_width() const {
+int DPITexture::get_width() const
+{
 	_ensure_scale(1.0);
 	return size.x;
 }
 
-int DPITexture::get_height() const {
+int DPITexture::get_height() const
+{
 	_ensure_scale(1.0);
 	return size.y;
 }
 
-RID DPITexture::get_rid() const {
-	return _ensure_scale(1.0);
-}
+RID DPITexture::get_rid() const { return _ensure_scale(1.0); }
 
-bool DPITexture::has_alpha() const {
-	return true;
-}
+bool DPITexture::has_alpha() const { return true; }
 
-RID DPITexture::get_scaled_rid() const {
+RID DPITexture::get_scaled_rid() const
+{
 	double scale = TextServer::get_current_drawn_item_oversampling();
 	if (scale == 0.0) {
 		scale = 1.0;
@@ -314,20 +321,31 @@ RID DPITexture::get_scaled_rid() const {
 	return _ensure_scale(scale);
 }
 
-void DPITexture::draw(RID p_canvas_item, const Point2 &p_pos, const Color &p_modulate, bool p_transpose) const {
-	RID rid = get_scaled_rid(); // Note: call `get_scaled_rid` before using `size` to ensure it is loaded.
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(p_canvas_item, Rect2(p_pos, size), rid, false, p_modulate, p_transpose);
+void DPITexture::draw(
+	RID p_canvas_item, const Point2& p_pos, const Color& p_modulate, bool p_transpose) const
+{
+	RID rid =
+		get_scaled_rid(); // Note: call `get_scaled_rid` before using `size` to ensure it is loaded.
+	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+		p_canvas_item, Rect2(p_pos, size), rid, false, p_modulate, p_transpose);
 }
 
-void DPITexture::draw_rect(RID p_canvas_item, const Rect2 &p_rect, bool p_tile, const Color &p_modulate, bool p_transpose) const {
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(p_canvas_item, p_rect, get_scaled_rid(), p_tile, p_modulate, p_transpose);
+void DPITexture::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile,
+	const Color& p_modulate, bool p_transpose) const
+{
+	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+		p_canvas_item, p_rect, get_scaled_rid(), p_tile, p_modulate, p_transpose);
 }
 
-void DPITexture::draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, const Rect2 &p_src_rect, const Color &p_modulate, bool p_transpose, bool p_clip_uv) const {
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(p_canvas_item, p_rect, get_scaled_rid(), p_src_rect, p_modulate, p_transpose, p_clip_uv);
+void DPITexture::draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const Rect2& p_src_rect,
+	const Color& p_modulate, bool p_transpose, bool p_clip_uv) const
+{
+	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(
+		p_canvas_item, p_rect, get_scaled_rid(), p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
-bool DPITexture::is_pixel_opaque(int p_x, int p_y) const {
+bool DPITexture::is_pixel_opaque(int p_x, int p_y) const
+{
 	if (alpha_cache.is_null()) {
 		Ref<Image> img = get_image();
 		if (img.is_valid()) {
@@ -355,7 +373,8 @@ bool DPITexture::is_pixel_opaque(int p_x, int p_y) const {
 	return true;
 }
 
-void DPITexture::set_size_override(const Size2i &p_size) {
+void DPITexture::set_size_override(const Size2i& p_size)
+{
 	if (size_override == p_size) {
 		return;
 	}
@@ -370,7 +389,7 @@ void DPITexture::set_size_override(const Size2i &p_size) {
 	if (size_override.y != 0) {
 		size.y = size_override.y;
 	}
-	for (KeyValue<double, RID> &tx : texture_cache) {
+	for (KeyValue<double, RID>& tx : texture_cache) {
 		if (tx.value.is_valid()) {
 			RenderingServer::get_singleton()->texture_set_size_override(tx.value, size.x, size.y);
 		}
@@ -382,37 +401,15 @@ void DPITexture::set_size_override(const Size2i &p_size) {
 	emit_changed();
 }
 
-void DPITexture::_bind_methods() {
-	ClassDB::bind_static_method("DPITexture", D_METHOD("create_from_string", "source", "scale", "saturation", "color_map"), &DPITexture::create_from_string, DEFVAL(1.0), DEFVAL(1.0), DEFVAL(Dictionary()));
+void DPITexture::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_source", "source"), &DPITexture::set_source);
-	ClassDB::bind_method(D_METHOD("get_source"), &DPITexture::get_source);
-	ClassDB::bind_method(D_METHOD("set_fix_alpha_border", "fix_alpha_border"), &DPITexture::set_fix_alpha_border);
-	ClassDB::bind_method(D_METHOD("get_fix_alpha_border"), &DPITexture::get_fix_alpha_border);
-	ClassDB::bind_method(D_METHOD("set_premult_alpha", "premult_alpha"), &DPITexture::set_premult_alpha);
-	ClassDB::bind_method(D_METHOD("get_premult_alpha"), &DPITexture::get_premult_alpha);
-	ClassDB::bind_method(D_METHOD("set_base_scale", "base_scale"), &DPITexture::set_base_scale);
-	ClassDB::bind_method(D_METHOD("get_base_scale"), &DPITexture::get_base_scale);
-	ClassDB::bind_method(D_METHOD("set_saturation", "saturation"), &DPITexture::set_saturation);
-	ClassDB::bind_method(D_METHOD("get_saturation"), &DPITexture::get_saturation);
-	ClassDB::bind_method(D_METHOD("set_color_map", "color_map"), &DPITexture::set_color_map);
-	ClassDB::bind_method(D_METHOD("get_color_map"), &DPITexture::get_color_map);
-	ClassDB::bind_method(D_METHOD("set_size_override", "size"), &DPITexture::set_size_override);
-	ClassDB::bind_method(D_METHOD("get_scaled_rid"), &DPITexture::get_scaled_rid);
-
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "_source", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_STORAGE), "set_source", "get_source");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "fix_alpha_border", PROPERTY_HINT_NONE, ""), "set_fix_alpha_border", "get_fix_alpha_border");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "premult_alpha", PROPERTY_HINT_NONE, ""), "set_premult_alpha", "get_premult_alpha");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "base_scale", PROPERTY_HINT_RANGE, "0.01,10.0,0.01"), "set_base_scale", "get_base_scale");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "saturation", PROPERTY_HINT_RANGE, "0.0,1.0,0.01"), "set_saturation", "get_saturation");
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "color_map", PROPERTY_HINT_DICTIONARY_TYPE, "Color;Color"), "set_color_map", "get_color_map");
-}
-
-DPITexture::~DPITexture() {
+DPITexture::~DPITexture()
+{
 	_clear();
-
 	MutexLock lock(mutex);
-	for (KeyValue<double, ScalingLevel> &sl : scaling_levels) {
+	for (KeyValue<double, ScalingLevel>& sl : scaling_levels) {
 		sl.value.textures.erase(this);
 	}
 }
+
+

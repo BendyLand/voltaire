@@ -368,58 +368,7 @@ bool ConvertTransformModifier3D::is_additive(int p_index) const
 	return setting->additive;
 }
 
-void ConvertTransformModifier3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_apply_transform_mode", "index", "transform_mode"),
-		&ConvertTransformModifier3D::set_apply_transform_mode);
-	ClassDB::bind_method(D_METHOD("get_apply_transform_mode", "index"),
-		&ConvertTransformModifier3D::get_apply_transform_mode);
-	ClassDB::bind_method(
-		D_METHOD("set_apply_axis", "index", "axis"), &ConvertTransformModifier3D::set_apply_axis);
-	ClassDB::bind_method(
-		D_METHOD("get_apply_axis", "index"), &ConvertTransformModifier3D::get_apply_axis);
-	ClassDB::bind_method(D_METHOD("set_apply_range_min", "index", "range_min"),
-		&ConvertTransformModifier3D::set_apply_range_min);
-	ClassDB::bind_method(
-		D_METHOD("get_apply_range_min", "index"), &ConvertTransformModifier3D::get_apply_range_min);
-	ClassDB::bind_method(D_METHOD("set_apply_range_max", "index", "range_max"),
-		&ConvertTransformModifier3D::set_apply_range_max);
-	ClassDB::bind_method(
-		D_METHOD("get_apply_range_max", "index"), &ConvertTransformModifier3D::get_apply_range_max);
-
-	ClassDB::bind_method(D_METHOD("set_reference_transform_mode", "index", "transform_mode"),
-		&ConvertTransformModifier3D::set_reference_transform_mode);
-	ClassDB::bind_method(D_METHOD("get_reference_transform_mode", "index"),
-		&ConvertTransformModifier3D::get_reference_transform_mode);
-	ClassDB::bind_method(D_METHOD("set_reference_axis", "index", "axis"),
-		&ConvertTransformModifier3D::set_reference_axis);
-	ClassDB::bind_method(
-		D_METHOD("get_reference_axis", "index"), &ConvertTransformModifier3D::get_reference_axis);
-	ClassDB::bind_method(D_METHOD("set_reference_range_min", "index", "range_min"),
-		&ConvertTransformModifier3D::set_reference_range_min);
-	ClassDB::bind_method(D_METHOD("get_reference_range_min", "index"),
-		&ConvertTransformModifier3D::get_reference_range_min);
-	ClassDB::bind_method(D_METHOD("set_reference_range_max", "index", "range_max"),
-		&ConvertTransformModifier3D::set_reference_range_max);
-	ClassDB::bind_method(D_METHOD("get_reference_range_max", "index"),
-		&ConvertTransformModifier3D::get_reference_range_max);
-
-	ClassDB::bind_method(
-		D_METHOD("set_relative", "index", "enabled"), &ConvertTransformModifier3D::set_relative);
-	ClassDB::bind_method(
-		D_METHOD("is_relative", "index"), &ConvertTransformModifier3D::is_relative);
-	ClassDB::bind_method(
-		D_METHOD("set_additive", "index", "enabled"), &ConvertTransformModifier3D::set_additive);
-	ClassDB::bind_method(
-		D_METHOD("is_additive", "index"), &ConvertTransformModifier3D::is_additive);
-
-	ADD_ARRAY_COUNT(
-		"Settings", "setting_count", "set_setting_count", "get_setting_count", "settings/");
-
-	BIND_ENUM_CONSTANT(TRANSFORM_MODE_POSITION);
-	BIND_ENUM_CONSTANT(TRANSFORM_MODE_ROTATION);
-	BIND_ENUM_CONSTANT(TRANSFORM_MODE_SCALE);
-}
+void ConvertTransformModifier3D::_bind_methods() {}
 
 void ConvertTransformModifier3D::_process_constraint_by_bone(
 	int p_index, Skeleton3D* p_skeleton, int p_apply_bone, int p_reference_bone, float p_amount)

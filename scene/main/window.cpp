@@ -1124,7 +1124,7 @@ void Window::update_mouse_cursor_state()
 	mm->set_position(pos);
 	mm->set_global_position(xform.xform(pos));
 	mm->set_device(InputEvent::DEVICE_ID_INTERNAL);
-	push_input(mm, true);
+	push_input(mm.ptr(), true);
 }
 
 void Window::show()
@@ -1921,9 +1921,9 @@ void Window::_notification(int p_what)
 
 	case NOTIFICATION_ENTER_TREE: {
 		if (is_in_edited_scene_root()) {
-			if (!ProjectSettings::get_singleton()->is_connected(
+			if (!ProjectSettings::get_singleton()->obj->is_connected(
 					"settings_changed", callable_mp(this, &Window::_settings_changed))) {
-				ProjectSettings::get_singleton()->connect(
+				ProjectSettings::get_singleton()->obj->connect(
 					"settings_changed", callable_mp(this, &Window::_settings_changed));
 			}
 		}
@@ -2073,9 +2073,9 @@ void Window::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		if (ProjectSettings::get_singleton()->is_connected(
+		if (ProjectSettings::get_singleton()->obj->is_connected(
 				"settings_changed", callable_mp(this, &Window::_settings_changed))) {
-			ProjectSettings::get_singleton()->disconnect(
+			ProjectSettings::get_singleton()->obj->disconnect(
 				"settings_changed", callable_mp(this, &Window::_settings_changed));
 		}
 
@@ -2168,6 +2168,7 @@ Window::ContentScaleMode Window::get_content_scale_mode() const
 void Window::set_content_scale_aspect(ContentScaleAspect p_aspect)
 {
 	ERR_MAIN_THREAD_GUARD;
+
 	content_scale_aspect = p_aspect;
 	_update_viewport_size();
 }
@@ -2361,7 +2362,7 @@ void Window::_window_input(const Ref<InputEvent>& p_ev)
 	}
 
 	if (is_inside_tree()) {
-		push_input(p_ev);
+		push_input(p_ev.ptr());
 	}
 }
 
@@ -3929,8 +3930,7 @@ Window::~Window()
 	}
 
 	// Then override maps can be simply cleared.
-	theme_icon_override.clear()
-;
+	theme_icon_override.clear();
 	theme_style_override.clear();
 	theme_font_override.clear();
 	theme_font_size_override.clear();

@@ -33,7 +33,8 @@
 #include "core/object/ref_counted.h"
 #include "scene/main/multiplayer_peer.h"
 
-class MultiplayerAPI : public RefCounted {
+class MultiplayerAPI : public RefCounted
+{
 	VLTRCLASS(MultiplayerAPI, RefCounted);
 
 private:
@@ -41,41 +42,51 @@ private:
 
 protected:
 	static void _bind_methods();
-	Error _rpc_bind(int p_peer, Object *p_obj, const StringName &p_method, Array args = Array());
+	Error _rpc_bind(int p_peer, Object* p_obj, const StringName& p_method, Array args = Array());
 
 public:
-	enum RPCMode {
-		RPC_MODE_DISABLED, // No rpc for this method, calls to this will be blocked (default)
-		RPC_MODE_ANY_PEER, // Any peer can call this RPC
-		RPC_MODE_AUTHORITY, // Only the node's multiplayer authority (server by default) can call this RPC
+	enum RPCMode
+	{
+		RPC_MODE_DISABLED,	// No rpc for this method, calls to this will be blocked (default)
+		RPC_MODE_ANY_PEER,	// Any peer can call this RPC
+		RPC_MODE_AUTHORITY, // Only the node's multiplayer authority (server by default) can call
+							// this RPC
 	};
 
 	static Ref<MultiplayerAPI> create_default_interface();
-	static void set_default_interface(const StringName &p_interface);
+	static void set_default_interface(const StringName& p_interface);
 	static StringName get_default_interface();
 
-	static Error encode_and_compress_variant(const Variant &p_variant, uint8_t *p_buffer, int &r_len, bool p_allow_object_decoding);
-	static Error decode_and_decompress_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int *r_len, bool p_allow_object_decoding);
-	static Error encode_and_compress_variants(const Variant **p_variants, int p_count, uint8_t *p_buffer, int &r_len, bool *r_raw = nullptr, bool p_allow_object_decoding = false);
-	static Error decode_and_decompress_variants(Vector<Variant> &r_variants, const uint8_t *p_buffer, int p_len, int &r_len, bool p_raw = false, bool p_allow_object_decoding = false);
+	static Error encode_and_compress_variant(
+		const Variant& p_variant, uint8_t* p_buffer, int& r_len, bool p_allow_object_decoding);
+	static Error decode_and_decompress_variant(Variant& r_variant, const uint8_t* p_buffer,
+		int p_len, int* r_len, bool p_allow_object_decoding);
+	static Error encode_and_compress_variants(const Variant** p_variants, int p_count,
+		uint8_t* p_buffer, int& r_len, bool* r_raw = nullptr, bool p_allow_object_decoding = false);
+	static Error decode_and_decompress_variants(Vector<Variant>& r_variants,
+		const uint8_t* p_buffer, int p_len, int& r_len, bool p_raw = false,
+		bool p_allow_object_decoding = false);
 
-	virtual Error poll() = 0;
-	virtual void set_multiplayer_peer(const Ref<MultiplayerPeer> &p_peer) = 0;
-	virtual Ref<MultiplayerPeer> get_multiplayer_peer() = 0;
-	virtual int get_unique_id() = 0;
-	virtual Vector<int> get_peer_ids() = 0;
+	virtual Error poll();
+	virtual void set_multiplayer_peer(const Ref<MultiplayerPeer>& p_peer);
+	virtual Ref<MultiplayerPeer> get_multiplayer_peer();
+	virtual int get_unique_id();
+	virtual Vector<int> get_peer_ids();
 
-	virtual Error rpcp(Object *p_obj, int p_peer_id, const StringName &p_method, const Variant **p_arg, int p_argcount) = 0;
-	virtual int get_remote_sender_id() = 0;
+	virtual Error rpcp(Object* p_obj, int p_peer_id, const StringName& p_method,
+		const Variant** p_arg, int p_argcount);
+	virtual int get_remote_sender_id();
 
-	virtual Error object_configuration_add(Object *p_object, Variant p_config) = 0;
-	virtual Error object_configuration_remove(Object *p_object, Variant p_config) = 0;
+	virtual Error object_configuration_add(Object* p_object, Variant p_config);
+	virtual Error object_configuration_remove(Object* p_object, Variant p_config);
 
 	bool has_multiplayer_peer() { return get_multiplayer_peer().is_valid(); }
+
 	bool is_server() { return get_unique_id() == MultiplayerPeer::TARGET_PEER_SERVER; }
 
 	virtual ~MultiplayerAPI() {}
 };
 
 VARIANT_ENUM_CAST(MultiplayerAPI::RPCMode);
+
 

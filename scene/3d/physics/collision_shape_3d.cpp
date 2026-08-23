@@ -89,7 +89,7 @@ void CollisionShape3D::_notification(int p_what)
 		if (collision_object) {
 			owner_id = collision_object->create_shape_owner(this->obj.get());
 			if (shape.is_valid()) {
-				collision_object->shape_owner_add_shape(owner_id, shape);
+				collision_object->shape_owner_add_shape(owner_id, shape.ptr());
 			}
 
 			_update_in_shape_owner();
@@ -214,7 +214,7 @@ void CollisionShape3D::set_shape(const Ref<Shape3D>& p_shape)
 	if (collision_object) {
 		collision_object->shape_owner_clear_shapes(owner_id);
 		if (shape.is_valid()) {
-			collision_object->shape_owner_add_shape(owner_id, shape);
+			collision_object->shape_owner_add_shape(owner_id, shape.ptr());
 		}
 	}
 

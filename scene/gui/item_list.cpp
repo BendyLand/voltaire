@@ -1585,7 +1585,7 @@ void ItemList::_notification(int p_what)
 			width -= scroll_bar_v_min.width + theme_cache.scroll_bar_h_separation;
 		}
 
-		draw_style_box(theme_cache.panel_style, Rect2(Point2(), size));
+		draw_style_box(theme_cache.panel_style.ptr(), Rect2(Point2(), size));
 
 		Ref<StyleBox> sbsel;
 		Ref<StyleBox> cursor;
@@ -1758,7 +1758,7 @@ void ItemList::_notification(int p_what)
 			}
 
 			if (style.is_valid()) {
-				draw_style_box(style, r);
+				draw_style_box(style.ptr(), r);
 			}
 
 			Vector2 text_ofs;
@@ -1819,8 +1819,8 @@ void ItemList::_notification(int p_what)
 				if (rtl) {
 					draw_rect.position.x = size.width - draw_rect.position.x - draw_rect.size.x;
 				}
-				draw_texture_rect_region(
-					items[i].icon, draw_rect, region, icon_modulate, items[i].icon_transposed);
+				draw_texture_rect_region(items[i].icon.ptr(), draw_rect, region, icon_modulate,
+					items[i].icon_transposed);
 			}
 
 			if (items[i].tag_icon.is_valid()) {
@@ -1839,7 +1839,7 @@ void ItemList::_notification(int p_what)
 					draw_pos.x = size.width - draw_pos.x - tag_icon_size.x;
 				}
 
-				draw_texture_rect(items[i].tag_icon, Rect2(draw_pos, tag_icon_size));
+				draw_texture_rect(items[i].tag_icon.ptr(), Rect2(draw_pos, tag_icon_size));
 			}
 
 			if (!items[i].text.is_empty()) {
@@ -1964,7 +1964,7 @@ void ItemList::_notification(int p_what)
 					size.width - cursor_rcache.position.x - cursor_rcache.size.x;
 			}
 
-			draw_style_box(cursor, cursor_rcache);
+			draw_style_box(cursor.ptr(), cursor_rcache);
 		}
 
 		if (scroll_hint_mode != SCROLL_HINT_MODE_DISABLED) {
@@ -1977,14 +1977,14 @@ void ItemList::_notification(int p_what)
 				if ((scroll_hint_mode == SCROLL_HINT_MODE_BOTH ||
 						scroll_hint_mode == SCROLL_HINT_MODE_TOP) &&
 					v_scroll_value > 1) {
-					draw_texture_rect(theme_cache.scroll_hint,
+					draw_texture_rect(theme_cache.scroll_hint.ptr(),
 						Rect2(Point2(), Size2(control_size.width, hint_height)), tile_scroll_hint,
 						theme_cache.scroll_hint_color);
 				}
 				if ((scroll_hint_mode == SCROLL_HINT_MODE_BOTH ||
 						scroll_hint_mode == SCROLL_HINT_MODE_BOTTOM) &&
 					v_scroll_below_max) {
-					draw_texture_rect(theme_cache.scroll_hint,
+					draw_texture_rect(theme_cache.scroll_hint.ptr(),
 						Rect2(Point2(0, control_size.height - hint_height),
 							Size2(control_size.width, -hint_height)),
 						tile_scroll_hint, theme_cache.scroll_hint_color);
@@ -1995,7 +1995,7 @@ void ItemList::_notification(int p_what)
 		if (has_focus(true)) {
 			RenderingServer::get_singleton()->canvas_item_add_clip_ignore(get_canvas_item(), true);
 			size.x -= (scroll_bar_h->get_max() - scroll_bar_h->get_page());
-			draw_style_box(theme_cache.focus_style, Rect2(Point2(), size));
+			draw_style_box(theme_cache.focus_style.ptr(), Rect2(Point2(), size));
 			RenderingServer::get_singleton()->canvas_item_add_clip_ignore(get_canvas_item(), false);
 		}
 	} break;
@@ -2286,7 +2286,8 @@ int ItemList::get_item_at_position(const Point2& p_pos, bool p_exact) const
 
 		if (rc.size.x < 0) {
 			continue; // Skip negative item sizes, because they are off screen.
-		}
+
+	}
 
 		if (rc.has_point(pos)) {
 			closest = i;

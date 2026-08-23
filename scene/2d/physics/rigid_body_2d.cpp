@@ -633,9 +633,9 @@ void RigidBody2D::set_contact_monitor(bool p_enabled)
 	}
 
 	if (!p_enabled) {
-		ERR_FAIL_COND_MSG(
-			contact_monitor->locked, "Can't disable contact monitoring during in/out callback. Use "
-									 "call_deferred(\"set_contact_monitor\", false) instead.");
+		ERR_FAIL_COND_MSG(contact_monitor->locked,
+			"Can't disable contact monitoring during in/out callback. Use "
+			"call_deferred(\"set_contact_monitor\", false) instead.");
 
 		for (const KeyValue<ObjectID, BodyState>& E : contact_monitor->body_map) {
 			// clean up mess
@@ -696,222 +696,7 @@ PackedStringArray RigidBody2D::get_configuration_warnings() const
 	return warnings;
 }
 
-void RigidBody2D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_mass", "mass"), &RigidBody2D::set_mass);
-	ClassDB::bind_method(D_METHOD("get_mass"), &RigidBody2D::get_mass);
-
-	ClassDB::bind_method(D_METHOD("get_inertia"), &RigidBody2D::get_inertia);
-	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &RigidBody2D::set_inertia);
-
-	ClassDB::bind_method(
-		D_METHOD("set_center_of_mass_mode", "mode"), &RigidBody2D::set_center_of_mass_mode);
-	ClassDB::bind_method(
-		D_METHOD("get_center_of_mass_mode"), &RigidBody2D::get_center_of_mass_mode);
-
-	ClassDB::bind_method(
-		D_METHOD("set_center_of_mass", "center_of_mass"), &RigidBody2D::set_center_of_mass);
-	ClassDB::bind_method(D_METHOD("get_center_of_mass"), &RigidBody2D::get_center_of_mass);
-
-	ClassDB::bind_method(D_METHOD("set_physics_material_override", "physics_material_override"),
-		&RigidBody2D::set_physics_material_override);
-	ClassDB::bind_method(
-		D_METHOD("get_physics_material_override"), &RigidBody2D::get_physics_material_override);
-
-	ClassDB::bind_method(
-		D_METHOD("set_gravity_scale", "gravity_scale"), &RigidBody2D::set_gravity_scale);
-	ClassDB::bind_method(D_METHOD("get_gravity_scale"), &RigidBody2D::get_gravity_scale);
-
-	ClassDB::bind_method(
-		D_METHOD("set_linear_damp_mode", "linear_damp_mode"), &RigidBody2D::set_linear_damp_mode);
-	ClassDB::bind_method(D_METHOD("get_linear_damp_mode"), &RigidBody2D::get_linear_damp_mode);
-
-	ClassDB::bind_method(D_METHOD("set_angular_damp_mode", "angular_damp_mode"),
-		&RigidBody2D::set_angular_damp_mode);
-	ClassDB::bind_method(D_METHOD("get_angular_damp_mode"), &RigidBody2D::get_angular_damp_mode);
-
-	ClassDB::bind_method(D_METHOD("set_linear_damp", "linear_damp"), &RigidBody2D::set_linear_damp);
-	ClassDB::bind_method(D_METHOD("get_linear_damp"), &RigidBody2D::get_linear_damp);
-
-	ClassDB::bind_method(
-		D_METHOD("set_angular_damp", "angular_damp"), &RigidBody2D::set_angular_damp);
-	ClassDB::bind_method(D_METHOD("get_angular_damp"), &RigidBody2D::get_angular_damp);
-
-	ClassDB::bind_method(
-		D_METHOD("set_linear_velocity", "linear_velocity"), &RigidBody2D::set_linear_velocity);
-	ClassDB::bind_method(D_METHOD("get_linear_velocity"), &RigidBody2D::get_linear_velocity);
-
-	ClassDB::bind_method(
-		D_METHOD("set_angular_velocity", "angular_velocity"), &RigidBody2D::set_angular_velocity);
-	ClassDB::bind_method(D_METHOD("get_angular_velocity"), &RigidBody2D::get_angular_velocity);
-
-	ClassDB::bind_method(
-		D_METHOD("set_max_contacts_reported", "amount"), &RigidBody2D::set_max_contacts_reported);
-	ClassDB::bind_method(
-		D_METHOD("get_max_contacts_reported"), &RigidBody2D::get_max_contacts_reported);
-	ClassDB::bind_method(D_METHOD("get_contact_count"), &RigidBody2D::get_contact_count);
-
-	ClassDB::bind_method(
-		D_METHOD("set_use_custom_integrator", "enable"), &RigidBody2D::set_use_custom_integrator);
-	ClassDB::bind_method(
-		D_METHOD("is_using_custom_integrator"), &RigidBody2D::is_using_custom_integrator);
-
-	ClassDB::bind_method(
-		D_METHOD("set_contact_monitor", "enabled"), &RigidBody2D::set_contact_monitor);
-	ClassDB::bind_method(
-		D_METHOD("is_contact_monitor_enabled"), &RigidBody2D::is_contact_monitor_enabled);
-
-	ClassDB::bind_method(D_METHOD("set_continuous_collision_detection_mode", "mode"),
-		&RigidBody2D::set_continuous_collision_detection_mode);
-	ClassDB::bind_method(D_METHOD("get_continuous_collision_detection_mode"),
-		&RigidBody2D::get_continuous_collision_detection_mode);
-
-	ClassDB::bind_method(
-		D_METHOD("set_axis_velocity", "axis_velocity"), &RigidBody2D::set_axis_velocity);
-	ClassDB::bind_method(D_METHOD("apply_central_impulse", "impulse"),
-		&RigidBody2D::apply_central_impulse, Vector2());
-	ClassDB::bind_method(
-		D_METHOD("apply_impulse", "impulse", "position"), &RigidBody2D::apply_impulse, Vector2());
-	ClassDB::bind_method(
-		D_METHOD("apply_torque_impulse", "torque"), &RigidBody2D::apply_torque_impulse);
-
-	ClassDB::bind_method(
-		D_METHOD("apply_central_force", "force"), &RigidBody2D::apply_central_force);
-	ClassDB::bind_method(
-		D_METHOD("apply_force", "force", "position"), &RigidBody2D::apply_force, Vector2());
-	ClassDB::bind_method(D_METHOD("apply_torque", "torque"), &RigidBody2D::apply_torque);
-
-	ClassDB::bind_method(
-		D_METHOD("add_constant_central_force", "force"), &RigidBody2D::add_constant_central_force);
-	ClassDB::bind_method(D_METHOD("add_constant_force", "force", "position"),
-		&RigidBody2D::add_constant_force, Vector2());
-	ClassDB::bind_method(
-		D_METHOD("add_constant_torque", "torque"), &RigidBody2D::add_constant_torque);
-
-	ClassDB::bind_method(D_METHOD("set_constant_force", "force"), &RigidBody2D::set_constant_force);
-	ClassDB::bind_method(D_METHOD("get_constant_force"), &RigidBody2D::get_constant_force);
-
-	ClassDB::bind_method(
-		D_METHOD("set_constant_torque", "torque"), &RigidBody2D::set_constant_torque);
-	ClassDB::bind_method(D_METHOD("get_constant_torque"), &RigidBody2D::get_constant_torque);
-
-	ClassDB::bind_method(D_METHOD("set_sleeping", "sleeping"), &RigidBody2D::set_sleeping);
-	ClassDB::bind_method(D_METHOD("is_sleeping"), &RigidBody2D::is_sleeping);
-
-	ClassDB::bind_method(D_METHOD("set_can_sleep", "able_to_sleep"), &RigidBody2D::set_can_sleep);
-	ClassDB::bind_method(D_METHOD("is_able_to_sleep"), &RigidBody2D::is_able_to_sleep);
-
-	ClassDB::bind_method(D_METHOD("set_lock_rotation_enabled", "lock_rotation"),
-		&RigidBody2D::set_lock_rotation_enabled);
-	ClassDB::bind_method(
-		D_METHOD("is_lock_rotation_enabled"), &RigidBody2D::is_lock_rotation_enabled);
-
-	ClassDB::bind_method(
-		D_METHOD("set_freeze_enabled", "freeze_mode"), &RigidBody2D::set_freeze_enabled);
-	ClassDB::bind_method(D_METHOD("is_freeze_enabled"), &RigidBody2D::is_freeze_enabled);
-
-	ClassDB::bind_method(D_METHOD("set_freeze_mode", "freeze_mode"), &RigidBody2D::set_freeze_mode);
-	ClassDB::bind_method(D_METHOD("get_freeze_mode"), &RigidBody2D::get_freeze_mode);
-
-	ClassDB::bind_method(D_METHOD("get_colliding_bodies"), &RigidBody2D::get_colliding_bodies);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mass", PROPERTY_HINT_RANGE,
-					 "0.001,1000,0.001,or_greater,exp,suffix:kg"),
-		"set_mass", "get_mass");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "physics_material_override",
-					 PROPERTY_HINT_RESOURCE_TYPE, PhysicsMaterial::get_class_static()),
-		"set_physics_material_override", "get_physics_material_override");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity_scale", PROPERTY_HINT_RANGE,
-					 "-8,8,0.001,or_less,or_greater"),
-		"set_gravity_scale", "get_gravity_scale");
-	ADD_GROUP("Mass Distribution", "");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "center_of_mass_mode", PROPERTY_HINT_ENUM, "Auto,Custom"),
-		"set_center_of_mass_mode", "get_center_of_mass_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "center_of_mass", PROPERTY_HINT_RANGE,
-					 "-1000,1000,0.01,or_less,or_greater,suffix:px"),
-		"set_center_of_mass", "get_center_of_mass");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE,
-					 U"0,1000,0.01,or_greater,exp,suffix:kg\u22C5px\u00B2"),
-		"set_inertia", "get_inertia");
-	ADD_GROUP("Deactivation", "");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sleeping"), "set_sleeping", "is_sleeping");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "can_sleep"), "set_can_sleep", "is_able_to_sleep");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "lock_rotation"), "set_lock_rotation_enabled",
-		"is_lock_rotation_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "freeze"), "set_freeze_enabled", "is_freeze_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "freeze_mode", PROPERTY_HINT_ENUM, "Static,Kinematic"),
-		"set_freeze_mode", "get_freeze_mode");
-	ADD_GROUP("Solver", "");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "custom_integrator"), "set_use_custom_integrator",
-		"is_using_custom_integrator");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "continuous_cd", PROPERTY_HINT_ENUM,
-					 "Disabled,Cast Ray,Cast Shape"),
-		"set_continuous_collision_detection_mode", "get_continuous_collision_detection_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "contact_monitor"), "set_contact_monitor",
-		"is_contact_monitor_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_contacts_reported", PROPERTY_HINT_RANGE,
-					 "0,64,1,or_greater"),
-		"set_max_contacts_reported", "get_max_contacts_reported");
-	ADD_GROUP("Linear", "linear_");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::VECTOR2, "linear_velocity", PROPERTY_HINT_NONE, "suffix:px/s"),
-		"set_linear_velocity", "get_linear_velocity");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "linear_damp_mode", PROPERTY_HINT_ENUM, "Combine,Replace"),
-		"set_linear_damp_mode", "get_linear_damp_mode");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "linear_damp", PROPERTY_HINT_RANGE, "-1,100,0.001,or_greater"),
-		"set_linear_damp", "get_linear_damp");
-	ADD_GROUP("Angular", "angular_");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "angular_velocity", PROPERTY_HINT_NONE,
-					 U"radians_as_degrees,suffix:\u00B0/s"),
-		"set_angular_velocity", "get_angular_velocity");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "angular_damp_mode", PROPERTY_HINT_ENUM, "Combine,Replace"),
-		"set_angular_damp_mode", "get_angular_damp_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "angular_damp", PROPERTY_HINT_RANGE,
-					 "-1,100,0.001,or_greater"),
-		"set_angular_damp", "get_angular_damp");
-	ADD_GROUP("Constant Forces", "constant_");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "constant_force", PROPERTY_HINT_NONE,
-					 U"suffix:kg\u22C5px/s\u00B2"),
-		"set_constant_force", "get_constant_force");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "constant_torque", PROPERTY_HINT_NONE,
-					 U"suffix:kg\u22C5px\u00B2/s\u00B2/rad"),
-		"set_constant_torque", "get_constant_torque");
-
-	ADD_SIGNAL(MethodInfo("body_shape_entered", PropertyInfo(Variant::RID, "body_rid"),
-		PropertyInfo(
-			Variant::OBJECT, "body", PROPERTY_HINT_RESOURCE_TYPE, Node::get_class_static()),
-		PropertyInfo(Variant::INT, "body_shape_index"),
-		PropertyInfo(Variant::INT, "local_shape_index")));
-	ADD_SIGNAL(MethodInfo("body_shape_exited", PropertyInfo(Variant::RID, "body_rid"),
-		PropertyInfo(
-			Variant::OBJECT, "body", PROPERTY_HINT_RESOURCE_TYPE, Node::get_class_static()),
-		PropertyInfo(Variant::INT, "body_shape_index"),
-		PropertyInfo(Variant::INT, "local_shape_index")));
-	ADD_SIGNAL(
-		MethodInfo("body_entered", PropertyInfo(Variant::OBJECT, "body",
-									   PROPERTY_HINT_RESOURCE_TYPE, Node::get_class_static())));
-	ADD_SIGNAL(
-		MethodInfo("body_exited", PropertyInfo(Variant::OBJECT, "body", PROPERTY_HINT_RESOURCE_TYPE,
-									  Node::get_class_static())));
-	ADD_SIGNAL(MethodInfo("sleeping_state_changed"));
-
-	BIND_ENUM_CONSTANT(FREEZE_MODE_STATIC);
-	BIND_ENUM_CONSTANT(FREEZE_MODE_KINEMATIC);
-
-	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_AUTO);
-	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_CUSTOM);
-
-	BIND_ENUM_CONSTANT(DAMP_MODE_COMBINE);
-	BIND_ENUM_CONSTANT(DAMP_MODE_REPLACE);
-
-	BIND_ENUM_CONSTANT(CCD_MODE_DISABLED);
-	BIND_ENUM_CONSTANT(CCD_MODE_CAST_RAY);
-	BIND_ENUM_CONSTANT(CCD_MODE_CAST_SHAPE);
-}
+void RigidBody2D::_bind_methods() {}
 
 void RigidBody2D::_validate_property(PropertyInfo& p_property) const
 {
@@ -938,8 +723,7 @@ void RigidBody2D::_reload_physics_characteristics()
 {
 	if (physics_material_override.is_null()) {
 		PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_BOUNCE, 0);
-		PhysicsServer2D::get_singleton(
-)->body_set_param(get_rid(), PS2DE::BODY_PARAM_FRICTION, 1);
+		PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_FRICTION, 1);
 	}
 	else {
 		PhysicsServer2D::get_singleton()->body_set_param(

@@ -120,8 +120,8 @@ public:
 	~Compositor();
 
 	// Compositor effects
-	void set_compositor_effects(const TypedArray<CompositorEffect>& p_compositor_effects);
-	TypedArray<CompositorEffect> get_compositor_effects() const;
+	void set_compositor_effects(const Array& p_compositor_effects);
+	Array get_compositor_effects() const;
 };
 
 

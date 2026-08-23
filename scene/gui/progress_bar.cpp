@@ -73,7 +73,7 @@ void ProgressBar::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_DRAW: {
-		draw_style_box(theme_cache.background_style, Rect2(Point2(), get_size()));
+		draw_style_box(theme_cache.background_style.ptr(), Rect2(Point2(), get_size()));
 
 		if (indeterminate) {
 			Size2 size = get_size();
@@ -97,7 +97,7 @@ void ProgressBar::_notification(int p_what)
 
 				real_t x = right_to_left ? size.width - _indeterminate_fill_progress
 										 : _indeterminate_fill_progress - fill_size;
-				draw_style_box(theme_cache.fill_style,
+				draw_style_box(theme_cache.fill_style.ptr(),
 					Rect2(x, 0, fill_size, size.height).intersection(Rect2(Point2(), size)));
 			} break;
 			case FILL_TOP_TO_BOTTOM: {
@@ -105,7 +105,7 @@ void ProgressBar::_notification(int p_what)
 					_indeterminate_fill_progress = 0;
 				}
 
-				draw_style_box(theme_cache.fill_style,
+				draw_style_box(theme_cache.fill_style.ptr(),
 					Rect2(0, _indeterminate_fill_progress - fill_size, size.width, fill_size)
 						.intersection(Rect2(Point2(), size)));
 			} break;
@@ -114,7 +114,7 @@ void ProgressBar::_notification(int p_what)
 					_indeterminate_fill_progress = -fill_size;
 				}
 
-				draw_style_box(theme_cache.fill_style,
+				draw_style_box(theme_cache.fill_style.ptr(),
 					Rect2(0, size.height - _indeterminate_fill_progress, size.width, fill_size)
 						.intersection(Rect2(Point2(), size)));
 			} break;
@@ -138,13 +138,13 @@ void ProgressBar::_notification(int p_what)
 			if (p > 0) {
 				if (right_to_left) {
 					int p_remaining = std::round((1.0 - r) * (get_size().width - mp));
-					draw_style_box(theme_cache.fill_style,
+					draw_style_box(theme_cache.fill_style.ptr(),
 						Rect2(Point2(p_remaining, 0),
 							Size2(p + theme_cache.fill_style->get_minimum_size().width,
 								get_size().height)));
 				}
 				else {
-					draw_style_box(theme_cache.fill_style,
+					draw_style_box(theme_cache.fill_style.ptr(),
 						Rect2(Point2(0, 0),
 							Size2(p + theme_cache.fill_style->get_minimum_size().width,
 								get_size().height)));
@@ -158,14 +158,14 @@ void ProgressBar::_notification(int p_what)
 
 			if (p > 0) {
 				if (mode == FILL_TOP_TO_BOTTOM) {
-					draw_style_box(theme_cache.fill_style,
+					draw_style_box(theme_cache.fill_style.ptr(),
 						Rect2(Point2(0, 0),
 							Size2(get_size().width,
 								p + theme_cache.fill_style->get_minimum_size().height)));
 				}
 				else {
 					int p_remaining = std::round((1.0 - r) * (get_size().height - mp));
-					draw_style_box(theme_cache.fill_style,
+					draw_style_box(theme_cache.fill_style.ptr(),
 						Rect2(Point2(0, p_remaining),
 							Size2(get_size().width,
 								p + theme_cache.fill_style->get_minimum_size().height)));

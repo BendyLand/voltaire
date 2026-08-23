@@ -396,40 +396,6 @@ BoneAttachment3D::BoneAttachment3D()
 	set_physics_interpolation_mode(PHYSICS_INTERPOLATION_MODE_OFF);
 }
 
-void BoneAttachment3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("get_skeleton"), &BoneAttachment3D::get_skeleton);
-
-	ClassDB::bind_method(D_METHOD("set_bone_name", "bone_name"), &BoneAttachment3D::set_bone_name);
-	ClassDB::bind_method(D_METHOD("get_bone_name"), &BoneAttachment3D::get_bone_name);
-
-	ClassDB::bind_method(D_METHOD("set_bone_idx", "bone_idx"), &BoneAttachment3D::set_bone_idx);
-	ClassDB::bind_method(D_METHOD("get_bone_idx"), &BoneAttachment3D::get_bone_idx);
-
-	ClassDB::bind_method(D_METHOD("on_skeleton_update"), &BoneAttachment3D::on_skeleton_update);
-
-	ClassDB::bind_method(
-		D_METHOD("set_override_pose", "override_pose"), &BoneAttachment3D::set_override_pose);
-	ClassDB::bind_method(D_METHOD("get_override_pose"), &BoneAttachment3D::get_override_pose);
-
-	ClassDB::bind_method(D_METHOD("set_use_external_skeleton", "use_external_skeleton"),
-		&BoneAttachment3D::set_use_external_skeleton);
-	ClassDB::bind_method(
-		D_METHOD("get_use_external_skeleton"), &BoneAttachment3D::get_use_external_skeleton);
-	ClassDB::bind_method(D_METHOD("set_external_skeleton", "external_skeleton"),
-		&BoneAttachment3D::set_external_skeleton);
-	ClassDB::bind_method(
-		D_METHOD("get_external_skeleton"), &BoneAttachment3D::get_external_skeleton);
-
-	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "bone_name"), "set_bone_name", "get_bone_name");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "bone_idx"), "set_bone_idx", "get_bone_idx");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "override_pose"), "set_override_pose", "get_override_pose");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_external_skeleton"), "set_use_external_skeleton",
-		"get_use_external_skeleton");
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "external_skeleton",
-					 PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Skeleton3D"),
-		"set_external_skeleton", "get_external_skeleton");
-}
+void BoneAttachment3D::_bind_methods() {}
 
 

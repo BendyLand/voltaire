@@ -45,15 +45,15 @@ PackedStringArray RetargetModifier3D::get_configuration_warnings() const
 
 void RetargetModifier3D::_profile_changed(Ref<SkeletonProfile> p_old, Ref<SkeletonProfile> p_new)
 {
-	if (p_old.is_valid() && p_old->is_connected(SNAME("profile_updated"),
+	if (p_old.is_valid() && p_old->obj->is_connected(SNAME("profile_updated"),
 								callable_mp(this, &RetargetModifier3D::cache_rests_with_reset))) {
-		p_old->disconnect(SNAME("profile_updated"),
+		p_old->obj->disconnect(SNAME("profile_updated"),
 			callable_mp(this, &RetargetModifier3D::cache_rests_with_reset));
 	}
 	profile = p_new;
-	if (p_new.is_valid() && !p_new->is_connected(SNAME("profile_updated"),
+	if (p_new.is_valid() && !p_new->obj->is_connected(SNAME("profile_updated"),
 								callable_mp(this, &RetargetModifier3D::cache_rests_with_reset))) {
-		p_new->connect(SNAME("profile_updated"),
+		p_new->obj->connect(SNAME("profile_updated"),
 			callable_mp(this, &RetargetModifier3D::cache_rests_with_reset));
 	}
 	cache_rests_with_reset();
@@ -296,42 +296,7 @@ void RetargetModifier3D::_validate_property(PropertyInfo& p_property) const
 	}
 }
 
-void RetargetModifier3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_profile", "profile"), &RetargetModifier3D::set_profile);
-	ClassDB::bind_method(D_METHOD("get_profile"), &RetargetModifier3D::get_profile);
-	ClassDB::bind_method(D_METHOD("set_use_global_pose", "use_global_pose"),
-		&RetargetModifier3D::set_use_global_pose);
-	ClassDB::bind_method(
-		D_METHOD("is_using_global_pose"), &RetargetModifier3D::is_using_global_pose);
-	ClassDB::bind_method(
-		D_METHOD("set_enable_flags", "enable_flags"), &RetargetModifier3D::set_enable_flags);
-	ClassDB::bind_method(D_METHOD("get_enable_flags"), &RetargetModifier3D::get_enable_flags);
-
-	ClassDB::bind_method(
-		D_METHOD("set_position_enabled", "enabled"), &RetargetModifier3D::set_position_enabled);
-	ClassDB::bind_method(D_METHOD("is_position_enabled"), &RetargetModifier3D::is_position_enabled);
-	ClassDB::bind_method(
-		D_METHOD("set_rotation_enabled", "enabled"), &RetargetModifier3D::set_rotation_enabled);
-	ClassDB::bind_method(D_METHOD("is_rotation_enabled"), &RetargetModifier3D::is_rotation_enabled);
-	ClassDB::bind_method(
-		D_METHOD("set_scale_enabled", "enabled"), &RetargetModifier3D::set_scale_enabled);
-	ClassDB::bind_method(D_METHOD("is_scale_enabled"), &RetargetModifier3D::is_scale_enabled);
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "profile", PROPERTY_HINT_RESOURCE_TYPE,
-					 SkeletonProfile::get_class_static()),
-		"set_profile", "get_profile");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_global_pose"), "set_use_global_pose",
-		"is_using_global_pose");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "enable", PROPERTY_HINT_FLAGS, "Position,Rotation,Scale"),
-		"set_enable_flags", "get_enable_flags");
-
-	BIND_BITFIELD_FLAG(TRANSFORM_FLAG_POSITION);
-	BIND_BITFIELD_FLAG(TRANSFORM_FLAG_ROTATION);
-	BIND_BITFIELD_FLAG(TRANSFORM_FLAG_SCALE);
-	BIND_BITFIELD_FLAG(TRANSFORM_FLAG_ALL);
-}
+void RetargetModifier3D::_bind_methods() {}
 
 void RetargetModifier3D::_set_active(bool p_active)
 {

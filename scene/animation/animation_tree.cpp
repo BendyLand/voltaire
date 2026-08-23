@@ -588,71 +588,11 @@ void AnimationNode::get_argument_options(
 			}
 		}
 	}
-	Resource::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
-void AnimationNode::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("add_input", "name"), &AnimationNode::add_input);
-	ClassDB::bind_method(D_METHOD("remove_input", "index"), &AnimationNode::remove_input);
-	ClassDB::bind_method(
-		D_METHOD("set_input_name", "input", "name"), &AnimationNode::set_input_name);
-	ClassDB::bind_method(D_METHOD("get_input_name", "input"), &AnimationNode::get_input_name);
-	ClassDB::bind_method(D_METHOD("get_input_count"), &AnimationNode::get_input_count);
-	ClassDB::bind_method(D_METHOD("find_input", "name"), &AnimationNode::find_input);
-
-	ClassDB::bind_method(
-		D_METHOD("set_filter_path", "path", "enable"), &AnimationNode::set_filter_path);
-	ClassDB::bind_method(D_METHOD("is_path_filtered", "path"), &AnimationNode::is_path_filtered);
-
-	ClassDB::bind_method(
-		D_METHOD("set_filter_enabled", "enable"), &AnimationNode::set_filter_enabled);
-	ClassDB::bind_method(D_METHOD("is_filter_enabled"), &AnimationNode::is_filter_enabled);
-
-	ClassDB::bind_method(D_METHOD("get_processing_animation_tree_instance_id"),
-		&AnimationNode::get_processing_animation_tree_instance_id);
-
-	ClassDB::bind_method(D_METHOD("is_process_testing"), &AnimationNode::is_process_testing);
-
-	ClassDB::bind_method(D_METHOD("_set_filters", "filters"), &AnimationNode::_set_filters);
-	ClassDB::bind_method(D_METHOD("_get_filters"), &AnimationNode::_get_filters);
-
-	ClassDB::bind_method(D_METHOD("blend_animation", "animation", "time", "delta", "seeked",
-							 "is_external_seeking", "blend", "looped_flag"),
-		&AnimationNode::blend_animation_ex, DEFVAL(Animation::LOOPED_FLAG_NONE));
-	ClassDB::bind_method(D_METHOD("blend_node", "name", "node", "time", "seek",
-							 "is_external_seeking", "blend", "filter", "sync", "test_only"),
-		&AnimationNode::blend_node_ex, DEFVAL(FILTER_IGNORE), DEFVAL(true), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("blend_input", "input_index", "time", "seek",
-							 "is_external_seeking", "blend", "filter", "sync", "test_only"),
-		&AnimationNode::blend_input_ex, DEFVAL(FILTER_IGNORE), DEFVAL(true), DEFVAL(false));
-
-	ClassDB::bind_method(
-		D_METHOD("set_parameter", "name", "value"), &AnimationNode::set_parameter_ex);
-	ClassDB::bind_method(D_METHOD("get_parameter", "name"), &AnimationNode::get_parameter_ex);
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "filter_enabled", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_NO_EDITOR),
-		"set_filter_enabled", "is_filter_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "filters", PROPERTY_HINT_NONE, "",
-					 PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL),
-		"_set_filters", "_get_filters");
-
-	// For "tree_changed", wouldn't it be nice, if we could pass in the source?
-	// That way we would be able to partially rebuild instances.
-	ADD_SIGNAL(MethodInfo("tree_changed"));
-	ADD_SIGNAL(MethodInfo("node_updated", PropertyInfo(Variant::INT, "object_id")));
-	ADD_SIGNAL(MethodInfo("animation_node_renamed", PropertyInfo(Variant::INT, "object_id"),
-		PropertyInfo(Variant::STRING, "old_name"), PropertyInfo(Variant::STRING, "new_name")));
-	ADD_SIGNAL(MethodInfo("animation_node_removed", PropertyInfo(Variant::INT, "object_id"),
-		PropertyInfo(Variant::STRING, "node_name")));
-
-	BIND_ENUM_CONSTANT(FILTER_IGNORE);
-	BIND_ENUM_CONSTANT(FILTER_PASS);
-	BIND_ENUM_CONSTANT(FILTER_STOP);
-	BIND_ENUM_CONSTANT(FILTER_BLEND);
-}
+void AnimationNode::_bind_methods() {}
 
 AnimationNode::AnimationNode() {}
 
@@ -660,42 +600,46 @@ AnimationNode::AnimationNode() {}
 
 void AnimationRootNode::_add_node(const Ref<AnimationNode>& p_node)
 {
-	p_node->connect(SNAME("tree_changed"), callable_mp(this, &AnimationRootNode::_tree_changed),
-		CONNECT_REFERENCE_COUNTED);
-	p_node->connect(SNAME("node_updated"), callable_mp(this, &AnimationRootNode::_node_updated),
-		CONNECT_REFERENCE_COUNTED);
-	p_node->connect(SNAME("animation_node_renamed"),
-		callable_mp(this, &AnimationRootNode::_animation_node_renamed), CONNECT_REFERENCE_COUNTED);
-	p_node->connect(SNAME("animation_node_removed"),
-		callable_mp(this, &AnimationRootNode::_animation_node_removed), CONNECT_REFERENCE_COUNTED);
+	p_node->obj->connect(SNAME("tree_changed"),
+		callable_mp(this, &AnimationRootNode::_tree_changed), Object::CONNECT_REFERENCE_COUNTED);
+	p_node->obj->connect(SNAME("node_updated"),
+		callable_mp(this, &AnimationRootNode::_node_updated), Object::CONNECT_REFERENCE_COUNTED);
+	p_node->obj->connect(SNAME("animation_node_renamed"),
+		callable_mp(this, &AnimationRootNode::_animation_node_renamed),
+		Object::CONNECT_REFERENCE_COUNTED);
+	p_node->obj->connect(SNAME("animation_node_removed"),
+		callable_mp(this, &AnimationRootNode::_animation_node_removed),
+		Object::CONNECT_REFERENCE_COUNTED);
 }
 
 void AnimationRootNode::_remove_node(const Ref<AnimationNode>& p_node)
 {
-	p_node->disconnect(SNAME("tree_changed"), callable_mp(this, &AnimationRootNode::_tree_changed));
-	p_node->disconnect(SNAME("node_updated"), callable_mp(this, &AnimationRootNode::_node_updated));
-	p_node->disconnect(SNAME("animation_node_renamed"),
+	p_node->obj->disconnect(
+		SNAME("tree_changed"), callable_mp(this, &AnimationRootNode::_tree_changed));
+	p_node->obj->disconnect(
+		SNAME("node_updated"), callable_mp(this, &AnimationRootNode::_node_updated));
+	p_node->obj->disconnect(SNAME("animation_node_renamed"),
 		callable_mp(this, &AnimationRootNode::_animation_node_renamed));
-	p_node->disconnect(SNAME("animation_node_removed"),
+	p_node->obj->disconnect(SNAME("animation_node_removed"),
 		callable_mp(this, &AnimationRootNode::_animation_node_removed));
 }
 
-void AnimationRootNode::_tree_changed() { emit_signal(SNAME("tree_changed")); }
+void AnimationRootNode::_tree_changed() { this->obj->emit_signal(SNAME("tree_changed")); }
 
 void AnimationRootNode::_node_updated(const ObjectID& p_oid)
 {
-	emit_signal(SNAME("node_updated"), p_oid);
+	this->obj->emit_signal(SNAME("node_updated"), p_oid);
 }
 
 void AnimationRootNode::_animation_node_renamed(
 	const ObjectID& p_oid, const String& p_old_name, const String& p_new_name)
 {
-	emit_signal(SNAME("animation_node_renamed"), p_oid, p_old_name, p_new_name);
+	this->obj->emit_signal(SNAME("animation_node_renamed"), p_oid, p_old_name, p_new_name);
 }
 
 void AnimationRootNode::_animation_node_removed(const ObjectID& p_oid, const StringName& p_node)
 {
-	emit_signal(SNAME("animation_node_removed"), p_oid, p_node);
+	this->obj->emit_signal(SNAME("animation_node_removed"), p_oid, p_node);
 }
 
 ////////////////////
@@ -703,26 +647,26 @@ void AnimationRootNode::_animation_node_removed(const ObjectID& p_oid, const Str
 void AnimationTree::set_root_animation_node(const Ref<AnimationRootNode>& p_animation_node)
 {
 	if (root_animation_node.is_valid()) {
-		root_animation_node->disconnect(
+		root_animation_node->obj->disconnect(
 			SNAME("tree_changed"), callable_mp(this, &AnimationTree::_tree_changed));
-		root_animation_node->disconnect(
+		root_animation_node->obj->disconnect(
 			SNAME("node_updated"), callable_mp(this, &AnimationTree::_node_updated));
-		root_animation_node->disconnect(SNAME("animation_node_renamed"),
+		root_animation_node->obj->disconnect(SNAME("animation_node_renamed"),
 			callable_mp(this, &AnimationTree::_animation_node_renamed));
-		root_animation_node->disconnect(SNAME("animation_node_removed"),
+		root_animation_node->obj->disconnect(SNAME("animation_node_removed"),
 			callable_mp(this, &AnimationTree::_animation_node_removed));
 	}
 
 	root_animation_node = p_animation_node;
 
 	if (root_animation_node.is_valid()) {
-		root_animation_node->connect(
+		root_animation_node->obj->connect(
 			SNAME("tree_changed"), callable_mp(this, &AnimationTree::_tree_changed));
-		root_animation_node->connect(
+		root_animation_node->obj->connect(
 			SNAME("node_updated"), callable_mp(this, &AnimationTree::_node_updated));
-		root_animation_node->connect(SNAME("animation_node_renamed"),
+		root_animation_node->obj->connect(SNAME("animation_node_renamed"),
 			callable_mp(this, &AnimationTree::_animation_node_renamed));
-		root_animation_node->connect(SNAME("animation_node_removed"),
+		root_animation_node->obj->connect(SNAME("animation_node_removed"),
 			callable_mp(this, &AnimationTree::_animation_node_removed));
 	}
 
@@ -909,7 +853,7 @@ void AnimationTree::_update_properties_for_node(
 {
 	ERR_FAIL_COND(p_node.is_null());
 
-	instance_paths[p_node->get_instance_id()].insert(p_base_path);
+	instance_paths[p_node->obj->get_instance_id()].insert(p_base_path);
 
 	const String base_path_str = p_base_path;
 

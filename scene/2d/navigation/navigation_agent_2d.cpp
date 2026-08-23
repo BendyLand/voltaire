@@ -200,7 +200,7 @@ NavigationAgent2D::NavigationAgent2D()
 	navigation_result.instantiate();
 
 #ifdef DEBUG_ENABLED
-	NavigationServer2D::get_singleton()->connect(SNAME("navigation_debug_changed"),
+	NavigationServer2D::get_singleton()->obj->connect(SNAME("navigation_debug_changed"),
 		callable_mp(this, &NavigationAgent2D::_navigation_debug_changed));
 #endif // DEBUG_ENABLED
 }
@@ -212,7 +212,7 @@ NavigationAgent2D::~NavigationAgent2D()
 	agent = RID(); // Pointless
 
 #ifdef DEBUG_ENABLED
-	NavigationServer2D::get_singleton()->disconnect(SNAME("navigation_debug_changed"),
+	NavigationServer2D::get_singleton()->obj->disconnect(SNAME("navigation_debug_changed"),
 		callable_mp(this, &NavigationAgent2D::_navigation_debug_changed));
 
 	ERR_FAIL_NULL(RenderingServer::get_singleton());

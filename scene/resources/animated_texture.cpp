@@ -254,7 +254,7 @@ void AnimatedTexture::_bind_methods() {}
 
 void AnimatedTexture::_finish_non_thread_safe_setup()
 {
-	RenderingServer::get_singleton()->connect(
+	RenderingServer::get_singleton()->obj->connect(
 		"frame_pre_draw", callable_mp(this, &AnimatedTexture::_update_proxy));
 }
 

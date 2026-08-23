@@ -2849,9 +2849,9 @@ void Viewport::_gui_update_mouse_over()
 
 	if (gui.sending_mouse_enter_exit_notifications) {
 		// If notifications are already being sent, delay call to next frame.
-		if (get_tree() && !get_tree()->is_connected(SNAME("process_frame"),
+		if (get_tree() && !get_tree()->obj->is_connected(SNAME("process_frame"),
 							  callable_mp(this, &Viewport::_gui_update_mouse_over))) {
-			get_tree()->connect(SNAME("process_frame"),
+			get_tree()->obj->connect(SNAME("process_frame"),
 				callable_mp(this, &Viewport::_gui_update_mouse_over), Object::CONNECT_ONE_SHOT);
 		}
 		return;
@@ -3792,7 +3792,8 @@ void Viewport::_drop_mouse_over(Control* p_until_control)
 
 	// Send Mouse Exit notifications to children first. Don't send to p_until_control or above.
 	int notification_until =
-		p_until_control ? gui.mouse_over_hierarchy.find(p_until_control->obj->get_instance_id()) + 1 : 0;
+		p_until_control ? gui.mouse_over_hierarchy.find(p_until_control->obj->get_instance_id()) + 1
+						: 0;
 	for (int i = gui.mouse_over_hierarchy.size() - 1; i >= notification_until; i--) {
 		Control* ctrl = ObjectDB::get_instance<Control>(gui.mouse_over_hierarchy[i]);
 		if (ctrl && ctrl->is_inside_tree()) {
@@ -5758,7 +5759,7 @@ Viewport::Viewport()
 	// Setting to ON allows each viewport to have a fresh interpolation state.
 	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_ON);
 
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp(this, &Viewport::_on_settings_changed));
 }
 

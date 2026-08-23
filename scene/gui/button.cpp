@@ -450,7 +450,7 @@ void Button::_notification(int p_what)
 				icon_ofs = icon_ofs.floor();
 
 				Rect2 icon_region = Rect2(icon_ofs, icon_size);
-				draw_texture_rect(_icon, icon_region, false, icon_modulate_color);
+				draw_texture_rect(_icon.ptr(), icon_region, false, icon_modulate_color);
 			}
 
 			if (!xl_text.is_empty()) {

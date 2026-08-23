@@ -184,13 +184,13 @@ void ColorPicker::_notification(int p_what)
 		for (int i = 0; i < MODE_BUTTON_COUNT; i++) {
 			mode_btns[i]->begin_bulk_theme_override();
 			mode_btns[i]->add_theme_style_override(
-				SceneStringName(pressed), theme_cache.mode_button_pressed);
+				SceneStringName(pressed), theme_cache.mode_button_pressed.ptr());
 			mode_btns[i]->add_theme_style_override(
-				"hover_pressed", theme_cache.mode_button_hover_pressed);
+				"hover_pressed", theme_cache.mode_button_hover_pressed.ptr());
 			mode_btns[i]->add_theme_style_override(
-				CoreStringName(normal), theme_cache.mode_button_normal);
+				CoreStringName(normal), theme_cache.mode_button_normal.ptr());
 			mode_btns[i]->add_theme_style_override(
-				SceneStringName(hover), theme_cache.mode_button_hover);
+				SceneStringName(hover), theme_cache.mode_button_hover.ptr());
 			mode_btns[i]->end_bulk_theme_override();
 		}
 
@@ -702,22 +702,22 @@ void ColorPicker::_reset_sliders_theme()
 
 	for (int i = 0; i < MODE_SLIDER_COUNT; i++) {
 		sliders[i]->begin_bulk_theme_override();
-		sliders[i]->add_theme_icon_override(SNAME("grabber"), theme_cache.bar_arrow);
-		sliders[i]->add_theme_icon_override(SNAME("grabber_highlight"), theme_cache.bar_arrow);
+		sliders[i]->add_theme_icon_override(SNAME("grabber"), theme_cache.bar_arrow.ptr());
+		sliders[i]->add_theme_icon_override(SNAME("grabber_highlight"), theme_cache.bar_arrow.ptr());
 		sliders[i]->add_theme_constant_override(
 			SNAME("grabber_offset"), 8 * theme_cache.base_scale);
 		if (!colorize_sliders) {
-			sliders[i]->add_theme_style_override(SNAME("slider"), style_box_flat);
+			sliders[i]->add_theme_style_override(SNAME("slider"), style_box_flat.ptr());
 		}
 		sliders[i]->end_bulk_theme_override();
 	}
 
 	alpha_slider->begin_bulk_theme_override();
-	alpha_slider->add_theme_icon_override(SNAME("grabber"), theme_cache.bar_arrow);
-	alpha_slider->add_theme_icon_override(SNAME("grabber_highlight"), theme_cache.bar_arrow);
+	alpha_slider->add_theme_icon_override(SNAME("grabber"), theme_cache.bar_arrow.ptr());
+	alpha_slider->add_theme_icon_override(SNAME("grabber_highlight"), theme_cache.bar_arrow.ptr());
 	alpha_slider->add_theme_constant_override(SNAME("grabber_offset"), 8 * theme_cache.base_scale);
 	if (!colorize_sliders) {
-		alpha_slider->add_theme_style_override(SNAME("slider"), style_box_flat);
+		alpha_slider->add_theme_style_override(SNAME("slider"), style_box_flat.ptr());
 	}
 	alpha_slider->end_bulk_theme_override();
 }
@@ -1080,7 +1080,7 @@ void ColorPicker::_palette_file_selected(const String& p_path)
 		Ref<ColorPalette> palette;
 		palette.instantiate();
 		palette->set_colors(get_presets());
-		Error error = ResourceSaver::save(palette, p_path);
+		Error error = ResourceSaver::save(palette.ptr(), p_path);
 		ERR_FAIL_COND_MSG(error != Error::OK,
 			vformat("Cannot open color palette file for writing at: %s", p_path));
 #ifdef TOOLS_ENABLED
@@ -1429,10 +1429,10 @@ void ColorPicker::set_colorize_sliders(bool p_colorize_sliders)
 		Ref<StyleBoxEmpty> style_box_empty(memnew(StyleBoxEmpty));
 
 		for (int i = 0; i < MODE_SLIDER_COUNT; i++) {
-			sliders[i]->add_theme_style_override("slider", style_box_empty);
+			sliders[i]->add_theme_style_override("slider", style_box_empty.ptr());
 		}
 
-		alpha_slider->add_theme_style_override("slider", style_box_empty);
+		alpha_slider->add_theme_style_override("slider", style_box_empty.ptr());
 	}
 	else {
 		Ref<StyleBoxFlat> style_box_flat(memnew(StyleBoxFlat));
@@ -1440,10 +1440,10 @@ void ColorPicker::set_colorize_sliders(bool p_colorize_sliders)
 		style_box_flat->set_bg_color(Color(0.2, 0.23, 0.31).lerp(Color(0, 0, 0, 1), 0.3).clamp());
 
 		for (int i = 0; i < MODE_SLIDER_COUNT; i++) {
-			sliders[i]->add_theme_style_override("slider", style_box_flat);
+			sliders[i]->add_theme_style_override("slider", style_box_flat.ptr());
 		}
 
-		alpha_slider->add_theme_style_override("slider", style_box_flat);
+		alpha_slider->add_theme_style_override("slider", style_box_flat.ptr());
 	}
 }
 
@@ -1517,7 +1517,7 @@ void ColorPicker::_sample_draw()
 			Point2(), Size2(sample->get_size().width * 0.5, sample->get_size().height * 0.95));
 
 		if (old_color.a < 1.0) {
-			sample->draw_texture_rect(theme_cache.sample_bg, rect_old, true);
+			sample->draw_texture_rect(theme_cache.sample_bg.ptr(), rect_old, true);
 		}
 
 		sample->draw_rect(rect_old, old_color);
@@ -1526,7 +1526,7 @@ void ColorPicker::_sample_draw()
 			// Draw a revert indicator to indicate that the old sample can be clicked to revert to
 			// this old color. Adapt icon color to the background color (taking alpha checkerboard
 			// into account) so that it's always visible.
-			sample->draw_texture(theme_cache.sample_revert,
+			sample->draw_texture(theme_cache.sample_revert.ptr(),
 				rect_old.size * 0.5 - theme_cache.sample_revert->get_size() * 0.5,
 				Math::lerp(0.75f, old_color.get_luminance(), old_color.a) < 0.455
 					? Color(1, 1, 1)
@@ -1541,7 +1541,7 @@ void ColorPicker::_sample_draw()
 		if (is_color_overbright(color)) {
 			// Draw an indicator to denote that the old color is "overbright" and can't be displayed
 			// accurately in the preview.
-			sample->draw_texture(theme_cache.overbright_indicator, Point2());
+			sample->draw_texture(theme_cache.overbright_indicator.ptr(), Point2());
 		}
 	}
 	else {
@@ -1550,7 +1550,7 @@ void ColorPicker::_sample_draw()
 	}
 
 	if (color.a < 1.0) {
-		sample->draw_texture_rect(theme_cache.sample_bg, rect_new, true);
+		sample->draw_texture_rect(theme_cache.sample_bg.ptr(), rect_new, true);
 	}
 
 	sample->draw_rect(rect_new, color);
@@ -1564,7 +1564,7 @@ void ColorPicker::_sample_draw()
 		// Draw an indicator to denote that the new color is "overbright" and can't be displayed
 		// accurately in the preview.
 		sample->draw_texture(
-			theme_cache.overbright_indicator, Point2(sample->get_size().width * 0.5, 0));
+			theme_cache.overbright_indicator.ptr(), Point2(sample->get_size().width * 0.5, 0));
 	}
 }
 
@@ -1589,7 +1589,7 @@ void ColorPicker::_alpha_slider_draw()
 	Color right_color;
 	const real_t margin = 16 * theme_cache.base_scale;
 	alpha_slider->draw_texture_rect(
-		theme_cache.sample_bg, Rect2(Point2(0, 0), Size2(size.x, margin)), true);
+		theme_cache.sample_bg.ptr(), Rect2(Point2(0, 0), Size2(size.x, margin)), true);
 
 	left_color = color_normalized;
 	left_color.a = 0;
@@ -1761,11 +1761,11 @@ void ColorPicker::_pick_button_pressed()
 		}
 
 		picker_preview_style_box.instantiate();
-		picker_preview->add_theme_style_override(SceneStringName(panel), picker_preview_style_box);
+		picker_preview->add_theme_style_override(SceneStringName(panel), picker_preview_style_box.ptr());
 
 		picker_preview_style_box_color.instantiate();
 		picker_preview_color->add_theme_style_override(
-			SceneStringName(panel), picker_preview_style_box_color);
+			SceneStringName(panel), picker_preview_style_box_color.ptr());
 
 		add_child(picker_window, false, INTERNAL_MODE_FRONT);
 	}
@@ -1803,7 +1803,7 @@ void ColorPicker::_target_gui_input(const Ref<InputEvent>& p_event)
 				Ref<InputEventMouseButton> new_ev = p_event->duplicate();
 				new_ev->set_position(win_mpos);
 				new_ev->set_global_position(win_mpos);
-				w->push_input(new_ev, true);
+				w->push_input(new_ev.ptr(), true);
 				return;
 			}
 			w = w->get_parent_visible_window();
@@ -1971,11 +1971,11 @@ void ColorPicker::_pick_button_pressed_legacy()
 		picker_preview->add_child(picker_texture_zoom);
 
 		picker_preview_style_box.instantiate();
-		picker_preview->add_theme_style_override(SceneStringName(panel), picker_preview_style_box);
+		picker_preview->add_theme_style_override(SceneStringName(panel), picker_preview_style_box.ptr());
 
 		picker_preview_style_box_color.instantiate();
 		picker_preview_color->add_theme_style_override(
-			SceneStringName(panel), picker_preview_style_box_color);
+			SceneStringName(panel), picker_preview_style_box_color.ptr());
 	}
 
 	Rect2i screen_rect;
@@ -2572,13 +2572,13 @@ void ColorPickerButton::_notification(int p_what)
 	case NOTIFICATION_DRAW: {
 		const Rect2 r = Rect2(theme_cache.normal_style->get_offset(),
 			get_size() - theme_cache.normal_style->get_minimum_size());
-		draw_texture_rect(theme_cache.background_icon, r, true);
+		draw_texture_rect(theme_cache.background_icon.ptr(), r, true);
 		draw_rect(r, color);
 
 		if (color.r > 1 || color.g > 1 || color.b > 1) {
 			// Draw an indicator to denote that the color is "overbright" and can't be displayed
 			// accurately in the preview
-			draw_texture(theme_cache.overbright_indicator, theme_cache.normal_style->get_offset());
+			draw_texture(theme_cache.overbright_indicator.ptr(), theme_cache.normal_style->get_offset());
 		}
 	} break;
 
@@ -2721,7 +2721,7 @@ void ColorPresetButton::_notification(int p_what)
 				bg_texture_rect =
 					bg_texture_rect.grow_side(SIDE_BOTTOM, -sb_flat->get_margin(SIDE_BOTTOM));
 
-				draw_texture_rect(theme_cache.background_icon, bg_texture_rect, true);
+				draw_texture_rect(theme_cache.background_icon.ptr(), bg_texture_rect, true);
 				sb_flat->set_bg_color(preset_color);
 			}
 			sb_flat->set_bg_color(preset_color);
@@ -2735,7 +2735,7 @@ void ColorPresetButton::_notification(int p_what)
 						StyleBoxTexture::AxisStretchMode::AXIS_STRETCH_MODE_TILE) ||
 					(sb_texture->get_h_axis_stretch_mode() ==
 						StyleBoxTexture::AxisStretchMode::AXIS_STRETCH_MODE_TILE_FIT);
-				draw_texture_rect(theme_cache.background_icon, r, use_tile_texture);
+				draw_texture_rect(theme_cache.background_icon.ptr(), r, use_tile_texture);
 			}
 			sb_texture->set_modulate(preset_color);
 			sb_texture->draw(get_canvas_item(), r);
@@ -2753,7 +2753,7 @@ void ColorPresetButton::_notification(int p_what)
 		if (is_color_overbright(preset_color)) {
 			// Draw an indicator to denote that the color is "overbright" and can't be displayed
 			// accurately in the preview
-			draw_texture(theme_cache.overbright_indicator, Vector2(0, 0));
+			draw_texture(theme_cache.overbright_indicator.ptr(), Vector2(0, 0));
 		}
 
 	} break;

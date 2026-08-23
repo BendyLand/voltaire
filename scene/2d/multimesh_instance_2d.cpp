@@ -65,30 +65,13 @@ void MultiMeshInstance2D::_notification(int p_what)
 	}
 	case NOTIFICATION_DRAW: {
 		if (multimesh.is_valid()) {
-			draw_multimesh(multimesh, texture);
+			draw_multimesh(multimesh.ptr(), texture);
 		}
 	} break;
 	}
 }
 
-void MultiMeshInstance2D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_multimesh", "multimesh"), &MultiMeshInstance2D::set_multimesh);
-	ClassDB::bind_method(D_METHOD("get_multimesh"), &MultiMeshInstance2D::get_multimesh);
-
-	ClassDB::bind_method(D_METHOD("set_texture", "texture"), &MultiMeshInstance2D::set_texture);
-	ClassDB::bind_method(D_METHOD("get_texture"), &MultiMeshInstance2D::get_texture);
-
-	ADD_SIGNAL(MethodInfo("texture_changed"));
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "multimesh", PROPERTY_HINT_RESOURCE_TYPE,
-					 MultiMesh::get_class_static()),
-		"set_multimesh", "get_multimesh");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE,
-					 Texture2D::get_class_static()),
-		"set_texture", "get_texture");
-}
+void MultiMeshInstance2D::_bind_methods() {}
 
 void MultiMeshInstance2D::set_multimesh(const Ref<MultiMesh>& p_multimesh)
 {

@@ -466,7 +466,7 @@ p_enabled);
 		bool p_process_in_physics = false, bool p_ignore_time_scale = false);
 	Tween* create_tween();
 	void remove_tween(const Ref<Tween>& p_tween);
-	TypedArray<Tween> get_processed_tweens();
+	Array get_processed_tweens();
 
 	// used by Main::start, don't use otherwise
 	void add_current_scene(Node* p_current);

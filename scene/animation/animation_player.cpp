@@ -353,7 +353,7 @@ bool AnimationPlayer::_blend_pre_process(
 	}
 
 	AnimationData* p_from = &animation_set[playback.current.animation_name];
-	tmp_from = p_from->animation->get_instance_id();
+	tmp_from = p_from->animation->obj->get_instance_id();
 	end_reached = false;
 	end_notify = false;
 
@@ -386,7 +386,7 @@ void AnimationPlayer::_blend_post_process()
 	if (end_reached) {
 		// If the method track changes current animation, the animation is not finished.
 		if (tmp_from ==
-			animation_set[playback.current.animation_name].animation->get_instance_id()) {
+			animation_set[playback.current.animation_name].animation->obj->get_instance_id()) {
 			if (!playback_queue.is_empty()) {
 				if (!finished_anim.is_empty()) {
 					this->obj->emit_signal(SceneStringName(animation_finished), finished_anim);

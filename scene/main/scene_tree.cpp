@@ -133,9 +133,9 @@ void SceneTree::ClientPhysicsInterpolation::physics_process()
 bool SceneTree::_physics_interpolation_enabled = false;
 bool SceneTree::_physics_interpolation_enabled_in_project = false;
 
-void SceneTree::tree_changed() { emit_signal(tree_changed_name); }
+void SceneTree::tree_changed() { this->obj->emit_signal(tree_changed_name); }
 
-void SceneTree::node_added(Node* p_node) { emit_signal(node_added_name, p_node); }
+void SceneTree::node_added(Node* p_node) { this->obj->emit_signal(node_added_name, p_node); }
 
 void SceneTree::node_removed(Node* p_node)
 {
@@ -143,13 +143,13 @@ void SceneTree::node_removed(Node* p_node)
 	if (current_scene == p_node) {
 		current_scene = nullptr;
 	}
-	emit_signal(node_removed_name, p_node);
+	this->obj->emit_signal(node_removed_name, p_node);
 	if (nodes_removed_on_group_call_lock) {
 		nodes_removed_on_group_call.insert(p_node);
 	}
 }
 
-void SceneTree::node_renamed(Node* p_node) { emit_signal(node_renamed_name, p_node); }
+void SceneTree::node_renamed(Node* p_node) { this->obj->emit_signal(node_renamed_name, p_node); }
 
 SceneTreeGroup* SceneTree::add_to_group(const StringName& p_group, Node* p_node)
 {
@@ -681,7 +681,7 @@ bool SceneTree::physics_process(double p_time)
 	}
 	physics_process_time = p_time;
 
-	emit_signal(SNAME("physics_frame"));
+	this->obj->emit_signal(SNAME("physics_frame"));
 
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 	call_group(SNAME("_picking_viewports"), SNAME("_process_picking"));
@@ -748,7 +748,7 @@ bool SceneTree::process(double p_time)
 		}
 	}
 
-	emit_signal(SNAME("process_frame"));
+	this->obj->emit_signal(SNAME("process_frame"));
 
 	MessageQueue::get_singleton()->flush(); // small little hack
 
@@ -806,7 +806,7 @@ bool SceneTree::process(double p_time)
 					fallback = ResourceLoader::load(env_path);
 					if (fallback.is_null()) {
 						// could not load fallback, set as empty
-						ProjectSettings::get_singleton()->set(
+						ProjectSettings::get_singleton()->obj->set(
 							"rendering/environment/defaults/default_environment", "");
 					}
 				}
@@ -1770,7 +1770,7 @@ void SceneTree::_flush_scene_change()
 		root->update_mouse_cursor_state();
 
 		// Only on successful scene change.
-		emit_signal(SNAME("scene_changed"));
+		this->obj->emit_signal(SNAME("scene_changed"));
 	}
 	else {
 		current_scene = nullptr;
@@ -1885,10 +1885,10 @@ void SceneTree::remove_tween(const Ref<Tween>& p_tween)
 	}
 }
 
-TypedArray<Tween> SceneTree::get_processed_tweens()
+Array SceneTree::get_processed_tweens()
 {
 	_THREAD_SAFE_METHOD_
-	TypedArray<Tween> ret;
+	Array ret;
 	ret.resize(tweens.size());
 
 	int i = 0;
@@ -2040,7 +2040,7 @@ void SceneTree::get_argument_options(
 			r_options->push_back(E.key.string().quote());
 		}
 	}
-	MainLoop::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
@@ -2268,7 +2268,7 @@ SceneTree::SceneTree()
 			else {
 				if (Engine::get_singleton()->is_editor_hint()) {
 					// File was erased, clear the field.
-					ProjectSettings::get_singleton()->set(
+					ProjectSettings::get_singleton()->obj->set(
 						"rendering/environment/defaults/default_environment", "");
 				}
 				else {

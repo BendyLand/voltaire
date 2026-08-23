@@ -29,15 +29,16 @@
 /**************************************************************************/
 
 #include "bit_map.h"
-
 #include "core/object/class_db.h"
 #include "core/variant/typed_array.h"
 
-void BitMap::create(const Size2i &p_size) {
+void BitMap::create(const Size2i& p_size)
+{
 	ERR_FAIL_COND(p_size.width < 1);
 	ERR_FAIL_COND(p_size.height < 1);
 
-	ERR_FAIL_COND(static_cast<int64_t>(p_size.width) * static_cast<int64_t>(p_size.height) > INT32_MAX);
+	ERR_FAIL_COND(
+		static_cast<int64_t>(p_size.width) * static_cast<int64_t>(p_size.height) > INT32_MAX);
 
 	Error err = bitmask.resize(Math::division_round_up(p_size.width * p_size.height, 8));
 	ERR_FAIL_COND(err != OK);
@@ -48,7 +49,8 @@ void BitMap::create(const Size2i &p_size) {
 	memset(bitmask.ptrw(), 0, bitmask.size());
 }
 
-void BitMap::create_from_image_alpha(const Ref<Image> &p_image, float p_threshold) {
+void BitMap::create_from_image_alpha(const Ref<Image>& p_image, float p_threshold)
+{
 	ERR_FAIL_COND(p_image.is_null() || p_image->is_empty());
 	Ref<Image> img = p_image->duplicate();
 	img->convert(Image::FORMAT_LA8);
@@ -56,8 +58,8 @@ void BitMap::create_from_image_alpha(const Ref<Image> &p_image, float p_threshol
 
 	create(Size2i(img->get_width(), img->get_height()));
 
-	const uint8_t *r = img->get_data().ptr();
-	uint8_t *w = bitmask.ptrw();
+	const uint8_t* r = img->get_data().ptr();
+	uint8_t* w = bitmask.ptrw();
 
 	for (int i = 0; i < width * height; i++) {
 		int bbyte = i / 8;
@@ -68,9 +70,10 @@ void BitMap::create_from_image_alpha(const Ref<Image> &p_image, float p_threshol
 	}
 }
 
-void BitMap::set_bit_rect(const Rect2i &p_rect, bool p_value) {
+void BitMap::set_bit_rect(const Rect2i& p_rect, bool p_value)
+{
 	Rect2i current = Rect2i(0, 0, width, height).intersection(p_rect);
-	uint8_t *data = bitmask.ptrw();
+	uint8_t* data = bitmask.ptrw();
 
 	for (int i = current.position.x; i < current.position.x + current.size.x; i++) {
 		for (int j = current.position.y; j < current.position.y + current.size.y; j++) {
@@ -82,7 +85,8 @@ void BitMap::set_bit_rect(const Rect2i &p_rect, bool p_value) {
 
 			if (p_value) {
 				b |= (1 << bbit);
-			} else {
+			}
+			else {
 				b &= ~(1 << bbit);
 			}
 
@@ -91,9 +95,10 @@ void BitMap::set_bit_rect(const Rect2i &p_rect, bool p_value) {
 	}
 }
 
-int BitMap::get_true_bit_count() const {
+int BitMap::get_true_bit_count() const
+{
 	int ds = bitmask.size();
-	const uint8_t *d = bitmask.ptr();
+	const uint8_t* d = bitmask.ptr();
 	int c = 0;
 
 	// Fast, almost branchless version.
@@ -112,11 +117,10 @@ int BitMap::get_true_bit_count() const {
 	return c;
 }
 
-void BitMap::set_bitv(const Point2i &p_pos, bool p_value) {
-	set_bit(p_pos.x, p_pos.y, p_value);
-}
+void BitMap::set_bitv(const Point2i& p_pos, bool p_value) { set_bit(p_pos.x, p_pos.y, p_value); }
 
-void BitMap::set_bit(int p_x, int p_y, bool p_value) {
+void BitMap::set_bit(int p_x, int p_y, bool p_value)
+{
 	ERR_FAIL_INDEX(p_x, width);
 	ERR_FAIL_INDEX(p_y, height);
 
@@ -128,18 +132,18 @@ void BitMap::set_bit(int p_x, int p_y, bool p_value) {
 
 	if (p_value) {
 		b |= (1 << bbit);
-	} else {
+	}
+	else {
 		b &= ~(1 << bbit);
 	}
 
 	bitmask.write[bbyte] = b;
 }
 
-bool BitMap::get_bitv(const Point2i &p_pos) const {
-	return get_bit(p_pos.x, p_pos.y);
-}
+bool BitMap::get_bitv(const Point2i& p_pos) const { return get_bit(p_pos.x, p_pos.y); }
 
-bool BitMap::get_bit(int p_x, int p_y) const {
+bool BitMap::get_bit(int p_x, int p_y) const
+{
 	ERR_FAIL_INDEX_V(p_x, width, false);
 	ERR_FAIL_INDEX_V(p_y, height, false);
 
@@ -150,11 +154,10 @@ bool BitMap::get_bit(int p_x, int p_y) const {
 	return (bitmask[bbyte] & (1 << bbit)) != 0;
 }
 
-Size2i BitMap::get_size() const {
-	return Size2i(width, height);
-}
+Size2i BitMap::get_size() const { return Size2i(width, height); }
 
-void BitMap::_set_data(const Dictionary &p_d) {
+void BitMap::_set_data(const Dictionary& p_d)
+{
 	ERR_FAIL_COND(!p_d.has("size"));
 	ERR_FAIL_COND(!p_d.has("data"));
 
@@ -162,14 +165,16 @@ void BitMap::_set_data(const Dictionary &p_d) {
 	bitmask = p_d["data"];
 }
 
-Dictionary BitMap::_get_data() const {
+Dictionary BitMap::_get_data() const
+{
 	Dictionary d;
 	d["size"] = get_size();
 	d["data"] = bitmask;
 	return d;
 }
 
-Vector<Vector<Vector2>> BitMap::_march_square(const Rect2i &p_rect, const Point2i &p_start) const {
+Vector<Vector<Vector2>> BitMap::_march_square(const Rect2i& p_rect, const Point2i& p_start) const
+{
 	int stepx = 0;
 	int stepy = 0;
 	int prevx = 0;
@@ -214,103 +219,105 @@ Vector<Vector<Vector2>> BitMap::_march_square(const Rect2i &p_rect, const Point2
 		}
 
 		switch (sv) {
-			case 1:
-			case 5:
-			case 13:
-				/* going UP with these cases:
-				1          5           13
-				+---+---+  +---+---+  +---+---+
-				| 1 |   |  | 1 |   |  | 1 |   |
-				+---+---+  +---+---+  +---+---+
-				|   |   |  | 4 |   |  | 4 | 8 |
-				+---+---+  +---+---+  +---+---+
-				*/
-				stepx = 0;
-				stepy = -1;
-				break;
+		case 1:
+		case 5:
+		case 13:
+			/* going UP with these cases:
+			1          5           13
+			+---+---+  +---+---+  +---+---+
+			| 1 |   |  | 1 |   |  | 1 |   |
+			+---+---+  +---+---+  +---+---+
+			|   |   |  | 4 |   |  | 4 | 8 |
+			+---+---+  +---+---+  +---+---+
+			*/
+			stepx = 0;
+			stepy = -1;
+			break;
 
-			case 8:
-			case 10:
-			case 11:
-				/* going DOWN with these cases:
-				8          10         11
-				+---+---+  +---+---+  +---+---+
-				|   |   |  |   | 2 |  | 1 | 2 |
-				+---+---+  +---+---+  +---+---+
-				|   | 8 |  |   | 8 |  |   | 8 |
-				+---+---+  +---+---+  +---+---+
-				*/
+		case 8:
+		case 10:
+		case 11:
+			/* going DOWN with these cases:
+			8          10         11
+			+---+---+  +---+---+  +---+---+
+			|   |   |  |   | 2 |  | 1 | 2 |
+			+---+---+  +---+---+  +---+---+
+			|   | 8 |  |   | 8 |  |   | 8 |
+			+---+---+  +---+---+  +---+---+
+			*/
+			stepx = 0;
+			stepy = 1;
+			break;
+
+		case 4:
+		case 12:
+		case 14:
+			/* going LEFT with these cases:
+			4          12         14
+			+---+---+  +---+---+  +---+---+
+			|   |   |  |   |   |  |   | 2 |
+			+---+---+  +---+---+  +---+---+
+			| 4 |   |  | 4 | 8 |  | 4 | 8 |
+			+---+---+  +---+---+  +---+---+
+			*/
+			stepx = -1;
+			stepy = 0;
+			break;
+
+		case 2:
+		case 3:
+		case 7:
+			/* going RIGHT with these cases:
+			2          3          7
+			+---+---+  +---+---+  +---+---+
+			|   | 2 |  | 1 | 2 |  | 1 | 2 |
+			+---+---+  +---+---+  +---+---+
+			|   |   |  |   |   |  | 4 |   |
+			+---+---+  +---+---+  +---+---+
+			*/
+			stepx = 1;
+			stepy = 0;
+			break;
+		case 9:
+			/* Going DOWN if coming from the LEFT, otherwise go UP.
+			9
+			+---+---+
+			| 1 |   |
+			+---+---+
+			|   | 8 |
+			+---+---+
+			*/
+
+			if (prevx == 1) {
 				stepx = 0;
 				stepy = 1;
-				break;
+			}
+			else {
+				stepx = 0;
+				stepy = -1;
+			}
+			break;
+		case 6:
+			/* Going RIGHT if coming from BELOW, otherwise go LEFT.
+			6
+			+---+---+
+			|   | 2 |
+			+---+---+
+			| 4 |   |
+			+---+---+
+			*/
 
-			case 4:
-			case 12:
-			case 14:
-				/* going LEFT with these cases:
-				4          12         14
-				+---+---+  +---+---+  +---+---+
-				|   |   |  |   |   |  |   | 2 |
-				+---+---+  +---+---+  +---+---+
-				| 4 |   |  | 4 | 8 |  | 4 | 8 |
-				+---+---+  +---+---+  +---+---+
-				*/
-				stepx = -1;
-				stepy = 0;
-				break;
-
-			case 2:
-			case 3:
-			case 7:
-				/* going RIGHT with these cases:
-				2          3          7
-				+---+---+  +---+---+  +---+---+
-				|   | 2 |  | 1 | 2 |  | 1 | 2 |
-				+---+---+  +---+---+  +---+---+
-				|   |   |  |   |   |  | 4 |   |
-				+---+---+  +---+---+  +---+---+
-				*/
+			if (prevy == -1) {
 				stepx = 1;
 				stepy = 0;
-				break;
-			case 9:
-				/* Going DOWN if coming from the LEFT, otherwise go UP.
-				9
-				+---+---+
-				| 1 |   |
-				+---+---+
-				|   | 8 |
-				+---+---+
-				*/
-
-				if (prevx == 1) {
-					stepx = 0;
-					stepy = 1;
-				} else {
-					stepx = 0;
-					stepy = -1;
-				}
-				break;
-			case 6:
-				/* Going RIGHT if coming from BELOW, otherwise go LEFT.
-				6
-				+---+---+
-				|   | 2 |
-				+---+---+
-				| 4 |   |
-				+---+---+
-				*/
-
-				if (prevy == -1) {
-					stepx = 1;
-					stepy = 0;
-				} else {
-					stepx = -1;
-					stepy = 0;
-				}
-				break;
-			default:
-				ERR_PRINT("this shouldn't happen.");
+			}
+			else {
+				stepx = -1;
+				stepy = 0;
+			}
+			break;
+		default:
+			ERR_PRINT("this shouldn't happen.");
 		}
 
 		// Handle crossing points.
@@ -331,7 +338,8 @@ Vector<Vector<Vector2>> BitMap::_march_square(const Rect2i &p_rect, const Point2
 				}
 
 				cross_map.erase(cur_pos);
-			} else {
+			}
+			else {
 				// Add crossing point to map.
 				cross_map.insert(cur_pos, points_size - 1);
 			}
@@ -344,7 +352,8 @@ Vector<Vector<Vector2>> BitMap::_march_square(const Rect2i &p_rect, const Point2
 		cury += stepy;
 		if (stepx == prevx && stepy == prevy) {
 			_points.set(points_size - 1, Vector2(curx, cury) - p_rect.position);
-		} else {
+		}
+		else {
 			_points.resize(MAX(points_size + 1, _points.size()));
 			_points.set(points_size, Vector2(curx, cury) - p_rect.position);
 			points_size++;
@@ -365,16 +374,19 @@ Vector<Vector<Vector2>> BitMap::_march_square(const Rect2i &p_rect, const Point2
 	return ret;
 }
 
-static float perpendicular_distance(const Vector2 &i, const Vector2 &start, const Vector2 &end) {
+static float perpendicular_distance(const Vector2& i, const Vector2& start, const Vector2& end)
+{
 	float res;
 	float slope;
 	float intercept;
 
 	if (start.x == end.x) {
 		res = Math::abs(i.x - end.x);
-	} else if (start.y == end.y) {
+	}
+	else if (start.y == end.y) {
 		res = Math::abs(i.y - end.y);
-	} else {
+	}
+	else {
 		slope = (end.y - start.y) / (end.x - start.x);
 		intercept = start.y - (slope * start.x);
 		res = Math::abs(slope * i.x - i.y + intercept) / Math::sqrt(Math::pow(slope, 2.0f) + 1.0);
@@ -382,7 +394,8 @@ static float perpendicular_distance(const Vector2 &i, const Vector2 &start, cons
 	return res;
 }
 
-static Vector<Vector2> rdp(const Vector<Vector2> &v, float optimization) {
+static Vector<Vector2> rdp(const Vector<Vector2>& v, float optimization)
+{
 	if (v.size() < 3) {
 		return v;
 	}
@@ -416,7 +429,8 @@ static Vector<Vector2> rdp(const Vector<Vector2> &v, float optimization) {
 			r1.write[middle + i] = r2[i];
 		}
 		return r1;
-	} else {
+	}
+	else {
 		Vector<Vector2> ret;
 		ret.push_back(v[0]);
 		ret.push_back(v[v.size() - 1]);
@@ -424,7 +438,8 @@ static Vector<Vector2> rdp(const Vector<Vector2> &v, float optimization) {
 	}
 }
 
-static Vector<Vector2> reduce(const Vector<Vector2> &points, const Rect2i &rect, float epsilon) {
+static Vector<Vector2> reduce(const Vector<Vector2>& points, const Rect2i& rect, float epsilon)
+{
 	int size = points.size();
 	// If there are less than 3 points, then we have nothing.
 	ERR_FAIL_COND_V(size < 3, Vector<Vector2>());
@@ -446,13 +461,16 @@ static Vector<Vector2> reduce(const Vector<Vector2> &points, const Rect2i &rect,
 	return result;
 }
 
-struct FillBitsStackEntry {
+struct FillBitsStackEntry
+{
 	Point2i pos;
 	int i = 0;
 	int j = 0;
 };
 
-static void fill_bits(const BitMap *p_src, Ref<BitMap> &p_map, const Point2i &p_pos, const Rect2i &rect) {
+static void fill_bits(
+	const BitMap* p_src, Ref<BitMap>& p_map, const Point2i& p_pos, const Rect2i& rect)
+{
 	// Using a custom stack to work iteratively to avoid stack overflow on big bitmaps.
 	Vector<FillBitsStackEntry> stack;
 	// Tracking size since we won't be shrinking the stack vector.
@@ -491,10 +509,11 @@ static void fill_bits(const BitMap *p_src, Ref<BitMap> &p_map, const Point2i &p_
 				if (p_map->get_bit(i, j)) {
 					continue;
 
-				} else if (p_src->get_bit(i, j)) {
+				}
+				else if (p_src->get_bit(i, j)) {
 					p_map->set_bit(i, j, true);
 
-					FillBitsStackEntry se = { pos, i, j };
+					FillBitsStackEntry se = {pos, i, j};
 					stack.resize(MAX(stack_size + 1, stack.size()));
 					stack.set(stack_size, se);
 					stack_size++;
@@ -521,7 +540,8 @@ static void fill_bits(const BitMap *p_src, Ref<BitMap> &p_map, const Point2i &p_
 	} while (reenter || popped);
 }
 
-Vector<Vector<Vector2>> BitMap::clip_opaque_to_polygons(const Rect2i &p_rect, float p_epsilon) const {
+Vector<Vector<Vector2>> BitMap::clip_opaque_to_polygons(const Rect2i& p_rect, float p_epsilon) const
+{
 	Rect2i r = Rect2i(0, 0, width, height).intersection(p_rect);
 
 	Ref<BitMap> fill;
@@ -551,7 +571,8 @@ Vector<Vector<Vector2>> BitMap::clip_opaque_to_polygons(const Rect2i &p_rect, fl
 	return polygons;
 }
 
-void BitMap::grow_mask(int p_pixels, const Rect2i &p_rect) {
+void BitMap::grow_mask(int p_pixels, const Rect2i& p_rect)
+{
 	if (p_pixels == 0) {
 		return;
 	}
@@ -579,11 +600,13 @@ void BitMap::grow_mask(int p_pixels, const Rect2i &p_rect) {
 				for (int x = j - p_pixels; x <= j + p_pixels; x++) {
 					bool outside = false;
 
-					if ((x < p_rect.position.x) || (x >= p_rect.position.x + p_rect.size.x) || (y < p_rect.position.y) || (y >= p_rect.position.y + p_rect.size.y)) {
+					if ((x < p_rect.position.x) || (x >= p_rect.position.x + p_rect.size.x) ||
+						(y < p_rect.position.y) || (y >= p_rect.position.y + p_rect.size.y)) {
 						// Outside of rectangle counts as bit not set.
 						if (!bit_value) {
 							outside = true;
-						} else {
+						}
+						else {
 							continue;
 						}
 					}
@@ -610,11 +633,11 @@ void BitMap::grow_mask(int p_pixels, const Rect2i &p_rect) {
 	}
 }
 
-void BitMap::shrink_mask(int p_pixels, const Rect2i &p_rect) {
-	grow_mask(-p_pixels, p_rect);
-}
+void BitMap::shrink_mask(int p_pixels, const Rect2i& p_rect) { grow_mask(-p_pixels, p_rect); }
 
-TypedArray<PackedVector2Array> BitMap::_opaque_to_polygons_bind(const Rect2i &p_rect, float p_epsilon) const {
+TypedArray<PackedVector2Array> BitMap::_opaque_to_polygons_bind(
+	const Rect2i& p_rect, float p_epsilon) const
+{
 	Vector<Vector<Vector2>> result = clip_opaque_to_polygons(p_rect, p_epsilon);
 
 	// Convert result to bindable types.
@@ -622,13 +645,13 @@ TypedArray<PackedVector2Array> BitMap::_opaque_to_polygons_bind(const Rect2i &p_
 	TypedArray<PackedVector2Array> result_array;
 	result_array.resize(result.size());
 	for (int i = 0; i < result.size(); i++) {
-		const Vector<Vector2> &polygon = result[i];
+		const Vector<Vector2>& polygon = result[i];
 
 		PackedVector2Array polygon_array;
 		polygon_array.resize(polygon.size());
 
 		{
-			Vector2 *w = polygon_array.ptrw();
+			Vector2* w = polygon_array.ptrw();
 			for (int j = 0; j < polygon.size(); j++) {
 				w[j] = polygon[j];
 			}
@@ -640,7 +663,8 @@ TypedArray<PackedVector2Array> BitMap::_opaque_to_polygons_bind(const Rect2i &p_
 	return result_array;
 }
 
-void BitMap::resize(const Size2i &p_new_size) {
+void BitMap::resize(const Size2i& p_new_size)
+{
 	ERR_FAIL_COND(p_new_size.width < 0 || p_new_size.height < 0);
 	if (p_new_size == get_size()) {
 		return;
@@ -667,7 +691,8 @@ void BitMap::resize(const Size2i &p_new_size) {
 	bitmask = new_bitmap->bitmask;
 }
 
-Ref<Image> BitMap::convert_to_image() const {
+Ref<Image> BitMap::convert_to_image() const
+{
 	Ref<Image> image = Image::create_empty(width, height, false, Image::FORMAT_L8);
 
 	for (int i = 0; i < width; i++) {
@@ -679,7 +704,8 @@ Ref<Image> BitMap::convert_to_image() const {
 	return image;
 }
 
-void BitMap::blit(const Vector2i &p_pos, const Ref<BitMap> &p_bitmap) {
+void BitMap::blit(const Vector2i& p_pos, const Ref<BitMap>& p_bitmap)
+{
 	ERR_FAIL_COND_MSG(p_bitmap.is_null(), "It's not a reference to a valid BitMap object.");
 
 	int x = p_pos.x;
@@ -704,27 +730,6 @@ void BitMap::blit(const Vector2i &p_pos, const Ref<BitMap> &p_bitmap) {
 	}
 }
 
-void BitMap::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("create", "size"), &BitMap::create);
-	ClassDB::bind_method(D_METHOD("create_from_image_alpha", "image", "threshold"), &BitMap::create_from_image_alpha, DEFVAL(0.1));
+void BitMap::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_bitv", "position", "bit"), &BitMap::set_bitv);
-	ClassDB::bind_method(D_METHOD("set_bit", "x", "y", "bit"), &BitMap::set_bit);
-	ClassDB::bind_method(D_METHOD("get_bitv", "position"), &BitMap::get_bitv);
-	ClassDB::bind_method(D_METHOD("get_bit", "x", "y"), &BitMap::get_bit);
 
-	ClassDB::bind_method(D_METHOD("set_bit_rect", "rect", "bit"), &BitMap::set_bit_rect);
-	ClassDB::bind_method(D_METHOD("get_true_bit_count"), &BitMap::get_true_bit_count);
-
-	ClassDB::bind_method(D_METHOD("get_size"), &BitMap::get_size);
-	ClassDB::bind_method(D_METHOD("resize", "new_size"), &BitMap::resize);
-
-	ClassDB::bind_method(D_METHOD("_set_data", "data"), &BitMap::_set_data);
-	ClassDB::bind_method(D_METHOD("_get_data"), &BitMap::_get_data);
-
-	ClassDB::bind_method(D_METHOD("grow_mask", "pixels", "rect"), &BitMap::grow_mask);
-	ClassDB::bind_method(D_METHOD("convert_to_image"), &BitMap::convert_to_image);
-	ClassDB::bind_method(D_METHOD("opaque_to_polygons", "rect", "epsilon"), &BitMap::_opaque_to_polygons_bind, DEFVAL(2.0));
-
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_data", "_get_data");
-}

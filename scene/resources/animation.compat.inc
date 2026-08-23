@@ -31,40 +31,42 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "animation.h"
-
 #include "core/object/class_db.h"
 
-Vector3 Animation::_position_track_interpolate_bind_compat_86629(int p_track, double p_time) const {
+Vector3 Animation::_position_track_interpolate_bind_compat_86629(int p_track, double p_time) const
+{
 	return position_track_interpolate(p_track, p_time, false);
 }
 
-Quaternion Animation::_rotation_track_interpolate_bind_compat_86629(int p_track, double p_time) const {
+Quaternion Animation::_rotation_track_interpolate_bind_compat_86629(
+	int p_track, double p_time) const
+{
 	return rotation_track_interpolate(p_track, p_time, false);
 }
 
-Vector3 Animation::_scale_track_interpolate_bind_compat_86629(int p_track, double p_time) const {
+Vector3 Animation::_scale_track_interpolate_bind_compat_86629(int p_track, double p_time) const
+{
 	return scale_track_interpolate(p_track, p_time, false);
 }
 
-float Animation::_blend_shape_track_interpolate_bind_compat_86629(int p_track, double p_time) const {
+float Animation::_blend_shape_track_interpolate_bind_compat_86629(int p_track, double p_time) const
+{
 	return blend_shape_track_interpolate(p_track, p_time, false);
 }
 
-Variant Animation::_value_track_interpolate_bind_compat_86629(int p_track, double p_time) const {
+Variant Animation::_value_track_interpolate_bind_compat_86629(int p_track, double p_time) const
+{
 	return value_track_interpolate(p_track, p_time, false);
 }
 
-int Animation::_track_find_key_bind_compat_92861(int p_track, double p_time, FindMode p_find_mode) const {
+int Animation::_track_find_key_bind_compat_92861(
+	int p_track, double p_time, FindMode p_find_mode) const
+{
 	return track_find_key(p_track, p_time, p_find_mode, false, false);
 }
 
-void Animation::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("position_track_interpolate", "track_idx", "time_sec"), &Animation::_position_track_interpolate_bind_compat_86629);
-	ClassDB::bind_compatibility_method(D_METHOD("rotation_track_interpolate", "track_idx", "time_sec"), &Animation::_rotation_track_interpolate_bind_compat_86629);
-	ClassDB::bind_compatibility_method(D_METHOD("scale_track_interpolate", "track_idx", "time_sec"), &Animation::_scale_track_interpolate_bind_compat_86629);
-	ClassDB::bind_compatibility_method(D_METHOD("blend_shape_track_interpolate", "track_idx", "time_sec"), &Animation::_blend_shape_track_interpolate_bind_compat_86629);
-	ClassDB::bind_compatibility_method(D_METHOD("value_track_interpolate", "track_idx", "time_sec"), &Animation::_value_track_interpolate_bind_compat_86629);
-	ClassDB::bind_compatibility_method(D_METHOD("track_find_key", "track_idx", "time", "find_mode"), &Animation::_track_find_key_bind_compat_92861, DEFVAL(FIND_MODE_NEAREST));
-}
+void Animation::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

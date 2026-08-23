@@ -35,21 +35,7 @@
 #include "servers/camera/camera_feed.h"
 #include "servers/rendering/rendering_server.h"
 
-void CameraTexture::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_camera_feed_id", "feed_id"), &CameraTexture::set_camera_feed_id);
-	ClassDB::bind_method(D_METHOD("get_camera_feed_id"), &CameraTexture::get_camera_feed_id);
-
-	ClassDB::bind_method(D_METHOD("set_which_feed", "which_feed"), &CameraTexture::set_which_feed);
-	ClassDB::bind_method(D_METHOD("get_which_feed"), &CameraTexture::get_which_feed);
-
-	ClassDB::bind_method(D_METHOD("set_camera_active", "active"), &CameraTexture::set_camera_active);
-	ClassDB::bind_method(D_METHOD("get_camera_active"), &CameraTexture::get_camera_active);
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "camera_feed_id"), "set_camera_feed_id", "get_camera_feed_id");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "which_feed"), "set_which_feed", "get_which_feed");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "camera_is_active"), "set_camera_active", "get_camera_active");
-	ADD_PROPERTY_DEFAULT("camera_is_active", false);
-}
+void CameraTexture::_bind_methods() {}
 
 void CameraTexture::_on_format_changed() {
 	// FIXME: `emit_changed` is more appropriate, but causes errors for some reason.
@@ -97,8 +83,8 @@ Ref<Image> CameraTexture::get_image() const {
 void CameraTexture::set_camera_feed_id(int p_new_id) {
 	Ref<CameraFeed> feed = CameraServer::get_singleton()->get_feed_by_id(camera_feed_id);
 	if (feed.is_valid()) {
-		if (feed->is_connected("format_changed", callable_mp(this, &CameraTexture::_on_format_changed))) {
-			feed->disconnect("format_changed", callable_mp(this, &CameraTexture::_on_format_changed));
+		if (feed->obj->is_connected("format_changed", callable_mp(this, &CameraTexture::_on_format_changed))) {
+			feed->obj->disconnect("format_changed", callable_mp(this, &CameraTexture::_on_format_changed));
 		}
 	}
 
@@ -106,10 +92,10 @@ void CameraTexture::set_camera_feed_id(int p_new_id) {
 
 	feed = CameraServer::get_singleton()->get_feed_by_id(camera_feed_id);
 	if (feed.is_valid()) {
-		feed->connect("format_changed", callable_mp(this, &CameraTexture::_on_format_changed));
+		feed->obj->connect("format_changed", callable_mp(this, &CameraTexture::_on_format_changed));
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	callable_mp((Resource *)this, &Resource::emit_changed).call_deferred();
 }
 
@@ -119,7 +105,7 @@ int CameraTexture::get_camera_feed_id() const {
 
 void CameraTexture::set_which_feed(CameraServer::FeedImage p_which) {
 	which_feed = p_which;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	callable_mp((Resource *)this, &Resource::emit_changed).call_deferred();
 }
 
@@ -131,7 +117,7 @@ void CameraTexture::set_camera_active(bool p_active) {
 	Ref<CameraFeed> feed = CameraServer::get_singleton()->get_feed_by_id(camera_feed_id);
 	if (feed.is_valid()) {
 		feed->set_active(p_active);
-		notify_property_list_changed();
+		this->obj->notify_property_list_changed();
 		callable_mp((Resource *)this, &Resource::emit_changed).call_deferred();
 	}
 }

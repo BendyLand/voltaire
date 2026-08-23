@@ -44,7 +44,7 @@ void AnimationNodeAnimation::set_animation(const StringName& p_name)
 	if (unlikely(animation_version == 0)) {
 		animation_version = 1;
 	}
-	_node_updated(get_instance_id());
+	_node_updated(this->obj->get_instance_id());
 }
 
 StringName AnimationNodeAnimation::get_animation() const { return animation; }
@@ -376,7 +376,7 @@ bool AnimationNodeAnimation::is_advance_on_start() const { return advance_on_sta
 void AnimationNodeAnimation::set_use_custom_timeline(bool p_use_custom_timeline)
 {
 	use_custom_timeline = p_use_custom_timeline;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool AnimationNodeAnimation::is_using_custom_timeline() const { return use_custom_timeline; }
@@ -388,7 +388,7 @@ double AnimationNodeAnimation::get_timeline_length() const { return timeline_len
 void AnimationNodeAnimation::set_stretch_time_scale(bool p_stretch_time_scale)
 {
 	stretch_time_scale = p_stretch_time_scale;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool AnimationNodeAnimation::is_stretching_time_scale() const { return stretch_time_scale; }
@@ -1197,8 +1197,8 @@ void AnimationNodeTransition::set_input_count(int p_inputs)
 
 	pending_update = true;
 
-	emit_signal(SNAME("tree_changed")); // For updating connect activity map.
-	notify_property_list_changed();
+	this->obj->emit_signal(SNAME("tree_changed")); // For updating connect activity map.
+	this->obj->notify_property_list_changed();
 }
 
 bool AnimationNodeTransition::add_input(const String& p_name)
@@ -1222,7 +1222,7 @@ bool AnimationNodeTransition::set_input_name(int p_input, const String& p_name)
 	if (!AnimationNode::set_input_name(p_input, p_name)) {
 		return false;
 	}
-	emit_signal(SNAME("tree_changed")); // For updating enum options.
+	this->obj->emit_signal(SNAME("tree_changed")); // For updating enum options.
 	return true;
 }
 
@@ -1491,12 +1491,12 @@ void AnimationNodeBlendTree::add_node(
 	nodes[p_name] = n;
 
 	emit_changed();
-	emit_signal(SNAME("tree_changed"));
+	this->obj->emit_signal(SNAME("tree_changed"));
 
 	_add_node(p_node);
 	p_node->connect_changed(
 		callable_mp(this, &AnimationNodeBlendTree::_child_node_changed).bind(p_name),
-		CONNECT_REFERENCE_COUNTED);
+		Object::CONNECT_REFERENCE_COUNTED);
 }
 
 Ref<AnimationNode> AnimationNodeBlendTree::get_node(const StringName& p_name) const
@@ -1560,9 +1560,9 @@ void AnimationNodeBlendTree::remove_node(const StringName& p_name)
 		}
 	}
 
-	emit_signal(SNAME("animation_node_removed"), get_instance_id(), p_name);
+	this->obj->emit_signal(SNAME("animation_node_removed"), this->obj->get_instance_id(), p_name);
 	emit_changed();
-	emit_signal(SNAME("tree_changed"));
+	this->obj->emit_signal(SNAME("tree_changed"));
 }
 
 void AnimationNodeBlendTree::rename_node(const StringName& p_name, const StringName& p_new_name)
@@ -1590,10 +1590,10 @@ void AnimationNodeBlendTree::rename_node(const StringName& p_name, const StringN
 	// Connection must be done with new name.
 	nodes[p_new_name].node->connect_changed(
 		callable_mp(this, &AnimationNodeBlendTree::_child_node_changed).bind(p_new_name),
-		CONNECT_REFERENCE_COUNTED);
+		Object::CONNECT_REFERENCE_COUNTED);
 
-	emit_signal(SNAME("animation_node_renamed"), get_instance_id(), p_name, p_new_name);
-	emit_signal(SNAME("tree_changed"));
+	this->obj->emit_signal(SNAME("animation_node_renamed"), this->obj->get_instance_id(), p_name, p_new_name);
+	this->obj->emit_signal(SNAME("tree_changed"));
 }
 
 void AnimationNodeBlendTree::connect_node(
@@ -1617,7 +1617,7 @@ void AnimationNodeBlendTree::connect_node(
 	nodes[p_input_node].connections[p_input_index] = p_output_node;
 
 	emit_changed();
-	_node_updated(input->get_instance_id());
+	_node_updated(input->obj->get_instance_id());
 }
 
 void AnimationNodeBlendTree::disconnect_node(const StringName& p_node, int p_input_index)
@@ -1628,7 +1628,7 @@ void AnimationNodeBlendTree::disconnect_node(const StringName& p_node, int p_inp
 	ERR_FAIL_INDEX(p_input_index, (int)nodes[p_node].connections.size());
 
 	nodes[p_node].connections[p_input_index] = StringName();
-	_node_updated(input->get_instance_id());
+	_node_updated(input->obj->get_instance_id());
 }
 
 AnimationNodeBlendTree::ConnectionError AnimationNodeBlendTree::can_connect_node(
@@ -1854,7 +1854,7 @@ void AnimationNodeBlendTree::reset_state()
 	nodes.clear();
 	_initialize_node_tree();
 	emit_changed();
-	emit_signal(SNAME("tree_changed"));
+	this->obj->emit_signal(SNAME("tree_changed"));
 }
 
 void AnimationNodeBlendTree::validate_node(
@@ -1897,7 +1897,7 @@ void AnimationNodeBlendTree::_child_node_changed(const StringName& p_node)
 {
 	ERR_FAIL_COND(!nodes.has(p_node));
 	nodes[p_node].connections.resize(nodes[p_node].node->get_input_count());
-	emit_signal(SNAME("node_changed"), p_node);
+	this->obj->emit_signal(SNAME("node_changed"), p_node);
 }
 
 #ifdef TOOLS_ENABLED

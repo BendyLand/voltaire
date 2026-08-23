@@ -726,10 +726,10 @@ void GraphNode::_notification(int p_what)
 		Rect2 body_rect(0, titlebar_rect.size.height, body_size.width, body_size.height);
 
 		// Draw body (slots area) stylebox.
-		draw_style_box(sb_to_draw_panel, body_rect);
+		draw_style_box(sb_to_draw_panel.ptr(), body_rect);
 
 		// Draw title bar stylebox above.
-		draw_style_box(sb_to_draw_titlebar, titlebar_rect);
+		draw_style_box(sb_to_draw_titlebar.ptr(), titlebar_rect);
 
 		int width = get_size().width - sb_panel->get_minimum_size().x;
 
@@ -762,17 +762,17 @@ void GraphNode::_notification(int p_what)
 						port_icon = theme_cache.port;
 					}
 					Size2i port_sz = port_icon->get_size() + sb_slot_selected->get_minimum_size();
-					draw_style_box(
-						sb_slot_selected, Rect2i(port_h_offset - port_sz.x * 0.5,
-											  slot_y - port_sz.y * 0.5, port_sz.x, port_sz.y));
+					draw_style_box(sb_slot_selected.ptr(),
+						Rect2i(port_h_offset - port_sz.x * 0.5, slot_y - port_sz.y * 0.5, port_sz.x,
+							port_sz.y));
 					port_icon = slot.custom_port_icon_right;
 					if (port_icon.is_null()) {
 						port_icon = theme_cache.port;
 					}
 					port_sz = port_icon->get_size() + sb_slot_selected->get_minimum_size();
-					draw_style_box(
-						sb_slot_selected, Rect2i(get_size().x - port_h_offset - port_sz.x * 0.5,
-											  slot_y - port_sz.y * 0.5, port_sz.x, port_sz.y));
+					draw_style_box(sb_slot_selected.ptr(),
+						Rect2i(get_size().x - port_h_offset - port_sz.x * 0.5,
+							slot_y - port_sz.y * 0.5, port_sz.x, port_sz.y));
 				}
 
 				// Draw slot stylebox.
@@ -785,14 +785,14 @@ void GraphNode::_notification(int p_what)
 						child_rect.position.y -= sb_slot->get_margin(SIDE_TOP);
 						child_rect.size.height +=
 							sb_slot->get_margin(SIDE_TOP) + sb_slot->get_margin(SIDE_BOTTOM);
-						draw_style_box(sb_slot, child_rect);
+						draw_style_box(sb_slot.ptr(), child_rect);
 					}
 				}
 			}
 		}
 
 		if (resizable) {
-			draw_texture(theme_cache.resizer, get_size() - theme_cache.resizer->get_size(),
+			draw_texture(theme_cache.resizer.ptr(), get_size() - theme_cache.resizer->get_size(),
 				theme_cache.resizer_color);
 		}
 	} break;
@@ -1407,8 +1407,7 @@ void GraphNode::set_slots_focus_mode(Control::FocusMode p_focus_mode)
 	if (slots_focus_mode == p_focus_mode) {
 		return;
 	}
-	ERR_FAIL_COND((int)p_focus_mode < 1 || (int)p_focus_mode > 3)
-;
+	ERR_FAIL_COND((int)p_focus_mode < 1 || (int)p_focus_mode > 3);
 
 	slots_focus_mode = p_focus_mode;
 	if (slots_focus_mode == Control::FOCUS_CLICK && selected_slot > -1) {

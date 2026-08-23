@@ -784,12 +784,12 @@ void Sprite3D::set_texture(const Ref<Texture2D>& p_texture)
 		return;
 	}
 	if (texture.is_valid()) {
-		texture->disconnect(
+		texture->obj->disconnect(
 			CoreStringName(changed), callable_mp((SpriteBase3D*)this, &Sprite3D::_queue_redraw));
 	}
 	texture = p_texture;
 	if (texture.is_valid()) {
-		texture->connect(
+		texture->obj->connect(
 			CoreStringName(changed), callable_mp((SpriteBase3D*)this, &Sprite3D::_queue_redraw));
 	}
 
@@ -1154,12 +1154,12 @@ void AnimatedSprite3D::set_sprite_frames(const Ref<SpriteFrames>& p_frames)
 	}
 
 	if (frames.is_valid()) {
-		frames->disconnect(
+		frames->obj->disconnect(
 			CoreStringName(changed), callable_mp(this, &AnimatedSprite3D::_res_changed));
 	}
 	frames = p_frames;
 	if (frames.is_valid()) {
-		frames->connect(
+		frames->obj->connect(
 			CoreStringName(changed), callable_mp(this, &AnimatedSprite3D::_res_changed));
 
 		List<StringName> al;

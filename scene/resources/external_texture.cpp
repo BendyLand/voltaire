@@ -28,58 +28,49 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "external_texture.h"
-
 #include "core/object/class_db.h"
+#include "external_texture.h"
 #include "servers/rendering/rendering_server.h"
 
-void ExternalTexture::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_size", "size"), &ExternalTexture::set_size);
-	ClassDB::bind_method(D_METHOD("get_external_texture_id"), &ExternalTexture::get_external_texture_id);
-	ClassDB::bind_method(D_METHOD("set_external_buffer_id", "external_buffer_id"), &ExternalTexture::set_external_buffer_id);
+void ExternalTexture::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "size"), "set_size", "get_size");
-}
-
-uint64_t ExternalTexture::get_external_texture_id() const {
+uint64_t ExternalTexture::get_external_texture_id() const
+{
 	_ensure_created();
 	return RenderingServer::get_singleton()->texture_get_native_handle(texture);
 }
 
-void ExternalTexture::set_size(const Size2 &p_size) {
+void ExternalTexture::set_size(const Size2& p_size)
+{
 	if (p_size.width > 0 && p_size.height > 0 && p_size != size) {
 		size = p_size;
 		_ensure_created();
-		RenderingServer::get_singleton()->texture_external_update(texture, size.width, size.height, external_buffer);
+		RenderingServer::get_singleton()->texture_external_update(
+			texture, size.width, size.height, external_buffer);
 		emit_changed();
 	}
 }
 
-Size2 ExternalTexture::get_size() const {
-	return size;
-}
+Size2 ExternalTexture::get_size() const { return size; }
 
-void ExternalTexture::set_external_buffer_id(uint64_t p_external_buffer) {
+void ExternalTexture::set_external_buffer_id(uint64_t p_external_buffer)
+{
 	if (p_external_buffer != external_buffer) {
 		external_buffer = p_external_buffer;
 		_ensure_created();
-		RenderingServer::get_singleton()->texture_external_update(texture, size.width, size.height, external_buffer);
+		RenderingServer::get_singleton()->texture_external_update(
+			texture, size.width, size.height, external_buffer);
 	}
 }
 
-int ExternalTexture::get_width() const {
-	return size.width;
-}
+int ExternalTexture::get_width() const { return size.width; }
 
-int ExternalTexture::get_height() const {
-	return size.height;
-}
+int ExternalTexture::get_height() const { return size.height; }
 
-bool ExternalTexture::has_alpha() const {
-	return false;
-}
+bool ExternalTexture::has_alpha() const { return false; }
 
-RID ExternalTexture::get_rid() const {
+RID ExternalTexture::get_rid() const
+{
 	if (!texture.is_valid()) {
 		texture = RenderingServer::get_singleton()->texture_2d_placeholder_create();
 		using_placeholder = true;
@@ -87,27 +78,32 @@ RID ExternalTexture::get_rid() const {
 	return texture;
 }
 
-void ExternalTexture::_ensure_created() const {
+void ExternalTexture::_ensure_created() const
+{
 	if (texture.is_valid() && !using_placeholder) {
 		return;
 	}
 
-	RID new_texture = RenderingServer::get_singleton()->texture_external_create(size.width, size.height);
+	RID new_texture =
+		RenderingServer::get_singleton()->texture_external_create(size.width, size.height);
 	if (using_placeholder) {
 		DEV_ASSERT(texture.is_valid());
 		RenderingServer::get_singleton()->texture_replace(texture, new_texture);
 		using_placeholder = false;
-	} else {
+	}
+	else {
 		texture = new_texture;
 	}
 }
 
-ExternalTexture::ExternalTexture() {
-}
+ExternalTexture::ExternalTexture() {}
 
-ExternalTexture::~ExternalTexture() {
+ExternalTexture::~ExternalTexture()
+{
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(RenderingServer::get_singleton());
 		RenderingServer::get_singleton()->free_rid(texture);
 	}
 }
+
+

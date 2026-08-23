@@ -29,33 +29,37 @@
 /**************************************************************************/
 
 #include "atlas_texture.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 
-int AtlasTexture::get_width() const {
+int AtlasTexture::get_width() const
+{
 	if (rounded_region.size.width == 0) {
 		if (atlas.is_valid()) {
 			return atlas->get_width();
 		}
 		return 1;
-	} else {
+	}
+	else {
 		return rounded_region.size.width + margin.size.width;
 	}
 }
 
-int AtlasTexture::get_height() const {
+int AtlasTexture::get_height() const
+{
 	if (rounded_region.size.height == 0) {
 		if (atlas.is_valid()) {
 			return atlas->get_height();
 		}
 		return 1;
-	} else {
+	}
+	else {
 		return rounded_region.size.height + margin.size.height;
 	}
 }
 
-RID AtlasTexture::get_rid() const {
+RID AtlasTexture::get_rid() const
+{
 	if (atlas.is_valid()) {
 		return atlas->get_rid();
 	}
@@ -63,7 +67,8 @@ RID AtlasTexture::get_rid() const {
 	return RID();
 }
 
-bool AtlasTexture::has_alpha() const {
+bool AtlasTexture::has_alpha() const
+{
 	if (atlas.is_valid()) {
 		return atlas->has_alpha();
 	}
@@ -71,28 +76,28 @@ bool AtlasTexture::has_alpha() const {
 	return false;
 }
 
-void AtlasTexture::set_atlas(const Ref<Texture2D> &p_atlas) {
+void AtlasTexture::set_atlas(const Ref<Texture2D>& p_atlas)
+{
 	ERR_FAIL_COND(p_atlas == this);
 	if (atlas == p_atlas) {
 		return;
 	}
 	// Support recursive AtlasTextures.
 	if (Ref<AtlasTexture>(atlas).is_valid()) {
-		atlas->disconnect_changed(callable_mp((Resource *)this, &AtlasTexture::emit_changed));
+		atlas->disconnect_changed(callable_mp((Resource*)this, &AtlasTexture::emit_changed));
 	}
 	atlas = p_atlas;
 	if (Ref<AtlasTexture>(atlas).is_valid()) {
-		atlas->connect_changed(callable_mp((Resource *)this, &AtlasTexture::emit_changed));
+		atlas->connect_changed(callable_mp((Resource*)this, &AtlasTexture::emit_changed));
 	}
 
 	emit_changed();
 }
 
-Ref<Texture2D> AtlasTexture::get_atlas() const {
-	return atlas;
-}
+Ref<Texture2D> AtlasTexture::get_atlas() const { return atlas; }
 
-void AtlasTexture::set_region(const Rect2 &p_region) {
+void AtlasTexture::set_region(const Rect2& p_region)
+{
 	if (region == p_region) {
 		return;
 	}
@@ -101,11 +106,10 @@ void AtlasTexture::set_region(const Rect2 &p_region) {
 	emit_changed();
 }
 
-Rect2 AtlasTexture::get_region() const {
-	return region;
-}
+Rect2 AtlasTexture::get_region() const { return region; }
 
-void AtlasTexture::set_margin(const Rect2 &p_margin) {
+void AtlasTexture::set_margin(const Rect2& p_margin)
+{
 	if (margin == p_margin) {
 		return;
 	}
@@ -113,20 +117,18 @@ void AtlasTexture::set_margin(const Rect2 &p_margin) {
 	emit_changed();
 }
 
-Rect2 AtlasTexture::get_margin() const {
-	return margin;
-}
+Rect2 AtlasTexture::get_margin() const { return margin; }
 
-void AtlasTexture::set_filter_clip(const bool p_enable) {
+void AtlasTexture::set_filter_clip(const bool p_enable)
+{
 	filter_clip = p_enable;
 	emit_changed();
 }
 
-bool AtlasTexture::has_filter_clip() const {
-	return filter_clip;
-}
+bool AtlasTexture::has_filter_clip() const { return filter_clip; }
 
-Rect2 AtlasTexture::_get_region_rect() const {
+Rect2 AtlasTexture::_get_region_rect() const
+{
 	Rect2 rc = rounded_region;
 	if (atlas.is_valid()) {
 		if (rc.size.width == 0) {
@@ -139,34 +141,22 @@ Rect2 AtlasTexture::_get_region_rect() const {
 	return rc;
 }
 
-void AtlasTexture::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_atlas", "atlas"), &AtlasTexture::set_atlas);
-	ClassDB::bind_method(D_METHOD("get_atlas"), &AtlasTexture::get_atlas);
+void AtlasTexture::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_region", "region"), &AtlasTexture::set_region);
-	ClassDB::bind_method(D_METHOD("get_region"), &AtlasTexture::get_region);
-
-	ClassDB::bind_method(D_METHOD("set_margin", "margin"), &AtlasTexture::set_margin);
-	ClassDB::bind_method(D_METHOD("get_margin"), &AtlasTexture::get_margin);
-
-	ClassDB::bind_method(D_METHOD("set_filter_clip", "enable"), &AtlasTexture::set_filter_clip);
-	ClassDB::bind_method(D_METHOD("has_filter_clip"), &AtlasTexture::has_filter_clip);
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "atlas", PROPERTY_HINT_RESOURCE_TYPE, Texture2D::get_class_static()), "set_atlas", "get_atlas");
-	ADD_PROPERTY(PropertyInfo(Variant::RECT2, "region", PROPERTY_HINT_NONE, "suffix:px"), "set_region", "get_region");
-	ADD_PROPERTY(PropertyInfo(Variant::RECT2, "margin", PROPERTY_HINT_NONE, "suffix:px"), "set_margin", "get_margin");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "filter_clip"), "set_filter_clip", "has_filter_clip");
-}
-
-void AtlasTexture::draw(RID p_canvas_item, const Point2 &p_pos, const Color &p_modulate, bool p_transpose) const {
+void AtlasTexture::draw(
+	RID p_canvas_item, const Point2& p_pos, const Color& p_modulate, bool p_transpose) const
+{
 	if (atlas.is_null()) {
 		return;
 	}
 	const Rect2 rc = _get_region_rect();
-	atlas->draw_rect_region(p_canvas_item, Rect2(p_pos + margin.position, rc.size), rc, p_modulate, p_transpose, filter_clip);
+	atlas->draw_rect_region(p_canvas_item, Rect2(p_pos + margin.position, rc.size), rc, p_modulate,
+		p_transpose, filter_clip);
 }
 
-void AtlasTexture::draw_rect(RID p_canvas_item, const Rect2 &p_rect, bool p_tile, const Color &p_modulate, bool p_transpose) const {
+void AtlasTexture::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile,
+	const Color& p_modulate, bool p_transpose) const
+{
 	if (atlas.is_null()) {
 		return;
 	}
@@ -180,7 +170,9 @@ void AtlasTexture::draw_rect(RID p_canvas_item, const Rect2 &p_rect, bool p_tile
 	}
 }
 
-void AtlasTexture::draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, const Rect2 &p_src_rect, const Color &p_modulate, bool p_transpose, bool p_clip_uv) const {
+void AtlasTexture::draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const Rect2& p_src_rect,
+	const Color& p_modulate, bool p_transpose, bool p_clip_uv) const
+{
 	// This might not necessarily work well if using a rect, needs to be fixed properly.
 	if (atlas.is_null()) {
 		return;
@@ -193,7 +185,9 @@ void AtlasTexture::draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, cons
 	}
 }
 
-bool AtlasTexture::get_rect_region(const Rect2 &p_rect, const Rect2 &p_src_rect, Rect2 &r_rect, Rect2 &r_src_rect) const {
+bool AtlasTexture::get_rect_region(
+	const Rect2& p_rect, const Rect2& p_src_rect, Rect2& r_rect, Rect2& r_src_rect) const
+{
 	if (atlas.is_null()) {
 		return false;
 	}
@@ -226,7 +220,8 @@ bool AtlasTexture::get_rect_region(const Rect2 &p_rect, const Rect2 &p_src_rect,
 	return true;
 }
 
-bool AtlasTexture::is_pixel_opaque(int p_x, int p_y) const {
+bool AtlasTexture::is_pixel_opaque(int p_x, int p_y) const
+{
 	if (atlas.is_null()) {
 		return true;
 	}
@@ -245,15 +240,18 @@ bool AtlasTexture::is_pixel_opaque(int p_x, int p_y) const {
 	return atlas->is_pixel_opaque(x, y);
 }
 
-Ref<Image> AtlasTexture::get_image() const {
+Ref<Image> AtlasTexture::get_image() const
+{
 	if (atlas.is_null()) {
 		return Ref<Image>();
 	}
 
-	const Ref<Image> &atlas_image = atlas->get_image();
+	const Ref<Image>& atlas_image = atlas->get_image();
 	if (atlas_image.is_null()) {
 		return Ref<Image>();
 	}
 
 	return atlas_image->get_region(_get_region_rect());
 }
+
+

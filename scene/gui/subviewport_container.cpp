@@ -140,10 +140,10 @@ void SubViewportContainer::_notification(int p_what)
 			}
 
 			if (stretch) {
-				draw_texture_rect(c->get_texture(), Rect2(Vector2(), get_size()));
+				draw_texture_rect(c->get_texture().ptr(), Rect2(Vector2(), get_size()));
 			}
 			else {
-				draw_texture_rect(c->get_texture(), Rect2(Vector2(), c->get_size()));
+				draw_texture_rect(c->get_texture().ptr(), Rect2(Vector2(), c->get_size()));
 			}
 		}
 	} break;
@@ -229,7 +229,7 @@ void SubViewportContainer::_send_event_to_viewports(const Ref<InputEvent>& p_eve
 			continue;
 		}
 
-		c->push_input(p_event);
+		c->push_input(p_event.ptr());
 	}
 }
 

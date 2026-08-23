@@ -547,18 +547,18 @@ void SpinBox::_notification(int p_what)
 							(sizing_cache.button_down_height - down_icon->get_height()) / 2;
 
 		// Draw separators.
-		draw_style_box(theme_cache.up_down_buttons_separator,
+		draw_style_box(theme_cache.up_down_buttons_separator.ptr(),
 			Rect2(sizing_cache.buttons_left, sizing_cache.buttons_separator_top,
 				sizing_cache.buttons_width, sizing_cache.buttons_vertical_separation));
-		draw_style_box(theme_cache.field_and_buttons_separator,
+		draw_style_box(theme_cache.field_and_buttons_separator.ptr(),
 			Rect2(sizing_cache.field_and_buttons_separator_left, 0,
 				sizing_cache.field_and_buttons_separator_width, size.height));
 
 		// Draw buttons.
-		draw_style_box(up_stylebox, Rect2(sizing_cache.buttons_left, 0, sizing_cache.buttons_width,
+		draw_style_box(up_stylebox.ptr(), Rect2(sizing_cache.buttons_left, 0, sizing_cache.buttons_width,
 										sizing_cache.button_up_height));
 		draw_style_box(
-			down_stylebox, Rect2(sizing_cache.buttons_left, sizing_cache.second_button_top,
+			down_stylebox.ptr(), Rect2(sizing_cache.buttons_left, sizing_cache.second_button_top,
 							   sizing_cache.buttons_width, sizing_cache.button_down_height));
 
 #ifndef DISABLE_DEPRECATED
@@ -574,8 +574,8 @@ void SpinBox::_notification(int p_what)
 		}
 #endif
 		// Draw arrows.
-		draw_texture(up_icon, Point2i(up_icon_left, up_icon_top), up_icon_modulate);
-		draw_texture(down_icon, Point2i(down_icon_left, down_icon_top), down_icon_modulate);
+		draw_texture(up_icon.ptr(), Point2i(up_icon_left, up_icon_top), up_icon_modulate);
+		draw_texture(down_icon.ptr(), Point2i(down_icon_left, down_icon_top), down_icon_modulate);
 
 	} break;
 

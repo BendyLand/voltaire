@@ -1051,10 +1051,10 @@ void Node3D::clear_gizmos()
 #endif
 }
 
-TypedArray<Node3DGizmo> Node3D::get_gizmos_bind() const
+Array Node3D::get_gizmos_bind() const
 {
-	ERR_THREAD_GUARD_V(TypedArray<Node3DGizmo>());
-	TypedArray<Node3DGizmo> ret;
+	ERR_THREAD_GUARD_V(Array());
+	Array ret;
 
 #ifdef TOOLS_ENABLED
 	for (int i = 0; i < data.gizmos.size(); i++) {

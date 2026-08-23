@@ -125,27 +125,27 @@ void GraphFrame::_notification(int p_what)
 				sb_panel_flat->set_bg_color(tint_color);
 				sb_panel_flat->set_border_color(
 					selected ? original_border_color : tint_color.lightened(0.3));
-				draw_style_box(sb_panel_flat, body_rect);
+				draw_style_box(sb_panel_flat.ptr(), body_rect);
 			}
 			else if (sb_panel_texture.is_valid()) {
 				sb_panel_texture = sb_panel_texture->duplicate();
 				sb_panel_texture->set_modulate(tint_color);
-				draw_style_box(sb_panel_texture, body_rect);
+				draw_style_box(sb_panel_texture.ptr(), body_rect);
 			}
 		}
 		else {
-			draw_style_box(sb_panel_flat, body_rect);
+			draw_style_box(sb_panel_flat.ptr(), body_rect);
 		}
 
 		// Draw title bar stylebox above.
-		draw_style_box(sb_to_draw_titlebar, titlebar_rect);
+		draw_style_box(sb_to_draw_titlebar.ptr(), titlebar_rect);
 
 		// Only draw the resize handle if the frame is not auto-resizing.
 		if (resizable && !autoshrink_enabled) {
 			Ref<Texture2D> resizer = theme_cache.resizer;
 			Color resizer_color = theme_cache.resizer_color;
 			if (resizable) {
-				draw_texture(resizer, get_size() - resizer->get_size(), resizer_color);
+				draw_texture(resizer.ptr(), get_size() - resizer->get_size(), resizer_color);
 			}
 		}
 

@@ -685,7 +685,7 @@ void ScrollContainer::_notification(int p_what)
 		if (p_what == NOTIFICATION_THEME_CHANGED) {
 			scroll_border = get_theme_constant(SNAME("scroll_border"), SNAME("Tree"));
 			scroll_speed = get_theme_constant(SNAME("scroll_speed"), SNAME("Tree"));
-			focus_panel->add_theme_style_override("panel", theme_cache.focus_style);
+			focus_panel->add_theme_style_override("panel", theme_cache.focus_style.ptr());
 		}
 	} break;
 
@@ -702,7 +702,7 @@ void ScrollContainer::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_DRAW: {
-		draw_style_box(theme_cache.panel_style, Rect2(Vector2(), get_size()));
+		draw_style_box(theme_cache.panel_style.ptr(), Rect2(Vector2(), get_size()));
 		focus_border_is_drawn = draw_focus_border && (has_focus(true) || child_has_focus());
 		focus_panel->set_visible(focus_border_is_drawn);
 	} break;

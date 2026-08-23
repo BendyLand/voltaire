@@ -90,10 +90,10 @@ void VirtualJoystick::_notification(int p_what)
 		Rect2 rect_joystick = Rect2(joystick_pos - Vector2(0.5, 0.5) * joystick_size,
 			Vector2(joystick_size, joystick_size));
 		draw_style_box(
-			is_pressed ? theme_cache.pressed_joystick : theme_cache.normal_joystick, rect_joystick);
+			is_pressed ? theme_cache.pressed_joystick.ptr() : theme_cache.normal_joystick.ptr(), rect_joystick);
 
 		Rect2 rect_tip = Rect2(tip_pos - Vector2(0.5, 0.5) * tip_size, Vector2(tip_size, tip_size));
-		draw_style_box(is_pressed ? theme_cache.pressed_tip : theme_cache.normal_tip, rect_tip);
+		draw_style_box(is_pressed ? theme_cache.pressed_tip.ptr() : theme_cache.normal_tip.ptr(), rect_tip);
 	} break;
 
 	case NOTIFICATION_ENTER_TREE: {

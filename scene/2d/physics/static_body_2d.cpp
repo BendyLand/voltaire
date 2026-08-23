@@ -28,12 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "static_body_2d.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "scene/resources/physics_material.h"
 #include "servers/physics_2d/physics_server_2d.h"
+#include "static_body_2d.h"
 
 #ifndef NAVIGATION_2D_DISABLED
 #include "scene/resources/2d/capsule_shape_2d.h"
@@ -49,72 +48,89 @@
 Callable StaticBody2D::_navmesh_source_geometry_parsing_callback;
 RID StaticBody2D::_navmesh_source_geometry_parser;
 
-void StaticBody2D::set_constant_linear_velocity(const Vector2 &p_vel) {
+void StaticBody2D::set_constant_linear_velocity(const Vector2& p_vel)
+{
 	constant_linear_velocity = p_vel;
 
-	PhysicsServer2D::get_singleton()->body_set_state(get_rid(), PS2DE::BODY_STATE_LINEAR_VELOCITY, constant_linear_velocity);
+	PhysicsServer2D::get_singleton()->body_set_state(
+		get_rid(), PS2DE::BODY_STATE_LINEAR_VELOCITY, constant_linear_velocity);
 }
 
-void StaticBody2D::set_constant_angular_velocity(real_t p_vel) {
+void StaticBody2D::set_constant_angular_velocity(real_t p_vel)
+{
 	constant_angular_velocity = p_vel;
 
-	PhysicsServer2D::get_singleton()->body_set_state(get_rid(), PS2DE::BODY_STATE_ANGULAR_VELOCITY, constant_angular_velocity);
+	PhysicsServer2D::get_singleton()->body_set_state(
+		get_rid(), PS2DE::BODY_STATE_ANGULAR_VELOCITY, constant_angular_velocity);
 }
 
-Vector2 StaticBody2D::get_constant_linear_velocity() const {
-	return constant_linear_velocity;
-}
+Vector2 StaticBody2D::get_constant_linear_velocity() const { return constant_linear_velocity; }
 
-real_t StaticBody2D::get_constant_angular_velocity() const {
-	return constant_angular_velocity;
-}
+real_t StaticBody2D::get_constant_angular_velocity() const { return constant_angular_velocity; }
 
-void StaticBody2D::set_physics_material_override(const Ref<PhysicsMaterial> &p_physics_material_override) {
+void StaticBody2D::set_physics_material_override(
+	const Ref<PhysicsMaterial>& p_physics_material_override)
+{
 	if (physics_material_override.is_valid()) {
-		physics_material_override->disconnect_changed(callable_mp(this, &StaticBody2D::_reload_physics_characteristics));
+		physics_material_override->disconnect_changed(
+			callable_mp(this, &StaticBody2D::_reload_physics_characteristics));
 	}
 
 	physics_material_override = p_physics_material_override;
 
 	if (physics_material_override.is_valid()) {
-		physics_material_override->connect_changed(callable_mp(this, &StaticBody2D::_reload_physics_characteristics));
+		physics_material_override->connect_changed(
+			callable_mp(this, &StaticBody2D::_reload_physics_characteristics));
 	}
 	_reload_physics_characteristics();
 }
 
-Ref<PhysicsMaterial> StaticBody2D::get_physics_material_override() const {
+Ref<PhysicsMaterial> StaticBody2D::get_physics_material_override() const
+{
 	return physics_material_override;
 }
 
-void StaticBody2D::_reload_physics_characteristics() {
+void StaticBody2D::_reload_physics_characteristics()
+{
 	if (physics_material_override.is_null()) {
 		PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_BOUNCE, 0);
 		PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_FRICTION, 1);
-	} else {
-		PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_BOUNCE, physics_material_override->computed_bounce());
-		PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_FRICTION, physics_material_override->computed_friction());
+	}
+	else {
+		PhysicsServer2D::get_singleton()->body_set_param(
+			get_rid(), PS2DE::BODY_PARAM_BOUNCE, physics_material_override->computed_bounce());
+		PhysicsServer2D::get_singleton()->body_set_param(
+			get_rid(), PS2DE::BODY_PARAM_FRICTION, physics_material_override->computed_friction());
 	}
 }
 
 #ifndef NAVIGATION_2D_DISABLED
-void StaticBody2D::navmesh_parse_init() {
+void StaticBody2D::navmesh_parse_init()
+{
 	ERR_FAIL_NULL(NavigationServer2D::get_singleton());
 	if (!_navmesh_source_geometry_parser.is_valid()) {
-		_navmesh_source_geometry_parsing_callback = callable_mp_static(&StaticBody2D::navmesh_parse_source_geometry);
-		_navmesh_source_geometry_parser = NavigationServer2D::get_singleton()->source_geometry_parser_create();
-		NavigationServer2D::get_singleton()->source_geometry_parser_set_callback(_navmesh_source_geometry_parser, _navmesh_source_geometry_parsing_callback);
+		_navmesh_source_geometry_parsing_callback =
+			callable_mp_static(&StaticBody2D::navmesh_parse_source_geometry);
+		_navmesh_source_geometry_parser =
+			NavigationServer2D::get_singleton()->source_geometry_parser_create();
+		NavigationServer2D::get_singleton()->source_geometry_parser_set_callback(
+			_navmesh_source_geometry_parser, _navmesh_source_geometry_parsing_callback);
 	}
 }
 
-void StaticBody2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node *p_node) {
-	StaticBody2D *static_body = Object::cast_to<StaticBody2D>(p_node);
+void StaticBody2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon>& p_navigation_mesh,
+	Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node* p_node)
+{
+	StaticBody2D* static_body = Object::cast_to<StaticBody2D>(p_node);
 
 	if (static_body == nullptr) {
 		return;
 	}
 
-	NavigationPolygon::ParsedGeometryType parsed_geometry_type = p_navigation_mesh->get_parsed_geometry_type();
-	if (!(parsed_geometry_type == NavigationPolygon::PARSED_GEOMETRY_STATIC_COLLIDERS || parsed_geometry_type == NavigationPolygon::PARSED_GEOMETRY_BOTH)) {
+	NavigationPolygon::ParsedGeometryType parsed_geometry_type =
+		p_navigation_mesh->get_parsed_geometry_type();
+	if (!(parsed_geometry_type == NavigationPolygon::PARSED_GEOMETRY_STATIC_COLLIDERS ||
+			parsed_geometry_type == NavigationPolygon::PARSED_GEOMETRY_BOTH)) {
 		return;
 	}
 
@@ -140,25 +156,29 @@ void StaticBody2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p
 				continue;
 			}
 
-			const Transform2D static_body_xform = p_source_geometry_data->root_node_transform * static_body->get_global_transform() * static_body->shape_owner_get_transform(shape_owner);
+			const Transform2D static_body_xform =
+				p_source_geometry_data->root_node_transform * static_body->get_global_transform() *
+				static_body->shape_owner_get_transform(shape_owner);
 
-			RectangleShape2D *rectangle_shape = Object::cast_to<RectangleShape2D>(*s);
+			RectangleShape2D* rectangle_shape = Object::cast_to<RectangleShape2D>(*s);
 			if (rectangle_shape) {
 				Vector<Vector2> shape_outline;
 
-				const Vector2 &rectangle_size = rectangle_shape->get_size();
+				const Vector2& rectangle_size = rectangle_shape->get_size();
 
 				shape_outline.resize(5);
 				shape_outline.write[0] = static_body_xform.xform(-rectangle_size * 0.5);
-				shape_outline.write[1] = static_body_xform.xform(Vector2(rectangle_size.x, -rectangle_size.y) * 0.5);
+				shape_outline.write[1] =
+					static_body_xform.xform(Vector2(rectangle_size.x, -rectangle_size.y) * 0.5);
 				shape_outline.write[2] = static_body_xform.xform(rectangle_size * 0.5);
-				shape_outline.write[3] = static_body_xform.xform(Vector2(-rectangle_size.x, rectangle_size.y) * 0.5);
+				shape_outline.write[3] =
+					static_body_xform.xform(Vector2(-rectangle_size.x, rectangle_size.y) * 0.5);
 				shape_outline.write[4] = static_body_xform.xform(-rectangle_size * 0.5);
 
 				p_source_geometry_data->add_obstruction_outline(shape_outline);
 			}
 
-			CapsuleShape2D *capsule_shape = Object::cast_to<CapsuleShape2D>(*s);
+			CapsuleShape2D* capsule_shape = Object::cast_to<CapsuleShape2D>(*s);
 			if (capsule_shape) {
 				const real_t capsule_height = capsule_shape->get_height();
 				const real_t capsule_radius = capsule_shape->get_radius();
@@ -168,12 +188,20 @@ void StaticBody2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p
 				shape_outline.resize(14);
 				int shape_outline_inx = 0;
 				for (int i = 0; i < 12; i++) {
-					Vector2 ofs = Vector2(0, (i > 3 && i <= 9) ? capsule_height * 0.5 - capsule_radius : -capsule_height * 0.5 + capsule_radius);
+					Vector2 ofs =
+						Vector2(0, (i > 3 && i <= 9) ? capsule_height * 0.5 - capsule_radius
+													 : -capsule_height * 0.5 + capsule_radius);
 
-					shape_outline.write[shape_outline_inx] = static_body_xform.xform(Vector2(Math::sin(i * turn_step), -Math::cos(i * turn_step)) * capsule_radius + ofs);
+					shape_outline.write[shape_outline_inx] = static_body_xform.xform(
+						Vector2(Math::sin(i * turn_step), -Math::cos(i * turn_step)) *
+							capsule_radius +
+						ofs);
 					shape_outline_inx += 1;
 					if (i == 3 || i == 9) {
-						shape_outline.write[shape_outline_inx] = static_body_xform.xform(Vector2(Math::sin(i * turn_step), -Math::cos(i * turn_step)) * capsule_radius - ofs);
+						shape_outline.write[shape_outline_inx] = static_body_xform.xform(
+							Vector2(Math::sin(i * turn_step), -Math::cos(i * turn_step)) *
+								capsule_radius -
+							ofs);
 						shape_outline_inx += 1;
 					}
 				}
@@ -181,7 +209,7 @@ void StaticBody2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p
 				p_source_geometry_data->add_obstruction_outline(shape_outline);
 			}
 
-			CircleShape2D *circle_shape = Object::cast_to<CircleShape2D>(*s);
+			CircleShape2D* circle_shape = Object::cast_to<CircleShape2D>(*s);
 			if (circle_shape) {
 				const real_t circle_radius = circle_shape->get_radius();
 
@@ -191,13 +219,16 @@ void StaticBody2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p
 
 				const real_t turn_step = Math::TAU / real_t(circle_edge_count);
 				for (int i = 0; i < circle_edge_count; i++) {
-					shape_outline.write[i] = static_body_xform.xform(Vector2(Math::cos(i * turn_step), Math::sin(i * turn_step)) * circle_radius);
+					shape_outline.write[i] = static_body_xform.xform(
+						Vector2(Math::cos(i * turn_step), Math::sin(i * turn_step)) *
+						circle_radius);
 				}
 
 				p_source_geometry_data->add_obstruction_outline(shape_outline);
 			}
 
-			ConcavePolygonShape2D *concave_polygon_shape = Object::cast_to<ConcavePolygonShape2D>(*s);
+			ConcavePolygonShape2D* concave_polygon_shape =
+				Object::cast_to<ConcavePolygonShape2D>(*s);
 			if (concave_polygon_shape) {
 				Vector<Vector2> shape_outline = concave_polygon_shape->get_segments();
 
@@ -208,7 +239,7 @@ void StaticBody2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p
 				p_source_geometry_data->add_obstruction_outline(shape_outline);
 			}
 
-			ConvexPolygonShape2D *convex_polygon_shape = Object::cast_to<ConvexPolygonShape2D>(*s);
+			ConvexPolygonShape2D* convex_polygon_shape = Object::cast_to<ConvexPolygonShape2D>(*s);
 			if (convex_polygon_shape) {
 				Vector<Vector2> shape_outline = convex_polygon_shape->get_points();
 
@@ -223,20 +254,8 @@ void StaticBody2D::navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p
 }
 #endif // NAVIGATION_2D_DISABLED
 
-void StaticBody2D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_constant_linear_velocity", "vel"), &StaticBody2D::set_constant_linear_velocity);
-	ClassDB::bind_method(D_METHOD("set_constant_angular_velocity", "vel"), &StaticBody2D::set_constant_angular_velocity);
-	ClassDB::bind_method(D_METHOD("get_constant_linear_velocity"), &StaticBody2D::get_constant_linear_velocity);
-	ClassDB::bind_method(D_METHOD("get_constant_angular_velocity"), &StaticBody2D::get_constant_angular_velocity);
+void StaticBody2D::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_physics_material_override", "physics_material_override"), &StaticBody2D::set_physics_material_override);
-	ClassDB::bind_method(D_METHOD("get_physics_material_override"), &StaticBody2D::get_physics_material_override);
+StaticBody2D::StaticBody2D(PS2DE::BodyMode p_mode) : PhysicsBody2D(p_mode) {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "physics_material_override", PROPERTY_HINT_RESOURCE_TYPE, PhysicsMaterial::get_class_static()), "set_physics_material_override", "get_physics_material_override");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "constant_linear_velocity", PROPERTY_HINT_NONE, "suffix:px/s"), "set_constant_linear_velocity", "get_constant_linear_velocity");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "constant_angular_velocity", PROPERTY_HINT_NONE, U"radians_as_degrees,suffix:\u00B0/s"), "set_constant_angular_velocity", "get_constant_angular_velocity");
-}
 
-StaticBody2D::StaticBody2D(PS2DE::BodyMode p_mode) :
-		PhysicsBody2D(p_mode) {
-}

@@ -47,29 +47,13 @@ void MeshInstance2D::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_DRAW: {
 		if (mesh.is_valid()) {
-			draw_mesh(mesh, texture);
+			draw_mesh(mesh.ptr(), texture);
 		}
 	} break;
 	}
 }
 
-void MeshInstance2D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_mesh", "mesh"), &MeshInstance2D::set_mesh);
-	ClassDB::bind_method(D_METHOD("get_mesh"), &MeshInstance2D::get_mesh);
-
-	ClassDB::bind_method(D_METHOD("set_texture", "texture"), &MeshInstance2D::set_texture);
-	ClassDB::bind_method(D_METHOD("get_texture"), &MeshInstance2D::get_texture);
-
-	ADD_SIGNAL(MethodInfo("texture_changed"));
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh", PROPERTY_HINT_RESOURCE_TYPE,
-					 Mesh::get_class_static()),
-		"set_mesh", "get_mesh");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE,
-					 Texture2D::get_class_static()),
-		"set_texture", "get_texture");
-}
+void MeshInstance2D::_bind_methods() {}
 
 void MeshInstance2D::set_mesh(const Ref<Mesh>& p_mesh)
 {

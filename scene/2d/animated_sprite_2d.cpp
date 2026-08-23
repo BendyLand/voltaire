@@ -339,12 +339,12 @@ void AnimatedSprite2D::set_sprite_frames(const Ref<SpriteFrames>& p_frames)
 	}
 
 	if (frames.is_valid()) {
-		frames->disconnect(
+		frames->obj->disconnect(
 			CoreStringName(changed), callable_mp(this, &AnimatedSprite2D::_res_changed));
 	}
 	frames = p_frames;
 	if (frames.is_valid()) {
-		frames->connect(
+		frames->obj->connect(
 			CoreStringName(changed), callable_mp(this, &AnimatedSprite2D::_res_changed));
 
 		List<StringName> al;

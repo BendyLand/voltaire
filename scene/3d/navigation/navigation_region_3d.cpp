@@ -233,9 +233,9 @@ RID NavigationRegion3D::get_navigation_map() const
 
 void NavigationRegion3D::bake_navigation_mesh(bool p_on_thread)
 {
-	ERR_FAIL_COND_MSG(
-		!Thread::is_main_thread(), "The SceneTree can only be parsed on the main thread. Call this "
-								   "function from the main thread or use call_deferred().");
+	ERR_FAIL_COND_MSG(!Thread::is_main_thread(),
+		"The SceneTree can only be parsed on the main thread. Call this "
+		"function from the main thread or use call_deferred().");
 	ERR_FAIL_COND_MSG(navigation_mesh.is_null(),
 		"Baking the navigation mesh requires a valid `NavigationMesh` resource.");
 
@@ -422,9 +422,9 @@ NavigationRegion3D::NavigationRegion3D()
 	NavigationServer3D::get_singleton()->region_set_enabled(region, enabled);
 
 #ifdef DEBUG_ENABLED
-	NavigationServer3D::get_singleton()->connect(
+	NavigationServer3D::get_singleton()->obj->connect(
 		SNAME("map_changed"), callable_mp(this, &NavigationRegion3D::_navigation_map_changed));
-	NavigationServer3D::get_singleton()->connect(SNAME("navigation_debug_changed"),
+	NavigationServer3D::get_singleton()->obj->connect(SNAME("navigation_debug_changed"),
 		callable_mp(this, &NavigationRegion3D::_navigation_debug_changed));
 #endif // DEBUG_ENABLED
 }
@@ -439,9 +439,9 @@ NavigationRegion3D::~NavigationRegion3D()
 	NavigationServer3D::get_singleton()->free_rid(region);
 
 #ifdef DEBUG_ENABLED
-	NavigationServer3D::get_singleton()->disconnect(
+	NavigationServer3D::get_singleton()->obj->disconnect(
 		SNAME("map_changed"), callable_mp(this, &NavigationRegion3D::_navigation_map_changed));
-	NavigationServer3D::get_singleton()->disconnect(SNAME("navigation_debug_changed"),
+	NavigationServer3D::get_singleton()->obj->disconnect(SNAME("navigation_debug_changed"),
 		callable_mp(this, &NavigationRegion3D::_navigation_debug_changed));
 
 	ERR_FAIL_NULL(RenderingServer::get_singleton());

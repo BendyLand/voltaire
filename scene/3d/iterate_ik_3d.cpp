@@ -434,70 +434,7 @@ void IterateIK3D::_validate_axis(Skeleton3D* p_skeleton, int p_index, int p_join
 	}
 }
 
-void IterateIK3D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_max_iterations", "max_iterations"), &IterateIK3D::set_max_iterations);
-	ClassDB::bind_method(D_METHOD("get_max_iterations"), &IterateIK3D::get_max_iterations);
-	ClassDB::bind_method(
-		D_METHOD("set_min_distance", "min_distance"), &IterateIK3D::set_min_distance);
-	ClassDB::bind_method(D_METHOD("get_min_distance"), &IterateIK3D::get_min_distance);
-	ClassDB::bind_method(D_METHOD("set_angular_delta_limit", "angular_delta_limit"),
-		&IterateIK3D::set_angular_delta_limit);
-	ClassDB::bind_method(
-		D_METHOD("get_angular_delta_limit"), &IterateIK3D::get_angular_delta_limit);
-	ClassDB::bind_method(
-		D_METHOD("set_deterministic", "deterministic"), &IterateIK3D::set_deterministic);
-	ClassDB::bind_method(D_METHOD("is_deterministic"), &IterateIK3D::is_deterministic);
-
-	// Setting.
-	ClassDB::bind_method(
-		D_METHOD("set_target_node", "index", "target_node"), &IterateIK3D::set_target_node);
-	ClassDB::bind_method(D_METHOD("get_target_node", "index"), &IterateIK3D::get_target_node);
-
-	// Individual joints.
-	ClassDB::bind_method(D_METHOD("set_joint_rotation_axis", "index", "joint", "axis"),
-		&IterateIK3D::set_joint_rotation_axis);
-	ClassDB::bind_method(D_METHOD("get_joint_rotation_axis", "index", "joint"),
-		&IterateIK3D::get_joint_rotation_axis);
-	ClassDB::bind_method(
-		D_METHOD("set_joint_rotation_axis_vector", "index", "joint", "axis_vector"),
-		&IterateIK3D::set_joint_rotation_axis_vector);
-	ClassDB::bind_method(D_METHOD("get_joint_rotation_axis_vector", "index", "joint"),
-		&IterateIK3D::get_joint_rotation_axis_vector);
-	ClassDB::bind_method(D_METHOD("set_joint_limitation", "index", "joint", "limitation"),
-		&IterateIK3D::set_joint_limitation);
-	ClassDB::bind_method(
-		D_METHOD("get_joint_limitation", "index", "joint"), &IterateIK3D::get_joint_limitation);
-	ClassDB::bind_method(D_METHOD("set_joint_limitation_right_axis", "index", "joint", "direction"),
-		&IterateIK3D::set_joint_limitation_right_axis);
-	ClassDB::bind_method(D_METHOD("get_joint_limitation_right_axis", "index", "joint"),
-		&IterateIK3D::get_joint_limitation_right_axis);
-	ClassDB::bind_method(
-		D_METHOD("set_joint_limitation_right_axis_vector", "index", "joint", "vector"),
-		&IterateIK3D::set_joint_limitation_right_axis_vector);
-	ClassDB::bind_method(D_METHOD("get_joint_limitation_right_axis_vector", "index", "joint"),
-		&IterateIK3D::get_joint_limitation_right_axis_vector);
-	ClassDB::bind_method(
-		D_METHOD("set_joint_limitation_rotation_offset", "index", "joint", "offset"),
-		&IterateIK3D::set_joint_limitation_rotation_offset);
-	ClassDB::bind_method(D_METHOD("get_joint_limitation_rotation_offset", "index", "joint"),
-		&IterateIK3D::get_joint_limitation_rotation_offset);
-
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "max_iterations", PROPERTY_HINT_RANGE, "0,100,or_greater"),
-		"set_max_iterations", "get_max_iterations");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "min_distance", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater"),
-		"set_min_distance", "get_min_distance");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "angular_delta_limit", PROPERTY_HINT_RANGE,
-					 "0,180,0.001,radians_as_degrees"),
-		"set_angular_delta_limit", "get_angular_delta_limit");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "deterministic"), "set_deterministic", "is_deterministic");
-	ADD_ARRAY_COUNT(
-		"Settings", "setting_count", "set_setting_count", "get_setting_count", "settings/");
-}
+void IterateIK3D::_bind_methods() {}
 
 void IterateIK3D::_clear_joints(int p_index)
 {

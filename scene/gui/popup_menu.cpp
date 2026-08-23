@@ -596,7 +596,7 @@ void PopupMenu::_input_from_window_internal(const Ref<InputEvent>& p_event)
 		}
 		if (p_event->is_action("ui_down", true) && p_event->is_pressed()) {
 			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_down", p_event, true)) {
+				if (!input->is_action_just_pressed_by_event("ui_down", p_event.ptr(), true)) {
 					return;
 				}
 				joypad_event_process = true;
@@ -642,7 +642,7 @@ void PopupMenu::_input_from_window_internal(const Ref<InputEvent>& p_event)
 		}
 		else if (p_event->is_action("ui_up", true) && p_event->is_pressed()) {
 			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_up", p_event, true)) {
+				if (!input->is_action_just_pressed_by_event("ui_up", p_event.ptr(), true)) {
 					return;
 				}
 				joypad_event_process = true;
@@ -1791,7 +1791,7 @@ void PopupMenu::_notification(int p_what)
 		vbox_container->add_theme_constant_override(
 			SNAME("separation"), theme_cache.search_bar_separation);
 
-		panel->add_theme_style_override(SceneStringName(panel), theme_cache.panel_style);
+		panel->add_theme_style_override(SceneStringName(panel), theme_cache.panel_style.ptr());
 
 		if (is_visible()) {
 			_update_shadow_offsets();
@@ -4106,8 +4106,7 @@ PopupMenu::PopupMenu()
 	scroll_container->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	scroll_container->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	vbox_container->add_child(scroll_container, false, INTERNAL_MODE_FRONT);
-	scroll_container->add_theme_style_override(SceneStringName(panel
-), memnew(StyleBoxEmpty));
+	scroll_container->add_theme_style_override(SceneStringName(panel), memnew(StyleBoxEmpty).ptr());
 
 	// The control which will display the items
 	control = memnew(PopupMenuItems(this));
@@ -4137,7 +4136,7 @@ PopupMenu::PopupMenu()
 	property_helper.setup_for_instance(base_property_helper, this->obj.get());
 
 #ifdef TOOLS_ENABLED
-	ProjectSettings::get_singleton()->connect(
+	ProjectSettings::get_singleton()->obj->connect(
 		"settings_changed", callable_mp((Node*)this, &Node::update_configuration_warnings));
 #endif
 }

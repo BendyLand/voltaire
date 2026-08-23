@@ -252,106 +252,7 @@ void Light2D::_validate_property(PropertyInfo& p_property) const
 	}
 }
 
-void Light2D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_enabled", "enabled"), &Light2D::set_enabled);
-	ClassDB::bind_method(D_METHOD("is_enabled"), &Light2D::is_enabled);
-
-	ClassDB::bind_method(D_METHOD("set_editor_only", "editor_only"), &Light2D::set_editor_only);
-	ClassDB::bind_method(D_METHOD("is_editor_only"), &Light2D::is_editor_only);
-
-	ClassDB::bind_method(D_METHOD("set_color", "color"), &Light2D::set_color);
-	ClassDB::bind_method(D_METHOD("get_color"), &Light2D::get_color);
-
-	ClassDB::bind_method(D_METHOD("set_energy", "energy"), &Light2D::set_energy);
-	ClassDB::bind_method(D_METHOD("get_energy"), &Light2D::get_energy);
-
-	ClassDB::bind_method(D_METHOD("set_z_range_min", "z"), &Light2D::set_z_range_min);
-	ClassDB::bind_method(D_METHOD("get_z_range_min"), &Light2D::get_z_range_min);
-
-	ClassDB::bind_method(D_METHOD("set_z_range_max", "z"), &Light2D::set_z_range_max);
-	ClassDB::bind_method(D_METHOD("get_z_range_max"), &Light2D::get_z_range_max);
-
-	ClassDB::bind_method(D_METHOD("set_layer_range_min", "layer"), &Light2D::set_layer_range_min);
-	ClassDB::bind_method(D_METHOD("get_layer_range_min"), &Light2D::get_layer_range_min);
-
-	ClassDB::bind_method(D_METHOD("set_layer_range_max", "layer"), &Light2D::set_layer_range_max);
-	ClassDB::bind_method(D_METHOD("get_layer_range_max"), &Light2D::get_layer_range_max);
-
-	ClassDB::bind_method(
-		D_METHOD("set_item_cull_mask", "item_cull_mask"), &Light2D::set_item_cull_mask);
-	ClassDB::bind_method(D_METHOD("get_item_cull_mask"), &Light2D::get_item_cull_mask);
-
-	ClassDB::bind_method(D_METHOD("set_item_shadow_cull_mask", "item_shadow_cull_mask"),
-		&Light2D::set_item_shadow_cull_mask);
-	ClassDB::bind_method(
-		D_METHOD("get_item_shadow_cull_mask"), &Light2D::get_item_shadow_cull_mask);
-
-	ClassDB::bind_method(D_METHOD("set_shadow_enabled", "enabled"), &Light2D::set_shadow_enabled);
-	ClassDB::bind_method(D_METHOD("is_shadow_enabled"), &Light2D::is_shadow_enabled);
-
-	ClassDB::bind_method(D_METHOD("set_shadow_smooth", "smooth"), &Light2D::set_shadow_smooth);
-	ClassDB::bind_method(D_METHOD("get_shadow_smooth"), &Light2D::get_shadow_smooth);
-
-	ClassDB::bind_method(D_METHOD("set_shadow_filter", "filter"), &Light2D::set_shadow_filter);
-	ClassDB::bind_method(D_METHOD("get_shadow_filter"), &Light2D::get_shadow_filter);
-
-	ClassDB::bind_method(D_METHOD("set_shadow_color", "shadow_color"), &Light2D::set_shadow_color);
-	ClassDB::bind_method(D_METHOD("get_shadow_color"), &Light2D::get_shadow_color);
-
-	ClassDB::bind_method(D_METHOD("set_blend_mode", "mode"), &Light2D::set_blend_mode);
-	ClassDB::bind_method(D_METHOD("get_blend_mode"), &Light2D::get_blend_mode);
-
-	ClassDB::bind_method(D_METHOD("set_height", "height"), &Light2D::set_height);
-	ClassDB::bind_method(D_METHOD("get_height"), &Light2D::get_height);
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "enabled"), "set_enabled", "is_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "editor_only"), "set_editor_only", "is_editor_only");
-	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "color"), "set_color", "get_color");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "energy", PROPERTY_HINT_RANGE, "0,16,0.01,or_greater"),
-		"set_energy", "get_energy");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "blend_mode", PROPERTY_HINT_ENUM, "Add,Subtract,Mix"),
-		"set_blend_mode", "get_blend_mode");
-	ADD_GROUP("Range", "range_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "range_z_min", PROPERTY_HINT_RANGE,
-					 itos(RSE::CANVAS_ITEM_Z_MIN) + "," + itos(RSE::CANVAS_ITEM_Z_MAX) + ",1"),
-		"set_z_range_min", "get_z_range_min");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "range_z_max", PROPERTY_HINT_RANGE,
-					 itos(RSE::CANVAS_ITEM_Z_MIN) + "," + itos(RSE::CANVAS_ITEM_Z_MAX) + ",1"),
-		"set_z_range_max", "get_z_range_max");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "range_layer_min", PROPERTY_HINT_RANGE,
-					 itos(RSE::CANVAS_LAYER_MIN) + "," + itos(RSE::CANVAS_LAYER_MAX) + ",1"),
-		"set_layer_range_min", "get_layer_range_min");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "range_layer_max", PROPERTY_HINT_RANGE,
-					 itos(RSE::CANVAS_LAYER_MIN) + "," + itos(RSE::CANVAS_LAYER_MAX) + ",1"),
-		"set_layer_range_max", "get_layer_range_max");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "range_item_cull_mask", PROPERTY_HINT_LAYERS_2D_RENDER),
-		"set_item_cull_mask", "get_item_cull_mask");
-
-	ADD_GROUP("Shadow", "shadow_");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shadow_enabled", PROPERTY_HINT_GROUP_ENABLE),
-		"set_shadow_enabled", "is_shadow_enabled");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::COLOR, "shadow_color"), "set_shadow_color", "get_shadow_color");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "shadow_filter", PROPERTY_HINT_ENUM,
-					 "None (Fast),PCF5 (Average),PCF13 (Slow)"),
-		"set_shadow_filter", "get_shadow_filter");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "shadow_filter_smooth", PROPERTY_HINT_RANGE, "0,64,0.1"),
-		"set_shadow_smooth", "get_shadow_smooth");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "shadow_item_cull_mask", PROPERTY_HINT_LAYERS_2D_RENDER),
-		"set_item_shadow_cull_mask", "get_item_shadow_cull_mask");
-
-	BIND_ENUM_CONSTANT(SHADOW_FILTER_NONE);
-	BIND_ENUM_CONSTANT(SHADOW_FILTER_PCF5);
-	BIND_ENUM_CONSTANT(SHADOW_FILTER_PCF13);
-
-	BIND_ENUM_CONSTANT(BLEND_MODE_ADD);
-	BIND_ENUM_CONSTANT(BLEND_MODE_SUB);
-	BIND_ENUM_CONSTANT(BLEND_MODE_MIX);
-}
+void Light2D::_bind_methods() {}
 
 Light2D::Light2D()
 {
@@ -421,13 +322,13 @@ void PointLight2D::set_texture(const Ref<Texture2D>& p_texture)
 	texture = p_texture;
 	if (texture.is_valid()) {
 #ifdef DEBUG_ENABLED
-		if (p_texture->is_class("AnimatedTexture") || p_texture->is_class("AtlasTexture") ||
-			p_texture->is_class("CameraTexture") || p_texture->is_class("CanvasTexture") ||
-			p_texture->is_class("MeshTexture") || p_texture->is_class("Texture2DRD") ||
-			p_texture->is_class("ViewportTexture")) {
+		if (p_texture->obj->is_class("AnimatedTexture") || p_texture->obj->is_class("AtlasTexture") ||
+			p_texture->obj->is_class("CameraTexture") || p_texture->obj->is_class("CanvasTexture") ||
+			p_texture->obj->is_class("MeshTexture") || p_texture->obj->is_class("Texture2DRD") ||
+			p_texture->obj->is_class("ViewportTexture")) {
 			WARN_PRINT(vformat("%s cannot be used as a PointLight2D texture (%s). As a workaround, "
 							   "assign the value returned by %s's `get_image()` instead.",
-				p_texture->get_class(), get_path(), p_texture->get_class()));
+				p_texture->obj->get_class(), get_path(), p_texture->obj->get_class()));
 		}
 #endif
 
@@ -489,31 +390,7 @@ bool PointLight2D::_set(const StringName& p_name, const Variant& p_value)
 #endif // DISABLE_DEPRECATED
 
 void PointLight2D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_texture", "texture"), &PointLight2D::set_texture);
-	ClassDB::bind_method(D_METHOD("get_texture"), &PointLight2D::get_texture);
-
-	ClassDB::bind_method(
-		D_METHOD("set_texture_offset", "texture_offset"), &PointLight2D::set_texture_offset);
-	ClassDB::bind_method(D_METHOD("get_texture_offset"), &PointLight2D::get_texture_offset);
-
-	ClassDB::bind_method(
-		D_METHOD("set_texture_scale", "texture_scale"), &PointLight2D::set_texture_scale);
-	ClassDB::bind_method(D_METHOD("get_texture_scale"), &PointLight2D::get_texture_scale);
-
-	// Only allow texture types that display correctly.
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE,
-					 "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-"
-					 "MeshTexture,-Texture2DRD,-ViewportTexture"),
-		"set_texture", "get_texture");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset", PROPERTY_HINT_NONE, "suffix:px"),
-		"set_texture_offset", "get_texture_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "texture_scale", PROPERTY_HINT_RANGE, "0.01,50,0.01"),
-		"set_texture_scale", "get_texture_scale");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "height", PROPERTY_HINT_RANGE,
-					 "0,1024,1,or_greater,suffix:px"),
-		"set_height", "get_height");
-}
+{}
 
 PointLight2D::PointLight2D()
 {
@@ -531,18 +408,7 @@ void DirectionalLight2D::set_max_distance(real_t p_distance)
 
 real_t DirectionalLight2D::get_max_distance() const { return max_distance; }
 
-void DirectionalLight2D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_max_distance", "pixels"), &DirectionalLight2D::set_max_distance);
-	ClassDB::bind_method(D_METHOD("get_max_distance"), &DirectionalLight2D::get_max_distance);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "height", PROPERTY_HINT_RANGE, "0,1,0.01"),
-		"set_height", "get_height");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_distance", PROPERTY_HINT_RANGE,
-					 "0,16384.0,1.0,or_greater,suffix:px"),
-		"set_max_distance", "get_max_distance");
-}
+void DirectionalLight2D::_bind_methods() {}
 
 DirectionalLight2D::DirectionalLight2D()
 {

@@ -287,9 +287,9 @@ void ColorPickerShape::draw_cursor(Control* p_control, const Vector2& p_center, 
 	const Vector2 position = p_center - color_picker->theme_cache.picker_cursor->get_size() * 0.5;
 	if (p_draw_bg) {
 		p_control->draw_texture(
-			color_picker->theme_cache.picker_cursor_bg, position, Color(color_picker->color, 1.0));
+			color_picker->theme_cache.picker_cursor_bg.ptr(), position, Color(color_picker->color, 1.0));
 	}
-	p_control->draw_texture(color_picker->theme_cache.picker_cursor, position);
+	p_control->draw_texture(color_picker->theme_cache.picker_cursor.ptr(), position);
 }
 
 void ColorPickerShape::draw_circle_cursor(Control* p_control, float p_hue, float p_saturation)
@@ -465,7 +465,7 @@ void ColorPickerShapeRectangle::_sv_square_draw()
 void ColorPickerShapeRectangle::_hue_slider_draw()
 {
 	const Vector2 size = hue_slider->get_size();
-	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue, Rect2(0, 0, -size.y, size.x),
+	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue.ptr(), Rect2(0, 0, -size.y, size.x),
 		false, Color(1, 1, 1), true);
 
 	draw_focus_rect(hue_slider);

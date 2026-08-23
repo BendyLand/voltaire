@@ -205,24 +205,7 @@ void SplineIK3D::_set_joint_count(int p_index, int p_count)
 	accum.resize(p_count);
 }
 
-void SplineIK3D::_bind_methods()
-{
-	// Setting.
-	ClassDB::bind_method(D_METHOD("set_path_3d", "index", "path_3d"), &SplineIK3D::set_path_3d);
-	ClassDB::bind_method(D_METHOD("get_path_3d", "index"), &SplineIK3D::get_path_3d);
-	ClassDB::bind_method(
-		D_METHOD("set_tilt_enabled", "index", "enabled"), &SplineIK3D::set_tilt_enabled);
-	ClassDB::bind_method(D_METHOD("is_tilt_enabled", "index"), &SplineIK3D::is_tilt_enabled);
-	ClassDB::bind_method(
-		D_METHOD("set_tilt_fade_in", "index", "size"), &SplineIK3D::set_tilt_fade_in);
-	ClassDB::bind_method(D_METHOD("get_tilt_fade_in", "index"), &SplineIK3D::get_tilt_fade_in);
-	ClassDB::bind_method(
-		D_METHOD("set_tilt_fade_out", "index", "size"), &SplineIK3D::set_tilt_fade_out);
-	ClassDB::bind_method(D_METHOD("get_tilt_fade_out", "index"), &SplineIK3D::get_tilt_fade_out);
-
-	ADD_ARRAY_COUNT(
-		"Settings", "setting_count", "set_setting_count", "get_setting_count", "settings/");
-}
+void SplineIK3D::_bind_methods() {}
 
 void SplineIK3D::_init_joints(Skeleton3D* p_skeleton, int p_index)
 {

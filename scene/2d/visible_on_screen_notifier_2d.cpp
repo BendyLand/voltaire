@@ -130,22 +130,7 @@ void VisibleOnScreenNotifier2D::_notification(int p_what)
 
 bool VisibleOnScreenNotifier2D::is_on_screen() const { return on_screen; }
 
-void VisibleOnScreenNotifier2D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_rect", "rect"), &VisibleOnScreenNotifier2D::set_rect);
-	ClassDB::bind_method(D_METHOD("get_rect"), &VisibleOnScreenNotifier2D::get_rect);
-	ClassDB::bind_method(
-		D_METHOD("set_show_rect", "show_rect"), &VisibleOnScreenNotifier2D::set_show_rect);
-	ClassDB::bind_method(D_METHOD("is_showing_rect"), &VisibleOnScreenNotifier2D::is_showing_rect);
-	ClassDB::bind_method(D_METHOD("is_on_screen"), &VisibleOnScreenNotifier2D::is_on_screen);
-
-	ADD_PROPERTY(PropertyInfo(Variant::RECT2, "rect", PROPERTY_HINT_NONE, "suffix:px"), "set_rect",
-		"get_rect");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_rect"), "set_show_rect", "is_showing_rect");
-
-	ADD_SIGNAL(MethodInfo("screen_entered"));
-	ADD_SIGNAL(MethodInfo("screen_exited"));
-}
+void VisibleOnScreenNotifier2D::_bind_methods() {}
 
 VisibleOnScreenNotifier2D::VisibleOnScreenNotifier2D()
 {
@@ -242,28 +227,7 @@ void VisibleOnScreenEnabler2D::_notification(int p_what)
 	}
 }
 
-void VisibleOnScreenEnabler2D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_enable_mode", "mode"), &VisibleOnScreenEnabler2D::set_enable_mode);
-	ClassDB::bind_method(D_METHOD("get_enable_mode"), &VisibleOnScreenEnabler2D::get_enable_mode);
-
-	ClassDB::bind_method(
-		D_METHOD("set_enable_node_path", "path"), &VisibleOnScreenEnabler2D::set_enable_node_path);
-	ClassDB::bind_method(
-		D_METHOD("get_enable_node_path"), &VisibleOnScreenEnabler2D::get_enable_node_path);
-
-	ADD_GROUP("Enabling", "enable_");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "enable_mode", PROPERTY_HINT_ENUM, "Inherit,Always,When Paused"),
-		"set_enable_mode", "get_enable_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "enable_node_path"), "set_enable_node_path",
-		"get_enable_node_path");
-
-	BIND_ENUM_CONSTANT(ENABLE_MODE_INHERIT);
-	BIND_ENUM_CONSTANT(ENABLE_MODE_ALWAYS);
-	BIND_ENUM_CONSTANT(ENABLE_MODE_WHEN_PAUSED);
-}
+void VisibleOnScreenEnabler2D::_bind_methods() {}
 
 VisibleOnScreenEnabler2D::VisibleOnScreenEnabler2D() {}
 

@@ -277,53 +277,7 @@ void LimitAngularVelocityModifier3D::set_exclude(bool p_exclude) { exclude = p_e
 
 bool LimitAngularVelocityModifier3D::is_exclude() const { return exclude; }
 
-void LimitAngularVelocityModifier3D::_bind_methods()
-{
-	// Setting.
-	ClassDB::bind_method(D_METHOD("set_root_bone_name", "index", "bone_name"),
-		&LimitAngularVelocityModifier3D::set_root_bone_name);
-	ClassDB::bind_method(D_METHOD("get_root_bone_name", "index"),
-		&LimitAngularVelocityModifier3D::get_root_bone_name);
-	ClassDB::bind_method(
-		D_METHOD("set_root_bone", "index", "bone"), &LimitAngularVelocityModifier3D::set_root_bone);
-	ClassDB::bind_method(
-		D_METHOD("get_root_bone", "index"), &LimitAngularVelocityModifier3D::get_root_bone);
-
-	ClassDB::bind_method(D_METHOD("set_end_bone_name", "index", "bone_name"),
-		&LimitAngularVelocityModifier3D::set_end_bone_name);
-	ClassDB::bind_method(
-		D_METHOD("get_end_bone_name", "index"), &LimitAngularVelocityModifier3D::get_end_bone_name);
-	ClassDB::bind_method(
-		D_METHOD("set_end_bone", "index", "bone"), &LimitAngularVelocityModifier3D::set_end_bone);
-	ClassDB::bind_method(
-		D_METHOD("get_end_bone", "index"), &LimitAngularVelocityModifier3D::get_end_bone);
-
-	ClassDB::bind_method(
-		D_METHOD("set_chain_count", "count"), &LimitAngularVelocityModifier3D::set_chain_count);
-	ClassDB::bind_method(
-		D_METHOD("get_chain_count"), &LimitAngularVelocityModifier3D::get_chain_count);
-	ClassDB::bind_method(D_METHOD("clear_chains"), &LimitAngularVelocityModifier3D::clear_chains);
-
-	ClassDB::bind_method(D_METHOD("set_max_angular_velocity", "angular_velocity"),
-		&LimitAngularVelocityModifier3D::set_max_angular_velocity);
-	ClassDB::bind_method(D_METHOD("get_max_angular_velocity"),
-		&LimitAngularVelocityModifier3D::get_max_angular_velocity);
-	ClassDB::bind_method(
-		D_METHOD("set_exclude", "exclude"), &LimitAngularVelocityModifier3D::set_exclude);
-	ClassDB::bind_method(D_METHOD("is_exclude"), &LimitAngularVelocityModifier3D::is_exclude);
-
-	ClassDB::bind_method(D_METHOD("reset"), &LimitAngularVelocityModifier3D::reset);
-
-	ClassDB::bind_method(
-		D_METHOD("_get_joint_count"), &LimitAngularVelocityModifier3D::_get_joint_count);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_angular_velocity", PROPERTY_HINT_RANGE,
-					 "0,720,or_greater,radians_as_degrees,suffix:" + String(U"°") + "/s"),
-		"set_max_angular_velocity", "get_max_angular_velocity");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "exclude"), "set_exclude", "is_exclude");
-	ADD_ARRAY_COUNT("Chains", "chain_count", "set_chain_count", "get_chain_count", "chains/");
-	ADD_ARRAY_COUNT("Joints", "joint_count", "", "_get_joint_count", "joints/");
-}
+void LimitAngularVelocityModifier3D::_bind_methods() {}
 
 void LimitAngularVelocityModifier3D::_set_active(bool p_active)
 {
@@ -341,8 +295,7 @@ void LimitAngularVelocityModifier3D::_validate_bone_names()
 {
 	for (uint32_t i = 0; i < chains.size(); i++) {
 		// Prior bone name.
-		if (!chains[i].
-root_bone.name.is_empty()) {
+		if (!chains[i].root_bone.name.is_empty()) {
 			set_root_bone_name(i, chains[i].root_bone.name);
 		}
 		else if (chains[i].root_bone.bone != -1) {

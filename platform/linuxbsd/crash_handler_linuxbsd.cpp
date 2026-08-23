@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "crash_handler_linuxbsd.h"
-
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
 #include "core/object/script_language.h"
@@ -37,6 +35,7 @@
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/version.h"
+#include "crash_handler_linuxbsd.h"
 #include "main/main.h"
 
 #ifndef DEBUG_ENABLED
@@ -44,26 +43,27 @@
 #endif
 
 #ifdef CRASH_HANDLER_ENABLED
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <execinfo.h>
 #include <link.h>
 
-#include <csignal>
-#include <cstdio>
-#include <cstdlib>
-
-inline String find_addr2line_executable() {
+inline String find_addr2line_executable()
+{
 	List<String> args;
 	args.push_back("--version");
 	String output;
-	OS *os = OS::get_singleton();
+	OS* os = OS::get_singleton();
 	int ret = 0;
 	Error err = OK;
 	// First, check for addr2line in the home directory's cargo bin.
 	if (os->has_environment("HOME")) {
 		// Faster implementation from gimli-rs/addr2line.
-		const String cargo_addr2line = os->get_environment("HOME").path_join(String("/.cargo/bin/addr2line"));
+		const String cargo_addr2line =
+			os->get_environment("HOME").path_join(String("/.cargo/bin/addr2line"));
 		err = os->execute(cargo_addr2line, args, &output, &ret);
 		if (err == OK && ret == 0) {
 			return cargo_addr2line;
@@ -78,7 +78,8 @@ inline String find_addr2line_executable() {
 	return String("addr2line");
 }
 
-static void handle_crash(int sig) {
+static void handle_crash(int sig)
+{
 	signal(SIGSEGV, SIG_DFL);
 	signal(SIGFPE, SIG_DFL);
 	signal(SIGILL, SIG_DFL);
@@ -91,7 +92,7 @@ static void handle_crash(int sig) {
 		std::_Exit(0);
 	}
 
-	void *bt_buffer[256];
+	void* bt_buffer[256];
 	size_t size = backtrace(bt_buffer, 256);
 	String exec_path = OS::get_singleton()->get_executable_path();
 
@@ -106,21 +107,23 @@ static void handle_crash(int sig) {
 
 	// Tell MainLoop about the crash. This can be handled by users too in Node.
 	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_CRASH);
+		OS::get_singleton()->get_main_loop()->obj->notification(MainLoop::NOTIFICATION_CRASH);
 	}
 
 	// Dump the backtrace to stderr with a message to the user
 	print_error("\n================================================================");
 	print_error(vformat("%s: Program crashed with signal %d", __FUNCTION__, sig));
 
-	// Print the engine version just before, so that people are reminded to include the version in backtrace reports.
+	// Print the engine version just before, so that people are reminded to include the version in
+	// backtrace reports.
 	if (String(VLTR_VERSION_HASH).is_empty()) {
 		print_error(vformat("Engine version: %s", VLTR_VERSION_FULL_NAME));
-	} else {
+	}
+	else {
 		print_error(vformat("Engine version: %s (%s)", VLTR_VERSION_FULL_NAME, VLTR_VERSION_HASH));
 	}
 	print_error(vformat("Dumping the backtrace. %s", msg));
-	char **strings = backtrace_symbols(bt_buffer, size);
+	char** strings = backtrace_symbols(bt_buffer, size);
 	// PIE executable relocation, zero for non-PIE executables
 #ifdef __GLIBC__
 	// This is a glibc only thing apparently.
@@ -130,7 +133,7 @@ static void handle_crash(int sig) {
 	uintptr_t relocation = 0;
 #endif //__GLIBC__
 
-	void *load_addr = nullptr;
+	void* load_addr = nullptr;
 	{
 		Dl_info info;
 		if (dladdr(bt_buffer[size - 1], &info)) {
@@ -147,7 +150,7 @@ static void handle_crash(int sig) {
 		List<String> args;
 		for (size_t i = 0; i < size; i++) {
 			char str[1024];
-			snprintf(str, 1024, "%p", (void *)((uintptr_t)bt_buffer[i] - relocation));
+			snprintf(str, 1024, "%p", (void*)((uintptr_t)bt_buffer[i] - relocation));
 			args.push_back(str);
 		}
 		args.push_back("-e");
@@ -160,7 +163,8 @@ static void handle_crash(int sig) {
 		String addr2line_output;
 		Error err = OS::get_singleton()->execute(exe_name, args, &addr2line_output, &ret);
 		if (err == OK) {
-			Vector<String> addr2line_results = addr2line_output.substr(0, addr2line_output.length() - 1).split("\n", false);
+			Vector<String> addr2line_results =
+				addr2line_output.substr(0, addr2line_output.length() - 1).split("\n", false);
 
 			for (size_t i = 1; i < size; i++) {
 				String output = addr2line_results[i].replace("/./", "/");
@@ -179,7 +183,8 @@ static void handle_crash(int sig) {
 					}
 					if (addr2line_fail && info.dli_sname && info.dli_sname[0] == '_') {
 						int status = 0;
-						char *demangled = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
+						char* demangled =
+							abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
 
 						if (status == 0 && demangled) {
 							output = String(demangled);
@@ -189,14 +194,18 @@ static void handle_crash(int sig) {
 							free(demangled);
 						}
 					}
-				} else {
+				}
+				else {
 					mod_name = "<unknown module>";
 				}
 
-				// Simplify printed file paths to remove redundant `/./` sections (e.g. `/opt/godot/./core` -> `/opt/godot/core`).
-				print_error(vformat("[%d] %x (%s+%x) - %s", (int64_t)i, (uint64_t)bt_buffer[i], mod_name, (uint64_t)bt_buffer[i] - mod_off, output));
+				// Simplify printed file paths to remove redundant `/./` sections (e.g.
+				// `/opt/godot/./core` -> `/opt/godot/core`).
+				print_error(vformat("[%d] %x (%s+%x) - %s", (int64_t)i, (uint64_t)bt_buffer[i],
+					mod_name, (uint64_t)bt_buffer[i] - mod_off, output));
 			}
-		} else {
+		}
+		else {
 			// Otherwise fall back to trace symbols.
 			for (size_t i = 1; i < size; i++) {
 				String output = String(strings[i]);
@@ -212,7 +221,8 @@ static void handle_crash(int sig) {
 					}
 					if (info.dli_sname && info.dli_sname[0] == '_') {
 						int status = 0;
-						char *demangled = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
+						char* demangled =
+							abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status);
 
 						if (status == 0 && demangled) {
 							output = String(demangled);
@@ -222,11 +232,13 @@ static void handle_crash(int sig) {
 							free(demangled);
 						}
 					}
-				} else {
+				}
+				else {
 					mod_name = "<unknown module>";
 				}
 
-				print_error(vformat("[%d] %x (%s+%x) - %s", (int64_t)i, (uint64_t)bt_buffer[i], mod_name, (uint64_t)bt_buffer[i] - mod_off, output));
+				print_error(vformat("[%d] %x (%s+%x) - %s", (int64_t)i, (uint64_t)bt_buffer[i],
+					mod_name, (uint64_t)bt_buffer[i] - mod_off, output));
 			}
 		}
 
@@ -235,10 +247,11 @@ static void handle_crash(int sig) {
 	print_error("-- END OF C++ BACKTRACE --");
 	print_error("================================================================");
 
-	for (const Ref<ScriptBacktrace> &backtrace : ScriptServer::capture_script_backtraces(false)) {
+	for (const Ref<ScriptBacktrace>& backtrace : ScriptServer::capture_script_backtraces(false)) {
 		if (!backtrace->is_empty()) {
 			print_error(backtrace->format());
-			print_error(vformat("-- END OF %s BACKTRACE --", backtrace->get_language_name().to_upper()));
+			print_error(
+				vformat("-- END OF %s BACKTRACE --", backtrace->get_language_name().to_upper()));
 			print_error("================================================================");
 		}
 	}
@@ -248,15 +261,12 @@ static void handle_crash(int sig) {
 }
 #endif
 
-CrashHandler::CrashHandler() {
-	disabled = false;
-}
+CrashHandler::CrashHandler() { disabled = false; }
 
-CrashHandler::~CrashHandler() {
-	disable();
-}
+CrashHandler::~CrashHandler() { disable(); }
 
-void CrashHandler::disable() {
+void CrashHandler::disable()
+{
 	if (disabled) {
 		return;
 	}
@@ -270,10 +280,13 @@ void CrashHandler::disable() {
 	disabled = true;
 }
 
-void CrashHandler::initialize() {
+void CrashHandler::initialize()
+{
 #ifdef CRASH_HANDLER_ENABLED
 	signal(SIGSEGV, handle_crash);
 	signal(SIGFPE, handle_crash);
 	signal(SIGILL, handle_crash);
 #endif
 }
+
+

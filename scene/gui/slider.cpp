@@ -153,7 +153,7 @@ void Slider::gui_input(const Ref<InputEvent>& p_event)
 				return;
 			}
 			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_left", p_event, true)) {
+				if (!input->is_action_just_pressed_by_event("ui_left", p_event.ptr(), true)) {
 					return;
 				}
 				set_process_internal(true);
@@ -171,7 +171,7 @@ void Slider::gui_input(const Ref<InputEvent>& p_event)
 				return;
 			}
 			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_right", p_event, true)) {
+				if (!input->is_action_just_pressed_by_event("ui_right", p_event.ptr(), true)) {
 					return;
 				}
 				set_process_internal(true);
@@ -189,7 +189,7 @@ void Slider::gui_input(const Ref<InputEvent>& p_event)
 				return;
 			}
 			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_up", p_event, true)) {
+				if (!input->is_action_just_pressed_by_event("ui_up", p_event.ptr(), true)) {
 					return;
 				}
 				set_process_internal(true);
@@ -202,7 +202,7 @@ void Slider::gui_input(const Ref<InputEvent>& p_event)
 				return;
 			}
 			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_down", p_event, true)) {
+				if (!input->is_action_just_pressed_by_event("ui_down", p_event.ptr(), true)) {
 					return;
 				}
 				set_process_internal(true);

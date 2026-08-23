@@ -721,7 +721,7 @@ void Node::set_process_mode(ProcessMode p_mode)
 	// This is required for the editor to update the visibility of disabled nodes
 	// It's very expensive during runtime to change, so editor-only
 	if (Engine::get_singleton()->is_editor_hint()) {
-		data.tree->emit_signal(SNAME("tree_process_mode_changed"));
+		data.tree->obj->emit_signal(SNAME("tree_process_mode_changed"));
 	}
 
 	_emit_editor_state_changed();
@@ -3740,7 +3740,7 @@ void Node::update_configuration_warnings()
 	if (data.tree->get_edited_scene_root() &&
 		(data.tree->get_edited_scene_root() == this ||
 			data.tree->get_edited_scene_root()->is_ancestor_of(this))) {
-		data.tree->emit_signal(SceneStringName(node_configuration_warning_changed), this);
+		data.tree->obj->emit_signal(SceneStringName(node_configuration_warning_changed), this);
 	}
 #endif
 }

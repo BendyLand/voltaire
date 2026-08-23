@@ -310,43 +310,7 @@ NodePath BoneConstraint3D::get_reference_node(int p_index) const
 	return settings[p_index]->reference_node;
 }
 
-void BoneConstraint3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_amount", "index", "amount"), &BoneConstraint3D::set_amount);
-	ClassDB::bind_method(D_METHOD("get_amount", "index"), &BoneConstraint3D::get_amount);
-	ClassDB::bind_method(D_METHOD("set_apply_bone_name", "index", "bone_name"),
-		&BoneConstraint3D::set_apply_bone_name);
-	ClassDB::bind_method(
-		D_METHOD("get_apply_bone_name", "index"), &BoneConstraint3D::get_apply_bone_name);
-	ClassDB::bind_method(
-		D_METHOD("set_apply_bone", "index", "bone"), &BoneConstraint3D::set_apply_bone);
-	ClassDB::bind_method(D_METHOD("get_apply_bone", "index"), &BoneConstraint3D::get_apply_bone);
-	ClassDB::bind_method(
-		D_METHOD("set_reference_type", "index", "type"), &BoneConstraint3D::set_reference_type);
-	ClassDB::bind_method(
-		D_METHOD("get_reference_type", "index"), &BoneConstraint3D::get_reference_type);
-	ClassDB::bind_method(D_METHOD("set_reference_bone_name", "index", "bone_name"),
-		&BoneConstraint3D::set_reference_bone_name);
-	ClassDB::bind_method(
-		D_METHOD("get_reference_bone_name", "index"), &BoneConstraint3D::get_reference_bone_name);
-	ClassDB::bind_method(
-		D_METHOD("set_reference_bone", "index", "bone"), &BoneConstraint3D::set_reference_bone);
-	ClassDB::bind_method(
-		D_METHOD("get_reference_bone", "index"), &BoneConstraint3D::get_reference_bone);
-	ClassDB::bind_method(
-		D_METHOD("set_reference_node", "index", "node"), &BoneConstraint3D::set_reference_node);
-	ClassDB::bind_method(
-		D_METHOD("get_reference_node", "index"), &BoneConstraint3D::get_reference_node);
-
-	ClassDB::bind_method(
-		D_METHOD("set_setting_count", "count"), &BoneConstraint3D::set_setting_count);
-	ClassDB::bind_method(D_METHOD("get_setting_count"), &BoneConstraint3D::get_setting_count);
-	ClassDB::bind_method(D_METHOD("clear_setting"), &BoneConstraint3D::clear_settings);
-
-	BIND_ENUM_CONSTANT(REFEREN
-CE_TYPE_BONE);
-	BIND_ENUM_CONSTANT(REFERENCE_TYPE_NODE);
-}
+void BoneConstraint3D::_bind_methods() {}
 
 void BoneConstraint3D::_validate_bone_names()
 {

@@ -396,70 +396,7 @@ Transform3D PathFollow3D::correct_posture(
 	return t;
 }
 
-void PathFollow3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_progress", "progress"), &PathFollow3D::set_progress);
-	ClassDB::bind_method(D_METHOD("get_progress"), &PathFollow3D::get_progress);
-
-	ClassDB::bind_method(D_METHOD("set_h_offset", "h_offset"), &PathFollow3D::set_h_offset);
-	ClassDB::bind_method(D_METHOD("get_h_offset"), &PathFollow3D::get_h_offset);
-
-	ClassDB::bind_method(D_METHOD("set_v_offset", "v_offset"), &PathFollow3D::set_v_offset);
-	ClassDB::bind_method(D_METHOD("get_v_offset"), &PathFollow3D::get_v_offset);
-
-	ClassDB::bind_method(
-		D_METHOD("set_progress_ratio", "ratio"), &PathFollow3D::set_progress_ratio);
-	ClassDB::bind_method(D_METHOD("get_progress_ratio"), &PathFollow3D::get_progress_ratio);
-
-	ClassDB::bind_method(
-		D_METHOD("set_rotation_mode", "rotation_mode"), &PathFollow3D::set_rotation_mode);
-	ClassDB::bind_method(D_METHOD("get_rotation_mode"), &PathFollow3D::get_rotation_mode);
-
-	ClassDB::bind_method(D_METHOD("set_cubic_interpolation", "enabled"),
-		&PathFollow3D::set_cubic_interpolation_enabled);
-	ClassDB::bind_method(
-		D_METHOD("get_cubic_interpolation"), &PathFollow3D::is_cubic_interpolation_enabled);
-
-	ClassDB::bind_method(
-		D_METHOD("set_use_model_front", "enabled"), &PathFollow3D::set_use_model_front);
-	ClassDB::bind_method(D_METHOD("is_using_model_front"), &PathFollow3D::is_using_model_front);
-
-	ClassDB::bind_method(D_METHOD("set_loop", "loop"), &PathFollow3D::set_loop);
-	ClassDB::bind_method(D_METHOD("has_loop"), &PathFollow3D::has_loop);
-
-	ClassDB::bind_method(D_METHOD("set_tilt_enabled", "enabled"), &PathFollow3D::set_tilt_enabled);
-	ClassDB::bind_method(D_METHOD("is_tilt_enabled"), &PathFollow3D::is_tilt_enabled);
-
-	ClassDB::bind_static_method("PathFollow3D",
-		D_METHOD("correct_posture", "transform", "rotation_mode"), &PathFollow3D::correct_posture);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "progress", PROPERTY_HINT_RANGE,
-					 "0,10000,0.01,or_less,or_greater,suffix:m"),
-		"set_progress", "get_progress");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "progress_ratio", PROPERTY_HINT_RANGE,
-					 "0,1,0.0001,or_less,or_greater", PROPERTY_USAGE_EDITOR),
-		"set_progress_ratio", "get_progress_ratio");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "h_offset", PROPERTY_HINT_NONE, "suffix:m"),
-		"set_h_offset", "get_h_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "v_offset", PROPERTY_HINT_NONE, "suffix:m"),
-		"set_v_offset", "get_v_offset");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "rotation_mode", PROPERTY_HINT_ENUM, "None,Y,XY,XYZ,Oriented"),
-		"set_rotation_mode", "get_rotation_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_model_front"), "set_use_model_front",
-		"is_using_model_front");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cubic_interp"), "set_cubic_interpolation",
-		"get_cubic_interpolation");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "loop"), "set_loop", "has_loop");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "tilt_enabled"), "set_tilt_enabled", "is_tilt_enabled");
-
-	BIND_ENUM_CONSTANT(ROTATION_NONE);
-	BIND_ENUM_CONSTANT(ROTATION_Y);
-	BIND_ENUM_CONSTANT(ROTATION_XY);
-	BIND_ENUM_CONSTANT(ROTATION_XYZ);
-	BIND_ENUM_CONSTANT(ROTATION_ORIENTED);
-}
+void PathFollow3D::_bind_methods() {}
 
 void PathFollow3D::set_progress(real_t p_progress)
 {
@@ -469,8 +406,7 @@ void PathFollow3D::set_progress(real_t p_progress)
 	}
 	progress = p_progress;
 
-	if (path)
- {
+	if (path) {
 		if (path->get_curve().is_valid()) {
 			real_t path_length = path->get_curve()->get_baked_length();
 

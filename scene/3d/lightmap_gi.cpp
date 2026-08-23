@@ -116,7 +116,7 @@ Array LightmapGIData::_get_user_data() const
 	return ret;
 }
 
-void LightmapGIData::set_lightmap_textures(const TypedArray<TextureLayered>& p_data)
+void LightmapGIData::set_lightmap_textures(const Array& p_data)
 {
 	storage_light_textures = p_data;
 	if (p_data.is_empty()) {
@@ -147,12 +147,12 @@ void LightmapGIData::set_lightmap_textures(const TypedArray<TextureLayered>& p_d
 	_reset_lightmap_textures();
 }
 
-TypedArray<TextureLayered> LightmapGIData::get_lightmap_textures() const
+Array LightmapGIData::get_lightmap_textures() const
 {
 	return storage_light_textures;
 }
 
-void LightmapGIData::set_shadowmask_textures(const TypedArray<TextureLayered>& p_data)
+void LightmapGIData::set_shadowmask_textures(const Array& p_data)
 {
 	storage_shadowmask_textures = p_data;
 
@@ -186,7 +186,7 @@ void LightmapGIData::set_shadowmask_textures(const TypedArray<TextureLayered>& p
 	_reset_shadowmask_textures();
 }
 
-TypedArray<TextureLayered> LightmapGIData::get_shadowmask_textures() const
+Array LightmapGIData::get_shadowmask_textures() const
 {
 	return storage_shadowmask_textures;
 }
@@ -336,7 +336,7 @@ Dictionary LightmapGIData::_get_probe_data() const
 #ifndef DISABLE_DEPRECATED
 void LightmapGIData::set_light_texture(const Ref<TextureLayered>& p_light_texture)
 {
-	TypedArray<TextureLayered> arr = {p_light_texture};
+	Array arr = {p_light_texture};
 	set_lightmap_textures(arr);
 }
 
@@ -845,7 +845,7 @@ void LightmapGI::_gen_new_positions_from_octree(const GenProbesOctree* p_cell, f
 
 LightmapGI::BakeError LightmapGI::_save_and_reimport_atlas_textures(
 	const Ref<Lightmapper> p_lightmapper, const String& p_base_name,
-	TypedArray<TextureLayered>& r_textures, bool p_is_shadowmask) const
+	Array& r_textures, bool p_is_shadowmask) const
 {
 	Vector<Ref<Image>> images;
 	images.resize(p_is_shadowmask ? p_lightmapper->get_shadowmask_texture_count()
@@ -1159,14 +1159,14 @@ LightmapGI::BakeError LightmapGI::bake(Node* p_from_node, String p_image_data_pa
 			ERR_FAIL_COND_V(
 				lightmap_size.x == 0 || lightmap_size.y == 0, BAKE_ERROR_LIGHTMAP_TOO_SMALL);
 
-			TypedArray<RID> overrides;
+			Array overrides;
 			overrides.resize(mf.overrides.size());
 			for (int i = 0; i < mf.overrides.size(); i++) {
 				if (mf.overrides[i].is_valid()) {
 					overrides[i] = mf.overrides[i]->get_rid();
 				}
 			}
-			TypedArray<Image> images =
+			Array images =
 				RS::get_singleton()->bake_render_uv2(mf.mesh->get_rid(), overrides, lightmap_size);
 
 			ERR_FAIL_COND_V(images.is_empty(), BAKE_ERROR_CANT_CREATE_IMAGE);
@@ -1407,8 +1407,8 @@ LightmapGI::BakeError LightmapGI::bake(Node* p_from_node, String p_image_data_pa
 		_build_area_light_texture_atlas(lights_found, area_light_atlas_textures,
 			area_light_atlas_size, area_light_atlas_mipmaps);
 		if (area_light_atlas_textures.size() > 0) {
-			TypedArray<RID> area_light_textures;
-			TypedArray<Rect2> area_light_texture_rects;
+			Array area_light_textures;
+			Array area_light_texture_rects;
 			for (const KeyValue<Ref<Texture2D>, AreaLightAtlasTexture>& E :
 				area_light_atlas_textures) {
 				area_light_textures.push_back(E.key->get_rid());
@@ -1593,8 +1593,8 @@ LightmapGI::BakeError LightmapGI::bake(Node* p_from_node, String p_image_data_pa
 	}
 
 	// POSTBAKE: Save Textures.
-	TypedArray<TextureLayered> lightmap_textures;
-	TypedArray<TextureLayered> shadowmask_textures;
+	Array lightmap_textures;
+	Array shadowmask_textures;
 
 	const String texture_filename = p_image_data_path.get_basename();
 	const int shadowmask_texture_count = lightmapper->get_shadowmask_texture_count();
@@ -1802,7 +1802,7 @@ LightmapGI::BakeError LightmapGI::bake(Node* p_from_node, String p_image_data_pa
 	}
 
 	gi_data->set_path(p_image_data_path, true);
-	Error err = ResourceSaver::save(gi_data);
+	Error err = ResourceSaver::save(gi_data.ptr());
 
 	if (err != OK) {
 		return BAKE_ERROR_CANT_CREATE_IMAGE;

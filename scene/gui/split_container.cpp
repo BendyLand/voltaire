@@ -435,7 +435,7 @@ void SplitContainerDragger::_notification(int p_what)
 
 	case NOTIFICATION_DRAW: {
 		SplitContainer* sc = Object::cast_to<SplitContainer>(get_parent());
-		draw_style_box(sc->theme_cache.split_bar_background, split_bar_rect);
+		draw_style_box(sc->theme_cache.split_bar_background.ptr(), split_bar_rect);
 		if (!sc->touch_dragger_enabled &&
 			sc->dragger_visibility == SplitContainer::DRAGGER_VISIBLE &&
 			(dragging || mouse_inside || !sc->theme_cache.autohide ||
@@ -445,7 +445,7 @@ void SplitContainerDragger::_notification(int p_what)
 												: (sc->get_size().y - tex->get_size().y);
 			if (available_size - sc->drag_area_margin_begin - sc->drag_area_margin_end >
 				0) { // Draw the grabber only if it fits.
-				draw_texture(tex, (split_bar_rect.get_position() +
+				draw_texture(tex.ptr(), (split_bar_rect.get_position() +
 									  (split_bar_rect.get_size() - tex->get_size()) * 0.5));
 			}
 		}

@@ -354,13 +354,13 @@ Error AnimationMixer::add_animation_library(
 
 	animation_libraries.insert(insert_pos, ald);
 
-	ald.library->connect(SNAME("animation_added"),
+	ald.library->obj->connect(SNAME("animation_added"),
 		callable_mp(this, &AnimationMixer::_animation_added).bind(p_name));
-	ald.library->connect(SNAME("animation_removed"),
+	ald.library->obj->connect(SNAME("animation_removed"),
 		callable_mp(this, &AnimationMixer::_animation_removed).bind(p_name));
-	ald.library->connect(SNAME("animation_renamed"),
+	ald.library->obj->connect(SNAME("animation_renamed"),
 		callable_mp(this, &AnimationMixer::_animation_renamed).bind(p_name));
-	ald.library->connect(
+	ald.library->obj->connect(
 		SceneStringName(animation_changed), callable_mp(this, &AnimationMixer::_animation_changed));
 
 	_animation_set_cache_update();
@@ -383,13 +383,13 @@ void AnimationMixer::remove_animation_library(const StringName& p_name)
 
 	ERR_FAIL_COND(at_pos == -1);
 
-	animation_libraries[at_pos].library->disconnect(
+	animation_libraries[at_pos].library->obj->disconnect(
 		SNAME("animation_added"), callable_mp(this, &AnimationMixer::_animation_added));
-	animation_libraries[at_pos].library->disconnect(
+	animation_libraries[at_pos].library->obj->disconnect(
 		SNAME("animation_removed"), callable_mp(this, &AnimationMixer::_animation_removed));
-	animation_libraries[at_pos].library->disconnect(
+	animation_libraries[at_pos].library->obj->disconnect(
 		SNAME("animation_renamed"), callable_mp(this, &AnimationMixer::_animation_renamed));
-	animation_libraries[at_pos].library->disconnect(
+	animation_libraries[at_pos].library->obj->disconnect(
 		SceneStringName(animation_changed), callable_mp(this, &AnimationMixer::_animation_changed));
 
 	animation_libraries.remove_at(at_pos);
@@ -419,18 +419,18 @@ void AnimationMixer::rename_animation_library(
 			found = true;
 			lib.name = p_new_name;
 			// rename connections
-			lib.library->disconnect(
+			lib.library->obj->disconnect(
 				SNAME("animation_added"), callable_mp(this, &AnimationMixer::_animation_added));
-			lib.library->disconnect(
+			lib.library->obj->disconnect(
 				SNAME("animation_removed"), callable_mp(this, &AnimationMixer::_animation_removed));
-			lib.library->disconnect(
+			lib.library->obj->disconnect(
 				SNAME("animation_renamed"), callable_mp(this, &AnimationMixer::_animation_renamed));
 
-			lib.library->connect(SNAME("animation_added"),
+			lib.library->obj->connect(SNAME("animation_added"),
 				callable_mp(this, &AnimationMixer::_animation_added).bind(p_new_name));
-			lib.library->connect(SNAME("animation_removed"),
+			lib.library->obj->connect(SNAME("animation_removed"),
 				callable_mp(this, &AnimationMixer::_animation_removed).bind(p_new_name));
-			lib.library->connect(SNAME("animation_renamed"),
+			lib.library->obj->connect(SNAME("animation_renamed"),
 				callable_mp(this, &AnimationMixer::_animation_renamed).bind(p_new_name));
 
 			for (const KeyValue<StringName, Ref<Animation>>& K : lib.library->animations) {
@@ -837,7 +837,7 @@ bool AnimationMixer::_update_caches()
 					TrackCacheValue* track_value = memnew(TrackCacheValue);
 
 					if (resource.is_valid()) {
-						track_value->object_id = resource->get_instance_id();
+						track_value->object_id = resource->obj->get_instance_id();
 					}
 					else {
 						track_value->object_id = child->obj->get_instance_id();
@@ -876,23 +876,6 @@ bool AnimationMixer::_update_caches()
 							else {
 								track_value->init_value =
 									(reset_anim->track_get_key_value(rt, 0).operator Array())[0];
-							}
-						}
-					}
-
-					if (is_value && callback_mode_discrete ==
-										ANIMATION_CALLBACK_MODE_DISCRETE_FORCE_CONTINUOUS) {
-						if (child) {
-							PropertyInfo prop_info;
-							ClassDB::get_property_info(child->obj->get_class_name(),
-								path.get_concatenated_subnames(), &prop_info);
-							if (prop_info.hint == PROPERTY_HINT_ONESHOT) {
-								WARN_PRINT_ED(vformat(
-									"%s: '%s', Value Track: '%s' is oneshot property, but will be "
-									"continuously updated. Consider setting a value other than "
-									"ANIMATION_CALLBACK_MODE_DISCRETE_FORCE_CONTINUOUS to "
-									"AnimationMixer.callback_mode_dominant.",
-									mixer_name, String(E), String(path)));
 							}
 						}
 					}
@@ -1016,7 +999,7 @@ bool AnimationMixer::_update_caches()
 					TrackCacheMethod* track_method = memnew(TrackCacheMethod);
 
 					if (resource.is_valid()) {
-						track_method->object_id = resource->get_instance_id();
+						track_method->object_id = resource->obj->get_instance_id();
 					}
 					else {
 						track_method->object_id = child->obj->get_instance_id();
@@ -1952,7 +1935,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only)
 					t->playing_streams.clear();
 					continue;
 				}
-				ObjectID oid = a->get_instance_id();
+				ObjectID oid = a->obj->get_instance_id();
 				if (!t->playing_streams.has(oid)) {
 					t->playing_streams[oid] = PlayingAudioTrackInfo();
 				}
@@ -2031,7 +2014,8 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only)
 						sample_playback.instantiate();
 						sample_playback->stream = stream;
 						t->audio_stream_playback->set_sample_playback(sample_playback);
-						AudioServer::get_singleton()->start_sample_playback(sample_playback);
+						AudioServer::
+get_singleton()->start_sample_playback(sample_playback);
 						continue;
 					}
 

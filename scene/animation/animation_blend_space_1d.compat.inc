@@ -31,10 +31,11 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "animation_blend_space_1d.h"
-
 #include "core/object/class_db.h"
 
-void AnimationNodeBlendSpace1D::_add_blend_point_bind_compat_110369(const Ref<AnimationRootNode> &p_node, float p_position, int p_at_index) {
+void AnimationNodeBlendSpace1D::_add_blend_point_bind_compat_110369(
+	const Ref<AnimationRootNode>& p_node, float p_position, int p_at_index)
+{
 	int n = p_at_index == -1 ? blend_points_used : p_at_index;
 	while (find_blend_point_by_name(itos(n)) != -1) {
 		n++;
@@ -42,8 +43,8 @@ void AnimationNodeBlendSpace1D::_add_blend_point_bind_compat_110369(const Ref<An
 	add_blend_point(p_node, p_position, p_at_index, StringName(itos(n)));
 }
 
-void AnimationNodeBlendSpace1D::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("add_blend_point", "node", "pos", "at_index"), &AnimationNodeBlendSpace1D::_add_blend_point_bind_compat_110369, DEFVAL(-1));
-}
+void AnimationNodeBlendSpace1D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

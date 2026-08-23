@@ -280,14 +280,14 @@ void AudioStreamPlayerInternal::get_property_list(List<PropertyInfo>* p_list) co
 void AudioStreamPlayerInternal::set_stream(Ref<AudioStream> p_stream)
 {
 	if (stream.is_valid()) {
-		stream->disconnect(SNAME("parameter_list_changed"),
+		stream->obj->disconnect(SNAME("parameter_list_changed"),
 			callable_mp(this, &AudioStreamPlayerInternal::_update_stream_parameters));
 	}
 	stop_callable.call();
 	stream = p_stream;
 	_update_stream_parameters();
 	if (stream.is_valid()) {
-		stream->connect(SNAME("parameter_list_changed"),
+		stream->obj->connect(SNAME("parameter_list_changed"),
 			callable_mp(this, &AudioStreamPlayerInternal::_update_stream_parameters));
 	}
 	node->obj->notify_property_list_changed();
@@ -400,9 +400,9 @@ AudioStreamPlayerInternal::AudioStreamPlayerInternal(
 	physical = p_physical;
 	bus = SceneStringName(Master);
 
-	AudioServer::get_singleton()->connect(
+	AudioServer::get_singleton()->obj->connect(
 		"bus_layout_changed", callable_mp((Object*)node, &Object::notify_property_list_changed));
-	AudioServer::get_singleton()->connect(
+	AudioServer::get_singleton()->obj->connect(
 		"bus_renamed", callable_mp((Object*)node, &Object::notify_property_list_changed).unbind(3));
 }
 

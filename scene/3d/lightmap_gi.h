@@ -40,12 +40,14 @@ class Light3D;
 class Mesh;
 class Sky;
 
-class LightmapGIData : public Resource {
+class LightmapGIData : public Resource
+{
 	VLTRCLASS(LightmapGIData, Resource);
 	RES_BASE_EXTENSION("lmbake")
 
 public:
-	enum ShadowmaskMode {
+	enum ShadowmaskMode
+	{
 		SHADOWMASK_MODE_NONE,
 		SHADOWMASK_MODE_REPLACE,
 		SHADOWMASK_MODE_OVERLAY,
@@ -59,8 +61,8 @@ private:
 
 	// The temporary texture atlas arrays which are used for storage.
 	// If a single atlas is too large, it's split and recombined during loading.
-	TypedArray<TextureLayered> storage_light_textures;
-	TypedArray<TextureLayered> storage_shadowmask_textures;
+	Array storage_light_textures;
+	Array storage_shadowmask_textures;
 
 	bool uses_spherical_harmonics = false;
 	bool interior = false;
@@ -72,7 +74,8 @@ private:
 	float baked_exposure = 1.0;
 	uint32_t lightprobe_hash = 0;
 
-	struct User {
+	struct User
+	{
 		NodePath path;
 		int32_t sub_instance = 0;
 		Rect2 uv_scale;
@@ -81,9 +84,9 @@ private:
 
 	Vector<User> users;
 
-	void _set_user_data(const Array &p_data);
+	void _set_user_data(const Array& p_data);
 	Array _get_user_data() const;
-	void _set_probe_data(const Dictionary &p_data);
+	void _set_probe_data(const Dictionary& p_data);
 	Dictionary _get_probe_data() const;
 
 	void _reset_lightmap_textures();
@@ -93,7 +96,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	void add_user(const NodePath &p_path, const Rect2 &p_uv_scale, int p_slice_index, int32_t p_sub_instance = -1);
+	void add_user(const NodePath& p_path, const Rect2& p_uv_scale, int p_slice_index,
+		int32_t p_sub_instance = -1);
 	int get_user_count() const;
 	NodePath get_user_path(int p_user) const;
 	int32_t get_user_sub_instance(int p_user) const;
@@ -102,10 +106,10 @@ public:
 	void clear_users();
 
 #ifndef DISABLE_DEPRECATED
-	void set_light_texture(const Ref<TextureLayered> &p_light_texture);
+	void set_light_texture(const Ref<TextureLayered>& p_light_texture);
 	Ref<TextureLayered> get_light_texture() const;
 
-	void _set_light_textures_data(const Array &p_data);
+	void _set_light_textures_data(const Array& p_data);
 	Array _get_light_textures_data() const;
 #endif
 
@@ -121,7 +125,9 @@ public:
 	bool is_interior() const;
 	float get_baked_exposure() const;
 
-	void set_capture_data(const AABB &p_bounds, bool p_interior, const PackedVector3Array &p_points, const PackedColorArray &p_point_sh, const PackedInt32Array &p_tetrahedra, const PackedInt32Array &p_bsp_tree, float p_baked_exposure, uint32_t p_lightprobe_hash);
+	void set_capture_data(const AABB& p_bounds, bool p_interior, const PackedVector3Array& p_points,
+		const PackedColorArray& p_point_sh, const PackedInt32Array& p_tetrahedra,
+		const PackedInt32Array& p_bsp_tree, float p_baked_exposure, uint32_t p_lightprobe_hash);
 	PackedVector3Array get_capture_points() const;
 	PackedColorArray get_capture_sh() const;
 	PackedInt32Array get_capture_tetrahedra() const;
@@ -132,11 +138,11 @@ public:
 
 	void clear();
 
-	void set_lightmap_textures(const TypedArray<TextureLayered> &p_data);
-	TypedArray<TextureLayered> get_lightmap_textures() const;
+	void set_lightmap_textures(const Array& p_data);
+	Array get_lightmap_textures() const;
 
-	void set_shadowmask_textures(const TypedArray<TextureLayered> &p_data);
-	TypedArray<TextureLayered> get_shadowmask_textures() const;
+	void set_shadowmask_textures(const Array& p_data);
+	Array get_shadowmask_textures() const;
 	void clear_shadowmask_textures();
 	bool has_shadowmask_textures();
 
@@ -145,18 +151,21 @@ public:
 	~LightmapGIData();
 };
 
-class LightmapGI : public VisualInstance3D {
+class LightmapGI : public VisualInstance3D
+{
 	VLTRCLASS(LightmapGI, VisualInstance3D);
 
 public:
-	enum BakeQuality {
+	enum BakeQuality
+	{
 		BAKE_QUALITY_LOW,
 		BAKE_QUALITY_MEDIUM,
 		BAKE_QUALITY_HIGH,
 		BAKE_QUALITY_ULTRA,
 	};
 
-	enum GenerateProbes {
+	enum GenerateProbes
+	{
 		GENERATE_PROBES_DISABLED,
 		GENERATE_PROBES_SUBDIV_4,
 		GENERATE_PROBES_SUBDIV_8,
@@ -164,7 +173,8 @@ public:
 		GENERATE_PROBES_SUBDIV_32,
 	};
 
-	enum BakeError {
+	enum BakeError
+	{
 		BAKE_ERROR_OK,
 		BAKE_ERROR_NO_SCENE_ROOT,
 		BAKE_ERROR_FOREIGN_DATA,
@@ -179,7 +189,8 @@ public:
 		BAKE_ERROR_ATLAS_TOO_SMALL,
 	};
 
-	enum EnvironmentMode {
+	enum EnvironmentMode
+	{
 		ENVIRONMENT_MODE_DISABLED,
 		ENVIRONMENT_MODE_SCENE,
 		ENVIRONMENT_MODE_CUSTOM_SKY,
@@ -210,19 +221,22 @@ private:
 	Ref<CameraAttributes> camera_attributes;
 
 	Ref<LightmapGIData> light_data;
-	Node *last_owner = nullptr;
+	Node* last_owner = nullptr;
 
-	struct LightsFound {
+	struct LightsFound
+	{
 		Transform3D xform;
-		Light3D *light = nullptr;
+		Light3D* light = nullptr;
 	};
 
-	struct AreaLightAtlasTexture {
+	struct AreaLightAtlasTexture
+	{
 		Rect2 texture_rect;
 		float max_mipmap;
 	};
 
-	struct MeshesFound {
+	struct MeshesFound
+	{
 		Transform3D xform;
 		NodePath node_path;
 		int32_t subindex = 0;
@@ -231,59 +245,78 @@ private:
 		Vector<Ref<Material>> overrides;
 	};
 
-	void _find_meshes_and_lights(Node *p_at_node, Vector<MeshesFound> &meshes, Vector<LightsFound> &lights, Vector<Vector3> &probes);
+	void _find_meshes_and_lights(Node* p_at_node, Vector<MeshesFound>& meshes,
+		Vector<LightsFound>& lights, Vector<Vector3>& probes);
 
 	void _assign_lightmaps();
 	void _clear_lightmaps();
 
-	struct BSPSimplex {
+	struct BSPSimplex
+	{
 		int vertices[4] = {};
 		int planes[4] = {};
 	};
 
-	struct BSPNode {
+	struct BSPNode
+	{
 		static const int32_t EMPTY_LEAF = INT32_MIN;
 		Plane plane;
 		int32_t over = EMPTY_LEAF;
 		int32_t under = EMPTY_LEAF;
 	};
 
-	int _bsp_get_simplex_side(const LocalVector<Vector3> &p_points, const LocalVector<BSPSimplex> &p_simplices, const Plane &p_plane, uint32_t p_simplex) const;
-	int32_t _compute_bsp_tree(const LocalVector<Vector3> &p_points, const LocalVector<Plane> &p_planes, LocalVector<int32_t> &planes_tested, const LocalVector<BSPSimplex> &p_simplices, const LocalVector<int32_t> &p_simplex_indices, LocalVector<BSPNode> &bsp_nodes);
+	int _bsp_get_simplex_side(const LocalVector<Vector3>& p_points,
+		const LocalVector<BSPSimplex>& p_simplices, const Plane& p_plane, uint32_t p_simplex) const;
+	int32_t _compute_bsp_tree(const LocalVector<Vector3>& p_points,
+		const LocalVector<Plane>& p_planes, LocalVector<int32_t>& planes_tested,
+		const LocalVector<BSPSimplex>& p_simplices, const LocalVector<int32_t>& p_simplex_indices,
+		LocalVector<BSPNode>& bsp_nodes);
 
-	struct BakeStepUD {
+	struct BakeStepUD
+	{
 		Lightmapper::BakeStepFunc func;
-		void *ud = nullptr;
+		void* ud = nullptr;
 		float from_percent = 0.0;
 		float to_percent = 0.0;
 	};
 
-	static bool _lightmap_bake_step_function(float p_completion, const String &p_text, void *ud, bool p_refresh);
+	static bool _lightmap_bake_step_function(
+		float p_completion, const String& p_text, void* ud, bool p_refresh);
 
-	struct GenProbesOctree {
+	struct GenProbesOctree
+	{
 		Vector3i offset;
 		uint32_t size = 0;
-		GenProbesOctree *children[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-		~GenProbesOctree() {
+		GenProbesOctree* children[8] = {
+			nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+
+		~GenProbesOctree()
+		{
 			for (int i = 0; i < 8; i++) {
 				memdelete(children[i]);
 			}
 		}
 	};
 
-	void _plot_triangle_into_octree(GenProbesOctree *p_cell, float p_cell_size, const Vector3 *p_triangle);
-	void _gen_new_positions_from_octree(const GenProbesOctree *p_cell, float p_cell_size, const Vector<Vector3> &probe_positions, LocalVector<Vector3> &new_probe_positions, HashMap<Vector3i, bool> &positions_used, const AABB &p_bounds);
+	void _plot_triangle_into_octree(
+		GenProbesOctree* p_cell, float p_cell_size, const Vector3* p_triangle);
+	void _gen_new_positions_from_octree(const GenProbesOctree* p_cell, float p_cell_size,
+		const Vector<Vector3>& probe_positions, LocalVector<Vector3>& new_probe_positions,
+		HashMap<Vector3i, bool>& positions_used, const AABB& p_bounds);
 
-	BakeError _save_and_reimport_atlas_textures(const Ref<Lightmapper> p_lightmapper, const String &p_base_name, TypedArray<TextureLayered> &r_textures, bool p_is_shadowmask = false) const;
-	void _build_area_light_texture_atlas(const Vector<LightmapGI::LightsFound> &lights_found, HashMap<Ref<Texture2D>, AreaLightAtlasTexture> &r_texture_rects, Size2i &r_atlas_size, int &r_mipmaps) const;
+	BakeError _save_and_reimport_atlas_textures(const Ref<Lightmapper> p_lightmapper,
+		const String& p_base_name, Array& r_textures, bool p_is_shadowmask = false) const;
+	void _build_area_light_texture_atlas(const Vector<LightmapGI::LightsFound>& lights_found,
+		HashMap<Ref<Texture2D>, AreaLightAtlasTexture>& r_texture_rects, Size2i& r_atlas_size,
+		int& r_mipmaps) const;
 
 protected:
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
-	void set_light_data(const Ref<LightmapGIData> &p_data);
+	void set_light_data(const Ref<LightmapGIData>& p_data);
 	Ref<LightmapGIData> get_light_data() const;
 
 	void set_bake_quality(BakeQuality p_quality);
@@ -313,10 +346,10 @@ public:
 	void set_environment_mode(EnvironmentMode p_mode);
 	EnvironmentMode get_environment_mode() const;
 
-	void set_environment_custom_sky(const Ref<Sky> &p_sky);
+	void set_environment_custom_sky(const Ref<Sky>& p_sky);
 	Ref<Sky> get_environment_custom_sky() const;
 
-	void set_environment_custom_color(const Color &p_color);
+	void set_environment_custom_color(const Color& p_color);
 	Color get_environment_custom_color() const;
 
 	void set_environment_custom_energy(float p_energy);
@@ -346,12 +379,13 @@ public:
 	void set_generate_probes(GenerateProbes p_generate_probes);
 	GenerateProbes get_generate_probes() const;
 
-	void set_camera_attributes(const Ref<CameraAttributes> &p_camera_attributes);
+	void set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes);
 	Ref<CameraAttributes> get_camera_attributes() const;
 
 	AABB get_aabb() const override;
 
-	BakeError bake(Node *p_from_node, String p_image_data_path = "", Lightmapper::BakeStepFunc p_bake_step = nullptr, void *p_bake_userdata = nullptr);
+	BakeError bake(Node* p_from_node, String p_image_data_path = "",
+		Lightmapper::BakeStepFunc p_bake_step = nullptr, void* p_bake_userdata = nullptr);
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 
@@ -363,3 +397,5 @@ VARIANT_ENUM_CAST(LightmapGI::BakeQuality);
 VARIANT_ENUM_CAST(LightmapGI::GenerateProbes);
 VARIANT_ENUM_CAST(LightmapGI::BakeError);
 VARIANT_ENUM_CAST(LightmapGI::EnvironmentMode);
+
+

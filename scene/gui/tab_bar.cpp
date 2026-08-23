@@ -372,7 +372,7 @@ void TabBar::gui_input(const Ref<InputEvent>& p_event)
 		bool is_joypad_event = (joypadmotion_event.is_valid() || joypadbutton_event.is_valid());
 		if (p_event->is_action("ui_right", true)) {
 			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_right", p_event, true)) {
+				if (!input->is_action_just_pressed_by_event("ui_right", p_event.ptr(), true)) {
 					return;
 				}
 				set_process_internal(true);
@@ -383,7 +383,7 @@ void TabBar::gui_input(const Ref<InputEvent>& p_event)
 		}
 		else if (p_event->is_action("ui_left", true)) {
 			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_left", p_event, true)) {
+				if (!input->is_action_just_pressed_by_event("ui_left", p_event.ptr(), true)) {
 					return;
 				}
 				set_process_internal(true);
@@ -683,44 +683,44 @@ void TabBar::_notification(int p_what)
 
 			if (rtl) {
 				if (missing_right) {
-					draw_texture(highlight_arrow == 1 ? theme_cache.decrement_hl_icon
-													  : theme_cache.decrement_icon,
+					draw_texture(highlight_arrow == 1 ? theme_cache.decrement_hl_icon.ptr()
+													  : theme_cache.decrement_icon.ptr(),
 						Point2(0, vofs));
 				}
 				else {
-					draw_texture(theme_cache.decrement_icon, Point2(0, vofs), Color(1, 1, 1, 0.5));
+					draw_texture(theme_cache.decrement_icon.ptr(), Point2(0, vofs), Color(1, 1, 1, 0.5));
 				}
 
 				if (offset > 0) {
-					draw_texture(highlight_arrow == 0 ? theme_cache.increment_hl_icon
-													  : theme_cache.increment_icon,
+					draw_texture(highlight_arrow == 0 ? theme_cache.increment_hl_icon.ptr()
+													  : theme_cache.increment_icon.ptr(),
 						Point2(theme_cache.increment_icon->get_size().width, vofs));
 				}
 				else {
-					draw_texture(theme_cache.increment_icon,
+					draw_texture(theme_cache.increment_icon.ptr(),
 						Point2(theme_cache.increment_icon->get_size().width, vofs),
 						Color(1, 1, 1, 0.5));
 				}
 			}
 			else {
 				if (offset > 0) {
-					draw_texture(highlight_arrow == 0 ? theme_cache.decrement_hl_icon
-													  : theme_cache.decrement_icon,
+					draw_texture(highlight_arrow == 0 ? theme_cache.decrement_hl_icon.ptr()
+													  : theme_cache.decrement_icon.ptr(),
 						Point2(limit_minus_buttons, vofs));
 				}
 				else {
-					draw_texture(theme_cache.decrement_icon, Point2(limit_minus_buttons, vofs),
+					draw_texture(theme_cache.decrement_icon.ptr(), Point2(limit_minus_buttons, vofs),
 						Color(1, 1, 1, 0.5));
 				}
 
 				if (missing_right) {
-					draw_texture(highlight_arrow == 1 ? theme_cache.increment_hl_icon
-													  : theme_cache.increment_icon,
+					draw_texture(highlight_arrow == 1 ? theme_cache.increment_hl_icon.ptr()
+													  : theme_cache.increment_icon.ptr(),
 						Point2(limit_minus_buttons + theme_cache.decrement_icon->get_size().width,
 							vofs));
 				}
 				else {
-					draw_texture(theme_cache.increment_icon,
+					draw_texture(theme_cache.increment_icon.ptr(),
 						Point2(limit_minus_buttons + theme_cache.decrement_icon->get_size().width,
 							vofs),
 						Color(1, 1, 1, 0.5));

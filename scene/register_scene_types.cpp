@@ -396,20 +396,14 @@ void register_scene_types()
 
 	Node::init_node_hrcr();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(CompressedTexture2D)) {
-		resource_loader_stream_texture.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_loader_stream_texture);
-	}
+	resource_loader_stream_texture.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_stream_texture);
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(TextureLayered)) {
-		resource_loader_texture_layered.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_loader_texture_layered);
-	}
+	resource_loader_texture_layered.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_texture_layered);
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Texture3D)) {
-		resource_loader_texture_3d.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_loader_texture_3d);
-	}
+	resource_loader_texture_3d.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_texture_3d);
 
 	resource_saver_text.instantiate();
 	ResourceSaver::add_resource_format_saver(resource_saver_text, true);
@@ -417,21 +411,17 @@ void register_scene_types()
 	resource_loader_text.instantiate();
 	ResourceLoader::add_resource_format_loader(resource_loader_text, true);
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Shader)) {
-		resource_saver_shader.instantiate();
-		ResourceSaver::add_resource_format_saver(resource_saver_shader, true);
+	resource_saver_shader.instantiate();
+	ResourceSaver::add_resource_format_saver(resource_saver_shader, true);
 
-		resource_loader_shader.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_loader_shader, true);
-	}
+	resource_loader_shader.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_shader, true);
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(ShaderInclude)) {
-		resource_saver_shader_include.instantiate();
-		ResourceSaver::add_resource_format_saver(resource_saver_shader_include, true);
+	resource_saver_shader_include.instantiate();
+	ResourceSaver::add_resource_format_saver(resource_saver_shader_include, true);
 
-		resource_loader_shader_include.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_loader_shader_include, true);
-	}
+	resource_loader_shader_include.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_shader_include, true);
 
 	OS::get_singleton()->yield(); // may take time to init
 
@@ -563,219 +553,6 @@ void register_scene_types()
 	OS::get_singleton()->yield(); // may take time to init
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
 
-#ifndef DISABLE_DEPRECATED
-	// Dropped in 4.0, near approximation.
-	ClassDB::add_compatibility_class("AnimationTreePlayer", "AnimationTree");
-	ClassDB::add_compatibility_class("BakedLightmap", "LightmapGI");
-	ClassDB::add_compatibility_class("BakedLightmapData", "LightmapGIData");
-	ClassDB::add_compatibility_class("BitmapFont", "FontFile");
-	ClassDB::add_compatibility_class("DynamicFont", "FontFile");
-	ClassDB::add_compatibility_class("DynamicFontData", "FontFile");
-#ifndef NAVIGATION_3D_DISABLED
-	ClassDB::add_compatibility_class("Navigation3D", "Node3D");
-	ClassDB::add_compatibility_class("Navigation2D", "Node2D");
-#endif // NAVIGATION_3D_DISABLED
-	ClassDB::add_compatibility_class("OpenSimplexNoise", "FastNoiseLite");
-	ClassDB::add_compatibility_class("ProximityGroup", "Node3D");
-	ClassDB::add_compatibility_class("ToolButton", "Button");
-	ClassDB::add_compatibility_class("YSort", "Node2D");
-	// Portal and room occlusion was replaced by raster occlusion (OccluderInstance3D node).
-	ClassDB::add_compatibility_class("Portal", "Node3D");
-	ClassDB::add_compatibility_class("Room", "Node3D");
-	ClassDB::add_compatibility_class("RoomManager", "Node3D");
-	ClassDB::add_compatibility_class("RoomGroup", "Node3D");
-	ClassDB::add_compatibility_class("Occluder", "Node3D");
-	// The OccluderShapeSphere resource (used in the old Occluder node) is not present anymore.
-	ClassDB::add_compatibility_class("OccluderShapeSphere", "Resource");
-
-	// Renamed in 4.0.
-	// Keep alphabetical ordering to easily locate classes and avoid duplicates.
-	ClassDB::add_compatibility_class("AnimatedSprite", "AnimatedSprite2D");
-	ClassDB::add_compatibility_class("ARVRCamera", "XRCamera3D");
-	ClassDB::add_compatibility_class("ARVRController", "XRController3D");
-	ClassDB::add_compatibility_class("ARVRAnchor", "XRAnchor3D");
-	ClassDB::add_compatibility_class("ARVRInterface", "XRInterface");
-	ClassDB::add_compatibility_class("ARVROrigin", "XROrigin3D");
-	ClassDB::add_compatibility_class("ARVRPositionalTracker", "XRPositionalTracker");
-	ClassDB::add_compatibility_class("ARVRServer", "XRServer");
-	ClassDB::add_compatibility_class("AStar", "AStar3D");
-	ClassDB::add_compatibility_class("BoneAttachment", "BoneAttachment3D");
-	ClassDB::add_compatibility_class("Camera", "Camera3D");
-	ClassDB::add_compatibility_class("ClippedCamera", "ClippedCamera3D");
-	ClassDB::add_compatibility_class("CSGBox", "CSGBox3D");
-	ClassDB::add_compatibility_class("CSGCombiner", "CSGCombiner3D");
-	ClassDB::add_compatibility_class("CSGCylinder", "CSGCylinder3D");
-	ClassDB::add_compatibility_class("CSGMesh", "CSGMesh3D");
-	ClassDB::add_compatibility_class("CSGPolygon", "CSGPolygon3D");
-	ClassDB::add_compatibility_class("CSGPrimitive", "CSGPrimitive3D");
-	ClassDB::add_compatibility_class("CSGShape", "CSGShape3D");
-	ClassDB::add_compatibility_class("CSGSphere", "CSGSphere3D");
-	ClassDB::add_compatibility_class("CSGTorus", "CSGTorus3D");
-	ClassDB::add_compatibility_class("CubeMesh", "BoxMesh");
-	ClassDB::add_compatibility_class("GIProbe", "VoxelGI");
-	ClassDB::add_compatibility_class("GIProbeData", "VoxelGIData");
-	ClassDB::add_compatibility_class("GradientTexture", "GradientTexture1D");
-	ClassDB::add_compatibility_class("Light", "Light3D");
-	ClassDB::add_compatibility_class("Light2D", "PointLight2D");
-	ClassDB::add_compatibility_class("LineShape2D", "WorldBoundaryShape2D");
-	ClassDB::add_compatibility_class("Listener", "AudioListener3D");
-	ClassDB::add_compatibility_class("MeshInstance", "MeshInstance3D");
-	ClassDB::add_compatibility_class("MultiMeshInstance", "MultiMeshInstance3D");
-#ifndef NAVIGATION_3D_DISABLED
-	ClassDB::add_compatibility_class("NavigationAgent", "NavigationAgent3D");
-	ClassDB::add_compatibility_class("NavigationMeshInstance", "NavigationRegion3D");
-	ClassDB::add_compatibility_class("NavigationObstacle", "NavigationObstacle3D");
-	ClassDB::add_compatibility_class("NavigationRegion", "NavigationRegion3D");
-	ClassDB::add_compatibility_class("NavigationServer", "NavigationServer3D");
-#endif // NAVIGATION_3D_DISABLED
-#ifndef NAVIGATION_2D_DISABLED
-	ClassDB::add_compatibility_class("NavigationPolygonInstance", "NavigationRegion2D");
-	ClassDB::add_compatibility_class("Navigation2DServer", "NavigationServer2D");
-#endif // NAVIGATION_2D_DISABLED
-	ClassDB::add_compatibility_class("OmniLight", "OmniLight3D");
-	ClassDB::add_compatibility_class("PanoramaSky", "Sky");
-	ClassDB::add_compatibility_class("Particles", "GPUParticles3D");
-	ClassDB::add_compatibility_class("Particles2D", "GPUParticles2D");
-	ClassDB::add_compatibility_class("ParticlesMaterial", "ParticleProcessMaterial");
-	ClassDB::add_compatibility_class("Path", "Path3D");
-	ClassDB::add_compatibility_class("PathFollow", "PathFollow3D");
-	ClassDB::add_compatibility_class("Position2D", "Marker2D");
-	ClassDB::add_compatibility_class("Position3D", "Marker3D");
-	ClassDB::add_compatibility_class("ProceduralSky", "Sky");
-	ClassDB::add_compatibility_class("RemoteTransform", "RemoteTransform3D");
-	ClassDB::add_compatibility_class("ShortCut", "Shortcut");
-	ClassDB::add_compatibility_class("Skeleton", "Skeleton3D");
-	ClassDB::add_compatibility_class("SkeletonIK", "SkeletonIK3D");
-	ClassDB::add_compatibility_class("Spatial", "Node3D");
-	ClassDB::add_compatibility_class("SpatialGizmo", "Node3DGizmo");
-	ClassDB::add_compatibility_class("SpatialMaterial", "StandardMaterial3D");
-	ClassDB::add_compatibility_class("SpotLight", "SpotLight3D");
-	ClassDB::add_compatibility_class("Sprite", "Sprite2D");
-	ClassDB::add_compatibility_class("StaticBody", "StaticBody3D");
-	ClassDB::add_compatibility_class("StreamTexture", "CompressedTexture2D");
-	ClassDB::add_compatibility_class("TextureProgress", "TextureProgressBar");
-	ClassDB::add_compatibility_class("VideoPlayer", "VideoStreamPlayer");
-	ClassDB::add_compatibility_class("ViewportContainer", "SubViewportContainer");
-	ClassDB::add_compatibility_class("Viewport", "SubViewport");
-	ClassDB::add_compatibility_class("VisibilityEnabler", "VisibleOnScreenEnabler3D");
-	ClassDB::add_compatibility_class("VisibilityNotifier", "VisibleOnScreenNotifier3D");
-	ClassDB::add_compatibility_class("VisibilityNotifier2D", "VisibleOnScreenNotifier2D");
-	ClassDB::add_compatibility_class("VisibilityNotifier3D", "VisibleOnScreenNotifier3D");
-	ClassDB::add_compatibility_class("VisualServer", "RenderingServer");
-	ClassDB::add_compatibility_class("World", "World3D");
-#ifndef PHYSICS_2D_DISABLED
-	ClassDB::add_compatibility_class("Physics2DDirectBodyState", "PhysicsDirectBodyState2D");
-	ClassDB::add_compatibility_class("Physics2DDirectSpaceState", "PhysicsDirectSpaceState2D");
-	ClassDB::add_compatibility_class("Physics2DServer", "PhysicsServer2D");
-	ClassDB::add_compatibility_class(
-		"Physics2DShapeQueryParameters", "PhysicsShapeQueryParameters2D");
-	ClassDB::add_compatibility_class("Physics2DTestMotionResult", "PhysicsTestMotionResult2D");
-	ClassDB::add_compatibility_class("RayShape2D", "SeparationRayShape2D");
-#endif // PHYSICS_2D_DISABLED
-#ifndef PHYSICS_3D_DISABLED
-	ClassDB::add_compatibility_class("Area", "Area3D");
-	ClassDB::add_compatibility_class("BoxShape", "BoxShape3D");
-	ClassDB::add_compatibility_class("CapsuleShape", "CapsuleShape3D");
-	ClassDB::add_compatibility_class("CollisionObject", "CollisionObject3D");
-	ClassDB::add_compatibility_class("CollisionPolygon", "CollisionPolygon3D");
-	ClassDB::add_compatibility_class("CollisionShape", "CollisionShape3D");
-	ClassDB::add_compatibility_class("ConcavePolygonShape", "ConcavePolygonShape3D");
-	ClassDB::add_compatibility_class("ConeTwistJoint", "ConeTwistJoint3D");
-	ClassDB::add_compatibility_class("ConvexPolygonShape", "ConvexPolygonShape3D");
-	ClassDB::add_compatibility_class("CPUParticles", "CPUParticles3D");
-	ClassDB::add_compatibility_class("CylinderShape", "CylinderShape3D");
-	ClassDB::add_compatibility_class("DirectionalLight", "DirectionalLight3D");
-	ClassDB::add_compatibility_class("EditorSpatialGizmo", "EditorNode3DGizmo");
-	ClassDB::add_compatibility_class("EditorSpatialGizmoPlugin", "EditorNode3DGizmoPlugin");
-	ClassDB::add_compatibility_class("Generic6DOFJoint", "Generic6DOFJoint3D");
-	ClassDB::add_compatibility_class("HeightMapShape", "HeightMapShape3D");
-	ClassDB::add_compatibility_class("HingeJoint", "HingeJoint3D");
-	ClassDB::add_compatibility_class("Joint", "Joint3D");
-	ClassDB::add_compatibility_class("KinematicBody", "CharacterBody3D");
-	ClassDB::add_compatibility_class("KinematicBody2D", "CharacterBody2D");
-	ClassDB::add_compatibility_class("KinematicCollision", "KinematicCollision3D");
-	ClassDB::add_compatibility_class("PhysicsBody", "PhysicsBody3D");
-	ClassDB::add_compatibility_class("PhysicalBone", "PhysicalBone3D");
-	ClassDB::add_compatibility_class("PhysicsDirectBodyState", "PhysicsDirectBodyState3D");
-	ClassDB::add_compatibility_class("PhysicsDirectSpaceState", "PhysicsDirectSpaceState3D");
-	ClassDB::add_compatibility_class("PhysicsServer", "PhysicsServer3D");
-	ClassDB::add_compatibility_class(
-		"PhysicsShapeQueryParameters", "PhysicsShapeQueryParameters3D");
-	ClassDB::add_compatibility_class("PinJoint", "PinJoint3D");
-	ClassDB::add_compatibility_class("PlaneShape", "WorldBoundaryShape3D");
-	ClassDB::add_compatibility_class("RayCast", "RayCast3D");
-	ClassDB::add_compatibility_class("RayShape", "SeparationRayShape3D");
-	ClassDB::add_compatibility_class("RigidBody", "RigidBody3D");
-	ClassDB::add_compatibility_class("RigidDynamicBody2D", "RigidBody2D");
-	ClassDB::add_compatibility_class("RigidDynamicBody3D", "RigidBody3D");
-	ClassDB::add_compatibility_class("Shape", "Shape3D");
-	ClassDB::add_compatibility_class("SliderJoint", "SliderJoint3D");
-	ClassDB::add_compatibility_class("SoftBody", "SoftBody3D");
-	ClassDB::add_compatibility_class("SoftDynamicBody3D", "SoftBody3D");
-	ClassDB::add_compatibility_class("SphereShape", "SphereShape3D");
-	ClassDB::add_compatibility_class("SpringArm", "SpringArm3D");
-	ClassDB::add_compatibility_class("VehicleBody", "VehicleBody3D");
-	ClassDB::add_compatibility_class("VehicleWheel", "VehicleWheel3D");
-#endif // PHYSICS_3D_DISABLED
-
-	// VisualShader classes.
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeScalarConstant", "VisualShaderNodeFloatConstant");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarFunc", "VisualShaderNodeFloatFunc");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarOp", "VisualShaderNodeFloatOp");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarClamp", "VisualShaderNodeClamp");
-	ClassDB::add_compatibility_class("VisualShaderNodeVectorClamp", "VisualShaderNodeClamp");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarInterp", "VisualShaderNodeMix");
-	ClassDB::add_compatibility_class("VisualShaderNodeVectorInterp", "VisualShaderNodeMix");
-	ClassDB::add_compatibility_class("VisualShaderNodeVectorScalarMix", "VisualShaderNodeMix");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeScalarSmoothStep", "VisualShaderNodeSmoothStep");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeVectorSmoothStep", "VisualShaderNodeSmoothStep");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeVectorScalarSmoothStep", "VisualShaderNodeSmoothStep");
-	ClassDB::add_compatibility_class("VisualShaderNodeVectorScalarStep", "VisualShaderNodeStep");
-	ClassDB::add_compatibility_class("VisualShaderNodeScalarSwitch", "VisualShaderNodeSwitch");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeScalarTransformMult", "VisualShaderNodeTransformOp");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeScalarDerivativeFunc", "VisualShaderNodeDerivativeFunc");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeVectorDerivativeFunc", "VisualShaderNodeDerivativeFunc");
-
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeBooleanUniform", "VisualShaderNodeBooleanParameter");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeColorUniform", "VisualShaderNodeColorParameter");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeScalarUniform", "VisualShaderNodeFloatParameter");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeCubeMapUniform", "VisualShaderNodeCubeMapParameter");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeTextureUniform", "VisualShaderNodeTexture2DParameter");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeTextureUniformTriplanar", "VisualShaderNodeTextureParameterTriplanar");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeTransformUniform", "VisualShaderNodeTransformParameter");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeVec3Uniform", "VisualShaderNodeVec3Parameter");
-	ClassDB::add_compatibility_class("VisualShaderNodeUniform", "VisualShaderNodeParameter");
-	ClassDB::add_compatibility_class("VisualShaderNodeUniformRef", "VisualShaderNodeParameterRef");
-
-	// Renamed during 4.0 alpha, added to ease transition between alphas.
-	ClassDB::add_compatibility_class("AudioStreamOGGVorbis", "AudioStreamOggVorbis");
-	ClassDB::add_compatibility_class("AudioStreamSample", "AudioStreamWAV");
-	ClassDB::add_compatibility_class("OGGPacketSequence", "OggPacketSequence");
-	ClassDB::add_compatibility_class("StreamCubemap", "CompressedCubemap");
-	ClassDB::add_compatibility_class("StreamCubemapArray", "CompressedCubemapArray");
-	ClassDB::add_compatibility_class("StreamTexture2D", "CompressedTexture2D");
-	ClassDB::add_compatibility_class("StreamTexture2DArray", "CompressedTexture2DArray");
-	ClassDB::add_compatibility_class("StreamTexture3D", "CompressedTexture3D");
-	ClassDB::add_compatibility_class("StreamTextureLayered", "CompressedTextureLayered");
-	ClassDB::add_compatibility_class(
-		"VisualShaderNodeFloatUniform", "VisualShaderNodeFloatParameter");
-#endif /* DISABLE_DEPRECATED */
-
 	OS::get_singleton()->yield(); // may take time to init
 
 	for (int i = 0; i < 20; i++) {
@@ -815,20 +592,13 @@ void unregister_scene_types()
 
 	SceneDebugger::deinitialize();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(TextureLayered)) {
-		ResourceLoader::remove_resource_format_loader(resource_loader_texture_layered);
-		resource_loader_texture_layered.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_loader_texture_layered);
+	resource_loader_texture_layered.unref();
+	ResourceLoader::remove_resource_format_loader(resource_loader_texture_3d);
+	resource_loader_texture_3d.unref();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Texture3D)) {
-		ResourceLoader::remove_resource_format_loader(resource_loader_texture_3d);
-		resource_loader_texture_3d.unref();
-	}
-
-	if constexpr (VLTR_IS_CLASS_ENABLED(CompressedTexture2D)) {
-		ResourceLoader::remove_resource_format_loader(resource_loader_stream_texture);
-		resource_loader_stream_texture.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_loader_stream_texture);
+	resource_loader_stream_texture.unref();
 
 	ResourceSaver::remove_resource_format_saver(resource_saver_text);
 	resource_saver_text.unref();
@@ -836,21 +606,16 @@ void unregister_scene_types()
 	ResourceLoader::remove_resource_format_loader(resource_loader_text);
 	resource_loader_text.unref();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(Shader)) {
-		ResourceSaver::remove_resource_format_saver(resource_saver_shader);
-		resource_saver_shader.unref();
+	ResourceSaver::remove_resource_format_saver(resource_saver_shader);
+	resource_saver_shader.unref();
 
-		ResourceLoader::remove_resource_format_loader(resource_loader_shader);
-		resource_loader_shader.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_loader_shader);
+	resource_loader_shader.unref();
+	ResourceSaver::remove_resource_format_saver(resource_saver_shader_include);
+	resource_saver_shader_include.unref();
 
-	if constexpr (VLTR_IS_CLASS_ENABLED(ShaderInclude)) {
-		ResourceSaver::remove_resource_format_saver(resource_saver_shader_include);
-		resource_saver_shader_include.unref();
-
-		ResourceLoader::remove_resource_format_loader(resource_loader_shader_include);
-		resource_loader_shader_include.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_loader_shader_include);
+	resource_loader_shader_include.unref();
 
 	// StandardMaterial3D is not initialized when 3D is disabled, so it shouldn't be cleaned up
 	// either

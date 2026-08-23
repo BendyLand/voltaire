@@ -166,15 +166,15 @@ void GPUParticles2D::set_process_material(const Ref<Material>& p_material)
 		return;
 	}
 
-	if (process_material.is_valid() && process_material->is_class("ParticleProcessMaterial")) {
-		process_material->disconnect("emission_shape_changed",
+	if (process_material.is_valid() && process_material->obj->is_class("ParticleProcessMaterial")) {
+		process_material->obj->disconnect("emission_shape_changed",
 			callable_mp((CanvasItem*)this, &GPUParticles2D::queue_redraw));
 	}
 
 	process_material = p_material;
 
-	if (process_material.is_valid() && process_material->is_class("ParticleProcessMaterial")) {
-		process_material->connect("emission_shape_changed",
+	if (process_material.is_valid() && process_material->obj->is_class("ParticleProcessMaterial")) {
+		process_material->obj->connect("emission_shape_changed",
 			callable_mp((CanvasItem*)this, &GPUParticles2D::queue_redraw));
 	}
 
@@ -915,196 +915,14 @@ void GPUParticles2D::_draw_emission_gizmo()
 }
 #endif
 
-void GPUParticles2D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_emitting", "emitting"), &GPUParticles2D::set_emitting);
-	ClassDB::bind_method(D_METHOD("set_amount", "amount"), &GPUParticles2D::set_amount);
-	ClassDB::bind_method(D_METHOD("set_lifetime", "secs"), &GPUParticles2D::set_lifetime);
-	ClassDB::bind_method(D_METHOD("set_one_shot", "secs"), &GPUParticles2D::set_one_shot);
-	ClassDB::bind_method(
-		D_METHOD("set_pre_process_time", "secs"), &GPUParticles2D::set_pre_process_time);
-	ClassDB::bind_method(
-		D_METHOD("set_explosiveness_ratio", "ratio"), &GPUParticles2D::set_explosiveness_ratio);
-	ClassDB::bind_method(
-		D_METHOD("set_randomness_ratio", "ratio"), &GPUParticles2D::set_randomness_ratio);
-	ClassDB::bind_method(
-		D_METHOD("set_visibility_rect", "visibility_rect"), &GPUParticles2D::set_visibility_rect);
-	ClassDB::bind_method(D_METHOD("set_use_local_coordinates", "enable"),
-		&GPUParticles2D::set_use_local_coordinates);
-	ClassDB::bind_method(D_METHOD("set_fixed_fps", "fps"), &GPUParticles2D::set_fixed_fps);
-	ClassDB::bind_method(
-		D_METHOD("set_fractional_delta", "enable"), &GPUParticles2D::set_fractional_delta);
-	ClassDB::bind_method(D_METHOD("set_interpolate", "enable"), &GPUParticles2D::set_interpolate);
-	ClassDB::bind_method(
-		D_METHOD("set_process_material", "material"), &GPUParticles2D::set_process_material);
-	ClassDB::bind_method(D_METHOD("set_speed_scale", "scale"), &GPUParticles2D::set_speed_scale);
-	ClassDB::bind_method(
-		D_METHOD("set_collision_base_size", "size"), &GPUParticles2D::set_collision_base_size);
-	ClassDB::bind_method(
-		D_METHOD("set_interp_to_end", "interp"), &GPUParticles2D::set_interp_to_end);
-
-	ClassDB::bind_method(
-		D_METHOD("request_particles_process", "process_time", "process_time_residual"),
-		&GPUParticles2D::request_particles_process, DEFVAL(0));
-
-	ClassDB::bind_method(D_METHOD("is_emitting"), &GPUParticles2D::is_emitting);
-	ClassDB::bind_method(D_METHOD("get_amount"), &GPUParticles2D::get_amount);
-	ClassDB::bind_method(D_METHOD("get_lifetime"), &GPUParticles2D::get_lifetime);
-	ClassDB::bind_method(D_METHOD("get_one_shot"), &GPUParticles2D::get_one_shot);
-	ClassDB::bind_method(D_METHOD("get_pre_process_time"), &GPUParticles2D::get_pre_process_time);
-	ClassDB::bind_method(
-		D_METHOD("get_explosiveness_ratio"), &GPUParticles2D::get_explosiveness_ratio);
-	ClassDB::bind_method(D_METHOD("get_randomness_ratio"), &GPUParticles2D::get_randomness_ratio);
-	ClassDB::bind_method(D_METHOD("get_visibility_rect"), &GPUParticles2D::get_visibility_rect);
-	ClassDB::bind_method(
-		D_METHOD("get_use_local_coordinates"), &GPUParticles2D::get_use_local_coordinates);
-	ClassDB::bind_method(D_METHOD("get_fixed_fps"), &GPUParticles2D::get_fixed_fps);
-	ClassDB::bind_method(D_METHOD("get_fractional_delta"), &GPUParticles2D::get_fractional_delta);
-	ClassDB::bind_method(D_METHOD("get_interpolate"), &GPUParticles2D::get_interpolate);
-	ClassDB::bind_method(D_METHOD("get_process_material"), &GPUParticles2D::get_process_material);
-	ClassDB::bind_method(D_METHOD("get_speed_scale"), &GPUParticles2D::get_speed_scale);
-	ClassDB::bind_method(
-		D_METHOD("get_collision_base_size"), &GPUParticles2D::get_collision_base_size);
-	ClassDB::bind_method(D_METHOD("get_interp_to_end"), &GPUParticles2D::get_interp_to_end);
-
-	ClassDB::bind_method(D_METHOD("set_draw_order", "order"), &GPUParticles2D::set_draw_order);
-	ClassDB::bind_method(D_METHOD("get_draw_order"), &GPUParticles2D::get_draw_order);
-
-	ClassDB::bind_method(D_METHOD("set_texture", "texture"), &GPUParticles2D::set_texture);
-	ClassDB::bind_method(D_METHOD("get_texture"), &GPUParticles2D::get_texture);
-
-	ClassDB::bind_method(D_METHOD("capture_rect"), &GPUParticles2D::capture_rect);
-
-	ClassDB::bind_method(D_METHOD("restart", "keep_seed"), &GPUParticles2D::restart, DEFVAL(false));
-
-	ClassDB::bind_method(D_METHOD("set_sub_emitter", "path"), &GPUParticles2D::set_sub_emitter);
-	ClassDB::bind_method(D_METHOD("get_sub_emitter"), &GPUParticles2D::get_sub_emitter);
-
-	ClassDB::bind_method(D_METHOD("emit_particle", "xform", "velocity", "color", "custom", "flags"),
-		&GPUParticles2D::emit_particle);
-
-	ClassDB::bind_method(
-		D_METHOD("set_trail_enabled", "enabled"), &GPUParticles2D::set_trail_enabled);
-	ClassDB::bind_method(
-		D_METHOD("set_trail_lifetime", "secs"), &GPUParticles2D::set_trail_lifetime);
-
-	ClassDB::bind_method(D_METHOD("is_trail_enabled"), &GPUParticles2D::is_trail_enabled);
-	ClassDB::bind_method(D_METHOD("get_trail_lifetime"), &GPUParticles2D::get_trail_lifetime);
-
-	ClassDB::bind_method(
-		D_METHOD("set_trail_sections", "sections"), &GPUParticles2D::set_trail_sections);
-	ClassDB::bind_method(D_METHOD("get_trail_sections"), &GPUParticles2D::get_trail_sections);
-
-	ClassDB::bind_method(D_METHOD("set_trail_section_subdivisions", "subdivisions"),
-		&GPUParticles2D::set_trail_section_subdivisions);
-	ClassDB::bind_method(D_METHOD("get_trail_section_subdivisions"),
-		&GPUParticles2D::get_trail_section_subdivisions);
-
-	ClassDB::bind_method(
-		D_METHOD("convert_from_particles", "particles"), &GPUParticles2D::convert_from_particles);
-
-	ClassDB::bind_method(D_METHOD("set_amount_ratio", "ratio"), &GPUParticles2D::set_amount_ratio);
-	ClassDB::bind_method(D_METHOD("get_amount_ratio"), &GPUParticles2D::get_amount_ratio);
-
-	ClassDB::bind_method(
-		D_METHOD("set_use_fixed_seed", "use_fixed_seed"), &GPUParticles2D::set_use_fixed_seed);
-	ClassDB::bind_method(D_METHOD("get_use_fixed_seed"), &GPUParticles2D::get_use_fixed_seed);
-
-	ClassDB::bind_method(D_METHOD("set_seed", "seed"), &GPUParticles2D::set_seed);
-	ClassDB::bind_method(D_METHOD("get_seed"), &GPUParticles2D::get_seed);
-
-	ADD_SIGNAL(MethodInfo("finished"));
-
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "emitting", PROPERTY_HINT_ONESHOT), "set_emitting",
-		"is_emitting");
-	ADD_PROPERTY_DEFAULT("emitting",
-		true); // Workaround for doctool in headless mode, as dummy rasterizer always returns false.
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "amount", PROPERTY_HINT_RANGE, "1,1000000,1,exp"),
-		"set_amount",
-		"get_amount"); // FIXME: Evaluate support for `exp` in integer properties, or remove this.
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "amount_ratio", PROPERTY_HINT_RANGE, "0,1,0.0001"),
-		"set_amount_ratio", "get_amount_ratio");
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "sub_emitter",
-					 PROPERTY_HINT_NODE_PATH_VALID_TYPES, "GPUParticles2D"),
-		"set_sub_emitter", "get_sub_emitter");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE,
-					 Texture2D::get_class_static()),
-		"set_texture", "get_texture");
-	ADD_GROUP("Time", "");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "lifetime", PROPERTY_HINT_RANGE,
-					 "0.01,600.0,0.01,or_greater,exp,suffix:s"),
-		"set_lifetime", "get_lifetime");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "interp_to_end", PROPERTY_HINT_RANGE, "0.00,1.0,0.001"),
-		"set_interp_to_end", "get_interp_to_end");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "one_shot"), "set_one_shot", "get_one_shot");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "preprocess", PROPERTY_HINT_RANGE,
-					 "0.00,10.0,0.01,or_greater,exp,suffix:s"),
-		"set_pre_process_time", "get_pre_process_time");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,64,0.01"),
-		"set_speed_scale", "get_speed_scale");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "explosiveness", PROPERTY_HINT_RANGE, "0,1,0.01"),
-		"set_explosiveness_ratio", "get_explosiveness_ratio");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "randomness", PROPERTY_HINT_RANGE, "0,1,0.01"),
-		"set_randomness_ratio", "get_randomness_ratio");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_fixed_seed", PROPERTY_HINT_ENUM),
-		"set_use_fixed_seed", "get_use_fixed_seed");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "seed", PROPERTY_HINT_RANGE, "0," + itos(UINT32_MAX) + ",1"),
-		"set_seed", "get_seed");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "fixed_fps", PROPERTY_HINT_RANGE, "0,1000,1,suffix:FPS"),
-		"set_fixed_fps", "get_fixed_fps");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interpolate"), "set_interpolate", "get_interpolate");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::BOOL, "fract_delta"), "set_fractional_delta", "get_fractional_delta");
-	ADD_GROUP("Collision", "collision_");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "collision_base_size", PROPERTY_HINT_RANGE,
-					 "0,128,0.01,or_greater"),
-		"set_collision_base_size", "get_collision_base_size");
-	ADD_GROUP("Drawing", "");
-	ADD_PROPERTY(PropertyInfo(Variant::RECT2, "visibility_rect", PROPERTY_HINT_NONE, "suffix:px"),
-		"set_visibility_rect", "get_visibility_rect");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "local_coords"), "set_use_local_coordinates",
-		"get_use_local_coordinates");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "draw_order", PROPERTY_HINT_ENUM,
-					 "Index,Lifetime,Reverse Lifetime"),
-		"set_draw_order", "get_draw_order");
-	ADD_GROUP("Trails", "trail_");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "trail_enabled", PROPERTY_HINT_GROUP_ENABLE),
-		"set_trail_enabled", "is_trail_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "trail_lifetime", PROPERTY_HINT_RANGE,
-					 "0.01,10,0.01,or_greater,suffix:s"),
-		"set_trail_lifetime", "get_trail_lifetime");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "trail_sections", PROPERTY_HINT_RANGE, "2,128,1"),
-		"set_trail_sections", "get_trail_sections");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "trail_section_subdivisions", PROPERTY_HINT_RANGE, "1,1024,1"),
-		"set_trail_section_subdivisions", "get_trail_section_subdivisions");
-	ADD_GROUP("Process Material", "");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "process_material", PROPERTY_HINT_RESOURCE_TYPE,
-					 "ParticleProcessMaterial,ShaderMaterial"),
-		"set_process_material", "get_process_material");
-	BIND_ENUM_CONSTANT(DRAW_ORDER_INDEX);
-	BIND_ENUM_CONSTANT(DRAW_ORDER_LIFETIME);
-	BIND_ENUM_CONSTANT(DRAW_ORDER_REVERSE_LIFETIME);
-
-	BIND_ENUM_CONSTANT(EMIT_FLAG_POSITION);
-	BIND_ENUM_CONSTANT(EMIT_FLAG_ROTATION_SCALE);
-	BIND_ENUM_CONSTANT(EMIT_FLAG_VELOCITY);
-	BIND_ENUM_CONSTANT(EMIT_FLAG_COLOR);
-	BIND_ENUM_CONSTANT(EMIT_FLAG_CUSTOM);
-
-	ADD_PROPERTY_DEFAULT("seed", 0);
-}
+void GPUParticles2D::_bind_methods() {}
 
 GPUParticles2D::GPUParticles2D()
 {
 	particles = RS::get_singleton()->particles_create();
 	RS::get_singleton()->particles_set_mode(particles, RSE::PARTICLES_MODE_2D);
 
-	mesh = RS::
-get_singleton()->mesh_create();
+	mesh = RS::get_singleton()->mesh_create();
 	RS::get_singleton()->particles_set_draw_passes(particles, 1);
 	RS::get_singleton()->particles_set_draw_pass_mesh(particles, 0, mesh);
 

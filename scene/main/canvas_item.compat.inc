@@ -39,7 +39,7 @@ void CanvasItem::_draw_string_bind_compat_104872(const Ref<Font>& p_font, const 
 	const Color& p_modulate, BitField<TextServer::JustificationFlag> p_jst_flags,
 	TextServer::Direction p_direction, TextServer::Orientation p_orientation) const
 {
-	draw_string(p_font, p_pos, p_text, p_alignment, p_width, p_font_size, p_modulate, p_jst_flags,
+	draw_string(p_font.ptr(), p_pos, p_text, p_alignment, p_width, p_font_size, p_modulate, p_jst_flags,
 		p_direction, p_orientation, 0.0);
 }
 
@@ -50,7 +50,7 @@ void CanvasItem::_draw_multiline_string_bind_compat_104872(const Ref<Font>& p_fo
 	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation) const
 {
-	draw_multiline_string(p_font, p_pos, p_text, p_alignment, p_width, p_font_size, p_max_lines,
+	draw_multiline_string(p_font.ptr(), p_pos, p_text, p_alignment, p_width, p_font_size, p_max_lines,
 		p_modulate, p_brk_flags, p_jst_flags, p_direction, p_orientation, 0.0);
 }
 
@@ -60,7 +60,7 @@ void CanvasItem::_draw_string_outline_bind_compat_104872(const Ref<Font>& p_font
 	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation) const
 {
-	draw_string_outline(p_font, p_pos, p_text, p_alignment, p_width, p_font_size, p_size,
+	draw_string_outline(p_font.ptr(), p_pos, p_text, p_alignment, p_width, p_font_size, p_size,
 		p_modulate, p_jst_flags, p_direction, p_orientation, 0.0);
 }
 
@@ -71,20 +71,20 @@ void CanvasItem::_draw_multiline_string_outline_bind_compat_104872(const Ref<Fon
 	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation) const
 {
-	draw_multiline_string_outline(p_font, p_pos, p_text, p_alignment, p_width, p_font_size,
+	draw_multiline_string_outline(p_font.ptr(), p_pos, p_text, p_alignment, p_width, p_font_size,
 		p_max_lines, p_size, p_modulate, p_brk_flags, p_jst_flags, p_direction, p_orientation, 0.0);
 }
 
 void CanvasItem::_draw_char_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
 	const String& p_char, int p_font_size, const Color& p_modulate) const
 {
-	draw_char(p_font, p_pos, p_char, p_font_size, p_modulate, 0.0);
+	draw_char(p_font.ptr(), p_pos, p_char, p_font_size, p_modulate, 0.0);
 }
 
 void CanvasItem::_draw_char_outline_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
 	const String& p_char, int p_font_size, int p_size, const Color& p_modulate) const
 {
-	draw_char_outline(p_font, p_pos, p_char, p_font_size, p_size, p_modulate, 0.0);
+	draw_char_outline(p_font.ptr(), p_pos, p_char, p_font_size, p_size, p_modulate, 0.0);
 }
 
 void CanvasItem::_draw_circle_bind_compat_84472(

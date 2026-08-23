@@ -46,15 +46,7 @@ void GPUParticlesCollision3D::set_cull_mask(uint32_t p_cull_mask)
 
 uint32_t GPUParticlesCollision3D::get_cull_mask() const { return cull_mask; }
 
-void GPUParticlesCollision3D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_cull_mask", "mask"), &GPUParticlesCollision3D::set_cull_mask);
-	ClassDB::bind_method(D_METHOD("get_cull_mask"), &GPUParticlesCollision3D::get_cull_mask);
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "cull_mask", PROPERTY_HINT_LAYERS_3D_RENDER),
-		"set_cull_mask", "get_cull_mask");
-}
+void GPUParticlesCollision3D::_bind_methods() {}
 
 GPUParticlesCollision3D::GPUParticlesCollision3D(RSE::ParticlesCollisionType p_type)
 {
@@ -71,16 +63,7 @@ GPUParticlesCollision3D::~GPUParticlesCollision3D()
 
 /////////////////////////////////
 
-void GPUParticlesCollisionSphere3D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_radius", "radius"), &GPUParticlesCollisionSphere3D::set_radius);
-	ClassDB::bind_method(D_METHOD("get_radius"), &GPUParticlesCollisionSphere3D::get_radius);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE,
-					 "0.01,1024,0.01,or_greater,suffix:m"),
-		"set_radius", "get_radius");
-}
+void GPUParticlesCollisionSphere3D::_bind_methods() {}
 
 void GPUParticlesCollisionSphere3D::set_radius(real_t p_radius)
 {
@@ -105,15 +88,7 @@ GPUParticlesCollisionSphere3D::~GPUParticlesCollisionSphere3D() {}
 
 ///////////////////////////
 
-void GPUParticlesCollisionBox3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_size", "size"), &GPUParticlesCollisionBox3D::set_size);
-	ClassDB::bind_method(D_METHOD("get_size"), &GPUParticlesCollisionBox3D::get_size);
-
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "size", PROPERTY_HINT_RANGE,
-					 "0.01,1024,0.01,or_greater,suffix:m"),
-		"set_size", "get_size");
-}
+void GPUParticlesCollisionBox3D::_bind_methods() {}
 
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesCollisionBox3D::_set(const StringName& p_name, const Variant& p_value)
@@ -558,8 +533,8 @@ Ref<Image> GPUParticlesCollisionSDF3D::bake()
 
 	Ref<Image> ret = Image::create_from_data(
 		sdf_size.x, sdf_size.y * sdf_size.z, false, Image::FORMAT_RF, cells_data);
-	ret->convert(Image::FORMAT_RH);		// convert to half, save space
-	ret->set_meta("depth", sdf_size.z); // hack, make sure to add to the docs of this function
+	ret->convert(Image::FORMAT_RH);			 // convert to half, save space
+	ret->obj->set_meta("depth", sdf_size.z); // hack, make sure to add to the docs of this function
 
 	if (bake_end_function) {
 		bake_end_function();
@@ -581,54 +556,7 @@ PackedStringArray GPUParticlesCollisionSDF3D::get_configuration_warnings() const
 	return warnings;
 }
 
-void GPUParticlesCollisionSDF3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_size", "size"), &GPUParticlesCollisionSDF3D::set_size);
-	ClassDB::bind_method(D_METHOD("get_size"), &GPUParticlesCollisionSDF3D::get_size);
-
-	ClassDB::bind_method(
-		D_METHOD("set_resolution", "resolution"), &GPUParticlesCollisionSDF3D::set_resolution);
-	ClassDB::bind_method(D_METHOD("get_resolution"), &GPUParticlesCollisionSDF3D::get_resolution);
-
-	ClassDB::bind_method(
-		D_METHOD("set_texture", "texture"), &GPUParticlesCollisionSDF3D::set_texture);
-	ClassDB::bind_method(D_METHOD("get_texture"), &GPUParticlesCollisionSDF3D::get_texture);
-
-	ClassDB::bind_method(
-		D_METHOD("set_thickness", "thickness"), &GPUParticlesCollisionSDF3D::set_thickness);
-	ClassDB::bind_method(D_METHOD("get_thickness"), &GPUParticlesCollisionSDF3D::get_thickness);
-
-	ClassDB::bind_method(
-		D_METHOD("set_bake_mask", "mask"), &GPUParticlesCollisionSDF3D::set_bake_mask);
-	ClassDB::bind_method(D_METHOD("get_bake_mask"), &GPUParticlesCollisionSDF3D::get_bake_mask);
-	ClassDB::bind_method(D_METHOD("set_bake_mask_value", "layer_number", "value"),
-		&GPUParticlesCollisionSDF3D::set_bake_mask_value);
-	ClassDB::bind_method(D_METHOD("get_bake_mask_value", "layer_number"),
-		&GPUParticlesCollisionSDF3D::get_bake_mask_value);
-
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "size", PROPERTY_HINT_RANGE,
-					 "0.01,1024,0.01,or_greater,suffix:m"),
-		"set_size", "get_size");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "resolution", PROPERTY_HINT_ENUM, "16,32,64,128,256,512"),
-		"set_resolution", "get_resolution");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::FLOAT, "thickness", PROPERTY_HINT_RANGE, "0.0,2.0,0.01,suffix:m"),
-		"set_thickness", "get_thickness");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "bake_mask", PROPERTY_HINT_LAYERS_3D_RENDER),
-		"set_bake_mask", "get_bake_mask");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE,
-					 Texture3D::get_class_static()),
-		"set_texture", "get_texture");
-
-	BIND_ENUM_CONSTANT(RESOLUTION_16);
-	BIND_ENUM_CONSTANT(RESOLUTION_32);
-	BIND_ENUM_CONSTANT(RESOLUTION_64);
-	BIND_ENUM_CONSTANT(RESOLUTION_128);
-	BIND_ENUM_CONSTANT(RESOLUTION_256);
-	BIND_ENUM_CONSTANT(RESOLUTION_512);
-	BIND_ENUM_CONSTANT(RESOLUTION_MAX);
-}
+void GPUParticlesCollisionSDF3D::_bind_methods() {}
 
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesCollisionSDF3D::_set(const StringName& p_name, const Variant& p_value)
@@ -778,63 +706,7 @@ void GPUParticlesCollisionHeightField3D::_notification(int p_what)
 	}
 }
 
-void GPUParticlesCollisionHeightField3D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_size", "size"), &GPUParticlesCollisionHeightField3D::set_size);
-	ClassDB::bind_method(D_METHOD("get_size"), &GPUParticlesCollisionHeightField3D::get_size);
-
-	ClassDB::bind_method(D_METHOD("set_resolution", "resolution"),
-		&GPUParticlesCollisionHeightField3D::set_resolution);
-	ClassDB::bind_method(
-		D_METHOD("get_resolution"), &GPUParticlesCollisionHeightField3D::get_resolution);
-
-	ClassDB::bind_method(D_METHOD("set_update_mode", "update_mode"),
-		&GPUParticlesCollisionHeightField3D::set_update_mode);
-	ClassDB::bind_method(
-		D_METHOD("get_update_mode"), &GPUParticlesCollisionHeightField3D::get_update_mode);
-
-	ClassDB::bind_method(D_METHOD("set_heightfield_mask", "heightfield_mask"),
-		&GPUParticlesCollisionHeightField3D::set_heightfield_mask);
-	ClassDB::bind_method(D_METHOD("get_heightfield_mask"),
-		&GPUParticlesCollisionHeightField3D::get_heightfield_mask);
-
-	ClassDB::bind_method(D_METHOD("set_heightfield_mask_value", "layer_number", "value"),
-		&GPUParticlesCollisionHeightField3D::set_heightfield_mask_value);
-	ClassDB::bind_method(D_METHOD("get_heightfield_mask_value", "layer_number"),
-		&GPUParticlesCollisionHeightField3D::get_heightfield_mask_value);
-
-	ClassDB::bind_method(D_METHOD("set_follow_camera_enabled", "enabled"),
-		&GPUParticlesCollisionHeightField3D::set_follow_camera_enabled);
-	ClassDB::bind_method(D_METHOD("is_follow_camera_enabled"),
-		&GPUParticlesCollisionHeightField3D::is_follow_camera_enabled);
-
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "size", PROPERTY_HINT_RANGE,
-					 "0.01,1024,0.01,or_greater,suffix:m"),
-		"set_size", "get_size");
-	ADD_PROPERTY(
-		PropertyInfo(Variant::INT, "resolution", PROPERTY_HINT_ENUM,
-			"256 (Fastest),512 (Fast),1024 (Average),2048 (Slow),4096 (Slower),8192 (Slowest)"),
-		"set_resolution", "get_resolution");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "update_mode", PROPERTY_HINT_ENUM,
-					 "When Moved (Fast),Always (Slow)"),
-		"set_update_mode", "get_update_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "follow_camera_enabled"), "set_follow_camera_enabled",
-		"is_follow_camera_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "heightfield_mask", PROPERTY_HINT_LAYERS_3D_RENDER),
-		"set_heightfield_mask", "get_heightfield_mask");
-
-	BIND_ENUM_CONSTANT(RESOLUTION_256);
-	BIND_ENUM_CONSTANT(RESOLUTION_512);
-	BIND_ENUM_CONSTANT(RESOLUTION_1024);
-	BIND_ENUM_CONSTANT(RESOLUTION_2048);
-	BIND_ENUM_CONSTANT(RESOLUTION_4096);
-	BIND_ENUM_CONSTANT(RESOLUTION_8192);
-	BIND_ENUM_CONSTANT(RESOLUTION_MAX);
-
-	BIND_ENUM_CONSTANT(UPDATE_MODE_WHEN_MOVED);
-	BIND_ENUM_CONSTANT(UPDATE_MODE_ALWAYS);
-}
+void GPUParticlesCollisionHeightField3D::_bind_methods() {}
 
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesCollisionHeightField3D::_set(const StringName& p_name, const Variant& p_value)
@@ -988,35 +860,7 @@ void GPUParticlesAttractor3D::set_directionality(real_t p_directionality)
 
 real_t GPUParticlesAttractor3D::get_directionality() const { return directionality; }
 
-void GPUParticlesAttractor3D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_cull_mask", "mask"), &GPUParticlesAttractor3D::set_cull_mask);
-	ClassDB::bind_method(D_METHOD("get_cull_mask"), &GPUParticlesAttractor3D::get_cull_mask);
-
-	ClassDB::bind_method(
-		D_METHOD("set_strength", "strength"), &GPUParticlesAttractor3D::set_strength);
-	ClassDB::bind_method(D_METHOD("get_strength"), &GPUParticlesAttractor3D::get_strength);
-
-	ClassDB::bind_method(
-		D_METHOD("set_attenuation", "attenuation"), &GPUParticlesAttractor3D::set_attenuation);
-	ClassDB::bind_method(D_METHOD("get_attenuation"), &GPUParticlesAttractor3D::get_attenuation);
-
-	ClassDB::bind_method(
-		D_METHOD("set_directionality", "amount"), &GPUParticlesAttractor3D::set_directionality);
-	ClassDB::bind_method(
-		D_METHOD("get_directionality"), &GPUParticlesAttractor3D::get_directionality);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "strength", PROPERTY_HINT_RANGE,
-					 "-128,128,0.01,or_greater,or_less"),
-		"set_strength", "get_strength");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "attenuation", PROPERTY_HINT_EXP_EASING, "0,8,0.01"),
-		"set_attenuation", "get_attenuation");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "directionality", PROPERTY_HINT_RANGE, "0,1,0.01"),
-		"set_directionality", "get_directionality");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "cull_mask", PROPERTY_HINT_LAYERS_3D_RENDER),
-		"set_cull_mask", "get_cull_mask");
-}
+void GPUParticlesAttractor3D::_bind_methods() {}
 
 GPUParticlesAttractor3D::GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_type)
 {
@@ -1033,16 +877,7 @@ GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 
 /////////////////////////////////
 
-void GPUParticlesAttractorSphere3D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_radius", "radius"), &GPUParticlesAttractorSphere3D::set_radius);
-	ClassDB::bind_method(D_METHOD("get_radius"), &GPUParticlesAttractorSphere3D::get_radius);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE,
-					 "0.01,1024,0.01,or_greater,suffix:m"),
-		"set_radius", "get_radius");
-}
+void GPUParticlesAttractorSphere3D::_bind_methods() {}
 
 void GPUParticlesAttractorSphere3D::set_radius(real_t p_radius)
 {
@@ -1067,15 +902,7 @@ GPUParticlesAttractorSphere3D::~GPUParticlesAttractorSphere3D() {}
 
 ///////////////////////////
 
-void GPUParticlesAttractorBox3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_size", "size"), &GPUParticlesAttractorBox3D::set_size);
-	ClassDB::bind_method(D_METHOD("get_size"), &GPUParticlesAttractorBox3D::get_size);
-
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "size", PROPERTY_HINT_RANGE,
-					 "0.01,1024,0.01,or_greater,suffix:m"),
-		"set_size", "get_size");
-}
+void GPUParticlesAttractorBox3D::_bind_methods() {}
 
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesAttractorBox3D::_set(const StringName& p_name, const Variant& p_value)
@@ -1117,23 +944,7 @@ GPUParticlesAttractorBox3D::~GPUParticlesAttractorBox3D() {}
 
 ///////////////////////////
 
-void GPUParticlesAttractorVectorField3D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_size", "size"), &GPUParticlesAttractorVectorField3D::set_size);
-	ClassDB::bind_method(D_METHOD("get_size"), &GPUParticlesAttractorVectorField3D::get_size);
-
-	ClassDB::bind_method(
-		D_METHOD("set_texture", "texture"), &GPUParticlesAttractorVectorField3D::set_texture);
-	ClassDB::bind_method(D_METHOD("get_texture"), &GPUParticlesAttractorVectorField3D::get_texture);
-
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "size", PROPERTY_HINT_RANGE,
-					 "0.01,1024,0.01,or_greater,suffix:m"),
-		"set_size", "get_size");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE,
-					 Texture3D::get_class_static()),
-		"set_texture", "get_texture");
-}
+void GPUParticlesAttractorVectorField3D::_bind_methods() {}
 
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesAttractorVectorField3D::_set(const StringName& p_name, const Variant& p_value)

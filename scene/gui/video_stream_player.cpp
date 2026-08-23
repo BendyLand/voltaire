@@ -193,7 +193,7 @@ void VideoStreamPlayer::_notification(int p_notification)
 		}
 
 		Size2 s = expand ? get_size() : texture_size;
-		draw_texture_rect(texture, Rect2(Point2(), s), false);
+		draw_texture_rect(texture.ptr(), Rect2(Point2(), s), false);
 	} break;
 
 	case NOTIFICATION_SUSPENDED:

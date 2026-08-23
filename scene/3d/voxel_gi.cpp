@@ -486,7 +486,7 @@ void VoxelGI::bake(Node* p_from_node, bool p_create_visual_debug)
 
 			set_probe_data(probe_data_new);
 #ifdef TOOLS_ENABLED
-			probe_data_new->set_edited(true); // so it gets saved
+			probe_data_new->obj->set_edited(true); // so it gets saved
 #endif
 		}
 	}

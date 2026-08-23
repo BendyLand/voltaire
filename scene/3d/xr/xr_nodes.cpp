@@ -58,7 +58,7 @@ void XRCamera3D::_bind_tracker()
 
 	tracker = xr_server->get_tracker(tracker_name);
 	if (tracker.is_valid()) {
-		tracker->connect("pose_changed", callable_mp(this, &XRCamera3D::_pose_changed));
+		tracker->obj->connect("pose_changed", callable_mp(this, &XRCamera3D::_pose_changed));
 
 		Ref<XRPose> pose = tracker->get_pose(pose_name);
 		if (pose.is_valid()) {
@@ -70,7 +70,7 @@ void XRCamera3D::_bind_tracker()
 void XRCamera3D::_unbind_tracker()
 {
 	if (tracker.is_valid()) {
-		tracker->disconnect("pose_changed", callable_mp(this, &XRCamera3D::_pose_changed));
+		tracker->obj->disconnect("pose_changed", callable_mp(this, &XRCamera3D::_pose_changed));
 	}
 	tracker.unref();
 }
@@ -247,9 +247,9 @@ XRCamera3D::XRCamera3D()
 	XRServer* xr_server = XRServer::get_singleton();
 	ERR_FAIL_NULL(xr_server);
 
-	xr_server->connect("tracker_added", callable_mp(this, &XRCamera3D::_changed_tracker));
-	xr_server->connect("tracker_updated", callable_mp(this, &XRCamera3D::_changed_tracker));
-	xr_server->connect("tracker_removed", callable_mp(this, &XRCamera3D::_removed_tracker));
+	xr_server->obj->connect("tracker_added", callable_mp(this, &XRCamera3D::_changed_tracker));
+	xr_server->obj->connect("tracker_updated", callable_mp(this, &XRCamera3D::_changed_tracker));
+	xr_server->obj->connect("tracker_removed", callable_mp(this, &XRCamera3D::_removed_tracker));
 
 	// check if our tracker already exists and if so, bind it...
 	_bind_tracker();
@@ -260,9 +260,9 @@ XRCamera3D::~XRCamera3D()
 	XRServer* xr_server = XRServer::get_singleton();
 	ERR_FAIL_NULL(xr_server);
 
-	xr_server->disconnect("tracker_added", callable_mp(this, &XRCamera3D::_changed_tracker));
-	xr_server->disconnect("tracker_updated", callable_mp(this, &XRCamera3D::_changed_tracker));
-	xr_server->disconnect("tracker_removed", callable_mp(this, &XRCamera3D::_removed_tracker));
+	xr_server->obj->disconnect("tracker_added", callable_mp(this, &XRCamera3D::_changed_tracker));
+	xr_server->obj->disconnect("tracker_updated", callable_mp(this, &XRCamera3D::_changed_tracker));
+	xr_server->obj->disconnect("tracker_removed", callable_mp(this, &XRCamera3D::_removed_tracker));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -270,33 +270,7 @@ XRCamera3D::~XRCamera3D()
 // Note that trackers are only available in runtime and only after an XRInterface registers one.
 // So we bind by name and as long as a tracker isn't available, our node remains inactive.
 
-void XRNode3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_tracker", "tracker_name"), &XRNode3D::set_tracker);
-	ClassDB::bind_method(D_METHOD("get_tracker"), &XRNode3D::get_tracker);
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "tracker", PROPERTY_HINT_ENUM_SUGGESTION),
-		"set_tracker", "get_tracker");
-
-	ClassDB::bind_method(D_METHOD("set_pose_name", "pose"), &XRNode3D::set_pose_name);
-	ClassDB::bind_method(D_METHOD("get_pose_name"), &XRNode3D::get_pose_name);
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "pose", PROPERTY_HINT_ENUM_SUGGESTION),
-		"set_pose_name", "get_pose_name");
-
-	ClassDB::bind_method(
-		D_METHOD("set_show_when_tracked", "show"), &XRNode3D::set_show_when_tracked);
-	ClassDB::bind_method(D_METHOD("get_show_when_tracked"), &XRNode3D::get_show_when_tracked);
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_when_tracked"), "set_show_when_tracked",
-		"get_show_when_tracked");
-
-	ClassDB::bind_method(D_METHOD("get_is_active"), &XRNode3D::get_is_active);
-	ClassDB::bind_method(D_METHOD("get_has_tracking_data"), &XRNode3D::get_has_tracking_data);
-	ClassDB::bind_method(D_METHOD("get_pose"), &XRNode3D::get_pose);
-	ClassDB::bind_method(D_METHOD("trigger_haptic_pulse", "action_name", "frequency", "amplitude",
-							 "duration_sec", "delay_sec"),
-		&XRNode3D::trigger_haptic_pulse);
-
-	ADD_SIGNAL(MethodInfo("tracking_changed", PropertyInfo(Variant::BOOL, "tracking")));
-}
+void XRNode3D::_bind_methods() {}
 
 void XRNode3D::_validate_property(PropertyInfo& p_property) const
 {
@@ -423,8 +397,9 @@ void XRNode3D::_bind_tracker()
 			return;
 		}
 
-		tracker->connect("pose_changed", callable_mp(this, &XRNode3D::_pose_changed));
-		tracker->connect("pose_lost_tracking", callable_mp(this, &XRNode3D::_pose_lost_tracking));
+		tracker->obj->connect("pose_changed", callable_mp(this, &XRNode3D::_pose_changed));
+		tracker->obj->connect(
+			"pose_lost_tracking", callable_mp(this, &XRNode3D::_pose_lost_tracking));
 
 		Ref<XRPose> pose = get_pose();
 		if (pose.is_valid()) {
@@ -441,8 +416,8 @@ void XRNode3D::_bind_tracker()
 void XRNode3D::_unbind_tracker()
 {
 	if (tracker.is_valid()) {
-		tracker->disconnect("pose_changed", callable_mp(this, &XRNode3D::_pose_changed));
-		tracker->disconnect(
+		tracker->obj->disconnect("pose_changed", callable_mp(this, &XRNode3D::_pose_changed));
+		tracker->obj->disconnect(
 			"pose_lost_tracking", callable_mp(this, &XRNode3D::_pose_lost_tracking));
 
 		tracker.unref();
@@ -526,9 +501,9 @@ XRNode3D::XRNode3D()
 	XRServer* xr_server = XRServer::get_singleton();
 	ERR_FAIL_NULL(xr_server);
 
-	xr_server->connect("tracker_added", callable_mp(this, &XRNode3D::_changed_tracker));
-	xr_server->connect("tracker_updated", callable_mp(this, &XRNode3D::_changed_tracker));
-	xr_server->connect("tracker_removed", callable_mp(this, &XRNode3D::_removed_tracker));
+	xr_server->obj->connect("tracker_added", callable_mp(this, &XRNode3D::_changed_tracker));
+	xr_server->obj->connect("tracker_updated", callable_mp(this, &XRNode3D::_changed_tracker));
+	xr_server->obj->connect("tracker_removed", callable_mp(this, &XRNode3D::_removed_tracker));
 }
 
 XRNode3D::~XRNode3D()
@@ -538,9 +513,9 @@ XRNode3D::~XRNode3D()
 	XRServer* xr_server = XRServer::get_singleton();
 	ERR_FAIL_NULL(xr_server);
 
-	xr_server->disconnect("tracker_added", callable_mp(this, &XRNode3D::_changed_tracker));
-	xr_server->disconnect("tracker_updated", callable_mp(this, &XRNode3D::_changed_tracker));
-	xr_server->disconnect("tracker_removed", callable_mp(this, &XRNode3D::_removed_tracker));
+	xr_server->obj->disconnect("tracker_added", callable_mp(this, &XRNode3D::_changed_tracker));
+	xr_server->obj->disconnect("tracker_updated", callable_mp(this, &XRNode3D::_changed_tracker));
+	xr_server->obj->disconnect("tracker_removed", callable_mp(this, &XRNode3D::_removed_tracker));
 }
 
 PackedStringArray XRNode3D::get_configuration_warnings() const
@@ -575,37 +550,23 @@ PackedStringArray XRNode3D::get_configuration_warnings() const
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void XRController3D::_bind_methods()
-{
-	// passthroughs to information about our related joystick
-	ClassDB::bind_method(D_METHOD("is_button_pressed", "name"), &XRController3D::is_button_pressed);
-	ClassDB::bind_method(D_METHOD("get_input", "name"), &XRController3D::get_input);
-	ClassDB::bind_method(D_METHOD("get_float", "name"), &XRController3D::get_float);
-	ClassDB::bind_method(D_METHOD("get_vector2", "name"), &XRController3D::get_vector2);
-
-	ClassDB::bind_method(D_METHOD("get_tracker_hand"), &XRController3D::get_tracker_hand);
-
-	ADD_SIGNAL(MethodInfo("button_pressed", PropertyInfo(Variant::STRING, "action_name")));
-	ADD_SIGNAL(MethodInfo("button_released", PropertyInfo(Variant::STRING, "action_name")));
-	ADD_SIGNAL(MethodInfo("input_float_changed", PropertyInfo(Variant::STRING, "action_name"),
-		PropertyInfo(Variant::FLOAT, "value")));
-	ADD_SIGNAL(MethodInfo("input_vector2_changed", PropertyInfo(Variant::STRING, "action_name"),
-		PropertyInfo(Variant::VECTOR2, "value")));
-	ADD_SIGNAL(MethodInfo("profile_changed", PropertyInfo(Variant::STRING, "role")));
-}
+void XRController3D::_bind_methods() {}
 
 void XRController3D::_bind_tracker()
 {
 	XRNode3D::_bind_tracker();
 	if (tracker.is_valid()) {
 		// bind to input signals
-		tracker->connect("button_pressed", callable_mp(this, &XRController3D::_button_pressed));
-		tracker->connect("button_released", callable_mp(this, &XRController3D::_button_released));
-		tracker->connect(
+		tracker->obj->connect(
+			"button_pressed", callable_mp(this, &XRController3D::_button_pressed));
+		tracker->obj->connect(
+			"button_released", callable_mp(this, &XRController3D::_button_released));
+		tracker->obj->connect(
 			"input_float_changed", callable_mp(this, &XRController3D::_input_float_changed));
-		tracker->connect(
+		tracker->obj->connect(
 			"input_vector2_changed", callable_mp(this, &XRController3D::_input_vector2_changed));
-		tracker->connect("profile_changed", callable_mp(this, &XRController3D::_profile_changed));
+		tracker->obj->connect(
+			"profile_changed", callable_mp(this, &XRController3D::_profile_changed));
 	}
 }
 
@@ -613,14 +574,15 @@ void XRController3D::_unbind_tracker()
 {
 	if (tracker.is_valid()) {
 		// unbind input signals
-		tracker->disconnect("button_pressed", callable_mp(this, &XRController3D::_button_pressed));
-		tracker->disconnect(
+		tracker->obj->disconnect(
+			"button_pressed", callable_mp(this, &XRController3D::_button_pressed));
+		tracker->obj->disconnect(
 			"button_released", callable_mp(this, &XRController3D::_button_released));
-		tracker->disconnect(
+		tracker->obj->disconnect(
 			"input_float_changed", callable_mp(this, &XRController3D::_input_float_changed));
-		tracker->disconnect(
+		tracker->obj->disconnect(
 			"input_vector2_changed", callable_mp(this, &XRController3D::_input_vector2_changed));
-		tracker->disconnect(
+		tracker->obj->disconnect(
 			"profile_changed", callable_mp(this, &XRController3D::_profile_changed));
 	}
 
@@ -739,11 +701,7 @@ XRPositionalTracker::TrackerHand XRController3D::get_tracker_hand() const
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void XRAnchor3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("get_size"), &XRAnchor3D::get_size);
-	ClassDB::bind_method(D_METHOD("get_plane"), &XRAnchor3D::get_plane);
-}
+void XRAnchor3D::_bind_methods() {}
 
 Vector3 XRAnchor3D::get_size() const { return size; }
 
@@ -794,16 +752,7 @@ PackedStringArray XROrigin3D::get_configuration_warnings() const
 	return warnings;
 }
 
-void XROrigin3D::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("set_world_scale", "world_scale"), &XROrigin3D::set_world_scale);
-	ClassDB::bind_method(D_METHOD("get_world_scale"), &XROrigin3D::get_world_scale);
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "world_scale"), "set_world_scale", "get_world_scale");
-
-	ClassDB::bind_method(D_METHOD("set_current", "enabled"), &XROrigin3D::set_current);
-	ClassDB::bind_method(D_METHOD("is_current"), &XROrigin3D::is_current);
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "current"), "set_current", "is_current");
-}
+void XROrigin3D::_bind_methods() {}
 
 real_t XROrigin3D::get_world_scale() const
 {
@@ -942,7 +891,7 @@ void XROrigin3D::_notification(int p_what)
 		for (int i = 0; i < xr_server->get_interface_count(); i++) {
 			Ref<XRInterface> interface = xr_server->get_interface(i);
 			if (interface.is_valid() && interface->is_initialized()) {
-				interface->notification(p_what);
+				interface->obj->notification(p_what);
 			}
 		}
 	}

@@ -209,12 +209,12 @@ VisualInstance3D::~VisualInstance3D()
 void GeometryInstance3D::set_material_override(const Ref<Material>& p_material)
 {
 	if (material_override.is_valid()) {
-		material_override->disconnect(CoreStringName(property_list_changed),
+		material_override->obj->disconnect(CoreStringName(property_list_changed),
 			callable_mp((Object*)this, &Object::notify_property_list_changed));
 	}
 	material_override = p_material;
 	if (material_override.is_valid()) {
-		material_override->connect(CoreStringName(property_list_changed),
+		material_override->obj->connect(CoreStringName(property_list_changed),
 			callable_mp((Object*)this, &Object::notify_property_list_changed));
 	}
 	RS::get_singleton()->instance_geometry_set_material_override(

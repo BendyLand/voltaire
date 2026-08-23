@@ -166,7 +166,7 @@ void GPUParticles3D::set_process_material(const Ref<Material>& p_material)
 #ifdef TOOLS_ENABLED
 	if (process_material.is_valid()) {
 		if (Ref<ParticleProcessMaterial>(process_material).is_valid()) {
-			process_material->disconnect("emission_shape_changed",
+			process_material->obj->disconnect("emission_shape_changed",
 				callable_mp((Node3D*)this, &GPUParticles3D::update_gizmos));
 		}
 	}
@@ -178,7 +178,7 @@ void GPUParticles3D::set_process_material(const Ref<Material>& p_material)
 		material_rid = process_material->get_rid();
 #ifdef TOOLS_ENABLED
 		if (Ref<ParticleProcessMaterial>(process_material).is_valid()) {
-			process_material->connect("emission_shape_changed",
+			process_material->obj->connect("emission_shape_changed",
 				callable_mp((Node3D*)this, &GPUParticles3D::update_gizmos));
 		}
 #endif

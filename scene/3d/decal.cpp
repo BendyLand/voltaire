@@ -50,13 +50,14 @@ void Decal::set_texture(DecalTexture p_type, const Ref<Texture2D>& p_texture)
 
 #ifdef DEBUG_ENABLED
 	if (p_texture.is_valid() &&
-		(p_texture->is_class("AnimatedTexture") || p_texture->is_class("AtlasTexture") ||
-			p_texture->is_class("CameraTexture") || p_texture->is_class("CanvasTexture") ||
-			p_texture->is_class("MeshTexture") || p_texture->is_class("Texture2DRD") ||
-			p_texture->is_class("ViewportTexture"))) {
+		(p_texture->obj->is_class("AnimatedTexture") || p_texture->obj->is_class("AtlasTexture") ||
+			p_texture->obj->is_class("CameraTexture") ||
+			p_texture->obj->is_class("CanvasTexture") || p_texture->obj->is_class("MeshTexture") ||
+			p_texture->obj->is_class("Texture2DRD") ||
+			p_texture->obj->is_class("ViewportTexture"))) {
 		WARN_PRINT(vformat("%s cannot be used as a Decal texture (%s). As a workaround, assign the "
 						   "value returned by %s's `get_image()` instead.",
-			p_texture->get_class(), get_path(), p_texture->get_class()));
+			p_texture->obj->get_class(), get_path(), p_texture->obj->get_class()));
 	}
 #endif
 
@@ -238,4 +239,5 @@ Decal::~Decal()
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RS::get_singleton()->free_rid(decal);
 }
+
 

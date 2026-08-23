@@ -68,7 +68,7 @@ void AnimationNodeStateMachineTransition::set_advance_condition(const StringName
 	else {
 		advance_condition_name = StringName();
 	}
-	emit_signal(SNAME("advance_condition_changed"));
+	this->obj->emit_signal(SNAME("advance_condition_changed"));
 }
 
 StringName AnimationNodeStateMachineTransition::get_advance_condition() const
@@ -364,7 +364,7 @@ void AnimationNodeStateMachinePlayback::_signal_state_change(
 			parent_playback->_signal_state_change(p_animation_tree, prefix + p_state, p_started);
 		}
 	}
-	emit_signal(
+	this->obj->emit_signal(
 		p_started ? SceneStringName(state_started) : SceneStringName(state_finished), p_state);
 }
 
@@ -1511,7 +1511,7 @@ void AnimationNodeStateMachine::set_state_machine_type(StateMachineType p_state_
 	state_machine_type = p_state_machine_type;
 	emit_changed();
 	_tree_changed();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 AnimationNodeStateMachine::StateMachineType
@@ -1610,9 +1610,9 @@ void AnimationNodeStateMachine::remove_node(const StringName& p_name)
 
 	states.erase(p_name);
 
-	emit_signal(SNAME("animation_node_removed"), get_instance_id(), p_name);
+	this->obj->emit_signal(SNAME("animation_node_removed"), this->obj->get_instance_id(), p_name);
 	emit_changed();
-	emit_signal(SNAME("tree_changed"));
+	this->obj->emit_signal(SNAME("tree_changed"));
 }
 
 void AnimationNodeStateMachine::rename_node(const StringName& p_name, const StringName& p_new_name)
@@ -1626,9 +1626,9 @@ void AnimationNodeStateMachine::rename_node(const StringName& p_name, const Stri
 
 	_rename_transitions(p_name, p_new_name);
 
-	emit_signal(SNAME("animation_node_renamed"), get_instance_id(), p_name, p_new_name);
+	this->obj->emit_signal(SNAME("animation_node_renamed"), this->obj->get_instance_id(), p_name, p_new_name);
 	emit_changed();
-	emit_signal(SNAME("tree_changed"));
+	this->obj->emit_signal(SNAME("tree_changed"));
 }
 
 void AnimationNodeStateMachine::_rename_transitions(
@@ -1774,8 +1774,8 @@ void AnimationNodeStateMachine::add_transition(const StringName& p_from, const S
 	tr.to = p_to;
 	tr.transition = p_transition;
 
-	tr.transition->connect("advance_condition_changed",
-		callable_mp(this, &AnimationNodeStateMachine::_tree_changed), CONNECT_REFERENCE_COUNTED);
+	tr.transition->obj->connect("advance_condition_changed",
+		callable_mp(this, &AnimationNodeStateMachine::_tree_changed), Object::CONNECT_REFERENCE_COUNTED);
 
 	transitions.push_back(tr);
 
@@ -1828,7 +1828,7 @@ void AnimationNodeStateMachine::remove_transition(const StringName& p_from, cons
 void AnimationNodeStateMachine::remove_transition_by_index(const int p_transition)
 {
 	ERR_FAIL_INDEX(p_transition, transitions.size());
-	transitions.write[p_transition].transition->disconnect(
+	transitions.write[p_transition].transition->obj->disconnect(
 		"advance_condition_changed", callable_mp(this, &AnimationNodeStateMachine::_tree_changed));
 	transitions.remove_at(p_transition);
 }

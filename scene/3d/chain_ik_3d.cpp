@@ -415,40 +415,7 @@ int ChainIK3D::get_joint_count(int p_index) const
 	return joints.size();
 }
 
-void ChainIK3D::_bind_methods()
-{
-	// Setting.
-	ClassDB::bind_method(
-		D_METHOD("set_root_bone_name", "index", "bone_name"), &ChainIK3D::set_root_bone_name);
-	ClassDB::bind_method(D_METHOD("get_root_bone_name", "index"), &ChainIK3D::get_root_bone_name);
-	ClassDB::bind_method(D_METHOD("set_root_bone", "index", "bone"), &ChainIK3D::set_root_bone);
-	ClassDB::bind_method(D_METHOD("get_root_bone", "index"), &ChainIK3D::get_root_bone);
-
-	ClassDB::bind_method(
-		D_METHOD("set_end_bone_name", "index", "bone_name"), &ChainIK3D::set_end_bone_name);
-	ClassDB::bind_method(D_METHOD("get_end_bone_name", "index"), &ChainIK3D::get_end_bone_name);
-	ClassDB::bind_method(D_METHOD("set_end_bone", "index", "bone"), &ChainIK3D::set_end_bone);
-	ClassDB::bind_method(D_METHOD("get_end_bone", "index"), &ChainIK3D::get_end_bone);
-
-	ClassDB::bind_method(
-		D_METHOD("set_extend_end_bone", "index", "enabled"), &ChainIK3D::set_extend_end_bone);
-	ClassDB::bind_method(
-		D_METHOD("is_end_bone_extended", "index"), &ChainIK3D::is_end_bone_extended);
-	ClassDB::bind_method(D_METHOD("set_end_bone_direction", "index", "bone_direction"),
-		&ChainIK3D::set_end_bone_direction);
-	ClassDB::bind_method(
-		D_METHOD("get_end_bone_direction", "index"), &ChainIK3D::get_end_bone_direction);
-	ClassDB::bind_method(
-		D_METHOD("set_end_bone_length", "index", "length"), &ChainIK3D::set_end_bone_length);
-	ClassDB::bind_method(D_METHOD("get_end_bone_length", "index"), &ChainIK3D::get_end_bone_length);
-
-	// Individual joints.
-	ClassDB::bind_method(
-		D_METHOD("get_joint_bone_name", "index", "joint"), &ChainIK3D::get_joint_bone_name);
-	ClassDB::bind_method(D_METHOD("get_joint_bone", "index", "joint"), &ChainIK3D::get_joint_bone);
-
-	ClassDB::bind_method(D_METHOD("get_joint_count", "index"), &ChainIK3D::get_joint_count);
-}
+void ChainIK3D::_bind_methods() {}
 
 void ChainIK3D::_validate_bone_names()
 {

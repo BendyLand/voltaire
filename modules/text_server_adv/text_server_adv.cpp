@@ -3769,8 +3769,7 @@ void TextServerAdvanced::_font_set_scale(const RID& p_font_rid, int64_t p_size, 
 	ffsd->scale = p_scale;
 }
 
-double TextSer
-verAdvanced::_font_get_scale(const RID& p_font_rid, int64_t p_size) const
+double TextServerAdvanced::_font_get_scale(const RID& p_font_rid, int64_t p_size) const
 {
 	FontAdvanced* fd = _get_font_data(p_font_rid);
 	ERR_FAIL_NULL_V(fd, 0.0);

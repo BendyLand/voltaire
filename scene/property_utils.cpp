@@ -184,39 +184,24 @@ Variant PropertyUtils::get_property_default_value(const Object* p_object,
 		}
 	}
 
-	// Fall back to the default from the native class
 	{
-		if (r_is_class_default) {
-			*r_is_class_default = true;
-		}
-		bool valid = false;
-		Variant value = ClassDB::class_get_default_property_value(
-			p_object->get_class_name(), p_property, &valid);
-		if (valid) {
+		// Heuristically check if this is a synthetic property (whatever/0, whatever/1, etc.)
+		// because they are not in the class DB yet must have a default (null).
+		String prop_str = String(p_property);
+		int p = prop_str.rfind_char('/');
+		if (p != -1 && p < prop_str.length() - 1) {
+			bool all_digits = true;
+			for (int i = p + 1; i < prop_str.length(); i++) {
+				if (!is_digit(prop_str[i])) {
+					all_digits = false;
+					break;
+				}
+			}
 			if (r_is_valid) {
-				*r_is_valid = true;
+				*r_is_valid = all_digits;
 			}
-			return value;
 		}
-		else {
-			// Heuristically check if this is a synthetic property (whatever/0, whatever/1, etc.)
-			// because they are not in the class DB yet must have a default (null).
-			String prop_str = String(p_property);
-			int p = prop_str.rfind_char('/');
-			if (p != -1 && p < prop_str.length() - 1) {
-				bool all_digits = true;
-				for (int i = p + 1; i < prop_str.length(); i++) {
-					if (!is_digit(prop_str[i])) {
-						all_digits = false;
-						break;
-					}
-				}
-				if (r_is_valid) {
-					*r_is_valid = all_digits;
-				}
-			}
-			return Variant();
-		}
+		return Variant();
 	}
 }
 

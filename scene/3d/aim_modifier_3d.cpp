@@ -207,29 +207,7 @@ bool AimModifier3D::is_relative(int p_index) const
 	return setting->relative;
 }
 
-void AimModifier3D::_bind_methods()
-{
-	ClassDB::bind_method(
-		D_METHOD("set_forward_axis", "index", "axis"), &AimModifier3D::set_forward_axis);
-	ClassDB::bind_method(D_METHOD("get_forward_axis", "index"), &AimModifier3D::get_forward_axis);
-	ClassDB::bind_method(
-		D_METHOD("set_use_euler", "index", "enabled"), &AimModifier3D::set_use_euler);
-	ClassDB::bind_method(D_METHOD("is_using_euler", "index"), &AimModifier3D::is_using_euler);
-	ClassDB::bind_method(D_METHOD("set_primary_rotation_axis", "index", "axis"),
-		&AimModifier3D::set_primary_rotation_axis);
-	ClassDB::bind_method(
-		D_METHOD("get_primary_rotation_axis", "index"), &AimModifier3D::get_primary_rotation_axis);
-	ClassDB::bind_method(D_METHOD("set_use_secondary_rotation", "index", "enabled"),
-		&AimModifier3D::set_use_secondary_rotation);
-	ClassDB::bind_method(D_METHOD("is_using_secondary_rotation", "index"),
-		&AimModifier3D::is_using_secondary_rotation);
-	ClassDB::bind_method(
-		D_METHOD("set_relative", "index", "enabled"), &AimModifier3D::set_relative);
-	ClassDB::bind_method(D_METHOD("is_relative", "index"), &AimModifier3D::is_relative);
-
-	ADD_ARRAY_COUNT(
-		"Settings", "setting_count", "set_setting_count", "get_setting_count", "settings/");
-}
+void AimModifier3D::_bind_methods() {}
 
 void AimModifier3D::_process_constraint_by_bone(
 	int p_index, Skeleton3D* p_skeleton, int p_apply_bone, int p_reference_bone, float p_amount)

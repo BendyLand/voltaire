@@ -1427,16 +1427,16 @@ void CPUParticles3D::_set_redraw(bool p_redraw)
 		MutexLock lock(update_mutex);
 
 		if (redraw) {
-			RS::get_singleton()->connect(
+			RS::get_singleton()->obj->connect(
 				"frame_pre_draw", callable_mp(this, &CPUParticles3D::_update_render_thread));
 			RS::get_singleton()->instance_geometry_set_flag(
 				get_instance(), RSE::INSTANCE_FLAG_DRAW_NEXT_FRAME_IF_VISIBLE, true);
 			RS::get_singleton()->multimesh_set_visible_instances(multimesh, -1);
 		}
 		else {
-			if (RS::get_singleton()->is_connected(
+			if (RS::get_singleton()->obj->is_connected(
 					"frame_pre_draw", callable_mp(this, &CPUParticles3D::_update_render_thread))) {
-				RS::get_singleton()->disconnect(
+				RS::get_singleton()->obj->disconnect(
 					"frame_pre_draw", callable_mp(this, &CPUParticles3D::_update_render_thread));
 			}
 			RS::get_singleton()->instance_geometry_set_flag(

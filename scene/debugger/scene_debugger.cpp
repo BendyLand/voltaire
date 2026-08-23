@@ -755,7 +755,7 @@ void SceneDebugger::_save_node(ObjectID id, const String& p_path)
 
 	Ref<PackedScene> ps = memnew(PackedScene);
 	ps->pack(copy);
-	ResourceSaver::save(ps, p_path);
+	ResourceSaver::save(ps.ptr(), p_path);
 
 	memdelete(copy);
 }
@@ -861,7 +861,7 @@ void SceneDebugger::_next_frame()
 	}
 
 	scene_tree->set_suspend(false);
-	RenderingServer::get_singleton()->connect("frame_post_draw",
+	RenderingServer::get_singleton()->obj->connect("frame_post_draw",
 		callable_mp(scene_tree, &SceneTree::set_suspend).bind(true), Object::CONNECT_ONE_SHOT);
 }
 
@@ -1106,7 +1106,7 @@ void LiveEditor::_res_set_func(int p_id, const StringName& p_prop, const Variant
 		return;
 	}
 
-	r->set(p_prop, p_value);
+	r->obj->set(p_prop, p_value);
 }
 
 void LiveEditor::_res_set_res_func(int p_id, const StringName& p_prop, const String& p_value)
@@ -1137,7 +1137,7 @@ void LiveEditor::_res_call_func(
 	}
 
 	Callable::CallError ce;
-	r->callp(p_method, p_args, p_argcount, ce);
+	r->obj->callp(p_method, p_args, p_argcount, ce);
 }
 
 void LiveEditor::_root_func(const NodePath& p_scene_path, const String& p_scene_from)
@@ -1175,8 +1175,7 @@ void LiveEditor::_create_node_func(
 			continue;
 		}
 		Node* n2 = n->get_node(p_parent);
-
-		Node* no = Object::cast_to<Node>(ClassDB::instantiate(p_type));
+		Node* no = memnew(Node);
 		if (!no) {
 			continue;
 		}

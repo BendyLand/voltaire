@@ -69,7 +69,7 @@ void CodeEdit::_notification(int p_what)
 		_apply_project_settings();
 #ifdef TOOLS_ENABLED
 		if (Engine::get_singleton()->is_editor_hint()) {
-			ProjectSettings::get_singleton()->connect(
+			ProjectSettings::get_singleton()->obj->connect(
 				"settings_changed", callable_mp(this, &CodeEdit::_apply_project_settings));
 		}
 #endif // TOOLS_ENABLED
@@ -4350,8 +4350,7 @@ bool CodeCompletionOptionCompare::operator()(const ScriptLanguage::CodeCompletio
 	}
 
 	// to get here they need to have the same size so we can take the size of whichever we want
-	for (int i = 0; i < l.matches.size(); ++i)
- {
+	for (int i = 0; i < l.matches.size(); ++i) {
 		if (l.matches[i].first != r.matches[i].first) {
 			return l.matches[i].first < r.matches[i].first;
 		}
