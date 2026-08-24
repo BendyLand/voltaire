@@ -28,11 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "rendering_server_default.h"
-
 #include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
+#include "rendering_server_default.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer_canvas_cull.h"
 #include "servers/rendering/renderer_scene_cull.h"
@@ -49,7 +48,8 @@ int RenderingServerDefault::changes = 0;
 
 /* FREE */
 
-void RenderingServerDefault::_free(RID p_rid) {
+void RenderingServerDefault::_free(RID p_rid)
+{
 	if (unlikely(p_rid.is_null())) {
 		return;
 	}
@@ -69,11 +69,13 @@ void RenderingServerDefault::_free(RID p_rid) {
 
 /* EVENT QUEUING */
 
-void RenderingServerDefault::request_frame_drawn_callback(const Callable &p_callable) {
+void RenderingServerDefault::request_frame_drawn_callback(const Callable& p_callable)
+{
 	frame_drawn_callbacks.push_back(p_callable);
 }
 
-void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step) {
+void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step)
+{
 	GodotProfileZoneGroupedFirst(_profile_zone, "rasterizer->begin_frame");
 	RSG::rasterizer->begin_frame(frame_step);
 
@@ -85,7 +87,7 @@ void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step) {
 
 #ifndef XR_DISABLED
 	GodotProfileZoneGrouped(_profile_zone, "xr_server->pre_render");
-	XRServer *xr_server = XRServer::get_singleton();
+	XRServer* xr_server = XRServer::get_singleton();
 	if (xr_server != nullptr) {
 		// Let XR server know we're about to render a frame.
 		xr_server->pre_render();
@@ -93,14 +95,16 @@ void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step) {
 #endif // XR_DISABLED
 
 	GodotProfileZoneGrouped(_profile_zone, "scene->update");
-	RSG::scene->update(); //update scenes stuff before updating instances
+	RSG::scene->update(); // update scenes stuff before updating instances
 	GodotProfileZoneGrouped(_profile_zone, "canvas->update");
 	RSG::canvas->update();
 
 	frame_setup_time = double(OS::get_singleton()->get_ticks_usec() - time_usec) / 1000.0;
 
 	GodotProfileZoneGrouped(_profile_zone, "particles_storage->update_particles");
-	RSG::particles_storage->update_particles(); //need to be done after instances are updated (colliders and particle transforms), and colliders are rendered
+	RSG::particles_storage
+		->update_particles(); // need to be done after instances are updated (colliders and particle
+							  // transforms), and colliders are rendered
 
 	GodotProfileZoneGrouped(_profile_zone, "scene->render_probes");
 	RSG::scene->render_probes();
@@ -129,7 +133,8 @@ void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step) {
 	GodotProfileZoneGrouped(_profile_zone, "post_draw_steps");
 	if (create_thread) {
 		callable_mp(this, &RenderingServerDefault::_run_post_draw_steps).call_deferred();
-	} else {
+	}
+	else {
 		_run_post_draw_steps();
 	}
 
@@ -181,7 +186,8 @@ void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step) {
 
 			if (print_gpu_profile_task_time.has(name)) {
 				print_gpu_profile_task_time[name] += time;
-			} else {
+			}
+			else {
 				print_gpu_profile_task_time[name] = time;
 			}
 		}
@@ -190,13 +196,14 @@ void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step) {
 			total_time = frame_profile[frame_profile.size() - 1].gpu_msec;
 		}
 
-		uint64_t ticks_elapsed = OS::get_singleton()->get_ticks_usec() - print_frame_profile_ticks_from;
+		uint64_t ticks_elapsed =
+			OS::get_singleton()->get_ticks_usec() - print_frame_profile_ticks_from;
 		print_frame_profile_frame_count++;
 		if (ticks_elapsed > 1000000) {
 			print_line("GPU PROFILE (total " + rtos(total_time) + "ms): ");
 
 			float print_threshold = 0.01;
-			for (const KeyValue<String, float> &E : print_gpu_profile_task_time) {
+			for (const KeyValue<String, float>& E : print_gpu_profile_task_time) {
 				double time = E.value / double(print_frame_profile_frame_count);
 				if (time > print_threshold) {
 					print_line("\t-" + E.key + ": " + rtos(time) + "ms");
@@ -212,7 +219,8 @@ void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step) {
 	RSG::utilities->update_memory_info();
 }
 
-void RenderingServerDefault::_run_post_draw_steps() {
+void RenderingServerDefault::_run_post_draw_steps()
+{
 	while (frame_drawn_callbacks.front()) {
 		Callable c = frame_drawn_callbacks.front()->get();
 		Variant result;
@@ -226,23 +234,20 @@ void RenderingServerDefault::_run_post_draw_steps() {
 		frame_drawn_callbacks.pop_front();
 	}
 
-	emit_signal(SNAME("frame_post_draw"));
+	this->obj->emit_signal(SNAME("frame_post_draw"));
 }
 
-double RenderingServerDefault::get_frame_setup_time_cpu() const {
-	return frame_setup_time;
-}
+double RenderingServerDefault::get_frame_setup_time_cpu() const { return frame_setup_time; }
 
-bool RenderingServerDefault::has_changed() const {
-	return changes > 0;
-}
+bool RenderingServerDefault::has_changed() const { return changes > 0; }
 
-void RenderingServerDefault::_init() {
+void RenderingServerDefault::_init()
+{
 	RSG::threaded = create_thread;
 
 	RSG::canvas = memnew(RendererCanvasCull);
 	RSG::viewport = memnew(RendererViewport);
-	RendererSceneCull *sr = memnew(RendererSceneCull);
+	RendererSceneCull* sr = memnew(RendererSceneCull);
 	RSG::camera_attributes = memnew(RendererCameraAttributes);
 	RSG::scene = sr;
 	RSG::rasterizer = RendererCompositor::create();
@@ -259,7 +264,8 @@ void RenderingServerDefault::_init() {
 	sr->set_scene_render(RSG::rasterizer->get_scene());
 }
 
-void RenderingServerDefault::_finish() {
+void RenderingServerDefault::_finish()
+{
 	if (test_cube.is_valid()) {
 		free_rid(test_cube);
 	}
@@ -273,22 +279,27 @@ void RenderingServerDefault::_finish() {
 	memdelete(RSG::camera_attributes);
 }
 
-void RenderingServerDefault::init() {
+void RenderingServerDefault::init()
+{
 	if (create_thread) {
 		print_verbose("RenderingServerWrapMT: Starting render thread");
 		DisplayServer::get_singleton()->release_rendering_thread();
-		WorkerThreadPool::TaskID tid = WorkerThreadPool::get_singleton()->add_task(callable_mp(this, &RenderingServerDefault::_thread_loop), true, "Rendering Server pump task", true);
+		WorkerThreadPool::TaskID tid = WorkerThreadPool::get_singleton()->add_task(
+			callable_mp(this, &RenderingServerDefault::_thread_loop), true,
+			"Rendering Server pump task", true);
 		command_queue.set_pump_task_id(tid);
 		command_queue.push(this, &RenderingServerDefault::_assign_mt_ids, tid);
 		command_queue.push_and_sync(this, &RenderingServerDefault::_init);
 		DEV_ASSERT(server_task_id == tid);
-	} else {
+	}
+	else {
 		server_thread = Thread::MAIN_ID;
 		_init();
 	}
 }
 
-void RenderingServerDefault::finish() {
+void RenderingServerDefault::finish()
+{
 	if (create_thread) {
 		command_queue.push(this, &RenderingServerDefault::_finish);
 		command_queue.push(this, &RenderingServerDefault::_thread_exit);
@@ -297,123 +308,144 @@ void RenderingServerDefault::finish() {
 			server_task_id = WorkerThreadPool::INVALID_TASK_ID;
 		}
 		server_thread = Thread::MAIN_ID;
-	} else {
+	}
+	else {
 		_finish();
 	}
 }
 
 /* STATUS INFORMATION */
 
-uint64_t RenderingServerDefault::get_rendering_info(RSE::RenderingInfo p_info) {
+uint64_t RenderingServerDefault::get_rendering_info(RSE::RenderingInfo p_info)
+{
 	if (p_info == RSE::RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME) {
 		return RSG::viewport->get_total_objects_drawn();
-	} else if (p_info == RSE::RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME) {
+	}
+	else if (p_info == RSE::RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME) {
 		return RSG::viewport->get_total_primitives_drawn();
-	} else if (p_info == RSE::RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME) {
+	}
+	else if (p_info == RSE::RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME) {
 		return RSG::viewport->get_total_draw_calls_used();
-	} else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_CANVAS) {
+	}
+	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_CANVAS) {
 		return RSG::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_CANVAS);
-	} else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_MESH) {
-		return RSG::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_MESH) + RSG::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_MESH);
-	} else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE) {
+	}
+	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_MESH) {
+		return RSG::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_MESH) +
+			   RSG::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_MESH);
+	}
+	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE) {
 		return RSG::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SURFACE);
-	} else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW) {
-		return RSG::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_DRAW) + RSG::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_DRAW);
-	} else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION) {
-		return RSG::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION) + RSG::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION);
+	}
+	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW) {
+		return RSG::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_DRAW) +
+			   RSG::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_DRAW);
+	}
+	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION) {
+		return RSG::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION) +
+			   RSG::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION);
 	}
 	return RSG::utilities->get_rendering_info(p_info);
 }
 
-RenderingDeviceEnums::DeviceType RenderingServerDefault::get_video_adapter_type() const {
+RenderingDeviceEnums::DeviceType RenderingServerDefault::get_video_adapter_type() const
+{
 	return RSG::utilities->get_video_adapter_type();
 }
 
-void RenderingServerDefault::set_frame_profiling_enabled(bool p_enable) {
+void RenderingServerDefault::set_frame_profiling_enabled(bool p_enable)
+{
 	RSG::utilities->capturing_timestamps = p_enable;
 }
 
-uint64_t RenderingServerDefault::get_frame_profile_frame() {
-	return frame_profile_frame;
-}
+uint64_t RenderingServerDefault::get_frame_profile_frame() { return frame_profile_frame; }
 
-Vector<RenderingServerTypes::FrameProfileArea> RenderingServerDefault::get_frame_profile() {
+Vector<RenderingServerTypes::FrameProfileArea> RenderingServerDefault::get_frame_profile()
+{
 	return frame_profile;
 }
 
 /* TESTING */
 
-Color RenderingServerDefault::get_default_clear_color() {
+Color RenderingServerDefault::get_default_clear_color()
+{
 	return RSG::texture_storage->get_default_clear_color();
 }
 
-void RenderingServerDefault::set_default_clear_color(const Color &p_color) {
+void RenderingServerDefault::set_default_clear_color(const Color& p_color)
+{
 	RSG::texture_storage->set_default_clear_color(p_color);
 }
 
 #ifndef DISABLE_DEPRECATED
-bool RenderingServerDefault::has_feature(RSE::Features p_feature) const {
-	return false;
-}
+bool RenderingServerDefault::has_feature(RSE::Features p_feature) const { return false; }
 #endif
 
-void RenderingServerDefault::sdfgi_set_debug_probe_select(const Vector3 &p_position, const Vector3 &p_dir) {
+void RenderingServerDefault::sdfgi_set_debug_probe_select(
+	const Vector3& p_position, const Vector3& p_dir)
+{
 	RSG::scene->sdfgi_set_debug_probe_select(p_position, p_dir);
 }
 
-void RenderingServerDefault::set_print_gpu_profile(bool p_enable) {
+void RenderingServerDefault::set_print_gpu_profile(bool p_enable)
+{
 	RSG::utilities->capturing_timestamps = p_enable;
 	print_gpu_profile = p_enable;
 }
 
-RID RenderingServerDefault::get_test_cube() {
+RID RenderingServerDefault::get_test_cube()
+{
 	if (!test_cube.is_valid()) {
 		test_cube = _make_test_cube();
 	}
 	return test_cube;
 }
 
-bool RenderingServerDefault::has_os_feature(const String &p_feature) const {
+bool RenderingServerDefault::has_os_feature(const String& p_feature) const
+{
 	if (RSG::utilities) {
 		return RSG::utilities->has_os_feature(p_feature);
-	} else {
+	}
+	else {
 		return false;
 	}
 }
 
-void RenderingServerDefault::set_debug_generate_wireframes(bool p_generate) {
+void RenderingServerDefault::set_debug_generate_wireframes(bool p_generate)
+{
 	RSG::utilities->set_debug_generate_wireframes(p_generate);
 }
 
-bool RenderingServerDefault::is_low_end() const {
-	return RendererCompositor::is_low_end();
-}
+bool RenderingServerDefault::is_low_end() const { return RendererCompositor::is_low_end(); }
 
-Size2i RenderingServerDefault::get_maximum_viewport_size() const {
+Size2i RenderingServerDefault::get_maximum_viewport_size() const
+{
 	if (RSG::utilities) {
 		return RSG::utilities->get_maximum_viewport_size();
-	} else {
+	}
+	else {
 		return Size2i();
 	}
 }
 
-void RenderingServerDefault::_assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id) {
+void RenderingServerDefault::_assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id)
+{
 	server_thread = Thread::get_caller_id();
 	server_task_id = p_pump_task_id;
 
-	RenderingDevice *rd = RenderingDevice::get_singleton();
+	RenderingDevice* rd = RenderingDevice::get_singleton();
 	if (rd) {
 		// This is needed because the main RD is created on the main thread.
 		rd->make_current();
 	}
 }
 
-void RenderingServerDefault::_thread_exit() {
-	exit = true;
-}
+void RenderingServerDefault::_thread_exit() { exit = true; }
 
-void RenderingServerDefault::_thread_loop() {
-	DisplayServer::get_singleton()->gl_window_make_current(DisplayServerEnums::MAIN_WINDOW_ID); // Move GL to this thread.
+void RenderingServerDefault::_thread_loop()
+{
+	DisplayServer::get_singleton()->gl_window_make_current(
+		DisplayServerEnums::MAIN_WINDOW_ID); // Move GL to this thread.
 
 	while (!exit) {
 		WorkerThreadPool::get_singleton()->yield();
@@ -425,51 +457,60 @@ void RenderingServerDefault::_thread_loop() {
 
 /* INTERPOLATION */
 
-void RenderingServerDefault::set_physics_interpolation_enabled(bool p_enabled) {
+void RenderingServerDefault::set_physics_interpolation_enabled(bool p_enabled)
+{
 	RSG::canvas->set_physics_interpolation_enabled(p_enabled);
 	RSG::scene->set_physics_interpolation_enabled(p_enabled);
 }
 
 /* EVENT QUEUING */
 
-void RenderingServerDefault::sync() {
+void RenderingServerDefault::sync()
+{
 	if (create_thread) {
 		command_queue.sync();
-	} else {
+	}
+	else {
 		command_queue.flush_all(); // Flush all pending from other threads.
 	}
 }
 
-void RenderingServerDefault::draw(bool p_present, double frame_step) {
-	ERR_FAIL_COND_MSG(!Thread::is_main_thread(), "Manually triggering the draw function from the RenderingServer can only be done on the main thread. Call this function from the main thread or use call_deferred().");
+void RenderingServerDefault::draw(bool p_present, double frame_step)
+{
+	ERR_FAIL_COND_MSG(!Thread::is_main_thread(),
+		"Manually triggering the draw function from the RenderingServer can only be done on the "
+		"main thread. Call this function from the main thread or use call_deferred().");
 	// Needs to be done before changes is reset to 0, to not force the editor to redraw.
-	RS::get_singleton()->emit_signal(SNAME("frame_pre_draw"));
+	RS::get_singleton()->obj->emit_signal(SNAME("frame_pre_draw"));
 	changes = 0;
 	if (create_thread) {
 		command_queue.push(this, &RenderingServerDefault::_draw, p_present, frame_step);
-	} else {
+	}
+	else {
 		_draw(p_present, frame_step);
 	}
 }
 
-void RenderingServerDefault::tick() {
+void RenderingServerDefault::tick()
+{
 	RSG::canvas->tick();
 	RSG::scene->tick();
 }
 
-void RenderingServerDefault::pre_draw(bool p_will_draw) {
-	RSG::scene->pre_draw(p_will_draw);
-}
+void RenderingServerDefault::pre_draw(bool p_will_draw) { RSG::scene->pre_draw(p_will_draw); }
 
-void RenderingServerDefault::_call_on_render_thread(const Callable &p_callable) {
+void RenderingServerDefault::_call_on_render_thread(const Callable& p_callable)
+{
 	p_callable.call();
 }
 
-RenderingServerDefault::RenderingServerDefault(bool p_create_thread) {
+RenderingServerDefault::RenderingServerDefault(bool p_create_thread)
+{
 	RenderingServer::init();
 
 	create_thread = p_create_thread;
 }
 
-RenderingServerDefault::~RenderingServerDefault() {
-}
+RenderingServerDefault::~RenderingServerDefault() {}
+
+

@@ -10698,7 +10698,7 @@ RenderingDevice::RenderingDevice()
 /*****************/
 
 RID RenderingDevice::_texture_create(const Ref<RDTextureFormat>& p_format,
-	const Ref<RDTextureView>& p_view, const TypedArray<PackedByteArray>& p_data)
+	const Ref<RDTextureView>& p_view, const Array& p_data)
 {
 	ERR_FAIL_COND_V(p_format.is_null(), RID());
 	ERR_FAIL_COND_V(p_view.is_null(), RID());
@@ -10738,7 +10738,7 @@ Ref<RDTextureFormat> RenderingDevice::_texture_get_format(RID p_rd_texture)
 }
 
 RenderingDevice::FramebufferFormatID RenderingDevice::_framebuffer_format_create(
-	const TypedArray<RDAttachmentFormat>& p_attachments, uint32_t p_view_count)
+	const Array& p_attachments, uint32_t p_view_count)
 {
 	Vector<AttachmentFormat> attachments;
 	attachments.resize(p_attachments.size());
@@ -10752,8 +10752,8 @@ RenderingDevice::FramebufferFormatID RenderingDevice::_framebuffer_format_create
 }
 
 RenderingDevice::FramebufferFormatID RenderingDevice::_framebuffer_format_create_multipass(
-	const TypedArray<RDAttachmentFormat>& p_attachments,
-	const TypedArray<RDFramebufferPass>& p_passes, uint32_t p_view_count)
+	const Array& p_attachments,
+	const Array& p_passes, uint32_t p_view_count)
 {
 	Vector<AttachmentFormat> attachments;
 	attachments.resize(p_attachments.size());
@@ -10775,14 +10775,14 @@ RenderingDevice::FramebufferFormatID RenderingDevice::_framebuffer_format_create
 }
 
 RID RenderingDevice::_framebuffer_create(
-	const TypedArray<RID>& p_textures, FramebufferFormatID p_format_check, uint32_t p_view_count)
+	const Array& p_textures, FramebufferFormatID p_format_check, uint32_t p_view_count)
 {
 	Vector<RID> textures = Variant(p_textures);
 	return framebuffer_create(textures, p_format_check, p_view_count);
 }
 
-RID RenderingDevice::_framebuffer_create_multipass(const TypedArray<RID>& p_textures,
-	const TypedArray<RDFramebufferPass>& p_passes, FramebufferFormatID p_format_check,
+RID RenderingDevice::_framebuffer_create_multipass(const Array& p_textures,
+	const Array& p_passes, FramebufferFormatID p_format_check,
 	uint32_t p_view_count)
 {
 	Vector<RID> textures = Variant(p_textures);
@@ -10803,7 +10803,7 @@ RID RenderingDevice::_sampler_create(const Ref<RDSamplerState>& p_state)
 }
 
 RenderingDevice::VertexFormatID RenderingDevice::_vertex_format_create(
-	const TypedArray<RDVertexAttribute>& p_vertex_formats)
+	const Array& p_vertex_formats)
 {
 	Vector<VertexAttribute> descriptions;
 	descriptions.resize(p_vertex_formats.size());
@@ -10817,7 +10817,7 @@ RenderingDevice::VertexFormatID RenderingDevice::_vertex_format_create(
 }
 
 RID RenderingDevice::_vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
-	const TypedArray<RID>& p_src_buffers, const Vector<int64_t>& p_offsets)
+	const Array& p_src_buffers, const Vector<int64_t>& p_offsets)
 {
 	Vector<RID> buffers = Variant(p_src_buffers);
 
@@ -10832,7 +10832,7 @@ RID RenderingDevice::_vertex_array_create(uint32_t p_vertex_count, VertexFormatI
 
 void RenderingDevice::_draw_list_bind_vertex_buffers_format(DrawListID p_list,
 	VertexFormatID p_vertex_format, uint32_t p_vertex_count,
-	const TypedArray<RID>& p_vertex_buffers, const Vector<int64_t>& p_offsets)
+	const Array& p_vertex_buffers, const Vector<int64_t>& p_offsets)
 {
 	Vector<RID> buffers = Variant(p_vertex_buffers);
 
@@ -10914,7 +10914,7 @@ RID RenderingDevice::_shader_create_from_spirv(
 }
 
 RID RenderingDevice::_uniform_set_create(
-	const TypedArray<RDUniform>& p_uniforms, RID p_shader, uint32_t p_shader_set)
+	const Array& p_uniforms, RID p_shader, uint32_t p_shader_set)
 {
 	LocalVector<Uniform> uniforms;
 	uniforms.resize(p_uniforms.size());
@@ -10932,7 +10932,7 @@ Error RenderingDevice::_buffer_update_bind(
 	return buffer_update(p_buffer, p_offset, p_size, p_data.ptr());
 }
 
-RID RenderingDevice::_blas_create(const TypedArray<RDAccelerationStructureGeometry>& p_geometries,
+RID RenderingDevice::_blas_create(const Array& p_geometries,
 	BitField<AccelerationStructureFlagBits> p_flags)
 {
 	thread_local LocalVector<AccelerationStructureGeometry> geometries;
@@ -10948,7 +10948,7 @@ RID RenderingDevice::_blas_create(const TypedArray<RDAccelerationStructureGeomet
 }
 
 Error RenderingDevice::_tlas_build(
-	RID p_tlas, const TypedArray<RDAccelerationStructureInstance>& p_instances)
+	RID p_tlas, const Array& p_instances)
 {
 	thread_local LocalVector<AccelerationStructureInstance> instances;
 	instances.resize(p_instances.size());
@@ -10970,7 +10970,7 @@ Error RenderingDevice::_hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTabl
 }
 
 static Vector<RenderingDevice::PipelineSpecializationConstant> _get_spec_constants(
-	const TypedArray<RDPipelineSpecializationConstant>& p_constants)
+	const Array& p_constants)
 {
 	Vector<RenderingDevice::PipelineSpecializationConstant> ret;
 	ret.resize(p_constants.size());
@@ -11008,7 +11008,7 @@ RID RenderingDevice::_render_pipeline_create(RID p_shader, FramebufferFormatID p
 	const Ref<RDPipelineDepthStencilState>& p_depth_stencil_state,
 	const Ref<RDPipelineColorBlendState>& p_blend_state,
 	BitField<PipelineDynamicStateFlags> p_dynamic_state_flags, uint32_t p_for_render_pass,
-	const TypedArray<RDPipelineSpecializationConstant>& p_specialization_constants)
+	const Array& p_specialization_constants)
 {
 	PipelineRasterizationState rasterization_state;
 	if (p_rasterization_state.is_valid()) {
@@ -11047,15 +11047,15 @@ RID RenderingDevice::_render_pipeline_create(RID p_shader, FramebufferFormatID p
 }
 
 RID RenderingDevice::_compute_pipeline_create(
-	RID p_shader, const TypedArray<RDPipelineSpecializationConstant>& p_specialization_constants =
-					  TypedArray<RDPipelineSpecializationConstant>())
+	RID p_shader, const Array& p_specialization_constants =
+					  Array())
 {
 	return compute_pipeline_create(p_shader, _get_spec_constants(p_specialization_constants));
 }
 
 RID RenderingDevice::_raytracing_pipeline_create(
-	const TypedArray<RDPipelineShader>& p_raygen_shaders,
-	const TypedArray<RDPipelineShader>& p_miss_shaders, const TypedArray<RDHitGroup>& p_hit_groups,
+	const Array& p_raygen_shaders,
+	const Array& p_miss_shaders, const Array& p_hit_groups,
 	uint32_t p_max_trace_recursion_depth)
 {
 	thread_local LocalVector<PipelineShader> raygen_and_miss_shaders;
@@ -11113,7 +11113,7 @@ Vector<int64_t> RenderingDevice::_draw_list_begin_split(RID p_framebuffer, uint3
 	InitialAction p_initial_color_action, FinalAction p_final_color_action,
 	InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
 	const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
-	const Rect2& p_region, const TypedArray<RID>& p_storage_textures)
+	const Rect2& p_region, const Array& p_storage_textures)
 {
 	ERR_FAIL_V_MSG(Vector<int64_t>(),
 		"Deprecated. Split draw lists are used automatically by RenderingDevice.");

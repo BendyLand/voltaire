@@ -64,7 +64,8 @@ class RDAccelerationStructureInstance;
 class RDPipelineShader;
 class RDHitGroup;
 
-class RenderingDevice : public RenderingDeviceCommons {
+class RenderingDevice : public RenderingDeviceCommons
+{
 	VLTRCLASS(RenderingDevice, Object)
 
 	_THREAD_SAFE_CLASS_
@@ -77,13 +78,13 @@ public:
 	typedef int64_t ComputeListID;
 	typedef int64_t RaytracingListID;
 
-	typedef void (*InvalidationCallback)(void *);
+	typedef void (*InvalidationCallback)(void*);
 
 private:
-	static RenderingDevice *singleton;
+	static RenderingDevice* singleton;
 
-	RenderingContextDriver *context = nullptr;
-	RenderingDeviceDriver *driver = nullptr;
+	RenderingContextDriver* context = nullptr;
+	RenderingDeviceDriver* driver = nullptr;
 	RenderingContextDriver::Device device;
 
 	bool local_device_processing = false;
@@ -93,8 +94,10 @@ protected:
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	RID _shader_create_from_bytecode_bind_compat_79606(const Vector<uint8_t> &p_shader_binary);
-	RID _texture_create_from_extension_bind_compat_105570(TextureType p_type, DataFormat p_format, TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage, uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
+	RID _shader_create_from_bytecode_bind_compat_79606(const Vector<uint8_t>& p_shader_binary);
+	RID _texture_create_from_extension_bind_compat_105570(TextureType p_type, DataFormat p_format,
+		TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage,
+		uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
 	static void _bind_compatibility_methods();
 #endif
 
@@ -102,12 +105,14 @@ protected:
 	/**** ID INFRASTRUCTURE ****/
 	/***************************/
 public:
-	//base numeric ID for all types
-	enum {
+	// base numeric ID for all types
+	enum
+	{
 		INVALID_FORMAT_ID = -1
 	};
 
-	enum IDType {
+	enum IDType
+	{
 		ID_TYPE_FRAMEBUFFER_FORMAT,
 		ID_TYPE_VERTEX_FORMAT,
 		ID_TYPE_DRAW_LIST,
@@ -119,7 +124,7 @@ public:
 	};
 
 private:
-	HashMap<RID, HashSet<RID>> dependency_map; // IDs to IDs that depend on it.
+	HashMap<RID, HashSet<RID>> dependency_map;		   // IDs to IDs that depend on it.
 	HashMap<RID, HashSet<RID>> reverse_dependency_map; // Same as above, but in reverse.
 
 	void _add_dependency(RID p_id, RID p_depends_on);
@@ -152,20 +157,23 @@ private:
 	//
 	// See the comments in the code to understand better how it works.
 
-	enum StagingRequiredAction {
+	enum StagingRequiredAction
+	{
 		STAGING_REQUIRED_ACTION_NONE,
 		STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL,
 		STAGING_REQUIRED_ACTION_STALL_PREVIOUS,
 	};
 
-	struct StagingBufferBlock {
+	struct StagingBufferBlock
+	{
 		RDD::BufferID driver_id;
 		uint64_t frame_used = 0;
 		uint32_t fill_amount = 0;
-		uint8_t *data_ptr = nullptr;
+		uint8_t* data_ptr = nullptr;
 	};
 
-	struct StagingBuffers {
+	struct StagingBuffers
+	{
 		Vector<StagingBufferBlock> blocks;
 		int current = 0;
 		uint32_t block_size = 0;
@@ -174,31 +182,36 @@ private:
 		bool used = false;
 	};
 
-	Error _staging_buffer_allocate(StagingBuffers &p_staging_buffers, uint32_t p_amount, uint32_t p_required_align, uint32_t &r_alloc_offset, uint32_t &r_alloc_size, StagingRequiredAction &r_required_action, bool p_can_segment = true);
-	void _staging_buffer_execute_required_action(StagingBuffers &p_staging_buffers, StagingRequiredAction p_required_action);
-	Error _insert_staging_block(StagingBuffers &p_staging_buffers);
+	Error _staging_buffer_allocate(StagingBuffers& p_staging_buffers, uint32_t p_amount,
+		uint32_t p_required_align, uint32_t& r_alloc_offset, uint32_t& r_alloc_size,
+		StagingRequiredAction& r_required_action, bool p_can_segment = true);
+	void _staging_buffer_execute_required_action(
+		StagingBuffers& p_staging_buffers, StagingRequiredAction p_required_action);
+	Error _insert_staging_block(StagingBuffers& p_staging_buffers);
 
 	StagingBuffers upload_staging_buffers;
 	StagingBuffers download_staging_buffers;
 
-	struct Buffer {
+	struct Buffer
+	{
 		RDD::BufferID driver_id;
 		uint32_t size = 0;
 		BitField<RDD::BufferUsageBits> usage = {};
-		RDG::ResourceTracker *draw_tracker = nullptr;
+		RDG::ResourceTracker* draw_tracker = nullptr;
 		int32_t transfer_worker_index = -1;
 		uint64_t transfer_worker_operation = 0;
 	};
 
-	Buffer *_get_buffer_from_owner(RID p_buffer);
-	Error _buffer_initialize(Buffer *p_buffer, Span<uint8_t> p_data, uint32_t p_required_align = 32);
+	Buffer* _get_buffer_from_owner(RID p_buffer);
+	Error _buffer_initialize(
+		Buffer* p_buffer, Span<uint8_t> p_data, uint32_t p_required_align = 32);
 
 	void update_perf_report();
 	// Flag for batching descriptor sets.
 	bool descriptor_set_batching = true;
-	// When true, the final draw call that copies our offscreen result into the Swapchain is put into its
-	// own cmd buffer, so that the whole rendering can start early instead of having to wait for the
-	// swapchain semaphore to be signaled (which causes bubbles).
+	// When true, the final draw call that copies our offscreen result into the Swapchain is put
+	// into its own cmd buffer, so that the whole rendering can start early instead of having to
+	// wait for the swapchain semaphore to be signaled (which causes bubbles).
 	bool split_swapchain_into_its_own_cmd_buffer = true;
 	uint32_t gpu_copy_count = 0;
 	uint32_t direct_copy_count = 0;
@@ -210,22 +223,25 @@ private:
 	RID_Owner<Buffer, true> storage_buffer_owner;
 	RID_Owner<Buffer, true> texture_buffer_owner;
 
-	struct BufferGetDataRequest {
+	struct BufferGetDataRequest
+	{
 		uint32_t frame_local_index = 0;
 		uint32_t frame_local_count = 0;
 		Callable callback;
 		uint32_t size = 0;
 	};
 
-	Error _buffer_update(Buffer *p_buffer, RID p_buffer_id, uint32_t p_offset, uint32_t p_size, const void *p_data);
+	Error _buffer_update(
+		Buffer* p_buffer, RID p_buffer_id, uint32_t p_offset, uint32_t p_size, const void* p_data);
 
 public:
-	Error buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset, uint32_t p_dst_offset, uint32_t p_size);
+	Error buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset,
+		uint32_t p_dst_offset, uint32_t p_size);
 	/**
 	 * @brief Updates the given GPU buffer at offset and size with the given CPU data.
 	 * @remarks
-	 *	Buffer update is queued into the render graph. The render graph will reorder this operation so
-	 *	that it happens together with other buffer_update() in bulk and before rendering operations
+	 *	Buffer update is queued into the render graph. The render graph will reorder this operation
+	 *so that it happens together with other buffer_update() in bulk and before rendering operations
 	 *	(or compute dispatches) that need it.
 	 *
 	 *	This means that the following will not work as intended:
@@ -263,12 +279,15 @@ public:
 	 * @param p_skip_check	Must always be false for user-facing public API. See remarks.
 	 * @return				Status result of the operation.
 	 */
-	Error buffer_update(RID p_buffer, uint32_t p_offset, uint32_t p_size, const void *p_data, bool p_skip_check = false);
+	Error buffer_update(RID p_buffer, uint32_t p_offset, uint32_t p_size, const void* p_data,
+		bool p_skip_check = false);
 	Error buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size);
-	Vector<uint8_t> buffer_get_data(RID p_buffer, uint32_t p_offset = 0, uint32_t p_size = 0); // This causes stall, only use to retrieve large buffers for saving.
-	Error buffer_get_data_async(RID p_buffer, const Callable &p_callback, uint32_t p_offset = 0, uint32_t p_size = 0);
+	Vector<uint8_t> buffer_get_data(RID p_buffer, uint32_t p_offset = 0,
+		uint32_t p_size = 0); // This causes stall, only use to retrieve large buffers for saving.
+	Error buffer_get_data_async(
+		RID p_buffer, const Callable& p_callback, uint32_t p_offset = 0, uint32_t p_size = 0);
 	uint64_t buffer_get_device_address(RID p_buffer);
-	uint8_t *buffer_persistent_map_advance(RID p_buffer);
+	uint8_t* buffer_persistent_map_advance(RID p_buffer);
 	void buffer_flush(RID p_buffer);
 
 private:
@@ -277,12 +296,14 @@ private:
 	/******************/
 
 public:
-	enum CallbackResourceType {
+	enum CallbackResourceType
+	{
 		CALLBACK_RESOURCE_TYPE_TEXTURE,
 		CALLBACK_RESOURCE_TYPE_BUFFER,
 	};
 
-	enum CallbackResourceUsage {
+	enum CallbackResourceUsage
+	{
 		CALLBACK_RESOURCE_USAGE_NONE,
 		CALLBACK_RESOURCE_USAGE_COPY_FROM,
 		CALLBACK_RESOURCE_USAGE_COPY_TO,
@@ -309,13 +330,15 @@ public:
 		CALLBACK_RESOURCE_USAGE_MAX
 	};
 
-	struct CallbackResource {
+	struct CallbackResource
+	{
 		RID rid;
 		CallbackResourceType type = CALLBACK_RESOURCE_TYPE_TEXTURE;
 		CallbackResourceUsage usage = CALLBACK_RESOURCE_USAGE_NONE;
 	};
 
-	Error driver_callback_add(RDD::DriverCallback p_callback, void *p_userdata, VectorView<CallbackResource> p_resources);
+	Error driver_callback_add(
+		RDD::DriverCallback p_callback, void* p_userdata, VectorView<CallbackResource> p_resources);
 
 	/*****************/
 	/**** TEXTURE ****/
@@ -333,13 +356,15 @@ public:
 	// or slices of a texture (a mipmap, a layer, a 3D slice)
 	// for a framebuffer to render into it.
 
-	struct Texture {
-		struct SharedFallback {
+	struct Texture
+	{
+		struct SharedFallback
+		{
 			uint32_t revision = 1;
 			RDD::TextureID texture;
-			RDG::ResourceTracker *texture_tracker = nullptr;
+			RDG::ResourceTracker* texture_tracker = nullptr;
 			RDD::BufferID buffer;
-			RDG::ResourceTracker *buffer_tracker = nullptr;
+			RDG::ResourceTracker* buffer_tracker = nullptr;
 			bool raw_reinterpretation = false;
 		};
 
@@ -372,13 +397,14 @@ public:
 		bool bound = false; // Bound to framebuffer.
 		RID owner;
 
-		RDG::ResourceTracker *draw_tracker = nullptr;
-		HashMap<Rect2i, RDG::ResourceTracker *> *slice_trackers = nullptr;
-		SharedFallback *shared_fallback = nullptr;
+		RDG::ResourceTracker* draw_tracker = nullptr;
+		HashMap<Rect2i, RDG::ResourceTracker*>* slice_trackers = nullptr;
+		SharedFallback* shared_fallback = nullptr;
 		int32_t transfer_worker_index = -1;
 		uint64_t transfer_worker_operation = 0;
 
-		RDD::TextureSubresourceRange barrier_range() const {
+		RDD::TextureSubresourceRange barrier_range() const
+		{
 			RDD::TextureSubresourceRange r;
 			r.aspect = barrier_aspect_flags;
 			r.base_mipmap = base_mipmap;
@@ -388,7 +414,8 @@ public:
 			return r;
 		}
 
-		TextureFormat texture_format() const {
+		TextureFormat texture_format() const
+		{
 			TextureFormat tf;
 			tf.format = format;
 			tf.width = width;
@@ -410,21 +437,27 @@ public:
 	uint32_t texture_upload_region_size_px = 0;
 	uint32_t texture_download_region_size_px = 0;
 
-	uint32_t _texture_layer_count(Texture *p_texture) const;
-	uint32_t _texture_alignment(Texture *p_texture) const;
-	Error _texture_initialize(RID p_texture, uint32_t p_layer, const Vector<uint8_t> &p_data, RDD::TextureLayout p_dst_layout, bool p_immediate_flush);
-	void _texture_check_shared_fallback(Texture *p_texture);
-	void _texture_update_shared_fallback(RID p_texture_rid, Texture *p_texture, bool p_for_writing);
-	void _texture_free_shared_fallback(Texture *p_texture);
-	void _texture_copy_shared(RID p_src_texture_rid, Texture *p_src_texture, RID p_dst_texture_rid, Texture *p_dst_texture);
-	void _texture_create_reinterpret_buffer(Texture *p_texture);
-	void _texture_check_pending_clear(RID p_texture_rid, Texture *p_texture);
-	void _texture_clear_color(RID p_texture_rid, Texture *p_texture, const Color &p_color, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers);
-	void _texture_clear_depth_stencil(RID p_texture_rid, Texture *p_texture, float p_depth, uint8_t p_stencil, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers);
+	uint32_t _texture_layer_count(Texture* p_texture) const;
+	uint32_t _texture_alignment(Texture* p_texture) const;
+	Error _texture_initialize(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data,
+		RDD::TextureLayout p_dst_layout, bool p_immediate_flush);
+	void _texture_check_shared_fallback(Texture* p_texture);
+	void _texture_update_shared_fallback(RID p_texture_rid, Texture* p_texture, bool p_for_writing);
+	void _texture_free_shared_fallback(Texture* p_texture);
+	void _texture_copy_shared(RID p_src_texture_rid, Texture* p_src_texture, RID p_dst_texture_rid,
+		Texture* p_dst_texture);
+	void _texture_create_reinterpret_buffer(Texture* p_texture);
+	void _texture_check_pending_clear(RID p_texture_rid, Texture* p_texture);
+	void _texture_clear_color(RID p_texture_rid, Texture* p_texture, const Color& p_color,
+		uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers);
+	void _texture_clear_depth_stencil(RID p_texture_rid, Texture* p_texture, float p_depth,
+		uint8_t p_stencil, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer,
+		uint32_t p_layers);
 	uint32_t _texture_vrs_method_to_usage_bits() const;
-	void _texture_ensure_shareable_format(RID p_texture, const DataFormat &p_shareable_format);
+	void _texture_ensure_shareable_format(RID p_texture, const DataFormat& p_shareable_format);
 
-	struct TextureGetDataRequest {
+	struct TextureGetDataRequest
+	{
 		uint32_t frame_local_index = 0;
 		uint32_t frame_local_count = 0;
 		Callable callback;
@@ -436,39 +469,55 @@ public:
 	};
 
 public:
-	struct TextureView {
+	struct TextureView
+	{
 		DataFormat format_override = DATA_FORMAT_MAX; // // Means, use same as format.
 		TextureSwizzle swizzle_r = TEXTURE_SWIZZLE_R;
 		TextureSwizzle swizzle_g = TEXTURE_SWIZZLE_G;
 		TextureSwizzle swizzle_b = TEXTURE_SWIZZLE_B;
 		TextureSwizzle swizzle_a = TEXTURE_SWIZZLE_A;
 
-		bool operator==(const TextureView &p_other) const {
+		bool operator==(const TextureView& p_other) const
+		{
 			if (format_override != p_other.format_override) {
 				return false;
-			} else if (swizzle_r != p_other.swizzle_r) {
+			}
+			else if (swizzle_r != p_other.swizzle_r) {
 				return false;
-			} else if (swizzle_g != p_other.swizzle_g) {
+			}
+			else if (swizzle_g != p_other.swizzle_g) {
 				return false;
-			} else if (swizzle_b != p_other.swizzle_b) {
+			}
+			else if (swizzle_b != p_other.swizzle_b) {
 				return false;
-			} else if (swizzle_a != p_other.swizzle_a) {
+			}
+			else if (swizzle_a != p_other.swizzle_a) {
 				return false;
-			} else {
+			}
+			else {
 				return true;
 			}
 		}
 	};
 
-	RID texture_create(const TextureFormat &p_format, const TextureView &p_view, const Vector<Vector<uint8_t>> &p_data = Vector<Vector<uint8_t>>());
-	RID texture_create_shared(const TextureView &p_view, RID p_with_texture);
-	RID texture_create_from_extension(TextureType p_type, DataFormat p_format, TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage, uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps = 1);
-	RID texture_create_shared_from_slice(const TextureView &p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1, TextureSliceType p_slice_type = TEXTURE_SLICE_2D, uint32_t p_layers = 0);
-	Error texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t> &p_data);
-	Vector<uint8_t> texture_get_data(RID p_texture, uint32_t p_layer); // CPU textures will return immediately, while GPU textures will most likely force a flush
-	Error texture_get_data_async(RID p_texture, uint32_t p_layer, const Callable &p_callback);
+	RID texture_create(const TextureFormat& p_format, const TextureView& p_view,
+		const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
+	RID texture_create_shared(const TextureView& p_view, RID p_with_texture);
+	RID texture_create_from_extension(TextureType p_type, DataFormat p_format,
+		TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage,
+		uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers,
+		uint64_t p_mipmaps = 1);
+	RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
+		uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1,
+		TextureSliceType p_slice_type = TEXTURE_SLICE_2D, uint32_t p_layers = 0);
+	Error texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data);
+	Vector<uint8_t> texture_get_data(
+		RID p_texture, uint32_t p_layer); // CPU textures will return immediately, while GPU
+										  // textures will most likely force a flush
+	Error texture_get_data_async(RID p_texture, uint32_t p_layer, const Callable& p_callback);
 
-	bool texture_is_format_supported_for_usage(DataFormat p_format, BitField<TextureUsageBits> p_usage) const;
+	bool texture_is_format_supported_for_usage(
+		DataFormat p_format, BitField<TextureUsageBits> p_usage) const;
 	bool texture_is_shared(RID p_texture);
 	bool texture_is_valid(RID p_texture);
 	TextureFormat texture_get_format(RID p_texture);
@@ -477,8 +526,11 @@ public:
 	uint64_t texture_get_native_handle(RID p_texture);
 #endif
 
-	Error texture_copy(RID p_from_texture, RID p_to_texture, const Vector3 &p_from, const Vector3 &p_to, const Vector3 &p_size, uint32_t p_src_mipmap, uint32_t p_dst_mipmap, uint32_t p_src_layer, uint32_t p_dst_layer);
-	Error texture_clear(RID p_texture, const Color &p_color, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers);
+	Error texture_copy(RID p_from_texture, RID p_to_texture, const Vector3& p_from,
+		const Vector3& p_to, const Vector3& p_size, uint32_t p_src_mipmap, uint32_t p_dst_mipmap,
+		uint32_t p_src_layer, uint32_t p_dst_layer);
+	Error texture_clear(RID p_texture, const Color& p_color, uint32_t p_base_mipmap,
+		uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers);
 	Error texture_resolve_multisample(RID p_from_texture, RID p_to_texture);
 
 	void texture_set_discardable(RID p_texture, bool p_discardable);
@@ -489,7 +541,8 @@ public:
 	/**** VRS ****/
 	/*************/
 
-	enum VRSMethod {
+	enum VRSMethod
+	{
 		VRS_METHOD_NONE,
 		VRS_METHOD_FRAGMENT_SHADING_RATE,
 		VRS_METHOD_FRAGMENT_DENSITY_MAP,
@@ -520,21 +573,27 @@ public:
 	// and must be more or less the same as the one
 	// used for the render pipelines.
 
-	struct AttachmentFormat {
-		enum : uint32_t {
+	struct AttachmentFormat
+	{
+		enum : uint32_t
+		{
 			UNUSED_ATTACHMENT = 0xFFFFFFFF
 		};
+
 		DataFormat format;
 		TextureSamples samples;
 		uint32_t usage_flags;
-		AttachmentFormat() {
+
+		AttachmentFormat()
+		{
 			format = DATA_FORMAT_R8G8B8A8_UNORM;
 			samples = TEXTURE_SAMPLES_1;
 			usage_flags = 0;
 		}
 	};
 
-	struct FramebufferPass {
+	struct FramebufferPass
+	{
 		Vector<int32_t> color_attachments;
 		Vector<int32_t> input_attachments;
 		Vector<int32_t> resolve_attachments;
@@ -546,7 +605,8 @@ public:
 	typedef int64_t FramebufferFormatID;
 
 private:
-	struct FramebufferFormatKey {
+	struct FramebufferFormatKey
+	{
 		Vector<AttachmentFormat> attachments;
 		Vector<FramebufferPass> passes;
 		uint32_t view_count = 1;
@@ -554,7 +614,8 @@ private:
 		int32_t vrs_attachment = ATTACHMENT_UNUSED;
 		Size2i vrs_texel_size;
 
-		bool operator<(const FramebufferFormatKey &p_key) const {
+		bool operator<(const FramebufferFormatKey& p_key) const
+		{
 			if (vrs_texel_size != p_key.vrs_texel_size) {
 				return vrs_texel_size < p_key.vrs_texel_size;
 			}
@@ -576,8 +637,8 @@ private:
 			if (pass_size != key_pass_size) {
 				return pass_size < key_pass_size;
 			}
-			const FramebufferPass *pass_ptr = passes.ptr();
-			const FramebufferPass *key_pass_ptr = p_key.passes.ptr();
+			const FramebufferPass* pass_ptr = passes.ptr();
+			const FramebufferPass* key_pass_ptr = p_key.passes.ptr();
 
 			for (uint32_t i = 0; i < pass_size; i++) {
 				{ // Compare color attachments.
@@ -586,8 +647,9 @@ private:
 					if (attachment_size != key_attachment_size) {
 						return attachment_size < key_attachment_size;
 					}
-					const int32_t *pass_attachment_ptr = pass_ptr[i].color_attachments.ptr();
-					const int32_t *key_pass_attachment_ptr = key_pass_ptr[i].color_attachments.ptr();
+					const int32_t* pass_attachment_ptr = pass_ptr[i].color_attachments.ptr();
+					const int32_t* key_pass_attachment_ptr =
+						key_pass_ptr[i].color_attachments.ptr();
 
 					for (uint32_t j = 0; j < attachment_size; j++) {
 						if (pass_attachment_ptr[j] != key_pass_attachment_ptr[j]) {
@@ -601,8 +663,9 @@ private:
 					if (attachment_size != key_attachment_size) {
 						return attachment_size < key_attachment_size;
 					}
-					const int32_t *pass_attachment_ptr = pass_ptr[i].input_attachments.ptr();
-					const int32_t *key_pass_attachment_ptr = key_pass_ptr[i].input_attachments.ptr();
+					const int32_t* pass_attachment_ptr = pass_ptr[i].input_attachments.ptr();
+					const int32_t* key_pass_attachment_ptr =
+						key_pass_ptr[i].input_attachments.ptr();
 
 					for (uint32_t j = 0; j < attachment_size; j++) {
 						if (pass_attachment_ptr[j] != key_pass_attachment_ptr[j]) {
@@ -616,8 +679,9 @@ private:
 					if (attachment_size != key_attachment_size) {
 						return attachment_size < key_attachment_size;
 					}
-					const int32_t *pass_attachment_ptr = pass_ptr[i].resolve_attachments.ptr();
-					const int32_t *key_pass_attachment_ptr = key_pass_ptr[i].resolve_attachments.ptr();
+					const int32_t* pass_attachment_ptr = pass_ptr[i].resolve_attachments.ptr();
+					const int32_t* key_pass_attachment_ptr =
+						key_pass_ptr[i].resolve_attachments.ptr();
 
 					for (uint32_t j = 0; j < attachment_size; j++) {
 						if (pass_attachment_ptr[j] != key_pass_attachment_ptr[j]) {
@@ -631,8 +695,9 @@ private:
 					if (attachment_size != key_attachment_size) {
 						return attachment_size < key_attachment_size;
 					}
-					const int32_t *pass_attachment_ptr = pass_ptr[i].preserve_attachments.ptr();
-					const int32_t *key_pass_attachment_ptr = key_pass_ptr[i].preserve_attachments.ptr();
+					const int32_t* pass_attachment_ptr = pass_ptr[i].preserve_attachments.ptr();
+					const int32_t* key_pass_attachment_ptr =
+						key_pass_ptr[i].preserve_attachments.ptr();
 
 					for (uint32_t j = 0; j < attachment_size; j++) {
 						if (pass_attachment_ptr[j] != key_pass_attachment_ptr[j]) {
@@ -651,11 +716,11 @@ private:
 				return as < bs;
 			}
 
-			const AttachmentFormat *af_a = attachments.ptr();
-			const AttachmentFormat *af_b = p_key.attachments.ptr();
+			const AttachmentFormat* af_a = attachments.ptr();
+			const AttachmentFormat* af_b = p_key.attachments.ptr();
 			for (int i = 0; i < as; i++) {
-				const AttachmentFormat &a = af_a[i];
-				const AttachmentFormat &b = af_b[i];
+				const AttachmentFormat& a = af_a[i];
+				const AttachmentFormat& b = af_b[i];
 				if (a.format != b.format) {
 					return a.format < b.format;
 				}
@@ -671,28 +736,39 @@ private:
 		}
 	};
 
-	static RDD::RenderPassID _render_pass_create(RenderingDeviceDriver *p_driver, const Vector<AttachmentFormat> &p_attachments, const Vector<FramebufferPass> &p_passes, VectorView<RDD::AttachmentLoadOp> p_load_ops, VectorView<RDD::AttachmentStoreOp> p_store_ops, uint32_t p_view_count = 1, VRSMethod p_vrs_method = VRS_METHOD_NONE, int32_t p_vrs_attachment = -1, Size2i p_vrs_texel_size = Size2i(), Vector<TextureSamples> *r_samples = nullptr);
-	static RDD::RenderPassID _render_pass_create_from_graph(RenderingDeviceDriver *p_driver, VectorView<RDD::AttachmentLoadOp> p_load_ops, VectorView<RDD::AttachmentStoreOp> p_store_ops, void *p_user_data);
+	static RDD::RenderPassID _render_pass_create(RenderingDeviceDriver* p_driver,
+		const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes,
+		VectorView<RDD::AttachmentLoadOp> p_load_ops,
+		VectorView<RDD::AttachmentStoreOp> p_store_ops, uint32_t p_view_count = 1,
+		VRSMethod p_vrs_method = VRS_METHOD_NONE, int32_t p_vrs_attachment = -1,
+		Size2i p_vrs_texel_size = Size2i(), Vector<TextureSamples>* r_samples = nullptr);
+	static RDD::RenderPassID _render_pass_create_from_graph(RenderingDeviceDriver* p_driver,
+		VectorView<RDD::AttachmentLoadOp> p_load_ops,
+		VectorView<RDD::AttachmentStoreOp> p_store_ops, void* p_user_data);
 
 	// This is a cache and it's never freed, it ensures
 	// IDs for a given format are always unique.
 	RBMap<FramebufferFormatKey, FramebufferFormatID> framebuffer_format_cache;
-	struct FramebufferFormat {
-		const RBMap<FramebufferFormatKey, FramebufferFormatID>::Element *E;
-		RDD::RenderPassID render_pass; // Here for constructing shaders, never used, see section (7.2. Render Pass Compatibility from Vulkan spec).
+
+	struct FramebufferFormat
+	{
+		const RBMap<FramebufferFormatKey, FramebufferFormatID>::Element* E;
+		RDD::RenderPassID render_pass; // Here for constructing shaders, never used, see section
+									   // (7.2. Render Pass Compatibility from Vulkan spec).
 		Vector<TextureSamples> pass_samples;
 		uint32_t view_count = 1; // Number of views.
 	};
 
 	HashMap<FramebufferFormatID, FramebufferFormat> framebuffer_formats;
 
-	struct Framebuffer {
+	struct Framebuffer
+	{
 		FramebufferFormatID format_id;
 		uint32_t storage_mask = 0;
 		Vector<RID> texture_ids;
 		InvalidationCallback invalidated_callback = nullptr;
-		void *invalidated_callback_userdata = nullptr;
-		RDG::FramebufferCache *framebuffer_cache = nullptr;
+		void* invalidated_callback_userdata = nullptr;
+		RDG::FramebufferCache* framebuffer_cache = nullptr;
 		Size2 size;
 		uint32_t view_count;
 	};
@@ -701,16 +777,26 @@ private:
 
 public:
 	// This ID is warranted to be unique for the same formats, does not need to be freed
-	FramebufferFormatID framebuffer_format_create(const Vector<AttachmentFormat> &p_format, uint32_t p_view_count = 1, int32_t p_vrs_attachment = -1);
-	FramebufferFormatID framebuffer_format_create_multipass(const Vector<AttachmentFormat> &p_attachments, const Vector<FramebufferPass> &p_passes, uint32_t p_view_count = 1, int32_t p_vrs_attachment = -1);
-	FramebufferFormatID framebuffer_format_create_empty(TextureSamples p_samples = TEXTURE_SAMPLES_1);
-	TextureSamples framebuffer_format_get_texture_samples(FramebufferFormatID p_format, uint32_t p_pass = 0);
+	FramebufferFormatID framebuffer_format_create(const Vector<AttachmentFormat>& p_format,
+		uint32_t p_view_count = 1, int32_t p_vrs_attachment = -1);
+	FramebufferFormatID framebuffer_format_create_multipass(
+		const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes,
+		uint32_t p_view_count = 1, int32_t p_vrs_attachment = -1);
+	FramebufferFormatID framebuffer_format_create_empty(
+		TextureSamples p_samples = TEXTURE_SAMPLES_1);
+	TextureSamples framebuffer_format_get_texture_samples(
+		FramebufferFormatID p_format, uint32_t p_pass = 0);
 
-	RID framebuffer_create(const Vector<RID> &p_texture_attachments, FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
-	RID framebuffer_create_multipass(const Vector<RID> &p_texture_attachments, const Vector<FramebufferPass> &p_passes, FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
-	RID framebuffer_create_empty(const Size2i &p_size, TextureSamples p_samples = TEXTURE_SAMPLES_1, FramebufferFormatID p_format_check = INVALID_ID);
+	RID framebuffer_create(const Vector<RID>& p_texture_attachments,
+		FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
+	RID framebuffer_create_multipass(const Vector<RID>& p_texture_attachments,
+		const Vector<FramebufferPass>& p_passes, FramebufferFormatID p_format_check = INVALID_ID,
+		uint32_t p_view_count = 1);
+	RID framebuffer_create_empty(const Size2i& p_size, TextureSamples p_samples = TEXTURE_SAMPLES_1,
+		FramebufferFormatID p_format_check = INVALID_ID);
 	bool framebuffer_is_valid(RID p_framebuffer) const;
-	void framebuffer_set_invalidation_callback(RID p_framebuffer, InvalidationCallback p_callback, void *p_userdata);
+	void framebuffer_set_invalidation_callback(
+		RID p_framebuffer, InvalidationCallback p_callback, void* p_userdata);
 
 	FramebufferFormatID framebuffer_get_format(RID p_framebuffer);
 	Size2 framebuffer_get_size(RID p_framebuffer);
@@ -722,8 +808,9 @@ private:
 	RID_Owner<RDD::SamplerID, true> sampler_owner;
 
 public:
-	RID sampler_create(const SamplerState &p_state);
-	bool sampler_is_format_supported_for_filter(DataFormat p_format, SamplerFilter p_sampler_filter) const;
+	RID sampler_create(const SamplerState& p_state);
+	bool sampler_is_format_supported_for_filter(
+		DataFormat p_format, SamplerFilter p_sampler_filter) const;
 
 	/**********************/
 	/**** VERTEX ARRAY ****/
@@ -743,21 +830,24 @@ private:
 
 	RID_Owner<Buffer, true> vertex_buffer_owner;
 
-	struct VertexDescriptionKey {
+	struct VertexDescriptionKey
+	{
 		Vector<VertexAttribute> vertex_formats;
 
-		bool operator==(const VertexDescriptionKey &p_key) const {
+		bool operator==(const VertexDescriptionKey& p_key) const
+		{
 			int vdc = vertex_formats.size();
 			int vdck = p_key.vertex_formats.size();
 
 			if (vdc != vdck) {
 				return false;
-			} else {
-				const VertexAttribute *a_ptr = vertex_formats.ptr();
-				const VertexAttribute *b_ptr = p_key.vertex_formats.ptr();
+			}
+			else {
+				const VertexAttribute* a_ptr = vertex_formats.ptr();
+				const VertexAttribute* b_ptr = p_key.vertex_formats.ptr();
 				for (int i = 0; i < vdc; i++) {
-					const VertexAttribute &a = a_ptr[i];
-					const VertexAttribute &b = b_ptr[i];
+					const VertexAttribute& a = a_ptr[i];
+					const VertexAttribute& b = b_ptr[i];
 
 					if (a.location != b.location) {
 						return false;
@@ -779,12 +869,13 @@ private:
 			}
 		}
 
-		uint32_t hash() const {
+		uint32_t hash() const
+		{
 			int vdc = vertex_formats.size();
 			uint32_t h = hash_murmur3_one_32(vdc);
-			const VertexAttribute *ptr = vertex_formats.ptr();
+			const VertexAttribute* ptr = vertex_formats.ptr();
 			for (int i = 0; i < vdc; i++) {
-				const VertexAttribute &vd = ptr[i];
+				const VertexAttribute& vd = ptr[i];
 				h = hash_murmur3_one_32(vd.location, h);
 				h = hash_murmur3_one_32(vd.offset, h);
 				h = hash_murmur3_one_32(vd.format, h);
@@ -795,8 +886,10 @@ private:
 		}
 	};
 
-	struct VertexDescriptionHash {
-		static _FORCE_INLINE_ uint32_t hash(const VertexDescriptionKey &p_key) {
+	struct VertexDescriptionHash
+	{
+		static _FORCE_INLINE_ uint32_t hash(const VertexDescriptionKey& p_key)
+		{
 			return p_key.hash();
 		}
 	};
@@ -805,7 +898,8 @@ private:
 	// ID used for a specific format always remain the same.
 	HashMap<VertexDescriptionKey, VertexFormatID, VertexDescriptionHash> vertex_format_cache;
 
-	struct VertexDescriptionCache {
+	struct VertexDescriptionCache
+	{
 		Vector<VertexAttribute> vertex_formats;
 		VertexAttributeBindingsMap bindings;
 		RDD::VertexFormatID driver_id;
@@ -813,14 +907,15 @@ private:
 
 	HashMap<VertexFormatID, VertexDescriptionCache> vertex_formats;
 
-	struct VertexArray {
+	struct VertexArray
+	{
 		RID buffer;
 		VertexFormatID description;
 		int vertex_count = 0;
 		uint32_t max_instances_allowed = 0;
 
-		Vector<RDD::BufferID> buffers; // Not owned, just referenced.
-		Vector<RDG::ResourceTracker *> draw_trackers; // Not owned, just referenced.
+		Vector<RDD::BufferID> buffers;				 // Not owned, just referenced.
+		Vector<RDG::ResourceTracker*> draw_trackers; // Not owned, just referenced.
 		Vector<uint64_t> offsets;
 		Vector<int32_t> transfer_worker_indices;
 		Vector<uint64_t> transfer_worker_operations;
@@ -829,7 +924,8 @@ private:
 
 	RID_Owner<VertexArray, true> vertex_array_owner;
 
-	struct IndexBuffer : public Buffer {
+	struct IndexBuffer : public Buffer
+	{
 		uint32_t max_index = 0; // Used for validation.
 		uint32_t index_count = 0;
 		IndexBufferFormat format = INDEX_BUFFER_FORMAT_UINT16;
@@ -838,10 +934,11 @@ private:
 
 	RID_Owner<IndexBuffer, true> index_buffer_owner;
 
-	struct IndexArray {
-		uint32_t max_index = 0; // Remember the maximum index here too, for validation.
+	struct IndexArray
+	{
+		uint32_t max_index = 0;	 // Remember the maximum index here too, for validation.
 		RDD::BufferID driver_id; // Not owned, inherited from index buffer.
-		RDG::ResourceTracker *draw_tracker = nullptr; // Not owned, inherited from index buffer.
+		RDG::ResourceTracker* draw_tracker = nullptr; // Not owned, inherited from index buffer.
 		uint32_t offset = 0;
 		uint32_t indices = 0;
 		IndexBufferFormat format = INDEX_BUFFER_FORMAT_UINT16;
@@ -853,35 +950,50 @@ private:
 	RID_Owner<IndexArray, true> index_array_owner;
 
 public:
-	enum BufferCreationBits {
+	enum BufferCreationBits
+	{
 		BUFFER_CREATION_DEVICE_ADDRESS_BIT = (1 << 0),
 		BUFFER_CREATION_AS_STORAGE_BIT = (1 << 1),
 		BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT = (1 << 2),
 		BUFFER_CREATION_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT = (1 << 3),
 	};
 
-	enum StorageBufferUsage {
+	enum StorageBufferUsage
+	{
 		STORAGE_BUFFER_USAGE_DISPATCH_INDIRECT = (1 << 0),
 	};
 
-	RID vertex_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {}, BitField<BufferCreationBits> p_creation_bits = 0);
-	RID _vertex_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t> &p_data, BitField<BufferCreationBits> p_creation_bits = 0) {
+	RID vertex_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
+		BitField<BufferCreationBits> p_creation_bits = 0);
+
+	RID _vertex_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
+		BitField<BufferCreationBits> p_creation_bits = 0)
+	{
 		return vertex_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
 
 	// This ID is warranted to be unique for the same formats, does not need to be freed
-	VertexFormatID vertex_format_create(const Vector<VertexAttribute> &p_vertex_descriptions);
-	RID vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format, const Vector<RID> &p_src_buffers, const Vector<uint64_t> &p_offsets = Vector<uint64_t>());
+	VertexFormatID vertex_format_create(const Vector<VertexAttribute>& p_vertex_descriptions);
+	RID vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
+		const Vector<RID>& p_src_buffers, const Vector<uint64_t>& p_offsets = Vector<uint64_t>());
 
-	RID index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format, Span<uint8_t> p_data = {}, bool p_use_restart_indices = false, BitField<BufferCreationBits> p_creation_bits = 0);
-	RID _index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format, const Vector<uint8_t> &p_data, bool p_use_restart_indices = false, BitField<BufferCreationBits> p_creation_bits = 0) {
-		return index_buffer_create(p_index_count, p_format, p_data, p_use_restart_indices, p_creation_bits);
+	RID index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
+		Span<uint8_t> p_data = {}, bool p_use_restart_indices = false,
+		BitField<BufferCreationBits> p_creation_bits = 0);
+
+	RID _index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
+		const Vector<uint8_t>& p_data, bool p_use_restart_indices = false,
+		BitField<BufferCreationBits> p_creation_bits = 0)
+	{
+		return index_buffer_create(
+			p_index_count, p_format, p_data, p_use_restart_indices, p_creation_bits);
 	}
 
 	RID index_array_create(RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count);
 
 private:
-	BitField<RDD::BufferUsageBits> _creation_to_usage_bits(BitField<BufferCreationBits> p_creation_bits);
+	BitField<RDD::BufferUsageBits> _creation_to_usage_bits(
+		BitField<BufferCreationBits> p_creation_bits);
 
 	/****************/
 	/**** SHADER ****/
@@ -900,17 +1012,20 @@ private:
 	// in order to avoid costly rebinds.
 
 private:
-	struct UniformSetFormat {
+	struct UniformSetFormat
+	{
 		Vector<ShaderUniform> uniforms;
 
-		_FORCE_INLINE_ bool operator<(const UniformSetFormat &p_other) const {
+		_FORCE_INLINE_ bool operator<(const UniformSetFormat& p_other) const
+		{
 			if (uniforms.size() != p_other.uniforms.size()) {
 				return uniforms.size() < p_other.uniforms.size();
 			}
 			for (int i = 0; i < uniforms.size(); i++) {
 				if (uniforms[i] < p_other.uniforms[i]) {
 					return true;
-				} else if (p_other.uniforms[i] < uniforms[i]) {
+				}
+				else if (p_other.uniforms[i] < uniforms[i]) {
 					return false;
 				}
 			}
@@ -938,7 +1053,8 @@ private:
 	// to do quick validation and ensuring the user
 	// does not submit something invalid.
 
-	struct Shader : public ShaderReflection {
+	struct Shader : public ShaderReflection
+	{
 		String name; // Used for debug.
 		RDD::ShaderID driver_id;
 		uint32_t layout_hash = 0;
@@ -952,18 +1068,20 @@ private:
 
 #ifndef DISABLE_DEPRECATED
 public:
-	enum BarrierMask {
+	enum BarrierMask
+	{
 		BARRIER_MASK_VERTEX = 1,
 		BARRIER_MASK_FRAGMENT = 8,
 		BARRIER_MASK_COMPUTE = 2,
 		BARRIER_MASK_TRANSFER = 4,
 
 		BARRIER_MASK_RASTER = BARRIER_MASK_VERTEX | BARRIER_MASK_FRAGMENT, // 9,
-		BARRIER_MASK_ALL_BARRIERS = 0x7FFF, // all flags set
+		BARRIER_MASK_ALL_BARRIERS = 0x7FFF,								   // all flags set
 		BARRIER_MASK_NO_BARRIER = 0x8000,
 	};
 
-	enum InitialAction {
+	enum InitialAction
+	{
 		INITIAL_ACTION_LOAD,
 		INITIAL_ACTION_CLEAR,
 		INITIAL_ACTION_DISCARD,
@@ -975,7 +1093,8 @@ public:
 		INITIAL_ACTION_CONTINUE = INITIAL_ACTION_LOAD,
 	};
 
-	enum FinalAction {
+	enum FinalAction
+	{
 		FINAL_ACTION_STORE,
 		FINAL_ACTION_DISCARD,
 		FINAL_ACTION_MAX,
@@ -983,12 +1102,23 @@ public:
 		FINAL_ACTION_CONTINUE = FINAL_ACTION_STORE,
 	};
 
-	void barrier(BitField<BarrierMask> p_from = BARRIER_MASK_ALL_BARRIERS, BitField<BarrierMask> p_to = BARRIER_MASK_ALL_BARRIERS);
+	void barrier(BitField<BarrierMask> p_from = BARRIER_MASK_ALL_BARRIERS,
+		BitField<BarrierMask> p_to = BARRIER_MASK_ALL_BARRIERS);
 	void full_barrier();
-	void draw_command_insert_label(String p_label_name, const Color &p_color = Color(1, 1, 1, 1));
-	Error draw_list_begin_split(RID p_framebuffer, uint32_t p_splits, DrawListID *r_split_ids, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0, uint32_t p_clear_stencil = 0, const Rect2 &p_region = Rect2(), const Vector<RID> &p_storage_textures = Vector<RID>());
-	Error draw_list_switch_to_next_pass_split(uint32_t p_splits, DrawListID *r_split_ids);
-	Vector<int64_t> _draw_list_begin_split(RID p_framebuffer, uint32_t p_splits, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0, uint32_t p_clear_stencil = 0, const Rect2 &p_region = Rect2(), const TypedArray<RID> &p_storage_textures = TypedArray<RID>());
+	void draw_command_insert_label(String p_label_name, const Color& p_color = Color(1, 1, 1, 1));
+	Error draw_list_begin_split(RID p_framebuffer, uint32_t p_splits, DrawListID* r_split_ids,
+		InitialAction p_initial_color_action, FinalAction p_final_color_action,
+		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
+		const Vector<Color>& p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0,
+		uint32_t p_clear_stencil = 0, const Rect2& p_region = Rect2(),
+		const Vector<RID>& p_storage_textures = Vector<RID>());
+	Error draw_list_switch_to_next_pass_split(uint32_t p_splits, DrawListID* r_split_ids);
+	Vector<int64_t> _draw_list_begin_split(RID p_framebuffer, uint32_t p_splits,
+		InitialAction p_initial_color_action, FinalAction p_final_color_action,
+		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
+		const Vector<Color>& p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0,
+		uint32_t p_clear_stencil = 0, const Rect2& p_region = Rect2(),
+		const Array& p_storage_textures = Array());
 	Vector<int64_t> _draw_list_switch_to_next_pass_split(uint32_t p_splits);
 
 private:
@@ -1000,40 +1130,71 @@ private:
 	void _compute_list_end_bind_compat_84976(BitField<BarrierMask> p_post_barrier);
 	InitialAction _convert_initial_action_84976(InitialAction p_old_initial_action);
 	FinalAction _convert_final_action_84976(FinalAction p_old_final_action);
-	DrawListID _draw_list_begin_bind_compat_84976(RID p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil, const Rect2 &p_region, const TypedArray<RID> &p_storage_textures);
+	DrawListID _draw_list_begin_bind_compat_84976(RID p_framebuffer,
+		InitialAction p_initial_color_action, FinalAction p_final_color_action,
+		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
+		const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
+		const Rect2& p_region, const Array& p_storage_textures);
 	ComputeListID _compute_list_begin_bind_compat_84976(bool p_allow_draw_overlap);
-	Error _buffer_update_bind_compat_84976(RID p_buffer, uint32_t p_offset, uint32_t p_size, const Vector<uint8_t> &p_data, BitField<BarrierMask> p_post_barrier);
-	Error _buffer_clear_bind_compat_84976(RID p_buffer, uint32_t p_offset, uint32_t p_size, BitField<BarrierMask> p_post_barrier);
-	Error _texture_update_bind_compat_84976(RID p_texture, uint32_t p_layer, const Vector<uint8_t> &p_data, BitField<BarrierMask> p_post_barrier);
-	Error _texture_copy_bind_compat_84976(RID p_from_texture, RID p_to_texture, const Vector3 &p_from, const Vector3 &p_to, const Vector3 &p_size, uint32_t p_src_mipmap, uint32_t p_dst_mipmap, uint32_t p_src_layer, uint32_t p_dst_layer, BitField<BarrierMask> p_post_barrier);
-	Error _texture_clear_bind_compat_84976(RID p_texture, const Color &p_color, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers, BitField<BarrierMask> p_post_barrier);
-	Error _texture_resolve_multisample_bind_compat_84976(RID p_from_texture, RID p_to_texture, BitField<BarrierMask> p_post_barrier);
+	Error _buffer_update_bind_compat_84976(RID p_buffer, uint32_t p_offset, uint32_t p_size,
+		const Vector<uint8_t>& p_data, BitField<BarrierMask> p_post_barrier);
+	Error _buffer_clear_bind_compat_84976(
+		RID p_buffer, uint32_t p_offset, uint32_t p_size, BitField<BarrierMask> p_post_barrier);
+	Error _texture_update_bind_compat_84976(RID p_texture, uint32_t p_layer,
+		const Vector<uint8_t>& p_data, BitField<BarrierMask> p_post_barrier);
+	Error _texture_copy_bind_compat_84976(RID p_from_texture, RID p_to_texture,
+		const Vector3& p_from, const Vector3& p_to, const Vector3& p_size, uint32_t p_src_mipmap,
+		uint32_t p_dst_mipmap, uint32_t p_src_layer, uint32_t p_dst_layer,
+		BitField<BarrierMask> p_post_barrier);
+	Error _texture_clear_bind_compat_84976(RID p_texture, const Color& p_color,
+		uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers,
+		BitField<BarrierMask> p_post_barrier);
+	Error _texture_resolve_multisample_bind_compat_84976(
+		RID p_from_texture, RID p_to_texture, BitField<BarrierMask> p_post_barrier);
 
 	FramebufferFormatID _screen_get_framebuffer_format_bind_compat_87340() const;
 
-	DrawListID _draw_list_begin_bind_compat_90993(RID p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil, const Rect2 &p_region);
+	DrawListID _draw_list_begin_bind_compat_90993(RID p_framebuffer,
+		InitialAction p_initial_color_action, FinalAction p_final_color_action,
+		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
+		const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
+		const Rect2& p_region);
 
-	DrawListID _draw_list_begin_bind_compat_98670(RID p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil, const Rect2 &p_region, uint32_t p_breadcrumb);
+	DrawListID _draw_list_begin_bind_compat_98670(RID p_framebuffer,
+		InitialAction p_initial_color_action, FinalAction p_final_color_action,
+		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
+		const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
+		const Rect2& p_region, uint32_t p_breadcrumb);
 
-	RID _uniform_buffer_create_bind_compat_101561(uint32_t p_size_bytes, const Vector<uint8_t> &p_data);
-	RID _vertex_buffer_create_bind_compat_101561(uint32_t p_size_bytes, const Vector<uint8_t> &p_data, bool p_use_as_storage);
-	RID _index_buffer_create_bind_compat_101561(uint32_t p_size_indices, IndexBufferFormat p_format, const Vector<uint8_t> &p_data, bool p_use_restart_indices);
-	RID _storage_buffer_create_bind_compat_101561(uint32_t p_size, const Vector<uint8_t> &p_data, BitField<StorageBufferUsage> p_usage);
+	RID _uniform_buffer_create_bind_compat_101561(
+		uint32_t p_size_bytes, const Vector<uint8_t>& p_data);
+	RID _vertex_buffer_create_bind_compat_101561(
+		uint32_t p_size_bytes, const Vector<uint8_t>& p_data, bool p_use_as_storage);
+	RID _index_buffer_create_bind_compat_101561(uint32_t p_size_indices, IndexBufferFormat p_format,
+		const Vector<uint8_t>& p_data, bool p_use_restart_indices);
+	RID _storage_buffer_create_bind_compat_101561(
+		uint32_t p_size, const Vector<uint8_t>& p_data, BitField<StorageBufferUsage> p_usage);
 #endif
 
 public:
-	RenderingDeviceDriver *get_device_driver() const { return driver; }
-	RenderingContextDriver *get_context_driver() const { return context; }
+	RenderingDeviceDriver* get_device_driver() const { return driver; }
 
-	const RDD::Capabilities &get_device_capabilities() const { return driver->get_capabilities(); }
+	RenderingContextDriver* get_context_driver() const { return context; }
+
+	const RDD::Capabilities& get_device_capabilities() const { return driver->get_capabilities(); }
 
 	bool has_feature(const Features p_feature) const;
 
-	Vector<uint8_t> shader_compile_spirv_from_source(ShaderStage p_stage, const String &p_source_code, ShaderLanguage p_language = SHADER_LANGUAGE_GLSL, String *r_error = nullptr, bool p_allow_cache = true);
-	Vector<uint8_t> shader_compile_binary_from_spirv(const Vector<ShaderStageSPIRVData> &p_spirv, const String &p_shader_name = "");
+	Vector<uint8_t> shader_compile_spirv_from_source(ShaderStage p_stage,
+		const String& p_source_code, ShaderLanguage p_language = SHADER_LANGUAGE_GLSL,
+		String* r_error = nullptr, bool p_allow_cache = true);
+	Vector<uint8_t> shader_compile_binary_from_spirv(
+		const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
 
-	RID shader_create_from_spirv(const Vector<ShaderStageSPIRVData> &p_spirv, const String &p_shader_name = "");
-	RID shader_create_from_bytecode(const Vector<uint8_t> &p_shader_binary, RID p_placeholder = RID());
+	RID shader_create_from_spirv(
+		const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
+	RID shader_create_from_bytecode(
+		const Vector<uint8_t>& p_shader_binary, RID p_placeholder = RID());
 	RID shader_create_placeholder();
 	void shader_destroy_modules(RID p_shader);
 
@@ -1048,88 +1209,117 @@ public:
 	/**** BUFFERS ****/
 	/*****************/
 
-	RID uniform_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {}, BitField<BufferCreationBits> p_creation_bits = 0);
-	RID _uniform_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t> &p_data, BitField<BufferCreationBits> p_creation_bits = 0) {
+	RID uniform_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
+		BitField<BufferCreationBits> p_creation_bits = 0);
+
+	RID _uniform_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
+		BitField<BufferCreationBits> p_creation_bits = 0)
+	{
 		return uniform_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
 
-	RID storage_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {}, BitField<StorageBufferUsage> p_usage = 0, BitField<BufferCreationBits> p_creation_bits = 0);
-	RID _storage_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t> &p_data, BitField<StorageBufferUsage> p_usage = 0, BitField<BufferCreationBits> p_creation_bits = 0) {
+	RID storage_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
+		BitField<StorageBufferUsage> p_usage = 0, BitField<BufferCreationBits> p_creation_bits = 0);
+
+	RID _storage_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
+		BitField<StorageBufferUsage> p_usage = 0, BitField<BufferCreationBits> p_creation_bits = 0)
+	{
 		return storage_buffer_create(p_size_bytes, p_data, p_usage, p_creation_bits);
 	}
 
-	RID texture_buffer_create(uint32_t p_size_elements, DataFormat p_format, Span<uint8_t> p_data = {});
-	RID _texture_buffer_create(uint32_t p_size_elements, DataFormat p_format, const Vector<uint8_t> &p_data) {
+	RID texture_buffer_create(
+		uint32_t p_size_elements, DataFormat p_format, Span<uint8_t> p_data = {});
+
+	RID _texture_buffer_create(
+		uint32_t p_size_elements, DataFormat p_format, const Vector<uint8_t>& p_data)
+	{
 		return texture_buffer_create(p_size_elements, p_format, p_data);
 	}
 
-	struct Uniform {
+	struct Uniform
+	{
 		UniformType uniform_type = UNIFORM_TYPE_IMAGE;
 		uint32_t binding = 0; // Binding index as specified in shader.
-		// This flag specifies that this is an immutable sampler to be set when creating pipeline layout.
+		// This flag specifies that this is an immutable sampler to be set when creating pipeline
+		// layout.
 		bool immutable_sampler = false;
 
 	private:
-		// In most cases only one ID is provided per binding, so avoid allocating memory unnecessarily for performance.
-		RID id; // If only one is provided, this is used.
+		// In most cases only one ID is provided per binding, so avoid allocating memory
+		// unnecessarily for performance.
+		RID id;			 // If only one is provided, this is used.
 		Vector<RID> ids; // If multiple ones are provided, this is used instead.
 
 	public:
-		_FORCE_INLINE_ uint32_t get_id_count() const {
-			return (id.is_valid() ? 1 : ids.size());
-		}
+		_FORCE_INLINE_ uint32_t get_id_count() const { return (id.is_valid() ? 1 : ids.size()); }
 
-		_FORCE_INLINE_ RID get_id(uint32_t p_idx) const {
+		_FORCE_INLINE_ RID get_id(uint32_t p_idx) const
+		{
 			if (id.is_valid()) {
 				ERR_FAIL_COND_V(p_idx != 0, RID());
 				return id;
-			} else {
+			}
+			else {
 				return ids[p_idx];
 			}
 		}
-		_FORCE_INLINE_ void set_id(uint32_t p_idx, RID p_id) {
+
+		_FORCE_INLINE_ void set_id(uint32_t p_idx, RID p_id)
+		{
 			if (id.is_valid()) {
 				ERR_FAIL_COND(p_idx != 0);
 				id = p_id;
-			} else {
+			}
+			else {
 				ids.write[p_idx] = p_id;
 			}
 		}
 
-		_FORCE_INLINE_ void append_id(RID p_id) {
+		_FORCE_INLINE_ void append_id(RID p_id)
+		{
 			if (ids.is_empty()) {
 				if (id == RID()) {
 					id = p_id;
-				} else {
+				}
+				else {
 					ids.push_back(id);
 					ids.push_back(p_id);
 					id = RID();
 				}
-			} else {
+			}
+			else {
 				ids.push_back(p_id);
 			}
 		}
 
-		_FORCE_INLINE_ void clear_ids() {
+		_FORCE_INLINE_ void clear_ids()
+		{
 			id = RID();
 			ids.clear();
 		}
 
-		_FORCE_INLINE_ Uniform(UniformType p_type, int p_binding, RID p_id) {
+		_FORCE_INLINE_ Uniform(UniformType p_type, int p_binding, RID p_id)
+		{
 			uniform_type = p_type;
 			binding = p_binding;
 			id = p_id;
 		}
-		_FORCE_INLINE_ Uniform(UniformType p_type, int p_binding, const Vector<RID> &p_ids) {
+
+		_FORCE_INLINE_ Uniform(UniformType p_type, int p_binding, const Vector<RID>& p_ids)
+		{
 			uniform_type = p_type;
 			binding = p_binding;
 			ids = p_ids;
 		}
+
 		_FORCE_INLINE_ Uniform() = default;
 	};
 
 	typedef Uniform PipelineImmutableSampler;
-	RID shader_create_from_bytecode_with_samplers(const Vector<uint8_t> &p_shader_binary, RID p_placeholder = RID(), const Vector<PipelineImmutableSampler> &p_immutable_samplers = Vector<PipelineImmutableSampler>());
+	RID shader_create_from_bytecode_with_samplers(const Vector<uint8_t>& p_shader_binary,
+		RID p_placeholder = RID(),
+		const Vector<PipelineImmutableSampler>& p_immutable_samplers =
+			Vector<PipelineImmutableSampler>());
 
 private:
 	static const uint32_t MAX_UNIFORM_SETS = 16;
@@ -1143,51 +1333,62 @@ private:
 	// Keep also in mind that you can share buffers between descriptor sets, so
 	// the above restriction is not too serious.
 
-	struct UniformSet {
+	struct UniformSet
+	{
 		uint32_t format = 0;
 		RID shader_id;
 		uint32_t shader_set = 0;
 		RDD::UniformSetID driver_id;
-		struct AttachableTexture {
+
+		struct AttachableTexture
+		{
 			uint32_t bind = 0;
 			RID texture;
 		};
 
-		struct SharedTexture {
+		struct SharedTexture
+		{
 			uint32_t writing = 0;
 			RID texture;
 		};
 
 		LocalVector<AttachableTexture> attachable_textures; // Used for validation.
-		Vector<RDG::ResourceTracker *> draw_trackers;
+		Vector<RDG::ResourceTracker*> draw_trackers;
 		Vector<RDG::ResourceUsage> draw_trackers_usage;
 		HashMap<RID, RDG::ResourceUsage> untracked_usage;
 		LocalVector<SharedTexture> shared_textures_to_update;
 		LocalVector<RID> pending_clear_textures;
 		Vector<RID> acceleration_structures; // Used for validation.
 		InvalidationCallback invalidated_callback = nullptr;
-		void *invalidated_callback_userdata = nullptr;
+		void* invalidated_callback_userdata = nullptr;
 	};
 
 	RID_Owner<UniformSet, true> uniform_set_owner;
 
-	void _uniform_set_update_shared(UniformSet *p_uniform_set);
-	void _uniform_set_update_clears(UniformSet *p_uniform_set);
+	void _uniform_set_update_shared(UniformSet* p_uniform_set);
+	void _uniform_set_update_clears(UniformSet* p_uniform_set);
 
 public:
 	/** Bake a set of uniforms that can be bound at runtime with the given shader.
-	 * @remark				Setting p_linear_pool = true while keeping the RID around for longer than the current frame will result in undefined behavior.
+	 * @remark				Setting p_linear_pool = true while keeping the RID around for longer than
+	 *the current frame will result in undefined behavior.
 	 * @param p_uniforms	The uniforms to bake into a set.
 	 * @param p_shader		The shader you intend to bind these uniforms with.
 	 * @param p_set_index	The set. Should be in range [0; 4)
-	 *						The value 4 comes from physical_device_properties.limits.maxBoundDescriptorSets. Vulkan only guarantees maxBoundDescriptorSets >= 4 (== 4 is very common on Mobile).
-	 * @param p_linear_pool	If you call this function every frame (and free the returned RID within the same frame!), set it to true for better performance.
-	 *						If you plan on keeping the return value around for more than one frame (e.g. Sets that are created once and reused forever) you MUST set it to false.
+	 *						The value 4 comes from
+	 *physical_device_properties.limits.maxBoundDescriptorSets. Vulkan only guarantees
+	 *maxBoundDescriptorSets >= 4 (== 4 is very common on Mobile).
+	 * @param p_linear_pool	If you call this function every frame (and free the returned RID within
+	 *the same frame!), set it to true for better performance. If you plan on keeping the return
+	 *value around for more than one frame (e.g. Sets that are created once and reused forever) you
+	 *MUST set it to false.
 	 * @return				Baked descriptor set.
 	 */
-	RID uniform_set_create(const VectorView<Uniform> &p_uniforms, RID p_shader, uint32_t p_shader_set, bool p_linear_pool = false);
+	RID uniform_set_create(const VectorView<Uniform>& p_uniforms, RID p_shader,
+		uint32_t p_shader_set, bool p_linear_pool = false);
 	bool uniform_set_is_valid(RID p_uniform_set);
-	void uniform_set_set_invalidation_callback(RID p_uniform_set, InvalidationCallback p_callback, void *p_userdata);
+	void uniform_set_set_invalidation_callback(
+		RID p_uniform_set, InvalidationCallback p_callback, void* p_userdata);
 
 	bool uniform_sets_have_linear_pools() const;
 
@@ -1206,10 +1407,12 @@ public:
 	// default) and warn the user if something
 	// was not supplied as intended.
 private:
-	struct RenderPipeline {
+	struct RenderPipeline
+	{
 		// Cached values for validation.
 #ifdef DEBUG_ENABLED
-		struct Validation {
+		struct Validation
+		{
 			FramebufferFormatID framebuffer_format;
 			uint32_t render_pass = 0;
 			uint32_t dynamic_state = 0;
@@ -1237,21 +1440,23 @@ private:
 	WorkerThreadPool::TaskID pipeline_cache_save_task = WorkerThreadPool::INVALID_TASK_ID;
 
 	Vector<uint8_t> _load_pipeline_cache();
-	static void _save_pipeline_cache(void *p_data);
+	static void _save_pipeline_cache(void* p_data);
 
-	struct ComputePipeline {
+	struct ComputePipeline
+	{
 		RID shader;
 		RDD::ShaderID shader_driver_id;
 		uint32_t shader_layout_hash = 0;
 		Vector<uint32_t> set_formats;
 		RDD::PipelineID driver_id;
 		uint32_t push_constant_size = 0;
-		uint32_t local_group_size[3] = { 0, 0, 0 };
+		uint32_t local_group_size[3] = {0, 0, 0};
 	};
 
 	RID_Owner<ComputePipeline, true> compute_pipeline_owner;
 
-	struct RaytracingPipeline {
+	struct RaytracingPipeline
+	{
 		RID layout_defining_shader;
 		RDD::ShaderID layout_defining_shader_driver_id;
 		uint32_t layout_defining_shader_layout_hash = 0;
@@ -1264,33 +1469,47 @@ private:
 		uint32_t hit_group_count = 0;
 	};
 
-	Error _raytracing_pipeline_create_sbt_buffer(RDD::RaytracingPipelineID p_raytracing_pipeline, uint32_t p_raygen_shader_count, uint32_t p_miss_shader_count, Buffer &r_sbt_buffer);
+	Error _raytracing_pipeline_create_sbt_buffer(RDD::RaytracingPipelineID p_raytracing_pipeline,
+		uint32_t p_raygen_shader_count, uint32_t p_miss_shader_count, Buffer& r_sbt_buffer);
 
 	RID_Owner<RaytracingPipeline, true> raytracing_pipeline_owner;
 
 public:
-	RID render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format, VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive, const PipelineRasterizationState &p_rasterization_state, const PipelineMultisampleState &p_multisample_state, const PipelineDepthStencilState &p_depth_stencil_state, const PipelineColorBlendState &p_blend_state, BitField<PipelineDynamicStateFlags> p_dynamic_state_flags = 0, uint32_t p_for_render_pass = 0, const Vector<PipelineSpecializationConstant> &p_specialization_constants = Vector<PipelineSpecializationConstant>());
+	RID render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format,
+		VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
+		const PipelineRasterizationState& p_rasterization_state,
+		const PipelineMultisampleState& p_multisample_state,
+		const PipelineDepthStencilState& p_depth_stencil_state,
+		const PipelineColorBlendState& p_blend_state,
+		BitField<PipelineDynamicStateFlags> p_dynamic_state_flags = 0,
+		uint32_t p_for_render_pass = 0,
+		const Vector<PipelineSpecializationConstant>& p_specialization_constants =
+			Vector<PipelineSpecializationConstant>());
 	bool render_pipeline_is_valid(RID p_pipeline);
 
-	RID compute_pipeline_create(RID p_shader, const Vector<PipelineSpecializationConstant> &p_specialization_constants = Vector<PipelineSpecializationConstant>());
+	RID compute_pipeline_create(
+		RID p_shader, const Vector<PipelineSpecializationConstant>& p_specialization_constants =
+						  Vector<PipelineSpecializationConstant>());
 	bool compute_pipeline_is_valid(RID p_pipeline);
 
-	struct PipelineShader {
+	struct PipelineShader
+	{
 		RID shader;
 		Vector<PipelineSpecializationConstant> specialization_constants;
 
-		bool is_valid() const {
-			return shader.is_valid();
-		}
+		bool is_valid() const { return shader.is_valid(); }
 	};
 
-	struct HitGroup {
+	struct HitGroup
+	{
 		PipelineShader closest_hit_shader;
 		PipelineShader any_hit_shader;
 		PipelineShader intersection_shader;
 	};
 
-	RID raytracing_pipeline_create(Span<PipelineShader> p_raygen_shaders, Span<PipelineShader> p_miss_shaders, Span<HitGroup> p_hit_groups, uint32_t p_max_trace_recursion_depth);
+	RID raytracing_pipeline_create(Span<PipelineShader> p_raygen_shaders,
+		Span<PipelineShader> p_miss_shaders, Span<HitGroup> p_hit_groups,
+		uint32_t p_max_trace_recursion_depth);
 	bool raytracing_pipeline_is_valid(RID p_pipeline);
 
 	void update_pipeline_cache(bool p_closing = false);
@@ -1306,13 +1525,20 @@ private:
 
 public:
 	Error screen_create(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
-	Error screen_prepare_for_drawing(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
-	int screen_get_width(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
-	int screen_get_height(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
-	int screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
-	FramebufferFormatID screen_get_framebuffer_format(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
-	ColorSpace screen_get_color_space(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
-	bool screen_get_hdr_output_supported(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
+	Error screen_prepare_for_drawing(
+		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
+	int screen_get_width(
+		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
+	int screen_get_height(
+		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
+	int screen_get_pre_rotation_degrees(
+		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
+	FramebufferFormatID screen_get_framebuffer_format(
+		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
+	ColorSpace screen_get_color_space(
+		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
+	bool screen_get_hdr_output_supported(
+		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID) const;
 	Error screen_free(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
 
 private:
@@ -1320,11 +1546,12 @@ private:
 	/**** ACCELERATION STRUCTURE ****/
 	/********************************/
 
-	struct AccelerationStructure {
+	struct AccelerationStructure
+	{
 		// --- Shared ---
 		RDD::AccelerationStructureID driver_id;
 		RDD::AccelerationStructureType type = {};
-		RDG::ResourceTracker *draw_tracker = nullptr;
+		RDG::ResourceTracker* draw_tracker = nullptr;
 
 		// BLAS/TLAS are weakly linked, as opposed to RD dependencies.
 		HashSet<RID> acceleration_structure_dependencies;
@@ -1334,30 +1561,33 @@ private:
 		RDD::BufferID scratch_buffer;
 
 		// --- Bottom Level ---
-		Vector<RDG::ResourceTracker *> draw_trackers;
+		Vector<RDG::ResourceTracker*> draw_trackers;
 		HashSet<RID> untracked_buffers;
 
 		// --- Top Level ---
 		uint32_t max_instance_count = 0;
 
-		struct InstanceBuffer {
+		struct InstanceBuffer
+		{
 			RDD::BufferID driver_id;
 			uint64_t frame_used = 0;
 			uint32_t used_size = 0;
-			uint8_t *data_ptr = nullptr;
+			uint8_t* data_ptr = nullptr;
 		};
 
 		LocalVector<InstanceBuffer> instance_buffers;
 	};
 
-	Error _acceleration_structure_scratch_buffer_create(AccelerationStructure *p_acceleration_structure);
-	void _blas_remove_tlas_dependencies(AccelerationStructure *p_blas, RID p_blas_id);
-	void _tlas_remove_blas_dependencies(AccelerationStructure *p_tlas, RID p_tlas_id);
+	Error _acceleration_structure_scratch_buffer_create(
+		AccelerationStructure* p_acceleration_structure);
+	void _blas_remove_tlas_dependencies(AccelerationStructure* p_blas, RID p_blas_id);
+	void _tlas_remove_blas_dependencies(AccelerationStructure* p_tlas, RID p_tlas_id);
 
 	RID_Owner<AccelerationStructure, true> acceleration_structure_owner;
 
 public:
-	struct AccelerationStructureGeometry {
+	struct AccelerationStructureGeometry
+	{
 		BitField<AccelerationStructureGeometryFlagBits> flags = {};
 		RID vertex_buffer;
 		uint32_t vertex_offset = 0;
@@ -1369,12 +1599,14 @@ public:
 		uint32_t index_count = 0;
 	};
 
-	RID blas_create(Span<AccelerationStructureGeometry> p_geometries, BitField<AccelerationStructureFlagBits> p_flags);
+	RID blas_create(Span<AccelerationStructureGeometry> p_geometries,
+		BitField<AccelerationStructureFlagBits> p_flags);
 	RID tlas_create(uint32_t p_max_instance_count, BitField<AccelerationStructureFlagBits> p_flags);
 
 	typedef int64_t HitShaderBindingTableRange;
 
-	struct AccelerationStructureInstance {
+	struct AccelerationStructureInstance
+	{
 		Transform3D transform;
 		uint32_t id = 0;
 		uint8_t mask = 0xFF;
@@ -1391,7 +1623,8 @@ private:
 	/**** HIT SHADER BINDING TABLE ****/
 	/**********************************/
 
-	struct HitShaderBindingTable : Buffer {
+	struct HitShaderBindingTable : Buffer
+	{
 		RID raytracing_pipeline_id;
 		RDD::RaytracingPipelineID raytracing_pipeline;
 		uint32_t index_offset = 0;
@@ -1413,8 +1646,10 @@ private:
 	RID_Owner<HitShaderBindingTable, true> hit_sbt_owner;
 
 	RDD::BufferID _hit_sbt_buffer_create(uint32_t p_buffer_size);
-	Error _hit_sbt_buffer_update(HitShaderBindingTable *p_hit_sbt, RID p_hit_sbt_id, RDD::ShaderBindingTable &r_sbt);
-	void _hit_sbt_add_dirty_range(HitShaderBindingTable *p_hit_sbt, uint32_t p_offset, uint32_t p_count);
+	Error _hit_sbt_buffer_update(
+		HitShaderBindingTable* p_hit_sbt, RID p_hit_sbt_id, RDD::ShaderBindingTable& r_sbt);
+	void _hit_sbt_add_dirty_range(
+		HitShaderBindingTable* p_hit_sbt, uint32_t p_offset, uint32_t p_count);
 
 public:
 	RID hit_sbt_create(RID p_raytracing_pipeline, uint32_t p_initial_hit_group_capacity);
@@ -1422,7 +1657,8 @@ public:
 
 	HitShaderBindingTableRange hit_sbt_range_alloc(RID p_hit_sbt, uint32_t p_hit_group_count);
 	Error hit_sbt_range_free(RID p_hit_sbt, HitShaderBindingTableRange p_range);
-	Error hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTableRange p_range, uint32_t p_hit_group_offset, Span<uint32_t> p_hit_group_indices);
+	Error hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTableRange p_range,
+		uint32_t p_hit_group_offset, Span<uint32_t> p_hit_group_indices);
 
 	/*************************/
 	/**** DRAW LISTS (II) ****/
@@ -1435,11 +1671,13 @@ private:
 	// validation is cheap so most of it can
 	// also run in release builds.
 
-	struct DrawList {
+	struct DrawList
+	{
 		Rect2i viewport;
 		bool active = false;
 
-		struct SetState {
+		struct SetState
+		{
 			uint32_t pipeline_expected_format = 0;
 			uint32_t uniform_set_format = 0;
 			RDD::UniformSetID uniform_set_driver_id;
@@ -1447,7 +1685,8 @@ private:
 			bool bound = false;
 		};
 
-		struct State {
+		struct State
+		{
 			SetState sets[MAX_UNIFORM_SETS];
 			uint32_t set_count = 0;
 			RID pipeline;
@@ -1461,7 +1700,8 @@ private:
 		} state;
 
 #ifdef DEBUG_ENABLED
-		struct Validation {
+		struct Validation
+		{
 			// Actual render pass values.
 			uint32_t dynamic_state = 0;
 			VertexFormatID vertex_format = INVALID_ID;
@@ -1485,7 +1725,8 @@ private:
 			bool pipeline_push_constant_supplied = false;
 		} validation;
 #else
-		struct Validation {
+		struct Validation
+		{
 			uint32_t vertex_array_size = 0;
 			uint32_t index_array_count = 0;
 		} validation;
@@ -1501,11 +1742,12 @@ private:
 
 	LocalVector<RID> draw_list_bound_textures;
 
-	void _draw_list_start(const Rect2i &p_viewport);
-	void _draw_list_end(Rect2i *r_last_viewport = nullptr);
+	void _draw_list_start(const Rect2i& p_viewport);
+	void _draw_list_end(Rect2i* r_last_viewport = nullptr);
 
 public:
-	enum DrawFlags {
+	enum DrawFlags
+	{
 		DRAW_DEFAULT_ALL = 0,
 		DRAW_CLEAR_COLOR_0 = (1 << 0),
 		DRAW_CLEAR_COLOR_1 = (1 << 1),
@@ -1538,27 +1780,40 @@ public:
 	/**
 	 * @param p_clear_color Must use linear encoding when HDR 2D is active.
 	 */
-	DrawListID draw_list_begin_for_screen(DisplayServerEnums::WindowID p_screen = 0, const Color &p_clear_color = Color());
+	DrawListID draw_list_begin_for_screen(
+		DisplayServerEnums::WindowID p_screen = 0, const Color& p_clear_color = Color());
 	/**
 	 * @param p_clear_color_values Color values must use linear encoding when HDR 2D is active.
 	 */
-	DrawListID draw_list_begin(RID p_framebuffer, BitField<DrawFlags> p_draw_flags = DRAW_DEFAULT_ALL, VectorView<Color> p_clear_color_values = VectorView<Color>(), float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0, const Rect2 &p_region = Rect2(), uint32_t p_breadcrumb = 0);
-	DrawListID _draw_list_begin_bind(RID p_framebuffer, BitField<DrawFlags> p_draw_flags = DRAW_DEFAULT_ALL, const Vector<Color> &p_clear_color_values = Vector<Color>(), float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0, const Rect2 &p_region = Rect2(), uint32_t p_breadcrumb = 0);
+	DrawListID draw_list_begin(RID p_framebuffer,
+		BitField<DrawFlags> p_draw_flags = DRAW_DEFAULT_ALL,
+		VectorView<Color> p_clear_color_values = VectorView<Color>(),
+		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
+		const Rect2& p_region = Rect2(), uint32_t p_breadcrumb = 0);
+	DrawListID _draw_list_begin_bind(RID p_framebuffer,
+		BitField<DrawFlags> p_draw_flags = DRAW_DEFAULT_ALL,
+		const Vector<Color>& p_clear_color_values = Vector<Color>(),
+		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
+		const Rect2& p_region = Rect2(), uint32_t p_breadcrumb = 0);
 
-	void draw_list_set_blend_constants(DrawListID p_list, const Color &p_color);
+	void draw_list_set_blend_constants(DrawListID p_list, const Color& p_color);
 	void draw_list_bind_render_pipeline(DrawListID p_list, RID p_render_pipeline);
 	void draw_list_bind_uniform_set(DrawListID p_list, RID p_uniform_set, uint32_t p_index);
 	void draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array);
-	void draw_list_bind_vertex_buffers_format(DrawListID p_list, VertexFormatID p_vertex_format, uint32_t p_vertex_count, const Span<RID> &p_vertex_buffers, const Span<uint64_t> &p_offsets = Vector<uint64_t>());
+	void draw_list_bind_vertex_buffers_format(DrawListID p_list, VertexFormatID p_vertex_format,
+		uint32_t p_vertex_count, const Span<RID>& p_vertex_buffers,
+		const Span<uint64_t>& p_offsets = Vector<uint64_t>());
 	void draw_list_bind_index_array(DrawListID p_list, RID p_index_array);
 	void draw_list_set_line_width(DrawListID p_list, float p_width);
-	void draw_list_set_push_constant(DrawListID p_list, const void *p_data, uint32_t p_data_size);
+	void draw_list_set_push_constant(DrawListID p_list, const void* p_data, uint32_t p_data_size);
 
-	void draw_list_draw(DrawListID p_list, bool p_use_indices, uint32_t p_instances = 1, uint32_t p_procedural_vertices = 0);
-	void draw_list_draw_indirect(DrawListID p_list, bool p_use_indices, RID p_buffer, uint32_t p_offset = 0, uint32_t p_draw_count = 1, uint32_t p_stride = 0);
+	void draw_list_draw(DrawListID p_list, bool p_use_indices, uint32_t p_instances = 1,
+		uint32_t p_procedural_vertices = 0);
+	void draw_list_draw_indirect(DrawListID p_list, bool p_use_indices, RID p_buffer,
+		uint32_t p_offset = 0, uint32_t p_draw_count = 1, uint32_t p_stride = 0);
 
-	void draw_list_set_viewport(DrawListID p_list, const Rect2 &p_rect);
-	void draw_list_enable_scissor(DrawListID p_list, const Rect2 &p_rect);
+	void draw_list_set_viewport(DrawListID p_list, const Rect2& p_rect);
+	void draw_list_enable_scissor(DrawListID p_list, const Rect2& p_rect);
 	void draw_list_disable_scissor(DrawListID p_list);
 
 	uint32_t draw_list_get_current_pass();
@@ -1571,9 +1826,12 @@ private:
 	/**** RAYTRACING LISTS ****/
 	/**************************/
 
-	struct RaytracingList {
+	struct RaytracingList
+	{
 		bool active = false;
-		struct SetState {
+
+		struct SetState
+		{
 			uint32_t pipeline_expected_format = 0;
 			uint32_t uniform_set_format = 0;
 			RDD::UniformSetID uniform_set_driver_id;
@@ -1581,7 +1839,8 @@ private:
 			bool bound = false;
 		};
 
-		struct State {
+		struct State
+		{
 			SetState sets[MAX_UNIFORM_SETS];
 			uint32_t set_count = 0;
 			RID pipeline;
@@ -1598,8 +1857,10 @@ private:
 		} state;
 
 #ifdef DEBUG_ENABLED
-		struct Validation {
-			bool active = true; // Means command buffer was not closed, so you can keep adding things.
+		struct Validation
+		{
+			bool active =
+				true; // Means command buffer was not closed, so you can keep adding things.
 			Vector<uint32_t> set_formats;
 			Vector<bool> set_bound;
 			Vector<RID> set_rids;
@@ -1618,10 +1879,14 @@ private:
 
 public:
 	RaytracingListID raytracing_list_begin();
-	void raytracing_list_bind_raytracing_pipeline(RaytracingListID p_list, RID p_raytracing_pipeline);
-	void raytracing_list_bind_uniform_set(RaytracingListID p_list, RID p_uniform_set, uint32_t p_index);
-	void raytracing_list_set_push_constant(RaytracingListID p_list, const void *p_data, uint32_t p_data_size);
-	void raytracing_list_trace_rays(RaytracingListID p_list, uint32_t p_raygen_shader_index, RID p_hit_sbt, uint32_t p_width, uint32_t p_height, uint32_t p_depth);
+	void raytracing_list_bind_raytracing_pipeline(
+		RaytracingListID p_list, RID p_raytracing_pipeline);
+	void raytracing_list_bind_uniform_set(
+		RaytracingListID p_list, RID p_uniform_set, uint32_t p_index);
+	void raytracing_list_set_push_constant(
+		RaytracingListID p_list, const void* p_data, uint32_t p_data_size);
+	void raytracing_list_trace_rays(RaytracingListID p_list, uint32_t p_raygen_shader_index,
+		RID p_hit_sbt, uint32_t p_width, uint32_t p_height, uint32_t p_depth);
 	void raytracing_list_end();
 
 private:
@@ -1629,9 +1894,12 @@ private:
 	/**** COMPUTE LISTS ****/
 	/***********************/
 
-	struct ComputeList {
+	struct ComputeList
+	{
 		bool active = false;
-		struct SetState {
+
+		struct SetState
+		{
 			uint32_t pipeline_expected_format = 0;
 			uint32_t uniform_set_format = 0;
 			RDD::UniformSetID uniform_set_driver_id;
@@ -1639,21 +1907,23 @@ private:
 			bool bound = false;
 		};
 
-		struct State {
+		struct State
+		{
 			SetState sets[MAX_UNIFORM_SETS];
 			uint32_t set_count = 0;
 			RID pipeline;
 			RID pipeline_shader;
 			RDD::ShaderID pipeline_shader_driver_id;
 			uint32_t pipeline_shader_layout_hash = 0;
-			uint32_t local_group_size[3] = { 0, 0, 0 };
+			uint32_t local_group_size[3] = {0, 0, 0};
 			uint8_t push_constant_data[MAX_PUSH_CONSTANT_SIZE] = {};
 			uint32_t push_constant_size = 0;
 			uint32_t dispatch_count = 0;
 		} state;
 
 #ifdef DEBUG_ENABLED
-		struct Validation {
+		struct Validation
+		{
 			Vector<uint32_t> set_formats;
 			Vector<bool> set_bound;
 			Vector<RID> set_rids;
@@ -1674,9 +1944,12 @@ public:
 	ComputeListID compute_list_begin();
 	void compute_list_bind_compute_pipeline(ComputeListID p_list, RID p_compute_pipeline);
 	void compute_list_bind_uniform_set(ComputeListID p_list, RID p_uniform_set, uint32_t p_index);
-	void compute_list_set_push_constant(ComputeListID p_list, const void *p_data, uint32_t p_data_size);
-	void compute_list_dispatch(ComputeListID p_list, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups);
-	void compute_list_dispatch_threads(ComputeListID p_list, uint32_t p_x_threads, uint32_t p_y_threads, uint32_t p_z_threads);
+	void compute_list_set_push_constant(
+		ComputeListID p_list, const void* p_data, uint32_t p_data_size);
+	void compute_list_dispatch(
+		ComputeListID p_list, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups);
+	void compute_list_dispatch_threads(
+		ComputeListID p_list, uint32_t p_x_threads, uint32_t p_y_threads, uint32_t p_z_threads);
 	void compute_list_dispatch_indirect(ComputeListID p_list, RID p_buffer, uint32_t p_offset);
 	void compute_list_add_barrier(ComputeListID p_list);
 
@@ -1687,7 +1960,8 @@ private:
 	/**** TRANSFER WORKER ****/
 	/*************************/
 
-	struct TransferWorker {
+	struct TransferWorker
+	{
 		uint32_t index = 0;
 		RDD::BufferID staging_buffer;
 		uint32_t max_transfer_size = 0;
@@ -1706,7 +1980,7 @@ private:
 		BinaryMutex operations_mutex;
 	};
 
-	TightLocalVector<TransferWorker *> transfer_worker_pool;
+	TightLocalVector<TransferWorker*> transfer_worker_pool;
 	uint32_t transfer_worker_pool_size = 0;
 	uint32_t transfer_worker_pool_max_size = 1;
 	TightLocalVector<uint64_t> transfer_worker_operation_used_by_draw;
@@ -1716,18 +1990,22 @@ private:
 	BinaryMutex transfer_worker_pool_texture_barriers_mutex;
 	ConditionVariable transfer_worker_pool_condition;
 
-	TransferWorker *_acquire_transfer_worker(uint32_t p_transfer_size, uint32_t p_required_align, uint32_t &r_staging_offset);
-	void _release_transfer_worker(TransferWorker *p_transfer_worker);
-	void _end_transfer_worker(TransferWorker *p_transfer_worker);
-	void _submit_transfer_worker(TransferWorker *p_transfer_worker, VectorView<RDD::SemaphoreID> p_signal_semaphores = VectorView<RDD::SemaphoreID>());
-	void _wait_for_transfer_worker(TransferWorker *p_transfer_worker);
-	void _flush_barriers_for_transfer_worker(TransferWorker *p_transfer_worker);
-	void _check_transfer_worker_operation(uint32_t p_transfer_worker_index, uint64_t p_transfer_worker_operation);
-	void _check_transfer_worker_buffer(Buffer *p_buffer);
-	void _check_transfer_worker_texture(Texture *p_texture);
-	void _check_transfer_worker_vertex_array(VertexArray *p_vertex_array);
-	void _check_transfer_worker_index_array(IndexArray *p_index_array);
-	void _submit_transfer_workers(RDD::CommandBufferID p_draw_command_buffer = RDD::CommandBufferID());
+	TransferWorker* _acquire_transfer_worker(
+		uint32_t p_transfer_size, uint32_t p_required_align, uint32_t& r_staging_offset);
+	void _release_transfer_worker(TransferWorker* p_transfer_worker);
+	void _end_transfer_worker(TransferWorker* p_transfer_worker);
+	void _submit_transfer_worker(TransferWorker* p_transfer_worker,
+		VectorView<RDD::SemaphoreID> p_signal_semaphores = VectorView<RDD::SemaphoreID>());
+	void _wait_for_transfer_worker(TransferWorker* p_transfer_worker);
+	void _flush_barriers_for_transfer_worker(TransferWorker* p_transfer_worker);
+	void _check_transfer_worker_operation(
+		uint32_t p_transfer_worker_index, uint64_t p_transfer_worker_operation);
+	void _check_transfer_worker_buffer(Buffer* p_buffer);
+	void _check_transfer_worker_texture(Texture* p_texture);
+	void _check_transfer_worker_vertex_array(VertexArray* p_vertex_array);
+	void _check_transfer_worker_index_array(IndexArray* p_index_array);
+	void _submit_transfer_workers(
+		RDD::CommandBufferID p_draw_command_buffer = RDD::CommandBufferID());
 	void _submit_transfer_barriers(RDD::CommandBufferID p_draw_command_buffer);
 	void _wait_for_transfer_workers();
 	void _free_transfer_workers();
@@ -1736,15 +2014,20 @@ private:
 	/**** COMMAND GRAPH ****/
 	/***********************/
 
-	bool _texture_make_mutable(Texture *p_texture, RID p_texture_id);
-	bool _buffer_make_mutable(Buffer *p_buffer, RID p_buffer_id);
-	bool _vertex_array_make_mutable(VertexArray *p_vertex_array, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
-	bool _index_array_make_mutable(IndexArray *p_index_array, RDG::ResourceTracker *p_resource_tracker);
-	bool _uniform_set_make_mutable(UniformSet *p_uniform_set, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
-	bool _acceleration_structure_make_mutable(AccelerationStructure *p_acceleration_structure, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
-	bool _dependency_make_mutable(RID p_id, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
-	bool _dependencies_make_mutable_recursive(RID p_id, RDG::ResourceTracker *p_resource_tracker);
-	bool _dependencies_make_mutable(RID p_id, RDG::ResourceTracker *p_resource_tracker);
+	bool _texture_make_mutable(Texture* p_texture, RID p_texture_id);
+	bool _buffer_make_mutable(Buffer* p_buffer, RID p_buffer_id);
+	bool _vertex_array_make_mutable(
+		VertexArray* p_vertex_array, RID p_resource_id, RDG::ResourceTracker* p_resource_tracker);
+	bool _index_array_make_mutable(
+		IndexArray* p_index_array, RDG::ResourceTracker* p_resource_tracker);
+	bool _uniform_set_make_mutable(
+		UniformSet* p_uniform_set, RID p_resource_id, RDG::ResourceTracker* p_resource_tracker);
+	bool _acceleration_structure_make_mutable(AccelerationStructure* p_acceleration_structure,
+		RID p_resource_id, RDG::ResourceTracker* p_resource_tracker);
+	bool _dependency_make_mutable(
+		RID p_id, RID p_resource_id, RDG::ResourceTracker* p_resource_tracker);
+	bool _dependencies_make_mutable_recursive(RID p_id, RDG::ResourceTracker* p_resource_tracker);
+	bool _dependencies_make_mutable(RID p_id, RDG::ResourceTracker* p_resource_tracker);
 
 	RenderingDeviceGraph draw_graph;
 
@@ -1777,7 +2060,8 @@ private:
 	// nature of the GPU. They will get deleted
 	// when the frame is cycled.
 
-	struct Frame {
+	struct Frame
+	{
 		// List in usage order, from last to free to first to free.
 		List<Buffer> buffers_to_dispose_of;
 		List<Texture> textures_to_dispose_of;
@@ -1810,7 +2094,8 @@ private:
 		// Signaled by the command buffer submission. Present must wait on this semaphore.
 		RDD::SemaphoreID semaphore;
 
-		// Signaled by the command buffer submission. Must wait on this fence before beginning command recording for the frame.
+		// Signaled by the command buffer submission. Must wait on this fence before beginning
+		// command recording for the frame.
 		RDD::FenceID fence;
 		bool fence_signaled = false;
 
@@ -1828,7 +2113,8 @@ private:
 		// splitting the final render pass to the swapchain into its own cmd buffer.
 		RDG::CommandBufferPool command_buffer_pool;
 
-		struct Timestamp {
+		struct Timestamp
+		{
 			String description;
 			uint64_t value = 0;
 		};
@@ -1851,15 +2137,19 @@ private:
 	TightLocalVector<Frame> frames;
 	uint64_t frames_drawn = 0;
 
-	// Whenever logic/physics request a graphics operation (not just deleting a resource) that requires
-	// us to flush all graphics commands, we must set frames_pending_resources_for_processing = frames.size().
-	// This is important for when the user requested for the logic loop to still be updated while
-	// graphics should not (e.g. headless Multiplayer servers, minimized windows that need to still
-	// process something on the background).
+	// Whenever logic/physics request a graphics operation (not just deleting a resource) that
+	// requires us to flush all graphics commands, we must set
+	// frames_pending_resources_for_processing = frames.size(). This is important for when the user
+	// requested for the logic loop to still be updated while graphics should not (e.g. headless
+	// Multiplayer servers, minimized windows that need to still process something on the
+	// background).
 	uint32_t frames_pending_resources_for_processing = 0u;
 
 public:
-	bool has_pending_resources_for_processing() const { return frames_pending_resources_for_processing != 0u; }
+	bool has_pending_resources_for_processing() const
+	{
+		return frames_pending_resources_for_processing != 0u;
+	}
 
 private:
 	void _free_pending_resources(int p_frame);
@@ -1869,8 +2159,8 @@ private:
 
 protected:
 	void execute_chained_cmds(bool p_present_swap_chain,
-			RenderingDeviceDriver::FenceID p_draw_fence,
-			RenderingDeviceDriver::SemaphoreID p_dst_draw_semaphore_to_signal);
+		RenderingDeviceDriver::FenceID p_draw_fence,
+		RenderingDeviceDriver::SemaphoreID p_dst_draw_semaphore_to_signal);
 
 public:
 	void _free_internal(RID p_id);
@@ -1881,31 +2171,29 @@ public:
 	void _stall_for_previous_frames();
 	void _flush_and_stall_for_all_frames(bool p_begin_frame = true);
 
-	template <typename T>
-	void _free_rids(T &p_owner, const char *p_type);
+	template <typename T> void _free_rids(T& p_owner, const char* p_type);
 
 #ifdef DEV_ENABLED
 	HashMap<RID, String> resource_names;
 #endif
 
 public:
-	Error initialize(RenderingContextDriver *p_context, DisplayServerEnums::WindowID p_main_window = DisplayServerEnums::INVALID_WINDOW_ID);
+	Error initialize(RenderingContextDriver* p_context,
+		DisplayServerEnums::WindowID p_main_window = DisplayServerEnums::INVALID_WINDOW_ID);
 	void finalize();
 
 	void _set_max_fps(int p_max_fps);
 
 	void free_rid(RID p_rid);
 #ifndef DISABLE_DEPRECATED
-	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) {
-		free_rid(p_rid);
-	}
+	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
 #endif // DISABLE_DEPRECATED
 
 	/****************/
 	/**** Timing ****/
 	/****************/
 
-	void capture_timestamp(const String &p_name);
+	void capture_timestamp(const String& p_name);
 	uint32_t get_captured_timestamps_count() const;
 	uint64_t get_captured_timestamps_frame() const;
 	uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const;
@@ -1925,7 +2213,8 @@ public:
 	void submit();
 	void sync();
 
-	enum MemoryType {
+	enum MemoryType
+	{
 		MEMORY_TEXTURES,
 		MEMORY_BUFFERS,
 		MEMORY_TOTAL
@@ -1933,12 +2222,13 @@ public:
 
 	uint64_t get_memory_usage(MemoryType p_type) const;
 
-	RenderingDevice *create_local_device();
+	RenderingDevice* create_local_device();
 
-	void set_resource_name(RID p_id, const String &p_name);
+	void set_resource_name(RID p_id, const String& p_name);
 
-	void _draw_command_begin_label(String p_label_name, const Color &p_color = Color(1, 1, 1, 1));
-	void draw_command_begin_label(const Span<char> p_label_name, const Color &p_color = Color(1, 1, 1, 1));
+	void _draw_command_begin_label(String p_label_name, const Color& p_color = Color(1, 1, 1, 1));
+	void draw_command_begin_label(
+		const Span<char> p_label_name, const Color& p_color = Color(1, 1, 1, 1));
 	void draw_command_end_label();
 
 	String get_device_vendor_name() const;
@@ -1954,7 +2244,8 @@ public:
 
 	bool is_composite_alpha_supported() const;
 
-	uint64_t get_driver_resource(DriverResource p_resource, RID p_rid = RID(), uint64_t p_index = 0);
+	uint64_t get_driver_resource(
+		DriverResource p_resource, RID p_rid = RID(), uint64_t p_index = 0);
 
 	String get_driver_and_device_memory_report() const;
 
@@ -1971,7 +2262,7 @@ public:
 	uint64_t get_device_memory_by_object_type(uint32_t p_type) const;
 	uint64_t get_device_allocs_by_object_type(uint32_t p_type) const;
 
-	static RenderingDevice *get_singleton();
+	static RenderingDevice* get_singleton();
 
 	void make_current();
 
@@ -1983,42 +2274,68 @@ private:
 	/**** BINDERS ****/
 	/*****************/
 
-	RID _texture_create(const Ref<RDTextureFormat> &p_format, const Ref<RDTextureView> &p_view, const TypedArray<PackedByteArray> &p_data = Array());
-	RID _texture_create_shared(const Ref<RDTextureView> &p_view, RID p_with_texture);
-	RID _texture_create_shared_from_slice(const Ref<RDTextureView> &p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1, TextureSliceType p_slice_type = TEXTURE_SLICE_2D);
+	RID _texture_create(const Ref<RDTextureFormat>& p_format, const Ref<RDTextureView>& p_view,
+		const Array& p_data = Array());
+	RID _texture_create_shared(const Ref<RDTextureView>& p_view, RID p_with_texture);
+	RID _texture_create_shared_from_slice(const Ref<RDTextureView>& p_view, RID p_with_texture,
+		uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1,
+		TextureSliceType p_slice_type = TEXTURE_SLICE_2D);
 	Ref<RDTextureFormat> _texture_get_format(RID p_rd_texture);
 
-	FramebufferFormatID _framebuffer_format_create(const TypedArray<RDAttachmentFormat> &p_attachments, uint32_t p_view_count);
-	FramebufferFormatID _framebuffer_format_create_multipass(const TypedArray<RDAttachmentFormat> &p_attachments, const TypedArray<RDFramebufferPass> &p_passes, uint32_t p_view_count);
-	RID _framebuffer_create(const TypedArray<RID> &p_textures, FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
-	RID _framebuffer_create_multipass(const TypedArray<RID> &p_textures, const TypedArray<RDFramebufferPass> &p_passes, FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
+	FramebufferFormatID _framebuffer_format_create(
+		const Array& p_attachments, uint32_t p_view_count);
+	FramebufferFormatID _framebuffer_format_create_multipass(
+		const Array& p_attachments, const Array& p_passes, uint32_t p_view_count);
+	RID _framebuffer_create(const Array& p_textures,
+		FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
+	RID _framebuffer_create_multipass(const Array& p_textures, const Array& p_passes,
+		FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
 
-	RID _sampler_create(const Ref<RDSamplerState> &p_state);
+	RID _sampler_create(const Ref<RDSamplerState>& p_state);
 
-	VertexFormatID _vertex_format_create(const TypedArray<RDVertexAttribute> &p_vertex_formats);
-	RID _vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format, const TypedArray<RID> &p_src_buffers, const Vector<int64_t> &p_offsets = Vector<int64_t>());
-	void _draw_list_bind_vertex_buffers_format(DrawListID p_list, VertexFormatID p_vertex_format, uint32_t p_vertex_count, const TypedArray<RID> &p_vertex_buffers, const Vector<int64_t> &p_offsets = Vector<int64_t>());
+	VertexFormatID _vertex_format_create(const Array& p_vertex_formats);
+	RID _vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
+		const Array& p_src_buffers, const Vector<int64_t>& p_offsets = Vector<int64_t>());
+	void _draw_list_bind_vertex_buffers_format(DrawListID p_list, VertexFormatID p_vertex_format,
+		uint32_t p_vertex_count, const Array& p_vertex_buffers,
+		const Vector<int64_t>& p_offsets = Vector<int64_t>());
 
-	Ref<RDShaderSPIRV> _shader_compile_spirv_from_source(const Ref<RDShaderSource> &p_source, bool p_allow_cache = true);
-	Vector<uint8_t> _shader_compile_binary_from_spirv(const Ref<RDShaderSPIRV> &p_bytecode, const String &p_shader_name = "");
-	RID _shader_create_from_spirv(const Ref<RDShaderSPIRV> &p_spirv, const String &p_shader_name = "");
+	Ref<RDShaderSPIRV> _shader_compile_spirv_from_source(
+		const Ref<RDShaderSource>& p_source, bool p_allow_cache = true);
+	Vector<uint8_t> _shader_compile_binary_from_spirv(
+		const Ref<RDShaderSPIRV>& p_bytecode, const String& p_shader_name = "");
+	RID _shader_create_from_spirv(
+		const Ref<RDShaderSPIRV>& p_spirv, const String& p_shader_name = "");
 
-	RID _uniform_set_create(const TypedArray<RDUniform> &p_uniforms, RID p_shader, uint32_t p_shader_set);
+	RID _uniform_set_create(const Array& p_uniforms, RID p_shader, uint32_t p_shader_set);
 
-	Error _buffer_update_bind(RID p_buffer, uint32_t p_offset, uint32_t p_size, const Vector<uint8_t> &p_data);
+	Error _buffer_update_bind(
+		RID p_buffer, uint32_t p_offset, uint32_t p_size, const Vector<uint8_t>& p_data);
 
-	RID _blas_create(const TypedArray<RDAccelerationStructureGeometry> &p_geometries, BitField<AccelerationStructureFlagBits> p_flags);
-	Error _tlas_build(RID p_tlas, const TypedArray<RDAccelerationStructureInstance> &p_instances);
+	RID _blas_create(const Array& p_geometries, BitField<AccelerationStructureFlagBits> p_flags);
+	Error _tlas_build(RID p_tlas, const Array& p_instances);
 
-	Error _hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTableRange p_range, uint32_t p_offset, const Vector<int32_t> &p_hit_group_indices);
+	Error _hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTableRange p_range,
+		uint32_t p_offset, const Vector<int32_t>& p_hit_group_indices);
 
-	RID _render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format, VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive, const Ref<RDPipelineRasterizationState> &p_rasterization_state, const Ref<RDPipelineMultisampleState> &p_multisample_state, const Ref<RDPipelineDepthStencilState> &p_depth_stencil_state, const Ref<RDPipelineColorBlendState> &p_blend_state, BitField<PipelineDynamicStateFlags> p_dynamic_state_flags, uint32_t p_for_render_pass, const TypedArray<RDPipelineSpecializationConstant> &p_specialization_constants);
-	RID _compute_pipeline_create(RID p_shader, const TypedArray<RDPipelineSpecializationConstant> &p_specialization_constants);
-	RID _raytracing_pipeline_create(const TypedArray<RDPipelineShader> &p_raygen_shaders, const TypedArray<RDPipelineShader> &p_miss_shaders, const TypedArray<RDHitGroup> &p_hit_groups, uint32_t p_max_trace_recursion_depth);
+	RID _render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format,
+		VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
+		const Ref<RDPipelineRasterizationState>& p_rasterization_state,
+		const Ref<RDPipelineMultisampleState>& p_multisample_state,
+		const Ref<RDPipelineDepthStencilState>& p_depth_stencil_state,
+		const Ref<RDPipelineColorBlendState>& p_blend_state,
+		BitField<PipelineDynamicStateFlags> p_dynamic_state_flags, uint32_t p_for_render_pass,
+		const Array& p_specialization_constants);
+	RID _compute_pipeline_create(RID p_shader, const Array& p_specialization_constants);
+	RID _raytracing_pipeline_create(const Array& p_raygen_shaders, const Array& p_miss_shaders,
+		const Array& p_hit_groups, uint32_t p_max_trace_recursion_depth);
 
-	void _draw_list_set_push_constant(DrawListID p_list, const Vector<uint8_t> &p_data, uint32_t p_data_size);
-	void _compute_list_set_push_constant(ComputeListID p_list, const Vector<uint8_t> &p_data, uint32_t p_data_size);
-	void _raytracing_list_set_push_constant(RaytracingListID p_list, const Vector<uint8_t> &p_data, uint32_t p_data_size);
+	void _draw_list_set_push_constant(
+		DrawListID p_list, const Vector<uint8_t>& p_data, uint32_t p_data_size);
+	void _compute_list_set_push_constant(
+		ComputeListID p_list, const Vector<uint8_t>& p_data, uint32_t p_data_size);
+	void _raytracing_list_set_push_constant(
+		RaytracingListID p_list, const Vector<uint8_t>& p_data, uint32_t p_data_size);
 };
 
 VARIANT_ENUM_CAST_EXT(RenderingDeviceEnums::DeviceType, RenderingDevice::DeviceType)
@@ -2065,3 +2382,5 @@ VARIANT_ENUM_CAST(RenderingDevice::FinalAction)
 #endif
 
 typedef RenderingDevice RD;
+
+

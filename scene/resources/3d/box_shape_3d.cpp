@@ -29,12 +29,12 @@
 /**************************************************************************/
 
 #include "box_shape_3d.h"
-
 #include "core/object/class_db.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
-Vector<Vector3> BoxShape3D::get_debug_mesh_lines() const {
+Vector<Vector3> BoxShape3D::get_debug_mesh_lines() const
+{
 	Vector<Vector3> lines;
 	AABB aabb;
 	aabb.position = -size / 2;
@@ -50,13 +50,14 @@ Vector<Vector3> BoxShape3D::get_debug_mesh_lines() const {
 	return lines;
 }
 
-Ref<ArrayMesh> BoxShape3D::get_debug_arraymesh_faces(const Color &p_modulate) const {
+Ref<ArrayMesh> BoxShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
 	Array box_array;
 	box_array.resize(RSE::ARRAY_MAX);
 	BoxMesh::create_mesh_array(box_array, size);
 
 	Vector<Color> colors;
-	const PackedVector3Array &verts = box_array[RSE::ARRAY_VERTEX];
+	const PackedVector3Array& verts = box_array[RSE::ARRAY_VERTEX];
 	const int32_t verts_size = verts.size();
 	for (int i = 0; i < verts_size; i++) {
 		colors.append(p_modulate);
@@ -68,17 +69,17 @@ Ref<ArrayMesh> BoxShape3D::get_debug_arraymesh_faces(const Color &p_modulate) co
 	return box_mesh;
 }
 
-real_t BoxShape3D::get_enclosing_radius() const {
-	return size.length() / 2;
-}
+real_t BoxShape3D::get_enclosing_radius() const { return size.length() / 2; }
 
-void BoxShape3D::_update_shape() {
+void BoxShape3D::_update_shape()
+{
 	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), size / 2);
 	Shape3D::_update_shape();
 }
 
 #ifndef DISABLE_DEPRECATED
-bool BoxShape3D::_set(const StringName &p_name, const Variant &p_value) {
+bool BoxShape3D::_set(const StringName& p_name, const Variant& p_value)
+{
 	if (p_name == "extents") { // Compatibility with Godot 3.x.
 		// Convert to `size`, twice as big.
 		set_size((Vector3)p_value * 2);
@@ -87,7 +88,8 @@ bool BoxShape3D::_set(const StringName &p_name, const Variant &p_value) {
 	return false;
 }
 
-bool BoxShape3D::_get(const StringName &p_name, Variant &r_property) const {
+bool BoxShape3D::_get(const StringName& p_name, Variant& r_property) const
+{
 	if (p_name == "extents") { // Compatibility with Godot 3.x.
 		// Convert to `extents`, half as big.
 		r_property = size / 2;
@@ -97,25 +99,22 @@ bool BoxShape3D::_get(const StringName &p_name, Variant &r_property) const {
 }
 #endif // DISABLE_DEPRECATED
 
-void BoxShape3D::set_size(const Vector3 &p_size) {
-	ERR_FAIL_COND_MSG(p_size.x < 0 || p_size.y < 0 || p_size.z < 0, "BoxShape3D size cannot be negative.");
+void BoxShape3D::set_size(const Vector3& p_size)
+{
+	ERR_FAIL_COND_MSG(
+		p_size.x < 0 || p_size.y < 0 || p_size.z < 0, "BoxShape3D size cannot be negative.");
 	size = p_size;
 	_update_shape();
 	emit_changed();
 }
 
-Vector3 BoxShape3D::get_size() const {
-	return size;
-}
+Vector3 BoxShape3D::get_size() const { return size; }
 
-void BoxShape3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_size", "size"), &BoxShape3D::set_size);
-	ClassDB::bind_method(D_METHOD("get_size"), &BoxShape3D::get_size);
+void BoxShape3D::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "size", PROPERTY_HINT_NONE, "suffix:m"), "set_size", "get_size");
-}
-
-BoxShape3D::BoxShape3D() :
-		Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_BOX)) {
+BoxShape3D::BoxShape3D() : Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_BOX))
+{
 	set_size(Vector3(1, 1, 1));
 }
+
+

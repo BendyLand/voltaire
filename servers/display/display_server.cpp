@@ -537,7 +537,7 @@ void DisplayServer::tts_pause() { WARN_PRINT("TTS is not supported by this displ
 
 void DisplayServer::tts_resume() { WARN_PRINT("TTS is not supported by this display server."); }
 
-TypedArray<Dictionary> DisplayServer::tts_get_voices() const
+Array DisplayServer::tts_get_voices() const
 {
 	WARN_PRINT("TTS is not supported by this display server.");
 	return TypedArray<Dictionary>();
@@ -1484,7 +1484,7 @@ Error DisplayServer::file_dialog_show(const String& p_title, const String& p_cur
 Error DisplayServer::file_dialog_with_options_show(const String& p_title,
 	const String& p_current_directory, const String& p_root, const String& p_filename,
 	bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode, const Vector<String>& p_filters,
-	const TypedArray<Dictionary>& p_options, const Callable& p_callback,
+	const Array& p_options, const Callable& p_callback,
 	DisplayServerEnums::WindowID p_window_id)
 {
 	WARN_PRINT("Native dialogs not supported by this display server.");

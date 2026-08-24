@@ -30,21 +30,26 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "navigation_server_2d.h"
 
-#include "core/object/class_db.h"
-
-Vector<Vector2> NavigationServer2D::_map_get_path_bind_compat_100129(RID p_map, Vector2 p_origin, Vector2 p_destination, bool p_optimize, uint32_t p_navigation_layers) const {
-	return const_cast<NavigationServer2D *>(this)->map_get_path(p_map, p_origin, p_destination, p_optimize, p_navigation_layers);
+Vector<Vector2> NavigationServer2D::_map_get_path_bind_compat_100129(RID p_map, Vector2 p_origin,
+	Vector2 p_destination, bool p_optimize, uint32_t p_navigation_layers) const
+{
+	return const_cast<NavigationServer2D*>(this)->map_get_path(
+		p_map, p_origin, p_destination, p_optimize, p_navigation_layers);
 }
 
-void NavigationServer2D::_query_path_bind_compat_100129(const Ref<NavigationPathQueryParameters2D> &p_query_parameters, Ref<NavigationPathQueryResult2D> p_query_result) const {
-	return const_cast<NavigationServer2D *>(this)->query_path(p_query_parameters, p_query_result, Callable());
+void NavigationServer2D::_query_path_bind_compat_100129(
+	const Ref<NavigationPathQueryParameters2D>& p_query_parameters,
+	Ref<NavigationPathQueryResult2D> p_query_result) const
+{
+	return const_cast<NavigationServer2D*>(this)->query_path(
+		p_query_parameters, p_query_result, Callable());
 }
 
-void NavigationServer2D::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("map_get_path", "map", "origin", "destination", "optimize", "navigation_layers"), &NavigationServer2D::_map_get_path_bind_compat_100129, DEFVAL(1));
-	ClassDB::bind_compatibility_method(D_METHOD("query_path", "parameters", "result"), &NavigationServer2D::_query_path_bind_compat_100129);
-}
+void NavigationServer2D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

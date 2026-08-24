@@ -100,7 +100,7 @@ PackedInt64Array RenderingServer::_instances_cull_ray_bind(
 }
 
 PackedInt64Array RenderingServer::_instances_cull_convex_bind(
-	const TypedArray<Plane>& p_convex, RID p_scenario) const
+	const Array& p_convex, RID p_scenario) const
 {
 	Vector<Plane> planes;
 	for (int i = 0; i < p_convex.size(); ++i) {
@@ -1937,7 +1937,7 @@ Dictionary RenderingServer::mesh_surface_get_lods(RID p_mesh, int p_surface) con
 	return ret;
 }
 
-TypedArray<Array> RenderingServer::mesh_surface_get_blend_shape_arrays(
+Array RenderingServer::mesh_surface_get_blend_shape_arrays(
 	RID p_mesh, int p_surface) const
 {
 	RenderingServerTypes::SurfaceData sd = mesh_get_surface(p_mesh, p_surface);
@@ -1963,7 +1963,7 @@ TypedArray<Array> RenderingServer::mesh_surface_get_blend_shape_arrays(
 
 		ERR_FAIL_COND_V(blend_shape_count != (uint32_t)mesh_get_blend_shape_count(p_mesh), Array());
 
-		TypedArray<Array> blend_shape_array;
+		Array blend_shape_array;
 		blend_shape_array.resize(mesh_get_blend_shape_count(p_mesh));
 		for (uint32_t i = 0; i < blend_shape_count; i++) {
 			Vector<uint8_t> bs_data = blend_shape_data.slice(i * divisor, (i + 1) * divisor);
@@ -1975,7 +1975,7 @@ TypedArray<Array> RenderingServer::mesh_surface_get_blend_shape_arrays(
 		return blend_shape_array;
 	}
 	else {
-		return TypedArray<Array>();
+		return Array();
 	}
 }
 
@@ -2089,7 +2089,7 @@ RenderingDevice* RenderingServer::create_local_rendering_device() const
 	return device->create_local_device();
 }
 
-static Vector<Ref<Image>> _get_imgvec(const TypedArray<Image>& p_layers)
+static Vector<Ref<Image>> _get_imgvec(const Array& p_layers)
 {
 	Vector<Ref<Image>> images;
 	images.resize(p_layers.size());
@@ -2100,27 +2100,26 @@ static Vector<Ref<Image>> _get_imgvec(const TypedArray<Image>& p_layers)
 }
 
 RID RenderingServer::_texture_2d_layered_create(
-	const TypedArray<Image>& p_layers, RSE::TextureLayeredType p_layered_type)
+	const Array& p_layers, RSE::TextureLayeredType p_layered_type)
 {
 	return texture_2d_layered_create(_get_imgvec(p_layers), p_layered_type);
 }
 
 RID RenderingServer::_texture_3d_create(Image::Format p_format, int p_width, int p_height,
-	int p_depth, bool p_mipmaps, const TypedArray<Image>& p_data)
+	int p_depth, bool p_mipmaps, const Array& p_data)
 {
 	return texture_3d_create(p_format, p_width, p_height, p_depth, p_mipmaps, _get_imgvec(p_data));
 }
 
-void RenderingServer::_texture_3d_update(RID p_texture, const TypedArray<Image>& p_data)
+void RenderingServer::_texture_3d_update(RID p_texture, const Array& p_data)
 {
 	texture_3d_update(p_texture, _get_imgvec(p_data));
 }
 
-TypedArray<Image>
-RenderingServer::_texture_3d_get(RID p_texture) const
+Array RenderingServer::_texture_3d_get(RID p_texture) const
 {
 	Vector<Ref<Image>> images = texture_3d_get(p_texture);
-	TypedArray<Image> ret;
+	Array ret;
 	ret.resize(images.size());
 	for (int i = 0; i < images.size(); i++) {
 		ret[i] = images[i];
@@ -2128,7 +2127,7 @@ RenderingServer::_texture_3d_get(RID p_texture) const
 	return ret;
 }
 
-TypedArray<Dictionary> RenderingServer::_shader_get_shader_parameter_list(RID p_shader) const
+Array RenderingServer::_shader_get_shader_parameter_list(RID p_shader) const
 {
 	List<PropertyInfo> l;
 	get_shader_parameter_list(p_shader, &l);
@@ -2201,7 +2200,7 @@ static RenderingServerTypes::SurfaceData _dict_to_surf(const Dictionary& p_dicti
 }
 
 RID RenderingServer::_mesh_create_from_surfaces(
-	const TypedArray<Dictionary>& p_surfaces, int p_blend_shape_count)
+	const Array& p_surfaces, int p_blend_shape_count)
 {
 	Vector<RenderingServerTypes::SurfaceData> surfaces;
 	for (int i = 0; i < p_surfaces.size(); i++) {
@@ -2266,7 +2265,7 @@ Dictionary RenderingServer::_mesh_get_surface(RID p_mesh, int p_idx)
 	return d;
 }
 
-TypedArray<Dictionary> RenderingServer::_instance_geometry_get_shader_parameter_list(
+Array RenderingServer::_instance_geometry_get_shader_parameter_list(
 	RID p_instance) const
 {
 	List<PropertyInfo> params;
@@ -2274,7 +2273,7 @@ TypedArray<Dictionary> RenderingServer::_instance_geometry_get_shader_parameter_
 	return convert_property_list(&params);
 }
 
-TypedArray<Dictionary> RenderingServer::_canvas_item_get_instance_shader_parameter_list(
+Array RenderingServer::_canvas_item_get_instance_shader_parameter_list(
 	RID p_instance) const
 {
 	List<PropertyInfo> params;
@@ -2282,10 +2281,10 @@ TypedArray<Dictionary> RenderingServer::_canvas_item_get_instance_shader_paramet
 	return convert_property_list(&params);
 }
 
-TypedArray<Image> RenderingServer::_bake_render_uv2(
-	RID p_base, const TypedArray<RID>& p_material_overrides, const Size2i& p_image_size)
+Array RenderingServer::_bake_render_uv2(
+	RID p_base, const Array& p_material_overrides, const Size2i& p_image_size)
 {
-	TypedArray<RID> mat_overrides;
+	Array mat_overrides;
 	for (int i = 0; i < p_material_overrides.size(); i++) {
 		mat_overrides.push_back(p_material_overrides[i]);
 	}
@@ -2293,7 +2292,7 @@ TypedArray<Image> RenderingServer::_bake_render_uv2(
 }
 
 void RenderingServer::_particles_set_trail_bind_poses(
-	RID p_particles, const TypedArray<Transform3D>& p_bind_poses)
+	RID p_particles, const Array& p_bind_poses)
 {
 	Vector<Transform3D> tbposes;
 	tbposes.resize(p_bind_poses.size());
@@ -2507,7 +2506,7 @@ void RenderingServer::get_argument_options(
 			}
 		}
 	}
-	Object::get_argument_options(p_function, p_idx, r_options);
+	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
@@ -2574,9 +2573,9 @@ RenderingServer::RenderingServer()
 	singleton = this;
 }
 
-TypedArray<StringName> RenderingServer::_global_shader_parameter_get_list() const
+Array RenderingServer::_global_shader_parameter_get_list() const
 {
-	TypedArray<StringName> gsp;
+	Array gsp;
 	Vector<StringName> gsp_sn = global_shader_parameter_get_list();
 	gsp.resize(gsp_sn.size());
 	for (int i = 0; i < gsp_sn.size(); i++) {

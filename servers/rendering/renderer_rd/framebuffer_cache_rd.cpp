@@ -28,21 +28,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "framebuffer_cache_rd.h"
-
 #include "core/object/class_db.h"
+#include "framebuffer_cache_rd.h"
 #include "servers/rendering/rendering_device_binds.h"
 
-FramebufferCacheRD *FramebufferCacheRD::singleton = nullptr;
+FramebufferCacheRD* FramebufferCacheRD::singleton = nullptr;
 
-void FramebufferCacheRD::_bind_methods() {
-	ClassDB::bind_static_method("FramebufferCacheRD", D_METHOD("get_cache_multipass", "textures", "passes", "views"), &FramebufferCacheRD::get_cache_multipass_array);
-}
+void FramebufferCacheRD::_bind_methods() {}
 
-void FramebufferCacheRD::_invalidate(Cache *p_cache) {
+void FramebufferCacheRD::_invalidate(Cache* p_cache)
+{
 	if (p_cache->prev) {
 		p_cache->prev->next = p_cache->next;
-	} else {
+	}
+	else {
 		// At beginning of table
 		uint32_t table_idx = p_cache->hash % HASH_TABLE_SIZE;
 		hash_table[table_idx] = p_cache->next;
@@ -55,11 +54,15 @@ void FramebufferCacheRD::_invalidate(Cache *p_cache) {
 	cache_allocator.free(p_cache);
 	cache_instances_used--;
 }
-void FramebufferCacheRD::_framebuffer_invalidation_callback(void *p_userdata) {
-	singleton->_invalidate(reinterpret_cast<Cache *>(p_userdata));
+
+void FramebufferCacheRD::_framebuffer_invalidation_callback(void* p_userdata)
+{
+	singleton->_invalidate(reinterpret_cast<Cache*>(p_userdata));
 }
 
-RID FramebufferCacheRD::get_cache_multipass_array(const TypedArray<RID> &p_textures, const TypedArray<RDFramebufferPass> &p_passes, uint32_t p_views) {
+RID FramebufferCacheRD::get_cache_multipass_array(const Array& p_textures,
+	const Array& p_passes, uint32_t p_views)
+{
 	Vector<RID> textures;
 	Vector<RD::FramebufferPass> passes;
 
@@ -78,13 +81,18 @@ RID FramebufferCacheRD::get_cache_multipass_array(const TypedArray<RID> &p_textu
 	return FramebufferCacheRD::get_singleton()->get_cache_multipass(textures, passes, p_views);
 }
 
-FramebufferCacheRD::FramebufferCacheRD() {
+FramebufferCacheRD::FramebufferCacheRD()
+{
 	ERR_FAIL_COND(singleton != nullptr);
 	singleton = this;
 }
 
-FramebufferCacheRD::~FramebufferCacheRD() {
+FramebufferCacheRD::~FramebufferCacheRD()
+{
 	if (cache_instances_used > 0) {
-		ERR_PRINT("At exit: " + itos(cache_instances_used) + " framebuffer cache instance(s) still in use.");
+		ERR_PRINT("At exit: " + itos(cache_instances_used) +
+				  " framebuffer cache instance(s) still in use.");
 	}
 }
+
+

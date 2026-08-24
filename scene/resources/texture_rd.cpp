@@ -28,32 +28,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "texture_rd.h"
-
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server.h"
+#include "texture_rd.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // Texture2DRD
 
-void Texture2DRD::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_texture_rd_rid", "texture_rd_rid"), &Texture2DRD::set_texture_rd_rid);
-	ClassDB::bind_method(D_METHOD("get_texture_rd_rid"), &Texture2DRD::get_texture_rd_rid);
+void Texture2DRD::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::RID, "texture_rd_rid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_texture_rd_rid", "get_texture_rd_rid");
-}
+int Texture2DRD::get_width() const { return size.width; }
 
-int Texture2DRD::get_width() const {
-	return size.width;
-}
+int Texture2DRD::get_height() const { return size.height; }
 
-int Texture2DRD::get_height() const {
-	return size.height;
-}
-
-RID Texture2DRD::get_rid() const {
+RID Texture2DRD::get_rid() const
+{
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
 		texture_rid = RenderingServer::get_singleton()->texture_2d_placeholder_create();
@@ -62,35 +53,39 @@ RID Texture2DRD::get_rid() const {
 	return texture_rid;
 }
 
-bool Texture2DRD::has_alpha() const {
-	return false;
-}
+bool Texture2DRD::has_alpha() const { return false; }
 
-Ref<Image> Texture2DRD::get_image() const {
+Ref<Image> Texture2DRD::get_image() const
+{
 	ERR_FAIL_NULL_V(RS::get_singleton(), Ref<Image>());
 	if (texture_rid.is_valid()) {
 		return RS::get_singleton()->texture_2d_get(texture_rid);
-	} else {
+	}
+	else {
 		return Ref<Image>();
 	}
 }
 
-void Texture2DRD::set_texture_rd_rid(RID p_texture_rd_rid) {
+void Texture2DRD::set_texture_rd_rid(RID p_texture_rd_rid)
+{
 	ERR_FAIL_NULL(RS::get_singleton());
 
 	if (p_texture_rd_rid.is_valid()) {
-		RS::get_singleton()->call_on_render_thread(callable_mp(this, &Texture2DRD::_set_texture_rd_rid).bind(p_texture_rd_rid));
-	} else if (texture_rid.is_valid()) {
+		RS::get_singleton()->call_on_render_thread(
+			callable_mp(this, &Texture2DRD::_set_texture_rd_rid).bind(p_texture_rd_rid));
+	}
+	else if (texture_rid.is_valid()) {
 		RS::get_singleton()->free_rid(texture_rid);
 		texture_rid = RID();
 		size = Size2i();
 
-		notify_property_list_changed();
+		this->obj->notify_property_list_changed();
 		emit_changed();
 	}
 }
 
-void Texture2DRD::_set_texture_rd_rid(RID p_texture_rd_rid) {
+void Texture2DRD::_set_texture_rd_rid(RID p_texture_rd_rid)
+{
 	ERR_FAIL_NULL(RD::get_singleton());
 	ERR_FAIL_COND(!RD::get_singleton()->texture_is_valid(p_texture_rd_rid));
 
@@ -105,24 +100,23 @@ void Texture2DRD::_set_texture_rd_rid(RID p_texture_rd_rid) {
 	texture_rd_rid = p_texture_rd_rid;
 
 	if (texture_rid.is_valid()) {
-		RS::get_singleton()->texture_replace(texture_rid, RS::get_singleton()->texture_rd_create(p_texture_rd_rid));
-	} else {
+		RS::get_singleton()->texture_replace(
+			texture_rid, RS::get_singleton()->texture_rd_create(p_texture_rd_rid));
+	}
+	else {
 		texture_rid = RS::get_singleton()->texture_rd_create(p_texture_rd_rid);
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
-RID Texture2DRD::get_texture_rd_rid() const {
-	return texture_rd_rid;
-}
+RID Texture2DRD::get_texture_rd_rid() const { return texture_rd_rid; }
 
-Texture2DRD::Texture2DRD() {
-	size = Size2i();
-}
+Texture2DRD::Texture2DRD() { size = Size2i(); }
 
-Texture2DRD::~Texture2DRD() {
+Texture2DRD::~Texture2DRD()
+{
 	if (texture_rid.is_valid()) {
 		ERR_FAIL_NULL(RS::get_singleton());
 		RS::get_singleton()->free_rid(texture_rid);
@@ -133,38 +127,22 @@ Texture2DRD::~Texture2DRD() {
 ////////////////////////////////////////////////////////////////////////////
 // TextureLayeredRD
 
-void TextureLayeredRD::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_texture_rd_rid", "texture_rd_rid"), &TextureLayeredRD::set_texture_rd_rid);
-	ClassDB::bind_method(D_METHOD("get_texture_rd_rid"), &TextureLayeredRD::get_texture_rd_rid);
+void TextureLayeredRD::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::RID, "texture_rd_rid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_texture_rd_rid", "get_texture_rd_rid");
-}
+TextureLayered::LayeredType TextureLayeredRD::get_layered_type() const { return layer_type; }
 
-TextureLayered::LayeredType TextureLayeredRD::get_layered_type() const {
-	return layer_type;
-}
+Image::Format TextureLayeredRD::get_format() const { return image_format; }
 
-Image::Format TextureLayeredRD::get_format() const {
-	return image_format;
-}
+int TextureLayeredRD::get_width() const { return size.width; }
 
-int TextureLayeredRD::get_width() const {
-	return size.width;
-}
+int TextureLayeredRD::get_height() const { return size.height; }
 
-int TextureLayeredRD::get_height() const {
-	return size.height;
-}
+int TextureLayeredRD::get_layers() const { return (int)layers; }
 
-int TextureLayeredRD::get_layers() const {
-	return (int)layers;
-}
+bool TextureLayeredRD::has_mipmaps() const { return mipmaps > 1; }
 
-bool TextureLayeredRD::has_mipmaps() const {
-	return mipmaps > 1;
-}
-
-RID TextureLayeredRD::get_rid() const {
+RID TextureLayeredRD::get_rid() const
+{
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
 		texture_rid = RenderingServer::get_singleton()->texture_2d_placeholder_create();
@@ -173,17 +151,21 @@ RID TextureLayeredRD::get_rid() const {
 	return texture_rid;
 }
 
-Ref<Image> TextureLayeredRD::get_layer_data(int p_layer) const {
+Ref<Image> TextureLayeredRD::get_layer_data(int p_layer) const
+{
 	ERR_FAIL_INDEX_V(p_layer, (int)layers, Ref<Image>());
 	return RS::get_singleton()->texture_2d_layer_get(texture_rid, p_layer);
 }
 
-void TextureLayeredRD::set_texture_rd_rid(RID p_texture_rd_rid) {
+void TextureLayeredRD::set_texture_rd_rid(RID p_texture_rd_rid)
+{
 	ERR_FAIL_NULL(RS::get_singleton());
 
 	if (p_texture_rd_rid.is_valid()) {
-		RS::get_singleton()->call_on_render_thread(callable_mp(this, &TextureLayeredRD::_set_texture_rd_rid).bind(p_texture_rd_rid));
-	} else if (texture_rid.is_valid()) {
+		RS::get_singleton()->call_on_render_thread(
+			callable_mp(this, &TextureLayeredRD::_set_texture_rd_rid).bind(p_texture_rd_rid));
+	}
+	else if (texture_rid.is_valid()) {
 		RS::get_singleton()->free_rid(texture_rid);
 		texture_rid = RID();
 		image_format = Image::FORMAT_MAX;
@@ -191,35 +173,38 @@ void TextureLayeredRD::set_texture_rd_rid(RID p_texture_rd_rid) {
 		layers = 0;
 		mipmaps = 0;
 
-		notify_property_list_changed();
+		this->obj->notify_property_list_changed();
 		emit_changed();
 	}
 }
 
-void TextureLayeredRD::_set_texture_rd_rid(RID p_texture_rd_rid) {
+void TextureLayeredRD::_set_texture_rd_rid(RID p_texture_rd_rid)
+{
 	ERR_FAIL_NULL(RD::get_singleton());
 	ERR_FAIL_COND(!RD::get_singleton()->texture_is_valid(p_texture_rd_rid));
 
 	RSE::TextureLayeredType rs_layer_type;
 	RD::TextureFormat tf = RD::get_singleton()->texture_get_format(p_texture_rd_rid);
-	ERR_FAIL_COND(tf.texture_type != RD::TEXTURE_TYPE_2D_ARRAY && tf.texture_type != RD::TEXTURE_TYPE_CUBE && tf.texture_type != RD::TEXTURE_TYPE_CUBE_ARRAY);
+	ERR_FAIL_COND(tf.texture_type != RD::TEXTURE_TYPE_2D_ARRAY &&
+				  tf.texture_type != RD::TEXTURE_TYPE_CUBE &&
+				  tf.texture_type != RD::TEXTURE_TYPE_CUBE_ARRAY);
 	ERR_FAIL_COND(tf.depth > 1);
 	switch (layer_type) {
-		case LAYERED_TYPE_2D_ARRAY: {
-			ERR_FAIL_COND(tf.array_layers <= 1);
-			rs_layer_type = RSE::TEXTURE_LAYERED_2D_ARRAY;
-		} break;
-		case LAYERED_TYPE_CUBEMAP: {
-			ERR_FAIL_COND(tf.array_layers != 6);
-			rs_layer_type = RSE::TEXTURE_LAYERED_CUBEMAP;
-		} break;
-		case LAYERED_TYPE_CUBEMAP_ARRAY: {
-			ERR_FAIL_COND((tf.array_layers == 0) || ((tf.array_layers % 6) != 0));
-			rs_layer_type = RSE::TEXTURE_LAYERED_CUBEMAP_ARRAY;
-		} break;
-		default: {
-			ERR_FAIL_MSG("Unknown layer type selected");
-		} break;
+	case LAYERED_TYPE_2D_ARRAY: {
+		ERR_FAIL_COND(tf.array_layers <= 1);
+		rs_layer_type = RSE::TEXTURE_LAYERED_2D_ARRAY;
+	} break;
+	case LAYERED_TYPE_CUBEMAP: {
+		ERR_FAIL_COND(tf.array_layers != 6);
+		rs_layer_type = RSE::TEXTURE_LAYERED_CUBEMAP;
+	} break;
+	case LAYERED_TYPE_CUBEMAP_ARRAY: {
+		ERR_FAIL_COND((tf.array_layers == 0) || ((tf.array_layers % 6) != 0));
+		rs_layer_type = RSE::TEXTURE_LAYERED_CUBEMAP_ARRAY;
+	} break;
+	default: {
+		ERR_FAIL_MSG("Unknown layer type selected");
+	} break;
 	}
 
 	size.width = tf.width;
@@ -230,22 +215,23 @@ void TextureLayeredRD::_set_texture_rd_rid(RID p_texture_rd_rid) {
 	texture_rd_rid = p_texture_rd_rid;
 
 	if (texture_rid.is_valid()) {
-		RS::get_singleton()->texture_replace(texture_rid, RS::get_singleton()->texture_rd_create(p_texture_rd_rid, rs_layer_type));
-	} else {
+		RS::get_singleton()->texture_replace(
+			texture_rid, RS::get_singleton()->texture_rd_create(p_texture_rd_rid, rs_layer_type));
+	}
+	else {
 		texture_rid = RS::get_singleton()->texture_rd_create(p_texture_rd_rid, rs_layer_type);
 	}
 
 	image_format = RS::get_singleton()->texture_get_format(texture_rid);
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
-RID TextureLayeredRD::get_texture_rd_rid() const {
-	return texture_rd_rid;
-}
+RID TextureLayeredRD::get_texture_rd_rid() const { return texture_rd_rid; }
 
-TextureLayeredRD::TextureLayeredRD(LayeredType p_layer_type) {
+TextureLayeredRD::TextureLayeredRD(LayeredType p_layer_type)
+{
 	layer_type = p_layer_type;
 	size = Size2i();
 	image_format = Image::FORMAT_MAX;
@@ -253,7 +239,8 @@ TextureLayeredRD::TextureLayeredRD(LayeredType p_layer_type) {
 	mipmaps = 0;
 }
 
-TextureLayeredRD::~TextureLayeredRD() {
+TextureLayeredRD::~TextureLayeredRD()
+{
 	if (texture_rid.is_valid()) {
 		ERR_FAIL_NULL(RS::get_singleton());
 		RS::get_singleton()->free_rid(texture_rid);
@@ -264,34 +251,20 @@ TextureLayeredRD::~TextureLayeredRD() {
 ////////////////////////////////////////////////////////////////////////////
 // Texture3DRD
 
-void Texture3DRD::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_texture_rd_rid", "texture_rd_rid"), &Texture3DRD::set_texture_rd_rid);
-	ClassDB::bind_method(D_METHOD("get_texture_rd_rid"), &Texture3DRD::get_texture_rd_rid);
+void Texture3DRD::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::RID, "texture_rd_rid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_texture_rd_rid", "get_texture_rd_rid");
-}
+Image::Format Texture3DRD::get_format() const { return image_format; }
 
-Image::Format Texture3DRD::get_format() const {
-	return image_format;
-}
+int Texture3DRD::get_width() const { return size.x; }
 
-int Texture3DRD::get_width() const {
-	return size.x;
-}
+int Texture3DRD::get_height() const { return size.y; }
 
-int Texture3DRD::get_height() const {
-	return size.y;
-}
+int Texture3DRD::get_depth() const { return size.z; }
 
-int Texture3DRD::get_depth() const {
-	return size.z;
-}
+bool Texture3DRD::has_mipmaps() const { return mipmaps > 1; }
 
-bool Texture3DRD::has_mipmaps() const {
-	return mipmaps > 1;
-}
-
-RID Texture3DRD::get_rid() const {
+RID Texture3DRD::get_rid() const
+{
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
 		texture_rid = RenderingServer::get_singleton()->texture_2d_placeholder_create();
@@ -300,24 +273,28 @@ RID Texture3DRD::get_rid() const {
 	return texture_rid;
 }
 
-void Texture3DRD::set_texture_rd_rid(RID p_texture_rd_rid) {
+void Texture3DRD::set_texture_rd_rid(RID p_texture_rd_rid)
+{
 	ERR_FAIL_NULL(RS::get_singleton());
 
 	if (p_texture_rd_rid.is_valid()) {
-		RS::get_singleton()->call_on_render_thread(callable_mp(this, &Texture3DRD::_set_texture_rd_rid).bind(p_texture_rd_rid));
-	} else if (texture_rid.is_valid()) {
+		RS::get_singleton()->call_on_render_thread(
+			callable_mp(this, &Texture3DRD::_set_texture_rd_rid).bind(p_texture_rd_rid));
+	}
+	else if (texture_rid.is_valid()) {
 		RS::get_singleton()->free_rid(texture_rid);
 		texture_rid = RID();
 		image_format = Image::FORMAT_MAX;
 		size = Vector3i();
 		mipmaps = 0;
 
-		notify_property_list_changed();
+		this->obj->notify_property_list_changed();
 		emit_changed();
 	}
 }
 
-void Texture3DRD::_set_texture_rd_rid(RID p_texture_rd_rid) {
+void Texture3DRD::_set_texture_rd_rid(RID p_texture_rd_rid)
+{
 	ERR_FAIL_NULL(RD::get_singleton());
 	ERR_FAIL_COND(!RD::get_singleton()->texture_is_valid(p_texture_rd_rid));
 
@@ -333,31 +310,35 @@ void Texture3DRD::_set_texture_rd_rid(RID p_texture_rd_rid) {
 	texture_rd_rid = p_texture_rd_rid;
 
 	if (texture_rid.is_valid()) {
-		RS::get_singleton()->texture_replace(texture_rid, RS::get_singleton()->texture_rd_create(p_texture_rd_rid));
-	} else {
+		RS::get_singleton()->texture_replace(
+			texture_rid, RS::get_singleton()->texture_rd_create(p_texture_rd_rid));
+	}
+	else {
 		texture_rid = RS::get_singleton()->texture_rd_create(p_texture_rd_rid);
 	}
 
 	image_format = RS::get_singleton()->texture_get_format(texture_rid);
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
-RID Texture3DRD::get_texture_rd_rid() const {
-	return texture_rd_rid;
-}
+RID Texture3DRD::get_texture_rd_rid() const { return texture_rd_rid; }
 
-Texture3DRD::Texture3DRD() {
+Texture3DRD::Texture3DRD()
+{
 	image_format = Image::FORMAT_MAX;
 	size = Vector3i();
 	mipmaps = 0;
 }
 
-Texture3DRD::~Texture3DRD() {
+Texture3DRD::~Texture3DRD()
+{
 	if (texture_rid.is_valid()) {
 		ERR_FAIL_NULL(RS::get_singleton());
 		RS::get_singleton()->free_rid(texture_rid);
 		texture_rid = RID();
 	}
 }
+
+

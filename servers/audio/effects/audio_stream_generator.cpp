@@ -29,46 +29,42 @@
 /**************************************************************************/
 
 #include "audio_stream_generator.h"
-
 #include "core/object/class_db.h"
 
-void AudioStreamGenerator::set_mix_rate(float p_mix_rate) {
-	mix_rate = p_mix_rate;
-}
+void AudioStreamGenerator::set_mix_rate(float p_mix_rate) { mix_rate = p_mix_rate; }
 
-float AudioStreamGenerator::get_mix_rate() const {
-	return mix_rate;
-}
+float AudioStreamGenerator::get_mix_rate() const { return mix_rate; }
 
-void AudioStreamGenerator::set_mix_rate_mode(AudioStreamGenerator::AudioStreamGeneratorMixRate p_mix_rate_mode) {
+void AudioStreamGenerator::set_mix_rate_mode(
+	AudioStreamGenerator::AudioStreamGeneratorMixRate p_mix_rate_mode)
+{
 	ERR_FAIL_INDEX(p_mix_rate_mode, AudioStreamGeneratorMixRate::MIX_RATE_MAX);
 	mix_rate_mode = p_mix_rate_mode;
 }
 
-AudioStreamGenerator::AudioStreamGeneratorMixRate AudioStreamGenerator::get_mix_rate_mode() const {
+AudioStreamGenerator::AudioStreamGeneratorMixRate AudioStreamGenerator::get_mix_rate_mode() const
+{
 	return mix_rate_mode;
 }
 
-void AudioStreamGenerator::set_buffer_length(float p_seconds) {
-	buffer_len = p_seconds;
-}
+void AudioStreamGenerator::set_buffer_length(float p_seconds) { buffer_len = p_seconds; }
 
-float AudioStreamGenerator::get_buffer_length() const {
-	return buffer_len;
-}
+float AudioStreamGenerator::get_buffer_length() const { return buffer_len; }
 
-float AudioStreamGenerator::_get_target_rate() const {
+float AudioStreamGenerator::_get_target_rate() const
+{
 	switch (mix_rate_mode) {
-		case AudioStreamGeneratorMixRate::MIX_RATE_OUTPUT:
-			return AudioServer::get_singleton()->get_mix_rate();
-		case AudioStreamGeneratorMixRate::MIX_RATE_INPUT:
-			return AudioServer::get_singleton()->get_input_mix_rate();
-		default:
-			return mix_rate;
+	case AudioStreamGeneratorMixRate::MIX_RATE_OUTPUT:
+		return AudioServer::get_singleton()->get_mix_rate();
+	case AudioStreamGeneratorMixRate::MIX_RATE_INPUT:
+		return AudioServer::get_singleton()->get_input_mix_rate();
+	default:
+		return mix_rate;
 	}
 }
 
-Ref<AudioStreamPlayback> AudioStreamGenerator::instantiate_playback() {
+Ref<AudioStreamPlayback> AudioStreamGenerator::instantiate_playback()
+{
 	Ref<AudioStreamGeneratorPlayback> playback;
 	playback.instantiate();
 	playback->generator = this;
@@ -78,37 +74,16 @@ Ref<AudioStreamPlayback> AudioStreamGenerator::instantiate_playback() {
 	return playback;
 }
 
-double AudioStreamGenerator::get_length() const {
-	return 0;
-}
+double AudioStreamGenerator::get_length() const { return 0; }
 
-bool AudioStreamGenerator::is_monophonic() const {
-	return true;
-}
+bool AudioStreamGenerator::is_monophonic() const { return true; }
 
-void AudioStreamGenerator::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_mix_rate", "hz"), &AudioStreamGenerator::set_mix_rate);
-	ClassDB::bind_method(D_METHOD("get_mix_rate"), &AudioStreamGenerator::get_mix_rate);
-
-	ClassDB::bind_method(D_METHOD("set_mix_rate_mode", "mode"), &AudioStreamGenerator::set_mix_rate_mode);
-	ClassDB::bind_method(D_METHOD("get_mix_rate_mode"), &AudioStreamGenerator::get_mix_rate_mode);
-
-	ClassDB::bind_method(D_METHOD("set_buffer_length", "seconds"), &AudioStreamGenerator::set_buffer_length);
-	ClassDB::bind_method(D_METHOD("get_buffer_length"), &AudioStreamGenerator::get_buffer_length);
-
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "mix_rate_mode", PROPERTY_HINT_ENUM, "System Output Rate,System Input Rate,Custom Rate"), "set_mix_rate_mode", "get_mix_rate_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mix_rate", PROPERTY_HINT_RANGE, "20,192000,1,suffix:Hz"), "set_mix_rate", "get_mix_rate");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "buffer_length", PROPERTY_HINT_RANGE, "0.01,10,0.01,suffix:s"), "set_buffer_length", "get_buffer_length");
-
-	BIND_ENUM_CONSTANT(MIX_RATE_OUTPUT);
-	BIND_ENUM_CONSTANT(MIX_RATE_INPUT);
-	BIND_ENUM_CONSTANT(MIX_RATE_CUSTOM);
-	BIND_ENUM_CONSTANT(MIX_RATE_MAX);
-}
+void AudioStreamGenerator::_bind_methods() {}
 
 ////////////////
 
-bool AudioStreamGeneratorPlayback::push_frame(const Vector2 &p_frame) {
+bool AudioStreamGeneratorPlayback::push_frame(const Vector2& p_frame)
+{
 	if (buffer.space_left() < 1) {
 		return false;
 	}
@@ -119,22 +94,25 @@ bool AudioStreamGeneratorPlayback::push_frame(const Vector2 &p_frame) {
 	return true;
 }
 
-bool AudioStreamGeneratorPlayback::can_push_buffer(int p_frames) const {
+bool AudioStreamGeneratorPlayback::can_push_buffer(int p_frames) const
+{
 	return buffer.space_left() >= p_frames;
 }
 
-bool AudioStreamGeneratorPlayback::push_buffer(const PackedVector2Array &p_frames) {
+bool AudioStreamGeneratorPlayback::push_buffer(const PackedVector2Array& p_frames)
+{
 	int to_write = p_frames.size();
 	if (buffer.space_left() < to_write) {
 		return false;
 	}
 
-	const Vector2 *r = p_frames.ptr();
+	const Vector2* r = p_frames.ptr();
 	if constexpr (sizeof(real_t) == 4) {
-		//write directly
-		buffer.write((const AudioFrame *)r, to_write);
-	} else {
-		//convert from double
+		// write directly
+		buffer.write((const AudioFrame*)r, to_write);
+	}
+	else {
+		// convert from double
 		AudioFrame buf[2048];
 		int ofs = 0;
 		while (to_write) {
@@ -150,21 +128,19 @@ bool AudioStreamGeneratorPlayback::push_buffer(const PackedVector2Array &p_frame
 	return true;
 }
 
-int AudioStreamGeneratorPlayback::get_frames_available() const {
-	return buffer.space_left();
-}
+int AudioStreamGeneratorPlayback::get_frames_available() const { return buffer.space_left(); }
 
-int AudioStreamGeneratorPlayback::get_skips() const {
-	return skips;
-}
+int AudioStreamGeneratorPlayback::get_skips() const { return skips; }
 
-void AudioStreamGeneratorPlayback::clear_buffer() {
+void AudioStreamGeneratorPlayback::clear_buffer()
+{
 	ERR_FAIL_COND(active);
 	buffer.clear();
 	mixed = 0;
 }
 
-int AudioStreamGeneratorPlayback::_mix_internal(AudioFrame *p_buffer, int p_frames) {
+int AudioStreamGeneratorPlayback::_mix_internal(AudioFrame* p_buffer, int p_frames)
+{
 	if (!active) {
 		return 0;
 	}
@@ -188,11 +164,13 @@ int AudioStreamGeneratorPlayback::_mix_internal(AudioFrame *p_buffer, int p_fram
 	return p_frames;
 }
 
-float AudioStreamGeneratorPlayback::get_stream_sampling_rate() {
+float AudioStreamGeneratorPlayback::get_stream_sampling_rate()
+{
 	return generator->_get_target_rate();
 }
 
-void AudioStreamGeneratorPlayback::start(double p_from_pos) {
+void AudioStreamGeneratorPlayback::start(double p_from_pos)
+{
 	if (mixed == 0.0) {
 		begin_resample();
 	}
@@ -201,42 +179,29 @@ void AudioStreamGeneratorPlayback::start(double p_from_pos) {
 	mixed = 0.0;
 }
 
-void AudioStreamGeneratorPlayback::stop() {
-	active = false;
+void AudioStreamGeneratorPlayback::stop() { active = false; }
+
+bool AudioStreamGeneratorPlayback::is_playing() const { return active; }
+
+int AudioStreamGeneratorPlayback::get_loop_count() const { return 0; }
+
+double AudioStreamGeneratorPlayback::get_playback_position() const { return mixed; }
+
+void AudioStreamGeneratorPlayback::seek(double p_time)
+{
+	// no seek possible
 }
 
-bool AudioStreamGeneratorPlayback::is_playing() const {
-	return active;
-}
+void AudioStreamGeneratorPlayback::tag_used_streams() { generator->tag_used(0); }
 
-int AudioStreamGeneratorPlayback::get_loop_count() const {
-	return 0;
-}
+void AudioStreamGeneratorPlayback::_bind_methods() {}
 
-double AudioStreamGeneratorPlayback::get_playback_position() const {
-	return mixed;
-}
-
-void AudioStreamGeneratorPlayback::seek(double p_time) {
-	//no seek possible
-}
-
-void AudioStreamGeneratorPlayback::tag_used_streams() {
-	generator->tag_used(0);
-}
-
-void AudioStreamGeneratorPlayback::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("push_frame", "frame"), &AudioStreamGeneratorPlayback::push_frame);
-	ClassDB::bind_method(D_METHOD("can_push_buffer", "amount"), &AudioStreamGeneratorPlayback::can_push_buffer);
-	ClassDB::bind_method(D_METHOD("push_buffer", "frames"), &AudioStreamGeneratorPlayback::push_buffer);
-	ClassDB::bind_method(D_METHOD("get_frames_available"), &AudioStreamGeneratorPlayback::get_frames_available);
-	ClassDB::bind_method(D_METHOD("get_skips"), &AudioStreamGeneratorPlayback::get_skips);
-	ClassDB::bind_method(D_METHOD("clear_buffer"), &AudioStreamGeneratorPlayback::clear_buffer);
-}
-
-AudioStreamGeneratorPlayback::AudioStreamGeneratorPlayback() {
+AudioStreamGeneratorPlayback::AudioStreamGeneratorPlayback()
+{
 	generator = nullptr;
 	skips = 0;
 	active = false;
 	mixed = 0;
 }
+
+

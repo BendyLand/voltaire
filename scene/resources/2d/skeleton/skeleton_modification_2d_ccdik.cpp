@@ -417,7 +417,7 @@ NodePath SkeletonModification2DCCDIK::get_tip_node() const { return tip_node; }
 void SkeletonModification2DCCDIK::set_ccdik_data_chain_length(int p_length)
 {
 	ccdik_data_chain.resize(p_length);
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int SkeletonModification2DCCDIK::get_ccdik_data_chain_length() { return ccdik_data_chain.size(); }
@@ -428,8 +428,7 @@ void SkeletonModification2DCCDIK::set_ccdik_joint_bone2d_node(
 	ERR_FAIL_INDEX_MSG(p_joint_idx, ccdik_data_chain.size(), "CCDIK joint out of range!");
 	ccdik_data_chain.write[p_joint_idx].bone2d_node = p_target_node;
 	ccdik_joint_update_bone2d_cache(p_joint_idx);
-
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 NodePath SkeletonModification2DCCDIK::get_ccdik_joint_bone2d_node(int p_joint_idx) const
@@ -464,7 +463,7 @@ void SkeletonModification2DCCDIK::set_ccdik_joint_bone_index(int p_joint_idx, in
 		ccdik_data_chain.write[p_joint_idx].bone_idx = p_bone_idx;
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int SkeletonModification2DCCDIK::get_ccdik_joint_bone_index(int p_joint_idx) const
@@ -491,7 +490,7 @@ void SkeletonModification2DCCDIK::set_ccdik_joint_enable_constraint(
 {
 	ERR_FAIL_INDEX_MSG(p_joint_idx, ccdik_data_chain.size(), "CCDIK joint out of range!");
 	ccdik_data_chain.write[p_joint_idx].enable_constraint = p_constraint;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 
 #ifdef TOOLS_ENABLED
 	if (stack && is_setup) {

@@ -1137,8 +1137,8 @@ public:
 		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size);
 
 	virtual PackedByteArray bake_render_area_light_atlas(
-		const TypedArray<RID>& p_area_light_textures,
-		const TypedArray<Rect2>& p_area_light_atlas_texture_rects, const Size2i& p_size,
+		const Array& p_area_light_textures,
+		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size,
 		int p_mipmaps) override
 	{
 		return PackedByteArray();

@@ -30,21 +30,23 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "shader.h"
 
-#include "core/object/class_db.h"
-
-void Shader::_set_default_texture_parameter_bind_compat_95126(const StringName &p_name, const Ref<Texture2D> &p_texture, int p_index) {
+void Shader::_set_default_texture_parameter_bind_compat_95126(
+	const StringName& p_name, const Ref<Texture2D>& p_texture, int p_index)
+{
 	set_default_texture_parameter(p_name, p_texture, p_index);
 }
 
-Ref<Texture2D> Shader::_get_default_texture_parameter_bind_compat_95126(const StringName &p_name, int p_index) const {
+Ref<Texture2D> Shader::_get_default_texture_parameter_bind_compat_95126(
+	const StringName& p_name, int p_index) const
+{
 	return get_default_texture_parameter(p_name, p_index);
 }
 
-void Shader::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("set_default_texture_parameter", "name", "texture", "index"), &Shader::_set_default_texture_parameter_bind_compat_95126, DEFVAL(0));
-	ClassDB::bind_compatibility_method(D_METHOD("get_default_texture_parameter", "name", "index"), &Shader::_get_default_texture_parameter_bind_compat_95126, DEFVAL(0));
-}
+void Shader::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

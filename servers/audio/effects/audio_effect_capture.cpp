@@ -29,15 +29,16 @@
 /**************************************************************************/
 
 #include "audio_effect_capture.h"
-
 #include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
-bool AudioEffectCapture::can_get_buffer(int p_frames) const {
+bool AudioEffectCapture::can_get_buffer(int p_frames) const
+{
 	return buffer.data_left() >= p_frames;
 }
 
-PackedVector2Array AudioEffectCapture::get_buffer(int p_frames) {
+PackedVector2Array AudioEffectCapture::get_buffer(int p_frames)
+{
 	ERR_FAIL_COND_V(!buffer_initialized, PackedVector2Array());
 	ERR_FAIL_INDEX_V(p_frames, buffer.size(), PackedVector2Array());
 	int data_left = buffer.data_left();
@@ -57,29 +58,21 @@ PackedVector2Array AudioEffectCapture::get_buffer(int p_frames) {
 	return ret;
 }
 
-void AudioEffectCapture::clear_buffer() {
+void AudioEffectCapture::clear_buffer()
+{
 	const int32_t data_left = buffer.data_left();
 	buffer.advance_read(data_left);
 }
 
-void AudioEffectCapture::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("can_get_buffer", "frames"), &AudioEffectCapture::can_get_buffer);
-	ClassDB::bind_method(D_METHOD("get_buffer", "frames"), &AudioEffectCapture::get_buffer);
-	ClassDB::bind_method(D_METHOD("clear_buffer"), &AudioEffectCapture::clear_buffer);
-	ClassDB::bind_method(D_METHOD("set_buffer_length", "buffer_length_seconds"), &AudioEffectCapture::set_buffer_length);
-	ClassDB::bind_method(D_METHOD("get_buffer_length"), &AudioEffectCapture::get_buffer_length);
-	ClassDB::bind_method(D_METHOD("get_frames_available"), &AudioEffectCapture::get_frames_available);
-	ClassDB::bind_method(D_METHOD("get_discarded_frames"), &AudioEffectCapture::get_discarded_frames);
-	ClassDB::bind_method(D_METHOD("get_buffer_length_frames"), &AudioEffectCapture::get_buffer_length_frames);
-	ClassDB::bind_method(D_METHOD("get_pushed_frames"), &AudioEffectCapture::get_pushed_frames);
+void AudioEffectCapture::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "buffer_length", PROPERTY_HINT_RANGE, "0.01,10,0.01,suffix:s"), "set_buffer_length", "get_buffer_length");
-}
-
-Ref<AudioEffectInstance> AudioEffectCapture::instantiate() {
+Ref<AudioEffectInstance> AudioEffectCapture::instantiate()
+{
 	if (!buffer_initialized) {
-		float target_buffer_size = AudioServer::get_singleton()->get_mix_rate() * buffer_length_seconds;
-		ERR_FAIL_COND_V(target_buffer_size <= 0 || target_buffer_size >= (1 << 27), Ref<AudioEffectInstance>());
+		float target_buffer_size =
+			AudioServer::get_singleton()->get_mix_rate() * buffer_length_seconds;
+		ERR_FAIL_COND_V(
+			target_buffer_size <= 0 || target_buffer_size >= (1 << 27), Ref<AudioEffectInstance>());
 		buffer.resize(Math::nearest_shift((uint32_t)target_buffer_size));
 		buffer_initialized = true;
 	}
@@ -93,34 +86,33 @@ Ref<AudioEffectInstance> AudioEffectCapture::instantiate() {
 	return ins;
 }
 
-void AudioEffectCapture::set_buffer_length(float p_buffer_length_seconds) {
+void AudioEffectCapture::set_buffer_length(float p_buffer_length_seconds)
+{
 	buffer_length_seconds = p_buffer_length_seconds;
 }
 
-float AudioEffectCapture::get_buffer_length() {
-	return buffer_length_seconds;
-}
+float AudioEffectCapture::get_buffer_length() { return buffer_length_seconds; }
 
-int AudioEffectCapture::get_frames_available() const {
+int AudioEffectCapture::get_frames_available() const
+{
 	ERR_FAIL_COND_V(!buffer_initialized, 0);
 	return buffer.data_left();
 }
 
-int64_t AudioEffectCapture::get_discarded_frames() const {
-	return discarded_frames.get();
-}
+int64_t AudioEffectCapture::get_discarded_frames() const { return discarded_frames.get(); }
 
-int AudioEffectCapture::get_buffer_length_frames() const {
+int AudioEffectCapture::get_buffer_length_frames() const
+{
 	ERR_FAIL_COND_V(!buffer_initialized, 0);
 	return buffer.size();
 }
 
-int64_t AudioEffectCapture::get_pushed_frames() const {
-	return pushed_frames.get();
-}
+int64_t AudioEffectCapture::get_pushed_frames() const { return pushed_frames.get(); }
 
-void AudioEffectCaptureInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {
-	RingBuffer<AudioFrame> &buffer = base->buffer;
+void AudioEffectCaptureInstance::process(
+	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
+{
+	RingBuffer<AudioFrame>& buffer = base->buffer;
 
 	for (int i = 0; i < p_frame_count; i++) {
 		p_dst_frames[i] = p_src_frames[i];
@@ -129,13 +121,15 @@ void AudioEffectCaptureInstance::process(const AudioFrame *p_src_frames, AudioFr
 	if (buffer.space_left() >= p_frame_count) {
 		// Add incoming audio frames to the IO ring buffer
 		int32_t ret = buffer.write(p_src_frames, p_frame_count);
-		ERR_FAIL_COND_MSG(ret != p_frame_count, "Failed to add data to effect capture ring buffer despite sufficient space.");
+		ERR_FAIL_COND_MSG(ret != p_frame_count,
+			"Failed to add data to effect capture ring buffer despite sufficient space.");
 		base->pushed_frames.add(p_frame_count);
-	} else {
+	}
+	else {
 		base->discarded_frames.add(p_frame_count);
 	}
 }
 
-bool AudioEffectCaptureInstance::process_silence() const {
-	return true;
-}
+bool AudioEffectCaptureInstance::process_silence() const { return true; }
+
+

@@ -69,6 +69,7 @@ class DisplayServer
 
 public:
 	mem_unique_ptr<Object> obj;
+
 	_FORCE_INLINE_ static DisplayServer* get_singleton() { return singleton; }
 
 	/* CREATE */
@@ -262,7 +263,7 @@ private:
 public:
 	virtual bool tts_is_speaking() const;
 	virtual bool tts_is_paused() const;
-	virtual TypedArray<Dictionary> tts_get_voices() const;
+	virtual Array tts_get_voices() const;
 	virtual PackedStringArray tts_get_voices_for_language(const String& p_language) const;
 
 	virtual void tts_speak(const String& p_text, const String& p_voice, int p_volume = 50,
@@ -376,10 +377,10 @@ public:
 	const float SCREEN_REFRESH_RATE_FALLBACK =
 		-1.0; // Returned by screen_get_refresh_rate if the method fails.
 
-	virtual TypedArray<Rect2> get_display_cutouts(
+	virtual Array get_display_cutouts(
 		int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const
 	{
-		return TypedArray<Rect2>();
+		return Array();
 	}
 
 	virtual Rect2i get_display_safe_area(
@@ -712,8 +713,7 @@ public:
 	virtual Error file_dialog_with_options_show(const String& p_title,
 		const String& p_current_directory, const String& p_root, const String& p_filename,
 		bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const TypedArray<Dictionary>& p_options,
-		const Callable& p_callback,
+		const Vector<String>& p_filters, const Array& p_options, const Callable& p_callback,
 		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID);
 
 #ifndef DISABLE_DEPRECATED
@@ -724,9 +724,8 @@ public:
 	Error _file_dialog_with_options_show_bind_compat_98194(const String& p_title,
 		const String& p_current_directory, const String& p_root, const String& p_filename,
 		bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const TypedArray<Dictionary>& p_options,
-		const Callable& p_callback);
-	TypedArray<Rect2> _get_display_cutouts_bind_compat_119196() const;
+		const Vector<String>& p_filters, const Array& p_options, const Callable& p_callback);
+	Array _get_display_cutouts_bind_compat_119196() const;
 	Rect2i _get_display_safe_area_bind_compat_119196() const;
 #endif
 

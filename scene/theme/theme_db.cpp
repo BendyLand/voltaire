@@ -197,11 +197,6 @@ void ThemeDB::get_native_type_dependencies(
 	if (p_base_type == StringName()) {
 		return;
 	}
-	// TODO: It may make sense to stop at Control/Window, because their parent classes cannot be
-	// used in a meaningful way.
-	if (!ClassDB::get_inheritance_chain_nocheck(p_base_type, r_result)) {
-		r_result.push_back(p_base_type);
-	}
 }
 
 // Global theme contexts.
@@ -357,7 +352,6 @@ void ThemeDB::update_class_instance_items(Node* p_instance)
 				F.value.setter(p_instance, F.value.item_name, F.value.type_name);
 			}
 		}
-		class_name = ClassDB::get_parent_class_nocheck(class_name);
 	}
 }
 
@@ -368,7 +362,6 @@ void ThemeDB::get_class_items(const StringName& p_class_name, List<ThemeItemBind
 	StringName class_name = p_class_name;
 	while (class_name != StringName()) {
 		class_hierarchy.push_front(class_name); // Put parent classes in front.
-		class_name = ClassDB::get_parent_class_nocheck(class_name);
 	}
 	HashSet<StringName> inherited_props;
 	for (const StringName& theme_type : class_hierarchy) {

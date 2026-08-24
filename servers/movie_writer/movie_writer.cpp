@@ -28,28 +28,29 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "movie_writer.h"
-
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/object/class_db.h"
 #include "core/os/time.h"
 #include "core/templates/rb_set.h"
+#include "movie_writer.h"
 #include "scene/main/window.h"
 #include "servers/audio/audio_driver_dummy.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_server.h"
 
-MovieWriter *MovieWriter::writers[MovieWriter::MAX_WRITERS];
+MovieWriter* MovieWriter::writers[MovieWriter::MAX_WRITERS];
 uint32_t MovieWriter::writer_count = 0;
 
-void MovieWriter::add_writer(MovieWriter *p_writer) {
+void MovieWriter::add_writer(MovieWriter* p_writer)
+{
 	ERR_FAIL_COND(writer_count == MAX_WRITERS);
 	writers[writer_count++] = p_writer;
 }
 
-MovieWriter *MovieWriter::find_writer_for_file(const String &p_file) {
+MovieWriter* MovieWriter::find_writer_for_file(const String& p_file)
+{
 	for (int32_t i = writer_count - 1; i >= 0; i--) { // More recent last, to have override ability.
 		if (writers[i]->handles_file(p_file)) {
 			return writers[i];
@@ -58,37 +59,46 @@ MovieWriter *MovieWriter::find_writer_for_file(const String &p_file) {
 	return nullptr;
 }
 
-uint32_t MovieWriter::get_audio_mix_rate() const {
+uint32_t MovieWriter::get_audio_mix_rate() const
+{
 	uint32_t ret = 48000;
 	return ret;
 }
-AudioServer::SpeakerMode MovieWriter::get_audio_speaker_mode() const {
+
+AudioServer::SpeakerMode MovieWriter::get_audio_speaker_mode() const
+{
 	AudioServer::SpeakerMode ret = AudioServer::SPEAKER_MODE_STEREO;
 	return ret;
 }
 
-Error MovieWriter::write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) {
+Error MovieWriter::write_begin(
+	const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
+{
 	Error ret = ERR_UNCONFIGURED;
 	return ret;
 }
 
-Error MovieWriter::write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) {
+Error MovieWriter::write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data)
+{
 	Error ret = ERR_UNCONFIGURED;
 	return ret;
 }
 
-void MovieWriter::get_supported_extensions(List<String> *r_extensions) const {
+void MovieWriter::get_supported_extensions(List<String>* r_extensions) const
+{
 	Vector<String> exts;
 	for (int i = 0; i < exts.size(); i++) {
 		r_extensions->push_back(exts[i]);
 	}
 }
 
-void MovieWriter::begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) {
+void MovieWriter::begin(const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
+{
 	project_name = GLOBAL_GET("application/config/name");
 	movie_size = p_movie_size;
 
-	print_line(vformat(U"Movie Maker mode enabled, recording movie in %s×%s @ %d FPS...", movie_size.width, movie_size.height, p_fps));
+	print_line(vformat(U"Movie Maker mode enabled, recording movie in %s×%s @ %d FPS...",
+		movie_size.width, movie_size.height, p_fps));
 
 	// Check for available disk space and warn the user if needed.
 	String path = p_base_path.get_base_dir();
@@ -98,7 +108,9 @@ void MovieWriter::begin(const Size2i &p_movie_size, uint32_t p_fps, const String
 	Ref<DirAccess> dir = DirAccess::open(path);
 	if (dir->get_space_left() < 10 * Math::pow(1024.0, 3.0)) {
 		// Less than 10 GiB available.
-		WARN_PRINT(vformat("Current available space on disk is low (%s). MovieWriter will fail during movie recording if the disk runs out of available space.", String::humanize_size(dir->get_space_left())));
+		WARN_PRINT(vformat("Current available space on disk is low (%s). MovieWriter will fail "
+						   "during movie recording if the disk runs out of available space.",
+			String::humanize_size(dir->get_space_left())));
 	}
 
 	cpu_time = 0.0f;
@@ -107,10 +119,13 @@ void MovieWriter::begin(const Size2i &p_movie_size, uint32_t p_fps, const String
 
 	mix_rate = get_audio_mix_rate();
 	AudioDriverDummy::get_dummy_singleton()->set_mix_rate(mix_rate);
-	AudioDriverDummy::get_dummy_singleton()->set_speaker_mode(AudioDriver::SpeakerMode(get_audio_speaker_mode()));
+	AudioDriverDummy::get_dummy_singleton()->set_speaker_mode(
+		AudioDriver::SpeakerMode(get_audio_speaker_mode()));
 	fps = p_fps;
 	if ((mix_rate % fps) != 0) {
-		WARN_PRINT("MovieWriter's audio mix rate (" + itos(mix_rate) + ") can not be divided by the recording FPS (" + itos(fps) + "). Audio may go out of sync over time.");
+		WARN_PRINT("MovieWriter's audio mix rate (" + itos(mix_rate) +
+				   ") can not be divided by the recording FPS (" + itos(fps) +
+				   "). Audio may go out of sync over time.");
 	}
 
 	audio_channels = AudioDriverDummy::get_dummy_singleton()->get_channels();
@@ -119,59 +134,49 @@ void MovieWriter::begin(const Size2i &p_movie_size, uint32_t p_fps, const String
 	write_begin(movie_size, p_fps, p_base_path);
 }
 
-void MovieWriter::_bind_methods() {
-	ClassDB::bind_static_method("MovieWriter", D_METHOD("add_writer", "writer"), &MovieWriter::add_writer);
+void MovieWriter::_bind_methods() {}
 
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/mix_rate", PROPERTY_HINT_RANGE, "8000,192000,1,suffix:Hz"), 48000);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/speaker_mode", PROPERTY_HINT_ENUM, "Stereo,3.1,5.1,7.1"), 0);
-	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "editor/movie_writer/video_quality", PROPERTY_HINT_RANGE, "0.0,1.0,0.01"), 0.75);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/audio_bit_depth", PROPERTY_HINT_ENUM, "16:16,32:32"), 16);
-	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "editor/movie_writer/ogv/audio_quality", PROPERTY_HINT_RANGE, "-0.1,1.0,0.01"), 0.5);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/ogv/encoding_speed", PROPERTY_HINT_ENUM, "Fastest (Lowest Efficiency):4,Fast (Low Efficiency):3,Slow (High Efficiency):2,Slowest (Highest Efficiency):1"), 4);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/ogv/keyframe_interval", PROPERTY_HINT_RANGE, "1,1024,1"), 64);
-
-	// Used by the editor.
-	GLOBAL_DEF_BASIC("editor/movie_writer/movie_file", "");
-	GLOBAL_DEF_BASIC("editor/movie_writer/disable_vsync", false);
-	GLOBAL_DEF_BASIC(PropertyInfo(Variant::INT, "editor/movie_writer/fps", PROPERTY_HINT_RANGE, "1,300,1,suffix:FPS"), 60);
-}
-
-void MovieWriter::set_extensions_hint() {
+void MovieWriter::set_extensions_hint()
+{
 	RBSet<String> found;
 	for (uint32_t i = 0; i < writer_count; i++) {
 		List<String> extensions;
 		writers[i]->get_supported_extensions(&extensions);
-		for (const String &ext : extensions) {
+		for (const String& ext : extensions) {
 			found.insert(ext);
 		}
 	}
 
 	String ext_hint;
 
-	for (const String &S : found) {
+	for (const String& S : found) {
 		if (ext_hint != "") {
 			ext_hint += ",";
 		}
 		ext_hint += "*." + S;
 	}
-	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(Variant::STRING, "editor/movie_writer/movie_file", PROPERTY_HINT_GLOBAL_SAVE_FILE, ext_hint));
+	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(Variant::STRING,
+		"editor/movie_writer/movie_file", PROPERTY_HINT_GLOBAL_SAVE_FILE, ext_hint));
 }
 
-void MovieWriter::add_frame() {
+void MovieWriter::add_frame()
+{
 	const int movie_time_seconds = Engine::get_singleton()->get_frames_drawn() / fps;
 	const int frame_remainder = Engine::get_singleton()->get_frames_drawn() % fps;
-	const String movie_time = vformat("%s:%s:%s:%s",
-			String::num(movie_time_seconds / 3600, 0).pad_zeros(2),
+	const String movie_time =
+		vformat("%s:%s:%s:%s", String::num(movie_time_seconds / 3600, 0).pad_zeros(2),
 			String::num((movie_time_seconds % 3600) / 60, 0).pad_zeros(2),
 			String::num(movie_time_seconds % 60, 0).pad_zeros(2),
 			String::num(frame_remainder, 0).pad_zeros(2));
 
-	Window *main_window = Window::get_from_id(DisplayServerEnums::MAIN_WINDOW_ID);
+	Window* main_window = Window::get_from_id(DisplayServerEnums::MAIN_WINDOW_ID);
 	if (main_window) {
-		main_window->set_title(vformat("MovieWriter: Frame %d (time: %s) - %s", Engine::get_singleton()->get_frames_drawn(), movie_time, project_name));
+		main_window->set_title(vformat("MovieWriter: Frame %d (time: %s) - %s",
+			Engine::get_singleton()->get_frames_drawn(), movie_time, project_name));
 	}
 
-	RID main_vp_rid = RenderingServer::get_singleton()->viewport_find_from_screen_attachment(DisplayServerEnums::MAIN_WINDOW_ID);
+	RID main_vp_rid = RenderingServer::get_singleton()->viewport_find_from_screen_attachment(
+		DisplayServerEnums::MAIN_WINDOW_ID);
 	RID main_vp_texture = RenderingServer::get_singleton()->viewport_get_texture(main_vp_rid);
 	Ref<Image> vp_tex = RenderingServer::get_singleton()->texture_2d_get(main_vp_texture);
 
@@ -195,7 +200,8 @@ void MovieWriter::add_frame() {
 			crop_width = int(vp_tex->get_size().height * dst_aspect);
 			crop_x = (vp_tex->get_size().width - crop_width) / 2;
 			vp_tex->crop_from_point(crop_x, crop_y, crop_width, crop_height);
-		} else if (src_aspect < dst_aspect) {
+		}
+		else if (src_aspect < dst_aspect) {
 			// Source is taller, crop vertically.
 			crop_height = int(vp_tex->get_size().width / dst_aspect);
 			crop_y = (vp_tex->get_size().height - crop_height) / 2;
@@ -211,9 +217,11 @@ void MovieWriter::add_frame() {
 	}
 
 	RenderingServer::get_singleton()->viewport_set_measure_render_time(main_vp_rid, true);
-	cpu_time += RenderingServer::get_singleton()->viewport_get_measured_render_time_cpu(main_vp_rid);
+	cpu_time +=
+		RenderingServer::get_singleton()->viewport_get_measured_render_time_cpu(main_vp_rid);
 	cpu_time += RenderingServer::get_singleton()->get_frame_setup_time_cpu();
-	gpu_time += RenderingServer::get_singleton()->viewport_get_measured_render_time_gpu(main_vp_rid);
+	gpu_time +=
+		RenderingServer::get_singleton()->viewport_get_measured_render_time_gpu(main_vp_rid);
 
 	AudioDriverDummy::get_dummy_singleton()->mix_audio(mix_rate / fps, audio_mix_buffer.ptr());
 
@@ -223,7 +231,8 @@ void MovieWriter::add_frame() {
 	encoding_time_usec += encoding_end_usec - encoding_start_usec;
 }
 
-void MovieWriter::end() {
+void MovieWriter::end()
+{
 	uint64_t encoding_start_usec = Time::get_singleton()->get_ticks_usec();
 	write_end();
 	uint64_t encoding_end_usec = Time::get_singleton()->get_ticks_usec();
@@ -235,33 +244,41 @@ void MovieWriter::end() {
 	if (movie_path.is_relative_path()) {
 		// Print absolute path to make finding the file easier,
 		// and to make it clickable in terminal emulators that support this.
-		movie_path = ProjectSettings::get_singleton()->globalize_path("res://").path_join(movie_path);
+		movie_path =
+			ProjectSettings::get_singleton()->globalize_path("res://").path_join(movie_path);
 	}
 	print_line(vformat("Done recording movie at path: %s", movie_path));
 
 	const int movie_time_seconds = Engine::get_singleton()->get_frames_drawn() / fps;
 	const int frame_remainder = Engine::get_singleton()->get_frames_drawn() % fps;
-	const String movie_time = vformat("%s:%s:%s:%s",
-			String::num(movie_time_seconds / 3600, 0).pad_zeros(2),
+	const String movie_time =
+		vformat("%s:%s:%s:%s", String::num(movie_time_seconds / 3600, 0).pad_zeros(2),
 			String::num((movie_time_seconds % 3600) / 60, 0).pad_zeros(2),
 			String::num(movie_time_seconds % 60, 0).pad_zeros(2),
 			String::num(frame_remainder, 0).pad_zeros(2));
 
 	const int real_time_seconds = Time::get_singleton()->get_ticks_msec() / 1000;
-	const String real_time = vformat("%s:%s:%s",
-			String::num(real_time_seconds / 3600, 0).pad_zeros(2),
+	const String real_time =
+		vformat("%s:%s:%s", String::num(real_time_seconds / 3600, 0).pad_zeros(2),
 			String::num((real_time_seconds % 3600) / 60, 0).pad_zeros(2),
 			String::num(real_time_seconds % 60, 0).pad_zeros(2));
 
-	print_line(vformat("%d frames at %d FPS (movie length: %s), recorded in %s (%d%% of real-time speed).", Engine::get_singleton()->get_frames_drawn(), fps, movie_time, real_time, (float(MAX(1, movie_time_seconds)) / MAX(1, real_time_seconds)) * 100));
-	print_line(vformat("CPU render time: %.2f seconds (average: %.2f ms/frame)", cpu_time / 1000, cpu_time / Engine::get_singleton()->get_frames_drawn()));
-	print_line(vformat("GPU render time: %.2f seconds (average: %.2f ms/frame)", gpu_time / 1000, gpu_time / Engine::get_singleton()->get_frames_drawn()));
-	print_line(vformat("Encoding time: %.2f seconds (average: %.2f ms/frame)", encoding_time_usec / 1000000.f, encoding_time_usec / 1000.f / Engine::get_singleton()->get_frames_drawn()));
+	print_line(
+		vformat("%d frames at %d FPS (movie length: %s), recorded in %s (%d%% of real-time speed).",
+			Engine::get_singleton()->get_frames_drawn(), fps, movie_time, real_time,
+			(float(MAX(1, movie_time_seconds)) / MAX(1, real_time_seconds)) * 100));
+	print_line(vformat("CPU render time: %.2f seconds (average: %.2f ms/frame)", cpu_time / 1000,
+		cpu_time / Engine::get_singleton()->get_frames_drawn()));
+	print_line(vformat("GPU render time: %.2f seconds (average: %.2f ms/frame)", gpu_time / 1000,
+		gpu_time / Engine::get_singleton()->get_frames_drawn()));
+	print_line(vformat("Encoding time: %.2f seconds (average: %.2f ms/frame)",
+		encoding_time_usec / 1000000.f,
+		encoding_time_usec / 1000.f / Engine::get_singleton()->get_frames_drawn()));
 	print_line("--------------------------------------------------------------------------------");
 }
 
 void MovieWriter::write_end() {}
 
-bool MovieWriter::handles_file(const String &p_path) const {
-	return false;
-}
+bool MovieWriter::handles_file(const String& p_path) const { return false; }
+
+

@@ -29,13 +29,13 @@
 /**************************************************************************/
 
 #include "convex_polygon_shape_3d.h"
-
 #include "core/math/convex_hull.h"
 #include "core/object/class_db.h"
 #include "scene/resources/mesh.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
-Vector<Vector3> ConvexPolygonShape3D::get_debug_mesh_lines() const {
+Vector<Vector3> ConvexPolygonShape3D::get_debug_mesh_lines() const
+{
 	Vector<Vector3> poly_points = get_points();
 
 	if (poly_points.size() > 1) { // Need at least 2 points for a line.
@@ -56,7 +56,8 @@ Vector<Vector3> ConvexPolygonShape3D::get_debug_mesh_lines() const {
 	return Vector<Vector3>();
 }
 
-Ref<ArrayMesh> ConvexPolygonShape3D::get_debug_arraymesh_faces(const Color &p_modulate) const {
+Ref<ArrayMesh> ConvexPolygonShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
 	const Vector<Vector3> hull_points = get_points();
 
 	Vector<Vector3> verts;
@@ -71,7 +72,7 @@ Ref<ArrayMesh> ConvexPolygonShape3D::get_debug_arraymesh_faces(const Color &p_mo
 			for (int i = 0; i < verts.size(); i++) {
 				colors.push_back(p_modulate);
 			}
-			for (const Geometry3D::MeshData::Face &face : md.faces) {
+			for (const Geometry3D::MeshData::Face& face : md.faces) {
 				const int first_point = face.indices[0];
 				const int indices_count = face.indices.size();
 				for (int i = 1; i < indices_count - 1; i++) {
@@ -94,9 +95,10 @@ Ref<ArrayMesh> ConvexPolygonShape3D::get_debug_arraymesh_faces(const Color &p_mo
 	return mesh;
 }
 
-real_t ConvexPolygonShape3D::get_enclosing_radius() const {
+real_t ConvexPolygonShape3D::get_enclosing_radius() const
+{
 	Vector<Vector3> data = get_points();
-	const Vector3 *read = data.ptr();
+	const Vector3* read = data.ptr();
 	real_t r = 0.0;
 	for (int i(0); i < data.size(); i++) {
 		r = MAX(read[i].length_squared(), r);
@@ -104,28 +106,26 @@ real_t ConvexPolygonShape3D::get_enclosing_radius() const {
 	return Math::sqrt(r);
 }
 
-void ConvexPolygonShape3D::_update_shape() {
+void ConvexPolygonShape3D::_update_shape()
+{
 	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), points);
 	Shape3D::_update_shape();
 }
 
-void ConvexPolygonShape3D::set_points(const Vector<Vector3> &p_points) {
+void ConvexPolygonShape3D::set_points(const Vector<Vector3>& p_points)
+{
 	points = p_points;
 	_update_shape();
 	emit_changed();
 }
 
-Vector<Vector3> ConvexPolygonShape3D::get_points() const {
-	return points;
+Vector<Vector3> ConvexPolygonShape3D::get_points() const { return points; }
+
+void ConvexPolygonShape3D::_bind_methods() {}
+
+ConvexPolygonShape3D::ConvexPolygonShape3D()
+	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CONVEX_POLYGON))
+{
 }
 
-void ConvexPolygonShape3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_points", "points"), &ConvexPolygonShape3D::set_points);
-	ClassDB::bind_method(D_METHOD("get_points"), &ConvexPolygonShape3D::get_points);
 
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "points"), "set_points", "get_points");
-}
-
-ConvexPolygonShape3D::ConvexPolygonShape3D() :
-		Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CONVEX_POLYGON)) {
-}

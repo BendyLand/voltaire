@@ -57,7 +57,7 @@ void Font::_update_rids_fb(const Font* p_f, int p_depth) const
 		if (rid.is_valid()) {
 			rids.push_back(rid);
 		}
-		const TypedArray<Font>& _fallbacks = p_f->get_fallbacks();
+		const Array& _fallbacks = p_f->get_fallbacks();
 		for (int i = 0; i < _fallbacks.size(); i++) {
 			Ref<Font> fb_font = _fallbacks[i];
 			_update_rids_fb(fb_font.ptr(), p_depth + 1);
@@ -147,10 +147,10 @@ void Font::set_fallbacks(const Array& p_fallbacks)
 	_invalidate_rids();
 }
 
-TypedArray<Font> Font::get_fallbacks() const { return fallbacks; }
+Array Font::get_fallbacks() const { return fallbacks; }
 
 // Output.
-TypedArray<RID> Font::get_rids() const
+Array Font::get_rids() const
 {
 	if (dirty_rids) {
 		_update_rids();
@@ -1286,7 +1286,7 @@ void FontFile::_get_property_list(List<PropertyInfo>* p_list) const
 	}
 	for (int i = 0; i < cache.size(); i++) {
 		String prefix = "cache/" + itos(i) + "/";
-		TypedArray<Vector2i> sizes = get_size_cache_list(i);
+		Array sizes = get_size_cache_list(i);
 		p_list->push_back(PropertyInfo(Variant::DICTIONARY, prefix + "variation_coordinates",
 			PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE));
 		p_list->push_back(PropertyInfo(Variant::INT, prefix + "face_index", PROPERTY_HINT_RANGE,
@@ -1353,7 +1353,7 @@ void FontFile::_get_property_list(List<PropertyInfo>* p_list) const
 						PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE));
 			}
 			if (sz.y == 0) {
-				TypedArray<Vector2i> kerning_map = get_kerning_list(i, sz.x);
+				Array kerning_map = get_kerning_list(i, sz.x);
 				for (int k = 0; k < kerning_map.size(); k++) {
 					const Vector2i& gl_pair = kerning_map[k];
 					p_list->push_back(PropertyInfo(Variant::VECTOR2,
@@ -2605,7 +2605,7 @@ void FontFile::remove_cache(int p_cache_index)
 	emit_changed();
 }
 
-TypedArray<Vector2i> FontFile::get_size_cache_list(int p_cache_index) const
+Array FontFile::get_size_cache_list(int p_cache_index) const
 {
 	ERR_FAIL_COND_V(p_cache_index < 0, Array());
 	ERR_FAIL_COND_V(!_ensure_rid(p_cache_index), Array());
@@ -2937,7 +2937,7 @@ int FontFile::get_glyph_texture_idx(
 	return TS->font_get_glyph_texture_idx(cache[p_cache_index], p_size, p_glyph);
 }
 
-TypedArray<Vector2i> FontFile::get_kerning_list(int p_cache_index, int p_size) const
+Array FontFile::get_kerning_list(int p_cache_index, int p_size) const
 {
 	ERR_FAIL_COND_V(p_cache_index < 0, Array());
 	ERR_FAIL_COND_V(!_ensure_rid(p_cache_index), Array());
@@ -3151,7 +3151,7 @@ void FontVariation::_update_rids() const
 			rids.push_back(rid);
 		}
 
-		const TypedArray<Font>& base_fallbacks = f->get_fallbacks();
+		const Array& base_fallbacks = f->get_fallbacks();
 		for (int i = 0; i < base_fallbacks.size(); i++) {
 			Ref<Font> fb_font = base_fallbacks[i];
 			_update_rids_fb(fb_font.ptr(), 0);
@@ -3421,7 +3421,7 @@ void SystemFont::_update_rids() const
 			rids.push_back(rid);
 		}
 
-		const TypedArray<Font>& base_fallbacks = f->get_fallbacks();
+		const Array& base_fallbacks = f->get_fallbacks();
 		for (int i = 0; i < base_fallbacks.size(); i++) {
 			Ref<Font> fb_font = base_fallbacks[i];
 			_update_rids_fb(fb_font.ptr(), 0);

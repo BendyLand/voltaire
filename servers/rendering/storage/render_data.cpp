@@ -28,13 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "render_data.h"
 
-#include "core/object/class_db.h"
+void RenderData::_bind_methods() {}
 
-void RenderData::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_render_scene_buffers"), &RenderData::get_render_scene_buffers);
-	ClassDB::bind_method(D_METHOD("get_render_scene_data"), &RenderData::get_render_scene_data);
-	ClassDB::bind_method(D_METHOD("get_environment"), &RenderData::get_environment);
-	ClassDB::bind_method(D_METHOD("get_camera_attributes"), &RenderData::get_camera_attributes);
-}
+

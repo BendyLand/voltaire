@@ -51,8 +51,7 @@ class PhysicsServer3D
 {
 	static PhysicsServer3D* singleton;
 
-	virtual bool _body_test_motion(RID p_body,
-		RequiredParam<PhysicsTestMotionParameters3D> rp_parameters,
+	virtual bool _body_test_motion(RID p_body, PhysicsTestMotionParameters3D* rp_parameters,
 		const Ref<PhysicsTestMotionResult3D>& p_result = Ref<PhysicsTestMotionResult3D>());
 
 protected:

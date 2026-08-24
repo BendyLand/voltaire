@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "cylinder_shape_3d.h"
-
 #include "core/object/class_db.h"
+#include "cylinder_shape_3d.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
-Vector<Vector3> CylinderShape3D::get_debug_mesh_lines() const {
+Vector<Vector3> CylinderShape3D::get_debug_mesh_lines() const
+{
 	float c_radius = get_radius();
 	float c_height = get_height();
 
@@ -62,13 +62,14 @@ Vector<Vector3> CylinderShape3D::get_debug_mesh_lines() const {
 	return points;
 }
 
-Ref<ArrayMesh> CylinderShape3D::get_debug_arraymesh_faces(const Color &p_modulate) const {
+Ref<ArrayMesh> CylinderShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
 	Array cylinder_array;
 	cylinder_array.resize(RSE::ARRAY_MAX);
 	CylinderMesh::create_mesh_array(cylinder_array, radius, radius, height, 32);
 
 	Vector<Color> colors;
-	const PackedVector3Array &verts = cylinder_array[RSE::ARRAY_VERTEX];
+	const PackedVector3Array& verts = cylinder_array[RSE::ARRAY_VERTEX];
 	const int32_t verts_size = verts.size();
 	for (int i = 0; i < verts_size; i++) {
 		colors.append(p_modulate);
@@ -80,11 +81,13 @@ Ref<ArrayMesh> CylinderShape3D::get_debug_arraymesh_faces(const Color &p_modulat
 	return cylinder_mesh;
 }
 
-real_t CylinderShape3D::get_enclosing_radius() const {
+real_t CylinderShape3D::get_enclosing_radius() const
+{
 	return Vector2(radius, height * 0.5).length();
 }
 
-void CylinderShape3D::_update_shape() {
+void CylinderShape3D::_update_shape()
+{
 	Dictionary d;
 	d["radius"] = radius;
 	d["height"] = height;
@@ -92,39 +95,32 @@ void CylinderShape3D::_update_shape() {
 	Shape3D::_update_shape();
 }
 
-void CylinderShape3D::set_radius(float p_radius) {
+void CylinderShape3D::set_radius(float p_radius)
+{
 	ERR_FAIL_COND_MSG(p_radius < 0, "CylinderShape3D radius cannot be negative.");
 	radius = p_radius;
 	_update_shape();
 	emit_changed();
 }
 
-float CylinderShape3D::get_radius() const {
-	return radius;
-}
+float CylinderShape3D::get_radius() const { return radius; }
 
-void CylinderShape3D::set_height(float p_height) {
+void CylinderShape3D::set_height(float p_height)
+{
 	ERR_FAIL_COND_MSG(p_height < 0, "CylinderShape3D height cannot be negative.");
 	height = p_height;
 	_update_shape();
 	emit_changed();
 }
 
-float CylinderShape3D::get_height() const {
-	return height;
-}
+float CylinderShape3D::get_height() const { return height; }
 
-void CylinderShape3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &CylinderShape3D::set_radius);
-	ClassDB::bind_method(D_METHOD("get_radius"), &CylinderShape3D::get_radius);
-	ClassDB::bind_method(D_METHOD("set_height", "height"), &CylinderShape3D::set_height);
-	ClassDB::bind_method(D_METHOD("get_height"), &CylinderShape3D::get_height);
+void CylinderShape3D::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "height", PROPERTY_HINT_RANGE, "0.001,100,0.001,or_greater,suffix:m"), "set_height", "get_height");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0.001,100,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
-}
-
-CylinderShape3D::CylinderShape3D() :
-		Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CYLINDER)) {
+CylinderShape3D::CylinderShape3D()
+	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CYLINDER))
+{
 	_update_shape();
 }
+
+

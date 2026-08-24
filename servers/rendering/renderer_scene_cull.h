@@ -49,11 +49,13 @@
 
 class RenderingLightCuller;
 
-class RendererSceneCull : public RenderingMethod {
+class RendererSceneCull : public RenderingMethod
+{
 public:
-	RendererSceneRender *scene_render = nullptr;
+	RendererSceneRender* scene_render = nullptr;
 
-	enum {
+	enum
+	{
 		SDFGI_MAX_CASCADES = 8,
 		SDFGI_MAX_REGIONS_PER_CASCADE = 3,
 		MAX_INSTANCE_PAIRS = 32,
@@ -62,7 +64,7 @@ public:
 
 	uint64_t render_pass;
 
-	static RendererSceneCull *singleton;
+	static RendererSceneCull* singleton;
 
 	/* EVENT QUEUING */
 
@@ -71,12 +73,15 @@ public:
 
 	/* CAMERA API */
 
-	struct Camera {
-		enum Type {
+	struct Camera
+	{
+		enum Type
+		{
 			PERSPECTIVE,
 			ORTHOGONAL,
 			FRUSTUM
 		};
+
 		Type type;
 		float fov;
 		float znear, zfar;
@@ -90,7 +95,8 @@ public:
 
 		Transform3D transform;
 
-		Camera() {
+		Camera()
+		{
 			visible_layers = 0xFFFFFFFF;
 			fov = 75;
 			type = PERSPECTIVE;
@@ -107,10 +113,12 @@ public:
 	virtual RID camera_allocate();
 	virtual void camera_initialize(RID p_rid);
 
-	virtual void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far);
+	virtual void camera_set_perspective(
+		RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far);
 	virtual void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far);
-	virtual void camera_set_frustum(RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far);
-	virtual void camera_set_transform(RID p_camera, const Transform3D &p_transform);
+	virtual void camera_set_frustum(
+		RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far);
+	virtual void camera_set_transform(RID p_camera, const Transform3D& p_transform);
 	virtual void camera_set_cull_mask(RID p_camera, uint32_t p_layers);
 	virtual void camera_set_environment(RID p_camera, RID p_env);
 	virtual void camera_set_camera_attributes(RID p_camera, RID p_attributes);
@@ -122,32 +130,39 @@ public:
 
 	virtual RID occluder_allocate();
 	virtual void occluder_initialize(RID p_occluder);
-	virtual void occluder_set_mesh(RID p_occluder, const PackedVector3Array &p_vertices, const PackedInt32Array &p_indices);
+	virtual void occluder_set_mesh(
+		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices);
 
 	/* VISIBILITY NOTIFIER API */
 
-	RendererSceneOcclusionCull *dummy_occlusion_culling = nullptr;
+	RendererSceneOcclusionCull* dummy_occlusion_culling = nullptr;
 
 	/* SCENARIO API */
 
 	struct Instance;
 
-	struct PlaneSign {
+	struct PlaneSign
+	{
 		_ALWAYS_INLINE_ PlaneSign() {}
-		_ALWAYS_INLINE_ PlaneSign(const Plane &p_plane) {
+
+		_ALWAYS_INLINE_ PlaneSign(const Plane& p_plane)
+		{
 			if (p_plane.normal.x > 0) {
 				signs[0] = 0;
-			} else {
+			}
+			else {
 				signs[0] = 3;
 			}
 			if (p_plane.normal.y > 0) {
 				signs[1] = 1;
-			} else {
+			}
+			else {
 				signs[1] = 4;
 			}
 			if (p_plane.normal.z > 0) {
 				signs[2] = 2;
-			} else {
+			}
+			else {
 				signs[2] = 5;
 			}
 		}
@@ -155,15 +170,18 @@ public:
 		uint32_t signs[3];
 	};
 
-	struct Frustum {
+	struct Frustum
+	{
 		Vector<Plane> planes;
 		Vector<PlaneSign> plane_signs;
-		const Plane *planes_ptr;
-		const PlaneSign *plane_signs_ptr;
+		const Plane* planes_ptr;
+		const PlaneSign* plane_signs_ptr;
 		uint32_t plane_count;
 
 		_ALWAYS_INLINE_ Frustum() {}
-		_ALWAYS_INLINE_ Frustum(const Frustum &p_frustum) {
+
+		_ALWAYS_INLINE_ Frustum(const Frustum& p_frustum)
+		{
 			planes = p_frustum.planes;
 			plane_signs = p_frustum.plane_signs;
 
@@ -171,7 +189,9 @@ public:
 			plane_signs_ptr = plane_signs.ptr();
 			plane_count = p_frustum.plane_count;
 		}
-		_ALWAYS_INLINE_ void operator=(const Frustum &p_frustum) {
+
+		_ALWAYS_INLINE_ void operator=(const Frustum& p_frustum)
+		{
 			planes = p_frustum.planes;
 			plane_signs = p_frustum.plane_signs;
 
@@ -179,7 +199,9 @@ public:
 			plane_signs_ptr = plane_signs.ptr();
 			plane_count = p_frustum.plane_count;
 		}
-		_ALWAYS_INLINE_ Frustum(const Vector<Plane> &p_planes) {
+
+		_ALWAYS_INLINE_ Frustum(const Vector<Plane>& p_planes)
+		{
 			planes = p_planes;
 			planes_ptr = planes.ptrw();
 			plane_count = planes.size();
@@ -192,15 +214,18 @@ public:
 		}
 	};
 
-	struct InstanceBounds {
+	struct InstanceBounds
+	{
 		// Efficiently store instance bounds.
 		// Because bounds checking is performed first,
 		// keep it separated from data.
 
 		real_t bounds[6];
+
 		_ALWAYS_INLINE_ InstanceBounds() {}
 
-		_ALWAYS_INLINE_ InstanceBounds(const AABB &p_aabb) {
+		_ALWAYS_INLINE_ InstanceBounds(const AABB& p_aabb)
+		{
 			bounds[0] = p_aabb.position.x;
 			bounds[1] = p_aabb.position.y;
 			bounds[2] = p_aabb.position.z;
@@ -208,15 +233,16 @@ public:
 			bounds[4] = p_aabb.position.y + p_aabb.size.y;
 			bounds[5] = p_aabb.position.z + p_aabb.size.z;
 		}
-		_ALWAYS_INLINE_ bool in_frustum(const Frustum &p_frustum) const {
+
+		_ALWAYS_INLINE_ bool in_frustum(const Frustum& p_frustum) const
+		{
 			// This is not a full SAT check and the possibility of false positives exist,
 			// but the tradeoff vs performance is still very good.
 
 			for (uint32_t i = 0; i < p_frustum.plane_count; i++) {
-				Vector3 min(
-						bounds[p_frustum.plane_signs_ptr[i].signs[0]],
-						bounds[p_frustum.plane_signs_ptr[i].signs[1]],
-						bounds[p_frustum.plane_signs_ptr[i].signs[2]]);
+				Vector3 min(bounds[p_frustum.plane_signs_ptr[i].signs[0]],
+					bounds[p_frustum.plane_signs_ptr[i].signs[1]],
+					bounds[p_frustum.plane_signs_ptr[i].signs[2]]);
 
 				if (p_frustum.planes_ptr[i].distance_to(min) >= 0.0) {
 					return false;
@@ -225,7 +251,9 @@ public:
 
 			return true;
 		}
-		_ALWAYS_INLINE_ bool in_aabb(const AABB &p_aabb) const {
+
+		_ALWAYS_INLINE_ bool in_aabb(const AABB& p_aabb) const
+		{
 			Vector3 end = p_aabb.position + p_aabb.size;
 
 			if (bounds[0] >= end.x) {
@@ -253,10 +281,12 @@ public:
 
 	struct InstanceVisibilityNotifierData;
 
-	struct InstanceData {
+	struct InstanceData
+	{
 		// Store instance pointer as well as common instance processing information,
 		// to make processing more cache friendly.
-		enum Flags : uint32_t {
+		enum Flags : uint32_t
+		{
 			FLAG_BASE_TYPE_MASK = 0xFF,
 			FLAG_CAST_SHADOWS = (1 << 8),
 			FLAG_CAST_SHADOWS_ONLY = (1 << 9),
@@ -270,7 +300,8 @@ public:
 			FLAG_USES_MESH_INSTANCE = (1 << 17),
 			FLAG_REFLECTION_PROBE_DIRTY = (1 << 18),
 			FLAG_IGNORE_OCCLUSION_CULLING = (1 << 19),
-			FLAG_VISIBILITY_DEPENDENCY_NEEDS_CHECK = (3 << 20), // 2 bits, overlaps with the other vis. dependency flags
+			FLAG_VISIBILITY_DEPENDENCY_NEEDS_CHECK =
+				(3 << 20), // 2 bits, overlaps with the other vis. dependency flags
 			FLAG_VISIBILITY_DEPENDENCY_HIDDEN_CLOSE_RANGE = (1 << 20),
 			FLAG_VISIBILITY_DEPENDENCY_HIDDEN = (1 << 21),
 			FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN = (1 << 22),
@@ -279,14 +310,17 @@ public:
 		};
 
 		uint32_t flags = 0;
-		uint32_t layer_mask = 0; //for fast layer-mask discard
+		uint32_t layer_mask = 0; // for fast layer-mask discard
 		RID base_rid;
-		union {
+
+		union
+		{
 			uint64_t instance_data_rid;
-			RenderGeometryInstance *instance_geometry;
-			InstanceVisibilityNotifierData *visibility_notifier = nullptr;
+			RenderGeometryInstance* instance_geometry;
+			InstanceVisibilityNotifierData* visibility_notifier = nullptr;
 		};
-		Instance *instance = nullptr;
+
+		Instance* instance = nullptr;
 		int32_t parent_array_index = -1;
 		int32_t visibility_index = -1;
 
@@ -298,12 +332,13 @@ public:
 		uint64_t occlusion_timeout = 0;
 	};
 
-	struct InstanceVisibilityData {
+	struct InstanceVisibilityData
+	{
 		uint64_t viewport_state = 0;
 		int32_t array_index = -1;
 		RSE::VisibilityRangeFadeMode fade_mode = RSE::VISIBILITY_RANGE_FADE_DISABLED;
 		Vector3 position;
-		Instance *instance = nullptr;
+		Instance* instance = nullptr;
 		float range_begin = 0.0f;
 		float range_end = 0.0f;
 		float range_begin_margin = 0.0f;
@@ -311,11 +346,14 @@ public:
 		float children_fade_alpha = 1.0f;
 	};
 
-	class VisibilityArray : public BinSortedArray<InstanceVisibilityData> {
-		_FORCE_INLINE_ virtual void _update_idx(InstanceVisibilityData &r_element, uint64_t p_idx) {
+	class VisibilityArray : public BinSortedArray<InstanceVisibilityData>
+	{
+		_FORCE_INLINE_ virtual void _update_idx(InstanceVisibilityData& r_element, uint64_t p_idx)
+		{
 			r_element.instance->visibility_index = p_idx;
 			if (r_element.instance->scenario && r_element.instance->array_index != -1) {
-				r_element.instance->scenario->instance_data[r_element.instance->array_index].visibility_index = p_idx;
+				r_element.instance->scenario->instance_data[r_element.instance->array_index]
+					.visibility_index = p_idx;
 			}
 		}
 	};
@@ -324,10 +362,12 @@ public:
 	PagedArrayPool<InstanceData> instance_data_page_pool;
 	PagedArrayPool<InstanceVisibilityData> instance_visibility_data_page_pool;
 
-	struct Scenario {
-		enum IndexerType {
-			INDEXER_GEOMETRY, //for geometry
-			INDEXER_VOLUMES, //for everything else
+	struct Scenario
+	{
+		enum IndexerType
+		{
+			INDEXER_GEOMETRY, // for geometry
+			INDEXER_VOLUMES,  // for everything else
 			INDEXER_MAX
 		};
 
@@ -335,7 +375,7 @@ public:
 
 		RID self;
 
-		List<Instance *> directional_lights;
+		List<Instance*> directional_lights;
 		RID environment;
 		RID fallback_environment;
 		RID camera_attributes;
@@ -353,7 +393,8 @@ public:
 		PagedArray<InstanceData> instance_data;
 		VisibilityArray instance_visibility;
 
-		Scenario() {
+		Scenario()
+		{
 			indexers[INDEXER_GEOMETRY].set_index(INDEXER_GEOMETRY);
 			indexers[INDEXER_VOLUMES].set_index(INDEXER_VOLUMES);
 			used_viewport_visibility_bits = 0;
@@ -364,10 +405,10 @@ public:
 
 	mutable RID_Owner<Scenario, true> scenario_owner;
 
-	static void _instance_pair(Instance *p_A, Instance *p_B);
-	static void _instance_unpair(Instance *p_A, Instance *p_B);
+	static void _instance_pair(Instance* p_A, Instance* p_B);
+	static void _instance_unpair(Instance* p_A, Instance* p_B);
 
-	void _instance_update_mesh_instance(Instance *p_instance) const;
+	void _instance_update_mesh_instance(Instance* p_instance) const;
 
 	virtual RID scenario_allocate();
 	virtual void scenario_initialize(RID p_rid);
@@ -376,7 +417,8 @@ public:
 	virtual void scenario_set_camera_attributes(RID p_scenario, RID p_attributes);
 	virtual void scenario_set_fallback_environment(RID p_scenario, RID p_environment);
 	virtual void scenario_set_compositor(RID p_scenario, RID p_compositor);
-	virtual void scenario_set_reflection_atlas_size(RID p_scenario, int p_reflection_size, int p_reflection_count);
+	virtual void scenario_set_reflection_atlas_size(
+		RID p_scenario, int p_reflection_size, int p_reflection_count);
 	virtual bool is_scenario(RID p_scenario) const;
 	virtual RID scenario_get_environment(RID p_scenario);
 	virtual void scenario_add_viewport_visibility_mask(RID p_scenario, RID p_viewport);
@@ -384,22 +426,25 @@ public:
 
 	/* INSTANCING API */
 
-	struct InstancePair {
-		Instance *a = nullptr;
-		Instance *b = nullptr;
+	struct InstancePair
+	{
+		Instance* a = nullptr;
+		Instance* b = nullptr;
 		SelfList<InstancePair> list_a;
 		SelfList<InstancePair> list_b;
-		InstancePair() :
-				list_a(this), list_b(this) {}
+
+		InstancePair() : list_a(this), list_b(this) {}
 	};
 
 	mutable PagedAllocator<InstancePair> pair_allocator;
 
-	struct InstanceBaseData {
+	struct InstanceBaseData
+	{
 		virtual ~InstanceBaseData() {}
 	};
 
-	struct Instance {
+	struct Instance
+	{
 		RSE::InstanceType base_type;
 		RID base;
 
@@ -407,7 +452,7 @@ public:
 		RID material_override;
 		RID material_overlay;
 
-		RID mesh_instance; //only used for meshes and when skeleton/blendshapes exist
+		RID mesh_instance; // only used for meshes and when skeleton/blendshapes exist
 
 		Transform3D transform;
 		bool teleported = false;
@@ -427,14 +472,14 @@ public:
 		bool receive_shadows : 1;
 		bool visible : 1;
 		bool baked_light : 1; // This flag is only to know if it actually did use baked light.
-		bool dynamic_gi : 1; // Same as above for dynamic objects.
+		bool dynamic_gi : 1;  // Same as above for dynamic objects.
 		bool redraw_if_visible : 1;
 
-		Instance *lightmap = nullptr;
+		Instance* lightmap = nullptr;
 		Rect2 lightmap_uv_scale;
 		int lightmap_slice_index;
 		uint32_t lightmap_cull_index;
-		Vector<Color> lightmap_sh; //spherical harmonic
+		Vector<Color> lightmap_sh; // spherical harmonic
 
 		AABB aabb;
 		AABB transformed_aabb;
@@ -445,7 +490,7 @@ public:
 		//
 
 		RID self;
-		//scenario stuff
+		// scenario stuff
 		DynamicBVH::ID indexer_id;
 		int32_t array_index = -1;
 		int32_t visibility_index = -1;
@@ -453,21 +498,22 @@ public:
 		float visibility_range_end = 0.0f;
 		float visibility_range_begin_margin = 0.0f;
 		float visibility_range_end_margin = 0.0f;
-		RSE::VisibilityRangeFadeMode visibility_range_fade_mode = RSE::VISIBILITY_RANGE_FADE_DISABLED;
-		Instance *visibility_parent = nullptr;
-		HashSet<Instance *> visibility_dependencies;
+		RSE::VisibilityRangeFadeMode visibility_range_fade_mode =
+			RSE::VISIBILITY_RANGE_FADE_DISABLED;
+		Instance* visibility_parent = nullptr;
+		HashSet<Instance*> visibility_dependencies;
 		uint32_t visibility_dependencies_depth = 0;
 		float transparency = 0.0f;
-		Scenario *scenario = nullptr;
+		Scenario* scenario = nullptr;
 		SelfList<Instance> scenario_item;
 
-		//aabb stuff
+		// aabb stuff
 		bool update_aabb;
 		bool update_dependencies;
 
 		SelfList<Instance> update_item;
 
-		AABB *custom_aabb = nullptr; // <Zylann> would using aabb directly with a bool be better?
+		AABB* custom_aabb = nullptr; // <Zylann> would using aabb directly with a bool be better?
 		float extra_margin;
 		ObjectID object_id;
 
@@ -475,63 +521,70 @@ public:
 		float sorting_offset = 0.0;
 		bool use_aabb_center = true;
 
-		Vector<Color> lightmap_target_sh; //target is used for incrementally changing the SH over time, this avoids pops in some corner cases and when going interior <-> exterior
+		Vector<Color> lightmap_target_sh; // target is used for incrementally changing the SH over
+										  // time, this avoids pops in some corner cases and when
+										  // going interior <-> exterior
 
 		uint64_t last_frame_pass;
 
 		uint64_t version; // changes to this, and changes to base increase version
 
-		InstanceBaseData *base_data = nullptr;
+		InstanceBaseData* base_data = nullptr;
 
 		SelfList<InstancePair>::List pairs;
 		uint64_t pair_check;
 
 		DependencyTracker dependency_tracker;
 
-		static void dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *tracker) {
-			Instance *instance = (Instance *)tracker->userdata;
+		static void dependency_changed(
+			Dependency::DependencyChangedNotification p_notification, DependencyTracker* tracker)
+		{
+			Instance* instance = (Instance*)tracker->userdata;
 			switch (p_notification) {
-				case Dependency::DEPENDENCY_CHANGED_SKELETON_DATA:
-				case Dependency::DEPENDENCY_CHANGED_SKELETON_BONES:
-				case Dependency::DEPENDENCY_CHANGED_AABB: {
-					singleton->_instance_queue_update(instance, true, false);
+			case Dependency::DEPENDENCY_CHANGED_SKELETON_DATA:
+			case Dependency::DEPENDENCY_CHANGED_SKELETON_BONES:
+			case Dependency::DEPENDENCY_CHANGED_AABB: {
+				singleton->_instance_queue_update(instance, true, false);
 
-				} break;
-				case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES:
-				case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
-					singleton->_instance_queue_update(instance, false, true);
-				} break;
-				case Dependency::DEPENDENCY_CHANGED_MESH:
-				case Dependency::DEPENDENCY_CHANGED_PARTICLES:
-				case Dependency::DEPENDENCY_CHANGED_MULTIMESH:
-				case Dependency::DEPENDENCY_CHANGED_DECAL:
-				case Dependency::DEPENDENCY_CHANGED_LIGHT: {
+			} break;
+			case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES:
+			case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
+				singleton->_instance_queue_update(instance, false, true);
+			} break;
+			case Dependency::DEPENDENCY_CHANGED_MESH:
+			case Dependency::DEPENDENCY_CHANGED_PARTICLES:
+			case Dependency::DEPENDENCY_CHANGED_MULTIMESH:
+			case Dependency::DEPENDENCY_CHANGED_DECAL:
+			case Dependency::DEPENDENCY_CHANGED_LIGHT: {
+				singleton->_instance_queue_update(instance, true, true);
+			} break;
+			case Dependency::DEPENDENCY_CHANGED_REFLECTION_PROBE:
+			case Dependency::DEPENDENCY_CHANGED_LIGHT_SOFT_SHADOW_AND_PROJECTOR:
+			case Dependency::DEPENDENCY_CHANGED_CULL_MASK: {
+				// requires repairing
+				if (instance->indexer_id.is_valid()) {
+					singleton->_unpair_instance(instance);
 					singleton->_instance_queue_update(instance, true, true);
-				} break;
-				case Dependency::DEPENDENCY_CHANGED_REFLECTION_PROBE:
-				case Dependency::DEPENDENCY_CHANGED_LIGHT_SOFT_SHADOW_AND_PROJECTOR:
-				case Dependency::DEPENDENCY_CHANGED_CULL_MASK: {
-					//requires repairing
-					if (instance->indexer_id.is_valid()) {
-						singleton->_unpair_instance(instance);
-						singleton->_instance_queue_update(instance, true, true);
-					}
+				}
 
-				} break;
-				default: {
-					// Ignored notifications.
-				} break;
+			} break;
+			default: {
+				// Ignored notifications.
+			} break;
 			}
 		}
 
-		static void dependency_deleted(const RID &p_dependency, DependencyTracker *tracker) {
-			Instance *instance = (Instance *)tracker->userdata;
+		static void dependency_deleted(const RID& p_dependency, DependencyTracker* tracker)
+		{
+			Instance* instance = (Instance*)tracker->userdata;
 
 			if (p_dependency == instance->base) {
 				singleton->instance_set_base(instance->self, RID());
-			} else if (p_dependency == instance->skeleton) {
+			}
+			else if (p_dependency == instance->skeleton) {
 				singleton->instance_attach_skeleton(instance->self, RID());
-			} else {
+			}
+			else {
 				// It's possible the same material is used in multiple slots,
 				// so we check whether we need to clear them all.
 				if (p_dependency == instance->material_override) {
@@ -546,9 +599,11 @@ public:
 					}
 				}
 				if (instance->base_type == RSE::INSTANCE_PARTICLES) {
-					RID particle_material = RSG::particles_storage->particles_get_process_material(instance->base);
+					RID particle_material =
+						RSG::particles_storage->particles_get_process_material(instance->base);
 					if (p_dependency == particle_material) {
-						RSG::particles_storage->particles_set_process_material(instance->base, RID());
+						RSG::particles_storage->particles_set_process_material(
+							instance->base, RID());
 					}
 				}
 
@@ -559,9 +614,8 @@ public:
 			}
 		}
 
-		Instance() :
-				scenario_item(this),
-				update_item(this) {
+		Instance() : scenario_item(this), update_item(this)
+		{
 			base_type = RSE::INSTANCE_NONE;
 			cast_shadows = RSE::SHADOW_CASTING_SETTING_ON;
 			receive_shadows = true;
@@ -606,96 +660,102 @@ public:
 			dependency_tracker.deleted_callback = dependency_deleted;
 		}
 
-		~Instance() {
+		~Instance()
+		{
 			memdelete(base_data);
 			memdelete(custom_aabb);
 		}
 	};
 
 	mutable SelfList<Instance>::List _instance_update_list;
-	void _instance_queue_update(Instance *p_instance, bool p_update_aabb, bool p_update_dependencies = false) const;
+	void _instance_queue_update(
+		Instance* p_instance, bool p_update_aabb, bool p_update_dependencies = false) const;
 
-	struct InstanceGeometryData : public InstanceBaseData {
-		RenderGeometryInstance *geometry_instance = nullptr;
-		HashSet<Instance *> lights;
+	struct InstanceGeometryData : public InstanceBaseData
+	{
+		RenderGeometryInstance* geometry_instance = nullptr;
+		HashSet<Instance*> lights;
 		bool can_cast_shadows;
 		bool material_is_animated;
 		uint32_t projector_count = 0;
 		uint32_t softshadow_count = 0;
 
-		HashSet<Instance *> decals;
-		HashSet<Instance *> reflection_probes;
-		HashSet<Instance *> voxel_gi_instances;
-		HashSet<Instance *> lightmap_captures;
+		HashSet<Instance*> decals;
+		HashSet<Instance*> reflection_probes;
+		HashSet<Instance*> voxel_gi_instances;
+		HashSet<Instance*> lightmap_captures;
 
-		InstanceGeometryData() {
+		InstanceGeometryData()
+		{
 			can_cast_shadows = true;
 			material_is_animated = true;
 		}
 	};
 
-	struct InstanceReflectionProbeData : public InstanceBaseData {
-		Instance *owner = nullptr;
+	struct InstanceReflectionProbeData : public InstanceBaseData
+	{
+		Instance* owner = nullptr;
 
-		HashSet<Instance *> geometries;
+		HashSet<Instance*> geometries;
 
 		RID instance;
 		SelfList<InstanceReflectionProbeData> update_list;
 
 		int render_step;
 
-		InstanceReflectionProbeData() :
-				update_list(this) {
-			render_step = -1;
-		}
+		InstanceReflectionProbeData() : update_list(this) { render_step = -1; }
 	};
 
-	struct InstanceDecalData : public InstanceBaseData {
-		Instance *owner = nullptr;
+	struct InstanceDecalData : public InstanceBaseData
+	{
+		Instance* owner = nullptr;
 		RID instance;
 		uint32_t cull_mask = 0xFFFFFFFF;
 
-		HashSet<Instance *> geometries;
+		HashSet<Instance*> geometries;
 
-		InstanceDecalData() {
-		}
+		InstanceDecalData() {}
 	};
 
 	SelfList<InstanceReflectionProbeData>::List reflection_probe_render_list;
 
-	struct InstanceParticlesCollisionData : public InstanceBaseData {
+	struct InstanceParticlesCollisionData : public InstanceBaseData
+	{
 		RID instance;
 		uint32_t cull_mask = 0xFFFFFFFF;
 	};
 
-	struct InstanceFogVolumeData : public InstanceBaseData {
+	struct InstanceFogVolumeData : public InstanceBaseData
+	{
 		RID instance;
 		bool is_global;
 	};
 
-	struct InstanceVisibilityNotifierData : public InstanceBaseData {
+	struct InstanceVisibilityNotifierData : public InstanceBaseData
+	{
 		bool just_visible = false;
 		uint64_t visible_in_frame = 0;
 		RID base;
 		SelfList<InstanceVisibilityNotifierData> list_element;
-		InstanceVisibilityNotifierData() :
-				list_element(this) {}
+
+		InstanceVisibilityNotifierData() : list_element(this) {}
 	};
 
 	SpinLock visible_notifier_list_lock;
 	SelfList<InstanceVisibilityNotifierData>::List visible_notifier_list;
 
-	struct InstanceLightData : public InstanceBaseData {
+	struct InstanceLightData : public InstanceBaseData
+	{
 		RID instance;
 		uint64_t last_version;
-		List<Instance *>::Element *D; // directional light in scenario
+		List<Instance*>::Element* D; // directional light in scenario
 
 		bool uses_projector = false;
 		bool uses_softshadow = false;
 
-		HashSet<Instance *> geometries;
+		HashSet<Instance*> geometries;
 
-		Instance *baked_light = nullptr;
+		Instance* baked_light = nullptr;
 
 		RSE::LightBakeMode bake_mode;
 		uint32_t max_sdfgi_cascade = 2;
@@ -713,8 +773,11 @@ public:
 
 	public:
 		bool is_shadow_dirty() const { return shadow_dirty_count != 0; }
+
 		void make_shadow_dirty() { shadow_dirty_count = light_intersects_multiple_cameras ? 1 : 2; }
-		void detect_light_intersects_multiple_cameras(uint32_t p_frame_id) {
+
+		void detect_light_intersects_multiple_cameras(uint32_t p_frame_id)
+		{
 			// We need to detect the case where shadow updates are occurring
 			// more than once per frame. In this case, we need to turn off
 			// tighter caster culling, so situation reverts to one full shadow update
@@ -722,12 +785,14 @@ public:
 			if (p_frame_id == light_update_frame_id) {
 				light_intersects_multiple_cameras = true;
 				light_intersects_multiple_cameras_timeout_frame_id = p_frame_id + 60;
-			} else {
+			}
+			else {
 				// When shadow_volume_intersects_multiple_cameras is set, we
 				// want to detect the situation this is no longer the case, via a timeout.
 				// The system can go back to tighter caster culling in this situation.
 				// Having a long-ish timeout prevents rapid cycling.
-				if (light_intersects_multiple_cameras && (p_frame_id >= light_intersects_multiple_cameras_timeout_frame_id)) {
+				if (light_intersects_multiple_cameras &&
+					(p_frame_id >= light_intersects_multiple_cameras_timeout_frame_id)) {
 					light_intersects_multiple_cameras = false;
 					light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
 				}
@@ -735,7 +800,8 @@ public:
 			light_update_frame_id = p_frame_id;
 		}
 
-		void decrement_shadow_dirty() {
+		void decrement_shadow_dirty()
+		{
 			shadow_dirty_count--;
 			DEV_ASSERT(shadow_dirty_count >= 0);
 		}
@@ -744,7 +810,8 @@ public:
 		// or closely culled to the camera frustum.
 		bool is_shadow_update_full() const { return shadow_dirty_count == 0; }
 
-		InstanceLightData() {
+		InstanceLightData()
+		{
 			bake_mode = RSE::LIGHT_BAKE_DISABLED;
 			D = nullptr;
 			last_version = 0;
@@ -757,15 +824,17 @@ public:
 		}
 	};
 
-	struct InstanceVoxelGIData : public InstanceBaseData {
-		Instance *owner = nullptr;
+	struct InstanceVoxelGIData : public InstanceBaseData
+	{
+		Instance* owner = nullptr;
 
-		HashSet<Instance *> geometries;
-		HashSet<Instance *> dynamic_geometries;
+		HashSet<Instance*> geometries;
+		HashSet<Instance*> dynamic_geometries;
 
-		HashSet<Instance *> lights;
+		HashSet<Instance*> lights;
 
-		struct LightCache {
+		struct LightCache
+		{
 			RSE::LightType type;
 			Transform3D transform;
 			Color color;
@@ -793,8 +862,8 @@ public:
 
 		SelfList<InstanceVoxelGIData> update_element;
 
-		InstanceVoxelGIData() :
-				update_element(this) {
+		InstanceVoxelGIData() : update_element(this)
+		{
 			invalid = true;
 			base_version = 0;
 		}
@@ -802,33 +871,37 @@ public:
 
 	SelfList<InstanceVoxelGIData>::List voxel_gi_update_list;
 
-	struct InstanceLightmapData : public InstanceBaseData {
+	struct InstanceLightmapData : public InstanceBaseData
+	{
 		RID instance;
-		HashSet<Instance *> geometries;
-		HashSet<Instance *> users;
+		HashSet<Instance*> geometries;
+		HashSet<Instance*> users;
 
-		InstanceLightmapData() {
-		}
+		InstanceLightmapData() {}
 	};
 
 	mutable uint64_t pair_pass = 1;
 
-	struct PairInstances {
-		Instance *instance = nullptr;
-		PagedAllocator<InstancePair> *pair_allocator = nullptr;
+	struct PairInstances
+	{
+		Instance* instance = nullptr;
+		PagedAllocator<InstancePair>* pair_allocator = nullptr;
 		SelfList<InstancePair>::List pairs_found;
-		DynamicBVH *bvh = nullptr;
-		DynamicBVH *bvh2 = nullptr; //some may need to cull in two
+		DynamicBVH* bvh = nullptr;
+		DynamicBVH* bvh2 = nullptr; // some may need to cull in two
 		uint32_t pair_mask;
 		uint64_t pair_pass;
 
-		_FORCE_INLINE_ bool operator()(void *p_data) {
-			Instance *p_instance = (Instance *)p_data;
+		_FORCE_INLINE_ bool operator()(void* p_data)
+		{
+			Instance* p_instance = (Instance*)p_data;
 
-			if (instance != p_instance && instance->transformed_aabb.intersects(p_instance->transformed_aabb) && (pair_mask & (1 << p_instance->base_type))) {
-				//test is more coarse in indexer
+			if (instance != p_instance &&
+				instance->transformed_aabb.intersects(p_instance->transformed_aabb) &&
+				(pair_mask & (1 << p_instance->base_type))) {
+				// test is more coarse in indexer
 				p_instance->pair_check = pair_pass;
-				InstancePair *pair = pair_allocator->alloc();
+				InstancePair* pair = pair_allocator->alloc();
 				pair->a = instance;
 				pair->b = p_instance;
 				pairs_found.add(&pair->list_a);
@@ -836,7 +909,8 @@ public:
 			return false;
 		}
 
-		void pair() {
+		void pair()
+		{
 			if (bvh) {
 				bvh->aabb_query(instance->transformed_aabb, *this);
 			}
@@ -844,24 +918,26 @@ public:
 				bvh2->aabb_query(instance->transformed_aabb, *this);
 			}
 			while (instance->pairs.first()) {
-				InstancePair *pair = instance->pairs.first()->self();
-				Instance *other_instance = instance == pair->a ? pair->b : pair->a;
+				InstancePair* pair = instance->pairs.first()->self();
+				Instance* other_instance = instance == pair->a ? pair->b : pair->a;
 				if (other_instance->pair_check != pair_pass) {
-					//unpaired
+					// unpaired
 					_instance_unpair(instance, other_instance);
-				} else {
-					//kept
-					other_instance->pair_check = 0; // if kept, then put pair check to zero, so we can distinguish with the newly added ones
+				}
+				else {
+					// kept
+					other_instance->pair_check = 0; // if kept, then put pair check to zero, so we
+													// can distinguish with the newly added ones
 				}
 
 				pair_allocator->free(pair);
 			}
 			while (pairs_found.first()) {
-				InstancePair *pair = pairs_found.first()->self();
+				InstancePair* pair = pairs_found.first()->self();
 				pairs_found.remove(pairs_found.first());
 
 				if (pair->b->pair_check == pair_pass) {
-					//paired
+					// paired
 					_instance_pair(instance, pair->b);
 				}
 				pair->a->pairs.add(&pair->list_a);
@@ -870,18 +946,19 @@ public:
 		}
 	};
 
-	mutable HashSet<Instance *> heightfield_particle_colliders_update_list;
+	mutable HashSet<Instance*> heightfield_particle_colliders_update_list;
 
-	PagedArrayPool<Instance *> instance_cull_page_pool;
-	PagedArrayPool<RenderGeometryInstance *> geometry_instance_cull_page_pool;
+	PagedArrayPool<Instance*> instance_cull_page_pool;
+	PagedArrayPool<RenderGeometryInstance*> geometry_instance_cull_page_pool;
 	PagedArrayPool<RID> rid_cull_page_pool;
 
-	PagedArray<Instance *> instance_cull_result;
-	PagedArray<Instance *> instance_shadow_cull_result;
+	PagedArray<Instance*> instance_cull_result;
+	PagedArray<Instance*> instance_shadow_cull_result;
 
-	struct InstanceCullResult {
-		PagedArray<RenderGeometryInstance *> geometry_instances;
-		PagedArray<Instance *> lights;
+	struct InstanceCullResult
+	{
+		PagedArray<RenderGeometryInstance*> geometry_instances;
+		PagedArray<Instance*> lights;
 		PagedArray<RID> light_instances;
 		PagedArray<RID> lightmaps;
 		PagedArray<RID> reflections;
@@ -890,14 +967,18 @@ public:
 		PagedArray<RID> mesh_instances;
 		PagedArray<RID> fog_volumes;
 
-		struct DirectionalShadow {
-			PagedArray<RenderGeometryInstance *> cascade_geometry_instances[RendererSceneRender::MAX_DIRECTIONAL_LIGHT_CASCADES];
+		struct DirectionalShadow
+		{
+			PagedArray<RenderGeometryInstance*>
+				cascade_geometry_instances[RendererSceneRender::MAX_DIRECTIONAL_LIGHT_CASCADES];
 		} directional_shadows[RendererSceneRender::MAX_DIRECTIONAL_LIGHTS];
 
-		PagedArray<RenderGeometryInstance *> sdfgi_region_geometry_instances[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
+		PagedArray<RenderGeometryInstance*>
+			sdfgi_region_geometry_instances[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
 		PagedArray<RID> sdfgi_cascade_lights[SDFGI_MAX_CASCADES];
 
-		void clear() {
+		void clear()
+		{
 			geometry_instances.clear();
 			lights.clear();
 			light_instances.clear();
@@ -922,7 +1003,8 @@ public:
 			}
 		}
 
-		void reset() {
+		void reset()
+		{
 			geometry_instances.reset();
 			lights.reset();
 			light_instances.reset();
@@ -947,7 +1029,8 @@ public:
 			}
 		}
 
-		void append_from(InstanceCullResult &p_cull_result) {
+		void append_from(InstanceCullResult& p_cull_result)
+		{
 			geometry_instances.merge_unordered(p_cull_result.geometry_instances);
 			lights.merge_unordered(p_cull_result.lights);
 			light_instances.merge_unordered(p_cull_result.light_instances);
@@ -960,12 +1043,14 @@ public:
 
 			for (int i = 0; i < RendererSceneRender::MAX_DIRECTIONAL_LIGHTS; i++) {
 				for (int j = 0; j < RendererSceneRender::MAX_DIRECTIONAL_LIGHT_CASCADES; j++) {
-					directional_shadows[i].cascade_geometry_instances[j].merge_unordered(p_cull_result.directional_shadows[i].cascade_geometry_instances[j]);
+					directional_shadows[i].cascade_geometry_instances[j].merge_unordered(
+						p_cull_result.directional_shadows[i].cascade_geometry_instances[j]);
 				}
 			}
 
 			for (int i = 0; i < SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE; i++) {
-				sdfgi_region_geometry_instances[i].merge_unordered(p_cull_result.sdfgi_region_geometry_instances[i]);
+				sdfgi_region_geometry_instances[i].merge_unordered(
+					p_cull_result.sdfgi_region_geometry_instances[i]);
 			}
 
 			for (int i = 0; i < SDFGI_MAX_CASCADES; i++) {
@@ -973,7 +1058,10 @@ public:
 			}
 		}
 
-		void init(PagedArrayPool<RID> *p_rid_pool, PagedArrayPool<RenderGeometryInstance *> *p_geometry_instance_pool, PagedArrayPool<Instance *> *p_instance_pool) {
+		void init(PagedArrayPool<RID>* p_rid_pool,
+			PagedArrayPool<RenderGeometryInstance*>* p_geometry_instance_pool,
+			PagedArrayPool<Instance*>* p_instance_pool)
+		{
 			geometry_instances.set_page_pool(p_geometry_instance_pool);
 			light_instances.set_page_pool(p_rid_pool);
 			lights.set_page_pool(p_instance_pool);
@@ -985,7 +1073,8 @@ public:
 			fog_volumes.set_page_pool(p_rid_pool);
 			for (int i = 0; i < RendererSceneRender::MAX_DIRECTIONAL_LIGHTS; i++) {
 				for (int j = 0; j < RendererSceneRender::MAX_DIRECTIONAL_LIGHT_CASCADES; j++) {
-					directional_shadows[i].cascade_geometry_instances[j].set_page_pool(p_geometry_instance_pool);
+					directional_shadows[i].cascade_geometry_instances[j].set_page_pool(
+						p_geometry_instance_pool);
 				}
 			}
 
@@ -1005,17 +1094,19 @@ public:
 	RendererSceneRender::RenderShadowData render_shadow_data[MAX_UPDATE_SHADOWS];
 	uint32_t max_shadows_used = 0;
 
-	RendererSceneRender::RenderSDFGIData render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
+	RendererSceneRender::RenderSDFGIData
+		render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
 	RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
 
 	uint32_t thread_cull_threshold = 200;
 
-	mutable RID_Owner<Instance, true> instance_owner{ 65536, 4194304 };
+	mutable RID_Owner<Instance, true> instance_owner{65536, 4194304};
 
-	uint32_t geometry_instance_pair_mask = 0; // used in traditional forward, unnecessary on clustered
+	uint32_t geometry_instance_pair_mask =
+		0; // used in traditional forward, unnecessary on clustered
 
 	LocalVector<Vector2> camera_jitter_array;
-	RenderingLightCuller *light_culler = nullptr;
+	RenderingLightCuller* light_culler = nullptr;
 
 	virtual RID instance_allocate();
 	virtual void instance_initialize(RID p_rid);
@@ -1023,11 +1114,13 @@ public:
 	virtual void instance_set_base(RID p_instance, RID p_base);
 	virtual void instance_set_scenario(RID p_instance, RID p_scenario);
 	virtual void instance_set_layer_mask(RID p_instance, uint32_t p_mask);
-	virtual void instance_set_pivot_data(RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
-	virtual void instance_set_transform(RID p_instance, const Transform3D &p_transform);
+	virtual void instance_set_pivot_data(
+		RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
+	virtual void instance_set_transform(RID p_instance, const Transform3D& p_transform);
 	virtual void instance_attach_object_instance_id(RID p_instance, ObjectID p_id);
 	virtual void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight);
-	virtual void instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material);
+	virtual void instance_set_surface_override_material(
+		RID p_instance, int p_surface, RID p_material);
 	virtual void instance_set_visible(RID p_instance, bool p_visible);
 	virtual void instance_geometry_set_transparency(RID p_instance, float p_transparency);
 
@@ -1043,50 +1136,69 @@ public:
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled);
 
-	bool _update_instance_visibility_depth(Instance *p_instance);
-	void _update_instance_visibility_dependencies(Instance *p_instance) const;
+	bool _update_instance_visibility_depth(Instance* p_instance);
+	void _update_instance_visibility_dependencies(Instance* p_instance) const;
 
 	// don't use these in a game!
-	virtual Vector<ObjectID> instances_cull_aabb(const AABB &p_aabb, RID p_scenario = RID()) const;
-	virtual Vector<ObjectID> instances_cull_ray(const Vector3 &p_from, const Vector3 &p_to, RID p_scenario = RID()) const;
-	virtual Vector<ObjectID> instances_cull_convex(const Vector<Plane> &p_convex, RID p_scenario = RID()) const;
+	virtual Vector<ObjectID> instances_cull_aabb(const AABB& p_aabb, RID p_scenario = RID()) const;
+	virtual Vector<ObjectID> instances_cull_ray(
+		const Vector3& p_from, const Vector3& p_to, RID p_scenario = RID()) const;
+	virtual Vector<ObjectID> instances_cull_convex(
+		const Vector<Plane>& p_convex, RID p_scenario = RID()) const;
 
-	virtual void instance_geometry_set_flag(RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
-	virtual void instance_geometry_set_cast_shadows_setting(RID p_instance, RSE::ShadowCastingSetting p_shadow_casting_setting);
+	virtual void instance_geometry_set_flag(
+		RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
+	virtual void instance_geometry_set_cast_shadows_setting(
+		RID p_instance, RSE::ShadowCastingSetting p_shadow_casting_setting);
 	virtual void instance_geometry_set_material_override(RID p_instance, RID p_material);
 	virtual void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
 
-	virtual void instance_geometry_set_visibility_range(RID p_instance, float p_min, float p_max, float p_min_margin, float p_max_margin, RSE::VisibilityRangeFadeMode p_fade_mode);
+	virtual void instance_geometry_set_visibility_range(RID p_instance, float p_min, float p_max,
+		float p_min_margin, float p_max_margin, RSE::VisibilityRangeFadeMode p_fade_mode);
 
-	virtual void instance_geometry_set_lightmap(RID p_instance, RID p_lightmap, const Rect2 &p_lightmap_uv_scale, int p_slice_index);
+	virtual void instance_geometry_set_lightmap(
+		RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_slice_index);
 	virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
 
-	virtual void instance_geometry_set_shader_parameter(RID p_instance, const StringName &p_parameter, const Variant &p_value);
-	virtual void instance_geometry_get_shader_parameter_list(RID p_instance, List<PropertyInfo> *p_parameters) const;
-	virtual Variant instance_geometry_get_shader_parameter(RID p_instance, const StringName &p_parameter) const;
-	virtual Variant instance_geometry_get_shader_parameter_default_value(RID p_instance, const StringName &p_parameter) const;
+	virtual void instance_geometry_set_shader_parameter(
+		RID p_instance, const StringName& p_parameter, const Variant& p_value);
+	virtual void instance_geometry_get_shader_parameter_list(
+		RID p_instance, List<PropertyInfo>* p_parameters) const;
+	virtual Variant instance_geometry_get_shader_parameter(
+		RID p_instance, const StringName& p_parameter) const;
+	virtual Variant instance_geometry_get_shader_parameter_default_value(
+		RID p_instance, const StringName& p_parameter) const;
 
 	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
 	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
 
-	_FORCE_INLINE_ void _update_instance(Instance *p_instance) const;
-	_FORCE_INLINE_ void _update_instance_aabb(Instance *p_instance) const;
-	_FORCE_INLINE_ void _update_dirty_instance(Instance *p_instance) const;
-	_FORCE_INLINE_ void _update_instance_lightmap_captures(Instance *p_instance) const;
-	void _unpair_instance(Instance *p_instance);
+	_FORCE_INLINE_ void _update_instance(Instance* p_instance) const;
+	_FORCE_INLINE_ void _update_instance_aabb(Instance* p_instance) const;
+	_FORCE_INLINE_ void _update_dirty_instance(Instance* p_instance) const;
+	_FORCE_INLINE_ void _update_instance_lightmap_captures(Instance* p_instance) const;
+	void _unpair_instance(Instance* p_instance);
 
-	void _light_instance_setup_directional_shadow(int p_shadow_index, Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect);
+	void _light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance,
+		const Transform3D p_cam_transform, const Projection& p_cam_projection,
+		bool p_cam_orthogonal, bool p_cam_vaspect);
 
-	_FORCE_INLINE_ bool _light_instance_update_shadow(Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario *p_scenario, float p_screen_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
+	_FORCE_INLINE_ bool _light_instance_update_shadow(Instance* p_instance,
+		const Transform3D p_cam_transform, const Projection& p_cam_projection,
+		bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario* p_scenario,
+		float p_screen_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
 
 	RID _render_get_environment(RID p_camera, RID p_scenario);
 	RID _render_get_compositor(RID p_camera, RID p_scenario);
 
-	struct Cull {
-		struct Shadow {
+	struct Cull
+	{
+		struct Shadow
+		{
 			RID light_instance;
 			uint32_t caster_mask;
-			struct Cascade {
+
+			struct Cascade
+			{
 				Frustum frustum;
 
 				Projection projection;
@@ -1098,17 +1210,21 @@ public:
 				real_t range_begin;
 				Vector2 uv_scale;
 
-			} cascades[RendererSceneRender::MAX_DIRECTIONAL_LIGHT_CASCADES]; //max 4 cascades
+			} cascades[RendererSceneRender::MAX_DIRECTIONAL_LIGHT_CASCADES]; // max 4 cascades
+
 			uint32_t cascade_count;
 
 		} shadows[RendererSceneRender::MAX_DIRECTIONAL_LIGHTS];
 
 		uint32_t shadow_count;
 
-		struct SDFGI {
-			//have arrays here because SDFGI functions expects this, plus regions can have areas
-			AABB region_aabb[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE]; //max 3 regions per cascade
-			uint32_t region_cascade[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE]; //max 3 regions per cascade
+		struct SDFGI
+		{
+			// have arrays here because SDFGI functions expects this, plus regions can have areas
+			AABB region_aabb[SDFGI_MAX_CASCADES *
+							 SDFGI_MAX_REGIONS_PER_CASCADE]; // max 3 regions per cascade
+			uint32_t region_cascade[SDFGI_MAX_CASCADES *
+									SDFGI_MAX_REGIONS_PER_CASCADE]; // max 3 regions per cascade
 			uint32_t region_count = 0;
 
 			uint32_t cascade_light_index[SDFGI_MAX_CASCADES];
@@ -1121,51 +1237,68 @@ public:
 		Frustum frustum;
 	} cull;
 
-	struct VisibilityCullData {
+	struct VisibilityCullData
+	{
 		uint64_t viewport_mask;
-		Scenario *scenario = nullptr;
+		Scenario* scenario = nullptr;
 		Vector3 camera_position;
 		uint32_t cull_offset;
 		uint32_t cull_count;
 	};
 
-	void _visibility_cull_threaded(uint32_t p_thread, VisibilityCullData *cull_data);
-	void _visibility_cull(const VisibilityCullData &cull_data, uint64_t p_from, uint64_t p_to);
+	void _visibility_cull_threaded(uint32_t p_thread, VisibilityCullData* cull_data);
+	void _visibility_cull(const VisibilityCullData& cull_data, uint64_t p_from, uint64_t p_to);
 	template <bool p_fade_check>
-	_FORCE_INLINE_ int _visibility_range_check(InstanceVisibilityData &r_vis_data, const Vector3 &p_camera_pos, uint64_t p_viewport_mask);
+	_FORCE_INLINE_ int _visibility_range_check(
+		InstanceVisibilityData& r_vis_data, const Vector3& p_camera_pos, uint64_t p_viewport_mask);
 
-	struct CullData {
-		Cull *cull = nullptr;
-		Scenario *scenario = nullptr;
+	struct CullData
+	{
+		Cull* cull = nullptr;
+		Scenario* scenario = nullptr;
 		RID shadow_atlas;
 		Transform3D cam_transform;
 		uint32_t visible_layers;
-		Instance *render_reflection_probe = nullptr;
-		const RendererSceneOcclusionCull::HZBuffer *occlusion_buffer;
-		const Projection *camera_matrix;
+		Instance* render_reflection_probe = nullptr;
+		const RendererSceneOcclusionCull::HZBuffer* occlusion_buffer;
+		const Projection* camera_matrix;
 		uint64_t visibility_viewport_mask;
 	};
 
-	void _scene_cull_threaded(uint32_t p_thread, CullData *cull_data);
-	void _scene_cull(CullData &cull_data, InstanceCullResult &cull_result, uint64_t p_from, uint64_t p_to);
-	static void _scene_particles_set_view_axis(RID p_particles, const Vector3 &p_axis, const Vector3 &p_up_axis);
-	_FORCE_INLINE_ bool _visibility_parent_check(const CullData &p_cull_data, const InstanceData &p_instance_data);
+	void _scene_cull_threaded(uint32_t p_thread, CullData* cull_data);
+	void _scene_cull(
+		CullData& cull_data, InstanceCullResult& cull_result, uint64_t p_from, uint64_t p_to);
+	static void _scene_particles_set_view_axis(
+		RID p_particles, const Vector3& p_axis, const Vector3& p_up_axis);
+	_FORCE_INLINE_ bool _visibility_parent_check(
+		const CullData& p_cull_data, const InstanceData& p_instance_data);
 
-	bool _render_reflection_probe_step(Instance *p_instance, int p_step);
+	bool _render_reflection_probe_step(Instance* p_instance, int p_step);
 
-	void _render_scene(const RendererSceneRender::CameraData *p_camera_data, const Ref<RenderSceneBuffers> &p_render_buffers, RID p_environment, RID p_force_camera_attributes, RID p_compositor, uint32_t p_visible_layers, RID p_scenario, RID p_viewport, RID p_shadow_atlas, RID p_reflection_probe, int p_reflection_probe_pass, float p_screen_mesh_lod_threshold, float p_window_output_max_value, bool p_using_shadows = true, RenderingServerTypes::RenderInfo *r_render_info = nullptr);
-	void render_empty_scene(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_scenario, RID p_shadow_atlas, float p_window_output_max_value);
+	void _render_scene(const RendererSceneRender::CameraData* p_camera_data,
+		const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
+		RID p_force_camera_attributes, RID p_compositor, uint32_t p_visible_layers, RID p_scenario,
+		RID p_viewport, RID p_shadow_atlas, RID p_reflection_probe, int p_reflection_probe_pass,
+		float p_screen_mesh_lod_threshold, float p_window_output_max_value,
+		bool p_using_shadows = true, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
+	void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario,
+		RID p_shadow_atlas, float p_window_output_max_value);
 
-	void render_camera(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_camera, RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count, float p_screen_mesh_lod_threshold, RID p_shadow_atlas, Ref<XRInterface> &p_xr_interface, float p_window_output_max_value, RenderingServerTypes::RenderInfo *r_render_info = nullptr);
+	void render_camera(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_camera,
+		RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count,
+		float p_screen_mesh_lod_threshold, RID p_shadow_atlas, Ref<XRInterface>& p_xr_interface,
+		float p_window_output_max_value, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
 	void update_dirty_instances() const;
 
 	void render_particle_colliders();
 	virtual void render_probes();
 
-	TypedArray<Image> bake_render_uv2(RID p_base, const TypedArray<RID> &p_material_overrides, const Size2i &p_image_size);
-	PackedByteArray bake_render_area_light_atlas(const TypedArray<RID> &p_area_light_textures, const TypedArray<Rect2> &p_area_light_atlas_texture_rects, const Size2i &p_size, int p_mipmaps);
+	Array bake_render_uv2(
+		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size);
+	PackedByteArray bake_render_area_light_atlas(const Array& p_area_light_textures,
+		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size, int p_mipmaps);
 
-	//pass to scene render
+	// pass to scene render
 
 	/* ENVIRONMENT API */
 
@@ -1185,7 +1318,7 @@ public:
 	PASS2(sky_set_radiance_size, RID, int)
 	PASS2(sky_set_mode, RID, RSE::SkyMode)
 	PASS2(sky_set_material, RID, RID)
-	PASS4R(Ref<Image>, sky_bake_panorama, RID, float, bool, const Size2i &)
+	PASS4R(Ref<Image>, sky_bake_panorama, RID, float, bool, const Size2i&)
 
 	// Compositor effect
 
@@ -1195,7 +1328,7 @@ public:
 	PASS1RC(bool, is_compositor_effect, RID)
 
 	PASS2(compositor_effect_set_enabled, RID, bool)
-	PASS3(compositor_effect_set_callback, RID, RSE::CompositorEffectCallbackType, const Callable &)
+	PASS3(compositor_effect_set_callback, RID, RSE::CompositorEffectCallbackType, const Callable&)
 	PASS3(compositor_effect_set_flag, RID, RSE::CompositorEffectFlags, bool)
 
 	// Compositor
@@ -1205,7 +1338,7 @@ public:
 
 	PASS1RC(bool, is_compositor, RID)
 
-	PASS2(compositor_set_compositor_effects, RID, const TypedArray<RID> &)
+	PASS2(compositor_set_compositor_effects, RID, const Array&)
 
 	// Environment
 
@@ -1218,11 +1351,12 @@ public:
 	PASS2(environment_set_background, RID, RSE::EnvironmentBG)
 	PASS2(environment_set_sky, RID, RID)
 	PASS2(environment_set_sky_custom_fov, RID, float)
-	PASS2(environment_set_sky_orientation, RID, const Basis &)
-	PASS2(environment_set_bg_color, RID, const Color &)
+	PASS2(environment_set_sky_orientation, RID, const Basis&)
+	PASS2(environment_set_bg_color, RID, const Color&)
 	PASS3(environment_set_bg_energy, RID, float, float)
 	PASS2(environment_set_canvas_max_layer, RID, int)
-	PASS6(environment_set_ambient_light, RID, const Color &, RSE::EnvironmentAmbientSource, float, float, RSE::EnvironmentReflectionSource)
+	PASS6(environment_set_ambient_light, RID, const Color&, RSE::EnvironmentAmbientSource, float,
+		float, RSE::EnvironmentReflectionSource)
 	PASS2(environment_set_camera_feed_id, RID, int)
 
 	PASS1RC(RSE::EnvironmentBG, environment_get_background, RID)
@@ -1247,7 +1381,8 @@ public:
 	PASS3RC(float, environment_get_white, RID, bool, float)
 
 	// Fog
-	PASS11(environment_set_fog, RID, bool, const Color &, float, float, float, float, float, float, float, RSE::EnvironmentFogMode)
+	PASS11(environment_set_fog, RID, bool, const Color&, float, float, float, float, float, float,
+		float, RSE::EnvironmentFogMode)
 
 	PASS1RC(bool, environment_get_fog_enabled, RID)
 	PASS1RC(Color, environment_get_fog_light_color, RID)
@@ -1270,7 +1405,8 @@ public:
 	PASS1RC(float, environment_get_fog_depth_end, RID)
 
 	// Volumentric Fog
-	PASS14(environment_set_volumetric_fog, RID, bool, float, const Color &, const Color &, float, float, float, float, float, bool, float, float, float)
+	PASS14(environment_set_volumetric_fog, RID, bool, float, const Color&, const Color&, float,
+		float, float, float, float, bool, float, float, float)
 
 	PASS1RC(bool, environment_get_volumetric_fog_enabled, RID)
 	PASS1RC(float, environment_get_volumetric_fog_density, RID)
@@ -1287,7 +1423,8 @@ public:
 	PASS1RC(float, environment_get_volumetric_fog_ambient_inject, RID)
 
 	// Glow
-	PASS13(environment_set_glow, RID, bool, Vector<float>, float, float, float, float, RSE::EnvironmentGlowBlendMode, float, float, float, float, RID)
+	PASS13(environment_set_glow, RID, bool, Vector<float>, float, float, float, float,
+		RSE::EnvironmentGlowBlendMode, float, float, float, float, RID)
 
 	PASS1RC(bool, environment_get_glow_enabled, RID)
 	PASS1RC(Vector<float>, environment_get_glow_levels, RID)
@@ -1344,7 +1481,8 @@ public:
 
 	// SDFGI
 
-	PASS11(environment_set_sdfgi, RID, bool, int, float, RSE::EnvironmentSDFGIYScale, bool, float, bool, float, float, float)
+	PASS11(environment_set_sdfgi, RID, bool, int, float, RSE::EnvironmentSDFGIYScale, bool, float,
+		bool, float, float, float)
 
 	PASS1RC(bool, environment_get_sdfgi_enabled, RID)
 	PASS1RC(int, environment_get_sdfgi_cascades, RID)
@@ -1366,12 +1504,13 @@ public:
 
 	PASS1RC(bool, environment_get_adjustments_enabled, RID)
 	PASS1RC(float, environment_get_adjustments_brightness, RID)
-	PASS1RC(float, environment_get_adjustments_contrast, RID)
+
+PASS1RC(float, environment_get_adjustments_contrast, RID)
 	PASS1RC(float, environment_get_adjustments_saturation, RID)
 	PASS1RC(bool, environment_get_use_1d_color_correction, RID)
 	PASS1RC(RID, environment_get_color_correction, RID)
 
-	PASS3R(Ref<Image>, environment_bake_panorama, RID, bool, const Size2i &)
+	PASS3R(Ref<Image>, environment_bake_panorama, RID, bool, const Size2i&)
 
 	PASS3(screen_space_roughness_limiter_set_active, bool, float, float)
 	PASS1(sub_surface_scattering_set_quality, RSE::SubSurfaceScatteringQuality)
@@ -1380,7 +1519,7 @@ public:
 	PASS1(positional_soft_shadow_filter_set_quality, RSE::ShadowQuality)
 	PASS1(directional_soft_shadow_filter_set_quality, RSE::ShadowQuality)
 
-	PASS2(sdfgi_set_debug_probe_select, const Vector3 &, const Vector3 &)
+	PASS2(sdfgi_set_debug_probe_select, const Vector3&, const Vector3&)
 
 	/* Render Buffers */
 
@@ -1399,7 +1538,7 @@ public:
 
 	bool free(RID p_rid);
 
-	void set_scene_render(RendererSceneRender *p_scene_render);
+	void set_scene_render(RendererSceneRender* p_scene_render);
 
 	virtual void update_visibility_notifiers();
 
@@ -1409,10 +1548,13 @@ public:
 	void update_interpolation_frame(bool p_process = true);
 	virtual void set_physics_interpolation_enabled(bool p_enabled);
 
-	struct InterpolationData {
+	struct InterpolationData
+	{
 		bool interpolation_enabled = false;
 	} _interpolation_data;
 
 	RendererSceneCull();
 	virtual ~RendererSceneCull();
 };
+
+

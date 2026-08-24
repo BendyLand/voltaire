@@ -28,11 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "skeleton_modification_2d.h"
-
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
 #include "scene/2d/skeleton_2d.h"
+#include "skeleton_modification_2d.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/settings/editor_settings.h"
@@ -42,16 +41,19 @@
 // Modification2D
 ///////////////////////////////////////
 
-void SkeletonModification2D::_setup_modification(SkeletonModificationStack2D *p_stack) {
+void SkeletonModification2D::_setup_modification(SkeletonModificationStack2D* p_stack)
+{
 	stack = p_stack;
 	if (stack) {
 		is_setup = true;
-	} else {
+	}
+	else {
 		WARN_PRINT("Could not setup modification with name " + get_name());
 	}
 }
 
-void SkeletonModification2D::set_enabled(bool p_enabled) {
+void SkeletonModification2D::set_enabled(bool p_enabled)
+{
 	enabled = p_enabled;
 
 #ifdef TOOLS_ENABLED
@@ -63,17 +65,18 @@ void SkeletonModification2D::set_enabled(bool p_enabled) {
 #endif // TOOLS_ENABLED
 }
 
-bool SkeletonModification2D::get_enabled() {
-	return enabled;
-}
+bool SkeletonModification2D::get_enabled() { return enabled; }
 
-float SkeletonModification2D::clamp_angle(float p_angle, float p_min_bound, float p_max_bound, bool p_invert) {
+float SkeletonModification2D::clamp_angle(
+	float p_angle, float p_min_bound, float p_max_bound, bool p_invert)
+{
 	// Map to the 0 to 360 range (in radians though) instead of the -180 to 180 range.
 	if (p_angle < 0) {
 		p_angle = Math::TAU + p_angle;
 	}
 
-	// Make min and max in the range of 0 to 360 (in radians), and make sure they are in the right order
+	// Make min and max in the range of 0 to 360 (in radians), and make sure they are in the right
+	// order
 	if (p_min_bound < 0) {
 		p_min_bound = Math::TAU + p_min_bound;
 	}
@@ -87,15 +90,18 @@ float SkeletonModification2D::clamp_angle(float p_angle, float p_min_bound, floa
 	bool is_beyond_bounds = (p_angle < p_min_bound || p_angle > p_max_bound);
 	bool is_within_bounds = (p_angle > p_min_bound && p_angle < p_max_bound);
 
-	// Note: May not be the most optimal way to clamp, but it always constraints to the nearest angle.
+	// Note: May not be the most optimal way to clamp, but it always constraints to the nearest
+	// angle.
 	if ((!p_invert && is_beyond_bounds) || (p_invert && is_within_bounds)) {
 		Vector2 min_bound_vec = Vector2(Math::cos(p_min_bound), Math::sin(p_min_bound));
 		Vector2 max_bound_vec = Vector2(Math::cos(p_max_bound), Math::sin(p_max_bound));
 		Vector2 angle_vec = Vector2(Math::cos(p_angle), Math::sin(p_angle));
 
-		if (angle_vec.distance_squared_to(min_bound_vec) <= angle_vec.distance_squared_to(max_bound_vec)) {
+		if (angle_vec.distance_squared_to(min_bound_vec) <=
+			angle_vec.distance_squared_to(max_bound_vec)) {
 			p_angle = p_min_bound;
-		} else {
+		}
+		else {
 			p_angle = p_max_bound;
 		}
 	}
@@ -103,8 +109,10 @@ float SkeletonModification2D::clamp_angle(float p_angle, float p_min_bound, floa
 	return p_angle;
 }
 
-void SkeletonModification2D::editor_draw_angle_constraints(Bone2D *p_operation_bone, float p_min_bound, float p_max_bound,
-		bool p_constraint_enabled, bool p_constraint_in_localspace, bool p_constraint_inverted) {
+void SkeletonModification2D::editor_draw_angle_constraints(Bone2D* p_operation_bone,
+	float p_min_bound, float p_max_bound, bool p_constraint_enabled,
+	bool p_constraint_in_localspace, bool p_constraint_inverted)
+{
 	if (!p_operation_bone) {
 		return;
 	}
@@ -132,58 +140,65 @@ void SkeletonModification2D::editor_draw_angle_constraints(Bone2D *p_operation_b
 
 	if (p_constraint_enabled) {
 		if (p_constraint_in_localspace) {
-			Node *operation_bone_parent = p_operation_bone->get_parent();
-			Bone2D *operation_bone_parent_bone = Object::cast_to<Bone2D>(operation_bone_parent);
+			Node* operation_bone_parent = p_operation_bone->get_parent();
+			Bone2D* operation_bone_parent_bone = Object::cast_to<Bone2D>(operation_bone_parent);
 
 			if (operation_bone_parent_bone) {
 				stack->skeleton->draw_set_transform(
-						stack->skeleton->to_local(p_operation_bone->get_global_position()),
-						operation_bone_parent_bone->get_global_rotation() - stack->skeleton->get_global_rotation());
-			} else {
-				stack->skeleton->draw_set_transform(stack->skeleton->to_local(p_operation_bone->get_global_position()));
+					stack->skeleton->to_local(p_operation_bone->get_global_position()),
+					operation_bone_parent_bone->get_global_rotation() -
+						stack->skeleton->get_global_rotation());
 			}
-		} else {
-			stack->skeleton->draw_set_transform(stack->skeleton->to_local(p_operation_bone->get_global_position()));
+			else {
+				stack->skeleton->draw_set_transform(
+					stack->skeleton->to_local(p_operation_bone->get_global_position()));
+			}
+		}
+		else {
+			stack->skeleton->draw_set_transform(
+				stack->skeleton->to_local(p_operation_bone->get_global_position()));
 		}
 
 		if (p_constraint_inverted) {
 			stack->skeleton->draw_arc(Vector2(0, 0), p_operation_bone->get_length(),
-					arc_angle_min + (Math::PI * 2), arc_angle_max, 32, bone_ik_color, 1.0);
-		} else {
-			stack->skeleton->draw_arc(Vector2(0, 0), p_operation_bone->get_length(),
-					arc_angle_min, arc_angle_max, 32, bone_ik_color, 1.0);
+				arc_angle_min + (Math::PI * 2), arc_angle_max, 32, bone_ik_color, 1.0);
 		}
-		stack->skeleton->draw_line(Vector2(0, 0), Vector2(Math::cos(arc_angle_min), Math::sin(arc_angle_min)) * p_operation_bone->get_length(), bone_ik_color, 1.0);
-		stack->skeleton->draw_line(Vector2(0, 0), Vector2(Math::cos(arc_angle_max), Math::sin(arc_angle_max)) * p_operation_bone->get_length(), bone_ik_color, 1.0);
+		else {
+			stack->skeleton->draw_arc(Vector2(0, 0), p_operation_bone->get_length(), arc_angle_min,
+				arc_angle_max, 32, bone_ik_color, 1.0);
+		}
+		stack->skeleton->draw_line(Vector2(0, 0),
+			Vector2(Math::cos(arc_angle_min), Math::sin(arc_angle_min)) *
+				p_operation_bone->get_length(),
+			bone_ik_color, 1.0);
+		stack->skeleton->draw_line(Vector2(0, 0),
+			Vector2(Math::cos(arc_angle_max), Math::sin(arc_angle_max)) *
+				p_operation_bone->get_length(),
+			bone_ik_color, 1.0);
 
-	} else {
-		stack->skeleton->draw_set_transform(stack->skeleton->to_local(p_operation_bone->get_global_position()));
-		stack->skeleton->draw_arc(Vector2(0, 0), p_operation_bone->get_length(), 0, Math::PI * 2, 32, bone_ik_color, 1.0);
-		stack->skeleton->draw_line(Vector2(0, 0), Vector2(1, 0) * p_operation_bone->get_length(), bone_ik_color, 1.0);
+	}
+	else {
+		stack->skeleton->draw_set_transform(
+			stack->skeleton->to_local(p_operation_bone->get_global_position()));
+		stack->skeleton->draw_arc(
+			Vector2(0, 0), p_operation_bone->get_length(), 0, Math::PI * 2, 32, bone_ik_color, 1.0);
+		stack->skeleton->draw_line(
+			Vector2(0, 0), Vector2(1, 0) * p_operation_bone->get_length(), bone_ik_color, 1.0);
 	}
 }
 
-Ref<SkeletonModificationStack2D> SkeletonModification2D::get_modification_stack() {
-	return stack;
-}
+Ref<SkeletonModificationStack2D> SkeletonModification2D::get_modification_stack() { return stack; }
 
-void SkeletonModification2D::set_is_setup(bool p_setup) {
-	is_setup = p_setup;
-}
+void SkeletonModification2D::set_is_setup(bool p_setup) { is_setup = p_setup; }
 
-bool SkeletonModification2D::get_is_setup() const {
-	return is_setup;
-}
+bool SkeletonModification2D::get_is_setup() const { return is_setup; }
 
-void SkeletonModification2D::set_execution_mode(int p_mode) {
-	execution_mode = p_mode;
-}
+void SkeletonModification2D::set_execution_mode(int p_mode) { execution_mode = p_mode; }
 
-int SkeletonModification2D::get_execution_mode() const {
-	return execution_mode;
-}
+int SkeletonModification2D::get_execution_mode() const { return execution_mode; }
 
-void SkeletonModification2D::set_editor_draw_gizmo(bool p_draw_gizmo) {
+void SkeletonModification2D::set_editor_draw_gizmo(bool p_draw_gizmo)
+{
 	editor_draw_gizmo = p_draw_gizmo;
 #ifdef TOOLS_ENABLED
 	if (is_setup) {
@@ -194,36 +209,24 @@ void SkeletonModification2D::set_editor_draw_gizmo(bool p_draw_gizmo) {
 #endif // TOOLS_ENABLED
 }
 
-bool SkeletonModification2D::get_editor_draw_gizmo() const {
-	return editor_draw_gizmo;
-}
+bool SkeletonModification2D::get_editor_draw_gizmo() const { return editor_draw_gizmo; }
 
-void SkeletonModification2D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_enabled", "enabled"), &SkeletonModification2D::set_enabled);
-	ClassDB::bind_method(D_METHOD("get_enabled"), &SkeletonModification2D::get_enabled);
-	ClassDB::bind_method(D_METHOD("get_modification_stack"), &SkeletonModification2D::get_modification_stack);
-	ClassDB::bind_method(D_METHOD("set_is_setup", "is_setup"), &SkeletonModification2D::set_is_setup);
-	ClassDB::bind_method(D_METHOD("get_is_setup"), &SkeletonModification2D::get_is_setup);
-	ClassDB::bind_method(D_METHOD("set_execution_mode", "execution_mode"), &SkeletonModification2D::set_execution_mode);
-	ClassDB::bind_method(D_METHOD("get_execution_mode"), &SkeletonModification2D::get_execution_mode);
-	ClassDB::bind_method(D_METHOD("clamp_angle", "angle", "min", "max", "invert"), &SkeletonModification2D::clamp_angle);
-	ClassDB::bind_method(D_METHOD("set_editor_draw_gizmo", "draw_gizmo"), &SkeletonModification2D::set_editor_draw_gizmo);
-	ClassDB::bind_method(D_METHOD("get_editor_draw_gizmo"), &SkeletonModification2D::get_editor_draw_gizmo);
+void SkeletonModification2D::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "enabled"), "set_enabled", "get_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "execution_mode", PROPERTY_HINT_ENUM, "process,physics_process"), "set_execution_mode", "get_execution_mode");
-}
-
-void SkeletonModification2D::reset_state() {
+void SkeletonModification2D::reset_state()
+{
 	stack = nullptr;
 	is_setup = false;
 }
 
-SkeletonModification2D::SkeletonModification2D() {
+SkeletonModification2D::SkeletonModification2D()
+{
 	stack = nullptr;
 	is_setup = false;
 }
 
 void SkeletonModification2D::_execute(float p_delta) {}
+
 void SkeletonModification2D::_draw_editor_gizmo() {}
+
 

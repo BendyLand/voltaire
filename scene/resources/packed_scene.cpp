@@ -176,7 +176,7 @@ Ref<Resource> SceneState::get_remap_resource(const Ref<Resource>& p_resource,
 	}
 
 	bool reuse_fallback = p_fallback.is_valid() && p_fallback->is_local_to_scene() &&
-						  p_fallback->get_class_name() == p_resource->get_class_name();
+						  p_fallback->obj->get_class_name() == p_resource->obj->get_class_name();
 
 	if (reuse_fallback) {
 		// The fallback resource can only be mapped at most once when it is valid.
@@ -193,7 +193,7 @@ Ref<Resource> SceneState::get_remap_resource(const Ref<Resource>& p_resource,
 		p_fallback->reset_state(); // May want to reset state.
 
 		List<PropertyInfo> pi;
-		p_resource->get_property_list(&pi);
+		p_resource->obj->get_property_list(&pi);
 		for (const PropertyInfo& E : pi) {
 			if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
 				continue;
@@ -202,10 +202,10 @@ Ref<Resource> SceneState::get_remap_resource(const Ref<Resource>& p_resource,
 				continue; // Do not change path.
 			}
 
-			Variant value = _duplicate_recursive(
-				p_resource->get(E.name), remap_cache, p_fallback->get(E.name), p_for_scene);
+			Variant value = _duplicate_recursive(p_resource->obj->get(E.name), remap_cache,
+				p_fallback->obj->get(E.name), p_for_scene);
 
-			p_fallback->set(E.name, value);
+			p_fallback->obj->set(E.name, value);
 		}
 		remap_cache[p_for_scene][p_resource] = p_fallback;
 		return p_fallback;
@@ -391,7 +391,7 @@ Node* SceneState::instantiate(GenEditState p_edit_state) const
 					missing_node = memnew(MissingNode);
 #ifdef TOOLS_ENABLED
 					if (res.is_valid()) {
-						missing_node->set_original_scene(res->get_meta("__load_path__", ""));
+						missing_node->set_original_scene(res->obj->get_meta("__load_path__", ""));
 					}
 #endif
 					missing_node->set_recording_properties(true);
@@ -452,22 +452,14 @@ Node* SceneState::instantiate(GenEditState p_edit_state) const
 		}
 		else {
 			// Node belongs to this scene and must be created.
-			Object* obj = ClassDB::instantiate(snames[n.type]);
-
-			node = Object::cast_to<Node>(obj);
+			node = memnew(Node);
 
 			if (!node) {
-				if (obj) {
-					memdelete(obj);
-					obj = nullptr;
-				}
-
 				if (ResourceLoader::is_creating_missing_resources_if_class_unavailable_enabled()) {
 					missing_node = memnew(MissingNode);
 					missing_node->set_original_class(snames[n.type]);
 					missing_node->set_recording_properties(true);
 					node = missing_node;
-					obj = missing_node->obj.get();
 				}
 				else {
 					WARN_PRINT(vformat("Node %s of type %s cannot be created. A placeholder will "
@@ -475,25 +467,8 @@ Node* SceneState::instantiate(GenEditState p_edit_state) const
 						snames[n.name], snames[n.type])
 								   .ascii()
 								   .get_data());
-					if (n.parent >= 0 && n.parent < nc && ret_nodes[n.parent]) {
-						if (Object::cast_to<Control>(ret_nodes[n.parent])) {
-							obj = memnew(Control)->obj.get();
-						}
-						else if (Object::cast_to<Node2D>(ret_nodes[n.parent])) {
-							obj = memnew(Node2D)->obj.get();
-#ifndef _3D_DISABLED
-						}
-						else if (Object::cast_to<Node3D>(ret_nodes[n.parent])) {
-							obj = memnew(Node3D)->obj.get();
-#endif // _3D_DISABLED
-						}
-					}
 
-					if (!obj) {
-						obj = memnew(Node)->obj.get();
-					}
-
-					node = Object::cast_to<Node>(obj);
+					node = memnew(Node);
 				}
 			}
 		}
@@ -816,12 +791,8 @@ Node* SceneState::instantiate(GenEditState p_edit_state) const
 			ERR_CONTINUE_EDMSG(!valid, vformat("Failed to get property '%s' from node '%s'.",
 										   dnp.property, base->get_name()));
 			dict = dict.duplicate();
-			bool convert_key = dict.get_typed_key_builtin() == Variant::OBJECT &&
-							   ClassDB::is_parent_class(dict.get_typed_key_class_name(), "Node");
-			bool convert_value =
-				dict.get_typed_value_builtin() == Variant::OBJECT &&
-				ClassDB::is_parent_class(dict.get_typed_value_class_name(), "Node");
-
+			bool convert_key = dict.get_typed_key_builtin() == Variant::OBJECT;
+			bool convert_value = dict.get_typed_value_builtin() == Variant::OBJECT;
 			for (const KeyValue<Variant, Variant>& kv : paths) {
 				Variant key = kv.key;
 				if (convert_key) {
@@ -881,8 +852,8 @@ Node* SceneState::instantiate(GenEditState p_edit_state) const
 		}
 
 		cfrom->connect(snames[c.signal], callable,
-			CONNECT_PERSIST | c.flags |
-				(p_edit_state == GEN_EDIT_STATE_MAIN ? 0 : CONNECT_INHERITED));
+			Object::CONNECT_PERSIST | c.flags |
+				(p_edit_state == GEN_EDIT_STATE_MAIN ? 0 : Object::CONNECT_INHERITED));
 	}
 
 	// Node *s = ret_nodes[0];
@@ -1430,7 +1401,7 @@ Error SceneState::_parse_connections(Node* p_owner, Node* p_node,
 			const Object::Connection& c = F;
 
 			// Don't save connections that are not persistent.
-			if (!(c.flags & CONNECT_PERSIST)) {
+			if (!(c.flags & Object::CONNECT_PERSIST)) {
 				continue;
 			}
 
@@ -1601,7 +1572,7 @@ Error SceneState::_parse_connections(Node* p_owner, Node* p_node,
 			cd.to = target_id;
 			cd.method = _nm_get_string(base_callable.get_method(), name_map);
 			cd.signal = _nm_get_string(c.signal.get_name(), name_map);
-			cd.flags = c.flags & ~CONNECT_INHERITED; // Do not store inherited.
+			cd.flags = c.flags & ~Object::CONNECT_INHERITED; // Do not store inherited.
 			cd.unbinds = unbinds;
 
 			for (int i = 0; i < binds.size(); i++) {
@@ -1853,8 +1824,7 @@ Variant SceneState::get_property_value(
 		String prop_str = p_property.string();
 		if (prop_str.begins_with("libraries/")) {
 			StringName node_type = get_node_type(p_node);
-			if (node_type != StringName() &&
-				ClassDB::is_parent_class(node_type, SNAME("AnimationMixer"))) {
+			if (node_type != StringName()) {
 				String library_name = prop_str.get_slicec('/', 1);
 				static const StringName libraries_sname = "libraries";
 				for (int i = 0; i < pc; i++) {
@@ -2113,7 +2083,8 @@ Dictionary SceneState::get_bundled_scene() const
 		rnodes.push_back(nd.owner);
 		rnodes.push_back(nd.type);
 		uint32_t name_index = nd.name;
-		if (nd.index < (1 << (32 - NAME_INDEX_BITS)) - 1) { // save if less than 16k children
+		if (nd.index <
+(1 << (32 - NAME_INDEX_BITS)) - 1) { // save if less than 16k children
 			name_index |= uint32_t(nd.index + 1)
 						  << NAME_INDEX_BITS; // for backwards compatibility, index 0 is no index
 		}
@@ -2803,7 +2774,7 @@ void PackedScene::reload_from_file()
 	}
 
 	Ref<PackedScene> s = ResourceLoader::load(
-		ResourceLoader::path_remap(path), get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
+		ResourceLoader::path_remap(path), this->obj->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
 	if (s.is_null()) {
 		return;
 	}

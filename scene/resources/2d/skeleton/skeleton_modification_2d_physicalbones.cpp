@@ -44,7 +44,7 @@ bool SkeletonModification2DPhysicalBones::_set(const StringName& p_path, const V
 		if (Engine::get_singleton()->is_editor_hint()) {
 			if (path.begins_with("fetch_bones")) {
 				fetch_physical_bones();
-				notify_property_list_changed();
+				this->obj->notify_property_list_changed();
 				return true;
 			}
 		}
@@ -205,7 +205,7 @@ void SkeletonModification2DPhysicalBones::set_physical_bone_chain_length(int p_l
 {
 	ERR_FAIL_COND(p_length < 0);
 	physical_bone_chain.resize(p_length);
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 void SkeletonModification2DPhysicalBones::fetch_physical_bones()

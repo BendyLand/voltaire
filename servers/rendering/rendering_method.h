@@ -177,7 +177,7 @@ public:
 
 	virtual bool is_compositor(RID p_compositor) const = 0;
 
-	virtual void compositor_set_compositor_effects(RID p_env, const TypedArray<RID>& p_effects) = 0;
+	virtual void compositor_set_compositor_effects(RID p_env, const Array& p_effects) = 0;
 
 	/* ENVIRONMENT API */
 
@@ -402,8 +402,8 @@ public:
 	virtual Array bake_render_uv2(
 		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size) = 0;
 	virtual PackedByteArray bake_render_area_light_atlas(
-		const TypedArray<RID>& p_area_light_textures,
-		const TypedArray<Rect2>& p_area_light_atlas_texture_rects, const Size2i& p_size,
+		const Array& p_area_light_textures,
+		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size,
 		int p_mipmaps) = 0;
 
 	virtual void voxel_gi_set_quality(RSE::VoxelGIQuality) = 0;

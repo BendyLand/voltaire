@@ -28,43 +28,44 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "shader_include_db.h"
-
 #include "core/object/class_db.h"
+#include "shader_include_db.h"
 
 HashMap<String, String> ShaderIncludeDB::built_in_includes;
 
-void ShaderIncludeDB::_bind_methods() {
-	ClassDB::bind_static_method("ShaderIncludeDB", D_METHOD("list_built_in_include_files"), &ShaderIncludeDB::list_built_in_include_files);
-	ClassDB::bind_static_method("ShaderIncludeDB", D_METHOD("has_built_in_include_file", "filename"), &ShaderIncludeDB::has_built_in_include_file);
-	ClassDB::bind_static_method("ShaderIncludeDB", D_METHOD("get_built_in_include_file", "filename"), &ShaderIncludeDB::get_built_in_include_file);
-}
+void ShaderIncludeDB::_bind_methods() {}
 
-void ShaderIncludeDB::register_built_in_include_file(const String &p_filename, const String &p_shader_code) {
+void ShaderIncludeDB::register_built_in_include_file(
+	const String& p_filename, const String& p_shader_code)
+{
 	built_in_includes[p_filename] = p_shader_code;
 }
 
-PackedStringArray ShaderIncludeDB::list_built_in_include_files() {
+PackedStringArray ShaderIncludeDB::list_built_in_include_files()
+{
 	PackedStringArray ret;
 
-	for (const KeyValue<String, String> &e : built_in_includes) {
+	for (const KeyValue<String, String>& e : built_in_includes) {
 		ret.push_back(e.key);
 	}
 
 	return ret;
 }
 
-bool ShaderIncludeDB::has_built_in_include_file(const String &p_filename) {
+bool ShaderIncludeDB::has_built_in_include_file(const String& p_filename)
+{
 	return built_in_includes.has(p_filename);
 }
 
-String ShaderIncludeDB::get_built_in_include_file(const String &p_filename) {
-	const String *ptr = built_in_includes.getptr(p_filename);
+String ShaderIncludeDB::get_built_in_include_file(const String& p_filename)
+{
+	const String* ptr = built_in_includes.getptr(p_filename);
 
 	return ptr ? *ptr : String();
 }
 
-String ShaderIncludeDB::parse_include_files(const String &p_code) {
+String ShaderIncludeDB::parse_include_files(const String& p_code)
+{
 	// Prevent needless processing if we don't have any includes.
 	if (p_code.find("#include ") == -1) {
 		return p_code;
@@ -76,7 +77,7 @@ String ShaderIncludeDB::parse_include_files(const String &p_code) {
 	Vector<String> lines = p_code.split("\n");
 	int line_count = lines.size();
 	for (int i = 0; i < line_count; i++) {
-		const String &l = lines[i];
+		const String& l = lines[i];
 
 		if (l.begins_with(include)) {
 			String include_file = l.replace(include, "").strip_edges();
@@ -95,19 +96,23 @@ String ShaderIncludeDB::parse_include_files(const String &p_code) {
 						}
 
 						line_count = lines.size();
-					} else {
+					}
+					else {
 						// Just add it back in, this will cause a compile error to alert the user.
 						parsed_code += l + "\n";
 					}
-				} else {
+				}
+				else {
 					// Include as is.
 					parsed_code += l + "\n";
 				}
-			} else {
+			}
+			else {
 				// Include as is.
 				parsed_code += l + "\n";
 			}
-		} else {
+		}
+		else {
 			// Include as is.
 			parsed_code += l + "\n";
 		}
@@ -115,3 +120,5 @@ String ShaderIncludeDB::parse_include_files(const String &p_code) {
 
 	return parsed_code;
 }
+
+

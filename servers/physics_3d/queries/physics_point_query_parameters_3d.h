@@ -33,7 +33,8 @@
 #include "core/object/ref_counted.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
 
-class PhysicsPointQueryParameters3D : public RefCounted {
+class PhysicsPointQueryParameters3D : public RefCounted
+{
 	VLTRCLASS(PhysicsPointQueryParameters3D, RefCounted);
 
 	PS3DT::PointParameters parameters;
@@ -42,20 +43,26 @@ protected:
 	static void _bind_methods();
 
 public:
-	const PS3DT::PointParameters &get_parameters() const { return parameters; }
+	const PS3DT::PointParameters& get_parameters() const { return parameters; }
 
-	void set_position(const Vector3 &p_position) { parameters.position = p_position; }
-	const Vector3 &get_position() const { return parameters.position; }
+	void set_position(const Vector3& p_position) { parameters.position = p_position; }
+
+	const Vector3& get_position() const { return parameters.position; }
 
 	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
 	uint32_t get_collision_mask() const { return parameters.collision_mask; }
 
 	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
 	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
 
 	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
 	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
 
-	void set_exclude(const TypedArray<RID> &p_exclude);
-	TypedArray<RID> get_exclude() const;
+	void set_exclude(const Array& p_exclude);
+	Array get_exclude() const;
 };
+
+

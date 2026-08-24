@@ -28,39 +28,35 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/object/class_db.h"
 #include "joint_limitation_cone_3d.h"
 
-#include "core/object/class_db.h"
-
 #ifndef DISABLE_DEPRECATED
-bool JointLimitationCone3D::_set(const StringName &p_path, const Variant &p_value) {
+bool JointLimitationCone3D::_set(const StringName& p_path, const Variant& p_value)
+{
 	// To keep compatibility between 4.6.beta2 and beta3.
 	if (p_path == SNAME("radius_range")) {
 		set_angle((float)p_value * Math::TAU);
-	} else {
+	}
+	else {
 		return false;
 	}
 	return true;
 }
 #endif // DISABLE_DEPRECATED
 
-void JointLimitationCone3D::set_angle(real_t p_angle) {
+void JointLimitationCone3D::set_angle(real_t p_angle)
+{
 	angle = p_angle;
 	emit_changed();
 }
 
-real_t JointLimitationCone3D::get_angle() const {
-	return angle;
-}
+real_t JointLimitationCone3D::get_angle() const { return angle; }
 
-void JointLimitationCone3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_angle", "angle"), &JointLimitationCone3D::set_angle);
-	ClassDB::bind_method(D_METHOD("get_angle"), &JointLimitationCone3D::get_angle);
+void JointLimitationCone3D::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "angle", PROPERTY_HINT_RANGE, "0,360,0.01,radians_as_degrees"), "set_angle", "get_angle");
-}
-
-Vector3 JointLimitationCone3D::_solve(const Vector3 &p_direction) const {
+Vector3 JointLimitationCone3D::_solve(const Vector3& p_direction) const
+{
 	// Assume the central (forward of the cone) axis is the +Y.
 	// This is based on the coordinate system set by JointLimitation3D::_make_space().
 	Vector3 center_axis = Vector3(0, 1, 0);
@@ -78,11 +74,13 @@ Vector3 JointLimitationCone3D::_solve(const Vector3 &p_direction) const {
 	// Define a plane using the central axis and the new direction vector.
 	Vector3 plane_normal;
 
-	// Special handling for when the new direction vector is completely opposite to the central axis.
+	// Special handling for when the new direction vector is completely opposite to the central
+	// axis.
 	if (Math::is_equal_approx((double)current_angle, Math::PI)) {
 		// Select an arbitrary perpendicular axis
 		plane_normal = center_axis.get_any_perpendicular();
-	} else {
+	}
+	else {
 		plane_normal = center_axis.cross(p_direction).normalized();
 	}
 
@@ -103,7 +101,9 @@ Vector3 JointLimitationCone3D::_solve(const Vector3 &p_direction) const {
 }
 
 #ifdef TOOLS_ENABLED
-void JointLimitationCone3D::draw_shape(Ref<SurfaceTool> &p_surface_tool, const Transform3D &p_transform, float p_bone_length, const Color &p_color) const {
+void JointLimitationCone3D::draw_shape(Ref<SurfaceTool>& p_surface_tool,
+	const Transform3D& p_transform, float p_bone_length, const Color& p_color) const
+{
 	static const int N = 16;
 	static const real_t DP = Math::TAU / (real_t)N;
 
@@ -135,7 +135,8 @@ void JointLimitationCone3D::draw_shape(Ref<SurfaceTool> &p_surface_tool, const T
 	if (alpha <= (real_t)1e-6) {
 		t_start = (real_t)0.5 * Math::PI;
 		arc_len = Math::PI;
-	} else {
+	}
+	else {
 		t_start = (real_t)0.5 * Math::PI + alpha;
 		arc_len = Math::PI - alpha;
 	}
@@ -144,7 +145,8 @@ void JointLimitationCone3D::draw_shape(Ref<SurfaceTool> &p_surface_tool, const T
 	for (int k = 0; k < N; k++) {
 		Basis ry(Vector3(0, 1, 0), (real_t)k * DP);
 
-		Vector3 prev = ry.xform(Vector3(sphere_r * Math::cos(t_start), sphere_r * Math::sin(t_start), 0));
+		Vector3 prev =
+			ry.xform(Vector3(sphere_r * Math::cos(t_start), sphere_r * Math::sin(t_start), 0));
 
 		for (int s = 1; s <= N; s++) {
 			real_t t = t_start + dt * (real_t)s;
@@ -156,7 +158,8 @@ void JointLimitationCone3D::draw_shape(Ref<SurfaceTool> &p_surface_tool, const T
 			prev = cur;
 		}
 
-		Vector3 mouth = ry.xform(Vector3(sphere_r * Math::cos(t_start), sphere_r * Math::sin(t_start), 0));
+		Vector3 mouth =
+			ry.xform(Vector3(sphere_r * Math::cos(t_start), sphere_r * Math::sin(t_start), 0));
 		Vector3 center = Vector3();
 
 		vts.push_back(center);
@@ -194,3 +197,5 @@ void JointLimitationCone3D::draw_shape(Ref<SurfaceTool> &p_surface_tool, const T
 	}
 }
 #endif // TOOLS_ENABLED
+
+

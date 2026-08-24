@@ -30,43 +30,47 @@
 
 #ifndef DISABLE_DEPRECATED
 
+#include "core/object/class_db.h"
 #include "text_paragraph.h"
 
-#include "core/object/class_db.h"
-
-void TextParagraph::_draw_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, const Color &p_color, const Color &p_dc_color) const {
+void TextParagraph::_draw_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, const Color& p_color, const Color& p_dc_color) const
+{
 	draw(p_canvas, p_pos, p_color, p_dc_color, 0.0);
 }
 
-void TextParagraph::_draw_outline_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, int p_outline_size, const Color &p_color, const Color &p_dc_color) const {
+void TextParagraph::_draw_outline_bind_compat_104872(RID p_canvas, const Vector2& p_pos,
+	int p_outline_size, const Color& p_color, const Color& p_dc_color) const
+{
 	draw_outline(p_canvas, p_pos, p_outline_size, p_color, p_dc_color, 0.0);
 }
 
-void TextParagraph::_draw_line_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, int p_line, const Color &p_color) const {
+void TextParagraph::_draw_line_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, int p_line, const Color& p_color) const
+{
 	draw_line(p_canvas, p_pos, p_line, p_color, 0.0);
 }
 
-void TextParagraph::_draw_line_outline_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, int p_line, int p_outline_size, const Color &p_color) const {
+void TextParagraph::_draw_line_outline_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, int p_line, int p_outline_size, const Color& p_color) const
+{
 	draw_line_outline(p_canvas, p_pos, p_line, p_outline_size, p_color, 0.0);
 }
 
-void TextParagraph::_draw_dropcap_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, const Color &p_color) const {
+void TextParagraph::_draw_dropcap_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, const Color& p_color) const
+{
 	draw_dropcap(p_canvas, p_pos, p_color, 0.0);
 }
 
-void TextParagraph::_draw_dropcap_outline_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, int p_outline_size, const Color &p_color) const {
+void TextParagraph::_draw_dropcap_outline_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, int p_outline_size, const Color& p_color) const
+{
 	draw_dropcap_outline(p_canvas, p_pos, p_outline_size, p_color, 0.0);
 }
 
-void TextParagraph::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("draw", "canvas", "pos", "color", "dc_color"), &TextParagraph::_draw_bind_compat_104872, DEFVAL(Color(1, 1, 1)), DEFVAL(Color(1, 1, 1)));
-	ClassDB::bind_compatibility_method(D_METHOD("draw_outline", "canvas", "pos", "outline_size", "color", "dc_color"), &TextParagraph::_draw_outline_bind_compat_104872, DEFVAL(1), DEFVAL(Color(1, 1, 1)), DEFVAL(Color(1, 1, 1)));
-
-	ClassDB::bind_compatibility_method(D_METHOD("draw_line", "canvas", "pos", "line", "color"), &TextParagraph::_draw_line_bind_compat_104872, DEFVAL(Color(1, 1, 1)));
-	ClassDB::bind_compatibility_method(D_METHOD("draw_line_outline", "canvas", "pos", "line", "outline_size", "color"), &TextParagraph::_draw_line_outline_bind_compat_104872, DEFVAL(1), DEFVAL(Color(1, 1, 1)));
-
-	ClassDB::bind_compatibility_method(D_METHOD("draw_dropcap", "canvas", "pos", "color"), &TextParagraph::_draw_dropcap_bind_compat_104872, DEFVAL(Color(1, 1, 1)));
-	ClassDB::bind_compatibility_method(D_METHOD("draw_dropcap_outline", "canvas", "pos", "outline_size", "color"), &TextParagraph::_draw_dropcap_outline_bind_compat_104872, DEFVAL(1), DEFVAL(Color(1, 1, 1)));
-}
+void TextParagraph::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

@@ -31,21 +31,23 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "audio_effect_spectrum_analyzer.h"
-
 #include "core/object/class_db.h"
 
-void AudioEffectSpectrumAnalyzer::_set_tap_back_pos_bind_compat_114355(float p_seconds) {
-	WARN_PRINT_ONCE("AudioEffectSpectrumAnalyzer.set_tap_back_pos() is deprecated and the value will be discarded.");
+void AudioEffectSpectrumAnalyzer::_set_tap_back_pos_bind_compat_114355(float p_seconds)
+{
+	WARN_PRINT_ONCE("AudioEffectSpectrumAnalyzer.set_tap_back_pos() is deprecated and the value "
+					"will be discarded.");
 }
 
-float AudioEffectSpectrumAnalyzer::_get_tap_back_pos_bind_compat_114355() const {
-	WARN_PRINT_ONCE("AudioEffectSpectrumAnalyzer.get_tap_back_pos() is deprecated and will only return the original default value.");
+float AudioEffectSpectrumAnalyzer::_get_tap_back_pos_bind_compat_114355() const
+{
+	WARN_PRINT_ONCE("AudioEffectSpectrumAnalyzer.get_tap_back_pos() is deprecated and will only "
+					"return the original default value.");
 	return 0.01;
 }
 
-void AudioEffectSpectrumAnalyzer::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("set_tap_back_pos", "seconds"), &AudioEffectSpectrumAnalyzer::_set_tap_back_pos_bind_compat_114355);
-	ClassDB::bind_compatibility_method(D_METHOD("get_tap_back_pos"), &AudioEffectSpectrumAnalyzer::_get_tap_back_pos_bind_compat_114355);
-}
+void AudioEffectSpectrumAnalyzer::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

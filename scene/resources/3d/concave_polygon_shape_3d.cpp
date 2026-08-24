@@ -29,18 +29,18 @@
 /**************************************************************************/
 
 #include "concave_polygon_shape_3d.h"
-
 #include "core/object/class_db.h"
 #include "scene/resources/mesh.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
-Vector<Vector3> ConcavePolygonShape3D::get_debug_mesh_lines() const {
+Vector<Vector3> ConcavePolygonShape3D::get_debug_mesh_lines() const
+{
 	HashSet<DrawEdge, DrawEdge> edges;
 
 	int index_count = faces.size();
 	ERR_FAIL_COND_V((index_count % 3) != 0, Vector<Vector3>());
 
-	const Vector3 *r = faces.ptr();
+	const Vector3* r = faces.ptr();
 
 	for (int i = 0; i < index_count; i += 3) {
 		for (int j = 0; j < 3; j++) {
@@ -52,7 +52,7 @@ Vector<Vector3> ConcavePolygonShape3D::get_debug_mesh_lines() const {
 	Vector<Vector3> points;
 	points.resize(edges.size() * 2);
 	int idx = 0;
-	for (const DrawEdge &E : edges) {
+	for (const DrawEdge& E : edges) {
 		points.write[idx + 0] = E.a;
 		points.write[idx + 1] = E.b;
 		idx += 2;
@@ -61,7 +61,8 @@ Vector<Vector3> ConcavePolygonShape3D::get_debug_mesh_lines() const {
 	return points;
 }
 
-Ref<ArrayMesh> ConcavePolygonShape3D::get_debug_arraymesh_faces(const Color &p_modulate) const {
+Ref<ArrayMesh> ConcavePolygonShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
 	Vector<Color> colors;
 
 	for (int i = 0; i < faces.size(); i++) {
@@ -78,9 +79,10 @@ Ref<ArrayMesh> ConcavePolygonShape3D::get_debug_arraymesh_faces(const Color &p_m
 	return mesh;
 }
 
-real_t ConcavePolygonShape3D::get_enclosing_radius() const {
+real_t ConcavePolygonShape3D::get_enclosing_radius() const
+{
 	Vector<Vector3> data = get_faces();
-	const Vector3 *read = data.ptr();
+	const Vector3* read = data.ptr();
 	real_t r = 0.0;
 	for (int i(0); i < data.size(); i++) {
 		r = MAX(read[i].length_squared(), r);
@@ -88,7 +90,8 @@ real_t ConcavePolygonShape3D::get_enclosing_radius() const {
 	return Math::sqrt(r);
 }
 
-void ConcavePolygonShape3D::_update_shape() {
+void ConcavePolygonShape3D::_update_shape()
+{
 	Dictionary d;
 	d["faces"] = faces;
 	d["backface_collision"] = backface_collision;
@@ -97,17 +100,17 @@ void ConcavePolygonShape3D::_update_shape() {
 	Shape3D::_update_shape();
 }
 
-void ConcavePolygonShape3D::set_faces(const Vector<Vector3> &p_faces) {
+void ConcavePolygonShape3D::set_faces(const Vector<Vector3>& p_faces)
+{
 	faces = p_faces;
 	_update_shape();
 	emit_changed();
 }
 
-Vector<Vector3> ConcavePolygonShape3D::get_faces() const {
-	return faces;
-}
+Vector<Vector3> ConcavePolygonShape3D::get_faces() const { return faces; }
 
-void ConcavePolygonShape3D::set_backface_collision_enabled(bool p_enabled) {
+void ConcavePolygonShape3D::set_backface_collision_enabled(bool p_enabled)
+{
 	backface_collision = p_enabled;
 
 	if (!faces.is_empty()) {
@@ -116,22 +119,14 @@ void ConcavePolygonShape3D::set_backface_collision_enabled(bool p_enabled) {
 	}
 }
 
-bool ConcavePolygonShape3D::is_backface_collision_enabled() const {
-	return backface_collision;
+bool ConcavePolygonShape3D::is_backface_collision_enabled() const { return backface_collision; }
+
+void ConcavePolygonShape3D::_bind_methods() {}
+
+ConcavePolygonShape3D::ConcavePolygonShape3D()
+	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CONCAVE_POLYGON))
+{
+	// set_planes(Vector3(1,1,1));
 }
 
-void ConcavePolygonShape3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_faces", "faces"), &ConcavePolygonShape3D::set_faces);
-	ClassDB::bind_method(D_METHOD("get_faces"), &ConcavePolygonShape3D::get_faces);
 
-	ClassDB::bind_method(D_METHOD("set_backface_collision_enabled", "enabled"), &ConcavePolygonShape3D::set_backface_collision_enabled);
-	ClassDB::bind_method(D_METHOD("is_backface_collision_enabled"), &ConcavePolygonShape3D::is_backface_collision_enabled);
-
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "set_faces", "get_faces");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "backface_collision"), "set_backface_collision_enabled", "is_backface_collision_enabled");
-}
-
-ConcavePolygonShape3D::ConcavePolygonShape3D() :
-		Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CONCAVE_POLYGON)) {
-	//set_planes(Vector3(1,1,1));
-}

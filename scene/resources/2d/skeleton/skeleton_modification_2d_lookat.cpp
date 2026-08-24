@@ -289,7 +289,7 @@ void SkeletonModification2DLookAt::set_bone_index(int p_bone_idx)
 		bone_idx = p_bone_idx;
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 void SkeletonModification2DLookAt::update_target_cache()
@@ -335,7 +335,7 @@ void SkeletonModification2DLookAt::set_additional_rotation(float p_rotation)
 void SkeletonModification2DLookAt::set_enable_constraint(bool p_constraint)
 {
 	enable_constraint = p_constraint;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 #ifdef TOOLS_ENABLED
 	if (stack && is_setup) {
 		stack->set_editor_gizmos_dirty(true);

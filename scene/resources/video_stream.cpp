@@ -28,28 +28,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "video_stream.h"
-
 #include "core/object/class_db.h"
+#include "video_stream.h"
 
 // VideoStreamPlayback starts here.
 
-void VideoStreamPlayback::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("mix_audio", "num_frames", "buffer", "offset"), &VideoStreamPlayback::mix_audio, DEFVAL(PackedFloat32Array()), DEFVAL(0));
-}
+void VideoStreamPlayback::_bind_methods() {}
 
-VideoStreamPlayback::VideoStreamPlayback() {
-}
+VideoStreamPlayback::VideoStreamPlayback() {}
 
-VideoStreamPlayback::~VideoStreamPlayback() {
-}
+VideoStreamPlayback::~VideoStreamPlayback() {}
 
-void VideoStreamPlayback::set_mix_callback(AudioMixCallback p_callback, void *p_userdata) {
+void VideoStreamPlayback::set_mix_callback(AudioMixCallback p_callback, void* p_userdata)
+{
 	mix_callback = p_callback;
 	mix_udata = p_userdata;
 }
 
-int VideoStreamPlayback::mix_audio(int num_frames, PackedFloat32Array buffer, int offset) {
+int VideoStreamPlayback::mix_audio(int num_frames, PackedFloat32Array buffer, int offset)
+{
 	if (num_frames <= 0) {
 		return 0;
 	}
@@ -57,55 +54,61 @@ int VideoStreamPlayback::mix_audio(int num_frames, PackedFloat32Array buffer, in
 		return -1;
 	}
 	ERR_FAIL_INDEX_V(offset, buffer.size(), -1);
-	ERR_FAIL_INDEX_V((_channel_count < 1 ? 1 : _channel_count) * num_frames - 1, buffer.size() - offset, -1);
+	ERR_FAIL_INDEX_V(
+		(_channel_count < 1 ? 1 : _channel_count) * num_frames - 1, buffer.size() - offset, -1);
 	return mix_callback(mix_udata, buffer.ptr() + offset, num_frames);
 }
 
 /* --- NOTE VideoStream starts here. ----- */
 
-Ref<VideoStreamPlayback> VideoStream::instantiate_playback() {
+Ref<VideoStreamPlayback> VideoStream::instantiate_playback()
+{
 	Ref<VideoStreamPlayback> ret;
 	ERR_FAIL_COND_V_MSG(ret.is_null(), nullptr, "Plugin returned null playback");
 	ret->set_audio_track(audio_track);
 	return ret;
 }
 
-void VideoStream::set_file(const String &p_file) {
+void VideoStream::set_file(const String& p_file)
+{
 	file = p_file;
 	emit_changed();
 }
 
-String VideoStream::get_file() {
-	return file;
-}
+String VideoStream::get_file() { return file; }
 
-void VideoStream::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_file", "file"), &VideoStream::set_file);
-	ClassDB::bind_method(D_METHOD("get_file"), &VideoStream::get_file);
+void VideoStream::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "file"), "set_file", "get_file");
-}
+VideoStream::VideoStream() {}
 
-VideoStream::VideoStream() {
-}
+VideoStream::~VideoStream() {}
 
-VideoStream::~VideoStream() {
-}
-
-void VideoStream::set_audio_track(int p_track) {
-	audio_track = p_track;
-}
+void VideoStream::set_audio_track(int p_track) { audio_track = p_track; }
 
 void VideoStreamPlayback::stop() {}
+
 void VideoStreamPlayback::play() {}
+
 bool VideoStreamPlayback::is_playing() const { return false; }
+
 void VideoStreamPlayback::set_paused(bool p_paused) {}
+
 bool VideoStreamPlayback::is_paused() const { return false; }
+
 double VideoStreamPlayback::get_length() const { return 0.0; }
+
 double VideoStreamPlayback::get_playback_position() const { return 0.0; }
+
 void VideoStreamPlayback::seek(double p_time) {}
+
 void VideoStreamPlayback::set_audio_track(int p_idx) {}
+
 Ref<Texture2D> VideoStreamPlayback::get_texture() const { return Ref<Texture2D>(); }
+
 void VideoStreamPlayback::update(double p_delta) {}
+
 int VideoStreamPlayback::get_channels() const { return 0; }
+
 int VideoStreamPlayback::get_mix_rate() const { return 0; }
+
+

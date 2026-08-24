@@ -70,7 +70,7 @@ void TileMapPattern::_set_tile_data(const Vector<int>& p_data)
 		set_cell(
 			Vector2i(x, y), source_id, Vector2i(atlas_coords_x, atlas_coords_y), alternative_tile);
 	}
-	emit_signal(CoreStringName(changed));
+	this->obj->emit_signal(CoreStringName(changed));
 }
 
 Vector<int> TileMapPattern::_get_tile_data() const
@@ -356,7 +356,7 @@ void TileSet::set_tile_shape(TileSet::TileShape p_shape)
 
 	terrain_bits_meshes_dirty = true;
 	tile_meshes_dirty = true;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -614,7 +614,7 @@ void TileSet::add_occlusion_layer(int p_index)
 		source.value->add_occlusion_layer(p_index);
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -627,7 +627,7 @@ void TileSet::move_occlusion_layer(int p_from_index, int p_to_pos)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->move_occlusion_layer(p_from_index, p_to_pos);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -638,7 +638,7 @@ void TileSet::remove_occlusion_layer(int p_index)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->remove_occlusion_layer(p_index);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -683,7 +683,7 @@ void TileSet::add_physics_layer(int p_index)
 		source.value->add_physics_layer(p_index);
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -696,7 +696,7 @@ void TileSet::move_physics_layer(int p_from_index, int p_to_pos)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->move_physics_layer(p_from_index, p_to_pos);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -707,7 +707,7 @@ void TileSet::remove_physics_layer(int p_index)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->remove_physics_layer(p_index);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -779,7 +779,7 @@ void TileSet::add_terrain_set(int p_index)
 		source.value->add_terrain_set(p_index);
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	terrains_cache_dirty = true;
 	emit_changed();
 }
@@ -793,7 +793,7 @@ void TileSet::move_terrain_set(int p_from_index, int p_to_pos)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->move_terrain_set(p_from_index, p_to_pos);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	terrains_cache_dirty = true;
 	emit_changed();
 }
@@ -805,7 +805,7 @@ void TileSet::remove_terrain_set(int p_index)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->remove_terrain_set(p_index);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	terrains_cache_dirty = true;
 	emit_changed();
 }
@@ -818,7 +818,7 @@ void TileSet::set_terrain_set_mode(int p_terrain_set, TerrainMode p_terrain_mode
 		E_source.value->notify_tile_data_properties_should_change();
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	terrains_cache_dirty = true;
 	emit_changed();
 }
@@ -857,7 +857,7 @@ void TileSet::add_terrain(int p_terrain_set, int p_index)
 		source.value->add_terrain(p_terrain_set, p_index);
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	terrains_cache_dirty = true;
 	emit_changed();
 }
@@ -874,7 +874,7 @@ void TileSet::move_terrain(int p_terrain_set, int p_from_index, int p_to_pos)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->move_terrain(p_terrain_set, p_from_index, p_to_pos);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	terrains_cache_dirty = true;
 	emit_changed();
 }
@@ -889,7 +889,7 @@ void TileSet::remove_terrain(int p_terrain_set, int p_index)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->remove_terrain(p_terrain_set, p_index);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	terrains_cache_dirty = true;
 	emit_changed();
 }
@@ -906,7 +906,7 @@ void TileSet::clear_terrains(int p_terrain_set)
 		}
 	}
 	terrains.clear();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	terrains_cache_dirty = true;
 	emit_changed();
 }
@@ -1068,7 +1068,7 @@ void TileSet::add_navigation_layer(int p_index)
 		source.value->add_navigation_layer(p_index);
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -1081,7 +1081,7 @@ void TileSet::move_navigation_layer(int p_from_index, int p_to_pos)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->move_navigation_layer(p_from_index, p_to_pos);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -1092,7 +1092,7 @@ void TileSet::remove_navigation_layer(int p_index)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->remove_navigation_layer(p_index);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -1154,7 +1154,7 @@ void TileSet::add_custom_data_layer(int p_index)
 		source.value->add_custom_data_layer(p_index);
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -1167,7 +1167,7 @@ void TileSet::move_custom_data_layer(int p_from_index, int p_to_pos)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->move_custom_data_layer(p_from_index, p_to_pos);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -1190,7 +1190,7 @@ void TileSet::remove_custom_data_layer(int p_index)
 	for (KeyValue<int, Ref<TileSetSource>> source : sources) {
 		source.value->remove_custom_data_layer(p_index);
 	}
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -1687,10 +1687,10 @@ void TileSet::draw_tile_shape(CanvasItem* p_canvas_item, Transform2D p_transform
 	}
 
 	if (p_filled) {
-		p_canvas_item->draw_mesh(tile_filled_mesh, p_texture, p_transform, p_color);
+		p_canvas_item->draw_mesh(tile_filled_mesh.ptr(), p_texture, p_transform, p_color);
 	}
 	else {
-		p_canvas_item->draw_mesh(tile_lines_mesh, Ref<Texture2D>(), p_transform, p_color);
+		p_canvas_item->draw_mesh(tile_lines_mesh.ptr(), Ref<Texture2D>(), p_transform, p_color);
 	}
 }
 
@@ -2865,7 +2865,7 @@ void TileSet::draw_terrains(
 		Color color = get_terrain_color(terrain_set, terrain_id);
 		color.a = TERRAIN_ALPHA;
 		p_canvas_item->draw_mesh(
-			terrain_meshes[terrain_mode], Ref<Texture2D>(), Transform2D(), color);
+			terrain_meshes[terrain_mode].ptr(), Ref<Texture2D>(), Transform2D(), color);
 	}
 
 	for (int i = 0; i < TileSet::CELL_NEIGHBOR_MAX; i++) {
@@ -2875,7 +2875,7 @@ void TileSet::draw_terrains(
 			if (terrain_id >= 0) {
 				Color color = get_terrain_color(terrain_set, terrain_id);
 				color.a = TERRAIN_ALPHA;
-				p_canvas_item->draw_mesh(terrain_peering_bits_meshes[terrain_mode][bit],
+				p_canvas_item->draw_mesh(terrain_peering_bits_meshes[terrain_mode][bit].ptr(),
 					Ref<Texture2D>(), Transform2D(), color);
 			}
 		}
@@ -5682,7 +5682,7 @@ void TileSetAtlasSource::set_tile_animation_frames_count(
 	_create_coords_mapping_cache(p_atlas_coords);
 	_queue_update_padded_texture();
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 
 	_try_emit_changed();
 }
@@ -6119,7 +6119,7 @@ TileData* TileSetAtlasSource::get_tile_data(
 
 void TileSetAtlasSource::_notification(int p_notification)
 {
-	if (p_notification == NOTIFICATION_POSTINITIALIZE) {
+	if (p_notification == Object::NOTIFICATION_POSTINITIALIZE) {
 		initializing = false;
 	}
 }
@@ -6592,7 +6592,7 @@ void TileSetScenesCollectionSource::_get_property_list(List<PropertyInfo>* p_lis
 
 void TileSetScenesCollectionSource::_notification(int p_notification)
 {
-	if (p_notification == NOTIFICATION_POSTINITIALIZE) {
+	if (p_notification == Object::NOTIFICATION_POSTINITIALIZE) {
 		initializing = false;
 	}
 }

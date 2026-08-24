@@ -100,7 +100,7 @@ class Texture3D : public Texture {
 protected:
 	static void _bind_methods();
 
-	TypedArray<Image> _get_datai() const;
+	Array _get_datai() const;
 
 public:
 	virtual Image::Format get_format() const;

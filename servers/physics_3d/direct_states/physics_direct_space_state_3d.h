@@ -40,15 +40,15 @@
 class PhysicsDirectSpaceState3D
 {
 private:
-	Dictionary _intersect_ray(RequiredParam<PhysicsRayQueryParameters3D> rp_ray_query);
-	TypedArray<Dictionary> _intersect_point(
-		RequiredParam<PhysicsPointQueryParameters3D> rp_point_query, int p_max_results = 32);
-	TypedArray<Dictionary> _intersect_shape(
-		RequiredParam<PhysicsShapeQueryParameters3D> rp_shape_query, int p_max_results = 32);
-	Vector<real_t> _cast_motion(RequiredParam<PhysicsShapeQueryParameters3D> rp_shape_query);
-	TypedArray<Vector3> _collide_shape(
-		RequiredParam<PhysicsShapeQueryParameters3D> rp_shape_query, int p_max_results = 32);
-	Dictionary _get_rest_info(RequiredParam<PhysicsShapeQueryParameters3D> rp_shape_query);
+	Dictionary _intersect_ray(PhysicsRayQueryParameters3D* rp_ray_query);
+	Array _intersect_point(
+		PhysicsPointQueryParameters3D* rp_point_query, int p_max_results = 32);
+	Array _intersect_shape(
+		PhysicsShapeQueryParameters3D* rp_shape_query, int p_max_results = 32);
+	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters3D* rp_shape_query);
+	Array _collide_shape(
+		PhysicsShapeQueryParameters3D* rp_shape_query, int p_max_results = 32);
+	Dictionary _get_rest_info(PhysicsShapeQueryParameters3D* rp_shape_query);
 
 protected:
 	static void _bind_methods();
@@ -57,10 +57,8 @@ public:
 	mem_unique_ptr<Object> obj;
 	virtual bool intersect_ray(
 		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result) = 0;
-
 	virtual int intersect_point(const PS3DT::PointParameters& p_parameters,
 		PS3DT::ShapeResult* r_results, int p_result_max) = 0;
-
 	virtual int intersect_shape(const PS3DT::ShapeParameters& p_parameters,
 		PS3DT::ShapeResult* r_results, int p_result_max) = 0;
 	virtual bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
@@ -69,10 +67,8 @@ public:
 		int p_result_max, int& r_result_count) = 0;
 	virtual bool rest_info(
 		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info) = 0;
-
 	virtual Vector3 get_closest_point_to_object_volume(
 		RID p_object, const Vector3 p_point) const = 0;
-
 	PhysicsDirectSpaceState3D();
 };
 

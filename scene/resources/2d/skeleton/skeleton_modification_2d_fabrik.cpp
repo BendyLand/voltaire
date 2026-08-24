@@ -429,7 +429,7 @@ NodePath SkeletonModification2DFABRIK::get_target_node() const { return target_n
 void SkeletonModification2DFABRIK::set_fabrik_data_chain_length(int p_length)
 {
 	fabrik_data_chain.resize(p_length);
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int SkeletonModification2DFABRIK::get_fabrik_data_chain_length()
@@ -444,7 +444,7 @@ void SkeletonModification2DFABRIK::set_fabrik_joint_bone2d_node(
 	fabrik_data_chain.write[p_joint_idx].bone2d_node = p_target_node;
 	fabrik_joint_update_bone2d_cache(p_joint_idx);
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 NodePath SkeletonModification2DFABRIK::get_fabrik_joint_bone2d_node(int p_joint_idx) const
@@ -458,7 +458,6 @@ void SkeletonModification2DFABRIK::set_fabrik_joint_bone_index(int p_joint_idx, 
 {
 	ERR_FAIL_INDEX_MSG(p_joint_idx, fabrik_data_chain.size(), "FABRIK joint out of range!");
 	ERR_FAIL_COND_MSG(p_bone_idx < 0, "Bone index is out of range: The index is too low!");
-
 	if (is_setup) {
 		if (stack->skeleton) {
 			ERR_FAIL_INDEX_MSG(p_bone_idx, stack->skeleton->get_bone_count(),
@@ -478,8 +477,7 @@ void SkeletonModification2DFABRIK::set_fabrik_joint_bone_index(int p_joint_idx, 
 	else {
 		fabrik_data_chain.write[p_joint_idx].bone_idx = p_bone_idx;
 	}
-
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int SkeletonModification2DFABRIK::get_fabrik_joint_bone_index(int p_joint_idx) const

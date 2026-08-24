@@ -28,14 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "shader_include_resource_format.h"
-
 #include "core/io/file_access.h"
 #include "scene/resources/shader_include.h"
+#include "shader_include_resource_format.h"
 
 // ResourceFormatLoaderShaderInclude
 
-Ref<Resource> ResourceFormatLoaderShaderInclude::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
+Ref<Resource> ResourceFormatLoaderShaderInclude::load(const String& p_path,
+	const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress,
+	CacheMode p_cache_mode)
+{
 	if (r_error) {
 		*r_error = ERR_FILE_CANT_OPEN;
 	}
@@ -46,7 +48,7 @@ Ref<Resource> ResourceFormatLoaderShaderInclude::load(const String &p_path, cons
 
 	String str;
 	if (buffer.size() > 0) {
-		error = str.append_utf8((const char *)buffer.ptr(), buffer.size());
+		error = str.append_utf8((const char*)buffer.ptr(), buffer.size());
 		ERR_FAIL_COND_V_MSG(error, nullptr, "Cannot parse shader include: " + p_path);
 	}
 
@@ -63,15 +65,18 @@ Ref<Resource> ResourceFormatLoaderShaderInclude::load(const String &p_path, cons
 	return shader_inc;
 }
 
-void ResourceFormatLoaderShaderInclude::get_recognized_extensions(List<String> *p_extensions) const {
+void ResourceFormatLoaderShaderInclude::get_recognized_extensions(List<String>* p_extensions) const
+{
 	p_extensions->push_back("gdshaderinc");
 }
 
-bool ResourceFormatLoaderShaderInclude::handles_type(const String &p_type) const {
+bool ResourceFormatLoaderShaderInclude::handles_type(const String& p_type) const
+{
 	return (p_type == "ShaderInclude");
 }
 
-String ResourceFormatLoaderShaderInclude::get_resource_type(const String &p_path) const {
+String ResourceFormatLoaderShaderInclude::get_resource_type(const String& p_path) const
+{
 	if (p_path.has_extension("gdshaderinc")) {
 		return "ShaderInclude";
 	}
@@ -80,7 +85,9 @@ String ResourceFormatLoaderShaderInclude::get_resource_type(const String &p_path
 
 // ResourceFormatSaverShaderInclude
 
-Error ResourceFormatSaverShaderInclude::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
+Error ResourceFormatSaverShaderInclude::save(
+	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
+{
 	Ref<ShaderInclude> shader_inc = p_resource;
 	ERR_FAIL_COND_V(shader_inc.is_null(), ERR_INVALID_PARAMETER);
 
@@ -99,13 +106,18 @@ Error ResourceFormatSaverShaderInclude::save(const Ref<Resource> &p_resource, co
 	return OK;
 }
 
-void ResourceFormatSaverShaderInclude::get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) const {
-	const ShaderInclude *shader_inc = Object::cast_to<ShaderInclude>(*p_resource);
+void ResourceFormatSaverShaderInclude::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
+	const ShaderInclude* shader_inc = Object::cast_to<ShaderInclude>(*p_resource);
 	if (shader_inc != nullptr) {
 		p_extensions->push_back("gdshaderinc");
 	}
 }
 
-bool ResourceFormatSaverShaderInclude::recognize(const Ref<Resource> &p_resource) const {
-	return p_resource->get_class_name() == "ShaderInclude"; //only shader, not inherited
+bool ResourceFormatSaverShaderInclude::recognize(const Ref<Resource>& p_resource) const
+{
+	return p_resource->obj->get_class_name() == "ShaderInclude"; // only shader, not inherited
 }
+
+

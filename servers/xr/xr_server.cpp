@@ -28,109 +28,48 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "xr_server.h"
-#include "xr_server.compat.inc"
-
 #include "core/config/project_settings.h"
 #include "core/object/callable_mp.h"
 #include "core/object/class_db.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_positional_tracker.h"
+#include "xr_server.compat.inc"
+#include "xr_server.h"
 
 XRServer::XRMode XRServer::xr_mode = XRMODE_DEFAULT;
 
-XRServer::XRMode XRServer::get_xr_mode() {
-	return xr_mode;
-}
+XRServer::XRMode XRServer::get_xr_mode() { return xr_mode; }
 
-void XRServer::set_xr_mode(XRServer::XRMode p_mode) {
-	xr_mode = p_mode;
-}
+void XRServer::set_xr_mode(XRServer::XRMode p_mode) { xr_mode = p_mode; }
 
-XRServer *XRServer::singleton = nullptr;
+XRServer* XRServer::singleton = nullptr;
 
-XRServer *XRServer::get_singleton() {
-	return singleton;
-}
+XRServer* XRServer::get_singleton() { return singleton; }
 
-void XRServer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_world_scale"), &XRServer::get_world_scale);
-	ClassDB::bind_method(D_METHOD("set_world_scale", "scale"), &XRServer::set_world_scale);
-	ClassDB::bind_method(D_METHOD("get_world_origin"), &XRServer::get_world_origin);
-	ClassDB::bind_method(D_METHOD("set_world_origin", "world_origin"), &XRServer::set_world_origin);
-	ClassDB::bind_method(D_METHOD("get_reference_frame"), &XRServer::get_reference_frame);
-	ClassDB::bind_method(D_METHOD("clear_reference_frame"), &XRServer::clear_reference_frame);
-	ClassDB::bind_method(D_METHOD("center_on_hmd", "rotation_mode", "keep_height"), &XRServer::center_on_hmd);
-	ClassDB::bind_method(D_METHOD("get_hmd_transform"), &XRServer::get_hmd_transform);
-	ClassDB::bind_method(D_METHOD("set_camera_locked_to_origin", "enabled"), &XRServer::set_camera_locked_to_origin);
-	ClassDB::bind_method(D_METHOD("is_camera_locked_to_origin"), &XRServer::is_camera_locked_to_origin);
+void XRServer::_bind_methods() {}
 
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "world_scale"), "set_world_scale", "get_world_scale");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "world_origin"), "set_world_origin", "get_world_origin");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "camera_locked_to_origin"), "set_camera_locked_to_origin", "is_camera_locked_to_origin");
-
-	ClassDB::bind_method(D_METHOD("add_interface", "interface"), &XRServer::add_interface);
-	ClassDB::bind_method(D_METHOD("get_interface_count"), &XRServer::get_interface_count);
-	ClassDB::bind_method(D_METHOD("remove_interface", "interface"), &XRServer::remove_interface);
-	ClassDB::bind_method(D_METHOD("get_interface", "idx"), &XRServer::get_interface);
-	ClassDB::bind_method(D_METHOD("get_interfaces"), &XRServer::get_interfaces);
-	ClassDB::bind_method(D_METHOD("find_interface", "name"), &XRServer::find_interface);
-
-	ClassDB::bind_method(D_METHOD("add_tracker", "tracker"), &XRServer::add_tracker);
-	ClassDB::bind_method(D_METHOD("remove_tracker", "tracker"), &XRServer::remove_tracker);
-	ClassDB::bind_method(D_METHOD("get_trackers", "tracker_types"), &XRServer::get_trackers);
-	ClassDB::bind_method(D_METHOD("get_tracker", "tracker_name"), &XRServer::get_tracker);
-
-	ClassDB::bind_method(D_METHOD("get_primary_interface"), &XRServer::get_primary_interface);
-	ClassDB::bind_method(D_METHOD("set_primary_interface", "interface"), &XRServer::set_primary_interface);
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "primary_interface"), "set_primary_interface", "get_primary_interface");
-
-	BIND_ENUM_CONSTANT(TRACKER_HEAD);
-	BIND_ENUM_CONSTANT(TRACKER_CONTROLLER);
-	BIND_ENUM_CONSTANT(TRACKER_BASESTATION);
-	BIND_ENUM_CONSTANT(TRACKER_ANCHOR);
-	BIND_ENUM_CONSTANT(TRACKER_HAND);
-	BIND_ENUM_CONSTANT(TRACKER_BODY);
-	BIND_ENUM_CONSTANT(TRACKER_FACE);
-	BIND_ENUM_CONSTANT(TRACKER_ANY_KNOWN);
-	BIND_ENUM_CONSTANT(TRACKER_UNKNOWN);
-	BIND_ENUM_CONSTANT(TRACKER_ANY);
-
-	BIND_ENUM_CONSTANT(RESET_FULL_ROTATION);
-	BIND_ENUM_CONSTANT(RESET_BUT_KEEP_TILT);
-	BIND_ENUM_CONSTANT(DONT_RESET_ROTATION);
-
-	ADD_SIGNAL(MethodInfo("reference_frame_changed"));
-
-	ADD_SIGNAL(MethodInfo("interface_added", PropertyInfo(Variant::STRING_NAME, "interface_name")));
-	ADD_SIGNAL(MethodInfo("interface_removed", PropertyInfo(Variant::STRING_NAME, "interface_name")));
-
-	ADD_SIGNAL(MethodInfo("tracker_added", PropertyInfo(Variant::STRING_NAME, "tracker_name"), PropertyInfo(Variant::INT, "type")));
-	ADD_SIGNAL(MethodInfo("tracker_updated", PropertyInfo(Variant::STRING_NAME, "tracker_name"), PropertyInfo(Variant::INT, "type")));
-	ADD_SIGNAL(MethodInfo("tracker_removed", PropertyInfo(Variant::STRING_NAME, "tracker_name"), PropertyInfo(Variant::INT, "type")));
-
-	ADD_SIGNAL(MethodInfo("world_origin_changed"));
-}
-
-double XRServer::get_world_scale() const {
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
+double XRServer::get_world_scale() const
+{
+	RenderingServer* rendering_server = RenderingServer::get_singleton();
 
 	if (rendering_server && rendering_server->is_on_render_thread()) {
 		// Return the value with which we're currently rendering,
 		// if we're on the render thread
 		return render_state.world_scale;
-	} else {
+	}
+	else {
 		// Return our current value
 		return world_scale;
 	}
 }
 
-void XRServer::set_world_scale(double p_world_scale) {
+void XRServer::set_world_scale(double p_world_scale)
+{
 	if (p_world_scale < 0.01) {
 		p_world_scale = 0.01;
-	} else if (p_world_scale > 1000.0) {
+	}
+	else if (p_world_scale > 1000.0) {
 		p_world_scale = 1000.0;
 	}
 
@@ -138,58 +77,66 @@ void XRServer::set_world_scale(double p_world_scale) {
 	set_render_world_scale(world_scale);
 }
 
-void XRServer::_set_render_world_scale(double p_world_scale) {
+void XRServer::_set_render_world_scale(double p_world_scale)
+{
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	XRServer *xr_server = XRServer::get_singleton();
+	XRServer* xr_server = XRServer::get_singleton();
 	ERR_FAIL_NULL(xr_server);
 	xr_server->render_state.world_scale = p_world_scale;
 }
 
-Transform3D XRServer::get_world_origin() const {
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
+Transform3D XRServer::get_world_origin() const
+{
+	RenderingServer* rendering_server = RenderingServer::get_singleton();
 
 	if (rendering_server && rendering_server->is_on_render_thread()) {
 		// Return the value with which we're currently rendering,
 		// if we're on the render thread
 		return render_state.world_origin;
-	} else {
+	}
+	else {
 		// Return our current value
 		return world_origin;
 	}
 }
 
-void XRServer::set_world_origin(const Transform3D &p_world_origin) {
+void XRServer::set_world_origin(const Transform3D& p_world_origin)
+{
 	world_origin = p_world_origin;
-	emit_signal(SNAME("world_origin_changed"));
+	this->obj->emit_signal(SNAME("world_origin_changed"));
 	set_render_world_origin(world_origin);
 }
 
-void XRServer::_set_render_world_origin(const Transform3D &p_world_origin) {
+void XRServer::_set_render_world_origin(const Transform3D& p_world_origin)
+{
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	XRServer *xr_server = XRServer::get_singleton();
+	XRServer* xr_server = XRServer::get_singleton();
 	ERR_FAIL_NULL(xr_server);
 	xr_server->render_state.world_origin = p_world_origin;
 }
 
-Transform3D XRServer::get_reference_frame() const {
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
+Transform3D XRServer::get_reference_frame() const
+{
+	RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL_V(rendering_server, reference_frame);
 
 	if (rendering_server->is_on_render_thread()) {
 		// Return the value with which we're currently rendering,
 		// if we're on the render thread
 		return render_state.reference_frame;
-	} else {
+	}
+	else {
 		// Return our current value
 		return reference_frame;
 	}
 }
 
-void XRServer::center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height) {
+void XRServer::center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height)
+{
 	if (primary_interface.is_null()) {
 		return;
 	}
@@ -203,14 +150,19 @@ void XRServer::center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height) {
 	// remove our tilt
 	if (p_rotation_mode == 1) {
 		// take the Y out of our Z
-		new_reference_frame.basis.set_column(2, Vector3(new_reference_frame.basis.rows[0][2], 0.0, new_reference_frame.basis.rows[2][2]).normalized());
+		new_reference_frame.basis.set_column(2,
+			Vector3(new_reference_frame.basis.rows[0][2], 0.0, new_reference_frame.basis.rows[2][2])
+				.normalized());
 
 		// Y is straight up
 		new_reference_frame.basis.set_column(1, Vector3(0.0, 1.0, 0.0));
 
 		// and X is our cross reference
-		new_reference_frame.basis.set_column(0, new_reference_frame.basis.get_column(1).cross(new_reference_frame.basis.get_column(2)).normalized());
-	} else if (p_rotation_mode == 2) {
+		new_reference_frame.basis.set_column(0, new_reference_frame.basis.get_column(1)
+													.cross(new_reference_frame.basis.get_column(2))
+													.normalized());
+	}
+	else if (p_rotation_mode == 2) {
 		// remove our rotation, we're only interesting in centering on position
 		new_reference_frame.basis = Basis();
 	}
@@ -222,49 +174,61 @@ void XRServer::center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height) {
 
 	reference_frame = new_reference_frame.inverse();
 	set_render_reference_frame(reference_frame);
-	emit_signal(SNAME("reference_frame_changed"));
+	this->obj->emit_signal(SNAME("reference_frame_changed"));
 }
 
-void XRServer::clear_reference_frame() {
+void XRServer::clear_reference_frame()
+{
 	reference_frame = Transform3D();
 	set_render_reference_frame(reference_frame);
-	emit_signal(SNAME("reference_frame_changed"));
+	this->obj->emit_signal(SNAME("reference_frame_changed"));
 }
 
-void XRServer::_set_render_reference_frame(const Transform3D &p_reference_frame) {
+void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
+{
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	XRServer *xr_server = XRServer::get_singleton();
+	XRServer* xr_server = XRServer::get_singleton();
 	ERR_FAIL_NULL(xr_server);
 	xr_server->render_state.reference_frame = p_reference_frame;
 }
 
-void XRServer::set_render_world_scale(double p_world_scale) {
-	// If we're rendering on a separate thread, we may still be processing the last frame, don't communicate this till we're ready...
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
+void XRServer::set_render_world_scale(double p_world_scale)
+{
+	// If we're rendering on a separate thread, we may still be processing the last frame, don't
+	// communicate this till we're ready...
+	RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rendering_server);
 
-	rendering_server->call_on_render_thread(callable_mp_static(&XRServer::_set_render_world_scale).bind(p_world_scale));
+	rendering_server->call_on_render_thread(
+		callable_mp_static(&XRServer::_set_render_world_scale).bind(p_world_scale));
 }
 
-void XRServer::set_render_world_origin(const Transform3D &p_world_origin) {
-	// If we're rendering on a separate thread, we may still be processing the last frame, don't communicate this till we're ready...
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
+void XRServer::set_render_world_origin(const Transform3D& p_world_origin)
+{
+	// If we're rendering on a separate thread, we may still be processing the last frame, don't
+	// communicate this till we're ready...
+	RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rendering_server);
 
-	rendering_server->call_on_render_thread(callable_mp_static(&XRServer::_set_render_world_origin).bind(p_world_origin));
+	rendering_server->call_on_render_thread(
+		callable_mp_static(&XRServer::_set_render_world_origin).bind(p_world_origin));
 }
 
-void XRServer::set_render_reference_frame(const Transform3D &p_reference_frame) {
-	// If we're rendering on a separate thread, we may still be processing the last frame, don't communicate this till we're ready...
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
+void XRServer::set_render_reference_frame(const Transform3D& p_reference_frame)
+{
+	// If we're rendering on a separate thread, we may still be processing the last frame, don't
+	// communicate this till we're ready...
+	RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rendering_server);
 
-	rendering_server->call_on_render_thread(callable_mp_static(&XRServer::_set_render_reference_frame).bind(p_reference_frame));
+	rendering_server->call_on_render_thread(
+		callable_mp_static(&XRServer::_set_render_reference_frame).bind(p_reference_frame));
 }
 
-Transform3D XRServer::get_hmd_transform() {
+Transform3D XRServer::get_hmd_transform()
+{
 	Transform3D hmd_transform;
 	if (primary_interface.is_valid()) {
 		hmd_transform = primary_interface->get_camera_transform();
@@ -272,11 +236,10 @@ Transform3D XRServer::get_hmd_transform() {
 	return hmd_transform;
 }
 
-void XRServer::set_camera_locked_to_origin(bool p_enable) {
-	camera_locked_to_origin = p_enable;
-}
+void XRServer::set_camera_locked_to_origin(bool p_enable) { camera_locked_to_origin = p_enable; }
 
-void XRServer::add_interface(const Ref<XRInterface> &p_interface) {
+void XRServer::add_interface(const Ref<XRInterface>& p_interface)
+{
 	ERR_FAIL_COND(p_interface.is_null());
 
 	if (interfaces.has(p_interface)) {
@@ -285,31 +248,32 @@ void XRServer::add_interface(const Ref<XRInterface> &p_interface) {
 	}
 
 	interfaces.push_back(p_interface);
-	emit_signal(SNAME("interface_added"), p_interface->get_name());
+	this->obj->emit_signal(SNAME("interface_added"), p_interface->get_name());
 }
 
-void XRServer::remove_interface(const Ref<XRInterface> &p_interface) {
+void XRServer::remove_interface(const Ref<XRInterface>& p_interface)
+{
 	ERR_FAIL_COND(p_interface.is_null());
 
 	int idx = interfaces.find(p_interface);
 	ERR_FAIL_COND_MSG(idx == -1, "Interface not found.");
 	print_verbose("XR: Removed interface \"" + p_interface->get_name() + "\"");
-	emit_signal(SNAME("interface_removed"), p_interface->get_name());
+	this->obj->emit_signal(SNAME("interface_removed"), p_interface->get_name());
 	interfaces.remove_at(idx);
 }
 
-int XRServer::get_interface_count() const {
-	return interfaces.size();
-}
+int XRServer::get_interface_count() const { return interfaces.size(); }
 
-Ref<XRInterface> XRServer::get_interface(int p_index) const {
+Ref<XRInterface> XRServer::get_interface(int p_index) const
+{
 	ERR_FAIL_INDEX_V(p_index, (int)interfaces.size(), nullptr);
 
 	return interfaces[p_index];
 }
 
-Ref<XRInterface> XRServer::find_interface(const String &p_name) const {
-	for (const Ref<XRInterface> &interface : interfaces) {
+Ref<XRInterface> XRServer::find_interface(const String& p_name) const
+{
+	for (const Ref<XRInterface>& interface : interfaces) {
 		if (interface->get_name() == p_name) {
 			return interface;
 		}
@@ -317,7 +281,8 @@ Ref<XRInterface> XRServer::find_interface(const String &p_name) const {
 	return Ref<XRInterface>();
 }
 
-TypedArray<Dictionary> XRServer::get_interfaces() const {
+TypedArray<Dictionary> XRServer::get_interfaces() const
+{
 	Array ret;
 
 	for (uint32_t i = 0; i < interfaces.size(); i++) {
@@ -332,22 +297,23 @@ TypedArray<Dictionary> XRServer::get_interfaces() const {
 	return ret;
 }
 
-Ref<XRInterface> XRServer::get_primary_interface() const {
-	return primary_interface;
-}
+Ref<XRInterface> XRServer::get_primary_interface() const { return primary_interface; }
 
-void XRServer::set_primary_interface(const Ref<XRInterface> &p_primary_interface) {
+void XRServer::set_primary_interface(const Ref<XRInterface>& p_primary_interface)
+{
 	if (p_primary_interface.is_null()) {
 		print_verbose("XR: Clearing primary interface");
 		primary_interface.unref();
-	} else {
+	}
+	else {
 		primary_interface = p_primary_interface;
 
 		print_verbose("XR: Primary interface set to: " + primary_interface->get_name());
 	}
 }
 
-void XRServer::add_tracker(const Ref<XRTracker> &p_tracker) {
+void XRServer::add_tracker(const Ref<XRTracker>& p_tracker)
+{
 	ERR_FAIL_COND(p_tracker.is_null());
 
 	StringName tracker_name = p_tracker->get_tracker_name();
@@ -355,28 +321,32 @@ void XRServer::add_tracker(const Ref<XRTracker> &p_tracker) {
 		if (trackers[tracker_name] != p_tracker) {
 			// We already have a tracker with this name, we're going to replace it
 			trackers[tracker_name] = p_tracker;
-			emit_signal(SNAME("tracker_updated"), tracker_name, p_tracker->get_tracker_type());
+			this->obj->emit_signal(SNAME("tracker_updated"), tracker_name, p_tracker->get_tracker_type());
 		}
-	} else {
+	}
+	else {
 		trackers[tracker_name] = p_tracker;
-		emit_signal(SNAME("tracker_added"), tracker_name, p_tracker->get_tracker_type());
+		this->obj->emit_signal(SNAME("tracker_added"), tracker_name, p_tracker->get_tracker_type());
 	}
 }
 
-void XRServer::remove_tracker(const Ref<XRTracker> &p_tracker) {
+void XRServer::remove_tracker(const Ref<XRTracker>& p_tracker)
+{
 	ERR_FAIL_COND(p_tracker.is_null());
 
 	StringName tracker_name = p_tracker->get_tracker_name();
 	if (trackers.has(tracker_name)) {
 		// we send the signal right before removing it
-		emit_signal(SNAME("tracker_removed"), p_tracker->get_tracker_name(), p_tracker->get_tracker_type());
+		this->obj->emit_signal(
+			SNAME("tracker_removed"), p_tracker->get_tracker_name(), p_tracker->get_tracker_type());
 
 		// and remove it
 		trackers.erase(tracker_name);
 	}
 }
 
-Dictionary XRServer::get_trackers(int p_tracker_types) {
+Dictionary XRServer::get_trackers(int p_tracker_types)
+{
 	Dictionary res;
 
 	for (int i = 0; i < trackers.size(); i++) {
@@ -389,19 +359,22 @@ Dictionary XRServer::get_trackers(int p_tracker_types) {
 	return res;
 }
 
-Ref<XRTracker> XRServer::get_tracker(const StringName &p_name) const {
+Ref<XRTracker> XRServer::get_tracker(const StringName& p_name) const
+{
 	if (trackers.has(p_name)) {
 		return trackers[p_name];
-	} else {
+	}
+	else {
 		// tracker hasn't been registered yet, which is fine, no need to spam the error log...
 		return Ref<XRTracker>();
 	}
 }
 
-PackedStringArray XRServer::get_suggested_tracker_names() const {
+PackedStringArray XRServer::get_suggested_tracker_names() const
+{
 	PackedStringArray arr;
 
-	for (const Ref<XRInterface> &interface : interfaces) {
+	for (const Ref<XRInterface>& interface : interfaces) {
 		PackedStringArray interface_arr = interface->get_suggested_tracker_names();
 		for (int i = 0; i < interface_arr.size(); i++) {
 			if (!arr.has(interface_arr[i])) {
@@ -420,10 +393,11 @@ PackedStringArray XRServer::get_suggested_tracker_names() const {
 	return arr;
 }
 
-PackedStringArray XRServer::get_suggested_pose_names(const StringName &p_tracker_name) const {
+PackedStringArray XRServer::get_suggested_pose_names(const StringName& p_tracker_name) const
+{
 	PackedStringArray arr;
 
-	for (const Ref<XRInterface> &interface : interfaces) {
+	for (const Ref<XRInterface>& interface : interfaces) {
 		PackedStringArray interface_arr = interface->get_suggested_pose_names(p_tracker_name);
 		for (int a = 0; a < interface_arr.size(); a++) {
 			if (!arr.has(interface_arr[a])) {
@@ -446,52 +420,59 @@ PackedStringArray XRServer::get_suggested_pose_names(const StringName &p_tracker
 	return arr;
 }
 
-void XRServer::_process() {
+void XRServer::_process()
+{
 	// called from our main game loop before we handle physics and game logic
-	// note that we can have multiple interfaces active if we have interfaces that purely handle tracking
+	// note that we can have multiple interfaces active if we have interfaces that purely handle
+	// tracking
 
 	// process all active interfaces
-	for (const Ref<XRInterface> &interface : interfaces) {
+	for (const Ref<XRInterface>& interface : interfaces) {
 		if (interface.is_null()) {
 			// ignore, not a valid reference
-		} else if (interface->is_initialized()) {
+		}
+		else if (interface->is_initialized()) {
 			interface->process();
 		}
 	}
 }
 
-void XRServer::pre_render() {
+void XRServer::pre_render()
+{
 	// called from RendererViewport.draw_viewports right before we start drawing our viewports
-	// note that we can have multiple interfaces active if we have interfaces that purely handle tracking
+	// note that we can have multiple interfaces active if we have interfaces that purely handle
+	// tracking
 
 	// process all active interfaces
-	for (const Ref<XRInterface> &interface : interfaces) {
+	for (const Ref<XRInterface>& interface : interfaces) {
 		if (interface.is_null()) {
 			// ignore, not a valid reference
-		} else if (interface->is_initialized()) {
+		}
+		else if (interface->is_initialized()) {
 			interface->pre_render();
 		}
 	}
 }
 
-void XRServer::end_frame() {
+void XRServer::end_frame()
+{
 	// called from RenderingServerDefault after Vulkan queues have been submitted
 
 	// process all active interfaces
-	for (const Ref<XRInterface> &interface : interfaces) {
+	for (const Ref<XRInterface>& interface : interfaces) {
 		if (interface.is_null()) {
 			// ignore, not a valid reference
-		} else if (interface->is_initialized()) {
+		}
+		else if (interface->is_initialized()) {
 			interface->end_frame();
 		}
 	}
 }
 
-XRServer::XRServer() {
-	singleton = this;
-}
+XRServer::XRServer() { singleton = this; }
 
-XRServer::~XRServer() {
+XRServer::~XRServer()
+{
 	primary_interface.unref();
 
 	interfaces.clear();
@@ -499,3 +480,5 @@ XRServer::~XRServer() {
 
 	singleton = nullptr;
 }
+
+

@@ -78,7 +78,7 @@ class RenderingServer
 	const Vector2 SMALL_VEC2 = Vector2(CMP_EPSILON, CMP_EPSILON);
 	const Vector3 SMALL_VEC3 = Vector3(CMP_EPSILON, CMP_EPSILON, CMP_EPSILON);
 
-	virtual TypedArray<StringName> _global_shader_parameter_get_list() const;
+	virtual Array _global_shader_parameter_get_list() const;
 
 protected:
 	RID _make_test_cube();
@@ -145,8 +145,8 @@ public:
 		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer = 0) = 0;
 	virtual void texture_proxy_update(RID p_texture, RID p_proxy_to) = 0;
 
-	virtual void texture_drawable_blit_rect(const TypedArray<RID>& p_textures, const Rect2i& p_rect,
-		RID p_material, const Color& p_modulate, const TypedArray<RID>& p_source_textures,
+	virtual void texture_drawable_blit_rect(const Array& p_textures, const Rect2i& p_rect,
+		RID p_material, const Color& p_modulate, const Array& p_source_textures,
 		int p_to_mipmap = 0) = 0;
 
 	// These two APIs can be used together or in combination with the others.
@@ -260,7 +260,7 @@ public:
 	Array mesh_create_arrays_from_surface_data(
 		const RenderingServerTypes::SurfaceData& p_data) const;
 	Array mesh_surface_get_arrays(RID p_mesh, int p_surface) const;
-	TypedArray<Array> mesh_surface_get_blend_shape_arrays(RID p_mesh, int p_surface) const;
+	Array mesh_surface_get_blend_shape_arrays(RID p_mesh, int p_surface) const;
 	Dictionary mesh_surface_get_lods(RID p_mesh, int p_surface) const;
 
 	virtual void mesh_add_surface_from_arrays(RID p_mesh, RSE::PrimitiveType p_primitive,
@@ -778,7 +778,7 @@ public:
 	virtual RID compositor_create() = 0;
 
 	virtual void compositor_set_compositor_effects(
-		RID p_compositor, const TypedArray<RID>& p_effects) = 0;
+		RID p_compositor, const Array& p_effects) = 0;
 
 	/* ENVIRONMENT API */
 
@@ -939,7 +939,7 @@ public:
 	PackedInt64Array _instances_cull_ray_bind(
 		const Vector3& p_from, const Vector3& p_to, RID p_scenario = RID()) const;
 	PackedInt64Array _instances_cull_convex_bind(
-		const TypedArray<Plane>& p_convex, RID p_scenario = RID()) const;
+		const Array& p_convex, RID p_scenario = RID()) const;
 
 	virtual void instance_geometry_set_flag(
 		RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled) = 0;
@@ -968,8 +968,8 @@ public:
 	virtual Array bake_render_uv2(
 		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size) = 0;
 	virtual PackedByteArray bake_render_area_light_atlas(
-		const TypedArray<RID>& p_area_light_textures,
-		const TypedArray<Rect2>& p_area_light_atlas_texture_rects, const Size2i& p_size,
+		const Array& p_area_light_textures,
+		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size,
 		int p_mipmaps) = 0;
 
 	/* CANVAS API (2D) */
@@ -1318,22 +1318,22 @@ public:
 private:
 	// Binder helpers
 	RID _texture_2d_layered_create(
-		const TypedArray<Image>& p_layers, RSE::TextureLayeredType p_layered_type);
+		const Array& p_layers, RSE::TextureLayeredType p_layered_type);
 	RID _texture_3d_create(Image::Format p_format, int p_width, int p_height, int p_depth,
-		bool p_mipmaps, const TypedArray<Image>& p_data);
-	void _texture_3d_update(RID p_texture, const TypedArray<Image>& p_data);
-	TypedArray<Image> _texture_3d_get(RID p_texture) const;
-	TypedArray<Dictionary> _shader_get_shader_parameter_list(RID p_shader) const;
+		bool p_mipmaps, const Array& p_data);
+	void _texture_3d_update(RID p_texture, const Array& p_data);
+	Array _texture_3d_get(RID p_texture) const;
+	Array _shader_get_shader_parameter_list(RID p_shader) const;
 	RID _mesh_create_from_surfaces(
-		const TypedArray<Dictionary>& p_surfaces, int p_blend_shape_count);
+		const Array& p_surfaces, int p_blend_shape_count);
 	void _mesh_add_surface(RID p_mesh, const Dictionary& p_surface);
 	Dictionary _mesh_get_surface(RID p_mesh, int p_idx);
-	TypedArray<Dictionary> _instance_geometry_get_shader_parameter_list(RID p_instance) const;
-	TypedArray<Dictionary> _canvas_item_get_instance_shader_parameter_list(RID p_item) const;
-	TypedArray<Image> _bake_render_uv2(
-		RID p_base, const TypedArray<RID>& p_material_overrides, const Size2i& p_image_size);
+	Array _instance_geometry_get_shader_parameter_list(RID p_instance) const;
+	Array _canvas_item_get_instance_shader_parameter_list(RID p_item) const;
+	Array _bake_render_uv2(
+		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size);
 	void _particles_set_trail_bind_poses(
-		RID p_particles, const TypedArray<Transform3D>& p_bind_poses);
+		RID p_particles, const Array& p_bind_poses);
 #ifdef TOOLS_ENABLED
 	SurfaceUpgradeCallback surface_upgrade_callback = nullptr;
 	bool warn_on_surface_upgrade = true;

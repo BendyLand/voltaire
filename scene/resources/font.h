@@ -101,12 +101,12 @@ class Font : public Resource
 
 protected:
 	// Output.
-	mutable TypedArray<RID> rids;
+	mutable Array rids;
 	mutable bool dirty_rids = true;
 
 	// Fallbacks.
 	static constexpr int MAX_FALLBACK_DEPTH = 64;
-	TypedArray<Font> fallbacks;
+	Array fallbacks;
 
 	static void _bind_methods();
 
@@ -179,7 +179,7 @@ public:
 
 	// Fallbacks.
 	virtual void set_fallbacks(const Array& p_fallbacks);
-	virtual TypedArray<Font> get_fallbacks() const;
+	virtual Array get_fallbacks() const;
 
 	// Output.
 	virtual RID find_variation(const Dictionary& p_variation_coordinates, int p_face_index = 0,
@@ -193,7 +193,7 @@ public:
 
 	virtual RID _get_rid() const { return RID(); }
 
-	virtual TypedArray<RID> get_rids() const;
+	virtual Array get_rids() const;
 
 	// Font metrics.
 	virtual real_t get_height(int p_font_size) const;
@@ -438,7 +438,7 @@ public:
 	virtual void clear_cache();
 	virtual void remove_cache(int p_cache_index);
 
-	virtual TypedArray<Vector2i> get_size_cache_list(int p_cache_index) const;
+	virtual Array get_size_cache_list(int p_cache_index) const;
 	virtual void clear_size_cache(int p_cache_index);
 	virtual void remove_size_cache(int p_cache_index, const Vector2i& p_size);
 
@@ -522,7 +522,7 @@ public:
 	virtual int get_glyph_texture_idx(
 		int p_cache_index, const Vector2i& p_size, int32_t p_glyph) const;
 
-	virtual TypedArray<Vector2i> get_kerning_list(int p_cache_index, int p_size) const;
+	virtual Array get_kerning_list(int p_cache_index, int p_size) const;
 	virtual void clear_kerning_map(int p_cache_index, int p_size);
 	virtual void remove_kerning(int p_cache_index, int p_size, const Vector2i& p_glyph_pair);
 

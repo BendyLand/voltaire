@@ -449,7 +449,7 @@ bool DisplayServerX11::tts_is_paused() const
 	return tts->is_paused();
 }
 
-TypedArray<Dictionary> DisplayServerX11::tts_get_voices() const
+Array DisplayServerX11::tts_get_voices() const
 {
 	if (unlikely(!tts)) {
 		initialize_tts();
@@ -557,7 +557,7 @@ Error DisplayServerX11::file_dialog_show(const String& p_title, const String& p_
 Error DisplayServerX11::file_dialog_with_options_show(const String& p_title,
 	const String& p_current_directory, const String& p_root, const String& p_filename,
 	bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode, const Vector<String>& p_filters,
-	const TypedArray<Dictionary>& p_options, const Callable& p_callback,
+	const Array& p_options, const Callable& p_callback,
 	DisplayServerEnums::WindowID p_window_id)
 {
 	ERR_FAIL_COND_V(!portal_desktop, ERR_UNAVAILABLE);

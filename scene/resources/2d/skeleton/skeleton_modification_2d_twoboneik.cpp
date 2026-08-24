@@ -128,7 +128,6 @@ void SkeletonModification2DTwoBoneIK::_execute(float p_delta)
 	if (!enabled) {
 		return;
 	}
-
 	if (target_node_cache.is_null()) {
 		WARN_PRINT_ONCE("Target cache is out of date. Attempting to update...");
 		update_target_cache();
@@ -427,7 +426,7 @@ void SkeletonModification2DTwoBoneIK::set_joint_one_bone2d_node(const NodePath& 
 {
 	joint_one_bone2d_node = p_target_node;
 	update_joint_one_bone2d_cache();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 void SkeletonModification2DTwoBoneIK::set_target_minimum_distance(float p_distance)
@@ -477,7 +476,7 @@ void SkeletonModification2DTwoBoneIK::set_joint_two_bone2d_node(const NodePath& 
 {
 	joint_two_bone2d_node = p_target_node;
 	update_joint_two_bone2d_cache();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 NodePath SkeletonModification2DTwoBoneIK::get_joint_two_bone2d_node() const
@@ -507,8 +506,7 @@ void SkeletonModification2DTwoBoneIK::set_joint_one_bone_idx(int p_bone_idx)
 	else {
 		joint_one_bone_idx = p_bone_idx;
 	}
-
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int SkeletonModification2DTwoBoneIK::get_joint_one_bone_idx() const { return joint_one_bone_idx; }
@@ -535,8 +533,7 @@ void SkeletonModification2DTwoBoneIK::set_joint_two_bone_idx(int p_bone_idx)
 	else {
 		joint_two_bone_idx = p_bone_idx;
 	}
-
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int SkeletonModification2DTwoBoneIK::get_joint_two_bone_idx() const { return joint_two_bone_idx; }

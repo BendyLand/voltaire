@@ -438,7 +438,7 @@ Vector2 SkeletonModification2DJiggle::get_gravity() const { return gravity; }
 void SkeletonModification2DJiggle::set_use_colliders(bool p_use_colliders)
 {
 	use_colliders = p_use_colliders;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool SkeletonModification2DJiggle::get_use_colliders() const { return use_colliders; }
@@ -457,7 +457,7 @@ void SkeletonModification2DJiggle::set_jiggle_data_chain_length(int p_length)
 {
 	ERR_FAIL_COND(p_length < 0);
 	jiggle_data_chain.resize(p_length);
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 void SkeletonModification2DJiggle::set_jiggle_joint_bone2d_node(
@@ -467,7 +467,7 @@ void SkeletonModification2DJiggle::set_jiggle_joint_bone2d_node(
 	jiggle_data_chain.write[p_joint_idx].bone2d_node = p_target_node;
 	jiggle_joint_update_bone2d_cache(p_joint_idx);
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 NodePath SkeletonModification2DJiggle::get_jiggle_joint_bone2d_node(int p_joint_idx) const
@@ -502,7 +502,7 @@ void SkeletonModification2DJiggle::set_jiggle_joint_bone_index(int p_joint_idx, 
 		jiggle_data_chain.write[p_joint_idx].bone_idx = p_bone_idx;
 	}
 
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 int SkeletonModification2DJiggle::get_jiggle_joint_bone_index(int p_joint_idx) const
@@ -516,7 +516,7 @@ void SkeletonModification2DJiggle::set_jiggle_joint_override(int p_joint_idx, bo
 	ERR_FAIL_INDEX(p_joint_idx, jiggle_data_chain.size());
 	jiggle_data_chain.write[p_joint_idx].override_defaults = p_override;
 	_update_jiggle_joint_data();
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool SkeletonModification2DJiggle::get_jiggle_joint_override(int p_joint_idx) const
@@ -568,7 +568,7 @@ void SkeletonModification2DJiggle::set_jiggle_joint_use_gravity(int p_joint_idx,
 {
 	ERR_FAIL_INDEX(p_joint_idx, jiggle_data_chain.size());
 	jiggle_data_chain.write[p_joint_idx].use_gravity = p_use_gravity;
-	notify_property_list_changed();
+	this->obj->notify_property_list_changed();
 }
 
 bool SkeletonModification2DJiggle::get_jiggle_joint_use_gravity(int p_joint_idx) const

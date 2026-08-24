@@ -29,11 +29,12 @@
 /**************************************************************************/
 
 #include "audio_effect_hard_limiter.h"
-
 #include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectHardLimiterInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {
+void AudioEffectHardLimiterInstance::process(
+	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
+{
 	float sample_rate = AudioServer::get_singleton()->get_mix_rate();
 
 	float ceiling = Math::db_to_linear(base->ceiling);
@@ -100,7 +101,8 @@ void AudioEffectHardLimiterInstance::process(const AudioFrame *p_src_frames, Aud
 	}
 }
 
-Ref<AudioEffectInstance> AudioEffectHardLimiter::instantiate() {
+Ref<AudioEffectInstance> AudioEffectHardLimiter::instantiate()
+{
 	Ref<AudioEffectHardLimiterInstance> ins;
 	ins.instantiate();
 	ins->base = Ref<AudioEffectHardLimiter>(this);
@@ -122,41 +124,18 @@ Ref<AudioEffectInstance> AudioEffectHardLimiter::instantiate() {
 	return ins;
 }
 
-void AudioEffectHardLimiter::set_ceiling_db(float p_ceiling) {
-	ceiling = p_ceiling;
-}
+void AudioEffectHardLimiter::set_ceiling_db(float p_ceiling) { ceiling = p_ceiling; }
 
-float AudioEffectHardLimiter::get_ceiling_db() const {
-	return ceiling;
-}
+float AudioEffectHardLimiter::get_ceiling_db() const { return ceiling; }
 
-float AudioEffectHardLimiter::get_pre_gain_db() const {
-	return pre_gain;
-}
+float AudioEffectHardLimiter::get_pre_gain_db() const { return pre_gain; }
 
-void AudioEffectHardLimiter::set_pre_gain_db(const float p_pre_gain) {
-	pre_gain = p_pre_gain;
-}
+void AudioEffectHardLimiter::set_pre_gain_db(const float p_pre_gain) { pre_gain = p_pre_gain; }
 
-float AudioEffectHardLimiter::get_release() const {
-	return release;
-}
+float AudioEffectHardLimiter::get_release() const { return release; }
 
-void AudioEffectHardLimiter::set_release(const float p_release) {
-	release = p_release;
-}
+void AudioEffectHardLimiter::set_release(const float p_release) { release = p_release; }
 
-void AudioEffectHardLimiter::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_ceiling_db", "ceiling"), &AudioEffectHardLimiter::set_ceiling_db);
-	ClassDB::bind_method(D_METHOD("get_ceiling_db"), &AudioEffectHardLimiter::get_ceiling_db);
+void AudioEffectHardLimiter::_bind_methods() {}
 
-	ClassDB::bind_method(D_METHOD("set_pre_gain_db", "pre_gain"), &AudioEffectHardLimiter::set_pre_gain_db);
-	ClassDB::bind_method(D_METHOD("get_pre_gain_db"), &AudioEffectHardLimiter::get_pre_gain_db);
 
-	ClassDB::bind_method(D_METHOD("set_release", "release"), &AudioEffectHardLimiter::set_release);
-	ClassDB::bind_method(D_METHOD("get_release"), &AudioEffectHardLimiter::get_release);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "pre_gain_db", PROPERTY_HINT_RANGE, "-24,24,0.01,suffix:dB"), "set_pre_gain_db", "get_pre_gain_db");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "ceiling_db", PROPERTY_HINT_RANGE, "-24,0.0,0.01,suffix:dB"), "set_ceiling_db", "get_ceiling_db");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "release", PROPERTY_HINT_RANGE, "0.01,3,0.01,suffix:s"), "set_release", "get_release");
-}
