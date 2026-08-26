@@ -135,7 +135,9 @@ private:
 	{
 		RBMap<int, Node> nodes;
 		List<Connection> connections;
-	} graph[TYPE_MAX];
+	};
+
+	Graph graph[TYPE_MAX];
 
 	Shader::Mode shader_mode = Shader::MODE_SPATIAL;
 	mutable String previous_code;

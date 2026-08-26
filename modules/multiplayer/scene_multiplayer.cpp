@@ -721,4 +721,3 @@ SceneMultiplayer::~SceneMultiplayer()
 	cache.unref();
 }
 
-

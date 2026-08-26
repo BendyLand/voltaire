@@ -928,4 +928,240 @@ RID RendererSceneRender::environment_get_color_correction(RID p_env) const
 	return environment_storage.environment_get_color_correction(p_env);
 }
 
+RenderGeometryInstance* RendererSceneRender::geometry_instance_create(RID p_base)
+{
+	return nullptr;
+}
+
+void RendererSceneRender::geometry_instance_free(RenderGeometryInstance* p_geometry_instance) {}
+
+uint32_t RendererSceneRender::geometry_instance_get_pair_mask() { return 0; }
+
+uint32_t RendererSceneRender::get_max_lights_total() { return 0; }
+
+uint32_t RendererSceneRender::get_max_lights_per_mesh() { return 0; }
+
+void RendererSceneRender::mesh_generate_pipelines(RID p_mesh, bool p_background_compilation) {}
+
+uint32_t RendererSceneRender::get_pipeline_compilations(
+	RenderingServerEnums::PipelineSource p_source)
+{
+	return 0;
+}
+
+void RendererSceneRender::sdfgi_update(const Ref<RenderSceneBuffers>& p_render_buffers,
+	RID p_environment, const Vector3& p_world_position)
+{
+}
+
+int RendererSceneRender::sdfgi_get_pending_region_count(
+	const Ref<RenderSceneBuffers>& p_render_buffers) const
+{
+	return 0;
+}
+
+AABB RendererSceneRender::sdfgi_get_pending_region_bounds(
+	const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const
+{
+	return AABB();
+}
+
+uint32_t RendererSceneRender::sdfgi_get_pending_region_cascade(
+	const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const
+{
+	return 0;
+}
+
+void RendererSceneRender::environment_set_ssr_half_size(bool p_enable) {}
+
+void RendererSceneRender::environment_set_ssr_roughness_quality(
+	RenderingServerEnums::EnvironmentSSRRoughnessQuality p_quality)
+{
+}
+
+void RendererSceneRender::environment_set_ssao_quality(
+	RenderingServerEnums::EnvironmentSSAOQuality p_quality, bool p_half_size,
+	float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to)
+{
+}
+
+void RendererSceneRender::environment_set_ssil_quality(
+	RenderingServerEnums::EnvironmentSSILQuality p_quality, bool p_half_size,
+	float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to)
+{
+}
+
+void RendererSceneRender::sub_surface_scattering_set_quality(
+	RenderingServerEnums::SubSurfaceScatteringQuality p_quality)
+{
+}
+
+void RendererSceneRender::sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) {}
+
+RID RendererSceneRender::sky_allocate() { return RID(); }
+
+void RendererSceneRender::sky_initialize(RID p_rid) {}
+
+void RendererSceneRender::sky_set_radiance_size(RID p_sky, int p_radiance_size) {}
+
+void RendererSceneRender::sky_set_mode(RID p_sky, RenderingServerEnums::SkyMode p_mode) {}
+
+void RendererSceneRender::sky_set_material(RID p_sky, RID p_material) {}
+
+Ref<Image> RendererSceneRender::sky_bake_panorama(
+	RID p_sky, float p_energy, bool p_bake_irradiance, const Vector2i& p_size)
+{
+	return Ref<Image>();
+}
+
+void RendererSceneRender::environment_set_volumetric_fog_volume_size(int p_size, int p_depth) {}
+
+void RendererSceneRender::environment_set_volumetric_fog_filter_active(bool p_enable) {}
+
+void RendererSceneRender::environment_glow_set_use_bicubic_upscale(bool p_enable) {}
+
+void RendererSceneRender::environment_set_sdfgi_ray_count(
+	RenderingServerEnums::EnvironmentSDFGIRayCount p_count)
+{
+}
+
+void RendererSceneRender::environment_set_sdfgi_frames_to_converge(
+	RenderingServerEnums::EnvironmentSDFGIFramesToConverge p_frames)
+{
+}
+
+void RendererSceneRender::environment_set_sdfgi_frames_to_update_light(
+	RenderingServerEnums::EnvironmentSDFGIFramesToUpdateLight p_frames)
+{
+}
+
+Ref<Image> RendererSceneRender::environment_bake_panorama(
+	RID p_env, bool p_bake_irradiance, const Vector2i& p_size)
+{
+	return Ref<Image>();
+}
+
+void RendererSceneRender::positional_soft_shadow_filter_set_quality(
+	RenderingServerEnums::ShadowQuality p_quality)
+{
+}
+
+void RendererSceneRender::directional_soft_shadow_filter_set_quality(
+	RenderingServerEnums::ShadowQuality p_quality)
+{
+}
+
+RID RendererSceneRender::fog_volume_instance_create(RID p_fog_volume) { return RID(); }
+
+void RendererSceneRender::fog_volume_instance_set_transform(
+	RID p_instance, const Transform3D& p_transform)
+{
+}
+
+void RendererSceneRender::fog_volume_instance_set_active(RID p_instance, bool p_active) {}
+
+RID RendererSceneRender::fog_volume_instance_get_volume(RID p_instance) const { return RID(); }
+
+Vector3 RendererSceneRender::fog_volume_instance_get_position(RID p_instance) const
+{
+	return Vector3();
+}
+
+RID RendererSceneRender::voxel_gi_instance_create(RID p_base) { return RID(); }
+
+void RendererSceneRender::voxel_gi_instance_set_transform_to_data(
+	RID p_probe, const Transform3D& p_xform)
+{
+}
+
+bool RendererSceneRender::voxel_gi_needs_update(RID p_probe) const { return false; }
+
+void RendererSceneRender::voxel_gi_update(RID p_probe, bool p_update_light_instances,
+	const Vector<RID>& p_light_instances,
+	const PagedArray<RenderGeometryInstance*>& p_dynamic_objects)
+{
+}
+
+void RendererSceneRender::voxel_gi_set_quality(RenderingServerEnums::VoxelGIQuality p_quality) {}
+
+void RendererSceneRender::render_scene(const Ref<RenderSceneBuffers>& p_render_buffers,
+	const CameraData* p_camera_data, const CameraData* p_prev_camera_data,
+	const PagedArray<RenderGeometryInstance*>& p_instances, const PagedArray<RID>& p_lights,
+	const PagedArray<RID>& p_reflection_probes, const PagedArray<RID>& p_voxel_gi_instances,
+	const PagedArray<RID>& p_decals, const PagedArray<RID>& p_lightmaps,
+	const PagedArray<RID>& p_fog_volumes, RID p_environment, RID p_camera_attributes,
+	RID p_compositor, RID p_shadow_atlas, RID p_occlusion_buffer, RID p_reflection_atlas,
+	RID p_reflection_probe, int p_reflection_probe_pass, float p_screen_mesh_lod_threshold,
+	const RenderShadowData* p_render_shadow_data, int p_render_shadow_count,
+	const RenderSDFGIData* p_render_sdfgi_data, int p_render_sdfgi_count,
+	float p_sdfgi_cascade_size, const RenderSDFGIUpdateData* p_render_sdfgi_update_data,
+	RenderingServerTypes::RenderInfo* p_render_info)
+{
+}
+
+void RendererSceneRender::render_material(const Transform3D& p_cam_transform,
+	const Projection& p_cam_projection, bool p_cam_orthogonal,
+	const PagedArray<RenderGeometryInstance*>& p_instances, RID p_framebuffer,
+	const Rect2i& p_region)
+{
+}
+
+void RendererSceneRender::render_particle_collider_heightfield(RID p_collider,
+	const Transform3D& p_transform, const PagedArray<RenderGeometryInstance*>& p_instances)
+{
+}
+
+void RendererSceneRender::set_scene_pass(uint64_t p_pass) {}
+
+void RendererSceneRender::set_time(double p_time, double p_step) {}
+
+void RendererSceneRender::set_debug_draw_mode(RenderingServerEnums::ViewportDebugDraw p_debug_draw)
+{
+}
+
+Ref<RenderSceneBuffers> RendererSceneRender::render_buffers_create()
+{
+	return Ref<RenderSceneBuffers>();
+}
+
+void RendererSceneRender::gi_set_use_half_resolution(bool p_enable) {}
+
+void RendererSceneRender::screen_space_roughness_limiter_set_active(
+	bool p_enable, float p_amount, float p_limit)
+{
+}
+
+bool RendererSceneRender::screen_space_roughness_limiter_is_active() const { return false; }
+
+Array RendererSceneRender::bake_render_uv2(
+	RID p_base, const Array& p_material_cache, const Vector2i& p_size)
+{
+	return Array();
+}
+
+PackedByteArray RendererSceneRender::bake_render_area_light_atlas(const Array& p_light_cache,
+	const Array& p_light_xforms, const Vector2i& p_size, int p_atlas_size)
+{
+	return PackedByteArray();
+}
+
+bool RendererSceneRender::free(RID p_rid) { return false; }
+
+void RendererSceneRender::sdfgi_set_debug_probe_select(
+	const Vector3& p_position, const Vector3& p_dir)
+{
+}
+
+void RendererSceneRender::decals_set_filter(RenderingServerEnums::DecalFilter p_filter) {}
+
+void RendererSceneRender::light_projectors_set_filter(
+	RenderingServerEnums::LightProjectorFilter p_filter)
+{
+}
+
+void RendererSceneRender::lightmaps_set_bicubic_filter(bool p_enable) {}
+
+void RendererSceneRender::material_set_use_debanding(bool p_enable) {}
+
+void RendererSceneRender::update() {}
 

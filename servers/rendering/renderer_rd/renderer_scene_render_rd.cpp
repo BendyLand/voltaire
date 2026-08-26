@@ -1692,6 +1692,7 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 		scene_data.camera_visible_layers = p_camera_data->visible_layers;
 		scene_data.taa_jitter = p_camera_data->taa_jitter;
 
+
 		scene_data.taa_frame_count = p_camera_data->taa_frame_count;
 		scene_data.main_cam_transform = p_camera_data->main_transform;
 		scene_data.flip_y = !p_reflection_probe.is_valid();
@@ -1931,10 +1932,8 @@ float RendererSceneRenderRD::screen_space_roughness_limiter_get_limit() const
 Array RendererSceneRenderRD::bake_render_uv2(
 	RID p_base, const Array& p_material_overrides, const Size2i& p_image_size)
 {
-	ERR_FAIL_COND_V_MSG(
-		p_image_size.width <= 0, Array(), "Image width must be greater than 0.");
-	ERR_FAIL_COND_V_MSG(
-		p_image_size.height <= 0, Array(), "Image height must be greater than 0.");
+	ERR_FAIL_COND_V_MSG(p_image_size.width <= 0, Array(), "Image width must be greater than 0.");
+	ERR_FAIL_COND_V_MSG(p_image_size.height <= 0, Array(), "Image height must be greater than 0.");
 	RD::TextureFormat tf;
 	tf.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
 	tf.width = p_image_size.width; // Always 64x64
@@ -2336,5 +2335,52 @@ RendererSceneRenderRD::~RendererSceneRenderRD()
 	RSG::light_storage->directional_shadow_atlas_set_size(0);
 	cull_argument.reset(); // avoid exit error
 }
+
+void RendererSceneRenderRD::setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) {}
+
+void RendererSceneRenderRD::_render_scene(RenderDataRD* p_render_data, const Color& p_default_color)
+{
+}
+
+void RendererSceneRenderRD::_render_uv2(const PagedArray<RenderGeometryInstance*>& p_instances,
+	RID p_framebuffer, const Rect2i& p_region)
+{
+}
+
+void RendererSceneRenderRD::_render_material(const Transform3D& p_cam_transform,
+	const Projection& p_cam_projection, bool p_cam_orthogonal,
+	const PagedArray<RenderGeometryInstance*>& p_instances, RID p_framebuffer,
+	const Rect2i& p_region, float p_exposure_normalization)
+{
+}
+
+
+void RendererSceneRenderRD::_render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i& p_from,
+	const Vector3i& p_size, const AABB& p_bounds,
+	const PagedArray<RenderGeometryInstance*>& p_instances, const RID& p_albedo_texture,
+	const RID& p_emission_texture, const RID& p_emission_aniso_texture,
+	const RID& p_geom_facing_texture, float p_exposure_normalization)
+{
+}
+
+void RendererSceneRenderRD::_render_particle_collider_heightfield(RID p_fb,
+	const Transform3D& p_cam_transform, const Projection& p_cam_projection,
+	const PagedArray<RenderGeometryInstance*>& p_instances)
+{
+}
+
+RID RendererSceneRenderRD::_render_buffers_get_normal_texture(
+	Ref<RenderSceneBuffersRD> p_render_buffers)
+{
+	return RID();
+}
+
+RID RendererSceneRenderRD::_render_buffers_get_velocity_texture(
+	Ref<RenderSceneBuffersRD> p_render_buffers)
+{
+	return RID();
+}
+
+void RendererSceneRenderRD::base_uniforms_changed() {}
 
 

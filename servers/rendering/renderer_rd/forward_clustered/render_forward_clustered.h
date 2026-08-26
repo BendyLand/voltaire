@@ -55,19 +55,23 @@
 #define RB_TEX_VOXEL_GI SNAME("voxel_gi")
 #define RB_TEX_VOXEL_GI_MSAA SNAME("voxel_gi_msaa")
 
-namespace RendererSceneRenderImplementation {
+namespace RendererSceneRenderImplementation
+{
 
-class RenderForwardClustered : public RendererSceneRenderRD {
+class RenderForwardClustered : public RendererSceneRenderRD
+{
 	friend SceneShaderForwardClustered;
 
-	enum {
+	enum
+	{
 		SCENE_UNIFORM_SET = 0,
 		RENDER_PASS_UNIFORM_SET = 1,
 		TRANSFORMS_UNIFORM_SET = 2,
 		MATERIAL_UNIFORM_SET = 3,
 	};
 
-	enum {
+	enum
+	{
 		SDFGI_MAX_CASCADES = 8,
 		MAX_VOXEL_GI_INSTANCESS = 8,
 		MAX_LIGHTMAPS = 8,
@@ -75,11 +79,12 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 		INSTANCE_DATA_BUFFER_MIN_SIZE = 4096
 	};
 
-	enum RenderListType {
-		RENDER_LIST_OPAQUE, //used for opaque objects
-		RENDER_LIST_MOTION, //used for opaque objects with motion
-		RENDER_LIST_ALPHA, //used for transparent objects
-		RENDER_LIST_SECONDARY, //used for shadows and other objects
+	enum RenderListType
+	{
+		RENDER_LIST_OPAQUE,	   // used for opaque objects
+		RENDER_LIST_MOTION,	   // used for opaque objects with motion
+		RENDER_LIST_ALPHA,	   // used for transparent objects
+		RENDER_LIST_SECONDARY, // used for shadows and other objects
 		RENDER_LIST_MAX
 	};
 
@@ -90,20 +95,22 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 public:
 	/* Framebuffer */
 
-	class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD {
+	class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD
+	{
 		VLTRCLASS(RenderBufferDataForwardClustered, RenderBufferCustomDataRD)
 
 	private:
-		RenderSceneBuffersRD *render_buffers = nullptr;
-		RendererRD::FSR2Context *fsr2_context = nullptr;
+		RenderSceneBuffersRD* render_buffers = nullptr;
+		RendererRD::FSR2Context* fsr2_context = nullptr;
 #ifdef METAL_MFXTEMPORAL_ENABLED
-		RendererRD::MFXTemporalContext *mfx_temporal_context = nullptr;
+		RendererRD::MFXTemporalContext* mfx_temporal_context = nullptr;
 #endif
 
 	public:
-		ClusterBuilderRD *cluster_builder = nullptr;
+		ClusterBuilderRD* cluster_builder = nullptr;
 
-		struct SSEffectsData {
+		struct SSEffectsData
+		{
 			Projection ssil_last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
 			Transform3D ssil_last_frame_transform;
 
@@ -115,7 +122,8 @@ public:
 			RendererRD::SSEffects::SSRRenderBuffers ssr;
 		} ss_effects_data;
 
-		enum DepthFrameBufferType {
+		enum DepthFrameBufferType
+		{
 			DEPTH_FB,
 			DEPTH_FB_ROUGHNESS,
 			DEPTH_FB_ROUGHNESS_VOXELGI
@@ -124,30 +132,94 @@ public:
 		RID render_sdfgi_uniform_set;
 
 		void ensure_specular();
-		bool has_specular() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
-		RID get_specular() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
-		RID get_specular(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR, p_layer, 0); }
-		RID get_specular_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR_MSAA, p_layer, 0); }
+
+		bool has_specular() const
+		{
+			return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR);
+		}
+
+		RID get_specular() const
+		{
+			return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR);
+		}
+
+		RID get_specular(uint32_t p_layer)
+		{
+			return render_buffers->get_texture_slice(
+				RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR, p_layer, 0);
+		}
+
+		RID get_specular_msaa(uint32_t p_layer)
+		{
+			return render_buffers->get_texture_slice(
+				RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR_MSAA, p_layer, 0);
+		}
 
 		void ensure_normal_roughness_texture();
-		bool has_normal_roughness() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); }
-		RID get_normal_roughness() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); }
-		RID get_normal_roughness(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS, p_layer, 0); }
-		RID get_normal_roughness_msaa() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA); }
-		RID get_normal_roughness_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA, p_layer, 0); }
+
+		bool has_normal_roughness() const
+		{
+			return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS);
+		}
+
+		RID get_normal_roughness() const
+		{
+			return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS);
+		}
+
+		RID get_normal_roughness(uint32_t p_layer)
+		{
+			return render_buffers->get_texture_slice(
+				RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS, p_layer, 0);
+		}
+
+		RID get_normal_roughness_msaa() const
+		{
+			return render_buffers->get_texture(
+				RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA);
+		}
+
+		RID get_normal_roughness_msaa(uint32_t p_layer)
+		{
+			return render_buffers->get_texture_slice(
+				RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA, p_layer, 0);
+		}
 
 		void ensure_voxelgi();
-		bool has_voxelgi() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
-		RID get_voxelgi() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
-		RID get_voxelgi(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI, p_layer, 0); }
-		RID get_voxelgi_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI_MSAA, p_layer, 0); }
 
-		void ensure_fsr2(RendererRD::FSR2Effect *p_effect);
-		RendererRD::FSR2Context *get_fsr2_context() const { return fsr2_context; }
+		bool has_voxelgi() const
+		{
+			return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI);
+		}
+
+		RID get_voxelgi() const
+		{
+			return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI);
+		}
+
+		RID get_voxelgi(uint32_t p_layer)
+		{
+			return render_buffers->get_texture_slice(
+				RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI, p_layer, 0);
+		}
+
+		RID get_voxelgi_msaa(uint32_t p_layer)
+		{
+			return render_buffers->get_texture_slice(
+				RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI_MSAA, p_layer, 0);
+		}
+
+		void ensure_fsr2(RendererRD::FSR2Effect* p_effect);
+
+		RendererRD::FSR2Context* get_fsr2_context() const { return fsr2_context; }
 
 #ifdef METAL_MFXTEMPORAL_ENABLED
-		bool ensure_mfx_temporal(RendererRD::MFXTemporalEffect *p_effect);
-		RendererRD::MFXTemporalContext *get_mfx_temporal_context() const { return mfx_temporal_context; }
+		bool ensure_mfx_temporal(RendererRD::MFXTemporalEffect* p_effect);
+
+		RendererRD::MFXTemporalContext* get_mfx_temporal_context() const
+		{
+			return mfx_temporal_context;
+		}
 #endif
 
 		RID get_color_only_fb();
@@ -156,48 +228,58 @@ public:
 		RID get_specular_only_fb();
 		RID get_velocity_only_fb();
 
-		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
+		virtual void configure(RenderSceneBuffersRD* p_render_buffers) override;
 		virtual void free_data() override;
 
 		static RD::DataFormat get_specular_format();
 		static uint32_t get_specular_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);
 		static RD::DataFormat get_normal_roughness_format();
-		static uint32_t get_normal_roughness_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);
+		static uint32_t get_normal_roughness_usage_bits(
+			bool p_resolve, bool p_msaa, bool p_storage);
 		static RD::DataFormat get_voxelgi_format();
 		static uint32_t get_voxelgi_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);
 	};
 
 private:
-	virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) override;
+	virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers);
 
 	RID render_base_uniform_set;
 
 	uint64_t lightmap_texture_array_version = 0xFFFFFFFF;
 
 	void _update_render_base_uniform_set();
-	RID _setup_sdfgi_render_pass_uniform_set(RID p_albedo_texture, RID p_emission_texture, RID p_emission_aniso_texture, RID p_geom_facing_texture, const RendererRD::MaterialStorage::Samplers &p_samplers, uint32_t p_uniform_buffer_index);
-	RID _setup_render_pass_uniform_set(RenderListType p_render_list, const RenderDataRD *p_render_data, bool p_is_multiview, RID p_radiance_texture, const RendererRD::MaterialStorage::Samplers &p_samplers, uint32_t p_uniform_buffer_index, bool p_use_directional_shadow_atlas = false);
+	RID _setup_sdfgi_render_pass_uniform_set(RID p_albedo_texture, RID p_emission_texture,
+		RID p_emission_aniso_texture, RID p_geom_facing_texture,
+		const RendererRD::MaterialStorage::Samplers& p_samplers, uint32_t p_uniform_buffer_index);
+	RID _setup_render_pass_uniform_set(RenderListType p_render_list,
+		const RenderDataRD* p_render_data, bool p_is_multiview, RID p_radiance_texture,
+		const RendererRD::MaterialStorage::Samplers& p_samplers, uint32_t p_uniform_buffer_index,
+		bool p_use_directional_shadow_atlas = false);
 
-	struct BestFitNormal {
+	struct BestFitNormal
+	{
 		BestFitNormalShaderRD shader;
 		RID shader_version;
 		RID pipeline;
 		RID texture;
 	} best_fit_normal;
 
-	struct IntegrateDFG {
+	struct IntegrateDFG
+	{
 		IntegrateDfgShaderRD shader;
 		RID shader_version;
 		RID pipeline;
 		RID texture;
 	} dfg_lut;
 
-	struct LTC {
+	struct LTC
+	{
 		RID lut1_texture;
 		RID lut2_texture;
 	} ltc;
 
-	enum PassMode {
+	enum PassMode
+	{
 		PASS_MODE_COLOR,
 		PASS_MODE_SHADOW,
 		PASS_MODE_SHADOW_DP,
@@ -209,7 +291,8 @@ private:
 		PASS_MODE_MAX
 	};
 
-	enum ColorPassFlags {
+	enum ColorPassFlags
+	{
 		COLOR_PASS_FLAG_TRANSPARENT = 1 << 0,
 		COLOR_PASS_FLAG_SEPARATE_SPECULAR = 1 << 1,
 		COLOR_PASS_FLAG_MULTIVIEW = 1 << 2,
@@ -219,9 +302,10 @@ private:
 	struct GeometryInstanceSurfaceDataCache;
 	struct RenderElementInfo;
 
-	struct RenderListParameters {
-		GeometryInstanceSurfaceDataCache **elements = nullptr;
-		RenderElementInfo *element_info = nullptr;
+	struct RenderListParameters
+	{
+		GeometryInstanceSurfaceDataCache** elements = nullptr;
+		RenderElementInfo* element_info = nullptr;
 		int element_count = 0;
 		bool reverse_cull = false;
 		PassMode pass_mode = PASS_MODE_COLOR;
@@ -238,7 +322,15 @@ private:
 		bool use_directional_soft_shadow = false;
 		SceneShaderForwardClustered::ShaderSpecialization base_specialization = {};
 
-		RenderListParameters(GeometryInstanceSurfaceDataCache **p_elements, RenderElementInfo *p_element_info, int p_element_count, bool p_reverse_cull, PassMode p_pass_mode, uint32_t p_color_pass_flags, bool p_no_gi, bool p_use_directional_soft_shadows, RID p_render_pass_uniform_set, bool p_force_wireframe = false, const Vector2 &p_uv_offset = Vector2(), float p_lod_distance_multiplier = 0.0, float p_screen_mesh_lod_threshold = 0.0, uint32_t p_view_count = 1, uint32_t p_element_offset = 0, SceneShaderForwardClustered::ShaderSpecialization p_base_specialization = {}) {
+		RenderListParameters(GeometryInstanceSurfaceDataCache** p_elements,
+			RenderElementInfo* p_element_info, int p_element_count, bool p_reverse_cull,
+			PassMode p_pass_mode, uint32_t p_color_pass_flags, bool p_no_gi,
+			bool p_use_directional_soft_shadows, RID p_render_pass_uniform_set,
+			bool p_force_wireframe = false, const Vector2& p_uv_offset = Vector2(),
+			float p_lod_distance_multiplier = 0.0, float p_screen_mesh_lod_threshold = 0.0,
+			uint32_t p_view_count = 1, uint32_t p_element_offset = 0,
+			SceneShaderForwardClustered::ShaderSpecialization p_base_specialization = {})
+		{
 			elements = p_elements;
 			element_info = p_element_info;
 			element_count = p_element_count;
@@ -258,19 +350,23 @@ private:
 		}
 	};
 
-	struct LightmapData {
+	struct LightmapData
+	{
 		float normal_xform[12];
 		float texture_size[2];
 		float exposure_normalization;
 		uint32_t flags;
 	};
 
-	struct LightmapCaptureData {
+	struct LightmapCaptureData
+	{
 		float sh[9 * 4];
 	};
 
-	// When changing any of these enums, remember to change the corresponding enums in the shader files as well.
-	enum {
+	// When changing any of these enums, remember to change the corresponding enums in the shader
+	// files as well.
+	enum
+	{
 		INSTANCE_DATA_FLAG_MULTIMESH_INDIRECT = 1 << 2,
 		INSTANCE_DATA_FLAGS_DYNAMIC = 1 << 3,
 		INSTANCE_DATA_FLAGS_NON_UNIFORM_SCALE = 1 << 4,
@@ -291,9 +387,12 @@ private:
 		INSTANCE_DATA_FLAGS_FADE_MASK = 0xFFUL << INSTANCE_DATA_FLAGS_FADE_SHIFT
 	};
 
-	struct SceneState {
-		// This struct is loaded into Set 1 - Binding 1, populated at start of rendering a frame, must match with shader code
-		struct UBO {
+	struct SceneState
+	{
+		// This struct is loaded into Set 1 - Binding 1, populated at start of rendering a frame,
+		// must match with shader code
+		struct UBO
+		{
 			uint32_t cluster_shift;
 			uint32_t cluster_width;
 			uint32_t cluster_type_size;
@@ -318,27 +417,30 @@ private:
 			uint32_t volumetric_fog_pad;
 		};
 
-		struct PushConstantUbershader {
+		struct PushConstantUbershader
+		{
 			SceneShaderForwardClustered::ShaderSpecialization specialization;
 			SceneShaderForwardClustered::UbershaderConstants constants;
 		};
 
-		struct PushConstant {
+		struct PushConstant
+		{
 			uint32_t base_index; //
-			uint32_t uv_offset; //packed
+			uint32_t uv_offset;	 // packed
 			uint32_t multimesh_motion_vectors_current_offset;
 			uint32_t multimesh_motion_vectors_previous_offset;
 			PushConstantUbershader ubershader;
 		};
 
-		struct InstanceData {
+		struct InstanceData
+		{
 			float transform[12];
 			float compressed_aabb_position[4];
 			float compressed_aabb_size[4];
 			float uv_scale[4];
 			uint32_t flags;
-			uint32_t instance_uniforms_ofs; //base offset in global buffer for instance variables
-			uint32_t gi_offset; //GI information when using lightmapping (VCT or lightmap index)
+			uint32_t instance_uniforms_ofs; // base offset in global buffer for instance variables
+			uint32_t gi_offset; // GI information when using lightmapping (VCT or lightmap index)
 			uint32_t layer_mask;
 			float prev_transform[12];
 			float lightmap_uv_scale[4];
@@ -348,19 +450,21 @@ private:
 #endif
 
 			// These setters allow us to copy the data over with operation when using floats.
-			inline void set_lightmap_uv_scale(const Rect2 &p_rect) {
+			inline void set_lightmap_uv_scale(const Rect2& p_rect)
+			{
 #ifdef REAL_T_IS_DOUBLE
 				lightmap_uv_scale[0] = p_rect.position.x;
 				lightmap_uv_scale[1] = p_rect.position.y;
 				lightmap_uv_scale[2] = p_rect.size.x;
 				lightmap_uv_scale[3] = p_rect.size.y;
 #else
-				Rect2 *rect = reinterpret_cast<Rect2 *>(lightmap_uv_scale);
+				Rect2* rect = reinterpret_cast<Rect2*>(lightmap_uv_scale);
 				*rect = p_rect;
 #endif
 			}
 
-			inline void set_compressed_aabb(const AABB &p_aabb) {
+			inline void set_compressed_aabb(const AABB& p_aabb)
+			{
 #ifdef REAL_T_IS_DOUBLE
 				compressed_aabb_position[0] = p_aabb.position.x;
 				compressed_aabb_position[1] = p_aabb.position.y;
@@ -370,21 +474,24 @@ private:
 				compressed_aabb_size[1] = p_aabb.size.y;
 				compressed_aabb_size[2] = p_aabb.size.z;
 #else
-				Vector3 *compressed_aabb_position_vec3 = reinterpret_cast<Vector3 *>(compressed_aabb_position);
-				Vector3 *compressed_aabb_size_vec3 = reinterpret_cast<Vector3 *>(compressed_aabb_size);
+				Vector3* compressed_aabb_position_vec3 =
+					reinterpret_cast<Vector3*>(compressed_aabb_position);
+				Vector3* compressed_aabb_size_vec3 =
+					reinterpret_cast<Vector3*>(compressed_aabb_size);
 				*compressed_aabb_position_vec3 = p_aabb.position;
 				*compressed_aabb_size_vec3 = p_aabb.size;
 #endif
 			}
 
-			inline void set_uv_scale(const Vector4 &p_uv_scale) {
+			inline void set_uv_scale(const Vector4& p_uv_scale)
+			{
 #ifdef REAL_T_IS_DOUBLE
 				uv_scale[0] = p_uv_scale.x;
 				uv_scale[1] = p_uv_scale.y;
 				uv_scale[2] = p_uv_scale.z;
 				uv_scale[3] = p_uv_scale.w;
 #else
-				Vector4 *uv_scale_vec4 = reinterpret_cast<Vector4 *>(uv_scale);
+				Vector4* uv_scale_vec4 = reinterpret_cast<Vector4*>(uv_scale);
 				*uv_scale_vec4 = p_uv_scale;
 #endif
 			}
@@ -406,10 +513,12 @@ private:
 		uint32_t max_lightmaps;
 		RID lightmap_buffer;
 
-		MultiUmaBuffer<1u> instance_buffer[RENDER_LIST_MAX] = { MultiUmaBuffer<1u>("RENDER_LIST_OPAQUE"), MultiUmaBuffer<1u>("RENDER_LIST_MOTION"), MultiUmaBuffer<1u>("RENDER_LIST_ALPHA"), MultiUmaBuffer<1u>("RENDER_LIST_SECONDARY") };
-		InstanceData *curr_gpu_ptr[RENDER_LIST_MAX] = {};
+		MultiUmaBuffer<1u> instance_buffer[RENDER_LIST_MAX] = {
+			MultiUmaBuffer<1u>("RENDER_LIST_OPAQUE"), MultiUmaBuffer<1u>("RENDER_LIST_MOTION"),
+			MultiUmaBuffer<1u>("RENDER_LIST_ALPHA"), MultiUmaBuffer<1u>("RENDER_LIST_SECONDARY")};
+		InstanceData* curr_gpu_ptr[RENDER_LIST_MAX] = {};
 
-		LightmapCaptureData *lightmap_captures = nullptr;
+		LightmapCaptureData* lightmap_captures = nullptr;
 		uint32_t max_lightmap_captures;
 		RID lightmap_capture_buffer;
 
@@ -423,7 +532,8 @@ private:
 		bool used_lightmap = false;
 		bool used_opaque_stencil = false;
 
-		struct ShadowPass {
+		struct ShadowPass
+		{
 			uint32_t element_from;
 			uint32_t element_count;
 			PassMode pass_mode;
@@ -442,27 +552,41 @@ private:
 
 		LocalVector<ShadowPass> shadow_passes;
 
-		void grow_instance_buffer(RenderListType p_render_list, uint32_t p_req_element_count, bool p_append);
+		void grow_instance_buffer(
+			RenderListType p_render_list, uint32_t p_req_element_count, bool p_append);
 	} scene_state;
 
-	static RenderForwardClustered *singleton;
+	static RenderForwardClustered* singleton;
 
-	uint32_t _setup_environment(const RenderDataRD *p_render_data, bool p_no_fog, const Size2i &p_screen_size, const Size2 &p_viewport_size, const Color &p_default_bg_color, bool p_opaque_render_buffers = false, bool p_apply_alpha_multiplier = false, bool p_pancake_shadows = false);
-	void _setup_voxelgis(const PagedArray<RID> &p_voxelgis);
-	void _setup_lightmaps(const RenderDataRD *p_render_data, const PagedArray<RID> &p_lightmaps, const Transform3D &p_cam_transform);
+	uint32_t _setup_environment(const RenderDataRD* p_render_data, bool p_no_fog,
+		const Size2i& p_screen_size, const Size2& p_viewport_size, const Color& p_default_bg_color,
+		bool p_opaque_render_buffers = false, bool p_apply_alpha_multiplier = false,
+		bool p_pancake_shadows = false);
+	void _setup_voxelgis(const PagedArray<RID>& p_voxelgis);
+	void _setup_lightmaps(const RenderDataRD* p_render_data, const PagedArray<RID>& p_lightmaps,
+		const Transform3D& p_cam_transform);
 
-	struct RenderElementInfo {
-		enum { MAX_REPEATS = (1 << 20) - 1 };
-		union {
-			struct {
+	struct RenderElementInfo
+	{
+		enum
+		{
+			MAX_REPEATS = (1 << 20) - 1
+		};
+
+		union
+		{
+			struct
+			{
 				uint32_t lod_index : 8;
 				uint32_t uses_softshadow : 1;
 				uint32_t uses_projector : 1;
 				uint32_t uses_forward_gi : 1;
 				uint32_t uses_lightmap : 1;
 			};
+
 			uint32_t value;
 		};
+
 		uint32_t repeat;
 	};
 
@@ -470,25 +594,39 @@ private:
 	static_assert(std::is_trivially_constructible_v<RenderElementInfo>);
 
 	template <PassMode p_pass_mode, uint32_t p_color_pass_flags = 0>
-	_FORCE_INLINE_ void _render_list_template(RenderingDevice::DrawListID p_draw_list, RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters *p_params, uint32_t p_from_element, uint32_t p_to_element);
-	void _render_list(RenderingDevice::DrawListID p_draw_list, RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters *p_params, uint32_t p_from_element, uint32_t p_to_element);
-	void _render_list_with_draw_list(RenderListParameters *p_params, RID p_framebuffer, BitField<RD::DrawFlags> p_draw_flags = RD::DRAW_DEFAULT_ALL, const Vector<Color> &p_clear_color_values = Vector<Color>(), float p_clear_depth_value = 0.0, uint32_t p_clear_stencil_value = 0, const Rect2 &p_region = Rect2());
+	_FORCE_INLINE_ void _render_list_template(RenderingDevice::DrawListID p_draw_list,
+		RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters* p_params,
+		uint32_t p_from_element, uint32_t p_to_element);
+	void _render_list(RenderingDevice::DrawListID p_draw_list,
+		RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters* p_params,
+		uint32_t p_from_element, uint32_t p_to_element);
+	void _render_list_with_draw_list(RenderListParameters* p_params, RID p_framebuffer,
+		BitField<RD::DrawFlags> p_draw_flags = RD::DRAW_DEFAULT_ALL,
+		const Vector<Color>& p_clear_color_values = Vector<Color>(),
+		float p_clear_depth_value = 0.0, uint32_t p_clear_stencil_value = 0,
+		const Rect2& p_region = Rect2());
 
-	void _fill_instance_data(RenderListType p_render_list, int *p_render_info = nullptr, uint32_t p_offset = 0, int32_t p_max_elements = -1, bool p_update_buffer = true);
-	void _fill_render_list(RenderListType p_render_list, const RenderDataRD *p_render_data, PassMode p_pass_mode, bool p_using_sdfgi = false, bool p_using_opaque_gi = false, bool p_using_motion_pass = false, bool p_append = false);
+	void _fill_instance_data(RenderListType p_render_list, int* p_render_info = nullptr,
+		uint32_t p_offset = 0, int32_t p_max_elements = -1, bool p_update_buffer = true);
+	void _fill_render_list(RenderListType p_render_list, const RenderDataRD* p_render_data,
+		PassMode p_pass_mode, bool p_using_sdfgi = false, bool p_using_opaque_gi = false,
+		bool p_using_motion_pass = false, bool p_append = false);
 
 	HashMap<Size2i, RID> sdfgi_framebuffer_size_cache;
 
 	struct GeometryInstanceData;
 	class GeometryInstanceForwardClustered;
 
-	struct GeometryInstanceLightmapSH {
+	struct GeometryInstanceLightmapSH
+	{
 		Color sh[9];
 	};
 
 	// Cached data for drawing surfaces
-	struct GeometryInstanceSurfaceDataCache {
-		enum {
+	struct GeometryInstanceSurfaceDataCache
+	{
+		enum
+		{
 			FLAG_PASS_DEPTH = 1,
 			FLAG_PASS_OPAQUE = 2,
 			FLAG_PASS_ALPHA = 4,
@@ -504,22 +642,29 @@ private:
 			FLAG_USES_STENCIL = 262144,
 		};
 
-		union {
-			struct {
+		union
+		{
+			struct
+			{
 				uint64_t sort_key1;
 				uint64_t sort_key2;
 			};
-			struct {
-				// Needs to be grouped together to be used in RenderElementInfo, as the value is masked directly.
+
+			struct
+			{
+				// Needs to be grouped together to be used in RenderElementInfo, as the value is
+				// masked directly.
 				uint64_t lod_index : 8;
 				uint64_t uses_softshadow : 1;
 				uint64_t uses_projector : 1;
 				uint64_t uses_forward_gi : 1;
 				uint64_t uses_lightmap : 1;
 
-				// Sorted based on optimal order for respecting priority and reducing the amount of rebinding of shaders, materials,
-				// and geometry. This current order was found to be the most optimal in large projects. If you wish to measure
-				// differences, refer to RenderingDeviceGraph and the methods available to print statistics for draw lists.
+				// Sorted based on optimal order for respecting priority and reducing the amount of
+				// rebinding of shaders, materials, and geometry. This current order was found to be
+				// the most optimal in large projects. If you wish to measure differences, refer to
+				// RenderingDeviceGraph and the methods available to print statistics for draw
+				// lists.
 				uint64_t depth_layer : 4;
 				uint64_t surface_index : 8;
 				uint64_t geometry_id : 32;
@@ -536,33 +681,36 @@ private:
 		uint32_t surface_index = 0;
 		uint32_t color_pass_inclusion_mask = 0;
 
-		void *surface = nullptr;
+		void* surface = nullptr;
 		RID material_uniform_set;
-		SceneShaderForwardClustered::ShaderData *shader = nullptr;
-		SceneShaderForwardClustered::MaterialData *material = nullptr;
+		SceneShaderForwardClustered::ShaderData* shader = nullptr;
+		SceneShaderForwardClustered::MaterialData* material = nullptr;
 
-		void *surface_shadow = nullptr;
+		void* surface_shadow = nullptr;
 		RID material_uniform_set_shadow;
-		SceneShaderForwardClustered::ShaderData *shader_shadow = nullptr;
+		SceneShaderForwardClustered::ShaderData* shader_shadow = nullptr;
 
-		GeometryInstanceSurfaceDataCache *next = nullptr;
-		GeometryInstanceForwardClustered *owner = nullptr;
+		GeometryInstanceSurfaceDataCache* next = nullptr;
+		GeometryInstanceForwardClustered* owner = nullptr;
 		SelfList<GeometryInstanceSurfaceDataCache> compilation_dirty_element;
 		SelfList<GeometryInstanceSurfaceDataCache> compilation_all_element;
 
-		GeometryInstanceSurfaceDataCache() :
-				compilation_dirty_element(this), compilation_all_element(this) {}
+		GeometryInstanceSurfaceDataCache()
+			: compilation_dirty_element(this), compilation_all_element(this)
+		{
+		}
 	};
 
-	class GeometryInstanceForwardClustered : public RenderGeometryInstanceBase {
+	class GeometryInstanceForwardClustered : public RenderGeometryInstanceBase
+	{
 	public:
 		// lightmap
 		RID lightmap_instance;
 		Rect2 lightmap_uv_scale;
 		uint32_t lightmap_slice_index;
-		GeometryInstanceLightmapSH *lightmap_sh = nullptr;
+		GeometryInstanceLightmapSH* lightmap_sh = nullptr;
 
-		//used during rendering
+		// used during rendering
 
 		uint32_t gi_offset_cache = 0;
 		bool store_transform_cache = true;
@@ -573,43 +721,64 @@ private:
 		bool using_projectors = false;
 		bool using_softshadows = false;
 
-		//used during setup
+		// used during setup
 		uint64_t prev_transform_change_frame = 0xFFFFFFFF;
-		enum TransformStatus {
+
+		enum TransformStatus
+		{
 			NONE,
 			MOVED,
 			TELEPORTED,
 		} transform_status = TransformStatus::MOVED;
+
 		Transform3D prev_transform;
 		RID voxel_gi_instances[MAX_VOXEL_GI_INSTANCESS_PER_INSTANCE];
-		GeometryInstanceSurfaceDataCache *surface_caches = nullptr;
+		GeometryInstanceSurfaceDataCache* surface_caches = nullptr;
 		SelfList<GeometryInstanceForwardClustered> dirty_list_element;
 
-		GeometryInstanceForwardClustered() :
-				dirty_list_element(this) {}
+		GeometryInstanceForwardClustered() : dirty_list_element(this) {}
 
 		virtual void _mark_dirty() override;
 
-		virtual void set_transform(const Transform3D &p_transform, const AABB &p_aabb, const AABB &p_transformed_aabb) override;
+		virtual void set_transform(const Transform3D& p_transform, const AABB& p_aabb,
+			const AABB& p_transformed_aabb) override;
 		virtual void reset_motion_vectors() override;
-		virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2 &p_lightmap_uv_scale, int p_lightmap_slice_index) override;
-		virtual void set_lightmap_capture(const Color *p_sh9) override;
+		virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2& p_lightmap_uv_scale,
+			int p_lightmap_slice_index) override;
+		virtual void set_lightmap_capture(const Color* p_sh9) override;
 
 		virtual void clear_light_instances() override {}
-		virtual void pair_light_instance(const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx) override {}
-		virtual void pair_reflection_probe_instances(const RID *p_reflection_probe_instances, uint32_t p_reflection_probe_instance_count) override {}
-		virtual void pair_decal_instances(const RID *p_decal_instances, uint32_t p_decal_instance_count) override {}
-		virtual void pair_voxel_gi_instances(const RID *p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) override;
+
+		virtual void pair_light_instance(
+			const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx) override
+		{
+		}
+
+		virtual void pair_reflection_probe_instances(const RID* p_reflection_probe_instances,
+			uint32_t p_reflection_probe_instance_count) override
+		{
+		}
+
+		virtual void pair_decal_instances(
+			const RID* p_decal_instances, uint32_t p_decal_instance_count) override
+		{
+		}
+
+		virtual void pair_voxel_gi_instances(
+			const RID* p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) override;
 
 		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
 	};
 
 	// These are not used in the Forward+ path, it has different light clustering tech.
 	virtual uint32_t get_max_lights_total() override { return 0; }
+
 	virtual uint32_t get_max_lights_per_mesh() override { return 0; }
 
-	static void _geometry_instance_dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *p_tracker);
-	static void _geometry_instance_dependency_deleted(const RID &p_dependency, DependencyTracker *p_tracker);
+	static void _geometry_instance_dependency_changed(
+		Dependency::DependencyChangedNotification p_notification, DependencyTracker* p_tracker);
+	static void _geometry_instance_dependency_deleted(
+		const RID& p_dependency, DependencyTracker* p_tracker);
 
 	SelfList<GeometryInstanceForwardClustered>::List geometry_instance_dirty_list;
 	SelfList<GeometryInstanceSurfaceDataCache>::List geometry_surface_compilation_dirty_list;
@@ -619,11 +788,12 @@ private:
 	PagedAllocator<GeometryInstanceSurfaceDataCache> geometry_instance_surface_alloc;
 	PagedAllocator<GeometryInstanceLightmapSH> geometry_instance_lightmap_sh;
 
-	struct SurfacePipelineData {
-		void *mesh_surface = nullptr;
-		void *mesh_surface_shadow = nullptr;
-		SceneShaderForwardClustered::ShaderData *shader = nullptr;
-		SceneShaderForwardClustered::ShaderData *shader_shadow = nullptr;
+	struct SurfacePipelineData
+	{
+		void* mesh_surface = nullptr;
+		void* mesh_surface_shadow = nullptr;
+		SceneShaderForwardClustered::ShaderData* shader = nullptr;
+		SceneShaderForwardClustered::ShaderData* shader_shadow = nullptr;
 		bool instanced = false;
 		bool uses_opaque = false;
 		bool uses_transparent = false;
@@ -631,11 +801,14 @@ private:
 		bool can_use_lightmap = false;
 	};
 
-	struct GlobalPipelineData {
-		union {
+	struct GlobalPipelineData
+	{
+		union
+		{
 			uint32_t key;
 
-			struct {
+			struct
+			{
 				uint32_t texture_samples : 3;
 				uint32_t use_reflection_probes : 1;
 				uint32_t use_separate_specular : 1;
@@ -656,22 +829,38 @@ private:
 	GlobalPipelineData global_pipeline_data_compiled = {};
 	GlobalPipelineData global_pipeline_data_required = {};
 
-	typedef Pair<SceneShaderForwardClustered::ShaderData *, SceneShaderForwardClustered::ShaderData::PipelineKey> ShaderPipelinePair;
+	typedef Pair<SceneShaderForwardClustered::ShaderData*,
+		SceneShaderForwardClustered::ShaderData::PipelineKey>
+		ShaderPipelinePair;
 
 	void _update_global_pipeline_data_requirements_from_project();
 	void _update_global_pipeline_data_requirements_from_light_storage();
-	void _geometry_instance_add_surface_with_material(GeometryInstanceForwardClustered *ginstance, uint32_t p_surface, SceneShaderForwardClustered::MaterialData *p_material, uint32_t p_material_id, uint32_t p_shader_id, RID p_mesh);
-	void _geometry_instance_add_surface_with_material_chain(GeometryInstanceForwardClustered *ginstance, uint32_t p_surface, SceneShaderForwardClustered::MaterialData *p_material, RID p_mat_src, RID p_mesh);
-	void _geometry_instance_add_surface(GeometryInstanceForwardClustered *ginstance, uint32_t p_surface, RID p_material, RID p_mesh);
-	void _geometry_instance_update(RenderGeometryInstance *p_geometry_instance);
-	void _mesh_compile_pipeline_for_surface(SceneShaderForwardClustered::ShaderData *p_shader, void *p_mesh_surface, bool p_ubershader, bool p_instanced_surface, RSE::PipelineSource p_source, SceneShaderForwardClustered::ShaderData::PipelineKey &r_pipeline_key, Vector<ShaderPipelinePair> *r_pipeline_pairs = nullptr);
-	void _mesh_compile_pipelines_for_surface(const SurfacePipelineData &p_surface, const GlobalPipelineData &p_global, RSE::PipelineSource p_source, Vector<ShaderPipelinePair> *r_pipeline_pairs = nullptr);
-	void _mesh_generate_all_pipelines_for_surface_cache(GeometryInstanceSurfaceDataCache *p_surface_cache, const GlobalPipelineData &p_global);
+	void _geometry_instance_add_surface_with_material(GeometryInstanceForwardClustered* ginstance,
+		uint32_t p_surface, SceneShaderForwardClustered::MaterialData* p_material,
+		uint32_t p_material_id, uint32_t p_shader_id, RID p_mesh);
+	void _geometry_instance_add_surface_with_material_chain(
+		GeometryInstanceForwardClustered* ginstance, uint32_t p_surface,
+		SceneShaderForwardClustered::MaterialData* p_material, RID p_mat_src, RID p_mesh);
+	void _geometry_instance_add_surface(GeometryInstanceForwardClustered* ginstance,
+		uint32_t p_surface, RID p_material, RID p_mesh);
+	void _geometry_instance_update(RenderGeometryInstance* p_geometry_instance);
+	void _mesh_compile_pipeline_for_surface(SceneShaderForwardClustered::ShaderData* p_shader,
+		void* p_mesh_surface, bool p_ubershader, bool p_instanced_surface,
+		RSE::PipelineSource p_source,
+		SceneShaderForwardClustered::ShaderData::PipelineKey& r_pipeline_key,
+		Vector<ShaderPipelinePair>* r_pipeline_pairs = nullptr);
+	void _mesh_compile_pipelines_for_surface(const SurfacePipelineData& p_surface,
+		const GlobalPipelineData& p_global, RSE::PipelineSource p_source,
+		Vector<ShaderPipelinePair>* r_pipeline_pairs = nullptr);
+	void _mesh_generate_all_pipelines_for_surface_cache(
+		GeometryInstanceSurfaceDataCache* p_surface_cache, const GlobalPipelineData& p_global);
 	void _update_dirty_geometry_instances();
 	void _update_dirty_geometry_pipelines();
 
-	// Global data about the scene that can be used to pre-allocate resources without relying on culling.
-	struct GlobalSurfaceData {
+	// Global data about the scene that can be used to pre-allocate resources without relying on
+	// culling.
+	struct GlobalSurfaceData
+	{
 		bool screen_texture_used = false;
 		bool normal_texture_used = false;
 		bool depth_texture_used = false;
@@ -680,105 +869,150 @@ private:
 
 	/* Render List */
 
-	struct RenderList {
-		LocalVector<GeometryInstanceSurfaceDataCache *> elements;
+	struct RenderList
+	{
+		LocalVector<GeometryInstanceSurfaceDataCache*> elements;
 		LocalVector<RenderElementInfo> element_info;
 
-		void clear() {
+		void clear()
+		{
 			elements.clear();
 			element_info.clear();
 		}
 
-		//should eventually be replaced by radix
+		// should eventually be replaced by radix
 
-		struct SortByKey {
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache *A, const GeometryInstanceSurfaceDataCache *B) const {
-				return (A->sort.sort_key2 == B->sort.sort_key2) ? (A->sort.sort_key1 < B->sort.sort_key1) : (A->sort.sort_key2 < B->sort.sort_key2);
+		struct SortByKey
+		{
+			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
+				const GeometryInstanceSurfaceDataCache* B) const
+			{
+				return (A->sort.sort_key2 == B->sort.sort_key2)
+						   ? (A->sort.sort_key1 < B->sort.sort_key1)
+						   : (A->sort.sort_key2 < B->sort.sort_key2);
 			}
 		};
 
-		void sort_by_key() {
-			SortArray<GeometryInstanceSurfaceDataCache *, SortByKey> sorter;
+		void sort_by_key()
+		{
+			SortArray<GeometryInstanceSurfaceDataCache*, SortByKey> sorter;
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
-		void sort_by_key_range(uint32_t p_from, uint32_t p_size) {
-			SortArray<GeometryInstanceSurfaceDataCache *, SortByKey> sorter;
+		void sort_by_key_range(uint32_t p_from, uint32_t p_size)
+		{
+			SortArray<GeometryInstanceSurfaceDataCache*, SortByKey> sorter;
 			sorter.sort(elements.ptr() + p_from, p_size);
 		}
 
-		struct SortByDepth {
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache *A, const GeometryInstanceSurfaceDataCache *B) const {
+		struct SortByDepth
+		{
+			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
+				const GeometryInstanceSurfaceDataCache* B) const
+			{
 				return (A->owner->depth < B->owner->depth);
 			}
 		};
 
-		void sort_by_depth() { //used for shadows
+		void sort_by_depth()
+		{ // used for shadows
 
-			SortArray<GeometryInstanceSurfaceDataCache *, SortByDepth> sorter;
+			SortArray<GeometryInstanceSurfaceDataCache*, SortByDepth> sorter;
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
-		struct SortByReverseDepthAndPriority {
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache *A, const GeometryInstanceSurfaceDataCache *B) const {
-				return (A->sort.priority == B->sort.priority) ? (A->owner->depth > B->owner->depth) : (A->sort.priority < B->sort.priority);
+		struct SortByReverseDepthAndPriority
+		{
+			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
+				const GeometryInstanceSurfaceDataCache* B) const
+			{
+				return (A->sort.priority == B->sort.priority)
+						   ? (A->owner->depth > B->owner->depth)
+						   : (A->sort.priority < B->sort.priority);
 			}
 		};
 
-		void sort_by_reverse_depth_and_priority() { //used for alpha
+		void sort_by_reverse_depth_and_priority()
+		{ // used for alpha
 
-			SortArray<GeometryInstanceSurfaceDataCache *, SortByReverseDepthAndPriority> sorter;
+			SortArray<GeometryInstanceSurfaceDataCache*, SortByReverseDepthAndPriority> sorter;
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
-		_FORCE_INLINE_ void add_element(GeometryInstanceSurfaceDataCache *p_element) {
+		_FORCE_INLINE_ void add_element(GeometryInstanceSurfaceDataCache* p_element)
+		{
 			elements.push_back(p_element);
 		}
 	};
 
 	RenderList render_list[RENDER_LIST_MAX];
 
-	virtual void _update_shader_quality_settings() override;
+	virtual void _update_shader_quality_settings();
 
 	/* Effects */
 
-	RendererRD::TAA *taa = nullptr;
-	RendererRD::FSR2Effect *fsr2_effect = nullptr;
-	RendererRD::SSEffects *ss_effects = nullptr;
+	RendererRD::TAA* taa = nullptr;
+	RendererRD::FSR2Effect* fsr2_effect = nullptr;
+	RendererRD::SSEffects* ss_effects = nullptr;
 
 #ifdef METAL_MFXTEMPORAL_ENABLED
-	RendererRD::MFXTemporalEffect *mfx_temporal_effect = nullptr;
+	RendererRD::MFXTemporalEffect* mfx_temporal_effect = nullptr;
 #endif
-	RendererRD::MotionVectorsStore *motion_vectors_store = nullptr;
+	RendererRD::MotionVectorsStore* motion_vectors_store = nullptr;
 
 	/* Cluster builder */
 
 	ClusterBuilderSharedDataRD cluster_builder_shared;
-	ClusterBuilderRD *current_cluster_builder = nullptr;
+	ClusterBuilderRD* current_cluster_builder = nullptr;
 
 	/* SDFGI */
-	void _update_sdfgi(RenderDataRD *p_render_data);
+	void _update_sdfgi(RenderDataRD* p_render_data);
 
 	/* Volumetric fog */
 	RID shadow_sampler;
 
-	void _update_volumetric_fog(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const Projection &p_cam_projection, const Transform3D &p_cam_transform, const Transform3D &p_prev_cam_inv_transform, RID p_shadow_atlas, int p_directional_light_count, bool p_use_directional_shadows, int p_positional_light_count, int p_voxel_gi_count, const PagedArray<RID> &p_fog_volumes);
+	void _update_volumetric_fog(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment,
+		const Projection& p_cam_projection, const Transform3D& p_cam_transform,
+		const Transform3D& p_prev_cam_inv_transform, RID p_shadow_atlas,
+		int p_directional_light_count, bool p_use_directional_shadows, int p_positional_light_count,
+		int p_voxel_gi_count, const PagedArray<RID>& p_fog_volumes);
 
 	/* Render shadows */
 
-	void _render_shadow_pass(RID p_light, RID p_shadow_atlas, int p_pass, const PagedArray<RenderGeometryInstance *> &p_instances, float p_lod_distance_multiplier = 0, float p_screen_mesh_lod_threshold = 0.0, bool p_open_pass = true, bool p_close_pass = true, bool p_clear_region = true, RenderingServerTypes::RenderInfo *p_render_info = nullptr, const Size2i &p_viewport_size = Size2i(1, 1), const Transform3D &p_main_cam_transform = Transform3D());
+	void _render_shadow_pass(RID p_light, RID p_shadow_atlas, int p_pass,
+		const PagedArray<RenderGeometryInstance*>& p_instances, float p_lod_distance_multiplier = 0,
+		float p_screen_mesh_lod_threshold = 0.0, bool p_open_pass = true, bool p_close_pass = true,
+		bool p_clear_region = true, RenderingServerTypes::RenderInfo* p_render_info = nullptr,
+		const Size2i& p_viewport_size = Size2i(1, 1),
+		const Transform3D& p_main_cam_transform = Transform3D());
 	void _render_shadow_begin();
-	void _render_shadow_append(RID p_framebuffer, const PagedArray<RenderGeometryInstance *> &p_instances, const Projection &p_projection, const Transform3D &p_transform, float p_zfar, float p_bias, float p_normal_bias, bool p_reverse_cull_face, bool p_use_dp, bool p_use_dp_flip, bool p_use_pancake, float p_lod_distance_multiplier = 0.0, float p_screen_mesh_lod_threshold = 0.0, const Rect2i &p_rect = Rect2i(), bool p_flip_y = false, bool p_clear_region = true, bool p_begin = true, bool p_end = true, RenderingServerTypes::RenderInfo *p_render_info = nullptr, const Size2i &p_viewport_size = Size2i(1, 1), const Transform3D &p_main_cam_transform = Transform3D());
+	void _render_shadow_append(RID p_framebuffer,
+		const PagedArray<RenderGeometryInstance*>& p_instances, const Projection& p_projection,
+		const Transform3D& p_transform, float p_zfar, float p_bias, float p_normal_bias,
+		bool p_reverse_cull_face, bool p_use_dp, bool p_use_dp_flip, bool p_use_pancake,
+		float p_lod_distance_multiplier = 0.0, float p_screen_mesh_lod_threshold = 0.0,
+		const Rect2i& p_rect = Rect2i(), bool p_flip_y = false, bool p_clear_region = true,
+		bool p_begin = true, bool p_end = true,
+		RenderingServerTypes::RenderInfo* p_render_info = nullptr,
+		const Size2i& p_viewport_size = Size2i(1, 1),
+		const Transform3D& p_main_cam_transform = Transform3D());
 	void _render_shadow_process();
 	void _render_shadow_end();
 
 	/* Render Scene */
-	void _process_ssao(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const RID *p_normal_buffers, const Projection *p_projections);
-	void _process_ssil(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const RID *p_normal_buffers, const Projection *p_projections, const Transform3D &p_transform);
-	void _process_ssr(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const RID *p_normal_slices, const Projection *p_projections, const Vector3 *p_eye_offsets, const Transform3D &p_transform);
-	void _copy_framebuffer_to_ss_effects(Ref<RenderSceneBuffersRD> p_render_buffers, bool p_use_ssil, bool p_use_ssr);
-	void _pre_opaque_render(RenderDataRD *p_render_data, bool p_use_ssao, bool p_use_ssil, bool p_use_ssr, bool p_use_gi, const RID *p_normal_roughness_slices, RID p_voxel_gi_buffer);
-	void _process_sss(Ref<RenderSceneBuffersRD> p_render_buffers, const Projection &p_camera);
+	void _process_ssao(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment,
+		const RID* p_normal_buffers, const Projection* p_projections);
+	void _process_ssil(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment,
+		const RID* p_normal_buffers, const Projection* p_projections,
+		const Transform3D& p_transform);
+	void _process_ssr(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment,
+		const RID* p_normal_slices, const Projection* p_projections, const Vector3* p_eye_offsets,
+		const Transform3D& p_transform);
+	void _copy_framebuffer_to_ss_effects(
+		Ref<RenderSceneBuffersRD> p_render_buffers, bool p_use_ssil, bool p_use_ssr);
+	void _pre_opaque_render(RenderDataRD* p_render_data, bool p_use_ssao, bool p_use_ssil,
+		bool p_use_ssr, bool p_use_gi, const RID* p_normal_roughness_slices, RID p_voxel_gi_buffer);
+	void _process_sss(Ref<RenderSceneBuffersRD> p_render_buffers, const Projection& p_camera);
 
 	/* Debug */
 	void _debug_draw_cluster(Ref<RenderSceneBuffersRD> p_render_buffers);
@@ -786,52 +1020,75 @@ private:
 protected:
 	/* setup */
 
-	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
-	virtual RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
+	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers);
+	virtual RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers);
 
-	virtual void environment_set_ssao_quality(RSE::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
-	virtual void environment_set_ssil_quality(RSE::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
+	virtual void environment_set_ssao_quality(RSE::EnvironmentSSAOQuality p_quality,
+		bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from,
+		float p_fadeout_to) override;
+	virtual void environment_set_ssil_quality(RSE::EnvironmentSSILQuality p_quality,
+		bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from,
+		float p_fadeout_to) override;
 	virtual void environment_set_ssr_half_size(bool p_half_size) override;
-	virtual void environment_set_ssr_roughness_quality(RSE::EnvironmentSSRRoughnessQuality p_quality) override;
+	virtual void environment_set_ssr_roughness_quality(
+		RSE::EnvironmentSSRRoughnessQuality p_quality) override;
 
-	virtual void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_quality) override;
+	virtual void sub_surface_scattering_set_quality(
+		RSE::SubSurfaceScatteringQuality p_quality) override;
 	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override;
 
 	/* Rendering */
 
-	virtual void _render_scene(RenderDataRD *p_render_data, const Color &p_default_bg_color) override;
-	virtual void _render_buffers_debug_draw(const RenderDataRD *p_render_data) override;
+	virtual void _render_scene(RenderDataRD* p_render_data, const Color& p_default_bg_color);
+	virtual void _render_buffers_debug_draw(const RenderDataRD* p_render_data);
 
-	virtual void _render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) override;
-	virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) override;
-	virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) override;
-	virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) override;
+	virtual void _render_material(const Transform3D& p_cam_transform,
+		const Projection& p_cam_projection, bool p_cam_orthogonal,
+		const PagedArray<RenderGeometryInstance*>& p_instances, RID p_framebuffer,
+		const Rect2i& p_region, float p_exposure_normalization);
+	virtual void _render_uv2(const PagedArray<RenderGeometryInstance*>& p_instances,
+		RID p_framebuffer, const Rect2i& p_region);
+	virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i& p_from,
+		const Vector3i& p_size, const AABB& p_bounds,
+		const PagedArray<RenderGeometryInstance*>& p_instances, const RID& p_albedo_texture,
+		const RID& p_emission_texture, const RID& p_emission_aniso_texture,
+		const RID& p_geom_facing_texture, float p_exposure_normalization);
+	virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D& p_cam_transform,
+		const Projection& p_cam_projection, const PagedArray<RenderGeometryInstance*>& p_instances);
 
 public:
-	static RenderForwardClustered *get_singleton() { return singleton; }
+	static RenderForwardClustered* get_singleton() { return singleton; }
 
-	ClusterBuilderSharedDataRD *get_cluster_builder_shared() { return &cluster_builder_shared; }
-	RendererRD::SSEffects *get_ss_effects() { return ss_effects; }
+	ClusterBuilderSharedDataRD* get_cluster_builder_shared() { return &cluster_builder_shared; }
+
+	RendererRD::SSEffects* get_ss_effects() { return ss_effects; }
 
 	/* callback from updating our lighting UBOs, used to populate cluster builder */
-	virtual void setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) override;
-	virtual void setup_added_light(const RSE::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture, const Vector2 &p_area_size) override;
-	virtual void setup_added_decal(const Transform3D &p_transform, const Vector3 &p_half_size) override;
+	virtual void setup_added_reflection_probe(
+		const Transform3D& p_transform, const Vector3& p_half_size);
+	virtual void setup_added_light(const RSE::LightType p_type, const Transform3D& p_transform,
+		float p_radius, float p_spot_aperture, const Vector2& p_area_size);
+	virtual void setup_added_decal(const Transform3D& p_transform, const Vector3& p_half_size);
 
-	virtual void base_uniforms_changed() override;
+	virtual void base_uniforms_changed();
 
 	/* SDFGI UPDATE */
 
-	virtual void sdfgi_update(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_environment, const Vector3 &p_world_position) override;
-	virtual int sdfgi_get_pending_region_count(const Ref<RenderSceneBuffers> &p_render_buffers) const override;
-	virtual AABB sdfgi_get_pending_region_bounds(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
-	virtual uint32_t sdfgi_get_pending_region_cascade(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
+	virtual void sdfgi_update(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
+		const Vector3& p_world_position) override;
+	virtual int sdfgi_get_pending_region_count(
+		const Ref<RenderSceneBuffers>& p_render_buffers) const override;
+	virtual AABB sdfgi_get_pending_region_bounds(
+		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const override;
+	virtual uint32_t sdfgi_get_pending_region_cascade(
+		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const override;
+
 	RID sdfgi_get_ubo() const { return gi.sdfgi_ubo; }
 
 	/* GEOMETRY INSTANCE */
 
-	virtual RenderGeometryInstance *geometry_instance_create(RID p_base) override;
-	virtual void geometry_instance_free(RenderGeometryInstance *p_geometry_instance) override;
+	virtual RenderGeometryInstance* geometry_instance_create(RID p_base) override;
+	virtual void geometry_instance_free(RenderGeometryInstance* p_geometry_instance) override;
 
 	virtual uint32_t geometry_instance_get_pair_mask() override;
 
@@ -853,3 +1110,5 @@ public:
 	~RenderForwardClustered();
 };
 } // namespace RendererSceneRenderImplementation
+
+

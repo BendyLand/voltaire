@@ -5949,33 +5949,34 @@ String VisualShaderNode::generate_code(Shader::Mode p_mode, VisualShader::Type p
 	return "";
 }
 
-/*
-Allocating an object of abstract class type 'VisualShaderNode'
+bool VisualShaderNodeParameter::is_qualifier_supported(Qualifier p_qual) const { return false; }
 
-/home/blandlogic/code/voltaire/modules/visual_shader/visual_shader.h:363:17:
-note: unimplemented pure virtual method 'get_caption' in 'VisualShaderNode'
+bool VisualShaderNodeParameter::is_convertible_to_constant() const { return false; }
 
-/home/blandlogic/code/voltaire/modules/visual_shader/visual_shader.h:365:14:
-note: unimplemented pure virtual method 'get_input_port_count' in 'VisualShaderNode'
+String VisualShaderNodeVarying::get_caption() const { return String(); }
 
-/home/blandlogic/code/voltaire/modules/visual_shad
-er/visual_shader.h:366:19:
-note: unimplemented pure virtual method 'get_input_port_type' in 'VisualShaderNode'
+int VisualShaderNodeVarying::get_input_port_count() const { return 0; }
 
-/home/blandlogic/code/voltaire/modules/visual_shader/visual_shader.h:367:17:
-note: unimplemented pure virtual method 'get_input_port_name' in 'VisualShaderNode'
+VisualShaderNode::PortType VisualShaderNodeVarying::get_input_port_type(int p_port) const
+{
+	return PORT_TYPE_SCALAR;
+}
 
-/home/blandlogic/code/voltaire/modules/visual_shader/visual_shader.h:381:14:
-note: unimplemented pure virtual method 'get_output_port_count' in 'VisualShaderNode'
+String VisualShaderNodeVarying::get_input_port_name(int p_port) const { return String(); }
 
-/home/blandlogic/code/voltaire/modules/visual_shader/visual_shader.h:382:19:
-note: unimplemented pure virtual method 'get_output_port_type' in 'VisualShaderNode'
+int VisualShaderNodeVarying::get_output_port_count() const { return 0; }
 
-/home/blandlogic/code/voltaire/modules/visual_shader/visual_shader.h:383:17:
-note: unimplemented pure virtual method 'get_output_port_name' in 'VisualShaderNode'
+VisualShaderNode::PortType VisualShaderNodeVarying::get_output_port_type(int p_port) const
+{
+	return PORT_TYPE_SCALAR;
+}
 
-/home/blandlogic/code/voltaire/modules/visual_shader/visual_shader.h:432:17:
-note: unimplemented pure virtual method 'generate_code' in 'VisualShaderNode'
-*/
+String VisualShaderNodeVarying::get_output_port_name(int p_port) const { return String(); }
+
+String VisualShaderNodeVarying::generate_code(Shader::Mode p_mode, VisualShader::Type p_type,
+	int p_id, const String* p_input_vars, const String* p_output_vars, bool p_for_preview) const
+{
+	return String();
+}
 
 

@@ -310,4 +310,20 @@ Vector<int> MultiplayerAPI::get_peer_ids() { return Vector<int>(); }
 
 int MultiplayerAPI::get_remote_sender_id() { return 0; }
 
+Error MultiplayerAPI::poll() { return OK; }
+
+void MultiplayerAPI::set_multiplayer_peer(const Ref<MultiplayerPeer>& p_peer) {}
+
+Ref<MultiplayerPeer> MultiplayerAPI::get_multiplayer_peer() { return Ref<MultiplayerPeer>(); }
+
+Error MultiplayerAPI::rpcp(Object* p_object, int p_peer_id, const StringName& p_method,
+	const Variant** p_argptrs, int p_argcount)
+{
+	return OK;
+}
+
+Error MultiplayerAPI::object_configuration_add(Object* p_obj, Variant p_config) { return OK; }
+
+Error MultiplayerAPI::object_configuration_remove(Object* p_obj, Variant p_config) { return OK; }
+
 
