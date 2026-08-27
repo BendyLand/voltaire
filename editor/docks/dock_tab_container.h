@@ -60,7 +60,7 @@ class EditorDockDragHint : public Control {
 	void _drag_move_tab_from(TabBar *p_from_tabbar, int p_from_index, int p_to_index);
 
 protected:
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	void _notification(int p_what);
 	virtual bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;

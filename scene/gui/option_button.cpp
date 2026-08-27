@@ -36,7 +36,7 @@
 
 static const int NONE_SELECTED = -1;
 
-void OptionButton::shortcut_input(const Ref<InputEvent>& p_event)
+void OptionButton::shortcut_input(const Object& obj, const Ref<InputEvent>& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -50,7 +50,7 @@ void OptionButton::shortcut_input(const Ref<InputEvent>& p_event)
 		return;
 	}
 
-	Button::shortcut_input(p_event);
+	Button::shortcut_input(obj, p_event);
 }
 
 Size2 OptionButton::get_minimum_size() const

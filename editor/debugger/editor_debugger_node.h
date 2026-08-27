@@ -154,9 +154,9 @@ protected:
 		Ref<RefCounted> p_script, int p_line, bool p_enabled, int p_debugger);
 	void _breakpoints_cleared_in_tree(int p_debugger);
 
-	void _clear_execution(Ref<RefCounted> p_script)
+	void _clear_execution(Object& obj, Ref<RefCounted> p_script)
 	{
-		this->obj->emit_signal(SNAME("clear_execution"), p_script);
+		obj.emit_signal(SNAME("clear_execution"), p_script);
 	}
 
 	void _text_editor_stack_goto(const ScriptEditorDebugger* p_debugger);

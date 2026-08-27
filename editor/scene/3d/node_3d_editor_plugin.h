@@ -309,7 +309,7 @@ private:
 		VLTRCLASS(PreviewSunEnvPopup, PopupPanel);
 
 	protected:
-		virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+		virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	};
 
 	uint32_t world_env_count = 0;
@@ -390,7 +390,7 @@ private:
 protected:
 	void _notification(int p_what);
 	//void _gui_input(InputEvent p_event);
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	static void _bind_methods();
 

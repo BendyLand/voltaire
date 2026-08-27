@@ -86,7 +86,7 @@ class ScrollBar : public Range
 	void _drag_node_exit();
 	void _drag_node_input(const Ref<InputEvent>& p_input);
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 protected:
 	struct ThemeCache

@@ -97,7 +97,7 @@ class GraphEditMinimap : public Control
 	Vector2 _convert_from_graph_position(const Vector2& p_position);
 	Vector2 _convert_to_graph_position(const Vector2& p_position);
 
-	virtual void gui_input(const Ref<InputEvent>& p_ev) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_ev) override;
 
 	void _adjust_graph_scroll(const Vector2& p_offset);
 
@@ -349,7 +349,7 @@ private:
 	void _update_scrollbars();
 	void _update_scroll_offset();
 	void _scrollbar_moved(double);
-	virtual void gui_input(const Ref<InputEvent>& p_ev) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_ev) override;
 	void _top_connection_layer_input(const Ref<InputEvent>& p_ev);
 
 	float _get_shader_line_width();

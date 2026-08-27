@@ -431,7 +431,7 @@ void EditorNode::input(const Ref<InputEvent>& p_event)
 	}
 }
 
-void EditorNode::shortcut_input(const Ref<InputEvent>& p_event)
+void EditorNode::shortcut_input(const Object& obj, const Ref<InputEvent>& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -455,7 +455,7 @@ void EditorNode::shortcut_input(const Ref<InputEvent>& p_event)
 			editor_main_screen->select(EditorMainScreen::EDITOR_GAME);
 		}
 		else if (ED_IS_SHORTCUT("editor/editor_help", p_event)) {
-			this->obj->emit_signal(SNAME("request_help_search"), "");
+			obj.emit_signal(SNAME("request_help_search"), "");
 		}
 		else if (ED_IS_SHORTCUT("editor/editor_asset_store", p_event) &&
 				   AssetLibraryEditorPlugin::is_available()) {
@@ -488,10 +488,8 @@ void EditorNode::shortcut_input(const Ref<InputEvent>& p_event)
 					}
 				}
 
-				undo_redo->add_do_method(node_with_visibility->obj.get(), "set_visible",
-					!node_with_visibility->obj->get("visible"));
-				undo_redo->add_undo_method(node_with_visibility->obj.get(), "set_visible",
-					node_with_visibility->obj->get("visible"));
+				undo_redo->add_do_method(&obj, "set_visible", !obj.get("visible"));
+				undo_redo->add_undo_method(&obj, "set_visible", obj.get("visible"));
 			}
 
 			undo_redo->commit_action();
@@ -513,7 +511,7 @@ void EditorNode::_update_vsync_mode()
 	DisplayServer::get_singleton()->window_set_vsync_mode(window_vsync_mode);
 }
 
-void EditorNode::_update_from_settings()
+void EditorNode::_update_from_settings(const Object& obj)
 {
 	if (!is_inside_tree()) {
 		return;
@@ -694,7 +692,7 @@ void EditorNode::_update_from_settings()
 
 	ResourceImporterTexture::get_singleton()->update_imports();
 
-	_update_translations();
+	_update_translations(obj);
 
 #ifdef DEBUG_ENABLED
 	NavigationServer2D::get_singleton()->set_debug_navigation_edge_connection_color(
@@ -750,7 +748,7 @@ void EditorNode::_gdextensions_reloaded()
 	EditorHelp::generate_doc(true, false);
 }
 
-void EditorNode::_update_translations()
+void EditorNode::_update_translations(const Object& obj)
 {
 	Ref<TranslationDomain> main = TranslationServer::get_singleton()->get_main_domain();
 
@@ -763,19 +761,19 @@ void EditorNode::_update_translations()
 			const HashSet<Ref<Translation>> translations =
 				main->find_translations(main->get_locale_override(), false);
 			if (translations != tracked_translations) {
-				_translation_resources_changed();
+				_translation_resources_changed(obj);
 			}
 		}
 		else {
 			// Translations for the current preview locale is removed.
 			main->set_enabled(false);
 			main->set_locale_override(String());
-			_translation_resources_changed();
+			_translation_resources_changed(obj);
 		}
 	}
 }
 
-void EditorNode::_translation_resources_changed()
+void EditorNode::_translation_resources_changed(const Object& obj)
 {
 	for (const Ref<Translation>& E : tracked_translations) {
 		E->disconnect_changed(callable_mp(this, &EditorNode::_queue_translation_notification));
@@ -795,7 +793,7 @@ void EditorNode::_translation_resources_changed()
 	}
 
 	_queue_translation_notification();
-	this->obj->emit_signal(SNAME("preview_locale_changed"));
+	obj.emit_signal(SNAME("preview_locale_changed"));
 }
 
 void EditorNode::_queue_translation_notification()
@@ -1077,7 +1075,7 @@ bool EditorNode::_is_project_data_missing()
 	return false;
 }
 
-void EditorNode::_notification(int p_what)
+void EditorNode::_notification(const Object& obj, int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_TRANSLATION_CHANGED: {
@@ -1311,7 +1309,7 @@ void EditorNode::_notification(int p_what)
 		// Save on focus loss before applying the FPS limit to avoid slowing down the saving
 		// process.
 		if (EDITOR_GET("interface/editor/behavior/save_on_focus_loss")) {
-			_save_scene_silently();
+			_save_scene_silently(obj);
 		}
 
 		// Set a low FPS cap to decrease CPU/GPU usage while the editor is unfocused.
@@ -1572,9 +1570,9 @@ void EditorNode::_plugin_over_edit(EditorPlugin* p_plugin, Object* p_object, boo
 	}
 }
 
-void EditorNode::_plugin_over_self_own(EditorPlugin* p_plugin)
+void EditorNode::_plugin_over_self_own(const Object& obj, EditorPlugin* p_plugin)
 {
-	active_plugins[p_plugin->obj->get_instance_id()].insert(p_plugin);
+	active_plugins[obj.get_instance_id()].insert(p_plugin);
 }
 
 void EditorNode::_resources_changed(const Vector<String>& p_resources)
@@ -1930,10 +1928,10 @@ void EditorNode::_scan_external_changes()
 	}
 }
 
-void EditorNode::_resave_externally_modified_scenes(String p_str)
+void EditorNode::_resave_externally_modified_scenes(const Object& obj, String p_str)
 {
 	for (const String& scene_path : disk_changed_scenes) {
-		_save_scene(scene_path);
+		_save_scene(obj, scene_path);
 	}
 
 	if (disk_changed_project) {
@@ -2070,20 +2068,20 @@ Error EditorNode::load_resource(const String& p_resource, bool p_ignore_broken_d
 	return OK;
 }
 
-Error EditorNode::load_scene_or_resource(
-	const String& p_path, bool p_ignore_broken_deps, bool p_change_scene_tab_if_already_open)
+Error EditorNode::load_scene_or_resource(const String& p_path,
+	bool p_ignore_broken_deps, bool p_change_scene_tab_if_already_open)
 {
 	return EditorNode::get_singleton()->load_resource(p_path, p_ignore_broken_deps);
 }
 
-void EditorNode::edit_node(Node* p_node) { push_item(p_node->obj.get()); }
+void EditorNode::edit_node(const Object& obj, Node* p_node) { push_item(&obj); }
 
 void EditorNode::edit_resource(const Ref<Resource>& p_resource)
 {
 	InspectorDock::get_singleton()->edit_resource(p_resource);
 }
 
-void EditorNode::save_resource_in_path(const Ref<Resource>& p_resource, const String& p_path)
+void EditorNode::save_resource_in_path(const Object& obj, const Ref<Resource>& p_resource, const String& p_path)
 {
 	editor_data.apply_changes_in_editors();
 
@@ -2130,7 +2128,7 @@ void EditorNode::save_resource_in_path(const Ref<Resource>& p_resource, const St
 	_resource_saved(p_resource, path);
 	clear_node_reference(p_resource); // // Check if Resource is saved to disk to potentially remove
 									  // it from resource_count
-	this->obj->emit_signal(SNAME("resource_saved"), p_resource);
+	obj.emit_signal(SNAME("resource_saved"), p_resource);
 	editor_data.notify_resource_saved(p_resource);
 
 	if (EDITOR_GET("filesystem/on_save/warn_on_saving_large_text_resources")) {
@@ -2154,7 +2152,7 @@ void EditorNode::save_resource_in_path(const Ref<Resource>& p_resource, const St
 	}
 }
 
-void EditorNode::save_resource(const Ref<Resource>& p_resource)
+void EditorNode::save_resource(const Object& obj, const Ref<Resource>& p_resource)
 {
 	// If built-in resource, save the scene instead.
 	if (p_resource->is_built_in()) {
@@ -2169,7 +2167,7 @@ void EditorNode::save_resource(const Ref<Resource>& p_resource)
 				Ref<Resource> parent_resource = ResourceCache::get_ref(scene_path);
 				ERR_FAIL_COND_MSG(
 					parent_resource.is_null(), "Parent resource not loaded, can't save.");
-				save_resource(parent_resource);
+				save_resource(obj, parent_resource);
 			}
 			return;
 		}
@@ -2178,14 +2176,14 @@ void EditorNode::save_resource(const Ref<Resource>& p_resource)
 	// If the resource has been imported, ask the user to use a different path in order to save it.
 	String path = p_resource->get_path();
 	if (path.is_resource_file() && !FileAccess::exists(path + ".import")) {
-		save_resource_in_path(p_resource, p_resource->get_path());
+		save_resource_in_path(obj, p_resource, p_resource->get_path());
 	}
 	else {
-		save_resource_as(p_resource);
+		save_resource_as(obj, p_resource);
 	}
 }
 
-void EditorNode::save_resource_as(const Ref<Resource>& p_resource, const String& p_at_path)
+void EditorNode::save_resource_as(const Object& obj, const Ref<Resource>& p_resource, const String& p_at_path)
 {
 	String resource_path = p_resource->get_path();
 	bool is_resource = resource_path.is_resource_file();
@@ -2389,7 +2387,7 @@ void EditorNode::gather_resources(const Variant& p_variant, List<Ref<Resource>>&
 	}
 }
 
-void EditorNode::update_resource_count(Node* p_node, bool p_remove)
+void EditorNode::update_resource_count(const Object& obj, Node* p_node, bool p_remove)
 {
 	if (!get_edited_scene()) {
 		return;
@@ -2411,7 +2409,7 @@ void EditorNode::update_resource_count(Node* p_node, bool p_remove)
 		}
 	}
 
-	this->obj->emit_signal(SNAME("resource_counter_changed"));
+	obj.emit_signal(SNAME("resource_counter_changed"));
 }
 
 int EditorNode::get_resource_count(Ref<Resource> p_res)
@@ -2426,7 +2424,7 @@ List<Node*> EditorNode::get_resource_node_list(Ref<Resource> p_res)
 	return L == nullptr ? List<Node*>() : List<Node*>(*L);
 }
 
-void EditorNode::update_node_reference(const Variant& p_value, Node* p_node, bool p_remove)
+void EditorNode::update_node_reference(const Object& obj, const Variant& p_value, Node* p_node, bool p_remove)
 {
 	List<Ref<Resource>> list;
 	Ref<Resource> res = p_value;
@@ -2450,7 +2448,7 @@ void EditorNode::update_node_reference(const Variant& p_value, Node* p_node, boo
 			}
 		}
 	}
-	this->obj->emit_signal(SNAME("resource_counter_changed"));
+	obj.emit_signal(SNAME("resource_counter_changed"));
 }
 
 void EditorNode::clear_node_reference(Ref<Resource> p_res)
@@ -2592,7 +2590,7 @@ bool EditorNode::_find_and_save_resource(
 }
 
 bool EditorNode::_find_and_save_edited_subresources(
-	Object* o, HashMap<Ref<Resource>, bool>& processed, int32_t flags)
+	const Object* o, HashMap<Ref<Resource>, bool>& processed, int32_t flags)
 {
 	bool ret_changed = false;
 	List<PropertyInfo> pi;
@@ -2640,41 +2638,41 @@ bool EditorNode::_find_and_save_edited_subresources(
 	return ret_changed;
 }
 
-void EditorNode::_save_edited_subresources(
+void EditorNode::_save_edited_subresources(const Object& obj,
 	Node* scene, HashMap<Ref<Resource>, bool>& processed, int32_t flags)
 {
-	_find_and_save_edited_subresources(scene->obj.get(), processed, flags);
+	_find_and_save_edited_subresources(&obj, processed, flags);
 
 	for (int i = 0; i < scene->get_child_count(); i++) {
 		Node* n = scene->get_child(i);
 		if (n->get_owner() != editor_data.get_edited_scene_root()) {
 			continue;
 		}
-		_save_edited_subresources(n, processed, flags);
+		_save_edited_subresources(obj, n, processed, flags);
 	}
 }
 
-void EditorNode::_find_node_types(Node* p_node, int& count_2d, int& count_3d)
+void EditorNode::_find_node_types(const Object& obj, Node* p_node, int& count_2d, int& count_3d)
 {
-	if (p_node->obj->is_class("Viewport") ||
+	if (obj.is_class("Viewport") ||
 		(p_node != editor_data.get_edited_scene_root() &&
 			p_node->get_owner() != editor_data.get_edited_scene_root())) {
 		return;
 	}
 
-	if (p_node->obj->is_class("CanvasItem")) {
+	if (obj.is_class("CanvasItem")) {
 		count_2d++;
 	}
-	else if (p_node->obj->is_class("Node3D")) {
+	else if (obj.is_class("Node3D")) {
 		count_3d++;
 	}
 
 	for (int i = 0; i < p_node->get_child_count(); i++) {
-		_find_node_types(p_node->get_child(i), count_2d, count_3d);
+		_find_node_types(obj, p_node->get_child(i), count_2d, count_3d);
 	}
 }
 
-void EditorNode::_save_scene_with_preview(String p_file, int p_idx)
+void EditorNode::_save_scene_with_preview(const Object& obj, String p_file, int p_idx)
 {
 	save_scene_progress = memnew(EditorProgress("save", TTR("Saving Scene"), 4));
 
@@ -2684,7 +2682,7 @@ void EditorNode::_save_scene_with_preview(String p_file, int p_idx)
 		int c2d = 0;
 		int c3d = 0;
 
-		_find_node_types(editor_data.get_edited_scene_root(), c2d, c3d);
+		_find_node_types(obj, editor_data.get_edited_scene_root(), c2d, c3d);
 
 		save_scene_progress->step(TTR("Creating Thumbnail"), 1);
 		// Current view?
@@ -2761,7 +2759,7 @@ void EditorNode::_save_scene_with_preview(String p_file, int p_idx)
 	}
 
 	save_scene_progress->step(TTR("Saving Scene"), 4);
-	_save_scene(p_file, p_idx);
+	_save_scene(obj, p_file, p_idx);
 
 	if (!singleton->cmdline_mode) {
 		EditorResourcePreview::get_singleton()->check_for_invalidation(p_file);
@@ -2867,7 +2865,7 @@ int EditorNode::_save_external_resources(bool p_also_save_external_data)
 	return saved;
 }
 
-void EditorNode::_save_scene_silently()
+void EditorNode::_save_scene_silently(const Object& obj)
 {
 	// Save scene without displaying progress dialog. Used to work around
 	// errors about parent node being busy setting up children
@@ -2875,7 +2873,7 @@ void EditorNode::_save_scene_silently()
 	Node* scene = editor_data.get_edited_scene_root();
 	if (scene && !scene->get_scene_file_path().is_empty() &&
 		DirAccess::exists(scene->get_scene_file_path().get_base_dir())) {
-		_save_scene(scene->get_scene_file_path());
+		_save_scene(obj, scene->get_scene_file_path());
 		save_editor_layout_delayed();
 	}
 }
@@ -2908,7 +2906,7 @@ static void _reset_animation_mixers(
 	}
 }
 
-void EditorNode::_save_scene(String p_file, int idx)
+void EditorNode::_save_scene(const Object& obj, String p_file, int idx)
 {
 	ERR_FAIL_COND_MSG(!saving_scene.is_empty() && saving_scene == p_file,
 		"Scene saved while already being saved!");
@@ -2970,7 +2968,7 @@ void EditorNode::_save_scene(String p_file, int idx)
 	err = ResourceSaver::save(sdata.ptr(), p_file, flg);
 
 	// This needs to be emitted before saving external resources.
-	this->obj->emit_signal(SNAME("scene_saved"), p_file);
+	obj.emit_signal(SNAME("scene_saved"), p_file);
 	editor_data.notify_scene_saved(p_file);
 
 	_save_external_resources();
@@ -3520,7 +3518,7 @@ void EditorNode::push_node_item(Node* p_node)
 	}
 }
 
-void EditorNode::push_item(Object* p_object, const String& p_property, bool p_inspector_only)
+void EditorNode::push_item(const Object* p_object, const String& p_property, bool p_inspector_only)
 {
 	if (!p_object) {
 		InspectorDock::get_inspector_singleton()->edit(nullptr);
@@ -3800,7 +3798,8 @@ void EditorNode::_edit_current(bool p_skip_foreign, bool p_skip_inspector_update
 		InspectorDock::get_inspector_singleton()->edit(current_obj);
 		SignalsDock::get_singleton()->set_object(nullptr);
 		GroupsDock::get_singleton()->set_selection(multi_nodes);
-		SceneTreeDock::get_singleton()->set_selected(selected_node);
+		SceneTr
+eeDock::get_singleton()->set_selected(selected_node);
 		SceneTreeDock::get_singleton()->set_selection(multi_nodes);
 		InspectorDock::get_singleton()->update(nullptr);
 	}
@@ -5817,9 +5816,9 @@ HashMap<StringName, Variant> EditorNode::get_modified_properties_for_node(
 					// If this property is a direct node reference, save a NodePath instead to
 					// prevent corrupted references.
 					if (node_reference) {
-						Node* target_node =
-Object::cast_to<Node>(current_value);
-						if (target_node) {
+						Node* target_node = Object::cast_to<Node>(current_value);
+						if (targe
+t_node) {
 							modified_property_map[E.name] = p_node->get_path_to(target_node);
 						}
 					}
@@ -7874,7 +7873,7 @@ void EditorNode::update_distraction_free_mode()
 	}
 }
 
-void EditorNode::set_distraction_free_mode(bool p_enter)
+void EditorNode::set_distraction_free_mode(const Object& obj, bool p_enter)
 {
 	distraction_free->set_pressed(p_enter);
 
@@ -7887,7 +7886,7 @@ void EditorNode::set_distraction_free_mode(bool p_enter)
 		editor_dock_manager->set_docks_visible(true);
 	}
 
-	this->obj->emit_signal(SNAME("distraction_free_mode_changed"), p_enter);
+	obj.emit_signal(SNAME("distraction_free_mode_changed"), p_enter);
 }
 
 bool EditorNode::is_distraction_free_mode_enabled() const { return distraction_free->is_pressed(); }
@@ -7971,9 +7970,9 @@ Dictionary EditorNode::drag_files_and_dirs(const Vector<String>& p_paths, Contro
 		p_paths.size() > max_rows
 			? max_rows - 1
 			: p_paths.size(); // Don't waste a row to say "1 more file" - list it instead.
-	VBoxContainer* vbox
- = memnew(VBoxContainer);
-	for (int i = 0; i < num_rows; i++) {
+	VBoxContainer* vbox = memnew(VBoxContainer);
+	for (int i = 0
+; i < num_rows; i++) {
 		HBoxContainer* hbox = memnew(HBoxContainer);
 		TextureRect* icon = memnew(TextureRect);
 		Label* label = memnew(Label);
@@ -8122,7 +8121,8 @@ void EditorNode::_file_access_close_error_notify_impl(const String& p_str)
 // It will attempt to call a method named '_nodes_scene_reimported' on every node in the
 // tree so that editor scripts which create transient nodes will have the opportunity
 // to recreate them.
-void EditorNode::_notify_nodes_scene_reimported(Node* p_node, Array p_reimported_nodes)
+void EditorNode::_notify_nodes_scene_reimported(
+	const Object& obj, Node* p_node, Array p_reimported_nodes)
 {
 	Skeleton3D* skel_3d = Object::cast_to<Skeleton3D>(p_node);
 	if (skel_3d) {
@@ -8135,8 +8135,8 @@ void EditorNode::_notify_nodes_scene_reimported(Node* p_node, Array p_reimported
 		}
 	}
 
-	if (p_node->obj->has_method("_nodes_scene_reimported")) {
-		p_node->obj->call("_nodes_scene_reimported", p_reimported_nodes);
+	if (obj.has_method("_nodes_scene_reimported")) {
+		obj.call("_nodes_scene_reimported", p_reimported_nodes);
 	}
 
 	for (int i = 0; i < p_node->get_child_count(); i++) {
@@ -9750,9 +9750,9 @@ EditorNode::EditorNode()
 		ResourceFormatImporter::get_singleton()->add_importer(import_font_data_bmfont);
 
 		Ref<ResourceImporterImageFont> import_font_data_image;
-		import_font_data_image.
-instantiate();
-		ResourceFormatImporter::get_singleton()->add_importer(import_font_data_image);
+		import_font_data_image.instantiate();
+		ResourceFormatImporte
+r::get_singleton()->add_importer(import_font_data_image);
 
 		Ref<ResourceImporterCSVTranslation> import_csv_translation;
 		import_csv_translation.instantiate();
@@ -10979,8 +10979,8 @@ instantiate();
 			"editor_metadata", "executable_path", "");
 		// Save editor executable path for third-party tools.
 		if (exec != old_exec) {
-
-			EditorSettings::get_singleton()->set_project_metadata(
+			EditorSettings::get_singleton()->se
+t_project_metadata(
 				"editor_metadata", "executable_path", exec);
 		}
 	}

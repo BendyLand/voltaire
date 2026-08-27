@@ -365,7 +365,7 @@ class ScriptEditor : public PanelContainer
 	void drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from);
 
 	virtual void input(const Ref<InputEvent>& p_event) override;
-	virtual void shortcut_input(const Ref<InputEvent>& p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 	void _script_list_clicked(
 		int p_item, Vector2 p_local_mouse_pos, MouseButton p_mouse_button_index);

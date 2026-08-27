@@ -353,7 +353,7 @@ public:
 	void set_read_only(bool p_read_only);
 	virtual Size2 get_minimum_size() const override;
 	virtual String get_tooltip(const Point2 &p_pos) const override;
-	void gui_input(const Ref<InputEvent> &p_ev) override;
+	void gui_input(const Object& obj, const Ref<InputEvent> &p_ev) override;
 	void set_flag(uint32_t p_flag);
 	EditorPropertyLayersGrid();
 };

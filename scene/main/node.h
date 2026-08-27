@@ -74,7 +74,6 @@ protected:
 	};
 
 public:
-	mem_unique_ptr<Object> obj;
 	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::NODE;
 
 	// N.B. Any enum stored as a bitfield should be specified as UNSIGNED to work around
@@ -493,7 +492,7 @@ protected:
 	virtual bool _uses_signal_mutex() const { return false; } // Node uses thread guards instead.
 
 	virtual void input(const Ref<InputEvent>& p_event);
-	virtual void shortcut_input(const Ref<InputEvent>& p_key_event);
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_key_event);
 	virtual void unhandled_input(const Ref<InputEvent>& p_event);
 	virtual void unhandled_key_input(const Ref<InputEvent>& p_key_event);
 
@@ -916,18 +915,18 @@ public:
 	virtual void set_translation_domain(const StringName& p_domain);
 	void set_translation_domain_inherited();
 
-	_FORCE_INLINE_ String atr(const String& p_message, const StringName& p_context = "") const
+	_FORCE_INLINE_ String atr(const Object& obj, const String& p_message, const StringName& p_context = "") const
 	{
 		return can_auto_translate()
-				   ? this->obj->tr(p_message, _get_translation_context_with_override(p_context))
+				   ? obj.tr(p_message, _get_translation_context_with_override(p_context))
 				   : p_message;
 	}
 
-	_FORCE_INLINE_ String atr_n(const String& p_message, const StringName& p_message_plural,
+	_FORCE_INLINE_ String atr_n(const Object& obj, const String& p_message, const StringName& p_message_plural,
 		int p_n, const StringName& p_context = "") const
 	{
 		if (can_auto_translate()) {
-			return this->obj->tr_n(p_message, p_message_plural, p_n,
+			return obj.tr_n(p_message, p_message_plural, p_n,
 				_get_translation_context_with_override(p_context));
 		}
 		return p_n == 1 ? p_message : String(p_message_plural);

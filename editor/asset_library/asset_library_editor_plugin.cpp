@@ -133,9 +133,9 @@ void EditorAssetLibraryItem::_calculate_misc_links_size()
 	license->set_custom_maximum_size(Size2(text_buf->get_line_width(), -1));
 }
 
-void EditorAssetLibraryItem::_asset_clicked()
+void EditorAssetLibraryItem::_asset_clicked(Object& obj)
 {
-	this->obj->emit_signal(SNAME("asset_selected"), author_id + "/" + asset_id + "/");
+	obj.emit_signal(SNAME("asset_selected"), author_id + "/" + asset_id + "/");
 }
 
 void EditorAssetLibraryItem::_author_clicked()
@@ -328,12 +328,12 @@ EditorAssetLibraryZoomMode::EditorAssetLibraryZoomMode(Control* p_previews)
 
 //////////////////////////////////////////////////////////////////////////////
 
-void EditorAssetLibraryItemDescription::set_image(
+void EditorAssetLibraryItemDescription::set_image(Object& obj,
 	int p_type, int p_index, const Ref<Texture2D>& p_image)
 {
 	switch (p_type) {
 	case EditorAssetLibrary::IMAGE_QUEUE_THUMBNAIL: {
-		item->obj->call("set_image", p_type, p_index, p_image);
+		obj.call("set_image", p_type, p_index, p_image);
 		icon = p_image;
 	} break;
 
@@ -374,7 +374,7 @@ void EditorAssetLibraryItemDescription::set_image(
 
 			preview_images.write[i].image = p_image;
 			if (button->is_pressed()) {
-				preview_click(p_index);
+				preview_click(obj, p_index);
 			}
 
 			break;
@@ -422,16 +422,16 @@ void EditorAssetLibraryItemDescription::_notification(int p_what)
 
 void EditorAssetLibraryItemDescription::_bind_methods() {}
 
-void EditorAssetLibraryItemDescription::_confirmed()
+void EditorAssetLibraryItemDescription::_confirmed(Object& obj)
 {
 	if (install_mode == MODE_INSTALL) {
 		// It will just redirect to the install dialog.
-		this->obj->emit_signal(SNAME("install_requested"), asset_id, "", "", "");
+		obj.emit_signal(SNAME("install_requested"), asset_id, "", "", "");
 		return;
 	}
 
 	Release release = releases[version_list->get_selected()];
-	this->obj->emit_signal(
+	obj.emit_signal(
 		SNAME("install_requested"), asset_id, release.version, release.url, release.sha256);
 }
 
@@ -453,10 +453,10 @@ void EditorAssetLibraryItemDescription::_source_pressed()
 	OS::get_singleton()->shell_open(source_url);
 }
 
-void EditorAssetLibraryItemDescription::_link_click(const String& p_url)
+void EditorAssetLibraryItemDescription::_link_click(Object& obj, const String& p_url)
 {
 	if (p_url.begins_with("#")) {
-		this->obj->emit_signal("tag_clicked", p_url);
+		obj.emit_signal("tag_clicked", p_url);
 		return;
 	}
 
@@ -464,7 +464,7 @@ void EditorAssetLibraryItemDescription::_link_click(const String& p_url)
 	OS::get_singleton()->shell_open(p_url);
 }
 
-void EditorAssetLibraryItemDescription::preview_click(int p_id)
+void EditorAssetLibraryItemDescription::preview_click(Object& obj, int p_id)
 {
 	for (int i = 0; i < preview_images.size(); i++) {
 		if (preview_images[i].id != p_id) {
@@ -480,36 +480,36 @@ void EditorAssetLibraryItemDescription::preview_click(int p_id)
 			preview_images[i].button->grab_focus(true);
 		}
 		else {
-			_link_click(preview_images[i].video_link);
+			_link_click(obj, preview_images[i].video_link);
 		}
 
 		break;
 	}
 }
 
-void EditorAssetLibraryItemDescription::_previous_preview_pressed()
+void EditorAssetLibraryItemDescription::_previous_preview_pressed(Object& obj)
 {
 	List<BaseButton*> buttons;
 	preview_group->get_buttons(&buttons);
 	BaseButton* pressed = preview_group->get_pressed_button();
 	if (pressed == buttons.front()->get()) {
-		preview_click(buttons.back()->get()->get_index());
+		preview_click(obj, buttons.back()->get()->get_index());
 	}
 	else {
-		preview_click(pressed->get_index() - 1);
+		preview_click(obj, pressed->get_index() - 1);
 	}
 }
 
-void EditorAssetLibraryItemDescription::_next_preview_pressed()
+void EditorAssetLibraryItemDescription::_next_preview_pressed(Object& obj)
 {
 	List<BaseButton*> buttons;
 	preview_group->get_buttons(&buttons);
 	BaseButton* pressed = preview_group->get_pressed_button();
 	if (pressed == buttons.back()->get()) {
-		preview_click(buttons.front()->get()->get_index());
+		preview_click(obj, buttons.front()->get()->get_index());
 	}
 	else {
-		preview_click(pressed->get_index() + 1);
+		preview_click(obj, pressed->get_index() + 1);
 	}
 }
 
@@ -828,7 +828,7 @@ EditorAssetLibraryItemDescription::EditorAssetLibraryItemDescription()
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-void EditorAssetLibraryItemDownload::_http_download_completed(
+void EditorAssetLibraryItemDownload::_http_download_completed(Object& obj,
 	int p_status, int p_code, const PackedStringArray& headers, const PackedByteArray& p_data)
 {
 	String error_text;
@@ -905,7 +905,7 @@ void EditorAssetLibraryItemDownload::_http_download_completed(
 	// Automatically prompt for installation once the download is completed
 	// as long as the main window is focused, to not clash with other subwindows.
 	if (get_window()->has_focus()) {
-		install();
+		install(obj);
 	}
 }
 
@@ -1004,17 +1004,17 @@ void EditorAssetLibraryItemDownload::_close()
 
 bool EditorAssetLibraryItemDownload::can_install() const { return install_button->is_visible(); }
 
-void EditorAssetLibraryItemDownload::install()
+void EditorAssetLibraryItemDownload::install(Object& obj)
 {
 	String file = download->get_download_file();
 
 	if (external_install) {
-		this->obj->emit_signal(SNAME("install_asset"), file, title->get_text());
+		obj.emit_signal(SNAME("install_asset"), file, title->get_text());
 		return;
 	}
 
 	asset_installer->set_asset_name(title->get_text());
-	asset_installer->open_asset(file, true);
+	asset_installer->open_asset(obj, file, true);
 }
 
 void EditorAssetLibraryItemDownload::_make_request()
@@ -1273,7 +1273,7 @@ void EditorAssetLibrary::_update_repository_options()
 	}
 }
 
-void EditorAssetLibrary::shortcut_input(const Ref<InputEvent>& p_event)
+void EditorAssetLibrary::shortcut_input(const Object& obj, const Ref<InputEvent>& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -1288,14 +1288,14 @@ void EditorAssetLibrary::shortcut_input(const Ref<InputEvent>& p_event)
 	}
 }
 
-void EditorAssetLibrary::_install_asset(const String& p_asset_id, const String& p_version,
+void EditorAssetLibrary::_install_asset(Object& obj, const String& p_asset_id, const String& p_version,
 	const String& p_download_url, const String& p_sha256)
 {
 	ERR_FAIL_NULL(description);
 
 	EditorAssetLibraryItemDownload* d = _get_asset_in_progress(p_asset_id);
 	if (d) {
-		d->install();
+		d->install(obj);
 		return;
 	}
 
@@ -1836,7 +1836,7 @@ void EditorAssetLibrary::_api_request(
 	requester->request(host + "/" + p_request);
 }
 
-void EditorAssetLibrary::_http_request_completed(int p_status, int p_code,
+void EditorAssetLibrary::_http_request_completed(Object& obj, int p_status, int p_code,
 	const PackedStringArray& headers, const PackedByteArray& p_data, HTTPRequest* p_requester)
 {
 	String str = String::utf8((const char*)p_data.ptr(), (int)p_data.size());
@@ -2056,7 +2056,7 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code,
 			item->connect("asset_selected", callable_mp(this, &EditorAssetLibrary::_select_asset));
 
 			if (r.has("thumbnail") && !r["thumbnail"].operator String().is_empty()) {
-				_request_image(item->obj->get_instance_id(), r["slug"], r["thumbnail"],
+				_request_image(obj.get_instance_id(), r["slug"], r["thumbnail"],
 					IMAGE_QUEUE_THUMBNAIL, 0);
 			}
 		}
@@ -2121,7 +2121,7 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code,
 		}
 
 		if (d.has("thumbnail") && !d["thumbnail"].operator String().is_empty()) {
-			_request_image(description->obj->get_instance_id(), d["slug"], d["thumbnail"],
+			_request_image(obj.get_instance_id(), d["slug"], d["thumbnail"],
 				IMAGE_QUEUE_THUMBNAIL, 0);
 		}
 
@@ -2131,7 +2131,7 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code,
 			String thumb = d["video_thumbnail_url"];
 			if (!video.is_empty() && !thumb.is_empty()) {
 				description->add_preview(0, true, video, thumb);
-				_request_image(description->obj->get_instance_id(), d["slug"], thumb,
+				_request_image(obj.get_instance_id(), d["slug"], thumb,
 					IMAGE_QUEUE_VIDEO_THUMBNAIL, preview_index);
 				preview_index = 1;
 			}
@@ -2142,10 +2142,10 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code,
 			for (int i = 0; i < previews.size(); i++) {
 				description->add_preview(preview_index);
 				if (i == 0) {
-					description->preview_click(preview_index);
+					description->preview_click(obj, preview_index);
 				}
 
-				_request_image(description->obj->get_instance_id(), d["slug"], previews[i],
+				_request_image(obj.get_instance_id(), d["slug"], previews[i],
 					IMAGE_QUEUE_SCREENSHOT, preview_index);
 				preview_index++;
 			}
@@ -2224,7 +2224,7 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code,
 	}
 }
 
-void EditorAssetLibrary::_asset_file_selected(const String& p_file)
+void EditorAssetLibrary::_asset_file_selected(Object& obj, const String& p_file)
 {
 	if (asset_installer) {
 		memdelete(asset_installer);
@@ -2234,7 +2234,7 @@ void EditorAssetLibrary::_asset_file_selected(const String& p_file)
 	asset_installer = memnew(EditorAssetInstaller);
 	asset_installer->set_asset_name(p_file);
 	add_child(asset_installer);
-	asset_installer->open_asset(p_file);
+	asset_installer->open_asset(obj, p_file);
 }
 
 void EditorAssetLibrary::_asset_open() { asset_open->popup_file_dialog(); }
@@ -2259,9 +2259,9 @@ EditorAssetLibraryItemDownload* EditorAssetLibrary::_get_asset_in_progress(
 	return nullptr;
 }
 
-void EditorAssetLibrary::_install_external_asset(const String& p_zip_path, const String& p_title)
+void EditorAssetLibrary::_install_external_asset(Object& obj, const String& p_zip_path, const String& p_title)
 {
-	this->obj->emit_signal(SNAME("install_asset"), p_zip_path, p_title);
+	obj.emit_signal(SNAME("install_asset"), p_zip_path, p_title);
 }
 
 void EditorAssetLibrary::_update_asset_items_columns()

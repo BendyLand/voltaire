@@ -64,7 +64,7 @@ protected:
 	static void _bind_methods();
 	void _notification(int p_what);
 
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 public:
 	void set_wrapped_control(Control *p_control, const Ref<Shortcut> &p_enable_shortcut = Ref<Shortcut>());

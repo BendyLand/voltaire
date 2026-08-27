@@ -82,7 +82,7 @@ class EditorAssetLibraryItem : public MarginContainer
 	int author_width = 0;
 	int price_width = 0;
 
-	void _asset_clicked();
+	void _asset_clicked(Object& obj);
 	void _author_clicked();
 	void _license_clicked();
 
@@ -156,7 +156,7 @@ class EditorAssetLibraryItemDescription : public ConfirmationDialog
 	Ref<ButtonGroup> preview_group;
 	TextureRect* preview = nullptr;
 
-	void set_image(int p_type, int p_index, const Ref<Texture2D>& p_image);
+	void set_image(Object& obj, int p_type, int p_index, const Ref<Texture2D>& p_image);
 
 	struct Release
 	{
@@ -183,14 +183,14 @@ public:
 private:
 	InstallMode install_mode = MODE_DOWNLOAD;
 
-	void _confirmed();
+	void _confirmed(Object& obj);
 	void _version_selected(int p_index);
 	void _store_pressed();
 	void _source_pressed();
-	void _link_click(const String& p_url);
+	void _link_click(Object& obj, const String& p_url);
 
-	void _previous_preview_pressed();
-	void _next_preview_pressed();
+	void _previous_preview_pressed(Object& obj);
+	void _next_preview_pressed(Object& obj);
 
 	void _zoom_toggled(bool p_pressed);
 
@@ -209,7 +209,7 @@ public:
 		const String& p_sha256);
 	void add_preview(
 		int p_id, bool p_video = false, const String& p_url = "", const String& p_thumbnail = "");
-	void preview_click(int p_id);
+	void preview_click(Object& obj, int p_id);
 
 	String get_title() { return title; }
 
@@ -249,7 +249,7 @@ class EditorAssetLibraryItemDownload : public MarginContainer
 
 	void _close();
 	void _make_request();
-	void _http_download_completed(
+	void _http_download_completed(Object& obj,
 		int p_status, int p_code, const PackedStringArray& headers, const PackedByteArray& p_data);
 
 protected:
@@ -265,7 +265,7 @@ public:
 		const Ref<Texture2D>& p_preview, const String& p_download_url, const String& p_sha256);
 
 	bool can_install() const;
-	void install();
+	void install(Object& obj);
 
 	EditorAssetLibraryItemDownload();
 };
@@ -280,7 +280,7 @@ class EditorAssetLibrary : public PanelContainer
 	EditorAssetInstaller* asset_installer = nullptr;
 
 	void _asset_open();
-	void _asset_file_selected(const String& p_file);
+	void _asset_file_selected(Object& obj, const String& p_file);
 	void _update_repository_options();
 
 	MarginContainer* library_mc = nullptr;
@@ -402,7 +402,7 @@ class EditorAssetLibrary : public PanelContainer
 
 	EditorAssetLibraryItemDescription* description = nullptr;
 
-	void _install_asset(const String& p_asset_id, const String& p_version,
+	void _install_asset(Object& obj, const String& p_asset_id, const String& p_version,
 		const String& p_download_url, const String& p_sha256);
 	void _tag_clicked(const String& p_tag);
 
@@ -414,14 +414,14 @@ class EditorAssetLibrary : public PanelContainer
 	void _search(int p_page = 1);
 	void _api_request(
 		const String& p_request, RequestType p_request_type, bool p_is_parallel = false);
-	void _http_request_completed(int p_status, int p_code, const PackedStringArray& headers,
+	void _http_request_completed(Object& obj, int p_status, int p_code, const PackedStringArray& headers,
 		const PackedByteArray& p_data, HTTPRequest* p_requester);
 	void _request_current_config();
 	EditorAssetLibraryItemDownload* _get_asset_in_progress(const String& p_asset_id) const;
 
 	void _repository_changed(int p_repository_id);
 
-	void _install_external_asset(const String& p_zip_path, const String& p_title);
+	void _install_external_asset(Object& obj, const String& p_zip_path, const String& p_title);
 
 	void _update_asset_items_columns();
 	void _update_downloads_section();
@@ -432,7 +432,7 @@ class EditorAssetLibrary : public PanelContainer
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);
-	virtual void shortcut_input(const Ref<InputEvent>& p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	EditorAssetLibrary(bool p_templates_only = false);

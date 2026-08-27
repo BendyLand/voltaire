@@ -691,7 +691,7 @@ public:
 
 	// Input events.
 
-	virtual void gui_input(const Ref<InputEvent>& p_event);
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event);
 	void accept_event();
 
 	virtual bool has_point(const Point2& p_point) const;

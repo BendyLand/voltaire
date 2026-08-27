@@ -97,26 +97,26 @@ class AnimationLibraryEditor : public AcceptDialog {
 
 	void _add_library();
 	void _add_library_validate(const String &p_name);
-	void _add_library_confirm();
+	void _add_library_confirm(const Object& obj);
 	void _load_library();
-	void _load_file(const String &p_path);
-	void _load_files(const PackedStringArray &p_paths);
+	void _load_file(const Object& obj, const String &p_path);
+	void _load_files(const Object& obj, const PackedStringArray &p_paths);
 
 	void _save_mixer_lib_folding(TreeItem *p_item);
 	Vector<String> _load_mixer_libs_folding();
 	String _get_mixer_signature() const;
 
-	void _item_renamed();
-	void _button_pressed(TreeItem *p_item, int p_column, int p_id, MouseButton p_button);
+	void _item_renamed(const Object& obj);
+	void _button_pressed(const Object& obj, TreeItem *p_item, int p_column, int p_id, MouseButton p_button);
 
-	void _file_popup_selected(int p_id);
+	void _file_popup_selected(const Object& obj, int p_id);
 
 	bool updating = false;
 
 protected:
 	void _notification(int p_what);
-	void _update_editor(Object *p_mixer);
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	void _update_editor(Object& obj, Object *p_mixer);
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	static void _bind_methods();
 
 public:

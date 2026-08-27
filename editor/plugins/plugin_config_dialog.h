@@ -38,27 +38,29 @@
 class ConfigFile;
 class EditorValidationPanel;
 
-class PluginConfigDialog : public ConfirmationDialog {
+class PluginConfigDialog : public ConfirmationDialog
+{
 	VLTRCLASS(PluginConfigDialog, ConfirmationDialog);
 
-	enum {
+	enum
+	{
 		MSG_ID_PLUGIN,
 		MSG_ID_SUBFOLDER,
 		MSG_ID_SCRIPT,
 		MSG_ID_ENABLE_WARNINGS,
 	};
 
-	LineEdit *name_edit = nullptr;
-	LineEdit *subfolder_edit = nullptr;
-	TextEdit *desc_edit = nullptr;
-	LineEdit *author_edit = nullptr;
-	LineEdit *version_edit = nullptr;
-	OptionButton *script_option_edit = nullptr;
-	LineEdit *script_edit = nullptr;
+	LineEdit* name_edit = nullptr;
+	LineEdit* subfolder_edit = nullptr;
+	TextEdit* desc_edit = nullptr;
+	LineEdit* author_edit = nullptr;
+	LineEdit* version_edit = nullptr;
+	OptionButton* script_option_edit = nullptr;
+	LineEdit* script_edit = nullptr;
 
-	LocalVector<Control *> plugin_edit_hidden_controls;
+	LocalVector<Control*> plugin_edit_hidden_controls;
 
-	EditorValidationPanel *validation_panel = nullptr;
+	EditorValidationPanel* validation_panel = nullptr;
 
 	bool _edit_mode = false;
 
@@ -66,17 +68,20 @@ class PluginConfigDialog : public ConfirmationDialog {
 	void _on_confirmed();
 	void _on_canceled();
 	void _on_required_text_changed();
-	void _create_script_for_plugin(const String &p_plugin_path, Ref<ConfigFile> p_config_file, int p_script_lang_index);
+	void _create_script_for_plugin(
+		const String& p_plugin_path, Ref<ConfigFile> p_config_file, int p_script_lang_index);
 	String _get_subfolder();
 
-	static String _to_absolute_plugin_path(const String &p_plugin_name);
+	static String _to_absolute_plugin_path(const String& p_plugin_name);
 
 protected:
 	virtual void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	void config(const String &p_config_path);
+	void config(const String& p_config_path);
 
 	PluginConfigDialog();
 };
+
+

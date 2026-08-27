@@ -36,11 +36,12 @@
 
 class EditorUndoRedoManager
 {
-	static EditorUndoRedoManager *singleton;
+	static EditorUndoRedoManager* singleton;
 	static constexpr uint64_t UNSAVED_VERSION = 0;
 
 public:
 	mem_unique_ptr<Object> obj;
+
 	enum SpecialHistory
 	{
 		GLOBAL_HISTORY = 0,
@@ -61,7 +62,7 @@ public:
 	struct History
 	{
 		int id = INVALID_HISTORY;
-		UndoRedo *undo_redo = nullptr;
+		UndoRedo* undo_redo = nullptr;
 		uint64_t saved_version = 1;
 		List<Action> undo_stack;
 		List<Action> redo_stack;
@@ -74,60 +75,72 @@ private:
 	bool forced_history = false;
 	bool is_committing = false;
 
-	History *_get_newest_undo();
+	History* _get_newest_undo();
 
 protected:
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	void _create_action_bind_compat_106121(const String &p_name = "", UndoRedo::MergeMode p_mode = UndoRedo::MERGE_DISABLE, Object *p_custom_context = nullptr, bool p_backward_undo_ops = false);
+	void _create_action_bind_compat_106121(const String& p_name = "",
+		UndoRedo::MergeMode p_mode = UndoRedo::MERGE_DISABLE, Object* p_custom_context = nullptr,
+		bool p_backward_undo_ops = false);
 	static void _bind_compatibility_methods();
 #endif
 
 public:
-	History &get_or_create_history(int p_idx);
-	UndoRedo *get_history_undo_redo(int p_idx) const;
-	int get_history_id_for_object(Object *p_object) const;
-	History &get_history_for_object(Object *p_object);
+	History& get_or_create_history(int p_idx);
+	UndoRedo* get_history_undo_redo(int p_idx) const;
+	int get_history_id_for_object(Object* p_object) const;
+	History& get_history_for_object(Object* p_object);
 	void force_fixed_history();
 
-	void create_action_for_history(const String &p_name, int p_history_id, UndoRedo::MergeMode p_mode = UndoRedo::MERGE_DISABLE, bool p_backward_undo_ops = false, bool p_mark_unsaved = true);
-	void create_action(const String &p_name = "", UndoRedo::MergeMode p_mode = UndoRedo::MERGE_DISABLE, Object *p_custom_context = nullptr, bool p_backward_undo_ops = false, bool p_mark_unsaved = true);
+	void create_action_for_history(const String& p_name, int p_history_id,
+		UndoRedo::MergeMode p_mode = UndoRedo::MERGE_DISABLE, bool p_backward_undo_ops = false,
+		bool p_mark_unsaved = true);
+	void create_action(const String& p_name = "",
+		UndoRedo::MergeMode p_mode = UndoRedo::MERGE_DISABLE, Object* p_custom_context = nullptr,
+		bool p_backward_undo_ops = false, bool p_mark_unsaved = true);
 
-	void add_do_methodp(Object *p_object, const StringName &p_method, const Variant **p_args, int p_argcount);
-	void add_undo_methodp(Object *p_object, const StringName &p_method, const Variant **p_args, int p_argcount);
+	void add_do_methodp(
+		const Object* p_object, const StringName& p_method, const Variant** p_args, int p_argcount);
+	void add_undo_methodp(
+		const Object* p_object, const StringName& p_method, const Variant** p_args, int p_argcount) const;
 
 	template <typename... VarArgs>
-	void add_do_method(Object *p_object, const StringName &p_method, VarArgs... p_args)
+	void add_do_method(const Object* p_object, const StringName& p_method, VarArgs... p_args)
 	{
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		const Variant *argptrs[sizeof...(p_args) + 1];
+		Variant args[sizeof...(p_args) + 1] = {
+			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
+		const Variant* argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
 
-		add_do_methodp(p_object, p_method, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args));
+		add_do_methodp(p_object, p_method,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
 	template <typename... VarArgs>
-	void add_undo_method(Object *p_object, const StringName &p_method, VarArgs... p_args)
+	void add_undo_method(const Object* p_object, const StringName& p_method, VarArgs... p_args) const
 	{
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		const Variant *argptrs[sizeof...(p_args) + 1];
+		Variant args[sizeof...(p_args) + 1] = {
+			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
+		const Variant* argptrs[sizeof...(p_args) + 1];
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
 
-		add_undo_methodp(p_object, p_method, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args));
+		add_undo_methodp(p_object, p_method,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
-	void _add_do_method(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
-	void _add_undo_method(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+	void _add_do_method(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
+	void _add_undo_method(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
 
-	void add_do_property(Object *p_object, const StringName &p_property, const Variant &p_value);
-	void add_undo_property(Object *p_object, const StringName &p_property, const Variant &p_value);
-	void add_do_reference(Object *p_object);
-	void add_undo_reference(Object *p_object);
+	void add_do_property(Object* p_object, const StringName& p_property, const Variant& p_value);
+	void add_undo_property(Object* p_object, const StringName& p_property, const Variant& p_value);
+	void add_do_reference(Object* p_object);
+	void add_undo_reference(Object* p_object);
 
 	void commit_action(bool p_execute = true);
 	bool is_committing_action() const;
@@ -150,9 +163,11 @@ public:
 
 	void discard_history(int p_idx, bool p_erase_from_map = true);
 
-	static EditorUndoRedoManager *get_singleton();
+	static EditorUndoRedoManager* get_singleton();
 	EditorUndoRedoManager();
 	~EditorUndoRedoManager();
 };
 
 VARIANT_ENUM_CAST(EditorUndoRedoManager::SpecialHistory);
+
+

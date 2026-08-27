@@ -894,7 +894,7 @@ public:
 
 	virtual void set_self_modulate(const Color& p_self_modulate) override;
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 	virtual String get_tooltip(const Point2& p_pos) const override;
 	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2& p_at) const override;

@@ -90,7 +90,7 @@ protected:
 	void _validate_property(PropertyInfo &p_property) const;
 	static void _bind_methods();
 
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 public:
 	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties returned by `_get_items()` ever changes,

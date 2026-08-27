@@ -282,7 +282,7 @@ void AnimationBezierTrackEdit::_draw_line_clipped(const Vector2& p_from, const V
 	draw_line(from, to, p_color, Math::round(EDSCALE), true);
 }
 
-void AnimationBezierTrackEdit::_notification(int p_what)
+void AnimationBezierTrackEdit::_notification(const Object& obj, int p_what)
 {
 	switch (p_what) {
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
@@ -337,7 +337,7 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 		const int v_separation =
 			get_theme_constant(SNAME("h_separation"), SNAME("AnimationBezierTrackEdit"));
 
-		const String& lang = this->obj->_get_locale();
+		const String& lang = obj._get_locale();
 
 		if (has_focus(true)) {
 			draw_rect(Rect2(Point2(1, 1), get_size() - Point2(1, 1)), focus_color, false,
@@ -474,7 +474,7 @@ void AnimationBezierTrackEdit::_notification(int p_what)
 					int ofs = h_separation;
 
 					Ref<Texture2D> icon =
-						EditorNode::get_singleton()->get_object_icon(node->obj.get());
+						EditorNode::get_singleton()->get_object_icon(&obj);
 
 					TextLine text_buf = TextLine(node->get_name(), font, font_size);
 					int total_icon_width = icon->get_width() + solo->get_width() +
@@ -1319,14 +1319,14 @@ String AnimationBezierTrackEdit::get_tooltip(const Point2& p_pos) const
 	return Control::get_tooltip(p_pos);
 }
 
-void AnimationBezierTrackEdit::_clear_selection()
+void AnimationBezierTrackEdit::_clear_selection(Object& obj)
 {
 	selection.clear();
-	this->obj->emit_signal(SNAME("clear_selection"));
+	obj.emit_signal(SNAME("clear_selection"));
 	queue_redraw();
 }
 
-void AnimationBezierTrackEdit::_change_selected_keys_handle_mode(
+void AnimationBezierTrackEdit::_change_selected_keys_handle_mode(const Object& obj,
 	Animation::HandleMode p_mode, bool p_auto)
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
@@ -1334,7 +1334,7 @@ void AnimationBezierTrackEdit::_change_selected_keys_handle_mode(
 		TTR("Update Selected Key Handles"), UndoRedo::MERGE_DISABLE, animation->obj.get());
 	for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
 		const IntPair track_key_pair = E->get();
-		undo_redo->add_undo_method(editor->obj.get(), "_bezier_track_set_key_handle_mode",
+		undo_redo->add_undo_method(&obj, "_bezier_track_set_key_handle_mode",
 			animation.ptr(), track_key_pair.first, track_key_pair.second,
 			animation->bezier_track_get_key_handle_mode(
 				track_key_pair.first, track_key_pair.second),
@@ -1346,27 +1346,28 @@ void AnimationBezierTrackEdit::_change_selected_keys_handle_mode(
 			track_key_pair.first, track_key_pair.second,
 			animation->bezier_track_get_key_out_handle(
 				track_key_pair.first, track_key_pair.second));
-		undo_redo->add_do_method(editor->obj.get(), "_bezier_track_set_key_handle_mode",
+		undo_redo->add_do_method(&obj, "_bezier_track_set_key_handle_mode",
 			animation.ptr(), track_key_pair.first, track_key_pair.second, p_mode,
 			p_auto ? Animation::HANDLE_SET_MODE_AUTO : Animation::HANDLE_SET_MODE_RESET);
 	}
 	AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 	if (ape) {
-		undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-		undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+		undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+		undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 	}
 	undo_redo->commit_action();
 }
 
-void AnimationBezierTrackEdit::_clear_selection_for_anim(const Ref<Animation>& p_anim)
+void AnimationBezierTrackEdit::_clear_selection_for_anim(const Object& obj, const Ref<Animation>& p_anim)
 {
 	if (!(animation == p_anim) || !is_visible()) {
 		return;
 	}
-	_clear_selection();
+	Object& o = const_cast<Object&>(obj);
+	_clear_selection(o);
 }
 
-void AnimationBezierTrackEdit::_select_at_anim(
+void AnimationBezierTrackEdit::_select_at_anim(Object& obj,
 	const Ref<Animation>& p_anim, int p_track, real_t p_pos, bool p_single)
 {
 	if (!(animation == p_anim) || !is_visible()) {
@@ -1377,11 +1378,11 @@ void AnimationBezierTrackEdit::_select_at_anim(
 	ERR_FAIL_COND(idx < 0);
 
 	selection.insert(IntPair(p_track, idx));
-	this->obj->emit_signal(SNAME("select_key"), idx, p_single, p_track);
+	obj.emit_signal(SNAME("select_key"), idx, p_single, p_track);
 	queue_redraw();
 }
 
-void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
+void AnimationBezierTrackEdit::gui_input(const Object& obj, const Ref<InputEvent>& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -1393,31 +1394,31 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 	if (p_event->is_pressed()) {
 		if (ED_IS_SHORTCUT("animation_editor/duplicate_selected_keys", p_event)) {
 			if (!read_only) {
-				duplicate_selected_keys(-1.0, false);
+				duplicate_selected_keys(obj, -1.0, false);
 			}
 			accept_event();
 		}
 		if (ED_IS_SHORTCUT("animation_editor/cut_selected_keys", p_event)) {
 			if (!read_only) {
-				copy_selected_keys(true);
+				copy_selected_keys(obj, true);
 			}
 			accept_event();
 		}
 		if (ED_IS_SHORTCUT("animation_editor/copy_selected_keys", p_event)) {
 			if (!read_only) {
-				copy_selected_keys(false);
+				copy_selected_keys(obj, false);
 			}
 			accept_event();
 		}
 		if (ED_IS_SHORTCUT("animation_editor/paste_keys", p_event)) {
 			if (!read_only) {
-				paste_keys(-1.0, false);
+				paste_keys(obj, -1.0, false);
 			}
 			accept_event();
 		}
 		if (ED_IS_SHORTCUT("animation_editor/delete_selection", p_event)) {
 			if (!read_only) {
-				delete_selection();
+				delete_selection(obj);
 			}
 			accept_event();
 		}
@@ -1425,6 +1426,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 
 	Ref<InputEventKey> key_press = p_event;
 
+	Object& o = const_cast<Object&>(obj);
 	if (key_press.is_valid() && key_press->is_pressed()) {
 		if (ED_IS_SHORTCUT("animation_bezier_editor/focus", p_event)) {
 			SelectionSet focused_keys;
@@ -1499,7 +1501,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 		}
 		else if (ED_IS_SHORTCUT("animation_bezier_editor/select_all_keys", p_event)) {
 			for (int i = 0; i < edit_points.size(); ++i) {
-				_select_at_anim(animation, edit_points[i].track,
+				_select_at_anim(o, animation, edit_points[i].track,
 					animation->track_get_key_time(edit_points[i].track, edit_points[i].key),
 					i == 0);
 			}
@@ -1510,7 +1512,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 		}
 		else if (ED_IS_SHORTCUT("animation_bezier_editor/deselect_all_keys", p_event)) {
 			selection.clear();
-			this->obj->emit_signal(SNAME("clear_selection"));
+			o.emit_signal(SNAME("clear_selection"));
 
 			queue_redraw();
 			accept_event();
@@ -1527,7 +1529,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 				Vector2 popup_pos = get_screen_position() + mb->get_position();
 
 				bool selected =
-					_try_select_at_ui_pos(mb->get_position(), mb->is_shift_pressed(), false);
+					_try_select_at_ui_pos(o, mb->get_position(), mb->is_shift_pressed(), false);
 
 				menu->clear();
 				menu->add_icon_item(bezier_icon, TTR("Insert Key Here"), MENU_KEY_INSERT);
@@ -1584,13 +1586,13 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 		if (mb->is_double_click() && !moving_selection && no_mod_key_pressed) {
 			int x = pos.x - timeline->get_name_limit();
 			float ofs = x / timeline->get_zoom_scale() + timeline->get_value();
-			this->obj->emit_signal(SNAME("timeline_changed"), ofs, false);
+			o.emit_signal(SNAME("timeline_changed"), ofs, false);
 		}
 		for (const KeyValue<int, Rect2>& E : subtracks) {
 			if (E.value.has_point(mb->get_position())) {
 				if (!locked_tracks.has(E.key) && !hidden_tracks.has(E.key)) {
 					set_animation_and_track(animation, E.key, read_only);
-					_clear_selection();
+					_clear_selection(o);
 				}
 				return;
 			}
@@ -1607,8 +1609,8 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 							undo_redo->create_action(
 								"Remove Bezier Track", UndoRedo::MERGE_DISABLE, animation->obj.get());
 
-							undo_redo->add_do_method(this->obj.get(), "_update_locked_tracks_after", track);
-							undo_redo->add_do_method(this->obj.get(), "_update_hidden_tracks_after", track);
+							undo_redo->add_do_method(&obj, "_update_locked_tracks_after", track);
+							undo_redo->add_do_method(&obj, "_update_hidden_tracks_after", track);
 
 							undo_redo->add_do_method(animation->obj.get(), "remove_track", track);
 
@@ -1618,15 +1620,15 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 								animation->track_get_path(track));
 
 							if (locked_tracks.has(track)) {
-								undo_redo->add_undo_method(this->obj.get(), "_lock_track", track);
+								undo_redo->add_undo_method(&obj, "_lock_track", track);
 							}
 
 							if (hidden_tracks.has(track)) {
-								undo_redo->add_undo_method(this->obj.get(), "_hide_track", track);
+								undo_redo->add_undo_method(&obj, "_hide_track", track);
 							}
 
 							for (int i = 0; i < animation->track_get_key_count(track); ++i) {
-								undo_redo->add_undo_method(this->obj.get(), "_bezier_track_insert_key_at_anim",
+								undo_redo->add_undo_method(&obj, "_bezier_track_insert_key_at_anim",
 									animation, track, animation->track_get_key_time(track, i),
 									animation->bezier_track_get_key_value(track, i),
 									animation->bezier_track_get_key_in_handle(track, i),
@@ -1714,12 +1716,12 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 									continue;
 								}
 
-								undo_redo->add_do_method(this->obj.get(), "_update_locked_tracks_after", i);
-								undo_redo->add_do_method(this->obj.get(), "_update_hidden_tracks_after", i);
+								undo_redo->add_do_method(&obj, "_update_locked_tracks_after", i);
+								undo_redo->add_do_method(&obj, "_update_hidden_tracks_after", i);
 								undo_redo->add_do_method(animation->obj.get(), "remove_track", i);
 
 								for (int j = animation->track_get_key_count(i) - 1; j >= 0; --j) {
-									undo_redo->add_undo_method(this->obj.get(),
+									undo_redo->add_undo_method(&obj,
 										"_bezier_track_insert_key_at_anim", animation, i,
 										animation->track_get_key_time(i, j),
 										animation->bezier_track_get_key_value(i, j),
@@ -1729,11 +1731,11 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 								}
 
 								if (hidden_tracks.has(i)) {
-									undo_redo->add_undo_method(this->obj.get(), "_hide_track", i);
+									undo_redo->add_undo_method(&obj, "_hide_track", i);
 								}
 
 								if (locked_tracks.has(i)) {
-									undo_redo->add_undo_method(this->obj.get(), "_lock_track", i);
+									undo_redo->add_undo_method(&obj, "_lock_track", i);
 								}
 
 								undo_redo->add_undo_method(animation->obj.get(), "track_set_path", i,
@@ -1871,7 +1873,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 		// Command/Control makes it ignore the keyframe, so control point editors can be
 		// force-edited.
 		if (!inside_selection_handles_rect && !mb->is_command_or_control_pressed()) {
-			if (_try_select_at_ui_pos(mb->get_position(), mb->is_shift_pressed(), true)) {
+			if (_try_select_at_ui_pos(o, mb->get_position(), mb->is_shift_pressed(), true)) {
 				return;
 			}
 		}
@@ -1973,7 +1975,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			undo_redo->add_do_method(animation->obj.get(), "bezier_track_insert_key", selected_track,
 				time, new_point[0], Vector2(new_point[1], new_point[2]),
 				Vector2(new_point[3], new_point[4]));
-			undo_redo->add_do_method(editor->obj.get(), "_bezier_track_set_key_handle_mode_at_time",
+			undo_redo->add_do_method(&obj, "_bezier_track_set_key_handle_mode_at_time",
 				animation.ptr(), selected_track, time,
 				(Animation::HandleMode)editor->bezier_key_mode->get_selected_id(),
 				Animation::HANDLE_SET_MODE_AUTO);
@@ -1985,8 +1987,8 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			int index =
 				animation->track_find_key(selected_track, time, Animation::FIND_MODE_APPROX);
 			ERR_FAIL_COND(index == -1);
-			_clear_selection();
-			_select_at_anim(animation, selected_track,
+			_clear_selection(o);
+			_select_at_anim(o, animation, selected_track,
 				animation->track_get_key_time(selected_track, index), true);
 
 			moving_selection_attempt = true;
@@ -2017,7 +2019,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 		if (box_selecting) {
 			// Do actual select.
 			if (!box_selecting_add) {
-				_clear_selection();
+				_clear_selection(o);
 			}
 
 			Vector2 bs_from = box_selection_from;
@@ -2034,7 +2036,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			int j = 0;
 			for (int i = 0; i < edit_points.size(); i++) {
 				if (edit_points[i].point_rect.intersects(rect)) {
-					_select_at_anim(animation, edit_points[i].track,
+					_select_at_anim(o, animation, edit_points[i].track,
 						animation->track_get_key_time(edit_points[i].track, edit_points[i].key),
 						j == 0 && !box_selecting_add);
 					if (!track_set) {
@@ -2046,8 +2048,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			}
 		}
 		else {
-			_clear_selection(); // Clicked and nothing happened, so clear the selection.
-
+			_clear_selection(o); // Clicked and nothing happened, so clear the selection.
 			// Select by clicking on curve.
 			int track_count = animation->get_track_count();
 
@@ -2144,7 +2145,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 						handle_set_mode = Animation::HANDLE_SET_MODE_AUTO;
 					}
 
-					undo_redo->add_do_method(this->obj.get(), "_bezier_track_insert_key_at_anim", animation,
+					undo_redo->add_do_method(&obj, "_bezier_track_insert_key_at_anim", animation,
 						E->get().first, newpos, key[0], Vector2(key[1], key[2]),
 						Vector2(key[3], key[4]), handle_mode, handle_set_mode);
 				}
@@ -2161,7 +2162,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 				for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
 					real_t oldpos = animation->track_get_key_time(E->get().first, E->get().second);
 					Array key = animation->track_get_key_value(E->get().first, E->get().second);
-					undo_redo->add_undo_method(this->obj.get(), "_bezier_track_insert_key_at_anim", animation,
+					undo_redo->add_undo_method(&obj, "_bezier_track_insert_key_at_anim", animation,
 						E->get().first, oldpos, key[0], Vector2(key[1], key[2]),
 						Vector2(key[3], key[4]),
 						animation->bezier_track_get_key_handle_mode(
@@ -2179,13 +2180,13 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 					Array key = amr.key;
 					undo_redo->add_undo_method(
 						animation->obj.get(), "track_insert_key", amr.track, amr.time, amr.key, 1);
-					undo_redo->add_undo_method(this->obj.get(), "_bezier_track_insert_key_at_anim", animation,
+					undo_redo->add_undo_method(&obj, "_bezier_track_insert_key_at_anim", animation,
 						amr.track, amr.time, key[0], Vector2(key[1], key[2]),
 						Vector2(key[3], key[4]), *handle_itr);
 				}
 
-				undo_redo->add_do_method(this->obj.get(), "_clear_selection_for_anim", animation);
-				undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
+				undo_redo->add_do_method(&obj, "_clear_selection_for_anim", animation);
+				undo_redo->add_undo_method(&obj, "_clear_selection_for_anim", animation);
 
 				// 7 - Reselect.
 				int i = 0;
@@ -2194,16 +2195,16 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 					real_t newpos = oldpos + moving_selection_offset.x;
 
 					undo_redo->add_do_method(
-						this->obj.get(), "_select_at_anim", animation, E->get().first, newpos, i == 0);
+						&obj, "_select_at_anim", animation, E->get().first, newpos, i == 0);
 					undo_redo->add_undo_method(
-						this->obj.get(), "_select_at_anim", animation, E->get().first, oldpos, i == 0);
+						&obj, "_select_at_anim", animation, E->get().first, oldpos, i == 0);
 					i++;
 				}
 
 				AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 				if (ape) {
-					undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-					undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+					undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+					undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 				}
 				undo_redo->commit_action();
 
@@ -2211,7 +2212,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			else if (select_single_attempt != IntPair(-1, -1)) {
 				selection.clear();
 				set_animation_and_track(animation, select_single_attempt.first, read_only);
-				_select_at_anim(animation, select_single_attempt.first,
+				_select_at_anim(o, animation, select_single_attempt.first,
 					animation->track_get_key_time(
 						select_single_attempt.first, select_single_attempt.second),
 					true);
@@ -2281,7 +2282,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 					 (h - scaling_selection_pivot.y) * (scaling_selection_scale.y - 1);
 				key[0] = h;
 
-				undo_redo->add_do_method(this->obj.get(), "_bezier_track_insert_key_at_anim", animation,
+				undo_redo->add_do_method(&obj, "_bezier_track_insert_key_at_anim", animation,
 					E->get().first, newpos, key[0], Vector2(key[1], key[2]),
 					Vector2(key[3], key[4]),
 					animation->bezier_track_get_key_handle_mode(E->get().first, E->get().second));
@@ -2300,7 +2301,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
 				real_t oldpos = animation->track_get_key_time(E->get().first, E->get().second);
 				Array key = animation->track_get_key_value(E->get().first, E->get().second);
-				undo_redo->add_undo_method(this->obj.get(), "_bezier_track_insert_key_at_anim", animation,
+				undo_redo->add_undo_method(&obj, "_bezier_track_insert_key_at_anim", animation,
 					E->get().first, oldpos, key[0], Vector2(key[1], key[2]),
 					Vector2(key[3], key[4]),
 					animation->bezier_track_get_key_handle_mode(E->get().first, E->get().second));
@@ -2315,13 +2316,13 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 				Array key = amr.key;
 				undo_redo->add_undo_method(
 					animation->obj.get(), "track_insert_key", amr.track, amr.time, amr.key, 1);
-				undo_redo->add_undo_method(this->obj.get(), "_bezier_track_insert_key_at_anim", animation,
+				undo_redo->add_undo_method(&obj, "_bezier_track_insert_key_at_anim", animation,
 					amr.track, amr.time, key[0], Vector2(key[1], key[2]), Vector2(key[3], key[4]),
 					*handle_itr);
 			}
 
-			undo_redo->add_do_method(this->obj.get(), "_clear_selection_for_anim", animation);
-			undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
+			undo_redo->add_do_method(&obj, "_clear_selection_for_anim", animation);
+			undo_redo->add_undo_method(&obj, "_clear_selection_for_anim", animation);
 
 			// 7 - Reselect.
 			int i = 0;
@@ -2332,16 +2333,16 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 						  (newpos - scaling_selection_pivot.x) * (scaling_selection_scale.x - 1);
 
 				undo_redo->add_do_method(
-					this->obj.get(), "_select_at_anim", animation, E->get().first, newpos, i == 0);
+					&obj, "_select_at_anim", animation, E->get().first, newpos, i == 0);
 				undo_redo->add_undo_method(
-					this->obj.get(), "_select_at_anim", animation, E->get().first, oldpos, i == 0);
+					&obj, "_select_at_anim", animation, E->get().first, oldpos, i == 0);
 				i++;
 			}
 
 			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 			if (ape) {
-				undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-				undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+				undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+				undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 			}
 			undo_redo->commit_action();
 		}
@@ -2614,8 +2615,8 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 			}
 			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 			if (ape) {
-				undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-				undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+				undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+				undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 			}
 			undo_redo->commit_action();
 			moving_handle = 0;
@@ -2624,7 +2625,7 @@ void AnimationBezierTrackEdit::gui_input(const Ref<InputEvent>& p_event)
 	}
 }
 
-bool AnimationBezierTrackEdit::_try_select_at_ui_pos(
+bool AnimationBezierTrackEdit::_try_select_at_ui_pos(Object& obj,
 	const Point2& p_pos, bool p_aggregate, bool p_deselectable)
 {
 	for (int i = 0; i < edit_points.size(); i++) {
@@ -2636,12 +2637,12 @@ bool AnimationBezierTrackEdit::_try_select_at_ui_pos(
 				if (selection.has(pair)) {
 					if (p_deselectable) {
 						selection.erase(pair);
-						this->obj->emit_signal(
+						obj.emit_signal(
 							SNAME("deselect_key"), edit_points[i].key, edit_points[i].track);
 					}
 				}
 				else {
-					_select_at_anim(animation, edit_points[i].track,
+					_select_at_anim(obj, animation, edit_points[i].track,
 						animation->track_get_key_time(edit_points[i].track, edit_points[i].key),
 						false);
 				}
@@ -2673,7 +2674,7 @@ bool AnimationBezierTrackEdit::_try_select_at_ui_pos(
 				set_animation_and_track(animation, pair.first, read_only);
 				if (!selection.has(pair)) {
 					selection.clear();
-					_select_at_anim(animation, edit_points[i].track,
+					_select_at_anim(obj, animation, edit_points[i].track,
 						animation->track_get_key_time(edit_points[i].track, edit_points[i].key),
 						true);
 				}
@@ -2731,7 +2732,7 @@ float AnimationBezierTrackEdit::get_bezier_key_value(Array p_bezier_key_array)
 	return p_bezier_key_array[0];
 }
 
-void AnimationBezierTrackEdit::_menu_selected(int p_index)
+void AnimationBezierTrackEdit::_menu_selected(const Object& obj, int p_index)
 {
 	int limit = timeline->get_name_limit();
 
@@ -2757,58 +2758,58 @@ void AnimationBezierTrackEdit::_menu_selected(int p_index)
 			undo_redo->create_action(TTR("Add Bezier Point"));
 			undo_redo->add_do_method(
 				animation->obj.get(), "track_insert_key", selected_track, time, new_point);
-			undo_redo->add_do_method(editor->obj.get(), "_bezier_track_set_key_handle_mode_at_time",
+			undo_redo->add_do_method(&obj, "_bezier_track_set_key_handle_mode_at_time",
 				animation.ptr(), selected_track, time, handle_mode,
 				Animation::HANDLE_SET_MODE_AUTO);
-			undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
+			undo_redo->add_undo_method(&obj, "_clear_selection_for_anim", animation);
 			undo_redo->add_undo_method(
 				animation->obj.get(), "track_remove_key_at_time", selected_track, time);
 			AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 			if (ape) {
-				undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-				undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+				undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+				undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 			}
 			undo_redo->commit_action();
 			queue_redraw();
 		}
 	} break;
 	case MENU_KEY_DUPLICATE: {
-		duplicate_selected_keys(time, true);
+		duplicate_selected_keys(obj, time, true);
 	} break;
 	case MENU_KEY_DELETE: {
-		delete_selection();
+		delete_selection(obj);
 	} break;
 	case MENU_KEY_CUT: {
-		copy_selected_keys(true);
+		copy_selected_keys(obj, true);
 	} break;
 	case MENU_KEY_COPY: {
-		copy_selected_keys(false);
+		copy_selected_keys(obj, false);
 	} break;
 	case MENU_KEY_PASTE: {
-		paste_keys(time, true);
+		paste_keys(obj, time, true);
 	} break;
 	case MENU_KEY_SET_HANDLE_FREE: {
-		_change_selected_keys_handle_mode(Animation::HANDLE_MODE_FREE);
+		_change_selected_keys_handle_mode(obj, Animation::HANDLE_MODE_FREE);
 	} break;
 	case MENU_KEY_SET_HANDLE_LINEAR: {
-		_change_selected_keys_handle_mode(Animation::HANDLE_MODE_LINEAR);
+		_change_selected_keys_handle_mode(obj, Animation::HANDLE_MODE_LINEAR);
 	} break;
 	case MENU_KEY_SET_HANDLE_BALANCED: {
-		_change_selected_keys_handle_mode(Animation::HANDLE_MODE_BALANCED);
+		_change_selected_keys_handle_mode(obj, Animation::HANDLE_MODE_BALANCED);
 	} break;
 	case MENU_KEY_SET_HANDLE_MIRRORED: {
-		_change_selected_keys_handle_mode(Animation::HANDLE_MODE_MIRRORED);
+		_change_selected_keys_handle_mode(obj, Animation::HANDLE_MODE_MIRRORED);
 	} break;
 	case MENU_KEY_SET_HANDLE_AUTO_BALANCED: {
-		_change_selected_keys_handle_mode(Animation::HANDLE_MODE_BALANCED, true);
+		_change_selected_keys_handle_mode(obj, Animation::HANDLE_MODE_BALANCED, true);
 	} break;
 	case MENU_KEY_SET_HANDLE_AUTO_MIRRORED: {
-		_change_selected_keys_handle_mode(Animation::HANDLE_MODE_MIRRORED, true);
+		_change_selected_keys_handle_mode(obj, Animation::HANDLE_MODE_MIRRORED, true);
 	} break;
 	}
 }
 
-void AnimationBezierTrackEdit::duplicate_selected_keys(real_t p_ofs, bool p_ofs_valid)
+void AnimationBezierTrackEdit::duplicate_selected_keys(const Object& obj, real_t p_ofs, bool p_ofs_valid)
 {
 	if (selection.is_empty()) {
 		return;
@@ -2859,34 +2860,34 @@ void AnimationBezierTrackEdit::duplicate_selected_keys(real_t p_ofs, bool p_ofs_
 		}
 	}
 
-	undo_redo->add_do_method(this->obj.get(), "_clear_selection_for_anim", animation);
-	undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
+	undo_redo->add_do_method(&obj, "_clear_selection_for_anim", animation);
+	undo_redo->add_undo_method(&obj, "_clear_selection_for_anim", animation);
 
 	// Reselect duplicated.
 	int i = 0;
 	for (const Pair<int, real_t>& E : new_selection_values) {
-		undo_redo->add_do_method(this->obj.get(), "_select_at_anim", animation, E.first, E.second, i == 0);
+		undo_redo->add_do_method(&obj, "_select_at_anim", animation, E.first, E.second, i == 0);
 		i++;
 	}
 	i = 0;
 	for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
 		real_t time = animation->track_get_key_time(E->get().first, E->get().second);
 		undo_redo->add_undo_method(
-			this->obj.get(), "_select_at_anim", animation, E->get().first, time, i == 0);
+			&obj, "_select_at_anim", animation, E->get().first, time, i == 0);
 		i++;
 	}
 
 	AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 	if (ape) {
-		undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-		undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+		undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+		undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 	}
-	undo_redo->add_do_method(this->obj.get(), "queue_redraw");
-	undo_redo->add_undo_method(this->obj.get(), "queue_redraw");
+	undo_redo->add_do_method(&obj, "queue_redraw");
+	undo_redo->add_undo_method(&obj, "queue_redraw");
 	undo_redo->commit_action();
 }
 
-void AnimationBezierTrackEdit::copy_selected_keys(bool p_cut)
+void AnimationBezierTrackEdit::copy_selected_keys(const Object& obj, bool p_cut)
 {
 	if (selection.is_empty()) {
 		return;
@@ -2915,8 +2916,8 @@ void AnimationBezierTrackEdit::copy_selected_keys(bool p_cut)
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(
 			TTR("Animation Cut Keys"), UndoRedo::MERGE_DISABLE, animation->obj.get());
-		undo_redo->add_do_method(this->obj.get(), "_clear_selection_for_anim", animation);
-		undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
+		undo_redo->add_do_method(&obj, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(&obj, "_clear_selection_for_anim", animation);
 		int i = 0;
 		for (RBMap<AnimationTrackEditor::SelectedKey, AnimationTrackEditor::KeyInfo>::Element* E =
 				 keys.back();
@@ -2928,7 +2929,7 @@ void AnimationBezierTrackEdit::copy_selected_keys(bool p_cut)
 			undo_redo->add_undo_method(animation->obj.get(), "track_insert_key", track_idx, time,
 				animation->track_get_key_value(track_idx, key_idx),
 				animation->track_get_key_transition(track_idx, key_idx));
-			undo_redo->add_undo_method(this->obj.get(), "_select_at_anim", animation, track_idx, time, i == 0);
+			undo_redo->add_undo_method(&obj, "_select_at_anim", animation, track_idx, time, i == 0);
 			i++;
 		}
 		i = 0;
@@ -2936,23 +2937,23 @@ void AnimationBezierTrackEdit::copy_selected_keys(bool p_cut)
 				 keys.back();
 			 E; E = E->prev()) {
 			undo_redo->add_undo_method(
-				this->obj.get(), "_select_at_anim", animation, E->key().track, E->value().pos, i == 0);
+				&obj, "_select_at_anim", animation, E->key().track, E->value().pos, i == 0);
 			i++;
 		}
 
 		AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 		if (ape) {
-			undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-			undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+			undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+			undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 		}
-		undo_redo->add_do_method(this->obj.get(), "queue_redraw");
-		undo_redo->add_undo_method(this->obj.get(), "queue_redraw");
+		undo_redo->add_do_method(&obj, "queue_redraw");
+		undo_redo->add_undo_method(&obj, "queue_redraw");
 
 		undo_redo->commit_action();
 	}
 }
 
-void AnimationBezierTrackEdit::paste_keys(real_t p_ofs, bool p_ofs_valid)
+void AnimationBezierTrackEdit::paste_keys(const Object& obj, real_t p_ofs, bool p_ofs_valid)
 {
 	if (editor->is_key_clipboard_active() && animation.is_valid() &&
 		(selected_track >= 0 && selected_track < animation->get_track_count())) {
@@ -3020,35 +3021,35 @@ void AnimationBezierTrackEdit::paste_keys(real_t p_ofs, bool p_ofs_valid)
 			}
 		}
 
-		undo_redo->add_do_method(this->obj.get(), "_clear_selection_for_anim", animation);
-		undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
+		undo_redo->add_do_method(&obj, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(&obj, "_clear_selection_for_anim", animation);
 
 		// Reselect pasted.
 		int i = 0;
 		for (const Pair<int, float>& E : new_selection_values) {
-			undo_redo->add_do_method(this->obj.get(), "_select_at_anim", animation, E.first, E.second, i == 0);
+			undo_redo->add_do_method(&obj, "_select_at_anim", animation, E.first, E.second, i == 0);
 			i++;
 		}
 		i = 0;
 		for (SelectionSet::Element* E = selection.back(); E; E = E->prev()) {
-			undo_redo->add_undo_method(this->obj.get(), "_select_at_anim", animation, E->get().first,
+			undo_redo->add_undo_method(&obj, "_select_at_anim", animation, E->get().first,
 				animation->track_get_key_time(E->get().first, E->get().second), i == 0);
 			i++;
 		}
 
 		AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 		if (ape) {
-			undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-			undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+			undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+			undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 		}
-		undo_redo->add_do_method(this->obj.get(), "queue_redraw");
-		undo_redo->add_undo_method(this->obj.get(), "queue_redraw");
+		undo_redo->add_do_method(&obj, "queue_redraw");
+		undo_redo->add_undo_method(&obj, "queue_redraw");
 
 		undo_redo->commit_action();
 	}
 }
 
-void AnimationBezierTrackEdit::delete_selection()
+void AnimationBezierTrackEdit::delete_selection(const Object& obj)
 {
 	if (selection.size()) {
 		EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
@@ -3061,12 +3062,12 @@ void AnimationBezierTrackEdit::delete_selection()
 				animation->track_get_key_time(E->get().first, E->get().second),
 				animation->track_get_key_value(E->get().first, E->get().second), 1);
 		}
-		undo_redo->add_do_method(this->obj.get(), "_clear_selection_for_anim", animation);
-		undo_redo->add_undo_method(this->obj.get(), "_clear_selection_for_anim", animation);
+		undo_redo->add_do_method(&obj, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(&obj, "_clear_selection_for_anim", animation);
 		AnimationPlayerEditor* ape = AnimationPlayerEditor::get_singleton();
 		if (ape) {
-			undo_redo->add_do_method(ape->obj.get(), "_animation_update_key_frame");
-			undo_redo->add_undo_method(ape->obj.get(), "_animation_update_key_frame");
+			undo_redo->add_do_method(&obj, "_animation_update_key_frame");
+			undo_redo->add_undo_method(&obj, "_animation_update_key_frame");
 		}
 		undo_redo->commit_action();
 

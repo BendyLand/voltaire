@@ -843,7 +843,7 @@ private:
 
 	_FORCE_INLINE_ float _calculate_line_vertical_offset(const Line& line) const;
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	virtual String get_tooltip(const Point2& p_pos) const override;
 	Item* _get_next_item(Item* p_item, bool p_free = false) const;
 	Item* _get_prev_item(Item* p_item, bool p_free = false) const;

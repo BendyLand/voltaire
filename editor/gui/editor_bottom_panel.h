@@ -46,7 +46,7 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 public:
 	ProgressIndicator();

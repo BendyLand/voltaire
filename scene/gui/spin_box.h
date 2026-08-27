@@ -150,7 +150,7 @@ class SpinBox : public Range {
 	void _update_buttons_state_for_current_value();
 
 protected:
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	void _value_changed(double p_value) override;
 	void _validate_property(PropertyInfo &p_property) const;
 

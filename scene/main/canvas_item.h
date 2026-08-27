@@ -206,11 +206,11 @@ protected:
 	virtual void _update_self_texture_repeat(RSE::CanvasItemTextureRepeat p_texture_repeat);
 	virtual void _update_self_texture_filter(RSE::CanvasItemTextureFilter p_texture_filter);
 
-	_FORCE_INLINE_ void _notify_transform()
+	_FORCE_INLINE_ void _notify_transform(const Object& obj)
 	{
 		_notify_transform(this);
 		if (is_inside_tree() && !block_transform_notify && notify_local_transform) {
-			this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
+			obj.notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
 		}
 	}
 

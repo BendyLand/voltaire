@@ -84,7 +84,7 @@ class EditorSettingsDialog : public AcceptDialog {
 	void _settings_property_edited();
 	void _settings_save();
 
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	void _notification(int p_what);
 	void _update_icons();
 

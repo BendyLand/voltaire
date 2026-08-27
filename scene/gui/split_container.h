@@ -45,7 +45,7 @@ class SplitContainerMultiDragger : public Control
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	int dragger_index = -1;
@@ -77,7 +77,7 @@ class SplitContainerDragger : public Control
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 	void _accessibility_action_inc(const Variant& p_data);
 	void _accessibility_action_dec(const Variant& p_data);

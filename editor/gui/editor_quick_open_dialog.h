@@ -266,7 +266,7 @@ public:
 protected:
 	virtual void cancel_pressed() override;
 	virtual void ok_pressed() override;
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	void item_pressed(bool p_double_click);
 	void selection_changed();
 

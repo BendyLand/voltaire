@@ -46,10 +46,10 @@ struct _ObjectDebugLock
 {
 	ObjectID obj_id;
 
-	_ObjectDebugLock(Object* p_obj)
+	_ObjectDebugLock(const Object* p_obj)
 	{
 		obj_id = p_obj->get_instance_id();
-		p_obj->_lock_index.ref();
+		const_cast<Object*>(p_obj)->_lock_index.ref();
 	}
 
 	~_ObjectDebugLock()
@@ -625,35 +625,9 @@ Variant Object::callv(const StringName& p_method, const Array& p_args)
 }
 
 Variant Object::callp(const StringName& p_method, const Variant** p_args, int p_argcount,
-	Callable::CallError& r_error)
+	Callable::CallError& r_error) const
 {
 	r_error.error = Callable::CallError::CALL_OK;
-
-	if (p_method == CoreStringName(free_)) {
-// free must be here, before anything, always ready
-#ifdef DEBUG_ENABLED
-		if (p_argcount != 0) {
-			r_error.error = Callable::CallError::CALL_ERROR_TOO_MANY_ARGUMENTS;
-			r_error.expected = 0;
-			return Variant();
-		}
-		if (is_ref_counted()) {
-			r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
-			ERR_FAIL_V_MSG(Variant(), "Can't free a RefCounted object.");
-		}
-
-		if (_lock_index.get() > 1) {
-			r_error.argument = 0;
-			r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
-			ERR_FAIL_V_MSG(Variant(), "Object is locked and can't be freed.");
-		}
-
-#endif
-		// must be here, must be before everything,
-		memdelete(this);
-		r_error.error = Callable::CallError::CALL_OK;
-		return Variant();
-	}
 
 	Variant ret;
 	OBJ_DEBUG_LOCK
@@ -724,7 +698,7 @@ void Object::_vltrvirtual_init_method_ptr(
 	r_fn_ptr = fn_ptr;
 }
 
-void Object::_notification_forward(int p_notification)
+void Object::_notification_forward(int p_notification) const
 {
 	// Notify classes starting with Object and ending with most derived subclass.
 	// e.g. Object -> Node -> Node3D
@@ -735,7 +709,7 @@ void Object::_notification_forward(int p_notification)
 	}
 }
 
-void Object::_notification_backward(int p_notification)
+void Object::_notification_backward(int p_notification) const
 {
 	if (script_instance) {
 		script_instance->notification(p_notification, true);
@@ -745,7 +719,7 @@ void Object::_notification_backward(int p_notification)
 	_notification_backwardv(p_notification);
 }
 
-String Object::to_string()
+String Object::to_string() const
 {
 	// Keep this method in sync with `Node::to_string`.
 	if (script_instance) {
@@ -959,7 +933,7 @@ void Object::_remove_user_signal(const StringName& p_name)
 	}
 }
 
-Error Object::_emit_signal(const Variant** p_args, int p_argcount, Callable::CallError& r_error)
+Error Object::_emit_signal(Object& obj, const Variant** p_args, int p_argcount, Callable::CallError& r_error)
 {
 	if (unlikely(p_argcount < 1)) {
 		r_error.error = Callable::CallError::CALL_ERROR_TOO_FEW_ARGUMENTS;
@@ -1007,7 +981,7 @@ Error Object::emit_signalp(const StringName& p_name, const Variant** p_args, int
 	{
 		ObjectSignalLock signal_lock(this);
 
-		SignalData* s = signal_map.getptr(p_name);
+		const SignalData* s = signal_map.getptr(p_name);
 		if (!s) {
 #ifdef DEBUG_ENABLED
 			bool signal_is_valid = get_vltrtype().get_signal_map(false).has(p_name);
@@ -1110,7 +1084,7 @@ Error Object::emit_signalp(const StringName& p_name, const Variant** p_args, int
 		}
 		else {
 			Callable::CallError ce;
-			_emitting = true;
+			this->_emitting = true;
 			Variant ret;
 			callable.callp(args, argc, ret, ce);
 			_emitting = false;
@@ -1167,9 +1141,7 @@ void Object::_reset_vltrtype() const
 	_vltrtype_ptr = &_get_typev();
 }
 
-void Object::autorelease_vltrtype(VLTRType** r_type)
-{
-}
+void Object::autorelease_vltrtype(VLTRType** r_type) {}
 
 void Object::_add_user_signal(const String& p_name, const Array& p_args)
 {
@@ -1488,7 +1460,7 @@ bool Object::_disconnect(const StringName& p_signal, const Callable& p_callable,
 	Object* target_object = p_callable.get_object();
 	ObjectSignalLock signal_lock(this, target_object);
 
-	SignalData* s = signal_map.getptr(p_signal);
+	SignalData* s = const_cast<SignalData*>(signal_map.getptr(p_signal));
 	if (!s) {
 		bool signal_is_valid =
 			get_vltrtype().get_signal_map(false).has(p_signal) ||
@@ -1507,7 +1479,6 @@ bool Object::_disconnect(const StringName& p_signal, const Callable& p_callable,
 			to_string(), p_signal, p_callable));
 
 	SignalData::Slot* slot = &s->slot_map[*p_callable.get_base_comparator()];
-
 	if (!p_force) {
 		slot->reference_count--; // by default is zero, if it was not referenced it will go below it
 		if (slot->reference_count > 0) {
@@ -1651,9 +1622,7 @@ void Object::_clear_internal_resource_paths(const Variant& p_var)
 	}
 }
 
-void Object::_add_class_to_classdb(VLTRType& p_type, const VLTRType* p_inherits)
-{
-}
+void Object::_add_class_to_classdb(VLTRType& p_type, const VLTRType* p_inherits) {}
 
 void Object::_get_property_list_from_classdb(const StringName& p_class, List<PropertyInfo>* p_list,
 	bool p_no_inheritance, const Object* p_validator)
@@ -1696,7 +1665,7 @@ void Object::clear_internal_resource_paths()
 
 void Object::notify_property_list_changed() { emit_signal(CoreStringName(property_list_changed)); }
 
-String Object::_to_string() { return "<" + get_class() + "#" + itos(get_instance_id()) + ">"; }
+String Object::_to_string() const { return "<" + get_class() + "#" + itos(get_instance_id()) + ">"; }
 
 void Object::_bind_methods() {}
 
@@ -1911,7 +1880,7 @@ Object::~Object()
 {
 	if (_emitting) {
 		//@todo this may need to actually reach the debugger prioritarily somehow because it may
-		//crash before
+		// crash before
 		ERR_PRINT(vformat(
 			"Object '%s' was freed or unreferenced while a signal is being emitted from it. Try "
 			"connecting to the signal using 'CONNECT_DEFERRED' flag, or use queue_free() to free "

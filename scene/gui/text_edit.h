@@ -881,7 +881,7 @@ protected:
 public:
 	/* General overrides. */
 	virtual void unhandled_key_input(const Ref<InputEvent>& p_event) override;
-	virtual void gui_input(const Ref<InputEvent>& p_gui_input) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_gui_input) override;
 	bool alt_input(const Ref<InputEvent>& p_gui_input);
 	virtual Size2 get_minimum_size() const override;
 	virtual bool is_text_field() const override;

@@ -71,7 +71,7 @@ class DockShortcutHandler : public Node
 	VLTRCLASS(DockShortcutHandler, Node);
 
 protected:
-	virtual void shortcut_input(const Ref<InputEvent>& p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	DockShortcutHandler() { set_process_shortcut_input(true); }
@@ -200,7 +200,7 @@ protected:
 	static void _bind_methods();
 	void _notification(int p_what);
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	virtual Size2 get_minimum_size() const override;
 
 public:

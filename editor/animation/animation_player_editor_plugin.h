@@ -43,18 +43,20 @@
 class AnimationPlayerEditorPlugin;
 class ImageTexture;
 
-class AnimationPlayerEditor : public EditorDock {
+class AnimationPlayerEditor : public EditorDock
+{
 	VLTRCLASS(AnimationPlayerEditor, EditorDock);
 
 	friend AnimationPlayerEditorPlugin;
 
-	AnimationPlayerEditorPlugin *plugin = nullptr;
-	AnimationMixer *original_node = nullptr; // For pinned mark in SceneTree.
-	AnimationPlayer *player = nullptr; // For AnimationPlayerEditor, could be dummy.
+	AnimationPlayerEditorPlugin* plugin = nullptr;
+	AnimationMixer* original_node = nullptr; // For pinned mark in SceneTree.
+	AnimationPlayer* player = nullptr;		 // For AnimationPlayerEditor, could be dummy.
 	ObjectID cached_root_node_id;
 	bool is_dummy = false;
 
-	enum {
+	enum
+	{
 		TOOL_NEW_ANIM,
 		TOOL_ANIM_LIBRARY,
 		TOOL_DUPLICATE_ANIM,
@@ -64,7 +66,8 @@ class AnimationPlayerEditor : public EditorDock {
 		TOOL_EDIT_RESOURCE
 	};
 
-	enum {
+	enum
+	{
 		ONION_SKINNING_ENABLE,
 		ONION_SKINNING_PAST,
 		ONION_SKINNING_FUTURE,
@@ -77,34 +80,36 @@ class AnimationPlayerEditor : public EditorDock {
 		ONION_SKINNING_INCLUDE_GIZMOS,
 	};
 
-	enum {
+	enum
+	{
 		ANIM_OPEN,
 		ANIM_SAVE,
 		ANIM_SAVE_AS
 	};
 
-	enum {
+	enum
+	{
 		RESOURCE_LOAD,
 		RESOURCE_SAVE
 	};
 
-	OptionButton *animation = nullptr;
-	Button *stop = nullptr;
-	Button *play = nullptr;
-	Button *play_from = nullptr;
-	Button *play_bw = nullptr;
-	Button *play_bw_from = nullptr;
-	Button *autoplay = nullptr;
+	OptionButton* animation = nullptr;
+	Button* stop = nullptr;
+	Button* play = nullptr;
+	Button* play_from = nullptr;
+	Button* play_bw = nullptr;
+	Button* play_bw_from = nullptr;
+	Button* autoplay = nullptr;
 
-	MenuButton *tool_anim = nullptr;
-	Button *onion_toggle = nullptr;
-	MenuButton *onion_skinning = nullptr;
-	Button *pin = nullptr;
-	SpinBox *frame = nullptr;
-	LineEdit *scale = nullptr;
-	LineEdit *name = nullptr;
-	OptionButton *library = nullptr;
-	Label *name_title = nullptr;
+	MenuButton* tool_anim = nullptr;
+	Button* onion_toggle = nullptr;
+	MenuButton* onion_skinning = nullptr;
+	Button* pin = nullptr;
+	SpinBox* frame = nullptr;
+	LineEdit* scale = nullptr;
+	LineEdit* name = nullptr;
+	OptionButton* library = nullptr;
+	Label* name_title = nullptr;
 
 	Ref<Texture2D> stop_icon;
 	Ref<Texture2D> pause_icon;
@@ -116,30 +121,32 @@ class AnimationPlayerEditor : public EditorDock {
 	bool last_active = false;
 	float timeline_position = 0;
 
-	EditorFileDialog *file = nullptr;
-	ConfirmationDialog *delete_dialog = nullptr;
+	EditorFileDialog* file = nullptr;
+	ConfirmationDialog* delete_dialog = nullptr;
 
-	AnimationLibraryEditor *library_editor = nullptr;
+	AnimationLibraryEditor* library_editor = nullptr;
 
-	struct BlendEditor {
-		AcceptDialog *dialog = nullptr;
-		Tree *tree = nullptr;
-		OptionButton *next = nullptr;
+	struct BlendEditor
+	{
+		AcceptDialog* dialog = nullptr;
+		Tree* tree = nullptr;
+		OptionButton* next = nullptr;
 
 	} blend_editor;
 
-	ConfirmationDialog *name_dialog = nullptr;
-	AcceptDialog *error_dialog = nullptr;
+	ConfirmationDialog* name_dialog = nullptr;
+	AcceptDialog* error_dialog = nullptr;
 	int name_dialog_op = TOOL_NEW_ANIM;
 
 	bool updating = false;
 	bool updating_blends = false;
 
-	AnimationTrackEditor *track_editor = nullptr;
-	static AnimationPlayerEditor *singleton;
+	AnimationTrackEditor* track_editor = nullptr;
+	static AnimationPlayerEditor* singleton;
 
 	// Onion skinning.
-	struct {
+	struct
+	{
 		// Settings.
 		bool enabled = false;
 		bool past = true;
@@ -149,7 +156,8 @@ class AnimationPlayerEditor : public EditorDock {
 		bool force_white_modulate = false;
 		bool include_gizmos = false;
 
-		uint32_t get_capture_count() const {
+		uint32_t get_capture_count() const
+		{
 			// 'Differences only' needs a capture of the present.
 			return (past && future ? 2 * steps : steps) + (differences_only ? 1 : 0);
 		}
@@ -160,7 +168,9 @@ class AnimationPlayerEditor : public EditorDock {
 		Size2 capture_size;
 		LocalVector<RID> captures;
 		LocalVector<bool> captures_valid;
-		struct {
+
+		struct
+		{
 			RID canvas;
 			RID canvas_item;
 			Ref<ShaderMaterial> material;
@@ -168,7 +178,8 @@ class AnimationPlayerEditor : public EditorDock {
 		} capture;
 
 		// Cross-call state.
-		struct {
+		struct
+		{
 			double anim_player_position = 0.0;
 			Ref<AnimatedValuesBackup> anim_values_backup;
 			Rect2 screen_rect;
@@ -177,7 +188,7 @@ class AnimationPlayerEditor : public EditorDock {
 		} temp;
 	} onion;
 
-	void _select_anim_by_name(const String &p_anim);
+	void _select_anim_by_name(const String& p_anim);
 	float _get_editor_step() const;
 	void _play_pressed();
 	void _play_from_pressed();
@@ -196,7 +207,7 @@ class AnimationPlayerEditor : public EditorDock {
 	void _animation_duplicate();
 	Ref<Animation> _animation_clone(const Ref<Animation> p_anim);
 	void _animation_resource_edit();
-	void _scale_changed(const String &p_scale);
+	void _scale_changed(const String& p_scale);
 	void _seek_value_changed(float p_value, bool p_timeline_only = false);
 	void _blend_editor_next_changed(const int p_idx);
 
@@ -204,8 +215,8 @@ class AnimationPlayerEditor : public EditorDock {
 	void _update_animation_blend();
 
 	void _list_changed();
-	void _animation_finished(const String &p_name);
-	void _current_animation_changed(const StringName &p_name);
+	void _animation_finished(const String& p_name);
+	void _current_animation_changed(const StringName& p_name);
 	void _update_animation();
 	void _update_player();
 	void _set_controls_disabled(bool p_disabled);
@@ -214,14 +225,15 @@ class AnimationPlayerEditor : public EditorDock {
 	void _update_playback_tooltips();
 	void _blend_edited();
 
-	void _animation_player_changed(Object *p_pl);
+	void _animation_player_changed(Object* p_pl);
 	void _animation_libraries_updated();
 
-	void _animation_key_editor_seek(float p_pos, bool p_timeline_only = false, bool p_update_position_only = false);
+	void _animation_key_editor_seek(
+		float p_pos, bool p_timeline_only = false, bool p_update_position_only = false);
 	void _animation_key_editor_anim_len_changed(float p_len);
 	void _animation_update_key_frame();
 
-	virtual void shortcut_input(const Ref<InputEvent> &p_ev) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_ev) override;
 	void _animation_tool_menu(int p_option);
 	void _onion_skinning_menu(int p_option);
 
@@ -248,69 +260,84 @@ class AnimationPlayerEditor : public EditorDock {
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 	void _find_player();
 	static void _bind_methods();
 
 public:
-	AnimationMixer *get_editing_node() const;
-	AnimationPlayer *get_player() const;
-	AnimationMixer *fetch_mixer_for_library() const;
-	Node *get_cached_root_node() const;
+	AnimationMixer* get_editing_node() const;
+	AnimationPlayer* get_player() const;
+	AnimationMixer* fetch_mixer_for_library() const;
+	Node* get_cached_root_node() const;
 
-	static AnimationPlayerEditor *get_singleton() { return singleton; }
+	static AnimationPlayerEditor* get_singleton() { return singleton; }
 
 	bool is_pinned() const { return pin->is_pressed(); }
-	void unpin() {
+
+	void unpin()
+	{
 		pin->set_pressed(false);
 		_pin_pressed();
 	}
-	AnimationTrackEditor *get_track_editor() { return track_editor; }
+
+	AnimationTrackEditor* get_track_editor() { return track_editor; }
+
 	Dictionary get_state() const;
-	void set_state(const Dictionary &p_state);
+	void set_state(const Dictionary& p_state);
 	void clear();
 
 	void ensure_visibility();
 	void go_to_nearest_keyframe(bool p_backward);
 
-	void edit(AnimationMixer *p_node, AnimationPlayer *p_player, bool p_is_dummy);
-	void forward_force_draw_over_viewport(Control *p_overlay);
+	void edit(AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy);
+	void forward_force_draw_over_viewport(Control* p_overlay);
 
-	AnimationPlayerEditor(AnimationPlayerEditorPlugin *p_plugin);
+	AnimationPlayerEditor(AnimationPlayerEditorPlugin* p_plugin);
 };
 
-class AnimationPlayerEditorPlugin : public EditorPlugin {
+class AnimationPlayerEditorPlugin : public EditorPlugin
+{
 	VLTRCLASS(AnimationPlayerEditorPlugin, EditorPlugin);
 
 	friend AnimationPlayerEditor;
 
-	AnimationPlayerEditor *anim_editor = nullptr;
-	AnimationPlayer *player = nullptr;
-	AnimationPlayer *dummy_player = nullptr;
+	AnimationPlayerEditor* anim_editor = nullptr;
+	AnimationPlayer* player = nullptr;
+	AnimationPlayer* dummy_player = nullptr;
 	ObjectID last_mixer;
 
-	void _update_dummy_player(AnimationMixer *p_mixer);
+	void _update_dummy_player(AnimationMixer* p_mixer);
 	void _clear_dummy_player();
 
 protected:
 	void _notification(int p_what);
 
-	void _property_keyed(const String &p_keyed, const Variant &p_value, bool p_advance);
-	void _transform_3d_key_request(Object *sp, const String &p_sub, const Transform3D &p_key);
+	void _property_keyed(const String& p_keyed, const Variant& p_value, bool p_advance);
+	void _transform_3d_key_request(Object* sp, const String& p_sub, const Transform3D& p_key);
 	void _update_keying();
 
 public:
 	virtual Dictionary get_state() const override { return anim_editor->get_state(); }
-	virtual void set_state(const Dictionary &p_state) override { anim_editor->set_state(p_state); }
+
+	virtual void set_state(const Dictionary& p_state) override { anim_editor->set_state(p_state); }
+
 	virtual void clear() override { anim_editor->clear(); }
 
 	virtual String get_plugin_name() const override { return "Anim"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
+
+	virtual void edit(Object* p_object) override;
+	virtual bool handles(Object* p_object) const override;
 	virtual void make_visible(bool p_visible) override;
 
-	virtual void forward_canvas_force_draw_over_viewport(Control *p_overlay) override { anim_editor->forward_force_draw_over_viewport(p_overlay); }
-	virtual void forward_3d_force_draw_over_viewport(Control *p_overlay) override { anim_editor->forward_force_draw_over_viewport(p_overlay); }
+	virtual void forward_canvas_force_draw_over_viewport(Control* p_overlay) override
+	{
+		anim_editor->forward_force_draw_over_viewport(p_overlay);
+	}
+
+	virtual void forward_3d_force_draw_over_viewport(Control* p_overlay) override
+	{
+		anim_editor->forward_force_draw_over_viewport(p_overlay);
+	}
 
 	AnimationPlayerEditorPlugin();
 	~AnimationPlayerEditorPlugin();
@@ -318,23 +345,25 @@ public:
 
 // AnimationTrackKeyEditEditorPlugin
 
-class EditorInspectorPluginAnimationTrackKeyEdit : public EditorInspectorPlugin {
+class EditorInspectorPluginAnimationTrackKeyEdit : public EditorInspectorPlugin
+{
 	VLTRCLASS(EditorInspectorPluginAnimationTrackKeyEdit, EditorInspectorPlugin);
 
-	AnimationTrackKeyEditEditor *atk_editor = nullptr;
+	AnimationTrackKeyEditEditor* atk_editor = nullptr;
 
 public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
+	virtual bool can_handle(Object* p_object) override;
+	virtual void parse_begin(Object* p_object) override;
 };
 
-class AnimationTrackKeyEditEditorPlugin : public EditorPlugin {
+class AnimationTrackKeyEditEditorPlugin : public EditorPlugin
+{
 	VLTRCLASS(AnimationTrackKeyEditEditorPlugin, EditorPlugin);
 
 	Ref<EditorInspectorPluginAnimationTrackKeyEdit> atk_plugin;
 
 public:
-	virtual bool handles(Object *p_object) const override;
+	virtual bool handles(Object* p_object) const override;
 
 	virtual String get_plugin_name() const override { return "AnimationTrackKeyEdit"; }
 
@@ -343,25 +372,29 @@ public:
 
 // AnimationMarkerKeyEditEditorPlugin
 
-class EditorInspectorPluginAnimationMarkerKeyEdit : public EditorInspectorPlugin {
+class EditorInspectorPluginAnimationMarkerKeyEdit : public EditorInspectorPlugin
+{
 	VLTRCLASS(EditorInspectorPluginAnimationMarkerKeyEdit, EditorInspectorPlugin);
 
-	AnimationMarkerKeyEditEditor *amk_editor = nullptr;
+	AnimationMarkerKeyEditEditor* amk_editor = nullptr;
 
 public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
+	virtual bool can_handle(Object* p_object) override;
+	virtual void parse_begin(Object* p_object) override;
 };
 
-class AnimationMarkerKeyEditEditorPlugin : public EditorPlugin {
+class AnimationMarkerKeyEditEditorPlugin : public EditorPlugin
+{
 	VLTRCLASS(AnimationMarkerKeyEditEditorPlugin, EditorPlugin);
 
 	Ref<EditorInspectorPluginAnimationMarkerKeyEdit> amk_plugin;
 
 public:
-	virtual bool handles(Object *p_object) const override;
+	virtual bool handles(Object* p_object) const override;
 
 	virtual String get_plugin_name() const override { return "AnimationMarkerKeyEdit"; }
 
 	AnimationMarkerKeyEditEditorPlugin();
 };
+
+

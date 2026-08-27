@@ -220,8 +220,8 @@ protected:
 	static void _bind_methods();
 	virtual void _set_read_only(bool p_read_only);
 
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	const Color *_get_property_colors();
 
 	virtual Variant _get_cache_value(const StringName &p_prop, bool &r_valid) const;
@@ -424,7 +424,7 @@ protected:
 	static void _bind_methods();
 
 	void _notification(int p_what);
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	void _accessibility_action_menu(const Variant &p_data);
 
@@ -534,7 +534,7 @@ protected:
 
 	void _notification(int p_what);
 	static void _bind_methods();
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	void _accessibility_action_collapse(const Variant &p_data);
 	void _accessibility_action_expand(const Variant &p_data);

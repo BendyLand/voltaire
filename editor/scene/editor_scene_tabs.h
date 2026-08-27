@@ -94,7 +94,7 @@ private:
 
 	void _project_settings_changed();
 
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 protected:
 	void _notification(int p_what);

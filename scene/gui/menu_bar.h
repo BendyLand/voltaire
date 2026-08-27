@@ -139,7 +139,7 @@ class MenuBar : public Control {
 	void unbind_global_menu();
 
 protected:
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	void _notification(int p_what);
 	virtual void add_child_notify(Node *p_child) override;

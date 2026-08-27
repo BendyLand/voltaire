@@ -30,20 +30,21 @@
 
 #pragma once
 
-#include "core/error/error_macros.h"
-
 #include <new> // IWYU pragma: keep // `new` operators.
 #include <type_traits>
+#include "core/error/error_macros.h"
 
-namespace Memory {
-constexpr size_t get_aligned_address(size_t p_address, size_t p_alignment) {
+namespace Memory
+{
+constexpr size_t get_aligned_address(size_t p_address, size_t p_alignment)
+{
 	const size_t n_bytes_unaligned = p_address % p_alignment;
 	return (n_bytes_unaligned == 0) ? p_address : (p_address + p_alignment - n_bytes_unaligned);
 }
 
 #if defined(__MINGW32__) && !defined(__MINGW64__)
-// Note: Using hardcoded value, since the value can end up different in different compile units on 32-bit windows
-// due to a compiler bug (see GH-113145)
+// Note: Using hardcoded value, since the value can end up different in different compile units on
+// 32-bit windows due to a compiler bug (see GH-113145)
 static constexpr size_t MAX_ALIGN = 16;
 static_assert(MAX_ALIGN % alignof(max_align_t) == 0);
 #else
@@ -58,16 +59,20 @@ static constexpr size_t MAX_ALIGN = alignof(max_align_t);
 // Offset:     ↑ SIZE_OFFSET        ↑ ELEMENT_OFFSET    ↑ DATA_OFFSET
 
 inline constexpr size_t SIZE_OFFSET = 0;
-inline constexpr size_t ELEMENT_OFFSET = get_aligned_address(SIZE_OFFSET + sizeof(uint64_t), alignof(uint64_t));
-inline constexpr size_t DATA_OFFSET = get_aligned_address(ELEMENT_OFFSET + sizeof(uint64_t), MAX_ALIGN);
+inline constexpr size_t ELEMENT_OFFSET =
+	get_aligned_address(SIZE_OFFSET + sizeof(uint64_t), alignof(uint64_t));
+inline constexpr size_t DATA_OFFSET =
+	get_aligned_address(ELEMENT_OFFSET + sizeof(uint64_t), MAX_ALIGN);
 
-template <bool p_ensure_zero = false>
-void *alloc_static(size_t p_bytes, bool p_pad_align = false);
-_FORCE_INLINE_ static void *alloc_static_zeroed(size_t p_bytes, bool p_pad_align = false) {
+template <bool p_ensure_zero = false> void* alloc_static(size_t p_bytes, bool p_pad_align = false);
+
+_FORCE_INLINE_ static void* alloc_static_zeroed(size_t p_bytes, bool p_pad_align = false)
+{
 	return alloc_static<true>(p_bytes, p_pad_align);
 }
-void *realloc_static(void *p_memory, size_t p_bytes, bool p_pad_align = false);
-void free_static(void *p_ptr, bool p_pad_align = false);
+
+void* realloc_static(void* p_memory, size_t p_bytes, bool p_pad_align = false);
+void free_static(void* p_ptr, bool p_pad_align = false);
 
 //	                            ↓ return value of alloc_aligned_static
 //	┌─────────────────┬─────────┬─────────┬──────────────────┐
@@ -85,40 +90,50 @@ void free_static(void *p_ptr, bool p_pad_align = false);
 // both start and end of the block must add exactly to p_alignment - 1.
 //
 // p_alignment MUST be a power of 2.
-void *alloc_aligned_static(size_t p_bytes, size_t p_alignment);
-void *realloc_aligned_static(void *p_memory, size_t p_bytes, size_t p_prev_bytes, size_t p_alignment);
+void* alloc_aligned_static(size_t p_bytes, size_t p_alignment);
+void* realloc_aligned_static(
+	void* p_memory, size_t p_bytes, size_t p_prev_bytes, size_t p_alignment);
 // Pass the ptr returned by alloc_aligned_static to free it.
 // e.g.
 //	void *data = realloc_aligned_static( bytes, 16 );
 //  free_aligned_static( data );
-void free_aligned_static(void *p_memory);
+void free_aligned_static(void* p_memory);
 
 uint64_t get_mem_available();
 uint64_t get_mem_usage();
 uint64_t get_mem_max_usage();
-}; //namespace Memory
+}; // namespace Memory
 
-class DefaultAllocator {
+class DefaultAllocator
+{
 public:
-	_FORCE_INLINE_ static void *alloc(size_t p_memory) { return Memory::alloc_static(p_memory, false); }
-	_FORCE_INLINE_ static void free(void *p_ptr) { Memory::free_static(p_ptr, false); }
+	_FORCE_INLINE_ static void* alloc(size_t p_memory)
+	{
+		return Memory::alloc_static(p_memory, false);
+	}
+
+	_FORCE_INLINE_ static void free(void* p_ptr) { Memory::free_static(p_ptr, false); }
 };
 
 // Overload of `new` operator to use the `Memory::alloc_static()` function.
 // The `DefaultAllocator` parameter is just a tag to select this overload.
 // NOTE: do not inline `new` operators due to GCC+LTO compiler bug (see GH-119752).
-void *operator new(size_t p_size, DefaultAllocator p_allocator);
+void* operator new(size_t p_size, DefaultAllocator p_allocator);
 
 // Overload of `new` operator to use a custom allocation function.
-void *operator new(size_t p_size, void *(*p_allocfunc)(size_t p_size));
+void* operator new(size_t p_size, void* (*p_allocfunc)(size_t p_size));
 
 #if defined(_MSC_VER) && !defined(__clang__)
-// When compiling with VC++ 2017, the above declarations of placement new generate many irrelevant warnings (C4291).
-// The purpose of the following definitions is to muffle these warnings, not to provide a usable implementation of placement delete.
-inline void operator delete(void *p_mem, DefaultAllocator p_allocator) {
+// When compiling with VC++ 2017, the above declarations of placement new generate many irrelevant
+// warnings (C4291). The purpose of the following definitions is to muffle these warnings, not to
+// provide a usable implementation of placement delete.
+inline void operator delete(void* p_mem, DefaultAllocator p_allocator)
+{
 	CRASH_NOW_MSG("Call to placement delete should not happen.");
 }
-inline void operator delete(void *p_mem, void *(*p_allocfunc)(size_t p_size)) {
+
+inline void operator delete(void* p_mem, void* (*p_allocfunc)(size_t p_size))
+{
 	CRASH_NOW_MSG("Call to placement delete should not happen.");
 }
 #endif // defined(_MSC_VER) && !defined(__clang__)
@@ -128,19 +143,18 @@ inline void operator delete(void *p_mem, void *(*p_allocfunc)(size_t p_size)) {
 #define memrealloc(m_mem, m_size) Memory::realloc_static(m_mem, m_size)
 #define memfree(m_mem) Memory::free_static(m_mem)
 
-template <typename T, typename Enable = void>
-struct memnew_result {
-	using class_name = T *;
+template <typename T, typename Enable = void> struct memnew_result
+{
+	using class_name = T*;
 };
 
-template <typename T>
-using memnew_result_t = typename memnew_result<T>::class_name;
+template <typename T> using memnew_result_t = typename memnew_result<T>::class_name;
 
-_ALWAYS_INLINE_ void postinitialize_handler(void *) {}
+_ALWAYS_INLINE_ void postinitialize_handler(void*) {}
 
-template <typename T>
-_ALWAYS_INLINE_ memnew_result_t<T> _post_initialize(T *p_obj) {
-	memnew_result_t<T> result{ p_obj };
+template <typename T> _ALWAYS_INLINE_ memnew_result_t<T> _post_initialize(T* p_obj)
+{
+	memnew_result_t<T> result{p_obj};
 	postinitialize_handler(result);
 	return result;
 }
@@ -150,12 +164,11 @@ _ALWAYS_INLINE_ memnew_result_t<T> _post_initialize(T *p_obj) {
 #define memnew_allocator(m_class, m_allocator) _post_initialize(::new (m_allocator::alloc) m_class)
 #define memnew_placement(m_placement, m_class) _post_initialize(::new (m_placement) m_class)
 
-_ALWAYS_INLINE_ bool predelete_handler(void *) {
-	return true;
-}
+_ALWAYS_INLINE_ bool predelete_handler(void*) { return true; }
 
-template <typename T>
-void memdelete(T *p_class) {
+template <typename T> void memdelete(T* p_class)
+
+{
 	if (unlikely(p_class == nullptr)) {
 		return;
 	}
@@ -169,8 +182,8 @@ void memdelete(T *p_class) {
 	Memory::free_static(p_class, false);
 }
 
-template <typename T, typename A>
-void memdelete_allocator(T *p_class) {
+template <typename T, typename A> void memdelete_allocator(T* p_class)
+{
 	if (unlikely(p_class == nullptr)) {
 		return;
 	}
@@ -186,28 +199,31 @@ void memdelete_allocator(T *p_class) {
 
 #define memnew_arr(m_class, m_count) memnew_arr_template<m_class>(m_count)
 
-_FORCE_INLINE_ uint64_t *_get_element_count_ptr(uint8_t *p_ptr) {
-	return (uint64_t *)(p_ptr - Memory::DATA_OFFSET + Memory::ELEMENT_OFFSET);
+_FORCE_INLINE_ uint64_t* _get_element_count_ptr(uint8_t* p_ptr)
+{
+	return (uint64_t*)(p_ptr - Memory::DATA_OFFSET + Memory::ELEMENT_OFFSET);
 }
 
-template <typename T>
-T *memnew_arr_template(size_t p_elements) {
+template <typename T> T* memnew_arr_template(size_t p_elements)
+{
 	if (p_elements == 0) {
 		return nullptr;
 	}
-	/** overloading operator new[] cannot be done , because it may not return the real allocated address (it may pad the 'element count' before the actual array). Because of that, it must be done by hand. This is the
-	same strategy used by std::vector, and the Vector class, so it should be safe.*/
+	/** overloading operator new[] cannot be done , because it may not return the real allocated
+	address (it may pad the 'element count' before the actual array). Because of that, it must be
+	done by hand. This is the same strategy used by std::vector, and the Vector class, so it should
+	be safe.*/
 
 	size_t len = sizeof(T) * p_elements;
-	uint8_t *mem = (uint8_t *)Memory::alloc_static(len, true);
-	T *failptr = nullptr; //get rid of a warning
+	uint8_t* mem = (uint8_t*)Memory::alloc_static(len, true);
+	T* failptr = nullptr; // get rid of a warning
 	ERR_FAIL_NULL_V(mem, failptr);
 
-	uint64_t *_elem_count_ptr = _get_element_count_ptr(mem);
+	uint64_t* _elem_count_ptr = _get_element_count_ptr(mem);
 	*(_elem_count_ptr) = p_elements;
 
 	if constexpr (!std::is_trivially_constructible_v<T>) {
-		T *elems = (T *)mem;
+		T* elems = (T*)mem;
 
 		/* call operator new */
 		for (size_t i = 0; i < p_elements; i++) {
@@ -215,16 +231,17 @@ T *memnew_arr_template(size_t p_elements) {
 		}
 	}
 
-	return (T *)mem;
+	return (T*)mem;
 }
 
 // Fast alternative to a loop constructor pattern.
-template <typename T>
-_FORCE_INLINE_ void memnew_arr_placement(T *p_start, size_t p_num) {
+template <typename T> _FORCE_INLINE_ void memnew_arr_placement(T* p_start, size_t p_num)
+{
 	if constexpr (is_zero_constructible_v<T>) {
 		// Can optimize with memset.
-		memset(static_cast<void *>(p_start), 0, p_num * sizeof(T));
-	} else {
+		memset(static_cast<void*>(p_start), 0, p_num * sizeof(T));
+	}
+	else {
 		// Need to use a for loop.
 		for (size_t i = 0; i < p_num; i++) {
 			memnew_placement(p_start + i, T());
@@ -233,11 +250,12 @@ _FORCE_INLINE_ void memnew_arr_placement(T *p_start, size_t p_num) {
 }
 
 // Convenient alternative to a loop copy pattern.
-template <typename T>
-_FORCE_INLINE_ void copy_arr_placement(T *p_dst, const T *p_src, size_t p_num) {
+template <typename T> _FORCE_INLINE_ void copy_arr_placement(T* p_dst, const T* p_src, size_t p_num)
+{
 	if constexpr (std::is_trivially_copyable_v<T>) {
-		memcpy((uint8_t *)p_dst, (uint8_t *)p_src, p_num * sizeof(T));
-	} else {
+		memcpy((uint8_t*)p_dst, (uint8_t*)p_src, p_num * sizeof(T));
+	}
+	else {
 		for (size_t i = 0; i < p_num; i++) {
 			memnew_placement(p_dst + i, T(p_src[i]));
 		}
@@ -245,8 +263,8 @@ _FORCE_INLINE_ void copy_arr_placement(T *p_dst, const T *p_src, size_t p_num) {
 }
 
 // Convenient alternative to a loop destructor pattern.
-template <typename T>
-_FORCE_INLINE_ void destruct_arr_placement(T *p_dst, size_t p_num) {
+template <typename T> _FORCE_INLINE_ void destruct_arr_placement(T* p_dst, size_t p_num)
+{
 	if constexpr (!std::is_trivially_destructible_v<T>) {
 		for (size_t i = 0; i < p_num; i++) {
 			p_dst[i].~T();
@@ -259,19 +277,19 @@ _FORCE_INLINE_ void destruct_arr_placement(T *p_dst, size_t p_num) {
  * an allocated-with memnew_arr() array
  */
 
-template <typename T>
-size_t memarr_len(const T *p_class) {
-	uint8_t *ptr = (uint8_t *)p_class;
-	uint64_t *_elem_count_ptr = _get_element_count_ptr(ptr);
+template <typename T> size_t memarr_len(const T* p_class)
+{
+	uint8_t* ptr = (uint8_t*)p_class;
+	uint64_t* _elem_count_ptr = _get_element_count_ptr(ptr);
 	return *(_elem_count_ptr);
 }
 
-template <typename T>
-void memdelete_arr(T *p_class) {
-	uint8_t *ptr = (uint8_t *)p_class;
+template <typename T> void memdelete_arr(T* p_class)
+{
+	uint8_t* ptr = (uint8_t*)p_class;
 
 	if constexpr (!std::is_trivially_destructible_v<T>) {
-		uint64_t *_elem_count_ptr = _get_element_count_ptr(ptr);
+		uint64_t* _elem_count_ptr = _get_element_count_ptr(ptr);
 		uint64_t elem_count = *(_elem_count_ptr);
 
 		for (uint64_t i = 0; i < elem_count; i++) {
@@ -282,23 +300,30 @@ void memdelete_arr(T *p_class) {
 	Memory::free_static(ptr, true);
 }
 
-struct _GlobalNil {
+struct _GlobalNil
+{
 	int color = 1;
-	_GlobalNil *right = nullptr;
-	_GlobalNil *left = nullptr;
-	_GlobalNil *parent = nullptr;
+	_GlobalNil* right = nullptr;
+	_GlobalNil* left = nullptr;
+	_GlobalNil* parent = nullptr;
 
 	_GlobalNil();
 };
 
-struct _GlobalNilClass {
+struct _GlobalNilClass
+{
 	static _GlobalNil _nil;
 };
 
-template <typename T>
-class DefaultTypedAllocator {
+template <typename T> class DefaultTypedAllocator
+{
 public:
-	template <typename... Args>
-	_FORCE_INLINE_ T *new_allocation(const Args &&...p_args) { return memnew(T(p_args...)); }
-	_FORCE_INLINE_ void delete_allocation(T *p_allocation) { memdelete(p_allocation); }
+	template <typename... Args> _FORCE_INLINE_ T* new_allocation(const Args&&... p_args)
+	{
+		return memnew(T(p_args...));
+	}
+
+	_FORCE_INLINE_ void delete_allocation(T* p_allocation) { memdelete(p_allocation); }
 };
+
+

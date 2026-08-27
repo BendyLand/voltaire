@@ -256,7 +256,7 @@ class SceneTreeDock : public EditorDock
 	bool scene_tree_drag_active = false;
 
 	virtual void input(const Ref<InputEvent>& p_event) override;
-	virtual void shortcut_input(const Ref<InputEvent>& p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _scene_tree_gui_input(Ref<InputEvent> p_event);
 
 	void _new_scene_from(const String& p_file);

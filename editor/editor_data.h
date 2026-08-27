@@ -334,12 +334,12 @@ public:
 	void remove_node(Node* p_node);
 	bool is_selected(Node* p_node) const;
 
-	template <typename T> T* get_node_editor_data(Node* p_node)
+	template <typename T> T* get_node_editor_data(const Object& obj, Node* p_node)
 	{
 		if (!p_node) {
 			return nullptr;
 		}
-		ObjectID nid = p_node->obj->get_instance_id();
+		ObjectID nid = obj.get_instance_id();
 		if (!selection.has(nid)) {
 			return nullptr;
 		}

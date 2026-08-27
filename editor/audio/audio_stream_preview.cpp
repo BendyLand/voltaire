@@ -104,29 +104,22 @@ AudioStreamPreview::AudioStreamPreview() { length = 0; }
 
 ////
 
-void AudioStreamPreviewGenerator::_update_emit(ObjectID p_id)
+void AudioStreamPreviewGenerator::_update_emit(Object& obj, ObjectID p_id)
 {
-	this->obj->emit_signal(SNAME("preview_updated"), p_id);
+	obj.emit_signal(SNAME("preview_updated"), p_id);
 }
 
 void AudioStreamPreviewGenerator::_preview_thread(void* p_preview)
 {
 	Thread::set_name("AudioStreamPreviewGenerator");
-
 	Preview* preview = static_cast<Preview*>(p_preview);
-
 	float muxbuff_chunk_s = 0.25;
-
 	int mixbuff_chunk_frames = AudioServer::get_singleton()->get_mix_rate() * muxbuff_chunk_s;
-
 	Vector<AudioFrame> mix_chunk;
 	mix_chunk.resize(mixbuff_chunk_frames);
-
 	int frames_total = AudioServer::get_singleton()->get_mix_rate() * preview->preview->length;
 	int frames_todo = frames_total;
-
 	preview->playback->start();
-
 	while (frames_todo) {
 		int ofs_write = uint64_t(frames_total - frames_todo) *
 						uint64_t(preview->preview->preview.size() / 2) / uint64_t(frames_total);
@@ -134,9 +127,7 @@ void AudioStreamPreviewGenerator::_preview_thread(void* p_preview)
 		int to_write = uint64_t(to_read) * uint64_t(preview->preview->preview.size() / 2) /
 					   uint64_t(frames_total);
 		to_write = MIN(to_write, (preview->preview->preview.size() / 2) - ofs_write);
-
 		preview->playback->mix(mix_chunk.ptrw(), 1.0, to_read);
-
 		for (int i = 0; i < to_write; i++) {
 			float max = -1000;
 			float min = 1000;
@@ -147,31 +138,23 @@ void AudioStreamPreviewGenerator::_preview_thread(void* p_preview)
 			if (to == from) {
 				to = from + 1;
 			}
-
 			for (int j = from; j < to; j++) {
 				max = MAX(max, mix_chunk[j].left);
 				max = MAX(max, mix_chunk[j].right);
-
 				min = MIN(min, mix_chunk[j].left);
 				min = MIN(min, mix_chunk[j].right);
 			}
-
 			uint8_t pfrom = CLAMP((min * 0.5 + 0.5) * 255, 0, 255);
 			uint8_t pto = CLAMP((max * 0.5 + 0.5) * 255, 0, 255);
-
 			preview->preview->preview.write[(ofs_write + i) * 2 + 0] = pfrom;
 			preview->preview->preview.write[(ofs_write + i) * 2 + 1] = pto;
 		}
-
 		frames_todo -= to_read;
 		callable_mp(singleton, &AudioStreamPreviewGenerator::_update_emit)
 			.call_deferred(preview->id);
 	}
-
 	preview->preview->version++;
-
 	preview->playback->stop();
-
 	preview->generating.clear();
 }
 

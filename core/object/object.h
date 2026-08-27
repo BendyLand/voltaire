@@ -109,7 +109,7 @@ public:                                                                         
 	virtual String get_save_class() const override                                                 \
 	{                                                                                              \
 		return #m_class;                                                                           \
-	}                                                                                              \
+	}
 
 #define OBJ_SAVE_TYPE_NO(m_class)                                                                  \
 public:                                                                                            \
@@ -253,7 +253,7 @@ private:
 	void _add_user_signal(const String& p_name, const Array& p_args = Array());
 	bool _has_user_signal(const StringName& p_name) const;
 	void _remove_user_signal(const StringName& p_name);
-	Error _emit_signal(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
+	Error _emit_signal(Object& obj, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
 	TypedArray<Dictionary> _get_signal_list() const;
 	TypedArray<Dictionary> _get_signal_connection_list(const StringName& p_signal) const;
 	TypedArray<Dictionary> _get_incoming_connections() const;
@@ -316,14 +316,14 @@ protected:
 		return false;
 	}
 
-	void _notification_forward(int p_notification);
-	void _notification_backward(int p_notification);
+	void _notification_forward(int p_notification) const;
+	void _notification_backward(int p_notification) const;
 
-	virtual void _notification_forwardv(int p_notification) {}
+	virtual void _notification_forwardv(int p_notification) const {}
 
-	virtual void _notification_backwardv(int p_notification) {}
+	virtual void _notification_backwardv(int p_notification) const {}
 
-	virtual String _to_string();
+	virtual String _to_string() const;
 
 	static void _bind_methods();
 	static void _bind_compatibility_methods();
@@ -403,13 +403,13 @@ protected:
 	static void _get_property_list_from_classdb(const StringName& p_class,
 		List<PropertyInfo>* p_list, bool p_no_inheritance, const Object* p_validator);
 
-	bool _disconnect(const StringName& p_signal, const Callable& p_callable, bool p_force = false);
+	bool _disconnect(
+		const StringName& p_signal, const Callable& p_callable, bool p_force = false);
 
 	// Prefer using derives_from.
 	bool _has_ancestry(AncestralClass p_class) const { return _ancestry & (uint32_t)p_class; }
 
 	virtual bool _uses_signal_mutex() const;
-
 
 #ifdef TOOLS_ENABLED
 	struct VirtualMethodTracker
@@ -515,8 +515,7 @@ public:
 
 	void set(const StringName& p_name, const Variant& p_value, bool* r_valid = nullptr);
 	Variant get(const StringName& p_name, bool* r_valid = nullptr) const;
-	void set_indexed(
-		const Vector<StringName>& p_names, const Variant& p_value, bool* r_valid = nullptr);
+	void set_indexed(const Vector<StringName>& p_names, const Variant& p_value, bool* r_valid = nullptr);
 	Variant get_indexed(const Vector<StringName>& p_names, bool* r_valid = nullptr) const;
 
 	void get_property_list(List<PropertyInfo>* p_list, bool p_reversed = false) const;
@@ -529,11 +528,11 @@ public:
 	void get_method_list(List<MethodInfo>* p_list) const;
 	Variant callv(const StringName& p_method, const Array& p_args);
 	virtual Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount,
-		Callable::CallError& r_error);
+		Callable::CallError& r_error) const;
 	virtual Variant call_const(const StringName& p_method, const Variant** p_args, int p_argcount,
 		Callable::CallError& r_error);
 
-	template <typename... VarArgs> Variant call(const StringName& p_method, VarArgs... p_args)
+	template <typename... VarArgs> Variant call(const StringName& p_method, VarArgs... p_args) const
 	{
 		Variant args[sizeof...(p_args) + 1] = {
 			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
@@ -553,7 +552,7 @@ public:
 	// script).
 	//   Backward calls subclasses in descending order (e.g. script -> extension -> Node3D -> Node
 	//   -> Object).
-	_FORCE_INLINE_ void notification(int p_notification, bool p_reversed = false)
+	_FORCE_INLINE_ void notification(int p_notification, bool p_reversed = false) const
 	{
 		if (p_reversed) {
 			_notification_backward(p_notification);
@@ -563,7 +562,7 @@ public:
 		}
 	}
 
-	String to_string();
+	String to_string() const;
 
 	// Used mainly by script, get and set all INCLUDING string.
 	virtual Variant getvar(const Variant& p_key, bool* r_valid = nullptr) const;
@@ -603,7 +602,8 @@ public:
 
 	void add_user_signal(const MethodInfo& p_signal);
 
-	template <typename... VarArgs> Error emit_signal(const StringName& p_name, VarArgs... p_args)
+	template <typename... VarArgs>
+	Error emit_signal(const StringName& p_name, VarArgs... p_args)
 	{
 		Variant args[sizeof...(p_args) + 1] = {
 			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
@@ -611,8 +611,8 @@ public:
 		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 			argptrs[i] = &args[i];
 		}
-		return emit_signalp(
-			p_name, sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
+		return emit_signalp(p_name,
+			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 	}
 
 	DEBUG_VIRTUAL Error emit_signalp(

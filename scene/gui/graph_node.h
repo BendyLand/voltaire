@@ -133,7 +133,7 @@ protected:
 
 public:
 	virtual String get_accessibility_container_name(const Node *p_node) const override;
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	void set_title(const String &p_title);
 	String get_title() const;

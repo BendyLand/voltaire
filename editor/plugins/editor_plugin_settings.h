@@ -35,14 +35,17 @@
 class TextureRect;
 class Tree;
 
-class EditorPluginSettings : public VBoxContainer {
+class EditorPluginSettings : public VBoxContainer
+{
 	VLTRCLASS(EditorPluginSettings, VBoxContainer);
 
-	enum {
+	enum
+	{
 		BUTTON_PLUGIN_EDIT
 	};
 
-	enum {
+	enum
+	{
 		COLUMN_STATUS,
 		COLUMN_NAME,
 		COLUMN_VERSION,
@@ -51,16 +54,16 @@ class EditorPluginSettings : public VBoxContainer {
 		COLUMN_MAX,
 	};
 
-	PluginConfigDialog *plugin_config_dialog = nullptr;
-	TextureRect *recovery_mode_icon = nullptr;
-	Tree *plugin_list = nullptr;
+	PluginConfigDialog* plugin_config_dialog = nullptr;
+	TextureRect* recovery_mode_icon = nullptr;
+	Tree* plugin_list = nullptr;
 	bool updating = false;
 
 	void _plugin_activity_changed();
 	void _create_clicked();
-	void _cell_button_pressed(Object *p_item, int p_column, int p_id, MouseButton p_button);
+	void _cell_button_pressed(Object* p_item, int p_column, int p_id, MouseButton p_button);
 
-	static Vector<String> _get_plugins(const String &p_dir);
+	static Vector<String> _get_plugins(const String& p_dir);
 
 protected:
 	void _notification(int p_what);
@@ -70,3 +73,5 @@ public:
 
 	EditorPluginSettings();
 };
+
+

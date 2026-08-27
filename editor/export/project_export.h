@@ -233,7 +233,7 @@ class ProjectExportDialog : public ConfirmationDialog {
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 public:
 	void popup_export();

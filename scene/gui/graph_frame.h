@@ -63,7 +63,7 @@ private:
 	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
 
 protected:
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	virtual CursorShape get_cursor_shape(const Point2 &p_pos = Point2i()) const override;
 
 	void _notification(int p_what);

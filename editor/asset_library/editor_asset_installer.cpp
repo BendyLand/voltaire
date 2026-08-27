@@ -127,7 +127,7 @@ bool EditorAssetInstaller::_is_item_checked(const String& p_source_path) const
 			   file_item_map[p_source_path]->is_indeterminate(0));
 }
 
-void EditorAssetInstaller::open_asset(const String& p_path, bool p_autoskip_toplevel)
+void EditorAssetInstaller::open_asset(Object& obj, const String& p_path, bool p_autoskip_toplevel)
 {
 	package_path = p_path;
 	asset_files.clear();
@@ -179,9 +179,9 @@ void EditorAssetInstaller::open_asset(const String& p_path, bool p_autoskip_topl
 	_check_has_toplevel();
 	// Default to false, unless forced. Don't skip "addons" by default
 	skip_toplevel = p_autoskip_toplevel && toplevel_prefix != "addons/";
-	skip_toplevel_check->obj->set_block_signals(true);
+	obj.set_block_signals(true);
 	skip_toplevel_check->set_pressed(!skip_toplevel_check->is_disabled() && skip_toplevel);
-	skip_toplevel_check->obj->set_block_signals(false);
+	obj.set_block_signals(false);
 
 	_update_file_mappings();
 	_rebuild_source_tree();

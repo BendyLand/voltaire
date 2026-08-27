@@ -356,7 +356,7 @@ private:
 	void _setup_button(Button *p_button, const Ref<Texture2D> &p_icon);
 	void _update_make_dir_visible();
 
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	void _native_popup();
 	void _native_dialog_cb(bool p_ok, const Vector<String> &p_files, int p_filter);

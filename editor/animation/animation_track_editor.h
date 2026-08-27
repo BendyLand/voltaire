@@ -258,7 +258,7 @@ class AnimationTimelineEdit : public Range
 	Vector2 zoom_scroll_origin;
 	bool zoom_callback_occurred = false;
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _commit_timeline_resize();
 	void _stop_dragging();
 	void _track_added(int p_track);
@@ -400,7 +400,7 @@ protected:
 	static void _bind_methods();
 	void _notification(int p_what);
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	virtual String get_tooltip(const Point2& p_pos) const override;
@@ -541,7 +541,7 @@ protected:
 	static void _bind_methods();
 	void _notification(int p_what);
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	virtual Variant get_drag_data(const Point2& p_point) override;
@@ -628,7 +628,7 @@ class AnimationTrackEditGroup : public Control
 protected:
 	void _notification(int p_what);
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	void set_type_and_name(

@@ -103,8 +103,8 @@ void AnimationNodeBlendTreeEditor::_update_options_menu(bool p_has_input_ports)
 
 Size2 AnimationNodeBlendTreeEditor::get_minimum_size() const { return Size2(10, 200); }
 
-void AnimationNodeBlendTreeEditor::_property_changed(
-	const StringName& p_property, const Variant& p_value, const String& p_field, bool p_changing)
+void AnimationNodeBlendTreeEditor::_property_changed(Object& obj, const StringName& p_property,
+	const Variant& p_value, const String& p_field, bool p_changing)
 {
 	AnimationTree* tree = AnimationTreeEditor::get_singleton()->get_animation_tree();
 	if (!tree) {
@@ -114,10 +114,10 @@ void AnimationNodeBlendTreeEditor::_property_changed(
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(
 		vformat(TTR("Parameter Changed: %s"), p_property), UndoRedo::MERGE_ENDS);
-	undo_redo->add_do_property(tree->obj.get(), p_property, p_value);
-	undo_redo->add_undo_property(tree->obj.get(), p_property, tree->obj->get(p_property));
-	undo_redo->add_do_method(this->obj.get(), "update_graph");
-	undo_redo->add_undo_method(this->obj.get(), "update_graph");
+	undo_redo->add_do_property(&obj, p_property, p_value);
+	undo_redo->add_undo_property(&obj, p_property, &obj);
+	undo_redo->add_do_method(&obj, "update_graph");
+	undo_redo->add_undo_method(&obj, "update_graph");
 	undo_redo->commit_action();
 	updating = false;
 }
@@ -135,7 +135,7 @@ void AnimationNodeBlendTreeEditor::update_graph()
 	callable_mp(this, &AnimationNodeBlendTreeEditor::update_graph_immediately).call_deferred();
 }
 
-void AnimationNodeBlendTreeEditor::update_graph_immediately()
+void AnimationNodeBlendTreeEditor::update_graph_immediately(Object& obj)
 {
 	if (updating || blend_tree.is_null()) {
 		graph_update_queued = false;
@@ -242,12 +242,12 @@ void AnimationNodeBlendTreeEditor::update_graph_immediately()
 			String base_path =
 				AnimationTreeEditor::get_singleton()->get_base_path() + String(E) + "/" + F.name;
 			EditorProperty* prop = EditorInspector::instantiate_property_editor(
-				tree->obj.get(), F.type, base_path, F.hint, F.hint_string, F.usage);
+				&obj, F.type, base_path, F.hint, F.hint_string, F.usage);
 			Vector<String> path = F.name.split("/");
 			float ratio = 0.0f;
 			if (prop) {
 				prop->set_read_only(read_only || (F.usage & PROPERTY_USAGE_READ_ONLY));
-				prop->set_object_and_property(tree->obj.get(), base_path);
+				prop->set_object_and_property(&obj, base_path);
 				if (path.size() >= 2 && path[0] == "conditions") {
 					prop->set_draw_label(true);
 					prop->set_label(path[1]);
@@ -263,8 +263,7 @@ void AnimationNodeBlendTreeEditor::update_graph_immediately()
 					prop->set_custom_minimum_size(Vector2(180, 0) * EDSCALE);
 					// Align the size of the node with the resource editor, its un-expanding does
 					// not trigger a resize.
-					prop->connect(
-						SceneStringName(resized), Callable(node->obj.get(), "reset_size"));
+					prop->connect(SceneStringName(resized), Callable(&obj, "reset_size"));
 				}
 
 				node->add_child(prop);
@@ -374,7 +373,8 @@ void AnimationNodeBlendTreeEditor::update_graph_immediately()
 	graph_update_queued = false;
 }
 
-void AnimationNodeBlendTreeEditor::pan_to_node(const StringName& p_node_name, int p_input_index)
+void AnimationNodeBlendTreeEditor::pan_to_node(
+	const Object& obj, const StringName& p_node_name, int p_input_index)
 {
 	GraphNode* target_node = nullptr;
 	for (int i = 0; i < graph->get_child_count(); i++) {
@@ -411,18 +411,17 @@ void AnimationNodeBlendTreeEditor::pan_to_node(const StringName& p_node_name, in
 				graph->get_scroll_offset(), target, 0.25);
 	}
 
-	pan_to_tween->tween_property(
-		target_node->obj.get(), NodePath("modulate"), Color(1, 1, 1, 1) * 10, 0.05);
+	pan_to_tween->tween_property(&obj, NodePath("modulate"), Color(1, 1, 1, 1) * 10, 0.05);
 	pan_to_tween->set_trans(Tween::TRANS_LINEAR)
 		->set_ease(Tween::EASE_OUT)
-		->tween_property(target_node->obj.get(), NodePath("modulate"), Color(1, 1, 1, 1), 0.3);
+		->tween_property(&obj, NodePath("modulate"), Color(1, 1, 1, 1), 0.3);
 }
 
-void AnimationNodeBlendTreeEditor::_file_opened(const String& p_file)
+void AnimationNodeBlendTreeEditor::_file_opened(const Object& obj, const String& p_file)
 {
 	file_loaded = ResourceLoader::load(p_file);
 	if (file_loaded.is_valid()) {
-		_add_node(MENU_LOAD_FILE_CONFIRM);
+		_add_node(obj, MENU_LOAD_FILE_CONFIRM);
 	}
 	else {
 		EditorNode::get_singleton()->show_warning(
@@ -430,7 +429,7 @@ void AnimationNodeBlendTreeEditor::_file_opened(const String& p_file)
 	}
 }
 
-void AnimationNodeBlendTreeEditor::_add_node(int p_idx)
+void AnimationNodeBlendTreeEditor::_add_node(const Object& obj, int p_idx)
 {
 	Ref<AnimationNode> anode;
 
@@ -503,7 +502,8 @@ void AnimationNodeBlendTreeEditor::_add_node(int p_idx)
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Add Node to BlendTree"));
-	undo_redo->add_do_method(blend_tree->obj.get(), "add_node", name, anode, instance_pos / EDSCALE);
+	undo_redo->add_do_method(
+		blend_tree->obj.get(), "add_node", name, anode, instance_pos / EDSCALE);
 	undo_redo->add_undo_method(blend_tree->obj.get(), "remove_node", name);
 
 	if (!from_node.is_empty()) {
@@ -516,8 +516,8 @@ void AnimationNodeBlendTreeEditor::_add_node(int p_idx)
 		to_slot = -1;
 	}
 
-	undo_redo->add_do_method(this->obj.get(), "update_graph");
-	undo_redo->add_undo_method(this->obj.get(), "update_graph");
+	undo_redo->add_do_method(&obj, "update_graph");
+	undo_redo->add_undo_method(&obj, "update_graph");
 	undo_redo->commit_action();
 }
 
@@ -577,21 +577,22 @@ void AnimationNodeBlendTreeEditor::_popup_hide()
 }
 
 void AnimationNodeBlendTreeEditor::_node_dragged(
-	const Vector2& p_from, const Vector2& p_to, const StringName& p_which)
+	const Object& obj, const Vector2& p_from, const Vector2& p_to, const StringName& p_which)
 {
 	updating = true;
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Node Moved"));
 	undo_redo->add_do_method(blend_tree->obj.get(), "set_node_position", p_which, p_to / EDSCALE);
-	undo_redo->add_undo_method(blend_tree->obj.get(), "set_node_position", p_which, p_from / EDSCALE);
-	undo_redo->add_do_method(this->obj.get(), "update_graph");
-	undo_redo->add_undo_method(this->obj.get(), "update_graph");
+	undo_redo->add_undo_method(
+		blend_tree->obj.get(), "set_node_position", p_which, p_from / EDSCALE);
+	undo_redo->add_do_method(&obj, "update_graph");
+	undo_redo->add_undo_method(&obj, "update_graph");
 	undo_redo->commit_action();
 	updating = false;
 }
 
 void AnimationNodeBlendTreeEditor::_connection_request(
-	const String& p_from, int p_from_index, const String& p_to, int p_to_index)
+	const Object& obj, const String& p_from, int p_from_index, const String& p_to, int p_to_index)
 {
 	if (read_only) {
 		return;
@@ -615,13 +616,13 @@ void AnimationNodeBlendTreeEditor::_connection_request(
 	undo_redo->create_action(TTR("Nodes Connected"));
 	undo_redo->add_do_method(blend_tree->obj.get(), "connect_node", p_to, p_to_index, p_from);
 	undo_redo->add_undo_method(blend_tree->obj.get(), "disconnect_node", p_to, p_to_index);
-	undo_redo->add_do_method(this->obj.get(), "update_graph");
-	undo_redo->add_undo_method(this->obj.get(), "update_graph");
+	undo_redo->add_do_method(&obj, "update_graph");
+	undo_redo->add_undo_method(&obj, "update_graph");
 	undo_redo->commit_action();
 }
 
 void AnimationNodeBlendTreeEditor::_disconnection_request(
-	const String& p_from, int p_from_index, const String& p_to, int p_to_index)
+	const Object& obj, const String& p_from, int p_from_index, const String& p_to, int p_to_index)
 {
 	if (read_only) {
 		return;
@@ -634,14 +635,14 @@ void AnimationNodeBlendTreeEditor::_disconnection_request(
 	undo_redo->create_action(TTR("Nodes Disconnected"));
 	undo_redo->add_do_method(blend_tree->obj.get(), "disconnect_node", p_to, p_to_index);
 	undo_redo->add_undo_method(blend_tree->obj.get(), "connect_node", p_to, p_to_index, p_from);
-	undo_redo->add_do_method(this->obj.get(), "update_graph");
-	undo_redo->add_undo_method(this->obj.get(), "update_graph");
+	undo_redo->add_do_method(&obj, "update_graph");
+	undo_redo->add_undo_method(&obj, "update_graph");
 	undo_redo->commit_action();
 	updating = false;
 }
 
 void AnimationNodeBlendTreeEditor::_anim_selected(
-	int p_index, const Array& p_options, const String& p_node)
+	const Object& obj, int p_index, const Array& p_options, const String& p_node)
 {
 	String option = p_options[p_index];
 
@@ -652,12 +653,12 @@ void AnimationNodeBlendTreeEditor::_anim_selected(
 	undo_redo->create_action(TTR("Set Animation"));
 	undo_redo->add_do_method(anim->obj.get(), "set_animation", option);
 	undo_redo->add_undo_method(anim->obj.get(), "set_animation", anim->get_animation());
-	undo_redo->add_do_method(this->obj.get(), "update_graph");
-	undo_redo->add_undo_method(this->obj.get(), "update_graph");
+	undo_redo->add_do_method(&obj, "update_graph");
+	undo_redo->add_undo_method(&obj, "update_graph");
 	undo_redo->commit_action();
 }
 
-void AnimationNodeBlendTreeEditor::_delete_node_request(const String& p_which)
+void AnimationNodeBlendTreeEditor::_delete_node_request(const Object& obj, const String& p_which)
 {
 	if (read_only) {
 		return;
@@ -666,8 +667,8 @@ void AnimationNodeBlendTreeEditor::_delete_node_request(const String& p_which)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Delete Node"));
 	undo_redo->add_do_method(blend_tree->obj.get(), "remove_node", p_which);
-	undo_redo->add_undo_method(blend_tree->obj.get(), "add_node", p_which, blend_tree->get_node(p_which),
-		blend_tree.ptr()->get_node_position(p_which));
+	undo_redo->add_undo_method(blend_tree->obj.get(), "add_node", p_which,
+		blend_tree->get_node(p_which), blend_tree.ptr()->get_node_position(p_which));
 
 	LocalVector<AnimationNodeBlendTree::NodeConnection> conns;
 	blend_tree->get_node_connections(&conns);
@@ -679,15 +680,16 @@ void AnimationNodeBlendTreeEditor::_delete_node_request(const String& p_which)
 		}
 	}
 
-	undo_redo->add_do_method(this->obj.get(), "update_graph");
-	undo_redo->add_undo_method(this->obj.get(), "update_graph");
+	undo_redo->add_do_method(&obj, "update_graph");
+	undo_redo->add_undo_method(&obj, "update_graph");
 	undo_redo->commit_action();
 
 	// Return selection to host BlendTree node.
 	EditorNode::get_singleton()->push_item(blend_tree->obj.get(), "", true);
 }
 
-void AnimationNodeBlendTreeEditor::_delete_nodes_request(const TypedArray<StringName>& p_nodes)
+void AnimationNodeBlendTreeEditor::_delete_nodes_request(
+	const Object& obj, const TypedArray<StringName>& p_nodes)
 {
 	if (read_only) {
 		return;
@@ -723,7 +725,7 @@ void AnimationNodeBlendTreeEditor::_delete_nodes_request(const TypedArray<String
 	undo_redo->create_action(TTR("Delete Node(s)"));
 
 	for (const StringName& F : to_erase) {
-		_delete_node_request(F);
+		_delete_node_request(obj, F);
 	}
 
 	undo_redo->commit_action();
@@ -770,7 +772,7 @@ void AnimationNodeBlendTreeEditor::_open_in_editor(const String& p_which)
 	AnimationTreeEditor::get_singleton()->enter_editor(p_which);
 }
 
-void AnimationNodeBlendTreeEditor::_filter_toggled()
+void AnimationNodeBlendTreeEditor::_filter_toggled(const Object& obj)
 {
 	updating = true;
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
@@ -779,13 +781,13 @@ void AnimationNodeBlendTreeEditor::_filter_toggled()
 		_filter_edit->obj.get(), "set_filter_enabled", filter_enabled->is_pressed());
 	undo_redo->add_undo_method(
 		_filter_edit->obj.get(), "set_filter_enabled", _filter_edit->is_filter_enabled());
-	undo_redo->add_do_method(this->obj.get(), "_update_filters", _filter_edit);
-	undo_redo->add_undo_method(this->obj.get(), "_update_filters", _filter_edit);
+	undo_redo->add_do_method(&obj, "_update_filters", _filter_edit);
+	undo_redo->add_undo_method(&obj, "_update_filters", _filter_edit);
 	undo_redo->commit_action();
 	updating = false;
 }
 
-void AnimationNodeBlendTreeEditor::_filter_edited()
+void AnimationNodeBlendTreeEditor::_filter_edited(const Object& obj)
 {
 	TreeItem* edited = filters->get_edited();
 	ERR_FAIL_NULL(edited);
@@ -799,13 +801,13 @@ void AnimationNodeBlendTreeEditor::_filter_edited()
 	undo_redo->add_do_method(_filter_edit->obj.get(), "set_filter_path", edited_path, filtered);
 	undo_redo->add_undo_method(_filter_edit->obj.get(), "set_filter_path", edited_path,
 		_filter_edit->is_path_filtered(edited_path));
-	undo_redo->add_do_method(this->obj.get(), "_update_filters", _filter_edit);
-	undo_redo->add_undo_method(this->obj.get(), "_update_filters", _filter_edit);
+	undo_redo->add_do_method(&obj, "_update_filters", _filter_edit);
+	undo_redo->add_undo_method(&obj, "_update_filters", _filter_edit);
 	undo_redo->commit_action();
 	updating = false;
 }
 
-void AnimationNodeBlendTreeEditor::_filter_fill_selection()
+void AnimationNodeBlendTreeEditor::_filter_fill_selection(const Object& obj)
 {
 	TreeItem* ti = filters->get_root();
 	if (!ti) {
@@ -818,15 +820,15 @@ void AnimationNodeBlendTreeEditor::_filter_fill_selection()
 
 	_filter_fill_selection_recursive(undo_redo, ti, false);
 
-	undo_redo->add_do_method(this->obj.get(), "_update_filters", _filter_edit);
-	undo_redo->add_undo_method(this->obj.get(), "_update_filters", _filter_edit);
+	undo_redo->add_do_method(&obj, "_update_filters", _filter_edit);
+	undo_redo->add_undo_method(&obj, "_update_filters", _filter_edit);
 	undo_redo->commit_action();
 	updating = false;
 
-	_update_filters(_filter_edit);
+	_update_filters(obj, _filter_edit);
 }
 
-void AnimationNodeBlendTreeEditor::_filter_invert_selection()
+void AnimationNodeBlendTreeEditor::_filter_invert_selection(const Object& obj)
 {
 	TreeItem* ti = filters->get_root();
 	if (!ti) {
@@ -839,15 +841,15 @@ void AnimationNodeBlendTreeEditor::_filter_invert_selection()
 
 	_filter_invert_selection_recursive(undo_redo, ti);
 
-	undo_redo->add_do_method(this->obj.get(), "_update_filters", _filter_edit);
-	undo_redo->add_undo_method(this->obj.get(), "_update_filters", _filter_edit);
+	undo_redo->add_do_method(&obj, "_update_filters", _filter_edit);
+	undo_redo->add_undo_method(&obj, "_update_filters", _filter_edit);
 	undo_redo->commit_action();
 	updating = false;
 
-	_update_filters(_filter_edit);
+	_update_filters(obj, _filter_edit);
 }
 
-void AnimationNodeBlendTreeEditor::_filter_clear_selection()
+void AnimationNodeBlendTreeEditor::_filter_clear_selection(const Object& obj)
 {
 	TreeItem* ti = filters->get_root();
 	if (!ti) {
@@ -860,12 +862,12 @@ void AnimationNodeBlendTreeEditor::_filter_clear_selection()
 
 	_filter_clear_selection_recursive(undo_redo, ti);
 
-	undo_redo->add_do_method(this->obj.get(), "_update_filters", _filter_edit);
-	undo_redo->add_undo_method(this->obj.get(), "_update_filters", _filter_edit);
+	undo_redo->add_do_method(&obj, "_update_filters", _filter_edit);
+	undo_redo->add_undo_method(&obj, "_update_filters", _filter_edit);
 	undo_redo->commit_action();
 	updating = false;
 
-	_update_filters(_filter_edit);
+	_update_filters(obj, _filter_edit);
 }
 
 void AnimationNodeBlendTreeEditor::_filter_fill_selection_recursive(
@@ -880,7 +882,8 @@ void AnimationNodeBlendTreeEditor::_filter_fill_selection_recursive(
 
 		p_undo_redo->add_do_method(
 			_filter_edit->obj.get(), "set_filter_path", item_path, parent_filtered);
-		p_undo_redo->add_undo_method(_filter_edit->obj.get(), "set_filter_path", item_path, filtered);
+		p_undo_redo->add_undo_method(
+			_filter_edit->obj.get(), "set_filter_path", item_path, filtered);
 
 		_filter_fill_selection_recursive(p_undo_redo, ti, parent_filtered);
 		ti = ti->get_next();
@@ -896,8 +899,10 @@ void AnimationNodeBlendTreeEditor::_filter_invert_selection_recursive(
 		NodePath item_path = ti->get_metadata(0);
 		bool filtered = _filter_edit->is_path_filtered(item_path);
 
-		p_undo_redo->add_do_method(_filter_edit->obj.get(), "set_filter_path", item_path, !filtered);
-		p_undo_redo->add_undo_method(_filter_edit->obj.get(), "set_filter_path", item_path, filtered);
+		p_undo_redo->add_do_method(
+			_filter_edit->obj.get(), "set_filter_path", item_path, !filtered);
+		p_undo_redo->add_undo_method(
+			_filter_edit->obj.get(), "set_filter_path", item_path, filtered);
 
 		_filter_invert_selection_recursive(p_undo_redo, ti);
 		ti = ti->get_next();
@@ -913,14 +918,16 @@ void AnimationNodeBlendTreeEditor::_filter_clear_selection_recursive(
 		bool filtered = _filter_edit->is_path_filtered(item_path);
 
 		p_undo_redo->add_do_method(_filter_edit->obj.get(), "set_filter_path", item_path, false);
-		p_undo_redo->add_undo_method(_filter_edit->obj.get(), "set_filter_path", item_path, filtered);
+		p_undo_redo->add_undo_method(
+			_filter_edit->obj.get(), "set_filter_path", item_path, filtered);
 
 		_filter_clear_selection_recursive(p_undo_redo, ti);
 		ti = ti->get_next();
 	}
 }
 
-bool AnimationNodeBlendTreeEditor::_update_filters(const Ref<AnimationNode>& anode)
+bool AnimationNodeBlendTreeEditor::_update_filters(
+	const Object& obj, const Ref<AnimationNode>& anode)
 {
 	if (updating || _filter_edit != anode) {
 		return false;
@@ -1000,7 +1007,7 @@ bool AnimationNodeBlendTreeEditor::_update_filters(const Ref<AnimationNode>& ano
 
 				Node* node = base->get_node_or_null(accum);
 				if (node) {
-					ti->set_icon(0, EditorNode::get_singleton()->get_object_icon(node->obj.get()));
+					ti->set_icon(0, EditorNode::get_singleton()->get_object_icon(&obj));
 				}
 
 			}
@@ -1098,7 +1105,7 @@ bool AnimationNodeBlendTreeEditor::_update_filters(const Ref<AnimationNode>& ano
 	return true;
 }
 
-void AnimationNodeBlendTreeEditor::_inspect_filters(const String& p_which)
+void AnimationNodeBlendTreeEditor::_inspect_filters(const Object& obj, const String& p_which)
 {
 	if (read_only) {
 		filter_dialog->set_title(TTR("Inspect Filtered Tracks:"));
@@ -1113,7 +1120,7 @@ void AnimationNodeBlendTreeEditor::_inspect_filters(const String& p_which)
 	ERR_FAIL_COND(anode.is_null());
 
 	_filter_edit = anode;
-	if (!_update_filters(anode)) {
+	if (!_update_filters(obj, anode)) {
 		return;
 	}
 
@@ -1131,7 +1138,7 @@ void AnimationNodeBlendTreeEditor::_update_editor_settings()
 	graph->set_warped_panning(EDITOR_GET("editors/panning/warped_mouse_panning"));
 }
 
-void AnimationNodeBlendTreeEditor::_notification(int p_what)
+void AnimationNodeBlendTreeEditor::_notification(const Object& obj, int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_READY: {
@@ -1185,8 +1192,8 @@ void AnimationNodeBlendTreeEditor::_notification(int p_what)
 						StringName time_path =
 							AnimationTreeEditor::get_singleton()->get_base_path() + String(E.key) +
 							"/current_position";
-						E.value->set_max(tree->obj->get(length_path));
-						E.value->set_value(tree->obj->get(time_path));
+						E.value->set_max(obj.get(length_path));
+						E.value->set_value(obj.get(time_path));
 					}
 				}
 			}
@@ -1240,7 +1247,7 @@ void AnimationNodeBlendTreeEditor::_node_changed(const StringName& p_node_name)
 }
 
 void AnimationNodeBlendTreeEditor::_node_renamed(
-	const String& p_text, Ref<AnimationNode> p_node, const StringName& p_name)
+	const Object& obj, const String& p_text, Ref<AnimationNode> p_node, const StringName& p_name)
 {
 	if (blend_tree.is_null()) {
 		return;
@@ -1282,8 +1289,8 @@ void AnimationNodeBlendTreeEditor::_node_renamed(
 	undo_redo->create_action(TTR("Node Renamed"));
 	undo_redo->add_do_method(blend_tree->obj.get(), "rename_node", prev_name, name);
 	undo_redo->add_undo_method(blend_tree->obj.get(), "rename_node", name, prev_name);
-	undo_redo->add_do_method(this->obj.get(), "update_graph");
-	undo_redo->add_undo_method(this->obj.get(), "update_graph");
+	undo_redo->add_do_method(&obj, "update_graph");
+	undo_redo->add_undo_method(&obj, "update_graph");
 	undo_redo->commit_action();
 	updating = false;
 	gn->set_name(new_name);
@@ -1328,12 +1335,12 @@ void AnimationNodeBlendTreeEditor::_node_renamed(
 }
 
 void AnimationNodeBlendTreeEditor::_node_renamed_focus_out(
-	Ref<AnimationNode> p_node, const StringName& p_name)
+	const Object& obj, Ref<AnimationNode> p_node, const StringName& p_name)
 {
 	if (current_node_rename_text.is_empty()) {
 		return; // The text_submitted signal triggered the graph update and freed the LineEdit.
 	}
-	_node_renamed(current_node_rename_text, p_node, p_name);
+	_node_renamed(obj, current_node_rename_text, p_node, p_name);
 }
 
 void AnimationNodeBlendTreeEditor::_node_rename_lineedit_changed(const String& p_text)
@@ -1581,11 +1588,12 @@ void AnimationNodeAnimationEditor::_confirm_set_custom_timeline_from_marker_dial
 	undo_redo->add_undo_method(animation_node_animation->obj.get(), "set_stretch_time_scale",
 		animation_node_animation->is_stretching_time_scale());
 	if (animation_node_animation->get_play_mode() == AnimationNodeAnimation::PLAY_MODE_FORWARD) {
-		undo_redo->add_do_method(animation_node_animation->obj.get(), "set_start_offset", start_time);
+		undo_redo->add_do_method(
+			animation_node_animation->obj.get(), "set_start_offset", start_time);
 	}
 	else {
-		undo_redo->add_do_method(
-			animation_node_animation->obj.get(), "set_start_offset", animation->get_length() - end_time);
+		undo_redo->add_do_method(animation_node_animation->obj.get(), "set_start_offset",
+			animation->get_length() - end_time);
 	}
 	undo_redo->add_undo_method(animation_node_animation->obj.get(), "set_start_offset",
 		animation_node_animation->get_start_offset());

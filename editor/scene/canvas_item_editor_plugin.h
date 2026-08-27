@@ -505,7 +505,7 @@ private:
 
 	void _keying_changed();
 
-	virtual void shortcut_input(const Ref<InputEvent>& p_ev) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_ev) override;
 
 	void _draw_text_at_position(Point2 p_position, const String& p_string, Side p_side);
 	void _draw_margin_at_position(int p_value, Point2 p_position, Side p_side);

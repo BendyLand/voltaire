@@ -290,7 +290,7 @@ protected:
 #endif
 
 	virtual void unhandled_key_input(const Ref<InputEvent> &p_event) override;
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	void _accessibility_action_set_selection(const Variant &p_data);
 	void _accessibility_action_replace_selected(const Variant &p_data);

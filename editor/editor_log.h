@@ -176,7 +176,7 @@ private:
 
 protected:
 	void _notification(int p_what);
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
+	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 public:
 	void add_message(const String &p_msg, MessageType p_type = MSG_TYPE_STD);

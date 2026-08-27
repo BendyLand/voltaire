@@ -216,7 +216,7 @@ protected:
 public:
 	virtual RID get_focused_accessibility_element() const override;
 
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	int add_item(const String &p_item, const Ref<Texture2D> &p_texture = Ref<Texture2D>(), bool p_selectable = true);
 	int add_icon_item(const Ref<Texture2D> &p_item, bool p_selectable = true);
