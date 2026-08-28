@@ -60,7 +60,7 @@
 
 ///////////////////////////////////
 
-void AnimationPlayerEditor::_find_player()
+void AnimationPlayerEditor::_find_player(Object& obj)
 {
 	if (!is_visible() || player) {
 		return;
@@ -76,12 +76,12 @@ void AnimationPlayerEditor::_find_player()
 	if (players.size() == 1) {
 		// Replicating EditorNode::_plugin_over_edit to ensure an identical setup as when selecting
 		// manually.
-		plugin->edit(players[0]->obj.get());
+		plugin->edit(&obj);
 		plugin->make_visible(true);
 	}
 }
 
-void AnimationPlayerEditor::_node_removed(Node* p_node)
+void AnimationPlayerEditor::_node_removed(Object& obj, Node* p_node)
 {
 	if (player && original_node == p_node) {
 		if (is_dummy) {
@@ -95,7 +95,7 @@ void AnimationPlayerEditor::_node_removed(Node* p_node)
 		track_editor->set_animation(Ref<Animation>(), true);
 		track_editor->set_root(nullptr);
 		track_editor->show_select_node_warning(true);
-		_update_player();
+		_update_player(obj);
 
 		_ensure_dummy_player();
 
@@ -103,7 +103,7 @@ void AnimationPlayerEditor::_node_removed(Node* p_node)
 	}
 }
 
-void AnimationPlayerEditor::_notification(int p_what)
+void AnimationPlayerEditor::_notification(Object& obj, int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_PROCESS: {
@@ -241,13 +241,13 @@ void AnimationPlayerEditor::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {
-		_find_player();
+		_find_player(obj);
 		_ensure_dummy_player();
 	} break;
 	}
 }
 
-void AnimationPlayerEditor::_autoplay_pressed()
+void AnimationPlayerEditor::_autoplay_pressed(const Object& obj)
 {
 	if (updating) {
 		return;
@@ -261,20 +261,20 @@ void AnimationPlayerEditor::_autoplay_pressed()
 	if (player->get_autoplay() == current) {
 		// unset
 		undo_redo->create_action(TTR("Toggle Autoplay"));
-		undo_redo->add_do_method(player->obj.get(), "set_autoplay", StringName());
-		undo_redo->add_undo_method(player->obj.get(), "set_autoplay", player->get_autoplay());
-		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
-		undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
+		undo_redo->add_do_method(&obj, "set_autoplay", StringName());
+		undo_redo->add_undo_method(&obj, "set_autoplay", player->get_autoplay());
+		undo_redo->add_do_method(&obj, "_animation_player_changed", player);
+		undo_redo->add_undo_method(&obj, "_animation_player_changed", player);
 		undo_redo->commit_action();
 
 	}
 	else {
 		// set
 		undo_redo->create_action(TTR("Toggle Autoplay"));
-		undo_redo->add_do_method(player->obj.get(), "set_autoplay", StringName(current));
-		undo_redo->add_undo_method(player->obj.get(), "set_autoplay", player->get_autoplay());
-		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
-		undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
+		undo_redo->add_do_method(&obj, "set_autoplay", StringName(current));
+		undo_redo->add_undo_method(&obj, "set_autoplay", player->get_autoplay());
+		undo_redo->add_do_method(&obj, "_animation_player_changed", player);
+		undo_redo->add_undo_method(&obj, "_animation_player_changed", player);
 		undo_redo->commit_action();
 	}
 }
@@ -488,7 +488,7 @@ void AnimationPlayerEditor::_stop_pressed()
 	stop->set_button_icon(stop_icon);
 }
 
-void AnimationPlayerEditor::_animation_selected(int p_which)
+void AnimationPlayerEditor::_animation_selected(Object& obj, int p_which)
 {
 	if (updating) {
 		return;
@@ -532,7 +532,7 @@ void AnimationPlayerEditor::_animation_selected(int p_which)
 			}
 			else {
 				cached_root_node_id =
-					root->obj->get_instance_id(); // Caching as `track_editor` can lose
+					obj.get_instance_id(); // Caching as `track_editor` can lose
 												  // track of player's root node.
 				track_editor->set_root(root);
 			}
@@ -550,7 +550,7 @@ void AnimationPlayerEditor::_animation_selected(int p_which)
 	AnimationPlayerEditor::get_singleton()->get_track_editor()->update_keying();
 	_animation_key_editor_seek(timeline_position);
 
-	this->obj->emit_signal("animation_selected", current);
+	obj.emit_signal("animation_selected", current);
 }
 
 void AnimationPlayerEditor::_animation_new()
@@ -625,7 +625,7 @@ void AnimationPlayerEditor::_animation_remove()
 	delete_dialog->popup_centered();
 }
 
-void AnimationPlayerEditor::_animation_remove_confirmed()
+void AnimationPlayerEditor::_animation_remove_confirmed(const Object& obj)
 {
 	String current = animation->get_item_text(animation->get_selected());
 	Ref<Animation> anim = player->get_animation(current);
@@ -640,26 +640,26 @@ void AnimationPlayerEditor::_animation_remove_confirmed()
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Remove Animation"));
 	if (player->get_autoplay() == current) {
-		undo_redo->add_do_method(player->obj.get(), "set_autoplay", StringName());
-		undo_redo->add_undo_method(player->obj.get(), "set_autoplay", StringName(current));
+		undo_redo->add_do_method(&obj, "set_autoplay", StringName());
+		undo_redo->add_undo_method(&obj, "set_autoplay", StringName(current));
 		// Avoid having the autoplay icon linger around if there is only one animation in the
 		// player.
-		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
+		undo_redo->add_do_method(&obj, "_animation_player_changed", player);
 	}
 	undo_redo->add_do_method(al->obj.get(), "remove_animation", current);
 	undo_redo->add_undo_method(al->obj.get(), "add_animation", current, anim);
-	undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
-	undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
+	undo_redo->add_do_method(&obj, "_animation_player_changed", player);
+	undo_redo->add_undo_method(&obj, "_animation_player_changed", player);
 	if (animation->has_selectable_items() &&
 		animation->get_selectable_item(false) ==
 			animation->get_selectable_item(true)) { // Last item remaining.
-		undo_redo->add_do_method(this->obj.get(), "_stop_onion_skinning");
-		undo_redo->add_undo_method(this->obj.get(), "_start_onion_skinning");
+		undo_redo->add_do_method(&obj, "_stop_onion_skinning");
+		undo_redo->add_undo_method(&obj, "_start_onion_skinning");
 	}
 	undo_redo->commit_action();
 }
 
-void AnimationPlayerEditor::_select_anim_by_name(const String& p_anim)
+void AnimationPlayerEditor::_select_anim_by_name(Object& obj, const String& p_anim)
 {
 	int idx = -1;
 	for (int i = 0; i < animation->get_item_count(); i++) {
@@ -673,7 +673,7 @@ void AnimationPlayerEditor::_select_anim_by_name(const String& p_anim)
 
 	animation->select(idx);
 
-	_animation_selected(idx);
+	_animation_selected(obj, idx);
 }
 
 float AnimationPlayerEditor::_get_editor_step() const
@@ -688,7 +688,7 @@ float AnimationPlayerEditor::_get_editor_step() const
 	return Input::get_singleton()->is_key_pressed(Key::SHIFT) ? step * 0.25 : step;
 }
 
-void AnimationPlayerEditor::_animation_name_edited()
+void AnimationPlayerEditor::_animation_name_edited(const Object& obj)
 {
 	if (player->is_playing()) {
 		player->stop();
@@ -742,14 +742,15 @@ void AnimationPlayerEditor::_animation_name_edited()
 		undo_redo->add_do_method(anim->obj.get(), "set_name", new_name);
 		undo_redo->add_undo_method(al->obj.get(), "rename_animation", new_name, current);
 		undo_redo->add_undo_method(anim->obj.get(), "set_name", current);
-		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
-		undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
+		undo_redo->add_do_method(&obj, "_animation_player_changed", player);
+		undo_redo->add_undo_method(&obj, "_animation_player_changed", player);
 		undo_redo->commit_action();
 
 		if (is_dummy) {
-			plugin->_update_dummy_player(original_node);
+			plugin->_update_dummy_player(obj, original_node);
 		}
-		_select_anim_by_name(new_library_prefix + new_name);
+		Object& o = const_cast<Object&>(obj);
+		_select_anim_by_name(o, new_library_prefix + new_name);
 	} break;
 
 	case TOOL_NEW_ANIM: {
@@ -783,21 +784,21 @@ void AnimationPlayerEditor::_animation_name_edited()
 			al.instantiate();
 			lib_added = true;
 			undo_redo->add_do_method(
-				fetch_mixer_for_library()->obj.get(), "add_animation_library", "", al);
+				&obj, "add_animation_library", "", al);
 			library_name = "";
 		}
 
 		undo_redo->add_do_method(al->obj.get(), "add_animation", new_name, new_anim);
 		undo_redo->add_undo_method(al->obj.get(), "remove_animation", new_name);
-		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
-		undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
+		undo_redo->add_do_method(&obj, "_animation_player_changed", player);
+		undo_redo->add_undo_method(&obj, "_animation_player_changed", player);
 		if (!animation->has_selectable_items()) {
-			undo_redo->add_do_method(this->obj.get(), "_start_onion_skinning");
-			undo_redo->add_undo_method(this->obj.get(), "_stop_onion_skinning");
+			undo_redo->add_do_method(&obj, "_start_onion_skinning");
+			undo_redo->add_undo_method(&obj, "_stop_onion_skinning");
 		}
 		if (lib_added) {
 			undo_redo->add_undo_method(
-				fetch_mixer_for_library()->obj.get(), "remove_animation_library", "");
+				&obj, "remove_animation_library", "");
 		}
 		undo_redo->commit_action();
 
@@ -806,9 +807,10 @@ void AnimationPlayerEditor::_animation_name_edited()
 		}
 
 		if (is_dummy) {
-			plugin->_update_dummy_player(original_node);
+			plugin->_update_dummy_player(obj, original_node);
 		}
-		_select_anim_by_name(library_name + new_name);
+		Object& o = const_cast<Object&>(obj);
+		_select_anim_by_name(o, library_name + new_name);
 
 	} break;
 
@@ -841,16 +843,16 @@ void AnimationPlayerEditor::_animation_name_edited()
 		if (al.is_null()) {
 			al.instantiate();
 			lib_added = true;
-			undo_redo->add_do_method(player->obj.get(), "add_animation_library", "", al);
+			undo_redo->add_do_method(&obj, "add_animation_library", "", al);
 			library_name = "";
 		}
 
-		undo_redo->add_do_method(al->obj.get(), "add_animation", new_name, new_anim);
-		undo_redo->add_undo_method(al->obj.get(), "remove_animation", new_name);
-		undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
-		undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
+		undo_redo->add_do_method(&obj, "add_animation", new_name, new_anim);
+		undo_redo->add_undo_method(&obj, "remove_animation", new_name);
+		undo_redo->add_do_method(&obj, "_animation_player_changed", player);
+		undo_redo->add_undo_method(&obj, "_animation_player_changed", player);
 		if (lib_added) {
-			undo_redo->add_undo_method(player->obj.get(), "remove_animation_library", "");
+			undo_redo->add_undo_method(&obj, "remove_animation_library", "");
 		}
 		undo_redo->commit_action();
 
@@ -859,16 +861,17 @@ void AnimationPlayerEditor::_animation_name_edited()
 		}
 
 		if (is_dummy) {
-			plugin->_update_dummy_player(original_node);
+			plugin->_update_dummy_player(obj, original_node);
 		}
-		_select_anim_by_name(library_name + new_name);
+		Object& o = const_cast<Object&>(obj);
+		_select_anim_by_name(o, library_name + new_name);
 	} break;
 	}
 
 	name_dialog->hide();
 }
 
-void AnimationPlayerEditor::_blend_editor_next_changed(const int p_idx)
+void AnimationPlayerEditor::_blend_editor_next_changed(const Object& obj, const int p_idx)
 {
 	if (!animation->has_selectable_items()) {
 		return;
@@ -879,11 +882,11 @@ void AnimationPlayerEditor::_blend_editor_next_changed(const int p_idx)
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Blend Next Changed"));
 	undo_redo->add_do_method(
-		player->obj.get(), "animation_set_next", current, blend_editor.next->get_item_text(p_idx));
+		&obj, "animation_set_next", current, blend_editor.next->get_item_text(p_idx));
 	undo_redo->add_undo_method(
-		player->obj.get(), "animation_set_next", current, player->animation_get_next(current));
-	undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
-	undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
+		&obj, "animation_set_next", current, player->animation_get_next(current));
+	undo_redo->add_do_method(&obj, "_animation_player_changed", player);
+	undo_redo->add_undo_method(&obj, "_animation_player_changed", player);
 	undo_redo->commit_action();
 }
 
@@ -941,7 +944,7 @@ void AnimationPlayerEditor::_update_animation_blend()
 	updating_blends = false;
 }
 
-void AnimationPlayerEditor::_blend_edited()
+void AnimationPlayerEditor::_blend_edited(const Object& obj)
 {
 	if (updating_blends || !animation->has_selectable_items()) {
 		return;
@@ -961,10 +964,10 @@ void AnimationPlayerEditor::_blend_edited()
 
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(TTR("Change Blend Time"));
-	undo_redo->add_do_method(player->obj.get(), "set_blend_time", current, to, blend_time);
-	undo_redo->add_undo_method(player->obj.get(), "set_blend_time", current, to, prev_blend_time);
-	undo_redo->add_do_method(this->obj.get(), "_animation_player_changed", player);
-	undo_redo->add_undo_method(this->obj.get(), "_animation_player_changed", player);
+	undo_redo->add_do_method(&obj, "set_blend_time", current, to, blend_time);
+	undo_redo->add_undo_method(&obj, "set_blend_time", current, to, prev_blend_time);
+	undo_redo->add_do_method(&obj, "_animation_player_changed", player);
+	undo_redo->add_undo_method(&obj, "_animation_player_changed", player);
 	undo_redo->commit_action();
 	updating_blends = false;
 }
@@ -974,7 +977,6 @@ void AnimationPlayerEditor::ensure_visibility()
 	if (player) {
 		return; // another player is pinned, don't reset
 	}
-
 	_animation_edit();
 }
 
@@ -994,7 +996,7 @@ Dictionary AnimationPlayerEditor::get_state() const
 	return d;
 }
 
-void AnimationPlayerEditor::set_state(const Dictionary& p_state)
+void AnimationPlayerEditor::set_state(Object& obj, const Dictionary& p_state)
 {
 	if (!p_state.has("visible") || !p_state["visible"]) {
 		return;
@@ -1034,7 +1036,7 @@ void AnimationPlayerEditor::set_state(const Dictionary& p_state)
 				}
 			}
 
-			_update_player();
+			_update_player(obj);
 			make_visible();
 			set_process(true);
 			ensure_visibility();
@@ -1042,7 +1044,7 @@ void AnimationPlayerEditor::set_state(const Dictionary& p_state)
 			if (p_state.has("animation")) {
 				String anim = p_state["animation"];
 				if (!anim.is_empty() && player->has_animation(anim)) {
-					_select_anim_by_name(anim);
+					_select_anim_by_name(obj, anim);
 					_animation_edit();
 				}
 			}
@@ -1116,7 +1118,7 @@ void AnimationPlayerEditor::_update_animation()
 	updating = false;
 }
 
-void AnimationPlayerEditor::_update_player()
+void AnimationPlayerEditor::_update_player(Object& obj)
 {
 	updating = true;
 
@@ -1191,7 +1193,7 @@ void AnimationPlayerEditor::_update_player()
 	if (active_idx != -1) {
 		animation->select(active_idx);
 		autoplay->set_pressed(animation->get_item_text(active_idx) == player->get_autoplay());
-		_animation_selected(active_idx);
+		_animation_selected(obj, active_idx);
 	}
 	else if (animation->has_selectable_items()) {
 		int item = reset_index;
@@ -1200,10 +1202,10 @@ void AnimationPlayerEditor::_update_player()
 		}
 		animation->select(item);
 		autoplay->set_pressed(animation->get_item_text(item) == player->get_autoplay());
-		_animation_selected(item);
+		_animation_selected(obj, item);
 	}
 	else {
-		_animation_selected(0);
+		_animation_selected(obj, 0);
 	}
 
 	if (no_anims_found) {
@@ -1383,7 +1385,7 @@ void AnimationPlayerEditor::_ensure_dummy_player()
 	}
 }
 
-void AnimationPlayerEditor::edit(AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy)
+void AnimationPlayerEditor::edit(Object& obj, AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy)
 {
 	if (player && pin->is_pressed()) {
 		return; // Ignore, pinned.
@@ -1446,7 +1448,7 @@ void AnimationPlayerEditor::edit(AnimationMixer* p_node, AnimationPlayer* p_play
 			player->connect(SNAME("current_animation_changed"),
 				callable_mp(this, &AnimationPlayerEditor::_current_animation_changed));
 		}
-		_update_player();
+		_update_player(obj);
 
 		if (onion.enabled) {
 			if (animation->has_selectable_items()) {
@@ -1467,7 +1469,7 @@ void AnimationPlayerEditor::edit(AnimationMixer* p_node, AnimationPlayer* p_play
 		track_editor->show_select_node_warning(true);
 	}
 
-	library_editor->set_animation_mixer(fetch_mixer_for_library()->obj.get());
+	library_editor->set_animation_mixer(&obj);
 
 	_ensure_dummy_player();
 }
@@ -1628,7 +1630,7 @@ void AnimationPlayerEditor::_seek_value_changed(float p_value, bool p_timeline_o
 
 void AnimationPlayerEditor::_animation_player_changed(Object* p_pl)
 {
-	_update_player();
+	_update_player(*p_pl);
 
 	if (blend_editor.dialog->is_visible()) {
 		_update_animation_blend(); // Update.
@@ -1639,15 +1641,15 @@ void AnimationPlayerEditor::_animation_player_changed(Object* p_pl)
 	}
 }
 
-void AnimationPlayerEditor::_animation_libraries_updated()
+void AnimationPlayerEditor::_animation_libraries_updated(Object& obj)
 {
-	_animation_player_changed(player->obj.get());
+	_animation_player_changed(&obj);
 }
 
-void AnimationPlayerEditor::_list_changed()
+void AnimationPlayerEditor::_list_changed(Object& obj)
 {
 	if (is_visible_in_tree()) {
-		_update_player();
+		_update_player(obj);
 	}
 }
 
@@ -1762,7 +1764,7 @@ void AnimationPlayerEditor::_animation_update_key_frame()
 	}
 }
 
-void AnimationPlayerEditor::_animation_tool_menu(int p_option)
+void AnimationPlayerEditor::_animation_tool_menu(const Object& obj, int p_option)
 {
 	String current = _get_current();
 
@@ -1770,13 +1772,13 @@ void AnimationPlayerEditor::_animation_tool_menu(int p_option)
 	if (!current.is_empty()) {
 		anim = player->get_animation(current);
 	}
-
+	Object& o = const_cast<Object&>(obj);
 	switch (p_option) {
 	case TOOL_NEW_ANIM: {
 		_animation_new();
 	} break;
 	case TOOL_ANIM_LIBRARY: {
-		library_editor->set_animation_mixer(fetch_mixer_for_library()->obj.get());
+		library_editor->set_animation_mixer(&o);
 		library_editor->show_dialog();
 	} break;
 	case TOOL_DUPLICATE_ANIM: {
@@ -1854,7 +1856,7 @@ void AnimationPlayerEditor::_onion_skinning_menu(int p_option)
 	}
 }
 
-void AnimationPlayerEditor::shortcut_input(const Ref<InputEvent>& p_ev)
+void AnimationPlayerEditor::shortcut_input(const Object& obj, const Ref<InputEvent>& p_ev)
 {
 	ERR_FAIL_COND(p_ev.is_null());
 
@@ -2214,13 +2216,13 @@ void AnimationPlayerEditor::_pin_pressed()
 	SceneTreeDock::get_singleton()->get_tree_editor()->update_tree();
 }
 
-AnimationMixer* AnimationPlayerEditor::fetch_mixer_for_library() const
+AnimationMixer* AnimationPlayerEditor::fetch_mixer_for_library(const Object& obj) const
 {
 	if (!original_node) {
 		return nullptr;
 	}
 	// Does AnimationTree have AnimationPlayer?
-	if (original_node->obj->is_class("AnimationTree")) {
+	if (obj.is_class("AnimationTree")) {
 		AnimationTree* src_tree = Object::cast_to<AnimationTree>(original_node);
 		Node* src_player = src_tree->get_node_or_null(src_tree->get_animation_player());
 		if (src_player) {
@@ -2305,7 +2307,7 @@ AnimationPlayer* AnimationPlayerEditor::get_player() const { return player; }
 
 AnimationMixer* AnimationPlayerEditor::get_editing_node() const { return original_node; }
 
-AnimationPlayerEditor::AnimationPlayerEditor(AnimationPlayerEditorPlugin* p_plugin)
+AnimationPlayerEditor::AnimationPlayerEditor(const Object& obj, AnimationPlayerEditorPlugin* p_plugin)
 {
 	plugin = p_plugin;
 	singleton = this;
@@ -2563,8 +2565,9 @@ AnimationPlayerEditor::AnimationPlayerEditor(AnimationPlayerEditorPlugin* p_plug
 		callable_mp(this, &AnimationPlayerEditor::_animation_key_editor_seek));
 	track_editor->connect(SNAME("animation_len_changed"),
 		callable_mp(this, &AnimationPlayerEditor::_animation_key_editor_anim_len_changed));
+	Object& o = const_cast<Object&>(obj);
 
-	_update_player();
+	_update_player(o);
 
 	library_editor = memnew(AnimationLibraryEditor);
 	add_child(library_editor);
@@ -2700,7 +2703,7 @@ void AnimationPlayerEditorPlugin::edit(Object* p_object)
 	bool is_dummy = false;
 	if (!p_object->is_class("AnimationPlayer")) {
 		// If it needs dummy AnimationPlayer, assign original AnimationMixer to LibraryEditor.
-		_update_dummy_player(src_node);
+		_update_dummy_player(p_object, src_node);
 
 		is_dummy = true;
 
@@ -2725,7 +2728,7 @@ void AnimationPlayerEditorPlugin::edit(Object* p_object)
 	}
 	player->set_dummy(is_dummy);
 
-	anim_editor->edit(src_node, player, is_dummy);
+	anim_editor->edit(*p_object, src_node, player, is_dummy);
 }
 
 void AnimationPlayerEditorPlugin::_clear_dummy_player()
@@ -2741,10 +2744,10 @@ void AnimationPlayerEditorPlugin::_clear_dummy_player()
 	dummy_player = nullptr;
 }
 
-void AnimationPlayerEditorPlugin::_update_dummy_player(AnimationMixer* p_mixer)
+void AnimationPlayerEditorPlugin::_update_dummy_player(const Object& obj, AnimationMixer* p_mixer)
 {
 	// Check current editing object.
-	if (p_mixer->obj->get_instance_id() != last_mixer &&
+	if (obj.get_instance_id() != last_mixer &&
 		p_mixer->is_connected(SNAME("mixer_updated"),
 			callable_mp(this, &AnimationPlayerEditorPlugin::_update_dummy_player))) {
 		p_mixer->disconnect(SNAME("mixer_updated"),
@@ -2766,14 +2769,15 @@ void AnimationPlayerEditorPlugin::_update_dummy_player(AnimationMixer* p_mixer)
 	// Convert AnimationTree (AnimationMixer) to AnimationPlayer.
 	AnimationMixer* default_node = memnew(AnimationMixer);
 	List<PropertyInfo> pinfo;
-	default_node->obj->get_property_list(&pinfo);
+	obj.get_property_list(&pinfo);
+	Object& o = const_cast<Object&>(obj);
 	for (const PropertyInfo& E : pinfo) {
 		if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
 			continue;
 		}
 		if (E.name != "script" && E.name != "active" && E.name != "deterministic" &&
 			E.name != "root_motion_track") {
-			dummy_player->obj->set(E.name, p_mixer->obj->get(E.name));
+			o.set(E.name, obj.get(E.name));
 		}
 	}
 	memdelete(default_node);
@@ -2792,7 +2796,7 @@ void AnimationPlayerEditorPlugin::_update_dummy_player(AnimationMixer* p_mixer)
 	}
 
 	if (anim_editor) {
-		anim_editor->_update_player();
+		anim_editor->_update_player(o);
 	}
 }
 
@@ -2811,9 +2815,9 @@ void AnimationPlayerEditorPlugin::make_visible(bool p_visible)
 	}
 }
 
-AnimationPlayerEditorPlugin::AnimationPlayerEditorPlugin()
+AnimationPlayerEditorPlugin::AnimationPlayerEditorPlugin(const Object& obj)
 {
-	anim_editor = memnew(AnimationPlayerEditor(this));
+	anim_editor = memnew(AnimationPlayerEditor(obj, this));
 	EditorDockManager::get_singleton()->add_dock(anim_editor);
 }
 

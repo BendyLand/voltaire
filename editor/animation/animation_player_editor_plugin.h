@@ -188,45 +188,45 @@ class AnimationPlayerEditor : public EditorDock
 		} temp;
 	} onion;
 
-	void _select_anim_by_name(const String& p_anim);
+	void _select_anim_by_name(Object& obj, const String& p_anim);
 	float _get_editor_step() const;
 	void _play_pressed();
 	void _play_from_pressed();
 	void _play_bw_pressed();
 	void _play_bw_from_pressed();
-	void _autoplay_pressed();
+	void _autoplay_pressed(const Object& obj);
 	void _stop_pressed();
-	void _animation_selected(int p_which);
+	void _animation_selected(Object& obj, int p_which);
 	void _animation_new();
 	void _animation_rename();
-	void _animation_name_edited();
+	void _animation_name_edited(const Object& obj);
 
 	void _animation_remove();
-	void _animation_remove_confirmed();
+	void _animation_remove_confirmed(const Object& obj);
 	void _animation_edit();
 	void _animation_duplicate();
 	Ref<Animation> _animation_clone(const Ref<Animation> p_anim);
 	void _animation_resource_edit();
 	void _scale_changed(const String& p_scale);
 	void _seek_value_changed(float p_value, bool p_timeline_only = false);
-	void _blend_editor_next_changed(const int p_idx);
+	void _blend_editor_next_changed(const Object& obj, const int p_idx);
 
 	void _edit_animation_blend();
 	void _update_animation_blend();
 
-	void _list_changed();
+	void _list_changed(Object& obj);
 	void _animation_finished(const String& p_name);
 	void _current_animation_changed(const StringName& p_name);
 	void _update_animation();
-	void _update_player();
+	void _update_player(Object& obj);
 	void _set_controls_disabled(bool p_disabled);
 	void _update_animation_list_icons();
 	void _update_name_dialog_library_dropdown();
 	void _update_playback_tooltips();
-	void _blend_edited();
+	void _blend_edited(const Object& obj);
 
 	void _animation_player_changed(Object* p_pl);
-	void _animation_libraries_updated();
+	void _animation_libraries_updated(Object& obj);
 
 	void _animation_key_editor_seek(
 		float p_pos, bool p_timeline_only = false, bool p_update_position_only = false);
@@ -234,7 +234,7 @@ class AnimationPlayerEditor : public EditorDock
 	void _animation_update_key_frame();
 
 	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_ev) override;
-	void _animation_tool_menu(int p_option);
+	void _animation_tool_menu(const Object& obj, int p_option);
 	void _onion_skinning_menu(int p_option);
 
 	void _editor_visibility_changed();
@@ -259,15 +259,15 @@ class AnimationPlayerEditor : public EditorDock
 	~AnimationPlayerEditor();
 
 protected:
-	void _notification(int p_what);
-	void _node_removed(Node* p_node);
-	void _find_player();
+	void _notification(Object& obj, int p_what);
+	void _node_removed(Object& obj, Node* p_node);
+	void _find_player(Object& obj);
 	static void _bind_methods();
 
 public:
 	AnimationMixer* get_editing_node() const;
 	AnimationPlayer* get_player() const;
-	AnimationMixer* fetch_mixer_for_library() const;
+	AnimationMixer* fetch_mixer_for_library(const Object& obj) const;
 	Node* get_cached_root_node() const;
 
 	static AnimationPlayerEditor* get_singleton() { return singleton; }
@@ -283,16 +283,16 @@ public:
 	AnimationTrackEditor* get_track_editor() { return track_editor; }
 
 	Dictionary get_state() const;
-	void set_state(const Dictionary& p_state);
+	void set_state(Object& obj, const Dictionary& p_state);
 	void clear();
 
 	void ensure_visibility();
 	void go_to_nearest_keyframe(bool p_backward);
 
-	void edit(AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy);
+	void edit(Object& obj, AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy);
 	void forward_force_draw_over_viewport(Control* p_overlay);
 
-	AnimationPlayerEditor(AnimationPlayerEditorPlugin* p_plugin);
+	AnimationPlayerEditor(const Object& obj, AnimationPlayerEditorPlugin* p_plugin);
 };
 
 class AnimationPlayerEditorPlugin : public EditorPlugin
@@ -306,7 +306,7 @@ class AnimationPlayerEditorPlugin : public EditorPlugin
 	AnimationPlayer* dummy_player = nullptr;
 	ObjectID last_mixer;
 
-	void _update_dummy_player(AnimationMixer* p_mixer);
+	void _update_dummy_player(const Object& obj, AnimationMixer* p_mixer);
 	void _clear_dummy_player();
 
 protected:
@@ -318,13 +318,9 @@ protected:
 
 public:
 	virtual Dictionary get_state() const override { return anim_editor->get_state(); }
-
-	virtual void set_state(const Dictionary& p_state) override { anim_editor->set_state(p_state); }
-
+	virtual void set_state(Object& obj, const Dictionary& p_state) override { anim_editor->set_state(obj, p_state); }
 	virtual void clear() override { anim_editor->clear(); }
-
 	virtual String get_plugin_name() const override { return "Anim"; }
-
 	virtual void edit(Object* p_object) override;
 	virtual bool handles(Object* p_object) const override;
 	virtual void make_visible(bool p_visible) override;
@@ -339,7 +335,7 @@ public:
 		anim_editor->forward_force_draw_over_viewport(p_overlay);
 	}
 
-	AnimationPlayerEditorPlugin();
+	AnimationPlayerEditorPlugin(const Object& obj);
 	~AnimationPlayerEditorPlugin();
 };
 

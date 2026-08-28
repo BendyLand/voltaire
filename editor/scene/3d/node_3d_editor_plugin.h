@@ -526,7 +526,7 @@ public:
 	virtual bool handles(Object *p_object) const override;
 
 	virtual Dictionary get_state() const override;
-	virtual void set_state(const Dictionary &p_state) override;
+	virtual void set_state(Object& obj, const Dictionary &p_state) override;
 	virtual void clear() override { spatial_editor->clear(); }
 
 	virtual void edited_scene_changed() override;

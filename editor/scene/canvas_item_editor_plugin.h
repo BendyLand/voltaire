@@ -690,7 +690,7 @@ public:
 	virtual bool handles(Object* p_object) const override;
 	virtual void make_visible(bool p_visible) override;
 	virtual Dictionary get_state() const override;
-	virtual void set_state(const Dictionary& p_state) override;
+	virtual void set_state(Object& obj, const Dictionary& p_state) override;
 	virtual void clear() override;
 
 	CanvasItemEditor* get_canvas_item_editor() { return canvas_item_editor; }

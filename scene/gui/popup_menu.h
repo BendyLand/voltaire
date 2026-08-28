@@ -506,7 +506,7 @@ public:
 
 	virtual RID get_focused_accessibility_element() const override;
 	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-	virtual String get_tooltip(const Point2& p_pos) const override;
+	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 };
 
 

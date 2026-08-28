@@ -888,8 +888,8 @@ public:
 	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
 	virtual Variant get_drag_data(const Point2& p_point) override;
 	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(const Point2& p_point, const Variant& p_data) override;
-	virtual String get_tooltip(const Point2& p_pos) const override;
+	virtual void drop_data(const Object& obj, const Point2& p_point, const Variant& p_data) override;
+	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 	void set_tooltip_request_func(const Callable& p_tooltip_callback);
 
 	/* Text */

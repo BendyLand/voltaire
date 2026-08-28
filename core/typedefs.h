@@ -46,13 +46,12 @@ static_assert(__cplusplus >= 201703L, "Minimum of C++17 required.");
 #include "platform_config.h"
 
 // Should be available everywhere.
-#include "core/error/error_list.h"
-
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
 #include <utility>
+#include "core/error/error_list.h"
 
 // IWYU pragma: end_exports
 
@@ -84,7 +83,8 @@ static_assert(__cplusplus >= 201703L, "Minimum of C++17 required.");
 #error Thread sanitizer was enabled without defining `TSAN_ENABLED`
 #endif
 
-#if (VLTR_HAS_FEATURE(undefined_behavior_sanitizer) || defined(__UNDEFINED_SANITIZER__)) && !defined(UBSAN_ENABLED)
+#if (VLTR_HAS_FEATURE(undefined_behavior_sanitizer) || defined(__UNDEFINED_SANITIZER__)) &&        \
+	!defined(UBSAN_ENABLED)
 #error Undefined behavior sanitizer was enabled without defining `UBSAN_ENABLED`
 #endif
 
@@ -151,31 +151,29 @@ static_assert(__cplusplus >= 201703L, "Minimum of C++17 required.");
 #undef MAX
 #undef CLAMP
 
-template <typename T>
-constexpr const T SIGN(const T p_value) {
+template <typename T> constexpr const T SIGN(const T p_value)
+{
 	return p_value > 0 ? +1.0f : (p_value < 0 ? -1.0f : 0.0f);
 }
 
-template <typename T, typename T2>
-constexpr auto MIN(const T p_left, const T2 p_right) {
+template <typename T, typename T2> constexpr auto MIN(const T p_left, const T2 p_right)
+{
 	return p_left < p_right ? p_left : p_right;
 }
 
-template <typename T, typename T2>
-constexpr auto MAX(const T p_left, const T2 p_right) {
+template <typename T, typename T2> constexpr auto MAX(const T p_left, const T2 p_right)
+{
 	return p_left > p_right ? p_left : p_right;
 }
 
 template <typename T, typename T2, typename T3>
-constexpr auto CLAMP(const T p_value, const T2 p_min, const T3 p_max) {
+constexpr auto CLAMP(const T p_value, const T2 p_min, const T3 p_max)
+{
 	return p_value < p_min ? p_min : (p_value > p_max ? p_max : p_value);
 }
 
 // Like std::size, but without requiring any additional includes.
-template <typename T, size_t SIZE>
-constexpr size_t std_size(const T (&)[SIZE]) {
-	return SIZE;
-}
+template <typename T, size_t SIZE> constexpr size_t std_size(const T (&)[SIZE]) { return SIZE; }
 
 // Generic swap template.
 #ifndef SWAP
@@ -192,15 +190,15 @@ constexpr size_t std_size(const T (&)[SIZE]) {
 #define BSWAP32(x) _byteswap_ulong(x)
 #define BSWAP64(x) _byteswap_uint64(x)
 #else
-static inline uint16_t BSWAP16(uint16_t x) {
-	return (x >> 8) | (x << 8);
-}
+static inline uint16_t BSWAP16(uint16_t x) { return (x >> 8) | (x << 8); }
 
-static inline uint32_t BSWAP32(uint32_t x) {
+static inline uint32_t BSWAP32(uint32_t x)
+{
 	return ((x << 24) | ((x << 8) & 0x00FF0000) | ((x >> 8) & 0x0000FF00) | (x >> 24));
 }
 
-static inline uint64_t BSWAP64(uint64_t x) {
+static inline uint64_t BSWAP64(uint64_t x)
+{
 	x = (x & 0x00000000FFFFFFFF) << 32 | (x & 0xFFFFFFFF00000000) >> 32;
 	x = (x & 0x0000FFFF0000FFFF) << 16 | (x & 0xFFFF0000FFFF0000) >> 16;
 	x = (x & 0x00FF00FF00FF00FF) << 8 | (x & 0xFF00FF00FF00FF00) >> 8;
@@ -209,17 +207,19 @@ static inline uint64_t BSWAP64(uint64_t x) {
 #endif
 
 // Generic comparator used in Map, List, etc.
-template <typename T>
-struct Comparator {
-	_ALWAYS_INLINE_ bool operator()(const T &p_a, const T &p_b) const { return (p_a < p_b); }
+template <typename T> struct Comparator
+{
+	_ALWAYS_INLINE_ bool operator()(const T& p_a, const T& p_b) const { return (p_a < p_b); }
 };
 
 // Global lock macro, relies on the static Mutex::_global_mutex.
 void _global_lock();
 void _global_unlock();
 
-struct _GlobalLock {
+struct _GlobalLock
+{
 	_GlobalLock() { _global_lock(); }
+
 	~_GlobalLock() { _global_unlock(); }
 };
 
@@ -243,23 +243,29 @@ struct _GlobalLock {
 
 // This is needed due to a strange OpenGL API that expects a pointer
 // type for an argument that is actually an offset.
-#define CAST_INT_TO_UCHAR_PTR(ptr) ((uint8_t *)(uintptr_t)(ptr))
+#define CAST_INT_TO_UCHAR_PTR(ptr) ((uint8_t*)(uintptr_t)(ptr))
 
-// Home-made index sequence trick, so it can be used everywhere without the costly include of std::tuple.
+// Home-made index sequence trick, so it can be used everywhere without the costly include of
+// std::tuple.
 // https://stackoverflow.com/questions/15014096/c-index-of-type-during-variadic-template-expansion
-template <size_t... Is>
-struct IndexSequence {};
+template <size_t... Is> struct IndexSequence
+{
+};
 
 template <size_t N, size_t... Is>
-struct BuildIndexSequence : BuildIndexSequence<N - 1, N - 1, Is...> {};
+struct BuildIndexSequence : BuildIndexSequence<N - 1, N - 1, Is...>
+{
+};
 
-template <size_t... Is>
-struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
+template <size_t... Is> struct BuildIndexSequence<0, Is...> : IndexSequence<Is...>
+{
+};
 
 // Limit the depth of recursive algorithms when dealing with Array/Dictionary
 #define MAX_RECURSION 100
 
-// Macro VLTR_IS_DEFINED() allows to check if a macro is defined. It needs to be defined to anything (say 1) to work.
+// Macro VLTR_IS_DEFINED() allows to check if a macro is defined. It needs to be defined to anything
+// (say 1) to work.
 #define __VLTRARG_PLACEHOLDER_1 false,
 #define __gd_take_second_arg(__ignored, val, ...) val
 #define ____gd_is_defined(arg1_or_junk) __gd_take_second_arg(arg1_or_junk true, false)
@@ -269,17 +275,21 @@ struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
 // Whether the default value of a type is just all-0 bytes.
 // This can most commonly be exploited by using memset for these types instead of loop-construct.
 // Trivially constructible types are also zero-constructible.
-template <typename T>
-struct is_zero_constructible : std::is_trivially_constructible<T> {};
+template <typename T> struct is_zero_constructible : std::is_trivially_constructible<T>
+{
+};
 
-template <typename T>
-struct is_zero_constructible<const T> : is_zero_constructible<T> {};
+template <typename T> struct is_zero_constructible<const T> : is_zero_constructible<T>
+{
+};
 
-template <typename T>
-struct is_zero_constructible<volatile T> : is_zero_constructible<T> {};
+template <typename T> struct is_zero_constructible<volatile T> : is_zero_constructible<T>
+{
+};
 
-template <typename T>
-struct is_zero_constructible<const volatile T> : is_zero_constructible<T> {};
+template <typename T> struct is_zero_constructible<const volatile T> : is_zero_constructible<T>
+{
+};
 
 template <typename T>
 inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
@@ -297,7 +307,8 @@ inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
 #define VLTR_CLANG_WARNING_PUSH VLTR_CLANG_PRAGMA(clang diagnostic push)
 #define VLTR_CLANG_WARNING_IGNORE(m_warning) VLTR_CLANG_PRAGMA(clang diagnostic ignored m_warning)
 #define VLTR_CLANG_WARNING_POP VLTR_CLANG_PRAGMA(clang diagnostic pop)
-#define VLTR_CLANG_WARNING_PUSH_AND_IGNORE(m_warning) VLTR_CLANG_WARNING_PUSH VLTR_CLANG_WARNING_IGNORE(m_warning)
+#define VLTR_CLANG_WARNING_PUSH_AND_IGNORE(m_warning)                                              \
+	VLTR_CLANG_WARNING_PUSH VLTR_CLANG_WARNING_IGNORE(m_warning)
 #else
 #define VLTR_CLANG_PRAGMA(m_content)
 #define VLTR_CLANG_WARNING_PUSH
@@ -311,7 +322,8 @@ inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
 #define VLTR_GCC_WARNING_PUSH VLTR_GCC_PRAGMA(GCC diagnostic push)
 #define VLTR_GCC_WARNING_IGNORE(m_warning) VLTR_GCC_PRAGMA(GCC diagnostic ignored m_warning)
 #define VLTR_GCC_WARNING_POP VLTR_GCC_PRAGMA(GCC diagnostic pop)
-#define VLTR_GCC_WARNING_PUSH_AND_IGNORE(m_warning) VLTR_GCC_WARNING_PUSH VLTR_GCC_WARNING_IGNORE(m_warning)
+#define VLTR_GCC_WARNING_PUSH_AND_IGNORE(m_warning)                                                \
+	VLTR_GCC_WARNING_PUSH VLTR_GCC_WARNING_IGNORE(m_warning)
 #else
 #define VLTR_GCC_PRAGMA(m_content)
 #define VLTR_GCC_WARNING_PUSH
@@ -325,7 +337,9 @@ inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
 #define VLTR_MSVC_WARNING_PUSH VLTR_MSVC_PRAGMA(warning(push))
 #define VLTR_MSVC_WARNING_IGNORE(m_warning) VLTR_MSVC_PRAGMA(warning(disable : m_warning))
 #define VLTR_MSVC_WARNING_POP VLTR_MSVC_PRAGMA(warning(pop))
-#define VLTR_MSVC_WARNING_PUSH_AND_IGNORE(m_warning) VLTR_MSVC_WARNING_PUSH VLTR_MSVC_WARNING_IGNORE(m_warning)
+#define VLTR_MSVC_WARNING_PUSH_AND_IGNORE(m_warning)
+                         \
+	VLTR_MSVC_WARNING_PUSH VLTR_MSVC_WARNING_IGNORE(m_warning)
 #else
 #define VLTR_MSVC_PRAGMA(m_command)
 #define VLTR_MSVC_WARNING_PUSH
@@ -336,7 +350,8 @@ inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
 
 // Deprecation warning suppression helper macros.
 #if defined(__clang__)
-#define VLTR_PUSH_IGNORE_DEPRECATION() VLTR_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
+#define VLTR_PUSH_IGNORE_DEPRECATION()                                                             \
+	VLTR_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
 #define VLTR_POP_IGNORE_DEPRECATION() VLTR_CLANG_WARNING_POP
 #endif
 
@@ -350,22 +365,25 @@ inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
 #define VLTR_POP_IGNORE_DEPRECATION() VLTR_MSVC_WARNING_POP
 #endif
 
-template <typename T, typename = void>
-struct is_fully_defined : std::false_type {};
+template <typename T, typename = void> struct is_fully_defined : std::false_type
+{
+};
 
-template <typename T>
-struct is_fully_defined<T, std::void_t<decltype(sizeof(T))>> : std::true_type {};
+template <typename T> struct is_fully_defined<T, std::void_t<decltype(sizeof(T))>> : std::true_type
+{
+};
 
-template <typename T>
-constexpr bool is_fully_defined_v = is_fully_defined<T>::value;
+template <typename T> constexpr bool is_fully_defined_v = is_fully_defined<T>::value;
 
 #ifndef SCU_BUILD_ENABLED
 /// Enforces the requirement that a class is not fully defined.
 /// This can be used to reduce include coupling and keep compile times low.
 /// The check must be made at the top of the corresponding .cpp file of a header.
-#define STATIC_ASSERT_INCOMPLETE_TYPE(m_keyword, m_type) \
-	m_keyword m_type; \
-	static_assert(!is_fully_defined_v<m_type>, #m_type " was unexpectedly fully defined. Please check the include hierarchy of '" __FILE__ "' and remove includes that resolve the " #m_keyword ".");
+#define STATIC_ASSERT_INCOMPLETE_TYPE(m_keyword, m_type)                                           \
+	m_keyword m_type;                                                                              \
+	static_assert(!is_fully_defined_v<m_type>, #m_type                                             \
+		" was unexpectedly fully defined. Please check the include hierarchy of '" __FILE__        \
+		"' and remove includes that resolve the " #m_keyword ".");
 #else
 #define STATIC_ASSERT_INCOMPLETE_TYPE(m_keyword, m_type)
 #endif
@@ -374,3 +392,5 @@ constexpr bool is_fully_defined_v = is_fully_defined<T>::value;
 #define _VLTR_VARNAME_CONCAT_A_(m_a, m_b, m_c) _VLTR_VARNAME_CONCAT_B_(hello there, m_a##m_b##m_c)
 #define _VLTR_VARNAME_CONCAT_(m_a, m_b, m_c) _VLTR_VARNAME_CONCAT_A_(m_a, m_b, m_c)
 #define VLTR_UNIQUE_NAME(m_name) _VLTR_VARNAME_CONCAT_(m_name, _, __COUNTER__)
+
+

@@ -109,7 +109,7 @@ protected:
 	void _focus_entered(bool p_hide_focus = false);
 
 public:
-	String get_tooltip(const Point2 &p_pos) const override;
+	String get_tooltip(const Object& obj, const Point2 &p_pos) const override;
 
 	virtual Size2 get_minimum_size() const override;
 

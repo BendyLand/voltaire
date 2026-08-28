@@ -222,7 +222,7 @@ protected:
 public:
 	static float get_bezier_key_value(Array p_bezier_key_array);
 
-	virtual String get_tooltip(const Point2& p_pos) const override;
+	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 
 	Ref<Animation> get_animation() const;
 

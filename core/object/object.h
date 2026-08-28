@@ -217,6 +217,7 @@ private:
 	bool _predelete_ok : 1;
 
 public:
+	Object(bool p_reference);
 	bool _is_queued_for_deletion : 1; // Set to true by SceneTree::queue_delete().
 
 private:
@@ -278,7 +279,6 @@ private:
 	InstanceBinding* _instance_bindings = nullptr;
 	uint32_t _instance_binding_count = 0;
 
-	Object(bool p_reference);
 
 protected:
 	friend class Node;

@@ -718,7 +718,7 @@ public:
 		const Callable& p_drag, const Callable& p_can_drop, const Callable& p_drop);
 	virtual Variant get_drag_data(const Point2& p_point);
 	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const;
-	virtual void drop_data(const Point2& p_point, const Variant& p_data);
+	virtual void drop_data(const Object& obj, const Point2& p_point, const Variant& p_data);
 	void set_drag_preview(Control* p_control);
 	void force_drag(const Variant& p_data, Control* p_control);
 	void accessibility_drag();
@@ -889,7 +889,7 @@ public:
 	void set_tooltip_text(const String& text);
 	StringName get_translation_context() const;
 	void set_translation_context(const StringName& p_context);
-	virtual String get_tooltip(const Point2& p_pos) const;
+	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const;
 	virtual Control* make_custom_tooltip(const String& p_text) const;
 
 	virtual String accessibility_get_contextual_info() const;

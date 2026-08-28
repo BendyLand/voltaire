@@ -33,13 +33,15 @@
 #include "core/object/script_language.h"
 #include "scene/gui/text_edit.h"
 
-class CodeEdit : public TextEdit {
+class CodeEdit : public TextEdit
+{
 	VLTRCLASS(CodeEdit, TextEdit)
 
 public:
 	// Keep enums in sync with:
 	// core/object/script_language.h - ScriptLanguage::CodeCompletionKind
-	enum CodeCompletionKind {
+	enum CodeCompletionKind
+	{
 		KIND_CLASS,
 		KIND_FUNCTION,
 		KIND_SIGNAL,
@@ -54,7 +56,8 @@ public:
 	};
 
 	// core/object/script_language.h - ScriptLanguage::CodeCompletionLocation
-	enum CodeCompletionLocation {
+	enum CodeCompletionLocation
+	{
 		LOCATION_LOCAL = 0,
 		LOCATION_PARENT_MASK = 1 << 8,
 		LOCATION_OTHER_USER_CODE = 1 << 9,
@@ -79,17 +82,20 @@ private:
 	bool auto_brace_completion_enabled = false;
 
 	/* BracePair open_key must be uniquie and ordered by length. */
-	struct BracePair {
+	struct BracePair
+	{
 		String open_key = "";
 		String close_key = "";
 	};
+
 	Vector<BracePair> auto_brace_completion_pairs;
 
 	int _get_auto_brace_pair_open_at_pos(int p_line, int p_col);
 	int _get_auto_brace_pair_close_at_pos(int p_line, int p_col);
 
 	/* Main Gutter */
-	enum MainGutterType {
+	enum MainGutterType
+	{
 		MAIN_GUTTER_BREAKPOINT = 0x01,
 		MAIN_GUTTER_BOOKMARK = 0x02,
 		MAIN_GUTTER_EXECUTING = 0x04
@@ -97,8 +103,12 @@ private:
 
 	int main_gutter = -1;
 	void _update_draw_main_gutter();
-	void _main_gutter_draw_callback(int p_line, int p_gutter, const Rect2 &p_region);
-	_FORCE_INLINE_ bool _is_bookmark_only() { return draw_bookmarks && !draw_executing_lines && !draw_breakpoints; }
+	void _main_gutter_draw_callback(int p_line, int p_gutter, const Rect2& p_region);
+
+	_FORCE_INLINE_ bool _is_bookmark_only()
+	{
+		return draw_bookmarks && !draw_executing_lines && !draw_breakpoints;
+	}
 
 	// breakpoints
 	HashMap<int, bool> breakpointed_lines;
@@ -118,7 +128,7 @@ private:
 	HashMap<int, RID> line_number_text_cache;
 	void _clear_line_number_text_cache();
 	void _update_line_number_gutter_width();
-	void _line_number_draw_callback(int p_line, int p_gutter, const Rect2 &p_region);
+	void _line_number_draw_callback(int p_line, int p_gutter, const Rect2& p_region);
 
 	/* Fold Gutter */
 	int fold_gutter = -1;
@@ -139,22 +149,25 @@ private:
 	bool _unfold_line(int p_line);
 
 	/* Delimiters */
-	enum DelimiterType {
+	enum DelimiterType
+	{
 		TYPE_STRING,
 		TYPE_COMMENT,
 	};
 
-	struct Delimiter {
+	struct Delimiter
+	{
 		DelimiterType type;
 		String start_key = "";
 		String end_key = "";
 		bool line_only = true;
 	};
+
 	bool setting_delimiters = false;
 	Vector<Delimiter> delimiters;
 	/*
-	 *  Vector entry per line, contains a Map of column numbers to delimiter index, -1 marks the end of a region.
-	 *  e.g the following text will be stored as so:
+	 *  Vector entry per line, contains a Map of column numbers to delimiter index, -1 marks the end
+	 *of a region. e.g the following text will be stored as so:
 	 *
 	 *  0: nothing here
 	 *  1:
@@ -192,11 +205,12 @@ private:
 	void _update_delimiter_cache(int p_from_line = 0, int p_to_line = -1);
 	int _is_in_delimiter(int p_line, int p_column, DelimiterType p_type) const;
 
-	void _add_delimiter(const String &p_start_key, const String &p_end_key, bool p_line_only, DelimiterType p_type);
-	void _remove_delimiter(const String &p_start_key, DelimiterType p_type);
-	bool _has_delimiter(const String &p_start_key, DelimiterType p_type) const;
+	void _add_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only, DelimiterType p_type);
+	void _remove_delimiter(const String& p_start_key, DelimiterType p_type);
+	bool _has_delimiter(const String& p_start_key, DelimiterType p_type) const;
 
-	void _set_delimiters(const TypedArray<String> &p_delimiters, DelimiterType p_type);
+	void _set_delimiters(const TypedArray<String>& p_delimiters, DelimiterType p_type);
 	void _clear_delimiters(DelimiterType p_type);
 	TypedArray<String> _get_delimiters(DelimiterType p_type) const;
 
@@ -237,7 +251,8 @@ private:
 
 	void _update_scroll_selected_line(float p_mouse_y);
 	void _filter_code_completion_candidates_impl();
-	bool _should_reset_selected_option_for_new_options(const Vector<ScriptLanguage::CodeCompletionOption> &p_new_options);
+	bool _should_reset_selected_option_for_new_options(
+		const Vector<ScriptLanguage::CodeCompletionOption>& p_new_options);
 
 	/* Line length guidelines */
 	TypedArray<int> line_length_guideline_columns;
@@ -252,11 +267,12 @@ private:
 	bool symbol_tooltip_on_hover_enabled = false;
 	Point2i symbol_tooltip_pos; // Column and line.
 	String symbol_tooltip_word;
-	Timer *symbol_tooltip_timer = nullptr;
+	Timer* symbol_tooltip_timer = nullptr;
 	void _on_symbol_tooltip_timer_timeout();
 
 	/* Visual */
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		/* Gutters */
 		Color code_folding_color = Color(1, 1, 1);
 		Color folded_code_region_color = Color(1, 1, 1);
@@ -331,7 +347,10 @@ protected:
 
 #ifndef DISABLE_DEPRECATED
 	String _get_text_for_symbol_lookup_bind_compat_73196();
-	void _add_code_completion_option_bind_compat_84906(CodeCompletionKind p_type, const String &p_display_text, const String &p_insert_text, const Color &p_text_color = Color(1, 1, 1), const Ref<Resource> &p_icon = Ref<Resource>(), const Variant &p_value = Variant::NIL, int p_location = LOCATION_OTHER);
+	void _add_code_completion_option_bind_compat_84906(CodeCompletionKind p_type,
+		const String& p_display_text, const String& p_insert_text,
+		const Color& p_text_color = Color(1, 1, 1), const Ref<Resource>& p_icon = Ref<Resource>(),
+		const Variant& p_value = Variant::NIL, int p_location = LOCATION_OTHER);
 	static void _bind_compatibility_methods();
 #endif
 
@@ -350,8 +369,8 @@ protected:
 
 public:
 	/* General overrides */
-	virtual void gui_input(const Ref<InputEvent> &p_gui_input) override;
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos = Point2i()) const override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_gui_input) override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
 
 	/* Indent management */
 	void set_indent_size(const int p_size);
@@ -363,7 +382,7 @@ public:
 	void set_auto_indent_enabled(bool p_enabled);
 	bool is_auto_indent_enabled() const;
 
-	void set_auto_indent_prefixes(const TypedArray<String> &p_prefixes);
+	void set_auto_indent_prefixes(const TypedArray<String>& p_prefixes);
 	TypedArray<String> get_auto_indent_prefixes() const;
 
 	void do_indent();
@@ -380,14 +399,14 @@ public:
 	void set_highlight_matching_braces_enabled(bool p_enabled);
 	bool is_highlight_matching_braces_enabled() const;
 
-	void add_auto_brace_completion_pair(const String &p_open_key, const String &p_close_key);
-	void set_auto_brace_completion_pairs(const Dictionary &p_auto_brace_completion_pairs);
+	void add_auto_brace_completion_pair(const String& p_open_key, const String& p_close_key);
+	void set_auto_brace_completion_pairs(const Dictionary& p_auto_brace_completion_pairs);
 	Dictionary get_auto_brace_completion_pairs() const;
 
-	bool has_auto_brace_completion_open_key(const String &p_open_key) const;
-	bool has_auto_brace_completion_close_key(const String &p_close_key) const;
+	bool has_auto_brace_completion_open_key(const String& p_open_key) const;
+	bool has_auto_brace_completion_close_key(const String& p_close_key) const;
 
-	String get_auto_brace_completion_close_key(const String &p_open_key) const;
+	String get_auto_brace_completion_close_key(const String& p_open_key) const;
 
 	/* Main Gutter */
 	void set_draw_breakpoints_gutter(bool p_draw);
@@ -451,26 +470,28 @@ public:
 	void create_code_region();
 	String get_code_region_start_tag() const;
 	String get_code_region_end_tag() const;
-	void set_code_region_tags(const String &p_start = "region", const String &p_end = "endregion");
+	void set_code_region_tags(const String& p_start = "region", const String& p_end = "endregion");
 	bool is_line_code_region_start(int p_line) const;
 	bool is_line_code_region_end(int p_line) const;
 
 	/* Delimiters */
-	void add_string_delimiter(const String &p_start_key, const String &p_end_key, bool p_line_only = false);
-	void remove_string_delimiter(const String &p_start_key);
-	bool has_string_delimiter(const String &p_start_key) const;
+	void add_string_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only = false);
+	void remove_string_delimiter(const String& p_start_key);
+	bool has_string_delimiter(const String& p_start_key) const;
 
-	void set_string_delimiters(const TypedArray<String> &p_string_delimiters);
+	void set_string_delimiters(const TypedArray<String>& p_string_delimiters);
 	void clear_string_delimiters();
 	TypedArray<String> get_string_delimiters() const;
 
 	int is_in_string(int p_line, int p_column = -1) const;
 
-	void add_comment_delimiter(const String &p_start_key, const String &p_end_key, bool p_line_only = false);
-	void remove_comment_delimiter(const String &p_start_key);
-	bool has_comment_delimiter(const String &p_start_key) const;
+	void add_comment_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only = false);
+	void remove_comment_delimiter(const String& p_start_key);
+	bool has_comment_delimiter(const String& p_start_key) const;
 
-	void set_comment_delimiters(const TypedArray<String> &p_comment_delimiters);
+	void set_comment_delimiters(const TypedArray<String>& p_comment_delimiters);
 	void clear_comment_delimiters();
 	TypedArray<String> get_comment_delimiters() const;
 
@@ -483,21 +504,24 @@ public:
 	Point2 get_delimiter_end_position(int p_line, int p_column) const;
 
 	/* Code hint */
-	void set_code_hint(const String &p_hint);
+	void set_code_hint(const String& p_hint);
 	void set_code_hint_draw_below(bool p_below);
 
 	/* Code Completion */
 	void set_code_completion_enabled(bool p_enable);
 	bool is_code_completion_enabled() const;
 
-	void set_code_completion_prefixes(const TypedArray<String> &p_prefixes);
+	void set_code_completion_prefixes(const TypedArray<String>& p_prefixes);
 	TypedArray<String> get_code_completion_prefixes() const;
 
 	String get_text_for_code_completion() const;
 
 	void request_code_completion(bool p_force = false);
 
-	void add_code_completion_option(CodeCompletionKind p_type, const String &p_display_text, const String &p_insert_text, const Color &p_text_color = Color(1, 1, 1), const Ref<Resource> &p_icon = Ref<Resource>(), const Variant &p_value = Variant(), int p_location = LOCATION_OTHER);
+	void add_code_completion_option(CodeCompletionKind p_type, const String& p_display_text,
+		const String& p_insert_text, const Color& p_text_color = Color(1, 1, 1),
+		const Ref<Resource>& p_icon = Ref<Resource>(), const Variant& p_value = Variant(),
+		int p_location = LOCATION_OTHER);
 	void update_code_completion_options(bool p_forced = false);
 
 	TypedArray<Dictionary> get_code_completion_options() const;
@@ -531,7 +555,7 @@ public:
 	void move_lines_up();
 	void move_lines_down();
 	void delete_lines();
-	void join_lines(const String &p_line_ending = " ");
+	void join_lines(const String& p_line_ending = " ");
 	void duplicate_selection();
 	void duplicate_lines();
 
@@ -543,6 +567,10 @@ VARIANT_ENUM_CAST(CodeEdit::CodeCompletionKind);
 VARIANT_ENUM_CAST(CodeEdit::CodeCompletionLocation);
 
 // The custom comparer which will sort completion options.
-struct CodeCompletionOptionCompare {
-	_FORCE_INLINE_ bool operator()(const ScriptLanguage::CodeCompletionOption &l, const ScriptLanguage::CodeCompletionOption &r) const;
+struct CodeCompletionOptionCompare
+{
+	_FORCE_INLINE_ bool operator()(const ScriptLanguage::CodeCompletionOption& l,
+		const ScriptLanguage::CodeCompletionOption& r) const;
 };
+
+

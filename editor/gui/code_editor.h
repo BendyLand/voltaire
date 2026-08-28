@@ -43,54 +43,57 @@ class MenuButton;
 class RichTextLabel;
 class Timer;
 
-class GotoLinePopup : public PopupPanel {
+class GotoLinePopup : public PopupPanel
+{
 	VLTRCLASS(GotoLinePopup, PopupPanel);
 
 	Variant original_state;
-	LineEdit *line_input = nullptr;
-	CodeTextEditor *text_editor = nullptr;
+	LineEdit* line_input = nullptr;
+	CodeTextEditor* text_editor = nullptr;
 
 	void _goto_line();
 	void _submit();
 
 protected:
 	void _notification(int p_what);
-	virtual void _input_from_window(const Ref<InputEvent> &p_event) override;
+	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
 
 public:
-	void popup_find_line(CodeTextEditor *p_text_editor);
+	void popup_find_line(CodeTextEditor* p_text_editor);
 
 	GotoLinePopup();
 };
 
-class FindReplaceBar : public HBoxContainer {
+class FindReplaceBar : public HBoxContainer
+{
 	VLTRCLASS(FindReplaceBar, HBoxContainer);
 
-	enum SearchMode {
+	enum SearchMode
+	{
 		SEARCH_CURRENT,
 		SEARCH_NEXT,
 		SEARCH_PREV,
 	};
 
-	Button *toggle_replace_button = nullptr;
-	LineEdit *search_text = nullptr;
-	Label *matches_label = nullptr;
-	Button *find_prev = nullptr;
-	Button *find_next = nullptr;
-	CheckBox *case_sensitive = nullptr;
-	CheckBox *whole_words = nullptr;
-	Button *hide_button = nullptr;
+	Button* toggle_replace_button = nullptr;
+	LineEdit* search_text = nullptr;
+	Label* matches_label = nullptr;
+	Button* find_prev = nullptr;
+	Button* find_next = nullptr;
+	CheckBox* case_sensitive = nullptr;
+	CheckBox* whole_words = nullptr;
+	Button* hide_button = nullptr;
 
-	LineEdit *replace_text = nullptr;
-	Button *replace = nullptr;
-	Button *replace_all = nullptr;
-	CheckBox *selection_only = nullptr;
+	LineEdit* replace_text = nullptr;
+	Button* replace = nullptr;
+	Button* replace_all = nullptr;
+	CheckBox* selection_only = nullptr;
 
-	HBoxContainer *hbc_button_replace = nullptr;
-	HBoxContainer *hbc_option_replace = nullptr;
+	HBoxContainer* hbc_button_replace = nullptr;
+	HBoxContainer* hbc_option_replace = nullptr;
 
-	CodeTextEditor *base_text_editor = nullptr;
-	CodeEdit *text_editor = nullptr;
+	CodeTextEditor* base_text_editor = nullptr;
+	CodeEdit* text_editor = nullptr;
 
 	uint32_t flags = 0;
 
@@ -102,9 +105,9 @@ class FindReplaceBar : public HBoxContainer {
 	bool replace_all_mode = false;
 	bool preserve_cursor = false;
 
-	virtual void input(const Ref<InputEvent> &p_event) override;
+	virtual void input(const Ref<InputEvent>& p_event) override;
 
-	void _get_search_from(int &r_line, int &r_col, SearchMode p_search_mode);
+	void _get_search_from(int& r_line, int& r_col, SearchMode p_search_mode);
 	void _update_results_count();
 	void _update_matches_display();
 
@@ -114,9 +117,9 @@ class FindReplaceBar : public HBoxContainer {
 
 	void _editor_text_changed();
 	void _search_options_changed(bool p_pressed);
-	void _search_text_changed(const String &p_text);
-	void _search_text_submitted(const String &p_text);
-	void _replace_text_submitted(const String &p_text);
+	void _search_text_changed(const String& p_text);
+	void _search_text_submitted(const String& p_text);
+	void _replace_text_submitted(const String& p_text);
 	void _replace_button_pressed();
 	void _toggle_replace_pressed();
 
@@ -140,7 +143,7 @@ public:
 	bool is_whole_words() const;
 	bool is_selection_only() const;
 
-	void set_text_edit(CodeTextEditor *p_text_editor);
+	void set_text_edit(CodeTextEditor* p_text_editor);
 
 	void popup_search(bool p_show_only = false);
 	void popup_replace();
@@ -155,34 +158,36 @@ public:
 	FindReplaceBar();
 };
 
-typedef void (*CodeTextEditorCodeCompleteFunc)(void *p_ud, const String &p_code, List<ScriptLanguage::CodeCompletionOption> *r_options, bool &r_forced);
+typedef void (*CodeTextEditorCodeCompleteFunc)(void* p_ud, const String& p_code,
+	List<ScriptLanguage::CodeCompletionOption>* r_options, bool& r_forced);
 
-class CodeTextEditor : public VBoxContainer {
+class CodeTextEditor : public VBoxContainer
+{
 	VLTRCLASS(CodeTextEditor, VBoxContainer);
 
-	CodeEdit *text_editor = nullptr;
-	FindReplaceBar *find_replace_bar = nullptr;
-	HBoxContainer *status_bar = nullptr;
+	CodeEdit* text_editor = nullptr;
+	FindReplaceBar* find_replace_bar = nullptr;
+	HBoxContainer* status_bar = nullptr;
 
-	Button *toggle_files_button = nullptr;
-	Control *toggle_files_list = nullptr;
-	Button *error_button = nullptr;
-	Button *warning_button = nullptr;
+	Button* toggle_files_button = nullptr;
+	Control* toggle_files_list = nullptr;
+	Button* error_button = nullptr;
+	Button* warning_button = nullptr;
 
-	MenuButton *zoom_button = nullptr;
-	Button *line_and_col_button = nullptr;
-	Label *indentation_txt = nullptr;
+	MenuButton* zoom_button = nullptr;
+	Button* line_and_col_button = nullptr;
+	Label* indentation_txt = nullptr;
 
-	Timer *idle = nullptr;
+	Timer* idle = nullptr;
 	float idle_time = 0.0f;
 	float idle_time_with_errors = 0.0f;
 	bool code_complete_enabled = true;
-	Timer *code_complete_timer = nullptr;
+	Timer* code_complete_timer = nullptr;
 	int code_complete_timer_line = 0;
 
 	float zoom_factor = 1.0f;
 
-	RichTextLabel *error = nullptr;
+	RichTextLabel* error = nullptr;
 	int error_line;
 	int error_column;
 
@@ -192,10 +197,10 @@ class CodeTextEditor : public VBoxContainer {
 	void _update_text_editor_theme();
 	void _update_font_ligatures();
 	void _complete_request();
-	Ref<Texture2D> _get_completion_icon(const ScriptLanguage::CodeCompletionOption &p_option);
+	Ref<Texture2D> _get_completion_icon(const ScriptLanguage::CodeCompletionOption& p_option);
 
-	virtual void input(const Ref<InputEvent> &event) override;
-	void _text_editor_gui_input(const Ref<InputEvent> &p_event);
+	virtual void input(const Ref<InputEvent>& event) override;
+	void _text_editor_gui_input(const Ref<InputEvent>& p_event);
 
 	Color completion_font_color;
 	Color completion_string_color;
@@ -204,7 +209,7 @@ class CodeTextEditor : public VBoxContainer {
 	Color completion_comment_color;
 	Color completion_doc_comment_color;
 	CodeTextEditorCodeCompleteFunc code_complete_func;
-	void *code_complete_ud = nullptr;
+	void* code_complete_ud = nullptr;
 
 	void _zoom_in();
 	void _zoom_out();
@@ -219,7 +224,7 @@ class CodeTextEditor : public VBoxContainer {
 	void _warning_button_pressed();
 	void _set_show_errors_panel(bool p_show);
 	void _set_show_warnings_panel(bool p_show);
-	void _error_pressed(const Ref<InputEvent> &p_event);
+	void _error_pressed(const Ref<InputEvent>& p_event);
 
 	void _zoom_popup_id_pressed(int p_idx);
 
@@ -227,8 +232,13 @@ class CodeTextEditor : public VBoxContainer {
 
 protected:
 	virtual void _load_theme_settings() {}
+
 	virtual void _validate_script() {}
-	virtual void _code_complete_script(const String &p_code, List<ScriptLanguage::CodeCompletionOption> *r_options) {}
+
+	virtual void _code_complete_script(
+		const String& p_code, List<ScriptLanguage::CodeCompletionOption>* r_options)
+	{
+	}
 
 	void _text_changed_idle_timeout();
 	void _code_complete_timer_timeout();
@@ -245,18 +255,20 @@ public:
 	void trim_final_newlines();
 	void insert_final_newline();
 
-	enum CaseStyle {
+	enum CaseStyle
+	{
 		UPPER,
 		LOWER,
 		CAPITALIZE,
 	};
+
 	void convert_case(CaseStyle p_case);
 
 	void set_indent_using_spaces(bool p_use_spaces);
 
-	/// Toggle inline comment on currently selected lines, or on current line if nothing is selected,
-	/// by adding or removing comment delimiter
-	void toggle_inline_comment(const String &delimiter);
+	/// Toggle inline comment on currently selected lines, or on current line if nothing is
+	/// selected, by adding or removing comment delimiter
+	void toggle_inline_comment(const String& delimiter);
 
 	void adjust_viewport_to_caret();
 	void center_viewport_to_caret();
@@ -272,7 +284,7 @@ public:
 	void clear_executing_line();
 
 	Dictionary get_edit_state();
-	void set_edit_state(const Dictionary &p_state);
+	void set_edit_state(const Dictionary& p_state);
 	Dictionary get_navigation_state();
 	Dictionary get_previous_state();
 	void store_previous_state();
@@ -284,17 +296,24 @@ public:
 	void set_warning_count(int p_warning_count);
 
 	void update_editor_settings();
-	void set_error(const String &p_error);
+	void set_error(const String& p_error);
 	void set_error_pos(int p_line, int p_column);
 	Point2i get_error_pos() const;
-	/// Convert internal position into a user readable format. This means 1 is the first position and the column counts tabs with their tab width.
+	/// Convert internal position into a user readable format. This means 1 is the first position
+	/// and the column counts tabs with their tab width.
 	Point2i get_pos_for_display(Point2i p_internal_position) const;
+
 	void update_line_and_column() { _line_col_changed(); }
-	CodeEdit *get_text_editor() { return text_editor; }
-	FindReplaceBar *get_find_replace_bar() { return find_replace_bar; }
-	void set_find_replace_bar(FindReplaceBar *p_bar);
+
+	CodeEdit* get_text_editor() { return text_editor; }
+
+	FindReplaceBar* get_find_replace_bar() { return find_replace_bar; }
+
+	void set_find_replace_bar(FindReplaceBar* p_bar);
 	void remove_find_replace_bar();
+
 	virtual void apply_code() {}
+
 	virtual void goto_error();
 
 	void toggle_bookmark();
@@ -305,13 +324,15 @@ public:
 	void set_zoom_factor(float p_zoom_factor);
 	float get_zoom_factor();
 
-	void set_code_complete_func(CodeTextEditorCodeCompleteFunc p_code_complete_func, void *p_ud);
+	void set_code_complete_func(CodeTextEditorCodeCompleteFunc p_code_complete_func, void* p_ud);
 
 	void validate_script();
 
-	void set_toggle_list_control(Control *p_toggle_list_control);
+	void set_toggle_list_control(Control* p_toggle_list_control);
 	void show_toggle_files_button();
 	void update_toggle_files_button();
 
 	CodeTextEditor();
 };
+
+

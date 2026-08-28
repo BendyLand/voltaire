@@ -34,26 +34,29 @@
 #include "scene/gui/range.h"
 #include "scene/main/timer.h"
 
-class SpinBoxLineEdit : public LineEdit {
+class SpinBoxLineEdit : public LineEdit
+{
 	VLTRCLASS(SpinBoxLineEdit, LineEdit);
 
 protected:
 	void _notification(int p_what);
 
-	void _accessibility_action_inc(const Variant &p_data);
-	void _accessibility_action_dec(const Variant &p_data);
+	void _accessibility_action_inc(const Variant& p_data);
+	void _accessibility_action_dec(const Variant& p_data);
 
 	virtual String _get_accessibility_name() const override;
 };
 
-class SpinBox : public Range {
+class SpinBox : public Range
+{
 	VLTRCLASS(SpinBox, Range);
 
-	SpinBoxLineEdit *line_edit = nullptr;
+	SpinBoxLineEdit* line_edit = nullptr;
 	bool update_on_text_changed = false;
 	bool accepted = true;
 
-	struct SizingCache {
+	struct SizingCache
+	{
 		int buttons_block_width = 0;
 		int buttons_width = 0;
 		int buttons_vertical_separation = 0;
@@ -66,14 +69,14 @@ class SpinBox : public Range {
 		int field_and_buttons_separator_width = 0;
 	} sizing_cache;
 
-	Timer *range_click_timer = nullptr;
+	Timer* range_click_timer = nullptr;
 	void _range_click_timeout();
 	void _release_mouse_from_drag_mode();
 	void _arrow_clicked(bool p_up);
 
 	void _update_text(bool p_only_update_if_value_changed = false);
-	void _text_submitted(const String &p_string);
-	void _text_changed(const String &p_string);
+	void _text_submitted(const String& p_string);
+	void _text_changed(const String& p_string);
 
 	String prefix;
 	String suffix;
@@ -81,9 +84,10 @@ class SpinBox : public Range {
 	double custom_arrow_step = 0.0;
 	bool custom_arrow_round = false;
 
-	void _line_edit_input(const Ref<InputEvent> &p_event);
+	void _line_edit_input(const Ref<InputEvent>& p_event);
 
-	struct Drag {
+	struct Drag
+	{
 		double base_val = 0.0;
 		bool allowed = false;
 		bool enabled = false;
@@ -91,7 +95,8 @@ class SpinBox : public Range {
 		double diff_y = 0.0;
 	} drag;
 
-	struct StateCache {
+	struct StateCache
+	{
 		bool up_button_hovered = false;
 		bool up_button_pressed = false;
 		bool up_button_disabled = false;
@@ -105,7 +110,8 @@ class SpinBox : public Range {
 	inline void _compute_sizes();
 	inline int _get_widest_button_icon_width();
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<Texture2D> up_icon;
 		Ref<Texture2D> up_hover_icon;
 		Ref<Texture2D> up_pressed_icon;
@@ -150,15 +156,15 @@ class SpinBox : public Range {
 	void _update_buttons_state_for_current_value();
 
 protected:
-	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _value_changed(double p_value) override;
-	void _validate_property(PropertyInfo &p_property) const;
+	void _validate_property(PropertyInfo& p_property) const;
 
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	LineEdit *get_line_edit();
+	LineEdit* get_line_edit();
 
 	virtual Size2 get_minimum_size() const override;
 
@@ -168,10 +174,10 @@ public:
 	void set_editable(bool p_enabled);
 	bool is_editable() const;
 
-	void set_suffix(const String &p_suffix);
+	void set_suffix(const String& p_suffix);
 	String get_suffix() const;
 
-	void set_prefix(const String &p_prefix);
+	void set_prefix(const String& p_prefix);
 	String get_prefix() const;
 
 	void set_update_on_text_changed(bool p_enabled);
@@ -189,3 +195,5 @@ public:
 
 	SpinBox();
 };
+
+

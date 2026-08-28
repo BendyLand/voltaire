@@ -41,40 +41,42 @@ class LineEdit;
 class OptionButton;
 class PanelContainer;
 
-class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin {
+class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
+{
 	VLTRCLASS(AnimationNodeStateMachineEditor, AnimationTreeNodeEditorPlugin);
 
 	Ref<AnimationNodeStateMachine> state_machine;
 
 	bool read_only = false;
 
-	Button *tool_select = nullptr;
-	Button *tool_create = nullptr;
-	Button *tool_connect = nullptr;
-	Popup *name_edit_popup = nullptr;
-	LineEdit *name_edit = nullptr;
+	Button* tool_select = nullptr;
+	Button* tool_create = nullptr;
+	Button* tool_connect = nullptr;
+	Popup* name_edit_popup = nullptr;
+	LineEdit* name_edit = nullptr;
 
-	HBoxContainer *selection_tools_hb = nullptr;
-	Button *tool_erase = nullptr;
+	HBoxContainer* selection_tools_hb = nullptr;
+	Button* tool_erase = nullptr;
 
-	HBoxContainer *transition_tools_hb = nullptr;
-	OptionButton *switch_mode = nullptr;
-	Button *auto_advance = nullptr;
+	HBoxContainer* transition_tools_hb = nullptr;
+	OptionButton* switch_mode = nullptr;
+	Button* auto_advance = nullptr;
 
-	OptionButton *play_mode = nullptr;
+	OptionButton* play_mode = nullptr;
 
-	PanelContainer *panel = nullptr;
+	PanelContainer* panel = nullptr;
 
 	StringName selected_node;
 	HashSet<StringName> selected_nodes;
 
-	HScrollBar *h_scroll = nullptr;
-	VScrollBar *v_scroll = nullptr;
+	HScrollBar* h_scroll = nullptr;
+	VScrollBar* v_scroll = nullptr;
 
-	Control *state_machine_draw = nullptr;
-	Control *state_machine_play_pos = nullptr;
+	Control* state_machine_draw = nullptr;
+	Control* state_machine_play_pos = nullptr;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> panel_style;
 		Ref<StyleBox> error_panel_style;
 		Color error_color;
@@ -124,23 +126,27 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin {
 
 	bool updating = false;
 
-	static AnimationNodeStateMachineEditor *singleton;
+	static AnimationNodeStateMachineEditor* singleton;
 
-	void _state_machine_gui_input(const Ref<InputEvent> &p_event);
-	void _connection_draw(const Vector2 &p_from, const Vector2 &p_to, AnimationNodeStateMachineTransition::SwitchMode p_mode, bool p_enabled, bool p_selected, bool p_travel, float p_fade_ratio, bool p_auto_advance, bool p_is_across_group, float p_opacity = 1.0, bool p_endpoint_hovered = false, bool p_endpoint_hovered_start = false);
+	void _state_machine_gui_input(const Object& obj, const Ref<InputEvent>& p_event);
+	void _connection_draw(const Vector2& p_from, const Vector2& p_to,
+		AnimationNodeStateMachineTransition::SwitchMode p_mode, bool p_enabled, bool p_selected,
+		bool p_travel, float p_fade_ratio, bool p_auto_advance, bool p_is_across_group,
+		float p_opacity = 1.0, bool p_endpoint_hovered = false,
+		bool p_endpoint_hovered_start = false);
 
-	void _state_machine_draw();
+	void _state_machine_draw(const Object& obj);
 
-	void _state_machine_pos_draw_individual(const String &p_name, float p_ratio);
-	void _state_machine_pos_draw_all();
+	void _state_machine_pos_draw_individual(const Object& obj, const String& p_name, float p_ratio);
+	void _state_machine_pos_draw_all(const Object& obj);
 
 	void _update_graph();
 
-	PopupMenu *menu = nullptr;
-	PopupMenu *connect_menu = nullptr;
-	PopupMenu *state_machine_menu = nullptr;
-	PopupMenu *end_menu = nullptr;
-	PopupMenu *animations_menu = nullptr;
+	PopupMenu* menu = nullptr;
+	PopupMenu* connect_menu = nullptr;
+	PopupMenu* state_machine_menu = nullptr;
+	PopupMenu* end_menu = nullptr;
+	PopupMenu* animations_menu = nullptr;
 	Vector<StringName> animations_to_add;
 	Vector<String> nodes_to_connect;
 
@@ -175,13 +181,14 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin {
 	Vector2 reconnecting_transition_pos;
 	StringName reconnecting_transition_target;
 
-	void _add_menu_type(int p_index);
-	void _add_animation_type(int p_index);
-	void _connect_to(int p_index);
-	void _reconnect_transition();
-	void _select_transition(const StringName &p_from, const StringName &p_to);
+	void _add_menu_type(const Object& obj, int p_index);
+	void _add_animation_type(const Object& obj, int p_index);
+	void _connect_to(const Object& obj, int p_index);
+	void _reconnect_transition(const Object& obj);
+	void _select_transition(const StringName& p_from, const StringName& p_to);
 
-	struct NodeRect {
+	struct NodeRect
+	{
 		StringName node_name;
 		Rect2 node;
 		Rect2 play;
@@ -192,7 +199,8 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin {
 
 	Vector<NodeRect> node_rects;
 
-	struct TransitionLine {
+	struct TransitionLine
+	{
 		StringName from_node;
 		StringName to_node;
 		Vector2 from;
@@ -213,13 +221,15 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin {
 
 	Vector<TransitionLine> transition_lines;
 
-	struct NodeUR {
+	struct NodeUR
+	{
 		StringName name;
 		Ref<AnimationNode> node;
 		Vector2 position;
 	};
 
-	struct TransitionUR {
+	struct TransitionUR
+	{
 		StringName new_from;
 		StringName new_to;
 		StringName old_from;
@@ -230,9 +240,10 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin {
 	StringName selected_transition_from;
 	StringName selected_transition_to;
 	int selected_transition_index = -1;
-	void _add_transition(const bool p_nested_action = false);
+	void _add_transition(const Object& obj, const bool p_nested_action = false);
 
-	enum HoveredNodeArea {
+	enum HoveredNodeArea
+	{
 		HOVER_NODE_NONE = -1,
 		HOVER_NODE_PLAY = 0,
 		HOVER_NODE_EDIT = 1,
@@ -242,20 +253,21 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin {
 	HoveredNodeArea hovered_node_area = HOVER_NODE_NONE;
 
 	String prev_name;
-	void _name_edited(const String &p_text);
-	void _name_edited_focus_out();
-	void _open_editor(const String &p_name);
+	void _name_edited(const Object& obj, const String& p_text);
+	void _name_edited_focus_out(const Object& obj);
+	void _open_editor(const String& p_name);
 	void _scroll_changed(double);
 
-	String _get_root_playback_path(String &r_node_directory);
+	String _get_root_playback_path(String& r_node_directory);
 
-	void _clip_src_line_to_rect(Vector2 &r_from, const Vector2 &p_to, const Rect2 &p_rect);
-	void _clip_dst_line_to_rect(const Vector2 &p_from, Vector2 &r_to, const Rect2 &p_rect);
+	void _clip_src_line_to_rect(Vector2& r_from, const Vector2& p_to, const Rect2& p_rect);
+	void _clip_dst_line_to_rect(const Vector2& p_from, Vector2& r_to, const Rect2& p_rect);
 
-	void _erase_selected(const bool p_nested_action = false);
+	void _erase_selected(const Object& obj, const bool p_nested_action = false);
 	void _update_mode();
-	void _open_menu(const Vector2 &p_position);
-	bool _create_submenu(PopupMenu *p_menu, Ref<AnimationNodeStateMachine> p_nodesm, const StringName &p_name, const StringName &p_path);
+	void _open_menu(const Vector2& p_position);
+	bool _create_submenu(PopupMenu* p_menu, Ref<AnimationNodeStateMachine> p_nodesm,
+		const StringName& p_name, const StringName& p_path);
 	void _stop_connecting();
 
 	bool last_active = false;
@@ -276,41 +288,44 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin {
 	float fading_time = 0.0f;
 	float fading_pos = 0.0f;
 
-	EditorFileDialog *open_file = nullptr;
+	EditorFileDialog* open_file = nullptr;
 	Ref<AnimationNode> file_loaded;
-	void _file_opened(const String &p_file);
+	void _file_opened(const Object& obj, const String& p_file);
 
-	enum {
+	enum
+	{
 		MENU_LOAD_FILE = 1000,
 		MENU_PASTE = 1001,
 		MENU_LOAD_FILE_CONFIRM = 1002
 	};
 
 	HashSet<StringName> connected_nodes;
-	void _update_connected_nodes(const StringName &p_node);
+	void _update_connected_nodes(const StringName& p_node);
 
 	Ref<StyleBox> _adjust_stylebox_opacity(Ref<StyleBox> p_style, float p_opacity);
 
 protected:
-	void _notification(int p_what);
+	void _notification(const Object& obj, int p_what);
 	static void _bind_methods();
 
 public:
-	static AnimationNodeStateMachineEditor *get_singleton() { return singleton; }
+	static AnimationNodeStateMachineEditor* get_singleton() { return singleton; }
 
-	virtual bool can_edit(const Ref<AnimationNode> &p_node) override;
-	virtual void edit(const Ref<AnimationNode> &p_node) override;
+	virtual bool can_edit(const Ref<AnimationNode>& p_node) override;
+	virtual void edit(const Ref<AnimationNode>& p_node) override;
 
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos) const override;
-	virtual String get_tooltip(const Point2 &p_pos) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
+	virtual String get_tooltip(const Point2& p_pos) const override;
 
 	AnimationNodeStateMachineEditor();
 };
 
-class EditorAnimationMultiTransitionEdit : public RefCounted {
+class EditorAnimationMultiTransitionEdit : public RefCounted
+{
 	VLTRCLASS(EditorAnimationMultiTransitionEdit, RefCounted);
 
-	struct Transition {
+	struct Transition
+	{
 		StringName from;
 		StringName to;
 		Ref<AnimationNodeStateMachineTransition> transition;
@@ -319,10 +334,13 @@ class EditorAnimationMultiTransitionEdit : public RefCounted {
 	Vector<Transition> transitions;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_property);
-	bool _get(const StringName &p_name, Variant &r_property) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
+	bool _set(const StringName& p_name, const Variant& p_property);
+	bool _get(const StringName& p_name, Variant& r_property) const;
+	void _get_property_list(List<PropertyInfo>* p_list) const;
 
 public:
-	void add_transition(const StringName &p_from, const StringName &p_to, Ref<AnimationNodeStateMachineTransition> p_transition);
+	void add_transition(const StringName& p_from, const StringName& p_to,
+		Ref<AnimationNodeStateMachineTransition> p_transition);
 };
+
+

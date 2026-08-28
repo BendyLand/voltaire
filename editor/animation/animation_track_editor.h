@@ -92,7 +92,7 @@ protected:
 	void _fix_node_path(Variant& value);
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
-	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _set(const Object& obj, const StringName& p_name, const Variant& p_value);
 	bool _get(const StringName& p_name, Variant& r_ret) const;
 	void _get_property_list(List<PropertyInfo>* p_list) const;
 };
@@ -132,7 +132,7 @@ protected:
 	void _fix_node_path(Variant& value, NodePath& base);
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
-	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _set(const Object& obj, const StringName& p_name, const Variant& p_value);
 	bool _get(const StringName& p_name, Variant& r_ret) const;
 	void _get_property_list(List<PropertyInfo>* p_list) const;
 };
@@ -229,9 +229,9 @@ class AnimationTimelineEdit : public Range
 									  // changed are much faster
 	HScrollBar* hscroll = nullptr;
 
-	void _zoom_changed(double);
-	void _anim_length_changed(double p_new_len);
-	void _anim_loop_pressed();
+	void _zoom_changed(Object& obj, double);
+	void _anim_length_changed(Object& obj, double p_new_len);
+	void _anim_loop_pressed(const Object& obj);
 
 	void _play_position_draw();
 	Rect2 hsize_rect;
@@ -261,14 +261,14 @@ class AnimationTimelineEdit : public Range
 	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _commit_timeline_resize();
 	void _stop_dragging();
-	void _track_added(int p_track);
+	void _track_added(Object& obj, int p_track);
 
 	float _get_zoom_scale(double p_zoom_value) const;
 	void _scroll_to_start();
 
 protected:
 	static void _bind_methods();
-	void _notification(int p_what);
+	void _notification(const Object& obj, int p_what);
 
 public:
 	int get_name_limit() const;
@@ -403,12 +403,12 @@ protected:
 	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
-	virtual String get_tooltip(const Point2& p_pos) const override;
+	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 
 	virtual int get_key_height() const;
 	virtual Rect2 get_key_rect(float p_pixels_sec) const;
 	virtual bool is_key_selectable_by_distance() const;
-	virtual void draw_key(const StringName& p_name, float p_pixels_sec, int p_x, bool p_selected,
+	virtual void draw_key(const Object& obj, const StringName& p_name, float p_pixels_sec, int p_x, bool p_selected,
 		int p_clip_left, int p_clip_right);
 	virtual void draw_bg(int p_clip_left, int p_clip_right);
 	virtual void draw_fg(int p_clip_left, int p_clip_right);
@@ -510,13 +510,13 @@ class AnimationTrackEdit : public Control
 	Ref<Texture2D> icon_cache;
 	String path_cache;
 
-	void _menu_selected(int p_index);
+	void _menu_selected(Object& obj, int p_index);
 	void _popup_key_context_menu(int p_hovering_key_idx, Vector2 p_popup_pos);
 
 	void _path_submitted(const String& p_text);
 	void _play_position_draw();
-	bool _is_value_key_valid(const Variant& p_key_value, Variant::Type& r_valid_type) const;
-	bool _try_select_at_ui_pos(const Point2& p_pos, bool p_aggregate, bool p_deselectable);
+	bool _is_value_key_valid(const Object& obj, const Variant& p_key_value, Variant::Type& r_valid_type) const;
+	bool _try_select_at_ui_pos(const Object& obj, const Point2& p_pos, bool p_aggregate, bool p_deselectable);
 
 	int lookup_key_idx = -1;
 	bool _lookup_key(int p_key_idx) const;
@@ -539,17 +539,17 @@ class AnimationTrackEdit : public Control
 
 protected:
 	static void _bind_methods();
-	void _notification(int p_what);
+	void _notification(const Object& obj, int p_what);
 
 	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	virtual Variant get_drag_data(const Point2& p_point) override;
 	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(const Point2& p_point, const Variant& p_data) override;
+	virtual void drop_data(const Object& obj, const Point2& p_point, const Variant& p_data) override;
 
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
-	virtual String get_tooltip(const Point2& p_pos) const override;
+	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 
 	const Ref<Texture2D>& get_key_type_icon() const { return type_icon; }
 
@@ -558,7 +558,7 @@ public:
 	virtual bool is_key_selectable_by_distance() const;
 	virtual void draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec, int p_x,
 		int p_next_x, int p_clip_left, int p_clip_right);
-	virtual void draw_key(int p_index, float p_pixels_sec, int p_x, bool p_selected,
+	virtual void draw_key(const Object& obj, int p_index, float p_pixels_sec, int p_x, bool p_selected,
 		int p_clip_left, int p_clip_right);
 	virtual void draw_bg(int p_clip_left, int p_clip_right);
 	virtual void draw_fg(int p_clip_left, int p_clip_right);
@@ -588,7 +588,7 @@ public:
 	void cancel_drop();
 
 	void set_in_group(bool p_enable);
-	void append_to_selection(const Rect2& p_box, bool p_deselection);
+	void append_to_selection(Object& obj, const Rect2& p_box, bool p_deselection);
 
 	AnimationTrackEdit();
 };
@@ -712,7 +712,7 @@ class AnimationTrackEditor : public VBoxContainer
 	void _check_bezier_exist();
 
 	void _name_limit_changed();
-	void _timeline_changed(float p_new_pos, bool p_timeline_only);
+	void _timeline_changed(Object& obj, float p_new_pos, bool p_timeline_only);
 	void _track_remove_request(int p_track);
 	void _animation_track_remove_request(int p_track, Ref<Animation> p_from_animation);
 	void _track_grab_focus(int p_track);
@@ -1025,21 +1025,21 @@ public:
 	void add_track_edit_plugin(const Ref<AnimationTrackEditPlugin>& p_plugin);
 	void remove_track_edit_plugin(const Ref<AnimationTrackEditPlugin>& p_plugin);
 
-	void set_animation(const Ref<Animation>& p_anim, bool p_read_only);
+	void set_animation(Object& obj, const Ref<Animation>& p_anim, bool p_read_only);
 	Ref<Animation> get_current_animation() const;
 	void set_root(Node* p_root);
 	Node* get_root() const;
-	void update_keying();
+	void update_keying(Object& obj);
 	bool has_keying() const;
 
 	Dictionary get_state() const;
 	void set_state(const Dictionary& p_state);
 	void clear();
 
-	void cleanup();
+	void cleanup(Object& obj);
 
 	void set_anim_pos(float p_pos);
-	void insert_node_value_key(Node* p_node, const String& p_property,
+	void insert_node_value_key(Object& obj, Node* p_node, const String& p_property,
 		bool p_only_if_exists = false, bool p_advance = false);
 	void insert_value_key(const String& p_property, bool p_advance);
 	void insert_transform_3d_key(Node3D* p_node, const String& p_sub,

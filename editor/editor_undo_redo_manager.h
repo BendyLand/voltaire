@@ -40,8 +40,6 @@ class EditorUndoRedoManager
 	static constexpr uint64_t UNSAVED_VERSION = 0;
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	enum SpecialHistory
 	{
 		GLOBAL_HISTORY = 0,
