@@ -32,13 +32,12 @@
 
 #include "core/crypto/crypto.h"
 #include "core/io/stream_peer.h"
-#include "core/object/ref_counted.h"
 
-class HTTPClient : public RefCounted {
-	VLTRCLASS(HTTPClient, RefCounted);
-
+class HTTPClient : public RefCounted
+{
 public:
-	enum ResponseCode {
+	enum ResponseCode
+	{
 		// 1xx informational
 		RESPONSE_CONTINUE = 100,
 		RESPONSE_SWITCHING_PROTOCOLS = 101,
@@ -112,7 +111,8 @@ public:
 
 	};
 
-	enum Method {
+	enum Method
+	{
 		METHOD_GET,
 		METHOD_HEAD,
 		METHOD_POST,
@@ -126,49 +126,53 @@ public:
 
 	};
 
-	enum Status {
+	enum Status
+	{
 		STATUS_DISCONNECTED,
 		STATUS_RESOLVING, // Resolving hostname (if passed a hostname)
 		STATUS_CANT_RESOLVE,
 		STATUS_CONNECTING, // Connecting to IP
 		STATUS_CANT_CONNECT,
-		STATUS_CONNECTED, // Connected, requests can be made
+		STATUS_CONNECTED,  // Connected, requests can be made
 		STATUS_REQUESTING, // Request in progress
-		STATUS_BODY, // Request resulted in body, which must be read
+		STATUS_BODY,	   // Request resulted in body, which must be read
 		STATUS_CONNECTION_ERROR,
 		STATUS_TLS_HANDSHAKE_ERROR,
 
 	};
 
 protected:
-	static const char *_methods[METHOD_MAX];
+	static const char* _methods[METHOD_MAX];
 	static const int HOST_MIN_LEN = 4;
 
-	enum Port {
+	enum Port
+	{
 		PORT_HTTP = 80,
 		PORT_HTTPS = 443,
 
 	};
 
-	PackedStringArray _get_response_headers();
-	Dictionary _get_response_headers_as_dictionary();
-	Error _request_raw(Method p_method, const String &p_url, const Vector<String> &p_headers, const Vector<uint8_t> &p_body);
-	Error _request(Method p_method, const String &p_url, const Vector<String> &p_headers, const String &p_body = String());
+	Vector<String> _get_response_headers();
+	Error _request_raw(Method p_method, const String& p_url, const Vector<String>& p_headers,
+		const Vector<uint8_t>& p_body);
+	Error _request(Method p_method, const String& p_url, const Vector<String>& p_headers,
+		const String& p_body = String());
 
-	static HTTPClient *(*_create)(bool p_notify_postinitialize);
+	static HTTPClient* (*_create)(bool p_notify_postinitialize);
 
 	static void _bind_methods();
 
 public:
-	static HTTPClient *create(bool p_notify_postinitialize = true);
+	static HTTPClient* create(bool p_notify_postinitialize = true);
 
-	String query_string_from_dict(const Dictionary &p_dict);
-	Error verify_headers(const Vector<String> &p_headers);
+	Error verify_headers(const Vector<String>& p_headers);
 
-	virtual Error request(Method p_method, const String &p_url, const Vector<String> &p_headers, const uint8_t *p_body, int p_body_size) = 0;
-	virtual Error connect_to_host(const String &p_host, int p_port = -1, Ref<TLSOptions> p_tls_options = Ref<TLSOptions>()) = 0;
+	virtual Error request(Method p_method, const String& p_url, const Vector<String>& p_headers,
+		const uint8_t* p_body, int p_body_size) = 0;
+	virtual Error connect_to_host(const String& p_host, int p_port = -1,
+		Ref<TLSOptions> p_tls_options = Ref<TLSOptions>()) = 0;
 
-	virtual void set_connection(const Ref<StreamPeer> &p_connection) = 0;
+	virtual void set_connection(const Ref<StreamPeer>& p_connection) = 0;
 	virtual Ref<StreamPeer> get_connection() const = 0;
 
 	virtual void close() = 0;
@@ -178,10 +182,11 @@ public:
 	virtual bool has_response() const = 0;
 	virtual bool is_response_chunked() const = 0;
 	virtual int get_response_code() const = 0;
-	virtual Error get_response_headers(List<String> *r_response) = 0;
+	virtual Error get_response_headers(List<String>* r_response) = 0;
 	virtual int64_t get_response_body_length() const = 0;
 
-	virtual PackedByteArray read_response_body_chunk() = 0; // Can't get body as partial text because of most encodings UTF8, gzip, etc.
+	virtual Vector<uint8_t> read_response_body_chunk() = 0; // Can't get body as partial text because of most encodings
+									// UTF8, gzip, etc.
 
 	virtual void set_blocking_mode(bool p_enable) = 0; // Useful mostly if running in a thread
 	virtual bool is_blocking_mode_enabled() const = 0;
@@ -192,12 +197,10 @@ public:
 	virtual Error poll() = 0;
 
 	// Use empty string or -1 to unset
-	virtual void set_http_proxy(const String &p_host, int p_port);
-	virtual void set_https_proxy(const String &p_host, int p_port);
+	virtual void set_http_proxy(const String& p_host, int p_port);
+	virtual void set_https_proxy(const String& p_host, int p_port);
 
 	virtual ~HTTPClient() {}
 };
 
-VARIANT_ENUM_CAST(HTTPClient::ResponseCode)
-VARIANT_ENUM_CAST(HTTPClient::Method);
-VARIANT_ENUM_CAST(HTTPClient::Status);
+

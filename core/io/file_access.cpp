@@ -35,7 +35,6 @@
 #include "core/io/file_access_pack.h"
 #include "core/io/marshalls.h"
 #include "core/io/resource_uid.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "file_access.compat.inc"
@@ -392,21 +391,6 @@ real_t FileAccess::get_real() const
 	else {
 		return get_float();
 	}
-}
-
-Variant FileAccess::get_var(bool p_allow_objects) const
-{
-	uint32_t len = get_32();
-	Vector<uint8_t> buff = get_buffer(len);
-	ERR_FAIL_COND_V((uint32_t)buff.size() != len, Variant());
-
-	const uint8_t* r = buff.ptr();
-
-	Variant v;
-	Error err = decode_variant(v, &r[0], len, nullptr, p_allow_objects);
-	ERR_FAIL_COND_V_MSG(err != OK, Variant(), "Error when trying to encode Variant.");
-
-	return v;
 }
 
 double FileAccess::get_double() const
@@ -822,17 +806,17 @@ Error FileAccess::set_read_only_attribute(const String& p_file, bool p_ro)
 	return err;
 }
 
-PackedByteArray FileAccess::get_extended_attribute(
+Vector<uint8_t> FileAccess::get_extended_attribute(
 	const String& p_file, const String& p_attribute_name)
 {
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
 		(PackedData::get_singleton()->has_path(p_file) ||
 			PackedData::get_singleton()->has_directory(p_file))) {
-		return PackedByteArray();
+		return Vector<uint8_t>();
 	}
 
 	Ref<FileAccess> fa = create_for_path(p_file);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedByteArray(),
+	ERR_FAIL_COND_V_MSG(fa.is_null(), Vector<uint8_t>(),
 		vformat("Cannot create FileAccess for path '%s'.", p_file));
 
 	return fa->_get_extended_attribute(p_file, p_attribute_name);
@@ -851,7 +835,7 @@ String FileAccess::get_extended_attribute_string(
 	ERR_FAIL_COND_V_MSG(
 		fa.is_null(), String(), vformat("Cannot create FileAccess for path '%s'.", p_file));
 
-	PackedByteArray data = fa->_get_extended_attribute(p_file, p_attribute_name);
+	Vector<uint8_t> data = fa->_get_extended_attribute(p_file, p_attribute_name);
 	if (data.is_empty()) {
 		return String();
 	}
@@ -859,7 +843,7 @@ String FileAccess::get_extended_attribute_string(
 }
 
 Error FileAccess::set_extended_attribute(
-	const String& p_file, const String& p_attribute_name, const PackedByteArray& p_data)
+	const String& p_file, const String& p_attribute_name, const Vector<uint8_t>& p_data)
 {
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
 		(PackedData::get_singleton()->has_path(p_file) ||
@@ -887,7 +871,7 @@ Error FileAccess::set_extended_attribute_string(
 	ERR_FAIL_COND_V_MSG(
 		fa.is_null(), ERR_CANT_CREATE, vformat("Cannot create FileAccess for path '%s'.", p_file));
 
-	PackedByteArray data;
+	Vector<uint8_t> data;
 	CharString cs = p_data.utf8();
 	data.resize(cs.size());
 	if (cs.size() > 0) {
@@ -912,16 +896,16 @@ Error FileAccess::remove_extended_attribute(const String& p_file, const String& 
 	return fa->_remove_extended_attribute(p_file, p_attribute_name);
 }
 
-PackedStringArray FileAccess::get_extended_attributes_list(const String& p_file)
+Vector<String> FileAccess::get_extended_attributes_list(const String& p_file)
 {
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
 		(PackedData::get_singleton()->has_path(p_file) ||
 			PackedData::get_singleton()->has_directory(p_file))) {
-		return PackedStringArray();
+		return Vector<String>();
 	}
 
 	Ref<FileAccess> fa = create_for_path(p_file);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedStringArray(),
+	ERR_FAIL_COND_V_MSG(fa.is_null(), Vector<String>(),
 		vformat("Cannot create FileAccess for path '%s'.", p_file));
 
 	return fa->_get_extended_attributes_list(p_file);
@@ -999,22 +983,6 @@ bool FileAccess::store_buffer(const uint8_t* p_src, uint64_t p_length)
 		}
 	}
 	return true;
-}
-
-bool FileAccess::store_var(const Variant& p_var, bool p_full_objects)
-{
-	int len;
-	Error err = encode_variant(p_var, nullptr, len, p_full_objects);
-	ERR_FAIL_COND_V_MSG(err != OK, false, "Error when trying to encode Variant.");
-
-	Vector<uint8_t> buff;
-	buff.resize(len);
-
-	uint8_t* w = buff.ptrw();
-	err = encode_variant(p_var, &w[0], len, p_full_objects);
-	ERR_FAIL_COND_V_MSG(err != OK, false, "Error when trying to encode Variant.");
-
-	return store_32(uint32_t(len)) && store_buffer(buff);
 }
 
 Vector<uint8_t> FileAccess::get_file_as_bytes(const String& p_path, Error* r_error)

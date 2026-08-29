@@ -77,7 +77,7 @@ void AnimationPlayerEditor::_find_player(Object& obj)
 		// Replicating EditorNode::_plugin_over_edit to ensure an identical setup as when selecting
 		// manually.
 		plugin->edit(&obj);
-		plugin->make_visible(true);
+		plugin->make_visible(obj, true);
 	}
 }
 
@@ -92,8 +92,8 @@ void AnimationPlayerEditor::_node_removed(Object& obj, Node* p_node)
 
 		set_process(false);
 
-		track_editor->set_animation(Ref<Animation>(), true);
-		track_editor->set_root(nullptr);
+		track_editor->set_animation(obj, Ref<Animation>(), true);
+		track_editor->set_root(obj, nullptr);
 		track_editor->show_select_node_warning(true);
 		_update_player(obj);
 
@@ -133,7 +133,7 @@ void AnimationPlayerEditor::_notification(Object& obj, int p_what)
 				}
 			}
 			frame->set_value(player->get_current_animation_position());
-			track_editor->set_anim_pos(player->get_current_animation_position());
+			track_editor->set_anim_pos(obj, player->get_current_animation_position());
 		}
 		else {
 			if (!player->is_valid()) {
@@ -143,7 +143,7 @@ void AnimationPlayerEditor::_notification(Object& obj, int p_what)
 			else if (last_active) {
 				// Need the last frame after it stopped.
 				frame->set_value(player->get_current_animation_position());
-				track_editor->set_anim_pos(player->get_current_animation_position());
+				track_editor->set_anim_pos(obj, player->get_current_animation_position());
 			}
 			stop->set_button_icon(stop_icon);
 		}
@@ -279,7 +279,7 @@ void AnimationPlayerEditor::_autoplay_pressed(const Object& obj)
 	}
 }
 
-void AnimationPlayerEditor::go_to_nearest_keyframe(bool p_backward)
+void AnimationPlayerEditor::go_to_nearest_keyframe(Object& obj, bool p_backward)
 {
 	if (_get_current().is_empty()) {
 		return;
@@ -345,7 +345,7 @@ void AnimationPlayerEditor::go_to_nearest_keyframe(bool p_backward)
 
 	player->seek_internal(nearest_key_time, true, true, true);
 	frame->set_value(nearest_key_time);
-	track_editor->set_anim_pos(nearest_key_time);
+	track_editor->set_anim_pos(obj, nearest_key_time);
 }
 
 void AnimationPlayerEditor::_play_pressed()
@@ -469,7 +469,7 @@ void AnimationPlayerEditor::_play_bw_from_pressed()
 	stop->set_button_icon(pause_icon);
 }
 
-void AnimationPlayerEditor::_stop_pressed()
+void AnimationPlayerEditor::_stop_pressed(Object& obj)
 {
 	if (!player) {
 		return;
@@ -483,7 +483,7 @@ void AnimationPlayerEditor::_stop_pressed()
 		player->stop();
 		player->set_assigned_animation(current);
 		frame->set_value(0);
-		track_editor->set_anim_pos(0);
+		track_editor->set_anim_pos(obj, 0);
 	}
 	stop->set_button_icon(stop_icon);
 }
@@ -516,7 +516,7 @@ void AnimationPlayerEditor::_animation_selected(Object& obj, int p_which)
 		{
 			bool animation_is_readonly = EditorNode::get_singleton()->is_resource_read_only(anim);
 
-			track_editor->set_animation(anim, animation_is_readonly);
+			track_editor->set_animation(obj, anim, animation_is_readonly);
 			Node* root = player->get_node_or_null(player->get_root_node());
 
 			// Player shouldn't access parent if it's the scene root.
@@ -531,10 +531,9 @@ void AnimationPlayerEditor::_animation_selected(Object& obj, int p_which)
 				}
 			}
 			else {
-				cached_root_node_id =
-					obj.get_instance_id(); // Caching as `track_editor` can lose
-												  // track of player's root node.
-				track_editor->set_root(root);
+				cached_root_node_id = obj.get_instance_id(); // Caching as `track_editor` can lose
+															 // track of player's root node.
+				track_editor->set_root(obj, root);
 			}
 		}
 		frame->set_max((double)anim->get_length());
@@ -542,13 +541,13 @@ void AnimationPlayerEditor::_animation_selected(Object& obj, int p_which)
 		player->stop();
 	}
 	else {
-		track_editor->set_animation(Ref<Animation>(), true);
-		track_editor->set_root(nullptr);
+		track_editor->set_animation(obj, Ref<Animation>(), true);
+		track_editor->set_root(obj, nullptr);
 		autoplay->set_pressed(false);
 	}
 
-	AnimationPlayerEditor::get_singleton()->get_track_editor()->update_keying();
-	_animation_key_editor_seek(timeline_position);
+	AnimationPlayerEditor::get_singleton()->get_track_editor()->update_keying(obj);
+	_animation_key_editor_seek(obj, timeline_position);
 
 	obj.emit_signal("animation_selected", current);
 }
@@ -783,8 +782,7 @@ void AnimationPlayerEditor::_animation_name_edited(const Object& obj)
 		if (al.is_null()) {
 			al.instantiate();
 			lib_added = true;
-			undo_redo->add_do_method(
-				&obj, "add_animation_library", "", al);
+			undo_redo->add_do_method(&obj, "add_animation_library", "", al);
 			library_name = "";
 		}
 
@@ -797,8 +795,7 @@ void AnimationPlayerEditor::_animation_name_edited(const Object& obj)
 			undo_redo->add_undo_method(&obj, "_stop_onion_skinning");
 		}
 		if (lib_added) {
-			undo_redo->add_undo_method(
-				&obj, "remove_animation_library", "");
+			undo_redo->add_undo_method(&obj, "remove_animation_library", "");
 		}
 		undo_redo->commit_action();
 
@@ -972,12 +969,12 @@ void AnimationPlayerEditor::_blend_edited(const Object& obj)
 	updating_blends = false;
 }
 
-void AnimationPlayerEditor::ensure_visibility()
+void AnimationPlayerEditor::ensure_visibility(Object& obj)
 {
 	if (player) {
 		return; // another player is pinned, don't reset
 	}
-	_animation_edit();
+	_animation_edit(obj);
 }
 
 Dictionary AnimationPlayerEditor::get_state() const
@@ -1039,24 +1036,24 @@ void AnimationPlayerEditor::set_state(Object& obj, const Dictionary& p_state)
 			_update_player(obj);
 			make_visible();
 			set_process(true);
-			ensure_visibility();
+			ensure_visibility(obj);
 
 			if (p_state.has("animation")) {
 				String anim = p_state["animation"];
 				if (!anim.is_empty() && player->has_animation(anim)) {
 					_select_anim_by_name(obj, anim);
-					_animation_edit();
+					_animation_edit(obj);
 				}
 			}
 		}
 	}
 
 	if (p_state.has("track_editor_state")) {
-		track_editor->set_state(p_state["track_editor_state"]);
+		track_editor->set_state(obj, p_state["track_editor_state"]);
 	}
 }
 
-void AnimationPlayerEditor::clear() { track_editor->clear(); }
+void AnimationPlayerEditor::clear(Object& obj) { track_editor->clear(obj); }
 
 void AnimationPlayerEditor::_animation_resource_edit()
 {
@@ -1067,22 +1064,23 @@ void AnimationPlayerEditor::_animation_resource_edit()
 	}
 }
 
-void AnimationPlayerEditor::_animation_edit()
+void AnimationPlayerEditor::_animation_edit(Object& obj)
 {
 	String current = _get_current();
 	if (current != String()) {
 		Ref<Animation> anim = player->get_animation(current);
 
-		track_editor->set_animation(anim, EditorNode::get_singleton()->is_resource_read_only(anim));
+		track_editor->set_animation(
+			obj, anim, EditorNode::get_singleton()->is_resource_read_only(anim));
 
 		Node* root = player->get_node_or_null(player->get_root_node());
 		if (root) {
-			track_editor->set_root(root);
+			track_editor->set_root(obj, root);
 		}
 	}
 	else {
-		track_editor->set_animation(Ref<Animation>(), true);
-		track_editor->set_root(nullptr);
+		track_editor->set_animation(obj, Ref<Animation>(), true);
+		track_editor->set_root(obj, nullptr);
 	}
 }
 
@@ -1129,7 +1127,7 @@ void AnimationPlayerEditor::_update_player(Object& obj)
 	_set_controls_disabled(player == nullptr);
 
 	if (!player) {
-		AnimationPlayerEditor::get_singleton()->get_track_editor()->update_keying();
+		AnimationPlayerEditor::get_singleton()->get_track_editor()->update_keying(obj);
 		return;
 	}
 
@@ -1218,10 +1216,10 @@ void AnimationPlayerEditor::_update_player(Object& obj)
 		bool animation_library_is_readonly =
 			EditorNode::get_singleton()->is_resource_read_only(anim);
 
-		track_editor->set_animation(anim, animation_library_is_readonly);
+		track_editor->set_animation(obj, anim, animation_library_is_readonly);
 		Node* root = player->get_node_or_null(player->get_root_node());
 		if (root) {
-			track_editor->set_root(root);
+			track_editor->set_root(obj, root);
 		}
 	}
 
@@ -1385,7 +1383,8 @@ void AnimationPlayerEditor::_ensure_dummy_player()
 	}
 }
 
-void AnimationPlayerEditor::edit(Object& obj, AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy)
+void AnimationPlayerEditor::edit(
+	Object& obj, AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy)
 {
 	if (player && pin->is_pressed()) {
 		return; // Ignore, pinned.
@@ -1594,7 +1593,7 @@ Ref<Animation> AnimationPlayerEditor::_animation_clone(Ref<Animation> p_anim)
 	return new_anim;
 }
 
-void AnimationPlayerEditor::_seek_value_changed(float p_value, bool p_timeline_only)
+void AnimationPlayerEditor::_seek_value_changed(Object& obj, float p_value, bool p_timeline_only)
 {
 	if (updating || !player || player->is_playing()) {
 		return;
@@ -1625,7 +1624,7 @@ void AnimationPlayerEditor::_seek_value_changed(float p_value, bool p_timeline_o
 		player->seek_internal(pos, true, true, false);
 	}
 
-	track_editor->set_anim_pos(pos);
+	track_editor->set_anim_pos(obj, pos);
 }
 
 void AnimationPlayerEditor::_animation_player_changed(Object* p_pl)
@@ -1655,7 +1654,7 @@ void AnimationPlayerEditor::_list_changed(Object& obj)
 
 void AnimationPlayerEditor::_animation_finished(const String& p_name) { finishing = true; }
 
-void AnimationPlayerEditor::_current_animation_changed(const StringName& p_name)
+void AnimationPlayerEditor::_current_animation_changed(Object& obj, const StringName& p_name)
 {
 	if (is_visible_in_tree()) {
 		if (finishing) {
@@ -1666,7 +1665,7 @@ void AnimationPlayerEditor::_current_animation_changed(const StringName& p_name)
 		else if (p_name.is_empty()) {
 			// Means [stop].
 			frame->set_value(0);
-			track_editor->set_anim_pos(0);
+			track_editor->set_anim_pos(obj, 0);
 			_update_animation();
 			return;
 		}
@@ -1710,7 +1709,7 @@ void AnimationPlayerEditor::_current_animation_changed(const StringName& p_name)
 
 		bool animation_is_readonly = EditorNode::get_singleton()->is_resource_read_only(anim);
 
-		track_editor->set_animation(anim, animation_is_readonly);
+		track_editor->set_animation(obj, anim, animation_is_readonly);
 		_update_animation();
 
 #define ITEM_CHECK_DISABLED(m_item)                                                                \
@@ -1740,7 +1739,7 @@ void AnimationPlayerEditor::_animation_key_editor_anim_len_changed(float p_len)
 }
 
 void AnimationPlayerEditor::_animation_key_editor_seek(
-	float p_pos, bool p_timeline_only, bool p_update_position_only)
+	Object& obj, float p_pos, bool p_timeline_only, bool p_update_position_only)
 {
 	timeline_position = p_pos;
 
@@ -1754,7 +1753,7 @@ void AnimationPlayerEditor::_animation_key_editor_seek(
 						 ? Math::snapped(p_pos, _get_editor_step())
 						 : p_pos);
 	updating = false;
-	_seek_value_changed(p_pos, p_timeline_only);
+	_seek_value_changed(obj, p_pos, p_timeline_only);
 }
 
 void AnimationPlayerEditor::_animation_update_key_frame()
@@ -1859,11 +1858,11 @@ void AnimationPlayerEditor::_onion_skinning_menu(int p_option)
 void AnimationPlayerEditor::shortcut_input(const Object& obj, const Ref<InputEvent>& p_ev)
 {
 	ERR_FAIL_COND(p_ev.is_null());
-
+	Object& o = const_cast<Object&>(obj);
 	Ref<InputEventKey> k = p_ev;
 	if (is_visible_in_tree() && k.is_valid() && k->is_pressed() && !k->is_echo()) {
 		if (ED_IS_SHORTCUT("animation_editor/stop_animation", p_ev)) {
-			_stop_pressed();
+			_stop_pressed(o);
 			accept_event();
 		}
 		else if (ED_IS_SHORTCUT("animation_editor/play_animation", p_ev)) {
@@ -1883,11 +1882,11 @@ void AnimationPlayerEditor::shortcut_input(const Object& obj, const Ref<InputEve
 			accept_event();
 		}
 		else if (ED_IS_SHORTCUT("animation_editor/go_to_next_keyframe", p_ev)) {
-			go_to_nearest_keyframe(false);
+			go_to_nearest_keyframe(o, false);
 			accept_event();
 		}
 		else if (ED_IS_SHORTCUT("animation_editor/go_to_previous_keyframe", p_ev)) {
-			go_to_nearest_keyframe(true);
+			go_to_nearest_keyframe(o, true);
 			accept_event();
 		}
 	}
@@ -2065,8 +2064,7 @@ void AnimationPlayerEditor::_prepare_onion_layers_2_prolog()
 		onion.capture.canvas_item, onion.capture.material->get_rid());
 	onion.capture.material->set_shader_parameter(
 		"bkg_color", GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
-	onion.capture.material->set_shader_parameter("differences_only", onion.differences_only)
-;
+	onion.capture.material->set_shader_parameter("differences_only", onion.differences_only);
 	onion.capture.material->set_shader_parameter("present",
 		onion.differences_only ? RS::get_singleton()->viewport_get_texture(present_rid) : RID());
 	onion.capture.material->set_shader_parameter(
@@ -2307,7 +2305,8 @@ AnimationPlayer* AnimationPlayerEditor::get_player() const { return player; }
 
 AnimationMixer* AnimationPlayerEditor::get_editing_node() const { return original_node; }
 
-AnimationPlayerEditor::AnimationPlayerEditor(const Object& obj, AnimationPlayerEditorPlugin* p_plugin)
+AnimationPlayerEditor::AnimationPlayerEditor(
+	const Object& obj, AnimationPlayerEditorPlugin* p_plugin)
 {
 	plugin = p_plugin;
 	singleton = this;
@@ -2653,18 +2652,18 @@ void AnimationPlayerEditorPlugin::_notification(int p_what)
 }
 
 void AnimationPlayerEditorPlugin::_property_keyed(
-	const String& p_keyed, const Variant& p_value, bool p_advance)
+	Object& obj, const String& p_keyed, const Variant& p_value, bool p_advance)
 {
 	AnimationTrackEditor* te = anim_editor->get_track_editor();
 	if (!te || !te->has_keying()) {
 		return;
 	}
 	te->_clear_selection();
-	te->insert_value_key(p_keyed, p_advance);
+	te->insert_value_key(obj, p_keyed, p_advance);
 }
 
 void AnimationPlayerEditorPlugin::_transform_3d_key_request(
-	Object* sp, const String& p_sub, const Transform3D& p_key)
+	const Object& obj, Object* sp, const String& p_sub, const Transform3D& p_key)
 {
 	if (!anim_editor->get_track_editor()->has_keying()) {
 		return;
@@ -2674,11 +2673,11 @@ void AnimationPlayerEditorPlugin::_transform_3d_key_request(
 		return;
 	}
 	anim_editor->get_track_editor()->insert_transform_3d_key(
-		s, p_sub, Animation::TYPE_POSITION_3D, p_key.origin);
+		obj, s, p_sub, Animation::TYPE_POSITION_3D, p_key.origin);
 	anim_editor->get_track_editor()->insert_transform_3d_key(
-		s, p_sub, Animation::TYPE_ROTATION_3D, p_key.basis.get_rotation_quaternion());
+		obj, s, p_sub, Animation::TYPE_ROTATION_3D, p_key.basis.get_rotation_quaternion());
 	anim_editor->get_track_editor()->insert_transform_3d_key(
-		s, p_sub, Animation::TYPE_SCALE_3D, p_key.basis.get_scale());
+		obj, s, p_sub, Animation::TYPE_SCALE_3D, p_key.basis.get_scale());
 }
 
 void AnimationPlayerEditorPlugin::_update_keying()
@@ -2806,12 +2805,12 @@ bool AnimationPlayerEditorPlugin::handles(Object* p_object) const
 		   p_object->is_class("AnimationMixer");
 }
 
-void AnimationPlayerEditorPlugin::make_visible(bool p_visible)
+void AnimationPlayerEditorPlugin::make_visible(Object& obj, bool p_visible)
 {
 	if (p_visible) {
 		anim_editor->make_visible();
 		anim_editor->set_process(true);
-		anim_editor->ensure_visibility();
+		anim_editor->ensure_visibility(obj);
 	}
 }
 
@@ -2831,6 +2830,7 @@ bool EditorInspectorPluginAnimationTrackKeyEdit::can_handle(Object* p_object)
 }
 
 void EditorInspectorPluginAnimationTrackKeyEdit::parse_begin(Object* p_object)
+
 {
 	AnimationTrackKeyEdit* atk = Object::cast_to<AnimationTrackKeyEdit>(p_object);
 	ERR_FAIL_NULL(atk);

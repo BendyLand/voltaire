@@ -32,7 +32,6 @@
 #include "core/input/input_map.h"
 #include "core/input/shortcut.h"
 #include "core/math/transform_2d.h"
-#include "core/object/class_db.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
@@ -159,7 +158,6 @@ void InputEventWithModifiers::set_command_or_control_autoremap(bool p_enabled)
 		ctrl_pressed = false;
 		meta_pressed = false;
 	}
-	this->obj->notify_property_list_changed();
 	emit_changed();
 }
 
@@ -276,26 +274,6 @@ String InputEventWithModifiers::as_text() const
 String InputEventWithModifiers::_to_string() { return as_text(); }
 
 void InputEventWithModifiers::_bind_methods() {}
-
-void InputEventWithModifiers::_validate_property(PropertyInfo& p_property) const
-{
-	if (command_or_control_autoremap) {
-		// Cannot be used with Meta/Command or Control!
-		if (p_property.name == "meta_pressed") {
-			p_property.usage ^= PROPERTY_USAGE_STORAGE;
-			p_property.usage ^= PROPERTY_USAGE_EDITOR;
-		}
-		else if (p_property.name == "ctrl_pressed") {
-			p_property.usage ^= PROPERTY_USAGE_STORAGE;
-			p_property.usage ^= PROPERTY_USAGE_EDITOR;
-		}
-	}
-	else {
-		if (p_property.name == "command_or_control_autoremap") {
-			p_property.usage ^= PROPERTY_USAGE_STORAGE;
-		}
-	}
-}
 
 ///////////////////////////////////
 
@@ -495,9 +473,7 @@ String InputEventKey::_to_string()
 	String mods = InputEventWithModifiers::as_text();
 	mods = mods.is_empty() ? "none" : mods;
 
-	return vformat(
-		"InputEventKey: keycode=%s, mods=%s, physical=%s, location=%s, pressed=%s, echo=%s", kc,
-		mods, physical, loc, p, e);
+	return "";
 }
 
 Ref<InputEventKey> InputEventKey::create_reference(Key p_keycode, bool p_physical)
@@ -545,7 +521,7 @@ Ref<InputEventKey> InputEventKey::create_reference(Key p_keycode, bool p_physica
 bool InputEventKey::action_match(const Ref<InputEvent>& p_event, bool p_exact_match,
 	float p_deadzone, bool* r_pressed, float* r_strength, float* r_raw_strength) const
 {
-	Ref<InputEventKey> key = p_event;
+	Ref<InputEventKey> key = static_cast<InputEventKey*>(p_event.ptr());
 	if (key.is_null()) {
 		return false;
 	}
@@ -593,7 +569,7 @@ bool InputEventKey::action_match(const Ref<InputEvent>& p_event, bool p_exact_ma
 
 bool InputEventKey::is_match(const Ref<InputEvent>& p_event, bool p_exact_match) const
 {
-	Ref<InputEventKey> key = p_event;
+	Ref<InputEventKey> key = static_cast<InputEventKey *>(p_event.ptr());
 	if (key.is_null()) {
 		return false;
 	}
@@ -692,15 +668,14 @@ InputEvent* InputEventMouseButton::xformed_by(
 	mb->set_factor(factor);
 	mb->set_button_index(button_index);
 
-	mb->obj->merge_meta_from(this->obj.get());
-
 	return mb.ptr();
 }
 
 bool InputEventMouseButton::action_match(const Ref<InputEvent>& p_event, bool p_exact_match,
 	float p_deadzone, bool* r_pressed, float* r_strength, float* r_raw_strength) const
 {
-	Ref<InputEventMouseButton> mb = p_event;
+	Ref<InputEventMouseButton> mb = dynamic_cast<InputEventMouseButton*>(p_event.ptr());
+
 	if (mb.is_null()) {
 		return false;
 	}
@@ -733,7 +708,7 @@ bool InputEventMouseButton::action_match(const Ref<InputEvent>& p_event, bool p_
 
 bool InputEventMouseButton::is_match(const Ref<InputEvent>& p_event, bool p_exact_match) const
 {
-	Ref<InputEventMouseButton> mb = p_event;
+	Ref<InputEventMouseButton> mb = dynamic_cast<InputEventMouseButton*>(p_event.ptr());
 	if (mb.is_null()) {
 		return false;
 	}
@@ -881,8 +856,6 @@ InputEvent* InputEventMouseMotion::xformed_by(
 	mm->set_velocity(p_xform.basis_xform(get_velocity()));
 	mm->set_screen_velocity(get_screen_velocity());
 
-	mm->obj->merge_meta_from(this->obj.get());
-
 	return mm.ptr();
 }
 
@@ -897,26 +870,6 @@ String InputEventMouseMotion::_to_string()
 	BitField<MouseButtonMask> mouse_button_mask = get_button_mask();
 	String button_mask_string = itos((int64_t)mouse_button_mask);
 
-	if (mouse_button_mask.has_flag(MouseButtonMask::LEFT)) {
-		button_mask_string +=
-			vformat(" (%s)", TTRGET(_mouse_button_descriptions[(size_t)MouseButton::LEFT - 1]));
-	}
-	if (mouse_button_mask.has_flag(MouseButtonMask::MIDDLE)) {
-		button_mask_string +=
-			vformat(" (%s)", TTRGET(_mouse_button_descriptions[(size_t)MouseButton::MIDDLE - 1]));
-	}
-	if (mouse_button_mask.has_flag(MouseButtonMask::RIGHT)) {
-		button_mask_string +=
-			vformat(" (%s)", TTRGET(_mouse_button_descriptions[(size_t)MouseButton::RIGHT - 1]));
-	}
-	if (mouse_button_mask.has_flag(MouseButtonMask::MB_XBUTTON1)) {
-		button_mask_string += vformat(
-			" (%s)", TTRGET(_mouse_button_descriptions[(size_t)MouseButton::MB_XBUTTON1 - 1]));
-	}
-	if (mouse_button_mask.has_flag(MouseButtonMask::MB_XBUTTON2)) {
-		button_mask_string += vformat(
-			" (%s)", TTRGET(_mouse_button_descriptions[(size_t)MouseButton::MB_XBUTTON2 - 1]));
-	}
 
 	// Work around the fact vformat can only take 5 substitutions but 7 need to be passed.
 	String mask_and_position_and_relative = vformat("button_mask=%s, position=(%s), relative=(%s)",
@@ -929,7 +882,7 @@ String InputEventMouseMotion::_to_string()
 
 bool InputEventMouseMotion::accumulate(const Ref<InputEvent>& p_event)
 {
-	Ref<InputEventMouseMotion> motion = p_event;
+	Ref<InputEventMouseMotion> motion = dynamic_cast<InputEventMouseMotion*>(p_event.ptr());
 	if (motion.is_null()) {
 		return false;
 	}
@@ -1002,7 +955,7 @@ float InputEventJoypadMotion::get_axis_value() const { return axis_value; }
 bool InputEventJoypadMotion::action_match(const Ref<InputEvent>& p_event, bool p_exact_match,
 	float p_deadzone, bool* r_pressed, float* r_strength, float* r_raw_strength) const
 {
-	Ref<InputEventJoypadMotion> jm = p_event;
+	Ref<InputEventJoypadMotion> jm = dynamic_cast<InputEventJoypadMotion*>(p_event.ptr());
 	if (jm.is_null()) {
 		return false;
 	}
@@ -1047,7 +1000,7 @@ bool InputEventJoypadMotion::action_match(const Ref<InputEvent>& p_event, bool p
 
 bool InputEventJoypadMotion::is_match(const Ref<InputEvent>& p_event, bool p_exact_match) const
 {
-	Ref<InputEventJoypadMotion> jm = p_event;
+	Ref<InputEventJoypadMotion> jm = dynamic_cast<InputEventJoypadMotion*>(p_event.ptr());
 	if (jm.is_null()) {
 		return false;
 	}
@@ -1114,7 +1067,7 @@ float InputEventJoypadButton::get_pressure() const { return pressure; }
 bool InputEventJoypadButton::action_match(const Ref<InputEvent>& p_event, bool p_exact_match,
 	float p_deadzone, bool* r_pressed, float* r_strength, float* r_raw_strength) const
 {
-	Ref<InputEventJoypadButton> jb = p_event;
+	Ref<InputEventJoypadButton> jb = dynamic_cast<InputEventJoypadButton*>(p_event.ptr());
 	if (jb.is_null()) {
 		return false;
 	}
@@ -1139,7 +1092,7 @@ bool InputEventJoypadButton::action_match(const Ref<InputEvent>& p_event, bool p
 
 bool InputEventJoypadButton::is_match(const Ref<InputEvent>& p_event, bool p_exact_match) const
 {
-	Ref<InputEventJoypadButton> button = p_event;
+	Ref<InputEventJoypadButton> button = static_cast<InputEventJoypadButton *>(p_event.ptr());
 	if (button.is_null()) {
 		return false;
 	}
@@ -1180,7 +1133,7 @@ String InputEventJoypadButton::as_text() const
 	}
 
 	if (pressure != 0) {
-		text += ", " + RTR("Pressure:") + " " + String(Variant(pressure));
+		text += ", " + RTR("Pressure:") + " " + String(pressure);
 	}
 
 	return text;
@@ -1236,8 +1189,6 @@ InputEvent* InputEventScreenTouch::xformed_by(
 	st->set_pressed(pressed);
 	st->set_canceled(canceled);
 	st->set_double_tap(double_tap);
-
-	st->obj->merge_meta_from(this->obj.get());
 
 	return st.ptr();
 }
@@ -1325,8 +1276,6 @@ InputEvent* InputEventScreenDrag::xformed_by(
 	sd->set_relative_screen_position(get_relative_screen_position());
 	sd->set_velocity(p_xform.basis_xform(velocity));
 	sd->set_screen_velocity(get_screen_velocity());
-
-	sd->obj->merge_meta_from(this->obj.get());
 
 	return sd.ptr();
 }
@@ -1472,8 +1421,6 @@ InputEvent* InputEventMagnifyGesture::xformed_by(
 	ev->set_position(p_xform.xform(get_position() + p_local_ofs));
 	ev->set_factor(get_factor());
 
-	ev->obj->merge_meta_from(this->obj.get());
-
 	return ev.ptr();
 }
 
@@ -1510,8 +1457,6 @@ InputEvent* InputEventPanGesture::xformed_by(
 
 	ev->set_position(p_xform.xform(get_position() + p_local_ofs));
 	ev->set_delta(get_delta());
-
-	ev->obj->merge_meta_from(this->obj.get());
 
 	return ev.ptr();
 }

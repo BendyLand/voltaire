@@ -175,18 +175,18 @@ void EditorDebuggerInspector::_notification(int p_what)
 	}
 }
 
-void EditorDebuggerInspector::_objects_edited(
-	const String& p_prop, const TypedDictionary<uint64_t, Variant>& p_values, const String& p_field)
+void EditorDebuggerInspector::_objects_edited(Object& obj, const String& p_prop,
+	const TypedDictionary<uint64_t, Variant>& p_values, const String& p_field)
 {
-	this->obj->emit_signal(SNAME("objects_edited"), p_prop, p_values, p_field);
+	obj.emit_signal(SNAME("objects_edited"), p_prop, p_values, p_field);
 }
 
-void EditorDebuggerInspector::_object_selected(ObjectID p_object)
+void EditorDebuggerInspector::_object_selected(Object& obj, ObjectID p_object)
 {
-	this->obj->emit_signal(SNAME("object_selected"), p_object);
+	obj.emit_signal(SNAME("object_selected"), p_object);
 }
 
-EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p_arr)
+EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(Object& obj, const Array& p_arr)
 {
 	ERR_FAIL_COND_V(p_arr.is_empty(), nullptr);
 
@@ -411,7 +411,7 @@ EditorDebuggerRemoteObjects* EditorDebuggerInspector::set_objects(const Array& p
 	if (old_prop_size == remote_objects->prop_list.size() && new_props_added == 0) {
 		// Only some may have changed, if so, then update those, if they exist.
 		for (const String& E : changed) {
-			this->obj->emit_signal(
+			obj.emit_signal(
 				SNAME("object_property_updated"), remote_objects->obj->get_instance_id(), E);
 		}
 	}
@@ -464,7 +464,7 @@ void EditorDebuggerInspector::invalidate_selection_from_cache(const TypedArray<u
 	}
 }
 
-void EditorDebuggerInspector::add_stack_variable(const Array& p_array, int p_offset)
+void EditorDebuggerInspector::add_stack_variable(Object& obj, const Array& p_array, int p_offset)
 {
 	DebuggerMarshalls::ScriptStackVariable var;
 	var.deserialize(p_array);
@@ -482,7 +482,7 @@ void EditorDebuggerInspector::add_stack_variable(const Array& p_array, int p_off
 		// Makes the call stack select the node in the remote tree. See
 		// https://github.com/godotengine/godot/issues/79477
 		if (n == "self") {
-			_object_selected(v);
+			_object_selected(obj, v);
 		}
 	}
 

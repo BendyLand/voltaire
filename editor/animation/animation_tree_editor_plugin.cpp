@@ -658,7 +658,7 @@ bool AnimationTreeEditorPlugin::handles(Object* p_object) const
 	return p_object->is_class("AnimationTree");
 }
 
-void AnimationTreeEditorPlugin::make_visible(bool p_visible)
+void AnimationTreeEditorPlugin::make_visible(Object& obj, bool p_visible)
 {
 	if (p_visible) {
 		anim_tree_editor->make_visible();

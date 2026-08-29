@@ -329,7 +329,7 @@ public:
 	void sort_items_by_text();
 	int find_metadata(const Variant &p_metadata) const;
 
-	virtual String get_tooltip(const Point2 &p_pos) const override;
+	virtual String get_tooltip(const Object& obj, const Point2 &p_pos) const override;
 	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2 &p_at) const override;
 	int get_item_at_position(const Point2 &p_pos, bool p_exact = false) const;
 	bool is_pos_at_end_of_items(const Point2 &p_pos) const;

@@ -242,4 +242,9 @@ bool operator!=(const char* p_name, const StringName& p_string_name);
 		return sname;                                                                              \
 	})()
 
+namespace vformat_detail
+{
+inline String to_str(const StringName& v) { return String(v); }
+}; // namespace vformat_detail
+
 

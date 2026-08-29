@@ -32,10 +32,12 @@
 
 #include "scene/gui/container.h"
 
-class PanelContainer : public Container {
+class PanelContainer : public Container
+{
 	VLTRCLASS(PanelContainer, Container);
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> panel_style;
 	} theme_cache;
 
@@ -53,3 +55,5 @@ public:
 
 	PanelContainer();
 };
+
+

@@ -876,10 +876,10 @@ Control::CursorShape AnimationNodeStateMachineEditor::get_cursor_shape(const Poi
 	return cursor_shape;
 }
 
-String AnimationNodeStateMachineEditor::get_tooltip(const Point2& p_pos) const
+String AnimationNodeStateMachineEditor::get_tooltip(const Object& obj, const Point2& p_pos) const
 {
 	if (hovered_node_name == StringName()) {
-		return AnimationTreeNodeEditorPlugin::get_tooltip(p_pos);
+		return AnimationTreeNodeEditorPlugin::get_tooltip(obj, p_pos);
 	}
 
 	String tooltip_text;

@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "core/object/object.h"
+#include "core/types.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/mem_unique_ptr.h"
@@ -42,8 +42,6 @@ typedef void (*ResourceUIDScanForUIDOnStartup)();
 class ResourceUID
 {
 public:
-	mem_unique_ptr<Object> obj;
-
 	typedef int64_t ID;
 	constexpr const static ID INVALID_ID = -1;
 

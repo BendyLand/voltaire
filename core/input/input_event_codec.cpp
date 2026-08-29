@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "input_event_codec.h"
-
 #include "core/input/input.h"
 #include "core/io/marshalls.h"
+#include "input_event_codec.h"
 
-enum class BoolShift : uint8_t {
+enum class BoolShift : uint8_t
+{
 	SHIFT = 0,
 	CTRL,
 	ALT,
@@ -45,11 +45,13 @@ enum class BoolShift : uint8_t {
 };
 
 // cast operator for BoolShift to uint8_t
-inline uint8_t operator<<(uint8_t p_left, BoolShift p_right) {
+inline uint8_t operator<<(uint8_t p_left, BoolShift p_right)
+{
 	return p_left << static_cast<uint8_t>(p_right);
 }
 
-uint8_t encode_key_modifier_state(Ref<InputEventWithModifiers> p_event) {
+uint8_t encode_key_modifier_state(Ref<InputEventWithModifiers> p_event)
+{
 	uint8_t bools = 0;
 	bools |= (uint8_t)p_event->is_shift_pressed() << BoolShift::SHIFT;
 	bools |= (uint8_t)p_event->is_ctrl_pressed() << BoolShift::CTRL;
@@ -58,20 +60,23 @@ uint8_t encode_key_modifier_state(Ref<InputEventWithModifiers> p_event) {
 	return bools;
 }
 
-void decode_key_modifier_state(uint8_t p_bools, Ref<InputEventWithModifiers> p_event) {
+void decode_key_modifier_state(uint8_t p_bools, Ref<InputEventWithModifiers> p_event)
+{
 	p_event->set_shift_pressed(p_bools & (1 << BoolShift::SHIFT));
 	p_event->set_ctrl_pressed(p_bools & (1 << BoolShift::CTRL));
 	p_event->set_alt_pressed(p_bools & (1 << BoolShift::ALT));
 	p_event->set_meta_pressed(p_bools & (1 << BoolShift::META));
 }
 
-int encode_vector2(const Vector2 &p_vector, uint8_t *p_data) {
+int encode_vector2(const Vector2& p_vector, uint8_t* p_data)
+{
 	p_data += encode_float(p_vector.x, p_data);
 	encode_float(p_vector.y, p_data);
 	return sizeof(float) * 2;
 }
 
-const uint8_t *decode_vector2(Vector2 &r_vector, const uint8_t *p_data) {
+const uint8_t* decode_vector2(Vector2& r_vector, const uint8_t* p_data)
+{
 	r_vector.x = decode_float(p_data);
 	p_data += sizeof(float);
 	r_vector.y = decode_float(p_data);
@@ -79,10 +84,11 @@ const uint8_t *decode_vector2(Vector2 &r_vector, const uint8_t *p_data) {
 	return p_data;
 }
 
-void encode_input_event_key(const Ref<InputEventKey> &p_event, PackedByteArray &r_data) {
+void encode_input_event_key(const Ref<InputEventKey>& p_event, Vector<uint8_t>& r_data)
+{
 	r_data.resize(19);
 
-	uint8_t *data = r_data.ptrw();
+	uint8_t* data = r_data.ptrw();
 	*data = (uint8_t)InputEventType::KEY;
 	data++;
 	uint8_t bools = encode_key_modifier_state(p_event);
@@ -101,8 +107,9 @@ void encode_input_event_key(const Ref<InputEventKey> &p_event, PackedByteArray &
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-Error decode_input_event_key(const PackedByteArray &p_data, Ref<InputEventKey> &r_event) {
-	const uint8_t *data = p_data.ptr();
+Error decode_input_event_key(const Vector<uint8_t>& p_data, Ref<InputEventKey>& r_event)
+{
+	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::KEY);
 	data++; // Skip event type.
 
@@ -131,10 +138,12 @@ Error decode_input_event_key(const PackedByteArray &p_data, Ref<InputEventKey> &
 	return OK;
 }
 
-void encode_input_event_mouse_button(const Ref<InputEventMouseButton> &p_event, PackedByteArray &r_data) {
+void encode_input_event_mouse_button(
+	const Ref<InputEventMouseButton>& p_event, Vector<uint8_t>& r_data)
+{
 	r_data.resize(12);
 
-	uint8_t *data = r_data.ptrw();
+	uint8_t* data = r_data.ptrw();
 	*data = (uint8_t)InputEventType::MOUSE_BUTTON;
 	data++;
 
@@ -158,8 +167,10 @@ void encode_input_event_mouse_button(const Ref<InputEventMouseButton> &p_event, 
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-Error decode_input_event_mouse_button(const PackedByteArray &p_data, Ref<InputEventMouseButton> &r_event) {
-	const uint8_t *data = p_data.ptr();
+Error decode_input_event_mouse_button(
+	const Vector<uint8_t>& p_data, Ref<InputEventMouseButton>& r_event)
+{
+	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MOUSE_BUTTON);
 	data++; // Skip event type.
 
@@ -182,10 +193,12 @@ Error decode_input_event_mouse_button(const PackedByteArray &p_data, Ref<InputEv
 	return OK;
 }
 
-void encode_input_event_mouse_motion(const Ref<InputEventMouseMotion> &p_event, PackedByteArray &r_data) {
+void encode_input_event_mouse_motion(
+	const Ref<InputEventMouseMotion>& p_event, Vector<uint8_t>& r_data)
+{
 	r_data.resize(31);
 
-	uint8_t *data = r_data.ptrw();
+	uint8_t* data = r_data.ptrw();
 	*data = (uint8_t)InputEventType::MOUSE_MOTION;
 	data++;
 
@@ -208,10 +221,12 @@ void encode_input_event_mouse_motion(const Ref<InputEventMouseMotion> &p_event, 
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_mouse_motion(const PackedByteArray &p_data, Ref<InputEventMouseMotion> &r_event) {
-	Input *input = Input::get_singleton();
+void decode_input_event_mouse_motion(
+	const Vector<uint8_t>& p_data, Ref<InputEventMouseMotion>& r_event)
+{
+	Input* input = Input::get_singleton();
 
-	const uint8_t *data = p_data.ptr();
+	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MOUSE_MOTION);
 	data++; // Skip event type.
 
@@ -249,10 +264,12 @@ void decode_input_event_mouse_motion(const PackedByteArray &p_data, Ref<InputEve
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-void encode_input_event_joypad_button(const Ref<InputEventJoypadButton> &p_event, PackedByteArray &r_data) {
+void encode_input_event_joypad_button(
+	const Ref<InputEventJoypadButton>& p_event, Vector<uint8_t>& r_data)
+{
 	r_data.resize(11);
 
-	uint8_t *data = r_data.ptrw();
+	uint8_t* data = r_data.ptrw();
 	*data = (uint8_t)InputEventType::JOY_BUTTON;
 	data++;
 
@@ -269,8 +286,10 @@ void encode_input_event_joypad_button(const Ref<InputEventJoypadButton> &p_event
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_joypad_button(const PackedByteArray &p_data, Ref<InputEventJoypadButton> &r_event) {
-	const uint8_t *data = p_data.ptr();
+void decode_input_event_joypad_button(
+	const Vector<uint8_t>& p_data, Ref<InputEventJoypadButton>& r_event)
+{
+	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::JOY_BUTTON);
 	data++; // Skip event type.
 
@@ -286,10 +305,12 @@ void decode_input_event_joypad_button(const PackedByteArray &p_data, Ref<InputEv
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-void encode_input_event_joypad_motion(const Ref<InputEventJoypadMotion> &p_event, PackedByteArray &r_data) {
+void encode_input_event_joypad_motion(
+	const Ref<InputEventJoypadMotion>& p_event, Vector<uint8_t>& r_data)
+{
 	r_data.resize(14);
 
-	uint8_t *data = r_data.ptrw();
+	uint8_t* data = r_data.ptrw();
 	*data = (uint8_t)InputEventType::JOY_MOTION;
 	data++;
 
@@ -302,8 +323,10 @@ void encode_input_event_joypad_motion(const Ref<InputEventJoypadMotion> &p_event
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_joypad_motion(const PackedByteArray &p_data, Ref<InputEventJoypadMotion> &r_event) {
-	const uint8_t *data = p_data.ptr();
+void decode_input_event_joypad_motion(
+	const Vector<uint8_t>& p_data, Ref<InputEventJoypadMotion>& r_event)
+{
+	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::JOY_MOTION);
 	data++; // Skip event type.
 
@@ -318,10 +341,12 @@ void decode_input_event_joypad_motion(const PackedByteArray &p_data, Ref<InputEv
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-void encode_input_event_gesture_pan(const Ref<InputEventPanGesture> &p_event, PackedByteArray &r_data) {
+void encode_input_event_gesture_pan(
+	const Ref<InputEventPanGesture>& p_event, Vector<uint8_t>& r_data)
+{
 	r_data.resize(18);
 
-	uint8_t *data = r_data.ptrw();
+	uint8_t* data = r_data.ptrw();
 	*data = (uint8_t)InputEventType::PAN_GESTURE;
 	data++;
 
@@ -335,8 +360,10 @@ void encode_input_event_gesture_pan(const Ref<InputEventPanGesture> &p_event, Pa
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_gesture_pan(const PackedByteArray &p_data, Ref<InputEventPanGesture> &r_event) {
-	const uint8_t *data = p_data.ptr();
+void decode_input_event_gesture_pan(
+	const Vector<uint8_t>& p_data, Ref<InputEventPanGesture>& r_event)
+{
+	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::PAN_GESTURE);
 	data++; // Skip event type.
 
@@ -355,10 +382,12 @@ void decode_input_event_gesture_pan(const PackedByteArray &p_data, Ref<InputEven
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-void encode_input_event_gesture_magnify(const Ref<InputEventMagnifyGesture> &p_event, PackedByteArray &r_data) {
+void encode_input_event_gesture_magnify(
+	const Ref<InputEventMagnifyGesture>& p_event, Vector<uint8_t>& r_data)
+{
 	r_data.resize(14);
 
-	uint8_t *data = r_data.ptrw();
+	uint8_t* data = r_data.ptrw();
 	*data = (uint8_t)InputEventType::MAGNIFY_GESTURE;
 	data++;
 
@@ -372,8 +401,10 @@ void encode_input_event_gesture_magnify(const Ref<InputEventMagnifyGesture> &p_e
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_gesture_magnify(const PackedByteArray &p_data, Ref<InputEventMagnifyGesture> &r_event) {
-	const uint8_t *data = p_data.ptr();
+void decode_input_event_gesture_magnify(
+	const Vector<uint8_t>& p_data, Ref<InputEventMagnifyGesture>& r_event)
+{
+	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MAGNIFY_GESTURE);
 	data++; // Skip event type.
 
@@ -391,83 +422,87 @@ void decode_input_event_gesture_magnify(const PackedByteArray &p_data, Ref<Input
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-bool encode_input_event(const Ref<InputEvent> &p_event, PackedByteArray &r_data) {
+bool encode_input_event(const Ref<InputEvent>& p_event, Vector<uint8_t>& r_data)
+{
 	switch (p_event->get_type()) {
-		case InputEventType::KEY:
-			encode_input_event_key(p_event, r_data);
-			break;
-		case InputEventType::MOUSE_BUTTON:
-			encode_input_event_mouse_button(p_event, r_data);
-			break;
-		case InputEventType::MOUSE_MOTION:
-			encode_input_event_mouse_motion(p_event, r_data);
-			break;
-		case InputEventType::JOY_MOTION:
-			encode_input_event_joypad_motion(p_event, r_data);
-			break;
-		case InputEventType::JOY_BUTTON:
-			encode_input_event_joypad_button(p_event, r_data);
-			break;
-		case InputEventType::MAGNIFY_GESTURE:
-			encode_input_event_gesture_magnify(p_event, r_data);
-			break;
-		case InputEventType::PAN_GESTURE:
-			encode_input_event_gesture_pan(p_event, r_data);
-			break;
-		default:
-			return false;
+	case InputEventType::KEY:
+		encode_input_event_key(p_event, r_data);
+		break;
+	case InputEventType::MOUSE_BUTTON:
+		encode_input_event_mouse_button(p_event, r_data);
+		break;
+	case InputEventType::MOUSE_MOTION:
+		encode_input_event_mouse_motion(p_event, r_data);
+		break;
+	case InputEventType::JOY_MOTION:
+		encode_input_event_joypad_motion(p_event, r_data);
+		break;
+	case InputEventType::JOY_BUTTON:
+		encode_input_event_joypad_button(p_event, r_data);
+		break;
+	case InputEventType::MAGNIFY_GESTURE:
+		encode_input_event_gesture_magnify(p_event, r_data);
+		break;
+	case InputEventType::PAN_GESTURE:
+		encode_input_event_gesture_pan(p_event, r_data);
+		break;
+	default:
+		return false;
 	}
 	return true;
 }
 
-void decode_input_event(const PackedByteArray &p_data, Ref<InputEvent> &r_event) {
-	const uint8_t *data = p_data.ptr();
+void decode_input_event(const Vector<uint8_t>& p_data, Ref<InputEvent>& r_event)
+{
+	const uint8_t* data = p_data.ptr();
 
 	switch (static_cast<InputEventType>(*data)) {
-		case InputEventType::KEY: {
-			Ref<InputEventKey> event;
-			event.instantiate();
-			decode_input_event_key(p_data, event);
-			r_event = event;
-		} break;
-		case InputEventType::MOUSE_BUTTON: {
-			Ref<InputEventMouseButton> event;
-			event.instantiate();
-			decode_input_event_mouse_button(p_data, event);
-			r_event = event;
-		} break;
-		case InputEventType::MOUSE_MOTION: {
-			Ref<InputEventMouseMotion> event;
-			event.instantiate();
-			decode_input_event_mouse_motion(p_data, event);
-			r_event = event;
-		} break;
-		case InputEventType::JOY_BUTTON: {
-			Ref<InputEventJoypadButton> event;
-			event.instantiate();
-			decode_input_event_joypad_button(p_data, event);
-			r_event = event;
-		} break;
-		case InputEventType::JOY_MOTION: {
-			Ref<InputEventJoypadMotion> event;
-			event.instantiate();
-			decode_input_event_joypad_motion(p_data, event);
-			r_event = event;
-		} break;
-		case InputEventType::PAN_GESTURE: {
-			Ref<InputEventPanGesture> event;
-			event.instantiate();
-			decode_input_event_gesture_pan(p_data, event);
-			r_event = event;
-		} break;
-		case InputEventType::MAGNIFY_GESTURE: {
-			Ref<InputEventMagnifyGesture> event;
-			event.instantiate();
-			decode_input_event_gesture_magnify(p_data, event);
-			r_event = event;
-		} break;
-		default: {
-			WARN_PRINT(vformat("Unknown event type %d.", static_cast<int>(*data)));
-		} break;
+	case InputEventType::KEY: {
+		Ref<InputEventKey> event;
+		event.instantiate();
+		decode_input_event_key(p_data, event);
+		r_event = event;
+	} break;
+	case InputEventType::MOUSE_BUTTON: {
+		Ref<InputEventMouseButton> event;
+		event.instantiate();
+		decode_input_event_mouse_button(p_data, event);
+		r_event = event;
+	} break;
+	case InputEventType::MOUSE_MOTION: {
+		Ref<InputEventMouseMotion> event;
+		event.instantiate();
+		decode_input_event_mouse_motion(p_data, event);
+		r_event = event;
+	} break;
+	case InputEventType::JOY_BUTTON: {
+		Ref<InputEventJoypadButton> event;
+		event.instantiate();
+		decode_input_event_joypad_button(p_data, event);
+		r_event = event;
+	} break;
+	case InputEventType::JOY_MOTION: {
+		Ref<InputEventJoypadMotion> event;
+		event.instantiate();
+		decode_input_event_joypad_motion(p_data, event);
+		r_event = event;
+	} break;
+	case InputEventType::PAN_GESTURE: {
+		Ref<InputEventPanGesture> event;
+		event.instantiate();
+		decode_input_event_gesture_pan(p_data, event);
+		r_event = event;
+	} break;
+	case InputEventType::MAGNIFY_GESTURE: {
+		Ref<InputEventMagnifyGesture> event;
+		event.instantiate();
+		decode_input_event_gesture_magnify(p_data, event);
+		r_event = event;
+	} break;
+	default: {
+		WARN_PRINT(vformat("Unknown event type %d.", static_cast<int>(*data)));
+	} break;
 	}
 }
+
+

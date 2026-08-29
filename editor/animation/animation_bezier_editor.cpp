@@ -1314,9 +1314,9 @@ bool AnimationBezierTrackEdit::_hide_track(int p_track)
 
 bool AnimationBezierTrackEdit::_show_track(int p_track) { return hidden_tracks.erase(p_track); }
 
-String AnimationBezierTrackEdit::get_tooltip(const Point2& p_pos) const
+String AnimationBezierTrackEdit::get_tooltip(const Object& obj, const Point2& p_pos) const
 {
-	return Control::get_tooltip(p_pos);
+	return Control::get_tooltip(obj, p_pos);
 }
 
 void AnimationBezierTrackEdit::_clear_selection(Object& obj)

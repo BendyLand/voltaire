@@ -138,32 +138,32 @@ private:
 protected:
 	void _debugger_stopped(int p_id);
 	void _debugger_wants_stop(int p_id);
-	void _debugger_changed(int p_tab);
+	void _debugger_changed(Object& obj, int p_tab);
 	void _debug_data(const String& p_msg, const Array& p_data, int p_debugger);
 	void _remote_tree_select_requested(const TypedArray<int64_t>& p_ids, int p_debugger);
 	void _remote_tree_clear_selection_requested(int p_debugger);
 	void _remote_tree_updated(int p_debugger);
-	void _remote_tree_button_pressed(Object* p_item, int p_column, int p_id, MouseButton p_button);
+	void _remote_tree_button_pressed(Object& obj, Object* p_item, int p_column, int p_id, MouseButton p_button);
 	void _remote_objects_updated(EditorDebuggerRemoteObjects* p_objs, int p_debugger);
 	void _remote_object_property_updated(ObjectID p_id, const String& p_property, int p_debugger);
 	void _remote_objects_requested(const TypedArray<uint64_t>& p_ids, int p_debugger);
 	void _remote_selection_cleared(int p_debugger);
 	void _save_node_requested(ObjectID p_id, const String& p_file, int p_debugger);
 
-	void _breakpoint_set_in_tree(
+	void _breakpoint_set_in_tree(Object& obj,
 		Ref<RefCounted> p_script, int p_line, bool p_enabled, int p_debugger);
-	void _breakpoints_cleared_in_tree(int p_debugger);
+	void _breakpoints_cleared_in_tree(Object& obj, int p_debugger);
 
 	void _clear_execution(Object& obj, Ref<RefCounted> p_script)
 	{
 		obj.emit_signal(SNAME("clear_execution"), p_script);
 	}
 
-	void _text_editor_stack_goto(const ScriptEditorDebugger* p_debugger);
-	void _text_editor_stack_clear(const ScriptEditorDebugger* p_debugger);
-	void _stack_frame_selected(int p_debugger);
-	void _error_selected(const String& p_file, int p_line, int p_debugger);
-	void _breaked(bool p_breaked, bool p_can_debug, const String& p_message, bool p_has_stackdump,
+	void _text_editor_stack_goto(Object& obj, const ScriptEditorDebugger* p_debugger);
+	void _text_editor_stack_clear(Object& obj, const ScriptEditorDebugger* p_debugger);
+	void _stack_frame_selected(Object& obj, int p_debugger);
+	void _error_selected(Object& obj, const String& p_file, int p_line, int p_debugger);
+	void _breaked(Object& obj, bool p_breaked, bool p_can_debug, const String& p_message, bool p_has_stackdump,
 		int p_debugger);
 	void _paused();
 	void _break_state_changed();
@@ -201,8 +201,8 @@ public:
 
 	bool is_skip_breakpoints() const;
 	bool is_ignore_error_breaks() const;
-	void set_breakpoint(const String& p_path, int p_line, bool p_enabled);
-	void set_breakpoints(const String& p_path, const Array& p_lines);
+	void set_breakpoint(Object& obj, const String& p_path, int p_line, bool p_enabled);
+	void set_breakpoints(Object& obj, const String& p_path, const Array& p_lines);
 	void reload_all_scripts();
 	void reload_scripts(const Vector<String>& p_script_paths);
 

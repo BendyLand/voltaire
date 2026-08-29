@@ -420,7 +420,7 @@ void EditorAudioBus::update_bus()
 	updating_bus = false;
 }
 
-void EditorAudioBus::_name_changed(const String& p_new_name)
+void EditorAudioBus::_name_changed(const Object& obj, const String& p_new_name)
 {
 	if (updating_bus) {
 		return;
@@ -472,18 +472,18 @@ void EditorAudioBus::_name_changed(const String& p_new_name)
 		}
 	}
 
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 
-	ur->add_do_method(buses->obj.get(), "_update_sends");
-	ur->add_undo_method(buses->obj.get(), "_update_sends");
+	ur->add_do_method(&obj, "_update_sends");
+	ur->add_undo_method(&obj, "_update_sends");
 
 	ur->commit_action();
 
 	updating_bus = false;
 }
 
-void EditorAudioBus::_volume_changed(float p_normalized)
+void EditorAudioBus::_volume_changed(const Object& obj, float p_normalized)
 {
 	if (updating_bus) {
 		return;
@@ -506,8 +506,8 @@ void EditorAudioBus::_volume_changed(float p_normalized)
 		AudioServer::get_singleton()->obj.get(), "set_bus_volume_db", get_index(), p_db);
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "set_bus_volume_db", get_index(),
 		AudioServer::get_singleton()->get_bus_volume_db(get_index()));
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 	ur->commit_action();
 
 	updating_bus = false;
@@ -620,7 +620,7 @@ void EditorAudioBus::_enable_indicator_fall()
 	}
 }
 
-void EditorAudioBus::_solo_toggled()
+void EditorAudioBus::_solo_toggled(const Object& obj)
 {
 	updating_bus = true;
 
@@ -630,14 +630,14 @@ void EditorAudioBus::_solo_toggled()
 		AudioServer::get_singleton()->obj.get(), "set_bus_solo", get_index(), solo->is_pressed());
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "set_bus_solo", get_index(),
 		AudioServer::get_singleton()->is_bus_solo(get_index()));
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 	ur->commit_action();
 
 	updating_bus = false;
 }
 
-void EditorAudioBus::_mute_toggled()
+void EditorAudioBus::_mute_toggled(const Object& obj)
 {
 	updating_bus = true;
 
@@ -647,14 +647,14 @@ void EditorAudioBus::_mute_toggled()
 		AudioServer::get_singleton()->obj.get(), "set_bus_mute", get_index(), mute->is_pressed());
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "set_bus_mute", get_index(),
 		AudioServer::get_singleton()->is_bus_mute(get_index()));
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 	ur->commit_action();
 
 	updating_bus = false;
 }
 
-void EditorAudioBus::_bypass_toggled()
+void EditorAudioBus::_bypass_toggled(const Object& obj)
 {
 	updating_bus = true;
 
@@ -664,14 +664,14 @@ void EditorAudioBus::_bypass_toggled()
 		get_index(), bypass->is_pressed());
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "set_bus_bypass_effects",
 		get_index(), AudioServer::get_singleton()->is_bus_bypassing_effects(get_index()));
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 	ur->commit_action();
 
 	updating_bus = false;
 }
 
-void EditorAudioBus::_send_selected(int p_which)
+void EditorAudioBus::_send_selected(const Object& obj, int p_which)
 {
 	updating_bus = true;
 
@@ -681,8 +681,8 @@ void EditorAudioBus::_send_selected(int p_which)
 		send->get_item_text(p_which));
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "set_bus_send", get_index(),
 		AudioServer::get_singleton()->get_bus_send(get_index()));
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 	ur->commit_action();
 
 	updating_bus = false;
@@ -707,7 +707,7 @@ void EditorAudioBus::_effect_selected()
 	updating_bus = false;
 }
 
-void EditorAudioBus::_effect_edited()
+void EditorAudioBus::_effect_edited(const Object& obj)
 {
 	if (updating_bus) {
 		return;
@@ -738,15 +738,15 @@ void EditorAudioBus::_effect_edited()
 		ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "set_bus_effect_enabled",
 			get_index(), index,
 			AudioServer::get_singleton()->is_bus_effect_enabled(get_index(), index));
-		ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-		ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+		ur->add_do_method(&obj, "_update_bus", get_index());
+		ur->add_undo_method(&obj, "_update_bus", get_index());
 		ur->commit_action();
 
 		updating_bus = false;
 	}
 }
 
-void EditorAudioBus::_effect_add(int p_which)
+void EditorAudioBus::_effect_add(const Object& obj, int p_which)
 {
 	if (updating_bus) {
 		return;
@@ -766,12 +766,12 @@ void EditorAudioBus::_effect_add(int p_which)
 		AudioServer::get_singleton()->obj.get(), "add_bus_effect", get_index(), afxr, -1);
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "remove_bus_effect", get_index(),
 		AudioServer::get_singleton()->get_bus_effect_count(get_index()));
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 	ur->commit_action();
 }
 
-void EditorAudioBus::gui_input(const Ref<InputEvent>& p_event)
+void EditorAudioBus::gui_input(const Object& obj, const Ref<InputEvent>& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -792,34 +792,34 @@ void EditorAudioBus::gui_input(const Ref<InputEvent>& p_event)
 	}
 }
 
-void EditorAudioBus::_effects_gui_input(Ref<InputEvent> p_event)
+void EditorAudioBus::_effects_gui_input(const Object& obj, Ref<InputEvent> p_event)
 {
 	Ref<InputEventKey> k = p_event;
 	if (k.is_valid() && k->is_pressed() && !k->is_echo() && k->get_keycode() == Key::KEY_DELETE) {
 		TreeItem* current_effect = effects->get_selected();
 		if (current_effect && current_effect->get_metadata(0).get_type() == Variant::INT) {
-			_delete_effect_pressed(0);
+			_delete_effect_pressed(obj, 0);
 			accept_event();
 		}
 	}
 }
 
-void EditorAudioBus::_bus_popup_pressed(int p_option)
+void EditorAudioBus::_bus_popup_pressed(Object& obj, int p_option)
 {
 	if (p_option == 2) {
 		// Reset volume
-		this->obj->emit_signal(SNAME("vol_reset_request"));
+		obj.emit_signal(SNAME("vol_reset_request"));
 	}
 	else if (p_option == 1) {
-		this->obj->emit_signal(SNAME("delete_request"));
+		obj.emit_signal(SNAME("delete_request"));
 	}
 	else if (p_option == 0) {
 		// duplicate
-		this->obj->emit_signal(SNAME("duplicate_request"), get_index());
+		obj.emit_signal(SNAME("duplicate_request"), get_index());
 	}
 }
 
-Variant EditorAudioBus::get_drag_data(const Point2& p_point)
+Variant EditorAudioBus::get_drag_data(Object& obj, const Point2& p_point)
 {
 	if (get_index() == 0) {
 		return Variant();
@@ -839,7 +839,7 @@ Variant EditorAudioBus::get_drag_data(const Point2& p_point)
 	d["index"] = get_index();
 
 	if (get_index() < AudioServer::get_singleton()->get_bus_count() - 1) {
-		this->obj->emit_signal(SNAME("drop_end_request"));
+		obj.emit_signal(SNAME("drop_end_request"));
 	}
 
 	return d;
@@ -860,10 +860,11 @@ bool EditorAudioBus::can_drop_data(const Point2& p_point, const Variant& p_data)
 	return false;
 }
 
-void EditorAudioBus::drop_data(const Point2& p_point, const Variant& p_data)
+void EditorAudioBus::drop_data(const Object& obj, const Point2& p_point, const Variant& p_data)
 {
 	Dictionary d = p_data;
-	this->obj->emit_signal(SNAME("dropped"), d["index"], get_index());
+	Object& o = const_cast<Object&>(obj);
+	o.emit_signal(SNAME("dropped"), d["index"], get_index());
 }
 
 Variant EditorAudioBus::get_drag_data_fw(const Point2& p_point, Control* p_from)
@@ -914,7 +915,8 @@ bool EditorAudioBus::can_drop_data_fw(
 	return true;
 }
 
-void EditorAudioBus::drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from)
+void EditorAudioBus::drop_data_fw(
+	const Object& obj, const Point2& p_point, const Variant& p_data, Control* p_from)
 {
 	Dictionary d = p_data;
 
@@ -975,16 +977,16 @@ void EditorAudioBus::drop_data_fw(const Point2& p_point, const Variant& p_data, 
 			AudioServer::get_singleton()->obj.get(), "set_bus_effect_enabled", bus, effect, false);
 	}
 
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 	if (get_index() != bus) {
-		ur->add_do_method(buses->obj.get(), "_update_bus", bus);
-		ur->add_undo_method(buses->obj.get(), "_update_bus", bus);
+		ur->add_do_method(&obj, "_update_bus", bus);
+		ur->add_undo_method(&obj, "_update_bus", bus);
 	}
 	ur->commit_action();
 }
 
-void EditorAudioBus::_delete_effect_pressed(int p_option)
+void EditorAudioBus::_delete_effect_pressed(const Object& obj, int p_option)
 {
 	TreeItem* item = effects->get_selected();
 	if (!item) {
@@ -1006,8 +1008,8 @@ void EditorAudioBus::_delete_effect_pressed(int p_option)
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "set_bus_effect_enabled",
 		get_index(), index,
 		AudioServer::get_singleton()->is_bus_effect_enabled(get_index(), index));
-	ur->add_do_method(buses->obj.get(), "_update_bus", get_index());
-	ur->add_undo_method(buses->obj.get(), "_update_bus", get_index());
+	ur->add_do_method(&obj, "_update_bus", get_index());
+	ur->add_undo_method(&obj, "_update_bus", get_index());
 	ur->commit_action();
 }
 
@@ -1367,11 +1369,11 @@ bool EditorAudioBusDrop::can_drop_data(const Point2& p_point, const Variant& p_d
 	return (d.has("type") && String(d["type"]) == "move_audio_bus");
 }
 
-void EditorAudioBusDrop::drop_data(const Point2& p_point, const Variant& p_data)
+void EditorAudioBusDrop::drop_data(const Object& obj, const Point2& p_point, const Variant& p_data)
 {
 	Dictionary d = p_data;
-	this->obj->emit_signal(
-		SNAME("dropped"), d["index"], AudioServer::get_singleton()->get_bus_count());
+	Object& o = const_cast<Object&>(obj);
+	o.emit_signal(SNAME("dropped"), d["index"], AudioServer::get_singleton()->get_bus_count());
 }
 
 void EditorAudioBusDrop::_bind_methods() {}
@@ -1502,19 +1504,18 @@ void EditorAudioBuses::_add_bus()
 	ur->commit_action();
 }
 
-void EditorAudioBuses::_update_bus(int p_index)
+void EditorAudioBuses::_update_bus(const Object& obj, int p_index)
 {
 	if (p_index >= bus_hb->get_child_count()) {
 		return;
 	}
-
-	bus_hb->get_child(p_index)->obj->call("update_bus");
+	obj.call("update_bus");
 }
 
-void EditorAudioBuses::_update_sends()
+void EditorAudioBuses::_update_sends(const Object& obj)
 {
 	for (int i = 0; i < bus_hb->get_child_count(); i++) {
-		bus_hb->get_child(i)->obj->call("update_send");
+		obj.call("update_send");
 	}
 }
 
@@ -1553,7 +1554,7 @@ void EditorAudioBuses::_delete_bus(Object* p_which)
 	ur->commit_action();
 }
 
-void EditorAudioBuses::_duplicate_bus(int p_which)
+void EditorAudioBuses::_duplicate_bus(const Object& obj, int p_which)
 {
 	int add_at_pos = p_which + 1;
 	EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
@@ -1577,12 +1578,12 @@ void EditorAudioBuses::_duplicate_bus(int p_which)
 		ur->add_do_method(AudioServer::get_singleton()->obj.get(), "set_bus_effect_enabled",
 			add_at_pos, i, AudioServer::get_singleton()->is_bus_effect_enabled(p_which, i));
 	}
-	ur->add_do_method(this->obj.get(), "_update_bus", add_at_pos);
+	ur->add_do_method(&obj, "_update_bus", add_at_pos);
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "remove_bus", add_at_pos);
 	ur->commit_action();
 }
 
-void EditorAudioBuses::_reset_bus_volume(Object* p_which)
+void EditorAudioBuses::_reset_bus_volume(const Object& obj, Object* p_which)
 {
 	EditorAudioBus* bus = Object::cast_to<EditorAudioBus>(p_which);
 	int index = bus->get_index();
@@ -1592,8 +1593,8 @@ void EditorAudioBuses::_reset_bus_volume(Object* p_which)
 	ur->add_do_method(AudioServer::get_singleton()->obj.get(), "set_bus_volume_db", index, 0.f);
 	ur->add_undo_method(AudioServer::get_singleton()->obj.get(), "set_bus_volume_db", index,
 		AudioServer::get_singleton()->get_bus_volume_db(index));
-	ur->add_do_method(this->obj.get(), "_update_bus", index);
-	ur->add_undo_method(this->obj.get(), "_update_bus", index);
+	ur->add_do_method(&obj, "_update_bus", index);
+	ur->add_undo_method(&obj, "_update_bus", index);
 	ur->commit_action();
 }
 
@@ -1833,9 +1834,7 @@ EditorAudioBuses::EditorAudioBuses()
 	AudioServer::get_singleton()->obj->connect(
 		"bus_renamed", callable_mp(this, &EditorAudioBuses::_rebuild_buses).unbind(3));
 	FileSystemDock::get_singleton()->connect(
-		"files_moved", callable_mp(this, &EditorAudioBuses::_file_moved
-));
-
+		"files_moved", callable_mp(this, &EditorAudioBuses::_file_moved));
 	set_process(true);
 }
 
@@ -1884,7 +1883,7 @@ bool AudioBusesEditorPlugin::handles(Object* p_node) const
 	return (Object::cast_to<AudioBusLayout>(p_node) != nullptr);
 }
 
-void AudioBusesEditorPlugin::make_visible(bool p_visible) {}
+void AudioBusesEditorPlugin::make_visible(Object& obj, bool p_visible) {}
 
 AudioBusesEditorPlugin::AudioBusesEditorPlugin(EditorAudioBuses* p_node)
 {

@@ -32,14 +32,13 @@
 
 #include "core/io/stream_peer_tcp.h"
 #include "core/io/stream_peer_tls.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "core/version.h"
 #include "http_client_tcp.h"
 
 HTTPClient* HTTPClientTCP::_create_func(bool p_notify_postinitialize)
 {
-	HTTPClientTCP* client = memnew(HTTPClientTCP).ptr();
+	HTTPClientTCP* client = memnew(HTTPClientTCP);
 	return client;
 }
 
@@ -50,8 +49,6 @@ Error HTTPClientTCP::connect_to_host(const String& p_host, int p_port, Ref<TLSOp
 	conn_port = p_port;
 	conn_host = p_host;
 	tls_options = p_options;
-
-	ip_candidates.clear();
 
 	String host_lower = conn_host.to_lower();
 	if (host_lower.begins_with("http://")) {
@@ -122,11 +119,6 @@ void HTTPClientTCP::set_connection(const Ref<StreamPeer>& p_connection)
 {
 	ERR_FAIL_COND_MSG(
 		p_connection.is_null(), "Connection is not a reference to a valid StreamPeer object.");
-
-	if (tls_options.is_valid()) {
-		ERR_FAIL_NULL_MSG(Object::cast_to<StreamPeerTLS>(p_connection.ptr()),
-			"Connection is not a reference to a valid StreamPeerTLS object.");
-	}
 
 	if (connection == p_connection) {
 		return;
@@ -270,8 +262,6 @@ void HTTPClientTCP::close()
 		IP::get_singleton()->erase_resolve_item(resolving);
 		resolving = IP::RESOLVER_INVALID_ID;
 	}
-
-	ip_candidates.clear();
 	response_headers.clear();
 	response_str.clear();
 	request_buffer->clear();
@@ -299,17 +289,10 @@ Error HTTPClientTCP::poll()
 			return OK; // Still resolving.
 
 		case IP::RESOLVER_STATUS_DONE: {
-			ip_candidates = IP::get_singleton()->get_resolve_item_addresses(resolving);
 			IP::get_singleton()->erase_resolve_item(resolving);
 			resolving = IP::RESOLVER_INVALID_ID;
 
 			Error err = ERR_BUG; // Should be at least one entry.
-			while (ip_candidates.size() > 0) {
-				err = tcp_connection->connect_to_host(ip_candidates.pop_front(), server_port);
-				if (err == OK) {
-					break;
-				}
-			}
 			if (err) {
 				status = STATUS_CANT_CONNECT;
 				return err;
@@ -408,7 +391,6 @@ Error HTTPClientTCP::poll()
 				if (tls_conn->get_status() == StreamPeerTLS::STATUS_CONNECTED) {
 					// Handshake has been successful.
 					handshaking = false;
-					ip_candidates.clear();
 					status = STATUS_CONNECTED;
 					return OK;
 				}
@@ -421,7 +403,6 @@ Error HTTPClientTCP::poll()
 				// ... we will need to poll more for handshake to finish.
 			}
 			else {
-				ip_candidates.clear();
 				status = STATUS_CONNECTED;
 			}
 			return OK;
@@ -429,13 +410,6 @@ Error HTTPClientTCP::poll()
 		case StreamPeerTCP::STATUS_ERROR:
 		case StreamPeerTCP::STATUS_NONE: {
 			Error err = ERR_CANT_CONNECT;
-			while (ip_candidates.size() > 0) {
-				tcp_connection->disconnect_from_host();
-				err = tcp_connection->connect_to_host(ip_candidates.pop_front(), server_port);
-				if (err == OK) {
-					return OK;
-				}
-			}
 			close();
 			status = STATUS_CANT_CONNECT;
 			return err;
@@ -595,11 +569,11 @@ Error HTTPClientTCP::poll()
 
 int64_t HTTPClientTCP::get_response_body_length() const { return body_size; }
 
-PackedByteArray HTTPClientTCP::read_response_body_chunk()
+Vector<uint8_t> HTTPClientTCP::read_response_body_chunk()
 {
-	ERR_FAIL_COND_V(status != STATUS_BODY, PackedByteArray());
+	ERR_FAIL_COND_V(status != STATUS_BODY, Vector<uint8_t>());
 
-	PackedByteArray ret;
+	Vector<uint8_t> ret;
 	Error err = OK;
 
 	if (chunked) {

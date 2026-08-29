@@ -688,10 +688,10 @@ public:
 
 	virtual void edit(Object* p_object) override;
 	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(bool p_visible) override;
+	virtual void make_visible(Object& obj, bool p_visible) override;
 	virtual Dictionary get_state() const override;
 	virtual void set_state(Object& obj, const Dictionary& p_state) override;
-	virtual void clear() override;
+	virtual void clear(Object& obj) override;
 
 	CanvasItemEditor* get_canvas_item_editor() { return canvas_item_editor; }
 
@@ -743,7 +743,7 @@ protected:
 
 public:
 	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(const Point2& p_point, const Variant& p_data) override;
+	virtual void drop_data(const Object& obj, const Point2& p_point, const Variant& p_data) override;
 
 	void set_hint_label(const String& p_title, const String& p_description) const;
 

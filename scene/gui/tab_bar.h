@@ -203,7 +203,7 @@ private:
 
 protected:
 	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
-	virtual String get_tooltip(const Point2 &p_pos) const override;
+	virtual String get_tooltip(const Object& obj, const Point2 &p_pos) const override;
 
 	bool _set(const StringName &p_name, const Variant &p_value) { return property_helper.property_set_value(p_name, p_value); }
 	bool _get(const StringName &p_name, Variant &r_ret) const { return property_helper.property_get_value(p_name, r_ret); }
@@ -213,9 +213,9 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	Variant get_drag_data(const Point2 &p_point) override;
+	Variant get_drag_data(Object& obj, const Point2 &p_point) override;
 	bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;
-	void drop_data(const Point2 &p_point, const Variant &p_data) override;
+	void drop_data(const Object& obj, const Point2 &p_point, const Variant &p_data) override;
 	void _move_tab_from(TabBar *p_from_tabbar, int p_from_index, int p_to_index);
 
 public:

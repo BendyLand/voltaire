@@ -30,15 +30,12 @@
 
 #pragma once
 
-#include "core/object/worker_thread_pool.h"
 #include "core/os/condition_variable.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
 #include "core/templates/rid_owner.h"
-#include "core/variant/type_info.h"
-#include "core/variant/typed_array.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_device_driver.h"
@@ -66,8 +63,6 @@ class RDHitGroup;
 
 class RenderingDevice : public RenderingDeviceCommons
 {
-	VLTRCLASS(RenderingDevice, Object)
-
 	_THREAD_SAFE_CLASS_
 
 private:
@@ -227,7 +222,6 @@ private:
 	{
 		uint32_t frame_local_index = 0;
 		uint32_t frame_local_count = 0;
-		Callable callback;
 		uint32_t size = 0;
 	};
 
@@ -285,7 +279,7 @@ public:
 	Vector<uint8_t> buffer_get_data(RID p_buffer, uint32_t p_offset = 0,
 		uint32_t p_size = 0); // This causes stall, only use to retrieve large buffers for saving.
 	Error buffer_get_data_async(
-		RID p_buffer, const Callable& p_callback, uint32_t p_offset = 0, uint32_t p_size = 0);
+		RID p_buffer, uint32_t p_offset = 0, uint32_t p_size = 0);
 	uint64_t buffer_get_device_address(RID p_buffer);
 	uint8_t* buffer_persistent_map_advance(RID p_buffer);
 	void buffer_flush(RID p_buffer);
@@ -460,7 +454,6 @@ public:
 	{
 		uint32_t frame_local_index = 0;
 		uint32_t frame_local_count = 0;
-		Callable callback;
 		uint32_t width = 0;
 		uint32_t height = 0;
 		uint32_t depth = 0;
@@ -514,7 +507,7 @@ public:
 	Vector<uint8_t> texture_get_data(
 		RID p_texture, uint32_t p_layer); // CPU textures will return immediately, while GPU
 										  // textures will most likely force a flush
-	Error texture_get_data_async(RID p_texture, uint32_t p_layer, const Callable& p_callback);
+	Error texture_get_data_async(RID p_texture, uint32_t p_layer);
 
 	bool texture_is_format_supported_for_usage(
 		DataFormat p_format, BitField<TextureUsageBits> p_usage) const;
@@ -1118,7 +1111,7 @@ public:
 		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
 		const Vector<Color>& p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0,
 		uint32_t p_clear_stencil = 0, const Rect2& p_region = Rect2(),
-		const Array& p_storage_textures = Array());
+		const Vector<Color>& p_storage_textures = Vector<Color>());
 	Vector<int64_t> _draw_list_switch_to_next_pass_split(uint32_t p_splits);
 
 private:
@@ -1134,7 +1127,7 @@ private:
 		InitialAction p_initial_color_action, FinalAction p_final_color_action,
 		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
 		const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
-		const Rect2& p_region, const Array& p_storage_textures);
+		const Rect2& p_region, const Vector<Color>& p_storage_textures);
 	ComputeListID _compute_list_begin_bind_compat_84976(bool p_allow_draw_overlap);
 	Error _buffer_update_bind_compat_84976(RID p_buffer, uint32_t p_offset, uint32_t p_size,
 		const Vector<uint8_t>& p_data, BitField<BarrierMask> p_post_barrier);
@@ -1437,7 +1430,6 @@ private:
 	bool pipeline_cache_enabled = false;
 	size_t pipeline_cache_size = 0;
 	String pipeline_cache_file_path;
-	WorkerThreadPool::TaskID pipeline_cache_save_task = WorkerThreadPool::INVALID_TASK_ID;
 
 	Vector<uint8_t> _load_pipeline_cache();
 	static void _save_pipeline_cache(void* p_data);
@@ -2268,118 +2260,7 @@ public:
 
 	RenderingDevice();
 	~RenderingDevice();
-
-private:
-	/*****************/
-	/**** BINDERS ****/
-	/*****************/
-
-	RID _texture_create(const Ref<RDTextureFormat>& p_format, const Ref<RDTextureView>& p_view,
-		const Array& p_data = Array());
-	RID _texture_create_shared(const Ref<RDTextureView>& p_view, RID p_with_texture);
-	RID _texture_create_shared_from_slice(const Ref<RDTextureView>& p_view, RID p_with_texture,
-		uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1,
-		TextureSliceType p_slice_type = TEXTURE_SLICE_2D);
-	Ref<RDTextureFormat> _texture_get_format(RID p_rd_texture);
-
-	FramebufferFormatID _framebuffer_format_create(
-		const Array& p_attachments, uint32_t p_view_count);
-	FramebufferFormatID _framebuffer_format_create_multipass(
-		const Array& p_attachments, const Array& p_passes, uint32_t p_view_count);
-	RID _framebuffer_create(const Array& p_textures,
-		FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
-	RID _framebuffer_create_multipass(const Array& p_textures, const Array& p_passes,
-		FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
-
-	RID _sampler_create(const Ref<RDSamplerState>& p_state);
-
-	VertexFormatID _vertex_format_create(const Array& p_vertex_formats);
-	RID _vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
-		const Array& p_src_buffers, const Vector<int64_t>& p_offsets = Vector<int64_t>());
-	void _draw_list_bind_vertex_buffers_format(DrawListID p_list, VertexFormatID p_vertex_format,
-		uint32_t p_vertex_count, const Array& p_vertex_buffers,
-		const Vector<int64_t>& p_offsets = Vector<int64_t>());
-
-	Ref<RDShaderSPIRV> _shader_compile_spirv_from_source(
-		const Ref<RDShaderSource>& p_source, bool p_allow_cache = true);
-	Vector<uint8_t> _shader_compile_binary_from_spirv(
-		const Ref<RDShaderSPIRV>& p_bytecode, const String& p_shader_name = "");
-	RID _shader_create_from_spirv(
-		const Ref<RDShaderSPIRV>& p_spirv, const String& p_shader_name = "");
-
-	RID _uniform_set_create(const Array& p_uniforms, RID p_shader, uint32_t p_shader_set);
-
-	Error _buffer_update_bind(
-		RID p_buffer, uint32_t p_offset, uint32_t p_size, const Vector<uint8_t>& p_data);
-
-	RID _blas_create(const Array& p_geometries, BitField<AccelerationStructureFlagBits> p_flags);
-	Error _tlas_build(RID p_tlas, const Array& p_instances);
-
-	Error _hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTableRange p_range,
-		uint32_t p_offset, const Vector<int32_t>& p_hit_group_indices);
-
-	RID _render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format,
-		VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
-		const Ref<RDPipelineRasterizationState>& p_rasterization_state,
-		const Ref<RDPipelineMultisampleState>& p_multisample_state,
-		const Ref<RDPipelineDepthStencilState>& p_depth_stencil_state,
-		const Ref<RDPipelineColorBlendState>& p_blend_state,
-		BitField<PipelineDynamicStateFlags> p_dynamic_state_flags, uint32_t p_for_render_pass,
-		const Array& p_specialization_constants);
-	RID _compute_pipeline_create(RID p_shader, const Array& p_specialization_constants);
-	RID _raytracing_pipeline_create(const Array& p_raygen_shaders, const Array& p_miss_shaders,
-		const Array& p_hit_groups, uint32_t p_max_trace_recursion_depth);
-
-	void _draw_list_set_push_constant(
-		DrawListID p_list, const Vector<uint8_t>& p_data, uint32_t p_data_size);
-	void _compute_list_set_push_constant(
-		ComputeListID p_list, const Vector<uint8_t>& p_data, uint32_t p_data_size);
-	void _raytracing_list_set_push_constant(
-		RaytracingListID p_list, const Vector<uint8_t>& p_data, uint32_t p_data_size);
 };
-
-VARIANT_ENUM_CAST_EXT(RenderingDeviceEnums::DeviceType, RenderingDevice::DeviceType)
-VARIANT_ENUM_CAST(RenderingDevice::DriverResource)
-VARIANT_ENUM_CAST(RenderingDevice::ShaderStage)
-VARIANT_ENUM_CAST(RenderingDevice::ShaderLanguage)
-VARIANT_ENUM_CAST(RenderingDevice::CompareOperator)
-VARIANT_ENUM_CAST(RenderingDevice::DataFormat)
-VARIANT_ENUM_CAST(RenderingDevice::TextureType)
-VARIANT_ENUM_CAST(RenderingDevice::TextureSamples)
-VARIANT_BITFIELD_CAST(RenderingDevice::TextureUsageBits)
-VARIANT_ENUM_CAST(RenderingDevice::TextureSwizzle)
-VARIANT_ENUM_CAST(RenderingDevice::TextureSliceType)
-VARIANT_ENUM_CAST(RenderingDevice::SamplerFilter)
-VARIANT_ENUM_CAST(RenderingDevice::SamplerRepeatMode)
-VARIANT_ENUM_CAST(RenderingDevice::SamplerBorderColor)
-VARIANT_ENUM_CAST(RenderingDevice::VertexFrequency)
-VARIANT_ENUM_CAST(RenderingDevice::IndexBufferFormat)
-VARIANT_BITFIELD_CAST(RenderingDevice::StorageBufferUsage)
-VARIANT_BITFIELD_CAST(RenderingDevice::BufferCreationBits)
-VARIANT_BITFIELD_CAST(RenderingDevice::AccelerationStructureFlagBits)
-VARIANT_BITFIELD_CAST(RenderingDevice::AccelerationStructureGeometryFlagBits)
-VARIANT_BITFIELD_CAST(RenderingDevice::AccelerationStructureInstanceFlagBits)
-VARIANT_ENUM_CAST(RenderingDevice::UniformType)
-VARIANT_ENUM_CAST(RenderingDevice::RenderPrimitive)
-VARIANT_ENUM_CAST(RenderingDevice::PolygonCullMode)
-VARIANT_ENUM_CAST(RenderingDevice::PolygonFrontFace)
-VARIANT_ENUM_CAST(RenderingDevice::StencilOperation)
-VARIANT_ENUM_CAST(RenderingDevice::LogicOperation)
-VARIANT_ENUM_CAST(RenderingDevice::BlendFactor)
-VARIANT_ENUM_CAST(RenderingDevice::BlendOperation)
-VARIANT_BITFIELD_CAST(RenderingDevice::PipelineDynamicStateFlags)
-VARIANT_ENUM_CAST(RenderingDevice::PipelineSpecializationConstantType)
-VARIANT_ENUM_CAST(RenderingDevice::Limit)
-VARIANT_ENUM_CAST(RenderingDevice::MemoryType)
-VARIANT_ENUM_CAST(RenderingDevice::Features)
-VARIANT_ENUM_CAST(RenderingDevice::BreadcrumbMarker)
-VARIANT_BITFIELD_CAST(RenderingDevice::DrawFlags);
-
-#ifndef DISABLE_DEPRECATED
-VARIANT_BITFIELD_CAST(RenderingDevice::BarrierMask);
-VARIANT_ENUM_CAST(RenderingDevice::InitialAction)
-VARIANT_ENUM_CAST(RenderingDevice::FinalAction)
-#endif
 
 typedef RenderingDevice RD;
 

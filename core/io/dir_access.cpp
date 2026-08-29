@@ -30,7 +30,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/templates/local_vector.h"
@@ -609,29 +608,29 @@ bool DirAccess::exists(const String& p_dir)
 da->change_dir(p_dir) == OK;
 }
 
-PackedStringArray DirAccess::get_files() { return _get_contents(false); }
+Vector<String> DirAccess::get_files() { return _get_contents(false); }
 
-PackedStringArray DirAccess::get_files_at(const String& p_path)
+Vector<String> DirAccess::get_files_at(const String& p_path)
 {
 	Ref<DirAccess> da = DirAccess::open(p_path);
-	ERR_FAIL_COND_V_MSG(da.is_null(), PackedStringArray(),
+	ERR_FAIL_COND_V_MSG(da.is_null(), Vector<String>(),
 		vformat("Couldn't open directory at path \"%s\".", p_path));
 	return da->get_files();
 }
 
-PackedStringArray DirAccess::get_directories() { return _get_contents(true); }
+Vector<String> DirAccess::get_directories() { return _get_contents(true); }
 
-PackedStringArray DirAccess::get_directories_at(const String& p_path)
+Vector<String> DirAccess::get_directories_at(const String& p_path)
 {
 	Ref<DirAccess> da = DirAccess::open(p_path);
-	ERR_FAIL_COND_V_MSG(da.is_null(), PackedStringArray(),
+	ERR_FAIL_COND_V_MSG(da.is_null(), Vector<String>(),
 		vformat("Couldn't open directory at path \"%s\".", p_path));
 	return da->get_directories();
 }
 
-PackedStringArray DirAccess::_get_contents(bool p_directories)
+Vector<String> DirAccess::_get_contents(bool p_directories)
 {
-	PackedStringArray ret;
+	Vector<String> ret;
 
 	list_dir_begin();
 	String s = _get_next();

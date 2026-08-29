@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "crypto.h"
 
 /// Resources
@@ -125,16 +124,16 @@ void Crypto::load_default_certificates(const String& p_path)
 	}
 }
 
-PackedByteArray Crypto::hmac_digest(HashingContext::HashType p_hash_type,
-	const PackedByteArray& p_key, const PackedByteArray& p_msg)
+Vector<uint8_t> Crypto::hmac_digest(HashingContext::HashType p_hash_type,
+	const Vector<uint8_t>& p_key, const Vector<uint8_t>& p_msg)
 {
 	Ref<HMACContext> ctx = Ref<HMACContext>(HMACContext::create());
 	ERR_FAIL_COND_V_MSG(
-		ctx.is_null(), PackedByteArray(), "HMAC is not available without mbedtls module.");
+		ctx.is_null(), Vector<uint8_t>(), "HMAC is not available without mbedtls module.");
 	Error err = ctx->start(p_hash_type, p_key);
-	ERR_FAIL_COND_V(err != OK, PackedByteArray());
+	ERR_FAIL_COND_V(err != OK, Vector<uint8_t>());
 	err = ctx->update(p_msg);
-	ERR_FAIL_COND_V(err != OK, PackedByteArray());
+	ERR_FAIL_COND_V(err != OK, Vector<uint8_t>());
 	return ctx->finish();
 }
 
@@ -143,7 +142,7 @@ PackedByteArray Crypto::hmac_digest(HashingContext::HashType p_hash_type,
 // @see:
 // https://paragonie.com/blog/2015/11/preventing-timing-attacks-on-string-comparison-with-double-hmac-strategy
 bool Crypto::constant_time_compare(
-	const PackedByteArray& p_trusted, const PackedByteArray& p_received)
+	const Vector<uint8_t>& p_trusted, const Vector<uint8_t>& p_received)
 {
 	const uint8_t* t = p_trusted.ptr();
 	const uint8_t* r = p_received.ptr();

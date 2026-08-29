@@ -31,9 +31,6 @@
 #pragma once
 
 #include "core/input/input_event.h"
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/object.h"
-#include "core/object/ref_counted.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/iterable.h"
 #include "core/templates/mem_unique_ptr.h"
@@ -74,8 +71,6 @@ protected:
 	};
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::NODE;
-
 	// N.B. Any enum stored as a bitfield should be specified as UNSIGNED to work around
 	// some compilers trying to store it as signed, and requiring 1 more bit than necessary.
 	enum ProcessMode : unsigned int
@@ -278,7 +273,6 @@ private:
 		void* process_group = nullptr; // to avoid cyclic dependency
 
 		int multiplayer_authority = 1; // Server by default.
-		Variant rpc_config;
 
 		// Variables used to properly sort the node when processing, ignored otherwise.
 		int process_priority = 0;
@@ -360,18 +354,12 @@ private:
 		Node* p_owner, int p_pause_notification, int p_enabled_notification);
 	void _propagate_groups_dirty();
 	void _propagate_translation_domain_dirty();
-	Array _get_node_and_resource(const NodePath& p_path);
 
 	void _duplicate_scripts(const Node* p_original, Node* p_copy) const;
 	void _duplicate_properties(
 		const Node* p_root, const Node* p_original, Node* p_copy, int p_flags) const;
 	void _duplicate_signals(const Node* p_original, Node* p_copy) const;
 	Node* _duplicate(int p_flags, HashMap<const Node*, Node*>* r_duplimap = nullptr) const;
-
-	TypedArray<StringName> _get_groups() const;
-
-	Error _rpc_bind(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
-	Error _rpc_id_bind(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
 
 	friend class SceneTree;
 
@@ -405,11 +393,6 @@ private:
 	void _add_tree_to_process_thread_group(Node* p_owner);
 
 	static thread_local Node* current_process_thread_group;
-
-	Variant _call_deferred_thread_group_bind(
-		const Variant** p_args, int p_argcount, Callable::CallError& r_error);
-	Variant _call_thread_safe_bind(
-		const Variant** p_args, int p_argcount, Callable::CallError& r_error);
 
 	// Editor only signal to keep the SceneTreeEditor in sync.
 #ifdef TOOLS_ENABLED
@@ -476,7 +459,6 @@ protected:
 	void _call_unhandled_input(const Ref<InputEvent>& p_event);
 	void _call_unhandled_key_input(const Ref<InputEvent>& p_event);
 
-	void _validate_property(PropertyInfo& p_property) const;
 	virtual String _to_string();
 
 	// Localization
@@ -486,21 +468,12 @@ protected:
 		return p_context;
 	}
 
-	Variant _get_node_rpc_config_bind() const { return get_node_rpc_config().duplicate(true); }
-
 protected:
 	virtual bool _uses_signal_mutex() const { return false; } // Node uses thread guards instead.
 
 	virtual void input(const Ref<InputEvent>& p_event);
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_key_event);
 	virtual void unhandled_input(const Ref<InputEvent>& p_event);
 	virtual void unhandled_key_input(const Ref<InputEvent>& p_key_event);
-
-#ifndef DISABLE_DEPRECATED
-	void _set_name_bind_compat_76560(const String& p_name);
-	Variant _get_rpc_config_bind_compat_106848() const;
-	static void _bind_compatibility_methods();
-#endif
 
 public:
 	enum
@@ -713,9 +686,6 @@ public:
 
 	void propagate_notification(int p_notification);
 
-	void propagate_call(const StringName& p_method, const Array& p_args = Array(),
-		const bool p_parent_first = false);
-
 	/* PROCESSING */
 
 	void set_physics_process(bool p_process);
@@ -801,8 +771,6 @@ public:
 
 	virtual Transform2D get_accessibility_transform() const;
 
-	virtual PackedStringArray get_accessibility_configuration_warnings() const;
-
 	Node* duplicate(int p_flags = DUPLICATE_GROUPS | DUPLICATE_SIGNALS | DUPLICATE_SCRIPTS) const;
 #ifdef TOOLS_ENABLED
 	Node* duplicate_from_editor(HashMap<const Node*, Node*>& r_duplimap) const;
@@ -823,12 +791,6 @@ public:
 
 	void set_scene_instance_load_placeholder(bool p_enable);
 	bool get_scene_instance_load_placeholder() const;
-
-	template <typename... VarArgs> Vector<Variant> make_binds(VarArgs... p_args)
-	{
-		Vector<Variant> binds = {p_args...};
-		return binds;
-	}
 
 	void replace_by(Node* rp_node, bool p_keep_groups = true);
 
@@ -858,7 +820,6 @@ public:
 	ProcessThreadGroup get_process_thread_group() const;
 
 	static void print_orphan_nodes();
-	static TypedArray<int> get_orphan_node_ids();
 
 #ifdef TOOLS_ENABLED
 	String validate_child_name(Node* p_child);
@@ -879,7 +840,7 @@ public:
 
 	_FORCE_INLINE_ Viewport* get_viewport() const { return data.viewport; }
 
-	virtual PackedStringArray get_configuration_warnings() const;
+	virtual Vector<String> get_configuration_warnings() const;
 
 	void update_configuration_warnings();
 
@@ -892,16 +853,10 @@ public:
 	int get_multiplayer_authority() const;
 	bool is_multiplayer_authority() const;
 
-	void rpc_config(
-		const StringName& p_method, const Variant& p_config); // config a local method for RPC
-	const Variant get_node_rpc_config() const;
-
 	template <typename... VarArgs> Error rpc(const StringName& p_method, VarArgs... p_args);
 
 	template <typename... VarArgs>
 	Error rpc_id(int p_peer_id, const StringName& p_method, VarArgs... p_args);
-
-	Error rpcp(int p_peer_id, const StringName& p_method, const Variant** p_arg, int p_argcount);
 
 	Ref<MultiplayerAPI> get_multiplayer() const;
 
@@ -915,61 +870,10 @@ public:
 	virtual void set_translation_domain(const StringName& p_domain);
 	void set_translation_domain_inherited();
 
-	_FORCE_INLINE_ String atr(const Object& obj, const String& p_message, const StringName& p_context = "") const
-	{
-		return can_auto_translate()
-				   ? obj.tr(p_message, _get_translation_context_with_override(p_context))
-				   : p_message;
-	}
-
-	_FORCE_INLINE_ String atr_n(const Object& obj, const String& p_message, const StringName& p_message_plural,
-		int p_n, const StringName& p_context = "") const
-	{
-		if (can_auto_translate()) {
-			return obj.tr_n(p_message, p_message_plural, p_n,
-				_get_translation_context_with_override(p_context));
-		}
-		return p_n == 1 ? p_message : String(p_message_plural);
-	}
-
 	/* THREADING */
 
-	void call_deferred_thread_groupp(const StringName& p_method, const Variant** p_args,
-		int p_argcount, bool p_show_error = false);
-
-	template <typename... VarArgs>
-	void call_deferred_thread_group(const StringName& p_method, VarArgs... p_args)
-	{
-		Variant args[sizeof...(p_args) + 1] = {
-			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
-		const Variant* argptrs[sizeof...(p_args) + 1];
-		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-			argptrs[i] = &args[i];
-		}
-		call_deferred_thread_groupp(p_method,
-			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
-	}
-
-	void set_deferred_thread_group(const StringName& p_property, const Variant& p_value);
 	void notify_deferred_thread_group(int p_notification);
 
-	void call_thread_safep(const StringName& p_method, const Variant** p_args, int p_argcount,
-		bool p_show_error = false);
-
-	template <typename... VarArgs>
-	void call_thread_safe(const StringName& p_method, VarArgs... p_args)
-	{
-		Variant args[sizeof...(p_args) + 1] = {
-			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
-		const Variant* argptrs[sizeof...(p_args) + 1];
-		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-			argptrs[i] = &args[i];
-		}
-		call_deferred_thread_groupp(p_method,
-			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
-	}
-
-	void set_thread_safe(const StringName& p_property, const Variant& p_value);
 	void notify_thread_safe(int p_notification);
 
 	/* HELPER */
@@ -979,43 +883,18 @@ public:
 	// These inherited functions need proper multithread locking when overridden in Node.
 #ifdef DEBUG_ENABLED
 
-	virtual void set_script(const Variant& p_script);
-	virtual Variant get_script() const;
-
 	virtual bool has_meta(const StringName& p_name) const;
-	virtual void set_meta(const StringName& p_name, const Variant& p_value);
 	virtual void remove_meta(const StringName& p_name);
-	virtual Variant get_meta(const StringName& p_name, const Variant& p_default = Variant()) const;
 	virtual void get_meta_list(List<StringName>* p_list) const;
 
-	virtual Error emit_signalp(const StringName& p_name, const Variant** p_args, int p_argcount);
 	virtual bool has_signal(const StringName& p_name) const;
-	virtual void get_signal_list(List<MethodInfo>* p_signals) const;
-	virtual void get_signal_connection_list(
-		const StringName& p_signal, List<Object::Connection>* p_connections) const;
-	virtual void get_all_signal_connections(List<Object::Connection>* p_connections) const;
 	virtual int get_persistent_signal_connection_count() const;
-	virtual uint32_t get_signal_connection_flags(
-		const StringName& p_name, const Callable& p_callable) const;
-	virtual void get_signals_connected_to_this(List<Object::Connection>* p_connections) const;
 
-	virtual Error connect(
-		const StringName& p_signal, const Callable& p_callable, uint32_t p_flags = 0);
-	virtual void disconnect(const StringName& p_signal, const Callable& p_callable);
-	virtual bool is_connected(const StringName& p_signal, const Callable& p_callable) const;
 	virtual bool has_connections(const StringName& p_signal) const;
 #endif
 	Node();
 	~Node();
 };
-
-VARIANT_ENUM_CAST(Node::DuplicateFlags);
-VARIANT_ENUM_CAST(Node::ProcessMode);
-VARIANT_ENUM_CAST(Node::ProcessThreadGroup);
-VARIANT_BITFIELD_CAST(Node::ProcessThreadMessages);
-VARIANT_ENUM_CAST(Node::InternalMode);
-VARIANT_ENUM_CAST(Node::PhysicsInterpolationMode);
-VARIANT_ENUM_CAST(Node::AutoTranslateMode);
 
 typedef HashSet<Node*, Node::Comparator> NodeSet;
 
@@ -1026,19 +905,6 @@ typedef HashSet<Node*, Node::Comparator> NodeSet;
 template <typename... VarArgs> Error Node::rpc(const StringName& p_method, VarArgs... p_args)
 {
 	return rpc_id(0, p_method, p_args...);
-}
-
-template <typename... VarArgs>
-Error Node::rpc_id(int p_peer_id, const StringName& p_method, VarArgs... p_args)
-{
-	Variant args[sizeof...(p_args) + 1] = {
-		p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
-	const Variant* argptrs[sizeof...(p_args) + 1];
-	for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-		argptrs[i] = &args[i];
-	}
-	return rpcp(p_peer_id, p_method, sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs,
-		sizeof...(p_args));
 }
 
 #ifdef DEBUG_ENABLED

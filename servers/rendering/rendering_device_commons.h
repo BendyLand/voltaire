@@ -30,8 +30,9 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/templates/mem_unique_ptr.h"
+#include "core/types.h"
+#include "core/typedefs.h"
 
 #define STEPIFY(m_number, m_alignment)                                                             \
 	((((m_number) + ((m_alignment)-1)) / (m_alignment)) * (m_alignment))
@@ -77,7 +78,6 @@ class RenderingDeviceCommons
 	// with RenderingDeviceDriver.
 	////////////////////////////////////////////
 public:
-	mem_unique_ptr<Object> obj;
 	static const bool command_pool_reset_enabled = true;
 
 	/*****************/

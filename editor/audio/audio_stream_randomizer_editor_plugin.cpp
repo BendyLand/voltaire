@@ -38,7 +38,7 @@ void AudioStreamRandomizerEditorPlugin::edit(Object* p_object) {}
 
 bool AudioStreamRandomizerEditorPlugin::handles(Object* p_object) const { return false; }
 
-void AudioStreamRandomizerEditorPlugin::make_visible(bool p_visible) {}
+void AudioStreamRandomizerEditorPlugin::make_visible(Object& obj, bool p_visible) {}
 
 void AudioStreamRandomizerEditorPlugin::_move_stream_array_element(Object* p_undo_redo,
 	Object* p_edited, const String& p_array_prefix, int p_from_index, int p_to_pos)

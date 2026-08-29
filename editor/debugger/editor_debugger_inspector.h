@@ -79,8 +79,8 @@ private:
 	HashSet<Ref<Resource>> remote_dependencies;
 	EditorDebuggerRemoteObjects* variables = nullptr;
 
-	void _object_selected(ObjectID p_object);
-	void _objects_edited(const String& p_prop, const TypedDictionary<uint64_t, Variant>& p_values,
+	void _object_selected(Object& obj, ObjectID p_object);
+	void _objects_edited(Object& obj, const String& p_prop, const TypedDictionary<uint64_t, Variant>& p_values,
 		const String& p_field);
 
 protected:
@@ -92,14 +92,14 @@ public:
 	~EditorDebuggerInspector();
 
 	// Remote Object cache
-	EditorDebuggerRemoteObjects* set_objects(const Array& p_array);
+	EditorDebuggerRemoteObjects* set_objects(Object& obj, const Array& p_array);
 	void clear_remote_inspector();
 	void clear_cache();
 	void invalidate_selection_from_cache(const TypedArray<uint64_t>& p_ids);
 
 	// Stack Dump variables
 	String get_stack_variable(const String& p_var);
-	void add_stack_variable(const Array& p_arr, int p_offset = -1);
+	void add_stack_variable(Object& obj, const Array& p_arr, int p_offset = -1);
 	void clear_stack_variables();
 };
 

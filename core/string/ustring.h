@@ -11,7 +11,7 @@
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include <type_traits>
+#include <utility>
 #include "core/string/char_utils.h" // IWYU pragma: export
 #include "core/templates/cowdata.h"
 #include "core/templates/hashfuncs.h"
@@ -38,6 +40,42 @@
 
 class String;
 template <typename T> class CharStringT;
+
+/*************************************************************************/
+/*  Type-Traits for String Conversion (C++17 Compatible)                 */
+/*************************************************************************/
+
+namespace string_traits
+{
+
+template <typename, typename = void> struct has_op_string : std::false_type
+{
+};
+
+template <typename T>
+struct has_op_string<T, std::void_t<decltype(std::declval<T>().operator String())>> : std::true_type
+{
+};
+
+template <typename, typename = void> struct has_to_string : std::false_type
+{
+};
+
+template <typename T>
+struct has_to_string<T, std::void_t<decltype(std::declval<T>().to_string())>> : std::true_type
+{
+};
+
+template <typename, typename = void> struct has_as_text : std::false_type
+{
+};
+
+template <typename T>
+struct has_as_text<T, std::void_t<decltype(std::declval<T>().as_text())>> : std::true_type
+{
+};
+
+} // namespace string_traits
 
 /*************************************************************************/
 /*  Utility Functions                                                    */
@@ -329,6 +367,49 @@ class [[nodiscard]] _WARN_UNUSED_ String
 	String _separate_compound_words() const;
 
 public:
+	// --- Direct Numeric & Primitive Constructors ---
+	_FORCE_INLINE_ explicit String(bool p_val) { *this = p_val ? "true" : "false"; }
+
+	_FORCE_INLINE_ explicit String(int8_t p_val) { *this = String::num_int64(p_val); }
+
+	_FORCE_INLINE_ explicit String(uint8_t p_val) { *this = String::num_uint64(p_val); }
+
+	_FORCE_INLINE_ explicit String(int16_t p_val) { *this = String::num_int64(p_val); }
+
+	_FORCE_INLINE_ explicit String(uint16_t p_val) { *this = String::num_uint64(p_val); }
+
+	_FORCE_INLINE_ explicit String(int32_t p_val) { *this = String::num_int64(p_val); }
+
+	_FORCE_INLINE_ explicit String(uint32_t p_val) { *this = String::num_uint64(p_val); }
+
+	_FORCE_INLINE_ explicit String(int64_t p_val) { *this = String::num_int64(p_val); }
+
+	_FORCE_INLINE_ explicit String(uint64_t p_val) { *this = String::num_uint64(p_val); }
+
+	_FORCE_INLINE_ explicit String(float p_val) { *this = String::num_real(p_val); }
+
+	_FORCE_INLINE_ explicit String(double p_val) { *this = String::num_real(p_val); }
+
+	// --- Universal Auto-Converter Template (Enums, Objects with to_string/as_text/cast) ---
+	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, String> &&
+													  !std::is_pointer_v<std::decay_t<T>> &&
+													  !std::is_array_v<std::remove_reference_t<T>>>>
+	_FORCE_INLINE_ explicit String(const T& p_val)
+	{
+		if constexpr (std::is_enum_v<T>) {
+			*this = String::num_int64(static_cast<int64_t>(p_val));
+		}
+		else if constexpr (string_traits::has_op_string<T>::value) {
+			*this = p_val.operator String();
+		}
+		else if constexpr (string_traits::has_to_string<T>::value) {
+			*this = p_val.to_string();
+		}
+		else if constexpr (string_traits::has_as_text<T>::value) {
+			*this = p_val.as_text();
+		}
+	}
+
 	enum
 	{
 		npos =
@@ -468,7 +549,6 @@ public:
 	bool is_lowercase() const;
 	Vector<String> bigrams() const;
 	float similarity(const String& p_string) const;
-	String format(const Variant& p_values, const String& p_placeholder = "{_}") const;
 	String replace_first(const String& p_key, const String& p_with) const;
 	String replace_first(const char* p_key, const char* p_with) const;
 	String replace(const String& p_key, const String& p_with) const;
@@ -493,7 +573,6 @@ public:
 	String trim_suffix(const char* p_suffix) const;
 	String lpad(int p_min_length, const String& p_character = " ") const;
 	String rpad(int p_min_length, const String& p_character = " ") const;
-	String sprintf(const Span<Variant>& p_values, bool* r_error) const;
 	String quote(const String& p_quotechar = "\"") const;
 	String unquote() const;
 	static String num(double p_num, int p_decimals = -1);
@@ -874,13 +953,9 @@ String DTRN(
 
 // Use this to mark property names for editor translation.
 // Often for dynamic properties defined in _get_property_list().
-// Property names defined directly inside EDITOR_DEF, GLOBAL_DEF, and ADD_PROPERTY macros don't need
-// this.
 #define PNAME(m_value) (m_value)
 
 // Similar to PNAME, but to mark groups, i.e. properties with PROPERTY_USAGE_GROUP.
-// Groups defined directly inside ADD_GROUP macros don't need this.
-// The arguments are the same as ADD_GROUP. m_prefix is only used for extraction.
 #define GNAME(m_value, m_prefix) (m_value)
 
 // Runtime translate for the public node API.
@@ -888,34 +963,8 @@ String RTR(const String& p_text, const String& p_context = "");
 String RTRN(
 	const String& p_text, const String& p_text_plural, int p_n, const String& p_context = "");
 
-/**
- * "Extractable TRanslate". Used for strings that can appear inside an exported
- * project (such as the ones in nodes like `FileDialog`), which are made possible
- * to add in the POT generator. A translation context can optionally be specified
- * to disambiguate between identical source strings in translations.
- * When placeholders are desired, use vformat(ETR("Example: %s"), some_string)`.
- * If a string mentions a quantity (and may therefore need a dynamic plural form),
- * use `ETRN()` instead of `ETR()`.
- *
- * NOTE: This function is for string extraction only, and will just return the
- * string it was given. The translation itself should be done internally by nodes
- * with `atr()` instead.
- */
 _FORCE_INLINE_ String ETR(const String& p_text, const String& p_context = "") { return p_text; }
 
-/**
- * "Extractable TRanslate for N items". Used for strings that can appear inside an
- * exported project (such as the ones in nodes like `FileDialog`), which are made
- * possible to add in the POT generator. A translation context can optionally be
- * specified to disambiguate between identical source strings in translations.
- * Use `ETR()` if the string doesn't need dynamic plural form. When placeholders
- * are desired, use `vformat(ETRN("%d item", "%d items", some_integer), some_integer)`.
- * The placeholder must be present in both strings to avoid run-time warnings in `vformat()`.
- *
- * NOTE: This function is for string extraction only, and will just return the
- * string it was given. The translation itself should be done internally by nodes
- * with `atr()` instead.
- */
 _FORCE_INLINE_ String ETRN(
 	const String& p_text, const String& p_text_plural, int p_n, const String& p_context = "")
 {
@@ -928,6 +977,96 @@ _FORCE_INLINE_ String ETRN(
 template <typename... P> _FORCE_INLINE_ Vector<String> sarray(P... p_args)
 {
 	return Vector<String>({String(p_args)...});
+}
+
+namespace vformat_detail
+{
+
+inline String to_str(const String& v) { return v; }
+
+inline String to_str(const char* v) { return String(v ? v : ""); }
+
+inline String to_str(char* v) { return String(v ? v : ""); }
+
+inline String to_str(bool v) { return v ? "true" : "false"; }
+
+inline String to_str(char v) { return String::chr(v); }
+
+inline String to_str(int8_t v) { return itos(v); }
+
+inline String to_str(uint8_t v) { return uitos(v); }
+
+inline String to_str(int16_t v) { return itos(v); }
+
+inline String to_str(uint16_t v) { return uitos(v); }
+
+inline String to_str(int32_t v) { return itos(v); }
+
+inline String to_str(uint32_t v) { return uitos(v); }
+
+inline String to_str(int64_t v) { return itos(v); }
+
+inline String to_str(uint64_t v) { return uitos(v); }
+
+inline String to_str(float v) { return String::num_real(v); }
+
+inline String to_str(double v) { return String::num_real(v); }
+
+template <typename T>
+inline auto to_str(const T& v) -> typename std::enable_if<std::is_enum<T>::value, String>::type
+{
+	return itos(static_cast<int64_t>(v));
+}
+
+template <typename T>
+inline auto to_str(const T& v) ->
+	typename std::enable_if<!std::is_enum<T>::value, decltype(String(v))>::type
+{
+	return String(v);
+}
+
+inline String dispatch(const String& p_fmt, const String* p_args, size_t p_count)
+{
+	String res;
+	size_t arg_idx = 0;
+	int len = p_fmt.length();
+
+	for (int i = 0; i < len; ++i) {
+		if (p_fmt[i] == '%' && i + 1 < len) {
+			if (p_fmt[i + 1] == '%') {
+				res += '%';
+				i++;
+				continue;
+			}
+			int j = i + 1;
+			while (j < len && (p_fmt[j] == '.' || p_fmt[j] == '-' || p_fmt[j] == '+' ||
+								  (p_fmt[j] >= '0' && p_fmt[j] <= '9'))) {
+				j++;
+			}
+			if (j < len) {
+				if (arg_idx < p_count) {
+					res += p_args[arg_idx++];
+				}
+				i = j;
+				continue;
+			}
+		}
+		res += p_fmt[i];
+	}
+	return res;
+}
+
+} // namespace vformat_detail
+
+template <typename... Args> _FORCE_INLINE_ String vformat(const String& p_fmt, Args&&... p_args)
+{
+	if constexpr (sizeof...(Args) == 0) {
+		return p_fmt;
+	}
+	else {
+		String args[sizeof...(Args)] = {vformat_detail::to_str(std::forward<Args>(p_args))...};
+		return vformat_detail::dispatch(p_fmt, args, sizeof...(Args));
+	}
 }
 
 

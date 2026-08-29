@@ -30,10 +30,12 @@
 
 #include "file_access_encrypted.h"
 
-#include "core/variant/variant.h"
-
-Error FileAccessEncrypted::open_and_parse(Ref<FileAccess> p_base, const Vector<uint8_t> &p_key, Mode p_mode, bool p_with_magic, const Vector<uint8_t> &p_iv) {
-	ERR_FAIL_COND_V_MSG(file.is_valid(), ERR_ALREADY_IN_USE, vformat("Can't open file while another file from path '%s' is open.", file->get_path_absolute()));
+Error FileAccessEncrypted::open_and_parse(Ref<FileAccess> p_base, const Vector<uint8_t>& p_key,
+	Mode p_mode, bool p_with_magic, const Vector<uint8_t>& p_iv)
+{
+	ERR_FAIL_COND_V_MSG(file.is_valid(), ERR_ALREADY_IN_USE,
+		vformat("Can't open file while another file from path '%s' is open.",
+			file->get_path_absolute()));
 	ERR_FAIL_COND_V(p_key.size() != 32, ERR_INVALID_PARAMETER);
 
 	pos = 0;
@@ -49,12 +51,14 @@ Error FileAccessEncrypted::open_and_parse(Ref<FileAccess> p_base, const Vector<u
 			iv.resize(16);
 			Error err = CryptoCore::generate_random(iv.ptrw(), 16);
 			ERR_FAIL_COND_V(err != OK, err);
-		} else {
+		}
+		else {
 			ERR_FAIL_COND_V(p_iv.size() != 16, ERR_INVALID_PARAMETER);
 			iv = p_iv;
 		}
 
-	} else if (p_mode == MODE_READ) {
+	}
+	else if (p_mode == MODE_READ) {
 		writing = false;
 		key = p_key;
 
@@ -87,7 +91,9 @@ Error FileAccessEncrypted::open_and_parse(Ref<FileAccess> p_base, const Vector<u
 		unsigned char hash[16];
 		ERR_FAIL_COND_V(CryptoCore::md5(data.ptr(), data.size(), hash) != OK, ERR_BUG);
 
-		ERR_FAIL_COND_V_MSG(String::md5(hash) != String::md5(md5d), ERR_FILE_CORRUPT, "The MD5 sum of the decrypted file does not match the expected value. It could be that the file is corrupt, or that the provided decryption key is invalid.");
+		ERR_FAIL_COND_V_MSG(String::md5(hash) != String::md5(md5d), ERR_FILE_CORRUPT,
+			"The MD5 sum of the decrypted file does not match the expected value. It could be that "
+			"the file is corrupt, or that the provided decryption key is invalid.");
 
 		file = p_base;
 	}
@@ -95,7 +101,9 @@ Error FileAccessEncrypted::open_and_parse(Ref<FileAccess> p_base, const Vector<u
 	return OK;
 }
 
-Error FileAccessEncrypted::open_and_parse_password(Ref<FileAccess> p_base, const String &p_key, Mode p_mode) {
+Error FileAccessEncrypted::open_and_parse_password(
+	Ref<FileAccess> p_base, const String& p_key, Mode p_mode)
+{
 	String cs = p_key.md5_text();
 	ERR_FAIL_COND_V(cs.length() != 32, ERR_INVALID_PARAMETER);
 	Vector<uint8_t> key_md5;
@@ -107,11 +115,10 @@ Error FileAccessEncrypted::open_and_parse_password(Ref<FileAccess> p_base, const
 	return open_and_parse(p_base, key_md5, p_mode);
 }
 
-Error FileAccessEncrypted::open_internal(const String &p_path, int p_mode_flags) {
-	return OK;
-}
+Error FileAccessEncrypted::open_internal(const String& p_path, int p_mode_flags) { return OK; }
 
-void FileAccessEncrypted::_close() {
+void FileAccessEncrypted::_close()
+{
 	if (file.is_null()) {
 		return;
 	}
@@ -129,7 +136,8 @@ void FileAccessEncrypted::_close() {
 		compressed.resize(len);
 		memcpy(compressed.ptr(), data.ptr(), data.size());
 		memset(compressed.ptr() + data.size(), 0, len - data.size());
-		Error err = CryptoCore::encrypt_cfb(compressed.ptr(), compressed.ptr(), len, key.ptr(), key.size(), iv.ptr());
+		Error err = CryptoCore::encrypt_cfb(
+			compressed.ptr(), compressed.ptr(), len, key.ptr(), key.size(), iv.ptr());
 		ERR_FAIL_COND_MSG(err, "Error encrypting file data: " + itos(err));
 
 		if (use_magic) {
@@ -147,27 +155,30 @@ void FileAccessEncrypted::_close() {
 	file.unref();
 }
 
-bool FileAccessEncrypted::is_open() const {
-	return file.is_valid();
-}
+bool FileAccessEncrypted::is_open() const { return file.is_valid(); }
 
-String FileAccessEncrypted::get_path() const {
+String FileAccessEncrypted::get_path() const
+{
 	if (file.is_valid()) {
 		return file->get_path();
-	} else {
+	}
+	else {
 		return "";
 	}
 }
 
-String FileAccessEncrypted::get_path_absolute() const {
+String FileAccessEncrypted::get_path_absolute() const
+{
 	if (file.is_valid()) {
 		return file->get_path_absolute();
-	} else {
+	}
+	else {
 		return "";
 	}
 }
 
-void FileAccessEncrypted::seek(uint64_t p_position) {
+void FileAccessEncrypted::seek(uint64_t p_position)
+{
 	if (p_position > get_length()) {
 		p_position = get_length();
 	}
@@ -176,23 +187,16 @@ void FileAccessEncrypted::seek(uint64_t p_position) {
 	eofed = false;
 }
 
-void FileAccessEncrypted::seek_end(int64_t p_position) {
-	seek(get_length() + p_position);
-}
+void FileAccessEncrypted::seek_end(int64_t p_position) { seek(get_length() + p_position); }
 
-uint64_t FileAccessEncrypted::get_position() const {
-	return pos;
-}
+uint64_t FileAccessEncrypted::get_position() const { return pos; }
 
-uint64_t FileAccessEncrypted::get_length() const {
-	return data.size();
-}
+uint64_t FileAccessEncrypted::get_length() const { return data.size(); }
 
-bool FileAccessEncrypted::eof_reached() const {
-	return eofed;
-}
+bool FileAccessEncrypted::eof_reached() const { return eofed; }
 
-uint64_t FileAccessEncrypted::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
+uint64_t FileAccessEncrypted::get_buffer(uint8_t* p_dst, uint64_t p_length) const
+{
 	ERR_FAIL_COND_V_MSG(writing, -1, "File has not been opened in read mode.");
 
 	if (!p_length) {
@@ -213,11 +217,10 @@ uint64_t FileAccessEncrypted::get_buffer(uint8_t *p_dst, uint64_t p_length) cons
 	return to_copy;
 }
 
-Error FileAccessEncrypted::get_error() const {
-	return eofed ? ERR_FILE_EOF : OK;
-}
+Error FileAccessEncrypted::get_error() const { return eofed ? ERR_FILE_EOF : OK; }
 
-bool FileAccessEncrypted::store_buffer(const uint8_t *p_src, uint64_t p_length) {
+bool FileAccessEncrypted::store_buffer(const uint8_t* p_src, uint64_t p_length)
+{
 	ERR_FAIL_COND_V_MSG(!writing, false, "File has not been opened in write mode.");
 
 	if (!p_length) {
@@ -236,13 +239,15 @@ bool FileAccessEncrypted::store_buffer(const uint8_t *p_src, uint64_t p_length) 
 	return true;
 }
 
-void FileAccessEncrypted::flush() {
+void FileAccessEncrypted::flush()
+{
 	ERR_FAIL_COND_MSG(!writing, "File has not been opened in write mode.");
 
 	// encrypted files keep data in memory till close()
 }
 
-bool FileAccessEncrypted::file_exists(const String &p_name) {
+bool FileAccessEncrypted::file_exists(const String& p_name)
+{
 	Ref<FileAccess> fa = FileAccess::open(p_name, FileAccess::READ);
 	if (fa.is_null()) {
 		return false;
@@ -250,76 +255,88 @@ bool FileAccessEncrypted::file_exists(const String &p_name) {
 	return true;
 }
 
-uint64_t FileAccessEncrypted::_get_modified_time(const String &p_file) {
+uint64_t FileAccessEncrypted::_get_modified_time(const String& p_file)
+{
 	if (file.is_valid()) {
 		return file->get_modified_time(p_file);
-	} else {
+	}
+	else {
 		return 0;
 	}
 }
 
-uint64_t FileAccessEncrypted::_get_access_time(const String &p_file) {
+uint64_t FileAccessEncrypted::_get_access_time(const String& p_file)
+{
 	if (file.is_valid()) {
 		return file->get_access_time(p_file);
-	} else {
+	}
+	else {
 		return 0;
 	}
 }
 
-int64_t FileAccessEncrypted::_get_size(const String &p_file) {
+int64_t FileAccessEncrypted::_get_size(const String& p_file)
+{
 	if (file.is_valid()) {
 		return file->get_size(p_file);
-	} else {
+	}
+	else {
 		return -1;
 	}
 }
 
-BitField<FileAccess::UnixPermissionFlags> FileAccessEncrypted::_get_unix_permissions(const String &p_file) {
+BitField<FileAccess::UnixPermissionFlags> FileAccessEncrypted::_get_unix_permissions(
+	const String& p_file)
+{
 	if (file.is_valid()) {
 		return file->_get_unix_permissions(p_file);
 	}
 	return 0;
 }
 
-Error FileAccessEncrypted::_set_unix_permissions(const String &p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions) {
+Error FileAccessEncrypted::_set_unix_permissions(
+	const String& p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions)
+{
 	if (file.is_valid()) {
 		return file->_set_unix_permissions(p_file, p_permissions);
 	}
 	return FAILED;
 }
 
-bool FileAccessEncrypted::_get_hidden_attribute(const String &p_file) {
+bool FileAccessEncrypted::_get_hidden_attribute(const String& p_file)
+{
 	if (file.is_valid()) {
 		return file->_get_hidden_attribute(p_file);
 	}
 	return false;
 }
 
-Error FileAccessEncrypted::_set_hidden_attribute(const String &p_file, bool p_hidden) {
+Error FileAccessEncrypted::_set_hidden_attribute(const String& p_file, bool p_hidden)
+{
 	if (file.is_valid()) {
 		return file->_set_hidden_attribute(p_file, p_hidden);
 	}
 	return FAILED;
 }
 
-bool FileAccessEncrypted::_get_read_only_attribute(const String &p_file) {
+bool FileAccessEncrypted::_get_read_only_attribute(const String& p_file)
+{
 	if (file.is_valid()) {
 		return file->_get_read_only_attribute(p_file);
 	}
 	return false;
 }
 
-Error FileAccessEncrypted::_set_read_only_attribute(const String &p_file, bool p_ro) {
+Error FileAccessEncrypted::_set_read_only_attribute(const String& p_file, bool p_ro)
+{
 	if (file.is_valid()) {
 		return file->_set_read_only_attribute(p_file, p_ro);
 	}
 	return FAILED;
 }
 
-void FileAccessEncrypted::close() {
-	_close();
-}
+void FileAccessEncrypted::close() { _close(); }
 
-FileAccessEncrypted::~FileAccessEncrypted() {
-	_close();
-}
+FileAccessEncrypted::~FileAccessEncrypted() { _close(); }
+
+

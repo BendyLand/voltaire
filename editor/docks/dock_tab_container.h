@@ -64,7 +64,7 @@ protected:
 
 	void _notification(int p_what);
 	virtual bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;
-	virtual void drop_data(const Point2 &p_point, const Variant &p_data) override;
+	virtual void drop_data(const Object& obj, const Point2 &p_point, const Variant &p_data) override;
 
 public:
 	void set_slot(DockTabContainer *p_slot);

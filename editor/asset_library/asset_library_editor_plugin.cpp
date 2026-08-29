@@ -2576,7 +2576,7 @@ const Ref<Texture2D> AssetLibraryEditorPlugin::get_plugin_icon() const
 		SNAME("AssetStore"), EditorStringName(EditorIcons));
 }
 
-void AssetLibraryEditorPlugin::make_visible(bool p_visible)
+void AssetLibraryEditorPlugin::make_visible(Object& obj, bool p_visible)
 {
 	if (p_visible) {
 		addon_library->show();

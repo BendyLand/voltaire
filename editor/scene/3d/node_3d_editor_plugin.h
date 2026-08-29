@@ -521,13 +521,13 @@ public:
 	Node3DEditor *get_spatial_editor() { return spatial_editor; }
 	virtual String get_plugin_name() const override { return TTRC("3D"); }
 	bool has_main_screen() const override { return true; }
-	virtual void make_visible(bool p_visible) override;
+	virtual void make_visible(Object& obj, bool p_visible) override;
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 
 	virtual Dictionary get_state() const override;
 	virtual void set_state(Object& obj, const Dictionary &p_state) override;
-	virtual void clear() override { spatial_editor->clear(); }
+	virtual void clear(Object& obj) override { spatial_editor->clear(); }
 
 	virtual void edited_scene_changed() override;
 

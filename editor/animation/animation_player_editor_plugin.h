@@ -195,7 +195,7 @@ class AnimationPlayerEditor : public EditorDock
 	void _play_bw_pressed();
 	void _play_bw_from_pressed();
 	void _autoplay_pressed(const Object& obj);
-	void _stop_pressed();
+	void _stop_pressed(Object& obj);
 	void _animation_selected(Object& obj, int p_which);
 	void _animation_new();
 	void _animation_rename();
@@ -203,12 +203,12 @@ class AnimationPlayerEditor : public EditorDock
 
 	void _animation_remove();
 	void _animation_remove_confirmed(const Object& obj);
-	void _animation_edit();
+	void _animation_edit(Object& obj);
 	void _animation_duplicate();
 	Ref<Animation> _animation_clone(const Ref<Animation> p_anim);
 	void _animation_resource_edit();
 	void _scale_changed(const String& p_scale);
-	void _seek_value_changed(float p_value, bool p_timeline_only = false);
+	void _seek_value_changed(Object& obj, float p_value, bool p_timeline_only = false);
 	void _blend_editor_next_changed(const Object& obj, const int p_idx);
 
 	void _edit_animation_blend();
@@ -216,7 +216,7 @@ class AnimationPlayerEditor : public EditorDock
 
 	void _list_changed(Object& obj);
 	void _animation_finished(const String& p_name);
-	void _current_animation_changed(const StringName& p_name);
+	void _current_animation_changed(Object& obj, const StringName& p_name);
 	void _update_animation();
 	void _update_player(Object& obj);
 	void _set_controls_disabled(bool p_disabled);
@@ -228,8 +228,8 @@ class AnimationPlayerEditor : public EditorDock
 	void _animation_player_changed(Object* p_pl);
 	void _animation_libraries_updated(Object& obj);
 
-	void _animation_key_editor_seek(
-		float p_pos, bool p_timeline_only = false, bool p_update_position_only = false);
+	void _animation_key_editor_seek(Object& obj, float p_pos, bool p_timeline_only = false,
+		bool p_update_position_only = false);
 	void _animation_key_editor_anim_len_changed(float p_len);
 	void _animation_update_key_frame();
 
@@ -284,10 +284,10 @@ public:
 
 	Dictionary get_state() const;
 	void set_state(Object& obj, const Dictionary& p_state);
-	void clear();
+	void clear(Object& obj);
 
-	void ensure_visibility();
-	void go_to_nearest_keyframe(bool p_backward);
+	void ensure_visibility(Object& obj);
+	void go_to_nearest_keyframe(Object& obj, bool p_backward);
 
 	void edit(Object& obj, AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy);
 	void forward_force_draw_over_viewport(Control* p_overlay);
@@ -312,18 +312,27 @@ class AnimationPlayerEditorPlugin : public EditorPlugin
 protected:
 	void _notification(int p_what);
 
-	void _property_keyed(const String& p_keyed, const Variant& p_value, bool p_advance);
-	void _transform_3d_key_request(Object* sp, const String& p_sub, const Transform3D& p_key);
+	void _property_keyed(
+		Object& obj, const String& p_keyed, const Variant& p_value, bool p_advance);
+	void _transform_3d_key_request(
+		const Object& obj, Object* sp, const String& p_sub, const Transform3D& p_key);
 	void _update_keying();
 
 public:
 	virtual Dictionary get_state() const override { return anim_editor->get_state(); }
-	virtual void set_state(Object& obj, const Dictionary& p_state) override { anim_editor->set_state(obj, p_state); }
-	virtual void clear() override { anim_editor->clear(); }
+
+	virtual void set_state(Object& obj, const Dictionary& p_state) override
+	{
+		anim_editor->set_state(obj, p_state);
+	}
+
+	virtual void clear(Object& obj) override { anim_editor->clear(obj); }
+
 	virtual String get_plugin_name() const override { return "Anim"; }
+
 	virtual void edit(Object* p_object) override;
 	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(bool p_visible) override;
+	virtual void make_visible(Object& obj, bool p_visible) override;
 
 	virtual void forward_canvas_force_draw_over_viewport(Control* p_overlay) override
 	{

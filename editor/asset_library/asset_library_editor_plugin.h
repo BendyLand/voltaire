@@ -457,7 +457,7 @@ public:
 
 	virtual bool handles(Object* p_object) const override { return false; }
 
-	virtual void make_visible(bool p_visible) override;
+	virtual void make_visible(Object& obj, bool p_visible) override;
 
 	AssetLibraryEditorPlugin();
 };

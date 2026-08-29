@@ -716,7 +716,7 @@ public:
 
 	virtual void set_drag_forwarding(
 		const Callable& p_drag, const Callable& p_can_drop, const Callable& p_drop);
-	virtual Variant get_drag_data(const Point2& p_point);
+	virtual Variant get_drag_data(Object& obj, const Point2& p_point);
 	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const;
 	virtual void drop_data(const Object& obj, const Point2& p_point, const Variant& p_data);
 	void set_drag_preview(Control* p_control);

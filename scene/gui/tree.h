@@ -50,6 +50,7 @@ class TreeItem
 {
 public:
 	mem_unique_ptr<Object> obj;
+
 	enum TreeCellMode
 	{
 		CELL_MODE_STRING,
@@ -900,7 +901,7 @@ public:
 	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2& p_at) const override;
 
 	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual Variant get_drag_data(const Point2& p_point) override;
+	virtual Variant get_drag_data(Object& obj, const Point2& p_point) override;
 	TreeItem* get_item_at_position(const Point2& p_pos) const;
 	int get_column_at_position(const Point2& p_pos) const;
 	int get_drop_section_at_position(const Point2& p_pos) const;
@@ -994,8 +995,7 @@ public:
 
 	void set_cursor_can_exit_tree(bool p_enable);
 
-	VScrollBar* get_vscroll_bar() { return
-v_scroll; }
+	VScrollBar* get_vscroll_bar() { return v_scroll; }
 
 	void set_hide_folding(bool p_hide);
 	bool is_folding_hidden() const;

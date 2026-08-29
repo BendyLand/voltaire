@@ -29,12 +29,11 @@
 /**************************************************************************/
 
 #include "aes_context.h"
-#include "core/object/class_db.h"
 
 using AESMode = CryptoCore::AESContext::Mode;
 using AESCipher = CryptoCore::AESContext::Cipher;
 
-Error AESContext::start(Mode p_mode, const PackedByteArray& p_key, const PackedByteArray& p_iv)
+Error AESContext::start(Mode p_mode, const Vector<uint8_t>& p_key, const Vector<uint8_t>& p_iv)
 {
 	ERR_FAIL_COND_V_MSG(mode != MODE_MAX, ERR_ALREADY_IN_USE,
 		"AESContext already started. Call 'finish' before starting a new one.");
@@ -69,7 +68,7 @@ Error AESContext::start(Mode p_mode, const PackedByteArray& p_key, const PackedB
 	}
 
 	// Initialization vector.
-	PackedByteArray iv = p_iv;
+	Vector<uint8_t> iv = p_iv;
 	ERR_FAIL_COND_V_MSG(ctx_cipher == AESCipher::CBC && iv.size() != 16, ERR_INVALID_PARAMETER,
 		"The initialization vector (IV) must be exactly 16 bytes.");
 	if (unlikely(ctx_cipher == AESCipher::ECB && iv.size())) {
@@ -86,24 +85,24 @@ Error AESContext::start(Mode p_mode, const PackedByteArray& p_key, const PackedB
 	return OK;
 }
 
-PackedByteArray AESContext::update(const PackedByteArray& p_src)
+Vector<uint8_t> AESContext::update(const Vector<uint8_t>& p_src)
 
 {
-	ERR_FAIL_COND_V_MSG(mode < 0 || mode >= MODE_MAX, PackedByteArray(),
+	ERR_FAIL_COND_V_MSG(mode < 0 || mode >= MODE_MAX, Vector<uint8_t>(),
 		"AESContext not started. Call 'start' before calling 'update'.");
 	int len = p_src.size();
-	ERR_FAIL_COND_V_MSG(len % 16, PackedByteArray(),
+	ERR_FAIL_COND_V_MSG(len % 16, Vector<uint8_t>(),
 		"The number of bytes to be encrypted must be multiple of 16. Add padding if needed");
-	PackedByteArray out;
+	Vector<uint8_t> out;
 	out.resize(len);
 	Error err = ctx.update(p_src.ptr(), len, out.ptrw(), len);
-	ERR_FAIL_COND_V(err != OK, PackedByteArray());
+	ERR_FAIL_COND_V(err != OK, Vector<uint8_t>());
 	return out;
 }
 
-PackedByteArray AESContext::get_iv_state()
+Vector<uint8_t> AESContext::get_iv_state()
 {
-	ERR_FAIL_V_MSG(PackedByteArray(), "Calling 'get_iv_state' is no longer supported.");
+	ERR_FAIL_V_MSG(Vector<uint8_t>(), "Calling 'get_iv_state' is no longer supported.");
 }
 
 void AESContext::finish()

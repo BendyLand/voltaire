@@ -31,8 +31,7 @@
 #pragma once
 
 #include "core/io/ip_address.h"
-#include "core/templates/mem_unique_ptr.h"
-#include "core/variant/type_info.h"
+#include "core/types.h"
 
 template <typename T> class TypedArray;
 
@@ -41,8 +40,6 @@ struct _IP_ResolverPrivate;
 class IP
 {
 public:
-	mem_unique_ptr<Object> obj;
-
 	enum ResolverStatus
 	{
 		RESOLVER_STATUS_NONE,
@@ -74,8 +71,7 @@ protected:
 	static inline IP* singleton = nullptr;
 	static void _bind_methods();
 
-	PackedStringArray _get_local_addresses() const;
-	TypedArray<Dictionary> _get_local_interfaces() const;
+	Vector<String> _get_local_addresses() const;
 
 	static IP* (*_create)();
 
@@ -89,7 +85,7 @@ public:
 	};
 
 	IPAddress resolve_hostname(const String& p_hostname, Type p_type = TYPE_ANY);
-	PackedStringArray resolve_hostname_addresses(const String& p_hostname, Type p_type = TYPE_ANY);
+	Vector<String> resolve_hostname_addresses(const String& p_hostname, Type p_type = TYPE_ANY);
 	// async resolver hostname
 	ResolverID resolve_hostname_queue_item(const String& p_hostname, Type p_type = TYPE_ANY);
 	ResolverStatus get_resolve_item_status(ResolverID p_id) const;
@@ -98,7 +94,6 @@ public:
 
 	virtual void _resolve_hostname(
 		List<IPAddress>& r_addresses, const String& p_hostname, Type p_type = TYPE_ANY) const = 0;
-	Array get_resolve_item_addresses(ResolverID p_id) const;
 
 	virtual void get_local_interfaces(HashMap<String, Interface_Info>* r_interfaces) const = 0;
 	void erase_resolve_item(ResolverID p_id);
@@ -112,8 +107,5 @@ public:
 	IP();
 	~IP();
 };
-
-VARIANT_ENUM_CAST(IP::Type);
-VARIANT_ENUM_CAST(IP::ResolverStatus);
 
 

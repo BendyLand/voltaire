@@ -31,14 +31,13 @@
 #pragma once
 
 #include "core/crypto/crypto_core.h"
-#include "core/object/ref_counted.h"
-#include "core/variant/type_info.h"
+#include "core/types.h"
 
-class AESContext : public RefCounted {
-	VLTRCLASS(AESContext, RefCounted);
-
+class AESContext : public RefCounted
+{
 public:
-	enum Mode : int32_t {
+	enum Mode : int32_t
+	{
 		MODE_ECB_ENCRYPT,
 		MODE_ECB_DECRYPT,
 		MODE_CBC_ENCRYPT,
@@ -54,10 +53,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	Error start(Mode p_mode, const PackedByteArray &p_key, const PackedByteArray &p_iv = PackedByteArray());
-	PackedByteArray update(const PackedByteArray &p_src);
-	PackedByteArray get_iv_state();
+	Error start(
+		Mode p_mode, const Vector<uint8_t>& p_key, const Vector<uint8_t>& p_iv = Vector<uint8_t>());
+	Vector<uint8_t> update(const Vector<uint8_t>& p_src);
+	Vector<uint8_t> get_iv_state();
 	void finish();
 };
 
-VARIANT_ENUM_CAST(AESContext::Mode);

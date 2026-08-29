@@ -193,11 +193,6 @@ public:
 	_FORCE_INLINE_ bool is_recovery_mode_hint() const { return false; }
 #endif
 
-	Dictionary get_version_info() const;
-	Dictionary get_author_info() const;
-	TypedArray<Dictionary> get_copyright_info() const;
-	Dictionary get_donor_info() const;
-	Dictionary get_license_info() const;
 	String get_license_text() const;
 
 	void set_write_movie_path(const String &p_path);

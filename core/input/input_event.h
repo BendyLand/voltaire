@@ -101,8 +101,6 @@ public:
 
 class InputEventFromWindow : public InputEvent
 {
-	VLTRCLASS(InputEventFromWindow, InputEvent);
-
 	int64_t window_id = 0;
 
 protected:
@@ -115,8 +113,6 @@ public:
 
 class InputEventWithModifiers : public InputEventFromWindow
 {
-	VLTRCLASS(InputEventWithModifiers, InputEventFromWindow);
-
 	bool command_or_control_autoremap = false;
 
 	bool shift_pressed = false;
@@ -126,7 +122,6 @@ class InputEventWithModifiers : public InputEventFromWindow
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
 
 public:
 	void set_command_or_control_autoremap(bool p_enabled);
@@ -156,8 +151,6 @@ public:
 
 class InputEventKey : public InputEventWithModifiers
 {
-	VLTRCLASS(InputEventKey, InputEventWithModifiers);
-
 	Key keycode = Key::NONE; // Key enum, without modifier masks.
 	Key physical_keycode = Key::NONE;
 	Key key_label = Key::NONE;
@@ -217,8 +210,6 @@ public:
 
 class InputEventMouse : public InputEventWithModifiers
 {
-	VLTRCLASS(InputEventMouse, InputEventWithModifiers);
-
 	BitField<MouseButtonMask> button_mask = MouseButtonMask::NONE;
 
 	Vector2 pos;
@@ -242,8 +233,6 @@ public:
 
 class InputEventMouseButton : public InputEventMouse
 {
-	VLTRCLASS(InputEventMouseButton, InputEventMouse);
-
 	float factor = 1;
 	MouseButton button_index = MouseButton::NONE;
 	bool double_click = false; // last even less than double click time
@@ -281,8 +270,6 @@ public:
 
 class InputEventMouseMotion : public InputEventMouse
 {
-	VLTRCLASS(InputEventMouseMotion, InputEventMouse);
-
 	Vector2 tilt;
 	float pressure = 0;
 	Vector2 relative;
@@ -328,7 +315,6 @@ public:
 
 class InputEventJoypadMotion : public InputEvent
 {
-	VLTRCLASS(InputEventJoypadMotion, InputEvent);
 	JoyAxis axis = (JoyAxis)0; ///< Joypad axis
 	float axis_value = 0;	   ///< -1 to 1
 
@@ -360,8 +346,6 @@ public:
 
 class InputEventJoypadButton : public InputEvent
 {
-	VLTRCLASS(InputEventJoypadButton, InputEvent);
-
 	JoyButton button_index = (JoyButton)0;
 	float pressure = 0; // 0 to 1
 protected:
@@ -393,7 +377,6 @@ public:
 
 class InputEventScreenTouch : public InputEventFromWindow
 {
-	VLTRCLASS(InputEventScreenTouch, InputEventFromWindow);
 	int index = 0;
 	Vector2 pos;
 	bool double_tap = false;
@@ -424,7 +407,6 @@ public:
 
 class InputEventScreenDrag : public InputEventFromWindow
 {
-	VLTRCLASS(InputEventScreenDrag, InputEventFromWindow);
 	int index = 0;
 	Vector2 pos;
 	Vector2 relative;
@@ -478,8 +460,6 @@ public:
 
 class InputEventAction : public InputEvent
 {
-	VLTRCLASS(InputEventAction, InputEvent);
-
 	StringName action;
 	float strength = 1.0f;
 	int event_index = -1;
@@ -515,8 +495,6 @@ public:
 
 class InputEventGesture : public InputEventWithModifiers
 {
-	VLTRCLASS(InputEventGesture, InputEventWithModifiers);
-
 	Vector2 pos;
 
 protected:
@@ -529,7 +507,6 @@ public:
 
 class InputEventMagnifyGesture : public InputEventGesture
 {
-	VLTRCLASS(InputEventMagnifyGesture, InputEventGesture);
 	real_t factor = 1.0;
 
 protected:
@@ -549,7 +526,6 @@ public:
 
 class InputEventPanGesture : public InputEventGesture
 {
-	VLTRCLASS(InputEventPanGesture, InputEventGesture);
 	Vector2 delta;
 
 protected:
@@ -569,8 +545,6 @@ public:
 
 class InputEventMIDI : public InputEvent
 {
-	VLTRCLASS(InputEventMIDI, InputEvent);
-
 	int channel = 0;
 	MIDIMessage message = MIDIMessage::NONE;
 	int pitch = 0;
@@ -616,8 +590,6 @@ public:
 
 class InputEventShortcut : public InputEvent
 {
-	VLTRCLASS(InputEventShortcut, InputEvent);
-
 	Ref<Shortcut> shortcut;
 
 protected:

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/crypto/crypto_core.h"
-#include "core/object/class_db.h"
 #include "hashing_context.h"
 
 Error HashingContext::start(HashType p_type)
@@ -48,7 +47,7 @@ Error HashingContext::start(HashType p_type)
 	return ERR_UNAVAILABLE;
 }
 
-Error HashingContext::update(const PackedByteArray& p_chunk)
+Error HashingContext::update(const Vector<uint8_t>& p_chunk)
 {
 	ERR_FAIL_NULL_V(ctx, ERR_UNCONFIGURED);
 	size_t len = p_chunk.size();
@@ -65,10 +64,10 @@ Error HashingContext::update(const PackedByteArray& p_chunk)
 	return ERR_UNAVAILABLE;
 }
 
-PackedByteArray HashingContext::finish()
+Vector<uint8_t> HashingContext::finish()
 {
-	ERR_FAIL_NULL_V(ctx, PackedByteArray());
-	PackedByteArray out;
+	ERR_FAIL_NULL_V(ctx, Vector<uint8_t>());
+	Vector<uint8_t> out;
 	Error err = FAILED;
 	switch (type) {
 	case HASH_MD5:
@@ -85,7 +84,7 @@ PackedByteArray HashingContext::finish()
 		break;
 	}
 	_delete_ctx();
-	ERR_FAIL_COND_V(err != OK, PackedByteArray());
+	ERR_FAIL_COND_V(err != OK, Vector<uint8_t>());
 	return out;
 }
 

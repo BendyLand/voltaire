@@ -313,7 +313,7 @@ public:
 	void set_horizontal_alignment(HorizontalAlignment p_alignment);
 	HorizontalAlignment get_horizontal_alignment() const;
 
-	virtual Variant get_drag_data(const Point2 &p_point) override;
+	virtual Variant get_drag_data(Object& obj, const Point2 &p_point) override;
 	virtual bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;
 	virtual void drop_data(const Object& obj, const Point2 &p_point, const Variant &p_data) override;
 

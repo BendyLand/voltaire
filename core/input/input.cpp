@@ -32,7 +32,6 @@
 #include "core/config/project_settings.h"
 #include "core/input/default_controller_mappings.h"
 #include "core/input/input_map.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "input.compat.inc"
 #include "input.h"
@@ -118,35 +117,6 @@ void Input::set_mouse_mode_override_enabled(bool p_override_enabled)
 }
 
 bool Input::is_mouse_mode_override_enabled() { return is_mouse_mode_override_enabled_func(); }
-
-void Input::_bind_methods() {}
-
-#ifdef TOOLS_ENABLED
-void Input::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
-{
-	const String pf = p_function;
-
-	if ((p_idx == 0 &&
-			(pf == "is_action_pressed" || pf == "action_press" || pf == "action_release" ||
-				pf == "is_action_just_pressed" || pf == "is_action_just_released" ||
-				pf == "get_action_strength" || pf == "get_action_raw_strength")) ||
-		(p_idx < 2 && pf == "get_axis") || (p_idx < 4 && pf == "get_vector")) {
-		List<PropertyInfo> pinfo;
-		ProjectSettings::get_singleton()->obj->get_property_list(&pinfo);
-
-		for (const PropertyInfo& pi : pinfo) {
-			if (!pi.name.begins_with("input/")) {
-				continue;
-			}
-
-			String name = pi.name.substr(pi.name.find_char('/') + 1);
-			r_options->push_back(name.quote());
-		}
-	}
-	this->obj->get_argument_options(p_function, p_idx, r_options);
-}
-#endif
 
 void Input::VelocityTrack::update(const Vector2& p_delta_p, const Vector2& p_screen_delta_p)
 {
@@ -367,10 +337,6 @@ bool Input::is_action_just_pressed_by_event(
 		return false;
 	}
 
-	if (E->value.pressed_event_id != rp_event->obj->get_instance_id()) {
-		return false;
-	}
-
 	// Backward compatibility for legacy behavior, only return true if currently pressed.
 	bool pressed_requirement = legacy_just_pressed_behavior ? E->value.cache.pressed : true;
 
@@ -430,10 +396,6 @@ bool Input::is_action_just_released_by_event(
 	}
 
 	if (p_exact && E->value.exact == false) {
-		return false;
-	}
-
-	if (E->value.released_event_id != rp_event->obj->get_instance_id()) {
 		return false;
 	}
 
@@ -627,82 +589,6 @@ static String _hex_str(uint8_t p_byte)
 	return ret;
 }
 
-void Input::joy_connection_changed(int p_idx, bool p_connected, const String& p_name,
-	const String& p_guid, const Dictionary& p_joypad_info)
-{
-	_THREAD_SAFE_METHOD_
-
-	// Clear the pressed status if a Joypad gets disconnected.
-	if (!p_connected) {
-		for (KeyValue<StringName, ActionState>& E : action_states) {
-			HashMap<int, ActionState::DeviceState>::Iterator it = E.value.device_states.find(p_idx);
-			if (it) {
-				E.value.device_states.remove(it);
-				_update_action_cache(E.key, E.value);
-			}
-		}
-	}
-
-	Joypad js;
-	js.name = p_connected ? p_name : "";
-	js.uid = p_connected ? p_guid : "";
-	js.info = p_connected ? p_joypad_info : Dictionary();
-
-	if (p_connected) {
-		String uidname = p_guid;
-		if (p_guid.is_empty()) {
-			int uidlen = MIN(p_name.length(), 16);
-			for (int i = 0; i < uidlen; i++) {
-				uidname = uidname + _hex_str(p_name[i]);
-			}
-		}
-		js.uid = uidname;
-		js.connected = true;
-		int mapping = fallback_mapping;
-		// Bypass the mapping system if the joypad's mapping is already handled by its driver
-		// (for example, the SDL joypad driver).
-		if (p_joypad_info.get("mapping_handled", false)) {
-			js.is_known = true;
-		}
-		else {
-			for (int i = 0; i < map_db.size(); i++) {
-				if (js.uid == map_db[i].uid) {
-					mapping = i;
-					if (mapping != fallback_mapping) {
-						js.is_known = true;
-					}
-					break;
-				}
-			}
-		}
-		// We don't want this setting to be exposed to the user, because it's not very useful
-		// outside of this method.
-		js.info.erase("mapping_handled");
-
-		_set_joypad_mapping(js, mapping);
-	}
-	else {
-		js.connected = false;
-		for (int i = 0; i < (int)JoyButton::MAX; i++) {
-			JoyButton c = _combine_device((JoyButton)i, p_idx);
-			joy_buttons_pressed.erase(c);
-		}
-		for (int i = 0; i < (int)JoyAxis::MAX; i++) {
-			set_joy_axis(p_idx, (JoyAxis)i, 0.0f);
-		}
-		MotionInfo* motion = joy_motion.getptr(p_idx);
-		if (motion != nullptr && motion->gamepad_motion != nullptr) {
-			delete motion->gamepad_motion;
-		}
-		joy_motion.erase(p_idx);
-	}
-	joy_names[p_idx] = js;
-
-	// Ensure this signal is emitted on the main thread, as some platforms (e.g. Linux) call this
-	// from a different thread.
-	this->obj->call_deferred("emit_signal", SNAME("joy_connection_changed"), p_idx, p_connected);
-}
-
 Vector3 Input::get_gravity() const
 {
 	_THREAD_SAFE_METHOD_
@@ -793,15 +679,15 @@ float Input::get_joy_touchpad_finger_pressure(int p_device, int p_finger, int p_
 	return finger_info->pressure;
 }
 
-PackedInt32Array Input::get_joy_touchpad_fingers(int p_device, int p_touchpad) const
+Vector<uint32_t> Input::get_joy_touchpad_fingers(int p_device, int p_touchpad) const
 {
 	_THREAD_SAFE_METHOD_
 	const TouchpadInfo* touch = joy_touch.getptr(p_device);
 	if (touch == nullptr) {
-		return PackedInt32Array();
+		return Vector<uint32_t>();
 	}
 
-	PackedInt32Array result;
+	Vector<uint32_t> result;
 	for (const KeyValue<uint16_t, TouchpadFingerInfo>& index : touch->finger_info) {
 		int touchpad = index.key >> 8;
 		if (touchpad == p_touchpad) {
@@ -1072,12 +958,10 @@ void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_em
 		// As input may come in part way through a physics tick, the earliest we can react to it is
 		// the next physics tick.
 		if (action_state.cache.pressed && !was_pressed) {
-			action_state.pressed_event_id = p_event->obj->get_instance_id();
 			action_state.pressed_physics_frame = Engine::get_singleton()->get_physics_frames() + 1;
 			action_state.pressed_process_frame = Engine::get_singleton()->get_process_frames();
 		}
 		if (!action_state.cache.pressed && was_pressed) {
-			action_state.released_event_id = p_event->obj->get_instance_id();
 			action_state.released_physics_frame = Engine::get_singleton()->get_physics_frames() + 1;
 			action_state.released_process_frame = Engine::get_singleton()->get_process_frames();
 		}
@@ -1284,47 +1168,6 @@ void Input::clear_joy_motion_sensors_calibration(int p_device)
 	motion->gamepad_motion->ResetContinuousCalibration();
 }
 
-Dictionary Input::get_joy_motion_sensors_calibration(int p_device) const
-{
-	_THREAD_SAFE_METHOD_
-	const MotionInfo* motion = joy_motion.getptr(p_device);
-	if (motion == nullptr) {
-		return Dictionary();
-	}
-
-	if (!motion->calibrated) {
-		return Dictionary();
-	}
-
-	float joy_gyro_offset_data[3];
-	motion->gamepad_motion->GetCalibrationOffset(
-		joy_gyro_offset_data[0], joy_gyro_offset_data[1], joy_gyro_offset_data[2]);
-	Vector3 joy_gyro_offset(
-		joy_gyro_offset_data[0], joy_gyro_offset_data[1], joy_gyro_offset_data[2]);
-
-	Dictionary result;
-	result["gyroscope_offset"] = joy_gyro_offset * M_PI / 180.0;
-	return result;
-}
-
-void Input::set_joy_motion_sensors_calibration(int p_device, const Dictionary& p_calibration_info)
-{
-	_THREAD_SAFE_METHOD_
-	MotionInfo* motion = joy_motion.getptr(p_device);
-	if (motion == nullptr) {
-		return;
-	}
-
-	ERR_FAIL_COND_MSG(motion->calibrating, "Calibration is currently in progress.");
-
-	Vector3 gyro_offset =
-		p_calibration_info.get("gyroscope_offset", Vector3()).operator Vector3() * 180.0 / M_PI;
-
-	motion->gamepad_motion->SetCalibrationOffset(gyro_offset.x, gyro_offset.y, gyro_offset.z, 1);
-	motion->calibrating = false;
-	motion->calibrated = true;
-}
-
 bool Input::is_joy_motion_sensors_calibrating(int p_device) const
 {
 	_THREAD_SAFE_METHOD_
@@ -1499,7 +1342,6 @@ void Input::action_press(const StringName& p_action, float p_strength)
 	// As input may come in part way through a physics tick, the earliest we can react to it is the
 	// next physics tick.
 	if (!action_state.cache.pressed) {
-		action_state.pressed_event_id = ObjectID();
 		action_state.pressed_physics_frame = Engine::get_singleton()->get_physics_frames() + 1;
 		action_state.pressed_process_frame = Engine::get_singleton()->get_process_frames();
 	}
@@ -1521,7 +1363,6 @@ void Input::action_release(const StringName& p_action)
 	action_state.cache.raw_strength = 0.0;
 	// As input may come in part way through a physics tick, the earliest we can react to it is the
 	// next physics tick.
-	action_state.released_event_id = ObjectID();
 	action_state.released_physics_frame = Engine::get_singleton()->get_physics_frames() + 1;
 	action_state.released_process_frame = Engine::get_singleton()->get_process_frames();
 	action_state.device_states.clear();
@@ -1700,13 +1541,6 @@ void Input::release_pressed_events()
 			if (E.value.cache.pressed) {
 				action_release(E.key);
 			}
-		}
-
-		for (int device : get_connected_joypads()) {
-			stop_joy_vibration(device);
-
-			TouchpadInfo& touch = joy_touch[device];
-			touch.finger_info.clear();
 		}
 	}
 	else {
@@ -2439,29 +2273,11 @@ String Input::get_joy_guid(int p_device) const
 	return joy_names[p_device].uid;
 }
 
-Dictionary Input::get_joy_info(int p_device) const
-{
-	ERR_FAIL_COND_V(!joy_names.has(p_device), Dictionary());
-	return joy_names[p_device].info;
-}
 
 bool Input::should_ignore_device(int p_vendor_id, int p_product_id) const
 {
 	uint32_t full_id = (((uint32_t)p_vendor_id) << 16) | ((uint16_t)p_product_id);
 	return ignored_device_ids.has(full_id);
-}
-
-TypedArray<int> Input::get_connected_joypads()
-{
-	TypedArray<int> ret;
-	HashMap<int, Joypad>::Iterator elem = joy_names.begin();
-	while (elem) {
-		if (elem->value.connected) {
-			ret.push_back(elem->key);
-		}
-		++elem;
-	}
-	return ret;
 }
 
 int Input::get_unused_joy_id()
@@ -2525,20 +2341,10 @@ Input::Input()
 		}
 	}
 
-	legacy_just_pressed_behavior =
-		GLOBAL_DEF("input_devices/compatibility/legacy_just_pressed_behavior", false);
 	if (Engine::get_singleton()->is_editor_hint()) {
 		// Always use standard behavior in the editor.
 		legacy_just_pressed_behavior = false;
 	}
-
-	accelerometer_enabled =
-		GLOBAL_DEF_RST_BASIC("input_devices/sensors/enable_accelerometer", false);
-	gravity_enabled = GLOBAL_DEF_RST_BASIC("input_devices/sensors/enable_gravity", false);
-	gyroscope_enabled = GLOBAL_DEF_RST_BASIC("input_devices/sensors/enable_gyroscope", false);
-	magnetometer_enabled = GLOBAL_DEF_RST_BASIC("input_devices/sensors/enable_magnetometer", false);
-	ignore_joypad_on_unfocused_application =
-		GLOBAL_DEF_RST_BASIC("input_devices/joypads/ignore_joypad_on_unfocused_application", false);
 }
 
 Input::~Input() { singleton = nullptr; }

@@ -37,17 +37,10 @@
 
 class MissingResource : public Resource
 {
-	VLTRCLASS(MissingResource, Resource)
-	HashMap<StringName, Variant> properties;
-
 	String original_class;
 	bool recording_properties = false;
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
 	static void _bind_methods();
 
 public:

@@ -33,17 +33,17 @@
 #include "core/crypto/crypto.h"
 #include "core/io/packet_peer_udp.h"
 
-class PacketPeerDTLS : public PacketPeer {
-	VLTRCLASS(PacketPeerDTLS, PacketPeer);
-
+class PacketPeerDTLS : public PacketPeer
+{
 protected:
-	static inline PacketPeerDTLS *(*_create)(bool p_notify_postinitialize) = nullptr;
+	static inline PacketPeerDTLS* (*_create)(bool p_notify_postinitialize) = nullptr;
 	static void _bind_methods();
 
 	static inline bool available = false;
 
 public:
-	enum Status {
+	enum Status
+	{
 		STATUS_DISCONNECTED,
 		STATUS_HANDSHAKING,
 		STATUS_CONNECTED,
@@ -52,12 +52,13 @@ public:
 	};
 
 	virtual void poll() = 0;
-	virtual Error connect_to_peer(Ref<PacketPeerUDP> p_base, const String &p_hostname, Ref<TLSOptions> p_options = Ref<TLSOptions>()) = 0;
+	virtual Error connect_to_peer(Ref<PacketPeerUDP> p_base, const String& p_hostname,
+		Ref<TLSOptions> p_options = Ref<TLSOptions>()) = 0;
 	virtual void disconnect_from_peer() = 0;
 	virtual Status get_status() const = 0;
 
-	static PacketPeerDTLS *create(bool p_notify_postinitialize = true);
+	static PacketPeerDTLS* create(bool p_notify_postinitialize = true);
 	static bool is_available();
 };
 
-VARIANT_ENUM_CAST(PacketPeerDTLS::Status);
+

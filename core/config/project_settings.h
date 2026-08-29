@@ -30,10 +30,10 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
+#include "core/types.h"
 
 template <typename T> class TypedArray;
 
@@ -52,8 +52,7 @@ class ProjectSettings
 	HashSet<StringName> changed_settings;
 
 public:
-	mem_unique_ptr<Object> obj;
-	typedef HashMap<String, Variant> CustomMap;
+	typedef HashMap<String, String> CustomMap;
 	// This constant is used to make the ".godot" folder and paths like "res://.godot/editor".
 	static inline const String PROJECT_DATA_DIR_NAME_SUFFIX = "godot";
 	static inline const String EDITOR_SETTING_OVERRIDE_PREFIX =
@@ -64,9 +63,8 @@ public:
 	constexpr static const int32_t NO_BUILTIN_ORDER_BASE = 1 << 16;
 
 #ifdef TOOLS_ENABLED
-	const static PackedStringArray get_required_features();
-	const static PackedStringArray get_unsupported_features(
-		const PackedStringArray& p_project_features);
+	const static Vector<String> get_required_features();
+	const static Vector<String> get_unsupported_features(const Vector<String>& p_project_features);
 #endif // TOOLS_ENABLED
 
 	struct AutoloadInfo
@@ -77,36 +75,11 @@ public:
 	};
 
 protected:
-	struct VariantContainer
-	{
-		int order = 0;
-		bool persist = false;
-		bool basic = false;
-		bool internal = false;
-		Variant variant;
-		Variant initial;
-		bool hide_from_editor = false;
-		bool restart_if_changed = false;
-#ifdef DEBUG_ENABLED
-		bool ignore_value_in_docs = false;
-#endif // DEBUG_ENABLED
-
-		VariantContainer() {}
-
-		VariantContainer(const Variant& p_variant, int p_order, bool p_persist = false)
-			: order(p_order), persist(p_persist), variant(p_variant)
-		{
-		}
-	};
-
 	int last_order = NO_BUILTIN_ORDER_BASE;
 	int last_builtin_order = 0;
 	uint64_t last_save_time = 0;
 
-	RBMap<StringName, VariantContainer>
-		props; // NOTE: Key order is used e.g. in the save_custom method.
 	String resource_path;
-	HashMap<StringName, PropertyInfo> custom_prop_info;
 	bool using_datapack = false;
 	bool project_loaded = false;
 	List<String> input_presets;
@@ -119,16 +92,12 @@ protected:
 	HashMap<StringName, String> global_groups;
 	HashMap<StringName, HashSet<StringName>> scene_groups_cache;
 
-	Array global_class_list;
+	Vector<StringName> global_class_list;
 	bool is_global_class_list_loaded = false;
 
 	String project_data_dir_name;
 
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 	bool _property_can_revert(const StringName& p_name) const;
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 	void _queue_changed(const StringName& p_name);
 	void _emit_changed();
@@ -147,9 +116,9 @@ protected:
 	Error _save_custom_bnd(const String& p_file);
 
 #ifdef TOOLS_ENABLED
-	const static PackedStringArray _get_supported_features();
-	const static PackedStringArray _trim_to_supported_features(
-		const PackedStringArray& p_project_features);
+	const static Vector<String> _get_supported_features();
+	const static Vector<String> _trim_to_supported_features(
+		const Vector<String>& p_project_features);
 #endif // TOOLS_ENABLED
 
 	void _convert_to_last_version(int p_from_version);
@@ -157,8 +126,6 @@ protected:
 	bool load_resource_pack(const String& p_pack, bool p_replace_files, int p_offset);
 	bool _load_resource_pack(const String& p_pack, bool p_replace_files = true, int p_offset = 0,
 		bool p_main_pack = false);
-
-	void _add_property_info_bind(const Dictionary& p_info);
 
 	Error _setup(const String& p_path, const String& p_main_pack, bool p_upwards = false,
 		bool p_ignore_override = false);
@@ -171,22 +138,14 @@ protected:
 public:
 	static const int CONFIG_VERSION = 5;
 
-#ifdef TOOLS_ENABLED
-	HashMap<String, PropertyInfo> editor_settings_info;
-#endif
-
-	void set_setting(const String& p_setting, const Variant& p_value);
-	Variant get_setting(const String& p_setting, const Variant& p_default_value = Variant()) const;
-	TypedArray<Dictionary> get_global_class_list();
 	void refresh_global_class_list();
-	void store_global_class_list(const Array& p_classes);
+	void store_global_class_list(const Vector<String>& p_classes);
 	String get_global_class_list_path() const;
 
 	bool has_setting(const String& p_var) const;
 	String localize_path(const String& p_path) const;
 	String globalize_path(const String& p_path) const;
 
-	void set_initial_value(const String& p_name, const Variant& p_value);
 	void set_as_basic(const String& p_name, bool p_basic);
 	void set_as_internal(const String& p_name, bool p_internal);
 	void set_restart_if_changed(const String& p_name, bool p_restart);
@@ -215,16 +174,10 @@ public:
 		const Vector<String>& p_custom_features = Vector<String>(),
 		bool p_merge_with_current = true);
 	Error save();
-	void set_custom_property_info(const PropertyInfo& p_info);
-	const HashMap<StringName, PropertyInfo>& get_custom_property_info() const;
 
 	uint64_t get_last_saved_time() { return last_save_time; }
 
 	List<String> get_input_presets() const { return List<String>(input_presets); }
-
-	Variant get_setting_with_override(const StringName& p_name) const;
-	Variant get_setting_with_override_and_custom_features(
-		const StringName& p_name, const Vector<String>& p_features) const;
 
 	bool is_using_datapack() const;
 	bool is_project_loaded() const;
@@ -232,7 +185,7 @@ public:
 	bool has_custom_feature(const String& p_feature) const;
 
 	// Change tracking methods
-	PackedStringArray get_changed_settings() const;
+	Vector<String> get_changed_settings() const;
 	bool check_changed_settings_in_group(const String& p_setting_prefix) const;
 
 	const HashMap<StringName, AutoloadInfo>& get_autoload_list() const;
@@ -262,22 +215,12 @@ public:
 		const StringName& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
-	void set_editor_setting_override(const String& p_setting, const Variant& p_value);
 	bool has_editor_setting_override(const String& p_setting) const;
-	Variant get_editor_setting_override(const String& p_setting) const;
 
 	ProjectSettings();
 	ProjectSettings(const String& p_path);
 	~ProjectSettings();
 };
-
-// Not a macro any longer.
-Variant _GLOBAL_DEF(const String& p_var, const Variant& p_default,
-	bool p_restart_if_changed = false, bool p_ignore_value_in_docs = false, bool p_basic = false,
-	bool p_internal = false);
-Variant _GLOBAL_DEF(const PropertyInfo& p_info, const Variant& p_default,
-	bool p_restart_if_changed = false, bool p_ignore_value_in_docs = false, bool p_basic = false,
-	bool p_internal = false);
 
 #define GLOBAL_DEF(m_var, m_value) _GLOBAL_DEF(m_var, m_value)
 #define GLOBAL_DEF_RST(m_var, m_value) _GLOBAL_DEF(m_var, m_value, true)

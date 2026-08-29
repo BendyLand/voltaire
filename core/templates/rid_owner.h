@@ -35,7 +35,7 @@
 #include "core/string/print_string.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/safe_refcount.h"
-#include "core/variant/variant.h"
+#include "core/types.h"
 
 #include <cstdio>
 #include <typeinfo> // IWYU pragma: keep // Used in macro.
@@ -116,11 +116,6 @@ class RID_Alloc : public RID_AllocBase {
 			uint32_t chunk_count = alloc_count == 0 ? 0 : (max_alloc / elements_in_chunk);
 			if (THREAD_SAFE && chunk_count == chunk_limit) {
 				mutex.unlock();
-				if (description != nullptr) {
-					ERR_FAIL_V_MSG(RID(), vformat("Element limit for RID of type '%s' reached.", String(description)));
-				} else {
-					ERR_FAIL_V_MSG(RID(), "Element limit reached.");
-				}
 			}
 
 			//grow chunks
@@ -427,9 +422,6 @@ public:
 		}
 
 		if (alloc_count) {
-			print_error(vformat("ERROR: %d RID allocations of type '%s' were leaked at exit.",
-					alloc_count, description ? description : typeid(T).name()));
-
 			for (size_t i = 0; i < max_alloc; i++) {
 				uint32_t validator = chunks[i / elements_in_chunk][i % elements_in_chunk].validator;
 				if (validator & 0x80000000) {
