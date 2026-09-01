@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "../openxr_extension_wrapper.h"
 #include "../openxr_future_extension.h"
 #include "openxr_spatial_entities.h"
 
@@ -38,9 +37,6 @@
 class OpenXRSpatialCapabilityConfigurationQrCode
 	: public OpenXRSpatialCapabilityConfigurationBaseHeader
 {
-	VLTRCLASS(
-		OpenXRSpatialCapabilityConfigurationQrCode, OpenXRSpatialCapabilityConfigurationBaseHeader);
-
 public:
 	virtual bool has_valid_configuration() const override;
 	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
@@ -63,9 +59,6 @@ private:
 class OpenXRSpatialCapabilityConfigurationMicroQrCode
 	: public OpenXRSpatialCapabilityConfigurationBaseHeader
 {
-	VLTRCLASS(OpenXRSpatialCapabilityConfigurationMicroQrCode,
-		OpenXRSpatialCapabilityConfigurationBaseHeader);
-
 public:
 	virtual bool has_valid_configuration() const override;
 	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
@@ -88,9 +81,6 @@ private:
 class OpenXRSpatialCapabilityConfigurationAruco
 	: public OpenXRSpatialCapabilityConfigurationBaseHeader
 {
-	VLTRCLASS(
-		OpenXRSpatialCapabilityConfigurationAruco, OpenXRSpatialCapabilityConfigurationBaseHeader);
-
 public:
 	enum ArucoDict
 	{
@@ -139,15 +129,10 @@ private:
 	ArucoDict _get_aruco_dict() const;
 };
 
-VARIANT_ENUM_CAST(OpenXRSpatialCapabilityConfigurationAruco::ArucoDict);
-
 // April tag marker tracking capability configuration
 class OpenXRSpatialCapabilityConfigurationAprilTag
 	: public OpenXRSpatialCapabilityConfigurationBaseHeader
 {
-	VLTRCLASS(OpenXRSpatialCapabilityConfigurationAprilTag,
-		OpenXRSpatialCapabilityConfigurationBaseHeader);
-
 public:
 	enum AprilTagDict
 	{
@@ -184,13 +169,9 @@ private:
 	AprilTagDict _get_april_dict() const;
 };
 
-VARIANT_ENUM_CAST(OpenXRSpatialCapabilityConfigurationAprilTag::AprilTagDict);
-
 // Marker component data
 class OpenXRSpatialComponentMarkerList : public OpenXRSpatialComponentData
 {
-	VLTRCLASS(OpenXRSpatialComponentMarkerList, OpenXRSpatialComponentData);
-
 public:
 	enum MarkerType
 	{
@@ -208,7 +189,6 @@ public:
 
 	MarkerType get_marker_type(int64_t p_index) const;
 	uint32_t get_marker_id(int64_t p_index) const;
-	Variant get_marker_data(RID p_snapshot, int64_t p_index) const;
 
 protected:
 	static void _bind_methods();
@@ -220,13 +200,9 @@ private:
 		XR_TYPE_SPATIAL_COMPONENT_MARKER_LIST_EXT, nullptr, 0, nullptr};
 };
 
-VARIANT_ENUM_CAST(OpenXRSpatialComponentMarkerList::MarkerType);
-
 // Marker tracker
 class OpenXRMarkerTracker : public OpenXRSpatialEntityTracker
 {
-	VLTRCLASS(OpenXRMarkerTracker, OpenXRSpatialEntityTracker);
-
 public:
 	void set_bounds_size(const Vector2& p_bounds_size);
 	Vector2 get_bounds_size() const;
@@ -237,51 +213,29 @@ public:
 	void set_marker_id(uint32_t p_id);
 	uint32_t get_marker_id() const;
 
-	void set_marker_data(const Variant& p_data);
-	Variant get_marker_data() const;
-
-protected:
-	static void _bind_methods();
-
 private:
 	Vector2 bounds_size;
 
 	OpenXRSpatialComponentMarkerList::MarkerType marker_type =
 		OpenXRSpatialComponentMarkerList::MarkerType::MARKER_TYPE_UNKNOWN;
 	uint32_t marker_id = 0;
-	Variant marker_data;
 };
 
 // Marker tracking logic
-class OpenXRSpatialMarkerTrackingCapability : public OpenXRExtensionWrapper
+class OpenXRSpatialMarkerTrackingCapability
 {
-	VLTRCLASS(OpenXRSpatialMarkerTrackingCapability, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods();
-
 public:
 	static OpenXRSpatialMarkerTrackingCapability* get_singleton();
 
 	OpenXRSpatialMarkerTrackingCapability();
-	virtual ~OpenXRSpatialMarkerTrackingCapability() override;
+	virtual ~OpenXRSpatialMarkerTrackingCapability();
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_session_created(const XrSession p_session) override;
-	virtual void on_session_destroyed() override;
+	virtual void on_session_created(const XrSession p_session);
+	virtual void on_session_destroyed();
 
-	virtual void on_process() override;
-
-	Ref<OpenXRFutureResult> start_entity_discovery(RID p_spatial_context,
-		Array p_component_data,
-		Ref<OpenXRStructureBase> p_next_snapshot_create = nullptr,
-		Ref<OpenXRStructureBase> p_next_snapshot_query = nullptr,
-		const Callable& p_user_callback = Callable());
-	void do_entity_update(RID p_spatial_context,
-		Array p_component_data,
-		Ref<OpenXRStructureBase> p_next_snapshot_create = nullptr,
-		Ref<OpenXRStructureBase> p_next_snapshot_query = nullptr);
+	virtual void on_process();
 
 	bool is_qrcode_supported();
 	bool is_micro_qrcode_supported();
@@ -296,8 +250,6 @@ private:
 	bool need_discovery = false;
 	int discovery_cooldown = 0;
 	Ref<OpenXRFutureResult> discovery_query_result;
-	Array marker_discovery_component_data;
-	Array marker_update_component_data;
 
 	Ref<OpenXRSpatialCapabilityConfigurationQrCode> qrcode_configuration;
 	Ref<OpenXRSpatialCapabilityConfigurationMicroQrCode> micro_qrcode_configuration;
@@ -309,11 +261,6 @@ private:
 	void _on_spatial_context_created(RID p_spatial_context);
 
 	void _on_spatial_discovery_recommended(RID p_spatial_context);
-
-	void _process_snapshot(RID p_snapshot, RID p_spatial_context, bool p_is_discovery,
-		Array p_component_data,
-		Ref<OpenXRStructureBase> p_next_snapshot_query,
-		const Callable& p_user_callback = Callable());
 
 	// Trackers; maps each Spatial Context RID to their marker entities and trackers
 	HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRMarkerTracker>>> marker_trackers;

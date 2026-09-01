@@ -37,10 +37,8 @@
 #include "winrt_utils.h"
 
 #include "core/config/engine.h"
-#include "core/debugger/engine_debugger.h"
 #include "core/debugger/script_debugger.h"
 #include "core/os/main_loop.h"
-#include "core/profiling/profiling.h"
 #include "core/version_generated.gen.h"
 #include "drivers/windows/dir_access_windows.h"
 #include "drivers/windows/file_access_windows.h"

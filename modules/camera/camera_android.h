@@ -55,7 +55,6 @@ struct CameraRotationParams {
 };
 
 class CameraFeedAndroid : public CameraFeed {
-	VLTRSOFTCLASS(CameraFeedAndroid, CameraFeed);
 
 private:
 	String camera_id;
@@ -123,7 +122,6 @@ public:
 };
 
 class CameraAndroid : public CameraServer {
-	VLTRSOFTCLASS(CameraAndroid, CameraServer);
 
 private:
 	ACameraManager *cameraManager = nullptr;

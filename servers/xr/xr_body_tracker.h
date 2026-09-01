@@ -32,18 +32,20 @@
 
 #include "servers/xr/xr_positional_tracker.h"
 
-class XRBodyTracker : public XRPositionalTracker {
-	VLTRCLASS(XRBodyTracker, XRPositionalTracker);
+class XRBodyTracker : public XRPositionalTracker
+{
 	_THREAD_SAFE_CLASS_
 
 public:
-	enum BodyFlags {
+	enum BodyFlags
+	{
 		BODY_FLAG_UPPER_BODY_SUPPORTED = 1,
 		BODY_FLAG_LOWER_BODY_SUPPORTED = 2,
 		BODY_FLAG_HANDS_SUPPORTED = 4,
 	};
 
-	enum Joint {
+	enum Joint
+	{
 		JOINT_ROOT,
 
 		// Upper Body Joints
@@ -129,7 +131,8 @@ public:
 		JOINT_RIGHT_PINKY_FINGER_PHALANX_DISTAL,
 		JOINT_RIGHT_PINKY_FINGER_TIP,
 
-		// Extra joints that aren't part of the Godot humanoid skeleton, but are commonly used in some VR avatars.
+		// Extra joints that aren't part of the Godot humanoid skeleton, but are commonly used in
+		// some VR avatars.
 		JOINT_LOWER_CHEST,
 		JOINT_LEFT_SCAPULA,
 		JOINT_LEFT_WRIST_TWIST,
@@ -145,7 +148,8 @@ public:
 		JOINT_MAX,
 	};
 
-	enum JointFlags {
+	enum JointFlags
+	{
 		JOINT_FLAG_ORIENTATION_VALID = 1,
 		JOINT_FLAG_ORIENTATION_TRACKED = 2,
 		JOINT_FLAG_POSITION_VALID = 4,
@@ -158,13 +162,13 @@ public:
 	void set_has_tracking_data(bool p_has_tracking_data);
 	bool get_has_tracking_data() const;
 
-	void set_body_flags(BitField<BodyFlags> p_body_flags);
-	BitField<BodyFlags> get_body_flags() const;
+	void set_body_flags(uint32_t p_body_flags);
+	uint32_t get_body_flags() const;
 
-	void set_joint_flags(Joint p_joint, BitField<JointFlags> p_flags);
-	BitField<JointFlags> get_joint_flags(Joint p_joint) const;
+	void set_joint_flags(Joint p_joint, uint32_t p_flags);
+	uint32_t get_joint_flags(Joint p_joint) const;
 
-	void set_joint_transform(Joint p_joint, const Transform3D &p_transform);
+	void set_joint_transform(Joint p_joint, const Transform3D& p_transform);
 	Transform3D get_joint_transform(Joint p_joint) const;
 
 	XRBodyTracker();
@@ -174,12 +178,10 @@ protected:
 
 private:
 	bool has_tracking_data = false;
-	BitField<BodyFlags> body_flags = {};
+	uint32_t body_flags = {};
 
-	BitField<JointFlags> joint_flags[JOINT_MAX];
+	uint32_t joint_flags[JOINT_MAX];
 	Transform3D joint_transforms[JOINT_MAX];
 };
 
-VARIANT_BITFIELD_CAST(XRBodyTracker::BodyFlags)
-VARIANT_ENUM_CAST(XRBodyTracker::Joint)
-VARIANT_BITFIELD_CAST(XRBodyTracker::JointFlags)
+

@@ -33,7 +33,6 @@
 
 TEST_FORCE_LINK(test_method_bind)
 
-#include "core/object/class_db.h"
 
 namespace TestMethodBind
 {

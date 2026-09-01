@@ -38,7 +38,6 @@
 #include <ws2tcpip.h>
 
 class NetSocketWinSock : public NetSocket {
-	VLTRSOFTCLASS(NetSocketWinSock, NetSocket);
 
 private:
 	SOCKET _sock = INVALID_SOCKET;

@@ -41,7 +41,6 @@ TEST_FORCE_LINK(test_window)
 namespace TestWindow {
 
 class NotificationControlWindow : public Control {
-	VLTRCLASS(NotificationControlWindow, Control);
 
 protected:
 	void _notification(int p_what) {

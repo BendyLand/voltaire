@@ -39,23 +39,26 @@
 class AnimationMixer;
 class EditorFileDialog;
 
-class AnimationLibraryEditor : public AcceptDialog {
-	VLTRCLASS(AnimationLibraryEditor, AcceptDialog)
-
-	enum {
+class AnimationLibraryEditor : public AcceptDialog
+{
+	enum
+	{
 		LIB_BUTTON_ADD,
 		LIB_BUTTON_LOAD,
 		LIB_BUTTON_PASTE,
 		LIB_BUTTON_FILE,
 		LIB_BUTTON_DELETE,
 	};
-	enum {
+
+	enum
+	{
 		ANIM_BUTTON_COPY,
 		ANIM_BUTTON_FILE,
 		ANIM_BUTTON_DELETE,
 	};
 
-	enum FileMenuAction {
+	enum FileMenuAction
+	{
 		FILE_MENU_SAVE_LIBRARY,
 		FILE_MENU_SAVE_AS_LIBRARY,
 		FILE_MENU_MAKE_LIBRARY_UNIQUE,
@@ -67,7 +70,8 @@ class AnimationLibraryEditor : public AcceptDialog {
 		FILE_MENU_EDIT_ANIMATION,
 	};
 
-	enum FileDialogAction {
+	enum FileDialogAction
+	{
 		FILE_DIALOG_ACTION_OPEN_LIBRARY,
 		FILE_DIALOG_ACTION_SAVE_LIBRARY,
 		FILE_DIALOG_ACTION_OPEN_ANIMATION,
@@ -79,49 +83,40 @@ class AnimationLibraryEditor : public AcceptDialog {
 	StringName file_dialog_animation;
 	StringName file_dialog_library;
 
-	Button *new_library_button = nullptr;
-	Button *load_library_button = nullptr;
+	Button* new_library_button = nullptr;
+	Button* load_library_button = nullptr;
 
-	AcceptDialog *error_dialog = nullptr;
+	AcceptDialog* error_dialog = nullptr;
 	bool adding_animation = false;
 	StringName adding_animation_to_library;
-	EditorFileDialog *file_dialog = nullptr;
-	ConfirmationDialog *add_library_dialog = nullptr;
-	LineEdit *add_library_name = nullptr;
-	Label *add_library_validate = nullptr;
-	PopupMenu *file_popup = nullptr;
+	EditorFileDialog* file_dialog = nullptr;
+	ConfirmationDialog* add_library_dialog = nullptr;
+	LineEdit* add_library_name = nullptr;
+	Label* add_library_validate = nullptr;
+	PopupMenu* file_popup = nullptr;
 
-	Tree *tree = nullptr;
+	Tree* tree = nullptr;
 
-	AnimationMixer *mixer = nullptr;
+	AnimationMixer* mixer = nullptr;
 
 	void _add_library();
-	void _add_library_validate(const String &p_name);
-	void _add_library_confirm(const Object& obj);
+	void _add_library_validate(const String& p_name);
 	void _load_library();
-	void _load_file(const Object& obj, const String &p_path);
-	void _load_files(const Object& obj, const PackedStringArray &p_paths);
 
-	void _save_mixer_lib_folding(TreeItem *p_item);
+	void _save_mixer_lib_folding(TreeItem* p_item);
 	Vector<String> _load_mixer_libs_folding();
 	String _get_mixer_signature() const;
-
-	void _item_renamed(const Object& obj);
-	void _button_pressed(const Object& obj, TreeItem *p_item, int p_column, int p_id, MouseButton p_button);
-
-	void _file_popup_selected(const Object& obj, int p_id);
 
 	bool updating = false;
 
 protected:
 	void _notification(int p_what);
-	void _update_editor(Object& obj, Object *p_mixer);
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	static void _bind_methods();
 
 public:
-	void set_animation_mixer(Object *p_mixer);
 	void show_dialog();
 	void update_tree();
 	AnimationLibraryEditor();
 };
+
+

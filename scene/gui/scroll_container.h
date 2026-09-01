@@ -142,15 +142,7 @@ protected:
 	void _update_scrollbar_position();
 	void _scroll_moved(float);
 
-	void _accessibility_action_scroll_set(const Variant& p_data);
-	void _accessibility_action_scroll_up(const Variant& p_data);
-	void _accessibility_action_scroll_down(const Variant& p_data);
-	void _accessibility_action_scroll_left(const Variant& p_data);
-	void _accessibility_action_scroll_right(const Variant& p_data);
-
 public:
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_gui_input) override;
-
 	void set_h_scroll(int p_pos);
 	int get_h_scroll() const;
 
@@ -197,8 +189,5 @@ public:
 
 	ScrollContainer();
 };
-
-VARIANT_ENUM_CAST(ScrollContainer::ScrollMode);
-VARIANT_ENUM_CAST(ScrollContainer::ScrollHintMode);
 
 

@@ -32,12 +32,9 @@
 
 #include "scene/3d/node_3d.h"
 
-class RemoteTransform3D : public Node3D {
-	VLTRCLASS(RemoteTransform3D, Node3D);
-
+class RemoteTransform3D : public Node3D
+{
 	NodePath remote_node;
-
-	ObjectID cache;
 
 	bool use_global_coordinates = true;
 	bool update_remote_position = true;
@@ -52,7 +49,7 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_remote_node(const NodePath &p_remote_node);
+	void set_remote_node(const NodePath& p_remote_node);
 	NodePath get_remote_node() const;
 
 	void set_use_global_coordinates(const bool p_enable);
@@ -73,3 +70,5 @@ public:
 
 	RemoteTransform3D();
 };
+
+

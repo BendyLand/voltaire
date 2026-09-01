@@ -32,9 +32,8 @@
 
 #include "scene/3d/physics/static_body_3d.h"
 
-class AnimatableBody3D : public StaticBody3D {
-	VLTRCLASS(AnimatableBody3D, StaticBody3D);
-
+class AnimatableBody3D : public StaticBody3D
+{
 private:
 	Vector3 linear_velocity;
 	Vector3 angular_velocity;
@@ -43,8 +42,8 @@ private:
 
 	Transform3D last_valid_transform;
 
-	static void _body_state_changed_callback(void *p_instance, PhysicsDirectBodyState3D *p_state);
-	void _body_state_changed(PhysicsDirectBodyState3D *p_state);
+	static void _body_state_changed_callback(void* p_instance, PhysicsDirectBodyState3D* p_state);
+	void _body_state_changed(PhysicsDirectBodyState3D* p_state);
 
 protected:
 	void _notification(int p_what);
@@ -62,3 +61,5 @@ private:
 	void set_sync_to_physics(bool p_enable);
 	bool is_sync_to_physics_enabled() const;
 };
+
+

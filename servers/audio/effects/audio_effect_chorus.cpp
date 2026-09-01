@@ -30,7 +30,6 @@
 
 #include "audio_effect_chorus.h"
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectChorusInstance::process(
@@ -285,18 +284,6 @@ float AudioEffectChorus::get_wet() const { return wet; }
 void AudioEffectChorus::set_dry(float amount) { dry = amount; }
 
 float AudioEffectChorus::get_dry() const { return dry; }
-
-void AudioEffectChorus::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name.begins_with("voice/")) {
-		int voice_idx = p_property.name.get_slicec('/', 1).to_int();
-		if (voice_idx > voice_count) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
-
-void AudioEffectChorus::_bind_methods() {}
 
 AudioEffectChorus::AudioEffectChorus()
 {

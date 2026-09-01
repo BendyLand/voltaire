@@ -58,7 +58,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	static PhysicsServer3D* get_singleton();
 
 	virtual void soft_body_update_rendering_server(
@@ -79,11 +78,9 @@ public:
 	virtual RID heightmap_shape_create() = 0;
 	virtual RID custom_shape_create() = 0;
 
-	virtual void shape_set_data(RID p_shape, const Variant& p_data) = 0;
 	virtual void shape_set_custom_solver_bias(RID p_shape, real_t p_bias) = 0;
 
 	virtual PS3DE::ShapeType shape_get_type(RID p_shape) const = 0;
-	virtual Variant shape_get_data(RID p_shape) const = 0;
 
 	virtual void shape_set_margin(RID p_shape, real_t p_margin) = 0;
 	virtual real_t shape_get_margin(RID p_shape) const = 0;
@@ -132,14 +129,8 @@ public:
 
 	virtual void area_set_shape_disabled(RID p_area, int p_shape_idx, bool p_disabled) = 0;
 
-	virtual void area_attach_object_instance_id(RID p_area, ObjectID p_id) = 0;
-	virtual ObjectID area_get_object_instance_id(RID p_area) const = 0;
-
-	virtual void area_set_param(
-		RID p_area, PS3DE::AreaParameter p_param, const Variant& p_value) = 0;
 	virtual void area_set_transform(RID p_area, const Transform3D& p_transform) = 0;
 
-	virtual Variant area_get_param(RID p_parea, PS3DE::AreaParameter p_param) const = 0;
 	virtual Transform3D area_get_transform(RID p_area) const = 0;
 
 	virtual void area_set_collision_layer(RID p_area, uint32_t p_layer) = 0;
@@ -149,9 +140,6 @@ public:
 	virtual uint32_t area_get_collision_mask(RID p_area) const = 0;
 
 	virtual void area_set_monitorable(RID p_area, bool p_monitorable) = 0;
-
-	virtual void area_set_monitor_callback(RID p_area, const Callable& p_callback) = 0;
-	virtual void area_set_area_monitor_callback(RID p_area, const Callable& p_callback) = 0;
 
 	virtual void area_set_ray_pickable(RID p_area, bool p_enable) = 0;
 
@@ -182,9 +170,6 @@ public:
 
 	virtual void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled) = 0;
 
-	virtual void body_attach_object_instance_id(RID p_body, ObjectID p_id) = 0;
-	virtual ObjectID body_get_object_instance_id(RID p_body) const = 0;
-
 	virtual void body_set_enable_continuous_collision_detection(RID p_body, bool p_enable) = 0;
 	virtual bool body_is_continuous_collision_detection_enabled(RID p_body) const = 0;
 
@@ -200,18 +185,9 @@ public:
 	virtual void body_set_user_flags(RID p_body, uint32_t p_flags) = 0;
 	virtual uint32_t body_get_user_flags(RID p_body) const = 0;
 
-	// common body variables
-
-	virtual void body_set_param(
-		RID p_body, PS3DE::BodyParameter p_param, const Variant& p_value) = 0;
-	virtual Variant body_get_param(RID p_body, PS3DE::BodyParameter p_param) const = 0;
-
 	virtual void body_reset_mass_properties(RID p_body) = 0;
 
 	// state
-
-	virtual void body_set_state(RID p_body, PS3DE::BodyState p_state, const Variant& p_variant) = 0;
-	virtual Variant body_get_state(RID p_body, PS3DE::BodyState p_state) const = 0;
 
 	virtual void body_apply_central_impulse(RID p_body, const Vector3& p_impulse) = 0;
 	virtual void body_apply_impulse(
@@ -254,10 +230,6 @@ public:
 	virtual void body_set_omit_force_integration(RID p_body, bool p_omit) = 0;
 	virtual bool body_is_omitting_force_integration(RID p_body) const = 0;
 
-	virtual void body_set_state_sync_callback(RID p_body, const Callable& p_callable) = 0;
-	virtual void body_set_force_integration_callback(
-		RID p_body, const Callable& p_callable, const Variant& p_udata = Variant()) = 0;
-
 	virtual void body_set_ray_pickable(RID p_body, bool p_enable) = 0;
 
 	// this function only works on physics process, errors and returns null otherwise
@@ -286,10 +258,6 @@ public:
 	virtual void soft_body_add_collision_exception(RID p_body, RID p_body_b) = 0;
 	virtual void soft_body_remove_collision_exception(RID p_body, RID p_body_b) = 0;
 	virtual void soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) = 0;
-
-	virtual void soft_body_set_state(
-		RID p_body, PS3DE::BodyState p_state, const Variant& p_variant) = 0;
-	virtual Variant soft_body_get_state(RID p_body, PS3DE::BodyState p_state) const = 0;
 
 	virtual void soft_body_set_transform(RID p_body, const Transform3D& p_transform) = 0;
 
@@ -437,21 +405,12 @@ class PhysicsServer3DManager
 	struct ClassInfo
 	{
 		String name;
-		Callable create_callback;
 
 		ClassInfo() {}
-
-		ClassInfo(String p_name, Callable p_create_callback)
-			: name(p_name), create_callback(p_create_callback)
-		{
-		}
-
-		ClassInfo(const ClassInfo& p_ci) : name(p_ci.name), create_callback(p_ci.create_callback) {}
 
 		void operator=(const ClassInfo& p_ci)
 		{
 			name = p_ci.name;
-			create_callback = p_ci.create_callback;
 		}
 	};
 
@@ -465,12 +424,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	static const String setting_property_name;
 
 	static PhysicsServer3DManager* get_singleton();
 
-	void register_server(const String& p_name, const Callable& p_create_callback);
 	void set_default_server(const String& p_name, int p_priority = 0);
 	int find_server_id(const String& p_name);
 	int get_servers_count();
@@ -481,25 +438,5 @@ public:
 	PhysicsServer3DManager();
 	~PhysicsServer3DManager();
 };
-
-VARIANT_ENUM_CAST_EXT(PS3DE::ShapeType, PhysicsServer3D::ShapeType);
-VARIANT_ENUM_CAST_EXT(PS3DE::SpaceParameter, PhysicsServer3D::SpaceParameter);
-VARIANT_ENUM_CAST_EXT(PS3DE::AreaParameter, PhysicsServer3D::AreaParameter);
-VARIANT_ENUM_CAST_EXT(PS3DE::AreaSpaceOverrideMode, PhysicsServer3D::AreaSpaceOverrideMode);
-VARIANT_ENUM_CAST_EXT(PS3DE::BodyMode, PhysicsServer3D::BodyMode);
-VARIANT_ENUM_CAST_EXT(PS3DE::BodyParameter, PhysicsServer3D::BodyParameter);
-VARIANT_ENUM_CAST_EXT(PS3DE::BodyDampMode, PhysicsServer3D::BodyDampMode);
-VARIANT_ENUM_CAST_EXT(PS3DE::BodyState, PhysicsServer3D::BodyState);
-VARIANT_ENUM_CAST_EXT(PS3DE::BodyAxis, PhysicsServer3D::BodyAxis);
-VARIANT_ENUM_CAST_EXT(PS3DE::PinJointParam, PhysicsServer3D::PinJointParam);
-VARIANT_ENUM_CAST_EXT(PS3DE::JointType, PhysicsServer3D::JointType);
-VARIANT_ENUM_CAST_EXT(PS3DE::HingeJointParam, PhysicsServer3D::HingeJointParam);
-VARIANT_ENUM_CAST_EXT(PS3DE::HingeJointFlag, PhysicsServer3D::HingeJointFlag);
-VARIANT_ENUM_CAST_EXT(PS3DE::SliderJointParam, PhysicsServer3D::SliderJointParam);
-VARIANT_ENUM_CAST_EXT(PS3DE::ConeTwistJointParam, PhysicsServer3D::ConeTwistJointParam);
-VARIANT_ENUM_CAST_EXT(PS3DE::G6DOFJointAxisParam, PhysicsServer3D::G6DOFJointAxisParam);
-VARIANT_ENUM_CAST_EXT(PS3DE::G6DOFJointAxisFlag, PhysicsServer3D::G6DOFJointAxisFlag);
-VARIANT_ENUM_CAST_EXT(PS3DE::AreaBodyStatus, PhysicsServer3D::AreaBodyStatus);
-VARIANT_ENUM_CAST_EXT(PS3DE::ProcessInfo, PhysicsServer3D::ProcessInfo);
 
 

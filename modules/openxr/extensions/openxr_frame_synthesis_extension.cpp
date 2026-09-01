@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "openxr_frame_synthesis_extension.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/xr/xr_server.h"
@@ -50,45 +48,6 @@ void OpenXRFrameSynthesisExtension::_bind_methods() {}
 OpenXRFrameSynthesisExtension::OpenXRFrameSynthesisExtension() { singleton = this; }
 
 OpenXRFrameSynthesisExtension::~OpenXRFrameSynthesisExtension() { singleton = nullptr; }
-
-HashMap<String, bool*> OpenXRFrameSynthesisExtension::get_requested_extensions(XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-	if (GLOBAL_GET("xr/openxr/extensions/frame_synthesis")) {
-		request_extensions[XR_EXT_FRAME_SYNTHESIS_EXTENSION_NAME] = &frame_synthesis_ext;
-	}
-
-	return request_extensions;
-}
-
-void OpenXRFrameSynthesisExtension::on_instance_created(const XrInstance p_instance)
-{
-	// Register this as a projection view extension
-	if (frame_synthesis_ext) {
-		OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-		ERR_FAIL_NULL(openxr_api);
-		openxr_api->register_projection_views_extension(this);
-	}
-
-	// Enable this if our extension was successfully enabled
-	enabled = frame_synthesis_ext;
-	render_state.enabled = frame_synthesis_ext;
-}
-
-void OpenXRFrameSynthesisExtension::on_instance_destroyed()
-{
-	// Unregister this as a projection view extension.
-	if (frame_synthesis_ext) {
-		OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-		ERR_FAIL_NULL(openxr_api);
-		openxr_api->unregister_projection_views_extension(this);
-	}
-
-	frame_synthesis_ext = false;
-	enabled = false;
-	render_state.enabled = false;
-}
 
 void OpenXRFrameSynthesisExtension::prepare_view_configuration(uint32_t p_view_count)
 {
@@ -125,23 +84,6 @@ void* OpenXRFrameSynthesisExtension::set_view_configuration_and_get_next_pointer
 	return &config_view;
 }
 
-void OpenXRFrameSynthesisExtension::print_view_configuration_info(uint32_t p_view) const
-{
-	if (!frame_synthesis_ext) {
-		return;
-	}
-
-	// Called during initialization, we can safely access this.
-	if (p_view < render_state.config_views.size()) {
-		const XrFrameSynthesisConfigViewEXT& config_view = render_state.config_views[p_view];
-
-		print_line(
-			" - motion vector width: ", itos(config_view.recommendedMotionVectorImageRectWidth));
-		print_line(
-			" - motion vector height: ", itos(config_view.recommendedMotionVectorImageRectHeight));
-	}
-}
-
 void OpenXRFrameSynthesisExtension::on_session_destroyed()
 {
 	if (!frame_synthesis_ext) {
@@ -150,120 +92,6 @@ void OpenXRFrameSynthesisExtension::on_session_destroyed()
 
 	// Free our swapchains.
 	free_swapchains();
-}
-
-void OpenXRFrameSynthesisExtension::on_main_swapchains_created()
-{
-	if (!frame_synthesis_ext) {
-		return;
-	}
-
-	// It is possible that our swapchain information gets resized,
-	// and that our motion vector and depth resolution changes with this.
-	// So (re)create our swapchains here as well.
-	// Note that we do this even if motion vectors aren't enabled yet.
-
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-
-	// Out with the old.
-	free_swapchains();
-
-	// We only support stereo.
-	size_t view_count = render_state.config_views.size();
-	ERR_FAIL_COND(view_count != 2);
-
-	// Determine specific values for each renderer.
-	int swapchain_format = 0;
-	int depth_swapchain_format = 0;
-	String rendering_driver_name = rendering_server->get_current_rendering_driver_name();
-	if (rendering_driver_name.contains("opengl")) {
-		swapchain_format = GL_RGBA16F;
-		depth_swapchain_format = GL_DEPTH24_STENCIL8;
-	}
-	else if (rendering_driver_name == "vulkan") {
-		String rendering_method = rendering_server->get_current_rendering_method();
-		if (rendering_method == "mobile") {
-			swapchain_format = VK_FORMAT_R16G16B16A16_SFLOAT;
-			depth_swapchain_format = VK_FORMAT_D24_UNORM_S8_UINT;
-		}
-		else {
-			WARN_PRINT("OpenXR: Frame synthesis not supported for this rendering method!");
-			frame_synthesis_ext = false;
-			openxr_api->unregister_projection_views_extension(this);
-			return;
-		}
-	}
-	else {
-		WARN_PRINT("OpenXR: Frame synthesis not supported for this rendering driver!");
-		frame_synthesis_ext = false;
-		openxr_api->unregister_projection_views_extension(this);
-		return;
-	}
-
-	// We assume the size for each eye is the same, it should be.
-	uint32_t width = render_state.config_views[0].recommendedMotionVectorImageRectWidth;
-	uint32_t height = render_state.config_views[0].recommendedMotionVectorImageRectHeight;
-
-	// Create swapchains for motion vectors and depth.
-	render_state.swapchains[SWAPCHAIN_MOTION_VECTOR].create(0,
-		XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT |
-			XR_SWAPCHAIN_USAGE_MUTABLE_FORMAT_BIT,
-		swapchain_format, width, height, 1, view_count);
-	render_state.swapchains[SWAPCHAIN_DEPTH].create(0,
-		XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-			XR_SWAPCHAIN_USAGE_MUTABLE_FORMAT_BIT,
-		depth_swapchain_format, width, height, 1, view_count);
-
-	// Set up our frame synthesis info.
-	render_state.frame_synthesis_info.resize(view_count);
-
-	// Y direction is undefined so we allow users to flip it for conflicting implementations.
-	float y_scale = 1.0;
-	if (GLOBAL_GET("xr/openxr/extensions/frame_synthesis/flip_y")) {
-		y_scale = -1.0;
-	}
-
-	uint32_t index = 0;
-	for (XrFrameSynthesisInfoEXT& frame_synthesis_info : render_state.frame_synthesis_info) {
-		frame_synthesis_info.type = XR_TYPE_FRAME_SYNTHESIS_INFO_EXT;
-		frame_synthesis_info.next = nullptr;
-		frame_synthesis_info.layerFlags = 0;
-
-		// Set up motion vector.
-		frame_synthesis_info.motionVectorSubImage.swapchain =
-			render_state.swapchains[SWAPCHAIN_MOTION_VECTOR].get_swapchain();
-		frame_synthesis_info.motionVectorSubImage.imageArrayIndex = index;
-		frame_synthesis_info.motionVectorSubImage.imageRect.offset.x = 0;
-		frame_synthesis_info.motionVectorSubImage.imageRect.offset.y = 0;
-		frame_synthesis_info.motionVectorSubImage.imageRect.extent.width = width;
-		frame_synthesis_info.motionVectorSubImage.imageRect.extent.height = height;
-
-		frame_synthesis_info.motionVectorScale = {1.0, y_scale, 1.0, 0.0};
-		frame_synthesis_info.motionVectorOffset = {0.0, 0.0, 0.0, 0.0};
-		frame_synthesis_info.appSpaceDeltaPose = {{0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}};
-
-		// Set up depth image.
-		frame_synthesis_info.depthSubImage.swapchain =
-			render_state.swapchains[SWAPCHAIN_DEPTH].get_swapchain();
-		frame_synthesis_info.depthSubImage.imageArrayIndex = index;
-		frame_synthesis_info.depthSubImage.imageRect.offset.x = 0;
-		frame_synthesis_info.depthSubImage.imageRect.offset.y = 0;
-		frame_synthesis_info.depthSubImage.imageRect.extent.width = width;
-		frame_synthesis_info.depthSubImage.imageRect.extent.height = height;
-
-		frame_synthesis_info.minDepth = 0.0;
-		frame_synthesis_info.maxDepth = 1.0;
-
-		// Note: reverse-Z, these are just defaults for now.
-		frame_synthesis_info.nearZ = 100.0;
-		frame_synthesis_info.farZ = 0.01;
-
-		index++;
-	}
 }
 
 void OpenXRFrameSynthesisExtension::on_pre_draw_viewport(RID p_render_target)
@@ -375,39 +203,9 @@ bool OpenXRFrameSynthesisExtension::is_available() const { return frame_synthesi
 
 bool OpenXRFrameSynthesisExtension::is_enabled() const { return frame_synthesis_ext && enabled; }
 
-void OpenXRFrameSynthesisExtension::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-	ERR_FAIL_COND(!frame_synthesis_ext && p_enabled);
-
-	enabled = p_enabled;
-
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	rendering_server->call_on_render_thread(
-		callable_mp(this, &OpenXRFrameSynthesisExtension::_set_render_state_enabled_rt)
-			.bind(enabled));
-}
-
 bool OpenXRFrameSynthesisExtension::get_relax_frame_interval() const
 {
 	return relax_frame_interval;
-}
-
-void OpenXRFrameSynthesisExtension::set_relax_frame_interval(bool p_relax_frame_interval)
-{
-	if (relax_frame_interval == p_relax_frame_interval) {
-		return;
-	}
-	relax_frame_interval = p_relax_frame_interval;
-
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	rendering_server->call_on_render_thread(
-		callable_mp(this, &OpenXRFrameSynthesisExtension::_set_relax_frame_interval_rt)
-			.bind(relax_frame_interval));
 }
 
 void OpenXRFrameSynthesisExtension::_set_render_state_enabled_rt(bool p_enabled)
@@ -425,14 +223,6 @@ void OpenXRFrameSynthesisExtension::free_swapchains()
 	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
 		render_state.swapchains[i].queue_free();
 	}
-}
-
-void OpenXRFrameSynthesisExtension::skip_next_frame()
-{
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	rendering_server->call_on_render_thread(
-		callable_mp(this, &OpenXRFrameSynthesisExtension::_set_skip_next_frame_rt));
 }
 
 void OpenXRFrameSynthesisExtension::_set_skip_next_frame_rt()

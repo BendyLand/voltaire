@@ -38,12 +38,7 @@
 
 class CollisionObject2D : public Node2D
 {
-	VLTRCLASS(CollisionObject2D, Node2D);
-
 public:
-	static constexpr Object::AncestralClass static_ancestral_class =
-		Object::AncestralClass::COLLISION_OBJECT_2D;
-
 	enum DisableMode
 	{
 		DISABLE_MODE_REMOVE,
@@ -67,7 +62,6 @@ private:
 
 	struct ShapeData
 	{
-		ObjectID owner_id;
 		Transform2D xform;
 
 		struct Shape
@@ -141,14 +135,12 @@ public:
 	void set_disable_mode(DisableMode p_mode);
 	DisableMode get_disable_mode() const;
 
-	uint32_t create_shape_owner(Object* p_owner);
 	void remove_shape_owner(uint32_t owner);
 	void get_shape_owners(List<uint32_t>* r_owners);
 	PackedInt32Array _get_shape_owners();
 
 	void shape_owner_set_transform(uint32_t p_owner, const Transform2D& p_transform);
 	Transform2D shape_owner_get_transform(uint32_t p_owner) const;
-	Object* shape_owner_get_owner(uint32_t p_owner) const;
 
 	void shape_owner_set_disabled(uint32_t p_owner, bool p_disabled);
 	bool is_shape_owner_disabled(uint32_t p_owner) const;
@@ -182,7 +174,5 @@ public:
 	CollisionObject2D();
 	~CollisionObject2D();
 };
-
-VARIANT_ENUM_CAST(CollisionObject2D::DisableMode);
 
 

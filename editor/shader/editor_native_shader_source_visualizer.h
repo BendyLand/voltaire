@@ -35,9 +35,9 @@
 class CodeHighlighter;
 class TabContainer;
 
-class EditorNativeShaderSourceVisualizer : public AcceptDialog {
-	VLTRCLASS(EditorNativeShaderSourceVisualizer, AcceptDialog)
-	TabContainer *versions = nullptr;
+class EditorNativeShaderSourceVisualizer : public AcceptDialog
+{
+	TabContainer* versions = nullptr;
 	Ref<CodeHighlighter> syntax_highlighter;
 
 	void _load_theme_settings();
@@ -49,3 +49,5 @@ protected:
 public:
 	EditorNativeShaderSourceVisualizer();
 };
+
+

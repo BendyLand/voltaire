@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/resources/camera_attributes.h"
 #include "scene/resources/environment.h"
@@ -43,50 +42,6 @@
 void World3D::_register_camera(Camera3D* p_camera) { cameras.insert(p_camera); }
 
 void World3D::_remove_camera(Camera3D* p_camera) { cameras.erase(p_camera); }
-
-RID World3D::get_space() const
-{
-#ifndef PHYSICS_3D_DISABLED
-	if (space.is_null()) {
-		space = PhysicsServer3D::get_singleton()->space_create();
-		PhysicsServer3D::get_singleton()->space_set_active(space, true);
-		PhysicsServer3D::get_singleton()->area_set_param(
-			space, PS3DE::AREA_PARAM_GRAVITY, GLOBAL_GET("physics/3d/default_gravity"));
-		PhysicsServer3D::get_singleton()->area_set_param(space, PS3DE::AREA_PARAM_GRAVITY_VECTOR,
-			GLOBAL_GET("physics/3d/default_gravity_vector"));
-		PhysicsServer3D::get_singleton()->area_set_param(
-			space, PS3DE::AREA_PARAM_LINEAR_DAMP, GLOBAL_GET("physics/3d/default_linear_damp"));
-		PhysicsServer3D::get_singleton()->area_set_param(
-			space, PS3DE::AREA_PARAM_ANGULAR_DAMP, GLOBAL_GET("physics/3d/default_angular_damp"));
-	}
-#endif // PHYSICS_3D_DISABLED
-	return space;
-}
-
-#ifndef NAVIGATION_3D_DISABLED
-RID World3D::get_navigation_map() const
-{
-	if (navigation_map.is_null()) {
-		navigation_map = NavigationServer3D::get_singleton()->map_create();
-		NavigationServer3D::get_singleton()->map_set_active(navigation_map, true);
-		NavigationServer3D::get_singleton()->map_set_cell_size(
-			navigation_map, GLOBAL_GET("navigation/3d/default_cell_size"));
-		NavigationServer3D::get_singleton()->map_set_cell_height(
-			navigation_map, GLOBAL_GET("navigation/3d/default_cell_height"));
-		NavigationServer3D::get_singleton()->map_set_up(
-			navigation_map, GLOBAL_GET("navigation/3d/default_up"));
-		NavigationServer3D::get_singleton()->map_set_merge_rasterizer_cell_scale(
-			navigation_map, GLOBAL_GET("navigation/3d/merge_rasterizer_cell_scale"));
-		NavigationServer3D::get_singleton()->map_set_use_edge_connections(
-			navigation_map, GLOBAL_GET("navigation/3d/use_edge_connections"));
-		NavigationServer3D::get_singleton()->map_set_edge_connection_margin(
-			navigation_map, GLOBAL_GET("navigation/3d/default_edge_connection_margin"));
-		NavigationServer3D::get_singleton()->map_set_link_connection_radius(
-			navigation_map, GLOBAL_GET("navigation/3d/default_link_connection_radius"));
-	}
-	return navigation_map;
-}
-#endif // NAVIGATION_3D_DISABLED
 
 RID World3D::get_scenario() const { return scenario; }
 

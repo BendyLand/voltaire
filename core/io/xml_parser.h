@@ -30,21 +30,21 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/string/ustring.h"
 #include "core/templates/vector.h"
-#include "core/variant/type_info.h"
+#include "core/types.h"
 
 /*
-  Based on irrXML (see their zlib license). Added mainly for compatibility with their Collada loader.
+  Based on irrXML (see their zlib license). Added mainly for compatibility with their Collada
+  loader.
 */
 
-class XMLParser : public RefCounted {
-	VLTRCLASS(XMLParser, RefCounted);
-
+class XMLParser : public RefCounted
+{
 public:
 	//! Enumeration of all supported source text file formats
-	enum SourceFormat {
+	enum SourceFormat
+	{
 		SOURCE_ASCII,
 		SOURCE_UTF8,
 		SOURCE_UTF16_BE,
@@ -53,7 +53,8 @@ public:
 		SOURCE_UTF32_LE
 	};
 
-	enum NodeType {
+	enum NodeType
+	{
 		NODE_NONE,
 		NODE_ELEMENT,
 		NODE_ELEMENT_END,
@@ -64,9 +65,9 @@ public:
 	};
 
 private:
-	char *data_copy = nullptr;
-	const char *data = nullptr;
-	const char *P = nullptr;
+	char* data_copy = nullptr;
+	const char* data = nullptr;
+	const char* P = nullptr;
 	uint64_t length = 0;
 	uint64_t current_line = 0;
 	String node_name;
@@ -74,14 +75,15 @@ private:
 	NodeType node_type = NODE_NONE;
 	uint64_t node_offset = 0;
 
-	struct Attribute {
+	struct Attribute
+	{
 		String name;
 		String value;
 	};
 
 	Vector<Attribute> attributes;
 
-	bool _set_text(const char *p_start, const char *p_end);
+	bool _set_text(const char* p_start, const char* p_end);
 	void _parse_closing_xml_element();
 	void _ignore_definition();
 	bool _parse_cdata();
@@ -89,7 +91,8 @@ private:
 	void _parse_opening_xml_element();
 	void _parse_current_node();
 
-	_FORCE_INLINE_ void next_char() {
+	_FORCE_INLINE_ void next_char()
+	{
 		if (*P == '\n') {
 			current_line++;
 		}
@@ -107,22 +110,23 @@ public:
 	int get_attribute_count() const;
 	String get_attribute_name(int p_idx) const;
 	String get_attribute_value(int p_idx) const;
-	bool has_attribute(const String &p_name) const;
-	String get_named_attribute_value(const String &p_name) const;
-	String get_named_attribute_value_safe(const String &p_name) const; // do not print error if doesn't exist
+	bool has_attribute(const String& p_name) const;
+	String get_named_attribute_value(const String& p_name) const;
+	String get_named_attribute_value_safe(
+		const String& p_name) const; // do not print error if doesn't exist
 	bool is_empty() const;
 	int get_current_line() const;
 
 	void skip_section();
 	Error seek(uint64_t p_pos);
 
-	Error open(const String &p_path);
-	Error open_buffer(const Vector<uint8_t> &p_buffer);
-	Error _open_buffer(const uint8_t *p_buffer, size_t p_size);
+	Error open(const String& p_path);
+	Error open_buffer(const Vector<uint8_t>& p_buffer);
+	Error _open_buffer(const uint8_t* p_buffer, size_t p_size);
 
 	void close();
 
 	~XMLParser();
 };
 
-VARIANT_ENUM_CAST(XMLParser::NodeType);
+

@@ -52,15 +52,6 @@ EditorExportPlatformVisionOS::~EditorExportPlatformVisionOS()
 #endif
 }
 
-void EditorExportPlatformVisionOS::get_export_options(List<ExportOption>* r_options) const
-{
-	EditorExportPlatformAppleEmbedded::get_export_options(r_options);
-
-	r_options->push_back(
-		ExportOption(PropertyInfo(Variant::STRING, "application/min_visionos_version"),
-			get_minimum_deployment_target()));
-}
-
 Vector<EditorExportPlatformAppleEmbedded::IconInfo>
 EditorExportPlatformVisionOS::get_icon_infos() const
 {
@@ -109,16 +100,6 @@ String EditorExportPlatformVisionOS::_process_config_file_line(
 	}
 	else if (p_line.contains("$pbx_launch_screen_build_reference")) {
 		strnew += p_line.replace("$pbx_launch_screen_build_reference", "") + "\n";
-
-		// OS Deployment Target
-	}
-	else if (p_line.contains("$os_deployment_target")) {
-		String min_version =
-			p_preset->obj->get("application/min_" + get_platform_name() + "_version");
-		String value = "XROS_DEPLOYMENT_TARGET = " + min_version + ";";
-		strnew += p_line.replace("$os_deployment_target", value) + "\n";
-
-		// Valid Archs
 	}
 	else if (p_line.contains("$valid_archs")) {
 		strnew += p_line.replace("$valid_archs", "arm64") + "\n";

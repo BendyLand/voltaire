@@ -106,9 +106,6 @@ void RasterizerGLES3::begin_frame(double frame_step)
 
 	time_total += frame_step;
 
-	double time_roll_over = GLOBAL_GET_CACHED(double, "rendering/limits/time/time_rollover_secs");
-	time_total = Math::fmod(time_total, time_roll_over);
-
 	canvas->set_time(time_total);
 	scene->set_time(time_total, frame_step);
 
@@ -324,7 +321,7 @@ RasterizerGLES3::RasterizerGLES3()
 				glEnable(_EXT_DEBUG_OUTPUT);
 			}
 			else {
-				print_line("OpenGL debugging not supported!");
+				__print_line("OpenGL debugging not supported!");
 			}
 		}
 	}
@@ -362,7 +359,7 @@ RasterizerGLES3::RasterizerGLES3()
 			}
 
 			if (callback) {
-				print_line("godot: ENABLING GL DEBUG");
+				__print_line("godot: ENABLING GL DEBUG");
 				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 				callback((DEBUGPROCARB)_gl_debug_print, nullptr);
 				glEnable(_EXT_DEBUG_OUTPUT);
@@ -397,13 +394,9 @@ RasterizerGLES3::RasterizerGLES3()
 			}
 			else {
 				shader_cache_dir = shader_cache_dir.path_join("shader_cache");
-
-				bool shader_cache_enabled =
-					GLOBAL_GET("rendering/shader_compiler/shader_cache/enabled");
-				if (!Engine::get_singleton()->is_editor_hint() && !shader_cache_enabled) {
+				if (!Engine::get_singleton()->is_editor_hint()) {
 					shader_cache_dir = String(); // disable only if not editor
 				}
-
 				if (!shader_cache_dir.is_empty()) {
 					ShaderGLES3::set_shader_cache_dir(shader_cache_dir);
 				}

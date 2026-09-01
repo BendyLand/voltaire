@@ -42,11 +42,11 @@
 
 class AspectRatioContainer;
 
-class BoneMapperButton : public TextureButton {
-	VLTRCLASS(BoneMapperButton, TextureButton);
-
+class BoneMapperButton : public TextureButton
+{
 public:
-	enum BoneMapState {
+	enum BoneMapState
+	{
 		BONE_MAP_STATE_UNSET,
 		BONE_MAP_STATE_SET,
 		BONE_MAP_STATE_MISSING,
@@ -58,7 +58,7 @@ private:
 	bool selected = false;
 	bool require = false;
 
-	TextureRect *circle = nullptr;
+	TextureRect* circle = nullptr;
 
 	void fetch_textures();
 
@@ -71,18 +71,17 @@ public:
 
 	bool is_require() const;
 
-	BoneMapperButton(const StringName &p_profile_bone_name, bool p_require, bool p_selected);
+	BoneMapperButton(const StringName& p_profile_bone_name, bool p_require, bool p_selected);
 };
 
-class BoneMapperItem : public VBoxContainer {
-	VLTRCLASS(BoneMapperItem, VBoxContainer);
-
+class BoneMapperItem : public VBoxContainer
+{
 	StringName profile_bone_name;
 
 	Ref<BoneMap> bone_map;
 
-	EditorPropertyText *skeleton_bone_selector = nullptr;
-	Button *picker_button = nullptr;
+	EditorPropertyText* skeleton_bone_selector = nullptr;
+	Button* picker_button = nullptr;
 
 	void _update_property();
 	void _open_picker();
@@ -90,23 +89,21 @@ class BoneMapperItem : public VBoxContainer {
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
-	virtual void _value_changed(const String &p_property, const Variant &p_value, const String &p_name, bool p_changing);
 	virtual void create_editor();
 
 public:
 	void assign_button_id(int p_button_id);
 
-	BoneMapperItem(Ref<BoneMap> &p_bone_map, const StringName &p_profile_bone_name = StringName());
+	BoneMapperItem(Ref<BoneMap>& p_bone_map, const StringName& p_profile_bone_name = StringName());
 };
 
-class BonePicker : public AcceptDialog {
-	VLTRCLASS(BonePicker, AcceptDialog);
-
-	Skeleton3D *skeleton = nullptr;
-	Tree *bones = nullptr;
+class BonePicker : public AcceptDialog
+{
+	Skeleton3D* skeleton = nullptr;
+	Tree* bones = nullptr;
 
 public:
-	void popup_bones_tree(const Size2i &p_minsize = Size2i());
+	void popup_bones_tree(const Size2i& p_minsize = Size2i());
 	bool has_selected_bone();
 	StringName get_selected_bone();
 
@@ -116,34 +113,33 @@ protected:
 
 private:
 	void create_editors();
-	void create_bones_tree(Skeleton3D *p_skeleton);
+	void create_bones_tree(Skeleton3D* p_skeleton);
 
 public:
-	BonePicker(Skeleton3D *p_skeleton);
+	BonePicker(Skeleton3D* p_skeleton);
 };
 
-class BoneMapper : public VBoxContainer {
-	VLTRCLASS(BoneMapper, VBoxContainer);
-
-	Skeleton3D *skeleton = nullptr;
+class BoneMapper : public VBoxContainer
+{
+	Skeleton3D* skeleton = nullptr;
 	Ref<BoneMap> bone_map;
 
-	EditorPropertyResource *profile_selector = nullptr;
+	EditorPropertyResource* profile_selector = nullptr;
 
-	Vector<BoneMapperItem *> bone_mapper_items;
+	Vector<BoneMapperItem*> bone_mapper_items;
 
-	Button *clear_mapping_button = nullptr;
+	Button* clear_mapping_button = nullptr;
 
-	VBoxContainer *mapper_item_vbox = nullptr;
+	VBoxContainer* mapper_item_vbox = nullptr;
 
 	int current_group_idx = 0;
 	int current_bone_idx = -1;
 
-	AspectRatioContainer *bone_mapper_field = nullptr;
-	EditorPropertyEnum *profile_group_selector = nullptr;
-	ColorRect *profile_bg = nullptr;
-	TextureRect *profile_texture = nullptr;
-	Vector<BoneMapperButton *> bone_mapper_buttons;
+	AspectRatioContainer* bone_mapper_field = nullptr;
+	EditorPropertyEnum* profile_group_selector = nullptr;
+	ColorRect* profile_bg = nullptr;
+	TextureRect* profile_texture = nullptr;
+	Vector<BoneMapperButton*> bone_mapper_buttons;
 
 	void create_editor();
 	void recreate_editor();
@@ -153,29 +149,31 @@ class BoneMapper : public VBoxContainer {
 	void _update_state();
 
 	/* Bone picker */
-	BonePicker *picker = nullptr;
+	BonePicker* picker = nullptr;
 	StringName picker_key_name;
-	void _pick_bone(const StringName &p_bone_name);
+	void _pick_bone(const StringName& p_bone_name);
 	void _apply_picker_selection();
 	void _clear_mapping_current_group();
 
 	/* For auto mapping */
-	enum BoneSegregation {
+	enum BoneSegregation
+	{
 		BONE_SEGREGATION_NONE,
 		BONE_SEGREGATION_LEFT,
 		BONE_SEGREGATION_RIGHT
 	};
-	bool is_match_with_bone_name(const String &p_bone_name, const String &p_word);
-	int search_bone_by_name(Skeleton3D *p_skeleton, const Vector<String> &p_picklist, BoneSegregation p_segregation = BONE_SEGREGATION_NONE, int p_parent = -1, int p_child = -1, int p_children_count = -1);
-	BoneSegregation guess_bone_segregation(const String &p_bone_name);
-	void auto_mapping_process(Ref<BoneMap> &p_bone_map);
+
+	bool is_match_with_bone_name(const String& p_bone_name, const String& p_word);
+	int search_bone_by_name(Skeleton3D* p_skeleton, const Vector<String>& p_picklist,
+		BoneSegregation p_segregation = BONE_SEGREGATION_NONE, int p_parent = -1, int p_child = -1,
+		int p_children_count = -1);
+	BoneSegregation guess_bone_segregation(const String& p_bone_name);
+	void auto_mapping_process(Ref<BoneMap>& p_bone_map);
 	void _run_auto_mapping();
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
-	virtual void _value_changed(const String &p_property, const Variant &p_value, const String &p_name, bool p_changing);
-	virtual void _profile_changed(const String &p_property, const Variant &p_value, const String &p_name, bool p_changing);
 
 public:
 	void set_current_group_idx(int p_group_idx);
@@ -183,15 +181,14 @@ public:
 	void set_current_bone_idx(int p_bone_idx);
 	int get_current_bone_idx() const;
 
-	BoneMapper(Skeleton3D *p_skeleton, Ref<BoneMap> &p_bone_map);
+	BoneMapper(Skeleton3D* p_skeleton, Ref<BoneMap>& p_bone_map);
 };
 
-class BoneMapEditor : public VBoxContainer {
-	VLTRCLASS(BoneMapEditor, VBoxContainer);
-
-	Skeleton3D *skeleton = nullptr;
+class BoneMapEditor : public VBoxContainer
+{
+	Skeleton3D* skeleton = nullptr;
 	Ref<BoneMap> bone_map;
-	BoneMapper *bone_mapper = nullptr;
+	BoneMapper* bone_mapper = nullptr;
 
 	void fetch_objects();
 	void create_editors();
@@ -200,22 +197,20 @@ protected:
 	void _notification(int p_what);
 
 public:
-	BoneMapEditor(Ref<BoneMap> &p_bone_map);
+	BoneMapEditor(Ref<BoneMap>& p_bone_map);
 };
 
-class EditorInspectorPluginBoneMap : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginBoneMap, EditorInspectorPlugin);
-	BoneMapEditor *editor = nullptr;
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
+class EditorInspectorPluginBoneMap : public EditorInspectorPlugin
+{
+	BoneMapEditor* editor = nullptr;
 };
 
-class BoneMapEditorPlugin : public EditorPlugin {
-	VLTRCLASS(BoneMapEditorPlugin, EditorPlugin);
-
+class BoneMapEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "BoneMap"; }
+
 	BoneMapEditorPlugin();
 };
+
+

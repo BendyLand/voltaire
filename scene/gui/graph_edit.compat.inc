@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "graph_edit.h"
 
 bool GraphEdit::_is_arrange_nodes_button_hidden_bind_compat_81582() const

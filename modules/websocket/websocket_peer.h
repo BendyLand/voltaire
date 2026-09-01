@@ -31,33 +31,36 @@
 #pragma once
 
 #include "core/crypto/crypto.h"
+#include "core/io/ip_address.h"
 #include "core/io/packet_peer.h"
 
-class WebSocketPeer : public PacketPeer {
-	VLTRCLASS(WebSocketPeer, PacketPeer);
-
+class WebSocketPeer : public PacketPeer
+{
 public:
-	enum State {
+	enum State
+	{
 		STATE_CONNECTING,
 		STATE_OPEN,
 		STATE_CLOSING,
 		STATE_CLOSED
 	};
 
-	enum WriteMode {
+	enum WriteMode
+	{
 		WRITE_MODE_TEXT,
 		WRITE_MODE_BINARY,
 	};
 
-	enum {
+	enum
+	{
 		DEFAULT_BUFFER_SIZE = 65535,
 	};
 
 private:
-	virtual Error _send_bind(const PackedByteArray &p_data, WriteMode p_mode = WRITE_MODE_BINARY);
+	virtual Error _send_bind(const PackedByteArray& p_data, WriteMode p_mode = WRITE_MODE_BINARY);
 
 protected:
-	static WebSocketPeer *(*_create)(bool p_notify_postinitialize);
+	static WebSocketPeer* (*_create)(bool p_notify_postinitialize);
 
 	static void _bind_methods();
 
@@ -73,18 +76,20 @@ protected:
 	uint64_t heartbeat_interval_msec = 0;
 
 public:
-	static WebSocketPeer *create(bool p_notify_postinitialize = true) {
+	static WebSocketPeer* create(bool p_notify_postinitialize = true)
+	{
 		if (!_create) {
 			return nullptr;
 		}
 		return _create(p_notify_postinitialize);
 	}
 
-	virtual Error connect_to_url(const String &p_url, const Ref<TLSOptions> &p_options = Ref<TLSOptions>()) = 0;
-	virtual Error accept_stream(const Ref<StreamPeer> &p_stream) = 0;
+	virtual Error connect_to_url(
+		const String& p_url, const Ref<TLSOptions>& p_options = Ref<TLSOptions>()) = 0;
+	virtual Error accept_stream(const Ref<StreamPeer>& p_stream) = 0;
 
-	virtual Error send(const uint8_t *p_buffer, int p_buffer_size, WriteMode p_mode) = 0;
-	virtual void close(int p_code = 1000, const String &p_reason = "") = 0;
+	virtual Error send(const uint8_t* p_buffer, int p_buffer_size, WriteMode p_mode) = 0;
+	virtual void close(int p_code = 1000, const String& p_reason = "") = 0;
 
 	virtual IPAddress get_connected_host() const = 0;
 	virtual uint16_t get_connected_port() const = 0;
@@ -99,12 +104,12 @@ public:
 	virtual int get_close_code() const = 0;
 	virtual String get_close_reason() const = 0;
 
-	Error send_text(const String &p_text);
+	Error send_text(const String& p_text);
 
-	void set_supported_protocols(const Vector<String> &p_protocols);
+	void set_supported_protocols(const Vector<String>& p_protocols);
 	const Vector<String> get_supported_protocols() const;
 
-	void set_handshake_headers(const Vector<String> &p_headers);
+	void set_handshake_headers(const Vector<String>& p_headers);
 	const Vector<String> get_handshake_headers() const;
 
 	void set_outbound_buffer_size(int p_buffer_size);
@@ -123,5 +128,4 @@ public:
 	~WebSocketPeer();
 };
 
-VARIANT_ENUM_CAST(WebSocketPeer::WriteMode);
-VARIANT_ENUM_CAST(WebSocketPeer::State);
+

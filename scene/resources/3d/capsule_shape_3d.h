@@ -34,8 +34,8 @@
 
 class ArrayMesh;
 
-class CapsuleShape3D : public Shape3D {
-	VLTRCLASS(CapsuleShape3D, Shape3D);
+class CapsuleShape3D : public Shape3D
+{
 	float radius = 0.5;
 	float height = 2.0;
 
@@ -53,8 +53,10 @@ public:
 	real_t get_mid_height() const;
 
 	virtual Vector<Vector3> get_debug_mesh_lines() const override;
-	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color &p_modulate) const override;
+	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color& p_modulate) const override;
 	virtual real_t get_enclosing_radius() const override;
 
 	CapsuleShape3D();
 };
+
+

@@ -42,50 +42,53 @@ class HBoxContainer;
 class MenuButton;
 class PanelContainer;
 
-class EditorRunBar : public MarginContainer {
-	VLTRCLASS(EditorRunBar, MarginContainer);
+class EditorRunBar : public MarginContainer
+{
+	static EditorRunBar* singleton;
 
-	static EditorRunBar *singleton;
-
-	enum RunMode {
+	enum RunMode
+	{
 		STOPPED = 0,
 		RUN_MAIN,
 		RUN_CURRENT,
 		RUN_CUSTOM,
 	};
 
-	enum RunXRModeMenuItem {
+	enum RunXRModeMenuItem
+	{
 		INVALID = -1,
 		OFF = 0,
 		ON = 1,
 	};
 
-	PanelContainer *main_panel = nullptr;
-	HBoxContainer *main_hbox = nullptr;
-	HBoxContainer *outer_hbox = nullptr;
+	PanelContainer* main_panel = nullptr;
+	HBoxContainer* main_hbox = nullptr;
+	HBoxContainer* outer_hbox = nullptr;
 
-	Button *profiler_autostart_indicator = nullptr;
+	Button* profiler_autostart_indicator = nullptr;
 
-	PanelContainer *recovery_mode_panel = nullptr;
-	Button *recovery_mode_button = nullptr;
-	Button *recovery_mode_reload_button = nullptr;
-	AcceptDialog *recovery_mode_popup = nullptr;
+	PanelContainer* recovery_mode_panel = nullptr;
+	Button* recovery_mode_button = nullptr;
+	Button* recovery_mode_reload_button = nullptr;
+	AcceptDialog* recovery_mode_popup = nullptr;
 
-	Button *play_button = nullptr;
-	Button *pause_button = nullptr;
-	Button *stop_button = nullptr;
-	Button *play_scene_button = nullptr;
-	Button *play_custom_scene_button = nullptr;
+	Button* play_button = nullptr;
+	Button* pause_button = nullptr;
+	Button* stop_button = nullptr;
+	Button* play_scene_button = nullptr;
+	Button* play_custom_scene_button = nullptr;
 
 	EditorRun editor_run;
-	EditorRunNative *run_native = nullptr;
+	EditorRunNative* run_native = nullptr;
 
-	enum MovieMakerMenuItem {
+	enum MovieMakerMenuItem
+	{
 		MOVIE_MAKER_TOGGLE,
 		MOVIE_MAKER_OPEN_SETTINGS,
 	};
-	PanelContainer *write_movie_panel = nullptr;
-	MenuButton *write_movie_button = nullptr;
+
+	PanelContainer* write_movie_panel = nullptr;
+	MenuButton* write_movie_button = nullptr;
 	bool movie_maker_enabled = false;
 
 	RunMode current_mode = RunMode::STOPPED;
@@ -97,13 +100,15 @@ class EditorRunBar : public MarginContainer {
 
 	void _movie_maker_item_pressed(int p_id);
 	void _write_movie_toggled(bool p_enabled);
-	void _quick_run_selected(const String &p_file_path, int p_menu_item = RunXRModeMenuItem::INVALID);
+	void _quick_run_selected(
+		const String& p_file_path, int p_menu_item = RunXRModeMenuItem::INVALID);
 
 	void _play_current_pressed(int p_menu_item = RunXRModeMenuItem::INVALID);
 	void _play_custom_pressed(int p_menu_item = RunXRModeMenuItem::INVALID);
 
-	void _run_scene(const String &p_scene_path = "", const Vector<String> &p_run_args = Vector<String>());
-	void _run_native(const Ref<EditorExportPreset> &p_preset);
+	void _run_scene(
+		const String& p_scene_path = "", const Vector<String>& p_run_args = Vector<String>());
+	void _run_native(const Ref<EditorExportPreset>& p_preset);
 
 	void _profiler_autostart_indicator_pressed();
 
@@ -115,14 +120,17 @@ protected:
 	static void _bind_methods();
 
 public:
-	static EditorRunBar *get_singleton() { return singleton; }
+	static EditorRunBar* get_singleton() { return singleton; }
 
 	void recovery_mode_show_dialog();
 	void recovery_mode_reload_project();
 
-	void play_main_scene(bool p_from_native = false, const Vector<String> &p_play_args = Vector<String>());
-	void play_current_scene(bool p_reload = false, const Vector<String> &p_play_args = Vector<String>());
-	void play_custom_scene(const String &p_custom, const Vector<String> &p_play_args = Vector<String>());
+	void play_main_scene(
+		bool p_from_native = false, const Vector<String>& p_play_args = Vector<String>());
+	void play_current_scene(
+		bool p_reload = false, const Vector<String>& p_play_args = Vector<String>());
+	void play_custom_scene(
+		const String& p_custom, const Vector<String>& p_play_args = Vector<String>());
 
 	void stop_playing();
 	bool is_playing() const;
@@ -139,9 +147,11 @@ public:
 
 	void update_profiler_autostart_indicator();
 
-	Button *get_pause_button() { return pause_button; }
+	Button* get_pause_button() { return pause_button; }
 
-	HBoxContainer *get_buttons_container();
+	HBoxContainer* get_buttons_container();
 
 	EditorRunBar();
 };
+
+

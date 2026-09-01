@@ -34,20 +34,19 @@
 
 class ConnectionsDock;
 
-class SignalsDock : public EditorDock {
-	VLTRCLASS(SignalsDock, EditorDock);
+class SignalsDock : public EditorDock
+{
+	ConnectionsDock* connections = nullptr;
 
-	ConnectionsDock *connections = nullptr;
-
-	static inline SignalsDock *singleton = nullptr;
+	static inline SignalsDock* singleton = nullptr;
 
 public:
-	static SignalsDock *get_singleton() { return singleton; }
-
-	void set_object(Object *p_object);
+	static SignalsDock* get_singleton() { return singleton; }
 
 	void update_lists();
 
 	SignalsDock();
 	~SignalsDock();
 };
+
+

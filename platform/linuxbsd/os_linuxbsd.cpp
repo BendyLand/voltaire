@@ -28,15 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "os_linuxbsd.h"
-
 #include "core/io/certs_compressed.gen.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
-#include "core/profiling/profiling.h"
 #include "main/main.h"
+#include "os_linuxbsd.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server.h"
 
@@ -75,14 +73,13 @@
 #include "drivers/gles3/rasterizer_gles3.h"
 #endif
 
+#include <cstdio>
+#include <cstdlib>
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <unistd.h>
-
-#include <cstdio>
-#include <cstdlib>
 
 #if __has_include(<mntent.h>)
 #include <mntent.h>
@@ -100,8 +97,9 @@
 #endif
 #endif
 
-void OS_LinuxBSD::alert(const String &p_alert, const String &p_title) {
-	const char *message_programs[] = { "zenity", "kdialog", "Xdialog", "xmessage" };
+void OS_LinuxBSD::alert(const String& p_alert, const String& p_title)
+{
+	const char* message_programs[] = {"zenity", "kdialog", "Xdialog", "xmessage"};
 
 	String path = get_environment("PATH");
 	Vector<String> path_elems = path.split(":", false);
@@ -161,12 +159,14 @@ void OS_LinuxBSD::alert(const String &p_alert, const String &p_title) {
 
 	if (program.length()) {
 		execute(program, args);
-	} else {
-		print_line(p_alert);
+	}
+	else {
+		__print_line(p_alert);
 	}
 }
 
-void OS_LinuxBSD::initialize() {
+void OS_LinuxBSD::initialize()
+{
 	crash_handler.initialize();
 
 	OS_Unix::initialize_core();
@@ -174,7 +174,8 @@ void OS_LinuxBSD::initialize() {
 	system_dir_desktop_cache = get_system_dir(SYSTEM_DIR_DESKTOP);
 }
 
-void OS_LinuxBSD::initialize_joypads() {
+void OS_LinuxBSD::initialize_joypads()
+{
 #ifdef SDL_ENABLED
 	joypad_sdl = memnew(JoypadSDL());
 	if (joypad_sdl->initialize() != OK) {
@@ -185,11 +186,12 @@ void OS_LinuxBSD::initialize_joypads() {
 #endif
 }
 
-String OS_LinuxBSD::get_unique_id() const {
+String OS_LinuxBSD::get_unique_id() const
+{
 	static String machine_id;
 	if (machine_id.is_empty()) {
 #if defined(__FreeBSD__)
-		const int mib[2] = { CTL_KERN, KERN_HOSTUUID };
+		const int mib[2] = {CTL_KERN, KERN_HOSTUUID};
 		char buf[4096];
 		memset(buf, 0, sizeof(buf));
 		size_t len = sizeof(buf) - 1;
@@ -208,9 +210,10 @@ String OS_LinuxBSD::get_unique_id() const {
 	return machine_id;
 }
 
-String OS_LinuxBSD::get_processor_name() const {
+String OS_LinuxBSD::get_processor_name() const
+{
 #if defined(__FreeBSD__)
-	const int mib[2] = { CTL_HW, HW_MODEL };
+	const int mib[2] = {CTL_HW, HW_MODEL};
 	char buf[4096];
 	memset(buf, 0, sizeof(buf));
 	size_t len = sizeof(buf) - 1;
@@ -219,7 +222,9 @@ String OS_LinuxBSD::get_processor_name() const {
 	}
 #else
 	Ref<FileAccess> f = FileAccess::open("/proc/cpuinfo", FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(f.is_null(), "", String("Couldn't open `/proc/cpuinfo` to get the CPU model name. Returning an empty string."));
+	ERR_FAIL_COND_V_MSG(f.is_null(), "",
+		String(
+			"Couldn't open `/proc/cpuinfo` to get the CPU model name. Returning an empty string."));
 
 	while (!f->eof_reached()) {
 		const String line = f->get_line();
@@ -232,7 +237,8 @@ String OS_LinuxBSD::get_processor_name() const {
 	ERR_FAIL_V_MSG("", String("Couldn't get the CPU model. Returning an empty string."));
 }
 
-bool OS_LinuxBSD::is_sandboxed() const {
+bool OS_LinuxBSD::is_sandboxed() const
+{
 	// This function is derived from SDL:
 	// https://github.com/libsdl-org/SDL/blob/main/src/core/linux/SDL_sandbox.c#L28-L45
 
@@ -242,7 +248,8 @@ bool OS_LinuxBSD::is_sandboxed() const {
 
 	// For Snap, we check multiple variables because they might be set for
 	// unrelated reasons. This is the same thing WebKitGTK does.
-	if (has_environment("SNAP") && has_environment("SNAP_NAME") && has_environment("SNAP_REVISION")) {
+	if (has_environment("SNAP") && has_environment("SNAP_NAME") &&
+		has_environment("SNAP_REVISION")) {
 		return true;
 	}
 
@@ -253,7 +260,8 @@ bool OS_LinuxBSD::is_sandboxed() const {
 	return false;
 }
 
-void OS_LinuxBSD::finalize() {
+void OS_LinuxBSD::finalize()
+{
 	memdelete(main_loop);
 	main_loop = nullptr;
 
@@ -266,24 +274,20 @@ void OS_LinuxBSD::finalize() {
 #endif
 }
 
-MainLoop *OS_LinuxBSD::get_main_loop() const {
-	return main_loop;
-}
+MainLoop* OS_LinuxBSD::get_main_loop() const { return main_loop; }
 
-void OS_LinuxBSD::delete_main_loop() {
+void OS_LinuxBSD::delete_main_loop()
+{
 	memdelete(main_loop);
 	main_loop = nullptr;
 }
 
-void OS_LinuxBSD::set_main_loop(MainLoop *p_main_loop) {
-	main_loop = p_main_loop;
-}
+void OS_LinuxBSD::set_main_loop(MainLoop* p_main_loop) { main_loop = p_main_loop; }
 
-String OS_LinuxBSD::get_identifier() const {
-	return "linuxbsd";
-}
+String OS_LinuxBSD::get_identifier() const { return "linuxbsd"; }
 
-String OS_LinuxBSD::get_name() const {
+String OS_LinuxBSD::get_name() const
+{
 #ifdef __linux__
 	return "Linux";
 #elif defined(__FreeBSD__)
@@ -297,7 +301,8 @@ String OS_LinuxBSD::get_name() const {
 #endif
 }
 
-String OS_LinuxBSD::get_systemd_os_release_info_value(const String &key) const {
+String OS_LinuxBSD::get_systemd_os_release_info_value(const String& key) const
+{
 	Ref<FileAccess> f = FileAccess::open("/etc/os-release", FileAccess::READ);
 	if (f.is_valid()) {
 		while (!f->eof_reached()) {
@@ -312,8 +317,10 @@ String OS_LinuxBSD::get_systemd_os_release_info_value(const String &key) const {
 	return "";
 }
 
-String OS_LinuxBSD::get_distribution_name() const {
-	static String distribution_name = get_systemd_os_release_info_value("NAME"); // returns a value for systemd users, otherwise an empty string.
+String OS_LinuxBSD::get_distribution_name() const
+{
+	static String distribution_name = get_systemd_os_release_info_value(
+		"NAME"); // returns a value for systemd users, otherwise an empty string.
 	if (!distribution_name.is_empty()) {
 		return distribution_name;
 	}
@@ -323,8 +330,10 @@ String OS_LinuxBSD::get_distribution_name() const {
 	return distribution_name;
 }
 
-String OS_LinuxBSD::get_version() const {
-	static String release_version = get_systemd_os_release_info_value("VERSION"); // returns a value for systemd users, otherwise an empty string.
+String OS_LinuxBSD::get_version() const
+{
+	static String release_version = get_systemd_os_release_info_value(
+		"VERSION"); // returns a value for systemd users, otherwise an empty string.
 	if (!release_version.is_empty()) {
 		return release_version;
 	}
@@ -334,7 +343,8 @@ String OS_LinuxBSD::get_version() const {
 	return release_version;
 }
 
-Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const {
+Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const
+{
 	if (RenderingServer::get_singleton() == nullptr) {
 		return Vector<String>();
 	}
@@ -344,22 +354,27 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const {
 		return info;
 	}
 
-	const String rendering_device_name = RenderingServer::get_singleton()->get_video_adapter_name(); // e.g. `NVIDIA GeForce GTX 970`
-	const String rendering_device_vendor = RenderingServer::get_singleton()->get_video_adapter_vendor(); // e.g. `NVIDIA`
-	const String card_name = rendering_device_name.trim_prefix(rendering_device_vendor).strip_edges(); // -> `GeForce GTX 970`
+	const String rendering_device_name =
+		RenderingServer::get_singleton()->get_video_adapter_name(); // e.g. `NVIDIA GeForce GTX 970`
+	const String rendering_device_vendor =
+		RenderingServer::get_singleton()->get_video_adapter_vendor(); // e.g. `NVIDIA`
+	const String card_name = rendering_device_name.trim_prefix(rendering_device_vendor)
+								 .strip_edges(); // -> `GeForce GTX 970`
 
 	String vendor_device_id_mappings;
 	List<String> lspci_args;
 	lspci_args.push_back("-n");
-	Error err = const_cast<OS_LinuxBSD *>(this)->execute("lspci", lspci_args, &vendor_device_id_mappings);
+	Error err =
+		const_cast<OS_LinuxBSD*>(this)->execute("lspci", lspci_args, &vendor_device_id_mappings);
 	if (err != OK || vendor_device_id_mappings.is_empty()) {
 		return Vector<String>();
 	}
 
-	// Usually found under "VGA", but for example NVIDIA mobile/laptop adapters are often listed under "3D" and some AMD adapters are under "Display".
-	const String dc_vga = "0300"; // VGA compatible controller
+	// Usually found under "VGA", but for example NVIDIA mobile/laptop adapters are often listed
+	// under "3D" and some AMD adapters are under "Display".
+	const String dc_vga = "0300";	  // VGA compatible controller
 	const String dc_display = "0302"; // Display controller
-	const String dc_3d = "0380"; // 3D controller
+	const String dc_3d = "0380";	  // 3D controller
 
 	// splitting results by device class allows prioritizing, if multiple devices are found.
 	Vector<String> class_vga_device_candidates;
@@ -368,17 +383,19 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const {
 
 #ifdef MODULE_REGEX_ENABLED
 	RegEx regex_id_format = RegEx();
-	regex_id_format.compile("^[a-f0-9]{4}:[a-f0-9]{4}$"); // e.g. `10de:13c2`; IDs are always in hexadecimal
+	regex_id_format.compile(
+		"^[a-f0-9]{4}:[a-f0-9]{4}$"); // e.g. `10de:13c2`; IDs are always in hexadecimal
 #endif
 
-	Vector<String> value_lines = vendor_device_id_mappings.split("\n", false); // example: `02:00.0 0300: 10de:13c2 (rev a1)`
-	for (const String &line : value_lines) {
+	Vector<String> value_lines =
+		vendor_device_id_mappings.split("\n", false); // example: `02:00.0 0300: 10de:13c2 (rev a1)`
+	for (const String& line : value_lines) {
 		Vector<String> columns = line.split(" ", false);
 		if (columns.size() < 3) {
 			continue;
 		}
 		String device_class = columns[1].trim_suffix(":");
-		const String &vendor_device_id_mapping = columns[2];
+		const String& vendor_device_id_mapping = columns[2];
 
 #ifdef MODULE_REGEX_ENABLED
 		if (regex_id_format.search(vendor_device_id_mapping).is_null()) {
@@ -388,43 +405,52 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const {
 
 		if (device_class == dc_vga) {
 			class_vga_device_candidates.push_back(vendor_device_id_mapping);
-		} else if (device_class == dc_display) {
+		}
+		else if (device_class == dc_display) {
 			class_display_device_candidates.push_back(vendor_device_id_mapping);
-		} else if (device_class == dc_3d) {
+		}
+		else if (device_class == dc_3d) {
 			class_3d_device_candidates.push_back(vendor_device_id_mapping);
 		}
 	}
 
-	// Check results against currently used device (`card_name`), in case the user has multiple graphics cards.
+	// Check results against currently used device (`card_name`), in case the user has multiple
+	// graphics cards.
 	const String device_lit = "Device"; // line of interest
-	class_vga_device_candidates = OS_LinuxBSD::lspci_device_filter(class_vga_device_candidates, dc_vga, device_lit, card_name);
-	class_display_device_candidates = OS_LinuxBSD::lspci_device_filter(class_display_device_candidates, dc_display, device_lit, card_name);
-	class_3d_device_candidates = OS_LinuxBSD::lspci_device_filter(class_3d_device_candidates, dc_3d, device_lit, card_name);
+	class_vga_device_candidates = OS_LinuxBSD::lspci_device_filter(
+		class_vga_device_candidates, dc_vga, device_lit, card_name);
+	class_display_device_candidates = OS_LinuxBSD::lspci_device_filter(
+		class_display_device_candidates, dc_display, device_lit, card_name);
+	class_3d_device_candidates =
+		OS_LinuxBSD::lspci_device_filter(class_3d_device_candidates, dc_3d, device_lit, card_name);
 
-	// Get driver names and filter out invalid ones, because some adapters are dummys used only for passthrough.
-	// And they have no indicator besides certain driver names.
+	// Get driver names and filter out invalid ones, because some adapters are dummys used only for
+	// passthrough. And they have no indicator besides certain driver names.
 	const String kernel_lit = "Kernel driver in use"; // line of interest
 	const String dummys = "vfio"; // for e.g. pci passthrough dummy kernel driver `vfio-pci`
-	Vector<String> class_vga_device_drivers = OS_LinuxBSD::lspci_get_device_value(class_vga_device_candidates, kernel_lit, dummys);
-	Vector<String> class_display_device_drivers = OS_LinuxBSD::lspci_get_device_value(class_display_device_candidates, kernel_lit, dummys);
-	Vector<String> class_3d_device_drivers = OS_LinuxBSD::lspci_get_device_value(class_3d_device_candidates, kernel_lit, dummys);
+	Vector<String> class_vga_device_drivers =
+		OS_LinuxBSD::lspci_get_device_value(class_vga_device_candidates, kernel_lit, dummys);
+	Vector<String> class_display_device_drivers =
+		OS_LinuxBSD::lspci_get_device_value(class_display_device_candidates, kernel_lit, dummys);
+	Vector<String> class_3d_device_drivers =
+		OS_LinuxBSD::lspci_get_device_value(class_3d_device_candidates, kernel_lit, dummys);
 
 	String driver_name;
 	String driver_version;
 
 	// Use first valid value:
-	for (const String &driver : class_3d_device_drivers) {
+	for (const String& driver : class_3d_device_drivers) {
 		driver_name = driver;
 		break;
 	}
 	if (driver_name.is_empty()) {
-		for (const String &driver : class_display_device_drivers) {
+		for (const String& driver : class_display_device_drivers) {
 			driver_name = driver;
 			break;
 		}
 	}
 	if (driver_name.is_empty()) {
-		for (const String &driver : class_vga_device_drivers) {
+		for (const String& driver : class_vga_device_drivers) {
 			driver_name = driver;
 			break;
 		}
@@ -435,13 +461,14 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const {
 	String modinfo;
 	List<String> modinfo_args;
 	modinfo_args.push_back(driver_name);
-	err = const_cast<OS_LinuxBSD *>(this)->execute("modinfo", modinfo_args, &modinfo);
+	err = const_cast<OS_LinuxBSD*>(this)->execute("modinfo", modinfo_args, &modinfo);
 	if (err != OK || modinfo.is_empty()) {
-		info.push_back(""); // So that this method always either returns an empty array, or an array of length 2.
+		info.push_back(""); // So that this method always either returns an empty array, or an array
+							// of length 2.
 		return info;
 	}
 	Vector<String> lines = modinfo.split("\n", false);
-	for (const String &line : lines) {
+	for (const String& line : lines) {
 		Vector<String> columns = line.split(":", false, 1);
 		if (columns.size() < 2) {
 			continue;
@@ -457,25 +484,29 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const {
 	return info;
 }
 
-Vector<String> OS_LinuxBSD::lspci_device_filter(Vector<String> vendor_device_id_mapping, String class_suffix, String check_column, String whitelist) const {
+Vector<String> OS_LinuxBSD::lspci_device_filter(Vector<String> vendor_device_id_mapping,
+	String class_suffix, String check_column, String whitelist) const
+{
 	// NOTE: whitelist can be changed to `Vector<String>`, if the need arises.
 	const String sep = ":";
 	Vector<String> devices;
-	for (const String &mapping : vendor_device_id_mapping) {
+	for (const String& mapping : vendor_device_id_mapping) {
 		String device;
 		List<String> d_args;
 		d_args.push_back("-d");
 		d_args.push_back(mapping + sep + class_suffix);
 		d_args.push_back("-vmm");
-		Error err = const_cast<OS_LinuxBSD *>(this)->execute("lspci", d_args, &device); // e.g. `lspci -d 10de:13c2:0300 -vmm`
+		Error err = const_cast<OS_LinuxBSD*>(this)->execute(
+			"lspci", d_args, &device); // e.g. `lspci -d 10de:13c2:0300 -vmm`
 		if (err != OK) {
 			return Vector<String>();
-		} else if (device.is_empty()) {
+		}
+		else if (device.is_empty()) {
 			continue;
 		}
 
 		Vector<String> device_lines = device.split("\n", false);
-		for (const String &line : device_lines) {
+		for (const String& line : device_lines) {
 			Vector<String> columns = line.split(":", false, 1);
 			if (columns.size() < 2) {
 				continue;
@@ -496,24 +527,28 @@ Vector<String> OS_LinuxBSD::lspci_device_filter(Vector<String> vendor_device_id_
 	return devices;
 }
 
-Vector<String> OS_LinuxBSD::lspci_get_device_value(Vector<String> vendor_device_id_mapping, String check_column, String blacklist) const {
+Vector<String> OS_LinuxBSD::lspci_get_device_value(
+	Vector<String> vendor_device_id_mapping, String check_column, String blacklist) const
+{
 	// NOTE: blacklist can be changed to `Vector<String>`, if the need arises.
 	Vector<String> values;
-	for (const String &mapping : vendor_device_id_mapping) {
+	for (const String& mapping : vendor_device_id_mapping) {
 		String device;
 		List<String> d_args;
 		d_args.push_back("-d");
 		d_args.push_back(mapping);
 		d_args.push_back("-k");
-		Error err = const_cast<OS_LinuxBSD *>(this)->execute("lspci", d_args, &device); // e.g. `lspci -d 10de:13c2 -k`
+		Error err = const_cast<OS_LinuxBSD*>(this)->execute(
+			"lspci", d_args, &device); // e.g. `lspci -d 10de:13c2 -k`
 		if (err != OK) {
 			return Vector<String>();
-		} else if (device.is_empty()) {
+		}
+		else if (device.is_empty()) {
 			continue;
 		}
 
 		Vector<String> device_lines = device.split("\n", false);
-		for (const String &line : device_lines) {
+		for (const String& line : device_lines) {
 			Vector<String> columns = line.split(":", false, 1);
 			if (columns.size() < 2) {
 				continue;
@@ -535,7 +570,8 @@ Vector<String> OS_LinuxBSD::lspci_get_device_value(Vector<String> vendor_device_
 	return values;
 }
 
-Error OS_LinuxBSD::shell_open(const String &p_uri) {
+Error OS_LinuxBSD::shell_open(const String& p_uri)
+{
 	List<String> args;
 	args.push_back(p_uri);
 
@@ -573,7 +609,8 @@ Error OS_LinuxBSD::shell_open(const String &p_uri) {
 	return FAILED;
 }
 
-bool OS_LinuxBSD::_check_internal_feature_support(const String &p_feature) {
+bool OS_LinuxBSD::_check_internal_feature_support(const String& p_feature)
+{
 #ifdef FONTCONFIG_ENABLED
 	if (p_feature == "system_fonts") {
 		return font_config_initialized;
@@ -599,7 +636,8 @@ bool OS_LinuxBSD::_check_internal_feature_support(const String &p_feature) {
 	return false;
 }
 
-uint64_t OS_LinuxBSD::get_embedded_pck_offset() const {
+uint64_t OS_LinuxBSD::get_embedded_pck_offset() const
+{
 	Ref<FileAccess> f = FileAccess::open(get_executable_path(), FileAccess::READ);
 	if (f.is_null()) {
 		return 0;
@@ -624,7 +662,8 @@ uint64_t OS_LinuxBSD::get_embedded_pck_offset() const {
 		f->seek(0x20);
 		section_table_pos = f->get_32();
 		f->seek(0x30);
-	} else { // 64
+	}
+	else { // 64
 		section_header_size = 64;
 		f->seek(0x28);
 		section_table_pos = f->get_64();
@@ -634,7 +673,7 @@ uint64_t OS_LinuxBSD::get_embedded_pck_offset() const {
 	int string_section_idx = f->get_16();
 
 	// Load the strings table.
-	uint8_t *strings;
+	uint8_t* strings;
 	{
 		// Jump to the strings section header.
 		f->seek(section_table_pos + string_section_idx * section_header_size);
@@ -646,7 +685,8 @@ uint64_t OS_LinuxBSD::get_embedded_pck_offset() const {
 			f->seek(f->get_position() + 0x10);
 			string_data_pos = f->get_32();
 			string_data_size = f->get_32();
-		} else { // 64
+		}
+		else { // 64
 			f->seek(f->get_position() + 0x18);
 			string_data_pos = f->get_64();
 			string_data_size = f->get_64();
@@ -654,7 +694,7 @@ uint64_t OS_LinuxBSD::get_embedded_pck_offset() const {
 
 		// Read strings data.
 		f->seek(string_data_pos);
-		strings = (uint8_t *)memalloc(string_data_size);
+		strings = (uint8_t*)memalloc(string_data_size);
 		if (!strings) {
 			return 0;
 		}
@@ -668,11 +708,12 @@ uint64_t OS_LinuxBSD::get_embedded_pck_offset() const {
 		f->seek(section_header_pos);
 
 		uint32_t name_offset = f->get_32();
-		if (strcmp((char *)strings + name_offset, "pck") == 0) {
+		if (strcmp((char*)strings + name_offset, "pck") == 0) {
 			if (bits == 32) {
 				f->seek(section_header_pos + 0x10);
 				off = f->get_32();
-			} else { // 64
+			}
+			else { // 64
 				f->seek(section_header_pos + 0x18);
 				off = f->get_64();
 			}
@@ -684,27 +725,31 @@ uint64_t OS_LinuxBSD::get_embedded_pck_offset() const {
 	return off;
 }
 
-Vector<String> OS_LinuxBSD::get_system_fonts() const {
+Vector<String> OS_LinuxBSD::get_system_fonts() const
+{
 #ifdef FONTCONFIG_ENABLED
 	if (!font_config_initialized) {
-		ERR_FAIL_V_MSG(Vector<String>(), "Unable to load fontconfig, system font support is disabled.");
+		ERR_FAIL_V_MSG(
+			Vector<String>(), "Unable to load fontconfig, system font support is disabled.");
 	}
 
 	HashSet<String> font_names;
 	Vector<String> ret;
-	static const char *allowed_formats[] = { "TrueType", "CFF" };
-	for (size_t i = 0; i < sizeof(allowed_formats) / sizeof(const char *); i++) {
-		FcPattern *pattern = FcPatternCreate();
+	static const char* allowed_formats[] = {"TrueType", "CFF"};
+	for (size_t i = 0; i < sizeof(allowed_formats) / sizeof(const char*); i++) {
+		FcPattern* pattern = FcPatternCreate();
 		ERR_CONTINUE(!pattern);
 
 		FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
-		FcPatternAddString(pattern, FC_FONTFORMAT, reinterpret_cast<const FcChar8 *>(allowed_formats[i]));
+		FcPatternAddString(
+			pattern, FC_FONTFORMAT, reinterpret_cast<const FcChar8*>(allowed_formats[i]));
 
-		FcFontSet *font_set = FcFontList(config, pattern, object_set);
+		FcFontSet* font_set = FcFontList(config, pattern, object_set);
 		if (font_set) {
 			for (int j = 0; j < font_set->nfont; j++) {
-				char *family_name = nullptr;
-				if (FcPatternGetString(font_set->fonts[j], FC_FAMILY, 0, reinterpret_cast<FcChar8 **>(&family_name)) == FcResultMatch) {
+				char* family_name = nullptr;
+				if (FcPatternGetString(font_set->fonts[j], FC_FAMILY, 0,
+						reinterpret_cast<FcChar8**>(&family_name)) == FcResultMatch) {
 					if (family_name) {
 						font_names.insert(String::utf8(family_name));
 					}
@@ -715,103 +760,132 @@ Vector<String> OS_LinuxBSD::get_system_fonts() const {
 		FcPatternDestroy(pattern);
 	}
 
-	for (const String &E : font_names) {
+	for (const String& E : font_names) {
 		ret.push_back(E);
 	}
 	return ret;
 #else
-	ERR_FAIL_V_MSG(Vector<String>(), "Godot was compiled without fontconfig, system font support is disabled.");
+	ERR_FAIL_V_MSG(Vector<String>(),
+		"Godot was compiled without fontconfig, system font support is disabled.");
 #endif
 }
 
 #ifdef FONTCONFIG_ENABLED
-int OS_LinuxBSD::_weight_to_fc(int p_weight) const {
+int OS_LinuxBSD::_weight_to_fc(int p_weight) const
+{
 	if (p_weight < 150) {
 		return FC_WEIGHT_THIN;
-	} else if (p_weight < 250) {
+	}
+	else if (p_weight < 250) {
 		return FC_WEIGHT_EXTRALIGHT;
-	} else if (p_weight < 325) {
+	}
+	else if (p_weight < 325) {
 		return FC_WEIGHT_LIGHT;
-	} else if (p_weight < 375) {
+	}
+	else if (p_weight < 375) {
 		return FC_WEIGHT_DEMILIGHT;
-	} else if (p_weight < 390) {
+	}
+	else if (p_weight < 390) {
 		return FC_WEIGHT_BOOK;
-	} else if (p_weight < 450) {
+	}
+	else if (p_weight < 450) {
 		return FC_WEIGHT_REGULAR;
-	} else if (p_weight < 550) {
+	}
+	else if (p_weight < 550) {
 		return FC_WEIGHT_MEDIUM;
-	} else if (p_weight < 650) {
+	}
+	else if (p_weight < 650) {
 		return FC_WEIGHT_DEMIBOLD;
-	} else if (p_weight < 750) {
+	}
+	else if (p_weight < 750) {
 		return FC_WEIGHT_BOLD;
-	} else if (p_weight < 850) {
+	}
+	else if (p_weight < 850) {
 		return FC_WEIGHT_EXTRABOLD;
-	} else if (p_weight < 925) {
+	}
+	else if (p_weight < 925) {
 		return FC_WEIGHT_BLACK;
-	} else {
+	}
+	else {
 		return FC_WEIGHT_EXTRABLACK;
 	}
 }
 
-int OS_LinuxBSD::_stretch_to_fc(int p_stretch) const {
+int OS_LinuxBSD::_stretch_to_fc(int p_stretch) const
+{
 	if (p_stretch < 56) {
 		return FC_WIDTH_ULTRACONDENSED;
-	} else if (p_stretch < 69) {
+	}
+	else if (p_stretch < 69) {
 		return FC_WIDTH_EXTRACONDENSED;
-	} else if (p_stretch < 81) {
+	}
+	else if (p_stretch < 81) {
 		return FC_WIDTH_CONDENSED;
-	} else if (p_stretch < 93) {
+	}
+	else if (p_stretch < 93) {
 		return FC_WIDTH_SEMICONDENSED;
-	} else if (p_stretch < 106) {
+	}
+	else if (p_stretch < 106) {
 		return FC_WIDTH_NORMAL;
-	} else if (p_stretch < 137) {
+	}
+	else if (p_stretch < 137) {
 		return FC_WIDTH_SEMIEXPANDED;
-	} else if (p_stretch < 144) {
+	}
+	else if (p_stretch < 144) {
 		return FC_WIDTH_EXPANDED;
-	} else if (p_stretch < 162) {
+	}
+	else if (p_stretch < 162) {
 		return FC_WIDTH_EXTRAEXPANDED;
-	} else {
+	}
+	else {
 		return FC_WIDTH_ULTRAEXPANDED;
 	}
 }
 #endif // FONTCONFIG_ENABLED
 
-Vector<String> OS_LinuxBSD::get_system_font_path_for_text(const String &p_font_name, const String &p_text, const String &p_locale, const String &p_script, int p_weight, int p_stretch, bool p_italic) const {
+Vector<String> OS_LinuxBSD::get_system_font_path_for_text(const String& p_font_name,
+	const String& p_text, const String& p_locale, const String& p_script, int p_weight,
+	int p_stretch, bool p_italic) const
+{
 #ifdef FONTCONFIG_ENABLED
 	if (!font_config_initialized) {
-		ERR_FAIL_V_MSG(Vector<String>(), "Unable to load fontconfig, system font support is disabled.");
+		ERR_FAIL_V_MSG(
+			Vector<String>(), "Unable to load fontconfig, system font support is disabled.");
 	}
 
 	Vector<String> ret;
-	static const char *allowed_formats[] = { "TrueType", "CFF" };
+	static const char* allowed_formats[] = {"TrueType", "CFF"};
 	for (size_t i = 0; i < std_size(allowed_formats); i++) {
-		FcPattern *pattern = FcPatternCreate();
+		FcPattern* pattern = FcPatternCreate();
 		if (pattern) {
 			FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
-			FcPatternAddString(pattern, FC_FONTFORMAT, reinterpret_cast<const FcChar8 *>(allowed_formats[i]));
-			FcPatternAddString(pattern, FC_FAMILY, reinterpret_cast<const FcChar8 *>(p_font_name.utf8().get_data()));
+			FcPatternAddString(
+				pattern, FC_FONTFORMAT, reinterpret_cast<const FcChar8*>(allowed_formats[i]));
+			FcPatternAddString(pattern, FC_FAMILY,
+				reinterpret_cast<const FcChar8*>(p_font_name.utf8().get_data()));
 			FcPatternAddInteger(pattern, FC_WEIGHT, _weight_to_fc(p_weight));
 			FcPatternAddInteger(pattern, FC_WIDTH, _stretch_to_fc(p_stretch));
 			FcPatternAddInteger(pattern, FC_SLANT, p_italic ? FC_SLANT_ITALIC : FC_SLANT_ROMAN);
 
-			FcCharSet *char_set = FcCharSetCreate();
+			FcCharSet* char_set = FcCharSetCreate();
 			for (int j = 0; j < p_text.size(); j++) {
 				FcCharSetAddChar(char_set, p_text[j]);
 			}
 			FcPatternAddCharSet(pattern, FC_CHARSET, char_set);
 
-			FcLangSet *lang_set = FcLangSetCreate();
-			FcLangSetAdd(lang_set, reinterpret_cast<const FcChar8 *>(p_locale.utf8().get_data()));
+			FcLangSet* lang_set = FcLangSetCreate();
+			FcLangSetAdd(lang_set, reinterpret_cast<const FcChar8*>(p_locale.utf8().get_data()));
 			FcPatternAddLangSet(pattern, FC_LANG, lang_set);
 
 			FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
 			FcDefaultSubstitute(pattern);
 
 			FcResult result;
-			FcPattern *match = FcFontMatch(nullptr, pattern, &result);
+			FcPattern* match = FcFontMatch(nullptr, pattern, &result);
 			if (match) {
-				char *file_name = nullptr;
-				if (FcPatternGetString(match, FC_FILE, 0, reinterpret_cast<FcChar8 **>(&file_name)) == FcResultMatch) {
+				char* file_name = nullptr;
+				if (FcPatternGetString(match, FC_FILE, 0,
+						reinterpret_cast<FcChar8**>(&file_name)) == FcResultMatch) {
 					if (file_name) {
 						ret.push_back(String::utf8(file_name));
 					}
@@ -826,25 +900,33 @@ Vector<String> OS_LinuxBSD::get_system_font_path_for_text(const String &p_font_n
 
 	return ret;
 #else
-	ERR_FAIL_V_MSG(Vector<String>(), "Godot was compiled without fontconfig, system font support is disabled.");
+	ERR_FAIL_V_MSG(Vector<String>(),
+		"Godot was compiled without fontconfig, system font support is disabled.");
 #endif
 }
 
-String OS_LinuxBSD::get_system_font_path(const String &p_font_name, int p_weight, int p_stretch, bool p_italic) const {
+String OS_LinuxBSD::get_system_font_path(
+	const String& p_font_name, int p_weight, int p_stretch, bool p_italic) const
+{
 #ifdef FONTCONFIG_ENABLED
 	if (!font_config_initialized) {
 		ERR_FAIL_V_MSG(String(), "Unable to load fontconfig, system font support is disabled.");
 	}
 
-	static const char *allowed_formats[] = { "TrueType", "CFF" };
-	for (size_t i = 0; i < sizeof(allowed_formats) / sizeof(const char *); i++) {
-		FcPattern *pattern = FcPatternCreate();
+	static const char* allowed_formats[] = {"TrueType", "CFF"};
+	for (size_t i = 0; i < sizeof(allowed_formats) / sizeof(const char*); i++) {
+		FcPattern* pattern = FcPatternCreate();
 		if (pattern) {
-			bool allow_substitutes = (p_font_name.to_lower() == "sans-serif") || (p_font_name.to_lower() == "serif") || (p_font_name.to_lower() == "monospace") || (p_font_name.to_lower() == "cursive") || (p_font_name.to_lower() == "fantasy");
+			bool allow_substitutes =
+				(p_font_name.to_lower() == "sans-serif") || (p_font_name.to_lower() == "serif") ||
+				(p_font_name.to_lower() == "monospace") || (p_font_name.to_lower() == "cursive") ||
+				(p_font_name.to_lower() == "fantasy");
 
 			FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
-			FcPatternAddString(pattern, FC_FONTFORMAT, reinterpret_cast<const FcChar8 *>(allowed_formats[i]));
-			FcPatternAddString(pattern, FC_FAMILY, reinterpret_cast<const FcChar8 *>(p_font_name.utf8().get_data()));
+			FcPatternAddString(
+				pattern, FC_FONTFORMAT, reinterpret_cast<const FcChar8*>(allowed_formats[i]));
+			FcPatternAddString(pattern, FC_FAMILY,
+				reinterpret_cast<const FcChar8*>(p_font_name.utf8().get_data()));
 			FcPatternAddInteger(pattern, FC_WEIGHT, _weight_to_fc(p_weight));
 			FcPatternAddInteger(pattern, FC_WIDTH, _stretch_to_fc(p_stretch));
 			FcPatternAddInteger(pattern, FC_SLANT, p_italic ? FC_SLANT_ITALIC : FC_SLANT_ROMAN);
@@ -853,20 +935,23 @@ String OS_LinuxBSD::get_system_font_path(const String &p_font_name, int p_weight
 			FcDefaultSubstitute(pattern);
 
 			FcResult result;
-			FcPattern *match = FcFontMatch(nullptr, pattern, &result);
+			FcPattern* match = FcFontMatch(nullptr, pattern, &result);
 			if (match) {
 				if (!allow_substitutes) {
-					char *family_name = nullptr;
-					if (FcPatternGetString(match, FC_FAMILY, 0, reinterpret_cast<FcChar8 **>(&family_name)) == FcResultMatch) {
-						if (family_name && String::utf8(family_name).to_lower() != p_font_name.to_lower()) {
+					char* family_name = nullptr;
+					if (FcPatternGetString(match, FC_FAMILY, 0,
+							reinterpret_cast<FcChar8**>(&family_name)) == FcResultMatch) {
+						if (family_name &&
+							String::utf8(family_name).to_lower() != p_font_name.to_lower()) {
 							FcPatternDestroy(match);
 							FcPatternDestroy(pattern);
 							continue;
 						}
 					}
 				}
-				char *file_name = nullptr;
-				if (FcPatternGetString(match, FC_FILE, 0, reinterpret_cast<FcChar8 **>(&file_name)) == FcResultMatch) {
+				char* file_name = nullptr;
+				if (FcPatternGetString(match, FC_FILE, 0,
+						reinterpret_cast<FcChar8**>(&file_name)) == FcResultMatch) {
 					if (file_name) {
 						String ret = String::utf8(file_name);
 						FcPatternDestroy(match);
@@ -882,56 +967,78 @@ String OS_LinuxBSD::get_system_font_path(const String &p_font_name, int p_weight
 
 	return String();
 #else
-	ERR_FAIL_V_MSG(String(), "Godot was compiled without fontconfig, system font support is disabled.");
+	ERR_FAIL_V_MSG(
+		String(), "Godot was compiled without fontconfig, system font support is disabled.");
 #endif
 }
 
-String OS_LinuxBSD::get_config_path() const {
+String OS_LinuxBSD::get_config_path() const
+{
 	if (has_environment("XDG_CONFIG_HOME")) {
 		if (get_environment("XDG_CONFIG_HOME").is_absolute_path()) {
 			return get_environment("XDG_CONFIG_HOME");
-		} else {
-			WARN_PRINT_ONCE("`XDG_CONFIG_HOME` is a relative path. Ignoring its value and falling back to `$HOME/.config` or `.` per the XDG Base Directory specification.");
+		}
+		else {
+			WARN_PRINT_ONCE(
+				"`XDG_CONFIG_HOME` is a relative path. Ignoring its value and falling back to "
+				"`$HOME/.config` or `.` per the XDG Base Directory specification.");
 			return has_environment("HOME") ? get_environment("HOME").path_join(".config") : ".";
 		}
-	} else if (has_environment("HOME")) {
+	}
+	else if (has_environment("HOME")) {
 		return get_environment("HOME").path_join(".config");
-	} else {
+	}
+	else {
 		return ".";
 	}
 }
 
-String OS_LinuxBSD::get_data_path() const {
+String OS_LinuxBSD::get_data_path() const
+{
 	if (has_environment("XDG_DATA_HOME")) {
 		if (get_environment("XDG_DATA_HOME").is_absolute_path()) {
 			return get_environment("XDG_DATA_HOME");
-		} else {
-			WARN_PRINT_ONCE("`XDG_DATA_HOME` is a relative path. Ignoring its value and falling back to `$HOME/.local/share` or `get_config_path()` per the XDG Base Directory specification.");
-			return has_environment("HOME") ? get_environment("HOME").path_join(".local/share") : get_config_path();
 		}
-	} else if (has_environment("HOME")) {
+		else {
+			WARN_PRINT_ONCE("`XDG_DATA_HOME` is a relative path. Ignoring its value and falling "
+							"back to `$HOME/.local/share` or `get_config_path()` per the XDG Base "
+							"Directory specification.");
+			return has_environment("HOME") ? get_environment("HOME").path_join(".local/share")
+										   : get_config_path();
+		}
+	}
+	else if (has_environment("HOME")) {
 		return get_environment("HOME").path_join(".local/share");
-	} else {
+	}
+	else {
 		return get_config_path();
 	}
 }
 
-String OS_LinuxBSD::get_cache_path() const {
+String OS_LinuxBSD::get_cache_path() const
+{
 	if (has_environment("XDG_CACHE_HOME")) {
 		if (get_environment("XDG_CACHE_HOME").is_absolute_path()) {
 			return get_environment("XDG_CACHE_HOME");
-		} else {
-			WARN_PRINT_ONCE("`XDG_CACHE_HOME` is a relative path. Ignoring its value and falling back to `$HOME/.cache` or `get_config_path()` per the XDG Base Directory specification.");
-			return has_environment("HOME") ? get_environment("HOME").path_join(".cache") : get_config_path();
 		}
-	} else if (has_environment("HOME")) {
+		else {
+			WARN_PRINT_ONCE(
+				"`XDG_CACHE_HOME` is a relative path. Ignoring its value and falling back to "
+				"`$HOME/.cache` or `get_config_path()` per the XDG Base Directory specification.");
+			return has_environment("HOME") ? get_environment("HOME").path_join(".cache")
+										   : get_config_path();
+		}
+	}
+	else if (has_environment("HOME")) {
 		return get_environment("HOME").path_join(".cache");
-	} else {
+	}
+	else {
 		return get_config_path();
 	}
 }
 
-String OS_LinuxBSD::get_system_dir(SystemDir p_dir, bool p_shared_storage) const {
+String OS_LinuxBSD::get_system_dir(SystemDir p_dir, bool p_shared_storage) const
+{
 	if (p_dir == SYSTEM_DIR_DESKTOP && !system_dir_desktop_cache.is_empty()) {
 		return system_dir_desktop_cache;
 	}
@@ -939,80 +1046,48 @@ String OS_LinuxBSD::get_system_dir(SystemDir p_dir, bool p_shared_storage) const
 	String xdgparam;
 
 	switch (p_dir) {
-		case SYSTEM_DIR_DESKTOP: {
-			xdgparam = "DESKTOP";
-		} break;
-		case SYSTEM_DIR_DCIM: {
-			xdgparam = "PICTURES";
-		} break;
-		case SYSTEM_DIR_DOCUMENTS: {
-			xdgparam = "DOCUMENTS";
-		} break;
-		case SYSTEM_DIR_DOWNLOADS: {
-			xdgparam = "DOWNLOAD";
-		} break;
-		case SYSTEM_DIR_MOVIES: {
-			xdgparam = "VIDEOS";
-		} break;
-		case SYSTEM_DIR_MUSIC: {
-			xdgparam = "MUSIC";
-		} break;
-		case SYSTEM_DIR_PICTURES: {
-			xdgparam = "PICTURES";
-		} break;
-		case SYSTEM_DIR_RINGTONES: {
-			xdgparam = "MUSIC";
-		} break;
+	case SYSTEM_DIR_DESKTOP: {
+		xdgparam = "DESKTOP";
+	} break;
+	case SYSTEM_DIR_DCIM: {
+		xdgparam = "PICTURES";
+	} break;
+	case SYSTEM_DIR_DOCUMENTS: {
+		xdgparam = "DOCUMENTS";
+	} break;
+	case SYSTEM_DIR_DOWNLOADS: {
+		xdgparam = "DOWNLOAD";
+	} break;
+	case SYSTEM_DIR_MOVIES: {
+		xdgparam = "VIDEOS";
+	} break;
+	case SYSTEM_DIR_MUSIC: {
+		xdgparam = "MUSIC";
+	} break;
+	case SYSTEM_DIR_PICTURES: {
+		xdgparam = "PICTURES";
+	} break;
+	case SYSTEM_DIR_RINGTONES: {
+		xdgparam = "MUSIC";
+	} break;
 	}
 
 	String pipe;
 	List<String> arg;
 	arg.push_back(xdgparam);
-	Error err = const_cast<OS_LinuxBSD *>(this)->execute("xdg-user-dir", arg, &pipe);
+	Error err = const_cast<OS_LinuxBSD*>(this)->execute("xdg-user-dir", arg, &pipe);
 	if (err != OK) {
 		return ".";
 	}
 	return pipe.strip_edges();
 }
 
-void OS_LinuxBSD::run() {
-	if (!main_loop) {
-		return;
-	}
+void OS_LinuxBSD::disable_crash_handler() { crash_handler.disable(); }
 
-	main_loop->initialize();
+bool OS_LinuxBSD::is_disable_crash_handler() const { return crash_handler.is_disabled(); }
 
-	//uint64_t last_ticks=get_ticks_usec();
-
-	//int frames=0;
-	//uint64_t frame=0;
-
-	while (true) {
-		GodotProfileFrameMark;
-		GodotProfileZone("OS_LinuxBSD::run");
-		DisplayServer::get_singleton()->process_events(); // get rid of pending events
-#ifdef SDL_ENABLED
-		if (joypad_sdl) {
-			joypad_sdl->process_events();
-		}
-#endif
-		if (Main::iteration()) {
-			break;
-		}
-	}
-
-	main_loop->finalize();
-}
-
-void OS_LinuxBSD::disable_crash_handler() {
-	crash_handler.disable();
-}
-
-bool OS_LinuxBSD::is_disable_crash_handler() const {
-	return crash_handler.is_disabled();
-}
-
-static String get_mountpoint(const String &p_path) {
+static String get_mountpoint(const String& p_path)
+{
 	struct stat s;
 	if (stat(p_path.utf8().get_data(), &s)) {
 		return "";
@@ -1020,7 +1095,7 @@ static String get_mountpoint(const String &p_path) {
 
 #if __has_include(<mntent.h>)
 	dev_t dev = s.st_dev;
-	FILE *fd = setmntent("/proc/mounts", "r");
+	FILE* fd = setmntent("/proc/mounts", "r");
 	if (!fd) {
 		return "";
 	}
@@ -1040,7 +1115,8 @@ static String get_mountpoint(const String &p_path) {
 	return "";
 }
 
-Error OS_LinuxBSD::move_to_trash(const String &p_path) {
+Error OS_LinuxBSD::move_to_trash(const String& p_path)
+{
 	// We try multiple methods, until we find one that works.
 	// So we only return on success until we exhausted possibilities.
 
@@ -1049,9 +1125,10 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 	List<String> args;
 	args.push_back(path);
 
-	args.push_front("trash"); // The command is `gio trash <file_name>` so we add it before the path.
+	args.push_front(
+		"trash"); // The command is `gio trash <file_name>` so we add it before the path.
 	Error result = execute("gio", args, nullptr, &err_code); // For GNOME based machines.
-	if (result == OK && err_code == 0) { // Success.
+	if (result == OK && err_code == 0) {					 // Success.
 		return OK;
 	}
 
@@ -1070,7 +1147,8 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 		return OK;
 	}
 
-	// If the commands `kioclient5`, `gio` or `gvfs-trash` don't work on the system we do it manually.
+	// If the commands `kioclient5`, `gio` or `gvfs-trash` don't work on the system we do it
+	// manually.
 	String trash_path = "";
 	String mnt = get_mountpoint(path);
 
@@ -1085,7 +1163,7 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 
 	// Otherwise, if ${XDG_DATA_HOME} is defined, use "${XDG_DATA_HOME}/Trash" as the trash can.
 	if (trash_path.is_empty()) {
-		char *dhome = getenv("XDG_DATA_HOME");
+		char* dhome = getenv("XDG_DATA_HOME");
 		if (dhome) {
 			trash_path = String::utf8(dhome) + "/Trash";
 		}
@@ -1093,14 +1171,15 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 
 	// Otherwise, if ${HOME} is defined, use "${HOME}/.local/share/Trash" as the trash can.
 	if (trash_path.is_empty()) {
-		char *home = getenv("HOME");
+		char* home = getenv("HOME");
 		if (home) {
 			trash_path = String::utf8(home) + "/.local/share/Trash";
 		}
 	}
 
 	// Issue an error if none of the previous locations is appropriate for the trash can.
-	ERR_FAIL_COND_V_MSG(trash_path.is_empty(), FAILED, "Could not determine the trash can location");
+	ERR_FAIL_COND_V_MSG(
+		trash_path.is_empty(), FAILED, "Could not determine the trash can location");
 
 	// Create needed directories for decided trash can location.
 	{
@@ -1108,16 +1187,19 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 		Error err = dir_access->make_dir_recursive(trash_path);
 
 		// Issue an error if trash can is not created properly.
-		ERR_FAIL_COND_V_MSG(err != OK, err, "Could not create the trash path \"" + trash_path + "\"");
+		ERR_FAIL_COND_V_MSG(
+			err != OK, err, "Could not create the trash path \"" + trash_path + "\"");
 		err = dir_access->make_dir_recursive(trash_path + "/files");
-		ERR_FAIL_COND_V_MSG(err != OK, err, "Could not create the trash path \"" + trash_path + "/files\"");
+		ERR_FAIL_COND_V_MSG(
+			err != OK, err, "Could not create the trash path \"" + trash_path + "/files\"");
 		err = dir_access->make_dir_recursive(trash_path + "/info");
-		ERR_FAIL_COND_V_MSG(err != OK, err, "Could not create the trash path \"" + trash_path + "/info\"");
+		ERR_FAIL_COND_V_MSG(
+			err != OK, err, "Could not create the trash path \"" + trash_path + "/info\"");
 	}
 
-	// The trash can is successfully created, now we check that we don't exceed our file name length limit.
-	// If the file name is too long trim it so we can add the identifying number and ".trashinfo".
-	// Assumes that the file name length limit is 255 characters.
+	// The trash can is successfully created, now we check that we don't exceed our file name length
+	// limit. If the file name is too long trim it so we can add the identifying number and
+	// ".trashinfo". Assumes that the file name length limit is 255 characters.
 	String file_name = path.get_file();
 	if (file_name.length() > 240) {
 		file_name = file_name.substr(0, file_name.length() - 15);
@@ -1135,7 +1217,8 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 
 		// Added a limit to check for identically named files already on the trash can
 		// if there are too many it could make the editor unresponsive.
-		ERR_FAIL_COND_V_MSG(id_number > 99, FAILED, "Too many identically named resources already in the trash can.");
+		ERR_FAIL_COND_V_MSG(id_number > 99, FAILED,
+			"Too many identically named resources already in the trash can.");
 		fn = file_name + "." + itos(id_number);
 		dest_path = trash_path + "/files/" + fn;
 	}
@@ -1145,21 +1228,27 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 
 	// Generates the .trashinfo file
 	OS::DateTime dt = OS::get_singleton()->get_datetime(false);
-	String timestamp = vformat("%04d-%02d-%02dT%02d:%02d:", dt.year, (int)dt.month, dt.day, dt.hour, dt.minute);
+	String timestamp =
+		vformat("%04d-%02d-%02dT%02d:%02d:", dt.year, (int)dt.month, dt.day, dt.hour, dt.minute);
 	timestamp = vformat("%s%02d", timestamp, dt.second); // vformat only supports up to 6 arguments.
-	String trash_info = "[Trash Info]\nPath=" + path.uri_encode() + "\nDeletionDate=" + timestamp + "\n";
+	String trash_info =
+		"[Trash Info]\nPath=" + path.uri_encode() + "\nDeletionDate=" + timestamp + "\n";
 	{
 		Error err;
 		{
-			Ref<FileAccess> file = FileAccess::open(trash_path + "/info/" + file_name + ".trashinfo", FileAccess::WRITE, &err);
-			ERR_FAIL_COND_V_MSG(err != OK, err, "Can't create trashinfo file: \"" + trash_path + "/info/" + file_name + ".trashinfo\"");
+			Ref<FileAccess> file = FileAccess::open(
+				trash_path + "/info/" + file_name + ".trashinfo", FileAccess::WRITE, &err);
+			ERR_FAIL_COND_V_MSG(err != OK, err,
+				"Can't create trashinfo file: \"" + trash_path + "/info/" + file_name +
+					".trashinfo\"");
 			file->store_string(trash_info);
 		}
 
 		// Rename our resource before moving it to the trash can.
 		Ref<DirAccess> dir_access = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 		err = dir_access->rename(path, renamed_path);
-		ERR_FAIL_COND_V_MSG(err != OK, err, "Can't rename file \"" + path + "\" to \"" + renamed_path + "\"");
+		ERR_FAIL_COND_V_MSG(
+			err != OK, err, "Can't rename file \"" + path + "\" to \"" + renamed_path + "\"");
 	}
 
 	// Move the given resource to the trash can.
@@ -1173,36 +1262,45 @@ Error OS_LinuxBSD::move_to_trash(const String &p_path) {
 
 		// Issue an error if "mv" failed to move the given resource to the trash can.
 		if (err != OK || retval != 0) {
-			ERR_PRINT("move_to_trash: Could not move the resource \"" + path + "\" to the trash can \"" + trash_path + "/files\"");
+			ERR_PRINT("move_to_trash: Could not move the resource \"" + path +
+					  "\" to the trash can \"" + trash_path + "/files\"");
 			Ref<DirAccess> dir_access = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 			err = dir_access->rename(renamed_path, path);
-			ERR_FAIL_COND_V_MSG(err != OK, err, "Could not rename \"" + renamed_path + "\" back to its original name: \"" + path + "\"");
+			ERR_FAIL_COND_V_MSG(err != OK, err,
+				"Could not rename \"" + renamed_path + "\" back to its original name: \"" + path +
+					"\"");
 			return FAILED;
 		}
 	}
 	return OK;
 }
 
-String OS_LinuxBSD::get_system_ca_certificates() {
+String OS_LinuxBSD::get_system_ca_certificates()
+{
 	String certfile;
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 
 	// Compile time preferred certificates path.
 	if (!String(_SYSTEM_CERTS_PATH).is_empty() && da->file_exists(_SYSTEM_CERTS_PATH)) {
 		certfile = _SYSTEM_CERTS_PATH;
-	} else if (da->file_exists("/etc/ssl/certs/ca-certificates.crt")) {
+	}
+	else if (da->file_exists("/etc/ssl/certs/ca-certificates.crt")) {
 		// Debian/Ubuntu
 		certfile = "/etc/ssl/certs/ca-certificates.crt";
-	} else if (da->file_exists("/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem")) {
+	}
+	else if (da->file_exists("/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem")) {
 		// Fedora
 		certfile = "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem";
-	} else if (da->file_exists("/etc/ca-certificates/extracted/tls-ca-bundle.pem")) {
+	}
+	else if (da->file_exists("/etc/ca-certificates/extracted/tls-ca-bundle.pem")) {
 		// Arch Linux
 		certfile = "/etc/ca-certificates/extracted/tls-ca-bundle.pem";
-	} else if (da->file_exists("/var/lib/ca-certificates/ca-bundle.pem")) {
+	}
+	else if (da->file_exists("/var/lib/ca-certificates/ca-bundle.pem")) {
 		// openSUSE
 		certfile = "/var/lib/ca-certificates/ca-bundle.pem";
-	} else if (da->file_exists("/etc/ssl/cert.pem")) {
+	}
+	else if (da->file_exists("/etc/ssl/cert.pem")) {
 		// FreeBSD/OpenBSD
 		certfile = "/etc/ssl/cert.pem";
 	}
@@ -1212,52 +1310,17 @@ String OS_LinuxBSD::get_system_ca_certificates() {
 	}
 
 	Ref<FileAccess> f = FileAccess::open(certfile, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(f.is_null(), "", vformat("Failed to open system CA certificates file: '%s'", certfile));
+	ERR_FAIL_COND_V_MSG(
+		f.is_null(), "", vformat("Failed to open system CA certificates file: '%s'", certfile));
 
 	return f->get_as_text();
 }
 
 #ifdef TOOLS_ENABLED
-bool OS_LinuxBSD::_test_create_rendering_device(const String &p_display_driver) const {
-	// Tests Rendering Device creation.
-
-	bool ok = false;
-#if defined(RD_ENABLED)
-	Error err;
-	RenderingContextDriver *rcd = nullptr;
-
-#if defined(VULKAN_ENABLED)
-#ifdef X11_ENABLED
-	if (p_display_driver == "x11" || p_display_driver.is_empty()) {
-		rcd = memnew(RenderingContextDriverVulkanX11);
-	}
-#endif
-#ifdef WAYLAND_ENABLED
-	if (p_display_driver == "wayland") {
-		rcd = memnew(RenderingContextDriverVulkanWayland);
-	}
-#endif
-#endif
-	if (rcd != nullptr) {
-		err = rcd->initialize();
-		if (err == OK) {
-			RenderingDevice *rd = memnew(RenderingDevice);
-			err = rd->initialize(rcd);
-			memdelete(rd);
-			rd = nullptr;
-			if (err == OK) {
-				ok = true;
-			}
-		}
-		memdelete(rcd);
-		rcd = nullptr;
-	}
-#endif
-	return ok;
-}
-
-bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String &p_display_driver) const {
-	// Tests OpenGL context and Rendering Device simultaneous creation. This function is expected to crash on some drivers.
+bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String& p_display_driver) const
+{
+	// Tests OpenGL context and Rendering Device simultaneous creation. This function is expected to
+	// crash on some drivers.
 
 #ifdef GLES3_ENABLED
 #ifdef X11_ENABLED
@@ -1286,7 +1349,8 @@ bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String &p_display_d
 }
 #endif
 
-OS_LinuxBSD::OS_LinuxBSD() {
+OS_LinuxBSD::OS_LinuxBSD()
+{
 	main_loop = nullptr;
 
 #ifdef PULSEAUDIO_ENABLED
@@ -1319,8 +1383,10 @@ OS_LinuxBSD::OS_LinuxBSD() {
 	if (font_config_initialized) {
 		bool ver_ok = false;
 		int version = FcGetVersion();
-		ver_ok = ((version / 100 / 100) == 2 && (version / 100 % 100) >= 11) || ((version / 100 / 100) > 2); // 2.11.0
-		print_verbose(vformat("FontConfig %d.%d.%d detected.", version / 100 / 100, version / 100 % 100, version % 100));
+		ver_ok = ((version / 100 / 100) == 2 && (version / 100 % 100) >= 11) ||
+				 ((version / 100 / 100) > 2); // 2.11.0
+		print_verbose(vformat("FontConfig %d.%d.%d detected.", version / 100 / 100,
+			version / 100 % 100, version % 100));
 		if (!ver_ok) {
 			font_config_initialized = false;
 		}
@@ -1339,7 +1405,8 @@ OS_LinuxBSD::OS_LinuxBSD() {
 #endif // FONTCONFIG_ENABLED
 }
 
-OS_LinuxBSD::~OS_LinuxBSD() {
+OS_LinuxBSD::~OS_LinuxBSD()
+{
 #ifdef FONTCONFIG_ENABLED
 	if (object_set) {
 		FcObjectSetDestroy(object_set);
@@ -1349,3 +1416,5 @@ OS_LinuxBSD::~OS_LinuxBSD() {
 	}
 #endif // FONTCONFIG_ENABLED
 }
+
+

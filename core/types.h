@@ -13,6 +13,7 @@
 #include "core/math/math_defs.h"
 #include "core/math/math_funcs.h"
 #include "core/math/quaternion.h"
+#include "core/math/face3.h"
 #include "core/math/rect2.h"
 #include "core/math/rect2i.h"
 #include "core/math/transform_2d.h"
@@ -23,6 +24,7 @@
 #include "core/math/vector3i.h"
 #include "core/math/vector4.h"
 #include "core/math/vector4i.h"
+#include "core/math/projection.h"
 
 // Strings & Paths
 #include "core/string/node_path.h"
@@ -41,5 +43,27 @@
 #include "core/templates/paged_allocator.h"
 #include "core/templates/ring_buffer.h"
 #include "core/templates/vector.h"
+
+// Packed Arrays
+typedef Vector<uint8_t> PackedByteArray;
+typedef Vector<int32_t> PackedInt32Array;
+typedef Vector<int64_t> PackedInt64Array;
+typedef Vector<float> PackedFloat32Array;
+typedef Vector<double> PackedFloat64Array;
+typedef Vector<String> PackedStringArray;
+typedef Vector<Vector2> PackedVector2Array;
+typedef Vector<Vector3> PackedVector3Array;
+typedef Vector<Color> PackedColorArray;
+typedef Vector<Vector4> PackedVector4Array;
+
+template <typename T>
+struct HashMapHasherDefaultImpl<Ref<T>> {
+	static _FORCE_INLINE_ uint32_t hash(const Ref<T> &p_ref) {
+		return hash_one_uint64(reinterpret_cast<uint64_t>(p_ref.ptr()));
+	}
+};
+
+#include "core/math/expression.h"
+#include "thirdparty/openxr/include/openxr/openxr.h"
 
 #endif // TYPES_H

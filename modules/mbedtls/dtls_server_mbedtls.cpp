@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "dtls_server_mbedtls.h"
 #include "packet_peer_mbed_dtls.h"
 
@@ -56,7 +55,7 @@ Ref<PacketPeerDTLS> DTLSServerMbedTLS::take_connection(Ref<PacketPeerUDP> p_udp_
 
 DTLSServer* DTLSServerMbedTLS::_create_func(bool p_notify_postinitialize)
 {
-	return static_cast<DTLSServer*>(memnew(DTLSServerMbedTLS).ptr());
+	return static_cast<DTLSServer*>(memnew(DTLSServerMbedTLS));
 }
 
 void DTLSServerMbedTLS::initialize()

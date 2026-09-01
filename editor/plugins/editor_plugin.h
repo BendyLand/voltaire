@@ -35,6 +35,7 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/gui/control.h"
 #include "scene/main/node.h"
+#include "core/types.h"
 
 class Node3D;
 class Button;
@@ -119,8 +120,6 @@ protected:
 	static void _bind_methods();
 	EditorUndoRedoManager* get_undo_redo();
 
-	void add_custom_type(const String& p_type, const String& p_base, const Ref<Script>& p_script,
-		const Ref<Texture2D>& p_icon);
 	void remove_custom_type(const String& p_type);
 
 #ifndef DISABLE_DEPRECATED
@@ -149,7 +148,6 @@ public:
 	void add_dock(EditorDock* p_dock);
 	void remove_dock(EditorDock* p_dock);
 
-	void add_tool_menu_item(const String& p_name, const Callable& p_callable);
 	void add_tool_submenu_item(const String& p_name, PopupMenu* p_submenu);
 	void remove_tool_menu_item(const String& p_name);
 
@@ -186,21 +184,12 @@ public:
 	virtual String get_plugin_version() const;
 	virtual void set_plugin_version(const String& p_version);
 	virtual bool has_main_screen() const;
-	virtual void make_visible(Object& obj, bool p_visible);
 
 	virtual void set_current() {}
 
 	virtual void selected_notify() {} // notify that it was raised by the user, not the editor
 
-	virtual void edit(Object* p_object);
-	virtual bool handles(Object* p_object) const;
 	virtual bool can_auto_hide() const;
-	virtual Dictionary
-	get_state() const; // save editor state so it can't be reloaded when reloading scene
-	virtual void set_state(Object& obj,
-		const Dictionary& p_state); // restore editor state (likely was saved with the scene)
-	virtual void clear(Object& obj); // clear any temporary data in the editor, reset it (likely new scene or
-						  // load another scene)
 	virtual String get_unsaved_status(const String& p_for_scene = "") const;
 	virtual void save_external_data(); // if editor references external resources/scenes, save them
 	virtual void apply_changes();	   // if changes are pending in editor, apply them
@@ -217,9 +206,6 @@ public:
 
 	EditorInterface* get_editor_interface();
 	ScriptCreateDialog* get_script_create_dialog();
-
-	void add_undo_redo_inspector_hook_callback(Callable p_callable);
-	void remove_undo_redo_inspector_hook_callback(Callable p_callable);
 
 	int update_overlays() const;
 
@@ -271,12 +257,6 @@ public:
 	void enable_plugin();
 	void disable_plugin();
 };
-
-#ifndef DISABLE_DEPRECATED
-VARIANT_ENUM_CAST(EditorPlugin::DockSlot);
-#endif
-VARIANT_ENUM_CAST(EditorPlugin::CustomControlContainer);
-VARIANT_ENUM_CAST(EditorPlugin::AfterGUIInput);
 
 typedef EditorPlugin* (*EditorPluginCreateFunc)();
 

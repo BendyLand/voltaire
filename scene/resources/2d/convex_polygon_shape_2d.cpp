@@ -30,7 +30,6 @@
 
 #include "convex_polygon_shape_2d.h"
 #include "core/math/geometry_2d.h"
-#include "core/object/class_db.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "servers/rendering/rendering_server.h"
 
@@ -68,21 +67,6 @@ bool is_convex(const Vector<Vector2>& p_points)
 }
 #endif
 
-void ConvexPolygonShape2D::_update_shape()
-{
-	Vector<Vector2> final_points = points;
-	if (Geometry2D::is_polygon_clockwise(final_points)) { // needs to be counter clockwise
-		final_points.reverse();
-	}
-#ifdef DEBUG_ENABLED
-	if (!is_convex(final_points)) {
-		WARN_PRINT("Concave polygon is assigned to ConvexPolygonShape2D.");
-	}
-#endif
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), final_points);
-	emit_changed();
-}
-
 void ConvexPolygonShape2D::set_point_cloud(const Vector<Vector2>& p_points)
 {
 	Vector<Point2> hull = Geometry2D::convex_hull(p_points);
@@ -98,8 +82,6 @@ void ConvexPolygonShape2D::set_points(const Vector<Vector2>& p_points)
 }
 
 Vector<Vector2> ConvexPolygonShape2D::get_points() const { return points; }
-
-void ConvexPolygonShape2D::_bind_methods() {}
 
 void ConvexPolygonShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {

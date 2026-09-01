@@ -292,13 +292,6 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-	void _validate_property(PropertyInfo& p_property) const;
-
-	void _accessibility_action_grab_focus(const Variant& p_data) { grab_focus(); }
-
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
 
@@ -312,7 +305,7 @@ public:
 		NOTIFICATION_THEME_CHANGED = 32
 	};
 
-	PackedStringArray get_accessibility_configuration_warnings() const override;
+	PackedStringArray get_accessibility_configuration_warnings() const;
 
 	static void set_root_layout_direction(int p_root_dir);
 	static Window* get_from_id(DisplayServerEnums::WindowID p_window_id);
@@ -535,8 +528,6 @@ public:
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 	int get_theme_constant(
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
-	Variant get_theme_item(Theme::DataType p_data_type, const StringName& p_name,
-		const StringName& p_theme_type = StringName()) const;
 #ifdef TOOLS_ENABLED
 	Ref<Texture2D> get_editor_theme_icon(const StringName& p_name) const;
 #endif
@@ -583,13 +574,4 @@ public:
 	Window();
 	~Window();
 };
-
-VARIANT_ENUM_CAST(Window::Mode);
-VARIANT_ENUM_CAST(Window::Flags);
-VARIANT_ENUM_CAST(Window::ContentScaleMode);
-VARIANT_ENUM_CAST(Window::ContentScaleAspect);
-VARIANT_ENUM_CAST(Window::ContentScaleStretch);
-VARIANT_ENUM_CAST(Window::LayoutDirection);
-VARIANT_ENUM_CAST(Window::WindowInitialPosition);
-
 

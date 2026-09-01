@@ -35,19 +35,20 @@
 
 class VehicleBody3D;
 
-class VehicleWheel3D : public Node3D {
-	VLTRCLASS(VehicleWheel3D, Node3D);
-
+class VehicleWheel3D : public Node3D
+{
 	friend class VehicleBody3D;
 
-	struct WheelXform {
+	struct WheelXform
+	{
 		Vector3 up;
 		Vector3 right;
 		Vector3 origin;
 		real_t steering = 0;
 	};
 
-	class FTIData {
+	class FTIData
+	{
 		real_t curr_rotation = 0;
 		real_t curr_rotation_delta = 0;
 
@@ -55,11 +56,13 @@ class VehicleWheel3D : public Node3D {
 		WheelXform curr;
 		WheelXform prev;
 
-		// If a wheel is added on a frame, the xform will not be set until it has been physics updated at least once.
+		// If a wheel is added on a frame, the xform will not be set until it has been physics
+		// updated at least once.
 		bool unset = true;
 		bool reset_queued = false;
 
-		void rotate(real_t p_delta) {
+		void rotate(real_t p_delta)
+		{
 			curr_rotation += p_delta;
 			curr_rotation_delta = p_delta;
 
@@ -71,11 +74,13 @@ class VehicleWheel3D : public Node3D {
 			curr_rotation = wrapped - Math::PI;
 		}
 
-		void pump() {
+		void pump()
+		{
 			prev = curr;
 			curr_rotation_delta = 0;
 		}
-		void update_world_xform(Transform3D &r_xform, real_t p_interpolation_fraction);
+
+		void update_world_xform(Transform3D& r_xform, real_t p_interpolation_fraction);
 	} fti_data;
 
 	Transform3D m_worldTransform;
@@ -83,9 +88,9 @@ class VehicleWheel3D : public Node3D {
 	bool engine_traction = false;
 	bool steers = false;
 
-	Vector3 m_chassisConnectionPointCS; //const
-	Vector3 m_wheelDirectionCS; //const
-	Vector3 m_wheelAxleCS; // const or modified by steering
+	Vector3 m_chassisConnectionPointCS; // const
+	Vector3 m_wheelDirectionCS;			// const
+	Vector3 m_wheelAxleCS;				// const or modified by steering
 
 	real_t m_suspensionRestLength = 0.15;
 	real_t m_maxSuspensionTravel = 0.2;
@@ -98,9 +103,9 @@ class VehicleWheel3D : public Node3D {
 	real_t m_maxSuspensionForce = 6000.0;
 	bool m_bIsFrontWheel = false;
 
-	VehicleBody3D *body = nullptr;
+	VehicleBody3D* body = nullptr;
 
-	//btVector3	m_wheelAxleCS; // const or modified by steering ?
+	// btVector3	m_wheelAxleCS; // const or modified by steering ?
 
 	real_t m_steering = 0.0;
 	real_t m_rotation = 0.0;
@@ -112,23 +117,24 @@ class VehicleWheel3D : public Node3D {
 
 	real_t m_clippedInvContactDotSuspension = 1.0;
 	real_t m_suspensionRelativeVelocity = 0.0;
-	//calculated by suspension
+	// calculated by suspension
 	real_t m_wheelsSuspensionForce = 0.0;
 	real_t m_skidInfo = 0.0;
 
-	struct RaycastInfo {
-		//set by raycaster
-		Vector3 m_contactNormalWS; //contactnormal
-		Vector3 m_contactPointWS; //raycast hitpoint
+	struct RaycastInfo
+	{
+		// set by raycaster
+		Vector3 m_contactNormalWS; // contactnormal
+		Vector3 m_contactPointWS;  // raycast hitpoint
 		real_t m_suspensionLength = 0.0;
-		Vector3 m_hardPointWS; //raycast starting point
-		Vector3 m_wheelDirectionWS; //direction in worldspace
-		Vector3 m_wheelAxleWS; // axle in worldspace
+		Vector3 m_hardPointWS;		// raycast starting point
+		Vector3 m_wheelDirectionWS; // direction in worldspace
+		Vector3 m_wheelAxleWS;		// axle in worldspace
 		bool m_isInContact = false;
-		PhysicsBody3D *m_groundObject = nullptr; //could be general void* ptr
+		PhysicsBody3D* m_groundObject = nullptr; // could be general void* ptr
 	} m_raycastInfo;
 
-	void _update(PhysicsDirectBodyState3D *s);
+	void _update(PhysicsDirectBodyState3D* s);
 
 protected:
 	void _notification(int p_what);
@@ -171,7 +177,7 @@ public:
 
 	Vector3 get_contact_normal() const;
 
-	Node3D *get_contact_body() const;
+	Node3D* get_contact_body() const;
 
 	void set_roll_influence(real_t p_value);
 	real_t get_roll_influence() const;
@@ -194,9 +200,8 @@ public:
 	VehicleWheel3D();
 };
 
-class VehicleBody3D : public RigidBody3D {
-	VLTRCLASS(VehicleBody3D, RigidBody3D);
-
+class VehicleBody3D : public RigidBody3D
+{
 	real_t engine_force = 0.0;
 	real_t brake = 0.0;
 
@@ -211,35 +216,40 @@ class VehicleBody3D : public RigidBody3D {
 	Vector<real_t> m_forwardImpulse;
 	Vector<real_t> m_sideImpulse;
 
-	struct btVehicleWheelContactPoint {
-		PhysicsDirectBodyState3D *m_s = nullptr;
-		PhysicsBody3D *m_body1 = nullptr;
+	struct btVehicleWheelContactPoint
+	{
+		PhysicsDirectBodyState3D* m_s = nullptr;
+		PhysicsBody3D* m_body1 = nullptr;
 		Vector3 m_frictionPositionWorld;
 		Vector3 m_frictionDirectionWorld;
 		real_t m_jacDiagABInv = 0.0;
 		real_t m_maxImpulse = 0.0;
 
-		btVehicleWheelContactPoint(PhysicsDirectBodyState3D *s, PhysicsBody3D *body1, const Vector3 &frictionPosWorld, const Vector3 &frictionDirectionWorld, real_t maxImpulse);
+		btVehicleWheelContactPoint(PhysicsDirectBodyState3D* s, PhysicsBody3D* body1,
+			const Vector3& frictionPosWorld, const Vector3& frictionDirectionWorld,
+			real_t maxImpulse);
 	};
 
-	void _resolve_single_bilateral(PhysicsDirectBodyState3D *s, const Vector3 &pos1, PhysicsBody3D *body2, const Vector3 &pos2, const Vector3 &normal, real_t &impulse, const real_t p_rollInfluence);
-	real_t _calc_rolling_friction(btVehicleWheelContactPoint &contactPoint);
+	void _resolve_single_bilateral(PhysicsDirectBodyState3D* s, const Vector3& pos1,
+		PhysicsBody3D* body2, const Vector3& pos2, const Vector3& normal, real_t& impulse,
+		const real_t p_rollInfluence);
+	real_t _calc_rolling_friction(btVehicleWheelContactPoint& contactPoint);
 
-	void _update_friction(PhysicsDirectBodyState3D *s);
-	void _update_suspension(PhysicsDirectBodyState3D *s);
-	real_t _ray_cast(int p_idx, PhysicsDirectBodyState3D *s);
-	void _update_wheel_transform(VehicleWheel3D &wheel, PhysicsDirectBodyState3D *s);
-	void _update_wheel(int p_idx, PhysicsDirectBodyState3D *s);
+	void _update_friction(PhysicsDirectBodyState3D* s);
+	void _update_suspension(PhysicsDirectBodyState3D* s);
+	real_t _ray_cast(int p_idx, PhysicsDirectBodyState3D* s);
+	void _update_wheel_transform(VehicleWheel3D& wheel, PhysicsDirectBodyState3D* s);
+	void _update_wheel(int p_idx, PhysicsDirectBodyState3D* s);
 
 	void _update_process_mode();
 
 	friend class VehicleWheel3D;
-	Vector<VehicleWheel3D *> wheels;
+	Vector<VehicleWheel3D*> wheels;
 
 	static void _bind_methods();
 
-	static void _body_state_changed_callback(void *p_instance, PhysicsDirectBodyState3D *p_state);
-	virtual void _body_state_changed(PhysicsDirectBodyState3D *p_state) override;
+	static void _body_state_changed_callback(void* p_instance, PhysicsDirectBodyState3D* p_state);
+	virtual void _body_state_changed(PhysicsDirectBodyState3D* p_state) override;
 
 protected:
 	void _notification(int p_what);
@@ -259,3 +269,5 @@ public:
 
 	VehicleBody3D();
 };
+
+

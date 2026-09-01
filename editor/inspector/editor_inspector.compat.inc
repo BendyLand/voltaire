@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "editor_inspector.h"
 
 void EditorInspectorPlugin::_add_property_editor_bind_compat_92322(

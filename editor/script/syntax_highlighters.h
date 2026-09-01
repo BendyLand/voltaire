@@ -32,9 +32,8 @@
 
 #include "scene/resources/syntax_highlighter.h"
 
-class EditorSyntaxHighlighter : public SyntaxHighlighter {
-	VLTRCLASS(EditorSyntaxHighlighter, SyntaxHighlighter)
-
+class EditorSyntaxHighlighter : public SyntaxHighlighter
+{
 private:
 	Ref<RefCounted> edited_resource;
 
@@ -45,52 +44,49 @@ public:
 	virtual String _get_name() const;
 	virtual PackedStringArray _get_supported_languages() const;
 
-	void _set_edited_resource(const Ref<Resource> &p_res) { edited_resource = p_res; }
+	void _set_edited_resource(const Ref<Resource>& p_res) { edited_resource = p_res; }
+
 	Ref<RefCounted> _get_edited_resource() { return edited_resource; }
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const;
 };
 
-class EditorStandardSyntaxHighlighter : public EditorSyntaxHighlighter {
-	VLTRCLASS(EditorStandardSyntaxHighlighter, EditorSyntaxHighlighter)
-
+class EditorStandardSyntaxHighlighter : public EditorSyntaxHighlighter
+{
 private:
 	Ref<CodeHighlighter> highlighter;
-	ScriptLanguage *script_language = nullptr; // See GH-89610.
 
 public:
 	virtual void _update_cache() override;
-	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override { return highlighter->get_line_syntax_highlighting(p_line); }
 
 	virtual String _get_name() const override { return TTR("Standard"); }
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
-	void _set_script_language(ScriptLanguage *p_script_language) { script_language = p_script_language; }
-
 	EditorStandardSyntaxHighlighter() { highlighter.instantiate(); }
 };
 
-class EditorPlainTextSyntaxHighlighter : public EditorSyntaxHighlighter {
-	VLTRCLASS(EditorPlainTextSyntaxHighlighter, EditorSyntaxHighlighter)
-
+class EditorPlainTextSyntaxHighlighter : public EditorSyntaxHighlighter
+{
 public:
 	virtual String _get_name() const override { return TTR("Plain Text"); }
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 };
 
-class EditorJSONSyntaxHighlighter : public EditorSyntaxHighlighter {
-	VLTRCLASS(EditorJSONSyntaxHighlighter, EditorSyntaxHighlighter)
-
+class EditorJSONSyntaxHighlighter : public EditorSyntaxHighlighter
+{
 private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
 	virtual void _update_cache() override;
-	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override { return highlighter->get_line_syntax_highlighting(p_line); }
 
-	virtual PackedStringArray _get_supported_languages() const override { return PackedStringArray{ "json" }; }
+	virtual PackedStringArray _get_supported_languages() const override
+	{
+		return PackedStringArray{"json"};
+	}
+
 	virtual String _get_name() const override { return TTR("JSON"); }
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
@@ -98,17 +94,19 @@ public:
 	EditorJSONSyntaxHighlighter() { highlighter.instantiate(); }
 };
 
-class EditorMarkdownSyntaxHighlighter : public EditorSyntaxHighlighter {
-	VLTRCLASS(EditorMarkdownSyntaxHighlighter, EditorSyntaxHighlighter)
-
+class EditorMarkdownSyntaxHighlighter : public EditorSyntaxHighlighter
+{
 private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
 	virtual void _update_cache() override;
-	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override { return highlighter->get_line_syntax_highlighting(p_line); }
 
-	virtual PackedStringArray _get_supported_languages() const override { return PackedStringArray{ "md", "markdown" }; }
+	virtual PackedStringArray _get_supported_languages() const override
+	{
+		return PackedStringArray{"md", "markdown"};
+	}
+
 	virtual String _get_name() const override { return TTR("Markdown"); }
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
@@ -116,24 +114,28 @@ public:
 	EditorMarkdownSyntaxHighlighter() { highlighter.instantiate(); }
 };
 
-class EditorConfigFileSyntaxHighlighter : public EditorSyntaxHighlighter {
-	VLTRCLASS(EditorConfigFileSyntaxHighlighter, EditorSyntaxHighlighter)
-
+class EditorConfigFileSyntaxHighlighter : public EditorSyntaxHighlighter
+{
 private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
 	virtual void _update_cache() override;
-	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override { return highlighter->get_line_syntax_highlighting(p_line); }
 
 	// While not explicitly designed for those formats, this highlighter happens
 	// to handle TSCN, TRES, `project.godot` well. We can expose it in case the
 	// user opens one of these using the script editor (which can be done using
 	// the All Files filter).
-	virtual PackedStringArray _get_supported_languages() const override { return PackedStringArray{ "ini", "cfg", "tscn", "tres", "godot" }; }
+	virtual PackedStringArray _get_supported_languages() const override
+	{
+		return PackedStringArray{"ini", "cfg", "tscn", "tres", "godot"};
+	}
+
 	virtual String _get_name() const override { return TTR("ConfigFile"); }
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
 	EditorConfigFileSyntaxHighlighter() { highlighter.instantiate(); }
 };
+
+

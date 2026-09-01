@@ -41,8 +41,10 @@
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_compiler.h"
 
-class RendererCanvasRenderRD : public RendererCanvasRender {
-	enum {
+class RendererCanvasRenderRD : public RendererCanvasRender
+{
+	enum
+	{
 		BASE_UNIFORM_SET = 0,
 		MATERIAL_UNIFORM_SET = 1,
 		TRANSFORMS_UNIFORM_SET = 2,
@@ -50,10 +52,12 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	};
 
 	const int SAMPLERS_BINDING_FIRST_INDEX = 10;
-	// The size of the ring buffer to store GPU buffers. Triple-buffering the max expected frames in flight.
+	// The size of the ring buffer to store GPU buffers. Triple-buffering the max expected frames in
+	// flight.
 	static const uint32_t BATCH_DATA_BUFFER_COUNT = 3;
 
-	enum ShaderVariant {
+	enum ShaderVariant
+	{
 		SHADER_VARIANT_QUAD,
 		SHADER_VARIANT_NINEPATCH,
 		SHADER_VARIANT_PRIMITIVE,
@@ -63,7 +67,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		SHADER_VARIANT_MAX
 	};
 
-	enum {
+	enum
+	{
 		INSTANCE_FLAGS_LIGHT_COUNT_SHIFT = 0, // 4 bits for light count.
 
 		INSTANCE_FLAGS_CLIP_RECT_UV = (1 << 4),
@@ -76,7 +81,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		INSTANCE_FLAGS_SHADOW_MASKED_SHIFT = 13, // 16 bits.
 	};
 
-	enum {
+	enum
+	{
 		BATCH_FLAGS_INSTANCING_MASK = 0x7F,
 		BATCH_FLAGS_INSTANCING_HAS_COLORS = (1 << 7),
 		BATCH_FLAGS_INSTANCING_HAS_CUSTOM_DATA = (1 << 8),
@@ -85,11 +91,13 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		BATCH_FLAGS_DEFAULT_SPECULAR_MAP_USED = (1 << 10),
 	};
 
-	enum {
+	enum
+	{
 		CANVAS_FLAGS_CONVERT_ATTRIBUTES_TO_LINEAR = (1 << 0),
 	};
 
-	enum {
+	enum
+	{
 		LIGHT_FLAGS_TEXTURE_MASK = 0xFFFF,
 		LIGHT_FLAGS_BLEND_SHIFT = 16,
 		LIGHT_FLAGS_BLEND_MASK = (3 << 16),
@@ -102,7 +110,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 	};
 
-	enum {
+	enum
+	{
 		MAX_RENDER_ITEMS = 256 * 1024,
 		MAX_LIGHT_TEXTURES = 1024,
 		MAX_LIGHTS_PER_ITEM = 16,
@@ -113,11 +122,14 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	/**** SHADER ****/
 	/****************/
 
-	struct ShaderSpecialization {
-		union {
+	struct ShaderSpecialization
+	{
+		union
+		{
 			uint32_t packed_0;
 
-			struct {
+			struct
+			{
 				uint32_t use_lighting : 1;
 				uint32_t use_msdf : 1;
 				uint32_t use_lcd : 1;
@@ -125,7 +137,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		};
 	};
 
-	struct PipelineKey {
+	struct PipelineKey
+	{
 		ShaderVariant variant = SHADER_VARIANT_MAX;
 		RD::FramebufferFormatID framebuffer_format_id = RD::INVALID_FORMAT_ID;
 		RD::VertexFormatID vertex_format_id = RD::INVALID_ID;
@@ -134,7 +147,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		uint32_t lcd_blend = 0;
 		uint32_t ubershader = 0;
 
-		uint32_t hash() const {
+		uint32_t hash() const
+		{
 			uint32_t h = hash_murmur3_one_32(variant);
 			h = hash_murmur3_one_32(framebuffer_format_id, h);
 			h = hash_murmur3_one_64((uint64_t)vertex_format_id, h);
@@ -146,7 +160,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		}
 	};
 
-	struct CanvasShaderData : public RendererRD::MaterialStorage::ShaderData {
+	struct CanvasShaderData : public RendererRD::MaterialStorage::ShaderData
+	{
 		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
 		int blend_mode = 0;
 
@@ -155,7 +170,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 		String code;
 		RID version;
-		PipelineHashMapRD<PipelineKey, CanvasShaderData, void (CanvasShaderData::*)(PipelineKey)> pipeline_hash_map;
+		PipelineHashMapRD<PipelineKey, CanvasShaderData, void (CanvasShaderData::*)(PipelineKey)>
+			pipeline_hash_map;
 
 		static const uint32_t VERTEX_INPUT_MASKS_SIZE = SHADER_VARIANT_MAX * 2;
 		std::atomic<uint64_t> vertex_input_masks[VERTEX_INPUT_MASKS_SIZE] = {};
@@ -167,11 +183,11 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 		void _clear_vertex_input_mask_cache();
 		void _create_pipeline(PipelineKey p_pipeline_key);
-		virtual void set_code(const String &p_Code);
+		virtual void set_code(const String& p_Code);
 		virtual bool is_animated() const;
 		virtual bool casts_shadows() const;
 		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-		virtual Pair<ShaderRD *, RID> get_native_shader_and_version() const;
+		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
 		RID get_shader(ShaderVariant p_shader_variant, bool p_ubershader) const;
 		uint64_t get_vertex_input_mask(ShaderVariant p_shader_variant, bool p_ubershader);
 		bool is_valid() const;
@@ -180,9 +196,10 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		virtual ~CanvasShaderData();
 	};
 
-	struct {
+	struct
+	{
 		// Data must be guaranteed to be erased before the rest on the destructor.
-		CanvasShaderData *default_version_data = nullptr;
+		CanvasShaderData* default_version_data = nullptr;
 		CanvasShaderRD canvas_shader;
 		RID default_version_rd_shader;
 		RID quad_index_buffer;
@@ -194,32 +211,41 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		Mutex mutex;
 	} shader;
 
-	RendererRD::MaterialStorage::ShaderData *_create_shader_func();
-	static RendererRD::MaterialStorage::ShaderData *_create_shader_funcs() {
-		return static_cast<RendererCanvasRenderRD *>(singleton)->_create_shader_func();
+	RendererRD::MaterialStorage::ShaderData* _create_shader_func();
+
+	static RendererRD::MaterialStorage::ShaderData* _create_shader_funcs()
+	{
+		return static_cast<RendererCanvasRenderRD*>(singleton)->_create_shader_func();
 	}
 
-	struct CanvasMaterialData : public RendererRD::MaterialStorage::MaterialData {
-		CanvasShaderData *shader_data = nullptr;
+	struct CanvasMaterialData : public RendererRD::MaterialStorage::MaterialData
+	{
+		CanvasShaderData* shader_data = nullptr;
 		RID uniform_set;
 		RID uniform_set_srgb;
 
 		virtual void set_render_priority(int p_priority) {}
+
 		virtual void set_next_pass(RID p_pass) {}
-		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
+
 		virtual ~CanvasMaterialData();
 	};
 
-	RendererRD::MaterialStorage::MaterialData *_create_material_func(CanvasShaderData *p_shader);
-	static RendererRD::MaterialStorage::MaterialData *_create_material_funcs(RendererRD::MaterialStorage::ShaderData *p_shader) {
-		return static_cast<RendererCanvasRenderRD *>(singleton)->_create_material_func(static_cast<CanvasShaderData *>(p_shader));
+	RendererRD::MaterialStorage::MaterialData* _create_material_func(CanvasShaderData* p_shader);
+
+	static RendererRD::MaterialStorage::MaterialData* _create_material_funcs(
+		RendererRD::MaterialStorage::ShaderData* p_shader)
+	{
+		return static_cast<RendererCanvasRenderRD*>(singleton)->_create_material_func(
+			static_cast<CanvasShaderData*>(p_shader));
 	}
 
 	/**************************/
 	/**** CANVAS TEXTURES *****/
 	/**************************/
 
-	struct {
+	struct
+	{
 		RSE::CanvasItemTextureFilter default_filter;
 		RSE::CanvasItemTextureRepeat default_repeat;
 	} default_samplers;
@@ -228,7 +254,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	/**** POLYGONS ****/
 	/******************/
 
-	struct PolygonBuffers {
+	struct PolygonBuffers
+	{
 		RD::VertexFormatID vertex_format_id;
 		RID vertex_buffer;
 		RID vertex_array;
@@ -237,7 +264,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		uint32_t primitive_count = 0;
 	};
 
-	struct {
+	struct
+	{
 		HashMap<PolygonID, PolygonBuffers> polygons;
 		PolygonID last_id;
 	} polygon_buffers;
@@ -246,7 +274,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	/**** PRIMITIVES ****/
 	/********************/
 
-	struct {
+	struct
+	{
 		RID index_array[4];
 	} primitive_arrays;
 
@@ -258,9 +287,12 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	/**** LIGHTING ****/
 	/******************/
 
-	struct CanvasLight {
+	struct CanvasLight
+	{
 		RID texture;
-		struct {
+
+		struct
+		{
 			bool enabled = false;
 			float z_far;
 			float y_offset;
@@ -270,7 +302,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 	RID_Owner<CanvasLight> canvas_light_owner;
 
-	struct PositionalShadowRenderPushConstant {
+	struct PositionalShadowRenderPushConstant
+	{
 		float modelview[8];
 		float rotation[4];
 		float direction[2];
@@ -281,7 +314,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		float pad2[2];
 	};
 
-	struct ShadowRenderPushConstant {
+	struct ShadowRenderPushConstant
+	{
 		float projection[16];
 		float modelview[8];
 		float direction[2];
@@ -289,7 +323,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		uint32_t cull_mode;
 	};
 
-	struct OccluderPolygon {
+	struct OccluderPolygon
+	{
 		RSE::CanvasOccluderPolygonCullMode cull_mode;
 		int line_point_count;
 		RID vertex_buffer;
@@ -306,13 +341,14 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		bool sdf_is_lines;
 	};
 
-	struct LightUniform {
-		float matrix[8]; //light to texture coordinate matrix
-		float shadow_matrix[8]; //light to shadow coordinate matrix
+	struct LightUniform
+	{
+		float matrix[8];		// light to texture coordinate matrix
+		float shadow_matrix[8]; // light to shadow coordinate matrix
 		float color[4];
 
 		uint8_t shadow_color[4];
-		uint32_t flags; //index to light texture
+		uint32_t flags; // index to light texture
 		float shadow_pixel_size;
 		float height;
 
@@ -325,18 +361,21 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 	RID_Owner<OccluderPolygon> occluder_polygon_owner;
 
-	enum ShadowRenderMode {
+	enum ShadowRenderMode
+	{
 		SHADOW_RENDER_MODE_DIRECTIONAL_SHADOW,
 		SHADOW_RENDER_MODE_POSITIONAL_SHADOW,
 		SHADOW_RENDER_MODE_SDF,
 	};
 
-	enum {
+	enum
+	{
 		SHADOW_RENDER_SDF_TRIANGLES,
 		SHADOW_RENDER_SDF_LINES,
 	};
 
-	struct {
+	struct
+	{
 		CanvasOcclusionShaderRD shader;
 		RID shader_version;
 		RID render_pipelines[2];
@@ -351,27 +390,34 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	/**** STATE ****/
 	/***************/
 
-	//state that does not vary across rendering all items
+	// state that does not vary across rendering all items
 
-	struct InstanceData {
+	struct InstanceData
+	{
 		float world[6];
 		float ninepatch_pixel_size[2];
-		union {
-			//rect
-			struct {
+
+		union
+		{
+			// rect
+			struct
+			{
 				float modulation[4];
 				float ninepatch_margins[4];
 				float dst_rect[4];
 				float src_rect[4];
 				float pad[2];
 			};
-			//primitive
-			struct {
-				float points[6]; // vec2 points[3]
-				float uvs[6]; // vec2 points[3]
+
+			// primitive
+			struct
+			{
+				float points[6];	// vec2 points[3]
+				float uvs[6];		// vec2 points[3]
 				uint32_t colors[6]; // colors encoded as half
 			};
 		};
+
 		uint32_t flags;
 		uint32_t instance_uniforms_ofs;
 		uint32_t lights[4];
@@ -379,7 +425,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 	static_assert(sizeof(InstanceData) == 128, "2D instance data struct size must be 128 bytes");
 
-	struct PushConstant {
+	struct PushConstant
+	{
 		ShaderSpecialization shader_specialization;
 		uint32_t specular_shininess;
 		uint32_t batch_flags;
@@ -389,7 +436,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		float color_texture_pixel_size[2];
 	};
 
-	struct PushConstantAttributes {
+	struct PushConstantAttributes
+	{
 		PushConstant base;
 
 		float world[6];
@@ -398,13 +446,13 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		float modulation[4];
 		uint32_t lights[4];
 
-		operator PushConstant &() {
-			return base;
-		}
+		operator PushConstant&() { return base; }
 	};
 
-	// TextureState is used to determine when a new batch is required due to a change of texture state.
-	struct TextureState {
+	// TextureState is used to determine when a new batch is required due to a change of texture
+	// state.
+	struct TextureState
+	{
 		static const uint32_t FILTER_SHIFT = 0;
 		static const uint32_t FILTER_BITS = 3;
 		static const uint32_t FILTER_MASK = (1 << FILTER_BITS) - 1;
@@ -423,48 +471,61 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 		TextureState() {}
 
-		TextureState(RID p_texture, RSE::CanvasItemTextureFilter p_base_filter, RSE::CanvasItemTextureRepeat p_base_repeat, bool p_texture_is_data, bool p_use_linear_colors) {
+		TextureState(RID p_texture, RSE::CanvasItemTextureFilter p_base_filter,
+			RSE::CanvasItemTextureRepeat p_base_repeat, bool p_texture_is_data,
+			bool p_use_linear_colors)
+		{
 			texture = p_texture;
-			other = (((uint32_t)p_base_filter & FILTER_MASK) << FILTER_SHIFT) |
-					(((uint32_t)p_base_repeat & REPEAT_MASK) << REPEAT_SHIFT) |
-					(((uint32_t)p_texture_is_data & TEXTURE_IS_DATA_MASK) << TEXTURE_IS_DATA_SHIFT) |
-					(((uint32_t)p_use_linear_colors & LINEAR_COLORS_MASK) << LINEAR_COLORS_SHIFT);
+			other =
+				(((uint32_t)p_base_filter & FILTER_MASK) << FILTER_SHIFT) |
+				(((uint32_t)p_base_repeat & REPEAT_MASK) << REPEAT_SHIFT) |
+				(((uint32_t)p_texture_is_data & TEXTURE_IS_DATA_MASK) << TEXTURE_IS_DATA_SHIFT) |
+				(((uint32_t)p_use_linear_colors & LINEAR_COLORS_MASK) << LINEAR_COLORS_SHIFT);
 		}
 
-		_ALWAYS_INLINE_ RSE::CanvasItemTextureFilter texture_filter() const {
+		_ALWAYS_INLINE_ RSE::CanvasItemTextureFilter texture_filter() const
+		{
 			return (RSE::CanvasItemTextureFilter)((other >> FILTER_SHIFT) & FILTER_MASK);
 		}
 
-		_ALWAYS_INLINE_ RSE::CanvasItemTextureRepeat texture_repeat() const {
+		_ALWAYS_INLINE_ RSE::CanvasItemTextureRepeat texture_repeat() const
+		{
 			return (RSE::CanvasItemTextureRepeat)((other >> REPEAT_SHIFT) & REPEAT_MASK);
 		}
 
-		_ALWAYS_INLINE_ bool linear_colors() const {
+		_ALWAYS_INLINE_ bool linear_colors() const
+		{
 			return (other >> LINEAR_COLORS_SHIFT) & LINEAR_COLORS_MASK;
 		}
 
-		_ALWAYS_INLINE_ bool texture_is_data() const {
+		_ALWAYS_INLINE_ bool texture_is_data() const
+		{
 			return (other >> TEXTURE_IS_DATA_SHIFT) & TEXTURE_IS_DATA_MASK;
 		}
 
-		_ALWAYS_INLINE_ bool operator==(const TextureState &p_val) const {
+		_ALWAYS_INLINE_ bool operator==(const TextureState& p_val) const
+		{
 			return (texture == p_val.texture) && (other == p_val.other);
 		}
 
-		_ALWAYS_INLINE_ bool operator!=(const TextureState &p_val) const {
+		_ALWAYS_INLINE_ bool operator!=(const TextureState& p_val) const
+		{
 			return (texture != p_val.texture) || (other != p_val.other);
 		}
 
 		_ALWAYS_INLINE_ bool is_valid() const { return texture.is_valid(); }
+
 		_ALWAYS_INLINE_ bool is_null() const { return texture.is_null(); }
 
-		uint32_t hash() const {
+		uint32_t hash() const
+		{
 			uint32_t hash = hash_murmur3_one_64(texture.get_id());
 			return hash_murmur3_one_32(other, hash);
 		}
 	};
 
-	struct TextureInfo {
+	struct TextureInfo
+	{
 		TextureState state;
 		RID diffuse;
 		RID normal;
@@ -476,44 +537,43 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	};
 
 	/// A key used to uniquely identify a distinct BATCH_UNIFORM_SET
-	struct RIDSetKey {
+	struct RIDSetKey
+	{
 		TextureState state;
 
-		RIDSetKey() {
-		}
+		RIDSetKey() {}
 
-		RIDSetKey(TextureState p_state) :
-				state(p_state) {
-		}
+		RIDSetKey(TextureState p_state) : state(p_state) {}
 
-		_ALWAYS_INLINE_ bool operator==(const RIDSetKey &p_val) const {
+		_ALWAYS_INLINE_ bool operator==(const RIDSetKey& p_val) const
+		{
 			return state == p_val.state;
 		}
 
-		_ALWAYS_INLINE_ bool operator!=(const RIDSetKey &p_val) const {
-			return !(*this == p_val);
-		}
+		_ALWAYS_INLINE_ bool operator!=(const RIDSetKey& p_val) const { return !(*this == p_val); }
 
-		_ALWAYS_INLINE_ uint32_t hash() const {
-			return state.hash();
-		}
+		_ALWAYS_INLINE_ uint32_t hash() const { return state.hash(); }
 	};
 
-	static void _before_evict(RendererCanvasRenderRD::RIDSetKey &p_key, RID &p_rid);
-	static void _uniform_set_invalidation_callback(void *p_userdata);
-	static void _canvas_texture_invalidation_callback(bool p_deleted, void *p_userdata);
+	static void _before_evict(RendererCanvasRenderRD::RIDSetKey& p_key, RID& p_rid);
+	static void _uniform_set_invalidation_callback(void* p_userdata);
+	static void _canvas_texture_invalidation_callback(bool p_deleted, void* p_userdata);
 
-	typedef LRUCache<RIDSetKey, RID, HashMapHasherDefault, HashMapComparatorDefault<RIDSetKey>, _before_evict> RIDCache;
+	typedef LRUCache<RIDSetKey, RID, HashMapHasherDefault, HashMapComparatorDefault<RIDSetKey>,
+		_before_evict>
+		RIDCache;
 	RIDCache rid_set_to_uniform_set;
 	/// Maps a CanvasTexture to its associated uniform sets, which must
 	/// be invalidated when the CanvasTexture is updated, such as changing the
 	/// diffuse texture.
 	HashMap<RID, TightLocalVector<RID>> canvas_texture_to_uniform_set;
 
-	static constexpr uint32_t PUSH_DATA_INSTANCE_COUNT = 0x8000'0000; // Use high bit to indicate instance data comes from push_data.
+	static constexpr uint32_t PUSH_DATA_INSTANCE_COUNT =
+		0x8000'0000; // Use high bit to indicate instance data comes from push_data.
 	static constexpr uint32_t INSTANCE_COUNT_MASK = 0x7fff'ffff;
 
-	struct Batch {
+	struct Batch
+	{
 		/// First instance index into the instance buffer for this batch.
 		uint32_t start = 0;
 		/// Number of instances in this batch.
@@ -523,19 +583,21 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		/// Push-constant payload for non-VAO draws.
 		InstanceData push_data = {};
 
-		TextureInfo *tex_info;
+		TextureInfo* tex_info;
 
 		Color modulate = Color(1.0, 1.0, 1.0, 1.0);
 		float msdf_pix_range = 0.0;
 		float msdf_outline = 0.0;
 
-		Item *clip = nullptr;
+		Item* clip = nullptr;
 
 		RID material;
-		CanvasMaterialData *material_data = nullptr;
+		CanvasMaterialData* material_data = nullptr;
 
-		const Item::Command *command = nullptr;
-		Item::Command::Type command_type = Item::Command::TYPE_ANIMATION_SLICE; // Can default to any type that doesn't form a batch.
+		const Item::Command* command = nullptr;
+		Item::Command::Type command_type =
+			Item::Command::TYPE_ANIMATION_SLICE; // Can default to any type that doesn't form a
+												 // batch.
 		ShaderVariant shader_variant = SHADER_VARIANT_QUAD;
 		RD::RenderPrimitive render_primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
 		bool use_lighting = false;
@@ -544,15 +606,18 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		bool has_blend = false;
 
 		// batch-specific data
-		union {
+		union
+		{
 			// TYPE_PRIMITIVE
 			uint32_t primitive_points = 0;
 			// TYPE_PARTICLES
 			uint32_t mesh_instance_count;
 		};
+
 		uint32_t flags = 0;
 
-		_FORCE_INLINE_ PushConstant push_constant() const {
+		_FORCE_INLINE_ PushConstant push_constant() const
+		{
 			PushConstant pc;
 			pc.specular_shininess = tex_info->specular_shininess;
 			pc.batch_flags = tex_info->flags | flags;
@@ -565,7 +630,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 			return pc;
 		}
 
-		_FORCE_INLINE_ PushConstantAttributes push_constant_attributes() const {
+		_FORCE_INLINE_ PushConstantAttributes push_constant_attributes() const
+		{
 			PushConstantAttributes pc;
 			pc.base = push_constant();
 			memcpy(pc.world, push_data.world, sizeof(pc.world));
@@ -577,11 +643,15 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		}
 	};
 
-	HashMap<TextureState, TextureInfo, HashMapHasherDefault, HashMapComparatorDefault<TextureState>, PagedAllocator<HashMapElement<TextureState, TextureInfo>>> texture_info_map;
+	HashMap<TextureState, TextureInfo, HashMapHasherDefault, HashMapComparatorDefault<TextureState>,
+		PagedAllocator<HashMapElement<TextureState, TextureInfo>>>
+		texture_info_map;
 
-	struct State {
-		//state buffer
-		struct Buffer {
+	struct State
+	{
+		// state buffer
+		struct Buffer
+		{
 			float canvas_transform[16];
 			float screen_transform[16];
 			float canvas_normal_transform[16];
@@ -609,11 +679,11 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 		MultiUmaBuffer<1u> instance_buffers = MultiUmaBuffer<1u>("CANVAS_INSTANCE_DATA");
 		/// A pointer to the current instance buffer retrieved from <c>instance_buffers</c>.
-		InstanceData *instance_data = nullptr;
+		InstanceData* instance_data = nullptr;
 		/// The index of the next instance to be added to <c>instance_data</c>.
 		uint32_t instance_data_index = 0;
 		/// Save the previous instance data to allow us to append .
-		InstanceData *prev_instance_data = nullptr;
+		InstanceData* prev_instance_data = nullptr;
 		uint32_t prev_instance_data_index = 0;
 
 		InstanceData intermediary_instance_data;
@@ -624,7 +694,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		Vector<RD::Uniform> batch_texture_uniforms;
 		RID current_batch_uniform_set;
 
-		LightUniform *light_uniforms = nullptr;
+		LightUniform* light_uniforms = nullptr;
 
 		RID lights_storage_buffer;
 		RID canvas_state_buffer;
@@ -644,7 +714,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 	} state;
 
-	Item *items[MAX_RENDER_ITEMS];
+	Item* items[MAX_RENDER_ITEMS];
 
 	TextureInfo default_texture_info;
 
@@ -666,54 +736,80 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	double debug_redraw_time = 1.0;
 
 	// A structure to store cached render target information
-	struct RenderTarget {
+	struct RenderTarget
+	{
 		// Current render target for the canvas.
 		RID render_target;
 		bool use_linear_colors = false;
 	};
 
-	inline RID _get_pipeline_specialization_or_ubershader(CanvasShaderData *p_shader_data, PipelineKey &r_pipeline_key, PushConstant &r_push_constant, RID p_mesh_instance = RID(), void *p_surface = nullptr, uint32_t p_surface_index = 0, RID *r_vertex_array = nullptr);
-	void _render_batch_items(RenderTarget p_to_render_target, int p_item_count, const Transform2D &p_canvas_transform_inverse, Light *p_lights, bool &r_sdf_used, bool p_to_backbuffer = false, RenderingServerTypes::RenderInfo *r_render_info = nullptr);
-	void _record_item_commands(const Item *p_item, RenderTarget p_render_target, const Transform2D &p_base_transform, Item *&r_current_clip, Light *p_lights, bool &r_batch_broken, bool &r_sdf_used, Batch *&r_current_batch);
-	void _render_batch(RD::DrawListID p_draw_list, CanvasShaderData *p_shader_data, RenderingDevice::FramebufferFormatID p_framebuffer_format, Light *p_lights, const Batch *p_batch, RenderingServerTypes::RenderInfo *r_render_info = nullptr);
-	void _prepare_batch_texture_info(RID p_texture, TextureState &p_state, TextureInfo *p_info);
+	inline RID _get_pipeline_specialization_or_ubershader(CanvasShaderData* p_shader_data,
+		PipelineKey& r_pipeline_key, PushConstant& r_push_constant, RID p_mesh_instance = RID(),
+		void* p_surface = nullptr, uint32_t p_surface_index = 0, RID* r_vertex_array = nullptr);
+	void _render_batch_items(RenderTarget p_to_render_target, int p_item_count,
+		const Transform2D& p_canvas_transform_inverse, Light* p_lights, bool& r_sdf_used,
+		bool p_to_backbuffer = false, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
+	void _record_item_commands(const Item* p_item, RenderTarget p_render_target,
+		const Transform2D& p_base_transform, Item*& r_current_clip, Light* p_lights,
+		bool& r_batch_broken, bool& r_sdf_used, Batch*& r_current_batch);
+	void _render_batch(RD::DrawListID p_draw_list, CanvasShaderData* p_shader_data,
+		RenderingDevice::FramebufferFormatID p_framebuffer_format, Light* p_lights,
+		const Batch* p_batch, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
+	void _prepare_batch_texture_info(RID p_texture, TextureState& p_state, TextureInfo* p_info);
 
 	// non-UMA
-	InstanceData *new_instance_data(Batch &p_current_batch, const InstanceData &template_instance, bool p_use_push_data = false);
-	[[nodiscard]] Batch *_new_batch(bool &r_batch_broken);
-	void _add_to_batch(bool &r_batch_broken, Batch *&r_current_batch);
+	InstanceData* new_instance_data(Batch& p_current_batch, const InstanceData& template_instance,
+		bool p_use_push_data = false);
+	[[nodiscard]] Batch* _new_batch(bool& r_batch_broken);
+	void _add_to_batch(bool& r_batch_broken, Batch*& r_current_batch);
 	void _allocate_instance_buffer();
 
-	_FORCE_INLINE_ void _update_transform_2d_to_mat2x4(const Transform2D &p_transform, float *p_mat2x4);
-	_FORCE_INLINE_ void _update_transform_2d_to_mat2x3(const Transform2D &p_transform, float *p_mat2x3);
+	_FORCE_INLINE_ void _update_transform_2d_to_mat2x4(
+		const Transform2D& p_transform, float* p_mat2x4);
+	_FORCE_INLINE_ void _update_transform_2d_to_mat2x3(
+		const Transform2D& p_transform, float* p_mat2x3);
 
-	_FORCE_INLINE_ void _update_transform_2d_to_mat4(const Transform2D &p_transform, float *p_mat4);
-	_FORCE_INLINE_ void _update_transform_to_mat4(const Transform3D &p_transform, float *p_mat4);
+	_FORCE_INLINE_ void _update_transform_2d_to_mat4(const Transform2D& p_transform, float* p_mat4);
+	_FORCE_INLINE_ void _update_transform_to_mat4(const Transform3D& p_transform, float* p_mat4);
 
 	void _update_shadow_atlas();
 	void _update_occluder_buffer(uint32_t p_size);
 
 public:
-	PolygonID request_polygon(const Vector<int> &p_indices, const Vector<Point2> &p_points, const Vector<Color> &p_colors, const Vector<Point2> &p_uvs = Vector<Point2>(), const Vector<int> &p_bones = Vector<int>(), const Vector<float> &p_weights = Vector<float>(), int p_count = -1) override;
+	PolygonID request_polygon(const Vector<int>& p_indices, const Vector<Point2>& p_points,
+		const Vector<Color>& p_colors, const Vector<Point2>& p_uvs = Vector<Point2>(),
+		const Vector<int>& p_bones = Vector<int>(),
+		const Vector<float>& p_weights = Vector<float>(), int p_count = -1) override;
 	void free_polygon(PolygonID p_polygon) override;
 
 	RID light_create() override;
 	void light_set_texture(RID p_rid, RID p_texture) override;
 	void light_set_use_shadow(RID p_rid, bool p_enable) override;
-	void light_update_shadow(RID p_rid, int p_shadow_index, const Transform2D &p_light_xform, int p_light_mask, float p_near, float p_far, LightOccluderInstance *p_occluders, const Rect2 &p_light_rect) override;
-	void light_update_directional_shadow(RID p_rid, int p_shadow_index, const Transform2D &p_light_xform, int p_light_mask, float p_cull_distance, const Rect2 &p_clip_rect, LightOccluderInstance *p_occluders) override;
+	void light_update_shadow(RID p_rid, int p_shadow_index, const Transform2D& p_light_xform,
+		int p_light_mask, float p_near, float p_far, LightOccluderInstance* p_occluders,
+		const Rect2& p_light_rect) override;
+	void light_update_directional_shadow(RID p_rid, int p_shadow_index,
+		const Transform2D& p_light_xform, int p_light_mask, float p_cull_distance,
+		const Rect2& p_clip_rect, LightOccluderInstance* p_occluders) override;
 
-	virtual void render_sdf(RID p_render_target, LightOccluderInstance *p_occluders) override;
+	virtual void render_sdf(RID p_render_target, LightOccluderInstance* p_occluders) override;
 
 	RID occluder_polygon_create() override;
-	void occluder_polygon_set_shape(RID p_occluder, const Vector<Vector2> &p_points, bool p_closed) override;
-	void occluder_polygon_set_cull_mode(RID p_occluder, RSE::CanvasOccluderPolygonCullMode p_mode) override;
+	void occluder_polygon_set_shape(
+		RID p_occluder, const Vector<Vector2>& p_points, bool p_closed) override;
+	void occluder_polygon_set_cull_mode(
+		RID p_occluder, RSE::CanvasOccluderPolygonCullMode p_mode) override;
 
-	void canvas_render_items(RID p_to_render_target, Item *p_item_list, const Color &p_modulate, Light *p_light_list, Light *p_directional_light_list, const Transform2D &p_canvas_transform, RSE::CanvasItemTextureFilter p_default_filter, RSE::CanvasItemTextureRepeat p_default_repeat, bool p_snap_2d_vertices_to_pixel, bool &r_sdf_used, RenderingServerTypes::RenderInfo *r_render_info = nullptr) override;
+	void canvas_render_items(RID p_to_render_target, Item* p_item_list, const Color& p_modulate,
+		Light* p_light_list, Light* p_directional_light_list, const Transform2D& p_canvas_transform,
+		RSE::CanvasItemTextureFilter p_default_filter,
+		RSE::CanvasItemTextureRepeat p_default_repeat, bool p_snap_2d_vertices_to_pixel,
+		bool& r_sdf_used, RenderingServerTypes::RenderInfo* r_render_info = nullptr) override;
 
 	virtual void set_shadow_texture_size(int p_size) override;
 
-	void set_debug_redraw(bool p_enabled, double p_time, const Color &p_color) override;
+	void set_debug_redraw(bool p_enabled, double p_time, const Color& p_color)
+ override;
 	uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) override;
 
 	void set_time(double p_time);
@@ -722,3 +818,5 @@ public:
 	RendererCanvasRenderRD();
 	~RendererCanvasRenderRD();
 };
+
+

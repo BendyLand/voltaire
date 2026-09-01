@@ -40,8 +40,6 @@ class EditorValidationPanel;
 
 class PluginConfigDialog : public ConfirmationDialog
 {
-	VLTRCLASS(PluginConfigDialog, ConfirmationDialog);
-
 	enum
 	{
 		MSG_ID_PLUGIN,

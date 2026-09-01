@@ -28,43 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "fog_volume.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/environment.h"
 #include "servers/rendering/rendering_server.h"
-
-///////////////////////////
-
-void FogVolume::_bind_methods() {}
-
-void FogVolume::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "size" && shape == RSE::FOG_VOLUME_SHAPE_WORLD) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
-#ifndef DISABLE_DEPRECATED
-bool FogVolume::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
-		return true;
-	}
-	return false;
-}
-
-bool FogVolume::_get(const StringName& p_name, Variant& r_property) const
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		r_property = size / 2;
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
 
 void FogVolume::set_size(const Vector3& p_size)
 {
@@ -75,16 +43,6 @@ void FogVolume::set_size(const Vector3& p_size)
 }
 
 Vector3 FogVolume::get_size() const { return size; }
-
-void FogVolume::set_shape(RSE::FogVolumeShape p_type)
-{
-	shape = p_type;
-	RS::get_singleton()->fog_volume_set_shape(_get_volume(), shape);
-	RS::get_singleton()->instance_set_ignore_culling(
-		get_instance(), shape == RSE::FOG_VOLUME_SHAPE_WORLD);
-	update_gizmos();
-	this->obj->notify_property_list_changed();
-}
 
 RSE::FogVolumeShape FogVolume::get_shape() const { return shape; }
 

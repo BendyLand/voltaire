@@ -36,7 +36,6 @@
 #include "servers/camera/camera_server.h"
 
 class CameraApple : public CameraServer {
-	VLTRSOFTCLASS(CameraApple, CameraServer);
 
 public:
 	CameraApple() = default;

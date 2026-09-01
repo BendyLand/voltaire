@@ -37,19 +37,19 @@
 class Mesh;
 class RandomNumberGenerator;
 
-class CPUParticles3D : public GeometryInstance3D {
-private:
-	VLTRCLASS(CPUParticles3D, GeometryInstance3D);
-
+class CPUParticles3D : public GeometryInstance3D
+{
 public:
-	enum DrawOrder {
+	enum DrawOrder
+	{
 		DRAW_ORDER_INDEX,
 		DRAW_ORDER_LIFETIME,
 		DRAW_ORDER_VIEW_DEPTH,
 		DRAW_ORDER_MAX
 	};
 
-	enum Parameter {
+	enum Parameter
+	{
 		PARAM_INITIAL_LINEAR_VELOCITY,
 		PARAM_ANGULAR_VELOCITY,
 		PARAM_ORBIT_VELOCITY,
@@ -65,14 +65,16 @@ public:
 		PARAM_MAX
 	};
 
-	enum ParticleFlags {
+	enum ParticleFlags
+	{
 		PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY,
 		PARTICLE_FLAG_ROTATE_Y,
 		PARTICLE_FLAG_DISABLE_Z,
 		PARTICLE_FLAG_MAX
 	};
 
-	enum EmissionShape {
+	enum EmissionShape
+	{
 		EMISSION_SHAPE_POINT,
 		EMISSION_SHAPE_SPHERE,
 		EMISSION_SHAPE_SPHERE_SURFACE,
@@ -87,7 +89,8 @@ private:
 	bool emitting = false;
 	bool active = false;
 
-	struct Particle {
+	struct Particle
+	{
 		Transform3D transform;
 		Color color;
 		real_t custom[4] = {};
@@ -116,19 +119,25 @@ private:
 	Vector<float> particle_data;
 	Vector<int> particle_order;
 
-	struct SortLifetime {
-		const Particle *particles = nullptr;
+	struct SortLifetime
+	{
+		const Particle* particles = nullptr;
 
-		bool operator()(int p_a, int p_b) const {
+		bool operator()(int p_a, int p_b) const
+		{
 			return particles[p_a].time > particles[p_b].time;
 		}
 	};
 
-	struct SortAxis {
-		const Particle *particles = nullptr;
+	struct SortAxis
+	{
+		const Particle* particles = nullptr;
 		Vector3 axis;
-		bool operator()(int p_a, int p_b) const {
-			return axis.dot(particles[p_a].transform.origin) < axis.dot(particles[p_b].transform.origin);
+
+		bool operator()(int p_a, int p_b) const
+		{
+			return axis.dot(particles[p_a].transform.origin) <
+				   axis.dot(particles[p_b].transform.origin);
 		}
 	};
 
@@ -208,15 +217,7 @@ private:
 	void _set_redraw(bool p_redraw);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
-
-#ifndef DISABLE_DEPRECATED
-	void _restart_bind_compat_92089();
-	void _request_particles_process_bind_compat_109142(real_t p_time);
-	static void _bind_compatibility_methods();
-#endif
 
 public:
 	AABB get_aabb() const override;
@@ -228,7 +229,7 @@ public:
 	void set_pre_process_time(double p_time);
 	void set_explosiveness_ratio(real_t p_ratio);
 	void set_randomness_ratio(real_t p_ratio);
-	void set_visibility_aabb(const AABB &p_aabb);
+	void set_visibility_aabb(const AABB& p_aabb);
 	void set_lifetime_randomness(double p_random);
 	void set_use_local_coordinates(bool p_enable);
 	void set_speed_scale(double p_scale);
@@ -254,7 +255,7 @@ public:
 	void set_draw_order(DrawOrder p_order);
 	DrawOrder get_draw_order() const;
 
-	void set_mesh(const Ref<Mesh> &p_mesh);
+	void set_mesh(const Ref<Mesh>& p_mesh);
 	Ref<Mesh> get_mesh() const;
 
 	void set_use_fixed_seed(bool p_use_fixed_seed = false);
@@ -263,7 +264,8 @@ public:
 	void set_seed(uint32_t p_seed);
 	uint32_t get_seed() const;
 
-	void request_particles_process(real_t p_requested_process_time, real_t p_request_process_time_residual = 0.0f);
+	void request_particles_process(
+		real_t p_requested_process_time, real_t p_request_process_time_residual = 0.0f);
 
 	///////////////////
 
@@ -282,16 +284,16 @@ public:
 	void set_param_max(Parameter p_param, real_t p_value);
 	real_t get_param_max(Parameter p_param) const;
 
-	void set_param_curve(Parameter p_param, const Ref<Curve> &p_curve);
+	void set_param_curve(Parameter p_param, const Ref<Curve>& p_curve);
 	Ref<Curve> get_param_curve(Parameter p_param) const;
 
-	void set_color(const Color &p_color);
+	void set_color(const Color& p_color);
 	Color get_color() const;
 
-	void set_color_ramp(const Ref<Gradient> &p_ramp);
+	void set_color_ramp(const Ref<Gradient>& p_ramp);
 	Ref<Gradient> get_color_ramp() const;
 
-	void set_color_initial_ramp(const Ref<Gradient> &p_ramp);
+	void set_color_initial_ramp(const Ref<Gradient>& p_ramp);
 	Ref<Gradient> get_color_initial_ramp() const;
 
 	void set_particle_flag(ParticleFlags p_particle_flag, bool p_enable);
@@ -300,9 +302,9 @@ public:
 	void set_emission_shape(EmissionShape p_shape);
 	void set_emission_sphere_radius(real_t p_radius);
 	void set_emission_box_extents(Vector3 p_extents);
-	void set_emission_points(const Vector<Vector3> &p_points);
-	void set_emission_normals(const Vector<Vector3> &p_normals);
-	void set_emission_colors(const Vector<Color> &p_colors);
+	void set_emission_points(const Vector<Vector3>& p_points);
+	void set_emission_normals(const Vector<Vector3>& p_normals);
+	void set_emission_colors(const Vector<Color>& p_colors);
 	void set_emission_ring_axis(Vector3 p_axis);
 	void set_emission_ring_height(real_t p_height);
 	void set_emission_ring_radius(real_t p_radius);
@@ -329,14 +331,14 @@ public:
 	Ref<Curve> get_scale_curve_z() const;
 	bool get_split_scale();
 
-	void set_gravity(const Vector3 &p_gravity);
+	void set_gravity(const Vector3& p_gravity);
 	Vector3 get_gravity() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 
 	void restart(bool p_keep_seed = false);
 
-	void convert_from_particles(Node *p_particles);
+	void convert_from_particles(Node* p_particles);
 
 	AABB capture_aabb() const;
 
@@ -344,7 +346,4 @@ public:
 	~CPUParticles3D();
 };
 
-VARIANT_ENUM_CAST(CPUParticles3D::DrawOrder)
-VARIANT_ENUM_CAST(CPUParticles3D::Parameter)
-VARIANT_ENUM_CAST(CPUParticles3D::ParticleFlags)
-VARIANT_ENUM_CAST(CPUParticles3D::EmissionShape)
+

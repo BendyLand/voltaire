@@ -57,7 +57,6 @@ class VSplitContainer;
 class CanvasItemEditorSelectedItem
 {
 public:
-	mem_unique_ptr<Object> obj;
 	Transform2D prev_xform;
 	Rect2 prev_rect;
 	Vector2 prev_pivot;
@@ -68,15 +67,10 @@ public:
 	Rect2 pre_drag_rect;
 
 	List<real_t> pre_drag_bones_length;
-	List<Dictionary> pre_drag_bones_undo_state;
-
-	Dictionary undo_state;
 };
 
 class CanvasItemEditor : public VBoxContainer
 {
-	VLTRCLASS(CanvasItemEditor, VBoxContainer);
-
 public:
 	enum Tool
 	{
@@ -330,23 +324,6 @@ private:
 
 	uint64_t bone_last_frame = 0;
 
-	struct BoneKey
-	{
-		ObjectID from;
-		ObjectID to;
-
-		_FORCE_INLINE_ bool operator<(const BoneKey& p_key) const
-		{
-			if (from == p_key.from) {
-				return to < p_key.to;
-			}
-			else {
-				return from < p_key.from;
-			}
-		}
-	};
-
-	HashMap<BoneKey, BoneList> bone_list;
 	MenuButton* skeleton_menu = nullptr;
 
 	struct PoseClipboard
@@ -354,7 +331,6 @@ private:
 		Vector2 pos;
 		Vector2 scale;
 		real_t rot = 0;
-		ObjectID id;
 	};
 
 	List<PoseClipboard> pose_clipboard;
@@ -499,13 +475,9 @@ private:
 		const Transform2D& p_canvas_xform = Transform2D(), bool include_locked_nodes = true);
 	Rect2 _get_encompassing_rect(const Node* p_node);
 
-	CanvasItemEditorSelectedItem* _get_editor_data(Object* p_what);
-
 	void _insert_animation_keys(bool p_location, bool p_rotation, bool p_scale, bool p_on_existing);
 
 	void _keying_changed();
-
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_ev) override;
 
 	void _draw_text_at_position(Point2 p_position, const String& p_string, Side p_side);
 	void _draw_margin_at_position(int p_value, Point2 p_position, Side p_side);
@@ -622,8 +594,6 @@ public:
 
 	static CanvasItemEditor* get_singleton() { return singleton; }
 
-	Dictionary get_state() const;
-	void set_state(const Dictionary& p_state);
 	void clear();
 
 	void add_control_to_menu_panel(Control* p_control);
@@ -674,8 +644,6 @@ public:
 
 class CanvasItemEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(CanvasItemEditorPlugin, EditorPlugin);
-
 	CanvasItemEditor* canvas_item_editor = nullptr;
 
 protected:
@@ -686,13 +654,6 @@ public:
 
 	bool has_main_screen() const override { return true; }
 
-	virtual void edit(Object* p_object) override;
-	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(Object& obj, bool p_visible) override;
-	virtual Dictionary get_state() const override;
-	virtual void set_state(Object& obj, const Dictionary& p_state) override;
-	virtual void clear(Object& obj) override;
-
 	CanvasItemEditor* get_canvas_item_editor() { return canvas_item_editor; }
 
 	CanvasItemEditorPlugin();
@@ -700,8 +661,6 @@ public:
 
 class CanvasItemEditorViewport : public Control
 {
-	VLTRCLASS(CanvasItemEditorViewport, Control);
-
 	// The type of node that will be created when dropping texture into the viewport.
 	String default_texture_node_type;
 	// Node types that are available to select from when dropping texture into viewport.
@@ -719,7 +678,6 @@ class CanvasItemEditorViewport : public Control
 	Ref<ButtonGroup> button_group;
 
 	void _on_mouse_exit();
-	void _on_select_texture_node_type(Object* selected);
 	void _on_change_type_confirmed();
 	void _on_change_type_closed();
 
@@ -742,9 +700,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(const Object& obj, const Point2& p_point, const Variant& p_data) override;
-
 	void set_hint_label(const String& p_title, const String& p_description) const;
 
 	CanvasItemEditorViewport(CanvasItemEditor* p_canvas_item_editor);

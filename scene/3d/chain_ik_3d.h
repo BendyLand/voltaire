@@ -33,7 +33,6 @@
 #include "scene/3d/ik_modifier_3d.h"
 
 class ChainIK3D : public IKModifier3D {
-	VLTRCLASS(ChainIK3D, IKModifier3D);
 
 public:
 	struct ChainIK3DSetting : public IKModifier3DSetting {
@@ -202,11 +201,6 @@ protected:
 #endif // TOOLS_ENABLED
 
 	LocalVector<ChainIK3DSetting *> chain_settings; // For caching.
-
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	bool _set(const StringName &p_path, const Variant &p_value);
-	void get_property_list(List<PropertyInfo> *p_list) const;
-	void _validate_dynamic_prop(PropertyInfo &p_property) const;
 
 	static void _bind_methods();
 

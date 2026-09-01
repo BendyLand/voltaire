@@ -28,52 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "missing_node.h"
-
-bool MissingNode::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (is_recording_properties()) {
-		properties.insert(p_name, p_value);
-		return true; // always valid to set (add)
-	}
-	else {
-		if (!properties.has(p_name)) {
-			return false;
-		}
-
-		properties[p_name] = p_value;
-		return true;
-	}
-}
-
-bool MissingNode::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (!properties.has(p_name)) {
-		return false;
-	}
-	r_ret = properties[p_name];
-	return true;
-}
-
-void MissingNode::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	for (const KeyValue<StringName, Variant>& E : properties) {
-		p_list->push_back(PropertyInfo(E.value.get_type(), E.key));
-	}
-}
-
-#ifdef DEBUG_ENABLED
-Error MissingNode::connect(const StringName& p_signal, const Callable& p_callable, uint32_t p_flags)
-{
-	if (is_recording_signals()) {
-		if (!has_signal(p_signal)) {
-			this->obj->add_user_signal(MethodInfo(p_signal));
-		}
-	}
-	return this->obj->connect(p_signal, p_callable, p_flags);
-}
-#endif
 
 void MissingNode::set_original_class(const String& p_class) { original_class = p_class; }
 
@@ -118,7 +73,6 @@ PackedStringArray MissingNode::get_configuration_warnings() const
 	return warnings;
 }
 
-void MissingNode::_bind_methods() {}
-
 MissingNode::MissingNode() {}
+
 

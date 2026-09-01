@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/worker_thread_pool.h"
 #include "core/os/thread.h"
 #include "core/templates/command_queue_mt.h"
 #include "core/templates/hash_map.h"
@@ -46,8 +45,6 @@
 
 class RenderingServerDefault : public RenderingServer
 {
-	VLTRSOFTCLASS(RenderingServerDefault, RenderingServer);
-
 	enum
 	{
 		MAX_INSTANCE_CULL = 8192,
@@ -63,8 +60,6 @@ class RenderingServerDefault : public RenderingServer
 
 	static int changes;
 	RID test_cube;
-
-	List<Callable> frame_drawn_callbacks;
 
 	static void _changes_changed() {}
 
@@ -82,11 +77,9 @@ class RenderingServerDefault : public RenderingServer
 	mutable CommandQueueMT command_queue;
 
 	Thread::ID server_thread = Thread::MAIN_ID;
-	WorkerThreadPool::TaskID server_task_id = WorkerThreadPool::INVALID_TASK_ID;
 	bool exit = false;
 	bool create_thread = false;
 
-	void _assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id);
 	void _thread_exit();
 	void _thread_loop();
 
@@ -96,8 +89,6 @@ class RenderingServerDefault : public RenderingServer
 	void _finish();
 
 	void _free(RID p_rid);
-
-	void _call_on_render_thread(const Callable& p_callable);
 
 public:
 	// if editor is redrawing when it shouldn't, enable this and put a breakpoint in
@@ -267,9 +258,6 @@ public:
 	FUNC4(texture_external_update, RID, int, int, uint64_t)
 	FUNC2(texture_proxy_update, RID, RID)
 
-	FUNC6(texture_drawable_blit_rect, const Array&, const Rect2i&, RID, const Color&, const Array&,
-		int)
-
 	// these also go pass-through
 	FUNCRIDTEX0(texture_2d_placeholder)
 	FUNCRIDTEX1(texture_2d_layered_placeholder, RSE::TextureLayeredType)
@@ -358,11 +346,8 @@ public:
 	FUNC2(shader_set_path_hint, RID, const String&)
 	FUNC1RC(String, shader_get_code, RID)
 
-	FUNC2SC(get_shader_parameter_list, RID, List<PropertyInfo>*)
-
 	FUNC4(shader_set_default_texture_parameter, RID, const StringName&, RID, int)
 	FUNC3RC(RID, shader_get_default_texture_parameter, RID, const StringName&, int)
-	FUNC2RC(Variant, shader_get_parameter_default, RID, const StringName&)
 
 	FUNC1RC(RenderingServerTypes::ShaderNativeSourceCode, shader_get_native_source_code, RID)
 
@@ -401,9 +386,6 @@ public:
 	}
 
 	FUNC2(material_set_shader, RID, RID)
-
-	FUNC3(material_set_param, RID, const StringName&, const Variant&)
-	FUNC2RC(Variant, material_get_param, RID, const StringName&)
 
 	FUNC2(material_set_render_priority, RID, int)
 	FUNC2(material_set_next_pass, RID, RID)
@@ -770,7 +752,6 @@ public:
 
 	FUNCRIDSPLIT(visibility_notifier)
 	FUNC2(visibility_notifier_set_aabb, RID, const AABB&)
-	FUNC3(visibility_notifier_set_callbacks, RID, const Callable&, const Callable&)
 
 #undef server_name
 #undef ServerName
@@ -892,12 +873,9 @@ public:
 
 	FUNCRIDSPLIT(compositor_effect)
 	FUNC2(compositor_effect_set_enabled, RID, bool)
-	FUNC3(compositor_effect_set_callback, RID, RSE::CompositorEffectCallbackType, const Callable&)
 	FUNC3(compositor_effect_set_flag, RID, RSE::CompositorEffectFlags, bool)
 
 	/* COMPOSITOR */
-
-	FUNC2(compositor_set_compositor_effects, RID, const Array&)
 
 	FUNCRIDSPLIT(compositor)
 
@@ -1017,7 +995,6 @@ public:
 	FUNC2(instance_set_layer_mask, RID, uint32_t)
 	FUNC3(instance_set_pivot_data, RID, float, bool)
 	FUNC2(instance_set_transform, RID, const Transform3D&)
-	FUNC2(instance_attach_object_instance_id, RID, ObjectID)
 	FUNC3(instance_set_blend_shape_weight, RID, int, float)
 	FUNC3(instance_set_surface_override_material, RID, int, RID)
 	FUNC2(instance_set_visible, RID, bool)
@@ -1033,11 +1010,6 @@ public:
 
 	FUNC2(instance_set_ignore_culling, RID, bool)
 
-	// don't use these in a game!
-	FUNC2RC(Vector<ObjectID>, instances_cull_aabb, const AABB&, RID)
-	FUNC3RC(Vector<ObjectID>, instances_cull_ray, const Vector3&, const Vector3&, RID)
-	FUNC2RC(Vector<ObjectID>, instances_cull_convex, const Vector<Plane>&, RID)
-
 	FUNC3(instance_geometry_set_flag, RID, RSE::InstanceFlags, bool)
 	FUNC2(instance_geometry_set_cast_shadows_setting, RID, RSE::ShadowCastingSetting)
 	FUNC2(instance_geometry_set_material_override, RID, RID)
@@ -1048,15 +1020,8 @@ public:
 	FUNC4(instance_geometry_set_lightmap, RID, RID, const Rect2&, int)
 	FUNC2(instance_geometry_set_lod_bias, RID, float)
 	FUNC2(instance_geometry_set_transparency, RID, float)
-	FUNC3(instance_geometry_set_shader_parameter, RID, const StringName&, const Variant&)
-	FUNC2RC(Variant, instance_geometry_get_shader_parameter, RID, const StringName&)
-	FUNC2RC(Variant, instance_geometry_get_shader_parameter_default_value, RID, const StringName&)
-	FUNC2SC(instance_geometry_get_shader_parameter_list, RID, List<PropertyInfo>*)
 
 	// the *_NO variant strips the override keyword from the definition
-	FUNC3R_NO(Array, bake_render_uv2, RID, const Array&, const Size2i&)
-	FUNC4R(PackedByteArray, bake_render_area_light_atlas, const Array&, const Array&, const Size2i&,
-		int)
 
 	FUNC1(gi_set_use_half_resolution, bool)
 
@@ -1145,16 +1110,7 @@ public:
 
 	FUNC2(canvas_item_set_material, RID, RID)
 
-	FUNC3(canvas_item_set_instance_shader_parameter, RID, const StringName&, const Variant&)
-	FUNC2RC(Variant, canvas_item_get_instance_shader_parameter, RID, const StringName&)
-	FUNC2RC(
-		Variant, canvas_item_get_instance_shader_parameter_default_value, RID, const StringName&)
-	FUNC2SC(canvas_item_get_instance_shader_parameter_list, RID, List<PropertyInfo>*)
-
 	FUNC2(canvas_item_set_use_parent_material, RID, bool)
-
-	FUNC5(canvas_item_set_visibility_notifier, RID, bool, const Rect2&, const Callable&,
-		const Callable&)
 
 	FUNC6(canvas_item_set_canvas_group_mode, RID, RSE::CanvasGroupMode, float, bool, float, bool)
 
@@ -1224,14 +1180,9 @@ public:
 #define ServerName RendererMaterialStorage
 #define server_name RSG::material_storage
 
-	FUNC3(global_shader_parameter_add, const StringName&, RSE::GlobalShaderParameterType,
-		const Variant&)
 	FUNC1(global_shader_parameter_remove, const StringName&)
 	FUNC0RC(Vector<StringName>, global_shader_parameter_get_list)
-	FUNC2(global_shader_parameter_set, const StringName&, const Variant&)
-	FUNC2(global_shader_parameter_set_override, const StringName&, const Variant&)
 	FUNC1RC(RSE::GlobalShaderParameterType, global_shader_parameter_get_type, const StringName&)
-	FUNC1RC(Variant, global_shader_parameter_get, const StringName&)
 
 	FUNC1(global_shader_parameters_load_settings, bool)
 	FUNC0(global_shader_parameters_clear)
@@ -1294,8 +1245,6 @@ public:
 
 	/* EVENT QUEUING */
 
-	virtual void request_frame_drawn_callback(const Callable& p_callable) override;
-
 	virtual void draw(bool p_present, double frame_step) override;
 	virtual void sync() override;
 	virtual bool has_changed() const override;
@@ -1305,17 +1254,6 @@ public:
 	virtual void pre_draw(bool p_will_draw) override;
 
 	virtual bool is_on_render_thread() override { return Thread::get_caller_id() == server_thread; }
-
-	virtual void call_on_render_thread(const Callable& p_callable) override
-	{
-		if (Thread::get_caller_id() == server_thread) {
-			command_queue.flush_if_pending();
-			p_callable.call();
-		} \
-		else {
-			command_queue.push(this, &RenderingServerDefault::_call_on_render_thread, p_callable);
-		}
-	}
 
 	/* TESTING */
 

@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "spring_bone_3d_gizmo_plugin.h"
-
 #include "editor/settings/editor_settings.h"
 #include "scene/3d/spring_bone_collision_3d.h"
 #include "scene/3d/spring_bone_collision_capsule_3d.h"
@@ -37,16 +35,20 @@
 #include "scene/3d/spring_bone_collision_sphere_3d.h"
 #include "scene/3d/spring_bone_simulator_3d.h"
 #include "scene/resources/surface_tool.h"
+#include "spring_bone_3d_gizmo_plugin.h"
 
 // SpringBoneSimulator3D
 
-SpringBoneSimulator3DGizmoPlugin::SelectionMaterials SpringBoneSimulator3DGizmoPlugin::selection_materials;
+SpringBoneSimulator3DGizmoPlugin::SelectionMaterials
+	SpringBoneSimulator3DGizmoPlugin::selection_materials;
 
-SpringBoneSimulator3DGizmoPlugin::SpringBoneSimulator3DGizmoPlugin() {
+SpringBoneSimulator3DGizmoPlugin::SpringBoneSimulator3DGizmoPlugin()
+{
 	selection_materials.unselected_mat.instantiate();
 	selection_materials.unselected_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	selection_materials.unselected_mat->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
+	selection_materials.unselected_mat->set_flag(
+		StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
 	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
 	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 
@@ -76,153 +78,55 @@ void fragment() {
 	selection_materials.selected_mat->set_shader(sh);
 }
 
-SpringBoneSimulator3DGizmoPlugin::~SpringBoneSimulator3DGizmoPlugin() {
+SpringBoneSimulator3DGizmoPlugin::~SpringBoneSimulator3DGizmoPlugin()
+{
 	selection_materials.unselected_mat.unref();
 	selection_materials.selected_mat.unref();
 }
 
-bool SpringBoneSimulator3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
-	return Object::cast_to<SpringBoneSimulator3D>(p_spatial) != nullptr;
-}
+String SpringBoneSimulator3DGizmoPlugin::get_gizmo_name() const { return "SpringBoneSimulator3D"; }
 
-String SpringBoneSimulator3DGizmoPlugin::get_gizmo_name() const {
-	return "SpringBoneSimulator3D";
-}
-
-int SpringBoneSimulator3DGizmoPlugin::get_priority() const {
-	return -1;
-}
-
-void SpringBoneSimulator3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
-	SpringBoneSimulator3D *simulator = Object::cast_to<SpringBoneSimulator3D>(p_gizmo->get_node_3d());
-	p_gizmo->clear();
-
-	if (!simulator->get_setting_count()) {
-		return;
-	}
-
-	Skeleton3D *skeleton = simulator->get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	Ref<ArrayMesh> mesh = get_joints_mesh(skeleton, simulator, p_gizmo->is_selected());
-	Transform3D skel_tr = simulator->get_global_transform().inverse() * skeleton->get_global_transform();
-	p_gizmo->add_mesh(mesh, Ref<Material>(), skel_tr, skeleton->register_skin(skeleton->create_skin_from_rest_transforms()));
-}
-
-Ref<ArrayMesh> SpringBoneSimulator3DGizmoPlugin::get_joints_mesh(Skeleton3D *p_skeleton, SpringBoneSimulator3D *p_simulator, bool p_is_selected) {
-	Color bone_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/spring_bone_joint");
-
-	Ref<SurfaceTool> surface_tool;
-	surface_tool.instantiate();
-	surface_tool->begin(Mesh::PRIMITIVE_LINES);
-
-	if (p_is_selected) {
-		surface_tool->set_material(selection_materials.selected_mat);
-	} else {
-		selection_materials.unselected_mat->set_albedo(bone_color);
-		surface_tool->set_material(selection_materials.unselected_mat);
-	}
-
-	LocalVector<int> bones;
-	LocalVector<float> weights;
-	bones.resize(4);
-	weights.resize(4);
-	for (int i = 0; i < 4; i++) {
-		bones[i] = 0;
-		weights[i] = 0;
-	}
-	weights[0] = 1;
-
-	for (int i = 0; i < p_simulator->get_setting_count(); i++) {
-		int current_bone = -1;
-		int prev_bone = -1;
-		int joint_end = p_simulator->get_joint_count(i) - 1;
-		bool is_extended = p_simulator->is_end_bone_extended(i) && p_simulator->get_end_bone_length(i) > 0;
-		for (int j = 0; j <= joint_end; j++) {
-			current_bone = p_simulator->get_joint_bone(i, j);
-			Transform3D global_pose = p_skeleton->get_bone_global_rest(current_bone);
-			if (j > 0) {
-				Transform3D parent_global_pose = p_skeleton->get_bone_global_rest(prev_bone);
-				Vector3 bone_vector = p_simulator->get_bone_vector(i, j - 1);
-				Vector3 center = parent_global_pose.translated_local(bone_vector).origin;
-				draw_line(surface_tool, parent_global_pose.origin, center, bone_color);
-				draw_sphere(surface_tool, global_pose.basis, center, p_simulator->get_joint_radius(i, j - 1), bone_color);
-
-				// Draw rotation axis vector if not ROTATION_AXIS_ALL.
-				if (j != joint_end || (j == joint_end && is_extended)) {
-					SkeletonModifier3D::RotationAxis rotation_axis = p_simulator->get_joint_rotation_axis(i, j);
-					if (rotation_axis != SkeletonModifier3D::ROTATION_AXIS_ALL) {
-						Vector3 axis_vector = p_simulator->get_joint_rotation_axis_vector(i, j);
-						if (!axis_vector.is_zero_approx()) {
-							float line_length = p_simulator->get_joint_radius(i, j - 1) * 2.0;
-							Vector3 axis = global_pose.basis.xform(axis_vector.normalized()) * line_length;
-							draw_line(surface_tool, center - axis, center + axis, bone_color);
-						}
-					}
-				}
-			}
-			if (j == joint_end && is_extended) {
-				Vector3 bone_vector = p_simulator->get_bone_vector(i, j);
-				if (bone_vector.is_zero_approx()) {
-					continue;
-				}
-				bones[0] = current_bone;
-				surface_tool->set_bones(Vector<int>(bones));
-				surface_tool->set_weights(Vector<float>(weights));
-				Vector3 center = global_pose.translated_local(bone_vector).origin;
-				draw_line(surface_tool, global_pose.origin, center, bone_color);
-				draw_sphere(surface_tool, global_pose.basis, center, p_simulator->get_joint_radius(i, j), bone_color);
-			} else {
-				bones[0] = current_bone;
-				surface_tool->set_bones(Vector<int>(bones));
-				surface_tool->set_weights(Vector<float>(weights));
-				if (j == 0) {
-					// Draw rotation axis vector if not ROTATION_AXIS_ALL.
-					SkeletonModifier3D::RotationAxis rotation_axis = p_simulator->get_joint_rotation_axis(i, j);
-					if (rotation_axis != SkeletonModifier3D::ROTATION_AXIS_ALL) {
-						Vector3 axis_vector = p_simulator->get_joint_rotation_axis_vector(i, j);
-						if (!axis_vector.is_zero_approx()) {
-							float line_length = p_simulator->get_joint_radius(i, j) * 2.0;
-							Vector3 axis = global_pose.basis.xform(axis_vector.normalized()) * line_length;
-							draw_line(surface_tool, global_pose.origin - axis, global_pose.origin + axis, bone_color);
-						}
-					}
-				}
-			}
-			prev_bone = current_bone;
-		}
-	}
-
-	return surface_tool->commit();
-}
-
-void SpringBoneSimulator3DGizmoPlugin::draw_sphere(Ref<SurfaceTool> &p_surface_tool, const Basis &p_basis, const Vector3 &p_center, float p_radius, const Color &p_color) {
+void SpringBoneSimulator3DGizmoPlugin::draw_sphere(Ref<SurfaceTool>& p_surface_tool,
+	const Basis& p_basis, const Vector3& p_center, float p_radius, const Color& p_color)
+{
 	static constexpr int STEP = 16;
 	static constexpr float SPPI = Math::TAU / (float)STEP;
 
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(p_center + ((p_basis.xform(Vector3::UP * p_radius)).rotated(p_basis.xform(Vector3::RIGHT), SPPI * ((i - 1) % STEP))));
+		p_surface_tool->add_vertex(
+			p_center + ((p_basis.xform(Vector3::UP * p_radius))
+							   .rotated(p_basis.xform(Vector3::RIGHT), SPPI * ((i - 1) % STEP))));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(p_center + ((p_basis.xform(Vector3::UP * p_radius)).rotated(p_basis.xform(Vector3::RIGHT), SPPI * (i % STEP))));
+		p_surface_tool->add_vertex(
+			p_center + ((p_basis.xform(Vector3::UP * p_radius))
+							   .rotated(p_basis.xform(Vector3::RIGHT), SPPI * (i % STEP))));
 	}
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(p_center + ((p_basis.xform(Vector3::RIGHT * p_radius)).rotated(p_basis.xform(Vector3::FORWARD), SPPI * ((i - 1) % STEP))));
+		p_surface_tool->add_vertex(
+			p_center + ((p_basis.xform(Vector3::RIGHT * p_radius))
+							   .rotated(p_basis.xform(Vector3::FORWARD), SPPI * ((i - 1) % STEP))));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(p_center + ((p_basis.xform(Vector3::RIGHT * p_radius)).rotated(p_basis.xform(Vector3::FORWARD), SPPI * (i % STEP))));
+		p_surface_tool->add_vertex(
+			p_center + ((p_basis.xform(Vector3::RIGHT * p_radius))
+							   .rotated(p_basis.xform(Vector3::FORWARD), SPPI * (i % STEP))));
 	}
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(p_center + ((p_basis.xform(Vector3::FORWARD * p_radius)).rotated(p_basis.xform(Vector3::UP), SPPI * ((i - 1) % STEP))));
+		p_surface_tool->add_vertex(
+			p_center + ((p_basis.xform(Vector3::FORWARD * p_radius))
+							   .rotated(p_basis.xform(Vector3::UP), SPPI * ((i - 1) % STEP))));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(p_center + ((p_basis.xform(Vector3::FORWARD * p_radius)).rotated(p_basis.xform(Vector3::UP), SPPI * (i % STEP))));
+		p_surface_tool->add_vertex(
+			p_center + ((p_basis.xform(Vector3::FORWARD * p_radius))
+							   .rotated(p_basis.xform(Vector3::UP), SPPI * (i % STEP))));
 	}
 }
 
-void SpringBoneSimulator3DGizmoPlugin::draw_line(Ref<SurfaceTool> &p_surface_tool, const Vector3 &p_begin_pos, const Vector3 &p_end_pos, const Color &p_color) {
+void SpringBoneSimulator3DGizmoPlugin::draw_line(Ref<SurfaceTool>& p_surface_tool,
+	const Vector3& p_begin_pos, const Vector3& p_end_pos, const Color& p_color)
+{
 	p_surface_tool->set_color(p_color);
 	p_surface_tool->add_vertex(p_begin_pos);
 	p_surface_tool->set_color(p_color);
@@ -231,13 +135,16 @@ void SpringBoneSimulator3DGizmoPlugin::draw_line(Ref<SurfaceTool> &p_surface_too
 
 // SpringBoneCollision3D
 
-SpringBoneCollision3DGizmoPlugin::SelectionMaterials SpringBoneCollision3DGizmoPlugin::selection_materials;
+SpringBoneCollision3DGizmoPlugin::SelectionMaterials
+	SpringBoneCollision3DGizmoPlugin::selection_materials;
 
-SpringBoneCollision3DGizmoPlugin::SpringBoneCollision3DGizmoPlugin() {
+SpringBoneCollision3DGizmoPlugin::SpringBoneCollision3DGizmoPlugin()
+{
 	selection_materials.unselected_mat.instantiate();
 	selection_materials.unselected_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	selection_materials.unselected_mat->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
+	selection_materials.unselected_mat->set_flag(
+		StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
 	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
 	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 
@@ -267,92 +174,49 @@ void fragment() {
 	selection_materials.selected_mat->set_shader(sh);
 }
 
-SpringBoneCollision3DGizmoPlugin::~SpringBoneCollision3DGizmoPlugin() {
+SpringBoneCollision3DGizmoPlugin::~SpringBoneCollision3DGizmoPlugin()
+{
 	selection_materials.unselected_mat.unref();
 	selection_materials.selected_mat.unref();
 }
 
-bool SpringBoneCollision3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
-	return Object::cast_to<SpringBoneCollision3D>(p_spatial) != nullptr;
-}
+String SpringBoneCollision3DGizmoPlugin::get_gizmo_name() const { return "SpringBoneCollision3D"; }
 
-String SpringBoneCollision3DGizmoPlugin::get_gizmo_name() const {
-	return "SpringBoneCollision3D";
-}
-
-int SpringBoneCollision3DGizmoPlugin::get_priority() const {
-	return -1;
-}
-
-void SpringBoneCollision3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
-	SpringBoneCollision3D *collision = Object::cast_to<SpringBoneCollision3D>(p_gizmo->get_node_3d());
-	p_gizmo->clear();
-
-	Ref<ArrayMesh> mesh = get_collision_mesh(collision, p_gizmo->is_selected());
-	p_gizmo->add_mesh(mesh);
-}
-
-Ref<ArrayMesh> SpringBoneCollision3DGizmoPlugin::get_collision_mesh(SpringBoneCollision3D *p_collision, bool p_is_selected) {
-	Color collision_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/spring_bone_collision");
-	Color inside_collision_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/spring_bone_inside_collision");
-
-	Ref<SurfaceTool> surface_tool;
-	surface_tool.instantiate();
-	surface_tool->begin(Mesh::PRIMITIVE_LINES);
-
-	if (p_is_selected) {
-		surface_tool->set_material(selection_materials.selected_mat);
-	} else {
-		selection_materials.unselected_mat->set_albedo(collision_color);
-		surface_tool->set_material(selection_materials.unselected_mat);
-	}
-
-	SpringBoneCollisionSphere3D *sphere = Object::cast_to<SpringBoneCollisionSphere3D>(p_collision);
-	if (sphere) {
-		draw_sphere(surface_tool, sphere->get_radius(), sphere->is_inside() ? inside_collision_color : collision_color);
-		return surface_tool->commit();
-	}
-
-	SpringBoneCollisionCapsule3D *capsule = Object::cast_to<SpringBoneCollisionCapsule3D>(p_collision);
-	if (capsule) {
-		draw_capsule(surface_tool, capsule->get_radius(), capsule->get_height(), capsule->is_inside() ? inside_collision_color : collision_color);
-		return surface_tool->commit();
-	}
-
-	SpringBoneCollisionPlane3D *plane = Object::cast_to<SpringBoneCollisionPlane3D>(p_collision);
-	if (plane) {
-		draw_plane(surface_tool, collision_color);
-		return surface_tool->commit();
-	}
-
-	return surface_tool->commit();
-}
-
-void SpringBoneCollision3DGizmoPlugin::draw_sphere(Ref<SurfaceTool> &p_surface_tool, float p_radius, const Color &p_color) {
+void SpringBoneCollision3DGizmoPlugin::draw_sphere(
+	Ref<SurfaceTool>& p_surface_tool, float p_radius, const Color& p_color)
+{
 	static constexpr int STEP = 16;
 	static constexpr float SPPI = Math::TAU / (float)STEP;
 
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((Vector3::UP * p_radius).rotated(Vector3::RIGHT, SPPI * ((i - 1) % STEP)));
+		p_surface_tool->add_vertex(
+			(Vector3::UP * p_radius).rotated(Vector3::RIGHT, SPPI * ((i - 1) % STEP)));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((Vector3::UP * p_radius).rotated(Vector3::RIGHT, SPPI * (i % STEP)));
+		p_surface_tool->add_vertex(
+			(Vector3::UP * p_radius).rotated(Vector3::RIGHT, SPPI * (i % STEP)));
 	}
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((Vector3::RIGHT * p_radius).rotated(Vector3::FORWARD, SPPI * ((i - 1) % STEP)));
+		p_surface_tool->add_vertex(
+			(Vector3::RIGHT * p_radius).rotated(Vector3::FORWARD, SPPI * ((i - 1) % STEP)));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((Vector3::RIGHT * p_radius).rotated(Vector3::FORWARD, SPPI * (i % STEP)));
+		p_surface_tool->add_vertex(
+			(Vector3::RIGHT * p_radius).rotated(Vector3::FORWARD, SPPI * (i % STEP)));
 	}
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * ((i - 1) % STEP)));
+		p_surface_tool->add_vertex(
+			(Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * ((i - 1) % STEP)));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * (i % STEP)));
+		p_surface_tool->add_vertex(
+			(Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * (i % STEP)));
 	}
 }
 
-void SpringBoneCollision3DGizmoPlugin::draw_capsule(Ref<SurfaceTool> &p_surface_tool, float p_radius, float p_height, const Color &p_color) {
+void SpringBoneCollision3DGizmoPlugin::draw_capsule(
+	Ref<SurfaceTool>& p_surface_tool, float p_radius, float p_height, const Color& p_color)
+{
 	static constexpr int STEP = 16;
 	static constexpr int HALF_STEP = 8;
 	static constexpr float SPPI = (float)Math::TAU / STEP;
@@ -363,27 +227,39 @@ void SpringBoneCollision3DGizmoPlugin::draw_capsule(Ref<SurfaceTool> &p_surface_
 
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((i - 1 < HALF_STEP ? top : bottom) + (Vector3::UP * p_radius).rotated(Vector3::RIGHT, -HALF_PI + SPPI * ((i - 1) % STEP)));
+		p_surface_tool->add_vertex(
+			(i - 1 < HALF_STEP ? top : bottom) +
+			(Vector3::UP * p_radius).rotated(Vector3::RIGHT, -HALF_PI + SPPI * ((i - 1) % STEP)));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((i - 1 < HALF_STEP ? top : bottom) + (Vector3::UP * p_radius).rotated(Vector3::RIGHT, -HALF_PI + SPPI * (i % STEP)));
+		p_surface_tool->add_vertex(
+			(i - 1 < HALF_STEP ? top : bottom) +
+			(Vector3::UP * p_radius).rotated(Vector3::RIGHT, -HALF_PI + SPPI * (i % STEP)));
 	}
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((i - 1 < HALF_STEP ? top : bottom) + (Vector3::RIGHT * p_radius).rotated(Vector3::FORWARD, SPPI * ((i - 1) % STEP)));
+		p_surface_tool->add_vertex(
+			(i - 1 < HALF_STEP ? top : bottom) +
+			(Vector3::RIGHT * p_radius).rotated(Vector3::FORWARD, SPPI * ((i - 1) % STEP)));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex((i - 1 < HALF_STEP ? top : bottom) + (Vector3::RIGHT * p_radius).rotated(Vector3::FORWARD, SPPI * (i % STEP)));
+		p_surface_tool->add_vertex(
+			(i - 1 < HALF_STEP ? top : bottom) +
+			(Vector3::RIGHT * p_radius).rotated(Vector3::FORWARD, SPPI * (i % STEP)));
 	}
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(top + (Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * ((i - 1) % STEP)));
+		p_surface_tool->add_vertex(
+			top + (Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * ((i - 1) % STEP)));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(top + (Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * (i % STEP)));
+		p_surface_tool->add_vertex(
+			top + (Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * (i % STEP)));
 	}
 	for (int i = 1; i <= STEP; i++) {
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(bottom + (Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * ((i - 1) % STEP)));
+		p_surface_tool->add_vertex(
+			bottom + (Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * ((i - 1) % STEP)));
 		p_surface_tool->set_color(p_color);
-		p_surface_tool->add_vertex(bottom + (Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * (i % STEP)));
+		p_surface_tool->add_vertex(
+			bottom + (Vector3::FORWARD * p_radius).rotated(Vector3::UP, SPPI * (i % STEP)));
 	}
 	LocalVector<Vector3> directions;
 	directions.resize(4);
@@ -399,7 +275,9 @@ void SpringBoneCollision3DGizmoPlugin::draw_capsule(Ref<SurfaceTool> &p_surface_
 	}
 }
 
-void SpringBoneCollision3DGizmoPlugin::draw_plane(Ref<SurfaceTool> &p_surface_tool, const Color &p_color) {
+void SpringBoneCollision3DGizmoPlugin::draw_plane(
+	Ref<SurfaceTool>& p_surface_tool, const Color& p_color)
+{
 	static constexpr float HALF_PI = (float)Math::PI * 0.5f;
 	static constexpr float ARROW_LENGTH = 0.3f;
 	static constexpr float ARROW_HALF_WIDTH = 0.05f;
@@ -446,3 +324,5 @@ void SpringBoneCollision3DGizmoPlugin::draw_plane(Ref<SurfaceTool> &p_surface_to
 		}
 	}
 }
+
+

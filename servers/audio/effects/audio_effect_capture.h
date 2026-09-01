@@ -31,14 +31,12 @@
 #pragma once
 
 #include "core/math/audio_frame.h"
-#include "core/object/ref_counted.h"
 #include "core/templates/ring_buffer.h"
 #include "servers/audio/audio_effect.h"
 
 class AudioEffectCapture;
 
 class AudioEffectCaptureInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectCaptureInstance, AudioEffectInstance);
 	friend class AudioEffectCapture;
 	Ref<AudioEffectCapture> base;
 
@@ -48,7 +46,6 @@ public:
 };
 
 class AudioEffectCapture : public AudioEffect {
-	VLTRCLASS(AudioEffectCapture, AudioEffect)
 	friend class AudioEffectCaptureInstance;
 
 	RingBuffer<AudioFrame> buffer;

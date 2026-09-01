@@ -30,26 +30,24 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
-class OpenXRPalmPoseExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRPalmPoseExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRPalmPoseExtension
+{
 public:
-	static OpenXRPalmPoseExtension *get_singleton();
+	static OpenXRPalmPoseExtension* get_singleton();
 
 	OpenXRPalmPoseExtension();
-	virtual ~OpenXRPalmPoseExtension() override;
+	virtual ~OpenXRPalmPoseExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
 	bool is_available();
 
 private:
-	static OpenXRPalmPoseExtension *singleton;
+	static OpenXRPalmPoseExtension* singleton;
 
 	bool available = false;
 };
+
+

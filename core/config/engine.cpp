@@ -200,59 +200,6 @@ void Engine::print_header_rich(const String& p_string) const
 	}
 }
 
-void Engine::add_singleton(const Singleton& p_singleton)
-{
-	singletons.push_back(p_singleton);
-	singleton_ptrs[p_singleton.name] = p_singleton.ptr;
-}
-
-Object* Engine::get_singleton_object(const StringName& p_name) const
-{
-	HashMap<StringName, Object*>::ConstIterator E = singleton_ptrs.find(p_name);
-	return E->value;
-}
-
-bool Engine::is_singleton_user_created(const StringName& p_name) const
-{
-	ERR_FAIL_COND_V(!singleton_ptrs.has(p_name), false);
-
-	for (const Singleton& E : singletons) {
-		if (E.name == p_name && E.user_created) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool Engine::is_singleton_editor_only(const StringName& p_name) const
-{
-	ERR_FAIL_COND_V(!singleton_ptrs.has(p_name), false);
-
-	for (const Singleton& E : singletons) {
-		if (E.name == p_name && E.editor_only) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void Engine::remove_singleton(const StringName& p_name)
-{
-	ERR_FAIL_COND(!singleton_ptrs.has(p_name));
-
-	for (List<Singleton>::Element* E = singletons.front(); E; E = E->next()) {
-		if (E->get().name == p_name) {
-			singletons.erase(E);
-			singleton_ptrs.erase(p_name);
-			return;
-		}
-	}
-}
-
-bool Engine::has_singleton(const StringName& p_name) const { return singleton_ptrs.has(p_name); }
-
 void Engine::get_singletons(List<Singleton>* p_singletons)
 {
 	for (const Singleton& E : singletons) {
@@ -295,12 +242,6 @@ Engine::~Engine()
 	if (singleton == this) {
 		singleton = nullptr;
 	}
-}
-
-Engine::Singleton::Singleton(
-	const StringName& p_name, Object* p_ptr, const StringName& p_class_name)
-	: name(p_name), ptr(p_ptr), class_name(p_class_name)
-{
 }
 
 

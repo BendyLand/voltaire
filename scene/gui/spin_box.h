@@ -36,21 +36,13 @@
 
 class SpinBoxLineEdit : public LineEdit
 {
-	VLTRCLASS(SpinBoxLineEdit, LineEdit);
-
 protected:
 	void _notification(int p_what);
-
-	void _accessibility_action_inc(const Variant& p_data);
-	void _accessibility_action_dec(const Variant& p_data);
-
 	virtual String _get_accessibility_name() const override;
 };
 
 class SpinBox : public Range
 {
-	VLTRCLASS(SpinBox, Range);
-
 	SpinBoxLineEdit* line_edit = nullptr;
 	bool update_on_text_changed = false;
 	bool accepted = true;
@@ -156,9 +148,7 @@ class SpinBox : public Range
 	void _update_buttons_state_for_current_value();
 
 protected:
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _value_changed(double p_value) override;
-	void _validate_property(PropertyInfo& p_property) const;
 
 	void _notification(int p_what);
 	static void _bind_methods();

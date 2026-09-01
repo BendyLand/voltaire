@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/error/error_macros.h"
-#include "core/object/class_db.h"
 #include "enet_connection.h"
 #include "enet_multiplayer_peer.h"
 #include "enet_packet_peer.h"

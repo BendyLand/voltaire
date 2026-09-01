@@ -36,9 +36,6 @@
 class Area2D : public CollisionObject2D
 {
 public:
-	static constexpr Object::AncestralClass static_ancestral_class =
-		Object::AncestralClass::AREA_2D;
-
 	enum SpaceOverride
 	{
 		SPACE_OVERRIDE_DISABLED,
@@ -65,12 +62,6 @@ private:
 	bool monitoring = false;
 	bool monitorable = false;
 	bool locked = false;
-
-	void _body_inout(
-		int p_status, const RID& p_body, ObjectID p_instance, int p_body_shape, int p_area_shape);
-
-	void _body_enter_tree(ObjectID p_id);
-	void _body_exit_tree(ObjectID p_id);
 
 	struct ShapePair
 	{
@@ -104,14 +95,6 @@ private:
 		VSet<ShapePair> shapes;
 	};
 
-	HashMap<ObjectID, BodyState> body_map;
-
-	void _area_inout(
-		int p_status, const RID& p_area, ObjectID p_instance, int p_area_shape, int p_self_shape);
-
-	void _area_enter_tree(ObjectID p_id);
-	void _area_exit_tree(ObjectID p_id);
-
 	struct AreaShapePair
 	{
 		int area_shape = 0;
@@ -144,7 +127,6 @@ private:
 		VSet<AreaShapePair> shapes;
 	};
 
-	HashMap<ObjectID, AreaState> area_map;
 	void _clear_monitoring();
 
 	bool audio_bus_override = false;
@@ -152,7 +134,6 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
 
 	virtual void _space_changed(const RID& p_new_space) override;
 
@@ -196,9 +177,6 @@ public:
 	void set_monitorable(bool p_enable);
 	bool is_monitorable() const;
 
-	Array get_overlapping_bodies() const;
-	Array get_overlapping_areas() const;
-
 	bool has_overlapping_bodies() const;
 	bool has_overlapping_areas() const;
 
@@ -211,10 +189,8 @@ public:
 	void set_audio_bus_name(const StringName& p_audio_bus);
 	StringName get_audio_bus_name() const;
 
-	Area2D();
-	~Area2D();
+	Area2D() = default;
+	~Area2D() = default;
 };
-
-VARIANT_ENUM_CAST(Area2D::SpaceOverride);
 
 

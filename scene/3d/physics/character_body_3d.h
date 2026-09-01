@@ -33,24 +33,27 @@
 #include "scene/3d/physics/kinematic_collision_3d.h"
 #include "scene/3d/physics/physics_body_3d.h"
 
-class CharacterBody3D : public PhysicsBody3D {
-	VLTRCLASS(CharacterBody3D, PhysicsBody3D);
-
+class CharacterBody3D : public PhysicsBody3D
+{
 public:
-	enum MotionMode {
+	enum MotionMode
+	{
 		MOTION_MODE_GROUNDED,
 		MOTION_MODE_FLOATING,
 	};
-	enum PlatformOnLeave {
+
+	enum PlatformOnLeave
+	{
 		PLATFORM_ON_LEAVE_ADD_VELOCITY,
 		PLATFORM_ON_LEAVE_ADD_UPWARD_VELOCITY,
 		PLATFORM_ON_LEAVE_DO_NOTHING,
 	};
+
 	bool move_and_slide();
 	void apply_floor_snap();
 
-	const Vector3 &get_velocity() const;
-	void set_velocity(const Vector3 &p_velocity);
+	const Vector3& get_velocity() const;
+	void set_velocity(const Vector3& p_velocity);
 
 	bool is_on_floor() const;
 	bool is_on_floor_only() const;
@@ -58,14 +61,14 @@ public:
 	bool is_on_wall_only() const;
 	bool is_on_ceiling() const;
 	bool is_on_ceiling_only() const;
-	const Vector3 &get_last_motion() const;
+	const Vector3& get_last_motion() const;
 	Vector3 get_position_delta() const;
-	const Vector3 &get_floor_normal() const;
-	const Vector3 &get_wall_normal() const;
-	const Vector3 &get_real_velocity() const;
-	real_t get_floor_angle(const Vector3 &p_up_direction = Vector3(0.0, 1.0, 0.0)) const;
-	const Vector3 &get_platform_velocity() const;
-	const Vector3 &get_platform_angular_velocity() const;
+	const Vector3& get_floor_normal() const;
+	const Vector3& get_wall_normal() const;
+	const Vector3& get_real_velocity() const;
+	real_t get_floor_angle(const Vector3& p_up_direction = Vector3(0.0, 1.0, 0.0)) const;
+	const Vector3& get_platform_velocity() const;
+	const Vector3& get_platform_angular_velocity() const;
 
 	virtual Vector3 get_linear_velocity() const override;
 
@@ -117,18 +120,22 @@ private:
 	real_t margin = 0.001;
 	MotionMode motion_mode = MOTION_MODE_GROUNDED;
 	PlatformOnLeave platform_on_leave = PLATFORM_ON_LEAVE_ADD_VELOCITY;
-	union CollisionState {
+
+	union CollisionState
+	{
 		uint32_t state = 0;
-		struct {
+
+		struct
+		{
 			bool floor;
 			bool wall;
 			bool ceiling;
 		};
 
-		CollisionState() {
-		}
+		CollisionState() {}
 
-		CollisionState(bool p_floor, bool p_wall, bool p_ceiling) {
+		CollisionState(bool p_floor, bool p_wall, bool p_ceiling)
+		{
 			floor = p_floor;
 			wall = p_wall;
 			ceiling = p_ceiling;
@@ -143,7 +150,6 @@ private:
 	int max_slides = 6;
 	int platform_layer = 0;
 	RID platform_rid;
-	ObjectID platform_object_id;
 	uint32_t platform_floor_layers = UINT32_MAX;
 	uint32_t platform_wall_layers = 0;
 	real_t floor_snap_length = 0.1;
@@ -169,18 +175,17 @@ private:
 
 	Ref<KinematicCollision3D> _get_slide_collision(int p_bounce);
 	Ref<KinematicCollision3D> _get_last_slide_collision();
-	const Vector3 &get_up_direction() const;
+	const Vector3& get_up_direction() const;
 	bool _on_floor_if_snapped(bool p_was_on_floor, bool p_vel_dir_facing_up);
-	void set_up_direction(const Vector3 &p_up_direction);
-	void _set_collision_direction(const PS3DT::MotionResult &p_result, CollisionState &r_state, CollisionState p_apply_state = CollisionState(true, true, true));
-	void _set_platform_data(const PS3DT::MotionCollision &p_collision);
+	void set_up_direction(const Vector3& p_up_direction);
+	void _set_collision_direction(const PS3DT::MotionResult& p_result, CollisionState& r_state,
+		CollisionState p_apply_state = CollisionState(true, true, true));
+	void _set_platform_data(const PS3DT::MotionCollision& p_collision);
 	void _snap_on_floor(bool p_was_on_floor, bool p_vel_dir_facing_up);
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 };
 
-VARIANT_ENUM_CAST(CharacterBody3D::MotionMode);
-VARIANT_ENUM_CAST(CharacterBody3D::PlatformOnLeave);
+

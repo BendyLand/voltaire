@@ -38,7 +38,6 @@
 #include <windows.h>
 
 class NativeMenuWindows : public NativeMenu {
-	VLTRCLASS(NativeMenuWindows, NativeMenu)
 
 	enum GlobalMenuCheckType {
 		CHECKABLE_TYPE_NONE,

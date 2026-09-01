@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "translation_server.h"
 
 String TranslationServer::_standardize_locale_bind_compat_98972(const String& p_locale) const

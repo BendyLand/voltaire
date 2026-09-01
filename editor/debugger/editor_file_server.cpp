@@ -76,24 +76,6 @@ void EditorFileServer::_scan_files_changed(EditorFileSystemDirectory* efd,
 			if (!cf->has_section("remap")) {
 				continue;
 			}
-
-			Vector<String> remaps = cf->get_section_keys("remap");
-
-			for (const String& remap : remaps) {
-				if (remap == "path") {
-					String remapped_path = cf->get_value("remap", remap);
-					uint64_t mt = FileAccess::get_modified_time(remapped_path);
-					_add_file(remapped_path, mt, files_to_send, cached_files);
-				}
-				else if (remap.begins_with("path.")) {
-					String feature = remap.get_slicec('.', 1);
-					if (p_tags.has(feature)) {
-						String remapped_path = cf->get_value("remap", remap);
-						uint64_t mt = FileAccess::get_modified_time(remapped_path);
-						_add_file(remapped_path, mt, files_to_send, cached_files);
-					}
-				}
-			}
 		}
 		else {
 			uint64_t mt = efd->get_file_modified_time(i);
@@ -275,8 +257,6 @@ void EditorFileServer::start()
 	if (active) {
 		stop();
 	}
-	port = EDITOR_GET("filesystem/file_server/port");
-	password = EDITOR_GET("filesystem/file_server/password");
 	Error err = server->listen(port);
 	ERR_FAIL_COND_MSG(err != OK, "EditorFileServer: Unable to listen on port " + itos(port));
 	active = true;

@@ -32,12 +32,9 @@
 
 #include "scene/2d/node_2d.h"
 
-class RemoteTransform2D : public Node2D {
-	VLTRCLASS(RemoteTransform2D, Node2D);
-
+class RemoteTransform2D : public Node2D
+{
 	NodePath remote_node;
-
-	ObjectID cache;
 
 	bool use_global_coordinates = true;
 	bool update_remote_position = true;
@@ -46,13 +43,13 @@ class RemoteTransform2D : public Node2D {
 
 	void _update_remote();
 	void _update_cache();
-	//void _node_exited_scene();
+	// void _node_exited_scene();
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
-	void set_remote_node(const NodePath &p_remote_node);
+	void set_remote_node(const NodePath& p_remote_node);
 	NodePath get_remote_node() const;
 
 	void set_use_global_coordinates(const bool p_enable);
@@ -73,3 +70,5 @@ public:
 
 	RemoteTransform2D();
 };
+
+

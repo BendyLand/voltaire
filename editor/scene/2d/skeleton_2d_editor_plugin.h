@@ -36,42 +36,40 @@
 class AcceptDialog;
 class MenuButton;
 
-class Skeleton2DEditor : public Control {
-	VLTRCLASS(Skeleton2DEditor, Control);
-
-	enum Menu {
+class Skeleton2DEditor : public Control
+{
+	enum Menu
+	{
 		MENU_OPTION_SET_REST,
 		MENU_OPTION_MAKE_REST,
 	};
 
-	Skeleton2D *node = nullptr;
+	Skeleton2D* node = nullptr;
 
-	MenuButton *options = nullptr;
-	AcceptDialog *err_dialog = nullptr;
+	MenuButton* options = nullptr;
+	AcceptDialog* err_dialog = nullptr;
 
 	void _menu_option(int p_option);
 
-	//void _create_uv_lines();
+	// void _create_uv_lines();
 	friend class Skeleton2DEditorPlugin;
 
 protected:
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 
 public:
-	void edit(Skeleton2D *p_sprite);
+	void edit(Skeleton2D* p_sprite);
 	Skeleton2DEditor();
 };
 
-class Skeleton2DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(Skeleton2DEditorPlugin, EditorPlugin);
-
-	Skeleton2DEditor *sprite_editor = nullptr;
+class Skeleton2DEditorPlugin : public EditorPlugin
+{
+	Skeleton2DEditor* sprite_editor = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "Skeleton2D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	Skeleton2DEditorPlugin();
 };
+
+

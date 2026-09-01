@@ -30,7 +30,6 @@
 
 #include "core/math/geometry_2d.h"
 #include "core/math/geometry_3d.h"
-#include "core/object/class_db.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
@@ -101,12 +100,6 @@ bool EditorNode3DGizmo::is_handle_highlighted(int p_id, bool p_secondary) const
 	return gizmo_plugin->is_handle_highlighted(this, p_id, p_secondary);
 }
 
-Variant EditorNode3DGizmo::get_handle_value(int p_id, bool p_secondary) const
-{
-	ERR_FAIL_NULL_V(gizmo_plugin, Variant());
-	return gizmo_plugin->get_handle_value(this, p_id, p_secondary);
-}
-
 void EditorNode3DGizmo::begin_handle_action(int p_id, bool p_secondary)
 {
 	ERR_FAIL_NULL(gizmo_plugin);
@@ -120,29 +113,10 @@ void EditorNode3DGizmo::set_handle(
 	gizmo_plugin->set_handle(this, p_id, p_secondary, p_camera, p_point);
 }
 
-void EditorNode3DGizmo::commit_handle(
-	int p_id, bool p_secondary, const Variant& p_restore, bool p_cancel)
-{
-	ERR_FAIL_NULL(gizmo_plugin);
-	gizmo_plugin->commit_handle(this, p_id, p_secondary, p_restore, p_cancel);
-}
-
 int EditorNode3DGizmo::subgizmos_intersect_ray(Camera3D* p_camera, const Vector2& p_point) const
 {
 	ERR_FAIL_NULL_V(gizmo_plugin, -1);
 	return gizmo_plugin->subgizmos_intersect_ray(this, p_camera, p_point);
-}
-
-Vector<int> EditorNode3DGizmo::subgizmos_intersect_frustum(
-	const Camera3D* p_camera, const Vector<Plane>& p_frustum) const
-{
-	TypedArray<Plane> frustum;
-	frustum.resize(p_frustum.size());
-	for (int i = 0; i < p_frustum.size(); i++) {
-		frustum[i] = p_frustum[i];
-	}
-	ERR_FAIL_NULL_V(gizmo_plugin, Vector<int>());
-	return gizmo_plugin->subgizmos_intersect_frustum(this, p_camera, p_frustum);
 }
 
 Transform3D EditorNode3DGizmo::get_subgizmo_transform(int p_id) const
@@ -157,44 +131,10 @@ void EditorNode3DGizmo::set_subgizmo_transform(int p_id, Transform3D p_transform
 	gizmo_plugin->set_subgizmo_transform(this, p_id, p_transform);
 }
 
-void EditorNode3DGizmo::commit_subgizmos(
-	const Vector<int>& p_ids, const Vector<Transform3D>& p_restore, bool p_cancel)
-{
-	TypedArray<Transform3D> restore;
-	restore.resize(p_restore.size());
-	for (int i = 0; i < p_restore.size(); i++) {
-		restore[i] = p_restore[i];
-	}
-	ERR_FAIL_NULL(gizmo_plugin);
-	gizmo_plugin->commit_subgizmos(this, p_ids, p_restore, p_cancel);
-}
-
 void EditorNode3DGizmo::set_node_3d(Node3D* p_node)
 {
 	ERR_FAIL_NULL(p_node);
 	spatial_node = p_node;
-}
-
-void EditorNode3DGizmo::Instance::create_instance(Node3D* p_base, bool p_hidden)
-{
-	instance = RS::get_singleton()->instance_create2(
-		mesh->get_rid(), p_base->get_world_3d()->get_scenario());
-	RS::get_singleton()->instance_attach_object_instance_id(
-		instance, p_base->obj->get_instance_id());
-	if (skin_reference.is_valid()) {
-		RS::get_singleton()->instance_attach_skeleton(instance, skin_reference->get_skeleton());
-	}
-	if (extra_margin) {
-		RS::get_singleton()->instance_set_extra_visibility_margin(instance, 1);
-	}
-	RS::get_singleton()->instance_geometry_set_cast_shadows_setting(
-		instance, RSE::SHADOW_CASTING_SETTING_OFF);
-	int layer = p_hidden ? 0 : 1 << Node3DEditorViewport::GIZMO_EDIT_LAYER;
-	RS::get_singleton()->instance_set_layer_mask(instance, layer); // gizmos are 26
-	RS::get_singleton()->instance_geometry_set_flag(
-		instance, RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, true);
-	RS::get_singleton()->instance_geometry_set_flag(
-		instance, RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
 }
 
 void EditorNode3DGizmo::add_mesh(const Ref<Mesh>& p_mesh, const Ref<Material>& p_material,
@@ -259,101 +199,6 @@ void EditorNode3DGizmo::add_lines(const Vector<Vector3>& p_lines, const Ref<Mate
 	add_vertices(p_lines, p_material, Mesh::PRIMITIVE_LINES, p_billboard, p_modulate);
 }
 
-void EditorNode3DGizmo::add_vertices(const Vector<Vector3>& p_vertices,
-	const Ref<Material>& p_material, Mesh::PrimitiveType p_primitive_type, bool p_billboard,
-	const Color& p_modulate)
-{
-	if (p_vertices.is_empty()) {
-		return;
-	}
-
-	ERR_FAIL_NULL(spatial_node);
-	Instance ins;
-
-	Ref<ArrayMesh> mesh = memnew(ArrayMesh);
-	Array a;
-	a.resize(Mesh::ARRAY_MAX);
-
-	a[Mesh::ARRAY_VERTEX] = p_vertices;
-
-	Vector<Color> color;
-	color.resize(p_vertices.size());
-	const Color vertex_color =
-		(is_selected() ? Color(1, 1, 1, 0.8) : Color(1, 1, 1, 0.2)) * p_modulate;
-	{
-		Color* w = color.ptrw();
-		for (int i = 0; i < p_vertices.size(); i++) {
-			w[i] = vertex_color;
-		}
-	}
-
-	a[Mesh::ARRAY_COLOR] = color;
-
-	mesh->add_surface_from_arrays(p_primitive_type, a);
-	mesh->surface_set_material(0, p_material);
-
-	if (p_billboard) {
-		float md = 0;
-		for (int i = 0; i < p_vertices.size(); i++) {
-			md = MAX(0, p_vertices[i].length());
-		}
-		if (md) {
-			mesh->set_custom_aabb(AABB(Vector3(-md, -md, -md), Vector3(md, md, md) * 2.0));
-		}
-	}
-
-	ins.mesh = mesh;
-	if (valid) {
-		ins.create_instance(spatial_node, hidden);
-		RS::get_singleton()->instance_set_transform(
-			ins.instance, spatial_node->get_global_transform());
-	}
-
-	instances.push_back(ins);
-}
-
-void EditorNode3DGizmo::add_unscaled_billboard(
-	const Ref<Material>& p_material, real_t p_scale, const Color& p_modulate)
-{
-	ERR_FAIL_NULL(spatial_node);
-	Instance ins;
-
-	Vector<Vector3> vs = {Vector3(-p_scale, p_scale, 0), Vector3(p_scale, p_scale, 0),
-		Vector3(p_scale, -p_scale, 0), Vector3(-p_scale, -p_scale, 0)};
-
-	Vector<Vector2> uv = {Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)};
-
-	Vector<Color> colors = {p_modulate, p_modulate, p_modulate, p_modulate};
-
-	Vector<int> indices = {0, 1, 2, 0, 2, 3};
-
-	Ref<ArrayMesh> mesh = memnew(ArrayMesh);
-	Array a;
-	a.resize(Mesh::ARRAY_MAX);
-	a[Mesh::ARRAY_VERTEX] = vs;
-	a[Mesh::ARRAY_TEX_UV] = uv;
-	a[Mesh::ARRAY_INDEX] = indices;
-	a[Mesh::ARRAY_COLOR] = colors;
-	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, a);
-	mesh->surface_set_material(0, p_material);
-
-	selectable_icon_size = p_scale;
-	mesh->set_custom_aabb(
-		AABB(Vector3(-selectable_icon_size, -selectable_icon_size, -selectable_icon_size) * 100.0f,
-			Vector3(selectable_icon_size, selectable_icon_size, selectable_icon_size) * 200.0f));
-
-	ins.mesh = mesh;
-	if (valid) {
-		ins.create_instance(spatial_node, hidden);
-		RS::get_singleton()->instance_set_transform(
-			ins.instance, spatial_node->get_global_transform());
-	}
-
-	selectable_icon_size = p_scale;
-
-	instances.push_back(ins);
-}
-
 void EditorNode3DGizmo::add_collision_triangles(const Ref<TriangleMesh>& p_tmesh)
 {
 	collision_meshes.push_back(p_tmesh);
@@ -366,122 +211,6 @@ void EditorNode3DGizmo::add_collision_segments(const Vector<Vector3>& p_lines)
 	for (int i = 0; i < p_lines.size(); i++) {
 		collision_segments.write[from + i] = p_lines[i];
 	}
-}
-
-void EditorNode3DGizmo::add_handles(const Vector<Vector3>& p_handles,
-	const Ref<Material>& p_material, const Vector<int>& p_ids, bool p_billboard, bool p_secondary)
-{
-	billboard_handle = p_billboard;
-
-	if (!is_selected() || !is_editable()) {
-		return;
-	}
-
-	ERR_FAIL_NULL(spatial_node);
-
-	Vector<Vector3>& handle_list = p_secondary ? secondary_handles : handles;
-	Vector<int>& id_list = p_secondary ? secondary_handle_ids : handle_ids;
-
-	if (p_ids.is_empty()) {
-		ERR_FAIL_COND_MSG(!id_list.is_empty(),
-			"IDs must be provided for all handles, as handles with IDs already exist.");
-	}
-	else {
-		ERR_FAIL_COND_MSG(p_handles.size() != p_ids.size(),
-			"The number of IDs should be the same as the number of handles.");
-	}
-
-	bool is_current_hover_gizmo = Node3DEditor::get_singleton()->get_current_hover_gizmo() == this;
-	bool current_hover_handle_secondary;
-	int current_hover_handle = Node3DEditor::get_singleton()->get_current_hover_gizmo_handle(
-		current_hover_handle_secondary);
-
-	Instance ins;
-	Ref<ArrayMesh> mesh = memnew(ArrayMesh);
-
-	Array a;
-	a.resize(RSE::ARRAY_MAX);
-	a[RSE::ARRAY_VERTEX] = p_handles;
-	Vector<Color> colors;
-	{
-		colors.resize(p_handles.size());
-		Color* w = colors.ptrw();
-		for (int i = 0; i < p_handles.size(); i++) {
-			int id = p_ids.is_empty() ? i : p_ids[i];
-
-			Color col(1, 1, 1, 1);
-			if (is_handle_highlighted(id, p_secondary)) {
-				col = Color(0, 0, 1, 0.9);
-			}
-
-			if (!is_current_hover_gizmo || current_hover_handle != id ||
-				p_secondary != current_hover_handle_secondary) {
-				col.a = 0.8;
-			}
-
-			w[i] = col;
-		}
-	}
-	a[RSE::ARRAY_COLOR] = colors;
-	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_POINTS, a);
-	mesh->surface_set_material(0, p_material);
-
-	if (p_billboard) {
-		float md = 0;
-		for (int i = 0; i < p_handles.size(); i++) {
-			md = MAX(0, p_handles[i].length());
-		}
-		if (md) {
-			mesh->set_custom_aabb(AABB(Vector3(-md, -md, -md), Vector3(md, md, md) * 2.0));
-		}
-	}
-
-	ins.mesh = mesh;
-	ins.extra_margin = true;
-	if (valid) {
-		ins.create_instance(spatial_node, hidden);
-		RS::get_singleton()->instance_set_transform(
-			ins.instance, spatial_node->get_global_transform());
-	}
-	instances.push_back(ins);
-
-	int current_size = handle_list.size();
-	handle_list.resize(current_size + p_handles.size());
-	for (int i = 0; i < p_handles.size(); i++) {
-		handle_list.write[current_size + i] = p_handles[i];
-	}
-
-	if (!p_ids.is_empty()) {
-		current_size = id_list.size();
-		id_list.resize(current_size + p_ids.size());
-		for (int i = 0; i < p_ids.size(); i++) {
-			id_list.write[current_size + i] = p_ids[i];
-		}
-	}
-}
-
-void EditorNode3DGizmo::add_solid_box(
-	const Ref<Material>& p_material, Vector3 p_size, Vector3 p_position, const Transform3D& p_xform)
-{
-	ERR_FAIL_NULL(spatial_node);
-
-	Array arrays;
-	arrays.resize(RSE::ARRAY_MAX);
-	BoxMesh::create_mesh_array(arrays, p_size);
-
-	PackedVector3Array vertex = arrays[RSE::ARRAY_VERTEX];
-	Vector3* w = vertex.ptrw();
-
-	for (int i = 0; i < vertex.size(); ++i) {
-		w[i] += p_position;
-	}
-
-	arrays[RSE::ARRAY_VERTEX] = vertex;
-
-	Ref<ArrayMesh> m;
-	m.instantiate();
-	m->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays);
-	add_mesh(m, p_material, p_xform);
 }
 
 bool EditorNode3DGizmo::intersect_frustum(const Camera3D* p_camera, const Vector<Plane>& p_frustum)
@@ -875,95 +604,6 @@ EditorNode3DGizmo::~EditorNode3DGizmo()
 
 /////
 
-void EditorNode3DGizmoPlugin::create_material(const String& p_name, const Color& p_color,
-	bool p_billboard, bool p_on_top, bool p_use_vertex_color)
-{
-	Color instantiated_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/instantiated");
-
-	Vector<Ref<StandardMaterial3D>> mats;
-
-	for (int i = 0; i < 4; i++) {
-		bool selected = i % 2 == 1;
-		bool instantiated = i < 2;
-
-		Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
-
-		Color color = instantiated ? instantiated_color : p_color;
-
-		if (!selected) {
-			color.a *= 0.3;
-		}
-
-		material->set_albedo(color);
-		material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-		material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-		material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 1);
-		material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-		material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-
-		if (p_use_vertex_color) {
-			material->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-			material->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-		}
-
-		if (p_billboard) {
-			material->set_billboard_mode(StandardMaterial3D::BILLBOARD_ENABLED);
-		}
-
-		if (p_on_top && selected) {
-			material->set_on_top_of_alpha();
-		}
-
-		mats.push_back(material);
-	}
-
-	materials[p_name] = mats;
-}
-
-void EditorNode3DGizmoPlugin::create_icon_material(
-	const String& p_name, const Ref<Texture2D>& p_texture, bool p_on_top, const Color& p_albedo)
-{
-	Color instantiated_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/instantiated");
-
-	Vector<Ref<StandardMaterial3D>> icons;
-
-	for (int i = 0; i < 4; i++) {
-		bool selected = i % 2 == 1;
-		bool instantiated = i < 2;
-
-		Ref<StandardMaterial3D> icon = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
-
-		Color color = instantiated ? instantiated_color : p_albedo;
-
-		if (!selected) {
-			color.r *= 0.6;
-			color.g *= 0.6;
-			color.b *= 0.6;
-		}
-
-		icon->set_albedo(color);
-
-		icon->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-		icon->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-		icon->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-		icon->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-		icon->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA_SCISSOR);
-		icon->set_alpha_scissor_threshold(0.1);
-		icon->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, p_texture);
-		icon->set_flag(StandardMaterial3D::FLAG_FIXED_SIZE, true);
-		icon->set_billboard_mode(StandardMaterial3D::BILLBOARD_ENABLED);
-		icon->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN);
-
-		if (p_on_top && selected) {
-			icon->set_on_top_of_alpha();
-		}
-
-		icons.push_back(icon);
-	}
-
-	materials[p_name] = icons;
-}
-
 void EditorNode3DGizmoPlugin::create_handle_material(
 	const String& p_name, bool p_billboard, const Ref<Texture2D>& p_icon)
 {
@@ -1031,29 +671,6 @@ String EditorNode3DGizmoPlugin::get_gizmo_name() const
 	return TTR("Unnamed Gizmo");
 }
 
-Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::get_gizmo(Node3D* p_spatial)
-{
-	if (this->obj->get_script_instance() &&
-		this->obj->get_script_instance()->has_method("_get_gizmo")) {
-		return this->obj->get_script_instance()->call("_get_gizmo", p_spatial);
-	}
-
-	Ref<EditorNode3DGizmo> ref = create_gizmo(p_spatial);
-
-	if (ref.is_null()) {
-		return ref;
-	}
-
-	ref->set_plugin(this);
-	ref->set_node_3d(p_spatial);
-	ref->set_hidden(current_state == HIDDEN);
-
-	current_gizmos.insert(ref.ptr());
-	return ref;
-}
-
-void EditorNode3DGizmoPlugin::_bind_methods() {}
-
 Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D* p_spatial)
 {
 	Ref<EditorNode3DGizmo> ret;
@@ -1062,28 +679,6 @@ Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D* p_spatial)
 		ref.instantiate();
 	}
 	return ref;
-}
-
-Vector<int> EditorNode3DGizmoPlugin::subgizmos_intersect_frustum(const EditorNode3DGizmo* p_gizmo,
-	const Camera3D* p_camera, const Vector<Plane>& p_frustum) const
-{
-	TypedArray<Plane> frustum;
-	frustum.resize(p_frustum.size());
-	for (int i = 0; i < p_frustum.size(); i++) {
-		frustum[i] = p_frustum[i];
-	}
-	Vector<int> ret;
-	return ret;
-}
-
-void EditorNode3DGizmoPlugin::commit_subgizmos(const EditorNode3DGizmo* p_gizmo,
-	const Vector<int>& p_ids, const Vector<Transform3D>& p_restore, bool p_cancel)
-{
-	TypedArray<Transform3D> restore;
-	restore.resize(p_restore.size());
-	for (int i = 0; i < p_restore.size(); i++) {
-		restore[i] = p_restore[i];
-	}
 }
 
 void EditorNode3DGizmoPlugin::set_state(int p_state)
@@ -1132,12 +727,6 @@ String EditorNode3DGizmoPlugin::get_handle_name(
 	return String();
 }
 
-Variant EditorNode3DGizmoPlugin::get_handle_value(
-	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const
-{
-	return Variant();
-}
-
 void EditorNode3DGizmoPlugin::begin_handle_action(
 	const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary)
 {
@@ -1145,11 +734,6 @@ void EditorNode3DGizmoPlugin::begin_handle_action(
 
 void EditorNode3DGizmoPlugin::set_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
 	bool p_secondary, Camera3D* p_camera, const Vector2& p_point)
-{
-}
-
-void EditorNode3DGizmoPlugin::commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id,
-	bool p_secondary, const Variant& p_restore, bool p_cancel)
 {
 }
 

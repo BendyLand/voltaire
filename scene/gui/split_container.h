@@ -37,15 +37,12 @@ class SplitContainer;
 
 class SplitContainerMultiDragger : public Control
 {
-	VLTRCLASS(SplitContainerMultiDragger, Control);
-
 	bool dragging = false;
 	int drag_from = 0;
 	int start_drag_split_offset = 0;
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	int dragger_index = -1;
@@ -61,7 +58,6 @@ public:
 
 class SplitContainerDragger : public Control
 {
-	VLTRCLASS(SplitContainerDragger, Control);
 	friend class SplitContainer;
 
 	bool dragging = false;
@@ -77,12 +73,6 @@ class SplitContainerDragger : public Control
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-
-	void _accessibility_action_inc(const Variant& p_data);
-	void _accessibility_action_dec(const Variant& p_data);
-	void _accessibility_action_set_value(const Variant& p_data);
-
 	virtual String _get_accessibility_name() const override;
 
 public:
@@ -99,7 +89,6 @@ public:
 
 class SplitContainer : public Container
 {
-	VLTRCLASS(SplitContainer, Container);
 	friend class SplitContainerDragger;
 	friend class SplitContainerMultiDragger;
 
@@ -180,7 +169,6 @@ protected:
 	bool is_fixed = false;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
@@ -231,8 +219,6 @@ public:
 	void set_show_drag_area_enabled(bool p_enabled);
 	bool is_show_drag_area_enabled() const;
 
-	Array get_drag_area_controls();
-
 	void set_touch_dragger_enabled(bool p_enabled);
 	bool is_touch_dragger_enabled() const;
 
@@ -252,20 +238,14 @@ public:
 	SplitContainer(bool p_vertical = false);
 };
 
-VARIANT_ENUM_CAST(SplitContainer::DraggerVisibility);
-
 class HSplitContainer : public SplitContainer
 {
-	VLTRCLASS(HSplitContainer, SplitContainer);
-
 public:
 	HSplitContainer() : SplitContainer(false) { is_fixed = true; }
 };
 
 class VSplitContainer : public SplitContainer
 {
-	VLTRCLASS(VSplitContainer, SplitContainer);
-
 public:
 	VSplitContainer() : SplitContainer(true) { is_fixed = true; }
 };

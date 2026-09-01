@@ -28,108 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/resources/atlas_texture.h"
 #include "servers/rendering/rendering_server.h"
 #include "texture_rect.h"
-
-void TextureRect::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_DRAW: {
-		if (texture.is_null()) {
-			return;
-		}
-
-		Size2 size;
-		Point2 offset;
-		Rect2 region;
-		bool tile = false;
-
-		switch (stretch_mode) {
-		case STRETCH_SCALE: {
-			size = get_size();
-		} break;
-		case STRETCH_TILE: {
-			size = get_size();
-			tile = true;
-		} break;
-		case STRETCH_KEEP: {
-			size = texture->get_size();
-		} break;
-		case STRETCH_KEEP_CENTERED: {
-			offset = (get_size() - texture->get_size()) / 2;
-			size = texture->get_size();
-		} break;
-		case STRETCH_KEEP_ASPECT_CENTERED:
-		case STRETCH_KEEP_ASPECT: {
-			size = get_size();
-			int tex_width = texture->get_width() * size.height / texture->get_height();
-			int tex_height = size.height;
-
-			if (tex_width > size.width) {
-				tex_width = size.width;
-				tex_height = texture->get_height() * tex_width / texture->get_width();
-			}
-
-			if (stretch_mode == STRETCH_KEEP_ASPECT_CENTERED) {
-				offset.x += (size.width - tex_width) / 2;
-				offset.y += (size.height - tex_height) / 2;
-			}
-
-			size.width = tex_width;
-			size.height = tex_height;
-		} break;
-		case STRETCH_KEEP_ASPECT_COVERED: {
-			size = get_size();
-
-			Size2 tex_size = texture->get_size();
-			Size2 scale_size(size.width / tex_size.width, size.height / tex_size.height);
-			float scale =
-				scale_size.width > scale_size.height ? scale_size.width : scale_size.height;
-			Size2 scaled_tex_size = tex_size * scale;
-
-			region.position = ((scaled_tex_size - size) / scale).abs() / 2.0f;
-			region.size = size / scale;
-		} break;
-		}
-
-		size.width *= hflip ? -1.0f : 1.0f;
-		size.height *= vflip ? -1.0f : 1.0f;
-
-		if (region.has_area()) {
-			draw_texture_rect_region(texture.ptr(), Rect2(offset, size), region);
-		}
-		else {
-			// `draw_texture_rect` doesn't support tiling an AtlasTexture.
-			// Workaround using nine patch. Doesn't work properly for non-zero margin, nesting
-			// AtlasTextures is fine otherwise.
-			if (tile && Object::cast_to<AtlasTexture>(*texture)) {
-				Rect2 src_rect(Vector2(), texture->get_size());
-				Rect2 dst_rect(offset, size);
-				Ref<AtlasTexture> at = texture;
-				bool anything_to_draw = true;
-				while (anything_to_draw && at.is_valid()) {
-					anything_to_draw = at->get_rect_region(dst_rect, src_rect, dst_rect, src_rect);
-					at = at->get_atlas();
-				}
-				if (anything_to_draw) {
-					RS::get_singleton()->canvas_item_add_nine_patch(get_canvas_item(), dst_rect,
-						src_rect, texture->get_scaled_rid(), Vector2(), Vector2(),
-						RSE::NINE_PATCH_TILE, RSE::NINE_PATCH_TILE, true);
-				}
-			}
-			else {
-				draw_texture_rect(texture.ptr(), Rect2(offset, size), tile);
-			}
-		}
-	} break;
-	case NOTIFICATION_RESIZED: {
-		update_minimum_size();
-	} break;
-	}
-}
 
 Size2 TextureRect::get_minimum_size() const
 {
@@ -179,44 +80,11 @@ PackedStringArray TextureRect::get_configuration_warnings() const
 	return warnings;
 }
 
-void TextureRect::_bind_methods() {}
-
-#ifndef DISABLE_DEPRECATED
-bool TextureRect::_set(const StringName& p_name, const Variant& p_value)
-{
-	if ((p_name == SNAME("expand") || p_name == SNAME("ignore_texture_size")) &&
-		p_value.operator bool()) {
-		expand_mode = EXPAND_IGNORE_SIZE;
-		return true;
-	}
-	return false;
-}
-#endif
-
 void TextureRect::_texture_changed()
 {
 	queue_redraw();
 	update_minimum_size();
 	update_configuration_warnings();
-}
-
-void TextureRect::set_texture(const Ref<Texture2D>& p_tex)
-{
-	if (p_tex == texture) {
-		return;
-	}
-
-	if (texture.is_valid()) {
-		texture->disconnect_changed(callable_mp(this, &TextureRect::_texture_changed));
-	}
-
-	texture = p_tex;
-
-	if (texture.is_valid()) {
-		texture->connect_changed(callable_mp(this, &TextureRect::_texture_changed));
-	}
-
-	_texture_changed();
 }
 
 Ref<Texture2D> TextureRect::get_texture() const { return texture; }

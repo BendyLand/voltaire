@@ -31,9 +31,6 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/gdvirtual.gen.h"
-#include "core/variant/native_ptr.h"
-#include "core/variant/typed_array.h"
 #include "scene/property_list_helper.h"
 #include "servers/audio/audio_server.h"
 
@@ -41,8 +38,6 @@ class AudioStream;
 
 class AudioSamplePlayback : public RefCounted
 {
-	VLTRCLASS(AudioSamplePlayback, RefCounted);
-
 public:
 	Ref<AudioStream> stream;
 	Ref<AudioStreamPlayback> stream_playback;
@@ -55,8 +50,6 @@ public:
 
 class AudioSample : public RefCounted
 {
-	VLTRCLASS(AudioSample, RefCounted)
-
 public:
 	enum LoopMode
 	{
@@ -79,8 +72,6 @@ public:
 
 class AudioStreamPlayback : public RefCounted
 {
-	VLTRCLASS(AudioStreamPlayback, RefCounted);
-
 protected:
 	static void _bind_methods();
 	PackedVector2Array _mix_audio_bind(float p_rate_scale, int p_frames);
@@ -96,9 +87,6 @@ public:
 	virtual void seek(double p_time);
 
 	virtual void tag_used_streams();
-
-	virtual void set_parameter(const StringName& p_name, const Variant& p_value);
-	virtual Variant get_parameter(const StringName& p_name) const;
 
 	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames);
 
@@ -121,8 +109,6 @@ public:
 
 class AudioStreamPlaybackResampled : public AudioStreamPlayback
 {
-	VLTRCLASS(AudioStreamPlaybackResampled, AudioStreamPlayback);
-
 	enum
 	{
 		FP_BITS = 16, // fixed point used for resampling
@@ -153,10 +139,6 @@ public:
 
 class AudioStream : public Resource
 {
-	VLTRCLASS(AudioStream, Resource);
-	OBJ_SAVE_TYPE_NO(
-		AudioStream); // Saves derived classes with common type so they can be interchanged.
-
 	enum
 	{
 		MAX_TAGGED_OFFSETS = 8
@@ -176,7 +158,6 @@ public:
 	virtual bool has_loop() const;
 	virtual int get_bar_beats() const;
 	virtual int get_beat_count() const;
-	virtual Dictionary get_tags() const;
 
 	virtual double get_length() const;
 	virtual bool is_monophonic() const;
@@ -186,21 +167,6 @@ public:
 	uint64_t get_tagged_frame() const;
 	uint32_t get_tagged_frame_count() const;
 	float get_tagged_frame_offset(int p_index) const;
-
-	struct Parameter
-	{
-		PropertyInfo property;
-		Variant default_value;
-
-		Parameter(
-			const PropertyInfo& p_info = PropertyInfo(), const Variant& p_default_value = Variant())
-		{
-			property = p_info;
-			default_value = p_default_value;
-		}
-	};
-
-	virtual void get_parameter_list(List<Parameter>* r_parameters);
 
 	virtual bool can_be_sampled() const { return false; }
 
@@ -215,7 +181,6 @@ class AudioStreamPlaybackMicrophone;
 
 class AudioStreamMicrophone : public AudioStream
 {
-	VLTRCLASS(AudioStreamMicrophone, AudioStream);
 	friend class AudioStreamPlaybackMicrophone;
 
 	HashSet<AudioStreamPlaybackMicrophone*> playbacks;
@@ -230,7 +195,6 @@ public:
 
 class AudioStreamPlaybackMicrophone : public AudioStreamPlaybackResampled
 {
-	VLTRCLASS(AudioStreamPlaybackMicrophone, AudioStreamPlaybackResampled);
 	friend class AudioStreamMicrophone;
 
 	bool active = false;
@@ -266,8 +230,6 @@ class AudioStreamPlaybackRandomizer;
 
 class AudioStreamRandomizer : public AudioStream
 {
-	VLTRCLASS(AudioStreamRandomizer, AudioStream);
-
 public:
 	enum PlaybackMode
 	{
@@ -303,29 +265,9 @@ private:
 protected:
 	static void _bind_methods();
 
-	bool _set(const StringName& p_name, const Variant& p_value)
-	{
-		return property_helper.property_set_value(p_name, p_value);
-	}
-
-	bool _get(const StringName& p_name, Variant& r_ret) const
-	{
-		return property_helper.property_get_value(p_name, r_ret);
-	}
-
-	void _get_property_list(List<PropertyInfo>* p_list) const
-	{
-		property_helper.get_property_list(p_list);
-	}
-
 	bool _property_can_revert(const StringName& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
-	}
-
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const
-	{
-		return property_helper.property_get_revert(p_name, r_property);
 	}
 
 public:
@@ -365,7 +307,6 @@ public:
 
 class AudioStreamPlaybackRandomizer : public AudioStreamPlayback
 {
-	VLTRCLASS(AudioStreamPlaybackRandomizer, AudioStreamPlayback);
 	friend class AudioStreamRandomizer;
 
 	Ref<AudioStreamRandomizer> randomizer;
@@ -391,7 +332,5 @@ public:
 
 	~AudioStreamPlaybackRandomizer();
 };
-
-VARIANT_ENUM_CAST(AudioStreamRandomizer::PlaybackMode);
 
 

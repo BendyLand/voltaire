@@ -30,9 +30,8 @@
 
 #pragma once
 
-#include "scene/3d/node_3d.h"
-
 #include <openxr/openxr.h>
+#include "scene/3d/node_3d.h"
 
 class JavaObject;
 class MeshInstance3D;
@@ -42,26 +41,28 @@ class OpenXRCompositionLayerExtension;
 class SubViewport;
 class XRCamera3D;
 
-class OpenXRCompositionLayer : public Node3D {
-	VLTRCLASS(OpenXRCompositionLayer, Node3D);
-
+class OpenXRCompositionLayer : public Node3D
+{
 public:
 	// Must be identical to Filter enum definition in OpenXRCompositionLayerExtension.
-	enum Filter {
+	enum Filter
+	{
 		FILTER_NEAREST,
 		FILTER_LINEAR,
 		FILTER_CUBIC,
 	};
 
 	// Must be identical to MipmapMode enum definition in OpenXRCompositionLayerExtension.
-	enum MipmapMode {
+	enum MipmapMode
+	{
 		MIPMAP_MODE_DISABLED,
 		MIPMAP_MODE_NEAREST,
 		MIPMAP_MODE_LINEAR,
 	};
 
 	// Must be identical to Wrap enum definition in OpenXRCompositionLayerExtension.
-	enum Wrap {
+	enum Wrap
+	{
 		WRAP_CLAMP_TO_BORDER,
 		WRAP_CLAMP_TO_EDGE,
 		WRAP_REPEAT,
@@ -70,7 +71,8 @@ public:
 	};
 
 	// Must be identical to Swizzle enum definition in OpenXRCompositionLayerExtension.
-	enum Swizzle {
+	enum Swizzle
+	{
 		SWIZZLE_RED,
 		SWIZZLE_GREEN,
 		SWIZZLE_BLUE,
@@ -80,7 +82,8 @@ public:
 	};
 
 	// Must be identical to EyeVisibility enum definition in OpenXRCompositionLayerExtension.
-	enum EyeVisibility {
+	enum EyeVisibility
+	{
 		EYE_VISIBILITY_BOTH,
 		EYE_VISIBILITY_LEFT,
 		EYE_VISIBILITY_RIGHT,
@@ -90,18 +93,17 @@ protected:
 	RID composition_layer;
 
 private:
-	SubViewport *layer_viewport = nullptr;
+	SubViewport* layer_viewport = nullptr;
 	bool use_android_surface = false;
 	Size2i android_surface_size = Size2i(1024, 1024);
 	bool enable_hole_punch = false;
 	bool alpha_blend = false;
 	int sort_order = 1;
 	bool protected_content = false;
-	MeshInstance3D *fallback = nullptr;
+	MeshInstance3D* fallback = nullptr;
 	bool should_update_fallback_mesh = false;
 	bool openxr_session_running = false;
 	bool registered = false;
-	Dictionary extension_property_values;
 
 	Filter min_filter = FILTER_LINEAR;
 	Filter mag_filter = FILTER_LINEAR;
@@ -113,7 +115,7 @@ private:
 	Swizzle blue_swizzle = SWIZZLE_BLUE;
 	Swizzle alpha_swizzle = SWIZZLE_ALPHA;
 	float max_anisotropy = 1.0;
-	Color border_color = { 0.0, 0.0, 0.0, 0.0 };
+	Color border_color = {0.0, 0.0, 0.0, 0.0};
 	EyeVisibility eye_visibility = EYE_VISIBILITY_BOTH;
 
 	bool _should_use_fallback_node();
@@ -126,19 +128,13 @@ private:
 
 	void _viewport_size_changed();
 
-	XRCamera3D *_get_xrcamera3d_ancestor() const;
+	XRCamera3D* _get_xrcamera3d_ancestor() const;
 
 protected:
-	OpenXRAPI *openxr_api = nullptr;
-	OpenXRCompositionLayerExtension *composition_layer_extension = nullptr;
-
-	static void _bind_methods();
+	OpenXRAPI* openxr_api = nullptr;
+	OpenXRCompositionLayerExtension* composition_layer_extension = nullptr;
 
 	void _notification(int p_what);
-	void _get_property_list(List<PropertyInfo> *p_property_list) const;
-	bool _get(const StringName &p_property, Variant &r_value) const;
-	bool _set(const StringName &p_property, const Variant &p_value);
-	void _validate_property(PropertyInfo &p_property) const;
 
 	virtual void _on_openxr_session_begun();
 	virtual void _on_openxr_session_stopping();
@@ -151,14 +147,14 @@ protected:
 	void update_transform();
 	void update_fallback_mesh();
 
-	static Vector<OpenXRCompositionLayer *> composition_layer_nodes;
-	bool is_viewport_in_use(SubViewport *p_viewport);
+	static Vector<OpenXRCompositionLayer*> composition_layer_nodes;
+	bool is_viewport_in_use(SubViewport* p_viewport);
 
 	OpenXRCompositionLayer();
 
 public:
-	void set_layer_viewport(SubViewport *p_viewport);
-	SubViewport *get_layer_viewport() const;
+	void set_layer_viewport(SubViewport* p_viewport);
+	SubViewport* get_layer_viewport() const;
 
 	void set_use_android_surface(bool p_use_android_surface);
 	bool get_use_android_surface() const;
@@ -211,7 +207,7 @@ public:
 	void set_max_anisotropy(float p_value);
 	float get_max_anisotropy() const;
 
-	void set_border_color(const Color &p_color);
+	void set_border_color(const Color& p_color);
 	Color get_border_color() const;
 
 	void set_eye_visibility(EyeVisibility p_eye_visibility);
@@ -219,13 +215,9 @@ public:
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-	virtual Vector2 intersects_ray(const Vector3 &p_origin, const Vector3 &p_direction) const;
+	virtual Vector2 intersects_ray(const Vector3& p_origin, const Vector3& p_direction) const;
 
 	~OpenXRCompositionLayer();
 };
 
-VARIANT_ENUM_CAST(OpenXRCompositionLayer::Filter)
-VARIANT_ENUM_CAST(OpenXRCompositionLayer::MipmapMode)
-VARIANT_ENUM_CAST(OpenXRCompositionLayer::Wrap)
-VARIANT_ENUM_CAST(OpenXRCompositionLayer::Swizzle)
-VARIANT_ENUM_CAST(OpenXRCompositionLayer::EyeVisibility)
+

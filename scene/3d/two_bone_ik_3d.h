@@ -292,13 +292,6 @@ public:
 protected:
 	LocalVector<TwoBoneIK3DSetting*> tb_settings;
 
-	bool _get(const StringName& p_path, Variant& r_ret) const;
-	bool _set(const StringName& p_path, const Variant& p_value);
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-	void _validate_dynamic_prop(PropertyInfo& p_property) const;
-
-	static void _bind_methods();
-
 	virtual void _validate_bone_names() override;
 	void _validate_pole_directions(Skeleton3D* p_skeleton) const;
 	void _validate_pole_direction(Skeleton3D* p_skeleton, int p_index) const;

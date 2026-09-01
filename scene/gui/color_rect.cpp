@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "color_rect.h"
-#include "core/object/class_db.h"
 #include "servers/display/accessibility_server.h"
 
 void ColorRect::set_color(const Color& p_color)
@@ -59,7 +58,5 @@ void ColorRect::_notification(int p_what)
 	} break;
 	}
 }
-
-void ColorRect::_bind_methods() {}
 
 

@@ -32,11 +32,11 @@
 
 #include "scene/gui/link_button.h"
 
-class EditorVersionButton : public LinkButton {
-	VLTRCLASS(EditorVersionButton, LinkButton);
-
+class EditorVersionButton : public LinkButton
+{
 public:
-	enum VersionFormat {
+	enum VersionFormat
+	{
 		// 4.3.2.stable
 		FORMAT_BASIC,
 		// v4.3.2.stable.mono [HASH]
@@ -56,3 +56,5 @@ protected:
 public:
 	EditorVersionButton(VersionFormat p_format);
 };
+
+

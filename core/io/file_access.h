@@ -93,9 +93,9 @@ public:
 	bool big_endian = false;
 	bool real_is_double = false;
 
-	virtual BitField<UnixPermissionFlags> _get_unix_permissions(const String& p_file) = 0;
+	virtual uint32_t _get_unix_permissions(const String& p_file) = 0;
 	virtual Error _set_unix_permissions(
-		const String& p_file, BitField<UnixPermissionFlags> p_permissions) = 0;
+		const String& p_file, uint32_t p_permissions) = 0;
 
 	virtual bool _get_hidden_attribute(const String& p_file) = 0;
 	virtual Error _set_hidden_attribute(const String& p_file, bool p_hidden) = 0;
@@ -290,9 +290,9 @@ public:
 	static uint64_t get_modified_time(const String& p_file);
 	static uint64_t get_access_time(const String& p_file);
 	static int64_t get_size(const String& p_file);
-	static BitField<FileAccess::UnixPermissionFlags> get_unix_permissions(const String& p_file);
+	static uint32_t get_unix_permissions(const String& p_file);
 	static Error set_unix_permissions(
-		const String& p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions);
+		const String& p_file, uint32_t p_permissions);
 
 	static bool get_hidden_attribute(const String& p_file);
 	static Error set_hidden_attribute(const String& p_file, bool p_hidden);

@@ -37,10 +37,6 @@
 
 class Material : public Resource
 {
-	VLTRCLASS(Material, Resource);
-	RES_BASE_EXTENSION("material")
-	OBJ_SAVE_TYPE_NO(Material);
-
 	mutable RID material;
 	Ref<Material> next_pass;
 	int render_priority;
@@ -63,10 +59,7 @@ protected:
 	virtual bool _can_do_next_pass() const;
 	virtual bool _can_use_render_priority() const;
 
-	void _validate_property(PropertyInfo& p_property) const;
-
 	void _mark_ready();
-	void _mark_initialized(const Callable& p_add_to_dirty_list, const Callable& p_update_shader);
 
 public:
 	enum
@@ -95,19 +88,13 @@ public:
 
 class ShaderMaterial : public Material
 {
-	VLTRCLASS(ShaderMaterial, Material);
 	Ref<Shader> shader;
 
 	mutable HashMap<StringName, StringName> remap_cache;
-	mutable HashMap<StringName, Variant> param_cache;
 	mutable Mutex material_rid_mutex;
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 	bool _property_can_revert(const StringName& p_name) const;
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 	static void _bind_methods();
 
@@ -126,9 +113,6 @@ public:
 	void set_shader(const Ref<Shader>& p_shader);
 	Ref<Shader> get_shader() const;
 
-	void set_shader_parameter(const StringName& p_param, const Variant& p_value);
-	Variant get_shader_parameter(const StringName& p_param) const;
-
 	virtual Shader::Mode get_shader_mode() const override;
 
 	virtual RID get_rid() const override;
@@ -142,8 +126,6 @@ class StandardMaterial3D;
 
 class BaseMaterial3D : public Material
 {
-	VLTRCLASS(BaseMaterial3D, Material);
-
 private:
 	mutable Mutex material_rid_mutex;
 
@@ -560,11 +542,9 @@ private:
 	void _update_shader();
 	_FORCE_INLINE_ void _queue_shader_change();
 	void _check_material_rid();
-	void _material_set_param(const StringName& p_name, const Variant& p_value);
 
 	bool orm;
 	RID shader_rid;
-	HashMap<StringName, Variant> pending_params;
 
 	Color albedo;
 	float specular = 0.0f;
@@ -669,7 +649,6 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
 
 	virtual bool _can_do_next_pass() const override { return true; }
 
@@ -926,51 +905,20 @@ public:
 	virtual ~BaseMaterial3D();
 };
 
-VARIANT_ENUM_CAST(BaseMaterial3D::TextureParam)
-VARIANT_ENUM_CAST(BaseMaterial3D::TextureFilter)
-VARIANT_ENUM_CAST(BaseMaterial3D::ShadingMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::Transparency)
-VARIANT_ENUM_CAST(BaseMaterial3D::AlphaAntiAliasing)
-VARIANT_ENUM_CAST(BaseMaterial3D::DetailUV)
-VARIANT_ENUM_CAST(BaseMaterial3D::Feature)
-VARIANT_ENUM_CAST(BaseMaterial3D::BlendMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::DepthDrawMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::DepthTest)
-VARIANT_ENUM_CAST(BaseMaterial3D::CullMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::Flags)
-VARIANT_ENUM_CAST(BaseMaterial3D::DiffuseMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::SpecularMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::BillboardMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::TextureChannel)
-VARIANT_ENUM_CAST(BaseMaterial3D::EmissionOperator)
-VARIANT_ENUM_CAST(BaseMaterial3D::DistanceFadeMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::StencilMode)
-VARIANT_ENUM_CAST(BaseMaterial3D::StencilFlags)
-VARIANT_ENUM_CAST(BaseMaterial3D::StencilCompare)
-
 class StandardMaterial3D : public BaseMaterial3D
 {
-	VLTRCLASS(StandardMaterial3D, BaseMaterial3D)
-protected:
-#ifndef DISABLE_DEPRECATED
-	// Kept for compatibility from 3.x to 4.0.
-	bool _set(const StringName& p_name, const Variant& p_value);
-#endif
-
 public:
 	StandardMaterial3D() : BaseMaterial3D(false) {}
 };
 
 class ORMMaterial3D : public BaseMaterial3D
 {
-	VLTRCLASS(ORMMaterial3D, BaseMaterial3D)
 public:
 	ORMMaterial3D() : BaseMaterial3D(true) {}
 };
 
 class PlaceholderMaterial : public Material
 {
-	VLTRCLASS(PlaceholderMaterial, Material)
 public:
 	virtual RID get_shader_rid() const override { return RID(); }
 

@@ -28,83 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "node_2d.h"
 #include "scene/main/viewport.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/rendering_server.h"
 
 #ifdef TOOLS_ENABLED
-Dictionary Node2D::_edit_get_state() const
-{
-	Dictionary state;
-	state["position"] = get_position();
-	state["rotation"] = get_rotation();
-	state["scale"] = get_scale();
-	state["skew"] = get_skew();
 
-	return state;
-}
-
-void Node2D::_edit_set_state(const Dictionary& p_state)
-{
-	position = p_state["position"];
-	rotation = p_state["rotation"];
-	scale = p_state["scale"];
-	skew = p_state["skew"];
-
-	_update_transform();
-}
-
-void Node2D::_edit_set_position(const Point2& p_position) { set_position(p_position); }
-
-Point2 Node2D::_edit_get_position() const { return position; }
-
-void Node2D::_edit_set_scale(const Size2& p_scale) { set_scale(p_scale); }
-
-Size2 Node2D::_edit_get_scale() const { return scale; }
-
-void Node2D::_edit_set_rotation(real_t p_rotation)
-{
-	rotation = p_rotation;
-	_update_transform();
-}
-
-real_t Node2D::_edit_get_rotation() const { return rotation; }
-
-bool Node2D::_edit_use_rotation() const { return true; }
-
-void Node2D::_edit_set_rect(const Rect2& p_edit_rect)
-{
-	ERR_FAIL_COND(!_edit_use_rect());
-
-	Rect2 r = _edit_get_rect();
-
-	Vector2 zero_offset;
-	Size2 new_scale(1, 1);
-
-	if (r.size.x != 0) {
-		zero_offset.x = -r.position.x / r.size.x;
-		new_scale.x = p_edit_rect.size.x / r.size.x;
-	}
-
-	if (r.size.y != 0) {
-		zero_offset.y = -r.position.y / r.size.y;
-		new_scale.y = p_edit_rect.size.y / r.size.y;
-	}
-
-	Point2 new_pos = p_edit_rect.position + p_edit_rect.size * zero_offset;
-
-	Transform2D postxf;
-	postxf.set_rotation_scale_and_skew(rotation, scale, skew);
-	new_pos = postxf.xform(new_pos);
-
-	position += new_pos;
-	scale *= new_scale;
-
-	_update_transform();
-}
 #endif
 
 void Node2D::_set_xform_dirty(bool p_dirty) const
@@ -129,16 +59,6 @@ void Node2D::_update_xform_values() const
 	position = transform.columns[2];
 	scale = transform.get_scale();
 	_set_xform_dirty(false);
-}
-
-void Node2D::_update_transform()
-{
-	transform.set_rotation_scale_and_skew(rotation, scale, skew);
-	transform.columns[2] = position;
-
-	RenderingServer::get_singleton()->canvas_item_set_transform(get_canvas_item(), transform);
-
-	_notify_transform();
 }
 
 void Node2D::reparent(Node* p_parent, bool p_keep_global_transform)
@@ -402,19 +322,6 @@ void Node2D::set_global_scale(const Size2& p_scale)
 	}
 }
 
-void Node2D::set_transform(const Transform2D& p_transform)
-{
-	ERR_THREAD_GUARD;
-	transform = p_transform;
-	_set_xform_dirty(true);
-
-	if (!_is_using_identity_transform()) {
-		RenderingServer::get_singleton()->canvas_item_set_transform(get_canvas_item(), transform);
-	}
-
-	_notify_transform();
-}
-
 void Node2D::set_global_transform(const Transform2D& p_transform)
 {
 	ERR_THREAD_GUARD;
@@ -424,24 +331,6 @@ void Node2D::set_global_transform(const Transform2D& p_transform)
 	}
 	else {
 		set_transform(p_transform);
-	}
-}
-
-Transform2D Node2D::get_relative_transform_to_parent(const Node* rp_parent) const
-{
-	ERR_READ_THREAD_GUARD_V(Transform2D());
-	if (rp_parent == this) {
-		return Transform2D();
-	}
-
-	Node2D* parent_2d = Object::cast_to<Node2D>(get_parent());
-
-	ERR_FAIL_NULL_V(parent_2d, Transform2D());
-	if (rp_parent == parent_2d) {
-		return get_transform();
-	}
-	else {
-		return parent_2d->get_relative_transform_to_parent(rp_parent) * get_transform();
 	}
 }
 
@@ -468,40 +357,5 @@ Point2 Node2D::to_global(const Point2& p_local) const
 	ERR_READ_THREAD_GUARD_V(Point2());
 	return get_global_transform().xform(p_local);
 }
-
-void Node2D::_notification(int p_notification)
-{
-	switch (p_notification) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CONTAINER);
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		ERR_MAIN_THREAD_GUARD;
-
-		if (get_viewport()) {
-			get_parent()->connect(SNAME("child_order_changed"),
-				callable_mp(get_viewport(), &Viewport::gui_set_root_order_dirty),
-				Object::CONNECT_REFERENCE_COUNTED);
-		}
-	} break;
-	case NOTIFICATION_EXIT_TREE: {
-		ERR_MAIN_THREAD_GUARD;
-
-		if (get_viewport()) {
-			get_parent()->disconnect(SNAME("child_order_changed"),
-				callable_mp(get_viewport(), &Viewport::gui_set_root_order_dirty));
-		}
-	} break;
-	}
-}
-
-void Node2D::_bind_methods() {}
-
-Node2D::Node2D() { this->obj->_define_ancestry(Object::AncestralClass::NODE_2D); }
 
 

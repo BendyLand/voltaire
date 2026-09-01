@@ -174,8 +174,8 @@ struct MetalLimits {
 
 	uint32_t minSubgroupSize; /**< The minimum number of threads in a SIMD-group. */
 	uint32_t maxSubgroupSize; /**< The maximum number of threads in a SIMD-group. */
-	BitField<RDD::ShaderStage> subgroupSupportedShaderStages;
-	BitField<RDD::SubgroupOperations> subgroupSupportedOperations; /**< The subgroup operations supported by the device. */
+	uint32_t subgroupSupportedShaderStages;
+	uint32_t subgroupSupportedOperations; /**< The subgroup operations supported by the device. */
 };
 
 class API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0)) MetalDeviceProperties {

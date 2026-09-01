@@ -30,7 +30,6 @@
 
 #include "audio_effect_compressor.h"
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectCompressorInstance::process(
@@ -167,24 +166,6 @@ void AudioEffectCompressor::set_sidechain(const StringName& p_sidechain)
 }
 
 StringName AudioEffectCompressor::get_sidechain() const { return sidechain; }
-
-void AudioEffectCompressor::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "sidechain") {
-		String buses = "";
-		for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
-			buses += ",";
-			buses += AudioServer::get_singleton()->get_bus_name(i);
-		}
-
-		p_property.hint_string = buses;
-	}
-}
-
-void AudioEffectCompressor::_bind_methods() {}
 
 AudioEffectCompressor::AudioEffectCompressor()
 {

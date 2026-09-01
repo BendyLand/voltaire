@@ -36,8 +36,6 @@
 
 class PhysicsDirectBodyState2DDummy : public PhysicsDirectBodyState2D
 {
-	VLTRCLASS(PhysicsDirectBodyState2DDummy, PhysicsDirectBodyState2D);
-
 	PhysicsDirectSpaceState2D* space_state_dummy = nullptr;
 
 public:
@@ -141,16 +139,6 @@ public:
 		return Vector2();
 	}
 
-	virtual ObjectID get_contact_collider_id(int p_contact_idx) const override
-	{
-		return ObjectID();
-	}
-
-	virtual Object* get_contact_collider_object(int p_contact_idx) const override
-	{
-		return nullptr;
-	}
-
 	virtual int get_contact_collider_shape(int p_contact_idx) const override { return 0; }
 
 	virtual Vector2 get_contact_collider_velocity_at_position(int p_contact_idx) const override
@@ -174,8 +162,6 @@ public:
 
 class PhysicsDirectSpaceState2DDummy : public PhysicsDirectSpaceState2D
 {
-	VLTRCLASS(PhysicsDirectSpaceState2DDummy, PhysicsDirectSpaceState2D);
-
 public:
 	virtual bool intersect_ray(
 		const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result) override
@@ -216,8 +202,6 @@ public:
 
 class PhysicsServer2DDummy : public PhysicsServer2D
 {
-	VLTRCLASS(PhysicsServer2DDummy, PhysicsServer2D);
-
 	PhysicsDirectSpaceState2DDummy* space_state_dummy = nullptr;
 	PhysicsDirectBodyState2DDummy* body_state_dummy = nullptr;
 
@@ -238,16 +222,12 @@ public:
 
 	virtual RID concave_polygon_shape_create() override { return RID(); }
 
-	virtual void shape_set_data(RID p_shape, const Variant& p_data) override {}
-
 	virtual void shape_set_custom_solver_bias(RID p_shape, real_t p_bias) override {}
 
 	virtual PS2DE::ShapeType shape_get_type(RID p_shape) const override
 	{
 		return PS2DE::ShapeType::SHAPE_CIRCLE;
 	}
-
-	virtual Variant shape_get_data(RID p_shape) const override { return Variant(); }
 
 	virtual real_t shape_get_custom_solver_bias(RID p_shape) const override { return 0; }
 
@@ -326,25 +306,7 @@ public:
 
 	virtual void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled) override {}
 
-	virtual void area_attach_object_instance_id(RID p_area, ObjectID p_id) override {}
-
-	virtual ObjectID area_get_object_instance_id(RID p_area) const override { return ObjectID(); }
-
-	virtual void area_attach_canvas_instance_id(RID p_area, ObjectID p_id) override {}
-
-	virtual ObjectID area_get_canvas_instance_id(RID p_area) const override { return ObjectID(); }
-
-	virtual void area_set_param(
-		RID p_area, PS2DE::AreaParameter p_param, const Variant& p_value) override
-	{
-	}
-
 	virtual void area_set_transform(RID p_area, const Transform2D& p_transform) override {}
-
-	virtual Variant area_get_param(RID p_parea, PS2DE::AreaParameter p_param) const override
-	{
-		return Variant();
-	}
 
 	virtual Transform2D area_get_transform(RID p_area) const override { return Transform2D(); }
 
@@ -359,10 +321,6 @@ public:
 	virtual void area_set_monitorable(RID p_area, bool p_monitorable) override {}
 
 	virtual void area_set_pickable(RID p_area, bool p_pickable) override {}
-
-	virtual void area_set_monitor_callback(RID p_area, const Callable& p_callback) override {}
-
-	virtual void area_set_area_monitor_callback(RID p_area, const Callable& p_callback) override {}
 
 	/* BODY API */
 
@@ -411,14 +369,6 @@ public:
 
 	virtual void body_clear_shapes(RID p_body) override {}
 
-	virtual void body_attach_object_instance_id(RID p_body, ObjectID p_id) override {}
-
-	virtual ObjectID body_get_object_instance_id(RID p_body) const override { return ObjectID(); }
-
-	virtual void body_attach_canvas_instance_id(RID p_body, ObjectID p_id) override {}
-
-	virtual ObjectID body_get_canvas_instance_id(RID p_body) const override { return ObjectID(); }
-
 	virtual void body_set_continuous_collision_detection_mode(
 		RID p_body, PS2DE::CCDMode p_mode) override
 	{
@@ -441,27 +391,7 @@ public:
 
 	virtual real_t body_get_collision_priority(RID p_body) const override { return 0; }
 
-	virtual void body_set_param(
-		RID p_body, PS2DE::BodyParameter p_param, const Variant& p_value) override
-	{
-	}
-
-	virtual Variant body_get_param(RID p_body, PS2DE::BodyParameter p_param) const override
-	{
-		return Variant();
-	}
-
 	virtual void body_reset_mass_properties(RID p_body) override {}
-
-	virtual void body_set_state(
-		RID p_body, PS2DE::BodyState p_state, const Variant& p_variant) override
-	{
-	}
-
-	virtual Variant body_get_state(RID p_body, PS2DE::BodyState p_state) const override
-	{
-		return Variant();
-	}
 
 	virtual void body_apply_central_impulse(RID p_body, const Vector2& p_impulse) override {}
 
@@ -522,13 +452,6 @@ public:
 	virtual void body_set_omit_force_integration(RID p_body, bool p_omit) override {}
 
 	virtual bool body_is_omitting_force_integration(RID p_body) const override { return false; }
-
-	virtual void body_set_state_sync_callback(RID p_body, const Callable& p_callable) override {}
-
-	virtual void body_set_force_integration_callback(
-		RID p_body, const Callable& p_callable, const Variant& p_udata = Variant()) override
-	{
-	}
 
 	virtual bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape,
 		const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results,
@@ -626,7 +549,6 @@ public:
 	/* MISC */
 
 	virtual void free_rid(RID p_rid) override {}
-
 
 	virtual void set_active(bool p_active) override {}
 

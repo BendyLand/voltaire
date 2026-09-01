@@ -39,29 +39,30 @@
 
 class ColorChannelSelector;
 
-class Texture3DEditor : public Control {
-	VLTRCLASS(Texture3DEditor, Control);
-
-	struct ThemeCache {
+class Texture3DEditor : public Control
+{
+	struct ThemeCache
+	{
 		Color outline_color;
 	} theme_cache;
 
-	SpinBox *layer = nullptr;
-	Label *info = nullptr;
+	SpinBox* layer = nullptr;
+	Label* info = nullptr;
 	Ref<Texture3D> texture;
 
 	static inline Ref<Shader> texture_shader;
 	Ref<ShaderMaterial> texture_material;
 
-	Control *texture_rect = nullptr;
+	Control* texture_rect = nullptr;
 
-	ColorChannelSelector *channel_selector = nullptr;
+	ColorChannelSelector* channel_selector = nullptr;
 
 	bool setting = false;
 
 	void _draw_outline();
 
-	void _layer_changed(double) {
+	void _layer_changed(double)
+	{
 		if (!setting) {
 			_update_material(false);
 		}
@@ -90,19 +91,12 @@ public:
 	~Texture3DEditor();
 };
 
-class EditorInspectorPlugin3DTexture : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPlugin3DTexture, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class Texture3DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(Texture3DEditorPlugin, EditorPlugin);
-
+class Texture3DEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "Texture3D"; }
 
 	Texture3DEditorPlugin();
 };
+
+

@@ -35,7 +35,6 @@ TEST_FORCE_LINK(test_instance_placeholder)
 #include "core/io/dir_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
-#include "core/object/class_db.h"
 #include "scene/main/instance_placeholder.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
@@ -45,7 +44,6 @@ TEST_FORCE_LINK(test_instance_placeholder)
 namespace TestInstancePlaceholder {
 
 class _TestInstancePlaceholderNode : public Node {
-	VLTRCLASS(_TestInstancePlaceholderNode, Node);
 
 protected:
 	static void _bind_methods() {

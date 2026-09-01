@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/os/memory.h"
 #include "regex.compat.inc"
 #include "regex.h"
@@ -47,25 +46,6 @@ static void _regex_free(void* ptr, void* user)
 	}
 }
 
-int RegExMatch::_find(const Variant& p_name) const
-{
-	if (p_name.is_num()) {
-		int i = (int)p_name;
-		if (i >= data.size()) {
-			return -1;
-		}
-		return i;
-	}
-	else if (p_name.is_string()) {
-		HashMap<String, int>::ConstIterator found = names.find(p_name);
-		if (found) {
-			return found->value;
-		}
-	}
-
-	return -1;
-}
-
 String RegExMatch::get_subject() const { return subject; }
 
 int RegExMatch::get_group_count() const
@@ -74,17 +54,6 @@ int RegExMatch::get_group_count() const
 		return 0;
 	}
 	return data.size() - 1;
-}
-
-Dictionary RegExMatch::get_names() const
-{
-	Dictionary result;
-
-	for (const KeyValue<String, int>& E : names) {
-		result[E.key] = E.value;
-	}
-
-	return result;
 }
 
 PackedStringArray RegExMatch::get_strings() const
@@ -108,49 +77,6 @@ PackedStringArray RegExMatch::get_strings() const
 
 	return result;
 }
-
-String RegExMatch::get_string(const Variant& p_name) const
-{
-	int id = _find(p_name);
-
-	if (id < 0) {
-		return String();
-	}
-
-	int start = data[id].start;
-
-	if (start == -1) {
-		return String();
-	}
-
-	int length = data[id].end - start;
-
-	return subject.substr(start, length);
-}
-
-int RegExMatch::get_start(const Variant& p_name) const
-{
-	int id = _find(p_name);
-
-	if (id < 0) {
-		return -1;
-	}
-
-	return data[id].start;
-}
-
-int RegExMatch::get_end(const Variant& p_name) const
-{
-	int id = _find(p_name);
-
-	if (id < 0) {
-		return -1;
-	}
-
-	return data[id].end;
-}
-
-void RegExMatch::_bind_methods() {}
 
 void RegEx::_pattern_info(uint32_t what, void* where) const
 {
@@ -269,26 +195,6 @@ Ref<RegExMatch> RegEx::search(const String& p_subject, int p_offset, int p_end) 
 	return result;
 }
 
-Array RegEx::search_all(const String& p_subject, int p_offset, int p_end) const
-{
-	ERR_FAIL_COND_V_MSG(p_offset < 0, Array(), "RegEx search offset must be >= 0");
-
-	int last_end = 0;
-	Array result;
-	Ref<RegExMatch> match = search(p_subject, p_offset, p_end);
-
-	while (match.is_valid()) {
-		last_end = match->get_end(0);
-		if (match->get_start(0) == last_end) {
-			last_end++;
-		}
-
-		result.push_back(match);
-		match = search(p_subject, last_end, p_end);
-	}
-	return result;
-}
-
 int RegEx::_sub(const String& p_subject, const String& p_replacement, int p_offset, int p_end,
 	uint32_t p_flags, String& r_output) const
 {
@@ -350,7 +256,8 @@ String RegEx::sub(
 	}
 
 	String output;
-	const int res = _sub(p_subject, p_replacement, p_offset, p_end, flags, output);
+	const int res = _sub(p_subject, p_replacement,
+p_offset, p_end, flags, output);
 
 	if (res < 0) {
 		PCRE2_UCHAR32 buf[256];

@@ -37,7 +37,6 @@
 
 class AudioStreamPolyphonic : public AudioStream
 {
-	VLTRCLASS(AudioStreamPolyphonic, AudioStream)
 	int polyphony = 32;
 
 	AudioServer::PlaybackType playback_type;
@@ -58,8 +57,6 @@ public:
 
 class AudioStreamPlaybackPolyphonic : public AudioStreamPlayback
 {
-	VLTRCLASS(AudioStreamPlaybackPolyphonic, AudioStreamPlayback)
-
 	constexpr static uint32_t INTERNAL_BUFFER_LEN = 128;
 
 	struct Stream

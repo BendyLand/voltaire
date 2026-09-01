@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "text_paragraph.h"
 
 void TextParagraph::_draw_bind_compat_104872(

@@ -30,11 +30,10 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
+#include "core/types.h"
 
-class Expression : public RefCounted {
-	VLTRCLASS(Expression, RefCounted);
-
+class Expression : public RefCounted
+{
 protected:
 	String expression;
 
@@ -43,7 +42,8 @@ protected:
 
 	bool _compile_expression();
 
-	enum TokenType {
+	enum TokenType
+	{
 		TK_CURLY_BRACKET_OPEN,
 		TK_CURLY_BRACKET_CLOSE,
 		TK_BRACKET_OPEN,
@@ -86,13 +86,15 @@ protected:
 		TK_MAX
 	};
 
-	static const char *token_name[TK_MAX];
-	struct Token {
+	static const char* token_name[TK_MAX];
+
+	struct Token
+	{
 		TokenType type;
-		Variant value;
 	};
 
-	void _set_error(const String &p_err) {
+	void _set_error(const String& p_err)
+	{
 		if (error_set) {
 			return;
 		}
@@ -100,13 +102,15 @@ protected:
 		error_set = true;
 	}
 
-	virtual Error _get_token(Token &r_token);
+	virtual Error _get_token(Token& r_token);
 
 	String error_str;
 	bool error_set = true;
 
-	struct ENode {
-		enum Type {
+	struct ENode
+	{
+		enum Type
+		{
 			TYPE_INPUT,
 			TYPE_CONSTANT,
 			TYPE_SELF,
@@ -120,138 +124,128 @@ protected:
 			TYPE_CALL
 		};
 
-		ENode *next = nullptr;
+		ENode* next = nullptr;
 
 		Type type = TYPE_INPUT;
 
-		virtual ~ENode() {
-			memdelete(next);
-		}
+		virtual ~ENode() { memdelete(next); }
 	};
 
-	struct ExpressionNode {
+	struct ExpressionNode
+	{
 		bool is_op = false;
-		union {
-			Variant::Operator op;
-			ENode *node = nullptr;
+
+		union
+		{
+			ENode* node = nullptr;
 		};
 	};
 
-	ENode *_parse_expression();
+	ENode* _parse_expression();
 
-	struct InputNode : public ENode {
+	struct InputNode : public ENode
+	{
 		int index = 0;
-		InputNode() {
-			type = TYPE_INPUT;
-		}
+
+		InputNode() { type = TYPE_INPUT; }
 	};
 
-	struct ConstantNode : public ENode {
-		Variant value = Variant::NIL;
-		ConstantNode() {
-			type = TYPE_CONSTANT;
-		}
+	struct ConstantNode : public ENode
+	{
+
+		ConstantNode() { type = TYPE_CONSTANT; }
 	};
 
-	struct OperatorNode : public ENode {
-		Variant::Operator op = Variant::Operator::OP_ADD;
+	struct OperatorNode : public ENode
+	{
+		ENode* nodes[2] = {nullptr, nullptr};
 
-		ENode *nodes[2] = { nullptr, nullptr };
-
-		OperatorNode() {
-			type = TYPE_OPERATOR;
-		}
+		OperatorNode() { type = TYPE_OPERATOR; }
 	};
 
-	struct SelfNode : public ENode {
-		SelfNode() {
-			type = TYPE_SELF;
-		}
+	struct SelfNode : public ENode
+	{
+		SelfNode() { type = TYPE_SELF; }
 	};
 
-	struct IndexNode : public ENode {
-		ENode *base = nullptr;
-		ENode *index = nullptr;
+	struct IndexNode : public ENode
+	{
+		ENode* base = nullptr;
+		ENode* index = nullptr;
 
-		IndexNode() {
-			type = TYPE_INDEX;
-		}
+		IndexNode() { type = TYPE_INDEX; }
 	};
 
-	struct NamedIndexNode : public ENode {
-		ENode *base = nullptr;
+	struct NamedIndexNode : public ENode
+	{
+		ENode* base = nullptr;
 		StringName name;
 
-		NamedIndexNode() {
-			type = TYPE_NAMED_INDEX;
-		}
+		NamedIndexNode() { type = TYPE_NAMED_INDEX; }
 	};
 
-	struct ConstructorNode : public ENode {
-		Variant::Type data_type = Variant::Type::NIL;
-		Vector<ENode *> arguments;
+	struct ConstructorNode : public ENode
+	{
+		Vector<ENode*> arguments;
 
-		ConstructorNode() {
-			type = TYPE_CONSTRUCTOR;
-		}
+		ConstructorNode() { type = TYPE_CONSTRUCTOR; }
 	};
 
-	struct CallNode : public ENode {
-		ENode *base = nullptr;
+	struct CallNode : public ENode
+	{
+		ENode* base = nullptr;
 		StringName method;
-		Vector<ENode *> arguments;
+		Vector<ENode*> arguments;
 
-		CallNode() {
-			type = TYPE_CALL;
-		}
+		CallNode() { type = TYPE_CALL; }
 	};
 
-	struct ArrayNode : public ENode {
-		Vector<ENode *> array;
-		ArrayNode() {
-			type = TYPE_ARRAY;
-		}
+	struct ArrayNode : public ENode
+	{
+		Vector<ENode*> array;
+
+		ArrayNode() { type = TYPE_ARRAY; }
 	};
 
-	struct DictionaryNode : public ENode {
-		Vector<ENode *> dict;
-		DictionaryNode() {
-			type = TYPE_DICTIONARY;
-		}
+	struct DictionaryNode : public ENode
+	{
+		Vector<ENode*> dict;
+
+		DictionaryNode() { type = TYPE_DICTIONARY; }
 	};
 
-	struct BuiltinFuncNode : public ENode {
+	struct BuiltinFuncNode : public ENode
+	{
 		StringName func;
-		Vector<ENode *> arguments;
-		BuiltinFuncNode() {
-			type = TYPE_BUILTIN_FUNC;
-		}
+		Vector<ENode*> arguments;
+
+		BuiltinFuncNode() { type = TYPE_BUILTIN_FUNC; }
 	};
 
-	template <typename T>
-	T *alloc_node() {
-		T *node = memnew(T);
+	template <typename T> T* alloc_node()
+	{
+		T* node = memnew(T);
 		node->next = nodes;
 		nodes = node;
 		return node;
 	}
 
-	ENode *root = nullptr;
-	ENode *nodes = nullptr;
+	ENode* root = nullptr;
+	ENode* nodes = nullptr;
 
 	Vector<String> input_names;
 
 	bool execution_error = false;
-	bool _execute(const Array &p_inputs, Object *p_instance, Expression::ENode *p_node, Variant &r_ret, bool p_const_calls_only, String &r_error_str);
 
 protected:
 	static void _bind_methods();
 
 public:
-	Error parse(const String &p_expression, const Vector<String> &p_input_names = Vector<String>());
-	Variant execute(const Array &p_inputs = Array(), Object *p_base = nullptr, bool p_show_error = true, bool p_const_calls_only = false);
+	Error parse(const String& p_expression, const Vector<String>& p_input_names = Vector<String>());
 	bool has_execute_failed() const;
 	String get_error_text() const;
 
 	~Expression();
 };
+
+

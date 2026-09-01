@@ -59,31 +59,6 @@ String _get_version_string(EditorVersionButton::VersionFormat p_format)
 	return main + hash;
 }
 
-void EditorVersionButton::_notification(int p_what)
-{
-	switch (p_what) {
-	case Object::NOTIFICATION_POSTINITIALIZE: {
-		// This can't be done in the constructor because theme cache is not ready yet.
-		set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-		set_text(_get_version_string(format));
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		String build_date;
-		if (VLTR_VERSION_TIMESTAMP > 0) {
-			build_date = Time::get_singleton()->get_datetime_string_from_unix_time(
-							 VLTR_VERSION_TIMESTAMP, true) +
-						 " UTC";
-		}
-		else {
-			build_date = TTR("(unknown)");
-		}
-		set_tooltip_text(vformat(
-			TTR("Git commit date: %s\nClick to copy the version information."), build_date));
-	} break;
-	}
-}
-
 void EditorVersionButton::pressed()
 {
 	DisplayServer::get_singleton()->clipboard_set(_get_version_string(FORMAT_WITH_BUILD));

@@ -28,20 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "servers/xr/xr_controller_tracker.h"
 #include "xr_positional_tracker.h"
-
-void XRPositionalTracker::_bind_methods() {}
-
-void XRPositionalTracker::set_tracker_profile(const String& p_profile)
-{
-	if (profile != p_profile) {
-		profile = p_profile;
-
-		this->obj->emit_signal("profile_changed", profile);
-	}
-}
 
 String XRPositionalTracker::get_tracker_profile() const { return profile; }
 
@@ -70,112 +58,6 @@ Ref<XRPose> XRPositionalTracker::get_pose(const StringName& p_action_name) const
 	}
 
 	return pose;
-}
-
-void XRPositionalTracker::invalidate_pose(const StringName& p_action_name)
-{
-	// only update this if we were tracking this pose
-	if (poses.has(p_action_name)) {
-		// We just set tracking data as invalid, we leave our current transform and velocity data as
-		// is so controllers don't suddenly jump to origin.
-		Ref<XRPose> pose = poses[p_action_name];
-		pose->set_has_tracking_data(false);
-
-		this->obj->emit_signal(SNAME("pose_lost_tracking"), pose);
-	}
-}
-
-void XRPositionalTracker::set_pose(const StringName& p_action_name, const Transform3D& p_transform,
-	const Vector3& p_linear_velocity, const Vector3& p_angular_velocity,
-	const XRPose::TrackingConfidence p_tracking_confidence)
-{
-	Ref<XRPose> new_pose;
-
-	if (poses.has(p_action_name)) {
-		new_pose = poses[p_action_name];
-	}
-	else {
-		new_pose.instantiate();
-		new_pose->set_name(p_action_name);
-		poses[p_action_name] = new_pose;
-	}
-
-	new_pose->set_has_tracking_data(true);
-	new_pose->set_transform(p_transform);
-	new_pose->set_linear_velocity(p_linear_velocity);
-	new_pose->set_angular_velocity(p_angular_velocity);
-	new_pose->set_tracking_confidence(p_tracking_confidence);
-
-	this->obj->emit_signal(SNAME("pose_changed"), new_pose);
-
-	// TODO discuss whether we also want to create and emit an InputEventXRPose event
-}
-
-Variant XRPositionalTracker::get_input(const StringName& p_action_name) const
-{
-	// Complain if this method is called on a XRPositionalTracker instance.
-	if (!dynamic_cast<const XRControllerTracker*>(this)) {
-		WARN_DEPRECATED_MSG(
-			R"*(The "get_input()" method is deprecated, use "XRControllerTracker" instead.)*");
-	}
-
-	if (inputs.has(p_action_name)) {
-		return inputs[p_action_name];
-	}
-	else {
-		return Variant();
-	}
-}
-
-void XRPositionalTracker::set_input(const StringName& p_action_name, const Variant& p_value)
-{
-	// Complain if this method is called on a XRPositionalTracker instance.
-	if (!dynamic_cast<XRControllerTracker*>(this)) {
-		WARN_DEPRECATED_MSG(
-			R"*(The "set_input()" method is deprecated, use "XRControllerTracker" instead.)*");
-	}
-
-	// XR inputs
-	bool changed;
-	if (inputs.has(p_action_name)) {
-		changed = inputs[p_action_name] != p_value;
-	}
-	else {
-		changed = true;
-	}
-
-	if (changed) {
-		// store the new value
-		inputs[p_action_name] = p_value;
-
-		// emit signals to let the rest of the world know
-		switch (p_value.get_type()) {
-		case Variant::BOOL: {
-			bool pressed = p_value;
-			if (pressed) {
-				this->obj->emit_signal(SNAME("button_pressed"), p_action_name);
-			}
-			else {
-				this->obj->emit_signal(SNAME("button_released"), p_action_name);
-			}
-
-			// TODO discuss whether we also want to create and emit an InputEventXRButton event
-		} break;
-		case Variant::FLOAT: {
-			this->obj->emit_signal(SNAME("input_float_changed"), p_action_name, p_value);
-
-			// TODO discuss whether we also want to create and emit an InputEventXRValue event
-		} break;
-		case Variant::VECTOR2: {
-			this->obj->emit_signal(SNAME("input_vector2_changed"), p_action_name, p_value);
-
-			// TODO discuss whether we also want to create and emit an InputEventXRAxis event
-		} break;
-		default: {
-			// ???
-		} break;
-		}
-	}
 }
 
 

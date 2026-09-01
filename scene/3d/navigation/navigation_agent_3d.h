@@ -39,10 +39,9 @@ class ArrayMesh;
 class Node3D;
 class StandardMaterial3D;
 
-class NavigationAgent3D : public Node {
-	VLTRCLASS(NavigationAgent3D, Node);
-
-	Node3D *agent_parent = nullptr;
+class NavigationAgent3D : public Node
+{
+	Node3D* agent_parent = nullptr;
 
 	RID agent;
 	RID map_override;
@@ -53,9 +52,12 @@ class NavigationAgent3D : public Node {
 	uint32_t avoidance_mask = 1;
 	real_t avoidance_priority = 1.0;
 	uint32_t navigation_layers = 1;
-	NavigationPathQueryParameters3D::PathfindingAlgorithm pathfinding_algorithm = NavigationPathQueryParameters3D::PathfindingAlgorithm::PATHFINDING_ALGORITHM_ASTAR;
-	NavigationPathQueryParameters3D::PathPostProcessing path_postprocessing = NavigationPathQueryParameters3D::PathPostProcessing::PATH_POSTPROCESSING_CORRIDORFUNNEL;
-	BitField<NavigationPathQueryParameters3D::PathMetadataFlags> path_metadata_flags = NavigationPathQueryParameters3D::PathMetadataFlags::PATH_METADATA_INCLUDE_ALL;
+	NavigationPathQueryParameters3D::PathfindingAlgorithm pathfinding_algorithm =
+		NavigationPathQueryParameters3D::PathfindingAlgorithm::PATHFINDING_ALGORITHM_ASTAR;
+	NavigationPathQueryParameters3D::PathPostProcessing path_postprocessing =
+		NavigationPathQueryParameters3D::PathPostProcessing::PATH_POSTPROCESSING_CORRIDORFUNNEL;
+	uint32_t path_metadata_flags =
+		NavigationPathQueryParameters3D::PathMetadataFlags::PATH_METADATA_INCLUDE_ALL;
 
 	real_t path_desired_distance = 1.0;
 	real_t target_desired_distance = 1.0;
@@ -91,12 +93,14 @@ class NavigationAgent3D : public Node {
 	bool velocity_submitted = false;
 
 	/// The submitted forced velocity, overrides the rvo agent velocity on the next update
-	// should only be used very intentionally and not every frame as it interferes with the simulation stability
+	// should only be used very intentionally and not every frame as it interferes with the
+	// simulation stability
 	Vector3 velocity_forced;
 	bool velocity_forced_submitted = false;
 
-	// 2D avoidance has no y-axis. This stores and reapplies the y-axis velocity to the agent before and after the avoidance step.
-	// While not perfect it at least looks way better than agent's that clip through everything that is not a flat surface
+	// 2D avoidance has no y-axis. This stores and reapplies the y-axis velocity to the agent before
+	// and after the avoidance step. While not perfect it at least looks way better than agent's
+	// that clip through everything that is not a flat surface
 	bool keep_y_velocity = true;
 	float stored_y_velocity = 0.0;
 
@@ -122,12 +126,6 @@ class NavigationAgent3D : public Node {
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
-
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-#endif // DISABLE_DEPRECATED
 
 public:
 	NavigationAgent3D();
@@ -138,7 +136,7 @@ public:
 	void set_avoidance_enabled(bool p_enabled);
 	bool get_avoidance_enabled() const;
 
-	void set_agent_parent(Node *p_agent_parent);
+	void set_agent_parent(Node* p_agent_parent);
 
 	void set_navigation_layers(uint32_t p_navigation_layers);
 	uint32_t get_navigation_layers() const;
@@ -146,58 +144,74 @@ public:
 	void set_navigation_layer_value(int p_layer_number, bool p_value);
 	bool get_navigation_layer_value(int p_layer_number) const;
 
-	void set_pathfinding_algorithm(const NavigationPathQueryParameters3D::PathfindingAlgorithm p_pathfinding_algorithm);
-	NavigationPathQueryParameters3D::PathfindingAlgorithm get_pathfinding_algorithm() const {
+	void set_pathfinding_algorithm(
+		const NavigationPathQueryParameters3D::PathfindingAlgorithm p_pathfinding_algorithm);
+
+	NavigationPathQueryParameters3D::PathfindingAlgorithm get_pathfinding_algorithm() const
+	{
 		return pathfinding_algorithm;
 	}
 
-	void set_path_postprocessing(const NavigationPathQueryParameters3D::PathPostProcessing p_path_postprocessing);
-	NavigationPathQueryParameters3D::PathPostProcessing get_path_postprocessing() const {
+	void set_path_postprocessing(
+		const NavigationPathQueryParameters3D::PathPostProcessing p_path_postprocessing);
+
+	NavigationPathQueryParameters3D::PathPostProcessing get_path_postprocessing() const
+	{
 		return path_postprocessing;
 	}
 
-	void set_path_metadata_flags(BitField<NavigationPathQueryParameters3D::PathMetadataFlags> p_flags);
-	BitField<NavigationPathQueryParameters3D::PathMetadataFlags> get_path_metadata_flags() const {
-		return path_metadata_flags;
-	}
+	void set_path_metadata_flags(uint32_t p_flags);
+
+	uint32_t get_path_metadata_flags() const { return path_metadata_flags; }
 
 	void set_navigation_map(RID p_navigation_map);
 	RID get_navigation_map() const;
 
 	void set_path_desired_distance(real_t p_dd);
+
 	real_t get_path_desired_distance() const { return path_desired_distance; }
 
 	void set_target_desired_distance(real_t p_dd);
+
 	real_t get_target_desired_distance() const { return target_desired_distance; }
 
 	void set_radius(real_t p_radius);
+
 	real_t get_radius() const { return radius; }
 
 	void set_height(real_t p_height);
+
 	real_t get_height() const { return height; }
 
 	void set_path_height_offset(real_t p_path_height_offset);
+
 	real_t get_path_height_offset() const { return path_height_offset; }
 
 	void set_use_3d_avoidance(bool p_use_3d_avoidance);
+
 	bool get_use_3d_avoidance() const { return use_3d_avoidance; }
 
 	void set_keep_y_velocity(bool p_enabled);
 	bool get_keep_y_velocity() const;
 
 	void set_neighbor_distance(real_t p_distance);
+
 	real_t get_neighbor_distance() const { return neighbor_distance; }
 
 	void set_max_neighbors(int p_count);
+
 	int get_max_neighbors() const { return max_neighbors; }
 
 	void set_time_horizon_agents(real_t p_time_horizon);
+
 	real_t get_time_horizon_agents() const { return time_horizon_agents; }
 
 	void set_time_horizon_obstacles(real_t p_time_horizon);
+
 	real_t get_time_horizon_obstacles() const { return time_horizon_obstacles; }
 
 	void set_max_speed(real_t p_max_speed);
+
 	real_t get_max_speed() const { return max_speed; }
 
 	void set_path_max_distance(real_t p_pmd);
@@ -228,9 +242,15 @@ public:
 
 	Vector3 get_next_path_position();
 
-	Ref<NavigationPathQueryResult3D> get_current_navigation_result() const { return navigation_result; }
+	Ref<NavigationPathQueryResult3D> get_current_navigation_result() const
+	{
+		return navigation_result;
+	}
 
-	const Vector<Vector3> &get_current_navigation_path() const { return navigation_result->get_path(); }
+	const Vector<Vector3>& get_current_navigation_path() const
+	{
+		return navigation_result->get_path();
+	}
 
 	int get_current_navigation_path_index() const { return navigation_path_index; }
 
@@ -241,6 +261,7 @@ public:
 	Vector3 get_final_position();
 
 	void set_velocity(const Vector3 p_velocity);
+
 	Vector3 get_velocity() { return velocity; }
 
 	void set_velocity_forced(const Vector3 p_velocity);
@@ -281,13 +302,13 @@ private:
 	Vector3 _get_final_position() const;
 
 	void _update_navigation();
-	void _advance_waypoints(const Vector3 &p_origin);
+	void _advance_waypoints(const Vector3& p_origin);
 	void _request_repath();
 
 	bool _is_last_waypoint() const;
 	void _move_to_next_waypoint();
-	bool _is_within_waypoint_distance(const Vector3 &p_origin) const;
-	bool _is_within_target_distance(const Vector3 &p_origin) const;
+	bool _is_within_waypoint_distance(const Vector3& p_origin) const;
+	bool _is_within_target_distance(const Vector3& p_origin) const;
 
 	void _trigger_waypoint_reached();
 	void _transition_to_navigation_finished();
@@ -298,3 +319,5 @@ private:
 	void _update_debug_path();
 #endif // DEBUG_ENABLED
 };
+
+

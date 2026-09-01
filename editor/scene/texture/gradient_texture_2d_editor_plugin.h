@@ -37,10 +37,10 @@ class Button;
 class EditorSpinSlider;
 class GradientTexture2D;
 
-class GradientTexture2DEdit : public Control {
-	VLTRCLASS(GradientTexture2DEdit, Control);
-
-	enum Handle {
+class GradientTexture2DEdit : public Control
+{
+	enum Handle
+	{
 		HANDLE_NONE,
 		HANDLE_FROM,
 		HANDLE_TO
@@ -50,7 +50,7 @@ class GradientTexture2DEdit : public Control {
 	bool snap_enabled = false;
 	int snap_count = 0;
 
-	TextureRect *checkerboard = nullptr;
+	TextureRect* checkerboard = nullptr;
 
 	Handle hovered = HANDLE_NONE;
 	Handle grabbed = HANDLE_NONE;
@@ -61,10 +61,10 @@ class GradientTexture2DEdit : public Control {
 	Size2 size;
 
 	Point2 _get_handle_pos(const Handle p_handle);
-	Handle get_handle_at(const Vector2 &p_pos);
-	void set_fill_pos(const Vector2 &p_pos);
+	Handle get_handle_at(const Vector2& p_pos);
+	void set_fill_pos(const Vector2& p_pos);
 
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event);
 
 	void _draw();
 
@@ -72,22 +72,21 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_texture(Ref<GradientTexture2D> &p_texture);
+	void set_texture(Ref<GradientTexture2D>& p_texture);
 	void set_snap_enabled(bool p_snap_enabled);
 	void set_snap_count(int p_snap_count);
 
 	GradientTexture2DEdit();
 };
 
-class GradientTexture2DEditor : public VBoxContainer {
-	VLTRCLASS(GradientTexture2DEditor, VBoxContainer);
-
+class GradientTexture2DEditor : public VBoxContainer
+{
 	Ref<GradientTexture2D> texture;
 
-	Button *reverse_button = nullptr;
-	Button *snap_button = nullptr;
-	EditorSpinSlider *snap_count_edit = nullptr;
-	GradientTexture2DEdit *texture_editor_rect = nullptr;
+	Button* reverse_button = nullptr;
+	Button* snap_button = nullptr;
+	EditorSpinSlider* snap_count_edit = nullptr;
+	GradientTexture2DEdit* texture_editor_rect = nullptr;
 
 	void _reverse_button_pressed();
 	void _set_snap_enabled(bool p_enabled);
@@ -98,22 +97,15 @@ protected:
 
 public:
 	static const int DEFAULT_SNAP;
-	void set_texture(Ref<GradientTexture2D> &p_texture);
+	void set_texture(Ref<GradientTexture2D>& p_texture);
 
 	GradientTexture2DEditor();
 };
 
-class EditorInspectorPluginGradientTexture2D : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginGradientTexture2D, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class GradientTexture2DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(GradientTexture2DEditorPlugin, EditorPlugin);
-
+class GradientTexture2DEditorPlugin : public EditorPlugin
+{
 public:
 	GradientTexture2DEditorPlugin();
 };
+
+

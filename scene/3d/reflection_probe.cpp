@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "reflection_probe.h"
 #include "servers/rendering/rendering_server.h"
 
@@ -49,14 +48,6 @@ void ReflectionProbe::set_blend_distance(float p_blend_distance)
 }
 
 float ReflectionProbe::get_blend_distance() const { return blend_distance; }
-
-void ReflectionProbe::set_ambient_mode(AmbientMode p_mode)
-{
-	ambient_mode = p_mode;
-	RS::get_singleton()->reflection_probe_set_ambient_mode(
-		probe, RSE::ReflectionProbeAmbientMode(p_mode));
-	this->obj->notify_property_list_changed();
-}
 
 ReflectionProbe::AmbientMode ReflectionProbe::get_ambient_mode() const { return ambient_mode; }
 
@@ -191,40 +182,6 @@ AABB ReflectionProbe::get_aabb() const
 	aabb.size = size;
 	return aabb;
 }
-
-void ReflectionProbe::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "ambient_color" || p_property.name == "ambient_color_energy") {
-		if (ambient_mode != AMBIENT_COLOR) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-}
-
-void ReflectionProbe::_bind_methods() {}
-
-#ifndef DISABLE_DEPRECATED
-bool ReflectionProbe::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
-		return true;
-	}
-	return false;
-}
-
-bool ReflectionProbe::_get(const StringName& p_name, Variant& r_property) const
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		r_property = size / 2;
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
 
 ReflectionProbe::ReflectionProbe()
 {

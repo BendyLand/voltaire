@@ -61,7 +61,6 @@ protected:
 	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 	static void _bind_methods();
 
 	virtual void _parent_focused();

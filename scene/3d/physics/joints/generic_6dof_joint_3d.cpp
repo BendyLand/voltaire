@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include <cfloat> // FLT_MAX
-#include "core/object/class_db.h"
 #include "generic_6dof_joint_3d.h"
 
 void Generic6DOFJoint3D::_bind_methods() {}

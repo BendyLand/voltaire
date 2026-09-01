@@ -30,9 +30,8 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/typed_array.h"
+#include "core/types.h"
 
 #ifdef ANDROID_ENABLED
 #include <android/log.h>
@@ -46,8 +45,6 @@ class JavaObject;
 
 class JavaClass : public RefCounted
 {
-	VLTRCLASS(JavaClass, RefCounted);
-
 #ifdef ANDROID_ENABLED
 	enum ArgumentType
 	{
@@ -201,16 +198,9 @@ class JavaClass : public RefCounted
 	bool is_interface;
 #endif
 
-protected:
-	static void _bind_methods();
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-
 public:
-	virtual Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount,
-		Callable::CallError& r_error);
 
 	String get_java_class_name() const;
-	TypedArray<Dictionary> get_java_method_list() const;
 	Ref<JavaClass> get_java_parent_class() const;
 	bool has_java_method(const StringName& p_method) const;
 
@@ -224,8 +214,6 @@ public:
 
 class JavaObject : public RefCounted
 {
-	VLTRCLASS(JavaObject, RefCounted);
-
 #ifdef ANDROID_ENABLED
 	Ref<JavaClass> base_class;
 	friend class JavaClass;
@@ -237,8 +225,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount,
-		Callable::CallError& r_error);
 
 	Ref<JavaClass> get_java_class() const;
 	bool has_java_method(const StringName& p_method) const;
@@ -307,13 +293,9 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	static JavaClassWrapper* get_singleton() { return singleton; }
 
 	Ref<JavaClass> wrap(const String& p_class) { return _wrap(p_class, false); }
-
-	Ref<JavaObject> create_sam_callback(const String& p_sam_interface, const Callable& p_callable);
-	Ref<JavaObject> create_proxy(const Object* p_object, const PackedStringArray& p_interfaces);
 
 	Ref<JavaObject> get_exception() { return exception; }
 

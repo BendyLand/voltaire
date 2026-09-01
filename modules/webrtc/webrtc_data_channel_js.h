@@ -35,7 +35,6 @@
 #include "webrtc_data_channel.h"
 
 class WebRTCDataChannelJS : public WebRTCDataChannel {
-	VLTRCLASS(WebRTCDataChannelJS, WebRTCDataChannel);
 
 private:
 	String _label;

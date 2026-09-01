@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "text_edit.h"
 
 void TextEdit::_set_selection_mode_bind_compat_86978(

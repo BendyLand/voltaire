@@ -37,8 +37,6 @@
 
 class Node3DGizmo : public RefCounted
 {
-	VLTRCLASS(Node3DGizmo, RefCounted);
-
 public:
 	virtual void create() = 0;
 	virtual void transform() = 0;
@@ -57,8 +55,6 @@ class Node3D : public Node
 	friend class SceneTreeFTITests;
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::NODE_3D;
-
 	// Edit mode for the rotation.
 	// THIS MODE ONLY AFFECTS HOW DATA IS EDITED AND SAVED
 	// IT DOES _NOT_ AFFECT THE TRANSFORM LOGIC (see comment in TransformDirty).
@@ -262,10 +258,7 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	void _validate_property(PropertyInfo& p_property) const;
-
 	bool _property_can_revert(const StringName& p_name) const;
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 public:
 	enum
@@ -339,7 +332,6 @@ public:
 		Ref<Node3DGizmo> p_gizmo, int p_id, Transform3D p_transform = Transform3D());
 	void clear_subgizmo_selection();
 	Vector<Ref<Node3DGizmo>> get_gizmos() const;
-	Array get_gizmos_bind() const;
 	void add_gizmo(Ref<Node3DGizmo> p_gizmo);
 	void remove_gizmo(Ref<Node3DGizmo> p_gizmo);
 	void clear_gizmos();
@@ -401,7 +393,5 @@ public:
 	Node3D();
 	~Node3D();
 };
-
-VARIANT_ENUM_CAST(Node3D::RotationEditMode)
 
 

@@ -32,9 +32,8 @@
 
 #include "core/string/translation.h"
 
-class OptimizedTranslation : public Translation {
-	VLTRCLASS(OptimizedTranslation, Translation);
-
+class OptimizedTranslation : public Translation
+{
 	// This translation uses a sort of modified perfect hash algorithm
 	// it requires hashing strings twice and then does a binary search,
 	// so it's slower, but at the same time it has an extremely high chance
@@ -49,14 +48,16 @@ class OptimizedTranslation : public Translation {
 	// Data for translated strings, UTF-8 encoded, either compressed or uncompressed.
 	Vector<uint8_t> strings;
 
-	struct Bucket {
+	struct Bucket
+	{
 		// Number of `Elem` objects at `elem`.
 		int size;
 
 		// Use `hash(func, text)` to generate the unique `Elem::key` in this bucket.
 		uint32_t func;
 
-		struct Elem {
+		struct Elem
+		{
 			// Unique key for the text.
 			uint32_t key;
 
@@ -71,7 +72,8 @@ class OptimizedTranslation : public Translation {
 		Elem elem[1];
 	};
 
-	_FORCE_INLINE_ uint32_t hash(uint32_t p_d, const char *p_str) const {
+	_FORCE_INLINE_ uint32_t hash(uint32_t p_d, const char* p_str) const
+	{
 		if (p_d == 0) {
 			p_d = 0x1000193;
 		}
@@ -86,23 +88,24 @@ class OptimizedTranslation : public Translation {
 	virtual Vector<String> _get_message_list() const override;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	void _generate_bind_compat_119563(const Ref<Translation> &p_from);
+	void _generate_bind_compat_119563(const Ref<Translation>& p_from);
 
 	static void _bind_compatibility_methods();
 #endif
 
 public:
-	virtual StringName get_message(const StringName &p_src_text, const StringName &p_context = "") const override; //overridable for other implementations
-	virtual StringName get_plural_message(const StringName &p_src_text, const StringName &p_plural_text, int p_n, const StringName &p_context = "") const override;
+	virtual StringName get_message(const StringName& p_src_text,
+		const StringName& p_context = "") const override; // overridable for other implementations
+	virtual StringName get_plural_message(const StringName& p_src_text,
+		const StringName& p_plural_text, int p_n, const StringName& p_context = "") const override;
 	virtual Vector<String> get_translated_message_list() const override;
-	bool generate(const Ref<Translation> &p_from);
+	bool generate(const Ref<Translation>& p_from);
 
-	virtual void get_message_list(List<StringName> *r_messages) const override;
+	virtual void get_message_list(List<StringName>* r_messages) const override;
 	virtual int get_message_count() const override;
 };
+
+

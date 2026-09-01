@@ -49,9 +49,10 @@ using namespace GLES3;
 
 #define _GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 
-Config *Config::singleton = nullptr;
+Config* Config::singleton = nullptr;
 
-Config::Config() {
+Config::Config()
+{
 	singleton = this;
 
 #ifdef WEB_ENABLED
@@ -61,10 +62,10 @@ Config::Config() {
 	// we use emscripten_webgl_get_supported_extensions() to get all supported extensions, which
 	// is what Emscripten 3.1.50 and earlier do.
 	{
-		char *extension_array_string = emscripten_webgl_get_supported_extensions();
-		PackedStringArray extension_array = String((const char *)extension_array_string).split(" ");
+		char* extension_array_string = emscripten_webgl_get_supported_extensions();
+		PackedStringArray extension_array = String((const char*)extension_array_string).split(" ");
 		extensions.reserve(extension_array.size() * 2);
-		for (const String &s : extension_array) {
+		for (const String& s : extension_array) {
 			extensions.insert(s);
 			extensions.insert("GL_" + s);
 		}
@@ -75,42 +76,51 @@ Config::Config() {
 		GLint max_extensions = 0;
 		glGetIntegerv(GL_NUM_EXTENSIONS, &max_extensions);
 		for (int i = 0; i < max_extensions; i++) {
-			const GLubyte *s = glGetStringi(GL_EXTENSIONS, i);
+			const GLubyte* s = glGetStringi(GL_EXTENSIONS, i);
 			if (!s) {
 				break;
 			}
-			extensions.insert((const char *)s);
+			extensions.insert((const char*)s);
 		}
 	}
 #endif
 
-	bptc_supported = extensions.has("GL_ARB_texture_compression_bptc") || extensions.has("GL_EXT_texture_compression_bptc");
+	bptc_supported = extensions.has("GL_ARB_texture_compression_bptc") ||
+					 extensions.has("GL_EXT_texture_compression_bptc");
 	astc_3d_supported = extensions.has("GL_OES_texture_compression_astc");
 	astc_hdr_supported = astc_3d_supported || extensions.has("GL_KHR_texture_compression_astc_hdr");
-	astc_layered_supported = astc_hdr_supported || extensions.has("GL_KHR_texture_compression_astc_sliced_3d");
-	astc_supported = astc_layered_supported || extensions.has("GL_KHR_texture_compression_astc_ldr") || extensions.has("WEBGL_compressed_texture_astc");
+	astc_layered_supported =
+		astc_hdr_supported || extensions.has("GL_KHR_texture_compression_astc_sliced_3d");
+	astc_supported = astc_layered_supported ||
+					 extensions.has("GL_KHR_texture_compression_astc_ldr") ||
+					 extensions.has("WEBGL_compressed_texture_astc");
 
 	if (RasterizerUtilGLES3::is_gles_over_gl()) {
 		float_texture_supported = true;
 		float_texture_linear_supported = true;
 		etc2_supported = false;
 		s3tc_supported = true;
-		rgtc_supported = true; //RGTC - core since OpenGL version 3.0
+		rgtc_supported = true; // RGTC - core since OpenGL version 3.0
 		srgb_framebuffer_supported = true;
 		unorm16_texture_supported = true;
-	} else {
+	}
+	else {
 		float_texture_supported = extensions.has("GL_EXT_color_buffer_float");
 		float_texture_linear_supported = extensions.has("GL_OES_texture_float_linear");
 		etc2_supported = true;
 #if defined(ANDROID_ENABLED) || defined(IOS_ENABLED)
-		// Some Android devices report support for S3TC but we don't expect that and don't export the textures.
-		// This could be fixed but so few devices support it that it doesn't seem useful (and makes bigger APKs).
-		// For good measure we do the same hack for iOS, just in case.
+		// Some Android devices report support for S3TC but we don't expect that and don't export
+		// the textures. This could be fixed but so few devices support it that it doesn't seem
+		// useful (and makes bigger APKs). For good measure we do the same hack for iOS, just in
+		// case.
 		s3tc_supported = false;
 #else
-		s3tc_supported = extensions.has("GL_EXT_texture_compression_dxt1") || extensions.has("GL_EXT_texture_compression_s3tc") || extensions.has("WEBGL_compressed_texture_s3tc");
+		s3tc_supported = extensions.has("GL_EXT_texture_compression_dxt1") ||
+						 extensions.has("GL_EXT_texture_compression_s3tc") ||
+						 extensions.has("WEBGL_compressed_texture_s3tc");
 #endif
-		rgtc_supported = extensions.has("GL_EXT_texture_compression_rgtc") || extensions.has("GL_ARB_texture_compression_rgtc");
+		rgtc_supported = extensions.has("GL_EXT_texture_compression_rgtc") ||
+						 extensions.has("GL_ARB_texture_compression_rgtc");
 		srgb_framebuffer_supported = extensions.has("GL_EXT_sRGB_write_control");
 		unorm16_texture_supported = extensions.has("GL_EXT_texture_norm16");
 	}
@@ -133,7 +143,6 @@ Config::Config() {
 	support_anisotropic_filter = extensions.has("GL_EXT_texture_filter_anisotropic");
 	if (support_anisotropic_filter) {
 		glGetFloatv(_GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropic_level);
-		anisotropic_level = MIN(float(1 << int(GLOBAL_GET("rendering/textures/default_filters/anisotropic_filtering_level"))), anisotropic_level);
 	}
 
 	glGetIntegerv(GL_MAX_SAMPLES, &msaa_max_samples);
@@ -150,7 +159,8 @@ Config::Config() {
 	msaa_multiview_supported = extensions.has("GL_EXT_multiview_texture_multisample");
 #endif
 
-	multiview_supported = extensions.has("OCULUS_multiview") || extensions.has("GL_OVR_multiview2") || extensions.has("GL_OVR_multiview");
+	multiview_supported = extensions.has("OCULUS_multiview") ||
+						  extensions.has("GL_OVR_multiview2") || extensions.has("GL_OVR_multiview");
 #endif
 
 #ifdef ANDROID_ENABLED
@@ -160,73 +170,57 @@ Config::Config() {
 	external_texture_supported = extensions.has("GL_OES_EGL_image_external_essl3");
 
 	if (multiview_supported) {
-		eglFramebufferTextureMultiviewOVR = (PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC)eglGetProcAddress("glFramebufferTextureMultiviewOVR");
+		eglFramebufferTextureMultiviewOVR =
+			(PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC)eglGetProcAddress(
+				"glFramebufferTextureMultiviewOVR");
 		if (eglFramebufferTextureMultiviewOVR == nullptr) {
 			multiview_supported = false;
 		}
 	}
 
 	if (msaa_multiview_supported) {
-		eglTexStorage3DMultisample = (PFNGLTEXSTORAGE3DMULTISAMPLEPROC)eglGetProcAddress("glTexStorage3DMultisample");
+		eglTexStorage3DMultisample =
+			(PFNGLTEXSTORAGE3DMULTISAMPLEPROC)eglGetProcAddress("glTexStorage3DMultisample");
 		if (eglTexStorage3DMultisample == nullptr) {
 			msaa_multiview_supported = false;
 		}
 	}
 
 	if (rt_msaa_supported) {
-		eglFramebufferTexture2DMultisampleEXT = (PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC)eglGetProcAddress("glFramebufferTexture2DMultisampleEXT");
+		eglFramebufferTexture2DMultisampleEXT =
+			(PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC)eglGetProcAddress(
+				"glFramebuffer
+Texture2DMultisampleEXT");
 		if (eglFramebufferTexture2DMultisampleEXT == nullptr) {
 			rt_msaa_supported = false;
 		}
 	}
 
 	if (rt_msaa_multiview_supported) {
-		eglFramebufferTextureMultisampleMultiviewOVR = (PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC)eglGetProcAddress("glFramebufferTextureMultisampleMultiviewOVR");
+		eglFramebufferTextureMultisampleMultiviewOVR =
+			(PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC)eglGetProcAddress(
+				"glFramebufferTextureMultisampleMultiviewOVR");
 		if (eglFramebufferTextureMultisampleMultiviewOVR == nullptr) {
 			rt_msaa_multiview_supported = false;
 		}
 	}
 
 	if (external_texture_supported) {
-		eglEGLImageTargetTexture2DOES = (PFNEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+		eglEGLImageTargetTexture2DOES =
+			(PFNEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
 		if (eglEGLImageTargetTexture2DOES == nullptr) {
 			external_texture_supported = false;
 		}
 	}
 #endif
 
-	force_vertex_shading = GLOBAL_GET("rendering/shading/overrides/force_vertex_shading");
-	specular_occlusion = GLOBAL_GET("rendering/reflections/specular_occlusion/enabled");
-	use_nearest_mip_filter = GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter");
-
-	use_depth_prepass = bool(GLOBAL_GET("rendering/driver/depth_prepass/enable"));
-	if (use_depth_prepass) {
-		String vendors = GLOBAL_GET("rendering/driver/depth_prepass/disable_for_vendors");
-		Vector<String> vendor_match = vendors.split(",");
-		const String &renderer = String::utf8((const char *)glGetString(GL_RENDERER));
-		for (int i = 0; i < vendor_match.size(); i++) {
-			String v = vendor_match[i].strip_edges();
-			if (v == String()) {
-				continue;
-			}
-
-			if (renderer.containsn(v)) {
-				use_depth_prepass = false;
-			}
-		}
-	}
-
-	max_renderable_elements = GLOBAL_GET("rendering/limits/opengl/max_renderable_elements");
-	max_renderable_lights = GLOBAL_GET("rendering/limits/opengl/max_renderable_lights");
-	max_lights_per_object = GLOBAL_GET("rendering/limits/opengl/max_lights_per_object");
-
-	//Adreno 3xx Compatibility
-	const String rendering_device_name = String::utf8((const char *)glGetString(GL_RENDERER));
+	// Adreno 3xx Compatibility
+	const String rendering_device_name = String::utf8((const char*)glGetString(GL_RENDERER));
 	if (rendering_device_name.left(13) == "Adreno (TM) 3") {
 		disable_particles_workaround = true;
 
 		// ignore driver version 331+
-		const String gl_version = String::utf8((const char *)glGetString(GL_VERSION));
+		const String gl_version = String::utf8((const char*)glGetString(GL_VERSION));
 		// Adreno 3xx examples (https://opengles.gpuinfo.org/listreports.php):
 		// ===========================================================================
 		// OpenGL ES 3.0 V@84.0 AU@ (CL@)
@@ -239,11 +233,12 @@ Config::Config() {
 		// OpenGL ES 3.0 V@0502.0 (GIT@09fef447e8, I1fe547a144, 1661493934) (Date:08/25/22)
 		String driver_version = gl_version.get_slice("V@", 1).get_slicec(' ', 0);
 		if (driver_version.is_valid_float() && driver_version.to_float() >= 331.0) {
-			//TODO: also 'GPUParticles'?
-			//https://github.com/godotengine/godot/issues/92662#issuecomment-2161199477
-			//disable_particles_workaround = false;
+			// TODO: also 'GPUParticles'?
+			// https://github.com/godotengine/godot/issues/92662#issuecomment-2161199477
+			// disable_particles_workaround = false;
 		}
-	} else if (rendering_device_name.contains("PowerVR")) {
+	}
+	else if (rendering_device_name.contains("PowerVR")) {
 		disable_transform_feedback_shader_cache = true;
 	}
 
@@ -255,8 +250,8 @@ Config::Config() {
 #endif
 }
 
-Config::~Config() {
-	singleton = nullptr;
-}
+Config::~Config() { singleton = nullptr; }
 
 #endif // GLES3_ENABLED
+
+

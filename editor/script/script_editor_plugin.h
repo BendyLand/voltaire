@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/error/error_list.h"
-#include "core/object/script_language.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/script/script_editor_base.h"
 #include "scene/gui/dialogs.h"
@@ -56,8 +55,6 @@ class ScriptEditorBase;
 
 class ScriptEditorQuickOpen : public ConfirmationDialog
 {
-	VLTRCLASS(ScriptEditorQuickOpen, ConfirmationDialog);
-
 	FilterLineEdit* search_box = nullptr;
 	Tree* search_options = nullptr;
 	String function;
@@ -80,8 +77,6 @@ public:
 
 class DocumentOutline : public VBoxContainer
 {
-	VLTRCLASS(DocumentOutline, VBoxContainer);
-
 	ItemList* item_list = nullptr;
 	HBoxContainer* buttons_hbox = nullptr;
 	FilterLineEdit* filter = nullptr;
@@ -240,7 +235,6 @@ class ScriptEditor : public PanelContainer
 	struct ScriptHistory
 	{
 		Control* control = nullptr;
-		Dictionary state;
 	};
 
 	Vector<ScriptHistory> history;
@@ -303,7 +297,6 @@ class ScriptEditor : public PanelContainer
 
 	int edit_pass;
 
-	void _add_callback(Object* p_obj, const String& p_function, const PackedStringArray& p_args);
 	void _res_saved_callback(const Ref<Resource>& p_res);
 	void _scene_saved_callback(const String& p_path);
 	void _mark_built_in_scripts_as_saved(const String& p_parent_path);
@@ -326,10 +319,8 @@ class ScriptEditor : public PanelContainer
 	void _clear_execution(Ref<RefCounted> p_script) { _change_execution(p_script); }
 
 	String _get_debug_tooltip(const String& p_text, Node* p_se);
-	void _script_created(Ref<Script> p_script);
 	void _set_breakpoint(Ref<RefCounted> p_script, int p_line, bool p_enabled);
 	void _clear_breakpoints();
-	Array _get_cached_breakpoints_for_script(const String& p_path) const;
 
 	ScriptEditorBase* _get_current_editor() const;
 	Vector<ScriptEditorBase*> _get_open_script_editors() const;
@@ -360,12 +351,7 @@ class ScriptEditor : public PanelContainer
 
 	void _split_dragged(float);
 
-	Variant get_drag_data_fw(const Point2& p_point, Control* p_from);
-	bool can_drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from) const;
-	void drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from);
-
 	virtual void input(const Ref<InputEvent>& p_event) override;
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 	void _script_list_clicked(
 		int p_item, Vector2 p_local_mouse_pos, MouseButton p_mouse_button_index);
@@ -387,20 +373,14 @@ class ScriptEditor : public PanelContainer
 	bool _help_tab_goto(const String& p_name, const String& p_desc);
 	void _update_history_arrows();
 	void _save_history(Control* p_control);
-	void _save_new_history(const Dictionary& p_state, Control* p_control);
-	void _save_previous_state(const Dictionary& p_state, Control* p_control);
 	void _compress_history_patterns(bool p_once);
 	void _go_to_tab(int p_idx, bool p_save_history = false);
 	void _update_history_pos(int p_new_pos);
 	void _update_script_colors();
-	void _update_modified_scripts_for_external_editor(Ref<Script> p_for_script = Ref<Script>());
 
 	void _script_changed();
 	int file_dialog_option;
 	void _file_dialog_action(const String& p_file);
-
-	Ref<Script> _get_current_script();
-	Array _get_open_scripts() const;
 
 	HashSet<String> textfile_extensions;
 	Ref<TextFile> _load_text_file(const String& p_path, Error* r_error) const;
@@ -462,25 +442,15 @@ public:
 	void set_window_layout(Ref<ConfigFile> p_layout);
 	void get_window_layout(Ref<ConfigFile> p_layout);
 
-	void set_scene_root_script(Ref<Script> p_script);
-	Vector<Ref<Script>> get_open_scripts() const;
 	ScriptEditorBase* get_script_editor(Ref<Resource> p_script) const;
 
 	ScriptEditorBase* get_current_editor() const { return _get_current_editor(); }
 
-	bool script_goto_method(Ref<Script> p_script, const String& p_method);
-
 	virtual void edited_scene_changed();
-
-	void notify_script_close(const Ref<Script>& p_script);
-	void notify_script_changed(const Ref<Script>& p_script);
 
 	void goto_help(const String& p_desc) { _help_class_goto(p_desc); }
 
 	void update_doc(const String& p_name);
-	void clear_docs_from_script(const Ref<Script>& p_script);
-	void update_docs_from_script(const Ref<Script>& p_script);
-
 	void trigger_live_script_reload(const String& p_script_path);
 
 	VSplitContainer* get_left_list_split() { return list_split; }
@@ -498,8 +468,6 @@ public:
 
 class ScriptEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(ScriptEditorPlugin, EditorPlugin);
-
 	ScriptEditor* script_editor = nullptr;
 	WindowWrapper* window_wrapper = nullptr;
 
@@ -525,9 +493,6 @@ public:
 
 	bool has_main_screen() const override { return true; }
 
-	virtual void edit(Object* p_object) override;
-	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(Object& obj, bool p_visible) override;
 	virtual void selected_notify() override;
 
 	virtual String get_unsaved_status(const String& p_for_scene) const override;

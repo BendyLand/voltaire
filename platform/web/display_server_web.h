@@ -44,7 +44,6 @@ class InputEventWithModifiers;
 class NativeMenu;
 
 class DisplayServerWeb : public DisplayServer {
-	VLTRSOFTCLASS(DisplayServerWeb, DisplayServer);
 
 private:
 	struct JSTouchEvent {

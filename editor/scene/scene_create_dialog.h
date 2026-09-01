@@ -41,10 +41,10 @@ class Label;
 class LineEdit;
 class OptionButton;
 
-class SceneCreateDialog : public ConfirmationDialog {
-	VLTRCLASS(SceneCreateDialog, ConfirmationDialog);
-
-	enum {
+class SceneCreateDialog : public ConfirmationDialog
+{
+	enum
+	{
 		MSG_ID_PATH,
 		MSG_ID_ROOT,
 	};
@@ -52,7 +52,8 @@ class SceneCreateDialog : public ConfirmationDialog {
 	const StringName type_meta = StringName("type");
 
 public:
-	enum RootType {
+	enum RootType
+	{
 		ROOT_2D_SCENE,
 		ROOT_3D_SCENE,
 		ROOT_USER_INTERFACE,
@@ -65,20 +66,20 @@ private:
 	String root_name;
 
 	Ref<ButtonGroup> node_type_group;
-	CheckBox *node_type_2d = nullptr;
-	CheckBox *node_type_3d = nullptr;
-	CheckBox *node_type_gui = nullptr;
-	CheckBox *node_type_other = nullptr;
+	CheckBox* node_type_2d = nullptr;
+	CheckBox* node_type_3d = nullptr;
+	CheckBox* node_type_gui = nullptr;
+	CheckBox* node_type_other = nullptr;
 
-	LineEdit *other_type_display = nullptr;
-	Button *select_node_button = nullptr;
-	CreateDialog *select_node_dialog = nullptr;
+	LineEdit* other_type_display = nullptr;
+	Button* select_node_button = nullptr;
+	CreateDialog* select_node_dialog = nullptr;
 
-	LineEdit *scene_name_edit = nullptr;
-	OptionButton *scene_extension_picker = nullptr;
-	LineEdit *root_name_edit = nullptr;
+	LineEdit* scene_name_edit = nullptr;
+	OptionButton* scene_extension_picker = nullptr;
+	LineEdit* root_name_edit = nullptr;
 
-	EditorValidationPanel *validation_panel = nullptr;
+	EditorValidationPanel* validation_panel = nullptr;
 
 	void accept_create();
 	void browse_types();
@@ -89,11 +90,13 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void config(const String &p_dir, const String &p_scene_name = "");
+	void config(const String& p_dir, const String& p_scene_name = "");
 
 	String get_scene_path() const;
 	String get_root_name() const;
-	Node *create_scene_root();
+	Node* create_scene_root();
 
 	SceneCreateDialog();
 };
+
+

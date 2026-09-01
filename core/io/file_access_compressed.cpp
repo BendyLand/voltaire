@@ -367,14 +367,14 @@ int64_t FileAccessCompressed::_get_size(const String &p_file) {
 	}
 }
 
-BitField<FileAccess::UnixPermissionFlags> FileAccessCompressed::_get_unix_permissions(const String &p_file) {
+uint32_t FileAccessCompressed::_get_unix_permissions(const String &p_file) {
 	if (f.is_valid()) {
 		return f->_get_unix_permissions(p_file);
 	}
 	return 0;
 }
 
-Error FileAccessCompressed::_set_unix_permissions(const String &p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions) {
+Error FileAccessCompressed::_set_unix_permissions(const String &p_file, uint32_t p_permissions) {
 	if (f.is_valid()) {
 		return f->_set_unix_permissions(p_file, p_permissions);
 	}

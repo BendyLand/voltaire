@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/rendering_server.h"
 #include "texture_progress_bar.h"
@@ -66,18 +64,6 @@ int TextureProgressBar::get_stretch_margin(Side p_side) const
 {
 	ERR_FAIL_INDEX_V((int)p_side, 4, 0);
 	return stretch_margin[p_side];
-}
-
-void TextureProgressBar::set_nine_patch_stretch(bool p_stretch)
-{
-	if (nine_patch_stretch == p_stretch) {
-		return;
-	}
-
-	nine_patch_stretch = p_stretch;
-	queue_redraw();
-	update_minimum_size();
-	this->obj->notify_property_list_changed();
 }
 
 bool TextureProgressBar::get_nine_patch_stretch() const { return nine_patch_stretch; }
@@ -156,27 +142,6 @@ void TextureProgressBar::set_tint_over(const Color& p_tint)
 }
 
 Color TextureProgressBar::get_tint_over() const { return tint_over; }
-
-void TextureProgressBar::_set_texture(
-	Ref<Texture2D>* p_destination, const Ref<Texture2D>& p_texture)
-{
-	DEV_ASSERT(p_destination);
-	Ref<Texture2D>& destination = *p_destination;
-	if (destination == p_texture) {
-		return;
-	}
-	if (destination.is_valid()) {
-		destination->disconnect_changed(callable_mp(this, &TextureProgressBar::_texture_changed));
-	}
-	destination = p_texture;
-	if (destination.is_valid()) {
-		// Pass `CONNECT_REFERENCE_COUNTED` to avoid early disconnect in case the same texture is
-		// assigned to different "slots".
-		destination->connect_changed(callable_mp(this, &TextureProgressBar::_texture_changed),
-			Object::CONNECT_REFERENCE_COUNTED);
-	}
-	_texture_changed();
-}
 
 void TextureProgressBar::_texture_changed()
 {
@@ -628,19 +593,6 @@ void TextureProgressBar::_notification(int p_what)
 	}
 }
 
-void TextureProgressBar::set_fill_mode(int p_fill)
-{
-	ERR_FAIL_INDEX(p_fill, FILL_MODE_MAX);
-
-	if (mode == (FillMode)p_fill) {
-		return;
-	}
-
-	mode = (FillMode)p_fill;
-	queue_redraw();
-	this->obj->notify_property_list_changed();
-}
-
 int TextureProgressBar::get_fill_mode() { return mode; }
 
 void TextureProgressBar::set_radial_initial_angle(float p_angle)
@@ -686,23 +638,6 @@ void TextureProgressBar::set_radial_center_offset(const Point2& p_off)
 }
 
 Point2 TextureProgressBar::get_radial_center_offset() { return rad_center_off; }
-
-void TextureProgressBar::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name.begins_with("stretch_margin_") && !nine_patch_stretch) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-	else if (p_property.name.begins_with("radial_") &&
-			   (mode != FillMode::FILL_CLOCKWISE && mode != FillMode::FILL_COUNTER_CLOCKWISE &&
-				   mode != FillMode::FILL_CLOCKWISE_AND_COUNTER_CLOCKWISE)) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-void TextureProgressBar::_bind_methods() {}
 
 TextureProgressBar::TextureProgressBar() { set_mouse_filter(MOUSE_FILTER_PASS); }
 

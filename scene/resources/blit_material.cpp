@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "blit_material.h"
-#include "core/object/class_db.h"
 #include "core/version.h"
 #include "servers/rendering/rendering_server.h"
 
