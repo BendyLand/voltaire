@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "navigation_server_3d.h"
 
 Vector<Vector3> NavigationServer3D::_map_get_path_bind_compat_100129(RID p_map, Vector3 p_origin,
@@ -39,16 +38,6 @@ Vector<Vector3> NavigationServer3D::_map_get_path_bind_compat_100129(RID p_map, 
 	return const_cast<NavigationServer3D*>(this)->map_get_path(
 		p_map, p_origin, p_destination, p_optimize, p_navigation_layers);
 }
-
-void NavigationServer3D::_query_path_bind_compat_100129(
-	const Ref<NavigationPathQueryParameters3D>& p_query_parameters,
-	Ref<NavigationPathQueryResult3D> p_query_result) const
-{
-	return const_cast<NavigationServer3D*>(this)->query_path(
-		p_query_parameters, p_query_result, Callable());
-}
-
-void NavigationServer3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 

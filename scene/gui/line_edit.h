@@ -33,11 +33,11 @@
 #include "scene/gui/control.h"
 #include "scene/gui/popup_menu.h"
 
-class LineEdit : public Control {
-	VLTRCLASS(LineEdit, Control);
-
+class LineEdit : public Control
+{
 public:
-	enum MenuItems {
+	enum MenuItems
+	{
 		MENU_CUT,
 		MENU_COPY,
 		MENU_PASTE,
@@ -73,7 +73,8 @@ public:
 	};
 
 	// Keep synced with DisplayServerEnums::VirtualKeyboardType enum.
-	enum VirtualKeyboardType {
+	enum VirtualKeyboardType
+	{
 		KEYBOARD_TYPE_DEFAULT,
 		KEYBOARD_TYPE_MULTILINE,
 		KEYBOARD_TYPE_NUMBER,
@@ -84,7 +85,8 @@ public:
 		KEYBOARD_TYPE_URL
 	};
 
-	enum ExpandMode {
+	enum ExpandMode
+	{
 		EXPAND_MODE_ORIGINAL_SIZE,
 		EXPAND_MODE_FIT_TO_TEXT,
 		EXPAND_MODE_FIT_TO_LINE_EDIT,
@@ -100,7 +102,8 @@ private:
 	bool text_changed_dirty = false;
 	ExpandMode icon_expand_mode = EXPAND_MODE_ORIGINAL_SIZE;
 
-	enum AltInputMode {
+	enum AltInputMode
+	{
 		ALT_INPUT_NONE,
 		ALT_INPUT_UNICODE,
 		ALT_INPUT_OEM,
@@ -131,9 +134,9 @@ private:
 	bool context_menu_enabled = true;
 	bool emoji_menu_enabled = true;
 	bool backspace_deletes_composite_character_enabled = false;
-	PopupMenu *menu = nullptr;
-	PopupMenu *menu_dir = nullptr;
-	PopupMenu *menu_ctl = nullptr;
+	PopupMenu* menu = nullptr;
+	PopupMenu* menu_dir = nullptr;
+	PopupMenu* menu_ctl = nullptr;
 
 	bool caret_mid_grapheme_enabled = false;
 
@@ -145,7 +148,6 @@ private:
 	TextDirection text_direction = TEXT_DIRECTION_AUTO;
 	TextDirection input_direction = TEXT_DIRECTION_LTR;
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-	Array st_args;
 	bool draw_control_chars = false;
 
 	bool expand_to_text_length = false;
@@ -168,7 +170,8 @@ private:
 	bool flat = false;
 	float right_icon_scale = 1.0;
 
-	struct Selection {
+	struct Selection
+	{
 		int begin = 0;
 		int end = 0;
 		int start_column = 0;
@@ -178,15 +181,18 @@ private:
 		bool drag_attempt = false;
 	} selection;
 
-	struct TextOperation {
+	struct TextOperation
+	{
 		int caret_column = 0;
 		float scroll_offset = 0.0;
 		String text;
 	};
-	List<TextOperation> undo_stack;
-	List<TextOperation>::Element *undo_stack_pos = nullptr;
 
-	struct ClearButtonStatus {
+	List<TextOperation> undo_stack;
+	List<TextOperation>::Element* undo_stack_pos = nullptr;
+
+	struct ClearButtonStatus
+	{
 		bool press_attempt = false;
 		bool pressing_inside = false;
 	} clear_button_status;
@@ -204,7 +210,8 @@ private:
 	bool pending_select_all_on_focus = false;
 	bool select_all_on_focus = false;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> normal;
 		Ref<StyleBox> read_only;
 		Ref<StyleBox> focus;
@@ -236,7 +243,7 @@ private:
 	void _clear_redo();
 	void _create_undo_state();
 
-	Key _get_menu_action_accelerator(const String &p_action);
+	Key _get_menu_action_accelerator(const String& p_action);
 	void _generate_context_menu();
 	void _update_context_menu();
 
@@ -276,12 +283,11 @@ private:
 	Point2 _get_right_icon_size(Ref<Texture2D> p_right_icon) const;
 
 protected:
-	bool _is_over_clear_button(const Point2 &p_pos) const;
+	bool _is_over_clear_button(const Point2& p_pos) const;
 
 	virtual void _update_theme_item_cache() override;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
@@ -289,14 +295,7 @@ protected:
 	static void _bind_compatibility_methods();
 #endif
 
-	virtual void unhandled_key_input(const Ref<InputEvent> &p_event) override;
-	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
-
-	void _accessibility_action_set_selection(const Variant &p_data);
-	void _accessibility_action_replace_selected(const Variant &p_data);
-	void _accessibility_action_set_value(const Variant &p_data);
-	void _accessibility_action_menu(const Variant &p_data);
-
+	virtual void unhandled_key_input(const Ref<InputEvent>& p_event) override;
 	virtual String _get_accessibility_name() const override;
 
 public:
@@ -313,16 +312,12 @@ public:
 	void set_horizontal_alignment(HorizontalAlignment p_alignment);
 	HorizontalAlignment get_horizontal_alignment() const;
 
-	virtual Variant get_drag_data(Object& obj, const Point2 &p_point) override;
-	virtual bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;
-	virtual void drop_data(const Object& obj, const Point2 &p_point, const Variant &p_data) override;
-
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 
 	void menu_option(int p_option);
 	void set_context_menu_enabled(bool p_enable);
 	bool is_context_menu_enabled();
-	PopupMenu *get_menu() const;
+	PopupMenu* get_menu() const;
 	bool is_menu_visible() const;
 
 	void show_emoji_and_symbol_picker();
@@ -348,12 +343,12 @@ public:
 	void _set_text(String p_text, bool p_emit_signal = false);
 	void set_text(String p_text);
 	String get_text() const;
-	void set_text_with_selection(const String &p_text); // Set text, while preserving selection.
+	void set_text_with_selection(const String& p_text); // Set text, while preserving selection.
 
 	void set_text_direction(TextDirection p_text_direction);
 	TextDirection get_text_direction() const;
 
-	void set_language(const String &p_language);
+	void set_language(const String& p_language);
 	String get_language() const;
 
 	void set_draw_control_chars(bool p_draw_control_chars);
@@ -361,9 +356,6 @@ public:
 
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
-
-	void set_structured_text_bidi_override_options(const Array &p_args);
-	Array get_structured_text_bidi_override_options() const;
 
 	void set_placeholder(String p_text);
 	String get_placeholder() const;
@@ -405,7 +397,7 @@ public:
 	void set_secret(bool p_secret);
 	bool is_secret() const;
 
-	void set_secret_character(const String &p_string);
+	void set_secret_character(const String& p_string);
 	String get_secret_character() const;
 
 	virtual Size2 get_minimum_size() const override;
@@ -440,7 +432,7 @@ public:
 	void set_drag_and_drop_selection_enabled(const bool p_enabled);
 	bool is_drag_and_drop_selection_enabled() const;
 
-	void set_right_icon(const Ref<Texture2D> &p_icon);
+	void set_right_icon(const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_right_icon();
 
 	void set_icon_expand_mode(ExpandMode p_mode);
@@ -462,10 +454,8 @@ public:
 
 	void show_virtual_keyboard();
 
-	LineEdit(const String &p_placeholder = String());
+	LineEdit(const String& p_placeholder = String());
 	~LineEdit();
 };
 
-VARIANT_ENUM_CAST(LineEdit::MenuItems);
-VARIANT_ENUM_CAST(LineEdit::VirtualKeyboardType);
-VARIANT_ENUM_CAST(LineEdit::ExpandMode);
+

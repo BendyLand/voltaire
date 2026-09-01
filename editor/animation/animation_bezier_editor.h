@@ -39,8 +39,6 @@ class ViewPanner;
 
 class AnimationBezierTrackEdit : public Control
 {
-	VLTRCLASS(AnimationBezierTrackEdit, Control);
-
 	enum
 	{
 		MENU_KEY_INSERT,
@@ -104,9 +102,6 @@ class AnimationBezierTrackEdit : public Control
 	bool _hide_track(int p_track);
 	bool _show_track(int p_track);
 
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-	void _menu_selected(const Object& obj, int p_index);
-
 	void _play_position_draw();
 	bool _is_track_displayed(int p_track_index);
 	bool _is_track_curves_displayed(int p_track_index);
@@ -158,19 +153,12 @@ class AnimationBezierTrackEdit : public Control
 	HashMap<Pair<int, int>, Vector2, PairHasher> additional_moving_handle_lefts;
 	HashMap<Pair<int, int>, Vector2, PairHasher> additional_moving_handle_rights;
 
-	void _clear_selection(Object& obj);
-	void _clear_selection_for_anim(const Object& obj, const Ref<Animation>& p_anim);
-	void _select_at_anim(Object& obj, const Ref<Animation>& p_anim, int p_track, real_t p_pos, bool p_single);
-	bool _try_select_at_ui_pos(Object& obj, const Point2& p_pos, bool p_aggregate, bool p_deselectable);
-	void _change_selected_keys_handle_mode(const Object& obj, Animation::HandleMode p_mode, bool p_auto = false);
-
 	Vector2 menu_insert_key;
 
 	struct AnimMoveRestore
 	{
 		int track = 0;
 		double time = 0;
-		Variant key;
 		real_t transition = 0;
 	};
 
@@ -217,13 +205,8 @@ class AnimationBezierTrackEdit : public Control
 
 protected:
 	static void _bind_methods();
-	void _notification(const Object& obj, int p_what);
 
 public:
-	static float get_bezier_key_value(Array p_bezier_key_array);
-
-	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
-
 	Ref<Animation> get_animation() const;
 
 	void set_animation_and_track(const Ref<Animation>& p_animation, int p_track, bool p_read_only);
@@ -238,11 +221,6 @@ public:
 
 	void set_play_position(real_t p_pos);
 	void update_play_position();
-
-	void duplicate_selected_keys(const Object& obj, real_t p_ofs, bool p_ofs_valid);
-	void copy_selected_keys(const Object& obj, bool p_cut);
-	void paste_keys(const Object& obj, real_t p_ofs, bool p_ofs_valid);
-	void delete_selection(const Object& obj);
 
 	void _bezier_track_insert_key_at_anim(const Ref<Animation>& p_anim, int p_track, double p_time,
 		real_t p_value, const Vector2& p_in_handle, const Vector2& p_out_handle,

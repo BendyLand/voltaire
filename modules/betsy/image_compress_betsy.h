@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/io/image.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/templates/command_queue_mt.h"
 #include "core/templates/mem_unique_ptr.h"
 
@@ -105,7 +104,6 @@ class BetsyCompressor
 {
 	mutable CommandQueueMT command_queue;
 	bool exit = false;
-	WorkerThreadPool::TaskID task_id = WorkerThreadPool::INVALID_TASK_ID;
 
 	struct BetsyShader
 	{
@@ -123,7 +121,6 @@ class BetsyCompressor
 	RID dxt1_encoding_table_buffer;
 
 	void _init();
-	void _assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id);
 	void _thread_loop();
 	void _thread_exit();
 
@@ -131,7 +128,6 @@ class BetsyCompressor
 	Error _compress(BetsyFormat p_format, Image* r_img);
 
 public:
-	mem_unique_ptr<Object> obj;
 	void init();
 	void finish();
 

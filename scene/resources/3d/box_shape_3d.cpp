@@ -29,75 +29,10 @@
 /**************************************************************************/
 
 #include "box_shape_3d.h"
-#include "core/object/class_db.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
-Vector<Vector3> BoxShape3D::get_debug_mesh_lines() const
-{
-	Vector<Vector3> lines;
-	AABB aabb;
-	aabb.position = -size / 2;
-	aabb.size = size;
-
-	for (int i = 0; i < 12; i++) {
-		Vector3 a, b;
-		aabb.get_edge(i, a, b);
-		lines.push_back(a);
-		lines.push_back(b);
-	}
-
-	return lines;
-}
-
-Ref<ArrayMesh> BoxShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
-{
-	Array box_array;
-	box_array.resize(RSE::ARRAY_MAX);
-	BoxMesh::create_mesh_array(box_array, size);
-
-	Vector<Color> colors;
-	const PackedVector3Array& verts = box_array[RSE::ARRAY_VERTEX];
-	const int32_t verts_size = verts.size();
-	for (int i = 0; i < verts_size; i++) {
-		colors.append(p_modulate);
-	}
-
-	Ref<ArrayMesh> box_mesh = memnew(ArrayMesh);
-	box_array[RSE::ARRAY_COLOR] = colors;
-	box_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, box_array);
-	return box_mesh;
-}
-
 real_t BoxShape3D::get_enclosing_radius() const { return size.length() / 2; }
-
-void BoxShape3D::_update_shape()
-{
-	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), size / 2);
-	Shape3D::_update_shape();
-}
-
-#ifndef DISABLE_DEPRECATED
-bool BoxShape3D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		// Convert to `size`, twice as big.
-		set_size((Vector3)p_value * 2);
-		return true;
-	}
-	return false;
-}
-
-bool BoxShape3D::_get(const StringName& p_name, Variant& r_property) const
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		// Convert to `extents`, half as big.
-		r_property = size / 2;
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
 
 void BoxShape3D::set_size(const Vector3& p_size)
 {
@@ -109,8 +44,6 @@ void BoxShape3D::set_size(const Vector3& p_size)
 }
 
 Vector3 BoxShape3D::get_size() const { return size; }
-
-void BoxShape3D::_bind_methods() {}
 
 BoxShape3D::BoxShape3D() : Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_BOX))
 {

@@ -30,18 +30,18 @@
 
 #pragma once
 
-#include "servers/audio/audio_stream.h"
-
 #include <thirdparty/dr_libs/dr_mp3.h>
+#include "servers/audio/audio_stream.h"
 
 class AudioStreamMP3;
 
-class AudioStreamPlaybackMP3 : public AudioStreamPlaybackResampled {
-	VLTRCLASS(AudioStreamPlaybackMP3, AudioStreamPlaybackResampled);
-
-	enum {
+class AudioStreamPlaybackMP3 : public AudioStreamPlaybackResampled
+{
+	enum
+	{
 		FADE_SIZE = 256
 	};
+
 	AudioFrame loop_fade[FADE_SIZE];
 	int loop_fade_remaining = FADE_SIZE;
 
@@ -60,7 +60,7 @@ class AudioStreamPlaybackMP3 : public AudioStreamPlaybackResampled {
 	Ref<AudioSamplePlayback> sample_playback;
 
 protected:
-	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames) override;
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
 	virtual float get_stream_sampling_rate() override;
 
 public:
@@ -68,7 +68,7 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; // times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
@@ -78,20 +78,15 @@ public:
 	virtual void set_is_sample(bool p_is_sample) override;
 	virtual bool get_is_sample() const override;
 	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
-	virtual void set_sample_playback(const Ref<AudioSamplePlayback> &p_playback) override;
-
-	virtual void set_parameter(const StringName &p_name, const Variant &p_value) override;
-	virtual Variant get_parameter(const StringName &p_name) const override;
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
 
 	AudioStreamPlaybackMP3() {}
+
 	~AudioStreamPlaybackMP3();
 };
 
-class AudioStreamMP3 : public AudioStream {
-	VLTRCLASS(AudioStreamMP3, AudioStream);
-	OBJ_SAVE_TYPE(AudioStream) //children are all saved as AudioStream, so they can be exchanged
-	RES_BASE_EXTENSION("mp3str");
-
+class AudioStreamMP3 : public AudioStream
+{
 	friend class AudioStreamPlaybackMP3;
 
 	TightLocalVector<uint8_t> data;
@@ -110,8 +105,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	static Ref<AudioStreamMP3> load_from_buffer(const Vector<uint8_t> &p_stream_data);
-	static Ref<AudioStreamMP3> load_from_file(const String &p_path);
+	static Ref<AudioStreamMP3> load_from_buffer(const Vector<uint8_t>& p_stream_data);
+	static Ref<AudioStreamMP3> load_from_file(const String& p_path);
 
 	void set_loop(bool p_enable);
 	virtual bool has_loop() const override;
@@ -130,17 +125,16 @@ public:
 
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 
-	void set_data(const Vector<uint8_t> &p_data);
+	void set_data(const Vector<uint8_t>& p_data);
 	Vector<uint8_t> get_data() const;
 
 	virtual double get_length() const override;
 
 	virtual bool is_monophonic() const override;
 
-	virtual bool can_be_sampled() const override {
-		return true;
-	}
-	virtual Ref<AudioSample> generate_sample() const override;
+	virtual bool can_be_sampled() const override { return true; }
 
-	virtual void get_parameter_list(List<Parameter> *r_parameters) override;
+	virtual Ref<AudioSample> generate_sample() const override;
 };
+
+

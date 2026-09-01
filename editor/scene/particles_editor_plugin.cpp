@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/settings/editor_settings.h"
@@ -62,68 +61,6 @@ void ParticlesEditorPlugin::_notification(int p_what)
 		popup->add_item(conversion_option_name, MENU_OPTION_CONVERT);
 	} break;
 	}
-}
-
-bool ParticlesEditorPlugin::need_show_lifetime_dialog(SpinBox* p_seconds)
-{
-	// Add one second to the default generation lifetime, since the progress is updated every
-	// second.
-	p_seconds->set_value(
-		MAX(1.0, std::trunc(edited_node->obj->get("lifetime").operator double()) + 1.0));
-
-	if (p_seconds->get_value() >= 11.0 + CMP_EPSILON) {
-		// Only pop up the time dialog if the particle's lifetime is long enough to warrant
-		// shortening it.
-		return true;
-	}
-	else {
-		// Generate the visibility rect/AABB immediately.
-		return false;
-	}
-}
-
-void ParticlesEditorPlugin::_menu_callback(int p_idx)
-{
-	switch (p_idx) {
-	case MENU_OPTION_CONVERT: {
-		Node* converted_node = _convert_particles();
-
-		EditorUndoRedoManager* ur = EditorUndoRedoManager::get_singleton();
-		ur->create_action(conversion_option_name, UndoRedo::MERGE_DISABLE, edited_node->obj.get());
-		SceneTreeDock::get_singleton()->replace_node(edited_node, converted_node);
-		ur->commit_action(false);
-	} break;
-
-	case MENU_RESTART: {
-		edited_node->obj->call("restart");
-	}
-	}
-}
-
-void ParticlesEditorPlugin::edit(Object* p_object)
-{
-	edited_node = Object::cast_to<Node>(p_object);
-}
-
-bool ParticlesEditorPlugin::handles(Object* p_object) const
-{
-	return p_object->is_class(handled_type);
-}
-
-void ParticlesEditorPlugin::make_visible(bool p_visible) { toolbar->set_visible(p_visible); }
-
-ParticlesEditorPlugin::ParticlesEditorPlugin()
-{
-	toolbar = memnew(HBoxContainer);
-	toolbar->hide();
-
-	menu = memnew(MenuButton);
-	menu->set_switch_on_hover(true);
-	menu->set_flat(false);
-	menu->set_theme_type_variation("FlatMenuButtonNoIconTint");
-	toolbar->add_child(menu);
-	menu->get_popup()->connect(
-		SceneStringName(id_pressed), callable_mp(this, &ParticlesEditorPlugin::_menu_callback));
 }
 
 

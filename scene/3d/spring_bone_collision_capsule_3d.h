@@ -32,9 +32,8 @@
 
 #include "scene/3d/spring_bone_collision_3d.h"
 
-class SpringBoneCollisionCapsule3D : public SpringBoneCollision3D {
-	VLTRCLASS(SpringBoneCollisionCapsule3D, SpringBoneCollision3D);
-
+class SpringBoneCollisionCapsule3D : public SpringBoneCollision3D
+{
 	float radius = 0.1;
 	float height = 0.5;
 	bool inside = false;
@@ -42,7 +41,8 @@ class SpringBoneCollisionCapsule3D : public SpringBoneCollision3D {
 protected:
 	static void _bind_methods();
 
-	virtual Vector3 _collide(const Transform3D &p_center, float p_bone_radius, float p_bone_length, const Vector3 &p_current) const override;
+	virtual Vector3 _collide(const Transform3D& p_center, float p_bone_radius, float p_bone_length,
+		const Vector3& p_current) const override;
 
 public:
 	void set_radius(float p_radius);
@@ -55,5 +55,7 @@ public:
 	bool is_inside() const;
 
 	// Helper.
-	Pair<Vector3, Vector3> get_head_and_tail(const Transform3D &p_center) const;
+	Pair<Vector3, Vector3> get_head_and_tail(const Transform3D& p_center) const;
 };
+
+

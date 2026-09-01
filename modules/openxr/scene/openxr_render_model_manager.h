@@ -34,16 +34,15 @@
 
 #ifdef MODULE_GLTF_ENABLED
 
+#include <openxr/openxr.h>
 #include "scene/3d/node_3d.h"
 #include "servers/xr/xr_positional_tracker.h"
 
-#include <openxr/openxr.h>
-
-class OpenXRRenderModelManager : public Node3D {
-	VLTRCLASS(OpenXRRenderModelManager, Node3D);
-
+class OpenXRRenderModelManager : public Node3D
+{
 public:
-	enum RenderModelTracker {
+	enum RenderModelTracker
+	{
 		RENDER_MODEL_TRACKER_ANY,
 		RENDER_MODEL_TRACKER_NONE_SET,
 		RENDER_MODEL_TRACKER_LEFT_HAND,
@@ -55,12 +54,12 @@ public:
 	void set_tracker(RenderModelTracker p_tracker);
 	RenderModelTracker get_tracker() const;
 
-	void set_make_local_to_pose(const String &p_action);
+	void set_make_local_to_pose(const String& p_action);
 	String get_make_local_to_pose() const;
 
 private:
-	HashMap<RID, Node3D *> render_models;
-	Node3D *container = nullptr;
+	HashMap<RID, Node3D*> render_models;
+	Node3D* container = nullptr;
 
 	bool is_dirty = false;
 	RenderModelTracker tracker = RENDER_MODEL_TRACKER_ANY;
@@ -82,6 +81,6 @@ protected:
 	void _notification(int p_what);
 };
 
-VARIANT_ENUM_CAST(OpenXRRenderModelManager::RenderModelTracker);
-
 #endif // MODULE_GLTF_ENABLED
+
+

@@ -31,14 +31,12 @@
 #pragma once
 
 #include "core/io/packet_peer.h"
-#include "core/object/gdvirtual.gen.h"
-#include "core/variant/native_ptr.h"
 
-class MultiplayerPeer : public PacketPeer {
-	VLTRCLASS(MultiplayerPeer, PacketPeer);
-
+class MultiplayerPeer : public PacketPeer
+{
 public:
-	enum TransferMode {
+	enum TransferMode
+	{
 		TRANSFER_MODE_UNRELIABLE,
 		TRANSFER_MODE_UNRELIABLE_ORDERED,
 		TRANSFER_MODE_RELIABLE
@@ -53,12 +51,14 @@ private:
 	bool refuse_connections = false;
 
 public:
-	enum {
+	enum
+	{
 		TARGET_PEER_BROADCAST = 0,
 		TARGET_PEER_SERVER = 1
 	};
 
-	enum ConnectionStatus {
+	enum ConnectionStatus
+	{
 		CONNECTION_DISCONNECTED,
 		CONNECTION_CONNECTING,
 		CONNECTION_CONNECTED,
@@ -92,10 +92,8 @@ public:
 	uint32_t generate_unique_id() const;
 };
 
-VARIANT_ENUM_CAST(MultiplayerPeer::ConnectionStatus);
-VARIANT_ENUM_CAST(MultiplayerPeer::TransferMode);
-
-class MultiplayerPeerExtension : public MultiplayerPeer {
+class MultiplayerPeerExtension : public MultiplayerPeer
+{
 protected:
 	static void _bind_methods();
 
@@ -103,10 +101,13 @@ protected:
 
 public:
 	/* PacketPeer extension */
-	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override; ///< buffer is GONE after next get_packet
-	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
+	virtual Error get_packet(const uint8_t** r_buffer,
+		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
 	/* MultiplayerPeer extension */
 	virtual void set_refuse_new_connections(bool p_enable) override;
 	virtual bool is_refusing_new_connections() const override;
 	virtual bool is_server_relay_supported() const override;
 };
+
+

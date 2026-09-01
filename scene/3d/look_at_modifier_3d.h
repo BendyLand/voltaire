@@ -33,11 +33,11 @@
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "scene/animation/tween.h"
 
-class LookAtModifier3D : public SkeletonModifier3D {
-	VLTRCLASS(LookAtModifier3D, SkeletonModifier3D);
-
+class LookAtModifier3D : public SkeletonModifier3D
+{
 public:
-	enum OriginFrom {
+	enum OriginFrom
+	{
 		ORIGIN_FROM_SELF,
 		ORIGIN_FROM_SPECIFIC_BONE,
 		ORIGIN_FROM_EXTERNAL_NODE,
@@ -96,15 +96,17 @@ private:
 	float time_step = 1.0;
 
 	float remap_damped(float p_from, float p_to, float p_damp_threshold, float p_value) const;
-	double get_bspline_y(const Vector2 &p_from, const Vector2 &p_control, const Vector2 &p_to, double p_x) const;
-	bool is_intersecting_axis(const Vector3 &p_prev, const Vector3 &p_current, Vector3::Axis p_flipping_axis, Vector3::Axis p_check_axis, bool p_check_plane = false) const;
+	double get_bspline_y(
+		const Vector2& p_from, const Vector2& p_control, const Vector2& p_to, double p_x) const;
+	bool is_intersecting_axis(const Vector3& p_prev, const Vector3& p_current,
+		Vector3::Axis p_flipping_axis, Vector3::Axis p_check_axis,
+		bool p_check_plane = false) const;
 
-	Transform3D look_at_with_axes(const Transform3D &p_rest);
+	Transform3D look_at_with_axes(const Transform3D& p_rest);
 	void init_transition();
 
 protected:
 	virtual PackedStringArray get_configuration_warnings() const override;
-	void _validate_property(PropertyInfo &p_property) const;
 
 	virtual void _validate_bone_names() override;
 
@@ -113,7 +115,7 @@ protected:
 	virtual void _process_modification(double p_delta) override;
 
 public:
-	void set_bone_name(const String &p_bone_name);
+	void set_bone_name(const String& p_bone_name);
 	String get_bone_name() const;
 	void set_bone(int p_bone);
 	int get_bone() const;
@@ -129,19 +131,19 @@ public:
 
 	void set_origin_from(OriginFrom p_origin_from);
 	OriginFrom get_origin_from() const;
-	void set_origin_bone_name(const String &p_bone_name);
+	void set_origin_bone_name(const String& p_bone_name);
 	String get_origin_bone_name() const;
 	void set_origin_bone(int p_bone);
 	int get_origin_bone() const;
-	void set_origin_external_node(const NodePath &p_external_node);
+	void set_origin_external_node(const NodePath& p_external_node);
 	NodePath get_origin_external_node() const;
 
-	void set_origin_offset(const Vector3 &p_offset);
+	void set_origin_offset(const Vector3& p_offset);
 	Vector3 get_origin_offset() const;
 	void set_origin_safe_margin(float p_margin);
 	float get_origin_safe_margin() const;
 
-	void set_target_node(const NodePath &p_target_node);
+	void set_target_node(const NodePath& p_target_node);
 	NodePath get_target_node() const;
 
 	void set_duration(float p_duration);
@@ -188,9 +190,10 @@ public:
 	bool is_interpolating() const;
 	bool is_target_within_limitation() const;
 
-	static Vector3::Axis get_secondary_rotation_axis(BoneAxis p_forward_axis, Vector3::Axis p_primary_rotation_axis);
-	static Vector3 get_basis_vector_from_bone_axis(const Basis &p_basis, BoneAxis p_axis);
-	static Vector2 get_projection_vector(const Vector3 &p_vector, Vector3::Axis p_axis);
+	static Vector3::Axis get_secondary_rotation_axis(
+		BoneAxis p_forward_axis, Vector3::Axis p_primary_rotation_axis);
+	static Vector3 get_basis_vector_from_bone_axis(const Basis& p_basis, BoneAxis p_axis);
+	static Vector2 get_projection_vector(const Vector3& p_vector, Vector3::Axis p_axis);
 };
 
-VARIANT_ENUM_CAST(LookAtModifier3D::OriginFrom);
+

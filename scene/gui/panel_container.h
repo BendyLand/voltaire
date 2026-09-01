@@ -34,8 +34,6 @@
 
 class PanelContainer : public Container
 {
-	VLTRCLASS(PanelContainer, Container);
-
 	struct ThemeCache
 	{
 		Ref<StyleBox> panel_style;

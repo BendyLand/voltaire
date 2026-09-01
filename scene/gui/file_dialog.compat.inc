@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "file_dialog.h"
 
 void FileDialog::_add_filter_bind_compat_111439(const String& p_filter, const String& p_description)

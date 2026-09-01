@@ -30,7 +30,6 @@
 
 #include "../extensions/openxr_visibility_mask_extension.h"
 #include "../openxr_interface.h"
-#include "core/object/callable_mp.h"
 #include "openxr_visibility_mask.h"
 #include "scene/3d/xr/xr_nodes.h"
 #include "servers/rendering/rendering_server.h"
@@ -64,21 +63,6 @@ void OpenXRVisibilityMask::_on_openxr_session_begun()
 
 void OpenXRVisibilityMask::_on_openxr_session_stopping() { set_base(RID()); }
 
-PackedStringArray OpenXRVisibilityMask::get_configuration_warnings() const
-{
-	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
-
-	if (is_visible() && is_inside_tree()) {
-		XRCamera3D* camera = Object::cast_to<XRCamera3D>(get_parent());
-		if (camera == nullptr) {
-			warnings.push_back(
-				RTR("OpenXR visibility mask must have an XRCamera3D node as their parent."));
-		}
-	}
-
-	return warnings;
-}
-
 AABB OpenXRVisibilityMask::get_aabb() const
 {
 	AABB ret;
@@ -88,31 +72,6 @@ AABB OpenXRVisibilityMask::get_aabb() const
 	ret.size = Vector3(2000.0, 2000.0, 2000.0);
 
 	return ret;
-}
-
-OpenXRVisibilityMask::OpenXRVisibilityMask()
-{
-	Ref<OpenXRInterface> openxr_interface = XRServer::get_singleton()->find_interface("OpenXR");
-	if (openxr_interface.is_valid()) {
-		openxr_interface->obj->connect(
-			"session_begun", callable_mp(this, &OpenXRVisibilityMask::_on_openxr_session_begun));
-		openxr_interface->obj->connect("session_stopping",
-			callable_mp(this, &OpenXRVisibilityMask::_on_openxr_session_stopping));
-	}
-
-	RS::get_singleton()->instance_geometry_set_cast_shadows_setting(
-		get_instance(), RSE::SHADOW_CASTING_SETTING_OFF);
-}
-
-OpenXRVisibilityMask::~OpenXRVisibilityMask()
-{
-	Ref<OpenXRInterface> openxr_interface = XRServer::get_singleton()->find_interface("OpenXR");
-	if (openxr_interface.is_valid()) {
-		openxr_interface->obj->disconnect(
-			"session_begun", callable_mp(this, &OpenXRVisibilityMask::_on_openxr_session_begun));
-		openxr_interface->obj->disconnect("session_stopping",
-			callable_mp(this, &OpenXRVisibilityMask::_on_openxr_session_stopping));
-	}
 }
 
 

@@ -35,20 +35,19 @@
 
 class Joint2D;
 
-class PhysicalBone2D : public RigidBody2D {
-	VLTRCLASS(PhysicalBone2D, RigidBody2D);
-
+class PhysicalBone2D : public RigidBody2D
+{
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
 private:
-	Skeleton2D *parent_skeleton = nullptr;
+	Skeleton2D* parent_skeleton = nullptr;
 	int bone2d_index = -1;
 	NodePath bone2d_nodepath;
 	bool follow_bone_when_simulating = false;
 
-	Joint2D *child_joint = nullptr;
+	Joint2D* child_joint = nullptr;
 	bool auto_configure_joint = true;
 
 	bool simulate_physics = false;
@@ -63,7 +62,7 @@ private:
 	void _position_at_bone2d();
 
 public:
-	Joint2D *get_joint() const;
+	Joint2D* get_joint() const;
 	bool get_auto_configure_joint() const;
 	void set_auto_configure_joint(bool p_auto_configure);
 
@@ -71,7 +70,7 @@ public:
 	bool get_simulate_physics() const;
 	bool is_simulating_physics() const;
 
-	void set_bone2d_nodepath(const NodePath &p_nodepath);
+	void set_bone2d_nodepath(const NodePath& p_nodepath);
 	NodePath get_bone2d_nodepath() const;
 	void set_bone2d_index(int p_bone_idx);
 	int get_bone2d_index() const;
@@ -83,3 +82,5 @@ public:
 	PhysicalBone2D();
 	~PhysicalBone2D();
 };
+
+

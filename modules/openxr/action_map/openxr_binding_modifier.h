@@ -38,40 +38,42 @@
 class OpenXRInteractionProfile;
 class OpenXRIPBinding;
 
-class OpenXRBindingModifier : public Resource {
-	VLTRCLASS(OpenXRBindingModifier, Resource);
-
+class OpenXRBindingModifier : public Resource
+{
 protected:
 	static void _bind_methods();
 
 public:
 	virtual String get_description() const; // Returns the description shown in the editor
-	virtual PackedByteArray get_ip_modification(); // Return the XrBindingModificationsKHR binding modifier struct data used when calling xrSuggestInteractionProfileBindings
+	virtual PackedByteArray
+	get_ip_modification(); // Return the XrBindingModificationsKHR binding modifier struct data used
+						   // when calling xrSuggestInteractionProfileBindings
 
 	OpenXRBindingModifier();
 	~OpenXRBindingModifier();
 };
 
-class OpenXRIPBindingModifier : public OpenXRBindingModifier {
-	VLTRCLASS(OpenXRIPBindingModifier, OpenXRBindingModifier);
-
+class OpenXRIPBindingModifier : public OpenXRBindingModifier
+{
 protected:
 	friend class OpenXRInteractionProfile;
 
-	OpenXRInteractionProfile *interaction_profile = nullptr; // action belongs to this interaction profile
+	OpenXRInteractionProfile* interaction_profile =
+		nullptr; // action belongs to this interaction profile
 
 public:
-	OpenXRInteractionProfile *get_interaction_profile() const { return interaction_profile; }
+	OpenXRInteractionProfile* get_interaction_profile() const { return interaction_profile; }
 };
 
-class OpenXRActionBindingModifier : public OpenXRBindingModifier {
-	VLTRCLASS(OpenXRActionBindingModifier, OpenXRBindingModifier);
-
+class OpenXRActionBindingModifier : public OpenXRBindingModifier
+{
 protected:
 	friend class OpenXRIPBinding;
 
-	OpenXRIPBinding *ip_binding = nullptr; // action belongs to this binding
+	OpenXRIPBinding* ip_binding = nullptr; // action belongs to this binding
 
 public:
-	OpenXRIPBinding *get_ip_binding() const { return ip_binding; }
+	OpenXRIPBinding* get_ip_binding() const { return ip_binding; }
 };
+
+

@@ -28,13 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "native_menu.h"
 #include "scene/resources/texture.h"
 
 NativeMenu* NativeMenu::singleton = nullptr;
-
-void NativeMenu::_bind_methods() {}
 
 bool NativeMenu::has_feature(Feature p_feature) const { return false; }
 
@@ -108,28 +105,6 @@ void NativeMenu::set_interface_direction(const RID& p_rid, bool p_is_rtl)
 	WARN_PRINT("Global menus are not supported on this platform.");
 }
 
-void NativeMenu::set_popup_open_callback(const RID& p_rid, const Callable& p_callback)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-}
-
-Callable NativeMenu::get_popup_open_callback(const RID& p_rid) const
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return Callable();
-}
-
-void NativeMenu::set_popup_close_callback(const RID& p_rid, const Callable& p_callback)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-}
-
-Callable NativeMenu::get_popup_close_callback(const RID& p_rid) const
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return Callable();
-}
-
 bool NativeMenu::is_opened(const RID& p_rid) const
 {
 	WARN_PRINT("Global menus are not supported on this platform.");
@@ -147,67 +122,6 @@ float NativeMenu::get_minimum_width(const RID& p_rid) const
 	return 0.f;
 }
 
-int NativeMenu::add_submenu_item(const RID& p_rid, const String& p_label, const RID& p_submenu_rid,
-	const Variant& p_tag, int p_index)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
-int NativeMenu::add_item(const RID& p_rid, const String& p_label, const Callable& p_callback,
-	const Callable& p_key_callback, const Variant& p_tag, Key p_accel, int p_index)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
-int NativeMenu::add_check_item(const RID& p_rid, const String& p_label, const Callable& p_callback,
-	const Callable& p_key_callback, const Variant& p_tag, Key p_accel, int p_index)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
-int NativeMenu::add_icon_item(const RID& p_rid, const Ref<Texture2D>& p_icon, const String& p_label,
-	const Callable& p_callback, const Callable& p_key_callback, const Variant& p_tag, Key p_accel,
-	int p_index)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
-int NativeMenu::add_icon_check_item(const RID& p_rid, const Ref<Texture2D>& p_icon,
-	const String& p_label, const Callable& p_callback, const Callable& p_key_callback,
-	const Variant& p_tag, Key p_accel, int p_index)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
-int NativeMenu::add_radio_check_item(const RID& p_rid, const String& p_label,
-	const Callable& p_callback, const Callable& p_key_callback, const Variant& p_tag, Key p_accel,
-	int p_index)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
-int NativeMenu::add_icon_radio_check_item(const RID& p_rid, const Ref<Texture2D>& p_icon,
-	const String& p_label, const Callable& p_callback, const Callable& p_key_callback,
-	const Variant& p_tag, Key p_accel, int p_index)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
-int NativeMenu::add_multistate_item(const RID& p_rid, const String& p_label, int p_max_states,
-	int p_default_state, const Callable& p_callback, const Callable& p_key_callback,
-	const Variant& p_tag, Key p_accel, int p_index)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
 int NativeMenu::add_separator(const RID& p_rid, int p_index)
 {
 	WARN_PRINT("Global menus are not supported on this platform.");
@@ -215,12 +129,6 @@ int NativeMenu::add_separator(const RID& p_rid, int p_index)
 }
 
 int NativeMenu::find_item_index_with_text(const RID& p_rid, const String& p_text) const
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return -1;
-}
-
-int NativeMenu::find_item_index_with_tag(const RID& p_rid, const Variant& p_tag) const
 {
 	WARN_PRINT("Global menus are not supported on this platform.");
 	return -1;
@@ -262,24 +170,6 @@ bool NativeMenu::is_item_radio_checkable(const RID& p_rid, int p_idx) const
 {
 	WARN_PRINT("Global menus are not supported on this platform.");
 	return false;
-}
-
-Callable NativeMenu::get_item_callback(const RID& p_rid, int p_idx) const
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return Callable();
-}
-
-Callable NativeMenu::get_item_key_callback(const RID& p_rid, int p_idx) const
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return Callable();
-}
-
-Variant NativeMenu::get_item_tag(const RID& p_rid, int p_idx) const
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-	return Variant();
 }
 
 String NativeMenu::get_item_text(const RID& p_rid, int p_idx) const
@@ -358,26 +248,6 @@ void NativeMenu::set_item_checkable(const RID& p_rid, int p_idx, bool p_checkabl
 }
 
 void NativeMenu::set_item_radio_checkable(const RID& p_rid, int p_idx, bool p_checkable)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-}
-
-void NativeMenu::set_item_callback(const RID& p_rid, int p_idx, const Callable& p_callback)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-}
-
-void NativeMenu::set_item_key_callback(const RID& p_rid, int p_idx, const Callable& p_key_callback)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-}
-
-void NativeMenu::set_item_hover_callbacks(const RID& p_rid, int p_idx, const Callable& p_callback)
-{
-	WARN_PRINT("Global menus are not supported on this platform.");
-}
-
-void NativeMenu::set_item_tag(const RID& p_rid, int p_idx, const Variant& p_tag)
 {
 	WARN_PRINT("Global menus are not supported on this platform.");
 }

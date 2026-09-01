@@ -32,9 +32,8 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class OpenXRVisibilityMask : public VisualInstance3D {
-	VLTRCLASS(OpenXRVisibilityMask, VisualInstance3D);
-
+class OpenXRVisibilityMask : public VisualInstance3D
+{
 protected:
 	void _notification(int p_what);
 
@@ -49,3 +48,5 @@ public:
 	OpenXRVisibilityMask();
 	~OpenXRVisibilityMask();
 };
+
+

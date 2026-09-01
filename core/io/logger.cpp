@@ -53,28 +53,6 @@ bool Logger::should_log(bool p_err)
 
 void Logger::set_flush_stdout_on_print(bool p_value) { _flush_stdout_on_print = p_value; }
 
-void Logger::log_error(const char* p_function, const char* p_file, int p_line, const char* p_code,
-	const char* p_rationale, bool p_editor_notify, ErrorType p_type,
-	const Vector<Ref<ScriptBacktrace>>& p_script_backtraces)
-{
-	if (!should_log(true)) {
-		return;
-	}
-
-	const char* err_type = error_type_string(p_type);
-
-	const char* err_details;
-	if (p_rationale && *p_rationale) {
-		err_details = p_rationale;
-	}
-	else {
-		err_details = p_code;
-	}
-
-	logf_error("%s: %s\n", err_type, err_details);
-	logf_error("   at: %s (%s:%i)\n", p_function, p_file, p_line);
-}
-
 void Logger::logf(const char* p_format, ...)
 {
 	if (!should_log(false)) {
@@ -253,20 +231,6 @@ void CompositeLogger::logv(const char* p_format, va_list p_list, bool p_err)
 		va_copy(list_copy, p_list);
 		loggers[i]->logv(p_format, list_copy, p_err);
 		va_end(list_copy);
-	}
-}
-
-void CompositeLogger::log_error(const char* p_function, const char* p_file, int p_line,
-	const char* p_code, const char* p_rationale, bool p_editor_notify, ErrorType p_type,
-	const Vector<Ref<ScriptBacktrace>>& p_script_backtraces)
-{
-	if (!should_log(true)) {
-		return;
-	}
-
-	for (int i = 0; i < loggers.size(); ++i) {
-		loggers[i]->log_error(p_function, p_file, p_line, p_code, p_rationale, p_editor_notify,
-			p_type, p_script_backtraces);
 	}
 }
 

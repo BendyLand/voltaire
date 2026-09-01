@@ -81,7 +81,6 @@ private:
 		CharString intersection_globals;
 		HashMap<StringName, CharString> code_sections;
 		Vector<CharString> custom_defines;
-		Vector<WorkerThreadPool::GroupID> group_compilation_tasks;
 		Vector<bool> group_loaded_from_cache;
 
 		Vector<Vector<uint8_t>> variant_data;
@@ -196,38 +195,6 @@ public:
 	void version_set_code(RID p_version, const HashMap<String, String> &p_code, const String &p_uniforms, const String &p_vertex_globals, const String &p_fragment_globals, const Vector<String> &p_custom_defines);
 	void version_set_compute_code(RID p_version, const HashMap<String, String> &p_code, const String &p_uniforms, const String &p_compute_globals, const Vector<String> &p_custom_defines);
 	void version_set_raytracing_code(RID p_version, const HashMap<String, String> &p_code, const String &p_uniforms, const String &p_raygen_globals, const String &p_any_hit_globals, const String &p_closest_hit_globals, const String &p_miss_globals, const String &p_intersection_globals, const Vector<String> &p_custom_defines);
-
-	_FORCE_INLINE_ RID version_get_shader(RID p_version, int p_variant) {
-		ERR_FAIL_INDEX_V(p_variant, variant_defines.size(), RID());
-		ERR_FAIL_COND_V(!variants_enabled[p_variant], RID());
-
-		Version *version = version_owner.get_or_null(p_version);
-		ERR_FAIL_NULL_V(version, RID());
-
-		MutexLock lock(*version->mutex);
-
-		if (version->dirty) {
-			_initialize_version(version);
-			for (int i = 0; i < group_enabled.size(); i++) {
-				if (!group_enabled[i]) {
-					_allocate_placeholders(version, i);
-					continue;
-				}
-				_compile_version_start(version, i);
-			}
-		}
-
-		uint32_t group = variant_to_group[p_variant];
-		if (version->group_compilation_tasks[group] != 0) {
-			_compile_version_end(version, group);
-		}
-
-		if (!version->valid) {
-			return RID();
-		}
-
-		return version->variants[p_variant];
-	}
 
 	bool version_is_valid(RID p_version);
 

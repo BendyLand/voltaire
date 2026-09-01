@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "noise.h"
 #include "noise_texture_2d.h"
 #include "servers/rendering/rendering_server.h"
@@ -40,37 +38,6 @@ NoiseTexture2D::NoiseTexture2D()
 	noise = Ref<Noise>();
 
 	_queue_update();
-}
-
-NoiseTexture2D::~NoiseTexture2D()
-{
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	if (texture.is_valid()) {
-		RS::get_singleton()->free_rid(texture);
-	}
-	if (current_task_id != WorkerThreadPool::INVALID_TASK_ID) {
-		regen_queued = false;
-		WorkerThreadPool::get_singleton()->wait_for_task_completion(current_task_id);
-	}
-}
-
-void NoiseTexture2D::_bind_methods() {}
-
-void NoiseTexture2D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "bump_strength") {
-		if (!as_normal_map) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-	else if (p_property.name == "seamless_blend_skirt") {
-		if (!seamless) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
 }
 
 void NoiseTexture2D::_set_texture_image(const Ref<Image>& p_image)
@@ -87,36 +54,6 @@ void NoiseTexture2D::_set_texture_image(const Ref<Image>& p_image)
 		RS::get_singleton()->texture_set_path(texture, get_path());
 	}
 	emit_changed();
-}
-
-void NoiseTexture2D::_thread_done(const Ref<Image>& p_image)
-{
-	if (current_task_id != WorkerThreadPool::INVALID_TASK_ID) {
-		WorkerThreadPool::get_singleton()->wait_for_task_completion(current_task_id);
-		current_task_id = WorkerThreadPool::INVALID_TASK_ID;
-	}
-	_set_texture_image(p_image);
-	if (regen_queued) {
-		current_task_id = WorkerThreadPool::get_singleton()->add_task(
-			callable_mp(this, &NoiseTexture2D::_thread_function), false,
-			"Noise Texture 2D Image generation");
-		regen_queued = false;
-	}
-}
-
-void NoiseTexture2D::_thread_function()
-{
-	callable_mp(this, &NoiseTexture2D::_thread_done).call_deferred(_generate_texture());
-}
-
-void NoiseTexture2D::_queue_update()
-{
-	if (update_queued) {
-		return;
-	}
-
-	update_queued = true;
-	callable_mp(this, &NoiseTexture2D::_update_texture).call_deferred();
 }
 
 Ref<Image> NoiseTexture2D::_generate_texture()
@@ -166,50 +103,6 @@ Ref<Image> NoiseTexture2D::_modulate_with_gradient(Ref<Image> p_image, Ref<Gradi
 	}
 
 	return new_image;
-}
-
-void NoiseTexture2D::_update_texture()
-{
-	bool use_thread = true;
-#ifndef THREADS_ENABLED
-	use_thread = false;
-#endif
-	if (first_time) {
-		use_thread = false;
-		first_time = false;
-	}
-	if (use_thread) {
-		if (current_task_id == WorkerThreadPool::INVALID_TASK_ID) {
-			current_task_id = WorkerThreadPool::get_singleton()->add_task(
-				callable_mp(this, &NoiseTexture2D::_thread_function), false,
-				"Noise Texture 2D Image generation");
-			regen_queued = false;
-		}
-		else {
-			regen_queued = true;
-		}
-
-	}
-	else {
-		Ref<Image> new_image = _generate_texture();
-		_set_texture_image(new_image);
-	}
-	update_queued = false;
-}
-
-void NoiseTexture2D::set_noise(Ref<Noise> p_noise)
-{
-	if (p_noise == noise) {
-		return;
-	}
-	if (noise.is_valid()) {
-		noise->disconnect_changed(callable_mp(this, &NoiseTexture2D::_queue_update));
-	}
-	noise = p_noise;
-	if (noise.is_valid()) {
-		noise->connect_changed(callable_mp(this, &NoiseTexture2D::_queue_update));
-	}
-	_queue_update();
 }
 
 Ref<Noise> NoiseTexture2D::get_noise() { return noise; }
@@ -274,7 +167,6 @@ void NoiseTexture2D::set_seamless(bool p_seamless)
 	}
 	seamless = p_seamless;
 	_queue_update();
-	this->obj->notify_property_list_changed();
 }
 
 bool NoiseTexture2D::get_seamless() { return seamless; }
@@ -299,7 +191,6 @@ void NoiseTexture2D::set_as_normal_map(bool p_as_normal_map)
 	}
 	as_normal_map = p_as_normal_map;
 	_queue_update();
-	this->obj->notify_property_list_changed();
 }
 
 bool NoiseTexture2D::is_normal_map() { return as_normal_map; }
@@ -316,21 +207,6 @@ void NoiseTexture2D::set_bump_strength(float p_bump_strength)
 }
 
 float NoiseTexture2D::get_bump_strength() { return bump_strength; }
-
-void NoiseTexture2D::set_color_ramp(const Ref<Gradient>& p_gradient)
-{
-	if (p_gradient == color_ramp) {
-		return;
-	}
-	if (color_ramp.is_valid()) {
-		color_ramp->disconnect_changed(callable_mp(this, &NoiseTexture2D::_queue_update));
-	}
-	color_ramp = p_gradient;
-	if (color_ramp.is_valid()) {
-		color_ramp->connect_changed(callable_mp(this, &NoiseTexture2D::_queue_update));
-	}
-	_queue_update();
-}
 
 void NoiseTexture2D::set_normalize(bool p_normalize)
 {

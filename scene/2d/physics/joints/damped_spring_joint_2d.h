@@ -34,9 +34,8 @@
 
 class PhysicsBody2D;
 
-class DampedSpringJoint2D : public Joint2D {
-	VLTRCLASS(DampedSpringJoint2D, Joint2D);
-
+class DampedSpringJoint2D : public Joint2D
+{
 	real_t stiffness = 20.0;
 	real_t damping = 1.0;
 	real_t rest_length = 0.0;
@@ -44,7 +43,8 @@ class DampedSpringJoint2D : public Joint2D {
 
 protected:
 	void _notification(int p_what);
-	virtual void _configure_joint(RID p_joint, PhysicsBody2D *body_a, PhysicsBody2D *body_b) override;
+	virtual void _configure_joint(
+		RID p_joint, PhysicsBody2D* body_a, PhysicsBody2D* body_b) override;
 	static void _bind_methods();
 
 public:
@@ -62,3 +62,5 @@ public:
 
 	DampedSpringJoint2D();
 };
+
+

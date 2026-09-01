@@ -38,18 +38,18 @@ class AudioStream;
 class AudioStreamPlayback;
 class AudioStreamPlayerInternal;
 
-class AudioStreamPlayer : public Node {
-	VLTRCLASS(AudioStreamPlayer, Node);
-
+class AudioStreamPlayer : public Node
+{
 public:
-	enum MixTarget {
+	enum MixTarget
+	{
 		MIX_TARGET_STEREO,
 		MIX_TARGET_SURROUND,
 		MIX_TARGET_CENTER
 	};
 
 private:
-	AudioStreamPlayerInternal *internal = nullptr;
+	AudioStreamPlayerInternal* internal = nullptr;
 
 	MixTarget mix_target = MIX_TARGET_STEREO;
 
@@ -59,18 +59,8 @@ private:
 	Vector<AudioFrame> _get_volume_vector();
 
 protected:
-	void _validate_property(PropertyInfo &p_property) const;
 	void _notification(int p_what);
 	static void _bind_methods();
-
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-
-#ifndef DISABLE_DEPRECATED
-	bool _is_autoplay_enabled_bind_compat_86907();
-	static void _bind_compatibility_methods();
-#endif // DISABLE_DEPRECATED
 
 public:
 	void set_stream(Ref<AudioStream> p_stream);
@@ -94,7 +84,7 @@ public:
 	bool is_playing() const;
 	float get_playback_position();
 
-	void set_bus(const StringName &p_bus);
+	void set_bus(const StringName& p_bus);
 	StringName get_bus() const;
 
 	void set_autoplay(bool p_enable);
@@ -116,4 +106,4 @@ public:
 	~AudioStreamPlayer();
 };
 
-VARIANT_ENUM_CAST(AudioStreamPlayer::MixTarget)
+

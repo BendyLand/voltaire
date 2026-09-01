@@ -515,7 +515,6 @@ public:
 
 		AABB* custom_aabb = nullptr; // <Zylann> would using aabb directly with a bool be better?
 		float extra_margin;
-		ObjectID object_id;
 
 		// sorting
 		float sorting_offset = 0.0;
@@ -1117,7 +1116,6 @@ public:
 	virtual void instance_set_pivot_data(
 		RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
 	virtual void instance_set_transform(RID p_instance, const Transform3D& p_transform);
-	virtual void instance_attach_object_instance_id(RID p_instance, ObjectID p_id);
 	virtual void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight);
 	virtual void instance_set_surface_override_material(
 		RID p_instance, int p_surface, RID p_material);
@@ -1139,13 +1137,6 @@ public:
 	bool _update_instance_visibility_depth(Instance* p_instance);
 	void _update_instance_visibility_dependencies(Instance* p_instance) const;
 
-	// don't use these in a game!
-	virtual Vector<ObjectID> instances_cull_aabb(const AABB& p_aabb, RID p_scenario = RID()) const;
-	virtual Vector<ObjectID> instances_cull_ray(
-		const Vector3& p_from, const Vector3& p_to, RID p_scenario = RID()) const;
-	virtual Vector<ObjectID> instances_cull_convex(
-		const Vector<Plane>& p_convex, RID p_scenario = RID()) const;
-
 	virtual void instance_geometry_set_flag(
 		RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
 	virtual void instance_geometry_set_cast_shadows_setting(
@@ -1160,21 +1151,11 @@ public:
 		RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_slice_index);
 	virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
 
-	virtual void instance_geometry_set_shader_parameter(
-		RID p_instance, const StringName& p_parameter, const Variant& p_value);
-	virtual void instance_geometry_get_shader_parameter_list(
-		RID p_instance, List<PropertyInfo>* p_parameters) const;
-	virtual Variant instance_geometry_get_shader_parameter(
-		RID p_instance, const StringName& p_parameter) const;
-	virtual Variant instance_geometry_get_shader_parameter_default_value(
-		RID p_instance, const StringName& p_parameter) const;
-
 	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
 	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
 
 	_FORCE_INLINE_ void _update_instance(Instance* p_instance) const;
 	_FORCE_INLINE_ void _update_instance_aabb(Instance* p_instance) const;
-	_FORCE_INLINE_ void _update_dirty_instance(Instance* p_instance) const;
 	_FORCE_INLINE_ void _update_instance_lightmap_captures(Instance* p_instance) const;
 	void _unpair_instance(Instance* p_instance);
 
@@ -1275,12 +1256,6 @@ public:
 
 	bool _render_reflection_probe_step(Instance* p_instance, int p_step);
 
-	void _render_scene(const RendererSceneRender::CameraData* p_camera_data,
-		const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
-		RID p_force_camera_attributes, RID p_compositor, uint32_t p_visible_layers, RID p_scenario,
-		RID p_viewport, RID p_shadow_atlas, RID p_reflection_probe, int p_reflection_probe_pass,
-		float p_screen_mesh_lod_threshold, float p_window_output_max_value,
-		bool p_using_shadows = true, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
 	void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario,
 		RID p_shadow_atlas, float p_window_output_max_value);
 
@@ -1288,19 +1263,9 @@ public:
 		RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count,
 		float p_screen_mesh_lod_threshold, RID p_shadow_atlas, Ref<XRInterface>& p_xr_interface,
 		float p_window_output_max_value, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
-	void update_dirty_instances() const;
 
 	void render_particle_colliders();
 	virtual void render_probes();
-
-	Array bake_render_uv2(
-		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size);
-	PackedByteArray bake_render_area_light_atlas(const Array& p_area_light_textures,
-		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size, int p_mipmaps);
-
-	// pass to scene render
-
-	/* ENVIRONMENT API */
 
 #ifdef PASSBASE
 #undef PASSBASE
@@ -1328,7 +1293,6 @@ public:
 	PASS1RC(bool, is_compositor_effect, RID)
 
 	PASS2(compositor_effect_set_enabled, RID, bool)
-	PASS3(compositor_effect_set_callback, RID, RSE::CompositorEffectCallbackType, const Callable&)
 	PASS3(compositor_effect_set_flag, RID, RSE::CompositorEffectFlags, bool)
 
 	// Compositor
@@ -1337,8 +1301,6 @@ public:
 	PASS1(compositor_initialize, RID)
 
 	PASS1RC(bool, is_compositor, RID)
-
-	PASS2(compositor_set_compositor_effects, RID, const Array&)
 
 	// Environment
 
@@ -1505,7 +1467,7 @@ public:
 	PASS1RC(bool, environment_get_adjustments_enabled, RID)
 	PASS1RC(float, environment_get_adjustments_brightness, RID)
 
-PASS1RC(float, environment_get_adjustments_contrast, RID)
+	PASS1RC(float, environment_get_adjustments_contrast, RID)
 	PASS1RC(float, environment_get_adjustments_saturation, RID)
 	PASS1RC(bool, environment_get_use_1d_color_correction, RID)
 	PASS1RC(RID, environment_get_color_correction, RID)

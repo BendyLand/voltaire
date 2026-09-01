@@ -35,9 +35,8 @@
 
 class Timer;
 
-class Path2D : public Node2D {
-	VLTRCLASS(Path2D, Node2D);
-
+class Path2D : public Node2D
+{
 	Ref<Curve2D> curve;
 
 	void _curve_changed();
@@ -59,21 +58,20 @@ public:
 #ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
-	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
+	virtual bool _edit_is_selected_on_click(
+		const Point2& p_point, double p_tolerance) const override;
 #endif
 
-	void set_curve(const Ref<Curve2D> &p_curve);
+	void set_curve(const Ref<Curve2D>& p_curve);
 	Ref<Curve2D> get_curve() const;
 };
 
-class PathFollow2D : public Node2D {
-	VLTRCLASS(PathFollow2D, Node2D);
-
-public:
+class PathFollow2D : public Node2D
+{
 private:
-	Path2D *path = nullptr;
+	Path2D* path = nullptr;
 	real_t progress = 0.0;
-	Timer *update_timer = nullptr;
+	Timer* update_timer = nullptr;
 	real_t h_offset = 0.0;
 	real_t v_offset = 0.0;
 	bool cubic = true;
@@ -83,8 +81,6 @@ private:
 	void _update_transform();
 
 protected:
-	void _validate_property(PropertyInfo &p_property) const;
-
 	void _notification(int p_what);
 	static void _bind_methods();
 
@@ -114,3 +110,5 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 };
+
+

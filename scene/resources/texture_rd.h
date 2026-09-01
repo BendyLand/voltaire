@@ -38,9 +38,8 @@
 
 #include "scene/resources/texture.h"
 
-class Texture2DRD : public Texture2D {
-	VLTRCLASS(Texture2DRD, Texture2D)
-
+class Texture2DRD : public Texture2D
+{
 	mutable RID texture_rid;
 	RID texture_rd_rid;
 	Size2i size;
@@ -66,9 +65,8 @@ public:
 	~Texture2DRD();
 };
 
-class TextureLayeredRD : public TextureLayered {
-	VLTRCLASS(TextureLayeredRD, TextureLayered)
-
+class TextureLayeredRD : public TextureLayered
+{
 	LayeredType layer_type;
 
 	mutable RID texture_rid;
@@ -103,33 +101,26 @@ public:
 	~TextureLayeredRD();
 };
 
-class Texture2DArrayRD : public TextureLayeredRD {
-	VLTRCLASS(Texture2DArrayRD, TextureLayeredRD)
-
+class Texture2DArrayRD : public TextureLayeredRD
+{
 public:
-	Texture2DArrayRD() :
-			TextureLayeredRD(LAYERED_TYPE_2D_ARRAY) {}
+	Texture2DArrayRD() : TextureLayeredRD(LAYERED_TYPE_2D_ARRAY) {}
 };
 
-class TextureCubemapRD : public TextureLayeredRD {
-	VLTRCLASS(TextureCubemapRD, TextureLayeredRD)
-
+class TextureCubemapRD : public TextureLayeredRD
+{
 public:
-	TextureCubemapRD() :
-			TextureLayeredRD(LAYERED_TYPE_CUBEMAP) {}
+	TextureCubemapRD() : TextureLayeredRD(LAYERED_TYPE_CUBEMAP) {}
 };
 
-class TextureCubemapArrayRD : public TextureLayeredRD {
-	VLTRCLASS(TextureCubemapArrayRD, TextureLayeredRD)
-
+class TextureCubemapArrayRD : public TextureLayeredRD
+{
 public:
-	TextureCubemapArrayRD() :
-			TextureLayeredRD(LAYERED_TYPE_CUBEMAP_ARRAY) {}
+	TextureCubemapArrayRD() : TextureLayeredRD(LAYERED_TYPE_CUBEMAP_ARRAY) {}
 };
 
-class Texture3DRD : public Texture3D {
-	VLTRCLASS(Texture3DRD, Texture3D)
-
+class Texture3DRD : public Texture3D
+{
 	mutable RID texture_rid;
 	RID texture_rd_rid;
 
@@ -157,3 +148,5 @@ public:
 	Texture3DRD();
 	~Texture3DRD();
 };
+
+

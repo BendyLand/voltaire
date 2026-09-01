@@ -36,29 +36,29 @@ class BoxContainer;
 class Button;
 class TextureRect;
 
-class TouchActionsPanel : public PanelContainer {
-	VLTRCLASS(TouchActionsPanel, PanelContainer);
-
+class TouchActionsPanel : public PanelContainer
+{
 private:
-	BoxContainer *box = nullptr;
-	Button *save_button = nullptr;
-	Button *delete_button = nullptr;
-	Button *undo_button = nullptr;
-	Button *redo_button = nullptr;
-	Button *cut_button = nullptr;
-	Button *copy_button = nullptr;
-	Button *paste_button = nullptr;
+	BoxContainer* box = nullptr;
+	Button* save_button = nullptr;
+	Button* delete_button = nullptr;
+	Button* undo_button = nullptr;
+	Button* redo_button = nullptr;
+	Button* cut_button = nullptr;
+	Button* copy_button = nullptr;
+	Button* paste_button = nullptr;
 
-	TextureRect *drag_handle = nullptr;
-	Button *layout_toggle_button = nullptr;
-	Button *lock_panel_button = nullptr;
-	Button *panel_pos_button = nullptr;
+	TextureRect* drag_handle = nullptr;
+	Button* layout_toggle_button = nullptr;
+	Button* lock_panel_button = nullptr;
+	Button* panel_pos_button = nullptr;
 
 	bool locked_panel = false;
 	bool dragging = false;
 	Vector2 drag_offset;
 
-	enum Modifier {
+	enum Modifier
+	{
 		MODIFIER_CTRL,
 		MODIFIER_SHIFT,
 		MODIFIER_ALT
@@ -72,16 +72,17 @@ private:
 	int embedded_panel_index = 0;
 
 	void _notification(int p_what);
-	virtual void input(const Ref<InputEvent> &event) override;
+	virtual void input(const Ref<InputEvent>& event) override;
 
-	void _simulate_editor_shortcut(const String &p_shortcut_name);
+	void _simulate_editor_shortcut(const String& p_shortcut_name);
 	void _simulate_key_press(Key p_keycode);
-	void _on_drag_handle_gui_input(const Ref<InputEvent> &p_event);
+	void _on_drag_handle_gui_input(const Ref<InputEvent>& p_event);
 	void _switch_layout();
 	void _lock_panel_toggled(bool p_pressed);
 	void _switch_embedded_panel_side();
 
-	Button *_add_new_action_button(const String &p_shortcut, const String &p_name, Key p_keycode = Key::NONE);
+	Button* _add_new_action_button(
+		const String& p_shortcut, const String& p_name, Key p_keycode = Key::NONE);
 	void _add_new_modifier_button(Modifier p_modifier);
 	void _on_modifier_button_toggled(bool p_pressed, int p_modifier);
 
@@ -90,3 +91,5 @@ private:
 public:
 	TouchActionsPanel();
 };
+
+

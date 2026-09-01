@@ -40,8 +40,6 @@ class LinkButton;
 
 class EditorAssetInstaller : public ConfirmationDialog
 {
-	VLTRCLASS(EditorAssetInstaller, ConfirmationDialog);
-
 	VBoxContainer* source_tree_vb = nullptr;
 	Tree* source_tree = nullptr;
 	MarginContainer* destination_tree_mc = nullptr;
@@ -101,8 +99,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void open_asset(Object& obj, const String& p_path, bool p_autoskip_toplevel = false);
-
 	void set_asset_name(const String& p_asset_name);
 	String get_asset_name() const;
 

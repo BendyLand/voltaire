@@ -29,36 +29,7 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "skeleton_modifier_3d.h"
-
-PackedStringArray SkeletonModifier3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-	if (skeleton_id.is_null()) {
-		warnings.push_back(
-			RTR("Skeleton3D node not set! SkeletonModifier3D must be child of Skeleton3D."));
-	}
-	return warnings;
-}
-
-/* Skeleton3D */
-
-Skeleton3D* SkeletonModifier3D::get_skeleton() const
-{
-	return ObjectDB::get_instance<Skeleton3D>(skeleton_id);
-}
-
-void SkeletonModifier3D::_update_skeleton_path()
-{
-	skeleton_id = ObjectID();
-
-	// Make sure parent is a Skeleton3D.
-	Skeleton3D* sk = Object::cast_to<Skeleton3D>(get_parent());
-	if (sk) {
-		skeleton_id = sk->obj->get_instance_id();
-	}
-}
 
 void SkeletonModifier3D::_update_skeleton()
 {
@@ -119,15 +90,6 @@ void SkeletonModifier3D::set_influence(real_t p_influence) { influence = p_influ
 
 real_t SkeletonModifier3D::get_influence() const { return influence; }
 
-void SkeletonModifier3D::process_modification(double p_delta)
-{
-	if (!is_inside_tree() || !active) {
-		return;
-	}
-	_process_modification(p_delta);
-	this->obj->emit_signal(SNAME("modification_processed"));
-}
-
 void SkeletonModifier3D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -141,8 +103,6 @@ void SkeletonModifier3D::_notification(int p_what)
 	} break;
 	}
 }
-
-void SkeletonModifier3D::_bind_methods() {}
 
 Vector3 SkeletonModifier3D::get_vector_from_bone_axis(BoneAxis p_axis)
 {

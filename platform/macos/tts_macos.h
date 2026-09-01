@@ -33,7 +33,6 @@
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
-#include "core/variant/array.h"
 
 #import <AppKit/AppKit.h>
 

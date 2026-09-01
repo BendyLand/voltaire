@@ -30,7 +30,6 @@
 
 #include "audio_effect_spectrum_analyzer.compat.inc"
 #include "audio_effect_spectrum_analyzer.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 static void smbFft(float* fftBuffer, long fftFrameSize, long sign)
@@ -150,8 +149,6 @@ void AudioEffectSpectrumAnalyzerInstance::process(
 	}
 }
 
-void AudioEffectSpectrumAnalyzerInstance::_bind_methods() {}
-
 Vector2 AudioEffectSpectrumAnalyzerInstance::get_magnitude_for_frequency_range(
 	float p_begin, float p_end, MagnitudeMode p_mode) const
 {
@@ -228,8 +225,6 @@ AudioEffectSpectrumAnalyzer::FFTSize AudioEffectSpectrumAnalyzer::get_fft_size()
 {
 	return fft_size;
 }
-
-void AudioEffectSpectrumAnalyzer::_bind_methods() {}
 
 AudioEffectSpectrumAnalyzer::AudioEffectSpectrumAnalyzer()
 {

@@ -30,8 +30,6 @@
 
 #include "core/io/compression.h"
 #include "core/io/ip.h"
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 #include "enet_connection.h"
 #include "enet_packet_peer.h"
 
@@ -42,36 +40,6 @@ void ENetConnection::broadcast(enet_uint8 p_channel, ENetPacket* p_packet)
 		vformat("Unable to send packet on channel %d, max channels: %d", p_channel,
 			(int)host->channelLimit));
 	enet_host_broadcast(host, p_channel, p_packet);
-}
-
-Error ENetConnection::create_host_bound(const IPAddress& p_bind_address, int p_port,
-	int p_max_peers, int p_max_channels, int p_in_bandwidth, int p_out_bandwidth)
-{
-	ERR_FAIL_COND_V_MSG(!p_bind_address.is_valid() && !p_bind_address.is_wildcard(),
-		ERR_INVALID_PARAMETER, "Invalid bind IP.");
-	ERR_FAIL_COND_V_MSG(p_port < 0 || p_port > 65535, ERR_INVALID_PARAMETER,
-		"The local port number must be between 0 and 65535 (inclusive).");
-
-	ENetAddress address;
-	memset(&address, 0, sizeof(address));
-	address.port = p_port;
-#ifdef GODOT_ENET
-	if (p_bind_address.is_wildcard()) {
-		address.wildcard = 1;
-	}
-	else {
-		enet_address_set_ip(&address, p_bind_address.get_ipv6(), 16);
-	}
-#else
-	if (p_bind_address.is_wildcard()) {
-		address.host = 0;
-	}
-	else {
-		ERR_FAIL_COND_V(!p_bind_address.is_ipv4(), ERR_INVALID_PARAMETER);
-		address.host = *(uint32_t*)p_bind_address.get_ipv4();
-	}
-#endif
-	return _create(&address, p_max_peers, p_max_channels, p_in_bandwidth, p_out_bandwidth);
 }
 
 Error ENetConnection::create_host(
@@ -297,17 +265,6 @@ void ENetConnection::get_peers(List<Ref<ENetPacketPeer>>& r_peers)
 	}
 }
 
-Array ENetConnection::_get_peers()
-{
-	ERR_FAIL_NULL_V_MSG(
-		host, Array(), "The ENetConnection instance isn't currently active.");
-	Array out;
-	for (const Ref<ENetPacketPeer>& I : peers) {
-		out.push_back(I);
-	}
-	return out;
-}
-
 Error ENetConnection::dtls_server_setup(const Ref<TLSOptions>& p_options)
 {
 #ifdef GODOT_ENET
@@ -368,18 +325,6 @@ Error ENetConnection::_create(ENetAddress* p_address, int p_max_peers, int p_max
 	return OK;
 }
 
-Array ENetConnection::_service(int p_timeout)
-{
-	Event event;
-	Ref<ENetPacketPeer> peer;
-	EventType ret = service(p_timeout, event);
-	Array out = {ret, event.peer, event.data, event.channel_id};
-	if (event.packet && event.peer.is_valid()) {
-		event.peer->_queue_packet(event.packet);
-	}
-	return out;
-}
-
 void ENetConnection::_broadcast(int p_channel, PackedByteArray p_packet, int p_flags)
 {
 	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
@@ -414,9 +359,9 @@ void ENetConnection::socket_send(
 #ifdef GODOT_ENET
 	enet_address_set_ip(&address, ip.get_ipv6(), 16);
 #else
-	ERR_FAIL_COND_MSG(
-		!ip.is_ipv4(), "Connecting to an IPv6 server isn't supported when using vanilla ENet. "
-					   "Recompile Godot with the bundled ENet library.");
+	ERR_FAIL_COND_MSG(!ip.is_ipv4(),
+		"Connecting to an IPv6 server isn't supported when using vanilla ENet. "
+		"Recompile Godot with the bundled ENet library.");
 	address.host = *(uint32_t*)ip.get_ipv4();
 #endif
 	address.port = p_port;

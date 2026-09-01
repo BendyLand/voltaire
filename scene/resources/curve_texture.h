@@ -33,11 +33,11 @@
 #include "scene/resources/curve.h"
 #include "scene/resources/texture.h"
 
-class CurveTexture : public Texture2D {
-	VLTRCLASS(CurveTexture, Texture2D);
-	RES_BASE_EXTENSION("curvetex")
+class CurveTexture : public Texture2D
+{
 public:
-	enum TextureMode {
+	enum TextureMode
+	{
 		TEXTURE_MODE_RGB,
 		TEXTURE_MODE_RED,
 	};
@@ -70,17 +70,14 @@ public:
 	virtual RID get_rid() const override;
 
 	virtual int get_height() const override { return 1; }
+
 	virtual bool has_alpha() const override { return false; }
 
 	~CurveTexture();
 };
 
-VARIANT_ENUM_CAST(CurveTexture::TextureMode)
-
-class CurveXYZTexture : public Texture2D {
-	VLTRCLASS(CurveXYZTexture, Texture2D);
-	RES_BASE_EXTENSION("curvetex")
-
+class CurveXYZTexture : public Texture2D
+{
 private:
 	mutable RID _texture;
 	Ref<Curve> _curve_x;
@@ -112,7 +109,10 @@ public:
 	virtual RID get_rid() const override;
 
 	virtual int get_height() const override { return 1; }
+
 	virtual bool has_alpha() const override { return false; }
 
 	~CurveXYZTexture();
 };
+
+

@@ -34,13 +34,12 @@
 #include "editor/plugins/editor_plugin.h"
 #include "editor/settings/action_map_editor.h"
 
-class InputEventConfigContainer : public VBoxContainer {
-	VLTRCLASS(InputEventConfigContainer, VBoxContainer);
-
-	Label *input_event_text = nullptr;
+class InputEventConfigContainer : public VBoxContainer
+{
+	Label* input_event_text = nullptr;
 
 	Ref<InputEvent> input_event;
-	InputEventConfigurationDialog *config_dialog = nullptr;
+	InputEventConfigurationDialog* config_dialog = nullptr;
 
 	void _config_dialog_confirmed();
 	void _configure_pressed();
@@ -48,24 +47,17 @@ class InputEventConfigContainer : public VBoxContainer {
 	void _event_changed();
 
 public:
-	void set_event(const Ref<InputEvent> &p_event);
+	void set_event(const Ref<InputEvent>& p_event);
 
 	InputEventConfigContainer();
 };
 
-class EditorInspectorPluginInputEvent : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginInputEvent, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class InputEventEditorPlugin : public EditorPlugin {
-	VLTRCLASS(InputEventEditorPlugin, EditorPlugin);
-
+class InputEventEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "InputEvent"; }
 
 	InputEventEditorPlugin();
 };
+
+

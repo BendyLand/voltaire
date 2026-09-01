@@ -28,61 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/gui/popup_menu.h"
 #include "servers/display/display_server.h"
 #include "status_indicator.h"
-
-void StatusIndicator::_notification(int p_what)
-{
-	ERR_MAIN_THREAD_GUARD;
-#ifdef TOOLS_ENABLED
-	if (is_part_of_edited_scene()) {
-		return;
-	}
-#endif
-
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		if (DisplayServer::get_singleton()->has_feature(
-				DisplayServerEnums::FEATURE_STATUS_INDICATOR)) {
-			if (visible && iid == DisplayServerEnums::INVALID_INDICATOR_ID) {
-				iid = DisplayServer::get_singleton()->create_status_indicator(
-					icon, tooltip, callable_mp(this, &StatusIndicator::_callback));
-				PopupMenu* pm = Object::cast_to<PopupMenu>(get_node_or_null(menu));
-				if (pm) {
-					RID menu_rid = pm->bind_global_menu();
-					DisplayServer::get_singleton()->status_indicator_set_menu(iid, menu_rid);
-				}
-			}
-		}
-	} break;
-	case NOTIFICATION_EXIT_TREE: {
-		if (DisplayServer::get_singleton()->has_feature(
-				DisplayServerEnums::FEATURE_STATUS_INDICATOR)) {
-			if (iid != DisplayServerEnums::INVALID_INDICATOR_ID) {
-				PopupMenu* pm = Object::cast_to<PopupMenu>(get_node_or_null(menu));
-				if (pm) {
-					pm->unbind_global_menu();
-					DisplayServer::get_singleton()->status_indicator_set_menu(iid, RID());
-				}
-				DisplayServer::get_singleton()->delete_status_indicator(iid);
-				iid = DisplayServerEnums::INVALID_INDICATOR_ID;
-			}
-		}
-	} break;
-	default:
-		break;
-	}
-}
-
-void StatusIndicator::_bind_methods() {}
-
-void StatusIndicator::_callback(MouseButton p_index, const Point2i& p_pos)
-{
-	this->obj->emit_signal(SceneStringName(pressed), p_index, p_pos);
-}
 
 void StatusIndicator::set_icon(const Ref<Texture2D>& p_icon)
 {
@@ -106,68 +54,7 @@ void StatusIndicator::set_tooltip(const String& p_tooltip)
 
 String StatusIndicator::get_tooltip() const { return tooltip; }
 
-void StatusIndicator::set_menu(const NodePath& p_menu)
-{
-	PopupMenu* pm = Object::cast_to<PopupMenu>(get_node_or_null(menu));
-	if (pm) {
-		pm->unbind_global_menu();
-		if (iid != DisplayServerEnums::INVALID_INDICATOR_ID) {
-			DisplayServer::get_singleton()->status_indicator_set_menu(iid, RID());
-		}
-	}
-
-	menu = p_menu;
-
-	pm = Object::cast_to<PopupMenu>(get_node_or_null(menu));
-	if (pm) {
-		if (iid != DisplayServerEnums::INVALID_INDICATOR_ID) {
-			RID menu_rid = pm->bind_global_menu();
-			DisplayServer::get_singleton()->status_indicator_set_menu(iid, menu_rid);
-		}
-	}
-}
-
 NodePath StatusIndicator::get_menu() const { return menu; }
-
-void StatusIndicator::set_visible(bool p_visible)
-{
-	ERR_MAIN_THREAD_GUARD;
-	if (visible == p_visible) {
-		return;
-	}
-	visible = p_visible;
-
-	if (!is_inside_tree()) {
-		return;
-	}
-
-#ifdef TOOLS_ENABLED
-	if (is_part_of_edited_scene()) {
-		return;
-	}
-#endif
-
-	if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_STATUS_INDICATOR)) {
-		if (visible && iid == DisplayServerEnums::INVALID_INDICATOR_ID) {
-			iid = DisplayServer::get_singleton()->create_status_indicator(
-				icon, tooltip, callable_mp(this, &StatusIndicator::_callback));
-			PopupMenu* pm = Object::cast_to<PopupMenu>(get_node_or_null(menu));
-			if (pm) {
-				RID menu_rid = pm->bind_global_menu();
-				DisplayServer::get_singleton()->status_indicator_set_menu(iid, menu_rid);
-			}
-		}
-		if (!visible && iid != DisplayServerEnums::INVALID_INDICATOR_ID) {
-			PopupMenu* pm = Object::cast_to<PopupMenu>(get_node_or_null(menu));
-			if (pm) {
-				pm->unbind_global_menu();
-				DisplayServer::get_singleton()->status_indicator_set_menu(iid, RID());
-			}
-			DisplayServer::get_singleton()->delete_status_indicator(iid);
-			iid = DisplayServerEnums::INVALID_INDICATOR_ID;
-		}
-	}
-}
 
 bool StatusIndicator::is_visible() const { return visible; }
 

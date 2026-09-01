@@ -31,24 +31,25 @@
 #pragma once
 
 #include "3d/nav_base_iteration_3d.h"
+#include "core/os/rw_lock.h"
 #include "nav_base_3d.h"
 #include "nav_utils_3d.h"
 
-#include "core/os/rw_lock.h"
-
-class NavLinkIteration3D : public NavBaseIteration3D {
-	VLTRCLASS(NavLinkIteration3D, NavBaseIteration3D);
-
+class NavLinkIteration3D : public NavBaseIteration3D
+{
 public:
 	bool bidirectional = true;
 	Vector3 start_position;
 	Vector3 end_position;
 
 	Vector3 get_start_position() const { return start_position; }
+
 	Vector3 get_end_position() const { return end_position; }
+
 	bool is_bidirectional() const { return bidirectional; }
 
-	virtual ~NavLinkIteration3D() override {
+	virtual ~NavLinkIteration3D() override
+	{
 		navmesh_polygons.clear();
 		internal_connections.clear();
 	}
@@ -56,8 +57,9 @@ public:
 
 #include "core/templates/self_list.h"
 
-class NavLink3D : public NavBase3D {
-	NavMap3D *map = nullptr;
+class NavLink3D : public NavBase3D
+{
+	NavMap3D* map = nullptr;
 	bool bidirectional = true;
 	Vector3 start_position;
 	Vector3 end_position;
@@ -83,34 +85,30 @@ public:
 
 	uint32_t get_iteration_id() const { return iteration_id; }
 
-	void set_map(NavMap3D *p_map);
-	NavMap3D *get_map() const {
-		return map;
-	}
+	void set_map(NavMap3D* p_map);
+
+	NavMap3D* get_map() const { return map; }
 
 	void set_enabled(bool p_enabled);
+
 	bool get_enabled() const { return enabled; }
 
 	void set_bidirectional(bool p_bidirectional);
-	bool is_bidirectional() const {
-		return bidirectional;
-	}
+
+	bool is_bidirectional() const { return bidirectional; }
 
 	void set_start_position(Vector3 p_position);
-	Vector3 get_start_position() const {
-		return start_position;
-	}
+
+	Vector3 get_start_position() const { return start_position; }
 
 	void set_end_position(Vector3 p_position);
-	Vector3 get_end_position() const {
-		return end_position;
-	}
+
+	Vector3 get_end_position() const { return end_position; }
 
 	// NavBase properties.
 	virtual void set_navigation_layers(uint32_t p_navigation_layers) override;
 	virtual void set_enter_cost(real_t p_enter_cost) override;
-	virtual void set_travel_cost(real_t p_travel_cost) override;
-	virtual void set_owner_id(ObjectID p_owner_id) override;
+	virtual void set_travel_cost(real_t p_travel_cost)  override;
 
 	bool sync();
 	void request_sync();
@@ -118,3 +116,5 @@ public:
 
 	Ref<NavLinkIteration3D> get_iteration();
 };
+
+

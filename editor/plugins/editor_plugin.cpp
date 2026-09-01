@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource_importer.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/editor_debugger_plugin.h"
 #include "editor/docks/editor_dock.h"
@@ -61,30 +59,9 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/gui/popup_menu.h"
 
-void EditorPlugin::add_custom_type(const String& p_type, const String& p_base,
-	const Ref<Script>& p_script, const Ref<Texture2D>& p_icon)
-{
-	EditorNode::get_editor_data().add_custom_type(p_type, p_base, p_script, p_icon);
-}
-
 void EditorPlugin::remove_custom_type(const String& p_type)
 {
 	EditorNode::get_editor_data().remove_custom_type(p_type);
-}
-
-void EditorPlugin::add_autoload_singleton(const String& p_name, const String& p_path)
-{
-	if (p_path.begins_with("res://")) {
-		EditorNode::get_singleton()->get_project_settings()->get_autoload_settings()->autoload_add(
-			p_name, p_path, false);
-	}
-	else {
-		const Ref<Script> plugin_script = static_cast<Ref<Script>>(get_script());
-		ERR_FAIL_COND(plugin_script.is_null());
-		const String script_base_path = plugin_script->get_path().get_base_dir();
-		EditorNode::get_singleton()->get_project_settings()->get_autoload_settings()->autoload_add(
-			p_name, script_base_path.path_join(p_path), false);
-	}
 }
 
 void EditorPlugin::remove_autoload_singleton(const String& p_name)
@@ -258,11 +235,6 @@ void EditorPlugin::remove_control_from_container(
 	}
 }
 
-void EditorPlugin::add_tool_menu_item(const String& p_name, const Callable& p_callable)
-{
-	EditorNode::get_singleton()->add_tool_menu_item(p_name, p_callable);
-}
-
 void EditorPlugin::add_tool_submenu_item(const String& p_name, PopupMenu* p_submenu)
 {
 	ERR_FAIL_NULL(p_submenu);
@@ -289,36 +261,6 @@ void EditorPlugin::set_force_draw_over_forwarding_enabled()
 {
 	force_draw_over_forwarding_enabled = true;
 	EditorNode::get_singleton()->get_editor_plugins_force_over()->add_plugin(this);
-}
-
-void EditorPlugin::notify_scene_changed(const Node* scn_root)
-{
-	this->obj->emit_signal(SNAME("scene_changed"), scn_root);
-}
-
-void EditorPlugin::notify_main_screen_changed(const String& screen_name)
-{
-	if (screen_name == last_main_screen_name) {
-		return;
-	}
-
-	this->obj->emit_signal(SNAME("main_screen_changed"), screen_name);
-	last_main_screen_name = screen_name;
-}
-
-void EditorPlugin::notify_scene_closed(const String& scene_filepath)
-{
-	this->obj->emit_signal(SNAME("scene_closed"), scene_filepath);
-}
-
-void EditorPlugin::notify_resource_saved(const Ref<Resource>& p_resource)
-{
-	this->obj->emit_signal(SNAME("resource_saved"), p_resource);
-}
-
-void EditorPlugin::notify_scene_saved(const String& p_scene_filepath)
-{
-	this->obj->emit_signal(SNAME("scene_saved"), p_scene_filepath);
 }
 
 // Updates the overlays of the 2D viewport or, if in 3D mode, of every 3D viewport.
@@ -365,16 +307,6 @@ void EditorPlugin::get_breakpoints(List<String>* p_breakpoints)
 
 bool EditorPlugin::get_remove_list(List<Node*>* p_list) { return false; }
 
-void EditorPlugin::add_undo_redo_inspector_hook_callback(Callable p_callable)
-{
-	EditorNode::get_editor_data().add_undo_redo_inspector_hook_callback(p_callable);
-}
-
-void EditorPlugin::remove_undo_redo_inspector_hook_callback(Callable p_callable)
-{
-	EditorNode::get_editor_data().remove_undo_redo_inspector_hook_callback(p_callable);
-}
-
 void EditorPlugin::add_translation_parser_plugin(const Ref<EditorTranslationParserPlugin>& p_parser)
 {
 	ERR_FAIL_COND(p_parser.is_null());
@@ -387,32 +319,6 @@ void EditorPlugin::remove_translation_parser_plugin(
 	ERR_FAIL_COND(p_parser.is_null());
 	EditorTranslationParser::get_singleton()->remove_parser(
 		p_parser, EditorTranslationParser::CUSTOM);
-}
-
-void EditorPlugin::add_import_plugin(
-	const Ref<EditorImportPlugin>& p_importer, bool p_first_priority)
-{
-	ERR_FAIL_COND(p_importer.is_null());
-	ResourceFormatImporter::get_singleton()->add_importer(p_importer, p_first_priority);
-	// Plugins are now loaded during the first scan. It's important not to start another scan,
-	// even a deferred one, as it would cause a scan during a scan at the next main thread
-	// iteration.
-	if (!EditorFileSystem::get_singleton()->doing_first_scan()) {
-		callable_mp(EditorFileSystem::get_singleton(), &EditorFileSystem::scan).call_deferred();
-	}
-}
-
-void EditorPlugin::remove_import_plugin(const Ref<EditorImportPlugin>& p_importer)
-{
-	ERR_FAIL_COND(p_importer.is_null());
-	ResourceFormatImporter::get_singleton()->remove_importer(p_importer);
-	// Plugins are now loaded during the first scan. It's important not to start another scan,
-	// even a deferred one, as it would cause a scan during a scan at the next main thread
-	// iteration.
-	if (!EditorNode::get_singleton()->is_exiting() &&
-		!EditorFileSystem::get_singleton()->doing_first_scan()) {
-		callable_mp(EditorFileSystem::get_singleton(), &EditorFileSystem::scan).call_deferred();
-	}
 }
 
 void EditorPlugin::add_export_plugin(const Ref<EditorExportPlugin>& p_exporter)
@@ -557,41 +463,9 @@ void EditorPlugin::remove_resource_conversion_plugin(
 	EditorNode::get_singleton()->remove_resource_conversion_plugin(p_plugin);
 }
 
-#ifndef DISABLE_DEPRECATED
-void EditorPlugin::_editor_project_settings_changed()
-{
-	this->obj->emit_signal(SNAME("project_settings_changed"));
-}
-#endif
+void EditorPlugin::enable_plugin() {}
 
-void EditorPlugin::_notification(int p_what)
-{
-#ifndef DISABLE_DEPRECATED
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		ProjectSettings::get_singleton()->obj->connect(
-			"settings_changed", callable_mp(this, &EditorPlugin::_editor_project_settings_changed));
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		ProjectSettings::get_singleton()->obj->disconnect(
-			"settings_changed", callable_mp(this, &EditorPlugin::_editor_project_settings_changed));
-	} break;
-	}
-#endif
-}
-
-void EditorPlugin::_bind_methods() {}
-
-void EditorPlugin::enable_plugin()
-{
-	// stub
-}
-
-void EditorPlugin::disable_plugin()
-{
-	// stub
-}
+void EditorPlugin::disable_plugin() {}
 
 EditorUndoRedoManager* EditorPlugin::get_undo_redo()
 {
@@ -603,12 +477,6 @@ EditorPluginCreateFunc EditorPlugins::creation_funcs[MAX_CREATE_FUNCS];
 bool EditorPlugin::has_main_screen() const { return false; }
 
 String EditorPlugin::get_plugin_name() const { return String(); }
-
-void EditorPlugin::edit(Object* p_object) {}
-
-bool EditorPlugin::handles(Object* p_object) const { return false; }
-
-void EditorPlugin::make_visible(bool p_visible) {}
 
 String EditorPlugin::get_unsaved_status(const String& p_for_scene) const { return String(); }
 
@@ -629,12 +497,6 @@ void EditorPlugin::forward_3d_draw_over_viewport(Control* p_overlay) {}
 void EditorPlugin::forward_3d_force_draw_over_viewport(Control* p_overlay) {}
 
 const Ref<Texture2D> EditorPlugin::get_plugin_icon() const { return Ref<Texture2D>(); }
-
-Dictionary EditorPlugin::get_state() const { return Dictionary(); }
-
-void EditorPlugin::set_state(const Dictionary& p_state) {}
-
-void EditorPlugin::clear() {}
 
 void EditorPlugin::apply_changes() {}
 

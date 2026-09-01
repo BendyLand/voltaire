@@ -390,6 +390,8 @@ public:
 
 	_FORCE_INLINE_ explicit String(double p_val) { *this = String::num_real(p_val); }
 
+	_FORCE_INLINE_ ~String() = default;
+
 	// --- Universal Auto-Converter Template (Enums, Objects with to_string/as_text/cast) ---
 	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, String> &&
 													  !std::is_pointer_v<std::decay_t<T>> &&

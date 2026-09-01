@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "audio_stream_preview.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 
 /////////////////////
 
@@ -104,11 +102,6 @@ AudioStreamPreview::AudioStreamPreview() { length = 0; }
 
 ////
 
-void AudioStreamPreviewGenerator::_update_emit(Object& obj, ObjectID p_id)
-{
-	obj.emit_signal(SNAME("preview_updated"), p_id);
-}
-
 void AudioStreamPreviewGenerator::_preview_thread(void* p_preview)
 {
 	Thread::set_name("AudioStreamPreviewGenerator");
@@ -150,109 +143,20 @@ void AudioStreamPreviewGenerator::_preview_thread(void* p_preview)
 			preview->preview->preview.write[(ofs_write + i) * 2 + 1] = pto;
 		}
 		frames_todo -= to_read;
-		callable_mp(singleton, &AudioStreamPreviewGenerator::_update_emit)
-			.call_deferred(preview->id);
 	}
 	preview->preview->version++;
 	preview->playback->stop();
 	preview->generating.clear();
 }
 
-Ref<AudioStreamPreview> AudioStreamPreviewGenerator::generate_preview(
-	const Ref<AudioStream>& p_stream)
-{
-	ERR_FAIL_COND_V(p_stream.is_null(), Ref<AudioStreamPreview>());
-
-	if (previews.has(p_stream->obj->get_instance_id())) {
-		return previews[p_stream->obj->get_instance_id()].preview;
-	}
-
-	// no preview exists
-
-	previews[p_stream->obj->get_instance_id()] = Preview();
-
-	Preview* preview = &previews[p_stream->obj->get_instance_id()];
-	preview->base_stream = p_stream;
-	preview->playback = preview->base_stream->instantiate_playback();
-	preview->generating.set();
-	preview->id = p_stream->obj->get_instance_id();
-
-	float len_s = preview->base_stream->get_length();
-	if (len_s == 0) {
-		len_s = 60 * 5; // five minutes
-	}
-
-	int frames = AudioServer::get_singleton()->get_mix_rate() * len_s;
-
-	Vector<uint8_t> maxmin;
-	int pw = frames / 20;
-	maxmin.resize(pw * 2);
-	{
-		uint8_t* ptr = maxmin.ptrw();
-		for (int i = 0; i < pw * 2; i++) {
-			ptr[i] = 127;
-		}
-	}
-
-	preview->preview.instantiate();
-	preview->preview->preview = maxmin;
-	preview->preview->length = len_s;
-
-	if (preview->playback.is_valid()) {
-		preview->task_id = WorkerThreadPool::get_singleton()->add_native_task(
-			&AudioStreamPreviewGenerator::_preview_thread, preview, true,
-			"AudioStreamPreviewGenerator");
-	}
-
-	return preview->preview;
-}
-
 void AudioStreamPreviewGenerator::_bind_methods() {}
 
 AudioStreamPreviewGenerator* AudioStreamPreviewGenerator::singleton = nullptr;
-
-void AudioStreamPreviewGenerator::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_PROCESS: {
-		List<ObjectID> to_erase;
-		for (KeyValue<ObjectID, Preview>& E : previews) {
-			if (!E.value.generating.is_set()) {
-				if (E.value.task_id != WorkerThreadPool::INVALID_TASK_ID) {
-					if (WorkerThreadPool::get_singleton()->is_task_completed(E.value.task_id)) {
-						WorkerThreadPool::get_singleton()->wait_for_task_completion(
-							E.value.task_id);
-						E.value.task_id = WorkerThreadPool::INVALID_TASK_ID;
-					}
-				}
-				else if (!ObjectDB::get_instance(E.key)) { // no longer in use, get rid of preview
-					to_erase.push_back(E.key);
-				}
-			}
-		}
-
-		while (to_erase.front()) {
-			previews.erase(to_erase.front()->get());
-			to_erase.pop_front();
-		}
-	} break;
-	}
-}
 
 AudioStreamPreviewGenerator::AudioStreamPreviewGenerator()
 {
 	singleton = this;
 	set_process(true);
-}
-
-AudioStreamPreviewGenerator::~AudioStreamPreviewGenerator()
-{
-	for (KeyValue<ObjectID, Preview>& E : previews) {
-		if (E.value.task_id != WorkerThreadPool::INVALID_TASK_ID) {
-			WorkerThreadPool::get_singleton()->wait_for_task_completion(E.value.task_id);
-		}
-	}
-	previews.clear();
 }
 
 

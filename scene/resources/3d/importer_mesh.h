@@ -31,9 +31,9 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/variant/typed_array.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/navigation_mesh.h"
+#include "drivers/gles3/storage/mesh_storage.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
@@ -44,19 +44,13 @@
 // so the data is not registered (hence, quality loss), importing happens faster and
 // its easier to modify before saving
 
+using BlendShape = GLES3::Mesh::Surface::BlendShape;
+
 class ImporterMesh : public Resource
 {
-	VLTRCLASS(ImporterMesh, Resource)
-
 	struct Surface
 	{
 		Mesh::PrimitiveType primitive;
-		Array arrays;
-
-		struct BlendShape
-		{
-			Array arrays;
-		};
 
 		Vector<BlendShape> blend_shape_data;
 
@@ -91,28 +85,15 @@ class ImporterMesh : public Resource
 	Size2i lightmap_size_hint;
 
 protected:
-	void _set_data(const Dictionary& p_data);
-	Dictionary _get_data() const;
-
-	void _generate_lods_bind(
-		float p_normal_merge_angle, float p_normal_split_angle, Array p_skin_pose_transform_array);
-
 	static void _bind_methods();
 
 public:
-	static Ref<ImporterMesh> merge_importer_meshes(const Array& p_importer_meshes,
-		const Array& p_relative_transforms, bool p_deduplicate_surfaces = true);
-
 	void add_blend_shape(const String& p_name);
 	int get_blend_shape_count() const;
 	String get_blend_shape_name(int p_blend_shape) const;
 
 	static String validate_blend_shape_name(const String& p_name);
 
-	void add_surface(Mesh::PrimitiveType p_primitive, const Array& p_arrays,
-		const TypedArray<Array>& p_blend_shapes = TypedArray<Array>(),
-		const Dictionary& p_lods = Dictionary(), const Ref<Material>& p_material = Ref<Material>(),
-		const String& p_surface_name = String(), const uint64_t p_flags = 0);
 	int get_surface_count() const;
 
 	void set_blend_shape_mode(Mesh::BlendShapeMode p_blend_shape_mode);
@@ -121,8 +102,6 @@ public:
 	Mesh::PrimitiveType get_surface_primitive_type(int p_surface);
 	String get_surface_name(int p_surface) const;
 	void set_surface_name(int p_surface, const String& p_name);
-	Array get_surface_arrays(int p_surface) const;
-	Array get_surface_blend_shape_arrays(int p_surface, int p_blend_shape) const;
 	int get_surface_lod_count(int p_surface) const;
 	Vector<int> get_surface_lod_indices(int p_surface, int p_lod) const;
 	float get_surface_lod_size(int p_surface, int p_lod) const;
@@ -132,8 +111,6 @@ public:
 	void set_surface_material(int p_surface, const Ref<Material>& p_material);
 
 	void optimize_indices();
-
-	void generate_lods(float p_normal_merge_angle, Array p_skin_pose_transform_array);
 
 	void create_shadow_mesh();
 	Ref<ImporterMesh> get_shadow_mesh() const;

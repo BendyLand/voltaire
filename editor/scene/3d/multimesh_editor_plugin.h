@@ -41,59 +41,57 @@ class MenuButton;
 class OptionButton;
 class SceneTreeDialog;
 
-class MultiMeshEditor : public Control {
-	VLTRCLASS(MultiMeshEditor, Control);
-
+class MultiMeshEditor : public Control
+{
 	friend class MultiMeshEditorPlugin;
 
-	AcceptDialog *err_dialog = nullptr;
-	MenuButton *options = nullptr;
-	MultiMeshInstance3D *_last_pp_node = nullptr;
+	AcceptDialog* err_dialog = nullptr;
+	MenuButton* options = nullptr;
+	MultiMeshInstance3D* _last_pp_node = nullptr;
 	bool browsing_source = false;
 
-	Panel *panel = nullptr;
-	MultiMeshInstance3D *node = nullptr;
+	Panel* panel = nullptr;
+	MultiMeshInstance3D* node = nullptr;
 
-	LineEdit *surface_source = nullptr;
-	LineEdit *mesh_source = nullptr;
+	LineEdit* surface_source = nullptr;
+	LineEdit* mesh_source = nullptr;
 
-	SceneTreeDialog *std = nullptr;
+	SceneTreeDialog* std = nullptr;
 
-	ConfirmationDialog *populate_dialog = nullptr;
-	OptionButton *populate_axis = nullptr;
-	HSlider *populate_rotate_random = nullptr;
-	HSlider *populate_tilt_random = nullptr;
-	SpinBox *populate_scale_random = nullptr;
-	SpinBox *populate_scale = nullptr;
-	SpinBox *populate_amount = nullptr;
+	ConfirmationDialog* populate_dialog = nullptr;
+	OptionButton* populate_axis = nullptr;
+	HSlider* populate_rotate_random = nullptr;
+	HSlider* populate_tilt_random = nullptr;
+	SpinBox* populate_scale_random = nullptr;
+	SpinBox* populate_scale = nullptr;
+	SpinBox* populate_amount = nullptr;
 
-	enum Menu {
+	enum Menu
+	{
 		MENU_OPTION_POPULATE
 	};
 
-	void _browsed(const NodePath &p_path);
+	void _browsed(const NodePath& p_path);
 	void _menu_option(int);
 	void _populate();
 	void _browse(bool p_source);
 
 protected:
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 
 public:
-	void edit(MultiMeshInstance3D *p_multimesh);
+	void edit(MultiMeshInstance3D* p_multimesh);
 	MultiMeshEditor();
 };
 
-class MultiMeshEditorPlugin : public EditorPlugin {
-	VLTRCLASS(MultiMeshEditorPlugin, EditorPlugin);
-
-	MultiMeshEditor *multimesh_editor = nullptr;
+class MultiMeshEditorPlugin : public EditorPlugin
+{
+	MultiMeshEditor* multimesh_editor = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "MultiMesh"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	MultiMeshEditorPlugin();
 };
+
+

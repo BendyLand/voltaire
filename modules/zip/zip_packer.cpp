@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/zip_io.h"
-#include "core/object/class_db.h"
 #include "core/os/time.h"
 #include "zip_packer.compat.inc"
 #include "zip_packer.h"
@@ -69,58 +68,6 @@ void ZIPPacker::set_compression_level(int p_compression_level)
 
 int ZIPPacker::get_compression_level() const { return compression_level; }
 
-Error ZIPPacker::start_file(const String& p_path,
-	BitField<FileAccess::UnixPermissionFlags> p_permissions, uint64_t p_modified_time)
-{
-	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPPacker must be opened before use.");
-
-	if (!p_path.get_base_dir().is_empty() && !directories.has(p_path.get_base_dir() + "/")) {
-		add_directory(p_path.get_base_dir(), 0755, p_modified_time);
-	}
-
-	uint64_t time = p_modified_time;
-	if (time == 0) {
-		time = Time::get_singleton()->get_unix_time_from_system();
-	}
-	Dictionary tz = Time::get_singleton()->get_time_zone_from_system();
-	time += tz["bias"].operator int() * 60;
-	Dictionary dt = Time::get_singleton()->get_datetime_dict_from_unix_time(time);
-
-	zip_fileinfo zipfi;
-	zipfi.tmz_date.tm_year = dt["year"];
-	zipfi.tmz_date.tm_mon =
-		dt["month"].operator int() - 1; // Note: "tm" month range - 0..11, Godot month range
-										// - 1..12, https://www.cplusplus.com/reference/ctime/tm/
-	zipfi.tmz_date.tm_mday = dt["day"];
-	zipfi.tmz_date.tm_hour = dt["hour"];
-	zipfi.tmz_date.tm_min = dt["minute"];
-	zipfi.tmz_date.tm_sec = dt["second"];
-	zipfi.dosDate = 0;
-
-	// 0100000: regular file type
-	// 0000644: permissions rw-r--r--
-	uint32_t _mode = p_permissions;
-	if (_mode == 0) {
-		_mode = 0100644;
-	}
-	else {
-		_mode |= 0100000;
-	}
-	zipfi.external_fa =
-		(_mode << 16L) | ((_mode & 0200) ? 0 : 1); // UUUUUUUU UUUUUUUU 00000000 00ADVSHR: Unix
-												   // permissions (U) + DOS read-only flag (R).
-	zipfi.internal_fa = 0;
-
-	int err = zipOpenNewFileInZip4(zf, p_path.utf8().get_data(), &zipfi, nullptr, 0, nullptr, 0,
-		nullptr, Z_DEFLATED, compression_level, 0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
-		nullptr, 0,
-		0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0, required to
-				// store Unix file permissions
-		1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment fields
-				  // must be encoded using UTF-8.
-	return err == ZIP_OK ? OK : FAILED;
-}
-
 Error ZIPPacker::write_file(const Vector<uint8_t>& p_data)
 {
 	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPPacker must be opened before use.");
@@ -134,66 +81,6 @@ Error ZIPPacker::close_file()
 
 	return zipCloseFileInZip(zf) == ZIP_OK ? OK : FAILED;
 }
-
-Error ZIPPacker::add_directory(const String& p_path,
-	BitField<FileAccess::UnixPermissionFlags> p_permissions, uint64_t p_modified_time)
-{
-	String path = p_path.ends_with("/") ? p_path : p_path + "/";
-	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPPacker must be opened before use.");
-	ERR_FAIL_COND_V_MSG(
-		directories.has(path), ERR_CANT_CREATE, vformat("Directory '%s' already exists.", path));
-
-	uint64_t time = p_modified_time;
-	if (time == 0) {
-		time = Time::get_singleton()->get_unix_time_from_system();
-	}
-	Dictionary tz = Time::get_singleton()->get_time_zone_from_system();
-	time += tz["bias"].operator int() * 60;
-	Dictionary dt = Time::get_singleton()->get_datetime_dict_from_unix_time(time);
-
-	zip_fileinfo zipfi;
-	zipfi.tmz_date.tm_year = dt["year"];
-	zipfi.tmz_date.tm_mon =
-		dt["month"].operator int() - 1; // Note: "tm" month range - 0..11, Godot month range
-										// - 1..12, https://www.cplusplus.com/reference/ctime/tm/
-	zipfi.tmz_date.tm_mday = dt["day"];
-	zipfi.tmz_date.tm_hour = dt["hour"];
-	zipfi.tmz_date.tm_min = dt["minute"];
-	zipfi.tmz_date.tm_sec = dt["second"];
-	zipfi.dosDate = 0;
-
-	// 0040000: directory file type
-	// 0000755: permissions rwxr-xr-x
-	uint32_t _mode = p_permissions;
-	if (_mode == 0) {
-		_mode = 0040755;
-	}
-	else {
-		_mode |= 0040000;
-	}
-	zipfi.external_fa =
-		(_mode << 16L) | 0x10 |
-		((_mode & 0200) ? 0 : 1); // UUUUUUUU UUUUUUUU 00000000 00ADVSHR: Unix permissions (U) + DOS
-								  // directory flag (D) + DOS read-only flag (R).
-	zipfi.internal_fa = 0;
-
-	int err = zipOpenNewFileInZip4(zf, path.utf8().get_data(), &zipfi, nullptr, 0, nullptr, 0,
-		nullptr, Z_DEFLATED, compression_level, 0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
-		nullptr, 0,
-		0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0, required to
-				// store Unix file permissions
-		1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment fields
-				  // must be encoded using UTF-8.
-	zipCloseFileInZip(zf);
-	if (err != ZIP_OK) {
-		return FAILED;
-	}
-
-	directories.insert(path);
-	return OK;
-}
-
-void ZIPPacker::_bind_methods() {}
 
 ZIPPacker::ZIPPacker() {}
 

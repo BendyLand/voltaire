@@ -35,7 +35,6 @@
 #include "core/extension/ext_wrappers.gen.h"
 
 class WebRTCPeerConnectionExtension : public WebRTCPeerConnection {
-	VLTRCLASS(WebRTCPeerConnectionExtension, WebRTCPeerConnection);
 
 protected:
 	static void _bind_methods();

@@ -36,22 +36,23 @@ class FilterLineEdit;
 class Shortcut;
 class Tree;
 
-class EditorCommandPalette : public ConfirmationDialog {
-	VLTRCLASS(EditorCommandPalette, ConfirmationDialog);
+class EditorCommandPalette : public ConfirmationDialog
+{
+	static EditorCommandPalette* singleton;
+	FilterLineEdit* command_search_box = nullptr;
+	Tree* search_options = nullptr;
 
-	static EditorCommandPalette *singleton;
-	FilterLineEdit *command_search_box = nullptr;
-	Tree *search_options = nullptr;
-
-	struct Command {
-		Callable callable;
+	struct Command
+	{
 		String name;
 		Ref<Shortcut> shortcut;
 		String shortcut_text;
-		int last_used = 0; // Store time as int, because doubles have problems with text serialization.
+		int last_used =
+			0; // Store time as int, because doubles have problems with text serialization.
 	};
 
-	struct CommandEntry {
+	struct CommandEntry
+	{
 		String key_name;
 		String display_name;
 		String shortcut_text;
@@ -59,17 +60,22 @@ class EditorCommandPalette : public ConfirmationDialog {
 		float score = 0;
 	};
 
-	struct CommandEntryComparator {
-		_FORCE_INLINE_ bool operator()(const CommandEntry &A, const CommandEntry &B) const {
+	struct CommandEntryComparator
+	{
+		_FORCE_INLINE_ bool operator()(const CommandEntry& A, const CommandEntry& B) const
+		{
 			return A.score > B.score;
 		}
 	};
 
-	struct CommandHistoryComparator {
-		_FORCE_INLINE_ bool operator()(const CommandEntry &A, const CommandEntry &B) const {
+	struct CommandHistoryComparator
+	{
+		_FORCE_INLINE_ bool operator()(const CommandEntry& A, const CommandEntry& B) const
+		{
 			if (A.last_used == B.last_used) {
 				return A.display_name < B.display_name;
-			} else {
+			}
+			else {
 				return A.last_used > B.last_used;
 			}
 		}
@@ -78,10 +84,9 @@ class EditorCommandPalette : public ConfirmationDialog {
 	HashMap<String, Command> commands;
 	HashMap<String, Pair<String, Ref<Shortcut>>> unregistered_shortcuts;
 
-	void _update_command_search(const String &search_text);
-	float _score_path(const String &p_search, const String &p_path);
+	void _update_command_search(const String& search_text);
+	float _score_path(const String& p_search, const String& p_path);
 	void _confirmed();
-	void _add_command(String p_command_name, String p_key_name, Callable p_binded_action, String p_shortcut_text = "None");
 	void _save_history() const;
 
 	EditorCommandPalette();
@@ -92,14 +97,18 @@ protected:
 
 public:
 	void open_popup();
-	void get_actions_list(List<String> *p_list) const;
-	void add_command(String p_command_name, String p_key_name, Callable p_action, const Ref<Shortcut> &p_shortcut = Ref<Shortcut>());
-	void execute_command(const String &p_command_name);
+	void get_actions_list(List<String>* p_list) const;
+	void execute_command(const String& p_command_name);
 	void register_shortcuts_as_command();
-	Ref<Shortcut> add_shortcut_command(const String &p_command, const String &p_key, Ref<Shortcut> p_shortcut);
+	Ref<Shortcut> add_shortcut_command(
+		const String& p_command, const String& p_key, Ref<Shortcut> p_shortcut);
 	void remove_command(String p_key_name);
-	static EditorCommandPalette *get_singleton();
+	static EditorCommandPalette* get_singleton();
 };
 
-Ref<Shortcut> ED_SHORTCUT_AND_COMMAND(const String &p_path, const String &p_name, Key p_keycode = Key::NONE, String p_command = "");
-Ref<Shortcut> ED_SHORTCUT_ARRAY_AND_COMMAND(const String &p_path, const String &p_name, const PackedInt32Array &p_keycodes, String p_command = "");
+Ref<Shortcut> ED_SHORTCUT_AND_COMMAND(
+	const String& p_path, const String& p_name, Key p_keycode = Key::NONE, String p_command = "");
+Ref<Shortcut> ED_SHORTCUT_ARRAY_AND_COMMAND(const String& p_path, const String& p_name,
+	const PackedInt32Array& p_keycodes, String p_command = "");
+
+

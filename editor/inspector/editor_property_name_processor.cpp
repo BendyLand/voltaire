@@ -28,41 +28,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_property_name_processor.h"
-
 #include "core/string/translation_server.h"
 #include "editor/settings/editor_settings.h"
+#include "editor_property_name_processor.h"
 
-EditorPropertyNameProcessor *EditorPropertyNameProcessor::singleton = nullptr;
+EditorPropertyNameProcessor* EditorPropertyNameProcessor::singleton = nullptr;
 
-EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_default_inspector_style() {
-	if (!EditorSettings::get_singleton()) {
-		return STYLE_CAPITALIZED;
-	}
-	const Style style = (Style)EDITOR_GET("interface/inspector/default_property_name_style").operator int();
-	if (style == STYLE_LOCALIZED && !is_localization_available()) {
-		return STYLE_CAPITALIZED;
-	}
-	return style;
-}
-
-EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_settings_style() {
-	if (!EditorSettings::get_singleton()) {
-		return STYLE_LOCALIZED;
-	}
-	const bool translate = EDITOR_GET("interface/editor/localization/localize_settings");
-	return translate ? STYLE_LOCALIZED : STYLE_CAPITALIZED;
-}
-
-EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_tooltip_style(Style p_style) {
+EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_tooltip_style(Style p_style)
+{
 	return p_style == STYLE_LOCALIZED ? STYLE_CAPITALIZED : STYLE_LOCALIZED;
 }
 
-bool EditorPropertyNameProcessor::is_localization_available() {
-	return EditorSettings::get_singleton() && EditorSettings::get_singleton()->get_language() != "en";
+bool EditorPropertyNameProcessor::is_localization_available()
+{
+	return EditorSettings::get_singleton() &&
+		   EditorSettings::get_singleton()->get_language() != "en";
 }
 
-String EditorPropertyNameProcessor::_capitalize_name(const String &p_name) const {
+String EditorPropertyNameProcessor::_capitalize_name(const String& p_name) const
+{
 	HashMap<String, String>::ConstIterator cached = capitalize_string_cache.find(p_name);
 	if (cached) {
 		return cached->value;
@@ -70,14 +54,16 @@ String EditorPropertyNameProcessor::_capitalize_name(const String &p_name) const
 
 	Vector<String> parts = p_name.split("_", false);
 	for (int i = 0; i < parts.size(); i++) {
-		// Articles/conjunctions/prepositions which should only be capitalized when not at beginning and end.
+		// Articles/conjunctions/prepositions which should only be capitalized when not at beginning
+		// and end.
 		if (i > 0 && i + 1 < parts.size() && stop_words.has(parts[i])) {
 			continue;
 		}
 		HashMap<String, String>::ConstIterator remap = capitalize_string_remaps.find(parts[i]);
 		if (remap) {
 			parts.write[i] = remap->value;
-		} else {
+		}
+		else {
 			parts.write[i] = parts[i].capitalize();
 		}
 	}
@@ -87,17 +73,19 @@ String EditorPropertyNameProcessor::_capitalize_name(const String &p_name) const
 	return capitalized;
 }
 
-StringName EditorPropertyNameProcessor::_get_context(const String &p_name, const String &p_property, const StringName &p_class) const {
+StringName EditorPropertyNameProcessor::_get_context(
+	const String& p_name, const String& p_property, const StringName& p_class) const
+{
 	if (p_property.is_empty() && p_class == StringName()) {
 		return StringName();
 	}
-	const HashMap<String, StringName> *context_map = translation_contexts.getptr(p_name);
+	const HashMap<String, StringName>* context_map = translation_contexts.getptr(p_name);
 	if (context_map == nullptr) {
 		return StringName();
 	}
 	// It's expected that full property path is enough to distinguish between usages.
 	// In case a class name is needed, all usages should be prefixed with the class name.
-	const StringName *context = context_map->getptr(p_property);
+	const StringName* context = context_map->getptr(p_property);
 	if (context == nullptr && p_class != StringName()) {
 		context = context_map->getptr(String(p_class) + "::" + p_property);
 	}
@@ -107,35 +95,41 @@ StringName EditorPropertyNameProcessor::_get_context(const String &p_name, const
 	return *context;
 }
 
-String EditorPropertyNameProcessor::process_name(const String &p_name, Style p_style, const String &p_property, const StringName &p_class) const {
+String EditorPropertyNameProcessor::process_name(
+	const String& p_name, Style p_style, const String& p_property, const StringName& p_class) const
+{
 	switch (p_style) {
-		case STYLE_RAW: {
-			return p_name;
-		} break;
+	case STYLE_RAW: {
+		return p_name;
+	} break;
 
-		case STYLE_CAPITALIZED: {
-			return _capitalize_name(p_name);
-		} break;
+	case STYLE_CAPITALIZED: {
+		return _capitalize_name(p_name);
+	} break;
 
-		case STYLE_LOCALIZED: {
-			const String capitalized = _capitalize_name(p_name);
-			if (TranslationServer::get_singleton()) {
-				return TranslationServer::get_singleton()->get_property_domain()->translate(capitalized, _get_context(p_name, p_property, p_class));
-			}
-			return capitalized;
-		} break;
+	case STYLE_LOCALIZED: {
+		const String capitalized = _capitalize_name(p_name);
+		if (TranslationServer::get_singleton()) {
+			return TranslationServer::get_singleton()->get_property_domain()->translate(
+				capitalized, _get_context(p_name, p_property, p_class));
+		}
+		return capitalized;
+	} break;
 	}
 	ERR_FAIL_V_MSG(p_name, "Unexpected property name style.");
 }
 
-String EditorPropertyNameProcessor::translate_group_name(const String &p_name) const {
+String EditorPropertyNameProcessor::translate_group_name(const String& p_name) const
+{
 	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->get_property_domain()->translate(p_name, StringName());
+		return TranslationServer::get_singleton()->get_property_domain()->translate(
+			p_name, StringName());
 	}
 	return p_name;
 }
 
-EditorPropertyNameProcessor::EditorPropertyNameProcessor() {
+EditorPropertyNameProcessor::EditorPropertyNameProcessor()
+{
 	ERR_FAIL_COND(singleton != nullptr);
 	singleton = this;
 
@@ -246,7 +240,7 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor() {
 	capitalize_string_remaps["msaa"] = "MSAA";
 	capitalize_string_remaps["msdf"] = "MSDF";
 	// Not used for now as AudioEffectReverb has a `msec` property.
-	//capitalize_string_remaps["msec"] = "(msec)"; // Unit.
+	// capitalize_string_remaps["msec"] = "(msec)"; // Unit.
 	capitalize_string_remaps["navmesh"] = "NavMesh";
 	capitalize_string_remaps["nfc"] = "NFC";
 	capitalize_string_remaps["ogv"] = "OGV";
@@ -333,37 +327,40 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor() {
 	capitalize_string_remaps["yz"] = "YZ";
 
 	// Articles, conjunctions, prepositions.
-	// The following initialization is parsed in https://github.com/godotengine/godot-editor-l10n/blob/main/scripts/common.py
-	// with a regex. The word definition format should be kept synced with the regex.
+	// The following initialization is parsed in
+	// https://github.com/godotengine/godot-editor-l10n/blob/main/scripts/common.py with a regex.
+	// The word definition format should be kept synced with the regex.
 	stop_words = LocalVector<String>({
-			"a",
-			"an",
-			"and",
-			"as",
-			"at",
-			"by",
-			"for",
-			"in",
-			"not",
-			"of",
-			"on",
-			"or",
-			"over",
-			"per",
-			"the",
-			"then",
-			"to",
-			"with",
+		"a",
+		"an",
+		"and",
+		"as",
+		"at",
+		"by",
+		"for",
+		"in",
+		"not",
+		"of",
+		"on",
+		"or",
+		"over",
+		"per",
+		"the",
+		"then",
+		"to",
+		"with",
 	});
 
 	// Translation context associated with a name.
 	// The second key is either:
 	// - `full/property/path`
 	// - `Class::full/property/path`
-	// In case a class name is needed to distinguish between usages, all usages should use the second format.
+	// In case a class name is needed to distinguish between usages, all usages should use the
+	// second format.
 	//
-	// The following initialization is parsed in https://github.com/godotengine/godot-editor-l10n/blob/main/scripts/common.py
-	// with a regex. The map name and value definition format should be kept synced with the regex.
+	// The following initialization is parsed in
+	// https://github.com/godotengine/godot-editor-l10n/blob/main/scripts/common.py with a regex.
+	// The map name and value definition format should be kept synced with the regex.
 	translation_contexts["force"]["constant_force"] = "Physics";
 	translation_contexts["force"]["force/8_bit"] = "Enforce";
 	translation_contexts["force"]["force/mono"] = "Enforce";
@@ -376,6 +373,6 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor() {
 	translation_contexts["normal"]["normal"] = "Geometry";
 }
 
-EditorPropertyNameProcessor::~EditorPropertyNameProcessor() {
-	singleton = nullptr;
-}
+EditorPropertyNameProcessor::~EditorPropertyNameProcessor() { singleton = nullptr; }
+
+

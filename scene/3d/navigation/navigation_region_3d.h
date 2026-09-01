@@ -33,9 +33,8 @@
 #include "scene/3d/node_3d.h"
 #include "scene/resources/navigation_mesh.h"
 
-class NavigationRegion3D : public Node3D {
-	VLTRCLASS(NavigationRegion3D, Node3D);
-
+class NavigationRegion3D : public Node3D
+{
 	bool enabled = true;
 	bool use_edge_connections = true;
 
@@ -67,11 +66,6 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-#endif // DISABLE_DEPRECATED
-
 public:
 	RID get_rid() const;
 
@@ -98,7 +92,7 @@ public:
 	void set_travel_cost(real_t p_travel_cost);
 	real_t get_travel_cost() const;
 
-	void set_navigation_mesh(const Ref<NavigationMesh> &p_navigation_mesh);
+	void set_navigation_mesh(const Ref<NavigationMesh>& p_navigation_mesh);
 	Ref<NavigationMesh> get_navigation_mesh() const;
 
 	/// Bakes the navigation mesh; once done, automatically
@@ -120,3 +114,5 @@ private:
 	void _region_exit_navigation_map();
 	void _region_update_transform();
 };
+
+

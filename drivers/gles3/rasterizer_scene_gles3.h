@@ -1133,17 +1133,6 @@ public:
 	void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_quality) override;
 	void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override;
 
-	Array bake_render_uv2(
-		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size);
-
-	virtual PackedByteArray bake_render_area_light_atlas(
-		const Array& p_area_light_textures,
-		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size,
-		int p_mipmaps) override
-	{
-		return PackedByteArray();
-	}
-
 	void _render_uv2(const PagedArray<RenderGeometryInstance*>& p_instances, GLuint p_framebuffer,
 		const Rect2i& p_region);
 

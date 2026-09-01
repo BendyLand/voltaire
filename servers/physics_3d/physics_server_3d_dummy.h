@@ -34,8 +34,6 @@
 
 class PhysicsDirectBodyState3DDummy : public PhysicsDirectBodyState3D
 {
-	VLTRCLASS(PhysicsDirectBodyState3DDummy, PhysicsDirectBodyState3D);
-
 	PhysicsDirectSpaceState3D* space_state_dummy = nullptr;
 
 public:
@@ -145,16 +143,6 @@ public:
 		return Vector3();
 	}
 
-	virtual ObjectID get_contact_collider_id(int p_contact_idx) const override
-	{
-		return ObjectID();
-	}
-
-	virtual Object* get_contact_collider_object(int p_contact_idx) const override
-	{
-		return nullptr;
-	}
-
 	virtual int get_contact_collider_shape(int p_contact_idx) const override { return 0; }
 
 	virtual Vector3 get_contact_collider_velocity_at_position(int p_contact_idx) const override
@@ -176,8 +164,6 @@ public:
 
 class PhysicsDirectSpaceState3DDummy : public PhysicsDirectSpaceState3D
 {
-	VLTRCLASS(PhysicsDirectSpaceState3DDummy, PhysicsDirectSpaceState3D);
-
 public:
 	virtual bool intersect_ray(
 		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result) override
@@ -224,8 +210,6 @@ public:
 
 class PhysicsServer3DDummy : public PhysicsServer3D
 {
-	VLTRCLASS(PhysicsServer3DDummy, PhysicsServer3D);
-
 	PhysicsDirectBodyState3DDummy* body_state_dummy = nullptr;
 	PhysicsDirectSpaceState3DDummy* space_state_dummy = nullptr;
 
@@ -250,16 +234,12 @@ public:
 
 	virtual RID custom_shape_create() override { return RID(); }
 
-	virtual void shape_set_data(RID p_shape, const Variant& p_data) override {}
-
 	virtual void shape_set_custom_solver_bias(RID p_shape, real_t p_bias) override {}
 
 	virtual PS3DE::ShapeType shape_get_type(RID p_shape) const override
 	{
 		return PS3DE::SHAPE_SPHERE;
 	}
-
-	virtual Variant shape_get_data(RID p_shape) const override { return Variant(); }
 
 	virtual void shape_set_margin(RID p_shape, real_t p_margin) override {}
 
@@ -334,21 +314,7 @@ public:
 
 	virtual void area_set_shape_disabled(RID p_area, int p_shape_idx, bool p_disabled) override {}
 
-	virtual void area_attach_object_instance_id(RID p_area, ObjectID p_id) override {}
-
-	virtual ObjectID area_get_object_instance_id(RID p_area) const override { return ObjectID(); }
-
-	virtual void area_set_param(
-		RID p_area, PS3DE::AreaParameter p_param, const Variant& p_value) override
-	{
-	}
-
 	virtual void area_set_transform(RID p_area, const Transform3D& p_transform) override {}
-
-	virtual Variant area_get_param(RID p_parea, PS3DE::AreaParameter p_param) const override
-	{
-		return Variant();
-	}
 
 	virtual Transform3D area_get_transform(RID p_area) const override { return Transform3D(); }
 
@@ -361,10 +327,6 @@ public:
 	virtual uint32_t area_get_collision_mask(RID p_area) const override { return 0; }
 
 	virtual void area_set_monitorable(RID p_area, bool p_monitorable) override {}
-
-	virtual void area_set_monitor_callback(RID p_area, const Callable& p_callback) override {}
-
-	virtual void area_set_area_monitor_callback(RID p_area, const Callable& p_callback) override {}
 
 	virtual void area_set_ray_pickable(RID p_area, bool p_enable) override {}
 
@@ -410,10 +372,6 @@ public:
 
 	virtual void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled) override {}
 
-	virtual void body_attach_object_instance_id(RID p_body, ObjectID p_id) override {}
-
-	virtual ObjectID body_get_object_instance_id(RID p_body) const override { return ObjectID(); }
-
 	virtual void body_set_enable_continuous_collision_detection(RID p_body, bool p_enable) override
 	{
 	}
@@ -439,27 +397,7 @@ public:
 
 	virtual uint32_t body_get_user_flags(RID p_body) const override { return 0; }
 
-	virtual void body_set_param(
-		RID p_body, PS3DE::BodyParameter p_param, const Variant& p_value) override
-	{
-	}
-
-	virtual Variant body_get_param(RID p_body, PS3DE::BodyParameter p_param) const override
-	{
-		return Variant();
-	}
-
 	virtual void body_reset_mass_properties(RID p_body) override {}
-
-	virtual void body_set_state(
-		RID p_body, PS3DE::BodyState p_state, const Variant& p_variant) override
-	{
-	}
-
-	virtual Variant body_get_state(RID p_body, PS3DE::BodyState p_state) const override
-	{
-		return Variant();
-	}
 
 	virtual void body_apply_central_impulse(RID p_body, const Vector3& p_impulse) override {}
 
@@ -528,13 +466,6 @@ public:
 
 	virtual bool body_is_omitting_force_integration(RID p_body) const override { return false; }
 
-	virtual void body_set_state_sync_callback(RID p_body, const Callable& p_callable) override {}
-
-	virtual void body_set_force_integration_callback(
-		RID p_body, const Callable& p_callable, const Variant& p_udata = Variant()) override
-	{
-	}
-
 	virtual void body_set_ray_pickable(RID p_body, bool p_enable) override {}
 
 	virtual PhysicsDirectBodyState3D* body_get_direct_state(RID p_body) override
@@ -578,16 +509,6 @@ public:
 	virtual void soft_body_remove_collision_exception(RID p_body, RID p_body_b) override {}
 
 	virtual void soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) override {}
-
-	virtual void soft_body_set_state(
-		RID p_body, PS3DE::BodyState p_state, const Variant& p_variant) override
-	{
-	}
-
-	virtual Variant soft_body_get_state(RID p_body, PS3DE::BodyState p_state) const override
-	{
-		return Variant();
-	}
 
 	virtual void soft_body_set_transform(RID p_body, const Transform3D& p_transform) override {}
 

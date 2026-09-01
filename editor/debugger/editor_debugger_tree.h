@@ -38,8 +38,6 @@ class EditorFileDialog;
 
 class EditorDebuggerTree : public Tree
 {
-	VLTRCLASS(EditorDebuggerTree, Tree);
-
 private:
 	struct ParentItem
 	{
@@ -63,21 +61,17 @@ private:
 		ITEM_MENU_EXPAND_COLLAPSE,
 	};
 
-	TypedArray<uint64_t> inspected_object_ids;
 	int debugger_id = 0;
 	bool new_session = false;
 	bool updating_scene_tree = false;
 	bool scrolling_to_item = false;
 	bool notify_selection_queued = false;
 	bool selection_surpassed_limit = false;
-	HashSet<ObjectID> unfold_cache;
-	HashSet<ObjectID> selection_cache;
 	PopupMenu* item_menu = nullptr;
 	EditorFileDialog* file_dialog = nullptr;
 	AcceptDialog* accept = nullptr;
 	String last_filter;
 
-	void _scene_tree_folded(Object* p_obj);
 	void _scene_tree_selected();
 	void _scene_tree_selection_changed(TreeItem* p_item, int p_column, bool p_selected);
 	void _scene_tree_nothing_selected();
@@ -97,15 +91,10 @@ public:
 		BUTTON_VISIBILITY = 1,
 	};
 
-	virtual Variant get_drag_data(Object& obj, const Point2& p_point) override;
-
 	void set_new_session();
 	void update_icon_max_width();
 	String get_selected_path();
-	ObjectID get_selected_object();
 	int get_current_debugger(); // Would love to have one tree for every debugger.
-
-	inline TypedArray<uint64_t> get_selection() const { return inspected_object_ids.duplicate(); }
 
 	void update_scene_tree(const SceneDebuggerTree* p_tree, int p_debugger);
 	void select_nodes(const TypedArray<int64_t>& p_ids);

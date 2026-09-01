@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/class_db.h"
 #include "core/os/process_id.h"
 #include "editor/run/embedded_process.h"
 #include "scene/gui/control.h"
@@ -40,7 +39,6 @@ class DisplayServerMacOS;
 class EmbeddedProcessMacOS;
 
 class LayerHost final : public Control {
-	VLTRCLASS(LayerHost, Control);
 
 	ScriptEditorDebugger *script_debugger = nullptr;
 	EmbeddedProcessMacOS *process = nullptr;
@@ -72,7 +70,6 @@ public:
 };
 
 class EmbeddedProcessMacOS final : public EmbeddedProcessBase {
-	VLTRCLASS(EmbeddedProcessMacOS, EmbeddedProcessBase);
 
 	enum class EmbeddingState {
 		IDLE,

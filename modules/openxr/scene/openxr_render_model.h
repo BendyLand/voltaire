@@ -33,17 +33,15 @@
 #include "modules/modules_enabled.gen.h"
 
 #ifdef MODULE_GLTF_ENABLED
+#include <openxr/openxr.h>
 #include "scene/3d/node_3d.h"
 
-#include <openxr/openxr.h>
-
-class OpenXRRenderModel : public Node3D {
-	VLTRCLASS(OpenXRRenderModel, Node3D);
-
+class OpenXRRenderModel : public Node3D
+{
 private:
 	RID render_model;
-	Node3D *scene = nullptr;
-	HashMap<String, Node3D *> animatable_nodes;
+	Node3D* scene = nullptr;
+	HashMap<String, Node3D*> animatable_nodes;
 
 	void _load_render_model_scene();
 	void _on_render_model_top_level_path_changed(RID p_render_model);
@@ -62,3 +60,5 @@ public:
 	String get_top_level_path() const;
 };
 #endif // MODULE_GLTF_ENABLED
+
+

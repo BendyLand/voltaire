@@ -49,8 +49,6 @@ class VScrollBar;
 class TreeItem
 {
 public:
-	mem_unique_ptr<Object> obj;
-
 	enum TreeCellMode
 	{
 		CELL_MODE_STRING,
@@ -80,10 +78,9 @@ private:
 		Ref<TextParagraph> text_buf;
 		String language;
 		TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-		Array st_args;
 		Control::TextDirection text_direction = Control::TEXT_DIRECTION_INHERITED;
 		TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
-		BitField<TextServer::LineBreakFlag> autowrap_trim_flags =
+		uint32_t autowrap_trim_flags =
 			TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
 		bool dirty = true;
 		double min = 0.0;
@@ -113,10 +110,7 @@ private:
 
 		HorizontalAlignment text_alignment = HORIZONTAL_ALIGNMENT_LEFT;
 
-		Variant meta;
 		String tooltip;
-
-		Callable custom_draw_callback;
 
 		struct Button
 		{
@@ -246,22 +240,6 @@ protected:
 	static void _bind_compatibility_methods();
 #endif
 
-	// Bind helpers.
-	Dictionary _get_range_config(int p_column)
-	{
-		Dictionary d;
-		double min = 0.0, max = 0.0, step = 0.0;
-		get_range_config(p_column, min, max, step);
-		d["min"] = min;
-		d["max"] = max;
-		d["step"] = step;
-		d["expr"] = false;
-
-		return d;
-	}
-
-	void _call_recursive_bind(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
-
 public:
 	// Cell mode.
 	void set_cell_mode(int p_column, TreeCellMode p_mode);
@@ -306,17 +284,14 @@ public:
 	void set_autowrap_mode(int p_column, TextServer::AutowrapMode p_mode);
 	TextServer::AutowrapMode get_autowrap_mode(int p_column) const;
 
-	void set_autowrap_trim_flags(int p_column, BitField<TextServer::LineBreakFlag> p_flags);
-	BitField<TextServer::LineBreakFlag> get_autowrap_trim_flags(int p_column) const;
+	void set_autowrap_trim_flags(int p_column, uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags(int p_column) const;
 
 	void set_text_overrun_behavior(int p_column, TextServer::OverrunBehavior p_behavior);
 	TextServer::OverrunBehavior get_text_overrun_behavior(int p_column) const;
 
 	void set_structured_text_bidi_override(int p_column, TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override(int p_column) const;
-
-	void set_structured_text_bidi_override_options(int p_column, const Array& p_args);
-	Array get_structured_text_bidi_override_options(int p_column) const;
 
 	void set_language(int p_column, const String& p_language);
 	String get_language(int p_column) const;
@@ -364,15 +339,6 @@ public:
 		int p_column, double p_min, double p_max, double p_step, bool p_exp = false);
 	void get_range_config(int p_column, double& r_min, double& r_max, double& r_step) const;
 	bool is_range_exponential(int p_column) const;
-
-	void set_metadata(int p_column, const Variant& p_meta);
-	Variant get_metadata(int p_column) const;
-
-#ifndef DISABLE_DEPRECATED
-	void set_custom_draw(int p_column, Object* p_object, const StringName& p_callback);
-#endif // DISABLE_DEPRECATED
-	void set_custom_draw_callback(int p_column, const Callable& p_callback);
-	Callable get_custom_draw_callback(int p_column) const;
 
 	void set_collapsed(bool p_collapsed);
 	bool is_collapsed();
@@ -474,18 +440,11 @@ public:
 	void move_before(TreeItem* p_item);
 	void move_after(TreeItem* p_item);
 
-	void call_recursive(const StringName& p_method, const Variant** p_args, int p_argcount,
-		Callable::CallError& r_error);
-
 	~TreeItem();
 };
 
-VARIANT_ENUM_CAST(TreeItem::TreeCellMode);
-
 class Tree : public Control
 {
-	VLTRCLASS(Tree, Control);
-
 public:
 	enum SelectMode
 	{
@@ -870,38 +829,14 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	void _accessibility_action_scroll_down(const Variant& p_data);
-	void _accessibility_action_scroll_left(const Variant& p_data);
-	void _accessibility_action_scroll_right(const Variant& p_data);
-	void _accessibility_action_scroll_up(const Variant& p_data);
-	void _accessibility_action_scroll_set(const Variant& p_data);
-	void _accessibility_action_scroll_into_view(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_focus(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_blur(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_collapse(const Variant& p_data, TreeItem* p_item);
-	void _accessibility_action_expand(const Variant& p_data, TreeItem* p_item);
-	void _accessibility_action_set_text_value(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_set_num_value(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_set_bool_value(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_set_inc(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_set_dec(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_edit_custom(const Variant& p_data, TreeItem* p_item, int p_col);
-	void _accessibility_action_button_press(
-		const Variant& p_data, TreeItem* p_item, int p_col, int p_btn);
-
 public:
-	PackedStringArray get_accessibility_configuration_warnings() const override;
+	PackedStringArray get_accessibility_configuration_warnings() const;
 	virtual RID get_focused_accessibility_element() const override;
 
 	virtual void set_self_modulate(const Color& p_self_modulate) override;
 
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-
-	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2& p_at) const override;
 
-	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual Variant get_drag_data(Object& obj, const Point2& p_point) override;
 	TreeItem* get_item_at_position(const Point2& p_pos) const;
 	int get_column_at_position(const Point2& p_pos) const;
 	int get_drop_section_at_position(const Point2& p_pos) const;
@@ -978,7 +913,6 @@ public:
 		const String& p_find, int* r_col = nullptr, bool p_selectable = false);
 	// First item that matches the whole text, from the first item down.
 	TreeItem* get_item_with_text(const String& p_find) const;
-	TreeItem* get_item_with_metadata(const Variant& p_find, int p_column = -1) const;
 
 	Point2 get_scroll() const;
 	void scroll_to_item(TreeItem* p_item, bool p_center_on_item = false);
@@ -1029,9 +963,5 @@ public:
 	Tree();
 	~Tree();
 };
-
-VARIANT_ENUM_CAST(Tree::SelectMode);
-VARIANT_ENUM_CAST(Tree::DropModeFlags);
-VARIANT_ENUM_CAST(Tree::ScrollHintMode);
 
 

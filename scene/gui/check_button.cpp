@@ -29,11 +29,11 @@
 /**************************************************************************/
 
 #include "check_button.h"
-
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
-Size2 CheckButton::get_icon_size() const {
+Size2 CheckButton::get_icon_size() const
+{
 	Ref<Texture2D> on_tex;
 	Ref<Texture2D> off_tex;
 
@@ -41,15 +41,18 @@ Size2 CheckButton::get_icon_size() const {
 		if (is_disabled()) {
 			on_tex = theme_cache.checked_disabled_mirrored;
 			off_tex = theme_cache.unchecked_disabled_mirrored;
-		} else {
+		}
+		else {
 			on_tex = theme_cache.checked_mirrored;
 			off_tex = theme_cache.unchecked_mirrored;
 		}
-	} else {
+	}
+	else {
 		if (is_disabled()) {
 			on_tex = theme_cache.checked_disabled;
 			off_tex = theme_cache.unchecked_disabled;
-		} else {
+		}
+		else {
 			on_tex = theme_cache.checked;
 			off_tex = theme_cache.unchecked;
 		}
@@ -66,7 +69,8 @@ Size2 CheckButton::get_icon_size() const {
 	return _fit_icon_size(tex_size);
 }
 
-Size2 CheckButton::get_minimum_size() const {
+Size2 CheckButton::get_minimum_size() const
+{
 	Size2 minsize = Button::get_minimum_size();
 	const Size2 tex_size = get_icon_size();
 	if (tex_size.width > 0 || tex_size.height > 0) {
@@ -84,101 +88,96 @@ Size2 CheckButton::get_minimum_size() const {
 	return minsize;
 }
 
-void CheckButton::_notification(int p_what) {
+void CheckButton::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-			RID ae = get_accessibility_element();
-			ERR_FAIL_COND(ae.is_null());
+	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+		RID ae = get_accessibility_element();
+		ERR_FAIL_COND(ae.is_null());
 
-			AccessibilityServer::get_singleton()->update_set_role(ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CHECK_BUTTON);
-		} break;
+		AccessibilityServer::get_singleton()->update_set_role(
+			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CHECK_BUTTON);
+	} break;
 
-		case NOTIFICATION_THEME_CHANGED:
-		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-		case NOTIFICATION_TRANSLATION_CHANGED: {
-			if (is_layout_rtl()) {
-				_set_internal_margin(SIDE_LEFT, get_icon_size().width);
-				_set_internal_margin(SIDE_RIGHT, 0.f);
-			} else {
-				_set_internal_margin(SIDE_LEFT, 0.f);
-				_set_internal_margin(SIDE_RIGHT, get_icon_size().width);
+	case NOTIFICATION_THEME_CHANGED:
+	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
+	case NOTIFICATION_TRANSLATION_CHANGED: {
+		if (is_layout_rtl()) {
+			_set_internal_margin(SIDE_LEFT, get_icon_size().width);
+			_set_internal_margin(SIDE_RIGHT, 0.f);
+		}
+		else {
+			_set_internal_margin(SIDE_LEFT, 0.f);
+			_set_internal_margin(SIDE_RIGHT, get_icon_size().width);
+		}
+	} break;
+
+	case NOTIFICATION_DRAW: {
+		RID ci = get_canvas_item();
+		bool rtl = is_layout_rtl();
+
+		Ref<Texture2D> on_tex;
+		Ref<Texture2D> off_tex;
+
+		if (rtl) {
+			if (is_disabled()) {
+				on_tex = theme_cache.checked_disabled_mirrored;
+				off_tex = theme_cache.unchecked_disabled_mirrored;
 			}
-		} break;
-
-		case NOTIFICATION_DRAW: {
-			RID ci = get_canvas_item();
-			bool rtl = is_layout_rtl();
-
-			Ref<Texture2D> on_tex;
-			Ref<Texture2D> off_tex;
-
-			if (rtl) {
-				if (is_disabled()) {
-					on_tex = theme_cache.checked_disabled_mirrored;
-					off_tex = theme_cache.unchecked_disabled_mirrored;
-				} else {
-					on_tex = theme_cache.checked_mirrored;
-					off_tex = theme_cache.unchecked_mirrored;
-				}
-			} else {
-				if (is_disabled()) {
-					on_tex = theme_cache.checked_disabled;
-					off_tex = theme_cache.unchecked_disabled;
-				} else {
-					on_tex = theme_cache.checked;
-					off_tex = theme_cache.unchecked;
-				}
+			else {
+				on_tex = theme_cache.checked_mirrored;
+				off_tex = theme_cache.unchecked_mirrored;
 			}
-
-			Vector2 ofs;
-			Size2 tex_size = get_icon_size();
-
-			if (rtl) {
-				ofs.x = theme_cache.normal_style->get_margin(SIDE_LEFT);
-			} else {
-				ofs.x = get_size().width - (tex_size.width + theme_cache.normal_style->get_margin(SIDE_RIGHT));
+		}
+		else {
+			if (is_disabled()) {
+				on_tex = theme_cache.checked_disabled;
+				off_tex = theme_cache.unchecked_disabled;
 			}
-			ofs.y = (get_size().height - tex_size.height) / 2 + theme_cache.check_v_offset;
-
-			if (is_pressed()) {
-				on_tex->draw_rect(ci, Rect2(ofs, _fit_icon_size(on_tex->get_size())), false, theme_cache.button_checked_color);
-			} else {
-				off_tex->draw_rect(ci, Rect2(ofs, _fit_icon_size(off_tex->get_size())), false, theme_cache.button_unchecked_color);
+			else {
+				on_tex = theme_cache.checked;
+				off_tex = theme_cache.unchecked;
 			}
-		} break;
+		}
+
+		Vector2 ofs;
+		Size2 tex_size = get_icon_size();
+
+		if (rtl) {
+			ofs.x = theme_cache.normal_style->get_margin(SIDE_LEFT);
+		}
+		else {
+			ofs.x = get_size().width -
+					(tex_size.width + theme_cache.normal_style->get_margin(SIDE_RIGHT));
+		}
+		ofs.y = (get_size().height - tex_size.height) / 2 + theme_cache.check_v_offset;
+
+		if (is_pressed()) {
+			on_tex->draw_rect(ci, Rect2(ofs, _fit_icon_size(on_tex->get_size())), false,
+				theme_cache.button_checked_color);
+		}
+		else {
+			off_tex->draw_rect(ci, Rect2(ofs, _fit_icon_size(off_tex->get_size())), false,
+				theme_cache.button_unchecked_color);
+		}
+	} break;
 	}
 }
 
-void CheckButton::_bind_methods() {
-	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, CheckButton, h_separation);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, CheckButton, check_v_offset);
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_STYLEBOX, CheckButton, normal_style, "normal");
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckButton, checked);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckButton, unchecked);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckButton, checked_disabled);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckButton, unchecked_disabled);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckButton, checked_mirrored);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckButton, unchecked_mirrored);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckButton, checked_disabled_mirrored);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckButton, unchecked_disabled_mirrored);
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CheckButton, button_checked_color);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CheckButton, button_unchecked_color);
-}
-
-CheckButton::CheckButton(const String &p_text) :
-		Button(p_text) {
+CheckButton::CheckButton(const String& p_text) : Button(p_text)
+{
 	set_toggle_mode(true);
 
 	set_text_alignment(HORIZONTAL_ALIGNMENT_LEFT);
 
 	if (is_layout_rtl()) {
 		_set_internal_margin(SIDE_LEFT, get_icon_size().width);
-	} else {
+	}
+	else {
 		_set_internal_margin(SIDE_RIGHT, get_icon_size().width);
 	}
 }
 
-CheckButton::~CheckButton() {
-}
+CheckButton::~CheckButton() {}
+
+

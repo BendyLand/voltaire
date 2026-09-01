@@ -67,12 +67,6 @@ private:
 	bool monitorable = false;
 	bool locked = false;
 
-	void _body_inout(
-		int p_status, const RID& p_body, ObjectID p_instance, int p_body_shape, int p_area_shape);
-
-	void _body_enter_tree(ObjectID p_id);
-	void _body_exit_tree(ObjectID p_id);
-
 	struct ShapePair
 	{
 		int body_shape = 0;
@@ -104,14 +98,6 @@ private:
 		bool in_tree = false;
 		VSet<ShapePair> shapes;
 	};
-
-	HashMap<ObjectID, BodyState> body_map;
-
-	void _area_inout(
-		int p_status, const RID& p_area, ObjectID p_instance, int p_area_shape, int p_self_shape);
-
-	void _area_enter_tree(ObjectID p_id);
-	void _area_exit_tree(ObjectID p_id);
 
 	struct AreaShapePair
 	{
@@ -145,7 +131,6 @@ private:
 		VSet<AreaShapePair> shapes;
 	};
 
-	HashMap<ObjectID, AreaState> area_map;
 	void _clear_monitoring();
 
 	bool audio_bus_override = false;
@@ -161,7 +146,6 @@ private:
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
 
 	virtual void _space_changed(const RID& p_new_space) override;
 
@@ -214,9 +198,6 @@ public:
 	void set_monitorable(bool p_enable);
 	bool is_monitorable() const;
 
-	Array get_overlapping_bodies() const;
-	Array get_overlapping_areas() const; // function for script
-
 	bool has_overlapping_bodies() const;
 	bool has_overlapping_areas() const;
 
@@ -244,7 +225,5 @@ public:
 	Area3D();
 	~Area3D();
 };
-
-VARIANT_ENUM_CAST(Area3D::SpaceOverride);
 
 

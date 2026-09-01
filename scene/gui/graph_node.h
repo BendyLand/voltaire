@@ -34,51 +34,51 @@
 
 class HBoxContainer;
 
-class GraphNode : public GraphElement {
-	VLTRCLASS(GraphNode, GraphElement);
-
+class GraphNode : public GraphElement
+{
 	friend class GraphEdit;
 
-	struct Slot {
+	struct Slot
+	{
 		bool enable_left = false;
 		int type_left = 0;
 		Color color_left = Color(1, 1, 1, 1);
 		Ref<Texture2D> custom_port_icon_left;
-		Variant metadata_left;
 
 		bool enable_right = false;
 		int type_right = 0;
 		Color color_right = Color(1, 1, 1, 1);
 		Ref<Texture2D> custom_port_icon_right;
-		Variant metadata_right;
 
 		bool draw_stylebox = true;
 	};
 
-	struct PortCache {
+	struct PortCache
+	{
 		Vector2 pos;
 		int slot_index;
 		int type = 0;
 		Color color;
 	};
 
-	struct _MinSizeCache {
+	struct _MinSizeCache
+	{
 		int min_size = 0;
 		int max_size = -1;
 		bool will_stretch = false;
 		int final_size = 0;
 	};
 
-	enum CustomAccessibilityAction {
+	enum CustomAccessibilityAction
+	{
 		ACTION_CONNECT_INPUT,
 		ACTION_CONNECT_OUTPUT,
 		ACTION_FOLLOW_INPUT,
 		ACTION_FOLLOW_OUTPUT,
 	};
-	void _accessibility_action_slot(const Variant &p_data);
 
-	HBoxContainer *titlebar_hbox = nullptr;
-	Label *title_label = nullptr;
+	HBoxContainer* titlebar_hbox = nullptr;
+	Label* title_label = nullptr;
 
 	String title;
 
@@ -92,7 +92,8 @@ class GraphNode : public GraphElement {
 	int slot_count = 0;
 	int selected_slot = -1;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> panel;
 		Ref<StyleBox> panel_selected;
 		Ref<StyleBox> panel_focus;
@@ -123,24 +124,22 @@ protected:
 
 	virtual void _resort() override;
 
-	virtual void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color &p_color);
-
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
+	virtual void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color& p_color);
 
 	virtual String _get_accessibility_name() const override;
 
 public:
-	virtual String get_accessibility_container_name(const Node *p_node) const override;
-	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
+	virtual String get_accessibility_container_name(const Node* p_node) const override;
 
-	void set_title(const String &p_title);
+	void set_title(const String& p_title);
 	String get_title() const;
 
-	HBoxContainer *get_titlebar_hbox();
+	HBoxContainer* get_titlebar_hbox();
 
-	void set_slot(int p_slot_index, bool p_enable_left, int p_type_left, const Color &p_color_left, bool p_enable_right, int p_type_right, const Color &p_color_right, const Ref<Texture2D> &p_custom_left = Ref<Texture2D>(), const Ref<Texture2D> &p_custom_right = Ref<Texture2D>(), bool p_draw_stylebox = true);
+	void set_slot(int p_slot_index, bool p_enable_left, int p_type_left, const Color& p_color_left,
+		bool p_enable_right, int p_type_right, const Color& p_color_right,
+		const Ref<Texture2D>& p_custom_left = Ref<Texture2D>(),
+		const Ref<Texture2D>& p_custom_right = Ref<Texture2D>(), bool p_draw_stylebox = true);
 	void clear_slot(int p_slot_index);
 	void clear_all_slots();
 
@@ -150,14 +149,11 @@ public:
 	void set_slot_type_left(int p_slot_index, int p_type);
 	int get_slot_type_left(int p_slot_index) const;
 
-	void set_slot_color_left(int p_slot_index, const Color &p_color);
+	void set_slot_color_left(int p_slot_index, const Color& p_color);
 	Color get_slot_color_left(int p_slot_index) const;
 
-	void set_slot_custom_icon_left(int p_slot_index, const Ref<Texture2D> &p_custom_icon);
+	void set_slot_custom_icon_left(int p_slot_index, const Ref<Texture2D>& p_custom_icon);
 	Ref<Texture2D> get_slot_custom_icon_left(int p_slot_index) const;
-
-	void set_slot_metadata_left(int p_slot_index, const Variant &p_value);
-	Variant get_slot_metadata_left(int p_slot_index) const;
 
 	bool is_slot_enabled_right(int p_slot_index) const;
 	void set_slot_enabled_right(int p_slot_index, bool p_enable);
@@ -165,14 +161,11 @@ public:
 	void set_slot_type_right(int p_slot_index, int p_type);
 	int get_slot_type_right(int p_slot_index) const;
 
-	void set_slot_color_right(int p_slot_index, const Color &p_color);
+	void set_slot_color_right(int p_slot_index, const Color& p_color);
 	Color get_slot_color_right(int p_slot_index) const;
 
-	void set_slot_custom_icon_right(int p_slot_index, const Ref<Texture2D> &p_custom_icon);
+	void set_slot_custom_icon_right(int p_slot_index, const Ref<Texture2D>& p_custom_icon);
 	Ref<Texture2D> get_slot_custom_icon_right(int p_slot_index) const;
-
-	void set_slot_metadata_right(int p_slot_index, const Variant &p_value);
-	Variant get_slot_metadata_right(int p_slot_index) const;
 
 	bool is_slot_draw_stylebox(int p_slot_index) const;
 	void set_slot_draw_stylebox(int p_slot_index, bool p_enable);
@@ -198,10 +191,12 @@ public:
 	virtual Size2 get_minimum_size() const override;
 	virtual Size2 get_desired_size() const override;
 
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos = Point2i()) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
 
 	virtual Vector<int> get_allowed_size_flags_horizontal() const override;
 	virtual Vector<int> get_allowed_size_flags_vertical() const override;
 
 	GraphNode();
 };
+
+

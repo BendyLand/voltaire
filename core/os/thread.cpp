@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/types.h"
 #include "platform_config.h" // IWYU pragma: keep. Can override the implementation.
 
 #ifndef PLATFORM_THREAD_OVERRIDE // See details in thread.h.
@@ -35,21 +36,24 @@
 #include "thread.h"
 
 #ifdef THREADS_ENABLED
-#include "core/object/script_language.h"
 
-SafeNumeric<uint64_t> Thread::id_counter(1); // The first value after .increment() is 2, hence by default the main thread ID should be 1.
+SafeNumeric<uint64_t> Thread::id_counter(
+	1); // The first value after .increment() is 2, hence by default the main thread ID should be 1.
 thread_local Thread::ID Thread::caller_id = Thread::id_counter.increment();
 
 #endif
 
 Thread::PlatformFunctions Thread::platform_functions;
 
-void Thread::_set_platform_functions(const PlatformFunctions &p_functions) {
+void Thread::_set_platform_functions(const PlatformFunctions& p_functions)
+{
 	platform_functions = p_functions;
 }
 
 #ifdef THREADS_ENABLED
-void Thread::callback(ID p_caller_id, const Settings &p_settings, Callback p_callback, void *p_userdata) {
+void Thread::callback(
+	ID p_caller_id, const Settings& p_settings, Callback p_callback, void* p_userdata)
+{
 	Thread::caller_id = p_caller_id;
 	if (platform_functions.set_priority) {
 		platform_functions.set_priority(p_settings.priority);
@@ -57,52 +61,59 @@ void Thread::callback(ID p_caller_id, const Settings &p_settings, Callback p_cal
 	if (platform_functions.init) {
 		platform_functions.init();
 	}
-	ScriptServer::thread_enter(); // Scripts may need to attach a stack.
 	if (platform_functions.wrapper) {
 		platform_functions.wrapper(p_callback, p_userdata);
-	} else {
+	}
+	else {
 		p_callback(p_userdata);
 	}
-	ScriptServer::thread_exit();
 	if (platform_functions.term) {
 		platform_functions.term();
 	}
 }
 
-Thread::ID Thread::start(Thread::Callback p_callback, void *p_user, const Settings &p_settings) {
-	ERR_FAIL_COND_V_MSG(id != UNASSIGNED_ID, UNASSIGNED_ID, "A Thread object has been re-started without wait_to_finish() having been called on it.");
+Thread::ID Thread::start(Thread::Callback p_callback, void* p_user, const Settings& p_settings)
+{
+	ERR_FAIL_COND_V_MSG(id != UNASSIGNED_ID, UNASSIGNED_ID,
+		"A Thread object has been re-started without wait_to_finish() having been called on it.");
 	id = id_counter.increment();
 	thread = THREADING_NAMESPACE::thread(&Thread::callback, id, p_settings, p_callback, p_user);
 	return id;
 }
 
-bool Thread::is_started() const {
-	return id != UNASSIGNED_ID;
-}
+bool Thread::is_started() const { return id != UNASSIGNED_ID; }
 
-void Thread::wait_to_finish() {
-	ERR_FAIL_COND_MSG(id == UNASSIGNED_ID, "Attempt of waiting to finish on a thread that was never started.");
-	ERR_FAIL_COND_MSG(id == get_caller_id(), "Threads can't wait to finish on themselves, another thread must wait.");
+void Thread::wait_to_finish()
+{
+	ERR_FAIL_COND_MSG(
+		id == UNASSIGNED_ID, "Attempt of waiting to finish on a thread that was never started.");
+	ERR_FAIL_COND_MSG(id == get_caller_id(),
+		"Threads can't wait to finish on themselves, another thread must wait.");
 	thread.join();
 	thread = THREADING_NAMESPACE::thread();
 	id = UNASSIGNED_ID;
 }
 
-void Thread::make_main_thread() {
+void Thread::make_main_thread()
+{
 	if (caller_id == MAIN_ID) {
 		return; // We're already the main thread
 	}
-	CRASH_COND_MSG(!is_main_thread_assigned.set_if_clear(), "A second thread attempted to become the main thread.");
+	CRASH_COND_MSG(!is_main_thread_assigned.set_if_clear(),
+		"A second thread attempted to become the main thread.");
 	caller_id = MAIN_ID;
 }
 
-void Thread::release_main_thread() {
-	CRASH_COND_MSG(caller_id != MAIN_ID, "Trying to release main thread from a thread that isn't main.");
+void Thread::release_main_thread()
+{
+	CRASH_COND_MSG(
+		caller_id != MAIN_ID, "Trying to release main thread from a thread that isn't main.");
 	CRASH_COND(!is_main_thread_assigned.clear_if_set());
 	caller_id = id_counter.increment();
 }
 
-Error Thread::set_name(const String &p_name) {
+Error Thread::set_name(const String& p_name)
+{
 	if (platform_functions.set_name) {
 		return platform_functions.set_name(p_name);
 	}
@@ -110,12 +121,13 @@ Error Thread::set_name(const String &p_name) {
 	return ERR_UNAVAILABLE;
 }
 
-Thread::~Thread() {
+Thread::~Thread()
+{
 	if (id != UNASSIGNED_ID) {
 #ifdef DEBUG_ENABLED
 		WARN_PRINT(
-				"A Thread object is being destroyed without its completion having been realized.\n"
-				"Please call wait_to_finish() on it to ensure correct cleanup.");
+			"A Thread object is being destroyed without its completion having been realized.\n"
+			"Please call wait_to_finish() on it to ensure correct cleanup.");
 #endif
 		thread.detach();
 	}
@@ -124,3 +136,5 @@ Thread::~Thread() {
 #endif // THREADS_ENABLED
 
 #endif // PLATFORM_THREAD_OVERRIDE
+
+

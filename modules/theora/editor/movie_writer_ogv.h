@@ -30,16 +30,14 @@
 
 #pragma once
 
-#include "servers/audio/audio_server.h"
-#include "servers/movie_writer/movie_writer.h"
-
 #include <theora/theoraenc.h>
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
+#include "servers/audio/audio_server.h"
+#include "servers/movie_writer/movie_writer.h"
 
-class MovieWriterOGV : public MovieWriter {
-	VLTRCLASS(MovieWriterOGV, MovieWriter)
-
+class MovieWriterOGV : public MovieWriter
+{
 	uint32_t mix_rate = 48000;
 	AudioServer::SpeakerMode speaker_mode = AudioServer::SPEAKER_MODE_STEREO;
 	String base_path;
@@ -50,22 +48,25 @@ class MovieWriterOGV : public MovieWriter {
 
 	Ref<FileAccess> f;
 
-	// Vorbis quality -0.1 to 1 (-0.1 yields smallest files but lowest fidelity; 1 yields highest fidelity but large files. '0.2' is a reasonable default).
+	// Vorbis quality -0.1 to 1 (-0.1 yields smallest files but lowest fidelity; 1 yields highest
+	// fidelity but large files. '0.2' is a reasonable default).
 	float audio_quality = 0.5;
 
 	// Bitrate target for Theora video.
 	int video_bitrate = 0;
 
-	// Theora quality selector from 0 to 1.0 (0 yields smallest files but lowest video quality. 1.0 yields highest fidelity but large files).
+	// Theora quality selector from 0 to 1.0 (0 yields smallest files but lowest video quality. 1.0
+	// yields highest fidelity but large files).
 	float video_quality = 0.75;
 
 	// Video stream keyframe frequency (one every N frames).
 	ogg_uint32_t keyframe_frequency = 64;
 
-	// Sets the encoder speed level. Higher speed levels favor quicker encoding over better quality per bit. Depending on the encoding
-	// mode, and the internal algorithms used, quality may actually improve with higher speeds, but in this case bitrate will also
-	// likely increase. The maximum value, and the meaning of each value, are implementation-specific and may change depending on the
-	// current encoding mode.
+	// Sets the encoder speed level. Higher speed levels favor quicker encoding over better quality
+	// per bit. Depending on the encoding mode, and the internal algorithms used, quality may
+	// actually improve with higher speeds, but in this case bitrate will also likely increase. The
+	// maximum value, and the meaning of each value, are implementation-specific and may change
+	// depending on the current encoding mode.
 	int speed = 4;
 
 	// Take physical pages, weld into a logical stream of packets.
@@ -75,7 +76,7 @@ class MovieWriterOGV : public MovieWriter {
 	ogg_stream_state vo;
 
 	// Theora encoding context.
-	th_enc_ctx *td;
+	th_enc_ctx* td;
 
 	// Theora bitstream information.
 	th_info ti;
@@ -105,17 +106,18 @@ class MovieWriterOGV : public MovieWriter {
 	ogg_page video_page;
 	ogg_page backup_page;
 	unsigned int backup_page_size = 0;
-	unsigned char *backup_page_data = nullptr;
+	unsigned char* backup_page_data = nullptr;
 
 	void write_to_file(bool p_finish = false);
-	void push_audio(const int32_t *p_audio_data);
-	void push_video(const Ref<Image> &p_image);
+	void push_audio(const int32_t* p_audio_data);
+	void push_video(const Ref<Image>& p_image);
 	void pull_audio(bool p_last = false);
 	void pull_video(bool p_last = false);
 	void save_page(ogg_page page);
-	void restore_page(ogg_page *page);
+	void restore_page(ogg_page* page);
 
-	inline int ilog(unsigned _v) {
+	inline int ilog(unsigned _v)
+	{
 		int ret;
 		for (ret = 0; _v; ret++) {
 			_v >>= 1;
@@ -126,14 +128,17 @@ class MovieWriterOGV : public MovieWriter {
 protected:
 	virtual uint32_t get_audio_mix_rate() const override;
 	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const override;
-	virtual void get_supported_extensions(List<String> *r_extensions) const override;
+	virtual void get_supported_extensions(List<String>* r_extensions) const override;
 
-	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) override;
-	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) override;
+	virtual Error write_begin(
+		const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path) override;
+	virtual Error write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data) override;
 	virtual void write_end() override;
 
-	virtual bool handles_file(const String &p_path) const override;
+	virtual bool handles_file(const String& p_path) const override;
 
 public:
 	MovieWriterOGV();
 };
+
+

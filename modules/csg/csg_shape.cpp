@@ -30,8 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/math/geometry_2d.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "csg_shape.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
@@ -54,94 +52,11 @@
 #include <manifold/manifold.h>
 
 #ifndef NAVIGATION_3D_DISABLED
-Callable CSGShape3D::_navmesh_source_geometry_parsing_callback;
 RID CSGShape3D::_navmesh_source_geometry_parser;
 
-void CSGShape3D::navmesh_parse_init()
-{
-	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
-	if (!_navmesh_source_geometry_parser.is_valid()) {
-		_navmesh_source_geometry_parsing_callback =
-			callable_mp_static(&CSGShape3D::navmesh_parse_source_geometry);
-		_navmesh_source_geometry_parser =
-			NavigationServer3D::get_singleton()->source_geometry_parser_create();
-		NavigationServer3D::get_singleton()->source_geometry_parser_set_callback(
-			_navmesh_source_geometry_parser, _navmesh_source_geometry_parsing_callback);
-	}
-}
-
-void CSGShape3D::navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
-	Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node)
-{
-	CSGShape3D* csgshape3d = Object::cast_to<CSGShape3D>(p_node);
-
-	if (csgshape3d == nullptr) {
-		return;
-	}
-
-	NavigationMesh::ParsedGeometryType parsed_geometry_type =
-		p_navigation_mesh->get_parsed_geometry_type();
-
-#ifndef PHYSICS_3D_DISABLED
-	bool nav_collision =
-		(parsed_geometry_type == NavigationMesh::PARSED_GEOMETRY_STATIC_COLLIDERS &&
-			csgshape3d->is_using_collision() &&
-			(csgshape3d->get_collision_layer() & p_navigation_mesh->get_collision_mask()));
-#else
-	bool nav_collision = false;
-#endif // PHYSICS_3D_DISABLED
-	if (parsed_geometry_type == NavigationMesh::PARSED_GEOMETRY_MESH_INSTANCES || nav_collision ||
-		parsed_geometry_type == NavigationMesh::PARSED_GEOMETRY_BOTH) {
-		Array meshes = csgshape3d->get_meshes();
-		if (!meshes.is_empty()) {
-			Ref<Mesh> mesh = meshes[1];
-			if (mesh.is_valid()) {
-				p_source_geometry_data->add_mesh(mesh, csgshape3d->get_global_transform());
-			}
-		}
-	}
-}
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED
-void CSGShape3D::set_use_collision(bool p_enable)
-{
-	if (use_collision == p_enable) {
-		return;
-	}
-
-	use_collision = p_enable;
-
-	if (!is_inside_tree() || !is_root_shape()) {
-		return;
-	}
-
-	if (use_collision) {
-		root_collision_shape.instantiate();
-		root_collision_body = PhysicsServer3D::get_singleton()->body_create();
-		PhysicsServer3D::get_singleton()->body_set_mode(
-			root_collision_body, PS3DE::BODY_MODE_STATIC);
-		PhysicsServer3D::get_singleton()->body_set_state(
-			root_collision_body, PS3DE::BODY_STATE_TRANSFORM, get_global_transform());
-		PhysicsServer3D::get_singleton()->body_add_shape(
-			root_collision_body, root_collision_shape->get_rid());
-		PhysicsServer3D::get_singleton()->body_set_space(
-			root_collision_body, get_world_3d()->get_space());
-		PhysicsServer3D::get_singleton()->body_attach_object_instance_id(
-			root_collision_body, this->obj->get_instance_id());
-		set_collision_layer(collision_layer);
-		set_collision_mask(collision_mask);
-		set_collision_priority(collision_priority);
-		_make_dirty(); // force update
-	}
-	else {
-		PhysicsServer3D::get_singleton()->free_rid(root_collision_body);
-		root_collision_body = RID();
-		root_collision_shape.unref();
-	}
-	this->obj->notify_property_list_changed();
-	update_gizmos();
-}
 
 bool CSGShape3D::is_using_collision() const { return use_collision; }
 
@@ -239,13 +154,6 @@ void CSGShape3D::set_collision_priority(real_t p_priority)
 real_t CSGShape3D::get_collision_priority() const { return collision_priority; }
 #endif // PHYSICS_3D_DISABLED
 
-void CSGShape3D::set_autosmooth(bool p_smooth)
-{
-	autosmooth = p_smooth;
-	_make_dirty();
-	this->obj->notify_property_list_changed();
-}
-
 bool CSGShape3D::is_autosmooth() const { return autosmooth; }
 
 void CSGShape3D::set_smoothing_angle(const float p_angle)
@@ -271,28 +179,6 @@ void CSGShape3D::set_snap(float p_snap)
 
 float CSGShape3D::get_snap() const { return snap; }
 #endif // DISABLE_DEPRECATED
-
-void CSGShape3D::_make_dirty(bool p_parent_removing)
-{
-#ifndef PHYSICS_3D_DISABLED
-	if ((p_parent_removing || is_root_shape()) && !dirty) {
-		callable_mp(this, &CSGShape3D::update_shape)
-			.call_deferred(); // Must be deferred; otherwise, is_root_shape() will use the previous
-							  // parent.
-	}
-#endif // PHYSICS_3D_DISABLED
-
-	if (!is_root_shape()) {
-		parent_shape->_make_dirty();
-	}
-#ifndef PHYSICS_3D_DISABLED
-	else if (!dirty) {
-		callable_mp(this, &CSGShape3D::update_shape).call_deferred();
-	}
-#endif // PHYSICS_3D_DISABLED
-
-	dirty = true;
-}
 
 enum ManifoldProperty
 {
@@ -517,66 +403,6 @@ struct ManifoldOperation
 	}
 };
 
-CSGBrush* CSGShape3D::_get_brush()
-{
-	if (!dirty) {
-		return brush;
-	}
-	memdelete(brush);
-	brush = nullptr;
-	CSGBrush* n = _build_brush();
-	HashMap<int32_t, Ref<Material>> mesh_materials;
-	manifold::Manifold root_manifold;
-	_pack_manifold(n, root_manifold, mesh_materials, this);
-	manifold::OpType current_op = ManifoldOperation::convert_csg_op(get_operation());
-	std::vector<manifold::Manifold> manifolds;
-	manifolds.push_back(root_manifold);
-	for (int i = 0; i < get_child_count(); i++) {
-		CSGShape3D* child = Object::cast_to<CSGShape3D>(get_child(i));
-		if (!child || !child->is_visible()) {
-			continue;
-		}
-		CSGBrush* child_brush = child->_get_brush();
-		if (!child_brush) {
-			continue;
-		}
-		CSGBrush transformed_brush;
-		transformed_brush.copy_from(*child_brush, child->get_transform());
-		manifold::Manifold child_manifold;
-		_pack_manifold(&transformed_brush, child_manifold, mesh_materials, child);
-		manifold::OpType child_operation =
-			ManifoldOperation::convert_csg_op(child->get_operation());
-		if (child_operation != current_op) {
-			manifold::Manifold result = manifold::Manifold::BatchBoolean(manifolds, current_op);
-			manifolds.clear();
-			manifolds.push_back(result);
-			current_op = child_operation;
-		}
-		manifolds.push_back(child_manifold);
-	}
-	if (!manifolds.empty()) {
-		manifold::Manifold manifold_result =
-			manifold::Manifold::BatchBoolean(manifolds, current_op);
-		memdelete(n);
-		n = memnew(CSGBrush);
-		_unpack_manifold(manifold_result, mesh_materials, n);
-	}
-	AABB aabb;
-	if (n && !n->faces.is_empty()) {
-		aabb.position = n->faces[0].vertices[0];
-		for (const CSGBrush::Face& face : n->faces) {
-			for (int i = 0; i < 3; ++i) {
-				aabb.expand_to(face.vertices[i]);
-			}
-		}
-	}
-	node_aabb = aabb;
-	brush = n;
-	dirty = false;
-	update_configuration_warnings();
-	return brush;
-}
-
 static void _generate_tangents_unindexed(float* p_tangents, size_t p_count,
 	const Vector3* p_positions, const Vector3* p_normals, const Vector2* p_uvs)
 {
@@ -618,74 +444,6 @@ static void _generate_tangents_unindexed(float* p_tangents, size_t p_count,
 		tangent_vertices.ptr()->position, p_count, sizeof(TangentVertex),
 		tangent_vertices.ptr()->normal, sizeof(TangentVertex), tangent_vertices.ptr()->uv,
 		sizeof(TangentVertex), 0);
-}
-
-void CSGShape3D::update_shape()
-{
-	if (!is_root_shape()) {
-		return;
-	}
-
-	set_base(RID());
-	root_mesh.unref(); // byebye root mesh
-
-	CSGBrush* n = _get_brush();
-	ERR_FAIL_NULL_MSG(n, "Cannot get CSGBrush.");
-
-	Vector<int> face_count;
-	face_count.resize(n->materials.size() + 1);
-	face_count.fill(0);
-
-	Vector<ShapeUpdateSurface> surfaces;
-	surfaces.resize(face_count.size());
-
-	if (autosmooth) {
-		_build_surfaces_smoothed(n, surfaces, face_count);
-	}
-	else {
-		_build_surfaces_default(n, surfaces, face_count);
-	}
-
-	root_mesh.instantiate();
-	// create surfaces
-
-	for (int i = 0; i < surfaces.size(); i++) {
-		// calculate tangents for this surface
-		bool have_tangents = calculate_tangents && SurfaceTool::generate_tangents_func;
-		if (have_tangents) {
-			ShapeUpdateSurface& surface = surfaces.write[i];
-
-			_generate_tangents_unindexed(surface.tansw, surface.vertices.size(), surface.verticesw,
-				surface.normalsw, surface.uvsw);
-		}
-
-		if (surfaces[i].last_added == 0) {
-			continue;
-		}
-
-		// and convert to surface array
-		Array array;
-		array.resize(Mesh::ARRAY_MAX);
-
-		array[Mesh::ARRAY_VERTEX] = surfaces[i].vertices;
-		array[Mesh::ARRAY_NORMAL] = surfaces[i].normals;
-		array[Mesh::ARRAY_TEX_UV] = surfaces[i].uvs;
-		if (have_tangents) {
-			array[Mesh::ARRAY_TANGENT] = surfaces[i].tans;
-		}
-
-		int idx = root_mesh->get_surface_count();
-		root_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, array);
-		root_mesh->surface_set_material(idx, surfaces[i].material);
-	}
-
-	set_base(root_mesh->get_rid());
-
-	update_gizmos();
-
-#ifndef PHYSICS_3D_DISABLED
-	_update_collision_faces();
-#endif // PHYSICS_3D_DISABLED
 }
 
 void CSGShape3D::_build_surfaces_smoothed(CSGBrush* p_brush,
@@ -794,112 +552,6 @@ void CSGShape3D::_build_surfaces_smoothed(CSGBrush* p_brush,
 				Vector3 v = p_brush->faces[i].vertices[j];
 
 				Vector3 normal = smooth_vertex[face_pos_i + j];
-
-				if (p_brush->faces[i].invert) {
-					normal = -normal;
-				}
-
-				int k = last + order[j];
-				r_surfaces[idx].verticesw[k] = v;
-				r_surfaces[idx].uvsw[k] = p_brush->faces[i].uvs[j];
-				r_surfaces[idx].normalsw[k] = normal;
-
-				if (calculate_tangents) {
-					// zero out our tangents for now
-					k *= 4;
-					r_surfaces[idx].tansw[k++] = 0.0;
-					r_surfaces[idx].tansw[k++] = 0.0;
-					r_surfaces[idx].tansw[k++] = 0.0;
-					r_surfaces[idx].tansw[k++] = 0.0;
-				}
-			}
-
-			r_surfaces.write[idx].last_added += 3;
-		}
-	}
-}
-
-void CSGShape3D::_build_surfaces_default(CSGBrush* p_brush,
-	Vector<CSGShape3D::ShapeUpdateSurface>& r_surfaces, Vector<int>& r_face_count)
-{
-	AHashMap<Vector3, Vector3> vec_map;
-	vec_map.reserve(p_brush->faces.size() * 3);
-
-	for (int i = 0; i < p_brush->faces.size(); i++) {
-		int mat = p_brush->faces[i].material;
-		ERR_CONTINUE(mat < -1 || mat >= r_face_count.size());
-		int idx = mat == -1 ? r_face_count.size() - 1 : mat;
-
-		if (p_brush->faces[i].smooth) {
-			Plane p(p_brush->faces[i].vertices[0], p_brush->faces[i].vertices[1],
-				p_brush->faces[i].vertices[2]);
-
-			for (int j = 0; j < 3; j++) {
-				Vector3 v = p_brush->faces[i].vertices[j];
-				Vector3* vec = vec_map.getptr(v);
-				if (vec) {
-					*vec += p.normal;
-				}
-				else {
-					vec_map.insert(v, p.normal);
-				}
-			}
-		}
-
-		r_face_count.write[idx]++;
-	}
-
-	// create arrays
-	for (int i = 0; i < r_surfaces.size(); i++) {
-		r_surfaces.write[i].vertices.resize(r_face_count[i] * 3);
-		r_surfaces.write[i].normals.resize(r_face_count[i] * 3);
-		r_surfaces.write[i].uvs.resize(r_face_count[i] * 3);
-		if (calculate_tangents) {
-			r_surfaces.write[i].tans.resize(r_face_count[i] * 3 * 4);
-		}
-		r_surfaces.write[i].last_added = 0;
-
-		if (i != r_surfaces.size() - 1) {
-			r_surfaces.write[i].material = p_brush->materials[i];
-		}
-
-		r_surfaces.write[i].verticesw = r_surfaces.write[i].vertices.ptrw();
-		r_surfaces.write[i].normalsw = r_surfaces.write[i].normals.ptrw();
-		r_surfaces.write[i].uvsw = r_surfaces.write[i].uvs.ptrw();
-		if (calculate_tangents) {
-			r_surfaces.write[i].tansw = r_surfaces.write[i].tans.ptrw();
-		}
-	}
-
-	// fill arrays
-	{
-		for (int i = 0; i < p_brush->faces.size(); i++) {
-			int order[3] = {0, 1, 2};
-
-			if (p_brush->faces[i].invert) {
-				SWAP(order[1], order[2]);
-			}
-
-			int mat = p_brush->faces[i].material;
-			ERR_CONTINUE(mat < -1 || mat >= r_face_count.size());
-			int idx = mat == -1 ? r_face_count.size() - 1 : mat;
-
-			int last = r_surfaces[idx].last_added;
-
-			Plane p(p_brush->faces[i].vertices[0], p_brush->faces[i].vertices[1],
-				p_brush->faces[i].vertices[2]);
-
-			for (int j = 0; j < 3; j++) {
-				Vector3 v = p_brush->faces[i].vertices[j];
-
-				Vector3 normal = p.normal;
-
-				if (p_brush->faces[i].smooth) {
-					Vector3* ptr = vec_map.getptr(v);
-					if (ptr) {
-						normal = ptr->normalized();
-					}
-				}
 
 				if (p_brush->faces[i].invert) {
 					normal = -normal;
@@ -1054,99 +706,6 @@ Vector<Vector3> CSGShape3D::get_brush_faces()
 	return faces;
 }
 
-void CSGShape3D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_PARENTED: {
-		Node* parentn = get_parent();
-		if (parentn) {
-			parent_shape = Object::cast_to<CSGShape3D>(parentn);
-			if (parent_shape) {
-				set_base(RID());
-				root_mesh.unref();
-			}
-		}
-		if (!brush || parent_shape) {
-			// Update this node if uninitialized, or both this node and its new parent if it gets
-			// added to another CSG shape
-			_make_dirty();
-		}
-		last_visible = is_visible();
-	} break;
-
-	case NOTIFICATION_UNPARENTED: {
-		if (!is_root_shape()) {
-			// Update this node and its previous parent only if it's currently being removed from
-			// another CSG shape
-			_make_dirty(true); // Must be forced since is_root_shape() uses the previous parent
-		}
-		parent_shape = nullptr;
-	} break;
-
-	case NOTIFICATION_CHILD_ORDER_CHANGED: {
-		_make_dirty();
-	} break;
-
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (!is_root_shape() && last_visible != is_visible()) {
-			// Update this node's parent only if its own visibility has changed, not the visibility
-			// of parent nodes
-			parent_shape->_make_dirty();
-		}
-		last_visible = is_visible();
-	} break;
-
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
-		if (!is_root_shape()) {
-			// Update this node's parent only if its own transformation has changed, not the
-			// transformation of parent nodes
-			parent_shape->_make_dirty();
-		}
-	} break;
-
-#ifndef PHYSICS_3D_DISABLED
-	case NOTIFICATION_ENTER_TREE: {
-		if (use_collision && is_root_shape()) {
-			root_collision_shape.instantiate();
-			root_collision_body = PhysicsServer3D::get_singleton()->body_create();
-			PhysicsServer3D::get_singleton()->body_set_mode(
-				root_collision_body, PS3DE::BODY_MODE_STATIC);
-			PhysicsServer3D::get_singleton()->body_set_state(
-				root_collision_body, PS3DE::BODY_STATE_TRANSFORM, get_global_transform());
-			PhysicsServer3D::get_singleton()->body_add_shape(
-				root_collision_body, root_collision_shape->get_rid());
-			PhysicsServer3D::get_singleton()->body_set_space(
-				root_collision_body, get_world_3d()->get_space());
-			PhysicsServer3D::get_singleton()->body_attach_object_instance_id(
-				root_collision_body, this->obj->get_instance_id());
-			set_collision_layer(collision_layer);
-			set_collision_mask(collision_mask);
-			set_collision_priority(collision_priority);
-			debug_shape_old_transform = get_global_transform();
-			_make_dirty();
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		if (use_collision && is_root_shape() && root_collision_body.is_valid()) {
-			PhysicsServer3D::get_singleton()->free_rid(root_collision_body);
-			root_collision_body = RID();
-			root_collision_shape.unref();
-			_clear_debug_collision_shape();
-		}
-	} break;
-
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (use_collision && is_root_shape() && root_collision_body.is_valid()) {
-			PhysicsServer3D::get_singleton()->body_set_state(
-				root_collision_body, PS3DE::BODY_STATE_TRANSFORM, get_global_transform());
-		}
-		_on_transform_changed();
-	} break;
-#endif // PHYSICS_3D_DISABLED
-	}
-}
-
 void CSGShape3D::set_operation(Operation p_operation)
 {
 	operation = p_operation;
@@ -1163,48 +722,6 @@ void CSGShape3D::set_calculate_tangents(bool p_calculate_tangents)
 }
 
 bool CSGShape3D::is_calculating_tangents() const { return calculate_tangents; }
-
-void CSGShape3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-
-	if (p_property.name == "smoothing_angle") {
-		if (!autosmooth || (is_inside_tree() && !is_root_shape())) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-
-	if (p_property.name == "autosmooth") {
-		if (is_inside_tree() && !is_root_shape()) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-
-	bool is_collision_prefixed = p_property.name.begins_with("collision_");
-	if ((is_collision_prefixed || p_property.name.begins_with("use_collision")) &&
-		is_inside_tree() && !is_root_shape()) {
-		// hide collision if not root
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-	else if (is_collision_prefixed && !bool(this->obj->get("use_collision"))) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-Array CSGShape3D::get_meshes() const
-{
-	if (root_mesh.is_valid()) {
-		Array arr;
-		arr.resize(2);
-		arr[0] = Transform3D();
-		arr[1] = root_mesh;
-		return arr;
-	}
-
-	return Array();
-}
 
 PackedStringArray CSGShape3D::get_configuration_warnings() const
 {
@@ -1243,16 +760,12 @@ CSGShape3D::~CSGShape3D()
 	}
 }
 
-//////////////////////////////////
-
 CSGBrush* CSGCombiner3D::_build_brush()
 {
 	return memnew(CSGBrush); // does not build anything
 }
 
 CSGCombiner3D::CSGCombiner3D() {}
-
-/////////////////////
 
 CSGBrush* CSGPrimitive3D::_create_brush_from_arrays(const Vector<Vector3>& p_vertices,
 	const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
@@ -1291,167 +804,6 @@ bool CSGPrimitive3D::get_flip_faces() { return flip_faces; }
 
 CSGPrimitive3D::CSGPrimitive3D() { flip_faces = false; }
 
-/////////////////////
-
-CSGBrush* CSGMesh3D::_build_brush()
-{
-	if (mesh.is_null()) {
-		return memnew(CSGBrush);
-	}
-
-	Vector<Vector3> vertices;
-	Vector<bool> smooth;
-	Vector<Ref<Material>> materials;
-	Vector<Vector2> uvs;
-	Ref<Material> base_material = get_material();
-
-	for (int i = 0; i < mesh->get_surface_count(); i++) {
-		if (mesh->surface_get_primitive_type(i) != Mesh::PRIMITIVE_TRIANGLES) {
-			continue;
-		}
-
-		Array arrays = mesh->surface_get_arrays(i);
-
-		if (arrays.is_empty()) {
-			_make_dirty();
-			ERR_FAIL_COND_V(arrays.is_empty(), memnew(CSGBrush));
-		}
-
-		Vector<Vector3> avertices = arrays[Mesh::ARRAY_VERTEX];
-		if (avertices.is_empty()) {
-			continue;
-		}
-
-		const Vector3* vr = avertices.ptr();
-
-		Vector<Vector3> anormals = arrays[Mesh::ARRAY_NORMAL];
-		const Vector3* nr = nullptr;
-		if (anormals.size()) {
-			nr = anormals.ptr();
-		}
-
-		Vector<Vector2> auvs = arrays[Mesh::ARRAY_TEX_UV];
-		const Vector2* uvr = nullptr;
-		if (auvs.size()) {
-			uvr = auvs.ptr();
-		}
-
-		Ref<Material> mat;
-		if (base_material.is_valid()) {
-			mat = base_material;
-		}
-		else {
-			mat = mesh->surface_get_material(i);
-		}
-
-		Vector<int> aindices = arrays[Mesh::ARRAY_INDEX];
-		if (aindices.size()) {
-			int as = vertices.size();
-			int is = aindices.size();
-
-			vertices.resize(as + is);
-			smooth.resize((as + is) / 3);
-			materials.resize((as + is) / 3);
-			uvs.resize(as + is);
-
-			Vector3* vw = vertices.ptrw();
-			bool* sw = smooth.ptrw();
-			Vector2* uvw = uvs.ptrw();
-			Ref<Material>* mw = materials.ptrw();
-
-			const int* ir = aindices.ptr();
-
-			for (int j = 0; j < is; j += 3) {
-				Vector3 vertex[3];
-				Vector3 normal[3];
-				Vector2 uv[3];
-
-				for (int k = 0; k < 3; k++) {
-					int idx = ir[j + k];
-					vertex[k] = vr[idx];
-					if (nr) {
-						normal[k] = nr[idx];
-					}
-					if (uvr) {
-						uv[k] = uvr[idx];
-					}
-				}
-
-				bool flat =
-					normal[0].is_equal_approx(normal[1]) && normal[0].is_equal_approx(normal[2]);
-
-				vw[as + j + 0] = vertex[0];
-				vw[as + j + 1] = vertex[1];
-				vw[as + j + 2] = vertex[2];
-
-				uvw[as + j + 0] = uv[0];
-				uvw[as + j + 1] = uv[1];
-				uvw[as + j + 2] = uv[2];
-
-				sw[(as + j) / 3] = !flat;
-				mw[(as + j) / 3] = mat;
-			}
-		}
-		else {
-			int as = vertices.size();
-			int is = avertices.size();
-
-			vertices.resize(as + is);
-			smooth.resize((as + is) / 3);
-			uvs.resize(as + is);
-			materials.resize((as + is) / 3);
-
-			Vector3* vw = vertices.ptrw();
-			bool* sw = smooth.ptrw();
-			Vector2* uvw = uvs.ptrw();
-			Ref<Material>* mw = materials.ptrw();
-
-			for (int j = 0; j < is; j += 3) {
-				Vector3 vertex[3];
-				Vector3 normal[3];
-				Vector2 uv[3];
-
-				for (int k = 0; k < 3; k++) {
-					vertex[k] = vr[j + k];
-					if (nr) {
-						normal[k] = nr[j + k];
-					}
-					if (uvr) {
-						uv[k] = uvr[j + k];
-					}
-				}
-
-				bool flat =
-					normal[0].is_equal_approx(normal[1]) && normal[0].is_equal_approx(normal[2]);
-
-				vw[as + j + 0] = vertex[0];
-				vw[as + j + 1] = vertex[1];
-				vw[as + j + 2] = vertex[2];
-
-				uvw[as + j + 0] = uv[0];
-				uvw[as + j + 1] = uv[1];
-				uvw[as + j + 2] = uv[2];
-
-				sw[(as + j) / 3] = !flat;
-				mw[(as + j) / 3] = mat;
-			}
-		}
-	}
-
-	if (vertices.is_empty()) {
-		return memnew(CSGBrush);
-	}
-
-	return _create_brush_from_arrays(vertices, uvs, smooth, materials);
-}
-
-void CSGMesh3D::_mesh_changed()
-{
-	_make_dirty();
-
-	callable_mp((Node3D*)this, &Node3D::update_gizmos).call_deferred();
-}
-
 void CSGMesh3D::set_material(const Ref<Material>& p_material)
 {
 	if (material == p_material) {
@@ -1463,28 +815,7 @@ void CSGMesh3D::set_material(const Ref<Material>& p_material)
 
 Ref<Material> CSGMesh3D::get_material() const { return material; }
 
-void CSGMesh3D::_bind_methods() {}
-
-void CSGMesh3D::set_mesh(const Ref<Mesh>& p_mesh)
-{
-	if (mesh == p_mesh) {
-		return;
-	}
-	if (mesh.is_valid()) {
-		mesh->disconnect_changed(callable_mp(this, &CSGMesh3D::_mesh_changed));
-	}
-	mesh = p_mesh;
-
-	if (mesh.is_valid()) {
-		mesh->connect_changed(callable_mp(this, &CSGMesh3D::_mesh_changed));
-	}
-
-	_mesh_changed();
-}
-
 Ref<Mesh> CSGMesh3D::get_mesh() { return mesh; }
-
-////////////////////////////////
 
 CSGBrush* CSGSphere3D::_build_brush()
 {
@@ -1673,8 +1004,6 @@ CSGSphere3D::CSGSphere3D()
 	smooth_faces = true;
 }
 
-///////////////
-
 CSGBrush* CSGBox3D::_build_brush()
 {
 	// set our bounding box
@@ -1788,34 +1117,6 @@ void CSGBox3D::set_size(const Vector3& p_size)
 
 Vector3 CSGBox3D::get_size() const { return size; }
 
-#ifndef DISABLE_DEPRECATED
-// Kept for compatibility from 3.x to 4.0.
-bool CSGBox3D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "width") {
-		size.x = p_value;
-		_make_dirty();
-		update_gizmos();
-		return true;
-	}
-	else if (p_name == "height") {
-		size.y = p_value;
-		_make_dirty();
-		update_gizmos();
-		return true;
-	}
-	else if (p_name == "depth") {
-		size.z = p_value;
-		_make_dirty();
-		update_gizmos();
-		return true;
-	}
-	else {
-		return false;
-	}
-}
-#endif
-
 void CSGBox3D::set_material(const Ref<Material>& p_material)
 {
 	material = p_material;
@@ -1824,8 +1125,6 @@ void CSGBox3D::set_material(const Ref<Material>& p_material)
 }
 
 Ref<Material> CSGBox3D::get_material() const { return material; }
-
-///////////////
 
 CSGBrush* CSGCylinder3D::_build_brush()
 {
@@ -2032,8 +1331,6 @@ CSGCylinder3D::CSGCylinder3D()
 	smooth_faces = true;
 }
 
-///////////////
-
 CSGBrush* CSGTorus3D::_build_brush()
 {
 	// set our bounding box
@@ -2229,408 +1526,6 @@ CSGTorus3D::CSGTorus3D()
 	smooth_faces = true;
 }
 
-///////////////
-
-CSGBrush* CSGPolygon3D::_build_brush()
-{
-	CSGBrush* new_brush = memnew(CSGBrush);
-
-	if (polygon.size() < 3) {
-		return new_brush;
-	}
-
-	// Triangulate polygon shape.
-	Vector<Point2> shape_polygon = polygon;
-	if (Triangulate::get_area(shape_polygon) > 0) {
-		shape_polygon.reverse();
-	}
-	int shape_sides = shape_polygon.size();
-	Vector<int> shape_faces = Geometry2D::triangulate_polygon(shape_polygon);
-	ERR_FAIL_COND_V_MSG(shape_faces.size() < 3, new_brush,
-		"Failed to triangulate CSGPolygon. Make sure the polygon doesn't have any intersecting "
-		"edges.");
-
-	// Get polygon enclosing Rect2.
-	Rect2 shape_rect(shape_polygon[0], Vector2());
-	for (int i = 1; i < shape_sides; i++) {
-		shape_rect.expand_to(shape_polygon[i]);
-	}
-
-	// If MODE_PATH, check if curve has changed.
-	Ref<Curve3D> curve;
-	if (mode == MODE_PATH) {
-		Path3D* current_path = Object::cast_to<Path3D>(get_node_or_null(path_node));
-		if (path != current_path) {
-			if (path) {
-				path->disconnect(
-					SceneStringName(tree_exited), callable_mp(this, &CSGPolygon3D::_path_exited));
-				path->disconnect("curve_changed", callable_mp(this, &CSGPolygon3D::_path_changed));
-				path->set_update_callback(Callable());
-			}
-			path = current_path;
-			if (path) {
-				path->connect(
-					SceneStringName(tree_exited), callable_mp(this, &CSGPolygon3D::_path_exited));
-				path->connect("curve_changed", callable_mp(this, &CSGPolygon3D::_path_changed));
-				path->set_update_callback(callable_mp(this, &CSGPolygon3D::_path_changed));
-			}
-		}
-
-		if (!path) {
-			return new_brush;
-		}
-
-		curve = path->get_curve();
-		if (curve.is_null() || curve->get_point_count() < 2) {
-			return new_brush;
-		}
-	}
-
-	// Calculate the number extrusions, ends and faces.
-	int extrusions = 0;
-	int extrusion_face_count = shape_sides * 2;
-	int end_count = 0;
-	int shape_face_count = shape_faces.size() / 3;
-	real_t curve_length = 1.0;
-	switch (mode) {
-	case MODE_DEPTH:
-		extrusions = 1;
-		end_count = 2;
-		break;
-	case MODE_SPIN:
-		extrusions = spin_sides;
-		if (spin_degrees < 360) {
-			end_count = 2;
-		}
-		break;
-	case MODE_PATH: {
-		curve_length = curve->get_baked_length();
-		if (path_interval_type == PATH_INTERVAL_DISTANCE) {
-			extrusions = MAX(1, Math::ceil(curve_length / path_interval)) + 1;
-		}
-		else {
-			extrusions = Math::ceil(1.0 * curve->get_point_count() / path_interval);
-		}
-		if (!path_joined) {
-			end_count = 2;
-			extrusions -= 1;
-		}
-	} break;
-	}
-	int face_count = extrusions * extrusion_face_count + end_count * shape_face_count;
-
-	// Initialize variables used to create the mesh.
-	Ref<Material> base_material = get_material();
-
-	Vector<Vector3> faces;
-	Vector<Vector2> uvs;
-	Vector<bool> smooth;
-	Vector<Ref<Material>> materials;
-	Vector<bool> invert;
-
-	faces.resize(face_count * 3);
-	uvs.resize(face_count * 3);
-	smooth.resize(face_count);
-	materials.resize(face_count);
-	invert.resize(face_count);
-	int faces_removed = 0;
-
-	{
-		Vector3* facesw = faces.ptrw();
-		Vector2* uvsw = uvs.ptrw();
-		bool* smoothw = smooth.ptrw();
-		Ref<Material>* materialsw = materials.ptrw();
-		bool* invertw = invert.ptrw();
-
-		int face = 0;
-		Transform3D base_xform;
-		Transform3D current_xform;
-		Transform3D previous_xform;
-		Transform3D previous_previous_xform;
-		double u_step = 1.0 / extrusions;
-		if (path_u_distance > 0.0) {
-			u_step *= curve_length / path_u_distance;
-		}
-		double v_step = 1.0 / shape_sides;
-		double spin_step = Math::deg_to_rad(spin_degrees / spin_sides);
-		double extrusion_step = 1.0 / extrusions;
-		if (mode == MODE_PATH) {
-			if (path_joined) {
-				extrusion_step = 1.0 / (extrusions - 1);
-			}
-			extrusion_step *= curve_length;
-		}
-
-		if (mode == MODE_PATH) {
-			if (!path_local && path->is_inside_tree()) {
-				base_xform = path->get_global_transform();
-			}
-
-			Vector3 current_point;
-			Vector3 current_up = Vector3(0, 1, 0);
-			Vector3 direction;
-
-			switch (path_rotation) {
-			case PATH_ROTATION_POLYGON:
-				current_point = curve->sample_baked(0);
-				direction = Vector3(0, 0, -1);
-				break;
-			case PATH_ROTATION_PATH:
-			case PATH_ROTATION_PATH_FOLLOW:
-				if (!path_rotation_accurate) {
-					current_point = curve->sample_baked(0);
-					Vector3 next_point = curve->sample_baked(extrusion_step);
-					direction = next_point - current_point;
-
-					if (path_joined) {
-						Vector3 last_point = curve->sample_baked(curve->get_baked_length());
-						direction = next_point - last_point;
-					}
-				}
-				else {
-					Transform3D current_sample_xform = curve->sample_baked_with_rotation(0);
-					current_point = current_sample_xform.get_origin();
-					direction = current_sample_xform.get_basis().xform(Vector3(0, 0, -1));
-				}
-
-				if (path_rotation == PATH_ROTATION_PATH_FOLLOW) {
-					current_up = curve->sample_baked_up_vector(0, true);
-				}
-				break;
-			}
-
-			Transform3D facing = Transform3D().looking_at(direction, current_up);
-			current_xform = base_xform.translated_local(current_point) * facing;
-		}
-
-		// Create the mesh.
-		if (end_count > 0) {
-			// Add front end face.
-			for (int face_idx = 0; face_idx < shape_face_count; face_idx++) {
-				for (int face_vertex_idx = 0; face_vertex_idx < 3; face_vertex_idx++) {
-					// We need to reverse the rotation of the shape face vertices.
-					int index = shape_faces[face_idx * 3 + 2 - face_vertex_idx];
-					Point2 p = shape_polygon[index];
-					Point2 uv = (p - shape_rect.position) / shape_rect.size;
-
-					// Use the left side of the bottom half of the y-inverted texture.
-					uv.x = uv.x / 2;
-					uv.y = 1 - (uv.y / 2);
-
-					facesw[face * 3 + face_vertex_idx] = current_xform.xform(Vector3(p.x, p.y, 0));
-					uvsw[face * 3 + face_vertex_idx] = uv;
-				}
-
-				smoothw[face] = false;
-				materialsw[face] = base_material;
-				invertw[face] = flip_faces;
-				face++;
-			}
-		}
-
-		real_t angle_simplify_dot = Math::cos(Math::deg_to_rad(path_simplify_angle));
-		Vector3 previous_simplify_dir = Vector3(0, 0, 0);
-		int faces_combined = 0;
-
-		// Add extrusion faces.
-		for (int x0 = 0; x0 < extrusions; x0++) {
-			previous_previous_xform = previous_xform;
-			previous_xform = current_xform;
-
-			switch (mode) {
-			case MODE_DEPTH: {
-				current_xform.translate_local(Vector3(0, 0, -depth));
-			} break;
-			case MODE_SPIN: {
-				if (end_count == 0 && x0 == extrusions - 1) {
-					current_xform = base_xform;
-				}
-				else {
-					current_xform.rotate(Vector3(0, 1, 0), spin_step);
-				}
-			} break;
-			case MODE_PATH: {
-				double previous_offset = x0 * extrusion_step;
-				double current_offset = (x0 + 1) * extrusion_step;
-				if (path_joined && x0 == extrusions - 1) {
-					current_offset = 0;
-				}
-
-				Vector3 previous_point = curve->sample_baked(previous_offset);
-				Transform3D current_sample_xform =
-					curve->sample_baked_with_rotation(current_offset);
-				Vector3 current_point = current_sample_xform.get_origin();
-				Vector3 current_up = Vector3(0, 1, 0);
-				Vector3 current_extrusion_dir = (current_point - previous_point).normalized();
-				Vector3 direction;
-
-				// If the angles are similar, remove the previous face and replace it with this one.
-				if (path_simplify_angle > 0.0 && x0 > 0 &&
-					previous_simplify_dir.dot(current_extrusion_dir) > angle_simplify_dot) {
-					faces_combined += 1;
-					previous_xform = previous_previous_xform;
-					face -= extrusion_face_count;
-					faces_removed += extrusion_face_count;
-				}
-				else {
-					faces_combined = 0;
-					previous_simplify_dir = current_extrusion_dir;
-				}
-
-				switch (path_rotation) {
-				case PATH_ROTATION_POLYGON:
-					direction = Vector3(0, 0, -1);
-					break;
-				case PATH_ROTATION_PATH:
-				case PATH_ROTATION_PATH_FOLLOW:
-					if (!path_rotation_accurate) {
-						double next_offset = (x0 + 2) * extrusion_step;
-						if (x0 == extrusions - 1) {
-							next_offset = path_joined ? extrusion_step : current_offset;
-						}
-						Vector3 next_point = curve->sample_baked(next_offset);
-						direction = next_point - previous_point;
-					}
-					else {
-						direction = current_sample_xform.get_basis().xform(Vector3(0, 0, -1));
-					}
-
-					if (path_rotation == PATH_ROTATION_PATH_FOLLOW) {
-						current_up = curve->sample_baked_up_vector(current_offset, true);
-					}
-					break;
-				}
-
-				Transform3D facing = Transform3D().looking_at(direction, current_up);
-				current_xform = base_xform.translated_local(current_point) * facing;
-			} break;
-			}
-
-			double u0 = (x0 - faces_combined) * u_step;
-			double u1 = ((x0 + 1) * u_step);
-			if (mode == MODE_PATH && !path_continuous_u) {
-				u0 = 0.0;
-				u1 = 1.0;
-			}
-
-			for (int y0 = 0; y0 < shape_sides; y0++) {
-				int y1 = (y0 + 1) % shape_sides;
-				// Use the top half of the texture.
-				double v0 = (y0 * v_step) / 2;
-				double v1 = ((y0 + 1) * v_step) / 2;
-
-				Vector3 v[4] = {
-					previous_xform.xform(Vector3(shape_polygon[y0].x, shape_polygon[y0].y, 0)),
-					current_xform.xform(Vector3(shape_polygon[y0].x, shape_polygon[y0].y, 0)),
-					current_xform.xform(Vector3(shape_polygon[y1].x, shape_polygon[y1].y, 0)),
-					previous_xform.xform(Vector3(shape_polygon[y1].x, shape_polygon[y1].y, 0)),
-				};
-
-				Vector2 u[4] = {
-					Vector2(u0, v0),
-					Vector2(u1, v0),
-					Vector2(u1, v1),
-					Vector2(u0, v1),
-				};
-
-				// Face 1
-				facesw[face * 3 + 0] = v[0];
-				facesw[face * 3 + 1] = v[1];
-				facesw[face * 3 + 2] = v[2];
-
-				uvsw[face * 3 + 0] = u[0];
-				uvsw[face * 3 + 1] = u[1];
-				uvsw[face * 3 + 2] = u[2];
-
-				smoothw[face] = smooth_faces;
-				invertw[face] = flip_faces;
-				materialsw[face] = base_material;
-
-				face++;
-
-				// Face 2
-				facesw[face * 3 + 0] = v[2];
-				facesw[face * 3 + 1] = v[3];
-				facesw[face * 3 + 2] = v[0];
-
-				uvsw[face * 3 + 0] = u[2];
-				uvsw[face * 3 + 1] = u[3];
-				uvsw[face * 3 + 2] = u[0];
-
-				smoothw[face] = smooth_faces;
-				invertw[face] = flip_faces;
-				materialsw[face] = base_material;
-
-				face++;
-			}
-		}
-
-		if (end_count > 1) {
-			// Add back end face.
-			for (int face_idx = 0; face_idx < shape_face_count; face_idx++) {
-				for (int face_vertex_idx = 0; face_vertex_idx < 3; face_vertex_idx++) {
-					int index = shape_faces[face_idx * 3 + face_vertex_idx];
-					Point2 p = shape_polygon[index];
-					Point2 uv = (p - shape_rect.position) / shape_rect.size;
-
-					// Use the x-inverted ride side of the bottom half of the y-inverted texture.
-					uv.x = 1 - uv.x / 2;
-					uv.y = 1 - (uv.y / 2);
-
-					facesw[face * 3 + face_vertex_idx] = current_xform.xform(Vector3(p.x, p.y, 0));
-					uvsw[face * 3 + face_vertex_idx] = uv;
-				}
-
-				smoothw[face] = false;
-				materialsw[face] = base_material;
-				invertw[face] = flip_faces;
-				face++;
-			}
-		}
-
-		face_count -= faces_removed;
-		ERR_FAIL_COND_V_MSG(
-			face != face_count, new_brush, "Bug: Failed to create the CSGPolygon mesh correctly.");
-	}
-
-	if (faces_removed > 0) {
-		faces.resize(face_count * 3);
-		uvs.resize(face_count * 3);
-		smooth.resize(face_count);
-		materials.resize(face_count);
-		invert.resize(face_count);
-	}
-
-	new_brush->build_from_faces(faces, uvs, smooth, materials, invert);
-
-	return new_brush;
-}
-
-void CSGPolygon3D::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_EXIT_TREE) {
-		if (path) {
-			path->disconnect(
-				SceneStringName(tree_exited), callable_mp(this, &CSGPolygon3D::_path_exited));
-			path->disconnect("curve_changed", callable_mp(this, &CSGPolygon3D::_path_changed));
-			path = nullptr;
-		}
-	}
-}
-
-void CSGPolygon3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name.begins_with("spin") && mode != MODE_SPIN) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	if (p_property.name.begins_with("path") && mode != MODE_PATH) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	if (p_property.name == "depth" && mode != MODE_DEPTH) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
 void CSGPolygon3D::_path_changed()
 {
 	_make_dirty();
@@ -2655,7 +1550,6 @@ void CSGPolygon3D::set_mode(Mode p_mode)
 	mode = p_mode;
 	_make_dirty();
 	update_gizmos();
-	this->obj->notify_property_list_changed();
 }
 
 CSGPolygon3D::Mode CSGPolygon3D::get_mode() const { return mode; }
@@ -2682,8 +1576,7 @@ void CSGPolygon3D::set_path_u_distance(real_t p_path_u_distance)
 {
 	path_u_distance = p_path_u_distance;
 	_make_dirty();
-	update_gizmos()
-;
+	update_gizmos();
 }
 
 real_t CSGPolygon3D::get_path_u_distance() const { return path_u_distance; }

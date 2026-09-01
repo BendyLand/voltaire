@@ -38,8 +38,6 @@
 // Performs the actual search.
 class FindInFilesSearch : public Node
 {
-	VLTRCLASS(FindInFilesSearch, Node);
-
 	// Config.
 	String pattern;
 	HashSet<String> extension_filter;
@@ -100,8 +98,6 @@ class HBoxContainer;
 // Prompts search parameters.
 class FindInFilesDialog : public AcceptDialog
 {
-	VLTRCLASS(FindInFilesDialog, AcceptDialog);
-
 	void _on_folder_button_pressed();
 	void _on_folder_selected(String p_path);
 	void _on_search_text_modified(const String& p_text);
@@ -161,8 +157,6 @@ class ProgressBar;
 // Display search results.
 class FindInFilesPanel : public MarginContainer
 {
-	VLTRCLASS(FindInFilesPanel, MarginContainer);
-
 	enum FindButtons
 	{
 		FIND_BUTTON_REPLACE,
@@ -217,8 +211,6 @@ class FindInFilesPanel : public MarginContainer
 	void _update_matches_text();
 	String _get_replace_text();
 
-	void _draw_result_text(Object* p_item_obj, const Rect2& p_rect);
-
 	void _clear();
 
 protected:
@@ -250,8 +242,6 @@ class TabContainer;
 // results can remain at the same time.
 class FindInFilesContainer : public EditorDock
 {
-	VLTRCLASS(FindInFilesContainer, EditorDock);
-
 	enum PanelMenuOptions
 	{
 		PANEL_CLOSE,
@@ -292,7 +282,6 @@ public:
 
 class FindInFiles
 {
-
 	FindInFilesDialog* dialog = nullptr;
 	FindInFilesContainer* container = nullptr;
 
@@ -304,7 +293,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	void open_dialog(const String& p_initial_text, bool p_replace = false);
 
 	FindInFiles();

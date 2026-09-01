@@ -35,11 +35,11 @@
 #include "scene/resources/bit_map.h"
 #include "scene/resources/texture.h"
 
-class TouchScreenButton : public Node2D {
-	VLTRCLASS(TouchScreenButton, Node2D);
-
+class TouchScreenButton : public Node2D
+{
 public:
-	enum VisibilityMode {
+	enum VisibilityMode
+	{
 		VISIBILITY_ALWAYS,
 		VISIBILITY_TOUCHSCREEN_ONLY
 	};
@@ -60,9 +60,9 @@ private:
 
 	VisibilityMode visibility = VISIBILITY_ALWAYS;
 
-	virtual void input(const Ref<InputEvent> &p_event) override;
+	virtual void input(const Ref<InputEvent>& p_event) override;
 
-	bool _is_point_inside(const Point2 &p_point);
+	bool _is_point_inside(const Point2& p_point);
 
 	void _press(int p_finger_pressed);
 	void _release(bool p_exiting_tree = false);
@@ -70,11 +70,6 @@ private:
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-#endif // DISABLE_DEPRECATED
-
-	void _accessibility_action_click(const Variant &p_data);
 
 public:
 #ifdef DEBUG_ENABLED
@@ -82,16 +77,16 @@ public:
 	virtual bool _edit_use_rect() const override;
 #endif // DEBUG_ENABLED
 
-	void set_texture_normal(const Ref<Texture2D> &p_texture);
+	void set_texture_normal(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture_normal() const;
 
-	void set_texture_pressed(const Ref<Texture2D> &p_texture_pressed);
+	void set_texture_pressed(const Ref<Texture2D>& p_texture_pressed);
 	Ref<Texture2D> get_texture_pressed() const;
 
-	void set_bitmask(const Ref<BitMap> &p_bitmask);
+	void set_bitmask(const Ref<BitMap>& p_bitmask);
 	Ref<BitMap> get_bitmask() const;
 
-	void set_shape(const Ref<Shape2D> &p_shape);
+	void set_shape(const Ref<Shape2D>& p_shape);
 	Ref<Shape2D> get_shape() const;
 
 	void set_shape_centered(bool p_shape_centered);
@@ -100,7 +95,7 @@ public:
 	void set_shape_visible(bool p_shape_visible);
 	bool is_shape_visible() const;
 
-	void set_action(const String &p_action);
+	void set_action(const String& p_action);
 	String get_action() const;
 
 	void set_passby_press(bool p_enable);
@@ -116,4 +111,4 @@ public:
 	TouchScreenButton();
 };
 
-VARIANT_ENUM_CAST(TouchScreenButton::VisibilityMode);
+

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "cylinder_shape_3d.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "servers/physics_3d/physics_server_3d.h"
@@ -62,37 +61,9 @@ Vector<Vector3> CylinderShape3D::get_debug_mesh_lines() const
 	return points;
 }
 
-Ref<ArrayMesh> CylinderShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
-{
-	Array cylinder_array;
-	cylinder_array.resize(RSE::ARRAY_MAX);
-	CylinderMesh::create_mesh_array(cylinder_array, radius, radius, height, 32);
-
-	Vector<Color> colors;
-	const PackedVector3Array& verts = cylinder_array[RSE::ARRAY_VERTEX];
-	const int32_t verts_size = verts.size();
-	for (int i = 0; i < verts_size; i++) {
-		colors.append(p_modulate);
-	}
-
-	Ref<ArrayMesh> cylinder_mesh = memnew(ArrayMesh);
-	cylinder_array[RSE::ARRAY_COLOR] = colors;
-	cylinder_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, cylinder_array);
-	return cylinder_mesh;
-}
-
 real_t CylinderShape3D::get_enclosing_radius() const
 {
 	return Vector2(radius, height * 0.5).length();
-}
-
-void CylinderShape3D::_update_shape()
-{
-	Dictionary d;
-	d["radius"] = radius;
-	d["height"] = height;
-	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), d);
-	Shape3D::_update_shape();
 }
 
 void CylinderShape3D::set_radius(float p_radius)
@@ -114,8 +85,6 @@ void CylinderShape3D::set_height(float p_height)
 }
 
 float CylinderShape3D::get_height() const { return height; }
-
-void CylinderShape3D::_bind_methods() {}
 
 CylinderShape3D::CylinderShape3D()
 	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CYLINDER))

@@ -30,29 +30,32 @@
 
 #pragma once
 
+#include <openxr/openxr.h>
 #include "openxr_composition_layer.h"
 
-#include <openxr/openxr.h>
-
-class OpenXRCompositionLayerQuad : public OpenXRCompositionLayer {
-	VLTRCLASS(OpenXRCompositionLayerQuad, OpenXRCompositionLayer);
-
+class OpenXRCompositionLayerQuad : public OpenXRCompositionLayer
+{
 	Size2 quad_size = Size2(1.0, 1.0);
 
 protected:
 	static void _bind_methods();
 
 	virtual Ref<Mesh> _create_fallback_mesh() override;
-	virtual XrStructureType _get_openxr_type() const override {
+
+	virtual XrStructureType _get_openxr_type() const override
+	{
 		return XR_TYPE_COMPOSITION_LAYER_QUAD;
 	}
 
 public:
-	void set_quad_size(const Size2 &p_size);
+	void set_quad_size(const Size2& p_size);
 	Size2 get_quad_size() const;
 
-	virtual Vector2 intersects_ray(const Vector3 &p_origin, const Vector3 &p_direction) const override;
+	virtual Vector2 intersects_ray(
+		const Vector3& p_origin, const Vector3& p_direction) const override;
 
 	OpenXRCompositionLayerQuad();
 	~OpenXRCompositionLayerQuad();
 };
+
+

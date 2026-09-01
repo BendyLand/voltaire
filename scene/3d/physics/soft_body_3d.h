@@ -117,24 +117,7 @@ private:
 	void _become_mesh_owner();
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
-	bool _set_property_pinned_points_indices(const Array& p_indices);
-	bool _set_property_pinned_points_attachment(
-		int p_item, const String& p_what, const Variant& p_value);
-	bool _get_property_pinned_points(int p_item, const String& p_what, Variant& r_ret) const;
-
 	void _notification(int p_what);
-	static void _bind_methods();
-
-#ifndef DISABLE_DEPRECATED
-	void _pin_point_bind_compat_94684(
-		int p_point_index, bool pin, const NodePath& p_spatial_attachment_path = NodePath());
-	static void _bind_compatibility_methods();
-#endif
-
 	PackedStringArray get_configuration_warnings() const override;
 
 public:
@@ -183,7 +166,6 @@ public:
 	void set_drag_coefficient(real_t p_drag_coefficient);
 	real_t get_drag_coefficient();
 
-	Array get_collision_exceptions();
 	void add_collision_exception_with(Node* rp_node);
 	void remove_collision_exception_with(Node* rp_node);
 
@@ -219,7 +201,5 @@ private:
 	int _get_pinned_point(int p_point_index, PinnedPoint*& r_point) const;
 	int _has_pinned_point(int p_point_index) const;
 };
-
-VARIANT_ENUM_CAST(SoftBody3D::DisableMode);
 
 

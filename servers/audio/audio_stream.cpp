@@ -30,7 +30,6 @@
 
 #include "audio_stream.h"
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 
 PackedVector2Array AudioStreamPlayback::_mix_audio_bind(float p_rate_scale, int p_frames)
 {
@@ -66,8 +65,6 @@ void AudioStreamPlayback::seek_playback(double p_time) { seek(p_time); }
 
 Ref<AudioSamplePlayback> AudioStreamPlayback::get_sample_playback() const { return nullptr; }
 
-void AudioStreamPlayback::_bind_methods() {}
-
 AudioStreamPlayback::AudioStreamPlayback() {}
 
 AudioStreamPlayback::~AudioStreamPlayback()
@@ -76,8 +73,6 @@ AudioStreamPlayback::~AudioStreamPlayback()
 		AudioServer::get_singleton()->stop_sample_playback(get_sample_playback());
 	}
 }
-
-//////////////////////////////
 
 void AudioStreamPlaybackResampled::begin_resample()
 {
@@ -90,8 +85,6 @@ void AudioStreamPlaybackResampled::begin_resample()
 	_mix_internal(internal_buffer + 4, INTERNAL_BUFFER_LEN);
 	mix_offset = 0;
 }
-
-void AudioStreamPlaybackResampled::_bind_methods() {}
 
 int AudioStreamPlaybackResampled::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames)
 {
@@ -155,8 +148,6 @@ int AudioStreamPlaybackResampled::mix(AudioFrame* p_buffer, float p_rate_scale, 
 	return mixed_frames_total;
 }
 
-////////////////////////////////
-
 void AudioStream::tag_used(float p_offset)
 {
 	if (tagged_frame != AudioServer::get_singleton()->get_mixed_frames()) {
@@ -178,30 +169,6 @@ float AudioStream::get_tagged_frame_offset(int p_index) const
 	return tagged_offsets[p_index];
 }
 
-void AudioStream::get_parameter_list(List<Parameter>* r_parameters)
-{
-	TypedArray<Dictionary> ret;
-	for (int i = 0; i < ret.size(); i++) {
-		Dictionary d = ret[i];
-		ERR_CONTINUE(!d.has("default_value"));
-		r_parameters->push_back(Parameter(PropertyInfo::from_dict(d), d["default_value"]));
-	}
-}
-
-Ref<AudioSample> AudioStream::generate_sample() const
-{
-	ERR_FAIL_COND_V_MSG(!can_be_sampled(), nullptr,
-		"Cannot generate a sample for a stream that cannot be sampled.");
-	Ref<AudioSample> sample;
-	sample.instantiate();
-	sample->stream = this;
-	return sample;
-}
-
-void AudioStream::_bind_methods() {}
-
-////////////////////////////////
-
 Ref<AudioStreamPlayback> AudioStreamMicrophone::instantiate_playback()
 {
 	Ref<AudioStreamPlaybackMicrophone> playback;
@@ -218,59 +185,6 @@ Ref<AudioStreamPlayback> AudioStreamMicrophone::instantiate_playback()
 double AudioStreamMicrophone::get_length() const { return 0; }
 
 bool AudioStreamMicrophone::is_monophonic() const { return true; }
-
-int AudioStreamPlaybackMicrophone::_mix_internal(AudioFrame* p_buffer, int p_frames)
-{
-	AudioDriver::get_singleton()->lock();
-
-	Vector<int32_t> buf = AudioDriver::get_singleton()->get_input_buffer();
-	unsigned int input_size = AudioDriver::get_singleton()->get_input_size();
-	int mix_rate = AudioDriver::get_singleton()->get_input_mix_rate();
-	unsigned int playback_delay = MIN(((50 * mix_rate) / 1000) * 2, buf.size() >> 1);
-#ifdef DEBUG_ENABLED
-	unsigned int input_position = AudioDriver::get_singleton()->get_input_position();
-#endif
-
-	int mixed_frames = p_frames;
-
-	if (playback_delay > input_size) {
-		for (int i = 0; i < p_frames; i++) {
-			p_buffer[i] = AudioFrame(0.0f, 0.0f);
-		}
-		input_ofs = 0;
-	}
-	else {
-		for (int i = 0; i < p_frames; i++) {
-			if (input_size > input_ofs && (int)input_ofs < buf.size()) {
-				float l = (buf[input_ofs++] >> 16) / 32768.f;
-				if ((int)input_ofs >= buf.size()) {
-					input_ofs = 0;
-				}
-				float r = (buf[input_ofs++] >> 16) / 32768.f;
-				if ((int)input_ofs >= buf.size()) {
-					input_ofs = 0;
-				}
-
-				p_buffer[i] = AudioFrame(l, r);
-			}
-			else {
-				p_buffer[i] = AudioFrame(0.0f, 0.0f);
-			}
-		}
-	}
-
-#ifdef DEBUG_ENABLED
-	if (input_ofs > input_position && (int)(input_ofs - input_position) < (p_frames * 2)) {
-		print_verbose(String(this->obj->get_class_name()) +
-					  " buffer underrun: input_position=" + itos(input_position) +
-					  " input_ofs=" + itos(input_ofs) + " input_size=" + itos(input_size));
-	}
-#endif
-
-	AudioDriver::get_singleton()->unlock();
-
-	return mixed_frames;
-}
 
 int AudioStreamPlaybackMicrophone::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames)
 {
@@ -325,65 +239,10 @@ AudioStreamPlaybackMicrophone::~AudioStreamPlaybackMicrophone()
 
 AudioStreamPlaybackMicrophone::AudioStreamPlaybackMicrophone() {}
 
-////////////////////////////////
-
-void AudioStreamRandomizer::add_stream(int p_index, Ref<AudioStream> p_stream, float p_weight)
-{
-	if (p_index < 0) {
-		p_index = audio_stream_pool.size();
-	}
-	ERR_FAIL_COND(p_index > audio_stream_pool.size());
-	PoolEntry entry{p_stream, p_weight};
-	audio_stream_pool.insert(p_index, entry);
-	this->obj->emit_signal(CoreStringName(changed));
-	this->obj->notify_property_list_changed();
-}
-
-// p_index_to is relative to the array prior to the removal of from.
-// Example: [0, 1, 2, 3], move(1, 3) => [0, 2, 1, 3]
-void AudioStreamRandomizer::move_stream(int p_index_from, int p_index_to)
-{
-	ERR_FAIL_INDEX(p_index_from, audio_stream_pool.size());
-	// p_index_to == audio_stream_pool.size() is valid (move to end).
-	ERR_FAIL_COND(p_index_to < 0);
-	ERR_FAIL_COND(p_index_to > audio_stream_pool.size());
-	audio_stream_pool.insert(p_index_to, audio_stream_pool[p_index_from]);
-	// If 'from' is strictly after 'to' we need to increment the index by one because of the
-	// insertion.
-	if (p_index_from > p_index_to) {
-		p_index_from++;
-	}
-	audio_stream_pool.remove_at(p_index_from);
-	this->obj->emit_signal(CoreStringName(changed));
-	this->obj->notify_property_list_changed();
-}
-
-void AudioStreamRandomizer::remove_stream(int p_index)
-{
-	ERR_FAIL_INDEX(p_index, audio_stream_pool.size());
-	audio_stream_pool.remove_at(p_index);
-	this->obj->emit_signal(CoreStringName(changed));
-	this->obj->notify_property_list_changed();
-}
-
-void AudioStreamRandomizer::set_stream(int p_index, Ref<AudioStream> p_stream)
-{
-	ERR_FAIL_INDEX(p_index, audio_stream_pool.size());
-	audio_stream_pool.write[p_index].stream = p_stream;
-	this->obj->emit_signal(CoreStringName(changed));
-}
-
 Ref<AudioStream> AudioStreamRandomizer::get_stream(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, audio_stream_pool.size(), nullptr);
 	return audio_stream_pool[p_index].stream;
-}
-
-void AudioStreamRandomizer::set_stream_probability_weight(int p_index, float p_weight)
-{
-	ERR_FAIL_INDEX(p_index, audio_stream_pool.size());
-	audio_stream_pool.write[p_index].weight = p_weight;
-	this->obj->emit_signal(CoreStringName(changed));
 }
 
 float AudioStreamRandomizer::get_stream_probability_weight(int p_index) const
@@ -587,13 +446,6 @@ bool AudioStreamRandomizer::is_monophonic() const
 	return false;
 }
 
-void AudioStreamRandomizer::_bind_methods() {}
-
-AudioStreamRandomizer::AudioStreamRandomizer()
-{
-	property_helper.setup_for_instance(base_property_helper, this->obj.get());
-}
-
 void AudioStreamPlaybackRandomizer::start(double p_from_pos)
 {
 	playing = playback;
@@ -696,15 +548,7 @@ int AudioStream::get_bar_beats() const { return 4; }
 
 int AudioStream::get_beat_count() const { return 0; }
 
-Dictionary AudioStream::get_tags() const { return Dictionary(); }
-
 double AudioStream::get_length() const { return 0.0; }
-
-void AudioStreamPlayback::set_parameter(const StringName& p_name, const Variant& p_value) {}
-
-Variant AudioStreamPlayback::get_parameter(const StringName& p_name) const { return Variant(); }
-
-/////////////////////////////////////////////
 
 Ref<AudioStreamPlayback> AudioStream::instantiate_playback() { return Ref<AudioStreamPlayback>(); }
 

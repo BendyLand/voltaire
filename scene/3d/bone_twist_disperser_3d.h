@@ -33,24 +33,26 @@
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "scene/resources/curve.h"
 
-class BoneTwistDisperser3D : public SkeletonModifier3D {
-	VLTRCLASS(BoneTwistDisperser3D, SkeletonModifier3D);
-
+class BoneTwistDisperser3D : public SkeletonModifier3D
+{
 	bool mutable_bone_axes = true;
 
 public:
-	enum DisperseMode {
+	enum DisperseMode
+	{
 		DISPERSE_MODE_EVEN,
 		DISPERSE_MODE_WEIGHTED,
 		DISPERSE_MODE_CUSTOM,
 	};
 
-	struct BoneJoint {
+	struct BoneJoint
+	{
 		StringName name;
 		int bone = -1;
 	};
 
-	struct DisperseJointSetting {
+	struct DisperseJointSetting
+	{
 		BoneJoint joint;
 		double custom_amount = 1.0;
 		// For processing.
@@ -58,7 +60,8 @@ public:
 		Vector3 axis;
 	};
 
-	struct BoneTwistDisperser3DSetting {
+	struct BoneTwistDisperser3DSetting
+	{
 		bool joints_dirty = false;
 
 		DisperseMode disperse_mode = DISPERSE_MODE_EVEN;
@@ -77,25 +80,21 @@ public:
 
 		BoneJoint reference_bone; // To cache.
 
-		~BoneTwistDisperser3DSetting() {
+		~BoneTwistDisperser3DSetting()
+		{
 			joints.clear();
 			damping_curve.unref();
 		}
 	};
 
 protected:
-	LocalVector<BoneTwistDisperser3DSetting *> settings;
-
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	bool _set(const StringName &p_path, const Variant &p_value);
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	void _validate_dynamic_prop(PropertyInfo &p_property) const;
+	LocalVector<BoneTwistDisperser3DSetting*> settings;
 
 	void _notification(int p_what);
 	static void _bind_methods();
 
 	virtual void _set_active(bool p_active) override;
-	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
+	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 	virtual void _validate_bone_names() override;
 
 	void _make_all_joints_dirty();
@@ -118,12 +117,12 @@ public:
 	void clear_settings();
 
 	// Setting.
-	void set_root_bone_name(int p_index, const String &p_bone_name);
+	void set_root_bone_name(int p_index, const String& p_bone_name);
 	String get_root_bone_name(int p_index) const;
 	void set_root_bone(int p_index, int p_bone);
 	int get_root_bone(int p_index) const;
 
-	void set_end_bone_name(int p_index, const String &p_bone_name);
+	void set_end_bone_name(int p_index, const String& p_bone_name);
 	String get_end_bone_name(int p_index) const;
 	void set_end_bone(int p_index, int p_bone);
 	int get_end_bone(int p_index) const;
@@ -135,7 +134,7 @@ public:
 
 	void set_twist_from_rest(int p_index, bool p_enabled);
 	bool is_twist_from_rest(int p_index) const;
-	void set_twist_from(int p_index, const Quaternion &p_from);
+	void set_twist_from(int p_index, const Quaternion& p_from);
 	Quaternion get_twist_from(int p_index) const;
 
 	String get_reference_bone_name(int p_index) const;
@@ -145,7 +144,7 @@ public:
 	DisperseMode get_disperse_mode(int p_index) const;
 	void set_weight_position(int p_index, float p_position);
 	float get_weight_position(int p_index) const;
-	void set_damping_curve(int p_index, const Ref<Curve> &p_damping_curve);
+	void set_damping_curve(int p_index, const Ref<Curve>& p_damping_curve);
 	Ref<Curve> get_damping_curve(int p_index) const;
 
 	// Individual joints.
@@ -161,4 +160,4 @@ public:
 	~BoneTwistDisperser3D();
 };
 
-VARIANT_ENUM_CAST(BoneTwistDisperser3D::DisperseMode);
+

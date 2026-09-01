@@ -51,14 +51,13 @@ private:
 		int click_margin = 0;
 	} theme_cache;
 
-	BitField<MouseButtonMask> button_mask = MouseButtonMask::LEFT;
+	uint32_t button_mask = 0;
 	bool toggle_mode = false;
 	bool shortcut_in_tooltip = true;
 	bool was_mouse_pressed = false;
 	bool keep_pressed_outside = false;
 	bool shortcut_feedback = true;
 	Ref<Shortcut> shortcut;
-	ObjectID shortcut_context;
 
 	ActionMode action_mode = ACTION_MODE_BUTTON_RELEASE;
 
@@ -89,12 +88,9 @@ protected:
 	virtual void pressed();
 	virtual void toggled(bool p_pressed);
 	static void _bind_methods();
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _notification(int p_what);
 
 	bool _was_pressed_by_mouse() const;
-	void _accessibility_action_click(const Variant& p_data);
 
 public:
 	enum DrawMode
@@ -136,8 +132,8 @@ public:
 	void set_shortcut_feedback(bool p_enable);
 	bool is_shortcut_feedback() const;
 
-	void set_button_mask(BitField<MouseButtonMask> p_mask);
-	BitField<MouseButtonMask> get_button_mask() const;
+	void set_button_mask(uint32_t p_mask);
+	uint32_t get_button_mask() const;
 
 	void set_shortcut(const Ref<Shortcut>& p_shortcut);
 	Ref<Shortcut> get_shortcut() const;
@@ -153,12 +149,8 @@ public:
 	~BaseButton();
 };
 
-VARIANT_ENUM_CAST(BaseButton::DrawMode)
-VARIANT_ENUM_CAST(BaseButton::ActionMode)
-
 class ButtonGroup : public Resource
 {
-	VLTRCLASS(ButtonGroup, Resource);
 	friend class BaseButton;
 	HashSet<BaseButton*> buttons;
 	bool allow_unpress = false;
@@ -169,7 +161,6 @@ protected:
 public:
 	BaseButton* get_pressed_button();
 	void get_buttons(List<BaseButton*>* r_buttons);
-	Array _get_buttons();
 	void set_allow_unpress(bool p_enabled);
 	bool is_allow_unpress();
 	ButtonGroup();

@@ -36,7 +36,6 @@
 #include "core/core_globals.h"
 #include "core/string/print_string.h"
 #include "core/string/ustring.h"
-#include "core/variant/variant.h" // IWYU pragma: keep. Needed for print_verbose.
 
 #ifdef GLAD_ENABLED
 #include <platform_gl.h>

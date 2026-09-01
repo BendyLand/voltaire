@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "foldable_container.h"
 #include "scene/resources/text_line.h"
 #include "scene/theme/theme_db.h"
@@ -84,40 +83,6 @@ Size2 FoldableContainer::get_inner_combined_maximum_size() const
 	}
 
 	return ms;
-}
-
-void FoldableContainer::fold()
-{
-	set_folded(true);
-	this->obj->emit_signal(SNAME("folding_changed"), folded);
-}
-
-void FoldableContainer::expand()
-{
-	set_folded(false);
-	this->obj->emit_signal(SNAME("folding_changed"), folded);
-}
-
-void FoldableContainer::set_folded(bool p_folded)
-{
-	if (folded != p_folded) {
-		if (!changing_group && foldable_group.is_valid()) {
-			if (!p_folded) {
-				_update_group();
-				foldable_group->obj->emit_signal(SNAME("expanded"), this);
-			}
-			else if (!foldable_group->updating_group &&
-					   foldable_group->get_expanded_container() == this &&
-					   !foldable_group->is_allow_folding_all()) {
-				return;
-			}
-		}
-		folded = p_folded;
-
-		update_minimum_size();
-		queue_sort();
-		queue_redraw();
-	}
 }
 
 bool FoldableContainer::is_folded() const { return folded; }
@@ -257,54 +222,6 @@ void FoldableContainer::remove_title_bar_control(Control* p_control)
 
 	title_controls.remove_at(index);
 	remove_child(p_control);
-}
-
-void FoldableContainer::gui_input(const Ref<InputEvent>& p_event)
-{
-	ERR_FAIL_COND(p_event.is_null());
-
-	Ref<InputEventMouseMotion> m = p_event;
-	if (m.is_valid()) {
-		if (_get_title_rect().has_point(m->get_position())) {
-			if (!is_hovering) {
-				is_hovering = true;
-				queue_redraw();
-			}
-		}
-		else if (is_hovering) {
-			is_hovering = false;
-			queue_redraw();
-		}
-		return;
-	}
-
-	if (p_event->is_action_pressed(SNAME("ui_accept"), false, true)) {
-		set_folded(!folded);
-		this->obj->emit_signal(SNAME("folding_changed"), folded);
-		accept_event();
-		return;
-	}
-
-	Ref<InputEventMouseButton> b = p_event;
-	if (b.is_valid()) {
-		if (b->get_button_index() == MouseButton::LEFT && b->is_pressed() &&
-			_get_title_rect().has_point(b->get_position())) {
-			set_folded(!folded);
-			this->obj->emit_signal(SNAME("folding_changed"), folded);
-			accept_event();
-		}
-	}
-}
-
-String FoldableContainer::get_tooltip(const Point2& p_pos) const
-{
-	if (Rect2(0,
-			(title_position == POSITION_TOP) ? 0 : get_size().height - title_minimum_size.height,
-			get_size().width, title_minimum_size.height)
-			.has_point(p_pos)) {
-		return Control::get_tooltip(p_pos);
-	}
-	return String();
 }
 
 bool FoldableContainer::has_point(const Point2& p_point) const
@@ -563,30 +480,6 @@ void FoldableContainer::_update_title_min_size() const
 	}
 }
 
-void FoldableContainer::_shape()
-{
-	Ref<Font> font = theme_cache.title_font;
-	int font_size = theme_cache.title_font_size;
-	if (font.is_null() || font_size == 0) {
-		return;
-	}
-
-	text_buf->clear();
-	text_buf->set_width(-1);
-
-	if (title_text_direction == TEXT_DIRECTION_INHERITED) {
-		text_buf->set_direction(
-			is_layout_rtl() ? TextServer::DIRECTION_RTL : TextServer::DIRECTION_LTR);
-	}
-	else {
-		text_buf->set_direction((TextServer::Direction)title_text_direction);
-	}
-	text_buf->set_horizontal_alignment(_get_actual_alignment());
-	text_buf->set_text_overrun_behavior(overrun_behavior);
-	const String& lang = language.is_empty() ? this->obj->_get_locale() : language;
-	text_buf->add_string(atr(title), font, font_size, lang);
-}
-
 HorizontalAlignment FoldableContainer::_get_actual_alignment() const
 {
 	if (is_layout_rtl()) {
@@ -625,8 +518,6 @@ void FoldableContainer::_draw_flippable_stylebox(
 		p_stylebox->draw(get_canvas_item(), p_rect);
 	}
 }
-
-void FoldableContainer::_bind_methods() {}
 
 FoldableContainer::FoldableContainer(const String& p_text)
 {
@@ -672,18 +563,6 @@ void FoldableGroup::get_containers(List<FoldableContainer*>* r_containers) const
 		r_containers->push_back(container);
 	}
 }
-
-Array FoldableGroup::_get_containers() const
-{
-	Array foldable_containers;
-	for (const FoldableContainer* container : containers) {
-		foldable_containers.push_back(container);
-	}
-
-	return foldable_containers;
-}
-
-void FoldableGroup::_bind_methods() {}
 
 FoldableGroup::FoldableGroup() { set_local_to_scene(true); }
 

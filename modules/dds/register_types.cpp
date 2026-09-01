@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource_loader.h"
-#include "core/object/class_db.h"
 #include "image_saver_dds.h"
 #include "register_types.h"
 #include "scene/resources/texture.h"

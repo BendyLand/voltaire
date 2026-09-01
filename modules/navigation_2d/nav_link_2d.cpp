@@ -29,10 +29,10 @@
 /**************************************************************************/
 
 #include "nav_link_2d.h"
-
 #include "nav_map_2d.h"
 
-void NavLink2D::set_map(NavMap2D *p_map) {
+void NavLink2D::set_map(NavMap2D* p_map)
+{
 	if (map == p_map) {
 		return;
 	}
@@ -52,7 +52,8 @@ void NavLink2D::set_map(NavMap2D *p_map) {
 	}
 }
 
-void NavLink2D::set_enabled(bool p_enabled) {
+void NavLink2D::set_enabled(bool p_enabled)
+{
 	if (enabled == p_enabled) {
 		return;
 	}
@@ -62,7 +63,8 @@ void NavLink2D::set_enabled(bool p_enabled) {
 	request_sync();
 }
 
-void NavLink2D::set_bidirectional(bool p_bidirectional) {
+void NavLink2D::set_bidirectional(bool p_bidirectional)
+{
 	if (bidirectional == p_bidirectional) {
 		return;
 	}
@@ -72,7 +74,8 @@ void NavLink2D::set_bidirectional(bool p_bidirectional) {
 	request_sync();
 }
 
-void NavLink2D::set_start_position(const Vector2 p_position) {
+void NavLink2D::set_start_position(const Vector2 p_position)
+{
 	if (start_position == p_position) {
 		return;
 	}
@@ -82,7 +85,8 @@ void NavLink2D::set_start_position(const Vector2 p_position) {
 	request_sync();
 }
 
-void NavLink2D::set_end_position(const Vector2 p_position) {
+void NavLink2D::set_end_position(const Vector2 p_position)
+{
 	if (end_position == p_position) {
 		return;
 	}
@@ -92,7 +96,8 @@ void NavLink2D::set_end_position(const Vector2 p_position) {
 	request_sync();
 }
 
-void NavLink2D::set_navigation_layers(uint32_t p_navigation_layers) {
+void NavLink2D::set_navigation_layers(uint32_t p_navigation_layers)
+{
 	if (navigation_layers == p_navigation_layers) {
 		return;
 	}
@@ -102,7 +107,8 @@ void NavLink2D::set_navigation_layers(uint32_t p_navigation_layers) {
 	request_sync();
 }
 
-void NavLink2D::set_enter_cost(real_t p_enter_cost) {
+void NavLink2D::set_enter_cost(real_t p_enter_cost)
+{
 	real_t new_enter_cost = MAX(p_enter_cost, 0.0);
 	if (enter_cost == new_enter_cost) {
 		return;
@@ -113,7 +119,8 @@ void NavLink2D::set_enter_cost(real_t p_enter_cost) {
 	request_sync();
 }
 
-void NavLink2D::set_travel_cost(real_t p_travel_cost) {
+void NavLink2D::set_travel_cost(real_t p_travel_cost)
+{
 	real_t new_travel_cost = MAX(p_travel_cost, 0.0);
 	if (travel_cost == new_travel_cost) {
 		return;
@@ -124,17 +131,8 @@ void NavLink2D::set_travel_cost(real_t p_travel_cost) {
 	request_sync();
 }
 
-void NavLink2D::set_owner_id(ObjectID p_owner_id) {
-	if (owner_id == p_owner_id) {
-		return;
-	}
-	owner_id = p_owner_id;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-bool NavLink2D::sync() {
+bool NavLink2D::sync()
+{
 	bool requires_map_update = false;
 	if (!map) {
 		return requires_map_update;
@@ -149,7 +147,8 @@ bool NavLink2D::sync() {
 	return requires_map_update;
 }
 
-void NavLink2D::_build_iteration() {
+void NavLink2D::_build_iteration()
+{
 	if (!iteration_dirty || iteration_building || iteration_ready) {
 		return;
 	}
@@ -164,7 +163,6 @@ void NavLink2D::_build_iteration() {
 	new_iteration->navigation_layers = get_navigation_layers();
 	new_iteration->enter_cost = get_enter_cost();
 	new_iteration->travel_cost = get_travel_cost();
-	new_iteration->owner_object_id = get_owner_id();
 	new_iteration->owner_type = get_type();
 	new_iteration->owner_rid = get_self();
 
@@ -184,31 +182,23 @@ void NavLink2D::_build_iteration() {
 	iteration_ready = true;
 }
 
-void NavLink2D::request_sync() {
-	if (map && !sync_dirty_request_list_element.in_list()) {
-		map->add_link_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-void NavLink2D::cancel_sync_request() {
-	if (map && sync_dirty_request_list_element.in_list()) {
-		map->remove_link_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-Ref<NavLinkIteration2D> NavLink2D::get_iteration() {
+Ref<NavLinkIteration2D> NavLink2D::get_iteration()
+{
 	RWLockRead read_lock(iteration_rwlock);
 	return iteration;
 }
 
-NavLink2D::NavLink2D() :
-		sync_dirty_request_list_element(this) {
+NavLink2D::NavLink2D() : sync_dirty_request_list_element(this)
+{
 	type = NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_LINK;
 	iteration.instantiate();
 }
 
-NavLink2D::~NavLink2D() {
+NavLink2D::~NavLink2D()
+{
 	cancel_sync_request();
 
 	iteration = Ref<NavLinkIteration2D>();
 }
+
+

@@ -36,10 +36,10 @@ class Label;
 class VBoxContainer;
 class Font;
 
-class CreditsRoll : public CanvasLayer {
-	VLTRCLASS(CreditsRoll, CanvasLayer);
-
-	enum class LabelSize {
+class CreditsRoll : public CanvasLayer
+{
+	enum class LabelSize
+	{
 		NORMAL,
 		HEADER,
 		BIG_HEADER,
@@ -51,15 +51,15 @@ class CreditsRoll : public CanvasLayer {
 	Ref<Font> bold_font;
 
 	bool mouse_enabled = false;
-	VBoxContainer *content = nullptr;
-	Label *project_manager = nullptr;
+	VBoxContainer* content = nullptr;
+	Label* project_manager = nullptr;
 
-	Label *_create_label(const String &p_with_text, LabelSize p_size = LabelSize::NORMAL);
+	Label* _create_label(const String& p_with_text, LabelSize p_size = LabelSize::NORMAL);
 	void _create_nothing(int p_size = -1);
-	String _build_string(const char *const *p_from) const;
+	String _build_string(const char* const* p_from) const;
 	void _visibility_changed();
 
-	virtual void input(const Ref<InputEvent> &p_event) override;
+	virtual void input(const Ref<InputEvent>& p_event) override;
 
 protected:
 	void _notification(int p_what);
@@ -69,3 +69,5 @@ public:
 
 	CreditsRoll();
 };
+
+

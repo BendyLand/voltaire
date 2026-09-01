@@ -36,33 +36,29 @@
 // https://github.khronos.org/OpenXR-Inventory/extension_support.html#XR_FB_foveation
 
 #include "../util.h"
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 #include "openxr_fb_update_swapchain_extension.h"
 
 // Always include this as late as possible.
 #include "../openxr_platform_inc.h" // IWYU pragma: keep.
 
-class OpenXRFBFoveationExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRFBFoveationExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRFBFoveationExtension
+{
 public:
-	static OpenXRFBFoveationExtension *get_singleton();
+	static OpenXRFBFoveationExtension* get_singleton();
 
-	OpenXRFBFoveationExtension(const String &p_rendering_driver);
-	virtual ~OpenXRFBFoveationExtension() override;
+	OpenXRFBFoveationExtension(const String& p_rendering_driver);
+	virtual ~OpenXRFBFoveationExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_instance_created(const XrInstance p_instance) override;
-	virtual void on_instance_destroyed() override;
+	virtual void on_instance_created(const XrInstance p_instance);
+	virtual void on_instance_destroyed();
 
-	virtual void *set_system_properties_and_get_next_pointer(void *p_next_pointer) override;
-	virtual void *set_swapchain_create_info_and_get_next_pointer(void *p_next_pointer) override;
+	virtual void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+	virtual void* set_swapchain_create_info_and_get_next_pointer(void* p_next_pointer);
 
-	virtual void on_main_swapchains_created() override;
+	virtual void on_main_swapchains_created();
 
 	bool is_enabled() const;
 
@@ -73,7 +69,7 @@ public:
 	void set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic);
 
 	bool is_foveation_eye_tracked_enabled() const;
-	void get_fragment_density_offsets(LocalVector<Vector2i> &r_offsets);
+	void get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets);
 
 	void set_foveation_with_subsampled_images_enabled(bool p_enabled);
 	bool is_foveation_with_subsampled_images_enabled() const;
@@ -81,7 +77,7 @@ public:
 	void set_foveation_with_subsampled_images_active(bool p_active);
 
 private:
-	static OpenXRFBFoveationExtension *singleton;
+	static OpenXRFBFoveationExtension* singleton;
 
 	// Setup
 	String rendering_driver;
@@ -103,7 +99,7 @@ private:
 
 	// Enable foveation on this swapchain
 	XrSwapchainCreateInfoFoveationFB swapchain_create_info_foveation_fb;
-	OpenXRFBUpdateSwapchainExtension *swapchain_update_state_ext = nullptr;
+	OpenXRFBUpdateSwapchainExtension* swapchain_update_state_ext = nullptr;
 
 	// Enable eye tracked foveation
 	XrSystemFoveationEyeTrackedPropertiesMETA meta_foveation_eye_tracked_properties;
@@ -113,7 +109,11 @@ private:
 #endif
 
 	// OpenXR API call wrappers
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateFoveationProfileFB, (XrSession), session, (const XrFoveationProfileCreateInfoFB *), create_info, (XrFoveationProfileFB *), profile);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateFoveationProfileFB, (XrSession), session,
+		(const XrFoveationProfileCreateInfoFB*), create_info, (XrFoveationProfileFB*), profile);
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyFoveationProfileFB, (XrFoveationProfileFB), profile);
-	EXT_PROTO_XRRESULT_FUNC2(xrGetFoveationEyeTrackedStateMETA, (XrSession), session, (XrFoveationEyeTrackedStateMETA *), foveationState);
+	EXT_PROTO_XRRESULT_FUNC2(xrGetFoveationEyeTrackedStateMETA, (XrSession), session,
+		(XrFoveationEyeTrackedStateMETA*), foveationState);
 };
+
+

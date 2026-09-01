@@ -34,7 +34,6 @@
 #include "editor/debugger/editor_debugger_plugin.h"
 #include "editor/editor_main_screen.h"
 #include "editor/plugins/editor_plugin.h"
-#include "scene/debugger/runtime_node_select.h"
 #include "scene/gui/box_container.h"
 
 class EmbeddedProcessBase;
@@ -42,16 +41,13 @@ class VSeparator;
 class WindowWrapper;
 class ScriptEditorDebugger;
 
-class GameViewDebugger : public EditorDebuggerPlugin {
-	VLTRCLASS(GameViewDebugger, EditorDebuggerPlugin);
-
+class GameViewDebugger : public EditorDebuggerPlugin
+{
 private:
 	Vector<Ref<EditorDebuggerSession>> sessions;
 
 	bool is_feature_enabled = true;
-	int node_type = RuntimeNodeSelect::NODE_TYPE_NONE;
 	bool selection_visible = true;
-	int select_mode = RuntimeNodeSelect::SELECT_MODE_SINGLE;
 	bool mute_audio = false;
 	EditorDebuggerNode::CameraOverride camera_override_mode = EditorDebuggerNode::OVERRIDE_INGAME;
 
@@ -63,24 +59,19 @@ private:
 
 	void _feature_profile_changed();
 
-	struct ScreenshotCB {
-		Callable cb;
+	struct ScreenshotCB
+	{
 		Rect2i rect;
 	};
 
 	int64_t scr_rq_id = 0;
 	HashMap<uint64_t, ScreenshotCB> screenshot_callbacks;
 
-	bool _msg_get_screenshot(const Array &p_args);
-
 protected:
 	static void _bind_methods();
 
 public:
-	virtual bool capture(const String &p_message, const Array &p_data, int p_session) override;
-	virtual bool has_capture(const String &p_capture) const override;
-
-	bool add_screenshot_callback(const Callable &p_callaback, const Rect2i &p_rect);
+	virtual bool has_capture(const String& p_capture) const override;
 
 	void window_request_size();
 	void hdr_output_request_state();
@@ -116,10 +107,10 @@ public:
 	GameViewDebugger();
 };
 
-class GameView : public VBoxContainer {
-	VLTRCLASS(GameView, VBoxContainer);
-
-	enum {
+class GameView : public VBoxContainer
+{
+	enum
+	{
 		CAMERA_RESET_2D,
 		CAMERA_RESET_3D,
 		CAMERA_MODE_INGAME,
@@ -135,13 +126,15 @@ class GameView : public VBoxContainer {
 		WINDOW_HDR_OUTPUT_ERROR,
 	};
 
-	enum EmbedSizeMode {
+	enum EmbedSizeMode
+	{
 		SIZE_MODE_FIXED,
 		SIZE_MODE_KEEP_ASPECT,
 		SIZE_MODE_STRETCH,
 	};
 
-	enum EmbedAvailability {
+	enum EmbedAvailability
+	{
 		EMBED_AVAILABLE,
 		EMBED_NOT_AVAILABLE_FEATURE_NOT_SUPPORTED,
 		EMBED_NOT_AVAILABLE_MINIMIZED,
@@ -152,22 +145,23 @@ class GameView : public VBoxContainer {
 		EMBED_NOT_AVAILABLE_HEADLESS,
 	};
 
-	enum EmbedMode {
+	enum EmbedMode
+	{
 		EMBED_TYPE_DISABLED,
 		EMBED_TYPE_FLOATING,
 		EMBED_TYPE_EDITOR,
 		EMBED_TYPE_MAX,
 	};
 
-	inline static GameView *singleton = nullptr;
+	inline static GameView* singleton = nullptr;
 
 	Ref<GameViewDebugger> debugger;
-	WindowWrapper *window_wrapper = nullptr;
+	WindowWrapper* window_wrapper = nullptr;
 
 	bool is_feature_enabled = true;
 	int active_sessions = 0;
 	int screen_index_before_start = -1;
-	ScriptEditorDebugger *embedded_script_debugger = nullptr;
+	ScriptEditorDebugger* embedded_script_debugger = nullptr;
 
 	bool embed_on_play = true;
 	bool make_floating_on_play = true;
@@ -184,31 +178,26 @@ class GameView : public VBoxContainer {
 	bool selection_avoid_locked = false;
 	bool selection_prefer_group = false;
 
-	Button *suspend_button = nullptr;
-	Button *next_frame_button = nullptr;
+	Button* suspend_button = nullptr;
+	Button* next_frame_button = nullptr;
 
-	Button *node_type_button[RuntimeNodeSelect::NODE_TYPE_MAX];
-	Button *select_mode_button[RuntimeNodeSelect::SELECT_MODE_MAX];
+	MenuButton* selection_options_menu = nullptr;
 
-	MenuButton *selection_options_menu = nullptr;
+	Button* camera_override_button = nullptr;
+	MenuButton* camera_override_menu = nullptr;
 
-	Button *camera_override_button = nullptr;
-	MenuButton *camera_override_menu = nullptr;
+	Button* debug_mute_audio_button = nullptr;
 
-	Button *debug_mute_audio_button = nullptr;
-
-	HBoxContainer *embedding_hb = nullptr;
-	MenuButton *game_window_options_menu = nullptr;
-	Label *game_size_label = nullptr;
-	HBoxContainer *game_hb = nullptr;
-	Button *game_embed_mode_button[EmbedMode::EMBED_TYPE_MAX];
-	Panel *panel = nullptr;
-	EmbeddedProcessBase *embedded_process = nullptr;
-	Label *state_label = nullptr;
+	HBoxContainer* embedding_hb = nullptr;
+	MenuButton* game_window_options_menu = nullptr;
+	Label* game_size_label = nullptr;
+	HBoxContainer* game_hb = nullptr;
+	Button* game_embed_mode_button[EmbedMode::EMBED_TYPE_MAX];
+	Panel* panel = nullptr;
+	EmbeddedProcessBase* embedded_process = nullptr;
+	Label* state_label = nullptr;
 
 	const int DEFAULT_TIME_SCALE_INDEX = 5;
-	Array time_scale_range = { 0.0625f, 0.125f, 0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f, 4.0f, 8.0f, 16.0f };
-	Array time_scale_label = { "1/16", "1/8", "1/4", "1/2", "3/4", "1.0", "1.25", "1.5", "1.75", "2.0", "4.0", "8.0", "16.0" };
 	int time_scale_index = DEFAULT_TIME_SCALE_INDEX;
 
 	Size2i game_window_size = Size2i(-1, -1);
@@ -219,7 +208,7 @@ class GameView : public VBoxContainer {
 	bool display_server_supports_hdr_output = false;
 	bool renderer_supports_hdr_output = false;
 
-	MenuButton *speed_state_button = nullptr;
+	MenuButton* speed_state_button = nullptr;
 
 	void _sessions_changed();
 
@@ -243,10 +232,8 @@ class GameView : public VBoxContainer {
 	void _update_speed_state_size();
 
 	void _play_pressed();
-	static void _instance_starting_static(int p_idx, List<String> &r_arguments);
-	void _instance_starting(int p_idx, List<String> &r_arguments);
-	static bool _instance_rq_screenshot_static(const Callable &p_callback);
-	bool _instance_rq_screenshot(const Callable &p_callback);
+	static void _instance_starting_static(int p_idx, List<String>& r_arguments);
+	void _instance_starting(int p_idx, List<String>& r_arguments);
 	void _stop_pressed();
 	void _embedding_completed();
 	void _embedding_failed();
@@ -259,13 +246,11 @@ class GameView : public VBoxContainer {
 	void _update_embed_buttons();
 	void _update_game_window_size_label();
 	void _update_embed_window_size();
-	void _update_arguments_for_instance(int p_idx, List<String> &r_arguments);
+	void _update_arguments_for_instance(int p_idx, List<String>& r_arguments);
 	void _show_update_window_wrapper();
 
 	void _debug_mute_audio_button_pressed();
 	void _setup_complete();
-	void _game_window_size_received(const Array &p_state);
-	void _hdr_state_received(const Array &p_state);
 
 	void _camera_override_button_toggled(bool p_pressed);
 	void _camera_override_menu_id_pressed(int p_id);
@@ -284,21 +269,18 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_state(const Dictionary &p_state);
-	Dictionary get_state() const;
-
 	void set_window_layout(Ref<ConfigFile> p_layout);
 	void get_window_layout(Ref<ConfigFile> p_layout);
 
-	GameView(Ref<GameViewDebugger> p_debugger, EmbeddedProcessBase *p_embedded_process, WindowWrapper *p_wrapper);
+	GameView(Ref<GameViewDebugger> p_debugger, EmbeddedProcessBase* p_embedded_process,
+		WindowWrapper* p_wrapper);
 };
 
-class GameViewPluginBase : public EditorPlugin {
-	VLTRCLASS(GameViewPluginBase, EditorPlugin);
-
+class GameViewPluginBase : public EditorPlugin
+{
 #ifndef ANDROID_ENABLED
-	GameView *game_view = nullptr;
-	WindowWrapper *window_wrapper = nullptr;
+	GameView* game_view = nullptr;
+	WindowWrapper* window_wrapper = nullptr;
 #endif // ANDROID_ENABLED
 
 	Ref<GameViewDebugger> debugger;
@@ -308,37 +290,36 @@ class GameViewPluginBase : public EditorPlugin {
 #ifndef ANDROID_ENABLED
 	void _window_visibility_changed(bool p_visible);
 #endif // ANDROID_ENABLED
-	void _save_last_editor(const String &p_editor);
+	void _save_last_editor(const String& p_editor);
 	void _focus_another_editor();
 	bool _is_window_wrapper_enabled() const;
 
 protected:
 	void _notification(int p_what);
 #ifndef ANDROID_ENABLED
-	void setup(Ref<GameViewDebugger> p_debugger, EmbeddedProcessBase *p_embedded_process);
+	void setup(Ref<GameViewDebugger> p_debugger, EmbeddedProcessBase* p_embedded_process);
 #endif
 
 public:
 	virtual String get_plugin_name() const override { return TTRC("Game"); }
+
 	bool has_main_screen() const override { return true; }
-	virtual void edit(Object *p_object) override {}
-	virtual bool handles(Object *p_object) const override { return false; }
+
 	virtual void selected_notify() override;
 
 	Ref<GameViewDebugger> get_debugger() const { return debugger; }
 
 #ifndef ANDROID_ENABLED
-	virtual void make_visible(bool p_visible) override;
-
 	virtual void set_window_layout(Ref<ConfigFile> p_layout) override;
 	virtual void get_window_layout(Ref<ConfigFile> p_layout) override;
 #endif // ANDROID_ENABLED
 	GameViewPluginBase();
 };
 
-class GameViewPlugin : public GameViewPluginBase {
-	VLTRCLASS(GameViewPlugin, GameViewPluginBase);
-
+class GameViewPlugin : public GameViewPluginBase
+{
 public:
 	GameViewPlugin();
 };
+
+

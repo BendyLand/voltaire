@@ -32,11 +32,11 @@
 
 #include "webrtc_data_channel.h"
 
-class WebRTCPeerConnection : public RefCounted {
-	VLTRCLASS(WebRTCPeerConnection, RefCounted);
-
+class WebRTCPeerConnection : public RefCounted
+{
 public:
-	enum ConnectionState {
+	enum ConnectionState
+	{
 		STATE_NEW,
 		STATE_CONNECTING,
 		STATE_CONNECTED,
@@ -45,13 +45,15 @@ public:
 		STATE_CLOSED
 	};
 
-	enum GatheringState {
+	enum GatheringState
+	{
 		GATHERING_STATE_NEW,
 		GATHERING_STATE_GATHERING,
 		GATHERING_STATE_COMPLETE,
 	};
 
-	enum SignalingState {
+	enum SignalingState
+	{
 		SIGNALING_STATE_STABLE,
 		SIGNALING_STATE_HAVE_LOCAL_OFFER,
 		SIGNALING_STATE_HAVE_REMOTE_OFFER,
@@ -67,27 +69,24 @@ protected:
 	static void _bind_methods();
 
 public:
-	static void set_default_extension(const StringName &p_name);
+	static void set_default_extension(const StringName& p_name);
 
 	virtual ConnectionState get_connection_state() const;
 	virtual GatheringState get_gathering_state() const;
 	virtual SignalingState get_signaling_state() const;
 
-	virtual Error initialize(const Dictionary &p_config = Dictionary());
-	virtual Ref<WebRTCDataChannel> create_data_channel(const String &p_label, const Dictionary &p_options = Dictionary());
 	virtual Error create_offer();
-	virtual Error set_remote_description(const String &p_type, const String &p_sdp);
-	virtual Error set_local_description(const String &p_type, const String &p_sdp);
-	virtual Error add_ice_candidate(const String &p_sdp_mid_name, int p_sdp_mline_index_name, const String &p_sdp_name);
+	virtual Error set_remote_description(const String& p_type, const String& p_sdp);
+	virtual Error set_local_description(const String& p_type, const String& p_sdp);
+	virtual Error add_ice_candidate(
+		const String& p_sdp_mid_name, int p_sdp_mline_index_name, const String& p_sdp_name);
 	virtual Error poll();
 	virtual void close();
 
-	static WebRTCPeerConnection *create(bool p_notify_postinitialize = true);
+	static WebRTCPeerConnection* create(bool p_notify_postinitialize = true);
 
 	WebRTCPeerConnection();
 	~WebRTCPeerConnection();
 };
 
-VARIANT_ENUM_CAST(WebRTCPeerConnection::ConnectionState);
-VARIANT_ENUM_CAST(WebRTCPeerConnection::GatheringState);
-VARIANT_ENUM_CAST(WebRTCPeerConnection::SignalingState);
+

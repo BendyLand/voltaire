@@ -35,15 +35,18 @@
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_server_types.h"
 
-namespace RendererSceneRenderImplementation {
+namespace RendererSceneRenderImplementation
+{
 
-class SceneShaderForwardClustered {
+class SceneShaderForwardClustered
+{
 private:
-	static SceneShaderForwardClustered *singleton;
+	static SceneShaderForwardClustered* singleton;
 	static Mutex singleton_mutex;
 
 public:
-	enum ShaderGroup {
+	enum ShaderGroup
+	{
 		SHADER_GROUP_BASE, // Always compiled at the beginning.
 		SHADER_GROUP_ADVANCED,
 		SHADER_GROUP_MULTIVIEW,
@@ -52,20 +55,24 @@ public:
 
 	// Not an enum because these values are constants that are processed as numbers
 	// to arrive at a unique version for a particular shader.
-	struct ShaderVersion {
+	struct ShaderVersion
+	{
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS = 0;
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_DP = 1;
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS = 2;
-		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI = 3;
+		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI =
+			3;
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_MULTIVIEW = 4;
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_MULTIVIEW = 5;
-		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI_MULTIVIEW = 6;
+		constexpr static uint16_t
+			SHADER_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI_MULTIVIEW = 6;
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_WITH_MATERIAL = 7;
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_WITH_SDF = 8;
 		constexpr static uint16_t SHADER_VERSION_COLOR_PASS = 9;
 	};
 
-	enum ShaderColorPassFlags {
+	enum ShaderColorPassFlags
+	{
 		SHADER_COLOR_PASS_FLAG_UBERSHADER = 1 << 0,
 		SHADER_COLOR_PASS_FLAG_SEPARATE_SPECULAR = 1 << 1,
 		SHADER_COLOR_PASS_FLAG_LIGHTMAP = 1 << 2,
@@ -74,7 +81,8 @@ public:
 		SHADER_COLOR_PASS_FLAG_COUNT = 1 << 5
 	};
 
-	enum PipelineVersion {
+	enum PipelineVersion
+	{
 		PIPELINE_VERSION_DEPTH_PASS,
 		PIPELINE_VERSION_DEPTH_PASS_DP,
 		PIPELINE_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS,
@@ -88,7 +96,8 @@ public:
 		PIPELINE_VERSION_MAX
 	};
 
-	enum PipelineColorPassFlags {
+	enum PipelineColorPassFlags
+	{
 		PIPELINE_COLOR_PASS_FLAG_TRANSPARENT = 1 << 0, // Can't combine with SEPARATE_SPECULAR.
 		PIPELINE_COLOR_PASS_FLAG_SEPARATE_SPECULAR = 1 << 1, // Can't combine with TRANSPARENT.
 		PIPELINE_COLOR_PASS_FLAG_LIGHTMAP = 1 << 2,
@@ -98,11 +107,14 @@ public:
 		PIPELINE_COLOR_PASS_FLAG_COMBINATIONS = 1 << PIPELINE_COLOR_PASS_FLAG_OPTIONS,
 	};
 
-	struct ShaderSpecialization {
-		union {
+	struct ShaderSpecialization
+	{
+		union
+		{
 			uint32_t packed_0;
 
-			struct {
+			struct
+			{
 				uint32_t use_forward_gi : 1;
 				uint32_t use_light_projector : 1;
 				uint32_t use_light_soft_shadows : 1;
@@ -118,10 +130,12 @@ public:
 			};
 		};
 
-		union {
+		union
+		{
 			uint32_t packed_1;
 
-			struct {
+			struct
+			{
 				uint32_t multimesh : 1;
 				uint32_t multimesh_format_2d : 1;
 				uint32_t multimesh_has_color : 1;
@@ -134,30 +148,37 @@ public:
 		uint32_t packed_2;
 	};
 
-	struct UbershaderConstants {
-		union {
+	struct UbershaderConstants
+	{
+		union
+		{
 			uint32_t packed_0;
 
-			struct {
+			struct
+			{
 				uint32_t cull_mode : 2;
 			};
 		};
 	};
 
-	struct ShaderData : public RendererRD::MaterialStorage::ShaderData {
-		enum DepthDraw {
+	struct ShaderData : public RendererRD::MaterialStorage::ShaderData
+	{
+		enum DepthDraw
+		{
 			DEPTH_DRAW_DISABLED,
 			DEPTH_DRAW_OPAQUE,
 			DEPTH_DRAW_ALWAYS
 		};
 
-		enum DepthTest {
+		enum DepthTest
+		{
 			DEPTH_TEST_DISABLED,
 			DEPTH_TEST_ENABLED,
 			DEPTH_TEST_ENABLED_INVERTED,
 		};
 
-		enum CullVariant {
+		enum CullVariant
+		{
 			CULL_VARIANT_NORMAL,
 			CULL_VARIANT_REVERSED,
 			CULL_VARIANT_DOUBLE_SIDED,
@@ -165,19 +186,22 @@ public:
 
 		};
 
-		enum AlphaAntiAliasing {
+		enum AlphaAntiAliasing
+		{
 			ALPHA_ANTIALIASING_OFF,
 			ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE,
 			ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE
 		};
 
-		enum StencilFlags {
+		enum StencilFlags
+		{
 			STENCIL_FLAG_READ = 1,
 			STENCIL_FLAG_WRITE = 2,
 			STENCIL_FLAG_WRITE_DEPTH_FAIL = 4,
 		};
 
-		enum StencilCompare {
+		enum StencilCompare
+		{
 			STENCIL_COMPARE_LESS,
 			STENCIL_COMPARE_EQUAL,
 			STENCIL_COMPARE_LESS_OR_EQUAL,
@@ -188,7 +212,8 @@ public:
 			STENCIL_COMPARE_MAX // Not an actual operator, just the amount of operators.
 		};
 
-		struct PipelineKey {
+		struct PipelineKey
+		{
 			RD::VertexFormatID vertex_format_id;
 			RD::FramebufferFormatID framebuffer_format_id;
 			RD::PolygonCullMode cull_mode = RD::POLYGON_CULL_MAX;
@@ -199,7 +224,8 @@ public:
 			uint32_t wireframe = false;
 			uint32_t ubershader = false;
 
-			uint32_t hash() const {
+			uint32_t hash() const
+			{
 				uint32_t h = hash_murmur3_one_64(vertex_format_id);
 				h = hash_murmur3_one_32(framebuffer_format_id, h);
 				h = hash_murmur3_one_32(cull_mode, h);
@@ -216,11 +242,13 @@ public:
 		};
 
 		void _create_pipeline(PipelineKey p_pipeline_key);
-		PipelineHashMapRD<PipelineKey, ShaderData, void (ShaderData::*)(PipelineKey)> pipeline_hash_map;
+		PipelineHashMapRD<PipelineKey, ShaderData, void (ShaderData::*)(PipelineKey)>
+			pipeline_hash_map;
 
 		RID version;
 
-		static const uint32_t VERTEX_INPUT_MASKS_SIZE = ShaderVersion::SHADER_VERSION_COLOR_PASS * 2 + SHADER_COLOR_PASS_FLAG_COUNT;
+		static const uint32_t VERTEX_INPUT_MASKS_SIZE =
+			ShaderVersion::SHADER_VERSION_COLOR_PASS * 2 + SHADER_COLOR_PASS_FLAG_COUNT;
 		std::atomic<uint64_t> vertex_input_masks[VERTEX_INPUT_MASKS_SIZE] = {};
 
 		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
@@ -279,9 +307,12 @@ public:
 		uint64_t last_pass = 0;
 		uint32_t index = 0;
 
-		_FORCE_INLINE_ bool uses_alpha_pass() const {
-			bool has_read_screen_alpha = uses_screen_texture || uses_depth_texture || uses_normal_texture;
-			bool has_base_alpha = (uses_alpha && (!uses_alpha_clip || uses_alpha_antialiasing)) || has_read_screen_alpha;
+		_FORCE_INLINE_ bool uses_alpha_pass() const
+		{
+			bool has_read_screen_alpha =
+				uses_screen_texture || uses_depth_texture || uses_normal_texture;
+			bool has_base_alpha = (uses_alpha && (!uses_alpha_clip || uses_alpha_antialiasing)) ||
+								  has_read_screen_alpha;
 			bool has_blend_alpha = uses_blend_alpha;
 			bool has_alpha = has_base_alpha || has_blend_alpha;
 			bool no_depth_draw = depth_draw == DEPTH_DRAW_DISABLED;
@@ -289,28 +320,38 @@ public:
 			return has_alpha || has_read_screen_alpha || no_depth_draw || no_depth_test;
 		}
 
-		_FORCE_INLINE_ bool uses_depth_in_alpha_pass() const {
+		_FORCE_INLINE_ bool uses_depth_in_alpha_pass() const
+		{
 			bool no_depth_draw = depth_draw == DEPTH_DRAW_DISABLED;
 			bool no_depth_test = depth_test != DEPTH_TEST_ENABLED;
-			return (uses_depth_prepass_alpha || uses_alpha_antialiasing) && !(no_depth_draw || no_depth_test);
+			return (uses_depth_prepass_alpha || uses_alpha_antialiasing) &&
+				   !(no_depth_draw || no_depth_test);
 		}
 
-		_FORCE_INLINE_ bool uses_shared_shadow_material() const {
+		_FORCE_INLINE_ bool uses_shared_shadow_material() const
+		{
 			bool backface_culling = cull_mode == RSE::CULL_MODE_BACK;
-			return !uses_particle_trails && !writes_modelview_or_projection && !uses_vertex && !uses_position && !uses_discard && !uses_depth_prepass_alpha && !uses_alpha_clip && !uses_alpha_antialiasing && backface_culling && !uses_point_size && !uses_world_coordinates && !wireframe && !uses_z_clip_scale && !stencil_enabled;
+			return !uses_particle_trails && !writes_modelview_or_projection && !uses_vertex &&
+				   !uses_position && !uses_discard && !uses_depth_prepass_alpha &&
+				   !uses_alpha_clip && !uses_alpha_antialiasing && backface_culling &&
+				   !uses_point_size && !uses_world_coordinates && !wireframe &&
+				   !uses_z_clip_scale && !stencil_enabled;
 		}
 
-		virtual void set_code(const String &p_Code);
+		virtual void set_code(const String& p_Code);
 
 		virtual bool is_animated() const;
 		virtual bool casts_shadows() const;
 		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-		virtual Pair<ShaderRD *, RID> get_native_shader_and_version() const;
-		uint16_t _get_shader_version(PipelineVersion p_pipeline_version, uint32_t p_color_pass_flags, bool p_ubershader) const;
+		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
+		uint16_t _get_shader_version(PipelineVersion p_pipeline_version,
+			uint32_t p_color_pass_flags, bool p_ubershader) const;
 		RID _get_shader_variant(uint16_t p_shader_version) const;
 		void _clear_vertex_input_mask_cache();
-		RID get_shader_variant(PipelineVersion p_pipeline_version, uint32_t p_color_pass_flags, bool p_ubershader) const;
-		uint64_t get_vertex_input_mask(PipelineVersion p_pipeline_version, uint32_t p_color_pass_flags, bool p_ubershader);
+		RID get_shader_variant(PipelineVersion p_pipeline_version, uint32_t p_color_pass_flags,
+			bool p_ubershader) const;
+		uint64_t get_vertex_input_mask(
+			PipelineVersion p_pipeline_version, uint32_t p_color_pass_flags, bool p_ubershader);
 		RD::PolygonCullMode get_cull_mode_from_cull_variant(CullVariant p_cull_variant);
 		bool is_valid() const;
 
@@ -321,13 +362,16 @@ public:
 
 	SelfList<ShaderData>::List shader_list;
 
-	RendererRD::MaterialStorage::ShaderData *_create_shader_func();
-	static RendererRD::MaterialStorage::ShaderData *_create_shader_funcs() {
-		return static_cast<SceneShaderForwardClustered *>(singleton)->_create_shader_func();
+	RendererRD::MaterialStorage::ShaderData* _create_shader_func();
+
+	static RendererRD::MaterialStorage::ShaderData* _create_shader_funcs()
+	{
+		return static_cast<SceneShaderForwardClustered*>(singleton)->_create_shader_func();
 	}
 
-	struct MaterialData : public RendererRD::MaterialStorage::MaterialData {
-		ShaderData *shader_data = nullptr;
+	struct MaterialData : public RendererRD::MaterialStorage::MaterialData
+	{
+		ShaderData* shader_data = nullptr;
 		RID uniform_set;
 		uint64_t last_pass = 0;
 		uint32_t index = 0;
@@ -335,13 +379,16 @@ public:
 		uint8_t priority;
 		virtual void set_render_priority(int p_priority);
 		virtual void set_next_pass(RID p_pass);
-		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
 		virtual ~MaterialData();
 	};
 
-	RendererRD::MaterialStorage::MaterialData *_create_material_func(ShaderData *p_shader);
-	static RendererRD::MaterialStorage::MaterialData *_create_material_funcs(RendererRD::MaterialStorage::ShaderData *p_shader) {
-		return static_cast<SceneShaderForwardClustered *>(singleton)->_create_material_func(static_cast<ShaderData *>(p_shader));
+	RendererRD::MaterialStorage::MaterialData* _create_material_func(ShaderData* p_shader);
+
+	static RendererRD::MaterialStorage::MaterialData* _create_material_funcs(
+		RendererRD::MaterialStorage::ShaderData* p_shader)
+	{
+		return static_cast<SceneShaderForwardClustered*>(singleton)->_create_material_func(
+			static_cast<ShaderData*>(p_shader));
 	}
 
 	SceneForwardClusteredShaderRD shader;
@@ -355,7 +402,8 @@ public:
 	RID debug_shadow_splits_material_shader;
 	RID debug_shadow_splits_material;
 	RID default_shader_rd;
-	RID default_multiview_shader_rd; // This is lazily initialized, use "get_default_shader_rd" instead.
+	RID default_multiview_shader_rd; // This is lazily initialized, use "get_default_shader_rd"
+									 // instead.
 	RID default_shader_sdfgi_rd;
 
 	RID default_vec4_xform_buffer;
@@ -364,13 +412,13 @@ public:
 	RID shadow_sampler;
 
 	RID default_material_uniform_set;
-	ShaderData *default_material_shader_ptr = nullptr;
+	ShaderData* default_material_shader_ptr = nullptr;
 
 	RID overdraw_material_uniform_set;
-	ShaderData *overdraw_material_shader_ptr = nullptr;
+	ShaderData* overdraw_material_shader_ptr = nullptr;
 
 	RID debug_shadow_splits_material_uniform_set;
-	ShaderData *debug_shadow_splits_material_shader_ptr = nullptr;
+	ShaderData* debug_shadow_splits_material_shader_ptr = nullptr;
 
 	ShaderSpecialization default_specialization = {};
 
@@ -380,7 +428,7 @@ public:
 	~SceneShaderForwardClustered();
 
 	void init(const String p_defines);
-	void set_default_specialization(const ShaderSpecialization &p_specialization);
+	void set_default_specialization(const ShaderSpecialization& p_specialization);
 	void enable_multiview_shader_group();
 	void enable_advanced_shader_group(bool p_needs_multiview = false);
 	bool is_multiview_shader_group_enabled() const;
@@ -390,3 +438,5 @@ public:
 };
 
 } // namespace RendererSceneRenderImplementation
+
+

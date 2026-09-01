@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_stream_editor_plugin.h"
-#include "core/object/callable_mp.h"
 #include "editor/audio/audio_stream_preview.h"
 #include "editor/editor_string_names.h"
 #include "editor/settings/editor_settings.h"
@@ -42,10 +41,6 @@
 void AudioStreamEditor::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_READY: {
-		AudioStreamPreviewGenerator::get_singleton()->connect(
-			SNAME("preview_updated"), callable_mp(this, &AudioStreamEditor::_preview_changed));
-	} break;
 	case NOTIFICATION_THEME_CHANGED: {
 		Ref<Font> font = get_theme_font(SNAME("status_source"), EditorStringName(EditorFonts));
 
@@ -106,13 +101,6 @@ void AudioStreamEditor::_draw_preview()
 	Vector<Color> colors = {get_theme_color(SNAME("contrast_color_2"), EditorStringName(Editor))};
 
 	RS::get_singleton()->canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
-}
-
-void AudioStreamEditor::_preview_changed(ObjectID p_which)
-{
-	if (stream.is_valid() && stream->obj->get_instance_id() == p_which) {
-		_preview->queue_redraw();
-	}
 }
 
 void AudioStreamEditor::_stream_changed()
@@ -207,16 +195,11 @@ void AudioStreamEditor::_seek_to(real_t p_x)
 
 void AudioStreamEditor::set_stream(const Ref<AudioStream>& p_stream)
 {
-	if (stream.is_valid()) {
-		stream->disconnect_changed(callable_mp(this, &AudioStreamEditor::_stream_changed));
-	}
-
 	stream = p_stream;
 	if (stream.is_null()) {
 		hide();
 		return;
 	}
-	stream->connect_changed(callable_mp(this, &AudioStreamEditor::_stream_changed));
 
 	_player->set_stream(stream);
 	_current = 0;
@@ -232,8 +215,6 @@ AudioStreamEditor::AudioStreamEditor()
 	set_custom_minimum_size(Size2(1, 100) * EDSCALE);
 
 	_player = memnew(AudioStreamPlayer);
-	_player->connect(
-		SceneStringName(finished), callable_mp(this, &AudioStreamEditor::_on_finished));
 	add_child(_player);
 
 	VBoxContainer* vbox = memnew(VBoxContainer);
@@ -242,15 +223,10 @@ AudioStreamEditor::AudioStreamEditor()
 
 	_preview = memnew(ColorRect);
 	_preview->set_v_size_flags(SIZE_EXPAND_FILL);
-	_preview->connect(SceneStringName(draw), callable_mp(this, &AudioStreamEditor::_draw_preview));
 	vbox->add_child(_preview);
 
 	_indicator = memnew(Control);
 	_indicator->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	_indicator->connect(
-		SceneStringName(draw), callable_mp(this, &AudioStreamEditor::_draw_indicator));
-	_indicator->connect(
-		SceneStringName(gui_input), callable_mp(this, &AudioStreamEditor::_on_input_indicator));
 	_preview->add_child(_indicator);
 
 	HBoxContainer* hbox = memnew(HBoxContainer);
@@ -261,7 +237,6 @@ AudioStreamEditor::AudioStreamEditor()
 	hbox->add_child(_play_button);
 	_play_button->set_flat(true);
 	_play_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-	_play_button->connect(SceneStringName(pressed), callable_mp(this, &AudioStreamEditor::_play));
 	_play_button->set_shortcut(ED_SHORTCUT("audio_stream_editor/audio_preview_play_pause",
 		TTRC("Audio Preview Play/Pause"), Key::SPACE));
 	_play_button->set_accessibility_name(TTRC("Play"));
@@ -270,7 +245,6 @@ AudioStreamEditor::AudioStreamEditor()
 	hbox->add_child(_stop_button);
 	_stop_button->set_flat(true);
 	_stop_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-	_stop_button->connect(SceneStringName(pressed), callable_mp(this, &AudioStreamEditor::_stop));
 	_stop_button->set_accessibility_name(TTRC("Stop"));
 
 	_current_label = memnew(Label);
@@ -281,23 +255,6 @@ AudioStreamEditor::AudioStreamEditor()
 
 	_duration_label = memnew(Label);
 	hbox->add_child(_duration_label);
-}
-
-// EditorInspectorPluginAudioStream
-
-bool EditorInspectorPluginAudioStream::can_handle(Object* p_object)
-{
-	return Object::cast_to<AudioStreamWAV>(p_object) != nullptr;
-}
-
-void EditorInspectorPluginAudioStream::parse_begin(Object* p_object)
-{
-	AudioStream* stream = Object::cast_to<AudioStream>(p_object);
-
-	editor = memnew(AudioStreamEditor);
-	editor->set_stream(Ref<AudioStream>(stream));
-
-	add_custom_control(editor);
 }
 
 // AudioStreamEditorPlugin

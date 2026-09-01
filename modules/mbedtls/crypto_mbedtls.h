@@ -48,8 +48,6 @@ class TLSContextMbedTLS;
 
 class CryptoKeyMbedTLS : public CryptoKey
 {
-	VLTRSOFTCLASS(CryptoKeyMbedTLS, CryptoKey);
-
 private:
 	psa_key_id_t pk_slot = PSA_KEY_ID_NULL;
 	psa_key_type_t pk_type = PSA_KEY_TYPE_NONE;
@@ -92,8 +90,6 @@ public:
 
 class X509CertificateMbedTLS : public X509Certificate
 {
-	VLTRSOFTCLASS(X509CertificateMbedTLS, X509Certificate);
-
 private:
 	mbedtls_x509_crt cert;
 	int locks;

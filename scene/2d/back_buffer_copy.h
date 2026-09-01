@@ -32,11 +32,11 @@
 
 #include "scene/2d/node_2d.h"
 
-class BackBufferCopy : public Node2D {
-	VLTRCLASS(BackBufferCopy, Node2D);
-
+class BackBufferCopy : public Node2D
+{
 public:
-	enum CopyMode {
+	enum CopyMode
+	{
 		COPY_MODE_DISABLED,
 		COPY_MODE_RECT,
 		COPY_MODE_VIEWPORT
@@ -48,17 +48,13 @@ private:
 
 	void _update_copy_mode();
 
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
-
 public:
 #ifdef DEBUG_ENABLED
 	Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
 #endif // DEBUG_ENABLED
 
-	void set_rect(const Rect2 &p_rect);
+	void set_rect(const Rect2& p_rect);
 	Rect2 get_rect() const;
 	Rect2 get_anchorable_rect() const override;
 
@@ -69,4 +65,4 @@ public:
 	~BackBufferCopy();
 };
 
-VARIANT_ENUM_CAST(BackBufferCopy::CopyMode);
+

@@ -32,17 +32,18 @@
 
 #include "scene/gui/control.h"
 
-class VirtualJoystick : public Control {
-	VLTRCLASS(VirtualJoystick, Control);
-
+class VirtualJoystick : public Control
+{
 public:
-	enum JoystickMode {
+	enum JoystickMode
+	{
 		JOYSTICK_FIXED,
 		JOYSTICK_DYNAMIC,
 		JOYSTICK_FOLLOWING,
 	};
 
-	enum VisibilityMode {
+	enum VisibilityMode
+	{
 		VISIBILITY_ALWAYS,
 		VISIBILITY_WHEN_TOUCHED,
 	};
@@ -60,7 +61,8 @@ private:
 	StringName action_down = "ui_down";
 	VisibilityMode visibility = VISIBILITY_ALWAYS;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> normal_joystick;
 		Ref<StyleBox> normal_tip;
 		Ref<StyleBox> pressed_joystick;
@@ -78,12 +80,12 @@ private:
 	Vector2 joystick_pos;
 	Vector2 tip_pos;
 
-	void _update_joystick(const Vector2 &p_pos);
+	void _update_joystick(const Vector2& p_pos);
 	void _handle_input_actions();
 	void _reset();
 
 protected:
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event);
 	void _notification(int p_what);
 	static void _bind_methods();
 
@@ -105,21 +107,20 @@ public:
 	void set_clampzone_ratio(float p_ratio);
 	float get_clampzone_ratio() const;
 
-	void set_initial_offset_ratio(const Vector2 &p_ratio);
+	void set_initial_offset_ratio(const Vector2& p_ratio);
 	Vector2 get_initial_offset_ratio() const;
 
-	void set_action_left(const StringName &p_action);
+	void set_action_left(const StringName& p_action);
 	StringName get_action_left() const;
-	void set_action_right(const StringName &p_action);
+	void set_action_right(const StringName& p_action);
 	StringName get_action_right() const;
-	void set_action_up(const StringName &p_action);
+	void set_action_up(const StringName& p_action);
 	StringName get_action_up() const;
-	void set_action_down(const StringName &p_action);
+	void set_action_down(const StringName& p_action);
 	StringName get_action_down() const;
 
 	void set_visibility_mode(VisibilityMode p_mode);
 	VisibilityMode get_visibility_mode() const;
 };
 
-VARIANT_ENUM_CAST(VirtualJoystick::JoystickMode);
-VARIANT_ENUM_CAST(VirtualJoystick::VisibilityMode);
+

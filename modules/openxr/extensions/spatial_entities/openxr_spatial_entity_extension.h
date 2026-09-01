@@ -31,17 +31,13 @@
 #pragma once
 
 #include "../../openxr_structure.h"
-#include "../openxr_extension_wrapper.h"
 #include "../openxr_future_extension.h"
 #include "core/templates/rid_owner.h"
-#include "core/variant/typed_array.h"
 #include "openxr_spatial_entities.h"
 
 // Spatial entity extension
-class OpenXRSpatialEntityExtension : public OpenXRExtensionWrapper
+class OpenXRSpatialEntityExtension
 {
-	VLTRCLASS(OpenXRSpatialEntityExtension, OpenXRExtensionWrapper);
-
 public:
 	enum Capability
 	{
@@ -73,15 +69,15 @@ public:
 	static OpenXRSpatialEntityExtension* get_singleton();
 
 	OpenXRSpatialEntityExtension();
-	virtual ~OpenXRSpatialEntityExtension() override;
+	virtual ~OpenXRSpatialEntityExtension();
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_instance_created(const XrInstance p_instance) override;
-	virtual void on_instance_destroyed() override;
-	virtual void on_session_destroyed() override;
+	virtual void on_instance_created(const XrInstance p_instance);
+	virtual void on_instance_destroyed();
+	virtual void on_session_destroyed();
 
-	virtual bool on_event_polled(const XrEventDataBuffer& event) override;
+	virtual bool on_event_polled(const XrEventDataBuffer& event);
 
 	bool get_active() const;
 	bool supports_capability(XrSpatialCapabilityEXT p_capability);
@@ -89,19 +85,9 @@ public:
 		XrSpatialCapabilityEXT p_capability, XrSpatialComponentTypeEXT p_component_type);
 
 	// Spatial contexts
-	Ref<OpenXRFutureResult> create_spatial_context(const Array& p_capability_configurations,
-		Ref<OpenXRStructureBase> p_next, const Callable& p_user_callback);
 	bool get_spatial_context_ready(RID p_spatial_context) const;
 	void free_spatial_context(RID p_spatial_context);
 	XrSpatialContextEXT get_spatial_context_handle(RID p_spatial_context) const;
-
-	// Discovery query
-	Ref<OpenXRFutureResult> discover_spatial_entities_with_component_data(RID p_spatial_context,
-		const Array& p_component_data, Ref<OpenXRStructureBase> p_next,
-		const Callable& p_user_callback);
-	Ref<OpenXRFutureResult> discover_spatial_entities(RID p_spatial_context,
-		const Vector<XrSpatialComponentTypeEXT>& p_component_types, Ref<OpenXRStructureBase> p_next,
-		const Callable& p_user_callback);
 
 	// Update query
 	RID update_spatial_entities(RID p_spatial_context, const LocalVector<RID>& p_entities,
@@ -112,10 +98,6 @@ public:
 	void free_spatial_snapshot(RID p_spatial_snapshot);
 	XrSpatialSnapshotEXT get_spatial_snapshot_handle(RID p_spatial_snapshot) const;
 	RID get_spatial_snapshot_context(RID p_spatial_snapshot) const;
-
-	bool query_snapshot(RID p_spatial_snapshot,
-		const Array& p_component_data,
-		Ref<OpenXRStructureBase> p_next);
 
 	// Buffers from snapshot
 	String get_string(RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const;
@@ -175,20 +157,7 @@ private:
 
 	mutable RID_Owner<SpatialContextData> spatial_context_owner;
 
-	void _on_context_creation_ready(
-		Ref<OpenXRFutureResult> p_future_result, const Callable& p_user_callback);
 	uint64_t _get_spatial_context_handle(RID p_spatial_context) const;
-
-	// Spatial query
-	Ref<OpenXRFutureResult> _discover_spatial_entities(RID p_spatial_context,
-		const PackedInt64Array& p_component_types, Ref<OpenXRStructureBase> p_next,
-		const Callable& p_callback);
-	void _on_discovered_spatial_entities(Ref<OpenXRFutureResult> p_future_result,
-		RID p_discovery_spatial_context, const Callable& p_user_callback);
-
-	// Update query
-	RID _update_spatial_entities(RID p_spatial_context, const TypedArray<RID>& p_entities,
-		const PackedInt64Array& p_component_types, Ref<OpenXRStructureBase> p_next);
 
 	// Snapshot data
 	struct SpatialSnapshotData
@@ -283,8 +252,5 @@ private:
 		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
 		buffer_count_output, (XrVector3f*), buffer);
 };
-
-VARIANT_ENUM_CAST(OpenXRSpatialEntityExtension::Capability);
-VARIANT_ENUM_CAST(OpenXRSpatialEntityExtension::ComponentType);
 
 

@@ -36,15 +36,14 @@ class EditorValidationPanel;
 class LineEdit;
 class ItemList;
 
-class EditorLayoutsDialog : public ConfirmationDialog {
-	VLTRCLASS(EditorLayoutsDialog, ConfirmationDialog);
-
+class EditorLayoutsDialog : public ConfirmationDialog
+{
 	bool save_mode = true;
 
-	LineEdit *name = nullptr;
-	EditorValidationPanel *validation = nullptr;
-	ItemList *layout_names = nullptr;
-	VBoxContainer *makevb = nullptr;
+	LineEdit* name = nullptr;
+	EditorValidationPanel* validation = nullptr;
+	ItemList* layout_names = nullptr;
+	VBoxContainer* makevb = nullptr;
 
 	void _deselect_layout_names();
 	void _validate_name();
@@ -61,3 +60,5 @@ public:
 
 	void set_save_mode_enabled(bool p_enabled);
 };
+
+

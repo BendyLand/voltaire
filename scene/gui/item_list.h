@@ -35,22 +35,24 @@
 #include "scene/property_list_helper.h"
 #include "scene/resources/text_paragraph.h"
 
-class ItemList : public Control {
-	VLTRCLASS(ItemList, Control);
-
+class ItemList : public Control
+{
 public:
-	enum IconMode {
+	enum IconMode
+	{
 		ICON_MODE_TOP,
 		ICON_MODE_LEFT
 	};
 
-	enum SelectMode {
+	enum SelectMode
+	{
 		SELECT_SINGLE,
 		SELECT_MULTI,
 		SELECT_TOGGLE,
 	};
 
-	enum ScrollHintMode {
+	enum ScrollHintMode
+	{
 		SCROLL_HINT_MODE_DISABLED,
 		SCROLL_HINT_MODE_BOTH,
 		SCROLL_HINT_MODE_TOP,
@@ -58,7 +60,8 @@ public:
 	};
 
 private:
-	struct Item {
+	struct Item
+	{
 		mutable RID accessibility_item_element;
 		mutable bool accessibility_item_dirty = true;
 
@@ -78,7 +81,6 @@ private:
 		bool selected = false;
 		bool disabled = false;
 		bool tooltip_enabled = true;
-		Variant metadata;
 		String tooltip;
 		Color custom_fg;
 		Color custom_bg = Color(0.0, 0.0, 0.0, 0.0);
@@ -89,14 +91,13 @@ private:
 
 		Size2 get_icon_size() const;
 
-		bool operator<(const Item &p_another) const { return text < p_another.text; }
+		bool operator<(const Item& p_another) const { return text < p_another.text; }
 
-		Item() {
-			text_buf.instantiate();
-		}
+		Item() { text_buf.instantiate(); }
 
 		Item(bool p_dummy) {}
 	};
+
 	RID accessibility_scroll_element;
 
 	static inline PropertyListHelper base_property_helper;
@@ -126,8 +127,8 @@ private:
 
 	SelectMode select_mode = SELECT_SINGLE;
 	IconMode icon_mode = ICON_MODE_LEFT;
-	VScrollBar *scroll_bar_v = nullptr;
-	HScrollBar *scroll_bar_h = nullptr;
+	VScrollBar* scroll_bar_v = nullptr;
+	HScrollBar* scroll_bar_h = nullptr;
 	TextServer::OverrunBehavior text_overrun_behavior = TextServer::OVERRUN_TRIM_ELLIPSIS;
 
 	ScrollHintMode scroll_hint_mode = SCROLL_HINT_MODE_DISABLED;
@@ -157,10 +158,11 @@ private:
 	void _mouse_exited();
 	void _shift_range_select(int p_from, int p_to);
 
-	String _atr(int p_idx, const String &p_text) const;
+	String _atr(int p_idx, const String& p_text) const;
 
 protected:
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		int h_separation = 0;
 		int v_separation = 0;
 		int scroll_bar_h_separation = 0;
@@ -197,52 +199,43 @@ protected:
 	} theme_cache;
 
 	void _notification(int p_what);
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const { return property_helper.property_get_value(p_name, r_ret); }
-	void _get_property_list(List<PropertyInfo> *p_list) const { property_helper.get_property_list(p_list); }
-	bool _property_can_revert(const StringName &p_name) const { return property_helper.property_can_revert(p_name); }
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const { return property_helper.property_get_revert(p_name, r_property); }
-	static void _bind_methods();
 
-	void _accessibility_action_scroll_set(const Variant &p_data);
-	void _accessibility_action_scroll_up(const Variant &p_data);
-	void _accessibility_action_scroll_down(const Variant &p_data);
-	void _accessibility_action_scroll_left(const Variant &p_data);
-	void _accessibility_action_scroll_right(const Variant &p_data);
-	void _accessibility_action_scroll_into_view(const Variant &p_data, int p_index);
-	void _accessibility_action_focus(const Variant &p_data, int p_index);
-	void _accessibility_action_blur(const Variant &p_data, int p_index);
+	bool _property_can_revert(const StringName& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+	static void _bind_methods();
 
 public:
 	virtual RID get_focused_accessibility_element() const override;
 
-	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
+	int add_item(const String& p_item, const Ref<Texture2D>& p_texture = Ref<Texture2D>(),
+		bool p_selectable = true);
+	int add_icon_item(const Ref<Texture2D>& p_item, bool p_selectable = true);
 
-	int add_item(const String &p_item, const Ref<Texture2D> &p_texture = Ref<Texture2D>(), bool p_selectable = true);
-	int add_icon_item(const Ref<Texture2D> &p_item, bool p_selectable = true);
-
-	void set_item_text(int p_idx, const String &p_text);
+	void set_item_text(int p_idx, const String& p_text);
 	String get_item_text(int p_idx) const;
 
 	void set_item_text_direction(int p_idx, TextDirection p_text_direction);
 	TextDirection get_item_text_direction(int p_idx) const;
 
-	void set_item_language(int p_idx, const String &p_language);
+	void set_item_language(int p_idx, const String& p_language);
 	String get_item_language(int p_idx) const;
 
 	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
 	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
 
-	void set_item_icon(int p_idx, const Ref<Texture2D> &p_icon);
+	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_item_icon(int p_idx) const;
 
 	void set_item_icon_transposed(int p_idx, const bool transposed);
 	bool is_item_icon_transposed(int p_idx) const;
 
-	void set_item_icon_region(int p_idx, const Rect2 &p_region);
+	void set_item_icon_region(int p_idx, const Rect2& p_region);
 	Rect2 get_item_icon_region(int p_idx) const;
 
-	void set_item_icon_modulate(int p_idx, const Color &p_modulate);
+	void set_item_icon_modulate(int p_idx, const Color& p_modulate);
 	Color get_item_icon_modulate(int p_idx) const;
 
 	void set_item_selectable(int p_idx, bool p_selectable);
@@ -251,21 +244,18 @@ public:
 	void set_item_disabled(int p_idx, bool p_disabled);
 	bool is_item_disabled(int p_idx) const;
 
-	void set_item_metadata(int p_idx, const Variant &p_metadata);
-	Variant get_item_metadata(int p_idx) const;
-
-	void set_item_tag_icon(int p_idx, const Ref<Texture2D> &p_tag_icon);
+	void set_item_tag_icon(int p_idx, const Ref<Texture2D>& p_tag_icon);
 
 	void set_item_tooltip_enabled(int p_idx, const bool p_enabled);
 	bool is_item_tooltip_enabled(int p_idx) const;
 
-	void set_item_tooltip(int p_idx, const String &p_tooltip);
+	void set_item_tooltip(int p_idx, const String& p_tooltip);
 	String get_item_tooltip(int p_idx) const;
 
-	void set_item_custom_bg_color(int p_idx, const Color &p_custom_bg_color);
+	void set_item_custom_bg_color(int p_idx, const Color& p_custom_bg_color);
 	Color get_item_custom_bg_color(int p_idx) const;
 
-	void set_item_custom_fg_color(int p_idx, const Color &p_custom_fg_color);
+	void set_item_custom_fg_color(int p_idx, const Color& p_custom_fg_color);
 	Color get_item_custom_fg_color(int p_idx) const;
 
 	Rect2 get_item_rect(int p_idx, bool p_expand = true) const;
@@ -309,10 +299,10 @@ public:
 	void set_icon_mode(IconMode p_mode);
 	IconMode get_icon_mode() const;
 
-	void set_fixed_icon_size(const Size2i &p_size);
+	void set_fixed_icon_size(const Size2i& p_size);
 	Size2i get_fixed_icon_size() const;
 
-	void set_fixed_tag_icon_size(const Size2i &p_size);
+	void set_fixed_tag_icon_size(const Size2i& p_size);
 
 	void set_allow_rmb_select(bool p_allow);
 	bool get_allow_rmb_select() const;
@@ -327,12 +317,10 @@ public:
 	void center_on_current(bool p_center_verically = true, bool p_center_horizontally = true);
 
 	void sort_items_by_text();
-	int find_metadata(const Variant &p_metadata) const;
 
-	virtual String get_tooltip(const Object& obj, const Point2 &p_pos) const override;
-	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2 &p_at) const override;
-	int get_item_at_position(const Point2 &p_pos, bool p_exact = false) const;
-	bool is_pos_at_end_of_items(const Point2 &p_pos) const;
+	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2& p_at) const override;
+	int get_item_at_position(const Point2& p_pos, bool p_exact = false) const;
+	bool is_pos_at_end_of_items(const Point2& p_pos) const;
 
 	void set_icon_scale(real_t p_scale);
 	real_t get_icon_scale() const;
@@ -352,8 +340,9 @@ public:
 
 	void force_update_list_size();
 
-	VScrollBar *get_v_scroll_bar() { return scroll_bar_v; }
-	HScrollBar *get_h_scroll_bar() { return scroll_bar_h; }
+	VScrollBar* get_v_scroll_bar() { return scroll_bar_v; }
+
+	HScrollBar* get_h_scroll_bar() { return scroll_bar_h; }
 
 	void set_scroll_hint_mode(ScrollHintMode p_mode);
 	ScrollHintMode get_scroll_hint_mode() const;
@@ -365,6 +354,4 @@ public:
 	~ItemList();
 };
 
-VARIANT_ENUM_CAST(ItemList::SelectMode);
-VARIANT_ENUM_CAST(ItemList::IconMode);
-VARIANT_ENUM_CAST(ItemList::ScrollHintMode);
+

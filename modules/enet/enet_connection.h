@@ -32,15 +32,12 @@
 
 #include <enet/enet.h>
 #include "core/crypto/crypto.h"
-#include "core/object/ref_counted.h"
 #include "enet_packet_peer.h"
 
 template <typename T> class TypedArray;
 
 class ENetConnection : public RefCounted
 {
-	VLTRCLASS(ENetConnection, RefCounted);
-
 public:
 	enum CompressionMode
 	{
@@ -86,9 +83,7 @@ private:
 	EventType _parse_event(const ENetEvent& p_event, Event& r_event);
 	Error _create(ENetAddress* p_address, int p_max_peers, int p_max_channels, int p_in_bandwidth,
 		int p_out_bandwidth);
-	Array _service(int p_timeout = 0);
 	void _broadcast(int p_channel, PackedByteArray p_packet, int p_flags);
-	Array _get_peers();
 
 	class Compressor
 	{
@@ -114,9 +109,6 @@ private:
 public:
 	void broadcast(enet_uint8 p_channel, ENetPacket* p_packet);
 	void socket_send(const String& p_address, int p_port, const PackedByteArray& p_packet);
-	Error create_host_bound(const IPAddress& p_bind_address = IPAddress("*"), int p_port = 0,
-		int p_max_peers = 32, int p_max_channels = 0, int p_in_bandwidth = 0,
-		int p_out_bandwidth = 0);
 	Error create_host(int p_max_peers = 32, int p_max_channels = 0, int p_in_bandwidth = 0,
 		int p_out_bandwidth = 0);
 	void destroy();
@@ -145,9 +137,5 @@ public:
 
 	~ENetConnection();
 };
-
-VARIANT_ENUM_CAST(ENetConnection::CompressionMode);
-VARIANT_ENUM_CAST(ENetConnection::EventType);
-VARIANT_ENUM_CAST(ENetConnection::HostStatistic);
 
 

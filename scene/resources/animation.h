@@ -37,9 +37,6 @@
 
 class Animation : public Resource
 {
-	VLTRCLASS(Animation, Resource);
-	RES_BASE_EXTENSION("anim");
-
 public:
 	typedef uint64_t TrackCacheID;
 
@@ -200,7 +197,6 @@ private:
 	struct ValueTrack : public Track
 	{
 		UpdateMode update_mode = UPDATE_CONTINUOUS;
-		LocalVector<TKey<Variant>> values;
 
 		ValueTrack() { type = TYPE_VALUE; }
 	};
@@ -210,7 +206,6 @@ private:
 	struct MethodKey : public Key
 	{
 		StringName method;
-		Vector<Variant> params;
 	};
 
 	struct MethodTrack : public Track
@@ -302,10 +297,6 @@ private:
 	_FORCE_INLINE_ Vector3 _interpolate(const Vector3& p_a, const Vector3& p_b, real_t p_c) const;
 	_FORCE_INLINE_ Quaternion _interpolate(
 		const Quaternion& p_a, const Quaternion& p_b, real_t p_c) const;
-	_FORCE_INLINE_ Variant _interpolate(const Variant& p_a, const Variant& p_b, real_t p_c) const;
-	_FORCE_INLINE_ real_t _interpolate(const real_t& p_a, const real_t& p_b, real_t p_c) const;
-	_FORCE_INLINE_ Variant _interpolate_angle(
-		const Variant& p_a, const Variant& p_b, real_t p_c) const;
 
 	_FORCE_INLINE_ Vector3 _cubic_interpolate_in_time(const Vector3& p_pre_a, const Vector3& p_a,
 		const Vector3& p_b, const Vector3& p_post_b, real_t p_c, real_t p_pre_a_t, real_t p_b_t,
@@ -313,15 +304,9 @@ private:
 	_FORCE_INLINE_ Quaternion _cubic_interpolate_in_time(const Quaternion& p_pre_a,
 		const Quaternion& p_a, const Quaternion& p_b, const Quaternion& p_post_b, real_t p_c,
 		real_t p_pre_a_t, real_t p_b_t, real_t p_post_b_t) const;
-	_FORCE_INLINE_ Variant _cubic_interpolate_in_time(const Variant& p_pre_a, const Variant& p_a,
-		const Variant& p_b, const Variant& p_post_b, real_t p_c, real_t p_pre_a_t, real_t p_b_t,
-		real_t p_post_b_t) const;
 	_FORCE_INLINE_ real_t _cubic_interpolate_in_time(const real_t& p_pre_a, const real_t& p_a,
 		const real_t& p_b, const real_t& p_post_b, real_t p_c, real_t p_pre_a_t, real_t p_b_t,
 		real_t p_post_b_t) const;
-	_FORCE_INLINE_ Variant _cubic_interpolate_angle_in_time(const Variant& p_pre_a,
-		const Variant& p_a, const Variant& p_b, const Variant& p_post_b, real_t p_c,
-		real_t p_pre_a_t, real_t p_b_t, real_t p_post_b_t) const;
 
 	template <typename T>
 	_FORCE_INLINE_ T _interpolate(const LocalVector<TKey<T>>& p_keys, double p_time,
@@ -464,10 +449,6 @@ private:
 		real_t p_allowed_angular_err, real_t p_allowed_precision_error);
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
 	virtual void reset_state() override;
 
 	static void _bind_methods();
@@ -480,7 +461,6 @@ protected:
 	Quaternion _rotation_track_interpolate_bind_compat_86629(int p_track, double p_time) const;
 	Vector3 _scale_track_interpolate_bind_compat_86629(int p_track, double p_time) const;
 	float _blend_shape_track_interpolate_bind_compat_86629(int p_track, double p_time) const;
-	Variant _value_track_interpolate_bind_compat_86629(int p_track, double p_time) const;
 	int _track_find_key_bind_compat_92861(
 		int p_track, double p_time, FindMode p_find_mode = FIND_MODE_NEAREST) const;
 	static void _bind_compatibility_methods();
@@ -514,16 +494,13 @@ public:
 	void track_set_enabled(int p_track, bool p_enabled);
 	bool track_is_enabled(int p_track) const;
 
-	int track_insert_key(int p_track, double p_time, const Variant& p_key, real_t p_transition = 1);
 	void track_set_key_transition(int p_track, int p_key_idx, real_t p_transition);
-	void track_set_key_value(int p_track, int p_key_idx, const Variant& p_value);
 	void track_set_key_time(int p_track, int p_key_idx, double p_time);
 	int track_find_key(int p_track, double p_time, FindMode p_find_mode = FIND_MODE_NEAREST,
 		bool p_limit = false, bool p_backward = false) const;
 	void track_remove_key(int p_track, int p_idx);
 	void track_remove_key_at_time(int p_track, double p_time);
 	int track_get_key_count(int p_track) const;
-	Variant track_get_key_value(int p_track, int p_key_idx) const;
 	double track_get_key_time(int p_track, int p_key_idx) const;
 	real_t track_get_key_transition(int p_track, int p_key_idx) const;
 	bool track_is_compressed(int p_track) const;
@@ -556,7 +533,6 @@ public:
 	void track_set_interpolation_type(int p_track, InterpolationType p_interp);
 	InterpolationType track_get_interpolation_type(int p_track) const;
 
-	Array make_default_bezier_key(float p_value);
 	int bezier_track_insert_key(int p_track, double p_time, real_t p_value,
 		const Vector2& p_in_handle, const Vector2& p_out_handle);
 	void bezier_track_set_key_value(int p_track, int p_index, real_t p_value);
@@ -598,11 +574,9 @@ public:
 	void track_set_interpolation_loop_wrap(int p_track, bool p_enable);
 	bool track_get_interpolation_loop_wrap(int p_track) const;
 
-	Variant value_track_interpolate(int p_track, double p_time, bool p_backward = false) const;
 	void value_track_set_update_mode(int p_track, UpdateMode p_mode);
 	UpdateMode value_track_get_update_mode(int p_track) const;
 
-	Vector<Variant> method_track_get_params(int p_track, int p_key_idx) const;
 	StringName method_track_get_name(int p_track, int p_key_idx) const;
 
 	void copy_track(int p_track, Ref<Animation> p_to_animation);
@@ -689,25 +663,6 @@ public:
 			Quaternion()); // Deterministic slerp to prevent to cross the inverted rest axis.
 
 	// Helper functions for Variant.
-	static bool is_variant_interpolatable(const Variant p_value);
-	static bool needs_type_cast(const Variant& p_from, const Variant& p_to);
-	static bool validate_type_match(const Variant& p_from, Variant& r_to);
-
-	static Variant cast_to_blendwise(const Variant p_value);
-	static Variant cast_from_blendwise(const Variant p_value, const Variant::Type p_type);
-
-	static Variant string_to_array(const Variant p_value);
-	static Variant array_to_string(const Variant p_value);
-
-	static Variant add_variant(const Variant& a, const Variant& b);
-	static Variant subtract_variant(const Variant& a, const Variant& b);
-	static Variant blend_variant(const Variant& a, const Variant& b, float c);
-	static Variant interpolate_variant(
-		const Variant& a, const Variant& b, float c, bool p_snap_array_element = false);
-	static Variant cubic_interpolate_in_time_variant(const Variant& pre_a, const Variant& a,
-		const Variant& b, const Variant& post_b, float c, real_t p_pre_a_t, real_t p_b_t,
-		real_t p_post_b_t, bool p_snap_array_element = false);
-
 	static bool is_less_or_equal_approx(double a, double b)
 	{
 		return a < b || Math::is_equal_approx(a, b);
@@ -731,14 +686,4 @@ public:
 	~Animation();
 };
 
-VARIANT_ENUM_CAST(Animation::TrackType);
-VARIANT_ENUM_CAST(Animation::InterpolationType);
-VARIANT_ENUM_CAST(Animation::UpdateMode);
-VARIANT_ENUM_CAST(Animation::LoopMode);
-VARIANT_ENUM_CAST(Animation::LoopedFlag);
-VARIANT_ENUM_CAST(Animation::FindMode);
-#ifdef TOOLS_ENABLED
-VARIANT_ENUM_CAST(Animation::HandleMode);
-VARIANT_ENUM_CAST(Animation::HandleSetMode);
-#endif // TOOLS_ENABLED
 

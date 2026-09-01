@@ -31,7 +31,6 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
-#include "core/object/class_db.h"
 #include "core/os/time.h"
 #include "core/templates/rb_set.h"
 #include "movie_writer.h"
@@ -90,73 +89,6 @@ void MovieWriter::get_supported_extensions(List<String>* r_extensions) const
 	for (int i = 0; i < exts.size(); i++) {
 		r_extensions->push_back(exts[i]);
 	}
-}
-
-void MovieWriter::begin(const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
-{
-	project_name = GLOBAL_GET("application/config/name");
-	movie_size = p_movie_size;
-
-	print_line(vformat(U"Movie Maker mode enabled, recording movie in %s×%s @ %d FPS...",
-		movie_size.width, movie_size.height, p_fps));
-
-	// Check for available disk space and warn the user if needed.
-	String path = p_base_path.get_base_dir();
-	if (path.is_relative_path()) {
-		path = "res://" + path;
-	}
-	Ref<DirAccess> dir = DirAccess::open(path);
-	if (dir->get_space_left() < 10 * Math::pow(1024.0, 3.0)) {
-		// Less than 10 GiB available.
-		WARN_PRINT(vformat("Current available space on disk is low (%s). MovieWriter will fail "
-						   "during movie recording if the disk runs out of available space.",
-			String::humanize_size(dir->get_space_left())));
-	}
-
-	cpu_time = 0.0f;
-	gpu_time = 0.0f;
-	encoding_time_usec = 0;
-
-	mix_rate = get_audio_mix_rate();
-	AudioDriverDummy::get_dummy_singleton()->set_mix_rate(mix_rate);
-	AudioDriverDummy::get_dummy_singleton()->set_speaker_mode(
-		AudioDriver::SpeakerMode(get_audio_speaker_mode()));
-	fps = p_fps;
-	if ((mix_rate % fps) != 0) {
-		WARN_PRINT("MovieWriter's audio mix rate (" + itos(mix_rate) +
-				   ") can not be divided by the recording FPS (" + itos(fps) +
-				   "). Audio may go out of sync over time.");
-	}
-
-	audio_channels = AudioDriverDummy::get_dummy_singleton()->get_channels();
-	audio_mix_buffer.resize(mix_rate * audio_channels / fps);
-
-	write_begin(movie_size, p_fps, p_base_path);
-}
-
-void MovieWriter::_bind_methods() {}
-
-void MovieWriter::set_extensions_hint()
-{
-	RBSet<String> found;
-	for (uint32_t i = 0; i < writer_count; i++) {
-		List<String> extensions;
-		writers[i]->get_supported_extensions(&extensions);
-		for (const String& ext : extensions) {
-			found.insert(ext);
-		}
-	}
-
-	String ext_hint;
-
-	for (const String& S : found) {
-		if (ext_hint != "") {
-			ext_hint += ",";
-		}
-		ext_hint += "*." + S;
-	}
-	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(Variant::STRING,
-		"editor/movie_writer/movie_file", PROPERTY_HINT_GLOBAL_SAVE_FILE, ext_hint));
 }
 
 void MovieWriter::add_frame()
@@ -229,52 +161,6 @@ void MovieWriter::add_frame()
 	write_frame(vp_tex, audio_mix_buffer.ptr());
 	uint64_t encoding_end_usec = Time::get_singleton()->get_ticks_usec();
 	encoding_time_usec += encoding_end_usec - encoding_start_usec;
-}
-
-void MovieWriter::end()
-{
-	uint64_t encoding_start_usec = Time::get_singleton()->get_ticks_usec();
-	write_end();
-	uint64_t encoding_end_usec = Time::get_singleton()->get_ticks_usec();
-	encoding_time_usec += encoding_end_usec - encoding_start_usec;
-
-	// Print a report with various statistics.
-	print_line("--------------------------------------------------------------------------------");
-	String movie_path = Engine::get_singleton()->get_write_movie_path();
-	if (movie_path.is_relative_path()) {
-		// Print absolute path to make finding the file easier,
-		// and to make it clickable in terminal emulators that support this.
-		movie_path =
-			ProjectSettings::get_singleton()->globalize_path("res://").path_join(movie_path);
-	}
-	print_line(vformat("Done recording movie at path: %s", movie_path));
-
-	const int movie_time_seconds = Engine::get_singleton()->get_frames_drawn() / fps;
-	const int frame_remainder = Engine::get_singleton()->get_frames_drawn() % fps;
-	const String movie_time =
-		vformat("%s:%s:%s:%s", String::num(movie_time_seconds / 3600, 0).pad_zeros(2),
-			String::num((movie_time_seconds % 3600) / 60, 0).pad_zeros(2),
-			String::num(movie_time_seconds % 60, 0).pad_zeros(2),
-			String::num(frame_remainder, 0).pad_zeros(2));
-
-	const int real_time_seconds = Time::get_singleton()->get_ticks_msec() / 1000;
-	const String real_time =
-		vformat("%s:%s:%s", String::num(real_time_seconds / 3600, 0).pad_zeros(2),
-			String::num((real_time_seconds % 3600) / 60, 0).pad_zeros(2),
-			String::num(real_time_seconds % 60, 0).pad_zeros(2));
-
-	print_line(
-		vformat("%d frames at %d FPS (movie length: %s), recorded in %s (%d%% of real-time speed).",
-			Engine::get_singleton()->get_frames_drawn(), fps, movie_time, real_time,
-			(float(MAX(1, movie_time_seconds)) / MAX(1, real_time_seconds)) * 100));
-	print_line(vformat("CPU render time: %.2f seconds (average: %.2f ms/frame)", cpu_time / 1000,
-		cpu_time / Engine::get_singleton()->get_frames_drawn()));
-	print_line(vformat("GPU render time: %.2f seconds (average: %.2f ms/frame)", gpu_time / 1000,
-		gpu_time / Engine::get_singleton()->get_frames_drawn()));
-	print_line(vformat("Encoding time: %.2f seconds (average: %.2f ms/frame)",
-		encoding_time_usec / 1000000.f,
-		encoding_time_usec / 1000.f / Engine::get_singleton()->get_frames_drawn()));
-	print_line("--------------------------------------------------------------------------------");
 }
 
 void MovieWriter::write_end() {}

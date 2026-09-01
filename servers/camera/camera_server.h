@@ -30,12 +30,10 @@
 
 #pragma once
 
-#include "core/object/object.h"
-#include "core/object/ref_counted.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
-#include "core/variant/type_info.h"
+#include "core/types.h"
 
 /**
 	The camera server is a singleton object that gives access to the various
@@ -50,7 +48,6 @@ class CameraServer
 	_THREAD_SAFE_CLASS_
 
 public:
-	mem_unique_ptr<Object> obj;
 
 	enum FeedImage
 	{
@@ -105,7 +102,6 @@ public:
 	// Get our feeds.
 	Ref<CameraFeed> get_feed(int p_index);
 	int get_feed_count();
-	Array get_feeds();
 
 	// Intended for use with custom CameraServer implementation.
 	RID feed_texture(int p_id, FeedImage p_texture);
@@ -120,7 +116,5 @@ public:
 	CameraServer();
 	~CameraServer();
 };
-
-VARIANT_ENUM_CAST(CameraServer::FeedImage);
 
 

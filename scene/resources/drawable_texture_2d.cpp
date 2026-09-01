@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "drawable_texture_2d.h"
 #include "scene/resources/atlas_texture.h"
 #include "scene/resources/material.h"
@@ -61,37 +60,13 @@ void DrawableTexture2D::_initialize()
 	}
 }
 
-// Setup basic parameters on the Drawable Texture
-void DrawableTexture2D::setup(
-	int p_width, int p_height, DrawableFormat p_format, const Color& p_color, bool p_use_mipmaps)
-{
-	ERR_FAIL_COND_MSG(
-		p_width <= 0 || p_width > 16384, "Texture dimensions have to be in the 1 to 16384 range.");
-	ERR_FAIL_COND_MSG(p_height <= 0 || p_height > 16384,
-		"Texture dimensions have to be in the 1 to 16384 range.");
-	width = p_width;
-	height = p_height;
-	format = p_format;
-	mipmaps = p_use_mipmaps;
-	base_color = p_color;
-	_initialize();
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
+
 
 int DrawableTexture2D::get_width() const { return width; }
 
 int DrawableTexture2D::get_height() const { return height; }
 
-void DrawableTexture2D::set_drawable_format(DrawableFormat p_format)
-{
-	if (format == p_format) {
-		return;
-	}
-	format = p_format;
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
+
 
 DrawableTexture2D::DrawableFormat DrawableTexture2D::get_drawable_format() const { return format; }
 
@@ -111,15 +86,7 @@ Image::Format DrawableTexture2D::get_format() const
 	}
 }
 
-void DrawableTexture2D::set_use_mipmaps(bool p_mipmaps)
-{
-	if (mipmaps == p_mipmaps) {
-		return;
-	}
-	mipmaps = p_mipmaps;
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
+
 
 bool DrawableTexture2D::get_use_mipmaps() const { return mipmaps; }
 
@@ -163,83 +130,6 @@ void DrawableTexture2D::draw_rect_region(RID p_canvas_item, const Rect2& p_rect,
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
-// Perform a blit operation from the given source to the given rect on self.
-void DrawableTexture2D::blit_rect(const Rect2i p_rect, const Ref<Texture2D>& p_source,
-	const Color& p_modulate, int p_mipmap, const Ref<Material>& p_material)
-{
-	// Use user Shader if exists.
-	RID material = default_material;
-	if (p_material.is_valid()) {
-		material = p_material->get_rid();
-		if (p_material->get_shader_mode() != Shader::MODE_TEXTURE_BLIT) {
-			WARN_PRINT("ShaderMaterial passed to blit_rect() is not a texture_blit shader. Using "
-					   "default instead.");
-		}
-	}
-
-	// Rendering server expects textureParameters as a TypedArray[RID]
-	Array textures;
-	textures.push_back(texture);
-
-	if (p_source.is_valid()) {
-		ERR_FAIL_COND_MSG(texture == p_source->get_rid(), "Cannot use self as a source.");
-	}
-	Array src_textures;
-	if (Ref<AtlasTexture>(p_source).is_valid()) {
-		WARN_PRINT("AtlasTexture not supported as a source for blit_rect. Using default White.");
-		src_textures.push_back(RID());
-	}
-	else {
-		src_textures.push_back(p_source);
-	}
-
-	RS::get_singleton()->texture_drawable_blit_rect(
-		textures, p_rect, material, p_modulate, src_textures, p_mipmap);
-	this->obj->notify_property_list_changed();
-}
-
-// Perform a blit operation from the given sources to the given rect on self and extra targets
-void DrawableTexture2D::blit_rect_multi(const Rect2i p_rect, const TypedArray<Texture2D>& p_sources,
-	const TypedArray<DrawableTexture2D>& p_extra_targets, const Color& p_modulate, int p_mipmap,
-	const Ref<Material>& p_material)
-{
-	RID material = default_material;
-	if (p_material.is_valid()) {
-		material = p_material->get_rid();
-		if (p_material->get_shader_mode() != Shader::MODE_TEXTURE_BLIT) {
-			WARN_PRINT("ShaderMaterial passed to blit_rect_multi() is not a texture_blit shader. "
-					   "Using default instead.");
-		}
-	}
-
-	// Rendering server expects textureParameters as a TypedArray[RID]
-	Array textures;
-	textures.push_back(texture);
-	int i = 0;
-	while (i < p_extra_targets.size()) {
-		textures.push_back(RID(p_extra_targets[i]));
-		i += 1;
-	}
-	i = 0;
-	Array src_textures;
-	while (i < p_sources.size()) {
-		if (Ref<AtlasTexture>(p_sources[i]).is_valid()) {
-			WARN_PRINT(
-				"AtlasTexture not supported as a source for blit_rect. Using default White.");
-			src_textures.push_back(RID());
-		}
-		else {
-			src_textures.push_back(RID(p_sources[i]));
-		}
-		ERR_FAIL_COND_MSG(textures.has(RID(src_textures[i])), "Cannot use self as a source.");
-		i += 1;
-	}
-
-	RS::get_singleton()->texture_drawable_blit_rect(
-		textures, p_rect, material, p_modulate, src_textures, p_mipmap);
-	this->obj->notify_property_list_changed();
-}
-
 Ref<Image> DrawableTexture2D::get_image() const
 {
 	if (texture.is_valid()) {
@@ -256,7 +146,5 @@ void DrawableTexture2D::generate_mipmaps()
 		RS::get_singleton()->texture_drawable_generate_mipmaps(texture);
 	}
 }
-
-void DrawableTexture2D::_bind_methods() {}
 
 

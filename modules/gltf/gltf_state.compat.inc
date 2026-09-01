@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "gltf_state.h"
 
 // Non-const getters for compatibility.
@@ -38,8 +37,6 @@ int32_t GLTFState::_get_handle_binary_image_bind_compat_113172()
 {
 	return get_handle_binary_image();
 }
-
-Dictionary GLTFState::_get_json_bind_compat_113172() { return get_json(); }
 
 int GLTFState::_get_major_version_bind_compat_113172() { return get_major_version(); }
 
@@ -57,18 +54,6 @@ bool GLTFState::_get_discard_meshes_and_materials_bind_compat_113172()
 	return get_discard_meshes_and_materials();
 }
 
-Array GLTFState::_get_nodes_bind_compat_113172() { return get_nodes_bind(); }
-
-Array GLTFState::_get_buffers_bind_compat_113172() { return get_buffers_bind(); }
-
-Array GLTFState::_get_buffer_views_bind_compat_113172() { return get_buffer_views_bind(); }
-
-Array GLTFState::_get_accessors_bind_compat_113172() { return get_accessors_bind(); }
-
-Array GLTFState::_get_meshes_bind_compat_113172() { return get_meshes_bind(); }
-
-Array GLTFState::_get_materials_bind_compat_113172() { return get_materials_bind(); }
-
 String GLTFState::_get_scene_name_bind_compat_113172() { return get_scene_name(); }
 
 String GLTFState::_get_base_path_bind_compat_113172() { return get_base_path(); }
@@ -79,49 +64,11 @@ String GLTFState::_get_extract_prefix_bind_compat_113172() { return get_extract_
 
 PackedInt32Array GLTFState::_get_root_nodes_bind_compat_113172() { return get_root_nodes(); }
 
-Array GLTFState::_get_textures_bind_compat_113172()
-{
-	return get_textures_bind();
-}
-
-Array GLTFState::_get_texture_samplers_bind_compat_113172()
-{
-	return get_texture_samplers_bind();
-}
-
-Array GLTFState::_get_images_bind_compat_113172() { return get_images_bind(); }
-
-Array GLTFState::_get_skins_bind_compat_113172() { return get_skins_bind(); }
-
-Array GLTFState::_get_cameras_bind_compat_113172() { return get_cameras_bind(); }
-
-Array GLTFState::_get_lights_bind_compat_113172() { return get_lights_bind(); }
-
-Array GLTFState::_get_unique_names_bind_compat_113172()
-{
-	return get_unique_names_bind();
-}
-
-Array GLTFState::_get_unique_animation_names_bind_compat_113172()
-{
-	return get_unique_animation_names_bind();
-}
-
-Array GLTFState::_get_skeletons_bind_compat_113172()
-{
-	return get_skeletons_bind();
-}
-
 bool GLTFState::_get_create_animations_bind_compat_113172() { return get_create_animations(); }
 
 bool GLTFState::_get_import_as_skeleton_bones_bind_compat_113172()
 {
 	return get_import_as_skeleton_bones();
-}
-
-Array GLTFState::_get_animations_bind_compat_113172()
-{
-	return get_animations_bind();
 }
 
 Node* GLTFState::_get_scene_node_bind_compat_113172(GLTFNodeIndex p_gltf_node_index)
@@ -143,13 +90,6 @@ AnimationPlayer* GLTFState::_get_animation_player_bind_compat_113172(int p_anim_
 {
 	return get_animation_player(p_anim_player_index);
 }
-
-Variant GLTFState::_get_additional_data_bind_compat_113172(const StringName& p_extension_name)
-{
-	return get_additional_data(p_extension_name);
-}
-
-void GLTFState::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 

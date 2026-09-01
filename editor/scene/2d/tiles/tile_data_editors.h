@@ -42,8 +42,6 @@ class EditorUndoRedoManager;
 
 class TileDataEditor : public VBoxContainer
 {
-	VLTRCLASS(TileDataEditor, VBoxContainer);
-
 private:
 	bool _tile_set_changed_update_needed = false;
 	void _tile_set_changed_plan_update();
@@ -92,16 +90,7 @@ public:
 
 class DummyObject
 {
-private:
-	HashMap<String, Variant> properties;
-
-protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-
 public:
-	mem_unique_ptr<Object> obj;
-
 	bool has_dummy_property(const StringName& p_name);
 	void add_dummy_property(const StringName& p_name);
 	void remove_dummy_property(const StringName& p_name);
@@ -110,8 +99,6 @@ public:
 
 class GenericTilePolygonEditor : public VBoxContainer
 {
-	VLTRCLASS(GenericTilePolygonEditor, VBoxContainer);
-
 private:
 	Ref<TileSet> tile_set;
 	LocalVector<Vector<Point2>> polygons;
@@ -225,8 +212,6 @@ public:
 
 class TileDataDefaultEditor : public TileDataEditor
 {
-	VLTRCLASS(TileDataDefaultEditor, TileDataEditor);
-
 private:
 	// Toolbar
 	HBoxContainer* toolbar = memnew(HBoxContainer);
@@ -250,30 +235,16 @@ private:
 	DragType drag_type = DRAG_TYPE_NONE;
 	Vector2 drag_start_pos;
 	Vector2 drag_last_pos;
-	HashMap<TileMapCell, Variant, TileMapCell> drag_modified;
-	Variant drag_painted_value;
-
-	void _property_value_changed(
-		const StringName& p_property, const Variant& p_value, const StringName& p_field);
 
 protected:
 	DummyObject* dummy_object = memnew(DummyObject);
 
 	StringName type;
 	String property;
-	Variant::Type property_type;
 	void _notification(int p_what);
 
-	virtual Variant _get_painted_value();
 	virtual void _set_painted_value(
 		TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords, int p_alternative_tile);
-	virtual void _set_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
-		int p_alternative_tile, const Variant& p_value);
-	virtual Variant _get_value(
-		TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords, int p_alternative_tile);
-	virtual void _setup_undo_redo_action(TileSetAtlasSource* p_tile_set_atlas_source,
-		const HashMap<TileMapCell, Variant, TileMapCell>& p_previous_values,
-		const Variant& p_new_value);
 
 public:
 	virtual Control* get_toolbar() override { return toolbar; }
@@ -291,18 +262,12 @@ public:
 	virtual void draw_over_tile(CanvasItem* p_canvas_item, Transform2D p_transform,
 		TileMapCell p_cell, bool p_selected = false) override;
 
-	void setup_property_editor(Variant::Type p_type, const String& p_property,
-		const String& p_label = "", const Variant& p_default_value = Variant());
-	Variant::Type get_property_type();
-
 	TileDataDefaultEditor();
 	~TileDataDefaultEditor();
 };
 
 class TileDataTextureOriginEditor : public TileDataDefaultEditor
 {
-	VLTRCLASS(TileDataTextureOriginEditor, TileDataDefaultEditor);
-
 public:
 	virtual void draw_over_tile(CanvasItem* p_canvas_item, Transform2D p_transform,
 		TileMapCell p_cell, bool p_selected = false) override;
@@ -310,8 +275,6 @@ public:
 
 class TileDataPositionEditor : public TileDataDefaultEditor
 {
-	VLTRCLASS(TileDataPositionEditor, TileDataDefaultEditor);
-
 public:
 	virtual void draw_over_tile(CanvasItem* p_canvas_item, Transform2D p_transform,
 		TileMapCell p_cell, bool p_selected = false) override;
@@ -319,8 +282,6 @@ public:
 
 class TileDataYSortEditor : public TileDataDefaultEditor
 {
-	VLTRCLASS(TileDataYSortEditor, TileDataDefaultEditor);
-
 public:
 	virtual void draw_over_tile(CanvasItem* p_canvas_item, Transform2D p_transform,
 		TileMapCell p_cell, bool p_selected = false) override;
@@ -328,8 +289,6 @@ public:
 
 class TileDataOcclusionShapeEditor : public TileDataDefaultEditor
 {
-	VLTRCLASS(TileDataOcclusionShapeEditor, TileDataDefaultEditor);
-
 private:
 	int occlusion_layer = -1;
 
@@ -338,16 +297,8 @@ private:
 
 	void _polygon_changed(const PackedVector2Array& p_polygon);
 
-	virtual Variant _get_painted_value() override;
 	virtual void _set_painted_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
 		int p_alternative_tile) override;
-	virtual void _set_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
-		int p_alternative_tile, const Variant& p_value) override;
-	virtual Variant _get_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
-		int p_alternative_tile) override;
-	virtual void _setup_undo_redo_action(TileSetAtlasSource* p_tile_set_atlas_source,
-		const HashMap<TileMapCell, Variant, TileMapCell>& p_previous_values,
-		const Variant& p_new_value) override;
 
 protected:
 	virtual void _tile_set_changed() override;
@@ -365,8 +316,6 @@ public:
 
 class TileDataCollisionEditor : public TileDataDefaultEditor
 {
-	VLTRCLASS(TileDataCollisionEditor, TileDataDefaultEditor);
-
 	int physics_layer = -1;
 
 	// UI
@@ -374,21 +323,11 @@ class TileDataCollisionEditor : public TileDataDefaultEditor
 	DummyObject* dummy_object = memnew(DummyObject);
 	HashMap<StringName, EditorProperty*> property_editors;
 
-	void _property_value_changed(
-		const StringName& p_property, const Variant& p_value, const StringName& p_field);
 	void _property_selected(const StringName& p_path, int p_focusable);
 	void _polygons_changed();
 
-	virtual Variant _get_painted_value() override;
 	virtual void _set_painted_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
 		int p_alternative_tile) override;
-	virtual void _set_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
-		int p_alternative_tile, const Variant& p_value) override;
-	virtual Variant _get_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
-		int p_alternative_tile) override;
-	virtual void _setup_undo_redo_action(TileSetAtlasSource* p_tile_set_atlas_source,
-		const HashMap<TileMapCell, Variant, TileMapCell>& p_previous_values,
-		const Variant& p_new_value) override;
 
 protected:
 	virtual void _tile_set_changed() override;
@@ -407,8 +346,6 @@ public:
 
 class TileDataTerrainsEditor : public TileDataEditor
 {
-	VLTRCLASS(TileDataTerrainsEditor, TileDataEditor);
-
 private:
 	// Toolbar
 	HBoxContainer* toolbar = memnew(HBoxContainer);
@@ -427,17 +364,12 @@ private:
 	DragType drag_type = DRAG_TYPE_NONE;
 	Vector2 drag_start_pos;
 	Vector2 drag_last_pos;
-	HashMap<TileMapCell, Variant, TileMapCell> drag_modified;
-	Variant drag_painted_value;
 
 	// UI
 	Label* label = nullptr;
 	DummyObject* dummy_object = memnew(DummyObject);
 	EditorPropertyEnum* terrain_set_property_editor = nullptr;
 	EditorPropertyEnum* terrain_property_editor = nullptr;
-
-	void _property_value_changed(
-		const StringName& p_property, const Variant& p_value, const StringName& p_field);
 
 	void _update_terrain_selector();
 
@@ -468,8 +400,6 @@ public:
 
 class TileDataNavigationEditor : public TileDataDefaultEditor
 {
-	VLTRCLASS(TileDataNavigationEditor, TileDataDefaultEditor);
-
 private:
 	int navigation_layer = -1;
 	PackedVector2Array navigation_polygon;
@@ -479,16 +409,8 @@ private:
 
 	void _polygon_changed(const PackedVector2Array& p_polygon);
 
-	virtual Variant _get_painted_value() override;
 	virtual void _set_painted_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
 		int p_alternative_tile) override;
-	virtual void _set_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
-		int p_alternative_tile, const Variant& p_value) override;
-	virtual Variant _get_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
-		int p_alternative_tile) override;
-	virtual void _setup_undo_redo_action(TileSetAtlasSource* p_tile_set_atlas_source,
-		const HashMap<TileMapCell, Variant, TileMapCell>& p_previous_values,
-		const Variant& p_new_value) override;
 
 protected:
 	virtual void _tile_set_changed() override;

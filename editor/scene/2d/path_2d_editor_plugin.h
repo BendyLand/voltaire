@@ -38,16 +38,16 @@ class CanvasItemEditor;
 class ConfirmationDialog;
 class MenuButton;
 
-class Path2DEditor : public HBoxContainer {
-	VLTRCLASS(Path2DEditor, HBoxContainer);
-
+class Path2DEditor : public HBoxContainer
+{
 	friend class Path2DEditorPlugin;
 
-	CanvasItemEditor *canvas_item_editor = nullptr;
-	Panel *panel = nullptr;
-	Path2D *node = nullptr;
+	CanvasItemEditor* canvas_item_editor = nullptr;
+	Panel* panel = nullptr;
+	Path2D* node = nullptr;
 
-	enum Mode {
+	enum Mode
+	{
 		MODE_CREATE,
 		MODE_EDIT,
 		MODE_EDIT_CURVE,
@@ -57,28 +57,30 @@ class Path2DEditor : public HBoxContainer {
 	};
 
 	Mode mode = MODE_EDIT;
-	HBoxContainer *toolbar = nullptr;
-	Button *curve_clear_points = nullptr;
-	Button *curve_close = nullptr;
-	Button *curve_create = nullptr;
-	Button *curve_del = nullptr;
-	Button *curve_edit = nullptr;
-	Button *curve_edit_curve = nullptr;
-	MenuButton *handle_menu = nullptr;
+	HBoxContainer* toolbar = nullptr;
+	Button* curve_clear_points = nullptr;
+	Button* curve_close = nullptr;
+	Button* curve_create = nullptr;
+	Button* curve_del = nullptr;
+	Button* curve_edit = nullptr;
+	Button* curve_edit_curve = nullptr;
+	MenuButton* handle_menu = nullptr;
 
-	Button *create_curve_button = nullptr;
-	ConfirmationDialog *clear_points_dialog = nullptr;
+	Button* create_curve_button = nullptr;
+	ConfirmationDialog* clear_points_dialog = nullptr;
 
 	bool mirror_handle_angle = true;
 	bool mirror_handle_length = true;
 	bool on_edge = false;
 
-	enum HandleOption {
+	enum HandleOption
+	{
 		HANDLE_OPTION_ANGLE,
 		HANDLE_OPTION_LENGTH,
 	};
 
-	enum Action {
+	enum Action
+	{
 		ACTION_NONE,
 		ACTION_MOVING_POINT,
 		ACTION_MOVING_NEW_POINT,
@@ -109,8 +111,8 @@ class Path2DEditor : public HBoxContainer {
 
 	void _create_curve();
 	void _confirm_clear_points();
-	void _clear_curve_points(Path2D *p_path2d);
-	void _restore_curve_points(Path2D *p_path2d, const PackedVector2Array &p_points);
+	void _clear_curve_points(Path2D* p_path2d);
+	void _restore_curve_points(Path2D* p_path2d, const PackedVector2Array& p_points);
 
 	RID debug_mesh_rid;
 	RID debug_handle_mesh_rid;
@@ -127,30 +129,35 @@ class Path2DEditor : public HBoxContainer {
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 	static void _bind_methods();
 
 public:
-	bool forward_gui_input(const Ref<InputEvent> &p_event);
-	void forward_canvas_draw_over_viewport(Control *p_overlay);
-	void edit(Node *p_path2d);
+	bool forward_gui_input(const Ref<InputEvent>& p_event);
+	void forward_canvas_draw_over_viewport(Control* p_overlay);
+	void edit(Node* p_path2d);
 	Path2DEditor();
 	~Path2DEditor();
 };
 
-class Path2DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(Path2DEditorPlugin, EditorPlugin);
-
-	Path2DEditor *path2d_editor = nullptr;
+class Path2DEditorPlugin : public EditorPlugin
+{
+	Path2DEditor* path2d_editor = nullptr;
 
 public:
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent> &p_event) override { return path2d_editor->forward_gui_input(p_event); }
-	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override { path2d_editor->forward_canvas_draw_over_viewport(p_overlay); }
+	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override
+	{
+		return path2d_editor->forward_gui_input(p_event);
+	}
+
+	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override
+	{
+		path2d_editor->forward_canvas_draw_over_viewport(p_overlay);
+	}
 
 	virtual String get_plugin_name() const override { return "Path2D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	Path2DEditorPlugin();
 };
+
+

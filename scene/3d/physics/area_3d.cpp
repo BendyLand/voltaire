@@ -30,84 +30,26 @@
 
 #include "area_3d.h"
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
-
-void Area3D::set_gravity_space_override_mode(SpaceOverride p_mode)
-{
-	gravity_space_override = p_mode;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_GRAVITY_OVERRIDE_MODE, p_mode);
-}
 
 Area3D::SpaceOverride Area3D::get_gravity_space_override_mode() const
 {
 	return gravity_space_override;
 }
 
-void Area3D::set_gravity_is_point(bool p_enabled)
-{
-	gravity_is_point = p_enabled;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_GRAVITY_IS_POINT, p_enabled);
-}
-
 bool Area3D::is_gravity_a_point() const { return gravity_is_point; }
-
-void Area3D::set_gravity_point_unit_distance(real_t p_scale)
-{
-	gravity_point_unit_distance = p_scale;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_GRAVITY_POINT_UNIT_DISTANCE, p_scale);
-}
 
 real_t Area3D::get_gravity_point_unit_distance() const { return gravity_point_unit_distance; }
 
-void Area3D::set_gravity_point_center(const Vector3& p_center)
-{
-	gravity_vec = p_center;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_GRAVITY_VECTOR, p_center);
-}
-
 const Vector3& Area3D::get_gravity_point_center() const { return gravity_vec; }
-
-void Area3D::set_gravity_direction(const Vector3& p_direction)
-{
-	gravity_vec = p_direction;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_GRAVITY_VECTOR, p_direction);
-}
 
 const Vector3& Area3D::get_gravity_direction() const { return gravity_vec; }
 
-void Area3D::set_gravity(real_t p_gravity)
-{
-	gravity = p_gravity;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_GRAVITY, p_gravity);
-}
-
 real_t Area3D::get_gravity() const { return gravity; }
-
-void Area3D::set_linear_damp_space_override_mode(SpaceOverride p_mode)
-{
-	linear_damp_space_override = p_mode;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_LINEAR_DAMP_OVERRIDE_MODE, p_mode);
-}
 
 Area3D::SpaceOverride Area3D::get_linear_damp_space_override_mode() const
 {
 	return linear_damp_space_override;
-}
-
-void Area3D::set_angular_damp_space_override_mode(SpaceOverride p_mode)
-{
-	angular_damp_space_override = p_mode;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_ANGULAR_DAMP_OVERRIDE_MODE, p_mode);
 }
 
 Area3D::SpaceOverride Area3D::get_angular_damp_space_override_mode() const
@@ -115,30 +57,9 @@ Area3D::SpaceOverride Area3D::get_angular_damp_space_override_mode() const
 	return angular_damp_space_override;
 }
 
-void Area3D::set_linear_damp(real_t p_linear_damp)
-{
-	linear_damp = p_linear_damp;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_LINEAR_DAMP, p_linear_damp);
-}
-
 real_t Area3D::get_linear_damp() const { return linear_damp; }
 
-void Area3D::set_angular_damp(real_t p_angular_damp)
-{
-	angular_damp = p_angular_damp;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_ANGULAR_DAMP, p_angular_damp);
-}
-
 real_t Area3D::get_angular_damp() const { return angular_damp; }
-
-void Area3D::set_priority(int p_priority)
-{
-	priority = p_priority;
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_PRIORITY, p_priority);
-}
 
 int Area3D::get_priority() const { return priority; }
 
@@ -172,235 +93,6 @@ void Area3D::set_wind_source_path(const NodePath& p_wind_source_path)
 
 const NodePath& Area3D::get_wind_source_path() const { return wind_source_path; }
 
-void Area3D::_initialize_wind()
-{
-	real_t temp_magnitude = 0.0;
-	Vector3 wind_direction(0., 0., 0.);
-	Vector3 wind_source(0., 0., 0.);
-
-	// Overwrite with area-specified info if available
-	if (!wind_source_path.is_empty()) {
-		Node* wind_source_node = get_node_or_null(wind_source_path);
-		ERR_FAIL_NULL_MSG(wind_source_node,
-			"Path to wind source is invalid: '" + String(wind_source_path) + "'.");
-		Node3D* wind_source_node3d = Object::cast_to<Node3D>(wind_source_node);
-		ERR_FAIL_NULL_MSG(wind_source_node3d,
-			"Path to wind source does not point to a Node3D: '" + String(wind_source_path) + "'.");
-		Transform3D global_transform = wind_source_node3d->get_transform();
-		wind_direction = -global_transform.basis.get_column(Vector3::AXIS_Z).normalized();
-		wind_source = global_transform.origin;
-		temp_magnitude = wind_force_magnitude;
-	}
-
-	// Set force, source and direction in the physics server.
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_WIND_ATTENUATION_FACTOR, wind_attenuation_factor);
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_WIND_SOURCE, wind_source);
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_WIND_DIRECTION, wind_direction);
-	PhysicsServer3D::get_singleton()->area_set_param(
-		get_rid(), PS3DE::AREA_PARAM_WIND_FORCE_MAGNITUDE, temp_magnitude);
-}
-
-void Area3D::_body_enter_tree(ObjectID p_id)
-{
-	Object* obj = ObjectDB::get_instance(p_id);
-	Node* node = Object::cast_to<Node>(obj);
-	ERR_FAIL_NULL(node);
-
-	HashMap<ObjectID, BodyState>::Iterator E = body_map.find(p_id);
-	ERR_FAIL_COND(!E);
-	ERR_FAIL_COND(E->value.in_tree);
-
-	E->value.in_tree = true;
-	this->obj->emit_signal(SceneStringName(body_entered), node);
-	for (int i = 0; i < E->value.shapes.size(); i++) {
-		this->obj->emit_signal(SceneStringName(body_shape_entered), E->value.rid, node,
-			E->value.shapes[i].body_shape, E->value.shapes[i].area_shape);
-	}
-}
-
-void Area3D::_body_exit_tree(ObjectID p_id)
-{
-	Object* obj = ObjectDB::get_instance(p_id);
-	Node* node = Object::cast_to<Node>(obj);
-	ERR_FAIL_NULL(node);
-	HashMap<ObjectID, BodyState>::Iterator E = body_map.find(p_id);
-	ERR_FAIL_COND(!E);
-	ERR_FAIL_COND(!E->value.in_tree);
-	E->value.in_tree = false;
-	this->obj->emit_signal(SceneStringName(body_exited), node);
-	for (int i = 0; i < E->value.shapes.size(); i++) {
-		this->obj->emit_signal(SceneStringName(body_shape_exited), E->value.rid, node,
-			E->value.shapes[i].body_shape, E->value.shapes[i].area_shape);
-	}
-}
-
-void Area3D::_body_inout(
-	int p_status, const RID& p_body, ObjectID p_instance, int p_body_shape, int p_area_shape)
-{
-	bool body_in = p_status == PS3DE::AREA_BODY_ADDED;
-	ObjectID objid = p_instance;
-
-	// Exit early if instance is invalid.
-	if (objid.is_null()) {
-		lock_callback();
-		locked = true;
-		// Emit the appropriate signals.
-		if (body_in) {
-			this->obj->emit_signal(SceneStringName(body_shape_entered), p_body, (Node*)nullptr,
-				p_body_shape, p_area_shape);
-		}
-		else {
-			this->obj->emit_signal(SceneStringName(body_shape_exited), p_body, (Node*)nullptr,
-				p_body_shape, p_area_shape);
-		}
-		locked = false;
-		unlock_callback();
-		return;
-	}
-
-	Object* obj = ObjectDB::get_instance(objid);
-	Node* node = Object::cast_to<Node>(obj);
-
-	HashMap<ObjectID, BodyState>::Iterator E = body_map.find(objid);
-
-	if (!body_in && !E) {
-		return; // likely removed from the tree
-	}
-
-	lock_callback();
-	locked = true;
-
-	if (body_in) {
-		if (!E) {
-			E = body_map.insert(objid, BodyState());
-			E->value.rid = p_body;
-			E->value.rc = 0;
-			E->value.in_tree = node && node->is_inside_tree();
-			if (node) {
-				node->connect(SceneStringName(tree_entered),
-					callable_mp(this, &Area3D::_body_enter_tree).bind(objid));
-				node->connect(SceneStringName(tree_exiting),
-					callable_mp(this, &Area3D::_body_exit_tree).bind(objid));
-				if (E->value.in_tree) {
-					this->obj->emit_signal(SceneStringName(body_entered), node);
-				}
-			}
-		}
-		E->value.rc++;
-		if (node) {
-			E->value.shapes.insert(ShapePair(p_body_shape, p_area_shape));
-		}
-
-		if (!node || E->value.in_tree) {
-			this->obj->emit_signal(
-				SceneStringName(body_shape_entered), p_body, node, p_body_shape, p_area_shape);
-		}
-
-	}
-	else {
-		E->value.rc--;
-
-		if (node) {
-			E->value.shapes.erase(ShapePair(p_body_shape, p_area_shape));
-		}
-
-		bool in_tree = E->value.in_tree;
-		if (E->value.rc == 0) {
-			body_map.remove(E);
-			if (node) {
-				node->disconnect(
-					SceneStringName(tree_entered), callable_mp(this, &Area3D::_body_enter_tree));
-				node->disconnect(
-					SceneStringName(tree_exiting), callable_mp(this, &Area3D::_body_exit_tree));
-				if (in_tree) {
-					this->obj->emit_signal(SceneStringName(body_exited), obj);
-				}
-			}
-		}
-		if (!node || in_tree) {
-			this->obj->emit_signal(
-				SceneStringName(body_shape_exited), p_body, obj, p_body_shape, p_area_shape);
-		}
-	}
-
-	locked = false;
-	unlock_callback();
-}
-
-void Area3D::_clear_monitoring()
-{
-	ERR_FAIL_COND_MSG(locked, "This function can't be used during the in/out signal.");
-
-	{
-		HashMap<ObjectID, BodyState> bmcopy(body_map);
-		body_map.clear();
-		// disconnect all monitored stuff
-
-		for (const KeyValue<ObjectID, BodyState>& E : bmcopy) {
-			Object* obj = ObjectDB::get_instance(E.key);
-			Node* node = Object::cast_to<Node>(obj);
-
-			if (!node) { // node may have been deleted in previous frame or at other legitimate
-						 // point
-				continue;
-			}
-			// ERR_CONTINUE(!node);
-
-			node->disconnect(
-				SceneStringName(tree_entered), callable_mp(this, &Area3D::_body_enter_tree));
-			node->disconnect(
-				SceneStringName(tree_exiting), callable_mp(this, &Area3D::_body_exit_tree));
-
-			if (!E.value.in_tree) {
-				continue;
-			}
-
-			for (int i = 0; i < E.value.shapes.size(); i++) {
-				this->obj->emit_signal(SceneStringName(body_shape_exited), E.value.rid, node,
-					E.value.shapes[i].body_shape, E.value.shapes[i].area_shape);
-			}
-
-			this->obj->emit_signal(SceneStringName(body_exited), node);
-		}
-	}
-
-	{
-		HashMap<ObjectID, AreaState> bmcopy(area_map);
-		area_map.clear();
-		// disconnect all monitored stuff
-
-		for (const KeyValue<ObjectID, AreaState>& E : bmcopy) {
-			Object* obj = ObjectDB::get_instance(E.key);
-			Node* node = Object::cast_to<Node>(obj);
-
-			if (!node) { // node may have been deleted in previous frame or at other legitimate
-						 // point
-				continue;
-			}
-			// ERR_CONTINUE(!node);
-
-			node->disconnect(
-				SceneStringName(tree_entered), callable_mp(this, &Area3D::_area_enter_tree));
-			node->disconnect(
-				SceneStringName(tree_exiting), callable_mp(this, &Area3D::_area_exit_tree));
-
-			if (!E.value.in_tree) {
-				continue;
-			}
-
-			for (int i = 0; i < E.value.shapes.size(); i++) {
-				this->obj->emit_signal(SceneStringName(area_shape_exited), E.value.rid, node,
-					E.value.shapes[i].area_shape, E.value.shapes[i].self_shape);
-			}
-
-			this->obj->emit_signal(SceneStringName(area_exited), obj);
-		}
-	}
-}
-
 void Area3D::_space_changed(const RID& p_new_space)
 {
 	if (p_new_space.is_null()) {
@@ -417,183 +109,7 @@ void Area3D::_notification(int p_what)
 	}
 }
 
-void Area3D::set_monitoring(bool p_enable)
-{
-	ERR_FAIL_COND_MSG(locked,
-		"Function blocked during in/out signal. Use set_deferred(\"monitoring\", true/false).");
-
-	if (p_enable == monitoring) {
-		return;
-	}
-
-	monitoring = p_enable;
-
-	if (monitoring) {
-		PhysicsServer3D::get_singleton()->area_set_monitor_callback(
-			get_rid(), callable_mp(this, &Area3D::_body_inout));
-		PhysicsServer3D::get_singleton()->area_set_area_monitor_callback(
-			get_rid(), callable_mp(this, &Area3D::_area_inout));
-	}
-	else {
-		PhysicsServer3D::get_singleton()->area_set_monitor_callback(get_rid(), Callable());
-		PhysicsServer3D::get_singleton()->area_set_area_monitor_callback(get_rid(), Callable());
-		_clear_monitoring();
-	}
-}
-
-void Area3D::_area_enter_tree(ObjectID p_id)
-{
-	Object* obj = ObjectDB::get_instance(p_id);
-	Node* node = Object::cast_to<Node>(obj);
-	ERR_FAIL_NULL(node);
-
-	HashMap<ObjectID, AreaState>::Iterator E = area_map.find(p_id);
-	ERR_FAIL_COND(!E);
-	ERR_FAIL_COND(E->value.in_tree);
-
-	E->value.in_tree = true;
-	this->obj->emit_signal(SceneStringName(area_entered), node);
-	for (int i = 0; i < E->value.shapes.size(); i++) {
-		this->obj->emit_signal(SceneStringName(area_shape_entered), E->value.rid, node,
-			E->value.shapes[i].area_shape, E->value.shapes[i].self_shape);
-	}
-}
-
-void Area3D::_area_exit_tree(ObjectID p_id)
-{
-	Object* obj = ObjectDB::get_instance(p_id);
-	Node* node = Object::cast_to<Node>(obj);
-	ERR_FAIL_NULL(node);
-	HashMap<ObjectID, AreaState>::Iterator E = area_map.find(p_id);
-	ERR_FAIL_COND(!E);
-	ERR_FAIL_COND(!E->value.in_tree);
-	E->value.in_tree = false;
-	this->obj->emit_signal(SceneStringName(area_exited), node);
-	for (int i = 0; i < E->value.shapes.size(); i++) {
-		this->obj->emit_signal(SceneStringName(area_shape_exited), E->value.rid, node,
-			E->value.shapes[i].area_shape, E->value.shapes[i].self_shape);
-	}
-}
-
-void Area3D::_area_inout(
-	int p_status, const RID& p_area, ObjectID p_instance, int p_area_shape, int p_self_shape)
-{
-	bool area_in = p_status == PS3DE::AREA_BODY_ADDED;
-	ObjectID objid = p_instance;
-
-	// Exit if instance is invalid.
-	if (objid.is_null()) {
-		lock_callback();
-		locked = true;
-		// Emit the appropriate signals.
-		if (area_in) {
-			this->obj->emit_signal(SceneStringName(area_shape_entered), p_area, (Node*)nullptr,
-				p_area_shape, p_self_shape);
-		}
-		else {
-			this->obj->emit_signal(SceneStringName(area_shape_exited), p_area, (Node*)nullptr,
-				p_area_shape, p_self_shape);
-		}
-		locked = false;
-		unlock_callback();
-		return;
-	}
-
-	Object* obj = ObjectDB::get_instance(objid);
-	Node* node = Object::cast_to<Node>(obj);
-
-	HashMap<ObjectID, AreaState>::Iterator E = area_map.find(objid);
-
-	if (!area_in && !E) {
-		return; // likely removed from the tree
-	}
-
-	lock_callback();
-	locked = true;
-
-	if (area_in) {
-		if (!E) {
-			E = area_map.insert(objid, AreaState());
-			E->value.rid = p_area;
-			E->value.rc = 0;
-			E->value.in_tree = node && node->is_inside_tree();
-			if (node) {
-				node->connect(SceneStringName(tree_entered),
-					callable_mp(this, &Area3D::_area_enter_tree).bind(objid));
-				node->connect(SceneStringName(tree_exiting),
-					callable_mp(this, &Area3D::_area_exit_tree).bind(objid));
-				if (E->value.in_tree) {
-					this->obj->emit_signal(SceneStringName(area_entered), node);
-				}
-			}
-		}
-		E->value.rc++;
-		if (node) {
-			E->value.shapes.insert(AreaShapePair(p_area_shape, p_self_shape));
-		}
-
-		if (!node || E->value.in_tree) {
-			this->obj->emit_signal(
-				SceneStringName(area_shape_entered), p_area, node, p_area_shape, p_self_shape);
-		}
-
-	}
-	else {
-		E->value.rc--;
-
-		if (node) {
-			E->value.shapes.erase(AreaShapePair(p_area_shape, p_self_shape));
-		}
-
-		bool in_tree = E->value.in_tree;
-		if (E->value.rc == 0) {
-			area_map.remove(E);
-			if (node) {
-				node->disconnect(
-					SceneStringName(tree_entered), callable_mp(this, &Area3D::_area_enter_tree));
-				node->disconnect(
-					SceneStringName(tree_exiting), callable_mp(this, &Area3D::_area_exit_tree));
-				if (in_tree) {
-					this->obj->emit_signal(SceneStringName(area_exited), obj);
-				}
-			}
-		}
-		if (!node || in_tree) {
-			this->obj->emit_signal(
-				SceneStringName(area_shape_exited), p_area, obj, p_area_shape, p_self_shape);
-		}
-	}
-
-	locked = false;
-	unlock_callback();
-}
-
 bool Area3D::is_monitoring() const { return monitoring; }
-
-Array Area3D::get_overlapping_bodies() const
-{
-	Array ret;
-	ERR_FAIL_COND_V_MSG(!monitoring, ret, "Can't find overlapping bodies when monitoring is off.");
-	ret.resize(body_map.size());
-	int idx = 0;
-	for (const KeyValue<ObjectID, BodyState>& E : body_map) {
-		Object* obj = ObjectDB::get_instance(E.key);
-		if (obj) {
-			ret[idx] = obj;
-			idx++;
-		}
-	}
-
-	ret.resize(idx);
-	return ret;
-}
-
-bool Area3D::has_overlapping_bodies() const
-{
-	ERR_FAIL_COND_V_MSG(
-		!monitoring, false, "Can't find overlapping bodies when monitoring is off.");
-	return !body_map.is_empty();
-}
 
 void Area3D::set_monitorable(bool p_enable)
 {
@@ -611,47 +127,6 @@ void Area3D::set_monitorable(bool p_enable)
 }
 
 bool Area3D::is_monitorable() const { return monitorable; }
-
-Array Area3D::get_overlapping_areas() const
-{
-	Array ret;
-	ERR_FAIL_COND_V_MSG(!monitoring, ret, "Can't find overlapping areas when monitoring is off.");
-	ret.resize(area_map.size());
-	int idx = 0;
-	for (const KeyValue<ObjectID, AreaState>& E : area_map) {
-		Object* obj = ObjectDB::get_instance(E.key);
-		if (obj) {
-			ret[idx] = obj;
-			idx++;
-		}
-	}
-	ret.resize(idx);
-	return ret;
-}
-
-bool Area3D::has_overlapping_areas() const
-{
-	ERR_FAIL_COND_V_MSG(!monitoring, false, "Can't find overlapping areas when monitoring is off.");
-	return !area_map.is_empty();
-}
-
-bool Area3D::overlaps_area(Node* rp_area) const
-{
-	HashMap<ObjectID, AreaState>::ConstIterator E = area_map.find(rp_area->obj->get_instance_id());
-	if (!E) {
-		return false;
-	}
-	return E->value.in_tree;
-}
-
-bool Area3D::overlaps_body(Node* rp_body) const
-{
-	HashMap<ObjectID, BodyState>::ConstIterator E = body_map.find(rp_body->obj->get_instance_id());
-	if (!E) {
-		return false;
-	}
-	return E->value.in_tree;
-}
 
 void Area3D::set_audio_bus_override(bool p_override) { audio_bus_override = p_override; }
 
@@ -693,55 +168,6 @@ void Area3D::set_reverb_uniformity(float p_uniformity) { reverb_uniformity = p_u
 
 float Area3D::get_reverb_uniformity() const { return reverb_uniformity; }
 
-void Area3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "audio_bus_name" || p_property.name == "reverb_bus_name") {
-		String options;
-		for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
-			if (i > 0) {
-				options += ",";
-			}
-			String name = AudioServer::get_singleton()->get_bus_name(i);
-			options += name;
-		}
-
-		p_property.hint_string = options;
-	}
-	else if (p_property.name.begins_with("gravity") &&
-			   p_property.name != "gravity_space_override") {
-		if (gravity_space_override == SPACE_OVERRIDE_DISABLED) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		else {
-			if (gravity_is_point) {
-				if (p_property.name == "gravity_direction") {
-					p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-				}
-			}
-			else {
-				if (p_property.name.begins_with("gravity_point_")) {
-					p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-				}
-			}
-		}
-	}
-	else if (p_property.name.begins_with("linear_damp") &&
-			   p_property.name != "linear_damp_space_override") {
-		if (linear_damp_space_override == SPACE_OVERRIDE_DISABLED) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-	else if (p_property.name.begins_with("angular_damp") &&
-			   p_property.name != "angular_damp_space_override") {
-		if (angular_damp_space_override == SPACE_OVERRIDE_DISABLED) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-}
-
-void Area3D::_bind_methods() {}
-
 Area3D::Area3D() {}
+
+

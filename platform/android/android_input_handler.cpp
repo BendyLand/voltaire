@@ -263,12 +263,12 @@ void AndroidInputHandler::process_touch_event(int p_event, int p_pointer, const 
 }
 
 void AndroidInputHandler::_cancel_mouse_event_info(bool p_source_mouse_relative) {
-	buttons_state = BitField<MouseButtonMask>();
-	_parse_mouse_event_info(BitField<MouseButtonMask>(), false, true, false, p_source_mouse_relative);
+	buttons_state = uint32_t();
+	_parse_mouse_event_info(uint32_t(), false, true, false, p_source_mouse_relative);
 	mouse_event_info.valid = false;
 }
 
-void AndroidInputHandler::_parse_mouse_event_info(BitField<MouseButtonMask> event_buttons_mask, bool p_pressed, bool p_canceled, bool p_double_click, bool p_source_mouse_relative) {
+void AndroidInputHandler::_parse_mouse_event_info(uint32_t event_buttons_mask, bool p_pressed, bool p_canceled, bool p_double_click, bool p_source_mouse_relative) {
 	if (!mouse_event_info.valid) {
 		return;
 	}
@@ -286,7 +286,7 @@ void AndroidInputHandler::_parse_mouse_event_info(BitField<MouseButtonMask> even
 	}
 	ev->set_pressed(p_pressed);
 	ev->set_canceled(p_canceled);
-	BitField<MouseButtonMask> changed_button_mask = buttons_state.get_different(event_buttons_mask);
+	uint32_t changed_button_mask = buttons_state.get_different(event_buttons_mask);
 
 	buttons_state = event_buttons_mask;
 
@@ -297,12 +297,12 @@ void AndroidInputHandler::_parse_mouse_event_info(BitField<MouseButtonMask> even
 }
 
 void AndroidInputHandler::_release_mouse_event_info(bool p_source_mouse_relative) {
-	_parse_mouse_event_info(BitField<MouseButtonMask>(), false, false, false, p_source_mouse_relative);
+	_parse_mouse_event_info(uint32_t(), false, false, false, p_source_mouse_relative);
 	mouse_event_info.valid = false;
 }
 
 void AndroidInputHandler::process_mouse_event(int p_event_action, int p_event_android_buttons_mask, Point2 p_event_pos, Vector2 p_delta, bool p_double_click, bool p_source_mouse_relative, float p_pressure, Vector2 p_tilt) {
-	BitField<MouseButtonMask> event_buttons_mask = _android_button_mask_to_godot_button_mask(p_event_android_buttons_mask);
+	uint32_t event_buttons_mask = _android_button_mask_to_godot_button_mask(p_event_android_buttons_mask);
 	switch (p_event_action) {
 		case AMOTION_EVENT_ACTION_HOVER_MOVE: // hover move
 		case AMOTION_EVENT_ACTION_HOVER_ENTER: // hover enter
@@ -394,7 +394,7 @@ void AndroidInputHandler::process_mouse_event(int p_event_action, int p_event_an
 	}
 }
 
-void AndroidInputHandler::_wheel_button_click(BitField<MouseButtonMask> event_buttons_mask, const Ref<InputEventMouseButton> &ev, MouseButton wheel_button, float factor) {
+void AndroidInputHandler::_wheel_button_click(uint32_t &ev, MouseButton wheel_button, float factor) {
 	Ref<InputEventMouseButton> evd = ev->duplicate();
 	_set_key_modifier_state(evd, Key::NONE);
 	evd->set_button_index(wheel_button);
@@ -425,7 +425,7 @@ void AndroidInputHandler::process_pan(Point2 p_pos, Vector2 p_delta) {
 	Input::get_singleton()->parse_input_event(pan_event);
 }
 
-MouseButton AndroidInputHandler::_button_index_from_mask(BitField<MouseButtonMask> button_mask) {
+MouseButton AndroidInputHandler::_button_index_from_mask(uint32_t button_mask) {
 	switch (button_mask) {
 		case MouseButtonMask::LEFT:
 			return MouseButton::LEFT;
@@ -442,8 +442,8 @@ MouseButton AndroidInputHandler::_button_index_from_mask(BitField<MouseButtonMas
 	}
 }
 
-BitField<MouseButtonMask> AndroidInputHandler::_android_button_mask_to_godot_button_mask(int android_button_mask) {
-	BitField<MouseButtonMask> godot_button_mask = MouseButtonMask::NONE;
+uint32_t AndroidInputHandler::_android_button_mask_to_godot_button_mask(int android_button_mask) {
+	uint32_t godot_button_mask = MouseButtonMask::NONE;
 	if (android_button_mask & AMOTION_EVENT_BUTTON_PRIMARY) {
 		godot_button_mask.set_flag(MouseButtonMask::LEFT);
 	}

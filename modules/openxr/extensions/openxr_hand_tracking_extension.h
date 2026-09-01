@@ -31,25 +31,21 @@
 #pragma once
 
 #include "../util.h"
-#include "openxr_extension_wrapper.h"
-
 #include "core/math/quaternion.h"
 #include "servers/xr/xr_hand_tracker.h"
 
-class OpenXRHandTrackingExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRHandTrackingExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRHandTrackingExtension
+{
 public:
-	enum HandTrackedHands {
+	enum HandTrackedHands
+	{
 		OPENXR_TRACKED_LEFT_HAND,
 		OPENXR_TRACKED_RIGHT_HAND,
 		OPENXR_MAX_TRACKED_HANDS
 	};
 
-	enum HandTrackedSource {
+	enum HandTrackedSource
+	{
 		OPENXR_SOURCE_UNKNOWN,
 		OPENXR_SOURCE_UNOBSTRUCTED,
 		OPENXR_SOURCE_CONTROLLER,
@@ -57,59 +53,32 @@ public:
 		OPENXR_SOURCE_MAX
 	};
 
-	struct HandTracker {
+	struct HandTracker
+	{
 		bool is_initialized = false;
 		Ref<XRHandTracker> godot_tracker;
-		XrHandJointsMotionRangeEXT motion_range = XR_HAND_JOINTS_MOTION_RANGE_UNOBSTRUCTED_EXT;
 		HandTrackedSource source = OPENXR_SOURCE_UNKNOWN;
-
-		XrHandTrackerEXT hand_tracker = XR_NULL_HANDLE;
-		XrHandJointLocationEXT joint_locations[XR_HAND_JOINT_COUNT_EXT];
-		XrHandJointVelocityEXT joint_velocities[XR_HAND_JOINT_COUNT_EXT];
-
-		XrHandJointVelocitiesEXT velocities;
-		XrHandJointLocationsEXT locations;
-		XrHandTrackingDataSourceStateEXT data_source;
 	};
 
-	static OpenXRHandTrackingExtension *get_singleton();
+	static OpenXRHandTrackingExtension* get_singleton();
 
 	OpenXRHandTrackingExtension();
-	virtual ~OpenXRHandTrackingExtension() override;
+	virtual ~OpenXRHandTrackingExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual void on_instance_destroyed();
+	virtual void on_session_destroyed();
 
-	virtual void on_instance_created(const XrInstance p_instance) override;
-	virtual void on_instance_destroyed() override;
-	virtual void on_session_destroyed() override;
-
-	virtual void *set_system_properties_and_get_next_pointer(void *p_next_pointer) override;
-	virtual void on_state_ready() override;
-	virtual void on_process() override;
-	virtual void on_state_stopping() override;
+	virtual void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+	virtual void on_state_ready();
+	virtual void on_process();
+	virtual void on_state_stopping();
 
 	bool get_active();
-	const HandTracker *get_hand_tracker(HandTrackedHands p_hand) const;
-
-	XrHandJointsMotionRangeEXT get_motion_range(HandTrackedHands p_hand) const;
-	void set_motion_range(HandTrackedHands p_hand, XrHandJointsMotionRangeEXT p_motion_range);
-
-	HandTrackedSource get_hand_tracking_source(HandTrackedHands p_hand) const;
-
-	XrSpaceLocationFlags get_hand_joint_location_flags(HandTrackedHands p_hand, XrHandJointEXT p_joint) const;
-	Quaternion get_hand_joint_rotation(HandTrackedHands p_hand, XrHandJointEXT p_joint) const;
-	Vector3 get_hand_joint_position(HandTrackedHands p_hand, XrHandJointEXT p_joint) const;
-	float get_hand_joint_radius(HandTrackedHands p_hand, XrHandJointEXT p_joint) const;
-
-	XrSpaceVelocityFlags get_hand_joint_velocity_flags(HandTrackedHands p_hand, XrHandJointEXT p_joint) const;
-	Vector3 get_hand_joint_linear_velocity(HandTrackedHands p_hand, XrHandJointEXT p_joint) const;
-	Vector3 get_hand_joint_angular_velocity(HandTrackedHands p_hand, XrHandJointEXT p_joint) const;
+	const HandTracker* get_hand_tracker(HandTrackedHands p_hand) const;
 
 private:
-	static OpenXRHandTrackingExtension *singleton;
+	static OpenXRHandTrackingExtension* singleton;
 
-	// state
-	XrSystemHandTrackingPropertiesEXT handTrackingSystemProperties;
 	HandTracker hand_trackers[OPENXR_MAX_TRACKED_HANDS]; // Fixed for left and right hand
 
 	// related extensions
@@ -121,9 +90,6 @@ private:
 
 	// functions
 	void cleanup_hand_tracking();
-
-	// OpenXR API call wrappers
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateHandTrackerEXT, (XrSession), p_session, (const XrHandTrackerCreateInfoEXT *), p_createInfo, (XrHandTrackerEXT *), p_handTracker)
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroyHandTrackerEXT, (XrHandTrackerEXT), p_handTracker)
-	EXT_PROTO_XRRESULT_FUNC3(xrLocateHandJointsEXT, (XrHandTrackerEXT), p_handTracker, (const XrHandJointsLocateInfoEXT *), p_locateInfo, (XrHandJointLocationsEXT *), p_locations)
 };
+
+
