@@ -603,7 +603,7 @@ void Button::_shape(Ref<TextParagraph> p_paragraph, String p_text) const
 		return;
 	}
 
-	BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY;
+	uint32_t autowrap_flags = TextServer::BREAK_MANDATORY;
 	switch (autowrap_mode) {
 	case TextServer::AUTOWRAP_WORD_SMART:
 		autowrap_flags =
@@ -682,7 +682,7 @@ void Button::set_autowrap_mode(TextServer::AutowrapMode p_mode)
 
 TextServer::AutowrapMode Button::get_autowrap_mode() const { return autowrap_mode; }
 
-void Button::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags)
+void Button::set_autowrap_trim_flags(uint32_t p_flags)
 {
 	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
 		autowrap_flags_trim = p_flags & TextServer::BREAK_TRIM_MASK;
@@ -692,7 +692,7 @@ void Button::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags
 	}
 }
 
-BitField<TextServer::LineBreakFlag> Button::get_autowrap_trim_flags() const
+uint32_t Button::get_autowrap_trim_flags() const
 {
 	return autowrap_flags_trim;
 }

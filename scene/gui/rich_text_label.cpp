@@ -759,7 +759,7 @@ float RichTextLabel::_shape_line(ItemFrame* p_frame, int p_line, const Ref<Font>
 
 	MutexLock lock(l.text_buf->get_mutex());
 
-	BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY;
+	uint32_t autowrap_flags = TextServer::BREAK_MANDATORY;
 	switch (autowrap_mode) {
 	case TextServer::AUTOWRAP_WORD_SMART:
 		autowrap_flags =
@@ -4343,7 +4343,7 @@ int RichTextLabel::_find_margin(Item* p_item, const Ref<Font>& p_base_font, int 
 	return margin;
 }
 
-BitField<TextServer::JustificationFlag> RichTextLabel::_find_jst_flags(Item* p_item)
+uint32_t RichTextLabel::_find_jst_flags(Item* p_item)
 {
 	Item* item = p_item;
 
@@ -5194,7 +5194,7 @@ void RichTextLabel::add_image(const Ref<Texture2D>& p_image, float p_width, floa
 	update_configuration_warnings();
 }
 
-void RichTextLabel::update_image(const Variant& p_key, BitField<ImageUpdateMask> p_mask,
+void RichTextLabel::update_image(const Variant& p_key, uint32_t p_mask,
 	const Ref<Texture2D>& p_image, float p_width, float p_height, const Color& p_color,
 	InlineAlignment p_alignment, const Rect2& p_region, bool p_pad, const String& p_tooltip,
 	ImageUnit p_width_unit, ImageUnit p_height_unit)
@@ -5692,7 +5692,7 @@ void RichTextLabel::push_strikethrough(const Color& p_color)
 void RichTextLabel::push_paragraph(HorizontalAlignment p_alignment,
 	Control::TextDirection p_direction, const String& p_language,
 	TextServer::StructuredTextParser p_st_parser,
-	BitField<TextServer::JustificationFlag> p_jst_flags, const PackedFloat32Array& p_tab_stops)
+	uint32_t p_jst_flags, const PackedFloat32Array& p_tab_stops)
 {
 	_stop_thread();
 	MutexLock data_lock(data_mutex);
@@ -6815,7 +6815,7 @@ void RichTextLabel::append_text(const String& p_bbcode)
 			String lang = language;
 			PackedFloat32Array tab_stops = default_tab_stops;
 			TextServer::StructuredTextParser st_parser_type = TextServer::STRUCTURED_TEXT_DEFAULT;
-			BitField<TextServer::JustificationFlag> jst_flags = default_jst_flags;
+			uint32_t jst_flags = default_jst_flags;
 
 			OptionMap::Iterator justification_flags_option =
 				bbcode_options.find("justification_flags");
@@ -8508,7 +8508,7 @@ void RichTextLabel::set_vertical_alignment(VerticalAlignment p_alignment)
 
 VerticalAlignment RichTextLabel::get_vertical_alignment() const { return vertical_alignment; }
 
-void RichTextLabel::set_justification_flags(BitField<TextServer::JustificationFlag> p_flags)
+void RichTextLabel::set_justification_flags(uint32_t p_flags)
 {
 	_stop_thread();
 
@@ -8525,7 +8525,7 @@ void RichTextLabel::set_justification_flags(BitField<TextServer::JustificationFl
 	}
 }
 
-BitField<TextServer::JustificationFlag> RichTextLabel::get_justification_flags() const
+uint32_t RichTextLabel::get_justification_flags() const
 {
 	return default_jst_flags;
 }
@@ -8623,7 +8623,7 @@ void RichTextLabel::set_autowrap_mode(TextServer::AutowrapMode p_mode)
 
 TextServer::AutowrapMode RichTextLabel::get_autowrap_mode() const { return autowrap_mode; }
 
-void RichTextLabel::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags)
+void RichTextLabel::set_autowrap_trim_flags(uint32_t p_flags)
 {
 	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
 		_stop_thread();
@@ -8636,7 +8636,7 @@ void RichTextLabel::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> 
 	}
 }
 
-BitField<TextServer::LineBreakFlag> RichTextLabel::get_autowrap_trim_flags() const
+uint32_t RichTextLabel::get_autowrap_trim_flags() const
 {
 	return autowrap_flags_trim;
 }

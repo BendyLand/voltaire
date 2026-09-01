@@ -414,7 +414,7 @@ int64_t FileAccessUnix::_get_size(const String &p_file) {
 	ERR_FAIL_V_MSG(-1, "Failed to get size for: " + p_file + "");
 }
 
-BitField<FileAccess::UnixPermissionFlags> FileAccessUnix::_get_unix_permissions(const String &p_file) {
+uint32_t FileAccessUnix::_get_unix_permissions(const String &p_file) {
 	String file = fix_path(p_file);
 	struct stat status = {};
 	int err = stat(file.utf8().get_data(), &status);
@@ -426,7 +426,7 @@ BitField<FileAccess::UnixPermissionFlags> FileAccessUnix::_get_unix_permissions(
 	}
 }
 
-Error FileAccessUnix::_set_unix_permissions(const String &p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions) {
+Error FileAccessUnix::_set_unix_permissions(const String &p_file, uint32_t p_permissions) {
 	String file = fix_path(p_file);
 
 	int err = chmod(file.utf8().get_data(), p_permissions);

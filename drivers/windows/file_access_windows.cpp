@@ -526,11 +526,11 @@ int64_t FileAccessWindows::_get_size(const String &p_file) {
 	ERR_FAIL_V_MSG(-1, "Failed to get size for: " + p_file + "");
 }
 
-BitField<FileAccess::UnixPermissionFlags> FileAccessWindows::_get_unix_permissions(const String &p_file) {
+uint32_t FileAccessWindows::_get_unix_permissions(const String &p_file) {
 	return 0;
 }
 
-Error FileAccessWindows::_set_unix_permissions(const String &p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions) {
+Error FileAccessWindows::_set_unix_permissions(const String &p_file, uint32_t p_permissions) {
 	return ERR_UNAVAILABLE;
 }
 

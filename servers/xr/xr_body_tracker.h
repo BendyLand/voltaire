@@ -158,11 +158,11 @@ public:
 	void set_has_tracking_data(bool p_has_tracking_data);
 	bool get_has_tracking_data() const;
 
-	void set_body_flags(BitField<BodyFlags> p_body_flags);
-	BitField<BodyFlags> get_body_flags() const;
+	void set_body_flags(uint32_t p_body_flags);
+	uint32_t get_body_flags() const;
 
-	void set_joint_flags(Joint p_joint, BitField<JointFlags> p_flags);
-	BitField<JointFlags> get_joint_flags(Joint p_joint) const;
+	void set_joint_flags(Joint p_joint, uint32_t p_flags);
+	uint32_t get_joint_flags(Joint p_joint) const;
 
 	void set_joint_transform(Joint p_joint, const Transform3D &p_transform);
 	Transform3D get_joint_transform(Joint p_joint) const;
@@ -174,9 +174,9 @@ protected:
 
 private:
 	bool has_tracking_data = false;
-	BitField<BodyFlags> body_flags = {};
+	uint32_t body_flags = {};
 
-	BitField<JointFlags> joint_flags[JOINT_MAX];
+	uint32_t joint_flags[JOINT_MAX];
 	Transform3D joint_transforms[JOINT_MAX];
 };
 

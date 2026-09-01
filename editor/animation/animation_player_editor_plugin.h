@@ -45,14 +45,11 @@ class ImageTexture;
 
 class AnimationPlayerEditor : public EditorDock
 {
-	VLTRCLASS(AnimationPlayerEditor, EditorDock);
-
 	friend AnimationPlayerEditorPlugin;
 
 	AnimationPlayerEditorPlugin* plugin = nullptr;
 	AnimationMixer* original_node = nullptr; // For pinned mark in SceneTree.
 	AnimationPlayer* player = nullptr;		 // For AnimationPlayerEditor, could be dummy.
-	ObjectID cached_root_node_id;
 	bool is_dummy = false;
 
 	enum
@@ -183,58 +180,36 @@ class AnimationPlayerEditor : public EditorDock
 			double anim_player_position = 0.0;
 			Ref<AnimatedValuesBackup> anim_values_backup;
 			Rect2 screen_rect;
-			Dictionary canvas_edit_state;
-			Dictionary spatial_edit_state;
 		} temp;
 	} onion;
 
-	void _select_anim_by_name(Object& obj, const String& p_anim);
 	float _get_editor_step() const;
 	void _play_pressed();
 	void _play_from_pressed();
 	void _play_bw_pressed();
 	void _play_bw_from_pressed();
-	void _autoplay_pressed(const Object& obj);
-	void _stop_pressed(Object& obj);
-	void _animation_selected(Object& obj, int p_which);
 	void _animation_new();
 	void _animation_rename();
-	void _animation_name_edited(const Object& obj);
 
 	void _animation_remove();
-	void _animation_remove_confirmed(const Object& obj);
-	void _animation_edit(Object& obj);
 	void _animation_duplicate();
 	Ref<Animation> _animation_clone(const Ref<Animation> p_anim);
 	void _animation_resource_edit();
 	void _scale_changed(const String& p_scale);
-	void _seek_value_changed(Object& obj, float p_value, bool p_timeline_only = false);
-	void _blend_editor_next_changed(const Object& obj, const int p_idx);
 
 	void _edit_animation_blend();
 	void _update_animation_blend();
 
-	void _list_changed(Object& obj);
 	void _animation_finished(const String& p_name);
-	void _current_animation_changed(Object& obj, const StringName& p_name);
 	void _update_animation();
-	void _update_player(Object& obj);
 	void _set_controls_disabled(bool p_disabled);
 	void _update_animation_list_icons();
 	void _update_name_dialog_library_dropdown();
 	void _update_playback_tooltips();
-	void _blend_edited(const Object& obj);
 
-	void _animation_player_changed(Object* p_pl);
-	void _animation_libraries_updated(Object& obj);
-
-	void _animation_key_editor_seek(Object& obj, float p_pos, bool p_timeline_only = false,
-		bool p_update_position_only = false);
 	void _animation_key_editor_anim_len_changed(float p_len);
 	void _animation_update_key_frame();
 
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_ev) override;
-	void _animation_tool_menu(const Object& obj, int p_option);
 	void _onion_skinning_menu(int p_option);
 
 	void _editor_visibility_changed();
@@ -259,15 +234,11 @@ class AnimationPlayerEditor : public EditorDock
 	~AnimationPlayerEditor();
 
 protected:
-	void _notification(Object& obj, int p_what);
-	void _node_removed(Object& obj, Node* p_node);
-	void _find_player(Object& obj);
 	static void _bind_methods();
 
 public:
 	AnimationMixer* get_editing_node() const;
 	AnimationPlayer* get_player() const;
-	AnimationMixer* fetch_mixer_for_library(const Object& obj) const;
 	Node* get_cached_root_node() const;
 
 	static AnimationPlayerEditor* get_singleton() { return singleton; }
@@ -282,57 +253,26 @@ public:
 
 	AnimationTrackEditor* get_track_editor() { return track_editor; }
 
-	Dictionary get_state() const;
-	void set_state(Object& obj, const Dictionary& p_state);
-	void clear(Object& obj);
-
-	void ensure_visibility(Object& obj);
-	void go_to_nearest_keyframe(Object& obj, bool p_backward);
-
-	void edit(Object& obj, AnimationMixer* p_node, AnimationPlayer* p_player, bool p_is_dummy);
 	void forward_force_draw_over_viewport(Control* p_overlay);
-
-	AnimationPlayerEditor(const Object& obj, AnimationPlayerEditorPlugin* p_plugin);
 };
 
 class AnimationPlayerEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(AnimationPlayerEditorPlugin, EditorPlugin);
-
 	friend AnimationPlayerEditor;
 
 	AnimationPlayerEditor* anim_editor = nullptr;
 	AnimationPlayer* player = nullptr;
 	AnimationPlayer* dummy_player = nullptr;
-	ObjectID last_mixer;
 
-	void _update_dummy_player(const Object& obj, AnimationMixer* p_mixer);
 	void _clear_dummy_player();
 
 protected:
 	void _notification(int p_what);
 
-	void _property_keyed(
-		Object& obj, const String& p_keyed, const Variant& p_value, bool p_advance);
-	void _transform_3d_key_request(
-		const Object& obj, Object* sp, const String& p_sub, const Transform3D& p_key);
 	void _update_keying();
 
 public:
-	virtual Dictionary get_state() const override { return anim_editor->get_state(); }
-
-	virtual void set_state(Object& obj, const Dictionary& p_state) override
-	{
-		anim_editor->set_state(obj, p_state);
-	}
-
-	virtual void clear(Object& obj) override { anim_editor->clear(obj); }
-
 	virtual String get_plugin_name() const override { return "Anim"; }
-
-	virtual void edit(Object* p_object) override;
-	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(Object& obj, bool p_visible) override;
 
 	virtual void forward_canvas_force_draw_over_viewport(Control* p_overlay) override
 	{
@@ -344,7 +284,6 @@ public:
 		anim_editor->forward_force_draw_over_viewport(p_overlay);
 	}
 
-	AnimationPlayerEditorPlugin(const Object& obj);
 	~AnimationPlayerEditorPlugin();
 };
 
@@ -352,24 +291,14 @@ public:
 
 class EditorInspectorPluginAnimationTrackKeyEdit : public EditorInspectorPlugin
 {
-	VLTRCLASS(EditorInspectorPluginAnimationTrackKeyEdit, EditorInspectorPlugin);
-
 	AnimationTrackKeyEditEditor* atk_editor = nullptr;
-
-public:
-	virtual bool can_handle(Object* p_object) override;
-	virtual void parse_begin(Object* p_object) override;
 };
 
 class AnimationTrackKeyEditEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(AnimationTrackKeyEditEditorPlugin, EditorPlugin);
-
 	Ref<EditorInspectorPluginAnimationTrackKeyEdit> atk_plugin;
 
 public:
-	virtual bool handles(Object* p_object) const override;
-
 	virtual String get_plugin_name() const override { return "AnimationTrackKeyEdit"; }
 
 	AnimationTrackKeyEditEditorPlugin();
@@ -379,24 +308,14 @@ public:
 
 class EditorInspectorPluginAnimationMarkerKeyEdit : public EditorInspectorPlugin
 {
-	VLTRCLASS(EditorInspectorPluginAnimationMarkerKeyEdit, EditorInspectorPlugin);
-
 	AnimationMarkerKeyEditEditor* amk_editor = nullptr;
-
-public:
-	virtual bool can_handle(Object* p_object) override;
-	virtual void parse_begin(Object* p_object) override;
 };
 
 class AnimationMarkerKeyEditEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(AnimationMarkerKeyEditEditorPlugin, EditorPlugin);
-
 	Ref<EditorInspectorPluginAnimationMarkerKeyEdit> amk_plugin;
 
 public:
-	virtual bool handles(Object* p_object) const override;
-
 	virtual String get_plugin_name() const override { return "AnimationMarkerKeyEdit"; }
 
 	AnimationMarkerKeyEditEditorPlugin();

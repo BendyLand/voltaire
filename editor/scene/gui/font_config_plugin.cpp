@@ -949,7 +949,7 @@ bool EditorInspectorPluginFontVariation::can_handle(Object* p_object)
 
 bool EditorInspectorPluginFontVariation::parse_property(Object* p_object,
 	const Variant::Type p_type, const String& p_path, const PropertyHint p_hint,
-	const String& p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+	const String& p_hint_text, const uint32_t p_usage, const bool p_wide)
 {
 	if (p_path == "variation_opentype") {
 		add_property_editor(p_path, memnew(EditorPropertyOTVariation));
@@ -1084,7 +1084,7 @@ void EditorInspectorPluginFontPreview::parse_begin(Object* p_object)
 
 bool EditorInspectorPluginFontPreview::parse_property(Object* p_object, const Variant::Type p_type,
 	const String& p_path, const PropertyHint p_hint, const String& p_hint_text,
-	const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+	const uint32_t p_usage, const bool p_wide)
 {
 	return false;
 }
@@ -1153,7 +1153,7 @@ bool EditorInspectorPluginSystemFont::can_handle(Object* p_object)
 
 bool EditorInspectorPluginSystemFont::parse_property(Object* p_object, const Variant::Type p_type,
 	const String& p_path, const PropertyHint p_hint, const String& p_hint_text,
-	const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+	const uint32_t p_usage, const bool p_wide)
 {
 	if (p_path == "font_names") {
 		EditorPropertyFontNamesArray* editor = memnew(EditorPropertyFontNamesArray);

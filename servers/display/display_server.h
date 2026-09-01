@@ -33,12 +33,10 @@
 #include "core/input/input_enums.h"
 #include "core/io/image.h"
 #include "core/io/resource.h"
-#include "core/object/object.h"
 #include "core/os/keyboard.h"
 #include "core/os/process_id.h"
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/callable.h"
-#include "core/variant/typed_array.h"
+#include "core/types.h"
 #include "servers/display/display_server_enums.h"
 
 class NativeMenu;
@@ -68,8 +66,6 @@ class DisplayServer
 	static DisplayServer* singleton;
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	_FORCE_INLINE_ static DisplayServer* get_singleton() { return singleton; }
 
 	/* CREATE */
@@ -150,120 +146,10 @@ public:
 	/* GLOBAL MENU */
 
 public:
-	virtual void help_set_search_callbacks(const Callable& p_search_callback = Callable(),
-		const Callable& p_action_callback = Callable());
-
-#ifndef DISABLE_DEPRECATED
-private:
-	mutable HashMap<String, RID> menu_names;
-
-	RID _get_rid_from_name(NativeMenu* p_nmenu, const String& p_menu_root) const;
-
-public:
-	virtual void global_menu_set_popup_callbacks(const String& p_menu_root,
-		const Callable& p_open_callback = Callable(),
-		const Callable& p_close_callback = Callable());
-
-	virtual int global_menu_add_submenu_item(const String& p_menu_root, const String& p_label,
-		const String& p_submenu, int p_index = -1);
-	virtual int global_menu_add_item(const String& p_menu_root, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int global_menu_add_check_item(const String& p_menu_root, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int global_menu_add_icon_item(const String& p_menu_root, const Ref<Texture2D>& p_icon,
-		const String& p_label, const Callable& p_callback = Callable(),
-		const Callable& p_key_callback = Callable(), const Variant& p_tag = Variant(),
-		Key p_accel = Key::NONE, int p_index = -1);
-	virtual int global_menu_add_icon_check_item(const String& p_menu_root,
-		const Ref<Texture2D>& p_icon, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int global_menu_add_radio_check_item(const String& p_menu_root, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int global_menu_add_icon_radio_check_item(const String& p_menu_root,
-		const Ref<Texture2D>& p_icon, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int global_menu_add_multistate_item(const String& p_menu_root, const String& p_label,
-		int p_max_states, int p_default_state, const Callable& p_callback = Callable(),
-		const Callable& p_key_callback = Callable(), const Variant& p_tag = Variant(),
-		Key p_accel = Key::NONE, int p_index = -1);
-	virtual int global_menu_add_separator(const String& p_menu_root, int p_index = -1);
-
-	virtual int global_menu_get_item_index_from_text(
-		const String& p_menu_root, const String& p_text) const;
-	virtual int global_menu_get_item_index_from_tag(
-		const String& p_menu_root, const Variant& p_tag) const;
-
-	virtual bool global_menu_is_item_checked(const String& p_menu_root, int p_idx) const;
-	virtual bool global_menu_is_item_checkable(const String& p_menu_root, int p_idx) const;
-	virtual bool global_menu_is_item_radio_checkable(const String& p_menu_root, int p_idx) const;
-	virtual Callable global_menu_get_item_callback(const String& p_menu_root, int p_idx) const;
-	virtual Callable global_menu_get_item_key_callback(const String& p_menu_root, int p_idx) const;
-	virtual Variant global_menu_get_item_tag(const String& p_menu_root, int p_idx) const;
-	virtual String global_menu_get_item_text(const String& p_menu_root, int p_idx) const;
-	virtual String global_menu_get_item_submenu(const String& p_menu_root, int p_idx) const;
-	virtual Key global_menu_get_item_accelerator(const String& p_menu_root, int p_idx) const;
-	virtual bool global_menu_is_item_disabled(const String& p_menu_root, int p_idx) const;
-	virtual bool global_menu_is_item_hidden(const String& p_menu_root, int p_idx) const;
-	virtual String global_menu_get_item_tooltip(const String& p_menu_root, int p_idx) const;
-	virtual int global_menu_get_item_state(const String& p_menu_root, int p_idx) const;
-	virtual int global_menu_get_item_max_states(const String& p_menu_root, int p_idx) const;
-	virtual Ref<Texture2D> global_menu_get_item_icon(const String& p_menu_root, int p_idx) const;
-	virtual int global_menu_get_item_indentation_level(const String& p_menu_root, int p_idx) const;
-
-	virtual void global_menu_set_item_checked(const String& p_menu_root, int p_idx, bool p_checked);
-	virtual void global_menu_set_item_checkable(
-		const String& p_menu_root, int p_idx, bool p_checkable);
-	virtual void global_menu_set_item_radio_checkable(
-		const String& p_menu_root, int p_idx, bool p_checkable);
-	virtual void global_menu_set_item_callback(
-		const String& p_menu_root, int p_idx, const Callable& p_callback);
-	virtual void global_menu_set_item_key_callback(
-		const String& p_menu_root, int p_idx, const Callable& p_key_callback);
-	virtual void global_menu_set_item_hover_callbacks(
-		const String& p_menu_root, int p_idx, const Callable& p_callback);
-	virtual void global_menu_set_item_tag(
-		const String& p_menu_root, int p_idx, const Variant& p_tag);
-	virtual void global_menu_set_item_text(
-		const String& p_menu_root, int p_idx, const String& p_text);
-	virtual void global_menu_set_item_submenu(
-		const String& p_menu_root, int p_idx, const String& p_submenu);
-	virtual void global_menu_set_item_accelerator(
-		const String& p_menu_root, int p_idx, Key p_keycode);
-	virtual void global_menu_set_item_disabled(
-		const String& p_menu_root, int p_idx, bool p_disabled);
-	virtual void global_menu_set_item_hidden(const String& p_menu_root, int p_idx, bool p_hidden);
-	virtual void global_menu_set_item_tooltip(
-		const String& p_menu_root, int p_idx, const String& p_tooltip);
-	virtual void global_menu_set_item_state(const String& p_menu_root, int p_idx, int p_state);
-	virtual void global_menu_set_item_max_states(
-		const String& p_menu_root, int p_idx, int p_max_states);
-	virtual void global_menu_set_item_icon(
-		const String& p_menu_root, int p_idx, const Ref<Texture2D>& p_icon);
-	virtual void global_menu_set_item_indentation_level(
-		const String& p_menu_root, int p_idx, int p_level);
-
-	virtual int global_menu_get_item_count(const String& p_menu_root) const;
-
-	virtual void global_menu_remove_item(const String& p_menu_root, int p_idx);
-	virtual void global_menu_clear(const String& p_menu_root);
-
-	virtual Dictionary global_menu_get_system_menu_roots() const;
-#endif // DISABLE_DEPRECATED
-
 	/* TTS */
-
-private:
-	Callable utterance_callback[DisplayServerEnums::TTS_UTTERANCE_MAX];
-
 public:
 	virtual bool tts_is_speaking() const;
 	virtual bool tts_is_paused() const;
-	virtual Array tts_get_voices() const;
 	virtual PackedStringArray tts_get_voices_for_language(const String& p_language) const;
 
 	virtual void tts_speak(const String& p_text, const String& p_voice, int p_volume = 50,
@@ -273,8 +159,6 @@ public:
 	virtual void tts_resume();
 	virtual void tts_stop();
 
-	virtual void tts_set_utterance_callback(
-		DisplayServerEnums::TTSUtteranceEvent p_event, const Callable& p_callable);
 	virtual void tts_post_utterance_event(
 		DisplayServerEnums::TTSUtteranceEvent p_event, int64_t p_id, int p_pos = 0);
 
@@ -287,10 +171,6 @@ public:
 	virtual Color get_accent_color() const { return Color(0, 0, 0, 0); }
 
 	virtual Color get_base_color() const { return Color(0, 0, 0, 0); }
-
-	virtual void set_system_theme_change_callback(const Callable& p_callable) {}
-
-	virtual void set_hardware_keyboard_connection_change_callback(const Callable& p_callable) {}
 
 	/* MOUSE */
 
@@ -320,7 +200,7 @@ public:
 
 	virtual void warp_mouse(const Point2i& p_position);
 	virtual Point2i mouse_get_position() const;
-	virtual BitField<MouseButtonMask> mouse_get_button_state() const;
+	virtual uint32_t mouse_get_button_state() const;
 
 	virtual void cursor_set_shape(DisplayServerEnums::CursorShape p_shape);
 	virtual DisplayServerEnums::CursorShape cursor_get_shape() const;
@@ -376,12 +256,6 @@ public:
 
 	const float SCREEN_REFRESH_RATE_FALLBACK =
 		-1.0; // Returned by screen_get_refresh_rate if the method fails.
-
-	virtual Array get_display_cutouts(
-		int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const
-	{
-		return Array();
-	}
 
 	virtual Rect2i get_display_safe_area(
 		int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const
@@ -501,26 +375,6 @@ public:
 
 	virtual DisplayServerEnums::WindowID get_window_at_screen_position(
 		const Point2i& p_position) const = 0;
-
-	virtual void window_attach_instance_id(ObjectID p_instance,
-		DisplayServerEnums::WindowID p_window =
-			DisplayServerEnums::MAIN_WINDOW_ID) = 0; // Note: internal method used by Window, do not
-													 // expose.
-	virtual ObjectID window_get_attached_instance_id(
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const = 0;
-
-	virtual void window_set_rect_changed_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) = 0;
-
-	virtual void window_set_window_event_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) = 0;
-	virtual void window_set_input_event_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) = 0;
-	virtual void window_set_input_text_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) = 0;
-
-	virtual void window_set_drop_files_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) = 0;
 
 	virtual void window_set_title(const String& p_title,
 		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) = 0;
@@ -701,63 +555,23 @@ public:
 
 	virtual bool get_swap_cancel_ok();
 
-	virtual Error dialog_show(
-		String p_title, String p_description, Vector<String> p_buttons, const Callable& p_callback);
-	virtual Error dialog_input_text(
-		String p_title, String p_description, String p_partial, const Callable& p_callback);
-
-	virtual Error file_dialog_show(const String& p_title, const String& p_current_directory,
-		const String& p_filename, bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const Callable& p_callback,
-		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID);
-	virtual Error file_dialog_with_options_show(const String& p_title,
-		const String& p_current_directory, const String& p_root, const String& p_filename,
-		bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const Array& p_options, const Callable& p_callback,
-		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID);
-
-#ifndef DISABLE_DEPRECATED
-	Error _file_dialog_show_bind_compat_98194(const String& p_title,
-		const String& p_current_directory, const String& p_filename, bool p_show_hidden,
-		DisplayServerEnums::FileDialogMode p_mode, const Vector<String>& p_filters,
-		const Callable& p_callback);
-	Error _file_dialog_with_options_show_bind_compat_98194(const String& p_title,
-		const String& p_current_directory, const String& p_root, const String& p_filename,
-		bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const Array& p_options, const Callable& p_callback);
-	Array _get_display_cutouts_bind_compat_119196() const;
-	Rect2i _get_display_safe_area_bind_compat_119196() const;
-#endif
-
 	virtual void show_emoji_and_symbol_picker() const;
-	virtual bool color_picker(const Callable& p_callback);
 
 	/* STATUS INDICATOR */
 
-	virtual DisplayServerEnums::IndicatorID create_status_indicator(
-		const Ref<Texture2D>& p_icon, const String& p_tooltip, const Callable& p_callback);
 	virtual void status_indicator_set_icon(
 		DisplayServerEnums::IndicatorID p_id, const Ref<Texture2D>& p_icon);
 	virtual void status_indicator_set_tooltip(
 		DisplayServerEnums::IndicatorID p_id, const String& p_tooltip);
 	virtual void status_indicator_set_menu(
 		DisplayServerEnums::IndicatorID p_id, const RID& p_menu_rid);
-	virtual void status_indicator_set_callback(
-		DisplayServerEnums::IndicatorID p_id, const Callable& p_callback);
 	virtual Rect2 status_indicator_get_rect(DisplayServerEnums::IndicatorID p_id) const;
 	virtual void delete_status_indicator(DisplayServerEnums::IndicatorID p_id);
 
 	/* OUTPUT */
 
-private:
-	LocalVector<ObjectID> additional_outputs;
 
 public:
-	void register_additional_output(Object* p_output);
-	void unregister_additional_output(Object* p_output);
-
-	bool has_additional_outputs() const { return additional_outputs.size() > 0; }
-
 	/* PICTURE_IN_PICTURE */
 	virtual bool is_in_pip_mode(
 		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID)
@@ -808,11 +622,6 @@ public:
 	virtual bool accessibility_has_element(const RID& p_id) const;
 	virtual void accessibility_free_element(const RID& p_id);
 
-	virtual void accessibility_element_set_meta(const RID& p_id, const Variant& p_meta);
-	virtual Variant accessibility_element_get_meta(const RID& p_id) const;
-
-	virtual void accessibility_update_if_active(const Callable& p_callable);
-
 	virtual void accessibility_update_set_focus(const RID& p_id);
 	virtual RID accessibility_get_window_root(DisplayServerEnums::WindowID p_window_id) const;
 
@@ -820,10 +629,6 @@ public:
 		DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out, const Rect2& p_rect_in);
 	virtual void accessibility_set_window_focused(
 		DisplayServerEnums::WindowID p_window_id, bool p_focused);
-	virtual void accessibility_set_window_callbacks(DisplayServerEnums::WindowID p_window_id,
-		const Callable& p_activate_callable,
-		const Callable&
-			p_deativate_callable); // Note: internal method used by Window, do not expose.
 	virtual void accessibility_window_activation_completed(DisplayServerEnums::WindowID
 			p_window_id); // Note: internal method used by Window, do not expose.
 	virtual void accessibility_window_deactivation_completed(DisplayServerEnums::WindowID
@@ -860,8 +665,6 @@ public:
 	virtual void accessibility_update_set_error_message(const RID& p_id, const RID& p_other_id);
 	virtual void accessibility_update_set_live(
 		const RID& p_id, DisplayServerEnums::AccessibilityLiveMode p_live);
-	virtual void accessibility_update_add_action(const RID& p_id,
-		DisplayServerEnums::AccessibilityAction p_action, const Callable& p_callable);
 	virtual void accessibility_update_add_custom_action(
 		const RID& p_id, int p_action_id, const String& p_action_description);
 	virtual void accessibility_update_set_table_row_count(const RID& p_id, int p_count);
@@ -913,34 +716,5 @@ public:
 	virtual void accessibility_update_set_foreground_color(const RID& p_id, const Color& p_color);
 #endif // DISABLE_DEPRECATED
 };
-
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::Feature, DisplayServer::Feature)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::TTSUtteranceEvent, DisplayServer::TTSUtteranceEvent)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::MouseMode, DisplayServer::MouseMode)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::CursorShape, DisplayServer::CursorShape)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::VirtualKeyboardType, DisplayServer::VirtualKeyboardType)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::ScreenOrientation, DisplayServer::ScreenOrientation)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::HandleType, DisplayServer::HandleType)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::WindowMode, DisplayServer::WindowMode)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::WindowFlags, DisplayServer::WindowFlags)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::WindowEvent, DisplayServer::WindowEvent)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::WindowResizeEdge, DisplayServer::WindowResizeEdge)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::VSyncMode, DisplayServer::VSyncMode)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::ProgressState, DisplayServer::ProgressState)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::FileDialogMode, DisplayServer::FileDialogMode)
-
-#ifndef DISABLE_DEPRECATED
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::AccessibilityRole, DisplayServer::AccessibilityRole)
-VARIANT_ENUM_CAST_EXT(
-	DisplayServerEnums::AccessibilityPopupType, DisplayServer::AccessibilityPopupType)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::AccessibilityFlags, DisplayServer::AccessibilityFlags)
-VARIANT_ENUM_CAST_EXT(DisplayServerEnums::AccessibilityAction, DisplayServer::AccessibilityAction)
-VARIANT_ENUM_CAST_EXT(
-	DisplayServerEnums::AccessibilityLiveMode, DisplayServer::AccessibilityLiveMode)
-VARIANT_ENUM_CAST_EXT(
-	DisplayServerEnums::AccessibilityScrollUnit, DisplayServer::AccessibilityScrollUnit)
-VARIANT_ENUM_CAST_EXT(
-	DisplayServerEnums::AccessibilityScrollHint, DisplayServer::AccessibilityScrollHint)
-#endif // DISABLE_DEPRECATED
 
 

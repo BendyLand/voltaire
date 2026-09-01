@@ -1656,7 +1656,7 @@ bool EditorInspectorPluginAnimationNodeAnimation::can_handle(Object* p_object)
 
 bool EditorInspectorPluginAnimationNodeAnimation::parse_property(Object* p_object,
 	const Variant::Type p_type, const String& p_path, const PropertyHint p_hint,
-	const String& p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+	const String& p_hint_text, const uint32_t p_usage, const bool p_wide)
 {
 	Ref<AnimationNodeAnimation> ana(Object::cast_to<AnimationNodeAnimation>(p_object));
 	ERR_FAIL_COND_V(ana.is_null(), false);

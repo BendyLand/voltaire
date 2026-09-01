@@ -1171,7 +1171,7 @@ void TextServerFallback::_font_set_data_ptr(const RID &p_font_rid, const uint8_t
 	fd->data_size = p_data_size;
 }
 
-void TextServerFallback::_font_set_style(const RID &p_font_rid, BitField<FontStyle> p_style) {
+void TextServerFallback::_font_set_style(const RID &p_font_rid, uint32_t p_style) {
 	FontFallback *fd = _get_font_data(p_font_rid);
 	ERR_FAIL_NULL(fd);
 
@@ -1250,7 +1250,7 @@ int64_t TextServerFallback::_font_get_face_count(const RID &p_font_rid) const {
 	return face_count;
 }
 
-BitField<TextServer::FontStyle> TextServerFallback::_font_get_style(const RID &p_font_rid) const {
+uint32_t TextServerFallback::_font_get_style(const RID &p_font_rid) const {
 	FontFallback *fd = _get_font_data(p_font_rid);
 	ERR_FAIL_NULL_V(fd, 0);
 
@@ -4217,7 +4217,7 @@ RID TextServerFallback::_shaped_text_get_parent(const RID &p_shaped) const {
 	return sd->parent;
 }
 
-double TextServerFallback::_shaped_text_fit_to_width(const RID &p_shaped, double p_width, BitField<JustificationFlag> p_jst_flags) {
+double TextServerFallback::_shaped_text_fit_to_width(const RID &p_shaped, double p_width, uint32_t p_jst_flags) {
 	ShapedTextDataFallback *sd = shaped_owner.get_or_null(p_shaped);
 	ERR_FAIL_NULL_V(sd, 0.0);
 
@@ -4467,7 +4467,7 @@ RID TextServerFallback::_find_sys_font_for_text(const RID &p_fdef, const String 
 	// Try system fallback.
 	if (_font_is_allow_system_fallback(p_fdef)) {
 		String font_name = _font_get_name(p_fdef);
-		BitField<FontStyle> font_style = _font_get_style(p_fdef);
+		uint32_t font_style = _font_get_style(p_fdef);
 		int font_weight = _font_get_weight(p_fdef);
 		int font_stretch = _font_get_stretch(p_fdef);
 		Dictionary dvar = _font_get_variation_coordinates(p_fdef);
@@ -4497,7 +4497,7 @@ RID TextServerFallback::_find_sys_font_for_text(const RID &p_fdef, const String 
 					if (unlikely(!_font_has_char(F.rid, p_text[0]))) {
 						continue;
 					}
-					BitField<FontStyle> style = _font_get_style(F.rid);
+					uint32_t style = _font_get_style(F.rid);
 					int weight = _font_get_weight(F.rid);
 					int stretch = _font_get_stretch(F.rid);
 					int score = (20 - Math::abs(weight - font_weight) / 50);
@@ -4549,7 +4549,7 @@ RID TextServerFallback::_find_sys_font_for_text(const RID &p_fdef, const String 
 					if (unlikely(!_font_has_char(sysf.rid, p_text[0]))) {
 						continue;
 					}
-					BitField<FontStyle> style = _font_get_style(sysf.rid);
+					uint32_t style = _font_get_style(sysf.rid);
 					int weight = _font_get_weight(sysf.rid);
 					int stretch = _font_get_stretch(sysf.rid);
 					int score = (20 - Math::abs(weight - font_weight) / 50);
@@ -4641,7 +4641,7 @@ RID TextServerFallback::_find_sys_font_for_text(const RID &p_fdef, const String 
 	return f;
 }
 
-void TextServerFallback::_shaped_text_overrun_trim_to_width(const RID &p_shaped_line, double p_width, BitField<TextServer::TextOverrunFlag> p_trim_flags) {
+void TextServerFallback::_shaped_text_overrun_trim_to_width(const RID &p_shaped_line, double p_width, uint32_t p_trim_flags) {
 	ShapedTextDataFallback *sd = shaped_owner.get_or_null(p_shaped_line);
 	ERR_FAIL_NULL_MSG(sd, "ShapedTextDataFallback invalid.");
 

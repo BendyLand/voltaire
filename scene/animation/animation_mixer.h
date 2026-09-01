@@ -115,8 +115,6 @@ protected:
 	AHashMap<StringName, AnimationData>
 		animation_set; // HashMap<Library name + Animation name, AnimationData>
 
-	TypedArray<StringName> _get_animation_library_list() const;
-
 	// TODO: This needs to be a TypedArray<StringName> see this PR for rationale
 	// https://github.com/godotengine/godot/pull/110767/
 	Vector<String> _get_animation_list() const
@@ -165,27 +163,16 @@ protected:
 		Animation::TrackType type = Animation::TrackType::TYPE_ANIMATION;
 		NodePath path;
 		int blend_idx = -1;
-		ObjectID object_id;
 		real_t total_weight = 0.0;
 		uint64_t animation_instance_weight_applied_at = 0;
 
 		TrackCache() = default;
-
-		TrackCache(const TrackCache& p_other)
-			: root_motion(p_other.root_motion), setup_pass(p_other.setup_pass), type(p_other.type),
-			  object_id(p_other.object_id), total_weight(p_other.total_weight),
-			  animation_instance_weight_applied_at(p_other.animation_instance_weight_applied_at)
-		{
-		}
 
 		virtual ~TrackCache() {}
 	};
 
 	struct TrackCacheTransform : public TrackCache
 	{
-#ifndef _3D_DISABLED
-		ObjectID skeleton_id;
-#endif // _3D_DISABLED
 		int bone_idx = -1;
 		bool loc_used = false;
 		bool rot_used = false;
@@ -199,9 +186,6 @@ protected:
 
 		TrackCacheTransform(const TrackCacheTransform& p_other)
 			: TrackCache(p_other),
-#ifndef _3D_DISABLED
-			  skeleton_id(p_other.skeleton_id),
-#endif
 			  bone_idx(p_other.bone_idx), loc_used(p_other.loc_used), rot_used(p_other.rot_used),
 			  scale_used(p_other.scale_used), init_loc(p_other.init_loc),
 			  init_rot(p_other.init_rot), init_scale(p_other.init_scale), loc(p_other.loc),
@@ -236,8 +220,6 @@ protected:
 
 	struct TrackCacheValue : public TrackCache
 	{
-		Variant init_value;
-		Variant value;
 		Vector<StringName> subpath;
 
 		// TODO: There are many boolean, can be packed into one integer.
@@ -247,26 +229,7 @@ protected:
 		bool is_using_angle = false;
 		bool is_variant_interpolatable = true;
 
-		Variant element_size;
-
-		TrackCacheValue(const TrackCacheValue& p_other)
-			: TrackCache(p_other), init_value(p_other.init_value), value(p_other.value),
-			  subpath(p_other.subpath), is_init(p_other.is_init),
-			  use_continuous(p_other.use_continuous), use_discrete(p_other.use_discrete),
-			  is_using_angle(p_other.is_using_angle),
-			  is_variant_interpolatable(p_other.is_variant_interpolatable),
-			  element_size(p_other.element_size)
-		{
-		}
-
 		TrackCacheValue() { type = Animation::TYPE_VALUE; }
-
-		~TrackCacheValue()
-		{
-			// Clear ref to avoid leaking.
-			init_value = Variant();
-			value = Variant();
-		}
 	};
 
 	struct TrackCacheMethod : public TrackCache
@@ -299,17 +262,8 @@ protected:
 	{
 		Ref<AudioStreamPolyphonic> audio_stream;
 		Ref<AudioStreamPlaybackPolyphonic> audio_stream_playback;
-		HashMap<ObjectID, PlayingAudioTrackInfo>
-			playing_streams; // Key is Animation resource ObjectID.
 		AudioServer::PlaybackType playback_type;
 		StringName bus;
-
-		TrackCacheAudio(const TrackCacheAudio& p_other)
-			: TrackCache(p_other), audio_stream(p_other.audio_stream),
-			  audio_stream_playback(p_other.audio_stream_playback),
-			  playing_streams(p_other.playing_streams), playback_type(p_other.playback_type)
-		{
-		}
 
 		TrackCacheAudio() { type = Animation::TYPE_AUDIO; }
 	};
@@ -359,9 +313,7 @@ protected:
 	bool _set(const StringName& p_name, const Variant& p_value);
 	bool _get(const StringName& p_name, Variant& r_ret) const;
 	virtual uint32_t _get_libraries_property_usage() const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 	void _notification(int p_what);
-	virtual void _validate_property(PropertyInfo& p_property) const;
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
@@ -380,11 +332,6 @@ protected:
 	virtual void _process_animation(double p_delta, bool p_update_only = false);
 
 	// For post process with retrieved key value during blending.
-	virtual Variant _post_process_key_value(const Ref<Animation>& p_anim, int p_track,
-		Variant& p_value, ObjectID p_object_id, int p_object_sub_idx = -1);
-	Variant post_process_key_value(const Ref<Animation>& p_anim, int p_track, Variant p_value,
-		ObjectID p_object_id, int p_object_sub_idx = -1);
-
 	void _blend_init();
 	virtual bool _blend_pre_process(
 		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map);
@@ -393,8 +340,6 @@ protected:
 	void _blend_process(double p_delta, bool p_update_only = false);
 	void _blend_apply();
 	virtual void _blend_post_process();
-	void _call_object(ObjectID p_object_id, const StringName& p_method,
-		const Vector<Variant>& p_params, bool p_deferred);
 
 	/* ---- Capture feature ---- */
 	struct CaptureCache
@@ -416,12 +361,6 @@ protected:
 	} capture_cache;
 
 	void blend_capture(double p_delta); // To blend capture track with all other animations.
-
-#ifndef DISABLE_DEPRECATED
-	virtual Variant _post_process_key_value_bind_compat_86687(const Ref<Animation>& p_anim,
-		int p_track, Variant p_value, Object* p_object, int p_object_idx = -1);
-	static void _bind_compatibility_methods();
-#endif // DISABLE_DEPRECATED
 
 public:
 	/* ---- Data lists ---- */
@@ -516,8 +455,6 @@ void make_animation_instance(const StringName& p_name, const PlaybackInfo& p_pla
 
 class AnimatedValuesBackup : public RefCounted
 {
-	VLTRCLASS(AnimatedValuesBackup, RefCounted);
-
 	AHashMap<Animation::TrackCacheID, AnimationMixer::TrackCache*, HashHasher> data;
 
 public:
@@ -531,9 +468,5 @@ public:
 
 	~AnimatedValuesBackup() { clear_data(); }
 };
-
-VARIANT_ENUM_CAST(AnimationMixer::AnimationCallbackModeProcess);
-VARIANT_ENUM_CAST(AnimationMixer::AnimationCallbackModeMethod);
-VARIANT_ENUM_CAST(AnimationMixer::AnimationCallbackModeDiscrete);
 
 

@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/type_info.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
 #include "servers/physics_3d/queries/physics_point_query_parameters_3d.h"
 #include "servers/physics_3d/queries/physics_ray_query_parameters_3d.h"
@@ -40,21 +39,12 @@
 class PhysicsDirectSpaceState3D
 {
 private:
-	Dictionary _intersect_ray(PhysicsRayQueryParameters3D* rp_ray_query);
-	Array _intersect_point(
-		PhysicsPointQueryParameters3D* rp_point_query, int p_max_results = 32);
-	Array _intersect_shape(
-		PhysicsShapeQueryParameters3D* rp_shape_query, int p_max_results = 32);
 	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters3D* rp_shape_query);
-	Array _collide_shape(
-		PhysicsShapeQueryParameters3D* rp_shape_query, int p_max_results = 32);
-	Dictionary _get_rest_info(PhysicsShapeQueryParameters3D* rp_shape_query);
 
 protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	virtual bool intersect_ray(
 		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result) = 0;
 	virtual int intersect_point(const PS3DT::PointParameters& p_parameters,

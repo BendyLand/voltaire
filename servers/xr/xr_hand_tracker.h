@@ -93,8 +93,8 @@ public:
 	void set_hand_tracking_source(HandTrackingSource p_source);
 	HandTrackingSource get_hand_tracking_source() const;
 
-	void set_hand_joint_flags(HandJoint p_joint, BitField<HandJointFlags> p_flags);
-	BitField<HandJointFlags> get_hand_joint_flags(HandJoint p_joint) const;
+	void set_hand_joint_flags(HandJoint p_joint, uint32_t p_flags);
+	uint32_t get_hand_joint_flags(HandJoint p_joint) const;
 
 	void set_hand_joint_transform(HandJoint p_joint, const Transform3D &p_transform);
 	Transform3D get_hand_joint_transform(HandJoint p_joint) const;
@@ -117,7 +117,7 @@ private:
 	bool has_tracking_data = false;
 	HandTrackingSource hand_tracking_source = HAND_TRACKING_SOURCE_UNKNOWN;
 
-	BitField<HandJointFlags> hand_joint_flags[HAND_JOINT_MAX];
+	uint32_t hand_joint_flags[HAND_JOINT_MAX];
 	Transform3D hand_joint_transforms[HAND_JOINT_MAX];
 	float hand_joint_radii[HAND_JOINT_MAX] = {};
 	Vector3 hand_joint_linear_velocities[HAND_JOINT_MAX];

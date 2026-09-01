@@ -898,7 +898,7 @@ HashSet<String> EditorExportPlatform::get_features(
 
 EditorExportPlatform::ExportNotifier::ExportNotifier(EditorExportPlatform& p_platform,
 	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path,
-	BitField<EditorExportPlatform::DebugFlags> p_flags, bool p_enabled)
+	uint32_t p_flags, bool p_enabled)
 {
 	enabled = p_enabled;
 	if (!enabled) {
@@ -2707,14 +2707,14 @@ Error EditorExportPlatform::save_zip_patch(const Ref<EditorExportPreset>& p_pres
 }
 
 Error EditorExportPlatform::export_pack(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-	const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags)
+	const String& p_path, uint32_t p_flags)
 {
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
 	return save_pack(p_preset, p_debug, p_path);
 }
 
 Error EditorExportPlatform::export_zip(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-	const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags)
+	const String& p_path, uint32_t p_flags)
 {
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
 	return save_zip(p_preset, p_debug, p_path);
@@ -2722,7 +2722,7 @@ Error EditorExportPlatform::export_zip(const Ref<EditorExportPreset>& p_preset, 
 
 Error EditorExportPlatform::export_pack_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 	const String& p_path, const Vector<String>& p_patches,
-	BitField<EditorExportPlatform::DebugFlags> p_flags)
+	uint32_t p_flags)
 {
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
 	Error err = _load_patches(p_preset, p_patches.is_empty() ? p_preset->get_patches() : p_patches);
@@ -2736,7 +2736,7 @@ Error EditorExportPlatform::export_pack_patch(const Ref<EditorExportPreset>& p_p
 
 Error EditorExportPlatform::export_zip_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 	const String& p_path, const Vector<String>& p_patches,
-	BitField<EditorExportPlatform::DebugFlags> p_flags)
+	uint32_t p_flags)
 {
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
 	Error err = _load_patches(p_preset, p_patches.is_empty() ? p_preset->get_patches() : p_patches);
@@ -2749,7 +2749,7 @@ Error EditorExportPlatform::export_zip_patch(const Ref<EditorExportPreset>& p_pr
 }
 
 Vector<String> EditorExportPlatform::gen_export_flags(
-	BitField<EditorExportPlatform::DebugFlags> p_flags)
+	uint32_t p_flags)
 {
 	Vector<String> ret;
 	String host = EDITOR_GET("network/debug/remote_host");
@@ -3071,7 +3071,7 @@ List<String> EditorExportPlatform::get_binary_extensions(
 }
 
 Error EditorExportPlatform::export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-	const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags, bool p_notify)
+	const String& p_path, uint32_t p_flags, bool p_notify)
 {
 	return OK;
 }

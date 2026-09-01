@@ -30,41 +30,48 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
+#include "core/types.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
 
-class PhysicsTestMotionParameters3D : public RefCounted {
-	VLTRCLASS(PhysicsTestMotionParameters3D, RefCounted);
-
+class PhysicsTestMotionParameters3D : public RefCounted
+{
 	PS3DT::MotionParameters parameters;
 
 protected:
 	static void _bind_methods();
 
 public:
-	const PS3DT::MotionParameters &get_parameters() const { return parameters; }
+	const PS3DT::MotionParameters& get_parameters() const { return parameters; }
 
-	const Transform3D &get_from() const { return parameters.from; }
-	void set_from(const Transform3D &p_from) { parameters.from = p_from; }
+	const Transform3D& get_from() const { return parameters.from; }
 
-	const Vector3 &get_motion() const { return parameters.motion; }
-	void set_motion(const Vector3 &p_motion) { parameters.motion = p_motion; }
+	void set_from(const Transform3D& p_from) { parameters.from = p_from; }
+
+	const Vector3& get_motion() const { return parameters.motion; }
+
+	void set_motion(const Vector3& p_motion) { parameters.motion = p_motion; }
 
 	real_t get_margin() const { return parameters.margin; }
+
 	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
 
 	int get_max_collisions() const { return parameters.max_collisions; }
+
 	void set_max_collisions(int p_max_collisions) { parameters.max_collisions = p_max_collisions; }
 
 	bool is_collide_separation_ray_enabled() const { return parameters.collide_separation_ray; }
-	void set_collide_separation_ray_enabled(bool p_enabled) { parameters.collide_separation_ray = p_enabled; }
 
-	TypedArray<RID> get_exclude_bodies() const;
-	void set_exclude_bodies(const TypedArray<RID> &p_exclude);
-
-	TypedArray<uint64_t> get_exclude_objects() const;
-	void set_exclude_objects(const TypedArray<uint64_t> &p_exclude);
+	void set_collide_separation_ray_enabled(bool p_enabled)
+	{
+		parameters.collide_separation_ray = p_enabled;
+	}
 
 	bool is_recovery_as_collision_enabled() const { return parameters.recovery_as_collision; }
-	void set_recovery_as_collision_enabled(bool p_enabled) { parameters.recovery_as_collision = p_enabled; }
+
+	void set_recovery_as_collision_enabled(bool p_enabled)
+	{
+		parameters.recovery_as_collision = p_enabled;
+	}
 };
+
+

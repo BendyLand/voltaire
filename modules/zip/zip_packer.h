@@ -71,11 +71,11 @@ public:
 	void set_compression_level(int p_compression_level);
 	int get_compression_level() const;
 
-	Error start_file(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions = 0644, uint64_t p_modified_time = 0);
+	Error start_file(const String &p_path, uint32_t p_permissions = 0644, uint64_t p_modified_time = 0);
 	Error write_file(const Vector<uint8_t> &p_data);
 	Error close_file();
 
-	Error add_directory(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions = 0755, uint64_t p_modified_time = 0);
+	Error add_directory(const String &p_path, uint32_t p_permissions = 0755, uint64_t p_modified_time = 0);
 
 	ZIPPacker();
 	~ZIPPacker();

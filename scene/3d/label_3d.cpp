@@ -404,7 +404,7 @@ void Label3D::_shape()
 		}
 		lines_rid.clear();
 
-		BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY;
+		uint32_t autowrap_flags = TextServer::BREAK_MANDATORY;
 		switch (autowrap_mode) {
 		case TextServer::AUTOWRAP_WORD_SMART:
 			autowrap_flags = TextServer::BREAK_WORD_BOUND | TextServer::BREAK_ADAPTIVE |
@@ -818,7 +818,7 @@ void Label3D::set_autowrap_mode(TextServer::AutowrapMode p_mode)
 
 TextServer::AutowrapMode Label3D::get_autowrap_mode() const { return autowrap_mode; }
 
-void Label3D::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags)
+void Label3D::set_autowrap_trim_flags(uint32_t p_flags)
 {
 	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
 		autowrap_flags_trim = (p_flags & TextServer::BREAK_TRIM_MASK);
@@ -827,12 +827,12 @@ void Label3D::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flag
 	}
 }
 
-BitField<TextServer::LineBreakFlag> Label3D::get_autowrap_trim_flags() const
+uint32_t Label3D::get_autowrap_trim_flags() const
 {
 	return autowrap_flags_trim;
 }
 
-void Label3D::set_justification_flags(BitField<TextServer::JustificationFlag> p_flags)
+void Label3D::set_justification_flags(uint32_t p_flags)
 {
 	if (jst_flags != p_flags) {
 		jst_flags = p_flags;
@@ -841,7 +841,7 @@ void Label3D::set_justification_flags(BitField<TextServer::JustificationFlag> p_
 	}
 }
 
-BitField<TextServer::JustificationFlag> Label3D::get_justification_flags() const
+uint32_t Label3D::get_justification_flags() const
 {
 	return jst_flags;
 }

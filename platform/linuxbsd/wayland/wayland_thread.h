@@ -424,7 +424,7 @@ public:
 		Vector2 relative_motion;
 		uint32_t relative_motion_time = 0;
 
-		BitField<MouseButtonMask> pressed_button_mask = MouseButtonMask::NONE;
+		uint32_t pressed_button_mask = MouseButtonMask::NONE;
 
 		MouseButton last_button_pressed = MouseButton::NONE;
 		Point2 last_pressed_position;
@@ -454,7 +454,7 @@ public:
 		Vector2 tilt;
 		uint32_t pressure = 0;
 
-		BitField<MouseButtonMask> pressed_button_mask = MouseButtonMask::NONE;
+		uint32_t pressed_button_mask = MouseButtonMask::NONE;
 
 		MouseButton last_button_pressed = MouseButton::NONE;
 		Point2 last_pressed_position;
@@ -1337,7 +1337,7 @@ public:
 	PointerConstraint pointer_get_constraint() const;
 	DisplayServerEnums::WindowID pointer_get_pointed_window_id() const;
 	DisplayServerEnums::WindowID pointer_get_last_pointed_window_id() const;
-	BitField<MouseButtonMask> pointer_get_button_mask() const;
+	uint32_t pointer_get_button_mask() const;
 
 	void cursor_set_visible(bool p_visible);
 	void cursor_set_shape(DisplayServerEnums::CursorShape p_cursor_shape);

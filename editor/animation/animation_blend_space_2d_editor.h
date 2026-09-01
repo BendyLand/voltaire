@@ -46,8 +46,6 @@ class VSeparator;
 
 class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 {
-	VLTRCLASS(AnimationNodeBlendSpace2DEditor, AnimationTreeNodeEditorPlugin);
-
 	Ref<AnimationNodeBlendSpace2D> blend_space;
 	bool read_only = false;
 
@@ -94,13 +92,8 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 
 	static AnimationNodeBlendSpace2DEditor* singleton;
 
-	void _blend_space_gui_input(const Object& obj, const Ref<InputEvent>& p_event);
-	void _blend_space_draw(const Object& obj);
-
 	void _update_space();
 
-	void _config_changed(const Object& obj, double);
-	void _labels_changed(const Object& obj, String);
 	void _snap_toggled();
 
 	PopupMenu* menu = nullptr;
@@ -125,21 +118,12 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 
 	Vector<int> making_triangle;
 
-	void _add_menu_type(const Object& obj, int p_index);
-	void _add_animation_type(const Object& obj, int p_index);
-
 	void _tool_switch(int p_tool);
 	void _update_edited_point_pos();
 	void _update_edited_point_name();
 	void _update_tool_erase();
-	void _erase_selected(const Object& obj);
-	void _edit_point_pos(const Object& obj, double);
-	void _edit_point_name(const Object& obj, const String& p_name);
-	void _edit_point_index(const Object& obj, double p_index);
 	void _set_selected_point(int p_index);
 	void _start_inline_edit(int p_point);
-	void _finish_inline_edit(const Object& obj);
-	void _finish_inline_edit_with_text(const Object& obj, const String& p_text);
 	void _cancel_inline_edit();
 	void _inline_editor_text_changed(const String& p_text);
 	void _open_editor();
@@ -148,15 +132,12 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 	void _index_focus_cooldown_timeout();
 	void _show_indices_with_cooldown();
 
-	void _auto_triangles_toggled(const Object& obj);
-
 	StringName get_blend_position_path() const;
 	String _get_safe_name(
 		const Ref<AnimationNodeBlendSpace2D>& p_blend_space, const String& p_name);
 
 	EditorFileDialog* open_file = nullptr;
 	Ref<AnimationNode> file_loaded;
-	void _file_opened(const Object& obj, const String& p_file);
 
 	enum
 	{

@@ -30,16 +30,14 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/type_info.h"
+#include "core/types.h"
 #include "servers/display/accessibility_server_enums.h"
 #include "servers/display/display_server_enums.h"
 
 class AccessibilityServer
 {
 public:
-	mem_unique_ptr<Object> obj;
 	typedef AccessibilityServer* (*CreateFunction)(Error& r_error);
 
 protected:
@@ -90,19 +88,12 @@ public:
 	virtual bool has_element(const RID& p_id) const = 0;
 	virtual void free_element(const RID& p_id) = 0;
 
-	virtual void element_set_meta(const RID& p_id, const Variant& p_meta) = 0;
-	virtual Variant element_get_meta(const RID& p_id) const = 0;
-
-	virtual void update_if_active(const Callable& p_callable) = 0;
-
 	virtual RID get_window_root(DisplayServerEnums::WindowID p_window_id) const = 0;
 	virtual void update_set_focus(const RID& p_id) = 0;
 
 	virtual void set_window_rect(DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out,
 		const Rect2& p_rect_in) = 0;
 	virtual void set_window_focused(DisplayServerEnums::WindowID p_window_id, bool p_focused) = 0;
-	virtual void set_window_callbacks(DisplayServerEnums::WindowID p_window_id,
-		const Callable& p_activate_callable, const Callable& p_deativate_callable) = 0;
 	virtual void window_activation_completed(DisplayServerEnums::WindowID p_window_id) = 0;
 	virtual void window_deactivation_completed(DisplayServerEnums::WindowID p_window_id) = 0;
 
@@ -133,8 +124,6 @@ public:
 	virtual void update_set_error_message(const RID& p_id, const RID& p_other_id) = 0;
 	virtual void update_set_live(
 		const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live) = 0;
-	virtual void update_add_action(const RID& p_id,
-		AccessibilityServerEnums::AccessibilityAction p_action, const Callable& p_callable) = 0;
 	virtual void update_add_custom_action(
 		const RID& p_id, int p_action_id, const String& p_action_description) = 0;
 	virtual void update_set_table_row_count(const RID& p_id, int p_count) = 0;
@@ -188,20 +177,4 @@ public:
 	AccessibilityServer();
 	virtual ~AccessibilityServer();
 };
-
-VARIANT_ENUM_CAST_EXT(
-	AccessibilityServerEnums::AccessibilityAction, AccessibilityServer::AccessibilityAction)
-VARIANT_ENUM_CAST_EXT(
-	AccessibilityServerEnums::AccessibilityFlags, AccessibilityServer::AccessibilityFlags)
-VARIANT_ENUM_CAST_EXT(
-	AccessibilityServerEnums::AccessibilityLiveMode, AccessibilityServer::AccessibilityLiveMode)
-VARIANT_ENUM_CAST_EXT(
-	AccessibilityServerEnums::AccessibilityPopupType, AccessibilityServer::AccessibilityPopupType)
-VARIANT_ENUM_CAST_EXT(
-	AccessibilityServerEnums::AccessibilityRole, AccessibilityServer::AccessibilityRole)
-VARIANT_ENUM_CAST_EXT(
-	AccessibilityServerEnums::AccessibilityScrollUnit, AccessibilityServer::AccessibilityScrollUnit)
-VARIANT_ENUM_CAST_EXT(
-	AccessibilityServerEnums::AccessibilityScrollHint, AccessibilityServer::AccessibilityScrollHint)
-
 

@@ -41,10 +41,6 @@ CubemapFilter *CubemapFilter::singleton = nullptr;
 
 CubemapFilter::CubemapFilter() {
 	singleton = this;
-	// Use a factor 4 larger for the compatibility renderer to make up for the fact
-	// That we don't use an array texture. We will reduce samples on low roughness
-	// to compensate.
-	ggx_samples = 4 * uint32_t(GLOBAL_GET("rendering/reflections/sky_reflections/ggx_samples"));
 
 	{
 		String defines;

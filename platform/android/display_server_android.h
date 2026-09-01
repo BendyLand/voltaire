@@ -258,7 +258,7 @@ public:
 	void notify_application_paused();
 
 	virtual Point2i mouse_get_position() const override;
-	virtual BitField<MouseButtonMask> mouse_get_button_state() const override;
+	virtual uint32_t mouse_get_button_state() const override;
 
 	void reset_swap_buffers_flag();
 	bool should_swap_buffers() const;

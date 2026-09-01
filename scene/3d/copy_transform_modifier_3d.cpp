@@ -41,13 +41,13 @@ bool CopyTransformModifier3D::_set(const StringName& p_path, const Variant& p_va
 		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
 
 		if (what == "copy") {
-			set_copy_flags(which, static_cast<BitField<TransformFlag>>((int)p_value));
+			set_copy_flags(which, static_cast<uint32_t((int)p_value));
 		}
 		else if (what == "axes") {
-			set_axis_flags(which, static_cast<BitField<AxisFlag>>((int)p_value));
+			set_axis_flags(which, static_cast<uint32_t((int)p_value));
 		}
 		else if (what == "invert") {
-			set_invert_flags(which, static_cast<BitField<AxisFlag>>((int)p_value));
+			set_invert_flags(which, static_cast<uint32_t((int)p_value));
 		}
 		else if (what == "relative") {
 			set_relative(which, p_value);
@@ -131,7 +131,7 @@ void CopyTransformModifier3D::_validate_setting(int p_index)
 	settings[p_index] = memnew(CopyTransform3DSetting);
 }
 
-void CopyTransformModifier3D::set_copy_flags(int p_index, BitField<TransformFlag> p_copy_flags)
+void CopyTransformModifier3D::set_copy_flags(int p_index, uint32_t p_copy_flags)
 {
 	ERR_FAIL_INDEX(p_index, (int)settings.size());
 	CopyTransform3DSetting* setting = static_cast<CopyTransform3DSetting*>(settings[p_index]);
@@ -139,7 +139,7 @@ void CopyTransformModifier3D::set_copy_flags(int p_index, BitField<TransformFlag
 	this->obj->notify_property_list_changed();
 }
 
-BitField<CopyTransformModifier3D::TransformFlag> CopyTransformModifier3D::get_copy_flags(
+uint32_t CopyTransformModifier3D::get_copy_flags(
 	int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
@@ -147,7 +147,7 @@ BitField<CopyTransformModifier3D::TransformFlag> CopyTransformModifier3D::get_co
 	return setting->copy_flags;
 }
 
-void CopyTransformModifier3D::set_axis_flags(int p_index, BitField<AxisFlag> p_axis_flags)
+void CopyTransformModifier3D::set_axis_flags(int p_index, uint32_t p_axis_flags)
 {
 	ERR_FAIL_INDEX(p_index, (int)settings.size());
 	CopyTransform3DSetting* setting = static_cast<CopyTransform3DSetting*>(settings[p_index]);
@@ -155,7 +155,7 @@ void CopyTransformModifier3D::set_axis_flags(int p_index, BitField<AxisFlag> p_a
 	this->obj->notify_property_list_changed();
 }
 
-BitField<CopyTransformModifier3D::AxisFlag> CopyTransformModifier3D::get_axis_flags(
+uint32_t CopyTransformModifier3D::get_axis_flags(
 	int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
@@ -163,7 +163,7 @@ BitField<CopyTransformModifier3D::AxisFlag> CopyTransformModifier3D::get_axis_fl
 	return setting->axis_flags;
 }
 
-void CopyTransformModifier3D::set_invert_flags(int p_index, BitField<AxisFlag> p_axis_flags)
+void CopyTransformModifier3D::set_invert_flags(int p_index, uint32_t p_axis_flags)
 {
 	ERR_FAIL_INDEX(p_index, (int)settings.size());
 	CopyTransform3DSetting* setting = static_cast<CopyTransform3DSetting*>(settings[p_index]);
@@ -171,7 +171,7 @@ void CopyTransformModifier3D::set_invert_flags(int p_index, BitField<AxisFlag> p
 	this->obj->notify_property_list_changed();
 }
 
-BitField<CopyTransformModifier3D::AxisFlag> CopyTransformModifier3D::get_invert_flags(
+uint32_t CopyTransformModifier3D::get_invert_flags(
 	int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);

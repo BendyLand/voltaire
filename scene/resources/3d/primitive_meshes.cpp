@@ -190,7 +190,7 @@ TypedArray<Array> PrimitiveMesh::surface_get_blend_shape_arrays(int p_surface) c
 	return TypedArray<Array>(); // not really supported
 }
 
-BitField<Mesh::ArrayFormat> PrimitiveMesh::surface_get_format(int p_idx) const
+uint32_t PrimitiveMesh::surface_get_format(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, 1, 0);
 
@@ -3100,7 +3100,7 @@ void TextMesh::_create_mesh_array(Array& p_arr) const
 		}
 		lines_rid.clear();
 
-		BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY;
+		uint32_t autowrap_flags = TextServer::BREAK_MANDATORY;
 		switch (autowrap_mode) {
 		case TextServer::AUTOWRAP_WORD_SMART:
 			autowrap_flags = TextServer::BREAK_WORD_BOUND | TextServer::BREAK_ADAPTIVE |
@@ -3649,7 +3649,7 @@ void TextMesh::set_autowrap_mode(TextServer::AutowrapMode p_mode)
 
 TextServer::AutowrapMode TextMesh::get_autowrap_mode() const { return autowrap_mode; }
 
-void TextMesh::set_justification_flags(BitField<TextServer::JustificationFlag> p_flags)
+void TextMesh::set_justification_flags(uint32_t p_flags)
 {
 	if (jst_flags != p_flags) {
 		jst_flags = p_flags;
@@ -3658,7 +3658,7 @@ void TextMesh::set_justification_flags(BitField<TextServer::JustificationFlag> p
 	}
 }
 
-BitField<TextServer::JustificationFlag> TextMesh::get_justification_flags() const
+uint32_t TextMesh::get_justification_flags() const
 {
 	return jst_flags;
 }

@@ -2099,7 +2099,7 @@ Error EditorExportPlatformAppleEmbedded::_export_apple_embedded_plugins(
 }
 
 Error EditorExportPlatformAppleEmbedded::export_project(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags,
+	bool p_debug, const String& p_path, uint32_t p_flags,
 	bool p_notify)
 {
 	return _export_project_helper(p_preset, p_debug, p_path, p_flags, p_notify, false);
@@ -2107,7 +2107,7 @@ Error EditorExportPlatformAppleEmbedded::export_project(const Ref<EditorExportPr
 
 Error EditorExportPlatformAppleEmbedded::_export_project_helper(
 	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path,
-	BitField<EditorExportPlatform::DebugFlags> p_flags, bool p_notify, bool p_oneclick)
+	uint32_t p_flags, bool p_notify, bool p_oneclick)
 {
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags, p_notify);
 
@@ -3275,7 +3275,7 @@ int EditorExportPlatformAppleEmbedded::_execute(const String& p_path,
 #endif
 
 Error EditorExportPlatformAppleEmbedded::run(const Ref<EditorExportPreset>& p_preset, int p_device,
-	BitField<EditorExportPlatform::DebugFlags> p_debug_flags)
+	uint32_t p_debug_flags)
 {
 #ifdef MACOS_ENABLED
 	ERR_FAIL_INDEX_V(p_device, devices.size(), ERR_INVALID_PARAMETER);

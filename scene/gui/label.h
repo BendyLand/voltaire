@@ -41,9 +41,9 @@ private:
 	String text;
 	String xl_text;
 	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
-	BitField<TextServer::LineBreakFlag> autowrap_flags_trim =
+	uint32_t autowrap_flags_trim =
 		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
-	BitField<TextServer::JustificationFlag> jst_flags =
+	uint32_t jst_flags =
 		TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
 		TextServer::JUSTIFICATION_SKIP_LAST_LINE |
 		TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
@@ -74,8 +74,6 @@ private:
 	String language;
 	TextDirection text_direction = TEXT_DIRECTION_AUTO;
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-	Array st_args;
-
 	TextServer::VisibleCharactersBehavior visible_chars_behavior =
 		TextServer::VC_CHARS_BEFORE_SHAPING;
 	int visible_chars = -1;
@@ -117,9 +115,6 @@ protected:
 
 	void _notification(int p_what);
 	static void _bind_methods();
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName& p_name, const Variant& p_value);
-#endif
 
 public:
 	virtual Size2 get_minimum_size() const override;
@@ -150,17 +145,14 @@ public:
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
 
-	void set_structured_text_bidi_override_options(const Array& p_args);
-	Array get_structured_text_bidi_override_options() const;
-
 	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
 	TextServer::AutowrapMode get_autowrap_mode() const;
 
-	void set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags);
-	BitField<TextServer::LineBreakFlag> get_autowrap_trim_flags() const;
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
 
-	void set_justification_flags(BitField<TextServer::JustificationFlag> p_flags);
-	BitField<TextServer::JustificationFlag> get_justification_flags() const;
+	void set_justification_flags(uint32_t p_flags);
+	uint32_t get_justification_flags() const;
 
 	void set_uppercase(bool p_uppercase);
 	bool is_uppercase() const;

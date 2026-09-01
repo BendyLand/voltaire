@@ -1011,8 +1011,8 @@ Point2i DisplayServerWindows::mouse_get_position() const {
 	return Point2i(p.x, p.y) - _get_screens_origin();
 }
 
-BitField<MouseButtonMask> DisplayServerWindows::mouse_get_button_state() const {
-	BitField<MouseButtonMask> last_button_state = MouseButtonMask::NONE;
+uint32_t DisplayServerWindows::mouse_get_button_state() const {
+	uint32_t last_button_state = MouseButtonMask::NONE;
 
 	if (GetKeyState(VK_LBUTTON) & (1 << 15)) {
 		last_button_state.set_flag(MouseButtonMask::LEFT);
@@ -5273,8 +5273,8 @@ void DisplayServerWindows::popup_close(DisplayServerEnums::WindowID p_window) {
 	}
 }
 
-BitField<DisplayServerWindows::WinKeyModifierMask> DisplayServerWindows::_get_mods() const {
-	BitField<WinKeyModifierMask> mask = {};
+uint32_t DisplayServerWindows::_get_mods() const {
+	uint32_t mask = {};
 	static unsigned char keyboard_state[256];
 	if (GetKeyboardState((PBYTE)&keyboard_state)) {
 		if ((keyboard_state[VK_LSHIFT] & 0x80) || (keyboard_state[VK_RSHIFT] & 0x80)) {
@@ -5643,7 +5643,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 			RAWINPUT *raw = (RAWINPUT *)lpb;
 
-			const BitField<WinKeyModifierMask> &mods = _get_mods();
+			const uint32_t &mods = _get_mods();
 			if (raw->header.dwType == RIM_TYPEKEYBOARD) {
 				if (raw->data.keyboard.VKey == VK_SHIFT) {
 					// If multiple Shifts are held down at the same time,
@@ -5771,7 +5771,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 						break;
 					}
 
-					const BitField<WinKeyModifierMask> &mods = _get_mods();
+					const uint32_t &mods = _get_mods();
 					Ref<InputEventMouseMotion> mm;
 					mm.instantiate();
 					mm->set_window_id(window_id);
@@ -5879,7 +5879,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			mb.instantiate();
 			mb->set_window_id(window_id);
 
-			BitField<MouseButtonMask> last_button_state = MouseButtonMask::NONE;
+			uint32_t last_button_state = MouseButtonMask::NONE;
 			if (IS_POINTER_FIRSTBUTTON_WPARAM(wParam)) {
 				last_button_state.set_flag(MouseButtonMask::LEFT);
 				mb->set_button_index(MouseButton::LEFT);
@@ -5902,7 +5902,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			}
 			mb->set_button_mask(last_button_state);
 
-			const BitField<WinKeyModifierMask> &mods = _get_mods();
+			const uint32_t &mods = _get_mods();
 			mb->set_ctrl_pressed(mods.has_flag(WinKeyModifierMask::CTRL));
 			mb->set_shift_pressed(mods.has_flag(WinKeyModifierMask::SHIFT));
 			mb->set_alt_pressed(mods.has_flag(WinKeyModifierMask::ALT));
@@ -6039,13 +6039,13 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			}
 			mm->set_pen_inverted(pen_info.penFlags & (PEN_FLAG_INVERTED | PEN_FLAG_ERASER));
 
-			const BitField<WinKeyModifierMask> &mods = _get_mods();
+			const uint32_t &mods = _get_mods();
 			mm->set_ctrl_pressed(mods.has_flag(WinKeyModifierMask::CTRL));
 			mm->set_shift_pressed(mods.has_flag(WinKeyModifierMask::SHIFT));
 			mm->set_alt_pressed(mods.has_flag(WinKeyModifierMask::ALT));
 			mm->set_meta_pressed(mods.has_flag(WinKeyModifierMask::META));
 
-			BitField<MouseButtonMask> last_button_state = MouseButtonMask::NONE;
+			uint32_t last_button_state = MouseButtonMask::NONE;
 			if (IS_POINTER_FIRSTBUTTON_WPARAM(wParam)) {
 				last_button_state.set_flag(MouseButtonMask::LEFT);
 			}
@@ -6166,7 +6166,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				}
 			}
 
-			const BitField<WinKeyModifierMask> &mods = _get_mods();
+			const uint32_t &mods = _get_mods();
 			Ref<InputEventMouseMotion> mm;
 			mm.instantiate();
 			mm->set_window_id(receiving_window_id);
@@ -6363,7 +6363,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				}
 			}
 
-			const BitField<WinKeyModifierMask> &mods = _get_mods();
+			const uint32_t &mods = _get_mods();
 			mb->set_ctrl_pressed(mods.has_flag(WinKeyModifierMask::CTRL));
 			mb->set_shift_pressed(mods.has_flag(WinKeyModifierMask::SHIFT));
 			mb->set_alt_pressed(mods.has_flag(WinKeyModifierMask::ALT));
@@ -6371,7 +6371,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 			if (mb->is_pressed() && mb->get_button_index() >= MouseButton::WHEEL_UP && mb->get_button_index() <= MouseButton::WHEEL_RIGHT) {
 				MouseButtonMask mask = mouse_button_to_mask(mb->get_button_index());
-				BitField<MouseButtonMask> scroll_mask = mouse_get_button_state();
+				uint32_t scroll_mask = mouse_get_button_state();
 				scroll_mask.set_flag(mask);
 				mb->set_button_mask(scroll_mask);
 			} else {
@@ -6635,7 +6635,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		}
 		case WM_CHAR: {
 			ERR_BREAK(key_event_pos >= KEY_EVENT_BUFFER_SIZE);
-			const BitField<WinKeyModifierMask> &mods = _get_mods();
+			const uint32_t &mods = _get_mods();
 
 			KeyEvent ke;
 			ke.shift = mods.has_flag(WinKeyModifierMask::SHIFT);
@@ -7381,7 +7381,7 @@ Error DisplayServerWindows::_create_gl_window(DisplayServerEnums::WindowID p_win
 }
 #endif
 
-BitField<DisplayServerWindows::DriverID> DisplayServerWindows::tested_drivers = 0;
+uint32_t DisplayServerWindows::tested_drivers = 0;
 
 // WinTab API.
 bool DisplayServerWindows::wintab_available = false;

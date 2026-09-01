@@ -269,7 +269,7 @@ private:
 		ProcessThreadGroup process_thread_group = PROCESS_THREAD_GROUP_INHERIT;
 		Node* process_thread_group_owner = nullptr;
 		int process_thread_group_order = 0;
-		BitField<ProcessThreadMessages> process_thread_messages = {};
+		uint32_t process_thread_messages = 0;
 		void* process_group = nullptr; // to avoid cyclic dependency
 
 		int multiplayer_authority = 1; // Server by default.
@@ -759,8 +759,8 @@ public:
 
 	_FORCE_INLINE_ static bool is_group_processing() { return current_process_thread_group; }
 
-	void set_process_thread_messages(BitField<ProcessThreadMessages> p_flags);
-	BitField<ProcessThreadMessages> get_process_thread_messages() const;
+	void set_process_thread_messages(uint32_t p_flags);
+	uint32_t get_process_thread_messages() const;
 
 	void queue_accessibility_update();
 

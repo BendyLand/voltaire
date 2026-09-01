@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/gdvirtual.gen.h"
 #include "scene/main/canvas_item.h"
 #include "scene/resources/environment.h"
 #include "scene/resources/theme.h"
@@ -50,8 +49,6 @@ class Control : public CanvasItem
 #endif // TOOLS_ENABLED
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::CONTROL;
-
 	enum Anchor
 	{
 		ANCHOR_BEGIN = 0,
@@ -186,18 +183,6 @@ public:
 	};
 
 private:
-	struct CComparator
-	{
-		bool operator()(const Control* p_a, const Control* p_b) const
-		{
-			if (p_a->get_canvas_layer() == p_b->get_canvas_layer()) {
-				return p_b->is_greater_than(p_a);
-			}
-
-			return p_a->get_canvas_layer() < p_b->get_canvas_layer();
-		}
-	};
-
 	// This Data struct is to avoid namespace pollution in derived classes.
 	struct Data
 	{
@@ -230,12 +215,8 @@ private:
 		Control* parent_control = nullptr;
 		Window* parent_window = nullptr;
 		CanvasItem* parent_canvas_item = nullptr;
-		Callable forward_drag;
-		Callable forward_can_drop;
-		Callable forward_drop;
 
 		// Positioning and sizing.
-
 		LayoutMode stored_layout_mode = LayoutMode::LAYOUT_MODE_POSITION;
 		bool stored_use_custom_anchors = false;
 
@@ -287,8 +268,8 @@ private:
 
 		// Container sizing.
 
-		BitField<SizeFlags> h_size_flags = SIZE_FILL;
-		BitField<SizeFlags> v_size_flags = SIZE_FILL;
+		uint32_t h_size_flags = SIZE_FILL;
+		uint32_t v_size_flags = SIZE_FILL;
 		real_t expand = 1.0;
 		Size2 custom_maximum_size = Size2(-1, -1);
 		Size2 custom_minimum_size;
@@ -313,7 +294,6 @@ private:
 		NodePath focus_next;
 		NodePath focus_prev;
 
-		ObjectID shortcut_context;
 
 		// Accessibility.
 
@@ -322,10 +302,10 @@ private:
 		AccessibilityServerEnums::AccessibilityLiveMode accessibility_live =
 			AccessibilityServerEnums::AccessibilityLiveMode::LIVE_OFF;
 
-		TypedArray<NodePath> accessibility_controls_nodes;
-		TypedArray<NodePath> accessibility_described_by_nodes;
-		TypedArray<NodePath> accessibility_labeled_by_nodes;
-		TypedArray<NodePath> accessibility_flow_to_nodes;
+		Vector<NodePath> accessibility_controls_nodes;
+		Vector<NodePath> accessibility_described_by_nodes;
+		Vector<NodePath> accessibility_labeled_by_nodes;
+		Vector<NodePath> accessibility_flow_to_nodes;
 
 		// Theming.
 
@@ -440,15 +420,7 @@ private:
 	static int root_layout_direction;
 
 protected:
-	// Dynamic properties.
-
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-	void _validate_property(PropertyInfo& p_property) const;
-
 	bool _property_can_revert(const StringName& p_name) const;
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 	// Localization
 
@@ -459,22 +431,10 @@ protected:
 
 	virtual void _update_theme_item_cache();
 
-	// Internationalization.
-
-	virtual TypedArray<Vector3i> structured_text_parser(
-		TextServer::StructuredTextParser p_parser_type, const Array& p_args,
-		const String& p_text) const;
-
 	// Base object overrides.
 
 	void _notification(int p_notification);
 	static void _bind_methods();
-
-	void _accessibility_action_foucs(const Variant& p_data);
-	void _accessibility_action_blur(const Variant& p_data);
-	void _accessibility_action_show_tooltip(const Variant& p_data);
-	void _accessibility_action_hide_tooltip(const Variant& p_data);
-	void _accessibility_action_scroll_into_view(const Variant& p_data);
 
 #ifndef DISABLE_DEPRECATED
 	bool _has_focus_bind_compat_110250() const;
@@ -510,9 +470,6 @@ public:
 
 	// TODO: Decouple controls from their editor plugin and get rid of this.
 #ifdef TOOLS_ENABLED
-	virtual Dictionary _edit_get_state() const override;
-	virtual void _edit_set_state(const Dictionary& p_state) override;
-
 	virtual void _edit_set_position(const Point2& p_position) override;
 	virtual Point2 _edit_get_position() const override;
 
@@ -544,7 +501,7 @@ public:
 	static void set_root_layout_direction(int p_root_dir);
 
 	PackedStringArray get_configuration_warnings() const override;
-	PackedStringArray get_accessibility_configuration_warnings() const override;
+	PackedStringArray get_accessibility_configuration_warnings() const ;
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
 		const StringName& p_function, int p_idx, List<String>* r_options) const;
@@ -658,14 +615,13 @@ public:
 	void layout_pending_start();
 	void layout_pending_finish();
 	Control* get_layout_pending_control_in_tree() const;
-	void call_on_all_layout_pending_finished(const Callable& p_callable);
 
 	// Container sizing.
 
-	void set_h_size_flags(BitField<SizeFlags> p_flags);
-	BitField<SizeFlags> get_h_size_flags() const;
-	void set_v_size_flags(BitField<SizeFlags> p_flags);
-	BitField<SizeFlags> get_v_size_flags() const;
+	void set_h_size_flags(uint32_t p_flags);
+	uint32_t get_h_size_flags() const;
+	void set_v_size_flags(uint32_t p_flags);
+	uint32_t get_v_size_flags() const;
 	void set_stretch_ratio(real_t p_ratio);
 	real_t get_stretch_ratio() const;
 
@@ -690,8 +646,6 @@ public:
 	Transform2D get_offset_transform() const;
 
 	// Input events.
-
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event);
 	void accept_event();
 
 	virtual bool has_point(const Point2& p_point) const;
@@ -714,13 +668,7 @@ public:
 
 	// Drag and drop handling.
 
-	virtual void set_drag_forwarding(
-		const Callable& p_drag, const Callable& p_can_drop, const Callable& p_drop);
-	virtual Variant get_drag_data(Object& obj, const Point2& p_point);
-	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const;
-	virtual void drop_data(const Object& obj, const Point2& p_point, const Variant& p_data);
 	void set_drag_preview(Control* p_control);
-	void force_drag(const Variant& p_data, Control* p_control);
 	void accessibility_drag();
 	void accessibility_drop();
 	bool is_drag_successful() const;
@@ -833,10 +781,6 @@ public:
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 	int get_theme_constant(
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
-	Variant get_theme_item(Theme::DataType p_data_type, const StringName& p_name,
-		const StringName& p_theme_type = StringName()) const;
-	Variant get_used_theme_item(
-		const String& p_full_name, const StringName& p_theme_type = StringName()) const;
 #ifdef TOOLS_ENABLED
 	Ref<Texture2D> get_editor_theme_icon(const StringName& p_name) const;
 #endif // TOOLS_ENABLED
@@ -889,7 +833,6 @@ public:
 	void set_tooltip_text(const String& text);
 	StringName get_translation_context() const;
 	void set_translation_context(const StringName& p_context);
-	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const;
 	virtual Control* make_custom_tooltip(const String& p_text) const;
 
 	virtual String accessibility_get_contextual_info() const;
@@ -897,20 +840,6 @@ public:
 	Control();
 	~Control();
 };
-
-VARIANT_ENUM_CAST(Control::FocusMode);
-VARIANT_ENUM_CAST(Control::FocusBehaviorRecursive);
-VARIANT_ENUM_CAST(Control::MouseBehaviorRecursive);
-VARIANT_BITFIELD_CAST(Control::SizeFlags);
-VARIANT_ENUM_CAST(Control::CursorShape);
-VARIANT_ENUM_CAST(Control::LayoutPreset);
-VARIANT_ENUM_CAST(Control::LayoutPresetMode);
-VARIANT_ENUM_CAST(Control::MouseFilter);
-VARIANT_ENUM_CAST(Control::GrowDirection);
-VARIANT_ENUM_CAST(Control::Anchor);
-VARIANT_ENUM_CAST(Control::LayoutMode);
-VARIANT_ENUM_CAST(Control::LayoutDirection);
-VARIANT_ENUM_CAST(Control::TextDirection);
 
 // G = get_drag_data_fw, C = can_drop_data_fw, D = drop_data_fw, U = underscore
 #define SET_DRAG_FORWARDING_CD(from, to)                                                           \

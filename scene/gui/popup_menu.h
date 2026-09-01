@@ -83,7 +83,6 @@ class PopupMenu : public Popup
 		bool indeterminate = false;
 		bool dirty = true;
 		int id = 0;
-		Variant metadata;
 		String submenu_name; // Compatibility.
 		PopupMenu* submenu = nullptr;
 		String tooltip;
@@ -134,7 +133,7 @@ class PopupMenu : public Popup
 	Timer* submenu_timer = nullptr;
 	List<Rect2> autohide_areas;
 	mutable Vector<Item> items;
-	BitField<MouseButtonMask> initial_button_mask = MouseButtonMask::NONE;
+	uint32_t initial_button_mask = 0;
 	bool during_grabbed_click = false;
 	bool is_scrolling = false;
 	int mouse_over = -1;
@@ -161,8 +160,6 @@ class PopupMenu : public Popup
 	Size2 _get_item_icon_size(int p_idx) const;
 
 	void _shape_item(int p_idx) const;
-
-	void _accessibility_action_click(const Variant& p_data, int p_idx);
 
 	void _activate_submenu(int p_over, bool p_by_keyboard = false);
 	void _submenu_timeout();
@@ -283,26 +280,10 @@ protected:
 
 	virtual void _popup_base(const Rect2i& p_bounds = Rect2i()) override;
 	void _notification(int p_what);
-	bool _set(const StringName& p_name, const Variant& p_value);
-
-	bool _get(const StringName& p_name, Variant& r_ret) const
-	{
-		return property_helper.property_get_value(p_name, r_ret);
-	}
-
-	void _get_property_list(List<PropertyInfo>* p_list) const
-	{
-		property_helper.get_property_list(p_list);
-	}
 
 	bool _property_can_revert(const StringName& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
-	}
-
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const
-	{
-		return property_helper.property_get_revert(p_name, r_property);
 	}
 
 	static void _bind_methods();
@@ -379,7 +360,6 @@ public:
 	void set_item_indeterminate(int p_idx, bool p_indeterminate);
 	void set_item_id(int p_idx, int p_id);
 	void set_item_accelerator(int p_idx, Key p_accel);
-	void set_item_metadata(int p_idx, const Variant& p_meta);
 	void set_item_disabled(int p_idx, bool p_disabled);
 	void set_item_submenu(int p_idx, const String& p_submenu);
 	void set_item_submenu_node(int p_idx, PopupMenu* p_submenu);
@@ -411,7 +391,6 @@ public:
 	int get_item_id(int p_idx) const;
 	int get_item_index(int p_id) const;
 	Key get_item_accelerator(int p_idx) const;
-	Variant get_item_metadata(int p_idx) const;
 	bool is_item_disabled(int p_idx) const;
 	String get_item_submenu(int p_idx) const;
 	PopupMenu* get_item_submenu_node(int p_idx) const;
@@ -505,8 +484,6 @@ public:
 	PopupMenuItems(PopupMenu* p_popup) : popup(p_popup) {}
 
 	virtual RID get_focused_accessibility_element() const override;
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 };
 
 

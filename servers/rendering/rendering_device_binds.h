@@ -72,7 +72,7 @@ public:
 	RD_SETGET(uint32_t, mipmaps)
 	RD_SETGET(RD::TextureType, texture_type)
 	RD_SETGET(RD::TextureSamples, samples)
-	RD_SETGET(BitField<RenderingDevice::TextureUsageBits>, usage_bits)
+	RD_SETGET(uint32_t, usage_bits)
 	RD_SETGET(bool, is_resolve_buffer)
 	RD_SETGET(bool, is_discardable)
 
@@ -585,7 +585,7 @@ class RDAccelerationStructureGeometry : public RefCounted
 	RD::AccelerationStructureGeometry base;
 
 public:
-	RD_SETGET(BitField<RD::AccelerationStructureGeometryFlagBits>, flags)
+	RD_SETGET(uint32_t, flags)
 	RD_SETGET(RID, vertex_buffer)
 	RD_SETGET(uint32_t, vertex_offset)
 	RD_SETGET(uint32_t, vertex_stride)
@@ -610,7 +610,7 @@ public:
 	RD_SETGET(uint32_t, id)
 	RD_SETGET(uint8_t, mask)
 	RD_SETGET(RD::HitShaderBindingTableRange, hit_sbt_range)
-	RD_SETGET(BitField<RD::AccelerationStructureInstanceFlagBits>, flags)
+	RD_SETGET(uint32_t, flags)
 	RD_SETGET(RID, blas)
 
 protected:

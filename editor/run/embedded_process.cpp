@@ -383,7 +383,7 @@ void EmbeddedProcess::_check_mouse_over()
 
 	// Input::is_mouse_button_pressed is not sufficient to detect the mouse button state
 	// while the floating game window is being resized.
-	BitField<MouseButtonMask> mouse_button_mask =
+	uint32_t mouse_button_mask =
 		DisplayServer::get_singleton()->mouse_get_button_state();
 	if (!mouse_button_mask.is_empty()) {
 		return;

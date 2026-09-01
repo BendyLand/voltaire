@@ -734,7 +734,7 @@ Point2i DisplayServerX11::mouse_get_position() const
 	return Vector2i();
 }
 
-BitField<MouseButtonMask> DisplayServerX11::mouse_get_button_state() const
+uint32_t DisplayServerX11::mouse_get_button_state() const
 {
 	int number_of_screens = XScreenCount(x11_display);
 	for (int i = 0; i < number_of_screens; i++) {
@@ -743,7 +743,7 @@ BitField<MouseButtonMask> DisplayServerX11::mouse_get_button_state() const
 		unsigned int mask;
 		if (XQueryPointer(x11_display, XRootWindow(x11_display, i), &root, &child, &root_x, &root_y,
 				&win_x, &win_y, &mask)) {
-			BitField<MouseButtonMask> last_button_state = MouseButtonMask::NONE;
+			uint32_t last_button_state = MouseButtonMask::NONE;
 
 			if (mask & Button1Mask) {
 				last_button_state.set_flag(MouseButtonMask::LEFT);
@@ -5747,7 +5747,7 @@ void DisplayServerX11::process_events()
 			if (mb->is_pressed() && mb->get_button_index() >= MouseButton::WHEEL_UP &&
 				mb->get_button_index() <= MouseButton::WHEEL_RIGHT) {
 				MouseButtonMask mask = mouse_button_to_mask(mb->get_button_index());
-				BitField<MouseButtonMask> scroll_mask = mouse_get_button_state();
+				uint32_t scroll_mask = mouse_get_button_state();
 				scroll_mask.set_flag(mask);
 				mb->set_button_mask(scroll_mask);
 			}
@@ -5928,7 +5928,7 @@ void DisplayServerX11::process_events()
 					windows[focused_window_id].size.height / 2);
 			}
 
-			BitField<MouseButtonMask> last_button_state = MouseButtonMask::NONE;
+			uint32_t last_button_state = MouseButtonMask::NONE;
 			if (event.xmotion.state & Button1Mask) {
 				last_button_state.set_flag(MouseButtonMask::LEFT);
 			}

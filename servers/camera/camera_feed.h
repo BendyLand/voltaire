@@ -39,22 +39,26 @@
 	camera feeds that can be used as the background for our environment.
 **/
 
-class CameraFeed : public RefCounted {
-	VLTRCLASS(CameraFeed, RefCounted);
-
+class CameraFeed : public RefCounted
+{
 public:
-	enum FeedDataType {
+	enum FeedDataType
+	{
 		FEED_NOIMAGE, // we don't have an image yet
-		FEED_RGB, // our texture will contain a normal RGB texture that can be used directly
-		FEED_YCBCR, // our texture will contain a YCbCr texture that needs to be converted to RGB before output
-		FEED_YCBCR_SEP, // our camera is split into two textures, first plane contains Y data, second plane contains CbCr data
-		FEED_EXTERNAL, // specific for android atm, camera feed is managed externally, assumed RGB for now
+		FEED_RGB,	  // our texture will contain a normal RGB texture that can be used directly
+		FEED_YCBCR,	  // our texture will contain a YCbCr texture that needs to be converted to RGB
+					  // before output
+		FEED_YCBCR_SEP, // our camera is split into two textures, first plane contains Y data,
+						// second plane contains CbCr data
+		FEED_EXTERNAL,	// specific for android atm, camera feed is managed externally, assumed RGB
+						// for now
 	};
 
-	enum FeedPosition {
+	enum FeedPosition
+	{
 		FEED_UNSPECIFIED, // we have no idea
-		FEED_FRONT, // this is a camera on the front of the device
-		FEED_BACK // this is a camera on the back of the device
+		FEED_FRONT,		  // this is a camera on the front of the device
+		FEED_BACK		  // this is a camera on the back of the device
 	};
 
 private:
@@ -63,7 +67,8 @@ private:
 	const StringName frame_changed_signal_name = "frame_changed";
 
 protected:
-	struct FeedFormat {
+	struct FeedFormat
+	{
 		int width = 0;
 		int height = 0;
 		String format;
@@ -72,14 +77,13 @@ protected:
 		uint32_t pixel_format = 0;
 	};
 
-	String name; // name of our camera feed
+	String name;		   // name of our camera feed
 	FeedDataType datatype; // type of texture data stored
 	FeedPosition position; // position of camera on the device
 	Transform2D transform; // display transform
 	int base_width = 0;
 	int base_height = 0;
 	Vector<FeedFormat> formats;
-	Dictionary parameters;
 	int selected_format = -1;
 
 	bool active; // only when active do we actually update the camera texture each frame
@@ -102,7 +106,7 @@ public:
 	void set_position(FeedPosition p_position);
 
 	Transform2D get_transform() const;
-	void set_transform(const Transform2D &p_transform);
+	void set_transform(const Transform2D& p_transform);
 
 	RID get_texture(CameraServer::FeedImage p_which);
 	uint64_t get_texture_tex_id(CameraServer::FeedImage p_which);
@@ -112,18 +116,15 @@ public:
 	virtual ~CameraFeed();
 
 	FeedDataType get_datatype() const;
-	void set_rgb_image(const Ref<Image> &p_rgb_img);
-	void set_ycbcr_image(const Ref<Image> &p_ycbcr_img);
-	void set_ycbcr_images(const Ref<Image> &p_y_img, const Ref<Image> &p_cbcr_img);
+	void set_rgb_image(const Ref<Image>& p_rgb_img);
+	void set_ycbcr_image(const Ref<Image>& p_ycbcr_img);
+	void set_ycbcr_images(const Ref<Image>& p_y_img, const Ref<Image>& p_cbcr_img);
 	void set_external(int p_width, int p_height);
 
-	virtual bool set_format(int p_index, const Dictionary &p_parameters);
-	virtual Array get_formats() const;
 	virtual FeedFormat get_format() const;
 
 	virtual bool activate_feed();
 	virtual void deactivate_feed();
 };
 
-VARIANT_ENUM_CAST(CameraFeed::FeedDataType);
-VARIANT_ENUM_CAST(CameraFeed::FeedPosition);
+

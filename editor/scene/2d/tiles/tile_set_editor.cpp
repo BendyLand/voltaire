@@ -1206,7 +1206,7 @@ bool TileSourceInspectorPlugin::can_handle(Object* p_object)
 
 bool TileSourceInspectorPlugin::parse_property(Object* p_object, const Variant::Type p_type,
 	const String& p_path, const PropertyHint p_hint, const String& p_hint_text,
-	const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+	const uint32_t p_usage, const bool p_wide)
 {
 	if (p_path == "id") {
 		const Variant value = p_object->get("id");

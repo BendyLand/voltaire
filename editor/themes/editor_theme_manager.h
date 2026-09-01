@@ -36,21 +36,24 @@ class StyleBoxFlat;
 class StyleBoxLine;
 class StyleBoxTexture;
 
-class EditorThemeManager {
+class EditorThemeManager
+{
 	static int benchmark_run;
 	static inline bool outdated_cache = false;
 	static inline bool outdated_cache_dirty = true;
 
 	static String get_benchmark_key();
 
-	enum ColorMode {
+	enum ColorMode
+	{
 		AUTO_COLOR,
 		DARK_COLOR,
 		LIGHT_COLOR,
 	};
 
 public:
-	struct ThemeConfiguration {
+	struct ThemeConfiguration
+	{
 		// Basic properties.
 
 		String style;
@@ -203,28 +206,37 @@ public:
 		uint32_t hash_icons();
 	};
 
-	enum RelationshipLinesMode {
+	enum RelationshipLinesMode
+	{
 		RELATIONSHIP_NONE,
 		RELATIONSHIP_SELECTED_ONLY,
 		RELATIONSHIP_ALL,
 	};
 
 private:
-	static Ref<EditorTheme> _create_base_theme(const Ref<EditorTheme> &p_old_theme = nullptr);
+	static Ref<EditorTheme> _create_base_theme(const Ref<EditorTheme>& p_old_theme = nullptr);
 	static ThemeConfiguration _create_theme_config();
 
-	static void _populate_text_editor_styles(const Ref<EditorTheme> &p_theme, ThemeConfiguration &p_config);
-	static void _populate_visual_shader_styles(const Ref<EditorTheme> &p_theme, ThemeConfiguration &p_config);
+	static void _populate_text_editor_styles(
+		const Ref<EditorTheme>& p_theme, ThemeConfiguration& p_config);
+	static void _populate_visual_shader_styles(
+		const Ref<EditorTheme>& p_theme, ThemeConfiguration& p_config);
 
 	static void _reset_dirty_flag();
 
 public:
-	static Ref<StyleBoxFlat> make_flat_stylebox(Color p_color, float p_margin_left = -1, float p_margin_top = -1, float p_margin_right = -1, float p_margin_bottom = -1, int p_corner_width = 0);
-	static Ref<StyleBoxEmpty> make_empty_stylebox(float p_margin_left = -1, float p_margin_top = -1, float p_margin_right = -1, float p_margin_bottom = -1);
-	static Ref<StyleBoxTexture> make_stylebox(Ref<Texture2D> p_texture, float p_left, float p_top, float p_right, float p_bottom, float p_margin_left = -1, float p_margin_top = -1, float p_margin_right = -1, float p_margin_bottom = -1, bool p_draw_center = true);
-	static Ref<StyleBoxLine> make_line_stylebox(Color p_color, int p_thickness = 1, float p_grow_begin = 1, float p_grow_end = 1, bool p_vertical = false);
+	static Ref<StyleBoxFlat> make_flat_stylebox(Color p_color, float p_margin_left = -1,
+		float p_margin_top = -1, float p_margin_right = -1, float p_margin_bottom = -1,
+		int p_corner_width = 0);
+	static Ref<StyleBoxEmpty> make_empty_stylebox(float p_margin_left = -1, float p_margin_top = -1,
+		float p_margin_right = -1, float p_margin_bottom = -1);
+	static Ref<StyleBoxTexture> make_stylebox(Ref<Texture2D> p_texture, float p_left, float p_top,
+		float p_right, float p_bottom, float p_margin_left = -1, float p_margin_top = -1,
+		float p_margin_right = -1, float p_margin_bottom = -1, bool p_draw_center = true);
+	static Ref<StyleBoxLine> make_line_stylebox(Color p_color, int p_thickness = 1,
+		float p_grow_begin = 1, float p_grow_end = 1, bool p_vertical = false);
 
-	static Ref<EditorTheme> generate_theme(const Ref<EditorTheme> &p_old_theme = nullptr);
+	static Ref<EditorTheme> generate_theme(const Ref<EditorTheme>& p_old_theme = nullptr);
 	static bool is_generated_theme_outdated();
 
 	static bool is_dark_theme();
@@ -233,3 +245,5 @@ public:
 	static void initialize();
 	static void finalize();
 };
+
+

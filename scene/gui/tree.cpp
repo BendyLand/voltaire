@@ -506,12 +506,12 @@ TextServer::AutowrapMode TreeItem::get_autowrap_mode(int p_column) const
 	return cells[p_column].autowrap_mode;
 }
 
-void TreeItem::set_autowrap_trim_flags(int p_column, BitField<TextServer::LineBreakFlag> p_flags)
+void TreeItem::set_autowrap_trim_flags(int p_column, uint32_t p_flags)
 {
 	ERR_FAIL_INDEX(p_column, cells.size());
 
 	// Only trim-related flags are valid for this property.
-	BitField<TextServer::LineBreakFlag> masked_flags = p_flags & TextServer::BREAK_TRIM_MASK;
+	uint32_t masked_flags = p_flags & TextServer::BREAK_TRIM_MASK;
 	if (cells[p_column].autowrap_trim_flags == masked_flags) {
 		return;
 	}
@@ -522,7 +522,7 @@ void TreeItem::set_autowrap_trim_flags(int p_column, BitField<TextServer::LineBr
 	cells.write[p_column].cached_minimum_size_dirty = true;
 }
 
-BitField<TextServer::LineBreakFlag> TreeItem::get_autowrap_trim_flags(int p_column) const
+uint32_t TreeItem::get_autowrap_trim_flags(int p_column) const
 {
 	ERR_FAIL_INDEX_V(p_column, cells.size(),
 		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES);
@@ -2294,7 +2294,7 @@ void Tree::update_item_cell(TreeItem* p_item, int p_col) const
 		p_item->cells[p_col].language.is_empty() ? this->obj->_get_locale() : p_item->cells[p_col].language;
 	p_item->cells.write[p_col].text_buf->add_string(valtext, font, font_size, lang);
 
-	BitField<TextServer::LineBreakFlag> break_flags =
+	uint32_t break_flags =
 		TextServer::BREAK_MANDATORY | p_item->cells[p_col].autowrap_trim_flags;
 	switch (p_item->cells.write[p_col].autowrap_mode) {
 	case TextServer::AUTOWRAP_OFF:

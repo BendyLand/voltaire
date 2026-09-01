@@ -186,7 +186,7 @@ private:
 
 		String language;
 		TextServer::Direction direction = TextServer::DIRECTION_AUTO;
-		BitField<TextServer::LineBreakFlag> brk_flags = TextServer::BREAK_MANDATORY;
+		uint32_t brk_flags = TextServer::BREAK_MANDATORY;
 		bool draw_control_chars = false;
 		String custom_word_separators;
 		bool use_default_word_separators = true;
@@ -235,8 +235,8 @@ private:
 
 		void set_width(float p_width);
 		float get_width() const;
-		void set_brk_flags(BitField<TextServer::LineBreakFlag> p_flags);
-		BitField<TextServer::LineBreakFlag> get_brk_flags() const;
+		void set_brk_flags(uint32_t p_flags);
+		uint32_t get_brk_flags() const;
 		int get_line_wrap_amount(int p_line) const;
 
 		const Vector<RID> get_accessibility_elements(int p_line);

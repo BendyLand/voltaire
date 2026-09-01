@@ -115,7 +115,7 @@ void TextParagraph::_shape_lines() const
 			}
 		}
 
-		BitField<TextServer::TextOverrunFlag> overrun_flags =
+		uint32_t overrun_flags =
 			TextServer::get_overrun_flags_from_behavior(overrun_behavior);
 
 		bool autowrap_enabled = brk_flags.has_flag(TextServer::BREAK_WORD_BOUND) ||
@@ -448,7 +448,7 @@ void TextParagraph::tab_align(const Vector<float>& p_tab_stops)
 	lines_dirty = true;
 }
 
-void TextParagraph::set_justification_flags(BitField<TextServer::JustificationFlag> p_flags)
+void TextParagraph::set_justification_flags(uint32_t p_flags)
 {
 	_THREAD_SAFE_METHOD_
 
@@ -458,12 +458,12 @@ void TextParagraph::set_justification_flags(BitField<TextServer::JustificationFl
 	}
 }
 
-BitField<TextServer::JustificationFlag> TextParagraph::get_justification_flags() const
+uint32_t TextParagraph::get_justification_flags() const
 {
 	return jst_flags;
 }
 
-void TextParagraph::set_break_flags(BitField<TextServer::LineBreakFlag> p_flags)
+void TextParagraph::set_break_flags(uint32_t p_flags)
 {
 	_THREAD_SAFE_METHOD_
 
@@ -473,7 +473,7 @@ void TextParagraph::set_break_flags(BitField<TextServer::LineBreakFlag> p_flags)
 	}
 }
 
-BitField<TextServer::LineBreakFlag> TextParagraph::get_break_flags() const { return brk_flags; }
+uint32_t TextParagraph::get_break_flags() const { return brk_flags; }
 
 void TextParagraph::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
 {

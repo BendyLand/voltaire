@@ -239,7 +239,7 @@ Dictionary Font::get_ot_name_strings() const { return TS->font_get_ot_name_strin
 
 String Font::get_font_style_name() const { return TS->font_get_style_name(_get_rid()); }
 
-BitField<TextServer::FontStyle> Font::get_font_style() const
+uint32_t Font::get_font_style() const
 {
 	return TS->font_get_style(_get_rid());
 }
@@ -258,7 +258,7 @@ void Font::set_cache_capacity(int p_single_line, int p_multi_line)
 }
 
 Size2 Font::get_string_size(const String& p_text, HorizontalAlignment p_alignment, float p_width,
-	int p_font_size, BitField<TextServer::JustificationFlag> p_jst_flags,
+	int p_font_size, uint32_t p_jst_flags,
 	TextServer::Direction p_direction, TextServer::Orientation p_orientation) const
 {
 	bool fill = (p_alignment == HORIZONTAL_ALIGNMENT_FILL);
@@ -290,8 +290,8 @@ Size2 Font::get_string_size(const String& p_text, HorizontalAlignment p_alignmen
 
 Size2 Font::get_multiline_string_size(const String& p_text, HorizontalAlignment p_alignment,
 	float p_width, int p_font_size, int p_max_lines,
-	BitField<TextServer::LineBreakFlag> p_brk_flags,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
+	uint32_t p_brk_flags,
+	uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation) const
 {
 	ShapedTextKey key = ShapedTextKey(
@@ -321,7 +321,7 @@ Size2 Font::get_multiline_string_size(const String& p_text, HorizontalAlignment 
 
 void Font::draw_string(RID p_canvas_item, const Point2& p_pos, const String& p_text,
 	HorizontalAlignment p_alignment, float p_width, int p_font_size, const Color& p_modulate,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
+	uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation, float p_oversampling) const
 {
 	bool fill = (p_alignment == HORIZONTAL_ALIGNMENT_FILL);
@@ -361,8 +361,8 @@ void Font::draw_string(RID p_canvas_item, const Point2& p_pos, const String& p_t
 
 void Font::draw_multiline_string(RID p_canvas_item, const Point2& p_pos, const String& p_text,
 	HorizontalAlignment p_alignment, float p_width, int p_font_size, int p_max_lines,
-	const Color& p_modulate, BitField<TextServer::LineBreakFlag> p_brk_flags,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
+	const Color& p_modulate, uint32_t p_brk_flags,
+	uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation, float p_oversampling) const
 {
 	ShapedTextKey key = ShapedTextKey(
@@ -400,7 +400,7 @@ void Font::draw_multiline_string(RID p_canvas_item, const Point2& p_pos, const S
 
 void Font::draw_string_outline(RID p_canvas_item, const Point2& p_pos, const String& p_text,
 	HorizontalAlignment p_alignment, float p_width, int p_font_size, int p_size,
-	const Color& p_modulate, BitField<TextServer::JustificationFlag> p_jst_flags,
+	const Color& p_modulate, uint32_t p_jst_flags,
 	TextServer::Direction p_direction, TextServer::Orientation p_orientation,
 	float p_oversampling) const
 {
@@ -442,8 +442,8 @@ void Font::draw_string_outline(RID p_canvas_item, const Point2& p_pos, const Str
 void Font::draw_multiline_string_outline(RID p_canvas_item, const Point2& p_pos,
 	const String& p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size,
 	int p_max_lines, int p_size, const Color& p_modulate,
-	BitField<TextServer::LineBreakFlag> p_brk_flags,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
+	uint32_t p_brk_flags,
+	uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation, float p_oversampling) const
 {
 	ShapedTextKey key = ShapedTextKey(
@@ -1496,7 +1496,7 @@ Error FontFile::_load_bitmap_font(const String& p_path, List<String>* r_image_fi
 	int height = 0;
 	int ascent = 0;
 	int outline = 0;
-	BitField<TextServer::FontStyle> st_flags = 0;
+	uint32_t st_flags = 0;
 	String font_name;
 
 	bool packed = false;
@@ -2252,7 +2252,7 @@ void FontFile::set_font_style_name(const String& p_name)
 	TS->font_set_style_name(cache[0], p_name);
 }
 
-void FontFile::set_font_style(BitField<TextServer::FontStyle> p_style)
+void FontFile::set_font_style(uint32_t p_style)
 {
 	ERR_FAIL_COND(!_ensure_rid(0));
 	TS->font_set_style(cache[0], p_style);
@@ -3470,7 +3470,7 @@ void SystemFont::_update_base_font()
 			if (n.to_upper() == E.to_upper()) {
 				score += 80;
 			}
-			BitField<TextServer::FontStyle> style = file->get_font_style();
+			uint32_tget_font_style();
 			int font_weight = file->get_font_weight();
 			int font_stretch = file->get_font_stretch();
 			score += (20 - Math::abs(font_weight - weight) / 50);

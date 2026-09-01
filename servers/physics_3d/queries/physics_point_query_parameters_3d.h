@@ -30,13 +30,11 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
+#include "core/types.h"
 
 class PhysicsPointQueryParameters3D : public RefCounted
 {
-	VLTRCLASS(PhysicsPointQueryParameters3D, RefCounted);
-
 	PS3DT::PointParameters parameters;
 
 protected:
@@ -60,9 +58,6 @@ public:
 	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
 
 	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
-
-	void set_exclude(const Array& p_exclude);
-	Array get_exclude() const;
 };
 
 

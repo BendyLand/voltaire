@@ -313,7 +313,7 @@ class TextServerAdvanced : public TextServer {
 		double embolden = 0.0;
 		Transform2D transform;
 
-		BitField<TextServer::FontStyle> style_flags = 0;
+		uint32_t style_flags = 0;
 		String font_name;
 		String style_name;
 		int weight = 400;
@@ -866,8 +866,8 @@ static int ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, con
 	void _font_set_face_index(const RID &p_font_rid, int64_t p_face_index);
 	int64_t _font_get_face_index(const RID &p_font_rid) const;
 	int64_t _font_get_face_count(const RID &p_font_rid) const;
-	void _font_set_style(const RID &p_font_rid, BitField<FontStyle> p_style);
-	BitField<TextServer::FontStyle> _font_get_style(const RID &p_font_rid) const;
+	void _font_set_style(const RID &p_font_rid, uint32_t p_style);
+	uint32_t _font_get_style(const RID &p_font_rid) const;
 	void _font_set_style_name(const RID &p_font_rid, const String &p_name);
 	String _font_get_style_name(const RID &p_font_rid) const;
 	void _font_set_weight(const RID &p_font_rid, int64_t p_weight);
@@ -1029,9 +1029,9 @@ static int ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, con
 	bool _shaped_text_resize_object(const RID &p_shaped, const Variant &p_key, const Size2 &p_size, InlineAlignment p_inline_align, double p_baseline);
 	RID _shaped_text_substr(const RID &p_shaped, int64_t p_start, int64_t p_length) const;
 	RID _shaped_text_get_parent(const RID &p_shaped) const;
-	double _shaped_text_fit_to_width(const RID &p_shaped, double p_width, BitField<TextServer::JustificationFlag> p_jst_flags);
+	double _shaped_text_fit_to_width(const RID &p_shaped, double p_width, uint32_t p_jst_flags);
 	double _shaped_text_tab_align(const RID &p_shaped, const PackedFloat32Array &p_tab_stops);
-	void _shaped_text_overrun_trim_to_width(const RID &p_shaped_line, double p_width, BitField<TextServer::TextOverrunFlag> p_trim_flags);
+	void _shaped_text_overrun_trim_to_width(const RID &p_shaped_line, double p_width, uint32_t p_trim_flags);
 	int64_t _shaped_text_get_trim_pos(const RID &p_shaped) const;
 	int64_t _shaped_text_get_ellipsis_pos(const RID &p_shaped) const;
 	const Glyph *_shaped_text_get_ellipsis_glyphs(const RID &p_shaped) const;

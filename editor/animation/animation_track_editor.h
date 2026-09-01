@@ -61,7 +61,6 @@ class EditorValidationPanel;
 class AnimationTrackKeyEdit
 {
 public:
-	mem_unique_ptr<Object> obj;
 	bool setting = false;
 	bool animation_read_only = false;
 
@@ -70,7 +69,6 @@ public:
 	float key_ofs = 0;
 	Node* root_path = nullptr;
 
-	PropertyInfo hint;
 	NodePath base;
 	bool use_fps = false;
 	AnimationTrackEditor* editor = nullptr;
@@ -89,18 +87,13 @@ public:
 
 protected:
 	static void _bind_methods();
-	void _fix_node_path(Variant& value);
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
-	bool _set(const Object& obj, const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 };
 
 class AnimationMultiTrackKeyEdit
 {
 public:
-	mem_unique_ptr<Object> obj;
 	bool setting = false;
 	bool animation_read_only = false;
 
@@ -108,7 +101,6 @@ public:
 
 	RBMap<int, List<float>> key_ofs_map;
 	RBMap<int, NodePath> base_map;
-	PropertyInfo hint;
 
 	Node* root_path = nullptr;
 
@@ -129,18 +121,13 @@ public:
 
 protected:
 	static void _bind_methods();
-	void _fix_node_path(Variant& value, NodePath& base);
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
-	bool _set(const Object& obj, const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 };
 
 class AnimationMarkerKeyEdit
 {
 public:
-	mem_unique_ptr<Object> obj;
 	bool animation_read_only = false;
 
 	Ref<Animation> animation;
@@ -162,15 +149,11 @@ public:
 protected:
 	static void _bind_methods();
 	void _set_marker_name(const StringName& p_name);
-	bool _set(const Object& obj, const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 };
 
 class AnimationMultiMarkerKeyEdit
 {
 public:
-	mem_unique_ptr<Object> obj;
 	bool animation_read_only = false;
 
 	Ref<Animation> animation;
@@ -188,15 +171,10 @@ public:
 
 protected:
 	static void _bind_methods();
-	bool _set(const Object& obj, const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 };
 
 class AnimationTimelineEdit : public Range
 {
-	VLTRCLASS(AnimationTimelineEdit, Range);
-
 	friend class AnimationBezierTrackEdit;
 	friend class AnimationTrackEditor;
 	friend class AnimationMarkerEdit;
@@ -229,10 +207,6 @@ class AnimationTimelineEdit : public Range
 									  // changed are much faster
 	HScrollBar* hscroll = nullptr;
 
-	void _zoom_changed(Object& obj, double);
-	void _anim_length_changed(Object& obj, double p_new_len);
-	void _anim_loop_pressed(Object& obj);
-
 	void _play_position_draw();
 	Rect2 hsize_rect;
 
@@ -258,17 +232,14 @@ class AnimationTimelineEdit : public Range
 	Vector2 zoom_scroll_origin;
 	bool zoom_callback_occurred = false;
 
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _commit_timeline_resize();
 	void _stop_dragging();
-	void _track_added(Object& obj, int p_track);
 
 	float _get_zoom_scale(double p_zoom_value) const;
 	void _scroll_to_start();
 
 protected:
 	static void _bind_methods();
-	void _notification(const Object& obj, int p_what);
 
 public:
 	int get_name_limit() const;
@@ -290,8 +261,6 @@ public:
 	float get_play_position() const;
 	void update_play_position();
 
-	void update_values(Object& obj);
-
 	void set_use_fps(bool p_use_fps);
 	bool is_using_fps() const;
 
@@ -304,7 +273,6 @@ public:
 
 class AnimationMarkerEdit : public Control
 {
-	VLTRCLASS(AnimationMarkerEdit, Control);
 	friend class AnimationTimelineEdit;
 
 	enum
@@ -337,11 +305,7 @@ class AnimationMarkerEdit : public Control
 
 	Ref<Texture2D> icon_cache;
 
-	void _menu_selected(const Object& obj, int p_index);
-
 	void _play_position_draw();
-	bool _try_select_at_ui_pos(
-		Object& obj, const Point2& p_pos, bool p_aggregate, bool p_deselectable);
 	bool _is_ui_pos_in_current_section(const Point2& p_pos);
 
 	float insert_at_pos = 0.0f;
@@ -355,7 +319,6 @@ class AnimationMarkerEdit : public Control
 	bool moving_selection = false;
 	void _move_selection_begin();
 	void _move_selection(float p_offset);
-	void _move_selection_commit(const Object& obj);
 	void _move_selection_cancel();
 
 	void _clear_selection_for_anim(const Ref<Animation>& p_anim);
@@ -364,7 +327,6 @@ class AnimationMarkerEdit : public Control
 
 	void _insert_marker(float p_ofs);
 	void _rename_marker(const StringName& p_name);
-	void _delete_selected_markers(const Object& obj);
 
 	ConfirmationDialog* marker_insert_confirm = nullptr;
 	LineEdit* marker_insert_new_name = nullptr;
@@ -382,9 +344,7 @@ class AnimationMarkerEdit : public Control
 
 	////////////// edit menu stuff
 
-	void _marker_insert_confirmed(const Object& obj);
 	void _marker_insert_new_name_changed(const String& p_text);
-	void _marker_rename_confirmed(const Object& obj);
 	void _marker_rename_new_name_changed(const String& p_text);
 
 	AnimationTrackEditor* editor = nullptr;
@@ -399,18 +359,11 @@ class AnimationMarkerEdit : public Control
 
 protected:
 	static void _bind_methods();
-	void _notification(const Object& obj, int p_what);
-
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
-	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
-
 	virtual int get_key_height() const;
 	virtual Rect2 get_key_rect(float p_pixels_sec) const;
 	virtual bool is_key_selectable_by_distance() const;
-	virtual void draw_key(const Object& obj, const StringName& p_name, float p_pixels_sec, int p_x,
-		bool p_selected, int p_clip_left, int p_clip_right);
 	virtual void draw_bg(int p_clip_left, int p_clip_right);
 	virtual void draw_fg(int p_clip_left, int p_clip_right);
 
@@ -448,7 +401,6 @@ public:
 
 class AnimationTrackEdit : public Control
 {
-	VLTRCLASS(AnimationTrackEdit, Control);
 	friend class AnimationTimelineEdit;
 
 	enum
@@ -511,15 +463,8 @@ class AnimationTrackEdit : public Control
 	Ref<Texture2D> icon_cache;
 	String path_cache;
 
-	void _menu_selected(Object& obj, int p_index);
-	void _popup_key_context_menu(const Object& obj, int p_hovering_key_idx, Vector2 p_popup_pos);
-
 	void _path_submitted(const String& p_text);
 	void _play_position_draw();
-	bool _is_value_key_valid(
-		const Object& obj, const Variant& p_key_value, Variant::Type& r_valid_type) const;
-	bool _try_select_at_ui_pos(
-		const Object& obj, const Point2& p_pos, bool p_aggregate, bool p_deselectable);
 
 	int lookup_key_idx = -1;
 	bool _lookup_key(int p_key_idx) const;
@@ -540,20 +485,8 @@ class AnimationTrackEdit : public Control
 	bool in_group = false;
 	AnimationTrackEditor* editor = nullptr;
 
-protected:
-	static void _bind_methods();
-	void _notification(const Object& obj, int p_what);
-
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-
 public:
-	virtual Variant get_drag_data(Object& obj, const Point2& p_point) override;
-	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(
-		const Object& obj, const Point2& p_point, const Variant& p_data) override;
-
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
-	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 
 	const Ref<Texture2D>& get_key_type_icon() const { return type_icon; }
 
@@ -562,8 +495,6 @@ public:
 	virtual bool is_key_selectable_by_distance() const;
 	virtual void draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec, int p_x,
 		int p_next_x, int p_clip_left, int p_clip_right);
-	virtual void draw_key(const Object& obj, int p_index, float p_pixels_sec, int p_x,
-		bool p_selected, int p_clip_left, int p_clip_right);
 	virtual void draw_bg(int p_clip_left, int p_clip_right);
 	virtual void draw_fg(int p_clip_left, int p_clip_right);
 
@@ -592,20 +523,14 @@ public:
 	void cancel_drop();
 
 	void set_in_group(bool p_enable);
-	void append_to_selection(Object& obj, const Rect2& p_box, bool p_deselection);
 
 	AnimationTrackEdit();
 };
 
 class AnimationTrackEditPlugin : public RefCounted
 {
-	VLTRCLASS(AnimationTrackEditPlugin, RefCounted);
-
 public:
-	virtual AnimationTrackEdit* create_value_track_edit(Object* p_object, Variant::Type p_type,
-		const String& p_property, PropertyHint p_hint, const String& p_hint_string, int p_usage);
 	virtual AnimationTrackEdit* create_audio_track_edit();
-	virtual AnimationTrackEdit* create_animation_track_edit(Object* p_object);
 };
 
 class AnimationTrackKeyEdit;
@@ -616,7 +541,6 @@ class AnimationTrackEditGroup : public Control
 {
 	friend class AnimationTrackEditor;
 
-	VLTRCLASS(AnimationTrackEditGroup, Control);
 	Ref<Texture2D> icon;
 	Vector2 icon_size;
 	String node_name;
@@ -632,8 +556,6 @@ class AnimationTrackEditGroup : public Control
 protected:
 	void _notification(int p_what);
 
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-
 public:
 	void set_type_and_name(
 		const Ref<Texture2D>& p_type, const String& p_name, const NodePath& p_node);
@@ -648,7 +570,6 @@ public:
 
 class AnimationTrackEditor : public VBoxContainer
 {
-	VLTRCLASS(AnimationTrackEditor, VBoxContainer);
 	friend class AnimationTimelineEdit;
 	friend class AnimationBezierTrackEdit;
 	friend class AnimationMarkerKeyEditEditor;
@@ -675,7 +596,6 @@ class AnimationTrackEditor : public VBoxContainer
 	VBoxContainer* info_message_vbox = nullptr;
 	Label* info_message = nullptr;
 	Button* add_animation_player = nullptr;
-	void _add_animation_player(Object& obj);
 
 	AnimationTimelineEdit* timeline = nullptr;
 	AnimationMarkerEdit* marker_edit = nullptr;
@@ -702,38 +622,23 @@ class AnimationTrackEditor : public VBoxContainer
 	Button* inactive_player_warning = nullptr;
 	void _show_inactive_player_warning();
 
-	void _snap_mode_changed(Object& obj, int p_mode);
 	Vector<AnimationTrackEdit*> track_edits;
 	Vector<AnimationTrackEditGroup*> groups;
 
 	bool animation_changing_awaiting_update = false;
-	void _animation_update(Object& obj); // Updated by AnimationTrackEditor(this)
 	int _get_track_selected();
-	void _animation_changed(Object& obj);
-	void _update_tracks(Object& obj);
 	void _redraw_tracks();
 	void _redraw_groups();
 	void _check_bezier_exist();
 
 	void _name_limit_changed();
-	void _timeline_changed(Object& obj, float p_new_pos, bool p_timeline_only);
-	void _track_remove_request(const Object& obj, int p_track);
-	void _animation_track_remove_request(
-		const Object& obj, int p_track, Ref<Animation> p_from_animation);
 	void _track_grab_focus(int p_track);
 
 	void _update_scroll(double);
 	void _update_nearest_fps_label();
 	void _update_fps_compat_mode(bool p_enabled);
-	void _update_step(Object& obj, double p_new_step);
-	void _update_length(Object& obj, double p_new_len);
-	void _dropped_track(const Object& obj, int p_from_track, int p_to_track);
 
 	void _add_track(int p_type);
-	void _new_track_node_selected(Object& obj, NodePath p_path);
-	void _new_track_property_selected(Object& obj, const String& p_name);
-
-	void _update_step_spinbox(Object& obj);
 	void _store_snap_states();
 
 	PropertySelector* prop_selector = nullptr;
@@ -750,7 +655,6 @@ class AnimationTrackEditor : public VBoxContainer
 		NodePath path;
 		int track_idx = 0;
 		float time = FLT_MAX; // Defaults to current timeline position.
-		Variant value;
 		String query;
 		bool advance = false;
 	};
@@ -761,10 +665,6 @@ class AnimationTrackEditor : public VBoxContainer
 	ConfirmationDialog* insert_confirm = nullptr;
 	bool insert_queue = false;
 	List<InsertData> insert_data;
-
-	void _query_insert(const Object& obj, const InsertData& p_id);
-	Ref<Animation> _create_and_get_reset_animation(const Object& obj);
-	void _confirm_insert_list(const Object& obj);
 
 	struct TrackIndices
 	{
@@ -778,36 +678,22 @@ class AnimationTrackEditor : public VBoxContainer
 		}
 	};
 
-	TrackIndices _confirm_insert(const Object& obj, InsertData p_id, TrackIndices p_next_tracks,
-		bool p_reset_wanted, Ref<Animation> p_reset_anim, bool p_create_beziers);
-	void _insert_track(const Object& obj, bool p_reset_wanted, bool p_create_beziers);
 
 	void _root_removed();
-
-	PropertyInfo _find_hint_for_track(
-		Object& obj, int p_idx, NodePath& r_base_path, Variant* r_current_val = nullptr);
 
 	void _scroll_changed(const Vector2& p_val);
 	void _v_scroll_changed(float p_val);
 	void _h_scroll_changed(float p_val);
 
 	Ref<ViewPanner> panner;
-	void _pan_callback(Object& obj, Vector2 p_scroll_vec, Ref<InputEvent> p_event);
 	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event);
 
 	void _timeline_value_changed(double);
 
 	float insert_key_from_track_call_ofs = 0.0f;
 	int insert_key_from_track_call_track = 0;
-	void _insert_key_from_track(Object& obj, float p_ofs, int p_track);
-	void _add_method_key(Object& obj, const String& p_method);
-
-	void _fetch_value_track_options(Object& obj, const NodePath& p_path,
-		Animation::UpdateMode* r_update_mode, Animation::InterpolationType* r_interpolation_type,
-		bool* r_loop_wrap);
 
 	void _clear_selection_for_anim(const Ref<Animation>& p_anim);
-	void _select_at_anim(Object& obj, const Ref<Animation>& p_anim, int p_track, float p_pos);
 
 	// selection
 
@@ -833,12 +719,10 @@ class AnimationTrackEditor : public VBoxContainer
 	float moving_selection_offset = 0.0f;
 	void _move_selection_begin();
 	void _move_selection(float p_offset);
-	void _move_selection_commit(const Object& obj);
 	void _move_selection_cancel();
 
 	AnimationTrackKeyEdit* key_edit = nullptr;
 	AnimationMultiTrackKeyEdit* multi_key_edit = nullptr;
-	void _update_key_edit(Object& obj);
 	void _clear_key_edit();
 
 	Control* box_selection_container = nullptr;
@@ -850,7 +734,6 @@ class AnimationTrackEditor : public VBoxContainer
 	Vector2 box_selecting_to;
 	Rect2 box_select_rect;
 	Vector2 prev_scroll_position;
-	void _scroll_input(Object& obj, const Ref<InputEvent>& p_event);
 
 	Vector<Ref<AnimationTrackEditPlugin>> track_edit_plugins;
 
@@ -894,25 +777,10 @@ class AnimationTrackEditor : public VBoxContainer
 
 	void _select_all_tracks_for_copy();
 
-	void _edit_menu_about_to_popup(const Object& obj);
-	void _edit_menu_pressed(const Object& obj, int p_option);
 	bool scale_from_cursor = false;
-
-	void _cleanup_animation(Object& obj, Ref<Animation> p_animation);
-
-	void _anim_duplicate_keys(Object& obj, float p_ofs, bool p_ofs_valid, int p_track);
-
-	void _anim_copy_keys(Object& obj, bool p_cut);
-
-	bool _is_track_compatible(int p_target_track_idx, Variant::Type p_source_value_type,
-		Animation::TrackType p_source_track_type);
-
-	void _anim_paste_keys(Object& obj, float p_ofs, bool p_ofs_valid, int p_track);
 
 	void _toggle_function_names();
 	Button* function_name_toggler = nullptr;
-
-	void _view_group_toggle(Object& obj);
 
 	Button* view_group = nullptr;
 	Button* selected_filter = nullptr;
@@ -923,7 +791,6 @@ class AnimationTrackEditor : public VBoxContainer
 
 	void _root_node_changed(Node* p_node, bool p_removed);
 	void _scene_changed();
-	void _selection_changed(Object& obj);
 
 	ConfirmationDialog* track_copy_dialog = nullptr;
 	Tree* track_copy_select = nullptr;
@@ -944,7 +811,6 @@ class AnimationTrackEditor : public VBoxContainer
 		{
 			float time = 0;
 			float transition = 0;
-			Variant value;
 		};
 
 		Vector<Key> keys;
@@ -960,7 +826,6 @@ class AnimationTrackEditor : public VBoxContainer
 			int track;
 			float time = 0;
 			float transition = 0;
-			Variant value;
 		};
 
 		Vector<Key> keys;
@@ -971,7 +836,6 @@ class AnimationTrackEditor : public VBoxContainer
 
 	void _set_key_clipboard(
 		int p_top_track, float p_top_time, RBMap<SelectedKey, KeyInfo>& p_keymap);
-	void _insert_animation_key(const Object& obj, NodePath p_path, const Variant& p_value);
 
 	void _pick_track_filter_text_changed(const String& p_newtext);
 	void _pick_track_select_recursive(
@@ -984,13 +848,10 @@ class AnimationTrackEditor : public VBoxContainer
 
 protected:
 	static void _bind_methods();
-	void _notification(Object& obj, int p_what);
 
 public:
 	// Public for use as signal callback.
 	void _clear_selection(bool p_update = false);
-	void _key_selected(Object& obj, int p_key, bool p_single, int p_track);
-	void _key_deselected(Object& obj, int p_key, int p_track);
 
 	enum
 	{
@@ -1031,29 +892,13 @@ public:
 	void add_track_edit_plugin(const Ref<AnimationTrackEditPlugin>& p_plugin);
 	void remove_track_edit_plugin(const Ref<AnimationTrackEditPlugin>& p_plugin);
 
-	void set_animation(Object& obj, const Ref<Animation>& p_anim, bool p_read_only);
 	Ref<Animation> get_current_animation() const;
-	void set_root(Object& obj, Node* p_root);
 	Node* get_root() const;
-	void update_keying(Object& obj);
 	bool has_keying() const;
 
-	Dictionary get_state() const;
-	void set_state(Object& obj, const Dictionary& p_state);
-	void clear(Object& obj);
-
-	void cleanup(Object& obj);
-
-	void set_anim_pos(Object& obj, float p_pos);
-	void insert_node_value_key(Object& obj, Node* p_node, const String& p_property,
-		bool p_only_if_exists = false, bool p_advance = false);
-	void insert_value_key(Object& obj, const String& p_property, bool p_advance);
-	void insert_transform_3d_key(const Object& obj, Node3D* p_node, const String& p_sub,
-		const Animation::TrackType p_type, const Variant& p_value);
 	bool has_transform_3d_track(
 		Node3D* p_node, const String& p_sub, const Animation::TrackType p_type);
 	void make_insert_queue();
-	void commit_insert_queue(const Object& obj);
 
 	void show_select_node_warning(bool p_show);
 	void show_dummy_player_warning(bool p_show);
@@ -1068,8 +913,6 @@ public:
 	bool is_insert_at_current_time_enabled() const;
 	void resolve_insertion_offset(float& r_offset) const;
 	bool is_bezier_editor_active() const;
-	bool can_add_reset_key(const Object& obj) const;
-	void _on_filter_updated(Object& obj, const String& p_filter);
 	float get_moving_selection_offset() const;
 	float snap_time(float p_value, bool p_relative = false);
 	float get_snap_unit();
@@ -1081,14 +924,7 @@ public:
 	float get_marker_moving_selection_offset() const;
 	bool is_function_name_pressed();
 
-	/** If `p_from_mouse_event` is `true`, handle Shift key presses for precise snapping. */
-	void goto_prev_step(Object& obj, bool p_from_mouse_event);
-
-	/** If `p_from_mouse_event` is `true`, handle Shift key presses for precise snapping. */
-	void goto_next_step(Object& obj, bool p_from_mouse_event, bool p_timeline_only = false);
-
 	bool is_read_only() const;
-	bool is_global_library_read_only(const Object& obj) const;
 	void popup_read_only_dialog();
 
 	MenuButton* get_edit_menu();
@@ -1100,8 +936,6 @@ public:
 
 class AnimationTrackKeyEditEditor : public EditorProperty
 {
-	VLTRCLASS(AnimationTrackKeyEditEditor, EditorProperty);
-
 	Ref<Animation> animation;
 	int track = -1;
 	real_t key_ofs = 0.0;
@@ -1113,12 +947,11 @@ class AnimationTrackKeyEditEditor : public EditorProperty
 	{
 		real_t time = 0.0;
 		float transition = 0.0;
-		Variant value;
-	} key_data_cache;
+	};
 
-	void _time_edit_spun(const Object& obj);
+	KeyDataCache key_data_cache;
+
 	void _time_edit_entered();
-	void _time_edit_exited(const Object& obj);
 
 public:
 	AnimationTrackKeyEditEditor(
@@ -1129,15 +962,11 @@ public:
 
 class AnimationMarkerKeyEditEditor : public EditorProperty
 {
-	VLTRCLASS(AnimationMarkerKeyEditEditor, EditorProperty);
-
 	Ref<Animation> animation;
 	StringName marker_name;
 	bool use_fps = false;
 
 	EditorSpinSlider* spinner = nullptr;
-
-	void _time_edit_exited(const Object& obj);
 
 public:
 	AnimationMarkerKeyEditEditor(

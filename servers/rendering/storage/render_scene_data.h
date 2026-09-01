@@ -30,8 +30,7 @@
 
 #pragma once
 
-#include "core/object/object.h"
-#include "core/templates/mem_unique_ptr.h"
+#include "core/types.h"
 
 class RenderSceneData
 {
@@ -39,7 +38,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	virtual Transform3D get_cam_transform() const = 0;
 	virtual Projection get_cam_projection() const = 0;
 

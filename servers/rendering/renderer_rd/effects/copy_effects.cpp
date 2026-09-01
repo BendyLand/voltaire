@@ -45,7 +45,7 @@ CopyEffects *CopyEffects::get_singleton() {
 	return singleton;
 }
 
-CopyEffects::CopyEffects(BitField<RasterEffects> p_raster_effects) {
+CopyEffects::CopyEffects(uint32_t p_raster_effects) {
 	singleton = this;
 	raster_effects = p_raster_effects;
 

@@ -141,7 +141,7 @@ void EditorExportPlatformWeb::_replace_strings(
 
 void EditorExportPlatformWeb::_fix_html(Vector<uint8_t>& p_html,
 	const Ref<EditorExportPreset>& p_preset, const String& p_name, bool p_debug,
-	BitField<EditorExportPlatform::DebugFlags> p_flags, const Vector<SharedObject> p_shared_objects,
+	uint32_t p_shared_objects,
 	const Dictionary& p_file_sizes)
 {
 	// Engine.js config
@@ -583,7 +583,7 @@ List<String> EditorExportPlatformWeb::get_binary_extensions(
 }
 
 Error EditorExportPlatformWeb::export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-	const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags, bool p_notify)
+	const String& p_path, uint32_t p_flags, bool p_notify)
 {
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags, p_notify);
 
@@ -891,7 +891,7 @@ String EditorExportPlatformWeb::get_option_tooltip(int p_index) const
 }
 
 Error EditorExportPlatformWeb::run(const Ref<EditorExportPreset>& p_preset, int p_option,
-	BitField<EditorExportPlatform::DebugFlags> p_debug_flags)
+	uint32_t p_debug_flags)
 {
 	const uint16_t bind_port = EDITOR_GET("export/web/http_port");
 	// Resolve host if needed.

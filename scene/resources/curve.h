@@ -35,20 +35,21 @@
 #include "scene/property_list_helper.h"
 
 // y(x) curve
-class Curve : public Resource {
-	VLTRCLASS(Curve, Resource);
-
+class Curve : public Resource
+{
 public:
-	static const char *SIGNAL_RANGE_CHANGED;
-	static const char *SIGNAL_DOMAIN_CHANGED;
+	static const char* SIGNAL_RANGE_CHANGED;
+	static const char* SIGNAL_DOMAIN_CHANGED;
 
-	enum TangentMode {
+	enum TangentMode
+	{
 		TANGENT_FREE = 0,
 		TANGENT_LINEAR,
 		TANGENT_MODE_COUNT
 	};
 
-	struct Point {
+	struct Point
+	{
 		Vector2 position;
 		real_t left_tangent = 0.0;
 		real_t right_tangent = 0.0;
@@ -57,11 +58,9 @@ public:
 
 		Point() {}
 
-		Point(const Vector2 &p_position,
-				real_t p_left = 0.0,
-				real_t p_right = 0.0,
-				TangentMode p_left_mode = TANGENT_FREE,
-				TangentMode p_right_mode = TANGENT_FREE) {
+		Point(const Vector2& p_position, real_t p_left = 0.0, real_t p_right = 0.0,
+			TangentMode p_left_mode = TANGENT_FREE, TangentMode p_right_mode = TANGENT_FREE)
+		{
 			position = p_position;
 			left_tangent = p_left;
 			right_tangent = p_right;
@@ -79,16 +78,11 @@ public:
 
 	void set_point_count(int p_count);
 
-	int add_point(Vector2 p_position,
-			real_t p_left_tangent = 0,
-			real_t p_right_tangent = 0,
-			TangentMode p_left_mode = TANGENT_FREE,
-			TangentMode p_right_mode = TANGENT_FREE);
-	int add_point_no_update(Vector2 p_position,
-			real_t p_left_tangent = 0,
-			real_t p_right_tangent = 0,
-			TangentMode p_left_mode = TANGENT_FREE,
-			TangentMode p_right_mode = TANGENT_FREE);
+	int add_point(Vector2 p_position, real_t p_left_tangent = 0, real_t p_right_tangent = 0,
+		TangentMode p_left_mode = TANGENT_FREE, TangentMode p_right_mode = TANGENT_FREE);
+	int add_point_no_update(Vector2 p_position, real_t p_left_tangent = 0,
+		real_t p_right_tangent = 0, TangentMode p_left_mode = TANGENT_FREE,
+		TangentMode p_right_mode = TANGENT_FREE);
 	void remove_point(int p_index);
 	void clear_points();
 
@@ -101,19 +95,24 @@ public:
 	Point get_point(int p_index) const;
 
 	real_t get_min_value() const { return _min_value; }
+
 	void set_min_value(real_t p_min);
+
 	real_t get_max_value() const { return _max_value; }
+
 	void set_max_value(real_t p_max);
+
 	real_t get_value_range() const { return _max_value - _min_value; }
 
 	real_t get_min_domain() const { return _min_domain; }
-	void set_min_domain(real_t p_min);
-	real_t get_max_domain() const { return _max_domain; }
-	void set_max_domain(real_t p_max);
-	real_t get_domain_range() const { return _max_domain - _min_domain; }
 
-	Array get_limits() const;
-	void set_limits(const Array &p_input);
+	void set_min_domain(real_t p_min);
+
+	real_t get_max_domain() const { return _max_domain; }
+
+	void set_max_domain(real_t p_max);
+
+	real_t get_domain_range() const { return _max_domain - _min_domain; }
 
 	real_t sample(real_t p_offset) const;
 	real_t sample_local_nocheck(int p_index, real_t p_local_offset) const;
@@ -132,38 +131,33 @@ public:
 
 	void update_auto_tangents(int p_index);
 
-	Array get_data() const;
-	void set_data(Array p_input);
-
 	void bake();
 	void _bake() const;
+
 	int get_bake_resolution() const { return _bake_resolution; }
+
 	void set_bake_resolution(int p_resolution);
 	real_t sample_baked(real_t p_offset) const;
 
 	void ensure_default_setup(real_t p_min, real_t p_max);
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value) { return property_helper.property_set_value(p_name, p_value); }
-	bool _get(const StringName &p_name, Variant &r_ret) const { return property_helper.property_get_value(p_name, r_ret); }
-	void _get_property_list(List<PropertyInfo> *p_list) const { property_helper.get_property_list(p_list); }
-	bool _property_can_revert(const StringName &p_name) const { return property_helper.property_can_revert(p_name); }
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const { return property_helper.property_get_revert(p_name, r_property); }
+	bool _property_can_revert(const StringName& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
 
 	static void _bind_methods();
 
 private:
-	bool _filter_property(const String &p_name, int p_index) const;
+	bool _filter_property(const String& p_name, int p_index) const;
 
 	void mark_dirty();
-	int _add_point(Vector2 p_position,
-			real_t p_left_tangent = 0,
-			real_t p_right_tangent = 0,
-			TangentMode p_left_mode = TANGENT_FREE,
-			TangentMode p_right_mode = TANGENT_FREE,
-			bool p_mark_dirty = true);
+	int _add_point(Vector2 p_position, real_t p_left_tangent = 0, real_t p_right_tangent = 0,
+		TangentMode p_left_mode = TANGENT_FREE, TangentMode p_right_mode = TANGENT_FREE,
+		bool p_mark_dirty = true);
 	void _remove_point(int p_index, bool p_mark_dirty = true);
-	void _set_point_position(int p_index, const Vector2 &p_position);
+	void _set_point_position(int p_index, const Vector2& p_position);
 
 	LocalVector<Point> _points;
 	mutable bool _baked_cache_dirty = false;
@@ -175,12 +169,10 @@ private:
 	real_t _max_domain = 1.0;
 };
 
-VARIANT_ENUM_CAST(Curve::TangentMode)
-
-class Curve2D : public Resource {
-	VLTRCLASS(Curve2D, Resource);
-
-	struct Point {
+class Curve2D : public Resource
+{
+	struct Point
+	{
 		Vector2 in;
 		Vector2 out;
 		Vector2 position;
@@ -191,7 +183,8 @@ class Curve2D : public Resource {
 
 	LocalVector<Point> points;
 
-	struct BakedPoint {
+	struct BakedPoint
+	{
 		real_t ofs = 0.0;
 		Vector2 point;
 	};
@@ -204,48 +197,55 @@ class Curve2D : public Resource {
 
 	void mark_dirty();
 
-	static Vector2 _calculate_tangent(const Vector2 &p_begin, const Vector2 &p_control_1, const Vector2 &p_control_2, const Vector2 &p_end, const real_t p_t);
+	static Vector2 _calculate_tangent(const Vector2& p_begin, const Vector2& p_control_1,
+		const Vector2& p_control_2, const Vector2& p_end, const real_t p_t);
 	void _bake() const;
 
 	real_t bake_interval = 5.0;
 
-	struct Interval {
+	struct Interval
+	{
 		int idx;
 		real_t frac;
 	};
+
 	Interval _find_interval(real_t p_offset) const;
 	Vector2 _sample_baked(Interval p_interval, bool p_cubic) const;
 	Transform2D _sample_posture(Interval p_interval) const;
 
-	void _bake_segment2d(RBMap<real_t, Vector2> &r_bake, real_t p_begin, real_t p_end, const Vector2 &p_a, const Vector2 &p_out, const Vector2 &p_b, const Vector2 &p_in, int p_depth, int p_max_depth, real_t p_tol) const;
-	void _bake_segment2d_even_length(RBMap<real_t, Vector2> &r_bake, real_t p_begin, real_t p_end, const Vector2 &p_a, const Vector2 &p_out, const Vector2 &p_b, const Vector2 &p_in, int p_depth, int p_max_depth, real_t p_length) const;
-	Dictionary _get_data() const;
-	void _set_data(const Dictionary &p_data);
+	void _bake_segment2d(RBMap<real_t, Vector2>& r_bake, real_t p_begin, real_t p_end,
+		const Vector2& p_a, const Vector2& p_out, const Vector2& p_b, const Vector2& p_in,
+		int p_depth, int p_max_depth, real_t p_tol) const;
+	void _bake_segment2d_even_length(RBMap<real_t, Vector2>& r_bake, real_t p_begin, real_t p_end,
+		const Vector2& p_a, const Vector2& p_out, const Vector2& p_b, const Vector2& p_in,
+		int p_depth, int p_max_depth, real_t p_length) const;
 
-	void _add_point(const Vector2 &p_position, const Vector2 &p_in = Vector2(), const Vector2 &p_out = Vector2(), int p_atpos = -1);
+	void _add_point(const Vector2& p_position, const Vector2& p_in = Vector2(),
+		const Vector2& p_out = Vector2(), int p_atpos = -1);
 	void _remove_point(int p_index);
 
-	Vector<RBMap<real_t, Vector2>> _tessellate_even_length(int p_max_stages = 5, real_t p_length = 0.2) const;
-	bool _filter_property(const String &p_name, int p_index) const;
+	Vector<RBMap<real_t, Vector2>> _tessellate_even_length(
+		int p_max_stages = 5, real_t p_length = 0.2) const;
+	bool _filter_property(const String& p_name, int p_index) const;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value) { return property_helper.property_set_value(p_name, p_value); }
-	bool _get(const StringName &p_name, Variant &r_ret) const { return property_helper.property_get_value(p_name, r_ret); }
-	void _get_property_list(List<PropertyInfo> *p_list) const { property_helper.get_property_list(p_list); }
-	bool _property_can_revert(const StringName &p_name) const { return property_helper.property_can_revert(p_name); }
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const { return property_helper.property_get_revert(p_name, r_property); }
+	bool _property_can_revert(const StringName& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
 
 	static void _bind_methods();
 
 public:
 	int get_point_count() const;
 	void set_point_count(int p_count);
-	void add_point(const Vector2 &p_position, const Vector2 &p_in = Vector2(), const Vector2 &p_out = Vector2(), int p_atpos = -1);
-	void set_point_position(int p_index, const Vector2 &p_position);
+	void add_point(const Vector2& p_position, const Vector2& p_in = Vector2(),
+		const Vector2& p_out = Vector2(), int p_atpos = -1);
+	void set_point_position(int p_index, const Vector2& p_position);
 	Vector2 get_point_position(int p_index) const;
-	void set_point_in(int p_index, const Vector2 &p_in);
+	void set_point_in(int p_index, const Vector2& p_in);
 	Vector2 get_point_in(int p_index) const;
-	void set_point_out(int p_index, const Vector2 &p_out);
+	void set_point_out(int p_index, const Vector2& p_out);
 	Vector2 get_point_out(int p_index) const;
 	void remove_point(int p_index);
 	void clear_points();
@@ -260,20 +260,22 @@ public:
 	Vector2 sample_baked(real_t p_offset, bool p_cubic = false) const;
 	Transform2D sample_baked_with_rotation(real_t p_offset, bool p_cubic = false) const;
 	PackedVector2Array get_points() const;
-	PackedVector2Array get_baked_points() const; //useful for going through
-	Vector2 get_closest_point(const Vector2 &p_to_point) const;
-	real_t get_closest_offset(const Vector2 &p_to_point) const;
+	PackedVector2Array get_baked_points() const; // useful for going through
+	Vector2 get_closest_point(const Vector2& p_to_point) const;
+	real_t get_closest_offset(const Vector2& p_to_point) const;
 
-	PackedVector2Array tessellate(int p_max_stages = 5, real_t p_tolerance = 4) const; //useful for display
-	PackedVector2Array tessellate_even_length(int p_max_stages = 5, real_t p_length = 20.0) const; // Useful for baking.
+	PackedVector2Array tessellate(
+		int p_max_stages = 5, real_t p_tolerance = 4) const; // useful for display
+	PackedVector2Array tessellate_even_length(
+		int p_max_stages = 5, real_t p_length = 20.0) const; // Useful for baking.
 
 	Curve2D();
 };
 
-class Curve3D : public Resource {
-	VLTRCLASS(Curve3D, Resource);
-
-	struct Point {
+class Curve3D : public Resource
+{
+	struct Point
+	{
 		Vector3 in;
 		Vector3 out;
 		Vector3 position;
@@ -301,13 +303,16 @@ class Curve3D : public Resource {
 
 	void mark_dirty();
 
-	static Vector3 _calculate_tangent(const Vector3 &p_begin, const Vector3 &p_control_1, const Vector3 &p_control_2, const Vector3 &p_end, const real_t p_t);
+	static Vector3 _calculate_tangent(const Vector3& p_begin, const Vector3& p_control_1,
+		const Vector3& p_control_2, const Vector3& p_end, const real_t p_t);
 	void _bake() const;
 
-	struct Interval {
+	struct Interval
+	{
 		int idx;
 		real_t frac;
 	};
+
 	Interval _find_interval(real_t p_offset) const;
 	Vector3 _sample_baked(Interval p_interval, bool p_cubic) const;
 	real_t _sample_baked_tilt(Interval p_interval) const;
@@ -317,23 +322,26 @@ class Curve3D : public Resource {
 	real_t bake_interval = 0.2;
 	bool up_vector_enabled = true;
 
-	void _bake_segment3d(RBMap<real_t, Vector3> &r_bake, real_t p_begin, real_t p_end, const Vector3 &p_a, const Vector3 &p_out, const Vector3 &p_b, const Vector3 &p_in, int p_depth, int p_max_depth, real_t p_tol) const;
-	void _bake_segment3d_even_length(RBMap<real_t, Vector3> &r_bake, real_t p_begin, real_t p_end, const Vector3 &p_a, const Vector3 &p_out, const Vector3 &p_b, const Vector3 &p_in, int p_depth, int p_max_depth, real_t p_length) const;
-	Dictionary _get_data() const;
-	void _set_data(const Dictionary &p_data);
+	void _bake_segment3d(RBMap<real_t, Vector3>& r_bake, real_t p_begin, real_t p_end,
+		const Vector3& p_a, const Vector3& p_out, const Vector3& p_b, const Vector3& p_in,
+		int p_depth, int p_max_depth, real_t p_tol) const;
+	void _bake_segment3d_even_length(RBMap<real_t, Vector3>& r_bake, real_t p_begin, real_t p_end,
+		const Vector3& p_a, const Vector3& p_out, const Vector3& p_b, const Vector3& p_in,
+		int p_depth, int p_max_depth, real_t p_length) const;
 
-	void _add_point(const Vector3 &p_position, const Vector3 &p_in = Vector3(), const Vector3 &p_out = Vector3(), int p_atpos = -1);
+	void _add_point(const Vector3& p_position, const Vector3& p_in = Vector3(),
+		const Vector3& p_out = Vector3(), int p_atpos = -1);
 	void _remove_point(int p_index);
 
-	Vector<RBMap<real_t, Vector3>> _tessellate_even_length(int p_max_stages = 5, real_t p_length = 0.2) const;
-	bool _filter_property(const String &p_name, int p_index) const;
+	Vector<RBMap<real_t, Vector3>> _tessellate_even_length(
+		int p_max_stages = 5, real_t p_length = 0.2) const;
+	bool _filter_property(const String& p_name, int p_index) const;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value) { return property_helper.property_set_value(p_name, p_value); }
-	bool _get(const StringName &p_name, Variant &r_ret) const { return property_helper.property_get_value(p_name, r_ret); }
-	void _get_property_list(List<PropertyInfo> *p_list) const { property_helper.get_property_list(p_list); }
-	bool _property_can_revert(const StringName &p_name) const { return property_helper.property_can_revert(p_name); }
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const { return property_helper.property_get_revert(p_name, r_property); }
+	bool _property_can_revert(const StringName& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
 
 	static void _bind_methods();
 
@@ -345,14 +353,15 @@ public:
 
 	int get_point_count() const;
 	void set_point_count(int p_count);
-	void add_point(const Vector3 &p_position, const Vector3 &p_in = Vector3(), const Vector3 &p_out = Vector3(), int p_atpos = -1);
-	void set_point_position(int p_index, const Vector3 &p_position);
+	void add_point(const Vector3& p_position, const Vector3& p_in = Vector3(),
+		const Vector3& p_out = Vector3(), int p_atpos = -1);
+	void set_point_position(int p_index, const Vector3& p_position);
 	Vector3 get_point_position(int p_index) const;
 	void set_point_tilt(int p_index, real_t p_tilt);
 	real_t get_point_tilt(int p_index) const;
-	void set_point_in(int p_index, const Vector3 &p_in);
+	void set_point_in(int p_index, const Vector3& p_in);
 	Vector3 get_point_in(int p_index) const;
-	void set_point_out(int p_index, const Vector3 &p_out);
+	void set_point_out(int p_index, const Vector3& p_out);
 	Vector3 get_point_out(int p_index) const;
 	void remove_point(int p_index);
 	void clear_points();
@@ -369,19 +378,24 @@ public:
 
 	real_t get_baked_length() const;
 	Vector3 sample_baked(real_t p_offset, bool p_cubic = false) const;
-	Transform3D sample_baked_with_rotation(real_t p_offset, bool p_cubic = false, bool p_apply_tilt = false) const;
+	Transform3D sample_baked_with_rotation(
+		real_t p_offset, bool p_cubic = false, bool p_apply_tilt = false) const;
 	real_t sample_baked_tilt(real_t p_offset) const;
 	Vector3 sample_baked_up_vector(real_t p_offset, bool p_apply_tilt = false) const;
 	PackedVector3Array get_baked_points() const; // Useful for going through.
-	Vector<real_t> get_baked_tilts() const; //useful for going through
+	Vector<real_t> get_baked_tilts() const;		 // useful for going through
 	PackedVector3Array get_baked_up_vectors() const;
 	Vector<real_t> get_baked_dist_cache() const;
-	Vector3 get_closest_point(const Vector3 &p_to_point) const;
-	real_t get_closest_offset(const Vector3 &p_to_point) const;
+	Vector3 get_closest_point(const Vector3& p_to_point) const;
+	real_t get_closest_offset(const Vector3& p_to_point) const;
 	PackedVector3Array get_points() const;
 
-	PackedVector3Array tessellate(int p_max_stages = 5, real_t p_tolerance = 4) const; // Useful for display.
-	PackedVector3Array tessellate_even_length(int p_max_stages = 5, real_t p_length = 0.2) const; // Useful for baking.
+	PackedVector3Array tessellate(
+		int p_max_stages = 5, real_t p_tolerance = 4) const; // Useful for display.
+	PackedVector3Array tessellate_even_length(
+		int p_max_stages = 5, real_t p_length = 0.2) const; // Useful for baking.
 
 	Curve3D();
 };
+
+

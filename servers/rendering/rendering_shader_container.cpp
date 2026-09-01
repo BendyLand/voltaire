@@ -305,7 +305,7 @@ Error RenderingShaderContainer::reflect_spirv(const String &p_shader_name, Span<
 
 		// We make all raytracing stages visible to make our lives easier when creating raytracing pipelines.
 		// This makes no practical difference in current graphics drivers, since Vulkan is the outlier.
-		BitField<RDC::ShaderStage> uniform_stage_flags;
+		uint32_t uniform_stage_flags;
 		if (pipeline_type == RDC::PIPELINE_TYPE_RAYTRACING) {
 			uniform_stage_flags = RDC::SHADER_STAGE_RAYGEN |
 					RDC::SHADER_STAGE_ANY_HIT |

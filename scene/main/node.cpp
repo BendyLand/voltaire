@@ -1272,7 +1272,7 @@ Node::ProcessThreadGroup Node::get_process_thread_group() const
 	return data.process_thread_group;
 }
 
-void Node::set_process_thread_messages(BitField<ProcessThreadMessages> p_flags)
+void Node::set_process_thread_messages(uint32_t p_flags)
 {
 	ERR_THREAD_GUARD
 	if (data.process_thread_messages == p_flags) {
@@ -1282,7 +1282,7 @@ void Node::set_process_thread_messages(BitField<ProcessThreadMessages> p_flags)
 	data.process_thread_messages = p_flags;
 }
 
-BitField<Node::ProcessThreadMessages> Node::get_process_thread_messages() const
+uint32_t Node::get_process_thread_messages() const
 {
 	return data.process_thread_messages;
 }

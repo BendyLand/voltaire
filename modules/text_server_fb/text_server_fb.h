@@ -240,7 +240,7 @@ class TextServerFallback : public TextServerExtension {
 		double embolden = 0.0;
 		Transform2D transform;
 
-		BitField<TextServer::FontStyle> style_flags = 0;
+		uint32_t style_flags = 0;
 		String font_name;
 		String style_name;
 		int weight = 400;
@@ -601,8 +601,8 @@ public:
 
 	MODBIND1RC(int64_t, font_get_face_count, const RID &);
 
-	MODBIND2(font_set_style, const RID &, BitField<FontStyle>);
-	MODBIND1RC(BitField<FontStyle>, font_get_style, const RID &);
+	MODBIND2(font_set_style, const RID &, uint32_t);
+	MODBIND1RC(uint32_t, font_get_style, const RID &);
 
 	MODBIND2(font_set_style_name, const RID &, const String &);
 	MODBIND1RC(String, font_get_style_name, const RID &);
@@ -837,7 +837,7 @@ public:
 	MODBIND3RC(RID, shaped_text_substr, const RID &, int64_t, int64_t);
 	MODBIND1RC(RID, shaped_text_get_parent, const RID &);
 
-	MODBIND3R(double, shaped_text_fit_to_width, const RID &, double, BitField<TextServer::JustificationFlag>);
+	MODBIND3R(double, shaped_text_fit_to_width, const RID &, double, uint32_t);
 	MODBIND2R(double, shaped_text_tab_align, const RID &, const PackedFloat32Array &);
 
 	MODBIND1R(bool, shaped_text_shape, const RID &);
@@ -849,7 +849,7 @@ public:
 	MODBIND1RC(const Glyph *, shaped_text_get_ellipsis_glyphs, const RID &);
 	MODBIND1RC(int64_t, shaped_text_get_ellipsis_glyph_count, const RID &);
 
-	MODBIND3(shaped_text_overrun_trim_to_width, const RID &, double, BitField<TextServer::TextOverrunFlag>);
+	MODBIND3(shaped_text_overrun_trim_to_width, const RID &, double, uint32_t);
 
 	MODBIND1RC(bool, shaped_text_is_ready, const RID &);
 

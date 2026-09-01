@@ -1270,7 +1270,7 @@ void CanvasItem::draw_multimesh(
 
 void CanvasItem::draw_string(Font* rp_font, const Point2& p_pos, const String& p_text,
 	HorizontalAlignment p_alignment, float p_width, int p_font_size, const Color& p_modulate,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
+	uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation, float p_oversampling) const
 {
 	ERR_THREAD_GUARD;
@@ -1281,8 +1281,8 @@ void CanvasItem::draw_string(Font* rp_font, const Point2& p_pos, const String& p
 
 void CanvasItem::draw_multiline_string(Font* rp_font, const Point2& p_pos,
 	const String& p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size,
-	int p_max_lines, const Color& p_modulate, BitField<TextServer::LineBreakFlag> p_brk_flags,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
+	int p_max_lines, const Color& p_modulate, uint32_t p_brk_flags,
+	uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation, float p_oversampling) const
 {
 	ERR_THREAD_GUARD;
@@ -1294,7 +1294,7 @@ void CanvasItem::draw_multiline_string(Font* rp_font, const Point2& p_pos,
 
 void CanvasItem::draw_string_outline(Font* rp_font, const Point2& p_pos,
 	const String& p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size,
-	int p_size, const Color& p_modulate, BitField<TextServer::JustificationFlag> p_jst_flags,
+	int p_size, const Color& p_modulate, uint32_t p_jst_flags,
 	TextServer::Direction p_direction, TextServer::Orientation p_orientation,
 	float p_oversampling) const
 {
@@ -1308,8 +1308,8 @@ void CanvasItem::draw_string_outline(Font* rp_font, const Point2& p_pos,
 void CanvasItem::draw_multiline_string_outline(Font* rp_font, const Point2& p_pos,
 	const String& p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size,
 	int p_max_lines, int p_size, const Color& p_modulate,
-	BitField<TextServer::LineBreakFlag> p_brk_flags,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
+	uint32_t p_brk_flags,
+	uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation, float p_oversampling) const
 {
 	ERR_THREAD_GUARD;

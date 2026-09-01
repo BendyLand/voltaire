@@ -1695,7 +1695,7 @@ void ArrayMesh::_recompute_aabb()
 }
 
 // TODO: Need to add binding to add_surface using future MeshSurfaceData object.
-void ArrayMesh::add_surface(BitField<ArrayFormat> p_format, PrimitiveType p_primitive,
+void ArrayMesh::add_surface(uint32_t p_format, PrimitiveType p_primitive,
 	const Vector<uint8_t>& p_array, const Vector<uint8_t>& p_attribute_array,
 	const Vector<uint8_t>& p_skin_array, int p_vertex_count, const Vector<uint8_t>& p_index_array,
 	int p_index_count, const AABB& p_aabb, const Vector<uint8_t>& p_blend_shape_data,
@@ -1740,7 +1740,7 @@ void ArrayMesh::add_surface(BitField<ArrayFormat> p_format, PrimitiveType p_prim
 
 void ArrayMesh::add_surface_from_arrays(PrimitiveType p_primitive, const Array& p_arrays,
 	const TypedArray<Array>& p_blend_shapes, const Dictionary& p_lods,
-	BitField<ArrayFormat> p_flags)
+	uint32_t p_flags)
 {
 	ERR_FAIL_COND(p_blend_shapes.size() != blend_shapes.size());
 	ERR_FAIL_COND(p_arrays.size() != ARRAY_MAX);
@@ -1868,7 +1868,7 @@ int ArrayMesh::surface_get_array_index_len(int p_idx) const
 	return surfaces[p_idx].index_array_length;
 }
 
-BitField<Mesh::ArrayFormat> ArrayMesh::surface_get_format(int p_idx) const
+uint32_t ArrayMesh::surface_get_format(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, surfaces.size(), 0);
 	return surfaces[p_idx].format;
@@ -2320,7 +2320,7 @@ TypedArray<Array> Mesh::surface_get_blend_shape_arrays(int p_idx) const
 
 Dictionary Mesh::surface_get_lods(int p_idx) const { return Dictionary(); }
 
-BitField<Mesh::ArrayFormat> Mesh::surface_get_format(int p_idx) const { return 0; }
+uint32_t Mesh::surface_get_format(int p_idx) const { return 0; }
 
 Mesh::PrimitiveType Mesh::surface_get_primitive_type(int p_idx) const
 {

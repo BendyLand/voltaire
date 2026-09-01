@@ -2207,7 +2207,7 @@ void WaylandThread::_wl_pointer_on_frame(void *data, struct wl_pointer *wl_point
 		}
 
 		if (old_pd.pressed_button_mask != pd.pressed_button_mask) {
-			BitField<MouseButtonMask> pressed_mask_delta = old_pd.pressed_button_mask.get_different(pd.pressed_button_mask);
+			uint32_t pressed_mask_delta = old_pd.pressed_button_mask.get_different(pd.pressed_button_mask);
 
 			const MouseButton buttons_to_test[] = {
 				MouseButton::LEFT,
@@ -3507,7 +3507,7 @@ void WaylandThread::_wp_tablet_tool_on_frame(void *data, struct zwp_tablet_tool_
 		if (old_td.pressed_button_mask != td.pressed_button_mask) {
 			td.button_time = time;
 
-			BitField<MouseButtonMask> pressed_mask_delta = old_td.pressed_button_mask.get_different(td.pressed_button_mask);
+			uint32_t pressed_mask_delta = old_td.pressed_button_mask.get_different(td.pressed_button_mask);
 
 			for (MouseButton test_button : { MouseButton::LEFT, MouseButton::RIGHT }) {
 				MouseButtonMask test_button_mask = mouse_button_to_mask(test_button);
@@ -5503,14 +5503,14 @@ WaylandThread::PointerConstraint WaylandThread::pointer_get_constraint() const {
 	return pointer_constraint;
 }
 
-BitField<MouseButtonMask> WaylandThread::pointer_get_button_mask() const {
+uint32_t WaylandThread::pointer_get_button_mask() const {
 	SeatState *ss = wl_seat_get_seat_state(wl_seat_current);
 
 	if (ss) {
 		return ss->pointer_data.pressed_button_mask;
 	}
 
-	return BitField<MouseButtonMask>();
+	return uint32_t();
 }
 
 Error WaylandThread::init() {

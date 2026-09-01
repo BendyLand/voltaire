@@ -34,7 +34,6 @@
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "editor/themes/editor_scale.h"
-#include "scene/debugger/view_3d_controller.h"
 #include "scene/gui/margin_container.h"
 
 class AcceptDialog;
@@ -56,7 +55,6 @@ class VBoxContainer;
 class Node3DEditorSelectedItem
 {
 public:
-	mem_unique_ptr<Object> obj;
 	AABB aabb;
 	Transform3D original; // original location when moving
 	Transform3D original_local;
@@ -81,34 +79,27 @@ public:
 
 class ViewportNavigationControl : public Control
 {
-	VLTRCLASS(ViewportNavigationControl, Control);
-
 	Node3DEditorViewport* viewport = nullptr;
 	Vector2i focused_mouse_start;
 	Vector2 focused_pos;
 	bool hovered = false;
 	int focused_index = -1;
-	View3DController::NavigationMode nav_mode = View3DController::NavigationMode::NAV_MODE_NONE;
 
 	const float AXIS_CIRCLE_RADIUS = 30.0f * EDSCALE;
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _draw();
 	void _process_click(int p_index, Vector2 p_position, bool p_pressed);
 	void _process_drag(int p_index, Vector2 p_position, Vector2 p_relative_position);
 	void _update_navigation();
 
 public:
-	void set_navigation_mode(View3DController::NavigationMode p_nav_mode);
 	void set_viewport(Node3DEditorViewport* p_viewport);
 };
 
 class ViewportRotationControl : public Control
 {
-	VLTRCLASS(ViewportRotationControl, Control);
-
 	struct Axis2D
 	{
 		Vector2 screen_point;
@@ -130,7 +121,6 @@ class ViewportRotationControl : public Control
 	Vector<int> axis_menu_options;
 	Vector2i orbiting_mouse_start;
 	Point2 original_mouse_pos;
-	View3DController::Cursor saved_cursor;
 	int orbiting_index = -1;
 	int focused_axis = -2;
 	bool gizmo_activated = false;
@@ -139,7 +129,6 @@ class ViewportRotationControl : public Control
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _draw();
 	void _draw_axis(const Axis2D& p_axis);
 	void _get_sorted_axis(Vector<Axis2D>& r_axis);
@@ -154,7 +143,6 @@ public:
 
 class Node3DEditorViewport : public Control
 {
-	VLTRCLASS(Node3DEditorViewport, Control);
 	friend class Node3DEditor;
 	friend class ViewportNavigationControl;
 	friend class ViewportRotationControl;
@@ -270,8 +258,6 @@ private:
 	Node* target_node = nullptr;
 	Point2 drop_pos;
 
-	ObjectID focused_node_id;
-
 	EditorSelection* editor_selection = nullptr;
 
 	Button* translation_preview_button = nullptr;
@@ -299,7 +285,6 @@ private:
 	Vector3 vertex_snap_target;
 	bool vertex_snap_has_target = false;
 	bool vertex_snap_has_source = false;
-	HashMap<ObjectID, Vector3> vertex_snap_original_positions;
 
 	PanelContainer* info_panel = nullptr;
 	Label* info_label = nullptr;
@@ -336,7 +321,6 @@ private:
 	void _clear_selected();
 	bool _is_rotation_arc_visible() const;
 	void _select_clicked(bool p_allow_locked);
-	ObjectID _select_ray(const Point2& p_pos) const;
 	void _find_items_at_pos(
 		const Point2& p_pos, Vector<_RayResult>& r_results, bool p_include_locked);
 
@@ -344,8 +328,6 @@ private:
 		const AABB& p_aabb, const Transform3D& p_transform, const Point2& p_cursor) const;
 	bool _find_closest_vertex_on_node(const Point2& p_screen_pos, Node3D* p_node,
 		float& r_closest_screen_dist, Vector3& r_vertex_world) const;
-	bool _find_closest_vertex_in_scene(const Point2& p_screen_pos, float p_threshold,
-		Vector3& r_vertex_world, const HashMap<ObjectID, Vector3>* p_exclude = nullptr);
 	void _vertex_snap_update_source(const Point2& p_screen_pos);
 	void _vertex_snap_commit();
 	void _vertex_snap_cancel();
@@ -375,8 +357,6 @@ private:
 
 	void _show_tooltip(const String& p_title, const String& p_description) const;
 
-	ObjectID clicked;
-	ObjectID material_target;
 	Vector<Node3D*> selection_results;
 	Vector<Node3D*> selection_results_menu;
 	bool clicked_wants_append = false;
@@ -426,7 +406,6 @@ private:
 		Ref<EditorNode3DGizmo> gizmo;
 		int gizmo_handle = 0;
 		bool gizmo_handle_secondary = false;
-		Variant gizmo_initial_value;
 		bool original_local;
 		bool instant;
 
@@ -450,7 +429,6 @@ private:
 		HashMap<Node3D*, Transform3D> children_original_globals;
 	} _edit;
 
-	Ref<View3DController> view_3d_controller;
 	void _update_view_3d_controller(bool p_update_all = true);
 
 	void _cursor_interpolated();
@@ -529,7 +507,6 @@ private:
 
 	void _create_preview_node(const Vector<String>& files) const;
 	void _remove_preview_node();
-	bool _apply_preview_material(ObjectID p_target, const Point2& p_point) const;
 	void _reset_preview_material() const;
 	void _remove_preview_material();
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node) const;
@@ -585,8 +562,6 @@ public:
 
 	void set_can_preview(Camera3D* p_preview);
 	void switch_preview_camera(Camera3D* p_new_camera);
-	void set_state(const Dictionary& p_state);
-	Dictionary get_state() const;
 	void reset();
 
 	Vector3 get_ray_pos(const Vector2& p_pos) const;
@@ -604,16 +579,12 @@ public:
 
 	Control* get_surface() { return surface; }
 
-	Ref<View3DController> get_controller() { return view_3d_controller; }
-
 	Node3DEditorViewport(Node3DEditor* p_spatial_editor, int p_index);
 	~Node3DEditorViewport();
 };
 
 class Node3DEditorViewportContainer : public MarginContainer
 {
-	VLTRCLASS(Node3DEditorViewportContainer, MarginContainer);
-
 public:
 	enum View
 	{
@@ -641,9 +612,6 @@ public:
 	View get_view();
 
 	void add_viewport(Node3DEditorViewport* p_viewport, int p_index);
-
-	Dictionary get_split_state() const;
-	void set_split_state(const Dictionary& p_state);
 
 	Node3DEditorViewportContainer();
 };

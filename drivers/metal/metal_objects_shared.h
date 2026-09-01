@@ -523,7 +523,7 @@ _FORCE_INLINE_ static bool operator==(MTL::Size p_a, MTL::Size p_b) {
 
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wunguarded-availability")
 
-_FORCE_INLINE_ static MTL::Stages convert_src_pipeline_stages_to_metal(BitField<RDD::PipelineStageBits> p_stages) {
+_FORCE_INLINE_ static MTL::Stages convert_src_pipeline_stages_to_metal(uint32_t p_stages) {
 	p_stages.clear_flag(RDD::PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
 	// BOTTOM_OF_PIPE or ALL_COMMANDS means "all prior work must complete".
@@ -562,7 +562,7 @@ _FORCE_INLINE_ static MTL::Stages convert_src_pipeline_stages_to_metal(BitField<
 	return mtlStages;
 }
 
-_FORCE_INLINE_ static MTL::Stages convert_dst_pipeline_stages_to_metal(BitField<RDD::PipelineStageBits> p_stages) {
+_FORCE_INLINE_ static MTL::Stages convert_dst_pipeline_stages_to_metal(uint32_t p_stages) {
 	p_stages.clear_flag(RDD::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 
 	// TOP_OF_PIPE or ALL_COMMANDS means "wait before any work starts".
@@ -633,7 +633,7 @@ struct RenderStateBase {
 		DIRTY_ALL      = (1 << 9) - 1,
 	};
 	// clang-format on
-	BitField<DirtyFlag> dirty = DIRTY_NONE;
+	uint32_t dirty = DIRTY_NONE;
 };
 
 /// Abstract base class for Metal command buffers, shared between MTL3 and MTL4 implementations.
@@ -740,8 +740,8 @@ public:
 
 #pragma mark - Synchronization
 
-	virtual void pipeline_barrier(BitField<RDD::PipelineStageBits> p_src_stages,
-			BitField<RDD::PipelineStageBits> p_dst_stages,
+	virtual void pipeline_barrier(uint32_t p_src_stages,
+			uint32_t p_dst_stages,
 			VectorView<RDD::MemoryAccessBarrier> p_memory_barriers,
 			VectorView<RDD::BufferBarrier> p_buffer_barriers,
 			VectorView<RDD::TextureBarrier> p_texture_barriers,
@@ -757,7 +757,7 @@ public:
 
 struct API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0), visionos(2.0)) UniformInfo {
 	uint32_t binding;
-	BitField<RDD::ShaderStage> active_stages;
+	uint32_t active_stages;
 	MTL::DataType dataType = MTL::DataTypeNone;
 	MTL::BindingAccess access = MTL::BindingAccessReadOnly;
 	MTL::ResourceUsage usage = 0;
@@ -903,7 +903,7 @@ public:
 	CharString name;
 	Vector<UniformSet> sets;
 	struct {
-		BitField<RDD::ShaderStage> stages = {};
+		uint32_t stages = {};
 		uint32_t binding = UINT32_MAX;
 		uint32_t size = 0;
 	} push_constants;

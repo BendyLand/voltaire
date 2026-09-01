@@ -50,8 +50,6 @@ class VBoxContainer;
 
 class SceneTreeDock : public EditorDock
 {
-	VLTRCLASS(SceneTreeDock, EditorDock);
-
 	enum Tool
 	{
 		TOOL_NEW,
@@ -103,8 +101,6 @@ class SceneTreeDock : public EditorDock
 		EDIT_SUBRESOURCE_BASE = 100
 	};
 
-	Vector<ObjectID> subresources;
-
 	bool reset_create_dialog = false;
 
 	int current_option = 0;
@@ -145,7 +141,6 @@ class SceneTreeDock : public EditorDock
 
 	EditorData* editor_data = nullptr;
 	EditorSelection* editor_selection = nullptr;
-	LocalVector<ObjectID> node_previous_selection;
 	bool update_script_button_queued = false;
 
 	List<Node*> node_clipboard;
@@ -194,15 +189,9 @@ class SceneTreeDock : public EditorDock
 
 	Ref<ShaderMaterial> selected_shader_material;
 
-	void _add_children_to_popup(Object* p_obj, int p_depth);
-
 	void _node_reparent(NodePath p_path, bool p_keep_global_xform);
 	void _do_reparent(Node* p_new_parent, int p_position_in_parent, Vector<Node*> p_nodes,
 		bool p_keep_global_xform);
-
-	void _make_owners_map(Node* p_node, Dictionary& r_owners);
-	void _apply_owners_map(Node* p_node, const Dictionary& p_owners);
-	void _set_owners(Node* p_owner, const Array& p_nodes);
 
 	enum ReplaceOwnerMode
 	{
@@ -215,8 +204,6 @@ class SceneTreeDock : public EditorDock
 		Node* p_base, Node* p_node, Node* p_root, ReplaceOwnerMode p_mode = MODE_BIDI);
 	void _node_strip_signal_inheritance(Node* p_node);
 	void _load_request(const String& p_path);
-	void _script_open_request(const Ref<Script>& p_script);
-	void _push_item(Object* p_object);
 	void _handle_select(Node* p_node);
 
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node);
@@ -224,7 +211,6 @@ class SceneTreeDock : public EditorDock
 
 	void _node_selected();
 	void _node_renamed();
-	void _script_created(Ref<Script> p_script);
 	void _shader_created(Ref<Shader> p_shader);
 	void _script_creation_closed();
 	void _shader_creation_closed();
@@ -234,9 +220,6 @@ class SceneTreeDock : public EditorDock
 
 	void _toggle_editable_children_from_selection();
 
-	void _reparent_nodes_to_root(Node* p_root, const Array& p_nodes, Node* p_owner);
-	void _reparent_nodes_to_paths_with_transform_and_name(Node* p_root, const Array& p_nodes,
-		const Array& p_paths, const Array& p_transforms, const Array& p_names, Node* p_owner);
 	void _toggle_editable_children(Node* p_node);
 
 	void _toggle_placeholder_from_selection();
@@ -252,11 +235,9 @@ class SceneTreeDock : public EditorDock
 	TreeItem* tree_item_inspected = nullptr;
 	Node* node_hovered_now = nullptr;
 	Node* node_hovered_previously = nullptr;
-	Object* edited_object_at_drag_start = nullptr;
 	bool scene_tree_drag_active = false;
 
 	virtual void input(const Ref<InputEvent>& p_event) override;
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _scene_tree_gui_input(Ref<InputEvent> p_event);
 
 	void _new_scene_from(const String& p_file);
@@ -274,9 +255,7 @@ class SceneTreeDock : public EditorDock
 	bool _has_tracks_to_delete(Node* p_node, List<Node*>& p_to_delete) const;
 
 	void _normalize_drop(Node*& to_node, int& to_pos, int p_type);
-	Array _get_selection_array();
 
-	void _nodes_dragged(const Array& p_nodes, NodePath p_to, int p_type);
 	void _files_dropped(const Vector<String>& p_files, NodePath p_to, int p_type);
 	void _script_dropped(const String& p_file, NodePath p_to);
 	void _quick_open(const String& p_file_path);
@@ -321,12 +300,6 @@ class SceneTreeDock : public EditorDock
 
 	bool _update_node_path(
 		Node* p_root_node, NodePath& r_node_path, HashMap<Node*, NodePath>* p_renames) const;
-	void _check_object_properties_recursive(Node* p_root_node, Object* p_obj,
-		HashMap<Node*, NodePath>* p_renames, bool p_inside_resource = false) const;
-	bool _check_node_path_recursive(Node* p_root_node, Variant& r_variant,
-		HashMap<Node*, NodePath>* p_renames, bool p_inside_resource = false) const;
-	bool _check_node_recursive(Variant& r_variant, Node* p_node, Node* p_by_node,
-		const String type_hint, String& r_warn_message);
 	void _replace_node(Node* p_node, Node* p_by_node, bool p_keep_properties = true);
 
 private:

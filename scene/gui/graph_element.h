@@ -32,9 +32,8 @@
 
 #include "scene/gui/container.h"
 
-class GraphElement : public Container {
-	VLTRCLASS(GraphElement, Container);
-
+class GraphElement : public Container
+{
 protected:
 	bool selected = false;
 	bool resizable = false;
@@ -50,25 +49,23 @@ protected:
 
 	bool scaling_menus = false;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<Texture2D> resizer;
 	} theme_cache;
 
 #ifdef TOOLS_ENABLED
-	void _edit_set_position(const Point2 &p_position) override;
+	void _edit_set_position(const Point2& p_position) override;
 #endif
 
 protected:
-	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_ev) override;
 	void _notification(int p_what);
 	static void _bind_methods();
 
 	virtual void _resort();
 
-	void _validate_property(PropertyInfo &p_property) const;
-
 public:
-	void set_position_offset(const Vector2 &p_offset);
+	void set_position_offset(const Vector2& p_offset);
 	Vector2 get_position_offset() const;
 
 	void set_selected(bool p_selected);
@@ -91,7 +88,7 @@ public:
 
 	virtual Size2 get_minimum_size() const override;
 
-	bool is_resizing() const {
-		return resizing;
-	}
+	bool is_resizing() const { return resizing; }
 };
+
+

@@ -48,7 +48,7 @@ private:
 	Ref<SkeletonProfile> profile;
 
 	bool use_global_pose = false;
-	BitField<TransformFlag> enable_flags = TRANSFORM_FLAG_ALL;
+	uint32_t enable_flags = TRANSFORM_FLAG_ALL;
 
 	struct RetargetBoneInfo {
 		int bone_id = -1;
@@ -103,8 +103,8 @@ public:
 
 	void set_use_global_pose(bool p_use_global_pose);
 	bool is_using_global_pose() const;
-	void set_enable_flags(BitField<TransformFlag> p_enable_flags);
-	BitField<TransformFlag> get_enable_flags() const;
+	void set_enable_flags(uint32_t p_enable_flags);
+	uint32_t get_enable_flags() const;
 
 	void set_position_enabled(bool p_enabled);
 	bool is_position_enabled() const;

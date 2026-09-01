@@ -154,7 +154,7 @@ void EditorAbout::_item_list_resized(ItemList* p_il)
 }
 
 Label* EditorAbout::_create_section(Control* p_parent, const String& p_name,
-	const char* const* p_src, BitField<SectionFlags> p_flags)
+	const char* const* p_src, uint32_t p_flags)
 {
 	Label* lbl = memnew(Label(p_name));
 	lbl->set_theme_type_variation("HeaderSmall");

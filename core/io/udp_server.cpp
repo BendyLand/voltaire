@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "udp_server.h"
 
 void UDPServer::_bind_methods() {}
@@ -83,7 +82,6 @@ Error UDPServer::poll()
 			//        with a better "transfer ownership" semantics is warranted to avoid
 			//        accidental leaks.
 			peer_ref->reference();
-			peer_ref->deinit_ref();
 		}
 	}
 	return OK;

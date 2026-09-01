@@ -293,11 +293,8 @@ private:
 	bool physics_object_picking_sort = false;
 	bool physics_object_picking_first_only = false;
 	List<Ref<InputEvent>> physics_picking_events;
-	ObjectID physics_object_capture;
-	ObjectID physics_object_over;
 	Transform3D physics_last_object_transform;
 	Transform3D physics_last_camera_transform;
-	ObjectID physics_last_id;
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 
 	bool handle_input_locally = true;
@@ -393,14 +390,11 @@ private:
 	struct GUI
 	{
 		bool mouse_in_viewport = false;
-		HashMap<int, ObjectID> touch_focus;
 		Control* mouse_focus = nullptr;
 		Control* mouse_click_grabber = nullptr;
-		BitField<MouseButtonMask> mouse_focus_mask = MouseButtonMask::NONE;
+		uint32_t mouse_focus_mask = 0;
 		Control* key_focus = nullptr;
 		bool hide_focus = false;
-		ObjectID mouse_over;
-		LocalVector<ObjectID> mouse_over_hierarchy;
 		bool sending_mouse_enter_exit_notifications = false;
 		Window* subwindow_over = nullptr; // mouse_over and subwindow_over are mutually exclusive.
 										  // At all times at least one of them is nullptr.
@@ -414,15 +408,12 @@ private:
 		Point2 last_mouse_pos;
 		Point2 drag_accum;
 		bool drag_attempted = false;
-		Variant drag_data; // Only used in root-Viewport and SubViewports, that are not children of
-						   // a SubViewportContainer.
-		ObjectID drag_preview_id;
+		// a SubViewportContainer.
 		String drag_description;
 		Ref<SceneTreeTimer> tooltip_timer;
 		double tooltip_delay = 0.0;
 		bool roots_order_dirty = false;
 		List<Control*> roots;
-		HashSet<ObjectID> canvas_parents_with_dirty_order;
 		int canvas_sort_index = 0; // for sorting items with canvas as root
 		bool dragging =
 			false; // Is true in the viewport in which dragging started while dragging is active.
@@ -499,7 +490,6 @@ private:
 
 	void _gui_force_drag_start();
 	void _gui_force_drag_cancel();
-	void _gui_force_drag(Control* p_base, const Variant& p_data, Control* p_control);
 	void _gui_set_drag_preview(Control* p_base, Control* p_control);
 	Control* _gui_get_drag_preview();
 
@@ -566,7 +556,6 @@ protected:
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
 #endif
-	void _validate_property(PropertyInfo& p_property) const;
 
 public:
 	void canvas_parent_mark_dirty(Node* p_node);
@@ -691,7 +680,6 @@ public:
 	bool get_physics_object_picking_first_only();
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 
-	Variant gui_get_drag_data() const;
 	String gui_get_drag_description() const;
 	void gui_set_drag_description(const String& p_description);
 
@@ -769,7 +757,6 @@ public:
 
 	void set_embedding_subwindows(bool p_embed);
 	bool is_embedding_subwindows() const;
-	Array get_embedded_subwindows() const;
 	void subwindow_set_popup_safe_rect(Window* p_window, const Rect2i& p_rect);
 	Rect2i subwindow_get_popup_safe_rect(Window* p_window) const;
 
@@ -810,7 +797,6 @@ private:
 	{
 	private:
 		bool enabled = false;
-		ObjectID overridden_camera_id;
 
 	public:
 		bool is_enabled() const;
@@ -847,9 +833,7 @@ public:
 private:
 #ifndef PHYSICS_2D_DISABLED
 	// Collider to frame
-	HashMap<ObjectID, uint64_t> physics_2d_mouseover;
 	// Collider & shape to frame
-	HashMap<Pair<ObjectID, int>, uint64_t> physics_2d_shape_mouseover;
 	// Cleans up colliders corresponding to old frames or all of them.
 	void _cleanup_mouseover_colliders(
 		bool p_clean_all_frames, bool p_paused_only, uint64_t p_frame_reference = 0);
@@ -1001,25 +985,7 @@ public:
 
 	virtual bool is_sub_viewport() const override { return true; }
 
-	void _validate_property(PropertyInfo& p_property) const;
 	SubViewport();
 };
-
-VARIANT_ENUM_CAST(Viewport::Scaling3DMode);
-VARIANT_ENUM_CAST(SubViewport::UpdateMode);
-VARIANT_ENUM_CAST(Viewport::PositionalShadowAtlasQuadrantSubdiv);
-VARIANT_ENUM_CAST(Viewport::MSAA);
-VARIANT_ENUM_CAST(Viewport::AnisotropicFiltering);
-VARIANT_ENUM_CAST(Viewport::ScreenSpaceAA);
-VARIANT_ENUM_CAST(Viewport::DebugDraw);
-VARIANT_ENUM_CAST(Viewport::SDFScale);
-VARIANT_ENUM_CAST(Viewport::SDFOversize);
-VARIANT_ENUM_CAST(Viewport::VRSMode);
-VARIANT_ENUM_CAST(Viewport::VRSUpdateMode);
-VARIANT_ENUM_CAST(SubViewport::ClearMode);
-VARIANT_ENUM_CAST(Viewport::RenderInfo);
-VARIANT_ENUM_CAST(Viewport::RenderInfoType);
-VARIANT_ENUM_CAST(Viewport::DefaultCanvasItemTextureFilter);
-VARIANT_ENUM_CAST(Viewport::DefaultCanvasItemTextureRepeat);
 
 

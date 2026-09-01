@@ -224,7 +224,7 @@ void XRHandModifier3D::_process_modification(double p_delta)
 	Transform3D inv_transforms[XRHandTracker::HAND_JOINT_MAX];
 
 	for (int joint = 0; joint < XRHandTracker::HAND_JOINT_MAX; joint++) {
-		BitField<XRHandTracker::HandJointFlags> flags =
+		uint32_t flags =
 			tracker->get_hand_joint_flags((XRHandTracker::HandJoint)joint);
 		has_valid_data[joint] = flags.has_flag(XRHandTracker::HAND_JOINT_FLAG_ORIENTATION_VALID);
 

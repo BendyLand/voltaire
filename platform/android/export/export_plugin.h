@@ -244,7 +244,7 @@ public:
 
 	virtual String get_device_architecture(int p_index) const override;
 
-	virtual Error run(const Ref<EditorExportPreset> &p_preset, int p_device, BitField<EditorExportPlatform::DebugFlags> p_debug_flags) override;
+	virtual Error run(const Ref<EditorExportPreset> &p_preset, int p_device, uint32_t p_debug_flags) override;
 #endif // ANDROID_ENABLED
 
 	virtual Ref<Texture2D> get_run_icon() const override;
@@ -271,7 +271,7 @@ public:
 
 	bool _is_clean_build_required(const Ref<EditorExportPreset> &p_preset);
 
-	void get_command_line_flags(const Ref<EditorExportPreset> &p_preset, const String &p_path, BitField<EditorExportPlatform::DebugFlags> p_flags, Vector<uint8_t> &r_command_line_flags);
+	void get_command_line_flags(const Ref<EditorExportPreset> &p_preset, const String &p_path, uint32_t &r_command_line_flags);
 
 	Error sign_apk(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &export_path, EditorProgress &ep);
 
@@ -282,9 +282,9 @@ public:
 	static String join_list(const List<String> &p_parts, const String &p_separator);
 	static String join_abis(const Vector<ABI> &p_parts, const String &p_separator, bool p_use_arch);
 
-	virtual Error export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0, bool p_notify = true) override;
+	virtual Error export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, uint32_t p_flags = 0, bool p_notify = true) override;
 
-	Error export_project_helper(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, int export_format, bool should_sign, BitField<EditorExportPlatform::DebugFlags> p_flags);
+	Error export_project_helper(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, int export_format, bool should_sign, uint32_t p_flags);
 
 	virtual void get_platform_features(List<String> *r_features) const override;
 

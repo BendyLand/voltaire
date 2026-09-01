@@ -130,8 +130,8 @@ void Container::fit_child_in_rect(Control* rp_child, const Rect2& p_rect)
 	Size2 desired_size = rp_child->get_bound_desired_size();
 	Size2 maxsize = rp_child->get_combined_maximum_size();
 	Rect2 r = p_rect;
-	BitField<SizeFlags> h_size_flags = rp_child->get_h_size_flags();
-	BitField<SizeFlags> v_size_flags = rp_child->get_v_size_flags();
+	uint32_tget_h_size_flags();
+	uint32_tget_v_size_flags();
 
 	if (!h_size_flags.has_flag(SIZE_FILL)) {
 		float final_width = minsize.width;

@@ -62,7 +62,7 @@ Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportP
 }
 
 Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags,
+	bool p_debug, const String& p_path, uint32_t p_flags,
 	bool p_notify)
 {
 	String custom_debug = p_preset->obj->get("custom_template/debug");
@@ -539,7 +539,7 @@ void EditorExportPlatformLinuxBSD::cleanup()
 }
 
 Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset>& p_preset, int p_device,
-	BitField<EditorExportPlatform::DebugFlags> p_debug_flags)
+	uint32_t p_debug_flags)
 {
 	cleanup();
 	if (p_device) { // Stop command, cleanup only.

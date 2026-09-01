@@ -36,8 +36,6 @@ class DependencyRemoveDialog;
 
 class EditorFileDialog : public FileDialog
 {
-	VLTRCLASS(EditorFileDialog, FileDialog);
-
 	DependencyRemoveDialog* dependency_remove_dialog = nullptr;
 
 protected:
@@ -50,7 +48,6 @@ protected:
 	virtual Vector2i _get_list_mode_icon_size() const override;
 
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
 	void _notification(int p_what);
 
 public:

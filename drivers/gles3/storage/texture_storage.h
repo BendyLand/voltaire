@@ -562,8 +562,6 @@ public:
 	virtual void texture_proxy_update(RID p_proxy, RID p_base) override;
 	void texture_remap_proxies(RID p_from_texture, RID p_to_texture);
 
-	virtual void texture_drawable_blit_rect(const TypedArray<RID> &p_textures, const Rect2i &p_rect, RID p_material, const Color &p_modulate, const TypedArray<RID> &p_source_textures, int p_to_mipmap) override;
-
 	Ref<Image> texture_2d_placeholder;
 	Vector<Ref<Image>> texture_2d_array_placeholder;
 	Vector<Ref<Image>> cubemap_placeholder;

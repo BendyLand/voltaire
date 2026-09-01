@@ -58,7 +58,7 @@ void Label::set_autowrap_mode(TextServer::AutowrapMode p_mode)
 
 TextServer::AutowrapMode Label::get_autowrap_mode() const { return autowrap_mode; }
 
-void Label::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags)
+void Label::set_autowrap_trim_flags(uint32_t p_flags)
 {
 	if (autowrap_flags_trim == (p_flags & TextServer::BREAK_TRIM_MASK)) {
 		return;
@@ -77,12 +77,12 @@ void Label::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags)
 	update_desired_size();
 }
 
-BitField<TextServer::LineBreakFlag> Label::get_autowrap_trim_flags() const
+uint32_t Label::get_autowrap_trim_flags() const
 {
 	return autowrap_flags_trim;
 }
 
-void Label::set_justification_flags(BitField<TextServer::JustificationFlag> p_flags)
+void Label::set_justification_flags(uint32_t p_flags)
 {
 	if (jst_flags == p_flags) {
 		return;
@@ -95,7 +95,7 @@ void Label::set_justification_flags(BitField<TextServer::JustificationFlag> p_fl
 	queue_redraw();
 }
 
-BitField<TextServer::JustificationFlag> Label::get_justification_flags() const { return jst_flags; }
+uint32_t Label::get_justification_flags() const { return jst_flags; }
 
 void Label::set_uppercase(bool p_uppercase)
 {
@@ -239,7 +239,7 @@ void Label::_shape() const
 			}
 			para.lines_rid.clear();
 
-			BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY;
+			uint32_t autowrap_flags = TextServer::BREAK_MANDATORY;
 			switch (autowrap_mode) {
 			case TextServer::AUTOWRAP_WORD_SMART:
 				autowrap_flags = TextServer::BREAK_WORD_BOUND | TextServer::BREAK_ADAPTIVE |
@@ -297,12 +297,12 @@ void Label::_shape() const
 		}
 
 		if (para.lines_dirty) {
-			BitField<TextServer::TextOverrunFlag> overrun_flags =
+			uint32_t overrun_flags =
 				TextServer::get_overrun_flags_from_behavior(overrun_behavior);
 
 			// Fill after min_size calculation.
 
-			BitField<TextServer::JustificationFlag> line_jst_flags = jst_flags;
+			uint32_t line_jst_flags = jst_flags;
 			if (!tab_stops.is_empty()) {
 				line_jst_flags.set_flag(TextServer::JUSTIFICATION_AFTER_LAST_TAB);
 			}

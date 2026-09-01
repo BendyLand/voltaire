@@ -31,11 +31,9 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
-#include "core/object/class_db.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/string/locales.h"
-#include "core/variant/typed_array.h"
 #include "translation_server.compat.inc"
 #include "translation_server.h"
 
@@ -530,11 +528,6 @@ void TranslationServer::set_locale(const String& p_locale)
 
 	locale = new_locale;
 	ResourceLoader::reload_translation_remaps();
-
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->obj->notification(
-			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
-	}
 }
 
 String TranslationServer::get_locale() const { return locale; }
@@ -581,17 +574,6 @@ Ref<Translation> TranslationServer::get_translation_object(const String& p_local
 	return main_domain->get_translation_object(p_locale);
 }
 #endif
-
-Array TranslationServer::get_translations() const
-{
-	return main_domain->get_translations_bind();
-}
-
-Array TranslationServer::find_translations(
-	const String& p_locale, bool p_exact) const
-{
-	return main_domain->find_translations_bind(p_locale, p_exact);
-}
 
 bool TranslationServer::has_translation(const Ref<Translation>& p_translation) const
 {
@@ -648,46 +630,6 @@ void TranslationServer::remove_domain(const StringName& p_domain)
 	custom_domains.erase(p_domain);
 }
 
-void TranslationServer::setup()
-{
-	String test = GLOBAL_DEF("internationalization/locale/test", "");
-	test = test.strip_edges();
-	if (!test.is_empty()) {
-		set_locale(test);
-	}
-	else {
-		set_locale(OS::get_singleton()->get_locale());
-	}
-
-	fallback = GLOBAL_DEF("internationalization/locale/fallback", "en");
-	allow_fallback = GLOBAL_DEF("internationalization/locale/allow_fallback", true);
-	main_domain->set_pseudolocalization_enabled(
-		GLOBAL_DEF("internationalization/pseudolocalization/use_pseudolocalization", false));
-	main_domain->set_pseudolocalization_accents_enabled(
-		GLOBAL_DEF("internationalization/pseudolocalization/replace_with_accents", true));
-	main_domain->set_pseudolocalization_double_vowels_enabled(
-		GLOBAL_DEF("internationalization/pseudolocalization/double_vowels", false));
-	main_domain->set_pseudolocalization_fake_bidi_enabled(
-		GLOBAL_DEF("internationalization/pseudolocalization/fake_bidi", false));
-	main_domain->set_pseudolocalization_override_enabled(
-		GLOBAL_DEF("internationalization/pseudolocalization/override", false));
-	main_domain->set_pseudolocalization_expansion_ratio(
-		GLOBAL_DEF("internationalization/pseudolocalization/expansion_ratio", 0.0));
-	main_domain->set_pseudolocalization_prefix(
-		GLOBAL_DEF("internationalization/pseudolocalization/prefix", "["));
-	main_domain->set_pseudolocalization_suffix(
-		GLOBAL_DEF("internationalization/pseudolocalization/suffix", "]"));
-	main_domain->set_pseudolocalization_skip_placeholders_enabled(
-		GLOBAL_DEF("internationalization/pseudolocalization/skip_placeholders", true));
-
-#ifdef TOOLS_ENABLED
-	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(
-		Variant::STRING, "internationalization/locale/test", PROPERTY_HINT_LOCALE_ID, ""));
-	ProjectSettings::get_singleton()->set_custom_property_info(PropertyInfo(
-		Variant::STRING, "internationalization/locale/fallback", PROPERTY_HINT_LOCALE_ID, ""));
-#endif
-}
-
 String TranslationServer::get_tool_locale()
 {
 #ifdef TOOLS_ENABLED
@@ -726,71 +668,12 @@ void TranslationServer::set_pseudolocalization_enabled(bool p_enabled)
 	main_domain->set_pseudolocalization_enabled(p_enabled);
 
 	ResourceLoader::reload_translation_remaps();
-
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->obj->notification(
-			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
-	}
-}
-
-void TranslationServer::reload_pseudolocalization()
-{
-	main_domain->set_pseudolocalization_accents_enabled(
-		GLOBAL_GET("internationalization/pseudolocalization/replace_with_accents"));
-	main_domain->set_pseudolocalization_double_vowels_enabled(
-		GLOBAL_GET("internationalization/pseudolocalization/double_vowels"));
-	main_domain->set_pseudolocalization_fake_bidi_enabled(
-		GLOBAL_GET("internationalization/pseudolocalization/fake_bidi"));
-	main_domain->set_pseudolocalization_override_enabled(
-		GLOBAL_GET("internationalization/pseudolocalization/override"));
-	main_domain->set_pseudolocalization_expansion_ratio(
-		GLOBAL_GET("internationalization/pseudolocalization/expansion_ratio"));
-	main_domain->set_pseudolocalization_prefix(
-		GLOBAL_GET("internationalization/pseudolocalization/prefix"));
-	main_domain->set_pseudolocalization_suffix(
-		GLOBAL_GET("internationalization/pseudolocalization/suffix"));
-	main_domain->set_pseudolocalization_skip_placeholders_enabled(
-		GLOBAL_GET("internationalization/pseudolocalization/skip_placeholders"));
-
-	ResourceLoader::reload_translation_remaps();
-
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->obj->notification(
-			MainLoop::NOTIFICATION_TRANSLATION_CHANGED);
-	}
 }
 
 StringName TranslationServer::pseudolocalize(const StringName& p_message) const
 {
 	return main_domain->pseudolocalize(p_message);
 }
-
-#ifdef TOOLS_ENABLED
-void TranslationServer::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
-{
-	const String pf = p_function;
-	if (p_idx == 0) {
-		HashMap<String, String>* target_hash_map = nullptr;
-		if (pf == "get_language_name") {
-			target_hash_map = &language_map;
-		}
-		else if (pf == "get_script_name") {
-			target_hash_map = &script_map;
-		}
-		else if (pf == "get_country_name") {
-			target_hash_map = &country_name_map;
-		}
-
-		if (target_hash_map) {
-			for (const KeyValue<String, String>& E : *target_hash_map) {
-				r_options->push_back(E.key.quote());
-			}
-		}
-	}
-	this->obj->get_argument_options(p_function, p_idx, r_options);
-}
-#endif // TOOLS_ENABLED
 
 void TranslationServer::_bind_methods() {}
 
@@ -802,14 +685,6 @@ void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domai
 	const String prop = "internationalization/locale/translations";
 	if (!ProjectSettings::get_singleton()->has_setting(prop)) {
 		return;
-	}
-	const Vector<String>& translations = GLOBAL_GET(prop);
-	for (const String& path : translations) {
-		Ref<Translation> tr = ResourceLoader::load(path);
-		if (tr.is_valid
-()) {
-			p_domain->add_translation(tr);
-		}
 	}
 }
 

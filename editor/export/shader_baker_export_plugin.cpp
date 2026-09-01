@@ -137,7 +137,7 @@ bool ShaderBakerExportPlugin::_begin_customize_resources(
 	to_hash.append(shader_cache_renderer_name);
 	customization_configuration_hash = to_hash.as_string().hash64();
 
-	BitField<RenderingShaderLibrary::FeatureBits> renderer_features = {};
+	uint32_t renderer_features = {};
 #ifndef XR_DISABLED
 	bool xr_enabled = GLOBAL_GET("xr/shaders/enabled");
 	renderer_features.set_flag(RenderingShaderLibrary::FEATURE_ADVANCED_BIT);

@@ -51,9 +51,9 @@ public:
 	};
 
 	struct CopyTransform3DSetting : public BoneConstraint3DSetting {
-		BitField<TransformFlag> copy_flags = TRANSFORM_FLAG_ALL;
-		BitField<AxisFlag> axis_flags = AXIS_FLAG_ALL;
-		BitField<AxisFlag> invert_flags = 0;
+		uint32_t copy_flags = TRANSFORM_FLAG_ALL;
+		uint32_t axis_flags = AXIS_FLAG_ALL;
+		uint32_t invert_flags = 0;
 
 		bool relative = true;
 		bool additive = false;
@@ -80,8 +80,8 @@ protected:
 	virtual void _validate_setting(int p_index) override;
 
 public:
-	void set_copy_flags(int p_index, BitField<TransformFlag> p_copy_flags);
-	BitField<TransformFlag> get_copy_flags(int p_index) const;
+	void set_copy_flags(int p_index, uint32_t p_copy_flags);
+	uint32_t get_copy_flags(int p_index) const;
 
 	void set_copy_position(int p_index, bool p_enabled);
 	bool is_position_copying(int p_index) const;
@@ -90,8 +90,8 @@ public:
 	void set_copy_scale(int p_index, bool p_enabled);
 	bool is_scale_copying(int p_index) const;
 
-	void set_axis_flags(int p_index, BitField<AxisFlag> p_axis_flags);
-	BitField<AxisFlag> get_axis_flags(int p_index) const;
+	void set_axis_flags(int p_index, uint32_t p_axis_flags);
+	uint32_t get_axis_flags(int p_index) const;
 
 	void set_axis_x_enabled(int p_index, bool p_enabled);
 	bool is_axis_x_enabled(int p_index) const;
@@ -100,8 +100,8 @@ public:
 	void set_axis_z_enabled(int p_index, bool p_enabled);
 	bool is_axis_z_enabled(int p_index) const;
 
-	void set_invert_flags(int p_index, BitField<AxisFlag> p_axis_flags);
-	BitField<AxisFlag> get_invert_flags(int p_index) const;
+	void set_invert_flags(int p_index, uint32_t p_axis_flags);
+	uint32_t get_invert_flags(int p_index) const;
 
 	void set_axis_x_inverted(int p_index, bool p_enabled);
 	bool is_axis_x_inverted(int p_index) const;

@@ -388,7 +388,7 @@ TypedArray<Array> ImmediateMesh::surface_get_blend_shape_arrays(int p_surface) c
 
 Dictionary ImmediateMesh::surface_get_lods(int p_surface) const { return Dictionary(); }
 
-BitField<Mesh::ArrayFormat> ImmediateMesh::surface_get_format(int p_idx) const
+uint32_t ImmediateMesh::surface_get_format(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, int(surfaces.size()), 0);
 	return surfaces[p_idx].format;

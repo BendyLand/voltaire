@@ -417,7 +417,7 @@ float NavigationAgent3D::get_path_search_max_distance() const { return path_sear
 float NavigationAgent3D::get_path_length() const { return navigation_result->get_path_length(); }
 
 void NavigationAgent3D::set_path_metadata_flags(
-	BitField<NavigationPathQueryParameters3D::PathMetadataFlags> p_path_metadata_flags)
+	uint32_t p_path_metadata_flags)
 {
 	if (path_metadata_flags == p_path_metadata_flags) {
 		return;

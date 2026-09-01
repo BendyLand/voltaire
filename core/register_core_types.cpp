@@ -30,12 +30,10 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/core_bind.h"
 #include "core/crypto/aes_context.h"
 #include "core/crypto/crypto.h"
 #include "core/crypto/crypto_resource_format.h"
 #include "core/crypto/hashing_context.h"
-#include "core/debugger/engine_profiler.h"
 #include "core/input/input.h"
 #include "core/input/input_map.h"
 #include "core/input/shortcut.h"
@@ -70,10 +68,6 @@
 #include "core/math/expression.h"
 #include "core/math/random_number_generator.h"
 #include "core/math/triangle_mesh.h"
-#include "core/object/class_db.h"
-#include "core/object/script_backtrace.h"
-#include "core/object/undo_redo.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
@@ -98,19 +92,9 @@ static Ref<ResourceFormatSaverJSON> resource_saver_json;
 static Ref<ResourceFormatLoaderJSON> resource_loader_json;
 
 static CoreBind::ResourceLoader* _resource_loader = nullptr;
-static CoreBind::ResourceSaver* _resource_saver = nullptr;
-static CoreBind::OS* _os = nullptr;
-static CoreBind::Engine* _engine = nullptr;
-static CoreBind::Marshalls* _marshalls = nullptr;
-static CoreBind::EngineDebugger* _engine_debugger = nullptr;
 
 static IP* ip = nullptr;
 static Time* _time = nullptr;
-
-static CoreBind::Geometry2D* _geometry_2d = nullptr;
-static CoreBind::Geometry3D* _geometry_3d = nullptr;
-
-static WorkerThreadPool* worker_thread_pool = nullptr;
 
 extern Mutex _global_mutex;
 
@@ -125,20 +109,13 @@ void register_core_types()
 {
 	OS::get_singleton()->benchmark_begin_measure("Core", "Register Types");
 
-	// consistency check
-	static_assert(sizeof(Callable) <= 16);
-
 	CryptoCore::initialize();
 
-	ObjectDB::setup();
 	StringName::setup();
 	register_global_constants();
-	CoreStringNames::create();
 
 	_time = memnew(Time);
 	ResourceLoader::initialize();
-
-	Variant::register_types();
 
 	resource_format_po.instantiate();
 	ResourceLoader::add_resource_format_loader(resource_format_po);
@@ -176,81 +153,14 @@ void register_core_types()
 
 	ip = IP::create();
 
-	_geometry_2d = memnew(CoreBind::Geometry2D);
-	_geometry_3d = memnew(CoreBind::Geometry3D);
-
-	_resource_loader = memnew(CoreBind::ResourceLoader);
-	_resource_saver = memnew(CoreBind::ResourceSaver);
-	_os = memnew(CoreBind::OS);
-	_engine = memnew(CoreBind::Engine);
-	_marshalls = memnew(CoreBind::Marshalls);
-	_engine_debugger = memnew(CoreBind::EngineDebugger);
-
-	worker_thread_pool = memnew(WorkerThreadPool);
-
 	OS::get_singleton()->benchmark_end_measure("Core", "Register Types");
 }
 
-void register_core_settings()
-{
-	// Since in register core types, globals may not be present.
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "network/limits/tcp/connect_timeout_seconds",
-				   PROPERTY_HINT_RANGE, "1,1800,1"),
-		(30));
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "network/limits/unix/connect_timeout_seconds",
-				   PROPERTY_HINT_RANGE, "1,1800,1"),
-		(30));
-	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "network/limits/packet_peer_stream/max_buffer_po2",
-					   PROPERTY_HINT_RANGE, "8,64,1,or_greater"),
-		(16));
-	GLOBAL_DEF(PropertyInfo(Variant::STRING, "network/tls/certificate_bundle_override",
-				   PROPERTY_HINT_FILE, "*.crt"),
-		"");
+void register_core_settings() {}
 
-	GLOBAL_DEF("threading/worker_pool/max_threads", -1);
-	GLOBAL_DEF("threading/worker_pool/low_priority_thread_ratio", 0.3);
-}
+void register_early_core_singletons() {}
 
-void register_early_core_singletons()
-{
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Engine", CoreBind::Engine::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("ProjectSettings", ProjectSettings::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("OS", CoreBind::OS::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("Time", Time::get_singleton()->obj.get()));
-}
-
-void register_core_singletons()
-{
-	OS::get_singleton()->benchmark_begin_measure("Core", "Register Singletons");
-
-	Engine::get_singleton()->add_singleton(Engine::Singleton("IP", IP::get_singleton()->obj.get(), "IP"));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Geometry2D", CoreBind::Geometry2D::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Geometry3D", CoreBind::Geometry3D::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("ResourceLoader", CoreBind::ResourceLoader::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("ResourceSaver", CoreBind::ResourceSaver::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Marshalls", CoreBind::Marshalls::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("TranslationServer", TranslationServer::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("Input", Input::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("InputMap", InputMap::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("EngineDebugger", CoreBind::EngineDebugger::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("ResourceUID", ResourceUID::get_singleton()->obj.get()));
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("WorkerThreadPool", worker_thread_pool->obj.get()));
-
-	OS::get_singleton()->benchmark_end_measure("Core", "Register Singletons");
-}
+void register_core_singletons() {}
 
 void register_core_extensions()
 {
@@ -268,74 +178,6 @@ void unregister_core_extensions()
 	OS::get_singleton()->benchmark_end_measure("Core", "Unregister Extensions");
 }
 
-void unregister_core_types()
-{
-	OS::get_singleton()->benchmark_begin_measure("Core", "Unregister Types");
-
-	// Destroy singletons in reverse order to ensure dependencies are not broken.
-
-	memdelete(worker_thread_pool);
-
-	memdelete(_engine_debugger);
-	memdelete(_marshalls);
-	memdelete(_engine);
-	memdelete(_os);
-	memdelete(_resource_saver);
-	memdelete(_resource_loader);
-
-	memdelete(_geometry_3d);
-	memdelete(_geometry_2d);
-
-	memdelete(resource_uid);
-
-	memdelete(ip);
-
-	ResourceLoader::remove_resource_format_loader(resource_format_image);
-	resource_format_image.unref();
-
-	ResourceSaver::remove_resource_format_saver(resource_saver_binary);
-	resource_saver_binary.unref();
-
-	ResourceLoader::remove_resource_format_loader(resource_loader_binary);
-	resource_loader_binary.unref();
-
-	ResourceLoader::remove_resource_format_loader(resource_format_importer);
-	resource_format_importer.unref();
-
-	ResourceSaver::remove_resource_format_saver(resource_format_importer_saver);
-	resource_format_importer_saver.unref();
-
-	ResourceLoader::remove_resource_format_loader(resource_format_po);
-	resource_format_po.unref();
-
-	ResourceSaver::remove_resource_format_saver(resource_format_saver_crypto);
-	resource_format_saver_crypto.unref();
-
-	ResourceLoader::remove_resource_format_loader(resource_format_loader_crypto);
-	resource_format_loader_crypto.unref();
-
-	ResourceSaver::remove_resource_format_saver(resource_saver_json);
-	resource_saver_json.unref();
-
-	ResourceLoader::remove_resource_format_loader(resource_loader_json);
-	resource_loader_json.unref();
-
-	ResourceLoader::finalize();
-
-	memdelete(_time);
-	ObjectDB::cleanup();
-
-	CryptoCore::finalize();
-
-	Variant::unregister_types();
-
-	unregister_global_constants();
-
-	ResourceCache::clear();
-	CoreStringNames::free();
-	StringName::cleanup();
-
-	OS::get_singleton()->benchmark_end_measure("Core", "Unregister Types");
-}
+void unregister_core_types() {}
 
 

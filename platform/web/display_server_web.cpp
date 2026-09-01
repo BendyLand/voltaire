@@ -289,7 +289,7 @@ int DisplayServerWeb::_mouse_button_callback(int p_pressed, int p_button, double
 		}
 	}
 
-	BitField<MouseButtonMask> mask = Input::get_singleton()->get_mouse_button_mask();
+	uint32_tget_mouse_button_mask();
 	MouseButtonMask button_flag = mouse_button_to_mask(ev->get_button_index());
 	if (ev->is_pressed()) {
 		mask.set_flag(button_flag);
@@ -325,7 +325,7 @@ void DisplayServerWeb::mouse_move_callback(double p_x, double p_y, double p_rel_
 }
 
 void DisplayServerWeb::_mouse_move_callback(double p_x, double p_y, double p_rel_x, double p_rel_y, int p_modifiers, double p_pressure) {
-	BitField<MouseButtonMask> input_mask = Input::get_singleton()->get_mouse_button_mask();
+	uint32_tget_mouse_button_mask();
 	// For motion outside the canvas, only read mouse movement if dragging
 	// started inside the canvas; imitating desktop app behavior.
 	if (!get_singleton()->cursor_inside_canvas && input_mask.is_empty()) {
@@ -712,7 +712,7 @@ int DisplayServerWeb::_mouse_wheel_callback(int p_delta_mode, double p_delta_x, 
 	}
 
 	MouseButtonMask button_flag = mouse_button_to_mask(ev->get_button_index());
-	BitField<MouseButtonMask> button_mask = input->get_mouse_button_mask();
+	uint32_tget_mouse_button_mask();
 	button_mask.set_flag(button_flag);
 
 	ev->set_pressed(true);

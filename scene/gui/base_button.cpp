@@ -448,9 +448,9 @@ void BaseButton::set_action_mode(ActionMode p_mode) { action_mode = p_mode; }
 
 BaseButton::ActionMode BaseButton::get_action_mode() const { return action_mode; }
 
-void BaseButton::set_button_mask(BitField<MouseButtonMask> p_mask) { button_mask = p_mask; }
+void BaseButton::set_button_mask(uint32_t p_mask) { button_mask = p_mask; }
 
-BitField<MouseButtonMask> BaseButton::get_button_mask() const { return button_mask; }
+uint32_t BaseButton::get_button_mask() const { return button_mask; }
 
 void BaseButton::set_keep_pressed_outside(bool p_on) { keep_pressed_outside = p_on; }
 

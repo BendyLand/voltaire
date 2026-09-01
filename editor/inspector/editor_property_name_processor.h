@@ -32,10 +32,9 @@
 
 #include "scene/main/node.h"
 
-class EditorPropertyNameProcessor : public Node {
-	VLTRCLASS(EditorPropertyNameProcessor, Node);
-
-	static EditorPropertyNameProcessor *singleton;
+class EditorPropertyNameProcessor : public Node
+{
+	static EditorPropertyNameProcessor* singleton;
 
 	mutable HashMap<String, String> capitalize_string_cache;
 	HashMap<String, String> capitalize_string_remaps;
@@ -44,20 +43,22 @@ class EditorPropertyNameProcessor : public Node {
 	HashMap<String, HashMap<String, StringName>> translation_contexts;
 
 	// Capitalizes property path segments.
-	String _capitalize_name(const String &p_name) const;
+	String _capitalize_name(const String& p_name) const;
 
 	// Returns the translation context for the given name.
-	StringName _get_context(const String &p_name, const String &p_property, const StringName &p_class) const;
+	StringName _get_context(
+		const String& p_name, const String& p_property, const StringName& p_class) const;
 
 public:
 	// Matches `interface/inspector/default_property_name_style` editor setting.
-	enum Style {
+	enum Style
+	{
 		STYLE_RAW,
 		STYLE_CAPITALIZED,
 		STYLE_LOCALIZED,
 	};
 
-	static EditorPropertyNameProcessor *get_singleton() { return singleton; }
+	static EditorPropertyNameProcessor* get_singleton() { return singleton; }
 
 	static Style get_default_inspector_style();
 	static Style get_settings_style();
@@ -66,12 +67,16 @@ public:
 	static bool is_localization_available();
 
 	// Turns property path segment into the given style.
-	// `p_class` and `p_property` are only used for `STYLE_LOCALIZED`, associating the name with a translation context.
-	String process_name(const String &p_name, Style p_style, const String &p_property = "", const StringName &p_class = "") const;
+	// `p_class` and `p_property` are only used for `STYLE_LOCALIZED`, associating the name with a
+	// translation context.
+	String process_name(const String& p_name, Style p_style, const String& p_property = "",
+		const StringName& p_class = "") const;
 
 	// Translate plain text group names.
-	String translate_group_name(const String &p_name) const;
+	String translate_group_name(const String& p_name) const;
 
 	EditorPropertyNameProcessor();
 	~EditorPropertyNameProcessor();
 };
+
+

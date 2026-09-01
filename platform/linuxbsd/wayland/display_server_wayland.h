@@ -150,7 +150,7 @@ class DisplayServerWayland : public DisplayServer
 	// all input thx" windows while the `popup_stack` variable keeps track of all the generic
 	// floating window concept.
 	List<DisplayServerEnums::WindowID> popup_menu_list;
-	BitField<MouseButtonMask> last_mouse_monitor_mask = MouseButtonMask::NONE;
+	uint32_t last_mouse_monitor_mask = MouseButtonMask::NONE;
 	bool last_touch_monitor_pressed = false;
 
 	String ime_text;
@@ -247,7 +247,7 @@ public:
 
 	virtual void warp_mouse(const Point2i& p_to) override;
 	virtual Point2i mouse_get_position() const override;
-	virtual BitField<MouseButtonMask> mouse_get_button_state() const override;
+	virtual uint32_t mouse_get_button_state() const override;
 
 	virtual void clipboard_set(const String& p_text) override;
 	virtual String clipboard_get() const override;

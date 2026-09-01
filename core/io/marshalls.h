@@ -227,10 +227,6 @@ class EncodedObjectAsID : public RefCounted
 {
 protected:
 	static void _bind_methods();
-
-public:
-	void set_object_id(ObjectID p_id);
-	ObjectID get_object_id() const;
 };
 
 Vector<float> vector3_to_float32_array(const Vector3* p_vecs, size_t p_count);

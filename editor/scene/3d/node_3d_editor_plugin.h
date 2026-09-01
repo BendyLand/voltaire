@@ -34,7 +34,6 @@
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "editor/scene/3d/node_3d_editor_viewport.h"
-#include "scene/debugger/view_3d_controller.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/popup.h"
 
@@ -58,13 +57,13 @@ class VSeparator;
 class VSplitContainer;
 class WorldEnvironment;
 
-class Node3DEditor : public VBoxContainer {
-	VLTRCLASS(Node3DEditor, VBoxContainer);
-
+class Node3DEditor : public VBoxContainer
+{
 public:
 	static const unsigned int VIEWPORTS_COUNT = 4;
 
-	enum ToolMode {
+	enum ToolMode
+	{
 		TOOL_MODE_TRANSFORM,
 		TOOL_MODE_MOVE,
 		TOOL_MODE_ROTATE,
@@ -79,7 +78,8 @@ public:
 		TOOL_MAX
 	};
 
-	enum ToolOptions {
+	enum ToolOptions
+	{
 		TOOL_OPT_LOCAL_COORDS,
 		TOOL_OPT_USE_SNAP,
 		TOOL_OPT_USE_TRACKBALL,
@@ -87,7 +87,8 @@ public:
 		TOOL_OPT_MAX
 	};
 
-	enum TransformMode {
+	enum TransformMode
+	{
 		TRANSFORM_MODE_GLOBAL = 1,
 		TRANSFORM_MODE_LOCAL = 2,
 	};
@@ -95,15 +96,15 @@ public:
 	real_t gizmo_view_rotation_scale = 1.0;
 
 private:
-	EditorSelection *editor_selection = nullptr;
+	EditorSelection* editor_selection = nullptr;
 
-	Node3DEditorViewportContainer *viewport_base = nullptr;
-	Node3DEditorViewport *viewports[VIEWPORTS_COUNT];
+	Node3DEditorViewportContainer* viewport_base = nullptr;
+	Node3DEditorViewport* viewports[VIEWPORTS_COUNT];
 	int last_used_viewport = 0;
 
-	VSplitContainer *shader_split = nullptr;
-	HSplitContainer *left_panel_split = nullptr;
-	HSplitContainer *right_panel_split = nullptr;
+	VSplitContainer* shader_split = nullptr;
+	HSplitContainer* left_panel_split = nullptr;
+	HSplitContainer* right_panel_split = nullptr;
 
 	/////
 
@@ -115,14 +116,15 @@ private:
 	bool origin_enabled = false;
 	RID grid[3];
 	RID grid_instance[3];
-	bool grid_visible[3] = { false, false, false }; //currently visible
-	bool grid_enable[3] = { false, false, false }; //should be always visible if true
+	bool grid_visible[3] = {false, false, false}; // currently visible
+	bool grid_enable[3] = {false, false, false};  // should be always visible if true
 	bool grid_enabled = false;
 	bool grid_init_draw = false;
 	Camera3D::ProjectionType grid_camera_last_update_perspective = Camera3D::PROJECTION_PERSPECTIVE;
 	Vector3 grid_camera_last_update_position;
 
-	Ref<ArrayMesh> move_gizmo[3], move_plane_gizmo[3], rotate_gizmo[4], scale_gizmo[3], scale_plane_gizmo[3], axis_gizmo[3];
+	Ref<ArrayMesh> move_gizmo[3], move_plane_gizmo[3], rotate_gizmo[4], scale_gizmo[3],
+		scale_plane_gizmo[3], axis_gizmo[3];
 	Ref<ArrayMesh> trackball_sphere_gizmo;
 	Ref<StandardMaterial3D> gizmo_color[3];
 	Ref<StandardMaterial3D> plane_gizmo_color[3];
@@ -162,21 +164,22 @@ private:
 	Ref<StandardMaterial3D> cursor_material;
 
 	// Scene drag and drop support
-	Node3D *preview_node = nullptr;
+	Node3D* preview_node = nullptr;
 	AABB preview_bounds;
 
 	Ref<Material> preview_material;
 	Ref<Material> preview_reset_material;
-	ObjectID preview_material_target;
 	int preview_material_surface = -1;
 
-	struct Gizmo {
+	struct Gizmo
+	{
 		bool visible = false;
 		real_t scale = 0;
 		Transform3D transform;
 	} gizmo;
 
-	enum MenuOption {
+	enum MenuOption
+	{
 		MENU_TOOL_TRANSFORM,
 		MENU_TOOL_MOVE,
 		MENU_TOOL_ROTATE,
@@ -211,38 +214,38 @@ private:
 		MENU_VERTEX_SNAP_SOURCE_COLLISION,
 	};
 
-	Button *tool_button[TOOL_MAX];
-	Button *tool_option_button[TOOL_OPT_MAX];
+	Button* tool_button[TOOL_MAX];
+	Button* tool_option_button[TOOL_OPT_MAX];
 
-	MenuButton *transform_menu = nullptr;
-	PopupMenu *gizmos_menu = nullptr;
-	MenuButton *view_layout_menu = nullptr;
+	MenuButton* transform_menu = nullptr;
+	PopupMenu* gizmos_menu = nullptr;
+	MenuButton* view_layout_menu = nullptr;
 
-	AcceptDialog *accept = nullptr;
+	AcceptDialog* accept = nullptr;
 
-	ConfirmationDialog *snap_dialog = nullptr;
-	ConfirmationDialog *xform_dialog = nullptr;
-	ConfirmationDialog *settings_dialog = nullptr;
+	ConfirmationDialog* snap_dialog = nullptr;
+	ConfirmationDialog* xform_dialog = nullptr;
+	ConfirmationDialog* settings_dialog = nullptr;
 
 	bool snap_enabled = false;
 	bool snap_key_enabled = false;
 	bool vertex_snap_origin_mode = false;
 	bool vertex_snap_use_collision = false;
-	EditorSpinSlider *snap_translate = nullptr;
-	EditorSpinSlider *snap_rotate = nullptr;
-	EditorSpinSlider *snap_scale = nullptr;
+	EditorSpinSlider* snap_translate = nullptr;
+	EditorSpinSlider* snap_rotate = nullptr;
+	EditorSpinSlider* snap_scale = nullptr;
 
 	bool trackball_enabled = false;
 
-	LineEdit *xform_translate[3];
-	LineEdit *xform_rotate[3];
-	LineEdit *xform_scale[3];
-	OptionButton *xform_type = nullptr;
+	LineEdit* xform_translate[3];
+	LineEdit* xform_rotate[3];
+	LineEdit* xform_scale[3];
+	OptionButton* xform_type = nullptr;
 
-	VBoxContainer *settings_vbc = nullptr;
-	SpinBox *settings_fov = nullptr;
-	SpinBox *settings_znear = nullptr;
-	SpinBox *settings_zfar = nullptr;
+	VBoxContainer* settings_vbc = nullptr;
+	SpinBox* settings_fov = nullptr;
+	SpinBox* settings_znear = nullptr;
+	SpinBox* settings_zfar = nullptr;
 
 	void _snap_changed();
 	void _snap_update();
@@ -253,9 +256,9 @@ private:
 	void _menu_gizmo_toggled(int p_option);
 	// Used for secondary menu items which are displayed depending on the currently selected node
 	// (such as MeshInstance's "Mesh" menu).
-	PanelContainer *context_toolbar_panel = nullptr;
-	HBoxContainer *context_toolbar_hbox = nullptr;
-	HashMap<Control *, VSeparator *> context_toolbar_separators;
+	PanelContainer* context_toolbar_panel = nullptr;
+	HBoxContainer* context_toolbar_hbox = nullptr;
+	HashMap<Control*, VSeparator*> context_toolbar_separators;
 
 	void _update_context_toolbar();
 
@@ -268,30 +271,22 @@ private:
 	void _finish_indicators();
 	void _finish_grid();
 
-	void _toggle_maximize_view(Object *p_viewport);
 	void _viewport_clicked(int p_viewport_idx);
 
-	Node *custom_camera = nullptr;
-
-	Node3DEditorSelectedItem* _get_editor_data(Object* p_what);
+	Node* custom_camera = nullptr;
 
 	Ref<Environment> viewport_environment;
 
-	Node3D *selected = nullptr;
+	Node3D* selected = nullptr;
 
-	Node3DEditorViewport *freelook_viewport = nullptr;
-
-	void _request_gizmo(Object *p_obj);
-	void _request_gizmo_for_id(ObjectID p_id);
-	void _set_subgizmo_selection(Object *p_obj, Ref<Node3DGizmo> p_gizmo, int p_id, Transform3D p_transform = Transform3D());
-	void _clear_subgizmo_selection(Object *p_obj = nullptr);
+	Node3DEditorViewport* freelook_viewport = nullptr;
 
 	bool gizmos_dirty = false;
 
-	static Node3DEditor *singleton;
+	static Node3DEditor* singleton;
 
-	void _node_added(Node *p_node);
-	void _node_removed(Node *p_node);
+	void _node_added(Node* p_node);
+	void _node_removed(Node* p_node);
 	Vector<Ref<EditorNode3DGizmoPlugin>> gizmo_plugins_by_priority;
 	Vector<Ref<EditorNode3DGizmoPlugin>> gizmo_plugins_by_name;
 
@@ -303,54 +298,45 @@ private:
 	bool do_snap_selected_nodes_to_floor = false;
 	void _snap_selected_nodes_to_floor();
 
-	// Preview Sun and Environment
-
-	class PreviewSunEnvPopup : public PopupPanel {
-		VLTRCLASS(PreviewSunEnvPopup, PopupPanel);
-
-	protected:
-		virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
-	};
-
 	uint32_t world_env_count = 0;
 	uint32_t directional_light_count = 0;
 
-	Button *sun_button = nullptr;
-	Label *sun_state = nullptr;
-	Label *sun_title = nullptr;
-	VBoxContainer *sun_vb = nullptr;
-	Popup *sun_environ_popup = nullptr;
-	Control *sun_direction = nullptr;
-	EditorSpinSlider *sun_angle_altitude = nullptr;
-	EditorSpinSlider *sun_angle_azimuth = nullptr;
-	ColorPickerButton *sun_color = nullptr;
-	EditorSpinSlider *sun_energy = nullptr;
-	EditorSpinSlider *sun_shadow_max_distance = nullptr;
-	Button *sun_add_to_scene = nullptr;
+	Button* sun_button = nullptr;
+	Label* sun_state = nullptr;
+	Label* sun_title = nullptr;
+	VBoxContainer* sun_vb = nullptr;
+	Popup* sun_environ_popup = nullptr;
+	Control* sun_direction = nullptr;
+	EditorSpinSlider* sun_angle_altitude = nullptr;
+	EditorSpinSlider* sun_angle_azimuth = nullptr;
+	ColorPickerButton* sun_color = nullptr;
+	EditorSpinSlider* sun_energy = nullptr;
+	EditorSpinSlider* sun_shadow_max_distance = nullptr;
+	Button* sun_add_to_scene = nullptr;
 
 	Vector2 sun_rotation;
 
 	Ref<Shader> sun_direction_shader;
 	Ref<ShaderMaterial> sun_direction_material;
 
-	Button *environ_button = nullptr;
-	Label *environ_state = nullptr;
-	Label *environ_title = nullptr;
-	VBoxContainer *environ_vb = nullptr;
-	ColorPickerButton *environ_sky_color = nullptr;
-	ColorPickerButton *environ_ground_color = nullptr;
-	EditorSpinSlider *environ_energy = nullptr;
-	Button *environ_ao_button = nullptr;
-	Button *environ_glow_button = nullptr;
-	Button *environ_tonemap_button = nullptr;
-	Button *environ_gi_button = nullptr;
-	Button *environ_add_to_scene = nullptr;
+	Button* environ_button = nullptr;
+	Label* environ_state = nullptr;
+	Label* environ_title = nullptr;
+	VBoxContainer* environ_vb = nullptr;
+	ColorPickerButton* environ_sky_color = nullptr;
+	ColorPickerButton* environ_ground_color = nullptr;
+	EditorSpinSlider* environ_energy = nullptr;
+	Button* environ_ao_button = nullptr;
+	Button* environ_glow_button = nullptr;
+	Button* environ_tonemap_button = nullptr;
+	Button* environ_gi_button = nullptr;
+	Button* environ_add_to_scene = nullptr;
 
-	Button *sun_environ_settings = nullptr;
+	Button* sun_environ_settings = nullptr;
 
-	DirectionalLight3D *preview_sun = nullptr;
+	DirectionalLight3D* preview_sun = nullptr;
 	bool preview_sun_dangling = false;
-	WorldEnvironment *preview_environment = nullptr;
+	WorldEnvironment* preview_environment = nullptr;
 	bool preview_env_dangling = false;
 	Ref<Environment> environment;
 	Ref<CameraAttributesPractical> camera_attributes;
@@ -359,15 +345,15 @@ private:
 	bool sun_environ_updating = false;
 
 	void _sun_direction_draw();
-	void _sun_direction_input(const Ref<InputEvent> &p_event);
+	void _sun_direction_input(const Ref<InputEvent>& p_event);
 	void _sun_direction_set_altitude(float p_altitude);
 	void _sun_direction_set_azimuth(float p_azimuth);
-	void _sun_set_color(const Color &p_color);
+	void _sun_set_color(const Color& p_color);
 	void _sun_set_energy(float p_energy);
 	void _sun_set_shadow_max_distance(float p_shadow_max_distance);
 
-	void _environ_set_sky_color(const Color &p_color);
-	void _environ_set_ground_color(const Color &p_color);
+	void _environ_set_sky_color(const Color& p_color);
+	void _environ_set_ground_color(const Color& p_color);
 	void _environ_set_sky_energy(float p_energy);
 	void _environ_set_ao();
 	void _environ_set_glow();
@@ -385,19 +371,15 @@ private:
 
 	void _update_theme();
 
-	void _undo_redo_inspector_callback(Object *p_undo_redo, Object *p_edited, const String &p_property, const Variant &p_new_value);
-
 protected:
 	void _notification(int p_what);
-	//void _gui_input(InputEvent p_event);
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 
 	static void _bind_methods();
 
 public:
-	static Node3DEditor *get_singleton() { return singleton; }
+	static Node3DEditor* get_singleton() { return singleton; }
 
-	static Size2i get_camera_viewport_size(Camera3D *p_camera);
+	static Size2i get_camera_viewport_size(Camera3D* p_camera);
 
 	Vector3 snap_point(Vector3 p_target, Vector3 p_start = Vector3(0, 0, 0)) const;
 
@@ -406,14 +388,19 @@ public:
 	float get_fov() const;
 
 	Transform3D get_gizmo_transform() const { return gizmo.transform; }
+
 	bool is_gizmo_visible() const;
 
 	ToolMode get_tool_mode() const { return tool_mode; }
+
 	bool are_local_coords_enabled() const;
 	void set_local_coords_enabled(bool on) const;
 	bool is_preserve_children_transform_enabled() const;
+
 	bool is_snap_enabled() const { return snap_enabled ^ snap_key_enabled; }
+
 	bool is_vertex_snap_origin_mode() const { return vertex_snap_origin_mode; }
+
 	bool is_vertex_snap_use_collision() const;
 	real_t get_translate_snap() const;
 	real_t get_rotate_snap() const;
@@ -422,114 +409,125 @@ public:
 	bool is_trackball_enabled() const { return trackball_enabled; }
 
 	Ref<ArrayMesh> get_move_gizmo(int idx) const { return move_gizmo[idx]; }
+
 	Ref<ArrayMesh> get_axis_gizmo(int idx) const { return axis_gizmo[idx]; }
+
 	Ref<ArrayMesh> get_move_plane_gizmo(int idx) const { return move_plane_gizmo[idx]; }
+
 	Ref<ArrayMesh> get_rotate_gizmo(int idx) const { return rotate_gizmo[idx]; }
+
 	Ref<ArrayMesh> get_scale_gizmo(int idx) const { return scale_gizmo[idx]; }
+
 	Ref<ArrayMesh> get_scale_plane_gizmo(int idx) const { return scale_plane_gizmo[idx]; }
+
 	Ref<ArrayMesh> get_trackball_sphere_gizmo() const { return trackball_sphere_gizmo; }
 
 	void update_grid();
 	void update_transform_gizmo();
-	void update_all_gizmos(Node *p_node = nullptr);
+	void update_all_gizmos(Node* p_node = nullptr);
 	void update_gizmo_opacity();
 	void snap_selected_nodes_to_floor();
 	void select_gizmo_highlight_axis(int p_axis);
-	void set_custom_camera(Node *p_camera) { custom_camera = p_camera; }
 
-	Dictionary get_state() const;
-	void set_state(const Dictionary &p_state);
+	void set_custom_camera(Node* p_camera) { custom_camera = p_camera; }
 
 	Ref<Environment> get_viewport_environment() { return viewport_environment; }
 
-	void add_control_to_menu_panel(Control *p_control);
-	void remove_control_from_menu_panel(Control *p_control);
+	void add_control_to_menu_panel(Control* p_control);
+	void remove_control_from_menu_panel(Control* p_control);
 
-	void add_control_to_left_panel(Control *p_control);
-	void remove_control_from_left_panel(Control *p_control);
+	void add_control_to_left_panel(Control* p_control);
+	void remove_control_from_left_panel(Control* p_control);
 
-	void add_control_to_right_panel(Control *p_control);
-	void remove_control_from_right_panel(Control *p_control);
+	void add_control_to_right_panel(Control* p_control);
+	void remove_control_from_right_panel(Control* p_control);
 
-	void move_control_to_left_panel(Control *p_control);
-	void move_control_to_right_panel(Control *p_control);
+	void move_control_to_left_panel(Control* p_control);
+	void move_control_to_right_panel(Control* p_control);
 
-	VSplitContainer *get_shader_split();
+	VSplitContainer* get_shader_split();
 
-	Node3D *get_single_selected_node() { return selected; }
-	bool is_current_selected_gizmo(const EditorNode3DGizmo *p_gizmo);
+	Node3D* get_single_selected_node() { return selected; }
+
+	bool is_current_selected_gizmo(const EditorNode3DGizmo* p_gizmo);
 	bool is_subgizmo_selected(int p_id);
 	Vector<int> get_subgizmo_selection();
-	void clear_subgizmo_selection(Object *p_obj = nullptr);
 	void refresh_dirty_gizmos();
 
 	Ref<EditorNode3DGizmo> get_current_hover_gizmo() const { return current_hover_gizmo; }
+
 	void set_current_hover_gizmo(Ref<EditorNode3DGizmo> p_gizmo) { current_hover_gizmo = p_gizmo; }
 
-	void set_current_hover_gizmo_handle(int p_id, bool p_secondary) {
+	void set_current_hover_gizmo_handle(int p_id, bool p_secondary)
+	{
 		current_hover_gizmo_handle = p_id;
 		current_hover_gizmo_handle_secondary = p_secondary;
 	}
 
-	int get_current_hover_gizmo_handle(bool &r_secondary) const {
+	int get_current_hover_gizmo_handle(bool& r_secondary) const
+	{
 		r_secondary = current_hover_gizmo_handle_secondary;
 		return current_hover_gizmo_handle;
 	}
 
-	void set_can_preview(Camera3D *p_preview);
+	void set_can_preview(Camera3D* p_preview);
 
 	void set_preview_material(Ref<Material> p_material) { preview_material = p_material; }
+
 	Ref<Material> get_preview_material() { return preview_material; }
-	void set_preview_reset_material(Ref<Material> p_material) { preview_reset_material = p_material; }
+
+	void set_preview_reset_material(Ref<Material> p_material)
+	{
+		preview_reset_material = p_material;
+	}
+
 	Ref<Material> get_preview_reset_material() const { return preview_reset_material; }
-	void set_preview_material_target(ObjectID p_object_id) { preview_material_target = p_object_id; }
-	ObjectID get_preview_material_target() const { return preview_material_target; }
+
 	void set_preview_material_surface(int p_surface) { preview_material_surface = p_surface; }
+
 	int get_preview_material_surface() const { return preview_material_surface; }
 
-	Node3DEditorViewport *get_editor_viewport(int p_idx) {
+	Node3DEditorViewport* get_editor_viewport(int p_idx)
+	{
 		ERR_FAIL_INDEX_V(p_idx, static_cast<int>(VIEWPORTS_COUNT), nullptr);
 		return viewports[p_idx];
 	}
-	Node3DEditorViewport *get_last_used_viewport();
 
-	void set_freelook_viewport(Node3DEditorViewport *p_viewport);
-	Node3DEditorViewport *get_freelook_viewport() const;
+	Node3DEditorViewport* get_last_used_viewport();
+
+	void set_freelook_viewport(Node3DEditorViewport* p_viewport);
+	Node3DEditorViewport* get_freelook_viewport() const;
 
 	void add_gizmo_plugin(Ref<EditorNode3DGizmoPlugin> p_plugin);
 	void remove_gizmo_plugin(Ref<EditorNode3DGizmoPlugin> p_plugin);
 
-	DynamicBVH::ID insert_gizmo_bvh_node(Node3D *p_node, const AABB &p_aabb);
-	void update_gizmo_bvh_node(DynamicBVH::ID p_id, const AABB &p_aabb);
+	DynamicBVH::ID insert_gizmo_bvh_node(Node3D* p_node, const AABB& p_aabb);
+	void update_gizmo_bvh_node(DynamicBVH::ID p_id, const AABB& p_aabb);
 	void remove_gizmo_bvh_node(DynamicBVH::ID p_id);
-	Vector<Node3D *> gizmo_bvh_ray_query(const Vector3 &p_ray_start, const Vector3 &p_ray_end);
-	Vector<Node3D *> gizmo_bvh_frustum_query(const Vector<Plane> &p_frustum);
+	Vector<Node3D*> gizmo_bvh_ray_query(const Vector3& p_ray_start, const Vector3& p_ray_end);
+	Vector<Node3D*> gizmo_bvh_frustum_query(const Vector<Plane>& p_frustum);
 
-	void edit(Node3D *p_spatial);
+	void edit(Node3D* p_spatial);
 	void clear();
 
 	Node3DEditor();
 	~Node3DEditor();
 };
 
-class Node3DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(Node3DEditorPlugin, EditorPlugin);
-
-	Node3DEditor *spatial_editor = nullptr;
+class Node3DEditorPlugin : public EditorPlugin
+{
+	Node3DEditor* spatial_editor = nullptr;
 
 public:
-	Node3DEditor *get_spatial_editor() { return spatial_editor; }
-	virtual String get_plugin_name() const override { return TTRC("3D"); }
-	bool has_main_screen() const override { return true; }
-	virtual void make_visible(Object& obj, bool p_visible) override;
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
+	Node3DEditor* get_spatial_editor() { return spatial_editor; }
 
-	virtual Dictionary get_state() const override;
-	virtual void set_state(Object& obj, const Dictionary &p_state) override;
-	virtual void clear(Object& obj) override { spatial_editor->clear(); }
+	virtual String get_plugin_name() const override { return TTRC("3D"); }
+
+	bool has_main_screen() const override { return true; }
 
 	virtual void edited_scene_changed() override;
 
 	Node3DEditorPlugin();
 };
+
+

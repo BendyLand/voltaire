@@ -38,9 +38,6 @@ class Texture2D;
 
 class Shader : public Resource
 {
-	VLTRCLASS(Shader, Resource);
-	OBJ_SAVE_TYPE_NO(Shader);
-
 public:
 	// Must be kept in sync with the List<String> of shader types in
 	// `servers/rendering/shader_types.cpp`.
@@ -71,7 +68,6 @@ private:
 	void _dependency_changed();
 	void _recompile();
 	virtual void _update_shader() const; // used for visual shader
-	Array _get_shader_uniform_list(bool p_get_groups = false);
 
 protected:
 #ifndef DISABLE_DEPRECATED
@@ -96,7 +92,6 @@ public:
 
 	void inspect_native_shader_code();
 
-	void get_shader_uniform_list(List<PropertyInfo>* p_params, bool p_get_groups = false) const;
 
 	void set_default_texture_parameter(
 		const StringName& p_name, const Ref<Texture>& p_texture, int p_index = 0);
@@ -110,7 +105,5 @@ public:
 	Shader();
 	~Shader();
 };
-
-VARIANT_ENUM_CAST(Shader::Mode);
 
 

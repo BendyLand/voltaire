@@ -304,7 +304,7 @@ public:
 		HAND_JOINT_ANGULAR_VELOCITY_VALID = 32,
 	};
 
-	BitField<HandJointFlags> get_hand_joint_flags(Hand p_hand, HandJoints p_joint) const;
+	uint32_t get_hand_joint_flags(Hand p_hand, HandJoints p_joint) const;
 	Quaternion get_hand_joint_rotation(Hand p_hand, HandJoints p_joint) const;
 	Vector3 get_hand_joint_position(Hand p_hand, HandJoints p_joint) const;
 	float get_hand_joint_radius(Hand p_hand, HandJoints p_joint) const;

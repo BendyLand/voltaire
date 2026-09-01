@@ -419,7 +419,7 @@ uint32_t RenderForwardMobile::get_pipeline_compilations(RSE::PipelineSource p_so
 	return scene_shader.get_pipeline_compilations(p_source);
 }
 
-void RenderForwardMobile::enable_features(BitField<FeatureBits> p_feature_bits) {
+void RenderForwardMobile::enable_features(uint32_t p_feature_bits) {
 	if (p_feature_bits.has_flag(FEATURE_FP32_BIT)) {
 		scene_shader.enable_fp32_shader_group();
 	}
@@ -2403,7 +2403,7 @@ void RenderForwardMobile::_render_list(RenderingDevice::DrawListID p_draw_list, 
 	}
 }
 
-void RenderForwardMobile::_render_list_with_draw_list(RenderListParameters *p_params, RID p_framebuffer, BitField<RD::DrawFlags> p_draw_flags, const Vector<Color> &p_clear_color_values, float p_clear_depth_value, uint32_t p_clear_stencil_value, const Rect2 &p_region) {
+void RenderForwardMobile::_render_list_with_draw_list(RenderListParameters *p_params, RID p_framebuffer, uint32_t &p_clear_color_values, float p_clear_depth_value, uint32_t p_clear_stencil_value, const Rect2 &p_region) {
 	RD::FramebufferFormatID fb_format = RD::get_singleton()->framebuffer_get_format(p_framebuffer);
 	p_params->framebuffer_format = fb_format;
 

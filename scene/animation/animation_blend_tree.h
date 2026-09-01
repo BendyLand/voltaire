@@ -33,9 +33,8 @@
 #include "scene/animation/animation_tree.h"
 #include "scene/resources/curve.h"
 
-class AnimationNodeAnimation : public AnimationRootNode {
-	VLTRCLASS(AnimationNodeAnimation, AnimationRootNode);
-
+class AnimationNodeAnimation : public AnimationRootNode
+{
 	StringName backward = "backward"; // Only used by pingpong animation.
 
 	StringName animation;
@@ -50,32 +49,39 @@ class AnimationNodeAnimation : public AnimationRootNode {
 	double start_offset = 0.0;
 
 public:
-	enum PlayMode {
+	enum PlayMode
+	{
 		PLAY_MODE_FORWARD,
 		PLAY_MODE_BACKWARD
 	};
 
-	virtual void validate_node(const AnimationTree *p_tree, const StringName &p_path) const override;
+	virtual void validate_node(
+		const AnimationTree* p_tree, const StringName& p_path) const override;
 
-	void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	static LocalVector<StringName> (*get_editable_animation_list)();
 
 	virtual String get_caption() const override;
-	_FORCE_INLINE_ virtual double get_process_delta(AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info) const override final {
-		return (p_instance.get_parameter_backward() ? -p_playback_info.delta : p_playback_info.delta);
-	}
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
 
-	void set_animation(const StringName &p_name);
+	_FORCE_INLINE_ virtual double get_process_delta(AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info) const override final
+	{
+		return (p_playback_info.delta);
+	}
+
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
+
+	void set_animation(const StringName& p_name);
 	StringName get_animation() const;
 
 	void set_play_mode(PlayMode p_play_mode);
 	PlayMode get_play_mode() const;
 
-	void set_backward(AnimationNodeInstance &p_instance, ProcessState &p_process_state, bool p_backward);
-	bool is_backward(AnimationNodeInstance &p_instance, ProcessState &p_process_state) const;
+	void set_backward(
+		AnimationNodeInstance& p_instance, ProcessState& p_process_state, bool p_backward);
+	bool is_backward(AnimationNodeInstance& p_instance, ProcessState& p_process_state) const;
 
 	void set_advance_on_start(bool p_advance_on_start);
 	bool is_advance_on_start() const;
@@ -98,20 +104,16 @@ public:
 	AnimationNodeAnimation();
 
 protected:
-	void _validate_property(PropertyInfo &p_property) const;
 	static void _bind_methods();
 
 private:
 	PlayMode play_mode = PLAY_MODE_FORWARD;
 
-	void _update_animation_cache(AnimationTree *p_tree, AnimationNodeInstance &p_instance) const;
+	void _update_animation_cache(AnimationTree* p_tree, AnimationNodeInstance& p_instance) const;
 };
 
-VARIANT_ENUM_CAST(AnimationNodeAnimation::PlayMode)
-
-class AnimationNodeSync : public AnimationNode {
-	VLTRCLASS(AnimationNodeSync, AnimationNode);
-
+class AnimationNodeSync : public AnimationNode
+{
 protected:
 	bool sync = false;
 
@@ -124,18 +126,19 @@ public:
 	AnimationNodeSync();
 };
 
-class AnimationNodeOneShot : public AnimationNodeSync {
-	VLTRCLASS(AnimationNodeOneShot, AnimationNodeSync);
-
+class AnimationNodeOneShot : public AnimationNodeSync
+{
 public:
-	enum OneShotRequest {
+	enum OneShotRequest
+	{
 		ONE_SHOT_REQUEST_NONE,
 		ONE_SHOT_REQUEST_FIRE,
 		ONE_SHOT_REQUEST_ABORT,
 		ONE_SHOT_REQUEST_FADE_OUT,
 	};
 
-	enum MixMode {
+	enum MixMode
+	{
 		MIX_MODE_BLEND,
 		MIX_MODE_ADD
 	};
@@ -164,22 +167,21 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
-	virtual bool is_parameter_read_only(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
+	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
 	void set_fade_in_time(double p_time);
 	double get_fade_in_time() const;
 
-	void set_fade_in_curve(const Ref<Curve> &p_curve);
+	void set_fade_in_curve(const Ref<Curve>& p_curve);
 	Ref<Curve> get_fade_in_curve() const;
 
 	void set_fade_out_time(double p_time);
 	double get_fade_out_time() const;
 
-	void set_fade_out_curve(const Ref<Curve> &p_curve);
+	void set_fade_out_curve(const Ref<Curve>& p_curve);
 	Ref<Curve> get_fade_out_curve() const;
 
 	void set_auto_restart_enabled(bool p_enabled);
@@ -200,115 +202,106 @@ public:
 	bool is_aborted_on_reset() const;
 
 	virtual bool has_filter() const override;
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	AnimationNodeOneShot();
 };
 
-VARIANT_ENUM_CAST(AnimationNodeOneShot::OneShotRequest)
-VARIANT_ENUM_CAST(AnimationNodeOneShot::MixMode)
-
-class AnimationNodeAdd2 : public AnimationNodeSync {
-	VLTRCLASS(AnimationNodeAdd2, AnimationNodeSync);
-
+class AnimationNodeAdd2 : public AnimationNodeSync
+{
 	StringName add_amount = PNAME("add_amount");
 
 public:
-	void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
 	virtual bool has_filter() const override;
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	AnimationNodeAdd2();
 };
 
-class AnimationNodeAdd3 : public AnimationNodeSync {
-	VLTRCLASS(AnimationNodeAdd3, AnimationNodeSync);
-
+class AnimationNodeAdd3 : public AnimationNodeSync
+{
 	StringName add_amount = PNAME("add_amount");
 
 public:
-	void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
 	virtual bool has_filter() const override;
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	AnimationNodeAdd3();
 };
 
-class AnimationNodeBlend2 : public AnimationNodeSync {
-	VLTRCLASS(AnimationNodeBlend2, AnimationNodeSync);
-
+class AnimationNodeBlend2 : public AnimationNodeSync
+{
 	StringName blend_amount = PNAME("blend_amount");
 
 public:
-	virtual void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	virtual bool has_filter() const override;
 	AnimationNodeBlend2();
 };
 
-class AnimationNodeBlend3 : public AnimationNodeSync {
-	VLTRCLASS(AnimationNodeBlend3, AnimationNodeSync);
-
+class AnimationNodeBlend3 : public AnimationNodeSync
+{
 	StringName blend_amount = PNAME("blend_amount");
 
 public:
-	virtual void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 	AnimationNodeBlend3();
 };
 
-class AnimationNodeSub2 : public AnimationNodeSync {
-	VLTRCLASS(AnimationNodeSub2, AnimationNodeSync);
-
+class AnimationNodeSub2 : public AnimationNodeSync
+{
 	StringName sub_amount = PNAME("sub_amount");
 
 public:
-	void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
 	virtual bool has_filter() const override;
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	AnimationNodeSub2();
 };
 
-class AnimationNodeTimeScale : public AnimationNode {
-	VLTRCLASS(AnimationNodeTimeScale, AnimationNode);
-
+class AnimationNodeTimeScale : public AnimationNode
+{
 	StringName scale = PNAME("scale");
 
 public:
-	virtual void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	AnimationNodeTimeScale();
 };
 
-class AnimationNodeTimeSeek : public AnimationNode {
-	VLTRCLASS(AnimationNodeTimeSeek, AnimationNode);
-
+class AnimationNodeTimeSeek : public AnimationNode
+{
 	StringName seek_request = PNAME("seek_request");
 	bool explicit_elapse = true;
 
@@ -316,12 +309,12 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	void set_explicit_elapse(bool p_enable);
 	bool is_explicit_elapse() const;
@@ -329,14 +322,15 @@ public:
 	AnimationNodeTimeSeek();
 };
 
-class AnimationNodeTransition : public AnimationNodeSync {
-	VLTRCLASS(AnimationNodeTransition, AnimationNodeSync);
-
-	struct InputData {
+class AnimationNodeTransition : public AnimationNodeSync
+{
+	struct InputData
+	{
 		bool auto_advance = false;
 		bool break_loop_at_end = false;
 		bool reset = true;
 	};
+
 	LocalVector<InputData> input_data;
 
 	StringName prev_xfading = "prev_xfading";
@@ -352,23 +346,21 @@ class AnimationNodeTransition : public AnimationNodeSync {
 	bool pending_update = false;
 
 protected:
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	bool _set(const StringName &p_path, const Variant &p_value);
+	bool _get(const StringName& p_path, Variant& r_ret) const;
+	bool _set(const StringName& p_path, const Variant& p_value);
 	static void _bind_methods();
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
-	virtual void get_parameter_list(LocalVector<PropertyInfo> *r_list) const override;
-	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
-	virtual bool is_parameter_read_only(const StringName &p_parameter) const override;
+	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
+	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
 	void set_input_count(int p_inputs);
 
-	virtual bool add_input(const String &p_name) override;
+	virtual bool add_input(const String& p_name) override;
 	virtual void remove_input(int p_index) override;
-	virtual bool set_input_name(int p_input, const String &p_name) override;
+	virtual bool set_input_name(int p_input, const String& p_name) override;
 
 	void set_input_as_auto_advance(int p_input, bool p_enable);
 	bool is_input_set_as_auto_advance(int p_input) const;
@@ -382,32 +374,33 @@ public:
 	void set_xfade_time(double p_fade);
 	double get_xfade_time() const;
 
-	void set_xfade_curve(const Ref<Curve> &p_curve);
+	void set_xfade_curve(const Ref<Curve>& p_curve);
 	Ref<Curve> get_xfade_curve() const;
 
 	void set_allow_transition_to_self(bool p_enable);
 	bool is_allow_transition_to_self() const;
 
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	AnimationNodeTransition();
 };
 
-class AnimationNodeOutput : public AnimationNode {
-	VLTRCLASS(AnimationNodeOutput, AnimationNode);
-
+class AnimationNodeOutput : public AnimationNode
+{
 public:
 	virtual String get_caption() const override;
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 	AnimationNodeOutput();
 };
 
 /////
 
-class AnimationNodeBlendTree : public AnimationRootNode {
-	VLTRCLASS(AnimationNodeBlendTree, AnimationRootNode);
-
-	struct Node {
+class AnimationNodeBlendTree : public AnimationRootNode
+{
+	struct Node
+	{
 		Ref<AnimationNode> node;
 		Vector2 position;
 		LocalVector<StringName> connections;
@@ -417,76 +410,80 @@ class AnimationNodeBlendTree : public AnimationRootNode {
 
 	Vector2 graph_offset;
 
-	void _child_node_changed(const StringName &p_node);
+	void _child_node_changed(const StringName& p_node);
 
 	void _initialize_node_tree();
 
 protected:
 	static void _bind_methods();
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
+	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _get(const StringName& p_name, Variant& r_ret) const;
 
 	virtual void _tree_changed() override;
-	virtual void _animation_node_renamed(const ObjectID &p_oid, const String &p_old_name, const String &p_new_name) override;
-	virtual void _animation_node_removed(const ObjectID &p_oid, const StringName &p_node) override;
 
 	virtual void reset_state() override;
 
 public:
-	enum ConnectionError {
+	enum ConnectionError
+	{
 		CONNECTION_OK,
 		CONNECTION_ERROR_NO_INPUT,
 		CONNECTION_ERROR_NO_INPUT_INDEX,
 		CONNECTION_ERROR_NO_OUTPUT,
 		CONNECTION_ERROR_SAME_NODE,
 		CONNECTION_ERROR_CONNECTION_EXISTS,
-		//no need to check for cycles due to tree topology
+		// no need to check for cycles due to tree topology
 	};
 
-	virtual void validate_node(const AnimationTree *p_tree, const StringName &p_path) const override;
+	virtual void validate_node(
+		const AnimationTree* p_tree, const StringName& p_path) const override;
 
-	void add_node(const StringName &p_name, const Ref<AnimationNode> &p_node, const Vector2 &p_position = Vector2());
-	Ref<AnimationNode> get_node(const StringName &p_name) const;
-	void remove_node(const StringName &p_name);
-	void rename_node(const StringName &p_name, const StringName &p_new_name);
-	bool has_node(const StringName &p_name) const;
-	const LocalVector<StringName> *get_node_connection_array(const StringName &p_name) const;
+	void add_node(const StringName& p_name, const Ref<AnimationNode>& p_node,
+		const Vector2& p_position = Vector2());
+	Ref<AnimationNode> get_node(const StringName& p_name) const;
+	void remove_node(const StringName& p_name);
+	void rename_node(const StringName& p_name, const StringName& p_new_name);
+	bool has_node(const StringName& p_name) const;
+	const LocalVector<StringName>* get_node_connection_array(const StringName& p_name) const;
 
-	void set_node_position(const StringName &p_node, const Vector2 &p_position);
-	Vector2 get_node_position(const StringName &p_node) const;
+	void set_node_position(const StringName& p_node, const Vector2& p_position);
+	Vector2 get_node_position(const StringName& p_node) const;
 
-	virtual void get_child_nodes(LocalVector<ChildNode> *r_child_nodes) override;
+	virtual void get_child_nodes(LocalVector<ChildNode>* r_child_nodes) override;
 
-	void connect_node(const StringName &p_input_node, int p_input_index, const StringName &p_output_node);
-	void disconnect_node(const StringName &p_node, int p_input_index);
+	void connect_node(
+		const StringName& p_input_node, int p_input_index, const StringName& p_output_node);
+	void disconnect_node(const StringName& p_node, int p_input_index);
 
-	struct NodeConnection {
+	struct NodeConnection
+	{
 		StringName input_node;
 		int input_index = 0;
 		StringName output_node;
 	};
 
-	ConnectionError can_connect_node(const StringName &p_input_node, int p_input_index, const StringName &p_output_node) const;
-	void get_node_connections(LocalVector<NodeConnection> *r_connections) const;
+	ConnectionError can_connect_node(
+		const StringName& p_input_node, int p_input_index, const StringName& p_output_node) const;
+	void get_node_connections(LocalVector<NodeConnection>* r_connections) const;
 
 	virtual String get_caption() const override;
-	virtual NodeTimeInfo _process(ProcessState &p_process_state, AnimationNodeInstance &p_instance, const AnimationMixer::PlaybackInfo &p_playback_info, bool p_test_only = false) override;
+	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
+		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	LocalVector<StringName> get_node_list() const;
-	TypedArray<StringName> get_node_list_as_typed_array() const;
 
-	void set_graph_offset(const Vector2 &p_graph_offset);
+	void set_graph_offset(const Vector2& p_graph_offset);
 	Vector2 get_graph_offset() const;
 
-	virtual Ref<AnimationNode> get_child_by_name(const StringName &p_name) const override;
+	virtual Ref<AnimationNode> get_child_by_name(const StringName& p_name) const override;
 
 #ifdef TOOLS_ENABLED
-	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
+	virtual void get_argument_options(
+		const StringName& p_function, int p_idx, List<String>* r_options) const override;
 #endif
 
 	AnimationNodeBlendTree();
 	~AnimationNodeBlendTree();
 };
 
-VARIANT_ENUM_CAST(AnimationNodeBlendTree::ConnectionError)
+

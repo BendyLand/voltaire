@@ -32,13 +32,13 @@
 
 #include "servers/rendering/rendering_shader_container.h"
 
-class RenderingShaderContainerVulkan : public RenderingShaderContainer {
-	VLTRSOFTCLASS(RenderingShaderContainerVulkan, RenderingShaderContainer);
-
+class RenderingShaderContainerVulkan : public RenderingShaderContainer
+{
 public:
 	static const uint32_t FORMAT_VERSION;
 
-	enum CompressionFlagsVulkan {
+	enum CompressionFlagsVulkan
+	{
 		COMPRESSION_FLAG_SMOLV = 0x10000,
 	};
 
@@ -47,13 +47,14 @@ public:
 protected:
 	virtual uint32_t _format() const override;
 	virtual uint32_t _format_version() const override;
-	virtual bool _set_code_from_spirv(const ReflectShader &p_shader) override;
+	virtual bool _set_code_from_spirv(const ReflectShader& p_shader) override;
 
 public:
 	RenderingShaderContainerVulkan(bool p_debug_info_enabled);
 };
 
-class RenderingShaderContainerFormatVulkan : public RenderingShaderContainerFormat {
+class RenderingShaderContainerFormatVulkan : public RenderingShaderContainerFormat
+{
 private:
 	bool debug_info_enabled = false;
 
@@ -66,3 +67,5 @@ public:
 	RenderingShaderContainerFormatVulkan();
 	virtual ~RenderingShaderContainerFormatVulkan();
 };
+
+

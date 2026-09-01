@@ -116,7 +116,7 @@ public:
 	typedef void (*EventDispatchFunc)(const Ref<InputEvent>& p_event);
 
 private:
-	BitField<MouseButtonMask> mouse_button_mask = MouseButtonMask::NONE;
+	uint32_t mouse_button_mask = 0;
 
 	RBSet<Key> key_label_pressed;
 	RBSet<Key> physical_keys_pressed;
@@ -437,7 +437,7 @@ public:
 	Point2 get_mouse_position() const;
 	Vector2 get_last_mouse_velocity();
 	Vector2 get_last_mouse_screen_velocity();
-	BitField<MouseButtonMask> get_mouse_button_mask() const;
+	uint32_t get_mouse_button_mask() const;
 
 	void warp_mouse(const Vector2& p_position);
 	Point2 warp_mouse_motion(const Ref<InputEventMouseMotion>& p_motion, const Rect2& p_rect);
@@ -507,7 +507,7 @@ public:
 	void parse_mapping(const String& p_mapping);
 	void joy_button(int p_device, JoyButton p_button, bool p_pressed);
 	void joy_axis(int p_device, JoyAxis p_axis, float p_value);
-	void joy_hat(int p_device, BitField<HatMask> p_val);
+	void joy_hat(int p_device, uint32_t p_val);
 	void joy_motion_sensors(
 		int p_device, const Vector3& p_accelerometer, const Vector3& p_gyroscope);
 	void joy_touchpad(int p_device, int p_touchpad, int p_finger, const Vector2& p_position,

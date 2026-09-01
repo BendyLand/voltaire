@@ -1065,7 +1065,7 @@ Error RenderingServer::_surface_set_data(Array p_arrays, uint64_t p_format, uint
 }
 
 uint32_t RenderingServer::mesh_surface_get_format_offset(
-	BitField<RSE::ArrayFormat> p_format, int p_vertex_len, int p_array_index) const
+	uint32_t p_format, int p_vertex_len, int p_array_index) const
 {
 	ERR_FAIL_INDEX_V(p_array_index, RSE::ARRAY_MAX, 0);
 	p_format = uint64_t(p_format) & ~RSE::ARRAY_FORMAT_INDEX;
@@ -1080,7 +1080,7 @@ uint32_t RenderingServer::mesh_surface_get_format_offset(
 }
 
 uint32_t RenderingServer::mesh_surface_get_format_vertex_stride(
-	BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const
+	uint32_t p_format, int p_vertex_len) const
 {
 	p_format = uint64_t(p_format) & ~RSE::ARRAY_FORMAT_INDEX;
 	uint32_t offsets[RSE::ARRAY_MAX];
@@ -1094,7 +1094,7 @@ uint32_t RenderingServer::mesh_surface_get_format_vertex_stride(
 }
 
 uint32_t RenderingServer::mesh_surface_get_format_normal_tangent_stride(
-	BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const
+	uint32_t p_format, int p_vertex_len) const
 {
 	p_format = uint64_t(p_format) & ~RSE::ARRAY_FORMAT_INDEX;
 	uint32_t offsets[RSE::ARRAY_MAX];
@@ -1108,7 +1108,7 @@ uint32_t RenderingServer::mesh_surface_get_format_normal_tangent_stride(
 }
 
 uint32_t RenderingServer::mesh_surface_get_format_attribute_stride(
-	BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const
+	uint32_t p_format, int p_vertex_len) const
 {
 	p_format = uint64_t(p_format) & ~RSE::ARRAY_FORMAT_INDEX;
 	uint32_t offsets[RSE::ARRAY_MAX];
@@ -1122,7 +1122,7 @@ uint32_t RenderingServer::mesh_surface_get_format_attribute_stride(
 }
 
 uint32_t RenderingServer::mesh_surface_get_format_skin_stride(
-	BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const
+	uint32_t p_format, int p_vertex_len) const
 {
 	p_format = uint64_t(p_format) & ~RSE::ARRAY_FORMAT_INDEX;
 	uint32_t offsets[RSE::ARRAY_MAX];
@@ -1136,7 +1136,7 @@ uint32_t RenderingServer::mesh_surface_get_format_skin_stride(
 }
 
 uint32_t RenderingServer::mesh_surface_get_format_index_stride(
-	BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const
+	uint32_t p_format, int p_vertex_len) const
 {
 	if (!(p_format & RSE::ARRAY_FORMAT_INDEX)) {
 		return 0;
@@ -1537,7 +1537,7 @@ Error RenderingServer::mesh_create_surface_data_from_arrays(
 
 void RenderingServer::mesh_add_surface_from_arrays(RID p_mesh, RSE::PrimitiveType p_primitive,
 	const Array& p_arrays, const Array& p_blend_shapes, const Dictionary& p_lods,
-	BitField<RSE::ArrayFormat> p_compress_format)
+	uint32_t p_compress_format)
 {
 	RenderingServerTypes::SurfaceData sd;
 	Error err = mesh_create_surface_data_from_arrays(

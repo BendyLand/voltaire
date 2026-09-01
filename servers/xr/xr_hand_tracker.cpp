@@ -64,16 +64,16 @@ XRHandTracker::HandTrackingSource XRHandTracker::get_hand_tracking_source() cons
 }
 
 void XRHandTracker::set_hand_joint_flags(
-	XRHandTracker::HandJoint p_joint, BitField<XRHandTracker::HandJointFlags> p_flags)
+	XRHandTracker::HandJoint p_joint, uint32_t p_flags)
 {
 	ERR_FAIL_INDEX(p_joint, HAND_JOINT_MAX);
 	hand_joint_flags[p_joint] = p_flags;
 }
 
-BitField<XRHandTracker::HandJointFlags> XRHandTracker::get_hand_joint_flags(
+uint32_t XRHandTracker::get_hand_joint_flags(
 	XRHandTracker::HandJoint p_joint) const
 {
-	ERR_FAIL_INDEX_V(p_joint, HAND_JOINT_MAX, BitField<HandJointFlags>());
+	ERR_FAIL_INDEX_V(p_joint, HAND_JOINT_MAX, uint32_t());
 	return hand_joint_flags[p_joint];
 }
 

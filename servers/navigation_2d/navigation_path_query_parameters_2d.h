@@ -66,7 +66,7 @@ private:
 	Vector2 start_position;
 	Vector2 target_position;
 	uint32_t navigation_layers = 1;
-	BitField<PathMetadataFlags> metadata_flags = PATH_METADATA_INCLUDE_ALL;
+	uint32_t metadata_flags = PATH_METADATA_INCLUDE_ALL;
 	bool simplify_path = false;
 	real_t simplify_epsilon = 0.0;
 
@@ -97,8 +97,8 @@ public:
 	void set_navigation_layers(uint32_t p_navigation_layers);
 	uint32_t get_navigation_layers() const;
 
-	void set_metadata_flags(BitField<NavigationPathQueryParameters2D::PathMetadataFlags> p_flags);
-	BitField<NavigationPathQueryParameters2D::PathMetadataFlags> get_metadata_flags() const;
+	void set_metadata_flags(uint32_t p_flags);
+	uint32_t get_metadata_flags() const;
 
 	void set_simplify_path(bool p_enabled);
 	bool get_simplify_path() const;

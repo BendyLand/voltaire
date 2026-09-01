@@ -217,7 +217,7 @@ public:
 	 * @param p_frames_drawn Used for debug checks when BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT is set.
 	 * @return the buffer.
 	 */
-	virtual BufferID buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage,
+	virtual BufferID buffer_create(uint64_t p_size, uint32_t p_usage,
 		MemoryAllocationType p_allocation_type, uint64_t p_frames_drawn) = 0;
 	// Only for a buffer with BUFFER_USAGE_TEXEL_BIT.
 	virtual bool buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) = 0;
@@ -294,7 +294,7 @@ public:
 
 	struct TextureSubresourceLayers
 	{
-		BitField<TextureAspectBits> aspect = {};
+		uint32_t aspect = 0;
 		uint32_t mipmap = 0;
 		uint32_t base_layer = 0;
 		uint32_t layer_count = 0;
@@ -302,7 +302,7 @@ public:
 
 	struct TextureSubresourceRange
 	{
-		BitField<TextureAspectBits> aspect = {};
+		uint32_t aspect = 0;
 		uint32_t base_mipmap = 0;
 		uint32_t mipmap_count = 0;
 		uint32_t base_layer = 0;
@@ -335,7 +335,7 @@ public:
 	// Returns the data of a texture layer for a CPU texture that was created with
 	// TEXTURE_USAGE_CPU_READ_BIT.
 	virtual Vector<uint8_t> texture_get_data(TextureID p_texture, uint32_t p_layer) = 0;
-	virtual BitField<TextureUsageBits> texture_get_usages_supported_by_format(
+	virtual uint32_t texture_get_usages_supported_by_format(
 		DataFormat p_format, bool p_cpu_readable) = 0;
 	virtual bool texture_can_make_shared_with_format(
 		TextureID p_texture, DataFormat p_format, bool& r_raw_reinterpretation) = 0;
@@ -419,15 +419,15 @@ public:
 	// header defines
 	struct MemoryAccessBarrier
 	{
-		BitField<BarrierAccessBits> src_access = {};
-		BitField<BarrierAccessBits> dst_access = {};
+		uint32_t src_access = 0;
+		uint32_t dst_access = 0;
 	};
 
 	struct BufferBarrier
 	{
 		BufferID buffer;
-		BitField<BarrierAccessBits> src_access = {};
-		BitField<BarrierAccessBits> dst_access = {};
+		uint32_t src_access = 0;
+		uint32_t dst_access = 0;
 		uint64_t offset = 0;
 		uint64_t size = 0;
 	};
@@ -435,8 +435,8 @@ public:
 	struct TextureBarrier
 	{
 		TextureID texture;
-		BitField<BarrierAccessBits> src_access = {};
-		BitField<BarrierAccessBits> dst_access = {};
+		uint32_t src_access = 0;
+		uint32_t dst_access = 0;
 		TextureLayout prev_layout = TEXTURE_LAYOUT_UNDEFINED;
 		TextureLayout next_layout = TEXTURE_LAYOUT_UNDEFINED;
 		TextureSubresourceRange subresources;
@@ -445,17 +445,17 @@ public:
 	struct AccelerationStructureBarrier
 	{
 		AccelerationStructureID acceleration_structure;
-		BitField<BarrierAccessBits> src_access;
-		BitField<BarrierAccessBits> dst_access;
+		uint32_t src_access;
+		uint32_t dst_access;
 		uint64_t offset = 0;
 		uint64_t size = 0;
 	};
 
 	virtual void command_pipeline_barrier(CommandBufferID p_cmd_buffer,
-		BitField<PipelineStageBits> p_src_stages, BitField<PipelineStageBits> p_dst_stages,
+		uint32_t p_src_stages, uint32_t p_dst_stages,
 		VectorView<MemoryAccessBarrier> p_memory_barriers,
 		VectorView<BufferBarrier> p_buffer_barriers, VectorView<TextureBarrier> p_texture_barriers,
-		VectorView<AccelerationStructureBarrier> p_acceleration_structure_barriers) = 0;
+		VectorView<AccelerationStructureBarrier> p_acceleration_structure_barriers) {}
 
 	/****************/
 	/**** FENCES ****/
@@ -490,7 +490,7 @@ public:
 	// it. It is valid to specify no bits and a valid surface: in this case, the dedicated
 	// presentation queue family will be the preferred option.
 	virtual CommandQueueFamilyID command_queue_family_get(
-		BitField<CommandQueueFamilyBits> p_cmd_queue_family_bits,
+		uint32_t p_cmd_queue_family_bits,
 		RenderingContextDriver::SurfaceID p_surface = 0) = 0;
 
 	// ----- QUEUE -----
@@ -748,7 +748,7 @@ public:
 		static constexpr uint32_t UNUSED = 0xffffffff;
 		uint32_t attachment = UNUSED;
 		TextureLayout layout = TEXTURE_LAYOUT_UNDEFINED;
-		BitField<TextureAspectBits> aspect = {};
+		uint32_t aspect = 0;
 	};
 
 	struct Subpass
@@ -767,10 +767,10 @@ public:
 	{
 		uint32_t src_subpass = 0xffffffff;
 		uint32_t dst_subpass = 0xffffffff;
-		BitField<PipelineStageBits> src_stages = {};
-		BitField<PipelineStageBits> dst_stages = {};
-		BitField<BarrierAccessBits> src_access = {};
-		BitField<BarrierAccessBits> dst_access = {};
+		uint32_t src_stages = 0;
+		uint32_t dst_stages = 0;
+		uint32_t src_access = 0;
+		uint32_t dst_access = 0;
 	};
 
 	virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments,
@@ -795,7 +795,7 @@ public:
 
 	struct AttachmentClear
 	{
-		BitField<TextureAspectBits> aspect = {};
+		uint32_t aspect = 0;
 		uint32_t color_attachment = 0xffffffff;
 		RenderPassClearValue value;
 	};
@@ -858,7 +858,7 @@ public:
 		PipelineMultisampleState p_multisample_state,
 		PipelineDepthStencilState p_depth_stencil_state, PipelineColorBlendState p_blend_state,
 		VectorView<int32_t> p_color_attachments,
-		BitField<PipelineDynamicStateFlags> p_dynamic_state, RenderPassID p_render_pass,
+		uint32_t p_dynamic_state, RenderPassID p_render_pass,
 		uint32_t p_render_subpass,
 		VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
 
@@ -894,7 +894,7 @@ public:
 
 	struct AccelerationStructureGeometry
 	{
-		BitField<AccelerationStructureGeometryFlagBits> flags = {};
+		uint32_t flags = 0;
 		BufferID vertex_buffer;
 		uint32_t vertex_offset = 0;
 		uint32_t vertex_stride = 0;
@@ -908,7 +908,7 @@ public:
 
 	virtual AccelerationStructureID blas_create(
 		VectorView<AccelerationStructureGeometry> p_geometries,
-		BitField<AccelerationStructureFlagBits> p_flags) = 0;
+		uint32_t p_flags) = 0;
 
 	struct AccelerationStructureInstance
 	{
@@ -916,12 +916,12 @@ public:
 		uint32_t id = 0;
 		uint8_t mask = 0;
 		uint32_t hit_sbt_offset = 0;
-		BitField<AccelerationStructureInstanceFlagBits> flags = {};
+		uint32_t flags = 0;
 		AccelerationStructureID blas;
 	};
 
 	virtual AccelerationStructureID tlas_create(
-		uint32_t p_max_instance_count, BitField<AccelerationStructureFlagBits> p_flags) = 0;
+		uint32_t p_max_instance_count, uint32_t p_flags) = 0;
 	virtual void acceleration_structure_instance_write(
 		uint8_t* r_driver_instance, const AccelerationStructureInstance& p_instance) = 0;
 

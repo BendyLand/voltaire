@@ -52,7 +52,7 @@ class NavigationAgent2D : public Node {
 	uint32_t navigation_layers = 1;
 	NavigationPathQueryParameters2D::PathfindingAlgorithm pathfinding_algorithm = NavigationPathQueryParameters2D::PathfindingAlgorithm::PATHFINDING_ALGORITHM_ASTAR;
 	NavigationPathQueryParameters2D::PathPostProcessing path_postprocessing = NavigationPathQueryParameters2D::PathPostProcessing::PATH_POSTPROCESSING_CORRIDORFUNNEL;
-	BitField<NavigationPathQueryParameters2D::PathMetadataFlags> path_metadata_flags = NavigationPathQueryParameters2D::PathMetadataFlags::PATH_METADATA_INCLUDE_ALL;
+	uint32_t path_metadata_flags = NavigationPathQueryParameters2D::PathMetadataFlags::PATH_METADATA_INCLUDE_ALL;
 
 	real_t path_desired_distance = 20.0;
 	real_t target_desired_distance = 10.0;
@@ -145,8 +145,8 @@ public:
 		return path_postprocessing;
 	}
 
-	void set_path_metadata_flags(BitField<NavigationPathQueryParameters2D::PathMetadataFlags> p_flags);
-	BitField<NavigationPathQueryParameters2D::PathMetadataFlags> get_path_metadata_flags() const {
+	void set_path_metadata_flags(uint32_t p_flags);
+	uint32_t get_path_metadata_flags() const {
 		return path_metadata_flags;
 	}
 

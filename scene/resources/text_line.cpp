@@ -46,7 +46,7 @@ void TextLine::_shape() const
 			TS->shaped_text_tab_align(rid, tab_stops);
 		}
 
-		BitField<TextServer::TextOverrunFlag> overrun_flags = TextServer::OVERRUN_NO_TRIM;
+		uint32_t overrun_flags = TextServer::OVERRUN_NO_TRIM;
 		if (overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
 			overrun_flags = TextServer::get_overrun_flags_from_behavior(overrun_behavior);
 
@@ -244,7 +244,7 @@ void TextLine::tab_align(const Vector<float>& p_tab_stops)
 	dirty = true;
 }
 
-void TextLine::set_flags(BitField<TextServer::JustificationFlag> p_flags)
+void TextLine::set_flags(uint32_t p_flags)
 {
 	if (flags != p_flags) {
 		flags = p_flags;
@@ -252,7 +252,7 @@ void TextLine::set_flags(BitField<TextServer::JustificationFlag> p_flags)
 	}
 }
 
-BitField<TextServer::JustificationFlag> TextLine::get_flags() const { return flags; }
+uint32_t TextLine::get_flags() const { return flags; }
 
 void TextLine::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
 {

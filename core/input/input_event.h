@@ -124,6 +124,27 @@ protected:
 	static void _bind_methods();
 
 public:
+	uint32_t get_modifiers_mask() const
+	{
+		uint32_t mask = 0;
+		if (command_or_control_autoremap) {
+			mask |= (uint32_t)KeyModifierMask::CMD_OR_CTRL;
+		}
+		if (shift_pressed) {
+			mask |= (uint32_t)KeyModifierMask::SHIFT;
+		}
+		if (alt_pressed) {
+			mask |= (uint32_t)KeyModifierMask::ALT;
+		}
+		if (ctrl_pressed) {
+			mask |= (uint32_t)KeyModifierMask::CTRL;
+		}
+		if (meta_pressed) {
+			mask |= (uint32_t)KeyModifierMask::META;
+		}
+		return mask;
+	}
+
 	void set_command_or_control_autoremap(bool p_enabled);
 	bool is_command_or_control_autoremap() const;
 
@@ -142,8 +163,6 @@ public:
 	bool is_meta_pressed() const;
 
 	void set_modifiers_from_event(const InputEventWithModifiers* p_event);
-
-	BitField<KeyModifierMask> get_modifiers_mask() const;
 
 	virtual String as_text() const override;
 	virtual String _to_string() override;
@@ -210,8 +229,6 @@ public:
 
 class InputEventMouse : public InputEventWithModifiers
 {
-	BitField<MouseButtonMask> button_mask = MouseButtonMask::NONE;
-
 	Vector2 pos;
 	Vector2 global_pos;
 
@@ -219,8 +236,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_button_mask(BitField<MouseButtonMask> p_mask);
-	BitField<MouseButtonMask> get_button_mask() const;
+	void set_button_mask(uint32_t p_mask);
+	uint32_t get_button_mask() const;
 
 	void set_position(const Vector2& p_pos);
 	Vector2 get_position() const;

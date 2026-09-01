@@ -32,8 +32,6 @@
 
 #ifdef UNIX_ENABLED
 
-#include "core/debugger/engine_debugger.h"
-#include "core/debugger/script_debugger.h"
 #include "drivers/unix/dir_access_unix.h"
 #include "drivers/unix/file_access_unix.h"
 #include "drivers/unix/file_access_unix_pipe.h"
@@ -71,6 +69,11 @@
 #include <uvm/uvm_extern.h>
 #endif
 
+#include <cerrno>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <dlfcn.h>
 #include <poll.h>
 #include <sys/resource.h>
@@ -78,12 +81,6 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#include <cerrno>
-#include <csignal>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
 
 #ifndef RTLD_DEEPBIND
 #define RTLD_DEEPBIND 0
@@ -99,7 +96,8 @@
 // Random location for getentropy. Fitting.
 #include <sys/random.h>
 #define UNIX_GET_ENTROPY
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__GLIBC_MINOR__) && (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 26))
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) ||                                              \
+	(defined(__GLIBC_MINOR__) && (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 26))
 // In <unistd.h>.
 // One day... (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700)
 // https://publications.opengroup.org/standards/unix/c211
@@ -114,7 +112,9 @@
 static uint64_t _clock_start = 0;
 #if defined(__APPLE__)
 static double _clock_scale = 0;
-static void _setup_clock() {
+
+static void _setup_clock()
+{
 	mach_timebase_info_data_t info;
 	kern_return_t ret = mach_timebase_info(&info);
 	ERR_FAIL_COND_MSG(ret != 0, "OS CLOCK IS NOT WORKING!");
@@ -127,8 +127,9 @@ static void _setup_clock() {
 #else
 #define GODOT_CLOCK CLOCK_MONOTONIC
 #endif
-static void _setup_clock() {
-	struct timespec tv_now = { 0, 0 };
+static void _setup_clock()
+{
+	struct timespec tv_now = {0, 0};
 	ERR_FAIL_COND_MSG(clock_gettime(GODOT_CLOCK, &tv_now) != 0, "OS CLOCK IS NOT WORKING!");
 	_clock_start = ((uint64_t)tv_now.tv_nsec / 1000L) + (uint64_t)tv_now.tv_sec * 1000000L;
 }
@@ -136,34 +137,27 @@ static void _setup_clock() {
 
 struct sigaction old_action;
 
-static void handle_interrupt(int sig) {
-	if (!EngineDebugger::is_active()) {
-		return;
-	}
-
-	EngineDebugger::get_script_debugger()->set_depth(-1);
-	EngineDebugger::get_script_debugger()->set_lines_left(1);
-
+static void handle_interrupt(int sig)
+{
 	// Ensure we call the old action if it was configured.
-	if (old_action.sa_handler && old_action.sa_handler != SIG_IGN && old_action.sa_handler != SIG_DFL) {
+	if (old_action.sa_handler && old_action.sa_handler != SIG_IGN &&
+		old_action.sa_handler != SIG_DFL) {
 		old_action.sa_handler(sig);
 	}
 }
 
-void OS_Unix::initialize_debugging() {
-	if (EngineDebugger::is_active()) {
-		struct sigaction action;
-		memset(&action, 0, sizeof(action));
-		action.sa_handler = handle_interrupt;
-		sigaction(SIGINT, &action, &old_action);
-	}
+void OS_Unix::initialize_debugging()
+{
+	struct sigaction action;
+	memset(&action, 0, sizeof(action));
+	action.sa_handler = handle_interrupt;
+	sigaction(SIGINT, &action, &old_action);
 }
 
-int OS_Unix::unix_initialize_audio(int p_audio_driver) {
-	return 0;
-}
+int OS_Unix::unix_initialize_audio(int p_audio_driver) { return 0; }
 
-void OS_Unix::initialize_core() {
+void OS_Unix::initialize_core()
+{
 #ifdef THREADS_ENABLED
 	init_thread_posix();
 #endif
@@ -185,30 +179,31 @@ void OS_Unix::initialize_core() {
 	_setup_clock();
 }
 
-void OS_Unix::finalize_core() {
+void OS_Unix::finalize_core()
+{
 	memdelete(process_map);
 #ifndef UNIX_SOCKET_UNAVAILABLE
 	NetSocketUnix::cleanup();
 #endif
 }
 
-Vector<String> OS_Unix::get_video_adapter_driver_info() const {
-	return Vector<String>();
-}
+Vector<String> OS_Unix::get_video_adapter_driver_info() const { return Vector<String>(); }
 
-String OS_Unix::get_stdin_string(int64_t p_buffer_size) {
+String OS_Unix::get_stdin_string(int64_t p_buffer_size)
+{
 	Vector<uint8_t> data;
 	data.resize(p_buffer_size);
-	if (fgets((char *)data.ptrw(), data.size(), stdin)) {
-		return String::utf8((char *)data.ptr()).replace("\r\n", "\n").rstrip("\n");
+	if (fgets((char*)data.ptrw(), data.size(), stdin)) {
+		return String::utf8((char*)data.ptr()).replace("\r\n", "\n").rstrip("\n");
 	}
 	return String();
 }
 
-PackedByteArray OS_Unix::get_stdin_buffer(int64_t p_buffer_size) {
+PackedByteArray OS_Unix::get_stdin_buffer(int64_t p_buffer_size)
+{
 	Vector<uint8_t> data;
 	data.resize(p_buffer_size);
-	size_t sz = fread((void *)data.ptrw(), 1, data.size(), stdin);
+	size_t sz = fread((void*)data.ptrw(), 1, data.size(), stdin);
 	if (sz > 0) {
 		data.resize(sz);
 		return data;
@@ -216,7 +211,8 @@ PackedByteArray OS_Unix::get_stdin_buffer(int64_t p_buffer_size) {
 	return PackedByteArray();
 }
 
-OS_Unix::StdHandleType OS_Unix::get_stdin_type() const {
+OS_Unix::StdHandleType OS_Unix::get_stdin_type() const
+{
 	int h = fileno(stdin);
 	if (h == -1) {
 		return STD_HANDLE_INVALID;
@@ -231,13 +227,15 @@ OS_Unix::StdHandleType OS_Unix::get_stdin_type() const {
 	}
 	if (S_ISFIFO(statbuf.st_mode)) {
 		return STD_HANDLE_PIPE;
-	} else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
+	}
+	else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
 		return STD_HANDLE_FILE;
 	}
 	return STD_HANDLE_UNKNOWN;
 }
 
-OS_Unix::StdHandleType OS_Unix::get_stdout_type() const {
+OS_Unix::StdHandleType OS_Unix::get_stdout_type() const
+{
 	int h = fileno(stdout);
 	if (h == -1) {
 		return STD_HANDLE_INVALID;
@@ -252,13 +250,15 @@ OS_Unix::StdHandleType OS_Unix::get_stdout_type() const {
 	}
 	if (S_ISFIFO(statbuf.st_mode)) {
 		return STD_HANDLE_PIPE;
-	} else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
+	}
+	else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
 		return STD_HANDLE_FILE;
 	}
 	return STD_HANDLE_UNKNOWN;
 }
 
-OS_Unix::StdHandleType OS_Unix::get_stderr_type() const {
+OS_Unix::StdHandleType OS_Unix::get_stderr_type() const
+{
 	int h = fileno(stderr);
 	if (h == -1) {
 		return STD_HANDLE_INVALID;
@@ -273,13 +273,15 @@ OS_Unix::StdHandleType OS_Unix::get_stderr_type() const {
 	}
 	if (S_ISFIFO(statbuf.st_mode)) {
 		return STD_HANDLE_PIPE;
-	} else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
+	}
+	else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
 		return STD_HANDLE_FILE;
 	}
 	return STD_HANDLE_UNKNOWN;
 }
 
-Error OS_Unix::get_entropy(uint8_t *r_buffer, int p_bytes) {
+Error OS_Unix::get_entropy(uint8_t* r_buffer, int p_bytes)
+{
 #if defined(UNIX_GET_ENTROPY)
 	int left = p_bytes;
 	int ofs = 0;
@@ -305,34 +307,29 @@ Error OS_Unix::get_entropy(uint8_t *r_buffer, int p_bytes) {
 	return OK;
 }
 
-String OS_Unix::get_name() const {
-	return "Unix";
-}
+String OS_Unix::get_name() const { return "Unix"; }
 
-String OS_Unix::get_distribution_name() const {
-	return "";
-}
+String OS_Unix::get_distribution_name() const { return ""; }
 
-String OS_Unix::get_version() const {
-	return "";
-}
+String OS_Unix::get_version() const { return ""; }
 
-String OS_Unix::get_temp_path() const {
-	return "/tmp";
-}
+String OS_Unix::get_temp_path() const { return "/tmp"; }
 
-double OS_Unix::get_unix_time() const {
+double OS_Unix::get_unix_time() const
+{
 	struct timeval tv_now;
 	gettimeofday(&tv_now, nullptr);
 	return (double)tv_now.tv_sec + double(tv_now.tv_usec) / 1000000;
 }
 
-OS::DateTime OS_Unix::get_datetime(bool p_utc) const {
+OS::DateTime OS_Unix::get_datetime(bool p_utc) const
+{
 	time_t t = time(nullptr);
 	struct tm lt;
 	if (p_utc) {
 		gmtime_r(&t, &lt);
-	} else {
+	}
+	else {
 		localtime_r(&t, &lt);
 	}
 	DateTime ret;
@@ -351,7 +348,8 @@ OS::DateTime OS_Unix::get_datetime(bool p_utc) const {
 	return ret;
 }
 
-OS::TimeZoneInfo OS_Unix::get_time_zone_info() const {
+OS::TimeZoneInfo OS_Unix::get_time_zone_info() const
+{
 	time_t t = time(nullptr);
 	struct tm lt;
 	localtime_r(&t, &lt);
@@ -372,15 +370,18 @@ OS::TimeZoneInfo OS_Unix::get_time_zone_info() const {
 	int minutes = bias % 100;
 	if (bias < 0) {
 		ret.bias = hour * 60 - minutes;
-	} else {
+	}
+	else {
 		ret.bias = hour * 60 + minutes;
 	}
 
 	return ret;
 }
 
-void OS_Unix::delay_usec(uint32_t p_usec) const {
-	struct timespec requested = { static_cast<time_t>(p_usec / 1000000), (static_cast<long>(p_usec) % 1000000) * 1000 };
+void OS_Unix::delay_usec(uint32_t p_usec) const
+{
+	struct timespec requested = {
+		static_cast<time_t>(p_usec / 1000000), (static_cast<long>(p_usec) % 1000000) * 1000};
 	struct timespec remaining;
 	while (nanosleep(&requested, &remaining) == -1 && errno == EINTR) {
 		requested.tv_sec = remaining.tv_sec;
@@ -388,13 +389,14 @@ void OS_Unix::delay_usec(uint32_t p_usec) const {
 	}
 }
 
-uint64_t OS_Unix::get_ticks_usec() const {
+uint64_t OS_Unix::get_ticks_usec() const
+{
 #if defined(__APPLE__)
 	uint64_t longtime = mach_absolute_time() * _clock_scale;
 #else
 	// Unchecked return. Static analyzers might complain.
 	// If _setup_clock() succeeded, we assume clock_gettime() works.
-	struct timespec tv_now = { 0, 0 };
+	struct timespec tv_now = {0, 0};
 	clock_gettime(GODOT_CLOCK, &tv_now);
 	uint64_t longtime = ((uint64_t)tv_now.tv_nsec / 1000L) + (uint64_t)tv_now.tv_sec * 1000000L;
 #endif
@@ -403,214 +405,31 @@ uint64_t OS_Unix::get_ticks_usec() const {
 	return longtime;
 }
 
-Dictionary OS_Unix::get_memory_info() const {
-	Dictionary meminfo;
-
-	meminfo["physical"] = -1;
-	meminfo["free"] = -1;
-	meminfo["available"] = -1;
-	meminfo["stack"] = -1;
-
-#if defined(__APPLE__)
-	int64_t phy_mem = 0;
-	size_t len = sizeof(phy_mem);
-	if (sysctlbyname("hw.memsize", &phy_mem, &len, nullptr, 0) < 0) {
-		ERR_PRINT(vformat("Could not get hw.memsize, error code: %d - %s", errno, strerror(errno)));
-	}
-
-	mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
-	vm_statistics64_data_t vmstat;
-	if (host_statistics64(mach_host_self(), HOST_VM_INFO64, (host_info64_t)&vmstat, &count) != KERN_SUCCESS) {
-		ERR_PRINT("Could not get host vm statistics.");
-	}
-	int64_t used = (vmstat.active_count + vmstat.inactive_count + vmstat.speculative_count + vmstat.wire_count + vmstat.compressor_page_count - vmstat.purgeable_count - vmstat.external_page_count) * (int64_t)vm_page_size;
-
-#if !defined(APPLE_EMBEDDED_ENABLED)
-	struct xsw_usage swap_used = {};
-	len = sizeof(swap_used);
-	if (sysctlbyname("vm.swapusage", &swap_used, &len, nullptr, 0) < 0) {
-		ERR_PRINT(vformat("Could not get vm.swapusage, error code: %d - %s", errno, strerror(errno)));
-	}
-#endif
-
-	if (phy_mem != 0) {
-		meminfo["physical"] = phy_mem;
-	}
-	if (used != 0) {
-		meminfo["free"] = phy_mem - used;
-	}
-#if defined(APPLE_EMBEDDED_ENABLED)
-	meminfo["available"] = meminfo["free"];
-#else
-	if (swap_used.xsu_avail + (phy_mem - used) != 0) {
-		meminfo["available"] = swap_used.xsu_avail + (phy_mem - used);
-	}
-#endif
-
-#elif defined(__FreeBSD__)
-	int pagesize = 0;
-	size_t len = sizeof(pagesize);
-	if (sysctlbyname("vm.stats.vm.v_page_size", &pagesize, &len, nullptr, 0) < 0) {
-		ERR_PRINT(vformat("Could not get vm.stats.vm.v_page_size, error code: %d - %s", errno, strerror(errno)));
-	}
-
-	uint64_t mtotal = 0;
-	len = sizeof(mtotal);
-	if (sysctlbyname("vm.stats.vm.v_page_count", &mtotal, &len, nullptr, 0) < 0) {
-		ERR_PRINT(vformat("Could not get vm.stats.vm.v_page_count, error code: %d - %s", errno, strerror(errno)));
-	}
-	uint64_t mfree = 0;
-	len = sizeof(mfree);
-	if (sysctlbyname("vm.stats.vm.v_free_count", &mfree, &len, nullptr, 0) < 0) {
-		ERR_PRINT(vformat("Could not get vm.stats.vm.v_free_count, error code: %d - %s", errno, strerror(errno)));
-	}
-
-	uint64_t stotal = 0;
-	uint64_t sused = 0;
-	char errmsg[_POSIX2_LINE_MAX] = {};
-	kvm_t *kd = kvm_openfiles(nullptr, "/dev/null", nullptr, 0, errmsg);
-	if (kd == nullptr) {
-		ERR_PRINT(vformat("kvm_openfiles failed, error: %s", errmsg));
-	} else {
-		struct kvm_swap swap_info[32];
-		int count = kvm_getswapinfo(kd, swap_info, 32, 0);
-		for (int i = 0; i < count; i++) {
-			stotal += swap_info[i].ksw_total;
-			sused += swap_info[i].ksw_used;
-		}
-		kvm_close(kd);
-	}
-
-	if (mtotal * pagesize != 0) {
-		meminfo["physical"] = mtotal * pagesize;
-	}
-	if (mfree * pagesize != 0) {
-		meminfo["free"] = mfree * pagesize;
-	}
-	if ((mfree + stotal - sused) * pagesize != 0) {
-		meminfo["available"] = (mfree + stotal - sused) * pagesize;
-	}
-#elif defined(__OpenBSD__)
-	int pagesize = sysconf(_SC_PAGESIZE);
-
-	const int mib[] = { CTL_VM, VM_UVMEXP };
-	uvmexp uvmexp_info;
-	size_t len = sizeof(uvmexp_info);
-	if (sysctl(mib, 2, &uvmexp_info, &len, nullptr, 0) < 0) {
-		ERR_PRINT(vformat("Could not get CTL_VM, VM_UVMEXP, error code: %d - %s", errno, strerror(errno)));
-	}
-
-	uint64_t stotal = 0;
-	uint64_t sused = 0;
-	int count = swapctl(SWAP_NSWAP, 0, 0);
-	if (count > 0) {
-		swapent swap_info[count];
-		count = swapctl(SWAP_STATS, swap_info, count);
-
-		for (int i = 0; i < count; i++) {
-			if (swap_info[i].se_flags & SWF_ENABLE) {
-				sused += swap_info[i].se_inuse;
-				stotal += swap_info[i].se_nblks;
-			}
-		}
-	}
-
-	if (uvmexp_info.npages * pagesize != 0) {
-		meminfo["physical"] = uvmexp_info.npages * pagesize;
-	}
-	if (uvmexp_info.free * pagesize != 0) {
-		meminfo["free"] = uvmexp_info.free * pagesize;
-	}
-	if ((uvmexp_info.free * pagesize) + (stotal - sused) * DEV_BSIZE != 0) {
-		meminfo["available"] = (uvmexp_info.free * pagesize) + (stotal - sused) * DEV_BSIZE;
-	}
-#elif defined(__NetBSD__)
-	int pagesize = sysconf(_SC_PAGESIZE);
-
-	const int mib[] = { CTL_VM, VM_UVMEXP2 };
-	uvmexp_sysctl uvmexp_info;
-	size_t len = sizeof(uvmexp_info);
-	if (sysctl(mib, 2, &uvmexp_info, &len, nullptr, 0) < 0) {
-		ERR_PRINT(vformat("Could not get CTL_VM, VM_UVMEXP2, error code: %d - %s", errno, strerror(errno)));
-	}
-
-	if (uvmexp_info.npages * pagesize != 0) {
-		meminfo["physical"] = uvmexp_info.npages * pagesize;
-	}
-	if (uvmexp_info.free * pagesize != 0) {
-		meminfo["free"] = uvmexp_info.free * pagesize;
-	}
-	if ((uvmexp_info.free + uvmexp_info.swpages - uvmexp_info.swpginuse) * pagesize != 0) {
-		meminfo["available"] = (uvmexp_info.free + uvmexp_info.swpages - uvmexp_info.swpginuse) * pagesize;
-	}
-#else
-	Error err;
-	Ref<FileAccess> f = FileAccess::open("/proc/meminfo", FileAccess::READ, &err);
-	uint64_t mtotal = 0;
-	uint64_t mfree = 0;
-	uint64_t sfree = 0;
-	while (f.is_valid() && !f->eof_reached()) {
-		String s = f->get_line().strip_edges();
-		if (s.begins_with("MemTotal:")) {
-			Vector<String> stok = s.replace("MemTotal:", "").strip_edges().split(" ");
-			if (stok.size() == 2) {
-				mtotal = stok[0].to_int() * 1024;
-			}
-		}
-		if (s.begins_with("MemFree:")) {
-			Vector<String> stok = s.replace("MemFree:", "").strip_edges().split(" ");
-			if (stok.size() == 2) {
-				mfree = stok[0].to_int() * 1024;
-			}
-		}
-		if (s.begins_with("SwapFree:")) {
-			Vector<String> stok = s.replace("SwapFree:", "").strip_edges().split(" ");
-			if (stok.size() == 2) {
-				sfree = stok[0].to_int() * 1024;
-			}
-		}
-	}
-
-	if (mtotal != 0) {
-		meminfo["physical"] = mtotal;
-	}
-	if (mfree != 0) {
-		meminfo["free"] = mfree;
-	}
-	if (mfree + sfree != 0) {
-		meminfo["available"] = mfree + sfree;
-	}
-#endif
-
-	rlimit stackinfo = {};
-	getrlimit(RLIMIT_STACK, &stackinfo);
-
-	if (stackinfo.rlim_cur != 0) {
-		meminfo["stack"] = (int64_t)stackinfo.rlim_cur;
-	}
-
-	return meminfo;
-}
-
 #if !defined(__GLIBC__) && !defined(WEB_ENABLED)
-void OS_Unix::_load_iconv() {
+void OS_Unix::_load_iconv()
+{
 #if defined(MACOS_ENABLED) || defined(IOS_ENABLED)
-	String iconv_lib_aliases[] = { "/usr/lib/libiconv.2.dylib" };
-	String iconv_func_aliases[] = { "iconv" };
-	String charset_lib_aliases[] = { "/usr/lib/libcharset.1.dylib" };
+	String iconv_lib_aliases[] = {"/usr/lib/libiconv.2.dylib"};
+	String iconv_func_aliases[] = {"iconv"};
+	String charset_lib_aliases[] = {"/usr/lib/libcharset.1.dylib"};
 #else
-	String iconv_lib_aliases[] = { "", "libiconv.2.so", "libiconv.so" };
-	String iconv_func_aliases[] = { "libiconv", "iconv", "bsd_iconv", "rpl_iconv" };
-	String charset_lib_aliases[] = { "", "libcharset.1.so", "libcharset.so" };
+	String iconv_lib_aliases[] = {"", "libiconv.2.so", "libiconv.so"};
+	String iconv_func_aliases[] = {"libiconv", "iconv", "bsd_iconv", "rpl_iconv"};
+	String charset_lib_aliases[] = {"", "libcharset.1.so", "libcharset.so"};
 #endif
 
 	for (size_t i = 0; i < sizeof(iconv_lib_aliases) / sizeof(iconv_lib_aliases[0]); i++) {
-		void *iconv_lib = iconv_lib_aliases[i].is_empty() ? RTLD_NEXT : dlopen(iconv_lib_aliases[i].utf8().get_data(), RTLD_NOW);
+		void* iconv_lib = iconv_lib_aliases[i].is_empty()
+							  ? RTLD_NEXT
+							  : dlopen(iconv_lib_aliases[i].utf8().get_data(), RTLD_NOW);
 		if (iconv_lib) {
-			for (size_t j = 0; j < sizeof(iconv_func_aliases) / sizeof(iconv_func_aliases[0]); j++) {
-				gd_iconv_open = (PIConvOpen)dlsym(iconv_lib, (iconv_func_aliases[j] + "_open").utf8().get_data());
+			for (size_t j = 0; j < sizeof(iconv_func_aliases) / sizeof(iconv_func_aliases[0]);
+				 j++) {
+				gd_iconv_open = (PIConvOpen)dlsym(
+					iconv_lib, (iconv_func_aliases[j] + "_open").utf8().get_data());
 				gd_iconv = (PIConv)dlsym(iconv_lib, (iconv_func_aliases[j]).utf8().get_data());
-				gd_iconv_close = (PIConvClose)dlsym(iconv_lib, (iconv_func_aliases[j] + "_close").utf8().get_data());
+				gd_iconv_close = (PIConvClose)dlsym(
+					iconv_lib, (iconv_func_aliases[j] + "_close").utf8().get_data());
 				if (gd_iconv_open && gd_iconv && gd_iconv_close) {
 					break;
 				}
@@ -625,7 +444,9 @@ void OS_Unix::_load_iconv() {
 	}
 
 	for (size_t i = 0; i < sizeof(charset_lib_aliases) / sizeof(charset_lib_aliases[0]); i++) {
-		void *cs_lib = charset_lib_aliases[i].is_empty() ? RTLD_NEXT : dlopen(charset_lib_aliases[i].utf8().get_data(), RTLD_NOW);
+		void* cs_lib = charset_lib_aliases[i].is_empty()
+						   ? RTLD_NEXT
+						   : dlopen(charset_lib_aliases[i].utf8().get_data(), RTLD_NOW);
 		if (cs_lib) {
 			gd_locale_charset = (PIConvLocaleCharset)dlsym(cs_lib, "locale_charset");
 			if (gd_locale_charset) {
@@ -640,22 +461,25 @@ void OS_Unix::_load_iconv() {
 }
 #endif
 
-String OS_Unix::multibyte_to_string(const String &p_encoding, const PackedByteArray &p_array) const {
+String OS_Unix::multibyte_to_string(const String& p_encoding, const PackedByteArray& p_array) const
+{
 	ERR_FAIL_COND_V_MSG(!_iconv_ok, String(), "Conversion failed: Unable to load libiconv");
 
 	LocalVector<char> chars;
 #if defined(__GLIBC__) || defined(WEB_ENABLED)
-	gd_iconv_t ctx = gd_iconv_open("UTF-8", p_encoding.is_empty() ? nl_langinfo(CODESET) : p_encoding.utf8().get_data());
+	gd_iconv_t ctx = gd_iconv_open(
+		"UTF-8", p_encoding.is_empty() ? nl_langinfo(CODESET) : p_encoding.utf8().get_data());
 #else
-	gd_iconv_t ctx = gd_iconv_open("UTF-8", p_encoding.is_empty() ? gd_locale_charset() : p_encoding.utf8().get_data());
+	gd_iconv_t ctx = gd_iconv_open(
+		"UTF-8", p_encoding.is_empty() ? gd_locale_charset() : p_encoding.utf8().get_data());
 #endif
 	ERR_FAIL_COND_V_MSG(ctx == (gd_iconv_t)(-1), String(), "Conversion failed: Unknown encoding");
 
-	char *in_ptr = (char *)p_array.ptr();
+	char* in_ptr = (char*)p_array.ptr();
 	size_t in_size = p_array.size();
 
 	chars.resize(in_size);
-	char *out_ptr = (char *)chars.ptr();
+	char* out_ptr = (char*)chars.ptr();
 	size_t out_size = chars.size();
 
 	while (gd_iconv(ctx, &in_ptr, &in_size, &out_ptr, &out_size) == (size_t)-1) {
@@ -666,44 +490,50 @@ String OS_Unix::multibyte_to_string(const String &p_encoding, const PackedByteAr
 		int64_t rate = (chars.size()) / (p_array.size() - in_size);
 		size_t oldpos = chars.size() - out_size;
 		chars.resize(chars.size() + in_size * rate);
-		out_ptr = (char *)chars.ptr() + oldpos;
+		out_ptr = (char*)chars.ptr() + oldpos;
 		out_size = chars.size() - oldpos;
 	}
 	chars.resize(chars.size() - out_size);
 	gd_iconv_close(ctx);
 
-	return String::utf8((const char *)chars.ptr(), chars.size());
+	return String::utf8((const char*)chars.ptr(), chars.size());
 }
 
-PackedByteArray OS_Unix::string_to_multibyte(const String &p_encoding, const String &p_string) const {
-	ERR_FAIL_COND_V_MSG(!_iconv_ok, PackedByteArray(), "Conversion failed: Unable to load libiconv");
+PackedByteArray OS_Unix::string_to_multibyte(const String& p_encoding, const String& p_string) const
+{
+	ERR_FAIL_COND_V_MSG(
+		!_iconv_ok, PackedByteArray(), "Conversion failed: Unable to load libiconv");
 
 	CharString charstr = p_string.utf8();
 
 	PackedByteArray ret;
 #if defined(__GLIBC__) || defined(WEB_ENABLED)
-	gd_iconv_t ctx = gd_iconv_open(p_encoding.is_empty() ? nl_langinfo(CODESET) : p_encoding.utf8().get_data(), "UTF-8");
+	gd_iconv_t ctx = gd_iconv_open(
+		p_encoding.is_empty() ? nl_langinfo(CODESET) : p_encoding.utf8().get_data(), "UTF-8");
 #else
-	gd_iconv_t ctx = gd_iconv_open(p_encoding.is_empty() ? gd_locale_charset() : p_encoding.utf8().get_data(), "UTF-8");
+	gd_iconv_t ctx = gd_iconv_open(
+		p_encoding.is_empty() ? gd_locale_charset() : p_encoding.utf8().get_data(), "UTF-8");
 #endif
-	ERR_FAIL_COND_V_MSG(ctx == (gd_iconv_t)(-1), PackedByteArray(), "Conversion failed: Unknown encoding");
+	ERR_FAIL_COND_V_MSG(
+		ctx == (gd_iconv_t)(-1), PackedByteArray(), "Conversion failed: Unknown encoding");
 
-	char *in_ptr = (char *)charstr.ptr();
+	char* in_ptr = (char*)charstr.ptr();
 	size_t in_size = charstr.size();
 
 	ret.resize(in_size);
-	char *out_ptr = (char *)ret.ptrw();
+	char* out_ptr = (char*)ret.ptrw();
 	size_t out_size = ret.size();
 
 	while (gd_iconv(ctx, &in_ptr, &in_size, &out_ptr, &out_size) == (size_t)-1) {
 		if (errno != E2BIG) {
 			gd_iconv_close(ctx);
-			ERR_FAIL_V_MSG(PackedByteArray(), vformat("Conversion failed: %d - %s", errno, strerror(errno)));
+			ERR_FAIL_V_MSG(
+				PackedByteArray(), vformat("Conversion failed: %d - %s", errno, strerror(errno)));
 		}
 		int64_t rate = (ret.size()) / (charstr.size() - in_size);
 		size_t oldpos = ret.size() - out_size;
 		ret.resize(ret.size() + in_size * rate);
-		out_ptr = (char *)ret.ptrw() + oldpos;
+		out_ptr = (char*)ret.ptrw() + oldpos;
 		out_size = ret.size() - oldpos;
 	}
 	ret.resize(ret.size() - out_size);
@@ -712,117 +542,8 @@ PackedByteArray OS_Unix::string_to_multibyte(const String &p_encoding, const Str
 	return ret;
 }
 
-Dictionary OS_Unix::execute_with_pipe(const String &p_path, const List<String> &p_arguments, bool p_blocking) {
-#define CLEAN_PIPES \
-	if (pipe_in[0] >= 0) { \
-		::close(pipe_in[0]); \
-	} \
-	if (pipe_in[1] >= 0) { \
-		::close(pipe_in[1]); \
-	} \
-	if (pipe_out[0] >= 0) { \
-		::close(pipe_out[0]); \
-	} \
-	if (pipe_out[1] >= 0) { \
-		::close(pipe_out[1]); \
-	} \
-	if (pipe_err[0] >= 0) { \
-		::close(pipe_err[0]); \
-	} \
-	if (pipe_err[1] >= 0) { \
-		::close(pipe_err[1]); \
-	}
-
-	Dictionary ret;
-#ifdef __EMSCRIPTEN__
-	// Don't compile this code at all to avoid undefined references.
-	// Actual virtual call goes to OS_Web.
-	ERR_FAIL_V(ret);
-#else
-	// Create pipes.
-	int pipe_in[2] = { -1, -1 };
-	int pipe_out[2] = { -1, -1 };
-	int pipe_err[2] = { -1, -1 };
-
-	ERR_FAIL_COND_V(pipe(pipe_in) != 0, ret);
-	if (pipe(pipe_out) != 0) {
-		CLEAN_PIPES
-		ERR_FAIL_V(ret);
-	}
-	if (pipe(pipe_err) != 0) {
-		CLEAN_PIPES
-		ERR_FAIL_V(ret);
-	}
-
-	// Create process.
-	pid_t pid = fork();
-	if (pid < 0) {
-		CLEAN_PIPES
-		ERR_FAIL_V(ret);
-	}
-
-	if (pid == 0) {
-		// The new process
-		// Create a new session-ID so parent won't wait for it.
-		// This ensures the process won't go zombie at the end.
-		setsid();
-
-		// The child process.
-		Vector<CharString> cs;
-		cs.push_back(p_path.utf8());
-		for (const String &arg : p_arguments) {
-			cs.push_back(arg.utf8());
-		}
-
-		Vector<char *> args;
-		for (int i = 0; i < cs.size(); i++) {
-			args.push_back((char *)cs[i].get_data());
-		}
-		args.push_back(0);
-
-		::close(STDIN_FILENO);
-		::dup2(pipe_in[0], STDIN_FILENO);
-
-		::close(STDOUT_FILENO);
-		::dup2(pipe_out[1], STDOUT_FILENO);
-
-		::close(STDERR_FILENO);
-		::dup2(pipe_err[1], STDERR_FILENO);
-
-		CLEAN_PIPES
-
-		execvp(p_path.utf8().get_data(), &args[0]);
-		// The execvp() function only returns if an error occurs.
-		fprintf(stderr, "Could not create child process: %s\n", p_path.utf8().get_data());
-		raise(SIGKILL);
-	}
-	::close(pipe_in[0]);
-	::close(pipe_out[1]);
-	::close(pipe_err[1]);
-
-	Ref<FileAccessUnixPipe> main_pipe;
-	main_pipe.instantiate();
-	main_pipe->open_existing(pipe_out[0], pipe_in[1], p_blocking);
-
-	Ref<FileAccessUnixPipe> err_pipe;
-	err_pipe.instantiate();
-	err_pipe->open_existing(pipe_err[0], -1, p_blocking);
-
-	ProcessInfo pi;
-	process_map_mutex.lock();
-	process_map->insert(pid, pi);
-	process_map_mutex.unlock();
-
-	ret["stdio"] = main_pipe;
-	ret["stderr"] = err_pipe;
-	ret["pid"] = pid;
-
-#undef CLEAN_PIPES
-	return ret;
-#endif
-}
-
-int OS_Unix::_wait_for_pid_completion(const pid_t p_pid, int *r_status, int p_options, pid_t *r_pid) {
+int OS_Unix::_wait_for_pid_completion(const pid_t p_pid, int* r_status, int p_options, pid_t* r_pid)
+{
 	while (true) {
 		pid_t pid = waitpid(p_pid, r_status, p_options);
 		if (pid != -1) {
@@ -842,8 +563,9 @@ int OS_Unix::_wait_for_pid_completion(const pid_t p_pid, int *r_status, int p_op
 	}
 }
 
-bool OS_Unix::_check_pid_is_running(const pid_t p_pid, int *r_status) const {
-	const ProcessInfo *pi = process_map->getptr(p_pid);
+bool OS_Unix::_check_pid_is_running(const pid_t p_pid, int* r_status) const
+{
+	const ProcessInfo* pi = process_map->getptr(p_pid);
 
 	if (pi && !pi->is_running) {
 		// Can return cached value.
@@ -860,8 +582,11 @@ bool OS_Unix::_check_pid_is_running(const pid_t p_pid, int *r_status) const {
 		// Thread is still running.
 		return true;
 	}
-	ERR_FAIL_COND_V_MSG(result != 0 && errno == ECHILD, false, vformat("The process %d does not exist or is not a child of the calling process.", (int)p_pid));
-	ERR_FAIL_COND_V_MSG(result != 0, false, vformat("waitpid for process %d failed with errno: %d", (int)p_pid, errno));
+	ERR_FAIL_COND_V_MSG(result != 0 && errno == ECHILD, false,
+		vformat(
+			"The process %d does not exist or is not a child of the calling process.", (int)p_pid));
+	ERR_FAIL_COND_V_MSG(result != 0, false,
+		vformat("waitpid for process %d failed with errno: %d", (int)p_pid, errno));
 
 	// Thread exited normally.
 	status = WIFEXITED(status) ? WEXITSTATUS(status) : status;
@@ -878,7 +603,9 @@ bool OS_Unix::_check_pid_is_running(const pid_t p_pid, int *r_status) const {
 	return false;
 }
 
-Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, String *r_pipe, int *r_exitcode, bool read_stderr, Mutex *p_pipe_mutex, bool p_open_console) {
+Error OS_Unix::execute(const String& p_path, const List<String>& p_arguments, String* r_pipe,
+	int* r_exitcode, bool read_stderr, Mutex* p_pipe_mutex, bool p_open_console)
+{
 #ifdef __EMSCRIPTEN__
 	// Don't compile this code at all to avoid undefined references.
 	// Actual virtual call goes to OS_Web.
@@ -886,16 +613,17 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, St
 #else
 	if (r_pipe) {
 		String command = "\"" + p_path + "\"";
-		for (const String &arg : p_arguments) {
+		for (const String& arg : p_arguments) {
 			command += String(" \"") + arg + "\"";
 		}
 		if (read_stderr) {
 			command += " 2>&1"; // Include stderr
-		} else {
+		}
+		else {
 			command += " 2>/dev/null"; // Silence stderr
 		}
 
-		FILE *f = popen(command.utf8().get_data(), "r");
+		FILE* f = popen(command.utf8().get_data(), "r");
 		ERR_FAIL_NULL_V_MSG(f, ERR_CANT_OPEN, "Cannot create pipe from command: " + command + ".");
 		char buf[65535];
 		while (fgets(buf, 65535, f)) {
@@ -905,7 +633,8 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, St
 			String pipe_out;
 			if (pipe_out.append_utf8(buf) == OK) {
 				(*r_pipe) += pipe_out;
-			} else {
+			}
+			else {
 				(*r_pipe) += String(buf); // If not valid UTF-8 try decode as Latin-1
 			}
 			if (p_pipe_mutex) {
@@ -927,13 +656,13 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, St
 		// The child process
 		Vector<CharString> cs;
 		cs.push_back(p_path.utf8());
-		for (const String &arg : p_arguments) {
+		for (const String& arg : p_arguments) {
 			cs.push_back(arg.utf8());
 		}
 
-		Vector<char *> args;
+		Vector<char*> args;
 		for (int i = 0; i < cs.size(); i++) {
-			args.push_back((char *)cs[i].get_data());
+			args.push_back((char*)cs[i].get_data());
 		}
 		args.push_back(0);
 
@@ -952,7 +681,9 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, St
 #endif
 }
 
-Error OS_Unix::create_process(const String &p_path, const List<String> &p_arguments, ProcessID *r_child_id, bool p_open_console) {
+Error OS_Unix::create_process(const String& p_path, const List<String>& p_arguments,
+	ProcessID* r_child_id, bool p_open_console)
+{
 #ifdef __EMSCRIPTEN__
 	// Don't compile this code at all to avoid undefined references.
 	// Actual virtual call goes to OS_Web.
@@ -969,13 +700,13 @@ Error OS_Unix::create_process(const String &p_path, const List<String> &p_argume
 
 		Vector<CharString> cs;
 		cs.push_back(p_path.utf8());
-		for (const String &arg : p_arguments) {
+		for (const String& arg : p_arguments) {
 			cs.push_back(arg.utf8());
 		}
 
-		Vector<char *> args;
+		Vector<char*> args;
 		for (int i = 0; i < cs.size(); i++) {
-			args.push_back((char *)cs[i].get_data());
+			args.push_back((char*)cs[i].get_data());
 		}
 		args.push_back(0);
 
@@ -997,26 +728,27 @@ Error OS_Unix::create_process(const String &p_path, const List<String> &p_argume
 #endif
 }
 
-Error OS_Unix::kill(const ProcessID &p_pid) {
+Error OS_Unix::kill(const ProcessID& p_pid)
+{
 	int ret = ::kill(p_pid, SIGKILL);
 	if (!ret) {
-		//avoid zombie process
+		// avoid zombie process
 		int st;
 		_wait_for_pid_completion(p_pid, &st, 0);
 	}
 	return ret ? ERR_INVALID_PARAMETER : OK;
 }
 
-int OS_Unix::get_process_id() const {
-	return getpid();
-}
+int OS_Unix::get_process_id() const { return getpid(); }
 
-bool OS_Unix::is_process_running(const ProcessID &p_pid) const {
+bool OS_Unix::is_process_running(const ProcessID& p_pid) const
+{
 	MutexLock lock(process_map_mutex);
 	return _check_pid_is_running(p_pid, nullptr);
 }
 
-int OS_Unix::get_process_exit_code(const ProcessID &p_pid) const {
+int OS_Unix::get_process_exit_code(const ProcessID& p_pid) const
+{
 	MutexLock lock(process_map_mutex);
 
 	int exit_code = 0;
@@ -1028,7 +760,8 @@ int OS_Unix::get_process_exit_code(const ProcessID &p_pid) const {
 	return exit_code;
 }
 
-String OS_Unix::get_locale() const {
+String OS_Unix::get_locale() const
+{
 	if (!has_environment("LANG")) {
 		return "en";
 	}
@@ -1041,12 +774,16 @@ String OS_Unix::get_locale() const {
 	return locale;
 }
 
-Error OS_Unix::open_dynamic_library(const String &p_path, void *&p_library_handle, GDExtensionData *p_data) {
+Error OS_Unix::open_dynamic_library(
+	const String& p_path, void*& p_library_handle, GDExtensionData* p_data)
+{
 	String path = p_path;
 
 	if (FileAccess::exists(path) && path.is_relative_path()) {
-		// dlopen expects a slash, in this case a leading ./ for it to be interpreted as a relative path,
-		//  otherwise it will end up searching various system directories for the lib instead and finally failing.
+		// dlopen expects a slash, in this case a leading ./ for it to be interpreted as a relative
+		// path,
+		//  otherwise it will end up searching various system directories for the lib instead and
+		//  finally failing.
 		path = "./" + path;
 	}
 
@@ -1057,13 +794,16 @@ Error OS_Unix::open_dynamic_library(const String &p_path, void *&p_library_handl
 
 	if (!FileAccess::exists(path)) {
 		// This code exists so GDExtension can load .so files from a standard unix location.
-		path = get_executable_path().get_base_dir().path_join("../lib").path_join(p_path.get_file());
+		path =
+			get_executable_path().get_base_dir().path_join("../lib").path_join(p_path.get_file());
 	}
 
-	ERR_FAIL_COND_V_MSG(!FileAccess::exists(path), ERR_FILE_NOT_FOUND, vformat("Can't open dynamic library, file not found: '%s'.", p_path));
+	ERR_FAIL_COND_V_MSG(!FileAccess::exists(path), ERR_FILE_NOT_FOUND,
+		vformat("Can't open dynamic library, file not found: '%s'.", p_path));
 
 	p_library_handle = dlopen(path.utf8().get_data(), GODOT_DLOPEN_MODE);
-	ERR_FAIL_NULL_V_MSG(p_library_handle, ERR_CANT_OPEN, vformat("Can't open dynamic library: %s. Error: %s.", p_path, dlerror()));
+	ERR_FAIL_NULL_V_MSG(p_library_handle, ERR_CANT_OPEN,
+		vformat("Can't open dynamic library: %s. Error: %s.", p_path, dlerror()));
 
 	if (p_data != nullptr && p_data->r_resolved_path != nullptr) {
 		*p_data->r_resolved_path = path;
@@ -1072,29 +812,34 @@ Error OS_Unix::open_dynamic_library(const String &p_path, void *&p_library_handl
 	return OK;
 }
 
-Error OS_Unix::close_dynamic_library(void *p_library_handle) {
+Error OS_Unix::close_dynamic_library(void* p_library_handle)
+{
 	if (dlclose(p_library_handle)) {
 		return FAILED;
 	}
 	return OK;
 }
 
-Error OS_Unix::get_dynamic_library_symbol_handle(void *p_library_handle, const String &p_name, void *&p_symbol_handle, bool p_optional) {
-	const char *error;
+Error OS_Unix::get_dynamic_library_symbol_handle(
+	void* p_library_handle, const String& p_name, void*& p_symbol_handle, bool p_optional)
+{
+	const char* error;
 	dlerror(); // Clear existing errors
 
 	p_symbol_handle = dlsym(p_library_handle, p_name.utf8().get_data());
 
 	error = dlerror();
 	if (error != nullptr) {
-		ERR_FAIL_COND_V_MSG(!p_optional, ERR_CANT_RESOLVE, "Can't resolve symbol " + p_name + ". Error: " + error + ".");
+		ERR_FAIL_COND_V_MSG(!p_optional, ERR_CANT_RESOLVE,
+			"Can't resolve symbol " + p_name + ". Error: " + error + ".");
 
 		return ERR_CANT_RESOLVE;
 	}
 	return OK;
 }
 
-Error OS_Unix::set_cwd(const String &p_cwd) {
+Error OS_Unix::set_cwd(const String& p_cwd)
+{
 	if (chdir(p_cwd.utf8().get_data()) != 0) {
 		return ERR_CANT_OPEN;
 	}
@@ -1102,7 +847,8 @@ Error OS_Unix::set_cwd(const String &p_cwd) {
 	return OK;
 }
 
-String OS_Unix::get_cwd() const {
+String OS_Unix::get_cwd() const
+{
 	String dir;
 	char real_current_dir_name[2048];
 	ERR_FAIL_NULL_V(getcwd(real_current_dir_name, 2048), ".");
@@ -1112,12 +858,14 @@ String OS_Unix::get_cwd() const {
 	return dir;
 }
 
-bool OS_Unix::has_environment(const String &p_var) const {
+bool OS_Unix::has_environment(const String& p_var) const
+{
 	return getenv(p_var.utf8().get_data()) != nullptr;
 }
 
-String OS_Unix::get_environment(const String &p_var) const {
-	const char *val = getenv(p_var.utf8().get_data());
+String OS_Unix::get_environment(const String& p_var) const
+{
+	const char* val = getenv(p_var.utf8().get_data());
 	if (val == nullptr) { // Not set; return empty string
 		return "";
 	}
@@ -1128,24 +876,31 @@ String OS_Unix::get_environment(const String &p_var) const {
 	return String(val); // Not valid UTF-8, so return as-is
 }
 
-void OS_Unix::set_environment(const String &p_var, const String &p_value) const {
-	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains_char('='), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
+void OS_Unix::set_environment(const String& p_var, const String& p_value) const
+{
+	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains_char('='),
+		vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
 	int err = setenv(p_var.utf8().get_data(), p_value.utf8().get_data(), /* overwrite: */ 1);
-	ERR_FAIL_COND_MSG(err != 0, vformat("Failed setting environment variable '%s', the system is out of memory.", p_var));
+	ERR_FAIL_COND_MSG(err != 0,
+		vformat("Failed setting environment variable '%s', the system is out of memory.", p_var));
 }
 
-void OS_Unix::unset_environment(const String &p_var) const {
-	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains_char('='), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
+void OS_Unix::unset_environment(const String& p_var) const
+{
+	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains_char('='),
+		vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
 	unsetenv(p_var.utf8().get_data());
 }
 
-String OS_Unix::get_user_data_dir(const String &p_user_dir) const {
+String OS_Unix::get_user_data_dir(const String& p_user_dir) const
+{
 	return get_data_path().path_join(p_user_dir);
 }
 
-String OS_Unix::get_executable_path() const {
+String OS_Unix::get_executable_path() const
+{
 #ifdef __linux__
-	//fix for running from a symlink
+	// fix for running from a symlink
 	char buf[PATH_MAX];
 	memset(buf, 0, PATH_MAX);
 	ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf));
@@ -1165,7 +920,7 @@ String OS_Unix::get_executable_path() const {
 
 	return String(resolved_path);
 #elif defined(__NetBSD__)
-	int mib[4] = { CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME };
+	int mib[4] = {CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME};
 	char buf[MAXPATHLEN];
 	size_t len = sizeof(buf);
 	if (sysctl(mib, 4, buf, &len, nullptr, 0) != 0) {
@@ -1173,14 +928,15 @@ String OS_Unix::get_executable_path() const {
 		return OS::get_executable_path();
 	}
 
-	// NetBSD does not always return a normalized path. For example if argv[0] is "./a.out" then executable path is "/home/netbsd/./a.out". Normalize with realpath:
+	// NetBSD does not always return a normalized path. For example if argv[0] is "./a.out" then
+	// executable path is "/home/netbsd/./a.out". Normalize with realpath:
 	char resolved_path[MAXPATHLEN];
 
 	realpath(buf, resolved_path);
 
 	return String(resolved_path);
 #elif defined(__FreeBSD__)
-	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
+	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
 	char buf[MAXPATHLEN];
 	size_t len = sizeof(buf);
 	if (sysctl(mib, 4, buf, &len, nullptr, 0) != 0) {
@@ -1194,7 +950,7 @@ String OS_Unix::get_executable_path() const {
 	uint32_t buff_size = 1;
 	_NSGetExecutablePath(temp_path, &buff_size);
 
-	char *resolved_path = new char[buff_size + 1];
+	char* resolved_path = new char[buff_size + 1];
 
 	if (_NSGetExecutablePath(resolved_path, &buff_size) == 1) {
 		WARN_PRINT("MAXPATHLEN is too small");
@@ -1205,12 +961,15 @@ String OS_Unix::get_executable_path() const {
 
 	return path;
 #else
-	ERR_PRINT("Warning, don't know how to obtain executable path on this OS! Please override this function properly.");
+	ERR_PRINT("Warning, don't know how to obtain executable path on this OS! Please override t
+his "
+			  "function properly.");
 	return OS::get_executable_path();
 #endif
 }
 
-String OS_Unix::expand_path(const String &p_path) const {
+String OS_Unix::expand_path(const String& p_path) const
+{
 	String path = p_path;
 
 	if (path.begins_with("~/") || path == "~") {
@@ -1223,15 +982,19 @@ String OS_Unix::expand_path(const String &p_path) const {
 	return path;
 }
 
-void UnixTerminalLogger::log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, ErrorType p_type, const Vector<Ref<ScriptBacktrace>> &p_script_backtraces) {
+void UnixTerminalLogger::log_error(const char* p_function, const char* p_file, int p_line,
+	const char* p_code, const char* p_rationale, bool p_editor_notify, ErrorType p_type,
+	const Vector<Ref<ScriptBacktrace>>& p_script_backtraces)
+{
 	if (!should_log(true)) {
 		return;
 	}
 
-	const char *err_details;
+	const char* err_details;
 	if (p_rationale && p_rationale[0]) {
 		err_details = p_rationale;
-	} else {
+	}
+	else {
 		err_details = p_code;
 	}
 
@@ -1239,59 +1002,57 @@ void UnixTerminalLogger::log_error(const char *p_function, const char *p_file, i
 	// This prevents Godot from writing ANSI escape codes when redirecting
 	// stdout and stderr to a file.
 	const bool tty = isatty(fileno(stdout));
-	const char *gray = tty ? "\E[0;90m" : "";
-	const char *red = tty ? "\E[0;91m" : "";
-	const char *red_bold = tty ? "\E[1;31m" : "";
-	const char *yellow = tty ? "\E[0;93m" : "";
-	const char *yellow_bold = tty ? "\E[1;33m" : "";
-	const char *magenta = tty ? "\E[0;95m" : "";
-	const char *magenta_bold = tty ? "\E[1;35m" : "";
-	const char *cyan = tty ? "\E[0;96m" : "";
-	const char *cyan_bold = tty ? "\E[1;36m" : "";
-	const char *reset = tty ? "\E[0m" : "";
+	const char* gray = tty ? "\E[0;90m" : "";
+	const char* red = tty ? "\E[0;91m" : "";
+	const char* red_bold = tty ? "\E[1;31m" : "";
+	const char* yellow = tty ? "\E[0;93m" : "";
+	const char* yellow_bold = tty ? "\E[1;33m" : "";
+	const char* magenta = tty ? "\E[0;95m" : "";
+	const char* magenta_bold = tty ? "\E[1;35m" : "";
+	const char* cyan = tty ? "\E[0;96m" : "";
+	const char* cyan_bold = tty ? "\E[1;36m" : "";
+	const char* reset = tty ? "\E[0m" : "";
 
-	const char *bold_color;
-	const char *normal_color;
+	const char* bold_color;
+	const char* normal_color;
 	switch (p_type) {
-		case ERR_WARNING:
-			bold_color = yellow_bold;
-			normal_color = yellow;
-			break;
-		case ERR_SCRIPT:
-			bold_color = magenta_bold;
-			normal_color = magenta;
-			break;
-		case ERR_SHADER:
-			bold_color = cyan_bold;
-			normal_color = cyan;
-			break;
-		case ERR_ERROR:
-		default:
-			bold_color = red_bold;
-			normal_color = red;
-			break;
+	case ERR_WARNING:
+		bold_color = yellow_bold;
+		normal_color = yellow;
+		break;
+	case ERR_SCRIPT:
+		bold_color = magenta_bold;
+		normal_color = magenta;
+		break;
+	case ERR_SHADER:
+		bold_color = cyan_bold;
+		normal_color = cyan;
+		break;
+	case ERR_ERROR:
+	default:
+		bold_color = red_bold;
+		normal_color = red;
+		break;
 	}
 
 	logf_error("%s%s:%s %s\n", bold_color, error_type_string(p_type), normal_color, err_details);
-	logf_error("%s%sat: %s (%s:%i)%s\n", gray, error_type_indent(p_type), p_function, p_file, p_line, reset);
-
-	for (const Ref<ScriptBacktrace> &backtrace : p_script_backtraces) {
-		if (!backtrace->is_empty()) {
-			logf_error("%s%s%s\n", gray, backtrace->format(strlen(error_type_indent(p_type))).utf8().get_data(), reset);
-		}
-	}
+	logf_error("%s%sat: %s (%s:%i)%s\n", gray, error_type_indent(p_type), p_function, p_file,
+		p_line, reset);
 }
 
 UnixTerminalLogger::~UnixTerminalLogger() {}
 
-OS_Unix::OS_Unix() {
+OS_Unix::OS_Unix()
+{
 #if !defined(__GLIBC__) && !defined(WEB_ENABLED)
 	_load_iconv();
 #endif
 
-	Vector<Logger *> loggers;
+	Vector<Logger*> loggers;
 	loggers.push_back(memnew(UnixTerminalLogger));
 	_set_logger(memnew(CompositeLogger(loggers)));
 }
 
 #endif
+
+

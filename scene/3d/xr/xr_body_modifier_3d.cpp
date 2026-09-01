@@ -43,7 +43,7 @@ void XRBodyModifier3D::set_body_tracker(const StringName& p_tracker_name)
 
 StringName XRBodyModifier3D::get_body_tracker() const { return tracker_name; }
 
-void XRBodyModifier3D::set_body_update(BitField<BodyUpdate> p_body_update)
+void XRBodyModifier3D::set_body_update(uint32_t p_body_update)
 {
 	body_update = p_body_update;
 
@@ -52,7 +52,7 @@ void XRBodyModifier3D::set_body_update(BitField<BodyUpdate> p_body_update)
 	}
 }
 
-BitField<XRBodyModifier3D::BodyUpdate> XRBodyModifier3D::get_body_update() const
+uint32_t XRBodyModifier3D::get_body_update() const
 {
 	return body_update;
 }
@@ -271,7 +271,7 @@ void XRBodyModifier3D::_process_modification(double p_delta)
 	Transform3D inv_transforms[XRBodyTracker::
 JOINT_MAX];
 	for (int joint = 0; joint < XRBodyTracker::JOINT_MAX; joint++) {
-		BitField<XRBodyTracker::JointFlags> flags =
+		uint32_t flags =
 			tracker->get_joint_flags(static_cast<XRBodyTracker::Joint>(joint));
 		has_valid_data[joint] = flags.has_flag(XRBodyTracker::JOINT_FLAG_ORIENTATION_VALID) &&
 								flags.has_flag(XRBodyTracker::JOINT_FLAG_POSITION_VALID);

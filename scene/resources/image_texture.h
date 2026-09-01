@@ -36,9 +36,6 @@ class BitMap;
 
 class ImageTexture : public Texture2D
 {
-	VLTRCLASS(ImageTexture, Texture2D);
-	RES_BASE_EXTENSION("tex");
-
 	mutable RID texture;
 	Image::Format format = Image::FORMAT_L8;
 	bool mipmaps = false;
@@ -92,8 +89,6 @@ public:
 
 class ImageTextureLayered : public TextureLayered
 {
-	VLTRCLASS(ImageTextureLayered, TextureLayered);
-
 	LayeredType layered_type;
 
 	mutable RID texture;
@@ -103,11 +98,6 @@ class ImageTextureLayered : public TextureLayered
 	int height = 0;
 	int layers = 0;
 	bool mipmaps = false;
-
-	Error _create_from_images(const Array& p_images);
-
-	Array _get_images() const;
-	void _set_images(const Array& p_images);
 
 protected:
 	static void _bind_methods();
@@ -133,8 +123,6 @@ public:
 
 class ImageTexture3D : public Texture3D
 {
-	VLTRCLASS(ImageTexture3D, Texture3D);
-
 	mutable RID texture;
 
 	Image::Format format = Image::FORMAT_L8;
@@ -144,15 +132,8 @@ class ImageTexture3D : public Texture3D
 	bool mipmaps = false;
 	bool images_stored = false;
 
-	Array _get_images() const;
-	void _set_images(const Array& p_images);
-
 protected:
 	static void _bind_methods();
-
-	Error _create(Image::Format p_format, int p_width, int p_height, int p_depth, bool p_mipmaps,
-		const Array& p_data);
-	void _update(const Array& p_data);
 
 public:
 	virtual Image::Format get_format() const override;
@@ -175,8 +156,6 @@ public:
 
 class Texture2DArray : public ImageTextureLayered
 {
-	VLTRCLASS(Texture2DArray, ImageTextureLayered)
-
 protected:
 	static void _bind_methods();
 
@@ -188,8 +167,6 @@ public:
 
 class Cubemap : public ImageTextureLayered
 {
-	VLTRCLASS(Cubemap, ImageTextureLayered);
-
 protected:
 	static void _bind_methods();
 
@@ -201,8 +178,6 @@ public:
 
 class CubemapArray : public ImageTextureLayered
 {
-	VLTRCLASS(CubemapArray, ImageTextureLayered);
-
 protected:
 	static void _bind_methods();
 

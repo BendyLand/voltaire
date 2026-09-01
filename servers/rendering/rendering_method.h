@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/variant/variant.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
 
@@ -93,7 +92,6 @@ public:
 	virtual void instance_set_pivot_data(
 		RID p_instance, float p_sorting_offset, bool p_use_aabb_center) = 0;
 	virtual void instance_set_transform(RID p_instance, const Transform3D& p_transform) = 0;
-	virtual void instance_attach_object_instance_id(RID p_instance, ObjectID p_id) = 0;
 	virtual void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight) = 0;
 	virtual void instance_set_surface_override_material(
 		RID p_instance, int p_surface, RID p_material) = 0;
@@ -111,14 +109,6 @@ public:
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
 
-	// don't use these in a game!
-	virtual Vector<ObjectID> instances_cull_aabb(
-		const AABB& p_aabb, RID p_scenario = RID()) const = 0;
-	virtual Vector<ObjectID> instances_cull_ray(
-		const Vector3& p_from, const Vector3& p_to, RID p_scenario = RID()) const = 0;
-	virtual Vector<ObjectID> instances_cull_convex(
-		const Vector<Plane>& p_convex, RID p_scenario = RID()) const = 0;
-
 	virtual void instance_geometry_set_flag(
 		RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled) = 0;
 	virtual void instance_geometry_set_cast_shadows_setting(
@@ -131,14 +121,6 @@ public:
 	virtual void instance_geometry_set_lightmap(
 		RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_slice_index) = 0;
 	virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias) = 0;
-	virtual void instance_geometry_set_shader_parameter(
-		RID p_instance, const StringName& p_parameter, const Variant& p_value) = 0;
-	virtual void instance_geometry_get_shader_parameter_list(
-		RID p_instance, List<PropertyInfo>* p_parameters) const = 0;
-	virtual Variant instance_geometry_get_shader_parameter(
-		RID p_instance, const StringName& p_parameter) const = 0;
-	virtual Variant instance_geometry_get_shader_parameter_default_value(
-		RID p_instance, const StringName& p_parameter) const = 0;
 
 	/* PIPELINES */
 
@@ -165,8 +147,6 @@ public:
 
 	virtual void compositor_effect_set_enabled(RID p_compositor, bool p_enabled) = 0;
 
-	virtual void compositor_effect_set_callback(RID p_compositor,
-		RSE::CompositorEffectCallbackType p_callback_type, const Callable& p_callback) = 0;
 	virtual void compositor_effect_set_flag(
 		RID p_compositor, RSE::CompositorEffectFlags p_flag, bool p_set) = 0;
 
@@ -176,8 +156,6 @@ public:
 	virtual void compositor_initialize(RID p_rid) = 0;
 
 	virtual bool is_compositor(RID p_compositor) const = 0;
-
-	virtual void compositor_set_compositor_effects(RID p_env, const Array& p_effects) = 0;
 
 	/* ENVIRONMENT API */
 
@@ -378,8 +356,7 @@ public:
 	virtual RID environment_get_color_correction(RID p_env) const = 0;
 
 	virtual Ref<Image> environment_bake_panorama(
-		RID p_env, bool p_bake_irradiance, const Size2i
-& p_size) = 0;
+		RID p_env, bool p_bake_irradiance, const Size2i& p_size) = 0;
 
 	virtual bool is_environment(RID p_environment) const = 0;
 
@@ -398,13 +375,6 @@ public:
 	virtual void gi_set_use_half_resolution(bool p_enable) = 0;
 
 	virtual void set_debug_draw_mode(RSE::ViewportDebugDraw p_debug_draw) = 0;
-
-	virtual Array bake_render_uv2(
-		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size) = 0;
-	virtual PackedByteArray bake_render_area_light_atlas(
-		const Array& p_area_light_textures,
-		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size,
-		int p_mipmaps) = 0;
 
 	virtual void voxel_gi_set_quality(RSE::VoxelGIQuality) = 0;
 

@@ -32,11 +32,11 @@
 
 #include "scene/gui/control.h"
 
-class TextureRect : public Control {
-	VLTRCLASS(TextureRect, Control);
-
+class TextureRect : public Control
+{
 public:
-	enum ExpandMode {
+	enum ExpandMode
+	{
 		EXPAND_KEEP_SIZE,
 		EXPAND_IGNORE_SIZE,
 		EXPAND_FIT_WIDTH,
@@ -45,7 +45,8 @@ public:
 		EXPAND_FIT_HEIGHT_PROPORTIONAL,
 	};
 
-	enum StretchMode {
+	enum StretchMode
+	{
 		STRETCH_SCALE,
 		STRETCH_TILE,
 		STRETCH_KEEP,
@@ -68,12 +69,9 @@ protected:
 	void _notification(int p_what);
 	virtual Size2 get_minimum_size() const override;
 	static void _bind_methods();
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-#endif
 
 public:
-	void set_texture(const Ref<Texture2D> &p_tex);
+	void set_texture(const Ref<Texture2D>& p_tex);
 	Ref<Texture2D> get_texture() const;
 
 	void set_expand_mode(ExpandMode p_mode);
@@ -94,5 +92,4 @@ public:
 	~TextureRect();
 };
 
-VARIANT_ENUM_CAST(TextureRect::ExpandMode);
-VARIANT_ENUM_CAST(TextureRect::StretchMode);
+

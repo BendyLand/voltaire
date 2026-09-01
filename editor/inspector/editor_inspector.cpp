@@ -6973,7 +6973,7 @@ void EditorInspectorPlugin::parse_begin(Object* p_object) {}
 
 bool EditorInspectorPlugin::parse_property(Object* p_object, const Variant::Type p_type,
 	const String& p_path, const PropertyHint p_hint, const String& p_hint_string,
-	const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+	const uint32_t p_usage, const bool p_wide)
 {
 	return false;
 }

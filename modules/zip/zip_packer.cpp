@@ -70,7 +70,7 @@ void ZIPPacker::set_compression_level(int p_compression_level)
 int ZIPPacker::get_compression_level() const { return compression_level; }
 
 Error ZIPPacker::start_file(const String& p_path,
-	BitField<FileAccess::UnixPermissionFlags> p_permissions, uint64_t p_modified_time)
+	uint32_t p_permissions, uint64_t p_modified_time)
 {
 	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPPacker must be opened before use.");
 
@@ -136,7 +136,7 @@ Error ZIPPacker::close_file()
 }
 
 Error ZIPPacker::add_directory(const String& p_path,
-	BitField<FileAccess::UnixPermissionFlags> p_permissions, uint64_t p_modified_time)
+	uint32_t p_permissions, uint64_t p_modified_time)
 {
 	String path = p_path.ends_with("/") ? p_path : p_path + "/";
 	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPPacker must be opened before use.");

@@ -45,7 +45,7 @@ public:
 	};
 
 	// Used by the shader baker to globally enable features on all the shaders that will be exported.
-	virtual void enable_features(BitField<FeatureBits> p_feature_bits) = 0;
+	virtual void enable_features(uint32_t p_feature_bits) = 0;
 
 	// Used by the shader baker to reference by name the library.
 	virtual String get_name() const = 0;

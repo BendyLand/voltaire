@@ -2628,7 +2628,7 @@ String EditorExportPlatformAndroid::get_device_architecture(int p_index) const
 }
 
 Error EditorExportPlatformAndroid::run(const Ref<EditorExportPreset>& p_preset, int p_device,
-	BitField<EditorExportPlatform::DebugFlags> p_debug_flags)
+	uint32_t p_debug_flags)
 {
 	ERR_FAIL_INDEX_V(p_device, devices.size() + 1, ERR_INVALID_PARAMETER);
 	if (p_device == 0) {
@@ -3550,7 +3550,7 @@ List<String> EditorExportPlatformAndroid::get_binary_extensions(
 }
 
 void EditorExportPlatformAndroid::get_command_line_flags(const Ref<EditorExportPreset>& p_preset,
-	const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags,
+	const String& p_path, uint32_t p_flags,
 	Vector<uint8_t>& r_command_line_flags)
 {
 	String cmdline = p_preset->obj->get("command_line/extra_args");
@@ -3973,7 +3973,7 @@ bool EditorExportPlatformAndroid::_is_clean_build_required(const Ref<EditorExpor
 }
 
 Error EditorExportPlatformAndroid::export_project(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags,
+	bool p_debug, const String& p_path, uint32_t p_flags,
 	bool p_notify)
 {
 	int export_format = int(p_preset->obj->get("gradle_build/export_format"));
@@ -4079,7 +4079,7 @@ static String _copy_keystore_to_temp(
 
 Error EditorExportPlatformAndroid::export_project_helper(const Ref<EditorExportPreset>& p_preset,
 	bool p_debug, const String& p_path, int export_format, bool should_sign,
-	BitField<EditorExportPlatform::DebugFlags> p_flags)
+	uint32_t p_flags)
 {
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
 

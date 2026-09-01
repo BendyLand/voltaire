@@ -451,7 +451,7 @@ void RetargetModifier3D::set_use_global_pose(bool p_use_global_pose)
 
 bool RetargetModifier3D::is_using_global_pose() const { return use_global_pose; }
 
-void RetargetModifier3D::set_enable_flags(BitField<TransformFlag> p_enable_flag)
+void RetargetModifier3D::set_enable_flags(uint32_t p_enable_flag)
 {
 	if (enable_flags != p_enable_flag) {
 		_reset_child_skeleton_poses();
@@ -459,7 +459,7 @@ void RetargetModifier3D::set_enable_flags(BitField<TransformFlag> p_enable_flag)
 	enable_flags = p_enable_flag;
 }
 
-BitField<RetargetModifier3D::TransformFlag> RetargetModifier3D::get_enable_flags() const
+uint32_t RetargetModifier3D::get_enable_flags() const
 {
 	return enable_flags;
 }

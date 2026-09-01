@@ -52,7 +52,6 @@ class EditorSelectionHistory
 	struct _Object
 	{
 		Ref<RefCounted> ref;
-		ObjectID object;
 		String property;
 		bool inspector_only = false;
 	};
@@ -82,26 +81,16 @@ public:
 	// Adds an object to the selection history. A property name can be passed if the target is a
 	// subresource of the given object. If the object should not change the main screen plugin, it
 	// can be set as inspector only.
-	void add_object(
-		ObjectID p_object, const String& p_property = String(), bool p_inspector_only = false);
-	void replace_object(ObjectID p_old_object, ObjectID p_new_object);
 
 	int get_history_len();
 	int get_history_pos();
 
-	// Gets an object from the history. The most recent object would be the object with p_obj =
-	// get_history_len() - 1.
-	ObjectID get_history_obj(int p_obj) const;
-
 	bool next();
 	bool previous();
-	ObjectID get_current();
 	bool is_current_inspector_only() const;
 
 	// Gets the size of the path of the current history item.
 	int get_path_size() const;
-	// Gets the object of the current history item, if valid.
-	ObjectID get_path_object(int p_index) const;
 	// Gets the property of the current history item.
 	String get_path_property(int p_index) const;
 
@@ -118,7 +107,6 @@ public:
 	struct CustomType
 	{
 		String name;
-		Ref<Script> script;
 		Ref<Texture2D> icon;
 	};
 
@@ -127,11 +115,9 @@ public:
 		Node* root = nullptr;
 		String path;
 		uint64_t file_modified_time = 0;
-		Dictionary editor_states;
 		List<Node*> selection;
 		Vector<EditorSelectionHistory::HistoryElement> history_stored;
 		int history_current = 0;
-		Dictionary custom_state;
 		NodePath live_edit_root;
 		int history_id = 0;
 		uint64_t last_checked_version = 0;
@@ -145,15 +131,12 @@ private:
 	struct PropertyData
 	{
 		String name;
-		Variant value;
 	};
 
 	HashMap<String, Vector<CustomType>> custom_types;
 
 	List<PropertyData> clipboard;
 	EditorUndoRedoManager* undo_redo_manager;
-	Vector<Callable> undo_redo_callbacks;
-	HashMap<StringName, Callable> move_element_functions;
 
 	Vector<EditedScene> edited_scene;
 	int current_edited_scene = -1;
@@ -168,17 +151,8 @@ private:
 	Ref<Texture2D> _load_script_icon(const String& p_path) const;
 
 public:
-	EditorPlugin* get_handling_main_editor(Object* p_object);
-	Vector<EditorPlugin*> get_handling_sub_editors(Object* p_object);
 	EditorPlugin* get_editor_by_name(const String& p_name);
 
-	void copy_object_params(Object* p_object);
-	void paste_object_params(Object* p_object);
-
-	Dictionary get_editor_plugin_states() const;
-	Dictionary get_scene_editor_states(int p_idx) const;
-	Dictionary get_scene_editor_states_with_selection(int p_idx) const;
-	void set_editor_plugin_states(const Dictionary& p_states);
 	void get_editor_breakpoints(List<String>* p_breakpoints);
 	void clear_editor_states();
 	void save_editor_external_data();
@@ -195,22 +169,8 @@ public:
 	bool has_extension_editor_plugin(const StringName& p_class_name);
 	EditorPlugin* get_extension_editor_plugin(const StringName& p_class_name);
 
-	void add_undo_redo_inspector_hook_callback(
-		Callable p_callable); // Callbacks should have this signature: void (Object* undo_redo,
-							  // Object *modified_object, String property, Variant new_value)
-	void remove_undo_redo_inspector_hook_callback(Callable p_callable);
-	const Vector<Callable> get_undo_redo_inspector_hook_callback();
-
-	void add_move_array_element_function(const StringName& p_class,
-		Callable p_callable); // Function should have this signature: void (Object* undo_redo,
-							  // Object *modified_object, String array_prefix, int element_index,
-							  // int new_position)
 	void remove_move_array_element_function(const StringName& p_class);
-	Callable get_move_array_element_function(const StringName& p_class) const;
 
-	void add_custom_type(const String& p_type, const String& p_inherits,
-		const Ref<Script>& p_script, const Ref<Texture2D>& p_icon);
-	Variant instantiate_custom_type(const String& p_type, const String& p_inherits);
 	void remove_custom_type(const String& p_type);
 
 	const HashMap<String, Vector<CustomType>>& get_custom_types() const { return custom_types; }
@@ -218,8 +178,6 @@ public:
 	const CustomType* get_custom_type_by_name(const String& p_name) const;
 	const CustomType* get_custom_type_by_path(const String& p_path) const;
 	bool is_type_recognized(const String& p_type) const;
-
-	void instantiate_object_properties(Object* p_object);
 
 	int add_edited_scene(int p_at_pos);
 	void remove_scene(int p_idx);
@@ -236,7 +194,6 @@ public:
 	String get_scene_path(int p_idx) const;
 	String get_scene_type(int p_idx) const;
 	void set_scene_path(int p_idx, const String& p_path);
-	Ref<Script> get_scene_root_script(int p_idx) const;
 	uint64_t get_scene_time_opened(int p_idx) const;
 	void set_scene_modified_time(int p_idx, uint64_t p_time);
 	uint64_t get_scene_modified_time(int p_idx) const;
@@ -260,19 +217,12 @@ public:
 	void set_plugin_window_layout(Ref<ConfigFile> p_layout);
 	void get_plugin_window_layout(Ref<ConfigFile> p_layout);
 
-	void save_edited_scene_state(EditorSelection* p_selection, EditorSelectionHistory* p_history,
-		const Dictionary& p_custom);
-	Dictionary restore_edited_scene_state(
-		EditorSelection* p_selection, EditorSelectionHistory* p_history);
 	void notify_edited_scene_changed();
 	void notify_resource_saved(const Ref<Resource>& p_resource);
 	void notify_scene_saved(const String& p_path);
 	void load_editor_plugin_states_from_config(const Ref<ConfigFile>& p_config_file, int p_idx);
 
 	bool script_class_is_parent(const String& p_class, const String& p_inherits);
-	Variant script_class_instance(const String& p_class);
-
-	Ref<Script> script_class_load_script(const String& p_class) const;
 
 	StringName script_class_get_name(const String& p_path) const;
 	void script_class_set_name(const String& p_path, const StringName& p_class);
@@ -303,11 +253,6 @@ public:
  */
 class EditorSelection
 {
-	// Contains the selected nodes and corresponding metadata.
-	// Metadata objects come from calling _get_editor_data on the editor_plugins, passing the
-	// selected node.
-	HashMap<ObjectID, Object*> selection;
-
 	// Tracks whether the selection change signal has been emitted.
 	// Prevents multiple signals being called in one frame.
 	bool emitted = false;
@@ -317,10 +262,6 @@ class EditorSelection
 
 	void _node_removed(Node* p_node);
 
-	// Editor plugins which are related to selection.
-	List<Object*> editor_plugins;
-	LocalVector<ObjectID> top_selected_node_list;
-
 	void _update_node_list();
 	void _emit_change();
 
@@ -328,26 +269,9 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	void add_node(Node* p_node);
 	void remove_node(Node* p_node);
 	bool is_selected(Node* p_node) const;
-
-	template <typename T> T* get_node_editor_data(const Object& obj, Node* p_node)
-	{
-		if (!p_node) {
-			return nullptr;
-		}
-		ObjectID nid = obj.get_instance_id();
-		if (!selection.has(nid)) {
-			return nullptr;
-		}
-		return Object::cast_to<T>(selection[nid]);
-	}
-
-	// Adds an editor plugin which can provide metadata for selected nodes.
-	void add_editor_plugin(Object* p_object);
 
 	void update(bool p_deferred = true);
 	void clear();
@@ -358,9 +282,6 @@ public:
 	List<Node*> get_top_selected_node_list();
 	// Returns all the selected nodes (list version of "get_selected_nodes").
 	List<Node*> get_full_selected_node_list();
-
-	// Returns the map of selected objects and their metadata.
-	HashMap<ObjectID, Object*>& get_selection() { return selection; }
 
 	~EditorSelection();
 };

@@ -431,7 +431,7 @@ bool helpers_has_property(const String& p_class_name, const String& p_name)
 	return false;
 }
 
-void DocTools::generate(BitField<GenerateFlags> p_flags)
+void DocTools::generate(uint32_t p_flags)
 {
 	// This may involve instantiating classes that are only usable from the main thread
 	// (which is in fact the case of the core API).

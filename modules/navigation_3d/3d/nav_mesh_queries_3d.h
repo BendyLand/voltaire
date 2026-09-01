@@ -67,7 +67,7 @@ public:
 		Vector3 start_position;
 		Vector3 target_position;
 		uint32_t navigation_layers;
-		BitField<PathMetadataFlags> metadata_flags = PathMetadataFlags::PATH_INCLUDE_ALL;
+		uint32_t metadata_flags = PathMetadataFlags::PATH_INCLUDE_ALL;
 		PathfindingAlgorithm pathfinding_algorithm = PathfindingAlgorithm::PATHFINDING_ALGORITHM_ASTAR;
 		PathPostProcessing path_postprocessing = PathPostProcessing::PATH_POSTPROCESSING_CORRIDORFUNNEL;
 		bool simplify_path = false;

@@ -3110,8 +3110,6 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 			if (!render_data.transparent_bg &&
 				environment_get_fog_enabled(render_data.environment)) {
 				draw_sky_fog_only = true;
-				GLES3::MaterialStorage::get_singleton()->material_set_param(
-					sky_globals.fog_material, "clear_color", Variant(clear_color));
 			}
 
 			clear_color = clear_color.srgb_to_linear();
@@ -5219,176 +5217,6 @@ void RasterizerSceneGLES3::sub_surface_scattering_set_quality(
 
 void RasterizerSceneGLES3::sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) {}
 
-Array RasterizerSceneGLES3::bake_render_uv2(
-	RID p_base, const Array& p_material_overrides, const Size2i& p_image_size)
-{
-	GLES3::Config* config = GLES3::Config::get_singleton();
-	ERR_FAIL_COND_V_MSG(p_image_size.width <= 0, Array(), "Image width must be greater than 0.");
-	ERR_FAIL_COND_V_MSG(p_image_size.height <= 0, Array(), "Image height must be greater than 0.");
-
-	GLuint albedo_alpha_tex = 0;
-	GLuint normal_tex = 0;
-	GLuint orm_tex = 0;
-	GLuint emission_tex = 0;
-	GLuint depth_tex = 0;
-	glGenTextures(1, &albedo_alpha_tex);
-	glGenTextures(1, &normal_tex);
-	glGenTextures(1, &orm_tex);
-	glGenTextures(1, &emission_tex);
-	glGenTextures(1, &depth_tex);
-
-	glBindTexture(GL_TEXTURE_2D, albedo_alpha_tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, p_image_size.width, p_image_size.height, 0, GL_RGBA,
-		GL_UNSIGNED_BYTE, nullptr);
-	GLES3::Utilities::get_singleton()->texture_allocated_data(
-		albedo_alpha_tex, p_image_size.width * p_image_size.height * 4, "Lightmap albedo texture");
-
-	glBindTexture(GL_TEXTURE_2D, normal_tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, p_image_size.width, p_image_size.height, 0, GL_RGBA,
-		GL_UNSIGNED_BYTE, nullptr);
-	GLES3::Utilities::get_singleton()->texture_allocated_data(
-		normal_tex, p_image_size.width * p_image_size.height * 4, "Lightmap normal texture");
-
-	glBindTexture(GL_TEXTURE_2D, orm_tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, p_image_size.width, p_image_size.height, 0, GL_RGBA,
-		GL_UNSIGNED_BYTE, nullptr);
-	GLES3::Utilities::get_singleton()->texture_allocated_data(
-		orm_tex, p_image_size.width * p_image_size.height * 4, "Lightmap ORM texture");
-
-	// Consider rendering to RGBA8 encoded as RGBE, then manually convert to RGBAH on CPU.
-	glBindTexture(GL_TEXTURE_2D, emission_tex);
-	if (config->float_texture_supported) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, p_image_size.width, p_image_size.height, 0,
-			GL_RGBA, GL_FLOAT, nullptr);
-		GLES3::Utilities::get_singleton()->texture_allocated_data(emission_tex,
-			p_image_size.width * p_image_size.height * 16, "Lightmap emission texture");
-	}
-	else {
-		// Fallback to RGBA8 on devices that don't support rendering to floating point textures.
-		// This will look bad, but we have no choice.
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, p_image_size.width, p_image_size.height, 0,
-			GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-		GLES3::Utilities::get_singleton()->texture_allocated_data(emission_tex,
-			p_image_size.width * p_image_size.height * 4, "Lightmap emission texture");
-	}
-
-	glBindTexture(GL_TEXTURE_2D, depth_tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, p_image_size.width, p_image_size.height, 0,
-		GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
-	GLES3::Utilities::get_singleton()->texture_allocated_data(
-		depth_tex, p_image_size.width * p_image_size.height * 3, "Lightmap depth texture");
-
-	GLuint fbo = 0;
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-	glFramebufferTexture2D(
-		GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, albedo_alpha_tex, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, normal_tex, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, orm_tex, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, emission_tex, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
-
-	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (status != GL_FRAMEBUFFER_COMPLETE) {
-		glDeleteFramebuffers(1, &fbo);
-		GLES3::Utilities::get_singleton()->texture_free_data(albedo_alpha_tex);
-		GLES3::Utilities::get_singleton()->texture_free_data(normal_tex);
-		GLES3::Utilities::get_singleton()->texture_free_data(orm_tex);
-		GLES3::Utilities::get_singleton()->texture_free_data(emission_tex);
-		GLES3::Utilities::get_singleton()->texture_free_data(depth_tex);
-
-		WARN_PRINT("Could not create render target, status: " +
-				   GLES3::TextureStorage::get_singleton()->get_framebuffer_error(status));
-		return Array();
-	}
-
-	RenderGeometryInstance* gi_inst = geometry_instance_create(p_base);
-	ERR_FAIL_NULL_V(gi_inst, Array());
-
-	uint32_t sc = RSG::mesh_storage->mesh_get_surface_count(p_base);
-	Vector<RID> materials;
-	materials.resize(sc);
-
-	for (uint32_t i = 0; i < sc; i++) {
-		if (i < (uint32_t)p_material_overrides.size()) {
-			materials.write[i] = p_material_overrides[i];
-		}
-	}
-
-	gi_inst->set_surface_materials(materials);
-
-	if (cull_argument.size() == 0) {
-		cull_argument.push_back(nullptr);
-	}
-	cull_argument[0] = gi_inst;
-	_render_uv2(cull_argument, fbo, Rect2i(0, 0, p_image_size.width, p_image_size.height));
-
-	geometry_instance_free(gi_inst);
-
-	Array ret;
-
-	// Create a dummy texture so we can use texture_2d_get.
-	RID tex_rid = GLES3::TextureStorage::get_singleton()->texture_allocate();
-	GLES3::Texture texture;
-	texture.width = p_image_size.width;
-	texture.height = p_image_size.height;
-	texture.alloc_width = p_image_size.width;
-	texture.alloc_height = p_image_size.height;
-	texture.format = Image::FORMAT_RGBA8;
-	texture.real_format = Image::FORMAT_RGBA8;
-	texture.gl_format_cache = GL_RGBA;
-	texture.gl_type_cache = GL_UNSIGNED_BYTE;
-	texture.type = GLES3::Texture::TYPE_2D;
-	texture.target = GL_TEXTURE_2D;
-	texture.active = true;
-	texture.is_render_target = true; // Enable this so the texture isn't cached in the editor.
-
-	GLES3::TextureStorage::get_singleton()->texture_2d_initialize_from_texture(tex_rid, texture);
-	GLES3::Texture* tex = GLES3::TextureStorage::get_singleton()->get_texture(tex_rid);
-
-	{
-		tex->tex_id = albedo_alpha_tex;
-		Ref<Image> img = GLES3::TextureStorage::get_singleton()->texture_2d_get(tex_rid);
-		GLES3::Utilities::get_singleton()->texture_free_data(albedo_alpha_tex);
-		ret.push_back(img);
-	}
-
-	{
-		tex->tex_id = normal_tex;
-		Ref<Image> img = GLES3::TextureStorage::get_singleton()->texture_2d_get(tex_rid);
-		GLES3::Utilities::get_singleton()->texture_free_data(normal_tex);
-		ret.push_back(img);
-	}
-
-	{
-		tex->tex_id = orm_tex;
-		Ref<Image> img = GLES3::TextureStorage::get_singleton()->texture_2d_get(tex_rid);
-		GLES3::Utilities::get_singleton()->texture_free_data(orm_tex);
-		ret.push_back(img);
-	}
-
-	{
-		tex->tex_id = emission_tex;
-		if (config->float_texture_supported) {
-			tex->format = Image::FORMAT_RGBAH;
-			tex->real_format = Image::FORMAT_RGBAH;
-			tex->gl_type_cache = GL_HALF_FLOAT;
-		}
-		Ref<Image> img = GLES3::TextureStorage::get_singleton()->texture_2d_get(tex_rid);
-		GLES3::Utilities::get_singleton()->texture_free_data(emission_tex);
-		ret.push_back(img);
-	}
-
-	tex->is_render_target = false;
-	tex->tex_id = 0;
-	GLES3::TextureStorage::get_singleton()->texture_free(tex_rid);
-
-	GLES3::Utilities::get_singleton()->texture_free_data(depth_tex);
-	glDeleteFramebuffers(1, &fbo);
-	return ret;
-}
-
 bool RasterizerSceneGLES3::free(RID p_rid)
 {
 	if (is_environment(p_rid)) {
@@ -5448,16 +5276,6 @@ RasterizerSceneGLES3::RasterizerSceneGLES3()
 	GLES3::Config* config = GLES3::Config::get_singleton();
 
 	cull_argument.set_page_pool(&cull_argument_pool);
-
-	// Quality settings.
-	use_physical_light_units = GLOBAL_GET("rendering/lights_and_shadows/use_physical_light_units");
-
-	positional_soft_shadow_filter_set_quality((RSE::ShadowQuality)(int)GLOBAL_GET(
-		"rendering/lights_and_shadows/positional_shadow/soft_shadow_filter_quality"));
-	directional_soft_shadow_filter_set_quality((RSE::ShadowQuality)(int)GLOBAL_GET(
-		"rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"));
-	lightmaps_set_bicubic_filter(
-		GLOBAL_GET("rendering/lightmapping/lightmap_gi/use_bicubic_filter"));
 
 	{
 		// Setup Lights
@@ -5621,10 +5439,6 @@ void fragment() {
 	}
 
 	{
-		// Initialize Sky stuff
-		sky_globals.roughness_layers =
-			GLOBAL_GET("rendering/reflections/sky_reflections/roughness_layers");
-
 		String global_defines;
 		global_defines +=
 			"#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now

@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "optimized_translation.h"
 
 void OptimizedTranslation::_generate_bind_compat_119563(const Ref<Translation>& p_from)

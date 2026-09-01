@@ -38,15 +38,16 @@
 #include "core/templates/list.h"
 #include "core/templates/pair.h"
 #include "core/templates/rid.h"
-#include "core/variant/callable.h"
 #include "servers/rendering/rendering_device_enums.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 class DependencyTracker;
 
-class Dependency {
+class Dependency
+{
 public:
-	enum DependencyChangedNotification {
+	enum DependencyChangedNotification
+	{
 		DEPENDENCY_CHANGED_AABB,
 		DEPENDENCY_CHANGED_MATERIAL,
 		DEPENDENCY_CHANGED_MESH,
@@ -64,42 +65,46 @@ public:
 	};
 
 	void changed_notify(DependencyChangedNotification p_notification);
-	void deleted_notify(const RID &p_rid);
+	void deleted_notify(const RID& p_rid);
 
 	~Dependency();
 
 private:
 	friend class DependencyTracker;
-	HashMap<DependencyTracker *, uint32_t> instances;
+	HashMap<DependencyTracker*, uint32_t> instances;
 };
 
-class DependencyTracker {
+class DependencyTracker
+{
 public:
-	void *userdata = nullptr;
-	typedef void (*ChangedCallback)(Dependency::DependencyChangedNotification, DependencyTracker *);
-	typedef void (*DeletedCallback)(const RID &, DependencyTracker *);
+	void* userdata = nullptr;
+	typedef void (*ChangedCallback)(Dependency::DependencyChangedNotification, DependencyTracker*);
+	typedef void (*DeletedCallback)(const RID&, DependencyTracker*);
 
 	ChangedCallback changed_callback = nullptr;
 	DeletedCallback deleted_callback = nullptr;
 
-	void update_begin() { // call before updating dependencies
+	void update_begin()
+	{ // call before updating dependencies
 		instance_version++;
 	}
 
-	void update_dependency(Dependency *p_dependency) { //called internally, can't be used directly, use update functions in Storage
+	void update_dependency(Dependency* p_dependency)
+	{ // called internally, can't be used directly, use update functions in Storage
 		dependencies.insert(p_dependency);
 		p_dependency->instances[this] = instance_version;
 	}
 
-	void update_end() { //call after updating dependencies
-		List<Pair<Dependency *, DependencyTracker *>> to_clean_up;
+	void update_end()
+	{ // call after updating dependencies
+		List<Pair<Dependency*, DependencyTracker*>> to_clean_up;
 
-		for (Dependency *E : dependencies) {
-			Dependency *dep = E;
-			HashMap<DependencyTracker *, uint32_t>::Iterator F = dep->instances.find(this);
+		for (Dependency* E : dependencies) {
+			Dependency* dep = E;
+			HashMap<DependencyTracker*, uint32_t>::Iterator F = dep->instances.find(this);
 			ERR_CONTINUE(!F);
 			if (F->value != instance_version) {
-				Pair<Dependency *, DependencyTracker *> p;
+				Pair<Dependency*, DependencyTracker*> p;
 				p.first = dep;
 				p.second = F->key;
 				to_clean_up.push_back(p);
@@ -113,9 +118,10 @@ public:
 		}
 	}
 
-	void clear() { // clear all dependencies
-		for (Dependency *E : dependencies) {
-			Dependency *dep = E;
+	void clear()
+	{ // clear all dependencies
+		for (Dependency* E : dependencies) {
+			Dependency* dep = E;
 			dep->instances.erase(this);
 		}
 		dependencies.clear();
@@ -126,10 +132,11 @@ public:
 private:
 	friend class Dependency;
 	uint32_t instance_version = 0;
-	HashSet<Dependency *> dependencies;
+	HashSet<Dependency*> dependencies;
 };
 
-class RendererUtilities {
+class RendererUtilities
+{
 public:
 	virtual ~RendererUtilities() {}
 
@@ -140,7 +147,7 @@ public:
 
 	/* DEPENDENCIES */
 
-	virtual void base_update_dependency(RID p_base, DependencyTracker *p_instance) = 0;
+	virtual void base_update_dependency(RID p_base, DependencyTracker* p_instance) = 0;
 
 	/* VISIBILITY NOTIFIER */
 
@@ -148,8 +155,7 @@ public:
 	virtual void visibility_notifier_initialize(RID p_notifier) = 0;
 	virtual void visibility_notifier_free(RID p_notifier) = 0;
 
-	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB &p_aabb) = 0;
-	virtual void visibility_notifier_set_callbacks(RID p_notifier, const Callable &p_enter_callbable, const Callable &p_exit_callable) = 0;
+	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb) = 0;
 
 	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const = 0;
 	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) = 0;
@@ -158,20 +164,20 @@ public:
 
 	bool capturing_timestamps = false;
 
-#define TIMESTAMP_BEGIN() \
-	{ \
-		if (RSG::utilities->capturing_timestamps) \
-			RSG::utilities->capture_timestamps_begin(); \
+#define TIMESTAMP_BEGIN()                                                                          \
+	{                                                                                              \
+		if (RSG::utilities->capturing_timestamps)                                                  \
+			RSG::utilities->capture_timestamps_begin();                                            \
 	}
 
-#define RENDER_TIMESTAMP(m_text) \
-	{ \
-		if (RSG::utilities->capturing_timestamps) \
-			RSG::utilities->capture_timestamp(m_text); \
+#define RENDER_TIMESTAMP(m_text)                                                                   \
+	{                                                                                              \
+		if (RSG::utilities->capturing_timestamps)                                                  \
+			RSG::utilities->capture_timestamp(m_text);                                             \
 	}
 
 	virtual void capture_timestamps_begin() = 0;
-	virtual void capture_timestamp(const String &p_name) = 0;
+	virtual void capture_timestamp(const String& p_name) = 0;
 	virtual uint32_t get_captured_timestamps_count() const = 0;
 	virtual uint64_t get_captured_timestamps_frame() const = 0;
 	virtual uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const = 0;
@@ -183,7 +189,7 @@ public:
 	virtual void update_dirty_resources() = 0;
 	virtual void set_debug_generate_wireframes(bool p_generate) = 0;
 
-	virtual bool has_os_feature(const String &p_feature) const = 0;
+	virtual bool has_os_feature(const String& p_feature) const = 0;
 
 	virtual void update_memory_info() = 0;
 
@@ -197,3 +203,5 @@ public:
 	virtual uint32_t get_maximum_shader_varyings() const = 0;
 	virtual uint64_t get_maximum_uniform_buffer_size() const = 0;
 };
+
+

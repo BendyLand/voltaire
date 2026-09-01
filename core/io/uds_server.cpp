@@ -28,10 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "uds_server.h"
-
-void UDSServer::_bind_methods() {}
 
 Error UDSServer::listen(const String& p_path)
 {

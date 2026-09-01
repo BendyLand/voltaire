@@ -329,7 +329,7 @@ void RenderingDevice::_tlas_remove_blas_dependencies(AccelerationStructure* p_tl
 }
 
 RID RenderingDevice::blas_create(Span<AccelerationStructureGeometry> p_geometries,
-	BitField<AccelerationStructureFlagBits> p_flags)
+	uint32_t p_flags)
 {
 	ERR_FAIL_COND_V_MSG(
 		!has_feature(SUPPORTS_RAYTRACING_PIPELINE) && !has_feature(SUPPORTS_RAY_QUERY), RID(),
@@ -444,10 +444,10 @@ RID RenderingDevice::blas_create(Span<AccelerationStructureGeometry> p_geometrie
 	return id;
 }
 
-BitField<RDD::BufferUsageBits> RenderingDevice::_creation_to_usage_bits(
-	BitField<RD::BufferCreationBits> p_creation_bits)
+uint32_t RenderingDevice::_creation_to_usage_bits(
+	uint32_t p_creation_bits)
 {
-	BitField<RDD::BufferUsageBits> usage = 0;
+	uint32_t usage = 0;
 
 	if (p_creation_bits.has_flag(BUFFER_CREATION_AS_STORAGE_BIT)) {
 		usage.set_flag(RDD::BUFFER_USAGE_STORAGE_BIT);
@@ -475,7 +475,7 @@ BitField<RDD::BufferUsageBits> RenderingDevice::_creation_to_usage_bits(
 }
 
 RID RenderingDevice::tlas_create(
-	uint32_t p_max_instance_count, BitField<AccelerationStructureFlagBits> p_flags)
+	uint32_t p_max_instance_count, uint32_t p_flags)
 {
 	ERR_FAIL_COND_V_MSG(
 		!has_feature(SUPPORTS_RAYTRACING_PIPELINE) && !has_feature(SUPPORTS_RAY_QUERY), RID(),
@@ -1646,7 +1646,7 @@ void RenderingDevice::buffer_flush(RID p_buffer)
 }
 
 RID RenderingDevice::storage_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data,
-	BitField<StorageBufferUsage> p_usage, BitField<BufferCreationBits> p_creation_bits)
+	uint32_t p_creation_bits)
 {
 	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
 
@@ -1717,7 +1717,7 @@ RID RenderingDevice::texture_buffer_create(
 
 	Buffer texture_buffer;
 	texture_buffer.size = size_bytes;
-	BitField<RDD::BufferUsageBits> usage =
+	uint32_t usage =
 		(RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT |
 			RDD::BUFFER_USAGE_TEXEL_BIT);
 	texture_buffer.driver_id =
@@ -1898,7 +1898,7 @@ RID RenderingDevice::texture_create(
 	{
 		// Validate that this image is supported for the intended use.
 		bool cpu_readable = (format.usage_bits & RDD::TEXTURE_USAGE_CPU_READ_BIT);
-		BitField<RDD::TextureUsageBits> supported_usage =
+		uint32_t supported_usage =
 			driver->texture_get_usages_supported_by_format(format.format, cpu_readable);
 
 		String format_text = "'" + String(FORMAT_NAMES[format.format]) + "'";
@@ -2133,7 +2133,7 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 }
 
 RID RenderingDevice::texture_create_from_extension(TextureType p_type, DataFormat p_format,
-	TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage, uint64_t p_image,
+	TextureSamples p_samples, uint32_t p_usage, uint64_t p_image,
 	uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps)
 {
 	// This method creates a texture object using a VkImage created by an extension, module or other
@@ -3641,12 +3641,12 @@ Error RenderingDevice::texture_clear(RID p_texture, const Color& p_color, uint32
 }
 
 bool RenderingDevice::texture_is_format_supported_for_usage(
-	DataFormat p_format, BitField<RenderingDevice::TextureUsageBits> p_usage) const
+	DataFormat p_format, uint32_t p_usage) const
 {
 	ERR_FAIL_INDEX_V(p_format, DATA_FORMAT_MAX, false);
 
 	bool cpu_readable = (p_usage & RDD::TEXTURE_USAGE_CPU_READ_BIT);
-	BitField<TextureUsageBits> supported =
+	uint32_t supported =
 		driver->texture_get_usages_supported_by_format(p_format, cpu_readable);
 	bool any_unsupported = (((int64_t)supported) | ((int64_t)p_usage)) != ((int64_t)supported);
 	return !any_unsupported;
@@ -4513,7 +4513,7 @@ bool RenderingDevice::sampler_is_format_supported_for_filter(
 /***********************/
 
 RID RenderingDevice::vertex_buffer_create(
-	uint32_t p_size_bytes, Span<uint8_t> p_data, BitField<BufferCreationBits> p_creation_bits)
+	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
 {
 	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
 
@@ -4731,7 +4731,7 @@ RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID
 }
 
 RID RenderingDevice::index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
-	Span<uint8_t> p_data, bool p_use_restart_indices, BitField<BufferCreationBits> p_creation_bits)
+	Span<uint8_t> p_data, bool p_use_restart_indices, uint32_t p_creation_bits)
 {
 	ERR_FAIL_COND_V(p_index_count == 0, RID());
 
@@ -5054,7 +5054,7 @@ uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader)
 /******************/
 
 RID RenderingDevice::uniform_buffer_create(
-	uint32_t p_size_bytes, Span<uint8_t> p_data, BitField<BufferCreationBits> p_creation_bits)
+	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
 {
 	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
 
@@ -5751,7 +5751,7 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
 	const PipelineMultisampleState& p_multisample_state,
 	const PipelineDepthStencilState& p_depth_stencil_state,
 	const PipelineColorBlendState& p_blend_state,
-	BitField<PipelineDynamicStateFlags> p_dynamic_state_flags, uint32_t p_for_render_pass,
+	uint32_t p_dynamic_state_flags, uint32_t p_for_render_pass,
 	const Vector<PipelineSpecializationConstant>& p_specialization_constants)
 {
 	// Needs a shader.
@@ -6573,7 +6573,7 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(
 }
 
 RenderingDevice::DrawListID RenderingDevice::_draw_list_begin_bind(RID p_framebuffer,
-	BitField<DrawFlags> p_draw_flags, const Vector<Color>& p_clear_color_values,
+	uint32_t& p_clear_color_values,
 	float p_clear_depth_value, uint32_t p_clear_stencil_value, const Rect2& p_region,
 	uint32_t p_breadcrumb)
 {
@@ -6582,7 +6582,7 @@ RenderingDevice::DrawListID RenderingDevice::_draw_list_begin_bind(RID p_framebu
 }
 
 RenderingDevice::DrawListID RenderingDevice::draw_list_begin(RID p_framebuffer,
-	BitField<DrawFlags> p_draw_flags, VectorView<Color> p_clear_color_values,
+	uint32_t p_clear_color_values,
 	float p_clear_depth_value, uint32_t p_clear_stencil_value, const Rect2& p_region,
 	uint32_t p_breadcrumb)
 {
@@ -6625,7 +6625,7 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_begin(RID p_framebuffer,
 	thread_local LocalVector<RDD::RenderPassClearValue> clear_values;
 	thread_local LocalVector<RDG::ResourceTracker*> resource_trackers;
 	thread_local LocalVector<RDG::ResourceUsage> resource_usages;
-	BitField<RDD::PipelineStageBits> stages = {};
+	uint32_t stages = {};
 	operations.resize(framebuffer->texture_ids.size());
 	clear_values.resize(framebuffer->texture_ids.size());
 	resource_trackers.clear();
@@ -8447,7 +8447,7 @@ void RenderingDevice::compute_list_end()
 }
 
 #ifndef DISABLE_DEPRECATED
-void RenderingDevice::barrier(BitField<BarrierMask> p_from, BitField<BarrierMask> p_to)
+void RenderingDevice::barrier(uint32_t p_to)
 {
 	WARN_PRINT("Deprecated. Barriers are automatically inserted by RenderingDevice.");
 }
@@ -9932,7 +9932,7 @@ Error RenderingDevice::initialize(
 	// as apparently the specification defines that the existence of either the graphics or compute
 	// bit implies that the queue can also do transfer operations, but it is optional to indicate
 	// whether it supports them or not with the dedicated transfer bit if either is set.
-	BitField<RDD::CommandQueueFamilyBits> main_queue_bits = {};
+	uint32_t main_queue_bits = {};
 	main_queue_bits.set_flag(RDD::COMMAND_QUEUE_FAMILY_GRAPHICS_BIT);
 	main_queue_bits.set_flag(RDD::COMMAND_QUEUE_FAMILY_COMPUTE_BIT);
 
@@ -9947,7 +9947,7 @@ Error RenderingDevice::initialize(
 		// two different queues instead.
 		main_queue_family = driver->command_queue_family_get(main_queue_bits);
 		present_queue_family =
-			driver->command_queue_family_get(BitField<RDD::CommandQueueFamilyBits>(), main_surface);
+			driver->command_queue_family_get(uint32_t(), main_surface);
 		ERR_FAIL_COND_V(!present_queue_family, FAILED);
 	}
 
@@ -10933,7 +10933,7 @@ Error RenderingDevice::_buffer_update_bind(
 }
 
 RID RenderingDevice::_blas_create(const Array& p_geometries,
-	BitField<AccelerationStructureFlagBits> p_flags)
+	uint32_t p_flags)
 {
 	thread_local LocalVector<AccelerationStructureGeometry> geometries;
 	geometries.resize(p_geometries.size());
@@ -11007,7 +11007,7 @@ RID RenderingDevice::_render_pipeline_create(RID p_shader, FramebufferFormatID p
 	const Ref<RDPipelineMultisampleState>& p_multisample_state,
 	const Ref<RDPipelineDepthStencilState>& p_depth_stencil_state,
 	const Ref<RDPipelineColorBlendState>& p_blend_state,
-	BitField<PipelineDynamicStateFlags> p_dynamic_state_flags, uint32_t p_for_render_pass,
+	uint32_t p_dynamic_state_flags, uint32_t p_for_render_pass,
 	const Array& p_specialization_constants)
 {
 	PipelineRasterizationState rasterization_state;

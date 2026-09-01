@@ -110,7 +110,7 @@ private:
 	String original_project_path;
 	bool duplicate_can_edit = false;
 
-	BitField<InvalidStateFlag> invalid_state_flags = INVALID_STATE_FLAG_NONE;
+	uint32_t invalid_state_flags = INVALID_STATE_FLAG_NONE;
 
 	void _set_message(const String &p_msg, MessageType p_type, InputType input_type = PROJECT_PATH);
 	void _update_ok_button();

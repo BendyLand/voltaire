@@ -31,8 +31,6 @@
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/object/class_db.h"
-#include "core/object/script_language.h"
 #include "resource_saver.h"
 
 Ref<ResourceFormatSaver> ResourceSaver::saver[MAX_SAVERS];
@@ -115,15 +113,6 @@ Error ResourceSaver::save(Resource* rp_resource, const String& p_path, uint32_t 
 		err = saver[i]->save(rp_resource, path, p_flags);
 
 		if (err == OK) {
-#ifdef TOOLS_ENABLED
-			(rp_resource)->obj->set_edited(false);
-			if (timestamp_on_save) {
-				uint64_t mt = FileAccess::get_modified_time(path);
-
-				(rp_resource)->set_last_modified_time(mt);
-			}
-#endif
-
 			if (p_flags & FLAG_CHANGE_PATH) {
 				rp_resource->set_path(old_path);
 			}
@@ -214,17 +203,6 @@ void ResourceSaver::remove_resource_format_saver(Ref<ResourceFormatSaver> p_form
 	--saver_count;
 }
 
-Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const String& p_path)
-{
-	for (int i = 0; i < saver_count; ++i) {
-		if (saver[i]->obj->get_script_instance() &&
-			saver[i]->obj->get_script_instance()->get_script()->get_path() == p_path) {
-			return saver[i];
-		}
-	}
-	return Ref<ResourceFormatSaver>();
-}
-
 bool ResourceSaver::add_custom_resource_format_saver(const String& p_script_path)
 {
 	if (_find_custom_resource_format_saver(p_script_path).is_valid()) {
@@ -233,42 +211,13 @@ bool ResourceSaver::add_custom_resource_format_saver(const String& p_script_path
 
 	Ref<Resource> res = ResourceLoader::load(p_script_path);
 	ERR_FAIL_COND_V(res.is_null(), false);
-	ERR_FAIL_COND_V(!res->obj->is_class("Script"), false);
-
-	Ref<Script> s = res;
-	StringName ibt = s->get_instance_base_type();
 
 	return true;
-}
-
-void ResourceSaver::add_custom_savers()
-{
-	// Custom resource savers exploits global class names
-
-	String custom_saver_base_class = ResourceFormatSaver::get_class_static();
-
-	LocalVector<StringName> global_classes;
-	ScriptServer::get_global_class_list(global_classes);
-
-	for (const StringName& class_name : global_classes) {
-		StringName base_class = ScriptServer::get_global_class_native_base(class_name);
-
-		if (base_class == custom_saver_base_class) {
-			String path = ScriptServer::get_global_class_path(class_name);
-			add_custom_resource_format_saver(path);
-		}
-	}
 }
 
 void ResourceSaver::remove_custom_savers()
 {
 	Vector<Ref<ResourceFormatSaver>> custom_savers;
-	for (int i = 0; i < saver_count; ++i) {
-		if (saver[i]->obj->get_script_instance()) {
-			custom_savers.push_back(saver[i]);
-		}
-	}
-
 	for (int i = 0; i < custom_savers.size(); ++i) {
 		remove_resource_format_saver(custom_savers[i]);
 	}

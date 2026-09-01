@@ -606,7 +606,7 @@ Point2i DisplayServerWayland::mouse_get_position() const
 	return mouse_pos;
 }
 
-BitField<MouseButtonMask> DisplayServerWayland::mouse_get_button_state() const
+uint32_t DisplayServerWayland::mouse_get_button_state() const
 {
 	MutexLock mutex_lock(wayland_thread.mutex);
 

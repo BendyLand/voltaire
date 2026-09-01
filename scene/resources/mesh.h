@@ -33,7 +33,6 @@
 #include "core/io/resource.h"
 #include "core/math/face3.h"
 #include "core/math/triangle_mesh.h"
-#include "core/variant/typed_array.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -49,8 +48,6 @@ class MeshConvexDecompositionSettings;
 
 class Mesh : public Resource
 {
-	VLTRCLASS(Mesh, Resource);
-
 	mutable Ref<TriangleMesh> triangle_mesh;				   // cached
 	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; // cached
 	mutable Vector<Vector3> debug_lines;
@@ -164,10 +161,7 @@ public:
 	virtual int get_surface_count() const;
 	virtual int surface_get_array_len(int p_idx) const;
 	virtual int surface_get_array_index_len(int p_idx) const;
-	virtual Array surface_get_arrays(int p_surface) const;
-	virtual TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const;
-	virtual Dictionary surface_get_lods(int p_surface) const;
-	virtual BitField<ArrayFormat> surface_get_format(int p_idx) const;
+	virtual uint32_t surface_get_format(int p_idx) const;
 	virtual PrimitiveType surface_get_primitive_type(int p_idx) const;
 	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material);
 	virtual Ref<Material> surface_get_material(int p_idx) const;
@@ -214,8 +208,6 @@ public:
 
 class MeshConvexDecompositionSettings : public RefCounted
 {
-	VLTRCLASS(MeshConvexDecompositionSettings, RefCounted);
-
 public:
 	enum Mode : int
 	{
@@ -295,18 +287,11 @@ public:
 	bool get_project_hull_vertices() const;
 };
 
-VARIANT_ENUM_CAST(MeshConvexDecompositionSettings::Mode);
-
 class ArrayMesh : public Mesh
 {
-	VLTRCLASS(ArrayMesh, Mesh);
-	RES_BASE_EXTENSION("mesh");
-
 	PackedStringArray _get_blend_shape_names() const;
 	void _set_blend_shape_names(const PackedStringArray& p_names);
 
-	Array _get_surfaces() const;
-	void _set_surfaces(const Array& p_data);
 	Ref<ArrayMesh> shadow_mesh;
 
 private:
@@ -336,9 +321,6 @@ private:
 protected:
 	virtual bool _is_generated() const { return false; }
 
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 	bool surface_index_0 = false;
 
 	virtual void reset_state() override;
@@ -346,11 +328,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	void add_surface_from_arrays(PrimitiveType p_primitive, const Array& p_arrays,
-		const TypedArray<Array>& p_blend_shapes = TypedArray<Array>(),
-		const Dictionary& p_lods = Dictionary(), BitField<ArrayFormat> p_flags = 0);
-
-	void add_surface(BitField<ArrayFormat> p_format, PrimitiveType p_primitive,
+	void add_surface(uint32_t p_format, PrimitiveType p_primitive,
 		const Vector<uint8_t>& p_array, const Vector<uint8_t>& p_attribute_array,
 		const Vector<uint8_t>& p_skin_array, int p_vertex_count,
 		const Vector<uint8_t>& p_index_array, int p_index_count, const AABB& p_aabb,
@@ -359,10 +337,6 @@ public:
 		const Vector<RenderingServerTypes::SurfaceData::LOD>& p_lods =
 			Vector<RenderingServerTypes::SurfaceData::LOD>(),
 		const Vector4 p_uv_scale = Vector4());
-
-	Array surface_get_arrays(int p_surface) const override;
-	TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const override;
-	Dictionary surface_get_lods(int p_surface) const override;
 
 	void add_blend_shape(const StringName& p_name);
 	int get_blend_shape_count() const override;
@@ -387,7 +361,7 @@ public:
 
 	int surface_get_array_len(int p_idx) const override;
 	int surface_get_array_index_len(int p_idx) const override;
-	BitField<ArrayFormat> surface_get_format(int p_idx) const override;
+	uint32_t surface_get_format(int p_idx) const override;
 	PrimitiveType surface_get_primitive_type(int p_idx) const override;
 
 	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material) override;
@@ -421,16 +395,8 @@ public:
 	~ArrayMesh();
 };
 
-VARIANT_ENUM_CAST(Mesh::ArrayType);
-VARIANT_BITFIELD_CAST(Mesh::ArrayFormat);
-VARIANT_ENUM_CAST(Mesh::ArrayCustomFormat);
-VARIANT_ENUM_CAST(Mesh::PrimitiveType);
-VARIANT_ENUM_CAST(Mesh::BlendShapeMode);
-
 class PlaceholderMesh : public Mesh
 {
-	VLTRCLASS(PlaceholderMesh, Mesh);
-
 	RID rid;
 	AABB aabb;
 
@@ -444,16 +410,7 @@ public:
 
 	virtual int surface_get_array_index_len(int p_idx) const override { return 0; }
 
-	virtual Array surface_get_arrays(int p_surface) const override { return Array(); }
-
-	virtual TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const override
-	{
-		return TypedArray<Array>();
-	}
-
-	virtual Dictionary surface_get_lods(int p_surface) const override { return Dictionary(); }
-
-	virtual BitField<ArrayFormat> surface_get_format(int p_idx) const override { return 0; }
+	virtual uint32_t surface_get_format(int p_idx) const override { return 0; }
 
 	virtual PrimitiveType surface_get_primitive_type(int p_idx) const override
 	{

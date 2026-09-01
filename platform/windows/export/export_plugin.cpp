@@ -205,7 +205,7 @@ Error EditorExportPlatformWindows::sign_shared_object(
 }
 
 Error EditorExportPlatformWindows::modify_template(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags)
+	bool p_debug, const String& p_path, uint32_t p_flags)
 {
 	if (p_preset->obj->get("application/modify_resources")) {
 		_add_data(p_preset, p_path, false);
@@ -218,7 +218,7 @@ Error EditorExportPlatformWindows::modify_template(const Ref<EditorExportPreset>
 }
 
 Error EditorExportPlatformWindows::export_project(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags,
+	bool p_debug, const String& p_path, uint32_t p_flags,
 	bool p_notify)
 {
 	String custom_debug = p_preset->obj->get("custom_template/debug");
@@ -1178,7 +1178,7 @@ void EditorExportPlatformWindows::cleanup()
 }
 
 Error EditorExportPlatformWindows::run(const Ref<EditorExportPreset>& p_preset, int p_device,
-	BitField<EditorExportPlatform::DebugFlags> p_debug_flags)
+	uint32_t p_debug_flags)
 {
 	cleanup();
 	if (p_device) { // Stop command, cleanup only.

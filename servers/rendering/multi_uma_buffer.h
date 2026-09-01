@@ -298,7 +298,7 @@ class MultiUmaBuffer : public MultiUmaBufferBase {
 			RID buffer;
 			switch (info.type) {
 				case MultiUmaBufferType::STORAGE:
-					buffer = rd->storage_buffer_create(info.size_bytes, Vector<uint8_t>(), BitField<RenderingDevice::StorageBufferUsage>(), RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);
+					buffer = rd->storage_buffer_create(info.size_bytes, Vector<uint8_t>(), uint32_t(), RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);
 					break;
 				case MultiUmaBufferType::VERTEX:
 					buffer = rd->vertex_buffer_create(info.size_bytes, Vector<uint8_t>(), RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);

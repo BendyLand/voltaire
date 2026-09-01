@@ -30,8 +30,6 @@
 
 #include "a_star_grid_2d.compat.inc"
 #include "a_star_grid_2d.h"
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 
 static real_t heuristic_euclidean(const Vector2i& p_from, const Vector2i& p_to)
 {
@@ -638,35 +636,6 @@ Vector2 AStarGrid2D::get_point_position(const Vector2i& p_id) const
 	return _get_point_unchecked(p_id)->pos;
 }
 
-TypedArray<Dictionary> AStarGrid2D::get_point_data_in_region(const Rect2i& p_region) const
-{
-	ERR_FAIL_COND_V_MSG(
-		dirty, TypedArray<Dictionary>(), "Grid is not initialized. Call the update method.");
-	const Rect2i inter_region = region.intersection(p_region);
-
-	const int32_t start_x = inter_region.position.x - region.position.x;
-	const int32_t start_y = inter_region.position.y - region.position.y;
-	const int32_t end_x = inter_region.get_end().x - region.position.x;
-	const int32_t end_y = inter_region.get_end().y - region.position.y;
-
-	TypedArray<Dictionary> data;
-
-	for (int32_t y = start_y; y < end_y; y++) {
-		for (int32_t x = start_x; x < end_x; x++) {
-			const Point& p = points[y][x];
-
-			Dictionary dict;
-			dict["id"] = p.id;
-			dict["position"] = p.pos;
-			dict["solid"] = _get_solid_unchecked(p.id);
-			dict["weight_scale"] = p.weight_scale;
-			data.push_back(dict);
-		}
-	}
-
-	return data;
-}
-
 Vector<Vector2> AStarGrid2D::get_point_path(
 	const Vector2i& p_from_id, const Vector2i& p_to_id, bool p_allow_partial_path)
 {
@@ -711,53 +680,6 @@ Vector<Vector2> AStarGrid2D::get_point_path(
 		}
 
 		w[0] = p->pos;
-	}
-
-	return path;
-}
-
-TypedArray<Vector2i> AStarGrid2D::get_id_path(
-	const Vector2i& p_from_id, const Vector2i& p_to_id, bool p_allow_partial_path)
-{
-	ERR_FAIL_COND_V_MSG(
-		dirty, TypedArray<Vector2i>(), "Grid is not initialized. Call the update method.");
-	ERR_FAIL_COND_V_MSG(!is_in_boundsv(p_from_id), TypedArray<Vector2i>(),
-		vformat("Can't get id path. Point %s out of bounds %s.", p_from_id, region));
-	ERR_FAIL_COND_V_MSG(!is_in_boundsv(p_to_id), TypedArray<Vector2i>(),
-		vformat("Can't get id path. Point %s out of bounds %s.", p_to_id, region));
-
-	Point* begin_point = _get_point(p_from_id.x, p_from_id.y);
-	Point* end_point = _get_point(p_to_id.x, p_to_id.y);
-
-	bool found_route = _solve(begin_point, end_point, p_allow_partial_path);
-	if (!found_route) {
-		if (!p_allow_partial_path || last_closest_point == nullptr) {
-			return TypedArray<Vector2i>();
-		}
-
-		// Use closest point instead.
-		end_point = last_closest_point;
-	}
-
-	Point* p = end_point;
-	int32_t pc = 1;
-	while (p != begin_point) {
-		pc++;
-		p = p->prev_point;
-	}
-
-	TypedArray<Vector2i> path;
-	path.resize(pc);
-
-	{
-		p = end_point;
-		int32_t idx = pc - 1;
-		while (p != begin_point) {
-			path[idx--] = p->id;
-			p = p->prev_point;
-		}
-
-		path[0] = p->id;
 	}
 
 	return path;

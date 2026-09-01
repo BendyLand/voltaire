@@ -47,7 +47,7 @@ protected:
 		RD::PipelineMultisampleState multisample_state;
 		RD::PipelineDepthStencilState depth_stencil_state;
 		RD::PipelineColorBlendState blend_state;
-		BitField<RD::PipelineDynamicStateFlags> dynamic_state_flags;
+		uint32_t dynamic_state_flags;
 		uint32_t for_render_pass;
 		Vector<RD::PipelineSpecializationConstant> specialization_constants;
 		bool is_compute;
@@ -87,7 +87,7 @@ public:
 #endif
 	}
 
-	void create_render_pipeline(RID p_shader, RD::FramebufferFormatID p_framebuffer_format, RD::VertexFormatID p_vertex_format, RD::RenderPrimitive p_render_primitive, const RD::PipelineRasterizationState &p_rasterization_state, const RD::PipelineMultisampleState &p_multisample_state, const RD::PipelineDepthStencilState &p_depth_stencil_state, const RD::PipelineColorBlendState &p_blend_state, BitField<RD::PipelineDynamicStateFlags> p_dynamic_state_flags = 0, uint32_t p_for_render_pass = 0, const Vector<RD::PipelineSpecializationConstant> &p_specialization_constants = Vector<RD::PipelineSpecializationConstant>()) {
+	void create_render_pipeline(RID p_shader, RD::FramebufferFormatID p_framebuffer_format, RD::VertexFormatID p_vertex_format, RD::RenderPrimitive p_render_primitive, const RD::PipelineRasterizationState &p_rasterization_state, const RD::PipelineMultisampleState &p_multisample_state, const RD::PipelineDepthStencilState &p_depth_stencil_state, const RD::PipelineColorBlendState &p_blend_state, uint32_t()) {
 		CreationParameters c;
 		c.shader = p_shader;
 		c.framebuffer_format = p_framebuffer_format;

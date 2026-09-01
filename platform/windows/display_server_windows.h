@@ -227,7 +227,7 @@ class DisplayServerWindows : public DisplayServer {
 		DRIVER_ID_RD_VULKAN = 1 << 2,
 		DRIVER_ID_RD_D3D12 = 1 << 3,
 	};
-	static BitField<DriverID> tested_drivers;
+	static uint32_t tested_drivers;
 
 	enum TimerID {
 		TIMER_ID_MOVE_REDRAW = 1,
@@ -534,7 +534,7 @@ class DisplayServerWindows : public DisplayServer {
 		META = (1 << 4),
 		CTRL = (1 << 5),
 	};
-	BitField<WinKeyModifierMask> _get_mods() const;
+	uint32_t _get_mods() const;
 
 	Error _file_dialog_with_options_show(const String &p_title, const String &p_current_directory, const String &p_root, const String &p_filename, bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode, const Vector<String> &p_filters, const TypedArray<Dictionary> &p_options, const Callable &p_callback, bool p_options_in_cb, DisplayServerEnums::WindowID p_window_id);
 
@@ -605,7 +605,7 @@ public:
 
 	virtual void warp_mouse(const Point2i &p_position) override;
 	virtual Point2i mouse_get_position() const override;
-	virtual BitField<MouseButtonMask> mouse_get_button_state() const override;
+	virtual uint32_t mouse_get_button_state() const override;
 
 	virtual void clipboard_set(const String &p_text) override;
 	virtual String clipboard_get() const override;

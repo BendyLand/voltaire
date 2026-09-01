@@ -32,10 +32,10 @@
 
 #include "scene/gui/button.h"
 
-class CheckBox : public Button {
-	VLTRCLASS(CheckBox, Button);
-
-	struct ThemeCache {
+class CheckBox : public Button
+{
+	struct ThemeCache
+	{
 		int h_separation = 0;
 		int check_v_offset = 0;
 		Ref<StyleBox> normal_style;
@@ -63,6 +63,8 @@ protected:
 	bool is_radio() const;
 
 public:
-	CheckBox(const String &p_text = String());
+	CheckBox(const String& p_text = String());
 	~CheckBox();
 };
+
+

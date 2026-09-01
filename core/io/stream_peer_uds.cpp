@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "stream_peer_uds.h"
 
@@ -40,8 +39,7 @@ void StreamPeerUDS::accept_socket(Ref<NetSocket> p_sock, const NetSocket::Addres
 	_sock = p_sock;
 	_sock->set_blocking_enabled(false);
 
-	timeout = OS::get_singleton()->get_ticks_msec() +
-			  (((uint64_t)GLOBAL_GET("network/limits/unix/connect_timeout_seconds")) * 1000);
+	timeout = 30;
 	status = STATUS_CONNECTED;
 }
 
@@ -75,8 +73,7 @@ Error StreamPeerUDS::connect_to_host(const String& p_path)
 		_sock->set_blocking_enabled(false);
 	}
 
-	timeout = OS::get_singleton()->get_ticks_msec() +
-			  (((uint64_t)GLOBAL_GET("network/limits/unix/connect_timeout_seconds")) * 1000);
+	timeout = 30;
 	NetSocket::Address addr(p_path);
 	Error err = _sock->connect_to_host(addr);
 

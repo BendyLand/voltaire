@@ -285,7 +285,7 @@ int64_t FileAccessEncrypted::_get_size(const String& p_file)
 	}
 }
 
-BitField<FileAccess::UnixPermissionFlags> FileAccessEncrypted::_get_unix_permissions(
+uint32_t FileAccessEncrypted::_get_unix_permissions(
 	const String& p_file)
 {
 	if (file.is_valid()) {
@@ -295,7 +295,7 @@ BitField<FileAccess::UnixPermissionFlags> FileAccessEncrypted::_get_unix_permiss
 }
 
 Error FileAccessEncrypted::_set_unix_permissions(
-	const String& p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions)
+	const String& p_file, uint32_t p_permissions)
 {
 	if (file.is_valid()) {
 		return file->_set_unix_permissions(p_file, p_permissions);

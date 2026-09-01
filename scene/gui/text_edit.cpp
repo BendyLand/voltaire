@@ -166,12 +166,12 @@ void TextEdit::Text::set_width(float p_width) { width = p_width; }
 
 float TextEdit::Text::get_width() const { return width; }
 
-void TextEdit::Text::set_brk_flags(BitField<TextServer::LineBreakFlag> p_flags)
+void TextEdit::Text::set_brk_flags(uint32_t p_flags)
 {
 	brk_flags = p_flags;
 }
 
-BitField<TextServer::LineBreakFlag> TextEdit::Text::get_brk_flags() const { return brk_flags; }
+uint32_t TextEdit::Text::get_brk_flags() const { return brk_flags; }
 
 int TextEdit::Text::get_line_wrap_amount(int p_line) const
 {
@@ -306,7 +306,7 @@ void TextEdit::Text::invalidate_cache(int p_line, bool p_text_changed)
 		text_line.data_buf->clear();
 	}
 
-	BitField<TextServer::LineBreakFlag> flags = brk_flags;
+	uint32_t flags = brk_flags;
 	if (indent_wrapped_lines) {
 		flags.set_flag(TextServer::BREAK_TRIM_INDENT);
 	}
@@ -4350,7 +4350,7 @@ void TextEdit::_update_placeholder()
 	// enough for now.
 	placeholder_data_buf->clear();
 	placeholder_data_buf->set_width(text.get_width());
-	BitField<TextServer::LineBreakFlag> flags = text.get_brk_flags();
+	uint32_t flags = text.get_brk_flags();
 	if (text.is_indent_wrapped_lines()) {
 		flags.set_flag(TextServer::BREAK_TRIM_INDENT);
 	}
@@ -9424,7 +9424,7 @@ void TextEdit::_update_wrap_at_column(bool p_force)
 	if ((wrap_at_column != new_wrap_at) || p_force) {
 		wrap_at_column = new_wrap_at;
 		if (line_wrapping_mode) {
-			BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY;
+			uint32_t autowrap_flags = TextServer::BREAK_MANDATORY;
 			switch (autowrap_mode) {
 			case TextServer::AUTOWRAP_WORD_SMART:
 				autowrap_flags = TextServer::BREAK_WORD_BOUND | TextServer::BREAK_ADAPTIVE |

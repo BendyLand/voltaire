@@ -4633,7 +4633,7 @@ int Main::start()
 #ifdef TOOLS_ENABLED
 	String doc_tool_path;
 	bool doc_tool_implicit_cwd = false;
-	BitField<DocTools::GenerateFlags> gen_flags = {};
+	uint32_t gen_flags = {};
 	String _export_preset;
 	Vector<String> patches;
 	bool export_debug = false;

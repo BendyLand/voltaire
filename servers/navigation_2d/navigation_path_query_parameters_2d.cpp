@@ -85,12 +85,12 @@ uint32_t NavigationPathQueryParameters2D::get_navigation_layers() const
 }
 
 void NavigationPathQueryParameters2D::set_metadata_flags(
-	BitField<NavigationPathQueryParameters2D::PathMetadataFlags> p_flags)
+	uint32_t p_flags)
 {
 	metadata_flags = (int64_t)p_flags;
 }
 
-BitField<NavigationPathQueryParameters2D::PathMetadataFlags>
+uint32_t
 NavigationPathQueryParameters2D::get_metadata_flags() const
 {
 	return (int64_t)metadata_flags;

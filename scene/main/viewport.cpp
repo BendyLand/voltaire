@@ -3018,7 +3018,7 @@ void Viewport::_gui_accept_event()
 void Viewport::_drop_mouse_focus()
 {
 	Control* c = gui.mouse_focus;
-	BitField<MouseButtonMask> mask = gui.mouse_focus_mask;
+	uint32_t mask = gui.mouse_focus_mask;
 	gui.mouse_focus = nullptr;
 	gui.mouse_focus_mask.clear();
 
@@ -3084,7 +3084,7 @@ void Viewport::_post_gui_grab_click_focus()
 			return;
 		}
 
-		BitField<MouseButtonMask> mask = gui.mouse_focus_mask;
+		uint32_t mask = gui.mouse_focus_mask;
 		Point2 click = gui.mouse_focus->get_global_transform_with_canvas().affine_inverse().xform(
 			gui.last_mouse_pos);
 

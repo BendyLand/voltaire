@@ -143,7 +143,7 @@ Error EditorRunNative::start_run_native(int p_id)
 		this->obj->emit_signal(SNAME("native_run"), preset);
 	}
 
-	BitField<EditorExportPlatform::DebugFlags> flags = 0;
+	uint32_t flags = 0;
 
 	bool deploy_debug_remote = is_deploy_debug_remote_enabled();
 	bool deploy_dumb = EditorSettings::get_singleton()->get_project_metadata(

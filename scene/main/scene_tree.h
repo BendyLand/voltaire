@@ -31,12 +31,11 @@
 #pragma once
 
 #include <cstdlib>
-#include "core/object/message_queue.h"
-#include "core/object/ref_counted.h"
 #include "core/os/main_loop.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/paged_allocator.h"
 #include "core/templates/self_list.h"
+#include "core/types.h"
 #include "scene/main/scene_tree_fti.h"
 
 class ArrayMesh;
@@ -55,8 +54,6 @@ class Node3D;
 
 class SceneTreeTimer : public RefCounted
 {
-	VLTRCLASS(SceneTreeTimer, RefCounted);
-
 	double time_left = 0.0;
 	bool process_always = true;
 	bool process_in_physics = false;
@@ -94,11 +91,8 @@ public:
 	typedef void (*IdleCallback)();
 
 private:
-	CallQueue::Allocator* process_group_call_queue_allocator = nullptr;
-
 	struct ProcessGroup
 	{
-		CallQueue call_queue;
 		Vector<Node*> nodes;
 		Vector<Node*> physics_nodes;
 		bool node_order_dirty = true;
@@ -197,24 +191,17 @@ private:
 	int nodes_removed_on_group_call_lock = 0;
 	HashSet<Node*> nodes_removed_on_group_call; // Skip erased nodes.
 
-	List<ObjectID> delete_queue;
-
 	uint64_t accessibility_upd_per_sec = 0;
 	bool accessibility_force_update = true;
-	HashSet<ObjectID> accessibility_change_queue;
 	uint64_t accessibility_last_update = 0;
 
-	HashMap<UGCall, Vector<Variant>, UGCall> unique_group_calls;
 	bool ugc_locked = false;
 	void _flush_ugc();
 
 	_FORCE_INLINE_ void _update_group_order(SceneTreeGroup& g);
 
-	Array _get_nodes_in_group(const StringName& p_group);
 
 	Node* current_scene = nullptr;
-	ObjectID prev_scene_id;
-	ObjectID pending_new_scene_id;
 
 	Color debug_collisions_color;
 	Color debug_collision_contact_color;
@@ -257,9 +244,6 @@ private:
 	void _add_process_group(Node* p_node);
 	void _remove_node_from_process_group(Node* p_node, Node* p_owner);
 	void _add_node_to_process_group(Node* p_node, Node* p_owner);
-
-	void _call_group_flags(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
-	void _call_group(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
 
 	void _flush_delete_queue();
 	// Optimization.
@@ -319,44 +303,10 @@ public:
 
 	Window* get_root() const;
 
-	void call_group_flagsp(uint32_t p_call_flags, const StringName& p_group,
-		const StringName& p_function, const Variant** p_args, int p_argcount);
 	void notify_group_flags(uint32_t p_call_flags, const StringName& p_group, int p_notification);
-	void set_group_flags(uint32_t p_call_flags, const StringName& p_group, const String& p_name,
-		const Variant& p_value);
 
 	// `notify_group()` is immediate by default since Godot 4.0.
 	void notify_group(const StringName& p_group, int p_notification);
-	// `set_group()` is immediate by default since Godot 4.0.
-	void set_group(const StringName& p_group, const String& p_name, const Variant& p_value);
-
-	template <typename... VarArgs>
-	// `call_group()` is immediate by default since Godot 4.0.
-	void call_group(const StringName& p_group, const StringName& p_function, VarArgs... p_args)
-	{
-		Variant args[sizeof...(p_args) + 1] = {
-			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
-		const Variant* argptrs[sizeof...(p_args) + 1];
-		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-			argptrs[i] = &args[i];
-		}
-		call_group_flagsp(GROUP_CALL_DEFAULT, p_group, p_function,
-			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
-	}
-
-	template <typename... VarArgs>
-	void call_group_flags(uint32_t p_flags, const StringName& p_group, const StringName& p_function,
-		VarArgs... p_args)
-	{
-		Variant args[sizeof...(p_args) + 1] = {
-			p_args..., Variant()}; // +1 makes sure zero sized arrays are also supported.
-		const Variant* argptrs[sizeof...(p_args) + 1];
-		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-			argptrs[i] = &args[i];
-		}
-		call_group_flagsp(p_flags, p_group, p_function,
-			sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
-	}
 
 	void flush_transform_notifications();
 
@@ -390,11 +340,11 @@ public:
 
 	_FORCE_INLINE_ double get_process_time() const { return process_time; }
 
-	void set_pause(bool
-p_enabled);
+	void set_pause(bool p_enabled);
 	bool is_paused() const;
 	void set_suspend(bool p_enabled);
-	bool is_suspended() const;
+	bool is_suspended() const
+;
 
 #ifdef DEBUG_ENABLED
 	void set_debug_collisions_hint(bool p_enabled);
@@ -441,8 +391,6 @@ p_enabled);
 
 	int get_node_count() const;
 
-	void queue_delete(Object* rp_object);
-
 	Vector<Node*> get_nodes_in_group(const StringName& p_group);
 	Node* get_first_node_in_group(const StringName& p_group);
 	bool has_group(const StringName& p_identifier) const;
@@ -466,7 +414,6 @@ p_enabled);
 		bool p_process_in_physics = false, bool p_ignore_time_scale = false);
 	Tween* create_tween();
 	void remove_tween(const Ref<Tween>& p_tween);
-	Array get_processed_tweens();
 
 	// used by Main::start, don't use otherwise
 	void add_current_scene(Node* p_current);
@@ -510,7 +457,5 @@ p_enabled);
 	SceneTree();
 	~SceneTree();
 };
-
-VARIANT_ENUM_CAST(SceneTree::GroupCallFlags);
 
 

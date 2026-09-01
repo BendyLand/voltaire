@@ -2560,7 +2560,7 @@ void Control::_clear_size_warning() { data.size_warning = false; }
 
 // Container sizing.
 
-void Control::set_h_size_flags(BitField<SizeFlags> p_flags)
+void Control::set_h_size_flags(uint32_t p_flags)
 {
 	ERR_MAIN_THREAD_GUARD;
 	if ((int)data.h_size_flags == (int)p_flags) {
@@ -2570,13 +2570,13 @@ void Control::set_h_size_flags(BitField<SizeFlags> p_flags)
 	this->obj->emit_signal(SceneStringName(size_flags_changed));
 }
 
-BitField<Control::SizeFlags> Control::get_h_size_flags() const
+uint32_t Control::get_h_size_flags() const
 {
 	ERR_READ_THREAD_GUARD_V(SIZE_EXPAND_FILL);
 	return data.h_size_flags;
 }
 
-void Control::set_v_size_flags(BitField<SizeFlags> p_flags)
+void Control::set_v_size_flags(uint32_t p_flags)
 {
 	ERR_MAIN_THREAD_GUARD;
 	if ((int)data.v_size_flags == (int)p_flags) {
@@ -2586,7 +2586,7 @@ void Control::set_v_size_flags(BitField<SizeFlags> p_flags)
 	this->obj->emit_signal(SceneStringName(size_flags_changed));
 }
 
-BitField<Control::SizeFlags> Control::get_v_size_flags() const
+uint32_t Control::get_v_size_flags() const
 {
 	ERR_READ_THREAD_GUARD_V(SIZE_EXPAND_FILL);
 	return data.v_size_flags;

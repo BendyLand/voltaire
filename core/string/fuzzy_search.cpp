@@ -30,9 +30,6 @@
 
 #include "fuzzy_search.h"
 
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
-
 static const String boundary_chars = "/\\-_. ";
 
 static bool _is_valid_interval(const Vector2i &p_interval) {
@@ -211,16 +208,6 @@ void FuzzySearchMatch::_add_token_match(const FuzzyTokenMatch &p_match) {
 
 void FuzzySearchMatch::_bind_methods() {}
 
-TypedArray<Vector2i> FuzzySearchMatch::get_matched_substrings() const {
-	TypedArray<Vector2i> substrings;
-	for (const FuzzyTokenMatch &match : token_matches) {
-		for (const Vector2i &substring : match.substrings) {
-			substrings.append(substring);
-		}
-	}
-	return substrings;
-}
-
 static void remove_low_scores(Vector<Ref<FuzzySearchMatch>> &p_results, float p_cull_score) {
 	// Removes all results with score < p_cull_score in-place.
 	int i = 0;
@@ -394,17 +381,6 @@ Vector<Ref<FuzzySearchMatch>> FuzzySearch::search_all(const String &p_query, con
 
 	_sort_and_filter(results);
 	return results;
-}
-
-Array FuzzySearch::_search_all_bind(const String &p_query, const PackedStringArray &p_targets) const {
-	Vector<Ref<FuzzySearchMatch>> results = search_all(p_query, p_targets);
-	Array wrapped_results;
-	wrapped_results.reserve(results.size());
-	for (Ref<FuzzySearchMatch> &result : results) {
-		wrapped_results.append(result);
-	}
-
-	return wrapped_results;
 }
 
 void FuzzySearch::_bind_methods() {}

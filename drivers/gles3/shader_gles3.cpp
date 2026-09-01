@@ -255,7 +255,7 @@ static void _display_error_with_code(const String &p_error, const String &p_code
 	Vector<String> lines = p_code.split("\n");
 
 	for (int j = 0; j < lines.size(); j++) {
-		print_line(itos(line) + ": " + lines[j]);
+		__print_line(itos(line) + ": " + lines[j]);
 		line++;
 	}
 

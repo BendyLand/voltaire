@@ -52,19 +52,19 @@ void XRBodyTracker::set_has_tracking_data(bool p_has_tracking_data)
 
 bool XRBodyTracker::get_has_tracking_data() const { return has_tracking_data; }
 
-void XRBodyTracker::set_body_flags(BitField<BodyFlags> p_body_flags) { body_flags = p_body_flags; }
+void XRBodyTracker::set_body_flags(uint32_t p_body_flags) { body_flags = p_body_flags; }
 
-BitField<XRBodyTracker::BodyFlags> XRBodyTracker::get_body_flags() const { return body_flags; }
+uint32_t XRBodyTracker::get_body_flags() const { return body_flags; }
 
-void XRBodyTracker::set_joint_flags(Joint p_joint, BitField<JointFlags> p_flags)
+void XRBodyTracker::set_joint_flags(Joint p_joint, uint32_t p_flags)
 {
 	ERR_FAIL_INDEX(p_joint, JOINT_MAX);
 	joint_flags[p_joint] = p_flags;
 }
 
-BitField<XRBodyTracker::JointFlags> XRBodyTracker::get_joint_flags(Joint p_joint) const
+uint32_t XRBodyTracker::get_joint_flags(Joint p_joint) const
 {
-	ERR_FAIL_INDEX_V(p_joint, JOINT_MAX, BitField<JointFlags>());
+	ERR_FAIL_INDEX_V(p_joint, JOINT_MAX, uint32_t());
 	return joint_flags[p_joint];
 }
 

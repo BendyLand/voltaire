@@ -365,7 +365,7 @@ bool TextServer::shaped_text_has_visible_chars(const RID& p_shaped) const
 
 PackedInt32Array TextServer::shaped_text_get_line_breaks_adv(const RID& p_shaped,
 	const PackedFloat32Array& p_width, int64_t p_start, bool p_once,
-	BitField<TextServer::LineBreakFlag> p_break_flags) const
+	uint32_t p_break_flags) const
 {
 	PackedInt32Array lines;
 
@@ -609,7 +609,7 @@ PackedInt32Array TextServer::shaped_text_get_line_breaks_adv(const RID& p_shaped
 }
 
 PackedInt32Array TextServer::shaped_text_get_line_breaks(const RID& p_shaped, double p_width,
-	int64_t p_start, BitField<TextServer::LineBreakFlag> p_break_flags) const
+	int64_t p_start, uint32_t p_break_flags) const
 {
 	PackedInt32Array lines;
 
@@ -846,8 +846,8 @@ PackedInt32Array TextServer::shaped_text_get_line_breaks(const RID& p_shaped, do
 }
 
 PackedInt32Array TextServer::shaped_text_get_word_breaks(const RID& p_shaped,
-	BitField<TextServer::GraphemeFlag> p_grapheme_flags,
-	BitField<TextServer::GraphemeFlag> p_skip_grapheme_flags) const
+	uint32_t p_grapheme_flags,
+	uint32_t p_skip_grapheme_flags) const
 {
 	PackedInt32Array words;
 
@@ -2190,10 +2190,10 @@ TextServer::TextServer()
 
 TextServer::~TextServer() {}
 
-BitField<TextServer::TextOverrunFlag> TextServer::get_overrun_flags_from_behavior(
+uint32_t TextServer::get_overrun_flags_from_behavior(
 	TextServer::OverrunBehavior p_behavior)
 {
-	BitField<TextOverrunFlag> overrun_flags = OVERRUN_NO_TRIM;
+	uint32_t overrun_flags = OVERRUN_NO_TRIM;
 	switch (p_behavior) {
 	case OVERRUN_TRIM_WORD_ELLIPSIS_FORCE: {
 		overrun_flags.set_flag(OVERRUN_TRIM);

@@ -91,7 +91,7 @@ protected:
 #ifndef DISABLE_DEPRECATED
 	RID _shader_create_from_bytecode_bind_compat_79606(const Vector<uint8_t>& p_shader_binary);
 	RID _texture_create_from_extension_bind_compat_105570(TextureType p_type, DataFormat p_format,
-		TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage,
+		TextureSamples p_samples, uint32_t p_usage,
 		uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
 	static void _bind_compatibility_methods();
 #endif
@@ -173,7 +173,7 @@ private:
 		int current = 0;
 		uint32_t block_size = 0;
 		uint64_t max_size = 0;
-		BitField<RDD::BufferUsageBits> usage_bits = {};
+		uint32_t usage_bits = 0;
 		bool used = false;
 	};
 
@@ -191,7 +191,7 @@ private:
 	{
 		RDD::BufferID driver_id;
 		uint32_t size = 0;
-		BitField<RDD::BufferUsageBits> usage = {};
+		uint32_t usage = 0;
 		RDG::ResourceTracker* draw_tracker = nullptr;
 		int32_t transfer_worker_index = -1;
 		uint64_t transfer_worker_operation = 0;
@@ -386,8 +386,8 @@ public:
 		bool has_initial_data = false;
 		bool pending_clear = false;
 
-		BitField<RDD::TextureAspectBits> read_aspect_flags = {};
-		BitField<RDD::TextureAspectBits> barrier_aspect_flags = {};
+		uint32_t read_aspect_flags = 0;
+		uint32_t barrier_aspect_flags = 0;
 		bool bound = false; // Bound to framebuffer.
 		RID owner;
 
@@ -497,7 +497,7 @@ public:
 		const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
 	RID texture_create_shared(const TextureView& p_view, RID p_with_texture);
 	RID texture_create_from_extension(TextureType p_type, DataFormat p_format,
-		TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage,
+		TextureSamples p_samples, uint32_t p_usage,
 		uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers,
 		uint64_t p_mipmaps = 1);
 	RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
@@ -510,7 +510,7 @@ public:
 	Error texture_get_data_async(RID p_texture, uint32_t p_layer);
 
 	bool texture_is_format_supported_for_usage(
-		DataFormat p_format, BitField<TextureUsageBits> p_usage) const;
+		DataFormat p_format, uint32_t p_usage) const;
 	bool texture_is_shared(RID p_texture);
 	bool texture_is_valid(RID p_texture);
 	TextureFormat texture_get_format(RID p_texture);
@@ -957,10 +957,10 @@ public:
 	};
 
 	RID vertex_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
-		BitField<BufferCreationBits> p_creation_bits = 0);
+		uint32_t p_creation_bits = 0);
 
 	RID _vertex_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
-		BitField<BufferCreationBits> p_creation_bits = 0)
+		uint32_t p_creation_bits = 0)
 	{
 		return vertex_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
@@ -972,11 +972,11 @@ public:
 
 	RID index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
 		Span<uint8_t> p_data = {}, bool p_use_restart_indices = false,
-		BitField<BufferCreationBits> p_creation_bits = 0);
+		uint32_t p_creation_bits = 0);
 
 	RID _index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
 		const Vector<uint8_t>& p_data, bool p_use_restart_indices = false,
-		BitField<BufferCreationBits> p_creation_bits = 0)
+		uint32_t p_creation_bits = 0)
 	{
 		return index_buffer_create(
 			p_index_count, p_format, p_data, p_use_restart_indices, p_creation_bits);
@@ -985,8 +985,8 @@ public:
 	RID index_array_create(RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count);
 
 private:
-	BitField<RDD::BufferUsageBits> _creation_to_usage_bits(
-		BitField<BufferCreationBits> p_creation_bits);
+	uint32_t _creation_to_usage_bits(
+		uint32_t p_creation_bits);
 
 	/****************/
 	/**** SHADER ****/
@@ -1051,7 +1051,7 @@ private:
 		String name; // Used for debug.
 		RDD::ShaderID driver_id;
 		uint32_t layout_hash = 0;
-		BitField<RDD::PipelineStageBits> stage_bits = {};
+		uint32_t stage_bits = 0;
 		Vector<uint32_t> set_formats;
 	};
 
@@ -1095,8 +1095,8 @@ public:
 		FINAL_ACTION_CONTINUE = FINAL_ACTION_STORE,
 	};
 
-	void barrier(BitField<BarrierMask> p_from = BARRIER_MASK_ALL_BARRIERS,
-		BitField<BarrierMask> p_to = BARRIER_MASK_ALL_BARRIERS);
+	void barrier(uint32_t p_from = BARRIER_MASK_ALL_BARRIERS,
+		uint32_t p_to = BARRIER_MASK_ALL_BARRIERS);
 	void full_barrier();
 	void draw_command_insert_label(String p_label_name, const Color& p_color = Color(1, 1, 1, 1));
 	Error draw_list_begin_split(RID p_framebuffer, uint32_t p_splits, DrawListID* r_split_ids,
@@ -1115,12 +1115,12 @@ public:
 	Vector<int64_t> _draw_list_switch_to_next_pass_split(uint32_t p_splits);
 
 private:
-	void _draw_list_end_bind_compat_81356(BitField<BarrierMask> p_post_barrier);
-	void _compute_list_end_bind_compat_81356(BitField<BarrierMask> p_post_barrier);
-	void _barrier_bind_compat_81356(BitField<BarrierMask> p_from, BitField<BarrierMask> p_to);
+	void _draw_list_end_bind_compat_81356(uint32_t p_post_barrier);
+	void _compute_list_end_bind_compat_81356(uint32_t p_post_barrier);
+	void _barrier_bind_compat_81356(uint32_t p_to);
 
-	void _draw_list_end_bind_compat_84976(BitField<BarrierMask> p_post_barrier);
-	void _compute_list_end_bind_compat_84976(BitField<BarrierMask> p_post_barrier);
+	void _draw_list_end_bind_compat_84976(uint32_t p_post_barrier);
+	void _compute_list_end_bind_compat_84976(uint32_t p_post_barrier);
 	InitialAction _convert_initial_action_84976(InitialAction p_old_initial_action);
 	FinalAction _convert_final_action_84976(FinalAction p_old_final_action);
 	DrawListID _draw_list_begin_bind_compat_84976(RID p_framebuffer,
@@ -1130,20 +1130,20 @@ private:
 		const Rect2& p_region, const Vector<Color>& p_storage_textures);
 	ComputeListID _compute_list_begin_bind_compat_84976(bool p_allow_draw_overlap);
 	Error _buffer_update_bind_compat_84976(RID p_buffer, uint32_t p_offset, uint32_t p_size,
-		const Vector<uint8_t>& p_data, BitField<BarrierMask> p_post_barrier);
+		const Vector<uint8_t>& p_data, uint32_t p_post_barrier);
 	Error _buffer_clear_bind_compat_84976(
-		RID p_buffer, uint32_t p_offset, uint32_t p_size, BitField<BarrierMask> p_post_barrier);
+		RID p_buffer, uint32_t p_offset, uint32_t p_size, uint32_t p_post_barrier);
 	Error _texture_update_bind_compat_84976(RID p_texture, uint32_t p_layer,
-		const Vector<uint8_t>& p_data, BitField<BarrierMask> p_post_barrier);
+		const Vector<uint8_t>& p_data, uint32_t p_post_barrier);
 	Error _texture_copy_bind_compat_84976(RID p_from_texture, RID p_to_texture,
 		const Vector3& p_from, const Vector3& p_to, const Vector3& p_size, uint32_t p_src_mipmap,
 		uint32_t p_dst_mipmap, uint32_t p_src_layer, uint32_t p_dst_layer,
-		BitField<BarrierMask> p_post_barrier);
+		uint32_t p_post_barrier);
 	Error _texture_clear_bind_compat_84976(RID p_texture, const Color& p_color,
 		uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers,
-		BitField<BarrierMask> p_post_barrier);
+		uint32_t p_post_barrier);
 	Error _texture_resolve_multisample_bind_compat_84976(
-		RID p_from_texture, RID p_to_texture, BitField<BarrierMask> p_post_barrier);
+		RID p_from_texture, RID p_to_texture, uint32_t p_post_barrier);
 
 	FramebufferFormatID _screen_get_framebuffer_format_bind_compat_87340() const;
 
@@ -1166,7 +1166,7 @@ private:
 	RID _index_buffer_create_bind_compat_101561(uint32_t p_size_indices, IndexBufferFormat p_format,
 		const Vector<uint8_t>& p_data, bool p_use_restart_indices);
 	RID _storage_buffer_create_bind_compat_101561(
-		uint32_t p_size, const Vector<uint8_t>& p_data, BitField<StorageBufferUsage> p_usage);
+		uint32_t p_size, const Vector<uint8_t>& p_data, uint32_t p_usage);
 #endif
 
 public:
@@ -1203,21 +1203,21 @@ public:
 	/*****************/
 
 	RID uniform_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
-		BitField<BufferCreationBits> p_creation_bits = 0);
+		uint32_t p_creation_bits = 0);
 
 	RID _uniform_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
-		BitField<BufferCreationBits> p_creation_bits = 0)
+		uint32_t p_creation_bits = 0)
 	{
 		return uniform_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
 
 	RID storage_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
-		BitField<StorageBufferUsage> p_usage = 0, BitField<BufferCreationBits> p_creation_bits = 0);
+		uint32_t p_creation_bits = 0);
 
 	RID _storage_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
-		BitField<StorageBufferUsage> p_usage = 0, BitField<BufferCreationBits> p_creation_bits = 0)
+		uint32_t p_creation_bits = 0)
 	{
-		return storage_buffer_create(p_size_bytes, p_data, p_usage, p_creation_bits);
+		return storage_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
 
 	RID texture_buffer_create(
@@ -1421,7 +1421,7 @@ private:
 		uint32_t shader_layout_hash = 0;
 		Vector<uint32_t> set_formats;
 		RDD::PipelineID driver_id;
-		BitField<RDD::PipelineStageBits> stage_bits = {};
+		uint32_t stage_bits = 0;
 		uint32_t push_constant_size = 0;
 	};
 
@@ -1473,7 +1473,7 @@ public:
 		const PipelineMultisampleState& p_multisample_state,
 		const PipelineDepthStencilState& p_depth_stencil_state,
 		const PipelineColorBlendState& p_blend_state,
-		BitField<PipelineDynamicStateFlags> p_dynamic_state_flags = 0,
+		uint32_t p_dynamic_state_flags = 0,
 		uint32_t p_for_render_pass = 0,
 		const Vector<PipelineSpecializationConstant>& p_specialization_constants =
 			Vector<PipelineSpecializationConstant>());
@@ -1580,7 +1580,7 @@ private:
 public:
 	struct AccelerationStructureGeometry
 	{
-		BitField<AccelerationStructureGeometryFlagBits> flags = {};
+		uint32_t flags = 0;
 		RID vertex_buffer;
 		uint32_t vertex_offset = 0;
 		uint32_t vertex_stride = 0;
@@ -1592,8 +1592,8 @@ public:
 	};
 
 	RID blas_create(Span<AccelerationStructureGeometry> p_geometries,
-		BitField<AccelerationStructureFlagBits> p_flags);
-	RID tlas_create(uint32_t p_max_instance_count, BitField<AccelerationStructureFlagBits> p_flags);
+		uint32_t p_flags);
+	RID tlas_create(uint32_t p_max_instance_count, uint32_t p_flags);
 
 	typedef int64_t HitShaderBindingTableRange;
 
@@ -1603,7 +1603,7 @@ public:
 		uint32_t id = 0;
 		uint8_t mask = 0xFF;
 		HitShaderBindingTableRange hit_sbt_range = 0;
-		BitField<AccelerationStructureInstanceFlagBits> flags = {};
+		uint32_t flags = 0;
 		RID blas;
 	};
 
@@ -1778,12 +1778,12 @@ public:
 	 * @param p_clear_color_values Color values must use linear encoding when HDR 2D is active.
 	 */
 	DrawListID draw_list_begin(RID p_framebuffer,
-		BitField<DrawFlags> p_draw_flags = DRAW_DEFAULT_ALL,
+		uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
 		VectorView<Color> p_clear_color_values = VectorView<Color>(),
 		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
 		const Rect2& p_region = Rect2(), uint32_t p_breadcrumb = 0);
 	DrawListID _draw_list_begin_bind(RID p_framebuffer,
-		BitField<DrawFlags> p_draw_flags = DRAW_DEFAULT_ALL,
+		uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
 		const Vector<Color>& p_clear_color_values = Vector<Color>(),
 		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
 		const Rect2& p_region = Rect2(), uint32_t p_breadcrumb = 0);

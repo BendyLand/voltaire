@@ -97,8 +97,6 @@ public:
 
 	bool is_compositor_effect(RID p_compositor) const;
 	void compositor_effect_set_enabled(RID p_compositor, bool p_enabled);
-	void compositor_effect_set_callback(RID p_compositor,
-		RSE::CompositorEffectCallbackType p_callback_type, const Callable& p_callback);
 	void compositor_effect_set_flag(
 		RID p_compositor, RSE::CompositorEffectFlags p_flag, bool p_set);
 
@@ -109,8 +107,6 @@ public:
 	void compositor_free(RID p_rid);
 
 	bool is_compositor(RID p_compositor) const;
-
-	void compositor_set_compositor_effects(RID p_compositor, const Array& p_effects);
 
 	/* ENVIRONMENT API */
 
@@ -406,12 +402,6 @@ public:
 
 	virtual void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_quality);
 	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale);
-
-	virtual Array bake_render_uv2(
-		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size);
-
-	virtual PackedByteArray bake_render_area_light_atlas(const Array& p_area_light_textures,
-		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size, int p_mipmaps);
 
 	virtual bool free(RID p_rid);
 

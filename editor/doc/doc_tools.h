@@ -56,7 +56,7 @@ public:
 		GENERATE_FLAG_EXTENSION_CLASSES_ONLY = (1 << 1),
 	};
 
-	void generate(BitField<GenerateFlags> p_flags = {});
+	void generate(uint32_t p_flags = {});
 	Error load_classes(const String& p_dir);
 	Error save_classes(const String& p_default_path, const HashMap<String, String>& p_class_path,
 		bool p_use_relative_schema = true);

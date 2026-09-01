@@ -60,7 +60,6 @@ protected:
 	bool is_fixed = false;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 	static void _bind_methods();
 
 public:
@@ -101,6 +100,5 @@ public:
 	VBoxContainer() : BoxContainer(true) { is_fixed = true; }
 };
 
-VARIANT_ENUM_CAST(BoxContainer::AlignmentMode);
 
 

@@ -1587,10 +1587,10 @@ OpenXRInterface::HandTrackedSource OpenXRInterface::get_hand_tracking_source(
 	return HAND_TRACKED_SOURCE_UNKNOWN;
 }
 
-BitField<OpenXRInterface::HandJointFlags> OpenXRInterface::get_hand_joint_flags(
+uint32_t OpenXRInterface::get_hand_joint_flags(
 	Hand p_hand, HandJoints p_joint) const
 {
-	BitField<OpenXRInterface::HandJointFlags> bits = HAND_JOINT_NONE;
+	uint32_t bits = HAND_JOINT_NONE;
 
 	OpenXRHandTrackingExtension* hand_tracking_ext = OpenXRHandTrackingExtension::get_singleton();
 	if (hand_tracking_ext && hand_tracking_ext->get_active()) {

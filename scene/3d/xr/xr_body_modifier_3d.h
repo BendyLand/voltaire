@@ -59,8 +59,8 @@ public:
 	void set_body_tracker(const StringName &p_tracker_name);
 	StringName get_body_tracker() const;
 
-	void set_body_update(BitField<BodyUpdate> p_body_update);
-	BitField<BodyUpdate> get_body_update() const;
+	void set_body_update(uint32_t p_body_update);
+	uint32_t get_body_update() const;
 
 	void set_bone_update(BoneUpdate p_bone_update);
 	BoneUpdate get_bone_update() const;
@@ -80,7 +80,7 @@ private:
 	};
 
 	StringName tracker_name = "/user/body_tracker";
-	BitField<BodyUpdate> body_update = BODY_UPDATE_UPPER_BODY | BODY_UPDATE_LOWER_BODY | BODY_UPDATE_HANDS;
+	uint32_t body_update = BODY_UPDATE_UPPER_BODY | BODY_UPDATE_LOWER_BODY | BODY_UPDATE_HANDS;
 	BoneUpdate bone_update = BONE_UPDATE_FULL;
 	JointData joints[XRBodyTracker::JOINT_MAX];
 

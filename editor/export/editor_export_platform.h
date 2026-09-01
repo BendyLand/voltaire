@@ -226,7 +226,7 @@ protected:
 		bool enabled = true;
 
 		ExportNotifier(EditorExportPlatform& p_platform, const Ref<EditorExportPreset>& p_preset,
-			bool p_debug, const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags,
+			bool p_debug, const String& p_path, uint32_t p_flags,
 			bool p_enabled = true);
 		~ExportNotifier();
 	};
@@ -248,7 +248,7 @@ protected:
 
 	bool exists_export_template(const String& p_template_file_name, String* r_err) const;
 	String find_export_template(const String& p_template_file_name, String* r_err = nullptr) const;
-	Vector<String> gen_export_flags(BitField<EditorExportPlatform::DebugFlags> p_flags);
+	Vector<String> gen_export_flags(uint32_t p_flags);
 
 	virtual void zip_folder_recursive(zipFile& p_zip, const String& p_root_path,
 		const String& p_folder, const String& p_pkg_name);
@@ -295,7 +295,7 @@ protected:
 
 #ifndef DISABLE_DEPRECATED
 	Error _export_project_bind_compat_118787(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		const String& p_path, uint32_t p_flags = 0);
 	static Vector<String> _get_forced_export_files_bind_compat_71542();
 	static void _bind_compatibility_methods();
 #endif
@@ -464,7 +464,7 @@ public:
 	virtual void cleanup() {}
 
 	virtual Error run(const Ref<EditorExportPreset>& p_preset, int p_device,
-		BitField<EditorExportPlatform::DebugFlags> p_debug_flags)
+		uint32_t p_debug_flags)
 	{
 		return OK;
 	}
@@ -480,18 +480,18 @@ public:
 
 	virtual List<String> get_binary_extensions(const Ref<EditorExportPreset>& p_preset) const;
 	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0,
+		const String& p_path, uint32_t p_flags = 0,
 		bool p_notify = true);
 	virtual Error export_pack(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		const String& p_path, uint32_t p_flags = 0);
 	virtual Error export_zip(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		const String& p_path, uint32_t p_flags = 0);
 	virtual Error export_pack_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 		const String& p_path, const Vector<String>& p_patches = Vector<String>(),
-		BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		uint32_t p_flags = 0);
 	virtual Error export_zip_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 		const String& p_path, const Vector<String>& p_patches = Vector<String>(),
-		BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		uint32_t p_flags = 0);
 	virtual void get_platform_features(List<String>* r_features) const;
 
 	virtual void resolve_platform_feature_priorities(

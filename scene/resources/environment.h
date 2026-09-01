@@ -37,8 +37,6 @@ class Sky;
 
 class Environment : public Resource
 {
-	VLTRCLASS(Environment, Resource);
-
 public:
 	enum BGMode
 	{
@@ -234,11 +232,6 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
-#ifndef DISABLE_DEPRECATED
-	// Kept for compatibility from 3.x to 4.0.
-	bool _set(const StringName& p_name, const Variant& p_value);
-#endif
 
 public:
 	virtual RID get_rid() const override;
@@ -460,13 +453,5 @@ public:
 	Environment();
 	~Environment();
 };
-
-VARIANT_ENUM_CAST(Environment::BGMode)
-VARIANT_ENUM_CAST(Environment::AmbientSource)
-VARIANT_ENUM_CAST(Environment::ReflectionSource)
-VARIANT_ENUM_CAST(Environment::ToneMapper)
-VARIANT_ENUM_CAST(Environment::SDFGIYScale)
-VARIANT_ENUM_CAST(Environment::GlowBlendMode)
-VARIANT_ENUM_CAST(Environment::FogMode)
 
 

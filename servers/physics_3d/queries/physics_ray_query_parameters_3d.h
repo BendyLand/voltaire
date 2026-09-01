@@ -30,22 +30,17 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
+#include "core/types.h"
 
 class PhysicsRayQueryParameters3D : public RefCounted
 {
-	VLTRCLASS(PhysicsRayQueryParameters3D, RefCounted);
-
 	PS3DT::RayParameters parameters;
 
 protected:
 	static void _bind_methods();
 
 public:
-	static Ref<PhysicsRayQueryParameters3D> create(
-		Vector3 p_from, Vector3 p_to, uint32_t p_mask, const Array& p_exclude);
-
 	const PS3DT::RayParameters& get_parameters() const { return parameters; }
 
 	void set_from(const Vector3& p_from) { parameters.from = p_from; }
@@ -75,9 +70,6 @@ public:
 	void set_hit_back_faces(bool p_enable) { parameters.hit_back_faces = p_enable; }
 
 	bool is_hit_back_faces_enabled() const { return parameters.hit_back_faces; }
-
-	void set_exclude(const Array& p_exclude);
-	Array get_exclude() const;
 };
 
 

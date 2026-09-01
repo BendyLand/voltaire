@@ -33,7 +33,6 @@
 #ifdef SDL_ENABLED
 
 #include "core/input/default_controller_mappings.h"
-#include "core/variant/dictionary.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
@@ -169,23 +168,11 @@ void JoypadSDL::process_events() {
 
 				sdl_instance_id_to_joypad_id.insert(sdl_event.jdevice.which, joy_id);
 
-				Dictionary joypad_info;
-				// Skip Godot's mapping system if SDL already handles the joypad's mapping.
-				joypad_info["mapping_handled"] = SDL_IsGamepad(sdl_event.jdevice.which);
-				joypad_info["raw_name"] = String::utf8(SDL_GetJoystickName(joy));
-				joypad_info["vendor_id"] = itos(SDL_GetJoystickVendor(joy));
-				joypad_info["product_id"] = itos(SDL_GetJoystickProduct(joy));
 
 				const String serial = String(SDL_GetJoystickSerial(joy));
-				if (!serial.is_empty()) {
-					joypad_info["serial_number"] = serial;
-				}
 
 #if defined(WINDOWS_ENABLED) || defined(LINUXBSD_ENABLED) || defined(MACOS_ENABLED)
 				const uint64_t steam_handle = SDL_GetGamepadSteamHandle(gamepad);
-				if (steam_handle != 0) {
-					joypad_info["steam_input_index"] = itos(steam_handle);
-				}
 #endif
 
 #ifdef WINDOWS_ENABLED
@@ -195,13 +182,6 @@ void JoypadSDL::process_events() {
 					joypad_info["xinput_index"] = itos(player_index);
 				}
 #endif
-
-				Input::get_singleton()->joy_connection_changed(
-						joy_id,
-						true,
-						device_name,
-						joypads[joy_id].guid,
-						joypad_info);
 
 				Input::get_singleton()->set_joy_features(joy_id, &joypads[joy_id]);
 
@@ -216,7 +196,6 @@ void JoypadSDL::process_events() {
 
 			switch (sdl_event.type) {
 				case SDL_EVENT_JOYSTICK_REMOVED:
-					Input::get_singleton()->joy_connection_changed(joy_id, false, "");
 					close_joypad(joy_id);
 					break;
 

@@ -38,8 +38,6 @@
 
 class LabelSettings : public Resource
 {
-	VLTRCLASS(LabelSettings, Resource);
-
 public:
 	struct StackedOutlineData
 	{
@@ -82,34 +80,10 @@ private:
 protected:
 	static void _bind_methods();
 
-	bool _set(const StringName& p_name, const Variant& p_value)
-	{
-		return stacked_outline_property_helper.property_set_value(p_name, p_value) ||
-			   stacked_shadow_property_helper.property_set_value(p_name, p_value);
-	}
-
-	bool _get(const StringName& p_name, Variant& r_ret) const
-	{
-		return stacked_outline_property_helper.property_get_value(p_name, r_ret) ||
-			   stacked_shadow_property_helper.property_get_value(p_name, r_ret);
-	}
-
-	void _get_property_list(List<PropertyInfo>* p_list) const
-	{
-		stacked_outline_property_helper.get_property_list(p_list);
-		stacked_shadow_property_helper.get_property_list(p_list);
-	}
-
 	bool _property_can_revert(const StringName& p_name) const
 	{
 		return stacked_outline_property_helper.property_can_revert(p_name) ||
 			   stacked_shadow_property_helper.property_can_revert(p_name);
-	}
-
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const
-	{
-		return stacked_outline_property_helper.property_get_revert(p_name, r_property) ||
-			   stacked_shadow_property_helper.property_get_revert(p_name, r_property);
 	}
 
 public:
@@ -167,13 +141,7 @@ public:
 	void set_stacked_shadow_outline_size(int p_index, int p_size);
 	int get_stacked_shadow_outline_size(int p_index) const;
 
-	LabelSettings()
-	{
-		stacked_outline_property_helper.setup_for_instance(
-			stacked_outline_base_property_helper, this->obj.get());
-		stacked_shadow_property_helper.setup_for_instance(
-			stacked_shadow_base_property_helper, this->obj.get());
-	}
+	LabelSettings() {}
 };
 
 

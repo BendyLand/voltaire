@@ -4249,7 +4249,7 @@ bool EditorInspectorDefaultPlugin::can_handle(Object* p_object)
 
 bool EditorInspectorDefaultPlugin::parse_property(Object* p_object, const Variant::Type p_type,
 	const String& p_path, const PropertyHint p_hint, const String& p_hint_text,
-	const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+	const uint32_t p_usage, const bool p_wide)
 {
 	Control* editor = EditorInspectorDefaultPlugin::get_editor_for_property(
 		p_object, p_type, p_path, p_hint, p_hint_text, p_usage, p_wide);
@@ -4373,7 +4373,7 @@ static EditorProperty* get_input_action_editor(const String& p_hint_text, bool i
 
 EditorProperty* EditorInspectorDefaultPlugin::get_editor_for_property(Object* p_object,
 	const Variant::Type p_type, const String& p_path, const PropertyHint p_hint,
-	const String& p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide)
+	const String& p_hint_text, const uint32_t p_usage, const bool p_wide)
 {
 	double default_float_step = EDITOR_GET("interface/inspector/default_float_step");
 

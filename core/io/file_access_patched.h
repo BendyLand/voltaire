@@ -44,13 +44,13 @@ class FileAccessPatched : public FileAccess
 	bool _try_apply_patch() const;
 
 protected:
-	virtual BitField<UnixPermissionFlags> _get_unix_permissions(const String& p_file) override
+	virtual uint32_t _get_unix_permissions(const String& p_file) override
 	{
 		return 0;
 	}
 
 	virtual Error _set_unix_permissions(
-		const String& p_file, BitField<UnixPermissionFlags> p_permissions) override
+		const String& p_file, uint32_t p_permissions) override
 	{
 		return FAILED;
 	}

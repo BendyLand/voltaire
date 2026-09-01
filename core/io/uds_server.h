@@ -33,14 +33,16 @@
 #include "core/io/socket_server.h"
 #include "core/io/stream_peer_uds.h"
 
-class UDSServer : public SocketServer {
-	VLTRCLASS(UDSServer, SocketServer);
-
+class UDSServer : public SocketServer
+{
 protected:
 	static void _bind_methods();
 
 public:
-	Error listen(const String &p_path);
+	Error listen(const String& p_path);
 	Ref<StreamPeerUDS> take_connection();
+
 	Ref<StreamPeerSocket> take_socket_connection() override { return take_connection(); }
 };
+
+
