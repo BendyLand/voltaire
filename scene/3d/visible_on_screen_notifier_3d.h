@@ -32,9 +32,8 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class VisibleOnScreenNotifier3D : public VisualInstance3D {
-	VLTRCLASS(VisibleOnScreenNotifier3D, VisualInstance3D);
-
+class VisibleOnScreenNotifier3D : public VisualInstance3D
+{
 	AABB aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
 
 private:
@@ -44,13 +43,14 @@ private:
 
 protected:
 	virtual void _screen_enter() {}
+
 	virtual void _screen_exit() {}
 
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	void set_aabb(const AABB &p_aabb);
+	void set_aabb(const AABB& p_aabb);
 	virtual AABB get_aabb() const override;
 	bool is_on_screen() const;
 
@@ -58,18 +58,17 @@ public:
 	~VisibleOnScreenNotifier3D();
 };
 
-class VisibleOnScreenEnabler3D : public VisibleOnScreenNotifier3D {
-	VLTRCLASS(VisibleOnScreenEnabler3D, VisibleOnScreenNotifier3D);
-
+class VisibleOnScreenEnabler3D : public VisibleOnScreenNotifier3D
+{
 public:
-	enum EnableMode {
+	enum EnableMode
+	{
 		ENABLE_MODE_INHERIT,
 		ENABLE_MODE_ALWAYS,
 		ENABLE_MODE_WHEN_PAUSED,
 	};
 
 protected:
-	ObjectID node_id;
 	virtual void _screen_enter() override;
 	virtual void _screen_exit() override;
 
@@ -91,4 +90,4 @@ public:
 	VisibleOnScreenEnabler3D();
 };
 
-VARIANT_ENUM_CAST(VisibleOnScreenEnabler3D::EnableMode);
+

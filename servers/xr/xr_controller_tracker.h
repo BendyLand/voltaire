@@ -33,16 +33,17 @@
 #include "core/os/thread_safe.h"
 #include "servers/xr/xr_positional_tracker.h"
 
-/**
-	The controller tracker object as an object that represents the position and orientation of a controller.
-*/
+/*
+ *  The controller tracker object as an object that represents the position and
+ *    orientation of a controller.
+ */
 
-class XRControllerTracker : public XRPositionalTracker {
-	VLTRCLASS(XRControllerTracker, XRPositionalTracker);
+class XRControllerTracker : public XRPositionalTracker
+{
 	_THREAD_SAFE_CLASS_
 
 public:
-	XRControllerTracker() {
-		type = XRServer::TRACKER_CONTROLLER;
-	}
+	XRControllerTracker() { type = XRServer::TRACKER_CONTROLLER; }
 };
+
+

@@ -35,16 +35,15 @@
 
 class Skeleton2D;
 
-class Bone2D : public Node2D {
-	VLTRCLASS(Bone2D, Node2D);
-
+class Bone2D : public Node2D
+{
 	friend class Skeleton2D;
 #ifdef TOOLS_ENABLED
 	friend class AnimatedValuesBackup;
 #endif
 
-	Bone2D *parent_bone = nullptr;
-	Skeleton2D *skeleton = nullptr;
+	Bone2D* parent_bone = nullptr;
+	Skeleton2D* skeleton = nullptr;
 	Transform2D rest;
 
 	bool autocalculate_length_and_angle = true;
@@ -57,22 +56,20 @@ class Bone2D : public Node2D {
 
 #ifdef TOOLS_ENABLED
 	RID editor_gizmo_rid;
-	bool _editor_get_bone_shape(Vector<Vector2> *p_shape, Vector<Vector2> *p_outline_shape, Bone2D *p_other_bone);
+	bool _editor_get_bone_shape(
+		Vector<Vector2>* p_shape, Vector<Vector2>* p_outline_shape, Bone2D* p_other_bone);
 	bool _editor_show_bone_gizmo = true;
 #endif // TOOLS ENABLED
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
-	bool _set(const StringName &p_path, const Variant &p_value);
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
 	Transform2D cache_transform;
 	bool copy_transform_to_cache = true;
 
-	void set_rest(const Transform2D &p_rest);
+	void set_rest(const Transform2D& p_rest);
 	Transform2D get_rest() const;
 	void apply_rest();
 	Transform2D get_skeleton_rest() const;
@@ -99,24 +96,23 @@ public:
 
 class SkeletonModificationStack2D;
 
-class Skeleton2D : public Node2D {
-	VLTRCLASS(Skeleton2D, Node2D);
-
+class Skeleton2D : public Node2D
+{
 	friend class Bone2D;
 #ifdef TOOLS_ENABLED
 	friend class AnimatedValuesBackup;
 #endif
 
-	struct Bone {
-		bool operator<(const Bone &p_bone) const {
-			return p_bone.bone->is_greater_than(bone);
-		}
-		Bone2D *bone = nullptr;
+	struct Bone
+	{
+		bool operator<(const Bone& p_bone) const { return p_bone.bone->is_greater_than(bone); }
+
+		Bone2D* bone = nullptr;
 		int parent_index = 0;
 		Transform2D accum_transform;
 		Transform2D rest_inverse;
 
-		//Transform2D local_pose_cache;
+		// Transform2D local_pose_cache;
 		Transform2D local_pose_override;
 		real_t local_pose_override_amount = 0;
 		bool local_pose_override_persistent = false;
@@ -138,7 +134,8 @@ class Skeleton2D : public Node2D {
 
 	///////////////////////////////////////////////////////
 	// INTERPOLATION
-	struct InterpolationData {
+	struct InterpolationData
+	{
 		Transform2D xform_curr;
 		Transform2D xform_prev;
 		uint32_t last_update_physics_tick = UINT32_MAX; // Ensure tick 0 is detected as a change.
@@ -152,18 +149,15 @@ protected:
 	///////////////////////////////////////////////////////
 
 	void _notification(int p_what);
-	static void _bind_methods();
-	bool _set(const StringName &p_path, const Variant &p_value);
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
 	int get_bone_count() const;
-	Bone2D *get_bone(int p_idx);
+	Bone2D* get_bone(int p_idx);
 
 	RID get_skeleton() const;
 
-	void set_bone_local_pose_override(int p_bone_idx, Transform2D p_override, real_t p_amount, bool p_persistent = true);
+	void set_bone_local_pose_override(
+		int p_bone_idx, Transform2D p_override, real_t p_amount, bool p_persistent = true);
 	Transform2D get_bone_local_pose_override(int p_bone_idx);
 
 	Ref<SkeletonModificationStack2D> get_modification_stack() const;
@@ -173,3 +167,5 @@ public:
 	Skeleton2D();
 	~Skeleton2D();
 };
+
+

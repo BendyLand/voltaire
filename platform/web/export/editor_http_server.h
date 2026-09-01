@@ -33,9 +33,8 @@
 #include "core/io/stream_peer_tls.h"
 #include "core/io/tcp_server.h"
 
-class EditorHTTPServer : public RefCounted {
-	VLTRSOFTCLASS(EditorHTTPServer, RefCounted);
-
+class EditorHTTPServer : public RefCounted
+{
 private:
 	Ref<TCPServer> server;
 	HashMap<String, String> mimes;
@@ -58,13 +57,16 @@ private:
 	void _send_response();
 	void _poll();
 
-	static void _server_thread_poll(void *data);
+	static void _server_thread_poll(void* data);
 
 public:
 	EditorHTTPServer();
 	~EditorHTTPServer();
 
 	void stop();
-	Error listen(int p_port, IPAddress p_address, bool p_use_tls, String p_tls_key, String p_tls_cert);
+	Error listen(
+		int p_port, IPAddress p_address, bool p_use_tls, String p_tls_key, String p_tls_cert);
 	bool is_listening() const;
 };
+
+

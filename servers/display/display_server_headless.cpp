@@ -49,13 +49,6 @@ void DisplayServerHeadless::_dispatch_input_events(const Ref<InputEvent>& p_even
 	static_cast<DisplayServerHeadless*>(get_singleton())->_dispatch_input_event(p_event);
 }
 
-void DisplayServerHeadless::_dispatch_input_event(const Ref<InputEvent>& p_event)
-{
-	if (input_event_callback.is_valid()) {
-		input_event_callback.call(p_event);
-	}
-}
-
 void DisplayServerHeadless::process_events() { Input::get_singleton()->flush_buffered_events(); }
 
 DisplayServerHeadless::DisplayServerHeadless()

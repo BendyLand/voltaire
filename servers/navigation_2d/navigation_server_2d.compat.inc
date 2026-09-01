@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "navigation_server_2d.h"
 
 Vector<Vector2> NavigationServer2D::_map_get_path_bind_compat_100129(RID p_map, Vector2 p_origin,

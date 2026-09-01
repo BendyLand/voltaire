@@ -28,16 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/math/math_funcs.h"
 #include "plane.h"
 
-#include "core/math/math_funcs.h"
-#include "core/variant/variant.h"
+void Plane::set_normal(const Vector3& p_normal) { normal = p_normal; }
 
-void Plane::set_normal(const Vector3 &p_normal) {
-	normal = p_normal;
-}
-
-void Plane::normalize() {
+void Plane::normalize()
+{
 #ifdef MATH_CHECKS
 	if (!is_finite()) {
 		WARN_PRINT("Plane cannot be normalized, the distance and the normal should be finite.");
@@ -53,20 +50,23 @@ void Plane::normalize() {
 	d /= l;
 }
 
-Plane Plane::normalized() const {
+Plane Plane::normalized() const
+{
 	Plane p = *this;
 	p.normalize();
 	return p;
 }
 
-Vector3 Plane::get_any_perpendicular_normal() const {
+Vector3 Plane::get_any_perpendicular_normal() const
+{
 	static const Vector3 p1 = Vector3(1, 0, 0);
 	static const Vector3 p2 = Vector3(0, 1, 0);
 	Vector3 p;
 
 	if (Math::abs(normal.dot(p1)) > 0.99f) { // if too similar to p1
-		p = p2; // use p2
-	} else {
+		p = p2;								 // use p2
+	}
+	else {
 		p = p1; // use p1
 	}
 
@@ -78,8 +78,9 @@ Vector3 Plane::get_any_perpendicular_normal() const {
 
 /* intersections */
 
-bool Plane::intersect_3(const Plane &p_plane1, const Plane &p_plane2, Vector3 *r_result) const {
-	const Plane &p_plane0 = *this;
+bool Plane::intersect_3(const Plane& p_plane1, const Plane& p_plane2, Vector3* r_result) const
+{
+	const Plane& p_plane0 = *this;
 	Vector3 normal0 = p_plane0.normal;
 	Vector3 normal1 = p_plane1.normal;
 	Vector3 normal2 = p_plane2.normal;
@@ -92,15 +93,17 @@ bool Plane::intersect_3(const Plane &p_plane1, const Plane &p_plane2, Vector3 *r
 
 	if (r_result) {
 		*r_result = ((vec3_cross(normal1, normal2) * p_plane0.d) +
-							(vec3_cross(normal2, normal0) * p_plane1.d) +
-							(vec3_cross(normal0, normal1) * p_plane2.d)) /
-				denom;
+						(vec3_cross(normal2, normal0) * p_plane1.d) +
+						(vec3_cross(normal0, normal1) * p_plane2.d)) /
+					denom;
 	}
 
 	return true;
 }
 
-bool Plane::intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, Vector3 *p_intersection) const {
+bool Plane::intersects_ray(
+	const Vector3& p_from, const Vector3& p_dir, Vector3* p_intersection) const
+{
 	Vector3 segment = p_dir;
 	real_t den = normal.dot(segment);
 
@@ -110,7 +113,8 @@ bool Plane::intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, Vector3 
 
 	real_t dist = (normal.dot(p_from) - d) / den;
 
-	if (dist > (real_t)CMP_EPSILON) { //this is a ray, before the emitting pos (p_from) doesn't exist
+	if (dist >
+		(real_t)CMP_EPSILON) { // this is a ray, before the emitting pos (p_from) doesn't exist
 
 		return false;
 	}
@@ -121,7 +125,9 @@ bool Plane::intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, Vector3 
 	return true;
 }
 
-bool Plane::intersects_segment(const Vector3 &p_begin, const Vector3 &p_end, Vector3 *p_intersection) const {
+bool Plane::intersects_segment(
+	const Vector3& p_begin, const Vector3& p_end, Vector3* p_intersection) const
+{
 	Vector3 segment = p_begin - p_end;
 	real_t den = normal.dot(segment);
 
@@ -141,51 +147,29 @@ bool Plane::intersects_segment(const Vector3 &p_begin, const Vector3 &p_end, Vec
 	return true;
 }
 
-Variant Plane::intersect_3_bind(const Plane &p_plane1, const Plane &p_plane2) const {
-	Vector3 inters;
-	if (intersect_3(p_plane1, p_plane2, &inters)) {
-		return inters;
-	} else {
-		return Variant();
-	}
-}
-
-Variant Plane::intersects_ray_bind(const Vector3 &p_from, const Vector3 &p_dir) const {
-	Vector3 inters;
-	if (intersects_ray(p_from, p_dir, &inters)) {
-		return inters;
-	} else {
-		return Variant();
-	}
-}
-
-Variant Plane::intersects_segment_bind(const Vector3 &p_begin, const Vector3 &p_end) const {
-	Vector3 inters;
-	if (intersects_segment(p_begin, p_end, &inters)) {
-		return inters;
-	} else {
-		return Variant();
-	}
-}
-
 /* misc */
 
-bool Plane::is_equal_approx_any_side(const Plane &p_plane) const {
-	return (normal.is_equal_approx(p_plane.normal) && Math::is_equal_approx(d, p_plane.d)) || (normal.is_equal_approx(-p_plane.normal) && Math::is_equal_approx(d, -p_plane.d));
+bool Plane::is_equal_approx_any_side(const Plane& p_plane) const
+{
+	return (normal.is_equal_approx(p_plane.normal) && Math::is_equal_approx(d, p_plane.d)) ||
+		   (normal.is_equal_approx(-p_plane.normal) && Math::is_equal_approx(d, -p_plane.d));
 }
 
-bool Plane::is_equal_approx(const Plane &p_plane) const {
+bool Plane::is_equal_approx(const Plane& p_plane) const
+{
 	return normal.is_equal_approx(p_plane.normal) && Math::is_equal_approx(d, p_plane.d);
 }
 
-bool Plane::is_same(const Plane &p_plane) const {
+bool Plane::is_same(const Plane& p_plane) const
+{
 	return normal.is_same(p_plane.normal) && Math::is_same(d, p_plane.d);
 }
 
-bool Plane::is_finite() const {
-	return normal.is_finite() && Math::is_finite(d);
-}
+bool Plane::is_finite() const { return normal.is_finite() && Math::is_finite(d); }
 
-Plane::operator String() const {
+Plane::operator String() const
+{
 	return "[N: " + normal.operator String() + ", D: " + String::num_real(d, false) + "]";
 }
+
+

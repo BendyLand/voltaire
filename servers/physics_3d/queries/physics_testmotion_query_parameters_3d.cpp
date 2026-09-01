@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 #include "physics_testmotion_query_parameters_3d.h"
 
 TypedArray<RID> PhysicsTestMotionParameters3D::get_exclude_bodies() const

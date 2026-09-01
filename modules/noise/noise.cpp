@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include <cfloat> // FLT_MAX
-#include "core/object/class_db.h"
 #include "noise.h"
 
 Vector<Ref<Image>> Noise::_get_seamless_image(int p_width, int p_height, int p_depth, bool p_invert,
@@ -67,20 +66,6 @@ Ref<Image> Noise::get_seamless_image(int p_width, int p_height, bool p_invert, b
 		return Ref<Image>();
 	}
 	return images[0];
-}
-
-Array Noise::get_seamless_image_3d(int p_width, int p_height, int p_depth,
-	bool p_invert, real_t p_blend_skirt, bool p_normalize) const
-{
-	Vector<Ref<Image>> images =
-		_get_seamless_image(p_width, p_height, p_depth, p_invert, true, p_blend_skirt, p_normalize);
-
-	Array ret;
-	ret.resize(images.size());
-	for (int i = 0; i < images.size(); i++) {
-		ret[i] = images[i];
-	}
-	return ret;
 }
 
 // Template specialization for faster grayscale blending.
@@ -191,20 +176,5 @@ Ref<Image> Noise::get_image(
 	}
 	return images[0];
 }
-
-Array Noise::get_image_3d(
-	int p_width, int p_height, int p_depth, bool p_invert, bool p_normalize) const
-{
-	Vector<Ref<Image>> images = _get_image(p_width, p_height, p_depth, p_invert, true, p_normalize);
-
-	Array ret;
-	ret.resize(images.size());
-	for (int i = 0; i < images.size(); i++) {
-		ret[i] = images[i];
-	}
-	return ret;
-}
-
-void Noise::_bind_methods() {}
 
 

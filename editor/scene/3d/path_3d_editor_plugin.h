@@ -39,22 +39,23 @@ class HBoxContainer;
 class MenuButton;
 class ConfirmationDialog;
 
-class Path3DGizmo : public EditorNode3DGizmo {
-	VLTRCLASS(Path3DGizmo, EditorNode3DGizmo);
-
+class Path3DGizmo : public EditorNode3DGizmo
+{
 	// Map handle id to control point id and handle type.
-	enum HandleType {
+	enum HandleType
+	{
 		HANDLE_TYPE_IN,
 		HANDLE_TYPE_OUT,
 		HANDLE_TYPE_TILT,
 	};
 
-	struct HandleInfo {
-		int point_idx; // Index of control point.
+	struct HandleInfo
+	{
+		int point_idx;	 // Index of control point.
 		HandleType type; // Type of this handle.
 	};
 
-	Path3D *path = nullptr;
+	Path3D* path = nullptr;
 	Ref<StandardMaterial3D> debug_material;
 	mutable Vector3 original;
 	mutable float orig_in_length;
@@ -71,64 +72,69 @@ class Path3DGizmo : public EditorNode3DGizmo {
 
 public:
 	virtual String get_handle_name(int p_id, bool p_secondary) const override;
-	virtual Variant get_handle_value(int p_id, bool p_secondary) const override;
-	virtual void set_handle(int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) override;
-	virtual void commit_handle(int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel = false) override;
+	virtual void set_handle(
+		int p_id, bool p_secondary, Camera3D* p_camera, const Point2& p_point) override;
 
 	virtual void redraw() override;
-	Path3DGizmo(Path3D *p_path = nullptr);
+	Path3DGizmo(Path3D* p_path = nullptr);
 };
 
-class Path3DGizmoPlugin : public EditorNode3DGizmoPlugin {
-	VLTRCLASS(Path3DGizmoPlugin, EditorNode3DGizmoPlugin);
-
-	// Locking basis is meant to ensure a predictable behavior during translation of the curve points in "local space transform mode".
-	// Without the locking, the gizmo/point, in "local space transform mode", wouldn't follow a straight path and would curve and twitch in an unpredictable way.
+class Path3DGizmoPlugin : public EditorNode3DGizmoPlugin
+{
+	// Locking basis is meant to ensure a predictable behavior during translation of the curve
+	// points in "local space transform mode". Without the locking, the gizmo/point, in "local space
+	// transform mode", wouldn't follow a straight path and would curve and twitch in an
+	// unpredictable way.
 	HashMap<int, Basis> transformation_locked_basis;
 
 protected:
-	Ref<EditorNode3DGizmo> create_gizmo(Node3D *p_spatial) override;
+	Ref<EditorNode3DGizmo> create_gizmo(Node3D* p_spatial) override;
 
 public:
-	virtual bool has_gizmo(Node3D *p_spatial) override;
+	virtual bool has_gizmo(Node3D* p_spatial) override;
 	String get_gizmo_name() const override;
 
-	virtual void redraw(EditorNode3DGizmo *p_gizmo) override;
+	virtual void redraw(EditorNode3DGizmo* p_gizmo) override;
 
-	virtual int subgizmos_intersect_ray(const EditorNode3DGizmo *p_gizmo, Camera3D *p_camera, const Vector2 &p_point) const override;
-	virtual Vector<int> subgizmos_intersect_frustum(const EditorNode3DGizmo *p_gizmo, const Camera3D *p_camera, const Vector<Plane> &p_frustum) const override;
-	virtual Transform3D get_subgizmo_transform(const EditorNode3DGizmo *p_gizmo, int p_id) const override;
-	virtual void set_subgizmo_transform(const EditorNode3DGizmo *p_gizmo, int p_id, Transform3D p_transform) override;
-	virtual void commit_subgizmos(const EditorNode3DGizmo *p_gizmo, const Vector<int> &p_ids, const Vector<Transform3D> &p_restore, bool p_cancel = false) override;
+	virtual int subgizmos_intersect_ray(const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera,
+		const Vector2& p_point) const override;
+	virtual Vector<int> subgizmos_intersect_frustum(const EditorNode3DGizmo* p_gizmo,
+		const Camera3D* p_camera, const Vector<Plane>& p_frustum) const override;
+	virtual Transform3D get_subgizmo_transform(
+		const EditorNode3DGizmo* p_gizmo, int p_id) const override;
+	virtual void set_subgizmo_transform(
+		const EditorNode3DGizmo* p_gizmo, int p_id, Transform3D p_transform) override;
+	virtual void commit_subgizmos(const EditorNode3DGizmo* p_gizmo, const Vector<int>& p_ids,
+		const Vector<Transform3D>& p_restore, bool p_cancel = false) override;
 
 	int get_priority() const override;
 	Path3DGizmoPlugin();
 };
 
-class Path3DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(Path3DEditorPlugin, EditorPlugin);
-
+class Path3DEditorPlugin : public EditorPlugin
+{
 	friend class Path3DGizmo;
 	friend class Path3DGizmoPlugin;
 
 	Ref<Path3DGizmoPlugin> path_3d_gizmo_plugin;
 
-	HBoxContainer *topmenu_bar = nullptr;
+	HBoxContainer* topmenu_bar = nullptr;
 
-	HBoxContainer *toolbar = nullptr;
-	Button *curve_create = nullptr;
-	Button *curve_edit = nullptr;
-	Button *curve_edit_curve = nullptr;
-	Button *curve_edit_tilt = nullptr;
-	Button *curve_del = nullptr;
-	Button *curve_closed = nullptr;
-	Button *curve_clear_points = nullptr;
-	MenuButton *handle_menu = nullptr;
+	HBoxContainer* toolbar = nullptr;
+	Button* curve_create = nullptr;
+	Button* curve_edit = nullptr;
+	Button* curve_edit_curve = nullptr;
+	Button* curve_edit_tilt = nullptr;
+	Button* curve_del = nullptr;
+	Button* curve_closed = nullptr;
+	Button* curve_clear_points = nullptr;
+	MenuButton* handle_menu = nullptr;
 
-	Button *create_curve_button = nullptr;
-	ConfirmationDialog *clear_points_dialog = nullptr;
+	Button* create_curve_button = nullptr;
+	ConfirmationDialog* clear_points_dialog = nullptr;
 
-	enum Mode {
+	enum Mode
+	{
 		MODE_CREATE,
 		MODE_EDIT,
 		MODE_EDIT_CURVE,
@@ -137,7 +143,7 @@ class Path3DEditorPlugin : public EditorPlugin {
 		ACTION_CLOSE
 	};
 
-	Path3D *path = nullptr;
+	Path3D* path = nullptr;
 
 	void _update_theme();
 	void _update_toolbar();
@@ -154,9 +160,10 @@ class Path3DEditorPlugin : public EditorPlugin {
 	void _confirm_clear_points();
 	void _clear_points();
 	void _clear_curve_points();
-	void _restore_curve_points(const PackedVector3Array &p_points);
+	void _restore_curve_points(const PackedVector3Array& p_points);
 
-	enum HandleOption {
+	enum HandleOption
+	{
 		HANDLE_OPTION_ANGLE,
 		HANDLE_OPTION_LENGTH,
 		HANDLE_OPTION_SNAP_COLLIDER,
@@ -167,27 +174,29 @@ protected:
 	static void _bind_methods();
 
 public:
-	Path3D *get_edited_path() { return path; }
+	Path3D* get_edited_path() { return path; }
 
 	void update_handles();
 
-	inline static Path3DEditorPlugin *singleton = nullptr;
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) override;
+	inline static Path3DEditorPlugin* singleton = nullptr;
+	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
+		Camera3D* p_camera, const Ref<InputEvent>& p_event) override;
 
 	virtual String get_plugin_name() const override { return "Path3D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	bool mirror_angle_enabled() { return mirror_handle_angle; }
+
 	bool mirror_length_enabled() { return mirror_handle_length; }
+
 	bool is_handle_clicked() { return handle_clicked; }
+
 	void set_handle_clicked(bool clicked) { handle_clicked = clicked; }
 
 	Path3DEditorPlugin();
 
 private:
-	struct EditData {
+	struct EditData
+	{
 		Vector3 click_ray_dir;
 		Vector3 click_ray_pos;
 		Vector3 origin;
@@ -196,9 +205,11 @@ private:
 		Ref<Path3DGizmo> gizmo;
 		int gizmo_handle = 0;
 		bool gizmo_handle_secondary = false;
-		Camera3D *gizmo_camera;
+		Camera3D* gizmo_camera;
 		bool waiting_point_physics = false;
 		bool waiting_handle_physics = false;
 		bool in_physics_frame = false;
 	} _edit;
 };
+
+

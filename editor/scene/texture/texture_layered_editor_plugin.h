@@ -39,15 +39,15 @@
 
 class ColorChannelSelector;
 
-class TextureLayeredEditor : public Control {
-	VLTRCLASS(TextureLayeredEditor, Control);
-
-	struct ThemeCache {
+class TextureLayeredEditor : public Control
+{
+	struct ThemeCache
+	{
 		Color outline_color;
 	} theme_cache;
 
-	SpinBox *layer = nullptr;
-	Label *info = nullptr;
+	SpinBox* layer = nullptr;
+	Label* info = nullptr;
 	Ref<TextureLayered> texture;
 
 	static inline Ref<Shader> shaders[3];
@@ -55,20 +55,21 @@ class TextureLayeredEditor : public Control {
 
 	float x_rot = 0;
 	float y_rot = 0;
-	Control *texture_rect = nullptr;
+	Control* texture_rect = nullptr;
 
 	bool setting = false;
 	Vector2 original_mouse_pos;
 	bool use_rotation = false;
 
-	ColorChannelSelector *channel_selector = nullptr;
+	ColorChannelSelector* channel_selector = nullptr;
 
 	void _draw_outline();
 
 	void _make_materials();
 	void _update_material(bool p_texture_changed);
 
-	void _layer_changed(double) {
+	void _layer_changed(double)
+	{
 		if (!setting) {
 			_update_material(false);
 		}
@@ -85,7 +86,7 @@ class TextureLayeredEditor : public Control {
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event);
 
 public:
 	static void init_shaders();
@@ -96,19 +97,12 @@ public:
 	TextureLayeredEditor();
 };
 
-class EditorInspectorPluginLayeredTexture : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginLayeredTexture, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class TextureLayeredEditorPlugin : public EditorPlugin {
-	VLTRCLASS(TextureLayeredEditorPlugin, EditorPlugin);
-
+class TextureLayeredEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "TextureLayered"; }
 
 	TextureLayeredEditorPlugin();
 };
+
+

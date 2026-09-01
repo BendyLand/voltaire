@@ -29,10 +29,7 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
-#include "core/variant/typed_array.h"
-#include "performance.compat.inc"
 #include "performance.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
@@ -56,18 +53,6 @@
 #endif // PHYSICS_3D_DISABLED
 
 Performance* Performance::singleton = nullptr;
-
-void Performance::_bind_methods() {}
-
-int Performance::_get_node_count() const
-{
-	MainLoop* ml = OS::get_singleton()->get_main_loop();
-	SceneTree* sml = Object::cast_to<SceneTree>(ml);
-	if (!sml) {
-		return 0;
-	}
-	return sml->get_node_count();
-}
 
 int Performance::_get_orphan_node_count() const
 {
@@ -172,10 +157,6 @@ double Performance::get_monitor(Monitor p_monitor) const
 		return Memory::get_mem_usage();
 	case MEMORY_STATIC_MAX:
 		return Memory::get_mem_max_usage();
-	case MEMORY_MESSAGE_BUFFER_MAX:
-		return MessageQueue::get_singleton()->get_max_buffer_usage();
-	case OBJECT_COUNT:
-		return ObjectDB::get_object_count();
 	case OBJECT_RESOURCE_COUNT:
 		return ResourceCache::get_cached_resource_count();
 	case OBJECT_NODE_COUNT:
@@ -508,67 +489,6 @@ void Performance::set_physics_process_time(double p_pt) { _physics_process_time 
 
 void Performance::set_navigation_process_time(double p_pt) { _navigation_process_time = p_pt; }
 
-void Performance::add_custom_monitor(const StringName& p_id, const Callable& p_callable,
-	const Vector<Variant>& p_args, MonitorType p_type)
-{
-	ERR_FAIL_COND_MSG(
-		has_custom_monitor(p_id), "Custom monitor with id '" + String(p_id) + "' already exists.");
-	_monitor_map.insert(p_id, MonitorCall(p_type, p_callable, p_args));
-	_monitor_modification_time = OS::get_singleton()->get_ticks_usec();
-}
-
-void Performance::remove_custom_monitor(const StringName& p_id)
-{
-	ERR_FAIL_COND_MSG(
-		!has_custom_monitor(p_id), "Custom monitor with id '" + String(p_id) + "' doesn't exist.");
-	_monitor_map.erase(p_id);
-	_monitor_modification_time = OS::get_singleton()->get_ticks_usec();
-}
-
-bool Performance::has_custom_monitor(const StringName& p_id) { return _monitor_map.has(p_id); }
-
-Variant Performance::get_custom_monitor(const StringName& p_id)
-{
-	ERR_FAIL_COND_V_MSG(!has_custom_monitor(p_id), Variant(),
-		"Custom monitor with id '" + String(p_id) + "' doesn't exist.");
-	bool error;
-	String error_message;
-	Variant return_value = _monitor_map[p_id].call(error, error_message);
-	ERR_FAIL_COND_V_MSG(error, return_value,
-		"Error calling from custom monitor '" + String(p_id) + "' to callable: " + error_message);
-	return return_value;
-}
-
-TypedArray<StringName> Performance::get_custom_monitor_names()
-{
-	if (!_monitor_map.size()) {
-		return TypedArray<StringName>();
-	}
-	TypedArray<StringName> return_array;
-	return_array.resize(_monitor_map.size());
-	int index = 0;
-	for (KeyValue<StringName, MonitorCall> i : _monitor_map) {
-		return_array.set(index, i.key);
-		index++;
-	}
-	return return_array;
-}
-
-Vector<int> Performance::get_custom_monitor_types()
-{
-	if (_monitor_map.is_empty()) {
-		return Vector<int>();
-	}
-	Vector<int> ret;
-	ret.resize(_monitor_map.size());
-	int index = 0;
-	for (const KeyValue<StringName, MonitorCall>& i : _monitor_map) {
-		ret.set(index, (int)i.value.get_monitor_type());
-		index++;
-	}
-	return ret;
-}
-
 uint64_t Performance::get_monitor_modification_time() { return _monitor_modification_time; }
 
 Performance::Performance()
@@ -580,33 +500,6 @@ Performance::Performance()
 	singleton = this;
 }
 
-Performance::MonitorCall::MonitorCall(
-	Performance::MonitorType p_type, const Callable& p_callable, const Vector<Variant>& p_arguments)
-{
-	_type = p_type;
-	_callable = p_callable;
-	_arguments = p_arguments;
-}
-
 Performance::MonitorCall::MonitorCall() {}
-
-Variant Performance::MonitorCall::call(bool& r_error, String& r_error_message)
-{
-	Vector<const Variant*> arguments_mem;
-	arguments_mem.resize(_arguments.size());
-	for (int i = 0; i < _arguments.size(); i++) {
-		arguments_mem.write[i] = &_arguments[i];
-	}
-	const Variant** args = (const Variant**)arguments_mem.ptr();
-	int argc = _arguments.size();
-	Variant return_value;
-	Callable::CallError error;
-	_callable.callp(args, argc, return_value, error);
-	r_error = (error.error != Callable::CallError::CALL_OK);
-	if (r_error) {
-		r_error_message = Variant::get_callable_error_text(_callable, args, argc, error);
-	}
-	return return_value;
-}
 
 

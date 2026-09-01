@@ -652,43 +652,6 @@ Error TemplateModifier::_truncate(const String& p_path, uint32_t p_size) const
 	return error;
 }
 
-HashMap<String, String> TemplateModifier::_get_strings(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	String file_version = p_preset->get_version("application/file_version", true);
-	String product_version = p_preset->get_version("application/product_version", true);
-	String company_name = p_preset->obj->get("application/company_name");
-	String product_name = p_preset->obj->get("application/product_name");
-	String file_description = p_preset->obj->get("application/file_description");
-	String copyright = p_preset->obj->get("application/copyright");
-	String trademarks = p_preset->obj->get("application/trademarks");
-
-	HashMap<String, String> strings;
-	if (!file_version.is_empty()) {
-		strings["FileVersion"] = file_version;
-	}
-	if (!product_version.is_empty()) {
-		strings["ProductVersion"] = product_version;
-	}
-	if (!company_name.is_empty()) {
-		strings["CompanyName"] = company_name;
-	}
-	if (!product_name.is_empty()) {
-		strings["ProductName"] = product_name;
-	}
-	if (!file_description.is_empty()) {
-		strings["FileDescription"] = file_description;
-	}
-	if (!copyright.is_empty()) {
-		strings["LegalCopyright"] = copyright;
-	}
-	if (!trademarks.is_empty()) {
-		strings["LegalTrademarks"] = trademarks;
-	}
-
-	return strings;
-}
-
 Error TemplateModifier::_modify_template(const Ref<EditorExportPreset>& p_preset,
 	const String& p_template_path, const String& p_icon_path) const
 {
@@ -810,8 +773,7 @@ Error TemplateModifier::_modify_template(const Ref<EditorExportPreset>& p_preset
 	template_file->seek(
 		optional_header_offset + (pe32plus ? 240 : 224) + SectionEntry::SIZE * resource_index);
 	template_file->store_buffer(resources_section_entry.save());
-	for (int i = resource_index + 1; i < section_entries.size();
- i++) {
+	for (int i = resource_index + 1; i < section_entries.size(); i++) {
 		template_file->seek(
 			optional_header_offset + (pe32plus ? 240 : 224) + SectionEntry::SIZE * i);
 		template_file->store_buffer(section_entries[i].save());

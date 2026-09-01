@@ -32,8 +32,10 @@
 
 #include "servers/audio/audio_effect.h"
 
-class SMBPitchShift {
-	enum {
+class SMBPitchShift
+{
+	enum
+	{
 		MAX_FRAME_LENGTH = 8192
 	};
 
@@ -49,16 +51,17 @@ class SMBPitchShift {
 	float gSynMagn[MAX_FRAME_LENGTH] = {};
 	long gRover = 0;
 
-	void smbFft(float *fftBuffer, long fftFrameSize, long sign);
+	void smbFft(float* fftBuffer, long fftFrameSize, long sign);
 
 public:
-	void PitchShift(float pitchShift, long numSampsToProcess, long fftFrameSize, long osamp, float sampleRate, float *indata, float *outdata, int stride);
+	void PitchShift(float pitchShift, long numSampsToProcess, long fftFrameSize, long osamp,
+		float sampleRate, float* indata, float* outdata, int stride);
 };
 
 class AudioEffectPitchShift;
 
-class AudioEffectPitchShiftInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectPitchShiftInstance, AudioEffectInstance);
+class AudioEffectPitchShiftInstance : public AudioEffectInstance
+{
 	friend class AudioEffectPitchShift;
 	Ref<AudioEffectPitchShift> base;
 
@@ -67,16 +70,17 @@ class AudioEffectPitchShiftInstance : public AudioEffectInstance {
 	SMBPitchShift shift_r;
 
 public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	virtual void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
 };
 
-class AudioEffectPitchShift : public AudioEffect {
-	VLTRCLASS(AudioEffectPitchShift, AudioEffect);
-
+class AudioEffectPitchShift : public AudioEffect
+{
 public:
 	friend class AudioEffectPitchShiftInstance;
 
-	enum FFTSize : unsigned int {
+	enum FFTSize : unsigned int
+	{
 		FFT_SIZE_256,
 		FFT_SIZE_512,
 		FFT_SIZE_1024,
@@ -108,4 +112,4 @@ public:
 	FFTSize get_fft_size() const;
 };
 
-VARIANT_ENUM_CAST(AudioEffectPitchShift::FFTSize);
+

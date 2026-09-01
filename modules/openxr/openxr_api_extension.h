@@ -30,18 +30,15 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
-#include "core/os/thread_safe.h"
-#include "core/variant/native_ptr.h"
-
 #include <openxr/openxr.h>
+#include "core/os/thread_safe.h"
+#include "core/types.h"
 
 class OpenXRExtensionWrapper;
 class OpenXRExtensionWrapperExtension;
 
-class OpenXRAPIExtension : public RefCounted {
-	VLTRCLASS(OpenXRAPIExtension, RefCounted);
-
+class OpenXRAPIExtension : public RefCounted
+{
 protected:
 	_THREAD_SAFE_CLASS_
 
@@ -49,10 +46,14 @@ protected:
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
-	void _register_composition_layer_provider_bind_compat_104087(OpenXRExtensionWrapperExtension *p_extension);
-	void _unregister_composition_layer_provider_bind_compat_104087(OpenXRExtensionWrapperExtension *p_extension);
-	void _register_projection_views_extension_bind_compat_104087(OpenXRExtensionWrapperExtension *p_extension);
-	void _unregister_projection_views_extension_bind_compat_104087(OpenXRExtensionWrapperExtension *p_extension);
+	void _register_composition_layer_provider_bind_compat_104087(
+		OpenXRExtensionWrapperExtension* p_extension);
+	void _unregister_composition_layer_provider_bind_compat_104087(
+		OpenXRExtensionWrapperExtension* p_extension);
+	void _register_projection_views_extension_bind_compat_104087(
+		OpenXRExtensionWrapperExtension* p_extension);
+	void _unregister_projection_views_extension_bind_compat_104087(
+		OpenXRExtensionWrapperExtension* p_extension);
 #endif
 
 public:
@@ -61,17 +62,16 @@ public:
 	uint64_t get_system_id();
 	uint64_t get_session();
 
-	bool xr_result(uint64_t p_result, const String &p_format, const Array &p_args = Array());
-
 	static bool openxr_is_enabled(bool p_check_run_in_editor = true);
 
-	uint64_t get_instance_proc_addr(const String &p_name);
+	uint64_t get_instance_proc_addr(const String& p_name);
 	String get_error_string(uint64_t result);
 	String get_swapchain_format_name(int64_t p_swapchain_format);
-	void set_object_name(int64_t p_object_type, uint64_t p_object_handle, const String &p_object_name);
-	void begin_debug_label_region(const String &p_label_name);
+	void set_object_name(
+		int64_t p_object_type, uint64_t p_object_handle, const String& p_object_name);
+	void begin_debug_label_region(const String& p_label_name);
 	void end_debug_label_region();
-	void insert_debug_label(const String &p_label_name);
+	void insert_debug_label(const String& p_label_name);
 
 	uint32_t get_view_count() const;
 	uint64_t get_view_configuration() const;
@@ -84,33 +84,36 @@ public:
 	int64_t get_next_frame_time();
 	bool can_render();
 
-	RID find_action(const String &p_name, const RID &p_action_set = RID());
+	RID find_action(const String& p_name, const RID& p_action_set = RID());
 	uint64_t action_get_handle(RID p_action);
+
 
 	uint64_t get_hand_tracker(int p_hand_index);
 
-	void register_composition_layer_provider(OpenXRExtensionWrapper *p_extension);
-	void unregister_composition_layer_provider(OpenXRExtensionWrapper *p_extension);
+	void register_composition_layer_provider(OpenXRExtensionWrapper* p_extension);
+	void unregister_composition_layer_provider(OpenXRExtensionWrapper* p_extension);
 
-	void register_projection_views_extension(OpenXRExtensionWrapper *p_extension);
-	void unregister_projection_views_extension(OpenXRExtensionWrapper *p_extension);
+	void register_projection_views_extension(OpenXRExtensionWrapper* p_extension);
+	void unregister_projection_views_extension(OpenXRExtensionWrapper* p_extension);
 
-	void register_frame_info_extension(OpenXRExtensionWrapper *p_extension);
-	void unregister_frame_info_extension(OpenXRExtensionWrapper *p_extension);
+	void register_frame_info_extension(OpenXRExtensionWrapper* p_extension);
+	void unregister_frame_info_extension(OpenXRExtensionWrapper* p_extension);
 
-	void register_projection_layer_extension(OpenXRExtensionWrapper *p_extension);
-	void unregister_projection_layer_extension(OpenXRExtensionWrapper *p_extension);
+	void register_projection_layer_extension(OpenXRExtensionWrapper* p_extension);
+	void unregister_projection_layer_extension(OpenXRExtensionWrapper* p_extension);
 
 	double get_render_state_z_near();
 	double get_render_state_z_far();
 
 	void set_velocity_texture(RID p_render_target);
 	void set_velocity_depth_texture(RID p_render_target);
-	void set_velocity_target_size(const Size2i &p_target_size);
+	void set_velocity_target_size(const Size2i& p_target_size);
 
 	PackedInt64Array get_supported_swapchain_formats();
 
-	uint64_t openxr_swapchain_create(XrSwapchainCreateFlags p_create_flags, XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size);
+	uint64_t openxr_swapchain_create(XrSwapchainCreateFlags p_create_flags,
+		XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
+		uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size);
 	void openxr_swapchain_free(uint64_t p_swapchain_info);
 	uint64_t openxr_swapchain_get_swapchain(uint64_t p_swapchain_info);
 	void openxr_swapchain_acquire(uint64_t p_swapchain_info);
@@ -119,11 +122,12 @@ public:
 
 	uint64_t get_projection_layer();
 
-	void set_render_region(const Rect2i &p_render_region);
+	void set_render_region(const Rect2i& p_render_region);
 
 	void update_main_swapchain_size();
 
-	enum OpenXRAlphaBlendModeSupport {
+	enum OpenXRAlphaBlendModeSupport
+	{
 		OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE = 0,
 		OPENXR_ALPHA_BLEND_MODE_SUPPORT_REAL = 1,
 		OPENXR_ALPHA_BLEND_MODE_SUPPORT_EMULATING = 2,
@@ -135,4 +139,4 @@ public:
 	OpenXRAPIExtension();
 };
 
-VARIANT_ENUM_CAST(OpenXRAPIExtension::OpenXRAlphaBlendModeSupport);
+

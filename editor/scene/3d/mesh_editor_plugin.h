@@ -41,26 +41,26 @@
 class SubViewport;
 class Button;
 
-class MeshEditor : public SubViewportContainer {
-	VLTRCLASS(MeshEditor, SubViewportContainer);
-
+class MeshEditor : public SubViewportContainer
+{
 	float rot_x;
 	float rot_y;
 
-	SubViewport *viewport = nullptr;
-	MeshInstance3D *mesh_instance = nullptr;
-	Node3D *rotation = nullptr;
-	DirectionalLight3D *light1 = nullptr;
-	DirectionalLight3D *light2 = nullptr;
-	Camera3D *camera = nullptr;
+	SubViewport* viewport = nullptr;
+	MeshInstance3D* mesh_instance = nullptr;
+	Node3D* rotation = nullptr;
+	DirectionalLight3D* light1 = nullptr;
+	DirectionalLight3D* light2 = nullptr;
+	Camera3D* camera = nullptr;
 	Ref<CameraAttributesPractical> camera_attributes;
 
 	Ref<Mesh> mesh;
 
-	Button *light_1_switch = nullptr;
-	Button *light_2_switch = nullptr;
+	Button* light_1_switch = nullptr;
+	Button* light_2_switch = nullptr;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<Texture2D> light_1_icon;
 		Ref<Texture2D> light_2_icon;
 	} theme_cache;
@@ -72,26 +72,19 @@ class MeshEditor : public SubViewportContainer {
 protected:
 	virtual void _update_theme_item_cache() override;
 	void _notification(int p_what);
-	void gui_input(const Ref<InputEvent> &p_event) override;
+	void gui_input(const Ref<InputEvent>& p_event) override;
 
 public:
 	void edit(Ref<Mesh> p_mesh);
 	MeshEditor();
 };
 
-class EditorInspectorPluginMesh : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginMesh, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class MeshEditorPlugin : public EditorPlugin {
-	VLTRCLASS(MeshEditorPlugin, EditorPlugin);
-
+class MeshEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "Mesh"; }
 
 	MeshEditorPlugin();
 };
+
+

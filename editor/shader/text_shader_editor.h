@@ -50,8 +50,6 @@ private:
 	Color disabled_branch_color;
 
 public:
-	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override;
-
 	void add_disabled_branch_region(const Point2i& p_region);
 	void clear_disabled_branch_regions();
 	void set_disabled_branch_color(const Color& p_color);
@@ -59,8 +57,6 @@ public:
 
 class TextShaderPreview : public VBoxContainer
 {
-	VLTRCLASS(TextShaderPreview, VBoxContainer);
-
 	static constexpr int BUTTON_SIZE = 32;
 
 private:
@@ -124,8 +120,6 @@ public:
 
 class TextShaderPreviewLineLayer : public Control
 {
-	VLTRCLASS(TextShaderPreviewLineLayer, Control);
-
 private:
 	Color line_color;
 	HashMap<int, TextShaderPreview*>* previews = nullptr;
@@ -177,9 +171,6 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 	virtual void _load_theme_settings() override;
-
-	virtual void _code_complete_script(
-		const String& p_code, List<ScriptLanguage::CodeCompletionOption>* r_options) override;
 
 public:
 	void set_block_shader_changed(bool p_block) { block_shader_changed = p_block; }
@@ -284,15 +275,8 @@ class TextShaderEditor : public ShaderEditor
 	void _reload_shader_include_from_disk();
 	void _reload();
 	void _show_warnings_panel(bool p_show);
-	void _warning_clicked(const Variant& p_line);
 	void _update_warnings(bool p_validate);
 	void _focus_preview_line(int p_line);
-
-	void _script_validated(bool p_valid)
-	{
-		compilation_success = p_valid;
-		this->obj->emit_signal(SNAME("validation_changed"));
-	}
 
 	uint32_t dependencies_version = 0xFFFFFFFF;
 

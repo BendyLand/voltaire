@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/templates/sort_array.h"
 #include "triangle_mesh.h"
 
@@ -553,54 +552,6 @@ bool TriangleMesh::create_from_faces(const Vector<Vector3>& p_faces)
 {
 	create(p_faces);
 	return is_valid();
-}
-
-Dictionary TriangleMesh::intersect_segment_scriptwrap(
-	const Vector3& p_begin, const Vector3& p_end) const
-{
-	if (!valid) {
-		return Dictionary();
-	}
-
-	Vector3 r_point;
-	Vector3 r_normal;
-	int32_t r_face_index = -1;
-
-	bool intersected = intersect_segment(p_begin, p_end, r_point, r_normal, nullptr, &r_face_index);
-	if (!intersected) {
-		return Dictionary();
-	}
-
-	Dictionary result;
-	result["position"] = r_point;
-	result["normal"] = r_normal;
-	result["face_index"] = r_face_index;
-
-	return result;
-}
-
-Dictionary TriangleMesh::intersect_ray_scriptwrap(
-	const Vector3& p_begin, const Vector3& p_dir) const
-{
-	if (!valid) {
-		return Dictionary();
-	}
-
-	Vector3 r_point;
-	Vector3 r_normal;
-	int32_t r_face_index = -1;
-
-	bool intersected = intersect_ray(p_begin, p_dir, r_point, r_normal, nullptr, &r_face_index);
-	if (!intersected) {
-		return Dictionary();
-	}
-
-	Dictionary result;
-	result["position"] = r_point;
-	result["normal"] = r_normal;
-	result["face_index"] = r_face_index;
-
-	return result;
 }
 
 Vector<Vector3> TriangleMesh::get_faces_scriptwrap() const

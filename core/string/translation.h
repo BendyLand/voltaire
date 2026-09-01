@@ -36,9 +36,6 @@ class PluralRules;
 
 class Translation : public Resource
 {
-	VLTRCLASS(Translation, Resource);
-	RES_BASE_EXTENSION("translation");
-
 public:
 	struct MessageKey
 	{
@@ -67,10 +64,6 @@ private:
 	String plural_rules_override;
 
 	virtual Vector<String> _get_message_list() const;
-
-	// For data storage.
-	virtual Dictionary _get_messages() const;
-	virtual void _set_messages(const Dictionary& p_messages);
 
 protected:
 	static void _bind_methods();

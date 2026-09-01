@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/worker_thread_pool.h"
 #include "core/os/condition_variable.h"
 #include "core/os/mutex.h"
 #include "core/templates/local_vector.h"
@@ -38,69 +37,73 @@
 #include "core/templates/tuple.h"
 #include "core/typedefs.h"
 
-class CommandQueueMT {
+class CommandQueueMT
+{
 	static const size_t MAX_COMMAND_SIZE = 1024;
 
-	struct CommandBase {
+	struct CommandBase
+	{
 		bool sync = false;
 		virtual void call() = 0;
 		virtual ~CommandBase() = default;
 
-		CommandBase(bool p_sync) :
-				sync(p_sync) {}
+		CommandBase(bool p_sync) : sync(p_sync) {}
 	};
 
 	template <typename T, typename M, bool NeedsSync, typename... Args>
-	struct Command : public CommandBase {
-		T *instance;
+	struct Command : public CommandBase
+	{
+		T* instance;
 		M method;
 		Tuple<GetSimpleTypeT<Args>...> args;
 
 		template <typename... FwdArgs>
-		_FORCE_INLINE_ Command(T *p_instance, M p_method, FwdArgs &&...p_args) :
-				CommandBase(NeedsSync), instance(p_instance), method(p_method), args(std::forward<FwdArgs>(p_args)...) {}
-
-		void call() override {
-			call_impl(BuildIndexSequence<sizeof...(Args)>{});
+		_FORCE_INLINE_ Command(T* p_instance, M p_method, FwdArgs&&... p_args)
+			: CommandBase(NeedsSync), instance(p_instance), method(p_method),
+			  args(std::forward<FwdArgs>(p_args)...)
+		{
 		}
 
+		void call() override { call_impl(BuildIndexSequence<sizeof...(Args)>{}); }
+
 	private:
-		template <size_t... I>
-		_FORCE_INLINE_ void call_impl(IndexSequence<I...>) {
+		template <size_t... I> _FORCE_INLINE_ void call_impl(IndexSequence<I...>)
+		{
 			// Move out of the Tuple, this will be destroyed as soon as the call is complete.
 			(instance->*method)(std::move(get<I>())...);
 		}
 
 		// This method exists so we can call it in the parameter pack expansion in call_impl.
-		template <size_t I>
-		_FORCE_INLINE_ auto &get() { return ::tuple_get<I>(args); }
+		template <size_t I> _FORCE_INLINE_ auto& get() { return ::tuple_get<I>(args); }
 	};
 
-	// Separate class from Command so we can save the space of the ret pointer for commands that don't return.
+	// Separate class from Command so we can save the space of the ret pointer for commands that
+	// don't return.
 	template <typename T, typename M, typename R, typename... Args>
-	struct CommandRet : public CommandBase {
-		T *instance;
+	struct CommandRet : public CommandBase
+	{
+		T* instance;
 		M method;
-		R *ret;
+		R* ret;
 		Tuple<GetSimpleTypeT<Args>...> args;
 
-		_FORCE_INLINE_ CommandRet(T *p_instance, M p_method, R *p_ret, GetSimpleTypeT<Args>... p_args) :
-				CommandBase(true), instance(p_instance), method(p_method), ret(p_ret), args{ p_args... } {}
-
-		void call() override {
-			*ret = call_impl(BuildIndexSequence<sizeof...(Args)>{});
+		_FORCE_INLINE_ CommandRet(
+			T* p_instance, M p_method, R* p_ret, GetSimpleTypeT<Args>... p_args)
+			: CommandBase(true), instance(p_instance), method(p_method), ret(p_ret), args{p_args...}
+		{
 		}
 
+		void call() override { *ret = call_impl(BuildIndexSequence<sizeof...(Args)>{}); }
+
 	private:
-		template <size_t... I>
-		_FORCE_INLINE_ R call_impl(IndexSequence<I...>) {
+		template <size_t... I> _FORCE_INLINE_ R call_impl(IndexSequence<I...>)
+		{
 			// Move out of the Tuple, this will be destroyed as soon as the call is complete.
 			return (instance->*method)(std::move(get<I>())...);
 		}
 
 		// This method exists so we can call it in the parameter pack expansion in call_impl.
-		template <size_t I>
-		_FORCE_INLINE_ auto &get() { return ::tuple_get<I>(args); }
+		template <size_t I> _FORCE_INLINE_ auto& get() { return ::tuple_get<I>(args); }
 	};
 
 	/***** BASE *******/
@@ -115,32 +118,28 @@ class CommandQueueMT {
 	uint32_t sync_head = 0;
 	uint32_t sync_tail = 0;
 	uint32_t sync_awaiters = 0;
-	WorkerThreadPool::TaskID pump_task_id = WorkerThreadPool::INVALID_TASK_ID;
 	uint64_t flush_read_ptr = 0;
-	std::atomic<bool> pending{ false };
+	std::atomic<bool> pending{false};
 
-	template <typename T, typename... Args>
-	_FORCE_INLINE_ void create_command(Args &&...p_args) {
+	template <typename T, typename... Args> _FORCE_INLINE_ void create_command(Args&&... p_args)
+	{
 		// alloc size is size+T+safeguard
 		constexpr uint64_t alloc_size = ((sizeof(T) + 8U - 1U) & ~(8U - 1U));
 		static_assert(alloc_size < UINT32_MAX, "Type too large to fit in the command queue.");
 
 		uint64_t size = command_mem.size();
 		command_mem.resize(size + alloc_size + sizeof(uint64_t));
-		*(uint64_t *)&command_mem[size] = alloc_size;
-		void *cmd = &command_mem[size + sizeof(uint64_t)];
+		*(uint64_t*)&command_mem[size] = alloc_size;
+		void* cmd = &command_mem[size + sizeof(uint64_t)];
 		memnew_placement(cmd, T(std::forward<Args>(p_args)...));
 		pending.store(true);
 	}
 
 	template <typename T, bool NeedsSync, typename... Args>
-	_FORCE_INLINE_ void _push_internal(Args &&...p_args) {
+	_FORCE_INLINE_ void _push_internal(Args&&... p_args)
+	{
 		MutexLock mlock(mutex);
 		create_command<T>(std::forward<Args>(p_args)...);
-
-		if (pump_task_id != WorkerThreadPool::INVALID_TASK_ID) {
-			WorkerThreadPool::get_singleton()->notify_yield_over(pump_task_id);
-		}
 
 		if constexpr (NeedsSync) {
 			sync_tail++;
@@ -148,7 +147,8 @@ class CommandQueueMT {
 		}
 	}
 
-	_FORCE_INLINE_ void _prevent_sync_wraparound() {
+	_FORCE_INLINE_ void _prevent_sync_wraparound()
+	{
 		bool safe_to_reset = !sync_awaiters;
 		bool already_sync_to_latest = sync_head == sync_tail;
 		if (safe_to_reset && already_sync_to_latest) {
@@ -157,7 +157,8 @@ class CommandQueueMT {
 		}
 	}
 
-	void _flush() {
+	void _flush()
+	{
 		// Safeguard against trying to re-lock the binary mutex.
 		if (flushing) {
 			return;
@@ -178,15 +179,16 @@ class CommandQueueMT {
 		alignas(uint64_t) char cmd_local_mem[MAX_COMMAND_SIZE];
 
 		while (flush_read_ptr < command_mem.size()) {
-			uint64_t size = *(uint64_t *)&command_mem[flush_read_ptr];
+			uint64_t size = *(uint64_t*)&command_mem[flush_read_ptr];
 			flush_read_ptr += sizeof(uint64_t);
 
 			// Protect against race condition between this thread
 			// during the call to the command and other threads potentially
 			// invalidating the pointer due to reallocs by relocating the object.
-			CommandBase *cmd_original = reinterpret_cast<CommandBase *>(&command_mem[flush_read_ptr]);
-			CommandBase *cmd_local = reinterpret_cast<CommandBase *>(cmd_local_mem);
-			memcpy(cmd_local_mem, (char *)cmd_original, size);
+			CommandBase* cmd_original =
+				reinterpret_cast<CommandBase*>(&command_mem[flush_read_ptr]);
+			CommandBase* cmd_local = reinterpret_cast<CommandBase*>(cmd_local_mem);
+			memcpy(cmd_local_mem, (char*)cmd_original, size);
 
 			lock.temp_unlock();
 			cmd_local->call();
@@ -213,7 +215,8 @@ class CommandQueueMT {
 		flushing = false;
 	}
 
-	_FORCE_INLINE_ void _wait_for_sync(MutexLock<BinaryMutex> &p_lock) {
+	_FORCE_INLINE_ void _wait_for_sync(MutexLock<BinaryMutex>& p_lock)
+	{
 		sync_awaiters++;
 		uint32_t sync_head_goal = sync_tail;
 		do {
@@ -227,7 +230,8 @@ class CommandQueueMT {
 
 public:
 	template <typename T, typename M, typename... Args>
-	void push(T *p_instance, M p_method, Args &&...p_args) {
+	void push(T* p_instance, M p_method, Args&&... p_args)
+	{
 		// Standard command, no sync.
 		using CommandType = Command<T, M, false, Args...>;
 		static_assert(sizeof(CommandType) <= MAX_COMMAND_SIZE);
@@ -235,7 +239,8 @@ public:
 	}
 
 	template <typename T, typename M, typename... Args>
-	void push_and_sync(T *p_instance, M p_method, Args... p_args) {
+	void push_and_sync(T* p_instance, M p_method, Args... p_args)
+	{
 		// Standard command, sync.
 		using CommandType = Command<T, M, true, Args...>;
 		static_assert(sizeof(CommandType) <= MAX_COMMAND_SIZE);
@@ -243,39 +248,29 @@ public:
 	}
 
 	template <typename T, typename M, typename R, typename... Args>
-	void push_and_ret(T *p_instance, M p_method, R *r_ret, Args... p_args) {
+	void push_and_ret(T* p_instance, M p_method, R* r_ret, Args... p_args)
+	{
 		// Command with return value, sync.
 		using CommandType = CommandRet<T, M, R, Args...>;
 		static_assert(sizeof(CommandType) <= MAX_COMMAND_SIZE);
-		_push_internal<CommandType, true>(p_instance, p_method, r_ret, std::forward<Args>(p_args)...);
+		_push_internal<CommandType, true>(
+			p_instance, p_method, r_ret, std::forward<Args>(p_args)...);
 	}
 
-	_FORCE_INLINE_ void flush_if_pending() {
+	_FORCE_INLINE_ void flush_if_pending()
+	{
 		if (unlikely(pending.load())) {
 			_flush();
 		}
 	}
 
-	void flush_all() {
-		_flush();
-	}
+	void flush_all() { _flush(); }
 
-	void sync() {
-		push_and_sync(this, &CommandQueueMT::_no_op);
-	}
+	void sync() { push_and_sync(this, &CommandQueueMT::_no_op); }
 
-	void wait_and_flush() {
-		ERR_FAIL_COND(pump_task_id == WorkerThreadPool::INVALID_TASK_ID);
-		WorkerThreadPool::get_singleton()->wait_for_task_completion(pump_task_id);
-		_flush();
-	}
+	void wait_and_flush() { _flush(); }
 
-	void set_pump_task_id(WorkerThreadPool::TaskID p_task_id) {
-		MutexLock lock(mutex);
-		pump_task_id = p_task_id;
-	}
-
-	CommandQueueMT() {
-		command_mem.reserve(DEFAULT_COMMAND_MEM_SIZE_KB * 1024);
-	}
+	CommandQueueMT() { command_mem.reserve(DEFAULT_COMMAND_MEM_SIZE_KB * 1024); }
 };
+
+

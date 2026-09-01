@@ -31,7 +31,6 @@
 #include "collision_polygon_2d.h"
 #include "core/config/engine.h"
 #include "core/math/geometry_2d.h"
-#include "core/object/class_db.h"
 #include "scene/2d/physics/area_2d.h"
 #include "scene/2d/physics/collision_object_2d.h"
 #include "scene/main/scene_tree.h"
@@ -98,85 +97,6 @@ void CollisionPolygon2D::_update_in_shape_owner(bool p_xform_only)
 	collision_object->shape_owner_set_one_way_collision_margin(owner_id, one_way_collision_margin);
 }
 
-void CollisionPolygon2D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_PARENTED: {
-		collision_object = Object::cast_to<CollisionObject2D>(get_parent());
-		if (collision_object) {
-			owner_id = collision_object->create_shape_owner(this->obj.get());
-			_build_polygon();
-			_update_in_shape_owner();
-		}
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		if (collision_object) {
-			_update_in_shape_owner();
-		}
-	} break;
-
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
-		if (collision_object) {
-			_update_in_shape_owner(true);
-		}
-	} break;
-
-	case NOTIFICATION_UNPARENTED: {
-		if (collision_object) {
-			collision_object->remove_shape_owner(owner_id);
-		}
-		owner_id = 0;
-		collision_object = nullptr;
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		ERR_FAIL_COND(!is_inside_tree());
-		if (!Engine::get_singleton()->is_editor_hint() &&
-			!get_tree()->is_debugging_collisions_hint()) {
-			break;
-		}
-
-		if (polygon.size() > 2) {
-#ifdef TOOLS_ENABLED
-			if (build_mode == BUILD_SOLIDS) {
-				Vector<Vector<Vector2>> decomp = _decompose_in_convex();
-
-				Color c(0.4, 0.9, 0.1);
-				for (int i = 0; i < decomp.size(); i++) {
-					c.set_hsv(Math::fmod(c.get_h() + 0.738, 1), c.get_s(), c.get_v(), 0.5);
-					draw_colored_polygon(decomp[i], c);
-				}
-			}
-#endif
-
-			const Color stroke_color = get_tree()->get_debug_collisions_color();
-			draw_polyline(polygon, stroke_color);
-			// Draw the last segment.
-			draw_line(polygon[polygon.size() - 1], polygon[0], stroke_color);
-		}
-
-		if (one_way_collision) {
-			Color dcol = get_tree()->get_debug_collisions_color(); // 0.9,0.2,0.2,0.4);
-			dcol.a = 1.0;
-			Vector2 line_to = 20.0 * one_way_collision_direction;
-			draw_line(Vector2(), line_to, dcol, 3);
-			real_t tsize = 8;
-
-			Vector<Vector2> pts = {
-				line_to + tsize * one_way_collision_direction,
-				line_to + Math::SQRT12 * tsize * one_way_collision_direction.orthogonal(),
-				line_to - Math::SQRT12 * tsize * one_way_collision_direction.orthogonal(),
-			};
-
-			Vector<Color> cols{dcol, dcol, dcol};
-
-			draw_primitive(pts, cols, Vector<Vector2>()); // small arrow
-		}
-	} break;
-	}
-}
-
 void CollisionPolygon2D::set_polygon(const Vector<Point2>& p_polygon)
 {
 	polygon = p_polygon;
@@ -225,50 +145,8 @@ CollisionPolygon2D::BuildMode CollisionPolygon2D::get_build_mode() const { retur
 
 #ifdef DEBUG_ENABLED
 Rect2 CollisionPolygon2D::_edit_get_rect() const { return aabb; }
-
 bool CollisionPolygon2D::_edit_use_rect() const { return true; }
-
-bool CollisionPolygon2D::_edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const
-{
-	return Geometry2D::is_point_in_polygon(p_point, Variant(polygon));
-}
 #endif
-
-PackedStringArray CollisionPolygon2D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node2D::get_configuration_warnings();
-
-	if (!Object::cast_to<CollisionObject2D>(get_parent())) {
-		warnings.push_back(
-			RTR("CollisionPolygon2D only serves to provide a collision shape to a "
-				"CollisionObject2D derived node. Please only use it as a child of Area2D, "
-				"StaticBody2D, RigidBody2D, CharacterBody2D, etc. to give them a shape."));
-	}
-
-	int polygon_count = polygon.size();
-	if (polygon_count == 0) {
-		warnings.push_back(RTR("An empty CollisionPolygon2D has no effect on collision."));
-	}
-	else {
-		bool solids = build_mode == BUILD_SOLIDS;
-		if (solids) {
-			if (polygon_count < 3) {
-				warnings.push_back(
-					RTR("Invalid polygon. At least 3 points are needed in 'Solids' build mode."));
-			}
-		}
-		else if (polygon_count < 2) {
-			warnings.push_back(
-				RTR("Invalid polygon. At least 2 points are needed in 'Segments' build mode."));
-		}
-	}
-	if (one_way_collision && Object::cast_to<Area2D>(get_parent())) {
-		warnings.push_back(RTR("The One Way Collision property will be ignored when the collision "
-							   "object is an Area2D."));
-	}
-
-	return warnings;
-}
 
 void CollisionPolygon2D::set_disabled(bool p_disabled)
 {

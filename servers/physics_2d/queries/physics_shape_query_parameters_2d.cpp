@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource.h"
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 #include "physics_shape_query_parameters_2d.h"
 
 Ref<Resource> PhysicsShapeQueryParameters2D::get_shape() const { return shape_ref; }
@@ -49,26 +47,5 @@ void PhysicsShapeQueryParameters2D::set_shape_rid(const RID& p_shape)
 		parameters.shape_rid = p_shape;
 	}
 }
-
-void PhysicsShapeQueryParameters2D::set_exclude(const TypedArray<RID>& p_exclude)
-{
-	parameters.exclude.clear();
-	for (int i = 0; i < p_exclude.size(); i++) {
-		parameters.exclude.insert(p_exclude[i]);
-	}
-}
-
-TypedArray<RID> PhysicsShapeQueryParameters2D::get_exclude() const
-{
-	TypedArray<RID> ret;
-	ret.resize(parameters.exclude.size());
-	int idx = 0;
-	for (const RID& E : parameters.exclude) {
-		ret[idx++] = E;
-	}
-	return ret;
-}
-
-void PhysicsShapeQueryParameters2D::_bind_methods() {}
 
 

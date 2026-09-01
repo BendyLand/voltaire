@@ -32,9 +32,8 @@
 
 #include "scene/gui/button.h"
 
-class EditorTranslationPreviewButton : public Button {
-	VLTRCLASS(EditorTranslationPreviewButton, Button);
-
+class EditorTranslationPreviewButton : public Button
+{
 	void _update();
 
 protected:
@@ -45,3 +44,5 @@ protected:
 public:
 	EditorTranslationPreviewButton();
 };
+
+

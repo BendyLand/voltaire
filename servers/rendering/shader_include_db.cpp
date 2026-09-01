@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "shader_include_db.h"
 
 HashMap<String, String> ShaderIncludeDB::built_in_includes;

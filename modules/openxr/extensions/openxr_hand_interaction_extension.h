@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
 // When supported the hand interaction extension introduces an interaction
 // profile that becomes active when the user either lets go of their
@@ -51,26 +51,25 @@
 
 class OpenXRInteractionProfileMetadata;
 
-class OpenXRHandInteractionExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRHandInteractionExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRHandInteractionExtension
+{
 public:
-	static OpenXRHandInteractionExtension *get_singleton();
+	static OpenXRHandInteractionExtension* get_singleton();
 
 	OpenXRHandInteractionExtension();
-	virtual ~OpenXRHandInteractionExtension() override;
+	virtual ~OpenXRHandInteractionExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
 	bool is_available();
 
-	virtual void on_register_metadata(OpenXRInteractionProfileMetadata *p_interaction_profile_metadata) override;
+	virtual void on_register_metadata(
+		OpenXRInteractionProfileMetadata* p_interaction_profile_metadata);
 
 private:
-	static OpenXRHandInteractionExtension *singleton;
+	static OpenXRHandInteractionExtension* singleton;
 
 	bool available = false;
 };
+
+

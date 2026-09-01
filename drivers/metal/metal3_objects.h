@@ -467,7 +467,7 @@ public:
 			DIRTY_ALL      = (1 << 3) - 1,
 		};
 		// clang-format on
-		BitField<DirtyFlag> dirty = DIRTY_NONE;
+		uint32_t dirty = DIRTY_NONE;
 
 		LocalVector<MDUniformSet *> uniform_sets;
 		uint32_t dynamic_offsets = 0;
@@ -561,8 +561,8 @@ public:
 
 #pragma mark - Synchronization
 
-	void pipeline_barrier(BitField<RDD::PipelineStageBits> p_src_stages,
-			BitField<RDD::PipelineStageBits> p_dst_stages,
+	void pipeline_barrier(uint32_t p_src_stages,
+			uint32_t p_dst_stages,
 			VectorView<RDD::MemoryAccessBarrier> p_memory_barriers,
 			VectorView<RDD::BufferBarrier> p_buffer_barriers,
 			VectorView<RDD::TextureBarrier> p_texture_barriers,

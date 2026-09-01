@@ -31,7 +31,6 @@
 #pragma once
 
 #include "../../util.h"
-#include "../openxr_extension_wrapper.h"
 
 #include <jni.h>
 

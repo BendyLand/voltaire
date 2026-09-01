@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/version.h"
 #include "fog_material.h"
 #include "servers/rendering/rendering_server.h"
@@ -36,52 +35,15 @@
 Mutex FogMaterial::shader_mutex;
 RID FogMaterial::shader;
 
-void FogMaterial::set_density(float p_density)
-{
-	density = p_density;
-	RS::get_singleton()->material_set_param(_get_material(), "density", density);
-}
-
 float FogMaterial::get_density() const { return density; }
-
-void FogMaterial::set_albedo(Color p_albedo)
-{
-	albedo = p_albedo;
-	RS::get_singleton()->material_set_param(_get_material(), "albedo", albedo);
-}
 
 Color FogMaterial::get_albedo() const { return albedo; }
 
-void FogMaterial::set_emission(Color p_emission)
-{
-	emission = p_emission;
-	RS::get_singleton()->material_set_param(_get_material(), "emission", emission);
-}
-
 Color FogMaterial::get_emission() const { return emission; }
-
-void FogMaterial::set_height_falloff(float p_falloff)
-{
-	height_falloff = MAX(p_falloff, 0.0f);
-	RS::get_singleton()->material_set_param(_get_material(), "height_falloff", height_falloff);
-}
 
 float FogMaterial::get_height_falloff() const { return height_falloff; }
 
-void FogMaterial::set_edge_fade(float p_edge_fade)
-{
-	edge_fade = MAX(p_edge_fade, 0.0f);
-	RS::get_singleton()->material_set_param(_get_material(), "edge_fade", edge_fade);
-}
-
 float FogMaterial::get_edge_fade() const { return edge_fade; }
-
-void FogMaterial::set_density_texture(const Ref<Texture3D>& p_texture)
-{
-	density_texture = p_texture;
-	Variant tex_rid = p_texture.is_valid() ? Variant(p_texture->get_rid()) : Variant();
-	RS::get_singleton()->material_set_param(_get_material(), "density_texture", tex_rid);
-}
 
 Ref<Texture3D> FogMaterial::get_density_texture() const { return density_texture; }
 
@@ -102,8 +64,6 @@ RID FogMaterial::get_rid() const
 	}
 	return _get_material();
 }
-
-void FogMaterial::_bind_methods() {}
 
 void FogMaterial::cleanup_shader()
 {

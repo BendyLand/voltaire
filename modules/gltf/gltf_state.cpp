@@ -28,12 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "gltf_state.compat.inc"
 #include "gltf_state.h"
-#include "gltf_template_convert.h"
-
-void GLTFState::_bind_methods() {}
 
 void GLTFState::add_used_extension(const String& p_extension_name, bool p_required)
 {
@@ -46,10 +42,6 @@ void GLTFState::add_used_extension(const String& p_extension_name, bool p_requir
 		}
 	}
 }
-
-Dictionary GLTFState::get_json() const { return Dictionary(json); }
-
-void GLTFState::set_json(const Dictionary& p_json) { json = Dictionary(p_json); }
 
 int GLTFState::get_major_version() const { return major_version; }
 
@@ -77,66 +69,6 @@ void GLTFState::set_use_named_skin_binds(bool p_use_named_skin_binds)
 	use_named_skin_binds = p_use_named_skin_binds;
 }
 
-Array GLTFState::get_nodes_bind() const
-{
-	return GLTFTemplateConvert::to_array(nodes);
-}
-
-void GLTFState::set_nodes_bind(const Array& p_nodes)
-{
-	GLTFTemplateConvert::set_from_array(nodes, p_nodes);
-}
-
-Array GLTFState::get_buffers_bind() const
-{
-	return GLTFTemplateConvert::to_array(buffers);
-}
-
-void GLTFState::set_buffers_bind(const Array& p_buffers)
-{
-	GLTFTemplateConvert::set_from_array(buffers, p_buffers);
-}
-
-Array GLTFState::get_buffer_views_bind() const
-{
-	return GLTFTemplateConvert::to_array(buffer_views);
-}
-
-void GLTFState::set_buffer_views_bind(const Array& p_buffer_views)
-{
-	GLTFTemplateConvert::set_from_array(buffer_views, p_buffer_views);
-}
-
-Array GLTFState::get_accessors_bind() const
-{
-	return GLTFTemplateConvert::to_array(accessors);
-}
-
-void GLTFState::set_accessors_bind(const Array& p_accessors)
-{
-	GLTFTemplateConvert::set_from_array(accessors, p_accessors);
-}
-
-Array GLTFState::get_meshes_bind() const
-{
-	return GLTFTemplateConvert::to_array(meshes);
-}
-
-void GLTFState::set_meshes_bind(const Array& p_meshes)
-{
-	GLTFTemplateConvert::set_from_array(meshes, p_meshes);
-}
-
-Array GLTFState::get_materials_bind() const
-{
-	return GLTFTemplateConvert::to_array(materials);
-}
-
-void GLTFState::set_materials_bind(const Array& p_materials)
-{
-	GLTFTemplateConvert::set_from_array(materials, p_materials);
-}
-
 String GLTFState::get_scene_name() const { return scene_name; }
 
 void GLTFState::set_scene_name(const String& p_scene_name) { scene_name = p_scene_name; }
@@ -146,96 +78,6 @@ PackedInt32Array GLTFState::get_root_nodes() const { return root_nodes; }
 void GLTFState::set_root_nodes(const PackedInt32Array& p_root_nodes)
 {
 	root_nodes = PackedInt32Array(p_root_nodes);
-}
-
-Array GLTFState::get_textures_bind() const
-{
-	return GLTFTemplateConvert::to_array(textures);
-}
-
-void GLTFState::set_textures_bind(const Array& p_textures)
-{
-	GLTFTemplateConvert::set_from_array(textures, p_textures);
-}
-
-Array GLTFState::get_texture_samplers_bind() const
-{
-	return GLTFTemplateConvert::to_array(texture_samplers);
-}
-
-void GLTFState::set_texture_samplers_bind(const Array& p_texture_samplers)
-{
-	GLTFTemplateConvert::set_from_array(texture_samplers, p_texture_samplers);
-}
-
-Array GLTFState::get_images_bind() const
-{
-	return GLTFTemplateConvert::to_array(images);
-}
-
-void GLTFState::set_images_bind(const Array& p_images)
-{
-	GLTFTemplateConvert::set_from_array(images, p_images);
-}
-
-Array GLTFState::get_skins_bind() const
-{
-	return GLTFTemplateConvert::to_array(skins);
-}
-
-void GLTFState::set_skins_bind(const Array& p_skins)
-{
-	GLTFTemplateConvert::set_from_array(skins, p_skins);
-}
-
-Array GLTFState::get_cameras_bind() const
-{
-	return GLTFTemplateConvert::to_array(cameras);
-}
-
-void GLTFState::set_cameras_bind(const Array& p_cameras)
-{
-	GLTFTemplateConvert::set_from_array(cameras, p_cameras);
-}
-
-Array GLTFState::get_lights_bind() const
-{
-	return GLTFTemplateConvert::to_array(lights);
-}
-
-void GLTFState::set_lights_bind(const Array& p_lights)
-{
-	GLTFTemplateConvert::set_from_array(lights, p_lights);
-}
-
-Array GLTFState::get_unique_names_bind() const
-{
-	return GLTFTemplateConvert::to_array(unique_names);
-}
-
-void GLTFState::set_unique_names_bind(const Array& p_unique_names)
-{
-	GLTFTemplateConvert::set_from_array(unique_names, p_unique_names);
-}
-
-Array GLTFState::get_unique_animation_names_bind() const
-{
-	return GLTFTemplateConvert::to_array(unique_animation_names);
-}
-
-void GLTFState::set_unique_animation_names_bind(const Array& p_unique_animation_names)
-{
-	GLTFTemplateConvert::set_from_array(unique_animation_names, p_unique_animation_names);
-}
-
-Array GLTFState::get_skeletons_bind() const
-{
-	return GLTFTemplateConvert::to_array(skeletons);
-}
-
-void GLTFState::set_skeletons_bind(const Array& p_skeletons)
-{
-	GLTFTemplateConvert::set_from_array(skeletons, p_skeletons);
 }
 
 bool GLTFState::get_create_animations() const { return create_animations; }
@@ -250,16 +92,6 @@ bool GLTFState::get_import_as_skeleton_bones() const { return import_as_skeleton
 void GLTFState::set_import_as_skeleton_bones(bool p_import_as_skeleton_bones)
 {
 	import_as_skeleton_bones = p_import_as_skeleton_bones;
-}
-
-Array GLTFState::get_animations_bind() const
-{
-	return GLTFTemplateConvert::to_array(animations);
-}
-
-void GLTFState::set_animations_bind(const Array& p_animations)
-{
-	GLTFTemplateConvert::set_from_array(animations, p_animations);
 }
 
 Node* GLTFState::get_scene_node(GLTFNodeIndex p_gltf_node_index) const
@@ -327,16 +159,6 @@ void GLTFState::set_filename(const String& p_filename)
 	if (extract_prefix.is_empty()) {
 		extract_prefix = p_filename.get_basename();
 	}
-}
-
-Variant GLTFState::get_additional_data(const StringName& p_extension_name) const
-{
-	return additional_data.get(p_extension_name, Variant());
-}
-
-void GLTFState::set_additional_data(const StringName& p_extension_name, Variant p_additional_data)
-{
-	additional_data[p_extension_name] = p_additional_data;
 }
 
 GLTFBufferViewIndex GLTFState::append_data_to_buffers(

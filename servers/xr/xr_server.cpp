@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_positional_tracker.h"

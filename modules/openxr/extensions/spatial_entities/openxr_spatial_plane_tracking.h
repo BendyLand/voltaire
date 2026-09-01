@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "../openxr_extension_wrapper.h"
 #include "../openxr_future_extension.h"
 #include "openxr_spatial_entities.h"
 
@@ -42,9 +41,6 @@
 class OpenXRSpatialCapabilityConfigurationPlaneTracking
 	: public OpenXRSpatialCapabilityConfigurationBaseHeader
 {
-	VLTRCLASS(OpenXRSpatialCapabilityConfigurationPlaneTracking,
-		OpenXRSpatialCapabilityConfigurationBaseHeader);
-
 public:
 	virtual bool has_valid_configuration() const override;
 	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
@@ -77,8 +73,6 @@ private:
 // Plane alignment component data
 class OpenXRSpatialComponentPlaneAlignmentList : public OpenXRSpatialComponentData
 {
-	VLTRCLASS(OpenXRSpatialComponentPlaneAlignmentList, OpenXRSpatialComponentData);
-
 public:
 	enum PlaneAlignment
 	{
@@ -106,12 +100,8 @@ private:
 	PlaneAlignment _get_plane_alignment(int64_t p_index) const;
 };
 
-VARIANT_ENUM_CAST(OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment);
-
 class OpenXRSpatialComponentPolygon2DList : public OpenXRSpatialComponentData
 {
-	VLTRCLASS(OpenXRSpatialComponentPolygon2DList, OpenXRSpatialComponentData);
-
 protected:
 	static void _bind_methods();
 
@@ -133,8 +123,6 @@ private:
 // Plane semantic label component data.
 class OpenXRSpatialComponentPlaneSemanticLabelList : public OpenXRSpatialComponentData
 {
-	VLTRCLASS(OpenXRSpatialComponentPlaneSemanticLabelList, OpenXRSpatialComponentData);
-
 public:
 	enum PlaneSemanticLabel
 	{
@@ -163,13 +151,9 @@ private:
 	PlaneSemanticLabel _get_plane_semantic_label(int64_t p_index) const;
 };
 
-VARIANT_ENUM_CAST(OpenXRSpatialComponentPlaneSemanticLabelList::PlaneSemanticLabel);
-
 // Plane tracker
 class OpenXRPlaneTracker : public OpenXRSpatialEntityTracker
 {
-	VLTRCLASS(OpenXRPlaneTracker, OpenXRSpatialEntityTracker);
-
 public:
 	void set_bounds_size(const Vector2& p_bounds_size);
 	Vector2 get_bounds_size() const;
@@ -239,31 +223,20 @@ private:
 };
 
 // Plane tracking logic
-class OpenXRSpatialPlaneTrackingCapability : public OpenXRExtensionWrapper
+class OpenXRSpatialPlaneTrackingCapability
 {
-	VLTRCLASS(OpenXRSpatialPlaneTrackingCapability, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods();
-
 public:
 	static OpenXRSpatialPlaneTrackingCapability* get_singleton();
 
 	OpenXRSpatialPlaneTrackingCapability();
-	virtual ~OpenXRSpatialPlaneTrackingCapability() override;
+	virtual ~OpenXRSpatialPlaneTrackingCapability();
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_session_created(const XrSession p_session) override;
-	virtual void on_session_destroyed() override;
+	virtual void on_session_created(const XrSession p_session);
+	virtual void on_session_destroyed();
 
-	virtual void on_process() override;
-
-	Ref<OpenXRFutureResult> start_entity_discovery(RID p_spatial_context,
-		Array p_component_data,
-		Ref<OpenXRStructureBase> p_next_snapshot_create = nullptr,
-		Ref<OpenXRStructureBase> p_next_snapshot_query = nullptr,
-		const Callable& p_user_callback = Callable());
+	virtual void on_process();
 
 	bool is_supported();
 
@@ -278,17 +251,12 @@ private:
 	Ref<OpenXRFutureResult> discovery_query_result;
 
 	Ref<OpenXRSpatialCapabilityConfigurationPlaneTracking> plane_configuration;
-	Array plane_component_data;
 
 	// Discovery logic
 	Ref<OpenXRFutureResult> _create_spatial_context();
 	void _on_spatial_context_created(RID p_spatial_context);
 
 	void _on_spatial_discovery_recommended(RID p_spatial_context);
-
-	void _process_snapshot(RID p_snapshot, RID p_spatial_context,
-		Array p_component_data,
-		Ref<OpenXRStructureBase> p_next_snapshot_query, const Callable& p_user_callback);
 
 	// Trackers; maps each Spatial Context RID to their plane entities and trackers
 	HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRPlaneTracker>>> plane_trackers;

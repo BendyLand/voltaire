@@ -30,7 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "register_server_types.h"
 #include "servers/audio/audio_effect.h"
@@ -55,7 +54,6 @@
 #include "servers/audio/effects/audio_stream_generator.h"
 #include "servers/camera/camera_feed.h"
 #include "servers/camera/camera_server.h"
-#include "servers/debugger/servers_debugger.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/native_menu.h"
@@ -133,96 +131,6 @@ static bool has_server_feature_callback(const String& p_feature)
 }
 
 static MovieWriterPNGWAV* writer_pngwav = nullptr;
-
-void register_server_types()
-{
-	OS::get_singleton()->benchmark_begin_measure("Servers", "Register Extensions");
-
-	shader_types = memnew(ShaderTypes);
-
-	Engine::get_singleton()->add_singleton(Engine::Singleton(
-		"TextServerManager", TextServerManager::get_singleton()->obj.get(), "TextServerManager"));
-
-	OS::get_singleton()->set_has_server_feature_callback(has_server_feature_callback);
-
-	{
-	// audio effects
-
-#ifndef DISABLE_DEPRECATED
-#endif
-	}
-
-	ServersDebugger::initialize();
-
-#ifndef NAVIGATION_2D_DISABLED
-	Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationServer2DManager",
-		NavigationServer2DManager::get_singleton()->obj.get(), "NavigationServer2DManager"));
-
-	GLOBAL_DEF(PropertyInfo(Variant::STRING, NavigationServer2DManager::setting_property_name,
-				   PROPERTY_HINT_ENUM, "DEFAULT"),
-		"DEFAULT");
-
-	NavigationServer2DManager::get_singleton()->register_server(
-		"Dummy", callable_mp_static(NavigationServer2DManager::create_dummy_server_callback));
-#endif // NAVIGATION_2D_DISABLED
-
-#ifndef PHYSICS_2D_DISABLED
-	// Physics 2D
-	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsServer2DManager",
-		PhysicsServer2DManager::get_singleton()->obj.get(), "PhysicsServer2DManager"));
-
-	GLOBAL_DEF(PropertyInfo(Variant::STRING, PhysicsServer2DManager::setting_property_name,
-				   PROPERTY_HINT_ENUM, "DEFAULT"),
-		"DEFAULT");
-
-	PhysicsServer2DManager::get_singleton()->register_server(
-		"Dummy", callable_mp_static(_create_dummy_physics_server_2d));
-#endif // PHYSICS_2D_DISABLED
-
-#ifndef NAVIGATION_3D_DISABLED
-	Engine::get_singleton()->add_singleton(Engine::Singleton("NavigationServer3DManager",
-		NavigationServer3DManager::get_singleton()->obj.get(), "NavigationServer3DManager"));
-
-	GLOBAL_DEF(PropertyInfo(Variant::STRING, NavigationServer3DManager::setting_property_name,
-				   PROPERTY_HINT_ENUM, "DEFAULT"),
-		"DEFAULT");
-
-	NavigationServer3DManager::get_singleton()->register_server(
-		"Dummy", callable_mp_static(NavigationServer3DManager::create_dummy_server_callback));
-#endif // NAVIGATION_3D_DISABLED
-
-#ifndef PHYSICS_3D_DISABLED
-	// Physics 3D
-	Engine::get_singleton()->add_singleton(Engine::Singleton("PhysicsServer3DManager",
-		PhysicsServer3DManager::get_singleton()->obj.get(), "PhysicsServer3DManager"));
-
-	GLOBAL_DEF(PropertyInfo(Variant::STRING, PhysicsServer3DManager::setting_property_name,
-				   PROPERTY_HINT_ENUM, "DEFAULT"),
-		"DEFAULT");
-
-	PhysicsServer3DManager::get_singleton()->register_server(
-		"Dummy", callable_mp_static(_create_dummy_physics_server_3d));
-#endif // PHYSICS_3D_DISABLED
-
-#ifndef XR_DISABLED
-#endif // XR_DISABLED
-
-	writer_pngwav = memnew(MovieWriterPNGWAV);
-	MovieWriter::add_writer(writer_pngwav);
-
-	OS::get_singleton()->benchmark_end_measure("Servers", "Register Extensions");
-}
-
-void unregister_server_types()
-{
-	OS::get_singleton()->benchmark_begin_measure("Servers", "Unregister Extensions");
-
-	ServersDebugger::deinitialize();
-	memdelete(shader_types);
-	memdelete(writer_pngwav);
-
-	OS::get_singleton()->benchmark_end_measure("Servers", "Unregister Extensions");
-}
 
 void register_server_singletons() {}
 

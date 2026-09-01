@@ -28,11 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "upnp.h"
 
 UPNP* (*UPNP::_create)(bool p_notify_postinitialize) = nullptr;
-
-void UPNP::_bind_methods() {}
 
 

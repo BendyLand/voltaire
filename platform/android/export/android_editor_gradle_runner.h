@@ -32,7 +32,6 @@
 
 #ifdef ANDROID_ENABLED
 
-#include "core/object/object.h"
 #include "core/templates/mem_unique_ptr.h"
 
 class ConfirmationDialog;

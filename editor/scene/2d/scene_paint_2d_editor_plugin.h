@@ -40,20 +40,21 @@ class SpinBox;
 class ItemList;
 class OptionButton;
 
-class ScenePaint2DEditor : public Control {
-	VLTRCLASS(ScenePaint2DEditor, Control);
-
-	inline static ScenePaint2DEditor *singleton = nullptr;
+class ScenePaint2DEditor : public Control
+{
+	inline static ScenePaint2DEditor* singleton = nullptr;
 
 	friend class ScenePaint2DEditorPlugin;
 
-	enum PaintMode {
+	enum PaintMode
+	{
 		PAINT_MODE_FREE,
 		PAINT_MODE_SNAP_GRID,
 		PAINT_MODE_SNAP_GRID_CELL_CENTER,
 	};
 
-	enum PickMode {
+	enum PickMode
+	{
 		PICK_FILE_SYSTEM,
 		PICK_SCENE_TREE,
 		PICK_CANVAS_ITEM,
@@ -61,7 +62,8 @@ class ScenePaint2DEditor : public Control {
 		PICK_CUSTOM_SOURCE,
 	};
 
-	enum InputTool {
+	enum InputTool
+	{
 		INPUT_TOOL_NONE,
 		INPUT_TOOL_PAINT,
 		INPUT_TOOL_ERASE,
@@ -70,7 +72,8 @@ class ScenePaint2DEditor : public Control {
 		INPUT_TOOL_QUICK_PICK,
 	};
 
-	enum MenuItem {
+	enum MenuItem
+	{
 		MENU_ITEM_FREE_PAINT_MODE,
 		MENU_ITEM_SNAP_TO_GRID_PAINT_MODE,
 		MENU_ITEM_SNAP_TO_GRID_CELL_CENTER_PAINT_MODE,
@@ -92,34 +95,29 @@ class ScenePaint2DEditor : public Control {
 
 	int recent_idx = -1;
 
-	PopupMenu *advanced_settings_popup = nullptr;
-	Control *custom_overlay = nullptr;
-	Control *viewport = nullptr;
-	HashMap<Node *, Node *> pinned_nodes;
+	PopupMenu* advanced_settings_popup = nullptr;
+	Control* custom_overlay = nullptr;
+	Control* viewport = nullptr;
+	HashMap<Node*, Node*> pinned_nodes;
 
-	Node2D *cache_node = nullptr;
-	Node2D *node = nullptr;
-	Node2D *instance = nullptr;
-	Node2D *instance_container = nullptr;
+	Node2D* cache_node = nullptr;
+	Node2D* node = nullptr;
+	Node2D* instance = nullptr;
+	Node2D* instance_container = nullptr;
 
-	HBoxContainer *toolbar = nullptr;
+	HBoxContainer* toolbar = nullptr;
 
-	Button *pin_node_button = nullptr;
-	Button *scene_picker_button = nullptr;
-	OptionButton *recent_scenes_button = nullptr;
-	Button *edit_properties_button = nullptr;
+	Button* pin_node_button = nullptr;
+	Button* scene_picker_button = nullptr;
+	OptionButton* recent_scenes_button = nullptr;
+	Button* edit_properties_button = nullptr;
 
-	Button *advanced_settings_button = nullptr;
+	Button* advanced_settings_button = nullptr;
 
-	Node2D *selected_scene = nullptr;
-
-	HashMap<Control *, Callable> custom_sources;
+	Node2D* selected_scene = nullptr;
 
 	void _can_handle(bool p_is_node_2d, bool p_edit);
 
-	void _edit(Object *p_object);
-
-	void _update_node(Object *p_object = nullptr);
 	bool _is_node_valid();
 
 	void _add_instance(bool p_show = false);
@@ -131,31 +129,31 @@ class ScenePaint2DEditor : public Control {
 	void _update_draw_overlay();
 	void _update_hint_label();
 
-	void _gui_input_viewport(const Ref<InputEvent> &p_event);
+	void _gui_input_viewport(const Ref<InputEvent>& p_event);
 	void _add_node_at_pos();
 	void _remove_node_at_pos();
 
 	Vector2 _get_mouse_grid_cell();
 
-	void _set_pinned(bool p_pinned, Node *p_pinned_node = nullptr);
+	void _set_pinned(bool p_pinned, Node* p_pinned_node = nullptr);
 	void _pinned_toggled(bool p_pressed);
 	void _scene_changed();
 
 	void _scene_picker_toggled(bool p_pressed);
-	void _update_scene_picker(int p_mode, Control *p_control);
-	void _file_system_input(const Ref<InputEvent> &p_event);
-	void _scene_tree_input(const Ref<InputEvent> &p_event);
+	void _update_scene_picker(int p_mode, Control* p_control);
+	void _file_system_input(const Ref<InputEvent>& p_event);
+	void _scene_tree_input(const Ref<InputEvent>& p_event);
 	void _recent_item_selected(int p_idx);
-	void _custom_source_input(const Ref<InputEvent> &p_event, Control *p_control);
-	Node2D *_get_scene_from_path(const String &p_path);
-	void _set_picked_scene(Node2D *p_scene);
+	void _custom_source_input(const Ref<InputEvent>& p_event, Control* p_control);
+	Node2D* _get_scene_from_path(const String& p_path);
+	void _set_picked_scene(Node2D* p_scene);
 
-	void _add_to_recent_scenes(const String &p_scene);
+	void _add_to_recent_scenes(const String& p_scene);
 	void _update_recent_scenes();
 
-	bool _is_selected_scene_valid(Node2D *p_node) const;
-	bool _is_scene_painted(Node2D *p_node) const;
-	Node2D *_get_node_root(Node *p_node) const;
+	bool _is_selected_scene_valid(Node2D* p_node) const;
+	bool _is_scene_painted(Node2D* p_node) const;
+	Node2D* _get_node_root(Node* p_node) const;
 
 	void _edit_properties_toggled(bool p_pressed);
 	void _edit_properties();
@@ -173,23 +171,21 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static ScenePaint2DEditor *get_singleton() { return singleton; }
+	static ScenePaint2DEditor* get_singleton() { return singleton; }
 
-	void forward_canvas_draw_over_viewport(Control *p_overlay);
+	void forward_canvas_draw_over_viewport(Control* p_overlay);
 
-	void register_scene_provider(Control *p_control, const Callable &p_callback);
-	void unregister_scene_provider(Control *p_control);
+	void unregister_scene_provider(Control* p_control);
 
-	void set_painted_scene(Node2D *p_scene);
-	Node2D *get_painted_scene() const;
+	void set_painted_scene(Node2D* p_scene);
+	Node2D* get_painted_scene() const;
 
 	ScenePaint2DEditor();
 };
 
-class ScenePaint2DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(ScenePaint2DEditorPlugin, EditorPlugin);
-
-	ScenePaint2DEditor *scene_paint_2d_editor = nullptr;
+class ScenePaint2DEditorPlugin : public EditorPlugin
+{
+	ScenePaint2DEditor* scene_paint_2d_editor = nullptr;
 
 	mutable bool is_node_2d = false;
 
@@ -199,10 +195,9 @@ protected:
 	void _notification(int p_what);
 
 public:
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
-	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override;
+	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
 
 	ScenePaint2DEditorPlugin();
 };
+
+

@@ -31,16 +31,16 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/gdvirtual.gen.h"
 
-class EditorResourceConversionPlugin : public RefCounted {
-	VLTRCLASS(EditorResourceConversionPlugin, RefCounted);
-
+class EditorResourceConversionPlugin : public RefCounted
+{
 protected:
 	static void _bind_methods();
 
 public:
 	virtual String converts_to() const;
-	virtual bool handles(const Ref<Resource> &p_resource) const;
-	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const;
+	virtual bool handles(const Ref<Resource>& p_resource) const;
+	virtual Ref<Resource> convert(const Ref<Resource>& p_resource) const;
 };
+
+

@@ -29,32 +29,7 @@
 /**************************************************************************/
 
 #include "compositor.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_server.h"
-
-/* Compositor Effect */
-
-void CompositorEffect::_bind_methods() {}
-
-void CompositorEffect::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "access_resolved_color") {
-		if (effect_callback_type == EFFECT_CALLBACK_TYPE_POST_TRANSPARENT) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "access_resolved_depth") {
-		if (effect_callback_type == EFFECT_CALLBACK_TYPE_POST_TRANSPARENT) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "needs_separate_specular") {
-		if (effect_callback_type != EFFECT_CALLBACK_TYPE_POST_SKY) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
 
 void CompositorEffect::set_enabled(bool p_enabled)
 {
@@ -67,20 +42,6 @@ void CompositorEffect::set_enabled(bool p_enabled)
 }
 
 bool CompositorEffect::get_enabled() const { return enabled; }
-
-void CompositorEffect::set_effect_callback_type(EffectCallbackType p_callback_type)
-{
-	effect_callback_type = p_callback_type;
-	this->obj->notify_property_list_changed();
-
-	if (rid.is_valid()) {
-		RenderingServer* rs = RenderingServer::get_singleton();
-		ERR_FAIL_NULL(rs);
-		rs->compositor_effect_set_callback(rid,
-			RSE::CompositorEffectCallbackType(effect_callback_type),
-			callable_mp(this, &CompositorEffect::_call_render_callback));
-	}
-}
 
 CompositorEffect::EffectCallbackType CompositorEffect::get_effect_callback_type() const
 {
@@ -157,17 +118,6 @@ void CompositorEffect::set_needs_separate_specular(bool p_enabled)
 
 bool CompositorEffect::get_needs_separate_specular() const { return needs_separate_specular; }
 
-CompositorEffect::CompositorEffect()
-{
-	RenderingServer* rs = RenderingServer::get_singleton();
-	if (rs != nullptr) {
-		rid = rs->compositor_effect_create();
-		rs->compositor_effect_set_callback(rid,
-			RSE::CompositorEffectCallbackType(effect_callback_type),
-			callable_mp(this, &CompositorEffect::_call_render_callback));
-	}
-}
-
 CompositorEffect::~CompositorEffect()
 {
 	RenderingServer* rs = RenderingServer::get_singleton();
@@ -194,41 +144,6 @@ Compositor::~Compositor()
 	if (rs != nullptr && compositor.is_valid()) {
 		rs->free_rid(compositor);
 	}
-}
-
-// Compositor effects
-void Compositor::set_compositor_effects(const Array& p_compositor_effects)
-{
-	Array effect_rids;
-	effects.clear();
-
-	for (int i = 0; i < p_compositor_effects.size(); i++) {
-		// Cast to proper ref, if our object isn't a CompositorEffect resource this will be an empty
-		// Ref.
-		Ref<CompositorEffect> compositor_effect = p_compositor_effects[i];
-
-		// We add the effect even if this is an empty Ref, this allows the UI to add new entries.
-		effects.push_back(compositor_effect);
-
-		// But we only add a rid for valid Refs
-		if (compositor_effect.is_valid()) {
-			RID rid = compositor_effect->get_rid();
-			effect_rids.push_back(rid);
-		}
-	}
-
-	RenderingServer::get_singleton()->compositor_set_compositor_effects(compositor, effect_rids);
-}
-
-Array Compositor::get_compositor_effects() const
-{
-	Array arr;
-
-	for (uint32_t i = 0; i < effects.size(); i++) {
-		arr.push_back(effects[i]);
-	}
-
-	return arr;
 }
 
 void CompositorEffect::_call_render_callback(

@@ -35,9 +35,8 @@
 class NavigationPolygon;
 class NavigationMeshSourceGeometryData2D;
 
-class NavigationObstacle2D : public Node2D {
-	VLTRCLASS(NavigationObstacle2D, Node2D);
-
+class NavigationObstacle2D : public Node2D
+{
 	RID obstacle;
 	RID map_before_pause;
 	RID map_override;
@@ -87,12 +86,15 @@ public:
 	RID get_navigation_map() const;
 
 	void set_radius(real_t p_radius);
+
 	real_t get_radius() const { return radius; }
 
-	void set_vertices(const Vector<Vector2> &p_vertices);
-	const Vector<Vector2> &get_vertices() const { return vertices; }
+	void set_vertices(const Vector<Vector2>& p_vertices);
+
+	const Vector<Vector2>& get_vertices() const { return vertices; }
 
 	bool are_vertices_clockwise() const { return vertices_are_clockwise; }
+
 	bool are_vertices_valid() const { return vertices_are_valid; }
 
 	void set_avoidance_layers(uint32_t p_layers);
@@ -105,6 +107,7 @@ public:
 	bool get_avoidance_layer_value(int p_layer_number) const;
 
 	void set_velocity(const Vector2 p_velocity);
+
 	Vector2 get_velocity() const { return velocity; }
 
 	void _avoidance_done(Vector3 p_new_velocity); // Dummy
@@ -118,15 +121,17 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 
 private:
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 
 public:
 	static void navmesh_parse_init();
-	static void navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node *p_node);
+	static void navmesh_parse_source_geometry(const Ref<NavigationPolygon>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node* p_node);
 
 private:
 	void _update_map(RID p_map);
 	void _update_position(const Vector2 p_position);
 	void _update_transform();
 };
+
+

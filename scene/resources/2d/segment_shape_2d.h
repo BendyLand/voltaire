@@ -32,9 +32,8 @@
 
 #include "scene/resources/2d/shape_2d.h"
 
-class SegmentShape2D : public Shape2D {
-	VLTRCLASS(SegmentShape2D, Shape2D);
-
+class SegmentShape2D : public Shape2D
+{
 	Vector2 a;
 	Vector2 b;
 
@@ -44,17 +43,20 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
+	virtual bool _edit_is_selected_on_click(
+		const Point2& p_point, double p_tolerance) const override;
 
-	void set_a(const Vector2 &p_a);
-	void set_b(const Vector2 &p_b);
+	void set_a(const Vector2& p_a);
+	void set_b(const Vector2& p_b);
 
 	Vector2 get_a() const;
 	Vector2 get_b() const;
 
-	virtual void draw(const RID &p_to_rid, const Color &p_color) override;
+	virtual void draw(const RID& p_to_rid, const Color& p_color) override;
 	virtual Rect2 get_rect() const override;
 	virtual real_t get_enclosing_radius() const override;
 
 	SegmentShape2D();
 };
+
+

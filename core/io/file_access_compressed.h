@@ -100,10 +100,10 @@ public:
 	virtual uint64_t _get_modified_time(const String& p_file) override;
 	virtual uint64_t _get_access_time(const String& p_file) override;
 	virtual int64_t _get_size(const String& p_file) override;
-	virtual BitField<FileAccess::UnixPermissionFlags> _get_unix_permissions(
+	virtual uint32_t _get_unix_permissions(
 		const String& p_file) override;
 	virtual Error _set_unix_permissions(
-		const String& p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions) override;
+		const String& p_file, uint32_t p_permissions) override;
 
 	virtual bool _get_hidden_attribute(const String& p_file) override;
 	virtual Error _set_hidden_attribute(const String& p_file, bool p_hidden) override;

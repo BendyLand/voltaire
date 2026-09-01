@@ -72,10 +72,6 @@ protected:
 
 	static void _bind_methods();
 
-	void _accessibility_action_inc(const Variant& p_data);
-	void _accessibility_action_dec(const Variant& p_data);
-	void _accessibility_action_set_value(const Variant& p_data);
-
 	bool _rounded_values = false;
 
 public:

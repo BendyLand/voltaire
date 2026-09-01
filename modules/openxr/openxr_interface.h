@@ -55,7 +55,6 @@
 
 #include "extensions/openxr_hand_tracking_extension.h"
 #include "openxr_api.h"
-
 #include "servers/xr/xr_controller_tracker.h"
 #include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_vrs.h"
@@ -63,11 +62,10 @@
 // declare some default strings
 #define INTERACTION_PROFILE_NONE "/interaction_profiles/none"
 
-class OpenXRInterface : public XRInterface {
-	VLTRCLASS(OpenXRInterface, XRInterface);
-
+class OpenXRInterface : public XRInterface
+{
 private:
-	OpenXRAPI *openxr_api = nullptr;
+	OpenXRAPI* openxr_api = nullptr;
 	bool initialized = false;
 	bool reference_stage_changing = false;
 	XRInterface::TrackingStatus tracking_state;
@@ -78,51 +76,64 @@ private:
 	Vector3 head_linear_velocity;
 	Vector3 head_angular_velocity;
 	XRPose::TrackingConfidence head_confidence;
-	Transform3D transform_for_view[2]; // We currently assume 2, but could be 4 for VARJO which we do not support yet
+	Transform3D transform_for_view[2]; // We currently assume 2, but could be 4 for VARJO which we
+									   // do not support yet
 
 	XRVRS xr_vrs;
 
 	void _load_action_map();
 
-	struct Action { // An action we've registered with OpenXR
-		String action_name; // Name of our action as presented to Godot (can be altered from the action map)
+	struct Action
+	{						// An action we've registered with OpenXR
+		String action_name; // Name of our action as presented to Godot (can be altered from the
+							// action map)
 		OpenXRAction::ActionType action_type; // The action type of this action
-		RID action_rid; // RID of the action registered with our OpenXR API
-	};
-	struct ActionSet { // An action set we've registered with OpenXR
-		String action_set_name; // Name of our action set
-		bool is_active; // If true this action set is active and we will sync it
-		Vector<Action *> actions; // List of actions in this action set
-		RID action_set_rid; // RID of the action registered with our OpenXR API
-	};
-	struct Tracker { // A tracker we've registered with OpenXR
-		String tracker_name; // Name of our tracker (can be altered from the action map)
-		Vector<Action *> actions; // Actions related to this tracker
-		Ref<XRControllerTracker> controller_tracker; // Our positional tracker object that holds our tracker state
-		RID tracker_rid; // RID of the tracker registered with our OpenXR API
-		RID interaction_profile; // RID of the interaction profile bound to this tracker (can be null)
+		RID action_rid;						  // RID of the action registered with our OpenXR API
 	};
 
-	Vector<ActionSet *> action_sets;
+	struct ActionSet
+	{							 // An action set we've registered with OpenXR
+		String action_set_name;	 // Name of our action set
+		bool is_active;			 // If true this action set is active and we will sync it
+		Vector<Action*> actions; // List of actions in this action set
+		RID action_set_rid;		 // RID of the action registered with our OpenXR API
+	};
+
+	struct Tracker
+	{							 // A tracker we've registered with OpenXR
+		String tracker_name;	 // Name of our tracker (can be altered from the action map)
+		Vector<Action*> actions; // Actions related to this tracker
+		Ref<XRControllerTracker>
+			controller_tracker;	 // Our positional tracker object that holds our tracker state
+		RID tracker_rid;		 // RID of the tracker registered with our OpenXR API
+		RID interaction_profile; // RID of the interaction profile bound to this tracker (can be
+								 // null)
+	};
+
+	Vector<ActionSet*> action_sets;
 	Vector<RID> interaction_profiles;
-	Vector<Tracker *> trackers;
+	Vector<Tracker*> trackers;
 
-	ActionSet *create_action_set(const String &p_action_set_name, const String &p_localized_name, const int p_priority);
+	ActionSet* create_action_set(
+		const String& p_action_set_name, const String& p_localized_name, const int p_priority);
 	void free_action_sets();
 
-	Action *create_action(ActionSet *p_action_set, const String &p_action_name, const String &p_localized_name, OpenXRAction::ActionType p_action_type, const Vector<Tracker *> p_trackers);
-	Action *find_action(const String &p_action_name);
-	void free_actions(ActionSet *p_action_set);
+	Action* create_action(ActionSet* p_action_set, const String& p_action_name,
+		const String& p_localized_name, OpenXRAction::ActionType p_action_type,
+		const Vector<Tracker*> p_trackers);
+	Action* find_action(const String& p_action_name);
+	void free_actions(ActionSet* p_action_set);
 
-	Tracker *find_tracker(const String &p_tracker_name, bool p_create = false);
-	void handle_tracker(Tracker *p_tracker);
+	Tracker* find_tracker(const String& p_tracker_name, bool p_create = false);
+	void handle_tracker(Tracker* p_tracker);
 	void free_trackers();
 
 	void free_interaction_profiles();
 
-	void _set_default_pos(Transform3D &r_transform, double p_world_scale, uint64_t p_eye);
+	void _set_default_pos(Transform3D& r_transform, double p_world_scale, uint64_t p_eye);
 
-	void handle_hand_tracking(const String &p_path, OpenXRHandTrackingExtension::HandTrackedHands p_hand);
+	void handle_hand_tracking(
+		const String& p_path, OpenXRHandTrackingExtension::HandTrackedHands p_hand);
 
 protected:
 	static void _bind_methods();
@@ -142,9 +153,10 @@ public:
 	virtual bool is_initialized() const override;
 	virtual bool initialize() override;
 	virtual void uninitialize() override;
-	virtual Dictionary get_system_info() override;
 
-	virtual void trigger_haptic_pulse(const String &p_action_name, const StringName &p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec, double p_delay_sec = 0) override;
+	virtual void trigger_haptic_pulse(const String& p_action_name, const StringName& p_tracker_name,
+		double p_frequency, double p_amplitude, double p_duration_sec,
+		double p_delay_sec = 0) override;
 
 	virtual bool supports_play_area_mode(XRInterface::PlayAreaMode p_mode) override;
 	virtual XRInterface::PlayAreaMode get_play_area_mode() const override;
@@ -153,11 +165,9 @@ public:
 
 	float get_display_refresh_rate() const;
 	void set_display_refresh_rate(float p_refresh_rate);
-	Array get_available_display_refresh_rates() const;
 
-	bool is_action_set_active(const String &p_action_set) const;
-	void set_action_set_active(const String &p_action_set, bool p_active);
-	Array get_action_sets() const;
+	bool is_action_set_active(const String& p_action_set) const;
+	void set_action_set_active(const String& p_action_set, bool p_active);
 
 	double get_render_target_size_multiplier() const;
 	void set_render_target_size_multiplier(double multiplier);
@@ -182,8 +192,10 @@ public:
 	virtual Size2 get_render_target_size() override;
 	virtual uint32_t get_view_count() override;
 	virtual Transform3D get_camera_transform() override;
-	virtual Transform3D get_transform_for_view(uint32_t p_view, const Transform3D &p_cam_transform) override;
-	virtual Projection get_projection_for_view(uint32_t p_view, double p_aspect, double p_z_near, double p_z_far) override;
+	virtual Transform3D get_transform_for_view(
+		uint32_t p_view, const Transform3D& p_cam_transform) override;
+	virtual Projection get_projection_for_view(
+		uint32_t p_view, double p_aspect, double p_z_near, double p_z_far) override;
 
 	virtual Rect2i get_render_region() override;
 
@@ -196,7 +208,8 @@ public:
 	virtual void process() override;
 	virtual void pre_render() override;
 	bool pre_draw_viewport(RID p_render_target) override;
-	virtual Vector<RenderingServerTypes::BlitToScreen> post_draw_viewport(RID p_render_target, const Rect2 &p_screen_rect) override;
+	virtual Vector<RenderingServerTypes::BlitToScreen> post_draw_viewport(
+		RID p_render_target, const Rect2& p_screen_rect) override;
 	virtual void end_frame() override;
 
 	virtual bool is_passthrough_supported() override;
@@ -204,8 +217,6 @@ public:
 	virtual bool start_passthrough() override;
 	virtual void stop_passthrough() override;
 
-	/** environment blend mode. */
-	virtual Array get_supported_environment_blend_modes() override;
 	virtual XRInterface::EnvironmentBlendMode get_environment_blend_mode() const override;
 	virtual bool set_environment_blend_mode(XRInterface::EnvironmentBlendMode mode) override;
 
@@ -221,7 +232,8 @@ public:
 	void tracker_profile_changed(RID p_tracker, RID p_interaction_profile);
 
 	/** Session */
-	enum SessionState { // Should mirror XrSessionState
+	enum SessionState
+	{ // Should mirror XrSessionState
 		SESSION_STATE_UNKNOWN = 0,
 		SESSION_STATE_IDLE = 1,
 		SESSION_STATE_READY = 2,
@@ -240,13 +252,15 @@ public:
 	bool is_user_present() const;
 
 	/** Hand tracking. */
-	enum Hand {
+	enum Hand
+	{
 		HAND_LEFT,
 		HAND_RIGHT,
 		HAND_MAX,
 	};
 
-	enum HandMotionRange {
+	enum HandMotionRange
+	{
 		HAND_MOTION_RANGE_UNOBSTRUCTED,
 		HAND_MOTION_RANGE_CONFORM_TO_CONTROLLER,
 		HAND_MOTION_RANGE_MAX
@@ -255,7 +269,8 @@ public:
 	void set_motion_range(const Hand p_hand, const HandMotionRange p_motion_range);
 	HandMotionRange get_motion_range(const Hand p_hand) const;
 
-	enum HandTrackedSource {
+	enum HandTrackedSource
+	{
 		HAND_TRACKED_SOURCE_UNKNOWN,
 		HAND_TRACKED_SOURCE_UNOBSTRUCTED,
 		HAND_TRACKED_SOURCE_CONTROLLER,
@@ -264,7 +279,8 @@ public:
 
 	HandTrackedSource get_hand_tracking_source(const Hand p_hand) const;
 
-	enum HandJoints {
+	enum HandJoints
+	{
 		HAND_JOINT_PALM = 0,
 		HAND_JOINT_WRIST = 1,
 		HAND_JOINT_THUMB_METACARPAL = 2,
@@ -294,7 +310,8 @@ public:
 		HAND_JOINT_MAX = 26,
 	};
 
-	enum HandJointFlags {
+	enum HandJointFlags
+	{
 		HAND_JOINT_NONE = 0,
 		HAND_JOINT_ORIENTATION_VALID = 1,
 		HAND_JOINT_ORIENTATION_TRACKED = 2,
@@ -304,7 +321,7 @@ public:
 		HAND_JOINT_ANGULAR_VELOCITY_VALID = 32,
 	};
 
-	BitField<HandJointFlags> get_hand_joint_flags(Hand p_hand, HandJoints p_joint) const;
+	uint32_t get_hand_joint_flags(Hand p_hand, HandJoints p_joint) const;
 	Quaternion get_hand_joint_rotation(Hand p_hand, HandJoints p_joint) const;
 	Vector3 get_hand_joint_position(Hand p_hand, HandJoints p_joint) const;
 	float get_hand_joint_radius(Hand p_hand, HandJoints p_joint) const;
@@ -316,20 +333,23 @@ public:
 	virtual VRSTextureFormat get_vrs_texture_format() override;
 
 	// Performance settings.
-	enum PerfSettingsLevel {
+	enum PerfSettingsLevel
+	{
 		PERF_SETTINGS_LEVEL_POWER_SAVINGS,
 		PERF_SETTINGS_LEVEL_SUSTAINED_LOW,
 		PERF_SETTINGS_LEVEL_SUSTAINED_HIGH,
 		PERF_SETTINGS_LEVEL_BOOST,
 	};
 
-	enum PerfSettingsSubDomain {
+	enum PerfSettingsSubDomain
+	{
 		PERF_SETTINGS_SUB_DOMAIN_COMPOSITING,
 		PERF_SETTINGS_SUB_DOMAIN_RENDERING,
 		PERF_SETTINGS_SUB_DOMAIN_THERMAL,
 	};
 
-	enum PerfSettingsNotificationLevel {
+	enum PerfSettingsNotificationLevel
+	{
 		PERF_SETTINGS_NOTIF_LEVEL_NORMAL,
 		PERF_SETTINGS_NOTIF_LEVEL_WARNING,
 		PERF_SETTINGS_NOTIF_LEVEL_IMPAIRED,
@@ -337,19 +357,13 @@ public:
 
 	void set_cpu_level(PerfSettingsLevel p_level);
 	void set_gpu_level(PerfSettingsLevel p_level);
-	void on_cpu_level_changed(PerfSettingsSubDomain p_sub_domain, PerfSettingsNotificationLevel p_from_level, PerfSettingsNotificationLevel p_to_level);
-	void on_gpu_level_changed(PerfSettingsSubDomain p_sub_domain, PerfSettingsNotificationLevel p_from_level, PerfSettingsNotificationLevel p_to_level);
+	void on_cpu_level_changed(PerfSettingsSubDomain p_sub_domain,
+		PerfSettingsNotificationLevel p_from_level, PerfSettingsNotificationLevel p_to_level);
+	void on_gpu_level_changed(PerfSettingsSubDomain p_sub_domain,
+		PerfSettingsNotificationLevel p_from_level, PerfSettingsNotificationLevel p_to_level);
 
 	OpenXRInterface();
 	~OpenXRInterface();
 };
 
-VARIANT_ENUM_CAST(OpenXRInterface::SessionState)
-VARIANT_ENUM_CAST(OpenXRInterface::Hand)
-VARIANT_ENUM_CAST(OpenXRInterface::HandMotionRange)
-VARIANT_ENUM_CAST(OpenXRInterface::HandTrackedSource)
-VARIANT_ENUM_CAST(OpenXRInterface::HandJoints)
-VARIANT_ENUM_CAST(OpenXRInterface::PerfSettingsLevel)
-VARIANT_ENUM_CAST(OpenXRInterface::PerfSettingsSubDomain)
-VARIANT_ENUM_CAST(OpenXRInterface::PerfSettingsNotificationLevel)
-VARIANT_BITFIELD_CAST(OpenXRInterface::HandJointFlags)
+

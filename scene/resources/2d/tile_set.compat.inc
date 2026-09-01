@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "tile_set.h"
 
 #ifndef NAVIGATION_2D_DISABLED

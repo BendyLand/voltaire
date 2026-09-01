@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/input/input_map.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "event_listener_line_edit.h"
 #include "scene/gui/dialogs.h"
@@ -154,64 +153,6 @@ bool EventListenerLineEdit::_is_event_allowed(const Ref<InputEvent>& p_event) co
 		   (jm.is_valid() && (allowed_input_types & INPUT_JOY_MOTION));
 }
 
-void EventListenerLineEdit::gui_input(const Ref<InputEvent>& p_event)
-{
-	const Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
-		LineEdit::gui_input(p_event);
-		return;
-	}
-
-	// Allow mouse button click on the clear button without being treated as an event.
-	const Ref<InputEventMouseButton> b = p_event;
-	if (b.is_valid() && _is_over_clear_button(b->get_position())) {
-		LineEdit::gui_input(p_event);
-		return;
-	}
-
-	// First event will be an event which is used to focus this control - i.e. a mouse click, or a
-	// tab press. Ignore the first one so that clicking into the LineEdit does not override the
-	// current event. Ignore is reset to true when the control is unfocused. This class also
-	// specially handles grab_focus() calls.
-	if (ignore_next_event) {
-		ignore_next_event = false;
-		return;
-	}
-
-	Ref<InputEvent> event_to_check = p_event;
-
-	// Allow releasing focus by holding "ui_cancel" action.
-	const uint64_t hold_to_unfocus_timeout = 3000;
-	if (p_event->is_action_pressed(SNAME("ui_cancel"), true, true)) {
-		if ((OS::get_singleton()->get_ticks_msec() - hold_next) < hold_to_unfocus_timeout) {
-			hold_next = 0;
-			Control* next = find_next_valid_focus();
-			next->grab_focus();
-		}
-		else {
-			hold_next = OS::get_singleton()->get_ticks_msec();
-			hold_event = p_event;
-		}
-		accept_event();
-		return;
-	}
-	if (p_event->is_action_released(SNAME("ui_cancel"), true)) {
-		event_to_check = hold_event;
-		hold_next = 0;
-		hold_event = Ref<InputEvent>();
-	}
-
-	accept_event();
-	if (event_to_check.is_null() || !event_to_check->is_pressed() || event_to_check->is_echo() ||
-		event_to_check->is_match(event) || !_is_event_allowed(event_to_check)) {
-		return;
-	}
-
-	event = event_to_check;
-	set_text(get_event_text(event, false));
-	this->obj->emit_signal("event_changed", event);
-}
-
 void EventListenerLineEdit::_on_text_changed(const String& p_text)
 {
 	if (p_text.is_empty()) {
@@ -220,15 +161,6 @@ void EventListenerLineEdit::_on_text_changed(const String& p_text)
 }
 
 Ref<InputEvent> EventListenerLineEdit::get_event() const { return event; }
-
-void EventListenerLineEdit::clear_event()
-{
-	if (event.is_valid()) {
-		event = Ref<InputEvent>();
-		set_text("");
-		this->obj->emit_signal("event_changed", event);
-	}
-}
 
 void EventListenerLineEdit::set_allowed_input_types(int p_type_masks)
 {
@@ -242,57 +174,6 @@ void EventListenerLineEdit::grab_focus()
 	// If we grab focus through code, we don't need to ignore the first event!
 	ignore_next_event = false;
 	Control::grab_focus();
-}
-
-void EventListenerLineEdit::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_extra_info(
-			ae, vformat(TTR("Listening for Input. Hold %s to release focus."),
-					InputMap::get_singleton()->get_action_description("ui_cancel")));
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		set_right_icon(get_editor_theme_icon(SNAME("Keyboard")));
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		connect(SceneStringName(text_changed),
-			callable_mp(this, &EventListenerLineEdit::_on_text_changed));
-		set_clear_button_enabled(true);
-	} break;
-
-	case NOTIFICATION_FOCUS_ENTER: {
-		AcceptDialog* dialog = Object::cast_to<AcceptDialog>(get_window());
-		if (dialog) {
-			dialog->set_close_on_escape(false);
-		}
-
-		set_placeholder(TTRC("Listening for Input"));
-	} break;
-
-	case NOTIFICATION_FOCUS_EXIT: {
-		AcceptDialog* dialog = Object::cast_to<AcceptDialog>(get_window());
-		if (dialog) {
-			dialog->set_close_on_escape(true);
-		}
-
-		ignore_next_event = true;
-		set_placeholder(TTRC("Filter by Event"));
-	} break;
-	}
-}
-
-void EventListenerLineEdit::_bind_methods()
-{
-	// `event` is either null or a valid InputEvent that is pressed and non-echo.
-	ADD_SIGNAL(MethodInfo(
-		"event_changed", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE,
-							 InputEvent::get_class_static())));
 }
 
 EventListenerLineEdit::EventListenerLineEdit()

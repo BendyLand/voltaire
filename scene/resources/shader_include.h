@@ -35,9 +35,6 @@
 
 class ShaderInclude : public Resource
 {
-	VLTRCLASS(ShaderInclude, Resource);
-	OBJ_SAVE_TYPE_NO(ShaderInclude);
-
 private:
 	String code;
 	String include_path;

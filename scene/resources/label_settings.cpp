@@ -28,13 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "label_settings.h"
 
 void LabelSettings::_font_changed() { emit_changed(); }
-
-void LabelSettings::_bind_methods() {}
 
 void LabelSettings::set_line_spacing(real_t p_spacing)
 {
@@ -55,21 +51,6 @@ void LabelSettings::set_paragraph_spacing(real_t p_spacing)
 }
 
 real_t LabelSettings::get_paragraph_spacing() const { return paragraph_spacing; }
-
-void LabelSettings::set_font(const Ref<Font>& p_font)
-{
-	if (font != p_font) {
-		if (font.is_valid()) {
-			font->disconnect_changed(callable_mp(this, &LabelSettings::_font_changed));
-		}
-		font = p_font;
-		if (font.is_valid()) {
-			font->connect_changed(callable_mp(this, &LabelSettings::_font_changed),
-				Object::CONNECT_REFERENCE_COUNTED);
-		}
-		emit_changed();
-	}
-}
 
 Ref<Font> LabelSettings::get_font() const { return font; }
 
@@ -150,45 +131,6 @@ Vector<LabelSettings::StackedOutlineData> LabelSettings::get_stacked_outline_dat
 
 int LabelSettings::get_stacked_outline_count() const { return stacked_outline_data.size(); }
 
-void LabelSettings::set_stacked_outline_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-	if (stacked_outline_data.size() != p_count) {
-		stacked_outline_data.resize(p_count);
-		this->obj->notify_property_list_changed();
-		emit_changed();
-	}
-}
-
-void LabelSettings::add_stacked_outline(int p_index)
-{
-	if (p_index < 0) {
-		p_index = stacked_outline_data.size();
-	}
-	ERR_FAIL_INDEX(p_index, stacked_outline_data.size() + 1);
-	stacked_outline_data.insert(p_index, StackedOutlineData());
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
-
-void LabelSettings::move_stacked_outline(int p_from_index, int p_to_position)
-{
-	ERR_FAIL_INDEX(p_from_index, stacked_outline_data.size());
-	ERR_FAIL_INDEX(p_to_position, stacked_outline_data.size() + 1);
-	stacked_outline_data.insert(p_to_position, stacked_outline_data[p_from_index]);
-	stacked_outline_data.remove_at(p_to_position < p_from_index ? p_from_index + 1 : p_from_index);
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
-
-void LabelSettings::remove_stacked_outline(int p_index)
-{
-	ERR_FAIL_INDEX(p_index, stacked_outline_data.size());
-	stacked_outline_data.remove_at(p_index);
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
-
 void LabelSettings::set_stacked_outline_size(int p_index, int p_size)
 {
 	ERR_FAIL_INDEX(p_index, stacked_outline_data.size());
@@ -225,45 +167,6 @@ Vector<LabelSettings::StackedShadowData> LabelSettings::get_stacked_shadow_data(
 }
 
 int LabelSettings::get_stacked_shadow_count() const { return stacked_shadow_data.size(); }
-
-void LabelSettings::set_stacked_shadow_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-	if (stacked_shadow_data.size() != p_count) {
-		stacked_shadow_data.resize(p_count);
-		this->obj->notify_property_list_changed();
-		emit_changed();
-	}
-}
-
-void LabelSettings::add_stacked_shadow(int p_index)
-{
-	if (p_index < 0) {
-		p_index = stacked_shadow_data.size();
-	}
-	ERR_FAIL_INDEX(p_index, stacked_shadow_data.size() + 1);
-	stacked_shadow_data.insert(p_index, StackedShadowData());
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
-
-void LabelSettings::move_stacked_shadow(int p_from_index, int p_to_position)
-{
-	ERR_FAIL_INDEX(p_from_index, stacked_shadow_data.size());
-	ERR_FAIL_INDEX(p_to_position, stacked_shadow_data.size() + 1);
-	stacked_shadow_data.insert(p_to_position, stacked_shadow_data[p_from_index]);
-	stacked_shadow_data.remove_at(p_to_position < p_from_index ? p_from_index + 1 : p_from_index);
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
-
-void LabelSettings::remove_stacked_shadow(int p_index)
-{
-	ERR_FAIL_INDEX(p_index, stacked_shadow_data.size());
-	stacked_shadow_data.remove_at(p_index);
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
 
 void LabelSettings::set_stacked_shadow_offset(int p_index, const Vector2& p_offset)
 {

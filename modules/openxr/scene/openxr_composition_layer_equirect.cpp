@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "../extensions/openxr_composition_layer_extension.h"
-#include "core/object/class_db.h"
 #include "openxr_composition_layer_equirect.h"
 #include "scene/resources/mesh.h"
 
@@ -55,64 +54,6 @@ OpenXRCompositionLayerEquirect::OpenXRCompositionLayerEquirect()
 }
 
 OpenXRCompositionLayerEquirect::~OpenXRCompositionLayerEquirect() {}
-
-void OpenXRCompositionLayerEquirect::_bind_methods() {}
-
-Ref<Mesh> OpenXRCompositionLayerEquirect::_create_fallback_mesh()
-{
-	Ref<ArrayMesh> mesh;
-	mesh.instantiate();
-
-	Array arrays;
-	arrays.resize(ArrayMesh::ARRAY_MAX);
-
-	Vector<Vector3> vertices;
-	Vector<Vector3> normals;
-	Vector<Vector2> uvs;
-	Vector<int> indices;
-
-	float step_horizontal = central_horizontal_angle / fallback_segments;
-	float step_vertical = (upper_vertical_angle + lower_vertical_angle) / fallback_segments;
-
-	float start_horizontal_angle = Math::PI - (central_horizontal_angle / 2.0);
-
-	for (uint32_t i = 0; i < fallback_segments + 1; i++) {
-		for (uint32_t j = 0; j < fallback_segments + 1; j++) {
-			float horizontal_angle = start_horizontal_angle + (step_horizontal * i);
-			float vertical_angle = -lower_vertical_angle + (step_vertical * j);
-
-			Vector3 vertex(radius * Math::cos(vertical_angle) * Math::sin(horizontal_angle),
-				radius * Math::sin(vertical_angle),
-				radius * Math::cos(vertical_angle) * Math::cos(horizontal_angle));
-
-			vertices.push_back(vertex);
-			normals.push_back(vertex.normalized());
-			uvs.push_back(Vector2(
-				1.0 - ((float)i / fallback_segments), 1.0 - (float(j) / fallback_segments)));
-		}
-	}
-
-	for (uint32_t i = 0; i < fallback_segments; i++) {
-		for (uint32_t j = 0; j < fallback_segments; j++) {
-			uint32_t index = i * (fallback_segments + 1) + j;
-			indices.push_back(index);
-			indices.push_back(index + fallback_segments + 1);
-			indices.push_back(index + fallback_segments + 2);
-
-			indices.push_back(index);
-			indices.push_back(index + fallback_segments + 2);
-			indices.push_back(index + 1);
-		}
-	}
-
-	arrays[ArrayMesh::ARRAY_VERTEX] = vertices;
-	arrays[ArrayMesh::ARRAY_NORMAL] = normals;
-	arrays[ArrayMesh::ARRAY_TEX_UV] = uvs;
-	arrays[ArrayMesh::ARRAY_INDEX] = indices;
-
-	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays);
-	return mesh;
-}
 
 void OpenXRCompositionLayerEquirect::set_radius(float p_radius)
 {

@@ -28,10 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/string/translation.h"
 #include "core/string/translation_server.h"
-#include "core/variant/typed_array.h"
 #include "translation_domain.h"
 
 struct _character_accent_pair
@@ -357,29 +355,6 @@ bool TranslationDomain::has_translation_for_locale(const String& p_locale, bool 
 		}
 	}
 	return false;
-}
-
-Array TranslationDomain::get_translations_bind() const
-{
-	Array res;
-	res.reserve(translations.size());
-	for (const Ref<Translation>& E : translations) {
-		res.push_back(E);
-	}
-	return res;
-}
-
-Array TranslationDomain::find_translations_bind(
-	const String& p_locale, bool p_exact) const
-{
-	const HashSet<Ref<Translation>>& found = find_translations(p_locale, p_exact);
-
-	Array res;
-	res.reserve(found.size());
-	for (const Ref<Translation>& E : found) {
-		res.push_back(E);
-	}
-	return res;
 }
 
 StringName TranslationDomain::translate(

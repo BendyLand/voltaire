@@ -33,31 +33,33 @@
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "scene/resources/skeleton_profile.h"
 
-class RetargetModifier3D : public SkeletonModifier3D {
-	VLTRCLASS(RetargetModifier3D, SkeletonModifier3D);
-
+class RetargetModifier3D : public SkeletonModifier3D
+{
 public:
-	enum TransformFlag {
+	enum TransformFlag
+	{
 		TRANSFORM_FLAG_POSITION = 1,
 		TRANSFORM_FLAG_ROTATION = 2,
 		TRANSFORM_FLAG_SCALE = 4,
-		TRANSFORM_FLAG_ALL = TRANSFORM_FLAG_POSITION | TRANSFORM_FLAG_ROTATION | TRANSFORM_FLAG_SCALE,
+		TRANSFORM_FLAG_ALL =
+			TRANSFORM_FLAG_POSITION | TRANSFORM_FLAG_ROTATION | TRANSFORM_FLAG_SCALE,
 	};
 
 private:
 	Ref<SkeletonProfile> profile;
 
 	bool use_global_pose = false;
-	BitField<TransformFlag> enable_flags = TRANSFORM_FLAG_ALL;
+	uint32_t enable_flags = TRANSFORM_FLAG_ALL;
 
-	struct RetargetBoneInfo {
+	struct RetargetBoneInfo
+	{
 		int bone_id = -1;
 		Basis pre_basis;
 		Basis post_basis;
 	};
 
-	struct RetargetInfo {
-		ObjectID skeleton_id;
+	struct RetargetInfo
+	{
 		Vector<RetargetBoneInfo> humanoid_bone_rests;
 	};
 
@@ -75,25 +77,23 @@ private:
 
 	void cache_rests_with_reset();
 	void cache_rests();
-	Vector<RetargetBoneInfo> cache_bone_global_rests(Skeleton3D *p_skeleton);
-	Vector<RetargetBoneInfo> cache_bone_rests(Skeleton3D *p_skeleton);
-	Vector<RetargetBoneInfo> get_humanoid_bone_rests(Skeleton3D *p_skeleton);
+	Vector<RetargetBoneInfo> cache_bone_global_rests(Skeleton3D* p_skeleton);
+	Vector<RetargetBoneInfo> cache_bone_rests(Skeleton3D* p_skeleton);
+	Vector<RetargetBoneInfo> get_humanoid_bone_rests(Skeleton3D* p_skeleton);
 
 	void _retarget_global_pose();
 	void _retarget_pose();
 
 protected:
-	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
+	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 	void _profile_changed(Ref<SkeletonProfile> p_old, Ref<SkeletonProfile> p_new);
-
-	void _validate_property(PropertyInfo &p_property) const;
 
 	static void _bind_methods();
 	virtual void _notification(int p_what);
 
-	virtual void add_child_notify(Node *p_child) override;
-	virtual void move_child_notify(Node *p_child) override;
-	virtual void remove_child_notify(Node *p_child) override;
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
 
 	virtual void _set_active(bool p_active) override;
 	virtual void _process_modification(double p_delta) override;
@@ -103,8 +103,8 @@ public:
 
 	void set_use_global_pose(bool p_use_global_pose);
 	bool is_using_global_pose() const;
-	void set_enable_flags(BitField<TransformFlag> p_enable_flags);
-	BitField<TransformFlag> get_enable_flags() const;
+	void set_enable_flags(uint32_t p_enable_flags);
+	uint32_t get_enable_flags() const;
 
 	void set_position_enabled(bool p_enabled);
 	bool is_position_enabled() const;
@@ -124,4 +124,4 @@ public:
 	virtual ~RetargetModifier3D();
 };
 
-VARIANT_BITFIELD_CAST(RetargetModifier3D::TransformFlag);
+

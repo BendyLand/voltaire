@@ -28,47 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "text_line.compat.inc"
 #include "text_line.h"
-
-void TextLine::_bind_methods() {}
-
-void TextLine::_shape() const
-{
-	// When a shaped text is invalidated by an external source, we want to reshape it.
-	if (!TS->shaped_text_is_ready(rid)) {
-		dirty = true;
-	}
-
-	if (dirty) {
-		if (!tab_stops.is_empty()) {
-			TS->shaped_text_tab_align(rid, tab_stops);
-		}
-
-		BitField<TextServer::TextOverrunFlag> overrun_flags = TextServer::OVERRUN_NO_TRIM;
-		if (overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
-			overrun_flags = TextServer::get_overrun_flags_from_behavior(overrun_behavior);
-
-			if (alignment == HORIZONTAL_ALIGNMENT_FILL) {
-				TS->shaped_text_fit_to_width(rid, width, flags);
-				overrun_flags.set_flag(TextServer::OVERRUN_JUSTIFICATION_AWARE);
-				TS->shaped_text_set_custom_ellipsis(
-					rid, (el_char.length() > 0) ? el_char[0] : 0x2026);
-				TS->shaped_text_overrun_trim_to_width(rid, width, overrun_flags);
-			}
-			else {
-				TS->shaped_text_set_custom_ellipsis(
-					rid, (el_char.length() > 0) ? el_char[0] : 0x2026);
-				TS->shaped_text_overrun_trim_to_width(rid, width, overrun_flags);
-			}
-		}
-		else if (alignment == HORIZONTAL_ALIGNMENT_FILL) {
-			TS->shaped_text_fit_to_width(rid, width, flags);
-		}
-		dirty = false;
-	}
-}
 
 RID TextLine::get_rid() const { return rid; }
 
@@ -133,96 +94,6 @@ TextServer::Orientation TextLine::get_orientation() const
 	return TS->shaped_text_get_orientation(rid);
 }
 
-void TextLine::set_bidi_override(const Array& p_override)
-{
-	TS->shaped_text_set_bidi_override(rid, p_override);
-	dirty = true;
-}
-
-bool TextLine::add_string(const String& p_text, const Ref<Font>& p_font, int p_font_size,
-	const String& p_language, const Variant& p_meta)
-{
-	ERR_FAIL_COND_V(p_font.is_null(), false);
-	bool res = TS->shaped_text_add_string(rid, p_text, p_font->get_rids(), p_font_size,
-		p_font->get_opentype_features(), p_language, p_meta);
-	dirty = true;
-	return res;
-}
-
-bool TextLine::add_object(Variant p_key, const Size2& p_size, InlineAlignment p_inline_align,
-	int p_length, float p_baseline)
-{
-	bool res = TS->shaped_text_add_object(rid, p_key, p_size, p_inline_align, p_length, p_baseline);
-	dirty = true;
-	return res;
-}
-
-bool TextLine::resize_object(
-	Variant p_key, const Size2& p_size, InlineAlignment p_inline_align, float p_baseline)
-{
-	_shape();
-	return TS->shaped_text_resize_object(rid, p_key, p_size, p_inline_align, p_baseline);
-}
-
-bool TextLine::has_object(Variant p_key) const
-{
-	_shape();
-	return TS->shaped_text_has_object(rid, p_key);
-}
-
-Array TextLine::get_objects() const { return TS->shaped_text_get_objects(rid); }
-
-Rect2 TextLine::get_object_rect(Variant p_key) const
-{
-	Vector2 ofs;
-
-	float length = TS->shaped_text_get_width(rid);
-	if (width > 0) {
-		switch (alignment) {
-		case HORIZONTAL_ALIGNMENT_FILL:
-		case HORIZONTAL_ALIGNMENT_LEFT:
-			break;
-		case HORIZONTAL_ALIGNMENT_CENTER: {
-			if (length <= width) {
-				if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
-					ofs.x += Math::floor((width - length) / 2.0);
-				}
-				else {
-					ofs.y += Math::floor((width - length) / 2.0);
-				}
-			}
-			else if (TS->shaped_text_get_inferred_direction(rid) == TextServer::DIRECTION_RTL) {
-				if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
-					ofs.x += width - length;
-				}
-				else {
-					ofs.y += width - length;
-				}
-			}
-		} break;
-		case HORIZONTAL_ALIGNMENT_RIGHT: {
-			if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
-				ofs.x += width - length;
-			}
-			else {
-				ofs.y += width - length;
-			}
-		} break;
-		}
-	}
-	if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
-		ofs.y += TS->shaped_text_get_ascent(rid);
-	}
-	else {
-		ofs.x += TS->shaped_text_get_ascent(rid);
-	}
-
-	Rect2 rect = TS->shaped_text_get_object_rect(rid, p_key);
-	rect.position += ofs;
-
-	return rect;
-}
-
 void TextLine::set_horizontal_alignment(HorizontalAlignment p_alignment)
 {
 	if (alignment != p_alignment) {
@@ -244,7 +115,7 @@ void TextLine::tab_align(const Vector<float>& p_tab_stops)
 	dirty = true;
 }
 
-void TextLine::set_flags(BitField<TextServer::JustificationFlag> p_flags)
+void TextLine::set_flags(uint32_t p_flags)
 {
 	if (flags != p_flags) {
 		flags = p_flags;
@@ -252,7 +123,7 @@ void TextLine::set_flags(BitField<TextServer::JustificationFlag> p_flags)
 	}
 }
 
-BitField<TextServer::JustificationFlag> TextLine::get_flags() const { return flags; }
+uint32_t TextLine::get_flags() const { return flags; }
 
 void TextLine::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
 {
@@ -446,17 +317,6 @@ int TextLine::hit_test(float p_coords) const
 	_shape();
 
 	return TS->shaped_text_hit_test_position(rid, p_coords);
-}
-
-TextLine::TextLine(const String& p_text, const Ref<Font>& p_font, int p_font_size,
-	const String& p_language, TextServer::Direction p_direction,
-	TextServer::Orientation p_orientation)
-{
-	rid = TS->create_shaped_text(p_direction, p_orientation);
-	if (p_font.is_valid()) {
-		TS->shaped_text_add_string(rid, p_text, p_font->get_rids(), p_font_size,
-			p_font->get_opentype_features(), p_language);
-	}
 }
 
 TextLine::TextLine() { rid = TS->create_shaped_text(); }

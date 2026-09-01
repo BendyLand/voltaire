@@ -30,7 +30,6 @@
 
 #include <cfloat> // FLT_MAX
 #include "../structures/gltf_object_model_property.h"
-#include "core/object/class_db.h"
 #include "gltf_light.h"
 #include "scene/3d/light_3d.h"
 
@@ -85,40 +84,6 @@ void GLTFLight::set_outer_cone_angle(float p_outer_cone_angle)
 	outer_cone_angle = p_outer_cone_angle;
 }
 
-Ref<GLTFLight> GLTFLight::from_node(const Light3D* p_light)
-{
-	Ref<GLTFLight> l;
-	l.instantiate();
-	ERR_FAIL_NULL_V_MSG(p_light, l,
-		"Tried to create a GLTFLight from a Light3D node, but the given node was null.");
-	l->color = p_light->get_color().srgb_to_linear();
-	if (Object::cast_to<DirectionalLight3D>(p_light)) {
-		l->light_type = "directional";
-		const DirectionalLight3D* light = Object::cast_to<const DirectionalLight3D>(p_light);
-		l->intensity = light->get_param(DirectionalLight3D::PARAM_ENERGY);
-		l->range = FLT_MAX; // Range for directional lights is infinite in Godot.
-	}
-	else if (Object::cast_to<const OmniLight3D>(p_light)) {
-		l->light_type = "point";
-		const OmniLight3D* light = Object::cast_to<const OmniLight3D>(p_light);
-		l->range = light->get_param(OmniLight3D::PARAM_RANGE);
-		l->intensity = light->get_param(OmniLight3D::PARAM_ENERGY);
-	}
-	else if (Object::cast_to<const SpotLight3D>(p_light)) {
-		l->light_type = "spot";
-		const SpotLight3D* light = Object::cast_to<const SpotLight3D>(p_light);
-		l->range = light->get_param(SpotLight3D::PARAM_RANGE);
-		l->intensity = light->get_param(SpotLight3D::PARAM_ENERGY);
-		l->outer_cone_angle = Math::deg_to_rad(light->get_param(SpotLight3D::PARAM_SPOT_ANGLE));
-		// This equation is the inverse of the import equation (which has a desmos link).
-		float angle_ratio =
-			1 - (0.2 / (0.1 + light->get_param(SpotLight3D::PARAM_SPOT_ATTENUATION)));
-		angle_ratio = MAX(0, angle_ratio);
-		l->inner_cone_angle = l->outer_cone_angle * angle_ratio;
-	}
-	return l;
-}
-
 Light3D* GLTFLight::to_node() const
 {
 	Light3D* light = nullptr;
@@ -153,82 +118,6 @@ Light3D* GLTFLight::to_node() const
 	light->set_color(color.linear_to_srgb());
 	light->set_param(Light3D::PARAM_ATTENUATION, 2.0);
 	return light;
-}
-
-Ref<GLTFLight> GLTFLight::from_dictionary(const Dictionary& p_dictionary)
-{
-	ERR_FAIL_COND_V_MSG(!p_dictionary.has("type"), Ref<GLTFLight>(),
-		"Failed to parse glTF light, missing required field 'type'.");
-	Ref<GLTFLight> light;
-	light.instantiate();
-	const String& type = p_dictionary["type"];
-	light->light_type = type;
-
-	if (p_dictionary.has("color")) {
-		const Array& arr = p_dictionary["color"];
-		if (arr.size() == 3) {
-			light->color = Color(arr[0], arr[1], arr[2]);
-		}
-		else {
-			ERR_PRINT("Error parsing glTF light: The color must have exactly 3 numbers.");
-		}
-	}
-	if (p_dictionary.has("intensity")) {
-		light->intensity = p_dictionary["intensity"];
-	}
-	if (p_dictionary.has("range")) {
-		light->range = p_dictionary["range"];
-	}
-	if (type == "spot") {
-		const Dictionary& spot = p_dictionary["spot"];
-		light->inner_cone_angle = spot["innerConeAngle"];
-		light->outer_cone_angle = spot["outerConeAngle"];
-		if (light->inner_cone_angle >= light->outer_cone_angle) {
-			ERR_PRINT(
-				"Error parsing glTF light: The inner angle must be smaller than the outer angle.");
-		}
-	}
-	else if (type != "point" && type != "directional") {
-		ERR_PRINT("Error parsing glTF light: Light type '" + type + "' is unknown.");
-	}
-	return light;
-}
-
-Dictionary GLTFLight::to_dictionary() const
-{
-	Dictionary d;
-	if (color != Color(1.0f, 1.0f, 1.0f)) {
-		Array color_array;
-		color_array.resize(3);
-		color_array[0] = color.r;
-		color_array[1] = color.g;
-		color_array[2] = color.b;
-		d["color"] = color_array;
-	}
-	if (intensity != 1.0f) {
-		d["intensity"] = intensity;
-	}
-	if (light_type != "directional" && range != Math::INF) {
-		d["range"] = range;
-	}
-	if (light_type == "spot") {
-		Dictionary spot_dict;
-		spot_dict["innerConeAngle"] = inner_cone_angle;
-		spot_dict["outerConeAngle"] = outer_cone_angle;
-		d["spot"] = spot_dict;
-	}
-	d["type"] = light_type;
-	return d;
-}
-
-Variant GLTFLight::get_additional_data(const StringName& p_extension_name)
-{
-	return additional_data.get(p_extension_name, Variant());
-}
-
-void GLTFLight::set_additional_data(const StringName& p_extension_name, Variant p_additional_data)
-{
-	additional_data[p_extension_name] = p_additional_data;
 }
 
 

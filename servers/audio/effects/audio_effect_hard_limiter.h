@@ -35,7 +35,6 @@
 class AudioEffectHardLimiter;
 
 class AudioEffectHardLimiterInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectHardLimiterInstance, AudioEffectInstance);
 	friend class AudioEffectHardLimiter;
 	Ref<AudioEffectHardLimiter> base;
 
@@ -60,7 +59,6 @@ public:
 };
 
 class AudioEffectHardLimiter : public AudioEffect {
-	VLTRCLASS(AudioEffectHardLimiter, AudioEffect);
 
 	friend class AudioEffectHardLimiterInstance;
 	float pre_gain = 0.0f;

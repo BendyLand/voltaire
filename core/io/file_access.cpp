@@ -712,7 +712,7 @@ int64_t FileAccess::get_size(const String& p_file)
 	return fa->_get_size(p_file);
 }
 
-BitField<FileAccess::UnixPermissionFlags> FileAccess::get_unix_permissions(const String& p_file)
+uint32_t FileAccess::get_unix_permissions(const String& p_file)
 {
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
 		(PackedData::get_singleton()->has_path(p_file) ||
@@ -728,7 +728,7 @@ BitField<FileAccess::UnixPermissionFlags> FileAccess::get_unix_permissions(const
 }
 
 Error FileAccess::set_unix_permissions(
-	const String& p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions)
+	const String& p_file, uint32_t p_permissions)
 {
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
 		(PackedData::get_singleton()->has_path(p_file) ||

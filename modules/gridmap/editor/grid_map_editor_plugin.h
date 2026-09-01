@@ -31,7 +31,6 @@
 #pragma once
 
 #include "../grid_map.h"
-
 #include "editor/docks/editor_dock.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
@@ -51,12 +50,12 @@ class SpinBox;
 class Tree;
 class TreeItem;
 
-class GridMapEditor : public EditorDock {
-	VLTRCLASS(GridMapEditor, EditorDock);
-
+class GridMapEditor : public EditorDock
+{
 	static constexpr int32_t GRID_CURSOR_SIZE = 50;
 
-	enum InputAction {
+	enum InputAction
+	{
 		INPUT_NONE,
 		INPUT_TRANSFORM,
 		INPUT_PAINT,
@@ -66,49 +65,51 @@ class GridMapEditor : public EditorDock {
 		INPUT_PASTE,
 	};
 
-	enum DisplayMode {
+	enum DisplayMode
+	{
 		DISPLAY_THUMBNAIL,
 		DISPLAY_LIST
 	};
 
 	InputAction input_action = INPUT_NONE;
 	bool valid_mb_press = false;
-	Panel *panel = nullptr;
-	MenuButton *options = nullptr;
-	SpinBox *floor = nullptr;
+	Panel* panel = nullptr;
+	MenuButton* options = nullptr;
+	SpinBox* floor = nullptr;
 	double accumulated_floor_delta = 0.0;
 
-	HBoxContainer *toolbar = nullptr;
-	TightLocalVector<BaseButton *> viewport_shortcut_buttons;
+	HBoxContainer* toolbar = nullptr;
+	TightLocalVector<BaseButton*> viewport_shortcut_buttons;
 	Ref<ButtonGroup> mode_buttons_group;
 	// mode
-	Button *transform_mode_button = nullptr;
-	Button *select_mode_button = nullptr;
-	Button *erase_mode_button = nullptr;
-	Button *paint_mode_button = nullptr;
-	Button *pick_mode_button = nullptr;
+	Button* transform_mode_button = nullptr;
+	Button* select_mode_button = nullptr;
+	Button* erase_mode_button = nullptr;
+	Button* paint_mode_button = nullptr;
+	Button* pick_mode_button = nullptr;
 	// action
-	Button *fill_action_button = nullptr;
-	Button *move_action_button = nullptr;
-	Button *duplicate_action_button = nullptr;
-	Button *delete_action_button = nullptr;
+	Button* fill_action_button = nullptr;
+	Button* move_action_button = nullptr;
+	Button* duplicate_action_button = nullptr;
+	Button* delete_action_button = nullptr;
 	// rotation
-	Button *rotate_x_button = nullptr;
-	Button *rotate_y_button = nullptr;
-	Button *rotate_z_button = nullptr;
-	Button *clear_rotation_button = nullptr;
+	Button* rotate_x_button = nullptr;
+	Button* rotate_y_button = nullptr;
+	Button* rotate_z_button = nullptr;
+	Button* clear_rotation_button = nullptr;
 
-	EditorZoomWidget *zoom_widget = nullptr;
-	Button *mode_thumbnail = nullptr;
-	Button *mode_list = nullptr;
-	FilterLineEdit *search_box = nullptr;
-	HSlider *size_slider = nullptr;
-	ConfirmationDialog *settings_dialog = nullptr;
-	VBoxContainer *settings_vbc = nullptr;
-	SpinBox *settings_pick_distance = nullptr;
-	Label *spin_box_label = nullptr;
+	EditorZoomWidget* zoom_widget = nullptr;
+	Button* mode_thumbnail = nullptr;
+	Button* mode_list = nullptr;
+	FilterLineEdit* search_box = nullptr;
+	HSlider* size_slider = nullptr;
+	ConfirmationDialog* settings_dialog = nullptr;
+	VBoxContainer* settings_vbc = nullptr;
+	SpinBox* settings_pick_distance = nullptr;
+	Label* spin_box_label = nullptr;
 
-	struct SetItem {
+	struct SetItem
+	{
 		Vector3i position;
 		int new_value = 0;
 		int new_orientation = 0;
@@ -118,7 +119,7 @@ class GridMapEditor : public EditorDock {
 
 	LocalVector<SetItem> set_items;
 
-	GridMap *node = nullptr;
+	GridMap* node = nullptr;
 	Ref<MeshLibrary> mesh_library = nullptr;
 
 	Transform3D grid_xform;
@@ -129,7 +130,7 @@ class GridMapEditor : public EditorDock {
 	Vector3 grid_ofs;
 
 	bool allow_viewport_override = true;
-	Viewport *last_viewport = nullptr;
+	Viewport* last_viewport = nullptr;
 	Vector3::Axis viewport_axis = edit_axis_select;
 
 	RID grid[3];
@@ -143,7 +144,8 @@ class GridMapEditor : public EditorDock {
 	RID paste_mesh;
 	RID paste_instance;
 
-	struct ClipboardItem {
+	struct ClipboardItem
+	{
 		int cell_item = 0;
 		Vector3 grid_offset;
 		int orientation = 0;
@@ -165,16 +167,19 @@ class GridMapEditor : public EditorDock {
 
 	bool updating = false;
 
-	struct Selection {
+	struct Selection
+	{
 		Vector3 click;
 		Vector3 current;
 		Vector3 begin;
 		Vector3 end;
 		bool active = false;
 	} selection;
+
 	Selection last_selection;
 
-	struct PasteIndicator {
+	struct PasteIndicator
+	{
 		Vector3 click;
 		Vector3 current;
 		Vector3 begin;
@@ -182,6 +187,7 @@ class GridMapEditor : public EditorDock {
 		Vector3 distance_from_cursor;
 		int orientation = 0;
 	};
+
 	PasteIndicator paste_indicator;
 
 	bool cursor_visible = false;
@@ -194,7 +200,8 @@ class GridMapEditor : public EditorDock {
 	int selected_palette = -1;
 	int cursor_rot = 0;
 
-	enum Menu {
+	enum Menu
+	{
 		MENU_OPTION_NEXT_LEVEL,
 		MENU_OPTION_PREV_LEVEL,
 		MENU_OPTION_LOCK_VIEW,
@@ -218,21 +225,23 @@ class GridMapEditor : public EditorDock {
 
 	};
 
-	struct AreaDisplay {
+	struct AreaDisplay
+	{
 		RID mesh;
 		RID instance;
 	};
 
-	Tree *categories = nullptr;
-	MarginContainer *item_palette_mc = nullptr;
-	ItemList *mesh_library_palette = nullptr;
-	Label *info_message = nullptr;
+	Tree* categories = nullptr;
+	MarginContainer* item_palette_mc = nullptr;
+	ItemList* mesh_library_palette = nullptr;
+	Label* info_message = nullptr;
 
 	void update_grid(); // Change which and where the grid is displayed.
-	void _draw_grids(const Vector3 &cell_size);
+	void _draw_grids(const Vector3& cell_size);
 	void _menu_option(int);
 	void update_palette();
-	void _update_resource_preview(const String &p_path, const Ref<Texture2D> &p_preview, const Ref<Texture2D> &p_small_preview, int p_idx);
+	void _update_resource_preview(const String& p_path, const Ref<Texture2D>& p_preview,
+		const Ref<Texture2D>& p_small_preview, int p_idx);
 	void _update_mesh_library();
 	void _set_display_mode(int p_mode);
 	void _item_selected_cbk(int idx);
@@ -241,8 +250,8 @@ class GridMapEditor : public EditorDock {
 	void _on_tool_mode_changed();
 	void _update_theme();
 
-	void _text_changed(const String &p_text);
-	void _mesh_library_palette_input(const Ref<InputEvent> &p_ie);
+	void _text_changed(const String& p_text);
+	void _mesh_library_palette_input(const Ref<InputEvent>& p_ie);
 
 	void _icon_size_changed(float p_value);
 
@@ -254,16 +263,20 @@ class GridMapEditor : public EditorDock {
 	void _show_viewports_transform_gizmo(bool p_value);
 	void _update_selection_transform();
 	void _validate_selection();
-	void _set_selection(bool p_active, const Vector3 &p_begin = Vector3(), const Vector3 &p_end = Vector3());
+	void _set_selection(
+		bool p_active, const Vector3& p_begin = Vector3(), const Vector3& p_end = Vector3());
 	AABB _get_selection() const;
 	bool _has_selection() const;
-	Array _get_selected_cells() const;
 
 	void _update_edit_axis();
-	Vector3::Axis _get_facing_axis(const Basis &p_grid_basis, const Vector3 &p_direction) const;
-	Vector3::Axis _get_edit_axis() const { return allow_viewport_override ? viewport_axis : edit_axis_select; }
+	Vector3::Axis _get_facing_axis(const Basis& p_grid_basis, const Vector3& p_direction) const;
 
-	void _view_state_changed(Node3DEditorViewport *p_viewport);
+	Vector3::Axis _get_edit_axis() const
+	{
+		return allow_viewport_override ? viewport_axis : edit_axis_select;
+	}
+
+	void _view_state_changed(Node3DEditorViewport* p_viewport);
 
 	String _get_cursor_coordinates() const;
 
@@ -276,19 +289,13 @@ class GridMapEditor : public EditorDock {
 	void _clear_selection_with_undo();
 	void _setup_paste_mode();
 
-	bool do_input_action(Camera3D *p_camera, const Point2 &p_point, bool p_click);
+	bool do_input_action(Camera3D* p_camera, const Point2& p_point, bool p_click);
 
 	friend class GridMapEditorPlugin;
-
-	struct ItemCategoryMapping {
-		AHashMap<StringName, HashSet<StringName>> category_to_category_children;
-		AHashMap<StringName, HashSet<int>> category_to_items;
-	};
 
 	void _on_categories_item_activated();
 
 	void _rebuild_categories();
-	void _add_child_categories_recursive(Tree *p_categories, TreeItem *p_ti_parent, const StringName &p_category, const ItemCategoryMapping &p_mapping);
 
 protected:
 	void _notification(int p_what);
@@ -297,17 +304,17 @@ protected:
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
 public:
-	EditorPlugin::AfterGUIInput forward_spatial_input_event(Camera3D *p_camera, const Ref<InputEvent> &p_event);
+	EditorPlugin::AfterGUIInput forward_spatial_input_event(
+		Camera3D* p_camera, const Ref<InputEvent>& p_event);
 
-	void edit(GridMap *p_gridmap);
+	void edit(GridMap* p_gridmap);
 	GridMapEditor();
 	~GridMapEditor();
 };
 
-class GridMapEditorPlugin : public EditorPlugin {
-	VLTRCLASS(GridMapEditorPlugin, EditorPlugin);
-
-	GridMapEditor *grid_map_editor = nullptr;
+class GridMapEditorPlugin : public EditorPlugin
+{
+	GridMapEditor* grid_map_editor = nullptr;
 
 	void _overlay_update_requested();
 
@@ -316,19 +323,23 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual void forward_3d_draw_over_viewport(Control *p_overlay) override;
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) override { return grid_map_editor->forward_spatial_input_event(p_camera, p_event); }
-	virtual String get_plugin_name() const override { return "GridMap"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
+	virtual void forward_3d_draw_over_viewport(Control* p_overlay) override;
 
-	GridMap *get_current_grid_map() const;
-	void set_selection(const Vector3i &p_begin, const Vector3i &p_end);
+	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
+		Camera3D* p_camera, const Ref<InputEvent>& p_event) override
+	{
+		return grid_map_editor->forward_spatial_input_event(p_camera, p_event);
+	}
+
+	virtual String get_plugin_name() const override { return "GridMap"; }
+
+	GridMap* get_current_grid_map() const;
+	void set_selection(const Vector3i& p_begin, const Vector3i& p_end);
 	void clear_selection();
 	AABB get_selection() const;
 	bool has_selection() const;
-	Array get_selected_cells() const;
 	void set_selected_palette_item(int p_item) const;
 	int get_selected_palette_item() const;
 };
+
+

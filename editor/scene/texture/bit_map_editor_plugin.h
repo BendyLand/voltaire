@@ -37,14 +37,13 @@
 class AspectRatioContainer;
 class TextureRect;
 
-class BitMapEditor : public VBoxContainer {
-	VLTRCLASS(BitMapEditor, VBoxContainer);
-
+class BitMapEditor : public VBoxContainer
+{
 private:
-	AspectRatioContainer *centering_container = nullptr;
-	Control *outline_overlay = nullptr;
-	TextureRect *texture_rect = nullptr;
-	Label *size_label = nullptr;
+	AspectRatioContainer* centering_container = nullptr;
+	Control* outline_overlay = nullptr;
+	TextureRect* texture_rect = nullptr;
+	Label* size_label = nullptr;
 
 	Color cached_outline_color;
 
@@ -54,22 +53,15 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void setup(const Ref<BitMap> &p_bitmap);
+	void setup(const Ref<BitMap>& p_bitmap);
 
 	BitMapEditor();
 };
 
-class EditorInspectorPluginBitMap : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginBitMap, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class BitMapEditorPlugin : public EditorPlugin {
-	VLTRCLASS(BitMapEditorPlugin, EditorPlugin);
-
+class BitMapEditorPlugin : public EditorPlugin
+{
 public:
 	BitMapEditorPlugin();
 };
+
+

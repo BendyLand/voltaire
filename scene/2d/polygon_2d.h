@@ -35,16 +35,15 @@
 class NavigationPolygon;
 class NavigationMeshSourceGeometryData2D;
 
-class Polygon2D : public Node2D {
-	VLTRCLASS(Polygon2D, Node2D);
-
+class Polygon2D : public Node2D
+{
 	Vector<Vector2> polygon;
 	Vector<Vector2> uv;
 	Vector<Color> vertex_colors;
-	Array polygons;
 	int internal_vertices = 0;
 
-	struct Bone {
+	struct Bone
+	{
 		NodePath path;
 		Vector<float> weights;
 	};
@@ -66,10 +65,6 @@ class Polygon2D : public Node2D {
 	mutable Rect2 item_rect;
 
 	NodePath skeleton;
-	ObjectID current_skeleton_id;
-
-	Array _get_bones() const;
-	void _set_bones(const Array &p_bones);
 
 	void _skeleton_bone_setup_changed();
 
@@ -86,10 +81,7 @@ protected:
 
 public:
 #ifdef TOOLS_ENABLED
-	virtual Dictionary _edit_get_state() const override;
-	virtual void _edit_set_state(const Dictionary &p_state) override;
-
-	virtual void _edit_set_pivot(const Point2 &p_pivot) override;
+	virtual void _edit_set_pivot(const Point2& p_pivot) override;
 	virtual Point2 _edit_get_pivot() const override;
 	virtual bool _edit_use_pivot() const override;
 #endif // TOOLS_ENABLED
@@ -98,37 +90,35 @@ public:
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
 
-	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
+	virtual bool _edit_is_selected_on_click(
+		const Point2& p_point, double p_tolerance) const override;
 #endif // DEBUG_ENABLED
 
-	void set_polygon(const Vector<Vector2> &p_polygon);
+	void set_polygon(const Vector<Vector2>& p_polygon);
 	Vector<Vector2> get_polygon() const;
 
 	void set_internal_vertex_count(int p_count);
 	int get_internal_vertex_count() const;
 
-	void set_uv(const Vector<Vector2> &p_uv);
+	void set_uv(const Vector<Vector2>& p_uv);
 	Vector<Vector2> get_uv() const;
 
-	void set_polygons(const Array &p_polygons);
-	Array get_polygons() const;
-
-	void set_color(const Color &p_color);
+	void set_color(const Color& p_color);
 	Color get_color() const;
 
-	void set_vertex_colors(const Vector<Color> &p_colors);
+	void set_vertex_colors(const Vector<Color>& p_colors);
 	Vector<Color> get_vertex_colors() const;
 
-	void set_texture(const Ref<Texture2D> &p_texture);
+	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
 
-	void set_texture_offset(const Vector2 &p_offset);
+	void set_texture_offset(const Vector2& p_offset);
 	Vector2 get_texture_offset() const;
 
 	void set_texture_rotation(real_t p_rot);
 	real_t get_texture_rotation() const;
 
-	void set_texture_scale(const Size2 &p_scale);
+	void set_texture_scale(const Size2& p_scale);
 	Size2 get_texture_scale() const;
 
 	void set_invert(bool p_invert);
@@ -140,33 +130,36 @@ public:
 	void set_invert_border(real_t p_invert_border);
 	real_t get_invert_border() const;
 
-	void set_offset(const Vector2 &p_offset);
+	void set_offset(const Vector2& p_offset);
 	Vector2 get_offset() const;
 
-	void add_bone(const NodePath &p_path = NodePath(), const Vector<float> &p_weights = Vector<float>());
+	void add_bone(
+		const NodePath& p_path = NodePath(), const Vector<float>& p_weights = Vector<float>());
 	int get_bone_count() const;
 	NodePath get_bone_path(int p_index) const;
-	const Vector<float> &get_bone_weights(int p_index) const _LIFETIME_BOUND_;
+	const Vector<float>& get_bone_weights(int p_index) const _LIFETIME_BOUND_;
 	void erase_bone(int p_idx);
 	void clear_bones();
-	void set_bone_weights(int p_index, const Vector<float> &p_weights);
-	void set_bone_path(int p_index, const NodePath &p_path);
+	void set_bone_weights(int p_index, const Vector<float>& p_weights);
+	void set_bone_path(int p_index, const NodePath& p_path);
 
-	void set_skeleton(const NodePath &p_skeleton);
+	void set_skeleton(const NodePath& p_skeleton);
 	NodePath get_skeleton() const;
 
 #ifndef NAVIGATION_2D_DISABLED
 private:
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 #endif // NAVIGATION_2D_DISABLED
 
 public:
 #ifndef NAVIGATION_2D_DISABLED
 	static void navmesh_parse_init();
-	static void navmesh_parse_source_geometry(const Ref<NavigationPolygon> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node *p_node);
+	static void navmesh_parse_source_geometry(const Ref<NavigationPolygon>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node* p_node);
 #endif // NAVIGATION_2D_DISABLED
 
 	Polygon2D();
 	~Polygon2D();
 };
+
+

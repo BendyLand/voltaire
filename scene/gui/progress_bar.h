@@ -52,7 +52,6 @@ class ProgressBar : public Range
 
 protected:
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 
 	static void _bind_methods();
 
@@ -88,7 +87,5 @@ private:
 
 	FillMode mode = FILL_BEGIN_TO_END;
 };
-
-VARIANT_ENUM_CAST(ProgressBar::FillMode);
 
 

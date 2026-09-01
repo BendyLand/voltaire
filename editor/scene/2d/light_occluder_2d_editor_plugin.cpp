@@ -43,11 +43,6 @@ Ref<OccluderPolygon2D> LightOccluder2DEditor::_ensure_occluder() const
 
 Node2D* LightOccluder2DEditor::_get_node() const { return node; }
 
-void LightOccluder2DEditor::_set_node(Node* p_polygon)
-{
-	node = Object::cast_to<LightOccluder2D>(p_polygon);
-}
-
 bool LightOccluder2DEditor::_is_line() const
 {
 	Ref<OccluderPolygon2D> occluder = node->get_occluder_polygon();
@@ -70,51 +65,9 @@ int LightOccluder2DEditor::_get_polygon_count() const
 	}
 }
 
-Variant LightOccluder2DEditor::_get_polygon(int p_idx) const
-{
-	Ref<OccluderPolygon2D> occluder = node->get_occluder_polygon();
-	if (occluder.is_valid()) {
-		return occluder->get_polygon();
-	}
-	else {
-		return Variant(Vector<Vector2>());
-	}
-}
-
-void LightOccluder2DEditor::_set_polygon(int p_idx, const Variant& p_polygon) const
-{
-	Ref<OccluderPolygon2D> occluder = _ensure_occluder();
-	occluder->set_polygon(p_polygon);
-}
-
-void LightOccluder2DEditor::_action_set_polygon(
-	int p_idx, const Variant& p_previous, const Variant& p_polygon)
-{
-	Ref<OccluderPolygon2D> occluder = _ensure_occluder();
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->add_do_method(occluder->obj.get(), "set_polygon", p_polygon);
-	undo_redo->add_undo_method(occluder->obj.get(), "set_polygon", p_previous);
-}
-
 bool LightOccluder2DEditor::_has_resource() const
 {
 	return node && node->get_occluder_polygon().is_valid();
-}
-
-void LightOccluder2DEditor::_create_resource()
-{
-	if (!node) {
-		return;
-	}
-
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Create Occluder Polygon"));
-	undo_redo->add_do_method(
-		node->obj.get(), "set_occluder_polygon", Ref<OccluderPolygon2D>(memnew(OccluderPolygon2D)));
-	undo_redo->add_undo_method(node->obj.get(), "set_occluder_polygon", Variant(Ref<RefCounted>()));
-	undo_redo->commit_action();
-
-	_menu_option(MODE_CREATE);
 }
 
 LightOccluder2DEditorPlugin::LightOccluder2DEditorPlugin()

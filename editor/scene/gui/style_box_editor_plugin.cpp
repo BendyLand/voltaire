@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/button.h"
 #include "scene/resources/style_box_texture.h"
@@ -39,20 +38,6 @@ bool StyleBoxPreview::grid_preview_enabled = true;
 void StyleBoxPreview::_grid_preview_toggled(bool p_active)
 {
 	grid_preview_enabled = p_active;
-	queue_redraw();
-}
-
-void StyleBoxPreview::edit(const Ref<StyleBox>& p_stylebox)
-{
-	if (stylebox.is_valid()) {
-		stylebox->disconnect_changed(callable_mp((CanvasItem*)this, &CanvasItem::queue_redraw));
-	}
-	stylebox = p_stylebox;
-	if (stylebox.is_valid()) {
-		stylebox->connect_changed(callable_mp((CanvasItem*)this, &CanvasItem::queue_redraw));
-	}
-	Ref<StyleBoxTexture> sbt = stylebox;
-	grid_preview->set_visible(sbt.is_valid());
 	queue_redraw();
 }
 
@@ -106,46 +91,6 @@ void StyleBoxPreview::_redraw()
 			draw_line(Point2(0, y_bottom), Point2(get_size().width, y_bottom), bright_color);
 		}
 	}
-}
-
-StyleBoxPreview::StyleBoxPreview()
-{
-	set_clip_contents(true);
-	set_custom_minimum_size(Size2(0, 150) * EDSCALE);
-	set_stretch_mode(TextureRect::STRETCH_TILE);
-	set_texture_repeat(CanvasItem::TEXTURE_REPEAT_ENABLED);
-	set_anchors_and_offsets_preset(PRESET_FULL_RECT);
-
-	grid_preview = memnew(Button);
-	// This theme variation works better than the normal theme because there's no focus highlight.
-	grid_preview->set_theme_type_variation("PreviewLightButton");
-	grid_preview->set_tooltip_text(TTRC("Toggle margins preview grid."));
-	grid_preview->set_toggle_mode(true);
-	grid_preview->connect(
-		SceneStringName(toggled), callable_mp(this, &StyleBoxPreview::_grid_preview_toggled));
-	grid_preview->set_pressed(grid_preview_enabled);
-	add_child(grid_preview);
-}
-
-bool EditorInspectorPluginStyleBox::can_handle(Object* p_object)
-{
-	return Object::cast_to<StyleBox>(p_object) != nullptr;
-}
-
-void EditorInspectorPluginStyleBox::parse_begin(Object* p_object)
-{
-	Ref<StyleBox> sb = Ref<StyleBox>(Object::cast_to<StyleBox>(p_object));
-
-	StyleBoxPreview* preview = memnew(StyleBoxPreview);
-	preview->edit(sb);
-	add_custom_control(preview);
-}
-
-StyleBoxEditorPlugin::StyleBoxEditorPlugin()
-{
-	Ref<EditorInspectorPluginStyleBox> inspector_plugin;
-	inspector_plugin.instantiate();
-	add_inspector_plugin(inspector_plugin);
 }
 
 

@@ -77,8 +77,6 @@ typedef ScriptEditorBase* (*CreateScriptEditorFunc)(const Ref<Resource>& p_resou
 
 class TextEditorBase : public ScriptEditorBase
 {
-	VLTRCLASS(TextEditorBase, ScriptEditorBase);
-
 	void _post_init();
 
 protected:
@@ -131,8 +129,6 @@ protected:
 
 	class EditMenus : public HBoxContainer
 	{
-		VLTRCLASS(EditMenus, HBoxContainer);
-
 	protected:
 		MenuButton* edit_menu = nullptr;
 		MenuButton* search_menu = nullptr;
@@ -212,8 +208,6 @@ public:
 
 	virtual CodeTextEditor* get_code_editor() const { return code_editor; }
 
-	virtual void set_tooltip_request_func(const Callable& p_toolip_callback);
-
 	virtual void ensure_focus() { code_editor->get_text_editor()->grab_focus(); }
 
 	virtual void convert_indent() { code_editor->get_text_editor()->convert_indent(); }
@@ -258,12 +252,6 @@ public:
 
 	virtual void clear_executing_line() { code_editor->clear_executing_line(); }
 
-	virtual Variant get_edit_state() { return code_editor->get_edit_state(); }
-
-	virtual void set_edit_state(const Variant& p_state);
-
-	virtual Variant get_navigation_state() { return code_editor->get_navigation_state(); }
-
 	virtual void update_settings() { code_editor->update_editor_settings(); }
 
 	virtual void set_find_replace_bar(FindReplaceBar* p_bar)
@@ -300,18 +288,12 @@ protected:
 
 	class EditMenusCEB : public EditMenus
 	{
-		VLTRCLASS(EditMenusCEB, EditMenus);
-
 	public:
 		EditMenusCEB();
 	};
 
 	VSplitContainer* editor_box = nullptr;
 	RichTextLabel* warnings_panel = nullptr;
-
-	virtual void _code_complete_script(const String& p_code,
-		List<ScriptLanguage::CodeCompletionOption>* r_options, bool& r_force) = 0;
-	virtual bool _warning_clicked(const Variant& p_line);
 
 public:
 	virtual bool show_members_overview() override { return true; }

@@ -32,18 +32,19 @@
 
 #include "scene/2d/node_2d.h"
 
-class Light2D : public Node2D {
-	VLTRCLASS(Light2D, Node2D);
-
+class Light2D : public Node2D
+{
 public:
-	enum ShadowFilter {
+	enum ShadowFilter
+	{
 		SHADOW_FILTER_NONE,
 		SHADOW_FILTER_PCF5,
 		SHADOW_FILTER_PCF13,
 		SHADOW_FILTER_MAX
 	};
 
-	enum BlendMode {
+	enum BlendMode
+	{
 		BLEND_MODE_ADD,
 		BLEND_MODE_SUB,
 		BLEND_MODE_MIX,
@@ -77,9 +78,9 @@ private:
 
 protected:
 	_FORCE_INLINE_ RID _get_light() const { return canvas_light; }
+
 	void _notification(int p_what);
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
 	void set_enabled(bool p_enabled);
@@ -88,7 +89,7 @@ public:
 	void set_editor_only(bool p_editor_only);
 	bool is_editor_only() const;
 
-	void set_color(const Color &p_color);
+	void set_color(const Color& p_color);
 	Color get_color() const;
 
 	void set_height(real_t p_height);
@@ -121,7 +122,7 @@ public:
 	void set_shadow_filter(ShadowFilter p_filter);
 	ShadowFilter get_shadow_filter() const;
 
-	void set_shadow_color(const Color &p_shadow_color);
+	void set_shadow_color(const Color& p_shadow_color);
 	Color get_shadow_color() const;
 
 	void set_shadow_smooth(real_t p_amount);
@@ -134,29 +135,16 @@ public:
 	~Light2D();
 };
 
-VARIANT_ENUM_CAST(Light2D::ShadowFilter);
-VARIANT_ENUM_CAST(Light2D::BlendMode);
-
-class PointLight2D : public Light2D {
-	VLTRCLASS(PointLight2D, Light2D);
-
+class PointLight2D : public Light2D
+{
 private:
 	real_t _scale = 1.0;
 	Ref<Texture2D> texture;
 	Vector2 texture_offset;
 
-protected:
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-#endif // DISABLE_DEPRECATED
-	static void _bind_methods();
-
 public:
 #ifdef TOOLS_ENABLED
-	virtual Dictionary _edit_get_state() const override;
-	virtual void _edit_set_state(const Dictionary &p_state) override;
-
-	virtual void _edit_set_pivot(const Point2 &p_pivot) override;
+	virtual void _edit_set_pivot(const Point2& p_pivot) override;
 	virtual Point2 _edit_get_pivot() const override;
 	virtual bool _edit_use_pivot() const override;
 #endif // TOOLS_ENABLED
@@ -168,10 +156,10 @@ public:
 
 	virtual Rect2 get_anchorable_rect() const override;
 
-	void set_texture(const Ref<Texture2D> &p_texture);
+	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
 
-	void set_texture_offset(const Vector2 &p_offset);
+	void set_texture_offset(const Vector2& p_offset);
 	Vector2 get_texture_offset() const;
 
 	void set_texture_scale(real_t p_scale);
@@ -182,9 +170,8 @@ public:
 	PointLight2D();
 };
 
-class DirectionalLight2D : public Light2D {
-	VLTRCLASS(DirectionalLight2D, Light2D);
-
+class DirectionalLight2D : public Light2D
+{
 	real_t max_distance = 10000.0;
 
 protected:
@@ -196,3 +183,5 @@ public:
 
 	DirectionalLight2D();
 };
+
+

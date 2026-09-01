@@ -30,14 +30,12 @@
 
 #pragma once
 
-#include "core/object/worker_thread_pool.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"
 #include "servers/audio/audio_stream.h"
 
 class AudioStreamPreview : public RefCounted
 {
-	VLTRCLASS(AudioStreamPreview, RefCounted);
 	friend class AudioStream;
 	Vector<uint8_t> preview;
 	float length;
@@ -57,8 +55,6 @@ public:
 
 class AudioStreamPreviewGenerator : public Node
 {
-	VLTRCLASS(AudioStreamPreviewGenerator, Node);
-
 	static AudioStreamPreviewGenerator* singleton;
 
 	struct Preview
@@ -67,8 +63,6 @@ class AudioStreamPreviewGenerator : public Node
 		Ref<AudioStream> base_stream;
 		Ref<AudioStreamPlayback> playback;
 		SafeFlag generating;
-		ObjectID id;
-		WorkerThreadPool::TaskID task_id = WorkerThreadPool::INVALID_TASK_ID;
 
 		// Needed for the bookkeeping of the Map
 		void operator=(const Preview& p_rhs)
@@ -77,8 +71,6 @@ class AudioStreamPreviewGenerator : public Node
 			base_stream = p_rhs.base_stream;
 			playback = p_rhs.playback;
 			generating.set_to(generating.is_set());
-			id = p_rhs.id;
-			task_id = p_rhs.task_id;
 		}
 
 		Preview(const Preview& p_rhs)
@@ -87,18 +79,12 @@ class AudioStreamPreviewGenerator : public Node
 			base_stream = p_rhs.base_stream;
 			playback = p_rhs.playback;
 			generating.set_to(generating.is_set());
-			id = p_rhs.id;
-			task_id = p_rhs.task_id;
 		}
 
 		Preview() {}
 	};
 
-	HashMap<ObjectID, Preview> previews;
-
 	static void _preview_thread(void* p_preview);
-
-	void _update_emit(Object& obj, ObjectID p_id);
 
 protected:
 	void _notification(int p_what);

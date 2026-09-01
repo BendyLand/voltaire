@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "animation_tree_editor_plugin.h"
-#include "core/object/callable_mp.h"
 #include "core/string/string_buffer.h"
 #include "editor/animation/animation_blend_space_1d_editor.h"
 #include "editor/animation/animation_blend_space_2d_editor.h"
@@ -49,70 +48,6 @@
 #include "scene/gui/separator.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/main/scene_tree.h"
-
-void AnimationTreeEditor::_meta_clicked(Variant p_meta)
-{
-	if (p_meta.get_type() != Variant::STRING) {
-		return;
-	}
-	const String raw_info_str = p_meta;
-	const String full_path_str = raw_info_str.get_slice("::", 0);
-	ERR_FAIL_COND(!full_path_str.ends_with("/"));
-
-	int input_index = -1;
-	if (raw_info_str.contains("::")) {
-		const String input_index_str = raw_info_str.get_slice("::", 1);
-		ERR_FAIL_COND(!input_index_str.is_valid_int());
-		input_index = input_index_str.to_int();
-	}
-
-	AnimationTree* anim_tree = AnimationTreeEditor::get_singleton()->get_animation_tree();
-	ERR_FAIL_NULL(anim_tree);
-
-	// Check if the node at the full path can be entered directly.
-	Ref<AnimationNode> target_node = anim_tree->get_animation_node_by_path(full_path_str);
-	if (target_node.is_valid() && can_edit(target_node)) {
-		const String to_edit_path =
-			full_path_str.replace_first(Animation::PARAMETERS_BASE_PATH, "").trim_suffix("/");
-		Vector<String> navigate_to;
-		if (!to_edit_path.is_empty()) {
-			navigate_to = to_edit_path.split("/");
-		}
-		if (AnimationTreeEditor::get_singleton()->get_edited_path() != navigate_to) {
-			AnimationTreeEditor::get_singleton()->edit_path(navigate_to);
-		}
-		return;
-	}
-
-	// Otherwise, navigate to parent and pan to node.
-	String parent_path = full_path_str.rstrip("/").substr(
-		0, full_path_str.rstrip("/").rfind_char('/') +
-			   1); // e.g. "parameters/blend_tree/node_name/" -> "parameters/blend_tree/"
-
-	Ref<AnimationRootNode> root_node = anim_tree->get_animation_node_by_path(parent_path);
-	ERR_FAIL_COND(root_node.is_null());
-
-	const String to_edit_root_path =
-		String(parent_path).replace_first(Animation::PARAMETERS_BASE_PATH, "").trim_suffix("/");
-	Vector<String> navigate_to;
-	if (!to_edit_root_path.is_empty()) {
-		// empty string still has 1 element when split.
-		navigate_to = to_edit_root_path.split("/");
-	}
-	if (AnimationTreeEditor::get_singleton()->get_edited_path() != navigate_to) {
-		AnimationTreeEditor::get_singleton()->edit_path(navigate_to);
-	}
-
-	// Special case for AnimationNodeBlendTree.
-	if (Ref<AnimationNodeBlendTree> blend_tree = root_node; blend_tree.is_valid()) {
-		String child_name = full_path_str;
-		child_name = child_name.replace_first(parent_path, "");
-		child_name = child_name.trim_suffix("/");
-		callable_mp(AnimationNodeBlendTreeEditor::get_singleton(),
-			&AnimationNodeBlendTreeEditor::pan_to_node)
-			.call_deferred(child_name, input_index);
-	}
-}
 
 void AnimationTreeEditor::_update_error_message()
 {
@@ -231,8 +166,6 @@ void AnimationTreeEditor::_update_error_message()
 		error_label->push_cell();
 		error_label->push_color(
 			error_label->get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		error_label->append_text(vformat(RTR("%s at "), node->obj->get_class()));
-		error_label->push_meta(String(kv.key));
 		error_label->append_text(vformat(RTR("'%s':"), kv.key));
 		error_label->pop(); // Meta.
 		error_label->pop(); // Color.
@@ -251,7 +184,6 @@ void AnimationTreeEditor::_update_error_message()
 			kv.value.input_errors) {
 			const String input_name = node->get_input_name(input_error.index);
 			error_label->append_text(input_error.error + " ");
-			error_label->push_meta(input_error_base + itos(input_error.index));
 			error_label->append_text(vformat(RTR("input %d '%s'."), input_error.index, input_name));
 			error_label->pop(); // Meta.
 			error_label->append_text(" ");
@@ -274,13 +206,10 @@ void AnimationTreeEditor::_update_error_message()
 				SNAME("error_color"), EditorStringName(Editor)));
 			current_scope_error_label->append_text(TTR("Error: "));
 			if (!inst.errors.is_empty()) {
-				current_scope_error_label->push_meta(String(display_key));
 				current_scope_error_label->append_text(inst.errors[0]);
 				current_scope_error_label->pop(); // Meta.
 			}
 			else if (!inst.input_errors.is_empty() && node.is_valid()) {
-				current_scope_error_label->push_meta(
-					input_error_base + itos(inst.input_errors[0].index));
 				current_scope_error_label->append_text(inst.input_errors[0].error + " ");
 				current_scope_error_label->append_text(vformat(RTR("input %d '%s'."),
 					inst.input_errors[0].index, node->get_input_name(inst.input_errors[0].index)));
@@ -292,33 +221,6 @@ void AnimationTreeEditor::_update_error_message()
 
 	error_button->set_text(itos(count));
 	error_button->show();
-}
-
-void AnimationTreeEditor::edit(AnimationTree* p_tree)
-{
-	if (p_tree && !p_tree->is_connected("animation_list_changed",
-					  callable_mp(this, &AnimationTreeEditor::_animation_list_changed))) {
-		p_tree->connect("animation_list_changed",
-			callable_mp(this, &AnimationTreeEditor::_animation_list_changed),
-			Object::CONNECT_DEFERRED);
-	}
-
-	if (tree == p_tree) {
-		return;
-	}
-
-	if (tree && tree->is_connected("animation_list_changed",
-					callable_mp(this, &AnimationTreeEditor::_animation_list_changed))) {
-		tree->disconnect("animation_list_changed",
-			callable_mp(this, &AnimationTreeEditor::_animation_list_changed));
-	}
-
-	tree = p_tree;
-
-	Vector<String> path;
-	if (tree) {
-		edit_path(path);
-	}
 }
 
 void AnimationTreeEditor::_node_removed(Node* p_node)
@@ -360,8 +262,6 @@ void AnimationTreeEditor::_update_path()
 	b->set_button_group(group);
 	b->set_pressed(true);
 	b->set_focus_mode(FOCUS_ACCESSIBILITY);
-	b->connect(SceneStringName(pressed),
-		callable_mp(this, &AnimationTreeEditor::_path_button_pressed).bind(-1));
 	path_hb->add_child(b);
 	for (int i = 0; i < button_path.size(); i++) {
 		// bread crumbs.
@@ -380,8 +280,6 @@ void AnimationTreeEditor::_update_path()
 		path_hb->add_child(b);
 		b->set_pressed(true);
 		b->set_focus_mode(FOCUS_ACCESSIBILITY);
-		b->connect(SceneStringName(pressed),
-			callable_mp(this, &AnimationTreeEditor::_path_button_pressed).bind(i));
 	}
 }
 
@@ -392,13 +290,8 @@ void AnimationTreeEditor::edit_path(const Vector<String>& p_path)
 	Ref<AnimationNode> node = tree->get_root_animation_node();
 
 	if (node.is_valid()) {
-		current_root = node->obj->get_instance_id();
-
 		for (int i = 0; i < p_path.size(); i++) {
 			Ref<AnimationNode> child = node->get_child_by_name(p_path[i]);
-			ERR_BREAK_MSG(child.is_null(),
-				vformat("Cannot edit path '%s': node '%s' not found as child of '%s'.",
-					String("/").join(p_path), p_path[i], node->obj->get_class()));
 			node = child;
 			button_path.push_back(p_path[i]);
 		}
@@ -417,7 +310,6 @@ void AnimationTreeEditor::edit_path(const Vector<String>& p_path)
 		}
 	}
 	else {
-		current_root = ObjectID();
 		edited_path = button_path;
 		for (int i = 0; i < editors.size(); i++) {
 			editors[i]->edit(Ref<AnimationNode>());
@@ -432,7 +324,6 @@ void AnimationTreeEditor::edit_path(const Vector<String>& p_path)
 void AnimationTreeEditor::_clear_editors()
 {
 	button_path.clear();
-	current_root = ObjectID();
 	edited_path = button_path;
 	for (int i = 0; i < editors.size(); i++) {
 		editors[i]->edit(Ref<AnimationNode>());
@@ -473,15 +364,6 @@ void AnimationTreeEditor::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_PROCESS: {
-		ObjectID root;
-		if (tree && tree->get_root_animation_node().is_valid()) {
-			root = tree->get_root_animation_node()->obj->get_instance_id();
-		}
-
-		if (root != current_root) {
-			edit_path(Vector<String>());
-		}
-
 		if (button_path.size() != edited_path.size()) {
 			edit_path(edited_path);
 		}
@@ -489,16 +371,6 @@ void AnimationTreeEditor::_notification(int p_what)
 		if (tree) {
 			_update_error_message();
 		}
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		get_tree()->obj->connect(
-			"node_removed", callable_mp(this, &AnimationTreeEditor::_node_removed));
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		get_tree()->obj->disconnect(
-			"node_removed", callable_mp(this, &AnimationTreeEditor::_node_removed));
 	} break;
 	}
 }
@@ -610,8 +482,6 @@ AnimationTreeEditor::AnimationTreeEditor()
 	current_scope_error_label->set_h_size_flags(SIZE_EXPAND_FILL);
 	current_scope_error_label->set_v_size_flags(SIZE_SHRINK_CENTER);
 	current_scope_error_label->set_meta_underline(false);
-	current_scope_error_label->connect(
-		"meta_clicked", callable_mp(this, &AnimationTreeEditor::_meta_clicked));
 	status_bar->add_child(current_scope_error_label);
 
 	error_button = memnew(Button);
@@ -620,8 +490,6 @@ AnimationTreeEditor::AnimationTreeEditor()
 	error_button->set_v_size_flags(SIZE_EXPAND | SIZE_SHRINK_CENTER);
 	error_button->set_default_cursor_shape(CURSOR_POINTING_HAND);
 	error_button->hide();
-	error_button->connect(
-		SceneStringName(pressed), callable_mp(this, &AnimationTreeEditor::_toggle_error_panel));
 	error_button->set_tooltip_text(TTRC("Errors"));
 	status_bar->add_child(error_button);
 
@@ -643,31 +511,8 @@ AnimationTreeEditor::AnimationTreeEditor()
 	error_label->set_h_size_flags(SIZE_EXPAND_FILL);
 	error_label->set_v_size_flags(SIZE_EXPAND_FILL);
 	error_label->set_meta_underline(true);
-	error_label->connect("meta_clicked", callable_mp(this, &AnimationTreeEditor::_meta_clicked));
 	error_scroll->add_child(error_label);
 	error_scroll->hide();
-}
-
-void AnimationTreeEditorPlugin::edit(Object* p_object)
-{
-	anim_tree_editor->edit(Object::cast_to<AnimationTree>(p_object));
-}
-
-bool AnimationTreeEditorPlugin::handles(Object* p_object) const
-{
-	return p_object->is_class("AnimationTree");
-}
-
-void AnimationTreeEditorPlugin::make_visible(Object& obj, bool p_visible)
-{
-	if (p_visible) {
-		anim_tree_editor->make_visible();
-	}
-	else {
-		anim_tree_editor->close();
-	}
-
-	anim_tree_editor->set_process(p_visible);
 }
 
 AnimationTreeEditorPlugin::AnimationTreeEditorPlugin()

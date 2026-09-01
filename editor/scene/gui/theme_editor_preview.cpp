@@ -30,7 +30,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
-#include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/themes/editor_scale.h"
@@ -106,124 +105,10 @@ void ThemeEditorPreview::_picker_button_cbk()
 	}
 }
 
-Control* ThemeEditorPreview::_find_hovered_control(Control* p_parent, Vector2 p_mouse_position)
-{
-	Control* found = nullptr;
-
-	for (int i = p_parent->get_child_count() - 1; i >= 0; i--) {
-		Control* cc = Object::cast_to<Control>(p_parent->get_child(i));
-		if (!cc || !cc->is_visible()) {
-			continue;
-		}
-
-		Rect2 crect = cc->get_rect();
-		if (crect.has_point(p_mouse_position)) {
-			// Check if there is a child control under mouse.
-			if (cc->get_child_count() > 0) {
-				found = _find_hovered_control(cc, p_mouse_position - cc->get_position());
-			}
-
-			// If there are no applicable children, use the control itself.
-			if (!found) {
-				found = cc;
-			}
-			break;
-		}
-	}
-
-	return found;
-}
-
-void ThemeEditorPreview::_draw_picker_overlay()
-{
-	if (!picker_button->is_pressed()) {
-		return;
-	}
-
-	picker_overlay->draw_rect(Rect2(Vector2(0.0, 0.0), picker_overlay->get_size()),
-		theme_cache.preview_picker_overlay_color);
-	if (hovered_control) {
-		Rect2 highlight_rect = hovered_control->get_global_rect();
-		highlight_rect.position =
-			picker_overlay->get_global_transform().affine_inverse().xform(highlight_rect.position);
-		picker_overlay->draw_style_box(theme_cache.preview_picker_overlay.ptr(), highlight_rect);
-
-		String highlight_name = hovered_control->get_theme_type_variation();
-		if (highlight_name == StringName()) {
-			highlight_name = hovered_control->obj->get_class_name();
-		}
-
-		Rect2 highlight_label_rect = highlight_rect;
-		highlight_label_rect.size = theme_cache.preview_picker_font->get_string_size(
-			highlight_name, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size);
-
-		int margin_top = theme_cache.preview_picker_label->get_margin(SIDE_TOP);
-		int margin_left = theme_cache.preview_picker_label->get_margin(SIDE_LEFT);
-		int margin_bottom = theme_cache.preview_picker_label->get_margin(SIDE_BOTTOM);
-		int margin_right = theme_cache.preview_picker_label->get_margin(SIDE_RIGHT);
-		highlight_label_rect.size.x += margin_left + margin_right;
-		highlight_label_rect.size.y += margin_top + margin_bottom;
-
-		highlight_label_rect.position =
-			highlight_label_rect.position.clamp(Vector2(), picker_overlay->get_size());
-
-		picker_overlay->draw_style_box(
-			theme_cache.preview_picker_label.ptr(), highlight_label_rect);
-
-		Point2 label_pos = highlight_label_rect.position;
-		label_pos.y += highlight_label_rect.size.y - margin_bottom;
-		label_pos.x += margin_left;
-		picker_overlay->draw_string(theme_cache.preview_picker_font.ptr(), label_pos,
-			highlight_name, HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size);
-	}
-}
-
-void ThemeEditorPreview::_gui_input_picker_overlay(const Ref<InputEvent>& p_event)
-{
-	if (!picker_button->is_pressed()) {
-		return;
-	}
-
-	Ref<InputEventMouseButton> mb = p_event;
-
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-		if (hovered_control) {
-			StringName theme_type = hovered_control->get_theme_type_variation();
-			if (theme_type == StringName()) {
-				theme_type = hovered_control->obj->get_class_name();
-			}
-
-			this->obj->emit_signal(SNAME("control_picked"), theme_type);
-			picker_button->set_pressed(false);
-			picker_overlay->set_visible(false);
-			return;
-		}
-	}
-
-	Ref<InputEventMouseMotion> mm = p_event;
-
-	if (mm.is_valid()) {
-		Vector2 mp = preview_content->get_local_mouse_position();
-		hovered_control = _find_hovered_control(preview_content, mp);
-		picker_overlay->queue_redraw();
-	}
-
-	// Forward input to the scroll container underneath to allow scrolling.
-	preview_container->gui_input(p_event);
-}
-
 void ThemeEditorPreview::_reset_picker_overlay()
 {
 	hovered_control = nullptr;
 	picker_overlay->queue_redraw();
-}
-
-void ThemeEditorPreview::_update_preview_bg()
-{
-	if (ProjectSettings::get_singleton()->check_changed_settings_in_group(
-			"rendering/environment/defaults/default_clear_color")) {
-		preview_bg->set_color(GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
-	}
 }
 
 void ThemeEditorPreview::_notification(int p_what)
@@ -251,66 +136,6 @@ void ThemeEditorPreview::_notification(int p_what)
 		theme_cache.font_size = get_theme_default_font_size();
 	} break;
 	}
-}
-
-void ThemeEditorPreview::_bind_methods() {}
-
-ThemeEditorPreview::ThemeEditorPreview()
-{
-	preview_toolbar = memnew(HBoxContainer);
-	add_child(preview_toolbar);
-
-	picker_button = memnew(Button);
-	preview_toolbar->add_child(picker_button);
-	picker_button->set_theme_type_variation(SceneStringName(FlatButton));
-	picker_button->set_toggle_mode(true);
-	picker_button->set_tooltip_text(
-		TTR("Toggle the control picker, allowing to visually select control types for edit."));
-	picker_button->connect(
-		SceneStringName(pressed), callable_mp(this, &ThemeEditorPreview::_picker_button_cbk));
-
-	MarginContainer* preview_body = memnew(MarginContainer);
-	preview_body->set_v_size_flags(SIZE_EXPAND_FILL);
-	add_child(preview_body);
-
-	preview_container = memnew(ScrollContainer);
-	preview_body->add_child(preview_container);
-
-	preview_root = memnew(MarginContainer);
-	preview_container->add_child(preview_root);
-	preview_root->set_clip_contents(true);
-	preview_root->set_custom_minimum_size(Size2(450, 0) * EDSCALE);
-	preview_root->set_v_size_flags(SIZE_EXPAND_FILL);
-	preview_root->set_h_size_flags(SIZE_EXPAND_FILL);
-
-	preview_bg = memnew(ColorRect);
-	preview_bg->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
-	preview_bg->set_color(GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
-	preview_root->add_child(preview_bg);
-
-	preview_content = memnew(ScalableContainer);
-	preview_content->add_theme_constant_override("margin_right", 4 * EDSCALE);
-	preview_content->add_theme_constant_override("margin_top", 4 * EDSCALE);
-	preview_content->add_theme_constant_override("margin_left", 4 * EDSCALE);
-	preview_content->add_theme_constant_override("margin_bottom", 4 * EDSCALE);
-	preview_root->add_child(preview_content);
-
-	preview_overlay = memnew(MarginContainer);
-	preview_overlay->set_mouse_filter(MOUSE_FILTER_IGNORE);
-	preview_overlay->set_clip_contents(true);
-	preview_body->add_child(preview_overlay);
-
-	picker_overlay = memnew(Control);
-	add_preview_overlay(picker_overlay);
-	picker_overlay->connect(
-		SceneStringName(draw), callable_mp(this, &ThemeEditorPreview::_draw_picker_overlay));
-	picker_overlay->connect(SceneStringName(gui_input),
-		callable_mp(this, &ThemeEditorPreview::_gui_input_picker_overlay));
-	picker_overlay->connect(SceneStringName(mouse_exited),
-		callable_mp(this, &ThemeEditorPreview::_reset_picker_overlay));
-
-	ProjectSettings::get_singleton()->obj->connect(
-		"settings_changed", callable_mp(this, &ThemeEditorPreview::_update_preview_bg));
 }
 
 void DefaultThemeEditorPreview::_notification(int p_what)
@@ -492,37 +317,6 @@ DefaultThemeEditorPreview::DefaultThemeEditorPreview()
 	item->set_range(0, 2);
 }
 
-void SceneThemeEditorPreview::_reload_scene()
-{
-	if (loaded_scene.is_null()) {
-		return;
-	}
-
-	if (loaded_scene->get_path().is_empty() || !ResourceLoader::exists(loaded_scene->get_path())) {
-		EditorNode::get_singleton()->show_warning(
-			TTR("Invalid path, the PackedScene resource was probably moved or removed."));
-		this->obj->emit_signal(SNAME("scene_invalidated"));
-		return;
-	}
-
-	for (int i = preview_content->get_child_count() - 1; i >= 0; i--) {
-		Node* node = preview_content->get_child(i);
-		node->queue_free();
-		preview_content->remove_child(node);
-	}
-
-	Node* instance = loaded_scene->instantiate();
-	if (!instance || !Object::cast_to<Control>(instance)) {
-		EditorNode::get_singleton()->show_warning(
-			TTR("Invalid PackedScene resource, must have a Control node at its root."));
-		this->obj->emit_signal(SNAME("scene_invalidated"));
-		return;
-	}
-
-	preview_content->add_child(instance);
-	this->obj->emit_signal(SNAME("scene_reloaded"));
-}
-
 void SceneThemeEditorPreview::_notification(int p_what)
 {
 	switch (p_what) {
@@ -532,35 +326,6 @@ void SceneThemeEditorPreview::_notification(int p_what)
 	}
 }
 
-void SceneThemeEditorPreview::_bind_methods() {}
-
-bool SceneThemeEditorPreview::set_preview_scene(const String& p_path)
-{
-	loaded_scene = ResourceLoader::load(p_path);
-	if (loaded_scene.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid file, not a PackedScene resource."));
-		return false;
-	}
-
-	Node* instance = loaded_scene->instantiate();
-
-	if (!instance) {
-		EditorNode::get_singleton()->show_warning(
-			TTR("Invalid PackedScene resource, could not instantiate it."));
-		return false;
-	}
-
-	if (!Object::cast_to<Control>(instance)) {
-		EditorNode::get_singleton()->show_warning(
-			TTR("Invalid PackedScene resource, must have a Control node at its root."));
-		memdelete(instance);
-		return false;
-	}
-
-	preview_content->add_child(instance);
-	return true;
-}
-
 String SceneThemeEditorPreview::get_preview_scene_path() const
 {
 	if (loaded_scene.is_null()) {
@@ -568,19 +333,6 @@ String SceneThemeEditorPreview::get_preview_scene_path() const
 	}
 
 	return loaded_scene->get_path();
-}
-
-SceneThemeEditorPreview::SceneThemeEditorPreview()
-{
-	preview_toolbar->add_child(memnew(VSeparator));
-
-	reload_scene_button = memnew(Button);
-	reload_scene_button->set_flat(true);
-	reload_scene_button->set_tooltip_text(
-		TTR("Reload the scene to reflect its most actual state."));
-	preview_toolbar->add_child(reload_scene_button);
-	reload_scene_button->connect(
-		SceneStringName(pressed), callable_mp(this, &SceneThemeEditorPreview::_reload_scene));
 }
 
 

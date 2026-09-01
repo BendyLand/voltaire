@@ -30,11 +30,8 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/os/keyboard.h"
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/callable.h"
-#include "core/variant/type_info.h"
 
 class Texture2D;
 
@@ -46,7 +43,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	_FORCE_INLINE_ static NativeMenu* get_singleton() { return singleton; }
 
 	enum Feature
@@ -86,54 +82,20 @@ public:
 
 	virtual void set_interface_direction(const RID& p_rid, bool p_is_rtl);
 
-	virtual void set_popup_open_callback(const RID& p_rid, const Callable& p_callback);
-	virtual Callable get_popup_open_callback(const RID& p_rid) const;
-	virtual void set_popup_close_callback(const RID& p_rid, const Callable& p_callback);
-	virtual Callable get_popup_close_callback(const RID& p_rid) const;
 	virtual void set_minimum_width(const RID& p_rid, float p_width);
 	virtual float get_minimum_width(const RID& p_rid) const;
 
 	virtual bool is_opened(const RID& p_rid) const;
 
-	virtual int add_submenu_item(const RID& p_rid, const String& p_label, const RID& p_submenu_rid,
-		const Variant& p_tag = Variant(), int p_index = -1);
-	virtual int add_item(const RID& p_rid, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int add_check_item(const RID& p_rid, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int add_icon_item(const RID& p_rid, const Ref<Texture2D>& p_icon, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int add_icon_check_item(const RID& p_rid, const Ref<Texture2D>& p_icon,
-		const String& p_label, const Callable& p_callback = Callable(),
-		const Callable& p_key_callback = Callable(), const Variant& p_tag = Variant(),
-		Key p_accel = Key::NONE, int p_index = -1);
-	virtual int add_radio_check_item(const RID& p_rid, const String& p_label,
-		const Callable& p_callback = Callable(), const Callable& p_key_callback = Callable(),
-		const Variant& p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1);
-	virtual int add_icon_radio_check_item(const RID& p_rid, const Ref<Texture2D>& p_icon,
-		const String& p_label, const Callable& p_callback = Callable(),
-		const Callable& p_key_callback = Callable(), const Variant& p_tag = Variant(),
-		Key p_accel = Key::NONE, int p_index = -1);
-	virtual int add_multistate_item(const RID& p_rid, const String& p_label, int p_max_states,
-		int p_default_state, const Callable& p_callback = Callable(),
-		const Callable& p_key_callback = Callable(), const Variant& p_tag = Variant(),
-		Key p_accel = Key::NONE, int p_index = -1);
 	virtual int add_separator(const RID& p_rid, int p_index = -1);
 
 	virtual int find_item_index_with_text(const RID& p_rid, const String& p_text) const;
-	virtual int find_item_index_with_tag(const RID& p_rid, const Variant& p_tag) const;
 	virtual int find_item_index_with_submenu(const RID& p_rid, const RID& p_submenu_rid) const;
 
 	virtual bool is_item_checked(const RID& p_rid, int p_idx) const;
 	virtual bool is_item_indeterminate(const RID& p_rid, int p_idx) const;
 	virtual bool is_item_checkable(const RID& p_rid, int p_idx) const;
 	virtual bool is_item_radio_checkable(const RID& p_rid, int p_idx) const;
-	virtual Callable get_item_callback(const RID& p_rid, int p_idx) const;
-	virtual Callable get_item_key_callback(const RID& p_rid, int p_idx) const;
-	virtual Variant get_item_tag(const RID& p_rid, int p_idx) const;
 	virtual String get_item_text(const RID& p_rid, int p_idx) const;
 	virtual RID get_item_submenu(const RID& p_rid, int p_idx) const;
 	virtual Key get_item_accelerator(const RID& p_rid, int p_idx) const;
@@ -149,10 +111,6 @@ public:
 	virtual void set_item_indeterminate(const RID& p_rid, int p_idx, bool p_indeterminate);
 	virtual void set_item_checkable(const RID& p_rid, int p_idx, bool p_checkable);
 	virtual void set_item_radio_checkable(const RID& p_rid, int p_idx, bool p_checkable);
-	virtual void set_item_callback(const RID& p_rid, int p_idx, const Callable& p_callback);
-	virtual void set_item_key_callback(const RID& p_rid, int p_idx, const Callable& p_key_callback);
-	virtual void set_item_hover_callbacks(const RID& p_rid, int p_idx, const Callable& p_callback);
-	virtual void set_item_tag(const RID& p_rid, int p_idx, const Variant& p_tag);
 	virtual void set_item_text(const RID& p_rid, int p_idx, const String& p_text);
 	virtual void set_item_submenu(const RID& p_rid, int p_idx, const RID& p_submenu_rid);
 	virtual void set_item_accelerator(const RID& p_rid, int p_idx, Key p_keycode);
@@ -175,8 +133,5 @@ public:
 
 	~NativeMenu() { singleton = nullptr; }
 };
-
-VARIANT_ENUM_CAST(NativeMenu::Feature);
-VARIANT_ENUM_CAST(NativeMenu::SystemMenus);
 
 

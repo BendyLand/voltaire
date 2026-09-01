@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include "core/object/object.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "servers/rendering/storage/render_scene_buffers.h"
 #include "servers/rendering/storage/render_scene_data.h"
 
@@ -41,7 +39,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const = 0;
 	virtual RenderSceneData* get_render_scene_data() const = 0;
 

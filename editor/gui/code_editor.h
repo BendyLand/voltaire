@@ -45,9 +45,6 @@ class Timer;
 
 class GotoLinePopup : public PopupPanel
 {
-	VLTRCLASS(GotoLinePopup, PopupPanel);
-
-	Variant original_state;
 	LineEdit* line_input = nullptr;
 	CodeTextEditor* text_editor = nullptr;
 
@@ -66,8 +63,6 @@ public:
 
 class FindReplaceBar : public HBoxContainer
 {
-	VLTRCLASS(FindReplaceBar, HBoxContainer);
-
 	enum SearchMode
 	{
 		SEARCH_CURRENT,
@@ -158,13 +153,8 @@ public:
 	FindReplaceBar();
 };
 
-typedef void (*CodeTextEditorCodeCompleteFunc)(void* p_ud, const String& p_code,
-	List<ScriptLanguage::CodeCompletionOption>* r_options, bool& r_forced);
-
 class CodeTextEditor : public VBoxContainer
 {
-	VLTRCLASS(CodeTextEditor, VBoxContainer);
-
 	CodeEdit* text_editor = nullptr;
 	FindReplaceBar* find_replace_bar = nullptr;
 	HBoxContainer* status_bar = nullptr;
@@ -192,12 +182,10 @@ class CodeTextEditor : public VBoxContainer
 	int error_column;
 
 	bool preview_navigation_change = false;
-	Dictionary previous_state;
 
 	void _update_text_editor_theme();
 	void _update_font_ligatures();
 	void _complete_request();
-	Ref<Texture2D> _get_completion_icon(const ScriptLanguage::CodeCompletionOption& p_option);
 
 	virtual void input(const Ref<InputEvent>& event) override;
 	void _text_editor_gui_input(const Ref<InputEvent>& p_event);
@@ -208,7 +196,6 @@ class CodeTextEditor : public VBoxContainer
 	Color completion_node_path_color;
 	Color completion_comment_color;
 	Color completion_doc_comment_color;
-	CodeTextEditorCodeCompleteFunc code_complete_func;
 	void* code_complete_ud = nullptr;
 
 	void _zoom_in();
@@ -234,11 +221,6 @@ protected:
 	virtual void _load_theme_settings() {}
 
 	virtual void _validate_script() {}
-
-	virtual void _code_complete_script(
-		const String& p_code, List<ScriptLanguage::CodeCompletionOption>* r_options)
-	{
-	}
 
 	void _text_changed_idle_timeout();
 	void _code_complete_timer_timeout();
@@ -283,10 +265,6 @@ public:
 	void set_executing_line(int p_line);
 	void clear_executing_line();
 
-	Dictionary get_edit_state();
-	void set_edit_state(const Dictionary& p_state);
-	Dictionary get_navigation_state();
-	Dictionary get_previous_state();
 	void store_previous_state();
 
 	bool is_previewing_navigation_change() const;
@@ -323,8 +301,6 @@ public:
 
 	void set_zoom_factor(float p_zoom_factor);
 	float get_zoom_factor();
-
-	void set_code_complete_func(CodeTextEditorCodeCompleteFunc p_code_complete_func, void* p_ud);
 
 	void validate_script();
 

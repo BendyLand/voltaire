@@ -187,7 +187,7 @@ Error decode_input_event_mouse_button(
 	data = decode_vector2(pos, data);
 	r_event->set_position(pos);
 	r_event->set_global_position(pos); // these are the same
-	BitField<MouseButtonMask> button_mask = (MouseButtonMask)*data;
+	uint32_t button_mask = (uint32_t)*data;
 	r_event->set_button_mask(button_mask);
 
 	return OK;
@@ -256,7 +256,7 @@ void decode_input_event_mouse_motion(
 		r_event->set_relative(relative);
 		r_event->set_relative_screen_position(relative);
 	}
-	BitField<MouseButtonMask> button_mask = (MouseButtonMask)*data;
+	uint32_t button_mask = (uint32_t)*data;
 	r_event->set_button_mask(button_mask);
 	data++;
 

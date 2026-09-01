@@ -46,8 +46,6 @@ protected:
 	SelfList<JoltShapedObject3D> shapes_changed_element;
 	SelfList<JoltShapedObject3D> needs_optimization_element;
 
-	LocalVector<JoltShapeInstance3D> shapes;
-
 	Vector3 scale = Vector3(1, 1, 1);
 
 	JPH::ShapeRefC jolt_shape;
@@ -112,8 +110,6 @@ public:
 
 	void clear_shapes();
 	void clear_previous_shape();
-
-	int get_shape_count() const { return shapes.size(); }
 
 	int find_shape_index(uint32_t p_shape_instance_id) const;
 	int find_shape_index(const JPH::SubShapeID &p_sub_shape_id) const;

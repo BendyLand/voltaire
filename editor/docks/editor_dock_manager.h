@@ -48,8 +48,6 @@ class StyleBoxFlat;
 
 class DockSplitContainer : public SplitContainer
 {
-	VLTRCLASS(DockSplitContainer, SplitContainer);
-
 private:
 	bool is_updating = false;
 
@@ -68,11 +66,6 @@ public:
 
 class DockShortcutHandler : public Node
 {
-	VLTRCLASS(DockShortcutHandler, Node);
-
-protected:
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-
 public:
 	DockShortcutHandler() { set_process_shortcut_input(true); }
 };
@@ -121,7 +114,6 @@ private:
 	EditorDock* _close_window(WindowWrapper* p_wrapper);
 	void _open_dock_in_window(
 		EditorDock* p_dock, bool p_show_window = true, bool p_reset_size = false);
-	void _restore_dock_to_saved_window(EditorDock* p_dock, const Dictionary& p_window_dump);
 
 	void _make_dock_visible(EditorDock* p_dock, bool p_grab_focus);
 	void _move_dock(
@@ -133,7 +125,6 @@ private:
 	void _register_split(DockSplitContainer** p_var, DockSplitContainer* p_split);
 
 public:
-	mem_unique_ptr<Object> obj;
 	static EditorDockManager* get_singleton() { return singleton; }
 
 	DockTabContainer* get_dock_container(int p_slot) const;
@@ -180,8 +171,6 @@ public:
 
 class DockSlotGrid : public Control
 {
-	VLTRCLASS(DockSlotGrid, Control);
-
 	static constexpr Vector2 GRID_SIZE = Vector2(8, 8);
 	static constexpr Vector2 MARGINS = Vector2(4, 8);
 	static constexpr Vector2 CELL_SIZE = Vector2(24, 12);
@@ -200,7 +189,6 @@ protected:
 	static void _bind_methods();
 	void _notification(int p_what);
 
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	virtual Size2 get_minimum_size() const override;
 
 public:
@@ -209,8 +197,6 @@ public:
 
 class DockContextPopup : public PopupPanel
 {
-	VLTRCLASS(DockContextPopup, PopupPanel);
-
 private:
 	VBoxContainer* dock_select_popup_vb = nullptr;
 

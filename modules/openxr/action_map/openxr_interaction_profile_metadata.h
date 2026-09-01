@@ -50,7 +50,6 @@
 // are supported but otherwise action types should match between action and
 // input/output paths.
 
-#include "core/object/object.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "openxr_action.h"
@@ -60,7 +59,6 @@
 class OpenXRInteractionProfileMetadata
 {
 public:
-	mem_unique_ptr<Object> obj;
 	struct TopLevelPath
 	{
 		String display_name;		   // User friendly display name (i.e. Left controller)

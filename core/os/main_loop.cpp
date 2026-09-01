@@ -28,17 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "main_loop.h"
 
-void MainLoop::_bind_methods() {}
-
-void MainLoop::finalize()
-{
-	if (this->obj->get_script_instance()) {
-		this->obj->set_script(Variant()); // clear script
-	}
-}
+void MainLoop::finalize() {}
 
 void MainLoop::initialize() {}
 

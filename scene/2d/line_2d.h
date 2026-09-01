@@ -34,23 +34,25 @@
 #include "scene/resources/curve.h"
 #include "scene/resources/gradient.h"
 
-class Line2D : public Node2D {
-	VLTRCLASS(Line2D, Node2D);
-
+class Line2D : public Node2D
+{
 public:
-	enum LineJointMode {
+	enum LineJointMode
+	{
 		LINE_JOINT_SHARP = 0,
 		LINE_JOINT_BEVEL,
 		LINE_JOINT_ROUND
 	};
 
-	enum LineCapMode {
+	enum LineCapMode
+	{
 		LINE_CAP_NONE = 0,
 		LINE_CAP_BOX,
 		LINE_CAP_ROUND
 	};
 
-	enum LineTextureMode {
+	enum LineTextureMode
+	{
 		LINE_TEXTURE_NONE = 0,
 		LINE_TEXTURE_TILE,
 		LINE_TEXTURE_STRETCH
@@ -59,12 +61,13 @@ public:
 #ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
-	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
+	virtual bool _edit_is_selected_on_click(
+		const Point2& p_point, double p_tolerance) const override;
 #endif
 
 	Line2D();
 
-	void set_points(const Vector<Vector2> &p_points);
+	void set_points(const Vector<Vector2>& p_points);
 	Vector<Vector2> get_points() const;
 
 	void set_point_position(int i, Vector2 pos);
@@ -83,16 +86,16 @@ public:
 	void set_width(float width);
 	float get_width() const;
 
-	void set_curve(const Ref<Curve> &curve);
+	void set_curve(const Ref<Curve>& curve);
 	Ref<Curve> get_curve() const;
 
 	void set_default_color(Color color);
 	Color get_default_color() const;
 
-	void set_gradient(const Ref<Gradient> &gradient);
+	void set_gradient(const Ref<Gradient>& gradient);
 	Ref<Gradient> get_gradient() const;
 
-	void set_texture(const Ref<Texture2D> &texture);
+	void set_texture(const Ref<Texture2D>& texture);
 	Ref<Texture2D> get_texture() const;
 
 	void set_texture_mode(const LineTextureMode mode);
@@ -143,7 +146,4 @@ private:
 	bool _antialiased = false;
 };
 
-// Needed so we can bind functions
-VARIANT_ENUM_CAST(Line2D::LineJointMode)
-VARIANT_ENUM_CAST(Line2D::LineCapMode)
-VARIANT_ENUM_CAST(Line2D::LineTextureMode)
+

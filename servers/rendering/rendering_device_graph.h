@@ -146,9 +146,9 @@ public:
 		int32_t acceleration_structure_barrier_index = -1;
 		int32_t acceleration_structure_barrier_count = 0;
 		int32_t label_index = -1;
-		BitField<RDD::PipelineStageBits> previous_stages = {};
-		BitField<RDD::PipelineStageBits> next_stages = {};
-		BitField<RDD::PipelineStageBits> self_stages = {};
+		uint32_t previous_stages = 0;
+		uint32_t next_stages = 0;
+		uint32_t self_stages = 0;
 	};
 
 	struct RecordedBufferCopy
@@ -197,8 +197,8 @@ public:
 		int64_t command_frame = -1;
 		int32_t command_index = -1;
 		uint32_t usage_index = UINT32_MAX;
-		BitField<RDD::PipelineStageBits> previous_frame_stages = {};
-		BitField<RDD::PipelineStageBits> current_frame_stages = {};
+		uint32_t previous_frame_stages = 0;
+		uint32_t current_frame_stages = 0;
 		int32_t read_full_command_list_index = -1;
 		int32_t read_slice_command_list_index = -1;
 		int32_t write_command_or_list_index = -1;
@@ -209,7 +209,7 @@ public:
 		ResourceUsage compute_list_usage = RESOURCE_USAGE_NONE;
 		ResourceUsage raytracing_list_usage = RESOURCE_USAGE_NONE;
 		ResourceUsage usage = RESOURCE_USAGE_NONE;
-		BitField<RDD::BarrierAccessBits> usage_access = {};
+		uint32_t usage_access = 0;
 		RDD::BufferID buffer_driver_id;
 		RDD::TextureID texture_driver_id;
 		RDD::AccelerationStructureID acceleration_structure_driver_id;
@@ -232,7 +232,7 @@ public:
 				command_index = -1;
 				usage_index = UINT32_MAX;
 				previous_frame_stages = current_frame_stages;
-				current_frame_stages.clear();
+				current_frame_stages = 0;
 				read_full_command_list_index = -1;
 				read_slice_command_list_index = -1;
 				write_command_or_list_index = -1;
@@ -297,7 +297,7 @@ private:
 		LocalVector<uint8_t> data;
 		LocalVector<ResourceTracker*> command_trackers;
 		LocalVector<ResourceUsage> command_tracker_usages;
-		BitField<RDD::PipelineStageBits> stages = {};
+		uint32_t stages = 0;
 		int32_t index = 0;
 
 		void clear()
@@ -305,7 +305,7 @@ private:
 			data.clear();
 			command_trackers.clear();
 			command_tracker_usages.clear();
-			stages.clear();
+			stages = 0;
 		}
 	};
 
@@ -881,8 +881,8 @@ private:
 
 	struct BarrierGroup
 	{
-		BitField<RDD::PipelineStageBits> src_stages = {};
-		BitField<RDD::PipelineStageBits> dst_stages = {};
+		uint32_t src_stages = 0;
+		uint32_t dst_stages = 0;
 		RDD::MemoryAccessBarrier memory_barrier;
 		LocalVector<RDD::TextureBarrier> normalization_barriers;
 		LocalVector<RDD::TextureBarrier> transition_barriers;
@@ -893,10 +893,10 @@ private:
 
 		void clear()
 		{
-			src_stages.clear();
-			dst_stages.clear();
-			memory_barrier.src_access.clear();
-			memory_barrier.dst_access.clear();
+			src_stages = 0;
+			dst_stages = 0;
+			memory_barrier.src_access = 0;
+			memory_barrier.dst_access = 0;
 			normalization_barriers.clear();
 			transition_barriers.clear();
 #if USE_BUFFER_BARRIERS
@@ -983,21 +983,21 @@ private:
 		ResourceUsage* p_resource_usages, uint32_t p_resource_count, int32_t p_command_index,
 		RecordedCommand* r_command);
 	void _add_texture_barrier_to_command(RDD::TextureID p_texture_id,
-		BitField<RDD::BarrierAccessBits> p_src_access,
-		BitField<RDD::BarrierAccessBits> p_dst_access, ResourceUsage p_prev_usage,
+		uint32_t p_src_access,
+		uint32_t p_dst_access, ResourceUsage p_prev_usage,
 		ResourceUsage p_next_usage, RDD::TextureSubresourceRange p_subresources,
 		LocalVector<RDD::TextureBarrier>& r_barrier_vector, int32_t& r_barrier_index,
 		int32_t& r_barrier_count);
 #if USE_BUFFER_BARRIERS
 	void _add_buffer_barrier_to_command(RDD::BufferID p_buffer_id,
-		BitField<RDD::BarrierAccessBits> p_src_access,
-		BitField<RDD::BarrierAccessBits> p_dst_access, int32_t& r_barrier_index,
+		uint32_t p_src_access,
+		uint32_t p_dst_access, int32_t& r_barrier_index,
 		int32_t& r_barrier_count);
 #endif
 	void _add_acceleration_structure_barrier_to_command(
 		RDD::AccelerationStructureID p_acceleration_structure_id,
-		BitField<RDD::BarrierAccessBits> p_src_access,
-		BitField<RDD::BarrierAccessBits> p_dst_access,
+		uint32_t p_src_access,
+		uint32_t p_dst_access,
 		LocalVector<RDD::AccelerationStructureBarrier>& r_barrier_vector, int32_t& r_barrier_index,
 		int32_t& r_barrier_count);
 	void _run_compute_list_command(RDD::CommandBufferID p_command_buffer,
@@ -1013,7 +1013,7 @@ private:
 		RDD::RenderPassID p_render_pass, RDD::FramebufferID p_framebuffer, Rect2i p_region,
 		VectorView<AttachmentOperation> p_attachment_operations,
 		VectorView<RDD::RenderPassClearValue> p_attachment_clear_values,
-		BitField<RDD::PipelineStageBits> p_stages, uint32_t p_breadcrumb, bool p_split_cmd_buffer);
+		uint32_t p_stages, uint32_t p_breadcrumb, bool p_split_cmd_buffer);
 	void _run_secondary_command_buffer_task(const SecondaryCommandBuffer* p_secondary);
 	void _wait_for_secondary_command_buffer_tasks();
 	void _run_render_commands(int32_t p_level, const RecordedCommandSort* p_sorted_commands,
@@ -1095,17 +1095,17 @@ public:
 	void add_draw_list_begin(FramebufferCache* p_framebuffer_cache, Rect2i p_region,
 		VectorView<AttachmentOperation> p_attachment_operations,
 		VectorView<RDD::RenderPassClearValue> p_attachment_clear_values,
-		BitField<RDD::PipelineStageBits> p_stages, uint32_t p_breadcrumb = 0,
+		uint32_t p_stages, uint32_t p_breadcrumb = 0,
 		bool p_split_cmd_buffer = false);
 	void add_draw_list_begin(RDD::RenderPassID p_render_pass, RDD::FramebufferID p_framebuffer,
 		Rect2i p_region, VectorView<AttachmentOperation> p_attachment_operations,
 		VectorView<RDD::RenderPassClearValue> p_attachment_clear_values,
-		BitField<RDD::PipelineStageBits> p_stages, uint32_t p_breadcrumb = 0,
+		uint32_t p_stages, uint32_t p_breadcrumb = 0,
 		bool p_split_cmd_buffer = false);
 	void add_draw_list_bind_index_buffer(
 		RDD::BufferID p_buffer, RDD::IndexBufferFormat p_format, uint32_t p_offset);
 	void add_draw_list_bind_pipeline(
-		RDD::PipelineID p_pipeline, BitField<RDD::PipelineStageBits> p_pipeline_stage_bits);
+		RDD::PipelineID p_pipeline, uint32_t p_pipeline_stage_bits);
 	void add_draw_list_bind_uniform_set(
 		RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index);
 	void add_draw_list_bind_uniform_sets(RDD::ShaderID p_shader,

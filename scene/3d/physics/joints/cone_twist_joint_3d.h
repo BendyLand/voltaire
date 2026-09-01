@@ -32,11 +32,11 @@
 
 #include "scene/3d/physics/joints/joint_3d.h"
 
-class ConeTwistJoint3D : public Joint3D {
-	VLTRCLASS(ConeTwistJoint3D, Joint3D);
-
+class ConeTwistJoint3D : public Joint3D
+{
 public:
-	enum Param {
+	enum Param
+	{
 		PARAM_SWING_SPAN,
 		PARAM_TWIST_SPAN,
 		PARAM_BIAS,
@@ -47,7 +47,8 @@ public:
 
 protected:
 	real_t params[PARAM_MAX];
-	virtual void _configure_joint(RID p_joint, PhysicsBody3D *body_a, PhysicsBody3D *body_b) override;
+	virtual void _configure_joint(
+		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
 	static void _bind_methods();
 
 public:
@@ -57,4 +58,4 @@ public:
 	ConeTwistJoint3D();
 };
 
-VARIANT_ENUM_CAST(ConeTwistJoint3D::Param);
+

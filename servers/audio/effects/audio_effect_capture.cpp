@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_effect_capture.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 bool AudioEffectCapture::can_get_buffer(int p_frames) const

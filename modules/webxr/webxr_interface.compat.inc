@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "webxr_interface.h"
 
 Ref<XRPositionalTracker> WebXRInterface::_get_input_source_tracker_bind_compat_90645(

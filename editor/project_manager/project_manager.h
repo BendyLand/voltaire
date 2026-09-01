@@ -267,8 +267,6 @@ class ProjectManager : public Control
 
 	// Input and I/O.
 
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_ev) override;
-
 	void _files_dropped(PackedStringArray p_files);
 
 protected:

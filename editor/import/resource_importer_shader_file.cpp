@@ -30,7 +30,6 @@
 
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
-#include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/shader/shader_file_editor_plugin.h"
 #include "resource_importer_shader_file.h"
@@ -58,12 +57,6 @@ void ResourceImporterShaderFile::get_import_options(
 {
 }
 
-bool ResourceImporterShaderFile::get_option_visibility(const String& p_path, const String& p_option,
-	const HashMap<StringName, Variant>& p_options) const
-{
-	return true;
-}
-
 static String _include_function(const String& p_path, void* userpointer)
 {
 	Error err;
@@ -80,35 +73,6 @@ static String _include_function(const String& p_path, void* userpointer)
 		return String();
 	}
 	return file_inc->get_as_utf8_string();
-}
-
-Error ResourceImporterShaderFile::import(ResourceUID::ID p_source_id, const String& p_source_file,
-	const String& p_save_path, const HashMap<StringName, Variant>& p_options,
-	List<String>* r_platform_variants, List<String>* r_gen_files, Variant* r_metadata)
-{
-	Error err;
-	Ref<FileAccess> file = FileAccess::open(p_source_file, FileAccess::READ, &err);
-	ERR_FAIL_COND_V(err != OK, ERR_CANT_OPEN);
-	ERR_FAIL_COND_V(file.is_null(), ERR_CANT_OPEN);
-
-	String file_txt = file->get_as_utf8_string();
-	Ref<RDShaderFile> shader_file;
-	shader_file.instantiate();
-	String base_path = p_source_file.get_base_dir();
-	err = shader_file->parse_versions_from_text(file_txt, "", _include_function, &base_path);
-
-	if (err != OK) {
-		if (!ShaderFileEditor::singleton->is_visible_in_tree()) {
-			callable_mp_static(&EditorNode::add_io_error)
-				.call_deferred(vformat(TTR("Error importing GLSL shader file: '%s'. Open the file "
-										   "in the filesystem dock in order to see the reason."),
-					p_source_file));
-		}
-	}
-
-	ResourceSaver::save(shader_file.ptr(), p_save_path + ".res");
-
-	return OK;
 }
 
 

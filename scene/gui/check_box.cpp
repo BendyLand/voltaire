@@ -29,11 +29,11 @@
 /**************************************************************************/
 
 #include "check_box.h"
-
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
-Size2 CheckBox::get_icon_size() const {
+Size2 CheckBox::get_icon_size() const
+{
 	Size2 tex_size = Size2(0, 0);
 	if (theme_cache.checked.is_valid()) {
 		tex_size = theme_cache.checked->get_size();
@@ -62,7 +62,8 @@ Size2 CheckBox::get_icon_size() const {
 	return _fit_icon_size(tex_size);
 }
 
-Size2 CheckBox::get_minimum_size() const {
+Size2 CheckBox::get_minimum_size() const
+{
 	Size2 minsize = Button::get_minimum_size();
 	const Size2 tex_size = get_icon_size();
 	if (tex_size.width > 0 || tex_size.height > 0) {
@@ -80,106 +81,101 @@ Size2 CheckBox::get_minimum_size() const {
 	return minsize;
 }
 
-void CheckBox::_notification(int p_what) {
+void CheckBox::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-			RID ae = get_accessibility_element();
-			ERR_FAIL_COND(ae.is_null());
+	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+		RID ae = get_accessibility_element();
+		ERR_FAIL_COND(ae.is_null());
 
-			if (is_radio()) {
-				AccessibilityServer::get_singleton()->update_set_role(ae, AccessibilityServerEnums::AccessibilityRole::ROLE_RADIO_BUTTON);
-			} else {
-				AccessibilityServer::get_singleton()->update_set_role(ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CHECK_BOX);
+		if (is_radio()) {
+			AccessibilityServer::get_singleton()->update_set_role(
+				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_RADIO_BUTTON);
+		}
+		else {
+			AccessibilityServer::get_singleton()->update_set_role(
+				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CHECK_BOX);
+		}
+	} break;
+
+	case NOTIFICATION_THEME_CHANGED:
+	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
+	case NOTIFICATION_TRANSLATION_CHANGED: {
+		if (is_layout_rtl()) {
+			_set_internal_margin(SIDE_LEFT, 0.f);
+			_set_internal_margin(SIDE_RIGHT, get_icon_size().width);
+		}
+		else {
+			_set_internal_margin(SIDE_LEFT, get_icon_size().width);
+			_set_internal_margin(SIDE_RIGHT, 0.f);
+		}
+	} break;
+
+	case NOTIFICATION_DRAW: {
+		RID ci = get_canvas_item();
+
+		Ref<Texture2D> on_tex;
+		Ref<Texture2D> off_tex;
+
+		if (is_radio()) {
+			if (is_disabled()) {
+				on_tex = theme_cache.radio_checked_disabled;
+				off_tex = theme_cache.radio_unchecked_disabled;
 			}
-		} break;
-
-		case NOTIFICATION_THEME_CHANGED:
-		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-		case NOTIFICATION_TRANSLATION_CHANGED: {
-			if (is_layout_rtl()) {
-				_set_internal_margin(SIDE_LEFT, 0.f);
-				_set_internal_margin(SIDE_RIGHT, get_icon_size().width);
-			} else {
-				_set_internal_margin(SIDE_LEFT, get_icon_size().width);
-				_set_internal_margin(SIDE_RIGHT, 0.f);
+			else {
+				on_tex = theme_cache.radio_checked;
+				off_tex = theme_cache.radio_unchecked;
 			}
-		} break;
-
-		case NOTIFICATION_DRAW: {
-			RID ci = get_canvas_item();
-
-			Ref<Texture2D> on_tex;
-			Ref<Texture2D> off_tex;
-
-			if (is_radio()) {
-				if (is_disabled()) {
-					on_tex = theme_cache.radio_checked_disabled;
-					off_tex = theme_cache.radio_unchecked_disabled;
-				} else {
-					on_tex = theme_cache.radio_checked;
-					off_tex = theme_cache.radio_unchecked;
-				}
-			} else {
-				if (is_disabled()) {
-					on_tex = theme_cache.checked_disabled;
-					off_tex = theme_cache.unchecked_disabled;
-				} else {
-					on_tex = theme_cache.checked;
-					off_tex = theme_cache.unchecked;
-				}
+		}
+		else {
+			if (is_disabled()) {
+				on_tex = theme_cache.checked_disabled;
+				off_tex = theme_cache.unchecked_disabled;
 			}
-
-			Vector2 ofs;
-			if (is_layout_rtl()) {
-				ofs.x = get_size().x - theme_cache.normal_style->get_margin(SIDE_RIGHT) - get_icon_size().width;
-			} else {
-				ofs.x = theme_cache.normal_style->get_margin(SIDE_LEFT);
+			else {
+				on_tex = theme_cache.checked;
+				off_tex = theme_cache.unchecked;
 			}
-			ofs.y = int((get_size().height - get_icon_size().height) / 2) + theme_cache.check_v_offset;
+		}
 
-			if (is_pressed()) {
-				on_tex->draw_rect(ci, Rect2(ofs, _fit_icon_size(on_tex->get_size())), false, theme_cache.checkbox_checked_color);
-			} else {
-				off_tex->draw_rect(ci, Rect2(ofs, _fit_icon_size(off_tex->get_size())), false, theme_cache.checkbox_unchecked_color);
-			}
-		} break;
+		Vector2 ofs;
+		if (is_layout_rtl()) {
+			ofs.x = get_size().x - theme_cache.normal_style->get_margin(SIDE_RIGHT) -
+					get_icon_size().width;
+		}
+		else {
+			ofs.x = theme_cache.normal_style->get_margin(SIDE_LEFT);
+		}
+		ofs.y = int((get_size().height - get_icon_size().height) / 2) + theme_cache.check_v_offset;
+
+		if (is_pressed()) {
+			on_tex->draw_rect(ci, Rect2(ofs, _fit_icon_size(on_tex->get_size())), false,
+				theme_cache.checkbox_checked_color);
+		}
+		else {
+			off_tex->draw_rect(ci, Rect2(ofs, _fit_icon_size(off_tex->get_size())), false,
+				theme_cache.checkbox_unchecked_color);
+		}
+	} break;
 	}
 }
 
-bool CheckBox::is_radio() const {
-	return get_button_group().is_valid();
-}
+bool CheckBox::is_radio() const { return get_button_group().is_valid(); }
 
-void CheckBox::_bind_methods() {
-	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, CheckBox, h_separation);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_CONSTANT, CheckBox, check_v_offset);
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_STYLEBOX, CheckBox, normal_style, "normal");
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckBox, checked);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckBox, unchecked);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckBox, radio_checked);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckBox, radio_unchecked);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckBox, checked_disabled);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckBox, unchecked_disabled);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckBox, radio_checked_disabled);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CheckBox, radio_unchecked_disabled);
-
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CheckBox, checkbox_checked_color);
-	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CheckBox, checkbox_unchecked_color);
-}
-
-CheckBox::CheckBox(const String &p_text) :
-		Button(p_text) {
+CheckBox::CheckBox(const String& p_text) : Button(p_text)
+{
 	set_toggle_mode(true);
 
 	set_text_alignment(HORIZONTAL_ALIGNMENT_LEFT);
 
 	if (is_layout_rtl()) {
 		_set_internal_margin(SIDE_RIGHT, get_icon_size().width);
-	} else {
+	}
+	else {
 		_set_internal_margin(SIDE_LEFT, get_icon_size().width);
 	}
 }
 
-CheckBox::~CheckBox() {
-}
+CheckBox::~CheckBox() {}
+
+

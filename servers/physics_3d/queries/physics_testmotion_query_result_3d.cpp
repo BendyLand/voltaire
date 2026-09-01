@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "physics_testmotion_query_result_3d.h"
 
 Vector3 PhysicsTestMotionResult3D::get_travel() const { return result.travel; }

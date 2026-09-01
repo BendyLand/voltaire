@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "spring_bone_collision_sphere_3d.h"
 
 void SpringBoneCollisionSphere3D::set_radius(float p_radius)

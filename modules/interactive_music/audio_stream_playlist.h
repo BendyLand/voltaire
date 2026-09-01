@@ -34,14 +34,13 @@
 
 class AudioStreamPlaybackPlaylist;
 
-class AudioStreamPlaylist : public AudioStream {
-	VLTRCLASS(AudioStreamPlaylist, AudioStream)
-	OBJ_SAVE_TYPE(AudioStream)
-
+class AudioStreamPlaylist : public AudioStream
+{
 private:
 	friend class AudioStreamPlaybackPlaylist;
 
-	enum {
+	enum
+	{
 		MAX_STREAMS = 64
 	};
 
@@ -51,7 +50,7 @@ private:
 
 	int stream_count = 0;
 	Ref<AudioStream> audio_streams[MAX_STREAMS];
-	HashSet<AudioStreamPlaybackPlaylist *> playbacks;
+	HashSet<AudioStreamPlaybackPlaylist*> playbacks;
 
 public:
 	virtual double get_bpm() const override;
@@ -68,23 +67,25 @@ public:
 
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 	virtual double get_length() const override;
+
 	virtual bool is_meta_stream() const override { return true; }
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &r_property) const;
 };
 
 ///////////////////////////////////////
 
-class AudioStreamPlaybackPlaylist : public AudioStreamPlayback {
-	VLTRCLASS(AudioStreamPlaybackPlaylist, AudioStreamPlayback)
+class AudioStreamPlaybackPlaylist : public AudioStreamPlayback
+{
 	friend class AudioStreamPlaylist;
 
 private:
-	enum {
+	enum
+	{
 		MIX_BUFFER_SIZE = 128
 	};
+
 	AudioFrame mix_buffer[MIX_BUFFER_SIZE];
 	AudioFrame fade_buffer[MIX_BUFFER_SIZE];
 
@@ -114,9 +115,11 @@ public:
 	virtual int get_loop_count() const override; // times it looped
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
-	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;
+	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
 
 	virtual void tag_used_streams() override;
 
 	~AudioStreamPlaybackPlaylist();
 };
+
+

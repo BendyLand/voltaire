@@ -34,8 +34,8 @@
 #include "scene/resources/mesh.h"
 #include "servers/navigation_3d/navigation_constants_3d.h"
 
-class NavigationMesh : public Resource {
-	VLTRCLASS(NavigationMesh, Resource);
+class NavigationMesh : public Resource
+{
 	RWLock rwlock;
 
 	Vector<Vector3> vertices;
@@ -44,32 +44,26 @@ class NavigationMesh : public Resource {
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
-
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-#endif // DISABLE_DEPRECATED
-
-	void _set_polygons(const Array &p_array);
-	Array _get_polygons() const;
 
 public:
-	enum SamplePartitionType {
+	enum SamplePartitionType
+	{
 		SAMPLE_PARTITION_WATERSHED = 0,
 		SAMPLE_PARTITION_MONOTONE,
 		SAMPLE_PARTITION_LAYERS,
 		SAMPLE_PARTITION_MAX
 	};
 
-	enum ParsedGeometryType {
+	enum ParsedGeometryType
+	{
 		PARSED_GEOMETRY_MESH_INSTANCES = 0,
 		PARSED_GEOMETRY_STATIC_COLLIDERS,
 		PARSED_GEOMETRY_BOTH,
 		PARSED_GEOMETRY_MAX
 	};
 
-	enum SourceGeometryMode {
+	enum SourceGeometryMode
+	{
 		SOURCE_GEOMETRY_ROOT_NODE_CHILDREN = 0,
 		SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN,
 		SOURCE_GEOMETRY_GROUPS_EXPLICIT,
@@ -122,7 +116,7 @@ public:
 	void set_source_geometry_mode(SourceGeometryMode p_geometry_mode);
 	SourceGeometryMode get_source_geometry_mode() const;
 
-	void set_source_group_name(const StringName &p_group_name);
+	void set_source_group_name(const StringName& p_group_name);
 	StringName get_source_group_name() const;
 
 	void set_cell_size(float p_value);
@@ -176,34 +170,32 @@ public:
 	void set_filter_walkable_low_height_spans(bool p_value);
 	bool get_filter_walkable_low_height_spans() const;
 
-	void set_filter_baking_aabb(const AABB &p_aabb);
+	void set_filter_baking_aabb(const AABB& p_aabb);
 	AABB get_filter_baking_aabb() const;
 
-	void set_filter_baking_aabb_offset(const Vector3 &p_aabb_offset);
+	void set_filter_baking_aabb_offset(const Vector3& p_aabb_offset);
 	Vector3 get_filter_baking_aabb_offset() const;
 
-	void create_from_mesh(const Ref<Mesh> &p_mesh);
+	void create_from_mesh(const Ref<Mesh>& p_mesh);
 
-	void set_vertices(const Vector<Vector3> &p_vertices);
+	void set_vertices(const Vector<Vector3>& p_vertices);
 	Vector<Vector3> get_vertices() const;
 
-	void add_polygon(const Vector<int> &p_polygon);
+	void add_polygon(const Vector<int>& p_polygon);
 	int get_polygon_count() const;
 	Vector<int> get_polygon(int p_idx);
 	void clear_polygons();
-	void set_polygons(const Vector<Vector<int>> &p_polygons);
+	void set_polygons(const Vector<Vector<int>>& p_polygons);
 	Vector<Vector<int>> get_polygons() const;
 
 	void clear();
 
-	void set_data(const Vector<Vector3> &p_vertices, const Vector<Vector<int>> &p_polygons);
-	void get_data(Vector<Vector3> &r_vertices, Vector<Vector<int>> &r_polygons);
+	void set_data(const Vector<Vector3>& p_vertices, const Vector<Vector<int>>& p_polygons);
+	void get_data(Vector<Vector3>& r_vertices, Vector<Vector<int>>& r_polygons);
 
 #ifdef DEBUG_ENABLED
 	Ref<ArrayMesh> get_debug_mesh();
 #endif // DEBUG_ENABLED
 };
 
-VARIANT_ENUM_CAST(NavigationMesh::SamplePartitionType);
-VARIANT_ENUM_CAST(NavigationMesh::ParsedGeometryType);
-VARIANT_ENUM_CAST(NavigationMesh::SourceGeometryMode);
+

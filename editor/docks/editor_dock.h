@@ -84,7 +84,7 @@ private:
 	bool closable = false;
 
 	DockLayout current_layout;
-	BitField<DockLayout> available_layouts = DOCK_LAYOUT_VERTICAL | DOCK_LAYOUT_FLOATING;
+	uint32_t available_layouts = DOCK_LAYOUT_VERTICAL | DOCK_LAYOUT_FLOATING;
 
 	bool is_open = false;
 	bool enabled = true;
@@ -100,8 +100,6 @@ private:
 	void _emit_changed();
 
 protected:
-	void _validate_property(PropertyInfo& p_property) const;
-
 	void _notification(int p_what);
 	static void _bind_methods();
 
@@ -154,9 +152,9 @@ public:
 
 	DockSlot get_default_slot() const { return default_slot; }
 
-	void set_available_layouts(BitField<DockLayout> p_layouts) { available_layouts = p_layouts; }
+	void set_available_layouts(uint32_t p_layouts) { available_layouts = p_layouts; }
 
-	BitField<DockLayout> get_available_layouts() const { return available_layouts; }
+	uint32_t get_available_layouts() const { return available_layouts; }
 
 	String get_display_title() const;
 	String get_effective_layout_key() const;
@@ -165,7 +163,6 @@ public:
 
 	void set_tab_index(int p_index, bool p_set_current);
 	void update_tab_style();
-	Ref<Texture2D> get_effective_icon(const Callable& p_icon_fetch);
 
 	DockLayout get_current_layout() const { return current_layout; }
 
@@ -177,8 +174,5 @@ public:
 
 	EditorDock();
 };
-
-VARIANT_BITFIELD_CAST(EditorDock::DockLayout);
-VARIANT_ENUM_CAST(EditorDock::DockSlot);
 
 

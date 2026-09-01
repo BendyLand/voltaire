@@ -220,32 +220,6 @@ void InputEventWithModifiers::set_modifiers_from_event(const InputEventWithModif
 	set_meta_pressed(p_event->is_meta_pressed());
 }
 
-BitField<KeyModifierMask> InputEventWithModifiers::get_modifiers_mask() const
-{
-	BitField<KeyModifierMask> mask = {};
-	if (is_ctrl_pressed()) {
-		mask.set_flag(KeyModifierMask::CTRL);
-	}
-	if (is_shift_pressed()) {
-		mask.set_flag(KeyModifierMask::SHIFT);
-	}
-	if (is_alt_pressed()) {
-		mask.set_flag(KeyModifierMask::ALT);
-	}
-	if (is_meta_pressed()) {
-		mask.set_flag(KeyModifierMask::META);
-	}
-	if (is_command_or_control_autoremap()) {
-		if (OS::prefer_meta_over_ctrl()) {
-			mask.set_flag(KeyModifierMask::META);
-		}
-		else {
-			mask.set_flag(KeyModifierMask::CTRL);
-		}
-	}
-	return mask;
-}
-
 String InputEventWithModifiers::as_text() const
 {
 	Vector<String> mod_names;
@@ -600,14 +574,6 @@ InputEventKey::InputEventKey() { set_device(DEVICE_ID_KEYBOARD); }
 
 ///////////////////////////////////
 
-void InputEventMouse::set_button_mask(BitField<MouseButtonMask> p_mask)
-{
-	button_mask = p_mask;
-	emit_changed();
-}
-
-BitField<MouseButtonMask> InputEventMouse::get_button_mask() const { return button_mask; }
-
 void InputEventMouse::set_position(const Vector2& p_pos) { pos = p_pos; }
 
 Vector2 InputEventMouse::get_position() const { return pos; }
@@ -867,7 +833,7 @@ String InputEventMouseMotion::as_text() const
 
 String InputEventMouseMotion::_to_string()
 {
-	BitField<MouseButtonMask> mouse_button_mask = get_button_mask();
+	uint32_t mouse_button_mask = get_button_mask();
 	String button_mask_string = itos((int64_t)mouse_button_mask);
 
 

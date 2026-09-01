@@ -32,9 +32,8 @@
 
 #include "scene/2d/node_2d.h"
 
-class Marker2D : public Node2D {
-	VLTRCLASS(Marker2D, Node2D);
-
+class Marker2D : public Node2D
+{
 	real_t gizmo_extents = 10.0;
 
 	void _draw_cross();
@@ -54,3 +53,5 @@ public:
 
 	Marker2D();
 };
+
+

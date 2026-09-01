@@ -33,9 +33,8 @@
 #include "scene/3d/node_3d.h"
 #include "scene/resources/3d/shape_3d.h"
 
-class SpringArm3D : public Node3D {
-	VLTRCLASS(SpringArm3D, Node3D);
-
+class SpringArm3D : public Node3D
+{
 	Ref<Shape3D> shape;
 	HashSet<RID> excluded_objects;
 	real_t spring_length = 1.0;
@@ -64,3 +63,5 @@ public:
 private:
 	void process_spring();
 };
+
+

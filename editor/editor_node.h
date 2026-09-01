@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/script_language.h"
 #include "core/os/process_id.h"
 #include "core/templates/safe_refcount.h"
 #include "editor/editor_data.h"
@@ -293,7 +292,6 @@ private:
 	bool _initializing_plugins = false;
 	HashMap<String, EditorPlugin*> addon_name_to_plugin;
 	LocalVector<String> pending_addons;
-	HashMap<ObjectID, HashSet<EditorPlugin*>> active_plugins;
 	bool is_main_screen_editing = false;
 
 	Control* gui_base = nullptr;
@@ -436,7 +434,6 @@ private:
 	Timer* editor_layout_save_delay_timer = nullptr;
 	Timer* scan_changes_timer = nullptr;
 	Button* distraction_free = nullptr;
-	Callable palette_file_selected_callback;
 
 	EditorBottomPanel* bottom_panel = nullptr;
 
@@ -488,7 +485,6 @@ private:
 	HashSet<String> textfile_extensions;
 	HashSet<String> other_file_extensions;
 	HashSet<FileDialog*> file_dialogs;
-	LocalVector<ObjectID> hdr_viewports;
 
 	Vector<Ref<EditorResourceConversionPlugin>> resource_conversion_plugins;
 	PrintHandlerList print_handler;
@@ -546,7 +542,6 @@ private:
 
 	void _dialog_action(String p_file);
 
-	void _add_to_history(const Object* p_object, const String& p_property, bool p_inspector_only);
 	void _edit_current(bool p_skip_foreign = false, bool p_skip_inspector_update = false);
 	void _dialog_display_save_error(String p_file, Error p_error);
 	void _dialog_display_load_error(String p_file, Error p_error);
@@ -574,8 +569,6 @@ private:
 	void _palette_quick_open_dialog();
 
 	void _remove_plugin_from_enabled(const String& p_name);
-	void _plugin_over_edit(EditorPlugin* p_plugin, Object* p_object, bool p_set_current = true);
-	void _plugin_over_self_own(const Object& obj, EditorPlugin* p_plugin);
 
 	void _fs_changed();
 	void _resources_reimporting(const Vector<String>& p_resources);
@@ -598,13 +591,11 @@ private:
 	void _update_undo_redo_allowed();
 
 	int _save_external_resources(bool p_also_save_external_data = false);
-	void _save_scene_silently(const Object& obj);
 
 	void _set_current_scene(int p_idx);
 	void _set_current_scene_nocheck(int p_idx, bool p_ignore_state = false);
 	void _nav_to_selected_scene();
 	bool _validate_scene_recursive(const String& p_filename, Node* p_node);
-	void _save_scene(const Object& obj, String p_file, int idx = -1);
 	void _save_all_scenes();
 	int _next_unsaved_scene(bool p_valid_filename, int p_start = 0);
 	void _discard_changes(const String& p_str = String());
@@ -633,10 +624,7 @@ private:
 	void _add_dropped_files_recursive(const Vector<String>& p_files, String to_path);
 
 	void _update_vsync_mode();
-	void _update_from_settings(const Object& obj);
 	void _gdextensions_reloaded();
-	void _update_translations(const Object& obj);
-	void _translation_resources_changed(const Object& obj);
 	void _queue_translation_notification();
 	void _propagate_translation_notification();
 
@@ -648,20 +636,13 @@ private:
 	void _exit_editor(int p_exit_code);
 
 	virtual void input(const Ref<InputEvent>& p_event) override;
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 	void _remove_edited_scene(bool p_change_tab = true);
 	void _remove_scene(int p_idx, bool p_change_tab = true);
 	bool _find_and_save_resource(
 		Ref<Resource> p_res, HashMap<Ref<Resource>, bool>& processed, int32_t flags);
-	bool _find_and_save_edited_subresources(
-		const Object* obj, HashMap<Ref<Resource>, bool>& processed, int32_t flags);
-	void _save_edited_subresources(const Object& obj,
-		Node* scene, HashMap<Ref<Resource>, bool>& processed, int32_t flags);
 	void _mark_unsaved_scenes();
 
-	void _find_node_types(const Object& obj, Node* p_node, int& count_2d, int& count_3d);
-	void _save_scene_with_preview(const Object& obj, String p_file, int p_idx = -1);
 	void _close_save_scene_progress();
 
 	bool _find_scene_in_use(Node* p_node, const String& p_path) const;
@@ -671,8 +652,6 @@ private:
 	bool _is_closing_editor() const;
 	void _restart_editor(bool p_goto_project_manager = false);
 
-	Dictionary _get_main_scene_state();
-	void _set_main_scene_state(const Dictionary& p_state);
 	Ref<ConfigFile> _load_scene_config(const String& p_scene_path);
 
 	void _save_editor_layout();
@@ -702,7 +681,6 @@ private:
 	void _scan_external_changes();
 	void _reload_modified_scenes();
 	void _reload_project_settings();
-	void _resave_externally_modified_scenes(const Object& obj, String p_str);
 
 	void _feature_profile_changed();
 	bool _is_class_editor_disabled_by_feature_profile(const StringName& p_class);
@@ -716,8 +694,6 @@ private:
 	void _immediate_dialog_confirmed();
 
 	void _begin_first_scan();
-
-	void _notify_nodes_scene_reimported(Node* p_node, Array p_reimported_nodes);
 
 	void _remove_all_not_owned_children(Node* p_node, Node* p_owner);
 
@@ -753,12 +729,8 @@ protected:
 	friend class FileSystemDock;
 
 	static void _bind_methods();
-	void _notification(const Object& obj, int p_what);
 
 public:
-	// Public for use as signal callback.
-	void _on_plugin_ready(Object* p_script, const String& p_activate_name);
-
 	void init_plugins();
 
 	bool call_build();
@@ -788,8 +760,6 @@ public:
 	static Button* get_distraction_free_button() { return singleton->distraction_free; }
 
 	static String adjust_scene_name_casing(const String& p_root_name);
-	static String adjust_script_name_casing(
-		const String& p_file_name, ScriptLanguage::ScriptNameCasing p_auto_casing);
 
 	static bool has_unsaved_changes() { return singleton->unsaved_cache; }
 
@@ -797,9 +767,6 @@ public:
 		const Vector<String> p_full_paths, Vector<String>& r_filenames);
 	static void add_io_error(const String& p_error);
 	static void add_io_warning(const String& p_warning);
-	static bool find_recursive_resources(
-		const Variant& p_variant, HashSet<Resource*>& r_resources_found);
-
 	static void progress_add_task(
 		const String& p_task, const String& p_label, int p_steps, bool p_can_cancel = false);
 	static bool progress_task_step(
@@ -830,8 +797,6 @@ public:
 		uint32_t p_wrap_width = 0);
 
 	static bool is_cmdline_mode();
-
-	static HashMap<String, Variant> get_initial_settings();
 
 	static void cleanup();
 
@@ -869,34 +834,18 @@ public:
 		const String& p_addon, bool p_enabled, bool p_config_changed = false);
 	bool is_addon_plugin_enabled(const String& p_addon) const;
 
-	void edit_node(const Object& obj, Node* p_node);
 	void edit_resource(const Ref<Resource>& p_resource);
 
-	void save_resource_in_path(const Object& obj, const Ref<Resource>& p_resource, const String& p_path);
-	void save_resource(const Object& obj, const Ref<Resource>& p_resource);
-	void save_resource_as(const Object& obj, const Ref<Resource>& p_resource, const String& p_at_path = String());
 	bool is_resource_internal_to_scene(Ref<Resource> p_resource);
-	void gather_resources(const Variant& p_variant, List<Ref<Resource>>& r_list,
-		HashSet<Object*>& r_scanned_objects, bool p_subresources = false,
-		bool p_allow_external = false);
-	void update_resource_count(const Object& obj, Node* p_node, bool p_remove = false);
-	void update_node_reference(const Object& obj, const Variant& p_value, Node* p_node, bool p_remove = false);
 	void clear_node_reference(Ref<Resource> p_res);
 	int get_resource_count(Ref<Resource> p_res);
 	List<Node*> get_resource_node_list(Ref<Resource> p_res);
 
 	void show_about() { _menu_option_confirm(HELP_ABOUT, false); }
 
-	void push_item(const Object* p_object, const String& p_property = "", bool p_inspector_only = false);
-	void push_item_no_inspector(Object* p_object);
 	void edit_previous_item();
-	void edit_item(Object* p_object, Object* p_editing_owner, bool p_set_current = true);
 	void push_node_item(Node* p_node);
-	void hide_unused_editors(const Object* p_editing_owner = nullptr);
 
-	void replace_resources_in_object(Object* p_object,
-		const Vector<Ref<Resource>>& p_source_resources,
-		const Vector<Ref<Resource>>& p_target_resource);
 	void replace_resources_in_scenes(const Vector<Ref<Resource>>& p_source_resources,
 		const Vector<Ref<Resource>>& p_target_resource);
 	void edit_foreign_resource(Ref<Resource> p_resource);
@@ -929,11 +878,6 @@ public:
 	Error load_scene_or_resource(const String& p_file, bool p_ignore_broken_deps = false,
 		bool p_change_scene_tab_if_already_open = true);
 
-	HashMap<StringName, Variant> get_modified_properties_for_node(
-		Node* p_node, bool p_node_references_only);
-	HashMap<StringName, Variant> get_modified_properties_reference_to_nodes(
-		Node* p_node, List<Node*>& p_nodes_referenced_by);
-
 	void set_unfocused_low_processor_usage_mode_enabled(bool p_enabled);
 
 	struct AdditiveNodeEntry
@@ -949,15 +893,12 @@ public:
 
 	struct ConnectionWithNodePath
 	{
-		Object::Connection connection;
 		NodePath node_path;
 	};
 
 	struct ModificationNodeEntry
 	{
-		HashMap<StringName, Variant> property_table;
 		List<ConnectionWithNodePath> connections_to;
-		List<Object::Connection> connections_from;
 		List<Node::GroupInfo> groups;
 	};
 
@@ -1026,12 +967,7 @@ public:
 
 	void update_preview_themes(int p_mode);
 
-	Ref<Script> get_object_custom_type_base(const Object* p_object) const;
-	StringName get_object_custom_type_name(const Object* p_object) const;
-	Ref<Texture2D> get_object_icon(const Object* p_object, const String& p_fallback = "");
 	Ref<Texture2D> get_class_icon(const String& p_class, const String& p_fallback = "");
-
-	bool is_object_of_custom_type(const Object* p_object, const StringName& p_class);
 
 	void show_save_accept(const String& p_text, const String& p_ok_text = TTRC("OK"));
 	void show_warning(const String& p_text, const String& p_title = TTRC("Warning!"));
@@ -1044,16 +980,6 @@ public:
 	bool is_project_exporting() const;
 
 	Control* get_gui_base() { return gui_base; }
-
-	void save_scene_to_path(const Object& obj, String p_file, bool p_with_preview = true)
-	{
-		if (p_with_preview) {
-			_save_scene_with_preview(obj, p_file);
-		}
-		else {
-			_save_scene(obj, p_file);
-		}
-	}
 
 	bool close_scene();
 
@@ -1073,12 +999,8 @@ public:
 
 	bool is_exiting() const { return exiting; }
 
-	Dictionary drag_resource(const Ref<Resource>& p_res, Control* p_from);
-	Dictionary drag_files_and_dirs(const Vector<String>& p_paths, Control* p_from);
-
 	EditorQuickOpenDialog* get_quick_open_dialog() { return quick_open_dialog; }
 
-	void add_tool_menu_item(const String& p_name, const Callable& p_callback);
 	void add_tool_submenu_item(const String& p_name, PopupMenu* p_submenu);
 	void remove_tool_menu_item(const String& p_name);
 
@@ -1122,7 +1044,6 @@ public:
 
 	bool ensure_main_scene(bool p_from_native);
 	bool validate_custom_directory();
-	void run_editor_script(const Ref<Script>& p_script);
 	bool is_scene_unsaved(int p_idx);
 };
 

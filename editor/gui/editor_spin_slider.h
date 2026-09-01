@@ -34,15 +34,14 @@
 #include "scene/gui/range.h"
 #include "scene/gui/texture_rect.h"
 
-class EditorSpinSlider : public Range {
-	VLTRCLASS(EditorSpinSlider, Range);
-
+class EditorSpinSlider : public Range
+{
 	String label;
 	String suffix;
 	int updown_offset = -1;
 	bool hover_updown = false;
 
-	TextureRect *grabber = nullptr;
+	TextureRect* grabber = nullptr;
 	int grabber_range = 1;
 
 	bool mouse_over_spin = false;
@@ -62,14 +61,15 @@ class EditorSpinSlider : public Range {
 	Vector2 grabbing_spinner_mouse_pos;
 	double pre_grab_value = 0.0;
 
-	LineEdit *value_input = nullptr;
+	LineEdit* value_input = nullptr;
 	uint64_t value_input_closed_frame = 0;
 	bool value_input_dirty = false;
 	bool value_input_focus_visible = false;
 	bool deferred_drag_mode = false;
 
 public:
-	enum ControlState {
+	enum ControlState
+	{
 		CONTROL_STATE_DEFAULT,
 		CONTROL_STATE_PREFER_SLIDER,
 		CONTROL_STATE_HIDE,
@@ -83,11 +83,11 @@ private:
 	void _grab_start();
 	void _grab_end();
 
-	void _grabber_gui_input(const Ref<InputEvent> &p_event);
+	void _grabber_gui_input(const Ref<InputEvent>& p_event);
 	void _value_input_hidden();
-	void _value_input_submitted(const String &);
+	void _value_input_submitted(const String&);
 	void _value_focus_exited();
-	void _value_input_gui_input(const Ref<InputEvent> &p_event);
+	void _value_input_gui_input(const Ref<InputEvent>& p_event);
 
 	void _evaluate_input_text();
 
@@ -95,29 +95,27 @@ private:
 	void _ensure_value_input();
 	void _draw_spin_slider();
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<Texture2D> updown_icon;
 		Ref<Texture2D> updown_disabled_icon;
 	} theme_cache;
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	static void _bind_methods();
 	void _grabber_mouse_entered();
 	void _grabber_mouse_exited();
 	void _focus_entered(bool p_hide_focus = false);
 
 public:
-	String get_tooltip(const Object& obj, const Point2 &p_pos) const override;
-
 	virtual Size2 get_minimum_size() const override;
 
 	String get_text_value() const;
-	void set_label(const String &p_label);
+	void set_label(const String& p_label);
 	String get_label() const;
 
-	void set_suffix(const String &p_suffix);
+	void set_suffix(const String& p_suffix);
 	String get_suffix() const;
 
 	void set_control_state(ControlState p_type);
@@ -142,9 +140,10 @@ public:
 	bool is_deferred_drag_mode_enabled() const;
 
 	void setup_and_show() { _focus_entered(); }
-	LineEdit *get_line_edit();
+
+	LineEdit* get_line_edit();
 
 	EditorSpinSlider();
 };
 
-VARIANT_ENUM_CAST(EditorSpinSlider::ControlState)
+

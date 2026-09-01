@@ -31,8 +31,6 @@
 #include "audio_stream_player_2d.compat.inc"
 #include "audio_stream_player_2d.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/2d/audio_listener_2d.h"
 #include "scene/audio/audio_stream_player_internal.h"
 #include "scene/main/viewport.h"
@@ -82,49 +80,6 @@ void AudioStreamPlayer2D::_notification(int p_what)
 		internal->ensure_playback_limit();
 	} break;
 	}
-}
-
-// Interacts with PhysicsServer2D, so can only be called during _physics_process.
-StringName AudioStreamPlayer2D::_get_actual_bus()
-{
-#ifndef PHYSICS_2D_DISABLED
-	if (area_mask == 0) {
-		return internal->bus;
-	}
-
-	Vector2 global_pos = get_global_position();
-
-	// check if any area is diverting sound into a bus
-	Ref<World2D> world_2d = get_world_2d();
-	ERR_FAIL_COND_V(world_2d.is_null(), SceneStringName(Master));
-
-	PhysicsDirectSpaceState2D* space_state =
-		PhysicsServer2D::get_singleton()->space_get_direct_state(world_2d->get_space());
-	ERR_FAIL_NULL_V(space_state, SceneStringName(Master));
-	PS2DT::ShapeResult sr[MAX_INTERSECT_AREAS];
-
-	PS2DT::PointParameters point_params;
-	point_params.position = global_pos;
-	point_params.collision_mask = area_mask;
-	point_params.collide_with_bodies = false;
-	point_params.collide_with_areas = true;
-
-	int areas = space_state->intersect_point(point_params, sr, MAX_INTERSECT_AREAS);
-	for (int i = 0; i < areas; i++) {
-		Area2D* area2d = Object::cast_to<Area2D>(sr[i].collider);
-		if (!area2d) {
-			continue;
-		}
-
-		if (!area2d->is_overriding_audio_bus()) {
-			continue;
-		}
-
-		return area2d->get_audio_bus_name();
-	}
-#endif // PHYSICS_2D_DISABLED
-
-	return internal->bus;
 }
 
 // Interacts with PhysicsServer2D, so can only be called during _physics_process
@@ -305,11 +260,6 @@ bool AudioStreamPlayer2D::is_autoplay_enabled() const { return internal->autopla
 
 void AudioStreamPlayer2D::_set_playing(bool p_enable) { internal->set_playing(p_enable); }
 
-void AudioStreamPlayer2D::_validate_property(PropertyInfo& p_property) const
-{
-	internal->validate_property(p_property);
-}
-
 void AudioStreamPlayer2D::set_max_distance(float p_pixels)
 {
 	ERR_FAIL_COND(p_pixels <= 0.0);
@@ -360,31 +310,6 @@ AudioServer::PlaybackType AudioStreamPlayer2D::get_playback_type() const
 void AudioStreamPlayer2D::set_playback_type(AudioServer::PlaybackType p_playback_type)
 {
 	internal->set_playback_type(p_playback_type);
-}
-
-bool AudioStreamPlayer2D::_set(const StringName& p_name, const Variant& p_value)
-{
-	return internal->set(p_name, p_value);
-}
-
-bool AudioStreamPlayer2D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	return internal->get(p_name, r_ret);
-}
-
-void AudioStreamPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	internal->get_property_list(p_list);
-}
-
-void AudioStreamPlayer2D::_bind_methods() {}
-
-AudioStreamPlayer2D::AudioStreamPlayer2D()
-{
-	internal = memnew(AudioStreamPlayerInternal(this, callable_mp(this, &AudioStreamPlayer2D::play),
-		callable_mp(this, &AudioStreamPlayer2D::stop), true));
-	cached_global_panning_strength = GLOBAL_GET_CACHED(float, "audio/general/2d_panning_strength");
-	set_hide_clip_children(true);
 }
 
 AudioStreamPlayer2D::~AudioStreamPlayer2D() { memdelete(internal); }

@@ -35,28 +35,32 @@
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/storage/render_data.h"
 
-class RenderDataRD : public RenderData {
-	VLTRCLASS(RenderDataRD, RenderData);
-
+class RenderDataRD : public RenderData
+{
 public:
 	// Access methods to expose data externally
-	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const override { return render_buffers; }
-	virtual RenderSceneData *get_render_scene_data() const override { return scene_data; }
+	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const override
+	{
+		return render_buffers;
+	}
+
+	virtual RenderSceneData* get_render_scene_data() const override { return scene_data; }
 
 	virtual RID get_environment() const override { return environment; }
+
 	virtual RID get_camera_attributes() const override { return camera_attributes; }
 
 	// Members are publicly accessible within the render engine.
 	Ref<RenderSceneBuffersRD> render_buffers;
-	RenderSceneDataRD *scene_data = nullptr;
+	RenderSceneDataRD* scene_data = nullptr;
 
-	const PagedArray<RenderGeometryInstance *> *instances = nullptr;
-	const PagedArray<RID> *lights = nullptr;
-	const PagedArray<RID> *reflection_probes = nullptr;
-	const PagedArray<RID> *voxel_gi_instances = nullptr;
-	const PagedArray<RID> *decals = nullptr;
-	const PagedArray<RID> *lightmaps = nullptr;
-	const PagedArray<RID> *fog_volumes = nullptr;
+	const PagedArray<RenderGeometryInstance*>* instances = nullptr;
+	const PagedArray<RID>* lights = nullptr;
+	const PagedArray<RID>* reflection_probes = nullptr;
+	const PagedArray<RID>* voxel_gi_instances = nullptr;
+	const PagedArray<RID>* decals = nullptr;
+	const PagedArray<RID>* lightmaps = nullptr;
+	const PagedArray<RID>* fog_volumes = nullptr;
 	RID environment;
 	RID camera_attributes;
 	RID compositor;
@@ -77,14 +81,14 @@ public:
 
 	float window_output_max_value = 1.0;
 
-	RenderingServerTypes::RenderInfo *render_info = nullptr;
+	RenderingServerTypes::RenderInfo* render_info = nullptr;
 
 	/* Viewport data */
 	bool transparent_bg = false;
 	Rect2i render_region;
 
 	/* Shadow data */
-	const RendererSceneRender::RenderShadowData *render_shadows = nullptr;
+	const RendererSceneRender::RenderShadowData* render_shadows = nullptr;
 	int render_shadow_count = 0;
 
 	LocalVector<int> cube_shadows;
@@ -92,9 +96,11 @@ public:
 	LocalVector<int> directional_shadows;
 
 	/* GI info */
-	const RendererSceneRender::RenderSDFGIData *render_sdfgi_regions = nullptr;
+	const RendererSceneRender::RenderSDFGIData* render_sdfgi_regions = nullptr;
 	int render_sdfgi_region_count = 0;
-	const RendererSceneRender::RenderSDFGIUpdateData *sdfgi_update_data = nullptr;
+	const RendererSceneRender::RenderSDFGIUpdateData* sdfgi_update_data = nullptr;
 
 	uint32_t voxel_gi_count = 0;
 };
+
+

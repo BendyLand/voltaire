@@ -34,18 +34,17 @@
 #include "scene/resources/video_stream.h"
 #include "servers/audio/audio_rb_resampler.h"
 
-class VideoStreamPlayer : public Control {
-	VLTRCLASS(VideoStreamPlayer, Control);
-
+class VideoStreamPlayer : public Control
+{
 	Ref<VideoStreamPlayback> playback;
 	Ref<VideoStream> stream;
 
 	int sp_get_channel_count() const;
-	bool mix(AudioFrame *p_buffer, int p_frames);
+	bool mix(AudioFrame* p_buffer, int p_frames);
 
 	Ref<Texture2D> texture;
 	Size2 texture_size;
-	void texture_changed(const Ref<Texture2D> &p_texture);
+	void texture_changed(const Ref<Texture2D>& p_texture);
 
 	AudioRBResampler resampler;
 	Vector<AudioFrame> mix_buffer;
@@ -67,13 +66,11 @@ class VideoStreamPlayer : public Control {
 	StringName bus;
 
 	void _mix_audio();
-	static int _audio_mix_callback(void *p_udata, const float *p_data, int p_frames);
-	static void _mix_audios(void *p_self);
+	static int _audio_mix_callback(void* p_udata, const float* p_data, int p_frames);
+	static void _mix_audios(void* p_self);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_notification);
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
 	Size2 get_minimum_size() const override;
@@ -82,7 +79,7 @@ public:
 
 	Ref<Texture2D> get_video_texture() const;
 
-	void set_stream(const Ref<VideoStream> &p_stream);
+	void set_stream(const Ref<VideoStream>& p_stream);
 	Ref<VideoStream> get_stream() const;
 
 	void play();
@@ -118,8 +115,10 @@ public:
 	void set_buffering_msec(int p_msec);
 	int get_buffering_msec() const;
 
-	void set_bus(const StringName &p_bus);
+	void set_bus(const StringName& p_bus);
 	StringName get_bus() const;
 
 	~VideoStreamPlayer();
 };
+
+

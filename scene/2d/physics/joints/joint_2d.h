@@ -34,9 +34,8 @@
 
 class PhysicsBody2D;
 
-class Joint2D : public Node2D {
-	VLTRCLASS(Joint2D, Node2D);
-
+class Joint2D : public Node2D
+{
 	RID joint;
 	RID ba, bb;
 
@@ -54,7 +53,7 @@ protected:
 	void _update_joint(bool p_only_free = false);
 
 	void _notification(int p_what);
-	virtual void _configure_joint(RID p_joint, PhysicsBody2D *body_a, PhysicsBody2D *body_b) = 0;
+	virtual void _configure_joint(RID p_joint, PhysicsBody2D* body_a, PhysicsBody2D* body_b) = 0;
 
 	static void _bind_methods();
 
@@ -63,10 +62,10 @@ protected:
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-	void set_node_a(const NodePath &p_node_a);
+	void set_node_a(const NodePath& p_node_a);
 	NodePath get_node_a() const;
 
-	void set_node_b(const NodePath &p_node_b);
+	void set_node_b(const NodePath& p_node_b);
 	NodePath get_node_b() const;
 
 	void set_bias(real_t p_bias);
@@ -76,6 +75,9 @@ public:
 	bool get_exclude_nodes_from_collision() const;
 
 	RID get_rid() const { return joint; }
+
 	Joint2D();
 	~Joint2D();
 };
+
+

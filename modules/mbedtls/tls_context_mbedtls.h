@@ -33,15 +33,12 @@
 #include <mbedtls/debug.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/ssl_cookie.h>
-#include "core/object/ref_counted.h"
 #include "crypto_mbedtls.h"
 
 class TLSContextMbedTLS;
 
 class CookieContextMbedTLS : public RefCounted
 {
-	VLTRSOFTCLASS(CookieContextMbedTLS, RefCounted);
-
 	friend class TLSContextMbedTLS;
 
 protected:
@@ -58,8 +55,6 @@ public:
 
 class TLSContextMbedTLS : public RefCounted
 {
-	VLTRSOFTCLASS(TLSContextMbedTLS, RefCounted);
-
 private:
 	bool inited = false;
 	mbedtls_pk_context pk;

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/scene_string_names.h"
 #include "sprite_frames.h"
 
@@ -194,98 +193,6 @@ SpriteFrames::LoopMode SpriteFrames::get_animation_loop_mode(const StringName& p
 		!E, LoopMode::LOOP_NONE, "Animation '" + String(p_anim) + "' doesn't exist.");
 	return E->value.loop;
 }
-
-Array SpriteFrames::_get_animations() const
-{
-	Array anims;
-
-	List<StringName> sorted_names;
-	get_animation_list(&sorted_names);
-	sorted_names.sort_custom<StringName::AlphCompare>();
-
-	for (const StringName& anim_name : sorted_names) {
-		const Anim& anim = animations[anim_name];
-		Dictionary d;
-		d["name"] = anim_name;
-		d["speed"] = anim.speed;
-		d["loop"] = anim.loop;
-		Array frames;
-		for (int i = 0; i < anim.frames.size(); i++) {
-			Dictionary f;
-			f["texture"] = anim.frames[i].texture;
-			f["duration"] = anim.frames[i].duration;
-			frames.push_back(f);
-		}
-		d["frames"] = frames;
-		anims.push_back(d);
-	}
-
-	return anims;
-}
-
-void SpriteFrames::_set_animations(const Array& p_animations)
-{
-	animations.clear();
-	for (int i = 0; i < p_animations.size(); i++) {
-		Dictionary d = p_animations[i];
-
-		ERR_CONTINUE(!d.has("name"));
-		ERR_CONTINUE(!d.has("speed"));
-		ERR_CONTINUE(!d.has("loop"));
-		ERR_CONTINUE(!d.has("frames"));
-
-		Anim anim;
-		anim
-.speed = d["speed"];
-		Array frames = d["frames"];
-		Variant loop = d["loop"];
-		anim.loop = static_cast<LoopMode>((int)loop);
-
-		for (int j = 0; j < frames.size(); j++) {
-#ifndef DISABLE_DEPRECATED
-			// For compatibility.
-			Ref<Resource> res = frames[j];
-			if (res.is_valid()) {
-				Frame frame = {res, 1.0};
-				anim.frames.push_back(frame);
-				continue;
-			}
-#endif
-
-			Dictionary f = frames[j];
-
-			ERR_CONTINUE(!f.has("texture"));
-			ERR_CONTINUE(!f.has("duration"));
-
-			Frame frame = {f["texture"], MAX(SPRITE_FRAME_MINIMUM_DURATION, (float)f["duration"])};
-			anim.frames.push_back(frame);
-		}
-
-		animations[d["name"]] = anim;
-	}
-}
-
-#ifdef TOOLS_ENABLED
-void SpriteFrames::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
-{
-	const String pf = p_function;
-	if (p_idx == 0) {
-		if (pf == "has_animation" || pf == "remove_animation" || pf == "rename_animation" ||
-			pf == "set_animation_speed" || pf == "get_animation_speed" ||
-			pf == "set_animation_loop" || pf == "get_animation_loop" || pf == "add_frame" ||
-			pf == "set_frame" || pf == "remove_frame" || pf == "get_frame_count" ||
-			pf == "get_frame_texture" || pf == "get_frame_duration" || pf == "clear") {
-			for (const String& E : get_animation_names()) {
-				r_options->push_back(E.quote());
-			}
-		}
-	}
-	this->obj->get_argument_options(p_function, p_idx, r_options);
-}
-#endif
-
-void SpriteFrames::_bind_methods() {}
 
 SpriteFrames::SpriteFrames() { add_animation(SceneStringName(default_)); }
 

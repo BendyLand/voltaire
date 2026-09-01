@@ -35,9 +35,8 @@
 class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 
-class NavigationObstacle3D : public Node3D {
-	VLTRCLASS(NavigationObstacle3D, Node3D);
-
+class NavigationObstacle3D : public Node3D
+{
 	RID obstacle;
 	RID map_before_pause;
 	RID map_override;
@@ -93,15 +92,19 @@ public:
 	RID get_navigation_map() const;
 
 	void set_radius(real_t p_radius);
+
 	real_t get_radius() const { return radius; }
 
 	void set_height(real_t p_height);
+
 	real_t get_height() const { return height; }
 
-	void set_vertices(const Vector<Vector3> &p_vertices);
-	const Vector<Vector3> &get_vertices() const { return vertices; }
+	void set_vertices(const Vector<Vector3>& p_vertices);
+
+	const Vector<Vector3>& get_vertices() const { return vertices; }
 
 	bool are_vertices_clockwise() const { return vertices_are_clockwise; }
+
 	bool are_vertices_valid() const { return vertices_are_valid; }
 
 	void set_avoidance_layers(uint32_t p_layers);
@@ -111,9 +114,11 @@ public:
 	bool get_avoidance_layer_value(int p_layer_number) const;
 
 	void set_use_3d_avoidance(bool p_use_3d_avoidance);
+
 	bool get_use_3d_avoidance() const { return use_3d_avoidance; }
 
 	void set_velocity(const Vector3 p_velocity);
+
 	Vector3 get_velocity() const { return velocity; }
 
 	void _avoidance_done(Vector3 p_new_velocity); // Dummy
@@ -127,12 +132,12 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 
 private:
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 
 public:
 	static void navmesh_parse_init();
-	static void navmesh_parse_source_geometry(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
+	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
 
 private:
 	void _update_map(RID p_map);
@@ -140,3 +145,5 @@ private:
 	void _update_transform();
 	void _update_use_3d_avoidance(bool p_use_3d_avoidance);
 };
+
+

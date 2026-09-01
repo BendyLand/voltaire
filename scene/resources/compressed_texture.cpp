@@ -31,7 +31,6 @@
 #include "compressed_texture.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/object/class_db.h"
 #include "scene/resources/bit_map.h"
 #include "servers/rendering/rendering_server.h"
 
@@ -136,80 +135,6 @@ CompressedTexture2D::TextureFormatRequestCallback CompressedTexture2D::request_n
 	nullptr;
 
 Image::Format CompressedTexture2D::get_format() const { return format; }
-
-Error CompressedTexture2D::load(const String& p_path)
-{
-	int lw, lh;
-	Ref<Image> image;
-	image.instantiate();
-
-	bool request_3d;
-	bool request_normal;
-	bool request_roughness;
-	int mipmap_limit;
-
-	Error err = _load_data(
-		p_path, lw, lh, image, request_3d, request_normal, request_roughness, mipmap_limit);
-	if (err) {
-		return err;
-	}
-
-	if (texture.is_valid()) {
-		RID new_texture = RS::get_singleton()->texture_2d_create(image);
-		RS::get_singleton()->texture_replace(texture, new_texture);
-	}
-	else {
-		texture = RS::get_singleton()->texture_2d_create(image);
-	}
-	if (lw || lh) {
-		RS::get_singleton()->texture_set_size_override(texture, lw, lh);
-	}
-
-	w = lw;
-	h = lh;
-	path_to_file = p_path;
-	format = image->get_format();
-
-	if (get_path().is_empty()) {
-		// temporarily set path if no path set for resource, helps find errors
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
-	}
-
-#ifdef TOOLS_ENABLED
-
-	if (request_3d) {
-		// print_line("request detect 3D at " + p_path);
-		RS::get_singleton()->texture_set_detect_3d_callback(texture, _requested_3d, this);
-	}
-	else {
-		// print_line("not requesting detect 3D at " + p_path);
-		RS::get_singleton()->texture_set_detect_3d_callback(texture, nullptr, nullptr);
-	}
-
-	if (request_roughness) {
-		// print_line("request detect srgb at " + p_path);
-		RS::get_singleton()->texture_set_detect_roughness_callback(
-			texture, _requested_roughness, this);
-	}
-	else {
-		// print_line("not requesting detect srgb at " + p_path);
-		RS::get_singleton()->texture_set_detect_roughness_callback(texture, nullptr, nullptr);
-	}
-
-	if (request_normal) {
-		// print_line("request detect srgb at " + p_path);
-		RS::get_singleton()->texture_set_detect_normal_callback(texture, _requested_normal, this);
-	}
-	else {
-		// print_line("not requesting detect normal at " + p_path);
-		RS::get_singleton()->texture_set_detect_normal_callback(texture, nullptr, nullptr);
-	}
-
-#endif
-	this->obj->notify_property_list_changed();
-	emit_changed();
-	return OK;
-}
 
 String CompressedTexture2D::get_load_path() const { return path_to_file; }
 
@@ -546,45 +471,6 @@ Error CompressedTexture3D::_load_data(const String& p_path, Vector<Ref<Image>>& 
 	return OK;
 }
 
-Error CompressedTexture3D::load(const String& p_path)
-{
-	Vector<Ref<Image>> data;
-
-	int tw, th, td;
-	Image::Format tfmt;
-	bool tmm;
-
-	Error err = _load_data(p_path, data, tfmt, tw, th, td, tmm);
-	if (err) {
-		return err;
-	}
-
-	if (texture.is_valid()) {
-		RID new_texture = RS::get_singleton()->texture_3d_create(tfmt, tw, th, td, tmm, data);
-		RS::get_singleton()->texture_replace(texture, new_texture);
-	}
-	else {
-		texture = RS::get_singleton()->texture_3d_create(tfmt, tw, th, td, tmm, data);
-	}
-
-	w = tw;
-	h = th;
-	d = td;
-	mipmaps = tmm;
-	format = tfmt;
-
-	path_to_file = p_path;
-
-	if (get_path().is_empty()) {
-		// temporarily set path if no path set for resource, helps find errors
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
-	}
-
-	this->obj->notify_property_list_changed();
-	emit_changed();
-	return OK;
-}
-
 String CompressedTexture3D::get_load_path() const { return path_to_file; }
 
 int CompressedTexture3D::get_width() const { return w; }
@@ -694,45 +580,6 @@ Error CompressedTextureLayered::_load_data(
 		images.write[i] = image;
 	}
 
-	return OK;
-}
-
-Error CompressedTextureLayered::load(const String& p_path)
-{
-	Vector<Ref<Image>> images;
-
-	int mipmap_limit;
-
-	Error err = _load_data(p_path, images, mipmap_limit);
-	if (err) {
-		return err;
-	}
-
-	if (texture.is_valid()) {
-		RID new_texture = RS::get_singleton()->texture_2d_layered_create(
-			images, RSE::TextureLayeredType(layered_type));
-		RS::get_singleton()->texture_replace(texture, new_texture);
-	}
-	else {
-		texture = RS::get_singleton()->texture_2d_layered_create(
-			images, RSE::TextureLayeredType(layered_type));
-	}
-
-	w = images[0]->get_width();
-	h = images[0]->get_height();
-	mipmaps = images[0]->has_mipmaps();
-	format = images[0]->get_format();
-	layers = images.size();
-
-	path_to_file = p_path;
-
-	if (get_path().is_empty()) {
-		// temporarily set path if no path set for resource, helps find errors
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
-	}
-
-	this->obj->notify_property_list_changed();
-	emit_changed();
 	return OK;
 }
 

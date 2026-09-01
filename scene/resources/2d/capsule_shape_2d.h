@@ -32,9 +32,8 @@
 
 #include "scene/resources/2d/shape_2d.h"
 
-class CapsuleShape2D : public Shape2D {
-	VLTRCLASS(CapsuleShape2D, Shape2D);
-
+class CapsuleShape2D : public Shape2D
+{
 	real_t height = 30.0;
 	real_t radius = 10.0;
 
@@ -45,7 +44,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
+	virtual bool _edit_is_selected_on_click(
+		const Point2& p_point, double p_tolerance) const override;
 
 	void set_height(real_t p_height);
 	real_t get_height() const;
@@ -56,9 +56,11 @@ public:
 	void set_mid_height(real_t p_mid_height);
 	real_t get_mid_height() const;
 
-	virtual void draw(const RID &p_to_rid, const Color &p_color) override;
+	virtual void draw(const RID& p_to_rid, const Color& p_color) override;
 	virtual Rect2 get_rect() const override;
 	virtual real_t get_enclosing_radius() const override;
 
 	CapsuleShape2D();
 };
+
+
