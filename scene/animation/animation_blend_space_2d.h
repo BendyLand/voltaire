@@ -96,9 +96,6 @@ protected:
 	String y_label = "y";
 	BlendMode blend_mode = BLEND_MODE_INTERPOLATED;
 
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-
 	void _set_triangles(const Vector<int>& p_triangles);
 	Vector<int> _get_triangles() const;
 
@@ -137,8 +134,6 @@ protected:
 public:
 	virtual void validate_node(
 		const AnimationTree* p_tree, const StringName& p_path) const override;
-
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual void get_child_nodes(LocalVector<ChildNode>* r_child_nodes) override;
 

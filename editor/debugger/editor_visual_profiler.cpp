@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/image.h"
-#include "core/object/callable_mp.h"
 #include "core/string/translation_server.h"
 #include "editor/editor_string_names.h"
 #include "editor/run/editor_run_bar.h"
@@ -111,16 +110,11 @@ void EditorVisualProfiler::add_frame_metric(const Metric& p_metric)
 
 void EditorVisualProfiler::clear()
 {
-	int metric_size = EDITOR_GET("debugger/profiler_frame_history_size");
-	metric_size = CLAMP(metric_size, 60, 10000);
 	frame_metrics.clear();
-	frame_metrics.resize(metric_size);
 	last_metric = -1;
 	variables->clear();
 	// activate->set_pressed(false);
 	category_folding.clear();
-
-	graph_limit = 1000.0f / CLAMP(int(EDITOR_GET("debugger/profiler_target_fps")), 1, 1000);
 
 	updating_frame = true;
 	cursor_metric_edit->set_min(0);
@@ -129,25 +123,6 @@ void EditorVisualProfiler::clear()
 	updating_frame = false;
 	hover_metric = -1;
 	seeking = false;
-}
-
-String EditorVisualProfiler::_get_time_as_text(float p_time)
-{
-	const String& lang = this->obj->_get_locale();
-
-	int dmode = display_mode->get_selected();
-
-	if (dmode == DISPLAY_FRAME_TIME) {
-		return TranslationServer::get_singleton()->format_number(String::num(p_time, 2), lang) +
-			   " " + TTR("ms");
-	}
-	else if (dmode == DISPLAY_FRAME_PERCENT) {
-		return TranslationServer::get_singleton()->format_number(
-				   String::num(p_time * 100 / graph_limit, 2), lang) +
-			   " " + TranslationServer::get_singleton()->get_percent_sign(lang);
-	}
-
-	return "err";
 }
 
 Color EditorVisualProfiler::_get_color_from_signature(const StringName& p_signature) const
@@ -169,14 +144,7 @@ void EditorVisualProfiler::_item_selected()
 	if (!item) {
 		return;
 	}
-	selected_area = item->get_metadata(0);
 	_update_plot();
-}
-
-void EditorVisualProfiler::_item_collapsed(TreeItem* p_item)
-{
-	StringName fullpath = p_item->get_metadata(0);
-	category_folding[fullpath] = p_item->is_collapsed();
 }
 
 void EditorVisualProfiler::_update_plot()
@@ -395,10 +363,7 @@ void EditorVisualProfiler::_update_frame(bool p_focus_selected)
 
 			name = name.substr(1);
 
-			category->set_metadata(0, m.areas[i].fullpath_cache);
 			category->set_text(0, name);
-			category->set_metadata(1, cpu_time);
-			category->set_metadata(2, gpu_time);
 
 			if (category_folding.has(m.areas[i].fullpath_cache)) {
 				category->set_collapsed(category_folding[m.areas[i].fullpath_cache]);
@@ -412,24 +377,12 @@ void EditorVisualProfiler::_update_frame(bool p_focus_selected)
 		}
 		TreeItem* category = variables->create_item(parent);
 
-		for (TreeItem* E : stack) {
-			float total_cpu = E->get_metadata(1);
-			float total_gpu = E->get_metadata(2);
-			total_cpu += cpu_time;
-			total_gpu += gpu_time;
-			E->set_metadata(1, total_cpu);
-			E->set_metadata(2, total_gpu);
-		}
-
 		category->set_icon(0, track_icon);
 		category->set_icon_modulate(0, m.areas[i].color_cache);
 		category->set_selectable(0, true);
-		category->set_metadata(0, m.areas[i].fullpath_cache);
 		category->set_text(0, m.areas[i].name);
 		category->set_text(1, _get_time_as_text(cpu_time));
-		category->set_metadata(1, m.areas[i].cpu_time);
 		category->set_text(2, _get_time_as_text(gpu_time));
-		category->set_metadata(2, m.areas[i].gpu_time);
 
 		if (selected_area == m.areas[i].fullpath_cache) {
 			category->select(0);
@@ -437,13 +390,6 @@ void EditorVisualProfiler::_update_frame(bool p_focus_selected)
 				ensure_selected = category;
 			}
 		}
-	}
-
-	for (TreeItem* E : categories) {
-		float total_cpu = E->get_metadata(1);
-		float total_gpu = E->get_metadata(2);
-		E->set_text(1, _get_time_as_text(total_cpu));
-		E->set_text(2, _get_time_as_text(total_gpu));
 	}
 
 	if (ensure_selected) {
@@ -471,7 +417,6 @@ void EditorVisualProfiler::_activate_pressed()
 		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
 		activate->set_text(TTRC("Start"));
 	}
-	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
 void EditorVisualProfiler::_clear_pressed()
@@ -483,8 +428,6 @@ void EditorVisualProfiler::_clear_pressed()
 
 void EditorVisualProfiler::_autostart_toggled(bool p_toggled_on)
 {
-	EditorSettings::get_singleton()->set_project_metadata(
-		"debug_options", "autostart_visual_profiler", p_toggled_on);
 	EditorRunBar::get_singleton()->update_profiler_autostart_indicator();
 }
 
@@ -644,7 +587,7 @@ void EditorVisualProfiler::_graph_tex_input(const Ref<InputEvent>& p_ev)
 			hover_metric = -1;
 		}
 
-		if (mb.is_valid() || mm->get_button_mask().has_flag(MouseButtonMask::LEFT)) {
+		if (mb.is_valid() || (mm->get_button_mask() & (uint32_t)(MouseButtonMask::LEFT)) != 0) {
 			// cursor_metric=x;
 			updating_frame = true;
 
@@ -771,7 +714,6 @@ void EditorVisualProfiler::set_profiling(bool p_profiling)
 {
 	activate->set_pressed(p_profiling);
 	_update_button_text();
-	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
 bool EditorVisualProfiler::is_profiling() { return activate->is_pressed(); }
@@ -847,23 +789,15 @@ EditorVisualProfiler::EditorVisualProfiler()
 	activate->set_toggle_mode(true);
 	activate->set_disabled(true);
 	activate->set_text(TTRC("Start"));
-	activate->connect(
-		SceneStringName(pressed), callable_mp(this, &EditorVisualProfiler::_activate_pressed));
 	container->add_child(activate);
 
 	clear_button = memnew(Button);
 	clear_button->set_text(TTRC("Clear"));
 	clear_button->set_disabled(true);
-	clear_button->connect(
-		SceneStringName(pressed), callable_mp(this, &EditorVisualProfiler::_clear_pressed));
 	container->add_child(clear_button);
 
 	CheckBox* autostart_checkbox = memnew(CheckBox);
 	autostart_checkbox->set_text(TTRC("Autostart"));
-	autostart_checkbox->set_pressed(EditorSettings::get_singleton()->get_project_metadata(
-		"debug_options", "autostart_visual_profiler", false));
-	autostart_checkbox->connect(
-		SceneStringName(toggled), callable_mp(this, &EditorVisualProfiler::_autostart_toggled));
 	container->add_child(autostart_checkbox);
 
 	HBoxContainer* hb_measure = memnew(HBoxContainer);
@@ -876,21 +810,15 @@ EditorVisualProfiler::EditorVisualProfiler()
 	display_mode->set_accessibility_name(TTRC("Measure:"));
 	display_mode->add_item(TTRC("Frame Time (ms)"));
 	display_mode->add_item(TTRC("Frame %"));
-	display_mode->connect(
-		SceneStringName(item_selected), callable_mp(this, &EditorVisualProfiler::_combo_changed));
 
 	hb_measure->add_child(display_mode);
 
 	frame_relative = memnew(CheckBox(TTRC("Fit to Frame")));
 	frame_relative->set_pressed(true);
 	container->add_child(frame_relative);
-	frame_relative->connect(
-		SceneStringName(pressed), callable_mp(this, &EditorVisualProfiler::_update_plot));
 	linked = memnew(CheckBox(TTRC("Linked")));
 	linked->set_pressed(true);
 	container->add_child(linked);
-	linked->connect(
-		SceneStringName(pressed), callable_mp(this, &EditorVisualProfiler::_update_plot));
 
 	HBoxContainer* hb_frame = memnew(HBoxContainer);
 	hb_frame->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
@@ -903,8 +831,6 @@ EditorVisualProfiler::EditorVisualProfiler()
 	cursor_metric_edit->set_accessibility_name(TTRC("Frame #:"));
 	cursor_metric_edit->set_h_size_flags(SIZE_FILL);
 	hb_frame->add_child(cursor_metric_edit);
-	cursor_metric_edit->connect(SceneStringName(value_changed),
-		callable_mp(this, &EditorVisualProfiler::_cursor_metric_changed));
 
 	h_split = memnew(HSplitContainer);
 	add_child(h_split);
@@ -929,40 +855,24 @@ EditorVisualProfiler::EditorVisualProfiler()
 	variables->set_column_clip_content(2, true);
 	variables->set_column_custom_minimum_width(2, 75 * EDSCALE);
 	variables->set_theme_type_variation("TreeSecondary");
-	variables->connect("cell_selected", callable_mp(this, &EditorVisualProfiler::_item_selected));
-	variables->connect("item_collapsed", callable_mp(this, &EditorVisualProfiler::_item_collapsed));
 
 	graph = memnew(TextureRect);
 	graph->set_custom_minimum_size(Size2(250 * EDSCALE, 0));
 	graph->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
 	graph->set_mouse_filter(MOUSE_FILTER_STOP);
-	graph->connect(
-		SceneStringName(draw), callable_mp(this, &EditorVisualProfiler::_graph_tex_draw));
-	graph->connect(
-		SceneStringName(gui_input), callable_mp(this, &EditorVisualProfiler::_graph_tex_input));
-	graph->connect(SceneStringName(mouse_exited),
-		callable_mp(this, &EditorVisualProfiler::_graph_tex_mouse_exit));
 
 	h_split->add_child(graph);
 	graph->set_h_size_flags(SIZE_EXPAND_FILL);
-
-	int metric_size = CLAMP(int(EDITOR_GET("debugger/profiler_frame_history_size")), 60, 10000);
-	frame_metrics.resize(metric_size);
-
-	graph_limit = 1000.0f / CLAMP(int(EDITOR_GET("debugger/profiler_target_fps")), 1, 1000);
 
 	frame_delay = memnew(Timer);
 	frame_delay->set_wait_time(0.1);
 	frame_delay->set_one_shot(true);
 	add_child(frame_delay);
-	frame_delay->connect(
-		"timeout", callable_mp(this, &EditorVisualProfiler::_update_frame).bind(false));
 
 	plot_delay = memnew(Timer);
 	plot_delay->set_wait_time(0.1);
 	plot_delay->set_one_shot(true);
 	add_child(plot_delay);
-	plot_delay->connect("timeout", callable_mp(this, &EditorVisualProfiler::_update_plot));
 }
 
 

@@ -79,7 +79,6 @@ class AnimationTreeEditor : public EditorDock
 	static LocalVector<StringName> get_animation_list();
 
 protected:
-	void _meta_clicked(Variant p_meta);
 	void _notification(int p_what);
 	void _node_removed(Node* p_node);
 

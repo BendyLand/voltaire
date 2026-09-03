@@ -90,7 +90,6 @@ class EditorFileSystemDirectory
 	friend class EditorFileSystem;
 
 public:
-	mem_unique_ptr<Object> obj;
 	String get_name();
 	String get_path() const;
 
@@ -124,8 +123,6 @@ public:
 
 class EditorFileSystemImportFormatSupportQuery : public RefCounted
 {
-	VLTRCLASS(EditorFileSystemImportFormatSupportQuery, RefCounted);
-
 protected:
 	static void _bind_methods();
 };
@@ -273,10 +270,6 @@ class EditorFileSystem : public Node
 
 	void _update_extensions();
 
-	Error _reimport_file(const String& p_file,
-		const HashMap<StringName, Variant>& p_custom_options = HashMap<StringName, Variant>(),
-		const String& p_custom_importer = String(), Variant* generator_parameters = nullptr,
-		bool p_update_file_system = true);
 	Error _reimport_group(const String& p_group_file, const Vector<String>& p_files);
 
 	bool _test_for_reimport(const String& p_path, const String& p_expected_import_md5);
@@ -361,7 +354,6 @@ class EditorFileSystem : public Node
 	HashMap<String, String> file_icon_cache;
 
 	bool refresh_queued = false;
-	HashSet<ObjectID> folders_to_sort;
 
 	Error _copy_file(const String& p_from, const String& p_to);
 	bool _copy_directory(
@@ -425,12 +417,6 @@ public:
 	ResourceUID::ID get_file_uid(const String& p_path) const;
 
 	void reimport_files(const Vector<String>& p_files);
-	Error reimport_append(const String& p_file,
-		const HashMap<StringName, Variant>& p_custom_options, const String& p_custom_importer,
-		Variant p_generator_parameters);
-
-	void reimport_file_with_custom_parameters(const String& p_file, const String& p_importer,
-		const HashMap<StringName, Variant>& p_custom_params);
 
 	bool is_group_file(const String& p_path) const;
 	void move_group_file(const String& p_path, const String& p_new_path);

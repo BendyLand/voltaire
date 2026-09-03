@@ -115,11 +115,8 @@ public:
 
 	virtual bool is_handle_highlighted(int p_id, bool p_secondary) const;
 	virtual String get_handle_name(int p_id, bool p_secondary) const;
-	virtual Variant get_handle_value(int p_id, bool p_secondary) const;
 	virtual void begin_handle_action(int p_id, bool p_secondary);
 	virtual void set_handle(int p_id, bool p_secondary, Camera3D* p_camera, const Point2& p_point);
-	virtual void commit_handle(
-		int p_id, bool p_secondary, const Variant& p_restore, bool p_cancel = false);
 
 	virtual int subgizmos_intersect_ray(Camera3D* p_camera, const Vector2& p_point) const;
 	virtual Vector<int> subgizmos_intersect_frustum(
@@ -201,13 +198,9 @@ public:
 		const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const;
 	virtual String get_handle_name(
 		const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const;
-	virtual Variant get_handle_value(
-		const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const;
 	virtual void begin_handle_action(const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary);
 	virtual void set_handle(const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary,
 		Camera3D* p_camera, const Point2& p_point);
-	virtual void commit_handle(const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary,
-		const Variant& p_restore, bool p_cancel = false);
 
 	virtual int subgizmos_intersect_ray(
 		const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera, const Vector2& p_point) const;

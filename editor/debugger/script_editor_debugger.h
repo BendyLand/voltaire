@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/script_language.h"
 #include "core/os/process_id.h"
 #include "editor/debugger/editor_debugger_inspector.h"
 #include "editor/debugger/editor_debugger_node.h"
@@ -56,26 +55,28 @@ class DebugAdapterProtocol;
 class DebugAdapterParser;
 class EditorExpressionEvaluator;
 
-class ScriptEditorDebugger : public MarginContainer {
-	VLTRCLASS(ScriptEditorDebugger, MarginContainer);
-
+class ScriptEditorDebugger : public MarginContainer
+{
 	friend class EditorDebuggerNode;
 	friend class DebugAdapterProtocol;
 	friend class DebugAdapterParser;
 
 private:
-	enum MessageType {
+	enum MessageType
+	{
 		MESSAGE_ERROR,
 		MESSAGE_WARNING,
 		MESSAGE_SUCCESS,
 	};
 
-	enum ProfilerType {
+	enum ProfilerType
+	{
 		PROFILER_VISUAL,
 		PROFILER_SCRIPTS_SERVERS
 	};
 
-	enum Actions {
+	enum Actions
+	{
 		ACTION_COPY_ERROR,
 		ACTION_OPEN_SOURCE,
 		ACTION_DELETE_BREAKPOINT,
@@ -83,36 +84,40 @@ private:
 		ACTION_DELETE_ALL_BREAKPOINTS,
 	};
 
-	enum VMemMenu {
+	enum VMemMenu
+	{
 		VMEM_MENU_SHOW_IN_FILESYSTEM,
 		VMEM_MENU_SHOW_IN_EXPLORER,
 		VMEM_MENU_OWNERS,
 	};
 
-	AcceptDialog *msgdialog = nullptr;
+	AcceptDialog* msgdialog = nullptr;
 
-	LineEdit *clicked_ctrl = nullptr;
-	LineEdit *clicked_ctrl_type = nullptr;
-	LineEdit *live_edit_root = nullptr;
-	Button *le_set = nullptr;
-	Button *le_clear = nullptr;
-	Button *export_csv = nullptr;
+	LineEdit* clicked_ctrl = nullptr;
+	LineEdit* clicked_ctrl_type = nullptr;
+	LineEdit* live_edit_root = nullptr;
+	Button* le_set = nullptr;
+	Button* le_clear = nullptr;
+	Button* export_csv = nullptr;
 
-	VBoxContainer *errors_tab = nullptr;
-	Tree *error_tree = nullptr;
-	Button *expand_all_button = nullptr;
-	Button *collapse_all_button = nullptr;
-	Button *clear_button = nullptr;
-	PopupMenu *item_menu = nullptr;
+	VBoxContainer* errors_tab = nullptr;
+	Tree* error_tree = nullptr;
+	Button* expand_all_button = nullptr;
+	Button* collapse_all_button = nullptr;
+	Button* clear_button = nullptr;
+	PopupMenu* item_menu = nullptr;
 
-	Tree *breakpoints_tree = nullptr;
-	PopupMenu *breakpoints_menu = nullptr;
+	Tree* breakpoints_tree = nullptr;
+	PopupMenu* breakpoints_menu = nullptr;
 
-	EditorFileDialog *file_dialog = nullptr;
-	enum FileDialogPurpose {
+	EditorFileDialog* file_dialog = nullptr;
+
+	enum FileDialogPurpose
+	{
 		SAVE_MONITORS_CSV,
 		SAVE_VRAM_CSV,
 	};
+
 	FileDialogPurpose file_dialog_purpose = SAVE_MONITORS_CSV;
 
 	int error_count = 0;
@@ -120,50 +125,47 @@ private:
 
 	bool skip_breakpoints_value = false;
 	bool ignore_error_breaks_value = false;
-	Ref<Script> stack_script;
 
-	TabContainer *tabs = nullptr;
+	TabContainer* tabs = nullptr;
 
-	RichTextLabel *reason = nullptr;
+	RichTextLabel* reason = nullptr;
 
-	Button *skip_breakpoints = nullptr;
-	Button *ignore_error_breaks = nullptr;
-	Button *copy = nullptr;
-	Button *step = nullptr;
-	Button *next = nullptr;
-	Button *out = nullptr;
-	Button *dobreak = nullptr;
-	Button *docontinue = nullptr;
+	Button* skip_breakpoints = nullptr;
+	Button* ignore_error_breaks = nullptr;
+	Button* copy = nullptr;
+	Button* step = nullptr;
+	Button* next = nullptr;
+	Button* out = nullptr;
+	Button* dobreak = nullptr;
+	Button* docontinue = nullptr;
 	// Reference to "Remote" tab in scene tree. Needed by _live_edit_set and buttons state.
 	// Each debugger should have it's tree in the future I guess.
-	const Tree *editor_remote_tree = nullptr;
+	const Tree* editor_remote_tree = nullptr;
 
 	HashMap<int, String> profiler_signature;
 
-	MarginContainer *vmem_mc = nullptr;
-	Tree *vmem_tree = nullptr;
-	Button *vmem_refresh = nullptr;
-	Button *vmem_export = nullptr;
-	LineEdit *vmem_total = nullptr;
-	TextureRect *vmem_notice_icon = nullptr;
-	PopupMenu *vmem_item_menu = nullptr;
+	MarginContainer* vmem_mc = nullptr;
+	Tree* vmem_tree = nullptr;
+	Button* vmem_refresh = nullptr;
+	Button* vmem_export = nullptr;
+	LineEdit* vmem_total = nullptr;
+	TextureRect* vmem_notice_icon = nullptr;
+	PopupMenu* vmem_item_menu = nullptr;
 
-	Tree *stack_dump = nullptr;
-	LineEdit *search = nullptr;
-	OptionButton *threads = nullptr;
-	EditorDebuggerInspector *inspector = nullptr;
-	SceneDebuggerTree *scene_tree = nullptr;
-
-	Ref<RemoteDebuggerPeer> peer;
+	Tree* stack_dump = nullptr;
+	LineEdit* search = nullptr;
+	OptionButton* threads = nullptr;
+	EditorDebuggerInspector* inspector = nullptr;
+	SceneDebuggerTree* scene_tree = nullptr;
 
 	HashMap<NodePath, int> node_path_cache;
 	int last_path_id = 0;
 	HashMap<String, int> res_path_cache;
 
-	EditorProfiler *profiler = nullptr;
-	EditorVisualProfiler *visual_profiler = nullptr;
-	EditorPerformanceProfiler *performance_profiler = nullptr;
-	EditorExpressionEvaluator *expression_evaluator = nullptr;
+	EditorProfiler* profiler = nullptr;
+	EditorVisualProfiler* visual_profiler = nullptr;
+	EditorPerformanceProfiler* performance_profiler = nullptr;
+	EditorExpressionEvaluator* expression_evaluator = nullptr;
 
 	ProcessID remote_pid = 0;
 	bool move_to_foreground = true;
@@ -173,7 +175,8 @@ private:
 
 	uint64_t debugging_thread_id = Thread::UNASSIGNED_ID;
 
-	struct ThreadDebugged {
+	struct ThreadDebugged
+	{
 		String name;
 		String error;
 		bool can_debug = false;
@@ -182,8 +185,10 @@ private:
 		uint64_t thread_id = Thread::UNASSIGNED_ID; // for order
 	};
 
-	struct ThreadSort {
-		bool operator()(const ThreadDebugged *a, const ThreadDebugged *b) const {
+	struct ThreadSort
+	{
+		bool operator()(const ThreadDebugged* a, const ThreadDebugged* b) const
+		{
 			return a->debug_order < b->debug_order;
 		}
 	};
@@ -202,71 +207,26 @@ private:
 
 	void _stack_dump_frame_selected();
 
-	void _file_selected(const String &p_file);
+	void _file_selected(const String& p_file);
 
 	/// Message handler function for _parse_message.
-	typedef void (ScriptEditorDebugger::*ParseMessageFunc)(uint64_t p_thread_id, const Array &p_data);
-	static HashMap<String, ParseMessageFunc> parse_message_handlers;
 	static void _init_parse_message_handlers();
 
-	void _msg_debug_enter(uint64_t p_thread_id, const Array &p_data);
-	void _msg_debug_exit(uint64_t p_thread_id, const Array &p_data);
-	void _msg_set_pid(uint64_t p_thread_id, const Array &p_data);
-	void _msg_scene_click_ctrl(uint64_t p_thread_id, const Array &p_data);
-	void _msg_scene_scene_tree(uint64_t p_thread_id, const Array &p_data);
-	void _msg_scene_inspect_objects(uint64_t p_thread_id, const Array &p_data);
-#ifndef DISABLE_DEPRECATED
-	void _msg_scene_inspect_object(uint64_t p_thread_id, const Array &p_data);
-#endif // DISABLE_DEPRECATED
-	void _msg_scene_debug_mute_audio(uint64_t p_thread_id, const Array &p_data);
-	void _msg_servers_memory_usage(uint64_t p_thread_id, const Array &p_data);
-	void _msg_servers_drawn(uint64_t p_thread_id, const Array &p_data);
-	void _msg_stack_dump(uint64_t p_thread_id, const Array &p_data);
-	void _msg_stack_frame_vars(uint64_t p_thread_id, const Array &p_data);
-	void _msg_stack_frame_var(uint64_t p_thread_id, const Array &p_data);
-	void _msg_output(uint64_t p_thread_id, const Array &p_data);
-	void _msg_performance_profile_frame(uint64_t p_thread_id, const Array &p_data);
-	void _msg_visual_hardware_info(uint64_t p_thread_id, const Array &p_data);
-	void _msg_visual_profile_frame(uint64_t p_thread_id, const Array &p_data);
-	void _msg_error(uint64_t p_thread_id, const Array &p_data);
-	void _msg_servers_function_signature(uint64_t p_thread_id, const Array &p_data);
-	void _msg_servers_profile_common(const Array &p_data, const bool p_final);
-	void _msg_servers_profile_frame(uint64_t p_thread_id, const Array &p_data);
-	void _msg_servers_profile_total(uint64_t p_thread_id, const Array &p_data);
-	void _msg_request_quit(uint64_t p_thread_id, const Array &p_data);
-	void _msg_remote_objects_selected(uint64_t p_thread_id, const Array &p_data);
-	void _msg_remote_nothing_selected(uint64_t p_thread_id, const Array &p_data);
-	void _msg_remote_selection_invalidated(uint64_t p_thread_id, const Array &p_data);
-	void _msg_show_selection_limit_warning(uint64_t p_thread_id, const Array &p_data);
-	void _msg_performance_profile_names(uint64_t p_thread_id, const Array &p_data);
-	void _msg_filesystem_update_file(uint64_t p_thread_id, const Array &p_data);
-	void _msg_evaluation_return(uint64_t p_thread_id, const Array &p_data);
-	void _msg_window_title(uint64_t p_thread_id, const Array &p_data);
-	void _msg_embed_suspend_toggle(uint64_t p_thread_id, const Array &p_data);
-	void _msg_embed_next_frame(uint64_t p_thread_id, const Array &p_data);
-
-	void _parse_message(const String &p_msg, uint64_t p_thread_id, const Array &p_data);
-	void _set_reason_text(const String &p_reason, MessageType p_type);
+	void _set_reason_text(const String& p_reason, MessageType p_type);
 	void _update_reason_content_height();
 	void _update_buttons_state();
-	void _remote_object_selected(ObjectID p_object);
-	void _remote_objects_edited(const String &p_prop, const TypedDictionary<uint64_t, Variant> &p_values, const String &p_field);
-	void _remote_object_property_updated(ObjectID p_id, const String &p_property);
 
 	void _video_mem_request();
 	void _video_mem_export();
 
-	void _resources_reimported(const PackedStringArray &p_resources);
+	void _resources_reimported(const PackedStringArray& p_resources);
 
-	int _get_node_path_cache(const NodePath &p_path);
+	int _get_node_path_cache(const NodePath& p_path);
 
-	int _get_res_path_cache(const String &p_path);
+	int _get_res_path_cache(const String& p_path);
 
 	void _live_edit_set();
 	void _live_edit_clear();
-
-	void _method_changed(Object *p_base, const StringName &p_name, const Variant **p_args, int p_argcount);
-	void _property_changed(Object *p_base, const StringName &p_property, const Variant &p_value);
 
 	void _error_activated();
 	void _error_selected();
@@ -275,7 +235,7 @@ private:
 	void _collapse_errors_list();
 
 	void _vmem_item_activated();
-	void _vmem_tree_rmb_selected(const Vector2 &p_pos, MouseButton p_button);
+	void _vmem_tree_rmb_selected(const Vector2& p_pos, MouseButton p_button);
 	void _vmem_item_menu_id_pressed(int p_option);
 
 	void _profiler_activate(bool p_enable, int p_profiler);
@@ -283,23 +243,21 @@ private:
 
 	void _clear_errors_list();
 
-	void _breakpoints_item_rmb_selected(const Vector2 &p_pos, MouseButton p_button);
-	void _error_tree_item_rmb_selected(const Vector2 &p_pos, MouseButton p_button);
+	void _breakpoints_item_rmb_selected(const Vector2& p_pos, MouseButton p_button);
+	void _error_tree_item_rmb_selected(const Vector2& p_pos, MouseButton p_button);
 	void _item_menu_id_pressed(int p_option);
 	void _tab_changed(int p_tab);
 
-	void _put_msg(const String &p_message, const Array &p_data, uint64_t p_thread_id = Thread::MAIN_ID);
 	void _export_csv();
 
 	void _clear_execution();
 	void _stop_and_notify();
 
-	void _set_breakpoint(const String &p_path, const int &p_line, const bool &p_enabled);
+	void _set_breakpoint(const String& p_path, const int& p_line, const bool& p_enabled);
 	void _clear_breakpoints();
 
 	void _breakpoint_tree_clicked();
 
-	String _format_frame_text(const ScriptLanguage::StackInfo *info);
 
 	void _thread_debug_enter(uint64_t p_thread_id);
 
@@ -308,25 +266,25 @@ protected:
 	static void _bind_methods();
 
 public:
-	enum EmbedShortcutAction {
+	enum EmbedShortcutAction
+	{
 		EMBED_SUSPEND_TOGGLE,
 		EMBED_NEXT_FRAME,
 	};
 
-	void request_remote_objects(const TypedArray<uint64_t> &p_obj_ids, bool p_update_selection = true);
-	void update_remote_object(ObjectID p_obj_id, const String &p_prop, const Variant &p_value, const String &p_field = "");
+	void request_remote_objects(
+		const TypedArray<uint64_t>& p_obj_ids, bool p_update_selection = true);
 
 	void clear_inspector(bool p_send_msg = true);
 
 	// Needed by _live_edit_set, buttons state.
-	void set_editor_remote_tree(const Tree *p_tree) { editor_remote_tree = p_tree; }
+	void set_editor_remote_tree(const Tree* p_tree) { editor_remote_tree = p_tree; }
 
 	void request_remote_tree();
-	const SceneDebuggerTree *get_remote_tree();
+	const SceneDebuggerTree* get_remote_tree();
 
-	void request_remote_evaluate(const String &p_expression, int p_stack_frame);
+	void request_remote_evaluate(const String& p_expression, int p_stack_frame);
 
-	void start(Ref<RemoteDebuggerPeer> p_peer);
 	void stop();
 
 	void debug_skip_breakpoints();
@@ -338,36 +296,43 @@ public:
 	void debug_step();
 	void debug_break();
 	void debug_continue();
+
 	bool is_breaked() const { return threads_debugged.size() > 0; }
-	bool is_debuggable() const { return threads_debugged.size() > 0 && threads_debugged[debugging_thread_id].can_debug; }
-	bool is_session_active() { return peer.is_valid() && peer->is_peer_connected(); }
+
+	bool is_debuggable() const
+	{
+		return threads_debugged.size() > 0 && threads_debugged[debugging_thread_id].can_debug;
+	}
+
 	int get_remote_pid() const { return remote_pid; }
 
 	bool is_move_to_foreground() const;
-	void set_move_to_foreground(const bool &p_move_to_foreground);
+	void set_move_to_foreground(const bool& p_move_to_foreground);
 
 	int get_error_count() const { return error_count; }
+
 	int get_warning_count() const { return warning_count; }
+
 	String get_stack_script_file() const;
 	int get_stack_script_line() const;
 	int get_stack_script_frame() const;
 
-	bool request_stack_dump(const int &p_frame);
+	bool request_stack_dump(const int& p_frame);
 
 	void update_tabs();
 	void clear_style();
-	String get_var_value(const String &p_var) const;
+	String get_var_value(const String& p_var) const;
 
-	void save_node(ObjectID p_id, const String &p_file);
 	void set_live_debugging(bool p_enable);
 
-	void live_debug_create_node(const NodePath &p_parent, const String &p_type, const String &p_name);
-	void live_debug_instantiate_node(const NodePath &p_parent, const String &p_path, const String &p_name);
-	void live_debug_remove_node(const NodePath &p_at);
-	void live_debug_remove_and_keep_node(const NodePath &p_at, ObjectID p_keep_id);
-	void live_debug_restore_node(ObjectID p_id, const NodePath &p_at, int p_at_pos);
-	void live_debug_duplicate_node(const NodePath &p_at, const String &p_new_name);
-	void live_debug_reparent_node(const NodePath &p_at, const NodePath &p_new_place, const String &p_new_name, int p_at_pos);
+	void live_debug_create_node(
+		const NodePath& p_parent, const String& p_type, const String& p_name);
+	void live_debug_instantiate_node(
+		const NodePath& p_parent, const String& p_path, const String& p_name);
+	void live_debug_remove_node(const NodePath& p_at);
+	void live_debug_duplicate_node(const NodePath& p_at, const String& p_new_name);
+	void live_debug_reparent_node(
+		const NodePath& p_at, const NodePath& p_new_place, const String& p_new_name, int p_at_pos);
 
 	bool get_debug_mute_audio() const;
 	void set_debug_mute_audio(bool p_mute);
@@ -375,28 +340,27 @@ public:
 	EditorDebuggerNode::CameraOverride get_camera_override() const;
 	void set_camera_override(EditorDebuggerNode::CameraOverride p_override);
 
-	void set_breakpoint(const String &p_path, int p_line, bool p_enabled);
+	void set_breakpoint(const String& p_path, int p_line, bool p_enabled);
 
 	void update_live_edit_root();
 
 	void reload_all_scripts();
-	void reload_scripts(const Vector<String> &p_script_paths);
+	void reload_scripts(const Vector<String>& p_script_paths);
 
 	bool is_skip_breakpoints() const;
 	bool is_ignore_error_breaks() const;
 
 	virtual Size2 get_minimum_size() const override;
 
-	void add_debugger_tab(Control *p_control);
-	void remove_debugger_tab(Control *p_control);
+	void add_debugger_tab(Control* p_control);
+	void remove_debugger_tab(Control* p_control);
 	int get_current_debugger_tab() const;
 	void switch_to_debugger(int p_debugger_tab_idx);
-
-	void send_message(const String &p_message, const Array &p_args);
-	void toggle_profiler(const String &p_profiler, bool p_enable, const Array &p_data);
 
 	void update_layout(EditorDock::DockLayout p_layout, int p_slot);
 
 	ScriptEditorDebugger();
 	~ScriptEditorDebugger();
 };
+
+

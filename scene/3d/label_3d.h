@@ -35,11 +35,11 @@
 #include "scene/resources/material.h"
 #include "servers/text/text_server.h"
 
-class Label3D : public GeometryInstance3D {
-	VLTRCLASS(Label3D, GeometryInstance3D);
-
+class Label3D : public GeometryInstance3D
+{
 public:
-	enum DrawFlags {
+	enum DrawFlags
+	{
 		FLAG_SHADED,
 		FLAG_DOUBLE_SIDED,
 		FLAG_DISABLE_DEPTH_TEST,
@@ -47,7 +47,8 @@ public:
 		FLAG_MAX
 	};
 
-	enum AlphaCutMode {
+	enum AlphaCutMode
+	{
 		ALPHA_CUT_DISABLED,
 		ALPHA_CUT_DISCARD,
 		ALPHA_CUT_OPAQUE_PREPASS,
@@ -61,14 +62,17 @@ private:
 	AlphaCutMode alpha_cut = ALPHA_CUT_DISABLED;
 	float alpha_scissor_threshold = 0.5;
 	float alpha_hash_scale = 1.0;
-	StandardMaterial3D::AlphaAntiAliasing alpha_antialiasing_mode = StandardMaterial3D::ALPHA_ANTIALIASING_OFF;
+	StandardMaterial3D::AlphaAntiAliasing alpha_antialiasing_mode =
+		StandardMaterial3D::ALPHA_ANTIALIASING_OFF;
 	float alpha_antialiasing_edge = 0.0f;
 
 	AABB aabb;
 
 	mutable Ref<TriangleMesh> triangle_mesh;
 	RID mesh;
-	struct SurfaceData {
+
+	struct SurfaceData
+	{
 		PackedVector3Array mesh_vertices;
 		PackedVector3Array mesh_normals;
 		PackedFloat32Array mesh_tangents;
@@ -80,24 +84,30 @@ private:
 		RID material;
 	};
 
-	struct SurfaceKey {
+	struct SurfaceKey
+	{
 		uint64_t texture_id;
 		int32_t priority;
 		int32_t outline_size;
 
-		bool operator==(const SurfaceKey &p_b) const {
-			return (texture_id == p_b.texture_id) && (priority == p_b.priority) && (outline_size == p_b.outline_size);
+		bool operator==(const SurfaceKey& p_b) const
+		{
+			return (texture_id == p_b.texture_id) && (priority == p_b.priority) &&
+				   (outline_size == p_b.outline_size);
 		}
 
-		SurfaceKey(uint64_t p_texture_id, int p_priority, int p_outline_size) {
+		SurfaceKey(uint64_t p_texture_id, int p_priority, int p_outline_size)
+		{
 			texture_id = p_texture_id;
 			priority = p_priority;
 			outline_size = p_outline_size;
 		}
 	};
 
-	struct SurfaceKeyHasher {
-		_FORCE_INLINE_ static uint32_t hash(const SurfaceKey &p_a) {
+	struct SurfaceKeyHasher
+	{
+		_FORCE_INLINE_ static uint32_t hash(const SurfaceKey& p_a)
+		{
 			return hash_murmur3_buffer(&p_a, sizeof(SurfaceKey));
 		}
 	};
@@ -111,8 +121,11 @@ private:
 	bool uppercase = false;
 
 	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
-	uint32_t autowrap_flags_trim = TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
-	uint32_t jst_flags = TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA | TextServer::JUSTIFICATION_SKIP_LAST_LINE | TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+	uint32_t autowrap_flags_trim =
+		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
+	uint32_t jst_flags = TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+						 TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+						 TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
 	float width = 500.0;
 
 	int font_size = 32;
@@ -131,13 +144,13 @@ private:
 	String language;
 	TextServer::Direction text_direction = TextServer::DIRECTION_AUTO;
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-	Array st_args;
 
 	RID text_rid;
 	Vector<RID> lines_rid;
 
 	StandardMaterial3D::BillboardMode billboard_mode = StandardMaterial3D::BILLBOARD_DISABLED;
-	StandardMaterial3D::TextureFilter texture_filter = StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
+	StandardMaterial3D::TextureFilter texture_filter =
+		StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
 
 	bool pending_update = false;
 
@@ -145,14 +158,13 @@ private:
 	bool dirty_font = true;
 	bool dirty_text = true;
 
-	void _generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset, const Color &p_modulate, int p_priority = 0, int p_outline_size = 0);
+	void _generate_glyph_surfaces(const Glyph& p_glyph, Vector2& r_offset, const Color& p_modulate,
+		int p_priority = 0, int p_outline_size = 0);
 
 protected:
 	void _notification(int p_what);
 
 	static void _bind_methods();
-
-	void _validate_property(PropertyInfo &p_property) const;
 
 	void _im_update();
 	void _font_changed();
@@ -173,25 +185,22 @@ public:
 	void set_outline_render_priority(int p_priority);
 	int get_outline_render_priority() const;
 
-	void set_text(const String &p_string);
+	void set_text(const String& p_string);
 	String get_text() const;
 
 	void set_text_direction(TextServer::Direction p_text_direction);
 	TextServer::Direction get_text_direction() const;
 
-	void set_language(const String &p_language);
+	void set_language(const String& p_language);
 	String get_language() const;
 
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
 
-	void set_structured_text_bidi_override_options(const Array &p_args);
-	Array get_structured_text_bidi_override_options() const;
-
 	void set_uppercase(bool p_uppercase);
 	bool is_uppercase() const;
 
-	void set_font(const Ref<Font> &p_font);
+	void set_font(const Ref<Font>& p_font);
 	Ref<Font> get_font() const;
 	Ref<Font> _get_font_or_default() const;
 
@@ -204,10 +213,10 @@ public:
 	void set_line_spacing(float p_size);
 	float get_line_spacing() const;
 
-	void set_modulate(const Color &p_color);
+	void set_modulate(const Color& p_color);
 	Color get_modulate() const;
 
-	void set_outline_modulate(const Color &p_color);
+	void set_outline_modulate(const Color& p_color);
 	Color get_outline_modulate() const;
 
 	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
@@ -225,7 +234,7 @@ public:
 	void set_pixel_size(real_t p_amount);
 	real_t get_pixel_size() const;
 
-	void set_offset(const Point2 &p_offset);
+	void set_offset(const Point2& p_offset);
 	Point2 get_offset() const;
 
 	void set_draw_flag(DrawFlags p_flag, bool p_enable);
@@ -259,5 +268,4 @@ public:
 	~Label3D();
 };
 
-VARIANT_ENUM_CAST(Label3D::DrawFlags);
-VARIANT_ENUM_CAST(Label3D::AlphaCutMode);
+

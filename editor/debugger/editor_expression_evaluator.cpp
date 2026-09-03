@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "editor/debugger/editor_debugger_inspector.h"
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/editor_string_names.h"
@@ -52,12 +51,6 @@ void EditorExpressionEvaluator::set_editor_debugger(ScriptEditorDebugger* p_edit
 	editor_debugger = p_editor_debugger;
 }
 
-void EditorExpressionEvaluator::add_value(const Array& p_array)
-{
-	inspector->add_stack_variable(p_array, 0);
-	inspector->set_v_scroll(0);
-	inspector->set_h_scroll(0);
-}
 
 void EditorExpressionEvaluator::_line_edit_gui_input(const Ref<InputEvent>& p_event)
 {
@@ -106,10 +99,6 @@ void EditorExpressionEvaluator::_evaluate()
 		return;
 	}
 
-	if (!editor_debugger->is_session_active()) {
-		return;
-	}
-
 	expression_history.erase(expression);
 	expression_history.push_back(expression);
 	expression_index = -1;
@@ -120,11 +109,6 @@ void EditorExpressionEvaluator::_evaluate()
 }
 
 void EditorExpressionEvaluator::_clear() { inspector->clear_stack_variables(); }
-
-void EditorExpressionEvaluator::_remote_object_selected(ObjectID p_id)
-{
-	editor_debugger->obj->emit_signal(SNAME("remote_objects_requested"), Array{p_id});
-}
 
 void EditorExpressionEvaluator::_on_expression_input_changed(const String& p_expression)
 {
@@ -138,21 +122,10 @@ void EditorExpressionEvaluator::_on_debugger_breaked(bool p_breaked, bool p_can_
 	evaluate_btn->set_disabled(!p_breaked);
 }
 
-void EditorExpressionEvaluator::_on_debugger_clear_execution(Ref<Script> p_stack_script)
-{
-	expression_input->set_editable(false);
-	evaluate_btn->set_disabled(true);
-}
 
 void EditorExpressionEvaluator::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_READY: {
-		EditorDebuggerNode::get_singleton()->connect(
-			"breaked", callable_mp(this, &EditorExpressionEvaluator::_on_debugger_breaked));
-		EditorDebuggerNode::get_singleton()->connect("clear_execution",
-			callable_mp(this, &EditorExpressionEvaluator::_on_debugger_clear_execution));
-	} break;
 	case NOTIFICATION_THEME_CHANGED: {
 		expression_input->add_theme_font_override(SceneStringName(font),
 			get_theme_font(SNAME("expression"), EditorStringName(EditorFonts)).ptr());
@@ -175,12 +148,6 @@ EditorExpressionEvaluator::EditorExpressionEvaluator()
 	expression_input->set_accessibility_name(TTRC("Expression to evaluate"));
 	expression_input->set_clear_button_enabled(true);
 	expression_input->set_keep_editing_on_text_submit(true);
-	expression_input->connect(SceneStringName(gui_input),
-		callable_mp(this, &EditorExpressionEvaluator::_line_edit_gui_input));
-	expression_input->connect(SceneStringName(text_submitted),
-		callable_mp(this, &EditorExpressionEvaluator::_evaluate).unbind(1));
-	expression_input->connect(SceneStringName(text_changed),
-		callable_mp(this, &EditorExpressionEvaluator::_on_expression_input_changed));
 	hb->add_child(expression_input);
 
 	clear_on_run_checkbox = memnew(CheckBox);
@@ -192,23 +159,17 @@ EditorExpressionEvaluator::EditorExpressionEvaluator()
 	evaluate_btn = memnew(Button);
 	evaluate_btn->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
 	evaluate_btn->set_text(TTRC("Evaluate"));
-	evaluate_btn->connect(
-		SceneStringName(pressed), callable_mp(this, &EditorExpressionEvaluator::_evaluate));
 	hb->add_child(evaluate_btn);
 
 	clear_btn = memnew(Button);
 	clear_btn->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
 	clear_btn->set_text(TTRC("Clear"));
-	clear_btn->connect(
-		SceneStringName(pressed), callable_mp(this, &EditorExpressionEvaluator::_clear));
 	hb->add_child(clear_btn);
 
 	inspector = memnew(EditorDebuggerInspector);
 	inspector->set_v_size_flags(SIZE_EXPAND_FILL);
 	inspector->set_property_name_style(EditorPropertyNameProcessor::STYLE_RAW);
 	inspector->set_read_only(true);
-	inspector->connect(
-		"object_selected", callable_mp(this, &EditorExpressionEvaluator::_remote_object_selected));
 	inspector->set_use_filter(true);
 	add_child(inspector);
 

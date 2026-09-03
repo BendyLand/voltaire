@@ -32,27 +32,32 @@
 
 #include "core/io/xml_parser.h"
 
-class Collada {
+class Collada
+{
 public:
-	enum ImportFlags {
+	enum ImportFlags
+	{
 		IMPORT_FLAG_SCENE = 1,
 		IMPORT_FLAG_ANIMATION = 2
 	};
 
-	struct Image {
+	struct Image
+	{
 		String path;
 	};
 
-	struct Material {
+	struct Material
+	{
 		String name;
 		String instance_effect;
 	};
 
-	struct Effect {
+	struct Effect
+	{
 		String name;
-		HashMap<String, Variant> params;
 
-		struct Channel {
+		struct Channel
+		{
 			int uv_idx = 0;
 			String texture;
 			Color color;
@@ -64,27 +69,31 @@ public:
 		bool double_sided = true;
 		bool unshaded = false;
 
-		String get_texture_path(const String &p_source, Collada &p_state) const;
+		String get_texture_path(const String& p_source, Collada& p_state) const;
 
-		Effect() {
-			diffuse.color = Color(1, 1, 1, 1);
-		}
+		Effect() { diffuse.color = Color(1, 1, 1, 1); }
 	};
 
-	struct CameraData {
-		enum Mode {
+	struct CameraData
+	{
+		enum Mode
+		{
 			MODE_PERSPECTIVE,
 			MODE_ORTHOGONAL
 		};
 
 		Mode mode = MODE_PERSPECTIVE;
 
-		union {
-			struct {
+		union
+		{
+			struct
+			{
 				float x_fov = 0;
 				float y_fov = 0;
 			} perspective;
-			struct {
+
+			struct
+			{
 				float x_mag = 0;
 				float y_mag = 0;
 			} orthogonal;
@@ -97,8 +106,10 @@ public:
 		CameraData() {}
 	};
 
-	struct LightData {
-		enum Mode {
+	struct LightData
+	{
+		enum Mode
+		{
 			MODE_AMBIENT,
 			MODE_DIRECTIONAL,
 			MODE_OMNI,
@@ -117,23 +128,29 @@ public:
 		float spot_exp = 1;
 	};
 
-	struct MeshData {
+	struct MeshData
+	{
 		String name;
-		struct Source {
+
+		struct Source
+		{
 			Vector<float> array;
 			int stride = 0;
 		};
 
 		HashMap<String, Source> sources;
 
-		struct Vertices {
+		struct Vertices
+		{
 			HashMap<String, String> sources;
 		};
 
 		HashMap<String, Vertices> vertices;
 
-		struct Primitives {
-			struct SourceRef {
+		struct Primitives
+		{
+			struct SourceRef
+			{
 				String source;
 				int offset = 0;
 			};
@@ -152,11 +169,13 @@ public:
 		bool double_sided = true;
 	};
 
-	struct CurveData {
+	struct CurveData
+	{
 		String name;
 		bool closed = false;
 
-		struct Source {
+		struct Source
+		{
 			Vector<String> sarray;
 			Vector<float> array;
 			int stride = 0;
@@ -167,26 +186,31 @@ public:
 		HashMap<String, String> control_vertices;
 	};
 
-	struct SkinControllerData {
+	struct SkinControllerData
+	{
 		String base;
 		bool use_idrefs = false;
 
 		Transform3D bind_shape;
 
-		struct Source {
-			Vector<String> sarray; //maybe for names
+		struct Source
+		{
+			Vector<String> sarray; // maybe for names
 			Vector<float> array;
 			int stride = 1;
 		};
 
 		HashMap<String, Source> sources;
 
-		struct Joints {
+		struct Joints
+		{
 			HashMap<String, String> sources;
 		} joints;
 
-		struct Weights {
-			struct SourceRef {
+		struct Weights
+		{
+			struct SourceRef
+			{
 				String source;
 				int offset = 0;
 			};
@@ -201,13 +225,15 @@ public:
 		HashMap<String, Transform3D> bone_rest_map;
 	};
 
-	struct MorphControllerData {
+	struct MorphControllerData
+	{
 		String mesh;
 		String mode;
 
-		struct Source {
+		struct Source
+		{
 			int stride = 1;
-			Vector<String> sarray; //maybe for names
+			Vector<String> sarray; // maybe for names
 			Vector<float> array;
 		};
 
@@ -216,7 +242,8 @@ public:
 		HashMap<String, String> targets;
 	};
 
-	struct Vertex {
+	struct Vertex
+	{
 		int idx = 0;
 		Vector3 vertex;
 		Vector3 normal;
@@ -225,18 +252,22 @@ public:
 		Plane tangent;
 		Color color;
 		int uid = 0;
-		struct Weight {
+
+		struct Weight
+		{
 			int bone_idx = 0;
 			float weight = 0;
-			bool operator<(const Weight w) const { return weight > w.weight; } //heaviest first
+
+			bool operator<(const Weight w) const { return weight > w.weight; } // heaviest first
 		};
 
 		Vector<Weight> weights;
 
-		void fix_weights() {
+		void fix_weights()
+		{
 			weights.sort();
 			if (weights.size() > 4) {
-				//cap to 4 and make weights add up 1
+				// cap to 4 and make weights add up 1
 				weights.resize(4);
 				float total = 0;
 				for (int i = 0; i < 4; i++) {
@@ -250,9 +281,10 @@ public:
 			}
 		}
 
-		void fix_unit_scale(const Collada &p_state);
+		void fix_unit_scale(const Collada& p_state);
 
-		bool operator<(const Vertex &p_vert) const {
+		bool operator<(const Vertex& p_vert) const
+		{
 			if (uid == p_vert.uid) {
 				if (vertex == p_vert.vertex) {
 					if (normal == p_vert.normal) {
@@ -262,49 +294,60 @@ public:
 									if (weights.size() == p_vert.weights.size()) {
 										for (int i = 0; i < weights.size(); i++) {
 											if (weights[i].bone_idx != p_vert.weights[i].bone_idx) {
-												return weights[i].bone_idx < p_vert.weights[i].bone_idx;
+												return weights[i].bone_idx <
+													   p_vert.weights[i].bone_idx;
 											}
 
 											if (weights[i].weight != p_vert.weights[i].weight) {
 												return weights[i].weight < p_vert.weights[i].weight;
 											}
 										}
-									} else {
+									}
+									else {
 										return weights.size() < p_vert.weights.size();
 									}
 								}
 
 								return (color < p_vert.color);
-							} else {
+							}
+							else {
 								return (uv2 < p_vert.uv2);
 							}
-						} else {
+						}
+						else {
 							return (uv < p_vert.uv);
 						}
-					} else {
+					}
+					else {
 						return (normal < p_vert.normal);
 					}
-				} else {
+				}
+				else {
 					return vertex < p_vert.vertex;
 				}
-			} else {
+			}
+			else {
 				return uid < p_vert.uid;
 			}
 		}
 	};
 
-	struct Node {
-		enum Type {
+	struct Node
+	{
+		enum Type
+		{
 			TYPE_NODE,
 			TYPE_JOINT,
-			TYPE_SKELETON, //this bone is not collada, it's added afterwards as optimization
+			TYPE_SKELETON, // this bone is not collada, it's added afterwards as optimization
 			TYPE_LIGHT,
 			TYPE_CAMERA,
 			TYPE_GEOMETRY
 		};
 
-		struct XForm {
-			enum Op {
+		struct XForm
+		{
+			enum Op
+			{
 				OP_ROTATE,
 				OP_SCALE,
 				OP_TRANSLATE,
@@ -326,40 +369,44 @@ public:
 		Vector<XForm> xform_list;
 		Transform3D default_transform;
 		Transform3D post_transform;
-		Vector<Node *> children;
+		Vector<Node*> children;
 
-		Node *parent = nullptr;
+		Node* parent = nullptr;
 
-		Transform3D compute_transform(const Collada &p_state) const;
+		Transform3D compute_transform(const Collada& p_state) const;
 		Transform3D get_global_transform() const;
 		Transform3D get_transform() const;
 
 		bool ignore_anim = false;
 
-		virtual ~Node() {
+		virtual ~Node()
+		{
 			for (int i = 0; i < children.size(); i++) {
 				memdelete(children[i]);
 			}
 		}
 	};
 
-	struct NodeSkeleton : public Node {
+	struct NodeSkeleton : public Node
+	{
 		NodeSkeleton() { type = TYPE_SKELETON; }
 	};
 
-	struct NodeJoint : public Node {
-		NodeSkeleton *owner = nullptr;
+	struct NodeJoint : public Node
+	{
+		NodeSkeleton* owner = nullptr;
 		String sid;
-		NodeJoint() {
-			type = TYPE_JOINT;
-		}
+
+		NodeJoint() { type = TYPE_JOINT; }
 	};
 
-	struct NodeGeometry : public Node {
+	struct NodeGeometry : public Node
+	{
 		bool controller = false;
 		String source;
 
-		struct Material {
+		struct Material
+		{
 			String target;
 		};
 
@@ -369,50 +416,59 @@ public:
 		NodeGeometry() { type = TYPE_GEOMETRY; }
 	};
 
-	struct NodeCamera : public Node {
+	struct NodeCamera : public Node
+	{
 		String camera;
 
 		NodeCamera() { type = TYPE_CAMERA; }
 	};
 
-	struct NodeLight : public Node {
+	struct NodeLight : public Node
+	{
 		String light;
 
 		NodeLight() { type = TYPE_LIGHT; }
 	};
 
-	struct VisualScene {
+	struct VisualScene
+	{
 		String name;
-		Vector<Node *> root_nodes;
+		Vector<Node*> root_nodes;
 
-		~VisualScene() {
+		~VisualScene()
+		{
 			for (int i = 0; i < root_nodes.size(); i++) {
 				memdelete(root_nodes[i]);
 			}
 		}
 	};
 
-	struct AnimationClip {
+	struct AnimationClip
+	{
 		String name;
 		float begin = 0;
 		float end = 1;
 		Vector<String> tracks;
 	};
 
-	struct AnimationTrack {
+	struct AnimationTrack
+	{
 		String id;
 		String target;
 		String param;
 		String component;
 		bool property = false;
 
-		enum InterpolationType {
+		enum InterpolationType
+		{
 			INTERP_LINEAR,
 			INTERP_BEZIER
 		};
 
-		struct Key {
-			enum Type {
+		struct Key
+		{
+			enum Type
+			{
 				TYPE_FLOAT,
 				TYPE_MATRIX
 			};
@@ -433,18 +489,27 @@ public:
 	/* IMPORT STATE */
 	/****************/
 
-	struct State {
+	struct State
+	{
 		int import_flags = 0;
 
 		float unit_scale = 1.0;
 		Vector3::Axis up_axis = Vector3::AXIS_Y;
 		bool z_up = false;
 
-		struct Version {
+		struct Version
+		{
 			int major = 0, minor = 0, rev = 0;
 
-			bool operator<(const Version &p_ver) const { return (major == p_ver.major) ? ((minor == p_ver.minor) ? (rev < p_ver.rev) : minor < p_ver.minor) : major < p_ver.major; }
-			Version(int p_major = 0, int p_minor = 0, int p_rev = 0) {
+			bool operator<(const Version& p_ver) const
+			{
+				return (major == p_ver.major)
+						   ? ((minor == p_ver.minor) ? (rev < p_ver.rev) : minor < p_ver.minor)
+						   : major < p_ver.major;
+			}
+
+			Version(int p_major = 0, int p_minor = 0, int p_rev = 0)
+			{
 				major = p_major;
 				minor = p_minor;
 				rev = p_rev;
@@ -467,10 +532,10 @@ public:
 		HashMap<String, Effect> effect_map;
 
 		HashMap<String, VisualScene> visual_scene_map;
-		HashMap<String, Node *> scene_map;
+		HashMap<String, Node*> scene_map;
 		HashSet<String> idref_joints;
 		HashMap<String, String> sid_to_node_map;
-		//RBMap<String,NodeJoint*> bone_map;
+		// RBMap<String,NodeJoint*> bone_map;
 
 		HashMap<String, Transform3D> bone_rest_map;
 
@@ -486,61 +551,62 @@ public:
 		float animation_length = 0;
 	} state;
 
-	Error load(const String &p_path, int p_flags = 0);
+	Error load(const String& p_path, int p_flags = 0);
 
-	Transform3D fix_transform(const Transform3D &p_transform);
+	Transform3D fix_transform(const Transform3D& p_transform);
 
 	Transform3D get_root_transform() const;
 
-	int get_uv_channel(const String &p_name);
+	int get_uv_channel(const String& p_name);
 
 private: // private stuff
 	HashMap<String, int> channel_map;
 
-	void _parse_asset(XMLParser &p_parser);
-	void _parse_image(XMLParser &p_parser);
-	void _parse_material(XMLParser &p_parser);
-	void _parse_effect_material(XMLParser &p_parser, Effect &p_effect, String &p_id);
-	void _parse_effect(XMLParser &p_parser);
-	void _parse_camera(XMLParser &p_parser);
-	void _parse_light(XMLParser &p_parser);
-	void _parse_animation_clip(XMLParser &p_parser);
+	void _parse_asset(XMLParser& p_parser);
+	void _parse_image(XMLParser& p_parser);
+	void _parse_material(XMLParser& p_parser);
+	void _parse_effect_material(XMLParser& p_parser, Effect& p_effect, String& p_id);
+	void _parse_effect(XMLParser& p_parser);
+	void _parse_camera(XMLParser& p_parser);
+	void _parse_light(XMLParser& p_parser);
+	void _parse_animation_clip(XMLParser& p_parser);
 
-	void _parse_mesh_geometry(XMLParser &p_parser, const String &p_id, const String &p_name);
-	void _parse_curve_geometry(XMLParser &p_parser, const String &p_id, const String &p_name);
+	void _parse_mesh_geometry(XMLParser& p_parser, const String& p_id, const String& p_name);
+	void _parse_curve_geometry(XMLParser& p_parser, const String& p_id, const String& p_name);
 
-	void _parse_skin_controller(XMLParser &p_parser, const String &p_id);
-	void _parse_morph_controller(XMLParser &p_parser, const String &p_id);
-	void _parse_controller(XMLParser &p_parser);
+	void _parse_skin_controller(XMLParser& p_parser, const String& p_id);
+	void _parse_morph_controller(XMLParser& p_parser, const String& p_id);
+	void _parse_controller(XMLParser& p_parser);
 
-	Node *_parse_visual_instance_geometry(XMLParser &p_parser);
-	Node *_parse_visual_instance_camera(XMLParser &p_parser);
-	Node *_parse_visual_instance_light(XMLParser &p_parser);
+	Node* _parse_visual_instance_geometry(XMLParser& p_parser);
+	Node* _parse_visual_instance_camera(XMLParser& p_parser);
+	Node* _parse_visual_instance_light(XMLParser& p_parser);
 
-	Node *_parse_visual_node_instance_data(XMLParser &p_parser);
-	Node *_parse_visual_scene_node(XMLParser &p_parser);
-	void _parse_visual_scene(XMLParser &p_parser);
+	Node* _parse_visual_node_instance_data(XMLParser& p_parser);
+	Node* _parse_visual_scene_node(XMLParser& p_parser);
+	void _parse_visual_scene(XMLParser& p_parser);
 
-	void _parse_animation(XMLParser &p_parser);
-	void _parse_scene(XMLParser &p_parser);
-	void _parse_library(XMLParser &p_parser);
+	void _parse_animation(XMLParser& p_parser);
+	void _parse_scene(XMLParser& p_parser);
+	void _parse_library(XMLParser& p_parser);
 
-	Variant _parse_param(XMLParser &p_parser);
-	Vector<float> _read_float_array(XMLParser &p_parser);
-	Vector<String> _read_string_array(XMLParser &p_parser);
-	Transform3D _read_transform(XMLParser &p_parser);
-	String _read_empty_draw_type(XMLParser &p_parser);
+	Vector<float> _read_float_array(XMLParser& p_parser);
+	Vector<String> _read_string_array(XMLParser& p_parser);
+	Transform3D _read_transform(XMLParser& p_parser);
+	String _read_empty_draw_type(XMLParser& p_parser);
 
-	void _joint_set_owner(Collada::Node *p_node, NodeSkeleton *p_owner);
-	void _create_skeletons(Collada::Node **p_node, NodeSkeleton *p_skeleton = nullptr);
-	void _find_morph_nodes(VisualScene *p_vscene, Node *p_node);
-	bool _remove_node(Node *p_parent, Node *p_node);
-	void _remove_node(VisualScene *p_vscene, Node *p_node);
-	void _merge_skeletons2(VisualScene *p_vscene);
-	void _merge_skeletons(VisualScene *p_vscene, Node *p_node);
-	bool _optimize_skeletons(VisualScene *p_vscene, Node *p_node);
+	void _joint_set_owner(Collada::Node* p_node, NodeSkeleton* p_owner);
+	void _create_skeletons(Collada::Node** p_node, NodeSkeleton* p_skeleton = nullptr);
+	void _find_morph_nodes(VisualScene* p_vscene, Node* p_node);
+	bool _remove_node(Node* p_parent, Node* p_node);
+	void _remove_node(VisualScene* p_vscene, Node* p_node);
+	void _merge_skeletons2(VisualScene* p_vscene);
+	void _merge_skeletons(VisualScene* p_vscene, Node* p_node);
+	bool _optimize_skeletons(VisualScene* p_vscene, Node* p_node);
 
-	bool _move_geometry_to_skeletons(VisualScene *p_vscene, Node *p_node, List<Node *> *p_mgeom);
+	bool _move_geometry_to_skeletons(VisualScene* p_vscene, Node* p_node, List<Node*>* p_mgeom);
 
 	void _optimize();
 };
+
+

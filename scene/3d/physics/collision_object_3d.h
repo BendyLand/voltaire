@@ -37,12 +37,7 @@
 
 class CollisionObject3D : public Node3D
 {
-	VLTRCLASS(CollisionObject3D, Node3D);
-
 public:
-	static constexpr Object::AncestralClass static_ancestral_class =
-		Object::AncestralClass::COLLISION_OBJECT_3D;
-
 	enum DisableMode
 	{
 		DISABLE_MODE_REMOVE,
@@ -66,7 +61,6 @@ private:
 
 	struct ShapeData
 	{
-		ObjectID owner_id;
 		Transform3D xform;
 
 		struct ShapeBase
@@ -152,14 +146,12 @@ public:
 	void set_disable_mode(DisableMode p_mode);
 	DisableMode get_disable_mode() const;
 
-	uint32_t create_shape_owner(Object* p_owner);
 	void remove_shape_owner(uint32_t owner);
 	void get_shape_owners(List<uint32_t>* r_owners);
 	PackedInt32Array _get_shape_owners();
 
 	void shape_owner_set_transform(uint32_t p_owner, const Transform3D& p_transform);
 	Transform3D shape_owner_get_transform(uint32_t p_owner) const;
-	Object* shape_owner_get_owner(uint32_t p_owner) const;
 
 	void shape_owner_set_disabled(uint32_t p_owner, bool p_disabled);
 	bool is_shape_owner_disabled(uint32_t p_owner) const;
@@ -187,7 +179,5 @@ public:
 	CollisionObject3D();
 	~CollisionObject3D();
 };
-
-VARIANT_ENUM_CAST(CollisionObject3D::DisableMode);
 
 

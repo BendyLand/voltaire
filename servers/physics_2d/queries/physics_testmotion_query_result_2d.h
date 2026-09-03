@@ -30,19 +30,18 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "servers/physics_2d/physics_server_2d_types.h"
+#include "core/types.h"
 
-class PhysicsTestMotionResult2D : public RefCounted {
-	VLTRCLASS(PhysicsTestMotionResult2D, RefCounted);
-
+class PhysicsTestMotionResult2D : public RefCounted
+{
 	PS2DT::MotionResult result;
 
 protected:
 	static void _bind_methods();
 
 public:
-	PS2DT::MotionResult *get_result_ptr() { return &result; }
+	PS2DT::MotionResult* get_result_ptr() { return &result; }
 
 	Vector2 get_travel() const;
 	Vector2 get_remainder() const;
@@ -50,12 +49,12 @@ public:
 	Vector2 get_collision_point() const;
 	Vector2 get_collision_normal() const;
 	Vector2 get_collider_velocity() const;
-	ObjectID get_collider_id() const;
 	RID get_collider_rid() const;
-	Object *get_collider() const;
 	int get_collider_shape() const;
 	int get_collision_local_shape() const;
 	real_t get_collision_depth() const;
 	real_t get_collision_safe_fraction() const;
 	real_t get_collision_unsafe_fraction() const;
 };
+
+

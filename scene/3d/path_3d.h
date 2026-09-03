@@ -36,17 +36,14 @@
 
 class ArrayMesh;
 
-class Path3D : public Node3D {
-	VLTRCLASS(Path3D, Node3D);
-
+class Path3D : public Node3D
+{
 private:
 	Ref<Curve3D> curve;
 	RID debug_instance;
 	Color debug_custom_color;
 	Ref<ArrayMesh> debug_mesh;
 	Ref<Material> debug_material;
-
-	Callable update_callback; // Used only by CSG currently.
 
 	void _update_debug_mesh();
 	void _update_debug_path_material();
@@ -55,16 +52,12 @@ private:
 protected:
 	void _notification(int p_what);
 
-	static void _bind_methods();
-
 public:
-	void set_update_callback(Callable p_callback);
-
-	void set_curve(const Ref<Curve3D> &p_curve);
+	void set_curve(const Ref<Curve3D>& p_curve);
 	Ref<Curve3D> get_curve() const;
 
-	const Color &get_debug_custom_color() const;
-	void set_debug_custom_color(const Color &p_color);
+	const Color& get_debug_custom_color() const;
+	void set_debug_custom_color(const Color& p_color);
 
 	Ref<StandardMaterial3D> get_debug_material();
 
@@ -72,11 +65,11 @@ public:
 	~Path3D();
 };
 
-class PathFollow3D : public Node3D {
-	VLTRCLASS(PathFollow3D, Node3D);
-
+class PathFollow3D : public Node3D
+{
 public:
-	enum RotationMode {
+	enum RotationMode
+	{
 		ROTATION_NONE,
 		ROTATION_Y,
 		ROTATION_XY,
@@ -85,7 +78,7 @@ public:
 	};
 
 private:
-	Path3D *path = nullptr;
+	Path3D* path = nullptr;
 	real_t progress = 0.0;
 	real_t h_offset = 0.0;
 	real_t v_offset = 0.0;
@@ -96,8 +89,6 @@ private:
 	RotationMode rotation_mode = ROTATION_XYZ;
 
 protected:
-	void _validate_property(PropertyInfo &p_property) const;
-
 	void _notification(int p_what);
 
 	static void _bind_methods();
@@ -134,7 +125,8 @@ public:
 
 	void update_transform();
 
-	static Transform3D correct_posture(Transform3D p_transform, PathFollow3D::RotationMode p_rotation_mode);
+	static Transform3D correct_posture(
+		Transform3D p_transform, PathFollow3D::RotationMode p_rotation_mode);
 };
 
-VARIANT_ENUM_CAST(PathFollow3D::RotationMode);
+

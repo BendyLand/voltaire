@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
 #include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
@@ -57,7 +56,6 @@ protected:
 #endif
 
 public:
-	mem_unique_ptr<Object> obj;
 	static PhysicsServer2D* get_singleton();
 
 	virtual RID world_boundary_shape_create() = 0;
@@ -69,11 +67,9 @@ public:
 	virtual RID convex_polygon_shape_create() = 0;
 	virtual RID concave_polygon_shape_create() = 0;
 
-	virtual void shape_set_data(RID p_shape, const Variant& p_data) = 0;
 	virtual void shape_set_custom_solver_bias(RID p_shape, real_t p_bias) = 0;
 
 	virtual PS2DE::ShapeType shape_get_type(RID p_shape) const = 0;
-	virtual Variant shape_get_data(RID p_shape) const = 0;
 	virtual real_t shape_get_custom_solver_bias(RID p_shape) const = 0;
 
 	// these work well, but should be used from the main thread only
@@ -123,17 +119,8 @@ public:
 
 	virtual void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled) = 0;
 
-	virtual void area_attach_object_instance_id(RID p_area, ObjectID p_id) = 0;
-	virtual ObjectID area_get_object_instance_id(RID p_area) const = 0;
-
-	virtual void area_attach_canvas_instance_id(RID p_area, ObjectID p_id) = 0;
-	virtual ObjectID area_get_canvas_instance_id(RID p_area) const = 0;
-
-	virtual void area_set_param(
-		RID p_area, PS2DE::AreaParameter p_param, const Variant& p_value) = 0;
 	virtual void area_set_transform(RID p_area, const Transform2D& p_transform) = 0;
 
-	virtual Variant area_get_param(RID p_parea, PS2DE::AreaParameter p_param) const = 0;
 	virtual Transform2D area_get_transform(RID p_area) const = 0;
 
 	virtual void area_set_collision_layer(RID p_area, uint32_t p_layer) = 0;
@@ -144,9 +131,6 @@ public:
 
 	virtual void area_set_monitorable(RID p_area, bool p_monitorable) = 0;
 	virtual void area_set_pickable(RID p_area, bool p_pickable) = 0;
-
-	virtual void area_set_monitor_callback(RID p_area, const Callable& p_callback) = 0;
-	virtual void area_set_area_monitor_callback(RID p_area, const Callable& p_callback) = 0;
 
 	/* BODY API */
 
@@ -177,12 +161,6 @@ public:
 	virtual void body_remove_shape(RID p_body, int p_shape_idx) = 0;
 	virtual void body_clear_shapes(RID p_body) = 0;
 
-	virtual void body_attach_object_instance_id(RID p_body, ObjectID p_id) = 0;
-	virtual ObjectID body_get_object_instance_id(RID p_body) const = 0;
-
-	virtual void body_attach_canvas_instance_id(RID p_body, ObjectID p_id) = 0;
-	virtual ObjectID body_get_canvas_instance_id(RID p_body) const = 0;
-
 	virtual void body_set_continuous_collision_detection_mode(
 		RID p_body, PS2DE::CCDMode p_mode) = 0;
 	virtual PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body) const = 0;
@@ -196,17 +174,9 @@ public:
 	virtual void body_set_collision_priority(RID p_body, real_t p_priority) = 0;
 	virtual real_t body_get_collision_priority(RID p_body) const = 0;
 
-	virtual void body_set_param(
-		RID p_body, PS2DE::BodyParameter p_param, const Variant& p_value) = 0;
-	virtual Variant body_get_param(RID p_body, PS2DE::BodyParameter p_param) const = 0;
-
 	virtual void body_reset_mass_properties(RID p_body) = 0;
 
 	// state
-
-	virtual void body_set_state(RID p_body, PS2DE::BodyState p_state, const Variant& p_variant) = 0;
-	virtual Variant body_get_state(RID p_body, PS2DE::BodyState p_state) const = 0;
-
 	virtual void body_apply_central_impulse(RID p_body, const Vector2& p_impulse) = 0;
 	virtual void body_apply_torque_impulse(RID p_body, real_t p_torque) = 0;
 	virtual void body_apply_impulse(
@@ -244,10 +214,6 @@ public:
 
 	virtual void body_set_omit_force_integration(RID p_body, bool p_omit) = 0;
 	virtual bool body_is_omitting_force_integration(RID p_body) const = 0;
-
-	virtual void body_set_state_sync_callback(RID p_body, const Callable& p_callable) = 0;
-	virtual void body_set_force_integration_callback(
-		RID p_body, const Callable& p_callable, const Variant& p_udata = Variant()) = 0;
 
 	virtual bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape,
 		const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results,
@@ -320,28 +286,6 @@ class PhysicsServer2DManager
 {
 	static PhysicsServer2DManager* singleton;
 
-	struct ClassInfo
-	{
-		String name;
-		Callable create_callback;
-
-		ClassInfo() {}
-
-		ClassInfo(String p_name, Callable p_create_callback)
-			: name(p_name), create_callback(p_create_callback)
-		{
-		}
-
-		ClassInfo(const ClassInfo& p_ci) : name(p_ci.name), create_callback(p_ci.create_callback) {}
-
-		void operator=(const ClassInfo& p_ci)
-		{
-			name = p_ci.name;
-			create_callback = p_ci.create_callback;
-		}
-	};
-
-	Vector<ClassInfo> physics_2d_servers;
 	int default_server_id = -1;
 	int default_server_priority = -1;
 
@@ -351,12 +295,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	static const String setting_property_name;
 
 	static PhysicsServer2DManager* get_singleton();
 
-	void register_server(const String& p_name, const Callable& p_create_callback);
 	void set_default_server(const String& p_name, int p_priority = 0);
 	int find_server_id(const String& p_name);
 	int get_servers_count();
@@ -367,22 +309,5 @@ public:
 	PhysicsServer2DManager();
 	~PhysicsServer2DManager();
 };
-
-VARIANT_ENUM_CAST_EXT(PS2DE::ShapeType, PhysicsServer2D::ShapeType);
-VARIANT_ENUM_CAST_EXT(PS2DE::SpaceParameter, PhysicsServer2D::SpaceParameter);
-VARIANT_ENUM_CAST_EXT(PS2DE::AreaParameter, PhysicsServer2D::AreaParameter);
-VARIANT_ENUM_CAST_EXT(PS2DE::AreaSpaceOverrideMode, PhysicsServer2D::AreaSpaceOverrideMode);
-VARIANT_ENUM_CAST_EXT(PS2DE::BodyMode, PhysicsServer2D::BodyMode);
-VARIANT_ENUM_CAST_EXT(PS2DE::BodyParameter, PhysicsServer2D::BodyParameter);
-VARIANT_ENUM_CAST_EXT(PS2DE::BodyDampMode, PhysicsServer2D::BodyDampMode);
-VARIANT_ENUM_CAST_EXT(PS2DE::BodyState, PhysicsServer2D::BodyState);
-VARIANT_ENUM_CAST_EXT(PS2DE::CCDMode, PhysicsServer2D::CCDMode);
-VARIANT_ENUM_CAST_EXT(PS2DE::JointParam, PhysicsServer2D::JointParam);
-VARIANT_ENUM_CAST_EXT(PS2DE::JointType, PhysicsServer2D::JointType);
-VARIANT_ENUM_CAST_EXT(PS2DE::PinJointParam, PhysicsServer2D::PinJointParam);
-VARIANT_ENUM_CAST_EXT(PS2DE::PinJointFlag, PhysicsServer2D::PinJointFlag);
-VARIANT_ENUM_CAST_EXT(PS2DE::DampedSpringParam, PhysicsServer2D::DampedSpringParam);
-VARIANT_ENUM_CAST_EXT(PS2DE::AreaBodyStatus, PhysicsServer2D::AreaBodyStatus);
-VARIANT_ENUM_CAST_EXT(PS2DE::ProcessInfo, PhysicsServer2D::ProcessInfo);
 
 

@@ -30,13 +30,10 @@
 
 #pragma once
 
-#include "core/object/script_language.h"
 #include "scene/gui/text_edit.h"
 
 class CodeEdit : public TextEdit
 {
-	VLTRCLASS(CodeEdit, TextEdit)
-
 public:
 	// Keep enums in sync with:
 	// core/object/script_language.h - ScriptLanguage::CodeCompletionKind
@@ -229,7 +226,6 @@ private:
 	bool is_code_completion_scroll_hovered = false;
 	bool is_code_completion_scroll_pressed = false;
 	bool is_code_completion_drag_started = false;
-	Vector<ScriptLanguage::CodeCompletionOption> code_completion_options;
 	Vector<RID> code_completion_ac_items;
 	RID code_completion_ac_scroll_element;
 	RID code_completion_ac_root_element;
@@ -242,8 +238,6 @@ private:
 	float code_completion_pan_offset = 0.0f;
 
 	HashSet<char32_t> code_completion_prefixes;
-	List<ScriptLanguage::CodeCompletionOption> code_completion_option_submitted;
-	List<ScriptLanguage::CodeCompletionOption> code_completion_option_sources;
 	String code_completion_base;
 	String code_completion_line;
 	int code_completion_caret_line = 0;
@@ -251,11 +245,6 @@ private:
 
 	void _update_scroll_selected_line(float p_mouse_y);
 	void _filter_code_completion_candidates_impl();
-	bool _should_reset_selected_option_for_new_options(
-		const Vector<ScriptLanguage::CodeCompletionOption>& p_new_options);
-
-	/* Line length guidelines */
-	TypedArray<int> line_length_guideline_columns;
 
 	/* Symbol lookup */
 	bool symbol_lookup_on_click_enabled = false;
@@ -345,15 +334,6 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-#ifndef DISABLE_DEPRECATED
-	String _get_text_for_symbol_lookup_bind_compat_73196();
-	void _add_code_completion_option_bind_compat_84906(CodeCompletionKind p_type,
-		const String& p_display_text, const String& p_insert_text,
-		const Color& p_text_color = Color(1, 1, 1), const Ref<Resource>& p_icon = Ref<Resource>(),
-		const Variant& p_value = Variant::NIL, int p_location = LOCATION_OTHER);
-	static void _bind_compatibility_methods();
-#endif
-
 	virtual void _unhide_carets() override;
 
 	virtual void _draw_guidelines() override;
@@ -369,7 +349,6 @@ protected:
 
 public:
 	/* General overrides */
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_gui_input) override;
 	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
 
 	/* Indent management */
@@ -400,8 +379,6 @@ public:
 	bool is_highlight_matching_braces_enabled() const;
 
 	void add_auto_brace_completion_pair(const String& p_open_key, const String& p_close_key);
-	void set_auto_brace_completion_pairs(const Dictionary& p_auto_brace_completion_pairs);
-	Dictionary get_auto_brace_completion_pairs() const;
 
 	bool has_auto_brace_completion_open_key(const String& p_open_key) const;
 	bool has_auto_brace_completion_close_key(const String& p_close_key) const;
@@ -518,14 +495,7 @@ public:
 
 	void request_code_completion(bool p_force = false);
 
-	void add_code_completion_option(CodeCompletionKind p_type, const String& p_display_text,
-		const String& p_insert_text, const Color& p_text_color = Color(1, 1, 1),
-		const Ref<Resource>& p_icon = Ref<Resource>(), const Variant& p_value = Variant(),
-		int p_location = LOCATION_OTHER);
 	void update_code_completion_options(bool p_forced = false);
-
-	TypedArray<Dictionary> get_code_completion_options() const;
-	Dictionary get_code_completion_option(int p_index) const;
 
 	int get_code_completion_selected_index() const;
 	void set_code_completion_selected_index(int p_index);
@@ -561,16 +531,6 @@ public:
 
 	CodeEdit();
 	~CodeEdit();
-};
-
-VARIANT_ENUM_CAST(CodeEdit::CodeCompletionKind);
-VARIANT_ENUM_CAST(CodeEdit::CodeCompletionLocation);
-
-// The custom comparer which will sort completion options.
-struct CodeCompletionOptionCompare
-{
-	_FORCE_INLINE_ bool operator()(const ScriptLanguage::CodeCompletionOption& l,
-		const ScriptLanguage::CodeCompletionOption& r) const;
 };
 
 

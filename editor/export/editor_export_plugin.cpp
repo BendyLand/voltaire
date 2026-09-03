@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "editor/export/editor_export_platform.h"
 #include "editor_export_plugin.h"
 
@@ -162,58 +161,12 @@ Vector<String> EditorExportPlugin::get_apple_embedded_platform_project_static_li
 	return apple_embedded_platform_project_static_libs;
 }
 
-Variant EditorExportPlugin::get_option(const StringName& p_name) const
-{
-	ERR_FAIL_COND_V(export_preset.is_null(), Variant());
-	return export_preset->obj->get(p_name);
-}
-
-String EditorExportPlugin::_has_valid_export_configuration(
-	const Ref<EditorExportPlatform>& p_export_platform, const Ref<EditorExportPreset>& p_preset)
-{
-	String warning;
-	if (!supports_platform(p_export_platform)) {
-		warning += vformat(TTR("Plugin \"%s\" is not supported on \"%s\""), get_name(),
-			p_export_platform->get_name());
-		warning += "\n";
-		return warning;
-	}
-
-	set_export_preset(p_preset);
-	List<EditorExportPlatform::ExportOption> options;
-	_get_export_options(p_export_platform, &options);
-	for (const EditorExportPlatform::ExportOption& E : options) {
-		String option_warning = _get_export_option_warning(p_export_platform, E.option.name);
-		if (!option_warning.is_empty()) {
-			warning += option_warning + "\n";
-		}
-	}
-
-	return warning;
-}
-
 // Customization
 
 PackedStringArray EditorExportPlugin::get_export_features(
 	const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const
 {
 	return _get_export_features(p_export_platform, p_debug);
-}
-
-void EditorExportPlugin::_get_export_options(const Ref<EditorExportPlatform>& p_platform,
-	List<EditorExportPlatform::ExportOption>* r_options) const
-{
-	TypedArray<Dictionary> ret;
-	for (int i = 0; i < ret.size(); i++) {
-		Dictionary option = ret[i];
-		ERR_CONTINUE_MSG(!option.has("option"), "Missing required element 'option'");
-		ERR_CONTINUE_MSG(!option.has("default_value"), "Missing required element 'default_value'");
-		PropertyInfo property_info = PropertyInfo::from_dict(option["option"]);
-		Variant default_value = option["default_value"];
-		bool update_visibility = option.has("update_visibility") && option["update_visibility"];
-		r_options->push_back(
-			EditorExportPlatform::ExportOption(property_info, default_value, update_visibility));
-	}
 }
 
 void EditorExportPlugin::_export_file(
@@ -273,12 +226,6 @@ PackedStringArray EditorExportPlugin::_get_export_features(
 	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
 {
 	return PackedStringArray();
-}
-
-Dictionary EditorExportPlugin::_get_export_options_overrides(
-	const Ref<EditorExportPlatform>& p_platform) const
-{
-	return Dictionary();
 }
 
 bool EditorExportPlugin::_should_update_export_options(

@@ -34,13 +34,13 @@
 #include "scene/resources/3d/shape_3d.h"
 
 class CollisionObject3D;
-class CollisionShape3D : public Node3D {
-	VLTRCLASS(CollisionShape3D, Node3D);
 
+class CollisionShape3D : public Node3D
+{
 	Ref<Shape3D> shape;
 
 	uint32_t owner_id = 0;
-	CollisionObject3D *collision_object = nullptr;
+	CollisionObject3D* collision_object = nullptr;
 
 	Color debug_color;
 	bool debug_fill = true;
@@ -61,24 +61,17 @@ protected:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
-
-#ifdef DEBUG_ENABLED
-	bool _property_can_revert(const StringName &p_name) const;
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
-	void _validate_property(PropertyInfo &p_property) const;
-#endif // DEBUG_ENABLED
 
 public:
 	void make_convex_from_siblings();
 
-	void set_shape(const Ref<Shape3D> &p_shape);
+	void set_shape(const Ref<Shape3D>& p_shape);
 	Ref<Shape3D> get_shape() const;
 
 	void set_disabled(bool p_disabled);
 	bool is_disabled() const;
 
-	void set_debug_color(const Color &p_color);
+	void set_debug_color(const Color& p_color);
 	Color get_debug_color() const;
 
 	void set_debug_fill_enabled(bool p_enable);
@@ -89,3 +82,5 @@ public:
 	CollisionShape3D();
 	~CollisionShape3D();
 };
+
+

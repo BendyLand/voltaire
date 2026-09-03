@@ -30,16 +30,15 @@
 
 #pragma once
 
-#include "servers/audio/audio_stream.h"
-
 #include <thirdparty/misc/qoa.h>
+#include "servers/audio/audio_stream.h"
 
 class AudioStreamWAV;
 
-class AudioStreamPlaybackWAV : public AudioStreamPlaybackResampled {
-	VLTRCLASS(AudioStreamPlaybackWAV, AudioStreamPlaybackResampled);
-
-	struct IMA_ADPCM_State {
+class AudioStreamPlaybackWAV : public AudioStreamPlaybackResampled
+{
+	struct IMA_ADPCM_State
+	{
 		int16_t step_index = 0;
 		int32_t predictor = 0;
 		/* values at loop point */
@@ -50,7 +49,8 @@ class AudioStreamPlaybackWAV : public AudioStreamPlaybackResampled {
 		int32_t window_ofs = 0;
 	} ima_adpcm[2];
 
-	struct QOA_State {
+	struct QOA_State
+	{
 		qoa_desc desc = {};
 		uint64_t data_ofs = 0;
 		uint32_t frame_len = 0;
@@ -64,13 +64,14 @@ class AudioStreamPlaybackWAV : public AudioStreamPlaybackResampled {
 	Ref<AudioStreamWAV> base;
 
 	template <typename Depth, bool is_stereo, bool is_ima_adpcm, bool is_qoa>
-	void decode_samples(const Depth *p_src, AudioFrame *p_dst, int64_t &p_offset, int8_t &p_increment, uint32_t p_amount, IMA_ADPCM_State *p_ima_adpcm, QOA_State *p_qoa);
+	void decode_samples(const Depth* p_src, AudioFrame* p_dst, int64_t& p_offset,
+		int8_t& p_increment, uint32_t p_amount, IMA_ADPCM_State* p_ima_adpcm, QOA_State* p_qoa);
 
 	bool _is_sample = false;
 	Ref<AudioSamplePlayback> sample_playback;
 
 protected:
-	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames) override;
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
 	virtual float get_stream_sampling_rate() override;
 
 public:
@@ -78,7 +79,7 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; // times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
@@ -88,15 +89,14 @@ public:
 	virtual void set_is_sample(bool p_is_sample) override;
 	virtual bool get_is_sample() const override;
 	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
-	virtual void set_sample_playback(const Ref<AudioSamplePlayback> &p_playback) override;
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
 };
 
-class AudioStreamWAV : public AudioStream {
-	VLTRCLASS(AudioStreamWAV, AudioStream);
-	RES_BASE_EXTENSION("sample")
-
+class AudioStreamWAV : public AudioStream
+{
 public:
-	enum Format {
+	enum Format
+	{
 		FORMAT_8_BITS,
 		FORMAT_16_BITS,
 		FORMAT_IMA_ADPCM,
@@ -104,7 +104,8 @@ public:
 	};
 
 	// Keep the ResourceImporterWAV `edit/loop_mode` enum hint in sync with these options.
-	enum LoopMode {
+	enum LoopMode
+	{
 		LOOP_DISABLED,
 		LOOP_FORWARD,
 		LOOP_PINGPONG,
@@ -122,15 +123,10 @@ private:
 	uint32_t mix_rate = 44100;
 	TightLocalVector<uint8_t, uint64_t> data;
 
-	Dictionary tags;
-
 protected:
 	static void _bind_methods();
 
 public:
-	static Ref<AudioStreamWAV> load_from_buffer(const Vector<uint8_t> &p_stream_data, const Dictionary &p_options);
-	static Ref<AudioStreamWAV> load_from_file(const String &p_path, const Dictionary &p_options);
-
 	void set_format(Format p_format);
 	Format get_format() const;
 
@@ -149,42 +145,32 @@ public:
 	void set_stereo(bool p_enable);
 	bool is_stereo() const;
 
-	void set_tags(const Dictionary &p_tags);
-	virtual Dictionary get_tags() const override;
-
-	virtual double get_length() const override; //if supported, otherwise return 0
+	virtual double get_length() const override; // if supported, otherwise return 0
 
 	virtual bool is_monophonic() const override;
 
-	void set_data(const Vector<uint8_t> &p_data);
+	void set_data(const Vector<uint8_t>& p_data);
 	Vector<uint8_t> get_data() const;
 
-	Error save_to_wav(const String &p_path);
+	Error save_to_wav(const String& p_path);
 
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 
-	virtual bool can_be_sampled() const override {
-		return true;
-	}
+	virtual bool can_be_sampled() const override { return true; }
+
 	virtual Ref<AudioSample> generate_sample() const override;
 
-	static void _compress_ima_adpcm(const Vector<float> &p_data, Vector<uint8_t> &r_dst_data) {
-		static const int16_t _ima_adpcm_step_table[89] = {
-			7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
-			19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
-			50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
-			130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
-			337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
-			876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
-			2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
-			5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
-			15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
-		};
+	static void _compress_ima_adpcm(const Vector<float>& p_data, Vector<uint8_t>& r_dst_data)
+	{
+		static const int16_t _ima_adpcm_step_table[89] = {7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19,
+			21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143,
+			157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724,
+			796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024,
+			3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487,
+			12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767};
 
 		static const int8_t _ima_adpcm_index_table[16] = {
-			-1, -1, -1, -1, 2, 4, 6, 8,
-			-1, -1, -1, -1, 2, 4, 6, 8
-		};
+			-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8};
 
 		int datalen = p_data.size();
 		int datamax = datalen;
@@ -193,11 +179,11 @@ public:
 		}
 
 		r_dst_data.resize(datalen / 2 + 4);
-		uint8_t *w = r_dst_data.ptrw();
+		uint8_t* w = r_dst_data.ptrw();
 
 		int i, step_idx = 0, prev = 0;
-		uint8_t *out = w;
-		const float *in = p_data.ptr();
+		uint8_t* out = w;
+		const float* in = p_data.ptr();
 
 		// Initial value is zero.
 		*(out++) = 0;
@@ -214,7 +200,8 @@ public:
 
 			if (i >= datamax) {
 				xm_sample = 0;
-			} else {
+			}
+			else {
 				xm_sample = CLAMP(in[i] * 32767.0, -32768, 32767);
 			}
 
@@ -241,7 +228,8 @@ public:
 
 			if (nibble & 8) {
 				prev -= vpdiff;
-			} else {
+			}
+			else {
 				prev += vpdiff;
 			}
 
@@ -253,15 +241,20 @@ public:
 			if (i & 1) {
 				*out |= nibble << 4;
 				out++;
-			} else {
+			}
+			else {
 				*out = nibble;
 			}
 		}
 	}
 
-	static void _compress_qoa(const Vector<float> &p_data, Vector<uint8_t> &dst_data, qoa_desc *p_desc) {
-		uint32_t frames_len = (p_desc->samples + QOA_FRAME_LEN - 1) / QOA_FRAME_LEN * (QOA_LMS_LEN * 4 * p_desc->channels + 8);
-		uint32_t slices_len = (p_desc->samples + QOA_SLICE_LEN - 1) / QOA_SLICE_LEN * 8 * p_desc->channels;
+	static void _compress_qoa(
+		const Vector<float>& p_data, Vector<uint8_t>& dst_data, qoa_desc* p_desc)
+	{
+		uint32_t frames_len = (p_desc->samples + QOA_FRAME_LEN - 1) / QOA_FRAME_LEN *
+							  (QOA_LMS_LEN * 4 * p_desc->channels + 8);
+		uint32_t slices_len =
+			(p_desc->samples + QOA_SLICE_LEN - 1) / QOA_SLICE_LEN * 8 * p_desc->channels;
 		dst_data.resize(8 + frames_len + slices_len);
 
 		for (uint32_t c = 0; c < p_desc->channels; c++) {
@@ -274,7 +267,7 @@ public:
 		TightLocalVector<int16_t> data16;
 		data16.resize(QOA_FRAME_LEN * p_desc->channels);
 
-		uint8_t *dst_ptr = dst_data.ptrw();
+		uint8_t* dst_ptr = dst_data.ptrw();
 		dst_ptr += qoa_encode_header(p_desc, dst_data.ptrw());
 
 		uint32_t frame_len = QOA_FRAME_LEN;
@@ -288,5 +281,4 @@ public:
 	}
 };
 
-VARIANT_ENUM_CAST(AudioStreamWAV::Format)
-VARIANT_ENUM_CAST(AudioStreamWAV::LoopMode)
+

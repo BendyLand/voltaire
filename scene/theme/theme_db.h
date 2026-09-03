@@ -30,10 +30,8 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/templates/mem_unique_ptr.h"
 #include <functional>
-#include "core/object/ref_counted.h"
 #include "scene/resources/theme.h"
 
 class Font;
@@ -103,7 +101,6 @@ class ThemeDB
 	// Binding of theme items to Node classes.
 
 public:
-	mem_unique_ptr<Object> obj;
 	typedef std::function<void(Node*, const StringName&, const StringName&)> ThemeItemSetter;
 
 	struct ThemeItemBind
@@ -212,7 +209,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	void set_themes(Vector<Ref<Theme>>& p_themes);
 	const Vector<Ref<Theme>> get_themes() const;
 	Ref<Theme> get_fallback_theme() const;

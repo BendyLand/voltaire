@@ -34,9 +34,8 @@
 
 class Viewport;
 
-class CanvasLayer : public Node {
-	VLTRCLASS(CanvasLayer, Node);
-
+class CanvasLayer : public Node
+{
 	mutable bool locrotscale_dirty = false;
 	mutable Vector2 ofs;
 	mutable Size2 scale = Vector2(1, 1);
@@ -45,11 +44,10 @@ class CanvasLayer : public Node {
 	Transform2D transform;
 	RID canvas;
 
-	ObjectID custom_viewport_id; // to check validity
-	Viewport *custom_viewport = nullptr;
+	Viewport* custom_viewport = nullptr;
 
 	RID viewport;
-	Viewport *vp = nullptr;
+	Viewport* vp = nullptr;
 
 	int sort_index = 0;
 	bool visible = true;
@@ -76,25 +74,25 @@ public:
 	void show();
 	void hide();
 
-	void set_transform(const Transform2D &p_xform);
+	void set_transform(const Transform2D& p_xform);
 	Transform2D get_transform() const;
 	Transform2D get_final_transform() const;
 
-	void set_offset(const Vector2 &p_offset);
+	void set_offset(const Vector2& p_offset);
 	Vector2 get_offset() const;
 
 	void set_rotation(real_t p_radians);
 	real_t get_rotation() const;
 
-	void set_scale(const Size2 &p_scale);
+	void set_scale(const Size2& p_scale);
 	Size2 get_scale() const;
 
 	Size2 get_viewport_size() const;
 
 	RID get_viewport() const;
 
-	void set_custom_viewport(Node *p_viewport);
-	Node *get_custom_viewport() const;
+	void set_custom_viewport(Node* p_viewport);
+	Node* get_custom_viewport() const;
 
 	void reset_sort_index();
 	int get_sort_index();
@@ -110,3 +108,5 @@ public:
 	CanvasLayer();
 	~CanvasLayer();
 };
+
+

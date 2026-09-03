@@ -30,28 +30,29 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
-#include "core/variant/type_info.h"
+#include "core/types.h"
 #include "servers/navigation_2d/navigation_constants_2d.h"
 
-class NavigationPathQueryParameters2D : public RefCounted {
-	VLTRCLASS(NavigationPathQueryParameters2D, RefCounted);
-
+class NavigationPathQueryParameters2D : public RefCounted
+{
 protected:
 	static void _bind_methods();
 
 public:
-	enum PathfindingAlgorithm {
+	enum PathfindingAlgorithm
+	{
 		PATHFINDING_ALGORITHM_ASTAR = NavigationEnums2D::PATHFINDING_ALGORITHM_ASTAR,
 	};
 
-	enum PathPostProcessing {
+	enum PathPostProcessing
+	{
 		PATH_POSTPROCESSING_CORRIDORFUNNEL = NavigationEnums2D::PATH_POSTPROCESSING_CORRIDORFUNNEL,
 		PATH_POSTPROCESSING_EDGECENTERED = NavigationEnums2D::PATH_POSTPROCESSING_EDGECENTERED,
 		PATH_POSTPROCESSING_NONE = NavigationEnums2D::PATH_POSTPROCESSING_NONE,
 	};
 
-	enum PathMetadataFlags {
+	enum PathMetadataFlags
+	{
 		PATH_METADATA_INCLUDE_NONE = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_NONE,
 		PATH_METADATA_INCLUDE_TYPES = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_TYPES,
 		PATH_METADATA_INCLUDE_RIDS = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_RIDS,
@@ -106,12 +107,6 @@ public:
 	void set_simplify_epsilon(real_t p_epsilon);
 	real_t get_simplify_epsilon() const;
 
-	void set_excluded_regions(const TypedArray<RID> &p_regions);
-	TypedArray<RID> get_excluded_regions() const;
-
-	void set_included_regions(const TypedArray<RID> &p_regions);
-	TypedArray<RID> get_included_regions() const;
-
 	void set_path_return_max_length(float p_length);
 	float get_path_return_max_length() const;
 
@@ -125,6 +120,4 @@ public:
 	float get_path_search_max_distance() const;
 };
 
-VARIANT_ENUM_CAST(NavigationPathQueryParameters2D::PathfindingAlgorithm);
-VARIANT_ENUM_CAST(NavigationPathQueryParameters2D::PathPostProcessing);
-VARIANT_BITFIELD_CAST(NavigationPathQueryParameters2D::PathMetadataFlags);
+

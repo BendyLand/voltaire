@@ -41,10 +41,10 @@ class SceneCreateDialog;
 class ScriptCreateDialog;
 class Tree;
 
-class EditorAutoloadSettings : public VBoxContainer {
-	VLTRCLASS(EditorAutoloadSettings, VBoxContainer);
-
-	enum {
+class EditorAutoloadSettings : public VBoxContainer
+{
+	enum
+	{
 		BUTTON_MOVE_UP,
 		BUTTON_MOVE_DOWN,
 		BUTTON_DELETE,
@@ -54,17 +54,16 @@ class EditorAutoloadSettings : public VBoxContainer {
 	const StringName autoload_changed = "autoload_changed";
 	String pending_autoload_path;
 
-	struct AutoloadInfo {
+	struct AutoloadInfo
+	{
 		String name;
 		String path;
 		bool is_singleton = false;
 		bool in_editor = false;
 		int order = 0;
-		Node *node = nullptr;
+		Node* node = nullptr;
 
-		bool operator==(const AutoloadInfo &p_info) const {
-			return order == p_info.order;
-		}
+		bool operator==(const AutoloadInfo& p_info) const { return order == p_info.order; }
 	};
 
 	List<AutoloadInfo> autoload_cache;
@@ -72,43 +71,37 @@ class EditorAutoloadSettings : public VBoxContainer {
 	bool updating_autoload = false;
 	String selected_autoload;
 
-	Tree *tree = nullptr;
-	Button *browse_button = nullptr;
-	Button *create_script_autoload = nullptr;
-	Button *create_scene_autoload = nullptr;
-	FileDialog *autoload_file_dialog = nullptr;
-	FileDialog *scene_file_dialog = nullptr;
-	ScriptCreateDialog *script_create_dialog = nullptr;
-	SceneCreateDialog *scene_create_dialog = nullptr;
+	Tree* tree = nullptr;
+	Button* browse_button = nullptr;
+	Button* create_script_autoload = nullptr;
+	Button* create_scene_autoload = nullptr;
+	FileDialog* autoload_file_dialog = nullptr;
+	FileDialog* scene_file_dialog = nullptr;
+	ScriptCreateDialog* script_create_dialog = nullptr;
+	SceneCreateDialog* scene_create_dialog = nullptr;
 
-	ConfirmationDialog *name_dialog = nullptr;
-	LineEdit *name_edit = nullptr;
-	EditorValidationPanel *name_validator = nullptr;
+	ConfirmationDialog* name_dialog = nullptr;
+	LineEdit* name_edit = nullptr;
+	EditorValidationPanel* name_validator = nullptr;
 
-	bool _autoload_name_is_valid(const String &p_name, String *r_error = nullptr);
+	bool _autoload_name_is_valid(const String& p_name, String* r_error = nullptr);
 	void _validate_autoload_name();
 
 	void _autoload_selected();
 	void _autoload_edited();
-	void _autoload_button_pressed(Object *p_item, int p_column, int p_button, MouseButton p_mouse_button);
 	void _autoload_activated();
-	void _autoload_open(const String &fpath);
-	Node *_create_autoload(const String &p_path);
+	void _autoload_open(const String& fpath);
+	Node* _create_autoload(const String& p_path);
 
 	void _create_script_autoload();
 	void _create_scene_autoload();
-	void _autoload_file_selected(const String &p_path);
-	void _scene_file_selected(const String &p_path);
+	void _autoload_file_selected(const String& p_path);
+	void _scene_file_selected(const String& p_path);
 
-	void _script_created(Ref<Script> p_script);
 	void _scene_created();
-	void _add_autoload(const String &p_name, const String &p_path);
-	void _try_add_autoload(const String &p_name, const String &p_path);
+	void _add_autoload(const String& p_name, const String& p_path);
+	void _try_add_autoload(const String& p_name, const String& p_path);
 	void _confirm_autoload_name();
-
-	Variant get_drag_data_fw(const Point2 &p_point, Control *p_control);
-	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_control) const;
-	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_control);
 
 protected:
 	void _notification(int p_what);
@@ -117,9 +110,11 @@ protected:
 public:
 	void init_autoloads();
 	void update_autoload();
-	bool autoload_add(const String &p_name, const String &p_path, bool p_use_undo);
-	void autoload_remove(const StringName &p_name);
+	bool autoload_add(const String& p_name, const String& p_path, bool p_use_undo);
+	void autoload_remove(const StringName& p_name);
 
 	EditorAutoloadSettings();
 	~EditorAutoloadSettings();
 };
+
+

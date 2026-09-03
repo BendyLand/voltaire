@@ -31,6 +31,7 @@
 #pragma once
 
 #include <cstdarg>
+#include "core/io/file_access.h"
 #include "core/string/ustring.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
@@ -114,7 +115,8 @@ public:
 };
 
 /**
- * Writes messages to the specified file. If the file already exists, creates a copy (backup)
+ * Writes messages to the specified file.
+If the file already exists, creates a copy (backup)
  * of it with timestamp appended to the file name. Maximum number of backups is configurable.
  * When maximum is reached, the oldest backups are erased. With the maximum being equal to 1,
  * it acts as a simple file logger.

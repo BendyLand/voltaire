@@ -50,8 +50,6 @@ class ProjectSettingsGDExtension;
 
 class ProjectSettingsEditor : public AcceptDialog
 {
-	VLTRCLASS(ProjectSettingsEditor, AcceptDialog);
-
 	inline static ProjectSettingsEditor* singleton = nullptr;
 
 	enum
@@ -104,9 +102,6 @@ class ProjectSettingsEditor : public AcceptDialog
 	void _property_box_changed(const String& p_text);
 	void _update_property_box();
 	void _feature_selected(int p_index);
-	void _select_type(Variant::Type p_type);
-
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 	String _get_setting_name() const;
 	void _setting_edited(const String& p_name);
@@ -125,7 +120,6 @@ class ProjectSettingsEditor : public AcceptDialog
 	void _add_feature_overrides();
 
 	void _action_added(const String& p_name);
-	void _action_edited(const String& p_name, const Dictionary& p_action);
 	void _action_removed(const String& p_name);
 	void _action_renamed(const String& p_old_name, const String& p_new_name);
 	void _action_reordered(const String& p_action_name, const String& p_relative_to, bool p_before);

@@ -38,9 +38,8 @@ class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 #endif // NAVIGATION_3D_DISABLED
 
-class MultiMeshInstance3D : public GeometryInstance3D {
-	VLTRCLASS(MultiMeshInstance3D, GeometryInstance3D);
-
+class MultiMeshInstance3D : public GeometryInstance3D
+{
 	Ref<MultiMesh> multimesh;
 
 	void _refresh_interpolated();
@@ -51,25 +50,25 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_multimesh(const Ref<MultiMesh> &p_multimesh);
+	void set_multimesh(const Ref<MultiMesh>& p_multimesh);
 	Ref<MultiMesh> get_multimesh() const;
-
-	Array get_meshes() const;
 
 	virtual AABB get_aabb() const override;
 
 private:
 #ifndef NAVIGATION_3D_DISABLED
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 #endif // NAVIGATION_3D_DISABLED
 
 public:
 #ifndef NAVIGATION_3D_DISABLED
 	static void navmesh_parse_init();
-	static void navmesh_parse_source_geometry(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
+	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
 #endif // NAVIGATION_3D_DISABLED
 
 	MultiMeshInstance3D();
 	~MultiMeshInstance3D();
 };
+
+

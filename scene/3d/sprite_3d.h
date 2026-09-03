@@ -201,8 +201,6 @@ protected:
 	virtual void _draw() override;
 	static void _bind_methods();
 
-	void _validate_property(PropertyInfo& p_property) const;
-
 public:
 	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
@@ -252,13 +250,9 @@ class AnimatedSprite3D : public SpriteBase3D
 	void _stop_internal(bool p_reset);
 
 protected:
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName& p_name, const Variant& p_value);
-#endif
 	virtual void _draw() override;
 	static void _bind_methods();
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 
 public:
 	void set_sprite_frames(const Ref<SpriteFrames>& p_frames);
@@ -301,8 +295,5 @@ public:
 
 	AnimatedSprite3D();
 };
-
-VARIANT_ENUM_CAST(SpriteBase3D::DrawFlags);
-VARIANT_ENUM_CAST(SpriteBase3D::AlphaCutMode);
 
 

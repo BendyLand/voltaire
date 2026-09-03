@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_device.h"
 
 #define RD_SETGET(m_type, m_member)                                                                \
@@ -56,8 +55,6 @@
 
 class RDTextureFormat : public RefCounted
 {
-	VLTRCLASS(RDTextureFormat, RefCounted)
-
 	friend class RenderingDevice;
 	friend class RenderSceneBuffersRD;
 
@@ -92,8 +89,6 @@ protected:
 
 class RDTextureView : public RefCounted
 {
-	VLTRCLASS(RDTextureView, RefCounted)
-
 	friend class RenderingDevice;
 	friend class RenderSceneBuffersRD;
 
@@ -111,7 +106,6 @@ protected:
 
 class RDAttachmentFormat : public RefCounted
 {
-	VLTRCLASS(RDAttachmentFormat, RefCounted)
 	friend class RenderingDevice;
 
 	RD::AttachmentFormat base;
@@ -126,7 +120,6 @@ protected:
 
 class RDFramebufferPass : public RefCounted
 {
-	VLTRCLASS(RDFramebufferPass, RefCounted)
 	friend class RenderingDevice;
 	friend class FramebufferCacheRD;
 
@@ -149,7 +142,6 @@ protected:
 
 class RDSamplerState : public RefCounted
 {
-	VLTRCLASS(RDSamplerState, RefCounted)
 	friend class RenderingDevice;
 
 	RD::SamplerState base;
@@ -177,7 +169,6 @@ protected:
 
 class RDVertexAttribute : public RefCounted
 {
-	VLTRCLASS(RDVertexAttribute, RefCounted)
 	friend class RenderingDevice;
 	RD::VertexAttribute base;
 
@@ -195,7 +186,6 @@ protected:
 
 class RDShaderSource : public RefCounted
 {
-	VLTRCLASS(RDShaderSource, RefCounted)
 	String source[RD::SHADER_STAGE_MAX];
 	RD::ShaderLanguage language = RD::SHADER_LANGUAGE_GLSL;
 
@@ -222,8 +212,6 @@ protected:
 
 class RDShaderSPIRV : public Resource
 {
-	VLTRCLASS(RDShaderSPIRV, Resource)
-
 	Vector<uint8_t> bytecode[RD::SHADER_STAGE_MAX];
 	String compile_error[RD::SHADER_STAGE_MAX];
 
@@ -272,8 +260,6 @@ protected:
 
 class RDShaderFile : public Resource
 {
-	VLTRCLASS(RDShaderFile, Resource)
-
 	HashMap<StringName, Ref<RDShaderSPIRV>> versions;
 	String base_error;
 
@@ -297,21 +283,6 @@ public:
 	{
 		ERR_FAIL_COND_V(!versions.has(p_version), Vector<RD::ShaderStageSPIRVData>());
 		return versions[p_version]->get_stages();
-	}
-
-	TypedArray<StringName> get_version_list() const
-	{
-		Vector<StringName> vnames;
-		for (const KeyValue<StringName, Ref<RDShaderSPIRV>>& E : versions) {
-			vnames.push_back(E.key);
-		}
-		vnames.sort_custom<StringName::AlphCompare>();
-		TypedArray<StringName> ret;
-		ret.resize(vnames.size());
-		for (int i = 0; i < vnames.size(); i++) {
-			ret[i] = vnames[i];
-		}
-		return ret;
 	}
 
 	void set_base_error(const String& p_error)
@@ -346,37 +317,10 @@ public:
 	typedef String (*OpenIncludeFunction)(const String&, void* userdata);
 	Error parse_versions_from_text(const String& p_text, const String p_defines = String(),
 		OpenIncludeFunction p_include_func = nullptr, void* p_include_func_userdata = nullptr);
-
-protected:
-	Dictionary _get_versions() const
-	{
-		TypedArray<StringName> vnames = get_version_list();
-		Dictionary ret;
-		for (int i = 0; i < vnames.size(); i++) {
-			ret[vnames[i]] = versions[vnames[i]];
-		}
-		return ret;
-	}
-
-	void _set_versions(const Dictionary& p_versions)
-	{
-		versions.clear();
-		for (const KeyValue<Variant, Variant>& kv : p_versions) {
-			StringName vname = kv.key;
-			Ref<RDShaderSPIRV> bc = kv.value;
-			ERR_CONTINUE(bc.is_null());
-			versions[vname] = bc;
-		}
-
-		emit_changed();
-	}
-
-	static void _bind_methods() {}
 };
 
 class RDUniform : public RefCounted
 {
-	VLTRCLASS(RDUniform, RefCounted)
 	friend class RenderingDevice;
 	friend class UniformSetCacheRD;
 	RD::Uniform base;
@@ -388,59 +332,22 @@ public:
 	void add_id(const RID& p_id) { base.append_id(p_id); }
 
 	void clear_ids() { base.clear_ids(); }
-
-	TypedArray<RID> get_ids() const
-	{
-		TypedArray<RID> ids;
-		for (uint32_t i = 0; i < base.get_id_count(); i++) {
-			ids.push_back(base.get_id(i));
-		}
-		return ids;
-	}
-
-protected:
-	void _set_ids(const TypedArray<RID>& p_ids)
-	{
-		base.clear_ids();
-		for (int i = 0; i < p_ids.size(); i++) {
-			RID id = p_ids[i];
-			ERR_FAIL_COND(id.is_null());
-			base.append_id(id);
-		}
-	}
-
-	static void _bind_methods() {}
 };
 
 class RDPipelineSpecializationConstant : public RefCounted
 {
-	VLTRCLASS(RDPipelineSpecializationConstant, RefCounted)
 	friend class RenderingDevice;
 
-	Variant value = false;
 	uint32_t constant_id = 0;
 
 public:
-	void set_value(const Variant& p_value)
-	{
-		ERR_FAIL_COND(p_value.get_type() != Variant::BOOL && p_value.get_type() != Variant::INT &&
-					  p_value.get_type() != Variant::FLOAT);
-		value = p_value;
-	}
-
-	Variant get_value() const { return value; }
-
 	void set_constant_id(uint32_t p_id) { constant_id = p_id; }
 
 	uint32_t get_constant_id() const { return constant_id; }
-
-protected:
-	static void _bind_methods() {}
 };
 
 class RDPipelineRasterizationState : public RefCounted
 {
-	VLTRCLASS(RDPipelineRasterizationState, RefCounted)
 	friend class RenderingDevice;
 
 	RD::PipelineRasterizationState base;
@@ -457,18 +364,13 @@ public:
 	RD_SETGET(float, depth_bias_slope_factor)
 	RD_SETGET(float, line_width)
 	RD_SETGET(uint32_t, patch_control_points)
-
-protected:
-	static void _bind_methods() {}
 };
 
 class RDPipelineMultisampleState : public RefCounted
 {
-	VLTRCLASS(RDPipelineMultisampleState, RefCounted)
 	friend class RenderingDevice;
 
 	RD::PipelineMultisampleState base;
-	TypedArray<int64_t> sample_masks;
 
 public:
 	RD_SETGET(RD::TextureSamples, sample_count)
@@ -477,17 +379,12 @@ public:
 	RD_SETGET(bool, enable_alpha_to_coverage)
 	RD_SETGET(bool, enable_alpha_to_one)
 
-	void set_sample_masks(const TypedArray<int64_t>& p_masks) { sample_masks = p_masks; }
-
-	TypedArray<int64_t> get_sample_masks() const { return sample_masks; }
-
 protected:
 	static void _bind_methods() {}
 };
 
 class RDPipelineDepthStencilState : public RefCounted
 {
-	VLTRCLASS(RDPipelineDepthStencilState, RefCounted)
 	friend class RenderingDevice;
 
 	RD::PipelineDepthStencilState base;
@@ -523,7 +420,6 @@ protected:
 
 class RDPipelineColorBlendStateAttachment : public RefCounted
 {
-	VLTRCLASS(RDPipelineColorBlendStateAttachment, RefCounted)
 	friend class RenderingDevice;
 	RD::PipelineColorBlendState::Attachment base;
 
@@ -556,23 +452,13 @@ protected:
 
 class RDPipelineColorBlendState : public RefCounted
 {
-	VLTRCLASS(RDPipelineColorBlendState, RefCounted)
 	friend class RenderingDevice;
 	RD::PipelineColorBlendState base;
-
-	TypedArray<RDPipelineColorBlendStateAttachment> attachments;
 
 public:
 	RD_SETGET(bool, enable_logic_op)
 	RD_SETGET(RD::LogicOperation, logic_op)
 	RD_SETGET(Color, blend_constant)
-
-	void set_attachments(const TypedArray<RDPipelineColorBlendStateAttachment>& p_attachments)
-	{
-		attachments = p_attachments;
-	}
-
-	TypedArray<RDPipelineColorBlendStateAttachment> get_attachments() const { return attachments; }
 
 protected:
 	static void _bind_methods() {}
@@ -580,7 +466,6 @@ protected:
 
 class RDAccelerationStructureGeometry : public RefCounted
 {
-	VLTRCLASS(RDAccelerationStructureGeometry, RefCounted)
 	friend class RenderingDevice;
 	RD::AccelerationStructureGeometry base;
 
@@ -601,7 +486,6 @@ protected:
 
 class RDAccelerationStructureInstance : public RefCounted
 {
-	VLTRCLASS(RDAccelerationStructureInstance, RefCounted)
 	friend class RenderingDevice;
 	RD::AccelerationStructureInstance base;
 
@@ -619,33 +503,15 @@ protected:
 
 class RDPipelineShader : public RefCounted
 {
-	VLTRCLASS(RDPipelineShader, RefCounted)
 	friend class RenderingDevice;
 	RD::PipelineShader base;
 
-	TypedArray<RDPipelineSpecializationConstant> specialization_constants;
-
 public:
 	RD_SETGET(RID, shader)
-
-	void set_specialization_constants(
-		const TypedArray<RDPipelineSpecializationConstant>& p_specialization_constants)
-	{
-		specialization_constants = p_specialization_constants;
-	}
-
-	TypedArray<RDPipelineSpecializationConstant> get_specialization_constants() const
-	{
-		return specialization_constants;
-	}
-
-protected:
-	static void _bind_methods() {}
 };
 
 class RDHitGroup : public RefCounted
 {
-	VLTRCLASS(RDHitGroup, RefCounted)
 	friend class RenderingDevice;
 
 	Ref<RDPipelineShader> closest_hit_shader;
@@ -673,9 +539,6 @@ public:
 	}
 
 	Ref<RDPipelineShader> get_intersection_shader() const { return intersection_shader; }
-
-protected:
-	static void _bind_methods() {}
 };
 
 

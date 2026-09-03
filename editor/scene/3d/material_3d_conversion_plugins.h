@@ -32,56 +32,53 @@
 
 #include "editor/plugins/editor_resource_conversion_plugin.h"
 
-class StandardMaterial3DConversionPlugin : public EditorResourceConversionPlugin {
-	VLTRCLASS(StandardMaterial3DConversionPlugin, EditorResourceConversionPlugin);
+class StandardMaterial3DConversionPlugin : public EditorResourceConversionPlugin
+{
+public:
+	virtual String converts_to() const override;
+	virtual bool handles(const Ref<Resource>& p_resource) const override;
+	virtual Ref<Resource> convert(const Ref<Resource>& p_resource) const override;
+};
+
+class ORMMaterial3DConversionPlugin : public EditorResourceConversionPlugin
+{
+public:
+	virtual String converts_to() const override;
+	virtual bool handles(const Ref<Resource>& p_resource) const override;
+	virtual Ref<Resource> convert(const Ref<Resource>& p_resource) const override;
+};
+
+class ProceduralSkyMaterialConversionPlugin : public EditorResourceConversionPlugin
+{
+public:
+	virtual String converts_to() const override;
+	virtual bool handles(const Ref<Resource>& p_resource) const override;
+	virtual Ref<Resource> convert(const Ref<Resource>& p_resource) const override;
+};
+
+class PanoramaSkyMaterialConversionPlugin : public EditorResourceConversionPlugin
+{
+public:
+	virtual String converts_to() const override;
+	virtual bool handles(const Ref<Resource>& p_resource) const override;
+	virtual Ref<Resource> convert(const Ref<Resource>& p_resource) const override;
+};
+
+class PhysicalSkyMaterialConversionPlugin : public EditorResourceConversionPlugin
+{
 
 public:
 	virtual String converts_to() const override;
-	virtual bool handles(const Ref<Resource> &p_resource) const override;
-	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const override;
+	virtual bool handles(const Ref<Resource>& p_resource) const override;
+	virtual Ref<Resource> convert(const Ref<Resource>& p_resource) const override;
 };
 
-class ORMMaterial3DConversionPlugin : public EditorResourceConversionPlugin {
-	VLTRCLASS(ORMMaterial3DConversionPlugin, EditorResourceConversionPlugin);
-
+class FogMaterialConversionPlugin : public EditorResourceConversionPlugin
+{
 public:
 	virtual String converts_to() const override;
-	virtual bool handles(const Ref<Resource> &p_resource) const override;
-	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const override;
+	virtual bool handles(const Ref<Resource>& p_resource) const override;
+	virtual Ref<Resource> convert(const Ref<Resource>& p_resource) const override;
 };
 
-class ProceduralSkyMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	VLTRCLASS(ProceduralSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
 
-public:
-	virtual String converts_to() const override;
-	virtual bool handles(const Ref<Resource> &p_resource) const override;
-	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const override;
-};
-
-class PanoramaSkyMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	VLTRCLASS(PanoramaSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
-
-public:
-	virtual String converts_to() const override;
-	virtual bool handles(const Ref<Resource> &p_resource) const override;
-	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const override;
-};
-
-class PhysicalSkyMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	VLTRCLASS(PhysicalSkyMaterialConversionPlugin, EditorResourceConversionPlugin);
-
-public:
-	virtual String converts_to() const override;
-	virtual bool handles(const Ref<Resource> &p_resource) const override;
-	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const override;
-};
-
-class FogMaterialConversionPlugin : public EditorResourceConversionPlugin {
-	VLTRCLASS(FogMaterialConversionPlugin, EditorResourceConversionPlugin);
-
-public:
-	virtual String converts_to() const override;
-	virtual bool handles(const Ref<Resource> &p_resource) const override;
-	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const override;
-};

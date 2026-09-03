@@ -38,32 +38,31 @@
 
 class CheckBox;
 
-class AudioStreamImportSettingsDialog : public ConfirmationDialog {
-	VLTRCLASS(AudioStreamImportSettingsDialog, ConfirmationDialog);
-
-	CheckBox *bpm_enabled = nullptr;
-	SpinBox *bpm_edit = nullptr;
-	CheckBox *beats_enabled = nullptr;
-	SpinBox *beats_edit = nullptr;
-	Label *bar_beats_label = nullptr;
-	SpinBox *bar_beats_edit = nullptr;
-	CheckBox *loop = nullptr;
-	SpinBox *loop_offset = nullptr;
-	ColorRect *color_rect = nullptr;
+class AudioStreamImportSettingsDialog : public ConfirmationDialog
+{
+	CheckBox* bpm_enabled = nullptr;
+	SpinBox* bpm_edit = nullptr;
+	CheckBox* beats_enabled = nullptr;
+	SpinBox* beats_edit = nullptr;
+	Label* bar_beats_label = nullptr;
+	SpinBox* bar_beats_edit = nullptr;
+	CheckBox* loop = nullptr;
+	SpinBox* loop_offset = nullptr;
+	ColorRect* color_rect = nullptr;
 	Ref<AudioStream> stream;
-	AudioStreamPlayer *_player = nullptr;
-	ColorRect *_preview = nullptr;
-	Control *_indicator = nullptr;
-	Label *_current_label = nullptr;
-	Label *_duration_label = nullptr;
+	AudioStreamPlayer* _player = nullptr;
+	ColorRect* _preview = nullptr;
+	Control* _indicator = nullptr;
+	Label* _current_label = nullptr;
+	Label* _duration_label = nullptr;
 
-	HScrollBar *zoom_bar = nullptr;
-	Button *zoom_in = nullptr;
-	Button *zoom_reset = nullptr;
-	Button *zoom_out = nullptr;
+	HScrollBar* zoom_bar = nullptr;
+	Button* zoom_in = nullptr;
+	Button* zoom_reset = nullptr;
+	Button* zoom_out = nullptr;
 
-	Button *_play_button = nullptr;
-	Button *_stop_button = nullptr;
+	Button* _play_button = nullptr;
+	Button* _stop_button = nullptr;
 
 	bool updating_settings = false;
 
@@ -73,11 +72,11 @@ class AudioStreamImportSettingsDialog : public ConfirmationDialog {
 	bool _pausing = false;
 	int _hovering_beat = -1;
 
-	HashMap<StringName, Variant> params;
 	String importer;
 	String path;
 
-	struct MasterState {
+	struct MasterState
+	{
 		bool mute = false;
 		bool bypass = false;
 		float volume = 0;
@@ -88,7 +87,7 @@ class AudioStreamImportSettingsDialog : public ConfirmationDialog {
 
 	void _audio_changed();
 
-	static AudioStreamImportSettingsDialog *singleton;
+	static AudioStreamImportSettingsDialog* singleton;
 
 	void _settings_changed();
 
@@ -96,7 +95,6 @@ class AudioStreamImportSettingsDialog : public ConfirmationDialog {
 
 protected:
 	void _notification(int p_what);
-	void _preview_changed(ObjectID p_which);
 	void _preview_zoom_in();
 	void _preview_zoom_out();
 	void _preview_zoom_reset();
@@ -114,9 +112,11 @@ protected:
 	int _get_beat_at_pos(real_t p_x);
 
 public:
-	void edit(const String &p_path, const String &p_importer, const Ref<AudioStream> &p_stream);
+	void edit(const String& p_path, const String& p_importer, const Ref<AudioStream>& p_stream);
 
-	static AudioStreamImportSettingsDialog *get_singleton() { return singleton; }
+	static AudioStreamImportSettingsDialog* get_singleton() { return singleton; }
 
 	AudioStreamImportSettingsDialog();
 };
+
+

@@ -31,8 +31,6 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/zip_io.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_file_system.h"
@@ -86,19 +84,11 @@ bool EditorAssetInstaller::_fix_conflicted_indeterminate_state(TreeItem* p_item,
 	TreeItem* child_item = p_item->get_first_child();
 	while (child_item) {
 		has_conflict_child |= _fix_conflicted_indeterminate_state(child_item, p_column);
-		Dictionary child_meta = child_item->get_metadata(p_column);
-		bool child_conflict = child_meta.get("is_conflict", false);
-		if (child_conflict) {
-			child_item->set_checked(p_column, false);
-			has_conflict_child = true;
-		}
-		else {
-			bool child_checked = child_item->is_checked(p_column);
-			bool child_indeterminate = child_item->is_indeterminate(p_column);
-			all_non_conflict_checked &= (child_checked || child_indeterminate);
-			all_non_conflict_unchecked &= !child_checked;
-			has_indeterminate_child |= child_indeterminate;
-		}
+		bool child_checked = child_item->is_checked(p_column);
+		bool child_indeterminate = child_item->is_indeterminate(p_column);
+		all_non_conflict_checked &= (child_checked || child_indeterminate);
+		all_non_conflict_unchecked &= !child_checked;
+		has_indeterminate_child |= child_indeterminate;
 		child_item = child_item->get_next();
 	}
 	if (has_indeterminate_child) {
@@ -125,69 +115,6 @@ bool EditorAssetInstaller::_is_item_checked(const String& p_source_path) const
 	return file_item_map.has(p_source_path) &&
 		   (file_item_map[p_source_path]->is_checked(0) ||
 			   file_item_map[p_source_path]->is_indeterminate(0));
-}
-
-void EditorAssetInstaller::open_asset(Object& obj, const String& p_path, bool p_autoskip_toplevel)
-{
-	package_path = p_path;
-	asset_files.clear();
-
-	Ref<FileAccess> io_fa;
-	zlib_filefunc_def io = zipio_create_io(&io_fa);
-
-	unzFile pkg = unzOpen2(p_path.utf8().get_data(), &io);
-	if (!pkg) {
-		EditorToaster::get_singleton()->popup_str(
-			vformat(TTR("Error opening asset file for \"%s\" (not in ZIP format)."), asset_name),
-			EditorToaster::SEVERITY_ERROR);
-		return;
-	}
-
-	int ret = unzGoToFirstFile(pkg);
-
-	while (ret == UNZ_OK) {
-		// get filename
-		unz_file_info info;
-		char fname[16384];
-		unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
-
-		String source_name = String::utf8(fname);
-
-		// Create intermediate directories if they aren't reported by unzip.
-		// We are only interested in subfolders, so skip the root slash.
-		int separator = source_name.find_char('/', 1);
-		while (separator != -1) {
-			String dir_name = source_name.substr(0, separator + 1);
-			if (!dir_name.is_empty() && !asset_files.has(dir_name)) {
-				asset_files.insert(dir_name);
-			}
-
-			separator = source_name.find_char('/', separator + 1);
-		}
-
-		if (!source_name.is_empty() && !asset_files.has(source_name)) {
-			asset_files.insert(source_name);
-		}
-
-		ret = unzGoToNextFile(pkg);
-	}
-
-	unzClose(pkg);
-
-	asset_title_label->set_text(asset_name);
-
-	_check_has_toplevel();
-	// Default to false, unless forced. Don't skip "addons" by default
-	skip_toplevel = p_autoskip_toplevel && toplevel_prefix != "addons/";
-	obj.set_block_signals(true);
-	skip_toplevel_check->set_pressed(!skip_toplevel_check->is_disabled() && skip_toplevel);
-	obj.set_block_signals(false);
-
-	_update_file_mappings();
-	_rebuild_source_tree();
-	_rebuild_destination_tree();
-
-	popup_centered_clamped(Size2(620, 640) * EDSCALE);
 }
 
 void EditorAssetInstaller::_update_file_mappings()
@@ -266,37 +193,6 @@ void EditorAssetInstaller::_rebuild_source_tree()
 	_update_confirm_button();
 
 	updating_source = false;
-}
-
-void EditorAssetInstaller::_update_source_tree()
-{
-	int num_file_conflicts = 0;
-	first_file_conflict = nullptr;
-
-	for (const KeyValue<String, TreeItem*>& E : file_item_map) {
-		TreeItem* ti = E.value;
-		Dictionary item_meta = ti->get_metadata(0);
-		if ((bool)item_meta.get("is_dir", false)) {
-			continue;
-		}
-
-		String asset_path = item_meta.get("asset_path", "");
-		ERR_CONTINUE(asset_path.is_empty());
-
-		bool target_exists = _update_source_item_status(ti, asset_path);
-		if (target_exists) {
-			if (first_file_conflict == nullptr) {
-				first_file_conflict = ti;
-			}
-			num_file_conflicts += 1;
-		}
-
-		item_meta["is_conflict"] = target_exists;
-		ti->set_metadata(0, item_meta);
-	}
-
-	_update_conflict_status(num_file_conflicts);
-	_update_confirm_button();
 }
 
 bool EditorAssetInstaller::_update_source_item_status(TreeItem* p_item, const String& p_path)
@@ -379,12 +275,6 @@ TreeItem* EditorAssetInstaller::_create_dir_item(
 		ti->set_checked(0, true);
 		ti->propagate_check(0);
 		_fix_conflicted_indeterminate_state(ti->get_tree()->get_root(), 0);
-
-		Dictionary meta;
-		meta["asset_path"] = p_path + "/";
-		meta["is_dir"] = true;
-		meta["is_conflict"] = false;
-		ti->set_metadata(0, meta);
 	}
 
 	ti->set_text(0, p_path.get_file() + "/");
@@ -410,12 +300,6 @@ TreeItem* EditorAssetInstaller::_create_file_item(
 			}
 			*r_conflicts += 1;
 		}
-
-		Dictionary meta;
-		meta["asset_path"] = p_path;
-		meta["is_dir"] = false;
-		meta["is_conflict"] = target_exists;
-		ti->set_metadata(0, meta);
 	}
 
 	String file = p_path.get_file();
@@ -533,8 +417,6 @@ void EditorAssetInstaller::_open_target_dir_dialog()
 		target_dir_dialog->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_DIR);
 		target_dir_dialog->set_title(TTRC("Select Install Folder"));
 		target_dir_dialog->set_current_dir(target_dir_path);
-		target_dir_dialog->connect(
-			"dir_selected", callable_mp(this, &EditorAssetInstaller::_target_dir_selected));
 		add_child(target_dir_dialog);
 	}
 
@@ -595,54 +477,43 @@ void EditorAssetInstaller::_install_asset()
 
 		String target_path = target_dir_path.path_join(E->value);
 
-		Dictionary asset_meta = file_item_map[source_name]->get_metadata(0);
-		bool is_dir = asset_meta.get("is_dir", false);
-		if (is_dir) {
-			if (target_path.ends_with("/")) {
-				target_path = target_path.substr(0, target_path.length() - 1);
-			}
+		Vector<uint8_t> uncomp_data;
+		uncomp_data.resize(info.uncompressed_size);
 
-			da->make_dir_recursive(target_path);
+		ret = unzOpenCurrentFile(pkg);
+		if (ret != UNZ_OK) {
+			failed_files.push_back(target_path);
+			continue;
+		}
+		int bytes_read = unzReadCurrentFile(pkg, uncomp_data.ptrw(), uncomp_data.size());
+		int close_err = unzCloseCurrentFile(pkg);
+		if (bytes_read < 0 || bytes_read != uncomp_data.size() || close_err != UNZ_OK) {
+			failed_files.push_back(target_path);
+			continue;
+		}
+
+		// Ensure that the target folder exists.
+		da->make_dir_recursive(target_path.get_base_dir());
+
+		if (_is_zip_entry_symlink(info)) {
+			String link_target =
+				String::utf8(reinterpret_cast<const char*>(uncomp_data.ptr()), uncomp_data.size());
+			Error err = da->create_link(link_target, target_path);
+			if (err != OK) {
+				failed_files.push_back(target_path);
+			}
 		}
 		else {
-			Vector<uint8_t> uncomp_data;
-			uncomp_data.resize(info.uncompressed_size);
-
-			ret = unzOpenCurrentFile(pkg);
-			if (ret != UNZ_OK) {
-				failed_files.push_back(target_path);
-				continue;
-			}
-			int bytes_read = unzReadCurrentFile(pkg, uncomp_data.ptrw(), uncomp_data.size());
-			int close_err = unzCloseCurrentFile(pkg);
-			if (bytes_read < 0 || bytes_read != uncomp_data.size() || close_err != UNZ_OK) {
-				failed_files.push_back(target_path);
-				continue;
-			}
-
-			// Ensure that the target folder exists.
-			da->make_dir_recursive(target_path.get_base_dir());
-
-			if (_is_zip_entry_symlink(info)) {
-				String link_target = String::utf8(
-					reinterpret_cast<const char*>(uncomp_data.ptr()), uncomp_data.size());
-				Error err = da->create_link(link_target, target_path);
-				if (err != OK) {
-					failed_files.push_back(target_path);
-				}
+			Ref<FileAccess> f = FileAccess::open(target_path, FileAccess::WRITE);
+			if (f.is_valid()) {
+				f->store_buffer(uncomp_data.ptr(), uncomp_data.size());
 			}
 			else {
-				Ref<FileAccess> f = FileAccess::open(target_path, FileAccess::WRITE);
-				if (f.is_valid()) {
-					f->store_buffer(uncomp_data.ptr(), uncomp_data.size());
-				}
-				else {
-					failed_files.push_back(target_path);
-				}
+				failed_files.push_back(target_path);
 			}
-
-			ProgressDialog::get_singleton()->task_step("uncompress", target_path, idx);
 		}
+
+		ProgressDialog::get_singleton()->task_step("uncompress", target_path, idx);
 	}
 
 	ProgressDialog::get_singleton()->end_task("uncompress");
@@ -771,24 +642,18 @@ EditorAssetInstaller::EditorAssetInstaller()
 	show_source_files_button->set_tooltip_text(
 		TTRC("Open the list of the asset contents and select which files to install."));
 	remapping_tools->add_child(show_source_files_button);
-	show_source_files_button->connect(SceneStringName(toggled),
-		callable_mp(this, &EditorAssetInstaller::_toggle_source_tree).bind(false));
 
 	Button* target_dir_button = memnew(Button);
 	target_dir_button->set_text(TTRC("Change Install Folder"));
 	target_dir_button->set_tooltip_text(
 		TTRC("Change the folder where the contents of the asset are going to be installed."));
 	remapping_tools->add_child(target_dir_button);
-	target_dir_button->connect(SceneStringName(pressed),
-		callable_mp(this, &EditorAssetInstaller::_open_target_dir_dialog));
 
 	remapping_tools->add_child(memnew(VSeparator));
 
 	skip_toplevel_check = memnew(CheckBox);
 	skip_toplevel_check->set_text(TTRC("Ignore Asset Root"));
 	skip_toplevel_check->set_tooltip_text(TTRC("Ignore the root directory when extracting files."));
-	skip_toplevel_check->connect(
-		SceneStringName(toggled), callable_mp(this, &EditorAssetInstaller::_set_skip_toplevel));
 	remapping_tools->add_child(skip_toplevel_check);
 
 	remapping_tools->add_spacer();
@@ -805,8 +670,6 @@ EditorAssetInstaller::EditorAssetInstaller()
 		TTRC("Show contents of the asset and conflicting files."));
 	asset_conflicts_link->set_visible(false);
 	remapping_tools->add_child(asset_conflicts_link);
-	asset_conflicts_link->connect(SceneStringName(pressed),
-		callable_mp(this, &EditorAssetInstaller::_toggle_source_tree).bind(true, true));
 
 	// File hierarchy trees.
 
@@ -828,8 +691,6 @@ EditorAssetInstaller::EditorAssetInstaller()
 	source_tree->set_accessibility_name(TTRC("Source Files"));
 	source_tree->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	source_tree->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	source_tree->connect(
-		"item_edited", callable_mp(this, &EditorAssetInstaller::_item_checked_cbk));
 	source_tree->set_theme_type_variation("TreeSecondary");
 	source_tree_vb->add_child(source_tree);
 
@@ -851,8 +712,6 @@ EditorAssetInstaller::EditorAssetInstaller()
 	destination_tree->set_accessibility_name(TTRC("Destination Files"));
 	destination_tree->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	destination_tree->set_scroll_hint_mode(Tree::SCROLL_HINT_MODE_BOTH);
-	destination_tree->connect(
-		"item_edited", callable_mp(this, &EditorAssetInstaller::_item_checked_cbk));
 	destination_tree_mc->add_child(destination_tree);
 
 	// Dialog configuration.

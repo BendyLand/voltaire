@@ -34,8 +34,6 @@
 
 class Slider : public Range
 {
-	VLTRCLASS(Slider, Range);
-
 public:
 	enum TickPosition
 	{
@@ -86,9 +84,7 @@ private:
 protected:
 	bool ticks_on_borders = false;
 
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 	static void _bind_methods();
 
 public:
@@ -115,20 +111,14 @@ public:
 	Slider(Orientation p_orientation = VERTICAL);
 };
 
-VARIANT_ENUM_CAST(Slider::TickPosition);
-
 class HSlider : public Slider
 {
-	VLTRCLASS(HSlider, Slider);
-
 public:
 	HSlider() : Slider(HORIZONTAL) { set_v_size_flags(0); }
 };
 
 class VSlider : public Slider
 {
-	VLTRCLASS(VSlider, Slider);
-
 public:
 	VSlider() : Slider(VERTICAL) { set_h_size_flags(0); }
 };

@@ -35,12 +35,11 @@
 class AtlasTexture;
 class Texture2D;
 
-class EditorIconManager : public Control {
-	VLTRCLASS(EditorIconManager, Control);
-
+class EditorIconManager : public Control
+{
 	HashMap<StringName, Ref<AtlasTexture>> icons;
 
-	inline static EditorIconManager *singleton = nullptr;
+	inline static EditorIconManager* singleton = nullptr;
 
 protected:
 	void _notification(int p_what);
@@ -48,5 +47,7 @@ protected:
 public:
 	EditorIconManager();
 
-	static Ref<Texture2D> get_icon(const StringName &p_icon_name);
+	static Ref<Texture2D> get_icon(const StringName& p_icon_name);
 };
+
+

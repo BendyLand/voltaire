@@ -53,53 +53,56 @@ class VBoxContainer;
 
 class QuickOpenResultItem;
 
-enum class QuickOpenDisplayMode {
+enum class QuickOpenDisplayMode
+{
 	GRID,
 	LIST,
 };
 
-struct QuickOpenResultCandidate {
+struct QuickOpenResultCandidate
+{
 	ResourceUID::ID uid;
 	Ref<Texture2D> thumbnail;
 	Ref<FuzzySearchMatch> result;
 
-	static QuickOpenResultCandidate from_uid(const ResourceUID::ID &p_uid, bool &r_success);
-	static QuickOpenResultCandidate from_result(const Ref<FuzzySearchMatch> p_result, bool &r_success);
+	static QuickOpenResultCandidate from_uid(const ResourceUID::ID& p_uid, bool& r_success);
+	static QuickOpenResultCandidate from_result(
+		const Ref<FuzzySearchMatch> p_result, bool& r_success);
 };
 
-class HighlightedLabel : public Label {
-	VLTRCLASS(HighlightedLabel, Label)
-
+class HighlightedLabel : public Label
+{
 	Vector<Vector2i> highlights;
 
-	void draw_substr_rects(const Vector2i &p_substr, Vector2 p_offset, int p_line_limit, int line_spacing);
+	void draw_substr_rects(
+		const Vector2i& p_substr, Vector2 p_offset, int p_line_limit, int line_spacing);
 
 public:
-	void add_highlight(const Vector2i &p_interval);
+	void add_highlight(const Vector2i& p_interval);
 	void reset_highlights();
 
 protected:
 	void _notification(int p_notification);
 };
 
-class QuickOpenResultContainer : public VBoxContainer {
-	VLTRCLASS(QuickOpenResultContainer, VBoxContainer)
-
-	enum {
+class QuickOpenResultContainer : public VBoxContainer
+{
+	enum
+	{
 		FILE_SHOW_IN_FILESYSTEM,
 		FILE_SHOW_IN_FILE_MANAGER
 	};
 
 public:
-	void init(const Vector<StringName> &p_base_types);
-	void handle_search_box_input(const Ref<InputEvent> &p_ie);
-	void set_query_and_update(const String &p_query);
+	void init(const Vector<StringName>& p_base_types);
+	void handle_search_box_input(const Ref<InputEvent>& p_ie);
+	void set_query_and_update(const String& p_query);
 	void update_results();
 
 	bool has_nothing_selected() const;
 	ResourceUID::ID get_selected() const;
 	String get_selected_path() const;
-	const Vector<StringName> &get_base_types() const;
+	const Vector<StringName>& get_base_types() const;
 
 	bool is_instant_preview_enabled() const;
 	void set_instant_preview_toggle_visible(bool p_visible);
@@ -133,34 +136,34 @@ private:
 	Ref<ConfigFile> history_file;
 
 	QuickOpenDisplayMode content_display_mode = QuickOpenDisplayMode::LIST;
-	Vector<QuickOpenResultItem *> result_items;
+	Vector<QuickOpenResultItem*> result_items;
 
-	ScrollContainer *scroll_container = nullptr;
-	VBoxContainer *list = nullptr;
-	HFlowContainer *grid = nullptr;
-	PopupMenu *file_context_menu = nullptr;
+	ScrollContainer* scroll_container = nullptr;
+	VBoxContainer* list = nullptr;
+	HFlowContainer* grid = nullptr;
+	PopupMenu* file_context_menu = nullptr;
 
-	PanelContainer *panel_container = nullptr;
-	CenterContainer *no_results_container = nullptr;
-	Label *no_results_label = nullptr;
+	PanelContainer* panel_container = nullptr;
+	CenterContainer* no_results_container = nullptr;
+	Label* no_results_label = nullptr;
 
-	Label *file_details_path = nullptr;
-	Button *display_mode_toggle = nullptr;
-	CheckButton *instant_preview_toggle = nullptr;
-	CheckButton *include_addons_toggle = nullptr;
-	CheckButton *fuzzy_search_toggle = nullptr;
+	Label* file_details_path = nullptr;
+	Button* display_mode_toggle = nullptr;
+	CheckButton* instant_preview_toggle = nullptr;
+	CheckButton* include_addons_toggle = nullptr;
+	CheckButton* fuzzy_search_toggle = nullptr;
 
 	AHashMap<StringName, Ref<Texture2D>> file_type_icons;
 
-	static QuickOpenDisplayMode get_adaptive_display_mode(const Vector<StringName> &p_base_types);
+	static QuickOpenDisplayMode get_adaptive_display_mode(const Vector<StringName>& p_base_types);
 
 	void _ensure_result_vector_capacity();
 	void _sort_uids(int p_max_results);
 	void _create_initial_results();
-	void _find_uids_in_folder(EditorFileSystemDirectory *p_directory, bool p_include_addons);
+	void _find_uids_in_folder(EditorFileSystemDirectory* p_directory, bool p_include_addons);
 
-	Vector<ResourceUID::ID> *_get_history();
-	void _add_candidate(QuickOpenResultCandidate &p_candidate);
+	Vector<ResourceUID::ID>* _get_history();
+	void _add_candidate(QuickOpenResultCandidate& p_candidate);
 	Vector<Ref<FuzzySearchMatch>> _get_fuzzy_search_results();
 	void _use_default_candidates();
 	void _score_and_sort_candidates();
@@ -169,10 +172,10 @@ private:
 	void _move_selection_index(Key p_key);
 	void _select_item(int p_index);
 
-	void _item_input(const Ref<InputEvent> &p_ev, int p_index);
+	void _item_input(const Ref<InputEvent>& p_ev, int p_index);
 
-	CanvasItem *_get_result_root();
-	void _layout_result_item(QuickOpenResultItem *p_item);
+	CanvasItem* _get_result_root();
+	void _layout_result_item(QuickOpenResultItem* p_item);
 	void _set_display_mode(QuickOpenDisplayMode p_display_mode);
 	void _toggle_display_mode();
 	void _toggle_instant_preview(bool p_pressed);
@@ -185,56 +188,53 @@ private:
 	static void _bind_methods();
 };
 
-class QuickOpenResultGridItem : public MarginContainer {
-	VLTRCLASS(QuickOpenResultGridItem, MarginContainer)
-
+class QuickOpenResultGridItem : public MarginContainer
+{
 public:
 	QuickOpenResultGridItem();
 
 	void reset();
-	void set_content(const QuickOpenResultCandidate &p_candidate, bool p_highlight);
-	void highlight_item(const Color &p_color);
+	void set_content(const QuickOpenResultCandidate& p_candidate, bool p_highlight);
+	void highlight_item(const Color& p_color);
 	void remove_highlight();
 
 private:
-	VBoxContainer *vbc = nullptr;
-	TextureRect *thumbnail = nullptr;
-	HighlightedLabel *name = nullptr;
+	VBoxContainer* vbc = nullptr;
+	TextureRect* thumbnail = nullptr;
+	HighlightedLabel* name = nullptr;
 };
 
-class QuickOpenResultListItem : public MarginContainer {
-	VLTRCLASS(QuickOpenResultListItem, MarginContainer)
-
+class QuickOpenResultListItem : public MarginContainer
+{
 public:
 	QuickOpenResultListItem();
 
 	void reset();
-	void set_content(const QuickOpenResultCandidate &p_candidate, bool p_highlight);
-	void highlight_item(const Color &p_color);
+	void set_content(const QuickOpenResultCandidate& p_candidate, bool p_highlight);
+	void highlight_item(const Color& p_color);
 	void remove_highlight();
 
 protected:
 	void _notification(int p_what);
 
 private:
-	HBoxContainer *hbc = nullptr;
-	VBoxContainer *text_container = nullptr;
+	HBoxContainer* hbc = nullptr;
+	VBoxContainer* text_container = nullptr;
 
-	TextureRect *thumbnail = nullptr;
-	HighlightedLabel *name = nullptr;
-	HighlightedLabel *path = nullptr;
+	TextureRect* thumbnail = nullptr;
+	HighlightedLabel* name = nullptr;
+	HighlightedLabel* path = nullptr;
 };
 
-class QuickOpenResultItem : public HBoxContainer {
-	VLTRCLASS(QuickOpenResultItem, HBoxContainer)
-
+class QuickOpenResultItem : public HBoxContainer
+{
 public:
 	QuickOpenResultItem();
 
 	bool enable_highlights = true;
 
 	void reset();
-	void set_content(const QuickOpenResultCandidate &p_candidate);
+	void set_content(const QuickOpenResultCandidate& p_candidate);
 	void set_display_mode(QuickOpenDisplayMode p_display_mode);
 	void highlight_item(bool p_enabled);
 
@@ -242,8 +242,8 @@ protected:
 	void _notification(int p_what);
 
 private:
-	QuickOpenResultListItem *list_item = nullptr;
-	QuickOpenResultGridItem *grid_item = nullptr;
+	QuickOpenResultListItem* list_item = nullptr;
+	QuickOpenResultGridItem* grid_item = nullptr;
 
 	Ref<StyleBox> selected_stylebox;
 	Ref<StyleBox> hovering_stylebox;
@@ -255,39 +255,33 @@ private:
 	void _set_enabled(bool p_enabled);
 };
 
-class EditorQuickOpenDialog : public AcceptDialog {
-	VLTRCLASS(EditorQuickOpenDialog, AcceptDialog);
-
+class EditorQuickOpenDialog : public AcceptDialog
+{
 public:
-	void popup_dialog(const Vector<StringName> &p_base_types, const Callable &p_item_selected_callback, bool p_allow_type_switching = false);
-	void popup_dialog_for_property(const Vector<StringName> &p_base_types, Object *p_obj, const StringName &p_path, const Callable &p_item_selected_callback);
 	EditorQuickOpenDialog();
 
 protected:
 	virtual void cancel_pressed() override;
 	virtual void ok_pressed() override;
-	virtual void shortcut_input(const Object& obj, const Ref<InputEvent> &p_event) override;
 	void item_pressed(bool p_double_click);
 	void selection_changed();
 
 private:
-	static String get_dialog_title(const Vector<StringName> &p_base_types);
+	static String get_dialog_title(const Vector<StringName>& p_base_types);
 
-	LineEdit *search_box = nullptr;
-	QuickOpenResultContainer *container = nullptr;
+	LineEdit* search_box = nullptr;
+	QuickOpenResultContainer* container = nullptr;
 
-	Callable item_selected_callback;
-
-	Object *property_object = nullptr;
 	StringName property_path;
-	Variant initial_property_value;
 	bool initial_selection_performed = false;
 	bool allow_type_switching = false;
 	bool is_cycling_items = false;
 	bool _is_instant_preview_active() const;
-	void _search_box_text_changed(const String &p_query);
-	void _finish_dialog_setup(const Vector<StringName> &p_base_types);
+	void _search_box_text_changed(const String& p_query);
+	void _finish_dialog_setup(const Vector<StringName>& p_base_types);
 
 	void preview_property();
 	void update_property();
 };
+
+

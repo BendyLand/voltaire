@@ -30,130 +30,13 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "editor/export/editor_export.h"
 #include "editor/settings/editor_settings.h"
 #include "editor_export_preset.compat.inc"
 #include "editor_export_preset.h"
 
-bool EditorExportPreset::_set(const StringName& p_name, const Variant& p_value)
-{
-	values[p_name] = p_value;
-	EditorExport::singleton->save_presets();
-	if (update_visibility.has(p_name)) {
-		if (update_visibility[p_name]) {
-			update_value_overrides();
-			this->obj->notify_property_list_changed();
-		}
-		return true;
-	}
-
-	return false;
-}
-
-bool EditorExportPreset::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (value_overrides.has(p_name)) {
-		r_ret = value_overrides[p_name];
-		return true;
-	}
-
-	if (values.has(p_name)) {
-		r_ret = values[p_name];
-		return true;
-	}
-
-	return false;
-}
-
-Variant EditorExportPreset::get_project_setting(const StringName& p_name)
-{
-	List<String> ftr_list;
-	platform->get_platform_features(&ftr_list);
-	platform->get_preset_features(this, &ftr_list);
-
-	Vector<String> features;
-	for (const String& E : ftr_list) {
-		features.push_back(E);
-	}
-
-	if (!get_custom_features().is_empty()) {
-		Vector<String> tmp_custom_list = get_custom_features().split(",");
-
-		for (int i = 0; i < tmp_custom_list.size(); i++) {
-			String f = tmp_custom_list[i].strip_edges();
-			if (!f.is_empty()) {
-				features.push_back(f);
-			}
-		}
-	}
-	return ProjectSettings::get_singleton()->get_setting_with_override_and_custom_features(
-		p_name, features);
-}
-
 void EditorExportPreset::_bind_methods() {}
-
-String EditorExportPreset::_get_property_warning(const StringName& p_name) const
-{
-	if (value_overrides.has(p_name)) {
-		return String();
-	}
-
-	String warning = platform->get_export_option_warning(this, p_name);
-	if (!warning.is_empty()) {
-		warning += "\n";
-	}
-
-	// Get property warning from editor export plugins.
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
-	for (int i = 0; i < export_plugins.size(); i++) {
-		if (!export_plugins[i]->supports_platform(platform)) {
-			continue;
-		}
-
-		export_plugins.write[i]->set_export_preset(Ref<EditorExportPreset>(this));
-		String plugin_warning = export_plugins[i]->_get_export_option_warning(platform, p_name);
-		if (!plugin_warning.is_empty()) {
-			warning += plugin_warning + "\n";
-		}
-	}
-
-	return warning;
-}
-
-void EditorExportPreset::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	for (const KeyValue<StringName, PropertyInfo>& E : properties) {
-		if (!value_overrides.has(E.key)) {
-			bool property_visible = platform->get_export_option_visibility(this, E.key);
-			if (!property_visible) {
-				continue;
-			}
-
-			// Get option visibility from editor export plugins.
-			Vector<Ref<EditorExportPlugin>> export_plugins =
-				EditorExport::get_singleton()->get_export_plugins();
-			for (int i = 0; i < export_plugins.size(); i++) {
-				if (!export_plugins[i]->supports_platform(platform)) {
-					continue;
-				}
-
-				export_plugins.write[i]->set_export_preset(Ref<EditorExportPreset>(this));
-				property_visible =
-					export_plugins[i]->_get_export_option_visibility(platform, E.key);
-				if (!property_visible) {
-					break;
-				}
-			}
-
-			if (property_visible) {
-				p_list->push_back(E.value);
-			}
-		}
-	}
-}
 
 Ref<EditorExportPlatform> EditorExportPreset::get_platform() const { return platform; }
 
@@ -184,40 +67,6 @@ void EditorExportPreset::update_files()
 	}
 }
 
-void EditorExportPreset::update_value_overrides()
-{
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
-	HashMap<StringName, Variant> new_value_overrides;
-
-	value_overrides.clear();
-
-	for (int i = 0; i < export_plugins.size(); i++) {
-		if (!export_plugins[i]->supports_platform(platform)) {
-			continue;
-		}
-
-		export_plugins.write[i]->set_export_preset(Ref<EditorExportPreset>(this));
-
-		Dictionary plugin_overrides = export_plugins[i]->_get_export_options_overrides(platform);
-		if (!plugin_overrides.is_empty()) {
-			for (const KeyValue<Variant, Variant>& kv : plugin_overrides) {
-				const StringName& key = kv.key;
-				const Variant& value = kv.value;
-				if (new_value_overrides.has(key) && new_value_overrides[key] != value) {
-					WARN_PRINT_ED(vformat("Editor export plugin '%s' overrides pre-existing export "
-										  "option override '%s' with new value.",
-						export_plugins[i]->get_name(), key));
-				}
-				new_value_overrides[key] = value;
-			}
-		}
-	}
-
-	value_overrides = new_value_overrides;
-	this->obj->notify_property_list_changed();
-}
-
 Vector<String> EditorExportPreset::get_files_to_export() const
 {
 	Vector<String> files;
@@ -237,49 +86,7 @@ void EditorExportPreset::set_selected_files(const HashSet<String>& p_files)
 	selected_files = p_files;
 }
 
-Dictionary EditorExportPreset::get_customized_files() const
-{
-	Dictionary files;
-	for (const KeyValue<String, FileExportMode>& E : customized_files) {
-		String mode;
-		switch (E.value) {
-		case MODE_FILE_NOT_CUSTOMIZED: {
-			continue;
-		} break;
-		case MODE_FILE_STRIP: {
-			mode = "strip";
-		} break;
-		case MODE_FILE_KEEP: {
-			mode = "keep";
-		} break;
-		case MODE_FILE_REMOVE: {
-			mode = "remove";
-		}
-		}
-		files[E.key] = mode;
-	}
-	return files;
-}
-
 int EditorExportPreset::get_customized_files_count() const { return customized_files.size(); }
-
-void EditorExportPreset::set_customized_files(const Dictionary& p_files)
-{
-	for (const Variant* key = p_files.next(nullptr); key; key = p_files.next(key)) {
-		EditorExportPreset::FileExportMode mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
-		String value = p_files[*key];
-		if (value == "strip") {
-			mode = EditorExportPreset::MODE_FILE_STRIP;
-		}
-		else if (value == "keep") {
-			mode = EditorExportPreset::MODE_FILE_KEEP;
-		}
-		else if (value == "remove") {
-			mode = EditorExportPreset::MODE_FILE_REMOVE;
-		}
-		set_file_export_mode(*key, mode);
-	}
-}
 
 void EditorExportPreset::set_name(const String& p_name)
 {
@@ -302,21 +109,6 @@ void EditorExportPreset::set_runnable(bool p_enable)
 bool EditorExportPreset::is_runnable() const
 {
 	return EditorExport::singleton->get_runnable_preset_for_platform(platform).ptr() == this;
-}
-
-bool EditorExportPreset::are_advanced_options_enabled() const
-{
-	return options_search_active || EDITOR_GET("_export_preset_advanced_mode");
-}
-
-void EditorExportPreset::set_options_search_active(bool p_active)
-{
-	if (options_search_active == p_active) {
-		return;
-	}
-
-	options_search_active = p_active;
-	this->obj->notify_property_list_changed();
 }
 
 void EditorExportPreset::set_dedicated_server(bool p_enable)
@@ -564,20 +356,6 @@ EditorExportPreset::ScriptExportMode EditorExportPreset::get_script_export_mode(
 	return script_mode;
 }
 
-Variant EditorExportPreset::get_or_env(
-	const StringName& p_name, const String& p_env_var, bool* r_valid) const
-{
-	const String from_env = OS::get_singleton()->get_environment(p_env_var);
-	if (!from_env.is_empty())
- {
-		if (r_valid) {
-			*r_valid = true;
-		}
-		return from_env;
-	}
-	return this->obj->get(p_name, r_valid);
-}
-
 _FORCE_INLINE_ bool _check_digits(const String& p_str)
 {
 	for (int i = 0; i < p_str.length(); i++) {
@@ -587,68 +365,6 @@ _FORCE_INLINE_ bool _check_digits(const String& p_str)
 		}
 	}
 	return true;
-}
-
-String EditorExportPreset::get_version(
-	const StringName& p_preset_string, bool p_windows_version) const
-{
-	String result = this->obj->get(p_preset_string);
-	if (result.is_empty()) {
-		result = GLOBAL_GET("application/config/version");
-
-		// Split and validate version number components.
-		const PackedStringArray result_split = result.split(".", false);
-		bool valid_version = !result_split.is_empty();
-
-		// Android supports non-numeric characters for version name.
-		if (!platform->obj->is_class("EditorExportPlatformAndroid")) {
-			for (const String& E : result_split) {
-				if (!_check_digits(E)) {
-					valid_version = false;
-					break;
-				}
-			}
-		}
-
-		if (valid_version) {
-			if (p_windows_version) {
-				// Modify version number to match Windows constraints (version numbers must have 4
-				// components).
-				if (result_split.size() == 1) {
-					result = result + ".0.0.0";
-				}
-				else if (result_split.size() == 2) {
-					result = result + ".0.0";
-				}
-				else if (result_split.size() == 3) {
-					result = result + ".0";
-				}
-				else {
-					result = vformat("%s.%s.%s.%s", result_split[0], result_split[1],
-						result_split[2], result_split[3]);
-				}
-			}
-			else {
-				result = String(".").join(result_split);
-			}
-		}
-		else {
-			if (!result.is_empty()) {
-				WARN_PRINT(
-					vformat("Invalid version number \"%s\". The version number can only contain "
-							"numeric characters (0-9) and non-consecutive periods (.).",
-						result));
-			}
-			if (p_windows_version) {
-				result = "1.0.0.0";
-			}
-			else {
-				result = "1.0.0";
-			}
-		}
-	}
-
-	return result;
 }
 
 

@@ -58,8 +58,6 @@ public:
 	virtual void validate_node(
 		const AnimationTree* p_tree, const StringName& p_path) const override;
 
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
-
 	static LocalVector<StringName> (*get_editable_animation_list)();
 
 	virtual String get_caption() const override;
@@ -167,7 +165,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
@@ -213,8 +210,6 @@ class AnimationNodeAdd2 : public AnimationNodeSync
 	StringName add_amount = PNAME("add_amount");
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
-
 	virtual String get_caption() const override;
 
 	virtual bool has_filter() const override;
@@ -229,8 +224,6 @@ class AnimationNodeAdd3 : public AnimationNodeSync
 	StringName add_amount = PNAME("add_amount");
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
-
 	virtual String get_caption() const override;
 
 	virtual bool has_filter() const override;
@@ -245,8 +238,6 @@ class AnimationNodeBlend2 : public AnimationNodeSync
 	StringName blend_amount = PNAME("blend_amount");
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
-
 	virtual String get_caption() const override;
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
@@ -260,8 +251,6 @@ class AnimationNodeBlend3 : public AnimationNodeSync
 	StringName blend_amount = PNAME("blend_amount");
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
-
 	virtual String get_caption() const override;
 
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
@@ -274,8 +263,6 @@ class AnimationNodeSub2 : public AnimationNodeSync
 	StringName sub_amount = PNAME("sub_amount");
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
-
 	virtual String get_caption() const override;
 
 	virtual bool has_filter() const override;
@@ -290,8 +277,6 @@ class AnimationNodeTimeScale : public AnimationNode
 	StringName scale = PNAME("scale");
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
-
 	virtual String get_caption() const override;
 
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
@@ -309,8 +294,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
-
 	virtual String get_caption() const override;
 
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
@@ -346,12 +329,9 @@ class AnimationNodeTransition : public AnimationNodeSync
 	bool pending_update = false;
 
 protected:
-	bool _get(const StringName& p_path, Variant& r_ret) const;
-	bool _set(const StringName& p_path, const Variant& p_value);
 	static void _bind_methods();
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
 
 	virtual String get_caption() const override;
@@ -416,8 +396,6 @@ class AnimationNodeBlendTree : public AnimationRootNode
 
 protected:
 	static void _bind_methods();
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
 
 	virtual void _tree_changed() override;
 

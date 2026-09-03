@@ -36,25 +36,27 @@
 
 class Timer;
 
-class TabBar : public Control {
-	VLTRCLASS(TabBar, Control);
-
+class TabBar : public Control
+{
 public:
-	enum AlignmentMode {
+	enum AlignmentMode
+	{
 		ALIGNMENT_LEFT,
 		ALIGNMENT_CENTER,
 		ALIGNMENT_RIGHT,
 		ALIGNMENT_MAX,
 	};
 
-	enum CloseButtonDisplayPolicy {
+	enum CloseButtonDisplayPolicy
+	{
 		CLOSE_BUTTON_SHOW_NEVER,
 		CLOSE_BUTTON_SHOW_ACTIVE_ONLY,
 		CLOSE_BUTTON_SHOW_ALWAYS,
 		CLOSE_BUTTON_MAX
 	};
 
-	enum DrawMode {
+	enum DrawMode
+	{
 		DRAW_NORMAL,
 		DRAW_PRESSED,
 		DRAW_HOVER,
@@ -63,12 +65,14 @@ public:
 	};
 
 private:
-	struct Tab {
+	struct Tab
+	{
 		mutable RID accessibility_item_element;
 		mutable bool accessibility_item_dirty = true;
 
 		// Corresponds to color overrides for the DrawMode enum
-		Color font_color_overrides[DrawMode::DRAW_MAX] = { Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0) };
+		Color font_color_overrides[DrawMode::DRAW_MAX] = {
+			Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)};
 
 		String text;
 		String tooltip;
@@ -84,7 +88,6 @@ private:
 		bool hidden = false;
 		bool truncated = false;
 
-		Variant metadata;
 		int ofs_cache = 0;
 		int size_cache = 0;
 		int size_text = 0;
@@ -93,9 +96,7 @@ private:
 		Rect2 rb_rect;
 		Rect2 cb_rect;
 
-		Tab() {
-			text_buf.instantiate();
-		}
+		Tab() { text_buf.instantiate(); }
 
 		Tab(bool p_dummy) {}
 	};
@@ -143,7 +144,8 @@ private:
 	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
 	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		int h_separation = 0;
 		int tab_separation = 0;
 		int icon_max_width = 0;
@@ -182,7 +184,7 @@ private:
 		Ref<StyleBox> button_hl_style;
 	} theme_cache;
 
-	Timer *hover_switch_delay = nullptr;
+	Timer* hover_switch_delay = nullptr;
 
 	int get_tab_width(int p_idx) const;
 	Size2 _get_tab_icon_size(int p_idx) const;
@@ -196,60 +198,50 @@ private:
 	void _on_mouse_exited();
 
 	void _shape(int p_tab);
-	void _draw_tab(Ref<StyleBox> &p_tab_style, const Color &p_font_color, const Color &p_icon_color, int p_index, float p_x, bool p_focus);
+	void _draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color, const Color& p_icon_color,
+		int p_index, float p_x, bool p_focus);
 
-	void _accessibility_action_scroll_into_view(const Variant &p_data, int p_index);
-	void _accessibility_action_focus(const Variant &p_data, int p_index);
 
 protected:
-	virtual void gui_input(const Object& obj, const Ref<InputEvent> &p_event) override;
-	virtual String get_tooltip(const Object& obj, const Point2 &p_pos) const override;
+	bool _property_can_revert(const StringName& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
 
-	bool _set(const StringName &p_name, const Variant &p_value) { return property_helper.property_set_value(p_name, p_value); }
-	bool _get(const StringName &p_name, Variant &r_ret) const { return property_helper.property_get_value(p_name, r_ret); }
-	void _get_property_list(List<PropertyInfo> *p_list) const { property_helper.get_property_list(p_list); }
-	bool _property_can_revert(const StringName &p_name) const { return property_helper.property_can_revert(p_name); }
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const { return property_helper.property_get_revert(p_name, r_property); }
+
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	Variant get_drag_data(Object& obj, const Point2 &p_point) override;
-	bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;
-	void drop_data(const Object& obj, const Point2 &p_point, const Variant &p_data) override;
-	void _move_tab_from(TabBar *p_from_tabbar, int p_from_index, int p_to_index);
+	void _move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index);
 
 public:
 	RID get_tab_accessibility_element(int p_tab) const;
 	virtual RID get_focused_accessibility_element() const override;
 
-	Variant _handle_get_drag_data(const String &p_type, const Point2 &p_point);
-	bool _handle_can_drop_data(const String &p_type, const Point2 &p_point, const Variant &p_data) const;
-	void _handle_drop_data(const String &p_type, const Point2 &p_point, const Variant &p_data, const Callable &p_move_tab_callback, const Callable &p_move_tab_from_other_callback);
 	void _draw_tab_drop(RID p_canvas_item);
-	void _handle_switch_on_hover(const Variant &p_data) const;
 
-	void add_tab(const String &p_str = "", const Ref<Texture2D> &p_icon = Ref<Texture2D>());
+	void add_tab(const String& p_str = "", const Ref<Texture2D>& p_icon = Ref<Texture2D>());
 
-	void set_tab_title(int p_tab, const String &p_title);
+	void set_tab_title(int p_tab, const String& p_title);
 	String get_tab_title(int p_tab) const;
 
-	void set_tab_tooltip(int p_tab, const String &p_tooltip);
+	void set_tab_tooltip(int p_tab, const String& p_tooltip);
 	String get_tab_tooltip(int p_tab) const;
 
 	void set_tab_text_direction(int p_tab, TextDirection p_text_direction);
 	TextDirection get_tab_text_direction(int p_tab) const;
 
-	void set_tab_language(int p_tab, const String &p_language);
+	void set_tab_language(int p_tab, const String& p_language);
 	String get_tab_language(int p_tab) const;
 
-	void set_tab_icon(int p_tab, const Ref<Texture2D> &p_icon);
+	void set_tab_icon(int p_tab, const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_tab_icon(int p_tab) const;
 
 	void set_tab_icon_max_width(int p_tab, int p_width);
 	int get_tab_icon_max_width(int p_tab) const;
 
-	void set_font_color_override_all(int p_tab, const Color &p_color);
-	void set_font_color_override(int p_tab, DrawMode p_draw_mode, const Color &p_color);
+	void set_font_color_override_all(int p_tab, const Color& p_color);
+	void set_font_color_override(int p_tab, DrawMode p_draw_mode, const Color& p_color);
 	Color get_font_color_override(int p_tab, DrawMode p_draw_mode) const;
 
 	void set_tab_disabled(int p_tab, bool p_disabled);
@@ -258,14 +250,11 @@ public:
 	void set_tab_hidden(int p_tab, bool p_hidden);
 	bool is_tab_hidden(int p_tab) const;
 
-	void set_tab_metadata(int p_tab, const Variant &p_metadata);
-	Variant get_tab_metadata(int p_tab) const;
-
-	void set_tab_button_icon(int p_tab, const Ref<Texture2D> &p_icon);
+	void set_tab_button_icon(int p_tab, const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_tab_button_icon(int p_tab) const;
 
-	int get_tab_idx_at_point(const Point2 &p_point) const;
-	int get_closest_tab_idx_to_point(const Point2 &p_point) const;
+	int get_tab_idx_at_point(const Point2& p_point) const;
+	int get_closest_tab_idx_to_point(const Point2& p_point) const;
 
 	void set_tab_alignment(AlignmentMode p_alignment);
 	AlignmentMode get_tab_alignment() const;
@@ -339,5 +328,4 @@ public:
 	TabBar();
 };
 
-VARIANT_ENUM_CAST(TabBar::AlignmentMode);
-VARIANT_ENUM_CAST(TabBar::CloseButtonDisplayPolicy);
+

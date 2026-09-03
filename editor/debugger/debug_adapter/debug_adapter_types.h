@@ -32,9 +32,11 @@
 
 #include "core/io/file_access.h"
 
-namespace DAP {
+namespace DAP
+{
 
-enum ErrorType {
+enum ErrorType
+{
 	UNKNOWN,
 	WRONG_PATH,
 	NOT_RUNNING,
@@ -43,31 +45,21 @@ enum ErrorType {
 	MISSING_DEVICE
 };
 
-struct Checksum {
+struct Checksum
+{
 	String algorithm;
 	String checksum;
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["algorithm"] = algorithm;
-		dict["checksum"] = checksum;
-
-		return dict;
-	}
 };
 
-struct Source {
-private:
-	Array _checksums;
-
+struct Source
+{
 public:
 	String name;
 	String path;
 
-	void compute_checksums() {
+	void compute_checksums()
+	{
 		ERR_FAIL_COND(path.is_empty());
-
-		_checksums.clear();
 
 		// MD5
 		Checksum md5;
@@ -78,201 +70,97 @@ public:
 		Checksum sha256;
 		sha256.algorithm = "SHA256";
 		sha256.checksum = FileAccess::get_sha256(path);
-
-		_checksums.push_back(md5.to_json());
-		_checksums.push_back(sha256.to_json());
-	}
-
-	_FORCE_INLINE_ void from_json(const Dictionary &p_params) {
-		name = p_params["name"];
-		path = p_params["path"];
-		_checksums = p_params["checksums"];
-	}
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["name"] = name;
-		dict["path"] = path;
-		dict["checksums"] = _checksums;
-
-		return dict;
 	}
 };
 
-struct Breakpoint {
+struct Breakpoint
+{
 	int id = 0;
 	bool verified = false;
-	const Source *source = nullptr;
+	const Source* source = nullptr;
 	int line = 0;
 
-	Breakpoint() = default; // Empty constructor is invalid, but is necessary because Godot's collections don't support rvalues.
-	Breakpoint(const Source &p_source) :
-			source(&p_source) {}
+	Breakpoint() = default; // Empty constructor is invalid, but is necessary because Godot's
+							// collections don't support rvalues.
 
-	bool operator==(const Breakpoint &p_other) const {
+	Breakpoint(const Source& p_source) : source(&p_source) {}
+
+	bool operator==(const Breakpoint& p_other) const
+	{
 		return source == p_other.source && line == p_other.line;
 	}
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["id"] = id;
-		dict["verified"] = verified;
-		if (source) {
-			dict["source"] = source->to_json();
-		}
-		dict["line"] = line;
-
-		return dict;
-	}
 };
 
-struct BreakpointLocation {
+struct BreakpointLocation
+{
 	int line = 0;
 	int endLine = -1;
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["line"] = line;
-		if (endLine >= 0) {
-			dict["endLine"] = endLine;
-		}
-
-		return dict;
-	}
 };
 
-struct Capabilities {
+struct Capabilities
+{
 	bool supportsConfigurationDoneRequest = true;
 	bool supportsEvaluateForHovers = true;
 	bool supportsSetVariable = true;
-	String supportedChecksumAlgorithms[2] = { "MD5", "SHA256" };
+	String supportedChecksumAlgorithms[2] = {"MD5", "SHA256"};
 	bool supportsRestartRequest = true;
 	bool supportsValueFormattingOptions = true;
 	bool supportTerminateDebuggee = true;
 	bool supportSuspendDebuggee = true;
 	bool supportsTerminateRequest = true;
 	bool supportsBreakpointLocationsRequest = true;
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["supportsConfigurationDoneRequest"] = supportsConfigurationDoneRequest;
-		dict["supportsEvaluateForHovers"] = supportsEvaluateForHovers;
-		dict["supportsSetVariable"] = supportsSetVariable;
-		dict["supportsRestartRequest"] = supportsRestartRequest;
-		dict["supportsValueFormattingOptions"] = supportsValueFormattingOptions;
-		dict["supportTerminateDebuggee"] = supportTerminateDebuggee;
-		dict["supportSuspendDebuggee"] = supportSuspendDebuggee;
-		dict["supportsTerminateRequest"] = supportsTerminateRequest;
-		dict["supportsBreakpointLocationsRequest"] = supportsBreakpointLocationsRequest;
-
-		Array arr = { supportedChecksumAlgorithms[0], supportedChecksumAlgorithms[1] };
-		dict["supportedChecksumAlgorithms"] = arr;
-
-		return dict;
-	}
 };
 
-struct Message {
+struct Message
+{
 	int id = 0;
 	String format;
 	bool sendTelemetry = false; // Just in case :)
 	bool showUser = true;
-	Dictionary variables;
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["id"] = id;
-		dict["format"] = format;
-		dict["sendTelemetry"] = sendTelemetry;
-		dict["showUser"] = showUser;
-		dict["variables"] = variables;
-
-		return dict;
-	}
 };
 
-struct Scope {
+struct Scope
+{
 	String name;
 	String presentationHint;
 	int variablesReference = 0;
 	bool expensive = false;
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["name"] = name;
-		dict["presentationHint"] = presentationHint;
-		dict["variablesReference"] = variablesReference;
-		dict["expensive"] = expensive;
-
-		return dict;
-	}
 };
 
-struct SourceBreakpoint {
+struct SourceBreakpoint
+{
 	int line = 0;
-
-	_FORCE_INLINE_ void from_json(const Dictionary &p_params) {
-		line = p_params["line"];
-	}
 };
 
-struct StackFrame {
+struct StackFrame
+{
 	int id = 0;
 	String name;
-	const Source *source = nullptr;
+	const Source* source = nullptr;
 	int line = 0;
 	int column = 0;
 
-	StackFrame() = default; // Empty constructor is invalid, but is necessary because Godot's collections don't support rvalues.
-	StackFrame(const Source &p_source) :
-			source(&p_source) {}
+	StackFrame() = default; // Empty constructor is invalid, but is necessary because Godot's
+							// collections don't support rvalues.
 
-	static uint32_t hash(const StackFrame &p_frame) {
-		return hash_murmur3_one_32(p_frame.id);
-	}
+	StackFrame(const Source& p_source) : source(&p_source) {}
 
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["id"] = id;
-		dict["name"] = name;
-		if (source) {
-			dict["source"] = source->to_json();
-		}
-		dict["line"] = line;
-		dict["column"] = column;
-
-		return dict;
-	}
+	static uint32_t hash(const StackFrame& p_frame) { return hash_murmur3_one_32(p_frame.id); }
 };
 
-struct Thread {
+struct Thread
+{
 	int id = 0;
 	String name;
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["id"] = id;
-		dict["name"] = name;
-
-		return dict;
-	}
 };
 
-struct Variable {
+struct Variable
+{
 	String name;
 	String value;
 	String type;
 	int variablesReference = 0;
-
-	_FORCE_INLINE_ Dictionary to_json() const {
-		Dictionary dict;
-		dict["name"] = name;
-		dict["value"] = value;
-		dict["type"] = type;
-		dict["variablesReference"] = variablesReference;
-
-		return dict;
-	}
 };
-
 } // namespace DAP
+
+

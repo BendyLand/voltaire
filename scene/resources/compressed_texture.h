@@ -35,26 +35,28 @@
 
 class BitMap;
 
-class CompressedTexture2D : public Texture2D {
-	VLTRCLASS(CompressedTexture2D, Texture2D);
-
+class CompressedTexture2D : public Texture2D
+{
 public:
-	enum DataFormat {
+	enum DataFormat
+	{
 		DATA_FORMAT_IMAGE,
 		DATA_FORMAT_PNG,
 		DATA_FORMAT_WEBP,
 		DATA_FORMAT_BASIS_UNIVERSAL,
 	};
 
-	enum {
+	enum
+	{
 		FORMAT_VERSION = 1
 	};
 
-	enum FormatBits {
+	enum FormatBits
+	{
 		FORMAT_BIT_STREAM = 1 << 22,
 		FORMAT_BIT_HAS_MIPMAPS = 1 << 23,
 		FORMAT_BIT_DETECT_3D = 1 << 24,
-		//FORMAT_BIT_DETECT_SRGB = 1 << 25,
+		// FORMAT_BIT_DETECT_SRGB = 1 << 25,
 		FORMAT_BIT_DETECT_NORMAL = 1 << 26,
 		FORMAT_BIT_DETECT_ROUGNESS = 1 << 27,
 	};
@@ -67,12 +69,15 @@ private:
 	int h = 0;
 	mutable Ref<BitMap> alpha_cache;
 
-	Error _load_data(const String &p_path, int &r_width, int &r_height, Ref<Image> &image, bool &r_request_3d, bool &r_request_normal, bool &r_request_roughness, int &mipmap_limit, int p_size_limit = 0);
+	Error _load_data(const String& p_path, int& r_width, int& r_height, Ref<Image>& image,
+		bool& r_request_3d, bool& r_request_normal, bool& r_request_roughness, int& mipmap_limit,
+		int p_size_limit = 0);
 	virtual void reload_from_file() override;
 
-	static void _requested_3d(void *p_ud);
-	static void _requested_roughness(void *p_ud, const String &p_normal_path, RSE::TextureDetectRoughnessChannel p_roughness_channel);
-	static void _requested_normal(void *p_ud);
+	static void _requested_3d(void* p_ud);
+	static void _requested_roughness(void* p_ud, const String& p_normal_path,
+		RSE::TextureDetectRoughnessChannel p_roughness_channel);
+	static void _requested_normal(void* p_ud);
 
 protected:
 	static void _bind_methods();
@@ -80,26 +85,31 @@ protected:
 public:
 	static Ref<Image> load_image_from_file(Ref<FileAccess> p_file, int p_size_limit);
 
-	typedef void (*TextureFormatRequestCallback)(const Ref<CompressedTexture2D> &);
-	typedef void (*TextureFormatRoughnessRequestCallback)(const Ref<CompressedTexture2D> &, const String &p_normal_path, RSE::TextureDetectRoughnessChannel p_roughness_channel);
+	typedef void (*TextureFormatRequestCallback)(const Ref<CompressedTexture2D>&);
+	typedef void (*TextureFormatRoughnessRequestCallback)(const Ref<CompressedTexture2D>&,
+		const String& p_normal_path, RSE::TextureDetectRoughnessChannel p_roughness_channel);
 
 	static TextureFormatRequestCallback request_3d_callback;
 	static TextureFormatRoughnessRequestCallback request_roughness_callback;
 	static TextureFormatRequestCallback request_normal_callback;
 
 	virtual Image::Format get_format() const override;
-	Error load(const String &p_path);
+	Error load(const String& p_path);
 	String get_load_path() const;
 
 	int get_width() const override;
 	int get_height() const override;
 	virtual RID get_rid() const override;
 
-	virtual void set_path(const String &p_path, bool p_take_over) override;
+	virtual void set_path(const String& p_path, bool p_take_over) override;
 
-	virtual void draw(RID p_canvas_item, const Point2 &p_pos, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
-	virtual void draw_rect(RID p_canvas_item, const Rect2 &p_rect, bool p_tile = false, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
-	virtual void draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, const Rect2 &p_src_rect, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false, bool p_clip_uv = true) const override;
+	virtual void draw(RID p_canvas_item, const Point2& p_pos,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
+	virtual void draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile = false,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
+	virtual void draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const Rect2& p_src_rect,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false,
+		bool p_clip_uv = true) const override;
 
 	virtual bool has_alpha() const override;
 	bool is_pixel_opaque(int p_x, int p_y) const override;
@@ -109,28 +119,31 @@ public:
 	~CompressedTexture2D();
 };
 
-class CompressedTextureLayered : public TextureLayered {
-	VLTRCLASS(CompressedTextureLayered, TextureLayered);
-
+class CompressedTextureLayered : public TextureLayered
+{
 public:
-	enum DataFormat {
+	enum DataFormat
+	{
 		DATA_FORMAT_IMAGE,
 		DATA_FORMAT_PNG,
 		DATA_FORMAT_WEBP,
 		DATA_FORMAT_BASIS_UNIVERSAL,
 	};
 
-	enum {
+	enum
+	{
 		FORMAT_VERSION = 1
 	};
 
-	enum FormatBits {
+	enum FormatBits
+	{
 		FORMAT_BIT_STREAM = 1 << 22,
 		FORMAT_BIT_HAS_MIPMAPS = 1 << 23,
 	};
 
 private:
-	Error _load_data(const String &p_path, Vector<Ref<Image>> &images, int &mipmap_limit, int p_size_limit = 0);
+	Error _load_data(
+		const String& p_path, Vector<Ref<Image>>& images, int& mipmap_limit, int p_size_limit = 0);
 	String path_to_file;
 	mutable RID texture;
 	Image::Format format = Image::FORMAT_L8;
@@ -147,7 +160,7 @@ protected:
 
 public:
 	Image::Format get_format() const override;
-	Error load(const String &p_path);
+	Error load(const String& p_path);
 	String get_load_path() const;
 	virtual LayeredType get_layered_type() const override;
 
@@ -157,7 +170,7 @@ public:
 	virtual bool has_mipmaps() const override;
 	virtual RID get_rid() const override;
 
-	virtual void set_path(const String &p_path, bool p_take_over) override;
+	virtual void set_path(const String& p_path, bool p_take_over) override;
 
 	virtual Ref<Image> get_layer_data(int p_layer) const override;
 
@@ -165,51 +178,49 @@ public:
 	~CompressedTextureLayered();
 };
 
-class CompressedTexture2DArray : public CompressedTextureLayered {
-	VLTRCLASS(CompressedTexture2DArray, CompressedTextureLayered)
+class CompressedTexture2DArray : public CompressedTextureLayered
+{
 public:
-	CompressedTexture2DArray() :
-			CompressedTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
+	CompressedTexture2DArray() : CompressedTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
 };
 
-class CompressedCubemap : public CompressedTextureLayered {
-	VLTRCLASS(CompressedCubemap, CompressedTextureLayered);
-
+class CompressedCubemap : public CompressedTextureLayered
+{
 public:
-	CompressedCubemap() :
-			CompressedTextureLayered(LAYERED_TYPE_CUBEMAP) {}
+	CompressedCubemap() : CompressedTextureLayered(LAYERED_TYPE_CUBEMAP) {}
 };
 
-class CompressedCubemapArray : public CompressedTextureLayered {
-	VLTRCLASS(CompressedCubemapArray, CompressedTextureLayered);
-
+class CompressedCubemapArray : public CompressedTextureLayered
+{
 public:
-	CompressedCubemapArray() :
-			CompressedTextureLayered(LAYERED_TYPE_CUBEMAP_ARRAY) {}
+	CompressedCubemapArray() : CompressedTextureLayered(LAYERED_TYPE_CUBEMAP_ARRAY) {}
 };
 
-class CompressedTexture3D : public Texture3D {
-	VLTRCLASS(CompressedTexture3D, Texture3D);
-
+class CompressedTexture3D : public Texture3D
+{
 public:
-	enum DataFormat {
+	enum DataFormat
+	{
 		DATA_FORMAT_IMAGE,
 		DATA_FORMAT_PNG,
 		DATA_FORMAT_WEBP,
 		DATA_FORMAT_BASIS_UNIVERSAL,
 	};
 
-	enum {
+	enum
+	{
 		FORMAT_VERSION = 1
 	};
 
-	enum FormatBits {
+	enum FormatBits
+	{
 		FORMAT_BIT_STREAM = 1 << 22,
 		FORMAT_BIT_HAS_MIPMAPS = 1 << 23,
 	};
 
 private:
-	Error _load_data(const String &p_path, Vector<Ref<Image>> &r_data, Image::Format &r_format, int &r_width, int &r_height, int &r_depth, bool &r_mipmaps);
+	Error _load_data(const String& p_path, Vector<Ref<Image>>& r_data, Image::Format& r_format,
+		int& r_width, int& r_height, int& r_depth, bool& r_mipmaps);
 	String path_to_file;
 	mutable RID texture;
 	Image::Format format = Image::FORMAT_L8;
@@ -225,7 +236,7 @@ protected:
 
 public:
 	Image::Format get_format() const override;
-	Error load(const String &p_path);
+	Error load(const String& p_path);
 	String get_load_path() const;
 
 	int get_width() const override;
@@ -234,9 +245,11 @@ public:
 	virtual bool has_mipmaps() const override;
 	virtual RID get_rid() const override;
 
-	virtual void set_path(const String &p_path, bool p_take_over) override;
+	virtual void set_path(const String& p_path, bool p_take_over) override;
 
 	virtual Vector<Ref<Image>> get_data() const override;
 
 	~CompressedTexture3D();
 };
+
+

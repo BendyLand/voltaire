@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/type_info.h"
 #include "servers/physics_2d/physics_server_2d_types.h"
 #include "servers/physics_2d/queries/physics_point_query_parameters_2d.h"
 #include "servers/physics_2d/queries/physics_ray_query_parameters_2d.h"
@@ -39,21 +38,12 @@
 
 class PhysicsDirectSpaceState2D
 {
-	Dictionary _intersect_ray(PhysicsRayQueryParameters2D* rp_ray_query);
-	Array _intersect_point(
-		PhysicsPointQueryParameters2D* rp_point_query, int p_max_results = 32);
-	Array _intersect_shape(
-		PhysicsShapeQueryParameters2D* rp_shape_query, int p_max_results = 32);
 	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters2D* rp_shape_query);
-	Array _collide_shape(
-		PhysicsShapeQueryParameters2D* rp_shape_query, int p_max_results = 32);
-	Dictionary _get_rest_info(PhysicsShapeQueryParameters2D* rp_shape_query);
 
 protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	virtual bool intersect_ray(
 		const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result) = 0;
 

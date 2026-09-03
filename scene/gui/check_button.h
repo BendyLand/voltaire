@@ -32,10 +32,10 @@
 
 #include "scene/gui/button.h"
 
-class CheckButton : public Button {
-	VLTRCLASS(CheckButton, Button);
-
-	struct ThemeCache {
+class CheckButton : public Button
+{
+	struct ThemeCache
+	{
 		int h_separation = 0;
 		int check_v_offset = 0;
 		Ref<StyleBox> normal_style;
@@ -61,6 +61,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	CheckButton(const String &p_text = String());
+	CheckButton(const String& p_text = String());
 	~CheckButton();
 };
+
+

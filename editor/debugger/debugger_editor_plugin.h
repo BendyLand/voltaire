@@ -37,15 +37,15 @@ class MenuButton;
 class PopupMenu;
 class RunInstancesDialog;
 
-class DebuggerEditorPlugin : public EditorPlugin {
-	VLTRCLASS(DebuggerEditorPlugin, EditorPlugin);
-
+class DebuggerEditorPlugin : public EditorPlugin
+{
 private:
-	PopupMenu *debug_menu = nullptr;
-	EditorFileServer *file_server = nullptr;
-	RunInstancesDialog *run_instances_dialog = nullptr;
+	PopupMenu* debug_menu = nullptr;
+	EditorFileServer* file_server = nullptr;
+	RunInstancesDialog* run_instances_dialog = nullptr;
 
-	enum MenuOptions {
+	enum MenuOptions
+	{
 		RUN_FILE_SERVER,
 		RUN_LIVE_DEBUG,
 		RUN_DEBUG_COLLISIONS,
@@ -68,6 +68,8 @@ private:
 public:
 	virtual String get_plugin_name() const override { return "Debugger"; }
 
-	DebuggerEditorPlugin(PopupMenu *p_menu);
+	DebuggerEditorPlugin(PopupMenu* p_menu);
 	~DebuggerEditorPlugin();
 };
+
+

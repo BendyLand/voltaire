@@ -35,6 +35,7 @@
 #include "scene/gui/button.h"
 #include "scene/gui/panel_container.h"
 #include "scene/gui/scroll_container.h"
+#include "scene/resources/style_box_flat.h"
 
 class AddMetadataDialog;
 class AcceptDialog;

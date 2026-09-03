@@ -514,9 +514,6 @@ private:
 	bool _create_audio_node(Node* p_parent, const String& p_path, const Point2& p_point);
 	void _perform_drop_data();
 
-	bool can_drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from);
-	void drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from);
-
 	void _project_settings_changed();
 
 	Transform3D _compute_transform(TransformMode p_mode, const Transform3D& p_original,

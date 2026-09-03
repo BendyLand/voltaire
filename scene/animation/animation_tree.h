@@ -33,10 +33,11 @@
 #include "scene/animation/animation_mixer.h"
 #include "scene/resources/animation.h"
 
-#define HUGE_LENGTH                                                                                \
-	31540000 // 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation
-			 // length and Transition xfade time to prevent time inversion for
-			 // AnimationNodeStateMachine.
+	   /**
+		 * 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation
+		 * length and Transition xfade time to prevent time inversion for AnimationNodeStateMachine.
+		 */
+#define HUGE_LENGTH 31540000
 
 #ifdef TOOLS_ENABLED
 #define ENABLE_ACTIVITY_TRACKING
@@ -212,11 +213,7 @@ private:
 	void _mark_filters_dirty();
 
 public:
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const;
 	virtual bool is_parameter_read_only(const StringName& p_parameter) const;
-
-	void set_parameter_ex(const StringName& p_name, const Variant& p_value);
-	Variant get_parameter_ex(const StringName& p_name) const;
 
 	struct ChildNode
 	{
@@ -288,8 +285,6 @@ struct AnimationNodeInstance
 	// In an ideal world, get_parameter and set_parameter are removed, and everything is made
 	// strongly typed (without variant). But that is a ton of work, and this is a good enough
 	// optimization for now.
-	LocalVector<Variant*> parameter_ptrs_by_slot;
-
 	mutable LocalVector<AnimationNodeInstance*>
 		connection_instances; // AnimationNodeInstance* | nullptr
 	mutable LocalVector<real_t> track_weights;
@@ -306,8 +301,6 @@ struct AnimationNodeInstance
 	// paths. Consider moving them out of this struct.
 	// AnimationNodeInstance *parent = nullptr;
 	StringName path; // e.g. "parameters/node_name/sub_node_name/"
-
-	mutable AHashMap<StringName, Variant*> property_ptrs;
 
 #ifdef ENABLE_ACTIVITY_TRACKING
 	struct Activity
@@ -370,17 +363,6 @@ struct AnimationNodeInstance
 			SLOT_MAX = 9
 	};
 
-	void maybe_bind_slot_property(const StringName& p_name, Variant* p_property)
-	{
-#define HANDLE_MAYBE_BIND_SLOT_PARAMETER(_index, slot, name, _variant_type, _native_type)          \
-	if (p_name == SNAME(#name)) {                                                                  \
-		parameter_ptrs_by_slot[SLOT_##slot] = p_property;                                          \
-		return;                                                                                    \
-	}
-		ANIM_SLOT_LIST(HANDLE_MAYBE_BIND_SLOT_PARAMETER)
-#undef HANDLE_MAYBE_BIND_SLOT_PARAMETER
-	}
-
 #define DEFINE_SET_PARAMETER_METHOD(_index, e, member, _variant_type, native_type)                 \
 	_FORCE_INLINE_ void set_parameter_##member(const native_type p_value, bool p_test_only)        \
 	{                                                                                              \
@@ -398,43 +380,6 @@ struct AnimationNodeInstance
 		return *parameter_ptrs_by_slot[SLOT_##e];                                                  \
 	}
 #undef DEFINE_GET_PARAMETER_METHOD
-
-	_FORCE_INLINE_ void set_parameter(
-		const StringName& p_name, const Variant& p_value, bool p_test_only)
-	{
-		if (p_test_only) {
-			return;
-		}
-
-#define HANDLE_SET_SLOT_PARAMETER(_index, slot, name, variant_type, _native_type)                  \
-	if (p_name == SNAME(#name)) {                                                                  \
-		ERR_FAIL_COND(p_value.get_type() != Variant::variant_type);                                \
-		Variant& prop = *parameter_ptrs_by_slot[SLOT_##slot];                                      \
-		prop = p_value;                                                                            \
-		return;                                                                                    \
-	}
-#undef HANDLE_SET_SLOT_PARAMETER
-
-		Variant** p = property_ptrs.getptr(p_name);
-		ERR_FAIL_NULL(p);
-		Variant& prop = **p;
-		// Only copy variant if needed.
-	}
-
-	_FORCE_INLINE_ Variant& get_parameter(const StringName& p_name)
-	{
-
-#define HANDLE_GET_SLOT_PARAMETER(_index, slot, name, _variant_type, _native_type)                 \
-	if (p_name == SNAME(#name)) {                                                                  \
-		return *parameter_ptrs_by_slot[SLOT_##slot];                                               \
-	}
-		ANIM_SLOT_LIST(HANDLE_GET_SLOT_PARAMETER)
-#undef HANDLE_GET_SLOT_PARAMETER
-
-		Variant** p = property_ptrs.getptr(p_name);
-		Variant& prop = **p;
-		return prop;
-	}
 
 	_FORCE_INLINE_ AnimationNodeInstance* get_child_instance_by_path_or_null(
 		const StringName& p_path)
@@ -484,9 +429,6 @@ private:
 	bool started = true;
 
 	friend class AnimationNode;
-
-	mutable AHashMap<StringName, Pair<Variant, bool>>
-		property_map; // Property value and read-only flag.
 	mutable AHashMap<StringName, AnimationNodeInstance> instance_map;
 
 	mutable bool properties_dirty = true;
@@ -506,8 +448,6 @@ private:
 	void _setup_animation_player();
 	void _animation_player_changed();
 
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
 	virtual uint32_t _get_libraries_property_usage() const override;
 	void _notification(int p_what);
 
@@ -548,7 +488,6 @@ public:
 	Ref<AnimationNode> get_animation_node_by_path(const StringName& p_path) const
 	{
 		Ref<AnimationNode> current = root_animation_node;
-
 		int name_count = String(p_path).substr(0, String(p_path).length() - 1).count("/");
 		for (int i = 0; i < name_count; i++) {
 			if (current.is_null()) {

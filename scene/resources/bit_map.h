@@ -37,9 +37,6 @@ template <typename T> class TypedArray;
 
 class BitMap : public Resource
 {
-	VLTRCLASS(BitMap, Resource);
-	OBJ_SAVE_TYPE_NO(BitMap);
-
 	Vector<uint8_t> bitmask;
 	int width = 0;
 	int height = 0;
@@ -48,12 +45,6 @@ class BitMap : public Resource
 
 	TypedArray<PackedVector2Array> _opaque_to_polygons_bind(
 		const Rect2i& p_rect, float p_epsilon) const;
-
-protected:
-	void _set_data(const Dictionary& p_d);
-	Dictionary _get_data() const;
-
-	static void _bind_methods();
 
 public:
 	void create(const Size2i& p_size);

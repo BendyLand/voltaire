@@ -35,11 +35,10 @@
 class CheckBox;
 class SceneTreeEditor;
 
-class ReparentDialog : public ConfirmationDialog {
-	VLTRCLASS(ReparentDialog, ConfirmationDialog);
-
-	SceneTreeEditor *tree = nullptr;
-	CheckBox *keep_transform = nullptr;
+class ReparentDialog : public ConfirmationDialog
+{
+	SceneTreeEditor* tree = nullptr;
+	CheckBox* keep_transform = nullptr;
 
 	void _reparent();
 	void _cancel();
@@ -49,7 +48,9 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_current(const HashSet<Node *> &p_selection);
+	void set_current(const HashSet<Node*>& p_selection);
 
 	ReparentDialog();
 };
+
+

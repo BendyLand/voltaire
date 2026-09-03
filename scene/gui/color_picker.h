@@ -53,8 +53,6 @@ class TextureRect;
 
 class ColorPresetButton : public BaseButton
 {
-	VLTRCLASS(ColorPresetButton, BaseButton);
-
 	Color preset_color;
 	bool recent = false;
 
@@ -75,16 +73,12 @@ public:
 	void set_preset_color(const Color& p_color);
 	Color get_preset_color() const;
 
-	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
-
 	ColorPresetButton(Color p_color, int p_size, bool p_recent);
 	~ColorPresetButton();
 };
 
 class ColorPicker : public VBoxContainer
 {
-	VLTRCLASS(ColorPicker, VBoxContainer);
-
 	// These classes poke into theme items for their internal logic.
 	friend class ColorPickerShape;
 	friend class ColorPickerShapeRectangle;
@@ -178,10 +172,6 @@ private:
 	static inline List<Color> preset_cache;
 	static inline List<Color> recent_preset_cache;
 
-#ifdef TOOLS_ENABLED
-	Object* editor_settings = nullptr;
-#endif
-
 	int current_slider_count = MODE_SLIDER_COUNT;
 
 	const float DEFAULT_GAMEPAD_EVENT_DELAY_MS = 1.0 / 2;
@@ -239,11 +229,6 @@ private:
 
 	HBoxContainer* perm_hb = nullptr;
 	void _req_permission();
-
-#ifdef TOOLS_ENABLED
-	Callable quick_open_callback;
-	Callable palette_saved_callback;
-#endif // TOOLS_ENABLED
 
 	OptionButton* mode_option_button = nullptr;
 
@@ -418,11 +403,6 @@ private:
 
 	void _set_mode_popup_value(ColorModeType p_mode);
 
-	Variant _get_drag_data_fw(const Point2& p_point, Control* p_from_control);
-	bool _can_drop_data_fw(
-		const Point2& p_point, const Variant& p_data, Control* p_from_control) const;
-	void _drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from_control);
-
 	void _ensure_file_dialog();
 
 protected:
@@ -432,14 +412,6 @@ protected:
 	static void _bind_methods();
 
 public:
-#ifdef TOOLS_ENABLED
-	void set_editor_settings(Object* p_editor_settings);
-	void set_quick_open_callback(const Callable& p_file_selected);
-	void set_palette_saved_callback(const Callable& p_palette_saved);
-
-	void _quick_open_palette_file_selected(const String& p_path);
-#endif
-
 	GridContainer* get_slider_container();
 	HSlider* get_slider(int idx);
 	Vector<float> get_active_slider_values();
@@ -520,8 +492,6 @@ class ColorPickerPopupPanel : public PopupPanel
 
 class ColorPickerButton : public Button
 {
-	VLTRCLASS(ColorPickerButton, Button);
-
 	// Initialization is now done deferred,
 	// this improves performance in the inspector as the color picker
 	// can be expensive to initialize.
@@ -552,7 +522,6 @@ class ColorPickerButton : public Button
 protected:
 	void _notification(int);
 	static void _bind_methods();
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
 
 public:
 	void set_pick_color(const Color& p_color);
@@ -569,8 +538,5 @@ public:
 
 	ColorPickerButton(const String& p_text = String());
 };
-
-VARIANT_ENUM_CAST(ColorPicker::PickerShapeType);
-VARIANT_ENUM_CAST(ColorPicker::ColorModeType);
 
 

@@ -38,33 +38,33 @@ class Button;
 class HBoxContainer;
 class Popup;
 
-class TabContainer : public Container {
-	VLTRCLASS(TabContainer, Container);
-
+class TabContainer : public Container
+{
 public:
-	enum TabPosition {
+	enum TabPosition
+	{
 		POSITION_TOP,
 		POSITION_BOTTOM,
 		POSITION_MAX,
 	};
 
 private:
-	HBoxContainer *internal_container = nullptr;
-	TabBar *tab_bar = nullptr;
-	Button *popup_button = nullptr;
+	HBoxContainer* internal_container = nullptr;
+	TabBar* tab_bar = nullptr;
+	Button* popup_button = nullptr;
 
 	bool tabs_visible = true;
 	TabPosition tabs_position = POSITION_TOP;
-	mutable ObjectID popup_obj_id;
 	bool use_hidden_tabs_for_min_size = false;
 	bool theme_changing = false;
-	Vector<Control *> children_removing;
+	Vector<Control*> children_removing;
 	bool drag_to_rearrange_enabled = false;
 	// Set the default setup current tab to be an invalid index.
 	int setup_current_tab = -2;
 	bool updating_visibility = false;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		int side_margin = 0;
 
 		Ref<StyleBox> panel_style;
@@ -106,7 +106,9 @@ private:
 		Ref<Font> tab_font;
 		int tab_font_size;
 	} theme_cache;
-	struct CachedTab {
+
+	struct CachedTab
+	{
 		bool has_title = false;
 		String title;
 		Ref<Texture2D> icon;
@@ -118,13 +120,13 @@ private:
 	PropertyListHelper property_helper;
 
 	mutable Vector<CachedTab> pending_tabs;
-	CachedTab *get_pending_tab(int p_idx) const;
+	CachedTab* get_pending_tab(int p_idx) const;
 
-	HashMap<Node *, RID> tab_panels;
+	HashMap<Node*, RID> tab_panels;
 
 	int _get_tab_height() const;
-	Control *_as_tab_control(Node *p_child) const;
-	Vector<Control *> _get_tab_controls() const;
+	Control* _as_tab_control(Node* p_child) const;
+	Vector<Control*> _get_tab_controls() const;
 	void _on_theme_changed();
 	void _repaint_call_deferred();
 	void _repaint();
@@ -138,13 +140,10 @@ private:
 	void _on_tab_selected(int p_tab);
 	void _on_tab_button_pressed(int p_tab);
 	void _on_active_tab_rearranged(int p_tab);
-	void _on_tab_visibility_changed(Control *p_child);
+	void _on_tab_visibility_changed(Control* p_child);
 
-	Variant _get_drag_data_fw(const Point2 &p_point, Control *p_from_control);
-	bool _can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from_control) const;
-	void _drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from_control);
 	void _drag_move_tab(int p_from_index, int p_to_index);
-	void _drag_move_tab_from(TabBar *p_from_tabbar, int p_from_index, int p_to_index);
+	void _drag_move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index);
 
 	void _popup_button_hovered(bool p_hover);
 	void _popup_button_pressed();
@@ -152,28 +151,28 @@ private:
 	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value) { return property_helper.property_set_value(p_name, p_value); }
-	bool _get(const StringName &p_name, Variant &r_ret) const { return property_helper.property_get_value(p_name, r_ret); }
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	bool _property_can_revert(const StringName &p_name) const { return property_helper.property_can_revert(p_name); }
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
+	bool _property_can_revert(const StringName& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
 
 	void _maximum_size_changed();
 
 	void _notification(int p_what);
-	virtual void add_child_notify(Node *p_child) override;
-	virtual void move_child_notify(Node *p_child) override;
-	virtual void remove_child_notify(Node *p_child) override;
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
 	static void _bind_methods();
 
 public:
 	virtual bool accessibility_override_tree_hierarchy() const override { return true; }
 
-	HBoxContainer *get_internal_container() { return internal_container; }
-	TabBar *get_tab_bar() const;
+	HBoxContainer* get_internal_container() { return internal_container; }
 
-	int get_tab_idx_at_point(const Point2 &p_point) const;
-	int get_tab_idx_from_control(Control *p_child) const;
+	TabBar* get_tab_bar() const;
+
+	int get_tab_idx_at_point(const Point2& p_point) const;
+	int get_tab_idx_from_control(Control* p_child) const;
 
 	void set_tab_alignment(TabBar::AlignmentMode p_alignment);
 	TabBar::AlignmentMode get_tab_alignment() const;
@@ -195,13 +194,13 @@ public:
 	bool is_all_tabs_in_front() const;
 #endif
 
-	void set_tab_title(int p_tab, const String &p_title);
+	void set_tab_title(int p_tab, const String& p_title);
 	String get_tab_title(int p_tab) const;
 
-	void set_tab_tooltip(int p_tab, const String &p_tooltip);
+	void set_tab_tooltip(int p_tab, const String& p_tooltip);
 	String get_tab_tooltip(int p_tab) const;
 
-	void set_tab_icon(int p_tab, const Ref<Texture2D> &p_icon);
+	void set_tab_icon(int p_tab, const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_tab_icon(int p_tab) const;
 
 	void set_tab_icon_max_width(int p_tab, int p_width);
@@ -213,10 +212,8 @@ public:
 	void set_tab_hidden(int p_tab, bool p_hidden);
 	bool is_tab_hidden(int p_tab) const;
 
-	void set_tab_metadata(int p_tab, const Variant &p_metadata);
-	Variant get_tab_metadata(int p_tab) const;
 
-	void set_tab_button_icon(int p_tab, const Ref<Texture2D> &p_icon);
+	void set_tab_button_icon(int p_tab, const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_tab_button_icon(int p_tab) const;
 
 	int get_tab_count() const;
@@ -230,17 +227,17 @@ public:
 	void set_deselect_enabled(bool p_enabled);
 	bool get_deselect_enabled() const;
 
-	Control *get_tab_control(int p_idx) const;
-	Control *get_current_tab_control() const;
+	Control* get_tab_control(int p_idx) const;
+	Control* get_current_tab_control() const;
 
 	virtual Size2 get_minimum_size() const override;
 	virtual Size2 get_inner_combined_maximum_size() const override;
 	virtual Size2 get_desired_size() const override;
 
-	void set_popup(Node *p_popup);
-	Popup *get_popup() const;
+	void set_popup(Node* p_popup);
+	Popup* get_popup() const;
 
-	void move_tab_from_tab_container(TabContainer *p_from, int p_from_index, int p_to_index = -1);
+	void move_tab_from_tab_container(TabContainer* p_from, int p_from_index, int p_to_index = -1);
 
 	void set_switch_on_drag_hover(bool p_enabled);
 	bool get_switch_on_drag_hover() const;
@@ -257,4 +254,4 @@ public:
 	TabContainer();
 };
 
-VARIANT_ENUM_CAST(TabContainer::TabPosition);
+

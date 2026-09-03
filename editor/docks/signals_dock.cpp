@@ -28,20 +28,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "signals_dock.h"
-
 #include "editor/scene/connections_dialog.h"
 #include "editor/settings/editor_command_palette.h"
+#include "signals_dock.h"
 
-void SignalsDock::update_lists() {
-	connections->update_tree();
-}
+void SignalsDock::update_lists() { connections->update_tree(); }
 
-void SignalsDock::set_object(Object *p_object) {
-	connections->set_object(p_object);
-}
-
-SignalsDock::SignalsDock() {
+SignalsDock::SignalsDock()
+{
 	singleton = this;
 	set_name(TTRC("Signals"));
 	set_icon_name("Signals");
@@ -53,6 +47,6 @@ SignalsDock::SignalsDock() {
 	add_child(connections);
 }
 
-SignalsDock::~SignalsDock() {
-	singleton = nullptr;
-}
+SignalsDock::~SignalsDock() { singleton = nullptr; }
+
+

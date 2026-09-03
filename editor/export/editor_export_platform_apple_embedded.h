@@ -62,8 +62,6 @@ static const String storyboard_image_scale_mode[] = {
 
 class EditorExportPlatformAppleEmbedded : public EditorExportPlatform
 {
-	VLTRCLASS(EditorExportPlatformAppleEmbedded, EditorExportPlatform);
-
 	Ref<ImageTexture> logo;
 	Ref<ImageTexture> run_icon;
 
@@ -172,60 +170,6 @@ protected:
 		String release_provisioning_profile_specifier;
 		bool debug_manual_signing = false;
 		bool release_manual_signing = false;
-
-		CodeSigningDetails(const Ref<EditorExportPreset>& p_preset)
-		{
-			debug_signing_identity =
-				p_preset->obj->get("application/code_sign_identity_debug")
-						.
-						operator String()
-						.is_empty()
-					? "Apple Development"
-					: p_preset->obj->get("application/code_sign_identity_debug");
-			release_signing_identity =
-				p_preset->obj->get("application/code_sign_identity_release")
-						.
-						operator String()
-						.is_empty()
-					? "Apple Distribution"
-					: p_preset->obj->get("application/code_sign_identity_release");
-
-			debug_provisioning_profile_uuid =
-				p_preset
-					->get_or_env("application/provisioning_profile_uuid_debug",
-						ENV_APPLE_PLATFORM_PROFILE_UUID_DEBUG)
-					.
-					operator String();
-			release_provisioning_profile_uuid =
-				p_preset
-					->get_or_env("application/provisioning_profile_uuid_release",
-						ENV_APPLE_PLATFORM_PROFILE_UUID_DEBUG)
-					.
-					operator String();
-
-			debug_manual_signing = !debug_provisioning_profile_uuid.is_empty() ||
-								   (debug_signing_identity != "Apple Development" &&
-									   debug_signing_identity != "Apple Distribution");
-			release_manual_signing = !release_provisioning_profile_uuid.is_empty() ||
-									 (release_signing_identity != "Apple Development" &&
-										 release_signing_identity != "Apple Distribution");
-
-			debug_provisioning_profile_specifier =
-				p_preset
-					->get_or_env("application/provisioning_profile_specifier_debug",
-						ENV_APPLE_PLATFORM_PROFILE_SPECIFIER_DEBUG)
-					.
-					operator String();
-			debug_manual_signing |= !debug_provisioning_profile_specifier.is_empty();
-
-			release_provisioning_profile_specifier =
-				p_preset
-					->get_or_env("application/provisioning_profile_specifier_release",
-						ENV_APPLE_PLATFORM_PROFILE_SPECIFIER_RELEASE)
-					.
-					operator String();
-			release_manual_signing |= !release_provisioning_profile_specifier.is_empty();
-		}
 	};
 
 	struct IconInfo
@@ -269,8 +213,7 @@ private:
 		bool p_debug);
 
 	Error _export_project_helper(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags, bool p_notify,
-		bool p_oneclick);
+		const String& p_path, uint32_t p_flags, bool p_notify, bool p_oneclick);
 
 	bool is_package_name_valid(const String& p_package, String* r_error = nullptr) const;
 
@@ -330,8 +273,8 @@ public:
 	virtual Ref<Texture2D> get_option_icon(int p_index) const override;
 	virtual String get_option_label(int p_index) const override;
 	virtual String get_option_tooltip(int p_index) const override;
-	virtual Error run(const Ref<EditorExportPreset>& p_preset, int p_device,
-		uint32_t p_debug_flags) override;
+	virtual Error run(
+		const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags) override;
 
 	virtual bool poll_export() override
 	{
@@ -353,25 +296,8 @@ public:
 		return export_options_changed;
 	}
 
-	virtual List<String> get_binary_extensions(
-		const Ref<EditorExportPreset>& p_preset) const override
-	{
-		List<String> list;
-		if (p_preset.is_valid()) {
-			bool project_only = p_preset->obj->get("application/export_project_only");
-			if (project_only) {
-				list.push_back("xcodeproj");
-			}
-			else {
-				list.push_back("ipa");
-			}
-		}
-		return list;
-	}
-
 	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0,
-		bool p_notify = true) override;
+		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
 
 	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
 		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
@@ -456,22 +382,6 @@ public:
 		}
 
 		return loaded_plugins;
-	}
-
-	static Vector<PluginConfigAppleEmbedded> get_enabled_plugins(
-		const String& p_platform_name, const Ref<EditorExportPreset>& p_presets)
-	{
-		Vector<PluginConfigAppleEmbedded> enabled_plugins;
-		Vector<PluginConfigAppleEmbedded> all_plugins = get_plugins(p_platform_name);
-		for (int i = 0; i < all_plugins.size(); i++) {
-			PluginConfigAppleEmbedded plugin = all_plugins[i];
-			bool enabled = p_presets->obj->get("plugins/" + plugin.name);
-			if (enabled) {
-				enabled_plugins.push_back(plugin);
-			}
-		}
-
-		return enabled_plugins;
 	}
 };
 

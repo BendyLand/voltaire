@@ -37,22 +37,18 @@
 
 class EditorSelectionHistory;
 
-class EditorObjectSelector : public Button {
-	VLTRCLASS(EditorObjectSelector, Button);
+class EditorObjectSelector : public Button
+{
+	EditorSelectionHistory* history = nullptr;
 
-	EditorSelectionHistory *history = nullptr;
-
-	TextureRect *current_object_icon = nullptr;
-	Label *current_object_label = nullptr;
-	TextureRect *sub_objects_icon = nullptr;
-	PopupMenu *sub_objects_menu = nullptr;
-
-	Vector<ObjectID> objects;
+	TextureRect* current_object_icon = nullptr;
+	Label* current_object_label = nullptr;
+	TextureRect* sub_objects_icon = nullptr;
+	PopupMenu* sub_objects_menu = nullptr;
 
 	void _show_popup();
 	void _id_pressed(int p_idx);
 	void _about_to_show();
-	void _add_children_to_popup(Object *p_obj, int p_depth = 0);
 
 protected:
 	void _notification(int p_what);
@@ -64,5 +60,7 @@ public:
 	void clear_path();
 	void enable_path();
 
-	EditorObjectSelector(EditorSelectionHistory *p_history);
+	EditorObjectSelector(EditorSelectionHistory* p_history);
 };
+
+

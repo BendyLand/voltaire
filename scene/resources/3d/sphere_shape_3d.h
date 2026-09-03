@@ -34,8 +34,8 @@
 
 class ArrayMesh;
 
-class SphereShape3D : public Shape3D {
-	VLTRCLASS(SphereShape3D, Shape3D);
+class SphereShape3D : public Shape3D
+{
 	float radius = 0.5f;
 
 protected:
@@ -48,8 +48,10 @@ public:
 	float get_radius() const;
 
 	virtual Vector<Vector3> get_debug_mesh_lines() const override;
-	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color &p_modulate) const override;
+	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color& p_modulate) const override;
 	virtual real_t get_enclosing_radius() const override;
 
 	SphereShape3D();
 };
+
+

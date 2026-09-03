@@ -30,10 +30,8 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/type_info.h"
 
 #define PERF_WARN_OFFLINE_FUNCTION
 #define PERF_WARN_PROCESS_SYNC
@@ -45,12 +43,6 @@ class Performance
 	static Performance* singleton;
 	static void _bind_methods();
 
-#ifndef DISABLE_DEPRECATED
-	void _add_custom_monitor_bind_compat_110433(
-		const StringName& p_id, const Callable& p_callable, const Vector<Variant>& p_args);
-	static void _bind_compatibility_methods();
-#endif
-
 	int _get_node_count() const;
 	int _get_orphan_node_count() const;
 
@@ -59,8 +51,6 @@ class Performance
 	double _navigation_process_time;
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	enum Monitor
 	{
 		TIME_FPS,
@@ -145,14 +135,6 @@ public:
 	void set_physics_process_time(double p_pt);
 	void set_navigation_process_time(double p_pt);
 
-	void add_custom_monitor(const StringName& p_id, const Callable& p_callable,
-		const Vector<Variant>& p_args, MonitorType p_type = MONITOR_TYPE_QUANTITY);
-	void remove_custom_monitor(const StringName& p_id);
-	bool has_custom_monitor(const StringName& p_id);
-	Variant get_custom_monitor(const StringName& p_id);
-	TypedArray<StringName> get_custom_monitor_names();
-	Vector<int> get_custom_monitor_types();
-
 	uint64_t get_monitor_modification_time();
 
 	static Performance* get_singleton() { return singleton; }
@@ -163,23 +145,14 @@ private:
 	class MonitorCall
 	{
 		MonitorType _type = MONITOR_TYPE_QUANTITY;
-		Callable _callable;
-		Vector<Variant> _arguments;
 
 	public:
-		MonitorCall(
-			MonitorType p_type, const Callable& p_callable, const Vector<Variant>& p_arguments);
 		MonitorCall();
-		Variant call(bool& r_error, String& r_error_message);
 
 		inline MonitorType get_monitor_type() const { return _type; }
 	};
 
-	HashMap<StringName, MonitorCall> _monitor_map;
 	uint64_t _monitor_modification_time;
 };
-
-VARIANT_ENUM_CAST(Performance::Monitor);
-VARIANT_ENUM_CAST(Performance::MonitorType);
 
 

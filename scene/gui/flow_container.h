@@ -32,16 +32,18 @@
 
 #include "scene/gui/container.h"
 
-class FlowContainer : public Container {
-	VLTRCLASS(FlowContainer, Container);
-
+class FlowContainer : public Container
+{
 public:
-	enum AlignmentMode {
+	enum AlignmentMode
+	{
 		ALIGNMENT_BEGIN,
 		ALIGNMENT_CENTER,
 		ALIGNMENT_END
 	};
-	enum LastWrapAlignmentMode {
+
+	enum LastWrapAlignmentMode
+	{
 		LAST_WRAP_ALIGNMENT_INHERIT,
 		LAST_WRAP_ALIGNMENT_BEGIN,
 		LAST_WRAP_ALIGNMENT_CENTER,
@@ -58,7 +60,8 @@ private:
 	AlignmentMode alignment = ALIGNMENT_BEGIN;
 	LastWrapAlignmentMode last_wrap_alignment = LAST_WRAP_ALIGNMENT_INHERIT;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		int h_separation = 0;
 		int v_separation = 0;
 	} theme_cache;
@@ -70,7 +73,6 @@ protected:
 	bool is_fixed = false;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
 	static void _bind_methods();
 
 public:
@@ -98,21 +100,16 @@ public:
 	FlowContainer(bool p_vertical = false);
 };
 
-class HFlowContainer : public FlowContainer {
-	VLTRCLASS(HFlowContainer, FlowContainer);
-
+class HFlowContainer : public FlowContainer
+{
 public:
-	HFlowContainer() :
-			FlowContainer(false) { is_fixed = true; }
+	HFlowContainer() : FlowContainer(false) { is_fixed = true; }
 };
 
-class VFlowContainer : public FlowContainer {
-	VLTRCLASS(VFlowContainer, FlowContainer);
-
+class VFlowContainer : public FlowContainer
+{
 public:
-	VFlowContainer() :
-			FlowContainer(true) { is_fixed = true; }
+	VFlowContainer() : FlowContainer(true) { is_fixed = true; }
 };
 
-VARIANT_ENUM_CAST(FlowContainer::AlignmentMode);
-VARIANT_ENUM_CAST(FlowContainer::LastWrapAlignmentMode);
+

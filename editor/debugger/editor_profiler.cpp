@@ -28,21 +28,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_profiler.h"
-
 #include "core/io/image.h"
-#include "core/object/callable_mp.h"
 #include "core/string/translation_server.h"
 #include "editor/editor_string_names.h"
 #include "editor/run/editor_run_bar.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "editor_profiler.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/flow_container.h"
 #include "scene/gui/label.h"
 #include "scene/resources/image_texture.h"
 
-void EditorProfiler::_make_metric_ptrs(Metric &m) {
+void EditorProfiler::_make_metric_ptrs(Metric& m)
+{
 	for (int i = 0; i < m.categories.size(); i++) {
 		m.category_ptrs[m.categories[i].signature] = &m.categories.write[i];
 		for (int j = 0; j < m.categories[i].items.size(); j++) {
@@ -51,11 +50,14 @@ void EditorProfiler::_make_metric_ptrs(Metric &m) {
 	}
 }
 
-const EditorProfiler::Metric &EditorProfiler::_get_frame_metric(int index) const {
-	return frame_metrics[(frame_metrics.size() + last_metric - (total_metrics - 1) + index) % frame_metrics.size()];
+const EditorProfiler::Metric& EditorProfiler::_get_frame_metric(int index) const
+{
+	return frame_metrics[(frame_metrics.size() + last_metric - (total_metrics - 1) + index) %
+						 frame_metrics.size()];
 }
 
-void EditorProfiler::add_frame_metric(const Metric &p_metric, bool p_final) {
+void EditorProfiler::add_frame_metric(const Metric& p_metric, bool p_final)
+{
 	++last_metric;
 	if (last_metric >= frame_metrics.size()) {
 		last_metric = 0;
@@ -92,22 +94,20 @@ void EditorProfiler::add_frame_metric(const Metric &p_metric, bool p_final) {
 	}
 }
 
-void EditorProfiler::clear() {
-	int metric_size = EDITOR_GET("debugger/profiler_frame_history_size");
-	metric_size = CLAMP(metric_size, 60, 10000);
+void EditorProfiler::clear()
+{
 	frame_metrics.clear();
-	frame_metrics.resize(metric_size);
 	total_metrics = 0;
 	last_metric = -1;
 	variables->clear();
 	plot_sigs.clear();
 	plot_sigs.insert("physics_frame_time");
 	plot_sigs.insert("category_frame_time");
-	display_internal_profiles->set_visible(EDITOR_GET("debugger/profile_native_calls"));
 
 	updating_frame = true;
 	cursor_metric_edit->set_min(0);
-	cursor_metric_edit->set_max(100); // Doesn't make much sense, but we can't have min == max. Doesn't hurt.
+	cursor_metric_edit->set_max(
+		100); // Doesn't make much sense, but we can't have min == max. Doesn't hurt.
 	cursor_metric_edit->set_value(0);
 	cursor_metric_edit->set_editable(false);
 	updating_frame = false;
@@ -116,40 +116,10 @@ void EditorProfiler::clear() {
 
 	// Ensure button text (start, stop) is correct
 	_update_button_text();
-	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
-String EditorProfiler::_get_time_as_text(const Metric &m, float p_time, int p_calls) {
-	const String &lang = this->obj->_get_locale();
-	const TranslationServer *ts = TranslationServer::get_singleton();
-
-	switch (display_mode->get_selected()) {
-		case DISPLAY_FRAME_TIME: {
-			return ts->format_number(rtos(p_time * 1000).pad_decimals(2), lang) + " " + TTR("ms");
-		} break;
-
-		case DISPLAY_AVERAGE_TIME: {
-			if (p_calls == 0) {
-				return ts->format_number("0.00", lang) + " " + TTR("ms");
-			}
-			return ts->format_number(rtos((p_time / p_calls) * 1000).pad_decimals(2), lang) + " " + TTR("ms");
-		} break;
-
-		case DISPLAY_FRAME_PERCENT: {
-			float total = m.frame_time == 0 ? 0.00001 : m.frame_time;
-			return ts->format_number(String::num((p_time / total) * 100, 1), lang) + ts->get_percent_sign(lang);
-		} break;
-
-		case DISPLAY_PHYSICS_FRAME_PERCENT: {
-			float total = m.physics_frame_time == 0 ? 0.00001 : m.physics_frame_time;
-			return ts->format_number(String::num((p_time / total) * 100, 1), lang) + ts->get_percent_sign(lang);
-		} break;
-	}
-
-	return "err";
-}
-
-Color EditorProfiler::_get_color_from_signature(const StringName &p_signature) const {
+Color EditorProfiler::_get_color_from_signature(const StringName& p_signature) const
+{
 	Color bc = get_theme_color(SNAME("error_color"), EditorStringName(Editor));
 	double rot = Math::abs(double(p_signature.hash()) / double(0x7FFFFFFF));
 	Color c;
@@ -157,27 +127,22 @@ Color EditorProfiler::_get_color_from_signature(const StringName &p_signature) c
 	return c.lerp(get_theme_color(SNAME("base_color"), EditorStringName(Editor)), 0.07);
 }
 
-int EditorProfiler::_get_zoom_left_border() const {
+int EditorProfiler::_get_zoom_left_border() const
+{
 	const int max_profiles_shown = frame_metrics.size() / Math::exp(graph_zoom);
-	return CLAMP(zoom_center - max_profiles_shown / 2, 0, frame_metrics.size() - max_profiles_shown);
+	return CLAMP(
+		zoom_center - max_profiles_shown / 2, 0, frame_metrics.size() - max_profiles_shown);
 }
 
-void EditorProfiler::_item_edited() {
+void EditorProfiler::_item_edited()
+{
 	if (updating_frame) {
 		return;
 	}
 
-	TreeItem *item = variables->get_edited();
+	TreeItem* item = variables->get_edited();
 	if (!item) {
 		return;
-	}
-	StringName signature = item->get_metadata(0);
-	bool checked = item->is_checked(0);
-
-	if (checked) {
-		plot_sigs.insert(signature);
-	} else {
-		plot_sigs.erase(signature);
 	}
 
 	if (!frame_delay->is_processing()) {
@@ -188,22 +153,11 @@ void EditorProfiler::_item_edited() {
 	_update_plot();
 }
 
-void EditorProfiler::_item_collapsed(TreeItem *p_item) {
-	if (!p_item) {
-		return;
-	}
-	StringName signature = p_item->get_metadata(0);
-	bool collapsed = p_item->is_collapsed();
-
-	if (collapsed) {
-		collapsed_categories.insert(signature);
-	} else {
-		collapsed_categories.erase(signature);
-	}
-}
-
-void EditorProfiler::_update_plot() {
-	const int w = MAX(1, graph->get_size().width); // Clamp to 1 to prevent from crashing when profiler is autostarted.
+void EditorProfiler::_update_plot()
+{
+	const int w =
+		MAX(1, graph->get_size()
+				   .width); // Clamp to 1 to prevent from crashing when profiler is autostarted.
 	const int h = MAX(1, graph->get_size().height);
 	bool reset_texture = false;
 	const int desired_len = w * h * 4;
@@ -213,7 +167,7 @@ void EditorProfiler::_update_plot() {
 		graph_image.resize(desired_len);
 	}
 
-	uint8_t *wr = graph_image.ptrw();
+	uint8_t* wr = graph_image.ptrw();
 	const Color background_color = get_theme_color(SNAME("dark_color_2"), EditorStringName(Editor));
 
 	// Clear the previous frame and set the background color.
@@ -224,25 +178,26 @@ void EditorProfiler::_update_plot() {
 		wr[i + 3] = 255;
 	}
 
-	//find highest value
+	// find highest value
 
 	const bool use_self = display_time->get_selected() == DISPLAY_SELF_TIME;
 	float highest = 0;
 
 	for (int i = 0; i < total_metrics; i++) {
-		const Metric &m = _get_frame_metric(i);
+		const Metric& m = _get_frame_metric(i);
 
-		for (const StringName &E : plot_sigs) {
-			HashMap<StringName, Metric::Category *>::ConstIterator F = m.category_ptrs.find(E);
+		for (const StringName& E : plot_sigs) {
+			HashMap<StringName, Metric::Category*>::ConstIterator F = m.category_ptrs.find(E);
 			if (F) {
 				highest = MAX(F->value->total_time, highest);
 			}
 
-			HashMap<StringName, Metric::Category::Item *>::ConstIterator G = m.item_ptrs.find(E);
+			HashMap<StringName, Metric::Category::Item*>::ConstIterator G = m.item_ptrs.find(E);
 			if (G) {
 				if (use_self) {
 					highest = MAX(G->value->self, highest);
-				} else {
+				}
+				else {
 					highest = MAX(G->value->total, highest);
 				}
 			}
@@ -250,14 +205,14 @@ void EditorProfiler::_update_plot() {
 	}
 
 	if (highest > 0) {
-		//means some data exists..
-		highest *= 1.2; //leave some upper room
+		// means some data exists..
+		highest *= 1.2; // leave some upper room
 		graph_height = highest;
 
 		Vector<int> columnv;
 		columnv.resize(h * 4);
 
-		int *column = columnv.ptrw();
+		int* column = columnv.ptrw();
 
 		HashMap<StringName, int> prev_plots;
 
@@ -273,21 +228,22 @@ void EditorProfiler::_update_plot() {
 
 			int current = (i * max_profiles_shown / w) + left_border;
 
-			for (const StringName &E : plot_sigs) {
-				const Metric &m = _get_frame_metric(current);
+			for (const StringName& E : plot_sigs) {
+				const Metric& m = _get_frame_metric(current);
 
 				float value = 0;
 
-				HashMap<StringName, Metric::Category *>::ConstIterator F = m.category_ptrs.find(E);
+				HashMap<StringName, Metric::Category*>::ConstIterator F = m.category_ptrs.find(E);
 				if (F) {
 					value = F->value->total_time;
 				}
 
-				HashMap<StringName, Metric::Category::Item *>::ConstIterator G = m.item_ptrs.find(E);
+				HashMap<StringName, Metric::Category::Item*>::ConstIterator G = m.item_ptrs.find(E);
 				if (G) {
 					if (use_self) {
 						value = G->value->self;
-					} else {
+					}
+					else {
 						value = G->value->total;
 					}
 				}
@@ -299,7 +255,8 @@ void EditorProfiler::_update_plot() {
 				if (H) {
 					prev_plot = H->value;
 					H->value = plot_pos;
-				} else {
+				}
+				else {
 					prev_plots[E] = plot_pos;
 				}
 
@@ -334,7 +291,8 @@ void EditorProfiler::_update_plot() {
 				const bool is_filled = red >= 1 || green >= 1 || blue >= 1;
 				const int widx = ((j >> 2) * w + i) * 4;
 
-				// If the pixel isn't filled by any profiler line, apply the background color instead.
+				// If the pixel isn't filled by any profiler line, apply the background color
+				// instead.
 				wr[widx + 0] = is_filled ? red : Math::fast_ftoi(background_color.r * 255);
 				wr[widx + 1] = is_filled ? green : Math::fast_ftoi(background_color.g * 255);
 				wr[widx + 2] = is_filled ? blue : Math::fast_ftoi(background_color.b * 255);
@@ -358,22 +316,22 @@ void EditorProfiler::_update_plot() {
 	graph->queue_redraw();
 }
 
-void EditorProfiler::_update_frame() {
+void EditorProfiler::_update_frame()
+{
 	int cursor_metric = cursor_metric_edit->get_value() - _get_frame_metric(0).frame_number;
 
 	updating_frame = true;
 	variables->clear();
 
-	TreeItem *root = variables->create_item();
-	const Metric &m = _get_frame_metric(cursor_metric);
+	TreeItem* root = variables->create_item();
+	const Metric& m = _get_frame_metric(cursor_metric);
 
 	int dtime = display_time->get_selected();
 
 	for (int i = 0; i < m.categories.size(); i++) {
-		TreeItem *category = variables->create_item(root);
+		TreeItem* category = variables->create_item(root);
 		category->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
 		category->set_editable(0, true);
-		category->set_metadata(0, m.categories[i].signature);
 		category->set_text(0, String(m.categories[i].name));
 		category->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_DISABLED);
 		category->set_text(1, _get_time_as_text(m, m.categories[i].total_time, 1));
@@ -388,19 +346,17 @@ void EditorProfiler::_update_frame() {
 		}
 
 		for (int j = 0; j < m.categories[i].items.size(); j++) {
-			const Metric::Category::Item &it = m.categories[i].items[j];
+			const Metric::Category::Item& it = m.categories[i].items[j];
 
-			if (it.internal == it.total && !display_internal_profiles->is_pressed() && m.categories[i].name == "Script Functions") {
+			if (it.internal == it.total && !display_internal_profiles->is_pressed() &&
+				m.categories[i].name == "Script Functions") {
 				continue;
 			}
-			TreeItem *item = variables->create_item(category);
+			TreeItem* item = variables->create_item(category);
 			item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
 			item->set_editable(0, true);
 			item->set_text(0, it.name);
 			item->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_DISABLED);
-			item->set_metadata(0, it.signature);
-			item->set_metadata(1, it.script);
-			item->set_metadata(2, it.line);
 			item->set_text_alignment(2, HORIZONTAL_ALIGNMENT_RIGHT);
 			item->set_tooltip_text(0, it.name + "\n" + it.script + ":" + itos(it.line));
 
@@ -423,89 +379,88 @@ void EditorProfiler::_update_frame() {
 	updating_frame = false;
 }
 
-void EditorProfiler::_update_button_text() {
+void EditorProfiler::_update_button_text()
+{
 	if (activate->is_pressed()) {
 		activate->set_button_icon(get_editor_theme_icon(SNAME("Stop")));
 		activate->set_text(TTRC("Stop"));
-	} else {
+	}
+	else {
 		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
 		activate->set_text(TTRC("Start"));
 	}
 }
 
-void EditorProfiler::_activate_pressed() {
-	_update_button_text();
-
-	if (activate->is_pressed()) {
-		_clear_pressed();
-	}
-
-	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
-}
-
-void EditorProfiler::_clear_pressed() {
+void EditorProfiler::_clear_pressed()
+{
 	clear_button->set_disabled(true);
 	clear();
 	_update_plot();
 }
 
-void EditorProfiler::_internal_profiles_pressed() {
-	_combo_changed(0);
-}
+void EditorProfiler::_internal_profiles_pressed() { _combo_changed(0); }
 
-void EditorProfiler::_autostart_toggled(bool p_toggled_on) {
-	EditorSettings::get_singleton()->set_project_metadata("debug_options", "autostart_profiler", p_toggled_on);
+void EditorProfiler::_autostart_toggled(bool p_toggled_on)
+{
 	EditorRunBar::get_singleton()->update_profiler_autostart_indicator();
 }
 
-void EditorProfiler::_notification(int p_what) {
+void EditorProfiler::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_TRANSLATION_CHANGED: {
-			if (is_ready()) {
-				_update_frame();
-			}
-			[[fallthrough]];
+	case NOTIFICATION_TRANSLATION_CHANGED: {
+		if (is_ready()) {
+			_update_frame();
 		}
-		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-		case NOTIFICATION_THEME_CHANGED: {
-			activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
-			clear_button->set_button_icon(get_editor_theme_icon(SNAME("Clear")));
+		[[fallthrough]];
+	}
+	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
+	case NOTIFICATION_THEME_CHANGED: {
+		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
+		clear_button->set_button_icon(get_editor_theme_icon(SNAME("Clear")));
 
-			theme_cache.seek_line_color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-			theme_cache.seek_line_color.a = 0.8;
-			theme_cache.seek_line_hover_color = theme_cache.seek_line_color;
-			theme_cache.seek_line_hover_color.a = 0.4;
+		theme_cache.seek_line_color =
+			get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
+		theme_cache.seek_line_color.a = 0.8;
+		theme_cache.seek_line_hover_color = theme_cache.seek_line_color;
+		theme_cache.seek_line_hover_color.a = 0.4;
 
-			if (total_metrics > 0) {
-				_update_plot();
-			}
-		} break;
+		if (total_metrics > 0) {
+			_update_plot();
+		}
+	} break;
 	}
 }
 
-void EditorProfiler::_graph_tex_draw() {
+void EditorProfiler::_graph_tex_draw()
+{
 	if (total_metrics == 0) {
 		return;
 	}
 	if (seeking) {
 		int frame = cursor_metric_edit->get_value() - _get_frame_metric(0).frame_number;
 		frame = frame - _get_zoom_left_border() + 1;
-		int cur_x = (frame * graph->get_size().width * Math::exp(graph_zoom)) / frame_metrics.size();
+		int cur_x =
+			(frame * graph->get_size().width * Math::exp(graph_zoom)) / frame_metrics.size();
 		cur_x = CLAMP(cur_x, 0, graph->get_size().width);
-		graph->draw_line(Vector2(cur_x, 0), Vector2(cur_x, graph->get_size().y), theme_cache.seek_line_color);
+		graph->draw_line(
+			Vector2(cur_x, 0), Vector2(cur_x, graph->get_size().y), theme_cache.seek_line_color);
 	}
 	if (hover_metric > -1) {
 		int cur_x = (2 * hover_metric + 1) * graph->get_size().x / (2 * frame_metrics.size()) + 1;
-		graph->draw_line(Vector2(cur_x, 0), Vector2(cur_x, graph->get_size().y), theme_cache.seek_line_hover_color);
+		graph->draw_line(Vector2(cur_x, 0), Vector2(cur_x, graph->get_size().y),
+			theme_cache.seek_line_hover_color);
 	}
 }
 
-void EditorProfiler::_graph_tex_mouse_exit() {
+void EditorProfiler::_graph_tex_mouse_exit()
+{
 	hover_metric = -1;
 	graph->queue_redraw();
 }
 
-void EditorProfiler::_cursor_metric_changed(double) {
+void EditorProfiler::_cursor_metric_changed(double)
+{
 	if (updating_frame) {
 		return;
 	}
@@ -514,7 +469,8 @@ void EditorProfiler::_cursor_metric_changed(double) {
 	_update_frame();
 }
 
-void EditorProfiler::_graph_tex_input(const Ref<InputEvent> &p_ev) {
+void EditorProfiler::_graph_tex_input(const Ref<InputEvent>& p_ev)
+{
 	if (last_metric < 0) {
 		return;
 	}
@@ -524,56 +480,21 @@ void EditorProfiler::_graph_tex_input(const Ref<InputEvent> &p_ev) {
 	Ref<InputEventMouseMotion> mm = p_ev;
 	MouseButton button_idx = mb.is_valid() ? mb->get_button_index() : MouseButton();
 
-	if (
-			(mb.is_valid() && button_idx == MouseButton::LEFT && mb->is_pressed()) ||
-			(mm.is_valid())) {
+	if ((mb.is_valid() && button_idx == MouseButton::LEFT && mb->is_pressed()) || (mm.is_valid())) {
 		int x = me->get_position().x - 1;
 		hover_metric = x * frame_metrics.size() / graph->get_size().width;
 
 		x = x * frame_metrics.size() / graph->get_size().width;
 		x = x / Math::exp(graph_zoom) + _get_zoom_left_border();
 		x = CLAMP(x, 0, frame_metrics.size() - 1);
-
-		if (mb.is_valid() || (mm->get_button_mask().has_flag(MouseButtonMask::LEFT))) {
-			updating_frame = true;
-
-			if (x < total_metrics) {
-				cursor_metric_edit->set_value(_get_frame_metric(x).frame_number);
-			}
-			updating_frame = false;
-
-			if (activate->is_pressed()) {
-				if (!seeking) {
-					this->obj->emit_signal(SNAME("break_request"));
-				}
-			}
-
-			seeking = true;
-
-			if (!frame_delay->is_processing()) {
-				frame_delay->set_wait_time(0.1);
-				frame_delay->start();
-			}
-		}
-	}
-
-	if (graph_zoom > 0 && mm.is_valid() && (mm->get_button_mask().has_flag(MouseButtonMask::MIDDLE) || mm->get_button_mask().has_flag(MouseButtonMask::RIGHT))) {
-		// Panning.
-		const int max_profiles_shown = frame_metrics.size() / Math::exp(graph_zoom);
-		pan_accumulator += (float)mm->get_relative().x * max_profiles_shown / graph->get_size().width;
-
-		if (Math::abs(pan_accumulator) > 1) {
-			zoom_center = CLAMP(zoom_center - (int)pan_accumulator, max_profiles_shown / 2, frame_metrics.size() - max_profiles_shown / 2);
-			pan_accumulator -= (int)pan_accumulator;
-			_update_plot();
-		}
 	}
 
 	if (button_idx == MouseButton::WHEEL_DOWN) {
 		// Zooming.
 		graph_zoom = MAX(-0.05 + graph_zoom, 0);
 		_update_plot();
-	} else if (button_idx == MouseButton::WHEEL_UP) {
+	}
+	else if (button_idx == MouseButton::WHEEL_UP) {
 		if (graph_zoom == 0) {
 			zoom_center = me->get_position().x;
 			zoom_center = zoom_center * frame_metrics.size() / graph->get_size().width;
@@ -585,39 +506,36 @@ void EditorProfiler::_graph_tex_input(const Ref<InputEvent> &p_ev) {
 	graph->queue_redraw();
 }
 
-void EditorProfiler::disable_seeking() {
+void EditorProfiler::disable_seeking()
+{
 	seeking = false;
 	graph->queue_redraw();
 }
 
-void EditorProfiler::_combo_changed(int) {
+void EditorProfiler::_combo_changed(int)
+{
 	_update_frame();
 	_update_plot();
 }
 
-void EditorProfiler::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("enable_profiling", PropertyInfo(Variant::BOOL, "enable")));
-	ADD_SIGNAL(MethodInfo("break_request"));
-}
-
-void EditorProfiler::set_enabled(bool p_enable, bool p_clear) {
+void EditorProfiler::set_enabled(bool p_enable, bool p_clear)
+{
 	activate->set_disabled(!p_enable);
 	if (p_clear) {
 		clear();
 	}
 }
 
-void EditorProfiler::set_profiling(bool p_pressed) {
+void EditorProfiler::set_profiling(bool p_pressed)
+{
 	activate->set_pressed(p_pressed);
 	_update_button_text();
-	this->obj->emit_signal(SNAME("enable_profiling"), activate->is_pressed());
 }
 
-bool EditorProfiler::is_profiling() {
-	return activate->is_pressed();
-}
+bool EditorProfiler::is_profiling() { return activate->is_pressed(); }
 
-Vector<Vector<String>> EditorProfiler::get_data_as_csv() const {
+Vector<Vector<String>> EditorProfiler::get_data_as_csv() const
+{
 	Vector<Vector<String>> res;
 
 	if (frame_metrics.is_empty()) {
@@ -627,14 +545,14 @@ Vector<Vector<String>> EditorProfiler::get_data_as_csv() const {
 	// Different metrics may contain different number of categories.
 	HashSet<StringName> possible_signatures;
 	for (int i = 0; i < frame_metrics.size(); i++) {
-		const Metric &m = frame_metrics[i];
+		const Metric& m = frame_metrics[i];
 		if (!m.valid) {
 			continue;
 		}
-		for (const KeyValue<StringName, Metric::Category *> &E : m.category_ptrs) {
+		for (const KeyValue<StringName, Metric::Category*>& E : m.category_ptrs) {
 			possible_signatures.insert(E.key);
 		}
-		for (const KeyValue<StringName, Metric::Category::Item *> &E : m.item_ptrs) {
+		for (const KeyValue<StringName, Metric::Category::Item*>& E : m.item_ptrs) {
 			possible_signatures.insert(E.key);
 		}
 	}
@@ -644,7 +562,7 @@ Vector<Vector<String>> EditorProfiler::get_data_as_csv() const {
 	Vector<String> signatures;
 	signatures.resize(possible_signatures.size());
 	int sig_index = 0;
-	for (const StringName &E : possible_signatures) {
+	for (const StringName& E : possible_signatures) {
 		signatures.write[sig_index] = E;
 		sig_map[E] = sig_index;
 		sig_index++;
@@ -663,7 +581,7 @@ Vector<Vector<String>> EditorProfiler::get_data_as_csv() const {
 			index = 0;
 		}
 
-		const Metric &m = frame_metrics[index];
+		const Metric& m = frame_metrics[index];
 
 		if (!m.valid) {
 			continue;
@@ -673,10 +591,10 @@ Vector<Vector<String>> EditorProfiler::get_data_as_csv() const {
 		values.clear();
 		values.resize(possible_signatures.size());
 
-		for (const KeyValue<StringName, Metric::Category *> &E : m.category_ptrs) {
+		for (const KeyValue<StringName, Metric::Category*>& E : m.category_ptrs) {
 			values.write[sig_map[E.key]] = String::num_real(E.value->total_time);
 		}
-		for (const KeyValue<StringName, Metric::Category::Item *> &E : m.item_ptrs) {
+		for (const KeyValue<StringName, Metric::Category::Item*>& E : m.item_ptrs) {
 			values.write[sig_map[E.key]] = String::num_real(E.value->total);
 		}
 
@@ -686,12 +604,13 @@ Vector<Vector<String>> EditorProfiler::get_data_as_csv() const {
 	return res;
 }
 
-EditorProfiler::EditorProfiler() {
-	HBoxContainer *hb = memnew(HBoxContainer);
+EditorProfiler::EditorProfiler()
+{
+	HBoxContainer* hb = memnew(HBoxContainer);
 	hb->add_theme_constant_override(SNAME("separation"), 8 * EDSCALE);
 	add_child(hb);
 
-	FlowContainer *container = memnew(FlowContainer);
+	FlowContainer* container = memnew(FlowContainer);
 	container->set_h_size_flags(SIZE_EXPAND_FILL);
 	container->add_theme_constant_override(SNAME("h_separation"), 8 * EDSCALE);
 	container->add_theme_constant_override(SNAME("v_separation"), 2 * EDSCALE);
@@ -701,22 +620,18 @@ EditorProfiler::EditorProfiler() {
 	activate->set_toggle_mode(true);
 	activate->set_disabled(true);
 	activate->set_text(TTRC("Start"));
-	activate->connect(SceneStringName(pressed), callable_mp(this, &EditorProfiler::_activate_pressed));
 	container->add_child(activate);
 
 	clear_button = memnew(Button);
 	clear_button->set_text(TTRC("Clear"));
-	clear_button->connect(SceneStringName(pressed), callable_mp(this, &EditorProfiler::_clear_pressed));
 	clear_button->set_disabled(true);
 	container->add_child(clear_button);
 
-	CheckBox *autostart_checkbox = memnew(CheckBox);
+	CheckBox* autostart_checkbox = memnew(CheckBox);
 	autostart_checkbox->set_text(TTRC("Autostart"));
-	autostart_checkbox->set_pressed(EditorSettings::get_singleton()->get_project_metadata("debug_options", "autostart_profiler", false));
-	autostart_checkbox->connect(SceneStringName(toggled), callable_mp(this, &EditorProfiler::_autostart_toggled));
 	container->add_child(autostart_checkbox);
 
-	HBoxContainer *hb_measure = memnew(HBoxContainer);
+	HBoxContainer* hb_measure = memnew(HBoxContainer);
 	hb_measure->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
 	container->add_child(hb_measure);
 
@@ -728,11 +643,10 @@ EditorProfiler::EditorProfiler() {
 	display_mode->add_item(TTRC("Average Time (ms)"));
 	display_mode->add_item(TTRC("Frame %"));
 	display_mode->add_item(TTRC("Physics Frame %"));
-	display_mode->connect(SceneStringName(item_selected), callable_mp(this, &EditorProfiler::_combo_changed));
 
 	hb_measure->add_child(display_mode);
 
-	HBoxContainer *hb_time = memnew(HBoxContainer);
+	HBoxContainer* hb_time = memnew(HBoxContainer);
 	hb_time->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
 	container->add_child(hb_time);
 
@@ -740,21 +654,22 @@ EditorProfiler::EditorProfiler() {
 
 	display_time = memnew(OptionButton);
 	display_time->set_accessibility_name(TTRC("Time:"));
-	// TRANSLATORS: This is an option in the profiler to display the time spent in a function, including the time spent in other functions called by that function.
+	// TRANSLATORS: This is an option in the profiler to display the time spent in a function,
+	// including the time spent in other functions called by that function.
 	display_time->add_item(TTRC("Inclusive"));
-	// TRANSLATORS: This is an option in the profiler to display the time spent in a function, exincluding the time spent in other functions called by that function.
+	// TRANSLATORS: This is an option in the profiler to display the time spent in a function,
+	// exincluding the time spent in other functions called by that function.
 	display_time->add_item(TTRC("Self"));
-	display_time->set_tooltip_text(TTRC("Inclusive: Includes time from other functions called by this function.\nUse this to spot bottlenecks.\n\nSelf: Only count the time spent in the function itself, not in other functions called by that function.\nUse this to find individual functions to optimize."));
-	display_time->connect(SceneStringName(item_selected), callable_mp(this, &EditorProfiler::_combo_changed));
-	hb_time->add_child(display_time);
+	display_time->set_tooltip_text(TTRC(
+		"Inclusive: Includes time from other functions called by this function.\nUse this to spot "
+		"bottlenecks.\n\nSelf: Only count the time spent in the function itself, not in other "
+		"functions called by that function.\nUse this to find individual functions to optimize."));
 
 	display_internal_profiles = memnew(CheckButton(TTRC("Display internal functions")));
-	display_internal_profiles->set_visible(EDITOR_GET("debugger/profile_native_calls"));
 	display_internal_profiles->set_pressed(false);
-	display_internal_profiles->connect(SceneStringName(pressed), callable_mp(this, &EditorProfiler::_internal_profiles_pressed));
 	container->add_child(display_internal_profiles);
 
-	HBoxContainer *hb_frame = memnew(HBoxContainer);
+	HBoxContainer* hb_frame = memnew(HBoxContainer);
 	hb_frame->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
 	hb_frame->set_v_size_flags(SIZE_SHRINK_BEGIN);
 	hb->add_child(hb_frame);
@@ -767,7 +682,6 @@ EditorProfiler::EditorProfiler() {
 	cursor_metric_edit->set_value(0);
 	cursor_metric_edit->set_editable(false);
 	hb_frame->add_child(cursor_metric_edit);
-	cursor_metric_edit->connect(SceneStringName(value_changed), callable_mp(this, &EditorProfiler::_cursor_metric_changed));
 
 	h_split = memnew(HSplitContainer);
 	add_child(h_split);
@@ -792,35 +706,27 @@ EditorProfiler::EditorProfiler() {
 	variables->set_column_clip_content(2, true);
 	variables->set_column_custom_minimum_width(2, 50 * EDSCALE);
 	variables->set_theme_type_variation("TreeSecondary");
-	variables->connect("item_edited", callable_mp(this, &EditorProfiler::_item_edited));
-	variables->connect("item_collapsed", callable_mp(this, &EditorProfiler::_item_collapsed));
 
 	graph = memnew(TextureRect);
 	graph->set_custom_minimum_size(Size2(250 * EDSCALE, 0));
 	graph->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
 	graph->set_mouse_filter(MOUSE_FILTER_STOP);
-	graph->connect(SceneStringName(draw), callable_mp(this, &EditorProfiler::_graph_tex_draw));
-	graph->connect(SceneStringName(gui_input), callable_mp(this, &EditorProfiler::_graph_tex_input));
-	graph->connect(SceneStringName(mouse_exited), callable_mp(this, &EditorProfiler::_graph_tex_mouse_exit));
 
 	h_split->add_child(graph);
 	graph->set_h_size_flags(SIZE_EXPAND_FILL);
-
-	int metric_size = CLAMP(int(EDITOR_GET("debugger/profiler_frame_history_size")), 60, 10000);
-	frame_metrics.resize(metric_size);
 
 	frame_delay = memnew(Timer);
 	frame_delay->set_wait_time(0.1);
 	frame_delay->set_one_shot(true);
 	add_child(frame_delay);
-	frame_delay->connect("timeout", callable_mp(this, &EditorProfiler::_update_frame));
 
 	plot_delay = memnew(Timer);
 	plot_delay->set_wait_time(0.1);
 	plot_delay->set_one_shot(true);
 	add_child(plot_delay);
-	plot_delay->connect("timeout", callable_mp(this, &EditorProfiler::_update_plot));
 
 	plot_sigs.insert("physics_frame_time");
 	plot_sigs.insert("category_frame_time");
 }
+
+

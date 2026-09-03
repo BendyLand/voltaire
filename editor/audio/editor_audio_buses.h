@@ -54,8 +54,6 @@ class Timer;
 
 class EditorAudioBus : public PanelContainer
 {
-	VLTRCLASS(EditorAudioBus, PanelContainer);
-
 	LineEdit* track_name = nullptr;
 	MenuButton* bus_options = nullptr;
 	VSlider* slider = nullptr;
@@ -121,40 +119,14 @@ class EditorAudioBus : public PanelContainer
 	bool is_master;
 	mutable bool hovering_drop = false;
 
-	virtual void gui_input(const Object& obj, const Ref<InputEvent>& p_event) override;
-	void _effects_gui_input(const Object& obj, Ref<InputEvent> p_event);
-	void _bus_popup_pressed(Object& obj, int p_option);
-
-	void _name_changed(const Object& obj, const String& p_new_name);
-
-	void _name_focus_exit(const Object& obj) { _name_changed(obj, track_name->get_text()); }
-
-	void _volume_changed(const Object& obj, float p_normalized);
 	float _normalized_volume_to_scaled_db(float normalized);
 	float _scaled_db_to_normalized_volume(float db);
 	void _show_value(float slider_value);
 	void _hide_value_preview();
 	void _enable_indicator_fall();
-	void _solo_toggled(const Object& obj);
-	void _mute_toggled(const Object& obj);
-	void _bypass_toggled(const Object& obj);
-	void _send_selected(const Object& obj, int p_which);
-	void _effect_edited(const Object& obj);
-	void _effect_add(const Object& obj, int p_which);
 	void _effect_selected();
-	void _delete_effect_pressed(const Object& obj, int p_option);
 	void _effect_rmb(const Vector2& p_pos, MouseButton p_button);
 	void _update_visible_channels();
-
-	virtual Variant get_drag_data(Object& obj, const Point2& p_point) override;
-	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(
-		const Object& obj, const Point2& p_point, const Variant& p_data) override;
-
-	Variant get_drag_data_fw(const Point2& p_point, Control* p_from);
-	bool can_drop_data_fw(const Point2& p_point, const Variant& p_data, Control* p_from) const;
-	void drop_data_fw(
-		const Object& obj, const Point2& p_point, const Variant& p_data, Control* p_from);
 
 	friend class EditorAudioBuses;
 
@@ -173,12 +145,6 @@ public:
 
 class EditorAudioBusDrop : public Control
 {
-	VLTRCLASS(EditorAudioBusDrop, Control);
-
-	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(
-		const Object& obj, const Point2& p_point, const Variant& p_data) override;
-
 	mutable bool hovering_drop = false;
 
 protected:
@@ -188,8 +154,6 @@ protected:
 
 class EditorAudioBuses : public EditorDock
 {
-	VLTRCLASS(EditorAudioBuses, EditorDock);
-
 	enum class MenuOption
 	{
 		LOAD,
@@ -218,13 +182,7 @@ class EditorAudioBuses : public EditorDock
 	void _update_file_label_size();
 
 	void _rebuild_buses();
-	void _update_bus(const Object& obj, int p_index);
-	void _update_sends(const Object& obj);
-
 	void _add_bus();
-	void _delete_bus(Object* p_which);
-	void _duplicate_bus(const Object& obj, int p_which);
-	void _reset_bus_volume(const Object& obj, Object* p_which);
 
 	void _request_drop_end();
 	void _drop_at_index(int p_bus, int p_index);
@@ -260,8 +218,6 @@ public:
 
 class EditorAudioMeterNotches : public Control
 {
-	VLTRCLASS(EditorAudioMeterNotches, Control);
-
 private:
 	struct AudioNotch
 	{
@@ -320,16 +276,10 @@ private:
 
 class AudioBusesEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(AudioBusesEditorPlugin, EditorPlugin);
-
 	EditorAudioBuses* audio_bus_editor = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "SampleLibrary"; }
-
-	virtual void edit(Object* p_node) override;
-	virtual bool handles(Object* p_node) const override;
-	virtual void make_visible(Object& obj, bool p_visible) override;
 
 	AudioBusesEditorPlugin(EditorAudioBuses* p_node);
 };

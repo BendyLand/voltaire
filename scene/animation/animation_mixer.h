@@ -310,8 +310,6 @@ protected:
 	Quaternion root_motion_rotation_accumulator = Quaternion(0, 0, 0, 1);
 	Vector3 root_motion_scale_accumulator = Vector3(1, 1, 1);
 
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
 	virtual uint32_t _get_libraries_property_usage() const;
 	void _notification(int p_what);
 

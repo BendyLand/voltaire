@@ -87,9 +87,6 @@ protected:
 
 	String value_label = "value";
 
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-
 	StringName blend_position = "blend_position";
 	StringName closest = "closest";
 
@@ -117,8 +114,6 @@ protected:
 public:
 	virtual void validate_node(
 		const AnimationTree* p_tree, const StringName& p_path) const override;
-
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const override;
 
 	virtual void get_child_nodes(LocalVector<ChildNode>* r_child_nodes) override;
 

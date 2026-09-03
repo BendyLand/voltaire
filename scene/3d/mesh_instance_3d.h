@@ -43,8 +43,6 @@ class Skin;
 class SkinReference;
 
 class MeshInstance3D : public GeometryInstance3D {
-	VLTRCLASS(MeshInstance3D, GeometryInstance3D);
-
 protected:
 	Ref<Mesh> mesh;
 	Ref<Skin> skin;
@@ -60,25 +58,14 @@ protected:
 	void _resolve_skeleton_path();
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 	bool surface_index_0 = false;
 
 	void _notification(int p_what);
 	static void _bind_methods();
 
 	bool _property_can_revert(const StringName &p_name) const;
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::MESH_INSTANCE_3D;
-
-#ifndef DISABLE_DEPRECATED
-	static inline bool use_parent_skeleton_compat = false;
-	static inline bool upgrading_skeleton_compat = false;
-#endif
-
 	void set_mesh(const Ref<Mesh> &p_mesh);
 	Ref<Mesh> get_mesh() const;
 
@@ -123,7 +110,6 @@ public:
 
 #ifndef NAVIGATION_3D_DISABLED
 private:
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 #endif // NAVIGATION_3D_DISABLED
 

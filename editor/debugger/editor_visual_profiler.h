@@ -41,16 +41,17 @@
 
 class ImageTexture;
 
-class EditorVisualProfiler : public VBoxContainer {
-	VLTRCLASS(EditorVisualProfiler, VBoxContainer);
-
+class EditorVisualProfiler : public VBoxContainer
+{
 public:
-	struct Metric {
+	struct Metric
+	{
 		bool valid = false;
 
 		uint64_t frame_number = 0;
 
-		struct Area {
+		struct Area
+		{
 			String name;
 			Color color_cache;
 			StringName fullpath_cache;
@@ -61,26 +62,27 @@ public:
 		Vector<Area> areas;
 	};
 
-	enum DisplayTimeMode {
+	enum DisplayTimeMode
+	{
 		DISPLAY_FRAME_TIME,
 		DISPLAY_FRAME_PERCENT,
 	};
 
 private:
-	Button *activate = nullptr;
-	Button *clear_button = nullptr;
+	Button* activate = nullptr;
+	Button* clear_button = nullptr;
 
-	TextureRect *graph = nullptr;
+	TextureRect* graph = nullptr;
 	Ref<ImageTexture> graph_texture;
 	Vector<uint8_t> graph_image;
-	Tree *variables = nullptr;
-	HSplitContainer *h_split = nullptr;
-	CheckBox *frame_relative = nullptr;
-	CheckBox *linked = nullptr;
+	Tree* variables = nullptr;
+	HSplitContainer* h_split = nullptr;
+	CheckBox* frame_relative = nullptr;
+	CheckBox* linked = nullptr;
 
-	OptionButton *display_mode = nullptr;
+	OptionButton* display_mode = nullptr;
 
-	SpinBox *cursor_metric_edit = nullptr;
+	SpinBox* cursor_metric_edit = nullptr;
 
 	Vector<Metric> frame_metrics;
 	int last_metric = -1;
@@ -102,8 +104,8 @@ private:
 
 	bool seeking = false;
 
-	Timer *frame_delay = nullptr;
-	Timer *plot_delay = nullptr;
+	Timer* frame_delay = nullptr;
+	Timer* plot_delay = nullptr;
 
 	void _update_button_text();
 
@@ -115,20 +117,20 @@ private:
 
 	String _get_time_as_text(float p_time);
 
-	//void _make_metric_ptrs(Metric &m);
+	// void _make_metric_ptrs(Metric &m);
 	void _item_selected();
-	void _item_collapsed(TreeItem *p_item);
+	void _item_collapsed(TreeItem* p_item);
 
 	void _update_plot();
 
 	void _graph_tex_mouse_exit();
 
 	void _graph_tex_draw();
-	void _graph_tex_input(const Ref<InputEvent> &p_ev);
+	void _graph_tex_input(const Ref<InputEvent>& p_ev);
 
 	int _get_cursor_index() const;
 
-	Color _get_color_from_signature(const StringName &p_signature) const;
+	Color _get_color_from_signature(const StringName& p_signature) const;
 
 	void _cursor_metric_changed(double);
 
@@ -139,12 +141,14 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_hardware_info(const String &p_cpu_name, const String &p_gpu_name);
-	void add_frame_metric(const Metric &p_metric);
+	void set_hardware_info(const String& p_cpu_name, const String& p_gpu_name);
+	void add_frame_metric(const Metric& p_metric);
 	void set_enabled(bool p_enable);
 	void set_profiling(bool p_profiling);
 	bool is_profiling();
+
 	bool is_seeking() { return seeking; }
+
 	void disable_seeking();
 
 	void clear();
@@ -153,3 +157,5 @@ public:
 
 	EditorVisualProfiler();
 };
+
+

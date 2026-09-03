@@ -39,17 +39,17 @@ class HFlowContainer;
 class ItemList;
 class RDShaderFile;
 
-class ShaderFileEditor : public EditorDock {
-	VLTRCLASS(ShaderFileEditor, EditorDock);
-
+class ShaderFileEditor : public EditorDock
+{
 	Ref<RDShaderFile> shader_file;
 
-	HFlowContainer *stage_hb = nullptr;
-	ItemList *versions = nullptr;
-	Button *stages[RD::SHADER_STAGE_MAX];
-	RichTextLabel *error_text = nullptr;
+	HFlowContainer* stage_hb = nullptr;
+	ItemList* versions = nullptr;
+	Button* stages[RD::SHADER_STAGE_MAX];
+	RichTextLabel* error_text = nullptr;
 
-	void _update_version(const StringName &p_version_txt, const RenderingDevice::ShaderStage p_stage);
+	void _update_version(
+		const StringName& p_version_txt, const RenderingDevice::ShaderStage p_stage);
 	void _version_selected(int p_stage);
 	void _editor_settings_changed();
 
@@ -60,24 +60,22 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static ShaderFileEditor *singleton;
-	void edit(const Ref<RDShaderFile> &p_shader);
+	static ShaderFileEditor* singleton;
+	void edit(const Ref<RDShaderFile>& p_shader);
 
 	ShaderFileEditor();
 };
 
-class ShaderFileEditorPlugin : public EditorPlugin {
-	VLTRCLASS(ShaderFileEditorPlugin, EditorPlugin);
-
-	ShaderFileEditor *shader_editor = nullptr;
+class ShaderFileEditorPlugin : public EditorPlugin
+{
+	ShaderFileEditor* shader_editor = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "ShaderFile"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
-	ShaderFileEditor *get_shader_editor() const { return shader_editor; }
+	ShaderFileEditor* get_shader_editor() const { return shader_editor; }
 
 	ShaderFileEditorPlugin();
 };
+
+

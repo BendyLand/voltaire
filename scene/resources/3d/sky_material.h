@@ -33,9 +33,8 @@
 #include "core/templates/rid.h"
 #include "scene/resources/material.h"
 
-class ProceduralSkyMaterial : public Material {
-	VLTRCLASS(ProceduralSkyMaterial, Material);
-
+class ProceduralSkyMaterial : public Material
+{
 private:
 	Color sky_top_color;
 	Color sky_horizon_color;
@@ -63,13 +62,12 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &property) const;
 
 public:
-	void set_sky_top_color(const Color &p_sky_top);
+	void set_sky_top_color(const Color& p_sky_top);
 	Color get_sky_top_color() const;
 
-	void set_sky_horizon_color(const Color &p_sky_horizon);
+	void set_sky_horizon_color(const Color& p_sky_horizon);
 	Color get_sky_horizon_color() const;
 
 	void set_sky_curve(float p_curve);
@@ -78,16 +76,16 @@ public:
 	void set_sky_energy_multiplier(float p_multiplier);
 	float get_sky_energy_multiplier() const;
 
-	void set_sky_cover(const Ref<Texture2D> &p_sky_cover);
+	void set_sky_cover(const Ref<Texture2D>& p_sky_cover);
 	Ref<Texture2D> get_sky_cover() const;
 
-	void set_sky_cover_modulate(const Color &p_sky_cover_modulate);
+	void set_sky_cover_modulate(const Color& p_sky_cover_modulate);
 	Color get_sky_cover_modulate() const;
 
-	void set_ground_bottom_color(const Color &p_ground_bottom);
+	void set_ground_bottom_color(const Color& p_ground_bottom);
 	Color get_ground_bottom_color() const;
 
-	void set_ground_horizon_color(const Color &p_ground_horizon);
+	void set_ground_horizon_color(const Color& p_ground_horizon);
 	Color get_ground_horizon_color() const;
 
 	void set_ground_curve(float p_curve);
@@ -121,9 +119,8 @@ public:
 //////////////////////////////////////////////////////
 /* PanoramaSkyMaterial */
 
-class PanoramaSkyMaterial : public Material {
-	VLTRCLASS(PanoramaSkyMaterial, Material);
-
+class PanoramaSkyMaterial : public Material
+{
 private:
 	Ref<Texture2D> panorama;
 	float energy_multiplier = 1.0f;
@@ -139,7 +136,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_panorama(const Ref<Texture2D> &p_panorama);
+	void set_panorama(const Ref<Texture2D>& p_panorama);
 	Ref<Texture2D> get_panorama() const;
 
 	void set_filtering_enabled(bool p_enabled);
@@ -161,9 +158,8 @@ public:
 //////////////////////////////////////////////////////
 /* PanoramaSkyMaterial */
 
-class PhysicalSkyMaterial : public Material {
-	VLTRCLASS(PhysicalSkyMaterial, Material);
-
+class PhysicalSkyMaterial : public Material
+{
 private:
 	static Mutex shader_mutex;
 	static RID shader_cache[4];
@@ -183,10 +179,6 @@ private:
 	Ref<Texture2D> night_sky;
 	static void _update_shader(bool p_use_debanding, bool p_use_night_sky);
 	mutable bool shader_set = false;
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &property) const;
 
 public:
 	void set_rayleigh_coefficient(float p_rayleigh);
@@ -222,7 +214,7 @@ public:
 	void set_use_debanding(bool p_use_debanding);
 	bool get_use_debanding() const;
 
-	void set_night_sky(const Ref<Texture2D> &p_night_sky);
+	void set_night_sky(const Ref<Texture2D>& p_night_sky);
 	Ref<Texture2D> get_night_sky() const;
 
 	virtual Shader::Mode get_shader_mode() const override;
@@ -234,3 +226,5 @@ public:
 	PhysicalSkyMaterial();
 	~PhysicalSkyMaterial();
 };
+
+

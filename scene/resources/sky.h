@@ -33,11 +33,11 @@
 #include "core/io/resource.h"
 #include "scene/resources/material.h"
 
-class Sky : public Resource {
-	VLTRCLASS(Sky, Resource);
-
+class Sky : public Resource
+{
 public:
-	enum RadianceSize {
+	enum RadianceSize
+	{
 		RADIANCE_SIZE_32,
 		RADIANCE_SIZE_64,
 		RADIANCE_SIZE_128,
@@ -48,7 +48,8 @@ public:
 		RADIANCE_SIZE_MAX
 	};
 
-	enum ProcessMode {
+	enum ProcessMode
+	{
 		PROCESS_MODE_AUTOMATIC,
 		PROCESS_MODE_QUALITY,
 		PROCESS_MODE_INCREMENTAL,
@@ -71,7 +72,7 @@ public:
 	void set_process_mode(ProcessMode p_mode);
 	ProcessMode get_process_mode() const;
 
-	void set_material(const Ref<Material> &p_material);
+	void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
 
 	virtual RID get_rid() const override;
@@ -80,5 +81,4 @@ public:
 	~Sky();
 };
 
-VARIANT_ENUM_CAST(Sky::RadianceSize)
-VARIANT_ENUM_CAST(Sky::ProcessMode)
+

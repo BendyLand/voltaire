@@ -48,9 +48,6 @@ protected:
 		real_t p_margin = 0.001, bool p_recovery_as_collision = false, int p_max_collisions = 1);
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class =
-		Object::AncestralClass::PHYSICS_BODY_3D;
-
 	PackedStringArray get_configuration_warnings() const override;
 
 	bool move_and_collide(const PS3DT::MotionParameters& p_parameters,
@@ -67,7 +64,6 @@ public:
 	virtual Vector3 get_angular_velocity() const;
 	virtual real_t get_inverse_mass() const;
 
-	Array get_collision_exceptions();
 	void add_collision_exception_with(Node* rp_node); // must be physicsbody
 	void remove_collision_exception_with(Node* rp_node);
 };

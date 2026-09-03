@@ -32,31 +32,21 @@
 
 #include "scene/main/node.h"
 
-class MissingNode : public Node {
-	VLTRCLASS(MissingNode, Node)
-	HashMap<StringName, Variant> properties;
-
+class MissingNode : public Node
+{
 	String original_class;
 	String original_scene;
 	bool recording_properties = false;
 	bool recording_signals = false;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-
-#ifdef DEBUG_ENABLED
-	virtual Error connect(const StringName &p_signal, const Callable &p_callable, uint32_t p_flags = 0) override;
-#endif
-
 	static void _bind_methods();
 
 public:
-	void set_original_class(const String &p_class);
+	void set_original_class(const String& p_class);
 	String get_original_class() const;
 
-	void set_original_scene(const String &p_scene);
+	void set_original_scene(const String& p_scene);
 	String get_original_scene() const;
 
 	void set_recording_properties(bool p_enable);
@@ -69,3 +59,5 @@ public:
 
 	MissingNode();
 };
+
+

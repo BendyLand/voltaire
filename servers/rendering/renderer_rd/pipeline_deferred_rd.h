@@ -36,9 +36,11 @@
 // When attempting to retrieve the pipeline with the getter, the caller will automatically
 // wait for it to be ready.
 
-class PipelineDeferredRD {
+class PipelineDeferredRD
+{
 protected:
-	struct CreationParameters {
+	struct CreationParameters
+	{
 		RID shader;
 		RD::FramebufferFormatID framebuffer_format;
 		RD::VertexFormatID vertex_format;
@@ -54,40 +56,45 @@ protected:
 	};
 
 	RID pipeline;
-	WorkerThreadPool::TaskID task = WorkerThreadPool::INVALID_TASK_ID;
 
-	void _create(const CreationParameters &c) {
+	void _create(const CreationParameters& c)
+	{
 		if (c.is_compute) {
-			pipeline = RD::get_singleton()->compute_pipeline_create(c.shader, c.specialization_constants);
-		} else {
-			pipeline = RD::get_singleton()->render_pipeline_create(c.shader, c.framebuffer_format, c.vertex_format, c.render_primitive, c.rasterization_state, c.multisample_state, c.depth_stencil_state, c.blend_state, c.dynamic_state_flags, c.for_render_pass, c.specialization_constants);
+			pipeline =
+				RD::get_singleton()->compute_pipeline_create(c.shader, c.specialization_constants);
+		}
+		else {
+			pipeline = RD::get_singleton()->render_pipeline_create(c.shader, c.framebuffer_format,
+				c.vertex_format, c.render_primitive, c.rasterization_state, c.multisample_state,
+				c.depth_stencil_state, c.blend_state, c.dynamic_state_flags, c.for_render_pass,
+				c.specialization_constants);
 		}
 	}
 
-	void _start(const CreationParameters &c) {
-		free();
-		task = WorkerThreadPool::get_singleton()->add_template_task(this, &PipelineDeferredRD::_create, c, true, "PipelineCompilation");
-	}
-
-	void _wait() {
-		if (task != WorkerThreadPool::INVALID_TASK_ID) {
-			WorkerThreadPool::get_singleton()->wait_for_task_completion(task);
-			task = WorkerThreadPool::INVALID_TASK_ID;
-		}
-	}
+	void _start(const CreationParameters& c) { free(); }
 
 public:
-	PipelineDeferredRD() {
+	PipelineDeferredRD()
+	{
 		// Default constructor.
 	}
 
-	~PipelineDeferredRD() {
+	~PipelineDeferredRD()
+	{
 #ifdef DEV_ENABLED
-		ERR_FAIL_COND_MSG(pipeline.is_valid(), "'free()' must be called manually before deconstruction and before the corresponding shader is freed.");
+		ERR_FAIL_COND_MSG(
+			pipeline.is_valid(), "'free()' must be called manually before deconstruction and "
+								 "before the corresponding shader is freed.");
 #endif
 	}
 
-	void create_render_pipeline(RID p_shader, RD::FramebufferFormatID p_framebuffer_format, RD::VertexFormatID p_vertex_format, RD::RenderPrimitive p_render_primitive, const RD::PipelineRasterizationState &p_rasterization_state, const RD::PipelineMultisampleState &p_multisample_state, const RD::PipelineDepthStencilState &p_depth_stencil_state, const RD::PipelineColorBlendState &p_blend_state, uint32_t()) {
+	void create_render_pipeline(RID p_shader, RD::FramebufferFormatID p_framebuffer_format,
+		RD::VertexFormatID p_vertex_format, RD::RenderPrimitive p_render_primitive,
+		const RD::PipelineRasterizationState& p_rasterization_state,
+		const RD::PipelineMultisampleState& p_multisample_state,
+		const RD::PipelineDepthStencilState& p_depth_stencil_state,
+		const RD::PipelineColorBlendState& p_blend_state, uint32_t())
+	{
 		CreationParameters c;
 		c.shader = p_shader;
 		c.framebuffer_format = p_framebuffer_format;
@@ -97,14 +104,14 @@ public:
 		c.multisample_state = p_multisample_state;
 		c.depth_stencil_state = p_depth_stencil_state;
 		c.blend_state = p_blend_state;
-		c.dynamic_state_flags = p_dynamic_state_flags;
-		c.for_render_pass = p_for_render_pass;
-		c.specialization_constants = p_specialization_constants;
 		c.is_compute = false;
 		_start(c);
 	}
 
-	void create_compute_pipeline(RID p_shader, const Vector<RD::PipelineSpecializationConstant> &p_specialization_constants = Vector<RD::PipelineSpecializationConstant>()) {
+	void create_compute_pipeline(
+		RID p_shader, const Vector<RD::PipelineSpecializationConstant>& p_specialization_constants =
+						  Vector<RD::PipelineSpecializationConstant>())
+	{
 		CreationParameters c = {};
 		c.shader = p_shader;
 		c.specialization_constants = p_specialization_constants;
@@ -112,20 +119,20 @@ public:
 		_start(c);
 	}
 
-	RID get_rid() {
-		_wait();
-		return pipeline;
-	}
+	RID get_rid() { return pipeline; }
 
-	void free() {
-		_wait();
-
+	void free()
+	{
 		if (pipeline.is_valid()) {
 #ifdef DEV_ENABLED
-			ERR_FAIL_COND_MSG(!(RD::get_singleton()->render_pipeline_is_valid(pipeline) || RD::get_singleton()->compute_pipeline_is_valid(pipeline)), "`free()` must be called  manually before the dependent shader is freed.");
+			ERR_FAIL_COND_MSG(!(RD::get_singleton()->render_pipeline_is_valid(pipeline) ||
+								  RD::get_singleton()->compute_pipeline_is_valid(pipeline)),
+				"`free()` must be called  manually before the dependent shader is freed.");
 #endif
 			RD::get_singleton()->free_rid(pipeline);
 			pipeline = RID();
 		}
 	}
 };
+
+

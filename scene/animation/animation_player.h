@@ -160,11 +160,7 @@ private:
 	bool playing = false;
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
 	void _notification(int p_what);
-
-	static void _bind_methods();
 
 	// Make animation instances.
 	virtual bool _blend_pre_process(

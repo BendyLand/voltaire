@@ -43,8 +43,6 @@ class PanelContainer;
 
 class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 {
-	VLTRCLASS(AnimationNodeStateMachineEditor, AnimationTreeNodeEditorPlugin);
-
 	Ref<AnimationNodeStateMachine> state_machine;
 
 	bool read_only = false;
@@ -128,17 +126,11 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 
 	static AnimationNodeStateMachineEditor* singleton;
 
-	void _state_machine_gui_input(const Object& obj, const Ref<InputEvent>& p_event);
 	void _connection_draw(const Vector2& p_from, const Vector2& p_to,
 		AnimationNodeStateMachineTransition::SwitchMode p_mode, bool p_enabled, bool p_selected,
 		bool p_travel, float p_fade_ratio, bool p_auto_advance, bool p_is_across_group,
 		float p_opacity = 1.0, bool p_endpoint_hovered = false,
 		bool p_endpoint_hovered_start = false);
-
-	void _state_machine_draw(const Object& obj);
-
-	void _state_machine_pos_draw_individual(const Object& obj, const String& p_name, float p_ratio);
-	void _state_machine_pos_draw_all(const Object& obj);
 
 	void _update_graph();
 
@@ -181,10 +173,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	Vector2 reconnecting_transition_pos;
 	StringName reconnecting_transition_target;
 
-	void _add_menu_type(const Object& obj, int p_index);
-	void _add_animation_type(const Object& obj, int p_index);
-	void _connect_to(const Object& obj, int p_index);
-	void _reconnect_transition(const Object& obj);
 	void _select_transition(const StringName& p_from, const StringName& p_to);
 
 	struct NodeRect
@@ -240,7 +228,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	StringName selected_transition_from;
 	StringName selected_transition_to;
 	int selected_transition_index = -1;
-	void _add_transition(const Object& obj, const bool p_nested_action = false);
 
 	enum HoveredNodeArea
 	{
@@ -253,8 +240,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	HoveredNodeArea hovered_node_area = HOVER_NODE_NONE;
 
 	String prev_name;
-	void _name_edited(const Object& obj, const String& p_text);
-	void _name_edited_focus_out(const Object& obj);
 	void _open_editor(const String& p_name);
 	void _scroll_changed(double);
 
@@ -263,7 +248,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	void _clip_src_line_to_rect(Vector2& r_from, const Vector2& p_to, const Rect2& p_rect);
 	void _clip_dst_line_to_rect(const Vector2& p_from, Vector2& r_to, const Rect2& p_rect);
 
-	void _erase_selected(const Object& obj, const bool p_nested_action = false);
 	void _update_mode();
 	void _open_menu(const Vector2& p_position);
 	bool _create_submenu(PopupMenu* p_menu, Ref<AnimationNodeStateMachine> p_nodesm,
@@ -290,7 +274,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 
 	EditorFileDialog* open_file = nullptr;
 	Ref<AnimationNode> file_loaded;
-	void _file_opened(const Object& obj, const String& p_file);
 
 	enum
 	{
@@ -305,7 +288,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	Ref<StyleBox> _adjust_stylebox_opacity(Ref<StyleBox> p_style, float p_opacity);
 
 protected:
-	void _notification(const Object& obj, int p_what);
 	static void _bind_methods();
 
 public:
@@ -315,15 +297,12 @@ public:
 	virtual void edit(const Ref<AnimationNode>& p_node) override;
 
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
-	virtual String get_tooltip(const Object& obj, const Point2& p_pos) const override;
 
 	AnimationNodeStateMachineEditor();
 };
 
 class EditorAnimationMultiTransitionEdit : public RefCounted
 {
-	VLTRCLASS(EditorAnimationMultiTransitionEdit, RefCounted);
-
 	struct Transition
 	{
 		StringName from;
@@ -332,11 +311,6 @@ class EditorAnimationMultiTransitionEdit : public RefCounted
 	};
 
 	Vector<Transition> transitions;
-
-protected:
-	bool _set(const StringName& p_name, const Variant& p_property);
-	bool _get(const StringName& p_name, Variant& r_property) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 
 public:
 	void add_transition(const StringName& p_from, const StringName& p_to,

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
@@ -104,35 +103,6 @@ void BackgroundProgress::_end_task(const String& p_task)
 	tasks.erase(p_task);
 }
 
-void BackgroundProgress::add_task(const String& p_task, const String& p_label, int p_steps)
-{
-	callable_mp(this, &BackgroundProgress::_add_task).call_deferred(p_task, p_label, p_steps);
-}
-
-void BackgroundProgress::task_step(const String& p_task, int p_step)
-{
-	// this code is weird, but it prevents deadlock.
-	bool no_updates = true;
-	{
-		_THREAD_SAFE_METHOD_
-		no_updates = updates.is_empty();
-	}
-
-	if (no_updates) {
-		callable_mp(this, &BackgroundProgress::_update).call_deferred();
-	}
-
-	{
-		_THREAD_SAFE_METHOD_
-		updates[p_task] = p_step;
-	}
-}
-
-void BackgroundProgress::end_task(const String& p_task)
-{
-	callable_mp(this, &BackgroundProgress::_end_task).call_deferred(p_task);
-}
-
 ////////////////////////////////////////////////
 
 ProgressDialog* ProgressDialog::singleton = nullptr;
@@ -163,33 +133,6 @@ void ProgressDialog::_update_ui()
 	}
 }
 
-void ProgressDialog::_popup()
-{
-	// Activate processing of all inputs in EditorNode, and the EditorNode::input method
-	// will discard every key input.
-	EditorNode::get_singleton()->set_process_input(true);
-	// Disable all other windows to prevent interaction with them.
-	for (ObjectID wid : host_windows) {
-		Window* w = ObjectDB::get_instance<Window>(wid);
-		if (w) {
-			w->set_process_mode(PROCESS_MODE_DISABLED);
-		}
-	}
-
-	Size2 ms = main->get_combined_minimum_size();
-	ms.width = MAX(500 * EDSCALE, ms.width);
-	ms += main_border_size;
-
-	center_panel->set_custom_minimum_size(ms);
-
-	if (is_ready()) {
-		_reparent_and_show();
-	}
-	else {
-		callable_mp(this, &ProgressDialog::_reparent_and_show).call_deferred();
-	}
-}
-
 void ProgressDialog::_reparent_and_show()
 {
 	Window* current_window = SceneTree::get_singleton()->get_root()->get_last_exclusive_window();
@@ -202,46 +145,6 @@ void ProgressDialog::_reparent_and_show()
 	current_window->set_disable_input(window_is_input_disabled);
 
 	show();
-}
-
-void ProgressDialog::add_task(
-	const String& p_task, const String& p_label, int p_steps, bool p_can_cancel)
-{
-	if (MessageQueue::get_singleton()->is_flushing()) {
-		ERR_PRINT("Do not use progress dialog (task) while flushing the message queue or using "
-				  "call_deferred()!");
-		return;
-	}
-
-	ERR_FAIL_COND_MSG(tasks.has(p_task), "Task '" + p_task + "' already exists.");
-	ProgressDialog::Task t;
-	t.vb = memnew(VBoxContainer);
-	VBoxContainer* vb2 = memnew(VBoxContainer);
-	t.vb->add_margin_child(p_label, vb2);
-	t.progress = memnew(ProgressBar);
-	t.progress->set_theme_type_variation("PopupProgressBar");
-	t.progress->set_max(p_steps);
-	t.progress->set_value(p_steps);
-	vb2->add_child(t.progress);
-	t.state = memnew(Label);
-	t.state->set_clip_text(true);
-	vb2->add_child(t.state);
-	main->add_child(t.vb);
-
-	tasks[p_task] = t;
-	if (p_can_cancel) {
-		cancel_hb->show();
-	}
-	else {
-		cancel_hb->hide();
-	}
-	cancel_hb->move_to_front();
-	canceled = false;
-	_popup();
-	if (p_can_cancel) {
-		cancel->grab_focus();
-	}
-	_update_ui();
 }
 
 bool ProgressDialog::task_step(
@@ -270,62 +173,7 @@ bool ProgressDialog::task_step(
 	return canceled;
 }
 
-void ProgressDialog::end_task(const String& p_task)
-{
-	ERR_FAIL_COND(!tasks.has(p_task));
-	Task& t = tasks[p_task];
-
-	memdelete(t.vb);
-	tasks.erase(p_task);
-
-	if (tasks.is_empty()) {
-		hide();
-		EditorNode::get_singleton()->set_process_input(false);
-		for (ObjectID wid : host_windows) {
-			Window* w = ObjectDB::get_instance<Window>(wid);
-			if (w) {
-				w->set_process_mode(PROCESS_MODE_INHERIT);
-			}
-		}
-	}
-	else {
-		_popup();
-	}
-}
-
-void ProgressDialog::add_host_window(ObjectID p_window) { host_windows.push_back(p_window); }
-
-void ProgressDialog::remove_host_window(ObjectID p_window) { host_windows.erase(p_window); }
-
 void ProgressDialog::_cancel_pressed() { canceled = true; }
-
-ProgressDialog::ProgressDialog()
-{
-	// We want to cover the entire screen to prevent the user from interacting with the Editor.
-	set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	// Be sure it's the top most component.
-	set_z_index(RSE::CANVAS_ITEM_Z_MAX);
-	singleton = this;
-	hide();
-
-	center_panel = memnew(PanelContainer);
-	add_child(center_panel);
-	center_panel->set_h_size_flags(SIZE_SHRINK_BEGIN);
-	center_panel->set_v_size_flags(SIZE_SHRINK_BEGIN);
-
-	main = memnew(VBoxContainer);
-	center_panel->add_child(main);
-
-	cancel_hb = memnew(HBoxContainer);
-	main->add_child(cancel_hb);
-	cancel_hb->hide();
-	cancel = memnew(Button);
-	cancel_hb->add_spacer();
-	cancel_hb->add_child(cancel);
-	cancel->set_text(TTR("Cancel"));
-	cancel_hb->add_spacer();
-	cancel->connect(SceneStringName(pressed), callable_mp(this, &ProgressDialog::_cancel_pressed));
-}
 
 ProgressDialog::~ProgressDialog() { singleton = nullptr; }
 
