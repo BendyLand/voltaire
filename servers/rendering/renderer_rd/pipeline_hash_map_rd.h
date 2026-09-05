@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/worker_thread_pool.h"
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/local_vector.h"

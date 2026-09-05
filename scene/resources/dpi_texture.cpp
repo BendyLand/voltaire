@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "dpi_texture.h"
 #include "modules/modules_enabled.gen.h" // For svg.
 #include "scene/resources/bit_map.h"

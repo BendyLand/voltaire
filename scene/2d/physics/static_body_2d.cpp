@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/resources/physics_material.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "static_body_2d.h"

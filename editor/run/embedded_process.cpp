@@ -30,7 +30,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "editor/editor_string_names.h"
 #include "embedded_process.h"
@@ -39,55 +38,6 @@
 #include "scene/resources/style_box_flat.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
-
-void EmbeddedProcessBase::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_READY: {
-		ProjectSettings::get_singleton()->obj->connect(
-			"settings_changed", callable_mp(this, &EmbeddedProcessBase::_project_settings_changed));
-	} break;
-	case NOTIFICATION_ENTER_TREE: {
-		window = get_window();
-		transp_enabled = GLOBAL_GET("display/window/per_pixel_transparency/allowed");
-		clear_color = GLOBAL_GET("rendering/environment/defaults/default_clear_color");
-	} break;
-	case NOTIFICATION_DRAW: {
-		_draw();
-	} break;
-	case NOTIFICATION_THEME_CHANGED: {
-		checkerboard = get_editor_theme_icon(SNAME("Checkerboard"));
-		focus_style_box =
-			get_theme_stylebox(SNAME("FocusViewport"), EditorStringName(EditorStyles));
-		Ref<StyleBoxFlat> focus_style_box_flat = focus_style_box;
-		if (focus_style_box_flat.is_valid()) {
-			margin_top_left = Point2i(focus_style_box_flat->get_border_width(SIDE_LEFT),
-				focus_style_box_flat->get_border_width(SIDE_TOP));
-			margin_bottom_right = Point2i(focus_style_box_flat->get_border_width(SIDE_RIGHT),
-				focus_style_box_flat->get_border_width(SIDE_BOTTOM));
-		}
-		else if (focus_style_box.is_valid()) {
-			margin_top_left = Point2i(
-				focus_style_box->get_margin(SIDE_LEFT), focus_style_box->get_margin(SIDE_TOP));
-			margin_bottom_right = Point2i(
-				focus_style_box->get_margin(SIDE_RIGHT), focus_style_box->get_margin(SIDE_BOTTOM));
-		}
-		else {
-			margin_top_left = Point2i();
-			margin_bottom_right = Point2i();
-		}
-	} break;
-	}
-}
-
-void EmbeddedProcessBase::_project_settings_changed()
-{
-	transp_enabled = GLOBAL_GET("display/window/per_pixel_transparency/allowed");
-	clear_color = GLOBAL_GET("rendering/environment/defaults/default_clear_color");
-	queue_redraw();
-}
-
-void EmbeddedProcessBase::_bind_methods() {}
 
 void EmbeddedProcessBase::_draw()
 {
@@ -258,36 +208,6 @@ void EmbeddedProcess::request_close()
 	}
 }
 
-void EmbeddedProcess::_try_embed_process()
-{
-	bool is_visible = is_visible_in_tree();
-	Error err = DisplayServer::get_singleton()->embed_process(window->get_window_id(),
-		current_process_id, get_screen_embedded_window_rect(), is_visible,
-		is_visible && application_has_focus && embedding_grab_focus);
-	if (err == OK) {
-		embedding_completed = true;
-		queue_redraw();
-		this->obj->emit_signal(SNAME("embedding_completed"));
-	}
-	else if (err == ERR_DOES_NOT_EXIST) {
-		if (OS::get_singleton()->get_ticks_msec() - start_embedding_time >=
-			(uint64_t)embedding_timeout) {
-			// Embedding process timed out.
-			reset();
-			this->obj->emit_signal(SNAME("embedding_failed"));
-		}
-		else {
-			// Tries another shot.
-			timer_embedding->start();
-		}
-	}
-	else {
-		// Another unknown error.
-		reset();
-		this->obj->emit_signal(SNAME("embedding_failed"));
-	}
-}
-
 bool EmbeddedProcess::_is_embedded_process_updatable()
 {
 	return window && current_process_id != 0 && embedding_completed;
@@ -360,112 +280,6 @@ void EmbeddedProcess::_notification(int p_what)
 	}
 }
 
-void EmbeddedProcess::_check_mouse_over()
-{
-	// This method checks if the mouse is over the embedded process while the current application is
-	// focused. The goal is to give focus to the embedded process as soon as the mouse hovers over
-	// it, allowing the user to interact with it immediately without needing to click first.
-	if (!embedding_completed || !application_has_focus || !window || has_focus() ||
-		!is_visible_in_tree() || !window->has_focus() ||
-		Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT) ||
-		Input::get_singleton()->is_mouse_button_pressed(MouseButton::RIGHT)) {
-		return;
-	}
-
-	// Before checking whether the mouse is truly inside the embedded process, ensure
-	// the editor has enough time to re-render. When a breakpoint is hit in the script editor,
-	// `_check_mouse_over` may be triggered before the editor hides the game workspace.
-	// This prevents the embedded process from regaining focus immediately after the editor has
-	// taken it.
-	if (OS::get_singleton()->get_ticks_msec() - last_application_focus_time < 500) {
-		return;
-	}
-
-	// Input::is_mouse_button_pressed is not sufficient to detect the mouse button state
-	// while the floating game window is being resized.
-	uint32_t mouse_button_mask =
-		DisplayServer::get_singleton()->mouse_get_button_state();
-	if (!mouse_button_mask.is_empty()) {
-		return;
-	}
-
-	// Not stealing focus from a textfield.
-	if (get_viewport()->gui_get_focus_owner() &&
-		get_viewport()->gui_get_focus_owner()->is_text_field()) {
-		return;
-	}
-
-	Vector2 mouse_position = DisplayServer::get_singleton()->mouse_get_position();
-	Rect2i window_rect = get_screen_embedded_window_rect();
-	if (!window_rect.has_point(mouse_position)) {
-		return;
-	}
-
-	// Don't grab the focus if mouse over another window.
-	DisplayServerEnums::WindowID window_id_over =
-		DisplayServer::get_singleton()->get_window_at_screen_position(mouse_position);
-	if (window_id_over > 0 && window_id_over != window->get_window_id()) {
-		return;
-	}
-
-	// Check if there's an exclusive popup, an open menu, or a tooltip.
-	// We don't want to grab focus to prevent the game window from coming to the front of the modal
-	// window or the open menu from closing when the mouse cursor moves outside the menu and over
-	// the embedded game.
-	Vector<DisplayServerEnums::WindowID> wl = DisplayServer::get_singleton()->get_window_list();
-	for (const DisplayServerEnums::WindowID& window_id : wl) {
-		Window* w = Window::get_from_id(window_id);
-		if (w && (w->is_exclusive() || w->get_flag(Window::FLAG_POPUP))) {
-			return;
-		}
-	}
-
-	// Force "regrabbing" the game window focus.
-	last_updated_embedded_process_focused = false;
-
-	grab_focus();
-	queue_redraw();
-}
-
-void EmbeddedProcess::_check_focused_process_id()
-{
-	ProcessID process_id = DisplayServer::get_singleton()->get_focused_process_id();
-	if (process_id != focused_process_id) {
-		focused_process_id = process_id;
-		if (focused_process_id == current_process_id) {
-			// The embedded process got the focus.
-
-			// Refocus the current model when focusing the embedded process.
-			Window* modal_window = _get_current_modal_window();
-			if (!modal_window) {
-				this->obj->emit_signal(SNAME("embedded_process_focused"));
-				if (has_focus()) {
-					// Redraw to updated the focus style.
-					queue_redraw();
-				}
-				else {
-					grab_focus();
-				}
-			}
-		}
-		else if (has_focus()) {
-			release_focus();
-		}
-	}
-
-	// Ensure that the opened modal dialog is refocused when the focused process is the embedded
-	// process.
-	if (!application_has_focus && focused_process_id == current_process_id) {
-		Window* modal_window = _get_current_modal_window();
-		if (modal_window) {
-			if (modal_window->get_mode() == Window::MODE_MINIMIZED) {
-				modal_window->set_mode(Window::MODE_WINDOWED);
-			}
-			callable_mp(modal_window, &Window::grab_focus).call_deferred();
-		}
-	}
-}
-
 Window* EmbeddedProcess::_get_current_modal_window()
 {
 	Vector<DisplayServerEnums::WindowID> wl = DisplayServer::get_singleton()->get_window_list();
@@ -480,22 +294,6 @@ Window* EmbeddedProcess::_get_current_modal_window()
 		}
 	}
 	return nullptr;
-}
-
-EmbeddedProcess::EmbeddedProcess()
-{
-	timer_embedding = memnew(Timer);
-	timer_embedding->set_wait_time(0.1);
-	timer_embedding->set_one_shot(true);
-	add_child(timer_embedding);
-	timer_embedding->connect(
-		"timeout", callable_mp(this, &EmbeddedProcess::_timer_embedding_timeout));
-
-	timer_update_embedded_process = memnew(Timer);
-	timer_update_embedded_process->set_wait_time(0.1);
-	add_child(timer_update_embedded_process);
-	timer_update_embedded_process->connect(
-		"timeout", callable_mp(this, &EmbeddedProcess::_timer_update_embedded_process_timeout));
 }
 
 EmbeddedProcess::~EmbeddedProcess()

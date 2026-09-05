@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "extensions/openxr_extension_wrapper.h"
 #include "openxr_api.h"
 #include "openxr_api_extension.compat.inc"

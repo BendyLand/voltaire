@@ -68,7 +68,6 @@ private:
 	StringName signal;
 	PackedStringArray signal_args;
 	LineEdit* dst_method = nullptr;
-	ConnectDialogBinds* cdbinds = nullptr;
 	bool edit_mode = false;
 	bool first_popup = true;
 	NodePath dst_path;

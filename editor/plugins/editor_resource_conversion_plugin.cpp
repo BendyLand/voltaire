@@ -30,22 +30,22 @@
 
 #include "editor_resource_conversion_plugin.h"
 
-#include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
-
-void EditorResourceConversionPlugin::_bind_methods() {}
-
-String EditorResourceConversionPlugin::converts_to() const {
+String EditorResourceConversionPlugin::converts_to() const
+{
 	String ret;
 	return ret;
 }
 
-bool EditorResourceConversionPlugin::handles(const Ref<Resource> &p_resource) const {
+bool EditorResourceConversionPlugin::handles(const Ref<Resource>& p_resource) const
+{
 	bool ret = false;
 	return ret;
 }
 
-Ref<Resource> EditorResourceConversionPlugin::convert(const Ref<Resource> &p_resource) const {
+Ref<Resource> EditorResourceConversionPlugin::convert(const Ref<Resource>& p_resource) const
+{
 	Ref<Resource> ret;
 	return ret;
 }
+
 

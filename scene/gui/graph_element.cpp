@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "graph_element.h"
 #include "scene/gui/graph_edit.h"
 #include "scene/theme/theme_db.h"

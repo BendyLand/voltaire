@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/templates/mem_unique_ptr.h"
 
 class JavaScriptObject : public RefCounted

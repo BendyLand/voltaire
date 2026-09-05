@@ -33,7 +33,6 @@
 #ifdef TOOLS_ENABLED
 
 #include "core/io/image.h"
-#include "core/object/object.h"
 #include "scene/3d/lightmapper.h"
 
 #include <embree4/rtcore.h>

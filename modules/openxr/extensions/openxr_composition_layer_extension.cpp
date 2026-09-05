@@ -32,7 +32,6 @@
 
 #include "openxr_fb_update_swapchain_extension.h"
 
-#include "core/object/callable_mp.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_globals.h"
 #include "servers/xr/xr_server.h"

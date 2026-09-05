@@ -28,12 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "../gltf_template_convert.h"
-#include "core/object/class_db.h"
 #include "gltf_skeleton.h"
 #include "scene/3d/bone_attachment_3d.h"
-
-void GLTFSkeleton::_bind_methods() {}
 
 Vector<GLTFNodeIndex> GLTFSkeleton::get_joints() { return Vector<GLTFNodeIndex>(joints); }
 
@@ -50,26 +46,6 @@ void GLTFSkeleton::set_roots(const Vector<GLTFNodeIndex>& p_roots)
 }
 
 Skeleton3D* GLTFSkeleton::get_godot_skeleton() { return godot_skeleton; }
-
-TypedArray<String> GLTFSkeleton::get_unique_names()
-{
-	return GLTFTemplateConvert::to_array(unique_names);
-}
-
-void GLTFSkeleton::set_unique_names(const TypedArray<String>& p_unique_names)
-{
-	GLTFTemplateConvert::set_from_array(unique_names, p_unique_names);
-}
-
-Dictionary GLTFSkeleton::get_godot_bone_node()
-{
-	return GLTFTemplateConvert::to_dictionary(godot_bone_node);
-}
-
-void GLTFSkeleton::set_godot_bone_node(const Dictionary& p_indict)
-{
-	GLTFTemplateConvert::set_from_dictionary(godot_bone_node, p_indict);
-}
 
 BoneAttachment3D* GLTFSkeleton::get_bone_attachment(int idx)
 {

@@ -34,7 +34,6 @@
 #include "core/templates/hash_map.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rid.h"
-#include "core/variant/variant.h"
 #include "servers/physics_3d/physics_server_3d_enums.h"
 
 class GodotShape3D;

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "canvas_modulate.h"
-#include "core/object/class_db.h"
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/rendering_server.h"
 

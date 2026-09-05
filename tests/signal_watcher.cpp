@@ -30,8 +30,6 @@
 
 #include "signal_watcher.h"
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 
 void SignalWatcher::_add_signal_entry(const Array &p_args, const String &p_name) {
 	if (!_signals.has(p_name)) {

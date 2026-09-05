@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "popup_menu.h"
 
 void PopupMenu::_add_shortcut_bind_compat_36493(

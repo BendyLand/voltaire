@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "skeleton_ik_3d.h"
 
 FabrikInverseKinematic::ChainItem* FabrikInverseKinematic::ChainItem::find_child(

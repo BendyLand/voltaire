@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 
 class Node;
 class SceneMultiplayer;

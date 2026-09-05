@@ -360,8 +360,7 @@ void ResourceImporterTexture::_remap_channels(Ref<Image>& r_image, ChannelRemap 
 	case Image::FORMAT_RGB565: {
 		if (needs_rgba) {
 			// RGB565 doesn't have an alpha expansion, convert to RGBA8.
-			r_image->convert(Image::FORMAT
-_RGBA8);
+			r_image->convert(Image::FORMAT_RGBA8);
 			could_not_expand = true;
 		}
 	} break;

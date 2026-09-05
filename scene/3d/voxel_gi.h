@@ -35,13 +35,9 @@
 class CameraAttributes;
 class Mesh;
 
-class VoxelGIData : public Resource {
-	VLTRCLASS(VoxelGIData, Resource);
-
+class VoxelGIData : public Resource
+{
 	RID probe;
-
-	void _set_data(const Dictionary &p_data);
-	Dictionary _get_data() const;
 
 	Transform3D to_cell_xform;
 	AABB bounds;
@@ -59,7 +55,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	void allocate(const Transform3D &p_to_cell_xform, const AABB &p_aabb, const Vector3 &p_octree_size, const Vector<uint8_t> &p_octree_cells, const Vector<uint8_t> &p_data_cells, const Vector<uint8_t> &p_distance_field, const Vector<int> &p_level_counts);
+	void allocate(const Transform3D& p_to_cell_xform, const AABB& p_aabb,
+		const Vector3& p_octree_size, const Vector<uint8_t>& p_octree_cells,
+		const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
+		const Vector<int>& p_level_counts);
 	AABB get_bounds() const;
 	Vector3 get_octree_size() const;
 	Vector<uint8_t> get_octree_cells() const;
@@ -95,11 +94,11 @@ public:
 	~VoxelGIData();
 };
 
-class VoxelGI : public VisualInstance3D {
-	VLTRCLASS(VoxelGI, VisualInstance3D);
-
+class VoxelGI : public VisualInstance3D
+{
 public:
-	enum Subdiv {
+	enum Subdiv
+	{
 		SUBDIV_64,
 		SUBDIV_128,
 		SUBDIV_256,
@@ -109,7 +108,7 @@ public:
 	};
 
 	typedef void (*BakeBeginFunc)();
-	typedef bool (*BakeStepFunc)(int, const String &);
+	typedef bool (*BakeStepFunc)(int, const String&);
 	typedef void (*BakeEndFunc)();
 
 private:
@@ -121,45 +120,39 @@ private:
 	Vector3 size = Vector3(20, 20, 20);
 	Ref<CameraAttributes> camera_attributes;
 
-	struct PlotMesh {
+	struct PlotMesh
+	{
 		Ref<Material> override_material;
 		Vector<Ref<Material>> instance_materials;
 		Ref<Mesh> mesh;
 		Transform3D local_xform;
 	};
 
-	void _find_meshes(Node *p_at_node, List<PlotMesh> &plot_meshes);
+	void _find_meshes(Node* p_at_node, List<PlotMesh>& plot_meshes);
 	void _debug_bake();
 
 	float _get_camera_exposure_normalization();
-
-protected:
-	static void _bind_methods();
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_property) const;
-#endif // DISABLE_DEPRECATED
 
 public:
 	static BakeBeginFunc bake_begin_function;
 	static BakeStepFunc bake_step_function;
 	static BakeEndFunc bake_end_function;
 
-	void set_probe_data(const Ref<VoxelGIData> &p_data);
+	void set_probe_data(const Ref<VoxelGIData>& p_data);
 	Ref<VoxelGIData> get_probe_data() const;
 
 	void set_subdiv(Subdiv p_subdiv);
 	Subdiv get_subdiv() const;
 
-	void set_size(const Vector3 &p_size);
+	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_camera_attributes(const Ref<CameraAttributes> &p_camera_attributes);
+	void set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes);
 	Ref<CameraAttributes> get_camera_attributes() const;
 
 	Vector3i get_estimated_cell_size() const;
 
-	void bake(Node *p_from_node = nullptr, bool p_create_visual_debug = false);
+	void bake(Node* p_from_node = nullptr, bool p_create_visual_debug = false);
 
 	virtual AABB get_aabb() const override;
 
@@ -169,4 +162,4 @@ public:
 	~VoxelGI();
 };
 
-VARIANT_ENUM_CAST(VoxelGI::Subdiv)
+

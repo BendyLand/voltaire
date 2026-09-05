@@ -33,7 +33,6 @@
 #ifndef WEB_ENABLED
 
 #include "core/io/stream_peer_tls.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 
 void WSLPeer::initialize() { WebSocketPeer::_create = WSLPeer::_create; }

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource_saver.h"
-#include "core/object/class_db.h"
 #include "resource_importer_ogg_vorbis.h"
 
 #ifdef TOOLS_ENABLED

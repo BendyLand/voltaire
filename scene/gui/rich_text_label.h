@@ -33,6 +33,7 @@
 #include "core/templates/rid_owner.h"
 #include "scene/gui/control.h"
 #include "scene/resources/text_paragraph.h"
+#include "scene/resources/text_line.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/themes/editor_scale.h"

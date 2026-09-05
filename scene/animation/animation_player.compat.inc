@@ -31,7 +31,6 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "animation_player.h"
-#include "core/object/class_db.h"
 
 void AnimationPlayer::_set_process_callback_bind_compat_80813(
 	AnimationPlayer::AnimationProcessCallback p_mode)

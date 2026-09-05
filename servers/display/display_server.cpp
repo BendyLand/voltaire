@@ -37,7 +37,6 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Texture2D);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 
 #include "core/input/input.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "scene/resources/texture.h"
 #include "servers/display/accessibility_server.h"

@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "display_server.h"
 
 Error DisplayServer::_file_dialog_show_bind_compat_98194(const String& p_title,

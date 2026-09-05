@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "../action_map/openxr_interaction_profile_metadata.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "editor/editor_string_names.h"
 #include "openxr_binding_modifier_editor.h"
 #include "scene/gui/option_button.h"

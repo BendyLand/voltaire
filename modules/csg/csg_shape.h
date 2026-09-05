@@ -31,7 +31,6 @@
 #pragma once
 
 #include "csg.h"
-
 #include "scene/3d/path_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 
@@ -43,11 +42,11 @@ class Mesh;
 class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 
-class CSGShape3D : public GeometryInstance3D {
-	VLTRCLASS(CSGShape3D, GeometryInstance3D);
-
+class CSGShape3D : public GeometryInstance3D
+{
 public:
-	enum Operation {
+	enum Operation
+	{
 		OPERATION_UNION,
 		OPERATION_INTERSECTION,
 		OPERATION_SUBTRACTION,
@@ -56,9 +55,9 @@ public:
 
 private:
 	Operation operation = OPERATION_UNION;
-	CSGShape3D *parent_shape = nullptr;
+	CSGShape3D* parent_shape = nullptr;
 
-	CSGBrush *brush = nullptr;
+	CSGBrush* brush = nullptr;
 
 	AABB node_aabb;
 
@@ -84,7 +83,8 @@ private:
 
 	Ref<ArrayMesh> root_mesh;
 
-	struct ShapeUpdateSurface {
+	struct ShapeUpdateSurface
+	{
 		Vector<Vector3> vertices;
 		Vector<Vector3> normals;
 		Vector<Vector2> uvs;
@@ -92,10 +92,10 @@ private:
 		Ref<Material> material;
 		int last_added = 0;
 
-		Vector3 *verticesw = nullptr;
-		Vector3 *normalsw = nullptr;
-		Vector2 *uvsw = nullptr;
-		float *tansw = nullptr;
+		Vector3* verticesw = nullptr;
+		Vector3* normalsw = nullptr;
+		Vector2* uvsw = nullptr;
+		float* tansw = nullptr;
 	};
 
 #ifndef PHYSICS_3D_DISABLED
@@ -107,24 +107,23 @@ private:
 	Vector<Vector3> _get_brush_collision_faces();
 #endif // PHYSICS_3D_DISABLED
 
-	void _build_surfaces_smoothed(CSGBrush *p_brush, Vector<ShapeUpdateSurface> &r_surfaces, Vector<int> &r_face_count);
-	void _build_surfaces_default(CSGBrush *p_brush, Vector<ShapeUpdateSurface> &r_surfaces, Vector<int> &r_face_count);
+	void _build_surfaces_smoothed(
+		CSGBrush* p_brush, Vector<ShapeUpdateSurface>& r_surfaces, Vector<int>& r_face_count);
+	void _build_surfaces_default(
+		CSGBrush* p_brush, Vector<ShapeUpdateSurface>& r_surfaces, Vector<int>& r_face_count);
 
 protected:
 	void _notification(int p_what);
-	virtual CSGBrush *_build_brush() = 0;
+	virtual CSGBrush* _build_brush() = 0;
 	void _make_dirty(bool p_parent_removing = false);
 	PackedStringArray get_configuration_warnings() const override;
 
 	static void _bind_methods();
 
 	friend class CSGCombiner3D;
-	CSGBrush *_get_brush();
-
-	void _validate_property(PropertyInfo &p_property) const;
+	CSGBrush* _get_brush();
 
 public:
-	Array get_meshes() const;
 	void update_shape();
 
 	void set_operation(Operation p_operation);
@@ -181,36 +180,34 @@ public:
 
 #ifndef NAVIGATION_3D_DISABLED
 private:
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 
 public:
 	static void navmesh_parse_init();
-	static void navmesh_parse_source_geometry(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
+	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
 #endif // NAVIGATION_3D_DISABLED
 
 	CSGShape3D();
 	~CSGShape3D();
 };
 
-VARIANT_ENUM_CAST(CSGShape3D::Operation)
-
-class CSGCombiner3D : public CSGShape3D {
-	VLTRCLASS(CSGCombiner3D, CSGShape3D);
-
+class CSGCombiner3D : public CSGShape3D
+{
 private:
-	virtual CSGBrush *_build_brush() override;
+	virtual CSGBrush* _build_brush() override;
 
 public:
 	CSGCombiner3D();
 };
 
-class CSGPrimitive3D : public CSGShape3D {
-	VLTRCLASS(CSGPrimitive3D, CSGShape3D);
-
+class CSGPrimitive3D : public CSGShape3D
+{
 protected:
 	bool flip_faces;
-	CSGBrush *_create_brush_from_arrays(const Vector<Vector3> &p_vertices, const Vector<Vector2> &p_uv, const Vector<bool> &p_smooth, const Vector<Ref<Material>> &p_materials);
+	CSGBrush* _create_brush_from_arrays(const Vector<Vector3>& p_vertices,
+		const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
+		const Vector<Ref<Material>>& p_materials);
 	static void _bind_methods();
 
 public:
@@ -220,10 +217,9 @@ public:
 	CSGPrimitive3D();
 };
 
-class CSGMesh3D : public CSGPrimitive3D {
-	VLTRCLASS(CSGMesh3D, CSGPrimitive3D);
-
-	virtual CSGBrush *_build_brush() override;
+class CSGMesh3D : public CSGPrimitive3D
+{
+	virtual CSGBrush* _build_brush() override;
 
 	Ref<Mesh> mesh;
 	Ref<Material> material;
@@ -234,16 +230,16 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_mesh(const Ref<Mesh> &p_mesh);
+	void set_mesh(const Ref<Mesh>& p_mesh);
 	Ref<Mesh> get_mesh();
 
-	void set_material(const Ref<Material> &p_material);
+	void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
 };
 
-class CSGSphere3D : public CSGPrimitive3D {
-	VLTRCLASS(CSGSphere3D, CSGPrimitive3D);
-	virtual CSGBrush *_build_brush() override;
+class CSGSphere3D : public CSGPrimitive3D
+{
+	virtual CSGBrush* _build_brush() override;
 
 	Ref<Material> material;
 	bool smooth_faces;
@@ -264,7 +260,7 @@ public:
 	void set_rings(const int p_rings);
 	int get_rings() const;
 
-	void set_material(const Ref<Material> &p_material);
+	void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
 
 	void set_smooth_faces(bool p_smooth_faces);
@@ -273,33 +269,29 @@ public:
 	CSGSphere3D();
 };
 
-class CSGBox3D : public CSGPrimitive3D {
-	VLTRCLASS(CSGBox3D, CSGPrimitive3D);
-	virtual CSGBrush *_build_brush() override;
+class CSGBox3D : public CSGPrimitive3D
+{
+	virtual CSGBrush* _build_brush() override;
 
 	Ref<Material> material;
 	Vector3 size = Vector3(1, 1, 1);
 
 protected:
 	static void _bind_methods();
-#ifndef DISABLE_DEPRECATED
-	// Kept for compatibility from 3.x to 4.0.
-	bool _set(const StringName &p_name, const Variant &p_value);
-#endif
 
 public:
-	void set_size(const Vector3 &p_size);
+	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_material(const Ref<Material> &p_material);
+	void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
 
 	CSGBox3D() {}
 };
 
-class CSGCylinder3D : public CSGPrimitive3D {
-	VLTRCLASS(CSGCylinder3D, CSGPrimitive3D);
-	virtual CSGBrush *_build_brush() override;
+class CSGCylinder3D : public CSGPrimitive3D
+{
+	virtual CSGBrush* _build_brush() override;
 
 	Ref<Material> material;
 	float radius;
@@ -327,15 +319,15 @@ public:
 	void set_smooth_faces(bool p_smooth_faces);
 	bool get_smooth_faces() const;
 
-	void set_material(const Ref<Material> &p_material);
+	void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
 
 	CSGCylinder3D();
 };
 
-class CSGTorus3D : public CSGPrimitive3D {
-	VLTRCLASS(CSGTorus3D, CSGPrimitive3D);
-	virtual CSGBrush *_build_brush() override;
+class CSGTorus3D : public CSGPrimitive3D
+{
+	virtual CSGBrush* _build_brush() override;
 
 	Ref<Material> material;
 	float inner_radius;
@@ -363,35 +355,37 @@ public:
 	void set_smooth_faces(bool p_smooth_faces);
 	bool get_smooth_faces() const;
 
-	void set_material(const Ref<Material> &p_material);
+	void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
 
 	CSGTorus3D();
 };
 
-class CSGPolygon3D : public CSGPrimitive3D {
-	VLTRCLASS(CSGPolygon3D, CSGPrimitive3D);
-
+class CSGPolygon3D : public CSGPrimitive3D
+{
 public:
-	enum Mode {
+	enum Mode
+	{
 		MODE_DEPTH,
 		MODE_SPIN,
 		MODE_PATH
 	};
 
-	enum PathIntervalType {
+	enum PathIntervalType
+	{
 		PATH_INTERVAL_DISTANCE,
 		PATH_INTERVAL_SUBDIVIDE
 	};
 
-	enum PathRotation {
+	enum PathRotation
+	{
 		PATH_ROTATION_POLYGON,
 		PATH_ROTATION_PATH,
 		PATH_ROTATION_PATH_FOLLOW,
 	};
 
 private:
-	virtual CSGBrush *_build_brush() override;
+	virtual CSGBrush* _build_brush() override;
 
 	Vector<Vector2> polygon;
 	Ref<Material> material;
@@ -411,7 +405,7 @@ private:
 	bool path_rotation_accurate;
 	bool path_local;
 
-	Path3D *path = nullptr;
+	Path3D* path = nullptr;
 
 	bool smooth_faces;
 	bool path_continuous_u;
@@ -426,11 +420,10 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 	void _notification(int p_what);
 
 public:
-	void set_polygon(const Vector<Vector2> &p_polygon);
+	void set_polygon(const Vector<Vector2>& p_polygon);
 	Vector<Vector2> get_polygon() const;
 
 	void set_mode(Mode p_mode);
@@ -445,7 +438,7 @@ public:
 	void set_spin_sides(int p_spin_sides);
 	int get_spin_sides() const;
 
-	void set_path_node(const NodePath &p_path);
+	void set_path_node(const NodePath& p_path);
 	NodePath get_path_node() const;
 
 	void set_path_interval_type(PathIntervalType p_interval_type);
@@ -478,12 +471,10 @@ public:
 	void set_smooth_faces(bool p_smooth_faces);
 	bool get_smooth_faces() const;
 
-	void set_material(const Ref<Material> &p_material);
+	void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
 
 	CSGPolygon3D();
 };
 
-VARIANT_ENUM_CAST(CSGPolygon3D::Mode)
-VARIANT_ENUM_CAST(CSGPolygon3D::PathRotation)
-VARIANT_ENUM_CAST(CSGPolygon3D::PathIntervalType)
+

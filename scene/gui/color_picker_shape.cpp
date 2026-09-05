@@ -31,7 +31,6 @@
 #include <thirdparty/misc/ok_color_shader.h>
 #include "color_picker_shape.h"
 #include "core/input/input.h"
-#include "core/object/callable_mp.h"
 #include "scene/gui/margin_container.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/rendering_server.h"

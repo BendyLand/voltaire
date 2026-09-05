@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "vehicle_body_3d.h"
 
 #define ROLLING_INFLUENCE_FIX

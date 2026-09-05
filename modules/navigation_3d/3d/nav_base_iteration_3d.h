@@ -32,7 +32,6 @@
 
 #include "../nav_utils_3d.h"
 
-#include "core/object/ref_counted.h"
 #include "servers/navigation_3d/navigation_constants_3d.h"
 
 class NavBaseIteration3D : public RefCounted {

@@ -30,7 +30,6 @@
 
 #include "audio_effect.h"
 
-#include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
 
 ////
 

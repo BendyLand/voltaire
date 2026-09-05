@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/math/geometry_3d.h"
-#include "core/object/class_db.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/os.h"
 #include "gpu_particles_collision_3d.h"
 #include "scene/3d/camera_3d.h"

@@ -30,8 +30,6 @@
 
 #include "audio_stream_player.compat.inc"
 #include "audio_stream_player.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/audio/audio_stream_player_internal.h"
 #include "servers/audio/audio_stream.h"
 #include "servers/display/accessibility_server.h"

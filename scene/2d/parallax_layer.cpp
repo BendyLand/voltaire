@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "parallax_layer.h"
 #include "scene/2d/parallax_background.h"
 #include "servers/rendering/rendering_server.h"

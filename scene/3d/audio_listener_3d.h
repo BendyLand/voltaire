@@ -33,11 +33,11 @@
 #include "scene/3d/node_3d.h"
 #include "scene/3d/velocity_tracker_3d.h"
 
-class AudioListener3D : public Node3D {
-	VLTRCLASS(AudioListener3D, Node3D);
-
+class AudioListener3D : public Node3D
+{
 public:
-	enum DopplerTracking {
+	enum DopplerTracking
+	{
 		DOPPLER_TRACKING_DISABLED,
 		DOPPLER_TRACKING_IDLE_STEP,
 		DOPPLER_TRACKING_PHYSICS_STEP,
@@ -73,12 +73,9 @@ protected:
 	void _update_listener();
 	virtual void _request_listener_update();
 
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 	void _notification(int p_what);
 
 	static void _bind_methods();
 };
 
-VARIANT_ENUM_CAST(AudioListener3D::DopplerTracking);
+

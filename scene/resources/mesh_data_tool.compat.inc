@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "mesh_data_tool.h"
 
 Error MeshDataTool::commit_to_surface_bind_compat_81138(const Ref<ArrayMesh>& p_mesh)

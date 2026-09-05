@@ -37,7 +37,6 @@ class CollisionObject2D;
 
 class CollisionShape2D : public Node2D
 {
-	VLTRCLASS(CollisionShape2D, Node2D);
 	Ref<Shape2D> shape;
 	Rect2 rect = Rect2(-Point2(10, 10), Point2(20, 20));
 	uint32_t owner_id = 0;
@@ -60,8 +59,6 @@ protected:
 
 #ifdef DEBUG_ENABLED
 	bool _property_can_revert(const StringName& p_name) const;
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
-	void _validate_property(PropertyInfo& p_property) const;
 #endif // DEBUG_ENABLED
 
 	static void _bind_methods();

@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "skeleton_3d.h"
 
 void Skeleton3D::_add_bone_bind_compat_88791(const String& p_name) { add_bone(p_name); }

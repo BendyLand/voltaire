@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "../openxr_api.h"
-#include "core/object/class_db.h"
 #include "openxr_interaction_profile_metadata.h"
 
 OpenXRInteractionProfileMetadata* OpenXRInteractionProfileMetadata::singleton = nullptr;

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "missing_node.h"
 
 bool MissingNode::_set(const StringName& p_name, const Variant& p_value)

@@ -33,7 +33,6 @@
 #include "../shapes/jolt_shape_instance_3d.h"
 
 #include "core/math/vector3.h"
-#include "core/object/object.h"
 #include "core/string/ustring.h"
 #include "core/templates/rid.h"
 

@@ -29,10 +29,8 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
-#include "core/variant/typed_array.h"
 #include "servers/rendering/rendering_server.h"
 #include "text_server.compat.inc"
 #include "text_server.h"

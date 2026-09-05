@@ -31,7 +31,6 @@
 #ifndef _3D_DISABLED
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "root_motion_view.h"
 #include "scene/animation/animation_mixer.h"
 #include "scene/resources/material.h"

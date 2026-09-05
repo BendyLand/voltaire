@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "enet_multiplayer_peer.h"
 
 void ENetMultiplayerPeer::set_target_peer(int p_peer) { target_peer = p_peer; }
@@ -68,12 +67,6 @@ Error ENetMultiplayerPeer::create_server(
 	set_refuse_new_connections(false);
 	Ref<ENetConnection> host;
 	host.instantiate();
-	Error err = host->create_host_bound(bind_ip, p_port, p_max_clients, 0,
-		p_max_channels > 0 ? p_max_channels + SYSCH_MAX : 0, p_out_bandwidth);
-	if (err != OK) {
-		return err;
-	}
-
 	active_mode = MODE_SERVER;
 	unique_id = 1;
 	connection_status = CONNECTION_CONNECTED;
@@ -90,12 +83,7 @@ Error ENetMultiplayerPeer::create_client(const String& p_address, int p_port, in
 	Ref<ENetConnection> host;
 	host.instantiate();
 	Error err;
-	if (p_local_port) {
-		err = host->create_host_bound(bind_ip, p_local_port, 1, 0, p_in_bandwidth, p_out_bandwidth);
-	}
-	else {
-		err = host->create_host(1, 0, p_in_bandwidth, p_out_bandwidth);
-	}
+	err = host->create_host(1, 0, p_in_bandwidth, p_out_bandwidth);
 	if (err != OK) {
 		return err;
 	}
@@ -142,7 +130,6 @@ Error ENetMultiplayerPeer::add_mesh_peer(int p_id, Ref<ENetConnection> p_host)
 		"The provided host must have exactly one peer in the connected state.");
 	hosts[p_id] = p_host;
 	peers[p_id] = host_peers.front()->get();
-	this->obj->emit_signal(SNAME("peer_connected"), p_id);
 	return OK;
 }
 
@@ -180,114 +167,6 @@ void ENetMultiplayerPeer::_disconnect_inactive_peers()
 			hosts.erase(P);
 		}
 		ERR_CONTINUE(active_mode == MODE_CLIENT && P != TARGET_PEER_SERVER);
-		this->obj->emit_signal(SNAME("peer_disconnected"), P);
-	}
-}
-
-void ENetMultiplayerPeer::poll()
-{
-	ERR_FAIL_COND_MSG(!_is_active(), "The multiplayer instance isn't currently active.");
-
-	_pop_current_packet();
-
-	_disconnect_inactive_peers();
-
-	switch (active_mode) {
-	case MODE_CLIENT: {
-		if (!peers.has(1)) {
-			close();
-			return;
-		}
-		ENetConnection::Event event;
-		ENetConnection::EventType ret = hosts[0]->service(0, event);
-		do {
-			if (ret == ENetConnection::EVENT_CONNECT) {
-				connection_status = CONNECTION_CONNECTED;
-				this->obj->emit_signal(SNAME("peer_connected"), 1);
-			}
-			else if (ret == ENetConnection::EVENT_DISCONNECT) {
-				if (connection_status == CONNECTION_CONNECTED) {
-					// Client just disconnected from server.
-					this->obj->emit_signal(SNAME("peer_disconnected"), 1);
-				}
-				close();
-			}
-			else if (ret == ENetConnection::EVENT_RECEIVE) {
-				_store_packet(1, event);
-			}
-			else if (ret != ENetConnection::EVENT_NONE) {
-				close(); // Error.
-			}
-		} while (hosts.has(0) && hosts[0]->check_events(ret, event) > 0);
-	} break;
-	case MODE_SERVER: {
-		ENetConnection::Event event;
-		ENetConnection::EventType ret = hosts[0]->service(0, event);
-		do {
-			if (ret == ENetConnection::EVENT_CONNECT) {
-				if (is_refusing_new_connections()) {
-					event.peer->reset();
-					continue;
-				}
-				// Client joined with invalid ID, probably trying to exploit us.
-				if (event.data < 2 || peers.has((int)event.data)) {
-					event.peer->reset();
-					continue;
-				}
-				int id = event.data;
-				event.peer->obj->set_meta(SNAME("_net_id"), id);
-				peers[id] = event.peer;
-				this->obj->emit_signal(SNAME("peer_connected"), id);
-			}
-			else if (ret == ENetConnection::EVENT_DISCONNECT) {
-				int id = event.peer->obj->get_meta(SNAME("_net_id"));
-				if (!peers.has(id)) {
-					// Never fully connected.
-					continue;
-				}
-				this->obj->emit_signal(SNAME("peer_disconnected"), id);
-				peers.erase(id);
-			}
-			else if (ret == ENetConnection::EVENT_RECEIVE) {
-				int32_t source = event.peer->obj->get_meta(SNAME("_net_id"));
-				_store_packet(source, event);
-			}
-			else if (ret != ENetConnection::EVENT_NONE) {
-				close(); // Error
-			}
-		} while (hosts.has(0) && hosts[0]->check_events(ret, event) > 0);
-	} break;
-	case MODE_MESH: {
-		HashSet<int> to_drop;
-		for (KeyValue<int, Ref<ENetConnection>>& E : hosts) {
-			ENetConnection::Event event;
-			ENetConnection::EventType ret = E.value->service(0, event);
-			do {
-				if (ret == ENetConnection::EVENT_CONNECT) {
-					event.peer->reset();
-				}
-				else if (ret == ENetConnection::EVENT_RECEIVE) {
-					_store_packet(E.key, event);
-				}
-				else if (ret == ENetConnection::EVENT_NONE) {
-					break; // Keep polling the others.
-				}
-				else {
-					to_drop.insert(E.key); // Error or disconnect.
-					break;				   // Keep polling the others.
-				}
-			} while (E.value->check_events(ret, event) > 0);
-		}
-		for (const int& P : to_drop) {
-			if (peers.has(P)) {
-				this->obj->emit_signal(SNAME("peer_disconnected"), P);
-				peers.erase(P);
-			}
-			hosts.erase(P);
-		}
-	} break;
-	default:
-		return;
 	}
 }
 
@@ -522,25 +401,11 @@ void ENetMultiplayerPeer::_destroy_unused(ENetPacket* p_packet)
 	}
 }
 
-void ENetMultiplayerPeer::_bind_methods() {}
-
-ENetMultiplayerPeer::ENetMultiplayerPeer() { bind_ip = IPAddress("*"); }
-
 ENetMultiplayerPeer::~ENetMultiplayerPeer()
 {
 	if (_is_active()) {
 		close();
 	}
-}
-
-// Sets IP for ENet to bind when using create_server or create_client
-// if no IP is set, then ENet bind to ENET_HOST_ANY
-void ENetMultiplayerPeer::set_bind_ip(const IPAddress& p_ip)
-{
-	ERR_FAIL_COND_MSG(!p_ip.is_valid() && !p_ip.is_wildcard(),
-		vformat("Invalid bind IP address: %s", String(p_ip)));
-
-	bind_ip = p_ip;
 }
 
 

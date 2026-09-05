@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 #include "physics_point_query_parameters_2d.h"
 
 void PhysicsPointQueryParameters2D::set_exclude(const TypedArray<RID>& p_exclude)

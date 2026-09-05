@@ -28,74 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/error/error_macros.h"
+#include "core/templates/hash_set.h"
 #include "editor_translation_parser.h"
 
-#include "core/error/error_macros.h"
-#include "core/object/class_db.h" // IWYU pragma: keep. `GDVIRTUAL_BIND` macro.
-#include "core/object/script_language.h"
-#include "core/templates/hash_set.h"
+EditorTranslationParser* EditorTranslationParser::singleton = nullptr;
 
-EditorTranslationParser *EditorTranslationParser::singleton = nullptr;
-
-Error EditorTranslationParserPlugin::parse_file(const String &p_path, Vector<Vector<String>> *r_translations) {
-	TypedArray<PackedStringArray> ret;
-	for (const PackedStringArray translation : ret) {
-		r_translations->push_back(translation);
-	}
-
-#ifndef DISABLE_DEPRECATED
-	TypedArray<String> ids;
-	TypedArray<Array> ids_ctx_plural;
-
-	// Add user's extracted translatable messages.
-	for (int i = 0; i < ids.size(); i++) {
-		r_translations->push_back({ ids[i] });
-	}
-
-	// Add user's collected translatable messages with context or plurals.
-	for (int i = 0; i < ids_ctx_plural.size(); i++) {
-		Array arr = ids_ctx_plural[i];
-		ERR_FAIL_COND_V_MSG(arr.size() != 3, ERR_INVALID_DATA, "Array entries written into `msgids_context_plural` in `_parse_file` method should have the form [\"message\", \"context\", \"plural message\"]");
-
-		r_translations->push_back({ arr[0], arr[1], arr[2] });
-	}
-	return OK;
-#endif // DISABLE_DEPRECATED
-	ERR_PRINT("Custom translation parser plugin's \"_parse_file\" is undefined.");
-	return ERR_UNAVAILABLE;
-}
-
-void EditorTranslationParserPlugin::get_recognized_extensions(List<String> *r_extensions) const {
+void EditorTranslationParserPlugin::get_recognized_extensions(List<String>* r_extensions) const
+{
 	Vector<String> extensions;
 	for (int i = 0; i < extensions.size(); i++) {
 		r_extensions->push_back(extensions[i]);
 	}
 }
 
-void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>> &r_strings) const {
-	TypedArray<PackedStringArray> new_strings;
-	new_strings.resize(r_strings.size());
-	int i = 0;
-	for (const PackedStringArray &translation : r_strings) {
-		new_strings[i] = translation;
-		i++;
-	}
-	r_strings.resize(new_strings.size());
-	PackedStringArray *translation_write = r_strings.ptrw();
-	i = 0;
-	for (const Variant &translation : new_strings) {
-		translation_write[i] = translation;
-		i++;
-	}
-}
-
-void EditorTranslationParserPlugin::_bind_methods() {
-
-}
-
 /////////////////////////
 
-void EditorTranslationParser::get_recognized_extensions(List<String> *r_extensions) const {
+void EditorTranslationParser::get_recognized_extensions(List<String>* r_extensions) const
+{
 	HashSet<String> extensions;
 	List<String> temp;
 	for (int i = 0; i < standard_parsers.size(); i++) {
@@ -105,18 +55,19 @@ void EditorTranslationParser::get_recognized_extensions(List<String> *r_extensio
 		custom_parsers[i]->get_recognized_extensions(&temp);
 	}
 	// Remove duplicates.
-	for (const String &E : temp) {
+	for (const String& E : temp) {
 		extensions.insert(E);
 	}
-	for (const String &E : extensions) {
+	for (const String& E : extensions) {
 		r_extensions->push_back(E);
 	}
 }
 
-bool EditorTranslationParser::can_parse(const String &p_extension) const {
+bool EditorTranslationParser::can_parse(const String& p_extension) const
+{
 	List<String> extensions;
 	get_recognized_extensions(&extensions);
-	for (const String &extension : extensions) {
+	for (const String& extension : extensions) {
 		if (p_extension == extension) {
 			return true;
 		}
@@ -124,12 +75,14 @@ bool EditorTranslationParser::can_parse(const String &p_extension) const {
 	return false;
 }
 
-Ref<EditorTranslationParserPlugin> EditorTranslationParser::get_parser(const String &p_extension) const {
+Ref<EditorTranslationParserPlugin> EditorTranslationParser::get_parser(
+	const String& p_extension) const
+{
 	// Consider user-defined parsers first.
 	for (int i = 0; i < custom_parsers.size(); i++) {
 		List<String> temp;
 		custom_parsers[i]->get_recognized_extensions(&temp);
-		for (const String &E : temp) {
+		for (const String& E : temp) {
 			if (E == p_extension) {
 				return custom_parsers[i];
 			}
@@ -139,7 +92,7 @@ Ref<EditorTranslationParserPlugin> EditorTranslationParser::get_parser(const Str
 	for (int i = 0; i < standard_parsers.size(); i++) {
 		List<String> temp;
 		standard_parsers[i]->get_recognized_extensions(&temp);
-		for (const String &E : temp) {
+		for (const String& E : temp) {
 			if (E == p_extension) {
 				return standard_parsers[i];
 			}
@@ -151,41 +104,53 @@ Ref<EditorTranslationParserPlugin> EditorTranslationParser::get_parser(const Str
 	return nullptr;
 }
 
-void EditorTranslationParser::customize_strings(Vector<Vector<String>> &r_strings) const {
-	for (const Ref<EditorTranslationParserPlugin> &parser : custom_parsers) {
+void EditorTranslationParser::customize_strings(Vector<Vector<String>>& r_strings) const
+{
+	for (const Ref<EditorTranslationParserPlugin>& parser : custom_parsers) {
 		parser->customize_strings(r_strings);
 	}
 }
 
-void EditorTranslationParser::add_parser(const Ref<EditorTranslationParserPlugin> &p_parser, ParserType p_type) {
+void EditorTranslationParser::add_parser(
+	const Ref<EditorTranslationParserPlugin>& p_parser, ParserType p_type)
+{
 	if (p_type == ParserType::STANDARD) {
 		standard_parsers.push_back(p_parser);
-	} else if (p_type == ParserType::CUSTOM) {
+	}
+	else if (p_type == ParserType::CUSTOM) {
 		custom_parsers.push_back(p_parser);
 	}
 }
 
-void EditorTranslationParser::remove_parser(const Ref<EditorTranslationParserPlugin> &p_parser, ParserType p_type) {
+void EditorTranslationParser::remove_parser(
+	const Ref<EditorTranslationParserPlugin>& p_parser, ParserType p_type)
+{
 	if (p_type == ParserType::STANDARD) {
 		standard_parsers.erase(p_parser);
-	} else if (p_type == ParserType::CUSTOM) {
+	}
+	else if (p_type == ParserType::CUSTOM) {
 		custom_parsers.erase(p_parser);
 	}
 }
 
-void EditorTranslationParser::clean_parsers() {
+void EditorTranslationParser::clean_parsers()
+{
 	standard_parsers.clear();
 	custom_parsers.clear();
 }
 
-EditorTranslationParser *EditorTranslationParser::get_singleton() {
+EditorTranslationParser* EditorTranslationParser::get_singleton()
+{
 	if (!singleton) {
 		singleton = memnew(EditorTranslationParser);
 	}
 	return singleton;
 }
 
-EditorTranslationParser::~EditorTranslationParser() {
+EditorTranslationParser::~EditorTranslationParser()
+{
 	memdelete(singleton);
 	singleton = nullptr;
 }
+
+

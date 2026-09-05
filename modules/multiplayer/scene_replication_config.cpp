@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene_replication_config.h"
 
 bool SceneReplicationConfig::_set(const StringName& p_name, const Variant& p_value)

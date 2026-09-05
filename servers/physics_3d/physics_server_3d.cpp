@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
-#include "core/object/ref_counted.h"
 #include "physics_server_3d.h"
 
 PhysicsServer3D* PhysicsServer3D::singleton = nullptr;

@@ -30,28 +30,28 @@
 
 #pragma once
 
+#include <enet/enet.h>
 #include "enet_connection.h"
-
 #include "scene/main/multiplayer_peer.h"
 
-#include <enet/enet.h>
-
-class ENetMultiplayerPeer : public MultiplayerPeer {
-	VLTRCLASS(ENetMultiplayerPeer, MultiplayerPeer);
-
+class ENetMultiplayerPeer : public MultiplayerPeer
+{
 private:
-	enum {
+	enum
+	{
 		SYSMSG_ADD_PEER,
 		SYSMSG_REMOVE_PEER
 	};
 
-	enum {
+	enum
+	{
 		SYSCH_RELIABLE = 0,
 		SYSCH_UNRELIABLE = 1,
 		SYSCH_MAX = 2
 	};
 
-	enum Mode {
+	enum Mode
+	{
 		MODE_NONE,
 		MODE_SERVER,
 		MODE_CLIENT,
@@ -69,8 +69,9 @@ private:
 	HashMap<int, Ref<ENetConnection>> hosts;
 	HashMap<int, Ref<ENetPacketPeer>> peers;
 
-	struct Packet {
-		ENetPacket *packet = nullptr;
+	struct Packet
+	{
+		ENetPacket* packet = nullptr;
 		int from = 0;
 		int channel = 0;
 		TransferMode transfer_mode = TRANSFER_MODE_RELIABLE;
@@ -80,13 +81,12 @@ private:
 
 	Packet current_packet;
 
-	void _store_packet(int32_t p_source, ENetConnection::Event &p_event);
+	void _store_packet(int32_t p_source, ENetConnection::Event& p_event);
 	void _pop_current_packet();
 	void _disconnect_inactive_peers();
-	void _destroy_unused(ENetPacket *p_packet);
-	_FORCE_INLINE_ bool _is_active() const { return active_mode != MODE_NONE; }
+	void _destroy_unused(ENetPacket* p_packet);
 
-	IPAddress bind_ip;
+	_FORCE_INLINE_ bool _is_active() const { return active_mode != MODE_NONE; }
 
 protected:
 	static void _bind_methods();
@@ -114,15 +114,15 @@ public:
 
 	virtual int get_max_packet_size() const override;
 	virtual int get_available_packet_count() const override;
-	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override;
-	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
+	virtual Error get_packet(const uint8_t** r_buffer, int& r_buffer_size) override;
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
 
-	Error create_server(int p_port, int p_max_clients = 32, int p_max_channels = 0, int p_in_bandwidth = 0, int p_out_bandwidth = 0);
-	Error create_client(const String &p_address, int p_port, int p_channel_count = 0, int p_in_bandwidth = 0, int p_out_bandwidth = 0, int p_local_port = 0);
+	Error create_server(int p_port, int p_max_clients = 32, int p_max_channels = 0,
+		int p_in_bandwidth = 0, int p_out_bandwidth = 0);
+	Error create_client(const String& p_address, int p_port, int p_channel_count = 0,
+		int p_in_bandwidth = 0, int p_out_bandwidth = 0, int p_local_port = 0);
 	Error create_mesh(int p_id);
 	Error add_mesh_peer(int p_id, Ref<ENetConnection> p_host);
-
-	void set_bind_ip(const IPAddress &p_ip);
 
 	Ref<ENetConnection> get_host() const;
 	Ref<ENetPacketPeer> get_peer(int p_id) const;
@@ -130,3 +130,5 @@ public:
 	ENetMultiplayerPeer();
 	~ENetMultiplayerPeer();
 };
+
+

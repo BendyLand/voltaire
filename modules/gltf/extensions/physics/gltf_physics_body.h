@@ -37,16 +37,16 @@
 // and the OMI_physics_body extension.
 // https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_body
 
-class GLTFPhysicsBody : public Resource {
-	VLTRCLASS(GLTFPhysicsBody, Resource)
-
+class GLTFPhysicsBody : public Resource
+{
 public:
 	// These values map to Godot's physics body types.
 	// When importing, the body type will be set to the closest match, and
 	// user code can change this to make Godot generate a different node type.
 	// When exporting, this will be squashed down to one of "static",
 	// "kinematic", or "dynamic" motion types, or the "trigger" property.
-	enum class PhysicsBodyType {
+	enum class PhysicsBodyType
+	{
 		STATIC,
 		ANIMATABLE,
 		CHARACTER,
@@ -69,7 +69,7 @@ private:
 
 public:
 	String get_body_type() const;
-	void set_body_type(const String &p_body_type);
+	void set_body_type(const String& p_body_type);
 
 	PhysicsBodyType get_physics_body_type() const;
 	void set_physics_body_type(PhysicsBodyType p_body_type);
@@ -78,28 +78,27 @@ public:
 	void set_mass(real_t p_mass);
 
 	Vector3 get_linear_velocity() const;
-	void set_linear_velocity(const Vector3 &p_linear_velocity);
+	void set_linear_velocity(const Vector3& p_linear_velocity);
 
 	Vector3 get_angular_velocity() const;
-	void set_angular_velocity(const Vector3 &p_angular_velocity);
+	void set_angular_velocity(const Vector3& p_angular_velocity);
 
 	Vector3 get_center_of_mass() const;
-	void set_center_of_mass(const Vector3 &p_center_of_mass);
+	void set_center_of_mass(const Vector3& p_center_of_mass);
 
 	Vector3 get_inertia_diagonal() const;
-	void set_inertia_diagonal(const Vector3 &p_inertia_diagonal);
+	void set_inertia_diagonal(const Vector3& p_inertia_diagonal);
 
 	Quaternion get_inertia_orientation() const;
-	void set_inertia_orientation(const Quaternion &p_inertia_orientation);
+	void set_inertia_orientation(const Quaternion& p_inertia_orientation);
 
 #ifndef DISABLE_DEPRECATED
 	Basis get_inertia_tensor() const;
-	void set_inertia_tensor(const Basis &p_inertia_tensor);
+	void set_inertia_tensor(const Basis& p_inertia_tensor);
 #endif // DISABLE_DEPRECATED
 
-	static Ref<GLTFPhysicsBody> from_node(const CollisionObject3D *p_body_node);
-	CollisionObject3D *to_node() const;
-
-	static Ref<GLTFPhysicsBody> from_dictionary(const Dictionary &p_dictionary);
-	Dictionary to_dictionary() const;
+	static Ref<GLTFPhysicsBody> from_node(const CollisionObject3D* p_body_node);
+	CollisionObject3D* to_node() const;
 };
+
+

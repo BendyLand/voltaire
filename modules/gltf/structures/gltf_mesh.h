@@ -31,19 +31,14 @@
 #pragma once
 
 #include "../gltf_defines.h"
-#include "core/variant/typed_array.h"
 #include "scene/resources/3d/importer_mesh.h"
 
 class GLTFMesh : public Resource
 {
-	VLTRCLASS(GLTFMesh, Resource);
-
 private:
 	String original_name;
 	Ref<ImporterMesh> mesh;
 	Vector<float> blend_weights;
-	Array instance_materials;
-	Dictionary additional_data;
 
 protected:
 	static void _bind_methods();
@@ -55,10 +50,6 @@ public:
 	void set_mesh(const Ref<ImporterMesh>& p_mesh);
 	Vector<float> get_blend_weights();
 	void set_blend_weights(const Vector<float>& p_blend_weights);
-	Array get_instance_materials();
-	void set_instance_materials(const Array& p_instance_materials);
-	Variant get_additional_data(const StringName& p_extension_name);
-	void set_additional_data(const StringName& p_extension_name, Variant p_additional_data);
 };
 
 

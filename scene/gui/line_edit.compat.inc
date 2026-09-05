@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "line_edit.h"
 
 void LineEdit::_edit_bind_compat_111117() { edit(false); }

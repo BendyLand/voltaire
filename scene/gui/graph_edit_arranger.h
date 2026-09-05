@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 

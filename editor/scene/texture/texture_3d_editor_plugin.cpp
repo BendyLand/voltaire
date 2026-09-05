@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "editor/editor_string_names.h"
 #include "editor/scene/texture/color_channel_selector.h"
 #include "editor/themes/editor_scale.h"
@@ -113,19 +112,6 @@ void Texture3DEditor::_texture_changed()
 
 	_update_material(true);
 	queue_redraw();
-}
-
-void Texture3DEditor::_update_material(bool p_texture_changed)
-{
-	texture_material->set_shader_parameter(
-		"layer", (layer->get_value() + 0.5) / texture->get_depth());
-
-	if (p_texture_changed) {
-		texture_material->set_shader_parameter("tex", texture->get_rid());
-	}
-
-	texture_material->set_shader_parameter(
-		"u_channel_factors", channel_selector->get_selected_channel_factors());
 }
 
 void Texture3DEditor::_draw_outline()
@@ -219,120 +205,5 @@ void Texture3DEditor::init_shaders()
 }
 
 void Texture3DEditor::finish_shaders() { texture_shader.unref(); }
-
-void Texture3DEditor::edit(Ref<Texture3D> p_texture)
-{
-	if (texture.is_valid()) {
-		texture->disconnect_changed(callable_mp(this, &Texture3DEditor::_texture_changed));
-	}
-
-	texture = p_texture;
-
-	if (texture.is_valid()) {
-		if (texture_material.is_null()) {
-			texture_material.instantiate();
-			texture_material->set_shader(texture_shader);
-		}
-
-		texture->connect_changed(callable_mp(this, &Texture3DEditor::_texture_changed));
-		texture_rect->set_material(texture_material);
-
-		setting = true;
-		layer->set_value(0);
-		layer->show();
-		_update_gui();
-		setting = false;
-
-		_update_material(true);
-		queue_redraw();
-
-	}
-	else {
-		hide();
-	}
-}
-
-Texture3DEditor::Texture3DEditor()
-{
-	set_texture_repeat(TextureRepeat::TEXTURE_REPEAT_ENABLED);
-	set_custom_minimum_size(Size2(1, 256.0) * EDSCALE);
-
-	texture_rect = memnew(Control);
-	texture_rect->set_mouse_filter(MOUSE_FILTER_IGNORE);
-	texture_rect->connect(
-		SceneStringName(draw), callable_mp(this, &Texture3DEditor::_texture_rect_draw));
-
-	add_child(texture_rect);
-
-	layer = memnew(SpinBox);
-	layer->set_step(1);
-	layer->set_max(100);
-
-	layer->set_modulate(Color(1, 1, 1, 0.8));
-	layer->set_h_grow_direction(GROW_DIRECTION_BEGIN);
-	layer->set_anchor(SIDE_RIGHT, 1);
-	layer->set_anchor(SIDE_LEFT, 1);
-	layer->connect(
-		SceneStringName(value_changed), callable_mp(this, &Texture3DEditor::_layer_changed));
-
-	add_child(layer);
-
-	channel_selector = memnew(ColorChannelSelector);
-	channel_selector->connect("selected_channels_changed",
-		callable_mp(this, &Texture3DEditor::on_selected_channels_changed));
-	channel_selector->set_anchors_preset(Control::PRESET_TOP_LEFT);
-	add_child(channel_selector);
-
-	info = memnew(Label);
-	info->set_focus_mode(FOCUS_ACCESSIBILITY);
-	info->add_theme_color_override(SceneStringName(font_color), Color(1, 1, 1));
-	info->add_theme_color_override("font_shadow_color", Color(0, 0, 0));
-	info->add_theme_font_size_override(SceneStringName(font_size), 14 * EDSCALE);
-	info->add_theme_color_override("font_outline_color", Color(0, 0, 0));
-	info->add_theme_constant_override("outline_size", 8 * EDSCALE);
-
-	info->set_h_grow_direction(GROW_DIRECTION_BEGIN);
-	info->set_v_grow_direction(GROW_DIRECTION_BEGIN);
-	info->set_h_size_flags(Control::SIZE_SHRINK_END);
-	info->set_v_size_flags(Control::SIZE_SHRINK_END);
-	info->set_anchor(SIDE_RIGHT, 1);
-	info->set_anchor(SIDE_LEFT, 1);
-	info->set_anchor(SIDE_BOTTOM, 1);
-	info->set_anchor(SIDE_TOP, 1);
-
-	add_child(info);
-}
-
-Texture3DEditor::~Texture3DEditor()
-{
-	if (texture.is_valid()) {
-		texture->disconnect_changed(callable_mp(this, &Texture3DEditor::_texture_changed));
-	}
-}
-
-bool EditorInspectorPlugin3DTexture::can_handle(Object* p_object)
-{
-	return Object::cast_to<Texture3D>(p_object) != nullptr;
-}
-
-void EditorInspectorPlugin3DTexture::parse_begin(Object* p_object)
-{
-	Texture3D* texture = Object::cast_to<Texture3D>(p_object);
-	if (!texture) {
-		return;
-	}
-	Ref<Texture3D> m(texture);
-
-	Texture3DEditor* editor = memnew(Texture3DEditor);
-	editor->edit(m);
-	add_custom_control(editor);
-}
-
-Texture3DEditorPlugin::Texture3DEditorPlugin()
-{
-	Ref<EditorInspectorPlugin3DTexture> plugin;
-	plugin.instantiate();
-	add_inspector_plugin(plugin);
-}
 
 

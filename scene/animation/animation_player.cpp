@@ -31,8 +31,6 @@
 #include "animation_player.compat.inc"
 #include "animation_player.h"
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 

@@ -35,8 +35,6 @@
 #include "core/io/resource_saver.h"
 #include "core/math/delaunay_3d.h"
 #include "core/math/geometry_3d.h"
-#include "core/object/class_db.h"
-#include "core/object/object.h"
 #include "lightmap_gi.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For lightmapper_rd.
 #include "scene/3d/light_3d.h"

@@ -34,8 +34,6 @@
 
 #include "core/math/vector3.h"
 #include "core/templates/self_list.h"
-#include "core/variant/callable.h"
-#include "core/variant/dictionary.h"
 #include "servers/navigation_3d/navigation_constants_3d.h"
 
 #include <Agent2d.h>

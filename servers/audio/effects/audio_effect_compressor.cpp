@@ -30,7 +30,6 @@
 
 #include "audio_effect_compressor.h"
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectCompressorInstance::process(

@@ -41,7 +41,6 @@
 class ViewPanner;
 
 class TileAtlasView : public Control {
-	VLTRCLASS(TileAtlasView, Control);
 
 private:
 	Ref<TileSet> tile_set;
@@ -56,7 +55,7 @@ private:
 	void _update_zoom_and_panning(bool p_zoom_on_mouse_pos = false, const Vector2 &p_mouse_pos = Vector2());
 	void _zoom_widget_changed();
 	void _center_view();
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent> &p_event);
 
 	Ref<ViewPanner> panner;
 	void _pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event);

@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "core/templates/safe_refcount.h"
 #include "servers/audio/audio_server.h"

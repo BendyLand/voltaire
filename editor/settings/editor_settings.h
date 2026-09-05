@@ -190,7 +190,6 @@ public:
 #define EDITOR_DEF(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val))
 #define EDITOR_DEF_RST(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val), true)
 #define EDITOR_DEF_BASIC(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val), false, true)
-#define EDITOR_GET(m_var) _EDITOR_GET(m_var)
 #define ED_IS_SHORTCUT(p_name, p_ev) (EditorSettings::get_singleton()->is_shortcut(p_name, p_ev))
 Ref<Shortcut> ED_SHORTCUT(
 	const String& p_path, const String& p_name, Key p_keycode = Key::NONE, bool p_physical = false);

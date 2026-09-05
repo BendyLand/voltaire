@@ -61,188 +61,10 @@ Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportP
 	return OK;
 }
 
-Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, uint32_t p_flags,
-	bool p_notify)
-{
-	String custom_debug = p_preset->obj->get("custom_template/debug");
-	String custom_release = p_preset->obj->get("custom_template/release");
-	String arch = p_preset->obj->get("binary_format/architecture");
-
-	String template_path = p_debug ? custom_debug : custom_release;
-	template_path = template_path.strip_edges();
-	if (!template_path.is_empty()) {
-		String exe_arch = _get_exe_arch(template_path);
-		if (arch != exe_arch) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"),
-				vformat(TTR("Mismatching custom export template executable architecture: found "
-							"\"%s\", expected \"%s\"."),
-					exe_arch, arch));
-			return ERR_CANT_CREATE;
-		}
-	}
-
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	if (da->file_exists(template_path.get_base_dir().path_join("libaccesskit." + arch + ".so"))) {
-		da->copy(template_path.get_base_dir().path_join("libaccesskit." + arch + ".so"),
-			p_path.get_base_dir().path_join("libaccesskit." + arch + ".so"), get_chmod_flags());
-	}
-
-	bool export_as_zip = p_path.ends_with("zip");
-
-	String pkg_name;
-	if (String(get_project_setting(p_preset, "application/config/name")) != "") {
-		pkg_name = String(get_project_setting(p_preset, "application/config/name"));
-	}
-	else {
-		pkg_name = "Unnamed";
-	}
-
-	pkg_name = OS::get_singleton()->get_safe_dir_name(pkg_name);
-
-	// Setup temp folder.
-	String path = p_path;
-	String tmp_dir_path = EditorPaths::get_singleton()->get_temp_dir().path_join(pkg_name);
-
-	Ref<DirAccess> tmp_app_dir = DirAccess::create_for_path(tmp_dir_path);
-	if (export_as_zip) {
-		if (tmp_app_dir.is_null()) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"),
-				vformat(TTR("Could not create and open the directory: \"%s\""), tmp_dir_path));
-			return ERR_CANT_CREATE;
-		}
-		if (DirAccess::exists(tmp_dir_path)) {
-			if (tmp_app_dir->change_dir(tmp_dir_path) == OK) {
-				tmp_app_dir->erase_contents_recursive();
-			}
-		}
-		tmp_app_dir->make_dir_recursive(tmp_dir_path);
-		path = tmp_dir_path.path_join(p_path.get_file().get_basename());
-	}
-
-	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags, export_as_zip);
-	// Export project.
-	Error err =
-		EditorExportPlatformPC::export_project(p_preset, p_debug, path, p_flags, !export_as_zip);
-	if (err != OK) {
-		// Message is supplied by the subroutine method.
-		return err;
-	}
-
-	// Save console wrapper.
-	int con_scr = p_preset->obj->get("debug/export_console_wrapper");
-	if ((con_scr == 1 && p_debug) || (con_scr == 2)) {
-		String scr_path = path.get_basename() + ".sh";
-		err = _export_debug_script(p_preset, pkg_name, path.get_file(), scr_path);
-		FileAccess::set_unix_permissions(scr_path, 0755);
-		if (err != OK) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Debug Console Export"),
-				TTR("Could not create console wrapper."));
-		}
-	}
-
-	// ZIP project.
-	if (export_as_zip) {
-		if (FileAccess::exists(p_path)) {
-			OS::get_singleton()->move_to_trash(p_path);
-		}
-
-		Ref<FileAccess> io_fa_dst;
-		zlib_filefunc_def io_dst = zipio_create_io(&io_fa_dst);
-		zipFile zip = zipOpen2(p_path.utf8().get_data(), APPEND_STATUS_CREATE, nullptr, &io_dst);
-
-		zip_folder_recursive(zip, tmp_dir_path, "", pkg_name);
-
-		zipClose(zip, nullptr);
-
-		if (tmp_app_dir->change_dir(tmp_dir_path) == OK) {
-			tmp_app_dir->erase_contents_recursive();
-			tmp_app_dir->change_dir("..");
-			tmp_app_dir->remove(pkg_name);
-		}
-	}
-
-	return err;
-}
-
 String EditorExportPlatformLinuxBSD::get_template_file_name(
 	const String& p_target, const String& p_arch) const
 {
 	return "linux_" + p_target + "." + p_arch;
-}
-
-List<String> EditorExportPlatformLinuxBSD::get_binary_extensions(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	List<String> list;
-	list.push_back(p_preset->obj->get("binary_format/architecture"));
-	list.push_back("zip");
-
-	return list;
-}
-
-bool EditorExportPlatformLinuxBSD::get_export_option_visibility(
-	const EditorExportPreset* p_preset, const String& p_option) const
-{
-	if (p_preset == nullptr) {
-		return true;
-	}
-
-	bool advanced_options_enabled = p_preset->are_advanced_options_enabled();
-
-	// Hide SSH options.
-	bool ssh = p_preset->obj->get("ssh_remote_deploy/enabled");
-	if (!ssh && p_option != "ssh_remote_deploy/enabled" &&
-		p_option.begins_with("ssh_remote_deploy/")) {
-		return false;
-	}
-	if (p_option == "dotnet/embed_build_outputs" || p_option == "custom_template/debug" ||
-		p_option == "custom_template/release") {
-		return advanced_options_enabled;
-	}
-	return true;
-}
-
-void EditorExportPlatformLinuxBSD::get_export_options(List<ExportOption>* r_options) const
-{
-	EditorExportPlatformPC::get_export_options(r_options);
-
-	r_options->push_back(
-		ExportOption(PropertyInfo(Variant::STRING, "binary_format/architecture", PROPERTY_HINT_ENUM,
-						 "x86_64,x86_32,arm64,arm32,rv64,ppc64,loongarch64"),
-			"x86_64"));
-
-	String run_script = "#!/usr/bin/env bash\n"
-						"export DISPLAY=:0\n"
-						"unzip -o -q \"{temp_dir}/{archive_name}\" -d \"{temp_dir}\"\n"
-						"\"{temp_dir}/{exe_name}\" {cmd_args}";
-
-	String cleanup_script = "#!/usr/bin/env bash\n"
-							"pkill -x -f \"{temp_dir}/{exe_name} {cmd_args}\"\n"
-							"rm -rf \"{temp_dir}\"";
-
-	r_options->push_back(
-		ExportOption(PropertyInfo(Variant::BOOL, "ssh_remote_deploy/enabled"), false, true));
-	r_options->push_back(
-		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/host"), "user@host_ip"));
-	r_options->push_back(
-		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/port"), "22"));
-
-	r_options->push_back(
-		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/extra_args_ssh",
-						 PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"),
-			""));
-	r_options->push_back(
-		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/extra_args_scp",
-						 PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"),
-			""));
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/run_script",
-										  PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"),
-		run_script));
-	r_options->push_back(
-		ExportOption(PropertyInfo(Variant::STRING, "ssh_remote_deploy/cleanup_script",
-						 PROPERTY_HINT_MULTILINE_TEXT, "monospace,no_wrap"),
-			cleanup_script));
 }
 
 bool EditorExportPlatformLinuxBSD::is_elf(const String& p_path) const
@@ -271,46 +93,6 @@ void EditorExportPlatformLinuxBSD::get_platform_features(List<String>* r_feature
 	EditorExportPlatformPC::get_platform_features(r_features);
 	r_features->push_back("linux");
 	r_features->push_back("linuxbsd");
-}
-
-bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
-	bool p_debug) const
-{
-	String err;
-	bool valid = EditorExportPlatformPC::has_valid_export_configuration(
-		p_preset, err, r_missing_templates, p_debug);
-
-	String custom_debug =
-		p_preset->obj->get("custom_template/debug").operator String().strip_edges();
-	String custom_release =
-		p_preset->obj->get("custom_template/release").operator String().strip_edges();
-	String arch = p_preset->obj->get("binary_format/architecture");
-
-	if (!custom_debug.is_empty() && FileAccess::exists(custom_debug)) {
-		String exe_arch = _get_exe_arch(custom_debug);
-		if (arch != exe_arch) {
-			err += vformat(TTR("Mismatching custom debug export template executable architecture: "
-							   "found \"%s\", expected \"%s\"."),
-					   exe_arch, arch) +
-				   "\n";
-		}
-	}
-	if (!custom_release.is_empty() && FileAccess::exists(custom_release)) {
-		String exe_arch = _get_exe_arch(custom_release);
-		if (arch != exe_arch) {
-			err += vformat(TTR("Mismatching custom release export template executable "
-							   "architecture: found \"%s\", expected \"%s\"."),
-					   exe_arch, arch) +
-				   "\n";
-		}
-	}
-
-	if (!err.is_empty()) {
-		r_error = err;
-	}
-
-	return valid;
 }
 
 String EditorExportPlatformLinuxBSD::_get_exe_arch(const String& p_path) const
@@ -473,25 +255,6 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(
 
 Ref<Texture2D> EditorExportPlatformLinuxBSD::get_run_icon() const { return run_icon; }
 
-bool EditorExportPlatformLinuxBSD::poll_export()
-{
-	Ref<EditorExportPreset> preset =
-		EditorExport::get_singleton()->get_runnable_preset_for_platform(this);
-
-	int prev = menu_options;
-	menu_options =
-		(preset.is_valid() && preset->obj->get("ssh_remote_deploy/enabled").operator bool());
-	if (ssh_pid != 0 || !cleanup_commands.is_empty()) {
-		if (menu_options == 0) {
-			cleanup();
-		}
-		else {
-			menu_options += 1;
-		}
-	}
-	return menu_options != prev;
-}
-
 Ref<Texture2D> EditorExportPlatformLinuxBSD::get_option_icon(int p_index) const
 {
 	if (p_index == 1) {
@@ -518,13 +281,13 @@ String EditorExportPlatformLinuxBSD::get_option_tooltip(int p_index) const
 void EditorExportPlatformLinuxBSD::cleanup()
 {
 	if (ssh_pid != 0 && OS::get_singleton()->is_process_running(ssh_pid)) {
-		print_line("Terminating connection...");
+		__print_line("Terminating connection...");
 		OS::get_singleton()->kill(ssh_pid);
 		OS::get_singleton()->delay_usec(1000);
 	}
 
 	if (!cleanup_commands.is_empty()) {
-		print_line("Stopping and deleting previous version...");
+		__print_line("Stopping and deleting previous version...");
 		for (const SSHCleanupCommand& cmd : cleanup_commands) {
 			if (cmd.wait) {
 				ssh_run_on_remote(cmd.host, cmd.port, cmd.ssh_args, cmd.cmd_args);
@@ -536,163 +299,6 @@ void EditorExportPlatformLinuxBSD::cleanup()
 	}
 	ssh_pid = 0;
 	cleanup_commands.clear();
-}
-
-Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset>& p_preset, int p_device,
-	uint32_t p_debug_flags)
-{
-	cleanup();
-	if (p_device) { // Stop command, cleanup only.
-		return OK;
-	}
-
-	EditorProgress ep("run", TTR("Running..."), 5);
-
-	const String dest = EditorPaths::get_singleton()->get_temp_dir().path_join("linuxbsd");
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	if (!da->dir_exists(dest)) {
-		Error err = da->make_dir_recursive(dest);
-		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(
-				TTR("Could not create temp directory:") + "\n" + dest);
-			return err;
-		}
-	}
-
-	String host = p_preset->obj->get("ssh_remote_deploy/host").operator String();
-	String port = p_preset->obj->get("ssh_remote_deploy/port").operator String();
-	if (port.is_empty()) {
-		port = "22";
-	}
-	Vector<String> extra_args_ssh =
-		p_preset->obj->get("ssh_remote_deploy/extra_args_ssh").operator String().split(" ", false);
-	Vector<String> extra_args_scp =
-		p_preset->obj->get("ssh_remote_deploy/extra_args_scp").operator String().split(" ", false);
-
-	const String basepath = dest.path_join("tmp_linuxbsd_export");
-
-#define CLEANUP_AND_RETURN(m_err)                                                                  \
-	{                                                                                              \
-		if (da->file_exists(basepath + ".zip")) {                                                  \
-			da->remove(basepath + ".zip");                                                         \
-		}                                                                                          \
-		if (da->file_exists(basepath + "_start.sh")) {                                             \
-			da->remove(basepath + "_start.sh");                                                    \
-		}                                                                                          \
-		if (da->file_exists(basepath + "_clean.sh")) {                                             \
-			da->remove(basepath + "_clean.sh");                                                    \
-		}                                                                                          \
-		return m_err;                                                                              \
-	}                                                                                              \
-	((void)0)
-
-	if (ep.step(TTR("Exporting project..."), 1)) {
-		return ERR_SKIP;
-	}
-	Error err = export_project(p_preset, true, basepath + ".zip", p_debug_flags);
-	if (err != OK) {
-		DirAccess::remove_file_or_error(basepath + ".zip");
-		return err;
-	}
-
-	String cmd_args;
-	{
-		Vector<String> cmd_args_list = gen_export_flags(p_debug_flags);
-		for (int i = 0; i < cmd_args_list.size(); i++) {
-			if (i != 0) {
-				cmd_args += " ";
-			}
-			cmd_args += cmd_args_list[i];
-		}
-	}
-
-	const bool use_remote = p_debug_flags.has_flag(DEBUG_FLAG_REMOTE_DEBUG) ||
-							p_debug_flags.has_flag(DEBUG_FLAG_DUMB_CLIENT);
-	int dbg_port = EDITOR_GET("network/debug/remote_port");
-
-	print_line("Creating temporary directory...");
-	ep.step(TTR("Creating temporary directory..."), 2);
-	String temp_dir;
-	err = ssh_run_on_remote(host, port, extra_args_ssh, "mktemp -d", &temp_dir);
-	if (err != OK || temp_dir.is_empty()) {
-		CLEANUP_AND_RETURN(err);
-	}
-
-	print_line("Uploading archive...");
-	ep.step(TTR("Uploading archive..."), 3);
-	err = ssh_push_to_remote(host, port, extra_args_scp, basepath + ".zip", temp_dir);
-	if (err != OK) {
-		CLEANUP_AND_RETURN(err);
-	}
-
-	{
-		String run_script = p_preset->obj->get("ssh_remote_deploy/run_script");
-		run_script = run_script.replace("{temp_dir}", temp_dir);
-		run_script = run_script.replace("{archive_name}", basepath.get_file() + ".zip");
-		run_script = run_script.replace("{exe_name}", basepath.get_file());
-		run_script = run_script.replace("{cmd_args}", cmd_args);
-
-		Ref<FileAccess> f = FileAccess::open(basepath + "_start.sh", FileAccess::WRITE);
-		if (f.is_null()) {
-			CLEANUP_AND_RETURN(err);
-		}
-
-		f->store_string(run_script);
-	}
-
-	{
-		String clean_script = p_preset->obj->get("ssh_remote_deploy/cleanup_script");
-		clean_script = clean_script.replace("{temp_dir}", temp_dir);
-		clean_script = clean_script.replace("{archive_name}", basepath.get_file() + ".zip");
-		clean_script = clean_script.replace("{exe_name}", basepath.get_file());
-		clean_script = clean_script.replace("{cmd_args}", cmd_args);
-
-		Ref<FileAccess> f = FileAccess::open(basepath + "_clean.sh", FileAccess::WRITE);
-		if (f.is_null()) {
-			CLEANUP_AND_RETURN(err);
-		}
-
-		f->store_string(clean_script);
-	}
-
-	print_line("Uploading scripts...");
-	ep.step(TTR("Uploading scripts..."), 4);
-	err = ssh_push_to_remote(host, port, extra_args_scp, basepath + "_start.sh", temp_dir);
-	if (err != OK) {
-		CLEANUP_AND_RETURN(err);
-	}
-	err = ssh_run_on_remote(host, port, extra_args_ssh,
-		vformat("chmod +x \"%s/%s\"", temp_dir, basepath.get_file() + "_start.sh"));
-	if (err != OK || temp_dir.is_empty()) {
-		CLEANUP_AND_RETURN(err);
-	}
-	err = ssh_push_to_remote(host, port, extra_args_scp, basepath + "_clean.sh", temp_dir);
-	if (err != OK) {
-		CLEANUP_AND_RETURN(err);
-	}
-	err = ssh_run_on_remote(host, port, extra_args_ssh,
-		vformat("chmod +x \"%s/%s\"", temp_dir, basepath.get_file() + "_clean.sh"));
-	if (err != OK || temp_dir.is_empty()) {
-		CLEANUP_AND_RETURN(err);
-	}
-
-	print_line("Starting project...");
-	ep.step(TTR("Starting project..."), 5);
-	err = ssh_run_on_remote_no_wait(host, port, extra_args_ssh,
-		vformat("\"%s/%s\"", temp_dir, basepath.get_file() + "_start.sh"), &ssh_pid,
-		(use_remote) ? dbg_port : -1);
-	if (err != OK) {
-		CLEANUP_AND_RETURN(err);
-	}
-
-	cleanup_commands.clear();
-	cleanup_commands.push_back(SSHCleanupCommand(host, port, extra_args_ssh,
-		vformat("\"%s/%s\"", temp_dir, basepath.get_file() + "_clean.sh")));
-
-	print_line("Project started.");
-
-	CLEANUP_AND_RETURN(OK);
-#undef CLEANUP_AND_RETURN
 }
 
 void EditorExportPlatformLinuxBSD::initialize()

@@ -31,8 +31,6 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/variant/typed_array.h"
-#include "core/variant/variant.h"
 
 #include <ogg/ogg.h>
 

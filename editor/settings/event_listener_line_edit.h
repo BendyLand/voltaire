@@ -32,16 +32,16 @@
 
 #include "scene/gui/line_edit.h"
 
-enum InputType {
+enum InputType
+{
 	INPUT_KEY = 1,
 	INPUT_MOUSE_BUTTON = 2,
 	INPUT_JOY_BUTTON = 4,
 	INPUT_JOY_MOTION = 8
 };
 
-class EventListenerLineEdit : public LineEdit {
-	VLTRCLASS(EventListenerLineEdit, LineEdit)
-
+class EventListenerLineEdit : public LineEdit
+{
 	uint64_t hold_next = 0;
 	Ref<InputEvent> hold_event;
 
@@ -49,17 +49,17 @@ class EventListenerLineEdit : public LineEdit {
 	bool ignore_next_event = true;
 	Ref<InputEvent> event;
 
-	bool _is_event_allowed(const Ref<InputEvent> &p_event) const;
+	bool _is_event_allowed(const Ref<InputEvent>& p_event) const;
 
-	void gui_input(const Ref<InputEvent> &p_event) override;
-	void _on_text_changed(const String &p_text);
+	void gui_input(const Ref<InputEvent>& p_event);
+	void _on_text_changed(const String& p_text);
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	static String get_event_text(const Ref<InputEvent> &p_event, bool p_include_device);
+	static String get_event_text(const Ref<InputEvent>& p_event, bool p_include_device);
 	static String get_device_string(int p_device);
 
 	Ref<InputEvent> get_event() const;
@@ -73,3 +73,5 @@ public:
 public:
 	EventListenerLineEdit();
 };
+
+

@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/ref_counted.h"
 
 #include <openxr/openxr.h>
 

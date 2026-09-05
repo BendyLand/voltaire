@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "skeleton_profile.h"
 
 bool SkeletonProfile::_set(const StringName& p_path, const Variant& p_value)

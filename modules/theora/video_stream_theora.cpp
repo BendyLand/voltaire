@@ -31,7 +31,6 @@
 #include <thirdparty/misc/yuv2rgb.h>
 #include "core/config/project_settings.h"
 #include "core/io/image.h"
-#include "core/object/class_db.h"
 #include "scene/resources/image_texture.h"
 #include "video_stream_theora.h"
 

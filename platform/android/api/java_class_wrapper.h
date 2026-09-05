@@ -30,9 +30,7 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/typed_array.h"
 
 #ifdef ANDROID_ENABLED
 #include <android/log.h>

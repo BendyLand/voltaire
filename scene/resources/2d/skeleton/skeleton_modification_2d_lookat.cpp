@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "scene/2d/skeleton_2d.h"
 #include "skeleton_modification_2d_lookat.h"
 

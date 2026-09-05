@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "importer_mesh_instance_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 

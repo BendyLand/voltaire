@@ -43,22 +43,21 @@ class ProjectList;
 class TextureButton;
 class TextureRect;
 
-class ProjectListItemControl : public HBoxContainer {
-	VLTRCLASS(ProjectListItemControl, HBoxContainer)
+class ProjectListItemControl : public HBoxContainer
+{
+	VBoxContainer* main_vbox = nullptr;
+	TextureButton* favorite_button = nullptr;
+	Button* explore_button = nullptr;
 
-	VBoxContainer *main_vbox = nullptr;
-	TextureButton *favorite_button = nullptr;
-	Button *explore_button = nullptr;
-
-	TextureRect *project_icon = nullptr;
-	Label *project_title = nullptr;
-	Label *project_path = nullptr;
-	Label *last_edited_info = nullptr;
-	Label *project_version = nullptr;
-	TextureRect *project_unsupported_features = nullptr;
-	TextureRect *project_different_version = nullptr;
-	HFlowContainer *tag_container = nullptr;
-	Button *touch_menu_button = nullptr;
+	TextureRect* project_icon = nullptr;
+	Label* project_title = nullptr;
+	Label* project_path = nullptr;
+	Label* last_edited_info = nullptr;
+	Label* project_version = nullptr;
+	TextureRect* project_unsupported_features = nullptr;
+	TextureRect* project_different_version = nullptr;
+	HFlowContainer* tag_container = nullptr;
+	Button* touch_menu_button = nullptr;
 
 	Color favorite_focus_color;
 
@@ -71,7 +70,8 @@ class ProjectListItemControl : public HBoxContainer {
 	bool is_hovering = false;
 	bool is_favorite = false;
 
-	enum class VersionMatchType {
+	enum class VersionMatchType
+	{
 		PROJECT_USES_SAME,
 		PROJECT_USES_OLDER_MAJOR,
 		PROJECT_USES_OLDER_MINOR,
@@ -86,12 +86,7 @@ class ProjectListItemControl : public HBoxContainer {
 	void _explore_button_pressed();
 	void _request_menu();
 
-	ProjectList *get_list() const;
-
-	void _accessibility_action_open(const Variant &p_data);
-	void _accessibility_action_scroll_into_view(const Variant &p_data);
-	void _accessibility_action_focus(const Variant &p_data);
-	void _accessibility_action_blur(const Variant &p_data);
+	ProjectList* get_list() const;
 
 private:
 	// Caches for resizing project titles.
@@ -105,16 +100,22 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_project_title(const String &p_title);
-	void set_project_path(const String &p_path);
-	void set_tags(const PackedStringArray &p_tags, ProjectList *p_parent_list);
-	void set_project_icon(const Ref<Texture2D> &p_icon);
-	void set_last_edited_info(const String &p_info);
-	void set_project_version(const String &p_version);
+	void set_project_title(const String& p_title);
+	void set_project_path(const String& p_path);
+	void set_tags(const PackedStringArray& p_tags, ProjectList* p_parent_list);
+	void set_project_icon(const Ref<Texture2D>& p_icon);
+	void set_last_edited_info(const String& p_info);
+	void set_project_version(const String& p_version);
 	void set_unsupported_features(PackedStringArray p_features);
 
 	bool should_load_project_icon() const;
-	bool is_older_version() const { return version_match_type == VersionMatchType::PROJECT_USES_OLDER_MAJOR || version_match_type == VersionMatchType::PROJECT_USES_OLDER_MINOR; }
+
+	bool is_older_version() const
+	{
+		return version_match_type == VersionMatchType::PROJECT_USES_OLDER_MAJOR ||
+			   version_match_type == VersionMatchType::PROJECT_USES_OLDER_MINOR;
+	}
+
 	void set_selected(bool p_selected, bool p_hide_focus = false);
 
 	void set_is_favorite(bool p_favorite);
@@ -128,21 +129,22 @@ public:
 	ProjectListItemControl();
 };
 
-class ProjectList : public ScrollContainer {
-	VLTRCLASS(ProjectList, ScrollContainer)
-
+class ProjectList : public ScrollContainer
+{
 	friend class ProjectManager;
 	friend class ProjectListItemControl;
 
 public:
-	enum FilterOption {
+	enum FilterOption
+	{
 		EDIT_DATE,
 		NAME,
 		PATH,
 		TAGS,
 	};
 
-	enum MenuOption {
+	enum MenuOption
+	{
 		MENU_EDIT,
 		MENU_EDIT_VERBOSE,
 		MENU_EDIT_RECOVERY,
@@ -156,7 +158,8 @@ public:
 	};
 
 	// Can often be passed by copy.
-	struct Item {
+	struct Item
+	{
 		String project_name;
 		String description;
 		String project_version;
@@ -174,24 +177,16 @@ public:
 		int version = 0;
 		int project_title_index = -1;
 
-		ProjectListItemControl *control = nullptr;
+		ProjectListItemControl* control = nullptr;
 
 		Item() {}
 
-		Item(const String &p_name,
-				const String &p_description,
-				const String &p_project_version,
-				const PackedStringArray &p_tags,
-				const String &p_path,
-				const String &p_icon,
-				const String &p_main_scene,
-				const PackedStringArray &p_unsupported_features,
-				uint64_t p_last_edited,
-				bool p_favorite,
-				bool p_grayed,
-				bool p_missing,
-				bool p_recovery_mode,
-				int p_version) {
+		Item(const String& p_name, const String& p_description, const String& p_project_version,
+			const PackedStringArray& p_tags, const String& p_path, const String& p_icon,
+			const String& p_main_scene, const PackedStringArray& p_unsupported_features,
+			uint64_t p_last_edited, bool p_favorite, bool p_grayed, bool p_missing,
+			bool p_recovery_mode, int p_version)
+		{
 			project_name = p_name;
 			description = p_description;
 			project_version = p_project_version;
@@ -214,9 +209,7 @@ public:
 			tag_sort_string = String().join(sorted_tags);
 		}
 
-		_FORCE_INLINE_ bool operator==(const Item &l) const {
-			return path == l.path;
-		}
+		_FORCE_INLINE_ bool operator==(const Item& l) const { return path == l.path; }
 
 		String get_last_edited_string() const;
 	};
@@ -239,47 +232,50 @@ private:
 	HashSet<String> _selected_project_paths;
 	String _last_clicked; // Project key
 
-	VBoxContainer *project_list_vbox = nullptr;
-	PopupMenu *project_context_menu = nullptr;
+	VBoxContainer* project_list_vbox = nullptr;
+	PopupMenu* project_context_menu = nullptr;
 
 	// Projects scan.
 
-	struct ScanData {
-		Thread *thread = nullptr;
+	struct ScanData
+	{
+		Thread* thread = nullptr;
 		PackedStringArray paths_to_scan;
 		List<String> found_projects;
 		SafeFlag scan_in_progress;
 	};
-	ScanData *scan_data = nullptr;
-	AcceptDialog *scan_progress = nullptr;
 
-	static void _scan_thread(void *p_scan_data);
+	ScanData* scan_data = nullptr;
+	AcceptDialog* scan_progress = nullptr;
+
+	static void _scan_thread(void* p_scan_data);
 	void _scan_finished();
 
 	// Initialization & loading.
 
 	void _migrate_config();
 
-	static Item load_project_data(const String &p_property_key, bool p_favorite);
+	static Item load_project_data(const String& p_property_key, bool p_favorite);
 	void _update_icons_async();
 	void _load_project_icon(int p_index);
 
 	// Project list updates.
 
-	static void _scan_folder_recursive(const String &p_path, List<String> *r_projects, const SafeFlag &p_scan_active);
+	static void _scan_folder_recursive(
+		const String& p_path, List<String>* r_projects, const SafeFlag& p_scan_active);
 
 	// Project list items.
 
 	void _create_project_item_control(int p_index);
-	void _update_project_control_translatable_fields(const Item &item);
+	void _update_project_control_translatable_fields(const Item& item);
 	void _toggle_project(int p_index);
 	void _remove_project(int p_index, bool p_update_settings);
 
-	void _list_item_input(const Ref<InputEvent> &p_ev, Control *p_hb);
-	void _on_favorite_pressed(Node *p_hb);
-	void _on_explore_pressed(const String &p_path);
+	void _list_item_input(const Ref<InputEvent>& p_ev, Control* p_hb);
+	void _on_favorite_pressed(Node* p_hb);
+	void _on_explore_pressed(const String& p_path);
 
-	void _open_menu(const Vector2 &p_at, Control *p_hb);
+	void _open_menu(const Vector2& p_at, Control* p_hb);
 	void _menu_option(int p_option);
 	void _update_menu_icons();
 
@@ -290,22 +286,17 @@ private:
 	void _deselect_project_nocheck(int p_index);
 	void _select_project_range(int p_begin, int p_end);
 
-	// Global menu integration.
-
-	void _global_menu_new_window(const Variant &p_tag);
-	void _global_menu_open_project(const Variant &p_tag);
-
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	static inline const char *SIGNAL_LIST_CHANGED = "list_changed";
-	static inline const char *SIGNAL_SELECTION_CHANGED = "selection_changed";
-	static inline const char *SIGNAL_PROJECT_ASK_OPEN = "project_ask_open";
-	static inline const char *SIGNAL_MENU_OPTION_SELECTED = "menu_option_selected";
+	static inline const char* SIGNAL_LIST_CHANGED = "list_changed";
+	static inline const char* SIGNAL_SELECTION_CHANGED = "selection_changed";
+	static inline const char* SIGNAL_PROJECT_ASK_OPEN = "project_ask_open";
+	static inline const char* SIGNAL_MENU_OPTION_SELECTED = "menu_option_selected";
 
-	static bool project_feature_looks_like_version(const String &p_feature);
+	static bool project_feature_looks_like_version(const String& p_feature);
 
 	// Initialization & loading.
 
@@ -318,16 +309,16 @@ public:
 	void sort_projects();
 	int get_project_count() const;
 
-	void find_projects(const String &p_path);
-	void find_projects_multiple(const PackedStringArray &p_paths);
+	void find_projects(const String& p_path);
+	void find_projects_multiple(const PackedStringArray& p_paths);
 
 	// Project list items.
 
-	void add_project(const String &dir_path, bool favorite);
-	void set_project_version(const String &p_project_path, int version);
-	int refresh_project(const String &dir_path);
+	void add_project(const String& dir_path, bool favorite);
+	void set_project_version(const String& p_project_path, int version);
+	int refresh_project(const String& dir_path);
 	void ensure_project_visible(int p_index);
-	int get_index(const ProjectListItemControl *p_control) const;
+	int get_index(const ProjectListItemControl* p_control) const;
 
 	// Project list selection.
 
@@ -337,7 +328,7 @@ public:
 	void select_all_visible_projects();
 	void deselect_all_visible_projects();
 	Vector<Item> get_selected_projects() const;
-	const HashSet<String> &get_selected_project_keys() const;
+	const HashSet<String>& get_selected_project_keys() const;
 	int get_single_selected_index() const;
 	void erase_selected_projects(bool p_delete_project_contents);
 
@@ -353,7 +344,7 @@ public:
 	// Project list sorting and filtering.
 
 	void set_search_term(String p_search_term);
-	void add_search_tag(const String &p_tag);
+	void add_search_tag(const String& p_tag);
 	void set_order_option(int p_option, bool p_save);
 
 	// Global menu integration.
@@ -362,3 +353,5 @@ public:
 
 	ProjectList();
 };
+
+

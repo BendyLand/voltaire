@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
 #include "jolt_project_settings.h"
 
 void JoltProjectSettings::register_settings()

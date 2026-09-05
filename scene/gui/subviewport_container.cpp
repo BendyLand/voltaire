@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "scene/main/viewport.h"
 #include "subviewport_container.h"
 

@@ -30,9 +30,7 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/os/thread_safe.h"
-#include "core/variant/native_ptr.h"
 
 #include <openxr/openxr.h>
 

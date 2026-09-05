@@ -30,7 +30,6 @@
 
 #include <cfloat> // FLT_EPSILON
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
 #include "curve.h"
 
 const char* Curve::SIGNAL_RANGE_CHANGED = "range_changed";

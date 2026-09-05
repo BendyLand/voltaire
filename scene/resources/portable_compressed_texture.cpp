@@ -30,7 +30,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/marshalls.h"
-#include "core/object/class_db.h"
 #include "portable_compressed_texture.h"
 #include "scene/resources/bit_map.h"
 #include "servers/rendering/rendering_server.h"

@@ -30,8 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/math/triangle_mesh.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "label_3d.h"
 #include "scene/main/window.h"
 #include "scene/resources/theme.h"

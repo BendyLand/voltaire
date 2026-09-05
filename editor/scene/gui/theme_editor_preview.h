@@ -40,9 +40,8 @@ class ColorRect;
 class PackedScene;
 class ScrollContainer;
 
-class ScalableContainer : public MarginContainer {
-	VLTRCLASS(ScalableContainer, MarginContainer);
-
+class ScalableContainer : public MarginContainer
+{
 protected:
 	void _notification(int p_what);
 
@@ -52,17 +51,17 @@ public:
 	ScalableContainer();
 };
 
-class ThemeEditorPreview : public VBoxContainer {
-	VLTRCLASS(ThemeEditorPreview, VBoxContainer);
+class ThemeEditorPreview : public VBoxContainer
+{
+	ScrollContainer* preview_container = nullptr;
+	MarginContainer* preview_root = nullptr;
+	ColorRect* preview_bg = nullptr;
+	MarginContainer* preview_overlay = nullptr;
+	Control* picker_overlay = nullptr;
+	Control* hovered_control = nullptr;
 
-	ScrollContainer *preview_container = nullptr;
-	MarginContainer *preview_root = nullptr;
-	ColorRect *preview_bg = nullptr;
-	MarginContainer *preview_overlay = nullptr;
-	Control *picker_overlay = nullptr;
-	Control *hovered_control = nullptr;
-
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> preview_picker_overlay;
 		Color preview_picker_overlay_color;
 		Ref<StyleBox> preview_picker_label;
@@ -71,34 +70,33 @@ class ThemeEditorPreview : public VBoxContainer {
 	} theme_cache;
 
 	void _picker_button_cbk();
-	Control *_find_hovered_control(Control *p_parent, Vector2 p_mouse_position);
+	Control* _find_hovered_control(Control* p_parent, Vector2 p_mouse_position);
 
 	void _draw_picker_overlay();
-	void _gui_input_picker_overlay(const Ref<InputEvent> &p_event);
+	void _gui_input_picker_overlay(const Ref<InputEvent>& p_event);
 	void _reset_picker_overlay();
 
 	void _update_preview_bg();
 
 protected:
-	HBoxContainer *preview_toolbar = nullptr;
-	ScalableContainer *preview_content = nullptr;
-	Button *picker_button = nullptr;
+	HBoxContainer* preview_toolbar = nullptr;
+	ScalableContainer* preview_content = nullptr;
+	Button* picker_button = nullptr;
 
-	void add_preview_overlay(Control *p_overlay);
+	void add_preview_overlay(Control* p_overlay);
 
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	void set_preview_theme(const Ref<Theme> &p_theme);
+	void set_preview_theme(const Ref<Theme>& p_theme);
 
 	ThemeEditorPreview();
 };
 
-class DefaultThemeEditorPreview : public ThemeEditorPreview {
-	VLTRCLASS(DefaultThemeEditorPreview, ThemeEditorPreview);
-
-	ColorPickerButton *test_color_picker_button = nullptr;
+class DefaultThemeEditorPreview : public ThemeEditorPreview
+{
+	ColorPickerButton* test_color_picker_button = nullptr;
 
 protected:
 	void _notification(int p_what);
@@ -107,12 +105,11 @@ public:
 	DefaultThemeEditorPreview();
 };
 
-class SceneThemeEditorPreview : public ThemeEditorPreview {
-	VLTRCLASS(SceneThemeEditorPreview, ThemeEditorPreview);
-
+class SceneThemeEditorPreview : public ThemeEditorPreview
+{
 	Ref<PackedScene> loaded_scene;
 
-	Button *reload_scene_button = nullptr;
+	Button* reload_scene_button = nullptr;
 
 	void _reload_scene();
 
@@ -121,8 +118,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	bool set_preview_scene(const String &p_path);
+	bool set_preview_scene(const String& p_path);
 	String get_preview_scene_path() const;
 
 	SceneThemeEditorPreview();
 };
+
+

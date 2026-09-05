@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "multiplayer_synchronizer.h"
 #include "scene/main/multiplayer_api.h"
 

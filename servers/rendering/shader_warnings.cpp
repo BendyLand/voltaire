@@ -30,7 +30,6 @@
 
 #include "shader_warnings.h"
 
-#include "core/variant/variant.h"
 
 #ifdef DEBUG_ENABLED
 

@@ -30,7 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "register_server_types.h"
 #include "servers/audio/audio_effect.h"

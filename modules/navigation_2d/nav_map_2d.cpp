@@ -33,7 +33,6 @@
 #include "2d/nav_mesh_queries_2d.h"
 #include "2d/nav_region_iteration_2d.h"
 #include "core/config/project_settings.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/os.h"
 #include "nav_agent_2d.h"
 #include "nav_link_2d.h"

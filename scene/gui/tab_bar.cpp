@@ -30,8 +30,6 @@
 
 #include <cfloat> // FLT_MAX
 #include "core/input/input.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/label.h"
 #include "scene/gui/texture_rect.h"

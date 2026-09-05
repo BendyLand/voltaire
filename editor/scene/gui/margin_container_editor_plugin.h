@@ -35,14 +35,12 @@
 
 class CanvasItemEditor;
 
-class MarginContainerEditorPlugin : public EditorPlugin {
-	VLTRCLASS(MarginContainerEditorPlugin, EditorPlugin);
-
-	MarginContainer *margin_container = nullptr;
+class MarginContainerEditorPlugin : public EditorPlugin
+{
+	MarginContainer* margin_container = nullptr;
 
 public:
-	void forward_canvas_draw_over_viewport(Control *p_viewport_control) override;
-
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
+	void forward_canvas_draw_over_viewport(Control* p_viewport_control) override;
 };
+
+

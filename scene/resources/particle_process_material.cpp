@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "core/version.h"
 #include "particle_process_material.h"
 #include "servers/rendering/rendering_server.h"

@@ -36,55 +36,14 @@
 
 /*************************************************************************/
 
-class EditorPropertyFontMetaObject : public RefCounted {
-	VLTRCLASS(EditorPropertyFontMetaObject, RefCounted);
+class EditorPropertyFontMetaOverride : public EditorProperty
+{
+	MarginContainer* container = nullptr;
+	VBoxContainer* property_vbox = nullptr;
 
-	Dictionary dict;
-
-protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-
-public:
-	void set_dict(const Dictionary &p_dict);
-	Dictionary get_dict();
-};
-
-/*************************************************************************/
-
-class EditorPropertyFontOTObject : public RefCounted {
-	VLTRCLASS(EditorPropertyFontOTObject, RefCounted);
-
-	Dictionary dict;
-	Dictionary defaults_dict;
-
-protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	bool _property_can_revert(const StringName &p_name) const;
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
-
-public:
-	void set_dict(const Dictionary &p_dict);
-	Dictionary get_dict();
-
-	void set_defaults(const Dictionary &p_dict);
-	Dictionary get_defaults();
-};
-
-/*************************************************************************/
-
-class EditorPropertyFontMetaOverride : public EditorProperty {
-	VLTRCLASS(EditorPropertyFontMetaOverride, EditorProperty);
-
-	Ref<EditorPropertyFontMetaObject> object;
-
-	MarginContainer *container = nullptr;
-	VBoxContainer *property_vbox = nullptr;
-
-	Button *edit = nullptr;
-	PopupMenu *menu = nullptr;
-	EditorLocaleDialog *locale_select = nullptr;
+	Button* edit = nullptr;
+	PopupMenu* menu = nullptr;
+	EditorLocaleDialog* locale_select = nullptr;
 
 	Vector<String> script_codes;
 
@@ -92,17 +51,14 @@ class EditorPropertyFontMetaOverride : public EditorProperty {
 	bool updating = false;
 	int page_length = 20;
 	int page_index = 0;
-	EditorPaginator *paginator = nullptr;
+	EditorPaginator* paginator = nullptr;
 
 protected:
 	void _edit_pressed();
 	void _page_changed(int p_page);
-	void _property_changed(const String &p_property, const Variant &p_value, const String &p_name = "", bool p_changing = false);
-	void _remove(Object *p_button, const String &p_key);
 	void _add_menu();
 	void _add_script(int p_option);
-	void _add_lang(const String &p_locale);
-	void _object_id_selected(const StringName &p_property, ObjectID p_id);
+	void _add_lang(const String& p_locale);
 
 public:
 	virtual void update_property() override;
@@ -112,26 +68,21 @@ public:
 
 /*************************************************************************/
 
-class EditorPropertyOTVariation : public EditorProperty {
-	VLTRCLASS(EditorPropertyOTVariation, EditorProperty);
+class EditorPropertyOTVariation : public EditorProperty
+{
+	MarginContainer* container = nullptr;
+	VBoxContainer* property_vbox = nullptr;
 
-	Ref<EditorPropertyFontOTObject> object;
-
-	MarginContainer *container = nullptr;
-	VBoxContainer *property_vbox = nullptr;
-
-	Button *edit = nullptr;
+	Button* edit = nullptr;
 
 	bool updating = false;
 	int page_length = 20;
 	int page_index = 0;
-	EditorPaginator *paginator = nullptr;
+	EditorPaginator* paginator = nullptr;
 
 protected:
 	void _edit_pressed();
 	void _page_changed(int p_page);
-	void _property_changed(const String &p_property, const Variant &p_value, const String &p_name = "", bool p_changing = false);
-	void _object_id_selected(const StringName &p_property, ObjectID p_id);
 
 public:
 	virtual void update_property() override;
@@ -141,10 +92,10 @@ public:
 
 /*************************************************************************/
 
-class EditorPropertyOTFeatures : public EditorProperty {
-	VLTRCLASS(EditorPropertyOTFeatures, EditorProperty);
-
-	enum FeatureGroups {
+class EditorPropertyOTFeatures : public EditorProperty
+{
+	enum FeatureGroups
+	{
 		FGRP_STYLISTIC_SET,
 		FGRP_CHARACTER_VARIANT,
 		FGRP_CAPITLS,
@@ -157,29 +108,24 @@ class EditorPropertyOTFeatures : public EditorProperty {
 		FGRP_MAX,
 	};
 
-	Ref<EditorPropertyFontOTObject> object;
+	MarginContainer* container = nullptr;
+	VBoxContainer* property_vbox = nullptr;
 
-	MarginContainer *container = nullptr;
-	VBoxContainer *property_vbox = nullptr;
-
-	Button *edit = nullptr;
-	PopupMenu *menu = nullptr;
-	PopupMenu *menu_sub[FGRP_MAX];
+	Button* edit = nullptr;
+	PopupMenu* menu = nullptr;
+	PopupMenu* menu_sub[FGRP_MAX];
 	String group_names[FGRP_MAX];
 
 	bool updating = false;
 	int page_length = 20;
 	int page_index = 0;
-	EditorPaginator *paginator = nullptr;
+	EditorPaginator* paginator = nullptr;
 
 protected:
 	void _edit_pressed();
 	void _page_changed(int p_page);
-	void _property_changed(const String &p_property, const Variant &p_value, const String &p_name = "", bool p_changing = false);
-	void _remove(Object *p_button, int p_key);
 	void _add_menu();
 	void _add_feature(int p_option);
-	void _object_id_selected(const StringName &p_property, ObjectID p_id);
 
 public:
 	virtual void update_property() override;
@@ -189,19 +135,8 @@ public:
 
 /*************************************************************************/
 
-class EditorInspectorPluginFontVariation : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginFontVariation, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual bool parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const uint32_t p_usage, const bool p_wide = false) override;
-};
-
-/*************************************************************************/
-
-class FontPreview : public Control {
-	VLTRCLASS(FontPreview, Control);
-
+class FontPreview : public Control
+{
 protected:
 	void _notification(int p_what);
 
@@ -212,26 +147,14 @@ protected:
 public:
 	virtual Size2 get_minimum_size() const override;
 
-	void set_data(const Ref<Font> &p_f);
+	void set_data(const Ref<Font>& p_f);
 };
 
 /*************************************************************************/
 
-class EditorInspectorPluginFontPreview : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginFontPreview, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-	virtual bool parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const uint32_t p_usage, const bool p_wide = false) override;
-};
-
-/*************************************************************************/
-
-class EditorPropertyFontNamesArray : public EditorPropertyArray {
-	VLTRCLASS(EditorPropertyFontNamesArray, EditorPropertyArray);
-
-	PopupMenu *menu = nullptr;
+class EditorPropertyFontNamesArray : public EditorPropertyArray
+{
+	PopupMenu* menu = nullptr;
 
 protected:
 	virtual void _add_element() override;
@@ -244,21 +167,12 @@ public:
 
 /*************************************************************************/
 
-class EditorInspectorPluginSystemFont : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginSystemFont, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual bool parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const uint32_t p_usage, const bool p_wide = false) override;
-};
-
-/*************************************************************************/
-
-class FontEditorPlugin : public EditorPlugin {
-	VLTRCLASS(FontEditorPlugin, EditorPlugin);
-
+class FontEditorPlugin : public EditorPlugin
+{
 public:
 	FontEditorPlugin();
 
 	virtual String get_plugin_name() const override { return "Font"; }
 };
+
+

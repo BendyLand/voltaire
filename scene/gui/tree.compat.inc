@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "tree.h"
 
 void TreeItem::_select_bind_compat_119367(int p_column) { select(p_column, true); }

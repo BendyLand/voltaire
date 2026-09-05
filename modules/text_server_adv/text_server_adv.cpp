@@ -32,8 +32,6 @@
 #include "core/error/error_macros.h"
 #include "core/io/file_access.h"
 #include "core/math/math_funcs_binary.h"
-#include "core/object/callable_mp.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
 #include "modules/modules_enabled.gen.h" // For freetype, msdfgen, svg.

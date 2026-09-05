@@ -34,7 +34,6 @@
 
 #include "core/templates/hash_set.h"
 #include "core/templates/self_list.h"
-#include "core/variant/callable.h"
 
 class GodotSpace3D;
 class GodotBody3D;

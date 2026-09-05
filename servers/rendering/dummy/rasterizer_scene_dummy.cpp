@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/image.h"
-#include "core/variant/typed_array.h"
 #include "rasterizer_scene_dummy.h"
 #include "servers/rendering/rendering_server_globals.h"
 

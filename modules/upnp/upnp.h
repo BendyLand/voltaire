@@ -32,7 +32,6 @@
 
 #include "upnp_device.h"
 
-#include "core/object/ref_counted.h"
 
 class UPNP : public RefCounted {
 	VLTRCLASS(UPNP, RefCounted);

@@ -40,36 +40,35 @@ class OptionButton;
 class SceneTreeDialog;
 class SpinBox;
 
-class ParticlesEditorPlugin : public EditorPlugin {
-	VLTRCLASS(ParticlesEditorPlugin, EditorPlugin);
-
+class ParticlesEditorPlugin : public EditorPlugin
+{
 private:
-	enum {
+	enum
+	{
 		MENU_OPTION_CONVERT,
 		MENU_RESTART
 	};
 
-	HBoxContainer *toolbar = nullptr;
-	MenuButton *menu = nullptr;
+	HBoxContainer* toolbar = nullptr;
+	MenuButton* menu = nullptr;
 
 protected:
 	String handled_type;
 	String conversion_option_name;
 
-	Node *edited_node = nullptr;
+	Node* edited_node = nullptr;
 
 	void _notification(int p_what);
 
-	bool need_show_lifetime_dialog(SpinBox *p_seconds);
+	bool need_show_lifetime_dialog(SpinBox* p_seconds);
 	virtual void _menu_callback(int p_idx);
 
-	virtual void _add_menu_options(PopupMenu *p_menu) {}
-	virtual Node *_convert_particles() = 0;
+	virtual void _add_menu_options(PopupMenu* p_menu) {}
+
+	virtual Node* _convert_particles() = 0;
 
 public:
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
-
 	ParticlesEditorPlugin();
 };
+
+

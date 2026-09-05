@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "navigation_path_query_result_3d.h"
 
 void NavigationPathQueryResult3D::set_path(const Vector<Vector3>& p_path) { path = p_path; }

@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "rigid_body_3d.h"
 #include "scene/resources/physics_material.h"
 #include "servers/physics_3d/physics_server_3d_constants.h"

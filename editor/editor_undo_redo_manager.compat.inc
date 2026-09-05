@@ -32,7 +32,6 @@
 
 #include "editor_undo_redo_manager.h"
 
-#include "core/object/class_db.h"
 
 void EditorUndoRedoManager::_create_action_bind_compat_106121(const String &p_name, UndoRedo::MergeMode p_mode, Object *p_custom_context, bool p_backward_undo_ops) {
 	create_action(p_name, p_mode, p_custom_context, p_backward_undo_ops, true);

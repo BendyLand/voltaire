@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "../extensions/openxr_composition_layer_extension.h"
-#include "core/object/class_db.h"
 #include "openxr_composition_layer_equirect.h"
 #include "scene/resources/mesh.h"
 

@@ -31,8 +31,6 @@
 #include "../../openxr_api.h"
 #include "../../openxr_util.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "openxr_spatial_anchor.compat.inc"
 #include "openxr_spatial_anchor.h"
 #include "openxr_spatial_entity_extension.h"

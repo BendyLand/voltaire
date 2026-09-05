@@ -36,23 +36,21 @@
 class EditorSpinSlider;
 class TextureButton;
 
-class EditorPropertyVectorN : public EditorProperty {
-	VLTRCLASS(EditorPropertyVectorN, EditorProperty);
-
+class EditorPropertyVectorN : public EditorProperty
+{
 	static const String COMPONENT_LABELS[4];
 
 	int component_count = 0;
-	Variant::Type vector_type;
 
-	Vector<EditorSpinSlider *> spin_sliders;
-	TextureButton *linked = nullptr;
+	Vector<EditorSpinSlider*> spin_sliders;
+	TextureButton* linked = nullptr;
 	Vector<double> ratio;
 
 	bool radians_as_degrees = false;
 
 	void _update_ratio();
 	void _store_link(bool p_linked);
-	void _value_changed(double p_val, const String &p_name);
+	void _value_changed(double p_val, const String& p_name);
 
 protected:
 	virtual void _set_read_only(bool p_read_only) override;
@@ -61,48 +59,44 @@ protected:
 public:
 	virtual void set_deferred_drag_mode_enabled(bool p_enabled = true) override;
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint &p_range_hint, bool p_link = false, bool p_is_int = false);
-	EditorPropertyVectorN(Variant::Type p_type, bool p_force_wide, bool p_horizontal);
+	void setup(
+		const EditorPropertyRangeHint& p_range_hint, bool p_link = false, bool p_is_int = false);
 };
 
-class EditorPropertyVector2 : public EditorPropertyVectorN {
-	VLTRCLASS(EditorPropertyVector2, EditorPropertyVectorN);
-
+class EditorPropertyVector2 : public EditorPropertyVectorN
+{
 public:
 	EditorPropertyVector2(bool p_force_wide = false);
 };
 
-class EditorPropertyVector2i : public EditorPropertyVectorN {
-	VLTRCLASS(EditorPropertyVector2i, EditorPropertyVectorN);
-
+class EditorPropertyVector2i : public EditorPropertyVectorN
+{
 public:
 	EditorPropertyVector2i(bool p_force_wide = false);
 };
 
-class EditorPropertyVector3 : public EditorPropertyVectorN {
-	VLTRCLASS(EditorPropertyVector3, EditorPropertyVectorN);
-
+class EditorPropertyVector3 : public EditorPropertyVectorN
+{
 public:
 	EditorPropertyVector3(bool p_force_wide = false);
 };
 
-class EditorPropertyVector3i : public EditorPropertyVectorN {
-	VLTRCLASS(EditorPropertyVector3i, EditorPropertyVectorN);
-
+class EditorPropertyVector3i : public EditorPropertyVectorN
+{
 public:
 	EditorPropertyVector3i(bool p_force_wide = false);
 };
 
-class EditorPropertyVector4 : public EditorPropertyVectorN {
-	VLTRCLASS(EditorPropertyVector4, EditorPropertyVectorN);
-
+class EditorPropertyVector4 : public EditorPropertyVectorN
+{
 public:
 	EditorPropertyVector4(bool p_force_wide = false);
 };
 
-class EditorPropertyVector4i : public EditorPropertyVectorN {
-	VLTRCLASS(EditorPropertyVector4i, EditorPropertyVectorN);
-
+class EditorPropertyVector4i : public EditorPropertyVectorN
+{
 public:
 	EditorPropertyVector4i(bool p_force_wide = false);
 };
+
+

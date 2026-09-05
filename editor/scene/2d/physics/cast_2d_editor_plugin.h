@@ -35,11 +35,10 @@
 
 class CanvasItemEditor;
 
-class Cast2DEditor : public Control {
-	VLTRCLASS(Cast2DEditor, Control);
-
-	CanvasItemEditor *canvas_item_editor = nullptr;
-	Node2D *node = nullptr;
+class Cast2DEditor : public Control
+{
+	CanvasItemEditor* canvas_item_editor = nullptr;
+	Node2D* node = nullptr;
 
 	bool pressed = false;
 	Point2 original_target_position;
@@ -47,27 +46,32 @@ class Cast2DEditor : public Control {
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 
 public:
-	bool forward_canvas_gui_input(const Ref<InputEvent> &p_event);
-	void forward_canvas_draw_over_viewport(Control *p_overlay);
-	void edit(Node2D *p_node);
+	bool forward_canvas_gui_input(const Ref<InputEvent>& p_event);
+	void forward_canvas_draw_over_viewport(Control* p_overlay);
+	void edit(Node2D* p_node);
 };
 
-class Cast2DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(Cast2DEditorPlugin, EditorPlugin);
-
-	Cast2DEditor *cast_2d_editor = nullptr;
+class Cast2DEditorPlugin : public EditorPlugin
+{
+	Cast2DEditor* cast_2d_editor = nullptr;
 
 public:
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent> &p_event) override { return cast_2d_editor->forward_canvas_gui_input(p_event); }
-	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override { cast_2d_editor->forward_canvas_draw_over_viewport(p_overlay); }
+	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override
+	{
+		return cast_2d_editor->forward_canvas_gui_input(p_event);
+	}
+
+	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override
+	{
+		cast_2d_editor->forward_canvas_draw_over_viewport(p_overlay);
+	}
 
 	virtual String get_plugin_name() const override { return "Cast2D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool visible) override;
 
 	Cast2DEditorPlugin();
 };
+
+

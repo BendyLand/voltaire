@@ -31,7 +31,6 @@
 #include "image_loader_svg.h"
 
 #include "core/os/os.h"
-#include "core/variant/variant.h"
 
 #include <thorvg.h>
 

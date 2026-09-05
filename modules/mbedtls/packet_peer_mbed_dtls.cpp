@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "packet_peer_mbed_dtls.h"
 
 int PacketPeerMbedDTLS::bio_send(void* ctx, const unsigned char* buf, size_t len)

@@ -33,10 +33,6 @@
 
 TEST_FORCE_LINK(test_object)
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
-#include "core/object/object.h"
-#include "core/object/script_language.h"
 #include "tests/signal_watcher.h"
 
 namespace TestObject

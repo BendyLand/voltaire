@@ -31,7 +31,6 @@
 #include "../action_map/openxr_action_set.h"
 #include "../action_map/openxr_interaction_profile.h"
 #include "../openxr_api.h"
-#include "core/object/class_db.h"
 #include "openxr_valve_analog_threshold_extension.h"
 
 // Implementation for:

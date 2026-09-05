@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "editor/themes/editor_scale.h"
 #include "openxr_select_action_dialog.h"
 #include "scene/gui/box_container.h"

@@ -30,8 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "navigation_server_3d.compat.inc"
 #include "navigation_server_3d.h"
 #include "scene/main/node.h" // IWYU pragma: keep. Needed to bind `Node *` arg.

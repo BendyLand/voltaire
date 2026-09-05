@@ -36,9 +36,8 @@
 
 class CollisionObject3D;
 
-class ShapeCast3D : public Node3D {
-	VLTRCLASS(ShapeCast3D, Node3D);
-
+class ShapeCast3D : public Node3D
+{
 	bool enabled = true;
 #ifndef DISABLE_DEPRECATED
 	void resource_changed(Ref<Resource> p_res);
@@ -92,10 +91,10 @@ public:
 	void set_enabled(bool p_enabled);
 	bool is_enabled() const;
 
-	void set_shape(const Ref<Shape3D> &p_shape);
+	void set_shape(const Ref<Shape3D>& p_shape);
 	Ref<Shape3D> get_shape() const;
 
-	void set_target_position(const Vector3 &p_point);
+	void set_target_position(const Vector3& p_point);
 	Vector3 get_target_position() const;
 
 	void set_margin(real_t p_margin);
@@ -113,17 +112,15 @@ public:
 	void set_exclude_parent_body(bool p_exclude_parent_body);
 	bool get_exclude_parent_body() const;
 
-	const Color &get_debug_shape_custom_color() const;
-	void set_debug_shape_custom_color(const Color &p_color);
+	const Color& get_debug_shape_custom_color() const;
+	void set_debug_shape_custom_color(const Color& p_color);
 
-	const Vector<Vector3> &get_debug_shape_vertices() const;
-	const Vector<Vector3> &get_debug_line_vertices() const;
+	const Vector<Vector3>& get_debug_shape_vertices() const;
+	const Vector<Vector3>& get_debug_line_vertices() const;
 
 	Ref<StandardMaterial3D> get_debug_material();
 
-	Array get_collision_result() const;
 	int get_collision_count() const;
-	Object *get_collider(int p_idx) const;
 	RID get_collider_rid(int p_idx) const;
 	int get_collider_shape(int p_idx) const;
 	Vector3 get_collision_point(int p_idx) const;
@@ -135,11 +132,13 @@ public:
 	void force_shapecast_update();
 	bool is_colliding() const;
 
-	void add_exception_rid(const RID &p_rid);
+	void add_exception_rid(const RID& p_rid);
 	void add_exception(const CollisionObject3D* rp_node);
-	void remove_exception_rid(const RID &p_rid);
+	void remove_exception_rid(const RID& p_rid);
 	void remove_exception(const CollisionObject3D* rp_node);
 	void clear_exceptions();
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 };
+
+

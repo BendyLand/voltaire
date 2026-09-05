@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "scene/gui/control.h"
 #include "scene/main/window.h"
 #include "scene/theme/theme_db.h"

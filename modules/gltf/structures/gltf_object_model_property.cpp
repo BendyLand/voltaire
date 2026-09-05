@@ -28,25 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "../gltf_template_convert.h"
-#include "core/object/class_db.h"
 #include "gltf_object_model_property.h"
-
-void GLTFObjectModelProperty::_bind_methods() {}
-
-void GLTFObjectModelProperty::append_node_path(const NodePath& p_node_path)
-{
-	node_paths.push_back(p_node_path);
-}
-
-void GLTFObjectModelProperty::append_path_to_property(
-	const NodePath& p_node_path, const StringName& p_prop_name)
-{
-	Vector<StringName> node_names = p_node_path.get_names();
-	Vector<StringName> subpath = p_node_path.get_subnames();
-	subpath.append(p_prop_name);
-	node_paths.push_back(NodePath(node_names, subpath, false));
-}
 
 GLTFAccessor::GLTFAccessorType GLTFObjectModelProperty::get_accessor_type() const
 {
@@ -65,27 +47,6 @@ GLTFAccessor::GLTFAccessorType GLTFObjectModelProperty::get_accessor_type() cons
 		return GLTFAccessor::TYPE_MAT4;
 	default:
 		return GLTFAccessor::TYPE_SCALAR;
-	}
-}
-
-GLTFAccessor::GLTFComponentType GLTFObjectModelProperty::get_component_type(
-	const Vector<Variant>& p_values) const
-{
-	switch (object_model_type) {
-	case GLTFObjectModelProperty::GLTF_OBJECT_MODEL_TYPE_BOOL: {
-		return GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE;
-	} break;
-	case GLTFObjectModelProperty::GLTF_OBJECT_MODEL_TYPE_INT: {
-		PackedInt64Array int_values;
-		for (int i = 0; i < p_values.size(); i++) {
-			int_values.append(p_values[i]);
-		}
-		return GLTFAccessor::get_minimal_integer_component_type_from_ints(int_values);
-	} break;
-	default: {
-		// The base glTF specification only supports 32-bit float accessors for floating point data.
-		return GLTFAccessor::COMPONENT_TYPE_SINGLE_FLOAT;
-	} break;
 	}
 }
 
@@ -111,18 +72,6 @@ void GLTFObjectModelProperty::set_godot_to_gltf_expression(
 	godot_to_gltf_expr = p_godot_to_gltf_expr;
 }
 
-TypedArray<NodePath> GLTFObjectModelProperty::get_node_paths() const
-{
-	return TypedArray<NodePath>(node_paths);
-}
-
-bool GLTFObjectModelProperty::has_node_paths() const { return !node_paths.is_empty(); }
-
-void GLTFObjectModelProperty::set_node_paths(const TypedArray<NodePath>& p_node_paths)
-{
-	node_paths = TypedArray<NodePath>(p_node_paths);
-}
-
 GLTFObjectModelProperty::GLTFObjectModelType GLTFObjectModelProperty::get_object_model_type() const
 {
 	return object_model_type;
@@ -143,31 +92,6 @@ bool GLTFObjectModelProperty::has_json_pointers() const { return !json_pointers.
 void GLTFObjectModelProperty::set_json_pointers(const Vector<PackedStringArray>& p_json_pointers)
 {
 	json_pointers = p_json_pointers;
-}
-
-TypedArray<PackedStringArray> GLTFObjectModelProperty::get_json_pointers_bind() const
-{
-	return GLTFTemplateConvert::to_array(json_pointers);
-}
-
-void GLTFObjectModelProperty::set_json_pointers_bind(
-	const TypedArray<PackedStringArray>& p_json_pointers)
-{
-	GLTFTemplateConvert::set_from_array(json_pointers, p_json_pointers);
-}
-
-Variant::Type GLTFObjectModelProperty::get_variant_type() const { return variant_type; }
-
-void GLTFObjectModelProperty::set_variant_type(Variant::Type p_variant_type)
-{
-	variant_type = p_variant_type;
-}
-
-void GLTFObjectModelProperty::set_types(
-	Variant::Type p_variant_type, GLTFObjectModelType p_obj_model_type)
-{
-	variant_type = p_variant_type;
-	object_model_type = p_obj_model_type;
 }
 
 

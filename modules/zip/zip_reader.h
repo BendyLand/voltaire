@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/io/file_access.h"
-#include "core/object/ref_counted.h"
 
 #include <thirdparty/minizip/unzip.h>
 

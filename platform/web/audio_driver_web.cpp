@@ -34,7 +34,6 @@
 
 #include "core/config/engine.h"
 #include "core/math/math_funcs_binary.h"
-#include "core/object/object.h"
 #include "servers/audio/audio_stream.h"
 
 #include <emscripten.h>

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "graph_frame.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/label.h"

@@ -40,11 +40,11 @@ class LineEdit;
 class OptionButton;
 class TextureRect;
 
-class ProjectDialog : public ConfirmationDialog {
-	VLTRCLASS(ProjectDialog, ConfirmationDialog);
-
+class ProjectDialog : public ConfirmationDialog
+{
 public:
-	enum Mode {
+	enum Mode
+	{
 		MODE_NEW,
 		MODE_IMPORT,
 		MODE_INSTALL,
@@ -53,18 +53,21 @@ public:
 	};
 
 private:
-	enum MessageType {
+	enum MessageType
+	{
 		MESSAGE_ERROR,
 		MESSAGE_WARNING,
 		MESSAGE_SUCCESS,
 	};
 
-	enum InputType {
+	enum InputType
+	{
 		PROJECT_PATH,
 		INSTALL_PATH,
 	};
 
-	enum InvalidStateFlag {
+	enum InvalidStateFlag
+	{
 		INVALID_STATE_FLAG_NONE = 0,
 		INVALID_STATE_FLAG_PATH_INPUT = 1 << 0,
 		INVALID_STATE_FLAG_RENDERER_SELECT = 1 << 1,
@@ -72,37 +75,37 @@ private:
 
 	Mode mode = MODE_NEW;
 	bool is_folder_empty = true;
-	ConfirmationDialog *nonempty_confirmation = nullptr;
+	ConfirmationDialog* nonempty_confirmation = nullptr;
 
-	CheckButton *create_dir = nullptr;
-	Button *project_browse = nullptr;
-	Button *install_browse = nullptr;
-	VBoxContainer *name_container = nullptr;
-	VBoxContainer *project_path_container = nullptr;
-	VBoxContainer *install_path_container = nullptr;
+	CheckButton* create_dir = nullptr;
+	Button* project_browse = nullptr;
+	Button* install_browse = nullptr;
+	VBoxContainer* name_container = nullptr;
+	VBoxContainer* project_path_container = nullptr;
+	VBoxContainer* install_path_container = nullptr;
 
-	VBoxContainer *renderer_container = nullptr;
-	Label *renderer_info = nullptr;
-	HBoxContainer *default_files_container = nullptr;
+	VBoxContainer* renderer_container = nullptr;
+	Label* renderer_info = nullptr;
+	HBoxContainer* default_files_container = nullptr;
 	Ref<ButtonGroup> renderer_button_group;
 	bool rendering_device_supported = false;
 	bool rendering_device_checked = false;
-	Label *rd_not_supported = nullptr;
+	Label* rd_not_supported = nullptr;
 
-	Label *msg = nullptr;
-	LineEdit *project_name = nullptr;
-	LineEdit *project_path = nullptr;
-	LineEdit *install_path = nullptr;
-	TextureRect *project_status_rect = nullptr;
-	TextureRect *install_status_rect = nullptr;
+	Label* msg = nullptr;
+	LineEdit* project_name = nullptr;
+	LineEdit* project_path = nullptr;
+	LineEdit* install_path = nullptr;
+	TextureRect* project_status_rect = nullptr;
+	TextureRect* install_status_rect = nullptr;
 
-	OptionButton *vcs_metadata_selection = nullptr;
+	OptionButton* vcs_metadata_selection = nullptr;
 
-	CheckBox *edit_check_box = nullptr;
+	CheckBox* edit_check_box = nullptr;
 
-	EditorFileDialog *fdialog_project = nullptr;
-	EditorFileDialog *fdialog_install = nullptr;
-	AcceptDialog *dialog_error = nullptr;
+	EditorFileDialog* fdialog_project = nullptr;
+	EditorFileDialog* fdialog_install = nullptr;
+	AcceptDialog* dialog_error = nullptr;
 
 	String zip_path;
 	String zip_title;
@@ -112,22 +115,24 @@ private:
 
 	uint32_t invalid_state_flags = INVALID_STATE_FLAG_NONE;
 
-	void _set_message(const String &p_msg, MessageType p_type, InputType input_type = PROJECT_PATH);
+	void _set_message(const String& p_msg, MessageType p_type, InputType input_type = PROJECT_PATH);
 	void _update_ok_button();
 	void _validate_path();
 
 	// Project path for MODE_NEW and MODE_INSTALL. Install path for MODE_IMPORT.
 	// Install path is only visible when importing a ZIP.
 	String _get_target_path();
-	void _set_target_path(const String &p_text);
+	void _set_target_path(const String& p_text);
 
 	// Calculated from project name / ZIP name.
 	String auto_dir;
 
-	// Updates `auto_dir`. If the target path dir name is equal to `auto_dir` (the default state), the target path is also updated.
+	// Updates `auto_dir`. If the target path dir name is equal to `auto_dir` (the default state),
+	// the target path is also updated.
 	void _update_target_auto_dir();
 
-	// While `create_dir` is disabled, stores the last target path dir name, or an empty string if equal to `auto_dir`.
+	// While `create_dir` is disabled, stores the last target path dir name, or an empty string if
+	// equal to `auto_dir`.
 	String last_custom_target_dir;
 	void _create_dir_toggled(bool p_pressed);
 
@@ -138,8 +143,8 @@ private:
 	void _browse_project_path();
 	void _browse_install_path();
 
-	void _project_path_selected(const String &p_path);
-	void _install_path_selected(const String &p_path);
+	void _project_path_selected(const String& p_path);
+	void _install_path_selected(const String& p_path);
 
 	void _reset_name();
 	void _renderer_selected();
@@ -153,11 +158,11 @@ protected:
 
 public:
 	void set_mode(Mode p_mode);
-	void set_project_name(const String &p_name);
-	void set_project_path(const String &p_path);
-	void set_zip_path(const String &p_path);
-	void set_zip_title(const String &p_title);
-	void set_original_project_path(const String &p_path);
+	void set_project_name(const String& p_name);
+	void set_project_path(const String& p_path);
+	void set_zip_path(const String& p_path);
+	void set_zip_title(const String& p_title);
+	void set_original_project_path(const String& p_path);
 	void set_duplicate_can_edit(bool p_duplicate_can_edit);
 
 	void ask_for_path_and_show();
@@ -165,3 +170,5 @@ public:
 
 	ProjectDialog();
 };
+
+

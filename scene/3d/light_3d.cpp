@@ -30,7 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "light_3d.h"
 #include "scene/main/scene_tree.h"

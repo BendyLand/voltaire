@@ -30,7 +30,6 @@
 
 #include "os_windows.h"
 
-#include "core/profiling/profiling.h"
 #include "main/main.h"
 
 #include <clocale>

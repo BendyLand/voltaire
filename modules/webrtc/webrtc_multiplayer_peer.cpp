@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "webrtc_multiplayer_peer.h"
 
 void WebRTCMultiplayerPeer::_bind_methods() {}

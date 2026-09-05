@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
@@ -45,89 +44,9 @@
 #include "scene/gui/tree.h"
 #include "scene/main/timer.h"
 
-void RunInstancesDialog::_fetch_main_args()
-{
-	if (!main_args_edit
-			 ->has_focus()) { // Only set the text if the user is not currently editing it.
-		main_args_edit->set_text(GLOBAL_GET("editor/run/main_run_args"));
-	}
-}
-
 void RunInstancesDialog::_start_main_timer() { main_apply_timer->start(); }
 
 void RunInstancesDialog::_start_instance_timer() { instance_apply_timer->start(); }
-
-void RunInstancesDialog::_refresh_argument_count()
-{
-	instance_tree->clear();
-	instance_tree->create_item(); // Root.
-
-	while (instance_count->get_value() > stored_data.size()) {
-		stored_data.append(Dictionary());
-	}
-
-	instances_data.resize(instance_count->get_value());
-	InstanceData* instances_write = instances_data.ptrw();
-
-	for (int i = 0; i < instances_data.size(); i++) {
-		InstanceData instance;
-		const Dictionary& instance_data = stored_data[i];
-
-		_create_instance(instance, instance_data, i + 1);
-		instances_write[i] = instance;
-	}
-}
-
-void RunInstancesDialog::_create_instance(
-	InstanceData& p_instance, const Dictionary& p_data, int p_idx)
-{
-	TreeItem* instance_item = instance_tree->create_item();
-	p_instance.item = instance_item;
-
-	instance_item->set_cell_mode(COLUMN_OVERRIDE_ARGS, TreeItem::CELL_MODE_CHECK);
-	instance_item->set_editable(COLUMN_OVERRIDE_ARGS, true);
-	instance_item->set_text(COLUMN_OVERRIDE_ARGS, TTR("Enabled"));
-	instance_item->set_checked(COLUMN_OVERRIDE_ARGS, p_data.get("override_args", false));
-
-	instance_item->set_editable(COLUMN_LAUNCH_ARGUMENTS, true);
-	instance_item->set_text(COLUMN_LAUNCH_ARGUMENTS, p_data.get("arguments", String()));
-
-	instance_item->set_cell_mode(COLUMN_OVERRIDE_FEATURES, TreeItem::CELL_MODE_CHECK);
-	instance_item->set_editable(COLUMN_OVERRIDE_FEATURES, true);
-	instance_item->set_text(COLUMN_OVERRIDE_FEATURES, TTR("Enabled"));
-	instance_item->set_checked(COLUMN_OVERRIDE_FEATURES, p_data.get("override_features", false));
-
-	instance_item->set_editable(COLUMN_FEATURE_TAGS, true);
-	instance_item->set_text(COLUMN_FEATURE_TAGS, p_data.get("features", String()));
-}
-
-void RunInstancesDialog::_save_main_args()
-{
-	ProjectSettings::get_singleton()->set_setting(
-		"editor/run/main_run_args", main_args_edit->get_text());
-	ProjectSettings::get_singleton()->save();
-	EditorSettings::get_singleton()->set_project_metadata(
-		"debug_options", "run_main_feature_tags", main_features_edit->get_text());
-	EditorSettings::get_singleton()->set_project_metadata("debug_options",
-		"multiple_instances_enabled", enable_multiple_instances_checkbox->is_pressed());
-}
-
-void RunInstancesDialog::_save_arguments()
-{
-	for (int i = 0; i < instances_data.size(); i++) {
-		const InstanceData& instance = instances_data[i];
-		Dictionary dict;
-		dict["override_args"] = instance.overrides_run_args();
-		dict["arguments"] = instance.get_launch_arguments();
-		dict["override_features"] = instance.overrides_features();
-		dict["features"] = instance.get_feature_tags();
-		stored_data[i] = dict;
-	}
-	EditorSettings::get_singleton()->set_project_metadata(
-		"debug_options", "run_instances_config", stored_data);
-	EditorSettings::get_singleton()->set_project_metadata(
-		"debug_options", "run_instance_count", instance_count->get_value());
-}
 
 Vector<String> RunInstancesDialog::_split_cmdline_args(const String& p_arg_string) const
 {
@@ -166,48 +85,6 @@ Vector<String> RunInstancesDialog::_split_cmdline_args(const String& p_arg_strin
 		split_args.push_back(p_arg_string.substr(arg_start, arg_length));
 	}
 	return split_args;
-}
-
-void RunInstancesDialog::_instance_menu_id_pressed(int p_option)
-{
-	switch (p_option) {
-	case CLEAR_ITEM: {
-		int item_to_clear = popup_menu->get_item_metadata(0);
-		if (item_to_clear >= 0 && item_to_clear < stored_data.size()) {
-			stored_data[item_to_clear] = Dictionary();
-		}
-	} break;
-	case CLEAR_ALL: {
-		stored_data.clear();
-		stored_data.resize(instance_count->get_value());
-	} break;
-	}
-
-	_start_instance_timer();
-	_refresh_argument_count();
-}
-
-void RunInstancesDialog::_instance_tree_rmb(const Vector2& p_pos, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	popup_menu->clear();
-	popup_menu->add_item(TTR("Clear"), CLEAR_ITEM);
-
-	TreeItem* item = instance_tree->get_item_at_position(p_pos);
-	if (item) {
-		popup_menu->set_item_metadata(0, item->get_index());
-	}
-	else {
-		popup_menu->set_item_disabled(0, true);
-	}
-
-	popup_menu->add_item(TTR("Clear All"), CLEAR_ALL);
-	popup_menu->set_position(instance_tree->get_screen_position() + p_pos);
-	popup_menu->reset_size();
-	popup_menu->popup();
 }
 
 void RunInstancesDialog::popup_dialog() { popup_centered_clamped(Size2(1200, 600) * EDSCALE, 0.8); }
@@ -314,135 +191,6 @@ void RunInstancesDialog::apply_custom_features(int p_instance_idx)
 	}
 	OS::get_singleton()->set_environment(
 		"GODOT_EDITOR_CUSTOM_FEATURES", String(",").join(stripped_features));
-}
-
-RunInstancesDialog::RunInstancesDialog()
-{
-	singleton = this;
-	set_title(TTR("Run Instances"));
-
-	main_apply_timer = memnew(Timer);
-	main_apply_timer->set_wait_time(0.5);
-	main_apply_timer->set_one_shot(true);
-	add_child(main_apply_timer);
-	main_apply_timer->connect("timeout", callable_mp(this, &RunInstancesDialog::_save_main_args));
-
-	instance_apply_timer = memnew(Timer);
-	instance_apply_timer->set_wait_time(0.5);
-	instance_apply_timer->set_one_shot(true);
-	add_child(instance_apply_timer);
-	instance_apply_timer->connect(
-		"timeout", callable_mp(this, &RunInstancesDialog::_save_arguments));
-
-	VBoxContainer* main_vb = memnew(VBoxContainer);
-	add_child(main_vb);
-
-	GridContainer* main_gc = memnew(GridContainer);
-	main_gc->set_columns(2);
-	main_vb->add_child(main_gc);
-
-	{
-		Label* l = memnew(Label);
-		l->set_text(TTR("Main Run Args:"));
-		main_gc->add_child(l);
-	}
-
-	{
-		Label* l = memnew(Label);
-		l->set_text(TTR("Main Feature Tags:"));
-		main_gc->add_child(l);
-	}
-
-	stored_data = TypedArray<Dictionary>(EditorSettings::get_singleton()->get_project_metadata(
-		"debug_options", "run_instances_config", TypedArray<Dictionary>()));
-
-	main_args_edit = memnew(LineEdit);
-	main_args_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	main_args_edit->set_placeholder(TTR("Space-separated arguments, example: host player1 blue"));
-	main_args_edit->set_accessibility_name(TTRC("Main Run Args:"));
-	main_gc->add_child(main_args_edit);
-	_fetch_main_args();
-	ProjectSettings::get_singleton()->obj->connect(
-		"settings_changed", callable_mp(this, &RunInstancesDialog::_fetch_main_args));
-	main_args_edit->connect(SceneStringName(text_changed),
-		callable_mp(this, &RunInstancesDialog::_start_main_timer).unbind(1));
-
-	main_features_edit = memnew(LineEdit);
-	main_features_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	main_features_edit->set_placeholder(TTR("Comma-separated tags, example: demo, steam, event"));
-	main_features_edit->set_text(EditorSettings::get_singleton()->get_project_metadata(
-		"debug_options", "run_main_feature_tags", ""));
-	main_features_edit->set_accessibility_name(TTRC("Main Feature Tags:"));
-	main_gc->add_child(main_features_edit);
-	main_features_edit->connect(SceneStringName(text_changed),
-		callable_mp(this, &RunInstancesDialog::_start_main_timer).unbind(1));
-
-	main_vb->add_child(memnew(HSeparator));
-
-	HBoxContainer* instance_hb = memnew(HBoxContainer);
-	instance_hb->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	main_vb->add_child(instance_hb);
-
-	enable_multiple_instances_checkbox = memnew(CheckBox);
-	enable_multiple_instances_checkbox->set_text(TTRC("Enable Multiple Instances"));
-	enable_multiple_instances_checkbox->set_pressed(
-		EditorSettings::get_singleton()->get_project_metadata(
-			"debug_options", "multiple_instances_enabled", false));
-	instance_hb->add_child(enable_multiple_instances_checkbox);
-	enable_multiple_instances_checkbox->connect(
-		SceneStringName(pressed), callable_mp(this, &RunInstancesDialog::_start_main_timer));
-
-	instance_count = memnew(SpinBox);
-	instance_count->set_min(1);
-	instance_count->set_max(20);
-	instance_count->set_value(EditorSettings::get_singleton()->get_project_metadata(
-		"debug_options", "run_instance_count", stored_data.size()));
-	instance_count->set_accessibility_name(TTRC("Number of Instances"));
-
-	instance_hb->add_child(instance_count);
-	instance_count->connect(SceneStringName(value_changed),
-		callable_mp(this, &RunInstancesDialog::_start_instance_timer).unbind(1));
-	instance_count->connect(SceneStringName(value_changed),
-		callable_mp(this, &RunInstancesDialog::_refresh_argument_count).unbind(1));
-	enable_multiple_instances_checkbox->connect(
-		SceneStringName(toggled), callable_mp(instance_count, &SpinBox::set_editable));
-	instance_count->set_editable(enable_multiple_instances_checkbox->is_pressed());
-
-	MarginContainer* mc = memnew(MarginContainer);
-	mc->set_theme_type_variation("NoBorderHorizontalWindow");
-	mc->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	main_vb->add_child(mc);
-
-	instance_tree = memnew(Tree);
-	instance_tree->set_h_scroll_enabled(false);
-	instance_tree->set_theme_type_variation("TreeTable");
-	instance_tree->set_hide_folding(true);
-	instance_tree->set_columns(4);
-	instance_tree->set_column_titles_visible(true);
-	instance_tree->set_column_title(COLUMN_OVERRIDE_ARGS, TTR("Override Main Run Args"));
-	instance_tree->set_column_expand(COLUMN_OVERRIDE_ARGS, false);
-	instance_tree->set_column_title(COLUMN_LAUNCH_ARGUMENTS, TTR("Launch Arguments"));
-	instance_tree->set_column_title(COLUMN_OVERRIDE_FEATURES, TTR("Override Main Tags"));
-	instance_tree->set_column_expand(COLUMN_OVERRIDE_FEATURES, false);
-	instance_tree->set_column_title(COLUMN_FEATURE_TAGS, TTR("Feature Tags"));
-	instance_tree->set_hide_root(true);
-	instance_tree->set_allow_rmb_select(true);
-	instance_tree->set_scroll_hint_mode(Tree::SCROLL_HINT_MODE_BOTTOM);
-
-	popup_menu = memnew(PopupMenu);
-	popup_menu->connect(SceneStringName(id_pressed),
-		callable_mp(this, &RunInstancesDialog::_instance_menu_id_pressed));
-	instance_tree->add_child(popup_menu);
-
-	instance_tree->connect(
-		"item_mouse_selected", callable_mp(this, &RunInstancesDialog::_instance_tree_rmb));
-	instance_tree->connect(
-		"empty_clicked", callable_mp(this, &RunInstancesDialog::_instance_tree_rmb));
-	mc->add_child(instance_tree);
-
-	_refresh_argument_count();
-	instance_tree->connect(
-		"item_edited", callable_mp(this, &RunInstancesDialog::_start_instance_timer));
 }
 
 bool RunInstancesDialog::InstanceData::overrides_run_args() const

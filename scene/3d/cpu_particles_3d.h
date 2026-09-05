@@ -38,8 +38,6 @@ class Mesh;
 class RandomNumberGenerator;
 
 class CPUParticles3D : public GeometryInstance3D {
-private:
-	VLTRCLASS(CPUParticles3D, GeometryInstance3D);
 
 public:
 	enum DrawOrder {
@@ -208,15 +206,7 @@ private:
 	void _set_redraw(bool p_redraw);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
-
-#ifndef DISABLE_DEPRECATED
-	void _restart_bind_compat_92089();
-	void _request_particles_process_bind_compat_109142(real_t p_time);
-	static void _bind_compatibility_methods();
-#endif
 
 public:
 	AABB get_aabb() const override;
@@ -344,7 +334,3 @@ public:
 	~CPUParticles3D();
 };
 
-VARIANT_ENUM_CAST(CPUParticles3D::DrawOrder)
-VARIANT_ENUM_CAST(CPUParticles3D::Parameter)
-VARIANT_ENUM_CAST(CPUParticles3D::ParticleFlags)
-VARIANT_ENUM_CAST(CPUParticles3D::EmissionShape)

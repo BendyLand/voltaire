@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "../multiplayer_synchronizer.h"
-#include "core/object/callable_mp.h"
 #include "editor/docks/editor_dock_manager.h"
 #include "editor/editor_interface.h"
 #include "editor/editor_node.h"

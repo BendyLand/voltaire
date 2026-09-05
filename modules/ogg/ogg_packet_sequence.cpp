@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 #include "ogg_packet_sequence.h"
 
 void OggPacketSequence::push_page(int64_t p_granule_pos, const Vector<PackedByteArray>& p_data)

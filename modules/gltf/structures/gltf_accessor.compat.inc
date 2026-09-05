@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "gltf_accessor.h"
 
 // 32-bit versions for compatibility.

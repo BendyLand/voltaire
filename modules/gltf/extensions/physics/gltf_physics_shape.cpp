@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/math/convex_hull.h"
-#include "core/object/class_db.h"
 #include "gltf_physics_shape.h"
 #include "scene/3d/physics/area_3d.h"
 #include "scene/resources/3d/box_shape_3d.h"
@@ -73,126 +72,12 @@ void GLTFPhysicsShape::set_importer_mesh(const Ref<ImporterMesh>& p_importer_mes
 	importer_mesh = p_importer_mesh;
 }
 
-Ref<ImporterMesh> _convert_hull_points_to_mesh(const Vector<Vector3>& p_hull_points)
-{
-	Ref<ImporterMesh> importer_mesh;
-	ERR_FAIL_COND_V_MSG(p_hull_points.size() < 3, importer_mesh,
-		"GLTFPhysicsShape: Convex hull has fewer points (" + itos(p_hull_points.size()) +
-			") than the minimum of 3. At least 3 points are required in order to save to glTF, "
-			"since it uses a mesh to represent convex hulls.");
-	if (p_hull_points.size() > 255) {
-		WARN_PRINT(
-			"GLTFPhysicsShape: Convex hull has more points (" + itos(p_hull_points.size()) +
-			") than the recommended maximum of 255. This may not load correctly in other engines.");
-	}
-	// Convert the convex hull points into an array of faces.
-	Geometry3D::MeshData md;
-	Error err = ConvexHullComputer::convex_hull(p_hull_points, md);
-	ERR_FAIL_COND_V_MSG(
-		err != OK, importer_mesh, "GLTFPhysicsShape: Failed to compute convex hull.");
-	Vector<Vector3> face_vertices;
-	for (uint32_t i = 0; i < md.faces.size(); i++) {
-		uint32_t index_count = md.faces[i].indices.size();
-		for (uint32_t j = 1; j < index_count - 1; j++) {
-			face_vertices.append(p_hull_points[md.faces[i].indices[0]]);
-			face_vertices.append(p_hull_points[md.faces[i].indices[j]]);
-			face_vertices.append(p_hull_points[md.faces[i].indices[j + 1]]);
-		}
-	}
-	// Create an ImporterMesh from the faces.
-	importer_mesh.instantiate();
-	Array surface_array;
-	surface_array.resize(Mesh::ArrayType::ARRAY_MAX);
-	surface_array[Mesh::ArrayType::ARRAY_VERTEX] = face_vertices;
-	importer_mesh->add_surface(Mesh::PRIMITIVE_TRIANGLES, surface_array);
-	return importer_mesh;
-}
-
-Ref<GLTFPhysicsShape> GLTFPhysicsShape::from_node(const CollisionShape3D* p_godot_shape_node)
-{
-	Ref<GLTFPhysicsShape> gltf_shape;
-	ERR_FAIL_NULL_V_MSG(p_godot_shape_node, gltf_shape,
-		"Tried to create a GLTFPhysicsShape from a CollisionShape3D node, but the given node was "
-		"null.");
-	Ref<Shape3D> shape_resource = p_godot_shape_node->get_shape();
-	ERR_FAIL_COND_V_MSG(shape_resource.is_null(), gltf_shape,
-		"Tried to create a GLTFPhysicsShape from a CollisionShape3D node, but the given node had a "
-		"null shape.");
-	gltf_shape = from_resource(shape_resource);
-	// Check if the shape is part of a trigger.
-	Node* parent = p_godot_shape_node->get_parent();
-	if (Object::cast_to<const Area3D>(parent)) {
-		gltf_shape->set_is_trigger(true);
-	}
-	return gltf_shape;
-}
-
 CollisionShape3D* GLTFPhysicsShape::to_node(bool p_cache_shapes)
 {
 	CollisionShape3D* godot_shape_node = memnew(CollisionShape3D);
 	to_resource(p_cache_shapes); // Sets `_shape_cache`.
 	godot_shape_node->set_shape(_shape_cache);
 	return godot_shape_node;
-}
-
-Ref<GLTFPhysicsShape> GLTFPhysicsShape::from_resource(const Ref<Shape3D>& p_shape_resource)
-{
-	Ref<GLTFPhysicsShape> gltf_shape;
-	gltf_shape.instantiate();
-	ERR_FAIL_COND_V_MSG(p_shape_resource.is_null(), gltf_shape,
-		"Tried to create a GLTFPhysicsShape from a Shape3D resource, but the given resource was "
-		"null.");
-	if (Object::cast_to<BoxShape3D>(p_shape_resource.ptr())) {
-		gltf_shape->shape_type = "box";
-		Ref<BoxShape3D> box = p_shape_resource;
-		gltf_shape->set_size(box->get_size());
-	}
-	else if (Object::cast_to<const CapsuleShape3D>(p_shape_resource.ptr())) {
-		gltf_shape->shape_type = "capsule";
-		Ref<CapsuleShape3D> capsule = p_shape_resource;
-		gltf_shape->set_radius(capsule->get_radius());
-		gltf_shape->set_height(capsule->get_height());
-	}
-	else if (Object::cast_to<const CylinderShape3D>(p_shape_resource.ptr())) {
-		gltf_shape->shape_type = "cylinder";
-		Ref<CylinderShape3D> cylinder = p_shape_resource;
-		gltf_shape->set_radius(cylinder->get_radius());
-		gltf_shape->set_height(cylinder->get_height());
-	}
-	else if (Object::cast_to<const SphereShape3D>(p_shape_resource.ptr())) {
-		gltf_shape->shape_type = "sphere";
-		Ref<SphereShape3D> sphere = p_shape_resource;
-		gltf_shape->set_radius(sphere->get_radius());
-	}
-	else if (Object::cast_to<const ConvexPolygonShape3D>(p_shape_resource.ptr())) {
-		gltf_shape->shape_type = "convex";
-		Ref<ConvexPolygonShape3D> convex = p_shape_resource;
-		Vector<Vector3> hull_points = convex->get_points();
-		Ref<ImporterMesh> importer_mesh = _convert_hull_points_to_mesh(hull_points);
-		ERR_FAIL_COND_V_MSG(importer_mesh.is_null(), gltf_shape,
-			"GLTFPhysicsShape: Failed to convert convex hull points to a mesh.");
-		gltf_shape->set_importer_mesh(importer_mesh);
-	}
-	else if (Object::cast_to<const ConcavePolygonShape3D>(p_shape_resource.ptr())) {
-		gltf_shape->shape_type = "trimesh";
-		Ref<ConcavePolygonShape3D> concave = p_shape_resource;
-		Ref<ImporterMesh> importer_mesh;
-		importer_mesh.instantiate();
-		Array surface_array;
-		surface_array.resize(Mesh::ArrayType::ARRAY_MAX);
-		surface_array[Mesh::ArrayType::ARRAY_VERTEX] = concave->get_faces();
-		importer_mesh->add_surface(Mesh::PRIMITIVE_TRIANGLES, surface_array);
-		gltf_shape->set_importer_mesh(importer_mesh);
-	}
-	else {
-		ERR_PRINT(
-			"Tried to create a GLTFPhysicsShape from a Shape3D, but the given shape '" +
-			String(Variant(p_shape_resource)) +
-			"' had an unsupported shape type. Only BoxShape3D, CapsuleShape3D, CylinderShape3D, "
-			"SphereShape3D, ConcavePolygonShape3D, and ConvexPolygonShape3D are supported.");
-	}
-	gltf_shape->_shape_cache = p_shape_resource;
-	return gltf_shape;
 }
 
 Ref<Shape3D> GLTFPhysicsShape::to_resource(bool p_cache_shapes)
@@ -244,89 +129,6 @@ Ref<Shape3D> GLTFPhysicsShape::to_resource(bool p_cache_shapes)
 		}
 	}
 	return _shape_cache;
-}
-
-Ref<GLTFPhysicsShape> GLTFPhysicsShape::from_dictionary(const Dictionary& p_dictionary)
-{
-	ERR_FAIL_COND_V_MSG(!p_dictionary.has("type"), Ref<GLTFPhysicsShape>(),
-		"Failed to parse GLTFPhysicsShape, missing required field 'type'.");
-	Ref<GLTFPhysicsShape> gltf_shape;
-	gltf_shape.instantiate();
-	String shape_type = p_dictionary["type"];
-	if (shape_type == "hull") {
-		shape_type = "convex";
-	}
-	gltf_shape->shape_type = shape_type;
-	if (shape_type != "box" && shape_type != "capsule" && shape_type != "cylinder" &&
-		shape_type != "sphere" && shape_type != "convex" && shape_type != "trimesh") {
-		ERR_PRINT("GLTFPhysicsShape: Error parsing unknown shape type '" + shape_type +
-				  "'. Only box, capsule, cylinder, sphere, convex, and trimesh are supported.");
-	}
-	Dictionary properties;
-	if (p_dictionary.has(shape_type)) {
-		properties = p_dictionary[shape_type];
-	}
-	else {
-		properties = p_dictionary;
-	}
-	if (properties.has("radius")) {
-		gltf_shape->set_radius(properties["radius"]);
-	}
-	if (properties.has("height")) {
-		gltf_shape->set_height(properties["height"]);
-	}
-	if (properties.has("size")) {
-		const Array& arr = properties["size"];
-		if (arr.size() == 3) {
-			gltf_shape->set_size(Vector3(arr[0], arr[1], arr[2]));
-		}
-		else {
-			ERR_PRINT("GLTFPhysicsShape: Error parsing the size, it must have exactly 3 numbers.");
-		}
-	}
-	if (properties.has("isTrigger")) {
-		gltf_shape->set_is_trigger(properties["isTrigger"]);
-	}
-	if (properties.has("mesh")) {
-		gltf_shape->set_mesh_index(properties["mesh"]);
-	}
-	if (unlikely(gltf_shape->get_mesh_index() < 0 &&
-				 (shape_type == "convex" || shape_type == "trimesh"))) {
-		ERR_PRINT("Error parsing GLTFPhysicsShape: The mesh-based shape type '" + shape_type +
-				  "' does not have a valid mesh index.");
-	}
-	return gltf_shape;
-}
-
-Dictionary GLTFPhysicsShape::to_dictionary() const
-{
-	Dictionary gltf_shape;
-	gltf_shape["type"] = shape_type;
-	Dictionary sub;
-	if (shape_type == "box") {
-		Array size_array;
-		size_array.resize(3);
-		size_array[0] = size.x;
-		size_array[1] = size.y;
-		size_array[2] = size.z;
-		sub["size"] = size_array;
-	}
-	else if (shape_type == "capsule") {
-		sub["radius"] = get_radius();
-		sub["height"] = get_height();
-	}
-	else if (shape_type == "cylinder") {
-		sub["radius"] = get_radius();
-		sub["height"] = get_height();
-	}
-	else if (shape_type == "sphere") {
-		sub["radius"] = get_radius();
-	}
-	else if (shape_type == "trimesh" || shape_type == "convex") {
-		sub["mesh"] = get_mesh_index();
-	}
-	gltf_shape[shape_type] = sub;
-	return gltf_shape;
 }
 
 

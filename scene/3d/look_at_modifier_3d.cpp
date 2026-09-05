@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "look_at_modifier_3d.h"
 #include "scene/resources/animation.h"
 

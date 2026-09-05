@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
-#include "core/object/worker_thread_pool.h"
 #include "noise.h"
 #include "scene/resources/gradient.h"
 #include "scene/resources/texture.h"

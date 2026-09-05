@@ -30,7 +30,6 @@
 
 #include "audio_stream_mp3.h"
 #include "core/io/resource_importer.h"
-#include "core/object/class_db.h"
 #include "register_types.h"
 
 #ifdef TOOLS_ENABLED

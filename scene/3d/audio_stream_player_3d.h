@@ -43,25 +43,27 @@ class AudioStreamPlayback;
 class AudioStreamPlayerInternal;
 class VelocityTracker3D;
 
-class AudioStreamPlayer3D : public Node3D {
-	VLTRCLASS(AudioStreamPlayer3D, Node3D);
-
+class AudioStreamPlayer3D : public Node3D
+{
 public:
-	enum AttenuationModel {
+	enum AttenuationModel
+	{
 		ATTENUATION_INVERSE_DISTANCE,
 		ATTENUATION_INVERSE_SQUARE_DISTANCE,
 		ATTENUATION_LOGARITHMIC,
 		ATTENUATION_DISABLED,
 	};
 
-	enum DopplerTracking {
+	enum DopplerTracking
+	{
 		DOPPLER_TRACKING_DISABLED,
 		DOPPLER_TRACKING_IDLE_STEP,
 		DOPPLER_TRACKING_PHYSICS_STEP
 	};
 
 private:
-	enum {
+	enum
+	{
 		MAX_OUTPUTS = 8,
 		MAX_INTERSECT_AREAS = 32
 
@@ -69,9 +71,9 @@ private:
 
 	static constexpr int64_t VOLUME_VECTOR_SIZE = AudioServer::MAX_CHANNELS_PER_BUS;
 
-	AudioStreamPlayerInternal *internal = nullptr;
+	AudioStreamPlayerInternal* internal = nullptr;
 
-	SafeNumeric<float> setplay{ -1.0 };
+	SafeNumeric<float> setplay{-1.0};
 	Ref<AudioStreamPlayback> setplayback;
 
 	AttenuationModel attenuation_model = ATTENUATION_INVERSE_DISTANCE;
@@ -83,20 +85,26 @@ private:
 	uint64_t last_mix_count = -1;
 	bool force_update_panning = false;
 
-	static void _calc_output_vol(const Vector3 &source_dir, real_t tightness, FixedVector<AudioFrame, VOLUME_VECTOR_SIZE> &output);
-	static AudioFrame _calc_output_vol_stereo(const Vector3 &source_dir, real_t panning_strength);
+	static void _calc_output_vol(const Vector3& source_dir, real_t tightness,
+		FixedVector<AudioFrame, VOLUME_VECTOR_SIZE>& output);
+	static AudioFrame _calc_output_vol_stereo(const Vector3& source_dir, real_t panning_strength);
 
 #ifndef PHYSICS_3D_DISABLED
-	void _calc_reverb_vol(Area3D *area, Vector3 listener_area_pos, const FixedVector<AudioFrame, VOLUME_VECTOR_SIZE> &direct_path_vol, FixedVector<AudioFrame, VOLUME_VECTOR_SIZE> &reverb_vol);
+	void _calc_reverb_vol(Area3D* area, Vector3 listener_area_pos,
+		const FixedVector<AudioFrame, VOLUME_VECTOR_SIZE>& direct_path_vol,
+		FixedVector<AudioFrame, VOLUME_VECTOR_SIZE>& reverb_vol);
 #endif // PHYSICS_3D_DISABLED
 
-	static void _listener_changed_cb(void *self) { reinterpret_cast<AudioStreamPlayer3D *>(self)->force_update_panning = true; }
+	static void _listener_changed_cb(void* self)
+	{
+		reinterpret_cast<AudioStreamPlayer3D*>(self)->force_update_panning = true;
+	}
 
 	void _set_playing(bool p_enable);
 	bool _is_active() const;
 	StringName _get_actual_bus();
 #ifndef PHYSICS_3D_DISABLED
-	Area3D *_get_overriding_area();
+	Area3D* _get_overriding_area();
 #endif // PHYSICS_3D_DISABLED
 	Vector<AudioFrame> _update_panning();
 
@@ -129,13 +137,8 @@ private:
 	HashMap<StringName, Vector<AudioFrame>> bus_volumes;
 
 protected:
-	void _validate_property(PropertyInfo &p_property) const;
 	void _notification(int p_what);
 	static void _bind_methods();
-
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 #ifndef DISABLE_DEPRECATED
 	bool _is_autoplay_enabled_bind_compat_86907();
@@ -167,7 +170,7 @@ public:
 	bool is_playing() const;
 	float get_playback_position();
 
-	void set_bus(const StringName &p_bus);
+	void set_bus(const StringName& p_bus);
 	StringName get_bus() const;
 
 	void set_max_polyphony(int p_max_polyphony);
@@ -219,5 +222,4 @@ public:
 	~AudioStreamPlayer3D();
 };
 
-VARIANT_ENUM_CAST(AudioStreamPlayer3D::AttenuationModel)
-VARIANT_ENUM_CAST(AudioStreamPlayer3D::DopplerTracking)
+

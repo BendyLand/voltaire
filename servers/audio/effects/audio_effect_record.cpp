@@ -30,7 +30,6 @@
 
 #include "audio_effect_record.h"
 #include "core/io/marshalls.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 
 void AudioEffectRecordInstance::process(

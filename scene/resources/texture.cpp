@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/resources/placeholder_textures.h"
 #include "servers/rendering/rendering_server.h"
 #include "texture.h"

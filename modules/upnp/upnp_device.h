@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
-#include "core/variant/type_info.h"
 
 class UPNPDevice : public RefCounted {
 	VLTRCLASS(UPNPDevice, RefCounted);

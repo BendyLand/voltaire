@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/math/geometry_3d.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "navigation_agent_3d.h"
 #include "scene/3d/navigation/navigation_link_3d.h"
 #include "scene/main/scene_tree.h"

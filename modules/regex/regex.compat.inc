@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "regex.h"
 
 Ref<RegEx> RegEx::_create_from_string_bind_compat_95212(const String& p_pattern)

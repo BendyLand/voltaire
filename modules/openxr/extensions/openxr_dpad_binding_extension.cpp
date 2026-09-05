@@ -30,7 +30,6 @@
 
 #include "../openxr_api.h"
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
 #include "openxr_dpad_binding_extension.h"
 
 // Implementation for:

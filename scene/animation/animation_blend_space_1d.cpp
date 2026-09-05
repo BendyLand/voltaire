@@ -30,7 +30,6 @@
 
 #include "animation_blend_space_1d.compat.inc"
 #include "animation_blend_space_1d.h"
-#include "core/object/class_db.h"
 #include "scene/animation/animation_blend_tree.h"
 
 void AnimationNodeBlendSpace1D::get_parameter_list(LocalVector<PropertyInfo>* r_list) const

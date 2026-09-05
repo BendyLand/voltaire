@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "extensions/openxr_extension_wrapper_extension.h"
 #include "openxr_api_extension.h"
 

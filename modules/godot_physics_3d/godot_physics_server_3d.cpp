@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/debugger/engine_debugger.h"
 #include "core/os/os.h"
 #include "godot_body_direct_state_3d.h"
 #include "godot_broad_phase_3d_bvh.h"

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "physics_body_2d.h"
 #include "scene/main/scene_tree.h"
 #include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"

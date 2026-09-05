@@ -30,7 +30,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "editor/docks/editor_dock_manager.h"
 #include "editor/editor_node.h"
@@ -121,32 +120,6 @@ void FindInFilesSearch::_notification(int p_what)
 	}
 }
 
-void FindInFilesSearch::start()
-{
-	if (pattern.is_empty()) {
-		print_verbose("Nothing to search, pattern is empty");
-		this->obj->emit_signal(SceneStringName(finished));
-		return;
-	}
-	if (extension_filter.is_empty()) {
-		print_verbose("Nothing to search, filter matches no files");
-		this->obj->emit_signal(SceneStringName(finished));
-		return;
-	}
-
-	// Init search.
-	current_dir = "";
-	PackedStringArray init_folder;
-	init_folder.push_back(root_dir);
-	folders_stack.clear();
-	folders_stack.push_back(init_folder);
-
-	initial_files_count = 0;
-
-	searching = true;
-	set_process(true);
-}
-
 void FindInFilesSearch::stop()
 {
 	searching = false;
@@ -218,7 +191,6 @@ void FindInFilesSearch::_iterate()
 		set_process(false);
 		current_dir = "";
 		searching = false;
-		this->obj->emit_signal(SceneStringName(finished));
 	}
 }
 
@@ -294,62 +266,6 @@ void FindInFilesSearch::_scan_dir(
 	}
 }
 
-CodeTextEditor* get_code_edit(const String& p_fpath)
-{
-	Ref<Resource> res = ResourceCache::get_ref(p_fpath);
-	if (res.is_null()) {
-		return nullptr;
-	}
-
-	ShaderEditorPlugin* shader_editor_plugin = ShaderEditorPlugin::get_singleton();
-	ScriptEditorPlugin* script_editor_plugin = ScriptEditorPlugin::get_singleton();
-
-	if (shader_editor_plugin && shader_editor_plugin->handles(res->obj.get())) {
-		TextShaderEditor* tse =
-			Object::cast_to<TextShaderEditor>(shader_editor_plugin->get_shader_editor(res));
-		if (tse) {
-			return tse->get_code_editor();
-		}
-	}
-	else if (script_editor_plugin && script_editor_plugin->handles(res->obj.get())) {
-		ScriptEditor* script_editor = ScriptEditor::get_singleton();
-		TextEditorBase* teb =
-			Object::cast_to<TextEditorBase>(script_editor->get_script_editor(res));
-		if (teb) {
-			return teb->get_code_editor();
-		}
-	}
-	return nullptr;
-}
-
-void FindInFilesSearch::_scan_file(const String& p_fpath)
-{
-	Vector<String> lines;
-
-	CodeTextEditor* code_text_editor = get_code_edit(p_fpath);
-	if (code_text_editor) {
-		lines = code_text_editor->get_text_editor()->get_text().split("\n");
-	}
-	else {
-		Ref<FileAccess> f = FileAccess::open(p_fpath, FileAccess::READ);
-		ERR_FAIL_COND_MSG(f.is_null(), "Cannot open file from path '" + p_fpath + "'.");
-		lines = f->get_as_text().split("\n");
-	}
-
-	int line_number = 0;
-
-	for (const String& line : lines) {
-		// Line number starts at 1.
-		++line_number;
-		int begin = 0;
-		int end = 0;
-
-		while (find_next(line, pattern, end, match_case, whole_words, begin, end)) {
-			this->obj->emit_signal(SNAME("result_found"), p_fpath, line_number, begin, end, line);
-		}
-	}
-}
-
 bool FindInFilesSearch::_is_file_matched(
 	const HashSet<String>& p_wildcards, const String& p_file_path, bool p_case_sensitive) const
 {
@@ -366,25 +282,7 @@ bool FindInFilesSearch::_is_file_matched(
 	return false;
 }
 
-void FindInFilesSearch::_bind_methods() {}
-
 //-----------------------------------------------------------------------------
-
-void FindInFilesDialog::set_search_text(const String& p_text)
-{
-	if (!p_text.is_empty()) {
-		search_text_line_edit->set_text(p_text);
-		_on_search_text_modified(p_text);
-	}
-	if (replace_mode && !p_text.is_empty()) {
-		callable_mp((Control*)replace_text_line_edit, &Control::grab_focus).call_deferred(false);
-		replace_text_line_edit->select_all();
-	}
-	else {
-		callable_mp((Control*)search_text_line_edit, &Control::grab_focus).call_deferred(false);
-		search_text_line_edit->select_all();
-	}
-}
 
 void FindInFilesDialog::set_replace_text(const String& p_text)
 {
@@ -473,47 +371,7 @@ HashSet<String> FindInFilesDialog::get_excludes() const
 	return excludes;
 }
 
-void FindInFilesDialog::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (is_visible()) {
-			// Extensions might have changed in the meantime, we clean them and instance them again.
-			for (int i = 0; i < filters_container->get_child_count(); i++) {
-				filters_container->get_child(i)->queue_free();
-			}
-			Array exts = GLOBAL_GET("editor/script/search_in_file_extensions");
-			for (int i = 0; i < exts.size(); ++i) {
-				CheckBox* cb = memnew(CheckBox);
-				cb->set_text(exts[i]);
-				if (!filters_preferences.has(exts[i])) {
-					filters_preferences[exts[i]] = true;
-				}
-				cb->set_pressed(filters_preferences[exts[i]]);
-				filters_container->add_child(cb);
-			}
-		}
-	} break;
-	}
-}
-
 void FindInFilesDialog::_on_folder_button_pressed() { folder_dialog->popup_file_dialog(); }
-
-void FindInFilesDialog::custom_action(const String& p_action)
-{
-	for (int i = 0; i < filters_container->get_child_count(); ++i) {
-		CheckBox* cb = static_cast<CheckBox*>(filters_container->get_child(i));
-		filters_preferences[cb->get_text()] = cb->is_pressed();
-	}
-
-	if (p_action == "find") {
-		this->obj->emit_signal(SNAME("find_requested"));
-	}
-	else if (p_action == "replace") {
-		this->obj->emit_signal(SNAME("replace_requested"));
-	}
-	hide();
-}
 
 void FindInFilesDialog::_on_search_text_modified(const String& p_text)
 {
@@ -576,153 +434,6 @@ String FindInFilesDialog::_validate_filter_wildcard(const String& p_expression) 
 
 	return ret;
 }
-
-void FindInFilesDialog::_bind_methods() {}
-
-FindInFilesDialog::FindInFilesDialog()
-{
-	set_min_size(Size2(500 * EDSCALE, 0));
-	set_title(TTRC("Find in Files"));
-
-	VBoxContainer* vbc = memnew(VBoxContainer);
-	vbc->set_anchor_and_offset(SIDE_LEFT, Control::ANCHOR_BEGIN, 8 * EDSCALE);
-	vbc->set_anchor_and_offset(SIDE_TOP, Control::ANCHOR_BEGIN, 8 * EDSCALE);
-	vbc->set_anchor_and_offset(SIDE_RIGHT, Control::ANCHOR_END, -8 * EDSCALE);
-	vbc->set_anchor_and_offset(SIDE_BOTTOM, Control::ANCHOR_END, -8 * EDSCALE);
-	add_child(vbc);
-
-	GridContainer* gc = memnew(GridContainer);
-	gc->set_columns(2);
-	vbc->add_child(gc);
-
-	Label* find_label = memnew(Label);
-	find_label->set_text(TTRC("Find:"));
-	gc->add_child(find_label);
-
-	search_text_line_edit = memnew(LineEdit);
-	search_text_line_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	search_text_line_edit->set_accessibility_name(TTRC("Find:"));
-	search_text_line_edit->connect(SceneStringName(text_changed),
-		callable_mp(this, &FindInFilesDialog::_on_search_text_modified));
-	search_text_line_edit->connect(SceneStringName(text_submitted),
-		callable_mp(this, &FindInFilesDialog::_on_search_text_submitted));
-	gc->add_child(search_text_line_edit);
-
-	replace_label = memnew(Label);
-	replace_label->set_text(TTRC("Replace:"));
-	replace_label->hide();
-	gc->add_child(replace_label);
-
-	replace_text_line_edit = memnew(LineEdit);
-	replace_text_line_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	replace_text_line_edit->set_accessibility_name(TTRC("Replace:"));
-	replace_text_line_edit->connect(SceneStringName(text_submitted),
-		callable_mp(this, &FindInFilesDialog::_on_replace_text_submitted));
-	replace_text_line_edit->hide();
-	gc->add_child(replace_text_line_edit);
-
-	gc->add_child(memnew(Control)); // Space to maintain the grid alignment.
-
-	{
-		HBoxContainer* hbc = memnew(HBoxContainer);
-
-		whole_words_checkbox = memnew(CheckBox);
-		whole_words_checkbox->set_text(TTRC("Whole Words"));
-		hbc->add_child(whole_words_checkbox);
-
-		match_case_checkbox = memnew(CheckBox);
-		match_case_checkbox->set_text(TTRC("Match Case"));
-		hbc->add_child(match_case_checkbox);
-
-		gc->add_child(hbc);
-	}
-
-	Label* folder_label = memnew(Label);
-	folder_label->set_text(TTRC("Folder:"));
-	gc->add_child(folder_label);
-
-	{
-		HBoxContainer* hbc = memnew(HBoxContainer);
-
-		Label* prefix_label = memnew(Label);
-		prefix_label->set_text("res://");
-		prefix_label->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-		hbc->add_child(prefix_label);
-
-		folder_line_edit = memnew(LineEdit);
-		folder_line_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		folder_line_edit->connect(SceneStringName(text_submitted),
-			callable_mp(this, &FindInFilesDialog::_on_search_text_submitted));
-		folder_line_edit->set_accessibility_name(TTRC("Folder:"));
-		hbc->add_child(folder_line_edit);
-
-		Button* folder_button = memnew(Button);
-		folder_button->set_accessibility_name(TTRC("Select Folder"));
-		folder_button->set_text("...");
-		folder_button->connect(SceneStringName(pressed),
-			callable_mp(this, &FindInFilesDialog::_on_folder_button_pressed));
-		hbc->add_child(folder_button);
-
-		folder_dialog = memnew(EditorFileDialog);
-		folder_dialog->set_file_mode(FileDialog::FILE_MODE_OPEN_DIR);
-		folder_dialog->connect(
-			"dir_selected", callable_mp(this, &FindInFilesDialog::_on_folder_selected));
-		add_child(folder_dialog);
-
-		gc->add_child(hbc);
-	}
-
-	Label* includes_label = memnew(Label);
-	includes_label->set_text(TTRC("Includes:"));
-	includes_label->set_tooltip_text(
-		TTRC("Include the files with the following expressions. Use \",\" to separate."));
-	includes_label->set_mouse_filter(Control::MOUSE_FILTER_PASS);
-	gc->add_child(includes_label);
-
-	includes_line_edit = memnew(LineEdit);
-	includes_line_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	includes_line_edit->set_placeholder(TTRC("example: scripts,scenes/*/test.gd"));
-	includes_line_edit->set_accessibility_name(TTRC("Includes:"));
-	includes_line_edit->connect(SceneStringName(text_submitted),
-		callable_mp(this, &FindInFilesDialog::_on_search_text_submitted));
-	gc->add_child(includes_line_edit);
-
-	Label* excludes_label = memnew(Label);
-	excludes_label->set_text(TTRC("Excludes:"));
-	excludes_label->set_tooltip_text(
-		TTRC("Exclude the files with the following expressions. Use \",\" to separate."));
-	excludes_label->set_mouse_filter(Control::MOUSE_FILTER_PASS);
-	gc->add_child(excludes_label);
-
-	excludes_line_edit = memnew(LineEdit);
-	excludes_line_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	excludes_line_edit->set_placeholder(TTRC("example: res://addons,scenes/test/*.gd"));
-	excludes_line_edit->set_accessibility_name(TTRC("Excludes:"));
-	excludes_line_edit->connect(SceneStringName(text_submitted),
-		callable_mp(this, &FindInFilesDialog::_on_search_text_submitted));
-	gc->add_child(excludes_line_edit);
-
-	Label* filter_label = memnew(Label);
-	filter_label->set_text(TTRC("Filters:"));
-	filter_label->set_tooltip_text(TTRC(
-		"Include the files with the following extensions. Add or remove them in ProjectSettings."));
-	filter_label->set_mouse_filter(Control::MOUSE_FILTER_PASS);
-	gc->add_child(filter_label);
-
-	filters_container = memnew(HBoxContainer);
-	gc->add_child(filters_container);
-
-	find_button = add_button(TTRC("Find..."), false, "find");
-	find_button->set_disabled(true);
-
-	replace_button = add_button(TTRC("Replace..."), false, "replace");
-	replace_button->set_disabled(true);
-
-	Button* cancel_button = get_ok_button();
-	cancel_button->set_text(TTRC("Cancel"));
-}
-
-//-----------------------------------------------------------------------------
 
 void FindInFilesPanel::set_with_replace(bool p_with_replace)
 {
@@ -853,78 +564,6 @@ void FindInFilesPanel::_notification(int p_what)
 	}
 }
 
-void FindInFilesPanel::_on_result_found(
-	const String& p_fpath, int p_line_number, int p_begin, int p_end, const String& p_text)
-{
-	TreeItem* file_item;
-	Ref<Texture2D> remove_texture = get_editor_theme_icon(SNAME("Close"));
-	Ref<Texture2D> replace_texture = get_editor_theme_icon(SNAME("ReplaceText"));
-
-	HashMap<String, TreeItem*>::Iterator E = file_items.find(p_fpath);
-	if (!E) {
-		file_item = results_display->create_item();
-		file_item->set_text(0, p_fpath);
-		file_item->set_metadata(0, p_fpath);
-
-		if (with_replace) {
-			file_item->add_button(
-				0, replace_texture, FIND_BUTTON_REPLACE, false, TTR("Replace all matches in file"));
-		}
-		file_item->add_button(0, remove_texture, FIND_BUTTON_REMOVE, false, TTR("Remove result"));
-
-		// The width of this column is restrained to checkboxes,
-		// but that doesn't make sense for the parent items,
-		// so we override their width so they can expand to full width.
-		file_item->set_expand_right(0, true);
-
-		file_items[p_fpath] = file_item;
-		file_items_results_count[file_item] = 1;
-	}
-	else {
-		file_item = E->value;
-		file_items_results_count[file_item]++;
-	}
-
-	Color file_item_color =
-		results_display->get_theme_color(SceneStringName(font_color)) * Color(1, 1, 1, 0.67);
-	file_item->set_custom_color(0, file_item_color);
-	file_item->set_selectable(0, false);
-
-	int text_index = with_replace ? 1 : 0;
-
-	TreeItem* item = results_display->create_item(file_item);
-
-	// Do this first because it resets properties of the cell...
-	item->set_cell_mode(text_index, TreeItem::CELL_MODE_CUSTOM);
-
-	// Trim result item line.
-	String trimmed_text = p_text.strip_edges(true, false);
-	int chars_removed = p_text.size() - trimmed_text.size();
-	String start = vformat("%3s: ", p_line_number);
-
-	item->set_text(text_index, start + trimmed_text);
-	item->set_custom_draw_callback(
-		text_index, callable_mp(this, &FindInFilesPanel::_draw_result_text));
-
-	Result r;
-	r.line_number = p_line_number;
-	r.begin = p_begin;
-	r.end = p_end;
-	r.begin_trimmed = p_begin - chars_removed + start.size() - 1;
-	result_items[item] = r;
-
-	if (with_replace) {
-		item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-		item->set_checked(0, true);
-		item->set_editable(0, true);
-		item->add_button(1, replace_texture, FIND_BUTTON_REPLACE, false, TTR("Replace"));
-		item->add_button(1, remove_texture, FIND_BUTTON_REMOVE, false, TTR("Remove result"));
-	}
-	else {
-		item->add_button(0, remove_texture, FIND_BUTTON_REMOVE, false, TTR("Remove result"));
-	}
-}
-
 void FindInFilesPanel::_on_theme_changed()
 {
 	results_display->add_theme_font_override(SceneStringName(font),
@@ -967,52 +606,6 @@ void FindInFilesPanel::_on_theme_changed()
 	}
 }
 
-void FindInFilesPanel::_draw_result_text(Object* p_item_obj, const Rect2& p_rect)
-{
-	TreeItem* item = Object::cast_to<TreeItem>(p_item_obj);
-	if (!item) {
-		return;
-	}
-
-	HashMap<TreeItem*, Result>::Iterator E = result_items.find(item);
-	if (!E) {
-		return;
-	}
-	Result r = E->value;
-	String item_text = item->get_text(with_replace ? 1 : 0);
-	Ref<Font> font = results_display->get_theme_font(SceneStringName(font));
-	int font_size = results_display->get_theme_font_size(SceneStringName(font_size));
-
-	Rect2 match_rect = p_rect;
-	match_rect.position.x += font->get_string_size(item_text.left(r.begin_trimmed),
-									 HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-								 .x -
-							 1;
-	match_rect.size.x = font->get_string_size(search_text_label->get_text(),
-								HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-							.x +
-						1;
-	match_rect.position.y += 1 * EDSCALE;
-	match_rect.size.y -= 2 * EDSCALE;
-
-	RID ci = item->get_tree()->get_custom_drawing_canvas_item();
-
-	Vector<Vector2> points;
-	points.resize(5);
-	points.write[0] = match_rect.position;
-	points.write[1] = match_rect.position + Vector2(match_rect.size.x, 0);
-	points.write[2] = match_rect.position + match_rect.size;
-	points.write[3] = match_rect.position + Vector2(0, match_rect.size.y);
-	points.write[4] = match_rect.position;
-	Color accent_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-	Vector<Color> colors = {Color(accent_color, 0.33)};
-	RenderingServer::get_singleton()->canvas_item_add_polyline(ci, points, colors, 2.0);
-	RenderingServer::get_singleton()->canvas_item_add_rect(
-		ci, match_rect, Color(accent_color, 0.17));
-
-	// Text is drawn by Tree already.
-}
-
 void FindInFilesPanel::_on_item_edited()
 {
 	TreeItem* item = results_display->get_selected();
@@ -1038,172 +631,7 @@ void FindInFilesPanel::_on_refresh_button_clicked() { start_search(); }
 
 void FindInFilesPanel::_on_cancel_button_clicked() { stop_search(); }
 
-void FindInFilesPanel::_on_close_button_clicked()
-{
-	this->obj->emit_signal(SNAME("close_button_clicked"));
-}
-
-void FindInFilesPanel::_on_result_selected()
-{
-	TreeItem* item = results_display->get_selected();
-	HashMap<TreeItem*, Result>::Iterator E = result_items.find(item);
-
-	if (!E) {
-		return;
-	}
-	Result r = E->value;
-
-	TreeItem* file_item = item->get_parent();
-	String fpath = file_item->get_metadata(0);
-
-	this->obj->emit_signal(SNAME("result_selected"), fpath, r.line_number, r.begin, r.end);
-}
-
 void FindInFilesPanel::_on_replace_text_changed(const String& p_text) { _update_replace_buttons(); }
-
-void FindInFilesPanel::_on_replace_all_clicked()
-{
-	String replace_text = _get_replace_text();
-
-	for (KeyValue<String, TreeItem*>& E : file_items) {
-		TreeItem* file_item = E.value;
-		String fpath = file_item->get_metadata(0);
-
-		Vector<Result> locations;
-		for (TreeItem* item = file_item->get_first_child(); item; item = item->get_next()) {
-			if (!item->is_checked(0)) {
-				continue;
-			}
-
-			HashMap<TreeItem*, Result>::Iterator F = result_items.find(item);
-			ERR_FAIL_COND(!F);
-			locations.push_back(F->value);
-		}
-
-		if (locations.size() != 0) {
-			// Results are sorted by file, so we can batch replaces.
-			_apply_replaces_in_file(fpath, locations, replace_text);
-		}
-	}
-
-	// Hide replace bar so we can't trigger the action twice without doing a new search.
-	replace_container->hide();
-
-	this->obj->emit_signal(SNAME("files_modified"));
-}
-
-void FindInFilesPanel::_on_button_clicked(
-	TreeItem* p_item, int p_column, int p_id, int p_mouse_button_index)
-{
-	const String file_path = p_item->get_metadata(0);
-
-	if (p_id == FIND_BUTTON_REPLACE) {
-		const String replace_text = _get_replace_text();
-		Vector<Result> locations;
-		if (file_items.has(file_path)) {
-			for (TreeItem* item = p_item->get_first_child(); item; item = item->get_next()) {
-				HashMap<TreeItem*, Result>::Iterator F = result_items.find(item);
-				ERR_FAIL_COND(!F);
-				locations.push_back(F->value);
-			}
-			_apply_replaces_in_file(file_path, locations, replace_text);
-		}
-		else {
-			locations.push_back(result_items.find(p_item)->value);
-			const String path = p_item->get_parent()->get_metadata(0);
-			_apply_replaces_in_file(path, locations, replace_text);
-		}
-		this->obj->emit_signal(SNAME("files_modified"));
-	}
-
-	result_items.erase(p_item);
-	if (file_items_results_count.has(p_item)) {
-		int match_count = p_item->get_child_count();
-
-		for (int i = 0; i < match_count; i++) {
-			TreeItem* child_item = p_item->get_child(i);
-			result_items.erase(child_item);
-		}
-
-		p_item->clear_children();
-		file_items.erase(file_path);
-		file_items_results_count.erase(p_item);
-	}
-
-	TreeItem* item_parent = p_item->get_parent();
-	if (item_parent) {
-		if (file_items_results_count.has(item_parent)) {
-			file_items_results_count[item_parent]--;
-		}
-		if (item_parent->get_child_count() < 2 && item_parent != results_display->get_root()) {
-			file_items.erase(item_parent->get_metadata(0));
-			get_tree()->queue_delete(item_parent->obj.get());
-		}
-	}
-	get_tree()->queue_delete(p_item->obj.get());
-	_update_matches_text();
-}
-
-void FindInFilesPanel::_apply_replaces_in_file(
-	const String& p_fpath, const Vector<Result>& p_locations, const String& p_new_text)
-{
-	CodeTextEditor* code_text_editor = get_code_edit(p_fpath);
-	CodeEdit* code_edit = nullptr;
-	if (code_text_editor) {
-		code_edit = code_text_editor->get_text_editor();
-	}
-	Ref<FileAccess> f;
-	Vector<String> lines;
-
-	if (code_edit) {
-		lines = code_edit->get_text().split("\n");
-	}
-	else {
-		f = FileAccess::open(p_fpath, FileAccess::READ);
-		ERR_FAIL_COND_MSG(f.is_null(), "Cannot open file from path '" + p_fpath + "'.");
-		lines = f->get_as_text().split("\n");
-	}
-
-	String search_text = finder->get_search_text();
-	int placeholder;
-	int repl_line_number = 0;
-
-	// Iterate backwards so changes don't affect the location of the next change in the same line.
-	for (int i = p_locations.size() - 1; i >= 0; i--) {
-		const Result& location = p_locations[i];
-		repl_line_number = location.line_number - 1;
-
-		if (repl_line_number >= 0 && repl_line_number < lines.size()) {
-			String& line = lines.write[repl_line_number];
-			if (find_next(line, search_text, location.begin, finder->is_match_case(),
-					finder->is_whole_words(), placeholder, placeholder)) {
-				line = line.left(location.begin) + p_new_text + line.substr(location.end);
-			}
-			else {
-				print_verbose(vformat(
-					R"(Occurrence no longer matches, replace will be ignored in "%s": line %d, col %d.)",
-					p_fpath, repl_line_number, location.begin));
-			}
-		}
-	}
-
-	String final_text = String("\n").join(lines);
-
-	if (code_edit) {
-		code_edit->begin_complex_operation();
-		Variant nav_state = code_text_editor->get_navigation_state();
-		code_edit->set_text(final_text);
-		code_edit->obj->emit_signal(SceneStringName(text_changed));
-		code_text_editor->set_edit_state(nav_state);
-		code_edit->end_complex_operation();
-	}
-	else {
-		// Now the modified contents are in the buffer, rewrite the file with our changes.
-		Error err = f->reopen(p_fpath, FileAccess::WRITE);
-		ERR_FAIL_COND_MSG(err != OK, "Cannot create file in path '" + p_fpath + "'.");
-		f->store_string(final_text);
-	}
-}
 
 String FindInFilesPanel::_get_replace_text() { return replace_line_edit->get_text(); }
 
@@ -1214,214 +642,7 @@ void FindInFilesPanel::_update_replace_buttons()
 	replace_all_button->set_disabled(disabled);
 }
 
-void FindInFilesPanel::_update_matches_text()
-{
-	String results_text;
-	int result_count = result_items.size();
-	int file_count = file_items.size();
-
-	if (result_count == 1 && file_count == 1) {
-		results_text = vformat(TTR("%d match in %d file"), result_count, file_count);
-	}
-	else if (result_count != 1 && file_count == 1) {
-		results_text = vformat(TTR("%d matches in %d file"), result_count, file_count);
-	}
-	else {
-		results_text = vformat(TTR("%d matches in %d files"), result_count, file_count);
-	}
-
-	status_label->set_text(results_text);
-
-	TreeItem* file_item = results_display->get_root()->get_first_child();
-	while (file_item) {
-		int file_matches_count = file_items_results_count[file_item];
-		file_item->set_text(
-			0, (String)file_item->get_metadata(0) + " (" +
-				   vformat(TTRN("%d match", "%d matches", file_matches_count), file_matches_count) +
-				   ")");
-		file_item = file_item->get_next();
-	}
-}
-
-void FindInFilesPanel::_bind_methods() {}
-
-FindInFilesPanel::FindInFilesPanel()
-{
-	finder = memnew(FindInFilesSearch);
-	finder->connect("result_found", callable_mp(this, &FindInFilesPanel::_on_result_found));
-	finder->connect(SceneStringName(finished), callable_mp(this, &FindInFilesPanel::_on_finished));
-	add_child(finder);
-
-	VBoxContainer* vbc = memnew(VBoxContainer);
-	vbc->set_anchor_and_offset(SIDE_LEFT, ANCHOR_BEGIN, 0);
-	vbc->set_anchor_and_offset(SIDE_TOP, ANCHOR_BEGIN, 0);
-	vbc->set_anchor_and_offset(SIDE_RIGHT, ANCHOR_END, 0);
-	vbc->set_anchor_and_offset(SIDE_BOTTOM, ANCHOR_END, 0);
-	add_child(vbc);
-
-	{
-		HBoxContainer* hbc = memnew(HBoxContainer);
-		hbc->set_alignment(BoxContainer::ALIGNMENT_END);
-
-		find_label = memnew(Label);
-		find_label->set_text(TTRC("Find:"));
-		hbc->add_child(find_label);
-
-		search_text_label = memnew(Label);
-		search_text_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-		search_text_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		search_text_label->set_focus_mode(FOCUS_ACCESSIBILITY);
-		search_text_label->set_mouse_filter(Control::MOUSE_FILTER_PASS);
-		search_text_label->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-		hbc->add_child(search_text_label);
-
-		progress_bar = memnew(ProgressBar);
-		progress_bar->set_h_size_flags(SIZE_EXPAND_FILL);
-		progress_bar->set_v_size_flags(SIZE_SHRINK_CENTER);
-		progress_bar->set_stretch_ratio(2.0);
-		progress_bar->set_visible(false);
-		hbc->add_child(progress_bar);
-
-		status_label = memnew(Label);
-		status_label->set_focus_mode(FOCUS_ACCESSIBILITY);
-		hbc->add_child(status_label);
-
-		keep_results_button = memnew(CheckButton);
-		keep_results_button->set_text(TTRC("Keep Results"));
-		keep_results_button->set_tooltip_text(
-			TTRC("Keep these results and show subsequent results in a new window"));
-		keep_results_button->set_pressed(false);
-		hbc->add_child(keep_results_button);
-
-		refresh_button = memnew(Button);
-		refresh_button->set_text(TTRC("Refresh"));
-		refresh_button->connect(SceneStringName(pressed),
-			callable_mp(this, &FindInFilesPanel::_on_refresh_button_clicked));
-		refresh_button->hide();
-		hbc->add_child(refresh_button);
-
-		cancel_button = memnew(Button);
-		cancel_button->set_text(TTRC("Cancel"));
-		cancel_button->connect(SceneStringName(pressed),
-			callable_mp(this, &FindInFilesPanel::_on_cancel_button_clicked));
-		cancel_button->hide();
-		hbc->add_child(cancel_button);
-
-		close_button = memnew(Button);
-		close_button->set_text(TTRC("Close"));
-		close_button->connect(SceneStringName(pressed),
-			callable_mp(this, &FindInFilesPanel::_on_close_button_clicked));
-		hbc->add_child(close_button);
-
-		vbc->add_child(hbc);
-	}
-
-	results_mc = memnew(MarginContainer);
-	results_mc->set_theme_type_variation("NoBorderHorizontal");
-	results_mc->set_v_size_flags(SIZE_EXPAND_FILL);
-	vbc->add_child(results_mc);
-
-	results_display = memnew(Tree);
-	results_display->set_accessibility_name(TTRC("Search Results"));
-	results_display->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	results_display->set_scroll_hint_mode(Tree::SCROLL_HINT_MODE_BOTH);
-	results_display->connect(
-		SceneStringName(item_selected), callable_mp(this, &FindInFilesPanel::_on_result_selected));
-	results_display->connect("item_edited", callable_mp(this, &FindInFilesPanel::_on_item_edited));
-	results_display->connect(
-		"button_clicked", callable_mp(this, &FindInFilesPanel::_on_button_clicked));
-	results_display->set_hide_root(true);
-	results_display->set_select_mode(Tree::SELECT_ROW);
-	results_display->set_allow_rmb_select(true);
-	results_display->set_allow_reselect(true);
-	results_display->add_theme_constant_override("inner_item_margin_left", 0);
-	results_display->add_theme_constant_override("inner_item_margin_right", 0);
-	results_display->create_item(); // Root
-	results_mc->add_child(results_display);
-
-	{
-		replace_container = memnew(HBoxContainer);
-
-		Label* replace_label = memnew(Label);
-		replace_label->set_text(TTRC("Replace:"));
-		replace_container->add_child(replace_label);
-
-		replace_line_edit = memnew(LineEdit);
-		replace_line_edit->set_accessibility_name(TTRC("Replace:"));
-		replace_line_edit->set_h_size_flags(SIZE_EXPAND_FILL);
-		replace_line_edit->connect(SceneStringName(text_changed),
-			callable_mp(this, &FindInFilesPanel::_on_replace_text_changed));
-		replace_container->add_child(replace_line_edit);
-
-		replace_all_button = memnew(Button);
-		replace_all_button->set_text(TTRC("Replace all (no undo)"));
-		replace_all_button->connect(SceneStringName(pressed),
-			callable_mp(this, &FindInFilesPanel::_on_replace_all_clicked));
-		replace_container->add_child(replace_all_button);
-
-		replace_container->hide();
-
-		vbc->add_child(replace_container);
-	}
-}
-
 //-----------------------------------------------------------------------------
-
-FindInFilesPanel* FindInFilesContainer::_create_new_panel()
-{
-	int index = tabs->get_current_tab();
-	FindInFilesPanel* panel = memnew(FindInFilesPanel);
-	tabs->add_child(panel);
-	tabs->move_child(panel, index + 1); // New panel is added after the current activated panel.
-	tabs->set_current_tab(index + 1);
-	_update_bar_visibility();
-
-	panel->connect("result_selected", callable_mp(this, &FindInFilesContainer::_result_selected));
-	panel->connect("files_modified", callable_mp(this, &FindInFilesContainer::_files_modified));
-	panel->connect(
-		"close_button_clicked", callable_mp(this, &FindInFilesContainer::_close_panel).bind(panel));
-	return panel;
-}
-
-FindInFilesPanel* FindInFilesContainer::_get_current_panel()
-{
-	return Object::cast_to<FindInFilesPanel>(tabs->get_current_tab_control());
-}
-
-FindInFilesPanel* FindInFilesContainer::get_panel_for_results(const String& p_label)
-{
-	FindInFilesPanel* panel = nullptr;
-	// Prefer the current panel.
-	if (_get_current_panel() && !_get_current_panel()->is_keep_results()) {
-		panel = _get_current_panel();
-	}
-	else {
-		// Find the first panel which does not keep results.
-		for (int i = 0; i < tabs->get_tab_count(); i++) {
-			FindInFilesPanel* p = Object::cast_to<FindInFilesPanel>(tabs->get_tab_control(i));
-			if (p && !p->is_keep_results()) {
-				panel = p;
-				tabs->set_current_tab(i);
-				break;
-			}
-		}
-
-		if (!panel) {
-			panel = _create_new_panel();
-		}
-	}
-	tabs->set_tab_title(tabs->get_current_tab(), p_label);
-	return panel;
-}
-
-void FindInFilesContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case Object::NOTIFICATION_POSTINITIALIZE: {
-		connect("closed", callable_mp(this, &FindInFilesContainer::_on_dock_closed));
-	} break;
-	}
-}
 
 void FindInFilesContainer::_on_theme_changed()
 {
@@ -1437,14 +658,6 @@ void FindInFilesContainer::_on_theme_changed()
 		end_bulk_theme_override();
 	}
 }
-
-void FindInFilesContainer::_result_selected(
-	const String& p_fpath, int p_line_number, int p_begin, int p_end)
-{
-	this->obj->emit_signal(SNAME("result_selected"), p_fpath, p_line_number, p_begin, p_end);
-}
-
-void FindInFilesContainer::_files_modified() { this->obj->emit_signal(SNAME("files_modified")); }
 
 void FindInFilesContainer::_close_panel(FindInFilesPanel* p_panel)
 {
@@ -1467,72 +680,6 @@ void FindInFilesContainer::_on_dock_closed()
 	_update_bar_visibility();
 }
 
-void FindInFilesContainer::_on_tab_close_pressed(int p_tab)
-{
-	FindInFilesPanel* panel = Object::cast_to<FindInFilesPanel>(tabs->get_tab_control(p_tab));
-	if (panel) {
-		_close_panel(panel);
-	}
-}
-
-void FindInFilesContainer::_update_bar_visibility()
-{
-	if (!update_bar) {
-		return;
-	}
-
-	// If tab count <= 1, behaves like this is not a TabContainer and the bar is hidden.
-	bool bar_visible = tabs->get_tab_count() > 1;
-	tabs->set_tabs_visible(bar_visible);
-
-	// Hide or show the search labels based on the visibility of the bar, as the search terms are
-	// displayed in the title of each tab.
-	for (int i = 0; i < tabs->get_tab_count(); i++) {
-		FindInFilesPanel* panel = Object::cast_to<FindInFilesPanel>(tabs->get_tab_control(i));
-		if (panel) {
-			panel->set_search_labels_visibility(!bar_visible);
-		}
-	}
-}
-
-void FindInFilesContainer::_bar_menu_option(int p_option)
-{
-	int tab_index = tabs->get_current_tab();
-	switch (p_option) {
-	case PANEL_CLOSE: {
-		_on_tab_close_pressed(tab_index);
-	} break;
-	case PANEL_CLOSE_OTHERS: {
-		update_bar = false;
-		FindInFilesPanel* panel =
-			Object::cast_to<FindInFilesPanel>(tabs->get_tab_control(tab_index));
-		for (int i = tabs->get_tab_count() - 1; i >= 0; i--) {
-			FindInFilesPanel* p = Object::cast_to<FindInFilesPanel>(tabs->get_tab_control(i));
-			if (p != panel) {
-				_close_panel(p);
-			}
-		}
-		update_bar = true;
-		_update_bar_visibility();
-	} break;
-	case PANEL_CLOSE_RIGHT: {
-		update_bar = false;
-		for (int i = tabs->get_tab_count() - 1; i > tab_index; i--) {
-			_on_tab_close_pressed(i);
-		}
-		update_bar = true;
-		_update_bar_visibility();
-	} break;
-	case PANEL_CLOSE_ALL: {
-		update_bar = false;
-		for (int i = tabs->get_tab_count() - 1; i >= 0; i--) {
-			_on_tab_close_pressed(i);
-		}
-		update_bar = true;
-	} break;
-	}
-}
-
 void FindInFilesContainer::_bar_input(const Ref<InputEvent>& p_input)
 {
 	int tab_id = tabs->get_tab_bar()->get_hovered_tab();
@@ -1547,56 +694,6 @@ void FindInFilesContainer::_bar_input(const Ref<InputEvent>& p_input)
 		tabs_context_menu->reset_size();
 		tabs_context_menu->popup();
 	}
-}
-
-void FindInFilesContainer::update_layout(EditorDock::DockLayout p_layout, int p_slot)
-{
-	for (Node* node : tabs->iterate_children()) {
-		FindInFilesPanel* panel = Object::cast_to<FindInFilesPanel>(node);
-		if (panel) {
-			panel->update_layout(p_layout, p_slot);
-		}
-	}
-}
-
-void FindInFilesContainer::_bind_methods() {}
-
-FindInFilesContainer::FindInFilesContainer()
-{
-	set_name(TTRC("Search Results"));
-	set_icon_name("Search");
-	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_search_results_bottom_panel",
-		TTRC("Toggle Search Results Bottom Panel")));
-	set_default_slot(EditorDock::DOCK_SLOT_BOTTOM);
-	set_available_layouts(EditorDock::DOCK_LAYOUT_HORIZONTAL | EditorDock::DOCK_LAYOUT_FLOATING);
-	set_global(false);
-	set_transient(true);
-	set_closable(true);
-	set_custom_minimum_size(Size2(0, 200 * EDSCALE));
-
-	tabs = memnew(TabContainer);
-	tabs->set_tabs_visible(false);
-	add_child(tabs);
-
-	tabs->set_drag_to_rearrange_enabled(true);
-	tabs->get_tab_bar()->set_select_with_rmb(true);
-	tabs->get_tab_bar()->set_tab_close_display_policy(TabBar::CLOSE_BUTTON_SHOW_ACTIVE_ONLY);
-	tabs->get_tab_bar()->connect(
-		"tab_close_pressed", callable_mp(this, &FindInFilesContainer::_on_tab_close_pressed));
-	tabs->get_tab_bar()->connect(
-		SceneStringName(gui_input), callable_mp(this, &FindInFilesContainer::_bar_input));
-
-	tabs_context_menu = memnew(PopupMenu);
-	add_child(tabs_context_menu);
-	tabs_context_menu->add_item(TTRC("Close Tab"), PANEL_CLOSE);
-	tabs_context_menu->add_item(TTRC("Close Other Tabs"), PANEL_CLOSE_OTHERS);
-	tabs_context_menu->add_item(TTRC("Close Tabs to the Right"), PANEL_CLOSE_RIGHT);
-	tabs_context_menu->add_item(TTRC("Close All Tabs"), PANEL_CLOSE_ALL);
-	tabs_context_menu->connect(
-		SceneStringName(id_pressed), callable_mp(this, &FindInFilesContainer::_bar_menu_option));
-
-	EditorNode::get_singleton()->get_gui_base()->connect(SceneStringName(theme_changed),
-		callable_mp(this, &FindInFilesContainer::_on_theme_changed));
 }
 
 void FindInFiles::_start_search(bool p_with_replace)
@@ -1628,29 +725,6 @@ void FindInFiles::open_dialog(const String& p_initial_text, bool p_replace)
 		dialog->set_replace_text(String());
 	}
 	dialog->popup_centered();
-}
-
-void FindInFiles::_result_selected(const String& p_fpath, int p_line_number, int p_begin, int p_end)
-{
-	this->obj->emit_signal(SNAME("result_selected"), p_fpath, p_line_number, p_begin, p_end);
-}
-
-void FindInFiles::_files_modified() { this->obj->emit_signal(SNAME("files_modified")); }
-
-void FindInFiles::_bind_methods() {}
-
-FindInFiles::FindInFiles()
-{
-	dialog = memnew(FindInFilesDialog);
-	dialog->connect("find_requested", callable_mp(this, &FindInFiles::_start_search).bind(false));
-	dialog->connect("replace_requested", callable_mp(this, &FindInFiles::_start_search).bind(true));
-	EditorNode::get_singleton()->get_gui_base()->add_child(dialog);
-
-	container = memnew(FindInFilesContainer);
-	EditorDockManager::get_singleton()->add_dock(container);
-	container->close();
-	container->connect("result_selected", callable_mp(this, &FindInFiles::_result_selected));
-	container->connect("files_modified", callable_mp(this, &FindInFiles::_files_modified));
 }
 
 

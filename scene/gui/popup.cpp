@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
 #include "popup.h"
 #include "scene/gui/panel.h"
 #include "scene/resources/style_box_flat.h"

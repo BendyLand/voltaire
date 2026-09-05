@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "text_server.h"
 
 void TextServer::_font_draw_glyph_bind_compat_104872(const RID& p_font, const RID& p_canvas,

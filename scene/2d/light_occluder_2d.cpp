@@ -30,8 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/math/geometry_2d.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "light_occluder_2d.h"
 #include "servers/rendering/rendering_server.h"
 

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource_loader.h"
-#include "core/object/class_db.h"
 #include "instance_placeholder.h"
 #include "scene/resources/packed_scene.h"
 

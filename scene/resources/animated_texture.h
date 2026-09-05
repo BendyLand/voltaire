@@ -33,14 +33,14 @@
 #include "core/os/rw_lock.h"
 #include "scene/resources/texture.h"
 
-class AnimatedTexture : public Texture2D {
-	VLTRCLASS(AnimatedTexture, Texture2D);
-
+class AnimatedTexture : public Texture2D
+{
 	// Use readers writers lock for this, since its far more times read than written to.
 	RWLock rw_lock;
 
 public:
-	enum {
+	enum
+	{
 		MAX_FRAMES = 256
 	};
 
@@ -48,7 +48,8 @@ private:
 	RID proxy_ph;
 	RID proxy;
 
-	struct Frame {
+	struct Frame
+	{
 		Ref<Texture2D> texture;
 		float duration = 1.0;
 	};
@@ -69,7 +70,6 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
 	void set_frames(int p_frames);
@@ -84,7 +84,7 @@ public:
 	void set_one_shot(bool p_one_shot);
 	bool get_one_shot() const;
 
-	void set_frame_texture(int p_frame, const Ref<Texture2D> &p_texture);
+	void set_frame_texture(int p_frame, const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_frame_texture(int p_frame) const;
 
 	void set_frame_duration(int p_frame, float p_duration);
@@ -106,3 +106,5 @@ public:
 	AnimatedTexture();
 	~AnimatedTexture();
 };
+
+

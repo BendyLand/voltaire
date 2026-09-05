@@ -36,7 +36,6 @@
 #include "action_map/openxr_interaction_profile_metadata.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "modules/modules_enabled.gen.h"
 #include "openxr_api_extension.h"

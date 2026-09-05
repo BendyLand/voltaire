@@ -43,7 +43,6 @@
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 
 #ifdef PROXY_TO_PTHREAD_ENABLED
-#include "core/object/callable_mp.h"
 #endif
 
 #ifdef GLES3_ENABLED

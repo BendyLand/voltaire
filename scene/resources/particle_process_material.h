@@ -43,11 +43,11 @@
 -Proper trails
 */
 
-class ParticleProcessMaterial : public Material {
-	VLTRCLASS(ParticleProcessMaterial, Material);
-
+class ParticleProcessMaterial : public Material
+{
 public:
-	enum Parameter {
+	enum Parameter
+	{
 		PARAM_INITIAL_LINEAR_VELOCITY,
 		PARAM_ANGULAR_VELOCITY,
 		PARAM_ORBIT_VELOCITY,
@@ -70,7 +70,8 @@ public:
 	};
 
 	// When extending, make sure not to overflow the size of the MaterialKey below.
-	enum ParticleFlags {
+	enum ParticleFlags
+	{
 		PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY,
 		PARTICLE_FLAG_ROTATE_Y,
 		PARTICLE_FLAG_DISABLE_Z,
@@ -80,7 +81,8 @@ public:
 	};
 
 	// When extending, make sure not to overflow the size of the MaterialKey below.
-	enum EmissionShape {
+	enum EmissionShape
+	{
 		EMISSION_SHAPE_POINT,
 		EMISSION_SHAPE_SPHERE,
 		EMISSION_SHAPE_SPHERE_SURFACE,
@@ -92,7 +94,8 @@ public:
 	};
 
 	// When extending, make sure not to overflow the size of the MaterialKey below.
-	enum SubEmitterMode {
+	enum SubEmitterMode
+	{
 		SUB_EMITTER_DISABLED,
 		SUB_EMITTER_CONSTANT,
 		SUB_EMITTER_AT_END,
@@ -102,7 +105,8 @@ public:
 	};
 
 	// When extending, make sure not to overflow the size of the MaterialKey below.
-	enum CollisionMode {
+	enum CollisionMode
+	{
 		COLLISION_DISABLED,
 		COLLISION_RIGID,
 		COLLISION_HIDE_ON_CONTACT,
@@ -110,7 +114,8 @@ public:
 	};
 
 private:
-	struct MaterialKey {
+	struct MaterialKey
+	{
 		// The bit size of the struct must be kept below or equal to 64 bits.
 		// Consider this when extending ParticleFlags, EmissionShape, or SubEmitterMode.
 		uint64_t texture_mask : PARAM_MAX;
@@ -134,22 +139,26 @@ private:
 		uint64_t use_rotation_velocity_3d : 1;
 		uint64_t use_rotation_velocity_3d_curve : 1;
 
-		MaterialKey() {
-			memset(this, 0, sizeof(MaterialKey));
+		MaterialKey() { memset(this, 0, sizeof(MaterialKey)); }
+
+		static uint32_t hash(const MaterialKey& p_key)
+		{
+			return hash_djb2_buffer((const uint8_t*)&p_key, sizeof(MaterialKey));
 		}
 
-		static uint32_t hash(const MaterialKey &p_key) {
-			return hash_djb2_buffer((const uint8_t *)&p_key, sizeof(MaterialKey));
-		}
-		bool operator==(const MaterialKey &p_key) const {
+		bool operator==(const MaterialKey& p_key) const
+		{
 			return memcmp(this, &p_key, sizeof(MaterialKey)) == 0;
 		}
-		bool operator<(const MaterialKey &p_key) const {
+
+		bool operator<(const MaterialKey& p_key) const
+		{
 			return memcmp(this, &p_key, sizeof(MaterialKey)) < 0;
 		}
 	};
 
-	struct ShaderData {
+	struct ShaderData
+	{
 		RID shader;
 		int users = 0;
 	};
@@ -161,49 +170,11 @@ private:
 	MaterialKey current_key;
 	RID shader_rid;
 
-	_FORCE_INLINE_ MaterialKey _compute_key() const {
-		MaterialKey mk;
-
-		mk.texture_color = color_ramp.is_valid() ? 1 : 0;
-		mk.emission_shape = emission_shape;
-		mk.has_emission_color = emission_shape >= EMISSION_SHAPE_POINTS && emission_color_texture.is_valid();
-		mk.sub_emitter = sub_emitter_mode;
-		mk.collision_mode = collision_mode;
-		mk.attractor_enabled = attractor_interaction_enabled;
-		mk.collision_scale = collision_scale;
-		mk.turbulence_enabled = turbulence_enabled;
-		mk.limiter_curve = velocity_limit_curve.is_valid() ? 1 : 0;
-		mk.alpha_curve = alpha_curve.is_valid() ? 1 : 0;
-		mk.emission_curve = emission_curve.is_valid() ? 1 : 0;
-		mk.has_initial_ramp = color_initial_ramp.is_valid() ? 1 : 0;
-		CurveXYZTexture *texture = Object::cast_to<CurveXYZTexture>(tex_parameters[PARAM_ORBIT_VELOCITY].ptr());
-		mk.orbit_uses_curve_xyz = texture ? 1 : 0;
-		mk.use_scale_3d = use_scale_3d ? 1 : 0;
-		mk.use_rotation_3d = use_rotation_3d ? 1 : 0;
-		mk.use_rotation_velocity_3d = using_rotation_velocity_3d;
-		if (using_rotation_velocity_3d) {
-			texture = Object::cast_to<CurveXYZTexture>(rotation_velocity_3d_curve.ptr());
-			mk.use_rotation_velocity_3d_curve = texture ? 1 : 0;
-		}
-
-		for (int i = 0; i < PARAM_MAX; i++) {
-			if (tex_parameters[i].is_valid()) {
-				mk.texture_mask |= ((uint64_t)1 << i);
-			}
-		}
-		for (int i = 0; i < PARTICLE_FLAG_MAX; i++) {
-			if (particle_flags[i]) {
-				mk.particle_flags |= ((uint64_t)1 << i);
-			}
-		}
-
-		return mk;
-	}
-
 	static Mutex dirty_materials_mutex;
 	static SelfList<ParticleProcessMaterial>::List dirty_materials;
 
-	struct ShaderNames {
+	struct ShaderNames
+	{
 		StringName direction;
 		StringName spread;
 		StringName flatness;
@@ -311,7 +282,7 @@ private:
 		StringName collision_bounce;
 	};
 
-	static ShaderNames *shader_names;
+	static ShaderNames* shader_names;
 
 	SelfList<ParticleProcessMaterial> element;
 
@@ -383,7 +354,7 @@ private:
 	int sub_emitter_amount_at_collision = 0;
 	int sub_emitter_amount_at_start = 0;
 	bool sub_emitter_keep_velocity = false;
-	//do not save emission points here
+	// do not save emission points here
 
 	bool attractor_interaction_enabled = false;
 	CollisionMode collision_mode;
@@ -391,12 +362,8 @@ private:
 	float collision_friction = 0.0f;
 	float collision_bounce = 0.0f;
 
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
-
 public:
-	static bool has_min_max_property(const String &p_name);
+	static bool has_min_max_property(const String& p_name);
 
 	void set_direction(Vector3 p_direction);
 	Vector3 get_direction() const;
@@ -407,10 +374,10 @@ public:
 	void set_flatness(float p_flatness);
 	float get_flatness() const;
 
-	void set_velocity_pivot(const Vector3 &p_pivot);
+	void set_velocity_pivot(const Vector3& p_pivot);
 	Vector3 get_velocity_pivot();
 
-	void set_param(Parameter p_param, const Vector2 &p_value);
+	void set_param(Parameter p_param, const Vector2& p_value);
 	Vector2 get_param(Parameter p_param) const;
 
 	void set_param_min(Parameter p_param, float p_value);
@@ -419,42 +386,42 @@ public:
 	void set_param_max(Parameter p_param, float p_value);
 	float get_param_max(Parameter p_param) const;
 
-	void set_param_texture(Parameter p_param, const Ref<Texture2D> &p_texture);
+	void set_param_texture(Parameter p_param, const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_param_texture(Parameter p_param) const;
 
-	void set_velocity_limit_curve(const Ref<Texture2D> &p_texture);
+	void set_velocity_limit_curve(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_velocity_limit_curve() const;
 
-	void set_alpha_curve(const Ref<Texture2D> &p_texture);
+	void set_alpha_curve(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_alpha_curve() const;
-	void set_color(const Color &p_color);
+	void set_color(const Color& p_color);
 	Color get_color() const;
 
-	void set_color_ramp(const Ref<Texture2D> &p_texture);
+	void set_color_ramp(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_color_ramp() const;
 
-	void set_color_initial_ramp(const Ref<Texture2D> &p_texture);
+	void set_color_initial_ramp(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_color_initial_ramp() const;
 
-	void set_emission_curve(const Ref<Texture2D> &p_texture);
+	void set_emission_curve(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_emission_curve() const;
 
 	void set_use_scale_3d(const bool p_use_scale_3d);
 	bool is_using_scale_3d() const;
 
-	void set_scale_3d_min(const Vector3 &p_scale_3d_min);
+	void set_scale_3d_min(const Vector3& p_scale_3d_min);
 	Vector3 get_scale_3d_min() const;
 
-	void set_scale_3d_max(const Vector3 &p_scale_3d_max);
+	void set_scale_3d_max(const Vector3& p_scale_3d_max);
 	Vector3 get_scale_3d_max() const;
 
 	void set_use_rotation_3d(const bool p_use_scale_3d);
 	bool is_using_rotation_3d() const;
 
-	void set_rotation_3d_min(const Vector3 &p_rotation_3d_min);
+	void set_rotation_3d_min(const Vector3& p_rotation_3d_min);
 	Vector3 get_rotation_3d_min() const;
 
-	void set_rotation_3d_max(const Vector3 &p_rotation_3d_max);
+	void set_rotation_3d_max(const Vector3& p_rotation_3d_max);
 	Vector3 get_rotation_3d_max() const;
 
 	void set_particle_flag(ParticleFlags p_particle_flag, bool p_enable);
@@ -463,9 +430,9 @@ public:
 	void set_emission_shape(EmissionShape p_shape);
 	void set_emission_sphere_radius(real_t p_radius);
 	void set_emission_box_extents(Vector3 p_extents);
-	void set_emission_point_texture(const Ref<Texture2D> &p_points);
-	void set_emission_normal_texture(const Ref<Texture2D> &p_normals);
-	void set_emission_color_texture(const Ref<Texture2D> &p_colors);
+	void set_emission_point_texture(const Ref<Texture2D>& p_points);
+	void set_emission_normal_texture(const Ref<Texture2D>& p_normals);
+	void set_emission_color_texture(const Ref<Texture2D>& p_colors);
 	void set_emission_ring_axis(Vector3 p_axis);
 	void set_emission_ring_height(real_t p_height);
 	void set_emission_ring_radius(real_t p_radius);
@@ -490,7 +457,7 @@ public:
 	void set_turbulence_noise_strength(float p_turbulence_noise_strength);
 	void set_turbulence_noise_scale(float p_turbulence_noise_scale);
 	void set_turbulence_noise_speed_random(float p_turbulence_noise_speed_random);
-	void set_turbulence_noise_speed(const Vector3 &p_turbulence_noise_speed);
+	void set_turbulence_noise_speed(const Vector3& p_turbulence_noise_speed);
 
 	bool get_turbulence_enabled() const;
 	float get_turbulence_noise_strength() const;
@@ -498,7 +465,7 @@ public:
 	float get_turbulence_noise_speed_random() const;
 	Vector3 get_turbulence_noise_speed() const;
 
-	void set_gravity(const Vector3 &p_gravity);
+	void set_gravity(const Vector3& p_gravity);
 	Vector3 get_gravity() const;
 
 	void set_lifetime_randomness(double p_lifetime);
@@ -509,11 +476,11 @@ public:
 
 	void set_use_rotation_velocity_3d(bool p_use_rotation_velocity_3d);
 	bool is_using_rotation_velocity_3d() const;
-	void set_rotation_velocity_3d_min(const Vector3 &p_rotation_velocity_3d_min);
+	void set_rotation_velocity_3d_min(const Vector3& p_rotation_velocity_3d_min);
 	Vector3 get_rotation_velocity_3d_min() const;
-	void set_rotation_velocity_3d_max(const Vector3 &p_rotation_velocity_3d_max);
+	void set_rotation_velocity_3d_max(const Vector3& p_rotation_velocity_3d_max);
 	Vector3 get_rotation_velocity_3d_max() const;
-	void set_rotation_velocity_3d_curve(const Ref<Texture2D> &p_texture);
+	void set_rotation_velocity_3d_curve(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_rotation_velocity_3d_curve() const;
 
 	void set_attractor_interaction_enabled(bool p_enable);
@@ -553,10 +520,10 @@ public:
 	void set_sub_emitter_keep_velocity(bool p_enable);
 	bool get_sub_emitter_keep_velocity() const;
 
-	void set_emission_shape_offset(const Vector3 &p_emission_shape_offset);
+	void set_emission_shape_offset(const Vector3& p_emission_shape_offset);
 	Vector3 get_emission_shape_offset() const;
 
-	void set_emission_shape_scale(const Vector3 &p_emission_shape_scale);
+	void set_emission_shape_scale(const Vector3& p_emission_shape_scale);
 	Vector3 get_emission_shape_scale() const;
 
 	virtual RID get_rid() const override;
@@ -568,8 +535,5 @@ public:
 	~ParticleProcessMaterial();
 };
 
-VARIANT_ENUM_CAST(ParticleProcessMaterial::Parameter)
-VARIANT_ENUM_CAST(ParticleProcessMaterial::ParticleFlags)
-VARIANT_ENUM_CAST(ParticleProcessMaterial::EmissionShape)
-VARIANT_ENUM_CAST(ParticleProcessMaterial::SubEmitterMode)
-VARIANT_ENUM_CAST(ParticleProcessMaterial::CollisionMode)
+
+

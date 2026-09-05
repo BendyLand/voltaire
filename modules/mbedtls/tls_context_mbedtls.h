@@ -33,7 +33,6 @@
 #include <mbedtls/debug.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/ssl_cookie.h>
-#include "core/object/ref_counted.h"
 #include "crypto_mbedtls.h"
 
 class TLSContextMbedTLS;

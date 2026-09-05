@@ -32,8 +32,6 @@
 #include "../openxr_api.h"
 #include "../openxr_interface.h"
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "openxr_composition_layer.h"
 #include "platform/android/api/java_class_wrapper.h"
 #include "scene/3d/mesh_instance_3d.h"

@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "openxr_frame_synthesis_extension.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/xr/xr_server.h"

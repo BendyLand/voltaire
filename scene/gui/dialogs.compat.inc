@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "dialogs.h"
 #include "scene/gui/line_edit.h"
 

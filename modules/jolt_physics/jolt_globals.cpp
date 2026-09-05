@@ -38,7 +38,6 @@
 #include "core/os/memory.h"
 
 #ifdef JPH_ENABLE_ASSERTS
-#include "core/variant/variant.h"
 #endif
 
 #include <Jolt/Jolt.h>

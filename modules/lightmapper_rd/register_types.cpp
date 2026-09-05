@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "lightmapper_rd.h"
 #include "register_types.h"
 #include "scene/3d/lightmapper.h"

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/animation/easing_equations.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"

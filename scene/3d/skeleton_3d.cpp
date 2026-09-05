@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "skeleton_3d.compat.inc"
 #include "skeleton_3d.h"

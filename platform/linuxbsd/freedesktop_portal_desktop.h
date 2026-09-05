@@ -33,7 +33,6 @@
 #include "core/templates/mem_unique_ptr.h"
 #ifdef DBUS_ENABLED
 
-#include "core/object/object.h"
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
 #include "core/templates/safe_refcount.h"

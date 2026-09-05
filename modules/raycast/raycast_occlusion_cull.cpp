@@ -33,7 +33,6 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/math/projection.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/os.h"
 
 #ifdef __SSE2__

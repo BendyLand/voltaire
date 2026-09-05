@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "chain_ik_3d.h"
-#include "core/object/class_db.h"
 
 bool ChainIK3D::_set(const StringName& p_path, const Variant& p_value)
 {

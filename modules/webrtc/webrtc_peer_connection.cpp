@@ -34,7 +34,6 @@
 #include "webrtc_peer_connection_js.h"
 #endif
 
-#include "core/object/class_db.h"
 
 StringName WebRTCPeerConnection::default_extension;
 

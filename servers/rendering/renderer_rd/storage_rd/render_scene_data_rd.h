@@ -33,12 +33,11 @@
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/storage/render_scene_data.h"
 
-// This is a container for data related to rendering a single frame of a viewport where we load this data into a UBO
-// that can be used by the main scene shader but also by various effects.
+// This is a container for data related to rendering a single frame of a viewport where we load this
+// data into a UBO that can be used by the main scene shader but also by various effects.
 
-class RenderSceneDataRD : public RenderSceneData {
-	VLTRCLASS(RenderSceneDataRD, RenderSceneData);
-
+class RenderSceneDataRD : public RenderSceneData
+{
 public:
 	bool calculate_motion_vectors = false;
 
@@ -94,7 +93,10 @@ public:
 	virtual Projection get_view_projection(uint32_t p_view) const override;
 
 	RID create_uniform_buffer();
-	void update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw p_debug_mode, RID p_env, RID p_reflection_probe_instance, RID p_camera_attributes, bool p_pancake_shadows, const Size2i &p_screen_size, const Size2 &p_viewport_size, const Color &p_default_bg_color, float p_luminance_multiplier, bool p_opaque_render_buffers, bool p_apply_alpha_multiplier);
+	void update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw p_debug_mode, RID p_env,
+		RID p_reflection_probe_instance, RID p_camera_attributes, bool p_pancake_shadows,
+		const Size2i& p_screen_size, const Size2& p_viewport_size, const Color& p_default_bg_color,
+		float p_luminance_multiplier, bool p_opaque_render_buffers, bool p_apply_alpha_multiplier);
 	virtual RID get_uniform_buffer() const override;
 
 	static uint32_t get_uniform_buffer_size_bytes() { return sizeof(UBODATA); }
@@ -102,7 +104,8 @@ public:
 private:
 	RID uniform_buffer; // loaded into this uniform buffer (supplied externally)
 
-	enum SceneDataFlags {
+	enum SceneDataFlags
+	{
 		SCENE_DATA_FLAGS_USE_AMBIENT_LIGHT = 1 << 0,
 		SCENE_DATA_FLAGS_USE_AMBIENT_CUBEMAP = 1 << 1,
 		SCENE_DATA_FLAGS_USE_REFLECTION_CUBEMAP = 1 << 2,
@@ -114,8 +117,10 @@ private:
 		SCENE_DATA_FLAGS_MAX
 	};
 
-	// This struct is loaded into Set 1 - Binding 0, populated at start of rendering a frame, must match with shader code
-	struct UBO {
+	// This struct is loaded into Set 1 - Binding 0, populated at start of rendering a frame, must
+	// match with shader code
+	struct UBO
+	{
 		float projection_matrix[16];
 		float inv_projection_matrix[16];
 		float inv_view_matrix[12];
@@ -134,7 +139,7 @@ private:
 		float viewport_size[2];
 		float screen_pixel_size[2];
 
-		float directional_penumbra_shadow_kernel[128]; //32 vec4s
+		float directional_penumbra_shadow_kernel[128]; // 32 vec4s
 		float directional_soft_shadow_kernel[128];
 		float penumbra_shadow_kernel[128];
 		float soft_shadow_kernel[128];
@@ -174,17 +179,22 @@ private:
 		float fog_aerial_perspective;
 
 		float time;
-		float taa_frame_count; // Used to add break up samples over multiple frames. Value is an integer from 0 to taa_phase_count -1.
+		float taa_frame_count; // Used to add break up samples over multiple frames. Value is an
+							   // integer from 0 to taa_phase_count -1.
 		float taa_jitter[2];
 
-		float emissive_exposure_normalization; // Needed to normalize emissive when using physical units.
-		float IBL_exposure_normalization; // Adjusts for baked exposure.
+		float emissive_exposure_normalization; // Needed to normalize emissive when using physical
+											   // units.
+		float IBL_exposure_normalization;	   // Adjusts for baked exposure.
 		uint32_t camera_visible_layers;
 		float pass_alpha_multiplier;
 	};
 
-	struct UBODATA {
+	struct UBODATA
+	{
 		UBO ubo;
 		UBO prev_ubo;
 	};
 };
+
+

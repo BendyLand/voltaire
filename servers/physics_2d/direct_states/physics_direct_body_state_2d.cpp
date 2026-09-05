@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "physics_direct_body_state_2d.h"
 
 void PhysicsDirectBodyState2D::integrate_forces()

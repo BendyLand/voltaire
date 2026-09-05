@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "editor_plugin.h"
 
 Button* EditorPlugin::_add_control_to_bottom_panel_bind_compat_88081(

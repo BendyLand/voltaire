@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "bit_map_editor_plugin.h"
-#include "core/object/callable_mp.h"
 #include "editor/editor_string_names.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/aspect_ratio_container.h"
@@ -37,21 +36,6 @@
 #include "scene/gui/margin_container.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/resources/image_texture.h"
-
-void BitMapEditor::setup(const Ref<BitMap>& p_bitmap)
-{
-	Ref<ImageTexture> bitmap_texture =
-		ImageTexture::create_from_image(p_bitmap->convert_to_image());
-	texture_rect->set_texture(bitmap_texture);
-	if (bitmap_texture.is_valid()) {
-		centering_container->set_custom_minimum_size(Size2(0, 250) * EDSCALE);
-		centering_container->set_ratio(bitmap_texture->get_size().aspect());
-		outline_overlay->connect(
-			SceneStringName(draw), callable_mp(this, &BitMapEditor::_draw_outline));
-	}
-	size_label->set_text(
-		vformat(U"%s×%s", p_bitmap->get_size().width, p_bitmap->get_size().height));
-}
 
 void BitMapEditor::_notification(int p_what)
 {
@@ -100,36 +84,6 @@ BitMapEditor::BitMapEditor()
 	Ref<StyleBoxEmpty> stylebox;
 	stylebox.instantiate();
 	stylebox->set_content_margin(SIDE_RIGHT, 4 * EDSCALE);
-	size_label->add_theme_style_override(CoreStringName(normal), stylebox.ptr());
-}
-
-///////////////////////
-
-bool EditorInspectorPluginBitMap::can_handle(Object* p_object)
-{
-	return Object::cast_to<BitMap>(p_object) != nullptr;
-}
-
-void EditorInspectorPluginBitMap::parse_begin(Object* p_object)
-{
-	BitMap* bitmap = Object::cast_to<BitMap>(p_object);
-	if (!bitmap) {
-		return;
-	}
-	Ref<BitMap> bm(bitmap);
-
-	BitMapEditor* editor = memnew(BitMapEditor);
-	editor->setup(bm);
-	add_custom_control(editor);
-}
-
-///////////////////////
-
-BitMapEditorPlugin::BitMapEditorPlugin()
-{
-	Ref<EditorInspectorPluginBitMap> plugin;
-	plugin.instantiate();
-	add_inspector_plugin(plugin);
 }
 
 

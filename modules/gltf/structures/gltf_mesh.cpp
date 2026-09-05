@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "gltf_mesh.h"
 #include "scene/resources/3d/importer_mesh.h"
 
@@ -42,31 +41,11 @@ Ref<ImporterMesh> GLTFMesh::get_mesh() { return mesh; }
 
 void GLTFMesh::set_mesh(const Ref<ImporterMesh>& p_mesh) { mesh = p_mesh; }
 
-Array GLTFMesh::get_instance_materials()
-{
-	return Array(instance_materials);
-}
-
-void GLTFMesh::set_instance_materials(const Array& p_instance_materials)
-{
-	instance_materials = Array(p_instance_materials);
-}
-
 Vector<float> GLTFMesh::get_blend_weights() { return Vector<float>(blend_weights); }
 
 void GLTFMesh::set_blend_weights(const Vector<float>& p_blend_weights)
 {
 	blend_weights = Vector<float>(p_blend_weights);
-}
-
-Variant GLTFMesh::get_additional_data(const StringName& p_extension_name)
-{
-	return additional_data.get(p_extension_name, Variant());
-}
-
-void GLTFMesh::set_additional_data(const StringName& p_extension_name, Variant p_additional_data)
-{
-	additional_data[p_extension_name] = p_additional_data;
 }
 
 

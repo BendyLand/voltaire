@@ -32,28 +32,29 @@
 
 #include "scene/resources/animation.h"
 
-class GLTFAnimation : public Resource {
-	VLTRCLASS(GLTFAnimation, Resource);
-
+class GLTFAnimation : public Resource
+{
 protected:
 	static void _bind_methods();
 
 public:
-	enum Interpolation {
+	enum Interpolation
+	{
 		INTERP_LINEAR,
 		INTERP_STEP,
 		INTERP_CATMULLROMSPLINE,
 		INTERP_CUBIC_SPLINE,
 	};
 
-	template <typename T>
-	struct Channel {
+	template <typename T> struct Channel
+	{
 		Interpolation interpolation = INTERP_LINEAR;
 		Vector<double> times;
 		Vector<T> values;
 	};
 
-	struct NodeTrack {
+	struct NodeTrack
+	{
 		Channel<Vector3> position_track;
 		Channel<Quaternion> rotation_track;
 		Channel<Vector3> scale_track;
@@ -63,25 +64,23 @@ public:
 	String original_name;
 	bool loop = false;
 	HashMap<int, NodeTrack> node_tracks;
-	HashMap<String, Channel<Variant>> pointer_tracks;
-	Dictionary additional_data;
 
 public:
-	static Interpolation godot_to_gltf_interpolation(const Ref<Animation> &p_godot_animation, int32_t p_godot_anim_track_index);
-	static Animation::InterpolationType gltf_to_godot_interpolation(Interpolation p_gltf_interpolation);
+	static Interpolation godot_to_gltf_interpolation(
+		const Ref<Animation>& p_godot_animation, int32_t p_godot_anim_track_index);
+	static Animation::InterpolationType gltf_to_godot_interpolation(
+		Interpolation p_gltf_interpolation);
 
 	String get_original_name();
-	void set_original_name(const String &p_name);
+	void set_original_name(const String& p_name);
 
 	bool get_loop() const;
 	void set_loop(bool p_val);
 
-	HashMap<int, GLTFAnimation::NodeTrack> &get_node_tracks();
-	HashMap<String, GLTFAnimation::Channel<Variant>> &get_pointer_tracks();
+	HashMap<int, GLTFAnimation::NodeTrack>& get_node_tracks();
 	bool is_empty_of_tracks() const;
-
-	Variant get_additional_data(const StringName &p_extension_name);
-	void set_additional_data(const StringName &p_extension_name, Variant p_additional_data);
 
 	GLTFAnimation();
 };
+
+

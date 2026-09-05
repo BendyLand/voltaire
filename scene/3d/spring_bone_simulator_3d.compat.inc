@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "spring_bone_simulator_3d.h"
 
 namespace compat::SpringBoneSimulator3D

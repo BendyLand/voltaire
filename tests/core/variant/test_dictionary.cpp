@@ -32,8 +32,6 @@
 
 TEST_FORCE_LINK(test_dictionary)
 
-#include "core/object/ref_counted.h"
-#include "core/variant/typed_dictionary.h"
 
 namespace TestDictionary {
 

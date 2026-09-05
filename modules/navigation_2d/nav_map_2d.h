@@ -36,7 +36,6 @@
 #include "nav_utils_2d.h"
 
 #include "core/math/math_defs.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/rw_lock.h"
 #include "servers/navigation_2d/navigation_constants_2d.h"
 

@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "noise.h"
 #include "noise_texture_2d.h"
 #include "servers/rendering/rendering_server.h"

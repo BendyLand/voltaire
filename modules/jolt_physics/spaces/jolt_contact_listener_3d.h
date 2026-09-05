@@ -35,7 +35,6 @@
 #include "core/templates/hash_set.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/local_vector.h"
-#include "core/variant/variant.h"
 
 #include <Jolt/Jolt.h>
 

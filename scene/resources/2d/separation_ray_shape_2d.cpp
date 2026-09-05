@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "separation_ray_shape_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "servers/rendering/rendering_server.h"

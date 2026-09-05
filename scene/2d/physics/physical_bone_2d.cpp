@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "physical_bone_2d.h"
 #include "scene/2d/physics/joints/joint_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"

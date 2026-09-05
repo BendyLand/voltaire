@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/world_2d.h"
 #include "skeleton_modification_2d_jiggle.h"

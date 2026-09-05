@@ -36,14 +36,13 @@ class Button;
 class EventListenerLineEdit;
 class LineEdit;
 
-class EditorEventSearchBar : public HBoxContainer {
-	VLTRCLASS(EditorEventSearchBar, HBoxContainer);
+class EditorEventSearchBar : public HBoxContainer
+{
+	LineEdit* search_by_name = nullptr;
+	EventListenerLineEdit* search_by_event = nullptr;
+	Button* clear_all = nullptr;
 
-	LineEdit *search_by_name = nullptr;
-	EventListenerLineEdit *search_by_event = nullptr;
-	Button *clear_all = nullptr;
-
-	void _on_event_changed(const Ref<InputEvent> &p_event);
+	void _on_event_changed(const Ref<InputEvent>& p_event);
 	void _on_clear_all();
 
 	void _value_changed();
@@ -53,7 +52,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	LineEdit *get_name_search_box() const { return search_by_name; }
+	LineEdit* get_name_search_box() const { return search_by_name; }
 
 	bool is_searching() const;
 
@@ -62,3 +61,5 @@ public:
 
 	EditorEventSearchBar();
 };
+
+

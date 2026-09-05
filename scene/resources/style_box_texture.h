@@ -34,7 +34,6 @@
 #include "scene/resources/texture.h"
 
 class StyleBoxTexture : public StyleBox {
-	VLTRCLASS(StyleBoxTexture, StyleBox);
 
 public:
 	enum AxisStretchMode {
@@ -90,4 +89,3 @@ public:
 	virtual void draw(RID p_canvas_item, const Rect2 &p_rect) const override;
 };
 
-VARIANT_ENUM_CAST(StyleBoxTexture::AxisStretchMode)

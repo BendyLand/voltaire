@@ -31,7 +31,6 @@
 #include "tts_linux.h"
 
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
 #include "servers/display/display_server.h"
 #include "servers/text/text_server.h"
 

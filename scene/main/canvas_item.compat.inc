@@ -31,7 +31,6 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "canvas_item.h"
-#include "core/object/class_db.h"
 #include "scene/resources/font.h"
 
 void CanvasItem::_draw_string_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,

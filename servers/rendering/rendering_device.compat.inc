@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "rendering_device.h"
 
 RID RenderingDevice::_shader_create_from_bytecode_bind_compat_79606(

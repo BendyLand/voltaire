@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 #include "physics_ray_query_parameters_3d.h"
 
 void PhysicsRayQueryParameters3D::set_exclude(const Array& p_exclude)

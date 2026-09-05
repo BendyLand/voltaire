@@ -32,8 +32,8 @@
 
 #include "scene/resources/style_box.h"
 
-class StyleBoxLine : public StyleBox {
-	VLTRCLASS(StyleBoxLine, StyleBox);
+class StyleBoxLine : public StyleBox
+{
 	Color color;
 	int thickness = 1;
 	bool vertical = false;
@@ -45,7 +45,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_color(const Color &p_color);
+	void set_color(const Color& p_color);
 	Color get_color() const;
 
 	void set_thickness(int p_thickness);
@@ -60,5 +60,7 @@ public:
 	void set_grow_end(float p_grow);
 	float get_grow_end() const;
 
-	virtual void draw(RID p_canvas_item, const Rect2 &p_rect) const override;
+	virtual void draw(RID p_canvas_item, const Rect2& p_rect) const override;
 };
+
+

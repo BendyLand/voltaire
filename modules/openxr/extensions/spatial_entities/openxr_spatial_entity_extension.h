@@ -34,7 +34,6 @@
 #include "../openxr_extension_wrapper.h"
 #include "../openxr_future_extension.h"
 #include "core/templates/rid_owner.h"
-#include "core/variant/typed_array.h"
 #include "openxr_spatial_entities.h"
 
 // Spatial entity extension

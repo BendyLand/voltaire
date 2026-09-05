@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "editor/editor_string_names.h"
 #include "editor/gui/editor_spin_slider.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_theme_manager.h"
@@ -266,105 +264,7 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_set_clamped_values(float p_mi
 void ParticleProcessMaterialMinMaxPropertyEditor::_sync_property()
 {
 	const Vector2 value = Vector2(min_range->get_value(), max_range->get_value());
-	emit_changed(get_edited_property(), value, "", true);
 	range_edit_widget->queue_redraw();
-}
-
-void ParticleProcessMaterialMinMaxPropertyEditor::_update_mode()
-{
-	max_edit->set_read_only(false);
-
-	switch (slider_mode) {
-	case Mode::RANGE: {
-		min_edit->set_label("min");
-		max_edit->set_label("max");
-		max_edit->obj->set_block_signals(true);
-		max_edit->set_min(max_range->get_min());
-		max_edit->set_max(max_range->get_max());
-		max_edit->obj->set_block_signals(false);
-
-		min_edit->set_allow_lesser(min_range->is_lesser_allowed());
-		min_edit->set_allow_greater(min_range->is_greater_allowed());
-		max_edit->set_allow_lesser(max_range->is_lesser_allowed());
-		max_edit->set_allow_greater(max_range->is_greater_allowed());
-	} break;
-
-	case Mode::MIDPOINT: {
-		min_edit->set_label("val");
-		max_edit->set_label(U"±");
-		max_edit->obj->set_block_signals(true);
-		max_edit->set_min(0);
-		max_edit->obj->set_block_signals(false);
-
-		min_edit->set_allow_lesser(min_range->is_lesser_allowed());
-		min_edit->set_allow_greater(max_range->is_greater_allowed());
-		max_edit->set_allow_lesser(false);
-		max_edit->set_allow_greater(
-			min_range->is_lesser_allowed() && max_range->is_greater_allowed());
-	} break;
-	}
-	_update_slider_values();
-}
-
-void ParticleProcessMaterialMinMaxPropertyEditor::_toggle_mode(bool p_edit_mode)
-{
-	slider_mode = p_edit_mode ? Mode::MIDPOINT : Mode::RANGE;
-	EditorSettings::get_singleton()->set_project_metadata(
-		"editor_metadata", "particle_spin_mode", int(slider_mode));
-	_update_mode();
-}
-
-void ParticleProcessMaterialMinMaxPropertyEditor::_update_slider_values()
-{
-	switch (slider_mode) {
-	case Mode::RANGE: {
-		min_edit->set_value_no_signal(min_range->get_value());
-		max_edit->set_value_no_signal(max_range->get_value());
-	} break;
-
-	case Mode::MIDPOINT: {
-		min_edit->set_value_no_signal((min_range->get_value() + max_range->get_value()) * 0.5);
-		max_edit->set_value_no_signal((max_range->get_value() - min_range->get_value()) * 0.5);
-
-		max_edit->obj->set_block_signals(true);
-		max_edit->set_max(_get_max_spread());
-		max_edit->set_read_only(max_edit->get_max() == 0);
-		max_edit->obj->set_block_signals(false);
-	} break;
-	}
-}
-
-void ParticleProcessMaterialMinMaxPropertyEditor::_sync_sliders(
-	float, const EditorSpinSlider* p_changed_slider)
-{
-	switch (slider_mode) {
-	case Mode::RANGE: {
-		if (p_changed_slider == max_edit) {
-			min_edit->set_value_no_signal(MIN(min_edit->get_value(), max_edit->get_value()));
-		}
-		min_range->set_value(min_edit->get_value());
-		if (p_changed_slider == min_edit) {
-			max_edit->set_value_no_signal(MAX(min_edit->get_value(), max_edit->get_value()));
-		}
-		max_range->set_value(max_edit->get_value());
-		_sync_property();
-	} break;
-
-	case Mode::MIDPOINT: {
-		if (p_changed_slider == min_edit) {
-			max_edit->obj->set_block_signals(true); // If max changes, value may change.
-			max_edit->set_max(_get_max_spread());
-			max_edit->set_read_only(max_edit->get_max() == 0);
-			max_edit->obj->set_block_signals(false);
-		}
-		min_range->set_value(min_edit->get_value() - max_edit->get_value());
-		max_range->set_value(min_edit->get_value() + max_edit->get_value());
-		_sync_property();
-	} break;
-	}
-
-	property_range.x = MIN(min_range->get_value(), min_range->get_min());
-	property_range.y = MAX(max_range->get_value(), max_range->get_max());
 }
 
 float ParticleProcessMaterialMinMaxPropertyEditor::_get_max_spread() const
@@ -386,33 +286,6 @@ float ParticleProcessMaterialMinMaxPropertyEditor::_get_max_spread() const
 	return max_spread;
 }
 
-void ParticleProcessMaterialMinMaxPropertyEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		toggle_mode_button->set_button_icon(get_editor_theme_icon(SNAME("Anchor")));
-		range_slider_left_icon = get_editor_theme_icon(SNAME("RangeSliderLeft"));
-		range_slider_right_icon = get_editor_theme_icon(SNAME("RangeSliderRight"));
-
-		min_edit->add_theme_color_override(SNAME("label_color"),
-			get_theme_color(SNAME("property_color_x"), EditorStringName(Editor)));
-		max_edit->add_theme_color_override(SNAME("label_color"),
-			get_theme_color(SNAME("property_color_y"), EditorStringName(Editor)));
-
-		const bool dark_theme = EditorThemeManager::is_dark_theme();
-		const Color accent_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		background_color = dark_theme ? Color(0.3, 0.3, 0.3) : Color(0.7, 0.7, 0.7);
-		normal_color = dark_theme ? Color(0.5, 0.5, 0.5) : Color(0.8, 0.8, 0.8);
-		hovered_color = dark_theme ? Color(0.8, 0.8, 0.8) : Color(0.6, 0.6, 0.6);
-		drag_color = hovered_color.lerp(accent_color, 0.8);
-		midpoint_color = dark_theme ? Color(1, 1, 1) : Color(0, 0, 0);
-
-		range_edit_widget->set_custom_minimum_size(
-			Vector2(0, range_slider_left_icon->get_height() + 8));
-	} break;
-	}
-}
-
 void ParticleProcessMaterialMinMaxPropertyEditor::setup(
 	float p_min, float p_max, float p_step, bool p_allow_less, bool p_allow_greater, bool p_degrees)
 {
@@ -432,113 +305,6 @@ void ParticleProcessMaterialMinMaxPropertyEditor::setup(
 		max_edit->set_suffix(U" \u00B0");
 	}
 	_update_mode();
-}
-
-void ParticleProcessMaterialMinMaxPropertyEditor::update_property()
-{
-	const Vector2 value = get_edited_property_value();
-	min_range->set_value(value.x);
-	max_range->set_value(value.y);
-	_update_slider_values();
-	range_edit_widget->queue_redraw();
-}
-
-ParticleProcessMaterialMinMaxPropertyEditor::ParticleProcessMaterialMinMaxPropertyEditor()
-{
-	VBoxContainer* content_vb = memnew(VBoxContainer);
-	content_vb->add_theme_constant_override(SNAME("separation"), 0);
-	add_child(content_vb);
-
-	// Helper Range objects to keep absolute min and max values.
-	min_range = memnew(Range);
-	min_range->hide();
-	add_child(min_range);
-
-	max_range = memnew(Range);
-	max_range->hide();
-	add_child(max_range);
-
-	// Range edit widget.
-	HBoxContainer* hb = memnew(HBoxContainer);
-	content_vb->add_child(hb);
-
-	range_edit_widget = memnew(Control);
-	range_edit_widget->set_h_size_flags(SIZE_EXPAND_FILL);
-	range_edit_widget->set_tooltip_text(
-		TTR("Hold Shift to scale around midpoint instead of moving."));
-	hb->add_child(range_edit_widget);
-	range_edit_widget->connect(SceneStringName(draw),
-		callable_mp(this, &ParticleProcessMaterialMinMaxPropertyEditor::_range_edit_draw));
-	range_edit_widget->connect(SceneStringName(gui_input),
-		callable_mp(this, &ParticleProcessMaterialMinMaxPropertyEditor::_range_edit_gui_input));
-	range_edit_widget->connect(SceneStringName(mouse_entered),
-		callable_mp(this
-, &ParticleProcessMaterialMinMaxPropertyEditor::_set_mouse_inside)
-			.bind(true));
-	range_edit_widget->connect(SceneStringName(mouse_exited),
-		callable_mp(this, &ParticleProcessMaterialMinMaxPropertyEditor::_set_mouse_inside)
-			.bind(false));
-
-	// Range controls for actual editing. Their min/max may depend on editing mode.
-	hb = memnew(HBoxContainer);
-	content_vb->add_child(hb);
-
-	min_edit = memnew(EditorSpinSlider);
-	min_edit->set_h_size_flags(SIZE_EXPAND_FILL);
-	hb->add_child(min_edit);
-	min_edit->connect(SceneStringName(value_changed),
-		callable_mp(this, &ParticleProcessMaterialMinMaxPropertyEditor::_sync_sliders)
-			.bind(min_edit));
-
-	max_edit = memnew(EditorSpinSlider);
-	max_edit->set_h_size_flags(SIZE_EXPAND_FILL);
-	hb->add_child(max_edit);
-	max_edit->connect(SceneStringName(value_changed),
-		callable_mp(this, &ParticleProcessMaterialMinMaxPropertyEditor::_sync_sliders)
-			.bind(max_edit));
-
-	toggle_mode_button = memnew(Button);
-	toggle_mode_button->set_toggle_mode(true);
-	toggle_mode_button->set_tooltip_text(
-		TTR("Toggle between minimum/maximum and base value/spread modes."));
-	hb->add_child(toggle_mode_button);
-	toggle_mode_button->connect(SceneStringName(toggled),
-		callable_mp(this, &ParticleProcessMaterialMinMaxPropertyEditor::_toggle_mode));
-
-	set_bottom_editor(content_vb);
-}
-
-bool EditorInspectorParticleProcessMaterialPlugin::can_handle(Object* p_object)
-{
-	return Object::cast_to<ParticleProcessMaterial>(p_object);
-}
-
-bool EditorInspectorParticleProcessMaterialPlugin::parse_property(Object* p_object,
-	const Variant::Type p_type, const String& p_path, const PropertyHint p_hint,
-	const String& p_hint_text, const uint32_t p_usage, const bool p_wide)
-{
-	if (!ParticleProcessMaterial::has_min_max_property(p_path)) {
-		return false;
-	}
-	ERR_FAIL_COND_V(p_hint != PROPERTY_HINT_RANGE, false);
-
-	Ref<ParticleProcessMaterial> mat = Ref<ParticleProcessMaterial>(p_object);
-	ERR_FAIL_COND_V(mat.is_null(), false);
-
-	PackedStringArray range_hint = p_hint_text.split(",");
-	float min = range_hint[0].to_float();
-	float max = range_hint[1].to_float();
-	float step = range_hint[2].to_float();
-	bool allow_less = range_hint.find("or_less", 3) > -1;
-	bool allow_greater = range_hint.find("or_greater", 3) > -1;
-	bool degrees = range_hint.find("degrees", 3) > -1;
-
-	ParticleProcessMaterialMinMaxPropertyEditor* ed =
-		memnew(ParticleProcessMaterialMinMaxPropertyEditor);
-	ed->setup(min, max, step, allow_less, allow_greater, degrees);
-	add_property_editor(p_path, ed);
-
-	return true;
 }
 
 

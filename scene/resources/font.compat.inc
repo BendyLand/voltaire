@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "font.h"
 
 void Font::_draw_string_bind_compat_104872(RID p_canvas_item, const Point2& p_pos,

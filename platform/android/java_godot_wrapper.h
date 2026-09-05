@@ -35,7 +35,6 @@
 #include "core/math/color.h"
 #include "core/templates/list.h"
 #include "core/templates/vector.h"
-#include "core/variant/callable.h"
 
 #include <jni.h>
 

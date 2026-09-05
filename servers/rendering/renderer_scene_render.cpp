@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/variant/typed_array.h"
 #include "renderer_scene_render.h"
 
 /////////////////////////////////////////////////////////////////////////////

@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 #include "navigation_path_query_parameters_3d.h"
 
 void NavigationPathQueryParameters3D::set_pathfinding_algorithm(

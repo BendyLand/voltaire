@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/math/convex_hull.h"
-#include "core/object/class_db.h"
 #include "core/templates/pair.h"
 #include "mesh.h"
 #include "scene/resources/surface_tool.h"

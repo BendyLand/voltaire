@@ -46,7 +46,6 @@
 
 #ifdef MACOS_ENABLED
 #include "core/io/json.h"
-#include "core/object/callable_mp.h"
 #include "core/os/process_id.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/script/script_editor_plugin.h"

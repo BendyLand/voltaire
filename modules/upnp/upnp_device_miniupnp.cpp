@@ -31,7 +31,6 @@
 #ifndef WEB_ENABLED
 
 #include <miniupnpc/upnpcommands.h>
-#include "core/object/class_db.h"
 #include "upnp_device_miniupnp.h"
 #include "upnp_miniupnp.h"
 

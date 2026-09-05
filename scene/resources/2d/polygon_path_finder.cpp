@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/math/geometry_2d.h"
-#include "core/object/class_db.h"
 #include "polygon_path_finder.h"
 
 bool PolygonPathFinder::_is_point_inside(const Vector2& p_point) const

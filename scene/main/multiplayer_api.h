@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "scene/main/multiplayer_peer.h"
 
 class MultiplayerAPI : public RefCounted

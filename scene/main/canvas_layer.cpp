@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "canvas_layer.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/main/canvas_item.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/world_2d.h"

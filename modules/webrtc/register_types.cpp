@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "register_types.h"
 #include "webrtc_data_channel.h"
 #include "webrtc_multiplayer_peer.h"

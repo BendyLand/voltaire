@@ -36,14 +36,12 @@
 class CheckButton;
 class EditorInspector;
 class LineEdit;
-class SectionedInspectorFilter;
 class Tree;
 class TreeItem;
 
 class SectionedInspector : public HSplitContainer
 {
 	Tree* sections = nullptr;
-	SectionedInspectorFilter* filter = nullptr;
 
 	HashMap<String, TreeItem*> section_map;
 	EditorInspector* inspector = nullptr;

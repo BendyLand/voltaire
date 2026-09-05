@@ -30,7 +30,6 @@
 
 #include "audio_stream.h"
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 
 PackedVector2Array AudioStreamPlayback::_mix_audio_bind(float p_rate_scale, int p_frames)
 {

@@ -30,7 +30,6 @@
 
 #include <thirdparty/misc/polypartition.h>
 #include "core/math/geometry_2d.h"
-#include "core/object/class_db.h"
 #include "core/os/mutex.h"
 #include "navigation_polygon.h"
 

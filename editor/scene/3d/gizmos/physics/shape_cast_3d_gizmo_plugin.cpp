@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "shape_cast_3d_gizmo_plugin.h"
-
 #include "scene/3d/physics/shape_cast_3d.h"
 #include "scene/main/scene_tree.h"
+#include "shape_cast_3d_gizmo_plugin.h"
 
-ShapeCast3DGizmoPlugin::ShapeCast3DGizmoPlugin() {
+ShapeCast3DGizmoPlugin::ShapeCast3DGizmoPlugin()
+{
 	const Color gizmo_color = SceneTree::get_singleton()->get_debug_collisions_color();
 	create_material("shape_material", gizmo_color);
 	const float gizmo_value = gizmo_color.get_v();
@@ -41,30 +41,6 @@ ShapeCast3DGizmoPlugin::ShapeCast3DGizmoPlugin() {
 	create_material("shape_material_disabled", gizmo_color_disabled);
 }
 
-bool ShapeCast3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
-	return Object::cast_to<ShapeCast3D>(p_spatial) != nullptr;
-}
+String ShapeCast3DGizmoPlugin::get_gizmo_name() const { return "ShapeCast3D"; }
 
-String ShapeCast3DGizmoPlugin::get_gizmo_name() const {
-	return "ShapeCast3D";
-}
 
-int ShapeCast3DGizmoPlugin::get_priority() const {
-	return -1;
-}
-
-void ShapeCast3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
-	ShapeCast3D *shapecast = Object::cast_to<ShapeCast3D>(p_gizmo->get_node_3d());
-
-	p_gizmo->clear();
-
-	const Ref<StandardMaterial3D> material = shapecast->is_enabled() ? shapecast->get_debug_material() : get_material("shape_material_disabled");
-
-	p_gizmo->add_lines(shapecast->get_debug_line_vertices(), material);
-
-	if (shapecast->get_shape().is_valid()) {
-		p_gizmo->add_lines(shapecast->get_debug_shape_vertices(), material);
-	}
-
-	p_gizmo->add_collision_segments(shapecast->get_debug_line_vertices());
-}

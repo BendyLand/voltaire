@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "physics_server_2d.h"
 
 void PhysicsServer2D::_body_set_shape_as_one_way_collision_bind_compat_104736(

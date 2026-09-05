@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_effect_reverb.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectReverbInstance::process(

@@ -43,10 +43,10 @@ class Sprite3D;
 class StyleBoxTexture;
 class ViewPanner;
 
-class TextureRegionEditor : public AcceptDialog {
-	VLTRCLASS(TextureRegionEditor, AcceptDialog);
-
-	enum SnapMode {
+class TextureRegionEditor : public AcceptDialog
+{
+	enum SnapMode
+	{
 		SNAP_NONE,
 		SNAP_PIXEL,
 		SNAP_GRID,
@@ -55,23 +55,24 @@ class TextureRegionEditor : public AcceptDialog {
 
 	friend class TextureRegionEditorPlugin;
 	friend class TextureRegionEditorOverlay;
-	OptionButton *snap_mode_button = nullptr;
-	Button *zoom_in = nullptr;
-	Button *zoom_reset = nullptr;
-	Button *zoom_out = nullptr;
-	HBoxContainer *hb_grid = nullptr; //For showing/hiding the grid controls when changing the SnapMode
-	SpinBox *sb_step_y = nullptr;
-	SpinBox *sb_step_x = nullptr;
-	SpinBox *sb_off_y = nullptr;
-	SpinBox *sb_off_x = nullptr;
-	SpinBox *sb_sep_y = nullptr;
-	SpinBox *sb_sep_x = nullptr;
+	OptionButton* snap_mode_button = nullptr;
+	Button* zoom_in = nullptr;
+	Button* zoom_reset = nullptr;
+	Button* zoom_out = nullptr;
+	HBoxContainer* hb_grid =
+		nullptr; // For showing/hiding the grid controls when changing the SnapMode
+	SpinBox* sb_step_y = nullptr;
+	SpinBox* sb_step_x = nullptr;
+	SpinBox* sb_off_y = nullptr;
+	SpinBox* sb_off_x = nullptr;
+	SpinBox* sb_sep_y = nullptr;
+	SpinBox* sb_sep_x = nullptr;
 
-	PanelContainer *texture_preview = nullptr;
-	Panel *texture_overlay = nullptr;
+	PanelContainer* texture_preview = nullptr;
+	Panel* texture_overlay = nullptr;
 
-	VScrollBar *vscroll = nullptr;
-	HScrollBar *hscroll = nullptr;
+	VScrollBar* vscroll = nullptr;
+	HScrollBar* hscroll = nullptr;
 
 	Vector2 draw_ofs;
 	float draw_zoom = 1.0;
@@ -84,9 +85,9 @@ class TextureRegionEditor : public AcceptDialog {
 	Vector2 snap_step;
 	Vector2 snap_separation;
 
-	Sprite2D *node_sprite_2d = nullptr;
-	Sprite3D *node_sprite_3d = nullptr;
-	NinePatchRect *node_ninepatch = nullptr;
+	Sprite2D* node_sprite_2d = nullptr;
+	Sprite3D* node_sprite_3d = nullptr;
+	NinePatchRect* node_ninepatch = nullptr;
 	Ref<StyleBoxTexture> res_stylebox;
 	Ref<AtlasTexture> res_atlas_texture;
 
@@ -124,14 +125,14 @@ class TextureRegionEditor : public AcceptDialog {
 	void _zoom_reset();
 	void _zoom_out();
 
-	void _apply_rect(const Rect2 &p_rect);
+	void _apply_rect(const Rect2& p_rect);
 	void _update_rect();
 	void _update_autoslice();
 
 	Ref<Texture2D> _get_edited_object_texture() const;
 	Rect2 _get_edited_object_region() const;
 	void _texture_changed();
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 
 	void _edit_region();
 	void _clear_edited_object();
@@ -140,58 +141,50 @@ class TextureRegionEditor : public AcceptDialog {
 
 	void _set_grid_parameters_clamping(bool p_enabled);
 
-	int _get_overlapping_selection_handle(const Point2 &p_mouse_pos);
-	int _get_overlapping_margin_line(const Point2 &p_mouse_pos, float *r_margin = nullptr);
+	int _get_overlapping_selection_handle(const Point2& p_mouse_pos);
+	int _get_overlapping_margin_line(const Point2& p_mouse_pos, float* r_margin = nullptr);
 
 	void _commit_drag();
 
 protected:
 	void _notification(int p_what);
-	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
-	static void _bind_methods();
 
 	void _texture_preview_draw();
 	void _texture_overlay_draw();
-	void _texture_overlay_input(const Ref<InputEvent> &p_input);
+	void _texture_overlay_input(const Ref<InputEvent>& p_input);
 
-	virtual void _input_from_window(const Ref<InputEvent> &p_event) override;
+	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
 
 	Vector2 snap_point(Vector2 p_target) const;
 
 public:
-	void edit(Object *p_obj);
-
 	TextureRegionEditor();
 };
 
-class TextureRegionEditorOverlay : public Panel {
-	TextureRegionEditor *editor = nullptr;
+class TextureRegionEditorOverlay : public Panel
+{
+	TextureRegionEditor* editor = nullptr;
 
 public:
-	void set_editor(TextureRegionEditor *p_editor) { editor = p_editor; }
+	void set_editor(TextureRegionEditor* p_editor) { editor = p_editor; }
 
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 };
 
-class EditorInspectorPluginTextureRegion : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginTextureRegion, EditorInspectorPlugin);
-
-	TextureRegionEditor *texture_region_editor = nullptr;
-
-	void _region_edit(Object *p_object);
+class EditorInspectorPluginTextureRegion : public EditorInspectorPlugin
+{
+	TextureRegionEditor* texture_region_editor = nullptr;
 
 public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual bool parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const uint32_t p_usage, const bool p_wide) override;
-
 	EditorInspectorPluginTextureRegion();
 };
 
-class TextureRegionEditorPlugin : public EditorPlugin {
-	VLTRCLASS(TextureRegionEditorPlugin, EditorPlugin);
-
+class TextureRegionEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "TextureRegion"; }
 
 	TextureRegionEditorPlugin();
 };
+
+

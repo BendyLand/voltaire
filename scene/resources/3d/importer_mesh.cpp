@@ -30,7 +30,6 @@
 
 #include "core/io/marshalls.h"
 #include "core/math/random_pcg.h"
-#include "core/object/class_db.h"
 #include "importer_mesh.h"
 #include "scene/resources/surface_tool.h"
 

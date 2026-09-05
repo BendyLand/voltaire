@@ -35,8 +35,6 @@
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/math/expression.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/gui/color_mode.h"
 #include "scene/gui/color_picker_shape.h"
 #include "scene/gui/file_dialog.h"

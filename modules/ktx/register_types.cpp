@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource_loader.h"
-#include "core/object/class_db.h"
 #include "register_types.h"
 #include "scene/resources/image_texture.h"
 #include "texture_loader_ktx.h"

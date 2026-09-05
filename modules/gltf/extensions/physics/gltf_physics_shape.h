@@ -31,7 +31,6 @@
 #pragma once
 
 #include "../../gltf_defines.h"
-
 #include "scene/3d/physics/collision_shape_3d.h"
 
 class ImporterMesh;
@@ -40,9 +39,8 @@ class ImporterMesh;
 // and the OMI_physics_shape extension.
 // https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_shape
 
-class GLTFPhysicsShape : public Resource {
-	VLTRCLASS(GLTFPhysicsShape, Resource)
-
+class GLTFPhysicsShape : public Resource
+{
 protected:
 	static void _bind_methods();
 
@@ -59,10 +57,10 @@ private:
 
 public:
 	String get_shape_type() const;
-	void set_shape_type(const String &p_shape_type);
+	void set_shape_type(const String& p_shape_type);
 
 	Vector3 get_size() const;
-	void set_size(const Vector3 &p_size);
+	void set_size(const Vector3& p_size);
 
 	real_t get_radius() const;
 	void set_radius(real_t p_radius);
@@ -77,14 +75,13 @@ public:
 	void set_mesh_index(GLTFMeshIndex p_mesh_index);
 
 	Ref<ImporterMesh> get_importer_mesh() const;
-	void set_importer_mesh(const Ref<ImporterMesh> &p_importer_mesh);
+	void set_importer_mesh(const Ref<ImporterMesh>& p_importer_mesh);
 
-	static Ref<GLTFPhysicsShape> from_node(const CollisionShape3D *p_shape_node);
-	CollisionShape3D *to_node(bool p_cache_shapes = false);
+	static Ref<GLTFPhysicsShape> from_node(const CollisionShape3D* p_shape_node);
+	CollisionShape3D* to_node(bool p_cache_shapes = false);
 
-	static Ref<GLTFPhysicsShape> from_resource(const Ref<Shape3D> &p_shape_resource);
+	static Ref<GLTFPhysicsShape> from_resource(const Ref<Shape3D>& p_shape_resource);
 	Ref<Shape3D> to_resource(bool p_cache_shapes = false);
-
-	static Ref<GLTFPhysicsShape> from_dictionary(const Dictionary &p_dictionary);
-	Dictionary to_dictionary() const;
 };
+
+

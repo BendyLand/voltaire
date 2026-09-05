@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/string/print_string.h"
 #include "openxr_android_thread_settings_extension.h"
 #include "servers/rendering/rendering_server.h"

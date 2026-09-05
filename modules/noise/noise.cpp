@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include <cfloat> // FLT_MAX
-#include "core/object/class_db.h"
 #include "noise.h"
 
 Vector<Ref<Image>> Noise::_get_seamless_image(int p_width, int p_height, int p_depth, bool p_invert,

@@ -30,8 +30,6 @@
 
 #include "../../openxr_api.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "openxr_spatial_entity_extension.h"
 #include "openxr_spatial_plane_tracking.h"
 #include "scene/resources/3d/primitive_meshes.h"

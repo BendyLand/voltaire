@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
-#include "core/object/script_language.h"
 #include "rich_text_effect.h"
 
 CharFXTransform::CharFXTransform() {}

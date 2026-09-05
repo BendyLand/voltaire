@@ -33,7 +33,6 @@
 #include "godot_physics_server_3d.h"
 
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
 #include "servers/physics_3d/physics_server_3d.h"
 #include "servers/physics_3d/physics_server_3d_wrap_mt.h"
 

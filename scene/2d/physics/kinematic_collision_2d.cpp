@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "kinematic_collision_2d.h"
 #include "scene/2d/physics/physics_body_2d.h"
 

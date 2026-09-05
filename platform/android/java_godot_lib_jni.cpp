@@ -52,7 +52,6 @@
 #include "core/os/os.h"
 #include "core/os/thread.h"
 #include "core/os/thread_safe.h"
-#include "core/profiling/profiling.h"
 #include "main/main.h"
 #include "servers/camera/camera_server.h"
 #include "servers/rendering/rendering_server.h"

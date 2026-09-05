@@ -35,9 +35,8 @@
 class ArrayMesh;
 class Image;
 
-class HeightMapShape3D : public Shape3D {
-	VLTRCLASS(HeightMapShape3D, Shape3D);
-
+class HeightMapShape3D : public Shape3D
+{
 	int map_width = 2;
 	int map_depth = 2;
 	Vector<real_t> map_data;
@@ -59,11 +58,14 @@ public:
 	real_t get_min_height() const;
 	real_t get_max_height() const;
 
-	void update_map_data_from_image(const Ref<Image> &p_image, real_t p_height_min, real_t p_height_max);
+	void update_map_data_from_image(
+		const Ref<Image>& p_image, real_t p_height_min, real_t p_height_max);
 
 	virtual Vector<Vector3> get_debug_mesh_lines() const override;
-	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color &p_modulate) const override;
+	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color& p_modulate) const override;
 	virtual real_t get_enclosing_radius() const override;
 
 	HeightMapShape3D();
 };
+
+

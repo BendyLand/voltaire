@@ -38,15 +38,15 @@
 
 class Bone2D;
 
-class SkeletonModification2D : public Resource {
-	VLTRCLASS(SkeletonModification2D, Resource);
+class SkeletonModification2D : public Resource
+{
 	friend class Skeleton2D;
 	friend class Bone2D;
 
 protected:
 	static void _bind_methods();
 
-	SkeletonModificationStack2D *stack = nullptr;
+	SkeletonModificationStack2D* stack = nullptr;
 	int execution_mode = 0; // 0 = process
 
 	bool enabled = true;
@@ -58,7 +58,7 @@ protected:
 
 public:
 	virtual void _execute(float _delta);
-	virtual void _setup_modification(SkeletonModificationStack2D *p_stack);
+	virtual void _setup_modification(SkeletonModificationStack2D* p_stack);
 	virtual void _draw_editor_gizmo();
 
 	bool editor_draw_gizmo = false;
@@ -75,8 +75,13 @@ public:
 	void set_execution_mode(int p_mode);
 	int get_execution_mode() const;
 
-	float clamp_angle(float p_angle, float p_min_bound, float p_max_bound, bool p_invert_clamp = false);
-	void editor_draw_angle_constraints(Bone2D *p_operation_bone, float p_min_bound, float p_max_bound, bool p_constraint_enabled, bool p_constraint_in_localspace, bool p_constraint_inverted);
+	float clamp_angle(
+		float p_angle, float p_min_bound, float p_max_bound, bool p_invert_clamp = false);
+	void editor_draw_angle_constraints(Bone2D* p_operation_bone, float p_min_bound,
+		float p_max_bound, bool p_constraint_enabled, bool p_constraint_in_localspace,
+		bool p_constraint_inverted);
 
 	SkeletonModification2D();
 };
+
+

@@ -30,7 +30,6 @@
 
 #include "character_body_3d.h"
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 
 // so, if you pass 45 as limit, avoid numerical precision errors when angle is 45.
 #define FLOOR_ANGLE_THRESHOLD 0.01

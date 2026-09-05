@@ -30,7 +30,6 @@
 
 #include "../openxr_api.h"
 #include "../openxr_api_extension.h"
-#include "core/object/class_db.h"
 #include "openxr_extension_wrapper.h"
 
 void OpenXRExtensionWrapper::_bind_methods() {}

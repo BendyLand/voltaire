@@ -30,11 +30,9 @@
 
 #include "audio_server.h"
 #include "core/config/project_settings.h"
-#include "core/debugger/engine_debugger.h"
 #include "core/error/error_macros.h"
 #include "core/io/resource_loader.h"
 #include "core/math/audio_frame.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "core/string/string_name.h"
 #include "core/templates/pair.h"

@@ -34,7 +34,6 @@
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/rid.h"
-#include "core/variant/variant.h"
 #include "servers/physics_3d/physics_server_3d_enums.h"
 
 #include <Jolt/Jolt.h>

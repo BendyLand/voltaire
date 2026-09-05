@@ -28,9 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/debugger/engine_debugger.h"
 #include "core/io/marshalls.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "scene/main/node.h"
 #include "scene_multiplayer.h"

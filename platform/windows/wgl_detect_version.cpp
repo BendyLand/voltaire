@@ -37,7 +37,6 @@
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/string/ustring.h"
-#include "core/variant/dictionary.h"
 
 #include <windows.h>
 

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/zip_io.h"
-#include "core/object/class_db.h"
 #include "core/os/time.h"
 #include "zip_packer.compat.inc"
 #include "zip_packer.h"

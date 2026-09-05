@@ -34,11 +34,8 @@
 
 #include "core/crypto/crypto_core.h"
 #include "core/error/error_macros.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "core/variant/typed_array.h"
-#include "core/variant/variant.h"
 #include "servers/display/display_server.h"
 
 #ifdef SOWRAP_ENABLED

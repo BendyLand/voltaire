@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "rich_text_label.h"
 
 void RichTextLabel::_push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size)

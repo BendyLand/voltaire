@@ -31,12 +31,10 @@
 #pragma once
 
 #include "../gltf_defines.h"
-
 #include "core/io/resource.h"
 
-class GLTFTexture : public Resource {
-	VLTRCLASS(GLTFTexture, Resource);
-
+class GLTFTexture : public Resource
+{
 private:
 	GLTFImageIndex src_image = -1;
 	GLTFTextureSamplerIndex sampler = -1;
@@ -50,3 +48,5 @@ public:
 	GLTFTextureSamplerIndex get_sampler() const;
 	void set_sampler(GLTFTextureSamplerIndex val);
 };
+
+

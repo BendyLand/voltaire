@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "navigation_mesh_generator.h"
 #include "scene/main/node.h"
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"

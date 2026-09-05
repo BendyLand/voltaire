@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "physics_server_2d.compat.inc"
 #include "physics_server_2d.h"
 

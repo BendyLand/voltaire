@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "joint_2d.h"
 #include "scene/2d/physics/physics_body_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"

@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include "core/object/object.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 

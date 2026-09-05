@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "two_bone_ik_3d.h"
 
 bool TwoBoneIK3D::_set(const StringName& p_path, const Variant& p_value)

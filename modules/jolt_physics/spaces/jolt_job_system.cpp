@@ -30,8 +30,6 @@
 
 #include "jolt_job_system.h"
 
-#include "core/debugger/engine_debugger.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
 

@@ -30,8 +30,6 @@
 
 #include "base_button.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/gui/label.h"
 #include "scene/main/timer.h"
 #include "scene/theme/theme_db.h"

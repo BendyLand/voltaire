@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "soft_body_3d.h"
 
 void SoftBody3D::_pin_point_bind_compat_94684(

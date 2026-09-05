@@ -33,8 +33,6 @@
 #include "core/templates/mem_unique_ptr.h"
 #ifdef CLIPPER2_ENABLED
 
-#include "core/object/object.h"
-#include "core/object/worker_thread_pool.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 
 class Node;

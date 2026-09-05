@@ -30,9 +30,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/math/geometry_3d.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
-#include "core/variant/typed_array.h"
 #include "rendering_server.compat.inc"
 #include "rendering_server.h"
 #include "servers/rendering/rendering_device.h"

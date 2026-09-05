@@ -35,7 +35,6 @@
 #include "core/io/certs_compressed.gen.h"
 #include "core/io/compression.h"
 #include "core/io/file_access.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "crypto_mbedtls.h"
 #include "mbedtls_cpp_compat.h"

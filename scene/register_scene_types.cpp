@@ -32,7 +32,6 @@
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "register_scene_types.h"
 #include "scene/animation/animation_blend_space_1d.h"

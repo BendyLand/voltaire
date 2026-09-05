@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/debugger/engine_debugger.h"
 #include "core/os/os.h"
 #include "multiplayer_debugger.h"
 #include "multiplayer_synchronizer.h"

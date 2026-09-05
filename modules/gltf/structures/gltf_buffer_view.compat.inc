@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "gltf_buffer_view.h"
 
 GLTFBufferIndex GLTFBufferView::_get_buffer_bind_compat_86907() { return get_buffer(); }

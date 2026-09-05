@@ -31,8 +31,6 @@
 #include "audio_stream_player_3d.compat.inc"
 #include "audio_stream_player_3d.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/3d/audio_listener_3d.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/velocity_tracker_3d.h"
