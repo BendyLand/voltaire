@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "godot_body_pair_2d.h"
-
 #include "godot_collision_solver_2d.h"
 #include "godot_space_2d.h"
 
@@ -38,13 +37,15 @@
 #define MIN_VELOCITY 0.001
 #define MAX_BIAS_ROTATION (Math::PI / 8)
 
-void GodotBodyPair2D::_add_contact(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_self) {
-	GodotBodyPair2D *self = static_cast<GodotBodyPair2D *>(p_self);
+void GodotBodyPair2D::_add_contact(const Vector2& p_point_A, const Vector2& p_point_B, void* p_self)
+{
+	GodotBodyPair2D* self = static_cast<GodotBodyPair2D*>(p_self);
 
 	self->_contact_added_callback(p_point_A, p_point_B);
 }
 
-void GodotBodyPair2D::_contact_added_callback(const Vector2 &p_point_A, const Vector2 &p_point_B) {
+void GodotBodyPair2D::_contact_added_callback(const Vector2& p_point_A, const Vector2& p_point_B)
+{
 	Vector2 local_A = A->get_inv_transform().basis_xform(p_point_A);
 	Vector2 local_B = B->get_inv_transform().basis_xform(p_point_B - offset_B);
 
@@ -59,12 +60,13 @@ void GodotBodyPair2D::_contact_added_callback(const Vector2 &p_point_A, const Ve
 	contact.used = true;
 
 	// Attempt to determine if the contact will be reused.
-	real_t recycle_radius_2 = space->get_contact_recycle_radius() * space->get_contact_recycle_radius();
+	real_t recycle_radius_2 =
+		space->get_contact_recycle_radius() * space->get_contact_recycle_radius();
 
 	for (int i = 0; i < contact_count; i++) {
-		Contact &c = contacts[i];
+		Contact& c = contacts[i];
 		if (c.local_A.distance_squared_to(local_A) < (recycle_radius_2) &&
-				c.local_B.distance_squared_to(local_B) < (recycle_radius_2)) {
+			c.local_B.distance_squared_to(local_B) < (recycle_radius_2)) {
 			contact.acc_normal_impulse = c.acc_normal_impulse;
 			contact.acc_tangent_impulse = c.acc_tangent_impulse;
 			contact.acc_bias_impulse = c.acc_bias_impulse;
@@ -78,8 +80,8 @@ void GodotBodyPair2D::_contact_added_callback(const Vector2 &p_point_A, const Ve
 	if (new_index == MAX_CONTACTS) {
 		// Remove the contact with the minimum depth.
 
-		const Transform2D &transform_A = A->get_transform();
-		const Transform2D &transform_B = B->get_transform();
+		const Transform2D& transform_A = A->get_transform();
+		const Transform2D& transform_B = B->get_transform();
 
 		int least_deep = -1;
 		real_t min_depth;
@@ -94,7 +96,7 @@ void GodotBodyPair2D::_contact_added_callback(const Vector2 &p_point_A, const Ve
 		}
 
 		for (int i = 0; i < contact_count; i++) {
-			const Contact &c = contacts[i];
+			const Contact& c = contacts[i];
 			Vector2 global_A = transform_A.basis_xform(c.local_A);
 			Vector2 global_B = transform_B.basis_xform(c.local_B) + offset_B;
 
@@ -119,22 +121,24 @@ void GodotBodyPair2D::_contact_added_callback(const Vector2 &p_point_A, const Ve
 	contact_count++;
 }
 
-void GodotBodyPair2D::_validate_contacts() {
+void GodotBodyPair2D::_validate_contacts()
+{
 	// Make sure to erase contacts that are no longer valid.
 	real_t max_separation = space->get_contact_max_separation();
 	real_t max_separation2 = max_separation * max_separation;
 
-	const Transform2D &transform_A = A->get_transform();
-	const Transform2D &transform_B = B->get_transform();
+	const Transform2D& transform_A = A->get_transform();
+	const Transform2D& transform_B = B->get_transform();
 
 	for (int i = 0; i < contact_count; i++) {
-		Contact &c = contacts[i];
+		Contact& c = contacts[i];
 
 		bool erase = false;
 		if (!c.used) {
 			// Was left behind in previous frame.
 			erase = true;
-		} else {
+		}
+		else {
 			c.used = false;
 
 			Vector2 global_A = transform_A.basis_xform(c.local_A);
@@ -142,7 +146,8 @@ void GodotBodyPair2D::_validate_contacts() {
 			Vector2 axis = global_A - global_B;
 			real_t depth = axis.dot(c.normal);
 
-			if (depth < -max_separation || (global_B + c.normal * depth - global_A).length_squared() > max_separation2) {
+			if (depth < -max_separation ||
+				(global_B + c.normal * depth - global_A).length_squared() > max_separation2) {
 				erase = true;
 			}
 		}
@@ -166,9 +171,12 @@ void GodotBodyPair2D::_validate_contacts() {
 // WARNING: The way velocity is adjusted down to cause a collision means the momentum will be
 // weaker than it should for a bounce!
 // Process: Only proceed if body A's motion is high relative to its size.
-// Cast forward along motion vector to see if A is going to enter/pass B's collider next frame, only proceed if it does.
-// Adjust the velocity of A down so that it will just slightly intersect the collider instead of blowing right past it.
-bool GodotBodyPair2D::_test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, const Transform2D &p_xform_A, GodotBody2D *p_B, int p_shape_B, const Transform2D &p_xform_B) {
+// Cast forward along motion vector to see if A is going to enter/pass B's collider next frame, only
+// proceed if it does. Adjust the velocity of A down so that it will just slightly intersect the
+// collider instead of blowing right past it.
+bool GodotBodyPair2D::_test_ccd(real_t p_step, GodotBody2D* p_A, int p_shape_A,
+	const Transform2D& p_xform_A, GodotBody2D* p_B, int p_shape_B, const Transform2D& p_xform_B)
+{
 	Vector2 motion = p_A->get_linear_velocity() * p_step;
 	real_t mlen = motion.length();
 	if (mlen < CMP_EPSILON) {
@@ -192,36 +200,43 @@ bool GodotBodyPair2D::_test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, 
 	// Roughly predict body B's position in the next frame (ignoring collisions).
 	Transform2D predicted_xform_B = p_xform_B.translated(p_B->get_linear_velocity() * p_step);
 
-	// Cast a segment from support in motion normal, in the same direction of motion by motion length.
-	// Support point will the farthest forward collision point along the movement vector.
+	// Cast a segment from support in motion normal, in the same direction of motion by motion
+	// length. Support point will the farthest forward collision point along the movement vector.
 	// i.e. the point that should hit B first if any collision does occur.
 
-	// convert mnormal into body A's local xform because get_support requires (and returns) local coordinates.
+	// convert mnormal into body A's local xform because get_support requires (and returns) local
+	// coordinates.
 	int a;
 	Vector2 s[2];
 	p_A->get_shape(p_shape_A)->get_supports(p_xform_A.basis_xform_inv(mnormal).normalized(), s, a);
 	Vector2 from = p_xform_A.xform(s[0]);
-	// Back up 10% of the per-frame motion behind the support point and use that as the beginning of our cast.
-	// This should ensure the calculated new velocity will really cause a bit of overlap instead of just getting us very close.
+	// Back up 10% of the per-frame motion behind the support point and use that as the beginning of
+	// our cast. This should ensure the calculated new velocity will really cause a bit of overlap
+	// instead of just getting us very close.
 	Vector2 to = from + motion;
 
 	Transform2D from_inv = predicted_xform_B.affine_inverse();
 
-	// Back up 10% of the per-frame motion behind the support point and use that as the beginning of our cast.
-	// At high speeds, this may mean we're actually casting from well behind the body instead of inside it, which is odd. But it still works out.
+	// Back up 10% of the per-frame motion behind the support point and use that as the beginning of
+	// our cast. At high speeds, this may mean we're actually casting from well behind the body
+	// instead of inside it, which is odd. But it still works out.
 	Vector2 local_from = from_inv.xform(from - motion * 0.1);
 	Vector2 local_to = from_inv.xform(to);
 
 	Vector2 rpos, rnorm;
 	if (!p_B->get_shape(p_shape_B)->intersect_segment(local_from, local_to, rpos, rnorm)) {
-		// there was no hit. Since the segment is the length of per-frame motion, this means the bodies will not
-		// actually collide yet on next frame. We'll probably check again next frame once they're closer.
+		// there was no hit. Since the segment is the length of per-frame motion, this means the
+		// bodies will not actually collide yet on next frame. We'll probably check again next frame
+		// once they're closer.
 		return false;
 	}
 
 	// Check one-way collision based on motion direction.
-	if (p_A->get_shape(p_shape_A)->allows_one_way_collision() && p_B->is_shape_set_as_one_way_collision(p_shape_B)) {
-		Vector2 direction = predicted_xform_B.basis_xform(p_B->get_shape_one_way_collision_direction(p_shape_B)).normalized();
+	if (p_A->get_shape(p_shape_A)->allows_one_way_collision() &&
+		p_B->is_shape_set_as_one_way_collision(p_shape_B)) {
+		Vector2 direction =
+			predicted_xform_B.basis_xform(p_B->get_shape_one_way_collision_direction(p_shape_B))
+				.normalized();
 
 		if (direction.dot(mnormal) < CMP_EPSILON) {
 			collided = false;
@@ -234,24 +249,31 @@ bool GodotBodyPair2D::_test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, 
 	// next frame will hit softly or soft enough.
 	Vector2 hitpos = predicted_xform_B.xform(rpos);
 
-	real_t newlen = hitpos.distance_to(from) + (max - min) * 0.01; // adding 1% of body length to the distance between collision and support point should cause body A's support point to arrive just within B's collider next frame.
+	real_t newlen = hitpos.distance_to(from) +
+					(max - min) * 0.01; // adding 1% of body length to the distance between
+										// collision and support point should cause body A's support
+										// point to arrive just within B's collider next frame.
 	p_A->set_linear_velocity(mnormal * (newlen / p_step));
 
 	return true;
 }
 
-real_t combine_bounce(GodotBody2D *A, GodotBody2D *B) {
+real_t combine_bounce(GodotBody2D* A, GodotBody2D* B)
+{
 	return CLAMP(A->get_bounce() + B->get_bounce(), 0, 1);
 }
 
-real_t combine_friction(GodotBody2D *A, GodotBody2D *B) {
+real_t combine_friction(GodotBody2D* A, GodotBody2D* B)
+{
 	return Math::abs(MIN(A->get_friction(), B->get_friction()));
 }
 
-bool GodotBodyPair2D::setup(real_t p_step) {
+bool GodotBodyPair2D::setup(real_t p_step)
+{
 	check_ccd = false;
 
-	if (!A->interacts_with(B) || A->has_exception(B->get_self()) || B->has_exception(A->get_self())) {
+	if (!A->interacts_with(B) || A->has_exception(B->get_self()) ||
+		B->has_exception(A->get_self())) {
 		collided = false;
 		return false;
 	}
@@ -263,18 +285,19 @@ bool GodotBodyPair2D::setup(real_t p_step) {
 	if (!collide_A && !collide_B) {
 		if ((A->get_max_contacts_reported() > 0) || (B->get_max_contacts_reported() > 0)) {
 			report_contacts_only = true;
-		} else {
+		}
+		else {
 			collided = false;
 			return false;
 		}
 	}
 
-	//use local A coordinates to avoid numerical issues on collision detection
+	// use local A coordinates to avoid numerical issues on collision detection
 	offset_B = B->get_transform().get_origin() - A->get_transform().get_origin();
 
 	_validate_contacts();
 
-	const Vector2 &offset_A = A->get_transform().get_origin();
+	const Vector2& offset_A = A->get_transform().get_origin();
 	Transform2D xform_Au = A->get_transform().untranslated();
 	Transform2D xform_A = xform_Au * A->get_shape_transform(shape_A);
 
@@ -282,8 +305,8 @@ bool GodotBodyPair2D::setup(real_t p_step) {
 	xform_Bu.columns[2] -= offset_A;
 	Transform2D xform_B = xform_Bu * B->get_shape_transform(shape_B);
 
-	GodotShape2D *shape_A_ptr = A->get_shape(shape_A);
-	GodotShape2D *shape_B_ptr = B->get_shape(shape_B);
+	GodotShape2D* shape_A_ptr = A->get_shape(shape_A);
+	GodotShape2D* shape_B_ptr = B->get_shape(shape_B);
 
 	Vector2 motion_A, motion_B;
 
@@ -296,7 +319,8 @@ bool GodotBodyPair2D::setup(real_t p_step) {
 
 	bool prev_collided = collided;
 
-	collided = GodotCollisionSolver2D::solve(shape_A_ptr, xform_A, motion_A, shape_B_ptr, xform_B, motion_B, _add_contact, this, &sep_axis);
+	collided = GodotCollisionSolver2D::solve(shape_A_ptr, xform_A, motion_A, shape_B_ptr, xform_B,
+		motion_B, _add_contact, this, &sep_axis);
 	if (!collided) {
 		oneway_disabled = false;
 
@@ -318,12 +342,14 @@ bool GodotBodyPair2D::setup(real_t p_step) {
 	}
 
 	if (!prev_collided) {
-		if (shape_B_ptr->allows_one_way_collision() && A->is_shape_set_as_one_way_collision(shape_A)) {
-			Vector2 direction = xform_A.basis_xform(A->get_shape_one_way_collision_direction(shape_A)).normalized();
+		if (shape_B_ptr->allows_one_way_collision() &&
+			A->is_shape_set_as_one_way_collision(shape_A)) {
+			Vector2 direction =
+				xform_A.basis_xform(A->get_shape_one_way_collision_direction(shape_A)).normalized();
 
 			bool valid = false;
 			for (int i = 0; i < contact_count; i++) {
-				Contact &c = contacts[i];
+				Contact& c = contacts[i];
 				if (c.normal.dot(direction) > -CMP_EPSILON) { // Greater (normal inverted).
 					continue;
 				}
@@ -337,12 +363,14 @@ bool GodotBodyPair2D::setup(real_t p_step) {
 			}
 		}
 
-		if (shape_A_ptr->allows_one_way_collision() && B->is_shape_set_as_one_way_collision(shape_B)) {
-			Vector2 direction = xform_B.basis_xform(B->get_shape_one_way_collision_direction(shape_B)).normalized();
+		if (shape_A_ptr->allows_one_way_collision() &&
+			B->is_shape_set_as_one_way_collision(shape_B)) {
+			Vector2 direction =
+				xform_B.basis_xform(B->get_shape_one_way_collision_direction(shape_B)).normalized();
 
 			bool valid = false;
 			for (int i = 0; i < contact_count; i++) {
-				Contact &c = contacts[i];
+				Contact& c = contacts[i];
 				if (c.normal.dot(direction) < CMP_EPSILON) { // Less (normal ok).
 					continue;
 				}
@@ -360,14 +388,15 @@ bool GodotBodyPair2D::setup(real_t p_step) {
 	return true;
 }
 
-bool GodotBodyPair2D::pre_solve(real_t p_step) {
+bool GodotBodyPair2D::pre_solve(real_t p_step)
+{
 	if (oneway_disabled) {
 		return false;
 	}
 
 	if (!collided) {
 		if (check_ccd) {
-			const Vector2 &offset_A = A->get_transform().get_origin();
+			const Vector2& offset_A = A->get_transform().get_origin();
 			Transform2D xform_Au = A->get_transform().untranslated();
 			Transform2D xform_A = xform_Au * A->get_shape_transform(shape_A);
 
@@ -375,11 +404,13 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 			xform_Bu.columns[2] -= offset_A;
 			Transform2D xform_B = xform_Bu * B->get_shape_transform(shape_B);
 
-			if (A->get_continuous_collision_detection_mode() == PS2DE::CCD_MODE_CAST_RAY && collide_A) {
+			if (A->get_continuous_collision_detection_mode() == PS2DE::CCD_MODE_CAST_RAY &&
+				collide_A) {
 				_test_ccd(p_step, A, shape_A, xform_A, B, shape_B, xform_B);
 			}
 
-			if (B->get_continuous_collision_detection_mode() == PS2DE::CCD_MODE_CAST_RAY && collide_B) {
+			if (B->get_continuous_collision_detection_mode() == PS2DE::CCD_MODE_CAST_RAY &&
+				collide_B) {
 				_test_ccd(p_step, B, shape_B, xform_B, A, shape_A, xform_A);
 			}
 		}
@@ -391,15 +422,17 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 
 	real_t bias = space->get_contact_bias();
 
-	GodotShape2D *shape_A_ptr = A->get_shape(shape_A);
-	GodotShape2D *shape_B_ptr = B->get_shape(shape_B);
+	GodotShape2D* shape_A_ptr = A->get_shape(shape_A);
+	GodotShape2D* shape_B_ptr = B->get_shape(shape_B);
 
 	if (shape_A_ptr->get_custom_bias() || shape_B_ptr->get_custom_bias()) {
 		if (shape_A_ptr->get_custom_bias() == 0) {
 			bias = shape_B_ptr->get_custom_bias();
-		} else if (shape_B_ptr->get_custom_bias() == 0) {
+		}
+		else if (shape_B_ptr->get_custom_bias() == 0) {
 			bias = shape_A_ptr->get_custom_bias();
-		} else {
+		}
+		else {
 			bias = (shape_B_ptr->get_custom_bias() + shape_A_ptr->get_custom_bias()) * 0.5;
 		}
 	}
@@ -408,9 +441,9 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 
 	bool do_process = false;
 
-	const Vector2 &offset_A = A->get_transform().get_origin();
-	const Transform2D &transform_A = A->get_transform();
-	const Transform2D &transform_B = B->get_transform();
+	const Vector2& offset_A = A->get_transform().get_origin();
+	const Transform2D& transform_A = A->get_transform();
+	const Transform2D& transform_B = B->get_transform();
 
 	real_t inv_inertia_A = collide_A ? A->get_inv_inertia() : 0.0;
 	real_t inv_inertia_B = collide_B ? B->get_inv_inertia() : 0.0;
@@ -419,7 +452,7 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 	real_t inv_mass_B = collide_B ? B->get_inv_mass() : 0.0;
 
 	for (int i = 0; i < contact_count; i++) {
-		Contact &c = contacts[i];
+		Contact& c = contacts[i];
 		c.active = false;
 
 		Vector2 global_A = transform_A.basis_xform(c.local_A);
@@ -446,14 +479,16 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 		real_t rnA = c.rA.dot(c.normal);
 		real_t rnB = c.rB.dot(c.normal);
 		real_t kNormal = inv_mass_A + inv_mass_B;
-		kNormal += inv_inertia_A * (c.rA.dot(c.rA) - rnA * rnA) + inv_inertia_B * (c.rB.dot(c.rB) - rnB * rnB);
+		kNormal += inv_inertia_A * (c.rA.dot(c.rA) - rnA * rnA) +
+				   inv_inertia_B * (c.rB.dot(c.rB) - rnB * rnB);
 		c.mass_normal = 1.0f / kNormal;
 
 		Vector2 tangent = c.normal.orthogonal();
 		real_t rtA = c.rA.dot(tangent);
 		real_t rtB = c.rB.dot(tangent);
 		real_t kTangent = inv_mass_A + inv_mass_B;
-		kTangent += inv_inertia_A * (c.rA.dot(c.rA) - rtA * rtA) + inv_inertia_B * (c.rB.dot(c.rB) - rtB * rtB);
+		kTangent += inv_inertia_A * (c.rA.dot(c.rA) - rtA * rtA) +
+					inv_inertia_B * (c.rB.dot(c.rB) - rtB * rtB);
 		c.mass_tangent = 1.0f / kTangent;
 
 		c.bias = -bias * inv_dt * MIN(0.0f, -depth + max_penetration);
@@ -462,17 +497,6 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 		Vector2 P = c.acc_normal_impulse * c.normal + c.acc_tangent_impulse * tangent;
 
 		c.acc_impulse -= P;
-
-		if (A->can_report_contacts() || B->can_report_contacts()) {
-			Vector2 crB = Vector2(-B->get_angular_velocity() * c.rB.y, B->get_angular_velocity() * c.rB.x) + B->get_linear_velocity();
-			Vector2 crA = Vector2(-A->get_angular_velocity() * c.rA.y, A->get_angular_velocity() * c.rA.x) + A->get_linear_velocity();
-			if (A->can_report_contacts()) {
-				A->add_contact(global_A + offset_A, -c.normal, depth, shape_A, crA, global_B + offset_A, shape_B, B->get_instance_id(), B->get_self(), crB, c.acc_impulse);
-			}
-			if (B->can_report_contacts()) {
-				B->add_contact(global_B + offset_A, c.normal, depth, shape_B, crB, global_A + offset_A, shape_A, A->get_instance_id(), A->get_self(), crA, c.acc_impulse);
-			}
-		}
 
 		if (report_contacts_only) {
 			collided = false;
@@ -493,8 +517,10 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 
 		c.bounce = combine_bounce(A, B);
 		if (c.bounce) {
-			Vector2 crA(-A->get_prev_angular_velocity() * c.rA.y, A->get_prev_angular_velocity() * c.rA.x);
-			Vector2 crB(-B->get_prev_angular_velocity() * c.rB.y, B->get_prev_angular_velocity() * c.rB.x);
+			Vector2 crA(
+				-A->get_prev_angular_velocity() * c.rA.y, A->get_prev_angular_velocity() * c.rA.x);
+			Vector2 crB(
+				-B->get_prev_angular_velocity() * c.rB.y, B->get_prev_angular_velocity() * c.rB.x);
 			Vector2 dv = B->get_prev_linear_velocity() + crB - A->get_prev_linear_velocity() - crA;
 			c.bounce = c.bounce * dv.dot(c.normal);
 		}
@@ -506,7 +532,8 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 	return do_process;
 }
 
-void GodotBodyPair2D::solve(real_t p_step) {
+void GodotBodyPair2D::solve(real_t p_step)
+{
 	if (!collided || oneway_disabled) {
 		return;
 	}
@@ -517,7 +544,7 @@ void GodotBodyPair2D::solve(real_t p_step) {
 	real_t inv_mass_B = collide_B ? B->get_inv_mass() : 0.0;
 
 	for (int i = 0; i < contact_count; ++i) {
-		Contact &c = contacts[i];
+		Contact& c = contacts[i];
 
 		if (!c.active) {
 			continue;
@@ -529,9 +556,12 @@ void GodotBodyPair2D::solve(real_t p_step) {
 		Vector2 crB(-B->get_angular_velocity() * c.rB.y, B->get_angular_velocity() * c.rB.x);
 		Vector2 dv = B->get_linear_velocity() + crB - A->get_linear_velocity() - crA;
 
-		Vector2 crbA(-A->get_biased_angular_velocity() * c.rA.y, A->get_biased_angular_velocity() * c.rA.x);
-		Vector2 crbB(-B->get_biased_angular_velocity() * c.rB.y, B->get_biased_angular_velocity() * c.rB.x);
-		Vector2 dbv = B->get_biased_linear_velocity() + crbB - A->get_biased_linear_velocity() - crbA;
+		Vector2 crbA(
+			-A->get_biased_angular_velocity() * c.rA.y, A->get_biased_angular_velocity() * c.rA.x);
+		Vector2 crbB(
+			-B->get_biased_angular_velocity() * c.rB.y, B->get_biased_angular_velocity() * c.rB.x);
+		Vector2 dbv =
+			B->get_biased_linear_velocity() + crbB - A->get_biased_linear_velocity() - crbA;
 
 		real_t vn = dv.dot(c.normal);
 		real_t vbn = dbv.dot(c.normal);
@@ -552,8 +582,10 @@ void GodotBodyPair2D::solve(real_t p_step) {
 			B->apply_bias_impulse(jb, c.rB + B->get_center_of_mass(), max_bias_av);
 		}
 
-		crbA = Vector2(-A->get_biased_angular_velocity() * c.rA.y, A->get_biased_angular_velocity() * c.rA.x);
-		crbB = Vector2(-B->get_biased_angular_velocity() * c.rB.y, B->get_biased_angular_velocity() * c.rB.x);
+		crbA = Vector2(
+			-A->get_biased_angular_velocity() * c.rA.y, A->get_biased_angular_velocity() * c.rA.x);
+		crbB = Vector2(
+			-B->get_biased_angular_velocity() * c.rB.y, B->get_biased_angular_velocity() * c.rB.x);
 		dbv = B->get_biased_linear_velocity() + crbB - A->get_biased_linear_velocity() - crbA;
 
 		vbn = dbv.dot(c.normal);
@@ -584,7 +616,8 @@ void GodotBodyPair2D::solve(real_t p_step) {
 		real_t jtOld = c.acc_tangent_impulse;
 		c.acc_tangent_impulse = CLAMP(jtOld + jt, -jtMax, jtMax);
 
-		Vector2 j = c.normal * (c.acc_normal_impulse - jnOld) + tangent * (c.acc_tangent_impulse - jtOld);
+		Vector2 j =
+			c.normal * (c.acc_normal_impulse - jnOld) + tangent * (c.acc_tangent_impulse - jtOld);
 
 		if (collide_A) {
 			A->apply_impulse(-j, c.rA + A->get_center_of_mass());
@@ -596,8 +629,9 @@ void GodotBodyPair2D::solve(real_t p_step) {
 	}
 }
 
-GodotBodyPair2D::GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B) :
-		GodotConstraint2D(_arr, 2) {
+GodotBodyPair2D::GodotBodyPair2D(GodotBody2D* p_A, int p_shape_A, GodotBody2D* p_B, int p_shape_B)
+	: GodotConstraint2D(_arr, 2)
+{
 	A = p_A;
 	B = p_B;
 	shape_A = p_shape_A;
@@ -607,7 +641,10 @@ GodotBodyPair2D::GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p
 	B->add_constraint(this, 1);
 }
 
-GodotBodyPair2D::~GodotBodyPair2D() {
+GodotBodyPair2D::~GodotBodyPair2D()
+{
 	A->remove_constraint(this, 0);
 	B->remove_constraint(this, 1);
 }
+
+

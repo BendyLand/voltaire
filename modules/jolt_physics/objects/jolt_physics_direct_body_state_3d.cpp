@@ -252,18 +252,6 @@ Vector3 JoltPhysicsDirectBodyState3D::get_contact_collider_position(int p_contac
 	return body->get_contact(p_contact_idx).collider_position;
 }
 
-ObjectID JoltPhysicsDirectBodyState3D::get_contact_collider_id(int p_contact_idx) const
-{
-	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), ObjectID());
-	return body->get_contact(p_contact_idx).collider_id;
-}
-
-Object* JoltPhysicsDirectBodyState3D::get_contact_collider_object(int p_contact_idx) const
-{
-	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), nullptr);
-	return ObjectDB::get_instance(body->get_contact(p_contact_idx).collider_id);
-}
-
 int JoltPhysicsDirectBodyState3D::get_contact_collider_shape(int p_contact_idx) const
 {
 	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), 0);

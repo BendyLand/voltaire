@@ -28,39 +28,40 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "jolt_body_3d.h"
-
 #include "../joints/jolt_joint_3d.h"
-#include "../jolt_project_settings.h"
 #include "../misc/jolt_math_funcs.h"
 #include "../misc/jolt_type_conversions.h"
 #include "../shapes/jolt_shape_3d.h"
 #include "../spaces/jolt_broad_phase_layer.h"
 #include "../spaces/jolt_space_3d.h"
 #include "jolt_area_3d.h"
+#include "jolt_body_3d.h"
 #include "jolt_group_filter.h"
 #include "jolt_physics_direct_body_state_3d.h"
 #include "jolt_soft_body_3d.h"
-
 #include "servers/physics_3d/physics_server_3d_constants.h"
 
-JPH::BroadPhaseLayer JoltBody3D::_get_broad_phase_layer() const {
+JPH::BroadPhaseLayer JoltBody3D::_get_broad_phase_layer() const
+{
 	switch (mode) {
-		case PS3DE::BODY_MODE_STATIC: {
-			return _is_big() ? JoltBroadPhaseLayer::BODY_STATIC_BIG : JoltBroadPhaseLayer::BODY_STATIC;
-		}
-		case PS3DE::BODY_MODE_KINEMATIC:
-		case PS3DE::BODY_MODE_RIGID:
-		case PS3DE::BODY_MODE_RIGID_LINEAR: {
-			return JoltBroadPhaseLayer::BODY_DYNAMIC;
-		}
-		default: {
-			ERR_FAIL_V_MSG(JoltBroadPhaseLayer::BODY_STATIC, vformat("Unhandled body mode: '%d'. This should not happen. Please report this.", mode));
-		}
+	case PS3DE::BODY_MODE_STATIC: {
+		return _is_big() ? JoltBroadPhaseLayer::BODY_STATIC_BIG : JoltBroadPhaseLayer::BODY_STATIC;
+	}
+	case PS3DE::BODY_MODE_KINEMATIC:
+	case PS3DE::BODY_MODE_RIGID:
+	case PS3DE::BODY_MODE_RIGID_LINEAR: {
+		return JoltBroadPhaseLayer::BODY_DYNAMIC;
+	}
+	default: {
+		ERR_FAIL_V_MSG(JoltBroadPhaseLayer::BODY_STATIC,
+			vformat(
+				"Unhandled body mode: '%d'. This should not happen. Please report this.", mode));
+	}
 	}
 }
 
-JPH::ObjectLayer JoltBody3D::_get_object_layer() const {
+JPH::ObjectLayer JoltBody3D::_get_object_layer() const
+{
 	ERR_FAIL_NULL_V(space, 0);
 
 	if (jolt_shape == nullptr || jolt_shape->GetType() == JPH::EShapeType::Empty) {
@@ -71,25 +72,29 @@ JPH::ObjectLayer JoltBody3D::_get_object_layer() const {
 	return space->map_to_object_layer(_get_broad_phase_layer(), collision_layer, collision_mask);
 }
 
-JPH::EMotionType JoltBody3D::_get_motion_type() const {
+JPH::EMotionType JoltBody3D::_get_motion_type() const
+{
 	switch (mode) {
-		case PS3DE::BODY_MODE_STATIC: {
-			return JPH::EMotionType::Static;
-		}
-		case PS3DE::BODY_MODE_KINEMATIC: {
-			return JPH::EMotionType::Kinematic;
-		}
-		case PS3DE::BODY_MODE_RIGID:
-		case PS3DE::BODY_MODE_RIGID_LINEAR: {
-			return JPH::EMotionType::Dynamic;
-		}
-		default: {
-			ERR_FAIL_V_MSG(JPH::EMotionType::Static, vformat("Unhandled body mode: '%d'. This should not happen. Please report this.", mode));
-		}
+	case PS3DE::BODY_MODE_STATIC: {
+		return JPH::EMotionType::Static;
+	}
+	case PS3DE::BODY_MODE_KINEMATIC: {
+		return JPH::EMotionType::Kinematic;
+	}
+	case PS3DE::BODY_MODE_RIGID:
+	case PS3DE::BODY_MODE_RIGID_LINEAR: {
+		return JPH::EMotionType::Dynamic;
+	}
+	default: {
+		ERR_FAIL_V_MSG(JPH::EMotionType::Static,
+			vformat(
+				"Unhandled body mode: '%d'. This should not happen. Please report this.", mode));
+	}
 	}
 }
 
-void JoltBody3D::_add_to_space() {
+void JoltBody3D::_add_to_space()
+{
 	jolt_shape = build_shapes(true);
 
 	JPH::CollisionGroup::GroupID group_id = 0;
@@ -107,19 +112,12 @@ void JoltBody3D::_add_to_space() {
 	jolt_settings->mAllowSleeping = is_sleep_actually_allowed();
 	jolt_settings->mLinearDamping = 0.0f;
 	jolt_settings->mAngularDamping = 0.0f;
-	jolt_settings->mMaxLinearVelocity = JoltProjectSettings::max_linear_velocity;
-	jolt_settings->mMaxAngularVelocity = JoltProjectSettings::max_angular_velocity;
-
-	if (JoltProjectSettings::use_enhanced_internal_edge_removal_for_bodies) {
-		jolt_settings->mEnhancedInternalEdgeRemoval = true;
-	}
-
 	jolt_settings->mOverrideMassProperties = JPH::EOverrideMassProperties::MassAndInertiaProvided;
 	jolt_settings->mMassPropertiesOverride = _calculate_mass_properties();
 
 	jolt_settings->SetShape(jolt_shape);
 
-	JPH::Body *new_jolt_body = space->add_object(*this, *jolt_settings, sleep_initially);
+	JPH::Body* new_jolt_body = space->add_object(*this, *jolt_settings, sleep_initially);
 	if (new_jolt_body == nullptr) {
 		return;
 	}
@@ -130,31 +128,36 @@ void JoltBody3D::_add_to_space() {
 	jolt_settings = nullptr;
 }
 
-void JoltBody3D::_enqueue_call_queries() {
-	// This method will be called from the body activation listener on multiple threads during the simulation step.
+void JoltBody3D::_enqueue_call_queries()
+{
+	// This method will be called from the body activation listener on multiple threads during the
+	// simulation step.
 
 	if (space != nullptr) {
 		space->enqueue_call_queries(&call_queries_element);
 	}
 }
 
-void JoltBody3D::_dequeue_call_queries() {
+void JoltBody3D::_dequeue_call_queries()
+{
 	if (space != nullptr) {
 		space->dequeue_call_queries(&call_queries_element);
 	}
 }
 
-void JoltBody3D::_integrate_forces(float p_step) {
+void JoltBody3D::_integrate_forces(float p_step)
+{
 	if (custom_integrator) {
 		return;
 	}
 
-	JPH::MotionProperties &motion_properties = *jolt_body->GetMotionPropertiesUnchecked();
+	JPH::MotionProperties& motion_properties = *jolt_body->GetMotionPropertiesUnchecked();
 
-	// Jolt applies damping differently from Godot Physics, where Godot Physics applies damping before integrating
-	// forces whereas Jolt does it after integrating forces. The way Godot Physics does it seems to yield more
-	// consistent results across different update frequencies when using high (>1) damping values, so we apply the
-	// damping ourselves instead, before any force integration happens.
+	// Jolt applies damping differently from Godot Physics, where Godot Physics applies damping
+	// before integrating forces whereas Jolt does it after integrating forces. The way Godot
+	// Physics does it seems to yield more consistent results across different update frequencies
+	// when using high (>1) damping values, so we apply the damping ourselves instead, before any
+	// force integration happens.
 	JPH::Vec3 linear_velocity = motion_properties.GetLinearVelocity();
 	linear_velocity *= MAX(1.0f - total_linear_damp * p_step, 0.0f);
 	motion_properties.SetLinearVelocity(linear_velocity);
@@ -163,11 +166,13 @@ void JoltBody3D::_integrate_forces(float p_step) {
 	angular_velocity *= MAX(1.0f - total_angular_damp * p_step, 0.0f);
 	motion_properties.SetAngularVelocity(angular_velocity);
 
-	jolt_body->AddForce(to_jolt(total_gravity / motion_properties.GetInverseMass() + constant_force));
+	jolt_body->AddForce(
+		to_jolt(total_gravity / motion_properties.GetInverseMass() + constant_force));
 	jolt_body->AddTorque(to_jolt(constant_torque));
 }
 
-void JoltBody3D::_move_kinematic(float p_step) {
+void JoltBody3D::_move_kinematic(float p_step)
+{
 	jolt_body->SetLinearVelocity(JPH::Vec3::sZero());
 	jolt_body->SetAngularVelocity(JPH::Vec3::sZero());
 
@@ -184,7 +189,8 @@ void JoltBody3D::_move_kinematic(float p_step) {
 	jolt_body->MoveKinematic(new_position, new_rotation, p_step);
 }
 
-JPH::EAllowedDOFs JoltBody3D::_calculate_allowed_dofs() const {
+JPH::EAllowedDOFs JoltBody3D::_calculate_allowed_dofs() const
+{
 	if (is_static()) {
 		return JPH::EAllowedDOFs::All;
 	}
@@ -215,12 +221,16 @@ JPH::EAllowedDOFs JoltBody3D::_calculate_allowed_dofs() const {
 		allowed_dofs &= ~JPH::EAllowedDOFs::RotationZ;
 	}
 
-	ERR_FAIL_COND_V_MSG(allowed_dofs == JPH::EAllowedDOFs::None, JPH::EAllowedDOFs::All, vformat("Invalid axis locks for '%s'. Locking all axes is not supported when using Jolt Physics. All axes will be unlocked. Considering freezing the body instead.", to_string()));
+	ERR_FAIL_COND_V_MSG(allowed_dofs == JPH::EAllowedDOFs::None, JPH::EAllowedDOFs::All,
+		vformat("Invalid axis locks for '%s'. Locking all axes is not supported when using Jolt "
+				"Physics. All axes will be unlocked. Considering freezing the body instead.",
+			to_string()));
 
 	return allowed_dofs;
 }
 
-JPH::MassProperties JoltBody3D::_calculate_mass_properties(const JPH::Shape &p_shape) const {
+JPH::MassProperties JoltBody3D::_calculate_mass_properties(const JPH::Shape& p_shape) const
+{
 	const bool calculate_mass = mass <= 0;
 	const bool calculate_inertia = inertia.x <= 0 || inertia.y <= 0 || inertia.z <= 0;
 
@@ -228,9 +238,11 @@ JPH::MassProperties JoltBody3D::_calculate_mass_properties(const JPH::Shape &p_s
 
 	if (calculate_mass && calculate_inertia) {
 		// Use the mass properties calculated by the shape
-	} else if (calculate_inertia) {
+	}
+	else if (calculate_inertia) {
 		mass_properties.ScaleToMass(mass);
-	} else {
+	}
+	else {
 		mass_properties.mMass = mass;
 	}
 
@@ -263,33 +275,31 @@ JPH::MassProperties JoltBody3D::_calculate_mass_properties(const JPH::Shape &p_s
 	return mass_properties;
 }
 
-JPH::MassProperties JoltBody3D::_calculate_mass_properties() const {
+JPH::MassProperties JoltBody3D::_calculate_mass_properties() const
+{
 	return _calculate_mass_properties(*jolt_shape);
 }
 
-void JoltBody3D::_on_wake_up() {
-	// This method will be called from the body activation listener on multiple threads during the simulation step.
-
-	if (_should_call_queries()) {
-		_enqueue_call_queries();
-	}
-}
-
-void JoltBody3D::_update_mass_properties() {
+void JoltBody3D::_update_mass_properties()
+{
 	if (in_space()) {
-		jolt_body->GetMotionPropertiesUnchecked()->SetMassProperties(_calculate_allowed_dofs(), _calculate_mass_properties());
+		jolt_body->GetMotionPropertiesUnchecked()->SetMassProperties(
+			_calculate_allowed_dofs(), _calculate_mass_properties());
 	}
 }
 
-bool JoltBody3D::_needs_update_environmental_properties() const {
+bool JoltBody3D::_needs_update_environmental_properties() const
+{
 	if (unlikely(!in_space())) {
 		return false;
 	}
 
-	return has_point_gravity || space->get_default_area_changed_count() != default_area_changed_count;
+	return has_point_gravity ||
+		   space->get_default_area_changed_count() != default_area_changed_count;
 }
 
-void JoltBody3D::_update_environmental_properties() {
+void JoltBody3D::_update_environmental_properties()
+{
 	if (unlikely(!in_space())) {
 		return;
 	}
@@ -304,23 +314,20 @@ void JoltBody3D::_update_environmental_properties() {
 	bool linear_damp_done = linear_damp_mode == PS3DE::BODY_DAMP_MODE_REPLACE;
 	bool angular_damp_done = angular_damp_mode == PS3DE::BODY_DAMP_MODE_REPLACE;
 
-	for (const JoltArea3D *area : areas) {
+	for (const JoltArea3D* area : areas) {
 		if (!gravity_done) {
-			gravity_done = JoltArea3D::apply_override(total_gravity, area->get_gravity_mode(), [&]() {
-				return area->compute_gravity(position);
-			});
+			gravity_done = JoltArea3D::apply_override(total_gravity, area->get_gravity_mode(),
+				[&]() { return area->compute_gravity(position); });
 		}
 
 		if (!linear_damp_done) {
-			linear_damp_done = JoltArea3D::apply_override(total_linear_damp, area->get_linear_damp_mode(), [&]() {
-				return area->get_linear_damp();
-			});
+			linear_damp_done = JoltArea3D::apply_override(total_linear_damp,
+				area->get_linear_damp_mode(), [&]() { return area->get_linear_damp(); });
 		}
 
 		if (!angular_damp_done) {
-			angular_damp_done = JoltArea3D::apply_override(total_angular_damp, area->get_angular_damp_mode(), [&]() {
-				return area->get_angular_damp();
-			});
+			angular_damp_done = JoltArea3D::apply_override(total_angular_damp,
+				area->get_angular_damp_mode(), [&]() { return area->get_angular_damp(); });
 		}
 
 		if (gravity_done && linear_damp_done && angular_damp_done) {
@@ -343,65 +350,73 @@ void JoltBody3D::_update_environmental_properties() {
 	total_gravity *= jolt_body->GetMotionPropertiesUnchecked()->GetGravityFactor();
 
 	switch (linear_damp_mode) {
-		case PS3DE::BODY_DAMP_MODE_COMBINE: {
-			total_linear_damp += linear_damp;
-		} break;
-		case PS3DE::BODY_DAMP_MODE_REPLACE: {
-			total_linear_damp = linear_damp;
-		} break;
+	case PS3DE::BODY_DAMP_MODE_COMBINE: {
+		total_linear_damp += linear_damp;
+	} break;
+	case PS3DE::BODY_DAMP_MODE_REPLACE: {
+		total_linear_damp = linear_damp;
+	} break;
 	}
 
 	switch (angular_damp_mode) {
-		case PS3DE::BODY_DAMP_MODE_COMBINE: {
-			total_angular_damp += angular_damp;
-		} break;
-		case PS3DE::BODY_DAMP_MODE_REPLACE: {
-			total_angular_damp = angular_damp;
-		} break;
+	case PS3DE::BODY_DAMP_MODE_COMBINE: {
+		total_angular_damp += angular_damp;
+	} break;
+	case PS3DE::BODY_DAMP_MODE_REPLACE: {
+		total_angular_damp = angular_damp;
+	} break;
 	}
 
 	default_area_changed_count = space->get_default_area_changed_count();
 }
 
-void JoltBody3D::_update_kinematic_transform() {
+void JoltBody3D::_update_kinematic_transform()
+{
 	if (is_kinematic()) {
 		kinematic_transform = get_transform_unscaled();
 	}
 }
 
-void JoltBody3D::_update_joint_constraints() {
-	for (JoltJoint3D *joint : joints) {
+void JoltBody3D::_update_joint_constraints()
+{
+	for (JoltJoint3D* joint : joints) {
 		joint->rebuild();
 	}
 }
 
-void JoltBody3D::_update_possible_kinematic_contacts() {
+void JoltBody3D::_update_possible_kinematic_contacts()
+{
 	const bool value = reports_all_kinematic_contacts();
 
 	if (!in_space()) {
 		jolt_settings->mCollideKinematicVsNonDynamic = value;
-	} else {
+	}
+	else {
 		jolt_body->SetCollideKinematicVsNonDynamic(value);
 	}
 }
 
-void JoltBody3D::_update_sleep_allowed() {
+void JoltBody3D::_update_sleep_allowed()
+{
 	const bool value = is_sleep_actually_allowed();
 
 	if (!in_space()) {
 		jolt_settings->mAllowSleeping = value;
-	} else {
+	}
+	else {
 		jolt_body->SetAllowSleeping(value);
 	}
 }
 
-void JoltBody3D::_destroy_joint_constraints() {
-	for (JoltJoint3D *joint : joints) {
+void JoltBody3D::_destroy_joint_constraints()
+{
+	for (JoltJoint3D* joint : joints) {
 		joint->destroy();
 	}
 }
 
-void JoltBody3D::_clear_areas() {
+void JoltBody3D::_clear_areas()
+{
 	if (!in_space()) {
 		return;
 	}
@@ -410,17 +425,20 @@ void JoltBody3D::_clear_areas() {
 	_areas_changed();
 }
 
-void JoltBody3D::_update_group_filter() {
-	JPH::GroupFilter *group_filter = !exceptions.is_empty() ? JoltGroupFilter::instance : nullptr;
+void JoltBody3D::_update_group_filter()
+{
+	JPH::GroupFilter* group_filter = !exceptions.is_empty() ? JoltGroupFilter::instance : nullptr;
 
 	if (!in_space()) {
 		jolt_settings->mCollisionGroup.SetGroupFilter(group_filter);
-	} else {
+	}
+	else {
 		jolt_body->GetCollisionGroup().SetGroupFilter(group_filter);
 	}
 }
 
-void JoltBody3D::_mode_changed() {
+void JoltBody3D::_mode_changed()
+{
 	_update_object_layer();
 	_update_kinematic_transform();
 	_update_mass_properties();
@@ -428,7 +446,8 @@ void JoltBody3D::_mode_changed() {
 	wake_up();
 }
 
-void JoltBody3D::_shapes_committed() {
+void JoltBody3D::_shapes_committed()
+{
 	JoltShapedObject3D::_shapes_committed();
 
 	_update_mass_properties();
@@ -436,7 +455,8 @@ void JoltBody3D::_shapes_committed() {
 	wake_up();
 }
 
-void JoltBody3D::_space_changing() {
+void JoltBody3D::_space_changing()
+{
 	JoltShapedObject3D::_space_changing();
 
 	sleep_initially = is_sleeping();
@@ -446,7 +466,8 @@ void JoltBody3D::_space_changing() {
 	_dequeue_call_queries();
 }
 
-void JoltBody3D::_space_changed() {
+void JoltBody3D::_space_changed()
+{
 	JoltShapedObject3D::_space_changed();
 
 	_update_kinematic_transform();
@@ -456,9 +477,10 @@ void JoltBody3D::_space_changed() {
 	_update_environmental_properties();
 }
 
-void JoltBody3D::_areas_changed() {
+void JoltBody3D::_areas_changed()
+{
 	has_point_gravity = false;
-	for (JoltArea3D *area : areas) {
+	for (JoltArea3D* area : areas) {
 		if (area->is_point_gravity()) {
 			has_point_gravity = true;
 			break;
@@ -473,57 +495,53 @@ void JoltBody3D::_areas_changed() {
 	}
 }
 
-void JoltBody3D::_joints_changed() {
-	wake_up();
-}
+void JoltBody3D::_joints_changed() { wake_up(); }
 
-void JoltBody3D::_transform_changed() {
-	wake_up();
-}
+void JoltBody3D::_transform_changed() { wake_up(); }
 
-void JoltBody3D::_motion_changed() {
-	wake_up();
-}
+void JoltBody3D::_motion_changed() { wake_up(); }
 
-void JoltBody3D::_exceptions_changed() {
-	_update_group_filter();
-}
+void JoltBody3D::_exceptions_changed() { _update_group_filter(); }
 
-void JoltBody3D::_axis_lock_changed() {
+void JoltBody3D::_axis_lock_changed()
+{
 	_update_mass_properties();
 	wake_up();
 }
 
-void JoltBody3D::_contact_reporting_changed() {
+void JoltBody3D::_contact_reporting_changed()
+{
 	_update_possible_kinematic_contacts();
 	_update_sleep_allowed();
 	wake_up();
 }
 
-void JoltBody3D::_sleep_allowed_changed() {
+void JoltBody3D::_sleep_allowed_changed()
+{
 	_update_sleep_allowed();
 	wake_up();
 }
 
-JoltBody3D::JoltBody3D() :
-		JoltShapedObject3D(OBJECT_TYPE_BODY),
-		call_queries_element(this) {
-}
+JoltBody3D::JoltBody3D() : JoltShapedObject3D(OBJECT_TYPE_BODY), call_queries_element(this) {}
 
-JoltBody3D::~JoltBody3D() {
+JoltBody3D::~JoltBody3D()
+{
 	if (direct_state != nullptr) {
 		memdelete(direct_state);
 		direct_state = nullptr;
 	}
 }
 
-void JoltBody3D::set_transform(Transform3D p_transform) {
-	JOLT_ENSURE_SCALE_NOT_ZERO(p_transform, vformat("An invalid transform was passed to physics body '%s'.", to_string()));
+void JoltBody3D::set_transform(Transform3D p_transform)
+{
+	JOLT_ENSURE_SCALE_NOT_ZERO(
+		p_transform, vformat("An invalid transform was passed to physics body '%s'.", to_string()));
 
 	Vector3 new_scale;
 	JoltMath::decompose(p_transform, new_scale);
 
-	// Ideally we would do an exact comparison here, but due to floating-point precision this would be invalidated very often.
+	// Ideally we would do an exact comparison here, but due to floating-point precision this would
+	// be invalidated very often.
 	if (!scale.is_equal_approx(new_scale)) {
 		scale = new_scale;
 		_shapes_changed();
@@ -532,138 +550,21 @@ void JoltBody3D::set_transform(Transform3D p_transform) {
 	if (!in_space()) {
 		jolt_settings->mPosition = to_jolt_r(p_transform.origin);
 		jolt_settings->mRotation = to_jolt(p_transform.basis);
-	} else if (is_kinematic()) {
+	}
+	else if (is_kinematic()) {
 		kinematic_transform = p_transform;
-	} else {
-		space->get_body_iface().SetPositionAndRotation(jolt_body->GetID(), to_jolt_r(p_transform.origin), to_jolt(p_transform.basis), JPH::EActivation::DontActivate);
+	}
+	else {
+		space->get_body_iface().SetPositionAndRotation(jolt_body->GetID(),
+			to_jolt_r(p_transform.origin), to_jolt(p_transform.basis),
+			JPH::EActivation::DontActivate);
 	}
 
 	_transform_changed();
 }
 
-Variant JoltBody3D::get_state(PS3DE::BodyState p_state) const {
-	switch (p_state) {
-		case PS3DE::BODY_STATE_TRANSFORM: {
-			return get_transform_scaled();
-		}
-		case PS3DE::BODY_STATE_LINEAR_VELOCITY: {
-			return get_linear_velocity();
-		}
-		case PS3DE::BODY_STATE_ANGULAR_VELOCITY: {
-			return get_angular_velocity();
-		}
-		case PS3DE::BODY_STATE_SLEEPING: {
-			return is_sleeping();
-		}
-		case PS3DE::BODY_STATE_CAN_SLEEP: {
-			return is_sleep_allowed();
-		}
-		default: {
-			ERR_FAIL_V_MSG(Variant(), vformat("Unhandled body state: '%d'. This should not happen. Please report this.", p_state));
-		}
-	}
-}
-
-void JoltBody3D::set_state(PS3DE::BodyState p_state, const Variant &p_value) {
-	switch (p_state) {
-		case PS3DE::BODY_STATE_TRANSFORM: {
-			set_transform(p_value);
-		} break;
-		case PS3DE::BODY_STATE_LINEAR_VELOCITY: {
-			set_linear_velocity(p_value);
-		} break;
-		case PS3DE::BODY_STATE_ANGULAR_VELOCITY: {
-			set_angular_velocity(p_value);
-		} break;
-		case PS3DE::BODY_STATE_SLEEPING: {
-			set_is_sleeping(p_value);
-		} break;
-		case PS3DE::BODY_STATE_CAN_SLEEP: {
-			set_is_sleep_allowed(p_value);
-		} break;
-		default: {
-			ERR_FAIL_MSG(vformat("Unhandled body state: '%d'. This should not happen. Please report this.", p_state));
-		} break;
-	}
-}
-
-Variant JoltBody3D::get_param(PS3DE::BodyParameter p_param) const {
-	switch (p_param) {
-		case PS3DE::BODY_PARAM_BOUNCE: {
-			return get_bounce();
-		}
-		case PS3DE::BODY_PARAM_FRICTION: {
-			return get_friction();
-		}
-		case PS3DE::BODY_PARAM_MASS: {
-			return get_mass();
-		}
-		case PS3DE::BODY_PARAM_INERTIA: {
-			return get_inertia();
-		}
-		case PS3DE::BODY_PARAM_CENTER_OF_MASS: {
-			return get_center_of_mass_custom();
-		}
-		case PS3DE::BODY_PARAM_GRAVITY_SCALE: {
-			return get_gravity_scale();
-		}
-		case PS3DE::BODY_PARAM_LINEAR_DAMP_MODE: {
-			return get_linear_damp_mode();
-		}
-		case PS3DE::BODY_PARAM_ANGULAR_DAMP_MODE: {
-			return get_angular_damp_mode();
-		}
-		case PS3DE::BODY_PARAM_LINEAR_DAMP: {
-			return get_linear_damp();
-		}
-		case PS3DE::BODY_PARAM_ANGULAR_DAMP: {
-			return get_angular_damp();
-		}
-		default: {
-			ERR_FAIL_V_MSG(Variant(), vformat("Unhandled body parameter: '%d'. This should not happen. Please report this.", p_param));
-		}
-	}
-}
-
-void JoltBody3D::set_param(PS3DE::BodyParameter p_param, const Variant &p_value) {
-	switch (p_param) {
-		case PS3DE::BODY_PARAM_BOUNCE: {
-			set_bounce(p_value);
-		} break;
-		case PS3DE::BODY_PARAM_FRICTION: {
-			set_friction(p_value);
-		} break;
-		case PS3DE::BODY_PARAM_MASS: {
-			set_mass(p_value);
-		} break;
-		case PS3DE::BODY_PARAM_INERTIA: {
-			set_inertia(p_value);
-		} break;
-		case PS3DE::BODY_PARAM_CENTER_OF_MASS: {
-			set_center_of_mass_custom(p_value);
-		} break;
-		case PS3DE::BODY_PARAM_GRAVITY_SCALE: {
-			set_gravity_scale(p_value);
-		} break;
-		case PS3DE::BODY_PARAM_LINEAR_DAMP_MODE: {
-			set_linear_damp_mode((DampMode)(int)p_value);
-		} break;
-		case PS3DE::BODY_PARAM_ANGULAR_DAMP_MODE: {
-			set_angular_damp_mode((DampMode)(int)p_value);
-		} break;
-		case PS3DE::BODY_PARAM_LINEAR_DAMP: {
-			set_linear_damp(p_value);
-		} break;
-		case PS3DE::BODY_PARAM_ANGULAR_DAMP: {
-			set_angular_damp(p_value);
-		} break;
-		default: {
-			ERR_FAIL_MSG(vformat("Unhandled body parameter: '%d'. This should not happen. Please report this.", p_param));
-		} break;
-	}
-}
-
-void JoltBody3D::set_custom_integrator(bool p_enabled) {
+void JoltBody3D::set_custom_integrator(bool p_enabled)
+{
 	if (custom_integrator == p_enabled) {
 		return;
 	}
@@ -678,27 +579,33 @@ void JoltBody3D::set_custom_integrator(bool p_enabled) {
 	_motion_changed();
 }
 
-bool JoltBody3D::is_sleeping() const {
+bool JoltBody3D::is_sleeping() const
+{
 	if (!in_space()) {
 		return sleep_initially;
-	} else {
+	}
+	else {
 		return !jolt_body->IsActive();
 	}
 }
 
-bool JoltBody3D::is_sleep_actually_allowed() const {
+bool JoltBody3D::is_sleep_actually_allowed() const
+{
 	return sleep_allowed && !(is_kinematic() && reports_contacts());
 }
 
-void JoltBody3D::set_is_sleeping(bool p_enabled) {
+void JoltBody3D::set_is_sleeping(bool p_enabled)
+{
 	if (!in_space()) {
 		sleep_initially = p_enabled;
-	} else {
+	}
+	else {
 		space->set_is_object_sleeping(jolt_body->GetID(), p_enabled);
 	}
 }
 
-void JoltBody3D::set_is_sleep_allowed(bool p_enabled) {
+void JoltBody3D::set_is_sleep_allowed(bool p_enabled)
+{
 	if (sleep_allowed == p_enabled) {
 		return;
 	}
@@ -708,28 +615,45 @@ void JoltBody3D::set_is_sleep_allowed(bool p_enabled) {
 	_sleep_allowed_changed();
 }
 
-Basis JoltBody3D::get_principal_inertia_axes() const {
-	ERR_FAIL_COND_V_MSG(!in_space(), Basis(), vformat("Failed to retrieve principal inertia axes of '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+Basis JoltBody3D::get_principal_inertia_axes() const
+{
+	ERR_FAIL_COND_V_MSG(!in_space(), Basis(),
+		vformat("Failed to retrieve principal inertia axes of '%s'. Doing so without a physics "
+				"space is not supported when using Jolt Physics. If this relates to a node, try "
+				"adding the node to a scene tree first.",
+			to_string()));
 
 	if (unlikely(is_static() || is_kinematic())) {
 		return Basis();
 	}
 
-	return to_godot(jolt_body->GetRotation() * jolt_body->GetMotionPropertiesUnchecked()->GetInertiaRotation());
+	return to_godot(
+		jolt_body->GetRotation() * jolt_body->GetMotionPropertiesUnchecked()->GetInertiaRotation());
 }
 
-Vector3 JoltBody3D::get_inverse_inertia() const {
-	ERR_FAIL_COND_V_MSG(!in_space(), Vector3(), vformat("Failed to retrieve inverse inertia of '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+Vector3 JoltBody3D::get_inverse_inertia() const
+{
+	ERR_FAIL_COND_V_MSG(!in_space(), Vector3(),
+		vformat("Failed to retrieve inverse inertia of '%s'. Doing so without a physics space is "
+				"not supported when using Jolt Physics. If this relates to a node, try adding the "
+				"node to a scene tree first.",
+			to_string()));
 
 	if (unlikely(is_static() || is_kinematic())) {
 		return Vector3();
 	}
 
-	return to_godot(jolt_body->GetMotionPropertiesUnchecked()->GetLocalSpaceInverseInertia().GetDiagonal3());
+	return to_godot(
+		jolt_body->GetMotionPropertiesUnchecked()->GetLocalSpaceInverseInertia().GetDiagonal3());
 }
 
-Basis JoltBody3D::get_inverse_inertia_tensor() const {
-	ERR_FAIL_COND_V_MSG(!in_space(), Basis(), vformat("Failed to retrieve inverse inertia tensor of '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+Basis JoltBody3D::get_inverse_inertia_tensor() const
+{
+	ERR_FAIL_COND_V_MSG(!in_space(), Basis(),
+		vformat("Failed to retrieve inverse inertia tensor of '%s'. Doing so without a physics "
+				"space is not supported when using Jolt Physics. If this relates to a node, try "
+				"adding the node to a scene tree first.",
+			to_string()));
 
 	if (unlikely(is_static() || is_kinematic())) {
 		return Basis();
@@ -738,35 +662,44 @@ Basis JoltBody3D::get_inverse_inertia_tensor() const {
 	return to_godot(jolt_body->GetInverseInertia()).basis;
 }
 
-void JoltBody3D::set_linear_velocity(const Vector3 &p_velocity) {
+void JoltBody3D::set_linear_velocity(const Vector3& p_velocity)
+{
 	if (is_static() || is_kinematic()) {
 		linear_surface_velocity = p_velocity;
-	} else {
+	}
+	else {
 		if (!in_space()) {
 			jolt_settings->mLinearVelocity = to_jolt(p_velocity);
-		} else {
-			jolt_body->GetMotionPropertiesUnchecked()->SetLinearVelocityClamped(to_jolt(p_velocity));
+		}
+		else {
+			jolt_body->GetMotionPropertiesUnchecked()->SetLinearVelocityClamped(
+				to_jolt(p_velocity));
 		}
 	}
 
 	_motion_changed();
 }
 
-void JoltBody3D::set_angular_velocity(const Vector3 &p_velocity) {
+void JoltBody3D::set_angular_velocity(const Vector3& p_velocity)
+{
 	if (is_static() || is_kinematic()) {
 		angular_surface_velocity = p_velocity;
-	} else {
+	}
+	else {
 		if (!in_space()) {
 			jolt_settings->mAngularVelocity = to_jolt(p_velocity);
-		} else {
-			jolt_body->GetMotionPropertiesUnchecked()->SetAngularVelocityClamped(to_jolt(p_velocity));
+		}
+		else {
+			jolt_body->GetMotionPropertiesUnchecked()->SetAngularVelocityClamped(
+				to_jolt(p_velocity));
 		}
 	}
 
 	_motion_changed();
 }
 
-void JoltBody3D::set_axis_velocity(const Vector3 &p_axis_velocity) {
+void JoltBody3D::set_axis_velocity(const Vector3& p_axis_velocity)
+{
 	const Vector3 axis = p_axis_velocity.normalized();
 
 	if (!in_space()) {
@@ -774,7 +707,8 @@ void JoltBody3D::set_axis_velocity(const Vector3 &p_axis_velocity) {
 		linear_velocity -= axis * axis.dot(linear_velocity);
 		linear_velocity += p_axis_velocity;
 		jolt_settings->mLinearVelocity = to_jolt(linear_velocity);
-	} else {
+	}
+	else {
 		Vector3 linear_velocity = get_linear_velocity();
 		linear_velocity -= axis * axis.dot(linear_velocity);
 		linear_velocity += p_axis_velocity;
@@ -784,20 +718,24 @@ void JoltBody3D::set_axis_velocity(const Vector3 &p_axis_velocity) {
 	_motion_changed();
 }
 
-Vector3 JoltBody3D::get_velocity_at_position(const Vector3 &p_position) const {
+Vector3 JoltBody3D::get_velocity_at_position(const Vector3& p_position) const
+{
 	if (unlikely(!in_space())) {
 		return Vector3();
 	}
 
-	const JPH::MotionProperties &motion_properties = *jolt_body->GetMotionPropertiesUnchecked();
-	const Vector3 total_linear_velocity = to_godot(motion_properties.GetLinearVelocity()) + linear_surface_velocity;
-	const Vector3 total_angular_velocity = to_godot(motion_properties.GetAngularVelocity()) + angular_surface_velocity;
+	const JPH::MotionProperties& motion_properties = *jolt_body->GetMotionPropertiesUnchecked();
+	const Vector3 total_linear_velocity =
+		to_godot(motion_properties.GetLinearVelocity()) + linear_surface_velocity;
+	const Vector3 total_angular_velocity =
+		to_godot(motion_properties.GetAngularVelocity()) + angular_surface_velocity;
 	const Vector3 com_to_pos = p_position - to_godot(jolt_body->GetCenterOfMassPosition());
 
 	return total_linear_velocity + total_angular_velocity.cross(com_to_pos);
 }
 
-void JoltBody3D::set_center_of_mass_custom(const Vector3 &p_center_of_mass) {
+void JoltBody3D::set_center_of_mass_custom(const Vector3& p_center_of_mass)
+{
 	if (custom_center_of_mass && p_center_of_mass == center_of_mass_custom) {
 		return;
 	}
@@ -808,7 +746,8 @@ void JoltBody3D::set_center_of_mass_custom(const Vector3 &p_center_of_mass) {
 	_shapes_changed();
 }
 
-void JoltBody3D::set_max_contacts_reported(int p_count) {
+void JoltBody3D::set_max_contacts_reported(int p_count)
+{
 	ERR_FAIL_INDEX(p_count, PS3DC::MAX_CONTACTS_REPORTED_3D_MAX);
 
 	if (unlikely((int)contacts.size() == p_count)) {
@@ -822,58 +761,16 @@ void JoltBody3D::set_max_contacts_reported(int p_count) {
 
 	if (!in_space()) {
 		jolt_settings->mUseManifoldReduction = use_manifold_reduction;
-	} else {
+	}
+	else {
 		space->get_body_iface().SetUseManifoldReduction(jolt_body->GetID(), use_manifold_reduction);
 	}
 
 	_contact_reporting_changed();
 }
 
-bool JoltBody3D::reports_all_kinematic_contacts() const {
-	return reports_contacts() && JoltProjectSettings::generate_all_kinematic_contacts;
-}
-
-void JoltBody3D::add_contact(const JoltBody3D *p_collider, float p_depth, int p_shape_index, int p_collider_shape_index, const Vector3 &p_normal, const Vector3 &p_position, const Vector3 &p_collider_position, const Vector3 &p_velocity, const Vector3 &p_collider_velocity, const Vector3 &p_impulse) {
-	const int max_contacts = get_max_contacts_reported();
-
-	if (max_contacts == 0) {
-		return;
-	}
-
-	Contact *contact = nullptr;
-
-	if (contact_count < max_contacts) {
-		contact = &contacts[contact_count++];
-	} else {
-		Contact *shallowest_contact = &contacts[0];
-
-		for (int i = 1; i < (int)contacts.size(); i++) {
-			Contact &other_contact = contacts[i];
-			if (other_contact.depth < shallowest_contact->depth) {
-				shallowest_contact = &other_contact;
-			}
-		}
-
-		if (shallowest_contact->depth < p_depth) {
-			contact = shallowest_contact;
-		}
-	}
-
-	if (contact != nullptr) {
-		contact->normal = p_normal;
-		contact->position = p_position;
-		contact->collider_position = p_collider_position;
-		contact->velocity = p_velocity;
-		contact->collider_velocity = p_collider_velocity;
-		contact->impulse = p_impulse;
-		contact->collider_id = p_collider->get_instance_id();
-		contact->collider_rid = p_collider->get_rid();
-		contact->shape_index = p_shape_index;
-		contact->collider_shape_index = p_collider_shape_index;
-	}
-}
-
-void JoltBody3D::reset_mass_properties() {
+void JoltBody3D::reset_mass_properties()
+{
 	if (custom_center_of_mass) {
 		custom_center_of_mass = false;
 		center_of_mass_custom.zero();
@@ -886,8 +783,13 @@ void JoltBody3D::reset_mass_properties() {
 	_update_mass_properties();
 }
 
-void JoltBody3D::apply_force(const Vector3 &p_force, const Vector3 &p_position) {
-	ERR_FAIL_COND_MSG(!in_space(), vformat("Failed to apply force to '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+void JoltBody3D::apply_force(const Vector3& p_force, const Vector3& p_position)
+{
+	ERR_FAIL_COND_MSG(
+		!in_space(), vformat("Failed to apply force to '%s'. Doing so without a physics space is "
+							 "not supported when using Jolt Physics. If this relates to a node, "
+							 "try adding the node to a scene tree first.",
+						 to_string()));
 
 	if (unlikely(!is_rigid()) || custom_integrator || p_force == Vector3()) {
 		return;
@@ -898,8 +800,13 @@ void JoltBody3D::apply_force(const Vector3 &p_force, const Vector3 &p_position) 
 	_motion_changed();
 }
 
-void JoltBody3D::apply_central_force(const Vector3 &p_force) {
-	ERR_FAIL_COND_MSG(!in_space(), vformat("Failed to apply central force to '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+void JoltBody3D::apply_central_force(const Vector3& p_force)
+{
+	ERR_FAIL_COND_MSG(
+		!in_space(), vformat("Failed to apply central force to '%s'. Doing so without a physics "
+							 "space is not supported when using Jolt Physics. If this relates to a "
+							 "node, try adding the node to a scene tree first.",
+						 to_string()));
 
 	if (unlikely(!is_rigid()) || custom_integrator || p_force == Vector3()) {
 		return;
@@ -910,8 +817,13 @@ void JoltBody3D::apply_central_force(const Vector3 &p_force) {
 	_motion_changed();
 }
 
-void JoltBody3D::apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position) {
-	ERR_FAIL_COND_MSG(!in_space(), vformat("Failed to apply impulse to '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+void JoltBody3D::apply_impulse(const Vector3& p_impulse, const Vector3& p_position)
+{
+	ERR_FAIL_COND_MSG(
+		!in_space(), vformat("Failed to apply impulse to '%s'. Doing so without a physics space is "
+							 "not supported when using Jolt Physics. If this relates to a node, "
+							 "try adding the node to a scene tree first.",
+						 to_string()));
 
 	if (unlikely(!is_rigid()) || p_impulse == Vector3()) {
 		return;
@@ -922,8 +834,13 @@ void JoltBody3D::apply_impulse(const Vector3 &p_impulse, const Vector3 &p_positi
 	_motion_changed();
 }
 
-void JoltBody3D::apply_central_impulse(const Vector3 &p_impulse) {
-	ERR_FAIL_COND_MSG(!in_space(), vformat("Failed to apply central impulse to '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+void JoltBody3D::apply_central_impulse(const Vector3& p_impulse)
+{
+	ERR_FAIL_COND_MSG(
+		!in_space(), vformat("Failed to apply central impulse to '%s'. Doing so without a physics "
+							 "space is not supported when using Jolt Physics. If this relates to a "
+							 "node, try adding the node to a scene tree first.",
+						 to_string()));
 
 	if (unlikely(!is_rigid()) || p_impulse == Vector3()) {
 		return;
@@ -934,8 +851,13 @@ void JoltBody3D::apply_central_impulse(const Vector3 &p_impulse) {
 	_motion_changed();
 }
 
-void JoltBody3D::apply_torque(const Vector3 &p_torque) {
-	ERR_FAIL_COND_MSG(!in_space(), vformat("Failed to apply torque to '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+void JoltBody3D::apply_torque(const Vector3& p_torque)
+{
+	ERR_FAIL_COND_MSG(
+		!in_space(), vformat("Failed to apply torque to '%s'. Doing so without a physics space is "
+							 "not supported when using Jolt Physics. If this relates to a node, "
+							 "try adding the node to a scene tree first.",
+						 to_string()));
 
 	if (unlikely(!is_rigid()) || custom_integrator || p_torque == Vector3()) {
 		return;
@@ -946,8 +868,13 @@ void JoltBody3D::apply_torque(const Vector3 &p_torque) {
 	_motion_changed();
 }
 
-void JoltBody3D::apply_torque_impulse(const Vector3 &p_impulse) {
-	ERR_FAIL_COND_MSG(!in_space(), vformat("Failed to apply torque impulse to '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+void JoltBody3D::apply_torque_impulse(const Vector3& p_impulse)
+{
+	ERR_FAIL_COND_MSG(
+		!in_space(), vformat("Failed to apply torque impulse to '%s'. Doing so without a physics "
+							 "space is not supported when using Jolt Physics. If this relates to a "
+							 "node, try adding the node to a scene tree first.",
+						 to_string()));
 
 	if (unlikely(!is_rigid()) || p_impulse == Vector3()) {
 		return;
@@ -958,7 +885,8 @@ void JoltBody3D::apply_torque_impulse(const Vector3 &p_impulse) {
 	_motion_changed();
 }
 
-void JoltBody3D::add_constant_central_force(const Vector3 &p_force) {
+void JoltBody3D::add_constant_central_force(const Vector3& p_force)
+{
 	if (p_force == Vector3()) {
 		return;
 	}
@@ -968,7 +896,8 @@ void JoltBody3D::add_constant_central_force(const Vector3 &p_force) {
 	_motion_changed();
 }
 
-void JoltBody3D::add_constant_force(const Vector3 &p_force, const Vector3 &p_position) {
+void JoltBody3D::add_constant_force(const Vector3& p_force, const Vector3& p_position)
+{
 	if (p_force == Vector3()) {
 		return;
 	}
@@ -979,7 +908,8 @@ void JoltBody3D::add_constant_force(const Vector3 &p_force, const Vector3 &p_pos
 	_motion_changed();
 }
 
-void JoltBody3D::add_constant_torque(const Vector3 &p_torque) {
+void JoltBody3D::add_constant_torque(const Vector3& p_torque)
+{
 	if (p_torque == Vector3()) {
 		return;
 	}
@@ -989,11 +919,10 @@ void JoltBody3D::add_constant_torque(const Vector3 &p_torque) {
 	_motion_changed();
 }
 
-Vector3 JoltBody3D::get_constant_force() const {
-	return constant_force;
-}
+Vector3 JoltBody3D::get_constant_force() const { return constant_force; }
 
-void JoltBody3D::set_constant_force(const Vector3 &p_force) {
+void JoltBody3D::set_constant_force(const Vector3& p_force)
+{
 	if (constant_force == p_force) {
 		return;
 	}
@@ -1003,11 +932,10 @@ void JoltBody3D::set_constant_force(const Vector3 &p_force) {
 	_motion_changed();
 }
 
-Vector3 JoltBody3D::get_constant_torque() const {
-	return constant_torque;
-}
+Vector3 JoltBody3D::get_constant_torque() const { return constant_torque; }
 
-void JoltBody3D::set_constant_torque(const Vector3 &p_torque) {
+void JoltBody3D::set_constant_torque(const Vector3& p_torque)
+{
 	if (constant_torque == p_torque) {
 		return;
 	}
@@ -1017,23 +945,27 @@ void JoltBody3D::set_constant_torque(const Vector3 &p_torque) {
 	_motion_changed();
 }
 
-void JoltBody3D::add_collision_exception(const RID &p_excepted_body) {
+void JoltBody3D::add_collision_exception(const RID& p_excepted_body)
+{
 	exceptions.push_back(p_excepted_body);
 
 	_exceptions_changed();
 }
 
-void JoltBody3D::remove_collision_exception(const RID &p_excepted_body) {
+void JoltBody3D::remove_collision_exception(const RID& p_excepted_body)
+{
 	exceptions.erase(p_excepted_body);
 
 	_exceptions_changed();
 }
 
-bool JoltBody3D::has_collision_exception(const RID &p_excepted_body) const {
+bool JoltBody3D::has_collision_exception(const RID& p_excepted_body) const
+{
 	return exceptions.find(p_excepted_body) >= 0;
 }
 
-void JoltBody3D::add_area(JoltArea3D *p_area) {
+void JoltBody3D::add_area(JoltArea3D* p_area)
+{
 	int i = 0;
 	for (; i < (int)areas.size(); i++) {
 		if (p_area->get_priority() > areas[i]->get_priority()) {
@@ -1046,95 +978,40 @@ void JoltBody3D::add_area(JoltArea3D *p_area) {
 	_areas_changed();
 }
 
-void JoltBody3D::remove_area(JoltArea3D *p_area) {
+void JoltBody3D::remove_area(JoltArea3D* p_area)
+{
 	areas.erase(p_area);
 
 	_areas_changed();
 }
 
-void JoltBody3D::update_area(JoltArea3D *p_area, bool p_priority_changed) {
+void JoltBody3D::update_area(JoltArea3D* p_area, bool p_priority_changed)
+{
 	if (p_priority_changed) {
 		areas.erase(p_area);
 		add_area(p_area);
-	} else {
+	}
+	else {
 		_areas_changed();
 	}
 }
 
-void JoltBody3D::add_joint(JoltJoint3D *p_joint) {
+void JoltBody3D::add_joint(JoltJoint3D* p_joint)
+{
 	joints.push_back(p_joint);
 
 	_joints_changed();
 }
 
-void JoltBody3D::remove_joint(JoltJoint3D *p_joint) {
+void JoltBody3D::remove_joint(JoltJoint3D* p_joint)
+{
 	joints.erase(p_joint);
 
 	_joints_changed();
 }
 
-void JoltBody3D::call_queries() {
-	if (custom_integration_callback.is_valid()) {
-		const Variant direct_state_variant = get_direct_state();
-		const Variant *args[2] = { &direct_state_variant, &custom_integration_userdata };
-		const int argc = custom_integration_userdata.get_type() != Variant::NIL ? 2 : 1;
-
-		Callable::CallError ce;
-		Variant ret;
-		custom_integration_callback.callp(args, argc, ret, ce);
-
-		if (unlikely(ce.error != Callable::CallError::CALL_OK)) {
-			ERR_PRINT_ONCE(vformat("Failed to call force integration callback for '%s'. It returned the following error: '%s'.", to_string(), Variant::get_callable_error_text(custom_integration_callback, args, argc, ce)));
-		}
-	}
-
-	if (state_sync_callback.is_valid()) {
-		const Variant direct_state_variant = get_direct_state();
-		const Variant *args[1] = { &direct_state_variant };
-
-		Callable::CallError ce;
-		Variant ret;
-		state_sync_callback.callp(args, 1, ret, ce);
-
-		if (unlikely(ce.error != Callable::CallError::CALL_OK)) {
-			ERR_PRINT_ONCE(vformat("Failed to call state synchronization callback for '%s'. It returned the following error: '%s'.", to_string(), Variant::get_callable_error_text(state_sync_callback, args, 1, ce)));
-		}
-	}
-}
-
-void JoltBody3D::pre_step(float p_step) {
-	JoltObject3D::pre_step(p_step);
-
-	switch (mode) {
-		case PS3DE::BODY_MODE_STATIC: {
-			// Will never happen.
-		} break;
-		case PS3DE::BODY_MODE_RIGID:
-		case PS3DE::BODY_MODE_RIGID_LINEAR: {
-			if (_needs_update_environmental_properties()) {
-				_update_environmental_properties();
-			}
-
-			_integrate_forces(p_step);
-		} break;
-
-		case PS3DE::BODY_MODE_KINEMATIC: {
-			if (_needs_update_environmental_properties()) {
-				_update_environmental_properties();
-			}
-
-			_move_kinematic(p_step);
-		} break;
-	}
-
-	if (_should_call_queries()) {
-		_enqueue_call_queries();
-	}
-
-	contact_count = 0;
-}
-
-JoltPhysicsDirectBodyState3D *JoltBody3D::get_direct_state() {
+JoltPhysicsDirectBodyState3D* JoltBody3D::get_direct_state()
+{
 	if (direct_state == nullptr) {
 		direct_state = memnew(JoltPhysicsDirectBodyState3D(this));
 	}
@@ -1142,7 +1019,8 @@ JoltPhysicsDirectBodyState3D *JoltBody3D::get_direct_state() {
 	return direct_state;
 }
 
-void JoltBody3D::set_mode(PS3DE::BodyMode p_mode) {
+void JoltBody3D::set_mode(PS3DE::BodyMode p_mode)
+{
 	if (p_mode == mode) {
 		return;
 	}
@@ -1177,88 +1055,109 @@ void JoltBody3D::set_mode(PS3DE::BodyMode p_mode) {
 	_mode_changed();
 }
 
-bool JoltBody3D::is_ccd_enabled() const {
+bool JoltBody3D::is_ccd_enabled() const
+{
 	if (!in_space()) {
 		return jolt_settings->mMotionQuality == JPH::EMotionQuality::LinearCast;
-	} else {
-		return !is_static() && jolt_body->GetMotionProperties()->GetMotionQuality() == JPH::EMotionQuality::LinearCast;
+	}
+	else {
+		return !is_static() && jolt_body->GetMotionProperties()->GetMotionQuality() ==
+								   JPH::EMotionQuality::LinearCast;
 	}
 }
 
-void JoltBody3D::set_ccd_enabled(bool p_enabled) {
-	const JPH::EMotionQuality motion_quality = p_enabled ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
+void JoltBody3D::set_ccd_enabled(bool p_enabled)
+{
+	const JPH::EMotionQuality motion_quality =
+		p_enabled ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
 
 	if (!in_space()) {
 		jolt_settings->mMotionQuality = motion_quality;
-	} else {
+	}
+	else {
 		space->get_body_iface().SetMotionQuality(jolt_body->GetID(), motion_quality);
 	}
 }
 
-void JoltBody3D::set_mass(float p_mass) {
+void JoltBody3D::set_mass(float p_mass)
+{
 	if (p_mass != mass) {
 		mass = p_mass;
 		_update_mass_properties();
 	}
 }
 
-void JoltBody3D::set_inertia(const Vector3 &p_inertia) {
+void JoltBody3D::set_inertia(const Vector3& p_inertia)
+{
 	if (p_inertia != inertia) {
 		inertia = p_inertia;
 		_update_mass_properties();
 	}
 }
 
-float JoltBody3D::get_bounce() const {
+float JoltBody3D::get_bounce() const
+{
 	if (!in_space()) {
 		return jolt_settings->mRestitution;
-	} else {
+	}
+	else {
 		return jolt_body->GetRestitution();
 	}
 }
 
-void JoltBody3D::set_bounce(float p_bounce) {
+void JoltBody3D::set_bounce(float p_bounce)
+{
 	if (!in_space()) {
 		jolt_settings->mRestitution = p_bounce;
-	} else {
+	}
+	else {
 		jolt_body->SetRestitution(p_bounce);
 	}
 }
 
-float JoltBody3D::get_friction() const {
+float JoltBody3D::get_friction() const
+{
 	if (!in_space()) {
 		return jolt_settings->mFriction;
-	} else {
+	}
+	else {
 		return jolt_body->GetFriction();
 	}
 }
 
-void JoltBody3D::set_friction(float p_friction) {
+void JoltBody3D::set_friction(float p_friction)
+{
 	if (!in_space()) {
 		jolt_settings->mFriction = p_friction;
-	} else {
+	}
+	else {
 		jolt_body->SetFriction(p_friction);
 	}
 }
 
-float JoltBody3D::get_gravity_scale() const {
+float JoltBody3D::get_gravity_scale() const
+{
 	if (!in_space()) {
 		return jolt_settings->mGravityFactor;
-	} else {
+	}
+	else {
 		return jolt_body->GetMotionPropertiesUnchecked()->GetGravityFactor();
 	}
 }
 
-void JoltBody3D::set_gravity_scale(float p_scale) {
+void JoltBody3D::set_gravity_scale(float p_scale)
+{
 	if (!in_space()) {
 		jolt_settings->mGravityFactor = p_scale;
-	} else {
+	}
+	else {
 		jolt_body->GetMotionPropertiesUnchecked()->SetGravityFactor(p_scale);
 		_update_environmental_properties();
 	}
 }
 
-void JoltBody3D::set_linear_damp(float p_damp) {
+void JoltBody3D::set_linear_damp(float p_damp)
+{
 	p_damp = MAX(0.0f, p_damp);
 
 	if (p_damp == linear_damp) {
@@ -1270,7 +1169,8 @@ void JoltBody3D::set_linear_damp(float p_damp) {
 	_update_environmental_properties();
 }
 
-void JoltBody3D::set_angular_damp(float p_damp) {
+void JoltBody3D::set_angular_damp(float p_damp)
+{
 	p_damp = MAX(0.0f, p_damp);
 
 	if (p_damp == angular_damp) {
@@ -1282,7 +1182,8 @@ void JoltBody3D::set_angular_damp(float p_damp) {
 	_update_environmental_properties();
 }
 
-void JoltBody3D::set_linear_damp_mode(DampMode p_mode) {
+void JoltBody3D::set_linear_damp_mode(DampMode p_mode)
+{
 	if (p_mode == linear_damp_mode) {
 		return;
 	}
@@ -1292,7 +1193,8 @@ void JoltBody3D::set_linear_damp_mode(DampMode p_mode) {
 	_update_environmental_properties();
 }
 
-void JoltBody3D::set_angular_damp_mode(DampMode p_mode) {
+void JoltBody3D::set_angular_damp_mode(DampMode p_mode)
+{
 	if (p_mode == angular_damp_mode) {
 		return;
 	}
@@ -1302,16 +1204,19 @@ void JoltBody3D::set_angular_damp_mode(DampMode p_mode) {
 	_update_environmental_properties();
 }
 
-bool JoltBody3D::is_axis_locked(PS3DE::BodyAxis p_axis) const {
+bool JoltBody3D::is_axis_locked(PS3DE::BodyAxis p_axis) const
+{
 	return (locked_axes & (uint32_t)p_axis) != 0;
 }
 
-void JoltBody3D::set_axis_lock(PS3DE::BodyAxis p_axis, bool p_enabled) {
+void JoltBody3D::set_axis_lock(PS3DE::BodyAxis p_axis, bool p_enabled)
+{
 	const uint32_t previous_locked_axes = locked_axes;
 
 	if (p_enabled) {
 		locked_axes |= (uint32_t)p_axis;
-	} else {
+	}
+	else {
 		locked_axes &= ~(uint32_t)p_axis;
 	}
 
@@ -1320,14 +1225,20 @@ void JoltBody3D::set_axis_lock(PS3DE::BodyAxis p_axis, bool p_enabled) {
 	}
 }
 
-bool JoltBody3D::can_interact_with(const JoltBody3D &p_other) const {
-	return (can_collide_with(p_other) || p_other.can_collide_with(*this)) && !has_collision_exception(p_other.get_rid()) && !p_other.has_collision_exception(rid);
+bool JoltBody3D::can_interact_with(const JoltBody3D& p_other) const
+{
+	return (can_collide_with(p_other) || p_other.can_collide_with(*this)) &&
+		   !has_collision_exception(p_other.get_rid()) && !p_other.has_collision_exception(rid);
 }
 
-bool JoltBody3D::can_interact_with(const JoltSoftBody3D &p_other) const {
+bool JoltBody3D::can_interact_with(const JoltSoftBody3D& p_other) const
+{
 	return p_other.can_interact_with(*this);
 }
 
-bool JoltBody3D::can_interact_with(const JoltArea3D &p_other) const {
+bool JoltBody3D::can_interact_with(const JoltArea3D& p_other) const
+{
 	return p_other.can_interact_with(*this);
 }
+
+

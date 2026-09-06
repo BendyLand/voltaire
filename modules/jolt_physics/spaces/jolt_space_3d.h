@@ -35,6 +35,7 @@
 #include "core/templates/rid.h"
 #include "core/templates/self_list.h"
 #include "servers/physics_3d/physics_server_3d_enums.h"
+#include "core/types.h"
 
 #include <Jolt/Jolt.h>
 

@@ -60,7 +60,6 @@ public:
 
 protected:
 	RID rid;
-	ObjectID instance_id;
 	JoltSpace3D *space = nullptr;
 	JPH::Body *jolt_body = nullptr;
 
@@ -112,10 +111,6 @@ public:
 
 	RID get_rid() const { return rid; }
 	void set_rid(const RID &p_rid) { rid = p_rid; }
-
-	ObjectID get_instance_id() const { return instance_id; }
-	void set_instance_id(ObjectID p_id) { instance_id = p_id; }
-	Object *get_instance() const;
 
 	JPH::Body *get_jolt_body() const { return jolt_body; }
 	JPH::BodyID get_jolt_id() const { return jolt_body->GetID(); }

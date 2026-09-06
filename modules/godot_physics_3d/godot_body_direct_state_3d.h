@@ -34,11 +34,10 @@
 
 class GodotBody3D;
 
-class GodotPhysicsDirectBodyState3D : public PhysicsDirectBodyState3D {
-	VLTRCLASS(GodotPhysicsDirectBodyState3D, PhysicsDirectBodyState3D);
-
+class GodotPhysicsDirectBodyState3D : public PhysicsDirectBodyState3D
+{
 public:
-	GodotBody3D *body = nullptr;
+	GodotBody3D* body = nullptr;
 
 	virtual Vector3 get_total_gravity() const override;
 	virtual real_t get_total_angular_damp() const override;
@@ -52,33 +51,36 @@ public:
 	virtual Vector3 get_inverse_inertia() const override;
 	virtual Basis get_inverse_inertia_tensor() const override;
 
-	virtual void set_linear_velocity(const Vector3 &p_velocity) override;
+	virtual void set_linear_velocity(const Vector3& p_velocity) override;
 	virtual Vector3 get_linear_velocity() const override;
 
-	virtual void set_angular_velocity(const Vector3 &p_velocity) override;
+	virtual void set_angular_velocity(const Vector3& p_velocity) override;
 	virtual Vector3 get_angular_velocity() const override;
 
-	virtual void set_transform(const Transform3D &p_transform) override;
+	virtual void set_transform(const Transform3D& p_transform) override;
 	virtual Transform3D get_transform() const override;
 
-	virtual Vector3 get_velocity_at_local_position(const Vector3 &p_position) const override;
+	virtual Vector3 get_velocity_at_local_position(const Vector3& p_position) const override;
 
-	virtual void apply_central_impulse(const Vector3 &p_impulse) override;
-	virtual void apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position = Vector3()) override;
-	virtual void apply_torque_impulse(const Vector3 &p_impulse) override;
+	virtual void apply_central_impulse(const Vector3& p_impulse) override;
+	virtual void apply_impulse(
+		const Vector3& p_impulse, const Vector3& p_position = Vector3()) override;
+	virtual void apply_torque_impulse(const Vector3& p_impulse) override;
 
-	virtual void apply_central_force(const Vector3 &p_force) override;
-	virtual void apply_force(const Vector3 &p_force, const Vector3 &p_position = Vector3()) override;
-	virtual void apply_torque(const Vector3 &p_torque) override;
+	virtual void apply_central_force(const Vector3& p_force) override;
+	virtual void apply_force(
+		const Vector3& p_force, const Vector3& p_position = Vector3()) override;
+	virtual void apply_torque(const Vector3& p_torque) override;
 
-	virtual void add_constant_central_force(const Vector3 &p_force) override;
-	virtual void add_constant_force(const Vector3 &p_force, const Vector3 &p_position = Vector3()) override;
-	virtual void add_constant_torque(const Vector3 &p_torque) override;
+	virtual void add_constant_central_force(const Vector3& p_force) override;
+	virtual void add_constant_force(
+		const Vector3& p_force, const Vector3& p_position = Vector3()) override;
+	virtual void add_constant_torque(const Vector3& p_torque) override;
 
-	virtual void set_constant_force(const Vector3 &p_force) override;
+	virtual void set_constant_force(const Vector3& p_force) override;
 	virtual Vector3 get_constant_force() const override;
 
-	virtual void set_constant_torque(const Vector3 &p_torque) override;
+	virtual void set_constant_torque(const Vector3& p_torque) override;
 	virtual Vector3 get_constant_torque() const override;
 
 	virtual void set_sleep_state(bool p_sleep) override;
@@ -100,7 +102,6 @@ public:
 
 	virtual RID get_contact_collider(int p_contact_idx) const override;
 	virtual Vector3 get_contact_collider_position(int p_contact_idx) const override;
-	virtual ObjectID get_contact_collider_id(int p_contact_idx) const override;
 	virtual int get_contact_collider_shape(int p_contact_idx) const override;
 	virtual Vector3 get_contact_collider_velocity_at_position(int p_contact_idx) const override;
 
@@ -108,3 +109,5 @@ public:
 
 	virtual real_t get_step() const override;
 };
+
+

@@ -117,13 +117,6 @@ RID GodotPhysicsServer3D::heightmap_shape_create()
 
 RID GodotPhysicsServer3D::custom_shape_create() { ERR_FAIL_V(RID()); }
 
-void GodotPhysicsServer3D::shape_set_data(RID p_shape, const Variant& p_data)
-{
-	GodotShape3D* shape = shape_owner.get_or_null(p_shape);
-	ERR_FAIL_NULL(shape);
-	shape->set_data(p_data);
-}
-
 void GodotPhysicsServer3D::shape_set_custom_solver_bias(RID p_shape, real_t p_bias)
 {
 	GodotShape3D* shape = shape_owner.get_or_null(p_shape);
@@ -136,14 +129,6 @@ PS3DE::ShapeType GodotPhysicsServer3D::shape_get_type(RID p_shape) const
 	const GodotShape3D* shape = shape_owner.get_or_null(p_shape);
 	ERR_FAIL_NULL_V(shape, PS3DE::SHAPE_CUSTOM);
 	return shape->get_type();
-}
-
-Variant GodotPhysicsServer3D::shape_get_data(RID p_shape) const
-{
-	const GodotShape3D* shape = shape_owner.get_or_null(p_shape);
-	ERR_FAIL_NULL_V(shape, Variant());
-	ERR_FAIL_COND_V(!shape->is_configured(), Variant());
-	return shape->get_data();
 }
 
 void GodotPhysicsServer3D::shape_set_margin(RID p_shape, real_t p_margin) {}
@@ -370,57 +355,11 @@ void GodotPhysicsServer3D::area_set_shape_disabled(RID p_area, int p_shape_idx, 
 	area->set_shape_disabled(p_shape_idx, p_disabled);
 }
 
-void GodotPhysicsServer3D::area_attach_object_instance_id(RID p_area, ObjectID p_id)
-{
-	if (space_owner.owns(p_area)) {
-		GodotSpace3D* space = space_owner.get_or_null(p_area);
-		p_area = space->get_default_area()->get_self();
-	}
-	GodotArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL(area);
-	area->set_instance_id(p_id);
-}
-
-ObjectID GodotPhysicsServer3D::area_get_object_instance_id(RID p_area) const
-{
-	if (space_owner.owns(p_area)) {
-		GodotSpace3D* space = space_owner.get_or_null(p_area);
-		p_area = space->get_default_area()->get_self();
-	}
-	GodotArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL_V(area, ObjectID());
-	return area->get_instance_id();
-}
-
-void GodotPhysicsServer3D::area_set_param(
-	RID p_area, PS3DE::AreaParameter p_param, const Variant& p_value)
-{
-	if (space_owner.owns(p_area)) {
-		GodotSpace3D* space = space_owner.get_or_null(p_area);
-		p_area = space->get_default_area()->get_self();
-	}
-	GodotArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL(area);
-	area->set_param(p_param, p_value);
-}
-
 void GodotPhysicsServer3D::area_set_transform(RID p_area, const Transform3D& p_transform)
 {
 	GodotArea3D* area = area_owner.get_or_null(p_area);
 	ERR_FAIL_NULL(area);
 	area->set_transform(p_transform);
-}
-
-Variant GodotPhysicsServer3D::area_get_param(RID p_area, PS3DE::AreaParameter p_param) const
-{
-	if (space_owner.owns(p_area)) {
-		GodotSpace3D* space = space_owner.get_or_null(p_area);
-		p_area = space->get_default_area()->get_self();
-	}
-	GodotArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL_V(area, Variant());
-
-	return area->get_param(p_param);
 }
 
 Transform3D GodotPhysicsServer3D::area_get_transform(RID p_area) const
@@ -472,28 +411,12 @@ void GodotPhysicsServer3D::area_set_monitorable(RID p_area, bool p_monitorable)
 	area->set_monitorable(p_monitorable);
 }
 
-void GodotPhysicsServer3D::area_set_monitor_callback(RID p_area, const Callable& p_callback)
-{
-	GodotArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL(area);
-
-	area->set_monitor_callback(p_callback.is_valid() ? p_callback : Callable());
-}
-
 void GodotPhysicsServer3D::area_set_ray_pickable(RID p_area, bool p_enable)
 {
 	GodotArea3D* area = area_owner.get_or_null(p_area);
 	ERR_FAIL_NULL(area);
 
 	area->set_ray_pickable(p_enable);
-}
-
-void GodotPhysicsServer3D::area_set_area_monitor_callback(RID p_area, const Callable& p_callback)
-{
-	GodotArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL(area);
-
-	area->set_area_monitor_callback(p_callback.is_valid() ? p_callback : Callable());
 }
 
 /* BODY API */
@@ -705,31 +628,6 @@ real_t GodotPhysicsServer3D::body_get_collision_priority(RID p_body) const
 	return body->get_collision_priority();
 }
 
-void GodotPhysicsServer3D::body_attach_object_instance_id(RID p_body, ObjectID p_id)
-{
-	GodotBody3D* body = body_owner.get_or_null(p_body);
-	if (body) {
-		body->set_instance_id(p_id);
-		return;
-	}
-
-	GodotSoftBody3D* soft_body = soft_body_owner.get_or_null(p_body);
-	if (soft_body) {
-		soft_body->set_instance_id(p_id);
-		return;
-	}
-
-	ERR_FAIL_MSG("Invalid ID.");
-}
-
-ObjectID GodotPhysicsServer3D::body_get_object_instance_id(RID p_body) const
-{
-	GodotBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, ObjectID());
-
-	return body->get_instance_id();
-}
-
 void GodotPhysicsServer3D::body_set_user_flags(RID p_body, uint32_t p_flags)
 {
 	GodotBody3D* body = body_owner.get_or_null(p_body);
@@ -744,46 +642,12 @@ uint32_t GodotPhysicsServer3D::body_get_user_flags(RID p_body) const
 	return 0;
 }
 
-void GodotPhysicsServer3D::body_set_param(
-	RID p_body, PS3DE::BodyParameter p_param, const Variant& p_value)
-{
-	GodotBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-
-	body->set_param(p_param, p_value);
-}
-
-Variant GodotPhysicsServer3D::body_get_param(RID p_body, PS3DE::BodyParameter p_param) const
-{
-	GodotBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, 0);
-
-	return body->get_param(p_param);
-}
-
 void GodotPhysicsServer3D::body_reset_mass_properties(RID p_body)
 {
 	GodotBody3D* body = body_owner.get_or_null(p_body);
 	ERR_FAIL_NULL(body);
 
 	return body->reset_mass_properties();
-}
-
-void GodotPhysicsServer3D::body_set_state(
-	RID p_body, PS3DE::BodyState p_state, const Variant& p_variant)
-{
-	GodotBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-
-	body->set_state(p_state, p_variant);
-}
-
-Variant GodotPhysicsServer3D::body_get_state(RID p_body, PS3DE::BodyState p_state) const
-{
-	GodotBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, Variant());
-
-	return body->get_state(p_state);
 }
 
 void GodotPhysicsServer3D::body_apply_central_impulse(RID p_body, const Vector3& p_impulse)
@@ -1049,21 +913,6 @@ int GodotPhysicsServer3D::body_get_max_contacts_reported(RID p_body) const
 	return body->get_max_contacts_reported();
 }
 
-void GodotPhysicsServer3D::body_set_state_sync_callback(RID p_body, const Callable& p_callable)
-{
-	GodotBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-	body->set_state_sync_callback(p_callable);
-}
-
-void GodotPhysicsServer3D::body_set_force_integration_callback(
-	RID p_body, const Callable& p_callable, const Variant& p_udata)
-{
-	GodotBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-	body->set_force_integration_callback(p_callable, p_udata);
-}
-
 void GodotPhysicsServer3D::body_set_ray_pickable(RID p_body, bool p_enable)
 {
 	GodotBody3D* body = body_owner.get_or_null(p_body);
@@ -1212,31 +1061,6 @@ void GodotPhysicsServer3D::soft_body_get_collision_exceptions(RID p_body, List<R
 	for (int i = 0; i < soft_body->get_exceptions().size(); i++) {
 		p_exceptions->push_back(soft_body->get_exceptions()[i]);
 	}
-}
-
-void GodotPhysicsServer3D::soft_body_set_state(
-	RID p_body, PS3DE::BodyState p_state, const Variant& p_variant)
-{
-	GodotSoftBody3D* soft_body = soft_body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(soft_body);
-
-	soft_body->set_state(p_state, p_variant);
-}
-
-Variant GodotPhysicsServer3D::soft_body_get_state(RID p_body, PS3DE::BodyState p_state) const
-{
-	GodotSoftBody3D* soft_body = soft_body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(soft_body, Variant());
-
-	return soft_body->get_state(p_state);
-}
-
-void GodotPhysicsServer3D::soft_body_set_transform(RID p_body, const Transform3D& p_transform)
-{
-	GodotSoftBody3D* soft_body = soft_body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(soft_body);
-
-	soft_body->set_state(PS3DE::BODY_STATE_TRANSFORM, p_transform);
 }
 
 void GodotPhysicsServer3D::soft_body_set_ray_pickable(RID p_body, bool p_enable)
@@ -1960,53 +1784,6 @@ void GodotPhysicsServer3D::step(real_t p_step)
 }
 
 void GodotPhysicsServer3D::sync() { doing_sync = true; }
-
-void GodotPhysicsServer3D::flush_queries()
-{
-	if (!active) {
-		return;
-	}
-
-	flushing_queries = true;
-
-	uint64_t time_beg = OS::get_singleton()->get_ticks_usec();
-
-	for (GodotSpace3D* E : active_spaces) {
-		GodotSpace3D* space = E;
-		space->call_queries();
-	}
-
-	flushing_queries = false;
-
-	if (EngineDebugger::is_profiling("servers")) {
-		uint64_t total_time[GodotSpace3D::
-ELAPSED_TIME_MAX];
-		static const char* time_name[GodotSpace3D::ELAPSED_TIME_MAX] = {"integrate_forces",
-			"generate_islands", "setup_constraints", "solve_constraints", "integrate_velocities"};
-
-		for (int i = 0; i < GodotSpace3D::ELAPSED_TIME_MAX; i++) {
-			total_time[i] = 0;
-		}
-
-		for (const GodotSpace3D* E : active_spaces) {
-			for (int i = 0; i < GodotSpace3D::ELAPSED_TIME_MAX; i++) {
-				total_time[i] += E->get_elapsed_time(GodotSpace3D::ElapsedTime(i));
-			}
-		}
-
-		Array values;
-		values.resize(GodotSpace3D::ELAPSED_TIME_MAX * 2);
-		for (int i = 0; i < GodotSpace3D::ELAPSED_TIME_MAX; i++) {
-			values[i * 2 + 0] = time_name[i];
-			values[i * 2 + 1] = USEC_TO_SEC(total_time[i]);
-		}
-		values.push_back("flush_queries");
-		values.push_back(USEC_TO_SEC(OS::get_singleton()->get_ticks_usec() - time_beg));
-
-		values.push_front("physics_3d");
-		EngineDebugger::profiler_add_frame_data("servers", values);
-	}
-}
 
 void GodotPhysicsServer3D::end_sync() { doing_sync = false; }
 

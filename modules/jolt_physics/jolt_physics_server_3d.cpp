@@ -142,22 +142,6 @@ RID JoltPhysicsServer3D::custom_shape_create()
 	ERR_FAIL_V_MSG(RID(), "Custom shapes are not supported.");
 }
 
-void JoltPhysicsServer3D::shape_set_data(RID p_shape, const Variant& p_data)
-{
-	JoltShape3D* shape = shape_owner.get_or_null(p_shape);
-	ERR_FAIL_NULL(shape);
-
-	shape->set_data(p_data);
-}
-
-Variant JoltPhysicsServer3D::shape_get_data(RID p_shape) const
-{
-	const JoltShape3D* shape = shape_owner.get_or_null(p_shape);
-	ERR_FAIL_NULL_V(shape, Variant());
-
-	return shape->get_data();
-}
-
 void JoltPhysicsServer3D::shape_set_custom_solver_bias(RID p_shape, real_t p_bias)
 {
 	JoltShape3D* shape = shape_owner.get_or_null(p_shape);
@@ -420,14 +404,6 @@ Transform3D JoltPhysicsServer3D::area_get_shape_transform(RID p_area, int p_shap
 	return area->get_shape_transform_scaled(p_shape_idx);
 }
 
-int JoltPhysicsServer3D::area_get_shape_count(RID p_area) const
-{
-	const JoltArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL_V(area, 0);
-
-	return area->get_shape_count();
-}
-
 void JoltPhysicsServer3D::area_remove_shape(RID p_area, int p_shape_idx)
 {
 	JoltArea3D* area = area_owner.get_or_null(p_area);
@@ -450,67 +426,6 @@ void JoltPhysicsServer3D::area_set_shape_disabled(RID p_area, int p_shape_idx, b
 	ERR_FAIL_NULL(area);
 
 	area->set_shape_disabled(p_shape_idx, p_disabled);
-}
-
-void JoltPhysicsServer3D::area_attach_object_instance_id(RID p_area, ObjectID p_id)
-{
-	RID area_rid = p_area;
-
-	if (space_owner.owns(area_rid)) {
-		const JoltSpace3D* space = space_owner.get_or_null(area_rid);
-		area_rid = space->get_default_area()->get_rid();
-	}
-
-	JoltArea3D* area = area_owner.get_or_null(area_rid);
-	ERR_FAIL_NULL(area);
-
-	area->set_instance_id(p_id);
-}
-
-ObjectID JoltPhysicsServer3D::area_get_object_instance_id(RID p_area) const
-{
-	RID area_rid = p_area;
-
-	if (space_owner.owns(area_rid)) {
-		const JoltSpace3D* space = space_owner.get_or_null(area_rid);
-		area_rid = space->get_default_area()->get_rid();
-	}
-
-	JoltArea3D* area = area_owner.get_or_null(area_rid);
-	ERR_FAIL_NULL_V(area, ObjectID());
-
-	return area->get_instance_id();
-}
-
-void JoltPhysicsServer3D::area_set_param(
-	RID p_area, PS3DE::AreaParameter p_param, const Variant& p_value)
-{
-	RID area_rid = p_area;
-
-	if (space_owner.owns(area_rid)) {
-		const JoltSpace3D* space = space_owner.get_or_null(area_rid);
-		area_rid = space->get_default_area()->get_rid();
-	}
-
-	JoltArea3D* area = area_owner.get_or_null(area_rid);
-	ERR_FAIL_NULL(area);
-
-	area->set_param(p_param, p_value);
-}
-
-Variant JoltPhysicsServer3D::area_get_param(RID p_area, PS3DE::AreaParameter p_param) const
-{
-	RID area_rid = p_area;
-
-	if (space_owner.owns(area_rid)) {
-		const JoltSpace3D* space = space_owner.get_or_null(area_rid);
-		area_rid = space->get_default_area()->get_rid();
-	}
-
-	JoltArea3D* area = area_owner.get_or_null(area_rid);
-	ERR_FAIL_NULL_V(area, Variant());
-
-	return area->get_param(p_param);
 }
 
 void JoltPhysicsServer3D::area_set_transform(RID p_area, const Transform3D& p_transform)
@@ -567,22 +482,6 @@ void JoltPhysicsServer3D::area_set_monitorable(RID p_area, bool p_monitorable)
 	ERR_FAIL_NULL(area);
 
 	area->set_monitorable(p_monitorable);
-}
-
-void JoltPhysicsServer3D::area_set_monitor_callback(RID p_area, const Callable& p_callback)
-{
-	JoltArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL(area);
-
-	area->set_body_monitor_callback(p_callback);
-}
-
-void JoltPhysicsServer3D::area_set_area_monitor_callback(RID p_area, const Callable& p_callback)
-{
-	JoltArea3D* area = area_owner.get_or_null(p_area);
-	ERR_FAIL_NULL(area);
-
-	area->set_area_monitor_callback(p_callback);
 }
 
 void JoltPhysicsServer3D::area_set_ray_pickable(RID p_area, bool p_enable)
@@ -697,14 +596,6 @@ Transform3D JoltPhysicsServer3D::body_get_shape_transform(RID p_body, int p_shap
 	return body->get_shape_transform_scaled(p_shape_idx);
 }
 
-int JoltPhysicsServer3D::body_get_shape_count(RID p_body) const
-{
-	const JoltBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, 0);
-
-	return body->get_shape_count();
-}
-
 void JoltPhysicsServer3D::body_remove_shape(RID p_body, int p_shape_idx)
 {
 	JoltBody3D* body = body_owner.get_or_null(p_body);
@@ -727,27 +618,6 @@ void JoltPhysicsServer3D::body_set_shape_disabled(RID p_body, int p_shape_idx, b
 	ERR_FAIL_NULL(body);
 
 	body->set_shape_disabled(p_shape_idx, p_disabled);
-}
-
-void JoltPhysicsServer3D::body_attach_object_instance_id(RID p_body, ObjectID p_id)
-{
-	if (JoltBody3D* body = body_owner.get_or_null(p_body)) {
-		body->set_instance_id(p_id);
-	}
-	else if (JoltSoftBody3D* soft_body = soft_body_owner.get_or_null(p_body)) {
-		soft_body->set_instance_id(p_id);
-	}
-	else {
-		ERR_FAIL();
-	}
-}
-
-ObjectID JoltPhysicsServer3D::body_get_object_instance_id(RID p_body) const
-{
-	const JoltBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, ObjectID());
-
-	return body->get_instance_id();
 }
 
 void JoltPhysicsServer3D::body_set_enable_continuous_collision_detection(RID p_body, bool p_enable)
@@ -821,46 +691,12 @@ void JoltPhysicsServer3D::body_set_user_flags(RID p_body, uint32_t p_flags)
 
 uint32_t JoltPhysicsServer3D::body_get_user_flags(RID p_body) const { return 0; }
 
-void JoltPhysicsServer3D::body_set_param(
-	RID p_body, PS3DE::BodyParameter p_param, const Variant& p_value)
-{
-	JoltBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-
-	body->set_param(p_param, p_value);
-}
-
-Variant JoltPhysicsServer3D::body_get_param(RID p_body, PS3DE::BodyParameter p_param) const
-{
-	const JoltBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, Variant());
-
-	return body->get_param(p_param);
-}
-
 void JoltPhysicsServer3D::body_reset_mass_properties(RID p_body)
 {
 	JoltBody3D* body = body_owner.get_or_null(p_body);
 	ERR_FAIL_NULL(body);
 
 	body->reset_mass_properties();
-}
-
-void JoltPhysicsServer3D::body_set_state(
-	RID p_body, PS3DE::BodyState p_state, const Variant& p_value)
-{
-	JoltBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-
-	body->set_state(p_state, p_value);
-}
-
-Variant JoltPhysicsServer3D::body_get_state(RID p_body, PS3DE::BodyState p_state) const
-{
-	JoltBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, Variant());
-
-	return body->get_state(p_state);
 }
 
 void JoltPhysicsServer3D::body_apply_central_impulse(RID p_body, const Vector3& p_impulse)
@@ -1063,23 +899,6 @@ bool JoltPhysicsServer3D::body_is_omitting_force_integration(RID p_body) const
 	return body->has_custom_integrator();
 }
 
-void JoltPhysicsServer3D::body_set_state_sync_callback(RID p_body, const Callable& p_callable)
-{
-	JoltBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-
-	body->set_state_sync_callback(p_callable);
-}
-
-void JoltPhysicsServer3D::body_set_force_integration_callback(
-	RID p_body, const Callable& p_callable, const Variant& p_userdata)
-{
-	JoltBody3D* body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-
-	body->set_custom_integration_callback(p_callable, p_userdata);
-}
-
 void JoltPhysicsServer3D::body_set_ray_pickable(RID p_body, bool p_enable)
 {
 	JoltBody3D* body = body_owner.get_or_null(p_body);
@@ -1225,33 +1044,6 @@ void JoltPhysicsServer3D::soft_body_remove_collision_exception(RID p_body, RID p
 	ERR_FAIL_NULL(body);
 
 	body->remove_collision_exception(p_excepted_body);
-}
-
-void JoltPhysicsServer3D::soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions)
-{
-	const JoltSoftBody3D* body = soft_body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-
-	for (const RID& exception : body->get_collision_exceptions()) {
-		p_exceptions->push_back(exception);
-	}
-}
-
-void JoltPhysicsServer3D::soft_body_set_state(
-	RID p_body, PS3DE::BodyState p_state, const Variant& p_value)
-{
-	JoltSoftBody3D* body = soft_body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL(body);
-
-	body->set_state(p_state, p_value);
-}
-
-Variant JoltPhysicsServer3D::soft_body_get_state(RID p_body, PS3DE::BodyState p_state) const
-{
-	JoltSoftBody3D* body = soft_body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, Variant());
-
-	return body->get_state(p_state);
 }
 
 void JoltPhysicsServer3D::soft_body_set_transform(RID p_body, const Transform3D& p_transform)
@@ -2318,8 +2110,7 @@ float JoltPhysicsServer3D::generic_6dof_joint_get_applied_force(RID p_joint)
 	JoltJoint3D* joint = joint_owner.get_or_null(p_joint);
 	ERR_FAIL_NULL_V(joint, 0.0f);
 
-	ERR_FAIL_COND_V(joint->
-get_type() != PS3DE::JOINT_TYPE_6DOF, 0.0f);
+	ERR_FAIL_COND_V(joint->get_type() != PS3DE::JOINT_TYPE_6DOF, 0.0f);
 	JoltGeneric6DOFJoint3D* g6dof_joint = static_cast<JoltGeneric6DOFJoint3D*>(joint);
 
 	return g6dof_joint->get_applied_force();

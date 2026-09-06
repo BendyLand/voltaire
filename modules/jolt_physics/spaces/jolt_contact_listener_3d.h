@@ -35,9 +35,10 @@
 #include "core/templates/hash_set.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/local_vector.h"
-
+#include "core/types.h"
+// must stay...
 #include <Jolt/Jolt.h>
-
+// ...in this order
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
 #include <Jolt/Physics/SoftBody/SoftBodyContactListener.h>
@@ -48,15 +49,20 @@ class JoltShapedObject3D;
 class JoltSoftBody3D;
 class JoltSpace3D;
 
-class JoltContactListener3D final
-		: public JPH::ContactListener,
-		  public JPH::SoftBodyContactListener {
-	struct BodyIDHasher {
-		static uint32_t hash(const JPH::BodyID &p_id) { return hash_fmix32(p_id.GetIndexAndSequenceNumber()); }
+class JoltContactListener3D final : public JPH::ContactListener, public JPH::SoftBodyContactListener
+{
+	struct BodyIDHasher
+	{
+		static uint32_t hash(const JPH::BodyID& p_id)
+		{
+			return hash_fmix32(p_id.GetIndexAndSequenceNumber());
+		}
 	};
 
-	struct ShapePairHasher {
-		static uint32_t hash(const JPH::SubShapeIDPair &p_pair) {
+	struct ShapePairHasher
+	{
+		static uint32_t hash(const JPH::SubShapeIDPair& p_pair)
+		{
 			uint32_t hash = hash_murmur3_one_32(p_pair.GetBody1ID().GetIndexAndSequenceNumber());
 			hash = hash_murmur3_one_32(p_pair.GetSubShapeID1().GetValue(), hash);
 			hash = hash_murmur3_one_32(p_pair.GetBody2ID().GetIndexAndSequenceNumber(), hash);
@@ -65,7 +71,8 @@ class JoltContactListener3D final
 		}
 	};
 
-	struct Contact {
+	struct Contact
+	{
 		Vector3 point_self;
 		Vector3 point_other;
 		Vector3 normal;
@@ -76,7 +83,8 @@ class JoltContactListener3D final
 
 	typedef LocalVector<Contact> Contacts;
 
-	struct Manifold {
+	struct Manifold
+	{
 		Contacts contacts1;
 		Contacts contacts2;
 		float depth = 0.0f;
@@ -88,38 +96,53 @@ class JoltContactListener3D final
 	HashSet<JPH::SubShapeIDPair, ShapePairHasher> area_exits;
 	LocalVector<JPH::SubShapeIDPair> area_soft_body_overlaps;
 	Mutex write_mutex;
-	JoltSpace3D *space = nullptr;
+	JoltSpace3D* space = nullptr;
 
 #ifdef DEBUG_ENABLED
 	PackedVector3Array debug_contacts;
 	std::atomic_int debug_contact_count = 0;
 #endif
 
-	virtual void OnContactAdded(const JPH::Body &p_body1, const JPH::Body &p_body2, const JPH::ContactManifold &p_manifold, JPH::ContactSettings &p_settings) override;
-	virtual void OnContactPersisted(const JPH::Body &p_body1, const JPH::Body &p_body2, const JPH::ContactManifold &p_manifold, JPH::ContactSettings &p_settings) override;
-	virtual void OnContactRemoved(const JPH::SubShapeIDPair &p_shape_pair) override;
+	virtual void OnContactAdded(const JPH::Body& p_body1, const JPH::Body& p_body2,
+		const JPH::ContactManifold& p_manifold, JPH::ContactSettings& p_settings) override;
+	virtual void OnContactPersisted(const JPH::Body& p_body1, const JPH::Body& p_body2,
+		const JPH::ContactManifold& p_manifold, JPH::ContactSettings& p_settings) override;
+	virtual void OnContactRemoved(const JPH::SubShapeIDPair& p_shape_pair) override;
 
-	virtual JPH::SoftBodyValidateResult OnSoftBodyContactValidate(const JPH::Body &p_soft_body, const JPH::Body &p_other_body, JPH::SoftBodyContactSettings &p_settings) override;
-	virtual void OnSoftBodyContactAdded(const JPH::Body &p_soft_body, const JPH::SoftBodyManifold &p_manifold) override;
+	virtual JPH::SoftBodyValidateResult OnSoftBodyContactValidate(const JPH::Body& p_soft_body,
+		const JPH::Body& p_other_body, JPH::SoftBodyContactSettings& p_settings) override;
+	virtual void OnSoftBodyContactAdded(
+		const JPH::Body& p_soft_body, const JPH::SoftBodyManifold& p_manifold) override;
 
-	bool _try_override_collision_response(const JPH::Body &p_jolt_body1, const JPH::Body &p_jolt_body2, JPH::ContactSettings &p_settings);
-	bool _try_override_collision_response(const JPH::Body &p_jolt_soft_body, const JPH::Body &p_jolt_other_body, JPH::SoftBodyContactSettings &p_settings);
-	bool _try_apply_surface_velocities(const JPH::Body &p_jolt_body1, const JPH::Body &p_jolt_body2, JPH::ContactSettings &p_settings);
-	bool _try_add_contacts(const JPH::Body &p_jolt_body1, const JPH::Body &p_jolt_body2, const JPH::ContactManifold &p_manifold, JPH::ContactSettings &p_settings);
-	bool _try_evaluate_area_overlap(const JPH::Body &p_body1, const JPH::Body &p_body2, const JPH::SubShapeID &p_shape_id1, const JPH::SubShapeID &p_shape_id2);
-	bool _try_remove_contacts(const JPH::SubShapeIDPair &p_shape_pair);
-	bool _try_remove_area_overlap(const JPH::SubShapeIDPair &p_shape_pair);
+	bool _try_override_collision_response(const JPH::Body& p_jolt_body1,
+		const JPH::Body& p_jolt_body2, JPH::ContactSettings& p_settings);
+	bool _try_override_collision_response(const JPH::Body& p_jolt_soft_body,
+		const JPH::Body& p_jolt_other_body, JPH::SoftBodyContactSettings& p_settings);
+	bool _try_apply_surface_velocities(const JPH::Body& p_jolt_body1, const JPH::Body& p_jolt_body2,
+		JPH::ContactSettings& p_settings);
+	bool _try_add_contacts(const JPH::Body& p_jolt_body1, const JPH::Body& p_jolt_body2,
+		const JPH::ContactManifold& p_manifold, JPH::ContactSettings& p_settings);
+	bool _try_evaluate_area_overlap(const JPH::Body& p_body1, const JPH::Body& p_body2,
+		const JPH::SubShapeID& p_shape_id1, const JPH::SubShapeID& p_shape_id2);
+	bool _try_remove_contacts(const JPH::SubShapeIDPair& p_shape_pair);
+	bool _try_remove_area_overlap(const JPH::SubShapeIDPair& p_shape_pair);
 
 #ifdef DEBUG_ENABLED
-	bool _try_add_debug_contacts(const JPH::Body &p_body1, const JPH::Body &p_body2, const JPH::ContactManifold &p_manifold);
-	bool _try_add_debug_contacts(const JPH::Body &p_soft_body, const JPH::SoftBodyManifold &p_manifold);
+	bool _try_add_debug_contacts(
+		const JPH::Body& p_body1, const JPH::Body& p_body2, const JPH::ContactManifold& p_manifold);
+	bool _try_add_debug_contacts(
+		const JPH::Body& p_soft_body, const JPH::SoftBodyManifold& p_manifold);
 #endif
 
-	bool _has_shape_shifted(const JoltShapedObject3D &p_object, const JPH::SubShapeID &p_sub_shape_id);
+	bool _has_shape_shifted(
+		const JoltShapedObject3D& p_object, const JPH::SubShapeID& p_sub_shape_id);
 
-	void _evaluate_area_overlap(const JoltArea3D &p_area, const JoltArea3D &p_other_area, const JPH::SubShapeIDPair &p_shape_pair);
-	void _evaluate_area_overlap(const JoltArea3D &p_area, const JoltBody3D &p_body, const JPH::SubShapeIDPair &p_shape_pair);
-	void _evaluate_area_overlap(const JoltArea3D &p_area, const JoltSoftBody3D &p_body, const JPH::SubShapeIDPair &p_shape_pair);
+	void _evaluate_area_overlap(const JoltArea3D& p_area, const JoltArea3D& p_other_area,
+		const JPH::SubShapeIDPair& p_shape_pair);
+	void _evaluate_area_overlap(const JoltArea3D& p_area, const JoltBody3D& p_body,
+		const JPH::SubShapeIDPair& p_shape_pair);
+	void _evaluate_area_overlap(const JoltArea3D& p_area, const JoltSoftBody3D& p_body,
+		const JPH::SubShapeIDPair& p_shape_pair);
 
 	void _flush_contacts();
 	void _flush_area_enters();
@@ -127,16 +150,23 @@ class JoltContactListener3D final
 	void _clear_area_soft_body_overlaps();
 
 public:
-	explicit JoltContactListener3D(JoltSpace3D *p_space) :
-			space(p_space) {}
+	explicit JoltContactListener3D(JoltSpace3D* p_space) : space(p_space) {}
 
 	void pre_step();
 	void post_step();
 
 #ifdef DEBUG_ENABLED
-	const PackedVector3Array &get_debug_contacts() const { return debug_contacts; }
-	int get_debug_contact_count() const { return debug_contact_count.load(std::memory_order_acquire); }
+	const PackedVector3Array& get_debug_contacts() const { return debug_contacts; }
+
+	int get_debug_contact_count() const
+	{
+		return debug_contact_count.load(std::memory_order_acquire);
+	}
+
 	int get_max_debug_contacts() const { return (int)debug_contacts.size(); }
+
 	void set_max_debug_contacts(int p_count) { debug_contacts.resize(p_count); }
 #endif
 };
+
+

@@ -42,45 +42,6 @@ Ref<AudioStreamPlayback> AudioStreamInteractive::instantiate_playback()
 	return playback_transitioner;
 }
 
-void AudioStreamInteractive::set_clip_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0 || p_count > MAX_CLIPS);
-
-	AudioServer::get_singleton()->lock();
-
-	if (p_count < clip_count) {
-		// Removing should stop players.
-		version++;
-	}
-
-#ifdef TOOLS_ENABLED
-	stream_name_cache = "";
-	if (p_count < clip_count) {
-		for (int i = 0; i < clip_count; i++) {
-			if (clips[i].auto_advance_next_clip >= p_count) {
-				clips[i].auto_advance_next_clip = 0;
-				clips[i].auto_advance = AUTO_ADVANCE_DISABLED;
-			}
-		}
-
-		for (KeyValue<TransitionKey, Transition>& K : transition_map) {
-			if (K.value.filler_clip >= p_count) {
-				K.value.use_filler_clip = false;
-				K.value.filler_clip = 0;
-			}
-		}
-		if (initial_clip >= p_count) {
-			initial_clip = 0;
-		}
-	}
-#endif
-	clip_count = p_count;
-	AudioServer::get_singleton()->unlock();
-
-	this->obj->notify_property_list_changed();
-	this->obj->emit_signal(SNAME("parameter_list_changed"));
-}
-
 void AudioStreamInteractive::set_initial_clip(int p_clip)
 {
 	ERR_FAIL_INDEX(p_clip, clip_count);
@@ -106,54 +67,10 @@ StringName AudioStreamInteractive::get_clip_name(int p_clip) const
 	return clips[p_clip].name;
 }
 
-void AudioStreamInteractive::set_clip_stream(int p_clip, const Ref<AudioStream>& p_stream)
-{
-	ERR_FAIL_INDEX(p_clip, MAX_CLIPS);
-	AudioServer::get_singleton()->lock();
-	if (clips[p_clip].stream.is_valid()) {
-		version++;
-	}
-	clips[p_clip].stream = p_stream;
-	AudioServer::get_singleton()->unlock();
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (clips[p_clip].name == StringName() && p_stream.is_valid()) {
-			String n;
-			if (!clips[p_clip].stream->get_name().is_empty()) {
-				n = clips[p_clip].stream->get_name().replace_char(',', ' ');
-			}
-			else if (clips[p_clip].stream->get_path().is_resource_file()) {
-				n = clips[p_clip].stream->get_path().get_file().get_basename().replace_char(
-					',', ' ');
-				n = n.capitalize();
-			}
-
-			if (n != "") {
-				clips[p_clip].name = n;
-			}
-		}
-	}
-#endif
-
-#ifdef TOOLS_ENABLED
-	stream_name_cache = "";
-	this->obj->notify_property_list_changed(); // Hints change if stream changes.
-	this->obj->emit_signal(SNAME("parameter_list_changed"));
-#endif
-}
-
 Ref<AudioStream> AudioStreamInteractive::get_clip_stream(int p_clip) const
 {
 	ERR_FAIL_INDEX_V(p_clip, MAX_CLIPS, Ref<AudioStream>());
 	return clips[p_clip].stream;
-}
-
-void AudioStreamInteractive::set_clip_auto_advance(int p_clip, AutoAdvanceMode p_mode)
-{
-	ERR_FAIL_INDEX(p_clip, MAX_CLIPS);
-	ERR_FAIL_INDEX(p_mode, 3);
-	clips[p_clip].auto_advance = p_mode;
-	this->obj->notify_property_list_changed();
 }
 
 AudioStreamInteractive::AutoAdvanceMode AudioStreamInteractive::get_clip_auto_advance(
@@ -176,58 +93,6 @@ int AudioStreamInteractive::get_clip_auto_advance_next_clip(int p_clip) const
 }
 
 // TRANSITIONS
-
-void AudioStreamInteractive::_set_transitions(const Dictionary& p_transitions)
-{
-	for (const KeyValue<Variant, Variant>& kv : p_transitions) {
-		Vector2i k = kv.key;
-		Dictionary data = kv.value;
-		ERR_CONTINUE(!data.has("from_time"));
-		ERR_CONTINUE(!data.has("to_time"));
-		ERR_CONTINUE(!data.has("fade_mode"));
-		ERR_CONTINUE(!data.has("fade_beats"));
-		bool use_filler_clip = false;
-		int filler_clip = 0;
-		if (data.has("use_filler_clip") && data.has("filler_clip")) {
-			use_filler_clip = data["use_filler_clip"];
-			filler_clip = data["filler_clip"];
-		}
-		bool hold_previous = data.has("hold_previous") ? bool(data["hold_previous"]) : false;
-
-		add_transition(k.x, k.y, TransitionFromTime(int(data["from_time"])),
-			TransitionToTime(int(data["to_time"])), FadeMode(int(data["fade_mode"])),
-			data["fade_beats"], use_filler_clip, filler_clip, hold_previous);
-	}
-}
-
-Dictionary AudioStreamInteractive::_get_transitions() const
-{
-	Vector<Vector2i> keys;
-
-	for (const KeyValue<TransitionKey, Transition>& K : transition_map) {
-		keys.push_back(Vector2i(K.key.from_clip, K.key.to_clip));
-	}
-	keys.sort();
-	Dictionary ret;
-	for (int i = 0; i < keys.size(); i++) {
-		const Transition& tr = transition_map[TransitionKey(keys[i].x, keys[i].y)];
-		Dictionary data;
-		data["from_time"] = tr.from_time;
-		data["to_time"] = tr.to_time;
-		data["fade_mode"] = tr.fade_mode;
-		data["fade_beats"] = tr.fade_beats;
-		if (tr.use_filler_clip) {
-			data["use_filler_clip"] = true;
-			data["filler_clip"] = tr.filler_clip;
-		}
-		if (tr.hold_previous) {
-			data["hold_previous"] = true;
-		}
-
-		ret[keys[i]] = data;
-	}
-	return ret;
-}
 
 bool AudioStreamInteractive::has_transition(int p_from_clip, int p_to_clip) const
 {
@@ -335,38 +200,6 @@ bool AudioStreamInteractive::is_transition_holding_previous(int p_from_clip, int
 
 #ifdef TOOLS_ENABLED
 
-PackedStringArray AudioStreamInteractive::_get_linked_undo_properties(
-	const String& p_property, const Variant& p_new_value) const
-{
-	PackedStringArray ret;
-
-	if (p_property.begins_with("clip_") && p_property.ends_with("/stream")) {
-		int clip = p_property.get_slicec('_', 1).to_int();
-		if (clip < clip_count) {
-			ret.push_back("clip_" + itos(clip) + "/name");
-		}
-	}
-
-	if (p_property == "clip_count") {
-		int new_clip_count = p_new_value;
-
-		if (new_clip_count < clip_count) {
-			for (int i = 0; i < clip_count; i++) {
-				if (clips[i].auto_advance_next_clip >= new_clip_count) {
-					ret.push_back("clip_" + itos(i) + "/auto_advance");
-					ret.push_back("clip_" + itos(i) + "/next_clip");
-				}
-			}
-
-			ret.push_back("_transitions");
-			if (initial_clip >= new_clip_count) {
-				ret.push_back("initial_clip");
-			}
-		}
-	}
-	return ret;
-}
-
 template <class T> static void _test_and_swap(T& p_elem, uint32_t p_a, uint32_t p_b)
 {
 	if ((uint32_t)p_elem == p_a) {
@@ -375,45 +208,6 @@ template <class T> static void _test_and_swap(T& p_elem, uint32_t p_a, uint32_t 
 	else if (uint32_t(p_elem) == p_b) {
 		p_elem = p_a;
 	}
-}
-
-void AudioStreamInteractive::_inspector_array_swap_clip(uint32_t p_item_a, uint32_t p_item_b)
-{
-	ERR_FAIL_UNSIGNED_INDEX(p_item_a, (uint32_t)clip_count);
-	ERR_FAIL_UNSIGNED_INDEX(p_item_b, (uint32_t)clip_count);
-
-	for (int i = 0; i < clip_count; i++) {
-		_test_and_swap(clips[i].auto_advance_next_clip, p_item_a, p_item_b);
-	}
-
-	Vector<TransitionKey> to_remove;
-	HashMap<TransitionKey, Transition, TransitionKeyHasher> to_add;
-
-	for (KeyValue<TransitionKey, Transition>& K : transition_map) {
-		if (K.key.from_clip == p_item_a || K.key.from_clip == p_item_b ||
-			K.key.to_clip == p_item_a || K.key.to_clip == p_item_b) {
-			to_remove.push_back(K.key);
-			TransitionKey new_key = K.key;
-			_test_and_swap(new_key.from_clip, p_item_a, p_item_b);
-			_test_and_swap(new_key.to_clip, p_item_a, p_item_b);
-			to_add[new_key] = K.value;
-		}
-	}
-
-	for (int i = 0; i < to_remove.size(); i++) {
-		transition_map.erase(to_remove[i]);
-	}
-
-	for (KeyValue<TransitionKey, Transition>& K : to_add) {
-		transition_map.insert(K.key, K.value);
-	}
-
-	SWAP(clips[p_item_a], clips[p_item_b]);
-
-	stream_name_cache = "";
-
-	this->obj->notify_property_list_changed();
-	this->obj->emit_signal(SNAME("parameter_list_changed"));
 }
 
 String AudioStreamInteractive::_get_streams_hint() const
@@ -448,61 +242,6 @@ String AudioStreamInteractive::_get_streams_hint() const
 }
 
 #endif
-
-void AudioStreamInteractive::_validate_property(PropertyInfo& r_property) const
-{
-	String prop = r_property.name;
-
-	if (Engine::get_singleton()->is_editor_hint() && prop == "switch_to") {
-#ifdef TOOLS_ENABLED
-		r_property.hint_string = _get_streams_hint();
-#endif
-		return;
-	}
-
-	if (Engine::get_singleton()->is_editor_hint() && prop == "initial_clip") {
-#ifdef TOOLS_ENABLED
-		r_property.hint_string = _get_streams_hint();
-#endif
-	}
-	else if (prop.begins_with("clip_") && prop != "clip_count") {
-		int clip = prop.get_slicec('_', 1).to_int();
-		if (clip >= clip_count) {
-			r_property.usage = PROPERTY_USAGE_INTERNAL;
-		}
-		else if (prop == "clip_" + itos(clip) + "/next_clip") {
-			if (clips[clip].auto_advance != AUTO_ADVANCE_ENABLED) {
-				r_property.usage = PROPERTY_USAGE_NONE;
-			}
-			else if (Engine::get_singleton()->is_editor_hint()) {
-#ifdef TOOLS_ENABLED
-				r_property.hint_string = _get_streams_hint();
-#endif
-			}
-		}
-	}
-}
-
-void AudioStreamInteractive::get_parameter_list(List<Parameter>* r_parameters)
-{
-	String clip_names;
-	for (int i = 0; i < clip_count; i++) {
-		clip_names += ",";
-		clip_names += clips[i].name;
-	}
-	r_parameters->push_back(Parameter(PropertyInfo(Variant::STRING, "switch_to_clip",
-										  PROPERTY_HINT_ENUM, clip_names, PROPERTY_USAGE_EDITOR),
-		""));
-}
-
-void AudioStreamInteractive::_bind_methods() {}
-
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-AudioStreamPlaybackInteractive::AudioStreamPlaybackInteractive() {}
-
-AudioStreamPlaybackInteractive::~AudioStreamPlaybackInteractive() {}
 
 void AudioStreamPlaybackInteractive::stop()
 {
@@ -1002,32 +741,6 @@ void AudioStreamPlaybackInteractive::switch_to_clip_by_name(const StringName& p_
 		}
 	}
 	ERR_FAIL_MSG("Clip not found: " + String(p_name));
-}
-
-void AudioStreamPlaybackInteractive::set_parameter(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == SNAME("switch_to_clip")) {
-		switch_to_clip_by_name(p_value);
-	}
-}
-
-Variant AudioStreamPlaybackInteractive::get_parameter(const StringName& p_name) const
-{
-	if (p_name == SNAME("switch_to_clip")) {
-		for (int i = 0; i < stream->get_clip_count(); i++) {
-			if (switch_request != -1) {
-				if (switch_request == i) {
-					return String(stream->get_clip_name(i));
-				}
-			}
-			else if (playback_current == i) {
-				return String(stream->get_clip_name(i));
-			}
-		}
-		return "";
-	}
-
-	return Variant();
 }
 
 void AudioStreamPlaybackInteractive::switch_to_clip(int p_index) { switch_request = p_index; }

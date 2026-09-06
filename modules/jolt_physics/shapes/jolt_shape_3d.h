@@ -30,21 +30,20 @@
 
 #pragma once
 
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Collision/Shape/Shape.h>
 #include "core/math/aabb.h"
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/rid.h"
 #include "servers/physics_3d/physics_server_3d_enums.h"
 
-#include <Jolt/Jolt.h>
-
-#include <Jolt/Physics/Collision/Shape/Shape.h>
-
 class JoltShapedObject3D;
 
-class JoltShape3D {
+class JoltShape3D
+{
 protected:
-	HashMap<JoltShapedObject3D *, int> ref_counts_by_owner;
+	HashMap<JoltShapedObject3D*, int> ref_counts_by_owner;
 	Mutex jolt_ref_mutex;
 	RID rid;
 	JPH::ShapeRefC jolt_ref;
@@ -59,17 +58,15 @@ public:
 	virtual ~JoltShape3D() = 0;
 
 	RID get_rid() const { return rid; }
-	void set_rid(const RID &p_rid) { rid = p_rid; }
 
-	void add_owner(JoltShapedObject3D *p_owner);
-	void remove_owner(JoltShapedObject3D *p_owner);
+	void set_rid(const RID& p_rid) { rid = p_rid; }
+
+	void add_owner(JoltShapedObject3D* p_owner);
+	void remove_owner(JoltShapedObject3D* p_owner);
 	void remove_self();
 
 	virtual ShapeType get_type() const = 0;
 	virtual bool is_convex() const = 0;
-
-	virtual Variant get_data() const = 0;
-	virtual void set_data(const Variant &p_data) = 0;
 
 	virtual float get_margin() const = 0;
 	virtual void set_margin(float p_margin) = 0;
@@ -83,41 +80,48 @@ public:
 
 	void destroy();
 
-	const JPH::Shape *get_jolt_ref() const { return jolt_ref; }
+	const JPH::Shape* get_jolt_ref() const { return jolt_ref; }
 
-	static JPH::ShapeRefC with_scale(const JPH::Shape *p_shape, const Vector3 &p_scale);
-	static JPH::ShapeRefC with_basis_origin(const JPH::Shape *p_shape, const Basis &p_basis, const Vector3 &p_origin);
-	static JPH::ShapeRefC with_center_of_mass_offset(const JPH::Shape *p_shape, const Vector3 &p_offset);
-	static JPH::ShapeRefC with_center_of_mass(const JPH::Shape *p_shape, const Vector3 &p_center_of_mass);
-	static JPH::ShapeRefC with_user_data(const JPH::Shape *p_shape, uint64_t p_user_data);
-	static JPH::ShapeRefC with_double_sided(const JPH::Shape *p_shape, bool p_back_face_collision);
-	static JPH::ShapeRefC without_custom_shapes(const JPH::Shape *p_shape);
+	static JPH::ShapeRefC with_scale(const JPH::Shape* p_shape, const Vector3& p_scale);
+	static JPH::ShapeRefC with_basis_origin(
+		const JPH::Shape* p_shape, const Basis& p_basis, const Vector3& p_origin);
+	static JPH::ShapeRefC with_center_of_mass_offset(
+		const JPH::Shape* p_shape, const Vector3& p_offset);
+	static JPH::ShapeRefC with_center_of_mass(
+		const JPH::Shape* p_shape, const Vector3& p_center_of_mass);
+	static JPH::ShapeRefC with_user_data(const JPH::Shape* p_shape, uint64_t p_user_data);
+	static JPH::ShapeRefC with_double_sided(const JPH::Shape* p_shape, bool p_back_face_collision);
+	static JPH::ShapeRefC without_custom_shapes(const JPH::Shape* p_shape);
 
-	static Vector3 make_scale_valid(const JPH::Shape *p_shape, const Vector3 &p_scale);
-	static bool is_scale_valid(const Vector3 &p_scale, const Vector3 &p_valid_scale, real_t p_tolerance = 0.01f);
+	static Vector3 make_scale_valid(const JPH::Shape* p_shape, const Vector3& p_scale);
+	static bool is_scale_valid(
+		const Vector3& p_scale, const Vector3& p_valid_scale, real_t p_tolerance = 0.01f);
 };
 
 #ifdef DEBUG_ENABLED
 
-#define JOLT_ENSURE_SCALE_NOT_ZERO(m_transform, m_msg) \
-	if (unlikely((m_transform).basis.determinant() == 0.0f)) { \
-		WARN_PRINT(vformat("%s " \
-						   "The basis of the transform was singular, which is not supported by Jolt Physics. " \
-						   "This is likely caused by one or more axes having a scale of zero. " \
-						   "The basis (and thus its scale) will be treated as identity.", \
-				m_msg)); \
-\
-		(m_transform).basis = Basis(); \
-	} else \
+#define JOLT_ENSURE_SCALE_NOT_ZERO(m_transform, m_msg)                                             \
+	if (unlikely((m_transform).basis.determinant() == 0.0f)) {                                     \
+		WARN_PRINT(vformat(                                                                        \
+			"%s "                                                                                  \
+			"The basis of the transform was singular, which is not supported by Jolt Physics. "    \
+			"This is likely caused by one or more axes having a scale of zero. "                   \
+			"The basis (and thus its scale) will be treated as identity.",                         \
+			m_msg));                                                                               \
+                                                                                                   \
+		(m_transform).basis = Basis();                                                             \
+	} \
+	else                                                                                         \
 		((void)0)
 
-#define ERR_PRINT_INVALID_SCALE_MSG(m_scale, m_valid_scale, m_msg) \
-	if (unlikely(!JoltShape3D::is_scale_valid(m_scale, valid_scale))) { \
-		ERR_PRINT(vformat("%s " \
-						  "A scale of %v is not supported by Jolt Physics for this shape/body. " \
-						  "The scale will instead be treated as %v.", \
-				m_msg, m_scale, valid_scale)); \
-	} else \
+#define ERR_PRINT_INVALID_SCALE_MSG(m_scale, m_valid_scale, m_msg)                                 \
+	if (unlikely(!JoltShape3D::is_scale_valid(m_scale, valid_scale))) {                            \
+		ERR_PRINT(vformat("%s "                                                                    \
+						  "A scale of %v is not supported by Jolt Physics for this shape/body. "   \
+						  "The scale will instead be treated as %v.",                              \
+			m_msg, m_scale, valid_scale));                                                         \
+	} \
+	else                                                                                         \
 		((void)0)
 
 #else
@@ -128,10 +132,13 @@ public:
 
 #endif
 
-#define JOLT_ENSURE_SCALE_VALID(m_shape, m_scale, m_msg) \
-	if (true) { \
-		const Vector3 valid_scale = JoltShape3D::make_scale_valid(m_shape, m_scale); \
-		ERR_PRINT_INVALID_SCALE_MSG(m_scale, valid_scale, m_msg); \
-		(m_scale) = valid_scale; \
-	} else \
+#define JOLT_ENSURE_SCALE_VALID(m_shape, m_scale, m_msg)                                           \
+	if (true) {                                                                                    \
+		const Vector3 valid_scale = JoltShape3D::make_scale_valid(m_shape, m_scale);               \
+		ERR_PRINT_INVALID_SCALE_MSG(m_scale, valid_scale, m_msg);                                  \
+		(m_scale) = valid_scale;                                                                   \
+	} \
+	else                                                                                         \
 		((void)0)
+
+

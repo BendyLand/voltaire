@@ -44,8 +44,6 @@ class JoltTempAllocator;
 
 class JoltPhysicsServer3D final : public PhysicsServer3D
 {
-	VLTRCLASS(JoltPhysicsServer3D, PhysicsServer3D)
-
 	inline static JoltPhysicsServer3D* singleton = nullptr;
 
 	mutable RID_PtrOwner<JoltSpace3D, true> space_owner;
@@ -145,9 +143,6 @@ public:
 	virtual RID heightmap_shape_create() override;
 	virtual RID custom_shape_create() override;
 
-	virtual void shape_set_data(RID p_shape, const Variant& p_data) override;
-	virtual Variant shape_get_data(RID p_shape) const override;
-
 	virtual void shape_set_custom_solver_bias(RID p_shape, real_t p_bias) override;
 
 	virtual void shape_set_margin(RID p_shape, real_t p_margin) override;
@@ -194,13 +189,6 @@ public:
 	virtual void area_remove_shape(RID p_area, int p_shape_idx) override;
 	virtual void area_clear_shapes(RID p_area) override;
 
-	virtual void area_attach_object_instance_id(RID p_area, ObjectID p_id) override;
-	virtual ObjectID area_get_object_instance_id(RID p_area) const override;
-
-	virtual void area_set_param(
-		RID p_area, PS3DE::AreaParameter p_param, const Variant& p_value) override;
-	virtual Variant area_get_param(RID p_area, PS3DE::AreaParameter p_param) const override;
-
 	virtual void area_set_transform(RID p_area, const Transform3D& p_transform) override;
 	virtual Transform3D area_get_transform(RID p_area) const override;
 
@@ -213,9 +201,6 @@ public:
 	virtual void area_set_monitorable(RID p_area, bool p_monitorable) override;
 
 	virtual void area_set_ray_pickable(RID p_area, bool p_enable) override;
-
-	virtual void area_set_monitor_callback(RID p_area, const Callable& p_callback) override;
-	virtual void area_set_area_monitor_callback(RID p_area, const Callable& p_callback) override;
 
 	virtual RID body_create() override;
 
@@ -242,9 +227,6 @@ public:
 	virtual void body_remove_shape(RID p_body, int p_shape_idx) override;
 	virtual void body_clear_shapes(RID p_body) override;
 
-	virtual void body_attach_object_instance_id(RID p_body, ObjectID p_id) override;
-	virtual ObjectID body_get_object_instance_id(RID p_body) const override;
-
 	virtual void body_set_enable_continuous_collision_detection(RID p_body, bool p_enable) override;
 	virtual bool body_is_continuous_collision_detection_enabled(RID p_body) const override;
 
@@ -260,15 +242,7 @@ public:
 	virtual void body_set_user_flags(RID p_body, uint32_t p_flags) override;
 	virtual uint32_t body_get_user_flags(RID p_body) const override;
 
-	virtual void body_set_param(
-		RID p_body, PS3DE::BodyParameter p_param, const Variant& p_value) override;
-	virtual Variant body_get_param(RID p_body, PS3DE::BodyParameter p_param) const override;
-
 	virtual void body_reset_mass_properties(RID p_body) override;
-
-	virtual void body_set_state(
-		RID p_body, PS3DE::BodyState p_state, const Variant& p_value) override;
-	virtual Variant body_get_state(RID p_body, PS3DE::BodyState p_state) const override;
 
 	virtual void body_apply_central_impulse(RID p_body, const Vector3& p_impulse) override;
 	virtual void body_apply_impulse(
@@ -310,10 +284,6 @@ public:
 	virtual void body_set_omit_force_integration(RID p_body, bool p_enable) override;
 	virtual bool body_is_omitting_force_integration(RID p_body) const override;
 
-	virtual void body_set_state_sync_callback(RID p_body, const Callable& p_callable) override;
-	virtual void body_set_force_integration_callback(
-		RID p_body, const Callable& p_callable, const Variant& p_userdata) override;
-
 	virtual void body_set_ray_pickable(RID p_body, bool p_enable) override;
 
 	virtual bool body_test_motion(RID p_body, const PS3DT::MotionParameters& p_parameters,
@@ -340,10 +310,6 @@ public:
 	virtual void soft_body_add_collision_exception(RID p_body, RID p_excepted_body) override;
 	virtual void soft_body_remove_collision_exception(RID p_body, RID p_excepted_body) override;
 	virtual void soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) override;
-
-	virtual void soft_body_set_state(
-		RID p_body, PS3DE::BodyState p_state, const Variant& p_value) override;
-	virtual Variant soft_body_get_state(RID p_body, PS3DE::BodyState p_state) const override;
 
 	virtual void soft_body_set_transform(RID p_body, const Transform3D& p_transform) override;
 
@@ -559,14 +525,5 @@ public:
 	float generic_6dof_joint_get_applied_force(RID p_joint);
 	float generic_6dof_joint_get_applied_torque(RID p_joint);
 };
-
-VARIANT_ENUM_CAST(JoltPhysicsServer3D::HingeJointParamJolt)
-VARIANT_ENUM_CAST(JoltPhysicsServer3D::HingeJointFlagJolt)
-VARIANT_ENUM_CAST(JoltPhysicsServer3D::SliderJointParamJolt)
-VARIANT_ENUM_CAST(JoltPhysicsServer3D::SliderJointFlagJolt)
-VARIANT_ENUM_CAST(JoltPhysicsServer3D::ConeTwistJointParamJolt)
-VARIANT_ENUM_CAST(JoltPhysicsServer3D::ConeTwistJointFlagJolt)
-VARIANT_ENUM_CAST(JoltPhysicsServer3D::G6DOFJointAxisParamJolt)
-VARIANT_ENUM_CAST(JoltPhysicsServer3D::G6DOFJointAxisFlagJolt)
 
 

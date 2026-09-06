@@ -98,7 +98,6 @@ void AudioStreamPlaylist::set_stream_count(int p_count)
 	AudioServer::get_singleton()->lock();
 	stream_count = p_count;
 	AudioServer::get_singleton()->unlock();
-	this->obj->notify_property_list_changed();
 }
 
 int AudioStreamPlaylist::get_stream_count() const { return stream_count; }
@@ -114,21 +113,6 @@ bool AudioStreamPlaylist::get_shuffle() const { return shuffle; }
 void AudioStreamPlaylist::set_loop(bool p_loop) { loop = p_loop; }
 
 bool AudioStreamPlaylist::has_loop() const { return loop; }
-
-void AudioStreamPlaylist::_validate_property(PropertyInfo& r_property) const
-{
-	if (r_property.name != "stream_count" && r_property.name.begins_with("stream_")) {
-		int stream = r_property.name.get_slicec('/', 0).get_slicec('_', 1).to_int();
-		if (stream >= stream_count) {
-			r_property.usage = PROPERTY_USAGE_INTERNAL;
-		}
-	}
-}
-
-void AudioStreamPlaylist::_bind_methods() {}
-
-//////////////////////
-//////////////////////
 
 AudioStreamPlaybackPlaylist::~AudioStreamPlaybackPlaylist()
 {
@@ -270,7 +254,7 @@ int AudioStreamPlaybackPlaylist::mix(AudioFrame* p_buffer, float p_rate_scale, i
 						offset = time_dec * (to_mix - i);
 					}
 
-				if (playback[play_order[play_index]].is_valid()) {
+					if (playback[play_order[play_index]].is_valid()) {
 						break;
 					}
 				}
