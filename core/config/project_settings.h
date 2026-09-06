@@ -249,7 +249,6 @@ public:
 		if (_ggc_local_version != _ggc_new_version) {                                              \
 			_ggc_spin.lock();                                                                      \
 			_ggc_local_version = _ggc_new_version;                                                 \
-			_ggc_local_var = ProjectSettings::get_singleton()->get_setting_with_override(p_name);  \
 			m_type _ggc_temp = _ggc_local_var;                                                     \
 			_ggc_spin.unlock();                                                                    \
 			return _ggc_temp;                                                                      \

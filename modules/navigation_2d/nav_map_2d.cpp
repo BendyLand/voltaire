@@ -355,16 +355,10 @@ void NavMap2D::_build_iteration()
 
 	iteration_build.map_iteration = &next_map_iteration;
 
-	if (use_async_iterations) {
-		iteration_build_thread_task_id = WorkerThreadPool::get_singleton()->add_native_task(
-			&NavMap2D::_build_iteration_threaded, &iteration_build, true, SNAME("NavMapBuilder2D"));
-	}
-	else {
-		NavMapBuilder2D::build_navmap_iteration(iteration_build);
+	NavMapBuilder2D::build_navmap_iteration(iteration_build);
 
-		iteration_building = false;
-		iteration_ready = true;
-	}
+	iteration_building = false;
+	iteration_ready = true;
 }
 
 void NavMap2D::_build_iteration_threaded(void* p_arg)
@@ -393,53 +387,6 @@ void NavMap2D::_sync_iteration()
 	iteration_slot_rwlock.write_unlock();
 
 	iteration_ready = false;
-}
-
-void NavMap2D::sync()
-{
-	// Performance Monitor.
-	performance_data.pm_region_count = regions.size();
-	performance_data.pm_agent_count = agents.size();
-	performance_data.pm_link_count = links.size();
-	performance_data.pm_obstacle_count = obstacles.size();
-
-	_sync_async_tasks();
-
-	_sync_dirty_map_update_requests();
-
-	if (iteration_dirty && !iteration_building && !iteration_ready) {
-		_build_iteration();
-	}
-	if (use_async_iterations &&
-		iteration_build_thread_task_id != WorkerThreadPool::INVALID_TASK_ID) {
-		if (WorkerThreadPool::get_singleton()->is_task_completed(iteration_build_thread_task_id)) {
-			WorkerThreadPool::get_singleton()->wait_for_task_completion(
-				iteration_build_thread_task_id);
-
-			iteration_build_thread_task_id = WorkerThreadPool::INVALID_TASK_ID;
-			iteration_building = false;
-			iteration_ready = true;
-		}
-	}
-	if (iteration_ready) {
-		_sync_iteration();
-
-		NavigationServer2D::get_singleton()->obj->emit_signal(SNAME("map_changed"), get_self());
-	}
-
-	map_settings_dirty = false;
-
-	_sync_avoidance();
-
-	performance_data.pm_polygon_count = 0;
-	performance_data.pm_edge_count = 0;
-	performance_data.pm_edge_merge_count = 0;
-
-	for (NavRegion2D* region : regions) {
-		performance_data.pm_polygon_count += region->get_pm_polygon_count();
-		performance_data.pm_edge_count += region->get_pm_edge_count();
-		performance_data.pm_edge_merge_count += region->get_pm_edge_merge_count();
-	}
 }
 
 void NavMap2D::_sync_avoidance()
@@ -563,29 +510,6 @@ void NavMap2D::compute_single_avoidance_step(uint32_t p_index, NavAgent2D** p_ag
 	(*(p_agent + p_index))->update();
 }
 
-void NavMap2D::step(double p_delta_time)
-{
-	rvo_simulation.setTimeStep(float(p_delta_time));
-
-	if (active_avoidance_agents.size() > 0) {
-		if (use_threads && avoidance_use_multiple_threads) {
-			WorkerThreadPool::GroupID group_task =
-				WorkerThreadPool::get_singleton()->add_template_group_task(this,
-					&NavMap2D::compute_single_avoidance_step, active_avoidance_agents.ptr(),
-					active_avoidance_agents.size(), -1, true, SNAME("RVOAvoidanceAgents2D"));
-			WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
-		}
-		else {
-			for (NavAgent2D* agent : active_avoidance_agents) {
-				agent->get_rvo_agent()->computeNeighbors(&rvo_simulation);
-				agent->get_rvo_agent()->computeNewVelocity(&rvo_simulation);
-				agent->get_rvo_agent()->update(&rvo_simulation);
-				agent->update();
-			}
-		}
-	}
-}
-
 void NavMap2D::dispatch_callbacks()
 {
 	for (NavAgent2D* agent : active_avoidance_agents) {
@@ -663,158 +587,6 @@ Vector2 NavMap2D::get_region_connection_pathway_end(
 	return Vector2();
 }
 
-void NavMap2D::add_region_sync_dirty_request(SelfList<NavRegion2D>* p_sync_request)
-{
-	if (p_sync_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(sync_dirty_requests.regions.rwlock);
-	sync_dirty_requests.regions.list.add(p_sync_request);
-}
-
-void NavMap2D::add_link_sync_dirty_request(SelfList<NavLink2D>* p_sync_request)
-{
-	if (p_sync_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(sync_dirty_requests.links.rwlock);
-	sync_dirty_requests.links.list.add(p_sync_request);
-}
-
-void NavMap2D::add_agent_sync_dirty_request(SelfList<NavAgent2D>* p_sync_request)
-{
-	if (p_sync_request->in_list()) {
-		return;
-	}
-	sync_dirty_requests.agents.list.add(p_sync_request);
-}
-
-void NavMap2D::add_obstacle_sync_dirty_request(SelfList<NavObstacle2D>* p_sync_request)
-{
-	if (p_sync_request->in_list()) {
-		return;
-	}
-	sync_dirty_requests.obstacles.list.add(p_sync_request);
-}
-
-void NavMap2D::remove_region_sync_dirty_request(SelfList<NavRegion2D>* p_sync_request)
-{
-	if (!p_sync_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(sync_dirty_requests.regions.rwlock);
-	sync_dirty_requests.regions.list.remove(p_sync_request);
-}
-
-void NavMap2D::remove_link_sync_dirty_request(SelfList<NavLink2D>* p_sync_request)
-{
-	if (!p_sync_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(sync_dirty_requests.links.rwlock);
-	sync_dirty_requests.links.list.remove(p_sync_request);
-}
-
-void NavMap2D::remove_agent_sync_dirty_request(SelfList<NavAgent2D>* p_sync_request)
-{
-	if (!p_sync_request->in_list()) {
-		return;
-	}
-	sync_dirty_requests.agents.list.remove(p_sync_request);
-}
-
-void NavMap2D::remove_obstacle_sync_dirty_request(SelfList<NavObstacle2D>* p_sync_request)
-{
-	if (!p_sync_request->in_list()) {
-		return;
-	}
-	sync_dirty_requests.obstacles.list.remove(p_sync_request);
-}
-
-void NavMap2D::_sync_dirty_map_update_requests()
-{
-	// If entire map settings changed make all regions dirty.
-	if (map_settings_dirty) {
-		for (NavRegion2D* region : regions) {
-			region->scratch_polygons();
-		}
-		iteration_dirty = true;
-	}
-
-	// Sync NavRegions.
-	RWLockWrite write_lock_regions(sync_dirty_requests.regions.rwlock);
-	for (SelfList<NavRegion2D>* element = sync_dirty_requests.regions.list.first(); element;
-		 element = element->next()) {
-		bool requires_map_update = element->self()->sync();
-		if (requires_map_update) {
-			iteration_dirty = true;
-		}
-	}
-	sync_dirty_requests.regions.list.clear();
-
-	// Sync NavLinks.
-	RWLockWrite write_lock_links(sync_dirty_requests.links.rwlock);
-	for (SelfList<NavLink2D>* element = sync_dirty_requests.links.list.first(); element;
-		 element = element->next()) {
-		bool requires_map_update = element->self()->sync();
-		if (requires_map_update) {
-			iteration_dirty = true;
-		}
-	}
-	sync_dirty_requests.links.list.clear();
-}
-
-void NavMap2D::_sync_dirty_avoidance_update_requests()
-{
-	// Sync NavAgents.
-	if (!agents_dirty) {
-		agents_dirty = sync_dirty_requests.agents.list.first();
-	}
-	for (SelfList<NavAgent2D>* element = sync_dirty_requests.agents.list.first(); element;
-		 element = element->next()) {
-		element->self()->sync();
-	}
-	sync_dirty_requests.agents.list.clear();
-
-	// Sync NavObstacles.
-	if (!obstacles_dirty) {
-		obstacles_dirty = sync_dirty_requests.obstacles.list.first();
-	}
-	for (SelfList<NavObstacle2D>* element = sync_dirty_requests.obstacles.list.first(); element;
-		 element = element->next()) {
-		element->self()->sync();
-	}
-	sync_dirty_requests.obstacles.list.clear();
-}
-
-void NavMap2D::add_region_async_thread_join_request(SelfList<NavRegion2D>* p_async_request)
-{
-	if (p_async_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(async_dirty_requests.regions.rwlock);
-	async_dirty_requests.regions.list.add(p_async_request);
-}
-
-void NavMap2D::remove_region_async_thread_join_request(SelfList<NavRegion2D>* p_async_request)
-{
-	if (!p_async_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(async_dirty_requests.regions.rwlock);
-	async_dirty_requests.regions.list.remove(p_async_request);
-}
-
-void NavMap2D::_sync_async_tasks()
-{
-	// Sync NavRegions that run async thread tasks.
-	RWLockWrite write_lock_regions(async_dirty_requests.regions.rwlock);
-	for (SelfList<NavRegion2D>* element = async_dirty_requests.regions.list.first(); element;
-		 element = element->next()) {
-		element->self()->sync_async_tasks();
-	}
-}
-
 void NavMap2D::set_use_async_iterations(bool p_enabled)
 {
 	if (use_async_iterations == p_enabled) {
@@ -826,55 +598,5 @@ void NavMap2D::set_use_async_iterations(bool p_enabled)
 }
 
 bool NavMap2D::get_use_async_iterations() const { return use_async_iterations; }
-
-NavMap2D::NavMap2D()
-{
-	avoidance_use_multiple_threads =
-		GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_multiple_threads");
-	avoidance_use_high_priority_threads =
-		GLOBAL_GET("navigation/avoidance/thread_model/avoidance_use_high_priority_threads");
-
-	path_query_slots_max = GLOBAL_GET("navigation/pathfinding/max_threads");
-
-	int processor_count = OS::get_singleton()->get_processor_count();
-	if (path_query_slots_max < 0) {
-		path_query_slots_max = processor_count;
-	}
-	if (processor_count < path_query_slots_max) {
-		path_query_slots_max = processor_count;
-	}
-	if (path_query_slots_max < 1) {
-		path_query_slots_max = 1;
-	}
-
-	iteration_slots.resize(2);
-
-	for (NavMapIteration2D& iteration_slot : iteration_slots) {
-		iteration_slot.path_query_slots.resize(path_query_slots_max);
-		for (uint32_t i = 0; i < iteration_slot.path_query_slots.size(); i++) {
-			iteration_slot.path_query_slots[i].slot_index = i;
-		}
-		iteration_slot.path_query_slots_semaphore.post(path_query_slots_max);
-	}
-
-#ifdef THREADS_ENABLED
-	use_async_iterations = GLOBAL_GET("navigation/world/map_use_async_iterations");
-#else
-	use_async_iterations = false;
-#endif
-}
-
-NavMap2D::~NavMap2D()
-{
-	if (iteration_build_thread_task_id != WorkerThreadPool::INVALID_TASK_ID) {
-		WorkerThreadPool::get_singleton()->wait_for_task_completion(iteration_build_thread_task_id);
-		iteration_build_thread_task_id = WorkerThreadPool::INVALID_TASK_ID;
-	}
-
-	RWLockWrite write_lock(iteration_slot_rwlock);
-	for (NavMapIteration2D& iteration_slot : iteration_slots) {
-		iteration_slot.clear();
-	}
-}
 
 

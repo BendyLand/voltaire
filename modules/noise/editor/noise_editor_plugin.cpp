@@ -28,30 +28,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "noise_editor_plugin.h"
-
 #include "../noise.h"
 #include "../noise_texture_2d.h"
-
 #include "editor/inspector/editor_inspector.h"
 #include "editor/themes/editor_scale.h"
+#include "noise_editor_plugin.h"
 #include "scene/gui/button.h"
 #include "scene/gui/texture_rect.h"
 
-class NoisePreview : public Control {
-	VLTRCLASS(NoisePreview, Control)
-
+class NoisePreview : public Control
+{
 	static const int PREVIEW_HEIGHT = 150;
 	static const int PADDING_3D_SPACE_SWITCH = 2;
 
 	Ref<Noise> _noise;
 	Size2i _preview_texture_size;
 
-	TextureRect *_texture_rect = nullptr;
-	Button *_3d_space_switch = nullptr;
+	TextureRect* _texture_rect = nullptr;
+	Button* _3d_space_switch = nullptr;
 
 public:
-	NoisePreview() {
+	NoisePreview()
+	{
 		set_custom_minimum_size(Size2(0, EDSCALE * PREVIEW_HEIGHT));
 
 		_texture_rect = memnew(TextureRect);
@@ -61,47 +59,38 @@ public:
 
 		_3d_space_switch = memnew(Button);
 		_3d_space_switch->set_text(TTR("3D"));
-		_3d_space_switch->set_tooltip_text(TTR("Toggles whether the noise preview is computed in 3D space."));
+		_3d_space_switch->set_tooltip_text(
+			TTR("Toggles whether the noise preview is computed in 3D space."));
 		_3d_space_switch->set_toggle_mode(true);
 		_3d_space_switch->set_offset(SIDE_LEFT, PADDING_3D_SPACE_SWITCH);
 		_3d_space_switch->set_offset(SIDE_TOP, PADDING_3D_SPACE_SWITCH);
-		_3d_space_switch->connect(SceneStringName(pressed), callable_mp(this, &NoisePreview::_on_3d_button_pressed));
 		add_child(_3d_space_switch);
 	}
 
-	void set_noise(Ref<Noise> noise) {
+	void set_noise(Ref<Noise> noise)
+	{
 		if (_noise == noise) {
 			return;
 		}
 		_noise = noise;
 		if (_noise.is_valid()) {
-			if (_noise->obj->has_meta("_preview_in_3d_space_")) {
-				_3d_space_switch->set_pressed(true);
-			}
-
 			update_preview();
 		}
 	}
 
 private:
-	void _on_3d_button_pressed() {
-		if (_3d_space_switch->is_pressed()) {
-			_noise->obj->set_meta("_preview_in_3d_space_", true);
-		} else {
-			_noise->obj->remove_meta("_preview_in_3d_space_");
-		}
-	}
-
-	void _notification(int p_what) {
+	void _notification(int p_what)
+	{
 		switch (p_what) {
-			case NOTIFICATION_RESIZED: {
-				_preview_texture_size = get_size();
-				update_preview();
-			} break;
+		case NOTIFICATION_RESIZED: {
+			_preview_texture_size = get_size();
+			update_preview();
+		} break;
 		}
 	}
 
-	void update_preview() {
+	void update_preview()
+	{
 		if (MIN(_preview_texture_size.width, _preview_texture_size.height) > 0) {
 			Ref<NoiseTexture2D> tex;
 			tex.instantiate();
@@ -114,35 +103,4 @@ private:
 	}
 };
 
-/////////////////////////////////////////////////////////////////////////////////
 
-class NoiseEditorInspectorPlugin : public EditorInspectorPlugin {
-	VLTRCLASS(NoiseEditorInspectorPlugin, EditorInspectorPlugin)
-public:
-	bool can_handle(Object *p_object) override {
-		return Object::cast_to<Noise>(p_object) != nullptr;
-	}
-
-	void parse_begin(Object *p_object) override {
-		Noise *noise_ptr = Object::cast_to<Noise>(p_object);
-		if (noise_ptr) {
-			Ref<Noise> noise(noise_ptr);
-
-			NoisePreview *viewer = memnew(NoisePreview);
-			viewer->set_noise(noise);
-			add_custom_control(viewer);
-		}
-	}
-};
-
-/////////////////////////////////////////////////////////////////////////////////
-
-String NoiseEditorPlugin::get_plugin_name() const {
-	return Noise::get_class_static();
-}
-
-NoiseEditorPlugin::NoiseEditorPlugin() {
-	Ref<NoiseEditorInspectorPlugin> plugin;
-	plugin.instantiate();
-	add_inspector_plugin(plugin);
-}

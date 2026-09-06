@@ -45,15 +45,12 @@ class NavMeshGenerator3D
 	static Mutex generator_task_mutex;
 
 	static RWLock generator_parsers_rwlock;
-	static LocalVector<NavMeshGeometryParser3D*> generator_parsers;
 
 	static bool use_threads;
 	static bool baking_use_multiple_threads;
 	static bool baking_use_high_priority_threads;
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	enum NavMeshBakeState
 	{
 		BAKE_STATE_NONE,
@@ -86,15 +83,11 @@ private:
 
 		Ref<NavigationMesh> navigation_mesh;
 		Ref<NavigationMeshSourceGeometryData3D> source_geometry_data;
-		Callable callback;
-		WorkerThreadPool::TaskID thread_task_id = WorkerThreadPool::INVALID_TASK_ID;
 		NavMeshGeneratorTask3D::TaskStatus status =
 			NavMeshGeneratorTask3D::TaskStatus::BAKING_STARTED;
 
 		NavMeshBakeState bake_state = NavMeshBakeState::BAKE_STATE_NONE;
 	};
-
-	static HashMap<WorkerThreadPool::TaskID, NavMeshGeneratorTask3D*> generator_tasks;
 
 	static void generator_thread_bake(void* p_arg);
 
@@ -107,8 +100,6 @@ private:
 		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_root_node);
 	static void generator_bake_from_source_geometry_data(NavMeshGeneratorTask3D* p_generator_task);
 
-	static bool generator_emit_callback(const Callable& p_callback);
-
 public:
 	static NavMeshGenerator3D* get_singleton();
 
@@ -116,17 +107,6 @@ public:
 	static void cleanup();
 	static void finish();
 
-	static void set_generator_parsers(const LocalVector<NavMeshGeometryParser3D*>& p_parsers);
-
-	static void parse_source_geometry_data(Ref<NavigationMesh> p_navigation_mesh,
-		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_root_node,
-		const Callable& p_callback = Callable());
-	static void bake_from_source_geometry_data(Ref<NavigationMesh> p_navigation_mesh,
-		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data,
-		const Callable& p_callback = Callable());
-	static void bake_from_source_geometry_data_async(Ref<NavigationMesh> p_navigation_mesh,
-		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data,
-		const Callable& p_callback = Callable());
 	static bool is_baking(Ref<NavigationMesh> p_navigation_mesh);
 	static String get_baking_state_msg(Ref<NavigationMesh> p_navigation_mesh);
 

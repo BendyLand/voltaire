@@ -44,7 +44,6 @@
 #include "scene/animation/animation_tree.h"
 #include "scene/animation/tween.h"
 #include "scene/audio/audio_stream_player.h"
-#include "scene/debugger/scene_debugger.h"
 #include "scene/gui/aspect_ratio_container.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"

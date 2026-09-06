@@ -288,7 +288,7 @@ PacketPeerMbedDTLS::Status PacketPeerMbedDTLS::get_status() const { return statu
 
 PacketPeerDTLS* PacketPeerMbedDTLS::_create_func(bool p_notify_postinitialize)
 {
-	return static_cast<PacketPeerDTLS*>(memnew(PacketPeerMbedDTLS).ptr());
+	return static_cast<PacketPeerDTLS*>(memnew(PacketPeerMbedDTLS));
 }
 
 void PacketPeerMbedDTLS::initialize_dtls()

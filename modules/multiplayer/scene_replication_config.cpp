@@ -30,88 +30,6 @@
 
 #include "scene_replication_config.h"
 
-bool SceneReplicationConfig::_set(const StringName& p_name, const Variant& p_value)
-{
-	String prop_name = p_name;
-
-	if (prop_name.begins_with("properties/")) {
-		int idx = prop_name.get_slicec('/', 1).to_int();
-		String what = prop_name.get_slicec('/', 2);
-
-		if (properties.size() == idx && what == "path") {
-			ERR_FAIL_COND_V(p_value.get_type() != Variant::NODE_PATH, false);
-			NodePath path = p_value;
-			ERR_FAIL_COND_V(path.is_empty() || path.get_subname_count() == 0, false);
-			add_property(path);
-			return true;
-		}
-		ERR_FAIL_INDEX_V(idx, properties.size(), false);
-		const ReplicationProperty& prop = properties.get(idx);
-		if (what == "replication_mode") {
-			ERR_FAIL_COND_V(p_value.get_type() != Variant::INT, false);
-			ReplicationMode mode = (ReplicationMode)p_value.operator int();
-			ERR_FAIL_COND_V(
-				mode < REPLICATION_MODE_NEVER || mode > REPLICATION_MODE_ON_CHANGE, false);
-			property_set_replication_mode(prop.name, mode);
-			return true;
-		}
-		ERR_FAIL_COND_V(p_value.get_type() != Variant::BOOL, false);
-		if (what == "spawn") {
-			property_set_spawn(prop.name, p_value);
-			return true;
-		}
-		else if (what == "sync") {
-			// Deprecated.
-			property_set_sync(prop.name, p_value);
-			return true;
-		}
-		else if (what == "watch") {
-			// Deprecated.
-			property_set_watch(prop.name, p_value);
-			return true;
-		}
-	}
-	return false;
-}
-
-bool SceneReplicationConfig::_get(const StringName& p_name, Variant& r_ret) const
-{
-	String prop_name = p_name;
-
-	if (prop_name.begins_with("properties/")) {
-		int idx = prop_name.get_slicec('/', 1).to_int();
-		String what = prop_name.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(idx, properties.size(), false);
-		const ReplicationProperty& prop = properties.get(idx);
-		if (what == "path") {
-			r_ret = prop.name;
-			return true;
-		}
-		else if (what == "spawn") {
-			r_ret = prop.spawn;
-			return true;
-		}
-		else if (what == "replication_mode") {
-			r_ret = prop.mode;
-			return true;
-		}
-	}
-	return false;
-}
-
-void SceneReplicationConfig::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	for (int i = 0; i < properties.size(); i++) {
-		p_list->push_back(PropertyInfo(Variant::STRING, "properties/" + itos(i) + "/path",
-			PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
-		p_list->push_back(PropertyInfo(Variant::STRING, "properties/" + itos(i) + "/spawn",
-			PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
-		p_list->push_back(PropertyInfo(Variant::INT, "properties/" + itos(i) + "/replication_mode",
-			PROPERTY_HINT_ENUM, "Never,Always,On Change",
-			PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
-	}
-}
-
 void SceneReplicationConfig::reset_state()
 {
 	dirty = false;
@@ -119,15 +37,6 @@ void SceneReplicationConfig::reset_state()
 	sync_props.clear();
 	spawn_props.clear();
 	watch_props.clear();
-}
-
-TypedArray<NodePath> SceneReplicationConfig::get_properties() const
-{
-	TypedArray<NodePath> paths;
-	for (const ReplicationProperty& prop : properties) {
-		paths.push_back(prop.name);
-	}
-	return paths;
 }
 
 void SceneReplicationConfig::add_property(const NodePath& p_path, int p_index)
@@ -302,7 +211,5 @@ const List<NodePath>& SceneReplicationConfig::get_watch_properties()
 	}
 	return watch_props;
 }
-
-void SceneReplicationConfig::_bind_methods() {}
 
 

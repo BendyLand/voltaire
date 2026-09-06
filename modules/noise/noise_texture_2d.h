@@ -31,17 +31,13 @@
 #pragma once
 
 #include "noise.h"
-
 #include "scene/resources/gradient.h"
 #include "scene/resources/texture.h"
 
-class NoiseTexture2D : public Texture2D {
-	VLTRCLASS(NoiseTexture2D, Texture2D);
-
+class NoiseTexture2D : public Texture2D
+{
 private:
 	Ref<Image> image;
-
-	WorkerThreadPool::TaskID current_task_id = WorkerThreadPool::INVALID_TASK_ID;
 
 	bool first_time = true;
 	bool update_queued = false;
@@ -63,19 +59,15 @@ private:
 	Ref<Gradient> color_ramp;
 	Ref<Noise> noise;
 
-	void _thread_done(const Ref<Image> &p_image);
+	void _thread_done(const Ref<Image>& p_image);
 	void _thread_function();
 
 	void _queue_update();
 	Ref<Image> _generate_texture();
 	void _update_texture();
-	void _set_texture_image(const Ref<Image> &p_image);
+	void _set_texture_image(const Ref<Image>& p_image);
 
 	Ref<Image> _modulate_with_gradient(Ref<Image> p_image, Ref<Gradient> p_gradient);
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
 	void set_noise(Ref<Noise> p_noise);
@@ -108,13 +100,14 @@ public:
 	void set_normalize(bool p_normalize);
 	bool is_normalized() const;
 
-	void set_color_ramp(const Ref<Gradient> &p_gradient);
+	void set_color_ramp(const Ref<Gradient>& p_gradient);
 	Ref<Gradient> get_color_ramp() const;
 
 	int get_width() const override;
 	int get_height() const override;
 
 	virtual RID get_rid() const override;
+
 	virtual bool has_alpha() const override { return false; }
 
 	virtual Ref<Image> get_image() const override;
@@ -122,3 +115,5 @@ public:
 	NoiseTexture2D();
 	virtual ~NoiseTexture2D();
 };
+
+

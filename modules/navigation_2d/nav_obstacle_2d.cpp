@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "nav_obstacle_2d.h"
-
 #include "nav_agent_2d.h"
 #include "nav_map_2d.h"
+#include "nav_obstacle_2d.h"
 
-void NavObstacle2D::set_agent(NavAgent2D *p_agent) {
+void NavObstacle2D::set_agent(NavAgent2D* p_agent)
+{
 	if (agent == p_agent) {
 		return;
 	}
@@ -45,7 +45,8 @@ void NavObstacle2D::set_agent(NavAgent2D *p_agent) {
 	request_sync();
 }
 
-void NavObstacle2D::set_avoidance_enabled(bool p_enabled) {
+void NavObstacle2D::set_avoidance_enabled(bool p_enabled)
+{
 	if (avoidance_enabled == p_enabled) {
 		return;
 	}
@@ -58,7 +59,8 @@ void NavObstacle2D::set_avoidance_enabled(bool p_enabled) {
 	request_sync();
 }
 
-void NavObstacle2D::set_map(NavMap2D *p_map) {
+void NavObstacle2D::set_map(NavMap2D* p_map)
+{
 	if (map == p_map) {
 		return;
 	}
@@ -83,7 +85,8 @@ void NavObstacle2D::set_map(NavMap2D *p_map) {
 	}
 }
 
-void NavObstacle2D::set_position(const Vector2 &p_position) {
+void NavObstacle2D::set_position(const Vector2& p_position)
+{
 	if (position == p_position) {
 		return;
 	}
@@ -98,7 +101,8 @@ void NavObstacle2D::set_position(const Vector2 &p_position) {
 	request_sync();
 }
 
-void NavObstacle2D::set_radius(real_t p_radius) {
+void NavObstacle2D::set_radius(real_t p_radius)
+{
 	if (radius == p_radius) {
 		return;
 	}
@@ -110,7 +114,8 @@ void NavObstacle2D::set_radius(real_t p_radius) {
 	}
 }
 
-void NavObstacle2D::set_velocity(const Vector2 &p_velocity) {
+void NavObstacle2D::set_velocity(const Vector2& p_velocity)
+{
 	velocity = p_velocity;
 
 	if (agent) {
@@ -118,7 +123,8 @@ void NavObstacle2D::set_velocity(const Vector2 &p_velocity) {
 	}
 }
 
-void NavObstacle2D::set_vertices(const Vector<Vector2> &p_vertices) {
+void NavObstacle2D::set_vertices(const Vector<Vector2>& p_vertices)
+{
 	if (vertices == p_vertices) {
 		return;
 	}
@@ -129,17 +135,20 @@ void NavObstacle2D::set_vertices(const Vector<Vector2> &p_vertices) {
 	request_sync();
 }
 
-bool NavObstacle2D::is_map_changed() {
+bool NavObstacle2D::is_map_changed()
+{
 	if (map) {
 		bool is_changed = map->get_iteration_id() != last_map_iteration_id;
 		last_map_iteration_id = map->get_iteration_id();
 		return is_changed;
-	} else {
+	}
+	else {
 		return false;
 	}
 }
 
-void NavObstacle2D::set_avoidance_layers(uint32_t p_layers) {
+void NavObstacle2D::set_avoidance_layers(uint32_t p_layers)
+{
 	if (avoidance_layers == p_layers) {
 		return;
 	}
@@ -154,15 +163,12 @@ void NavObstacle2D::set_avoidance_layers(uint32_t p_layers) {
 	request_sync();
 }
 
-bool NavObstacle2D::is_dirty() const {
-	return obstacle_dirty;
-}
+bool NavObstacle2D::is_dirty() const { return obstacle_dirty; }
 
-void NavObstacle2D::sync() {
-	obstacle_dirty = false;
-}
+void NavObstacle2D::sync() { obstacle_dirty = false; }
 
-void NavObstacle2D::internal_update_agent() {
+void NavObstacle2D::internal_update_agent()
+{
 	if (agent) {
 		agent->set_neighbor_distance(0.0);
 		agent->set_max_neighbors(0.0);
@@ -180,7 +186,8 @@ void NavObstacle2D::internal_update_agent() {
 	}
 }
 
-void NavObstacle2D::set_paused(bool p_paused) {
+void NavObstacle2D::set_paused(bool p_paused)
+{
 	if (paused == p_paused) {
 		return;
 	}
@@ -190,33 +197,18 @@ void NavObstacle2D::set_paused(bool p_paused) {
 	if (map) {
 		if (paused) {
 			map->remove_obstacle(this);
-		} else {
+		}
+		else {
 			map->add_obstacle(this);
 		}
 	}
 	internal_update_agent();
 }
 
-bool NavObstacle2D::get_paused() const {
-	return paused;
-}
+bool NavObstacle2D::get_paused() const { return paused; }
 
-void NavObstacle2D::request_sync() {
-	if (map && !sync_dirty_request_list_element.in_list()) {
-		map->add_obstacle_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
+NavObstacle2D::NavObstacle2D() : sync_dirty_request_list_element(this) {}
 
-void NavObstacle2D::cancel_sync_request() {
-	if (map && sync_dirty_request_list_element.in_list()) {
-		map->remove_obstacle_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
+NavObstacle2D::~NavObstacle2D() { cancel_sync_request(); }
 
-NavObstacle2D::NavObstacle2D() :
-		sync_dirty_request_list_element(this) {
-}
 
-NavObstacle2D::~NavObstacle2D() {
-	cancel_sync_request();
-}

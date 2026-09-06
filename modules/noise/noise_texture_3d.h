@@ -36,10 +36,7 @@
 
 class NoiseTexture3D : public Texture3D
 {
-	VLTRCLASS(NoiseTexture3D, Texture3D);
-
 private:
-	WorkerThreadPool::TaskID current_task_id = WorkerThreadPool::INVALID_TASK_ID;
 	bool first_time = true;
 	bool update_queued = false;
 	bool regen_queued = false;
@@ -60,19 +57,12 @@ private:
 
 	Image::Format format = Image::FORMAT_L8;
 
-	void _thread_done(const Array& p_data);
 	void _thread_function();
 
 	void _queue_update();
-	Array _generate_texture();
 	void _update_texture();
-	void _set_texture_data(const Array& p_data);
 
 	Ref<Image> _modulate_with_gradient(Ref<Image> p_image, Ref<Gradient> p_gradient);
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
 
 public:
 	void set_noise(Ref<Noise> p_noise);

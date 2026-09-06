@@ -39,7 +39,6 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "scene/animation/tween.h"
-#include "scene/debugger/scene_debugger.h"
 #include "scene/gui/control.h"
 #include "scene/main/multiplayer_api.h"
 #include "scene/main/node.h"

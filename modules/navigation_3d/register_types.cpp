@@ -53,29 +53,6 @@ static NavigationServer3D* _createGodotNavigation3DCallback()
 	return memnew(GodotNavigationServer3D);
 }
 
-void initialize_navigation_3d_module(ModuleInitializationLevel p_level)
-{
-	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
-		NavigationServer3DManager::get_singleton()->register_server(
-			"GodotNavigation3D", callable_mp_static(_createGodotNavigation3DCallback));
-		NavigationServer3DManager::get_singleton()->set_default_server("GodotNavigation3D");
-
-#ifndef DISABLE_DEPRECATED
-		_nav_mesh_generator = memnew(NavigationMeshGenerator);
-		Engine::get_singleton()->add_singleton(
-			Engine::Singleton("NavigationMeshGenerator", NavigationMeshGenerator::get_singleton()->obj.get()));
-#endif // DISABLE_DEPRECATED
-	}
-
-#ifdef TOOLS_ENABLED
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorPlugins::add_by_type<NavigationLink3DEditorPlugin>();
-		EditorPlugins::add_by_type<NavigationRegion3DEditorPlugin>();
-		EditorPlugins::add_by_type<NavigationObstacle3DEditorPlugin>();
-	}
-#endif
-}
-
 void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level)
 {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {

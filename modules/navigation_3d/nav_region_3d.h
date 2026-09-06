@@ -31,16 +31,16 @@
 #pragma once
 
 #include "3d/nav_region_iteration_3d.h"
+#include "core/os/rw_lock.h"
 #include "nav_base_3d.h"
 #include "nav_utils_3d.h"
-
-#include "core/os/rw_lock.h"
 #include "scene/resources/navigation_mesh.h"
 
-class NavRegion3D : public NavBase3D {
+class NavRegion3D : public NavBase3D
+{
 	RWLock region_rwlock;
 
-	NavMap3D *map = nullptr;
+	NavMap3D* map = nullptr;
 	Transform3D transform;
 	bool enabled = true;
 
@@ -61,8 +61,7 @@ class NavRegion3D : public NavBase3D {
 	NavRegionIterationBuild3D iteration_build;
 	bool use_async_iterations = true;
 	SelfList<NavRegion3D> async_list_element;
-	WorkerThreadPool::TaskID iteration_build_thread_task_id = WorkerThreadPool::INVALID_TASK_ID;
-	static void _build_iteration_threaded(void *p_arg);
+	static void _build_iteration_threaded(void* p_arg);
 
 	bool iteration_dirty = true;
 	bool iteration_building = false;
@@ -80,28 +79,30 @@ public:
 	void scratch_polygons();
 
 	void set_enabled(bool p_enabled);
+
 	bool get_enabled() const { return enabled; }
 
-	void set_map(NavMap3D *p_map);
-	NavMap3D *get_map() const {
-		return map;
-	}
+	void set_map(NavMap3D* p_map);
+
+	NavMap3D* get_map() const { return map; }
 
 	virtual void set_use_edge_connections(bool p_enabled) override;
+
 	virtual bool get_use_edge_connections() const override { return use_edge_connections; }
 
 	void set_transform(Transform3D transform);
-	const Transform3D &get_transform() const {
-		return transform;
-	}
+
+	const Transform3D& get_transform() const { return transform; }
 
 	void set_navigation_mesh(Ref<NavigationMesh> p_navigation_mesh);
+
 	Ref<NavigationMesh> get_navigation_mesh() const { return navmesh; }
 
-	const LocalVector<Nav3D::Polygon> &get_polygons() const;
+	const LocalVector<Nav3D::Polygon>& get_polygons() const;
 
-	Vector3 get_closest_point_to_segment(const Vector3 &p_from, const Vector3 &p_to, bool p_use_collision) const;
-	Nav3D::ClosestPointQueryResult get_closest_point_info(const Vector3 &p_point) const;
+	Vector3 get_closest_point_to_segment(
+		const Vector3& p_from, const Vector3& p_to, bool p_use_collision) const;
+	Nav3D::ClosestPointQueryResult get_closest_point_info(const Vector3& p_point) const;
 	Vector3 get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const;
 
 	real_t get_surface_area() const;
@@ -111,7 +112,6 @@ public:
 	virtual void set_navigation_layers(uint32_t p_navigation_layers) override;
 	virtual void set_enter_cost(real_t p_enter_cost) override;
 	virtual void set_travel_cost(real_t p_travel_cost) override;
-	virtual void set_owner_id(ObjectID p_owner_id) override;
 
 	bool sync();
 	void request_sync();
@@ -125,9 +125,13 @@ public:
 
 	// Performance Monitor
 	int get_pm_polygon_count() const { return performance_data.pm_polygon_count; }
+
 	int get_pm_edge_count() const { return performance_data.pm_edge_count; }
+
 	int get_pm_edge_merge_count() const { return performance_data.pm_edge_merge_count; }
 
 	void set_use_async_iterations(bool p_enabled);
 	bool get_use_async_iterations() const;
 };
+
+

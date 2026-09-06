@@ -28,10 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
 #include "2d/godot_navigation_server_2d.h"
-
+#include "register_types.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 
 #ifdef TOOLS_ENABLED
@@ -40,13 +38,14 @@
 #include "editor/navigation_region_2d_editor_plugin.h"
 #endif
 
-static NavigationServer2D *_createGodotNavigation2DCallback() {
+static NavigationServer2D* _createGodotNavigation2DCallback()
+{
 	return memnew(GodotNavigationServer2D);
 }
 
-void initialize_navigation_2d_module(ModuleInitializationLevel p_level) {
+void initialize_navigation_2d_module(ModuleInitializationLevel p_level)
+{
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
-		NavigationServer2DManager::get_singleton()->register_server("GodotNavigation2D", callable_mp_static(_createGodotNavigation2DCallback));
 		NavigationServer2DManager::get_singleton()->set_default_server("GodotNavigation2D");
 	}
 
@@ -59,8 +58,11 @@ void initialize_navigation_2d_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_navigation_2d_module(ModuleInitializationLevel p_level) {
+void uninitialize_navigation_2d_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
 		return;
 	}
 }
+
+

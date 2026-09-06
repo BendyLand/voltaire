@@ -39,23 +39,22 @@ class NavigationPolygon;
 class NavigationRegion2D;
 class Timer;
 
-class NavigationRegion2DEditor : public AbstractPolygon2DEditor {
+class NavigationRegion2DEditor : public AbstractPolygon2DEditor
+{
 	friend class NavigationRegion2DEditorPlugin;
 
-	VLTRCLASS(NavigationRegion2DEditor, AbstractPolygon2DEditor);
-
-	NavigationRegion2D *node = nullptr;
+	NavigationRegion2D* node = nullptr;
 
 	Ref<NavigationPolygon> _ensure_navpoly() const;
 
-	AcceptDialog *err_dialog = nullptr;
+	AcceptDialog* err_dialog = nullptr;
 
-	HBoxContainer *bake_hbox = nullptr;
-	Button *button_bake = nullptr;
-	Button *button_reset = nullptr;
-	Label *bake_info = nullptr;
+	HBoxContainer* bake_hbox = nullptr;
+	Button* button_bake = nullptr;
+	Button* button_reset = nullptr;
+	Label* bake_info = nullptr;
 
-	Timer *rebake_timer = nullptr;
+	Timer* rebake_timer = nullptr;
 	float _rebake_timer_delay = 1.5;
 	void _rebake_timer_timeout();
 
@@ -67,16 +66,12 @@ class NavigationRegion2DEditor : public AbstractPolygon2DEditor {
 protected:
 	void _notification(int p_what);
 
-	virtual Node2D *_get_node() const override;
-	virtual void _set_node(Node *p_polygon) override;
+	virtual Node2D* _get_node() const override;
+	virtual void _set_node(Node* p_polygon) override;
 
 	virtual int _get_polygon_count() const override;
-	virtual Variant _get_polygon(int p_idx) const override;
-	virtual void _set_polygon(int p_idx, const Variant &p_polygon) const override;
 
-	virtual void _action_add_polygon(const Variant &p_polygon) override;
 	virtual void _action_remove_polygon(int p_idx) override;
-	virtual void _action_set_polygon(int p_idx, const Variant &p_previous, const Variant &p_polygon) override;
 
 	virtual bool _has_resource() const override;
 	virtual void _create_resource() override;
@@ -85,11 +80,12 @@ public:
 	NavigationRegion2DEditor();
 };
 
-class NavigationRegion2DEditorPlugin : public AbstractPolygon2DEditorPlugin {
-	VLTRCLASS(NavigationRegion2DEditorPlugin, AbstractPolygon2DEditorPlugin);
-
-	NavigationRegion2DEditor *navigation_polygon_editor = nullptr;
+class NavigationRegion2DEditorPlugin : public AbstractPolygon2DEditorPlugin
+{
+	NavigationRegion2DEditor* navigation_polygon_editor = nullptr;
 
 public:
 	NavigationRegion2DEditorPlugin();
 };
+
+

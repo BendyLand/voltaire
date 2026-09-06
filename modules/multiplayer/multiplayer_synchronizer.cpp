@@ -32,82 +32,6 @@
 #include "multiplayer_synchronizer.h"
 #include "scene/main/multiplayer_api.h"
 
-Object* MultiplayerSynchronizer::_get_prop_target(Object* p_obj, const NodePath& p_path)
-{
-	if (p_path.get_name_count() == 0) {
-		return p_obj;
-	}
-	Node* node = Object::cast_to<Node>(p_obj);
-	ERR_FAIL_COND_V_MSG(
-		!node || !node->has_node(p_path), nullptr, vformat("Node '%s' not found.", p_path));
-	return node->get_node(p_path)->obj.get();
-}
-
-void MultiplayerSynchronizer::_stop()
-{
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-#endif
-	root_node_cache = ObjectID();
-	Node* node = is_inside_tree() ? get_node_or_null(root_path) : nullptr;
-	if (node) {
-		get_multiplayer()->object_configuration_remove(node->obj.get(), (Object*)this);
-	}
-	reset();
-}
-
-void MultiplayerSynchronizer::_start()
-{
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-#endif
-	root_node_cache = ObjectID();
-	reset();
-	Node* node = is_inside_tree() ? get_node_or_null(root_path) : nullptr;
-	if (node) {
-		root_node_cache = node->obj->get_instance_id();
-		get_multiplayer()->object_configuration_add(node->obj.get(), (Object*)this);
-		_update_process();
-	}
-}
-
-void MultiplayerSynchronizer::_update_process()
-{
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-#endif
-	Node* node = is_inside_tree() ? get_node_or_null(root_path) : nullptr;
-	if (!node) {
-		return;
-	}
-	set_process_internal(false);
-	set_physics_process_internal(false);
-	if (!visibility_filters.size()) {
-		return;
-	}
-	switch (visibility_update_mode) {
-	case VISIBILITY_PROCESS_IDLE:
-		set_process_internal(true);
-		break;
-	case VISIBILITY_PROCESS_PHYSICS:
-		set_physics_process_internal(true);
-		break;
-	case VISIBILITY_PROCESS_NONE:
-		break;
-	}
-}
-
-Node* MultiplayerSynchronizer::get_root_node()
-{
-	return root_node_cache.is_valid() ? ObjectDB::get_instance<Node>(root_node_cache) : nullptr;
-}
-
 void MultiplayerSynchronizer::reset()
 {
 	net_id = 0;
@@ -161,76 +85,11 @@ PackedStringArray MultiplayerSynchronizer::get_configuration_warnings() const
 	return warnings;
 }
 
-Error MultiplayerSynchronizer::get_state(const List<NodePath>& p_properties, Object* p_obj,
-	Vector<Variant>& r_variant, Vector<const Variant*>& r_variant_ptrs)
-{
-	ERR_FAIL_NULL_V(p_obj, ERR_INVALID_PARAMETER);
-	r_variant.resize(p_properties.size());
-	r_variant_ptrs.resize(r_variant.size());
-	int i = 0;
-	for (const NodePath& prop : p_properties) {
-		bool valid = false;
-		const Object* obj = _get_prop_target(p_obj, prop);
-		ERR_FAIL_NULL_V(obj, FAILED);
-		r_variant.write[i] = obj->get_indexed(prop.get_subnames(), &valid);
-		r_variant_ptrs.write[i] = &r_variant[i];
-		ERR_FAIL_COND_V_MSG(!valid, ERR_INVALID_DATA, vformat("Property '%s' not found.", prop));
-		i++;
-	}
-	return OK;
-}
-
-Error MultiplayerSynchronizer::set_state(
-	const List<NodePath>& p_properties, Object* p_obj, const Vector<Variant>& p_state)
-{
-	ERR_FAIL_NULL_V(p_obj, ERR_INVALID_PARAMETER);
-	int i = 0;
-	for (const NodePath& prop : p_properties) {
-		Object* obj = _get_prop_target(p_obj, prop);
-		ERR_FAIL_NULL_V(obj, FAILED);
-		obj->set_indexed(prop.get_subnames(), p_state[i]);
-		i += 1;
-	}
-	return OK;
-}
-
 bool MultiplayerSynchronizer::is_visibility_public() const { return peer_visibility.has(0); }
 
 void MultiplayerSynchronizer::set_visibility_public(bool p_visible)
 {
 	set_visibility_for(0, p_visible);
-}
-
-bool MultiplayerSynchronizer::is_visible_to(int p_peer)
-{
-	if (visibility_filters.size()) {
-		Variant arg = p_peer;
-		const Variant* argv[1] = {&arg};
-		for (Callable filter : visibility_filters) {
-			Variant ret;
-			Callable::CallError err;
-			filter.callp(argv, 1, ret, err);
-			ERR_FAIL_COND_V(
-				err.error != Callable::CallError::CALL_OK || ret.get_type() != Variant::BOOL,
-				false);
-			if (!ret.operator bool()) {
-				return false;
-			}
-		}
-	}
-	return peer_visibility.has(0) || peer_visibility.has(p_peer);
-}
-
-void MultiplayerSynchronizer::add_visibility_filter(Callable p_callback)
-{
-	visibility_filters.insert(p_callback);
-	_update_process();
-}
-
-void MultiplayerSynchronizer::remove_visibility_filter(Callable p_callback)
-{
-	visibility_filters.erase(p_callback);
-	_update_process();
 }
 
 void MultiplayerSynchronizer::set_visibility_for(int p_peer, bool p_visible)
@@ -327,19 +186,6 @@ Ref<SceneReplicationConfig> MultiplayerSynchronizer::get_replication_config()
 	return replication_config;
 }
 
-void MultiplayerSynchronizer::update_visibility(int p_for_peer)
-{
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-#endif
-	Node* node = is_inside_tree() ? get_node_or_null(root_path) : nullptr;
-	if (node && get_multiplayer()->has_multiplayer_peer() && is_multiplayer_authority()) {
-		this->obj->emit_signal(SceneStringName(visibility_changed), p_for_peer);
-	}
-}
-
 void MultiplayerSynchronizer::set_root_path(const NodePath& p_path)
 {
 	if (p_path == root_path) {
@@ -361,75 +207,6 @@ void MultiplayerSynchronizer::set_multiplayer_authority(int p_peer_id, bool p_re
 	_stop();
 	Node::set_multiplayer_authority(p_peer_id, p_recursive);
 	_start();
-}
-
-Error MultiplayerSynchronizer::_watch_changes(uint64_t p_usec)
-{
-	ERR_FAIL_COND_V(replication_config.is_null(), FAILED);
-	const List<NodePath> props(replication_config->get_watch_properties());
-	if (props.size() != watchers.size()) {
-		watchers.resize(props.size());
-	}
-	if (props.is_empty()) {
-		return OK;
-	}
-	Node* node = get_root_node();
-	ERR_FAIL_NULL_V(node, FAILED);
-	int idx = -1;
-	Watcher* ptr = watchers.ptrw();
-	for (const NodePath& prop : props) {
-		idx++;
-		bool valid = false;
-		const Object* obj = _get_prop_target(node->obj.get(), prop);
-		ERR_CONTINUE_MSG(!obj, vformat("Node not found for property '%s'.", prop));
-		Variant v = obj->get_indexed(prop.get_subnames(), &valid);
-		ERR_CONTINUE_MSG(!valid, vformat("Property '%s' not found.", prop));
-		Watcher& w = ptr[idx];
-		if (w.prop != prop) {
-			w.prop = prop;
-			w.value = v.duplicate(true);
-			w.last_change_usec = p_usec;
-		}
-		else if (!w.value.hash_compare(v)) {
-			w.value = v.duplicate(true);
-			w.last_change_usec = p_usec;
-		}
-	}
-	return OK;
-}
-
-List<Variant> MultiplayerSynchronizer::get_delta_state(
-	uint64_t p_cur_usec, uint64_t p_last_usec, uint64_t& r_indexes)
-{
-	r_indexes = 0;
-	List<Variant> out;
-
-	if (last_watch_usec == p_cur_usec) {
-		// We already watched for changes in this frame.
-
-	}
-	else if (p_cur_usec < p_last_usec + delta_interval_usec) {
-		// Too soon skip delta synchronization.
-		return out;
-
-	}
-	else {
-		// Watch for changes.
-		Error err = _watch_changes(p_cur_usec);
-		ERR_FAIL_COND_V(err != OK, out);
-		last_watch_usec = p_cur_usec;
-	}
-
-	const Watcher* ptr = watchers.size() ? watchers.ptr() : nullptr;
-	for (int i = 0; i < watchers.size(); i++) {
-		const Watcher& w = ptr[i];
-		if (w.last_change_usec <= p_last_usec) {
-			continue;
-		}
-		out.push_back(w.value);
-		r_indexes |= 1ULL << i;
-	}
-	return out;
 }
 
 List<NodePath> MultiplayerSynchronizer::get_delta_properties(uint64_t p_indexes)

@@ -39,8 +39,6 @@ class TLSContextMbedTLS;
 
 class CookieContextMbedTLS : public RefCounted
 {
-	VLTRSOFTCLASS(CookieContextMbedTLS, RefCounted);
-
 	friend class TLSContextMbedTLS;
 
 protected:
@@ -57,8 +55,6 @@ public:
 
 class TLSContextMbedTLS : public RefCounted
 {
-	VLTRSOFTCLASS(TLSContextMbedTLS, RefCounted);
-
 private:
 	bool inited = false;
 	mbedtls_pk_context pk;

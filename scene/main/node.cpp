@@ -56,7 +56,6 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Engine);
 #include "servers/display/accessibility_server.h"
 
 #ifdef DEBUG_ENABLED
-#include "scene/debugger/scene_debugger.h"
 #endif
 
 #ifdef DEBUG_ENABLED

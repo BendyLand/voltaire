@@ -30,60 +30,41 @@
 
 #pragma once
 
+#include "core/types.h"
 
 class Node;
 class SceneMultiplayer;
 
-class SceneCacheInterface : public RefCounted {
-	VLTRCLASS(SceneCacheInterface, RefCounted);
-
+class SceneCacheInterface : public RefCounted
+{
 private:
-	SceneMultiplayer *multiplayer = nullptr;
+	SceneMultiplayer* multiplayer = nullptr;
 
-	//path sent caches
-	struct NodeCache {
+	// path sent caches
+	struct NodeCache
+	{
 		int cache_id = 0;
-		HashMap<int, int> recv_ids; // peer id, remote cache id
+		HashMap<int, int> recv_ids;			// peer id, remote cache id
 		HashMap<int, bool> confirmed_peers; // peer id, confirmed
 	};
 
-	struct RecvNode {
-		ObjectID oid;
+	struct RecvNode
+	{
 		NodePath path;
-
-		RecvNode(const ObjectID &p_oid, const NodePath &p_path) {
-			oid = p_oid;
-			path = p_path;
-		}
 	};
 
-	struct PeerInfo {
+	struct PeerInfo
+	{
 		HashMap<int, RecvNode> recv_nodes; // remote cache id, (ObjectID, NodePath)
-		HashSet<ObjectID> sent_nodes;
 	};
 
-	HashMap<ObjectID, NodeCache> nodes_cache;
-	HashMap<int, ObjectID> assigned_ids;
 	HashMap<int, PeerInfo> peers_info;
 	int last_send_cache_id = 1;
 
-	void _remove_node_cache(ObjectID p_oid);
-	NodeCache &_track(Node *p_node);
-
-protected:
-	Error _send_confirm_path(Node *p_node, NodeCache &p_cache, const List<int> &p_peers);
+	NodeCache& _track(Node* p_node);
 
 public:
-	void clear();
-	void on_peer_change(int p_id, bool p_connected);
-	void process_simplify_path(int p_from, const uint8_t *p_packet, int p_packet_len);
-	void process_confirm_path(int p_from, const uint8_t *p_packet, int p_packet_len);
-
-	// Returns true if all peers have cached path.
-	bool send_object_cache(Object *p_obj, int p_target, int &p_id);
-	int make_object_cache(Object *p_obj);
-	Object *get_cached_object(int p_from, uint32_t p_cache_id);
-	bool is_cache_confirmed(Node *p_path, int p_peer);
-
-	SceneCacheInterface(SceneMultiplayer *p_multiplayer) { multiplayer = p_multiplayer; }
+	SceneCacheInterface(SceneMultiplayer* p_multiplayer) { multiplayer = p_multiplayer; }
 };
+
+

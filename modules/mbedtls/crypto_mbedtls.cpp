@@ -52,7 +52,7 @@ int godot_mbedtls_random_compat(void* p_rng, unsigned char* r_output, size_t p_o
 
 CryptoKey* CryptoKeyMbedTLS::create(bool p_notify_postinitialize)
 {
-	return static_cast<CryptoKey*>(memnew(CryptoKeyMbedTLS).ptr());
+	return static_cast<CryptoKey*>(memnew(CryptoKeyMbedTLS));
 }
 
 Ref<CryptoKeyMbedTLS> CryptoKeyMbedTLS::generate(psa_key_type_t p_type, size_t p_size)
@@ -261,7 +261,7 @@ int CryptoKeyMbedTLS::_parse_key(const uint8_t* p_buf, int p_size, bool p_public
 
 X509Certificate* X509CertificateMbedTLS::create(bool p_notify_postinitialize)
 {
-	return static_cast<X509Certificate*>(memnew(X509CertificateMbedTLS).ptr());
+	return static_cast<X509Certificate*>(memnew(X509CertificateMbedTLS));
 }
 
 Error X509CertificateMbedTLS::load(const String& p_path)
@@ -376,7 +376,7 @@ bool HMACContextMbedTLS::is_hash_type_allowed(HashingContext::HashType p_hash_ty
 
 HMACContext* HMACContextMbedTLS::create(bool p_notify_postinitialize)
 {
-	return static_cast<HMACContext*>(memnew(HMACContextMbedTLS).ptr());
+	return static_cast<HMACContext*>(memnew(HMACContextMbedTLS));
 }
 
 Error HMACContextMbedTLS::start(HashingContext::HashType p_hash_type, const PackedByteArray& p_key)
@@ -450,7 +450,7 @@ HMACContextMbedTLS::~HMACContextMbedTLS() { _clear(); }
 
 Crypto* CryptoMbedTLS::create(bool p_notify_postinitialize)
 {
-	return static_cast<Crypto*>(memnew(CryptoMbedTLS).ptr());
+	return static_cast<Crypto*>(memnew(CryptoMbedTLS));
 }
 
 void CryptoMbedTLS::initialize_crypto()

@@ -30,17 +30,16 @@
 
 #pragma once
 
-#include "nav_rid_2d.h"
-
+#include <Agent2d.h>
 #include "core/math/vector2.h"
 #include "core/templates/self_list.h"
+#include "nav_rid_2d.h"
 #include "servers/navigation_2d/navigation_constants_2d.h"
-
-#include <Agent2d.h>
 
 class NavMap2D;
 
-class NavAgent2D : public NavRid2D {
+class NavAgent2D : public NavRid2D
+{
 	Vector2 position;
 	Vector2 target_position;
 	Vector2 velocity;
@@ -54,7 +53,7 @@ class NavAgent2D : public NavRid2D {
 	Vector2 safe_velocity;
 	bool clamp_speed = true; // Experimental, clamps velocity to max_speed.
 
-	NavMap2D *map = nullptr;
+	NavMap2D* map = nullptr;
 
 	RVO2D::Agent2D rvo_agent;
 	bool avoidance_enabled = false;
@@ -62,8 +61,6 @@ class NavAgent2D : public NavRid2D {
 	uint32_t avoidance_layers = 1;
 	uint32_t avoidance_mask = 1;
 	real_t avoidance_priority = 1.0;
-
-	Callable avoidance_callback;
 
 	bool agent_dirty = true;
 
@@ -77,57 +74,71 @@ public:
 	~NavAgent2D();
 
 	void set_avoidance_enabled(bool p_enabled);
+
 	bool is_avoidance_enabled() { return avoidance_enabled; }
 
-	void set_map(NavMap2D *p_map);
-	NavMap2D *get_map() { return map; }
+	void set_map(NavMap2D* p_map);
+
+	NavMap2D* get_map() { return map; }
 
 	bool is_map_changed();
 
-	RVO2D::Agent2D *get_rvo_agent() { return &rvo_agent; }
+	RVO2D::Agent2D* get_rvo_agent() { return &rvo_agent; }
 
-	void set_avoidance_callback(Callable p_callback);
 	bool has_avoidance_callback() const;
 
 	void dispatch_avoidance_callback();
 
 	void set_neighbor_distance(real_t p_neighbor_distance);
+
 	real_t get_neighbor_distance() const { return neighbor_distance; }
 
 	void set_max_neighbors(int p_max_neighbors);
+
 	int get_max_neighbors() const { return max_neighbors; }
 
 	void set_time_horizon_agents(real_t p_time_horizon);
+
 	real_t get_time_horizon_agents() const { return time_horizon_agents; }
 
 	void set_time_horizon_obstacles(real_t p_time_horizon);
+
 	real_t get_time_horizon_obstacles() const { return time_horizon_obstacles; }
 
 	void set_radius(real_t p_radius);
+
 	real_t get_radius() const { return radius; }
 
 	void set_max_speed(real_t p_max_speed);
+
 	real_t get_max_speed() const { return max_speed; }
 
-	void set_position(const Vector2 &p_position);
+	void set_position(const Vector2& p_position);
+
 	Vector2 get_position() const { return position; }
 
-	void set_target_position(const Vector2 &p_target_position);
+	void set_target_position(const Vector2& p_target_position);
+
 	Vector2 get_target_position() const { return target_position; }
 
-	void set_velocity(const Vector2 &p_velocity);
+	void set_velocity(const Vector2& p_velocity);
+
 	Vector2 get_velocity() const { return velocity; }
 
-	void set_velocity_forced(const Vector2 &p_velocity);
+	void set_velocity_forced(const Vector2& p_velocity);
+
 	Vector2 get_velocity_forced() const { return velocity_forced; }
 
 	void set_avoidance_layers(uint32_t p_layers);
+
 	uint32_t get_avoidance_layers() const { return avoidance_layers; }
 
 	void set_avoidance_mask(uint32_t p_mask);
+
 	uint32_t get_avoidance_mask() const { return avoidance_mask; }
 
 	void set_avoidance_priority(real_t p_priority);
+
 	real_t get_avoidance_priority() const { return avoidance_priority; }
 
 	void set_paused(bool p_paused);
@@ -141,9 +152,8 @@ public:
 	// Updates this agent with rvo data after the rvo simulation avoidance step.
 	void update();
 
-	// RVO debug data from the last frame update.
-	const Dictionary get_avoidance_data() const;
-
 private:
 	void _update_rvo_agent_properties();
 };
+
+

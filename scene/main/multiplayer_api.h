@@ -34,14 +34,11 @@
 
 class MultiplayerAPI : public RefCounted
 {
-	VLTRCLASS(MultiplayerAPI, RefCounted);
-
 private:
 	static StringName default_interface;
 
 protected:
 	static void _bind_methods();
-	Error _rpc_bind(int p_peer, Object* p_obj, const StringName& p_method, Array args = Array());
 
 public:
 	enum RPCMode
@@ -56,28 +53,11 @@ public:
 	static void set_default_interface(const StringName& p_interface);
 	static StringName get_default_interface();
 
-	static Error encode_and_compress_variant(
-		const Variant& p_variant, uint8_t* p_buffer, int& r_len, bool p_allow_object_decoding);
-	static Error decode_and_decompress_variant(Variant& r_variant, const uint8_t* p_buffer,
-		int p_len, int* r_len, bool p_allow_object_decoding);
-	static Error encode_and_compress_variants(const Variant** p_variants, int p_count,
-		uint8_t* p_buffer, int& r_len, bool* r_raw = nullptr, bool p_allow_object_decoding = false);
-	static Error decode_and_decompress_variants(Vector<Variant>& r_variants,
-		const uint8_t* p_buffer, int p_len, int& r_len, bool p_raw = false,
-		bool p_allow_object_decoding = false);
-
 	virtual Error poll();
 	virtual void set_multiplayer_peer(const Ref<MultiplayerPeer>& p_peer);
 	virtual Ref<MultiplayerPeer> get_multiplayer_peer();
 	virtual int get_unique_id();
 	virtual Vector<int> get_peer_ids();
-
-	virtual Error rpcp(Object* p_obj, int p_peer_id, const StringName& p_method,
-		const Variant** p_arg, int p_argcount);
-	virtual int get_remote_sender_id();
-
-	virtual Error object_configuration_add(Object* p_object, Variant p_config);
-	virtual Error object_configuration_remove(Object* p_object, Variant p_config);
 
 	bool has_multiplayer_peer() { return get_multiplayer_peer().is_valid(); }
 
@@ -85,7 +65,5 @@ public:
 
 	virtual ~MultiplayerAPI() {}
 };
-
-VARIANT_ENUM_CAST(MultiplayerAPI::RPCMode);
 
 
