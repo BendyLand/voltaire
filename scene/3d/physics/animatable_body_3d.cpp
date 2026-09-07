@@ -82,46 +82,4 @@ void AnimatableBody3D::_body_state_changed(PhysicsDirectBodyState3D* p_state)
 	_on_transform_changed();
 }
 
-void AnimatableBody3D::_notification(int p_what)
-{
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-#endif
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		last_valid_transform = get_global_transform();
-		_update_kinematic_motion();
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		set_only_update_transform_changes(false);
-		set_notify_local_transform(false);
-	} break;
-
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
-		// Used by sync to physics, send the new transform to the physics...
-		Transform3D new_transform = get_global_transform();
-
-		PhysicsServer3D::get_singleton()->body_set_state(
-			get_rid(), PS3DE::BODY_STATE_TRANSFORM, new_transform);
-
-		// ... but then revert changes.
-		set_notify_local_transform(false);
-		set_global_transform(last_valid_transform);
-		set_notify_local_transform(true);
-		_on_transform_changed();
-	} break;
-	}
-}
-
-void AnimatableBody3D::_bind_methods() {}
-
-AnimatableBody3D::AnimatableBody3D() : StaticBody3D(PS3DE::BODY_MODE_KINEMATIC)
-{
-	PhysicsServer3D::get_singleton()->body_set_state_sync_callback(
-		get_rid(), callable_mp(this, &AnimatableBody3D::_body_state_changed));
-}
-
 

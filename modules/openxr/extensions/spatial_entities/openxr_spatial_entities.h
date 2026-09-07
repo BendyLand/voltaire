@@ -30,38 +30,31 @@
 
 #pragma once
 
+#include <openxr/openxr.h>
 #include "../../openxr_structure.h"
-
 #include "scene/resources/mesh.h"
 #include "servers/xr/xr_positional_tracker.h"
-
-#include <openxr/openxr.h>
 
 #define XR_NULL_ENTITY 0x7FFFFFFF
 
 // Wrapper class for XrSpatialCapabilityConfigurationBaseHeaderEXT
-class OpenXRSpatialCapabilityConfigurationBaseHeader : public RefCounted {
-	VLTRCLASS(OpenXRSpatialCapabilityConfigurationBaseHeader, RefCounted);
-
-protected:
-	static void _bind_methods();
-
+class OpenXRSpatialCapabilityConfigurationBaseHeader : public RefCounted
+{
 public:
 	virtual bool has_valid_configuration() const;
 	uint64_t _get_configurationgd();
-	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT *get_configuration();
+	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration();
 
 	OpenXRSpatialCapabilityConfigurationBaseHeader();
 	~OpenXRSpatialCapabilityConfigurationBaseHeader();
-
 };
 
 // Tracker for our spatial entities
-class OpenXRSpatialEntityTracker : public XRPositionalTracker {
-	VLTRCLASS(OpenXRSpatialEntityTracker, XRPositionalTracker);
-
+class OpenXRSpatialEntityTracker : public XRPositionalTracker
+{
 public:
-	enum EntityTrackingState {
+	enum EntityTrackingState
+	{
 		ENTITY_TRACKING_STATE_STOPPED = XR_SPATIAL_ENTITY_TRACKING_STATE_STOPPED_EXT,
 		ENTITY_TRACKING_STATE_PAUSED = XR_SPATIAL_ENTITY_TRACKING_STATE_PAUSED_EXT,
 		ENTITY_TRACKING_STATE_TRACKING = XR_SPATIAL_ENTITY_TRACKING_STATE_TRACKING_EXT,
@@ -70,10 +63,10 @@ public:
 	OpenXRSpatialEntityTracker();
 	virtual ~OpenXRSpatialEntityTracker();
 
-	void set_spatial_context(const RID &p_spatial_context);
+	void set_spatial_context(const RID& p_spatial_context);
 	RID get_spatial_context() const;
 
-	void set_entity(const RID &p_entity);
+	void set_entity(const RID& p_entity);
 	RID get_entity() const;
 
 	void set_spatial_tracking_state(const XrSpatialEntityTrackingStateEXT p_state);
@@ -83,48 +76,35 @@ public:
 	void remove_next(Ref<OpenXRStructureBase> p_next);
 	Ref<OpenXRStructureBase> get_next() const;
 
-protected:
-	static void _bind_methods();
-
 private:
 	RID spatial_context;
 	RID spatial_entity;
-	XrSpatialEntityTrackingStateEXT spatial_tracking_state = XR_SPATIAL_ENTITY_TRACKING_STATE_PAUSED_EXT;
+	XrSpatialEntityTrackingStateEXT spatial_tracking_state =
+		XR_SPATIAL_ENTITY_TRACKING_STATE_PAUSED_EXT;
 	Ref<OpenXRStructureBase> next;
 
 	void _set_spatial_tracking_state(const EntityTrackingState p_state);
 	EntityTrackingState _get_spatial_tracking_state() const;
 };
 
-VARIANT_ENUM_CAST(OpenXRSpatialEntityTracker::EntityTrackingState)
-
 // Wrapper class for our spatial component data returned by discovery queries
-class OpenXRSpatialComponentData : public RefCounted {
-	VLTRCLASS(OpenXRSpatialComponentData, RefCounted);
-
-protected:
-	static void _bind_methods();
-
+class OpenXRSpatialComponentData : public RefCounted
+{
 public:
 	virtual void set_capacity(uint32_t p_capacity);
 	int64_t _get_component_typegd() const;
 	virtual XrSpatialComponentTypeEXT get_component_type() const;
-	virtual void *get_structure_data(void *p_next);
+	virtual void* get_structure_data(void* p_next);
 	OpenXRSpatialComponentData();
 	~OpenXRSpatialComponentData();
-
 };
 
-class OpenXRSpatialComponentBounded2DList : public OpenXRSpatialComponentData {
-	VLTRCLASS(OpenXRSpatialComponentBounded2DList, OpenXRSpatialComponentData);
-
-protected:
-	static void _bind_methods();
-
+class OpenXRSpatialComponentBounded2DList : public OpenXRSpatialComponentData
+{
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	Transform3D get_center_pose(int64_t p_index) const;
 	Vector2 get_size(int64_t p_index) const;
@@ -132,19 +112,16 @@ public:
 private:
 	Vector<XrSpatialBounded2DDataEXT> bounded2d_data;
 
-	XrSpatialComponentBounded2DListEXT bounded2d_list = { XR_TYPE_SPATIAL_COMPONENT_BOUNDED_2D_LIST_EXT, nullptr, 0, nullptr };
+	XrSpatialComponentBounded2DListEXT bounded2d_list = {
+		XR_TYPE_SPATIAL_COMPONENT_BOUNDED_2D_LIST_EXT, nullptr, 0, nullptr};
 };
 
-class OpenXRSpatialComponentBounded3DList : public OpenXRSpatialComponentData {
-	VLTRCLASS(OpenXRSpatialComponentBounded3DList, OpenXRSpatialComponentData);
-
-protected:
-	static void _bind_methods();
-
+class OpenXRSpatialComponentBounded3DList : public OpenXRSpatialComponentData
+{
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	Transform3D get_center_pose(int64_t p_index) const;
 	Vector3 get_size(int64_t p_index) const;
@@ -152,38 +129,32 @@ public:
 private:
 	Vector<XrBoxf> bounded3d_data;
 
-	XrSpatialComponentBounded3DListEXT bounded3d_list = { XR_TYPE_SPATIAL_COMPONENT_BOUNDED_3D_LIST_EXT, nullptr, 0, nullptr };
+	XrSpatialComponentBounded3DListEXT bounded3d_list = {
+		XR_TYPE_SPATIAL_COMPONENT_BOUNDED_3D_LIST_EXT, nullptr, 0, nullptr};
 };
 
-class OpenXRSpatialComponentParentList : public OpenXRSpatialComponentData {
-	VLTRCLASS(OpenXRSpatialComponentParentList, OpenXRSpatialComponentData);
-
-protected:
-	static void _bind_methods();
-
+class OpenXRSpatialComponentParentList : public OpenXRSpatialComponentData
+{
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	RID get_parent(int64_t p_index) const;
 
 private:
 	Vector<XrSpatialEntityIdEXT> parent_data;
 
-	XrSpatialComponentParentListEXT parent_list = { XR_TYPE_SPATIAL_COMPONENT_PARENT_LIST_EXT, nullptr, 0, nullptr };
+	XrSpatialComponentParentListEXT parent_list = {
+		XR_TYPE_SPATIAL_COMPONENT_PARENT_LIST_EXT, nullptr, 0, nullptr};
 };
 
-class OpenXRSpatialComponentMesh2DList : public OpenXRSpatialComponentData {
-	VLTRCLASS(OpenXRSpatialComponentMesh2DList, OpenXRSpatialComponentData);
-
-protected:
-	static void _bind_methods();
-
+class OpenXRSpatialComponentMesh2DList : public OpenXRSpatialComponentData
+{
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	Transform3D get_transform(int64_t p_index) const;
 	PackedVector2Array get_vertices(RID p_snapshot, int64_t p_index) const;
@@ -192,19 +163,16 @@ public:
 private:
 	Vector<XrSpatialMeshDataEXT> mesh2d_data;
 
-	XrSpatialComponentMesh2DListEXT mesh2d_list = { XR_TYPE_SPATIAL_COMPONENT_MESH_2D_LIST_EXT, nullptr, 0, nullptr };
+	XrSpatialComponentMesh2DListEXT mesh2d_list = {
+		XR_TYPE_SPATIAL_COMPONENT_MESH_2D_LIST_EXT, nullptr, 0, nullptr};
 };
 
-class OpenXRSpatialComponentMesh3DList : public OpenXRSpatialComponentData {
-	VLTRCLASS(OpenXRSpatialComponentMesh3DList, OpenXRSpatialComponentData);
-
-protected:
-	static void _bind_methods();
-
+class OpenXRSpatialComponentMesh3DList : public OpenXRSpatialComponentData
+{
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	Transform3D get_transform(int64_t p_index) const;
 	Ref<Mesh> get_mesh(int64_t p_index) const;
@@ -212,21 +180,19 @@ public:
 private:
 	Vector<XrSpatialMeshDataEXT> mesh3d_data;
 
-	XrSpatialComponentMesh3DListEXT mesh3d_list = { XR_TYPE_SPATIAL_COMPONENT_MESH_3D_LIST_EXT, nullptr, 0, nullptr };
+	XrSpatialComponentMesh3DListEXT mesh3d_list = {
+		XR_TYPE_SPATIAL_COMPONENT_MESH_3D_LIST_EXT, nullptr, 0, nullptr};
 };
 
-class OpenXRSpatialQueryResultData : public OpenXRSpatialComponentData {
-	VLTRCLASS(OpenXRSpatialQueryResultData, OpenXRSpatialComponentData);
-
-protected:
-	static void _bind_methods();
-
+class OpenXRSpatialQueryResultData : public OpenXRSpatialComponentData
+{
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void *get_structure_data(void *p_next) override;
+	virtual void* get_structure_data(void* p_next) override;
 
 	int64_t get_capacity() const { return entity_ids.size(); }
+
 	XrSpatialEntityIdEXT get_entity_id(int64_t p_index) const;
 	XrSpatialEntityTrackingStateEXT get_entity_state(int64_t p_index) const;
 
@@ -236,8 +202,11 @@ private:
 	Vector<XrSpatialEntityIdEXT> entity_ids;
 	Vector<XrSpatialEntityTrackingStateEXT> entity_states;
 
-	XrSpatialComponentDataQueryResultEXT query_result = { XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT, nullptr, 0, 0, nullptr, 0, 0, nullptr };
+	XrSpatialComponentDataQueryResultEXT query_result = {
+		XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT, nullptr, 0, 0, nullptr, 0, 0, nullptr};
 
 	uint64_t _get_entity_id(int64_t p_index) const;
 	OpenXRSpatialEntityTracker::EntityTrackingState _get_entity_state(int64_t p_index) const;
 };
+
+

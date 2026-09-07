@@ -41,7 +41,6 @@ class RenderingDevice;
 #endif
 
 class DisplayServerAndroid : public DisplayServer {
-	VLTRSOFTCLASS(DisplayServerAndroid, DisplayServer);
 
 	String rendering_driver;
 

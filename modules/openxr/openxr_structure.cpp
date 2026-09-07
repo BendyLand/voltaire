@@ -30,8 +30,6 @@
 
 #include "openxr_structure.h"
 
-void OpenXRStructureBase::_bind_methods() {}
-
 void OpenXRStructureBase::set_next(const Ref<OpenXRStructureBase> p_next) { next = p_next; }
 
 Ref<OpenXRStructureBase> OpenXRStructureBase::get_next() const { return next; }

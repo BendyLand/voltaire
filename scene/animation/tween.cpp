@@ -55,23 +55,11 @@ Tween::interpolater Tween::interpolaters[Tween::TRANS_MAX][Tween::EASE_MAX] = {
 	{&Spring::in, &Spring::out, &Spring::in_out, &Spring::out_in},
 };
 
-void Tweener::set_tween(const Ref<Tween>& p_tween) { tween_id = p_tween->obj->get_instance_id(); }
-
 void Tweener::start()
 {
 	elapsed_time = 0;
 	finished = false;
 }
-
-Ref<Tween> Tweener::_get_tween() { return ObjectDB::get_ref<Tween>(tween_id); }
-
-void Tweener::_finish()
-{
-	finished = true;
-	this->obj->emit_signal(SceneStringName(finished));
-}
-
-void Tweener::_bind_methods() {}
 
 void Tween::_start_tweeners()
 {
@@ -95,61 +83,11 @@ void Tween::_stop_internal(bool p_reset)
 	}
 }
 
-PropertyTweener* Tween::tween_property(const Object* rp_target,
-	const NodePath& p_property, Variant p_to, double p_duration)
-{
-	CHECK_VALID();
-	Vector<StringName> property_subnames = p_property.get_as_property_path().get_subnames();
-#ifdef DEBUG_ENABLED
-	bool prop_valid;
-	const Variant& prop_value = rp_target->get_indexed(property_subnames, &prop_valid);
-	ERR_FAIL_COND_V_MSG(!prop_valid, nullptr,
-		vformat(
-			"The tweened property \"%s\" does not exist in object \"%s\".", p_property, rp_target));
-#else
-	const Variant& prop_value = rp_target->get_indexed(property_subnames);
-#endif
-
-	if (!Animation::validate_type_match(prop_value, p_to)) {
-		return nullptr;
-	}
-
-	Ref<PropertyTweener> tweener;
-	tweener.instantiate(rp_target, property_subnames, p_to, p_duration);
-	append(tweener);
-	return tweener.ptr();
-}
-
 IntervalTweener* Tween::tween_interval(double p_time)
 {
 	CHECK_VALID();
 	Ref<IntervalTweener> tweener;
 	tweener.instantiate(p_time);
-	append(tweener);
-	return tweener.ptr();
-}
-
-CallbackTweener* Tween::tween_callback(const Callable& p_callback)
-{
-	CHECK_VALID();
-
-	Ref<CallbackTweener> tweener;
-	tweener.instantiate(p_callback);
-	append(tweener);
-	return tweener.ptr();
-}
-
-MethodTweener* Tween::tween_method(
-	const Callable& p_callback, const Variant p_from, Variant p_to, double p_duration)
-{
-	CHECK_VALID();
-
-	if (!Animation::validate_type_match(p_from, p_to)) {
-		return nullptr;
-	}
-
-	Ref<MethodTweener> tweener;
-	tweener.instantiate(p_callback, p_from, p_to, p_duration);
 	append(tweener);
 	return tweener.ptr();
 }
@@ -169,15 +107,6 @@ SubtweenTweener* Tween::tween_subtween(Tween* rp_subtween)
 		tweener->subtween->parent_tree->remove_tween(tweener->subtween);
 	}
 	subtweens.push_back(rp_subtween);
-	append(tweener);
-	return tweener.ptr();
-}
-
-AwaitTweener* Tween::tween_await(const Signal& p_signal)
-{
-	CHECK_VALID();
-
-	Ref<AwaitTweener> tweener = memnew(AwaitTweener(p_signal));
 	append(tweener);
 	return tweener.ptr();
 }
@@ -231,13 +160,6 @@ void Tween::clear()
 {
 	valid = false;
 	tweeners.clear();
-}
-
-Tween* Tween::bind_node(const Node* rp_node)
-{
-	bound_node = rp_node->obj->get_instance_id();
-	is_bound = true;
-	return this;
 }
 
 Tween* Tween::set_process_mode(TweenProcessMode p_mode)
@@ -332,114 +254,6 @@ bool Tween::custom_step(double p_delta)
 	return ret;
 }
 
-bool Tween::step(double p_delta)
-{
-	if (dead) {
-		return false;
-	}
-
-	if (is_bound) {
-		Node* node = get_bound_node();
-		if (node) {
-			if (!node->is_inside_tree()) {
-				return true;
-			}
-		}
-		else {
-			return false;
-		}
-	}
-
-	if (!running) {
-		return true;
-	}
-	in_step = true;
-
-	if (!started) {
-		if (tweeners.is_empty()) {
-			String tween_id;
-			Node* node = get_bound_node();
-			if (node) {
-				tween_id = vformat("Tween (bound to %s)",
-					node->is_inside_tree() ? (String)node->get_path() : (String)node->get_name());
-			}
-			else {
-				tween_id = this->obj->to_string();
-			}
-			in_step = false;
-			ERR_FAIL_V_MSG(false, tween_id + ": started with no Tweeners.");
-		}
-		current_step = 0;
-		loops_done = 0;
-		total_time = 0;
-		_start_tweeners();
-		started = true;
-	}
-
-	double rem_delta = p_delta * speed_scale;
-	bool step_active = false;
-	total_time += rem_delta;
-
-#ifdef DEBUG_ENABLED
-	double initial_delta = rem_delta;
-	bool potential_infinite = false;
-#endif
-
-	while (running && rem_delta > 0) {
-		double step_delta = rem_delta;
-		step_active = false;
-
-		for (Ref<Tweener>& tweener : tweeners[current_step]) {
-			// Modified inside Tweener.step().
-			double temp_delta = rem_delta;
-			// Turns to true if any Tweener returns true (i.e. is still not finished).
-			step_active = tweener->step(temp_delta) || step_active;
-			step_delta = MIN(temp_delta, step_delta);
-		}
-
-		rem_delta = step_delta;
-
-		if (!step_active) {
-			this->obj->emit_signal(SNAME("step_finished"), current_step);
-			current_step++;
-
-			if (current_step == (int)tweeners.size()) {
-				loops_done++;
-				if (loops_done == loops) {
-					running = false;
-					dead = true;
-					this->obj->emit_signal(SceneStringName(finished));
-					break;
-				}
-				else {
-					this->obj->emit_signal(SNAME("loop_finished"), loops_done);
-					current_step = 0;
-					_start_tweeners();
-#ifdef DEBUG_ENABLED
-					if (loops <= 0 && Math::is_equal_approx(rem_delta, initial_delta)) {
-						if (!potential_infinite) {
-							potential_infinite = true;
-						}
-						else {
-							// Looped twice without using any time, this is 100% certain infinite
-							// loop.
-							in_step = false;
-							ERR_FAIL_V_MSG(false, "Infinite loop detected. Check set_loops() "
-												  "description for more info.");
-						}
-					}
-#endif
-				}
-			}
-			else {
-				_start_tweeners();
-			}
-		}
-	}
-	in_step = false;
-	return true;
-}
-
 bool Tween::can_process(bool p_tree_paused) const
 {
 	if (is_bound && pause_mode == TWEEN_PAUSE_BOUND) {
@@ -450,16 +264,6 @@ bool Tween::can_process(bool p_tree_paused) const
 	}
 
 	return !p_tree_paused || pause_mode == TWEEN_PAUSE_PROCESS;
-}
-
-Node* Tween::get_bound_node() const
-{
-	if (is_bound) {
-		return ObjectDB::get_instance<Node>(bound_node);
-	}
-	else {
-		return nullptr;
-	}
 }
 
 double Tween::get_total_time() const { return total_time; }
@@ -476,71 +280,12 @@ real_t Tween::run_equation(TransitionType p_trans_type, EaseType p_ease_type, re
 	return func(p_time, p_initial, p_delta, p_duration);
 }
 
-Variant Tween::interpolate_variant(const Variant& p_initial_val, const Variant& p_delta_val,
-	double p_time, double p_duration, TransitionType p_trans, EaseType p_ease)
-{
-	ERR_FAIL_INDEX_V(p_trans, TransitionType::TRANS_MAX, Variant());
-	ERR_FAIL_INDEX_V(p_ease, EaseType::EASE_MAX, Variant());
-
-	Variant ret = Animation::add_variant(p_initial_val, p_delta_val);
-	ret = Animation::interpolate_variant(p_initial_val, ret,
-		run_equation(p_trans, p_ease, p_time, 0.0, 1.0, p_duration), p_initial_val.is_string());
-	return ret;
-}
-
-String Tween::_to_string()
-{
-	String ret = this->obj->to_string();
-	Node* node = get_bound_node();
-	if (node) {
-		ret += vformat(" (bound to %s)", node->get_name());
-	}
-	return ret;
-}
-
-void Tween::_bind_methods() {}
-
 Tween::Tween() { ERR_FAIL_MSG("Tween can't be created directly. Use create_tween() method."); }
 
 Tween::Tween(SceneTree* p_parent_tree)
 {
 	parent_tree = p_parent_tree;
 	valid = true;
-}
-
-double PropertyTweener::_get_custom_interpolated_value(const Variant& p_value)
-{
-	const Variant* argptr = &p_value;
-
-	Variant result;
-	Callable::CallError ce;
-	custom_method.callp(&argptr, 1, result, ce);
-	if (ce.error != Callable::CallError::CALL_OK) {
-		ERR_FAIL_V_MSG(false, "Error calling custom method from PropertyTweener: " +
-								  Variant::get_callable_error_text(custom_method, &argptr, 1, ce) +
-								  ".");
-	}
-	else if (result.get_type() != Variant::FLOAT) {
-		ERR_FAIL_V_MSG(false,
-			vformat("Wrong return type in PropertyTweener custom method. Expected float, got %s.",
-				Variant::get_type_name(result.get_type())));
-	}
-	return result;
-}
-
-PropertyTweener* PropertyTweener::from(const Variant& p_value)
-{
-	Ref<Tween> tween = _get_tween();
-	ERR_FAIL_COND_V(tween.is_null(), nullptr);
-
-	Variant from_value = p_value;
-	if (!Animation::validate_type_match(final_val, from_value)) {
-		return nullptr;
-	}
-
-	initial_val = from_value;
-	do_continue = false;
-	return this;
 }
 
 PropertyTweener* PropertyTweener::from_current()
@@ -567,99 +312,10 @@ PropertyTweener* PropertyTweener::set_ease(Tween::EaseType p_ease)
 	return this;
 }
 
-PropertyTweener* PropertyTweener::set_custom_interpolator(const Callable& p_method)
-{
-	custom_method = p_method;
-	return this;
-}
-
 PropertyTweener* PropertyTweener::set_delay(double p_delay)
 {
 	delay = p_delay;
 	return this;
-}
-
-void PropertyTweener::start()
-{
-	Tweener::start();
-
-	Object* target_instance = ObjectDB::get_instance(target);
-	if (!target_instance) {
-		return;
-	}
-
-	if (do_continue) {
-		if (Math::is_zero_approx(delay)) {
-			initial_val = target_instance->get_indexed(property);
-		}
-		else {
-			do_continue_delayed = true;
-		}
-	}
-
-	if (relative) {
-		final_val = Animation::add_variant(initial_val, base_final_val);
-	}
-
-	delta_val = Animation::subtract_variant(final_val, initial_val);
-}
-
-bool PropertyTweener::step(double& r_delta)
-{
-	if (finished) {
-		// This is needed in case there's a parallel Tweener with longer duration.
-		return false;
-	}
-
-	Object* target_instance = ObjectDB::get_instance(target);
-	if (!target_instance) {
-		_finish();
-		return false;
-	}
-	elapsed_time += r_delta;
-
-	if (elapsed_time < delay) {
-		r_delta = 0;
-		return true;
-	}
-	else if (do_continue_delayed && !Math::is_zero_approx(delay)) {
-		initial_val = target_instance->get_indexed(property);
-		delta_val = Animation::subtract_variant(final_val, initial_val);
-		do_continue_delayed = false;
-	}
-
-	Ref<Tween> tween = _get_tween();
-
-	double time = MIN(elapsed_time - delay, duration);
-	if (time < duration) {
-		if (custom_method.is_valid()) {
-			const Variant t =
-				tween->interpolate_variant(0.0, 1.0, time, duration, trans_type, ease_type);
-			double result = _get_custom_interpolated_value(t);
-			target_instance->set_indexed(
-				property, Animation::interpolate_variant(initial_val, final_val, result));
-		}
-		else {
-			target_instance->set_indexed(
-				property, tween->interpolate_variant(
-							  initial_val, delta_val, time, duration, trans_type, ease_type));
-		}
-		r_delta = 0;
-		return true;
-	}
-	else {
-		if (custom_method.is_valid()) {
-			double final_t = _get_custom_interpolated_value(1.0);
-			target_instance->set_indexed(
-				property, Animation::interpolate_variant(initial_val, final_val, final_t));
-		}
-		else {
-			target_instance->set_indexed(property, final_val);
-		}
-		r_delta = elapsed_time - delay - duration;
-		_finish();
-		return false;
-	}
 }
 
 void PropertyTweener::set_tween(const Ref<Tween>& p_tween)
@@ -670,23 +326,6 @@ void PropertyTweener::set_tween(const Ref<Tween>& p_tween)
 	}
 	if (ease_type == Tween::EASE_MAX) {
 		ease_type = p_tween->get_ease();
-	}
-}
-
-void PropertyTweener::_bind_methods() {}
-
-PropertyTweener::PropertyTweener(const Object* p_target, const Vector<StringName>& p_property,
-	const Variant& p_to, double p_duration)
-{
-	target = p_target->get_instance_id();
-	property = p_property;
-	initial_val = p_target->get_indexed(property);
-	base_final_val = p_to;
-	final_val = base_final_val;
-	duration = p_duration;
-
-	if (p_target->is_ref_counted()) {
-		ref_copy = p_target;
 	}
 }
 
@@ -725,51 +364,9 @@ IntervalTweener::IntervalTweener()
 
 CallbackTweener* CallbackTweener::set_delay(double p_delay)
 {
-	delay = p_delay;
+	delay
+= p_delay;
 	return this;
-}
-
-bool CallbackTweener::step(double& r_delta)
-{
-	if (finished) {
-		return false;
-	}
-
-	if (!callback.is_valid()) {
-		_finish();
-		return false;
-	}
-
-	elapsed_time += r_delta;
-	if (elapsed_time >= delay) {
-		Variant result;
-		Callable::CallError ce;
-		callback.callp(nullptr, 0, result, ce);
-		if (ce.error != Callable::CallError::CALL_OK) {
-			ERR_FAIL_V_MSG(false, "Error calling method from CallbackTweener: " +
-									  Variant::get_callable_error_text(callback, nullptr, 0, ce) +
-									  ".");
-		}
-
-		r_delta = elapsed_time - delay;
-		_finish();
-		return false;
-	}
-
-	r_delta = 0;
-	return true;
-}
-
-void CallbackTweener::_bind_methods() {}
-
-CallbackTweener::CallbackTweener(const Callable& p_callback)
-{
-	callback = p_callback;
-
-	Object* callback_instance = p_callback.get_object();
-	if (callback_instance && callback_instance->is_ref_counted()) {
-		ref_copy = callback_instance;
-	}
 }
 
 CallbackTweener::CallbackTweener()
@@ -796,57 +393,6 @@ MethodTweener* MethodTweener::set_ease(Tween::EaseType p_ease)
 	return this;
 }
 
-bool MethodTweener::step(double& r_delta)
-{
-	if (finished) {
-		return false;
-	}
-
-	if (!callback.is_valid()) {
-		_finish();
-		return false;
-	}
-
-	elapsed_time += r_delta;
-
-	if (elapsed_time < delay) {
-		r_delta = 0;
-		return true;
-	}
-
-	Ref<Tween> tween = _get_tween();
-
-	Variant current_val;
-	double time = MIN(elapsed_time - delay, duration);
-	if (time < duration) {
-		current_val = tween->interpolate_variant(
-			initial_val, delta_val, time, duration, trans_type, ease_type);
-	}
-	else {
-		current_val = final_val;
-	}
-	const Variant** argptr = (const Variant**)alloca(sizeof(Variant*));
-	argptr[0] = &current_val;
-
-	Variant result;
-	Callable::CallError ce;
-	callback.callp(argptr, 1, result, ce);
-	if (ce.error != Callable::CallError::CALL_OK) {
-		ERR_FAIL_V_MSG(false, "Error calling method from MethodTweener: " +
-								  Variant::get_callable_error_text(callback, argptr, 1, ce) + ".");
-	}
-
-	if (time < duration) {
-		r_delta = 0;
-		return true;
-	}
-	else {
-		r_delta = elapsed_time - delay - duration;
-		_finish();
-		return false;
-	}
-}
-
 void MethodTweener::set_tween(const Ref<Tween>& p_tween)
 {
 	Tweener::set_tween(p_tween);
@@ -855,23 +401,6 @@ void MethodTweener::set_tween(const Ref<Tween>& p_tween)
 	}
 	if (ease_type == Tween::EASE_MAX) {
 		ease_type = p_tween->get_ease();
-	}
-}
-
-void MethodTweener::_bind_methods() {}
-
-MethodTweener::MethodTweener(
-	const Callable& p_callback, const Variant& p_from, const Variant& p_to, double p_duration)
-{
-	callback = p_callback;
-	initial_val = p_from;
-	delta_val = Animation::subtract_variant(p_to, p_from);
-	final_val = p_to;
-	duration = p_duration;
-
-	Object* callback_instance = p_callback.get_object();
-	if (callback_instance && callback_instance->is_ref_counted()) {
-		ref_copy = callback_instance;
 	}
 }
 
@@ -927,8 +456,6 @@ SubtweenTweener* SubtweenTweener::set_delay(double p_delay)
 	return this;
 }
 
-void SubtweenTweener::_bind_methods() {}
-
 SubtweenTweener::SubtweenTweener(const Ref<Tween>& p_subtween) { subtween = p_subtween; }
 
 SubtweenTweener::SubtweenTweener()
@@ -949,58 +476,9 @@ void AwaitTweener::start()
 	received = false;
 }
 
-bool AwaitTweener::step(double& r_delta)
-{
-	if (finished) {
-		return false;
-	}
-
-	if (!signal.get_object() ||
-		!signal.is_connected(
-			target_callable)) { // In case the object was destroyed before emitting.
-		_finish();
-		return false;
-	}
-
-	elapsed_time += r_delta;
-
-	if (timeout >= 0 && elapsed_time >= timeout) {
-		_finish();
-		r_delta = elapsed_time - timeout;
-		return false;
-	}
-
-	r_delta = 0; // "Consume" all remaining time to prevent infinite loops.
-	if (received) {
-		_finish();
-		return false;
-	}
-	return true;
-}
-
-AwaitTweener::AwaitTweener(const Signal& p_signal)
-{
-	signal = p_signal;
-	target_callable = Callable(this->obj.get(), SNAME("_signal_callback"));
-	signal.connect(target_callable);
-
-	Object* signal_instance = p_signal.get_object();
-	if (signal_instance && signal_instance->is_ref_counted()) {
-		ref_copy = signal_instance;
-	}
-}
-
 AwaitTweener::AwaitTweener()
 {
 	ERR_FAIL_MSG("AwaitTweener can't be created directly. Use the tween_await() method in Tween.");
-}
-
-void AwaitTweener::_bind_methods() {}
-
-void AwaitTweener::_signal_received(
-	const Variant** p_args, int p_argcount, Callable::CallError& r_error)
-{
-	received = true;
 }
 
 

@@ -40,23 +40,24 @@ class Skeleton3D;
 	data from an XRBodyTracker instance.
  */
 
-class XRBodyModifier3D : public SkeletonModifier3D {
-	VLTRCLASS(XRBodyModifier3D, SkeletonModifier3D);
-
+class XRBodyModifier3D : public SkeletonModifier3D
+{
 public:
-	enum BodyUpdate {
+	enum BodyUpdate
+	{
 		BODY_UPDATE_UPPER_BODY = 1,
 		BODY_UPDATE_LOWER_BODY = 2,
 		BODY_UPDATE_HANDS = 4,
 	};
 
-	enum BoneUpdate {
+	enum BoneUpdate
+	{
 		BONE_UPDATE_FULL,
 		BONE_UPDATE_ROTATION_ONLY,
 		BONE_UPDATE_MAX
 	};
 
-	void set_body_tracker(const StringName &p_tracker_name);
+	void set_body_tracker(const StringName& p_tracker_name);
 	StringName get_body_tracker() const;
 
 	void set_body_update(uint32_t p_body_update);
@@ -70,11 +71,12 @@ public:
 protected:
 	static void _bind_methods();
 
-	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
+	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 	virtual void _process_modification(double p_delta) override;
 
 private:
-	struct JointData {
+	struct JointData
+	{
 		int bone = -1;
 		int parent_joint = -1;
 	};
@@ -85,8 +87,7 @@ private:
 	JointData joints[XRBodyTracker::JOINT_MAX];
 
 	void _get_joint_data();
-	void _tracker_changed(const StringName &p_tracker_name, XRServer::TrackerType p_tracker_type);
+	void _tracker_changed(const StringName& p_tracker_name, XRServer::TrackerType p_tracker_type);
 };
 
-VARIANT_BITFIELD_CAST(XRBodyModifier3D::BodyUpdate)
-VARIANT_ENUM_CAST(XRBodyModifier3D::BoneUpdate)
+

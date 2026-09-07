@@ -148,11 +148,6 @@ void ColorPickerShape::finish_shaders()
 	rectangle_ok_color_hl_shader.unref();
 }
 
-void ColorPickerShape::_emit_color_changed()
-{
-	color_picker->obj->emit_signal(SNAME("color_changed"), color_picker->color);
-}
-
 bool ColorPickerShape::can_handle(
 	const Ref<InputEvent>& p_event, Vector2& r_position, bool* r_is_click)
 {
@@ -285,8 +280,8 @@ void ColorPickerShape::draw_cursor(Control* p_control, const Vector2& p_center, 
 {
 	const Vector2 position = p_center - color_picker->theme_cache.picker_cursor->get_size() * 0.5;
 	if (p_draw_bg) {
-		p_control->draw_texture(
-			color_picker->theme_cache.picker_cursor_bg.ptr(), position, Color(color_picker->color, 1.0));
+		p_control->draw_texture(color_picker->theme_cache.picker_cursor_bg.ptr(), position,
+			Color(color_picker->color, 1.0));
 	}
 	p_control->draw_texture(color_picker->theme_cache.picker_cursor.ptr(), position);
 }
@@ -300,15 +295,6 @@ void ColorPickerShape::draw_circle_cursor(Control* p_control, float p_hue, float
 	draw_cursor(p_control, cursor_pos);
 }
 
-void ColorPickerShape::connect_shape_focus(Control* p_shape)
-{
-	p_shape->set_focus_mode(Control::FOCUS_ALL);
-	p_shape->connect(
-		SceneStringName(focus_entered), callable_mp(this, &ColorPickerShape::shape_focus_entered));
-	p_shape->connect(
-		SceneStringName(focus_exited), callable_mp(this, &ColorPickerShape::shape_focus_exited));
-}
-
 void ColorPickerShape::shape_focus_entered()
 {
 	Input* input = Input::get_singleton();
@@ -319,47 +305,6 @@ void ColorPickerShape::shape_focus_entered()
 }
 
 void ColorPickerShape::shape_focus_exited() { cursor_editing = false; }
-
-void ColorPickerShape::handle_cursor_editing(const Ref<InputEvent>& p_event, Control* p_control)
-{
-	if (p_event->is_action_pressed("ui_accept", false, true)) {
-		cursor_editing = !cursor_editing;
-		p_control->queue_redraw();
-		color_picker->accept_event();
-	}
-
-	if (cursor_editing && p_event->is_action_pressed("ui_cancel", false, true)) {
-		cursor_editing = false;
-		p_control->queue_redraw();
-		color_picker->accept_event();
-	}
-
-	if (!cursor_editing) {
-		return;
-	}
-
-	Input* input = Input::get_singleton();
-	bool is_joypad_event = Object::cast_to<InputEventJoypadMotion>(p_event.ptr()) ||
-						   Object::cast_to<InputEventJoypadButton>(p_event.ptr());
-
-	if (p_event->is_action_pressed("ui_left", true) ||
-		p_event->is_action_pressed("ui_right", true) || p_event->is_action_pressed("ui_up", true) ||
-		p_event->is_action_pressed("ui_down", true)) {
-		if (is_joypad_event) {
-			if (color_picker->is_processing_internal()) {
-				color_picker->accept_event();
-				return;
-			}
-			color_picker->set_process_internal(true);
-		}
-
-		Vector2 color_change_vector =
-			Vector2(input->is_action_pressed("ui_right") - input->is_action_pressed("ui_left"),
-				input->is_action_pressed("ui_down") - input->is_action_pressed("ui_up"));
-		update_cursor(color_change_vector, p_event->is_echo());
-		color_picker->accept_event();
-	}
-}
 
 int ColorPickerShape::get_edge_h_change(const Vector2& p_color_change_vector)
 {
@@ -464,37 +409,14 @@ void ColorPickerShapeRectangle::_sv_square_draw()
 void ColorPickerShapeRectangle::_hue_slider_draw()
 {
 	const Vector2 size = hue_slider->get_size();
-	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue.ptr(), Rect2(0, 0, -size.y, size.x),
-		false, Color(1, 1, 1), true);
+	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue.ptr(),
+		Rect2(0, 0, -size.y, size.x), false, Color(1, 1, 1), true);
 
 	draw_focus_rect(hue_slider);
 
 	int y = size.y * color_picker->h;
 	const Color color = Color::from_hsv(color_picker->h, 1, 1);
 	hue_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-}
-
-void ColorPickerShapeRectangle::_initialize_controls()
-{
-	sv_square = memnew(Control);
-	sv_square->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	color_picker->shape_container->add_child(sv_square);
-	sv_square->connect(SceneStringName(gui_input),
-		callable_mp(this, &ColorPickerShapeRectangle::_sv_square_input));
-	sv_square->connect(
-		SceneStringName(draw), callable_mp(this, &ColorPickerShapeRectangle::_sv_square_draw));
-	connect_shape_focus(sv_square);
-
-	hue_slider = memnew(Control);
-	color_picker->shape_container->add_child(hue_slider);
-	hue_slider->connect(SceneStringName(gui_input),
-		callable_mp(this, &ColorPickerShapeRectangle::_hue_slider_input));
-	hue_slider->connect(
-		SceneStringName(draw), callable_mp(this, &ColorPickerShapeRectangle::_hue_slider_draw));
-	connect_shape_focus(hue_slider);
-
-	controls.append(sv_square);
-	controls.append(hue_slider);
 }
 
 void ColorPickerShapeRectangle::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
@@ -518,45 +440,6 @@ void ColorPickerShapeRectangle::update_theme()
 
 void ColorPickerShapeRectangle::grab_focus() { hue_slider->grab_focus(); }
 
-void ColorPickerShapeOKHSRectangle::_initialize_controls()
-{
-	rectangle_margin = memnew(MarginContainer);
-	rectangle_margin->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	color_picker->shape_container->add_child(rectangle_margin);
-
-	Ref<ShaderMaterial> material;
-	material.instantiate();
-	material->set_shader(_get_shader());
-
-	square = memnew(Control);
-	rectangle_margin->add_child(square);
-	square->connect(
-		SceneStringName(draw), callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_draw));
-	square->set_material(material);
-
-	square_overlay = memnew(Control);
-	rectangle_margin->add_child(square_overlay);
-	square_overlay->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	square_overlay->connect(SceneStringName(gui_input),
-		callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_overlay_input));
-	square_overlay->connect(SceneStringName(draw),
-		callable_mp(this, &ColorPickerShapeOKHSRectangle::_square_overlay_draw));
-	connect_shape_focus(square_overlay);
-
-	value_slider = memnew(Control);
-	color_picker->shape_container->add_child(value_slider);
-	value_slider->connect(SceneStringName(gui_input),
-		callable_mp(this, &ColorPickerShapeOKHSRectangle::_value_slider_input));
-	value_slider->connect(SceneStringName(draw),
-		callable_mp(this, &ColorPickerShapeOKHSRectangle::_value_slider_draw));
-	connect_shape_focus(value_slider);
-
-	controls.append(rectangle_margin);
-	controls.append(square);
-	controls.append(square_overlay);
-	controls.append(value_slider);
-}
-
 void ColorPickerShapeOKHSRectangle::update_theme()
 {
 	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
@@ -579,13 +462,6 @@ void ColorPickerShapeOKHSRectangle::_update_cursor(
 		color_picker->ok_hsl_l =
 			CLAMP(color_picker->ok_hsl_l + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
 	}
-}
-
-void ColorPickerShapeOKHSRectangle::_square_draw()
-{
-	Ref<ShaderMaterial> material = square->get_material();
-	material->set_shader_parameter(SNAME("ok_hsl_l"), color_picker->ok_hsl_l);
-	square->draw_rect(Rect2(Point2(), square->get_size()), Color(1, 1, 1));
 }
 
 void ColorPickerShapeOKHSRectangle::_square_overlay_input(const Ref<InputEvent>& p_event)
@@ -708,13 +584,6 @@ void ColorPickerShapeOKHLRectangle::_square_overlay_draw()
 
 	draw_focus_rect(square_overlay);
 	draw_cursor(square_overlay, cursor_pos);
-}
-
-void ColorPickerShapeOKHLRectangle::_square_draw()
-{
-	Ref<ShaderMaterial> material = square->get_material();
-	material->set_shader_parameter(SNAME("ok_hsl_s"), color_picker->ok_hsl_s);
-	square->draw_rect(Rect2(Point2(), square->get_size()), Color(1, 1, 1));
 }
 
 void ColorPickerShapeOKHLRectangle::_value_slider_input(const Ref<InputEvent>& p_event)
@@ -897,33 +766,6 @@ void ColorPickerShapeWheel::_wheel_uv_draw()
 	draw_cursor(wheel_uv, cursor_pos, false);
 }
 
-void ColorPickerShapeWheel::_initialize_controls()
-{
-	Ref<ShaderMaterial> material;
-	material.instantiate();
-	material->set_shader(ColorPickerShape::wheel_shader);
-	material->set_shader_parameter("wheel_radius", WHEEL_RADIUS);
-
-	wheel = memnew(Control);
-	wheel->set_material(material);
-	color_picker->shape_container->add_child(wheel);
-	wheel->connect(SceneStringName(draw), callable_mp(this, &ColorPickerShapeWheel::_wheel_draw));
-
-	wheel_uv = memnew(Control);
-	wheel_uv->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	wheel->add_child(wheel_uv);
-	wheel_uv->connect(SceneStringName(focus_entered),
-		callable_mp(this, &ColorPickerShapeWheel::_reset_wheel_focus));
-	wheel_uv->connect(
-		SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeWheel::_wheel_input));
-	wheel_uv->connect(
-		SceneStringName(draw), callable_mp(this, &ColorPickerShapeWheel::_wheel_uv_draw));
-	connect_shape_focus(wheel_uv);
-
-	controls.append(wheel);
-	controls.append(wheel_uv);
-}
-
 void ColorPickerShapeWheel::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
 {
 	if (wheel_focused) {
@@ -973,40 +815,6 @@ void ColorPickerShapeCircle::update_circle_cursor(
 	}
 }
 
-void ColorPickerShapeCircle::_initialize_controls()
-{
-	Ref<ShaderMaterial> material;
-	material.instantiate();
-	material->set_shader(_get_shader());
-
-	circle = memnew(Control);
-	circle->set_material(material);
-	color_picker->shape_container->add_child(circle);
-	circle->connect(
-		SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_circle_draw));
-
-	circle_overlay = memnew(Control);
-	circle_overlay->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	circle->add_child(circle_overlay);
-	circle_overlay->connect(
-		SceneStringName(gui_input), callable_mp(this, &ColorPickerShapeCircle::_circle_input));
-	circle_overlay->connect(
-		SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_circle_overlay_draw));
-	connect_shape_focus(circle_overlay);
-
-	value_slider = memnew(Control);
-	color_picker->shape_container->add_child(value_slider);
-	value_slider->connect(SceneStringName(gui_input),
-		callable_mp(this, &ColorPickerShapeCircle::_value_slider_input));
-	value_slider->connect(
-		SceneStringName(draw), callable_mp(this, &ColorPickerShapeCircle::_value_slider_draw));
-	connect_shape_focus(value_slider);
-
-	controls.append(circle);
-	controls.append(circle_overlay);
-	controls.append(value_slider);
-}
-
 void ColorPickerShapeCircle::update_theme()
 {
 	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
@@ -1054,13 +862,6 @@ void ColorPickerShapeVHSCircle::_value_slider_input(const Ref<InputEvent>& p_eve
 	}
 	color_picker->v = 1.0 - CLAMP(event_position.y / value_slider->get_size().y, 0.0, 1.0);
 	apply_color();
-}
-
-void ColorPickerShapeVHSCircle::_circle_draw()
-{
-	Ref<ShaderMaterial> material = circle->get_material();
-	material->set_shader_parameter(SNAME("v"), color_picker->v);
-	circle->draw_rect(Rect2(Point2(), circle->get_size()), Color(1, 1, 1));
 }
 
 void ColorPickerShapeVHSCircle::_circle_overlay_draw()
@@ -1148,16 +949,8 @@ void ColorPickerShapeOKHSLCircle::_value_slider_input(const Ref<InputEvent>& p_e
 	if (!can_handle(p_event, event_position)) {
 		return;
 	}
-	color_picker->ok_hsl_l = 1.0 -
- CLAMP(event_position.y / value_slider->get_size().y, 0.0, 1.0);
+	color_picker->ok_hsl_l = 1.0 - CLAMP(event_position.y / value_slider->get_size().y, 0.0, 1.0);
 	apply_color();
-}
-
-void ColorPickerShapeOKHSLCircle::_circle_draw()
-{
-	Ref<ShaderMaterial> material = circle->get_material();
-	material->set_shader_parameter(SNAME("ok_hsl_l"), color_picker->ok_hsl_l);
-	circle->draw_rect(Rect2(Point2(), circle->get_size()), Color(1, 1, 1));
 }
 
 void ColorPickerShapeOKHSLCircle::_circle_overlay_draw()

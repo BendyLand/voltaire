@@ -30,26 +30,25 @@
 
 #pragma once
 
-#include "servers/audio/audio_stream.h"
-
-#include "modules/ogg/ogg_packet_sequence.h"
-
 #include <vorbis/codec.h>
+#include "modules/ogg/ogg_packet_sequence.h"
+#include "servers/audio/audio_stream.h"
 
 class AudioStreamOggVorbis;
 
-class AudioStreamPlaybackOggVorbis : public AudioStreamPlaybackResampled {
-	VLTRCLASS(AudioStreamPlaybackOggVorbis, AudioStreamPlaybackResampled);
-
+class AudioStreamPlaybackOggVorbis : public AudioStreamPlaybackResampled
+{
 	uint32_t frames_mixed = 0;
 	bool active = false;
 	bool looping_override = false;
 	bool looping = false;
 	int loops = 0;
 
-	enum {
+	enum
+	{
 		FADE_SIZE = 256
 	};
+
 	AudioFrame loop_fade[FADE_SIZE];
 	int loop_fade_remaining = FADE_SIZE;
 
@@ -77,14 +76,14 @@ class AudioStreamPlaybackOggVorbis : public AudioStreamPlaybackResampled {
 	bool _is_sample = false;
 	Ref<AudioSamplePlayback> sample_playback;
 
-	int _mix_frames(AudioFrame *p_buffer, int p_frames);
-	int _mix_frames_vorbis(AudioFrame *p_buffer, int p_frames);
+	int _mix_frames(AudioFrame* p_buffer, int p_frames);
+	int _mix_frames_vorbis(AudioFrame* p_buffer, int p_frames);
 
 	// Allocates vorbis data structures. Returns true upon success, false on failure.
 	bool _alloc_vorbis();
 
 protected:
-	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames) override;
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
 	virtual float get_stream_sampling_rate() override;
 
 public:
@@ -92,30 +91,25 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; // times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 
 	virtual void tag_used_streams() override;
 
-	virtual void set_parameter(const StringName &p_name, const Variant &p_value) override;
-	virtual Variant get_parameter(const StringName &p_name) const override;
-
 	virtual void set_is_sample(bool p_is_sample) override;
 	virtual bool get_is_sample() const override;
 	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
-	virtual void set_sample_playback(const Ref<AudioSamplePlayback> &p_playback) override;
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
 
 	AudioStreamPlaybackOggVorbis() {}
+
 	~AudioStreamPlaybackOggVorbis();
 };
 
-class AudioStreamOggVorbis : public AudioStream {
-	VLTRCLASS(AudioStreamOggVorbis, AudioStream);
-	OBJ_SAVE_TYPE(AudioStream); // Saves derived classes with common type so they can be interchanged.
-	RES_BASE_EXTENSION("oggvorbisstr");
-
+class AudioStreamOggVorbis : public AudioStream
+{
 	friend class AudioStreamPlaybackOggVorbis;
 
 	int channels = 1;
@@ -132,14 +126,10 @@ class AudioStreamOggVorbis : public AudioStream {
 	double bpm = 0;
 	int beat_count = 0;
 	int bar_beats = 4;
-	Dictionary tags;
-
-protected:
-	static void _bind_methods();
 
 public:
-	static Ref<AudioStreamOggVorbis> load_from_file(const String &p_path);
-	static Ref<AudioStreamOggVorbis> load_from_buffer(const Vector<uint8_t> &p_stream_data);
+	static Ref<AudioStreamOggVorbis> load_from_file(const String& p_path);
+	static Ref<AudioStreamOggVorbis> load_from_buffer(const Vector<uint8_t>& p_stream_data);
 
 	void set_loop(bool p_enable);
 	virtual bool has_loop() const override;
@@ -156,22 +146,18 @@ public:
 	void set_bar_beats(int p_bar_beats);
 	virtual int get_bar_beats() const override;
 
-	void set_tags(const Dictionary &p_tags);
-	virtual Dictionary get_tags() const override;
-
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 
 	void set_packet_sequence(Ref<OggPacketSequence> p_packet_sequence);
 	Ref<OggPacketSequence> get_packet_sequence() const;
 
-	virtual double get_length() const override; //if supported, otherwise return 0
+	virtual double get_length() const override; // if supported, otherwise return 0
 
 	virtual bool is_monophonic() const override;
 
-	virtual void get_parameter_list(List<Parameter> *r_parameters) override;
+	virtual bool can_be_sampled() const override { return true; }
 
-	virtual bool can_be_sampled() const override {
-		return true;
-	}
 	virtual Ref<AudioSample> generate_sample() const override;
 };
+
+

@@ -36,7 +36,6 @@ class InputEvent;
 class NativeMenu;
 
 class DisplayServerHeadless : public DisplayServer {
-	VLTRSOFTCLASS(DisplayServerHeadless, DisplayServer);
 
 private:
 	friend class DisplayServer;

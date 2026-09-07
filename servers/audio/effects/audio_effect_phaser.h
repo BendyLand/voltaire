@@ -35,7 +35,6 @@
 class AudioEffectPhaser;
 
 class AudioEffectPhaserInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectPhaserInstance, AudioEffectInstance);
 	friend class AudioEffectPhaser;
 	Ref<AudioEffectPhaser> base;
 
@@ -69,7 +68,6 @@ public:
 };
 
 class AudioEffectPhaser : public AudioEffect {
-	VLTRCLASS(AudioEffectPhaser, AudioEffect);
 
 	friend class AudioEffectPhaserInstance;
 	float range_min;

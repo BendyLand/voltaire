@@ -30,21 +30,16 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
-class OpenXRML2ControllerExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRML2ControllerExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRML2ControllerExtension
+{
 public:
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
 	bool is_available();
-
-	virtual void on_register_metadata(OpenXRInteractionProfileMetadata *p_interaction_profile_metadata) override;
-
 private:
 	bool available = false;
 };
+
+

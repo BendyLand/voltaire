@@ -170,7 +170,6 @@ void Light2D::set_shadow_filter(ShadowFilter p_filter)
 	shadow_filter = p_filter;
 	RS::get_singleton()->canvas_light_set_shadow_filter(
 		canvas_light, RSE::CanvasLightShadowFilter(p_filter));
-	this->obj->notify_property_list_changed();
 }
 
 Light2D::ShadowFilter Light2D::get_shadow_filter() const { return shadow_filter; }
@@ -240,17 +239,6 @@ void Light2D::set_shadow_smooth(real_t p_amount)
 
 real_t Light2D::get_shadow_smooth() const { return shadow_smooth; }
 
-void Light2D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (shadow && p_property.name == "shadow_filter_smooth" &&
-		shadow_filter == SHADOW_FILTER_NONE) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
 void Light2D::_bind_methods() {}
 
 Light2D::Light2D()
@@ -268,18 +256,6 @@ Light2D::~Light2D()
 //////////////////////////////
 
 #ifdef TOOLS_ENABLED
-Dictionary PointLight2D::_edit_get_state() const
-{
-	Dictionary state = Node2D::_edit_get_state();
-	state["offset"] = get_texture_offset();
-	return state;
-}
-
-void PointLight2D::_edit_set_state(const Dictionary& p_state)
-{
-	Node2D::_edit_set_state(p_state);
-	set_texture_offset(p_state["offset"]);
-}
 
 void PointLight2D::_edit_set_pivot(const Point2& p_pivot)
 {
@@ -314,30 +290,6 @@ Rect2 PointLight2D::get_anchorable_rect() const
 
 	Size2 s = texture->get_size() * _scale;
 	return Rect2(texture_offset - s / 2.0, s);
-}
-
-void PointLight2D::set_texture(const Ref<Texture2D>& p_texture)
-{
-	texture = p_texture;
-	if (texture.is_valid()) {
-#ifdef DEBUG_ENABLED
-		if (p_texture->obj->is_class("AnimatedTexture") || p_texture->obj->is_class("AtlasTexture") ||
-			p_texture->obj->is_class("CameraTexture") || p_texture->obj->is_class("CanvasTexture") ||
-			p_texture->obj->is_class("MeshTexture") || p_texture->obj->is_class("Texture2DRD") ||
-			p_texture->obj->is_class("ViewportTexture")) {
-			WARN_PRINT(vformat("%s cannot be used as a PointLight2D texture (%s). As a workaround, "
-							   "assign the value returned by %s's `get_image()` instead.",
-				p_texture->obj->get_class(), get_path(), p_texture->obj->get_class()));
-		}
-#endif
-
-		RS::get_singleton()->canvas_light_set_texture(_get_light(), texture->get_rid());
-	}
-	else {
-		RS::get_singleton()->canvas_light_set_texture(_get_light(), RID());
-	}
-
-	update_configuration_warnings();
 }
 
 Ref<Texture2D> PointLight2D::get_texture() const { return texture; }
@@ -377,19 +329,8 @@ void PointLight2D::set_texture_scale(real_t p_scale)
 real_t PointLight2D::get_texture_scale() const { return _scale; }
 
 #ifndef DISABLE_DEPRECATED
-bool PointLight2D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "mode" && p_value.is_num()) { // Compatibility with Godot 3.x.
-		set_blend_mode((BlendMode)(int)p_value);
-		return true;
-	}
 
-	return false;
-}
 #endif // DISABLE_DEPRECATED
-
-void PointLight2D::_bind_methods()
-{}
 
 PointLight2D::PointLight2D()
 {

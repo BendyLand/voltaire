@@ -30,35 +30,34 @@
 
 #pragma once
 
-#include "../openxr_api.h"
-#include "openxr_extension_wrapper.h"
-
 #include <openxr/openxr.h>
+#include "../openxr_api.h"
+#include "core/types.h"
 
-class OpenXRFrameSynthesisExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRFrameSynthesisExtension, OpenXRExtensionWrapper);
-
+class OpenXRFrameSynthesisExtension
+{
 public:
-	static OpenXRFrameSynthesisExtension *get_singleton();
+	static OpenXRFrameSynthesisExtension* get_singleton();
 
 	OpenXRFrameSynthesisExtension();
-	virtual ~OpenXRFrameSynthesisExtension() override;
+	virtual ~OpenXRFrameSynthesisExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_instance_created(const XrInstance p_instance) override;
-	virtual void on_instance_destroyed() override;
+	virtual void on_instance_created(const XrInstance p_instance);
+	virtual void on_instance_destroyed();
 
-	virtual void prepare_view_configuration(uint32_t p_view_count) override;
-	virtual void *set_view_configuration_and_get_next_pointer(uint32_t p_view, void *p_next_pointer) override;
-	virtual void print_view_configuration_info(uint32_t p_view) const override;
+	virtual void prepare_view_configuration(uint32_t p_view_count);
+	virtual void* set_view_configuration_and_get_next_pointer(
+		uint32_t p_view, void* p_next_pointer);
+	virtual void print_view_configuration_info(uint32_t p_view) const;
 
-	virtual void on_session_destroyed() override;
+	virtual void on_session_destroyed();
 
-	virtual void on_main_swapchains_created() override;
-	virtual void on_pre_draw_viewport(RID p_render_target) override;
-	virtual void on_post_draw_viewport(RID p_render_target) override;
-	virtual void *set_projection_views_and_get_next_pointer(int p_view_index, void *p_next_pointer) override;
+	virtual void on_main_swapchains_created();
+	virtual void on_pre_draw_viewport(RID p_render_target);
+	virtual void on_post_draw_viewport(RID p_render_target);
+	virtual void* set_projection_views_and_get_next_pointer(int p_view_index, void* p_next_pointer);
 
 	bool is_available() const;
 
@@ -78,21 +77,24 @@ protected:
 	void _set_skip_next_frame_rt();
 
 private:
-	enum SwapchainTypes {
+	enum SwapchainTypes
+	{
 		SWAPCHAIN_MOTION_VECTOR,
 		SWAPCHAIN_DEPTH,
 		SWAPCHAIN_MAX
 	};
+
 	void free_swapchains();
 
-	static OpenXRFrameSynthesisExtension *singleton;
+	static OpenXRFrameSynthesisExtension* singleton;
 
 	bool frame_synthesis_ext = false;
 	bool enabled = true;
 	bool relax_frame_interval = false;
 
 	// Frame synthesis render state, only accessible on render thread
-	struct RenderState {
+	struct RenderState
+	{
 		bool enabled = true;
 		bool relax_frame_interval = false;
 		bool skip_next_frame = false;
@@ -103,3 +105,5 @@ private:
 		Transform3D previous_transform;
 	} render_state;
 };
+
+

@@ -38,7 +38,6 @@
 ///////////////////////////////////////
 
 class SkeletonModification2DFABRIK : public SkeletonModification2D {
-	VLTRCLASS(SkeletonModification2DFABRIK, SkeletonModification2D);
 
 private:
 	struct FABRIK_Joint_Data2D {

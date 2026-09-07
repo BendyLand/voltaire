@@ -36,7 +36,6 @@
 class AudioEffectFilter;
 
 class AudioEffectFilterInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectFilterInstance, AudioEffectInstance);
 	friend class AudioEffectFilter;
 
 	Ref<AudioEffectFilter> base;
@@ -54,7 +53,6 @@ public:
 };
 
 class AudioEffectFilter : public AudioEffect {
-	VLTRCLASS(AudioEffectFilter, AudioEffect);
 
 public:
 	enum FilterDB {
@@ -95,7 +93,6 @@ public:
 VARIANT_ENUM_CAST(AudioEffectFilter::FilterDB)
 
 class AudioEffectLowPassFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectLowPassFilter, AudioEffectFilter);
 
 	void _validate_property(PropertyInfo &p_property) const {
 		if (p_property.name == "gain") {
@@ -109,7 +106,6 @@ public:
 };
 
 class AudioEffectHighPassFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectHighPassFilter, AudioEffectFilter);
 	void _validate_property(PropertyInfo &p_property) const {
 		if (p_property.name == "gain") {
 			p_property.usage = PROPERTY_USAGE_NONE;
@@ -122,7 +118,6 @@ public:
 };
 
 class AudioEffectBandPassFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectBandPassFilter, AudioEffectFilter);
 	void _validate_property(PropertyInfo &p_property) const {
 		if (p_property.name == "gain") {
 			p_property.usage = PROPERTY_USAGE_NONE;
@@ -135,7 +130,6 @@ public:
 };
 
 class AudioEffectNotchFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectNotchFilter, AudioEffectFilter);
 
 protected:
 	void _validate_property(PropertyInfo &p_property) const {
@@ -150,7 +144,6 @@ public:
 };
 
 class AudioEffectBandLimitFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectBandLimitFilter, AudioEffectFilter);
 
 protected:
 	void _validate_property(PropertyInfo &p_property) const {
@@ -165,7 +158,6 @@ public:
 };
 
 class AudioEffectLowShelfFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectLowShelfFilter, AudioEffectFilter);
 
 public:
 	AudioEffectLowShelfFilter() :
@@ -173,7 +165,6 @@ public:
 };
 
 class AudioEffectHighShelfFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectHighShelfFilter, AudioEffectFilter);
 
 public:
 	AudioEffectHighShelfFilter() :

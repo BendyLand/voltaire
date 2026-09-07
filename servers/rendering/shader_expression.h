@@ -33,7 +33,6 @@
 #include "core/math/expression.h"
 
 class ShaderExpression : public Expression {
-	VLTRCLASS(ShaderExpression, Expression);
 
 protected:
 	virtual Error _get_token(Token &r_token) override;

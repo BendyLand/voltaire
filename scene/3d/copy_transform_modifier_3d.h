@@ -32,25 +32,28 @@
 
 #include "scene/3d/bone_constraint_3d.h"
 
-class CopyTransformModifier3D : public BoneConstraint3D {
-	VLTRCLASS(CopyTransformModifier3D, BoneConstraint3D);
-
+class CopyTransformModifier3D : public BoneConstraint3D
+{
 public:
-	enum TransformFlag {
+	enum TransformFlag
+	{
 		TRANSFORM_FLAG_POSITION = 1,
 		TRANSFORM_FLAG_ROTATION = 2,
 		TRANSFORM_FLAG_SCALE = 4,
-		TRANSFORM_FLAG_ALL = TRANSFORM_FLAG_POSITION | TRANSFORM_FLAG_ROTATION | TRANSFORM_FLAG_SCALE,
+		TRANSFORM_FLAG_ALL =
+			TRANSFORM_FLAG_POSITION | TRANSFORM_FLAG_ROTATION | TRANSFORM_FLAG_SCALE,
 	};
 
-	enum AxisFlag {
+	enum AxisFlag
+	{
 		AXIS_FLAG_X = 1,
 		AXIS_FLAG_Y = 2,
 		AXIS_FLAG_Z = 4,
 		AXIS_FLAG_ALL = AXIS_FLAG_X | AXIS_FLAG_Y | AXIS_FLAG_Z,
 	};
 
-	struct CopyTransform3DSetting : public BoneConstraint3DSetting {
+	struct CopyTransform3DSetting : public BoneConstraint3DSetting
+	{
 		uint32_t copy_flags = TRANSFORM_FLAG_ALL;
 		uint32_t axis_flags = AXIS_FLAG_ALL;
 		uint32_t invert_flags = 0;
@@ -58,7 +61,8 @@ public:
 		bool relative = true;
 		bool additive = false;
 
-		bool is_relative() {
+		bool is_relative()
+		{
 			if (reference_type == REFERENCE_TYPE_NODE) {
 				return false;
 			}
@@ -67,16 +71,12 @@ public:
 	};
 
 protected:
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	bool _set(const StringName &p_path, const Variant &p_value);
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	void _validate_dynamic_prop(PropertyInfo &p_property) const;
-
-	static void _bind_methods();
-
-	virtual void _process_constraint_by_bone(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, int p_reference_bone, float p_amount) override;
-	virtual void _process_constraint_by_node(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const NodePath &p_reference_node, float p_amount) override;
-	virtual void _process_copy(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const Transform3D &p_destination, float p_amount);
+	virtual void _process_constraint_by_bone(int p_index, Skeleton3D* p_skeleton, int p_apply_bone,
+		int p_reference_bone, float p_amount) override;
+	virtual void _process_constraint_by_node(int p_index, Skeleton3D* p_skeleton, int p_apply_bone,
+		const NodePath& p_reference_node, float p_amount) override;
+	virtual void _process_copy(int p_index, Skeleton3D* p_skeleton, int p_apply_bone,
+		const Transform3D& p_destination, float p_amount);
 	virtual void _validate_setting(int p_index) override;
 
 public:
@@ -119,5 +119,4 @@ public:
 	~CopyTransformModifier3D();
 };
 
-VARIANT_BITFIELD_CAST(CopyTransformModifier3D::TransformFlag);
-VARIANT_BITFIELD_CAST(CopyTransformModifier3D::AxisFlag);
+

@@ -41,21 +41,16 @@
 	If so the future can be used to obtain final return values.
 	The API call for this is often part of the extension that utilizes
 	the future.
-
-	We will be using Godot Callables to drive responses on futures.
 */
 
-#include "../util.h"
-#include "openxr_extension_wrapper.h"
-
-
 #include <openxr/openxr.h>
+#include "../util.h"
+#include "core/types.h"
 
 class OpenXRFutureExtension;
 
-class OpenXRFutureResult : public RefCounted {
-	VLTRCLASS(OpenXRFutureResult, RefCounted);
-
+class OpenXRFutureResult : public RefCounted
+{
 	friend class OpenXRFutureExtension;
 
 protected:
@@ -65,7 +60,8 @@ protected:
 	void _mark_as_cancelled();
 
 public:
-	enum ResultStatus {
+	enum ResultStatus
+	{
 		RESULT_RUNNING,
 		RESULT_FINISHED,
 		RESULT_CANCELLED,
@@ -74,63 +70,52 @@ public:
 	ResultStatus get_status() const;
 	XrFutureEXT get_future() const;
 
-	void set_result_value(const Variant &p_result_value);
-	Variant get_result_value() const;
-
 	void cancel_future();
-
-	OpenXRFutureResult(XrFutureEXT p_future, const Callable &p_on_success);
 
 private:
 	ResultStatus status = RESULT_RUNNING;
 	XrFutureEXT future;
-	Variant result_value;
-	Callable on_success_callback;
 
 	uint64_t _get_future() const;
 };
 
-VARIANT_ENUM_CAST(OpenXRFutureResult::ResultStatus);
-
-class OpenXRFutureExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRFutureExtension, OpenXRExtensionWrapper);
-
+class OpenXRFutureExtension
+{
 protected:
 	static void _bind_methods();
 
 public:
-	static OpenXRFutureExtension *get_singleton();
+	static OpenXRFutureExtension* get_singleton();
 
 	OpenXRFutureExtension();
-	virtual ~OpenXRFutureExtension() override;
+	virtual ~OpenXRFutureExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_instance_created(const XrInstance p_instance) override;
-	virtual void on_instance_destroyed() override;
-	virtual void on_session_destroyed() override;
+	virtual void on_instance_created(const XrInstance p_instance);
+	virtual void on_instance_destroyed();
+	virtual void on_session_destroyed();
 
-	virtual void on_process() override;
+	virtual void on_process();
 
 	bool is_active() const;
 
-	Ref<OpenXRFutureResult> register_future(XrFutureEXT p_future, const Callable &p_on_success = Callable());
 	void cancel_future(XrFutureEXT p_future);
 
 private:
-	static OpenXRFutureExtension *singleton;
+	static OpenXRFutureExtension* singleton;
 
 	bool future_ext = false;
 
 	HashMap<XrFutureEXT, Ref<OpenXRFutureResult>> futures;
 
-	// Make these accessible from GDExtension and/or GDScript
-	Ref<OpenXRFutureResult> _register_future(uint64_t p_future, const Callable &p_on_success = Callable());
 	void _cancel_future(uint64_t p_future);
 
-	// OpenXR API call wrappers
-
 	// Futures
-	EXT_PROTO_XRRESULT_FUNC3(xrPollFutureEXT, (XrInstance), instance, (const XrFuturePollInfoEXT *), poll_info, (XrFuturePollResultEXT *), poll_result);
-	EXT_PROTO_XRRESULT_FUNC2(xrCancelFutureEXT, (XrInstance), instance, (const XrFutureCancelInfoEXT *), cancel_info);
+	EXT_PROTO_XRRESULT_FUNC3(xrPollFutureEXT, (XrInstance), instance, (const XrFuturePollInfoEXT*),
+		poll_info, (XrFuturePollResultEXT*), poll_result);
+	EXT_PROTO_XRRESULT_FUNC2(
+		xrCancelFutureEXT, (XrInstance), instance, (const XrFutureCancelInfoEXT*), cancel_info);
 };
+
+

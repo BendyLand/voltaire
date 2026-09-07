@@ -31,87 +31,6 @@
 #include "aim_modifier_3d.h"
 #include "scene/3d/look_at_modifier_3d.h"
 
-bool AimModifier3D::_set(const StringName& p_path, const Variant& p_value)
-{
-	String path = p_path;
-
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
-
-		if (what == "forward_axis") {
-			set_forward_axis(which, static_cast<BoneAxis>((int)p_value));
-		}
-		else if (what == "use_euler") {
-			set_use_euler(which, p_value);
-		}
-		else if (what == "primary_rotation_axis") {
-			set_primary_rotation_axis(which, static_cast<Vector3::Axis>((int)p_value));
-		}
-		else if (what == "use_secondary_rotation") {
-			set_use_secondary_rotation(which, p_value);
-		}
-		else if (what == "relative") {
-			set_relative(which, p_value);
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool AimModifier3D::_get(const StringName& p_path, Variant& r_ret) const
-{
-	String path = p_path;
-
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
-
-		if (what == "forward_axis") {
-			r_ret = (int)get_forward_axis(which);
-		}
-		else if (what == "use_euler") {
-			r_ret = is_using_euler(which);
-		}
-		else if (what == "primary_rotation_axis") {
-			r_ret = (int)get_primary_rotation_axis(which);
-		}
-		else if (what == "use_secondary_rotation") {
-			r_ret = is_using_secondary_rotation(which);
-		}
-		else if (what == "relative") {
-			r_ret = is_relative(which);
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-void AimModifier3D::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	BoneConstraint3D::get_property_list(p_list);
-
-	for (uint32_t i = 0; i < settings.size(); i++) {
-		String path = "settings/" + itos(i) + "/";
-		int rotation_usage = is_using_euler(i) ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
-
-		p_list->push_back(PropertyInfo(Variant::INT, path + "forward_axis", PROPERTY_HINT_ENUM,
-			SkeletonModifier3D::get_hint_bone_axis()));
-		p_list->push_back(PropertyInfo(Variant::BOOL, path + "use_euler"));
-		p_list->push_back(PropertyInfo(Variant::INT, path + "primary_rotation_axis",
-			PROPERTY_HINT_ENUM, "X,Y,Z", rotation_usage));
-		p_list->push_back(PropertyInfo(Variant::BOOL, path + "use_secondary_rotation",
-			PROPERTY_HINT_NONE, "", rotation_usage));
-		p_list->push_back(PropertyInfo(Variant::BOOL, path + "relative"));
-	}
-}
-
 PackedStringArray AimModifier3D::get_configuration_warnings() const
 {
 	PackedStringArray warnings = BoneConstraint3D::get_configuration_warnings();
@@ -145,15 +64,6 @@ SkeletonModifier3D::BoneAxis AimModifier3D::get_forward_axis(int p_index) const
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), BONE_AXIS_PLUS_Y);
 	AimModifier3DSetting* setting = static_cast<AimModifier3DSetting*>(settings[p_index]);
 	return setting->forward_axis;
-}
-
-void AimModifier3D::set_use_euler(int p_index, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	AimModifier3DSetting* setting = static_cast<AimModifier3DSetting*>(settings[p_index]);
-	setting->use_euler = p_enabled;
-	this->obj->notify_property_list_changed();
-	update_configuration_warnings();
 }
 
 bool AimModifier3D::is_using_euler(int p_index) const
@@ -206,8 +116,6 @@ bool AimModifier3D::is_relative(int p_index) const
 	return setting->relative;
 }
 
-void AimModifier3D::_bind_methods() {}
-
 void AimModifier3D::_process_constraint_by_bone(
 	int p_index, Skeleton3D* p_skeleton, int p_apply_bone, int p_reference_bone, float p_amount)
 {
@@ -219,19 +127,6 @@ void AimModifier3D::_process_constraint_by_bone(
 	}
 	Vector3 reference_origin = p_skeleton->get_bone_global_pose(p_reference_bone).origin;
 	_process_aim(p_index, p_skeleton, p_apply_bone, reference_origin, p_amount);
-}
-
-void AimModifier3D::_process_constraint_by_node(int p_index, Skeleton3D* p_skeleton,
-	int p_apply_bone, const NodePath& p_reference_node, float p_amount)
-{
-	Node3D* nd = Object::cast_to<Node3D>(get_node_or_null(p_reference_node));
-	if (!nd) {
-		return;
-	}
-	Transform3D skel_tr = p_skeleton->get_global_transform_interpolated();
-	Vector3 reference_origin = nd->get_global_transform_interpolated().origin - skel_tr.origin;
-	_process_aim(p_index, p_skeleton, p_apply_bone,
-		skel_tr.basis.get_rotation_quaternion().xform_inv(reference_origin), p_amount);
 }
 
 void AimModifier3D::_process_aim(

@@ -39,7 +39,6 @@ class DisplayServerMacOS;
 class EmbeddedProcessMacOS;
 
 class LayerHost final : public Control {
-	VLTRCLASS(LayerHost, Control);
 
 	ScriptEditorDebugger *script_debugger = nullptr;
 	EmbeddedProcessMacOS *process = nullptr;
@@ -71,7 +70,6 @@ public:
 };
 
 class EmbeddedProcessMacOS final : public EmbeddedProcessBase {
-	VLTRCLASS(EmbeddedProcessMacOS, EmbeddedProcessBase);
 
 	enum class EmbeddingState {
 		IDLE,

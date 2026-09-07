@@ -35,7 +35,6 @@
 class AudioEffectCompressor;
 
 class AudioEffectCompressorInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectCompressorInstance, AudioEffectInstance);
 	friend class AudioEffectCompressor;
 	Ref<AudioEffectCompressor> base;
 
@@ -48,7 +47,6 @@ public:
 };
 
 class AudioEffectCompressor : public AudioEffect {
-	VLTRCLASS(AudioEffectCompressor, AudioEffect);
 
 	friend class AudioEffectCompressorInstance;
 	float threshold;

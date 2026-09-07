@@ -32,45 +32,6 @@
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/rendering_server.h"
 
-void CanvasModulate::_on_in_canvas_visibility_changed(bool p_new_visibility)
-{
-	RID canvas = get_canvas();
-	StringName group_name = "_canvas_modulate_" + itos(canvas.get_id());
-
-	ERR_FAIL_COND_MSG(p_new_visibility == is_in_group(group_name),
-		vformat("CanvasModulate becoming %s in the canvas already %s in the modulate group. Buggy "
-				"logic, please report.",
-			p_new_visibility ? "visible" : "invisible", p_new_visibility ? "was" : "was not"));
-
-	if (p_new_visibility) {
-		bool has_active_canvas_modulate =
-			get_tree()->has_group(group_name); // Group would be removed if empty; otherwise one
-											   // CanvasModulate within must be active.
-		add_to_group(group_name);
-		if (!has_active_canvas_modulate) {
-			is_active = true;
-			RS::get_singleton()->canvas_set_modulate(canvas, color);
-		}
-	}
-	else {
-		remove_from_group(group_name);
-		if (is_active) {
-			is_active = false;
-			CanvasModulate* new_active =
-				Object::cast_to<CanvasModulate>(get_tree()->get_first_node_in_group(group_name));
-			if (new_active) {
-				new_active->is_active = true;
-				RS::get_singleton()->canvas_set_modulate(canvas, new_active->color);
-			}
-			else {
-				RS::get_singleton()->canvas_set_modulate(canvas, Color(1, 1, 1, 1));
-			}
-		}
-	}
-
-	update_configuration_warnings();
-}
-
 void CanvasModulate::_notification(int p_what)
 {
 	switch (p_what) {
@@ -107,8 +68,6 @@ void CanvasModulate::_notification(int p_what)
 	} break;
 	}
 }
-
-void CanvasModulate::_bind_methods() {}
 
 void CanvasModulate::set_color(const Color& p_color)
 {

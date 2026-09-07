@@ -347,8 +347,7 @@ static void remove_driven_unified_blend_shapes(RBMap<int, int>& p_blend_mapping)
 		{XRFaceTracker::FT_MOUTH_STRETCH,
 			{XRFaceTracker::FT_MOUTH_STRETCH_RIGHT, XRFaceTracker::FT_MOUTH_STRETCH_LEFT, -1, -1}},
 		{XRFaceTracker::FT_MOUTH_DIMPLE,
-			{XRFaceTracker::FT_MOUTH_DIMPLE_RIGHT,
-XRFaceTracker::FT_MOUTH_DIMPLE_LEFT, -1, -1}},
+			{XRFaceTracker::FT_MOUTH_DIMPLE_RIGHT, XRFaceTracker::FT_MOUTH_DIMPLE_LEFT, -1, -1}},
 		{XRFaceTracker::FT_MOUTH_TIGHTENER, {XRFaceTracker::FT_MOUTH_TIGHTENER_RIGHT,
 												XRFaceTracker::FT_MOUTH_TIGHTENER_LEFT, -1, -1}},
 		{XRFaceTracker::FT_MOUTH_PRESS,
@@ -394,20 +393,6 @@ void XRFaceModifier3D::set_target(const NodePath& p_target)
 }
 
 NodePath XRFaceModifier3D::get_target() const { return target; }
-
-MeshInstance3D* XRFaceModifier3D::get_mesh_instance() const
-{
-	if (!has_node(target)) {
-		return nullptr;
-	}
-
-	Node* node = get_node(target);
-	if (!node) {
-		return nullptr;
-	}
-
-	return Object::cast_to<MeshInstance3D>(node);
-}
 
 void XRFaceModifier3D::_get_blend_data()
 {

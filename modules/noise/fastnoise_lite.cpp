@@ -89,7 +89,6 @@ void FastNoiseLite::set_noise_type(NoiseType p_noise_type)
 	noise_type = p_noise_type;
 	_noise.SetNoiseType((_FastNoiseLite::NoiseType)p_noise_type);
 	emit_changed();
-	this->obj->notify_property_list_changed();
 }
 
 FastNoiseLite::NoiseType FastNoiseLite::get_noise_type() const { return noise_type; }
@@ -128,7 +127,6 @@ void FastNoiseLite::set_fractal_type(FractalType p_type)
 	fractal_type = p_type;
 	_noise.SetFractalType((_FastNoiseLite::FractalType)p_type);
 	emit_changed();
-	this->obj->notify_property_list_changed();
 }
 
 FastNoiseLite::FractalType FastNoiseLite::get_fractal_type() const { return fractal_type; }
@@ -220,7 +218,6 @@ void FastNoiseLite::set_domain_warp_enabled(bool p_enabled)
 	if (domain_warp_enabled != p_enabled) {
 		domain_warp_enabled = p_enabled;
 		emit_changed();
-		this->obj->notify_property_list_changed();
 	}
 }
 
@@ -339,34 +336,5 @@ real_t FastNoiseLite::get_noise_3d(real_t p_x, real_t p_y, real_t p_z) const
 }
 
 void FastNoiseLite::_changed() { emit_changed(); }
-
-void FastNoiseLite::_bind_methods() {}
-
-void FastNoiseLite::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name.begins_with("cellular")) {
-		if (get_noise_type() != TYPE_CELLULAR) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name != "fractal_type" && p_property.name.begins_with("fractal")) {
-		if (get_fractal_type() == FRACTAL_NONE) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "fractal_ping_pong_strength") {
-		if (get_fractal_type() != FRACTAL_PING_PONG) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-}
 
 

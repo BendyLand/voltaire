@@ -32,6 +32,7 @@
 
 STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 
+#include "core/math/triangle_mesh.h"
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
@@ -188,35 +189,10 @@ void VisualInstance3D::set_base(const RID& p_base)
 
 RID VisualInstance3D::get_base() const { return base; }
 
-VisualInstance3D::VisualInstance3D()
-{
-	this->obj->_define_ancestry(Object::AncestralClass::VISUAL_INSTANCE_3D);
-
-	instance = RenderingServer::get_singleton()->instance_create();
-	RenderingServer::get_singleton()->instance_attach_object_instance_id(
-		instance, this->obj->get_instance_id());
-	set_notify_transform(true);
-}
-
 VisualInstance3D::~VisualInstance3D()
 {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RenderingServer::get_singleton()->free_rid(instance);
-}
-
-void GeometryInstance3D::set_material_override(const Ref<Material>& p_material)
-{
-	if (material_override.is_valid()) {
-		material_override->obj->disconnect(CoreStringName(property_list_changed),
-			callable_mp((Object*)this, &Object::notify_property_list_changed));
-	}
-	material_override = p_material;
-	if (material_override.is_valid()) {
-		material_override->obj->connect(CoreStringName(property_list_changed),
-			callable_mp((Object*)this, &Object::notify_property_list_changed));
-	}
-	RS::get_singleton()->instance_geometry_set_material_override(
-		get_instance(), p_material.is_valid() ? p_material->get_rid() : RID());
 }
 
 Ref<Material> GeometryInstance3D::get_material_override() const { return material_override; }
@@ -326,66 +302,6 @@ const StringName* GeometryInstance3D::_instance_uniform_get_remap(const StringNa
 	return r;
 }
 
-bool GeometryInstance3D::_set(const StringName& p_name, const Variant& p_value)
-{
-	const StringName* r = _instance_uniform_get_remap(p_name);
-	if (r) {
-		set_instance_shader_parameter(*r, p_value);
-		return true;
-	}
-#ifndef DISABLE_DEPRECATED
-	if (p_name == SNAME("use_in_baked_light") && bool(p_value)) {
-		set_gi_mode(GI_MODE_STATIC);
-		return true;
-	}
-
-	if (p_name == SNAME("use_dynamic_gi") && bool(p_value)) {
-		set_gi_mode(GI_MODE_DYNAMIC);
-		return true;
-	}
-#endif // DISABLE_DEPRECATED
-	return false;
-}
-
-bool GeometryInstance3D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	const StringName* r = _instance_uniform_get_remap(p_name);
-	if (r) {
-		r_ret = get_instance_shader_parameter(*r);
-		return true;
-	}
-
-	return false;
-}
-
-void GeometryInstance3D::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	List<PropertyInfo> pinfo;
-	RS::get_singleton()->instance_geometry_get_shader_parameter_list(get_instance(), &pinfo);
-	for (PropertyInfo& pi : pinfo) {
-		bool has_def_value = false;
-		Variant def_value =
-			RS::get_singleton()->instance_geometry_get_shader_parameter_default_value(
-				get_instance(), pi.name);
-		if (def_value.get_type() != Variant::NIL) {
-			has_def_value = true;
-		}
-		if (instance_shader_parameters.has(pi.name)) {
-			pi.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE |
-					   (has_def_value ? (PROPERTY_USAGE_CHECKABLE | PROPERTY_USAGE_CHECKED)
-									  : PROPERTY_USAGE_NONE);
-		}
-		else {
-			pi.usage = PROPERTY_USAGE_EDITOR |
-					   (has_def_value ? PROPERTY_USAGE_CHECKABLE
-									  : PROPERTY_USAGE_NONE); // do not save if not changed
-		}
-
-		pi.name = "instance_shader_parameters/" + pi.name;
-		p_list->push_back(pi);
-	}
-}
-
 void GeometryInstance3D::set_cast_shadows_setting(ShadowCastingSetting p_shadow_casting_setting)
 {
 	shadow_casting_setting = p_shadow_casting_setting;
@@ -417,36 +333,6 @@ void GeometryInstance3D::set_lod_bias(float p_bias)
 
 float GeometryInstance3D::get_lod_bias() const { return lod_bias; }
 
-void GeometryInstance3D::set_instance_shader_parameter(
-	const StringName& p_name, const Variant& p_value)
-{
-	if (p_value.get_type() == Variant::NIL) {
-		Variant def_value =
-			RS::get_singleton()->instance_geometry_get_shader_parameter_default_value(
-				get_instance(), p_name);
-		RS::get_singleton()->instance_geometry_set_shader_parameter(
-			get_instance(), p_name, def_value);
-		instance_shader_parameters.erase(p_name);
-	}
-	else {
-		instance_shader_parameters[p_name] = p_value;
-		if (p_value.get_type() == Variant::OBJECT) {
-			RID tex_id = p_value;
-			RS::get_singleton()->instance_geometry_set_shader_parameter(
-				get_instance(), p_name, tex_id);
-		}
-		else {
-			RS::get_singleton()->instance_geometry_set_shader_parameter(
-				get_instance(), p_name, p_value);
-		}
-	}
-}
-
-Variant GeometryInstance3D::get_instance_shader_parameter(const StringName& p_name) const
-{
-	return RS::get_singleton()->instance_geometry_get_shader_parameter(get_instance(), p_name);
-}
-
 void GeometryInstance3D::set_custom_aabb(AABB p_aabb)
 {
 	if (p_aabb == custom_aabb) {
@@ -462,45 +348,6 @@ AABB GeometryInstance3D::get_custom_aabb() const { return custom_aabb; }
 void GeometryInstance3D::set_lightmap_texel_scale(float p_scale) { lightmap_texel_scale = p_scale; }
 
 float GeometryInstance3D::get_lightmap_texel_scale() const { return lightmap_texel_scale; }
-
-#ifndef DISABLE_DEPRECATED
-void GeometryInstance3D::set_lightmap_scale(LightmapScale p_scale)
-{
-	ERR_FAIL_INDEX(p_scale, LIGHTMAP_SCALE_MAX);
-	switch (p_scale) {
-	case GeometryInstance3D::LIGHTMAP_SCALE_1X:
-		lightmap_texel_scale = 1.0f;
-		break;
-	case GeometryInstance3D::LIGHTMAP_SCALE_2X:
-		lightmap_texel_scale = 2.0f;
-		break;
-	case GeometryInstance3D::LIGHTMAP_SCALE_4X:
-		lightmap_texel_scale = 4.0f;
-		break;
-	case GeometryInstance3D::LIGHTMAP_SCALE_8X:
-		lightmap_texel_scale = 8.0f;
-		break;
-	case GeometryInstance3D::LIGHTMAP_SCALE_MAX:
-		break; // Can't happen, but silences warning.
-	}
-}
-
-GeometryInstance3D::LightmapScale GeometryInstance3D::get_lightmap_scale() const
-{
-	// Return closest approximation.
-	if (lightmap_texel_scale < 1.5f) {
-		return GeometryInstance3D::LIGHTMAP_SCALE_1X;
-	}
-	else if (lightmap_texel_scale < 3.0f) {
-		return GeometryInstance3D::LIGHTMAP_SCALE_2X;
-	}
-	else if (lightmap_texel_scale < 6.0f) {
-		return GeometryInstance3D::LIGHTMAP_SCALE_4X;
-	}
-
-	return GeometryInstance3D::LIGHTMAP_SCALE_8X;
-}
-#endif // DISABLE_DEPRECATED
 
 void GeometryInstance3D::set_gi_mode(GIMode p_mode)
 {
@@ -588,17 +435,6 @@ PackedStringArray GeometryInstance3D::get_configuration_warnings() const
 
 	return warnings;
 }
-
-void GeometryInstance3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "sorting_offset" || p_property.name == "sorting_use_aabb_center") {
-		p_property.usage = PROPERTY_USAGE_DEFAULT;
-	}
-}
-
-void GeometryInstance3D::_bind_methods() {}
-
-GeometryInstance3D::GeometryInstance3D() { this->obj->_define_ancestry(Object::AncestralClass::GEOMETRY_INSTANCE_3D); }
 
 GeometryInstance3D::~GeometryInstance3D()
 {

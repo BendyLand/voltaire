@@ -35,7 +35,6 @@
 class AudioEffectSpectrumAnalyzer;
 
 class AudioEffectSpectrumAnalyzerInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectSpectrumAnalyzerInstance, AudioEffectInstance);
 
 public:
 	enum MagnitudeMode {
@@ -66,7 +65,6 @@ public:
 VARIANT_ENUM_CAST(AudioEffectSpectrumAnalyzerInstance::MagnitudeMode)
 
 class AudioEffectSpectrumAnalyzer : public AudioEffect {
-	VLTRCLASS(AudioEffectSpectrumAnalyzer, AudioEffect);
 
 public:
 	enum FFTSize {

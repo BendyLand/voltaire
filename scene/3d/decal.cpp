@@ -41,29 +41,6 @@ void Decal::set_size(const Vector3& p_size)
 
 Vector3 Decal::get_size() const { return size; }
 
-void Decal::set_texture(DecalTexture p_type, const Ref<Texture2D>& p_texture)
-{
-	ERR_FAIL_INDEX(p_type, TEXTURE_MAX);
-	textures[p_type] = p_texture;
-	RID texture_rid = p_texture.is_valid() ? p_texture->get_rid() : RID();
-
-#ifdef DEBUG_ENABLED
-	if (p_texture.is_valid() &&
-		(p_texture->obj->is_class("AnimatedTexture") || p_texture->obj->is_class("AtlasTexture") ||
-			p_texture->obj->is_class("CameraTexture") ||
-			p_texture->obj->is_class("CanvasTexture") || p_texture->obj->is_class("MeshTexture") ||
-			p_texture->obj->is_class("Texture2DRD") ||
-			p_texture->obj->is_class("ViewportTexture"))) {
-		WARN_PRINT(vformat("%s cannot be used as a Decal texture (%s). As a workaround, assign the "
-						   "value returned by %s's `get_image()` instead.",
-			p_texture->obj->get_class(), get_path(), p_texture->obj->get_class()));
-	}
-#endif
-
-	RS::get_singleton()->decal_set_texture(decal, RSE::DecalTexture(p_type), texture_rid);
-	update_configuration_warnings();
-}
-
 Ref<Texture2D> Decal::get_texture(DecalTexture p_type) const
 {
 	ERR_FAIL_INDEX_V(p_type, TEXTURE_MAX, Ref<Texture2D>());
@@ -118,14 +95,6 @@ void Decal::set_modulate(Color p_modulate)
 
 Color Decal::get_modulate() const { return modulate; }
 
-void Decal::set_enable_distance_fade(bool p_enable)
-{
-	distance_fade_enabled = p_enable;
-	RS::get_singleton()->decal_set_distance_fade(
-		decal, distance_fade_enabled, distance_fade_begin, distance_fade_length);
-	this->obj->notify_property_list_changed();
-}
-
 bool Decal::is_distance_fade_enabled() const { return distance_fade_enabled; }
 
 void Decal::set_distance_fade_begin(real_t p_distance)
@@ -163,13 +132,6 @@ AABB Decal::get_aabb() const
 	return aabb;
 }
 
-void Decal::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "sorting_offset") {
-		p_property.usage = PROPERTY_USAGE_DEFAULT;
-	}
-}
-
 PackedStringArray Decal::get_configuration_warnings() const
 {
 	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
@@ -204,28 +166,6 @@ PackedStringArray Decal::get_configuration_warnings() const
 
 	return warnings;
 }
-
-void Decal::_bind_methods() {}
-
-#ifndef DISABLE_DEPRECATED
-bool Decal::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
-		return true;
-	}
-	return false;
-}
-
-bool Decal::_get(const StringName& p_name, Variant& r_property) const
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		r_property = size / 2;
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
 
 Decal::Decal()
 {

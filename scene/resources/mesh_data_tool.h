@@ -33,7 +33,6 @@
 #include "scene/resources/mesh.h"
 
 class MeshDataTool : public RefCounted {
-	VLTRCLASS(MeshDataTool, RefCounted);
 
 	uint64_t format = 0;
 	struct Vertex {

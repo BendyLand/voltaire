@@ -38,7 +38,6 @@
 ///////////////////////////////////////
 
 class SkeletonModification2DPhysicalBones : public SkeletonModification2D {
-	VLTRCLASS(SkeletonModification2DPhysicalBones, SkeletonModification2D);
 
 private:
 	struct PhysicalBone_Data2D {

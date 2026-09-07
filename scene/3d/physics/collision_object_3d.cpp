@@ -35,120 +35,6 @@
 #include "scene/resources/mesh.h"
 #include "servers/rendering/rendering_server.h"
 
-void CollisionObject3D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		if (_are_collision_shapes_visible()) {
-			debug_shape_old_transform = get_global_transform();
-			for (const KeyValue<uint32_t, ShapeData>& E : shapes) {
-				debug_shapes_to_update.insert(E.key);
-			}
-			_update_debug_shapes();
-		}
-#ifdef TOOLS_ENABLED
-		if (Engine::get_singleton()->is_editor_hint()) {
-			set_notify_local_transform(true); // Used for warnings and only in editor.
-		}
-#endif
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		if (debug_shapes_count > 0) {
-			_clear_debug_shapes();
-		}
-	} break;
-
-	case NOTIFICATION_ENTER_WORLD: {
-		if (area) {
-			PhysicsServer3D::get_singleton()->area_set_transform(rid, get_global_transform());
-		}
-		else {
-			PhysicsServer3D::get_singleton()->body_set_state(
-				rid, PS3DE::BODY_STATE_TRANSFORM, get_global_transform());
-		}
-
-		bool disabled = !is_enabled();
-
-		if (disabled && (disable_mode != DISABLE_MODE_REMOVE)) {
-			_apply_disabled();
-		}
-
-		if (!disabled || (disable_mode != DISABLE_MODE_REMOVE)) {
-			Ref<World3D> world_ref = get_world_3d();
-			ERR_FAIL_COND(world_ref.is_null());
-			RID space = world_ref->get_space();
-			if (area) {
-				PhysicsServer3D::get_singleton()->area_set_space(rid, space);
-			}
-			else {
-				PhysicsServer3D::get_singleton()->body_set_space(rid, space);
-			}
-			_space_changed(space);
-		}
-
-		_update_pickable();
-	} break;
-
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
-		update_configuration_warnings();
-	} break;
-
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (only_update_transform_changes) {
-			return;
-		}
-
-		if (area) {
-			PhysicsServer3D::get_singleton()->area_set_transform(rid, get_global_transform());
-		}
-		else {
-			PhysicsServer3D::get_singleton()->body_set_state(
-				rid, PS3DE::BODY_STATE_TRANSFORM, get_global_transform());
-		}
-
-		_on_transform_changed();
-	} break;
-
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		_update_pickable();
-	} break;
-
-	case NOTIFICATION_EXIT_WORLD: {
-		bool disabled = !is_enabled();
-
-		if (!disabled || (disable_mode != DISABLE_MODE_REMOVE)) {
-			if (callback_lock > 0) {
-				ERR_PRINT(
-					"Removing a CollisionObject node during a physics callback is not allowed and "
-					"will cause undesired behavior. Remove with call_deferred() instead.");
-			}
-			else {
-				if (area) {
-					PhysicsServer3D::get_singleton()->area_set_space(rid, RID());
-				}
-				else {
-					PhysicsServer3D::get_singleton()->body_set_space(rid, RID());
-				}
-				_space_changed(RID());
-			}
-		}
-
-		if (disabled && (disable_mode != DISABLE_MODE_REMOVE)) {
-			_apply_enabled();
-		}
-	} break;
-
-	case NOTIFICATION_DISABLED: {
-		_apply_disabled();
-	} break;
-
-	case NOTIFICATION_ENABLED: {
-		_apply_enabled();
-	} break;
-	}
-}
-
 void CollisionObject3D::set_collision_layer(uint32_t p_layer)
 {
 	collision_layer = p_layer;
@@ -320,17 +206,6 @@ void CollisionObject3D::_apply_enabled()
 	}
 }
 
-void CollisionObject3D::_input_event_call(Camera3D* p_camera, const Ref<InputEvent>& p_input_event,
-	const Vector3& p_pos, const Vector3& p_normal, int p_shape)
-{
-	this->obj->emit_signal(
-		SceneStringName(input_event), p_camera, p_input_event, p_pos, p_normal, p_shape);
-}
-
-void CollisionObject3D::_mouse_enter() { this->obj->emit_signal(SceneStringName(mouse_entered)); }
-
-void CollisionObject3D::_mouse_exit() { this->obj->emit_signal(SceneStringName(mouse_exited)); }
-
 void CollisionObject3D::set_body_mode(PS3DE::BodyMode p_mode)
 {
 	ERR_FAIL_COND(area);
@@ -381,16 +256,6 @@ bool CollisionObject3D::_are_collision_shapes_visible()
 		   !Engine::get_singleton()->is_editor_hint();
 }
 
-void CollisionObject3D::_update_shape_data(uint32_t p_owner)
-{
-	if (_are_collision_shapes_visible()) {
-		if (debug_shapes_to_update.is_empty()) {
-			callable_mp(this, &CollisionObject3D::_update_debug_shapes).call_deferred();
-		}
-		debug_shapes_to_update.insert(p_owner);
-	}
-}
-
 void CollisionObject3D::_shape_changed(const Ref<Shape3D>& p_shape)
 {
 	for (KeyValue<uint32_t, ShapeData>& E : shapes) {
@@ -404,72 +269,6 @@ void CollisionObject3D::_shape_changed(const Ref<Shape3D>& p_shape)
 			}
 		}
 	}
-}
-
-void CollisionObject3D::_update_debug_shapes()
-{
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-
-	if (!is_inside_tree()) {
-		debug_shapes_to_update.clear();
-		return;
-	}
-
-	for (const uint32_t& shapedata_idx : debug_shapes_to_update) {
-		if (shapes.has(shapedata_idx)) {
-			ShapeData& shapedata = shapes[shapedata_idx];
-			ShapeData::ShapeBase* shape_bases = shapedata.shapes.ptrw();
-			for (int i = 0; i < shapedata.shapes.size(); i++) {
-				ShapeData::ShapeBase& s = shape_bases[i];
-				if (s.shape.is_null() || shapedata.disabled) {
-					if (s.debug_shape.is_valid()) {
-						RS::get_singleton()->free_rid(s.debug_shape);
-						s.debug_shape = RID();
-						--debug_shapes_count;
-					}
-					continue;
-				}
-
-				if (s.debug_shape.is_null()) {
-					s.debug_shape = RS::get_singleton()->instance_create();
-					RS::get_singleton()->instance_set_scenario(
-						s.debug_shape, get_world_3d()->get_scenario());
-					s.shape->connect_changed(
-						callable_mp(this, &CollisionObject3D::_shape_changed).bind(s.shape),
-						Object::CONNECT_DEFERRED);
-					++debug_shapes_count;
-				}
-
-				Ref<Mesh> mesh = s.shape->get_debug_mesh();
-				RS::get_singleton()->instance_set_base(s.debug_shape, mesh->get_rid());
-				RS::get_singleton()->instance_set_transform(
-					s.debug_shape, get_global_transform() * shapedata.xform);
-			}
-		}
-	}
-	debug_shapes_to_update.clear();
-}
-
-void CollisionObject3D::_clear_debug_shapes()
-{
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-
-	for (KeyValue<uint32_t, ShapeData>& E : shapes) {
-		ShapeData& shapedata = E.value;
-		ShapeData::ShapeBase* shape_bases = shapedata.shapes.ptrw();
-		for (int i = 0; i < shapedata.shapes.size(); i++) {
-			ShapeData::ShapeBase& s = shape_bases[i];
-			if (s.debug_shape.is_valid()) {
-				RS::get_singleton()->free_rid(s.debug_shape);
-				s.debug_shape = RID();
-				if (s.shape.is_valid()) {
-					s.shape->disconnect_changed(
-						callable_mp(this, &CollisionObject3D::_update_shape_data));
-				}
-			}
-		}
-	}
-	debug_shapes_count = 0;
 }
 
 void CollisionObject3D::_on_transform_changed()
@@ -503,25 +302,6 @@ void CollisionObject3D::set_ray_pickable(bool p_ray_pickable)
 bool CollisionObject3D::is_ray_pickable() const { return ray_pickable; }
 
 void CollisionObject3D::_bind_methods() {}
-
-uint32_t CollisionObject3D::create_shape_owner(Object* p_owner)
-{
-	ShapeData sd;
-	uint32_t id;
-
-	if (shapes.is_empty()) {
-		id = 0;
-	}
-	else {
-		id = shapes.back()->key() + 1;
-	}
-
-	sd.owner_id = p_owner ? p_owner->get_instance_id() : ObjectID();
-
-	shapes[id] = sd;
-
-	return id;
-}
 
 void CollisionObject3D::remove_shape_owner(uint32_t owner)
 {
@@ -606,13 +386,6 @@ Transform3D CollisionObject3D::shape_owner_get_transform(uint32_t p_owner) const
 	return shapes[p_owner].xform;
 }
 
-Object* CollisionObject3D::shape_owner_get_owner(uint32_t p_owner) const
-{
-	ERR_FAIL_COND_V(!shapes.has(p_owner), nullptr);
-
-	return ObjectDB::get_instance(shapes[p_owner].owner_id);
-}
-
 void CollisionObject3D::shape_owner_add_shape(uint32_t p_owner, Shape3D* rp_shape)
 {
 	ERR_FAIL_COND(!shapes.has(p_owner));
@@ -661,44 +434,6 @@ int CollisionObject3D::shape_owner_get_shape_index(uint32_t p_owner, int p_shape
 	return shapes[p_owner].shapes[p_shape].index;
 }
 
-void CollisionObject3D::shape_owner_remove_shape(uint32_t p_owner, int p_shape)
-{
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	ERR_FAIL_COND(!shapes.has(p_owner));
-	ERR_FAIL_INDEX(p_shape, shapes[p_owner].shapes.size());
-
-	ShapeData::ShapeBase& s = shapes[p_owner].shapes.write[p_shape];
-	int index_to_remove = s.index;
-
-	if (area) {
-		PhysicsServer3D::get_singleton()->area_remove_shape(rid, index_to_remove);
-	}
-	else {
-		PhysicsServer3D::get_singleton()->body_remove_shape(rid, index_to_remove);
-	}
-
-	if
-(s.debug_shape.is_valid()) {
-		RS::get_singleton()->free_rid(s.debug_shape);
-		if (s.shape.is_valid()) {
-			s.shape->disconnect_changed(callable_mp(this, &CollisionObject3D::_shape_changed));
-		}
-		--debug_shapes_count;
-	}
-
-	shapes[p_owner].shapes.remove_at(p_shape);
-
-	for (KeyValue<uint32_t, ShapeData>& E : shapes) {
-		for (int i = 0; i < E.value.shapes.size(); i++) {
-			if (E.value.shapes[i].index > index_to_remove) {
-				E.value.shapes.write[i].index -= 1;
-			}
-		}
-	}
-
-	total_subshapes--;
-}
-
 void CollisionObject3D::shape_owner_clear_shapes(uint32_t p_owner)
 {
 	ERR_FAIL_COND(!shapes.has(p_owner));
@@ -726,24 +461,6 @@ uint32_t CollisionObject3D::shape_find_owner(int p_shape_index) const
 	ERR_FAIL_V_MSG(UINT32_MAX, "Can't find owner for shape index " + itos(p_shape_index) + ".");
 }
 
-CollisionObject3D::CollisionObject3D(RID p_rid, bool p_area)
-{
-	rid = p_rid;
-	area = p_area;
-	set_notify_transform(true);
-	this->obj->_define_ancestry(Object::AncestralClass::COLLISION_OBJECT_3D);
-
-	if (p_area) {
-		PhysicsServer3D::get_singleton()->area_attach_object_instance_id(
-			rid, this->obj->get_instance_id());
-	}
-	else {
-		PhysicsServer3D::get_singleton()->body_attach_object_instance_id(
-			rid, this->obj->get_instance_id());
-		PhysicsServer3D::get_singleton()->body_set_mode(rid, body_mode);
-	}
-}
-
 void CollisionObject3D::set_capture_input_on_drag(bool p_capture)
 {
 	capture_input_on_drag = p_capture;
@@ -767,14 +484,6 @@ PackedStringArray CollisionObject3D::get_configuration_warnings() const
 							   "axes), and change the size in children collision shapes instead."));
 	}
 	return warnings;
-}
-
-CollisionObject3D::CollisionObject3D()
-{
-	this->obj->_define_ancestry(Object::AncestralClass::COLLISION_OBJECT_3D);
-	set_notify_transform(true);
-	// owner=
-	// set_transform_notify(true);
 }
 
 CollisionObject3D::~CollisionObject3D()

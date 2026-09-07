@@ -35,45 +35,6 @@
 #include "servers/navigation_3d/navigation_server_3d.h"
 #include "servers/rendering/rendering_server.h"
 
-void NavigationAgent3D::_bind_methods() {}
-
-#ifndef DISABLE_DEPRECATED
-// Compatibility with Godot 4.0 beta 10 or below.
-// Functions in block below all renamed or replaced in 4.0 beta 1X avoidance rework.
-bool NavigationAgent3D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "time_horizon") {
-		set_time_horizon_agents(p_value);
-		return true;
-	}
-	if (p_name == "target_location") {
-		set_target_position(p_value);
-		return true;
-	}
-	if (p_name == "agent_height_offset") {
-		set_path_height_offset(p_value);
-		return true;
-	}
-	return false;
-}
-
-bool NavigationAgent3D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (p_name == "time_horizon") {
-		r_ret = get_time_horizon_agents();
-		return true;
-	}
-	if (p_name == "target_location") {
-		r_ret = get_target_position();
-		return true;
-	}
-	if (p_name == "agent_height_offset") {
-		r_ret = get_path_height_offset();
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
 
 void NavigationAgent3D::_notification(int p_what)
 {
@@ -183,122 +144,17 @@ void NavigationAgent3D::_notification(int p_what)
 	}
 }
 
-void NavigationAgent3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "keep_y_velocity" && use_3d_avoidance) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
 
-NavigationAgent3D::NavigationAgent3D()
-{
-	agent = NavigationServer3D::get_singleton()->agent_create();
 
-	NavigationServer3D::get_singleton()->agent_set_neighbor_distance(agent, neighbor_distance);
-	NavigationServer3D::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);
-	NavigationServer3D::get_singleton()->agent_set_time_horizon_agents(agent, time_horizon_agents);
-	NavigationServer3D::get_singleton()->agent_set_time_horizon_obstacles(
-		agent, time_horizon_obstacles);
-	NavigationServer3D::get_singleton()->agent_set_radius(agent, radius);
-	NavigationServer3D::get_singleton()->agent_set_height(agent, height);
-	NavigationServer3D::get_singleton()->agent_set_max_speed(agent, max_speed);
-	NavigationServer3D::get_singleton()->agent_set_avoidance_layers(agent, avoidance_layers);
-	NavigationServer3D::get_singleton()->agent_set_avoidance_mask(agent, avoidance_mask);
-	NavigationServer3D::get_singleton()->agent_set_avoidance_priority(agent, avoidance_priority);
-	NavigationServer3D::get_singleton()->agent_set_use_3d_avoidance(agent, use_3d_avoidance);
-	NavigationServer3D::get_singleton()->agent_set_avoidance_enabled(agent, avoidance_enabled);
-	if (avoidance_enabled) {
-		NavigationServer3D::get_singleton()->agent_set_avoidance_callback(
-			agent, callable_mp(this, &NavigationAgent3D::_avoidance_done));
-	}
 
-	// Preallocate query and result objects to improve performance.
-	navigation_query = Ref<NavigationPathQueryParameters3D>();
-	navigation_query.instantiate();
 
-	navigation_result = Ref<NavigationPathQueryResult3D>();
-	navigation_result.instantiate();
 
-#ifdef DEBUG_ENABLED
-	NavigationServer3D::get_singleton()->obj->connect(SNAME("navigation_debug_changed"),
-		callable_mp(this, &NavigationAgent3D::_navigation_debug_changed));
-#endif // DEBUG_ENABLED
-}
 
-NavigationAgent3D::~NavigationAgent3D()
-{
-	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
-	NavigationServer3D::get_singleton()->free_rid(agent);
-	agent = RID(); // Pointless
 
-#ifdef DEBUG_ENABLED
-	NavigationServer3D::get_singleton()->obj->disconnect(SNAME("navigation_debug_changed"),
-		callable_mp(this, &NavigationAgent3D::_navigation_debug_changed));
-
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	if (debug_path_instance.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(debug_path_instance);
-	}
-	if (debug_path_mesh.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(debug_path_mesh->get_rid());
-	}
-#endif // DEBUG_ENABLED
-}
-
-void NavigationAgent3D::set_avoidance_enabled(bool p_enabled)
-{
-	if (avoidance_enabled == p_enabled) {
-		return;
-	}
-
-	avoidance_enabled = p_enabled;
-
-	if (avoidance_enabled) {
-		NavigationServer3D::get_singleton()->agent_set_avoidance_enabled(agent, true);
-		NavigationServer3D::get_singleton()->agent_set_avoidance_callback(
-			agent, callable_mp(this, &NavigationAgent3D::_avoidance_done));
-	}
-	else {
-		NavigationServer3D::get_singleton()->agent_set_avoidance_enabled(agent, false);
-		NavigationServer3D::get_singleton()->agent_set_avoidance_callback(agent, Callable());
-	}
-}
 
 bool NavigationAgent3D::get_avoidance_enabled() const { return avoidance_enabled; }
 
-void NavigationAgent3D::set_agent_parent(Node* p_agent_parent)
-{
-	if (agent_parent == p_agent_parent) {
-		return;
-	}
 
-	// remove agent from any avoidance map before changing parent or there will be leftovers on the
-	// RVO map
-	NavigationServer3D::get_singleton()->agent_set_avoidance_callback(agent, Callable());
-
-	if (Object::cast_to<Node3D>(p_agent_parent) != nullptr) {
-		// place agent on navigation map first or else the RVO agent callback creation fails
-		// silently later
-		agent_parent = Object::cast_to<Node3D>(p_agent_parent);
-		if (map_override.is_valid()) {
-			NavigationServer3D::get_singleton()->agent_set_map(get_rid(), map_override);
-		}
-		else {
-			NavigationServer3D::get_singleton()->agent_set_map(
-				get_rid(), agent_parent->get_world_3d()->get_navigation_map());
-		}
-
-		// create new avoidance callback if enabled
-		if (avoidance_enabled) {
-			NavigationServer3D::get_singleton()->agent_set_avoidance_callback(
-				agent, callable_mp(this, &NavigationAgent3D::_avoidance_done));
-		}
-	}
-	else {
-		agent_parent = nullptr;
-		NavigationServer3D::get_singleton()->agent_set_map(get_rid(), RID());
-	}
-}
 
 void NavigationAgent3D::set_navigation_layers(uint32_t p_navigation_layers)
 {
@@ -493,12 +349,7 @@ void NavigationAgent3D::set_path_height_offset(real_t p_path_height_offset)
 	path_height_offset = p_path_height_offset;
 }
 
-void NavigationAgent3D::set_use_3d_avoidance(bool p_use_3d_avoidance)
-{
-	use_3d_avoidance = p_use_3d_avoidance;
-	NavigationServer3D::get_singleton()->agent_set_use_3d_avoidance(agent, use_3d_avoidance);
-	this->obj->notify_property_list_changed();
-}
+
 
 void NavigationAgent3D::set_keep_y_velocity(bool p_enabled)
 {
@@ -658,114 +509,11 @@ void NavigationAgent3D::set_velocity(const Vector3 p_velocity)
 	velocity_submitted = true;
 }
 
-void NavigationAgent3D::_avoidance_done(Vector3 p_new_velocity)
-{
-	safe_velocity = p_new_velocity;
-	if (!use_3d_avoidance) {
-		safe_velocity.y = stored_y_velocity;
-	}
-	this->obj->emit_signal(SNAME("velocity_computed"), safe_velocity);
-}
 
-PackedStringArray NavigationAgent3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node::get_configuration_warnings();
 
-	if (!Object::cast_to<Node3D>(get_parent())) {
-		warnings.push_back(
-			RTR("The NavigationAgent3D can be used only under a Node3D inheriting parent node."));
-	}
 
-	return warnings;
-}
 
-void NavigationAgent3D::_update_navigation()
-{
-	if (agent_parent == nullptr) {
-		return;
-	}
-	if (!agent_parent->is_inside_tree()) {
-		return;
-	}
-	if (!target_position_submitted) {
-		return;
-	}
 
-	Vector3 origin = agent_parent->get_global_position();
-
-	bool reload_path = false;
-
-	if (NavigationServer3D::get_singleton()->agent_is_map_changed(agent)) {
-		reload_path = true;
-	}
-	else if (navigation_result->get_path().is_empty()) {
-		reload_path = true;
-	}
-	else {
-		// Check if too far from the navigation path
-		if (navigation_path_index > 0) {
-			const Vector<Vector3>& navigation_path = navigation_result->get_path();
-
-			Vector3 segment_a = navigation_path[navigation_path_index - 1];
-			Vector3 segment_b = navigation_path[navigation_path_index];
-			segment_a.y -= path_height_offset;
-			segment_b.y -= path_height_offset;
-			Vector3 p = Geometry3D::get_closest_point_to_segment(origin, segment_a, segment_b);
-			if (origin.distance_to(p) >= path_max_distance) {
-				// To faraway, reload path
-				reload_path = true;
-			}
-		}
-	}
-
-	if (reload_path) {
-		navigation_query->set_start_position(origin);
-		navigation_query->set_target_position(target_position);
-		navigation_query->set_navigation_layers(navigation_layers);
-		navigation_query->set_metadata_flags(path_metadata_flags);
-
-		if (map_override.is_valid()) {
-			navigation_query->set_map(map_override);
-		}
-		else {
-			navigation_query->set_map(agent_parent->get_world_3d()->get_navigation_map());
-		}
-
-		NavigationServer3D::get_singleton()->query_path(navigation_query, navigation_result);
-#ifdef DEBUG_ENABLED
-		debug_path_dirty = true;
-#endif // DEBUG_ENABLED
-		navigation_finished = false;
-		last_waypoint_reached = false;
-		navigation_path_index = 0;
-		this->obj->emit_signal(SNAME("path_changed"));
-	}
-
-	if (navigation_result->get_path().is_empty()) {
-		return;
-	}
-
-	// Check if the navigation has already finished.
-	if (navigation_finished) {
-		return;
-	}
-
-	// Check if we reached the target.
-	if (_is_within_target_distance(origin)) {
-		// Emit waypoint_reached in case we also moved within distance of a waypoint.
-		_advance_waypoints(origin);
-		_transition_to_target_reached();
-		_transition_to_navigation_finished();
-	}
-	else {
-		// Advance waypoints if possible.
-		_advance_waypoints(origin);
-		// Keep navigation running even after reaching the last waypoint if the target is reachable.
-		if (last_waypoint_reached && !_is_target_reachable()) {
-			_transition_to_navigation_finished();
-		}
-	}
-}
 
 void NavigationAgent3D::_advance_waypoints(const Vector3& p_origin)
 {
@@ -813,95 +561,11 @@ bool NavigationAgent3D::_is_within_target_distance(const Vector3& p_origin) cons
 	return p_origin.distance_to(target_position) < target_desired_distance;
 }
 
-void NavigationAgent3D::_trigger_waypoint_reached()
-{
-	const Vector<Vector3>& navigation_path = navigation_result->get_path();
-	const Vector<int32_t>& navigation_path_types = navigation_result->get_path_types();
-	const TypedArray<RID>& navigation_path_rids = navigation_result->get_path_rids();
-	const Vector<int64_t>& navigation_path_owners = navigation_result->get_path_owner_ids();
 
-	Dictionary details;
 
-	const Vector3 waypoint = navigation_path[navigation_path_index];
-	details[CoreStringName(position)] = waypoint;
 
-	int waypoint_type = -1;
-	if (path_metadata_flags.has_flag(
-			NavigationPathQueryParameters3D::PathMetadataFlags::PATH_METADATA_INCLUDE_TYPES)) {
-		const NavigationPathQueryResult3D::PathSegmentType type =
-			NavigationPathQueryResult3D::PathSegmentType(
-				navigation_path_types[navigation_path_index]);
 
-		details[SNAME("type")] = type;
-		waypoint_type = type;
-	}
 
-	if (path_metadata_flags.has_flag(
-			NavigationPathQueryParameters3D::PathMetadataFlags::PATH_METADATA_INCLUDE_RIDS)) {
-		details[SNAME("rid")] = navigation_path_rids[navigation_path_index];
-	}
-
-	if (path_metadata_flags.has_flag(
-			NavigationPathQueryParameters3D::PathMetadataFlags::PATH_METADATA_INCLUDE_OWNERS)) {
-		const ObjectID waypoint_owner_id = ObjectID(navigation_path_owners[navigation_path_index]);
-
-		// Get a reference to the owning object.
-		Object* owner = nullptr;
-		if (waypoint_owner_id.is_valid()) {
-			owner = ObjectDB::get_instance(waypoint_owner_id);
-		}
-
-		details[SNAME("owner")] = owner;
-
-		if (waypoint_type == NavigationPathQueryResult3D::PATH_SEGMENT_TYPE_LINK) {
-			const NavigationLink3D* navlink = Object::cast_to<NavigationLink3D>(owner);
-			if (navlink) {
-				Vector3 link_global_start_position = navlink->get_global_start_position();
-				Vector3 link_global_end_position = navlink->get_global_end_position();
-				if (waypoint.distance_to(link_global_start_position) <
-					waypoint.distance_to(link_global_end_position)) {
-					details[SNAME("link_entry_position")] = link_global_start_position;
-					details[SNAME("link_exit_position")] = link_global_end_position;
-				}
-				else {
-					details[SNAME("link_entry_position")] = link_global_end_position;
-					details[SNAME("link_exit_position")] = link_global_start_position;
-				}
-			}
-		}
-	}
-
-	// Emit a signal for the waypoint.
-	this->obj->emit_signal(SNAME("waypoint_reached"), details);
-
-	// Emit a signal if we've reached a navigation link.
-	if (waypoint_type == NavigationPathQueryResult3D::PATH_SEGMENT_TYPE_LINK) {
-		this->obj->emit_signal(SNAME("link_reached"), details);
-	}
-}
-
-void NavigationAgent3D::_transition_to_navigation_finished()
-{
-	navigation_finished = true;
-	target_position_submitted = false;
-
-	if (avoidance_enabled) {
-		NavigationServer3D::get_singleton()->agent_set_position(
-			agent, agent_parent->get_global_transform().origin);
-		NavigationServer3D::get_singleton()->agent_set_velocity(agent, Vector3(0.0, 0.0, 0.0));
-		NavigationServer3D::get_singleton()->agent_set_velocity_forced(
-			agent, Vector3(0.0, 0.0, 0.0));
-		stored_y_velocity = 0.0;
-	}
-
-	this->obj->emit_signal(SNAME("navigation_finished"));
-}
-
-void NavigationAgent3D::_transition_to_target_reached()
-{
-	target_reached = true;
-	this->obj->emit_signal(SNAME("target_reached"));
-}
 
 void NavigationAgent3D::set_avoidance_layers(uint32_t p_layers)
 {
@@ -1044,89 +708,6 @@ float NavigationAgent3D::get_debug_path_custom_point_size() const
 
 #ifdef DEBUG_ENABLED
 void NavigationAgent3D::_navigation_debug_changed() { debug_path_dirty = true; }
-
-void NavigationAgent3D::_update_debug_path()
-{
-	if (!debug_path_dirty) {
-		return;
-	}
-	debug_path_dirty = false;
-	if (!debug_path_instance.is_valid()) {
-		debug_path_instance = RenderingServer::get_singleton()->instance_create();
-	}
-	if (debug_path_mesh.is_null()) {
-		debug_path_mesh.instantiate();
-	}
-	debug_path_mesh->clear_surfaces();
-	if (!(debug_enabled &&
-			NavigationServer3D::get_singleton()->get_debug_navigation_enable_agent_paths())) {
-		return;
-	}
-	if (!(agent_parent && agent_parent->is_inside_tree())) {
-		return;
-	}
-	const Vector<Vector3>& navigation_path = navigation_result->get_path();
-	if (navigation_path.size() <= 1) {
-		return;
-	}
-	Vector<Vector3> debug_path_lines_vertex_array;
-	for (int i = 0; i < navigation_path.size() - 1; i++) {
-		debug_path_lines_vertex_array.push_back(navigation_path[i]);
-		debug_path_lines_vertex_array.push_back(navigation_path[i + 1]);
-	}
-	Array debug_path_lines_mesh_array;
-	debug_path_lines_mesh_array.resize(Mesh::ARRAY_MAX);
-	debug_path_lines_mesh_array[Mesh::ARRAY_VERTEX] = debug_path_lines_vertex_array;
-	debug_path_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, debug_path_lines_mesh_array);
-	Ref<StandardMaterial3D> debug_agent_path_line_material =
-		NavigationServer3D::get_singleton()->get_debug_navigation_agent_path_line_material();
-	if (debug_use_custom) {
-		if (debug_agent_path_line_custom_material.is_null()) {
-			debug_agent_path_line_custom_material = debug_agent_path_line_material->duplicate();
-		}
-		debug_agent_path_line_custom_material->set_albedo(debug_path_custom_color);
-		debug_path_mesh->surface_set_material(0, debug_agent_path_line_custom_material);
-	}
-	else {
-		debug_path_mesh->surface_set_material(0, debug_agent_path_line_material);
-	}
-
-	if (debug_path_custom_point_size > 0.0) {
-		Vector<Vector3> debug_path_points_vertex_array;
-
-		for (int i = 0; i < navigation_path.size(); i++) {
-			debug_path_points_vertex_array.push_back(navigation_path[i]);
-		}
-
-		Array debug_path_points_mesh_array;
-		debug_path_points_mesh_array.resize(Mesh::ARRAY_MAX);
-		debug_path_points_mesh_array[Mesh::ARRAY_VERTEX] = debug_path_points_vertex_array;
-
-		debug_path_mesh->add_surface_from_arrays(
-			Mesh::PRIMITIVE_POINTS, debug_path_points_mesh_array);
-
-		Ref<StandardMaterial3D> debug_agent_path_point_material =
-			NavigationServer3D::get_singleton()->get_debug_navigation_agent_path_point_material();
-		if (debug_use_custom) {
-			if (debug_agent_path_point_custom_material.is_null()) {
-				debug_agent_path_point_custom_material =
-					debug_agent_path_point_material->duplicate();
-			}
-			debug_agent_path_point_custom_material->set_albedo(debug_path_custom_color);
-			debug_agent_path_point_custom_material->set_point_size(debug_path_custom_point_size);
-			debug_path_mesh->surface_set_material(1, debug_agent_path_point_custom_material);
-		}
-		else {
-			debug_path_mesh->surface_set_material(1, debug_agent_path_point_material);
-		}
-	}
-
-	RS::get_singleton()->instance_set_base(debug_path_instance, debug_path_mesh->get_rid());
-	RS::get_singleton()->instance_set_scenario(
-		debug_path_instance, agent_parent->get_world_3d()->get_scenario());
-	RS::get_singleton()->instance_set_visible(
-		debug_path_instance, agent_parent->is_visible_in_tree());
-}
 #endif // DEBUG_ENABLED
 
 

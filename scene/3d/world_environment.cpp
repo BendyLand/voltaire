@@ -80,56 +80,6 @@ void WorldEnvironment::_notification(int p_what)
 	}
 }
 
-void WorldEnvironment::_update_current_environment()
-{
-	WorldEnvironment* first = Object::cast_to<WorldEnvironment>(get_tree()->get_first_node_in_group(
-		"_world_environment_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id())));
-
-	if (first) {
-		get_viewport()->find_world_3d()->set_environment(first->environment);
-	}
-	else {
-		get_viewport()->find_world_3d()->set_environment(Ref<Environment>());
-	}
-	get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-		"_world_environment_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id()),
-		"update_configuration_warnings");
-}
-
-void WorldEnvironment::_update_current_camera_attributes()
-{
-	WorldEnvironment* first = Object::cast_to<WorldEnvironment>(get_tree()->get_first_node_in_group(
-		"_world_camera_attributes_" +
-		itos(get_viewport()->find_world_3d()->get_scenario().get_id())));
-	if (first) {
-		get_viewport()->find_world_3d()->set_camera_attributes(first->camera_attributes);
-	}
-	else {
-		get_viewport()->find_world_3d()->set_camera_attributes(Ref<CameraAttributes>());
-	}
-
-	get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-		"_world_camera_attributes_" +
-			itos(get_viewport()->find_world_3d()->get_scenario().get_id()),
-		"update_configuration_warnings");
-}
-
-void WorldEnvironment::_update_current_compositor()
-{
-	WorldEnvironment* first = Object::cast_to<WorldEnvironment>(get_tree()->get_first_node_in_group(
-		"_world_compositor_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id())));
-	if (first) {
-		get_viewport()->find_world_3d()->set_compositor(first->compositor);
-	}
-	else {
-		get_viewport()->find_world_3d()->set_compositor(Ref<Compositor>());
-	}
-
-	get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-		"_world_compositor_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id()),
-		"update_configuration_warnings");
-}
-
 void WorldEnvironment::set_environment(const Ref<Environment>& p_environment)
 {
 	if (environment == p_environment) {

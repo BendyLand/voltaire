@@ -33,7 +33,6 @@
 #include "scene/resources/3d/joint_limitation_3d.h"
 
 class JointLimitationCone3D : public JointLimitation3D {
-	VLTRCLASS(JointLimitationCone3D, JointLimitation3D);
 
 	real_t angle = Math::TAU * 0.25;
 

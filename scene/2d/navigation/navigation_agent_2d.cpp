@@ -36,38 +36,6 @@
 #include "servers/navigation_2d/navigation_server_2d.h"
 #include "servers/rendering/rendering_server.h"
 
-void NavigationAgent2D::_bind_methods() {}
-
-#ifndef DISABLE_DEPRECATED
-// Compatibility with Godot 4.0 beta 10 or below.
-// Functions in block below all renamed or replaced in 4.0 beta 1X avoidance rework.
-bool NavigationAgent2D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "time_horizon") {
-		set_time_horizon_agents(p_value);
-		return true;
-	}
-	if (p_name == "target_location") {
-		set_target_position(p_value);
-		return true;
-	}
-	return false;
-}
-
-bool NavigationAgent2D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (p_name == "time_horizon") {
-		r_ret = get_time_horizon_agents();
-		return true;
-	}
-	if (p_name == "target_location") {
-		r_ret = get_target_position();
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
-
 void NavigationAgent2D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -170,110 +138,7 @@ void NavigationAgent2D::_notification(int p_what)
 	}
 }
 
-NavigationAgent2D::NavigationAgent2D()
-{
-	agent = NavigationServer2D::get_singleton()->agent_create();
-
-	NavigationServer2D::get_singleton()->agent_set_neighbor_distance(agent, neighbor_distance);
-	NavigationServer2D::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);
-	NavigationServer2D::get_singleton()->agent_set_time_horizon_agents(agent, time_horizon_agents);
-	NavigationServer2D::get_singleton()->agent_set_time_horizon_obstacles(
-		agent, time_horizon_obstacles);
-	NavigationServer2D::get_singleton()->agent_set_radius(agent, radius);
-	NavigationServer2D::get_singleton()->agent_set_max_speed(agent, max_speed);
-	NavigationServer2D::get_singleton()->agent_set_avoidance_layers(agent, avoidance_layers);
-	NavigationServer2D::get_singleton()->agent_set_avoidance_mask(agent, avoidance_mask);
-	NavigationServer2D::get_singleton()->agent_set_avoidance_priority(agent, avoidance_priority);
-	NavigationServer2D::get_singleton()->agent_set_avoidance_enabled(agent, avoidance_enabled);
-	if (avoidance_enabled) {
-		NavigationServer2D::get_singleton()->agent_set_avoidance_callback(
-			agent, callable_mp(this, &NavigationAgent2D::_avoidance_done));
-	}
-
-	// Preallocate query and result objects to improve performance.
-	navigation_query = Ref<NavigationPathQueryParameters2D>();
-	navigation_query.instantiate();
-
-	navigation_result = Ref<NavigationPathQueryResult2D>();
-	navigation_result.instantiate();
-
-#ifdef DEBUG_ENABLED
-	NavigationServer2D::get_singleton()->obj->connect(SNAME("navigation_debug_changed"),
-		callable_mp(this, &NavigationAgent2D::_navigation_debug_changed));
-#endif // DEBUG_ENABLED
-}
-
-NavigationAgent2D::~NavigationAgent2D()
-{
-	ERR_FAIL_NULL(NavigationServer2D::get_singleton());
-	NavigationServer2D::get_singleton()->free_rid(agent);
-	agent = RID(); // Pointless
-
-#ifdef DEBUG_ENABLED
-	NavigationServer2D::get_singleton()->obj->disconnect(SNAME("navigation_debug_changed"),
-		callable_mp(this, &NavigationAgent2D::_navigation_debug_changed));
-
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	if (debug_path_instance.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(debug_path_instance);
-	}
-#endif // DEBUG_ENABLED
-}
-
-void NavigationAgent2D::set_avoidance_enabled(bool p_enabled)
-{
-	if (avoidance_enabled == p_enabled) {
-		return;
-	}
-
-	avoidance_enabled = p_enabled;
-
-	if (avoidance_enabled) {
-		NavigationServer2D::get_singleton()->agent_set_avoidance_enabled(agent, true);
-		NavigationServer2D::get_singleton()->agent_set_avoidance_callback(
-			agent, callable_mp(this, &NavigationAgent2D::_avoidance_done));
-	}
-	else {
-		NavigationServer2D::get_singleton()->agent_set_avoidance_enabled(agent, false);
-		NavigationServer2D::get_singleton()->agent_set_avoidance_callback(agent, Callable());
-	}
-}
-
 bool NavigationAgent2D::get_avoidance_enabled() const { return avoidance_enabled; }
-
-void NavigationAgent2D::set_agent_parent(Node* p_agent_parent)
-{
-	if (agent_parent == p_agent_parent) {
-		return;
-	}
-
-	// remove agent from any avoidance map before changing parent or there will be leftovers on the
-	// RVO map
-	NavigationServer2D::get_singleton()->agent_set_avoidance_callback(agent, Callable());
-
-	if (Object::cast_to<Node2D>(p_agent_parent) != nullptr) {
-		// place agent on navigation map first or else the RVO agent callback creation fails
-		// silently later
-		agent_parent = Object::cast_to<Node2D>(p_agent_parent);
-		if (map_override.is_valid()) {
-			NavigationServer2D::get_singleton()->agent_set_map(get_rid(), map_override);
-		}
-		else {
-			NavigationServer2D::get_singleton()->agent_set_map(
-				get_rid(), agent_parent->get_world_2d()->get_navigation_map());
-		}
-
-		// create new avoidance callback if enabled
-		if (avoidance_enabled) {
-			NavigationServer2D::get_singleton()->agent_set_avoidance_callback(
-				agent, callable_mp(this, &NavigationAgent2D::_avoidance_done));
-		}
-	}
-	else {
-		agent_parent = nullptr;
-		NavigationServer2D::get_singleton()->agent_set_map(get_rid(), RID());
-	}
-}
 
 void NavigationAgent2D::set_navigation_layers(uint32_t p_navigation_layers)
 {
@@ -389,8 +254,7 @@ float NavigationAgent2D::get_path_search_max_distance() const { return path_sear
 
 float NavigationAgent2D::get_path_length() const { return navigation_result->get_path_length(); }
 
-void NavigationAgent2D::set_path_metadata_flags(
-	uint32_t p_path_metadata_flags)
+void NavigationAgent2D::set_path_metadata_flags(uint32_t p_path_metadata_flags)
 {
 	if (path_metadata_flags == p_path_metadata_flags) {
 		return;
@@ -604,110 +468,6 @@ void NavigationAgent2D::set_velocity(const Vector2 p_velocity)
 	velocity_submitted = true;
 }
 
-void NavigationAgent2D::_avoidance_done(Vector2 p_new_velocity)
-{
-	safe_velocity = p_new_velocity;
-	this->obj->emit_signal(SNAME("velocity_computed"), safe_velocity);
-}
-
-PackedStringArray NavigationAgent2D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node::get_configuration_warnings();
-
-	if (!Object::cast_to<Node2D>(get_parent())) {
-		warnings.push_back(
-			RTR("The NavigationAgent2D can be used only under a Node2D inheriting parent node."));
-	}
-
-	return warnings;
-}
-
-void NavigationAgent2D::_update_navigation()
-{
-	if (agent_parent == nullptr) {
-		return;
-	}
-	if (!agent_parent->is_inside_tree()) {
-		return;
-	}
-	if (!target_position_submitted) {
-		return;
-	}
-
-	Vector2 origin = agent_parent->get_global_position();
-
-	bool reload_path = false;
-
-	if (NavigationServer2D::get_singleton()->agent_is_map_changed(agent)) {
-		reload_path = true;
-	}
-	else if (navigation_result->get_path().is_empty()) {
-		reload_path = true;
-	}
-	else {
-		// Check if too far from the navigation path
-		if (navigation_path_index > 0) {
-			const Vector<Vector2>& navigation_path = navigation_result->get_path();
-
-			const Vector2 segment_a = navigation_path[navigation_path_index - 1];
-			const Vector2 segment_b = navigation_path[navigation_path_index];
-			Vector2 p = Geometry2D::get_closest_point_to_segment(origin, segment_a, segment_b);
-			if (origin.distance_to(p) >= path_max_distance) {
-				// To faraway, reload path
-				reload_path = true;
-			}
-		}
-	}
-
-	if (reload_path) {
-		navigation_query->set_start_position(origin);
-		navigation_query->set_target_position(target_position);
-		navigation_query->set_navigation_layers(navigation_layers);
-		navigation_query->set_metadata_flags(path_metadata_flags);
-
-		if (map_override.is_valid()) {
-			navigation_query->set_map(map_override);
-		}
-		else {
-			navigation_query->set_map(agent_parent->get_world_2d()->get_navigation_map());
-		}
-
-		NavigationServer2D::get_singleton()->query_path(navigation_query, navigation_result);
-#ifdef DEBUG_ENABLED
-		debug_path_dirty = true;
-#endif // DEBUG_ENABLED
-		navigation_finished = false;
-		last_waypoint_reached = false;
-		navigation_path_index = 0;
-		this->obj->emit_signal(SNAME("path_changed"));
-	}
-
-	if (navigation_result->get_path().is_empty()) {
-		return;
-	}
-
-	// Check if the navigation has already finished.
-	if (navigation_finished) {
-		return;
-	}
-
-	// Check if we reached the target.
-	if (_is_within_target_distance(origin)) {
-		// Emit waypoint_reached in case we also moved within distance of a waypoint.
-		_advance_waypoints(origin);
-		_transition_to_target_reached();
-		_transition_to_navigation_finished();
-	}
-	else {
-		// Advance waypoints if possible.
-		_advance_waypoints(origin);
-		// Keep navigation running even after reaching the last waypoint if the target is reachable.
-		if (last_waypoint_reached && !_is_target_reachable()) {
-			_transition_to_navigation_finished();
-		}
-	}
-}
-
 void NavigationAgent2D::_advance_waypoints(const Vector2& p_origin)
 {
 	if (last_waypoint_reached) {
@@ -753,73 +513,6 @@ bool NavigationAgent2D::_is_within_target_distance(const Vector2& p_origin) cons
 	return p_origin.distance_to(target_position) < target_desired_distance;
 }
 
-void NavigationAgent2D::_trigger_waypoint_reached()
-{
-	const Vector<Vector2>& navigation_path = navigation_result->get_path();
-	const Vector<int32_t>& navigation_path_types = navigation_result->get_path_types();
-	const TypedArray<RID>& navigation_path_rids = navigation_result->get_path_rids();
-	const Vector<int64_t>& navigation_path_owners = navigation_result->get_path_owner_ids();
-
-	Dictionary details;
-
-	const Vector2 waypoint = navigation_path[navigation_path_index];
-	details[CoreStringName(position)] = waypoint;
-
-	int waypoint_type = -1;
-	if (path_metadata_flags.has_flag(
-			NavigationPathQueryParameters2D::PathMetadataFlags::PATH_METADATA_INCLUDE_TYPES)) {
-		const NavigationPathQueryResult2D::PathSegmentType type =
-			NavigationPathQueryResult2D::PathSegmentType(
-				navigation_path_types[navigation_path_index]);
-
-		details[SNAME("type")] = type;
-		waypoint_type = type;
-	}
-
-	if (path_metadata_flags.has_flag(
-			NavigationPathQueryParameters2D::PathMetadataFlags::PATH_METADATA_INCLUDE_RIDS)) {
-		details[SNAME("rid")] = navigation_path_rids[navigation_path_index];
-	}
-
-	if (path_metadata_flags.has_flag(
-			NavigationPathQueryParameters2D::PathMetadataFlags::PATH_METADATA_INCLUDE_OWNERS)) {
-		const ObjectID waypoint_owner_id = ObjectID(navigation_path_owners[navigation_path_index]);
-
-		// Get a reference to the owning object.
-		Object* owner = nullptr;
-		if (waypoint_owner_id.is_valid()) {
-			owner = ObjectDB::get_instance(waypoint_owner_id);
-		}
-
-		details[SNAME("owner")] = owner;
-
-		if (waypoint_type == NavigationPathQueryResult2D::PATH_SEGMENT_TYPE_LINK) {
-			const NavigationLink2D* navlink = Object::cast_to<NavigationLink2D>(owner);
-			if (navlink) {
-				Vector2 link_global_start_position = navlink->get_global_start_position();
-				Vector2 link_global_end_position = navlink->get_global_end_position();
-				if (waypoint.distance_to(link_global_start_position) <
-					waypoint.distance_to(link_global_end_position)) {
-					details[SNAME("link_entry_position")] = link_global_start_position;
-					details[SNAME("link_exit_position")] = link_global_end_position;
-				}
-				else {
-					details[SNAME("link_entry_position")] = link_global_end_position;
-					details[SNAME("link_exit_position")] = link_global_start_position;
-				}
-			}
-		}
-	}
-
-	// Emit a signal for the waypoint.
-	this->obj->emit_signal(SNAME("waypoint_reached"), details);
-
-	// Emit a signal if we've reached a navigation link.
-	if (waypoint_type == NavigationPathQueryResult2D::PATH_SEGMENT_TYPE_LINK) {
-		this->obj->emit_signal(SNAME("link_reached"), details);
-	}
-}
-
 void NavigationAgent2D::_transition_to_navigation_finished()
 {
 	navigation_finished = true;
@@ -831,14 +524,6 @@ void NavigationAgent2D::_transition_to_navigation_finished()
 		NavigationServer2D::get_singleton()->agent_set_velocity(agent, Vector2(0.0, 0.0));
 		NavigationServer2D::get_singleton()->agent_set_velocity_forced(agent, Vector2(0.0, 0.0));
 	}
-
-	this->obj->emit_signal(SNAME("navigation_finished"));
-}
-
-void NavigationAgent2D::_transition_to_target_reached()
-{
-	target_reached = true;
-	this->obj->emit_signal(SNAME("target_reached"));
 }
 
 void NavigationAgent2D::set_avoidance_layers(uint32_t p_layers)

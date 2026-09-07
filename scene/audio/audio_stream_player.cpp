@@ -28,42 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "audio_stream_player.compat.inc"
 #include "audio_stream_player.h"
 #include "scene/audio/audio_stream_player_internal.h"
 #include "servers/audio/audio_stream.h"
 #include "servers/display/accessibility_server.h"
 
-void AudioStreamPlayer::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_ACCESSIBILITY_UPDATE) {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_AUDIO);
-	}
-	else {
-		internal->notification(p_what);
-	}
-}
-
 void AudioStreamPlayer::set_stream(Ref<AudioStream> p_stream) { internal->set_stream(p_stream); }
-
-bool AudioStreamPlayer::_set(const StringName& p_name, const Variant& p_value)
-{
-	return internal->set(p_name, p_value);
-}
-
-bool AudioStreamPlayer::_get(const StringName& p_name, Variant& r_ret) const
-{
-	return internal->get(p_name, r_ret);
-}
-
-void AudioStreamPlayer::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	internal->get_property_list(p_list);
-}
 
 Ref<AudioStream> AudioStreamPlayer::get_stream() const { return internal->stream; }
 
@@ -194,11 +164,6 @@ Vector<AudioFrame> AudioStreamPlayer::_get_volume_vector()
 	return volume_vector;
 }
 
-void AudioStreamPlayer::_validate_property(PropertyInfo& p_property) const
-{
-	internal->validate_property(p_property);
-}
-
 bool AudioStreamPlayer::has_stream_playback() { return internal->has_stream_playback(); }
 
 Ref<AudioStreamPlayback> AudioStreamPlayer::get_stream_playback()
@@ -214,14 +179,6 @@ AudioServer::PlaybackType AudioStreamPlayer::get_playback_type() const
 void AudioStreamPlayer::set_playback_type(AudioServer::PlaybackType p_playback_type)
 {
 	internal->set_playback_type(p_playback_type);
-}
-
-void AudioStreamPlayer::_bind_methods() {}
-
-AudioStreamPlayer::AudioStreamPlayer()
-{
-	internal = memnew(AudioStreamPlayerInternal(this, callable_mp(this, &AudioStreamPlayer::play),
-		callable_mp(this, &AudioStreamPlayer::stop), false));
 }
 
 AudioStreamPlayer::~AudioStreamPlayer() { memdelete(internal); }

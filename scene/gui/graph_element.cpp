@@ -33,18 +33,6 @@
 #include "scene/gui/graph_edit.h"
 #include "scene/theme/theme_db.h"
 
-#ifdef TOOLS_ENABLED
-void GraphElement::_edit_set_position(const Point2& p_position)
-{
-	GraphEdit* graph = Object::cast_to<GraphEdit>(get_parent());
-	if (graph) {
-		Point2 offset = (p_position + graph->get_scroll_offset()) * graph->get_zoom();
-		set_position_offset(offset);
-	}
-	set_position(p_position);
-}
-#endif
-
 void GraphElement::_resort()
 {
 	Size2 size = get_size();
@@ -91,103 +79,11 @@ void GraphElement::_notification(int p_what)
 	}
 }
 
-void GraphElement::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	GraphEdit* graph = Object::cast_to<GraphEdit>(get_parent());
-	if (graph) {
-		if (p_property.name == "position") {
-			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
-		}
-	}
-}
-
-void GraphElement::set_position_offset(const Vector2& p_offset)
-{
-	if (position_offset == p_offset) {
-		return;
-	}
-
-	position_offset = p_offset;
-	this->obj->emit_signal(SNAME("position_offset_changed"));
-	queue_redraw();
-}
-
 Vector2 GraphElement::get_position_offset() const { return position_offset; }
-
-void GraphElement::set_selected(bool p_selected)
-{
-	if (!is_selectable() || selected == p_selected) {
-		return;
-	}
-	selected = p_selected;
-	this->obj->emit_signal(p_selected ? SNAME("node_selected") : SNAME("node_deselected"));
-	queue_redraw();
-}
 
 bool GraphElement::is_selected() { return selected; }
 
-void GraphElement::set_drag(bool p_drag)
-{
-	if (p_drag) {
-		drag_from = get_position_offset();
-	}
-	else {
-		this->obj->emit_signal(
-			SNAME("dragged"), drag_from, get_position_offset()); // Required for undo/redo.
-	}
-}
-
 Vector2 GraphElement::get_drag_from() { return drag_from; }
-
-void GraphElement::gui_input(const Ref<InputEvent>& p_ev)
-{
-	ERR_FAIL_COND(p_ev.is_null());
-
-	Ref<InputEventMouseButton> mb = p_ev;
-	if (mb.is_valid()) {
-		ERR_FAIL_NULL_MSG(
-			get_parent_control(), "GraphElement must be the child of a GraphEdit node.");
-
-		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-			Vector2 mpos = mb->get_position();
-
-			if (resizable && mpos.x > get_size().x - theme_cache.resizer->get_width() &&
-				mpos.y > get_size().y - theme_cache.resizer->get_height()) {
-				resizing = true;
-				resizing_from = mpos;
-				resizing_from_size = get_size();
-				accept_event();
-				return;
-			}
-
-			this->obj->emit_signal(SNAME("raise_request"));
-		}
-
-		if (!mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-			if (resizing) {
-				resizing = false;
-				this->obj->emit_signal(SNAME("resize_end"), get_size());
-				return;
-			}
-		}
-	}
-
-	Ref<InputEventMouseMotion> mm = p_ev;
-	if (resizing && mm.is_valid()) {
-		Vector2 mpos = mm->get_position();
-		Vector2 diff = mpos - resizing_from;
-
-		this->obj->emit_signal(SNAME("resize_request"), resizing_from_size + diff);
-	}
-
-	GraphEdit* graph = Object::cast_to<GraphEdit>(get_parent());
-	if (graph && has_focus()) {
-		graph->key_input(p_ev);
-	}
-}
 
 void GraphElement::set_resizable(bool p_enable)
 {
@@ -218,5 +114,4 @@ void GraphElement::set_scaling_menus(bool p_scaling_menus) { scaling_menus = p_s
 
 bool GraphElement::is_scaling_menus() const { return scaling_menus; }
 
-void GraphElement::_bind_methods() {}
 

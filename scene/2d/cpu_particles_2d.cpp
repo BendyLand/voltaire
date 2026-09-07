@@ -151,76 +151,6 @@ void CPUParticles2D::set_draw_order(DrawOrder p_order) { draw_order = p_order; }
 
 CPUParticles2D::DrawOrder CPUParticles2D::get_draw_order() const { return draw_order; }
 
-void CPUParticles2D::_update_mesh_texture()
-{
-	Size2 tex_size;
-	if (texture.is_valid()) {
-		tex_size = texture->get_size();
-	}
-	else {
-		tex_size = Size2(1, 1);
-	}
-
-	Vector<Vector2> vertices = {-tex_size * 0.5, -tex_size * 0.5 + Vector2(tex_size.x, 0),
-		-tex_size * 0.5 + tex_size, -tex_size * 0.5 + Vector2(0, tex_size.y)};
-
-	Vector<Vector2> uvs;
-	AtlasTexture* atlas_texture = Object::cast_to<AtlasTexture>(*texture);
-	if (atlas_texture && atlas_texture->get_atlas().is_valid()) {
-		Rect2 region_rect = atlas_texture->get_region();
-		Size2 atlas_size = atlas_texture->get_atlas()->get_size();
-		uvs.push_back(
-			Vector2(region_rect.position.x / atlas_size.x, region_rect.position.y / atlas_size.y));
-		uvs.push_back(Vector2((region_rect.position.x + region_rect.size.x) / atlas_size.x,
-			region_rect.position.y / atlas_size.y));
-		uvs.push_back(Vector2((region_rect.position.x + region_rect.size.x) / atlas_size.x,
-			(region_rect.position.y + region_rect.size.y) / atlas_size.y));
-		uvs.push_back(Vector2(region_rect.position.x / atlas_size.x,
-			(region_rect.position.y + region_rect.size.y) / atlas_size.y));
-	}
-	else {
-		uvs.push_back(Vector2(0, 0));
-		uvs.push_back(Vector2(1, 0));
-		uvs.push_back(Vector2(1, 1));
-		uvs.push_back(Vector2(0, 1));
-	}
-
-	Vector<Color> colors = {
-		Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 1)};
-
-	Vector<int> indices = {0, 1, 2, 2, 3, 0};
-
-	Array arr;
-	arr.resize(RSE::ARRAY_MAX);
-	arr[RSE::ARRAY_VERTEX] = vertices;
-	arr[RSE::ARRAY_TEX_UV] = uvs;
-	arr[RSE::ARRAY_COLOR] = colors;
-	arr[RSE::ARRAY_INDEX] = indices;
-
-	RS::get_singleton()->mesh_clear(mesh);
-	RS::get_singleton()->mesh_add_surface_from_arrays(mesh, RSE::PRIMITIVE_TRIANGLES, arr);
-}
-
-void CPUParticles2D::set_texture(const Ref<Texture2D>& p_texture)
-{
-	if (p_texture == texture) {
-		return;
-	}
-
-	if (texture.is_valid()) {
-		texture->disconnect_changed(callable_mp(this, &CPUParticles2D::_texture_changed));
-	}
-
-	texture = p_texture;
-
-	if (texture.is_valid()) {
-		texture->connect_changed(callable_mp(this, &CPUParticles2D::_texture_changed));
-	}
-
-	queue_redraw();
-	_update_mesh_texture();
-}
-
 void CPUParticles2D::_texture_changed()
 {
 	if (texture.is_valid()) {
@@ -260,24 +190,6 @@ int CPUParticles2D::get_fixed_fps() const { return fixed_fps; }
 void CPUParticles2D::set_fractional_delta(bool p_enable) { fractional_delta = p_enable; }
 
 bool CPUParticles2D::get_fractional_delta() const { return fractional_delta; }
-
-PackedStringArray CPUParticles2D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node2D::get_configuration_warnings();
-
-	CanvasItemMaterial* mat = Object::cast_to<CanvasItemMaterial>(get_material().ptr());
-
-	if (get_material().is_null() || (mat && !mat->get_particles_animation())) {
-		if (get_param_max(PARAM_ANIM_SPEED) != 0.0 || get_param_max(PARAM_ANIM_OFFSET) != 0.0 ||
-			get_param_curve(PARAM_ANIM_SPEED).is_valid() ||
-			get_param_curve(PARAM_ANIM_OFFSET).is_valid()) {
-			warnings.push_back(RTR("CPUParticles2D animation requires the usage of a "
-								   "CanvasItemMaterial with \"Particles Animation\" enabled."));
-		}
-	}
-
-	return warnings;
-}
 
 void CPUParticles2D::restart(bool p_keep_seed)
 {
@@ -438,18 +350,6 @@ bool CPUParticles2D::get_particle_flag(ParticleFlags p_particle_flag) const
 	return particle_flags[p_particle_flag];
 }
 
-void CPUParticles2D::set_emission_shape(EmissionShape p_shape)
-{
-	ERR_FAIL_INDEX(p_shape, EMISSION_SHAPE_MAX);
-	emission_shape = p_shape;
-	this->obj->notify_property_list_changed();
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		queue_redraw();
-	}
-#endif
-}
-
 void CPUParticles2D::set_emission_sphere_radius(real_t p_radius)
 {
 	if (p_radius == emission_sphere_radius) {
@@ -525,12 +425,6 @@ void CPUParticles2D::set_scale_curve_x(Ref<Curve> p_scale_curve) { scale_curve_x
 
 void CPUParticles2D::set_scale_curve_y(Ref<Curve> p_scale_curve) { scale_curve_y = p_scale_curve; }
 
-void CPUParticles2D::set_split_scale(bool p_split_scale)
-{
-	split_scale = p_split_scale;
-	this->obj->notify_property_list_changed();
-}
-
 Ref<Curve> CPUParticles2D::get_scale_curve_x() const { return scale_curve_x; }
 
 Ref<Curve> CPUParticles2D::get_scale_curve_y() const { return scale_curve_y; }
@@ -543,7 +437,6 @@ void CPUParticles2D::set_use_fixed_seed(bool p_use_fixed_seed)
 		return;
 	}
 	use_fixed_seed = p_use_fixed_seed;
-	this->obj->notify_property_list_changed();
 }
 
 bool CPUParticles2D::get_use_fixed_seed() const { return use_fixed_seed; }
@@ -569,67 +462,6 @@ void CPUParticles2D::request_particles_process(
 	_request_process_time = p_request_process_time;
 	_request_process_time_residual = p_request_process_time_residual;
 	_update_internal();
-}
-
-void CPUParticles2D::_validate_property(PropertyInfo& p_property) const
-{
-	if (Engine::get_singleton()->is_editor_hint() && p_property.name == "emitting") {
-		p_property.hint = one_shot ? PROPERTY_HINT_ONESHOT : PROPERTY_HINT_NONE;
-	}
-	else if (p_property.name == "emission_sphere_radius") {
-		if (emission_shape != EMISSION_SHAPE_SPHERE &&
-			emission_shape != EMISSION_SHAPE_SPHERE_SURFACE) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "emission_rect_extents") {
-		if (emission_shape != EMISSION_SHAPE_RECTANGLE) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "emission_point_texture" ||
-			   p_property.name == "emission_color_texture") {
-		if (emission_shape < EMISSION_SHAPE_POINTS) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "emission_normals") {
-		if (emission_shape != EMISSION_SHAPE_DIRECTED_POINTS) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "emission_points") {
-		if (emission_shape != EMISSION_SHAPE_POINTS &&
-			emission_shape != EMISSION_SHAPE_DIRECTED_POINTS) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "emission_colors") {
-		if (emission_shape != EMISSION_SHAPE_POINTS &&
-			emission_shape != EMISSION_SHAPE_DIRECTED_POINTS) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name.begins_with("scale_curve_")) {
-		if (!split_scale) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "emission_ring_inner_radius") {
-		if (emission_shape != EMISSION_SHAPE_RING) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "emission_ring_radius") {
-		if (emission_shape != EMISSION_SHAPE_RING) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "seed") {
-		if (!use_fixed_seed) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
 }
 
 static uint32_t idhash(uint32_t x)
@@ -773,7 +605,6 @@ void CPUParticles2D::_particles_process(double p_delta)
 		cycle++;
 		if (one_shot && cycle > 0) {
 			set_emitting(false);
-			this->obj->notify_property_list_changed();
 		}
 	}
 
@@ -1201,7 +1032,6 @@ void CPUParticles2D::_particles_process(double p_delta)
 	}
 	if (!Math::is_equal_approx(time, 0.0) && active && !should_be_active) {
 		active = false;
-		this->obj->emit_signal(SceneStringName(finished));
 	}
 }
 
@@ -1272,122 +1102,11 @@ void CPUParticles2D::_update_particle_data_buffer()
 	}
 }
 
-void CPUParticles2D::_set_do_redraw(bool p_do_redraw)
-{
-	if (do_redraw == p_do_redraw) {
-		return;
-	}
-	do_redraw = p_do_redraw;
-
-	{
-		MutexLock lock(update_mutex);
-
-		if (do_redraw) {
-			RS::get_singleton()->obj->connect(
-				"frame_pre_draw", callable_mp(this, &CPUParticles2D::_update_render_thread));
-			RS::get_singleton()->canvas_item_set_update_when_visible(get_canvas_item(), true);
-
-			RS::get_singleton()->multimesh_set_visible_instances(multimesh, -1);
-		}
-		else {
-			if (RS::get_singleton()->obj->is_connected(
-					"frame_pre_draw", callable_mp(this, &CPUParticles2D::_update_render_thread))) {
-				RS::get_singleton()->obj->disconnect(
-					"frame_pre_draw", callable_mp(this, &CPUParticles2D::_update_render_thread));
-			}
-			RS::get_singleton()->canvas_item_set_update_when_visible(get_canvas_item(), false);
-
-			RS::get_singleton()->multimesh_set_visible_instances(multimesh, 0);
-		}
-	}
-
-	queue_redraw(); // redraw to update render list
-}
-
 void CPUParticles2D::_update_render_thread()
 {
 	MutexLock lock(update_mutex);
 
 	RS::get_singleton()->multimesh_set_buffer(multimesh, particle_data);
-}
-
-void CPUParticles2D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		set_process_internal(emitting);
-
-		_refresh_interpolation_state();
-
-		// If we are interpolated following, then reset physics interpolation
-		// when first appearing. This won't be called by canvas item, as in the
-		// following mode, is_physics_interpolated() is actually FALSE.
-		if (_interpolation_data.interpolated_follow) {
-			this->obj->notification(NOTIFICATION_RESET_PHYSICS_INTERPOLATION);
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		_set_do_redraw(false);
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		// first update before rendering to avoid one frame delay after emitting starts
-		if (emitting && (time == 0)) {
-			_update_internal();
-		}
-
-		if (!do_redraw) {
-			return; // don't add to render list
-		}
-
-		RID texrid;
-		if (texture.is_valid()) {
-			texrid = texture->get_rid();
-		}
-
-		RS::get_singleton()->canvas_item_add_multimesh(get_canvas_item(), multimesh, texrid);
-
-#ifdef TOOLS_ENABLED
-		if (show_gizmos) {
-			_draw_emission_gizmo();
-		}
-#endif
-
-	} break;
-
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		_update_internal();
-	} break;
-
-	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-		if (_interpolation_data.interpolated_follow) {
-			// Keep the interpolated follow target updated.
-			_interpolation_data.global_xform_prev = _interpolation_data.global_xform_curr;
-			_interpolation_data.global_xform_curr = get_global_transform();
-		}
-	} break;
-
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (_interpolation_data.interpolated_follow) {
-			// If the transform has been updated AFTER the physics tick, keep data flowing.
-			if (Engine::get_singleton()->is_in_physics_frame()) {
-				_interpolation_data.global_xform_curr = get_global_transform();
-			}
-		}
-#ifdef TOOLS_ENABLED
-		if (!local_coords) {
-			queue_redraw();
-		}
-#endif
-	} break;
-
-	case NOTIFICATION_RESET_PHYSICS_INTERPOLATION: {
-		// Make sure current is up to date with any pending global transform changes.
-		_interpolation_data.global_xform_curr = get_global_transform_const();
-		_interpolation_data.global_xform_prev = _interpolation_data.global_xform_curr;
-	} break;
-	}
 }
 
 #ifdef TOOLS_ENABLED
@@ -1411,105 +1130,11 @@ void CPUParticles2D::_draw_emission_gizmo()
 		draw_circle(Vector2(), emission_sphere_radius, emission_ring_color, false);
 		break;
 	default:
-		break;
+
+	break;
 	}
 }
 #endif
-
-void CPUParticles2D::convert_from_particles(Node* p_particles)
-{
-	GPUParticles2D* gpu_particles = Object::cast_to<GPUParticles2D>(p_particles);
-	ERR_FAIL_NULL_MSG(
-		gpu_particles, "Only GPUParticles2D nodes can be converted to CPUParticles2D.");
-
-	set_emitting(gpu_particles->is_emitting());
-	set_amount(gpu_particles->get_amount());
-	set_lifetime(gpu_particles->get_lifetime());
-	set_one_shot(gpu_particles->get_one_shot());
-	set_pre_process_time(gpu_particles->get_pre_process_time());
-	set_explosiveness_ratio(gpu_particles->get_explosiveness_ratio());
-	set_randomness_ratio(gpu_particles->get_randomness_ratio());
-	set_use_local_coordinates(gpu_particles->get_use_local_coordinates());
-	set_fixed_fps(gpu_particles->get_fixed_fps());
-	set_fractional_delta(gpu_particles->get_fractional_delta());
-	set_speed_scale(gpu_particles->get_speed_scale());
-	set_draw_order(DrawOrder(gpu_particles->get_draw_order()));
-	set_texture(gpu_particles->get_texture());
-
-	Ref<Material> mat = gpu_particles->get_material();
-	if (mat.is_valid()) {
-		set_material(mat);
-	}
-
-	Ref<ParticleProcessMaterial> proc_mat = gpu_particles->get_process_material();
-	if (proc_mat.is_null()) {
-		return;
-	}
-
-	Vector3 dir = proc_mat->get_direction();
-	set_direction(Vector2(dir.x, dir.y));
-	set_spread(proc_mat->get_spread());
-
-	set_color(proc_mat->get_color());
-
-	Ref<GradientTexture1D> gt = proc_mat->get_color_ramp();
-	if (gt.is_valid()) {
-		set_color_ramp(gt->get_gradient());
-	}
-
-	Ref<GradientTexture1D> gti = proc_mat->get_color_initial_ramp();
-	if (gti.is_valid()) {
-		set_color_initial_ramp(gti->get_gradient());
-	}
-
-	set_particle_flag(PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY,
-		proc_mat->get_particle_flag(ParticleProcessMaterial::PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY));
-
-	set_emission_shape(EmissionShape(proc_mat->get_emission_shape()));
-	set_emission_sphere_radius(proc_mat->get_emission_sphere_radius());
-	Vector2 rect_extents =
-		Vector2(proc_mat->get_emission_box_extents().x, proc_mat->get_emission_box_extents().y);
-	set_emission_rect_extents(rect_extents);
-
-	set_emission_ring_radius(proc_mat->get_emission_ring_radius());
-	set_emission_ring_inner_radius(proc_mat->get_emission_ring_inner_radius());
-
-	Ref<CurveXYZTexture> scale3D =
-		proc_mat->get_param_texture(ParticleProcessMaterial::PARAM_SCALE);
-	if (scale3D.is_valid()) {
-		split_scale = true;
-		scale_curve_x = scale3D->get_curve_x();
-		scale_curve_y = scale3D->get_curve_y();
-	}
-	set_gravity(Vector2(proc_mat->get_gravity().x, proc_mat->get_gravity().y));
-	set_lifetime_randomness(proc_mat->get_lifetime_randomness());
-
-#define CONVERT_PARAM(m_param)                                                                     \
-	set_param_min(m_param, proc_mat->get_param_min(ParticleProcessMaterial::m_param));             \
-	{                                                                                              \
-		Ref<CurveTexture> ctex = proc_mat->get_param_texture(ParticleProcessMaterial::m_param);    \
-		if (ctex.is_valid())                                                                       \
-			set_param_curve(m_param, ctex->get_curve());                                           \
-	}                                                                                              \
-	set_param_max(m_param, proc_mat->get_param_max(ParticleProcessMaterial::m_param));
-
-	CONVERT_PARAM(PARAM_INITIAL_LINEAR_VELOCITY);
-	CONVERT_PARAM(PARAM_ANGULAR_VELOCITY);
-	CONVERT_PARAM(PARAM_ORBIT_VELOCITY);
-	CONVERT_PARAM(PARAM_LINEAR_ACCEL);
-	CONVERT_PARAM(PARAM_RADIAL_ACCEL);
-	CONVERT_PARAM(PARAM_TANGENTIAL_ACCEL);
-	CONVERT_PARAM(PARAM_DAMPING);
-	CONVERT_PARAM(PARAM_ANGLE);
-	CONVERT_PARAM(PARAM_SCALE);
-	CONVERT_PARAM(PARAM_HUE_VARIATION);
-	CONVERT_PARAM(PARAM_ANIM_SPEED);
-	CONVERT_PARAM(PARAM_ANIM_OFFSET);
-
-#undef CONVERT_PARAM
-}
-
-void CPUParticles2D::_bind_methods() {}
 
 CPUParticles2D::CPUParticles2D()
 {

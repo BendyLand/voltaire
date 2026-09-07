@@ -34,239 +34,12 @@
 #include "servers/physics_2d/physics_server_2d.h"
 #include "servers/physics_2d/physics_server_2d_constants.h"
 
-void RigidBody2D::_body_enter_tree(ObjectID p_id)
-{
-	Object* obj = ObjectDB::get_instance(p_id);
-	Node* node = Object::cast_to<Node>(obj);
-	ERR_FAIL_NULL(node);
-	ERR_FAIL_NULL(contact_monitor);
-	HashMap<ObjectID, BodyState>::Iterator E = contact_monitor->body_map.find(p_id);
-	ERR_FAIL_COND(!E);
-	ERR_FAIL_COND(E->value.in_scene);
-
-	contact_monitor->locked = true;
-
-	E->value.in_scene = true;
-	this->obj->emit_signal(SceneStringName(body_entered), node);
-
-	for (int i = 0; i < E->value.shapes.size(); i++) {
-		this->obj->emit_signal(SceneStringName(body_shape_entered), E->value.rid, node,
-			E->value.shapes[i].body_shape, E->value.shapes[i].local_shape);
-	}
-
-	contact_monitor->locked = false;
-}
-
-void RigidBody2D::_body_exit_tree(ObjectID p_id)
-{
-	Object* obj = ObjectDB::get_instance(p_id);
-	Node* node = Object::cast_to<Node>(obj);
-	ERR_FAIL_NULL(node);
-	ERR_FAIL_NULL(contact_monitor);
-	HashMap<ObjectID, BodyState>::Iterator E = contact_monitor->body_map.find(p_id);
-	ERR_FAIL_COND(!E);
-	ERR_FAIL_COND(!E->value.in_scene);
-	E->value.in_scene = false;
-
-	contact_monitor->locked = true;
-
-	this->obj->emit_signal(SceneStringName(body_exited), node);
-
-	for (int i = 0; i < E->value.shapes.size(); i++) {
-		this->obj->emit_signal(SceneStringName(body_shape_exited), E->value.rid, node,
-			E->value.shapes[i].body_shape, E->value.shapes[i].local_shape);
-	}
-
-	contact_monitor->locked = false;
-}
-
-void RigidBody2D::_body_inout(
-	int p_status, const RID& p_body, ObjectID p_instance, int p_body_shape, int p_local_shape)
-{
-	bool body_in = p_status == 1;
-	ObjectID objid = p_instance;
-
-	Object* obj = ObjectDB::get_instance(objid);
-	Node* node = Object::cast_to<Node>(obj);
-
-	ERR_FAIL_NULL(contact_monitor);
-	HashMap<ObjectID, BodyState>::Iterator E = contact_monitor->body_map.find(objid);
-
-	ERR_FAIL_COND(!body_in && !E);
-
-	if (body_in) {
-		if (!E) {
-			E = contact_monitor->body_map.insert(objid, BodyState());
-			E->value.rid = p_body;
-			// E->value.rc=0;
-			E->value.in_scene = node && node->is_inside_tree();
-			if (node) {
-				node->connect(SceneStringName(tree_entered),
-					callable_mp(this, &RigidBody2D::_body_enter_tree).bind(objid));
-				node->connect(SceneStringName(tree_exiting),
-					callable_mp(this, &RigidBody2D::_body_exit_tree).bind(objid));
-				if (E->value.in_scene) {
-					this->obj->emit_signal(SceneStringName(body_entered), node);
-				}
-			}
-
-			// E->value.rc++;
-		}
-
-		if (node) {
-			E->value.shapes.insert(ShapePair(p_body_shape, p_local_shape));
-		}
-
-		if (E->value.in_scene) {
-			this->obj->emit_signal(
-				SceneStringName(body_shape_entered), p_body, node, p_body_shape, p_local_shape);
-		}
-
-	}
-	else {
-		// E->value.rc--;
-
-		if (node) {
-			E->value.shapes.erase(ShapePair(p_body_shape, p_local_shape));
-		}
-
-		bool in_scene = E->value.in_scene;
-
-		if (E->value.shapes.is_empty()) {
-			if (node) {
-				node->disconnect(SceneStringName(tree_entered),
-					callable_mp(this, &RigidBody2D::_body_enter_tree));
-				node->disconnect(SceneStringName(tree_exiting),
-					callable_mp(this, &RigidBody2D::_body_exit_tree));
-				if (in_scene) {
-					this->obj->emit_signal(SceneStringName(body_exited), node);
-				}
-			}
-
-			contact_monitor->body_map.remove(E);
-		}
-		if (node && in_scene) {
-			this->obj->emit_signal(
-				SceneStringName(body_shape_exited), p_body, node, p_body_shape, p_local_shape);
-		}
-	}
-}
-
 struct _RigidBody2DInOut
 {
 	RID rid;
-	ObjectID id;
 	int shape = 0;
 	int local_shape = 0;
 };
-
-void RigidBody2D::_sync_body_state(PhysicsDirectBodyState2D* p_state)
-{
-	Transform2D new_transform = p_state->get_transform();
-	if (likely(new_transform != get_global_transform())) {
-		set_block_transform_notify(true);
-		set_global_transform(new_transform);
-		set_block_transform_notify(false);
-	}
-
-	linear_velocity = p_state->get_linear_velocity();
-	angular_velocity = p_state->get_angular_velocity();
-
-	contact_count = p_state->get_contact_count();
-
-	if (sleeping != p_state->is_sleeping()) {
-		sleeping = p_state->is_sleeping();
-		this->obj->emit_signal(SceneStringName(sleeping_state_changed));
-	}
-}
-
-void RigidBody2D::_body_state_changed(PhysicsDirectBodyState2D* p_state)
-{
-	lock_callback();
-
-	_sync_body_state(p_state);
-	if (contact_monitor) {
-		contact_monitor->locked = true;
-
-		// untag all
-		int rc = 0;
-		for (KeyValue<ObjectID, BodyState>& E : contact_monitor->body_map) {
-			for (int i = 0; i < E.value.shapes.size(); i++) {
-				E.value.shapes[i].tagged = false;
-				rc++;
-			}
-		}
-
-		_RigidBody2DInOut* toadd =
-			(_RigidBody2DInOut*)alloca(p_state->get_contact_count() * sizeof(_RigidBody2DInOut));
-		int toadd_count = 0; // state->get_contact_count();
-		RigidBody2D_RemoveAction* toremove =
-			(RigidBody2D_RemoveAction*)alloca(rc * sizeof(RigidBody2D_RemoveAction));
-		int toremove_count = 0;
-
-		// put the ones to add
-
-		for (int i = 0; i < p_state->get_contact_count(); i++) {
-			RID col_rid = p_state->get_contact_collider(i);
-			ObjectID col_obj = p_state->get_contact_collider_id(i);
-			int local_shape = p_state->get_contact_local_shape(i);
-			int col_shape = p_state->get_contact_collider_shape(i);
-
-			HashMap<ObjectID, BodyState>::Iterator E = contact_monitor->body_map.find(col_obj);
-			if (!E) {
-				toadd[toadd_count].rid = col_rid;
-				toadd[toadd_count].local_shape = local_shape;
-				toadd[toadd_count].id = col_obj;
-				toadd[toadd_count].shape = col_shape;
-				toadd_count++;
-				continue;
-			}
-
-			ShapePair sp(col_shape, local_shape);
-			int idx = E->value.shapes.find(sp);
-			if (idx == -1) {
-				toadd[toadd_count].rid = col_rid;
-				toadd[toadd_count].local_shape = local_shape;
-				toadd[toadd_count].id = col_obj;
-				toadd[toadd_count].shape = col_shape;
-				toadd_count++;
-				continue;
-			}
-
-			E->value.shapes[idx].tagged = true;
-		}
-
-		// put the ones to remove
-
-		for (const KeyValue<ObjectID, BodyState>& E : contact_monitor->body_map) {
-			for (int i = 0; i < E.value.shapes.size(); i++) {
-				if (!E.value.shapes[i].tagged) {
-					toremove[toremove_count].rid = E.value.rid;
-					toremove[toremove_count].body_id = E.key;
-					toremove[toremove_count].pair = E.value.shapes[i];
-					toremove_count++;
-				}
-			}
-		}
-
-		// process removals
-
-		for (int i = 0; i < toremove_count; i++) {
-			_body_inout(0, toremove[i].rid, toremove[i].body_id, toremove[i].pair.body_shape,
-				toremove[i].pair.local_shape);
-		}
-
-		// process additions
-
-		for (int i = 0; i < toadd_count; i++) {
-			_body_inout(1, toadd[i].rid, toadd[i].id, toadd[i].shape, toadd[i].local_shape);
-		}
-
-		contact_monitor->locked = false;
-	}
-
-	unlock_callback();
-}
 
 void RigidBody2D::_apply_body_mode()
 {
@@ -324,164 +97,33 @@ void RigidBody2D::set_freeze_mode(FreezeMode p_freeze_mode)
 
 RigidBody2D::FreezeMode RigidBody2D::get_freeze_mode() const { return freeze_mode; }
 
-void RigidBody2D::set_mass(real_t p_mass)
-{
-	ERR_FAIL_COND(p_mass <= 0);
-	mass = p_mass;
-	PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_MASS, mass);
-}
-
 real_t RigidBody2D::get_mass() const { return mass; }
 
-void RigidBody2D::set_inertia(real_t p_inertia)
-{
-	ERR_FAIL_COND(p_inertia < 0);
-	inertia = p_inertia;
-	PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_INERTIA, inertia);
-}
-
 real_t RigidBody2D::get_inertia() const { return inertia; }
-
-void RigidBody2D::set_center_of_mass_mode(CenterOfMassMode p_mode)
-{
-	if (center_of_mass_mode == p_mode) {
-		return;
-	}
-
-	center_of_mass_mode = p_mode;
-
-	switch (center_of_mass_mode) {
-	case CENTER_OF_MASS_MODE_AUTO: {
-		center_of_mass = Vector2();
-		PhysicsServer2D::get_singleton()->body_reset_mass_properties(get_rid());
-		if (inertia != 0.0) {
-			PhysicsServer2D::get_singleton()->body_set_param(
-				get_rid(), PS2DE::BODY_PARAM_INERTIA, inertia);
-		}
-	} break;
-
-	case CENTER_OF_MASS_MODE_CUSTOM: {
-		PhysicsServer2D::get_singleton()->body_set_param(
-			get_rid(), PS2DE::BODY_PARAM_CENTER_OF_MASS, center_of_mass);
-	} break;
-	}
-
-	this->obj->notify_property_list_changed();
-}
 
 RigidBody2D::CenterOfMassMode RigidBody2D::get_center_of_mass_mode() const
 {
 	return center_of_mass_mode;
 }
 
-void RigidBody2D::set_center_of_mass(const Vector2& p_center_of_mass)
-{
-	if (center_of_mass == p_center_of_mass) {
-		return;
-	}
-
-	ERR_FAIL_COND(center_of_mass_mode != CENTER_OF_MASS_MODE_CUSTOM);
-	center_of_mass = p_center_of_mass;
-
-	PhysicsServer2D::get_singleton()->body_set_param(
-		get_rid(), PS2DE::BODY_PARAM_CENTER_OF_MASS, center_of_mass);
-}
-
 const Vector2& RigidBody2D::get_center_of_mass() const { return center_of_mass; }
-
-void RigidBody2D::set_physics_material_override(
-	const Ref<PhysicsMaterial>& p_physics_material_override)
-{
-	if (physics_material_override.is_valid()) {
-		physics_material_override->disconnect_changed(
-			callable_mp(this, &RigidBody2D::_reload_physics_characteristics));
-	}
-
-	physics_material_override = p_physics_material_override;
-
-	if (physics_material_override.is_valid()) {
-		physics_material_override->connect_changed(
-			callable_mp(this, &RigidBody2D::_reload_physics_characteristics));
-	}
-	_reload_physics_characteristics();
-}
 
 Ref<PhysicsMaterial> RigidBody2D::get_physics_material_override() const
 {
 	return physics_material_override;
 }
 
-void RigidBody2D::set_gravity_scale(real_t p_gravity_scale)
-{
-	gravity_scale = p_gravity_scale;
-	PhysicsServer2D::get_singleton()->body_set_param(
-		get_rid(), PS2DE::BODY_PARAM_GRAVITY_SCALE, gravity_scale);
-}
-
 real_t RigidBody2D::get_gravity_scale() const { return gravity_scale; }
-
-void RigidBody2D::set_linear_damp_mode(DampMode p_mode)
-{
-	linear_damp_mode = p_mode;
-	PhysicsServer2D::get_singleton()->body_set_param(
-		get_rid(), PS2DE::BODY_PARAM_LINEAR_DAMP_MODE, linear_damp_mode);
-}
 
 RigidBody2D::DampMode RigidBody2D::get_linear_damp_mode() const { return linear_damp_mode; }
 
-void RigidBody2D::set_angular_damp_mode(DampMode p_mode)
-{
-	angular_damp_mode = p_mode;
-	PhysicsServer2D::get_singleton()->body_set_param(
-		get_rid(), PS2DE::BODY_PARAM_ANGULAR_DAMP_MODE, angular_damp_mode);
-}
-
 RigidBody2D::DampMode RigidBody2D::get_angular_damp_mode() const { return angular_damp_mode; }
-
-void RigidBody2D::set_linear_damp(real_t p_linear_damp)
-{
-	ERR_FAIL_COND(p_linear_damp < -1);
-	linear_damp = p_linear_damp;
-	PhysicsServer2D::get_singleton()->body_set_param(
-		get_rid(), PS2DE::BODY_PARAM_LINEAR_DAMP, linear_damp);
-}
 
 real_t RigidBody2D::get_linear_damp() const { return linear_damp; }
 
-void RigidBody2D::set_angular_damp(real_t p_angular_damp)
-{
-	ERR_FAIL_COND(p_angular_damp < -1);
-	angular_damp = p_angular_damp;
-	PhysicsServer2D::get_singleton()->body_set_param(
-		get_rid(), PS2DE::BODY_PARAM_ANGULAR_DAMP, angular_damp);
-}
-
 real_t RigidBody2D::get_angular_damp() const { return angular_damp; }
 
-void RigidBody2D::set_axis_velocity(const Vector2& p_axis)
-{
-	Vector2 axis = p_axis.normalized();
-	linear_velocity -= axis * axis.dot(linear_velocity);
-	linear_velocity += p_axis;
-	PhysicsServer2D::get_singleton()->body_set_state(
-		get_rid(), PS2DE::BODY_STATE_LINEAR_VELOCITY, linear_velocity);
-}
-
-void RigidBody2D::set_linear_velocity(const Vector2& p_velocity)
-{
-	linear_velocity = p_velocity;
-	PhysicsServer2D::get_singleton()->body_set_state(
-		get_rid(), PS2DE::BODY_STATE_LINEAR_VELOCITY, linear_velocity);
-}
-
 Vector2 RigidBody2D::get_linear_velocity() const { return linear_velocity; }
-
-void RigidBody2D::set_angular_velocity(real_t p_velocity)
-{
-	angular_velocity = p_velocity;
-	PhysicsServer2D::get_singleton()->body_set_state(
-		get_rid(), PS2DE::BODY_STATE_ANGULAR_VELOCITY, angular_velocity);
-}
 
 real_t RigidBody2D::get_angular_velocity() const { return angular_velocity; }
 
@@ -496,20 +138,6 @@ void RigidBody2D::set_use_custom_integrator(bool p_enable)
 }
 
 bool RigidBody2D::is_using_custom_integrator() { return custom_integrator; }
-
-void RigidBody2D::set_sleeping(bool p_sleeping)
-{
-	sleeping = p_sleeping;
-	PhysicsServer2D::get_singleton()->body_set_state(
-		get_rid(), PS2DE::BODY_STATE_SLEEPING, sleeping);
-}
-
-void RigidBody2D::set_can_sleep(bool p_active)
-{
-	can_sleep = p_active;
-	PhysicsServer2D::get_singleton()->body_set_state(
-		get_rid(), PS2DE::BODY_STATE_CAN_SLEEP, p_active);
-}
 
 bool RigidBody2D::is_able_to_sleep() const { return can_sleep; }
 
@@ -605,62 +233,6 @@ RigidBody2D::CCDMode RigidBody2D::get_continuous_collision_detection_mode() cons
 	return ccd_mode;
 }
 
-Array RigidBody2D::get_colliding_bodies() const
-{
-	ERR_FAIL_NULL_V(contact_monitor, Array());
-	Array ret;
-	ret.resize(contact_monitor->body_map.size());
-	int idx = 0;
-	for (const KeyValue<ObjectID, BodyState>& E : contact_monitor->body_map) {
-		Object* obj = ObjectDB::get_instance(E.key);
-		if (!obj) {
-			ret.resize(ret.size() - 1); // ops
-		}
-		else {
-			ret[idx++] = obj;
-		}
-	}
-
-	return ret;
-}
-
-void RigidBody2D::set_contact_monitor(bool p_enabled)
-{
-	if (p_enabled == is_contact_monitor_enabled()) {
-		return;
-	}
-
-	if (!p_enabled) {
-		ERR_FAIL_COND_MSG(contact_monitor->locked,
-			"Can't disable contact monitoring during in/out callback. Use "
-			"call_deferred(\"set_contact_monitor\", false) instead.");
-
-		for (const KeyValue<ObjectID, BodyState>& E : contact_monitor->body_map) {
-			// clean up mess
-			Object* obj = ObjectDB::get_instance(E.key);
-			Node* node = Object::cast_to<Node>(obj);
-
-			if (node) {
-				node->disconnect(SceneStringName(tree_entered),
-					callable_mp(this, &RigidBody2D::_body_enter_tree));
-				node->disconnect(SceneStringName(tree_exiting),
-					callable_mp(this, &RigidBody2D::_body_exit_tree));
-			}
-		}
-
-		memdelete(contact_monitor);
-		contact_monitor = nullptr;
-	}
-	else {
-		contact_monitor = memnew(ContactMonitor);
-		contact_monitor->locked = false;
-	}
-
-	this->obj->notify_property_list_changed();
-}
-
-bool RigidBody2D::is_contact_monitor_enabled() const { return contact_monitor != nullptr; }
-
 void RigidBody2D::_notification(int p_what)
 {
 #ifdef TOOLS_ENABLED
@@ -692,43 +264,6 @@ PackedStringArray RigidBody2D::get_configuration_warnings() const
 	}
 
 	return warnings;
-}
-
-void RigidBody2D::_bind_methods() {}
-
-void RigidBody2D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (center_of_mass_mode != CENTER_OF_MASS_MODE_CUSTOM && p_property.name == "center_of_mass") {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-	else if (!contact_monitor && p_property.name == "max_contacts_reported") {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-RigidBody2D::RigidBody2D() : PhysicsBody2D(PS2DE::BODY_MODE_RIGID)
-{
-	PhysicsServer2D::get_singleton()->body_set_state_sync_callback(
-		get_rid(), callable_mp(this, &RigidBody2D::_body_state_changed));
-}
-
-RigidBody2D::~RigidBody2D() { memdelete(contact_monitor); }
-
-void RigidBody2D::_reload_physics_characteristics()
-{
-	if (physics_material_override.is_null()) {
-		PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_BOUNCE, 0);
-		PhysicsServer2D::get_singleton()->body_set_param(get_rid(), PS2DE::BODY_PARAM_FRICTION, 1);
-	}
-	else {
-		PhysicsServer2D::get_singleton()->body_set_param(
-			get_rid(), PS2DE::BODY_PARAM_BOUNCE, physics_material_override->computed_bounce());
-		PhysicsServer2D::get_singleton()->body_set_param(
-			get_rid(), PS2DE::BODY_PARAM_FRICTION, physics_material_override->computed_friction());
-	}
 }
 
 

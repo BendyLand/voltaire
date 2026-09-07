@@ -31,42 +31,41 @@
 #pragma once
 
 #include "../openxr_api.h"
-#include "openxr_extension_wrapper.h"
 
 #ifdef ANDROID_ENABLED
 #include <jni.h>
 
 // Copied here from openxr_platform.h, in order to avoid including that whole header,
 // which can cause compilation issues on some platforms.
-typedef XrResult(XRAPI_PTR *PFN_xrCreateSwapchainAndroidSurfaceKHR)(XrSession session, const XrSwapchainCreateInfo *info, XrSwapchain *swapchain, jobject *surface);
+typedef XrResult(XRAPI_PTR* PFN_xrCreateSwapchainAndroidSurfaceKHR)(
+	XrSession session, const XrSwapchainCreateInfo* info, XrSwapchain* swapchain, jobject* surface);
 #endif
 
 class JavaObject;
 
 // OpenXRCompositionLayerExtension enables the extensions related to this functionality
-class OpenXRCompositionLayerExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRCompositionLayerExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRCompositionLayerExtension
+{
 public:
 	// Must be identical to Filter enum definition in OpenXRCompositionLayer.
-	enum Filter {
+	enum Filter
+	{
 		FILTER_NEAREST,
 		FILTER_LINEAR,
 		FILTER_CUBIC,
 	};
 
 	// Must be identical to MipmapMode enum definition in OpenXRCompositionLayer.
-	enum MipmapMode {
+	enum MipmapMode
+	{
 		MIPMAP_MODE_DISABLED,
 		MIPMAP_MODE_NEAREST,
 		MIPMAP_MODE_LINEAR,
 	};
 
 	// Must be identical to Wrap enum definition in OpenXRCompositionLayer.
-	enum Wrap {
+	enum Wrap
+	{
 		WRAP_CLAMP_TO_BORDER,
 		WRAP_CLAMP_TO_EDGE,
 		WRAP_REPEAT,
@@ -75,7 +74,8 @@ public:
 	};
 
 	// Must be identical to Swizzle enum definition in OpenXRCompositionLayer.
-	enum Swizzle {
+	enum Swizzle
+	{
 		SWIZZLE_RED,
 		SWIZZLE_GREEN,
 		SWIZZLE_BLUE,
@@ -85,18 +85,21 @@ public:
 	};
 
 	// Must be identical to EyeVisibility enum definition in OpenXRCompositionLayer.
-	enum EyeVisibility {
+	enum EyeVisibility
+	{
 		EYE_VISIBILITY_BOTH,
 		EYE_VISIBILITY_LEFT,
 		EYE_VISIBILITY_RIGHT,
 	};
 
-	enum PoseSpace {
+	enum PoseSpace
+	{
 		POSE_WORLD_LOCKED,
 		POSE_HEAD_LOCKED,
 	};
 
-	struct SwapchainState {
+	struct SwapchainState
+	{
 		Filter min_filter = Filter::FILTER_LINEAR;
 		Filter mag_filter = Filter::FILTER_LINEAR;
 		MipmapMode mipmap_mode = MipmapMode::MIPMAP_MODE_LINEAR;
@@ -107,49 +110,50 @@ public:
 		Swizzle blue_swizzle = Swizzle::SWIZZLE_BLUE;
 		Swizzle alpha_swizzle = Swizzle::SWIZZLE_ALPHA;
 		float max_anisotropy = 1.0;
-		Color border_color = { 0.0, 0.0, 0.0, 0.0 };
+		Color border_color = {0.0, 0.0, 0.0, 0.0};
 	};
 
-	static OpenXRCompositionLayerExtension *get_singleton();
+	static OpenXRCompositionLayerExtension* get_singleton();
 
 	OpenXRCompositionLayerExtension();
-	virtual ~OpenXRCompositionLayerExtension() override;
+	virtual ~OpenXRCompositionLayerExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
-	virtual void on_instance_created(const XrInstance p_instance) override;
-	virtual void on_session_created(const XrSession p_session) override;
-	virtual void on_session_destroyed() override;
-	virtual void on_pre_render() override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	virtual void on_instance_created(const XrInstance p_instance);
+	virtual void on_session_created(const XrSession p_session);
+	virtual void on_session_destroyed();
+	virtual void on_pre_render();
 
-	virtual int get_composition_layer_count() override;
-	virtual XrCompositionLayerBaseHeader *get_composition_layer(int p_index) override;
-	virtual int get_composition_layer_order(int p_index) override;
+	virtual int get_composition_layer_count();
+	virtual XrCompositionLayerBaseHeader* get_composition_layer(int p_index);
+	virtual int get_composition_layer_order(int p_index);
 
-	// The data on p_openxr_layer will be copied - there is no need to keep it valid after this call.
-	RID composition_layer_create(XrCompositionLayerBaseHeader *p_openxr_layer);
+	// The data on p_openxr_layer will be copied - there is no need to keep it valid after this
+	// call.
+	RID composition_layer_create(XrCompositionLayerBaseHeader* p_openxr_layer);
 	void composition_layer_free(RID p_layer);
 
 	void composition_layer_register(RID p_layer);
 	void composition_layer_unregister(RID p_layer);
 
-	// This extension provides access to composition layers for displaying 2D content through the XR compositor.
-	// Declarations are made here, and implementations in the .cpp, to avoid having to include RenderingServer in a header.
+	// This extension provides access to composition layers for displaying 2D content through the XR
+	// compositor. Declarations are made here, and implementations in the .cpp, to avoid having to
+	// include RenderingServer in a header.
 
-#define OPENXR_LAYER_FUNC1_DECL(m_name, m_arg1) \
-	void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1); \
+#define OPENXR_LAYER_FUNC1_DECL(m_name, m_arg1)                                                    \
+	void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1);                                 \
 	void composition_layer_##m_name(RID p_layer, m_arg1 p1);
 
-#define OPENXR_LAYER_FUNC2_DECL(m_name, m_arg1, m_arg2) \
-	void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1, m_arg2 p2); \
+#define OPENXR_LAYER_FUNC2_DECL(m_name, m_arg1, m_arg2)                                            \
+	void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1, m_arg2 p2);                      \
 	void composition_layer_##m_name(RID p_layer, m_arg1 p1, m_arg2 p2);
 
-	OPENXR_LAYER_FUNC2_DECL(set_viewport, RID, const Size2i &);
-	OPENXR_LAYER_FUNC2_DECL(set_use_android_surface, bool, const Size2i &);
+	OPENXR_LAYER_FUNC2_DECL(set_viewport, RID, const Size2i&);
+	OPENXR_LAYER_FUNC2_DECL(set_use_android_surface, bool, const Size2i&);
 	OPENXR_LAYER_FUNC1_DECL(set_sort_order, int);
 	OPENXR_LAYER_FUNC1_DECL(set_alpha_blend, bool);
-	OPENXR_LAYER_FUNC1_DECL(set_transform, const Transform3D &);
+	OPENXR_LAYER_FUNC1_DECL(set_transform, const Transform3D&);
 	OPENXR_LAYER_FUNC1_DECL(set_protected_content, bool);
-	OPENXR_LAYER_FUNC1_DECL(set_extension_property_values, Dictionary);
 
 	OPENXR_LAYER_FUNC1_DECL(set_min_filter, Filter);
 	OPENXR_LAYER_FUNC1_DECL(set_mag_filter, Filter);
@@ -161,11 +165,11 @@ public:
 	OPENXR_LAYER_FUNC1_DECL(set_green_swizzle, Swizzle);
 	OPENXR_LAYER_FUNC1_DECL(set_alpha_swizzle, Swizzle);
 	OPENXR_LAYER_FUNC1_DECL(set_max_anisotropy, float);
-	OPENXR_LAYER_FUNC1_DECL(set_border_color, const Color &);
+	OPENXR_LAYER_FUNC1_DECL(set_border_color, const Color&);
 	OPENXR_LAYER_FUNC1_DECL(set_pose_space, PoseSpace);
 	OPENXR_LAYER_FUNC1_DECL(set_eye_visibility, EyeVisibility);
 
-	OPENXR_LAYER_FUNC1_DECL(set_quad_size, const Size2 &);
+	OPENXR_LAYER_FUNC1_DECL(set_quad_size, const Size2&);
 
 	OPENXR_LAYER_FUNC1_DECL(set_cylinder_radius, float);
 	OPENXR_LAYER_FUNC1_DECL(set_cylinder_aspect_ratio, float);
@@ -182,10 +186,11 @@ public:
 	Ref<JavaObject> composition_layer_get_android_surface(RID p_layer);
 
 	bool is_available(XrStructureType p_which);
+
 	bool is_android_surface_swapchain_available() { return android_surface_ext_available; }
 
 private:
-	static OpenXRCompositionLayerExtension *singleton;
+	static OpenXRCompositionLayerExtension* singleton;
 
 	bool cylinder_ext_available = false;
 	bool equirect_ext_available = false;
@@ -196,14 +201,18 @@ private:
 	void _composition_layer_unregister_rt(RID p_layer);
 
 #ifdef ANDROID_ENABLED
-	bool create_android_surface_swapchain(XrSwapchainCreateInfo *p_info, XrSwapchain *r_swapchain, jobject *r_surface);
+	bool create_android_surface_swapchain(
+		XrSwapchainCreateInfo* p_info, XrSwapchain* r_swapchain, jobject* r_surface);
 
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroySwapchain, (XrSwapchain), swapchain)
-	EXT_PROTO_XRRESULT_FUNC4(xrCreateSwapchainAndroidSurfaceKHR, (XrSession), session, (const XrSwapchainCreateInfo *), info, (XrSwapchain *), swapchain, (jobject *), surface)
+	EXT_PROTO_XRRESULT_FUNC4(xrCreateSwapchainAndroidSurfaceKHR, (XrSession), session,
+		(const XrSwapchainCreateInfo*), info, (XrSwapchain*), swapchain, (jobject*), surface)
 #endif
 
-	struct CompositionLayer {
-		union {
+	struct CompositionLayer
+	{
+		union
+		{
 			XrCompositionLayerBaseHeader composition_layer;
 			XrCompositionLayerQuad composition_layer_quad;
 			XrCompositionLayerCylinderKHR composition_layer_cylinder;
@@ -212,10 +221,10 @@ private:
 
 		int sort_order = 1;
 		bool alpha_blend = false;
-		Dictionary extension_property_values;
 		bool extension_property_values_changed = true;
 
-		struct {
+		struct
+		{
 			RID viewport;
 			Size2i viewport_size;
 			OpenXRAPI::OpenXRSwapChainInfo swapchain_info;
@@ -224,7 +233,8 @@ private:
 		} subviewport;
 
 #ifdef ANDROID_ENABLED
-		struct {
+		struct
+		{
 			XrSwapchain swapchain = XR_NULL_HANDLE;
 			Ref<JavaObject> surface;
 		} android_surface;
@@ -240,14 +250,19 @@ private:
 		SwapchainState swapchain_state;
 		bool swapchain_state_is_dirty = false;
 
-		void set_viewport(RID p_viewport, const Size2i &p_size);
-		void set_use_android_surface(bool p_use_android_surface, const Size2i &p_size);
+		void set_viewport(RID p_viewport, const Size2i& p_size);
+		void set_use_android_surface(bool p_use_android_surface, const Size2i& p_size);
 
 		void set_sort_order(int p_sort_order) { sort_order = p_sort_order; }
+
 		void set_alpha_blend(bool p_alpha_blend);
-		void set_protected_content(bool p_protected_content) { protected_content = p_protected_content; }
-		void set_transform(const Transform3D &p_transform);
-		void set_extension_property_values(const Dictionary &p_extension_property_values);
+
+		void set_protected_content(bool p_protected_content)
+		{
+			protected_content = p_protected_content;
+		}
+
+		void set_transform(const Transform3D& p_transform);
 
 		void set_min_filter(Filter p_mode);
 		void set_mag_filter(Filter p_mode);
@@ -259,11 +274,11 @@ private:
 		void set_blue_swizzle(Swizzle p_mode);
 		void set_alpha_swizzle(Swizzle p_mode);
 		void set_max_anisotropy(float p_value);
-		void set_border_color(const Color &p_color);
+		void set_border_color(const Color& p_color);
 		void set_pose_space(PoseSpace p_pose_space);
 		void set_eye_visibility(EyeVisibility p_eye_visibility);
 
-		void set_quad_size(const Size2 &p_size);
+		void set_quad_size(const Size2& p_size);
 
 		void set_cylinder_radius(float p_radius);
 		void set_cylinder_aspect_ratio(float p_aspect_ratio);
@@ -276,12 +291,12 @@ private:
 
 		Ref<JavaObject> get_android_surface();
 		void on_pre_render();
-		XrCompositionLayerBaseHeader *get_composition_layer();
+		XrCompositionLayerBaseHeader* get_composition_layer();
 		void free();
 
 	private:
 		void update_swapchain_state();
-		void update_swapchain_sub_image(XrSwapchainSubImage &r_subimage);
+		void update_swapchain_sub_image(XrSwapchainSubImage& r_subimage);
 		bool update_and_acquire_swapchain(bool p_static_image);
 		RID get_current_swapchain_texture();
 		void free_swapchain();
@@ -293,12 +308,7 @@ private:
 
 	Mutex composition_layer_mutex;
 	RID_Owner<CompositionLayer, true> composition_layer_owner;
-	LocalVector<CompositionLayer *> registered_composition_layers;
+	LocalVector<CompositionLayer*> registered_composition_layers;
 };
 
-VARIANT_ENUM_CAST(OpenXRCompositionLayerExtension::Filter);
-VARIANT_ENUM_CAST(OpenXRCompositionLayerExtension::MipmapMode);
-VARIANT_ENUM_CAST(OpenXRCompositionLayerExtension::Wrap);
-VARIANT_ENUM_CAST(OpenXRCompositionLayerExtension::Swizzle);
-VARIANT_ENUM_CAST(OpenXRCompositionLayerExtension::PoseSpace);
-VARIANT_ENUM_CAST(OpenXRCompositionLayerExtension::EyeVisibility);
+

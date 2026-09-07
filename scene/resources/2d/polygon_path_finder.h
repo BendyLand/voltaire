@@ -33,7 +33,6 @@
 #include "core/io/resource.h"
 
 class PolygonPathFinder : public Resource {
-	VLTRCLASS(PolygonPathFinder, Resource);
 
 	struct Point {
 		Vector2 pos;

@@ -28,18 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "movie_writer_ogv.h"
-
-#include "rgb2yuv.h"
-
+#include <cstdlib>
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
+#include "movie_writer_ogv.h"
+#include "rgb2yuv.h"
 
-#include <cstdlib>
-
-void MovieWriterOGV::push_audio(const int32_t *p_audio_data) {
+void MovieWriterOGV::push_audio(const int32_t* p_audio_data)
+{
 	// Read and process more audio.
-	float **vorbis_buffer = vorbis_analysis_buffer(&vd, audio_frames);
+	float** vorbis_buffer = vorbis_analysis_buffer(&vd, audio_frames);
 
 	// Deinterleave samples.
 	uint32_t count = 0;
@@ -53,7 +51,8 @@ void MovieWriterOGV::push_audio(const int32_t *p_audio_data) {
 	vorbis_analysis_wrote(&vd, audio_frames);
 }
 
-void MovieWriterOGV::pull_audio(bool p_last) {
+void MovieWriterOGV::pull_audio(bool p_last)
+{
 	ogg_packet op;
 
 	while (vorbis_analysis_blockout(&vd, &vb) > 0) {
@@ -73,17 +72,20 @@ void MovieWriterOGV::pull_audio(bool p_last) {
 	}
 }
 
-void MovieWriterOGV::push_video(const Ref<Image> &p_image) {
+void MovieWriterOGV::push_video(const Ref<Image>& p_image)
+{
 	PackedByteArray data = p_image->get_data();
 	if (p_image->get_format() == Image::FORMAT_RGBA8) {
 		rgba2yuv420(y, u, v, data.ptrw(), p_image->get_width(), p_image->get_height());
-	} else {
+	}
+	else {
 		rgb2yuv420(y, u, v, data.ptrw(), p_image->get_width(), p_image->get_height());
 	}
 	th_encode_ycbcr_in(td, ycbcr);
 }
 
-void MovieWriterOGV::pull_video(bool p_last) {
+void MovieWriterOGV::pull_video(bool p_last)
+{
 	ogg_packet op;
 
 	int ret = 0;
@@ -95,24 +97,25 @@ void MovieWriterOGV::pull_video(bool p_last) {
 	} while (ret > 0);
 }
 
-uint32_t MovieWriterOGV::get_audio_mix_rate() const {
-	return mix_rate;
-}
+uint32_t MovieWriterOGV::get_audio_mix_rate() const { return mix_rate; }
 
-AudioServer::SpeakerMode MovieWriterOGV::get_audio_speaker_mode() const {
-	return speaker_mode;
-}
+AudioServer::SpeakerMode MovieWriterOGV::get_audio_speaker_mode() const { return speaker_mode; }
 
-bool MovieWriterOGV::handles_file(const String &p_path) const {
+bool MovieWriterOGV::handles_file(const String& p_path) const
+{
 	return p_path.has_extension("ogv");
 }
 
-void MovieWriterOGV::get_supported_extensions(List<String> *r_extensions) const {
+void MovieWriterOGV::get_supported_extensions(List<String>* r_extensions) const
+{
 	r_extensions->push_back("ogv");
 }
 
-Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) {
-	ERR_FAIL_COND_V_MSG((p_movie_size.width & 1) || (p_movie_size.height & 1), ERR_UNAVAILABLE, "Both video dimensions must be even.");
+Error MovieWriterOGV::write_begin(
+	const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
+{
+	ERR_FAIL_COND_V_MSG((p_movie_size.width & 1) || (p_movie_size.height & 1), ERR_UNAVAILABLE,
+		"Both video dimensions must be even.");
 	base_path = p_base_path.get_basename();
 	if (base_path.is_relative_path()) {
 		base_path = "res://" + base_path;
@@ -126,18 +129,18 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 
 	audio_ch = 2;
 	switch (speaker_mode) {
-		case AudioServer::SPEAKER_MODE_STEREO:
-			audio_ch = 2;
-			break;
-		case AudioServer::SPEAKER_SURROUND_31:
-			audio_ch = 4;
-			break;
-		case AudioServer::SPEAKER_SURROUND_51:
-			audio_ch = 6;
-			break;
-		case AudioServer::SPEAKER_SURROUND_71:
-			audio_ch = 8;
-			break;
+	case AudioServer::SPEAKER_MODE_STEREO:
+		audio_ch = 2;
+		break;
+	case AudioServer::SPEAKER_SURROUND_31:
+		audio_ch = 4;
+		break;
+	case AudioServer::SPEAKER_SURROUND_51:
+		audio_ch = 6;
+		break;
+	case AudioServer::SPEAKER_SURROUND_71:
+		audio_ch = 8;
+		break;
 	}
 	audio_frames = mix_rate / fps;
 
@@ -149,7 +152,9 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 	// Initialize Vorbis audio encoding.
 	vorbis_info_init(&vi);
 	int ret = vorbis_encode_init_vbr(&vi, audio_ch, mix_rate, audio_quality);
-	ERR_FAIL_COND_V_MSG(ret, ERR_UNAVAILABLE, "The Ogg Vorbis encoder couldn't set up a mode according to the requested quality or bitrate.");
+	ERR_FAIL_COND_V_MSG(ret, ERR_UNAVAILABLE,
+		"The Ogg Vorbis encoder couldn't set up a mode according to the requested quality or "
+		"bitrate.");
 
 	vorbis_comment_init(&vc);
 	vorbis_analysis_init(&vd, &vi);
@@ -166,9 +171,9 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 	int pic_x = (frame_w - pic_w) / 2 & ~1;
 	int pic_y = (frame_h - pic_h) / 2 & ~1;
 
-	y = (uint8_t *)memalloc(pic_w * pic_h);
-	u = (uint8_t *)memalloc(pic_w * pic_h / 4);
-	v = (uint8_t *)memalloc(pic_w * pic_h / 4);
+	y = (uint8_t*)memalloc(pic_w * pic_h);
+	u = (uint8_t*)memalloc(pic_w * pic_h / 4);
+	v = (uint8_t*)memalloc(pic_w * pic_h / 4);
 
 	// We submit the buffer using the size of the picture region.
 	// libtheora will pad the picture region out to the full frame size for us,
@@ -206,11 +211,13 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 	ti.pixel_fmt = TH_PF_420;
 	td = th_encode_alloc(&ti);
 	th_info_clear(&ti);
-	ERR_FAIL_NULL_V_MSG(td, ERR_UNCONFIGURED, "Couldn't create a Theora encoder instance. Check that the video parameters are valid.");
+	ERR_FAIL_NULL_V_MSG(td, ERR_UNCONFIGURED,
+		"Couldn't create a Theora encoder instance. Check that the video parameters are valid.");
 
 	// Setting just the granule shift only allows power-of-two keyframe spacing.
 	// Set the actual requested spacing.
-	ret = th_encode_ctl(td, TH_ENCCTL_SET_KEYFRAME_FREQUENCY_FORCE, &keyframe_frequency, sizeof(keyframe_frequency));
+	ret = th_encode_ctl(td, TH_ENCCTL_SET_KEYFRAME_FREQUENCY_FORCE, &keyframe_frequency,
+		sizeof(keyframe_frequency));
 	if (ret < 0) {
 		ERR_PRINT("Couldn't set keyframe interval.");
 	}
@@ -259,7 +266,8 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 		ret = th_encode_flushheader(td, &tc, &op);
 		if (ret < 0) {
 			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Theora library error.");
-		} else if (ret == 0) {
+		}
+		else if (ret == 0) {
 			break;
 		}
 		ogg_stream_packetin(&to, &op);
@@ -285,12 +293,14 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 	ogg_stream_packetin(&vo, &comment);
 	ogg_stream_packetin(&vo, &code);
 
-	// Flush the rest of our headers. This ensures the actual data in each stream will start on a new page, as per spec.
+	// Flush the rest of our headers. This ensures the actual data in each stream will start on a
+	// new page, as per spec.
 	while (true) {
 		ret = ogg_stream_flush(&to, &video_page);
 		if (ret < 0) {
 			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
-		} else if (ret == 0) {
+		}
+		else if (ret == 0) {
 			break;
 		}
 		f->store_buffer(video_page.header, video_page.header_len);
@@ -301,7 +311,8 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 		ret = ogg_stream_flush(&vo, &audio_page);
 		if (ret < 0) {
 			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
-		} else if (ret == 0) {
+		}
+		else if (ret == 0) {
 			break;
 		}
 		f->store_buffer(audio_page.header, audio_page.header_len);
@@ -311,11 +322,11 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 	return OK;
 }
 
-// The order of the operations has been chosen so we're one frame behind writing to the stream so we can put the eos
-// mark in the last frame.
-// Flushing streams to the file every X frames is done to improve audio/video page interleaving thus avoiding large runs
-// of video or audio pages.
-Error MovieWriterOGV::write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) {
+// The order of the operations has been chosen so we're one frame behind writing to the stream so we
+// can put the eos mark in the last frame. Flushing streams to the file every X frames is done to
+// improve audio/video page interleaving thus avoiding large runs of video or audio pages.
+Error MovieWriterOGV::write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data)
+{
 	ERR_FAIL_COND_V(f.is_null() || td == nullptr, ERR_UNCONFIGURED);
 
 	frame_count++;
@@ -333,10 +344,11 @@ Error MovieWriterOGV::write_frame(const Ref<Image> &p_image, const int32_t *p_au
 	return OK;
 }
 
-void MovieWriterOGV::save_page(ogg_page page) {
+void MovieWriterOGV::save_page(ogg_page page)
+{
 	unsigned int page_size = page.header_len + page.body_len;
 	if (page_size > backup_page_size) {
-		backup_page_data = (unsigned char *)memrealloc(backup_page_data, page_size);
+		backup_page_data = (unsigned char*)memrealloc(backup_page_data, page_size);
 		backup_page_size = page_size;
 	}
 	backup_page.header = backup_page_data;
@@ -347,25 +359,30 @@ void MovieWriterOGV::save_page(ogg_page page) {
 	memcpy(backup_page.body, page.body, page.body_len);
 }
 
-void MovieWriterOGV::restore_page(ogg_page *page) {
+void MovieWriterOGV::restore_page(ogg_page* page)
+{
 	page->header = backup_page.header;
 	page->header_len = backup_page.header_len;
 	page->body = backup_page.body;
 	page->body_len = backup_page.body_len;
 }
 
-// The added complexity here is because we have to ensure pages are written in ascending timestamp order.
-// libOgg doesn't allow checking the next page granulepos without requesting the page, and once requested it can't be
-// returned, thus, we need to save it so that it doesn't get erased by the next `ogg_stream_packetin` call.
-void MovieWriterOGV::write_to_file(bool p_finish) {
+// The added complexity here is because we have to ensure pages are written in ascending timestamp
+// order. libOgg doesn't allow checking the next page granulepos without requesting the page, and
+// once requested it can't be returned, thus, we need to save it so that it doesn't get erased by
+// the next `ogg_stream_packetin` call.
+void MovieWriterOGV::write_to_file(bool p_finish)
+{
 	if (audio_flag) {
 		restore_page(&audio_page);
-	} else {
+	}
+	else {
 		audio_flag = ogg_stream_flush(&vo, &audio_page);
 	}
 	if (video_flag) {
 		restore_page(&video_page);
-	} else {
+	}
+	else {
 		video_flag = ogg_stream_flush(&to, &video_page);
 	}
 
@@ -380,7 +397,8 @@ void MovieWriterOGV::write_to_file(bool p_finish) {
 			f->store_buffer(video_page.header, video_page.header_len);
 			f->store_buffer(video_page.body, video_page.body_len);
 			video_flag = ogg_stream_flush(&to, &video_page) > 0;
-		} else {
+		}
+		else {
 			// Flush an audio page.
 			f->store_buffer(audio_page.header, audio_page.header_len);
 			f->store_buffer(audio_page.body, audio_page.body_len);
@@ -391,12 +409,14 @@ void MovieWriterOGV::write_to_file(bool p_finish) {
 
 	if (video_flag) {
 		save_page(video_page);
-	} else if (audio_flag) {
+	}
+	else if (audio_flag) {
 		save_page(audio_page);
 	}
 }
 
-void MovieWriterOGV::write_end() {
+void MovieWriterOGV::write_end()
+{
 	pull_audio(true);
 	pull_video(true);
 	write_to_file(true);
@@ -425,11 +445,4 @@ void MovieWriterOGV::write_end() {
 	}
 }
 
-MovieWriterOGV::MovieWriterOGV() {
-	mix_rate = GLOBAL_GET("editor/movie_writer/mix_rate");
-	speaker_mode = AudioServer::SpeakerMode(int(GLOBAL_GET("editor/movie_writer/speaker_mode")));
-	video_quality = GLOBAL_GET("editor/movie_writer/video_quality");
-	audio_quality = GLOBAL_GET("editor/movie_writer/ogv/audio_quality");
-	speed = GLOBAL_GET("editor/movie_writer/ogv/encoding_speed");
-	keyframe_frequency = GLOBAL_GET("editor/movie_writer/ogv/keyframe_interval");
-}
+

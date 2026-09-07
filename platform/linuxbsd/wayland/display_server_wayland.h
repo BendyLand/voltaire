@@ -60,8 +60,6 @@ class TTS_Linux;
 
 class DisplayServerWayland : public DisplayServer
 {
-	VLTRSOFTCLASS(DisplayServerWayland, DisplayServer);
-
 	struct WindowData
 	{
 		DisplayServerEnums::WindowID id = DisplayServerEnums::INVALID_WINDOW_ID;
@@ -101,14 +99,7 @@ class DisplayServerWayland : public DisplayServer
 		bool hdr_requested = false;
 		WaylandThread::ColorProfile color_profile;
 
-		Callable rect_changed_callback;
-		Callable window_event_callback;
-		Callable input_event_callback;
-		Callable drop_files_callback;
-		Callable input_text_callback;
-
 		String title;
-		ObjectID instance_id;
 	};
 
 	struct CustomCursor
@@ -150,7 +141,7 @@ class DisplayServerWayland : public DisplayServer
 	// all input thx" windows while the `popup_stack` variable keeps track of all the generic
 	// floating window concept.
 	List<DisplayServerEnums::WindowID> popup_menu_list;
-	uint32_t last_mouse_monitor_mask = MouseButtonMask::NONE;
+	uint32_t last_mouse_monitor_mask = 0;
 	bool last_touch_monitor_pressed = false;
 
 	String ime_text;
@@ -209,7 +200,6 @@ public:
 #ifdef SPEECHD_ENABLED
 	virtual bool tts_is_speaking() const override;
 	virtual bool tts_is_paused() const override;
-	virtual Array tts_get_voices() const override;
 
 	virtual void tts_speak(const String& p_text, const String& p_voice, int p_volume = 50,
 		float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
@@ -223,21 +213,9 @@ public:
 	virtual bool is_dark_mode_supported() const override;
 	virtual bool is_dark_mode() const override;
 	virtual Color get_accent_color() const override;
-	virtual void set_system_theme_change_callback(const Callable& p_callable) override;
-
-	virtual Error file_dialog_show(const String& p_title, const String& p_current_directory,
-		const String& p_filename, bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const Callable& p_callback,
-		DisplayServerEnums::WindowID p_window_id) override;
-	virtual Error file_dialog_with_options_show(const String& p_title,
-		const String& p_current_directory, const String& p_root, const String& p_filename,
-		bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const Array& p_options, const Callable& p_callback,
-		DisplayServerEnums::WindowID p_window_id) override;
 #endif
 
 	virtual void beep() const override;
-
 	virtual void mouse_set_mode(DisplayServerEnums::MouseMode p_mode) override;
 	virtual DisplayServerEnums::MouseMode mouse_get_mode() const override;
 	virtual void mouse_set_mode_override(DisplayServerEnums::MouseMode p_mode) override;
@@ -297,26 +275,10 @@ public:
 	virtual DisplayServerEnums::WindowID get_window_at_screen_position(
 		const Point2i& p_position) const override;
 
-	virtual void window_attach_instance_id(ObjectID p_instance,
-		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual ObjectID window_get_attached_instance_id(
-		DisplayServerEnums::WindowID p_window_id =
-			DisplayServerEnums::MAIN_WINDOW_ID) const override;
 
 	virtual void window_set_title(const String& p_title,
 		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
 	virtual void window_set_mouse_passthrough(const Vector<Vector2>& p_region,
-		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
-
-	virtual void window_set_rect_changed_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual void window_set_window_event_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual void window_set_input_event_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual void window_set_input_text_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual void window_set_drop_files_callback(const Callable& p_callable,
 		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
 
 	virtual int window_get_current_screen(DisplayServerEnums::WindowID p_window_id =
@@ -461,12 +423,9 @@ public:
 	virtual int keyboard_get_current_layout() const override;
 	virtual void keyboard_set_current_layout(int p_index) override;
 	virtual String keyboard_get_layout_language(int p_index) const override;
-	virtual
-String keyboard_get_layout_name(int p_index) const override;
+	virtual String keyboard_get_layout_name(int p_index) const override;
 	virtual Key keyboard_get_keycode_from_physical(Key p_keycode) const override;
 	virtual Key keyboard_get_label_from_physical(Key p_keycode) const override;
-
-	virtual bool color_picker(const Callable& p_callback) override;
 
 	virtual void process_events() override;
 

@@ -28,45 +28,44 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "os_linuxbsd.h"
-
-#include "main/main.h"
-
-#include <unistd.h>
-
 #include <clocale>
 #include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
+#include "main/main.h"
+#include "os_linuxbsd.h"
 
 #if defined(ASAN_ENABLED)
 #include <sys/resource.h>
 #endif
 
 #if defined(__x86_64) || defined(__x86_64__)
-void __cpuid(int *r_cpuinfo, int p_info) {
-	// Note: Some compilers have a buggy `__cpuid` intrinsic, using inline assembly (based on LLVM-20 implementation) instead.
+void __cpuid(int* r_cpuinfo, int p_info)
+{
+	// Note: Some compilers have a buggy `__cpuid` intrinsic, using inline assembly (based on
+	// LLVM-20 implementation) instead.
 	__asm__ __volatile__(
-			"xchgq %%rbx, %q1;"
-			"cpuid;"
-			"xchgq %%rbx, %q1;"
-			: "=a"(r_cpuinfo[0]), "=r"(r_cpuinfo[1]), "=c"(r_cpuinfo[2]), "=d"(r_cpuinfo[3])
-			: "0"(p_info));
+		"xchgq %%rbx, %q1;"
+		"cpuid;"
+		"xchgq %%rbx, %q1;"
+		: "=a"(r_cpuinfo[0]), "=r"(r_cpuinfo[1]), "=c"(r_cpuinfo[2]), "=d"(r_cpuinfo[3])
+		: "0"(p_info));
 }
 #endif
 
 // For export templates, add a section; the exporter will patch it to enclose
 // the data appended to the executable (bundled PCK).
 #if !defined(TOOLS_ENABLED) && defined(__GNUC__)
-static const char dummy[8] __attribute__((section("pck"), used)) = { 0 };
+static const char dummy[8] __attribute__((section("pck"), used)) = {0};
 
 // Dummy function to prevent LTO from discarding "pck" section.
-extern "C" const char *pck_section_dummy_call() __attribute__((used));
-extern "C" const char *pck_section_dummy_call() {
-	return &dummy[0];
-}
+extern "C" const char* pck_section_dummy_call() __attribute__((used));
+
+extern "C" const char* pck_section_dummy_call() { return &dummy[0]; }
 #endif
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
 #if defined(__x86_64) || defined(__x86_64__)
 	int cpuinfo[4];
 	__cpuid(cpuinfo, 0x01);
@@ -74,38 +73,38 @@ int main(int argc, char *argv[]) {
 	if (!(cpuinfo[2] & (1 << 20))) {
 		printf("A CPU with SSE4.2 instruction set support is required.\n");
 
-		int ret = system("zenity --warning --title \"Godot Engine\" --text \"A CPU with SSE4.2 instruction set support is required.\" 2> /dev/null");
+		int ret = system("zenity --warning --title \"Godot Engine\" --text \"A CPU with SSE4.2 "
+						 "instruction set support is required.\" 2> /dev/null");
 		if (ret != 0) {
-			ret = system("kdialog --title \"Godot Engine\" --sorry \"A CPU with SSE4.2 instruction set support is required.\" 2> /dev/null");
+			ret = system("kdialog --title \"Godot Engine\" --sorry \"A CPU with SSE4.2 instruction "
+						 "set support is required.\" 2> /dev/null");
 		}
 		if (ret != 0) {
-			ret = system("Xdialog --title \"Godot Engine\" --msgbox \"A CPU with SSE4.2 instruction set support is required.\" 0 0 2> /dev/null");
+			ret = system("Xdialog --title \"Godot Engine\" --msgbox \"A CPU with SSE4.2 "
+						 "instruction set support is required.\" 0 0 2> /dev/null");
 		}
 		if (ret != 0) {
-			ret = system("xmessage -center -title \"Godot Engine\" \"A CPU with SSE4.2 instruction set support is required.\" 2> /dev/null");
+			ret = system("xmessage -center -title \"Godot Engine\" \"A CPU with SSE4.2 instruction "
+						 "set support is required.\" 2> /dev/null");
 		}
 		abort();
 	}
 #endif
 
 #if defined(ASAN_ENABLED)
-	// Note: Set stack size to be at least 30 MB (vs 8 MB default) to avoid overflow, address sanitizer can increase stack usage up to 3 times.
-	struct rlimit stack_lim = { 0x1E00000, 0x1E00000 };
+	// Note: Set stack size to be at least 30 MB (vs 8 MB default) to avoid overflow, address
+	// sanitizer can increase stack usage up to 3 times.
+	struct rlimit stack_lim = {0x1E00000, 0x1E00000};
 	setrlimit(RLIMIT_STACK, &stack_lim);
 #endif
-
-	godot_init_profiler();
 
 	OS_LinuxBSD os;
 
 	setlocale(LC_CTYPE, "");
 
-	// We must override main when testing is enabled
-	TEST_MAIN_OVERRIDE
-
-	char *cwd = (char *)malloc(PATH_MAX);
+	char* cwd = (char*)malloc(PATH_MAX);
 	ERR_FAIL_NULL_V(cwd, ERR_OUT_OF_MEMORY);
-	char *ret = getcwd(cwd, PATH_MAX);
+	char* ret = getcwd(cwd, PATH_MAX);
 
 	Error err = Main::setup(argv[0], argc - 1, &argv[1]);
 
@@ -119,7 +118,8 @@ int main(int argc, char *argv[]) {
 
 	if (Main::start() == EXIT_SUCCESS) {
 		os.run();
-	} else {
+	}
+	else {
 		os.set_exit_code(EXIT_FAILURE);
 	}
 	Main::cleanup();
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	free(cwd);
-
-	godot_cleanup_profiler();
 	return os.get_exit_code();
 }
+
+

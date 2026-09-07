@@ -129,42 +129,6 @@ void Camera3D::_update_camera_mode()
 	fti_notify_node_changed(false);
 }
 
-void Camera3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (p_property.name == "fov") {
-			if (mode != PROJECTION_PERSPECTIVE) {
-				p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-			}
-			return;
-		}
-		else if (p_property.name == "size") {
-			if (mode != PROJECTION_ORTHOGONAL && mode != PROJECTION_FRUSTUM) {
-				p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-			}
-			return;
-		}
-		else if (p_property.name == "frustum_offset") {
-			if (mode != PROJECTION_FRUSTUM) {
-				p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-			}
-			return;
-		}
-	}
-
-	if (attributes.is_valid()) {
-		const CameraAttributesPhysical* physical_attributes =
-			Object::cast_to<CameraAttributesPhysical>(attributes.ptr());
-		if (physical_attributes) {
-			if (p_property.name == "near" || p_property.name == "far" || p_property.name == "fov" ||
-				p_property.name == "keep_aspect") {
-				p_property.usage =
-					PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL | PROPERTY_USAGE_EDITOR;
-			}
-		}
-	}
-}
-
 void Camera3D::_update_camera()
 {
 	if (!is_inside_tree()) {
@@ -199,84 +163,6 @@ void Camera3D::_update_process_mode()
 {
 	set_process_internal(_desired_process_internal);
 	set_physics_process_internal(_desired_physics_process_internal);
-}
-
-void Camera3D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_WORLD: {
-		// Needs to track the Viewport because it's needed on NOTIFICATION_EXIT_WORLD
-		// and Spatial will handle it first, including clearing its reference to the Viewport,
-		// therefore making it impossible to subclasses to access it
-		viewport = get_viewport();
-		ERR_FAIL_NULL(viewport);
-
-		bool first_camera = viewport->_camera_3d_add(this);
-		if (current || first_camera) {
-			viewport->_camera_3d_set(this);
-		}
-
-#ifdef TOOLS_ENABLED
-		if (Engine::get_singleton()->is_editor_hint()) {
-			viewport->connect(
-				SNAME("size_changed"), callable_mp((Node3D*)this, &Camera3D::update_gizmos));
-		}
-#endif
-	} break;
-
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-#if defined(DEBUG_ENABLED) && defined(TOOLS_ENABLED)
-		if (is_physics_interpolated_and_enabled()) {
-			if (!Engine::get_singleton()->is_in_physics_frame()) {
-				PHYSICS_INTERPOLATION_NODE_WARNING(this->obj->get_instance_id(),
-					"Interpolated Camera3D triggered from outside physics process");
-			}
-		}
-#endif
-		_request_camera_update();
-		if (doppler_tracking != DOPPLER_TRACKING_DISABLED) {
-			velocity_tracker->update_position(get_global_transform().origin);
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_WORLD: {
-		if (!is_part_of_edited_scene()) {
-			if (is_current()) {
-				clear_current();
-				current = true; // keep it true
-
-			}
-			else {
-				current = false;
-			}
-		}
-
-		if (viewport) {
-#ifdef TOOLS_ENABLED
-			if (Engine::get_singleton()->is_editor_hint()) {
-				viewport->disconnect(
-					SNAME("size_changed"), callable_mp((Node3D*)this, &Camera3D::update_gizmos));
-			}
-#endif
-			viewport->_camera_3d_remove(this);
-			viewport = nullptr;
-		}
-	} break;
-
-	case NOTIFICATION_BECAME_CURRENT: {
-		if (viewport) {
-			viewport->find_world_3d()->_register_camera(this);
-		}
-		_update_process_mode();
-	} break;
-
-	case NOTIFICATION_LOST_CURRENT: {
-		if (viewport) {
-			viewport->find_world_3d()->_remove_camera(this);
-		}
-		_update_process_mode();
-	} break;
-	}
 }
 
 Transform3D Camera3D::_get_adjusted_camera_transform(const Transform3D& p_xform) const
@@ -374,16 +260,6 @@ void Camera3D::set_frustum(real_t p_size, Vector2 p_offset, real_t p_z_near, rea
 
 	RenderingServer::get_singleton()->camera_set_frustum(camera, size, frustum_offset, _near, _far);
 	update_gizmos();
-}
-
-void Camera3D::set_projection(ProjectionType p_mode)
-{
-	if (p_mode == PROJECTION_PERSPECTIVE || p_mode == PROJECTION_ORTHOGONAL ||
-		p_mode == PROJECTION_FRUSTUM) {
-		mode = p_mode;
-		_update_camera_mode();
-		this->obj->notify_property_list_changed();
-	}
 }
 
 RID Camera3D::get_camera() const { return camera; }
@@ -581,49 +457,7 @@ void Camera3D::set_environment(const Ref<Environment>& p_environment)
 
 Ref<Environment> Camera3D::get_environment() const { return environment; }
 
-void Camera3D::set_attributes(const Ref<CameraAttributes>& p_attributes)
-{
-	if (attributes.is_valid()) {
-		CameraAttributesPhysical* physical_attributes =
-			Object::cast_to<CameraAttributesPhysical>(attributes.ptr());
-		if (physical_attributes) {
-			attributes->disconnect_changed(callable_mp(this, &Camera3D::_attributes_changed));
-		}
-	}
-
-	attributes = p_attributes;
-
-	if (attributes.is_valid()) {
-		CameraAttributesPhysical* physical_attributes =
-			Object::cast_to<CameraAttributesPhysical>(attributes.ptr());
-		if (physical_attributes) {
-			attributes->connect_changed(callable_mp(this, &Camera3D::_attributes_changed));
-			_attributes_changed();
-		}
-
-		RS::get_singleton()->camera_set_camera_attributes(camera, attributes->get_rid());
-	}
-	else {
-		RS::get_singleton()->camera_set_camera_attributes(camera, RID());
-	}
-
-	this->obj->notify_property_list_changed();
-}
-
 Ref<CameraAttributes> Camera3D::get_attributes() const { return attributes; }
-
-void Camera3D::_attributes_changed()
-{
-	CameraAttributesPhysical* physical_attributes =
-		Object::cast_to<CameraAttributesPhysical>(attributes.ptr());
-	ERR_FAIL_NULL(physical_attributes);
-
-	fov = physical_attributes->get_fov();
-	_near = physical_attributes->get_near();
-	_far = physical_attributes->get_far();
-	keep_aspect = KEEP_HEIGHT;
-	_update_camera_mode();
-}
 
 void Camera3D::set_compositor(const Ref<Compositor>& p_compositor)
 {
@@ -638,15 +472,6 @@ void Camera3D::set_compositor(const Ref<Compositor>& p_compositor)
 }
 
 Ref<Compositor> Camera3D::get_compositor() const { return compositor; }
-
-void Camera3D::set_keep_aspect_mode(KeepAspect p_aspect)
-{
-	keep_aspect = p_aspect;
-	RenderingServer::get_singleton()->camera_set_use_vertical_aspect(
-		camera, p_aspect == KEEP_WIDTH);
-	_update_camera_mode();
-	this->obj->notify_property_list_changed();
-}
 
 Camera3D::KeepAspect Camera3D::get_keep_aspect_mode() const { return keep_aspect; }
 
@@ -750,17 +575,12 @@ bool Camera3D::get_cull_mask_value(int p_layer_number) const
 
 Vector<Plane> Camera3D::get_frustum() const
 {
-	ERR_FAIL_COND_V(!is_inside_world(), Vector<Plane>());
+	ERR_FAIL_COND_V(!
+is_inside_world(), Vector<Plane>());
 
 	Projection cm = _get_camera_projection(_near);
 
 	return cm.get_projection_planes(get_camera_transform());
-}
-
-TypedArray<Plane> Camera3D::_get_frustum() const
-{
-	Variant ret = get_frustum();
-	return ret;
 }
 
 bool Camera3D::is_position_in_frustum(const Vector3& p_position) const
@@ -799,38 +619,6 @@ Vector3 Camera3D::get_doppler_tracked_velocity() const
 		return Vector3();
 	}
 }
-
-#ifndef PHYSICS_3D_DISABLED
-RID Camera3D::get_pyramid_shape_rid()
-{
-	ERR_FAIL_COND_V_MSG(!is_inside_tree(), RID(), "Camera is not inside scene.");
-	if (pyramid_shape == RID()) {
-		pyramid_shape_points = get_near_plane_points();
-		pyramid_shape = PhysicsServer3D::get_singleton()->convex_polygon_shape_create();
-		PhysicsServer3D::get_singleton()->shape_set_data(pyramid_shape, pyramid_shape_points);
-
-	}
-	else { // check if points changed
-		Vector<Vector3> local_points = get_near_plane_points();
-
-		bool all_equal = true;
-
-		for (int i = 0; i < 5; i++) {
-			if (local_points[i] != pyramid_shape_points[i]) {
-				all_equal = false;
-				break;
-			}
-		}
-
-		if (!all_equal) {
-			PhysicsServer3D::get_singleton()->shape_set_data(pyramid_shape, local_points);
-			pyramid_shape_points = local_points;
-		}
-	}
-
-	return pyramid_shape;
-}
-#endif // PHYSICS_3D_DISABLED
 
 Camera3D::Camera3D()
 {

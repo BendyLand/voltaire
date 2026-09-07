@@ -38,7 +38,6 @@
 
 class FileAccess;
 class RegEx;
-class ScriptBacktrace;
 
 class Logger
 {
@@ -90,9 +89,6 @@ public:
 
 	virtual void logv(
 		const char* p_format, va_list p_list, bool p_err) _PRINTF_FORMAT_ATTRIBUTE_2_0 = 0;
-	virtual void log_error(const char* p_function, const char* p_file, int p_line,
-		const char* p_code, const char* p_rationale, bool p_editor_notify = false,
-		ErrorType p_type = ERR_ERROR, const Vector<Ref<ScriptBacktrace>>& p_script_backtraces = {});
 
 	void logf(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
 	void logf_error(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
@@ -149,10 +145,6 @@ public:
 
 	virtual void logv(
 		const char* p_format, va_list p_list, bool p_err) override _PRINTF_FORMAT_ATTRIBUTE_2_0;
-	virtual void log_error(const char* p_function, const char* p_file, int p_line,
-		const char* p_code, const char* p_rationale, bool p_editor_notify,
-		ErrorType p_type = ERR_ERROR,
-		const Vector<Ref<ScriptBacktrace>>& p_script_backtraces = {}) override;
 
 	void add_logger(Logger* p_logger);
 

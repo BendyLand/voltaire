@@ -33,7 +33,6 @@
 #include "servers/navigation_2d/navigation_server_2d.h"
 
 class NavigationServer2DDummy : public NavigationServer2D {
-	VLTRCLASS(NavigationServer2DDummy, NavigationServer2D);
 
 public:
 	TypedArray<RID> get_maps() const override { return TypedArray<RID>(); }

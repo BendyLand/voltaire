@@ -35,7 +35,6 @@
 #include "servers/audio/audio_rb_resampler.h"
 
 class VideoStreamPlayer : public Control {
-	VLTRCLASS(VideoStreamPlayer, Control);
 
 	Ref<VideoStreamPlayback> playback;
 	Ref<VideoStream> stream;

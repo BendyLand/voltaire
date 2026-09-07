@@ -32,6 +32,4 @@
 
 UPNP* (*UPNP::_create)(bool p_notify_postinitialize) = nullptr;
 
-void UPNP::_bind_methods() {}
-
 

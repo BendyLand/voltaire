@@ -67,8 +67,8 @@ public:
 		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
 #endif // NAVIGATION_3D_DISABLED
 
-	MultiMeshInstance3D();
-	~MultiMeshInstance3D();
+	MultiMeshInstance3D() = default;
+	~MultiMeshInstance3D() = default;
 };
 
 

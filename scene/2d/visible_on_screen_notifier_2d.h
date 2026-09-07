@@ -33,9 +33,9 @@
 #include "scene/2d/node_2d.h"
 
 class Viewport;
-class VisibleOnScreenNotifier2D : public Node2D {
-	VLTRCLASS(VisibleOnScreenNotifier2D, Node2D);
 
+class VisibleOnScreenNotifier2D : public Node2D
+{
 	Rect2 rect;
 	bool show_rect = true;
 
@@ -46,19 +46,16 @@ private:
 
 protected:
 	virtual void _screen_enter() {}
+
 	virtual void _screen_exit() {}
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 #ifdef TOOLS_ENABLED
-	virtual Dictionary _edit_get_state() const override;
-	virtual void _edit_set_state(const Dictionary &p_state) override;
-
 	virtual Vector2 _edit_get_minimum_size() const override { return Vector2(); }
 
-	virtual void _edit_set_rect(const Rect2 &p_edit_rect) override;
+	virtual void _edit_set_rect(const Rect2& p_edit_rect) override;
 #endif // TOOLS_ENABLED
 
 #ifdef DEBUG_ENABLED
@@ -67,7 +64,7 @@ public:
 	virtual bool _edit_use_rect() const override;
 #endif // DEBUG_ENABLED
 
-	void set_rect(const Rect2 &p_rect);
+	void set_rect(const Rect2& p_rect);
 	Rect2 get_rect() const;
 
 	void set_show_rect(bool p_show_rect);
@@ -78,18 +75,17 @@ public:
 	VisibleOnScreenNotifier2D();
 };
 
-class VisibleOnScreenEnabler2D : public VisibleOnScreenNotifier2D {
-	VLTRCLASS(VisibleOnScreenEnabler2D, VisibleOnScreenNotifier2D);
-
+class VisibleOnScreenEnabler2D : public VisibleOnScreenNotifier2D
+{
 public:
-	enum EnableMode {
+	enum EnableMode
+	{
 		ENABLE_MODE_INHERIT,
 		ENABLE_MODE_ALWAYS,
 		ENABLE_MODE_WHEN_PAUSED,
 	};
 
 protected:
-	ObjectID node_id;
 	virtual void _screen_enter() override;
 	virtual void _screen_exit() override;
 
@@ -97,7 +93,6 @@ protected:
 	NodePath enable_node_path = NodePath("..");
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	void _update_enable_mode(bool p_enable);
 
@@ -108,7 +103,7 @@ public:
 	void set_enable_node_path(NodePath p_path);
 	NodePath get_enable_node_path();
 
-	VisibleOnScreenEnabler2D();
+	VisibleOnScreenEnabler2D() = default;
 };
 
-VARIANT_ENUM_CAST(VisibleOnScreenEnabler2D::EnableMode);
+

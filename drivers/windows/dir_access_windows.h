@@ -37,7 +37,6 @@
 struct DirAccessWindowsPrivate;
 
 class DirAccessWindows : public DirAccess {
-	VLTRSOFTCLASS(DirAccessWindows, DirAccess);
 	enum {
 		MAX_DRIVES = 26
 	};

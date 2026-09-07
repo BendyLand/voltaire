@@ -38,7 +38,6 @@
 #import <ApplicationServices/ApplicationServices.h>
 
 class NativeMenuMacOS : public NativeMenu {
-	VLTRCLASS(NativeMenuMacOS, NativeMenu)
 
 	struct MenuData {
 		NSMenu *menu = nullptr;

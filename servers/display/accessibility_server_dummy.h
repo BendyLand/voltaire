@@ -33,7 +33,6 @@
 #include "servers/display/accessibility_server.h"
 
 class AccessibilityServerDummy : public AccessibilityServer {
-	VLTRSOFTCLASS(AccessibilityServerDummy, AccessibilityServer)
 	friend class AccessibilityServer;
 
 protected:

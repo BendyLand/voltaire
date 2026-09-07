@@ -176,8 +176,6 @@ private:
 
 	void _window_visibility_changed();
 
-	void _notify_transform(CanvasItem* p_node);
-
 	static CanvasItem* current_item_drawn;
 	friend class Viewport;
 	void _refresh_texture_repeat_cache() const;
@@ -211,17 +209,16 @@ protected:
 		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
 		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
 	void _draw_multiline_string_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
 		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
 		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY |
-														  TextServer::BREAK_WORD_BOUND,
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
 		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
 	void _draw_string_outline_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
@@ -229,7 +226,7 @@ protected:
 		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
 		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
 	void _draw_multiline_string_outline_bind_compat_104872(const Ref<Font>& p_font,
@@ -237,10 +234,9 @@ protected:
 		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
 		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1, int p_size = 1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY |
-														  TextServer::BREAK_WORD_BOUND,
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
 		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
 	void _draw_char_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
@@ -396,10 +392,10 @@ public:
 		bool p_filled = true, real_t p_width = -1.0, bool p_antialiased = false);
 	void draw_circle(const Point2& p_pos, real_t p_radius, const Color& p_color,
 		bool p_filled = true, real_t p_width = -1.0, bool p_antialiased = false);
-	void draw_texture(Texture2D* rp_texture, const Point2& p_pos,
-		const Color& p_modulate = Color(1, 1, 1, 1));
-	void draw_texture_rect(Texture2D* rp_texture, const Rect2& p_rect,
-		bool p_tile = false, const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false);
+	void draw_texture(
+		Texture2D* rp_texture, const Point2& p_pos, const Color& p_modulate = Color(1, 1, 1, 1));
+	void draw_texture_rect(Texture2D* rp_texture, const Rect2& p_rect, bool p_tile = false,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false);
 	void draw_texture_rect_region(Texture2D* rp_texture, const Rect2& p_rect,
 		const Rect2& p_src_rect, const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false,
 		bool p_clip_uv = false);
@@ -426,18 +422,17 @@ public:
 		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
 		int p_font_size = DEFAULT_FONT_SIZE, const Color& p_modulate = Color(1.0, 1.0, 1.0),
 		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
 		float p_oversampling = 0.0) const;
-	void draw_multiline_string(Font* rp_font, const Point2& p_pos,
-		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
-		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
+	void draw_multiline_string(Font* rp_font, const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY |
-														  TextServer::BREAK_WORD_BOUND,
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
 		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
 		float p_oversampling = 0.0) const;
@@ -447,18 +442,17 @@ public:
 		int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
 		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
 		float p_oversampling = 0.0) const;
-	void draw_multiline_string_outline(Font* rp_font, const Point2& p_pos,
-		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
-		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
-		int p_size = 1, const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY |
-														  TextServer::BREAK_WORD_BOUND,
+	void draw_multiline_string_outline(Font* rp_font, const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1, int p_size = 1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
 		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
 		float p_oversampling = 0.0) const;
@@ -556,7 +550,6 @@ public:
 
 class CanvasTexture : public Texture2D
 {
-
 	Ref<Texture2D> diffuse_texture;
 	Ref<Texture2D> normal_texture;
 	Ref<Texture2D> specular_texture;

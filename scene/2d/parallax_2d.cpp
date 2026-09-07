@@ -78,13 +78,6 @@ void Parallax2D::_edit_set_position(const Point2& p_position)
 }
 #endif // TOOLS_ENABLED
 
-void Parallax2D::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "position") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
 void Parallax2D::_camera_moved(
 	const Transform2D& p_transform, const Point2& p_screen_offset, const Point2& p_adj_screen_pos)
 {

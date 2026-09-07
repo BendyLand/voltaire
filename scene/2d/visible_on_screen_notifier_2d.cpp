@@ -33,20 +33,6 @@
 #include "visible_on_screen_notifier_2d.h"
 
 #ifdef TOOLS_ENABLED
-Dictionary VisibleOnScreenNotifier2D::_edit_get_state() const
-{
-	Dictionary state = Node2D::_edit_get_state();
-	state["rect"] = rect;
-	return state;
-}
-
-void VisibleOnScreenNotifier2D::_edit_set_state(const Dictionary& p_state)
-{
-	ERR_FAIL_COND(p_state.is_empty() || !p_state.has("rect"));
-	set_rect(p_state["rect"]);
-	Node2D::_edit_set_state(p_state);
-}
-
 void VisibleOnScreenNotifier2D::_edit_set_rect(const Rect2& p_edit_rect) { set_rect(p_edit_rect); }
 #endif // TOOLS_ENABLED
 
@@ -55,39 +41,6 @@ Rect2 VisibleOnScreenNotifier2D::_edit_get_rect() const { return rect; }
 
 bool VisibleOnScreenNotifier2D::_edit_use_rect() const { return show_rect; }
 #endif // DEBUG_ENABLED
-
-void VisibleOnScreenNotifier2D::_visibility_enter()
-{
-	if (!is_inside_tree() || Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-
-	on_screen = true;
-	this->obj->emit_signal(SceneStringName(screen_entered));
-	_screen_enter();
-}
-
-void VisibleOnScreenNotifier2D::_visibility_exit()
-{
-	if (!is_inside_tree() || Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-
-	on_screen = false;
-	this->obj->emit_signal(SceneStringName(screen_exited));
-	_screen_exit();
-}
-
-void VisibleOnScreenNotifier2D::set_rect(const Rect2& p_rect)
-{
-	rect = p_rect;
-	if (is_inside_tree()) {
-		RS::get_singleton()->canvas_item_set_visibility_notifier(get_canvas_item(), true, rect,
-			callable_mp(this, &VisibleOnScreenNotifier2D::_visibility_enter),
-			callable_mp(this, &VisibleOnScreenNotifier2D::_visibility_exit));
-	}
-	queue_redraw();
-}
 
 Rect2 VisibleOnScreenNotifier2D::get_rect() const { return rect; }
 
@@ -102,33 +55,7 @@ void VisibleOnScreenNotifier2D::set_show_rect(bool p_show_rect)
 
 bool VisibleOnScreenNotifier2D::is_showing_rect() const { return show_rect; }
 
-void VisibleOnScreenNotifier2D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		on_screen = false;
-		RS::get_singleton()->canvas_item_set_visibility_notifier(get_canvas_item(), true, rect,
-			callable_mp(this, &VisibleOnScreenNotifier2D::_visibility_enter),
-			callable_mp(this, &VisibleOnScreenNotifier2D::_visibility_exit));
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		if (show_rect && Engine::get_singleton()->is_editor_hint()) {
-			draw_rect(rect, Color(1, 0.5, 1, 0.2));
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		on_screen = false;
-		RS::get_singleton()->canvas_item_set_visibility_notifier(
-			get_canvas_item(), false, Rect2(), Callable(), Callable());
-	} break;
-	}
-}
-
 bool VisibleOnScreenNotifier2D::is_on_screen() const { return on_screen; }
-
-void VisibleOnScreenNotifier2D::_bind_methods() {}
 
 VisibleOnScreenNotifier2D::VisibleOnScreenNotifier2D()
 {
@@ -155,78 +82,6 @@ VisibleOnScreenEnabler2D::EnableMode VisibleOnScreenEnabler2D::get_enable_mode()
 	return enable_mode;
 }
 
-void VisibleOnScreenEnabler2D::set_enable_node_path(NodePath p_path)
-{
-	if (enable_node_path == p_path) {
-		return;
-	}
-	enable_node_path = p_path;
-	if (enable_node_path.is_empty()) {
-		node_id = ObjectID();
-		return;
-	}
-	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
-		node_id = ObjectID();
-		Node* node = get_node(enable_node_path);
-		if (node) {
-			node_id = node->obj->get_instance_id();
-			_update_enable_mode(is_on_screen());
-		}
-	}
-}
-
 NodePath VisibleOnScreenEnabler2D::get_enable_node_path() { return enable_node_path; }
-
-void VisibleOnScreenEnabler2D::_update_enable_mode(bool p_enable)
-{
-	Node* node = ObjectDB::get_instance<Node>(node_id);
-	if (node) {
-		if (p_enable) {
-			switch (enable_mode) {
-			case ENABLE_MODE_INHERIT: {
-				node->set_process_mode(PROCESS_MODE_INHERIT);
-			} break;
-			case ENABLE_MODE_ALWAYS: {
-				node->set_process_mode(PROCESS_MODE_ALWAYS);
-			} break;
-			case ENABLE_MODE_WHEN_PAUSED: {
-				node->set_process_mode(PROCESS_MODE_WHEN_PAUSED);
-			} break;
-			}
-		}
-		else {
-			node->set_process_mode(PROCESS_MODE_DISABLED);
-		}
-	}
-}
-
-void VisibleOnScreenEnabler2D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		if (Engine::get_singleton()->is_editor_hint()) {
-			return;
-		}
-		node_id = ObjectID();
-		if (enable_node_path.is_empty()) {
-			return;
-		}
-
-		Node* node = get_node(enable_node_path);
-		if (node) {
-			node_id = node->obj->get_instance_id();
-			node->set_process_mode(PROCESS_MODE_DISABLED);
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		node_id = ObjectID();
-	} break;
-	}
-}
-
-void VisibleOnScreenEnabler2D::_bind_methods() {}
-
-VisibleOnScreenEnabler2D::VisibleOnScreenEnabler2D() {}
 
 

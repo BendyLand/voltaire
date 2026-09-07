@@ -38,7 +38,6 @@
 ///////////////////////////////////////
 
 class SkeletonModification2DLookAt : public SkeletonModification2D {
-	VLTRCLASS(SkeletonModification2DLookAt, SkeletonModification2D);
 
 private:
 	int bone_idx = -1;

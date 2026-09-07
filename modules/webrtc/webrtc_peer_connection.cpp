@@ -34,7 +34,6 @@
 #include "webrtc_peer_connection_js.h"
 #endif
 
-
 StringName WebRTCPeerConnection::default_extension;
 
 void WebRTCPeerConnection::set_default_extension(const StringName& p_extension)
@@ -51,7 +50,7 @@ WebRTCPeerConnection* WebRTCPeerConnection::create(bool p_notify_postinitialize)
 	if (default_extension == StringName()) {
 		WARN_PRINT_ONCE("No default WebRTC extension configured.");
 	}
-	return memnew(WebRTCPeerConnection).ptr();
+	return memnew(WebRTCPeerConnection);
 #endif
 }
 
@@ -70,14 +69,6 @@ WebRTCPeerConnection::GatheringState WebRTCPeerConnection::get_gathering_state()
 WebRTCPeerConnection::SignalingState WebRTCPeerConnection::get_signaling_state() const
 {
 	return SIGNALING_STATE_STABLE;
-}
-
-Error WebRTCPeerConnection::initialize(const Dictionary& p_config) { return OK; }
-
-Ref<WebRTCDataChannel> WebRTCPeerConnection::create_data_channel(
-	const String& p_label, const Dictionary& p_options)
-{
-	return nullptr;
 }
 
 Error WebRTCPeerConnection::create_offer() { return OK; }

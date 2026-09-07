@@ -31,8 +31,6 @@
 #include "openxr_interaction_profile.h"
 #include "openxr_interaction_profile_metadata.h"
 
-void OpenXRIPBinding::_bind_methods() {}
-
 Ref<OpenXRIPBinding> OpenXRIPBinding::new_binding(
 	const Ref<OpenXRAction>& p_action, const String& p_binding_path)
 {
@@ -93,27 +91,6 @@ void OpenXRIPBinding::clear_binding_modifiers()
 	}
 	binding_modifiers.clear();
 	emit_changed();
-}
-
-void OpenXRIPBinding::set_binding_modifiers(const Array& p_binding_modifiers)
-{
-	clear_binding_modifiers();
-
-	// Any binding modifier not retained in p_binding_modifiers should be freed automatically, those
-	// held within our Array will have be relinked to our interaction profile.
-	for (int i = 0; i < p_binding_modifiers.size(); i++) {
-		// Add them anew so we verify our binding modifier pointer.
-		add_binding_modifier(p_binding_modifiers[i]);
-	}
-}
-
-Array OpenXRIPBinding::get_binding_modifiers() const
-{
-	Array ret;
-	for (const Ref<OpenXRActionBindingModifier>& binding_modifier : binding_modifiers) {
-		ret.push_back(binding_modifier);
-	}
-	return ret;
 }
 
 void OpenXRIPBinding::add_binding_modifier(
@@ -214,8 +191,6 @@ void OpenXRIPBinding::remove_path(const String& p_path)
 
 OpenXRIPBinding::~OpenXRIPBinding() { action.unref(); }
 
-void OpenXRInteractionProfile::_bind_methods() {}
-
 Ref<OpenXRInteractionProfile> OpenXRInteractionProfile::new_profile(
 	const char* p_input_profile_path)
 {
@@ -244,85 +219,6 @@ String OpenXRInteractionProfile::get_interaction_profile_path() const
 	return interaction_profile_path;
 }
 
-int OpenXRInteractionProfile::get_binding_count() const { return bindings.size(); }
-
-Ref<OpenXRIPBinding> OpenXRInteractionProfile::get_binding(int p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, bindings.size(), Ref<OpenXRIPBinding>());
-
-	return bindings[p_index];
-}
-
-void OpenXRInteractionProfile::set_bindings(const Array& p_bindings)
-{
-	bindings.clear();
-
-	for (Ref<OpenXRIPBinding> binding : p_bindings) {
-		String binding_path = binding->get_binding_path();
-		if (binding_path.find_char(',') >= 0) {
-			// Convert old binding approach to new...
-			add_new_binding(binding->get_action(), binding_path);
-		}
-		else {
-			add_binding(binding);
-		}
-	}
-
-	emit_changed();
-}
-
-Array OpenXRInteractionProfile::get_bindings() const { return bindings; }
-
-Ref<OpenXRIPBinding> OpenXRInteractionProfile::find_binding(
-	const Ref<OpenXRAction>& p_action, const String& p_binding_path) const
-{
-	for (Ref<OpenXRIPBinding> binding : bindings) {
-		if (binding->get_action() == p_action && binding->get_binding_path() == p_binding_path) {
-			return binding;
-		}
-	}
-
-	return Ref<OpenXRIPBinding>();
-}
-
-Vector<Ref<OpenXRIPBinding>> OpenXRInteractionProfile::get_bindings_for_action(
-	const Ref<OpenXRAction>& p_action) const
-{
-	Vector<Ref<OpenXRIPBinding>> ret_bindings;
-
-	for (Ref<OpenXRIPBinding> binding : bindings) {
-		if (binding->get_action() == p_action) {
-			ret_bindings.push_back(binding);
-		}
-	}
-
-	return ret_bindings;
-}
-
-void OpenXRInteractionProfile::add_binding(const Ref<OpenXRIPBinding>& p_binding)
-{
-	ERR_FAIL_COND(p_binding.is_null());
-
-	if (!bindings.has(p_binding)) {
-		ERR_FAIL_COND_MSG(
-			find_binding(p_binding->get_action(), p_binding->get_binding_path()).is_valid(),
-			"There is already a binding for this action and binding path in this interaction "
-			"profile.");
-
-		bindings.push_back(p_binding);
-		emit_changed();
-	}
-}
-
-void OpenXRInteractionProfile::remove_binding(const Ref<OpenXRIPBinding>& p_binding)
-{
-	int idx = bindings.find(p_binding);
-	if (idx != -1) {
-		bindings.remove_at(idx);
-		emit_changed();
-	}
-}
-
 void OpenXRInteractionProfile::add_new_binding(
 	const Ref<OpenXRAction>& p_action, const String& p_paths)
 {
@@ -334,28 +230,6 @@ void OpenXRInteractionProfile::add_new_binding(
 		Ref<OpenXRIPBinding> binding = OpenXRIPBinding::new_binding(p_action, path);
 		add_binding(binding);
 	}
-}
-
-void OpenXRInteractionProfile::remove_binding_for_action(const Ref<OpenXRAction>& p_action)
-{
-	for (int i = bindings.size() - 1; i >= 0; i--) {
-		Ref<OpenXRIPBinding> binding = bindings[i];
-		if (binding->get_action() == p_action) {
-			remove_binding(binding);
-		}
-	}
-}
-
-bool OpenXRInteractionProfile::has_binding_for_action(const Ref<OpenXRAction>& p_action)
-{
-	for (int i = bindings.size() - 1; i >= 0; i--) {
-		Ref<OpenXRIPBinding> binding = bindings[i];
-		if (binding->get_action() == p_action) {
-			return true;
-		}
-	}
-
-	return false;
 }
 
 int OpenXRInteractionProfile::get_binding_modifier_count() const
@@ -384,27 +258,6 @@ void OpenXRInteractionProfile::clear_binding_modifiers()
 	}
 	binding_modifiers.clear();
 	emit_changed();
-}
-
-void OpenXRInteractionProfile::set_binding_modifiers(const Array& p_binding_modifiers)
-{
-	clear_binding_modifiers();
-
-	// Any binding modifier not retained in p_binding_modifiers should be freed automatically, those
-	// held within our Array will have be relinked to our interaction profile.
-	for (int i = 0; i < p_binding_modifiers.size(); i++) {
-		// Add them anew so we verify our binding modifier pointer.
-		add_binding_modifier(p_binding_modifiers[i]);
-	}
-}
-
-Array OpenXRInteractionProfile::get_binding_modifiers() const
-{
-	Array ret;
-	for (const Ref<OpenXRIPBindingModifier>& binding_modifier : binding_modifiers) {
-		ret.push_back(binding_modifier);
-	}
-	return ret;
 }
 
 void OpenXRInteractionProfile::add_binding_modifier(
@@ -439,12 +292,6 @@ void OpenXRInteractionProfile::remove_binding_modifier(
 
 		emit_changed();
 	}
-}
-
-OpenXRInteractionProfile::~OpenXRInteractionProfile()
-{
-	bindings.clear();
-	clear_binding_modifiers();
 }
 
 

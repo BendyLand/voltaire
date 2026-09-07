@@ -47,55 +47,6 @@ static const char* HOLE_PUNCH_SHADER_CODE =
 	"\tALBEDO = vec3(0.0, 0.0, 0.0);\n"
 	"}\n";
 
-OpenXRCompositionLayer::OpenXRCompositionLayer()
-{
-	openxr_api = OpenXRAPI::get_singleton();
-	composition_layer_extension = OpenXRCompositionLayerExtension::get_singleton();
-
-	if (openxr_api) {
-		openxr_session_running = openxr_api->is_running();
-	}
-
-	Ref<OpenXRInterface> openxr_interface = XRServer::get_singleton()->find_interface("OpenXR");
-	if (openxr_interface.is_valid()) {
-		openxr_interface->obj->connect(
-			"session_begun", callable_mp(this, &OpenXRCompositionLayer::_on_openxr_session_begun));
-		openxr_interface->obj->connect("session_stopping",
-			callable_mp(this, &OpenXRCompositionLayer::_on_openxr_session_stopping));
-	}
-
-	XRServer::get_singleton()->obj->connect(
-		"reference_frame_changed", callable_mp(this, &OpenXRCompositionLayer::update_transform));
-	XRServer::get_singleton()->obj->connect(
-		"world_origin_changed", callable_mp(this, &OpenXRCompositionLayer::update_transform));
-
-	set_process_internal(true);
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		// In the editor, create the fallback right away.
-		_create_fallback_node();
-	}
-}
-
-OpenXRCompositionLayer::~OpenXRCompositionLayer()
-{
-	Ref<OpenXRInterface> openxr_interface = XRServer::get_singleton()->find_interface("OpenXR");
-	if (openxr_interface.is_valid()) {
-		openxr_interface->obj->disconnect(
-			"session_begun", callable_mp(this, &OpenXRCompositionLayer::_on_openxr_session_begun));
-		openxr_interface->obj->disconnect("session_stopping",
-			callable_mp(this, &OpenXRCompositionLayer::_on_openxr_session_stopping));
-	}
-
-	composition_layer_nodes.erase(this);
-
-	if (composition_layer_extension && composition_layer.is_valid()) {
-		composition_layer_extension->composition_layer_free(composition_layer);
-	}
-}
-
-void OpenXRCompositionLayer::_bind_methods() {}
-
 bool OpenXRCompositionLayer::_should_use_fallback_node()
 {
 	if (Engine::get_singleton()->is_editor_hint() || openxr_api == nullptr) {
@@ -189,44 +140,6 @@ void OpenXRCompositionLayer::_on_openxr_session_stopping()
 	_clear_composition_layer();
 }
 
-void OpenXRCompositionLayer::update_transform()
-{
-	if (composition_layer_extension) {
-		XRCamera3D* ancestor_camera = _get_xrcamera3d_ancestor();
-		bool parent_is_xr_camera = Object::cast_to<XRCamera3D>(get_parent()) != nullptr;
-		bool parent_is_xr_origin = Object::cast_to<XROrigin3D>(get_parent()) != nullptr;
-		OpenXRCompositionLayerExtension::PoseSpace new_pose_space;
-
-		// Automatically set the PoseSpace to POSE_HEAD_LOCKED if layer has an XRCamera3D ancestor.
-		if (ancestor_camera) {
-			new_pose_space = OpenXRCompositionLayerExtension::PoseSpace::POSE_HEAD_LOCKED;
-		}
-		else {
-			new_pose_space = OpenXRCompositionLayerExtension::PoseSpace::POSE_WORLD_LOCKED;
-		}
-
-		Transform3D xf;
-		if (parent_is_xr_origin || parent_is_xr_camera) {
-			xf = get_transform();
-		}
-		else {
-			if (ancestor_camera) {
-				xf = ancestor_camera->get_global_transform().affine_inverse() *
-					 get_global_transform();
-			}
-			else {
-				xf = XRServer::get_singleton()->get_world_origin().affine_inverse() *
-					 get_global_transform();
-			}
-		}
-
-		// Pose space must be set first, as composition_layer_set_transform() depends on it.
-		composition_layer_extension->composition_layer_set_pose_space(
-			composition_layer, new_pose_space);
-		composition_layer_extension->composition_layer_set_transform(composition_layer, xf);
-	}
-}
-
 void OpenXRCompositionLayer::update_fallback_mesh() { should_update_fallback_mesh = true; }
 
 bool OpenXRCompositionLayer::_should_register()
@@ -245,63 +158,6 @@ bool OpenXRCompositionLayer::is_viewport_in_use(SubViewport* p_viewport)
 		}
 	}
 	return false;
-}
-
-void OpenXRCompositionLayer::set_layer_viewport(SubViewport* p_viewport)
-{
-	if (layer_viewport == p_viewport) {
-		return;
-	}
-
-	if (p_viewport != nullptr) {
-		ERR_FAIL_COND_EDMSG(is_viewport_in_use(p_viewport),
-			RTR("Cannot use the same SubViewport with multiple OpenXR composition layers. Clear it "
-				"from its current layer first."));
-	}
-	if (use_android_surface) {
-		ERR_FAIL_COND_MSG(
-			p_viewport != nullptr, RTR("Cannot set SubViewport on an OpenXR composition layer when "
-									   "using an Android surface."));
-	}
-
-	if (layer_viewport) {
-		layer_viewport->disconnect(
-			"size_changed", callable_mp(this, &OpenXRCompositionLayer::_viewport_size_changed));
-	}
-
-	layer_viewport = p_viewport;
-	if (_should_register()) {
-		_setup_composition_layer();
-	}
-
-	if (layer_viewport) {
-		layer_viewport->connect(
-			"size_changed", callable_mp(this, &OpenXRCompositionLayer::_viewport_size_changed));
-
-		SubViewport::UpdateMode update_mode = layer_viewport->get_update_mode();
-		if (update_mode == SubViewport::UPDATE_WHEN_VISIBLE ||
-			update_mode == SubViewport::UPDATE_WHEN_PARENT_VISIBLE) {
-			WARN_PRINT_ONCE(
-				"OpenXR composition layers cannot use SubViewports with UPDATE_WHEN_VISIBLE or "
-				"UPDATE_WHEN_PARENT_VISIBLE. Switching to UPDATE_ALWAYS.");
-			layer_viewport->set_update_mode(SubViewport::UPDATE_ALWAYS);
-		}
-	}
-
-	if (fallback) {
-		_reset_fallback_material();
-	}
-	if (openxr_session_running && composition_layer_extension && is_visible_in_tree() &&
-		is_inside_tree() && is_natively_supported()) {
-		if (layer_viewport) {
-			composition_layer_extension->composition_layer_set_viewport(
-				composition_layer, layer_viewport->get_viewport_rid(), layer_viewport->get_size());
-		}
-		else {
-			composition_layer_extension->composition_layer_set_viewport(
-				composition_layer, RID(), Size2i());
-		}
-	}
 }
 
 void OpenXRCompositionLayer::set_use_android_surface(bool p_use_android_surface)
@@ -330,8 +186,6 @@ void OpenXRCompositionLayer::set_use_android_surface(bool p_use_android_surface)
 				composition_layer, false, Size2i());
 		}
 	}
-
-	this->obj->notify_property_list_changed();
 }
 
 bool OpenXRCompositionLayer::get_use_android_surface() const { return use_android_surface; }
@@ -669,152 +523,6 @@ void OpenXRCompositionLayer::_reset_fallback_material()
 	else {
 		fallback->set_surface_override_material(0, Ref<Material>());
 	}
-}
-
-void OpenXRCompositionLayer::_notification(int p_what)
-{
-	switch (p_what) {
-	case Object::NOTIFICATION_POSTINITIALIZE: {
-		composition_layer_nodes.push_back(this);
-
-		for (OpenXRExtensionWrapper* extension : OpenXRAPI::get_registered_extension_wrappers()) {
-			extension_property_values.merge(
-				extension->get_viewport_composition_layer_extension_property_defaults());
-		}
-		if (composition_layer_extension) {
-			composition_layer_extension->composition_layer_set_extension_property_values(
-				composition_layer, extension_property_values);
-		}
-	} break;
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		if (fallback) {
-			if (should_update_fallback_mesh) {
-				fallback->set_mesh(_create_fallback_mesh());
-				_reset_fallback_material();
-				should_update_fallback_mesh = false;
-			}
-		}
-	} break;
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (is_natively_supported() && openxr_session_running && is_inside_tree()) {
-			if (is_visible_in_tree()) {
-				_setup_composition_layer();
-				update_transform();
-			}
-			else {
-				_clear_composition_layer();
-			}
-		}
-		update_configuration_warnings();
-	} break;
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED:
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		update_transform();
-		update_configuration_warnings();
-	} break;
-	case NOTIFICATION_ENTER_TREE: {
-		if (layer_viewport && is_viewport_in_use(layer_viewport)) {
-			_clear_composition_layer();
-		}
-		else if (openxr_session_running && is_visible_in_tree()) {
-			_setup_composition_layer();
-		}
-		update_transform();
-	} break;
-	case NOTIFICATION_PARENTED: {
-		// Enables NOTIFICATION_LOCAL_TRANSFORM_CHANGED when XROrigin3D or XRCamera3D are the
-		// parents since that notification happens less frequently than
-		// NOTIFICATION_TRANSFORM_CHANGED.
-		bool parent_is_xr_camera = Object::cast_to<XRCamera3D>(get_parent()) != nullptr;
-		bool parent_is_xr_origin = Object::cast_to<XROrigin3D>(get_parent()) != nullptr;
-		bool enable_local_transform_notification = parent_is_xr_camera || parent_is_xr_origin;
-		set_notify_local_transform(enable_local_transform_notification);
-		set_notify_transform(!enable_local_transform_notification);
-
-		update_transform();
-	} break;
-	case NOTIFICATION_EXIT_TREE: {
-		// This will clean up existing resources.
-		_clear_composition_layer();
-	} break;
-	}
-}
-
-void OpenXRCompositionLayer::_get_property_list(List<PropertyInfo>* p_property_list) const
-{
-	List<PropertyInfo> extension_properties;
-	for (OpenXRExtensionWrapper* extension : OpenXRAPI::get_registered_extension_wrappers()) {
-		extension->get_viewport_composition_layer_extension_properties(&extension_properties);
-	}
-
-	for (const PropertyInfo& pinfo : extension_properties) {
-		StringName prop_name = pinfo.name;
-		if (!String(prop_name).contains_char('/')) {
-			WARN_PRINT_ONCE(vformat("Discarding OpenXRCompositionLayer property name '%s' from "
-									"extension because it doesn't contain a '/'."));
-			continue;
-		}
-		p_property_list->push_back(pinfo);
-	}
-}
-
-bool OpenXRCompositionLayer::_get(const StringName& p_property, Variant& r_value) const
-{
-	if (extension_property_values.has(p_property)) {
-		r_value = extension_property_values[p_property];
-		return true;
-	}
-
-	return false;
-}
-
-bool OpenXRCompositionLayer::_set(const StringName& p_property, const Variant& p_value)
-{
-	extension_property_values[p_property] = p_value;
-
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_extension_property_values(
-			composition_layer, extension_property_values);
-	}
-
-	return true;
-}
-
-void OpenXRCompositionLayer::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "layer_viewport") {
-		if (use_android_surface) {
-			p_property.usage &= ~PROPERTY_USAGE_EDITOR;
-		}
-		else {
-			p_property.usage |= PROPERTY_USAGE_EDITOR;
-		}
-	}
-	else if (p_property.name == "android_surface_size") {
-		if (use_android_surface) {
-			p_property.usage |= PROPERTY_USAGE_EDITOR;
-		}
-		else {
-			p_property.usage &= ~PROPERTY_USAGE_EDITOR;
-		}
-	}
-}
-
-XRCamera3D* OpenXRCompositionLayer::_get_xrcamera3d_ancestor() const
-{
-	Node* parent = get_parent();
-	while (parent != nullptr) {
-		XRCamera3D* camera = Object::cast_to<XRCamera3D>(parent);
-		if (camera != nullptr) {
-			return camera;
-		}
-
-		parent = parent->get_parent();
-	}
-	return nullptr;
 }
 
 PackedStringArray OpenXRCompositionLayer::get_configuration_warnings() const

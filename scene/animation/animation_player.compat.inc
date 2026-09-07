@@ -67,15 +67,6 @@ void AnimationPlayer::_seek_bind_compat_80813(double p_time, bool p_update)
 	seek(p_time, p_update, false);
 }
 
-Vector<String> AnimationPlayer::_get_queue_bind_compat_110767()
-{
-	Vector<String> queue;
-	for (const Variant& E : get_queue()) {
-		queue.push_back(E);
-	}
-	return queue;
-}
-
 String AnimationPlayer::_get_current_animation_bind_compat_110767() const
 {
 	return get_current_animation();

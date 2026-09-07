@@ -38,64 +38,9 @@
 #include "servers/rendering/rendering_server.h"
 #include "voxel_gi.h"
 
-void VoxelGIData::_set_data(const Dictionary& p_data)
-{
-	ERR_FAIL_COND(!p_data.has("bounds"));
-	ERR_FAIL_COND(!p_data.has("octree_size"));
-	ERR_FAIL_COND(!p_data.has("octree_cells"));
-	ERR_FAIL_COND(!p_data.has("octree_data"));
-	ERR_FAIL_COND(!p_data.has("octree_df") && !p_data.has("octree_df_png"));
-	ERR_FAIL_COND(!p_data.has("level_counts"));
-	ERR_FAIL_COND(!p_data.has("to_cell_xform"));
 
-	AABB bounds_new = p_data["bounds"];
-	Vector3 octree_size_new = p_data["octree_size"];
-	Vector<uint8_t> octree_cells = p_data["octree_cells"];
-	Vector<uint8_t> octree_data = p_data["octree_data"];
 
-	Vector<uint8_t> octree_df;
-	if (p_data.has("octree_df")) {
-		octree_df = p_data["octree_df"];
-	}
-	else if (p_data.has("octree_df_png")) {
-		Vector<uint8_t> octree_df_png = p_data["octree_df_png"];
-		Ref<Image> img;
-		img.instantiate();
-		Error err = img->load_png_from_buffer(octree_df_png);
-		ERR_FAIL_COND(err != OK);
-		ERR_FAIL_COND(img->get_format() != Image::FORMAT_L8);
-		octree_df = img->get_data();
-	}
-	Vector<int> octree_levels = p_data["level_counts"];
-	Transform3D to_cell_xform_new = p_data["to_cell_xform"];
 
-	allocate(to_cell_xform_new, bounds_new, octree_size_new, octree_cells, octree_data, octree_df,
-		octree_levels);
-}
-
-Dictionary VoxelGIData::_get_data() const
-{
-	Dictionary d;
-	d["bounds"] = get_bounds();
-	Vector3i otsize = get_octree_size();
-	d["octree_size"] = Vector3(otsize);
-	d["octree_cells"] = get_octree_cells();
-	d["octree_data"] = get_data_cells();
-	if (otsize != Vector3i()) {
-		Ref<Image> img = Image::create_from_data(
-			otsize.x * otsize.y, otsize.z, false, Image::FORMAT_L8, get_distance_field());
-		Vector<uint8_t> df_png = img->save_png_to_buffer();
-		ERR_FAIL_COND_V(df_png.is_empty(), Dictionary());
-		d["octree_df_png"] = df_png;
-	}
-	else {
-		d["octree_df"] = Vector<uint8_t>();
-	}
-
-	d["level_counts"] = get_level_counts();
-	d["to_cell_xform"] = get_to_cell_xform();
-	return d;
-}
 
 void VoxelGIData::allocate(const Transform3D& p_to_cell_xform, const AABB& p_aabb,
 	const Vector3& p_octree_size, const Vector<uint8_t>& p_octree_cells,
@@ -193,28 +138,6 @@ bool VoxelGIData::is_using_two_bounces() const { return use_two_bounces; }
 
 RID VoxelGIData::get_rid() const { return probe; }
 
-void VoxelGIData::_bind_methods() {}
-
-#ifndef DISABLE_DEPRECATED
-bool VoxelGI::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
-		return true;
-	}
-	return false;
-}
-
-bool VoxelGI::_get(const StringName& p_name, Variant& r_property) const
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		r_property = size / 2;
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
-
 VoxelGIData::VoxelGIData() { probe = RS::get_singleton()->voxel_gi_create(); }
 
 VoxelGIData::~VoxelGIData()
@@ -274,81 +197,9 @@ void VoxelGI::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attrib
 
 Ref<CameraAttributes> VoxelGI::get_camera_attributes() const { return camera_attributes; }
 
-static bool is_node_voxel_bakeable(Node3D* p_node)
-{
-	if (!p_node->is_visible_in_tree()) {
-		return false;
-	}
 
-	GeometryInstance3D* geometry = Object::cast_to<GeometryInstance3D>(p_node);
-	if (geometry != nullptr && geometry->get_gi_mode() != GeometryInstance3D::GI_MODE_STATIC) {
-		return false;
-	}
-	return true;
-}
 
-void VoxelGI::_find_meshes(Node* p_at_node, List<PlotMesh>& plot_meshes)
-{
-	MeshInstance3D* mi = Object::cast_to<MeshInstance3D>(p_at_node);
-	if (mi && is_node_voxel_bakeable(mi)) {
-		Ref<Mesh> mesh = mi->get_mesh();
-		if (mesh.is_valid()) {
-			AABB aabb = mesh->get_aabb();
 
-			Transform3D xf = get_global_transform().affine_inverse() * mi->get_global_transform();
-
-			if (AABB(-size / 2, size).intersects(xf.xform(aabb))) {
-				PlotMesh pm;
-				pm.local_xform = xf;
-				pm.mesh = mesh;
-				for (int i = 0; i < mesh->get_surface_count(); i++) {
-					pm.instance_materials.push_back(mi->get_surface_override_material(i));
-				}
-				pm.override_material = mi->get_material_override();
-				plot_meshes.push_back(pm);
-			}
-		}
-	}
-
-	Node3D* s = Object::cast_to<Node3D>(p_at_node);
-	if (s) {
-		if (is_node_voxel_bakeable(s)) {
-			Array meshes;
-			MultiMeshInstance3D* multi_mesh = Object::cast_to<MultiMeshInstance3D>(p_at_node);
-			if (multi_mesh) {
-				meshes = multi_mesh->get_meshes();
-			}
-			else {
-				meshes = p_at_node->obj->call("get_meshes");
-			}
-
-			for (int i = 0; i < meshes.size(); i += 2) {
-				Transform3D mxf = meshes[i];
-				Ref<Mesh> mesh = meshes[i + 1];
-				if (mesh.is_null()) {
-					continue;
-				}
-
-				AABB aabb = mesh->get_aabb();
-
-				Transform3D xf =
-					get_global_transform().affine_inverse() * (s->get_global_transform() * mxf);
-
-				if (AABB(-size / 2, size).intersects(xf.xform(aabb))) {
-					PlotMesh pm;
-					pm.local_xform = xf;
-					pm.mesh = mesh;
-					plot_meshes.push_back(pm);
-				}
-			}
-		}
-	}
-
-	for (int i = 0; i < p_at_node->get_child_count(); i++) {
-		Node* child = p_at_node->get_child(i);
-		_find_meshes(child, plot_meshes);
-	}
-}
 
 VoxelGI::BakeBeginFunc VoxelGI::bake_begin_function = nullptr;
 VoxelGI::BakeStepFunc VoxelGI::bake_step_function = nullptr;
@@ -397,106 +248,6 @@ Vector3i VoxelGI::get_estimated_cell_size() const
 	return Vector3i(axis_cell_size[0], axis_cell_size[1], axis_cell_size[2]);
 }
 
-void VoxelGI::bake(Node* p_from_node, bool p_create_visual_debug)
-{
-	static const int subdiv_value[SUBDIV_MAX] = {6, 7, 8, 9};
-
-	p_from_node = p_from_node ? p_from_node : get_parent();
-	ERR_FAIL_NULL(p_from_node);
-
-	float exposure_normalization = _get_camera_exposure_normalization();
-
-	Voxelizer baker;
-
-	baker.begin_bake(subdiv_value[subdiv], AABB(-size / 2, size), exposure_normalization);
-
-	List<PlotMesh> mesh_list;
-
-	_find_meshes(p_from_node, mesh_list);
-
-	if (bake_begin_function) {
-		bake_begin_function();
-	}
-
-	Voxelizer::BakeStepFunc voxelizer_step_func =
-		bake_step_function != nullptr ? voxelizer_plot_bake_step_function : nullptr;
-
-	voxelizer_plot_bake_total = voxelizer_plot_bake_base = 0;
-	for (PlotMesh& E : mesh_list) {
-		voxelizer_plot_bake_total += baker.get_bake_steps(E.mesh);
-	}
-	for (PlotMesh& E : mesh_list) {
-		if (baker.plot_mesh(E.local_xform, E.mesh, E.instance_materials, E.override_material,
-				voxelizer_step_func) != Voxelizer::BAKE_RESULT_OK) {
-			baker.end_bake();
-			if (bake_end_function) {
-				bake_end_function();
-			}
-			return;
-		}
-		voxelizer_plot_bake_base += baker.get_bake_steps(E.mesh);
-	}
-	if (bake_step_function) {
-		bake_step_function(500, RTR("Finishing Plot"));
-	}
-
-	baker.end_bake();
-
-	// create the data for rendering server
-
-	if (p_create_visual_debug) {
-		MultiMeshInstance3D* mmi = memnew(MultiMeshInstance3D);
-		mmi->set_multimesh(baker.create_debug_multimesh());
-		add_child(mmi, true);
-#ifdef TOOLS_ENABLED
-		if (is_inside_tree() && get_tree()->get_edited_scene_root() == this) {
-			mmi->set_owner(this);
-		}
-		else {
-			mmi->set_owner(get_owner());
-		}
-#else
-		mmi->set_owner(get_owner());
-#endif
-
-	}
-	else {
-		Ref<VoxelGIData> probe_data_new = get_probe_data();
-
-		if (probe_data_new.is_null()) {
-			probe_data_new.instantiate();
-		}
-
-		if (bake_step_function) {
-			bake_step_function(500, RTR("Generating Distance Field"));
-		}
-
-		voxelizer_step_func =
-			bake_step_function != nullptr ? voxelizer_sdf_bake_step_function : nullptr;
-
-		Vector<uint8_t> df;
-		if (baker.get_sdf_3d_image(df, voxelizer_step_func) == Voxelizer::BAKE_RESULT_OK) {
-			RS::get_singleton()->voxel_gi_set_baked_exposure_normalization(
-				probe_data_new->get_rid(), exposure_normalization);
-
-			probe_data_new->allocate(baker.get_to_cell_space_xform(), AABB(-size / 2, size),
-				baker.get_voxel_gi_octree_size(), baker.get_voxel_gi_octree_cells(),
-				baker.get_voxel_gi_data_cells(), df, baker.get_voxel_gi_level_cell_count());
-
-			set_probe_data(probe_data_new);
-#ifdef TOOLS_ENABLED
-			probe_data_new->obj->set_edited(true); // so it gets saved
-#endif
-		}
-	}
-
-	if (bake_end_function) {
-		bake_end_function();
-	}
-
-	this->obj->notify_property_list_changed(); // bake property may have changed
-}
-
 void VoxelGI::_debug_bake() { bake(nullptr, true); }
 
 float VoxelGI::_get_camera_exposure_normalization()
@@ -530,8 +281,6 @@ PackedStringArray VoxelGI::get_configuration_warnings() const
 	}
 	return warnings;
 }
-
-void VoxelGI::_bind_methods() {}
 
 VoxelGI::VoxelGI()
 {

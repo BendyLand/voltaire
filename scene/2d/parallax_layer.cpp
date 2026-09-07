@@ -33,49 +33,9 @@
 #include "scene/2d/parallax_background.h"
 #include "servers/rendering/rendering_server.h"
 
-void ParallaxLayer::set_motion_scale(const Size2& p_scale)
-{
-	motion_scale = p_scale;
-
-	ParallaxBackground* pb = Object::cast_to<ParallaxBackground>(get_parent());
-	if (pb && is_inside_tree()) {
-		Vector2 final_ofs = pb->get_final_offset();
-		real_t scroll_scale = pb->get_scroll_scale();
-		set_base_offset_and_scale(final_ofs, scroll_scale);
-	}
-}
-
 Size2 ParallaxLayer::get_motion_scale() const { return motion_scale; }
 
-void ParallaxLayer::set_motion_offset(const Size2& p_offset)
-{
-	motion_offset = p_offset;
-
-	ParallaxBackground* pb = Object::cast_to<ParallaxBackground>(get_parent());
-	if (pb && is_inside_tree()) {
-		Vector2 final_ofs = pb->get_final_offset();
-		real_t scroll_scale = pb->get_scroll_scale();
-		set_base_offset_and_scale(final_ofs, scroll_scale);
-	}
-}
-
 Size2 ParallaxLayer::get_motion_offset() const { return motion_offset; }
-
-void ParallaxLayer::_update_mirroring()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	ParallaxBackground* pb = Object::cast_to<ParallaxBackground>(get_parent());
-	if (pb) {
-		RID c = pb->get_canvas();
-		RID ci = get_canvas_item();
-		Point2 mirror_scale = mirroring * orig_scale;
-		RenderingServer::get_singleton()->canvas_set_item_mirroring(c, ci, mirror_scale);
-		RenderingServer::get_singleton()->canvas_item_set_interpolated(ci, false);
-	}
-}
 
 void ParallaxLayer::set_mirroring(const Size2& p_mirroring)
 {
@@ -132,20 +92,6 @@ void ParallaxLayer::set_base_offset_and_scale(const Point2& p_offset, real_t p_s
 
 	_update_mirroring();
 }
-
-PackedStringArray ParallaxLayer::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node2D::get_configuration_warnings();
-
-	if (!Object::cast_to<ParallaxBackground>(get_parent())) {
-		warnings.push_back(
-			RTR("ParallaxLayer node only works when set as child of a ParallaxBackground node."));
-	}
-
-	return warnings;
-}
-
-void ParallaxLayer::_bind_methods() {}
 
 ParallaxLayer::ParallaxLayer()
 {

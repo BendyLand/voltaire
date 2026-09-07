@@ -30,17 +30,16 @@
 
 #pragma once
 
+#include "core/types.h"
 
-class UPNPDevice : public RefCounted {
-	VLTRCLASS(UPNPDevice, RefCounted);
-
+class UPNPDevice : public RefCounted
+{
 protected:
-	static void _bind_methods();
-
-	static UPNPDevice *(*_create)(bool p_notify_postinitialize);
+	static UPNPDevice* (*_create)(bool p_notify_postinitialize);
 
 public:
-	enum IGDStatus {
+	enum IGDStatus
+	{
 		IGD_STATUS_OK,
 		IGD_STATUS_HTTP_ERROR,
 		IGD_STATUS_HTTP_EMPTY,
@@ -53,26 +52,27 @@ public:
 		IGD_STATUS_UNKNOWN_ERROR,
 	};
 
-	static UPNPDevice *create(bool p_notify_postinitialize = true) {
+	static UPNPDevice* create(bool p_notify_postinitialize = true)
+	{
 		if (!_create) {
 			return nullptr;
 		}
 		return _create(p_notify_postinitialize);
 	}
 
-	virtual void set_description_url(const String &url) = 0;
+	virtual void set_description_url(const String& url) = 0;
 	virtual String get_description_url() const = 0;
 
-	virtual void set_service_type(const String &type) = 0;
+	virtual void set_service_type(const String& type) = 0;
 	virtual String get_service_type() const = 0;
 
-	virtual void set_igd_control_url(const String &url) = 0;
+	virtual void set_igd_control_url(const String& url) = 0;
 	virtual String get_igd_control_url() const = 0;
 
-	virtual void set_igd_service_type(const String &type) = 0;
+	virtual void set_igd_service_type(const String& type) = 0;
 	virtual String get_igd_service_type() const = 0;
 
-	virtual void set_igd_our_addr(const String &addr) = 0;
+	virtual void set_igd_our_addr(const String& addr) = 0;
 	virtual String get_igd_our_addr() const = 0;
 
 	virtual void set_igd_status(IGDStatus status) = 0;
@@ -80,11 +80,13 @@ public:
 
 	virtual bool is_valid_gateway() const = 0;
 	virtual String query_external_address() const = 0;
-	virtual int add_port_mapping(int port, int port_internal = 0, String desc = "", String proto = "UDP", int duration = 0) const = 0;
+	virtual int add_port_mapping(int port, int port_internal = 0, String desc = "",
+		String proto = "UDP", int duration = 0) const = 0;
 	virtual int delete_port_mapping(int port, String proto = "UDP") const = 0;
 
 	UPNPDevice() {}
+
 	virtual ~UPNPDevice() {}
 };
 
-VARIANT_ENUM_CAST(UPNPDevice::IGDStatus)
+

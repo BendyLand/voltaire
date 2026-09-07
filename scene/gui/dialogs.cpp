@@ -29,13 +29,10 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "dialogs.compat.inc"
 #include "dialogs.h"
 #include "scene/gui/line_edit.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
-
-// AcceptDialog
 
 void AcceptDialog::_input_from_window(const Ref<InputEvent>& p_event)
 {
@@ -52,82 +49,6 @@ void AcceptDialog::_parent_focused()
 	}
 }
 
-void AcceptDialog::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_DIALOG);
-	} break;
-	case NOTIFICATION_POST_ENTER_TREE: {
-		if (is_visible()) {
-			get_ok_button()->grab_focus();
-		}
-	} break;
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (is_visible()) {
-			if (get_ok_button()->is_inside_tree()) {
-				get_ok_button()->grab_focus();
-			}
-			_update_child_rects();
-
-			parent_visible = get_parent_visible_window();
-			if (parent_visible) {
-				parent_visible->connect(SceneStringName(focus_entered),
-					callable_mp(this, &AcceptDialog::_parent_focused));
-			}
-		}
-		else {
-			popped_up = false;
-			if (parent_visible) {
-				parent_visible->disconnect(SceneStringName(focus_entered),
-					callable_mp(this, &AcceptDialog::_parent_focused));
-				parent_visible = nullptr;
-			}
-		}
-	} break;
-
-	case NOTIFICATION_WM_WINDOW_FOCUS_IN: {
-		if (!is_in_edited_scene_root()) {
-			if (has_focus()) {
-				popped_up = true;
-			}
-		}
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		bg_panel->add_theme_style_override(SceneStringName(panel), theme_cache.panel_style.ptr());
-
-		child_controls_changed();
-		if (is_visible()) {
-			_update_child_rects();
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		if (parent_visible) {
-			parent_visible->disconnect(
-				SceneStringName(focus_entered), callable_mp(this, &AcceptDialog::_parent_focused));
-			parent_visible = nullptr;
-		}
-	} break;
-
-	case NOTIFICATION_READY:
-	case NOTIFICATION_WM_SIZE_CHANGED: {
-		if (is_visible()) {
-			_update_child_rects();
-		}
-	} break;
-
-	case NOTIFICATION_WM_CLOSE_REQUEST: {
-		_cancel_pressed();
-	} break;
-	}
-}
-
 void AcceptDialog::_text_submitted(const String& p_text)
 {
 	if (get_ok_button() && get_ok_button()->is_disabled()) {
@@ -140,39 +61,6 @@ void AcceptDialog::_post_popup()
 {
 	Window::_post_popup();
 	popped_up = true;
-}
-
-void AcceptDialog::_ok_pressed()
-{
-	if (hide_on_ok) {
-		popped_up = false;
-		set_visible(false);
-	}
-	ok_pressed();
-	this->obj->emit_signal(SceneStringName(confirmed));
-	set_input_as_handled();
-}
-
-void AcceptDialog::_cancel_pressed()
-{
-	popped_up = false;
-	Window* parent_window = parent_visible;
-	if (parent_visible) {
-		parent_visible->disconnect(
-			SceneStringName(focus_entered), callable_mp(this, &AcceptDialog::_parent_focused));
-		parent_visible = nullptr;
-	}
-
-	callable_mp((Window*)this, &Window::hide).call_deferred();
-
-	this->obj->emit_signal(SNAME("canceled"));
-
-	cancel_pressed();
-
-	if (parent_window) {
-		// parent_window->grab_focus();
-	}
-	set_input_as_handled();
 }
 
 String AcceptDialog::get_text() const { return message_label->get_text(); }
@@ -218,63 +106,6 @@ void AcceptDialog::set_ok_button_text(String p_ok_button_text)
 
 String AcceptDialog::get_ok_button_text() const { return ok_text; }
 
-void AcceptDialog::register_text_enter(LineEdit* p_line_edit)
-{
-	ERR_FAIL_NULL(p_line_edit);
-	p_line_edit->connect(
-		SceneStringName(text_submitted), callable_mp(this, &AcceptDialog::_text_submitted));
-}
-
-void AcceptDialog::_update_child_rects()
-{
-	Size2 dlg_size = Vector2(get_size()) / get_content_scale_factor();
-	float h_margins = theme_cache.panel_style->get_margin(SIDE_LEFT) +
-					  theme_cache.panel_style->get_margin(SIDE_RIGHT);
-	float v_margins = theme_cache.panel_style->get_margin(SIDE_TOP) +
-					  theme_cache.panel_style->get_margin(SIDE_BOTTOM);
-
-	// Fill the entire size of the window with the background.
-	bg_panel->set_position(Point2());
-	bg_panel->set_size(dlg_size);
-
-	for (int i = 0; i < buttons_hbox->get_child_count(); i++) {
-		Button* b = Object::cast_to<Button>(buttons_hbox->get_child(i));
-		if (!b) {
-			continue;
-		}
-
-		b->set_custom_minimum_size(
-			Size2(theme_cache.buttons_min_width, theme_cache.buttons_min_height));
-	}
-
-	// Place the buttons from the bottom edge to their minimum required size.
-	Size2 buttons_minsize = buttons_hbox->get_bound_minimum_size();
-	Size2 buttons_size = Size2(dlg_size.x - h_margins, buttons_minsize.y);
-	Point2 buttons_position = Point2(theme_cache.panel_style->get_margin(SIDE_LEFT),
-		dlg_size.y - theme_cache.panel_style->get_margin(SIDE_BOTTOM) - buttons_size.y);
-	buttons_hbox->set_position(buttons_position);
-	buttons_hbox->set_size(buttons_size);
-
-	// Place the content from the top to fill the rest of the space (minus the separation).
-	Point2 content_position = Point2(theme_cache.panel_style->get_margin(SIDE_LEFT),
-		theme_cache.panel_style->get_margin(SIDE_TOP));
-	Size2 content_size = Size2(dlg_size.x - h_margins,
-		dlg_size.y - v_margins - buttons_size.y - theme_cache.buttons_separation);
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = Object::cast_to<Control>(get_child(i));
-		if (!c) {
-			continue;
-		}
-		if (c == buttons_hbox || c == bg_panel || c->is_set_as_top_level()) {
-			continue;
-		}
-
-		c->set_position(content_position);
-		c->set_size(content_size);
-	}
-}
-
 void AcceptDialog::_update_ok_text()
 {
 	String prev_text = ok_button->get_text();
@@ -295,215 +126,9 @@ void AcceptDialog::_update_ok_text()
 	}
 }
 
-Size2 AcceptDialog::_get_contents_minimum_size() const
-{
-	// First, we then iterate over the label and any other custom controls
-	// to try and find the size that encompasses all content.
-	Size2 content_minsize;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = Object::cast_to<Control>(get_child(i));
-		if (!c) {
-			continue;
-		}
-
-		// Buttons will be included afterwards.
-		// The panel only displays the stylebox and doesn't contribute to the size.
-		if (c == buttons_hbox || c == bg_panel || c->is_set_as_top_level()) {
-			continue;
-		}
-
-		Size2 child_minsize = c->get_bound_minimum_size();
-		content_minsize = child_minsize.max(content_minsize);
-	}
-
-	// Then we add buttons. Horizontally we're interested in whichever
-	// value is the biggest. Vertically buttons add to the overall size.
-	Size2 buttons_minsize = buttons_hbox->get_bound_minimum_size();
-	content_minsize.x = MAX(buttons_minsize.x, content_minsize.x);
-	content_minsize.y += buttons_minsize.y;
-	// Plus there is a separation size added on top.
-	content_minsize.y += theme_cache.buttons_separation;
-
-	// Then we take the background panel as it provides the offsets,
-	// which are always added to the minimum size.
-	if (theme_cache.panel_style.is_valid()) {
-		content_minsize += theme_cache.panel_style->get_minimum_size();
-	}
-
-	return content_minsize;
-}
-
-void AcceptDialog::set_default_ok_text(const String& p_text)
-{
-	if (default_ok_text == p_text) {
-		return;
-	}
-	default_ok_text = p_text;
-	_update_ok_text();
-	this->obj->notify_property_list_changed();
-}
-
-void AcceptDialog::_custom_action(const String& p_action)
-{
-	this->obj->emit_signal(SNAME("custom_action"), p_action);
-	custom_action(p_action);
-}
-
-void AcceptDialog::_button_visibility_changed(Button* button)
-{
-	Control* bound_spacer = Object::cast_to<Control>(button->get_meta("__bound_spacer"));
-	if (bound_spacer) {
-		bound_spacer->set_visible(button->is_visible());
-	}
-}
-
-Button* AcceptDialog::add_button(const String& p_text, bool p_right, const String& p_action)
-{
-	Button* button = memnew(Button);
-	button->set_text(p_text);
-
-	Control* bound_spacer;
-	if (p_right) {
-		buttons_hbox->add_child(button);
-		bound_spacer = buttons_hbox->add_spacer();
-	}
-	else {
-		buttons_hbox->add_child(button);
-		buttons_hbox->move_child(button, 0);
-		bound_spacer = buttons_hbox->add_spacer(true);
-	}
-	button->set_meta("__bound_spacer", bound_spacer);
-
-	button->connect(SceneStringName(visibility_changed),
-		callable_mp(this, &AcceptDialog::_button_visibility_changed).bind(button));
-
-	child_controls_changed();
-	if (is_visible()) {
-		_update_child_rects();
-	}
-
-	if (!p_action.is_empty()) {
-		button->connect(SceneStringName(pressed),
-			callable_mp(this, &AcceptDialog::_custom_action).bind(p_action));
-	}
-
-	return button;
-}
-
-Button* AcceptDialog::add_cancel_button(const String& p_cancel)
-{
-	String c = p_cancel;
-	if (p_cancel.is_empty()) {
-		c = ETR("Cancel");
-	}
-
-	Button* b = swap_cancel_ok ? add_button(c, true) : add_button(c);
-
-	b->connect(SceneStringName(pressed), callable_mp(this, &AcceptDialog::_cancel_pressed));
-
-	return b;
-}
-
-void AcceptDialog::remove_button(Button* p_button)
-{
-	ERR_FAIL_NULL(p_button);
-	ERR_FAIL_COND_MSG(p_button->get_parent() != buttons_hbox,
-		vformat(
-			"Cannot remove button %s as it does not belong to this dialog.", p_button->get_name()));
-	ERR_FAIL_COND_MSG(p_button == ok_button, "Cannot remove dialog's OK button.");
-
-	Control* bound_spacer = Object::cast_to<Control>(p_button->get_meta("__bound_spacer"));
-	if (bound_spacer) {
-		ERR_FAIL_COND_MSG(bound_spacer->get_parent() != buttons_hbox,
-			vformat(
-				"Cannot remove button %s as its associated spacer does not belong to this dialog.",
-				p_button->get_name()));
-	}
-
-	p_button->disconnect(SceneStringName(visibility_changed),
-		callable_mp(this, &AcceptDialog::_button_visibility_changed));
-	if (p_button->is_connected(
-			SceneStringName(pressed), callable_mp(this, &AcceptDialog::_custom_action))) {
-		p_button->disconnect(
-			SceneStringName(pressed), callable_mp(this, &AcceptDialog::_custom_action));
-	}
-	if (p_button->is_connected(
-			SceneStringName(pressed), callable_mp(this, &AcceptDialog::_cancel_pressed))) {
-		p_button->disconnect(
-			SceneStringName(pressed), callable_mp(this, &AcceptDialog::_cancel_pressed));
-	}
-
-	if (bound_spacer) {
-		buttons_hbox->remove_child(bound_spacer);
-		p_button->remove_meta("__bound_spacer");
-		bound_spacer->queue_free();
-	}
-	buttons_hbox->remove_child(p_button);
-
-	child_controls_changed();
-	if (is_visible()) {
-		_update_child_rects();
-	}
-}
-
-void AcceptDialog::_bind_methods() {}
-
-void AcceptDialog::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "ok_button_text") {
-		p_property.hint = PROPERTY_HINT_PLACEHOLDER_TEXT;
-		p_property.hint_string = default_ok_text;
-	}
-}
-
 void AcceptDialog::set_swap_cancel_ok(bool p_swap) { swap_cancel_ok = p_swap; }
 
-AcceptDialog::AcceptDialog()
-{
-	set_wrap_controls(true);
-	set_visible(false);
-	set_transient(true);
-	set_exclusive(true);
-	set_clamp_to_embedder(true);
-	set_keep_title_visible(true);
-
-	set_flag(FLAG_MINIMIZE_DISABLED, true);
-	set_flag(FLAG_MAXIMIZE_DISABLED, true);
-
-	bg_panel = memnew(Panel);
-	add_child(bg_panel, false, INTERNAL_MODE_FRONT);
-
-	buttons_hbox = memnew(HBoxContainer);
-
-	message_label = memnew(Label);
-	message_label->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-	message_label->set_anchor(SIDE_RIGHT, Control::ANCHOR_END);
-	message_label->set_anchor(SIDE_BOTTOM, Control::ANCHOR_END);
-	add_child(message_label, false, INTERNAL_MODE_FRONT);
-
-	add_child(buttons_hbox, false, INTERNAL_MODE_BACK);
-
-	buttons_hbox->add_spacer();
-	ok_button = memnew(Button);
-	set_default_ok_text(ETR("OK"));
-	buttons_hbox->add_child(ok_button);
-	// Ensure hiding OK button will hide one of the initial spacers.
-	Control* bound_spacer = buttons_hbox->add_spacer();
-	ok_button->set_meta("__bound_spacer", bound_spacer);
-	ok_button->connect(SceneStringName(visibility_changed),
-		callable_mp(this, &AcceptDialog::_button_visibility_changed).bind(ok_button));
-
-	ok_button->connect(SceneStringName(pressed), callable_mp(this, &AcceptDialog::_ok_pressed));
-
-	set_title(ETR("Alert!"));
-}
-
 AcceptDialog::~AcceptDialog() {}
-
-// ConfirmationDialog
 
 void ConfirmationDialog::set_cancel_button_text(String p_cancel_button_text)
 {
@@ -511,8 +136,6 @@ void ConfirmationDialog::set_cancel_button_text(String p_cancel_button_text)
 }
 
 String ConfirmationDialog::get_cancel_button_text() const { return cancel->get_text(); }
-
-void ConfirmationDialog::_bind_methods() {}
 
 Button* ConfirmationDialog::get_cancel_button() { return cancel; }
 

@@ -30,153 +30,6 @@
 
 #include "bone_constraint_3d.h"
 
-bool BoneConstraint3D::_set(const StringName& p_path, const Variant& p_value)
-{
-	String path = p_path;
-
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
-
-		if (what == "amount") {
-			set_amount(which, p_value);
-		}
-		else if (what == "reference_type") {
-			set_reference_type(which, static_cast<ReferenceType>((int)p_value));
-		}
-		else if (what == "apply_bone_name") {
-			set_apply_bone_name(which, p_value);
-		}
-		else if (what == "reference_bone_name") {
-			set_reference_bone_name(which, p_value);
-		}
-		else if (what == "apply_bone") {
-			set_apply_bone(which, p_value);
-		}
-		else if (what == "reference_bone") {
-			set_reference_bone(which, p_value);
-		}
-		else if (what == "reference_node") {
-			set_reference_node(which, p_value);
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool BoneConstraint3D::_get(const StringName& p_path, Variant& r_ret) const
-{
-	String path = p_path;
-
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
-
-		if (what == "amount") {
-			r_ret = get_amount(which);
-		}
-		else if (what == "reference_type") {
-			r_ret = (int)get_reference_type(which);
-		}
-		else if (what == "apply_bone_name") {
-			r_ret = get_apply_bone_name(which);
-		}
-		else if (what == "reference_bone_name") {
-			r_ret = get_reference_bone_name(which);
-		}
-		else if (what == "apply_bone") {
-			r_ret = get_apply_bone(which);
-		}
-		else if (what == "reference_bone") {
-			r_ret = get_reference_bone(which);
-		}
-		else if (what == "reference_node") {
-			r_ret = get_reference_node(which);
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-void BoneConstraint3D::get_property_list(List<PropertyInfo>* p_list) const
-{
-	String enum_hint;
-	Skeleton3D* skeleton = get_skeleton();
-	if (skeleton) {
-		enum_hint = skeleton->get_concatenated_bone_names();
-	}
-
-	LocalVector<PropertyInfo> props;
-
-	for (uint32_t i = 0; i < settings.size(); i++) {
-		String path = "settings/" + itos(i) + "/";
-		props.push_back(
-			PropertyInfo(Variant::FLOAT, path + "amount", PROPERTY_HINT_RANGE, "0,1,0.001"));
-		props.push_back(PropertyInfo(
-			Variant::STRING, path + "apply_bone_name", PROPERTY_HINT_ENUM_SUGGESTION, enum_hint));
-		props.push_back(PropertyInfo(
-			Variant::INT, path + "apply_bone", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
-		props.push_back(
-			PropertyInfo(Variant::INT, path + "reference_type", PROPERTY_HINT_ENUM, "Bone,Node"));
-		props.push_back(PropertyInfo(Variant::STRING, path + "reference_bone_name",
-			PROPERTY_HINT_ENUM_SUGGESTION, enum_hint));
-		props.push_back(PropertyInfo(Variant::INT, path + "reference_bone", PROPERTY_HINT_NONE, "",
-			PROPERTY_USAGE_NO_EDITOR));
-		props.push_back(PropertyInfo(Variant::NODE_PATH, path + "reference_node",
-			PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Node3D"));
-	}
-
-	for (PropertyInfo& p : props) {
-		_validate_dynamic_prop(p);
-		p_list->push_back(p);
-	}
-}
-
-void BoneConstraint3D::_validate_dynamic_prop(PropertyInfo& p_property) const
-{
-	PackedStringArray split = p_property.name.split("/");
-	if (split.size() > 2 && split[0] == "settings") {
-		int which = split[1].to_int();
-		if (split[2].begins_with("reference_bone") &&
-			get_reference_type(which) != REFERENCE_TYPE_BONE) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-		if (split[2].begins_with("reference_node") &&
-			get_reference_type(which) != REFERENCE_TYPE_NODE) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
-
-void BoneConstraint3D::set_setting_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-
-	int delta = p_count - (int)settings.size();
-	if (delta < 0) {
-		for (int i = delta; i < 0; i++) {
-			memdelete(settings[(int)settings.size() + i]);
-			settings[(int)settings.size() + i] = nullptr;
-		}
-	}
-	settings.resize(p_count);
-	delta++;
-
-	if (delta > 1) {
-		for (int i = 1; i < delta; i++) {
-			_validate_setting(p_count - i);
-		}
-	}
-
-	this->obj->notify_property_list_changed();
-}
-
 int BoneConstraint3D::get_setting_count() const { return (int)settings.size(); }
 
 void BoneConstraint3D::_validate_setting(int p_index)
@@ -238,13 +91,6 @@ int BoneConstraint3D::get_apply_bone(int p_index) const
 	return settings[p_index]->apply_bone;
 }
 
-void BoneConstraint3D::set_reference_type(int p_index, ReferenceType p_type)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	settings[p_index]->reference_type = p_type;
-	this->obj->notify_property_list_changed();
-}
-
 BoneConstraint3D::ReferenceType BoneConstraint3D::get_reference_type(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), REFERENCE_TYPE_BONE);
@@ -292,24 +138,11 @@ int BoneConstraint3D::get_reference_bone(int p_index) const
 	return settings[p_index]->reference_bone;
 }
 
-void BoneConstraint3D::set_reference_node(int p_index, const NodePath& p_node)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	settings[p_index]->reference_node = p_node;
-	if (should_check_node_path() && !p_node.is_empty() &&
-		!Object::cast_to<Node3D>(get_node_or_null(p_node))) {
-		WARN_PRINT_ED(
-			"Setting: " + itos(p_index) + ": Reference node '" + String(p_node) + "' not found.");
-	}
-}
-
 NodePath BoneConstraint3D::get_reference_node(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), NodePath());
 	return settings[p_index]->reference_node;
 }
-
-void BoneConstraint3D::_bind_methods() {}
 
 void BoneConstraint3D::_validate_bone_names()
 {

@@ -58,7 +58,6 @@ public:
 class AudioEffectPitchShift;
 
 class AudioEffectPitchShiftInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectPitchShiftInstance, AudioEffectInstance);
 	friend class AudioEffectPitchShift;
 	Ref<AudioEffectPitchShift> base;
 
@@ -71,7 +70,6 @@ public:
 };
 
 class AudioEffectPitchShift : public AudioEffect {
-	VLTRCLASS(AudioEffectPitchShift, AudioEffect);
 
 public:
 	friend class AudioEffectPitchShiftInstance;

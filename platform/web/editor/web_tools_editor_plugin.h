@@ -33,7 +33,6 @@
 #include "editor/plugins/editor_plugin.h"
 
 class WebToolsEditorPlugin : public EditorPlugin {
-	VLTRCLASS(WebToolsEditorPlugin, EditorPlugin);
 
 private:
 	void _download_zip();

@@ -35,7 +35,6 @@
 class Material;
 
 class DrawableTexture2D : public Texture2D {
-	VLTRCLASS(DrawableTexture2D, Texture2D);
 	RES_BASE_EXTENSION("tex");
 
 public:

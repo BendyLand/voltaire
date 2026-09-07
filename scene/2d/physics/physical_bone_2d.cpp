@@ -80,88 +80,6 @@ void PhysicalBone2D::_position_at_bone2d()
 	}
 }
 
-void PhysicalBone2D::_find_skeleton_parent()
-{
-	Node* current_parent = get_parent();
-
-	while (current_parent != nullptr) {
-		Skeleton2D* potential_skeleton = Object::cast_to<Skeleton2D>(current_parent);
-		if (potential_skeleton) {
-			parent_skeleton = potential_skeleton;
-			break;
-		}
-		else {
-			PhysicalBone2D* potential_parent_bone = Object::cast_to<PhysicalBone2D>(current_parent);
-			if (potential_parent_bone) {
-				current_parent = potential_parent_bone->get_parent();
-			}
-			else {
-				current_parent = nullptr;
-			}
-		}
-	}
-}
-
-void PhysicalBone2D::_find_joint_child()
-{
-	for (int i = 0; i < get_child_count(); i++) {
-		Node* child_node = get_child(i);
-		Joint2D* potential_joint = Object::cast_to<Joint2D>(child_node);
-		if (potential_joint) {
-			child_joint = potential_joint;
-			break;
-		}
-	}
-}
-
-PackedStringArray PhysicalBone2D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = RigidBody2D::get_configuration_warnings();
-
-	if (!parent_skeleton) {
-		warnings.push_back(RTR("A PhysicalBone2D only works with a Skeleton2D or another "
-							   "PhysicalBone2D as a parent node!"));
-	}
-	if (parent_skeleton && bone2d_index <= -1) {
-		warnings.push_back(RTR("A PhysicalBone2D needs to be assigned to a Bone2D node in order to "
-							   "function! Please set a Bone2D node in the inspector."));
-	}
-	if (!child_joint) {
-		PhysicalBone2D* parent_bone = Object::cast_to<PhysicalBone2D>(get_parent());
-		if (parent_bone) {
-			warnings.push_back(
-				RTR("A PhysicalBone2D node should have a Joint2D-based child node to keep bones "
-					"connected! Please add a Joint2D-based node as a child to this node!"));
-		}
-	}
-
-	return warnings;
-}
-
-void PhysicalBone2D::_auto_configure_joint()
-{
-	if (!auto_configure_joint) {
-		return;
-	}
-
-	if (child_joint) {
-		// Node A = parent | Node B = this node
-		Node* parent_node = get_parent();
-		PhysicalBone2D* potential_parent_bone = Object::cast_to<PhysicalBone2D>(parent_node);
-
-		if (potential_parent_bone) {
-			child_joint->set_node_a(child_joint->get_path_to(potential_parent_bone));
-			child_joint->set_node_b(child_joint->get_path_to(this));
-		}
-		else {
-			WARN_PRINT("Cannot setup joint without a parent PhysicalBone2D node.");
-		}
-
-		// Place the child joint at this node's position.
-		child_joint->set_global_position(get_global_position());
-	}
-}
-
 void PhysicalBone2D::_start_physics_simulation()
 {
 	if (_internal_simulate_physics) {
@@ -230,37 +148,7 @@ bool PhysicalBone2D::get_simulate_physics() const { return simulate_physics; }
 
 bool PhysicalBone2D::is_simulating_physics() const { return _internal_simulate_physics; }
 
-void PhysicalBone2D::set_bone2d_nodepath(const NodePath& p_nodepath)
-{
-	bone2d_nodepath = p_nodepath;
-	this->obj->notify_property_list_changed();
-}
-
 NodePath PhysicalBone2D::get_bone2d_nodepath() const { return bone2d_nodepath; }
-
-void PhysicalBone2D::set_bone2d_index(int p_bone_idx)
-{
-	ERR_FAIL_COND_MSG(p_bone_idx < 0, "Bone index is out of range: The index is too low!");
-
-	if (!is_inside_tree()) {
-		bone2d_index = p_bone_idx;
-		return;
-	}
-
-	if (parent_skeleton) {
-		ERR_FAIL_INDEX_MSG(
-			p_bone_idx, parent_skeleton->get_bone_count(), "Passed-in Bone index is out of range!");
-		bone2d_index = p_bone_idx;
-
-		bone2d_nodepath = get_path_to(parent_skeleton->get_bone(bone2d_index));
-	}
-	else {
-		WARN_PRINT("Cannot verify bone index...");
-		bone2d_index = p_bone_idx;
-	}
-
-	this->obj->notify_property_list_changed();
-}
 
 int PhysicalBone2D::get_bone2d_index() const { return bone2d_index; }
 

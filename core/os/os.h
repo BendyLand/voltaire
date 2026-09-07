@@ -188,10 +188,6 @@ public:
 
 	virtual bool get_user_prefers_integrated_gpu() const { return false; }
 
-	void print_error(const char* p_function, const char* p_file, int p_line, const char* p_code,
-		const char* p_rationale, bool p_editor_notify = false,
-		Logger::ErrorType p_type = Logger::ERR_ERROR,
-		const Vector<Ref<ScriptBacktrace>>& p_script_backtraces = {});
 	void print(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
 	void print_rich(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
 	void printerr(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;

@@ -37,7 +37,6 @@
 class AudioEffectCapture;
 
 class AudioEffectCaptureInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectCaptureInstance, AudioEffectInstance);
 	friend class AudioEffectCapture;
 	Ref<AudioEffectCapture> base;
 
@@ -47,7 +46,6 @@ public:
 };
 
 class AudioEffectCapture : public AudioEffect {
-	VLTRCLASS(AudioEffectCapture, AudioEffect)
 	friend class AudioEffectCaptureInstance;
 
 	RingBuffer<AudioFrame> buffer;

@@ -30,28 +30,25 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
-class OpenXRMetaControllerExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRMetaControllerExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRMetaControllerExtension
+{
 public:
-	enum MetaControllers {
+	enum MetaControllers
+	{
 		META_TOUCH_PROXIMITY, // Proximity extensions for normal touch controllers
-		META_TOUCH_PRO, // Touch controller for the Quest Pro
-		META_TOUCH_PLUS, // Touch controller for the Quest Plus
+		META_TOUCH_PRO,		  // Touch controller for the Quest Pro
+		META_TOUCH_PLUS,	  // Touch controller for the Quest Plus
 		META_MAX_CONTROLLERS
 	};
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
 	bool is_available(MetaControllers p_type);
 
-	virtual void on_register_metadata(OpenXRInteractionProfileMetadata *p_interaction_profile_metadata) override;
-
 private:
-	bool available[META_MAX_CONTROLLERS] = { false, false, false };
+	bool available[META_MAX_CONTROLLERS] = {false, false, false};
 };
+
+

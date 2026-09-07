@@ -45,14 +45,11 @@ private:
 	struct ParameterData
 	{
 		StringName path;
-		Variant value;
 	};
 
 	static inline const String PARAM_PREFIX = "parameters/";
 
 	Node* node = nullptr;
-	Callable play_callable;
-	Callable stop_callable;
 	bool physical = false;
 	AudioServer::PlaybackType playback_type = AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT;
 
@@ -70,7 +67,6 @@ private:
 	}
 
 public:
-	mem_unique_ptr<Object> obj;
 	Vector<Ref<AudioStreamPlayback>> stream_playbacks;
 	Ref<AudioStream> stream;
 
@@ -86,10 +82,6 @@ public:
 	void ensure_playback_limit();
 
 	void notification(int p_what);
-	void validate_property(PropertyInfo& p_property) const;
-	bool set(const StringName& p_name, const Variant& p_value);
-	bool get(const StringName& p_name, Variant& r_ret) const;
-	void get_property_list(List<PropertyInfo>* p_list) const;
 
 	void set_stream(Ref<AudioStream> p_stream);
 	void set_pitch_scale(float p_pitch_scale);
@@ -115,9 +107,6 @@ public:
 
 	void set_playback_type(AudioServer::PlaybackType p_playback_type);
 	AudioServer::PlaybackType get_playback_type() const;
-
-	AudioStreamPlayerInternal(Node* p_node, const Callable& p_play_callable,
-		const Callable& p_stop_callable, bool p_physical);
 };
 
 

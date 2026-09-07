@@ -97,7 +97,6 @@ public:
 
 	class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD
 	{
-		VLTRCLASS(RenderBufferDataForwardClustered, RenderBufferCustomDataRD)
 
 	private:
 		RenderSceneBuffersRD* render_buffers = nullptr;

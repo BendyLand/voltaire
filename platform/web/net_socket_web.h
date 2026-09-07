@@ -35,7 +35,6 @@
 #include <sys/socket.h>
 
 class NetSocketWeb : public NetSocket {
-	VLTRSOFTCLASS(NetSocketWeb, NetSocket);
 
 protected:
 	static Ref<NetSocket> _create_func() {

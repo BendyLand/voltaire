@@ -30,176 +30,6 @@
 
 #include "chain_ik_3d.h"
 
-bool ChainIK3D::_set(const StringName& p_path, const Variant& p_value)
-{
-	String path = p_path;
-
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
-
-		if (what == "root_bone_name") {
-			set_root_bone_name(which, p_value);
-		}
-		else if (what == "root_bone") {
-			set_root_bone(which, p_value);
-		}
-		else if (what == "end_bone_name") {
-			set_end_bone_name(which, p_value);
-		}
-		else if (what == "end_bone") {
-			String opt = path.get_slicec('/', 3);
-			if (opt.is_empty()) {
-				set_end_bone(which, p_value);
-			}
-			else if (opt == "direction") {
-				set_end_bone_direction(which, static_cast<BoneDirection>((int)p_value));
-			}
-			else if (opt == "length") {
-				set_end_bone_length(which, p_value);
-			}
-			else {
-				return false;
-			}
-		}
-		else if (what == "extend_end_bone") {
-			set_extend_end_bone(which, p_value);
-		}
-		else if (what == "joint_count") {
-			set_joint_count(which, p_value);
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool ChainIK3D::_get(const StringName& p_path, Variant& r_ret) const
-{
-	String path = p_path;
-
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
-
-		if (what == "root_bone_name") {
-			r_ret = get_root_bone_name(which);
-		}
-		else if (what == "root_bone") {
-			r_ret = get_root_bone(which);
-		}
-		else if (what == "end_bone_name") {
-			r_ret = get_end_bone_name(which);
-		}
-		else if (what == "end_bone") {
-			String opt = path.get_slicec('/', 3);
-			if (opt.is_empty()) {
-				r_ret = get_end_bone(which);
-			}
-			else if (opt == "direction") {
-				r_ret = (int)get_end_bone_direction(which);
-			}
-			else if (opt == "length") {
-				r_ret = get_end_bone_length(which);
-			}
-			else {
-				return false;
-			}
-		}
-		else if (what == "extend_end_bone") {
-			r_ret = is_end_bone_extended(which);
-		}
-		else if (what == "joint_count") {
-			r_ret = get_joint_count(which);
-		}
-		else if (what == "joints") {
-			int idx = path.get_slicec('/', 3).to_int();
-			String prop = path.get_slicec('/', 4);
-			if (prop == "bone_name") {
-				r_ret = get_joint_bone_name(which, idx);
-			}
-			else if (prop == "bone") {
-				r_ret = get_joint_bone(which, idx);
-			}
-			else {
-				return false;
-			}
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-void ChainIK3D::get_property_list(List<PropertyInfo>* p_list) const
-{
-	String enum_hint;
-	Skeleton3D* skeleton = get_skeleton();
-	if (skeleton) {
-		enum_hint = skeleton->get_concatenated_bone_names();
-	}
-
-	LocalVector<PropertyInfo> props;
-
-	for (uint32_t i = 0; i < settings.size(); i++) {
-		String path = "settings/" + itos(i) + "/";
-		props.push_back(PropertyInfo(
-			Variant::STRING, path + "root_bone_name", PROPERTY_HINT_ENUM_SUGGESTION, enum_hint));
-		props.push_back(PropertyInfo(
-			Variant::INT, path + "root_bone", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
-		props.push_back(PropertyInfo(
-			Variant::STRING, path + "end_bone_name", PROPERTY_HINT_ENUM_SUGGESTION, enum_hint));
-		props.push_back(PropertyInfo(
-			Variant::INT, path + "end_bone", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
-		props.push_back(PropertyInfo(Variant::BOOL, path + "extend_end_bone"));
-		props.push_back(PropertyInfo(Variant::INT, path + "end_bone/direction", PROPERTY_HINT_ENUM,
-			SkeletonModifier3D::get_hint_bone_direction()));
-		props.push_back(PropertyInfo(Variant::FLOAT, path + "end_bone/length", PROPERTY_HINT_RANGE,
-			"0,1,0.001,or_greater,suffix:m"));
-		props.push_back(PropertyInfo(Variant::INT, path + "joint_count", PROPERTY_HINT_NONE, "",
-			PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY,
-			"Joints," + path + "joints/,static,const"));
-		for (uint32_t j = 0; j < chain_settings[i]->joints.size(); j++) {
-			String joint_path = path + "joints/" + itos(j) + "/";
-			props.push_back(PropertyInfo(Variant::STRING, joint_path + "bone_name",
-				PROPERTY_HINT_ENUM_SUGGESTION, enum_hint,
-				PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY));
-			props.push_back(PropertyInfo(Variant::INT, joint_path + "bone", PROPERTY_HINT_NONE, "",
-				PROPERTY_USAGE_READ_ONLY));
-		}
-	}
-
-	for (PropertyInfo& p : props) {
-		_validate_dynamic_prop(p);
-		p_list->push_back(p);
-	}
-}
-
-void ChainIK3D::_validate_dynamic_prop(PropertyInfo& p_property) const
-{
-	PackedStringArray split = p_property.name.split("/");
-	if (split.size() > 2 && split[0] == "settings") {
-		int which = split[1].to_int();
-
-		// Extended end bone option.
-		bool force_hide = false;
-		if (split[2] == "extend_end_bone" && get_end_bone(which) == -1) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-			force_hide = true;
-		}
-		if (force_hide ||
-			(split[2] == "end_bone" && !is_end_bone_extended(which) && split.size() > 3)) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
-
-// Setting.
-
 void ChainIK3D::set_root_bone_name(int p_index, const String& p_bone_name)
 {
 	ERR_FAIL_INDEX(p_index, (int)settings.size());
@@ -261,49 +91,10 @@ String ChainIK3D::get_end_bone_name(int p_index) const
 	return chain_settings[p_index]->end_bone.name;
 }
 
-void ChainIK3D::set_end_bone(int p_index, int p_bone)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	bool changed = chain_settings[p_index]->end_bone.bone != p_bone;
-	chain_settings[p_index]->end_bone.bone = p_bone;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (chain_settings[p_index]->end_bone.bone <= -1 ||
-			chain_settings[p_index]->end_bone.bone >= sk->get_bone_count()) {
-			WARN_PRINT_ED("Setting: " + itos(p_index) + ": End bone index '" + itos(p_bone) +
-						  "' is out of range!");
-			chain_settings[p_index]->end_bone.bone = -1;
-		}
-		else {
-			chain_settings[p_index]->end_bone.name =
-				sk->get_bone_name(chain_settings[p_index]->end_bone.bone);
-		}
-	}
-	if (changed) {
-		_update_joints(p_index);
-	}
-	this->obj->notify_property_list_changed();
-}
-
 int ChainIK3D::get_end_bone(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
 	return chain_settings[p_index]->end_bone.bone;
-}
-
-void ChainIK3D::set_extend_end_bone(int p_index, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	chain_settings[p_index]->extend_end_bone = p_enabled;
-	_make_simulation_dirty(p_index);
-	Skeleton3D* sk = get_skeleton();
-	if (sk && !chain_settings[p_index]->joints.is_empty()) {
-		_validate_axis(sk, p_index, chain_settings[p_index]->joints.size() - 1);
-	}
-	this->obj->notify_property_list_changed();
-#ifdef TOOLS_ENABLED
-	_make_gizmo_dirty();
-#endif // TOOLS_ENABLED
 }
 
 bool ChainIK3D::is_end_bone_extended(int p_index) const
@@ -392,29 +183,12 @@ int ChainIK3D::get_joint_bone(int p_index, int p_joint) const
 	return joints[p_joint].bone;
 }
 
-void ChainIK3D::set_joint_count(int p_index, int p_count)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	ERR_FAIL_COND(p_count < 0);
-	LocalVector<BoneJoint>& joints = chain_settings[p_index]->joints;
-	joints.resize(p_count);
-	_set_joint_count(p_index, p_count);
-	this->obj->notify_property_list_changed();
-}
-
-void ChainIK3D::_set_joint_count(int p_index, int p_count)
-{
-	//
-}
-
 int ChainIK3D::get_joint_count(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
 	const LocalVector<BoneJoint>& joints = chain_settings[p_index]->joints;
 	return joints.size();
 }
-
-void ChainIK3D::_bind_methods() {}
 
 void ChainIK3D::_validate_bone_names()
 {

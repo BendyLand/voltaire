@@ -77,22 +77,6 @@ void OpenXRAndroidThreadSettingsExtension::on_instance_created(XrInstance p_inst
 	}
 }
 
-void OpenXRAndroidThreadSettingsExtension::on_session_created(XrSession p_session)
-{
-	if (!available) {
-		return;
-	}
-
-	// Attempt to mark this thread as the "main thread".
-	set_application_thread_type(THREAD_TYPE_APPLICATION_MAIN);
-
-	// Attempt to mark the render thread too.
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	rendering_server->call_on_render_thread(
-		callable_mp(this, &OpenXRAndroidThreadSettingsExtension::_set_render_thread_type));
-}
-
 bool OpenXRAndroidThreadSettingsExtension::set_application_thread_type(
 	ThreadType p_thread_type, uint32_t p_thread_id)
 {

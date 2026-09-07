@@ -32,151 +32,6 @@
 #include "bone_attachment_3d.h"
 #include "core/config/engine.h"
 
-void BoneAttachment3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (Engine::get_singleton()->is_editor_hint() && p_property.name == "bone_name") {
-		// Because it is a constant function, we cannot use the get_skeleton function.
-		const Skeleton3D* parent = nullptr;
-		if (use_external_skeleton) {
-			if (external_skeleton_node_cache.is_valid()) {
-				parent = ObjectDB::get_instance<Skeleton3D>(external_skeleton_node_cache);
-			}
-		}
-		else {
-			parent = Object::cast_to<Skeleton3D>(get_parent());
-		}
-
-		if (parent) {
-			p_property.hint = PROPERTY_HINT_ENUM;
-			p_property.hint_string = parent->get_concatenated_bone_names();
-		}
-		else {
-			p_property.hint = PROPERTY_HINT_NONE;
-			p_property.hint_string = "";
-		}
-		return;
-	}
-
-	if (p_property.name == "external_skeleton" && !use_external_skeleton) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
-PackedStringArray BoneAttachment3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-
-	if (use_external_skeleton) {
-		if (external_skeleton_node_cache.is_null()) {
-			warnings.push_back(RTR("External Skeleton3D node not set! Please set a path to an "
-								   "external Skeleton3D node."));
-		}
-	}
-	else {
-		Skeleton3D* parent = Object::cast_to<Skeleton3D>(get_parent());
-		if (!parent) {
-			warnings.push_back(RTR("Parent node is not a Skeleton3D node! Please use an external "
-								   "Skeleton3D if you intend to use the BoneAttachment3D without "
-								   "it being a child of a Skeleton3D node."));
-		}
-	}
-
-	if (bone_idx == -1) {
-		warnings.push_back(RTR("BoneAttachment3D node is not bound to any bones! Please select a "
-							   "bone to attach this node."));
-	}
-
-	return warnings;
-}
-
-void BoneAttachment3D::_update_external_skeleton_cache()
-{
-	external_skeleton_node_cache = ObjectID();
-	if (has_node(external_skeleton_node)) {
-		Node* node = get_node(external_skeleton_node);
-		ERR_FAIL_NULL_MSG(node, "Cannot update external skeleton cache: Node cannot be found!");
-
-		// Make sure it's a Skeleton3D.
-		Skeleton3D* sk = Object::cast_to<Skeleton3D>(node);
-		ERR_FAIL_NULL_MSG(sk, "Cannot update external skeleton cache: Skeleton3D Nodepath does not "
-							  "point to a Skeleton3D node!");
-
-		external_skeleton_node_cache = node->obj->get_instance_id();
-	}
-	else {
-		if (external_skeleton_node.is_empty()) {
-			BoneAttachment3D* parent_attachment = Object::cast_to<BoneAttachment3D>(get_parent());
-			if (parent_attachment) {
-				parent_attachment->_update_external_skeleton_cache();
-				if (parent_attachment->has_node(parent_attachment->external_skeleton_node)) {
-					Node* node =
-						parent_attachment->get_node(parent_attachment->external_skeleton_node);
-					ERR_FAIL_NULL_MSG(node, "Cannot update external skeleton cache: Parent's "
-											"Skeleton3D node cannot be found!");
-
-					// Make sure it's a Skeleton3D.
-					Skeleton3D* sk = Object::cast_to<Skeleton3D>(node);
-					ERR_FAIL_NULL_MSG(
-						sk, "Cannot update external skeleton cache: Parent Skeleton3D Nodepath "
-							"does not point to a Skeleton3D node!");
-
-					external_skeleton_node_cache = node->obj->get_instance_id();
-					external_skeleton_node = get_path_to(node);
-				}
-			}
-		}
-	}
-}
-
-void BoneAttachment3D::_check_bind()
-{
-	Skeleton3D* sk = get_skeleton();
-
-	if (sk && !bound) {
-		if (bone_idx <= -1) {
-			bone_idx = sk->find_bone(bone_name);
-		}
-		if (bone_idx != -1) {
-			sk->connect(SceneStringName(skeleton_updated),
-				callable_mp(this, &BoneAttachment3D::on_skeleton_update));
-			bound = true;
-			on_skeleton_update();
-		}
-	}
-}
-
-Skeleton3D* BoneAttachment3D::get_skeleton()
-{
-	if (use_external_skeleton) {
-		if (external_skeleton_node_cache.is_valid()) {
-			return ObjectDB::get_instance<Skeleton3D>(external_skeleton_node_cache);
-		}
-		else {
-			_update_external_skeleton_cache();
-			if (external_skeleton_node_cache.is_valid()) {
-				return ObjectDB::get_instance<Skeleton3D>(external_skeleton_node_cache);
-			}
-		}
-	}
-	else {
-		return Object::cast_to<Skeleton3D>(get_parent());
-	}
-	return nullptr;
-}
-
-void BoneAttachment3D::_check_unbind()
-{
-	if (bound) {
-		Skeleton3D* sk = get_skeleton();
-
-		if (sk) {
-			sk->disconnect(SceneStringName(skeleton_updated),
-				callable_mp(this, &BoneAttachment3D::on_skeleton_update));
-		}
-		bound = false;
-	}
-}
-
 void BoneAttachment3D::_transform_changed()
 {
 	if (!is_inside_tree()) {
@@ -216,81 +71,11 @@ void BoneAttachment3D::set_bone_name(const String& p_name)
 
 String BoneAttachment3D::get_bone_name() const { return bone_name; }
 
-void BoneAttachment3D::set_bone_idx(const int& p_idx)
-{
-	if (is_inside_tree()) {
-		_check_unbind();
-	}
-
-	bone_idx = p_idx;
-
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (bone_idx <= -1 || bone_idx >= sk->get_bone_count()) {
-			WARN_PRINT("Bone index " + itos(bone_idx) +
-					   " out of range! Cannot connect BoneAttachment to node!");
-			bone_idx = -1;
-		}
-		else {
-			bone_name = sk->get_bone_name(bone_idx);
-		}
-	}
-
-	if (is_inside_tree()) {
-		_check_bind();
-	}
-	else {
-		on_skeleton_update();
-	}
-
-	this->obj->notify_property_list_changed();
-}
-
 int BoneAttachment3D::get_bone_idx() const { return bone_idx; }
-
-void BoneAttachment3D::set_override_pose(bool p_override_pose)
-{
-	if (override_pose == p_override_pose) {
-		return;
-	}
-
-	override_pose = p_override_pose;
-	set_notify_transform(override_pose);
-	set_process_internal(override_pose);
-	if (!override_pose && bone_idx >= 0) {
-		Skeleton3D* sk = get_skeleton();
-		if (sk) {
-			sk->reset_bone_pose(bone_idx);
-		}
-	}
-
-	this->obj->notify_property_list_changed();
-}
 
 bool BoneAttachment3D::get_override_pose() const { return override_pose; }
 
-void BoneAttachment3D::set_use_external_skeleton(bool p_use_external_skeleton)
-{
-	use_external_skeleton = p_use_external_skeleton;
-
-	if (use_external_skeleton) {
-		_check_unbind();
-		_update_external_skeleton_cache();
-		_check_bind();
-		_transform_changed();
-	}
-
-	this->obj->notify_property_list_changed();
-}
-
 bool BoneAttachment3D::get_use_external_skeleton() const { return use_external_skeleton; }
-
-void BoneAttachment3D::set_external_skeleton(NodePath p_external_skeleton)
-{
-	external_skeleton_node = p_external_skeleton;
-	_update_external_skeleton_cache();
-	this->obj->notify_property_list_changed();
-}
 
 NodePath BoneAttachment3D::get_external_skeleton() const { return external_skeleton_node; }
 
@@ -357,25 +142,6 @@ void BoneAttachment3D::on_skeleton_update()
 }
 
 #ifdef TOOLS_ENABLED
-void BoneAttachment3D::notify_skeleton_bones_renamed(
-	Node* p_base_scene, Skeleton3D* p_skeleton, Dictionary p_rename_map)
-{
-	const Skeleton3D* parent = nullptr;
-	if (use_external_skeleton) {
-		if (external_skeleton_node_cache.is_valid()) {
-			parent = ObjectDB::get_instance<Skeleton3D>(external_skeleton_node_cache);
-		}
-	}
-	else {
-		parent = Object::cast_to<Skeleton3D>(get_parent());
-	}
-	if (parent && parent == p_skeleton) {
-		StringName bn = p_rename_map[bone_name];
-		if (bn) {
-			set_bone_name(bn);
-		}
-	}
-}
 
 void BoneAttachment3D::notify_rebind_required()
 {
@@ -393,7 +159,5 @@ BoneAttachment3D::BoneAttachment3D()
 {
 	set_physics_interpolation_mode(PHYSICS_INTERPOLATION_MODE_OFF);
 }
-
-void BoneAttachment3D::_bind_methods() {}
 
 

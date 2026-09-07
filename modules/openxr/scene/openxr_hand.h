@@ -30,50 +30,53 @@
 
 #pragma once
 
+#include <openxr/openxr.h>
 #include "scene/3d/node_3d.h"
 #include "scene/3d/skeleton_3d.h"
-
-#include <openxr/openxr.h>
 
 class OpenXRAPI;
 class OpenXRHandTrackingExtension;
 
-class OpenXRHand : public Node3D {
-	VLTRCLASS(OpenXRHand, Node3D);
-
+class OpenXRHand : public Node3D
+{
 public:
-	enum Hands { // Deprecated, need to change this to OpenXRInterface::Hands.
+	enum Hands
+	{ // Deprecated, need to change this to OpenXRInterface::Hands.
 		HAND_LEFT,
 		HAND_RIGHT,
 		HAND_MAX
 	};
 
-	enum MotionRange { // Deprecated, need to change this to OpenXRInterface::HandMotionRange.
+	enum MotionRange
+	{ // Deprecated, need to change this to OpenXRInterface::HandMotionRange.
 		MOTION_RANGE_UNOBSTRUCTED,
 		MOTION_RANGE_CONFORM_TO_CONTROLLER,
 		MOTION_RANGE_MAX
 	};
 
-	enum SkeletonRig {
+	enum SkeletonRig
+	{
 		SKELETON_RIG_OPENXR,
 		SKELETON_RIG_HUMANOID,
 		SKELETON_RIG_MAX
 	};
 
-	enum BoneUpdate {
+	enum BoneUpdate
+	{
 		BONE_UPDATE_FULL,
 		BONE_UPDATE_ROTATION_ONLY,
 		BONE_UPDATE_MAX
 	};
 
 private:
-	struct JointData {
+	struct JointData
+	{
 		int bone = -1;
 		int parent_joint = -1;
 	};
 
-	OpenXRAPI *openxr_api = nullptr;
-	OpenXRHandTrackingExtension *hand_tracking_ext = nullptr;
+	OpenXRAPI* openxr_api = nullptr;
+	OpenXRHandTrackingExtension* hand_tracking_ext = nullptr;
 
 	Hands hand = HAND_LEFT;
 	MotionRange motion_range = MOTION_RANGE_UNOBSTRUCTED;
@@ -85,7 +88,7 @@ private:
 
 	void _set_motion_range();
 
-	Skeleton3D *get_skeleton();
+	Skeleton3D* get_skeleton();
 	void _get_joint_data();
 	void _update_skeleton();
 
@@ -101,7 +104,7 @@ public:
 	void set_motion_range(MotionRange p_motion_range);
 	MotionRange get_motion_range() const;
 
-	void set_hand_skeleton(const NodePath &p_hand_skeleton);
+	void set_hand_skeleton(const NodePath& p_hand_skeleton);
 	NodePath get_hand_skeleton() const;
 
 	void set_skeleton_rig(SkeletonRig p_skeleton_rig);
@@ -113,7 +116,4 @@ public:
 	void _notification(int p_what);
 };
 
-VARIANT_ENUM_CAST(OpenXRHand::Hands)
-VARIANT_ENUM_CAST(OpenXRHand::MotionRange)
-VARIANT_ENUM_CAST(OpenXRHand::SkeletonRig)
-VARIANT_ENUM_CAST(OpenXRHand::BoneUpdate)
+

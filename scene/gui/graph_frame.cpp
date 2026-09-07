@@ -36,53 +36,6 @@
 #include "scene/resources/style_box_texture.h"
 #include "scene/theme/theme_db.h"
 
-void GraphFrame::gui_input(const Ref<InputEvent>& p_ev)
-{
-	ERR_FAIL_COND(p_ev.is_null());
-
-	Ref<InputEventMouseButton> mb = p_ev;
-	if (mb.is_valid()) {
-		ERR_FAIL_NULL_MSG(
-			get_parent_control(), "GraphFrame must be the child of a GraphEdit node.");
-
-		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-			Vector2 mpos = mb->get_position();
-
-			Ref<Texture2D> resizer = theme_cache.resizer;
-
-			if (resizable && mpos.x > get_size().x - resizer->get_width() &&
-				mpos.y > get_size().y - resizer->get_height()) {
-				resizing = true;
-				resizing_from = mpos;
-				resizing_from_size = get_size();
-				accept_event();
-				return;
-			}
-
-			this->obj->emit_signal(SNAME("raise_request"));
-		}
-
-		if (!mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-			if (resizing) {
-				resizing = false;
-				this->obj->emit_signal(SNAME("resize_end"), get_size());
-				return;
-			}
-		}
-	}
-
-	Ref<InputEventMouseMotion> mm = p_ev;
-
-	// Only resize if the frame is not auto-resizing based on linked nodes.
-	if (resizing && !autoshrink_enabled && mm.is_valid()) {
-		Vector2 mpos = mm->get_position();
-
-		Vector2 diff = mpos - resizing_from;
-
-		this->obj->emit_signal(SNAME("resize_request"), resizing_from_size + diff);
-	}
-}
-
 Control::CursorShape GraphFrame::get_cursor_shape(const Point2& p_pos) const
 {
 	if (resizable && !autoshrink_enabled) {
@@ -183,18 +136,6 @@ void GraphFrame::_resort()
 	}
 }
 
-void GraphFrame::_bind_methods() {}
-
-void GraphFrame::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "resizable") {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
 void GraphFrame::set_title(const String& p_title)
 {
 	if (title == p_title) {
@@ -209,26 +150,7 @@ void GraphFrame::set_title(const String& p_title)
 
 String GraphFrame::get_title() const { return title; }
 
-void GraphFrame::set_autoshrink_enabled(bool p_shrink)
-{
-	if (autoshrink_enabled == p_shrink) {
-		return;
-	}
-	autoshrink_enabled = p_shrink;
-	this->obj->emit_signal("autoshrink_changed", get_size());
-	queue_redraw();
-}
-
 bool GraphFrame::is_autoshrink_enabled() const { return autoshrink_enabled; }
-
-void GraphFrame::set_autoshrink_margin(const int& p_margin)
-{
-	if (autoshrink_margin == p_margin) {
-		return;
-	}
-	autoshrink_margin = p_margin;
-	this->obj->emit_signal("autoshrink_changed", get_size());
-}
 
 int GraphFrame::get_autoshrink_margin() const { return autoshrink_margin; }
 

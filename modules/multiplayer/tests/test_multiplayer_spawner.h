@@ -40,7 +40,6 @@ namespace TestMultiplayerSpawner
 {
 class Wasp : public Node
 {
-	VLTRCLASS(Wasp, Node);
 
 	int _size = 0;
 

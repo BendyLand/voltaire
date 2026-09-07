@@ -13,6 +13,7 @@
 #include "core/math/math_defs.h"
 #include "core/math/math_funcs.h"
 #include "core/math/quaternion.h"
+#include "core/math/face3.h"
 #include "core/math/rect2.h"
 #include "core/math/rect2i.h"
 #include "core/math/transform_2d.h"
@@ -63,5 +64,6 @@ struct HashMapHasherDefaultImpl<Ref<T>> {
 };
 
 #include "core/math/expression.h"
+#include "thirdparty/openxr/include/openxr/openxr.h"
 
 #endif // TYPES_H

@@ -30,111 +30,11 @@
 
 #include "joint_3d.h"
 
-void Joint3D::_disconnect_signals()
-{
-	Node* node_a = get_node_or_null(a);
-	PhysicsBody3D* body_a = Object::cast_to<PhysicsBody3D>(node_a);
-	if (body_a) {
-		body_a->disconnect(
-			SceneStringName(tree_exiting), callable_mp(this, &Joint3D::_body_exit_tree));
-	}
-
-	Node* node_b = get_node_or_null(b);
-	PhysicsBody3D* body_b = Object::cast_to<PhysicsBody3D>(node_b);
-	if (body_b) {
-		body_b->disconnect(
-			SceneStringName(tree_exiting), callable_mp(this, &Joint3D::_body_exit_tree));
-	}
-}
-
 void Joint3D::_body_exit_tree()
 {
 	_disconnect_signals();
 	_update_joint(true);
 	update_configuration_warnings();
-}
-
-void Joint3D::_update_joint(bool p_only_free)
-{
-	if (ba.is_valid() && bb.is_valid()) {
-		PhysicsServer3D::get_singleton()->body_remove_collision_exception(ba, bb);
-		PhysicsServer3D::get_singleton()->body_remove_collision_exception(bb, ba);
-	}
-
-	ba = RID();
-	bb = RID();
-
-	configured = false;
-
-	if (p_only_free || !is_inside_tree()) {
-		PhysicsServer3D::get_singleton()->joint_clear(joint);
-		warning = String();
-		return;
-	}
-
-	Node* node_a = get_node_or_null(a);
-	Node* node_b = get_node_or_null(b);
-
-	PhysicsBody3D* body_a = Object::cast_to<PhysicsBody3D>(node_a);
-	PhysicsBody3D* body_b = Object::cast_to<PhysicsBody3D>(node_b);
-
-	if (node_a && !body_a && node_b && !body_b) {
-		warning = RTR("Node A and Node B must be PhysicsBody3Ds");
-	}
-	else if (node_a && !body_a) {
-		warning = RTR("Node A must be a PhysicsBody3D");
-	}
-	else if (node_b && !body_b) {
-		warning = RTR("Node B must be a PhysicsBody3D");
-	}
-	else if (!body_a && !body_b) {
-		warning = RTR("Joint is not connected to any PhysicsBody3Ds");
-	}
-	else if (body_a == body_b) {
-		warning = RTR("Node A and Node B must be different PhysicsBody3Ds");
-	}
-	else {
-		warning = String();
-	}
-
-	update_configuration_warnings();
-
-	if (!warning.is_empty()) {
-		PhysicsServer3D::get_singleton()->joint_clear(joint);
-		return;
-	}
-
-	configured = true;
-
-	if (body_a) {
-		_configure_joint(joint, body_a, body_b);
-	}
-	else if (body_b) {
-		_configure_joint(joint, body_b, nullptr);
-	}
-
-	PhysicsServer3D::get_singleton()->joint_set_solver_priority(joint, solver_priority);
-
-	if (body_a) {
-		ba = body_a->get_rid();
-		if (!body_a->is_connected(
-				SceneStringName(tree_exiting), callable_mp(this, &Joint3D::_body_exit_tree))) {
-			body_a->connect(
-				SceneStringName(tree_exiting), callable_mp(this, &Joint3D::_body_exit_tree));
-		}
-	}
-
-	if (body_b) {
-		bb = body_b->get_rid();
-		if (!body_b->is_connected(
-				SceneStringName(tree_exiting), callable_mp(this, &Joint3D::_body_exit_tree))) {
-			body_b->connect(
-				SceneStringName(tree_exiting), callable_mp(this, &Joint3D::_body_exit_tree));
-		}
-	}
-
-	PhysicsServer3D::get_singleton()->joint_disable_collisions_between_bodies(
-		joint, exclude_from_collision);
 }
 
 void Joint3D::set_node_a(const NodePath& p_node_a)

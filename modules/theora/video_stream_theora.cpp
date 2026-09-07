@@ -665,17 +665,6 @@ void VideoStreamPlaybackTheora::update(double p_delta)
 	}
 }
 
-void VideoStreamPlaybackTheora::play()
-{
-	if (playing) {
-		return;
-	}
-
-	playing = true;
-	delay_compensation = GLOBAL_GET("audio/video/video_delay_compensation_ms");
-	delay_compensation /= 1000.0;
-}
-
 void VideoStreamPlaybackTheora::stop()
 {
 	playing = false;

@@ -59,6 +59,4 @@ void ColorRect::_notification(int p_what)
 	}
 }
 
-void ColorRect::_bind_methods() {}
-
 

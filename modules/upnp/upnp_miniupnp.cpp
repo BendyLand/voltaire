@@ -38,7 +38,7 @@
 
 UPNP* UPNPMiniUPNP::_create(bool p_notify_postinitialize)
 {
-	return static_cast<UPNP*>(memnew(UPNPMiniUPNP).ptr());
+	return static_cast<UPNP*>(memnew(UPNPMiniUPNP));
 }
 
 void UPNPMiniUPNP::make_default() { UPNP::_create = UPNPMiniUPNP::_create; }

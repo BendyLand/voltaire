@@ -38,7 +38,6 @@ OpenXRInteractionProfileMetadata::OpenXRInteractionProfileMetadata()
 	singleton = this;
 
 	_register_core_metadata();
-	OpenXRAPI::register_extension_metadata(this);
 }
 
 OpenXRInteractionProfileMetadata::~OpenXRInteractionProfileMetadata() { singleton = nullptr; }

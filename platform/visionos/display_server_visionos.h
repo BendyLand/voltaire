@@ -33,7 +33,6 @@
 #include "drivers/apple_embedded/display_server_apple_embedded.h"
 
 class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
-	VLTRSOFTCLASS(DisplayServerVisionOS, DisplayServerAppleEmbedded);
 
 	_THREAD_SAFE_CLASS_
 

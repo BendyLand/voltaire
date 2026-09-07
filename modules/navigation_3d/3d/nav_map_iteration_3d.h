@@ -34,8 +34,9 @@
 #include "core/math/math_defs.h"
 #include "core/os/rw_lock.h"
 #include "core/os/semaphore.h"
-#include "nav_mesh_queries_3d.h"
+#include "modules/navigation_3d/3d/nav_region_iteration_3d.h"
 #include "modules/navigation_3d/nav_link_3d.h"
+#include "nav_mesh_queries_3d.h"
 
 class NavLinkIteration3D;
 class NavRegion3D;

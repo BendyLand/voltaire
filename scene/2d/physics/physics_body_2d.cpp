@@ -33,114 +33,11 @@
 #include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
-void PhysicsBody2D::_bind_methods() {}
-
 PhysicsBody2D::PhysicsBody2D(PS2DE::BodyMode p_mode)
 	: CollisionObject2D(PhysicsServer2D::get_singleton()->body_create(), false)
 {
 	set_body_mode(p_mode);
 	set_pickable(false);
-}
-
-Ref<KinematicCollision2D> PhysicsBody2D::_move(
-	const Vector2& p_motion, bool p_test_only, real_t p_margin, bool p_recovery_as_collision)
-{
-	PS2DT::MotionParameters parameters(get_global_transform(), p_motion, p_margin);
-	parameters.recovery_as_collision = p_recovery_as_collision;
-
-	PS2DT::MotionResult result;
-
-	if (move_and_collide(parameters, result, p_test_only)) {
-		// Create a new instance when the cached reference is invalid or still in use in script.
-		if (motion_cache.is_null() || motion_cache->get_reference_count() > 1) {
-			motion_cache.instantiate();
-			motion_cache->owner_id = this->obj->get_instance_id();
-		}
-
-		motion_cache->result = result;
-		return motion_cache;
-	}
-
-	return Ref<KinematicCollision2D>();
-}
-
-bool PhysicsBody2D::move_and_collide(const PS2DT::MotionParameters& p_parameters,
-	PS2DT::MotionResult& r_result, bool p_test_only, bool p_cancel_sliding)
-{
-	if (is_only_update_transform_changes_enabled()) {
-		ERR_PRINT("Move functions do not work together with 'sync to physics' option. See the "
-				  "documentation for details.");
-	}
-
-	bool colliding =
-		PhysicsServer2D::get_singleton()->body_test_motion(get_rid(), p_parameters, &r_result);
-
-	// Restore direction of motion to be along original motion,
-	// in order to avoid sliding due to recovery,
-	// but only if collision depth is low enough to avoid tunneling.
-	if (p_cancel_sliding) {
-		real_t motion_length = p_parameters.motion.length();
-		real_t precision = 0.001;
-
-		if (colliding) {
-			// Can't just use margin as a threshold because collision depth is calculated on unsafe
-			// motion, so even in normal resting cases the depth can be a bit more than the margin.
-			precision += motion_length *
-						 (r_result.collision_unsafe_fraction - r_result.collision_safe_fraction);
-
-			if (r_result.collision_depth > p_parameters.margin + precision) {
-				p_cancel_sliding = false;
-			}
-		}
-
-		if (p_cancel_sliding) {
-			// When motion is null, recovery is the resulting motion.
-			Vector2 motion_normal;
-			if (motion_length > CMP_EPSILON) {
-				motion_normal = p_parameters.motion / motion_length;
-			}
-
-			// Check depth of recovery.
-			real_t projected_length = r_result.travel.dot(motion_normal);
-			Vector2 recovery = r_result.travel - motion_normal * projected_length;
-			real_t recovery_length = recovery.length();
-			// Fixes cases where canceling slide causes the motion to go too deep into the ground,
-			// because we're only taking rest information into account and not general recovery.
-			if (recovery_length < p_parameters.margin + precision) {
-				// Apply adjustment to motion.
-				r_result.travel = motion_normal * projected_length;
-				r_result.remainder = p_parameters.motion - r_result.travel;
-			}
-		}
-	}
-
-	if (!p_test_only) {
-		Transform2D gt = p_parameters.from;
-		gt.columns[2] += r_result.travel;
-		set_global_transform(gt);
-	}
-
-	return colliding;
-}
-
-bool PhysicsBody2D::test_move(const Transform2D& p_from, const Vector2& p_motion,
-	const Ref<KinematicCollision2D>& r_collision, real_t p_margin, bool p_recovery_as_collision)
-{
-	ERR_FAIL_COND_V(!is_inside_tree(), false);
-
-	PS2DT::MotionResult* r = nullptr;
-	PS2DT::MotionResult temp_result;
-	if (r_collision.is_valid()) {
-		r = &r_collision->result;
-	}
-	else {
-		r = &temp_result;
-	}
-
-	PS2DT::MotionParameters parameters(p_from, p_motion, p_margin);
-	parameters.recovery_as_collision = p_recovery_as_collision;
-
-	return PhysicsServer2D::get_singleton()->body_test_motion(get_rid(), parameters, r);
 }
 
 Vector2 PhysicsBody2D::get_gravity() const
@@ -149,38 +46,6 @@ Vector2 PhysicsBody2D::get_gravity() const
 		PhysicsServer2D::get_singleton()->body_get_direct_state(get_rid());
 	ERR_FAIL_NULL_V(state, Vector2());
 	return state->get_total_gravity();
-}
-
-Array PhysicsBody2D::get_collision_exceptions()
-{
-	List<RID> exceptions;
-	PhysicsServer2D::get_singleton()->body_get_collision_exceptions(get_rid(), &exceptions);
-	Array ret;
-	for (const RID& body : exceptions) {
-		ObjectID instance_id = PhysicsServer2D::get_singleton()->body_get_object_instance_id(body);
-		Object* obj = ObjectDB::get_instance(instance_id);
-		PhysicsBody2D* physics_body = Object::cast_to<PhysicsBody2D>(obj);
-		ret.append(physics_body);
-	}
-	return ret;
-}
-
-void PhysicsBody2D::add_collision_exception_with(Node* rp_node)
-{
-	PhysicsBody2D* physics_body = Object::cast_to<PhysicsBody2D>(rp_node);
-	ERR_FAIL_NULL_MSG(physics_body,
-		"Collision exception only works between two nodes that inherit from PhysicsBody2D.");
-	PhysicsServer2D::get_singleton()->body_add_collision_exception(
-		get_rid(), physics_body->get_rid());
-}
-
-void PhysicsBody2D::remove_collision_exception_with(Node* rp_node)
-{
-	PhysicsBody2D* physics_body = Object::cast_to<PhysicsBody2D>(rp_node);
-	ERR_FAIL_NULL_MSG(physics_body,
-		"Collision exception only works between two nodes that inherit from PhysicsBody2D.");
-	PhysicsServer2D::get_singleton()->body_remove_collision_exception(
-		get_rid(), physics_body->get_rid());
 }
 
 PackedStringArray PhysicsBody2D::get_configuration_warnings() const

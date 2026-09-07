@@ -37,7 +37,6 @@
 #include <jni.h>
 
 class FileAccessAndroid : public FileAccess {
-	VLTRSOFTCLASS(FileAccessAndroid, FileAccess);
 	static AAssetManager *asset_manager;
 	static jobject j_asset_manager;
 

@@ -34,13 +34,6 @@
 
 static JavaScriptBridge* javascript_bridge_singleton;
 
-void register_web_api()
-{
-	javascript_bridge_singleton = memnew(JavaScriptBridge);
-	Engine::get_singleton()->add_singleton(
-		Engine::Singleton("JavaScriptBridge", javascript_bridge_singleton->obj.get()));
-}
-
 void unregister_web_api() { memdelete(javascript_bridge_singleton); }
 
 JavaScriptBridge* JavaScriptBridge::singleton = nullptr;
@@ -54,51 +47,6 @@ JavaScriptBridge::JavaScriptBridge()
 }
 
 JavaScriptBridge::~JavaScriptBridge() {}
-
-void JavaScriptBridge::_bind_methods() {}
-
-#if !defined(WEB_ENABLED) || !defined(JAVASCRIPT_EVAL_ENABLED)
-
-Variant JavaScriptBridge::eval(const String& p_code, bool p_use_global_exec_context)
-{
-	return Variant();
-}
-
-Ref<JavaScriptObject> JavaScriptBridge::get_interface(const String& p_interface)
-{
-	return Ref<JavaScriptObject>();
-}
-
-Ref<JavaScriptObject> JavaScriptBridge::create_callback(const Callable& p_callable)
-{
-	return Ref<JavaScriptObject>();
-}
-
-bool JavaScriptBridge::is_js_buffer(Ref<JavaScriptObject> p_js_obj) { return false; }
-
-PackedByteArray JavaScriptBridge::js_buffer_to_packed_byte_array(Ref<JavaScriptObject> p_js_obj)
-{
-	return PackedByteArray();
-}
-
-Variant JavaScriptBridge::_create_object_bind(
-	const Variant** p_args, int p_argcount, Callable::CallError& r_error)
-{
-	if (p_argcount < 1) {
-		r_error.error = Callable::CallError::CALL_ERROR_TOO_FEW_ARGUMENTS;
-		r_error.expected = 1;
-		return Ref<JavaScriptObject>();
-	}
-	if (!p_args[0]->is_string()) {
-		r_error.error = Callable::CallError::CALL_ERROR_INVALID_ARGUMENT;
-		r_error.argument = 0;
-		r_error.expected = Variant::STRING;
-		return Ref<JavaScriptObject>();
-	}
-	return Ref<JavaScriptObject>();
-}
-
-#endif
 
 #if !defined(WEB_ENABLED)
 

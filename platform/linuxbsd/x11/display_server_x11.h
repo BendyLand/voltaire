@@ -104,8 +104,6 @@ typedef struct _xrr_monitor_info
 
 class DisplayServerX11 : public DisplayServer
 {
-	VLTRSOFTCLASS(DisplayServerX11, DisplayServer);
-
 	_THREAD_SAFE_CLASS_
 
 	Atom wm_delete;
@@ -162,18 +160,11 @@ class DisplayServerX11 : public DisplayServer
 		Size2i max_size;
 		Point2i position;
 		Size2i size;
-		Callable rect_changed_callback;
-		Callable event_callback;
-		Callable input_event_callback;
-		Callable input_text_callback;
-		Callable drop_files_callback;
 
 		Vector<Vector2> mpath;
 
 		DisplayServerEnums::WindowID transient_parent = DisplayServerEnums::INVALID_WINDOW_ID;
 		HashSet<DisplayServerEnums::WindowID> transient_children;
-
-		ObjectID instance_id;
 
 		bool no_focus = false;
 
@@ -320,7 +311,6 @@ class DisplayServerX11 : public DisplayServer
 	Cursor cursors[DisplayServerEnums::CURSOR_MAX];
 	Cursor null_cursor;
 	DisplayServerEnums::CursorShape current_cursor = DisplayServerEnums::CURSOR_ARROW;
-	HashMap<DisplayServerEnums::CursorShape, Vector<Variant>> cursors_cache;
 
 	String rendering_driver;
 	void set_wm_fullscreen(bool p_enabled);
@@ -419,7 +409,6 @@ public:
 #ifdef SPEECHD_ENABLED
 	virtual bool tts_is_speaking() const override;
 	virtual bool tts_is_paused() const override;
-	virtual Array tts_get_voices() const override;
 
 	virtual void tts_speak(const String& p_text, const String& p_voice, int p_volume = 50,
 		float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
@@ -433,17 +422,6 @@ public:
 	virtual bool is_dark_mode_supported() const override;
 	virtual bool is_dark_mode() const override;
 	virtual Color get_accent_color() const override;
-	virtual void set_system_theme_change_callback(const Callable& p_callable) override;
-
-	virtual Error file_dialog_show(const String& p_title, const String& p_current_directory,
-		const String& p_filename, bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const Callable& p_callback,
-		DisplayServerEnums::WindowID p_window_id) override;
-	virtual Error file_dialog_with_options_show(const String& p_title,
-		const String& p_current_directory, const String& p_root, const String& p_filename,
-		bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode,
-		const Vector<String>& p_filters, const Array& p_options, const Callable& p_callback,
-		DisplayServerEnums::WindowID p_window_id) override;
 #endif
 
 	virtual void beep() const override;
@@ -509,25 +487,10 @@ public:
 	virtual int64_t window_get_native_handle(DisplayServerEnums::HandleType p_handle_type,
 		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
 
-	virtual void window_attach_instance_id(ObjectID p_instance,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual ObjectID window_get_attached_instance_id(
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
 
 	virtual void window_set_title(const String& p_title,
 		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
 	virtual void window_set_mouse_passthrough(const Vector<Vector2>& p_region,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
-
-	virtual void window_set_rect_changed_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual void window_set_window_event_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual void window_set_input_event_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual void window_set_input_text_callback(const Callable& p_callable,
-		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
-	virtual void window_set_drop_files_callback(const Callable& p_callable,
 		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
 
 	virtual int window_get_current_screen(
@@ -635,8 +598,6 @@ public:
 	virtual String keyboard_get_layout_name(int p_index) const override;
 	virtual Key keyboard_get_keycode_from_physical(Key p_keycode) const override;
 	virtual Key keyboard_get_label_from_physical(Key p_keycode) const override;
-
-	virtual bool color_picker(const Callable& p_callback) override;
 
 	virtual void process_events() override;
 

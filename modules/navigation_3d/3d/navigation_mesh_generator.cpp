@@ -60,23 +60,4 @@ void NavigationMeshGenerator::clear(Ref<NavigationMesh> p_navigation_mesh)
 	}
 }
 
-void NavigationMeshGenerator::parse_source_geometry_data(
-	const Ref<NavigationMesh>& p_navigation_mesh,
-	Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_root_node,
-	const Callable& p_callback)
-{
-	NavigationServer3D::get_singleton()->parse_source_geometry_data(
-		p_navigation_mesh, p_source_geometry_data, p_root_node, p_callback);
-}
-
-void NavigationMeshGenerator::bake_from_source_geometry_data(Ref<NavigationMesh> p_navigation_mesh,
-	const Ref<NavigationMeshSourceGeometryData3D>& p_source_geometry_data,
-	const Callable& p_callback)
-{
-	NavigationServer3D::get_singleton()->bake_from_source_geometry_data(
-		p_navigation_mesh, p_source_geometry_data, p_callback);
-}
-
-void NavigationMeshGenerator::_bind_methods() {}
-
 

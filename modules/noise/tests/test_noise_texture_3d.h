@@ -38,7 +38,6 @@
 namespace TestNoiseTexture3D {
 
 class NoiseTexture3DTester : public RefCounted {
-	VLTRCLASS(NoiseTexture3DTester, RefCounted);
 
 	const NoiseTexture3D *const texture;
 

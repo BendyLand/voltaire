@@ -32,6 +32,5 @@
 
 UPNPDevice* (*UPNPDevice::_create)(bool p_notify_postinitialize) = nullptr;
 
-void UPNPDevice::_bind_methods() {}
 
 

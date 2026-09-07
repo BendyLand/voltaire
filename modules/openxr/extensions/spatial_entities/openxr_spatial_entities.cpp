@@ -34,22 +34,6 @@
 #include "openxr_spatial_entities.h"
 #include "openxr_spatial_entity_extension.h"
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialCapabilityConfigurationBaseHeader
-
-void OpenXRSpatialCapabilityConfigurationBaseHeader::_bind_methods() {}
-
-// For exposing this to GDExtension
-uint64_t OpenXRSpatialCapabilityConfigurationBaseHeader::_get_configurationgd()
-{
-	return (uint64_t)get_configuration();
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialEntityTracker
-
-void OpenXRSpatialEntityTracker::_bind_methods() {}
-
 OpenXRSpatialEntityTracker::OpenXRSpatialEntityTracker()
 {
 	set_tracker_type(XRServer::TrackerType::TRACKER_ANCHOR);
@@ -113,8 +97,6 @@ void OpenXRSpatialEntityTracker::set_spatial_tracking_state(
 {
 	if (spatial_tracking_state != p_state) {
 		spatial_tracking_state = p_state;
-
-		this->obj->emit_signal(SNAME("spatial_tracking_state_changed"), spatial_tracking_state);
 	}
 }
 
@@ -143,7 +125,6 @@ void OpenXRSpatialEntityTracker::add_next(Ref<OpenXRStructureBase> p_next)
 		}
 
 		next = p_next;
-		this->obj->emit_signal(SNAME("next_changed"));
 	}
 }
 
@@ -164,7 +145,6 @@ void OpenXRSpatialEntityTracker::remove_next(Ref<OpenXRStructureBase> p_next)
 			}
 
 			p_next->set_next(nullptr);
-			this->obj->emit_signal(SNAME("next_changed"));
 			break;
 		}
 
@@ -174,26 +154,10 @@ void OpenXRSpatialEntityTracker::remove_next(Ref<OpenXRStructureBase> p_next)
 
 Ref<OpenXRStructureBase> OpenXRSpatialEntityTracker::get_next() const { return next; }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialComponentData
-
-void OpenXRSpatialComponentData::_bind_methods() {}
-
-// For exposing this to GDExtension
-int64_t OpenXRSpatialComponentData::_get_component_typegd() const
-{
-	return (int64_t)get_component_type();
-}
-
 XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const
 {
 	return XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
 }
-
-////////////////////////////////////////////////////////////////////////////
-// Spatial component bounded2d list
-
-void OpenXRSpatialComponentBounded2DList::_bind_methods() {}
 
 void OpenXRSpatialComponentBounded2DList::set_capacity(uint32_t p_capacity)
 {
@@ -235,11 +199,6 @@ Vector2 OpenXRSpatialComponentBounded2DList::get_size(int64_t p_index) const
 	return Vector2(extents.width, extents.height);
 }
 
-////////////////////////////////////////////////////////////////////////////
-// Spatial component bounded3d list
-
-void OpenXRSpatialComponentBounded3DList::_bind_methods() {}
-
 void OpenXRSpatialComponentBounded3DList::set_capacity(uint32_t p_capacity)
 {
 	bounded3d_data.resize(p_capacity);
@@ -280,11 +239,6 @@ Vector3 OpenXRSpatialComponentBounded3DList::get_size(int64_t p_index) const
 	return Vector3(extents.width, extents.height, extents.depth);
 }
 
-////////////////////////////////////////////////////////////////////////////
-// Spatial component parent list
-
-void OpenXRSpatialComponentParentList::_bind_methods() {}
-
 void OpenXRSpatialComponentParentList::set_capacity(uint32_t p_capacity)
 {
 	parent_data.resize(p_capacity);
@@ -313,11 +267,6 @@ RID OpenXRSpatialComponentParentList::get_parent(int64_t p_index) const
 
 	return se_extension->find_spatial_entity(parent_data[p_index]);
 }
-
-////////////////////////////////////////////////////////////////////////////
-// Spatial component mesh2d list
-
-void OpenXRSpatialComponentMesh2DList::_bind_methods() {}
 
 void OpenXRSpatialComponentMesh2DList::set_capacity(uint32_t p_capacity)
 {
@@ -422,11 +371,6 @@ PackedInt32Array OpenXRSpatialComponentMesh2DList::get_indices(
 	return ret;
 }
 
-////////////////////////////////////////////////////////////////////////////
-// Spatial component mesh3d list
-
-void OpenXRSpatialComponentMesh3DList::_bind_methods() {}
-
 void OpenXRSpatialComponentMesh3DList::set_capacity(uint32_t p_capacity)
 {
 	mesh3d_data.resize(p_capacity);
@@ -464,11 +408,6 @@ Ref<Mesh> OpenXRSpatialComponentMesh3DList::get_mesh(int64_t p_index) const
 
 	return nullptr;
 }
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialQueryResultData
-
-void OpenXRSpatialQueryResultData::_bind_methods() {}
 
 void OpenXRSpatialQueryResultData::set_capacity(uint32_t p_capacity)
 {

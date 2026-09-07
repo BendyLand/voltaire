@@ -111,46 +111,6 @@ void VehicleWheel3D::FTIData::update_world_xform(
 	}
 }
 
-void VehicleWheel3D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		VehicleBody3D* cb = Object::cast_to<VehicleBody3D>(get_parent());
-		if (!cb) {
-			return;
-		}
-		body = cb;
-		local_xform = get_transform();
-		cb->wheels.push_back(this);
-
-		m_chassisConnectionPointCS = get_transform().origin;
-		m_wheelDirectionCS = -get_transform().basis.get_column(Vector3::AXIS_Y).normalized();
-		m_wheelAxleCS = get_transform().basis.get_column(Vector3::AXIS_X).normalized();
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		VehicleBody3D* cb = Object::cast_to<VehicleBody3D>(get_parent());
-		if (!cb) {
-			return;
-		}
-		cb->wheels.erase(this);
-		body = nullptr;
-	} break;
-	}
-}
-
-PackedStringArray VehicleWheel3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-
-	if (!Object::cast_to<VehicleBody3D>(get_parent())) {
-		warnings.push_back(RTR("VehicleWheel3D serves to provide a wheel system to a "
-							   "VehicleBody3D. Please use it as a child of a VehicleBody3D."));
-	}
-
-	return warnings;
-}
-
 void VehicleWheel3D::_update(PhysicsDirectBodyState3D* s)
 {
 	if (m_raycastInfo.m_isInContact) {
@@ -324,102 +284,6 @@ void VehicleBody3D::_update_wheel(int p_idx, PhysicsDirectBodyState3D* s)
 	wheel.m_worldTransform.set_basis(steeringMat * rotatingMat * basis2);
 	// wheel.m_worldTransform.set_basis(basis2 * (steeringMat * rotatingMat));
 	wheel.m_worldTransform.set_origin(origin);
-}
-
-real_t VehicleBody3D::_ray_cast(int p_idx, PhysicsDirectBodyState3D* s)
-{
-	VehicleWheel3D& wheel = *wheels[p_idx];
-
-	_update_wheel_transform(wheel, s);
-
-	real_t depth = -1;
-
-	real_t raylen = wheel.m_suspensionRestLength + wheel.m_wheelRadius;
-
-	Vector3 rayvector = wheel.m_raycastInfo.m_wheelDirectionWS * (raylen);
-	Vector3 source = wheel.m_raycastInfo.m_hardPointWS;
-	wheel.m_raycastInfo.m_contactPointWS = source + rayvector;
-	const Vector3& target = wheel.m_raycastInfo.m_contactPointWS;
-	source -= wheel.m_wheelRadius * wheel.m_raycastInfo.m_wheelDirectionWS;
-
-	real_t param = real_t(0.);
-
-	PS3DT::RayResult rr;
-
-	PhysicsDirectSpaceState3D* ss = s->get_space_state();
-
-	PS3DT::RayParameters ray_params;
-	ray_params.from = source;
-	ray_params.to = target;
-	ray_params.exclude = exclude;
-	ray_params.collision_mask = get_collision_mask();
-
-	wheel.m_raycastInfo.m_groundObject = nullptr;
-	bool col = ss->intersect_ray(ray_params, rr);
-
-	if (col) {
-		param = source.distance_to(rr.position) / source.distance_to(target);
-		depth = raylen * param;
-		wheel.m_raycastInfo.m_contactNormalWS = rr.normal;
-
-		wheel.m_raycastInfo.m_isInContact = true;
-		if (rr.collider) {
-			wheel.m_raycastInfo.m_groundObject = Object::cast_to<PhysicsBody3D>(rr.collider);
-		}
-
-		real_t hitDistance = param * raylen;
-		wheel.m_raycastInfo.m_suspensionLength = hitDistance - wheel.m_wheelRadius;
-		// clamp on max suspension travel
-
-		real_t minSuspensionLength = wheel.m_suspensionRestLength - wheel.m_maxSuspensionTravel;
-		real_t maxSuspensionLength = wheel.m_suspensionRestLength + wheel.m_maxSuspensionTravel;
-		if (wheel.m_raycastInfo.m_suspensionLength < minSuspensionLength) {
-			wheel.m_raycastInfo.m_suspensionLength = minSuspensionLength;
-		}
-		if (wheel.m_raycastInfo.m_suspensionLength > maxSuspensionLength) {
-			wheel.m_raycastInfo.m_suspensionLength = maxSuspensionLength;
-		}
-
-		wheel.m_raycastInfo.m_contactPointWS = rr.position;
-
-		real_t denominator =
-			wheel.m_raycastInfo.m_contactNormalWS.dot(wheel.m_raycastInfo.m_wheelDirectionWS);
-
-		Vector3 chassis_velocity_at_contactPoint;
-		// Vector3 relpos =
-		// wheel.m_raycastInfo.m_contactPointWS-getRigidBody()->getCenterOfMassPosition();
-
-		// chassis_velocity_at_contactPoint = getRigidBody()->getVelocityInLocalPoint(relpos);
-
-		chassis_velocity_at_contactPoint =
-			s->get_linear_velocity() + (s->get_angular_velocity())
-										   .cross(wheel.m_raycastInfo.m_contactPointWS -
-												  s->get_transform().origin); // * mPos);
-
-		real_t projVel =
-			wheel.m_raycastInfo.m_contactNormalWS.dot(chassis_velocity_at_contactPoint);
-
-		if (denominator >= real_t(-0.1)) {
-			wheel.m_suspensionRelativeVelocity = real_t(0.0);
-			wheel.m_clippedInvContactDotSuspension = real_t(1.0) / real_t(0.1);
-		}
-		else {
-			real_t inv = real_t(-1.) / denominator;
-			wheel.m_suspensionRelativeVelocity = projVel * inv;
-			wheel.m_clippedInvContactDotSuspension = inv;
-		}
-
-	}
-	else {
-		wheel.m_raycastInfo.m_isInContact = false;
-		// put wheel info as in rest position
-		wheel.m_raycastInfo.m_suspensionLength = wheel.m_suspensionRestLength;
-		wheel.m_suspensionRelativeVelocity = real_t(0.0);
-		wheel.m_raycastInfo.m_contactNormalWS = -wheel.m_raycastInfo.m_wheelDirectionWS;
-		wheel.m_clippedInvContactDotSuspension = real_t(1.0);
-	}
-
-	return depth;
 }
 
 void VehicleBody3D::_update_suspension(PhysicsDirectBodyState3D* s)
@@ -870,8 +734,7 @@ void VehicleBody3D::_body_state_changed(PhysicsDirectBodyState3D* p_state)
 
 	_update_friction(p_state);
 
-	for (int i
-= 0; i < wheels.size(); i++) {
+	for (int i = 0; i < wheels.size(); i++) {
 		VehicleWheel3D& wheel = *wheels[i];
 		Vector3 relpos = wheel.m_raycastInfo.m_hardPointWS - p_state->get_transform().origin;
 		Vector3 vel =

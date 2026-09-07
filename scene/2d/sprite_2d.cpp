@@ -33,47 +33,6 @@
 #include "servers/display/accessibility_server.h"
 #include "sprite_2d.h"
 
-#ifdef TOOLS_ENABLED
-Dictionary Sprite2D::_edit_get_state() const
-{
-	Dictionary state = Node2D::_edit_get_state();
-	state["offset"] = offset;
-	state["region_rect"] = region_rect;
-	return state;
-}
-
-void Sprite2D::_edit_set_state(const Dictionary& p_state)
-{
-	Node2D::_edit_set_state(p_state);
-	set_offset(p_state["offset"]);
-	set_region_rect(p_state["region_rect"]);
-}
-
-void Sprite2D::_edit_set_pivot(const Point2& p_pivot)
-{
-	set_offset(get_offset() - p_pivot);
-	set_position(get_transform().xform(p_pivot));
-}
-
-Point2 Sprite2D::_edit_get_pivot() const { return Vector2(); }
-
-bool Sprite2D::_edit_use_pivot() const { return true; }
-
-void Sprite2D::_edit_set_rect(const Rect2& p_rect)
-{
-	if (texture.is_null()) {
-		return;
-	}
-	if (!region_enabled || hframes > 1 || vframes > 1 || !dragging_to_resize_rect) {
-		Node2D::_edit_set_rect(p_rect);
-		return;
-	}
-	Point2 delta = p_rect.position - (centered ? _get_rect_offset(p_rect.size) : Vector2());
-	set_region_rect(Rect2(region_rect.position, p_rect.size));
-	set_position(get_position() + get_transform().basis_xform(delta));
-}
-#endif // TOOLS_ENABLED
-
 #ifdef DEBUG_ENABLED
 bool Sprite2D::_edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const
 {
@@ -172,27 +131,6 @@ void Sprite2D::_notification(int p_what)
 	}
 }
 
-void Sprite2D::set_texture(const Ref<Texture2D>& p_texture)
-{
-	if (p_texture == texture) {
-		return;
-	}
-
-	if (texture.is_valid()) {
-		texture->disconnect_changed(callable_mp(this, &Sprite2D::_texture_changed));
-	}
-
-	texture = p_texture;
-
-	if (texture.is_valid()) {
-		texture->connect_changed(callable_mp(this, &Sprite2D::_texture_changed));
-	}
-
-	queue_redraw();
-	this->obj->emit_signal(SceneStringName(texture_changed));
-	item_rect_changed();
-}
-
 Ref<Texture2D> Sprite2D::get_texture() const { return texture; }
 
 void Sprite2D::set_centered(bool p_center)
@@ -285,19 +223,6 @@ void Sprite2D::set_region_filter_clip_enabled(bool p_region_filter_clip_enabled)
 
 bool Sprite2D::is_region_filter_clip_enabled() const { return region_filter_clip_enabled; }
 
-void Sprite2D::set_frame(int p_frame)
-{
-	ERR_FAIL_INDEX(p_frame, vframes * hframes);
-
-	if (frame == p_frame) {
-		return;
-	}
-
-	frame = p_frame;
-	item_rect_changed();
-	this->obj->emit_signal(SceneStringName(frame_changed));
-}
-
 int Sprite2D::get_frame() const { return frame; }
 
 void Sprite2D::set_frame_coords(const Vector2i& p_coord)
@@ -310,55 +235,7 @@ void Sprite2D::set_frame_coords(const Vector2i& p_coord)
 
 Vector2i Sprite2D::get_frame_coords() const { return Vector2i(frame % hframes, frame / hframes); }
 
-void Sprite2D::set_vframes(int p_amount)
-{
-	ERR_FAIL_COND_MSG(p_amount < 1, "Amount of vframes cannot be smaller than 1.");
-
-	if (vframes == p_amount) {
-		return;
-	}
-
-	vframes = p_amount;
-	if (frame >= vframes * hframes) {
-		frame = 0;
-	}
-	_emit_region_rect_enabled();
-	queue_redraw();
-	item_rect_changed();
-	this->obj->notify_property_list_changed();
-}
-
 int Sprite2D::get_vframes() const { return vframes; }
-
-void Sprite2D::set_hframes(int p_amount)
-{
-	ERR_FAIL_COND_MSG(p_amount < 1, "Amount of hframes cannot be smaller than 1.");
-
-	if (hframes == p_amount) {
-		return;
-	}
-
-	if (vframes > 1) {
-		// Adjust the frame to fit new sheet dimensions.
-		int original_column = frame % hframes;
-		if (original_column >= p_amount) {
-			// Frame's column was dropped, reset.
-			frame = 0;
-		}
-		else {
-			int original_row = frame / hframes;
-			frame = original_row * p_amount + original_column;
-		}
-	}
-	hframes = p_amount;
-	if (frame >= vframes * hframes) {
-		frame = 0;
-	}
-	_emit_region_rect_enabled();
-	queue_redraw();
-	item_rect_changed();
-	this->obj->notify_property_list_changed();
-}
 
 int Sprite2D::get_hframes() const { return hframes; }
 
@@ -420,15 +297,6 @@ bool Sprite2D::is_editor_region_rect_draggable() const
 	return hframes <= 1 && vframes <= 1 && region_enabled;
 }
 
-#ifdef TOOLS_ENABLED
-void Sprite2D::_editor_set_dragging_to_resize_rect(bool p_dragging_to_resize_rect)
-{
-	dragging_to_resize_rect = p_dragging_to_resize_rect;
-}
-
-bool Sprite2D::_editor_is_dragging_to_resiz_rect() const { return dragging_to_resize_rect; }
-#endif
-
 Rect2 Sprite2D::get_rect() const
 {
 	if (texture.is_null()) {
@@ -455,43 +323,12 @@ Rect2 Sprite2D::get_rect() const
 	return Rect2(ofs, s);
 }
 
-void Sprite2D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "frame") {
-		p_property.hint = PROPERTY_HINT_RANGE;
-		p_property.hint_string = "0," + itos(vframes * hframes - 1) + ",1";
-		p_property.usage |= PROPERTY_USAGE_KEYING_INCREMENTS;
-	}
-	else if (p_property.name == "frame_coords") {
-		p_property.usage |= PROPERTY_USAGE_KEYING_INCREMENTS;
-	}
-}
-
 void Sprite2D::_texture_changed()
 {
 	// Changes to the texture need to trigger an update to make
 	// the editor redraw the sprite with the updated texture.
 	if (texture.is_valid()) {
 		queue_redraw();
-	}
-}
-
-void Sprite2D::_emit_region_rect_enabled()
-{
-	if (Engine::get_singleton()->is_editor_hint()) {
-		this->obj->emit_signal("_editor_region_rect_enabled");
-	}
-}
-
-void Sprite2D::_bind_methods() {}
-
-Sprite2D::Sprite2D()
-{
-	if (Engine::get_singleton()->is_editor_hint()) {
-		this->obj->add_user_signal(MethodInfo("_editor_region_rect_enabled"));
 	}
 }
 

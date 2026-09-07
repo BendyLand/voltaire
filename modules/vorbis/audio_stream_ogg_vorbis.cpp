@@ -267,28 +267,6 @@ void AudioStreamPlaybackOggVorbis::tag_used_streams()
 	vorbis_stream->tag_used(get_playback_position());
 }
 
-void AudioStreamPlaybackOggVorbis::set_parameter(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == SNAME("looping")) {
-		if (p_value == Variant()) {
-			looping_override = false;
-			looping = false;
-		}
-		else {
-			looping_override = true;
-			looping = p_value;
-		}
-	}
-}
-
-Variant AudioStreamPlaybackOggVorbis::get_parameter(const StringName& p_name) const
-{
-	if (looping_override && p_name == SNAME("looping")) {
-		return looping;
-	}
-	return Variant();
-}
-
 void AudioStreamPlaybackOggVorbis::seek(double p_time)
 {
 	ERR_FAIL_COND(!ready);
@@ -447,66 +425,6 @@ Ref<AudioStreamPlayback> AudioStreamOggVorbis::instantiate_playback()
 	return nullptr;
 }
 
-void AudioStreamOggVorbis::maybe_update_info()
-{
-	ERR_FAIL_COND(packet_sequence.is_null());
-
-	vorbis_info info;
-	vorbis_comment comment;
-	int err;
-
-	vorbis_info_init(&info);
-	vorbis_comment_init(&comment);
-
-	Ref<OggPacketSequencePlayback> packet_sequence_playback =
-		packet_sequence->instantiate_playback();
-
-	for (int i = 0; i < 3; i++) {
-		ogg_packet* packet;
-		if (!packet_sequence_playback->next_ogg_packet(&packet)) {
-			WARN_PRINT("Failed to get header packet");
-			break;
-		}
-		if (i == 0) {
-			packet->b_o_s = 1;
-
-			ERR_FAIL_COND(!vorbis_synthesis_idheader(packet));
-		}
-
-		err = vorbis_synthesis_headerin(&info, &comment, packet);
-		ERR_FAIL_COND_MSG(err != 0, "Error parsing header packet " + itos(i) + ": " + itos(err));
-	}
-
-	Dictionary dictionary;
-	// Comments are required by the Vorbis spec to be structured like env vars, i.e. VAR=VALUE.
-	// This is how tags are stored (artist, album, etc.), and we parse them out for display.
-	// See https://xiph.org/vorbis/doc/v-comment.html
-	for (int i = 0; i < comment.comments; i++) {
-		String c = String::utf8(comment.user_comments[i]);
-		int equals = c.find_char('=');
-
-#ifdef TOOLS_ENABLED
-		if (equals == -1) {
-			WARN_PRINT(
-				vformat(R"(Invalid comment in Ogg Vorbis file "%s", should contain '=': "%s".)",
-					get_path(), c));
-			continue;
-		}
-#endif
-
-		String tag = c.substr(0, equals);
-		String tag_value = c.substr(equals + 1);
-
-		dictionary[tag.to_lower()] = tag_value;
-	}
-	tags = dictionary;
-
-	packet_sequence->set_sampling_rate(info.rate);
-
-	vorbis_comment_clear(&comment);
-	vorbis_info_clear(&info);
-}
-
 void AudioStreamOggVorbis::set_packet_sequence(Ref<OggPacketSequence> p_packet_sequence)
 {
 	packet_sequence = p_packet_sequence;
@@ -558,30 +476,7 @@ void AudioStreamOggVorbis::set_bar_beats(int p_bar_beats)
 
 int AudioStreamOggVorbis::get_bar_beats() const { return bar_beats; }
 
-void AudioStreamOggVorbis::set_tags(const Dictionary& p_tags) { tags = p_tags; }
-
-Dictionary AudioStreamOggVorbis::get_tags() const { return tags; }
-
 bool AudioStreamOggVorbis::is_monophonic() const { return false; }
-
-void AudioStreamOggVorbis::get_parameter_list(List<Parameter>* r_parameters)
-{
-	r_parameters->push_back(Parameter(PropertyInfo(Variant::BOOL, "looping", PROPERTY_HINT_NONE, "",
-										  PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CHECKABLE),
-		Variant()));
-}
-
-Ref<AudioSample> AudioStreamOggVorbis::generate_sample() const
-{
-	Ref<AudioSample> sample;
-	sample.instantiate();
-	sample->stream = this;
-	sample->loop_mode =
-		loop ? AudioSample::LoopMode::LOOP_FORWARD : AudioSample::LoopMode::LOOP_DISABLED;
-	sample->loop_begin = loop_offset;
-	sample->loop_end = 0;
-	return sample;
-}
 
 Ref<AudioStreamOggVorbis> AudioStreamOggVorbis::load_from_buffer(
 	const Vector<uint8_t>& p_stream_data)
@@ -721,7 +616,5 @@ Ref<AudioStreamOggVorbis> AudioStreamOggVorbis::load_from_file(const String& p_p
 		vformat("Cannot open file '%s'.", p_path));
 	return load_from_buffer(stream_data);
 }
-
-void AudioStreamOggVorbis::_bind_methods() {}
 
 

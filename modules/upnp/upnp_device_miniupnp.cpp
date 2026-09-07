@@ -36,7 +36,7 @@
 
 UPNPDevice* UPNPDeviceMiniUPNP::_create(bool p_notify_postinitialize)
 {
-	return static_cast<UPNPDevice*>(memnew(UPNPDeviceMiniUPNP).ptr());
+	return static_cast<UPNPDevice*>(memnew(UPNPDeviceMiniUPNP));
 }
 
 void UPNPDeviceMiniUPNP::make_default() { UPNPDevice::_create = UPNPDeviceMiniUPNP::_create; }

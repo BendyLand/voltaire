@@ -33,7 +33,6 @@
 #include "core/io/resource.h"
 
 class CharFXTransform : public RefCounted {
-	VLTRCLASS(CharFXTransform, RefCounted);
 
 protected:
 	static void _bind_methods();
@@ -97,7 +96,6 @@ public:
 };
 
 class RichTextEffect : public Resource {
-	VLTRCLASS(RichTextEffect, Resource);
 	OBJ_SAVE_TYPE_NO(RichTextEffect);
 
 protected:

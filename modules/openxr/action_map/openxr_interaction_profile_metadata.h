@@ -59,7 +59,6 @@
 class OpenXRInteractionProfileMetadata
 {
 public:
-	mem_unique_ptr<Object> obj;
 	struct TopLevelPath
 	{
 		String display_name;		   // User friendly display name (i.e. Left controller)

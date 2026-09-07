@@ -34,136 +34,6 @@
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 
-bool AnimationPlayer::_set(const StringName& p_name, const Variant& p_value)
-{
-	String name = p_name;
-	if (name.begins_with("playback/play")) { // For backward compatibility.
-		set_current_animation(p_value);
-	}
-	else if (name.begins_with("next/")) {
-		String which = name.get_slicec('/', 1);
-		animation_set_next(which, p_value);
-	}
-	else if (p_name == SceneStringName(blend_times)) {
-		Array array = p_value;
-		int len = array.size();
-		ERR_FAIL_COND_V(len % 3, false);
-
-		for (int i = 0; i < len / 3; i++) {
-			StringName from = array[i * 3 + 0];
-			StringName to = array[i * 3 + 1];
-			float time = array[i * 3 + 2];
-			set_blend_time(from, to, time);
-		}
-#ifndef DISABLE_DEPRECATED
-	}
-	else if (p_name == "method_call_mode") {
-		set_callback_mode_method(static_cast<AnimationCallbackModeMethod>((int)p_value));
-	}
-	else if (p_name == "playback_process_mode") {
-		set_callback_mode_process(static_cast<AnimationCallbackModeProcess>((int)p_value));
-	}
-	else if (p_name == "playback_active") {
-		set_active(p_value);
-#endif // DISABLE_DEPRECATED
-	}
-	else {
-		return false;
-	}
-	return true;
-}
-
-bool AnimationPlayer::_get(const StringName& p_name, Variant& r_ret) const
-{
-	String name = p_name;
-
-	if (name == "playback/play") { // For backward compatibility.
-
-		r_ret = get_current_animation();
-
-	}
-	else if (name.begins_with("next/")) {
-		String which = name.get_slicec('/', 1);
-		r_ret = animation_get_next(which);
-
-	}
-	else if (p_name == SceneStringName(blend_times)) {
-		Vector<BlendKey> keys;
-		for (const KeyValue<BlendKey, double>& E : blend_times) {
-			keys.ordered_insert(E.key);
-		}
-
-		Array array;
-		for (int i = 0; i < keys.size(); i++) {
-			array.push_back(keys[i].from);
-			array.push_back(keys[i].to);
-			array.push_back(blend_times.get(keys[i]));
-		}
-
-		r_ret = array;
-#ifndef DISABLE_DEPRECATED
-	}
-	else if (name == "method_call_mode") {
-		r_ret = get_callback_mode_method();
-	}
-	else if (name == "playback_process_mode") {
-		r_ret = get_callback_mode_process();
-	}
-	else if (name == "playback_active") {
-		r_ret = is_active();
-#endif // DISABLE_DEPRECATED
-	}
-	else {
-		return false;
-	}
-
-	return true;
-}
-
-void AnimationPlayer::_validate_property(PropertyInfo& p_property) const
-{
-	if (Engine::get_singleton()->is_editor_hint() && p_property.name == "current_animation") {
-		List<String> names;
-
-		for (const KeyValue<StringName, AnimationData>& E : animation_set) {
-			names.push_back(E.key);
-		}
-		names.push_front("[stop]");
-		String hint;
-		for (List<String>::Element* E = names.front(); E; E = E->next()) {
-			if (E != names.front()) {
-				hint += ",";
-			}
-			hint += E->get();
-		}
-
-		p_property.hint_string = hint;
-	}
-	else if (!auto_capture && p_property.name.begins_with("playback_auto_capture_")) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
-void AnimationPlayer::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	List<PropertyInfo> anim_names;
-
-	for (const KeyValue<StringName, AnimationData>& E : animation_set) {
-		AHashMap<StringName, StringName>::ConstIterator F = animation_next_set.find(E.key);
-		if (F && F->value != StringName()) {
-			anim_names.push_back(PropertyInfo(Variant::STRING, "next/" + String(E.key),
-				PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
-		}
-	}
-
-	for (const PropertyInfo& E : anim_names) {
-		p_list->push_back(E);
-	}
-
-	p_list->push_back(PropertyInfo(Variant::ARRAY, "blend_times", PROPERTY_HINT_NONE, "",
-		PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
-}
-
 void AnimationPlayer::_notification(int p_what)
 {
 	switch (p_what) {
@@ -342,90 +212,9 @@ void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started)
 	}
 }
 
-bool AnimationPlayer::_blend_pre_process(
-	double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map)
-{
-	if (!playback.current.is_enabled) {
-		_set_process(false);
-		return false;
-	}
-
-	AnimationData* p_from = &animation_set[playback.current.animation_name];
-	tmp_from = p_from->animation->obj->get_instance_id();
-	end_reached = false;
-	end_notify = false;
-
-	finished_anim = StringName();
-
-	bool started = playback.started; // The animation may be changed during process, so it is safer
-									 // that the state is changed before process.
-	if (playback.started) {
-		playback.started = false;
-	}
-
-	String prev_animation_name = playback.current.animation_name;
-	_blend_playback_data(p_delta, started);
-
-	if (prev_animation_name != playback.current.animation_name) {
-		return false; // Animation has been changed in the process (may be caused by method track),
-					  // abort process.
-	}
-
-	return true;
-}
-
 void AnimationPlayer::_blend_capture(double p_delta)
 {
 	blend_capture(p_delta * Math::abs(speed_scale));
-}
-
-void AnimationPlayer::_blend_post_process()
-{
-	if (end_reached) {
-		// If the method track changes current animation, the animation is not finished.
-		if (tmp_from ==
-			animation_set[playback.current.animation_name].animation->obj->get_instance_id()) {
-			if (!playback_queue.is_empty()) {
-				if (!finished_anim.is_empty()) {
-					this->obj->emit_signal(SceneStringName(animation_finished), finished_anim);
-					// Abort if playback_queue is cleared by animation_finished signal.
-					if (playback_queue.is_empty()) {
-						end_reached = false;
-						end_notify = false;
-						tmp_from = ObjectID();
-						return;
-					}
-				}
-				const StringName old = playback.assigned;
-				play(playback_queue.front()->get());
-				const StringName& new_name = playback.assigned;
-				playback_queue.pop_front();
-				if (end_notify) {
-					this->obj->emit_signal(SceneStringName(animation_changed), old, new_name);
-				}
-			}
-			else {
-				_clear_caches(clear_cache_on_stop);
-				playing = false;
-				_set_process(false);
-				if (end_notify) {
-					if (!finished_anim.is_empty()) {
-						this->obj->emit_signal(SceneStringName(animation_finished), finished_anim);
-					}
-					this->obj->emit_signal(SNAME("current_animation_changed"), "");
-					if (movie_quit_on_finish && OS::get_singleton()->has_feature("movie")) {
-						print_line(vformat("Movie Maker mode is enabled. Quitting on animation "
-										   "finish as requested by: %s",
-							get_path()));
-						get_tree()->quit();
-					}
-				}
-			}
-		}
-		end_reached = false;
-		end_notify = false;
-	}
-	tmp_from = ObjectID();
 }
 
 void AnimationPlayer::queue(const StringName& p_name)
@@ -436,16 +225,6 @@ void AnimationPlayer::queue(const StringName& p_name)
 	else {
 		playback_queue.push_back(p_name);
 	}
-}
-
-TypedArray<StringName> AnimationPlayer::get_queue()
-{
-	TypedArray<StringName> ret;
-	for (const StringName& E : playback_queue) {
-		ret.push_back(E);
-	}
-
-	return ret;
 }
 
 void AnimationPlayer::clear_queue() { playback_queue.clear(); }
@@ -530,124 +309,6 @@ void AnimationPlayer::play_section_with_markers(const StringName& p_name,
 	play_section(name, start_time, end_time, p_custom_blend, p_custom_scale, p_from_end);
 }
 
-void AnimationPlayer::play_section(const StringName& p_name, double p_start_time, double p_end_time,
-	double p_custom_blend, float p_custom_scale, bool p_from_end)
-{
-	StringName name = p_name;
-
-	if (name == StringName()) {
-		name = playback.assigned;
-	}
-
-	ERR_FAIL_COND_MSG(!animation_set.has(name), vformat("Animation not found: %s.", name));
-	ERR_FAIL_COND_MSG(
-		p_start_time >= 0 && p_end_time >= 0 && Math::is_equal_approx(p_start_time, p_end_time),
-		"Start time and end time must not equal to each other.");
-	ERR_FAIL_COND_MSG(p_start_time >= 0 && p_end_time >= 0 &&
-						  Animation::is_greater_approx(p_start_time, p_end_time),
-		vformat("Start time %f is greater than end time %f.", p_start_time, p_end_time));
-
-	Playback& c = playback;
-
-	if (c.current.is_enabled) {
-		double blend_time = 0.0;
-		// Find if it can blend.
-		BlendKey bk;
-		bk.from = c.current.animation_name;
-		bk.to = name;
-
-		if (Animation::is_greater_or_equal_approx(p_custom_blend, 0)) {
-			blend_time = p_custom_blend;
-		}
-		else if (blend_times.has(bk)) {
-			blend_time = blend_times[bk];
-		}
-		else {
-			bk.from = SNAME("*");
-			if (blend_times.has(bk)) {
-				blend_time = blend_times[bk];
-			}
-			else {
-				bk.from = c.current.animation_name;
-				bk.to = SNAME("*");
-
-				if (blend_times.has(bk)) {
-					blend_time = blend_times[bk];
-				}
-			}
-		}
-
-		if (Animation::is_less_approx(p_custom_blend, 0) && Math::is_zero_approx(blend_time) &&
-			default_blend_time) {
-			blend_time = default_blend_time;
-		}
-		if (Animation::is_greater_approx(blend_time, 0)) {
-			Blend b;
-			b.data = c.current;
-			b.blend_left = get_current_blend_amount();
-			b.blend_time = blend_time;
-			c.blend.push_back(b);
-		}
-		else {
-			c.blend.clear();
-		}
-	}
-
-	if (get_current_animation() != p_name) {
-		_clear_playing_caches();
-	}
-
-	c.current.is_enabled = true;
-	c.current.animation_name = name;
-	c.current.animation_length = animation_set[name].animation->get_length();
-	c.current.speed_scale = p_custom_scale;
-	c.current.start_time = p_start_time;
-	c.current.end_time = p_end_time;
-
-	double start = playback.current.get_start_time();
-	double end = playback.current.get_end_time();
-
-	if (!end_reached) {
-		playback_queue.clear();
-	}
-
-	if (c.assigned != name) { // Reset.
-		c.current.pos = p_from_end ? end : start;
-		c.assigned = name;
-		this->obj->emit_signal(SNAME("current_animation_changed"), c.assigned);
-	}
-	else {
-		if (p_from_end && Animation::is_less_or_equal_approx(c.current.pos, start)) {
-			// Animation reset but played backwards, set position to the end.
-			seek_internal(end, true, true, true);
-		}
-		else if (!p_from_end && Animation::is_greater_or_equal_approx(c.current.pos, end)) {
-			// Animation resumed but already ended, set position to the beginning.
-			seek_internal(start, true, true, true);
-		}
-		else if (playing) {
-			return;
-		}
-	}
-
-	c.seeked = false;
-	c.started = true;
-
-	_set_process(true); // Always process when starting an animation.
-	playing = true;
-
-	this->obj->emit_signal(SceneStringName(animation_started), c.assigned);
-
-	if (is_inside_tree() && Engine::get_singleton()->is_editor_hint()) {
-		return; // No next in this case.
-	}
-
-	StringName next = animation_get_next(p_name);
-	if (next != StringName() && animation_set.has(next)) {
-		queue(next);
-	}
-}
-
 void AnimationPlayer::_capture(const StringName& p_name, bool p_from_end, double p_duration,
 	Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type)
 {
@@ -698,52 +359,9 @@ void AnimationPlayer::play_with_capture(const StringName& p_name, double p_durat
 
 bool AnimationPlayer::is_playing() const { return playing; }
 
-void AnimationPlayer::set_current_animation(const StringName& p_animation)
-{
-	if (p_animation == SNAME("[stop]") || p_animation.is_empty()) {
-		// It should be call deferred and handled only when is_playing() == true to prevent infinite
-		// loops caused by seeking within stop(). Especially when the key current_animation =
-		// "[stop]" is placed at the beginning of an animation, this line is called when the
-		// animation changes, so is_playing() == true must be checked.
-		if (is_playing()) {
-			callable_mp(this, &AnimationPlayer::stop).call_deferred(false);
-		}
-	}
-	else if (!is_playing()) {
-		play(p_animation);
-	}
-	else if (playback.assigned != p_animation) {
-		float speed = playback.current.speed_scale;
-		play(p_animation, -1.0, speed, std::signbit(speed));
-	}
-	else {
-		// Same animation, do not replay from start.
-	}
-}
-
 StringName AnimationPlayer::get_current_animation() const
 {
 	return (is_playing() ? playback.assigned : StringName());
-}
-
-void AnimationPlayer::set_assigned_animation(const StringName& p_animation)
-{
-	if (is_playing()) {
-		float speed = playback.current.speed_scale;
-		play(p_animation, -1.0, speed, std::signbit(speed));
-	}
-	else {
-		ERR_FAIL_COND_MSG(!animation_set.has(p_animation),
-			vformat("Animation not found: %s.", p_animation.string()));
-		playback.current.pos = 0;
-		playback.current.is_enabled = true;
-		playback.current.animation_name = p_animation;
-		playback.current.animation_length = animation_set[p_animation].animation->get_length();
-		playback.current.start_time = -1;
-		playback.current.end_time = -1;
-		playback.assigned = p_animation;
-		this->obj->emit_signal(SNAME("current_animation_changed"), playback.assigned);
-	}
 }
 
 StringName AnimationPlayer::get_assigned_animation() const { return playback.assigned; }
@@ -949,29 +567,6 @@ void AnimationPlayer::_animation_changed(const StringName& p_name)
 	}
 }
 
-void AnimationPlayer::_stop_internal(bool p_reset, bool p_keep_state)
-{
-	_clear_caches(clear_cache_on_stop);
-	Playback& c = playback;
-	double start = c.current.is_enabled ? playback.current.get_start_time() : 0;
-	if (p_reset) {
-		c.blend.clear();
-		if (p_keep_state) {
-			c.current.pos = start;
-		}
-		else {
-			seek_internal(start, true, true, true);
-		}
-		c.current.is_enabled = false;
-		c.current.animation_name = String();
-		c.current.speed_scale = 1;
-		this->obj->emit_signal(SNAME("current_animation_changed"), "");
-	}
-	_set_process(false);
-	playback_queue.clear();
-	playing = false;
-}
-
 void AnimationPlayer::animation_set_next(const StringName& p_animation, const StringName& p_next)
 {
 	ERR_FAIL_COND_MSG(
@@ -988,7 +583,8 @@ StringName AnimationPlayer::animation_get_next(const StringName& p_animation) co
 	return *next;
 }
 
-void AnimationPlayer::set_default_blend_time(double p_default) { default_blend_time = p_default; }
+void AnimationPlayer::set_default_blend_time(double p_default) { default_blend_time =
+ p_default; }
 
 double AnimationPlayer::get_default_blend_time() const { return default_blend_time; }
 
@@ -1025,12 +621,6 @@ double AnimationPlayer::get_blend_time(
 	else {
 		return 0;
 	}
-}
-
-void AnimationPlayer::set_auto_capture(bool p_auto_capture)
-{
-	auto_capture = p_auto_capture;
-	this->obj->notify_property_list_changed();
 }
 
 bool AnimationPlayer::is_auto_capture() const { return auto_capture; }
@@ -1144,8 +734,6 @@ void AnimationPlayer::_rename_animation(const StringName& p_from_name, const Str
 		autoplay = p_to_name;
 	}
 }
-
-void AnimationPlayer::_bind_methods() {}
 
 AnimationPlayer::AnimationPlayer() {}
 

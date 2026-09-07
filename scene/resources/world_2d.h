@@ -40,9 +40,8 @@ class VisibleOnScreenNotifier2D;
 class Viewport;
 struct SpatialIndexer2D;
 
-class World2D : public Resource {
-	VLTRCLASS(World2D, Resource);
-
+class World2D : public Resource
+{
 	RID canvas;
 #ifndef NAVIGATION_2D_DISABLED
 	mutable RID navigation_map;
@@ -51,7 +50,7 @@ class World2D : public Resource {
 	mutable RID space;
 #endif // PHYSICS_2D_DISABLED
 
-	HashSet<Viewport *> viewports;
+	HashSet<Viewport*> viewports;
 
 protected:
 	static void _bind_methods();
@@ -65,14 +64,16 @@ public:
 
 #ifndef PHYSICS_2D_DISABLED
 	RID get_space() const;
-	PhysicsDirectSpaceState2D *get_direct_space_state();
+	PhysicsDirectSpaceState2D* get_direct_space_state();
 #endif // PHYSICS_2D_DISABLED
 
-	void register_viewport(Viewport *p_viewport);
-	void remove_viewport(Viewport *p_viewport);
+	void register_viewport(Viewport* p_viewport);
+	void remove_viewport(Viewport* p_viewport);
 
-	_FORCE_INLINE_ const HashSet<Viewport *> &get_viewports() { return viewports; }
+	_FORCE_INLINE_ const HashSet<Viewport*>& get_viewports() { return viewports; }
 
 	World2D();
 	~World2D();
 };
+
+

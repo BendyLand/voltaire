@@ -34,46 +34,11 @@
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRFutureResult
 
-void OpenXRFutureResult::_bind_methods() {}
-
-void OpenXRFutureResult::_mark_as_finished()
-{
-	// Update our status
-	status = RESULT_FINISHED;
-
-	// Perform our callback
-	on_success_callback.call(
-		this); // Note, `this` will be converted to a variant that will be refcounted!
-
-	// Emit our signal, we assume our callback has provided us with the correct result value by
-	// calling set_result_value.
-	this->obj->emit_signal(SNAME("completed"), result_value);
-}
-
-void OpenXRFutureResult::_mark_as_cancelled()
-{
-	// Update our status
-	status = RESULT_CANCELLED;
-
-	// There is no point in doing a callback for cancellation as its always user invoked.
-
-	// But we do emit our signal to make sure any await finishes.
-	Variant no_result;
-	this->obj->emit_signal(SNAME("completed"), no_result);
-}
-
 OpenXRFutureResult::ResultStatus OpenXRFutureResult::get_status() const { return status; }
 
 XrFutureEXT OpenXRFutureResult::get_future() const { return future; }
 
 uint64_t OpenXRFutureResult::_get_future() const { return (uint64_t)future; }
-
-void OpenXRFutureResult::set_result_value(const Variant& p_result_value)
-{
-	result_value = p_result_value;
-}
-
-Variant OpenXRFutureResult::get_result_value() const { return result_value; }
 
 void OpenXRFutureResult::cancel_future()
 {
@@ -83,12 +48,6 @@ void OpenXRFutureResult::cancel_future()
 	ERR_FAIL_NULL(future_extension);
 
 	future_extension->cancel_future(future);
-}
-
-OpenXRFutureResult::OpenXRFutureResult(XrFutureEXT p_future, const Callable& p_on_success)
-{
-	future = p_future;
-	on_success_callback = p_on_success;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -158,25 +117,6 @@ void OpenXRFutureExtension::on_session_destroyed()
 }
 
 bool OpenXRFutureExtension::is_active() const { return future_ext; }
-
-Ref<OpenXRFutureResult> OpenXRFutureExtension::register_future(
-	XrFutureEXT p_future, const Callable& p_on_success)
-{
-	ERR_FAIL_COND_V(futures.has(p_future), nullptr);
-
-	Ref<OpenXRFutureResult> future_result;
-	future_result.instantiate(p_future, p_on_success);
-
-	futures[p_future] = future_result;
-
-	return future_result;
-}
-
-Ref<OpenXRFutureResult> OpenXRFutureExtension::_register_future(
-	uint64_t p_future, const Callable& p_on_success)
-{
-	return register_future((XrFutureEXT)p_future, p_on_success);
-}
 
 void OpenXRFutureExtension::cancel_future(XrFutureEXT p_future)
 {

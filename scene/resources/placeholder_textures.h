@@ -33,7 +33,6 @@
 #include "scene/resources/texture.h"
 
 class PlaceholderTexture2D : public Texture2D {
-	VLTRCLASS(PlaceholderTexture2D, Texture2D)
 
 	mutable RID rid;
 	Size2 size = Size2(1, 1);
@@ -56,7 +55,6 @@ public:
 };
 
 class PlaceholderTexture3D : public Texture3D {
-	VLTRCLASS(PlaceholderTexture3D, Texture3D)
 
 	mutable RID rid;
 	Vector3i size = Vector3i(1, 1, 1);
@@ -80,7 +78,6 @@ public:
 };
 
 class PlaceholderTextureLayered : public TextureLayered {
-	VLTRCLASS(PlaceholderTextureLayered, TextureLayered)
 
 	mutable RID rid;
 	Size2i size = Size2i(1, 1);
@@ -108,21 +105,18 @@ public:
 };
 
 class PlaceholderTexture2DArray : public PlaceholderTextureLayered {
-	VLTRCLASS(PlaceholderTexture2DArray, PlaceholderTextureLayered)
 public:
 	PlaceholderTexture2DArray() :
 			PlaceholderTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
 };
 
 class PlaceholderCubemap : public PlaceholderTextureLayered {
-	VLTRCLASS(PlaceholderCubemap, PlaceholderTextureLayered)
 public:
 	PlaceholderCubemap() :
 			PlaceholderTextureLayered(LAYERED_TYPE_CUBEMAP) {}
 };
 
 class PlaceholderCubemapArray : public PlaceholderTextureLayered {
-	VLTRCLASS(PlaceholderCubemapArray, PlaceholderTextureLayered)
 public:
 	PlaceholderCubemapArray() :
 			PlaceholderTextureLayered(LAYERED_TYPE_CUBEMAP_ARRAY) {}

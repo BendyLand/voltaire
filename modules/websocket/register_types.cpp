@@ -57,25 +57,6 @@ static void _editor_init_callback()
 }
 #endif
 
-void initialize_websocket_module(ModuleInitializationLevel p_level)
-{
-	if (p_level == MODULE_INITIALIZATION_LEVEL_CORE) {
-#ifdef WEB_ENABLED
-		EMWSPeer::initialize();
-#else
-		WSLPeer::initialize();
-#endif
-		EngineDebugger::register_uri_handler("ws://", RemoteDebuggerPeerWebSocket::create);
-		EngineDebugger::register_uri_handler("wss://", RemoteDebuggerPeerWebSocket::create);
-	}
-
-#ifdef TOOLS_ENABLED
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorNode::add_init_callback(&_editor_init_callback);
-	}
-#endif
-}
-
 void uninitialize_websocket_module(ModuleInitializationLevel p_level)
 {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_CORE) {

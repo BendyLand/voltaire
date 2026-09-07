@@ -35,44 +35,6 @@
 #include "servers/xr/xr_interface.h"
 #include "xr_nodes.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void XRCamera3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	// Hide properties that are managed by XRInterface or otherwise not applicable for XRCamera3D.
-	if (p_property.name == "fov" || p_property.name == "projection" || p_property.name == "size" ||
-		p_property.name == "frustum_offset" || p_property.name == "keep_aspect") {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-void XRCamera3D::_bind_tracker()
-{
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-
-	tracker = xr_server->get_tracker(tracker_name);
-	if (tracker.is_valid()) {
-		tracker->obj->connect("pose_changed", callable_mp(this, &XRCamera3D::_pose_changed));
-
-		Ref<XRPose> pose = tracker->get_pose(pose_name);
-		if (pose.is_valid()) {
-			set_transform(pose->get_adjusted_transform());
-		}
-	}
-}
-
-void XRCamera3D::_unbind_tracker()
-{
-	if (tracker.is_valid()) {
-		tracker->obj->disconnect("pose_changed", callable_mp(this, &XRCamera3D::_pose_changed));
-	}
-	tracker.unref();
-}
-
 void XRCamera3D::_changed_tracker(const StringName& p_tracker_name, int p_tracker_type)
 {
 	if (p_tracker_name == tracker_name) {
@@ -98,28 +60,6 @@ void XRCamera3D::_physics_interpolated_changed()
 {
 	Camera3D::_physics_interpolated_changed();
 	update_configuration_warnings();
-}
-
-PackedStringArray XRCamera3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Camera3D::get_configuration_warnings();
-
-	if (is_visible() && is_inside_tree()) {
-		// Warn if the node has a parent which isn't an XROrigin3D!
-		Node* parent = get_parent();
-		XROrigin3D* origin = Object::cast_to<XROrigin3D>(parent);
-		if (parent && origin == nullptr) {
-			warnings.push_back(RTR("XRCamera3D may not function as expected without an XROrigin3D "
-								   "node as its parent."));
-		};
-
-		if (SceneTree::is_fti_enabled_in_project() && is_physics_interpolated()) {
-			warnings.push_back(RTR("XRCamera3D should have physics_interpolation_mode set to OFF "
-								   "in order to avoid jitter."));
-		}
-	}
-
-	return warnings;
 }
 
 Vector3 XRCamera3D::project_local_ray_normal(const Point2& p_pos) const
@@ -237,85 +177,9 @@ Vector<Plane> XRCamera3D::get_frustum() const
 	return cm.get_projection_planes(get_camera_transform());
 }
 
-XRCamera3D::XRCamera3D()
-{
-	// XRCamera3D gets its transform updated every render frame and shouldn't be interpolated.
-	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
-
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-
-	xr_server->obj->connect("tracker_added", callable_mp(this, &XRCamera3D::_changed_tracker));
-	xr_server->obj->connect("tracker_updated", callable_mp(this, &XRCamera3D::_changed_tracker));
-	xr_server->obj->connect("tracker_removed", callable_mp(this, &XRCamera3D::_removed_tracker));
-
-	// check if our tracker already exists and if so, bind it...
-	_bind_tracker();
-}
-
-XRCamera3D::~XRCamera3D()
-{
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-
-	xr_server->obj->disconnect("tracker_added", callable_mp(this, &XRCamera3D::_changed_tracker));
-	xr_server->obj->disconnect("tracker_updated", callable_mp(this, &XRCamera3D::_changed_tracker));
-	xr_server->obj->disconnect("tracker_removed", callable_mp(this, &XRCamera3D::_removed_tracker));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
 // XRNode3D is a node that has it's transform updated by an XRPositionalTracker.
 // Note that trackers are only available in runtime and only after an XRInterface registers one.
 // So we bind by name and as long as a tracker isn't available, our node remains inactive.
-
-void XRNode3D::_bind_methods() {}
-
-void XRNode3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-
-	if (p_property.name == "tracker") {
-		PackedStringArray names = xr_server->get_suggested_tracker_names();
-		String hint_string;
-		for (const String& name : names) {
-			hint_string += name + ",";
-		}
-		p_property.hint_string = hint_string;
-	}
-	else if (p_property.name == "pose") {
-		PackedStringArray names = xr_server->get_suggested_pose_names(tracker_name);
-		String hint_string;
-		for (const String& name : names) {
-			hint_string += name + ",";
-		}
-		p_property.hint_string = hint_string;
-	}
-}
-
-void XRNode3D::set_tracker(const StringName& p_tracker_name)
-{
-	if (tracker.is_valid() && tracker->get_tracker_name() == p_tracker_name) {
-		// didn't change
-		return;
-	}
-
-	// just in case
-	_unbind_tracker();
-
-	// copy the name
-	tracker_name = p_tracker_name;
-	pose_name = SceneStringName(default_);
-
-	// see if it's already available
-	_bind_tracker();
-
-	update_configuration_warnings();
-	this->obj->notify_property_list_changed();
-}
 
 StringName XRNode3D::get_tracker() const { return tracker_name; }
 
@@ -382,48 +246,6 @@ Ref<XRPose> XRNode3D::get_pose()
 	}
 }
 
-void XRNode3D::_bind_tracker()
-{
-	ERR_FAIL_COND_MSG(tracker.is_valid(), "Unbind the current tracker first");
-
-	XRServer* xr_server = XRServer::get_singleton();
-	if (xr_server != nullptr) {
-		tracker = xr_server->get_tracker(tracker_name);
-		if (tracker.is_null()) {
-			// It is possible and valid if the tracker isn't available (yet), in this case we just
-			// exit
-			return;
-		}
-
-		tracker->obj->connect("pose_changed", callable_mp(this, &XRNode3D::_pose_changed));
-		tracker->obj->connect(
-			"pose_lost_tracking", callable_mp(this, &XRNode3D::_pose_lost_tracking));
-
-		Ref<XRPose> pose = get_pose();
-		if (pose.is_valid()) {
-			set_transform(pose->get_adjusted_transform());
-			_set_has_tracking_data(pose->get_has_tracking_data());
-		}
-		else {
-			// Pose has been invalidated or was never set.
-			_set_has_tracking_data(false);
-		}
-	}
-}
-
-void XRNode3D::_unbind_tracker()
-{
-	if (tracker.is_valid()) {
-		tracker->obj->disconnect("pose_changed", callable_mp(this, &XRNode3D::_pose_changed));
-		tracker->obj->disconnect(
-			"pose_lost_tracking", callable_mp(this, &XRNode3D::_pose_lost_tracking));
-
-		tracker.unref();
-
-		_set_has_tracking_data(false);
-	}
-}
-
 void XRNode3D::_changed_tracker(const StringName& p_tracker_name, int p_tracker_type)
 {
 	if (tracker_name == p_tracker_name) {
@@ -458,22 +280,6 @@ void XRNode3D::_pose_lost_tracking(const Ref<XRPose>& p_pose)
 	}
 }
 
-void XRNode3D::_set_has_tracking_data(bool p_has_tracking_data)
-{
-	// Always update our visibility, we may have set our tracking data
-	// when conditions weren't right.
-	_update_visibility();
-
-	// Ignore if the has_tracking_data state isn't changing.
-	if (p_has_tracking_data == has_tracking_data) {
-		return;
-	}
-
-	// Handle change of has_tracking_data.
-	has_tracking_data = p_has_tracking_data;
-	this->obj->emit_signal(SNAME("tracking_changed"), has_tracking_data);
-}
-
 void XRNode3D::_update_visibility()
 {
 	// If configured, show or hide the node based on tracking data.
@@ -491,201 +297,7 @@ void XRNode3D::_update_visibility()
 
 void XRNode3D::_physics_interpolated_changed() { update_configuration_warnings(); }
 
-XRNode3D::XRNode3D()
-{
-	// XRNode3D gets its transform updated every render frame and shouldn't be interpolated.
-	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
-
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-
-	xr_server->obj->connect("tracker_added", callable_mp(this, &XRNode3D::_changed_tracker));
-	xr_server->obj->connect("tracker_updated", callable_mp(this, &XRNode3D::_changed_tracker));
-	xr_server->obj->connect("tracker_removed", callable_mp(this, &XRNode3D::_removed_tracker));
-}
-
-XRNode3D::~XRNode3D()
-{
-	_unbind_tracker();
-
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-
-	xr_server->obj->disconnect("tracker_added", callable_mp(this, &XRNode3D::_changed_tracker));
-	xr_server->obj->disconnect("tracker_updated", callable_mp(this, &XRNode3D::_changed_tracker));
-	xr_server->obj->disconnect("tracker_removed", callable_mp(this, &XRNode3D::_removed_tracker));
-}
-
-PackedStringArray XRNode3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-
-	if (is_visible() && is_inside_tree()) {
-		// Warn if the node has a parent which isn't an XROrigin3D!
-		Node* parent = get_parent();
-		XROrigin3D* origin = Object::cast_to<XROrigin3D>(parent);
-		if (parent && origin == nullptr) {
-			warnings.push_back(RTR(
-				"XRNode3D may not function as expected without an XROrigin3D node as its parent."));
-		};
-
-		if (tracker_name == "") {
-			warnings.push_back(RTR("No tracker name is set."));
-		}
-
-		if (pose_name == "") {
-			warnings.push_back(RTR("No pose is set."));
-		}
-
-		if (SceneTree::is_fti_enabled_in_project() && is_physics_interpolated()) {
-			warnings.push_back(RTR("XRNode3D should have physics_interpolation_mode set to OFF in "
-								   "order to avoid jitter."));
-		}
-	}
-
-	return warnings;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void XRController3D::_bind_methods() {}
-
-void XRController3D::_bind_tracker()
-{
-	XRNode3D::_bind_tracker();
-	if (tracker.is_valid()) {
-		// bind to input signals
-		tracker->obj->connect(
-			"button_pressed", callable_mp(this, &XRController3D::_button_pressed));
-		tracker->obj->connect(
-			"button_released", callable_mp(this, &XRController3D::_button_released));
-		tracker->obj->connect(
-			"input_float_changed", callable_mp(this, &XRController3D::_input_float_changed));
-		tracker->obj->connect(
-			"input_vector2_changed", callable_mp(this, &XRController3D::_input_vector2_changed));
-		tracker->obj->connect(
-			"profile_changed", callable_mp(this, &XRController3D::_profile_changed));
-	}
-}
-
-void XRController3D::_unbind_tracker()
-{
-	if (tracker.is_valid()) {
-		// unbind input signals
-		tracker->obj->disconnect(
-			"button_pressed", callable_mp(this, &XRController3D::_button_pressed));
-		tracker->obj->disconnect(
-			"button_released", callable_mp(this, &XRController3D::_button_released));
-		tracker->obj->disconnect(
-			"input_float_changed", callable_mp(this, &XRController3D::_input_float_changed));
-		tracker->obj->disconnect(
-			"input_vector2_changed", callable_mp(this, &XRController3D::_input_vector2_changed));
-		tracker->obj->disconnect(
-			"profile_changed", callable_mp(this, &XRController3D::_profile_changed));
-	}
-
-	XRNode3D::_unbind_tracker();
-}
-
-void XRController3D::_button_pressed(const String& p_name)
-{
-	this->obj->emit_signal(SNAME("button_pressed"), p_name);
-}
-
-void XRController3D::_button_released(const String& p_name)
-{
-	this->obj->emit_signal(SNAME("button_released"), p_name);
-}
-
-void XRController3D::_input_float_changed(const String& p_name, float p_value)
-{
-	this->obj->emit_signal(SNAME("input_float_changed"), p_name, p_value);
-}
-
-void XRController3D::_input_vector2_changed(const String& p_name, Vector2 p_value)
-{
-	this->obj->emit_signal(SNAME("input_vector2_changed"), p_name, p_value);
-}
-
-void XRController3D::_profile_changed(const String& p_role)
-{
-	this->obj->emit_signal(SNAME("profile_changed"), p_role);
-}
-
-bool XRController3D::is_button_pressed(const StringName& p_name) const
-{
-	if (tracker.is_valid()) {
-		// Inputs should already be of the correct type, our XR runtime handles conversions between
-		// raw input and the desired type
-		bool pressed = tracker->get_input(p_name);
-		return pressed;
-	}
-	else {
-		return false;
-	}
-}
-
-Variant XRController3D::get_input(const StringName& p_name) const
-{
-	if (tracker.is_valid()) {
-		return tracker->get_input(p_name);
-	}
-	else {
-		return Variant();
-	}
-}
-
-float XRController3D::get_float(const StringName& p_name) const
-{
-	if (tracker.is_valid()) {
-		// Inputs should already be of the correct type, our XR runtime handles conversions between
-		// raw input and the desired type, but just in case we convert
-		Variant input = tracker->get_input(p_name);
-		switch (input.get_type()) {
-		case Variant::BOOL: {
-			bool value = input;
-			return value ? 1.0 : 0.0;
-		} break;
-		case Variant::FLOAT: {
-			float value = input;
-			return value;
-		} break;
-		default:
-			return 0.0;
-		};
-	}
-	else {
-		return 0.0;
-	}
-}
-
-Vector2 XRController3D::get_vector2(const StringName& p_name) const
-{
-	if (tracker.is_valid()) {
-		// Inputs should already be of the correct type, our XR runtime handles conversions between
-		// raw input and the desired type, but just in case we convert
-		Variant input = tracker->get_input(p_name);
-		switch (input.get_type()) {
-		case Variant::BOOL: {
-			bool value = input;
-			return Vector2(value ? 1.0 : 0.0, 0.0);
-		} break;
-		case Variant::FLOAT: {
-			float value = input;
-			return Vector2(value, 0.0);
-		} break;
-		case Variant::VECTOR2: {
-			Vector2 axis = input;
-			return axis;
-		}
-		default:
-			return Vector2();
-		}
-	}
-	else {
-		return Vector2();
-	}
-}
 
 XRPositionalTracker::TrackerHand XRController3D::get_tracker_hand() const
 {
@@ -696,10 +308,6 @@ XRPositionalTracker::TrackerHand XRController3D::get_tracker_hand() const
 
 	return tracker->get_tracker_hand();
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void XRAnchor3D::_bind_methods() {}
 
 Vector3 XRAnchor3D::get_size() const { return size; }
 
@@ -713,42 +321,7 @@ Plane XRAnchor3D::get_plane() const
 	return plane;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 Vector<XROrigin3D*> XROrigin3D::origin_nodes;
-
-PackedStringArray XROrigin3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-
-	if (is_visible() && is_inside_tree()) {
-		bool has_camera = false;
-		for (int i = 0; !has_camera && i < get_child_count(); i++) {
-			XRCamera3D* camera = Object::cast_to<XRCamera3D>(get_child(i));
-			if (camera) {
-				// found it!
-				has_camera = true;
-			}
-		}
-		if (!has_camera) {
-			warnings.push_back(RTR("XROrigin3D requires an XRCamera3D child node."));
-		}
-
-		if (!get_scale().is_equal_approx(Vector3(1, 1, 1))) {
-			warnings.push_back(RTR("Changing the scale on the XROrigin3D node is not supported. "
-								   "Change the World Scale instead."));
-		}
-	}
-
-	bool xr_enabled = GLOBAL_GET("xr/shaders/enabled");
-	if (!xr_enabled) {
-		warnings.push_back(RTR("XR shaders are not enabled in project settings. Stereoscopic "
-							   "output is not supported unless they are enabled. Please enable "
-							   "`xr/shaders/enabled` to use stereoscopic output."));
-	}
-
-	return warnings;
-}
 
 void XROrigin3D::_bind_methods() {}
 
@@ -831,67 +404,6 @@ bool XROrigin3D::is_current() const
 	}
 	else {
 		return current && is_inside_tree();
-	}
-}
-
-void XROrigin3D::_notification(int p_what)
-{
-	// get our XRServer
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		if (!Engine::get_singleton()->is_editor_hint()) {
-			if (origin_nodes.is_empty()) {
-				// first entry always becomes current
-				current = true;
-			}
-
-			origin_nodes.push_back(this);
-
-			if (current) {
-				// set this again so we do whatever setup is needed.
-				set_current(true);
-			}
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		if (!Engine::get_singleton()->is_editor_hint()) {
-			origin_nodes.erase(this);
-
-			if (current) {
-				// We are no longer current
-				set_current(false);
-			}
-		}
-	} break;
-
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED:
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (current && !Engine::get_singleton()->is_editor_hint() &&
-			!is_physics_interpolated_and_enabled()) {
-			xr_server->set_world_origin(get_global_transform());
-		}
-	} break;
-
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		if (current && !Engine::get_singleton()->is_editor_hint() &&
-			is_physics_interpolated_and_enabled()) {
-			xr_server->set_world_origin(get_global_transform_interpolated());
-		}
-	} break;
-	}
-
-	if (current) {
-		// send our notification to all active XE interfaces, they may need to react to it also
-		for (int i = 0; i < xr_server->get_interface_count(); i++) {
-			Ref<XRInterface> interface = xr_server->get_interface(i);
-			if (interface.is_valid() && interface->is_initialized()) {
-				interface->obj->notification(p_what);
-			}
-		}
 	}
 }
 

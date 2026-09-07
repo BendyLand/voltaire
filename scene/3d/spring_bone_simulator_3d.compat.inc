@@ -55,9 +55,6 @@ enum RotationAxis : int
 };
 } // namespace compat::SpringBoneSimulator3D
 
-VARIANT_ENUM_CAST(compat::SpringBoneSimulator3D::BoneDirection);
-VARIANT_ENUM_CAST(compat::SpringBoneSimulator3D::RotationAxis);
-
 compat::SpringBoneSimulator3D::BoneDirection
 SpringBoneSimulator3D::_get_end_bone_direction_bind_compat_110120(int p_index) const
 {

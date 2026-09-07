@@ -70,28 +70,7 @@ OpenXRHand::MotionRange OpenXRHand::get_motion_range() const { return motion_ran
 
 NodePath OpenXRHand::get_hand_skeleton() const { return hand_skeleton; }
 
-void OpenXRHand::_set_motion_range()
-{
-	if (!hand_tracking_ext) {
-		return;
-	}
 
-	XrHandJointsMotionRangeEXT xr_motion_range;
-	switch (motion_range) {
-	case MOTION_RANGE_UNOBSTRUCTED:
-		xr_motion_range = XR_HAND_JOINTS_MOTION_RANGE_UNOBSTRUCTED_EXT;
-		break;
-	case MOTION_RANGE_CONFORM_TO_CONTROLLER:
-		xr_motion_range = XR_HAND_JOINTS_MOTION_RANGE_CONFORMING_TO_CONTROLLER_EXT;
-		break;
-	default:
-		xr_motion_range = XR_HAND_JOINTS_MOTION_RANGE_CONFORMING_TO_CONTROLLER_EXT;
-		break;
-	}
-
-	hand_tracking_ext->set_motion_range(
-		OpenXRHandTrackingExtension::HandTrackedHands(hand), xr_motion_range);
-}
 
 void OpenXRHand::set_skeleton_rig(SkeletonRig p_skeleton_rig)
 {
@@ -110,21 +89,6 @@ void OpenXRHand::set_bone_update(BoneUpdate p_bone_update)
 }
 
 OpenXRHand::BoneUpdate OpenXRHand::get_bone_update() const { return bone_update; }
-
-Skeleton3D* OpenXRHand::get_skeleton()
-{
-	if (!has_node(hand_skeleton)) {
-		return nullptr;
-	}
-
-	Node* node = get_node(hand_skeleton);
-	if (!node) {
-		return nullptr;
-	}
-
-	Skeleton3D* skeleton = Object::cast_to<Skeleton3D>(node);
-	return skeleton;
-}
 
 void OpenXRHand::_get_joint_data()
 {
@@ -175,7 +139,7 @@ void OpenXRHand::_get_joint_data()
 		// Find the skeleton bone.
 		bones[i] = skeleton->find_bone(bone_name);
 		if (bones[i] == -1) {
-			print_line("Couldn't obtain bone for", bone_name);
+			// print_line("Couldn't obtain bone for", bone_name);
 		}
 	}
 
@@ -205,119 +169,6 @@ void OpenXRHand::_get_joint_data()
 				break;
 			}
 		}
-	}
-}
-
-void OpenXRHand::_update_skeleton()
-{
-	if (openxr_api == nullptr || !openxr_api->is_initialized()) {
-		return;
-	}
-	else if (hand_tracking_ext == nullptr || !hand_tracking_ext->get_active()) {
-		return;
-	}
-
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	// Table of bone adjustments for different rig types
-	static const Quaternion bone_adjustments[SKELETON_RIG_MAX] = {
-		// SKELETON_RIG_OPENXR bone adjustment. This is an identity quaternion
-		// because the incoming quaternions are already in OpenXR format.
-		Quaternion(),
-
-		// SKELETON_RIG_HUMANOID bone adjustment. This rotation performs:
-		// OpenXR Z+ -> Godot Humanoid Y-  (Back along the bone)
-		// OpenXR Y+ -> Godot Humanoid Z- (Out the back of the hand)
-		Quaternion(0.0, -Math::SQRT12, Math::SQRT12, 0.0),
-	};
-
-	// we cache our transforms so we can quickly calculate local transforms
-	XRPose::TrackingConfidence confidences[XR_HAND_JOINT_COUNT_EXT];
-	Quaternion quaternions[XR_HAND_JOINT_COUNT_EXT];
-	Quaternion inv_quaternions[XR_HAND_JOINT_COUNT_EXT];
-	Vector3 positions[XR_HAND_JOINT_COUNT_EXT];
-
-	const Quaternion& rig_adjustment = bone_adjustments[skeleton_rig];
-	const OpenXRHandTrackingExtension::HandTracker* hand_tracker =
-		hand_tracking_ext->get_hand_tracker(OpenXRHandTrackingExtension::HandTrackedHands(hand));
-	const float ws = XRServer::get_singleton()->get_world_scale();
-
-	if (hand_tracker->is_initialized && hand_tracker->locations.isActive) {
-		for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
-			confidences[i] = XRPose::XR_TRACKING_CONFIDENCE_NONE;
-			quaternions[i] = Quaternion();
-			positions[i] = Vector3();
-
-			const XrHandJointLocationEXT& location = hand_tracker->joint_locations[i];
-			const XrPosef& pose = location.pose;
-
-			if (location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) {
-				if (pose.orientation.x != 0 || pose.orientation.y != 0 || pose.orientation.z != 0 ||
-					pose.orientation.w != 0) {
-					quaternions[i] = Quaternion(pose.orientation.x, pose.orientation.y,
-										 pose.orientation.z, pose.orientation.w) *
-									 rig_adjustment;
-					inv_quaternions[i] = quaternions[i].inverse();
-
-					if (location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
-						confidences[i] = XRPose::XR_TRACKING_CONFIDENCE_HIGH;
-						positions[i] = Vector3(
-							pose.position.x * ws, pose.position.y * ws, pose.position.z * ws);
-
-						// TODO get inverse of position, we'll do this later. For now we're ignoring
-						// bone positions which generally works better anyway
-					}
-					else {
-						confidences[i] = XRPose::XR_TRACKING_CONFIDENCE_LOW;
-					}
-				}
-			}
-		}
-
-		if (confidences[XR_HAND_JOINT_PALM_EXT] != XRPose::XR_TRACKING_CONFIDENCE_NONE) {
-			// Iterate over all the OpenXR joints.
-			for (int joint = 0; joint < XR_HAND_JOINT_COUNT_EXT; joint++) {
-				// Get the skeleton bone (skip if none).
-				const int bone = joints[joint].bone;
-				if (bone == -1) {
-					continue;
-				}
-
-				// Calculate the relative relationship to the parent bone joint.
-				const int parent_joint = joints[joint].parent_joint;
-				const Quaternion q = inv_quaternions[parent_joint] * quaternions[joint];
-				const Vector3 p =
-					inv_quaternions[parent_joint].xform(positions[joint] - positions[parent_joint]);
-
-				// Update the bone position if enabled by update mode.
-				if (bone_update == BONE_UPDATE_FULL) {
-					skeleton->set_bone_pose_position(joints[joint].bone, p);
-				}
-
-				// Always update the bone rotation.
-				skeleton->set_bone_pose_rotation(joints[joint].bone, q);
-			}
-
-			// Transform the OpenXRHand to the skeleton pose.
-			Transform3D t;
-			t.basis = Basis(quaternions[XR_HAND_JOINT_PALM_EXT]);
-			t.origin = positions[XR_HAND_JOINT_PALM_EXT];
-			set_transform(t);
-
-			// show it
-			set_visible(true);
-		}
-		else {
-			// hide it
-			set_visible(false);
-		}
-	}
-	else {
-		// hide it
-		set_visible(false);
 	}
 }
 

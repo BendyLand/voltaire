@@ -52,31 +52,11 @@ void IKModifier3D::_notification(int p_what)
 	}
 }
 
-void IKModifier3D::_bind_methods() {}
-
 void IKModifier3D::_set_active(bool p_active)
 {
 	if (p_active) {
 		reset();
 	}
-}
-
-void IKModifier3D::_skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new)
-{
-	if (p_old && p_old->is_connected(
-					 SNAME("rest_updated"), callable_mp(this, &IKModifier3D::_rest_updated))) {
-		p_old->disconnect(SNAME("rest_updated"), callable_mp(this, &IKModifier3D::_rest_updated));
-	}
-	if (p_new && !p_new->is_connected(
-					 SNAME("rest_updated"), callable_mp(this, &IKModifier3D::_rest_updated))) {
-		p_new->connect(SNAME("rest_updated"), callable_mp(this, &IKModifier3D::_rest_updated));
-	}
-	_make_all_joints_dirty();
-}
-
-void IKModifier3D::_validate_bone_names()
-{
-	//
 }
 
 void IKModifier3D::_rest_updated()
@@ -96,26 +76,6 @@ void IKModifier3D::_rest_updated()
 #endif // TOOLS_ENABLED
 }
 
-void IKModifier3D::_make_all_joints_dirty()
-{
-	//
-}
-
-void IKModifier3D::_init_joints(Skeleton3D* p_skeleton, int p_index)
-{
-	//
-}
-
-void IKModifier3D::_update_joints(int p_index)
-{
-	//
-}
-
-void IKModifier3D::_make_simulation_dirty(int p_index)
-{
-	//
-}
-
 void IKModifier3D::_process_modification(double p_delta)
 {
 	Skeleton3D* skeleton = get_skeleton();
@@ -126,31 +86,7 @@ void IKModifier3D::_process_modification(double p_delta)
 	_process_ik(skeleton, p_delta);
 }
 
-void IKModifier3D::_process_ik(Skeleton3D* p_skeleton, double p_delta)
-{
-	//
-}
-
-void IKModifier3D::_update_bone_axis(Skeleton3D* p_skeleton, int p_index)
-{
-	//
-}
-
 #ifdef TOOLS_ENABLED
-void IKModifier3D::_make_gizmo_dirty()
-{
-	if (gizmo_dirty) {
-		return;
-	}
-	gizmo_dirty = true;
-
-	callable_mp(this, &IKModifier3D::_redraw_gizmo).call_deferred();
-}
-
-void IKModifier3D::_update_mutable_info()
-{
-	//
-}
 
 void IKModifier3D::_redraw_gizmo()
 {

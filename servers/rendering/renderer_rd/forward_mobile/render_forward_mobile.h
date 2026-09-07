@@ -85,7 +85,6 @@ private:
 
 	class RenderBufferDataForwardMobile : public RenderBufferCustomDataRD
 	{
-		VLTRCLASS(RenderBufferDataForwardMobile, RenderBufferCustomDataRD);
 
 	public:
 		enum FramebufferConfigType

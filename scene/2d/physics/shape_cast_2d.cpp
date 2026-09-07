@@ -88,15 +88,7 @@ int ShapeCast2D::get_collision_count() const { return result.size(); }
 
 bool ShapeCast2D::is_colliding() const { return collided; }
 
-Object* ShapeCast2D::get_collider(int p_idx) const
-{
-	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), nullptr, "No collider found.");
 
-	if (result[p_idx].collider_id.is_null()) {
-		return nullptr;
-	}
-	return ObjectDB::get_instance(result[p_idx].collider_id);
-}
 
 RID ShapeCast2D::get_collider_rid(int p_idx) const
 {
@@ -143,200 +135,19 @@ void ShapeCast2D::set_enabled(bool p_enabled)
 
 bool ShapeCast2D::is_enabled() const { return enabled; }
 
-void ShapeCast2D::set_shape(const Ref<Shape2D>& p_shape)
-{
-	if (p_shape == shape) {
-		return;
-	}
-	if (shape.is_valid()) {
-		shape->disconnect_changed(callable_mp(this, &ShapeCast2D::_shape_changed));
-	}
-	shape = p_shape;
-	if (shape.is_valid()) {
-		shape->connect_changed(callable_mp(this, &ShapeCast2D::_shape_changed));
-		shape_rid = shape->get_rid();
-	}
 
-	update_configuration_warnings();
-	queue_redraw();
-}
 
 Ref<Shape2D> ShapeCast2D::get_shape() const { return shape; }
 
-void ShapeCast2D::set_exclude_parent_body(bool p_exclude_parent_body)
-{
-	if (exclude_parent_body == p_exclude_parent_body) {
-		return;
-	}
-	exclude_parent_body = p_exclude_parent_body;
 
-	if (!is_inside_tree()) {
-		return;
-	}
-	if (Object::cast_to<CollisionObject2D>(get_parent())) {
-		if (exclude_parent_body) {
-			exclude.insert(Object::cast_to<CollisionObject2D>(get_parent())->get_rid());
-		}
-		else {
-			exclude.erase(Object::cast_to<CollisionObject2D>(get_parent())->get_rid());
-		}
-	}
-}
 
 bool ShapeCast2D::get_exclude_parent_body() const { return exclude_parent_body; }
 
 void ShapeCast2D::_shape_changed() { queue_redraw(); }
 
-void ShapeCast2D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		if (enabled && !Engine::get_singleton()->is_editor_hint()) {
-			set_physics_process_internal(true);
-		}
-		else {
-			set_physics_process_internal(false);
-		}
-		if (Object::cast_to<CollisionObject2D>(get_parent())) {
-			if (exclude_parent_body) {
-				exclude.insert(Object::cast_to<CollisionObject2D>(get_parent())->get_rid());
-			}
-			else {
-				exclude.erase(Object::cast_to<CollisionObject2D>(get_parent())->get_rid());
-			}
-		}
-	} break;
 
-	case NOTIFICATION_EXIT_TREE: {
-		if (enabled) {
-			set_physics_process_internal(false);
-		}
-	} break;
 
-	case NOTIFICATION_DRAW: {
-#ifdef TOOLS_ENABLED
-		ERR_FAIL_COND(!is_inside_tree());
-		if (!Engine::get_singleton()->is_editor_hint() &&
-			!get_tree()->is_debugging_collisions_hint()) {
-			break;
-		}
-		if (shape.is_null()) {
-			break;
-		}
-		Color draw_col = collided ? Color(1.0, 0.01, 0) : get_tree()->get_debug_collisions_color();
-		if (!enabled) {
-			float g = draw_col.get_v();
-			draw_col.r = g;
-			draw_col.g = g;
-			draw_col.b = g;
-		}
-		// Draw continuous chain of shapes along the cast.
-		const int steps =
-			MAX(2, target_position.length() / shape->get_rect().get_size().length() * 4);
-		for (int i = 0; i <= steps; ++i) {
-			Vector2 t = (real_t(i) / steps) * target_position;
-			draw_set_transform(t, 0.0, Size2(1, 1));
-			shape->draw(get_canvas_item(), draw_col);
-		}
-		draw_set_transform(Vector2(), 0.0, Size2(1, 1));
 
-		// Draw an arrow indicating where the ShapeCast is pointing to.
-		if (target_position != Vector2()) {
-			const real_t max_arrow_size = 6;
-			const real_t line_width = 1.4;
-			bool no_line = target_position.length() < line_width;
-			real_t arrow_size = CLAMP(target_position.length() * 2 / 3, line_width, max_arrow_size);
-
-			if (no_line) {
-				arrow_size = target_position.length();
-			}
-			else {
-				draw_line(Vector2(), target_position - target_position.normalized() * arrow_size,
-					draw_col, line_width);
-			}
-
-			Transform2D xf;
-			xf.rotate(target_position.angle());
-			xf.translate_local(Vector2(no_line ? 0 : target_position.length() - arrow_size, 0));
-
-			Vector<Vector2> pts = {xf.xform(Vector2(arrow_size, 0)),
-				xf.xform(Vector2(0, 0.5 * arrow_size)), xf.xform(Vector2(0, -0.5 * arrow_size))};
-
-			Vector<Color> cols = {draw_col, draw_col, draw_col};
-
-			draw_primitive(pts, cols, Vector<Vector2>());
-		}
-#endif
-	} break;
-
-	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-		if (!enabled) {
-			break;
-		}
-		_update_shapecast_state();
-	} break;
-	}
-}
-
-void ShapeCast2D::_update_shapecast_state()
-{
-	result.clear();
-
-	ERR_FAIL_COND_MSG(shape.is_null(), "Invalid shape.");
-
-	Ref<World2D> w2d = get_world_2d();
-	ERR_FAIL_COND(w2d.is_null());
-
-	PhysicsDirectSpaceState2D* dss =
-		PhysicsServer2D::get_singleton()->space_get_direct_state(w2d->get_space());
-	ERR_FAIL_NULL(dss);
-
-	Transform2D gt = get_global_transform();
-
-	PS2DT::ShapeParameters params;
-	params.shape_rid = shape_rid;
-	params.transform = gt;
-	params.motion = gt.basis_xform(target_position);
-	params.margin = margin;
-	params.exclude = exclude;
-	params.collision_mask = collision_mask;
-	params.collide_with_bodies = collide_with_bodies;
-	params.collide_with_areas = collide_with_areas;
-
-	collision_safe_fraction = 0.0;
-	collision_unsafe_fraction = 0.0;
-
-	bool prev_collision_state = collided;
-
-	if (target_position != Vector2()) {
-		dss->cast_motion(params, collision_safe_fraction, collision_unsafe_fraction);
-		if (collision_unsafe_fraction < 1.0) {
-			// Move shape transform to the point of impact,
-			// so we can collect contact info at that point.
-			gt.set_origin(
-				gt.get_origin() + params.motion * (collision_unsafe_fraction + CMP_EPSILON));
-			params.transform = gt;
-		}
-	}
-	// Regardless of whether the shape is stuck or it's moved along
-	// the motion vector, we'll only consider static collisions from now on.
-	params.motion = Vector2();
-
-	bool intersected = true;
-	while (intersected && result.size() < max_results) {
-		PS2DT::ShapeRestInfo info;
-		intersected = dss->rest_info(params, &info);
-		if (intersected) {
-			result.push_back(info);
-			params.exclude.insert(info.rid);
-		}
-	}
-	collided = !result.is_empty();
-
-	if (prev_collision_state != collided) {
-		queue_redraw();
-	}
-}
 
 void ShapeCast2D::force_shapecast_update() { _update_shapecast_state(); }
 
@@ -363,27 +174,6 @@ bool ShapeCast2D::is_collide_with_areas_enabled() const { return collide_with_ar
 void ShapeCast2D::set_collide_with_bodies(bool p_clip) { collide_with_bodies = p_clip; }
 
 bool ShapeCast2D::is_collide_with_bodies_enabled() const { return collide_with_bodies; }
-
-Array ShapeCast2D::get_collision_result() const
-{
-	Array ret;
-
-	for (int i = 0; i < result.size(); ++i) {
-		const PS2DT::ShapeRestInfo& sri = result[i];
-
-		Dictionary col;
-		col["point"] = sri.point;
-		col["normal"] = sri.normal;
-		col["rid"] = sri.rid;
-		col["collider"] = ObjectDB::get_instance(sri.collider_id);
-		col["collider_id"] = sri.collider_id;
-		col["shape"] = sri.shape;
-		col["linear_velocity"] = sri.linear_velocity;
-
-		ret.push_back(col);
-	}
-	return ret;
-}
 
 PackedStringArray ShapeCast2D::get_configuration_warnings() const
 {

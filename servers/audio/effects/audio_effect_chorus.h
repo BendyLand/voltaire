@@ -35,7 +35,6 @@
 class AudioEffectChorus;
 
 class AudioEffectChorusInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectChorusInstance, AudioEffectInstance);
 	friend class AudioEffectChorus;
 	Ref<AudioEffectChorus> base;
 
@@ -53,7 +52,6 @@ public:
 };
 
 class AudioEffectChorus : public AudioEffect {
-	VLTRCLASS(AudioEffectChorus, AudioEffect);
 
 	friend class AudioEffectChorusInstance;
 

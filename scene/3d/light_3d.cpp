@@ -75,14 +75,6 @@ void Light3D::set_negative(bool p_enable)
 
 bool Light3D::is_negative() const { return negative; }
 
-void Light3D::set_enable_distance_fade(bool p_enable)
-{
-	distance_fade_enabled = p_enable;
-	RS::get_singleton()->light_set_distance_fade(light, distance_fade_enabled, distance_fade_begin,
-		distance_fade_shadow, distance_fade_length);
-	this->obj->notify_property_list_changed();
-}
-
 bool Light3D::is_distance_fade_enabled() const { return distance_fade_enabled; }
 
 void Light3D::set_distance_fade_begin(real_t p_distance)
@@ -154,44 +146,6 @@ void Light3D::set_shadow_caster_mask(uint32_t p_caster_mask)
 
 uint32_t Light3D::get_shadow_caster_mask() const { return shadow_caster_mask; }
 
-AABB Light3D::get_aabb() const
-{
-	if (type == RSE::LIGHT_DIRECTIONAL) {
-		return AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
-
-	}
-	else if (type == RSE::LIGHT_OMNI) {
-		return AABB(
-			Vector3(-1, -1, -1) * param[PARAM_RANGE], Vector3(2, 2, 2) * param[PARAM_RANGE]);
-
-	}
-	else if (type == RSE::LIGHT_SPOT) {
-		real_t cone_slant_height = param[PARAM_RANGE];
-		real_t cone_angle_rad = Math::deg_to_rad(param[PARAM_SPOT_ANGLE]);
-
-		if (cone_angle_rad > Math::PI / 2.0) {
-			// Just return the AABB of an omni light if the spot angle is above 90 degrees.
-			return AABB(
-				Vector3(-1, -1, -1) * cone_slant_height, Vector3(2, 2, 2) * cone_slant_height);
-		}
-
-		real_t size = Math::sin(cone_angle_rad) * cone_slant_height;
-		return AABB(Vector3(-size, -size, -cone_slant_height),
-			Vector3(2 * size, 2 * size, cone_slant_height));
-	}
-	else if (type == RSE::LIGHT_AREA) {
-		float len = param[PARAM_RANGE];
-
-		const AreaLight3D* l = Object::cast_to<const AreaLight3D>(this);
-		float width = l->get_area_size().x / 2.0 + len;
-		float height = l->get_area_size().y / 2.0 + len;
-
-		return AABB(-Vector3(width, height, 0), Vector3(width * 2, height * 2, -len));
-	}
-
-	return AABB();
-}
-
 PackedStringArray Light3D::get_configuration_warnings() const
 {
 	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
@@ -210,28 +164,6 @@ void Light3D::set_bake_mode(BakeMode p_mode)
 }
 
 Light3D::BakeMode Light3D::get_bake_mode() const { return bake_mode; }
-
-void Light3D::set_projector(const Ref<Texture2D>& p_texture)
-{
-	projector = p_texture;
-	RID tex_id = projector.is_valid() ? projector->get_rid() : RID();
-
-#ifdef DEBUG_ENABLED
-	if (p_texture.is_valid() &&
-		(p_texture->obj->is_class("AnimatedTexture") || p_texture->obj->is_class("AtlasTexture") ||
-			p_texture->obj->is_class("CameraTexture") ||
-			p_texture->obj->is_class("CanvasTexture") || p_texture->obj->is_class("MeshTexture") ||
-			p_texture->obj->is_class("Texture2DRD") ||
-			p_texture->obj->is_class("ViewportTexture"))) {
-		WARN_PRINT(vformat("%s cannot be used as a Light3D projector texture (%s). As a "
-						   "workaround, assign the value returned by %s's `get_image()` instead.",
-			p_texture->obj->get_class(), get_path(), p_texture->obj->get_class()));
-	}
-#endif
-
-	RS::get_singleton()->light_set_projector(light, tex_id);
-	update_configuration_warnings();
-}
 
 Ref<Texture2D> Light3D::get_projector() const { return projector; }
 
@@ -339,29 +271,6 @@ void Light3D::set_editor_only(bool p_editor_only)
 
 bool Light3D::is_editor_only() const { return editor_only; }
 
-void Light3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (get_light_type() != RSE::LIGHT_DIRECTIONAL &&
-		(p_property.name == "light_angular_distance" || p_property.name == "light_intensity_lux")) {
-		// Angular distance and Light Intensity Lux are only used in DirectionalLight3D.
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (get_light_type() == RSE::LIGHT_DIRECTIONAL &&
-			   p_property.name == "light_intensity_lumens") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units") &&
-			   (p_property.name == "light_intensity_lumens" ||
-				   p_property.name == "light_intensity_lux" ||
-				   p_property.name == "light_temperature")) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (get_light_type() == RSE::LIGHT_AREA && p_property.name == "light_projector") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
-void Light3D::_bind_methods() {}
 
 Light3D::Light3D(RSE::LightType p_type)
 {
@@ -433,16 +342,6 @@ Light3D::~Light3D()
 	}
 }
 
-/////////////////////////////////////////
-
-void DirectionalLight3D::set_shadow_mode(ShadowMode p_mode)
-{
-	shadow_mode = p_mode;
-	RS::get_singleton()->light_directional_set_shadow_mode(
-		light, RSE::LightDirectionalShadowMode(p_mode));
-	this->obj->notify_property_list_changed();
-}
-
 DirectionalLight3D::ShadowMode DirectionalLight3D::get_shadow_mode() const { return shadow_mode; }
 
 void DirectionalLight3D::set_blend_splits(bool p_enable)
@@ -462,40 +361,7 @@ void DirectionalLight3D::set_sky_mode(SkyMode p_mode)
 
 DirectionalLight3D::SkyMode DirectionalLight3D::get_sky_mode() const { return sky_mode; }
 
-void DirectionalLight3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (shadow_mode == SHADOW_ORTHOGONAL &&
-			(p_property.name == "directional_shadow_split_1" ||
-				p_property.name == "directional_shadow_blend_splits")) {
-			// Split 2 and split blending are only used with the PSSM 2 Splits and PSSM 4 Splits
-			// shadow modes.
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
 
-		if ((shadow_mode == SHADOW_ORTHOGONAL || shadow_mode == SHADOW_PARALLEL_2_SPLITS) &&
-			(p_property.name == "directional_shadow_split_2" ||
-				p_property.name == "directional_shadow_split_3")) {
-			// Splits 3 and 4 are only used with the PSSM 4 Splits shadow mode.
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-	if (p_property.name == "light_size" || p_property.name == "light_projector") {
-		// Not implemented in DirectionalLight3D (`light_size` is replaced by
-		// `light_angular_distance`).
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (p_property.name == "distance_fade_enabled" ||
-			   p_property.name == "distance_fade_begin" ||
-			   p_property.name == "distance_fade_shadow" ||
-			   p_property.name == "distance_fade_length") {
-		// Not relevant for DirectionalLight3D, as the light LOD system only pertains to point
-		// lights. For DirectionalLight3D, `directional_shadow_max_distance` can be used instead.
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
-void DirectionalLight3D::_bind_methods() {}
 
 DirectionalLight3D::DirectionalLight3D() : Light3D(RSE::LIGHT_DIRECTIONAL)
 {
@@ -536,7 +402,7 @@ PackedStringArray OmniLight3D::get_configuration_warnings() const
 	return warnings;
 }
 
-void OmniLight3D::_bind_methods() {}
+
 
 OmniLight3D::OmniLight3D() : Light3D(RSE::LIGHT_OMNI) { set_shadow_mode(SHADOW_CUBE); }
 
@@ -563,34 +429,10 @@ PackedStringArray SpotLight3D::get_configuration_warnings() const
 	return warnings;
 }
 
-void SpotLight3D::_bind_methods() {}
-
 SpotLight3D::SpotLight3D() : Light3D(RSE::LIGHT_SPOT)
 {
 	// Decrease the default shadow bias to better suit most scenes.
 	set_param(PARAM_SHADOW_BIAS, 0.03);
-}
-
-void AreaLight3D::set_area_texture(const Ref<Texture2D>& p_texture)
-{
-	area_texture = p_texture;
-	RID tex_id = area_texture.is_valid() ? area_texture->get_rid() : RID();
-
-#ifdef DEBUG_ENABLED
-	if (p_texture.is_valid() &&
-		(p_texture->obj->is_class("AnimatedTexture") || p_texture->obj->is_class("AtlasTexture") ||
-			p_texture->obj->is_class("CameraTexture") ||
-			p_texture->obj->is_class("CanvasTexture") || p_texture->obj->is_class("MeshTexture") ||
-			p_texture->obj->is_class("Texture2DRD") ||
-			p_texture->obj->is_class("ViewportTexture"))) {
-		WARN_PRINT(vformat("%s cannot be used as a Light3D projector texture (%s). As a "
-						   "workaround, assign the value returned by %s's `get_image()` instead.",
-			p_texture->obj->get_class(), get_path(), p_texture->obj->get_class()));
-	}
-#endif
-
-	RS::get_singleton()->light_area_set_texture(light, tex_id);
-	update_configuration_warnings();
 }
 
 Ref<Texture2D> AreaLight3D::get_area_texture() const { return area_texture; }
@@ -623,7 +465,7 @@ AreaLight3D::AreaLight3D() : Light3D(RSE::LIGHT_AREA)
 	set_area_normalize_energy(true);
 }
 
-void AreaLight3D::_bind_methods() {}
+
 
 PackedStringArray AreaLight3D::get_configuration_warnings() const
 {
