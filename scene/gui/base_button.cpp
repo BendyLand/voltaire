@@ -230,15 +230,6 @@ void ButtonGroup::get_buttons(List<BaseButton*>* r_buttons)
 	}
 }
 
-Array ButtonGroup::_get_buttons()
-{
-	Array btns;
-	for (const BaseButton* E : buttons) {
-		btns.push_back(E);
-	}
-	return btns;
-}
-
 BaseButton* ButtonGroup::get_pressed_button()
 {
 	for (BaseButton* E : buttons) {

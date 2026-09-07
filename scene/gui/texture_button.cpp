@@ -264,8 +264,6 @@ void TextureButton::_notification(int p_what)
 	}
 }
 
-void TextureButton::_bind_methods() {}
-
 void TextureButton::set_texture_normal(const Ref<Texture2D>& p_normal)
 {
 	_set_texture(&normal, p_normal);
@@ -310,26 +308,6 @@ Ref<Texture2D> TextureButton::get_texture_focused() const { return focused; }
 void TextureButton::set_texture_focused(const Ref<Texture2D>& p_focused)
 {
 	_set_texture(&focused, p_focused);
-}
-
-void TextureButton::_set_texture(Ref<Texture2D>* p_destination, const Ref<Texture2D>& p_texture)
-{
-	DEV_ASSERT(p_destination);
-	Ref<Texture2D>& destination = *p_destination;
-	if (destination == p_texture) {
-		return;
-	}
-	if (destination.is_valid()) {
-		destination->disconnect_changed(callable_mp(this, &TextureButton::_texture_changed));
-	}
-	destination = p_texture;
-	if (destination.is_valid()) {
-		// Pass `CONNECT_REFERENCE_COUNTED` to avoid early disconnect in case the same texture is
-		// assigned to different "slots".
-		destination->connect_changed(
-			callable_mp(this, &TextureButton::_texture_changed), Object::CONNECT_REFERENCE_COUNTED);
-	}
-	_texture_changed();
 }
 
 void TextureButton::_texture_changed()

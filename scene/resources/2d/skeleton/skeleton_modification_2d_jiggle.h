@@ -33,17 +33,13 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-///////////////////////////////////////
-// SkeletonModification2DJIGGLE
-///////////////////////////////////////
-
-class SkeletonModification2DJiggle : public SkeletonModification2D {
-
+class SkeletonModification2DJiggle : public SkeletonModification2D
+{
 private:
-	struct Jiggle_Joint_Data2D {
+	struct Jiggle_Joint_Data2D
+	{
 		int bone_idx = -1;
 		NodePath bone2d_node;
-		ObjectID bone2d_node_cache;
 
 		bool override_defaults = false;
 		float stiffness = 3;
@@ -64,7 +60,6 @@ private:
 	Vector<Jiggle_Joint_Data2D> jiggle_data_chain;
 
 	NodePath target_node;
-	ObjectID target_node_cache;
 	void update_target_cache();
 
 	float stiffness = 3;
@@ -77,21 +72,15 @@ private:
 	uint32_t collision_mask = 1;
 
 	void jiggle_joint_update_bone2d_cache(int p_joint_idx);
-	void _execute_jiggle_joint(int p_joint_idx, Node2D *p_target, float p_delta);
+	void _execute_jiggle_joint(int p_joint_idx, Node2D* p_target, float p_delta);
 	void _update_jiggle_joint_data();
-
-protected:
-	static void _bind_methods();
-	bool _set(const StringName &p_path, const Variant &p_value);
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
 	void reset();
 	void _execute(float p_delta) override;
-	void _setup_modification(SkeletonModificationStack2D *p_stack) override;
+	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
 
-	void set_target_node(const NodePath &p_target_node);
+	void set_target_node(const NodePath& p_target_node);
 	NodePath get_target_node() const;
 
 	void set_stiffness(float p_stiffness);
@@ -113,7 +102,7 @@ public:
 	int get_jiggle_data_chain_length();
 	void set_jiggle_data_chain_length(int p_new_length);
 
-	void set_jiggle_joint_bone2d_node(int p_joint_idx, const NodePath &p_target_node);
+	void set_jiggle_joint_bone2d_node(int p_joint_idx, const NodePath& p_target_node);
 	NodePath get_jiggle_joint_bone2d_node(int p_joint_idx) const;
 	void set_jiggle_joint_bone_index(int p_joint_idx, int p_bone_idx);
 	int get_jiggle_joint_bone_index(int p_joint_idx) const;
@@ -134,3 +123,5 @@ public:
 	SkeletonModification2DJiggle();
 	~SkeletonModification2DJiggle();
 };
+
+

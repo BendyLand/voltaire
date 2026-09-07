@@ -43,7 +43,6 @@ private:
 	struct CCDIK_Joint_Data2D {
 		int bone_idx = -1;
 		NodePath bone2d_node;
-		ObjectID bone2d_node_cache;
 		bool rotate_from_joint = false;
 
 		bool enable_constraint = false;
@@ -58,21 +57,13 @@ private:
 	Vector<CCDIK_Joint_Data2D> ccdik_data_chain;
 
 	NodePath target_node;
-	ObjectID target_node_cache;
 	void update_target_cache();
 
 	NodePath tip_node;
-	ObjectID tip_node_cache;
 	void update_tip_cache();
 
 	void ccdik_joint_update_bone2d_cache(int p_joint_idx);
 	void _execute_ccdik_joint(int p_joint_idx, Node2D *p_target, Node2D *p_tip);
-
-protected:
-	static void _bind_methods();
-	bool _set(const StringName &p_path, const Variant &p_value);
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
 	void _execute(float p_delta) override;

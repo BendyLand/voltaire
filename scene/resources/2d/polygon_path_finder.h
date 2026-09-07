@@ -72,12 +72,6 @@ class PolygonPathFinder : public Resource {
 
 	bool _is_point_inside(const Vector2 &p_point) const;
 
-	void _set_data(const Dictionary &p_data);
-	Dictionary _get_data() const;
-
-protected:
-	static void _bind_methods();
-
 public:
 	void setup(const Vector<Vector2> &p_points, const Vector<int> &p_connections);
 	Vector<Vector2> find_path(const Vector2 &p_from, const Vector2 &p_to);

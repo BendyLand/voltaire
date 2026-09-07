@@ -48,87 +48,6 @@ void Popup::_input_from_window(const Ref<InputEvent>& p_event)
 	Window::_input_from_window(p_event);
 }
 
-void Popup::_initialize_visible_parents()
-{
-	if (is_embedded()) {
-		visible_parents.clear();
-
-		Window* parent_window = this;
-		while (parent_window) {
-			parent_window = parent_window->get_parent_visible_window();
-			if (parent_window) {
-				visible_parents.push_back(parent_window);
-				parent_window->connect(
-					SceneStringName(focus_entered), callable_mp(this, &Popup::_parent_focused));
-				parent_window->connect(SceneStringName(tree_exited),
-					callable_mp(this, &Popup::_deinitialize_visible_parents));
-			}
-		}
-	}
-}
-
-void Popup::_deinitialize_visible_parents()
-{
-	if (is_embedded()) {
-		for (Window* parent_window : visible_parents) {
-			parent_window->disconnect(
-				SceneStringName(focus_entered), callable_mp(this, &Popup::_parent_focused));
-			parent_window->disconnect(SceneStringName(tree_exited),
-				callable_mp(this, &Popup::_deinitialize_visible_parents));
-		}
-
-		visible_parents.clear();
-	}
-}
-
-void Popup::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (!is_in_edited_scene_root()) {
-			if (is_visible()) {
-				_initialize_visible_parents();
-				popped_up = true;
-				hide_reason = HIDE_REASON_NONE;
-			}
-			else {
-				_deinitialize_visible_parents();
-				if (hide_reason == HIDE_REASON_NONE) {
-					hide_reason = HIDE_REASON_CANCELED;
-				}
-				this->obj->emit_signal(SNAME("popup_hide"));
-				popped_up = false;
-			}
-		}
-	} break;
-
-	case NOTIFICATION_UNPARENTED:
-	case NOTIFICATION_EXIT_TREE: {
-		if (!is_in_edited_scene_root()) {
-			_deinitialize_visible_parents();
-		}
-	} break;
-
-	case NOTIFICATION_WM_CLOSE_REQUEST: {
-		if (!is_in_edited_scene_root()) {
-			if (hide_reason == HIDE_REASON_NONE) {
-				hide_reason = HIDE_REASON_UNFOCUSED;
-			}
-			_close_pressed();
-		}
-	} break;
-
-	case NOTIFICATION_APPLICATION_FOCUS_OUT: {
-		if (!is_in_edited_scene_root() && get_flag(FLAG_POPUP)) {
-			if (hide_reason == HIDE_REASON_NONE) {
-				hide_reason = HIDE_REASON_UNFOCUSED;
-			}
-			_close_pressed();
-		}
-	} break;
-	}
-}
-
 void Popup::_parent_focused()
 {
 	if (popped_up && get_flag(FLAG_POPUP)) {
@@ -139,30 +58,10 @@ void Popup::_parent_focused()
 	}
 }
 
-void Popup::_close_pressed()
-{
-	popped_up = false;
-
-	_deinitialize_visible_parents();
-
-	callable_mp((Window*)this, &Window::hide).call_deferred();
-}
-
 void Popup::_post_popup()
 {
 	Window::_post_popup();
 	popped_up = true;
-}
-
-void Popup::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "transient" || p_property.name == "exclusive" ||
-		p_property.name == "popup_window" || p_property.name == "unfocusable") {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
 }
 
 Rect2i Popup::_popup_adjust_rect() const
@@ -291,31 +190,6 @@ void PopupPanel::_input_from_window(const Ref<InputEvent>& p_event)
 	Popup::_input_from_window(p_event);
 }
 
-Size2 PopupPanel::_get_contents_minimum_size() const
-{
-	Size2 ms;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = Object::cast_to<Control>(get_child(i));
-		if (!c || c == panel) {
-			continue;
-		}
-
-		if (c->is_set_as_top_level()) {
-			continue;
-		}
-
-		Size2 cms = c->get_bound_minimum_size();
-		ms = cms.max(ms);
-	}
-
-	// Take shadows into account.
-	ms.width += panel->get_offset(SIDE_LEFT) - panel->get_offset(SIDE_RIGHT);
-	ms.height += panel->get_offset(SIDE_TOP) - panel->get_offset(SIDE_BOTTOM);
-
-	return ms + theme_cache.panel_style->get_minimum_size();
-}
-
 Rect2i PopupPanel::_popup_adjust_rect() const
 {
 	Rect2i current = Popup::_popup_adjust_rect();
@@ -374,33 +248,6 @@ void PopupPanel::_update_shadow_offsets() const
 	}
 	panel->set_offset(SIDE_TOP, MAX(0, shadow_size - shadow_offset.y));
 	panel->set_offset(SIDE_BOTTOM, MIN(0, -shadow_size - shadow_offset.y));
-}
-
-void PopupPanel::_update_child_rects() const
-{
-	Vector2 cpos(theme_cache.panel_style->get_offset());
-	cpos += Vector2(is_layout_rtl() ? -panel->get_offset(SIDE_RIGHT) : panel->get_offset(SIDE_LEFT),
-		panel->get_offset(SIDE_TOP));
-
-	Vector2 csize = Vector2(get_size()) / get_content_scale_factor() -
-					theme_cache.panel_style->get_minimum_size();
-	// Trim shadows.
-	csize.width -= panel->get_offset(SIDE_LEFT) - panel->get_offset(SIDE_RIGHT);
-	csize.height -= panel->get_offset(SIDE_TOP) - panel->get_offset(SIDE_BOTTOM);
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = Object::cast_to<Control>(get_child(i));
-		if (!c || c == panel) {
-			continue;
-		}
-
-		if (c->is_set_as_top_level()) {
-			continue;
-		}
-
-		c->set_position(cpos);
-		c->set_size(csize);
-	}
 }
 
 void PopupPanel::_notification(int p_what)
@@ -464,26 +311,6 @@ void PopupPanel::_notification(int p_what)
 		}
 	} break;
 	}
-}
-
-void PopupPanel::_bind_methods() {}
-
-PopupPanel::PopupPanel()
-{
-	set_flag(FLAG_TRANSPARENT, true);
-	set_default_canvas_item_texture_filter(
-		Viewport::DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_PARENT_NODE);
-	set_default_canvas_item_texture_repeat(
-		Viewport::DEFAULT_CANVAS_ITEM_TEXTURE_REPEAT_PARENT_NODE);
-
-	panel = memnew(Panel);
-	panel->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	add_child(panel, false, INTERNAL_MODE_FRONT);
-
-#ifdef TOOLS_ENABLED
-	ProjectSettings::get_singleton()->obj->connect(
-		"settings_changed", callable_mp((Node*)this, &Node::update_configuration_warnings));
-#endif
 }
 
 

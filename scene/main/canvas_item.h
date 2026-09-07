@@ -105,7 +105,9 @@ private:
 		// an optimization for faster traversal.
 		LocalVector<CanvasItem*> canvas_item_children;
 		uint32_t index_in_parent = UINT32_MAX;
-	} data;
+	};
+
+	Data data;
 
 	int light_mask = 1;
 	uint32_t visibility_layer = 1;

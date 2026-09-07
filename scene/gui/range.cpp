@@ -83,63 +83,6 @@ PackedStringArray Range::get_configuration_warnings() const
 	return warnings;
 }
 
-void Range::_value_changed_notify()
-{
-	_value_changed(shared->val);
-	this->obj->emit_signal(SceneStringName(value_changed), shared->val);
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void Range::_accessibility_action_inc(const Variant& p_data)
-{
-	double step = ((shared->step > 0) ? shared->step : 1);
-	set_value(shared->val + step);
-}
-
-void Range::_accessibility_action_dec(const Variant& p_data)
-{
-	double step = ((shared->step > 0) ? shared->step : 1);
-	set_value(shared->val - step);
-}
-
-void Range::_accessibility_action_set_value(const Variant& p_data)
-{
-	double new_val = p_data;
-	set_value(new_val);
-}
-
-void Range::_notification(int p_what)
-{
-	ERR_MAIN_THREAD_GUARD;
-	switch (p_what) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_SPIN_BUTTON);
-		AccessibilityServer::get_singleton()->update_set_num_value(ae, shared->val);
-		AccessibilityServer::get_singleton()->update_set_num_range(ae, shared->min, shared->max);
-		if (shared->step > 0) {
-			AccessibilityServer::get_singleton()->update_set_num_step(ae, shared->step);
-		}
-		else {
-			AccessibilityServer::get_singleton()->update_set_num_step(ae, 1);
-		}
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_DECREMENT,
-			callable_mp(this, &Range::_accessibility_action_dec));
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_INCREMENT,
-			callable_mp(this, &Range::_accessibility_action_inc));
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_SET_VALUE,
-			callable_mp(this, &Range::_accessibility_action_set_value));
-	} break;
-	}
-}
-
 void Range::Shared::emit_value_changed()
 {
 	for (Range* E : owners) {
@@ -149,12 +92,6 @@ void Range::Shared::emit_value_changed()
 		}
 		r->_value_changed_notify();
 	}
-}
-
-void Range::_changed_notify()
-{
-	this->obj->emit_signal(CoreStringName(changed));
-	queue_redraw();
 }
 
 void Range::Shared::emit_changed()
@@ -350,13 +287,6 @@ double Range::get_as_ratio() const
 		double value = CLAMP(get_value(), shared->min, shared->max);
 		return CLAMP((value - get_min()) / (get_max() - get_min()), 0, 1);
 	}
-}
-
-void Range::_share(Node* p_range)
-{
-	Range* r = Object::cast_to<Range>(p_range);
-	ERR_FAIL_NULL(r);
-	share(r);
 }
 
 void Range::share(Range* p_range)

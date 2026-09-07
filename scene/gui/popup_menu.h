@@ -286,8 +286,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-	static void _bind_methods();
-
 	virtual String _get_accessibility_name() const override;
 
 #ifndef DISABLE_DEPRECATED

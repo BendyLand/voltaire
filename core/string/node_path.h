@@ -30,17 +30,18 @@
 
 #pragma once
 
+#include <climits>
 #include "core/string/string_name.h"
 #include "core/string/ustring.h"
-
-#include <climits>
 
 // Represents a path to a node or property in a hierarchy of nodes
 // Note that NodePath is (effectively) const: If you hold a NodePath,
 // you can expect it to remain unchanged, even if you make copies of
 // it. This is achieved through copy-on-write (CoW).
-class [[nodiscard]] _WARN_UNUSED_ NodePath {
-	struct Data {
+class [[nodiscard]] _WARN_UNUSED_ NodePath
+{
+	struct Data
+	{
 		SafeRefCount refcount;
 		Vector<StringName> path;
 		Vector<StringName> subpath;
@@ -51,7 +52,7 @@ class [[nodiscard]] _WARN_UNUSED_ NodePath {
 		mutable uint32_t hash_cache;
 	};
 
-	mutable Data *data = nullptr;
+	mutable Data* data = nullptr;
 	void unref();
 
 	void _update_hash_cache() const;
@@ -73,12 +74,13 @@ public:
 	StringName get_concatenated_subnames() const;
 	NodePath slice(int p_begin, int p_end = INT_MAX) const;
 
-	NodePath rel_path_to(const NodePath &p_np) const;
+	NodePath rel_path_to(const NodePath& p_np) const;
 	NodePath get_as_property_path() const;
 
 	void prepend_period();
 
-	_FORCE_INLINE_ uint32_t hash() const {
+	_FORCE_INLINE_ uint32_t hash() const
+	{
 		if (!data) {
 			return 0;
 		}
@@ -91,21 +93,27 @@ public:
 	explicit operator String() const;
 	bool is_empty() const;
 
-	bool operator==(const NodePath &p_path) const;
-	bool operator!=(const NodePath &p_path) const;
-	void operator=(const NodePath &p_path);
+	bool operator==(const NodePath& p_path) const;
+	bool operator!=(const NodePath& p_path) const;
+	void operator=(const NodePath& p_path);
 
 	void simplify();
 	NodePath simplified() const;
 
-	NodePath(const Vector<StringName> &p_path, bool p_absolute);
-	NodePath(const Vector<StringName> &p_path, const Vector<StringName> &p_subpath, bool p_absolute);
-	NodePath(const NodePath &p_path);
-	NodePath(const String &p_path);
+	NodePath(const Vector<StringName>& p_path, bool p_absolute);
+	NodePath(
+		const Vector<StringName>& p_path, const Vector<StringName>& p_subpath, bool p_absolute);
+	NodePath(const NodePath& p_path);
+	NodePath(const String& p_path);
+
 	NodePath() {}
+
 	~NodePath();
 };
 
 // Zero-constructing NodePath initializes data to nullptr (and thus empty).
-template <>
-struct is_zero_constructible<NodePath> : std::true_type {};
+template <> struct is_zero_constructible<NodePath> : std::true_type
+{
+};
+
+

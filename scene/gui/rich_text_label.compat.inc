@@ -49,33 +49,6 @@ void RichTextLabel::_set_table_column_expand_bind_compat_101482(
 	set_table_column_expand(p_column, p_expand, p_ratio, true);
 }
 
-void RichTextLabel::_push_meta_bind_compat_99481(
-	const Variant& p_meta, MetaUnderline p_underline_mode)
-{
-	push_meta(p_meta, p_underline_mode, String());
-}
-
-void RichTextLabel::_push_meta_bind_compat_89024(const Variant& p_meta)
-{
-	push_meta(p_meta, RichTextLabel::MetaUnderline::META_UNDERLINE_ALWAYS, String());
-}
-
-void RichTextLabel::_add_image_bind_compat_80410(const Ref<Texture2D>& p_image, const int p_width,
-	const int p_height, const Color& p_color, InlineAlignment p_alignment, const Rect2& p_region)
-{
-	add_image(p_image, p_width, p_height, p_color, p_alignment, p_region, Variant(), false,
-		String(), IMAGE_UNIT_PIXEL, IMAGE_UNIT_PIXEL, String());
-}
-
-void RichTextLabel::_add_image_bind_compat_76829(const Ref<Texture2D>& p_image, const int p_width,
-	const int p_height, const Color& p_color, InlineAlignment p_alignment, const Rect2& p_region,
-	const Variant& p_key, bool p_pad, const String& p_tooltip, bool p_size_in_percent)
-{
-	add_image(p_image, p_width, p_height, p_color, p_alignment, p_region, p_key, p_pad, p_tooltip,
-		p_size_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL,
-		p_size_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL, String());
-}
-
 void RichTextLabel::_push_table_bind_compat_76829(
 	int p_columns, InlineAlignment p_alignment, int p_align_to_row)
 {
@@ -93,48 +66,6 @@ void RichTextLabel::_push_strikethrough_bind_compat_106300()
 {
 	push_strikethrough(Color(0, 0, 0, 0));
 }
-
-void RichTextLabel::_add_image_bind_compat_107347(const Ref<Texture2D>& p_image, int p_width,
-	int p_height, const Color& p_color, InlineAlignment p_alignment, const Rect2& p_region,
-	const Variant& p_key, bool p_pad, const String& p_tooltip, bool p_size_in_percent,
-	const String& p_alt_text)
-{
-	add_image(p_image, p_width, p_height, p_color, p_alignment, p_region, p_key, p_pad, p_tooltip,
-		p_size_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL,
-		p_size_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL, p_alt_text);
-}
-
-void RichTextLabel::_update_image_bind_compat_107347(const Variant& p_key,
-	BitField<ImageUpdateMask> p_mask, const Ref<Texture2D>& p_image, int p_width, int p_height,
-	const Color& p_color, InlineAlignment p_alignment, const Rect2& p_region, bool p_pad,
-	const String& p_tooltip, bool p_size_in_percent)
-{
-	update_image(p_key, p_mask, p_image, p_width, p_height, p_color, p_alignment, p_region, p_pad,
-		p_tooltip, p_size_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL,
-		p_size_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL);
-}
-
-void RichTextLabel::_add_image_bind_compat_112617(const Ref<Texture2D>& p_image, int p_width,
-	int p_height, const Color& p_color, InlineAlignment p_alignment, const Rect2& p_region,
-	const Variant& p_key, bool p_pad, const String& p_tooltip, bool p_width_in_percent,
-	bool p_height_in_percent, const String& p_alt_text)
-{
-	add_image(p_image, p_width, p_height, p_color, p_alignment, p_region, p_key, p_pad, p_tooltip,
-		p_width_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL,
-		p_height_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL, p_alt_text);
-}
-
-void RichTextLabel::_update_image_bind_compat_112617(const Variant& p_key,
-	BitField<ImageUpdateMask> p_mask, const Ref<Texture2D>& p_image, int p_width, int p_height,
-	const Color& p_color, InlineAlignment p_alignment, const Rect2& p_region, bool p_pad,
-	const String& p_tooltip, bool p_width_in_percent, bool p_height_in_percent)
-{
-	update_image(p_key, p_mask, p_image, p_width, p_height, p_color, p_alignment, p_region, p_pad,
-		p_tooltip, p_width_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL,
-		p_height_in_percent ? IMAGE_UNIT_PERCENT : IMAGE_UNIT_PIXEL);
-}
-
-void RichTextLabel::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
