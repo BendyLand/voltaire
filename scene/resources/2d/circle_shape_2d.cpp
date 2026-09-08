@@ -37,12 +37,6 @@ bool CircleShape2D::_edit_is_selected_on_click(const Point2& p_point, double p_t
 	return p_point.length() < get_radius() + p_tolerance;
 }
 
-void CircleShape2D::_update_shape()
-{
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), radius);
-	emit_changed();
-}
-
 void CircleShape2D::set_radius(real_t p_radius)
 {
 	ERR_FAIL_COND_MSG(p_radius < 0, "CircleShape2D radius cannot be negative.");
@@ -54,8 +48,6 @@ void CircleShape2D::set_radius(real_t p_radius)
 }
 
 real_t CircleShape2D::get_radius() const { return radius; }
-
-void CircleShape2D::_bind_methods() {}
 
 Rect2 CircleShape2D::get_rect() const
 {

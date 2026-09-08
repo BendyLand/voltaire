@@ -106,18 +106,4 @@ Error ResourceFormatSaverShaderInclude::save(
 	return OK;
 }
 
-void ResourceFormatSaverShaderInclude::get_recognized_extensions(
-	const Ref<Resource>& p_resource, List<String>* p_extensions) const
-{
-	const ShaderInclude* shader_inc = Object::cast_to<ShaderInclude>(*p_resource);
-	if (shader_inc != nullptr) {
-		p_extensions->push_back("gdshaderinc");
-	}
-}
-
-bool ResourceFormatSaverShaderInclude::recognize(const Ref<Resource>& p_resource) const
-{
-	return p_resource->obj->get_class_name() == "ShaderInclude"; // only shader, not inherited
-}
-
 

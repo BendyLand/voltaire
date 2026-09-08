@@ -374,19 +374,6 @@ int ImmediateMesh::surface_get_array_len(int p_idx) const
 
 int ImmediateMesh::surface_get_array_index_len(int p_idx) const { return 0; }
 
-Array ImmediateMesh::surface_get_arrays(int p_surface) const
-{
-	ERR_FAIL_INDEX_V(p_surface, int(surfaces.size()), Array());
-	return RS::get_singleton()->mesh_surface_get_arrays(mesh, p_surface);
-}
-
-TypedArray<Array> ImmediateMesh::surface_get_blend_shape_arrays(int p_surface) const
-{
-	return TypedArray<Array>();
-}
-
-Dictionary ImmediateMesh::surface_get_lods(int p_surface) const { return Dictionary(); }
-
 uint32_t ImmediateMesh::surface_get_format(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, int(surfaces.size()), 0);

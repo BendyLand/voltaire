@@ -37,9 +37,6 @@ class MultiplayerAPI : public RefCounted
 private:
 	static StringName default_interface;
 
-protected:
-	static void _bind_methods();
-
 public:
 	enum RPCMode
 	{

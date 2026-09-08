@@ -55,32 +55,7 @@ Vector<Vector3> SphereShape3D::get_debug_mesh_lines() const
 	return points;
 }
 
-Ref<ArrayMesh> SphereShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
-{
-	Array sphere_array;
-	sphere_array.resize(RSE::ARRAY_MAX);
-	SphereMesh::create_mesh_array(sphere_array, radius, radius * 2, 32);
-
-	Vector<Color> colors;
-	const PackedVector3Array& verts = sphere_array[RSE::ARRAY_VERTEX];
-	const int32_t verts_size = verts.size();
-	for (int i = 0; i < verts_size; i++) {
-		colors.append(p_modulate);
-	}
-
-	Ref<ArrayMesh> sphere_mesh = memnew(ArrayMesh);
-	sphere_array[RSE::ARRAY_COLOR] = colors;
-	sphere_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, sphere_array);
-	return sphere_mesh;
-}
-
 real_t SphereShape3D::get_enclosing_radius() const { return radius; }
-
-void SphereShape3D::_update_shape()
-{
-	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), radius);
-	Shape3D::_update_shape();
-}
 
 void SphereShape3D::set_radius(float p_radius)
 {
@@ -91,8 +66,6 @@ void SphereShape3D::set_radius(float p_radius)
 }
 
 float SphereShape3D::get_radius() const { return radius; }
-
-void SphereShape3D::_bind_methods() {}
 
 SphereShape3D::SphereShape3D()
 	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_SPHERE))

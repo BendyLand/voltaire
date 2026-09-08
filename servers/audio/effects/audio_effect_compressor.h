@@ -34,7 +34,8 @@
 
 class AudioEffectCompressor;
 
-class AudioEffectCompressorInstance : public AudioEffectInstance {
+class AudioEffectCompressorInstance : public AudioEffectInstance
+{
 	friend class AudioEffectCompressor;
 	Ref<AudioEffectCompressor> base;
 
@@ -43,11 +44,13 @@ class AudioEffectCompressorInstance : public AudioEffectInstance {
 
 public:
 	void set_current_channel(int p_channel) { current_channel = p_channel; }
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+
+	virtual void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
 };
 
-class AudioEffectCompressor : public AudioEffect {
-
+class AudioEffectCompressor : public AudioEffect
+{
 	friend class AudioEffectCompressorInstance;
 	float threshold;
 	float ratio;
@@ -56,10 +59,6 @@ class AudioEffectCompressor : public AudioEffect {
 	float release_ms;
 	float mix;
 	StringName sidechain;
-
-protected:
-	void _validate_property(PropertyInfo &p_property) const;
-	static void _bind_methods();
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;
@@ -82,8 +81,10 @@ public:
 	void set_mix(float p_mix);
 	float get_mix() const;
 
-	void set_sidechain(const StringName &p_sidechain);
+	void set_sidechain(const StringName& p_sidechain);
 	StringName get_sidechain() const;
 
 	AudioEffectCompressor();
 };
+
+

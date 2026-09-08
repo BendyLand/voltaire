@@ -32,43 +32,12 @@
 
 #include "display_server.h"
 
-Error DisplayServer::_file_dialog_show_bind_compat_98194(const String& p_title,
-	const String& p_current_directory, const String& p_filename, bool p_show_hidden,
-	DisplayServerEnums::FileDialogMode p_mode, const Vector<String>& p_filters,
-	const Callable& p_callback)
-{
-	return file_dialog_show(p_title, p_current_directory, p_filename, p_show_hidden, p_mode,
-		p_filters, p_callback, DisplayServerEnums::MAIN_WINDOW_ID);
-}
-
-Error DisplayServer::_file_dialog_with_options_show_bind_compat_98194(const String& p_title,
-	const String& p_current_directory, const String& p_root, const String& p_filename,
-	bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode, const Vector<String>& p_filters,
-	const Array& p_options, const Callable& p_callback)
-{
-	return file_dialog_with_options_show(p_title, p_current_directory, p_root, p_filename,
-		p_show_hidden, p_mode, p_filters, p_options, p_callback,
-		DisplayServerEnums::MAIN_WINDOW_ID);
-}
-
 RID DisplayServer::_accessibility_create_sub_text_edit_elements_bind_compat_113459(
 	const RID& p_parent_rid, const RID& p_shaped_text, float p_min_height, int p_insert_pos)
 {
 	return accessibility_create_sub_text_edit_elements(
 		p_parent_rid, p_shaped_text, p_min_height, p_insert_pos, false);
 }
-
-Array DisplayServer::_get_display_cutouts_bind_compat_119196() const
-{
-	return get_display_cutouts(DisplayServerEnums::SCREEN_OF_MAIN_WINDOW);
-}
-
-Rect2i DisplayServer::_get_display_safe_area_bind_compat_119196() const
-{
-	return get_display_safe_area(DisplayServerEnums::SCREEN_OF_MAIN_WINDOW);
-}
-
-void DisplayServer::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 

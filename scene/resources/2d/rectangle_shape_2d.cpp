@@ -32,34 +32,6 @@
 #include "servers/physics_2d/physics_server_2d.h"
 #include "servers/rendering/rendering_server.h"
 
-void RectangleShape2D::_update_shape()
-{
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), size * 0.5);
-	emit_changed();
-}
-
-#ifndef DISABLE_DEPRECATED
-bool RectangleShape2D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		// Convert to `size`, twice as big.
-		set_size((Size2)p_value * 2);
-		return true;
-	}
-	return false;
-}
-
-bool RectangleShape2D::_get(const StringName& p_name, Variant& r_property) const
-{
-	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		// Convert to `extents`, half as big.
-		r_property = size / 2;
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
-
 void RectangleShape2D::set_size(const Size2& p_size)
 {
 	ERR_FAIL_COND_MSG(p_size.x < 0 || p_size.y < 0, "RectangleShape2D size cannot be negative.");
@@ -96,8 +68,6 @@ void RectangleShape2D::draw(const RID& p_to_rid, const Color& p_color)
 Rect2 RectangleShape2D::get_rect() const { return Rect2(-size * 0.5, size); }
 
 real_t RectangleShape2D::get_enclosing_radius() const { return size.length() / 2; }
-
-void RectangleShape2D::_bind_methods() {}
 
 RectangleShape2D::RectangleShape2D()
 	: Shape2D(PhysicsServer2D::get_singleton()->rectangle_shape_create())

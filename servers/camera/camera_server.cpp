@@ -36,8 +36,6 @@
 
 CameraServer::CreateFunc CameraServer::create_func = nullptr;
 
-void CameraServer::_bind_methods() {}
-
 CameraServer* CameraServer::singleton = nullptr;
 
 CameraServer* CameraServer::get_singleton() { return singleton; }
@@ -95,41 +93,6 @@ Ref<CameraFeed> CameraServer::get_feed_by_id(int p_id)
 	}
 }
 
-void CameraServer::add_feed(const Ref<CameraFeed>& p_feed)
-{
-	ERR_FAIL_COND(p_feed.is_null());
-
-	// add our feed
-	feeds.push_back(p_feed);
-
-	print_verbose("CameraServer: Registered camera " + p_feed->get_name() + " with ID " +
-				  itos(p_feed->get_id()) + " and position " + itos(p_feed->get_position()) +
-				  " at index " + itos(feeds.size() - 1));
-
-	// let whomever is interested know
-	this->obj->emit_signal(SNAME("camera_feed_added"), p_feed->get_id());
-}
-
-void CameraServer::remove_feed(const Ref<CameraFeed>& p_feed)
-{
-	for (int i = 0; i < feeds.size(); i++) {
-		if (feeds[i] == p_feed) {
-			int feed_id = p_feed->get_id();
-
-			print_verbose("CameraServer: Removed camera " + p_feed->get_name() + " with ID " +
-						  itos(feed_id) + " and position " + itos(p_feed->get_position()));
-
-			// remove it from our array, if this results in our feed being unreferenced it will be
-			// destroyed
-			feeds.remove_at(i);
-
-			// let whomever is interested know
-			this->obj->emit_signal(SNAME("camera_feed_removed"), feed_id);
-			return;
-		};
-	};
-}
-
 Ref<CameraFeed> CameraServer::get_feed(int p_index)
 {
 	ERR_FAIL_COND_V_MSG(!monitoring_feeds, nullptr,
@@ -144,21 +107,6 @@ int CameraServer::get_feed_count()
 	ERR_FAIL_COND_V_MSG(!monitoring_feeds, 0,
 		"CameraServer is not actively monitoring feeds; call set_monitoring_feeds(true) first.");
 	return feeds.size();
-}
-
-Array CameraServer::get_feeds()
-{
-	ERR_FAIL_COND_V_MSG(!monitoring_feeds, {},
-		"CameraServer is not actively monitoring feeds; call set_monitoring_feeds(true) first.");
-	Array return_feeds;
-	int cc = get_feed_count();
-	return_feeds.resize(cc);
-
-	for (int i = 0; i < feeds.size(); i++) {
-		return_feeds[i] = get_feed(i);
-	};
-
-	return return_feeds;
 }
 
 RID CameraServer::feed_texture(int p_id, CameraServer::FeedImage p_texture)

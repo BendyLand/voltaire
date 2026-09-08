@@ -33,10 +33,6 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-///////////////////////////////////////
-// SkeletonModification2DJIGGLE
-///////////////////////////////////////
-
 class SkeletonModification2DTwoBoneIK : public SkeletonModification2D
 {
 private:

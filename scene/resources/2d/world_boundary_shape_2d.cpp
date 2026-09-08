@@ -56,13 +56,6 @@ bool WorldBoundaryShape2D::_edit_is_selected_on_click(
 	return false;
 }
 
-void WorldBoundaryShape2D::_update_shape()
-{
-	Array arr = {normal, distance};
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), arr);
-	emit_changed();
-}
-
 void WorldBoundaryShape2D::set_normal(const Vector2& p_normal)
 {
 	// Can be non-unit but prevent zero.
@@ -137,8 +130,6 @@ Rect2 WorldBoundaryShape2D::get_rect() const
 }
 
 real_t WorldBoundaryShape2D::get_enclosing_radius() const { return distance; }
-
-void WorldBoundaryShape2D::_bind_methods() {}
 
 WorldBoundaryShape2D::WorldBoundaryShape2D()
 	: Shape2D(PhysicsServer2D::get_singleton()->world_boundary_shape_create())

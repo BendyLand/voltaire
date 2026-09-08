@@ -92,39 +92,6 @@ float AudioEffectEQ::get_band_gain_db(int p_band) const
 
 int AudioEffectEQ::get_band_count() const { return gain.size(); }
 
-bool AudioEffectEQ::_set(const StringName& p_name, const Variant& p_value)
-{
-	HashMap<StringName, int>::ConstIterator E = prop_band_map.find(p_name);
-	if (E) {
-		set_band_gain_db(E->value, p_value);
-		return true;
-	}
-
-	return false;
-}
-
-bool AudioEffectEQ::_get(const StringName& p_name, Variant& r_ret) const
-
-{
-	HashMap<StringName, int>::ConstIterator E = prop_band_map.find(p_name);
-	if (E) {
-		r_ret = get_band_gain_db(E->value);
-		return true;
-	}
-
-	return false;
-}
-
-void AudioEffectEQ::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	for (int i = 0; i < band_names.size(); i++) {
-		p_list->push_back(PropertyInfo(
-			Variant::FLOAT, band_names[i], PROPERTY_HINT_RANGE, "-60,24,0.1,suffix:dB"));
-	}
-}
-
-void AudioEffectEQ::_bind_methods() {}
-
 AudioEffectEQ::AudioEffectEQ(EQ::Preset p_preset)
 {
 	eq.set_mix_rate(AudioServer::get_singleton()->get_mix_rate());

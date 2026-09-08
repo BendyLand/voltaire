@@ -57,12 +57,6 @@ bool CapsuleShape2D::_edit_is_selected_on_click(const Point2& p_point, double p_
 	return Geometry2D::is_point_in_polygon(p_point, _get_points());
 }
 
-void CapsuleShape2D::_update_shape()
-{
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), Vector2(radius, height));
-	emit_changed();
-}
-
 void CapsuleShape2D::set_radius(real_t p_radius)
 {
 	ERR_FAIL_COND_MSG(p_radius < 0.0f, "CapsuleShape2D radius cannot be negative.");
@@ -122,8 +116,6 @@ Rect2 CapsuleShape2D::get_rect() const
 }
 
 real_t CapsuleShape2D::get_enclosing_radius() const { return height * 0.5f; }
-
-void CapsuleShape2D::_bind_methods() {}
 
 CapsuleShape2D::CapsuleShape2D() : Shape2D(PhysicsServer2D::get_singleton()->capsule_shape_create())
 {

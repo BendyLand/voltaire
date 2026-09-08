@@ -31,91 +31,11 @@
 #include "core/templates/rb_set.h"
 #include "resource_preloader.h"
 
-void ResourcePreloader::_set_resources(const Array& p_data)
-{
-	resources.clear();
-
-	ERR_FAIL_COND(p_data.size() != 2);
-	Vector<String> names = p_data[0];
-	Array resdata = p_data[1];
-
-	ERR_FAIL_COND(names.size() != resdata.size());
-
-	for (int i = 0; i < resdata.size(); i++) {
-		Ref<Resource> resource = resdata[i];
-		ERR_CONTINUE(resource.is_null());
-		resources[names[i]] = resource;
-
-		// add_resource(names[i],resource);
-	}
-}
-
-Array ResourcePreloader::_get_resources() const
-{
-	Vector<String> names;
-	Array arr;
-	arr.resize(resources.size());
-	names.resize(resources.size());
-
-	RBSet<String> sorted_names;
-
-	for (const KeyValue<StringName, Ref<Resource>>& E : resources) {
-		sorted_names.insert(E.key);
-	}
-
-	int i = 0;
-	for (const String& E : sorted_names) {
-		names.set(i, E);
-		arr[i] = resources[E];
-		i++;
-	}
-
-	return Array{names, arr};
-}
-
-void ResourcePreloader::add_resource(const StringName& p_name, const Ref<Resource>& p_resource)
-{
-	ERR_FAIL_COND(p_resource.is_null());
-	if (resources.has(p_name)) {
-		StringName new_name;
-		int idx = 2;
-
-		while (true) {
-			new_name = p_name.string() + " " + itos(idx);
-			if (resources.has(new_name)) {
-				idx++;
-				continue;
-			}
-
-			break;
-		}
-
-		add_resource(new_name, p_resource);
-	}
-	else {
-		resources[p_name] = p_resource;
-#ifdef TOOLS_ENABLED
-		this->obj->emit_signal("_resource_changed");
-#endif
-	}
-}
-
-void ResourcePreloader::remove_resource(const StringName& p_name)
-{
-	ERR_FAIL_COND(!resources.has(p_name));
-	if (resources.erase(p_name)) {
-#ifdef TOOLS_ENABLED
-		this->obj->emit_signal("_resource_changed");
-#endif
-	}
-}
-
 void ResourcePreloader::rename_resource(const StringName& p_from_name, const StringName& p_to_name)
 {
 	ERR_FAIL_COND(!resources.has(p_from_name));
 
-	Ref<Resource> res = resources
-[p_from_name];
+	Ref<Resource> res = resources[p_from_name];
 
 	resources.erase(p_from_name);
 	add_resource(p_to_name, res);
@@ -155,4 +75,5 @@ void ResourcePreloader::get_resource_list(List<StringName>* p_list)
 void ResourcePreloader::_bind_methods() {}
 
 ResourcePreloader::ResourcePreloader() {}
+
 

@@ -827,8 +827,7 @@ MultiplayerAPI* SceneTree::get_multiplayer(const NodePath& p_for_path) const
 	return multiplayer.ptr();
 }
 
-void SceneTree::set_multiplayer_poll_enabled(bo
-ol p_enabled)
+void SceneTree::set_multiplayer_poll_enabled(bool p_enabled)
 {
 	ERR_FAIL_COND_MSG(
 		!Thread::is_main_thread(), "Multiplayer can only be manipulated from the main thread.");

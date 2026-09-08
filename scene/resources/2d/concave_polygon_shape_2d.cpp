@@ -53,17 +53,6 @@ bool ConcavePolygonShape2D::_edit_is_selected_on_click(
 	return false;
 }
 
-void ConcavePolygonShape2D::set_segments(const Vector<Vector2>& p_segments)
-{
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), p_segments);
-	emit_changed();
-}
-
-Vector<Vector2> ConcavePolygonShape2D::get_segments() const
-{
-	return PhysicsServer2D::get_singleton()->shape_get_data(get_rid());
-}
-
 void ConcavePolygonShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {
 	Vector<Vector2> s = get_segments();

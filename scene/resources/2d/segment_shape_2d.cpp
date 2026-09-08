@@ -39,15 +39,6 @@ bool SegmentShape2D::_edit_is_selected_on_click(const Point2& p_point, double p_
 	return p_point.distance_to(closest) < p_tolerance;
 }
 
-void SegmentShape2D::_update_shape()
-{
-	Rect2 r;
-	r.position = a;
-	r.size = b;
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), r);
-	emit_changed();
-}
-
 void SegmentShape2D::set_a(const Vector2& p_a)
 {
 	if (a == p_a) {
@@ -84,8 +75,6 @@ Rect2 SegmentShape2D::get_rect() const
 }
 
 real_t SegmentShape2D::get_enclosing_radius() const { return (a + b).length(); }
-
-void SegmentShape2D::_bind_methods() {}
 
 SegmentShape2D::SegmentShape2D() : Shape2D(PhysicsServer2D::get_singleton()->segment_shape_create())
 {

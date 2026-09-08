@@ -100,76 +100,6 @@ void NavigationMeshSourceGeometryData2D::_add_obstruction_outline(
 	}
 }
 
-void NavigationMeshSourceGeometryData2D::set_traversable_outlines(
-	const TypedArray<Vector<Vector2>>& p_traversable_outlines)
-{
-	RWLockWrite write_lock(geometry_rwlock);
-	traversable_outlines.resize(p_traversable_outlines.size());
-	for (int i = 0; i < p_traversable_outlines.size(); i++) {
-		traversable_outlines.write[i] = p_traversable_outlines[i];
-	}
-	bounds_dirty = true;
-}
-
-TypedArray<Vector<Vector2>> NavigationMeshSourceGeometryData2D::get_traversable_outlines() const
-{
-	RWLockRead read_lock(geometry_rwlock);
-	TypedArray<Vector<Vector2>> typed_array_traversable_outlines;
-	typed_array_traversable_outlines.resize(traversable_outlines.size());
-	for (int i = 0; i < typed_array_traversable_outlines.size(); i++) {
-		typed_array_traversable_outlines[i] = traversable_outlines[i];
-	}
-
-	return typed_array_traversable_outlines;
-}
-
-void NavigationMeshSourceGeometryData2D::set_obstruction_outlines(
-	const TypedArray<Vector<Vector2>>& p_obstruction_outlines)
-{
-	RWLockWrite write_lock(geometry_rwlock);
-	obstruction_outlines.resize(p_obstruction_outlines.size());
-	for (int i = 0; i < p_obstruction_outlines.size(); i++) {
-		obstruction_outlines.write[i] = p_obstruction_outlines[i];
-	}
-	bounds_dirty = true;
-}
-
-TypedArray<Vector<Vector2>> NavigationMeshSourceGeometryData2D::get_obstruction_outlines() const
-{
-	RWLockRead read_lock(geometry_rwlock);
-	TypedArray<Vector<Vector2>> typed_array_obstruction_outlines;
-	typed_array_obstruction_outlines.resize(obstruction_outlines.size());
-	for (int i = 0; i < typed_array_obstruction_outlines.size(); i++) {
-		typed_array_obstruction_outlines[i] = obstruction_outlines[i];
-	}
-
-	return typed_array_obstruction_outlines;
-}
-
-void NavigationMeshSourceGeometryData2D::append_traversable_outlines(
-	const TypedArray<Vector<Vector2>>& p_traversable_outlines)
-{
-	RWLockWrite write_lock(geometry_rwlock);
-	int traversable_outlines_size = traversable_outlines.size();
-	traversable_outlines.resize(traversable_outlines_size + p_traversable_outlines.size());
-	for (int i = traversable_outlines_size; i < p_traversable_outlines.size(); i++) {
-		traversable_outlines.write[i] = p_traversable_outlines[i];
-	}
-	bounds_dirty = true;
-}
-
-void NavigationMeshSourceGeometryData2D::append_obstruction_outlines(
-	const TypedArray<Vector<Vector2>>& p_obstruction_outlines)
-{
-	RWLockWrite write_lock(geometry_rwlock);
-	int obstruction_outlines_size = obstruction_outlines.size();
-	obstruction_outlines.resize(obstruction_outlines_size + p_obstruction_outlines.size());
-	for (int i = obstruction_outlines_size; i < p_obstruction_outlines.size(); i++) {
-		obstruction_outlines.write[i] = p_obstruction_outlines[i];
-	}
-	bounds_dirty = true;
-}
-
 void NavigationMeshSourceGeometryData2D::add_traversable_outline(
 	const PackedVector2Array& p_shape_outline)
 {
@@ -241,75 +171,11 @@ void NavigationMeshSourceGeometryData2D::add_projected_obstruction(
 	bounds_dirty = true;
 }
 
-void NavigationMeshSourceGeometryData2D::set_projected_obstructions(const Array& p_array)
-{
-	clear_projected_obstructions();
-
-	for (int i = 0; i < p_array.size(); i++) {
-		Dictionary data = p_array[i];
-		ERR_FAIL_COND(!data.has("version"));
-
-		uint32_t po_version = data["version"];
-
-		if (po_version == 1) {
-			ERR_FAIL_COND(!data.has("vertices"));
-			ERR_FAIL_COND(!data.has("carve"));
-		}
-
-		ProjectedObstruction projected_obstruction;
-		projected_obstruction.vertices = Vector<float>(data["vertices"]);
-		projected_obstruction.carve = data["carve"];
-
-		RWLockWrite write_lock(geometry_rwlock);
-		_projected_obstructions.push_back(projected_obstruction);
-		bounds_dirty = true;
-	}
-}
-
 Vector<NavigationMeshSourceGeometryData2D::ProjectedObstruction>
 NavigationMeshSourceGeometryData2D::_get_projected_obstructions() const
 {
 	RWLockRead read_lock(geometry_rwlock);
 	return _projected_obstructions;
-}
-
-Array NavigationMeshSourceGeometryData2D::get_projected_obstructions() const
-{
-	RWLockRead read_lock(geometry_rwlock);
-
-	Array ret;
-	ret.resize(_projected_obstructions.size());
-
-	for (int i = 0; i < _projected_obstructions.size(); i++) {
-		const ProjectedObstruction& projected_obstruction = _projected_obstructions[i];
-
-		Dictionary data;
-		data["version"] = (int)ProjectedObstruction::VERSION;
-		data["vertices"] = projected_obstruction.vertices;
-		data["carve"] = projected_obstruction.carve;
-
-		ret[i] = data;
-	}
-
-	return ret;
-}
-
-bool NavigationMeshSourceGeometryData2D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "projected_obstructions") {
-		set_projected_obstructions(p_value);
-		return true;
-	}
-	return false;
-}
-
-bool NavigationMeshSourceGeometryData2D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (p_name == "projected_obstructions") {
-		r_ret = get_projected_obstructions();
-		return true;
-	}
-	return false;
 }
 
 void NavigationMeshSourceGeometryData2D::set_data(
@@ -391,7 +257,5 @@ Rect2 NavigationMeshSourceGeometryData2D::get_bounds()
 	RWLockRead read_lock(geometry_rwlock);
 	return bounds;
 }
-
-void NavigationMeshSourceGeometryData2D::_bind_methods() {}
 
 

@@ -76,8 +76,6 @@ void VideoStream::set_file(const String& p_file)
 
 String VideoStream::get_file() { return file; }
 
-void VideoStream::_bind_methods() {}
-
 VideoStream::VideoStream() {}
 
 VideoStream::~VideoStream() {}

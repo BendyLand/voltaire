@@ -46,15 +46,6 @@ Ref<ArrayMesh> SeparationRayShape3D::get_debug_arraymesh_faces(const Color& p_mo
 
 real_t SeparationRayShape3D::get_enclosing_radius() const { return length; }
 
-void SeparationRayShape3D::_update_shape()
-{
-	Dictionary d;
-	d["length"] = length;
-	d["slide_on_slope"] = slide_on_slope;
-	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), d);
-	Shape3D::_update_shape();
-}
-
 void SeparationRayShape3D::set_length(float p_length)
 {
 	length = p_length;
@@ -72,8 +63,6 @@ void SeparationRayShape3D::set_slide_on_slope(bool p_active)
 }
 
 bool SeparationRayShape3D::get_slide_on_slope() const { return slide_on_slope; }
-
-void SeparationRayShape3D::_bind_methods() {}
 
 SeparationRayShape3D::SeparationRayShape3D()
 	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_SEPARATION_RAY))

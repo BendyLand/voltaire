@@ -60,24 +60,6 @@ Vector<Vector3> ConcavePolygonShape3D::get_debug_mesh_lines() const
 	return points;
 }
 
-Ref<ArrayMesh> ConcavePolygonShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
-{
-	Vector<Color> colors;
-
-	for (int i = 0; i < faces.size(); i++) {
-		colors.push_back(p_modulate);
-	}
-
-	Ref<ArrayMesh> mesh = memnew(ArrayMesh);
-	Array a;
-	a.resize(Mesh::ARRAY_MAX);
-	a[RSE::ARRAY_VERTEX] = faces;
-	a[RSE::ARRAY_COLOR] = colors;
-	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, a);
-
-	return mesh;
-}
-
 real_t ConcavePolygonShape3D::get_enclosing_radius() const
 {
 	Vector<Vector3> data = get_faces();
@@ -87,16 +69,6 @@ real_t ConcavePolygonShape3D::get_enclosing_radius() const
 		r = MAX(read[i].length_squared(), r);
 	}
 	return Math::sqrt(r);
-}
-
-void ConcavePolygonShape3D::_update_shape()
-{
-	Dictionary d;
-	d["faces"] = faces;
-	d["backface_collision"] = backface_collision;
-	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), d);
-
-	Shape3D::_update_shape();
 }
 
 void ConcavePolygonShape3D::set_faces(const Vector<Vector3>& p_faces)

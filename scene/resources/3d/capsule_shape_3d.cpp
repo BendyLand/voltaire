@@ -68,35 +68,7 @@ Vector<Vector3> CapsuleShape3D::get_debug_mesh_lines() const
 	return points;
 }
 
-Ref<ArrayMesh> CapsuleShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
-{
-	Array capsule_array;
-	capsule_array.resize(RSE::ARRAY_MAX);
-	CapsuleMesh::create_mesh_array(capsule_array, radius, height, 32, 8);
-
-	Vector<Color> colors;
-	const PackedVector3Array& verts = capsule_array[RSE::ARRAY_VERTEX];
-	const int32_t verts_size = verts.size();
-	for (int i = 0; i < verts_size; i++) {
-		colors.append(p_modulate);
-	}
-
-	Ref<ArrayMesh> capsule_mesh = memnew(ArrayMesh);
-	capsule_array[RSE::ARRAY_COLOR] = colors;
-	capsule_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, capsule_array);
-	return capsule_mesh;
-}
-
 real_t CapsuleShape3D::get_enclosing_radius() const { return height * 0.5f; }
-
-void CapsuleShape3D::_update_shape()
-{
-	Dictionary d;
-	d["radius"] = radius;
-	d["height"] = height;
-	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), d);
-	Shape3D::_update_shape();
-}
 
 void CapsuleShape3D::set_radius(float p_radius)
 {
@@ -133,8 +105,6 @@ void CapsuleShape3D::set_mid_height(real_t p_mid_height)
 }
 
 real_t CapsuleShape3D::get_mid_height() const { return height - radius * 2.0f; }
-
-void CapsuleShape3D::_bind_methods() {}
 
 CapsuleShape3D::CapsuleShape3D()
 	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CAPSULE))

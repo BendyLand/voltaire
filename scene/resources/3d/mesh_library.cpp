@@ -49,86 +49,6 @@ bool MeshLibrary::_validate_index(int p_idx)
 	return true;
 }
 
-bool MeshLibrary::_set(const StringName& p_name, const Variant& p_value)
-{
-	init_property = true;
-	if (property_helper.property_set_value(p_name, p_value)) {
-		return true;
-	}
-	init_property = false;
-
-#ifndef DISABLE_DEPRECATED
-	const String sname = p_name;
-	if (!sname.begins_with("item/")) {
-		return false;
-	}
-
-	Vector<String> components = sname.split("/", true, 2);
-	if (components.size() < 2 || !components[1].is_valid_int()) {
-		return false;
-	}
-
-	int index = components[1].to_int();
-	if (components[2] == "navmesh") { // Renamed in 4.0 beta 9.
-		set_item_navigation_mesh(index, p_value);
-		return true;
-	}
-	else if (components[2] == "navmesh_transform") { // Renamed in 4.0 beta 9.
-		set_item_navigation_mesh_transform(index, p_value);
-		return true;
-	}
-#endif // DISABLE_DEPRECATED
-
-	return false;
-}
-
-bool MeshLibrary::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (property_helper.property_get_value(p_name, r_ret)) {
-		return true;
-	}
-
-#ifndef DISABLE_DEPRECATED
-	const String sname = p_name;
-	if (!sname.begins_with("item/")) {
-		return false;
-	}
-
-	Vector<String> components = sname.split("/", true, 2);
-	if (components.size() < 2 || !components[1].is_valid_int()) {
-		return false;
-	}
-
-	int index = components[1].to_int();
-	if (components[2] == "navmesh") { // Renamed in 4.0 beta 9.
-		r_ret = get_item_navigation_mesh(index);
-		return true;
-	}
-	else if (components[2] == "navmesh_transform") { // Renamed in 4.0 beta 9.
-		r_ret = get_item_navigation_mesh_transform(index);
-		return true;
-	}
-#endif // DISABLE_DEPRECATED
-
-	return false;
-}
-
-void MeshLibrary::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	for (const KeyValue<int, Item>& E : item_map) {
-		property_helper.add_properties_for_index(E.key, p_list);
-	}
-}
-
-void MeshLibrary::create_item(int p_item)
-{
-	ERR_FAIL_COND(p_item < 0);
-	ERR_FAIL_COND(item_map.has(p_item));
-	item_map[p_item] = Item();
-	emit_changed();
-	this->obj->notify_property_list_changed();
-}
-
 void MeshLibrary::set_item_name(int p_item, const String& p_name)
 {
 	if (_validate_index(p_item)) {
@@ -169,17 +89,6 @@ void MeshLibrary::set_item_mesh_cast_shadow(
 		emit_changed();
 	}
 }
-
-#ifndef PHYSICS_3D_DISABLED
-void MeshLibrary::set_item_shapes(int p_item, const Vector<ShapeData>& p_shapes)
-{
-	if (_validate_index(p_item)) {
-		item_map[p_item].shapes = p_shapes;
-		emit_changed();
-		this->obj->notify_property_list_changed();
-	}
-}
-#endif // PHYSICS_3D_DISABLED
 
 void MeshLibrary::set_item_navigation_mesh(int p_item, const Ref<NavigationMesh>& p_navigation_mesh)
 {
@@ -287,22 +196,6 @@ Ref<Texture2D> MeshLibrary::get_item_preview(int p_item) const
 
 bool MeshLibrary::has_item(int p_item) const { return item_map.has(p_item); }
 
-void MeshLibrary::remove_item(int p_item)
-{
-	ERR_FAIL_COND_MSG(!item_map.has(p_item),
-		"Requested for nonexistent MeshLibrary item '" + itos(p_item) + "'.");
-	item_map.erase(p_item);
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
-
-void MeshLibrary::clear()
-{
-	item_map.clear();
-	this->obj->notify_property_list_changed();
-	emit_changed();
-}
-
 Vector<int> MeshLibrary::get_item_list() const
 {
 	Vector<int> ret;
@@ -335,70 +228,6 @@ int MeshLibrary::get_last_unused_item_id() const
 	}
 }
 
-#ifndef PHYSICS_3D_DISABLED
-void MeshLibrary::_set_item_shapes(int p_item, const Array& p_shapes)
-{
-	Array arr_shapes = p_shapes;
-	int size = p_shapes.size();
-	if (size & 1) {
-		ERR_FAIL_COND_MSG(!item_map.has(p_item),
-			"Requested for nonexistent MeshLibrary item '" + itos(p_item) + "'.");
-		int prev_size = item_map[p_item].shapes.size() * 2;
-
-		if (prev_size < size) {
-			// Check if last element is a shape.
-			Ref<Shape3D> shape = arr_shapes[size - 1];
-			if (shape.is_null()) {
-				Ref<BoxShape3D> box_shape;
-				box_shape.instantiate();
-				arr_shapes[size - 1] = box_shape;
-			}
-
-			// Make sure the added element is a Transform3D.
-			arr_shapes.push_back(Transform3D());
-			size++;
-		}
-		else {
-			size--;
-			arr_shapes.resize(size);
-		}
-	}
-
-	Vector<ShapeData> shapes;
-	for (int i = 0; i < size; i += 2) {
-		ShapeData sd;
-		sd.shape = arr_shapes[i + 0];
-		sd.local_transform = arr_shapes[i + 1];
-
-		if (sd.shape.is_valid()) {
-			shapes.push_back(sd);
-		}
-	}
-
-	set_item_shapes(p_item, shapes);
-}
-
-Array MeshLibrary::_get_item_shapes(int p_item) const
-{
-	Vector<ShapeData> shapes = get_item_shapes(p_item);
-	Array ret;
-	for (int i = 0; i < shapes.size(); i++) {
-		ret.push_back(shapes[i].shape);
-		ret.push_back(shapes[i].local_transform);
-	}
-
-	return ret;
-}
-#endif // PHYSICS_3D_DISABLED
-
 void MeshLibrary::reset_state() { clear(); }
-
-void MeshLibrary::_bind_methods() {}
-
-MeshLibrary::MeshLibrary()
-{
-	property_helper.setup_for_instance(base_property_helper, this->obj.get());
-	property_helper.enable_out_of_bounds_assign();
-}
 
 

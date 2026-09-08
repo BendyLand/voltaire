@@ -133,8 +133,6 @@ void AudioEffectFilter::set_db(FilterDB p_db) { db = p_db; }
 
 AudioEffectFilter::FilterDB AudioEffectFilter::get_db() const { return db; }
 
-void AudioEffectFilter::_bind_methods() {}
-
 AudioEffectFilter::AudioEffectFilter(AudioFilterSW::Mode p_mode)
 {
 	mode = p_mode;

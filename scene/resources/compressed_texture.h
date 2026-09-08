@@ -31,6 +31,7 @@
 #pragma once
 
 #include "scene/resources/texture.h"
+#include "scene/resources/bit_map.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 class BitMap;

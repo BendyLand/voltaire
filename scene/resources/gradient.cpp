@@ -43,19 +43,6 @@ Gradient::Gradient()
 
 Gradient::~Gradient() {}
 
-void Gradient::_bind_methods() {}
-
-void Gradient::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "interpolation_color_space" &&
-		interpolation_mode == GRADIENT_INTERPOLATE_CONSTANT) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
 Vector<float> Gradient::get_offsets() const
 {
 	Vector<float> offsets;
@@ -74,17 +61,6 @@ Vector<Color> Gradient::get_colors() const
 		colors.write[i] = points[i].color;
 	}
 	return colors;
-}
-
-void Gradient::set_interpolation_mode(Gradient::InterpolationMode p_interp_mode)
-{
-	if (p_interp_mode == interpolation_mode) {
-		return;
-	}
-
-	interpolation_mode = p_interp_mode;
-	emit_changed();
-	this->obj->notify_property_list_changed();
 }
 
 Gradient::InterpolationMode Gradient::get_interpolation_mode() { return interpolation_mode; }

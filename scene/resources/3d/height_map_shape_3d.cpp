@@ -87,76 +87,9 @@ Vector<Vector3> HeightMapShape3D::get_debug_mesh_lines() const
 	return points;
 }
 
-Ref<ArrayMesh> HeightMapShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
-{
-	Vector<Vector3> verts;
-	Vector<Color> colors;
-	Vector<int> indices;
-
-	// This will be slow for large maps...
-
-	if ((map_width != 0) && (map_depth != 0)) {
-		Vector2 size = Vector2(map_width - 1, map_depth - 1) * -0.5;
-		const real_t* r = map_data.ptr();
-
-		for (int d = 0; d <= map_depth - 2; d++) {
-			const int this_row_offset = map_width * d;
-			const int next_row_offset = this_row_offset + map_width;
-
-			for (int w = 0; w <= map_width - 2; w++) {
-				const float height_tl = r[next_row_offset + w];
-				const float height_bl = r[this_row_offset + w];
-				const float height_br = r[this_row_offset + w + 1];
-				const float height_tr = r[next_row_offset + w + 1];
-
-				const int index_offset = verts.size();
-
-				verts.push_back(Vector3(size.x + w, height_tl, size.y + d + 1));
-				verts.push_back(Vector3(size.x + w, height_bl, size.y + d));
-				verts.push_back(Vector3(size.x + w + 1, height_br, size.y + d));
-				verts.push_back(Vector3(size.x + w + 1, height_tr, size.y + d + 1));
-
-				colors.push_back(p_modulate);
-				colors.push_back(p_modulate);
-				colors.push_back(p_modulate);
-				colors.push_back(p_modulate);
-
-				indices.push_back(index_offset);
-				indices.push_back(index_offset + 1);
-				indices.push_back(index_offset + 2);
-				indices.push_back(index_offset);
-				indices.push_back(index_offset + 2);
-				indices.push_back(index_offset + 3);
-			}
-		}
-	}
-
-	Ref<ArrayMesh> mesh = memnew(ArrayMesh);
-	Array a;
-	a.resize(Mesh::ARRAY_MAX);
-	a[RSE::ARRAY_VERTEX] = verts;
-	a[RSE::ARRAY_COLOR] = colors;
-	a[RSE::ARRAY_INDEX] = indices;
-	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, a);
-
-	return mesh;
-}
-
 real_t HeightMapShape3D::get_enclosing_radius() const
 {
 	return Vector3(real_t(map_width), max_height - min_height, real_t(map_depth)).length();
-}
-
-void HeightMapShape3D::_update_shape()
-{
-	Dictionary d;
-	d["width"] = map_width;
-	d["depth"] = map_depth;
-	d["heights"] = map_data;
-	d["min_height"] = min_height;
-	d["max_height"] = max_height;
-	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), d);
-	Shape3D::_update_shape();
 }
 
 void HeightMapShape3D::set_map_width(int p_new)
@@ -356,8 +289,6 @@ void HeightMapShape3D::update_map_data_from_image(
 	_update_shape();
 	emit_changed();
 }
-
-void HeightMapShape3D::_bind_methods() {}
 
 HeightMapShape3D::HeightMapShape3D()
 	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_HEIGHTMAP))

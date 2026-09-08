@@ -33,50 +33,6 @@
 #include "scene/theme/theme_db.h"
 #include "virtual_joystick.h"
 
-void VirtualJoystick::gui_input(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventScreenTouch> touch = p_event;
-	if (touch.is_valid()) {
-		if (touch->is_pressed()) {
-			if (touch_index == -1 && has_point(touch->get_position())) {
-				Rect2 base_rect = Rect2(joystick_pos - Vector2(0.5, 0.5) * joystick_size,
-					Vector2(joystick_size, joystick_size));
-				if (joystick_mode == JOYSTICK_DYNAMIC || joystick_mode == JOYSTICK_FOLLOWING ||
-					(base_rect.has_point(touch->get_position()) &&
-						joystick_mode == JOYSTICK_FIXED)) {
-					if (joystick_mode == JOYSTICK_DYNAMIC || joystick_mode == JOYSTICK_FOLLOWING) {
-						joystick_pos = touch->get_position();
-					}
-
-					this->obj->emit_signal(SceneStringName(pressed));
-
-					is_pressed = true;
-					touch_index = touch->get_index();
-					_update_joystick(touch->get_position());
-				}
-			}
-		}
-		else if (touch->get_index() == touch_index) {
-			is_pressed = false;
-			this->obj->emit_signal(SNAME("released"), input_vector);
-
-			if (!is_flick_canceled && !has_moved) {
-				this->obj->emit_signal(SNAME("tapped"));
-			}
-			else if (has_input && has_moved) {
-				this->obj->emit_signal(SNAME("flicked"), input_vector);
-			}
-			_reset();
-		}
-	}
-
-	Ref<InputEventScreenDrag> drag = p_event;
-	if (drag.is_valid() && drag->get_index() == touch_index) {
-		has_moved = true;
-		_update_joystick(drag->get_position());
-	}
-}
-
 void VirtualJoystick::_notification(int p_what)
 {
 	switch (p_what) {
@@ -89,10 +45,12 @@ void VirtualJoystick::_notification(int p_what)
 		Rect2 rect_joystick = Rect2(joystick_pos - Vector2(0.5, 0.5) * joystick_size,
 			Vector2(joystick_size, joystick_size));
 		draw_style_box(
-			is_pressed ? theme_cache.pressed_joystick.ptr() : theme_cache.normal_joystick.ptr(), rect_joystick);
+			is_pressed ? theme_cache.pressed_joystick.ptr() : theme_cache.normal_joystick.ptr(),
+			rect_joystick);
 
 		Rect2 rect_tip = Rect2(tip_pos - Vector2(0.5, 0.5) * tip_size, Vector2(tip_size, tip_size));
-		draw_style_box(is_pressed ? theme_cache.pressed_tip.ptr() : theme_cache.normal_tip.ptr(), rect_tip);
+		draw_style_box(
+			is_pressed ? theme_cache.pressed_tip.ptr() : theme_cache.normal_tip.ptr(), rect_tip);
 	} break;
 
 	case NOTIFICATION_ENTER_TREE: {
@@ -104,51 +62,6 @@ void VirtualJoystick::_notification(int p_what)
 		_reset();
 	} break;
 	}
-}
-
-void VirtualJoystick::_update_joystick(const Vector2& p_pos)
-{
-	Vector2 offset = p_pos - joystick_pos;
-	float length = offset.length();
-	Vector2 direction = offset.normalized();
-
-	float clampzone_radius = joystick_size * 0.5f * clampzone_ratio;
-
-	if (joystick_mode == JOYSTICK_FOLLOWING && length > clampzone_radius && has_point(p_pos)) {
-		joystick_pos = p_pos - direction * clampzone_radius;
-	}
-
-	if (length > clampzone_radius) {
-		length = clampzone_radius;
-		offset = direction * length;
-	}
-
-	tip_pos = joystick_pos + offset;
-
-	bool was_pressed = has_input;
-	raw_input_vector = offset / clampzone_radius;
-	if (length > deadzone_ratio * clampzone_radius) {
-		has_input = true;
-		float scaled =
-			Math::inverse_lerp(deadzone_ratio * clampzone_radius, clampzone_radius, length);
-		input_vector = direction * scaled;
-	}
-	else {
-		has_input = false;
-		input_vector = Vector2();
-	}
-
-	if (!is_flick_canceled && was_pressed && !has_input) {
-		is_flick_canceled = true;
-		this->obj->emit_signal(SNAME("flick_canceled"));
-	}
-	else if (is_flick_canceled && !was_pressed && has_input) {
-		is_flick_canceled = false;
-	}
-
-	_handle_input_actions();
-
-	queue_redraw();
 }
 
 void VirtualJoystick::_handle_input_actions()

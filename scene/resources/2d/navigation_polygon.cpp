@@ -64,21 +64,6 @@ Rect2 NavigationPolygon::_edit_get_rect() const
 	return item_rect;
 }
 
-bool NavigationPolygon::_edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const
-{
-	RWLockRead read_lock(rwlock);
-	for (int i = 0; i < outlines.size(); i++) {
-		const Vector<Vector2>& outline = outlines[i];
-		const int outline_size = outline.size();
-		if (outline_size < 3) {
-			continue;
-		}
-		if (Geometry2D::is_point_in_polygon(p_point, Variant(outline))) {
-			return true;
-		}
-	}
-	return false;
-}
 #endif // DEBUG_ENABLED
 
 void NavigationPolygon::set_vertices(const Vector<Vector2>& p_vertices)
@@ -96,53 +81,6 @@ const Vector<Vector2>& NavigationPolygon::get_vertices() const
 {
 	RWLockRead read_lock(rwlock);
 	return vertices;
-}
-
-void NavigationPolygon::_set_polygons(const TypedArray<Vector<int32_t>>& p_array)
-{
-	RWLockWrite write_lock(rwlock);
-	{
-		MutexLock lock(navigation_mesh_generation);
-		navigation_mesh.unref();
-	}
-	polygons.resize(p_array.size());
-	for (int i = 0; i < p_array.size(); i++) {
-		polygons.write[i] = p_array[i];
-	}
-}
-
-TypedArray<Vector<int32_t>> NavigationPolygon::_get_polygons() const
-{
-	RWLockRead read_lock(rwlock);
-	TypedArray<Vector<int32_t>> ret;
-	ret.resize(polygons.size());
-	for (int i = 0; i < ret.size(); i++) {
-		ret[i] = polygons[i];
-	}
-
-	return ret;
-}
-
-void NavigationPolygon::_set_outlines(const TypedArray<Vector<Vector2>>& p_array)
-{
-	RWLockWrite write_lock(rwlock);
-	outlines.resize(p_array.size());
-	for (int i = 0; i < p_array.size(); i++) {
-		outlines.write[i] = p_array[i];
-	}
-	rect_cache_dirty = true;
-}
-
-TypedArray<Vector<Vector2>> NavigationPolygon::_get_outlines() const
-{
-	RWLockRead read_lock(rwlock);
-	TypedArray<Vector<Vector2>> ret;
-	ret.resize(outlines.size());
-	for (int i = 0; i < ret.size(); i++) {
-		ret[i] = outlines[i];
-	}
-
-	return ret;
 }
 
 void NavigationPolygon::add_polygon(const Vector<int>& p_polygon)
@@ -481,13 +419,6 @@ NavigationPolygon::SamplePartitionType NavigationPolygon::get_sample_partition_t
 	return partition_type;
 }
 
-void NavigationPolygon::set_parsed_geometry_type(ParsedGeometryType p_geometry_type)
-{
-	ERR_FAIL_INDEX(p_geometry_type, PARSED_GEOMETRY_MAX);
-	parsed_geometry_type = p_geometry_type;
-	this->obj->notify_property_list_changed();
-}
-
 NavigationPolygon::ParsedGeometryType NavigationPolygon::get_parsed_geometry_type() const
 {
 	return parsed_geometry_type;
@@ -523,13 +454,6 @@ bool NavigationPolygon::get_parsed_collision_mask_value(int p_layer_number) cons
 	ERR_FAIL_COND_V_MSG(
 		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
 	return get_parsed_collision_mask() & (1 << (p_layer_number - 1));
-}
-
-void NavigationPolygon::set_source_geometry_mode(SourceGeometryMode p_geometry_mode)
-{
-	ERR_FAIL_INDEX(p_geometry_mode, SOURCE_GEOMETRY_MAX);
-	source_geometry_mode = p_geometry_mode;
-	this->obj->notify_property_list_changed();
 }
 
 NavigationPolygon::SourceGeometryMode NavigationPolygon::get_source_geometry_mode() const
@@ -570,23 +494,5 @@ void NavigationPolygon::set_baking_rect_offset(const Vector2& p_rect_offset)
 }
 
 Vector2 NavigationPolygon::get_baking_rect_offset() const { return baking_rect_offset; }
-
-void NavigationPolygon::_bind_methods() {}
-
-void NavigationPolygon::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "parsed_collision_mask") {
-		if (parsed_geometry_type == PARSED_GEOMETRY_MESH_INSTANCES) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-		return;
-	}
-
-	if (p_property.name == "parsed_source_group_name") {
-		if (source_geometry_mode == SOURCE_GEOMETRY_ROOT_NODE_CHILDREN) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
 
 

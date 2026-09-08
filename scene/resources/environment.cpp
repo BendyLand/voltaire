@@ -38,18 +38,6 @@
 
 RID Environment::get_rid() const { return environment; }
 
-// Background
-
-void Environment::set_background(BGMode p_bg)
-{
-	bg_mode = p_bg;
-	RS::get_singleton()->environment_set_background(environment, RSE::EnvironmentBG(p_bg));
-	this->obj->notify_property_list_changed();
-	if (bg_mode != BG_SKY) {
-		set_fog_aerial_perspective(0.0);
-	}
-}
-
 Environment::BGMode Environment::get_background() const { return bg_mode; }
 
 void Environment::set_sky(const Ref<Sky>& p_sky)
@@ -132,7 +120,6 @@ void Environment::set_camera_feed_id(int p_id)
 
 int Environment::get_camera_feed_id() const { return bg_camera_feed_id; }
 
-// Ambient light
 
 void Environment::set_ambient_light_color(const Color& p_color)
 {
@@ -141,13 +128,6 @@ void Environment::set_ambient_light_color(const Color& p_color)
 }
 
 Color Environment::get_ambient_light_color() const { return ambient_color; }
-
-void Environment::set_ambient_source(AmbientSource p_source)
-{
-	ambient_source = p_source;
-	_update_ambient_light();
-	this->obj->notify_property_list_changed();
-}
 
 Environment::AmbientSource Environment::get_ambient_source() const { return ambient_source; }
 
@@ -169,13 +149,6 @@ void Environment::set_ambient_light_sky_contribution(float p_ratio)
 
 float Environment::get_ambient_light_sky_contribution() const { return ambient_sky_contribution; }
 
-void Environment::set_reflection_source(ReflectionSource p_source)
-{
-	reflection_source = p_source;
-	_update_ambient_light();
-	this->obj->notify_property_list_changed();
-}
-
 Environment::ReflectionSource Environment::get_reflection_source() const
 {
 	return reflection_source;
@@ -186,15 +159,6 @@ void Environment::_update_ambient_light()
 	RS::get_singleton()->environment_set_ambient_light(environment, ambient_color,
 		RSE::EnvironmentAmbientSource(ambient_source), ambient_energy, ambient_sky_contribution,
 		RSE::EnvironmentReflectionSource(reflection_source));
-}
-
-// Tonemap
-
-void Environment::set_tonemapper(ToneMapper p_tone_mapper)
-{
-	tone_mapper = p_tone_mapper;
-	_update_tonemap();
-	this->obj->notify_property_list_changed();
 }
 
 Environment::ToneMapper Environment::get_tonemapper() const { return tone_mapper; }
@@ -238,7 +202,6 @@ void Environment::_update_tonemap()
 		tone_mapper == TONE_MAPPER_AGX ? tonemap_agx_white : tonemap_white);
 }
 
-// SSR
 
 void Environment::set_ssr_enabled(bool p_enabled)
 {
@@ -286,7 +249,6 @@ void Environment::_update_ssr()
 		environment, ssr_enabled, ssr_max_steps, ssr_fade_in, ssr_fade_out, ssr_depth_tolerance);
 }
 
-// SSAO
 
 void Environment::set_ssao_enabled(bool p_enabled)
 {
@@ -367,7 +329,6 @@ void Environment::_update_ssao()
 		ssao_direct_light_affect, ssao_ao_channel_affect);
 }
 
-// SSIL
 
 void Environment::set_ssil_enabled(bool p_enabled)
 {
@@ -415,7 +376,6 @@ void Environment::_update_ssil()
 		ssil_intensity, ssil_sharpness, ssil_normal_rejection);
 }
 
-// SDFGI
 
 void Environment::set_sdfgi_enabled(bool p_enabled)
 {
@@ -535,7 +495,6 @@ void Environment::_update_sdfgi()
 		sdfgi_probe_bias);
 }
 
-// Glow
 
 void Environment::set_glow_enabled(bool p_enabled)
 {
@@ -601,13 +560,6 @@ void Environment::set_glow_bloom(float p_threshold)
 }
 
 float Environment::get_glow_bloom() const { return glow_bloom; }
-
-void Environment::set_glow_blend_mode(GlowBlendMode p_mode)
-{
-	glow_blend_mode = p_mode;
-	_update_glow();
-	this->obj->notify_property_list_changed();
-}
 
 Environment::GlowBlendMode Environment::get_glow_blend_mode() const { return glow_blend_mode; }
 
@@ -684,7 +636,6 @@ void Environment::_update_glow()
 		glow_hdr_bleed_scale, glow_hdr_luminance_cap, _glow_map_strength, glow_map_rid);
 }
 
-// Fog
 
 void Environment::set_fog_enabled(bool p_enabled)
 {
@@ -693,19 +644,6 @@ void Environment::set_fog_enabled(bool p_enabled)
 }
 
 bool Environment::is_fog_enabled() const { return fog_enabled; }
-
-void Environment::set_fog_mode(FogMode p_mode)
-{
-	if (fog_mode != p_mode && p_mode == FogMode::FOG_MODE_EXPONENTIAL) {
-		set_fog_density(0.01);
-	}
-	else {
-		set_fog_density(1.0);
-	}
-	fog_mode = p_mode;
-	_update_fog();
-	this->obj->notify_property_list_changed();
-}
 
 Environment::FogMode Environment::get_fog_mode() const { return fog_mode; }
 
@@ -780,7 +718,6 @@ void Environment::_update_fog()
 		fog_aerial_perspective, fog_sky_affect, RSE::EnvironmentFogMode(fog_mode));
 }
 
-// Depth Fog
 
 void Environment::set_fog_depth_curve(float p_curve)
 {
@@ -818,7 +755,6 @@ void Environment::_update_fog_depth()
 		environment, fog_depth_curve, fog_depth_begin, fog_depth_end);
 }
 
-// Volumetric Fog
 
 void Environment::_update_volumetric_fog()
 {
@@ -947,7 +883,6 @@ float Environment::get_volumetric_fog_temporal_reprojection_amount() const
 	return volumetric_fog_temporal_reproject_amount;
 }
 
-// Adjustment
 
 void Environment::set_adjustment_enabled(bool p_enabled)
 {
@@ -981,23 +916,6 @@ void Environment::set_adjustment_saturation(float p_saturation)
 
 float Environment::get_adjustment_saturation() const { return adjustment_saturation; }
 
-void Environment::set_adjustment_color_correction(Ref<Texture> p_color_correction)
-{
-	adjustment_color_correction = p_color_correction;
-	Ref<GradientTexture1D> grad_tex = p_color_correction;
-	if (grad_tex.is_valid()) {
-		grad_tex->connect_changed(callable_mp(this, &Environment::_update_adjustment));
-	}
-	Ref<Texture2D> adjustment_texture_2d = adjustment_color_correction;
-	if (adjustment_texture_2d.is_valid()) {
-		use_1d_color_correction = true;
-	}
-	else {
-		use_1d_color_correction = false;
-	}
-	_update_adjustment();
-}
-
 Ref<Texture> Environment::get_adjustment_color_correction() const
 {
 	return adjustment_color_correction;
@@ -1011,189 +929,6 @@ void Environment::_update_adjustment()
 	RS::get_singleton()->environment_set_adjustment(environment, adjustment_enabled,
 		adjustment_brightness, adjustment_contrast, adjustment_saturation, use_1d_color_correction,
 		color_correction);
-}
-
-// Private methods, constructor and destructor
-
-void Environment::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "sky" || p_property.name == "sky_custom_fov" ||
-		p_property.name == "sky_rotation" || p_property.name == "ambient_light_sky_contribution") {
-		if (bg_mode != BG_SKY && ambient_source != AMBIENT_SOURCE_SKY &&
-			reflection_source != REFLECTION_SOURCE_SKY) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "fog_depth_curve" || p_property.name == "fog_depth_begin" ||
-		p_property.name == "fog_depth_end") {
-		if (fog_mode == FOG_MODE_EXPONENTIAL) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "ambient_light_color" || p_property.name == "ambient_light_energy") {
-		if (ambient_source == AMBIENT_SOURCE_DISABLED) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "ambient_light_sky_contribution") {
-		if (ambient_source == AMBIENT_SOURCE_DISABLED || ambient_source == AMBIENT_SOURCE_COLOR) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "fog_aerial_perspective") {
-		if (bg_mode != BG_SKY) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "tonemap_white") {
-		if (tone_mapper == TONE_MAPPER_LINEAR || tone_mapper == TONE_MAPPER_AGX) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "tonemap_agx_white") {
-		if (tone_mapper != TONE_MAPPER_AGX) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "tonemap_agx_contrast") {
-		if (tone_mapper != TONE_MAPPER_AGX) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "glow_intensity") {
-		if (glow_blend_mode == GLOW_BLEND_MODE_MIX &&
-			OS::get_singleton()->get_current_rendering_method() != "gl_compatibility") {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
-		// Hide glow properties we do not support in GL Compatibility.
-		if (p_property.name.begins_with("glow_levels") || p_property.name == "glow_normalized" ||
-			p_property.name == "glow_strength" || p_property.name == "glow_mix" ||
-			p_property.name == "glow_blend_mode" || p_property.name == "glow_map_strength" ||
-			p_property.name == "glow_map") {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-			return;
-		}
-	}
-	else {
-		if (p_property.name == "glow_mix" && glow_blend_mode != GLOW_BLEND_MODE_MIX) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-			return;
-		}
-	}
-
-	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
-		// Hide SSAO properties that only work in Forward+.
-		if (p_property.name.begins_with("ssao_")) {
-			if ((p_property.name != "ssao_enabled") && (p_property.name != "ssao_radius") &&
-				(p_property.name != "ssao_intensity")) {
-				p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-			}
-			return;
-		}
-	}
-
-	if (p_property.name == "background_color") {
-		if (bg_mode != BG_COLOR && ambient_source != AMBIENT_SOURCE_COLOR) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "background_canvas_max_layer") {
-		if (bg_mode != BG_CANVAS) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "background_camera_feed_id") {
-		if (bg_mode != BG_CAMERA_FEED) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-		return;
-	}
-
-	if (p_property.name == "background_intensity" &&
-		!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units")) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-#ifndef DISABLE_DEPRECATED
-// Kept for compatibility from 3.x to 4.0.
-bool Environment::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "background_sky") {
-		set_sky(p_value);
-		return true;
-	}
-	else if (p_name == "background_sky_custom_fov") {
-		set_sky_custom_fov(p_value);
-		return true;
-	}
-	else if (p_name == "background_sky_orientation") {
-		Vector3 euler = p_value.operator Basis().get_euler();
-		set_sky_rotation(euler);
-		return true;
-	}
-	else {
-		return false;
-	}
-}
-#endif
-
-void Environment::_bind_methods() {}
-
-Environment::Environment()
-{
-	environment = RS::get_singleton()->environment_create();
-
-	set_camera_feed_id(bg_camera_feed_id);
-
-	glow_levels.resize(7);
-	glow_levels.write[0] = 0.0;
-	glow_levels.write[1] = 0.8;
-	glow_levels.write[2] = 0.4;
-	glow_levels.write[3] = 0.1;
-	glow_levels.write[4] = 0.0;
-	glow_levels.write[5] = 0.0;
-	glow_levels.write[6] = 0.0;
-
-	_update_ambient_light();
-	_update_tonemap();
-	_update_ssr();
-	_update_ssao();
-	_update_ssil();
-	_update_sdfgi();
-	_update_glow();
-	_update_fog();
-	_update_adjustment();
-	_update_volumetric_fog();
-	_update_bg_energy();
-	this->obj->notify_property_list_changed();
 }
 
 Environment::~Environment()

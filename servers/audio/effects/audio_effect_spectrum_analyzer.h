@@ -34,10 +34,11 @@
 
 class AudioEffectSpectrumAnalyzer;
 
-class AudioEffectSpectrumAnalyzerInstance : public AudioEffectInstance {
-
+class AudioEffectSpectrumAnalyzerInstance : public AudioEffectInstance
+{
 public:
-	enum MagnitudeMode {
+	enum MagnitudeMode
+	{
 		MAGNITUDE_AVERAGE,
 		MAGNITUDE_MAX,
 	};
@@ -54,20 +55,19 @@ private:
 	int fft_pos;
 	float mix_rate;
 
-protected:
-	static void _bind_methods();
 
 public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
-	Vector2 get_magnitude_for_frequency_range(float p_begin, float p_end, MagnitudeMode p_mode = MAGNITUDE_MAX) const;
+	virtual void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
+	Vector2 get_magnitude_for_frequency_range(
+		float p_begin, float p_end, MagnitudeMode p_mode = MAGNITUDE_MAX) const;
 };
 
-VARIANT_ENUM_CAST(AudioEffectSpectrumAnalyzerInstance::MagnitudeMode)
-
-class AudioEffectSpectrumAnalyzer : public AudioEffect {
-
+class AudioEffectSpectrumAnalyzer : public AudioEffect
+{
 public:
-	enum FFTSize {
+	enum FFTSize
+	{
 		FFT_SIZE_256,
 		FFT_SIZE_512,
 		FFT_SIZE_1024,
@@ -82,8 +82,6 @@ public:
 	FFTSize fft_size;
 
 protected:
-	static void _bind_methods();
-
 #ifndef DISABLE_DEPRECATED
 	void _set_tap_back_pos_bind_compat_114355(float p_seconds);
 	float _get_tap_back_pos_bind_compat_114355() const;
@@ -101,4 +99,4 @@ public:
 	AudioEffectSpectrumAnalyzer();
 };
 
-VARIANT_ENUM_CAST(AudioEffectSpectrumAnalyzer::FFTSize);
+

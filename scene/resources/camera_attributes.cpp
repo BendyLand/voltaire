@@ -64,13 +64,6 @@ void CameraAttributes::_update_exposure()
 		camera_attributes, exposure_multiplier, exposure_normalization);
 }
 
-void CameraAttributes::set_auto_exposure_enabled(bool p_enabled)
-{
-	auto_exposure_enabled = p_enabled;
-	_update_auto_exposure();
-	this->obj->notify_property_list_changed();
-}
-
 bool CameraAttributes::is_auto_exposure_enabled() const { return auto_exposure_enabled; }
 
 void CameraAttributes::set_auto_exposure_speed(float p_auto_exposure_speed)
@@ -91,24 +84,6 @@ float CameraAttributes::get_auto_exposure_scale() const { return auto_exposure_s
 
 RID CameraAttributes::get_rid() const { return camera_attributes; }
 
-void CameraAttributes::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units") &&
-		p_property.name == "exposure_sensitivity") {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL;
-		return;
-	}
-
-	if (p_property.name.begins_with("auto_exposure_") &&
-		p_property.name != "auto_exposure_enabled" && !auto_exposure_enabled) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL;
-		return;
-	}
-}
-
 void CameraAttributes::_bind_methods() {}
 
 CameraAttributes::CameraAttributes()
@@ -124,13 +99,6 @@ CameraAttributes::~CameraAttributes()
 
 //////////////////////////////////////////////////////
 /* CameraAttributesPractical */
-
-void CameraAttributesPractical::set_dof_blur_far_enabled(bool p_enabled)
-{
-	dof_blur_far_enabled = p_enabled;
-	_update_dof_blur();
-	this->obj->notify_property_list_changed();
-}
 
 bool CameraAttributesPractical::is_dof_blur_far_enabled() const { return dof_blur_far_enabled; }
 
@@ -151,13 +119,6 @@ void CameraAttributesPractical::set_dof_blur_far_transition(float p_distance)
 float CameraAttributesPractical::get_dof_blur_far_transition() const
 {
 	return dof_blur_far_transition;
-}
-
-void CameraAttributesPractical::set_dof_blur_near_enabled(bool p_enabled)
-{
-	dof_blur_near_enabled = p_enabled;
-	_update_dof_blur();
-	this->obj->notify_property_list_changed();
 }
 
 bool CameraAttributesPractical::is_dof_blur_near_enabled() const { return dof_blur_near_enabled; }
@@ -236,30 +197,6 @@ void CameraAttributesPractical::_update_auto_exposure()
 			((12.5 / 100.0) / exposure_sensitivity), // Convert from Sensitivity to Luminance
 		auto_exposure_speed, auto_exposure_scale);
 	emit_changed();
-}
-
-void CameraAttributesPractical::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if ((p_property.name != "dof_blur_far_enabled" && !dof_blur_far_enabled &&
-			p_property.name.begins_with("dof_blur_far_")) ||
-		(p_property.name != "dof_blur_near_enabled" && !dof_blur_near_enabled &&
-			p_property.name.begins_with("dof_blur_near_"))) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-void CameraAttributesPractical::_bind_methods() {}
-
-CameraAttributesPractical::CameraAttributesPractical()
-{
-	_update_dof_blur();
-	_update_exposure();
-	set_auto_exposure_min_sensitivity(0.0);
-	set_auto_exposure_max_sensitivity(800.0);
-	this->obj->notify_property_list_changed();
 }
 
 CameraAttributesPractical::~CameraAttributesPractical() {}
@@ -405,29 +342,6 @@ void CameraAttributesPhysical::_update_auto_exposure()
 			(12.5 / exposure_sensitivity), // Convert from EV100 to Luminance
 		auto_exposure_speed, auto_exposure_scale);
 	emit_changed();
-}
-
-void CameraAttributesPhysical::_validate_property(PropertyInfo& property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units") &&
-		(property.name == "exposure_aperture" || property.name == "exposure_shutter_speed")) {
-		property.usage = PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL;
-	}
-}
-
-void CameraAttributesPhysical::_bind_methods() {}
-
-CameraAttributesPhysical::CameraAttributesPhysical()
-{
-	_update_exposure();
-	_update_frustum();
-	set_auto_exposure_min_exposure_value(-8);
-	set_auto_exposure_max_exposure_value(
-		10); // Use a wide range by default to feel more like a real camera.
-	this->obj->notify_property_list_changed();
 }
 
 CameraAttributesPhysical::~CameraAttributesPhysical() {}

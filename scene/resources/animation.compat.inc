@@ -53,18 +53,11 @@ float Animation::_blend_shape_track_interpolate_bind_compat_86629(int p_track, d
 	return blend_shape_track_interpolate(p_track, p_time, false);
 }
 
-Variant Animation::_value_track_interpolate_bind_compat_86629(int p_track, double p_time) const
-{
-	return value_track_interpolate(p_track, p_time, false);
-}
-
 int Animation::_track_find_key_bind_compat_92861(
 	int p_track, double p_time, FindMode p_find_mode) const
 {
 	return track_find_key(p_track, p_time, p_find_mode, false, false);
 }
-
-void Animation::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 

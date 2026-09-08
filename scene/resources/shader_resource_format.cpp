@@ -101,19 +101,4 @@ Error ResourceFormatSaverShader::save(
 	return OK;
 }
 
-void ResourceFormatSaverShader::get_recognized_extensions(
-	const Ref<Resource>& p_resource, List<String>* p_extensions) const
-{
-	if (const Shader* shader = Object::cast_to<Shader>(*p_resource)) {
-		if (shader->is_text_shader()) {
-			p_extensions->push_back("gdshader");
-		}
-	}
-}
-
-bool ResourceFormatSaverShader::recognize(const Ref<Resource>& p_resource) const
-{
-	return p_resource->obj->get_class_name() == "Shader"; // only shader, not inherited
-}
-
 

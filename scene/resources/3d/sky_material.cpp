@@ -38,139 +38,30 @@
 Mutex ProceduralSkyMaterial::shader_mutex;
 RID ProceduralSkyMaterial::shader_cache[4];
 
-void ProceduralSkyMaterial::set_sky_top_color(const Color& p_sky_top)
-{
-	sky_top_color = p_sky_top;
-	RS::get_singleton()->material_set_param(
-		_get_material(), "sky_top_color", sky_top_color * sky_energy_multiplier);
-}
-
 Color ProceduralSkyMaterial::get_sky_top_color() const { return sky_top_color; }
-
-void ProceduralSkyMaterial::set_sky_horizon_color(const Color& p_sky_horizon)
-{
-	sky_horizon_color = p_sky_horizon;
-	RS::get_singleton()->material_set_param(
-		_get_material(), "sky_horizon_color", sky_horizon_color * sky_energy_multiplier);
-}
 
 Color ProceduralSkyMaterial::get_sky_horizon_color() const { return sky_horizon_color; }
 
-void ProceduralSkyMaterial::set_sky_curve(float p_curve)
-{
-	sky_curve = p_curve;
-	// Actual curve passed to shader includes an ad hoc adjustment because the curve used to be
-	// in calculated in angles and now uses cosines.
-	RS::get_singleton()->material_set_param(_get_material(), "inv_sky_curve", 0.6 / sky_curve);
-}
-
 float ProceduralSkyMaterial::get_sky_curve() const { return sky_curve; }
-
-void ProceduralSkyMaterial::set_sky_energy_multiplier(float p_multiplier)
-{
-	sky_energy_multiplier = p_multiplier;
-	RS::get_singleton()->material_set_param(
-		_get_material(), "sky_top_color", sky_top_color * sky_energy_multiplier);
-	RS::get_singleton()->material_set_param(
-		_get_material(), "sky_horizon_color", sky_horizon_color * sky_energy_multiplier);
-	RS::get_singleton()->material_set_param(_get_material(), "sky_cover_modulate",
-		Color(sky_cover_modulate.r, sky_cover_modulate.g, sky_cover_modulate.b,
-			sky_cover_modulate.a * sky_energy_multiplier));
-}
 
 float ProceduralSkyMaterial::get_sky_energy_multiplier() const { return sky_energy_multiplier; }
 
-void ProceduralSkyMaterial::set_sky_cover(const Ref<Texture2D>& p_sky_cover)
-{
-	sky_cover = p_sky_cover;
-
-	if (p_sky_cover.is_valid()) {
-		RS::get_singleton()->material_set_param(
-			_get_material(), "sky_cover", p_sky_cover->get_rid());
-	}
-	else {
-		RS::get_singleton()->material_set_param(_get_material(), "sky_cover", Variant());
-	}
-
-	_update_shader(use_debanding, sky_cover.is_valid());
-
-	if (shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), get_shader_cache());
-	}
-}
-
 Ref<Texture2D> ProceduralSkyMaterial::get_sky_cover() const { return sky_cover; }
-
-void ProceduralSkyMaterial::set_sky_cover_modulate(const Color& p_sky_cover_modulate)
-{
-	sky_cover_modulate = p_sky_cover_modulate;
-	RS::get_singleton()->material_set_param(_get_material(), "sky_cover_modulate",
-		Color(sky_cover_modulate.r, sky_cover_modulate.g, sky_cover_modulate.b,
-			sky_cover_modulate.a * sky_energy_multiplier));
-}
 
 Color ProceduralSkyMaterial::get_sky_cover_modulate() const { return sky_cover_modulate; }
 
-void ProceduralSkyMaterial::set_ground_bottom_color(const Color& p_ground_bottom)
-{
-	ground_bottom_color = p_ground_bottom;
-	RS::get_singleton()->material_set_param(
-		_get_material(), "ground_bottom_color", ground_bottom_color * ground_energy_multiplier);
-}
-
 Color ProceduralSkyMaterial::get_ground_bottom_color() const { return ground_bottom_color; }
-
-void ProceduralSkyMaterial::set_ground_horizon_color(const Color& p_ground_horizon)
-{
-	ground_horizon_color = p_ground_horizon;
-	RS::get_singleton()->material_set_param(
-		_get_material(), "ground_horizon_color", ground_horizon_color * ground_energy_multiplier);
-}
 
 Color ProceduralSkyMaterial::get_ground_horizon_color() const { return ground_horizon_color; }
 
-void ProceduralSkyMaterial::set_ground_curve(float p_curve)
-{
-	ground_curve = p_curve;
-	// Actual curve passed to shader includes an ad hoc adjustment because the curve used to be
-	// in calculated in angles and now uses cosines.
-	RS::get_singleton()->material_set_param(
-		_get_material(), "inv_ground_curve", 0.6 / ground_curve);
-}
-
 float ProceduralSkyMaterial::get_ground_curve() const { return ground_curve; }
-
-void ProceduralSkyMaterial::set_ground_energy_multiplier(float p_multiplier)
-{
-	ground_energy_multiplier = p_multiplier;
-	RS::get_singleton()->material_set_param(
-		_get_material(), "ground_bottom_color", ground_bottom_color * ground_energy_multiplier);
-	RS::get_singleton()->material_set_param(
-		_get_material(), "ground_horizon_color", ground_horizon_color * ground_energy_multiplier);
-}
 
 float ProceduralSkyMaterial::get_ground_energy_multiplier() const
 {
 	return ground_energy_multiplier;
 }
 
-void ProceduralSkyMaterial::set_sun_angle_max(float p_angle)
-{
-	sun_angle_max = p_angle;
-	RS::get_singleton()->material_set_param(
-		_get_material(), "sun_angle_max", Math::cos(Math::deg_to_rad(sun_angle_max)));
-}
-
 float ProceduralSkyMaterial::get_sun_angle_max() const { return sun_angle_max; }
-
-void ProceduralSkyMaterial::set_sun_curve(float p_curve)
-{
-	sun_curve = p_curve;
-	// Actual curve passed to shader includes an ad hoc adjustment because the curve used to be
-	// in calculated in angles and now uses cosines.
-	RS::get_singleton()->material_set_param(
-		_get_material(), "inv_sun_curve", 1.6f / Math::pow(sun_curve, 1.4f));
-}
 
 float ProceduralSkyMaterial::get_sun_curve() const { return sun_curve; }
 
@@ -185,12 +76,6 @@ void ProceduralSkyMaterial::set_use_debanding(bool p_use_debanding)
 }
 
 bool ProceduralSkyMaterial::get_use_debanding() const { return use_debanding; }
-
-void ProceduralSkyMaterial::set_energy_multiplier(float p_multiplier)
-{
-	global_energy_multiplier = p_multiplier;
-	RS::get_singleton()->material_set_param(_get_material(), "exposure", global_energy_multiplier);
-}
 
 float ProceduralSkyMaterial::get_energy_multiplier() const { return global_energy_multiplier; }
 
@@ -218,19 +103,6 @@ RID ProceduralSkyMaterial::get_shader_rid() const
 	_update_shader(use_debanding, sky_cover.is_valid());
 	return get_shader_cache();
 }
-
-void ProceduralSkyMaterial::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if ((p_property.name == "sky_luminance" || p_property.name == "ground_luminance") &&
-		!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units")) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-void ProceduralSkyMaterial::_bind_methods() {}
 
 void ProceduralSkyMaterial::cleanup_shader()
 {
@@ -359,41 +231,9 @@ ProceduralSkyMaterial::ProceduralSkyMaterial()
 
 ProceduralSkyMaterial::~ProceduralSkyMaterial() {}
 
-/////////////////////////////////////////
-/* PanoramaSkyMaterial */
-
-void PanoramaSkyMaterial::set_panorama(const Ref<Texture2D>& p_panorama)
-{
-	panorama = p_panorama;
-	if (p_panorama.is_valid()) {
-		RS::get_singleton()->material_set_param(
-			_get_material(), "source_panorama", p_panorama->get_rid());
-	}
-	else {
-		RS::get_singleton()->material_set_param(_get_material(), "source_panorama", Variant());
-	}
-}
-
 Ref<Texture2D> PanoramaSkyMaterial::get_panorama() const { return panorama; }
 
-void PanoramaSkyMaterial::set_filtering_enabled(bool p_enabled)
-{
-	filter = p_enabled;
-	this->obj->notify_property_list_changed();
-	_update_shader(filter);
-	// Only set if shader already compiled
-	if (shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), shader_cache[int(filter)]);
-	}
-}
-
 bool PanoramaSkyMaterial::is_filtering_enabled() const { return filter; }
-
-void PanoramaSkyMaterial::set_energy_multiplier(float p_multiplier)
-{
-	energy_multiplier = p_multiplier;
-	RS::get_singleton()->material_set_param(_get_material(), "exposure", energy_multiplier);
-}
 
 float PanoramaSkyMaterial::get_energy_multiplier() const { return energy_multiplier; }
 
@@ -414,8 +254,6 @@ RID PanoramaSkyMaterial::get_shader_rid() const
 	_update_shader(filter);
 	return shader_cache[int(filter)];
 }
-
-void PanoramaSkyMaterial::_bind_methods() {}
 
 Mutex PanoramaSkyMaterial::shader_mutex;
 RID PanoramaSkyMaterial::shader_cache[2];
@@ -463,78 +301,21 @@ PanoramaSkyMaterial::PanoramaSkyMaterial()
 
 PanoramaSkyMaterial::~PanoramaSkyMaterial() {}
 
-//////////////////////////////////
-/* PhysicalSkyMaterial */
-
-void PhysicalSkyMaterial::set_rayleigh_coefficient(float p_rayleigh)
-{
-	rayleigh = p_rayleigh;
-	RS::get_singleton()->material_set_param(_get_material(), "rayleigh", rayleigh);
-}
-
 float PhysicalSkyMaterial::get_rayleigh_coefficient() const { return rayleigh; }
-
-void PhysicalSkyMaterial::set_rayleigh_color(Color p_rayleigh_color)
-{
-	rayleigh_color = p_rayleigh_color;
-	RS::get_singleton()->material_set_param(_get_material(), "rayleigh_color", rayleigh_color);
-}
 
 Color PhysicalSkyMaterial::get_rayleigh_color() const { return rayleigh_color; }
 
-void PhysicalSkyMaterial::set_mie_coefficient(float p_mie)
-{
-	mie = p_mie;
-	RS::get_singleton()->material_set_param(_get_material(), "mie", mie);
-}
-
 float PhysicalSkyMaterial::get_mie_coefficient() const { return mie; }
-
-void PhysicalSkyMaterial::set_mie_eccentricity(float p_eccentricity)
-{
-	mie_eccentricity = p_eccentricity;
-	RS::get_singleton()->material_set_param(_get_material(), "mie_eccentricity", mie_eccentricity);
-}
 
 float PhysicalSkyMaterial::get_mie_eccentricity() const { return mie_eccentricity; }
 
-void PhysicalSkyMaterial::set_mie_color(Color p_mie_color)
-{
-	mie_color = p_mie_color;
-	RS::get_singleton()->material_set_param(_get_material(), "mie_color", mie_color);
-}
-
 Color PhysicalSkyMaterial::get_mie_color() const { return mie_color; }
-
-void PhysicalSkyMaterial::set_turbidity(float p_turbidity)
-{
-	turbidity = p_turbidity;
-	RS::get_singleton()->material_set_param(_get_material(), "turbidity", turbidity);
-}
 
 float PhysicalSkyMaterial::get_turbidity() const { return turbidity; }
 
-void PhysicalSkyMaterial::set_sun_disk_scale(float p_sun_disk_scale)
-{
-	sun_disk_scale = p_sun_disk_scale;
-	RS::get_singleton()->material_set_param(_get_material(), "sun_disk_scale", sun_disk_scale);
-}
-
 float PhysicalSkyMaterial::get_sun_disk_scale() const { return sun_disk_scale; }
 
-void PhysicalSkyMaterial::set_ground_color(Color p_ground_color)
-{
-	ground_color = p_ground_color;
-	RS::get_singleton()->material_set_param(_get_material(), "ground_color", ground_color);
-}
-
 Color PhysicalSkyMaterial::get_ground_color() const { return ground_color; }
-
-void PhysicalSkyMaterial::set_energy_multiplier(float p_multiplier)
-{
-	energy_multiplier = p_multiplier;
-	RS::get_singleton()->material_set_param(_get_material(), "exposure", energy_multiplier);
-}
 
 float PhysicalSkyMaterial::get_energy_multiplier() const { return energy_multiplier; }
 
@@ -549,24 +330,6 @@ void PhysicalSkyMaterial::set_use_debanding(bool p_use_debanding)
 }
 
 bool PhysicalSkyMaterial::get_use_debanding() const { return use_debanding; }
-
-void PhysicalSkyMaterial::set_night_sky(const Ref<Texture2D>& p_night_sky)
-{
-	night_sky = p_night_sky;
-	if (p_night_sky.is_valid()) {
-		RS::get_singleton()->material_set_param(
-			_get_material(), "night_sky", p_night_sky->get_rid());
-	}
-	else {
-		RS::get_singleton()->material_set_param(_get_material(), "night_sky", Variant());
-	}
-
-	_update_shader(use_debanding, night_sky.is_valid());
-
-	if (shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), get_shader_cache());
-	}
-}
 
 Ref<Texture2D> PhysicalSkyMaterial::get_night_sky() const { return night_sky; }
 
@@ -595,21 +358,8 @@ RID PhysicalSkyMaterial::get_shader_rid() const
 	return get_shader_cache();
 }
 
-void PhysicalSkyMaterial::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "exposure_value" &&
-		!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units")) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
 Mutex PhysicalSkyMaterial::shader_mutex;
 RID PhysicalSkyMaterial::shader_cache[4];
-
-void PhysicalSkyMaterial::_bind_methods() {}
 
 void PhysicalSkyMaterial::cleanup_shader()
 {

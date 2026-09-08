@@ -82,147 +82,10 @@ void Shader::set_include_path(const String& p_path)
 	include_path = p_path;
 }
 
-void Shader::set_code(const String& p_code)
-{
-	for (const Ref<ShaderInclude>& E : include_dependencies) {
-		E->disconnect_changed(callable_mp(this, &Shader::_dependency_changed));
-	}
-
-	code = p_code;
-	preprocessed_code = p_code;
-
-	{
-		String path = get_path();
-		if (path.is_empty()) {
-			path = include_path;
-		}
-		// Preprocessor must run here and not in the server because:
-		// 1) Need to keep track of include dependencies at resource level
-		// 2) Server does not do interaction with Resource filetypes, this is a scene level feature.
-		HashSet<Ref<ShaderInclude>> new_include_dependencies;
-		ShaderPreprocessor preprocessor;
-		Error result = preprocessor.preprocess(
-			p_code, path, preprocessed_code, nullptr, nullptr, nullptr, &new_include_dependencies);
-		if (result == OK) {
-			// This ensures previous include resources are not freed and then re-loaded during parse
-			// (which would make compiling slower)
-			include_dependencies = new_include_dependencies;
-		}
-	}
-
-	// Try to get the shader type from the final, fully preprocessed shader code.
-	String type = ShaderLanguage::get_shader_type(preprocessed_code);
-
-	if (type == "canvas_item") {
-		mode = MODE_CANVAS_ITEM;
-	}
-	else if (type == "particles") {
-		mode = MODE_PARTICLES;
-	}
-	else if (type == "sky") {
-		mode = MODE_SKY;
-	}
-	else if (type == "fog") {
-		mode = MODE_FOG;
-	}
-	else if (type == "texture_blit") {
-		mode = MODE_TEXTURE_BLIT;
-	}
-	else {
-		mode = MODE_SPATIAL;
-	}
-
-	for (const Ref<ShaderInclude>& E : include_dependencies) {
-		E->connect_changed(callable_mp(this, &Shader::_dependency_changed));
-	}
-
-	if (shader_rid.is_valid()) {
-		RenderingServer::get_singleton()->shader_set_code(shader_rid, preprocessed_code);
-		preprocessed_code = String();
-	}
-
-	emit_changed();
-}
-
 String Shader::get_code() const
 {
 	_update_shader();
 	return code;
-}
-
-void Shader::inspect_native_shader_code()
-{
-	SceneTree* st = SceneTree::get_singleton();
-	RID _shader = get_rid();
-	if (st && _shader.is_valid()) {
-		st->call_group_flags(SceneTree::GROUP_CALL_DEFERRED, "_native_shader_source_visualizer",
-			"_inspect_shader", _shader);
-	}
-}
-
-void Shader::get_shader_uniform_list(List<PropertyInfo>* p_params, bool p_get_groups) const
-{
-	_update_shader();
-	_check_shader_rid();
-
-	List<PropertyInfo> local;
-	RenderingServer::get_singleton()->get_shader_parameter_list(shader_rid, &local);
-
-#ifdef TOOLS_ENABLED
-	DocData::ClassDoc class_doc;
-	bool generate_doc = Engine::get_singleton()->is_editor_hint() && !get_path().is_empty();
-	if (generate_doc) {
-		class_doc.name = get_path().trim_prefix("res://").quote();
-		class_doc.is_script_doc = true;
-		class_doc.inherits = "Shader";
-	}
-#endif
-
-	for (PropertyInfo& pi : local) {
-		bool is_group = pi.usage == PROPERTY_USAGE_GROUP || pi.usage == PROPERTY_USAGE_SUBGROUP;
-		if (!p_get_groups && is_group) {
-			continue;
-		}
-		if (!is_group) {
-			if (default_textures.has(pi.name)) { // do not show default textures
-				continue;
-			}
-		}
-		if (p_params) {
-			// small little hack
-			if (pi.type == Variant::RID) {
-				pi.type = Variant::OBJECT;
-			}
-#ifdef TOOLS_ENABLED
-			if (generate_doc) {
-				DocData::PropertyDoc prop_doc;
-				prop_doc.name = "shader_parameter/" + pi.name;
-				const RegEx pattern("/\\*\\*\\s([^*]|[\\r\\n]|(\\*+([^*/]|[\\r\\n])))*\\*+/"
-									"\\s*uniform\\s+\\w+\\s+" +
-									pi.name + "(?=[\\s:;=])");
-				Ref<RegExMatch> pattern_ref = pattern.search(code);
-				if (pattern_ref.is_valid()) {
-					RegExMatch* match = pattern_ref.ptr();
-					const RegEx pattern_tip("\\/\\*\\*([\\s\\S]*?)\\*/");
-					Ref<RegExMatch> pattern_tip_ref = pattern_tip.search(match->get_string(0));
-					RegExMatch* match_tip = pattern_tip_ref.ptr();
-					const RegEx pattern_stripped("\\n\\s*\\*\\s*");
-					prop_doc.description =
-						pattern_stripped.sub(match_tip->get_string(1), "\n", true);
-
-					pi.class_name = class_doc.name;
-					class_doc.properties.push_back(prop_doc);
-				}
-			}
-#endif
-			p_params->push_back(pi);
-		}
-	}
-#ifdef TOOLS_ENABLED
-	if (generate_doc && class_doc.properties.size() > 0) {
-		EditorHelp::add_doc(class_doc);
-	}
-#endif
 }
 
 RID Shader::get_rid() const
@@ -282,19 +145,6 @@ void Shader::_update_shader() const
 {
 	// Base implementation does nothing.
 }
-
-Array Shader::_get_shader_uniform_list(bool p_get_groups)
-{
-	List<PropertyInfo> uniform_list;
-	get_shader_uniform_list(&uniform_list, p_get_groups);
-	Array ret;
-	for (const PropertyInfo& pi : uniform_list) {
-		ret.push_back(pi.operator Dictionary());
-	}
-	return ret;
-}
-
-void Shader::_bind_methods() {}
 
 Shader::Shader()
 {

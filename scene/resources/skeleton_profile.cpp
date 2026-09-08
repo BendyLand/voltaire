@@ -31,188 +31,6 @@
 #include "core/config/engine.h"
 #include "skeleton_profile.h"
 
-bool SkeletonProfile::_set(const StringName& p_path, const Variant& p_value)
-{
-	ERR_FAIL_COND_V(is_read_only, false);
-	String path = p_path;
-
-	if (path.begins_with("groups/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, groups.size(), false);
-
-		if (what == "group_name") {
-			set_group_name(which, p_value);
-			return true;
-		}
-		else if (what == "texture") {
-			set_texture(which, p_value);
-			return true;
-		}
-	}
-
-	if (path.begins_with("bones/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, bones.size(), false);
-
-		if (what == "bone_name") {
-			set_bone_name(which, p_value);
-			return true;
-		}
-		else if (what == "bone_parent") {
-			set_bone_parent(which, p_value);
-			return true;
-		}
-		else if (what == "tail_direction") {
-			set_tail_direction(which, static_cast<TailDirection>((int)p_value));
-			return true;
-		}
-		else if (what == "bone_tail") {
-			set_bone_tail(which, p_value);
-			return true;
-		}
-		else if (what == "reference_pose") {
-			set_reference_pose(which, p_value);
-			return true;
-		}
-		else if (what == "handle_offset") {
-			set_handle_offset(which, p_value);
-			return true;
-		}
-		else if (what == "group") {
-			set_group(which, p_value);
-			return true;
-		}
-		else if (what == "require") {
-			set_required(which, p_value);
-			return true;
-		}
-	}
-	return false;
-}
-
-bool SkeletonProfile::_get(const StringName& p_path, Variant& r_ret) const
-{
-	String path = p_path;
-
-	if (path.begins_with("groups/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, groups.size(), false);
-
-		if (what == "group_name") {
-			r_ret = get_group_name(which);
-			return true;
-		}
-		else if (what == "texture") {
-			r_ret = get_texture(which);
-			return true;
-		}
-	}
-	else if (path.begins_with("bones/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, bones.size(), false);
-
-		if (what == "bone_name") {
-			r_ret = get_bone_name(which);
-			return true;
-		}
-		else if (what == "bone_parent") {
-			r_ret = get_bone_parent(which);
-			return true;
-		}
-		else if (what == "tail_direction") {
-			r_ret = get_tail_direction(which);
-			return true;
-		}
-		else if (what == "bone_tail") {
-			r_ret = get_bone_tail(which);
-			return true;
-		}
-		else if (what == "reference_pose") {
-			r_ret = get_reference_pose(which);
-			return true;
-		}
-		else if (what == "handle_offset") {
-			r_ret = get_handle_offset(which);
-			return true;
-		}
-		else if (what == "group") {
-			r_ret = get_group(which);
-			return true;
-		}
-		else if (what == "require") {
-			r_ret = is_required(which);
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void SkeletonProfile::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (is_read_only) {
-		if (p_property.name == ("group_size") || p_property.name == ("bone_size") ||
-			p_property.name == ("root_bone") || p_property.name == ("scale_base_bone")) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-			return;
-		}
-	}
-
-	if (p_property.name == ("root_bone") || p_property.name == ("scale_base_bone")) {
-		String hint = "";
-		for (int i = 0; i < bones.size(); i++) {
-			if (i > 0) {
-				hint += ",";
-			}
-			hint += String(bones[i].bone_name);
-		}
-		p_property.hint_string = hint;
-	}
-}
-
-void SkeletonProfile::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	if (is_read_only) {
-		return;
-	}
-	String group_names = "";
-	for (int i = 0; i < groups.size(); i++) {
-		String path = "groups/" + itos(i) + "/";
-		p_list->push_back(PropertyInfo(Variant::STRING_NAME, path + "group_name"));
-		p_list->push_back(PropertyInfo(Variant::OBJECT, path + "texture",
-			PROPERTY_HINT_RESOURCE_TYPE, Texture2D::get_class_static()));
-		if (i > 0) {
-			group_names = group_names + ",";
-		}
-		group_names = group_names + groups[i].group_name;
-	}
-	for (int i = 0; i < bones.size(); i++) {
-		String path = "bones/" + itos(i) + "/";
-		int bone_tail_usage = (get_tail_direction(i) != TAIL_DIRECTION_SPECIFIC_CHILD)
-								  ? PROPERTY_USAGE_NONE
-								  : PROPERTY_USAGE_DEFAULT;
-
-		p_list->push_back(PropertyInfo(Variant::STRING_NAME, path + "bone_name"));
-		p_list->push_back(PropertyInfo(Variant::STRING_NAME, path + "bone_parent"));
-		p_list->push_back(PropertyInfo(Variant::INT, path + "tail_direction", PROPERTY_HINT_ENUM,
-			"AverageChildren,SpecificChild,End"));
-		p_list->push_back(PropertyInfo(
-			Variant::STRING_NAME, path + "bone_tail", PROPERTY_HINT_NONE, "", bone_tail_usage));
-		p_list->push_back(PropertyInfo(Variant::TRANSFORM3D, path + "reference_pose"));
-		p_list->push_back(PropertyInfo(Variant::VECTOR2, path + "handle_offset"));
-		p_list->push_back(
-			PropertyInfo(Variant::STRING_NAME, path + "group", PROPERTY_HINT_ENUM, group_names));
-		p_list->push_back(PropertyInfo(Variant::BOOL, path + "require"));
-	}
-}
-
 StringName SkeletonProfile::get_root_bone() { return root_bone; }
 
 void SkeletonProfile::set_root_bone(const StringName& p_bone_name)
@@ -235,31 +53,10 @@ void SkeletonProfile::set_scale_base_bone(const StringName& p_bone_name)
 
 int SkeletonProfile::get_group_size() { return groups.size(); }
 
-void SkeletonProfile::set_group_size(int p_size)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_COND(p_size < 0);
-	groups.resize(p_size);
-	this->obj->emit_signal("profile_updated");
-	this->obj->notify_property_list_changed();
-}
-
 StringName SkeletonProfile::get_group_name(int p_group_idx) const
 {
 	ERR_FAIL_INDEX_V(p_group_idx, groups.size(), StringName());
 	return groups[p_group_idx].group_name;
-}
-
-void SkeletonProfile::set_group_name(int p_group_idx, const StringName& p_group_name)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_group_idx, groups.size());
-	groups.write[p_group_idx].group_name = p_group_name;
-	this->obj->emit_signal("profile_updated");
 }
 
 Ref<Texture2D> SkeletonProfile::get_texture(int p_group_idx) const
@@ -268,28 +65,7 @@ Ref<Texture2D> SkeletonProfile::get_texture(int p_group_idx) const
 	return groups[p_group_idx].texture;
 }
 
-void SkeletonProfile::set_texture(int p_group_idx, const Ref<Texture2D>& p_texture)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_group_idx, groups.size());
-	groups.write[p_group_idx].texture = p_texture;
-	this->obj->emit_signal("profile_updated");
-}
-
 int SkeletonProfile::get_bone_size() { return bones.size(); }
-
-void SkeletonProfile::set_bone_size(int p_size)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_COND(p_size < 0);
-	bones.resize(p_size);
-	this->obj->emit_signal("profile_updated");
-	this->obj->notify_property_list_changed();
-}
 
 int SkeletonProfile::find_bone(const StringName& p_bone_name) const
 {
@@ -319,30 +95,10 @@ StringName SkeletonProfile::get_bone_name(int p_bone_idx) const
 	return bones[p_bone_idx].bone_name;
 }
 
-void SkeletonProfile::set_bone_name(int p_bone_idx, const StringName& p_bone_name)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_bone_idx, bones.size());
-	bones.write[p_bone_idx].bone_name = p_bone_name;
-	this->obj->emit_signal("profile_updated");
-}
-
 StringName SkeletonProfile::get_bone_parent(int p_bone_idx) const
 {
 	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), StringName());
 	return bones[p_bone_idx].bone_parent;
-}
-
-void SkeletonProfile::set_bone_parent(int p_bone_idx, const StringName& p_bone_parent)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_bone_idx, bones.size());
-	bones.write[p_bone_idx].bone_parent = p_bone_parent;
-	this->obj->emit_signal("profile_updated");
 }
 
 SkeletonProfile::TailDirection SkeletonProfile::get_tail_direction(int p_bone_idx) const
@@ -351,31 +107,10 @@ SkeletonProfile::TailDirection SkeletonProfile::get_tail_direction(int p_bone_id
 	return bones[p_bone_idx].tail_direction;
 }
 
-void SkeletonProfile::set_tail_direction(int p_bone_idx, TailDirection p_tail_direction)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_bone_idx, bones.size());
-	bones.write[p_bone_idx].tail_direction = p_tail_direction;
-	this->obj->emit_signal("profile_updated");
-	this->obj->notify_property_list_changed();
-}
-
 StringName SkeletonProfile::get_bone_tail(int p_bone_idx) const
 {
 	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), StringName());
 	return bones[p_bone_idx].bone_tail;
-}
-
-void SkeletonProfile::set_bone_tail(int p_bone_idx, const StringName& p_bone_tail)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_bone_idx, bones.size());
-	bones.write[p_bone_idx].bone_tail = p_bone_tail;
-	this->obj->emit_signal("profile_updated");
 }
 
 Transform3D SkeletonProfile::get_reference_pose(int p_bone_idx) const
@@ -384,30 +119,10 @@ Transform3D SkeletonProfile::get_reference_pose(int p_bone_idx) const
 	return bones[p_bone_idx].reference_pose;
 }
 
-void SkeletonProfile::set_reference_pose(int p_bone_idx, const Transform3D& p_reference_pose)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_bone_idx, bones.size());
-	bones.write[p_bone_idx].reference_pose = p_reference_pose;
-	this->obj->emit_signal("profile_updated");
-}
-
 Vector2 SkeletonProfile::get_handle_offset(int p_bone_idx) const
 {
 	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), Vector2());
 	return bones[p_bone_idx].handle_offset;
-}
-
-void SkeletonProfile::set_handle_offset(int p_bone_idx, const Vector2& p_handle_offset)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_bone_idx, bones.size());
-	bones.write[p_bone_idx].handle_offset = p_handle_offset;
-	this->obj->emit_signal("profile_updated");
 }
 
 StringName SkeletonProfile::get_group(int p_bone_idx) const
@@ -416,30 +131,10 @@ StringName SkeletonProfile::get_group(int p_bone_idx) const
 	return bones[p_bone_idx].group;
 }
 
-void SkeletonProfile::set_group(int p_bone_idx, const StringName& p_group)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_bone_idx, bones.size());
-	bones.write[p_bone_idx].group = p_group;
-	this->obj->emit_signal("profile_updated");
-}
-
 bool SkeletonProfile::is_required(int p_bone_idx) const
 {
 	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), false);
 	return bones[p_bone_idx].required;
-}
-
-void SkeletonProfile::set_required(int p_bone_idx, bool p_required)
-{
-	if (is_read_only) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_bone_idx, bones.size());
-	bones.write[p_bone_idx].required = p_required;
-	this->obj->emit_signal("profile_updated");
 }
 
 bool SkeletonProfile::has_bone(const StringName& p_bone_name)
@@ -453,8 +148,6 @@ bool SkeletonProfile::has_bone(const StringName& p_bone_name)
 	}
 	return is_found;
 }
-
-void SkeletonProfile::_bind_methods() {}
 
 SkeletonProfile::SkeletonProfile() {}
 

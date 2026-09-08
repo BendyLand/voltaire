@@ -1286,10 +1286,7 @@ Ref<Image> CanvasTexture::get_image() const
 	}
 }
 
-RID CanvasTexture::ge
-t_rid() const { return canvas_texture; }
-
-void CanvasTexture::_bind_methods() {}
+RID CanvasTexture::get_rid() const { return canvas_texture; }
 
 CanvasTexture::CanvasTexture() { canvas_texture = RS::get_singleton()->canvas_texture_create(); }
 

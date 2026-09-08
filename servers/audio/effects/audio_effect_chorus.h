@@ -34,7 +34,8 @@
 
 class AudioEffectChorus;
 
-class AudioEffectChorusInstance : public AudioEffectInstance {
+class AudioEffectChorusInstance : public AudioEffectInstance
+{
 	friend class AudioEffectChorus;
 	Ref<AudioEffectChorus> base;
 
@@ -45,14 +46,16 @@ class AudioEffectChorusInstance : public AudioEffectInstance {
 	AudioFrame filter_h[4];
 	uint64_t cycles[4];
 
-	void _process_chunk(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count);
+	void _process_chunk(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 
 public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	virtual void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
 };
 
-class AudioEffectChorus : public AudioEffect {
-
+class AudioEffectChorus : public AudioEffect
+{
 	friend class AudioEffectChorusInstance;
 
 public:
@@ -66,7 +69,8 @@ public:
 	static constexpr int32_t MS_CUTOFF_MAX = 16000;
 
 private:
-	struct Voice {
+	struct Voice
+	{
 		float delay;
 		float rate;
 		float depth;
@@ -74,7 +78,8 @@ private:
 		float cutoff;
 		float pan;
 
-		Voice() {
+		Voice()
+		{
 			delay = 12.0;
 			rate = 1;
 			depth = 0;
@@ -89,11 +94,6 @@ private:
 
 	float wet;
 	float dry;
-
-protected:
-	void _validate_property(PropertyInfo &p_property) const;
-
-	static void _bind_methods();
 
 public:
 	void set_voice_count(int p_voices);
@@ -127,3 +127,5 @@ public:
 
 	AudioEffectChorus();
 };
+
+

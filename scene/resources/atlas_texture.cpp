@@ -74,24 +74,6 @@ bool AtlasTexture::has_alpha() const
 	return false;
 }
 
-void AtlasTexture::set_atlas(const Ref<Texture2D>& p_atlas)
-{
-	ERR_FAIL_COND(p_atlas == this);
-	if (atlas == p_atlas) {
-		return;
-	}
-	// Support recursive AtlasTextures.
-	if (Ref<AtlasTexture>(atlas).is_valid()) {
-		atlas->disconnect_changed(callable_mp((Resource*)this, &AtlasTexture::emit_changed));
-	}
-	atlas = p_atlas;
-	if (Ref<AtlasTexture>(atlas).is_valid()) {
-		atlas->connect_changed(callable_mp((Resource*)this, &AtlasTexture::emit_changed));
-	}
-
-	emit_changed();
-}
-
 Ref<Texture2D> AtlasTexture::get_atlas() const { return atlas; }
 
 void AtlasTexture::set_region(const Rect2& p_region)

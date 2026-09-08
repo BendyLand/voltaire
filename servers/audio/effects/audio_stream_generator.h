@@ -33,10 +33,11 @@
 #include "core/templates/ring_buffer.h"
 #include "servers/audio/audio_stream.h"
 
-class AudioStreamGenerator : public AudioStream {
-
+class AudioStreamGenerator : public AudioStream
+{
 public:
-	enum AudioStreamGeneratorMixRate {
+	enum AudioStreamGeneratorMixRate
+	{
 		MIX_RATE_OUTPUT,
 		MIX_RATE_INPUT,
 		MIX_RATE_CUSTOM,
@@ -67,19 +68,21 @@ public:
 
 	virtual double get_length() const override;
 	virtual bool is_monophonic() const override;
+
 	AudioStreamGenerator() {}
 };
 
-class AudioStreamGeneratorPlayback : public AudioStreamPlaybackResampled {
+class AudioStreamGeneratorPlayback : public AudioStreamPlaybackResampled
+{
 	friend class AudioStreamGenerator;
 	RingBuffer<AudioFrame> buffer;
 	int skips;
 	bool active;
 	float mixed;
-	AudioStreamGenerator *generator = nullptr;
+	AudioStreamGenerator* generator = nullptr;
 
 protected:
-	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames) override;
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
 	virtual float get_stream_sampling_rate() override;
 
 	static void _bind_methods();
@@ -89,14 +92,14 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; // times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 
-	bool push_frame(const Vector2 &p_frame);
+	bool push_frame(const Vector2& p_frame);
 	bool can_push_buffer(int p_frames) const;
-	bool push_buffer(const PackedVector2Array &p_frames);
+	bool push_buffer(const PackedVector2Array& p_frames);
 	int get_frames_available() const;
 	int get_skips() const;
 
@@ -107,4 +110,4 @@ public:
 	AudioStreamGeneratorPlayback();
 };
 
-VARIANT_ENUM_CAST(AudioStreamGenerator::AudioStreamGeneratorMixRate);
+

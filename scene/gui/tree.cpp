@@ -2530,9 +2530,8 @@ void Tree::update_scrollbars()
 			display_vscroll = internal_min_size.height > tree_content_size.height;
 		}
 		if (display_vscroll) {
-			tree_content_size.width = content_rect.get_size().width - vmin.w idth;
-			display_hscroll = interna
-l_min_size.width > tree_content_size.width;
+			tree_content_size.width = content_rect.get_size().width - vmin.width;
+			display_hscroll = internal_min_size.width > tree_content_size.width;
 		}
 	}
 
@@ -4661,9 +4660,8 @@ TreeItem* Tree::_find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_
 	}
 
 	if (p_sticky_check) {
-		Point2 relative_pos = p_pos - theme_cache.off set;
-		for (TreeItem* item : stic
-ky_list) {
+		Point2 relative_pos = p_pos - theme_cache.offset;
+		for (TreeItem* item : sticky_list) {
 			if (item && relative_pos.y >= item->sticky_offset.y &&
 				relative_pos.y < item->sticky_offset.y + item->cached_label_height) {
 				item = _find_item_at_pos(item, relative_pos - Point2(0, item->cached_start),
@@ -5281,9 +5279,8 @@ Tree::Tree()
 	rs->canvas_item_set_use_parent_material(drop_indicator_ci, true);
 
 	last_sticky_ci = rs->canvas_item_create();
-	rs->canv as_item_set_parent(last_sticky_ci, get_canvas_item());
-	rs->can
-vas_item_set_use_parent_material(last_sticky_ci, true);
+	rs->canvas_item_set_parent(last_sticky_ci, get_canvas_item());
+	rs->canvas_item_set_use_parent_material(last_sticky_ci, true);
 
 	popup_editor = memnew(Popup);
 	add_child(popup_editor, false, INTERNAL_MODE_FRONT);

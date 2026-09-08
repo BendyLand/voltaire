@@ -236,37 +236,6 @@ bool AnimatedTexture::is_pixel_opaque(int p_x, int p_y) const
 	return true;
 }
 
-void AnimatedTexture::_validate_property(PropertyInfo& p_property) const
-{
-	String prop = p_property.name;
-	if (prop.begins_with("frame_")) {
-		int frame = prop.get_slicec('/', 0).get_slicec('_', 1).to_int();
-		if (frame >= frame_count) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
-
-void AnimatedTexture::_bind_methods() {}
-
-void AnimatedTexture::_finish_non_thread_safe_setup()
-{
-	RenderingServer::get_singleton()->obj->connect(
-		"frame_pre_draw", callable_mp(this, &AnimatedTexture::_update_proxy));
-}
-
-AnimatedTexture::AnimatedTexture()
-{
-	// proxy = RS::get_singleton()->texture_create();
-	proxy_ph = RS::get_singleton()->texture_2d_placeholder_create();
-	proxy = RS::get_singleton()->texture_proxy_create(proxy_ph);
-
-	RenderingServer::get_singleton()->texture_set_force_redraw_if_visible(proxy, true);
-
-	MessageQueue::get_main_singleton()->push_callable(
-		callable_mp(this, &AnimatedTexture::_finish_non_thread_safe_setup));
-}
-
 AnimatedTexture::~AnimatedTexture()
 {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
