@@ -46,8 +46,6 @@ RenderSceneBuffersRD::~RenderSceneBuffersRD()
 	RendererRD::MaterialStorage::get_singleton()->samplers_rd_free(samplers);
 }
 
-void RenderSceneBuffersRD::_bind_methods() {}
-
 void RenderSceneBuffersRD::update_sizes(NamedTexture& p_named_texture)
 {
 	ERR_FAIL_COND(p_named_texture.texture.is_null());
@@ -327,37 +325,6 @@ RID RenderSceneBuffersRD::_create_texture_from_format(const StringName& p_contex
 		p_context, p_texture_name, p_texture_format->base, texture_view, p_unique);
 }
 
-RID RenderSceneBuffersRD::create_texture_from_format(const StringName& p_context,
-	const StringName& p_texture_name, const RD::TextureFormat& p_texture_format,
-	RD::TextureView p_view, bool p_unique)
-{
-	// TODO p_unique, if p_unique is true, this is a texture that can be shared. This will be
-	// implemented later as an optimization.
-
-	NTKey key(p_context, p_texture_name);
-
-	// check if this is a known texture
-	if (named_textures.has(key)) {
-		return named_textures[key].texture;
-	}
-
-	// Add a new entry..
-	NamedTexture& named_texture = named_textures[key];
-	named_texture.format = p_texture_format;
-	named_texture.is_unique = p_unique;
-	named_texture.texture = RD::get_singleton()->texture_create(p_texture_format, p_view);
-
-	Array arr = {p_context, p_texture_name};
-	RD::get_singleton()->set_resource_name(
-		named_texture.texture, String("RenderBuffer {0}/{1}").format(arr));
-
-	update_sizes(named_texture);
-
-	// The rest is lazy created..
-
-	return named_texture.texture;
-}
-
 RID RenderSceneBuffersRD::_create_texture_view(const StringName& p_context,
 	const StringName& p_texture_name, const StringName& p_view_name,
 	const Ref<RDTextureView> p_view)
@@ -368,38 +335,6 @@ RID RenderSceneBuffersRD::_create_texture_view(const StringName& p_context,
 	}
 
 	return create_texture_view(p_context, p_texture_name, p_view_name, texture_view);
-}
-
-RID RenderSceneBuffersRD::create_texture_view(const StringName& p_context,
-	const StringName& p_texture_name, const StringName& p_view_name, RD::TextureView p_view)
-{
-	NTKey view_key(p_context, p_view_name);
-
-	// check if this is a known texture
-	if (named_textures.has(view_key)) {
-		return named_textures[view_key].texture;
-	}
-
-	NTKey key(p_context, p_texture_name);
-
-	ERR_FAIL_COND_V(!named_textures.has(key), RID());
-
-	NamedTexture& named_texture = named_textures[key];
-	NamedTexture& view_texture = named_textures[view_key];
-
-	view_texture.format = named_texture.format;
-	view_texture.is_unique = named_texture.is_unique;
-
-	view_texture.texture =
-		RD::get_singleton()->texture_create_shared(p_view, named_texture.texture);
-
-	Array arr = {p_context, p_view_name};
-	RD::get_singleton()->set_resource_name(
-		view_texture.texture, String("RenderBuffer View {0}/{1}").format(arr));
-
-	update_sizes(named_texture);
-
-	return view_texture.texture;
 }
 
 RID RenderSceneBuffersRD::get_texture(
@@ -452,55 +387,6 @@ RID RenderSceneBuffersRD::get_texture_slice(const StringName& p_context,
 {
 	return get_texture_slice_view(
 		p_context, p_texture_name, p_layer, p_mipmap, p_layers, p_mipmaps, RD::TextureView());
-}
-
-RID RenderSceneBuffersRD::get_texture_slice_view(const StringName& p_context,
-	const StringName& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
-	const uint32_t p_layers, const uint32_t p_mipmaps, RD::TextureView p_view)
-{
-	NTKey key(p_context, p_texture_name);
-
-	// check if this is a known texture
-	ERR_FAIL_COND_V(!named_textures.has(key), RID());
-	NamedTexture& named_texture = named_textures[key];
-	ERR_FAIL_COND_V(named_texture.texture.is_null(), RID());
-
-	// check if we're in bounds
-	ERR_FAIL_UNSIGNED_INDEX_V(p_layer, named_texture.format.array_layers, RID());
-	ERR_FAIL_COND_V(p_layers == 0, RID());
-	ERR_FAIL_COND_V(p_layer + p_layers > named_texture.format.array_layers, RID());
-	ERR_FAIL_UNSIGNED_INDEX_V(p_mipmap, named_texture.format.mipmaps, RID());
-	ERR_FAIL_COND_V(p_mipmaps == 0, RID());
-	ERR_FAIL_COND_V(p_mipmap + p_mipmaps > named_texture.format.mipmaps, RID());
-
-	// asking the whole thing? just return the original
-	RD::TextureView default_view = RD::TextureView();
-	if (p_layer == 0 && p_mipmap == 0 && named_texture.format.array_layers == p_layers &&
-		named_texture.format.mipmaps == p_mipmaps && p_view == default_view) {
-		return named_texture.texture;
-	}
-
-	// see if we have this
-	NTSliceKey slice_key(p_layer, p_layers, p_mipmap, p_mipmaps, p_view);
-	if (named_texture.slices.has(slice_key)) {
-		return named_texture.slices[slice_key];
-	}
-
-	// create our slice
-	RID& slice = named_texture.slices[slice_key];
-	slice = RD::get_singleton()->texture_create_shared_from_slice(p_view, named_texture.texture,
-		p_layer, p_mipmap, p_mipmaps,
-		p_layers > 1 ? RD::TEXTURE_SLICE_2D_ARRAY : RD::TEXTURE_SLICE_2D, p_layers);
-
-	Array arr = {p_context, p_texture_name, itos(p_layer), itos(p_layers), itos(p_mipmap),
-		itos(p_mipmaps), itos(p_view.format_override), itos(p_view.swizzle_r),
-		itos(p_view.swizzle_g), itos(p_view.swizzle_b), itos(p_view.swizzle_a)};
-	RD::get_singleton()->set_resource_name(slice,
-		String("RenderBuffer {0}/{1}, layer {2}/{3}, mipmap {4}/{5}, view {6}/{7}/{8}/{9}/{10}")
-			.format(arr));
-
-	// and return our slice
-	return slice;
 }
 
 Size2i RenderSceneBuffersRD::get_texture_slice_size(
@@ -857,8 +743,7 @@ RID RenderSceneBuffersRD::get_velocity_buffer(bool p_get_msaa, uint32_t p_layer)
 			return velocity_slice;
 		}
 		else {
-			return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY,
- p_layer, 0);
+			return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY, p_layer, 0);
 		}
 	}
 }

@@ -67,8 +67,8 @@ public:
 			// 					   "{DEBUG_ENABLED unavailable}"
 			// #endif
 			// 					"' used a total of " + itos(buffers.size()) +
-			// 					" buffers. A large number may indicate a waste of VRAM and can be brought down
-			// by tweaking MAX_EXTRA_BUFFERS for this buffer.");
+			// 					" buffers. A large number may indicate a waste of VRAM and can be brought
+			// down by tweaking MAX_EXTRA_BUFFERS for this buffer.");
 		}
 
 		RenderingDevice* rd = RD::RenderingDevice::get_singleton();
@@ -99,10 +99,10 @@ public:
 				// #else
 				// 						   "{DEBUG_ENABLED unavailable}"
 				// #endif
-				// 						"' peaked to " + itos(elem_count) + " elements and shrinking it to " +
-				// itos(max_extra_buffers) +
-				// 						". If you see this message often, then something is wrong with rendering or
-				// MAX_EXTRA_BUFFERS needs to be increased.");
+				// 						"' peaked to " + itos(elem_count) + " elements and shrinking it to "
+				// + itos(max_extra_buffers) +
+				// 						". If you see this message often, then something is wrong with rendering
+				// or MAX_EXTRA_BUFFERS needs to be increased.");
 			}
 		}
 
@@ -130,9 +130,9 @@ enum class MultiUmaBufferType : uint8_t
 /// It stands for Unified Memory Architecture. There are two kinds of UMA:
 ///	 1. HW UMA. This is the case of iGPUs (specially Android, iOS, Apple ARM-based macOS, PS4 & PS5)
 ///		The CPU and GPU share the same die and same memory. So regular RAM and VRAM are internally
-///the 		same thing. There may be some differences between them in practice due to cache
-///synchronization 		behaviors or the regular BW RAM may be purposely throttled (as is the case of PS4
-///& PS5).
+/// the 		same thing. There may be some differences between them in practice due to cache
+/// synchronization 		behaviors or the regular BW RAM may be purposely throttled (as is the
+/// case of PS4 & PS5).
 ///  2. "Pretended UMA". On PC Desktop GPUs with ReBAR enabled can pretend VRAM behaves like normal
 ///		RAM, while internally the data is moved across the PCIe Bus. This can cause differences
 ///		in execution time of the routines that write to GPU buffers as the region is often uncached
@@ -208,7 +208,7 @@ enum class MultiUmaBufferType : uint8_t
 /// # Tricks
 ///
 ///	Godot's shadow mapping code calls uma_buffer.uniform_buffers._get(-p_pass_offset) (i.e. a
-///negative value)
+/// negative value)
 /// because for various reasons its shadow mapping code was written like this:
 ///
 ///		for( uint32_t i = 0u; i < num_passes; ++i ) {
@@ -310,8 +310,8 @@ class MultiUmaBuffer : public MultiUmaBufferBase
 			RID buffer;
 			switch (info.type) {
 			case MultiUmaBufferType::STORAGE:
-				buffer = rd->storage_buffer_create(info.size_bytes, Vector<uint8_t>(), uint32_t(),
-					RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);
+				buffer = rd->storage_buffer_create(
+					info.size_bytes, Vector<uint8_t>(), RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);
 				break;
 			case MultiUmaBufferType::VERTEX:
 				buffer = rd->vertex_buffer_create(

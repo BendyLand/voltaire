@@ -32,7 +32,6 @@
 
 #include "core/templates/mem_unique_ptr.h"
 #include "servers/physics_2d/physics_server_2d_types.h"
-#include "servers/physics_2d/queries/physics_point_query_parameters_2d.h"
 #include "servers/physics_2d/queries/physics_ray_query_parameters_2d.h"
 #include "servers/physics_2d/queries/physics_shape_query_parameters_2d.h"
 

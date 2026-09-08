@@ -74,9 +74,6 @@ public:
 	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
 
 	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
-
-	void set_exclude(const TypedArray<RID>& p_exclude);
-	TypedArray<RID> get_exclude() const;
 };
 
 

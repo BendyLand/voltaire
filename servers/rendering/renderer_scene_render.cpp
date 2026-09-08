@@ -30,9 +30,6 @@
 
 #include "renderer_scene_render.h"
 
-/////////////////////////////////////////////////////////////////////////////
-// CameraData
-
 void RendererSceneRender::CameraData::set_camera(const Transform3D p_transform,
 	const Projection p_projection, bool p_is_orthogonal, bool p_vaspect,
 	const Vector2& p_taa_jitter, float p_taa_frame_count, uint32_t p_visible_layers)
@@ -242,12 +239,6 @@ void RendererSceneRender::compositor_effect_set_enabled(RID p_effect, bool p_ena
 	compositor_storage.compositor_effect_set_enabled(p_effect, p_enabled);
 }
 
-void RendererSceneRender::compositor_effect_set_callback(
-	RID p_effect, RSE::CompositorEffectCallbackType p_callback_type, const Callable& p_callback)
-{
-	compositor_storage.compositor_effect_set_callback(p_effect, p_callback_type, p_callback);
-}
-
 void RendererSceneRender::compositor_effect_set_flag(
 	RID p_effect, RSE::CompositorEffectFlags p_flag, bool p_set)
 {
@@ -269,20 +260,6 @@ bool RendererSceneRender::is_compositor(RID p_rid) const
 {
 	return compositor_storage.is_compositor(p_rid);
 }
-
-void RendererSceneRender::compositor_set_compositor_effects(
-	RID p_compositor, const Array& p_effects)
-{
-	Vector<RID> rids;
-	for (int i = 0; i < p_effects.size(); i++) {
-		RID rid = p_effects[i];
-		rids.push_back(rid);
-	}
-
-	compositor_storage.compositor_set_compositor_effects(p_compositor, rids);
-}
-
-/* Environment API */
 
 RID RendererSceneRender::environment_allocate()
 {
@@ -1132,18 +1109,6 @@ void RendererSceneRender::screen_space_roughness_limiter_set_active(
 
 bool RendererSceneRender::screen_space_roughness_limiter_is_active() const { return false; }
 
-Array RendererSceneRender::bake_render_uv2(
-	RID p_base, const Array& p_material_cache, const Vector2i& p_size)
-{
-	return Array();
-}
-
-PackedByteArray RendererSceneRender::bake_render_area_light_atlas(const Array& p_light_cache,
-	const Array& p_light_xforms, const Vector2i& p_size, int p_atlas_size)
-{
-	return PackedByteArray();
-}
-
 bool RendererSceneRender::free(RID p_rid) { return false; }
 
 void RendererSceneRender::sdfgi_set_debug_probe_select(
@@ -1163,4 +1128,5 @@ void RendererSceneRender::lightmaps_set_bicubic_filter(bool p_enable) {}
 void RendererSceneRender::material_set_use_debanding(bool p_enable) {}
 
 void RendererSceneRender::update() {}
+
 

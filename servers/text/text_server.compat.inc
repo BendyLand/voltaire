@@ -59,14 +59,6 @@ void TextServer::_shaped_text_draw_outline_bind_compat_104872(const RID& p_shape
 		p_shaped, p_canvas, p_pos, p_clip_l, p_clip_r, p_outline_size, p_color, 0.0);
 }
 
-PackedInt32Array TextServer::_shaped_text_get_word_breaks_bind_compat_90732(
-	const RID& p_shaped, BitField<TextServer::GraphemeFlag> p_grapheme_flags) const
-{
-	return shaped_text_get_word_breaks(p_shaped, p_grapheme_flags, 0);
-}
-
-void TextServer::_bind_compatibility_methods() {}
-
 #endif // DISABLE_DEPRECATED
 
 

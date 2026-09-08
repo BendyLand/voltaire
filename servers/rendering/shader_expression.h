@@ -32,8 +32,10 @@
 
 #include "core/math/expression.h"
 
-class ShaderExpression : public Expression {
-
+class ShaderExpression : public Expression
+{
 protected:
-	virtual Error _get_token(Token &r_token) override;
+	virtual Error _get_token(Token& r_token) override;
 };
+
+

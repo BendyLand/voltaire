@@ -33,26 +33,10 @@
 
 using namespace RendererRD;
 
-SortEffects::SortEffects() {
-	Vector<String> sort_modes;
-	sort_modes.push_back("\n#define MODE_SORT_BLOCK\n");
-	sort_modes.push_back("\n#define MODE_SORT_STEP\n");
-	sort_modes.push_back("\n#define MODE_SORT_INNER\n");
+SortEffects::~SortEffects() { shader.version_free(shader_version); }
 
-	shader.initialize(sort_modes);
-
-	shader_version = shader.version_create();
-
-	for (int i = 0; i < SORT_MODE_MAX; i++) {
-		pipelines[i] = RD::get_singleton()->compute_pipeline_create(shader.version_get_shader(shader_version, i));
-	}
-}
-
-SortEffects::~SortEffects() {
-	shader.version_free(shader_version);
-}
-
-void SortEffects::sort_buffer(RID p_uniform_set, int p_size) {
+void SortEffects::sort_buffer(RID p_uniform_set, int p_size)
+{
 	PushConstant push_constant;
 	push_constant.total_elements = p_size;
 
@@ -66,9 +50,11 @@ void SortEffects::sort_buffer(RID p_uniform_set, int p_size) {
 
 	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
 
-	RD::get_singleton()->compute_list_bind_compute_pipeline(compute_list, pipelines[SORT_MODE_BLOCK]);
+	RD::get_singleton()->compute_list_bind_compute_pipeline(
+		compute_list, pipelines[SORT_MODE_BLOCK]);
 	RD::get_singleton()->compute_list_bind_uniform_set(compute_list, p_uniform_set, 1);
-	RD::get_singleton()->compute_list_set_push_constant(compute_list, &push_constant, sizeof(PushConstant));
+	RD::get_singleton()->compute_list_set_push_constant(
+		compute_list, &push_constant, sizeof(PushConstant));
 	RD::get_singleton()->compute_list_dispatch(compute_list, numThreadGroups, 1, 1);
 
 	int presorted = 512;
@@ -77,7 +63,8 @@ void SortEffects::sort_buffer(RID p_uniform_set, int p_size) {
 		RD::get_singleton()->compute_list_add_barrier(compute_list);
 
 		done = true;
-		RD::get_singleton()->compute_list_bind_compute_pipeline(compute_list, pipelines[SORT_MODE_STEP]);
+		RD::get_singleton()->compute_list_bind_compute_pipeline(
+			compute_list, pipelines[SORT_MODE_STEP]);
 
 		numThreadGroups = 0;
 
@@ -95,24 +82,29 @@ void SortEffects::sort_buffer(RID p_uniform_set, int p_size) {
 
 		unsigned int nMergeSize = presorted * 2;
 
-		for (unsigned int nMergeSubSize = nMergeSize >> 1; nMergeSubSize > 256; nMergeSubSize = nMergeSubSize >> 1) {
+		for (unsigned int nMergeSubSize = nMergeSize >> 1; nMergeSubSize > 256;
+			 nMergeSubSize = nMergeSubSize >> 1) {
 			push_constant.job_params[0] = nMergeSubSize;
 			if (nMergeSubSize == nMergeSize >> 1) {
 				push_constant.job_params[1] = (2 * nMergeSubSize - 1);
 				push_constant.job_params[2] = -1;
-			} else {
+			}
+			else {
 				push_constant.job_params[1] = nMergeSubSize;
 				push_constant.job_params[2] = 1;
 			}
 			push_constant.job_params[3] = 0;
 
-			RD::get_singleton()->compute_list_set_push_constant(compute_list, &push_constant, sizeof(PushConstant));
+			RD::get_singleton()->compute_list_set_push_constant(
+				compute_list, &push_constant, sizeof(PushConstant));
 			RD::get_singleton()->compute_list_dispatch(compute_list, numThreadGroups, 1, 1);
 			RD::get_singleton()->compute_list_add_barrier(compute_list);
 		}
 
-		RD::get_singleton()->compute_list_bind_compute_pipeline(compute_list, pipelines[SORT_MODE_INNER]);
-		RD::get_singleton()->compute_list_set_push_constant(compute_list, &push_constant, sizeof(PushConstant));
+		RD::get_singleton()->compute_list_bind_compute_pipeline(
+			compute_list, pipelines[SORT_MODE_INNER]);
+		RD::get_singleton()->compute_list_set_push_constant(
+			compute_list, &push_constant, sizeof(PushConstant));
 		RD::get_singleton()->compute_list_dispatch(compute_list, numThreadGroups, 1, 1);
 
 		presorted *= 2;
@@ -120,3 +112,5 @@ void SortEffects::sort_buffer(RID p_uniform_set, int p_size) {
 
 	RD::get_singleton()->compute_list_end();
 }
+
+

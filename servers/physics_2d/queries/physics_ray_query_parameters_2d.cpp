@@ -42,25 +42,4 @@ Ref<PhysicsRayQueryParameters2D> PhysicsRayQueryParameters2D::create(
 	return params;
 }
 
-void PhysicsRayQueryParameters2D::set_exclude(const TypedArray<RID>& p_exclude)
-{
-	parameters.exclude.clear();
-	for (int i = 0; i < p_exclude.size(); i++) {
-		parameters.exclude.insert(p_exclude[i]);
-	}
-}
-
-TypedArray<RID> PhysicsRayQueryParameters2D::get_exclude() const
-{
-	TypedArray<RID> ret;
-	ret.resize(parameters.exclude.size());
-	int idx = 0;
-	for (const RID& E : parameters.exclude) {
-		ret[idx++] = E;
-	}
-	return ret;
-}
-
-void PhysicsRayQueryParameters2D::_bind_methods() {}
-
 

@@ -96,8 +96,7 @@ void MovieWriter::add_frame()
 	const int movie_time_seconds = Engine::get_singleton()->get_frames_drawn() / fps;
 	const int frame_remainder = Engine::get_singleton()->get_frames_drawn() % fps;
 	const String movie_time =
-		vformat("%s:%s:%s:%s", String::num(movie_time_second
-s / 3600, 0).pad_zeros(2),
+		vformat("%s:%s:%s:%s", String::num(movie_time_seconds / 3600, 0).pad_zeros(2),
 			String::num((movie_time_seconds % 3600) / 60, 0).pad_zeros(2),
 			String::num(movie_time_seconds % 60, 0).pad_zeros(2),
 			String::num(frame_remainder, 0).pad_zeros(2));

@@ -58,15 +58,6 @@ void PhysicsDirectBodyState2D::integrate_forces()
 	set_angular_velocity(av);
 }
 
-Object* PhysicsDirectBodyState2D::get_contact_collider_object(int p_contact_idx) const
-{
-	ObjectID objid = get_contact_collider_id(p_contact_idx);
-	Object* obj = ObjectDB::get_instance(objid);
-	return obj;
-}
-
-void PhysicsDirectBodyState2D::_bind_methods() {}
-
 PhysicsDirectBodyState2D::PhysicsDirectBodyState2D() {}
 
 

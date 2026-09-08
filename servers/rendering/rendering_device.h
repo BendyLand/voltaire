@@ -91,14 +91,11 @@ protected:
 #ifndef DISABLE_DEPRECATED
 	RID _shader_create_from_bytecode_bind_compat_79606(const Vector<uint8_t>& p_shader_binary);
 	RID _texture_create_from_extension_bind_compat_105570(TextureType p_type, DataFormat p_format,
-		TextureSamples p_samples, uint32_t p_usage,
-		uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
+		TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint64_t p_width,
+		uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
 	static void _bind_compatibility_methods();
 #endif
 
-	/***************************/
-	/**** ID INFRASTRUCTURE ****/
-	/***************************/
 public:
 	// base numeric ID for all types
 	enum
@@ -127,10 +124,6 @@ private:
 	void _free_dependencies(RID p_id);
 
 private:
-	/***************************/
-	/**** BUFFER MANAGEMENT ****/
-	/***************************/
-
 	// These are temporary buffers on CPU memory that hold
 	// the information until the CPU fetches it and places it
 	// either on GPU buffers, or images (textures). It ensures
@@ -278,16 +271,10 @@ public:
 	Error buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size);
 	Vector<uint8_t> buffer_get_data(RID p_buffer, uint32_t p_offset = 0,
 		uint32_t p_size = 0); // This causes stall, only use to retrieve large buffers for saving.
-	Error buffer_get_data_async(
-		RID p_buffer, uint32_t p_offset = 0, uint32_t p_size = 0);
+	Error buffer_get_data_async(RID p_buffer, uint32_t p_offset = 0, uint32_t p_size = 0);
 	uint64_t buffer_get_device_address(RID p_buffer);
 	uint8_t* buffer_persistent_map_advance(RID p_buffer);
 	void buffer_flush(RID p_buffer);
-
-private:
-	/******************/
-	/**** CALLBACK ****/
-	/******************/
 
 public:
 	enum CallbackResourceType
@@ -333,10 +320,6 @@ public:
 
 	Error driver_callback_add(
 		RDD::DriverCallback p_callback, void* p_userdata, VectorView<CallbackResource> p_resources);
-
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
 
 	// In modern APIs, the concept of textures may not exist;
 	// instead there is the image (the memory pretty much,
@@ -497,9 +480,8 @@ public:
 		const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
 	RID texture_create_shared(const TextureView& p_view, RID p_with_texture);
 	RID texture_create_from_extension(TextureType p_type, DataFormat p_format,
-		TextureSamples p_samples, uint32_t p_usage,
-		uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers,
-		uint64_t p_mipmaps = 1);
+		TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint64_t p_width,
+		uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps = 1);
 	RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
 		uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1,
 		TextureSliceType p_slice_type = TEXTURE_SLICE_2D, uint32_t p_layers = 0);
@@ -509,8 +491,7 @@ public:
 										  // textures will most likely force a flush
 	Error texture_get_data_async(RID p_texture, uint32_t p_layer);
 
-	bool texture_is_format_supported_for_usage(
-		DataFormat p_format, uint32_t p_usage) const;
+	bool texture_is_format_supported_for_usage(DataFormat p_format, uint32_t p_usage) const;
 	bool texture_is_shared(RID p_texture);
 	bool texture_is_valid(RID p_texture);
 	TextureFormat texture_get_format(RID p_texture);
@@ -530,10 +511,6 @@ public:
 	bool texture_is_discardable(RID p_texture);
 
 public:
-	/*************/
-	/**** VRS ****/
-	/*************/
-
 	enum VRSMethod
 	{
 		VRS_METHOD_NONE,
@@ -555,10 +532,6 @@ public:
 	VRSMethod vrs_get_method() const;
 	DataFormat vrs_get_format() const;
 	Size2i vrs_get_texel_size() const;
-
-	/*********************/
-	/**** FRAMEBUFFER ****/
-	/*********************/
 
 	// In modern APIs, generally, framebuffers work similar to how they
 	// do in OpenGL, with the exception that
@@ -794,9 +767,6 @@ public:
 	FramebufferFormatID framebuffer_get_format(RID p_framebuffer);
 	Size2 framebuffer_get_size(RID p_framebuffer);
 
-	/*****************/
-	/**** SAMPLER ****/
-	/*****************/
 private:
 	RID_Owner<RDD::SamplerID, true> sampler_owner;
 
@@ -804,10 +774,6 @@ public:
 	RID sampler_create(const SamplerState& p_state);
 	bool sampler_is_format_supported_for_filter(
 		DataFormat p_format, SamplerFilter p_sampler_filter) const;
-
-	/**********************/
-	/**** VERTEX ARRAY ****/
-	/**********************/
 
 	typedef int64_t VertexFormatID;
 
@@ -956,11 +922,11 @@ public:
 		STORAGE_BUFFER_USAGE_DISPATCH_INDIRECT = (1 << 0),
 	};
 
-	RID vertex_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
-		uint32_t p_creation_bits = 0);
+	RID vertex_buffer_create(
+		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
 
-	RID _vertex_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
-		uint32_t p_creation_bits = 0)
+	RID _vertex_buffer_create(
+		uint32_t p_size_bytes, const Vector<uint8_t>& p_data, uint32_t p_creation_bits = 0)
 	{
 		return vertex_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
@@ -985,12 +951,7 @@ public:
 	RID index_array_create(RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count);
 
 private:
-	uint32_t _creation_to_usage_bits(
-		uint32_t p_creation_bits);
-
-	/****************/
-	/**** SHADER ****/
-	/****************/
+	uint32_t _creation_to_usage_bits(uint32_t p_creation_bits);
 
 	// Some APIs (e.g., Vulkan) specifies a really complex behavior for the application
 	// in order to tell when descriptor sets need to be re-bound (or not).
@@ -1061,8 +1022,7 @@ private:
 
 #ifndef DISABLE_DEPRECATED
 public:
-	enum BarrierMask
-	{
+	enum BarrierMask{
 		BARRIER_MASK_VERTEX = 1,
 		BARRIER_MASK_FRAGMENT = 8,
 		BARRIER_MASK_COMPUTE = 2,
@@ -1073,8 +1033,7 @@ public:
 		BARRIER_MASK_NO_BARRIER = 0x8000,
 	};
 
-	enum InitialAction
-	{
+	enum InitialAction{
 		INITIAL_ACTION_LOAD,
 		INITIAL_ACTION_CLEAR,
 		INITIAL_ACTION_DISCARD,
@@ -1086,8 +1045,7 @@ public:
 		INITIAL_ACTION_CONTINUE = INITIAL_ACTION_LOAD,
 	};
 
-	enum FinalAction
-	{
+	enum FinalAction{
 		FINAL_ACTION_STORE,
 		FINAL_ACTION_DISCARD,
 		FINAL_ACTION_MAX,
@@ -1095,8 +1053,8 @@ public:
 		FINAL_ACTION_CONTINUE = FINAL_ACTION_STORE,
 	};
 
-	void barrier(uint32_t p_from = BARRIER_MASK_ALL_BARRIERS,
-		uint32_t p_to = BARRIER_MASK_ALL_BARRIERS);
+	void barrier(
+		uint32_t p_from = BARRIER_MASK_ALL_BARRIERS, uint32_t p_to = BARRIER_MASK_ALL_BARRIERS);
 	void full_barrier();
 	void draw_command_insert_label(String p_label_name, const Color& p_color = Color(1, 1, 1, 1));
 	Error draw_list_begin_split(RID p_framebuffer, uint32_t p_splits, DrawListID* r_split_ids,
@@ -1133,12 +1091,11 @@ private:
 		const Vector<uint8_t>& p_data, uint32_t p_post_barrier);
 	Error _buffer_clear_bind_compat_84976(
 		RID p_buffer, uint32_t p_offset, uint32_t p_size, uint32_t p_post_barrier);
-	Error _texture_update_bind_compat_84976(RID p_texture, uint32_t p_layer,
-		const Vector<uint8_t>& p_data, uint32_t p_post_barrier);
+	Error _texture_update_bind_compat_84976(
+		RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data, uint32_t p_post_barrier);
 	Error _texture_copy_bind_compat_84976(RID p_from_texture, RID p_to_texture,
 		const Vector3& p_from, const Vector3& p_to, const Vector3& p_size, uint32_t p_src_mipmap,
-		uint32_t p_dst_mipmap, uint32_t p_src_layer, uint32_t p_dst_layer,
-		uint32_t p_post_barrier);
+		uint32_t p_dst_mipmap, uint32_t p_src_layer, uint32_t p_dst_layer, uint32_t p_post_barrier);
 	Error _texture_clear_bind_compat_84976(RID p_texture, const Color& p_color,
 		uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers,
 		uint32_t p_post_barrier);
@@ -1193,29 +1150,22 @@ public:
 
 	uint64_t shader_get_vertex_input_attribute_mask(RID p_shader);
 
-	/******************/
-	/**** UNIFORMS ****/
-	/******************/
 	String get_perf_report() const;
 
-	/*****************/
-	/**** BUFFERS ****/
-	/*****************/
+	RID uniform_buffer_create(
+		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
 
-	RID uniform_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
-		uint32_t p_creation_bits = 0);
-
-	RID _uniform_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
-		uint32_t p_creation_bits = 0)
+	RID _uniform_buffer_create(
+		uint32_t p_size_bytes, const Vector<uint8_t>& p_data, uint32_t p_creation_bits = 0)
 	{
 		return uniform_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
 
-	RID storage_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {},
-		uint32_t p_creation_bits = 0);
+	RID storage_buffer_create(
+		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
 
-	RID _storage_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data,
-		uint32_t p_creation_bits = 0)
+	RID _storage_buffer_create(
+		uint32_t p_size_bytes, const Vector<uint8_t>& p_data, uint32_t p_creation_bits = 0)
 	{
 		return storage_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
@@ -1363,8 +1313,8 @@ private:
 
 public:
 	/** Bake a set of uniforms that can be bound at runtime with the given shader.
-	 * @remark				Setting p_linear_pool = true while keeping the RID around for longer than
-	 *the current frame will result in undefined behavior.
+	 * @remark				Setting p_linear_pool = true while keeping the RID around for longer
+	 *than the current frame will result in undefined behavior.
 	 * @param p_uniforms	The uniforms to bake into a set.
 	 * @param p_shader		The shader you intend to bind these uniforms with.
 	 * @param p_set_index	The set. Should be in range [0; 4)
@@ -1384,10 +1334,6 @@ public:
 		RID p_uniform_set, InvalidationCallback p_callback, void* p_userdata);
 
 	bool uniform_sets_have_linear_pools() const;
-
-	/*******************/
-	/**** PIPELINES ****/
-	/*******************/
 
 	// Render pipeline contains ALL the
 	// information required for drawing.
@@ -1472,8 +1418,7 @@ public:
 		const PipelineRasterizationState& p_rasterization_state,
 		const PipelineMultisampleState& p_multisample_state,
 		const PipelineDepthStencilState& p_depth_stencil_state,
-		const PipelineColorBlendState& p_blend_state,
-		uint32_t p_dynamic_state_flags = 0,
+		const PipelineColorBlendState& p_blend_state, uint32_t p_dynamic_state_flags = 0,
 		uint32_t p_for_render_pass = 0,
 		const Vector<PipelineSpecializationConstant>& p_specialization_constants =
 			Vector<PipelineSpecializationConstant>());
@@ -1507,9 +1452,6 @@ public:
 	void update_pipeline_cache(bool p_closing = false);
 
 private:
-	/****************/
-	/**** SCREEN ****/
-	/****************/
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID> screen_swap_chains;
 	HashMap<DisplayServerEnums::WindowID, RDD::FramebufferID> screen_framebuffers;
 
@@ -1534,10 +1476,6 @@ public:
 	Error screen_free(DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
 
 private:
-	/********************************/
-	/**** ACCELERATION STRUCTURE ****/
-	/********************************/
-
 	struct AccelerationStructure
 	{
 		// --- Shared ---
@@ -1591,8 +1529,7 @@ public:
 		uint32_t index_count = 0;
 	};
 
-	RID blas_create(Span<AccelerationStructureGeometry> p_geometries,
-		uint32_t p_flags);
+	RID blas_create(Span<AccelerationStructureGeometry> p_geometries, uint32_t p_flags);
 	RID tlas_create(uint32_t p_max_instance_count, uint32_t p_flags);
 
 	typedef int64_t HitShaderBindingTableRange;
@@ -1611,10 +1548,6 @@ public:
 	Error tlas_build(RID p_tlas, Span<AccelerationStructureInstance> p_instances);
 
 private:
-	/**********************************/
-	/**** HIT SHADER BINDING TABLE ****/
-	/**********************************/
-
 	struct HitShaderBindingTable : Buffer
 	{
 		RID raytracing_pipeline_id;
@@ -1651,10 +1584,6 @@ public:
 	Error hit_sbt_range_free(RID p_hit_sbt, HitShaderBindingTableRange p_range);
 	Error hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTableRange p_range,
 		uint32_t p_hit_group_offset, Span<uint32_t> p_hit_group_indices);
-
-	/*************************/
-	/**** DRAW LISTS (II) ****/
-	/*************************/
 
 private:
 	// Draw list contains both the command buffer
@@ -1777,13 +1706,11 @@ public:
 	/**
 	 * @param p_clear_color_values Color values must use linear encoding when HDR 2D is active.
 	 */
-	DrawListID draw_list_begin(RID p_framebuffer,
-		uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
+	DrawListID draw_list_begin(RID p_framebuffer, uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
 		VectorView<Color> p_clear_color_values = VectorView<Color>(),
 		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
 		const Rect2& p_region = Rect2(), uint32_t p_breadcrumb = 0);
-	DrawListID _draw_list_begin_bind(RID p_framebuffer,
-		uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
+	DrawListID _draw_list_begin_bind(RID p_framebuffer, uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
 		const Vector<Color>& p_clear_color_values = Vector<Color>(),
 		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
 		const Rect2& p_region = Rect2(), uint32_t p_breadcrumb = 0);
@@ -1814,10 +1741,6 @@ public:
 	void draw_list_end();
 
 private:
-	/**************************/
-	/**** RAYTRACING LISTS ****/
-	/**************************/
-
 	struct RaytracingList
 	{
 		bool active = false;
@@ -1882,10 +1805,6 @@ public:
 	void raytracing_list_end();
 
 private:
-	/***********************/
-	/**** COMPUTE LISTS ****/
-	/***********************/
-
 	struct ComputeList
 	{
 		bool active = false;
@@ -1948,10 +1867,6 @@ public:
 	void compute_list_end();
 
 private:
-	/*************************/
-	/**** TRANSFER WORKER ****/
-	/*************************/
-
 	struct TransferWorker
 	{
 		uint32_t index = 0;
@@ -2002,10 +1917,6 @@ private:
 	void _wait_for_transfer_workers();
 	void _free_transfer_workers();
 
-	/***********************/
-	/**** COMMAND GRAPH ****/
-	/***********************/
-
 	bool _texture_make_mutable(Texture* p_texture, RID p_texture_id);
 	bool _buffer_make_mutable(Buffer* p_buffer, RID p_buffer_id);
 	bool _vertex_array_make_mutable(
@@ -2023,20 +1934,12 @@ private:
 
 	RenderingDeviceGraph draw_graph;
 
-	/**************************/
-	/**** QUEUE MANAGEMENT ****/
-	/**************************/
-
 	RDD::CommandQueueFamilyID main_queue_family;
 	RDD::CommandQueueFamilyID transfer_queue_family;
 	RDD::CommandQueueFamilyID present_queue_family;
 	RDD::CommandQueueID main_queue;
 	RDD::CommandQueueID transfer_queue;
 	RDD::CommandQueueID present_queue;
-
-	/**************************/
-	/**** FRAME MANAGEMENT ****/
-	/**************************/
 
 	// This is the frame structure. There are normally
 	// 3 of these (used for triple buffering), or 2
@@ -2181,20 +2084,12 @@ public:
 	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
 #endif // DISABLE_DEPRECATED
 
-	/****************/
-	/**** Timing ****/
-	/****************/
-
 	void capture_timestamp(const String& p_name);
 	uint32_t get_captured_timestamps_count() const;
 	uint64_t get_captured_timestamps_frame() const;
 	uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const;
 	uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const;
 	String get_captured_timestamp_name(uint32_t p_index) const;
-
-	/****************/
-	/**** LIMITS ****/
-	/****************/
 
 	uint64_t limit_get(Limit p_limit) const;
 

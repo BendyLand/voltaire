@@ -149,8 +149,6 @@ void AudioEffectSpectrumAnalyzerInstance::process(
 	}
 }
 
-void AudioEffectSpectrumAnalyzerInstance::_bind_methods() {}
-
 Vector2 AudioEffectSpectrumAnalyzerInstance::get_magnitude_for_frequency_range(
 	float p_begin, float p_end, MagnitudeMode p_mode) const
 {
@@ -227,8 +225,6 @@ AudioEffectSpectrumAnalyzer::FFTSize AudioEffectSpectrumAnalyzer::get_fft_size()
 {
 	return fft_size;
 }
-
-void AudioEffectSpectrumAnalyzer::_bind_methods() {}
 
 AudioEffectSpectrumAnalyzer::AudioEffectSpectrumAnalyzer()
 {
