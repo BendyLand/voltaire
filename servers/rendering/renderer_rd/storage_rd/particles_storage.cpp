@@ -1178,8 +1178,6 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 
 	// todo should maybe compute all particle systems together?
 	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
-	RD::get_singleton()->compute_list_bind_compute_pipeline(
-		compute_list, m->shader_data->pipeline.get_rid());
 	RD::get_singleton()->compute_list_bind_uniform_set(
 		compute_list, particles_shader.base_uniform_set, BASE_UNIFORM_SET);
 	RD::get_singleton()->compute_list_bind_uniform_set(

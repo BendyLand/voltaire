@@ -85,17 +85,6 @@ private:
 	bool local_device_processing = false;
 	bool is_main_instance = false;
 
-protected:
-	static void _bind_methods();
-
-#ifndef DISABLE_DEPRECATED
-	RID _shader_create_from_bytecode_bind_compat_79606(const Vector<uint8_t>& p_shader_binary);
-	RID _texture_create_from_extension_bind_compat_105570(TextureType p_type, DataFormat p_format,
-		TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint64_t p_width,
-		uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
-	static void _bind_compatibility_methods();
-#endif
-
 public:
 	// base numeric ID for all types
 	enum
@@ -217,9 +206,6 @@ private:
 		uint32_t frame_local_count = 0;
 		uint32_t size = 0;
 	};
-
-	Error _buffer_update(
-		Buffer* p_buffer, RID p_buffer_id, uint32_t p_offset, uint32_t p_size, const void* p_data);
 
 public:
 	Error buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset,
@@ -427,9 +413,6 @@ public:
 	void _texture_check_pending_clear(RID p_texture_rid, Texture* p_texture);
 	void _texture_clear_color(RID p_texture_rid, Texture* p_texture, const Color& p_color,
 		uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers);
-	void _texture_clear_depth_stencil(RID p_texture_rid, Texture* p_texture, float p_depth,
-		uint8_t p_stencil, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer,
-		uint32_t p_layers);
 	uint32_t _texture_vrs_method_to_usage_bits() const;
 	void _texture_ensure_shareable_format(RID p_texture, const DataFormat& p_shareable_format);
 
@@ -1141,8 +1124,6 @@ public:
 	Vector<uint8_t> shader_compile_binary_from_spirv(
 		const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
 
-	RID shader_create_from_spirv(
-		const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
 	RID shader_create_from_bytecode(
 		const Vector<uint8_t>& p_shader_binary, RID p_placeholder = RID());
 	RID shader_create_placeholder();
@@ -1151,15 +1132,6 @@ public:
 	uint64_t shader_get_vertex_input_attribute_mask(RID p_shader);
 
 	String get_perf_report() const;
-
-	RID uniform_buffer_create(
-		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
-
-	RID _uniform_buffer_create(
-		uint32_t p_size_bytes, const Vector<uint8_t>& p_data, uint32_t p_creation_bits = 0)
-	{
-		return uniform_buffer_create(p_size_bytes, p_data, p_creation_bits);
-	}
 
 	RID storage_buffer_create(
 		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
@@ -1259,10 +1231,6 @@ public:
 	};
 
 	typedef Uniform PipelineImmutableSampler;
-	RID shader_create_from_bytecode_with_samplers(const Vector<uint8_t>& p_shader_binary,
-		RID p_placeholder = RID(),
-		const Vector<PipelineImmutableSampler>& p_immutable_samplers =
-			Vector<PipelineImmutableSampler>());
 
 private:
 	static const uint32_t MAX_UNIFORM_SETS = 16;
@@ -1449,8 +1417,6 @@ public:
 		uint32_t p_max_trace_recursion_depth);
 	bool raytracing_pipeline_is_valid(RID p_pipeline);
 
-	void update_pipeline_cache(bool p_closing = false);
-
 private:
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID> screen_swap_chains;
 	HashMap<DisplayServerEnums::WindowID, RDD::FramebufferID> screen_framebuffers;
@@ -1571,8 +1537,6 @@ private:
 	RID_Owner<HitShaderBindingTable, true> hit_sbt_owner;
 
 	RDD::BufferID _hit_sbt_buffer_create(uint32_t p_buffer_size);
-	Error _hit_sbt_buffer_update(
-		HitShaderBindingTable* p_hit_sbt, RID p_hit_sbt_id, RDD::ShaderBindingTable& r_sbt);
 	void _hit_sbt_add_dirty_range(
 		HitShaderBindingTable* p_hit_sbt, uint32_t p_offset, uint32_t p_count);
 
@@ -1719,9 +1683,6 @@ public:
 	void draw_list_bind_render_pipeline(DrawListID p_list, RID p_render_pipeline);
 	void draw_list_bind_uniform_set(DrawListID p_list, RID p_uniform_set, uint32_t p_index);
 	void draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array);
-	void draw_list_bind_vertex_buffers_format(DrawListID p_list, VertexFormatID p_vertex_format,
-		uint32_t p_vertex_count, const Span<RID>& p_vertex_buffers,
-		const Span<uint64_t>& p_offsets = Vector<uint64_t>());
 	void draw_list_bind_index_array(DrawListID p_list, RID p_index_array);
 	void draw_list_set_line_width(DrawListID p_list, float p_width);
 	void draw_list_set_push_constant(DrawListID p_list, const void* p_data, uint32_t p_data_size);
@@ -1853,7 +1814,6 @@ private:
 
 public:
 	ComputeListID compute_list_begin();
-	void compute_list_bind_compute_pipeline(ComputeListID p_list, RID p_compute_pipeline);
 	void compute_list_bind_uniform_set(ComputeListID p_list, RID p_uniform_set, uint32_t p_index);
 	void compute_list_set_push_constant(
 		ComputeListID p_list, const void* p_data, uint32_t p_data_size);
@@ -2059,12 +2019,7 @@ protected:
 
 public:
 	void _free_internal(RID p_id);
-	void _begin_frame(bool p_presented = false);
-	void _end_frame();
 	void _execute_frame(bool p_present);
-	void _stall_for_frame(uint32_t p_frame);
-	void _stall_for_previous_frames();
-	void _flush_and_stall_for_all_frames(bool p_begin_frame = true);
 
 	template <typename T> void _free_rids(T& p_owner, const char* p_type);
 
@@ -2073,8 +2028,6 @@ public:
 #endif
 
 public:
-	Error initialize(RenderingContextDriver* p_context,
-		DisplayServerEnums::WindowID p_main_window = DisplayServerEnums::INVALID_WINDOW_ID);
 	void finalize();
 
 	void _set_max_fps(int p_max_fps);
@@ -2097,7 +2050,6 @@ public:
 
 	uint32_t get_frame_delay() const;
 
-	void submit();
 	void sync();
 
 	enum MemoryType

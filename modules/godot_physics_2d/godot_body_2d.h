@@ -33,6 +33,7 @@
 #include "core/templates/list.h"
 #include "core/templates/pair.h"
 #include "core/templates/vset.h"
+#include "core/typedefs.h"
 #include "godot_area_2d.h"
 #include "godot_collision_object_2d.h"
 #include "servers/physics_2d/physics_server_2d_constants.h"
@@ -408,7 +409,7 @@ public:
 
 // add contact inline
 
-void GodotBody2D::add_contact(const Vector2& p_local_pos, const Vector2& p_local_normal,
+_FORCE_INLINE_ void GodotBody2D::add_contact(const Vector2& p_local_pos, const Vector2& p_local_normal,
 	real_t p_depth, int p_local_shape, const Vector2& p_local_velocity_at_pos,
 	const Vector2& p_collider_pos, int p_collider_shape, const RID& p_collider,
 	const Vector2& p_collider_velocity_at_pos, const Vector2& p_impulse)

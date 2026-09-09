@@ -44,17 +44,12 @@
 
 int RenderingServerDefault::changes = 0;
 
-/* FREE */
-
 void RenderingServerDefault::_free(RID p_rid)
 {
 	if (unlikely(p_rid.is_null())) {
 		return;
 	}
 	if (RSG::utilities->free(p_rid)) {
-		return;
-	}
-	if (RSG::canvas->free(p_rid)) {
 		return;
 	}
 	if (RSG::viewport->free(p_rid)) {
@@ -155,8 +150,6 @@ Vector<RenderingServerTypes::FrameProfileArea> RenderingServerDefault::get_frame
 {
 	return frame_profile;
 }
-
-/* TESTING */
 
 Color RenderingServerDefault::get_default_clear_color()
 {

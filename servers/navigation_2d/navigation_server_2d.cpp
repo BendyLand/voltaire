@@ -332,16 +332,6 @@ const String NavigationServer2DManager::setting_property_name(
 
 NavigationServer2DManager* NavigationServer2DManager::get_singleton() { return singleton; }
 
-void NavigationServer2DManager::set_default_server(const String& p_name, int p_priority)
-{
-	const int id = find_server_id(p_name);
-	ERR_FAIL_COND(id == -1); // Not found
-	if (default_server_priority < p_priority) {
-		default_server_id = id;
-		default_server_priority = p_priority;
-	}
-}
-
 NavigationServer2D* NavigationServer2DManager::create_dummy_server_callback()
 {
 	return memnew(NavigationServer2DDummy);
