@@ -433,7 +433,6 @@ public:
 	static NavigationServer2DManager* get_singleton();
 
 	void set_default_server(const String& p_name, int p_priority = 0);
-	int find_server_id(const String& p_name);
 	int get_servers_count();
 	String get_server_name(int p_id);
 	NavigationServer2D* new_default_server();

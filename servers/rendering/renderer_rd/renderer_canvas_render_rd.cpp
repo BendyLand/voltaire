@@ -2749,39 +2749,6 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 	pipeline_key.lcd_blend = p_batch->has_blend;
 
 	switch (p_batch->command_type) {
-	case Item::Command::TYPE_RECT:
-	case Item::Command::TYPE_NINEPATCH: {
-		PushConstant push_constant = p_batch->push_constant();
-
-		pipeline_key.vertex_format_id = shader.quad_vertex_format_id;
-		pipeline =
-			_get_pipeline_specialization_or_ubershader(p_shader_data, pipeline_key, push_constant);
-		RD::get_singleton()->draw_list_bind_render_pipeline(p_draw_list, pipeline);
-		if (p_batch->has_blend) {
-			RD::get_singleton()->draw_list_set_blend_constants(p_draw_list, p_batch->modulate);
-		}
-
-		RD::get_singleton()->draw_list_set_push_constant(
-			p_draw_list, &push_constant, sizeof(push_constant));
-		FixedVector<RID, 1> vb = {p_batch->instance_buffer};
-		FixedVector<uint64_t, 1> vo = {uint64_t(p_batch->start) * sizeof(InstanceData)};
-		RD::get_singleton()->draw_list_bind_vertex_buffers_format(
-			p_draw_list, shader.quad_vertex_format_id, 1, vb, vo);
-		RD::get_singleton()->draw_list_bind_index_array(p_draw_list, shader.quad_index_array);
-		RD::get_singleton()->draw_list_draw(p_draw_list, true, p_batch->instance_count);
-
-		if (r_render_info) {
-			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
-							   [RSE::VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME] +=
-				p_batch->instance_count;
-			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
-							   [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] +=
-				2 * p_batch->instance_count;
-			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
-							   [RSE::VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME]++;
-		}
-	} break;
-
 	case Item::Command::TYPE_POLYGON: {
 		ERR_FAIL_NULL(p_batch->command);
 		PushConstantAttributes push_constant = p_batch->push_constant_attributes();
@@ -2811,45 +2778,6 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
 							   [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] +=
 				_indices_to_primitives(polygon->primitive, pb->primitive_count);
-			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
-							   [RSE::VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME]++;
-		}
-	} break;
-
-	case Item::Command::TYPE_PRIMITIVE: {
-		ERR_FAIL_NULL(p_batch->command);
-
-		const Item::CommandPrimitive* primitive =
-			static_cast<const Item::CommandPrimitive*>(p_batch->command);
-
-		PushConstant push_constant = p_batch->push_constant();
-		pipeline_key.vertex_format_id = shader.primitive_vertex_format_id;
-		pipeline =
-			_get_pipeline_specialization_or_ubershader(p_shader_data, pipeline_key, push_constant);
-		RD::get_singleton()->draw_list_bind_render_pipeline(p_draw_list, pipeline);
-
-		RD::get_singleton()->draw_list_set_push_constant(
-			p_draw_list, &push_constant, sizeof(push_constant));
-		FixedVector<RID, 1> vb = {p_batch->instance_buffer};
-		FixedVector<uint64_t, 1> vo = {uint64_t(p_batch->start) * sizeof(InstanceData)};
-		RD::get_singleton()->draw_list_bind_vertex_buffers_format(
-			p_draw_list, shader.primitive_vertex_format_id, 1, vb, vo);
-		RD::get_singleton()->draw_list_bind_index_array(
-			p_draw_list, primitive_arrays.index_array[MIN(3u, primitive->point_count) - 1]);
-		uint32_t instance_count = p_batch->instance_count;
-		RD::get_singleton()->draw_list_draw(p_draw_list, true, instance_count);
-
-		if (r_render_info) {
-			const RSE::PrimitiveType rs_primitive[5] = {RSE::PRIMITIVE_POINTS,
-				RSE::PRIMITIVE_POINTS, RSE::PRIMITIVE_LINES, RSE::PRIMITIVE_TRIANGLES,
-				RSE::PRIMITIVE_TRIANGLES};
-			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
-							   [RSE::VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME] += instance_count;
-			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
-							   [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] +=
-				_indices_to_primitives(
-					rs_primitive[p_batch->primitive_points], p_batch->primitive_points) *
-				instance_count;
 			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
 							   [RSE::VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME]++;
 		}

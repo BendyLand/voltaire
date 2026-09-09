@@ -1156,7 +1156,6 @@ public:
 
 	_FORCE_INLINE_ void _update_instance(Instance* p_instance) const;
 	_FORCE_INLINE_ void _update_instance_aabb(Instance* p_instance) const;
-	_FORCE_INLINE_ void _update_dirty_instance(Instance* p_instance) const;
 	_FORCE_INLINE_ void _update_instance_lightmap_captures(Instance* p_instance) const;
 	void _unpair_instance(Instance* p_instance);
 
@@ -1257,12 +1256,6 @@ public:
 
 	bool _render_reflection_probe_step(Instance* p_instance, int p_step);
 
-	void _render_scene(const RendererSceneRender::CameraData* p_camera_data,
-		const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
-		RID p_force_camera_attributes, RID p_compositor, uint32_t p_visible_layers, RID p_scenario,
-		RID p_viewport, RID p_shadow_atlas, RID p_reflection_probe, int p_reflection_probe_pass,
-		float p_screen_mesh_lod_threshold, float p_window_output_max_value,
-		bool p_using_shadows = true, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
 	void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario,
 		RID p_shadow_atlas, float p_window_output_max_value);
 
@@ -1270,12 +1263,9 @@ public:
 		RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count,
 		float p_screen_mesh_lod_threshold, RID p_shadow_atlas, Ref<XRInterface>& p_xr_interface,
 		float p_window_output_max_value, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
-	void update_dirty_instances() const;
 
 	void render_particle_colliders();
 	virtual void render_probes();
-
-	/* ENVIRONMENT API */
 
 #ifdef PASSBASE
 #undef PASSBASE

@@ -48,25 +48,4 @@ void PhysicsShapeQueryParameters3D::set_shape_rid(const RID& p_shape)
 	}
 }
 
-void PhysicsShapeQueryParameters3D::set_exclude(const TypedArray<RID>& p_exclude)
-{
-	parameters.exclude.clear();
-	for (int i = 0; i < p_exclude.size(); i++) {
-		parameters.exclude.insert(p_exclude[i]);
-	}
-}
-
-TypedArray<RID> PhysicsShapeQueryParameters3D::get_exclude() const
-{
-	TypedArray<RID> ret;
-	ret.resize(parameters.exclude.size());
-	int idx = 0;
-	for (const RID& E : parameters.exclude) {
-		ret[idx++] = E;
-	}
-	return ret;
-}
-
-void PhysicsShapeQueryParameters3D::_bind_methods() {}
-
 

@@ -1218,10 +1218,6 @@ void MeshStorage::update_mesh_instances()
 
 			bool array_is_2d = mi->mesh->surfaces[i]->format & RSE::ARRAY_FLAG_USE_2D_VERTICES;
 
-			RD::get_singleton()->compute_list_bind_compute_pipeline(compute_list,
-				skeleton_shader.pipeline[array_is_2d ? SkeletonShader::SHADER_MODE_2D
-													 : SkeletonShader::SHADER_MODE_3D]);
-
 			RD::get_singleton()->compute_list_bind_uniform_set(
 				compute_list, mi_surface_uniform_set, SkeletonShader::UNIFORM_SET_INSTANCE);
 			RD::get_singleton()->compute_list_bind_uniform_set(compute_list,

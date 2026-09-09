@@ -4650,11 +4650,7 @@ void TextureStorage::render_target_sdf_process(RID p_render_target)
 
 	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
 
-	/* Load */
 
-	RD::get_singleton()->compute_list_bind_compute_pipeline(
-		compute_list, rt_sdf.pipelines[shrink ? RenderTargetSDF::SHADER_LOAD_SHRINK
-											  : RenderTargetSDF::SHADER_LOAD]);
 	RD::get_singleton()->compute_list_bind_uniform_set(
 		compute_list, rt->sdf_buffer_process_uniform_sets[1], 0); // fill [0]
 	RD::get_singleton()->compute_list_set_push_constant(
@@ -4663,13 +4659,8 @@ void TextureStorage::render_target_sdf_process(RID p_render_target)
 	RD::get_singleton()->compute_list_dispatch_threads(
 		compute_list, push_constant.size[0], push_constant.size[1], 1);
 
-	/* Process */
-
 	int stride =
 		Math::nearest_power_of_2_templated(MAX(push_constant.size[0], push_constant.size[1]) / 2);
-
-	RD::get_singleton()->compute_list_bind_compute_pipeline(
-		compute_list, rt_sdf.pipelines[RenderTargetSDF::SHADER_PROCESS]);
 
 	RD::get_singleton()->compute_list_add_barrier(compute_list);
 	bool swap = false;
@@ -4688,11 +4679,6 @@ void TextureStorage::render_target_sdf_process(RID p_render_target)
 		RD::get_singleton()->compute_list_add_barrier(compute_list);
 	}
 
-	/* Store */
-
-	RD::get_singleton()->compute_list_bind_compute_pipeline(
-		compute_list, rt_sdf.pipelines[shrink ? RenderTargetSDF::SHADER_STORE_SHRINK
-											  : RenderTargetSDF::SHADER_STORE]);
 	RD::get_singleton()->compute_list_bind_uniform_set(
 		compute_list, rt->sdf_buffer_process_uniform_sets[swap ? 1 : 0], 0);
 	RD::get_singleton()->compute_list_set_push_constant(

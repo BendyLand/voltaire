@@ -37,9 +37,6 @@ class PhysicsPointQueryParameters3D : public RefCounted
 {
 	PS3DT::PointParameters parameters;
 
-protected:
-	static void _bind_methods();
-
 public:
 	const PS3DT::PointParameters& get_parameters() const { return parameters; }
 

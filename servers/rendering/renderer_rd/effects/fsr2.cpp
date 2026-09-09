@@ -172,27 +172,6 @@ static uint32_t ffx_usage_to_rd_usage_flags(uint32_t p_flags)
 	return ret;
 }
 
-static FfxErrorCode create_backend_context_rd(
-	FfxFsr2Interface* p_backend_interface, FfxDevice p_device)
-{
-	FSR2Context::Scratch& scratch =
-		*reinterpret_cast<FSR2Context::Scratch*>(p_backend_interface->scratchBuffer);
-
-	// Store pointer to the device common to all contexts.
-	scratch.device = p_device;
-
-	// Create a ring buffer of uniform buffers.
-	// FIXME: This could be optimized to be a single memory block if it was possible for RD to
-	// create views into a particular memory range of a UBO.
-	for (uint32_t i = 0; i < FSR2_UBO_RING_BUFFER_SIZE; i++) {
-		scratch.ubo_ring_buffer[i] =
-			RD::get_singleton()->uniform_buffer_create(FFX_MAX_CONST_SIZE * sizeof(uint32_t));
-		ERR_FAIL_COND_V(scratch.ubo_ring_buffer[i].is_null(), FFX_ERROR_BACKEND_API_ERROR);
-	}
-
-	return FFX_OK;
-}
-
 static FfxErrorCode get_device_capabilities_rd(FfxFsr2Interface* p_backend_interface,
 	FfxDeviceCapabilities* p_out_device_capabilities, FfxDevice p_device)
 {
@@ -388,98 +367,6 @@ static FfxErrorCode execute_gpu_job_copy_rd(
 	return FFX_OK;
 }
 
-static FfxErrorCode execute_gpu_job_compute_rd(
-	FSR2Context::Scratch& p_scratch, const FfxComputeJobDescription& p_job)
-{
-	UniformSetCacheRD* uniform_set_cache = UniformSetCacheRD::get_singleton();
-	ERR_FAIL_NULL_V(uniform_set_cache, FFX_ERROR_BACKEND_API_ERROR);
-
-	FSR2Effect::RootSignature& root_signature =
-		*reinterpret_cast<FSR2Effect::RootSignature*>(p_job.pipeline.rootSignature);
-	ERR_FAIL_COND_V(root_signature.shader_rid.is_null(), FFX_ERROR_INVALID_ARGUMENT);
-
-	FSR2Effect::Pipeline& backend_pipeline =
-		*reinterpret_cast<FSR2Effect::Pipeline*>(p_job.pipeline.pipeline);
-	ERR_FAIL_COND_V(backend_pipeline.pipeline_rid.is_null(), FFX_ERROR_INVALID_ARGUMENT);
-
-	thread_local LocalVector<RD::Uniform> compute_uniforms;
-	compute_uniforms.clear();
-
-	for (uint32_t i = 0; i < p_job.pipeline.srvCount; i++) {
-		RID texture_rid = p_scratch.resources.rids[p_job.srvs[i].internalIndex];
-		RD::Uniform texture_uniform(
-			RD::UNIFORM_TYPE_TEXTURE, p_job.pipeline.srvResourceBindings[i].slotIndex, texture_rid);
-		compute_uniforms.push_back(texture_uniform);
-	}
-
-	for (uint32_t i = 0; i < p_job.pipeline.uavCount; i++) {
-		RID image_rid = p_scratch.resources.rids[p_job.uavs[i].internalIndex];
-		RD::Uniform storage_uniform;
-		storage_uniform.uniform_type = RD::UNIFORM_TYPE_IMAGE;
-		storage_uniform.binding = p_job.pipeline.uavResourceBindings[i].slotIndex;
-
-		if (p_job.uavMip[i] > 0) {
-			LocalVector<RID>& mip_slice_rids =
-				p_scratch.resources.mip_slice_rids[p_job.uavs[i].internalIndex];
-			if (mip_slice_rids.is_empty()) {
-				mip_slice_rids.resize(
-					p_scratch.resources.descriptions[p_job.uavs[i].internalIndex].mipCount);
-			}
-
-			ERR_FAIL_COND_V(p_job.uavMip[i] >= mip_slice_rids.size(), FFX_ERROR_INVALID_ARGUMENT);
-
-			if (mip_slice_rids[p_job.uavMip[i]].is_null()) {
-				mip_slice_rids[p_job.uavMip[i]] =
-					RD::get_singleton()->texture_create_shared_from_slice(
-						RD::TextureView(), image_rid, 0, p_job.uavMip[i]);
-			}
-
-			ERR_FAIL_COND_V(mip_slice_rids[p_job.uavMip[i]].is_null(), FFX_ERROR_BACKEND_API_ERROR);
-
-			storage_uniform.append_id(mip_slice_rids[p_job.uavMip[i]]);
-		}
-		else {
-			storage_uniform.append_id(image_rid);
-		}
-
-		compute_uniforms.push_back(storage_uniform);
-	}
-
-	for (uint32_t i = 0; i < p_job.pipeline.constCount; i++) {
-		RID buffer_rid = p_scratch.ubo_ring_buffer[p_scratch.ubo_ring_buffer_index];
-		p_scratch.ubo_ring_buffer_index =
-			(p_scratch.ubo_ring_buffer_index + 1) % FSR2_UBO_RING_BUFFER_SIZE;
-
-		RD::get_singleton()->buffer_update(
-			buffer_rid, 0, p_job.cbs[i].uint32Size * sizeof(uint32_t), p_job.cbs[i].data);
-
-		RD::Uniform buffer_uniform(RD::UNIFORM_TYPE_UNIFORM_BUFFER,
-			p_job.pipeline.cbResourceBindings[i].slotIndex, buffer_rid);
-		compute_uniforms.push_back(buffer_uniform);
-	}
-
-	FSR2Effect::Device& device = *reinterpret_cast<FSR2Effect::Device*>(p_scratch.device);
-	RD::Uniform u_point_clamp_sampler(
-		RD::UniformType::UNIFORM_TYPE_SAMPLER, 0, device.point_clamp_sampler);
-	RD::Uniform u_linear_clamp_sampler(
-		RD::UniformType::UNIFORM_TYPE_SAMPLER, 1, device.linear_clamp_sampler);
-
-	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
-	RD::get_singleton()->compute_list_bind_compute_pipeline(
-		compute_list, backend_pipeline.pipeline_rid);
-	RD::get_singleton()->compute_list_bind_uniform_set(compute_list,
-		uniform_set_cache->get_cache(
-			root_signature.shader_rid, 0, u_point_clamp_sampler, u_linear_clamp_sampler),
-		0);
-	RD::get_singleton()->compute_list_bind_uniform_set(compute_list,
-		uniform_set_cache->get_cache_vec(root_signature.shader_rid, 1, compute_uniforms), 1);
-	RD::get_singleton()->compute_list_dispatch(
-		compute_list, p_job.dimensions[0], p_job.dimensions[1], p_job.dimensions[2]);
-	RD::get_singleton()->compute_list_end();
-
-	return FFX_OK;
-}
-
 static FfxErrorCode execute_gpu_jobs_rd(
 	FfxFsr2Interface* p_backend_interface, FfxCommandList p_command_list)
 {
@@ -496,22 +383,16 @@ static FfxErrorCode execute_gpu_jobs_rd(
 		case FFX_GPU_JOB_COPY: {
 			error_code = execute_gpu_job_copy_rd(scratch, job.copyJobDescriptor);
 		} break;
-		case FFX_GPU_JOB_COMPUTE: {
-			error_code = execute_gpu_job_compute_rd(scratch, job.computeJobDescriptor);
-		} break;
 		default: {
 			error_code = FFX_ERROR_INVALID_ARGUMENT;
 		} break;
 		}
-
 		if (error_code != FFX_OK) {
 			scratch.gpu_jobs.clear();
 			return error_code;
 		}
 	}
-
 	scratch.gpu_jobs.clear();
-
 	return FFX_OK;
 }
 
@@ -796,7 +677,6 @@ FSR2Context* FSR2Effect::create_context(Size2i p_internal_size, Size2i p_target_
 	context->fsr_desc.device = &device;
 
 	FfxFsr2Interface& functions = context->fsr_desc.callbacks;
-	functions.fpCreateBackendContext = create_backend_context_rd;
 	functions.fpGetDeviceCapabilities = get_device_capabilities_rd;
 	functions.fpDestroyBackendContext = destroy_backend_context_rd;
 	functions.fpCreateResource = create_resource_rd;

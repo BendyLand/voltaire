@@ -37,9 +37,6 @@ class PhysicsRayQueryParameters3D : public RefCounted
 {
 	PS3DT::RayParameters parameters;
 
-protected:
-	static void _bind_methods();
-
 public:
 	const PS3DT::RayParameters& get_parameters() const { return parameters; }
 

@@ -442,13 +442,10 @@ public:
 	void canvas_item_set_default_texture_repeat(RID p_item, RSE::CanvasItemTextureRepeat p_repeat);
 
 	void update_visibility_notifiers();
-	void update_dirty_items();
 
 	void _update_dirty_item(Item* p_item);
 
 	Rect2 _debug_canvas_item_get_rect(RID p_item);
-
-	bool free(RID p_rid);
 
 	void finalize();
 

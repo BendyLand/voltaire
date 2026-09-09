@@ -38,10 +38,6 @@ public:
 	void free(RID p_self);
 
 	void materials_start();
-	void materials_append(RID p_material);
-
-	// Assign location() to instance offset if materials_finish returns true.
-	bool materials_finish(RID p_self);
 
 	inline int32_t location() const { return _location; }
 

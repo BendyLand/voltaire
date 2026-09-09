@@ -424,30 +424,6 @@ Vector<String> ShaderRD::_build_variant_stage_sources(uint32_t p_variant, Compil
 	return stage_sources;
 }
 
-void ShaderRD::_compile_variant(uint32_t p_variant, CompileData p_data)
-{
-	uint32_t variant = group_to_variant_map[p_data.group][p_variant];
-	if (!variants_enabled[variant]) {
-		return; // Variant is disabled, return.
-	}
-
-	Vector<String> variant_stage_sources = _build_variant_stage_sources(variant, p_data);
-	Vector<RD::ShaderStageSPIRVData> variant_stages =
-		compile_stages(variant_stage_sources, dynamic_buffers);
-	ERR_FAIL_COND(variant_stages.is_empty());
-
-	Vector<uint8_t> shader_data = RD::get_singleton()->shader_compile_binary_from_spirv(
-		variant_stages, name + ":" + itos(variant));
-	ERR_FAIL_COND(shader_data.is_empty());
-
-	{
-		p_data.version->variants.write[variant] =
-			RD::get_singleton()->shader_create_from_bytecode_with_samplers(
-				shader_data, p_data.version->variants[variant], immutable_samplers);
-		p_data.version->variant_data.write[variant] = shader_data;
-	}
-}
-
 Vector<String> ShaderRD::version_build_variant_stage_sources(RID p_version, int p_variant)
 {
 	Version* version = version_owner.get_or_null(p_version);
@@ -644,20 +620,6 @@ String ShaderRD::_get_cache_file_path(
 	const String& shader_cache_dir = p_user_dir ? shader_cache_user_dir : shader_cache_res_dir;
 	String relative_path = _get_cache_file_relative_path(p_version, p_group, p_api_name);
 	return shader_cache_dir.path_join(relative_path);
-}
-
-void ShaderRD::_load_variant_from_cache(uint32_t p_variant, CompileData p_data)
-{
-	uint32_t variant = group_to_variant_map[p_data.group][p_variant];
-	if (!variants_enabled[variant]) {
-		p_data.version->variants.write[variant] = RID();
-		return; // Variant is disabled, return.
-	}
-
-	p_data.version->variants.write[variant] =
-		RD::get_singleton()->shader_create_from_bytecode_with_samplers(
-			p_data.version->variant_data[variant], p_data.version->variants[variant],
-			immutable_samplers);
 }
 
 void ShaderRD::_save_to_cache(Version* p_version, int p_group)

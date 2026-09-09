@@ -2064,42 +2064,6 @@ void RenderForwardMobile::_setup_environment(const RenderDataRD* p_render_data, 
 		p_opaque_render_buffers, false);
 }
 
-/// RENDERING ///
-
-void RenderForwardMobile::_render_list(RenderingDevice::DrawListID p_draw_list,
-	RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters* p_params,
-	uint32_t p_from_element, uint32_t p_to_element)
-{
-	// use template for faster performance (pass mode comparisons are inlined)
-
-	switch (p_params->pass_mode) {
-	case PASS_MODE_COLOR: {
-		_render_list_template<PASS_MODE_COLOR>(
-			p_draw_list, p_framebuffer_Format, p_params, p_from_element, p_to_element);
-	} break;
-	case PASS_MODE_COLOR_TRANSPARENT: {
-		_render_list_template<PASS_MODE_COLOR_TRANSPARENT>(
-			p_draw_list, p_framebuffer_Format, p_params, p_from_element, p_to_element);
-	} break;
-	case PASS_MODE_SHADOW: {
-		_render_list_template<PASS_MODE_SHADOW>(
-			p_draw_list, p_framebuffer_Format, p_params, p_from_element, p_to_element);
-	} break;
-	case PASS_MODE_SHADOW_DP: {
-		_render_list_template<PASS_MODE_SHADOW_DP>(
-			p_draw_list, p_framebuffer_Format, p_params, p_from_element, p_to_element);
-	} break;
-	case PASS_MODE_DEPTH_MATERIAL: {
-		_render_list_template<PASS_MODE_DEPTH_MATERIAL>(
-			p_draw_list, p_framebuffer_Format, p_params, p_from_element, p_to_element);
-	} break;
-	case PASS_MODE_MOTION_VECTORS: {
-		_render_list_template<PASS_MODE_MOTION_VECTORS>(
-			p_draw_list, p_framebuffer_Format, p_params, p_from_element, p_to_element);
-	}
-	}
-}
-
 RenderGeometryInstance* RenderForwardMobile::geometry_instance_create(RID p_base)
 {
 	RSE::InstanceType type = RSG::utilities->get_base_type(p_base);

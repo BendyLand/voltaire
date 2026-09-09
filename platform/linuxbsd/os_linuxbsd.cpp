@@ -1317,45 +1317,6 @@ String OS_LinuxBSD::get_system_ca_certificates()
 }
 
 #ifdef TOOLS_ENABLED
-bool OS_LinuxBSD::_test_create_rendering_device(const String& p_display_driver) const
-{
-	// Tests Rendering Device creation.
-
-	bool ok = false;
-#if defined(RD_ENABLED)
-	Error err;
-	RenderingContextDriver* rcd = nullptr;
-
-#if defined(VULKAN_ENABLED)
-#ifdef X11_ENABLED
-	if (p_display_driver == "x11" || p_display_driver.is_empty()) {
-		rcd = memnew(RenderingContextDriverVulkanX11);
-	}
-#endif
-#ifdef WAYLAND_ENABLED
-	if (p_display_driver == "wayland") {
-		rcd = memnew(RenderingContextDriverVulkanWayland);
-	}
-#endif
-#endif
-	if (rcd != nullptr) {
-		err = rcd->initialize();
-		if (err == OK) {
-			RenderingDevice* rd = memnew(RenderingDevice);
-			err = rd->initialize(rcd);
-			memdelete(rd);
-			rd = nullptr;
-			if (err == OK) {
-				ok = true;
-			}
-		}
-		memdelete(rcd);
-		rcd = nullptr;
-	}
-#endif
-	return ok;
-}
-
 bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String& p_display_driver) const
 {
 	// Tests OpenGL context and Rendering Device simultaneous creation. This function is expected to

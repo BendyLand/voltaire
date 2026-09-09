@@ -32,12 +32,6 @@
 
 #include "rendering_device.h"
 
-RID RenderingDevice::_shader_create_from_bytecode_bind_compat_79606(
-	const Vector<uint8_t>& p_shader_binary)
-{
-	return shader_create_from_bytecode(p_shader_binary, RID());
-}
-
 RenderingDevice::InitialAction RenderingDevice::_convert_initial_action_84976(
 	InitialAction p_old_initial_action)
 {
@@ -94,12 +88,6 @@ RenderingDevice::FramebufferFormatID
 RenderingDevice::_screen_get_framebuffer_format_bind_compat_87340() const
 {
 	return screen_get_framebuffer_format(DisplayServerEnums::MAIN_WINDOW_ID);
-}
-
-RID RenderingDevice::_uniform_buffer_create_bind_compat_101561(
-	uint32_t p_size_bytes, const Vector<uint8_t>& p_data)
-{
-	return _uniform_buffer_create(p_size_bytes, p_data, 0);
 }
 
 RID RenderingDevice::_vertex_buffer_create_bind_compat_101561(
