@@ -398,4 +398,7 @@ $RECYCLE.BIN/
 *.generated.props
 .watcher
 .cache
+*summary*
+.todo.csv
+errs
 
