@@ -34,15 +34,6 @@
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 
-#ifdef TOOLS_ENABLED
-void Camera2D::_project_settings_changed()
-{
-	if (screen_drawing_enabled) {
-		queue_redraw();
-	}
-}
-#endif
-
 void Camera2D::_update_process_callback()
 {
 	if (is_physics_interpolated_and_enabled()) {
@@ -239,16 +230,6 @@ void Camera2D::set_limit_smoothing_enabled(bool p_enabled)
 
 bool Camera2D::is_limit_smoothing_enabled() const { return limit_smoothing_enabled; }
 
-void Camera2D::set_drag_margin(Side p_side, real_t p_drag_margin)
-{
-	ERR_FAIL_INDEX((int)p_side, 4);
-	if (drag_margin[p_side] == p_drag_margin) {
-		return;
-	}
-	drag_margin[p_side] = p_drag_margin;
-	queue_redraw();
-}
-
 real_t Camera2D::get_drag_margin(Side p_side) const
 {
 	ERR_FAIL_INDEX_V((int)p_side, 4, 0);
@@ -359,37 +340,11 @@ bool Camera2D::is_position_smoothing_enabled() const { return position_smoothing
 
 Node* Camera2D::get_custom_viewport() const { return custom_viewport; }
 
-void Camera2D::set_screen_drawing_enabled(bool p_enabled)
-{
-	screen_drawing_enabled = p_enabled;
-#ifdef TOOLS_ENABLED
-	queue_redraw();
-#endif
-}
-
 bool Camera2D::is_screen_drawing_enabled() const { return screen_drawing_enabled; }
-
-void Camera2D::set_limit_drawing_enabled(bool p_enabled)
-{
-	limit_drawing_enabled = p_enabled;
-#ifdef TOOLS_ENABLED
-	queue_redraw();
-#endif
-}
 
 bool Camera2D::is_limit_drawing_enabled() const { return limit_drawing_enabled; }
 
-void Camera2D::set_margin_drawing_enabled(bool p_enabled)
-{
-	margin_drawing_enabled = p_enabled;
-#ifdef TOOLS_ENABLED
-	queue_redraw();
-#endif
-}
-
 bool Camera2D::is_margin_drawing_enabled() const { return margin_drawing_enabled; }
-
-void Camera2D::_bind_methods() {}
 
 Camera2D::Camera2D()
 {

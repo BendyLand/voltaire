@@ -1314,27 +1314,6 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 
 		r_positional_light_count++;
 	}
-
-	// update without barriers
-	if (omni_light_count) {
-		RD::get_singleton()->buffer_update(
-			omni_light_buffer, 0, sizeof(LightData) * omni_light_count, omni_lights);
-	}
-
-	if (spot_light_count) {
-		RD::get_singleton()->buffer_update(
-			spot_light_buffer, 0, sizeof(LightData) * spot_light_count, spot_lights);
-	}
-
-	if (area_light_count) {
-		RD::get_singleton()->buffer_update(
-			area_light_buffer, 0, sizeof(LightData) * area_light_count, area_lights);
-	}
-
-	if (r_directional_light_count) {
-		RD::get_singleton()->buffer_update(directional_light_buffer, 0,
-			sizeof(DirectionalLightData) * r_directional_light_count, directional_lights);
-	}
 }
 
 RID LightStorage::reflection_probe_allocate() { return reflection_probe_owner.allocate_rid(); }
@@ -2208,11 +2187,6 @@ void LightStorage::update_reflection_probe_buffer(RenderDataRD* p_render_data,
 
 		// hook for subclass to do further processing.
 		RendererSceneRenderRD::get_singleton()->setup_added_reflection_probe(transform, extents);
-	}
-
-	if (reflection_count) {
-		RD::get_singleton()->buffer_update(
-			reflection_buffer, 0, reflection_count * sizeof(ReflectionData), reflections);
 	}
 }
 

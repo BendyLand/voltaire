@@ -311,14 +311,6 @@ void EditorAudioBus::_notification(int p_what)
 
 		set_process(is_visible_in_tree());
 	} break;
-
-	case NOTIFICATION_MOUSE_EXIT:
-	case NOTIFICATION_DRAG_END: {
-		if (hovering_drop) {
-			hovering_drop = false;
-			queue_redraw();
-		}
-	} break;
 	}
 }
 
@@ -513,8 +505,6 @@ void EditorAudioBus::_effect_rmb(const Vector2& p_pos, MouseButton p_button)
 	delete_effect_popup->reset_size();
 	delete_effect_popup->popup();
 }
-
-void EditorAudioBus::_bind_methods() {}
 
 EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 {
@@ -767,25 +757,8 @@ void EditorAudioBusDrop::_notification(int p_what)
 			draw_rect(Rect2(Point2(), get_size()), accent, false);
 		}
 	} break;
-
-	case NOTIFICATION_MOUSE_ENTER: {
-		if (!hovering_drop) {
-			hovering_drop = true;
-			queue_redraw();
-		}
-	} break;
-
-	case NOTIFICATION_MOUSE_EXIT:
-	case NOTIFICATION_DRAG_END: {
-		if (hovering_drop) {
-			hovering_drop = false;
-			queue_redraw();
-		}
-	} break;
 	}
 }
-
-void EditorAudioBusDrop::_bind_methods() {}
 
 void EditorAudioBuses::_update_file_label()
 {
@@ -931,8 +904,6 @@ void EditorAudioBuses::update_layout(EditorDock::DockLayout p_layout, int p_slot
 		bus_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_ALL);
 	}
 }
-
-void EditorAudioBuses::_bind_methods() {}
 
 EditorAudioBuses::EditorAudioBuses()
 {
@@ -1085,8 +1056,6 @@ void EditorAudioMeterNotches::_update_theme_item_cache()
 	theme_cache.font = get_theme_font(SceneStringName(font), SNAME("Label"));
 	theme_cache.font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 }
-
-void EditorAudioMeterNotches::_bind_methods() {}
 
 void EditorAudioMeterNotches::_notification(int p_what)
 {

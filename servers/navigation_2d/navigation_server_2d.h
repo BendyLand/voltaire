@@ -52,11 +52,9 @@ class NavigationServer2D
 {
 	static NavigationServer2D* singleton;
 
-protected:
-	static void _bind_methods();
-
 public:
 	static NavigationServer2D* get_singleton();
+	~NavigationServer2D();
 
 	/* MAP API */
 
@@ -261,9 +259,6 @@ public:
 #ifndef DISABLE_DEPRECATED
 	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
 #endif // DISABLE_DEPRECATED
-
-	NavigationServer2D();
-	~NavigationServer2D();
 
 	/* DEBUG API */
 

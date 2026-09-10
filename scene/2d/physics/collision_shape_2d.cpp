@@ -36,8 +36,6 @@
 #include "scene/resources/2d/concave_polygon_shape_2d.h"
 #include "scene/resources/2d/convex_polygon_shape_2d.h"
 
-void CollisionShape2D::_shape_changed() { queue_redraw(); }
-
 void CollisionShape2D::_update_in_shape_owner(bool p_xform_only)
 {
 	collision_object->shape_owner_set_transform(owner_id, get_transform());
@@ -62,26 +60,7 @@ bool CollisionShape2D::_edit_is_selected_on_click(const Point2& p_point, double 
 	return shape->_edit_is_selected_on_click(p_point, p_tolerance);
 }
 
-void CollisionShape2D::set_disabled(bool p_disabled)
-{
-	disabled = p_disabled;
-	queue_redraw();
-	if (collision_object) {
-		collision_object->shape_owner_set_disabled(owner_id, p_disabled);
-	}
-}
-
 bool CollisionShape2D::is_disabled() const { return disabled; }
-
-void CollisionShape2D::set_one_way_collision(bool p_enable)
-{
-	one_way_collision = p_enable;
-	queue_redraw();
-	if (collision_object) {
-		collision_object->shape_owner_set_one_way_collision(owner_id, p_enable);
-	}
-	update_configuration_warnings();
-}
 
 bool CollisionShape2D::is_one_way_collision_enabled() const { return one_way_collision; }
 
@@ -96,20 +75,6 @@ void CollisionShape2D::set_one_way_collision_margin(real_t p_margin)
 
 real_t CollisionShape2D::get_one_way_collision_margin() const { return one_way_collision_margin; }
 
-void CollisionShape2D::set_one_way_collision_direction(const Vector2& p_direction)
-{
-	if (p_direction == one_way_collision_direction) {
-		return;
-	}
-
-	one_way_collision_direction = p_direction.normalized();
-	if (collision_object) {
-		collision_object->shape_owner_set_one_way_collision_direction(
-			owner_id, p_direction.normalized());
-	}
-	queue_redraw();
-}
-
 Vector2 CollisionShape2D::get_one_way_collision_direction() const
 {
 	return one_way_collision_direction;
@@ -119,16 +84,6 @@ Color CollisionShape2D::_get_default_debug_color() const
 {
 	const SceneTree* st = SceneTree::get_singleton();
 	return st ? st->get_debug_collisions_color() : Color(0.0, 0.0, 0.0, 0.0);
-}
-
-void CollisionShape2D::set_debug_color(const Color& p_color)
-{
-	if (debug_color == p_color) {
-		return;
-	}
-
-	debug_color = p_color;
-	queue_redraw();
 }
 
 Color CollisionShape2D::get_debug_color() const { return debug_color; }

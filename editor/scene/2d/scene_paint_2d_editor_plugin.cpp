@@ -69,13 +69,6 @@ void ScenePaint2DEditor::_update_instance()
 
 bool ScenePaint2DEditor::_is_instance_valid() { return instance && instance->is_inside_tree(); }
 
-void ScenePaint2DEditor::_update_draw_overlay()
-{
-	if (custom_overlay) {
-		custom_overlay->queue_redraw();
-	}
-}
-
 void ScenePaint2DEditor::_update_hint_label()
 {
 	if (!is_tool_selected) {

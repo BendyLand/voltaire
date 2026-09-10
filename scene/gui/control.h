@@ -581,7 +581,6 @@ public:
 	bool is_propagating_maximum_size();
 
 	void update_maximum_size();
-	void update_minimum_size();
 	void update_desired_size();
 
 	void grow_to_desired_size();

@@ -277,20 +277,6 @@ void TextureLayeredEditor::_notification(int p_what)
 	}
 }
 
-void TextureLayeredEditor::_texture_changed()
-{
-	if (!is_visible()) {
-		return;
-	}
-
-	setting = true;
-	_update_gui();
-	setting = false;
-
-	_update_material(true);
-	queue_redraw();
-}
-
 void TextureLayeredEditor::on_selected_channels_changed() { _update_material(false); }
 
 void TextureLayeredEditor::_draw_outline()

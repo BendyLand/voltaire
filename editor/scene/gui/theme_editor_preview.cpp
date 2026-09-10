@@ -55,24 +55,6 @@
 #include "scene/theme/theme_db.h"
 #include "theme_editor_preview.h"
 
-void ScalableContainer::_notification(int p_what)
-{
-	if (EDSCALE == 1 || p_what != NOTIFICATION_SORT_CHILDREN) {
-		return;
-	}
-
-	Size2 size = get_size() / EDSCALE;
-	size.width -= get_margin_size(SIDE_LEFT) + get_margin_size(SIDE_RIGHT);
-	size.height -= get_margin_size(SIDE_TOP) + get_margin_size(SIDE_BOTTOM);
-
-	for (Node* child : iterate_children()) {
-		Control* control = as_sortable_control(child);
-		if (control) {
-			fit_child_in_rect(control, Rect2(control->get_position(), size));
-		}
-	}
-}
-
 Size2 ScalableContainer::get_minimum_size() const
 {
 	return MarginContainer::get_minimum_size() * EDSCALE;
@@ -103,12 +85,6 @@ void ThemeEditorPreview::_picker_button_cbk()
 	if (picker_button->is_pressed()) {
 		_reset_picker_overlay();
 	}
-}
-
-void ThemeEditorPreview::_reset_picker_overlay()
-{
-	hovered_control = nullptr;
-	picker_overlay->queue_redraw();
 }
 
 void ThemeEditorPreview::_notification(int p_what)

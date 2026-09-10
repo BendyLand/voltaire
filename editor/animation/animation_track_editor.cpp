@@ -69,8 +69,6 @@
 constexpr double FPS_DECIMAL = 1.0;
 constexpr double SECOND_DECIMAL = 0.0001;
 
-void AnimationTrackKeyEdit::_bind_methods() {}
-
 void AnimationTrackKeyEdit::_update_obj(const Ref<Animation>& p_anim)
 {
 	if (setting || animation != p_anim) {
@@ -96,8 +94,6 @@ void AnimationTrackKeyEdit::_key_ofs_changed(const Ref<Animation>& p_anim, float
 }
 
 Node* AnimationTrackKeyEdit::get_root_path() { return root_path; }
-
-void AnimationMultiTrackKeyEdit::_bind_methods() {}
 
 void AnimationMultiTrackKeyEdit::_update_obj(const Ref<Animation>& p_anim)
 {
@@ -183,33 +179,6 @@ int AnimationTimelineEdit::get_name_limit() const
 	limit = MIN(limit, get_size().width - get_buttons_width() - 1);
 
 	return limit;
-}
-
-void AnimationTimelineEdit::set_animation(const Ref<Animation>& p_animation, bool p_read_only)
-{
-	animation = p_animation;
-	read_only = p_read_only;
-
-	length->set_read_only(read_only);
-
-	if (animation.is_valid()) {
-		len_hb->show();
-		filter_track->show();
-		if (read_only) {
-			add_track->hide();
-		}
-		else {
-			add_track->show();
-		}
-		play_position->show();
-	}
-	else {
-		len_hb->hide();
-		filter_track->hide();
-		add_track->hide();
-		play_position->hide();
-	}
-	queue_redraw();
 }
 
 Size2 AnimationTimelineEdit::get_minimum_size() const
@@ -298,15 +267,7 @@ void AnimationTimelineEdit::set_track_edit(AnimationTrackEdit* p_track_edit)
 
 void AnimationTimelineEdit::set_editor(AnimationTrackEditor* p_editor) { editor = p_editor; }
 
-void AnimationTimelineEdit::set_play_position(float p_pos)
-{
-	play_position_pos = p_pos;
-	play_position->queue_redraw();
-}
-
 float AnimationTimelineEdit::get_play_position() const { return play_position_pos; }
-
-void AnimationTimelineEdit::update_play_position() { play_position->queue_redraw(); }
 
 void AnimationTimelineEdit::_play_position_draw()
 {
@@ -360,19 +321,9 @@ void AnimationTimelineEdit::_zoom_callback(
 	get_zoom()->set_value(MAX(0.01, current_zoom_value - (1.0 - p_zoom_factor)));
 }
 
-void AnimationTimelineEdit::set_use_fps(bool p_use_fps)
-{
-	use_fps = p_use_fps;
-	queue_redraw();
-}
-
 bool AnimationTimelineEdit::is_using_fps() const { return use_fps; }
 
 void AnimationTimelineEdit::set_hscroll(HScrollBar* p_hscroll) { hscroll = p_hscroll; }
-
-void AnimationTimelineEdit::_bind_methods() {}
-
-////////////////////////////////////
 
 int AnimationTrackEdit::get_key_height() const
 {
@@ -461,22 +412,6 @@ int AnimationTrackEdit::get_track() const { return track; }
 
 Ref<Animation> AnimationTrackEdit::get_animation() const { return animation; }
 
-void AnimationTrackEdit::set_animation_and_track(
-	const Ref<Animation>& p_animation, int p_track, bool p_read_only)
-{
-	animation = p_animation;
-	read_only = p_read_only;
-
-	track = p_track;
-	queue_redraw();
-
-	ERR_FAIL_INDEX(track, animation->get_track_count());
-
-	node_path = animation->track_get_path(p_track);
-	type_icon = _get_key_type_icon();
-	selected_icon = get_editor_theme_icon(SNAME("KeySelected"));
-}
-
 NodePath AnimationTrackEdit::get_path() const { return node_path; }
 
 Size2 AnimationTrackEdit::get_minimum_size() const
@@ -512,21 +447,7 @@ void AnimationTrackEdit::_play_position_draw()
 	}
 }
 
-void AnimationTrackEdit::set_play_position(float p_pos)
-{
-	play_position_pos = p_pos;
-	play_position->queue_redraw();
-}
-
-void AnimationTrackEdit::update_play_position() { play_position->queue_redraw(); }
-
 void AnimationTrackEdit::set_root(Node* p_root) { root = p_root; }
-
-void AnimationTrackEdit::_zoom_changed()
-{
-	queue_redraw();
-	play_position->queue_redraw();
-}
 
 Ref<Texture2D> AnimationTrackEdit::_get_key_type_icon() const
 {
@@ -548,22 +469,6 @@ Control::CursorShape AnimationTrackEdit::get_cursor_shape(const Point2& p_pos) c
 	}
 	return get_default_cursor_shape();
 }
-
-void AnimationTrackEdit::cancel_drop()
-{
-	if (dropping_at != 0) {
-		dropping_at = 0;
-		queue_redraw();
-	}
-}
-
-void AnimationTrackEdit::set_in_group(bool p_enable)
-{
-	in_group = p_enable;
-	queue_redraw();
-}
-
-///////////////////////////////////////
 
 void AnimationTrackEditGroup::_notification(int p_what)
 {
@@ -748,26 +653,7 @@ void AnimationTrackEditGroup::_notification(int p_what)
 			}
 		}
 	} break;
-
-	case NOTIFICATION_MOUSE_EXIT: {
-		if (hovered) {
-			hovered = false;
-			// When the mouse cursor exits the AnimationTrackEditGroup, we're no longer hovering
-			// the group.
-			queue_redraw();
-		}
-	} break;
 	}
-}
-
-void AnimationTrackEditGroup::set_type_and_name(
-	const Ref<Texture2D>& p_type, const String& p_name, const NodePath& p_node)
-{
-	icon = p_type;
-	node_name = p_name;
-	node = p_node;
-	queue_redraw();
-	update_minimum_size();
 }
 
 Size2 AnimationTrackEditGroup::get_minimum_size() const
@@ -786,19 +672,9 @@ Size2 AnimationTrackEditGroup::get_minimum_size() const
 
 String AnimationTrackEditGroup::get_node_name() const { return node_name; }
 
-void AnimationTrackEditGroup::set_root(Node* p_root)
-{
-	root = p_root;
-	queue_redraw();
-}
-
 void AnimationTrackEditGroup::set_editor(AnimationTrackEditor* p_editor) { editor = p_editor; }
 
-void AnimationTrackEditGroup::_zoom_changed() { queue_redraw(); }
-
 AnimationTrackEditGroup::AnimationTrackEditGroup() { set_mouse_filter(MOUSE_FILTER_PASS); }
-
-//////////////////////////////////////
 
 void AnimationTrackEditor::add_track_edit_plugin(const Ref<AnimationTrackEditPlugin>& p_plugin)
 {
@@ -969,20 +845,6 @@ void AnimationTrackEditor::resolve_insertion_offset(float& r_offset) const
 
 bool AnimationTrackEditor::is_bezier_editor_active() const { return bezier_mc->is_visible(); }
 
-void AnimationTrackEditor::_redraw_tracks()
-{
-	for (int i = 0; i < track_edits.size(); i++) {
-		track_edits[i]->queue_redraw();
-	}
-}
-
-void AnimationTrackEditor::_redraw_groups()
-{
-	for (int i = 0; i < groups.size(); i++) {
-		groups[i]->queue_redraw();
-	}
-}
-
 void AnimationTrackEditor::_update_fps_compat_mode(bool p_enabled) { _update_snap_unit(); }
 
 void AnimationTrackEditor::_update_nearest_fps_label()
@@ -998,13 +860,6 @@ void AnimationTrackEditor::_update_nearest_fps_label()
 }
 
 MenuButton* AnimationTrackEditor::get_edit_menu() { return edit; }
-
-void AnimationTrackEditor::_update_scroll(double)
-{
-	_redraw_tracks();
-	_redraw_groups();
-	marker_edit->queue_redraw();
-}
 
 void AnimationTrackEditor::_add_track(int p_type)
 {
@@ -1052,22 +907,6 @@ void AnimationTrackEditor::_add_track(int p_type)
 	pick_track->popup_scenetree_dialog(nullptr, root_node);
 	pick_track->get_filter_line_edit()->clear();
 	pick_track->get_filter_line_edit()->grab_focus();
-}
-
-void AnimationTrackEditor::_timeline_value_changed(double)
-{
-	timeline->update_play_position();
-
-	_redraw_tracks();
-	for (int i = 0; i < track_edits.size(); i++) {
-		track_edits[i]->update_play_position();
-	}
-	_redraw_groups();
-
-	bezier_edit->queue_redraw();
-	bezier_edit->update_play_position();
-
-	marker_edit->update_play_position();
 }
 
 int AnimationTrackEditor::_get_track_selected()
@@ -1393,8 +1232,6 @@ void AnimationTrackEditor::_select_all_tracks_for_copy()
 	}
 }
 
-void AnimationTrackEditor::_bind_methods() {}
-
 void AnimationTrackEditor::_pick_track_filter_text_changed(const String& p_newtext)
 {
 	TreeItem* root_item = pick_track->get_scene_tree()->get_scene_tree()->get_root();
@@ -1433,12 +1270,6 @@ AnimationTrackEditor::~AnimationTrackEditor()
 {
 	memdelete(key_edit);
 	memdelete(multi_key_edit);
-}
-
-void AnimationMarkerEdit::_zoom_changed()
-{
-	queue_redraw();
-	play_position->queue_redraw();
 }
 
 void AnimationMarkerEdit::_play_position_draw()
@@ -1532,8 +1363,6 @@ void AnimationMarkerEdit::_update_key_edit()
 	}
 }
 
-void AnimationMarkerEdit::_bind_methods() {}
-
 int AnimationMarkerEdit::get_key_height() const
 {
 	if (animation.is_null()) {
@@ -1597,19 +1426,6 @@ void AnimationMarkerEdit::draw_fg(int p_clip_left, int p_clip_right) {}
 
 Ref<Animation> AnimationMarkerEdit::get_animation() const { return animation; }
 
-void AnimationMarkerEdit::set_animation(const Ref<Animation>& p_animation, bool p_read_only)
-{
-	if (animation.is_valid()) {
-		_clear_selection_for_anim(animation);
-	}
-	animation = p_animation;
-	read_only = p_read_only;
-	type_icon = get_editor_theme_icon(SNAME("Marker"));
-	selected_icon = get_editor_theme_icon(SNAME("MarkerSelected"));
-
-	queue_redraw();
-}
-
 Size2 AnimationMarkerEdit::get_minimum_size() const
 {
 	Ref<Texture2D> texture = get_editor_theme_icon(SNAME("Object"));
@@ -1625,46 +1441,10 @@ Size2 AnimationMarkerEdit::get_minimum_size() const
 
 void AnimationMarkerEdit::set_editor(AnimationTrackEditor* p_editor) { editor = p_editor; }
 
-void AnimationMarkerEdit::set_play_position(float p_pos)
-{
-	play_position_pos = p_pos;
-	play_position->queue_redraw();
-}
-
-void AnimationMarkerEdit::update_play_position() { play_position->queue_redraw(); }
-
 void AnimationMarkerEdit::_move_selection_begin()
 {
 	moving_selection = true;
 	moving_selection_offset = 0;
-}
-
-void AnimationMarkerEdit::_move_selection(float p_offset)
-{
-	moving_selection_offset = p_offset;
-	queue_redraw();
-}
-
-void AnimationMarkerEdit::_move_selection_cancel()
-{
-	moving_selection = false;
-	queue_redraw();
-}
-
-void AnimationMarkerEdit::_clear_selection(bool p_update)
-{
-	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
-	if (player) {
-		player->reset_section();
-	}
-
-	selection.clear();
-
-	if (p_update) {
-		queue_redraw();
-	}
-
-	_clear_key_edit();
 }
 
 void AnimationMarkerEdit::_clear_selection_for_anim(const Ref<Animation>& p_anim)
@@ -1674,54 +1454,6 @@ void AnimationMarkerEdit::_clear_selection_for_anim(const Ref<Animation>& p_anim
 	}
 
 	_clear_selection(true);
-}
-
-void AnimationMarkerEdit::_select_key(const StringName& p_name, bool is_single)
-{
-	if (is_single) {
-		_clear_selection(false);
-	}
-
-	selection.insert(p_name);
-
-	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
-	if (player) {
-		if (selection.size() >= 2) {
-			PackedStringArray selected_section = get_selected_section();
-			double start_time = animation->get_marker_time(selected_section[0]);
-			double end_time = animation->get_marker_time(selected_section[1]);
-			player->set_section(start_time, end_time);
-		}
-		else {
-			player->reset_section();
-		}
-	}
-
-	queue_redraw();
-	_update_key_edit();
-
-	editor->_clear_selection(editor->is_selection_active());
-}
-
-void AnimationMarkerEdit::_deselect_key(const StringName& p_name)
-{
-	selection.erase(p_name);
-
-	AnimationPlayer* player = AnimationPlayerEditor::get_singleton()->get_player();
-	if (player) {
-		if (selection.size() >= 2) {
-			PackedStringArray selected_section = get_selected_section();
-			double start_time = animation->get_marker_time(selected_section[0]);
-			double end_time = animation->get_marker_time(selected_section[1]);
-			player->set_section(start_time, end_time);
-		}
-		else {
-			player->reset_section();
-		}
-	}
-
-	queue_redraw();
-	_update_key_edit();
 }
 
 void AnimationMarkerEdit::_insert_marker(float p_ofs)

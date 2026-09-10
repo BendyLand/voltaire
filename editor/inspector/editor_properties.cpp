@@ -70,8 +70,6 @@
 #include "modules/visual_shader/vs_nodes/visual_shader_nodes.h"
 #endif // MODULE_VISUAL_SHADER_ENABLED
 
-///////////////////// NIL /////////////////////////
-
 void EditorPropertyNil::update_property() {}
 
 EditorPropertyNil::EditorPropertyNil()
@@ -80,8 +78,6 @@ EditorPropertyNil::EditorPropertyNil()
 	prop_label->set_text("<null>");
 	add_child(prop_label);
 }
-
-//////////////////// VARIANT ///////////////////////
 
 void EditorPropertyVariant::_set_read_only(bool p_read_only)
 {
@@ -97,8 +93,6 @@ void EditorPropertyVariant::_notification(int p_what)
 		edit_button->set_button_icon(get_editor_theme_icon(SNAME("Edit")));
 	}
 }
-
-///////////////////// TEXT /////////////////////////
 
 void EditorPropertyText::_notification(int p_what)
 {
@@ -167,8 +161,6 @@ void EditorPropertyText::set_monospaced(bool p_monospaced)
 	monospaced = p_monospaced;
 	_update_theme();
 }
-
-///////////////////// MULTILINE TEXT /////////////////////////
 
 void EditorPropertyMultilineText::_set_read_only(bool p_read_only)
 {
@@ -250,8 +242,6 @@ bool EditorPropertyMultilineText::EditorPropertyMultilineText::get_wrap_lines()
 	return wrap_lines;
 }
 
-///////////////////// TEXT ENUM /////////////////////////
-
 void EditorPropertyTextEnum::_set_read_only(bool p_read_only)
 {
 	option_button->set_disabled(p_read_only);
@@ -290,8 +280,6 @@ void EditorPropertyTextEnum::_notification(int p_what)
 	}
 }
 
-//////////////////// LOCALE ////////////////////////
-
 void EditorPropertyLocale::setup(const String& p_hint_text) {}
 
 void EditorPropertyLocale::_notification(int p_what)
@@ -304,8 +292,6 @@ void EditorPropertyLocale::_notification(int p_what)
 }
 
 void EditorPropertyLocale::_locale_focus_exited() { _locale_selected(locale->get_text()); }
-
-///////////////////// PATH /////////////////////////
 
 void EditorPropertyPath::_set_read_only(bool p_read_only)
 {
@@ -354,8 +340,6 @@ void EditorPropertyPath::_update_uid_icon()
 		get_editor_theme_icon(display_uid ? SNAME("UID") : SNAME("NodePath")));
 }
 
-///////////////////// CLASS NAME /////////////////////////
-
 void EditorPropertyClassName::_set_read_only(bool p_read_only)
 {
 	property->set_disabled(p_read_only);
@@ -369,19 +353,13 @@ void EditorPropertyClassName::setup(const String& p_base_type, const String& p_s
 	property->set_text(selected_type);
 }
 
-///////////////////// CHECK /////////////////////////
-
 void EditorPropertyCheck::_set_read_only(bool p_read_only) { checkbox->set_disabled(p_read_only); }
-
-///////////////////// ENUM /////////////////////////
 
 void EditorPropertyEnum::_set_read_only(bool p_read_only) { options->set_disabled(p_read_only); }
 
 void EditorPropertyEnum::set_option_button_clip(bool p_enable) { options->set_clip_text(p_enable); }
 
 OptionButton* EditorPropertyEnum::get_option_button() { return options; }
-
-///////////////////// FLAGS /////////////////////////
 
 void EditorPropertyFlags::_set_read_only(bool p_read_only)
 {
@@ -396,8 +374,6 @@ EditorPropertyFlags::EditorPropertyFlags()
 	vbox->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	add_child(vbox);
 }
-
-///////////////////// LAYERS /////////////////////////
 
 void EditorPropertyLayersGrid::_rename_pressed(int p_menu)
 {
@@ -435,47 +411,6 @@ Size2 EditorPropertyLayersGrid::get_minimum_size() const
 	}
 
 	return min_size;
-}
-
-void EditorPropertyLayersGrid::_update_hovered(const Vector2& p_position)
-{
-	bool expand_was_hovered = expand_hovered;
-	expand_hovered = expand_rect.has_point(p_position);
-	if (expand_hovered != expand_was_hovered) {
-		queue_redraw();
-	}
-
-	if (!expand_hovered) {
-		for (int i = 0; i < flag_rects.size(); i++) {
-			if (flag_rects[i].has_point(p_position)) {
-				// Used to highlight the hovered flag in the layers grid.
-				hovered_index = i;
-				queue_redraw();
-				return;
-			}
-		}
-	}
-
-	// Remove highlight when no square is hovered.
-	if (hovered_index != HOVERED_INDEX_NONE) {
-		hovered_index = HOVERED_INDEX_NONE;
-		queue_redraw();
-	}
-}
-
-void EditorPropertyLayersGrid::_on_hover_exit()
-{
-	if (expand_hovered) {
-		expand_hovered = false;
-		queue_redraw();
-	}
-	if (hovered_index != HOVERED_INDEX_NONE) {
-		hovered_index = HOVERED_INDEX_NONE;
-		queue_redraw();
-	}
-	if (dragging) {
-		dragging = false;
-	}
 }
 
 void EditorPropertyLayersGrid::_notification(int p_what)
@@ -581,10 +516,6 @@ void EditorPropertyLayersGrid::_notification(int p_what)
 			}
 		}
 
-		if ((expansion_rows != prev_expansion_rows) && expanded) {
-			update_minimum_size();
-		}
-
 		if ((expansion_rows == 0) && (layer_index == layer_count)) {
 			// Whole grid was drawn, no need for expansion icon.
 			break;
@@ -615,14 +546,6 @@ void EditorPropertyLayersGrid::_notification(int p_what)
 	} break;
 	}
 }
-
-void EditorPropertyLayersGrid::set_flag(uint32_t p_flag)
-{
-	value = p_flag;
-	queue_redraw();
-}
-
-void EditorPropertyLayersGrid::_bind_methods() {}
 
 void EditorPropertyLayers::_notification(int p_what)
 {
@@ -670,23 +593,7 @@ void EditorPropertyLayers::_button_pressed()
 	layers->popup();
 }
 
-void EditorPropertyLayers::_menu_pressed(int p_menu)
-{
-	if (uint32_t(p_menu) == grid->layer_count) {
-		ProjectSettingsEditor::get_singleton()->popup_project_settings(true);
-		ProjectSettingsEditor::get_singleton()->set_general_page(basename);
-	}
-	else {
-		grid->value ^= 1u << p_menu;
-		grid->queue_redraw();
-		layers->set_item_checked(layers->get_item_index(p_menu), grid->value & (1u << p_menu));
-		_grid_changed(grid->value);
-	}
-}
-
 void EditorPropertyLayers::_refresh_names() { setup(layer_type); }
-
-///////////////////// INT /////////////////////////
 
 void EditorPropertyInteger::_set_read_only(bool p_read_only) { spin->set_read_only(p_read_only); }
 
@@ -715,8 +622,6 @@ void EditorPropertyInteger::setup(const EditorPropertyRangeHint& p_range_hint)
 	spin->set_suffix(p_range_hint.suffix);
 }
 
-///////////////////// OBJECT ID /////////////////////////
-
 void EditorPropertyObjectID::_set_read_only(bool p_read_only) { edit->set_disabled(p_read_only); }
 
 void EditorPropertyObjectID::_notification(int p_what)
@@ -731,10 +636,6 @@ void EditorPropertyObjectID::_notification(int p_what)
 
 void EditorPropertyObjectID::setup(const String& p_base_type) { base_type = p_base_type; }
 
-///////////////////// SIGNAL /////////////////////////
-
-///////////////////// CALLABLE /////////////////////////
-
 EditorPropertyCallable::EditorPropertyCallable()
 {
 	edit = memnew(Button);
@@ -743,8 +644,6 @@ EditorPropertyCallable::EditorPropertyCallable()
 	add_child(edit);
 	add_focusable(edit);
 }
-
-///////////////////// FLOAT /////////////////////////
 
 void EditorPropertyFloat::_set_read_only(bool p_read_only) { spin->set_read_only(p_read_only); }
 
@@ -770,17 +669,7 @@ void EditorPropertyFloat::setup(const EditorPropertyRangeHint& p_range_hint)
 	spin->set_suffix(p_range_hint.suffix);
 }
 
-///////////////////// EASING /////////////////////////
-
 void EditorPropertyEasing::_set_read_only(bool p_read_only) { spin->set_read_only(p_read_only); }
-
-void EditorPropertyEasing::_spin_focus_exited()
-{
-	spin->hide();
-	// Ensure the easing doesn't appear as being dragged
-	dragging = false;
-	easing_draw->queue_redraw();
-}
 
 void EditorPropertyEasing::setup(bool p_positive_only, bool p_flip)
 {
@@ -837,8 +726,6 @@ void EditorPropertyEasing::_notification(int p_what)
 	}
 }
 
-///////////////////// RECT2 /////////////////////////
-
 void EditorPropertyRect2::_set_read_only(bool p_read_only)
 {
 	for (int i = 0; i < 4; i++) {
@@ -873,8 +760,6 @@ void EditorPropertyRect2::setup(const EditorPropertyRangeHint& p_range_hint)
 	}
 }
 
-///////////////////// RECT2i /////////////////////////
-
 void EditorPropertyRect2i::_set_read_only(bool p_read_only)
 {
 	for (int i = 0; i < 4; i++) {
@@ -906,8 +791,6 @@ void EditorPropertyRect2i::setup(const EditorPropertyRangeHint& p_range_hint)
 		spin[i]->set_editing_integer(true);
 	}
 }
-
-///////////////////// PLANE /////////////////////////
 
 void EditorPropertyPlane::_set_read_only(bool p_read_only)
 {
@@ -942,8 +825,6 @@ void EditorPropertyPlane::setup(const EditorPropertyRangeHint& p_range_hint)
 	}
 	spin[3]->set_suffix(p_range_hint.suffix);
 }
-
-///////////////////// QUATERNION /////////////////////////
 
 void EditorPropertyQuaternion::_set_read_only(bool p_read_only)
 {
@@ -1054,8 +935,6 @@ void EditorPropertyQuaternion::setup(
 	}
 }
 
-///////////////////// AABB /////////////////////////
-
 void EditorPropertyAABB::_set_read_only(bool p_read_only)
 {
 	for (int i = 0; i < 6; i++) {
@@ -1089,8 +968,6 @@ void EditorPropertyAABB::setup(const EditorPropertyRangeHint& p_range_hint)
 		spin[i]->set_suffix(p_range_hint.suffix);
 	}
 }
-
-///////////////////// TRANSFORM2D /////////////////////////
 
 void EditorPropertyTransform2D::_set_read_only(bool p_read_only)
 {
@@ -1134,8 +1011,6 @@ void EditorPropertyTransform2D::setup(const EditorPropertyRangeHint& p_range_hin
 	}
 }
 
-///////////////////// BASIS /////////////////////////
-
 void EditorPropertyBasis::_set_read_only(bool p_read_only)
 {
 	for (int i = 0; i < 9; i++) {
@@ -1171,8 +1046,6 @@ void EditorPropertyBasis::setup(const EditorPropertyRangeHint& p_range_hint)
 		spin[i]->set_suffix(p_range_hint.suffix);
 	}
 }
-
-///////////////////// TRANSFORM3D /////////////////////////
 
 void EditorPropertyTransform3D::_set_read_only(bool p_read_only)
 {
@@ -1225,8 +1098,6 @@ void EditorPropertyTransform3D::setup(const EditorPropertyRangeHint& p_range_hin
 		}
 	}
 }
-
-///////////////////// PROJECTION /////////////////////////
 
 void EditorPropertyProjection::_set_read_only(bool p_read_only)
 {
@@ -1284,8 +1155,6 @@ void EditorPropertyProjection::setup(const EditorPropertyRangeHint& p_range_hint
 	}
 }
 
-////////////// COLOR PICKER //////////////////////
-
 void EditorPropertyColor::_set_read_only(bool p_read_only) { picker->set_disabled(p_read_only); }
 
 void EditorPropertyColor::_popup_opening()
@@ -1303,8 +1172,6 @@ void EditorPropertyColor::set_live_changes_enabled(bool p_enabled)
 {
 	live_changes_enabled = p_enabled;
 }
-
-////////////// NODE PATH //////////////////////
 
 void EditorPropertyNodePath::_set_read_only(bool p_read_only)
 {
@@ -1339,15 +1206,11 @@ void EditorPropertyNodePath::setup(
 	use_path_from_scene_root = p_use_path_from_scene_root;
 }
 
-///////////////////// RID /////////////////////////
-
 EditorPropertyRID::EditorPropertyRID()
 {
 	label = memnew(Label);
 	add_child(label);
 }
-
-////////////// RESOURCE //////////////////////
 
 void EditorPropertyResource::_set_read_only(bool p_read_only)
 {
@@ -1398,7 +1261,6 @@ void EditorPropertyResource::set_use_filter(bool p_use)
 	use_filter = p_use;
 	if (sub_inspector) {
 		update_property();
-
 	}
 }
 

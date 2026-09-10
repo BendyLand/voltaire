@@ -93,8 +93,6 @@ void EditorPerformanceProfiler::_update_monitor_value(Monitor* p_monitor, float 
 	}
 }
 
-void EditorPerformanceProfiler::_monitor_select() { monitor_draw->queue_redraw(); }
-
 void EditorPerformanceProfiler::_monitor_draw()
 {
 	Vector<StringName> active;
@@ -283,72 +281,6 @@ TreeItem* EditorPerformanceProfiler::_create_monitor_item(
 	return item;
 }
 
-void EditorPerformanceProfiler::_marker_input(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-		Vector<StringName> active;
-		for (KeyValue<StringName, Monitor>& E : monitors) {
-			if (E.value.item->is_checked(0)) {
-				active.push_back(E.key);
-			}
-		}
-		if (active.size() > 0) {
-			int columns = int(Math::ceil(Math::sqrt(float(active.size()))));
-			int rows = int(Math::ceil(float(active.size()) / float(columns)));
-			if (active.size() == 1) {
-				rows = 1;
-			}
-			Size2i cell_size = Size2i(monitor_draw->get_size()) / Size2i(columns, rows);
-			Vector2i index = mb->get_position() / cell_size;
-			Rect2i rect(index * cell_size + Point2i(MARGIN, MARGIN),
-				cell_size - Point2i(MARGIN, MARGIN) * 2);
-			if (rect.has_point(mb->get_position())) {
-				if (index.x + index.y * columns < active.size()) {
-					marker_key = active[index.x + index.y * columns];
-				}
-				else {
-					marker_key = "";
-				}
-				Vector2 point = mb->get_position() - rect.position;
-				if (point.x >= rect.size.x) {
-					marker_frame = 0;
-				}
-				else {
-					int point_sep = 5;
-					float spacing = float(point_sep) / float(columns);
-					marker_frame = (rect.size.x - point.x) / spacing;
-				}
-				monitor_draw->queue_redraw();
-				return;
-			}
-		}
-		marker_key = "";
-		monitor_draw->queue_redraw();
-	}
-}
-
-void EditorPerformanceProfiler::reset()
-{
-	HashMap<StringName, Monitor>::Iterator E = monitors.begin();
-	while (E != monitors.end()) {
-		HashMap<StringName, Monitor>::Iterator N = E;
-		++N;
-		if (String(E->key).begins_with("custom:")) {
-			monitors.remove(E);
-		}
-		else {
-			E->value.reset();
-		}
-		E = N;
-	}
-
-	_build_monitor_tree();
-	marker_key = "";
-	marker_frame = 0;
-	monitor_draw->queue_redraw();
-}
-
 void EditorPerformanceProfiler::update_monitors(
 	const Vector<StringName>& p_names, const PackedInt32Array& p_types)
 {
@@ -391,54 +323,12 @@ void EditorPerformanceProfiler::update_monitors(
 	_build_monitor_tree();
 }
 
-void EditorPerformanceProfiler::add_profile_frame(const Vector<float>& p_values)
-{
-	for (KeyValue<StringName, Monitor>& E : monitors) {
-		float value = 0.0f;
-		if (E.value.frame_index >= 0 && E.value.frame_index < p_values.size()) {
-			value = p_values[E.value.frame_index];
-		}
-		E.value.history.push_front(value);
-		_update_monitor_value(&E.value, value);
-	}
-	marker_frame++;
-	monitor_draw->queue_redraw();
-}
-
 List<float>* EditorPerformanceProfiler::get_monitor_data(const StringName& p_name)
 {
 	if (monitors.has(p_name)) {
 		return &monitors[p_name].history;
 	}
 	return nullptr;
-}
-
-void EditorPerformanceProfiler::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (is_ready()) {
-			_build_monitor_tree();
-			if (monitor_draw->is_visible_in_tree()) {
-				monitor_draw->queue_redraw();
-			}
-		}
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		for (KeyValue<StringName, TreeItem*>& E : base_map) {
-			E.value->set_custom_font(
-				0, get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
-		}
-	} break;
-
-	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-		if (EditorSettings::get_singleton()->check_changed_settings_in_group(
-				"interface/editor/localization/localize_settings")) {
-			_build_monitor_tree();
-		}
-	} break;
-	}
 }
 
 EditorPerformanceProfiler::EditorPerformanceProfiler()
@@ -449,6 +339,7 @@ EditorPerformanceProfiler::EditorPerformanceProfiler()
 	monitor_tree = memnew(Tree);
 	monitor_tree->set_custom_minimum_size(Size2(300, 0) * EDSCALE);
 	monitor_tree->set_columns(2);
+
 	monitor_tree->set_column_title(0, TTRC("Monitor"));
 	monitor_tree->set_column_expand(0, true);
 	monitor_tree->set_column_title(1, TTRC("Value"));

@@ -35,15 +35,6 @@
 #include "scene/resources/world_2d.h"
 #include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
 
-void RayCast2D::set_target_position(const Vector2& p_point)
-{
-	target_position = p_point;
-	if (is_inside_tree() &&
-		(Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_collisions_hint())) {
-		queue_redraw();
-	}
-}
-
 Vector2 RayCast2D::get_target_position() const { return target_position; }
 
 void RayCast2D::set_collision_mask(uint32_t p_mask) { collision_mask = p_mask; }
@@ -84,18 +75,6 @@ int RayCast2D::get_collider_shape() const { return against_shape; }
 Vector2 RayCast2D::get_collision_point() const { return collision_point; }
 
 Vector2 RayCast2D::get_collision_normal() const { return collision_normal; }
-
-void RayCast2D::set_enabled(bool p_enabled)
-{
-	enabled = p_enabled;
-	queue_redraw();
-	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
-		set_physics_process_internal(p_enabled);
-	}
-	if (!p_enabled) {
-		collided = false;
-	}
-}
 
 bool RayCast2D::is_enabled() const { return enabled; }
 

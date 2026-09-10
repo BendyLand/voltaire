@@ -248,12 +248,6 @@ bool AnimationNodeStateMachineEditor::_create_submenu(PopupMenu* p_menu,
 	return node_added;
 }
 
-void AnimationNodeStateMachineEditor::_stop_connecting()
-{
-	connecting = false;
-	state_machine_draw->queue_redraw();
-}
-
 void AnimationNodeStateMachineEditor::_connection_draw(const Vector2& p_from, const Vector2& p_to,
 	AnimationNodeStateMachineTransition::SwitchMode p_mode, bool p_enabled, bool p_selected,
 	bool p_travel, float p_fade_ratio, bool p_auto_advance, bool p_is_across_group, float p_opacity,
@@ -397,32 +391,9 @@ void AnimationNodeStateMachineEditor::_update_connected_nodes(const StringName& 
 	}
 }
 
-void AnimationNodeStateMachineEditor::_update_graph()
-{
-	if (updating) {
-		return;
-	}
-
-	updating = true;
-
-	state_machine_draw->queue_redraw();
-
-	updating = false;
-}
-
 void AnimationNodeStateMachineEditor::_open_editor(const String& p_name)
 {
 	AnimationTreeEditor::get_singleton()->enter_editor(p_name);
-}
-
-void AnimationNodeStateMachineEditor::_scroll_changed(double)
-{
-	if (updating) {
-		return;
-	}
-
-	state_machine->set_graph_offset(Vector2(h_scroll->get_value(), v_scroll->get_value()));
-	state_machine_draw->queue_redraw();
 }
 
 void AnimationNodeStateMachineEditor::_update_mode()
@@ -453,8 +424,6 @@ void AnimationNodeStateMachineEditor::_update_mode()
 		transition_tools_hb->hide();
 	}
 }
-
-void AnimationNodeStateMachineEditor::_bind_methods() {}
 
 AnimationNodeStateMachineEditor* AnimationNodeStateMachineEditor::singleton = nullptr;
 

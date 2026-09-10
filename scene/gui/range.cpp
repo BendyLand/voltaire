@@ -105,20 +105,6 @@ void Range::Shared::emit_changed()
 	}
 }
 
-void Range::Shared::redraw_owners()
-{
-	for (Range* E : owners) {
-		Range* r = E;
-		if (!r->is_inside_tree()) {
-			continue;
-		}
-
-		r->_value_changed(val);
-		r->queue_accessibility_update();
-		r->queue_redraw();
-	}
-}
-
 void Range::set_value(double p_val)
 {
 	double prev_val = shared->val;
@@ -335,8 +321,6 @@ void Range::_unref_shared()
 		}
 	}
 }
-
-void Range::_bind_methods() {}
 
 void Range::set_use_rounded_values(bool p_enable) { _rounded_values = p_enable; }
 

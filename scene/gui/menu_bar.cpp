@@ -33,64 +33,6 @@
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
-void MenuBar::_open_popup(int p_index, bool p_focus_item)
-{
-	ERR_FAIL_INDEX(p_index, menu_cache.size());
-
-	PopupMenu* pm = get_menu_popup(p_index);
-	if (pm->is_visible()) {
-		pm->hide();
-		return;
-	}
-
-	Rect2 item_rect = _get_menu_item_rect(p_index);
-	item_rect.position *= get_screen_transform().get_scale();
-	item_rect.size *= get_screen_transform().get_scale();
-
-	Rect2 rect = get_screen_rect();
-	rect.position.x += item_rect.position.x;
-	rect.position.y += rect.size.height;
-	if (get_viewport()->is_embedding_subwindows() && pm->get_force_native()) {
-		Transform2D xform = get_viewport()->get_popup_base_transform_native();
-		rect = xform.xform(rect);
-	}
-
-	active_menu = p_index;
-
-	pm->set_size(Size2(item_rect.size.x, 0));
-	if (is_layout_rtl()) {
-		rect.position.x += rect.size.width - pm->get_size().width;
-	}
-	pm->set_position(rect.position);
-	pm->popup();
-
-	if (p_focus_item) {
-		for (int i = 0; i < pm->get_item_count(); i++) {
-			if (!pm->is_item_disabled(i)) {
-				pm->set_focused_item(i);
-				break;
-			}
-		}
-	}
-
-	queue_redraw();
-}
-
-void MenuBar::_popup_visibility_changed(bool p_visible)
-{
-	if (!p_visible) {
-		active_menu = -1;
-		focused_menu = -1;
-		set_process_internal(false);
-		queue_redraw();
-		return;
-	}
-
-	if (switch_on_hover) {
-		set_process_internal(true);
-	}
-}
-
 bool MenuBar::is_native_menu() const
 {
 #ifdef TOOLS_ENABLED
@@ -302,36 +244,9 @@ bool MenuBar::is_switch_on_hover() { return switch_on_hover; }
 
 void MenuBar::set_disable_shortcuts(bool p_disabled) { disable_shortcuts = p_disabled; }
 
-void MenuBar::set_text_direction(Control::TextDirection p_text_direction)
-{
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-	if (text_direction != p_text_direction) {
-		text_direction = p_text_direction;
-		update_minimum_size();
-		queue_redraw();
-	}
-}
-
 Control::TextDirection MenuBar::get_text_direction() const { return text_direction; }
 
-void MenuBar::set_language(const String& p_language)
-{
-	if (language != p_language) {
-		language = p_language;
-		update_minimum_size();
-		queue_redraw();
-	}
-}
-
 String MenuBar::get_language() const { return language; }
-
-void MenuBar::set_flat(bool p_enabled)
-{
-	if (flat != p_enabled) {
-		flat = p_enabled;
-		queue_redraw();
-	}
-}
 
 bool MenuBar::is_flat() const { return flat; }
 
@@ -421,24 +336,7 @@ bool MenuBar::is_menu_disabled(int p_menu) const
 	return menu_cache[p_menu].disabled;
 }
 
-void MenuBar::set_menu_hidden(int p_menu, bool p_hidden)
-{
-	ERR_FAIL_INDEX(p_menu, menu_cache.size());
-	menu_cache.write[p_menu].hidden = p_hidden;
-	if (!global_menu_tag.is_empty() && menu_cache[p_menu].submenu_rid.is_valid()) {
-		NativeMenu* nmenu = NativeMenu::get_singleton();
-		RID main_menu = nmenu->get_system_menu(NativeMenu::MAIN_MENU_ID);
-		int item_idx =
-			nmenu->find_item_index_with_submenu(main_menu, menu_cache[p_menu].submenu_rid);
-		if (item_idx >= 0) {
-			nmenu->set_item_hidden(main_menu, item_idx, p_hidden);
-		}
-	}
-	update_minimum_size();
-}
-
-bool MenuBar::is_menu_hidden(int p_menu)
-const
+bool MenuBar::is_menu_hidden(int p_menu) const
 {
 	ERR_FAIL_INDEX_V(p_menu, menu_cache.size(), false);
 	return menu_cache[p_menu].hidden;

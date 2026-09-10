@@ -319,134 +319,7 @@ int PopupMenu::_get_mouse_over(const Point2& p_over) const
 	return -1;
 }
 
-void PopupMenu::_activate_submenu(int p_over, bool p_by_keyboard)
-{
-	ERR_FAIL_INDEX_MSG(
-		p_over, items.size(), vformat("Invalid submenu index %d in _activate_submenu.", p_over));
-	PopupMenu* submenu_popup = items[p_over].submenu;
-	if (submenu_popup->is_visible()) {
-		WARN_VERBOSE(vformat(
-			"_activate_submenu should not be called on an open submenu - index: %d.", p_over));
-		return;
-	}
-	submenu_popup->this_submenu_index = p_over;
-	active_submenu_index = p_over;
 
-	submenu_popup->get_window()->set_exclusive(
-		false); // Ensure mouse inputs to parent menu are not inhibited by the submenu in exclusive
-				// mode.
-
-	const float win_scale = get_content_scale_factor();
-
-	const Point2 this_pos = get_position();
-	Rect2 this_rect = Rect2(this_pos, panel->get_size());
-
-	submenu_popup->reset_size(); // Shrink the popup size to its contents.
-	const Size2 submenu_size = submenu_popup->get_size();
-
-	// Calculate the submenu's position.
-	Point2 submenu_pos = Point2(0, 0);
-	Rect2i screen_rect =
-		is_embedded() ? Rect2i(get_embedder()->get_visible_rect()) : get_parent_rect();
-	active_submenu_target_line.clear();
-
-	panel_offset_start =
-		Point2(panel->get_offset(SIDE_LEFT), panel->get_offset(SIDE_TOP)) * win_scale;
-	const Point2 panel_offset_end =
-		Point2(-panel->get_offset(SIDE_RIGHT), -panel->get_offset(SIDE_BOTTOM)) * win_scale;
-	const Vector2 this_size = this_rect.size * win_scale;
-	const float theme_v_separation = theme_cache.v_separation * win_scale;
-	const float scroll_offset = control->get_position().y * win_scale;
-	const float scroll_container_offset = scroll_container->get_global_position().y * win_scale;
-	const float ofs_cache = items[p_over]._ofs_cache * win_scale;
-	const float height_cache = items[p_over]._height_cache * win_scale;
-	const float item_top_y =
-		ofs_cache + scroll_offset + scroll_container_offset - int(theme_v_separation * 0.5);
-
-	if (is_layout_rtl()) {
-		is_active_submenu_left = true;
-		submenu_pos.x = this_pos.x - submenu_size.width + panel_offset_end.x;
-		if (submenu_pos.x < screen_rect.position.x) {
-			submenu_pos.x = this_pos.x + this_rect.size.width - panel_offset_start.x;
-			is_active_submenu_left = false;
-		}
-	}
-	else {
-		is_active_submenu_left = false;
-		submenu_pos.x = this_pos.x + this_size.x + panel_offset_start.x;
-		if (submenu_pos.x + submenu_size.width > screen_rect.position.x + screen_rect.size.width) {
-			submenu_pos.x = this_pos.x - submenu_size.width + panel_offset_end.x;
-			is_active_submenu_left = true;
-		}
-	}
-
-	submenu_pos.y = this_pos.y + item_top_y -
-					submenu_popup->theme_cache.panel_style->get_margin(SIDE_TOP) * win_scale;
-	if (submenu_popup->search_bar->is_visible()) {
-		submenu_pos.y -= (submenu_popup->search_bar->get_minimum_size().y +
-							 submenu_popup->theme_cache.search_bar_separation) *
-						 win_scale;
-	}
-
-	submenu_popup->set_position(submenu_pos);
-	submenu_popup->activated_by_keyboard = p_by_keyboard;
-	// If not triggered by the mouse, start the popup with its first enabled item focused.
-	if (p_by_keyboard) {
-		for (int i = 0; i < submenu_popup->get_item_count(); i++) {
-			if (!submenu_popup->is_item_disabled(i)) {
-				submenu_popup->set_focused_item(i);
-				break;
-			}
-		}
-	}
-	submenu_popup->popup();
-	// The autohide areas are set on the submenu, but are aligned over the parent menu,
-	// so we spoof `this_rect` position as the negative relative offset of the parent from the
-	// submenu.
-	this_rect.position = -(submenu_popup->get_position() - this_pos);
-
-	const Rect2 safe_area(get_position(), get_size());
-	Viewport* vp = submenu_popup->get_embedder();
-	if (vp) {
-		vp->subwindow_set_popup_safe_rect(submenu_popup, safe_area);
-	}
-	else {
-		DisplayServer::get_singleton()->window_set_popup_safe_rect(
-			submenu_popup->get_window_id(), safe_area);
-	}
-	// Set the mouse movement target line at the top and bottom points of the submenu vertical side
-	// abutting the parent menu.
-	if (is_active_submenu_left) {
-		active_submenu_target_line.push_back(
-			Point2(submenu_popup->get_position().x + submenu_popup->get_size().x,
-				submenu_popup->get_position().y));
-	}
-	else {
-		active_submenu_target_line.push_back(submenu_popup->get_position());
-	}
-	active_submenu_target_line.push_back(Point2(active_submenu_target_line[0].x,
-		active_submenu_target_line[0].y + submenu_popup->get_size().y));
-
-	submenu_popup->clear_autohide_areas();
-	// Add an autohide area above the submenu item unless it's the top item.
-	// This avoids a narrow strip of area that can trigger the submenu to reload when reentering the
-	// parent item from the top.
-	const int y_to_item_top = item_top_y - panel_offset_start.y;
-	Rect2 top_rect =
-		Rect2(this_rect.position.x, this_rect.position.y, this_size.width, y_to_item_top);
-	if (active_submenu_index != 0) {
-		submenu_popup->add_autohide_area(top_rect);
-	}
-	// If there is an area below the submenu item, add an autohide area there unless it's the last
-	// item.
-	if (active_submenu_index != items.size() - 1) {
-		const int y_to_item_bottom = y_to_item_top + height_cache + theme_v_separation;
-		submenu_popup->add_autohide_area(Rect2(this_rect.position.x,
-			this_rect.position.y + y_to_item_bottom, this_size.x, this_size.y - y_to_item_bottom));
-	}
-	queue_accessibility_update();
-	control->queue_redraw();
-}
 
 void PopupMenu::_submenu_timeout()
 {
@@ -794,13 +667,7 @@ void PopupMenu::_update_search_bar_visibility()
 	}
 }
 
-void PopupMenu::_search_bar_focus_entered()
-{
-	prev_mouse_over = mouse_over;
-	mouse_over = -1;
-	queue_accessibility_update();
-	control->queue_redraw();
-}
+
 
 void PopupMenu::_filter_items(const String& p_query)
 {
@@ -964,258 +831,30 @@ RID PopupMenu::get_focused_accessibility_element() const
 #undef ITEM_SETUP_WITH_ACCEL
 #undef ITEM_SETUP_WITH_SHORTCUT
 
-/* Methods to modify existing items. */
 
-void PopupMenu::set_item_text(int p_idx, const String& p_text)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-	if (items[p_idx].text == p_text) {
-		return;
-	}
-	items.write[p_idx].text = p_text;
-	items.write[p_idx].xl_text = _atr(p_idx, p_text);
-	items.write[p_idx].dirty = true;
-	items.write[p_idx].accessibility_item_dirty = true;
 
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_text(global_menu, p_idx, items[p_idx].xl_text);
-	}
 
-	_shape_item(p_idx);
-	queue_accessibility_update();
-	control->queue_redraw();
 
-	child_controls_changed();
-	_menu_changed();
-}
 
-void PopupMenu::set_item_text_direction(int p_idx, Control::TextDirection p_text_direction)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
 
-	if (items[p_idx].text_direction != p_text_direction) {
-		items.write[p_idx].text_direction = p_text_direction;
-		items.write[p_idx].dirty = true;
-		items.write[p_idx].accessibility_item_dirty = true;
 
-		_shape_item(p_idx);
-		queue_accessibility_update();
-		control->queue_redraw();
-	}
-}
 
-void PopupMenu::set_item_language(int p_idx, const String& p_language)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-	if (items[p_idx].language != p_language) {
-		items.write[p_idx].language = p_language;
-		items.write[p_idx].dirty = true;
-		items.write[p_idx].accessibility_item_dirty = true;
 
-		_shape_item(p_idx);
-		queue_accessibility_update();
-		control->queue_redraw();
-	}
-}
 
-void PopupMenu::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-	if (items[p_idx].auto_translate_mode == p_mode) {
-		return;
-	}
-	items.write[p_idx].auto_translate_mode = p_mode;
-	items.write[p_idx].xl_text = _atr(p_idx, items[p_idx].text);
-	items.write[p_idx].dirty = true;
-	control->queue_redraw();
-}
 
-void PopupMenu::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
 
-	if (items[p_idx].icon == p_icon) {
-		return;
-	}
 
-	items.write[p_idx].icon = p_icon;
 
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_icon(global_menu, p_idx, items[p_idx].icon);
-	}
 
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
 
-void PopupMenu::set_item_icon_max_width(int p_idx, int p_width)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
 
-	if (items[p_idx].icon_max_width == p_width) {
-		return;
-	}
 
-	items.write[p_idx].icon_max_width = p_width;
 
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
 
-void PopupMenu::set_item_icon_modulate(int p_idx, const Color& p_modulate)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
 
-	if (items[p_idx].icon_modulate == p_modulate) {
-		return;
-	}
 
-	items.write[p_idx].icon_modulate = p_modulate;
-	control->queue_redraw();
-}
 
-void PopupMenu::set_item_checked(int p_idx, bool p_checked)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
 
-	if (items[p_idx].checked == p_checked) {
-		return;
-	}
-
-	items.write[p_idx].checked = p_checked;
-	items.write[p_idx].accessibility_item_dirty = true;
-	items.write[p_idx].indeterminate = false;
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_checked(global_menu, p_idx, p_checked);
-	}
-
-	queue_accessibility_update();
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
-
-void PopupMenu::set_item_indeterminate(int p_idx, bool p_indeterminate)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items[p_idx].indeterminate == p_indeterminate) {
-		return;
-	}
-
-	items.write[p_idx].indeterminate = p_indeterminate;
-	items.write[p_idx].accessibility_item_dirty = true;
-	items.write[p_idx].checked = false;
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_indeterminate(global_menu, p_idx, p_indeterminate);
-	}
-
-	queue_accessibility_update();
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
-
-void PopupMenu::set_item_id(int p_idx, int p_id)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items[p_idx].id == p_id) {
-		return;
-	}
-
-	items.write[p_idx].id = p_id;
-
-	// `global_menu` does not know about IDs so there is no need to update it.
-
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
-
-void PopupMenu::set_item_accelerator(int p_idx, Key p_accel)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items[p_idx].accel == p_accel) {
-		return;
-	}
-
-	items.write[p_idx].accel = p_accel;
-	items.write[p_idx].dirty = true;
-	items.write[p_idx].accessibility_item_dirty = true;
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_accelerator(global_menu, p_idx, p_accel);
-	}
-
-	queue_accessibility_update();
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
-
-void PopupMenu::set_item_disabled(int p_idx, bool p_disabled)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items[p_idx].disabled == p_disabled) {
-		return;
-	}
-
-	items.write[p_idx].disabled = p_disabled;
-	items.write[p_idx].accessibility_item_dirty = true;
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_disabled(global_menu, p_idx, p_disabled);
-	}
-
-	queue_accessibility_update();
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
 
 void PopupMenu::_close_suspended_timeout()
 {
@@ -1233,51 +872,9 @@ void PopupMenu::_close_suspended_timeout()
 	}
 }
 
-void PopupMenu::_submenu_hidden()
-{
-	// Ensure the submenu_timer is not running to avoid any race conditions between opening and
-	// closing submenus.
-	if (!submenu_timer->is_stopped()) {
-		WARN_VERBOSE("The submenu_timer should never be running when the _submenu_hidden signal is "
-					 "emitted.");
-		return;
-	}
-	if (active_submenu_index == -1) {
-		WARN_VERBOSE(
-			"The active_submenu_index should never be -1 when _submenu_hidden is entered.");
-		return;
-	}
-	active_submenu_index = -1;
-	submenu_over = -1;
-	submenu_mouse_exited_ticks_msec = -1;
-	mouse_movement_was_tested = false;
-	close_was_suspended = false;
-	queue_accessibility_update();
-	control->queue_redraw();
-	if (!activated_by_keyboard) {
-		Point2 mouse_pos =
-			is_embedded()
-				? get_mouse_position() * get_content_scale_factor()
-				: Point2(DisplayServer::get_singleton()->mouse_get_position() - get_position());
-		_mouse_over_update(mouse_pos);
-	}
-}
 
-void PopupMenu::toggle_item_checked(int p_idx)
-{
-	ERR_FAIL_INDEX(p_idx, items.size());
-	items.write[p_idx].checked = !items[p_idx].checked;
-	items.write[p_idx].accessibility_item_dirty = true;
 
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_checked(global_menu, p_idx, items[p_idx].checked);
-	}
 
-	queue_accessibility_update();
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
 
 String PopupMenu::get_item_text(int p_idx) const
 {
@@ -1421,23 +1018,7 @@ int PopupMenu::get_item_state(int p_idx) const
 	return items[p_idx].state;
 }
 
-void PopupMenu::set_item_as_separator(int p_idx, bool p_separator)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
 
-	if (items[p_idx].separator == p_separator) {
-		return;
-	}
-
-	items.write[p_idx].separator = p_separator;
-	items.write[p_idx].accessibility_item_dirty = true;
-
-	queue_accessibility_update();
-	control->queue_redraw();
-}
 
 bool PopupMenu::is_item_separator(int p_idx) const
 {
@@ -1445,167 +1026,19 @@ bool PopupMenu::is_item_separator(int p_idx) const
 	return items[p_idx].separator;
 }
 
-void PopupMenu::set_item_as_checkable(int p_idx, bool p_checkable)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
 
-	int type = (int)(p_checkable ? Item::CHECKABLE_TYPE_CHECK_BOX : Item::CHECKABLE_TYPE_NONE);
-	if (type == items[p_idx].checkable_type) {
-		return;
-	}
 
-	items.write[p_idx].checkable_type =
-		p_checkable ? Item::CHECKABLE_TYPE_CHECK_BOX : Item::CHECKABLE_TYPE_NONE;
-	items.write[p_idx].accessibility_item_dirty = true;
 
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_checkable(global_menu, p_idx, p_checkable);
-	}
 
-	queue_accessibility_update();
-	control->queue_redraw();
-	_menu_changed();
-}
 
-void PopupMenu::set_item_as_radio_checkable(int p_idx, bool p_radio_checkable)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
 
-	int type =
-		(int)(p_radio_checkable ? Item::CHECKABLE_TYPE_RADIO_BUTTON : Item::CHECKABLE_TYPE_NONE);
-	if (type == items[p_idx].checkable_type) {
-		return;
-	}
 
-	items.write[p_idx].checkable_type =
-		p_radio_checkable ? Item::CHECKABLE_TYPE_RADIO_BUTTON : Item::CHECKABLE_TYPE_NONE;
-	items.write[p_idx].accessibility_item_dirty = true;
 
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_radio_checkable(
-			global_menu, p_idx, p_radio_checkable);
-	}
 
-	queue_accessibility_update();
-	control->queue_redraw();
-	_menu_changed();
-}
 
-void PopupMenu::set_item_tooltip(int p_idx, const String& p_tooltip)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
 
-	if (items[p_idx].tooltip == p_tooltip) {
-		return;
-	}
 
-	items.write[p_idx].tooltip = p_tooltip;
-	items.write[p_idx].accessibility_item_dirty = true;
 
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_tooltip(global_menu, p_idx, p_tooltip);
-	}
-
-	queue_accessibility_update();
-	control->queue_redraw();
-	_menu_changed();
-}
-
-void PopupMenu::set_item_indent(int p_idx, int p_indent)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items.write[p_idx].indent == p_indent) {
-		return;
-	}
-	items.write[p_idx].indent = p_indent;
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_indentation_level(global_menu, p_idx, p_indent);
-	}
-
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
-}
-
-void PopupMenu::set_item_max_states(int p_idx, int p_max_states)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items[p_idx].max_states == p_max_states) {
-		return;
-	}
-
-	items.write[p_idx].max_states = p_max_states;
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_max_states(global_menu, p_idx, p_max_states);
-	}
-
-	control->queue_redraw();
-	_menu_changed();
-}
-
-void PopupMenu::set_item_multistate(int p_idx, int p_state)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items[p_idx].state == p_state) {
-		return;
-	}
-
-	items.write[p_idx].state = p_state;
-	items.write[p_idx].accessibility_item_dirty = true;
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_state(global_menu, p_idx, p_state);
-	}
-
-	queue_accessibility_update();
-	control->queue_redraw();
-	_menu_changed();
-}
-
-void PopupMenu::toggle_item_multistate(int p_idx)
-{
-	ERR_FAIL_INDEX(p_idx, items.size());
-	if (0 >= items[p_idx].max_states) {
-		return;
-	}
-
-	++items.write[p_idx].state;
-	if (items.write[p_idx].max_states <= items[p_idx].state) {
-		items.write[p_idx].state = 0;
-	}
-	items.write[p_idx].accessibility_item_dirty = true;
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_state(global_menu, p_idx, items[p_idx].state);
-	}
-
-	queue_accessibility_update();
-	control->queue_redraw();
-	_menu_changed();
-}
 
 bool PopupMenu::is_item_checkable(int p_idx) const
 {
@@ -1631,24 +1064,7 @@ bool PopupMenu::is_item_shortcut_disabled(int p_idx) const
 	return items[p_idx].shortcut_is_disabled;
 }
 
-void PopupMenu::set_focused_item(int p_idx)
-{
-	if (p_idx != -1) {
-		ERR_FAIL_INDEX(p_idx, items.size());
-	}
 
-	if (mouse_over == p_idx) {
-		return;
-	}
-
-	prev_mouse_over = mouse_over;
-	mouse_over = p_idx;
-	if (mouse_over != -1) {
-		scroll_to_item(mouse_over);
-	}
-	queue_accessibility_update();
-	control->queue_redraw();
-}
 
 int PopupMenu::get_focused_item() const { return mouse_over; }
 
@@ -1747,30 +1163,6 @@ bool PopupMenu::activate_item_by_event(const Ref<InputEvent>& p_event, bool p_fo
 		}
 	}
 	return false;
-}
-
-void PopupMenu::remove_item(int p_idx)
-{
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items[p_idx].accessibility_item_element.is_valid()) {
-		AccessibilityServer::get_singleton()->free_element(
-			items.write[p_idx].accessibility_item_element);
-		items.write[p_idx].accessibility_item_element = RID();
-	}
-	if (items[p_idx].shortcut.is_valid()) {
-		_unref_shortcut(items[p_idx].shortcut);
-	}
-
-	items.remove_at(p_idx);
-
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->remove_item(global_menu, p_idx);
-	}
-
-	control->queue_redraw();
-	child_controls_changed();
-	_menu_changed();
 }
 
 // Hide on item selection determines whether or not the popup will close after item selection

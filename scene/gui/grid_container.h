@@ -43,7 +43,6 @@ class GridContainer : public Container
 	} theme_cache;
 
 private:
-	void _resort();
 	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
 
 protected:

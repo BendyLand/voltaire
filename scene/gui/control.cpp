@@ -126,8 +126,6 @@ void Control::reparent(Node* p_parent, bool p_keep_global_transform)
 	}
 }
 
-// Editor integration.
-
 int Control::root_layout_direction = 0;
 
 void Control::set_root_layout_direction(int p_root_dir) { root_layout_direction = p_root_dir; }
@@ -164,8 +162,6 @@ bool Control::is_text_field() const
 	return false;
 }
 
-// Dynamic properties.
-
 String Control::properties_managed_by_container[] = {"offset_left", "offset_top", "offset_right",
 	"offset_bottom", "anchor_left", "anchor_top", "anchor_right", "anchor_bottom", "position",
 	"rotation", "scale", "size"};
@@ -178,8 +174,6 @@ bool Control::_property_can_revert(const StringName& p_name) const
 
 	return false;
 }
-
-// Global relations.
 
 Control* Control::get_parent_control() const
 {
@@ -232,8 +226,6 @@ Size2 Control::get_parent_area_size() const
 	return get_parent_anchorable_rect().size;
 }
 
-// Positioning and sizing.
-
 Transform2D Control::_get_internal_transform() const
 {
 	// T(pivot_offset) * R(rotation) * S(scale) * T(-pivot_offset)
@@ -280,50 +272,7 @@ void Control::_top_level_changed_on_parent()
 	_notification(NOTIFICATION_ENTER_CANVAS);
 }
 
-/// Anchors and offsets.
-
 void Control::_set_anchor(Side p_side, real_t p_anchor) { set_anchor(p_side, p_anchor); }
-
-void Control::set_anchor(
-	Side p_side, real_t p_anchor, bool p_keep_offset, bool p_push_opposite_anchor)
-{
-	ERR_MAIN_THREAD_GUARD;
-	ERR_FAIL_INDEX((int)p_side, 4);
-
-	Rect2 parent_rect = get_parent_anchorable_rect();
-	real_t parent_range =
-		(p_side == SIDE_LEFT || p_side == SIDE_RIGHT) ? parent_rect.size.x : parent_rect.size.y;
-	real_t previous_pos = data.offset[p_side] + data.anchor[p_side] * parent_range;
-	real_t previous_opposite_pos =
-		data.offset[(p_side + 2) % 4] + data.anchor[(p_side + 2) % 4] * parent_range;
-
-	data.anchor[p_side] = p_anchor;
-
-	if (((p_side == SIDE_LEFT || p_side == SIDE_TOP) &&
-			data.anchor[p_side] > data.anchor[(p_side + 2) % 4]) ||
-		((p_side == SIDE_RIGHT || p_side == SIDE_BOTTOM) &&
-			data.anchor[p_side] < data.anchor[(p_side + 2) % 4])) {
-		if (p_push_opposite_anchor) {
-			data.anchor[(p_side + 2) % 4] = data.anchor[p_side];
-		}
-		else {
-			data.anchor[p_side] = data.anchor[(p_side + 2) % 4];
-		}
-	}
-
-	if (!p_keep_offset) {
-		data.offset[p_side] = previous_pos - data.anchor[p_side] * parent_range;
-		if (p_push_opposite_anchor) {
-			data.offset[(p_side + 2) % 4] =
-				previous_opposite_pos - data.anchor[(p_side + 2) % 4] * parent_range;
-		}
-	}
-	if (is_inside_tree()) {
-		_size_changed();
-	}
-
-	queue_redraw();
-}
 
 real_t Control::get_anchor(Side p_side) const
 {
@@ -481,8 +430,6 @@ void Control::_compute_layout_rect(Rect2 p_rect, bool p_keep_offsets)
 		data.offset[3] = y + p_rect.size.y - (data.anchor[3] * parent_rect_size.y);
 	}
 }
-
-/// Presets and layout modes.
 
 int Control::_get_anchors_layout_preset() const
 {
@@ -902,8 +849,6 @@ void Control::set_grow_direction_preset(LayoutPreset p_preset)
 	}
 }
 
-/// Manual positioning.
-
 void Control::_set_position(const Point2& p_point) { set_position(p_point); }
 
 void Control::set_position(const Point2& p_point, bool p_keep_offsets)
@@ -1101,8 +1046,6 @@ Vector2 Control::get_combined_pivot_offset() const
 	return data.pivot_offset + data.pivot_offset_ratio * get_size();
 }
 
-/// Sizes.
-
 void Control::set_propagate_maximum_size(bool p_propagate)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1236,23 +1179,6 @@ Size2 Control::get_minimum_size() const
 	ERR_READ_THREAD_GUARD_V(Size2());
 	Vector2 ms;
 	return ms;
-}
-
-void Control::set_custom_minimum_size(const Size2& p_custom)
-{
-	ERR_MAIN_THREAD_GUARD;
-	if (p_custom == data.custom_minimum_size) {
-		return;
-	}
-
-	if (!p_custom.is_finite()) {
-		// Prevent infinite loop.
-		return;
-	}
-
-	data.custom_minimum_size = p_custom;
-	update_minimum_size();
-	update_configuration_warnings();
 }
 
 Size2 Control::get_custom_minimum_size() const
@@ -1394,8 +1320,6 @@ Size2 Control::get_bound_minimum_size() const
 
 void Control::_clear_size_warning() { data.size_warning = false; }
 
-// Container sizing.
-
 uint32_t Control::get_h_size_flags() const
 {
 	ERR_READ_THREAD_GUARD_V(SIZE_EXPAND_FILL);
@@ -1413,8 +1337,6 @@ real_t Control::get_stretch_ratio() const
 	ERR_READ_THREAD_GUARD_V(0);
 	return data.expand;
 }
-
-// Offset transform.
 
 bool Control::is_offset_transform_enabled() const
 {
@@ -1500,8 +1422,6 @@ Transform2D Control::get_offset_transform() const
 	offset_xform.translate_local(-combined_pivot);
 	return offset_xform;
 }
-
-// Input events.
 
 void Control::accept_event()
 {
@@ -1666,8 +1586,6 @@ bool Control::is_drag_successful() const
 	ERR_READ_THREAD_GUARD_V(false);
 	return is_inside_tree() && get_viewport()->gui_is_drag_successful();
 }
-
-// Focus.
 
 void Control::set_focus_mode(FocusMode p_focus_mode)
 {
@@ -1852,8 +1770,6 @@ Control* Control::find_valid_focus_neighbor(Side p_side) const
 	return const_cast<Control*>(this)->_get_focus_neighbor(p_side);
 }
 
-// Rendering.
-
 void Control::set_default_cursor_shape(CursorShape p_shape)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1887,30 +1803,10 @@ Control::CursorShape Control::get_cursor_shape(const Point2& p_pos) const
 	return data.default_cursor;
 }
 
-void Control::set_disable_visibility_clip(bool p_ignore)
-{
-	ERR_MAIN_THREAD_GUARD;
-	if (data.disable_visibility_clip == p_ignore) {
-		return;
-	}
-	data.disable_visibility_clip = p_ignore;
-	queue_redraw();
-}
-
 bool Control::is_visibility_clip_disabled() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	return data.disable_visibility_clip;
-}
-
-void Control::set_clip_contents(bool p_clip)
-{
-	ERR_MAIN_THREAD_GUARD;
-	if (data.clip_contents == p_clip) {
-		return;
-	}
-	data.clip_contents = p_clip;
-	queue_redraw();
 }
 
 bool Control::is_clipping_contents()
@@ -1918,8 +1814,6 @@ bool Control::is_clipping_contents()
 	ERR_READ_THREAD_GUARD_V(false);
 	return data.clip_contents;
 }
-
-// Theming.
 
 void Control::_theme_changed()
 {
@@ -1979,16 +1873,12 @@ StringName Control::get_theme_type_variation() const
 	return data.theme_type_variation;
 }
 
-/// Theme property lookup.
-
 #ifdef TOOLS_ENABLED
 Ref<Texture2D> Control::get_editor_theme_icon(const StringName& p_name) const
 {
 	return get_theme_icon(p_name, SNAME("EditorIcons"));
 }
 #endif // TOOLS_ENABLED
-
-/// Local property overrides.
 
 void Control::add_theme_font_size_override(const StringName& p_name, int p_font_size)
 {
@@ -2074,8 +1964,6 @@ bool Control::has_theme_constant_override(const StringName& p_name) const
 	return constant != nullptr;
 }
 
-/// Default theme properties.
-
 float Control::get_theme_default_base_scale() const
 {
 	ERR_READ_THREAD_GUARD_V(0);
@@ -2094,8 +1982,6 @@ int Control::get_theme_default_font_size() const
 	return data.theme_owner->get_theme_default_font_size();
 }
 
-/// Bulk actions.
-
 void Control::begin_bulk_theme_override()
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -2110,8 +1996,6 @@ void Control::end_bulk_theme_override()
 	data.bulk_theme_override = false;
 	_notify_theme_override_changed();
 }
-
-// Internationalization.
 
 void Control::set_layout_direction(Control::LayoutDirection p_direction)
 {
@@ -2169,8 +2053,6 @@ Node::AutoTranslateMode Control::get_tooltip_auto_translate_mode_at(const Vector
 	ERR_READ_THREAD_GUARD_V(AUTO_TRANSLATE_MODE_INHERIT);
 	return get_tooltip_auto_translate_mode();
 }
-
-// Extra properties.
 
 void Control::set_tooltip_text(const String& p_hint)
 {

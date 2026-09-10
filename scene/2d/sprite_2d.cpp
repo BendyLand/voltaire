@@ -133,66 +133,13 @@ void Sprite2D::_notification(int p_what)
 
 Ref<Texture2D> Sprite2D::get_texture() const { return texture; }
 
-void Sprite2D::set_centered(bool p_center)
-{
-	if (centered == p_center) {
-		return;
-	}
-
-	centered = p_center;
-	queue_redraw();
-	item_rect_changed();
-}
-
 bool Sprite2D::is_centered() const { return centered; }
-
-void Sprite2D::set_offset(const Point2& p_offset)
-{
-	if (offset == p_offset) {
-		return;
-	}
-
-	offset = p_offset;
-	queue_redraw();
-	item_rect_changed();
-}
 
 Point2 Sprite2D::get_offset() const { return offset; }
 
-void Sprite2D::set_flip_h(bool p_flip)
-{
-	if (hflip == p_flip) {
-		return;
-	}
-
-	hflip = p_flip;
-	queue_redraw();
-}
-
 bool Sprite2D::is_flipped_h() const { return hflip; }
 
-void Sprite2D::set_flip_v(bool p_flip)
-{
-	if (vflip == p_flip) {
-		return;
-	}
-
-	vflip = p_flip;
-	queue_redraw();
-}
-
 bool Sprite2D::is_flipped_v() const { return vflip; }
-
-void Sprite2D::set_region_enabled(bool p_region_enabled)
-{
-	if (region_enabled == p_region_enabled) {
-		return;
-	}
-
-	region_enabled = p_region_enabled;
-	_emit_region_rect_enabled();
-	queue_redraw();
-}
 
 bool Sprite2D::is_region_enabled() const { return region_enabled; }
 
@@ -210,16 +157,6 @@ void Sprite2D::set_region_rect(const Rect2& p_region_rect)
 }
 
 Rect2 Sprite2D::get_region_rect() const { return region_rect; }
-
-void Sprite2D::set_region_filter_clip_enabled(bool p_region_filter_clip_enabled)
-{
-	if (region_filter_clip_enabled == p_region_filter_clip_enabled) {
-		return;
-	}
-
-	region_filter_clip_enabled = p_region_filter_clip_enabled;
-	queue_redraw();
-}
 
 bool Sprite2D::is_region_filter_clip_enabled() const { return region_filter_clip_enabled; }
 
@@ -321,15 +258,6 @@ Rect2 Sprite2D::get_rect() const
 	}
 
 	return Rect2(ofs, s);
-}
-
-void Sprite2D::_texture_changed()
-{
-	// Changes to the texture need to trigger an update to make
-	// the editor redraw the sprite with the updated texture.
-	if (texture.is_valid()) {
-		queue_redraw();
-	}
 }
 
 

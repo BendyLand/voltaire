@@ -1349,11 +1349,6 @@ void RenderForwardClustered::_fill_render_list(RenderListType p_render_list,
 			surf = surf->next;
 		}
 	}
-
-	if (p_render_list == RENDER_LIST_OPAQUE && lightmap_captures_used) {
-		RD::get_singleton()->buffer_update(scene_state.lightmap_capture_buffer, 0,
-			sizeof(LightmapCaptureData) * lightmap_captures_used, scene_state.lightmap_captures);
-	}
 }
 
 void RenderForwardClustered::_setup_voxelgis(const PagedArray<RID>& p_voxelgis)
@@ -1405,10 +1400,6 @@ void RenderForwardClustered::_setup_lightmaps(const RenderDataRD* p_render_data,
 		scene_state.lightmap_has_sh[i] = light_storage->lightmap_uses_spherical_harmonics(lightmap);
 
 		scene_state.lightmaps_used++;
-	}
-	if (scene_state.lightmaps_used > 0) {
-		RD::get_singleton()->buffer_update(scene_state.lightmap_buffer, 0,
-			sizeof(LightmapData) * scene_state.lightmaps_used, scene_state.lightmaps);
 	}
 }
 
@@ -1812,14 +1803,6 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
 					p_render_data->render_info, viewport_size,
 					p_render_data->scene_data->cam_transform);
 			}
-		}
-
-		if (p_render_data->directional_shadows.size()) {
-			// open the pass for directional shadows
-			light_storage->update_directional_shadow_atlas();
-			RD::get_singleton()->draw_list_begin(light_storage->direction_shadow_get_fb(),
-				RD::DRAW_CLEAR_DEPTH, Vector<Color>(), 0.0f);
-			RD::get_singleton()->draw_list_end();
 		}
 	}
 
@@ -2497,15 +2480,6 @@ void RenderForwardClustered::_render_scene(
 		else {
 			RENDER_TIMESTAMP("Render Depth Pre-Pass");
 		}
-		if (needs_pre_resolve) {
-			// pre clear the depth framebuffer, as AMD (and maybe others?) use compute for it, and
-			// barrier other compute shaders.
-			RD::get_singleton()->draw_list_begin(
-				depth_framebuffer, RD::DRAW_CLEAR_ALL, depth_pass_clear, 0.0f);
-			RD::get_singleton()->draw_list_end();
-			// start compute processes here, so they run at the same time as depth pre-pass
-			_post_prepass_render(p_render_data, using_sdfgi || using_voxelgi);
-		}
 
 		RD::get_singleton()->draw_command_begin_label("Render Depth Pre-Pass");
 
@@ -2649,13 +2623,6 @@ void RenderForwardClustered::_render_scene(
 					p_render_data->scene_data->prev_cam_projection,
 					p_render_data->scene_data->prev_cam_transform);
 			}
-			else {
-				Vector<Color> motion_vector_clear_colors;
-				motion_vector_clear_colors.push_back(Color(-1, -1, 0, 0));
-				RD::get_singleton()->draw_list_begin(rb_data->get_velocity_only_fb(),
-					RD::DRAW_CLEAR_ALL, motion_vector_clear_colors);
-				RD::get_singleton()->draw_list_end();
-			}
 		}
 
 		if (render_motion_pass) {
@@ -2700,22 +2667,6 @@ void RenderForwardClustered::_render_scene(
 			RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_OPAQUE, p_render_data);
 	}
 
-	if (debug_voxelgis) {
-		Projection dc;
-		dc.set_depth_correction(true);
-		Projection cm = (dc * p_render_data->scene_data->cam_projection) *
-						Projection(p_render_data->scene_data->cam_transform.affine_inverse());
-		RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(color_only_framebuffer);
-		RD::get_singleton()->draw_command_begin_label("Debug VoxelGIs");
-		for (int i = 0; i < (int)p_render_data->voxel_gi_instances->size(); i++) {
-			gi.debug_voxel_gi((*p_render_data->voxel_gi_instances)[i], draw_list,
-				color_only_framebuffer, cm,
-				get_debug_draw_mode() == RSE::VIEWPORT_DEBUG_DRAW_VOXEL_GI_LIGHTING,
-				get_debug_draw_mode() == RSE::VIEWPORT_DEBUG_DRAW_VOXEL_GI_EMISSION, 1.0);
-		}
-		RD::get_singleton()->draw_command_end_label();
-		RD::get_singleton()->draw_list_end();
-	}
 
 	if (debug_sdfgi_probes) {
 		Projection dc;
@@ -2726,20 +2677,6 @@ void RenderForwardClustered::_render_scene(
 					 Projection(p_render_data->scene_data->cam_transform.affine_inverse());
 		}
 		_debug_sdfgi_probes(rb, color_only_framebuffer, p_render_data->scene_data->view_count, cms);
-	}
-
-	if (draw_sky || draw_sky_fog_only) {
-		RENDER_TIMESTAMP("Render Sky");
-
-		RD::get_singleton()->draw_command_begin_label("Draw Sky");
-		RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(color_only_framebuffer,
-			RD::DRAW_DEFAULT_ALL, Vector<Color>(), 1.0f, 0u, p_render_data->render_region);
-
-		sky.draw_sky(draw_list, rb, p_render_data->environment, color_only_framebuffer, time,
-			sky_luminance_multiplier, sky_brightness_multiplier);
-
-		RD::get_singleton()->draw_list_end();
-		RD::get_singleton()->draw_command_end_label();
 	}
 
 	if (use_msaa) {
@@ -2790,20 +2727,6 @@ void RenderForwardClustered::_render_scene(
 				!use_msaa ? RID() : rb->get_internal_texture(), RID(),
 				p_render_data->scene_data->view_count);
 		}
-	}
-
-	if (using_separate_specular && is_environment(p_render_data->environment) &&
-		(environment_get_background(p_render_data->environment) == RSE::ENV_BG_CANVAS)) {
-		// Canvas background mode does not clear the color buffer, but copies over it. If
-		// screen-space specular effects are enabled and the background is blank, this results in
-		// ghosting due to the separate specular buffer copy. Need to explicitly clear the specular
-		// buffer once we're done with it to fix it.
-		RENDER_TIMESTAMP("Clear Separate Specular (Canvas Background Mode)");
-		Vector<Color> blank_clear_color;
-		blank_clear_color.push_back(Color(0.0, 0.0, 0.0));
-		RD::get_singleton()->draw_list_begin(
-			rb_data->get_specular_only_fb(), RD::DRAW_CLEAR_ALL, blank_clear_color);
-		RD::get_singleton()->draw_list_end();
 	}
 
 	if (rb_data.is_valid() && using_upscaling) {
@@ -3571,22 +3494,6 @@ void RenderForwardClustered::_render_material(const Transform3D& p_cam_transform
 
 	RENDER_TIMESTAMP("Render 3D Material");
 
-	{
-		RenderListParameters render_list_params(render_list[RENDER_LIST_SECONDARY].elements.ptr(),
-			render_list[RENDER_LIST_SECONDARY].element_info.ptr(),
-			render_list[RENDER_LIST_SECONDARY].elements.size(), true, pass_mode, 0, true, false,
-			rp_uniform_set);
-		// regular forward for now
-		Vector<Color> clear = {Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0),
-			Color(0, 0, 0, 0), Color(0, 0, 0, 0)};
-
-		RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(
-			p_framebuffer, RD::DRAW_CLEAR_ALL, clear, 0.0f, 0, p_region);
-		_render_list(draw_list, RD::get_singleton()->framebuffer_get_format(p_framebuffer),
-			&render_list_params, 0, render_list_params.element_count);
-		RD::get_singleton()->draw_list_end();
-	}
-
 	RD::get_singleton()->draw_command_end_label();
 }
 
@@ -3631,48 +3538,6 @@ void RenderForwardClustered::_render_uv2(const PagedArray<RenderGeometryInstance
 		uniform_buffer_index);
 
 	RENDER_TIMESTAMP("Render 3D Material");
-
-	{
-		RenderListParameters render_list_params(render_list[RENDER_LIST_SECONDARY].elements.ptr(),
-			render_list[RENDER_LIST_SECONDARY].element_info.ptr(),
-			render_list[RENDER_LIST_SECONDARY].elements.size(), true, pass_mode, 0, true, false,
-			rp_uniform_set, true);
-		// regular forward for now
-		Vector<Color> clear = {Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0),
-			Color(0, 0, 0, 0), Color(0, 0, 0, 0)};
-		RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(
-			p_framebuffer, RD::DRAW_CLEAR_ALL, clear, 0.0f, 0, p_region);
-
-		const int uv_offset_count = 9;
-		static const Vector2 uv_offsets[uv_offset_count] = {
-			Vector2(-1, 1),
-			Vector2(1, 1),
-			Vector2(1, -1),
-			Vector2(-1, -1),
-			Vector2(-1, 0),
-			Vector2(1, 0),
-			Vector2(0, -1),
-			Vector2(0, 1),
-			Vector2(0, 0),
-
-		};
-
-		for (int i = 0; i < uv_offset_count; i++) {
-			Vector2 ofs = uv_offsets[i];
-			ofs.x /= p_region.size.width;
-			ofs.y /= p_region.size.height;
-			render_list_params.uv_offset = ofs;
-			_render_list(draw_list, RD::get_singleton()->framebuffer_get_format(p_framebuffer),
-				&render_list_params, 0,
-				render_list_params.element_count); // first wireframe, for pseudo conservative
-		}
-		render_list_params.uv_offset = Vector2();
-		render_list_params.force_wireframe = false;
-		_render_list(draw_list, RD::get_singleton()->framebuffer_get_format(p_framebuffer),
-			&render_list_params, 0, render_list_params.element_count); // second regular triangles
-
-		RD::get_singleton()->draw_list_end();
-	}
 
 	RD::get_singleton()->draw_command_end_label();
 }

@@ -64,49 +64,6 @@ bool NavigationRegion2DEditor::_has_resource() const
 	return node && node->get_navigation_polygon().is_valid();
 }
 
-void NavigationRegion2DEditor::_bake_pressed()
-{
-	if (rebake_timer) {
-		rebake_timer->stop();
-	}
-	button_bake->set_pressed(false);
-
-	ERR_FAIL_NULL(node);
-	Ref<NavigationPolygon> navigation_polygon = node->get_navigation_polygon();
-	if (navigation_polygon.is_null()) {
-		err_dialog->set_text(
-			TTR("A NavigationPolygon resource must be set or created for this node to work."));
-		err_dialog->popup_centered();
-		return;
-	}
-
-	node->bake_navigation_polygon(true);
-
-	node->queue_redraw();
-}
-
-void NavigationRegion2DEditor::_clear_pressed()
-{
-	if (rebake_timer) {
-		rebake_timer->stop();
-	}
-	if (node) {
-		if (node->get_navigation_polygon().is_valid()) {
-			node->get_navigation_polygon()->clear();
-			// Needed to update all the region internals.
-			node->set_navigation_polygon(node->get_navigation_polygon());
-		}
-	}
-
-	button_bake->set_pressed(false);
-	bake_info->set_text("");
-
-	if (node) {
-		node->queue_redraw()
-;
-	}
-}
-
 void NavigationRegion2DEditor::_update_polygon_editing_state()
 {
 	if (!_get_node()) {
@@ -119,20 +76,6 @@ void NavigationRegion2DEditor::_update_polygon_editing_state()
 	else {
 		bake_hbox->hide();
 	}
-}
-
-void NavigationRegion2DEditor::_rebake_timer_timeout()
-{
-	if (!node) {
-		return;
-	}
-	Ref<NavigationPolygon> navigation_polygon = node->get_navigation_polygon();
-	if (navigation_polygon.is_null()) {
-		return;
-	}
-
-	node->bake_navigation_polygon(true);
-	node->queue_redraw();
 }
 
 NavigationRegion2DEditorPlugin::NavigationRegion2DEditorPlugin()
