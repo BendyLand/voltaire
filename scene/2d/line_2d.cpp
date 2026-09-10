@@ -75,43 +75,13 @@ bool Line2D::_edit_is_selected_on_click(const Point2& p_point, double p_toleranc
 }
 #endif
 
-void Line2D::set_points(const Vector<Vector2>& p_points)
-{
-	_points = p_points;
-	queue_redraw();
-}
-
-void Line2D::set_closed(bool p_closed)
-{
-	_closed = p_closed;
-	queue_redraw();
-}
-
 bool Line2D::is_closed() const { return _closed; }
 
-void Line2D::set_width(float p_width)
-{
-	if (p_width < 0.0) {
-		p_width = 0.0;
-	}
-	_width = p_width;
-	queue_redraw();
-}
-
 float Line2D::get_width() const { return _width; }
-
-
 
 Ref<Curve> Line2D::get_curve() const { return _curve; }
 
 Vector<Vector2> Line2D::get_points() const { return _points; }
-
-void Line2D::set_point_position(int i, Vector2 p_pos)
-{
-	ERR_FAIL_INDEX(i, _points.size());
-	_points.set(i, p_pos);
-	queue_redraw();
-}
 
 Vector2 Line2D::get_point_position(int i) const
 {
@@ -121,81 +91,17 @@ Vector2 Line2D::get_point_position(int i) const
 
 int Line2D::get_point_count() const { return _points.size(); }
 
-void Line2D::clear_points()
-{
-	int count = _points.size();
-	if (count > 0) {
-		_points.clear();
-		queue_redraw();
-	}
-}
-
-void Line2D::add_point(Vector2 p_pos, int p_atpos)
-{
-	if (p_atpos < 0 || _points.size() < p_atpos) {
-		_points.push_back(p_pos);
-	}
-	else {
-		_points.insert(p_atpos, p_pos);
-	}
-	queue_redraw();
-}
-
-void Line2D::remove_point(int i)
-{
-	_points.remove_at(i);
-	queue_redraw();
-}
-
-void Line2D::set_default_color(Color p_color)
-{
-	_default_color = p_color;
-	queue_redraw();
-}
-
 Color Line2D::get_default_color() const { return _default_color; }
-
-
 
 Ref<Gradient> Line2D::get_gradient() const { return _gradient; }
 
-void Line2D::set_texture(const Ref<Texture2D>& p_texture)
-{
-	_texture = p_texture;
-	queue_redraw();
-}
-
 Ref<Texture2D> Line2D::get_texture() const { return _texture; }
-
-void Line2D::set_texture_mode(const LineTextureMode p_mode)
-{
-	_texture_mode = p_mode;
-	queue_redraw();
-}
 
 Line2D::LineTextureMode Line2D::get_texture_mode() const { return _texture_mode; }
 
-void Line2D::set_joint_mode(LineJointMode p_mode)
-{
-	_joint_mode = p_mode;
-	queue_redraw();
-}
-
 Line2D::LineJointMode Line2D::get_joint_mode() const { return _joint_mode; }
 
-void Line2D::set_begin_cap_mode(LineCapMode p_mode)
-{
-	_begin_cap_mode = p_mode;
-	queue_redraw();
-}
-
 Line2D::LineCapMode Line2D::get_begin_cap_mode() const { return _begin_cap_mode; }
-
-void Line2D::set_end_cap_mode(LineCapMode p_mode)
-{
-	_end_cap_mode = p_mode;
-	queue_redraw();
-}
 
 Line2D::LineCapMode Line2D::get_end_cap_mode() const { return _end_cap_mode; }
 
@@ -208,35 +114,10 @@ void Line2D::_notification(int p_what)
 	}
 }
 
-void Line2D::set_sharp_limit(float p_limit)
-{
-	if (p_limit < 0.f) {
-		p_limit = 0.f;
-	}
-	_sharp_limit = p_limit;
-	queue_redraw();
-}
-
 float Line2D::get_sharp_limit() const { return _sharp_limit; }
-
-void Line2D::set_round_precision(int p_precision)
-{
-	_round_precision = MAX(1, p_precision);
-	queue_redraw();
-}
 
 int Line2D::get_round_precision() const { return _round_precision; }
 
-void Line2D::set_antialiased(bool p_antialiased)
-{
-	_antialiased = p_antialiased;
-	queue_redraw();
-}
-
 bool Line2D::get_antialiased() const { return _antialiased; }
-
-void Line2D::_gradient_changed() { queue_redraw(); }
-
-void Line2D::_curve_changed() { queue_redraw(); }
 
 

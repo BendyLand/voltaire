@@ -28,61 +28,27 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/config/engine.h"
 #include "reference_rect.h"
 
-#include "core/config/engine.h"
-
-void ReferenceRect::_notification(int p_what) {
+void ReferenceRect::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_DRAW: {
-			if (!is_inside_tree()) {
-				return;
-			}
-			if (Engine::get_singleton()->is_editor_hint() || !editor_only) {
-				draw_rect(Rect2(Point2(), get_size()), border_color, false, border_width);
-			}
-		} break;
+	case NOTIFICATION_DRAW: {
+		if (!is_inside_tree()) {
+			return;
+		}
+		if (Engine::get_singleton()->is_editor_hint() || !editor_only) {
+			draw_rect(Rect2(Point2(), get_size()), border_color, false, border_width);
+		}
+	} break;
 	}
 }
 
-void ReferenceRect::set_border_color(const Color &p_color) {
-	if (border_color == p_color) {
-		return;
-	}
+Color ReferenceRect::get_border_color() const { return border_color; }
 
-	border_color = p_color;
-	queue_redraw();
-}
+float ReferenceRect::get_border_width() const { return border_width; }
 
-Color ReferenceRect::get_border_color() const {
-	return border_color;
-}
+bool ReferenceRect::get_editor_only() const { return editor_only; }
 
-void ReferenceRect::set_border_width(float p_width) {
-	float width_max = MAX(0.0, p_width);
-	if (border_width == width_max) {
-		return;
-	}
 
-	border_width = width_max;
-	queue_redraw();
-}
-
-float ReferenceRect::get_border_width() const {
-	return border_width;
-}
-
-void ReferenceRect::set_editor_only(const bool &p_enabled) {
-	if (editor_only == p_enabled) {
-		return;
-	}
-
-	editor_only = p_enabled;
-	queue_redraw();
-}
-
-bool ReferenceRect::get_editor_only() const {
-	return editor_only;
-}
-
-void ReferenceRect::_bind_methods() {}

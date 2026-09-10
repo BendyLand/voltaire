@@ -202,23 +202,6 @@ void EditorToaster::_popup_str(
 		toast.message_label = label;
 		toast.message_count_label = count_label;
 	}
-	else {
-		Toast& toast = toasts[control];
-		if (toast.popped) {
-			toast.count += 1;
-		}
-		else {
-			toast.count = 1;
-		}
-		toast.remaining_time = toast.duration;
-		toast.popped = true;
-		control->show();
-		vbox_container->move_child(control, vbox_container->get_child_count());
-		_auto_hide_or_free_toasts();
-		_update_vbox_position();
-		_update_disable_notifications_button();
-		main_button->queue_redraw();
-	}
 
 	// Retrieve the label back, then update the text.
 	Label* message_label = toasts[control].message_label;
@@ -281,8 +264,6 @@ void EditorToaster::copy(Control* p_control)
 	ERR_FAIL_COND(!toasts.has(p_control));
 	DisplayServer::get_singleton()->clipboard_set(toasts[p_control].message);
 }
-
-void EditorToaster::_bind_methods() {}
 
 EditorToaster* EditorToaster::get_singleton() { return singleton; }
 

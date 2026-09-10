@@ -104,27 +104,6 @@ void CPUParticles2D::set_randomness_ratio(real_t p_ratio) { randomness_ratio = p
 
 void CPUParticles2D::set_lifetime_randomness(double p_random) { lifetime_randomness = p_random; }
 
-void CPUParticles2D::set_use_local_coordinates(bool p_enable)
-{
-	local_coords = p_enable;
-
-	// Prevent sending item transforms when using global coords,
-	// and inform the RenderingServer to use identity mode.
-	set_canvas_item_use_identity_transform(!local_coords);
-
-	// We only need NOTIFICATION_TRANSFORM_CHANGED
-	// when following an interpolated target.
-
-#ifdef TOOLS_ENABLED
-	set_notify_transform(_interpolation_data.interpolated_follow ||
-						 (Engine::get_singleton()->is_editor_hint() && !local_coords));
-#else
-	set_notify_transform(_interpolation_data.interpolated_follow);
-#endif
-
-	queue_redraw();
-}
-
 void CPUParticles2D::set_speed_scale(double p_scale) { speed_scale = p_scale; }
 
 bool CPUParticles2D::is_emitting() const { return emitting; }
@@ -150,14 +129,6 @@ double CPUParticles2D::get_speed_scale() const { return speed_scale; }
 void CPUParticles2D::set_draw_order(DrawOrder p_order) { draw_order = p_order; }
 
 CPUParticles2D::DrawOrder CPUParticles2D::get_draw_order() const { return draw_order; }
-
-void CPUParticles2D::_texture_changed()
-{
-	if (texture.is_valid()) {
-		queue_redraw();
-		_update_mesh_texture();
-	}
-}
 
 void CPUParticles2D::_refresh_interpolation_state()
 {
@@ -350,32 +321,6 @@ bool CPUParticles2D::get_particle_flag(ParticleFlags p_particle_flag) const
 	return particle_flags[p_particle_flag];
 }
 
-void CPUParticles2D::set_emission_sphere_radius(real_t p_radius)
-{
-	if (p_radius == emission_sphere_radius) {
-		return;
-	}
-	emission_sphere_radius = p_radius;
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		queue_redraw();
-	}
-#endif
-}
-
-void CPUParticles2D::set_emission_rect_extents(Vector2 p_extents)
-{
-	if (p_extents == emission_rect_extents) {
-		return;
-	}
-	emission_rect_extents = p_extents;
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		queue_redraw();
-	}
-#endif
-}
-
 void CPUParticles2D::set_emission_points(const Vector<Vector2>& p_points)
 {
 	emission_points = p_points;
@@ -442,17 +387,6 @@ void CPUParticles2D::set_use_fixed_seed(bool p_use_fixed_seed)
 bool CPUParticles2D::get_use_fixed_seed() const { return use_fixed_seed; }
 
 void CPUParticles2D::set_seed(uint32_t p_seed) { seed = p_seed; }
-
-#ifdef TOOLS_ENABLED
-void CPUParticles2D::set_show_gizmos(bool p_show_gizmos)
-{
-	if (show_gizmos == p_show_gizmos) {
-		return;
-	}
-	show_gizmos = p_show_gizmos;
-	queue_redraw();
-}
-#endif
 
 uint32_t CPUParticles2D::get_seed() const { return seed; }
 
@@ -1131,7 +1065,7 @@ void CPUParticles2D::_draw_emission_gizmo()
 		break;
 	default:
 
-	break;
+		break;
 	}
 }
 #endif

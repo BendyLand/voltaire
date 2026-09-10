@@ -100,20 +100,6 @@ void Texture3DEditor::_notification(int p_what)
 	}
 }
 
-void Texture3DEditor::_texture_changed()
-{
-	if (!is_visible()) {
-		return;
-	}
-
-	setting = true;
-	_update_gui();
-	setting = false;
-
-	_update_material(true);
-	queue_redraw();
-}
-
 void Texture3DEditor::_draw_outline()
 {
 	const float outline_width = Math::round(EDSCALE);

@@ -210,50 +210,6 @@ private:
 public:
 	Error buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset,
 		uint32_t p_dst_offset, uint32_t p_size);
-	/**
-	 * @brief Updates the given GPU buffer at offset and size with the given CPU data.
-	 * @remarks
-	 *	Buffer update is queued into the render graph. The render graph will reorder this operation
-	 *so that it happens together with other buffer_update() in bulk and before rendering operations
-	 *	(or compute dispatches) that need it.
-	 *
-	 *	This means that the following will not work as intended:
-	 *	@code
-	 *		buffer_update(buffer_a, ..., data_source_x, ...);
-	 *		draw_list_draw(buffer_a);							// render data_render_x.
-	 *		buffer_update(buffer_a, ..., data_source_y, ...);
-	 *		draw_list_draw(buffer_a);							// render data_source_y.
-	 *	@endcode
-	 *
-	 *	Because it will be *reordered* to become the following:
-	 *	@code
-	 *		buffer_update(buffer_a, ..., data_source_x, ...);
-	 *		buffer_update(buffer_a, ..., data_source_y, ...);
-	 *		draw_list_draw(buffer_a); // render data_source_y. <-- Oops! should be data_source_x
-	 *		draw_list_draw(buffer_a); // render data_source_y.
-	 *	@endcode
-	 *
-	 *	When p_skip_check = true, we will perform checks to prevent this situation from happening
-	 *	(buffer_update must not be called while creating a draw or compute list).
-	 *	Do NOT set it to false for user-facing public API because users had trouble understanding
-	 *  this problem when manually creating draw lists.
-	 *
-	 *  Godot internally can set p_skip_check = true when it believes it will only update
-	 *  the buffer once and it needs to be done while a draw/compute list is being created.
-	 *
-	 *  Important: The Vulkan & Metal APIs do not allow issuing copies while inside a RenderPass.
-	 *  We can do it because Godot's render graph will reorder them.
-	 *
-	 * @param p_buffer		GPU buffer to update.
-	 * @param p_offset		Offset in bytes (relative to p_buffer).
-	 * @param p_size		Size in bytes of the data.
-	 * @param p_data		CPU data to transfer to GPU.
-	 *						Pointer can be deleted after buffer_update returns.
-	 * @param p_skip_check	Must always be false for user-facing public API. See remarks.
-	 * @return				Status result of the operation.
-	 */
-	Error buffer_update(RID p_buffer, uint32_t p_offset, uint32_t p_size, const void* p_data,
-		bool p_skip_check = false);
 	Error buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size);
 	Vector<uint8_t> buffer_get_data(RID p_buffer, uint32_t p_offset = 0,
 		uint32_t p_size = 0); // This causes stall, only use to retrieve large buffers for saving.
@@ -410,7 +366,6 @@ public:
 	void _texture_copy_shared(RID p_src_texture_rid, Texture* p_src_texture, RID p_dst_texture_rid,
 		Texture* p_dst_texture);
 	void _texture_create_reinterpret_buffer(Texture* p_texture);
-	void _texture_check_pending_clear(RID p_texture_rid, Texture* p_texture);
 	void _texture_clear_color(RID p_texture_rid, Texture* p_texture, const Color& p_color,
 		uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers);
 	uint32_t _texture_vrs_method_to_usage_bits() const;
@@ -919,18 +874,6 @@ public:
 	RID vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
 		const Vector<RID>& p_src_buffers, const Vector<uint64_t>& p_offsets = Vector<uint64_t>());
 
-	RID index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
-		Span<uint8_t> p_data = {}, bool p_use_restart_indices = false,
-		uint32_t p_creation_bits = 0);
-
-	RID _index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
-		const Vector<uint8_t>& p_data, bool p_use_restart_indices = false,
-		uint32_t p_creation_bits = 0)
-	{
-		return index_buffer_create(
-			p_index_count, p_format, p_data, p_use_restart_indices, p_creation_bits);
-	}
-
 	RID index_array_create(RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count);
 
 private:
@@ -1092,12 +1035,6 @@ private:
 		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
 		const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
 		const Rect2& p_region);
-
-	DrawListID _draw_list_begin_bind_compat_98670(RID p_framebuffer,
-		InitialAction p_initial_color_action, FinalAction p_final_color_action,
-		InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
-		const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
-		const Rect2& p_region, uint32_t p_breadcrumb);
 
 	RID _uniform_buffer_create_bind_compat_101561(
 		uint32_t p_size_bytes, const Vector<uint8_t>& p_data);
@@ -1277,7 +1214,6 @@ private:
 	RID_Owner<UniformSet, true> uniform_set_owner;
 
 	void _uniform_set_update_shared(UniformSet* p_uniform_set);
-	void _uniform_set_update_clears(UniformSet* p_uniform_set);
 
 public:
 	/** Bake a set of uniforms that can be bound at runtime with the given shader.
@@ -1670,10 +1606,6 @@ public:
 	/**
 	 * @param p_clear_color_values Color values must use linear encoding when HDR 2D is active.
 	 */
-	DrawListID draw_list_begin(RID p_framebuffer, uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
-		VectorView<Color> p_clear_color_values = VectorView<Color>(),
-		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
-		const Rect2& p_region = Rect2(), uint32_t p_breadcrumb = 0);
 	DrawListID _draw_list_begin_bind(RID p_framebuffer, uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
 		const Vector<Color>& p_clear_color_values = Vector<Color>(),
 		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
@@ -2028,8 +1960,6 @@ public:
 #endif
 
 public:
-	void finalize();
-
 	void _set_max_fps(int p_max_fps);
 
 	void free_rid(RID p_rid);

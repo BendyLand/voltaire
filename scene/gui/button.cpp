@@ -244,96 +244,17 @@ Size2 Button::get_minimum_size_for_text_and_icon(const String& p_text, Ref<Textu
 		   minsize;
 }
 
-void Button::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
-{
-	if (overrun_behavior != p_behavior) {
-		bool need_update_cache = overrun_behavior == TextServer::OVERRUN_NO_TRIMMING ||
-								 p_behavior == TextServer::OVERRUN_NO_TRIMMING;
-		overrun_behavior = p_behavior;
-		_shape();
-
-		if (need_update_cache) {
-			_queue_update_size_cache();
-		}
-		queue_redraw();
-		update_minimum_size();
-	}
-}
-
 TextServer::OverrunBehavior Button::get_text_overrun_behavior() const { return overrun_behavior; }
-
-void Button::set_text(const String& p_text)
-{
-	const String translated_text = _get_translated_text(p_text);
-	if (text == p_text && xl_text == translated_text) {
-		return;
-	}
-	text = p_text;
-	xl_text = translated_text;
-	_shape();
-
-	update_configuration_warnings();
-	queue_accessibility_update();
-	queue_redraw();
-	update_minimum_size();
-}
 
 String Button::get_text() const { return text; }
 
-void Button::set_autowrap_mode(TextServer::AutowrapMode p_mode)
-{
-	if (autowrap_mode != p_mode) {
-		autowrap_mode = p_mode;
-		_shape();
-		queue_redraw();
-		update_minimum_size();
-	}
-}
-
 TextServer::AutowrapMode Button::get_autowrap_mode() const { return autowrap_mode; }
-
-void Button::set_autowrap_trim_flags(uint32_t p_flags)
-{
-	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
-		autowrap_flags_trim = p_flags & TextServer::BREAK_TRIM_MASK;
-		_shape();
-		queue_redraw();
-		update_minimum_size();
-	}
-}
 
 uint32_t Button::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
 
-void Button::set_text_direction(Control::TextDirection p_text_direction)
-{
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-	if (text_direction != p_text_direction) {
-		text_direction = p_text_direction;
-		_shape();
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
 Control::TextDirection Button::get_text_direction() const { return text_direction; }
 
-void Button::set_language(const String& p_language)
-{
-	if (language != p_language) {
-		language = p_language;
-		_shape();
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
 String Button::get_language() const { return language; }
-
-void Button::_texture_changed()
-{
-	queue_redraw();
-	update_minimum_size();
-}
 
 void Button::_update_style_margins(const Ref<StyleBox>& p_stylebox)
 {
@@ -350,78 +271,13 @@ void Button::_update_style_margins(const Ref<StyleBox>& p_stylebox)
 
 Ref<Texture2D> Button::get_button_icon() const { return icon; }
 
-void Button::set_expand_icon(bool p_enabled)
-{
-	if (expand_icon != p_enabled) {
-		expand_icon = p_enabled;
-		_queue_update_size_cache();
-		queue_redraw();
-		update_minimum_size();
-	}
-}
-
 bool Button::is_expand_icon() const { return expand_icon; }
-
-void Button::set_flat(bool p_enabled)
-{
-	if (flat != p_enabled) {
-		flat = p_enabled;
-		queue_redraw();
-	}
-}
 
 bool Button::is_flat() const { return flat; }
 
-void Button::set_clip_text(bool p_enabled)
-{
-	if (clip_text != p_enabled) {
-		clip_text = p_enabled;
-
-		_queue_update_size_cache();
-		queue_redraw();
-		update_minimum_size();
-	}
-}
-
 bool Button::get_clip_text() const { return clip_text; }
 
-void Button::set_text_alignment(HorizontalAlignment p_alignment)
-{
-	if (alignment != p_alignment) {
-		alignment = p_alignment;
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
 HorizontalAlignment Button::get_text_alignment() const { return alignment; }
-
-void Button::set_icon_alignment(HorizontalAlignment p_alignment)
-{
-	if (horizontal_icon_alignment == p_alignment) {
-		return;
-	}
-
-	horizontal_icon_alignment = p_alignment;
-	update_minimum_size();
-	queue_redraw();
-}
-
-void Button::set_vertical_icon_alignment(VerticalAlignment p_alignment)
-{
-	if (vertical_icon_alignment == p_alignment) {
-		return;
-	}
-	bool need_update_cache = vertical_icon_alignment == VERTICAL_ALIGNMENT_CENTER ||
-							 p_alignment == VERTICAL_ALIGNMENT_CENTER;
-	vertical_icon_alignment = p_alignment;
-
-	if (need_update_cache) {
-		_queue_update_size_cache();
-	}
-	update_minimum_size();
-	queue_redraw();
-}
 
 HorizontalAlignment Button::get_icon_alignment() const { return horizontal_icon_alignment; }
 

@@ -42,32 +42,7 @@ struct _LineData
 	bool is_filled = false;
 };
 
-Size2 FlowContainer::_get_minimum_size(bool p_use_desired_sizes) const
-{
-	Size2i minimum;
 
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-
-		Size2i size =
-			p_use_desired_sizes ? c->get_bound_desired_size() : c->get_bound_minimum_size();
-
-		if (vertical) { /* VERTICAL */
-			minimum.height = MAX(minimum.height, size.height);
-			minimum.width = cached_size;
-
-		}
-		else { /* HORIZONTAL */
-			minimum.width = MAX(minimum.width, size.width);
-			minimum.height = cached_size;
-		}
-	}
-
-	return minimum;
-}
 
 Size2 FlowContainer::get_minimum_size() const { return _get_minimum_size(false); }
 
@@ -97,25 +72,6 @@ Vector<int> FlowContainer::get_allowed_size_flags_vertical() const
 	flags.append(SIZE_SHRINK_CENTER);
 	flags.append(SIZE_SHRINK_END);
 	return flags;
-}
-
-void FlowContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_SORT_CHILDREN: {
-		_resort();
-		update_minimum_size();
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		update_minimum_size();
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
-		queue_sort();
-	} break;
-	}
 }
 
 int FlowContainer::get_line_count() const { return cached_line_count; }

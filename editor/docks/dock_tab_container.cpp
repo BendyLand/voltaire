@@ -56,14 +56,7 @@ void EditorDockDragHint::set_slot(DockTabContainer* p_slot)
 	drop_tabbar_parent = (Control*)p_slot->get_internal_container();
 }
 
-void EditorDockDragHint::set_highlighted(bool p_highlighted)
-{
-	if (highlighted == p_highlighted) {
-		return;
-	}
-	highlighted = p_highlighted;
-	queue_redraw();
-}
+
 
 void EditorDockDragHint::_notification(int p_what)
 {
@@ -74,13 +67,6 @@ void EditorDockDragHint::_notification(int p_what)
 		dock_drop_highlight->set_border_color(valid_drop_color);
 		dock_drop_highlight->set_bg_color(valid_drop_color * Color(1, 1, 1, 0.1));
 	} break;
-
-	case NOTIFICATION_MOUSE_ENTER:
-	case NOTIFICATION_MOUSE_EXIT: {
-		mouse_inside = p_what == NOTIFICATION_MOUSE_ENTER;
-		queue_redraw();
-	} break;
-
 	case NOTIFICATION_DRAG_BEGIN: {
 		EditorDock* dragged_dock = EditorDockManager::get_singleton()->_get_dock_tab_dragged();
 		if (!dragged_dock) {

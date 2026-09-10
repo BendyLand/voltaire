@@ -120,18 +120,6 @@ void ProjectListItemControl::_notification(int p_what)
 		}
 	} break;
 
-	case NOTIFICATION_MOUSE_ENTER: {
-		is_hovering = true;
-		queue_redraw();
-		queue_accessibility_update();
-	} break;
-
-	case NOTIFICATION_MOUSE_EXIT: {
-		is_hovering = false;
-		queue_redraw();
-		queue_accessibility_update();
-	} break;
-
 	case NOTIFICATION_DRAW: {
 		if (is_selected && is_hovering) {
 			draw_style_box(get_theme_stylebox(SNAME("hover_pressed"), SNAME("ProjectList")).ptr(),
@@ -323,14 +311,6 @@ void ProjectListItemControl::set_unsupported_features(PackedStringArray p_featur
 
 bool ProjectListItemControl::should_load_project_icon() const { return icon_needs_reload; }
 
-void ProjectListItemControl::set_selected(bool p_selected, bool p_hide_focus)
-{
-	is_selected = p_selected;
-	is_focus_hidden = is_selected && p_hide_focus;
-	queue_redraw();
-	queue_accessibility_update();
-}
-
 void ProjectListItemControl::set_is_favorite(bool p_favorite)
 {
 	is_favorite = p_favorite;
@@ -425,8 +405,6 @@ void ProjectListItemControl::resize_project_title()
 	}
 }
 
-void ProjectListItemControl::_bind_methods() {}
-
 struct ProjectListComparator
 {
 	ProjectList::FilterOption order_option = ProjectList::FilterOption::EDIT_DATE;
@@ -464,14 +442,10 @@ String ProjectList::Item::get_last_edited_string() const
 		last_edited + tz.bias * 60, true);
 }
 
-// Helpers.
-
 bool ProjectList::project_feature_looks_like_version(const String& p_feature)
 {
 	return p_feature.contains_char('.') && p_feature.substr(0, 3).is_numeric();
 }
-
-// Notifications.
 
 void ProjectList::_notification(int p_what)
 {
@@ -526,8 +500,6 @@ void ProjectList::_notification(int p_what)
 	}
 }
 
-// Projects scan.
-
 void ProjectList::_scan_thread(void* p_scan_data)
 {
 	ScanData* scan_data = static_cast<ScanData*>(p_scan_data);
@@ -571,12 +543,7 @@ void ProjectList::_scan_finished()
 	}
 }
 
-// Initialization & loading.
-
 void ProjectList::save_config() { _config.save(_config_path); }
-
-// Load project data from p_property_key and return it in a ProjectList::Item.
-// p_favorite is passed directly into the Item.
 
 void ProjectList::_update_icons_async()
 {
@@ -821,8 +788,6 @@ void ProjectList::_update_menu_icons()
 		project_context_menu->get_item_index(MENU_REMOVE), get_editor_theme_icon("Remove"));
 }
 
-// Project list selection.
-
 void ProjectList::_clear_project_selection()
 {
 	Vector<Item> previous_selected_items = get_selected_projects();
@@ -985,16 +950,12 @@ void ProjectList::erase_selected_projects(bool p_delete_project_contents)
 	update_dock_menu();
 }
 
-// Resize project titles.
-
 void ProjectList::resize_project_titles()
 {
 	for (Item& item : _projects) {
 		item.control->resize_project_title();
 	}
 }
-
-// Missing projects.
 
 bool ProjectList::is_any_project_missing() const
 {
@@ -1034,8 +995,6 @@ void ProjectList::erase_missing_projects()
 	save_config();
 }
 
-// Project list sorting and filtering.
-
 void ProjectList::set_search_term(String p_search_term) { _search_term = p_search_term; }
 
 void ProjectList::add_search_tag(const String& p_tag)
@@ -1056,10 +1015,6 @@ void ProjectList::add_search_tag(const String& p_tag)
 
 	sort_projects();
 }
-
-// Object methods.
-
-void ProjectList::_bind_methods() {}
 
 ProjectList::ProjectList()
 {

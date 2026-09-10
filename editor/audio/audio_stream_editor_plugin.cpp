@@ -36,40 +36,6 @@
 #include "scene/resources/audio_stream_wav.h"
 #include "servers/rendering/rendering_server.h"
 
-// AudioStreamEditor
-
-void AudioStreamEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		Ref<Font> font = get_theme_font(SNAME("status_source"), EditorStringName(EditorFonts));
-
-		_current_label->add_theme_font_override(SceneStringName(font), font.ptr());
-		_duration_label->add_theme_font_override(SceneStringName(font), font.ptr());
-
-		_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-		_stop_button->set_button_icon(get_editor_theme_icon(SNAME("Stop")));
-		_preview->set_color(get_theme_color(SNAME("dark_color_2"), EditorStringName(Editor)));
-
-		set_color(get_theme_color(SNAME("dark_color_1"), EditorStringName(Editor)));
-
-		_indicator->queue_redraw();
-		_preview->queue_redraw();
-	} break;
-	case NOTIFICATION_PROCESS: {
-		_current = _player->get_playback_position();
-		_indicator->queue_redraw();
-	} break;
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (!is_visible_in_tree()) {
-			_stop();
-		}
-	} break;
-	default: {
-	} break;
-	}
-}
-
 void AudioStreamEditor::_draw_preview()
 {
 	Size2 size = get_size();
@@ -103,14 +69,6 @@ void AudioStreamEditor::_draw_preview()
 	RS::get_singleton()->canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
 }
 
-void AudioStreamEditor::_stream_changed()
-{
-	if (!is_visible()) {
-		return;
-	}
-	queue_redraw();
-}
-
 void AudioStreamEditor::_play()
 {
 	if (_player->is_playing()) {
@@ -125,28 +83,6 @@ void AudioStreamEditor::_play()
 		_play_button->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
 		set_process(true);
 	}
-}
-
-void AudioStreamEditor::_stop()
-{
-	_player->stop();
-	_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-	_current = 0;
-	_indicator->queue_redraw();
-	set_process(false);
-}
-
-void AudioStreamEditor::_on_finished()
-{
-	_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-	if (!_pausing) {
-		_current = 0;
-		_indicator->queue_redraw();
-	}
-	else {
-		_pausing = false;
-	}
-	set_process(false);
 }
 
 void AudioStreamEditor::_draw_indicator()
@@ -183,31 +119,6 @@ void AudioStreamEditor::_on_input_indicator(Ref<InputEvent> p_event)
 			_seek_to(mm->get_position().x);
 		}
 	}
-}
-
-void AudioStreamEditor::_seek_to(real_t p_x)
-{
-	_current = p_x / _preview->get_rect().size.x * stream->get_length();
-	_current = CLAMP(_current, 0, stream->get_length());
-	_player->seek(_current);
-	_indicator->queue_redraw();
-}
-
-void AudioStreamEditor::set_stream(const Ref<AudioStream>& p_stream)
-{
-	stream = p_stream;
-	if (stream.is_null()) {
-		hide();
-		return;
-	}
-
-	_player->set_stream(stream);
-	_current = 0;
-
-	String text = String::num(stream->get_length(), 2).pad_decimals(2) + "s";
-	_duration_label->set_text(text);
-
-	queue_redraw();
 }
 
 AudioStreamEditor::AudioStreamEditor()

@@ -77,23 +77,6 @@ void SkeletonModificationStack2D::draw_editor_gizmos()
 	}
 }
 
-void SkeletonModificationStack2D::set_editor_gizmos_dirty(bool p_dirty)
-{
-	if (!is_setup) {
-		return;
-	}
-
-	if (!editor_gizmo_dirty && p_dirty) {
-		editor_gizmo_dirty = p_dirty;
-		if (skeleton) {
-			skeleton->queue_redraw();
-		}
-	}
-	else {
-		editor_gizmo_dirty = p_dirty;
-	}
-}
-
 void SkeletonModificationStack2D::enable_all_modifications(bool p_enabled)
 {
 	for (int i = 0; i < modifications.size(); i++) {

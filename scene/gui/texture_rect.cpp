@@ -80,62 +80,13 @@ PackedStringArray TextureRect::get_configuration_warnings() const
 	return warnings;
 }
 
-void TextureRect::_texture_changed()
-{
-	queue_redraw();
-	update_minimum_size();
-	update_configuration_warnings();
-}
-
 Ref<Texture2D> TextureRect::get_texture() const { return texture; }
-
-void TextureRect::set_expand_mode(ExpandMode p_mode)
-{
-	if (expand_mode == p_mode) {
-		return;
-	}
-
-	expand_mode = p_mode;
-	queue_redraw();
-	update_minimum_size();
-}
 
 TextureRect::ExpandMode TextureRect::get_expand_mode() const { return expand_mode; }
 
-void TextureRect::set_stretch_mode(StretchMode p_mode)
-{
-	if (stretch_mode == p_mode) {
-		return;
-	}
-
-	stretch_mode = p_mode;
-	queue_redraw();
-	update_configuration_warnings();
-}
-
 TextureRect::StretchMode TextureRect::get_stretch_mode() const { return stretch_mode; }
 
-void TextureRect::set_flip_h(bool p_flip)
-{
-	if (hflip == p_flip) {
-		return;
-	}
-
-	hflip = p_flip;
-	queue_redraw();
-}
-
 bool TextureRect::is_flipped_h() const { return hflip; }
-
-void TextureRect::set_flip_v(bool p_flip)
-{
-	if (vflip == p_flip) {
-		return;
-	}
-
-	vflip = p_flip;
-	queue_redraw();
-}
 
 bool TextureRect::is_flipped_v() const { return vflip; }
 

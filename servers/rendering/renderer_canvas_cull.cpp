@@ -2794,15 +2794,6 @@ void RendererCanvasCull::_item_queue_update(Item* p_item, bool p_update_dependen
 	}
 }
 
-void RendererCanvasCull::finalize()
-{
-	_free_rids(canvas_owner, "Canvas");
-	_free_rids(canvas_item_owner, "CanvasItem");
-	_free_rids(canvas_light_owner, "CanvasLight");
-	_free_rids(canvas_light_occluder_owner, "CanvasLightOccluder");
-	_free_rids(canvas_light_occluder_polygon_owner, "CanvasLightOccluderPolygon");
-}
-
 void RendererCanvasCull::tick()
 {
 	if (_interpolation_data.interpolation_enabled) {

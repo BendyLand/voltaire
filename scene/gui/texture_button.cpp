@@ -310,58 +310,11 @@ void TextureButton::set_texture_focused(const Ref<Texture2D>& p_focused)
 	_set_texture(&focused, p_focused);
 }
 
-void TextureButton::_texture_changed()
-{
-	queue_redraw();
-	update_minimum_size();
-}
-
 bool TextureButton::get_ignore_texture_size() const { return ignore_texture_size; }
-
-void TextureButton::set_ignore_texture_size(bool p_ignore)
-{
-	if (ignore_texture_size == p_ignore) {
-		return;
-	}
-
-	ignore_texture_size = p_ignore;
-	update_minimum_size();
-	queue_redraw();
-}
-
-void TextureButton::set_stretch_mode(StretchMode p_stretch_mode)
-{
-	if (stretch_mode == p_stretch_mode) {
-		return;
-	}
-
-	stretch_mode = p_stretch_mode;
-	queue_redraw();
-}
 
 TextureButton::StretchMode TextureButton::get_stretch_mode() const { return stretch_mode; }
 
-void TextureButton::set_flip_h(bool p_flip)
-{
-	if (hflip == p_flip) {
-		return;
-	}
-
-	hflip = p_flip;
-	queue_redraw();
-}
-
 bool TextureButton::is_flipped_h() const { return hflip; }
-
-void TextureButton::set_flip_v(bool p_flip)
-{
-	if (vflip == p_flip) {
-		return;
-	}
-
-	vflip = p_flip;
-	queue_redraw();
-}
 
 bool TextureButton::is_flipped_v() const { return vflip; }
 

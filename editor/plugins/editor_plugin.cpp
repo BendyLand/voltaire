@@ -263,27 +263,6 @@ void EditorPlugin::set_force_draw_over_forwarding_enabled()
 	EditorNode::get_singleton()->get_editor_plugins_force_over()->add_plugin(this);
 }
 
-// Updates the overlays of the 2D viewport or, if in 3D mode, of every 3D viewport.
-int EditorPlugin::update_overlays() const
-{
-	if (Node3DEditor::get_singleton()->is_visible()) {
-		int count = 0;
-		for (uint32_t i = 0; i < Node3DEditor::VIEWPORTS_COUNT; i++) {
-			Node3DEditorViewport* vp = Node3DEditor::get_singleton()->get_editor_viewport(i);
-			if (vp->is_visible()) {
-				vp->update_surface();
-				count++;
-			}
-		}
-		return count;
-	}
-	else {
-		// This will update the normal viewport itself as well
-		CanvasItemEditor::get_singleton()->get_viewport_control()->queue_redraw();
-		return 1;
-	}
-}
-
 EditorPlugin::AfterGUIInput EditorPlugin::forward_3d_gui_input(
 	Camera3D* p_camera, const Ref<InputEvent>& p_event)
 {

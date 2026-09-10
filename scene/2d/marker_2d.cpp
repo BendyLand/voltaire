@@ -77,10 +77,6 @@ bool Marker2D::_edit_use_rect() const { return false; }
 void Marker2D::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		queue_redraw();
-	} break;
-
 	case NOTIFICATION_DRAW: {
 		if (!is_inside_tree()) {
 			break;
@@ -92,15 +88,7 @@ void Marker2D::_notification(int p_what)
 	}
 }
 
-void Marker2D::set_gizmo_extents(real_t p_extents)
-{
-	gizmo_extents = p_extents;
-	queue_redraw();
-}
-
 real_t Marker2D::get_gizmo_extents() const { return gizmo_extents; }
-
-void Marker2D::_bind_methods() {}
 
 Marker2D::Marker2D() { set_hide_clip_children(true); }
 

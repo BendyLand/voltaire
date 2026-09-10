@@ -80,13 +80,4 @@ void TouchActionsPanel::_on_modifier_button_toggled(bool p_pressed, int p_modifi
 	}
 }
 
-void TouchActionsPanel::_lock_panel_toggled(bool p_pressed)
-{
-	locked_panel = p_pressed;
-	layout_toggle_button->set_visible(!p_pressed);
-	drag_handle->set_visible(!p_pressed);
-	reset_size();
-	queue_redraw();
-}
-
 

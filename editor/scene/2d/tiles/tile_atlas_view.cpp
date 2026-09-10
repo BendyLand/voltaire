@@ -475,46 +475,6 @@ void TileAtlasView::_draw_background_right()
 		theme_cache.checkerboard.ptr(), Rect2(Vector2(), background_right->get_size()), true);
 }
 
-void TileAtlasView::set_atlas_source(
-	TileSet* p_tile_set, TileSetAtlasSource* p_tile_set_atlas_source, int p_source_id)
-{
-	tile_set = Ref<TileSet>(p_tile_set);
-	tile_set_atlas_source = Ref<TileSetAtlasSource>(p_tile_set_atlas_source);
-
-	_clear_material_canvas_items();
-
-	if (tile_set.is_null()) {
-		return;
-	}
-
-	ERR_FAIL_COND(p_source_id < 0);
-	ERR_FAIL_COND(p_tile_set->get_source(p_source_id) != p_tile_set_atlas_source);
-
-	source_id = p_source_id;
-
-	// Show or hide the view.
-	bool valid = tile_set_atlas_source->get_texture().is_valid();
-	hbox->set_visible(valid);
-	missing_source_label->set_visible(!valid);
-
-	// Update the rect cache.
-	_update_alternative_tiles_rect_cache();
-
-	// Update everything.
-	_update_zoom_and_panning();
-
-	base_tiles_drawing_root->set_size(_compute_base_tiles_control_size());
-	alternative_tiles_drawing_root->set_size(_compute_alternative_tiles_control_size());
-
-	// Update.
-	base_tiles_draw->queue_redraw();
-	base_tiles_texture_grid->queue_redraw();
-	base_tiles_shape_grid->queue_redraw();
-	alternatives_draw->queue_redraw();
-	background_left->queue_redraw();
-	background_right->queue_redraw();
-}
-
 float TileAtlasView::get_zoom() const { return zoom_widget->get_zoom(); }
 
 void TileAtlasView::set_transform(float p_zoom, Vector2i p_panning)
@@ -618,16 +578,6 @@ Rect2i TileAtlasView::get_alternative_tile_rect(const Vector2i p_coords, int p_a
 			"No cached rect for tile coords:%s alternative_id:%d", p_coords, p_alternative_tile));
 
 	return alternative_tiles_rect_cache[p_coords][p_alternative_tile];
-}
-
-void TileAtlasView::queue_redraw()
-{
-	base_tiles_draw->queue_redraw();
-	base_tiles_texture_grid->queue_redraw();
-	base_tiles_shape_grid->queue_redraw();
-	alternatives_draw->queue_redraw();
-	background_left->queue_redraw();
-	background_right->queue_redraw();
 }
 
 void TileAtlasView::_update_theme_item_cache()

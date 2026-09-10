@@ -31,56 +31,6 @@
 #include "aspect_ratio_container.h"
 #include "scene/gui/texture_rect.h"
 
-Size2 AspectRatioContainer::get_minimum_size() const
-{
-	Size2 ms;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-		Size2 minsize = c->get_bound_minimum_size();
-		ms = ms.max(minsize);
-	}
-	return ms;
-}
-
-void AspectRatioContainer::set_ratio(float p_ratio)
-{
-	if (ratio == p_ratio) {
-		return;
-	}
-	ratio = p_ratio;
-	queue_sort();
-}
-
-void AspectRatioContainer::set_stretch_mode(StretchMode p_mode)
-{
-	if (stretch_mode == p_mode) {
-		return;
-	}
-	stretch_mode = p_mode;
-	queue_sort();
-}
-
-void AspectRatioContainer::set_alignment_horizontal(AlignmentMode p_alignment_horizontal)
-{
-	if (alignment_horizontal == p_alignment_horizontal) {
-		return;
-	}
-	alignment_horizontal = p_alignment_horizontal;
-	queue_sort();
-}
-
-void AspectRatioContainer::set_alignment_vertical(AlignmentMode p_alignment_vertical)
-{
-	if (alignment_vertical == p_alignment_vertical) {
-		return;
-	}
-	alignment_vertical = p_alignment_vertical;
-	queue_sort();
-}
-
 Vector<int> AspectRatioContainer::get_allowed_size_flags_horizontal() const
 {
 	Vector<int> flags;

@@ -126,26 +126,6 @@ void GraphFrame::_resort()
 	Point2 offset = Point2(
 		sb_panel->get_margin(SIDE_LEFT), sb_panel->get_margin(SIDE_TOP) + titlebar_min_size.height +
 											 sb_titlebar->get_minimum_size().height);
-
-	for (int i = 0; i < get_child_count(false); i++) {
-		Control* child = as_sortable_control(get_child(i, false));
-		if (!child) {
-			continue;
-		}
-		fit_child_in_rect(child, Rect2(offset, size));
-	}
-}
-
-void GraphFrame::set_title(const String& p_title)
-{
-	if (title == p_title) {
-		return;
-	}
-	title = p_title;
-	if (title_label) {
-		title_label->set_text(title);
-	}
-	update_minimum_size();
 }
 
 String GraphFrame::get_title() const { return title; }
@@ -165,19 +145,7 @@ void GraphFrame::set_drag_margin(int p_margin) { drag_margin = p_margin; }
 
 int GraphFrame::get_drag_margin() const { return drag_margin; }
 
-void GraphFrame::set_tint_color_enabled(bool p_enable)
-{
-	tint_color_enabled = p_enable;
-	queue_redraw();
-}
-
 bool GraphFrame::is_tint_color_enabled() const { return tint_color_enabled; }
-
-void GraphFrame::set_tint_color(const Color& p_color)
-{
-	tint_color = p_color;
-	queue_redraw();
-}
 
 Color GraphFrame::get_tint_color() const { return tint_color; }
 
@@ -207,34 +175,6 @@ bool GraphFrame::has_point(const Point2& p_point) const
 	}
 
 	return false;
-}
-
-Size2 GraphFrame::_get_minimum_size(bool p_use_desired_sizes) const
-{
-	Ref<StyleBox> sb_panel = theme_cache.panel;
-	Ref<StyleBox> sb_titlebar = theme_cache.titlebar;
-
-	Size2 minsize = (p_use_desired_sizes ? titlebar_hbox->get_bound_desired_size()
-										 : titlebar_hbox->get_minimum_size()) +
-					sb_titlebar->get_minimum_size();
-
-	for (int i = 0; i < get_child_count(false); i++) {
-		Control* child = as_sortable_control(get_child(i, false));
-		if (!child) {
-			continue;
-		}
-
-		Size2i size =
-			p_use_desired_sizes ? child->get_bound_desired_size() : child->get_bound_minimum_size();
-		size.width += sb_panel->get_minimum_size().width;
-
-		minsize.x = MAX(minsize.x, size.x);
-		minsize.y += MAX(minsize.y, size.y);
-	}
-
-	minsize.height += sb_panel->get_minimum_size().height;
-
-	return minsize;
 }
 
 Size2 GraphFrame::get_minimum_size() const { return _get_minimum_size(false); }

@@ -1979,10 +1979,6 @@ Error RenderingDevice::texture_copy(RID p_from_texture, RID p_to_texture, const 
 		ERR_INVALID_PARAMETER,
 		"Source and destination texture must be of the same type (color or depth).");
 
-	// Clear the textures if the driver requires it during its first use.
-	_texture_check_pending_clear(p_from_texture, src_tex);
-	_texture_check_pending_clear(p_to_texture, dst_tex);
-
 	_check_transfer_worker_texture(src_tex);
 	_check_transfer_worker_texture(dst_tex);
 
@@ -2069,10 +2065,6 @@ Error RenderingDevice::texture_resolve_multisample(RID p_from_texture, RID p_to_
 	// Indicate the texture will get modified for the shared texture fallback.
 	_texture_update_shared_fallback(p_to_texture, dst_tex, true);
 
-	// Clear the textures if the driver requires it during its first use.
-	_texture_check_pending_clear(p_from_texture, src_tex);
-	_texture_check_pending_clear(p_to_texture, dst_tex);
-
 	_check_transfer_worker_texture(src_tex);
 	_check_transfer_worker_texture(dst_tex);
 
@@ -2142,9 +2134,6 @@ Error RenderingDevice::texture_clear(RID p_texture, const Color& p_color, uint32
 
 	ERR_FAIL_COND_V(p_base_mipmap + p_mipmaps > src_tex->mipmaps, ERR_INVALID_PARAMETER);
 	ERR_FAIL_COND_V(p_base_layer + p_layers > src_tex->layers, ERR_INVALID_PARAMETER);
-
-	// Clear the texture if the driver requires it during its first use.
-	_texture_check_pending_clear(p_texture, src_tex);
 
 	_texture_clear_color(
 		p_texture, src_tex, p_color, p_base_mipmap, p_mipmaps, p_base_layer, p_layers);
@@ -3303,22 +3292,6 @@ void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set)
 	}
 }
 
-void RenderingDevice::_uniform_set_update_clears(UniformSet* p_uniform_set)
-{
-	if (p_uniform_set->pending_clear_textures.is_empty()) {
-		return;
-	}
-
-	for (RID texture_id : p_uniform_set->pending_clear_textures) {
-		Texture* texture = texture_owner.get_or_null(texture_id);
-		if (texture != nullptr) {
-			_texture_check_pending_clear(texture_id, texture);
-		}
-	}
-
-	p_uniform_set->pending_clear_textures.clear();
-}
-
 bool RenderingDevice::uniform_set_is_valid(RID p_uniform_set)
 {
 	_THREAD_SAFE_METHOD_
@@ -3898,7 +3871,6 @@ void RenderingDevice::draw_list_draw(
 					uniform_set_owner.get_or_null(draw_list.state.sets[i].uniform_set);
 				ERR_FAIL_NULL(uniform_set);
 				_uniform_set_update_shared(uniform_set);
-				_uniform_set_update_clears(uniform_set);
 
 				draw_graph.add_draw_list_usages(
 					uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
@@ -4430,7 +4402,6 @@ void RenderingDevice::compute_list_dispatch(
 			UniformSet* uniform_set =
 				uniform_set_owner.get_or_null(compute_list.state.sets[i].uniform_set);
 			_uniform_set_update_shared(uniform_set);
-			_uniform_set_update_clears(uniform_set);
 
 			draw_graph.add_compute_list_usages(
 				uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
@@ -5887,15 +5858,6 @@ bool RenderingDevice::has_feature(const Features p_feature) const
 }
 
 void RenderingDevice::make_current() { render_thread_id = Thread::get_caller_id(); }
-
-RenderingDevice::~RenderingDevice()
-{
-	finalize();
-
-	if (singleton == this) {
-		singleton = nullptr;
-	}
-}
 
 RenderingDevice::RenderingDevice()
 {

@@ -56,8 +56,6 @@ bool AnimationNodeBlendSpace2DEditor::can_edit(const Ref<AnimationNode>& p_node)
 	return bs2d.is_valid();
 }
 
-void AnimationNodeBlendSpace2DEditor::_blend_space_changed() { blend_space_draw->queue_redraw(); }
-
 void AnimationNodeBlendSpace2DEditor::edit(const Ref<AnimationNode>& p_node)
 {
 	blend_space = p_node;
@@ -90,7 +88,6 @@ StringName AnimationNodeBlendSpace2DEditor::get_blend_position_path() const
 	StringName path = AnimationTreeEditor::get_singleton()->get_base_path() + "blend_position";
 	return path;
 }
-
 
 String AnimationNodeBlendSpace2DEditor::_get_safe_name(
 	const Ref<AnimationNodeBlendSpace2D>& p_blend_space, const String& p_name)
@@ -134,76 +131,6 @@ void AnimationNodeBlendSpace2DEditor::_update_tool_erase()
 	else {
 		edit_hb->hide();
 	}
-}
-
-void AnimationNodeBlendSpace2DEditor::_tool_switch(int p_tool)
-{
-	making_triangle.clear();
-
-	if (p_tool == 3) {
-		Vector<Vector2> bl_points;
-		for (int i = 0; i < blend_space->get_blend_point_count(); i++) {
-			bl_points.push_back(blend_space->get_blend_point_position(i));
-		}
-		Vector<Delaunay2D::Triangle> tr = Delaunay2D::triangulate(bl_points);
-		for (int i = 0; i < tr.size(); i++) {
-			blend_space->add_triangle(tr[i].points[0], tr[i].points[1], tr[i].points[2]);
-		}
-	}
-
-	if (p_tool == 0) {
-		tool_erase->show();
-		tool_erase_sep->show();
-	}
-	else {
-		tool_erase->hide();
-		tool_erase_sep->hide();
-	}
-	_update_tool_erase();
-	blend_space_draw->queue_redraw();
-}
-
-void AnimationNodeBlendSpace2DEditor::_snap_toggled() { blend_space_draw->queue_redraw(); }
-
-void AnimationNodeBlendSpace2DEditor::_update_space()
-{
-	if (updating || blend_space.is_null()) {
-		return;
-	}
-
-	updating = true;
-
-	if (blend_space->get_auto_triangles()) {
-		tool_triangle->hide();
-	}
-	else {
-		tool_triangle->show();
-	}
-
-	auto_triangles->set_pressed(blend_space->get_auto_triangles());
-
-	sync->select(blend_space->get_sync_mode());
-	cyclic_length_value->set_value(blend_space->get_cyclic_length());
-	cyclic_length_value->set_visible(
-		blend_space->get_sync_mode() == AnimationNodeBlendSpace2D::SYNC_MODE_CYCLIC_CONSTANT);
-
-	interpolation->select(blend_space->get_blend_mode());
-
-	max_x_value->set_value(blend_space->get_max_space().x);
-	max_y_value->set_value(blend_space->get_max_space().y);
-
-	min_x_value->set_value(blend_space->get_min_space().x);
-	min_y_value->set_value(blend_space->get_min_space().y);
-
-	label_x->set_text(blend_space->get_x_label());
-	label_y->set_text(blend_space->get_y_label());
-
-	snap_x->set_value(blend_space->get_snap().x);
-	snap_y->set_value(blend_space->get_snap().y);
-
-	blend_space_draw->queue_redraw();
-
-	updating = false;
 }
 
 void AnimationNodeBlendSpace2DEditor::_update_edited_point_pos()
@@ -286,101 +213,10 @@ void AnimationNodeBlendSpace2DEditor::_open_editor()
 	}
 }
 
-void AnimationNodeBlendSpace2DEditor::_index_edit_focus_entered()
-{
-	if (index_focus_cooldown_timer->is_stopped() == false) {
-		index_focus_cooldown_timer->stop();
-	}
-	index_edit_has_focus = true;
-	show_indices = true;
-	blend_space_draw->queue_redraw();
-}
-
 void AnimationNodeBlendSpace2DEditor::_index_edit_focus_exited()
 {
 	index_edit_has_focus = false;
 	index_focus_cooldown_timer->start();
-}
-
-void AnimationNodeBlendSpace2DEditor::_index_focus_cooldown_timeout()
-{
-	if (!index_edit_has_focus) {
-		show_indices = false;
-		blend_space_draw->queue_redraw();
-	}
-}
-
-void AnimationNodeBlendSpace2DEditor::_show_indices_with_cooldown()
-{
-	if (index_focus_cooldown_timer->is_stopped() == false) {
-		index_focus_cooldown_timer->stop();
-	}
-	show_indices = true;
-	index_focus_cooldown_timer->start();
-	blend_space_draw->queue_redraw();
-}
-
-void AnimationNodeBlendSpace2DEditor::_bind_methods() {}
-
-void AnimationNodeBlendSpace2DEditor::_start_inline_edit(int p_point)
-{
-	if (editing_point != -1 || p_point < 0 || p_point >= blend_space->get_blend_point_count()) {
-		return;
-	}
-
-	editing_point = p_point;
-	_set_selected_point(p_point);
-
-	inline_editor = memnew(LineEdit);
-	blend_space_draw->add_child(inline_editor);
-
-	inline_editor->add_theme_color_override(SceneStringName(font_color),
-		get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
-	inline_editor->add_theme_color_override("font_selected_color", Color::named("white"));
-	inline_editor->add_theme_color_override(
-		"selection_color", get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
-	Ref<StyleBoxEmpty> empty_style = memnew(StyleBoxEmpty);
-	empty_style->set_content_margin_all(0);
-	inline_editor->add_theme_style_override("focus", memnew(StyleBoxEmpty));
-	inline_editor->add_theme_style_override("read_only", memnew(StyleBoxEmpty));
-	inline_editor->add_theme_constant_override("minimum_character_width", 0);
-	inline_editor->set_flat(true);
-
-	inline_editor->set_text(blend_space->get_blend_point_name(p_point));
-	inline_editor->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
-	inline_editor->set_expand_to_text_length_enabled(true);
-
-	if (p_point < text_rects.size() && p_point < points.size()) {
-		Rect2 text_rect = text_rects[p_point];
-
-		inline_editor_point_x = points[p_point].x;
-
-		float editor_width = text_rect.size.x;
-		inline_editor->set_size(Vector2(editor_width, text_rect.size.y));
-
-		const float pm = POINT_MARGIN * EDSCALE;
-		const Size2 s = blend_space_draw->get_size() - Vector2(pm * 2, pm * 2);
-
-		float editor_x = inline_editor_point_x - editor_width / 2.0;
-		editor_x = CLAMP(editor_x, pm, pm + s.width - editor_width);
-
-		inline_editor->set_position(Vector2(editor_x, text_rect.position.y - 1 * EDSCALE));
-	}
-
-	inline_editor->grab_focus();
-	inline_editor->select_all();
-
-	blend_space_draw->queue_redraw();
-}
-
-void AnimationNodeBlendSpace2DEditor::_cancel_inline_edit()
-{
-	if (inline_editor) {
-		inline_editor->queue_free();
-		inline_editor = nullptr;
-	}
-	editing_point = -1;
-	blend_space_draw->queue_redraw();
 }
 
 void AnimationNodeBlendSpace2DEditor::_inline_editor_text_changed(const String& p_text)

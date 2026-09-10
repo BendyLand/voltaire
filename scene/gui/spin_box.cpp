@@ -109,15 +109,6 @@ void SpinBox::_arrow_clicked(bool p_up)
 	}
 }
 
-void SpinBox::_mouse_exited()
-{
-	if (state_cache.up_button_hovered || state_cache.down_button_hovered) {
-		state_cache.up_button_hovered = false;
-		state_cache.down_button_hovered = false;
-		queue_redraw();
-	}
-}
-
 void SpinBox::_line_edit_editing_toggled(bool p_toggled_on)
 {
 	if (p_toggled_on) {
@@ -248,12 +239,6 @@ void SpinBox::set_select_all_on_focus(bool p_enabled)
 
 bool SpinBox::is_select_all_on_focus() const { return line_edit->is_select_all_on_focus(); }
 
-void SpinBox::set_editable(bool p_enabled)
-{
-	line_edit->set_editable(p_enabled);
-	queue_redraw();
-}
-
 bool SpinBox::is_editable() const { return line_edit->is_editable(); }
 
 void SpinBox::apply() { _text_submitted(line_edit->get_text()); }
@@ -273,20 +258,6 @@ void SpinBox::_value_changed(double p_value)
 {
 	_update_buttons_state_for_current_value();
 	Range::_value_changed(p_value);
-}
-
-void SpinBox::_update_buttons_state_for_current_value()
-{
-	double value = get_value();
-	bool should_disable_up = value == get_max() && !is_greater_allowed();
-	bool should_disable_down = value == get_min() && !is_lesser_allowed();
-
-	if (state_cache.up_button_disabled != should_disable_up ||
-		state_cache.down_button_disabled != should_disable_down) {
-		state_cache.up_button_disabled = should_disable_up;
-		state_cache.down_button_disabled = should_disable_down;
-		queue_redraw();
-	}
 }
 
 

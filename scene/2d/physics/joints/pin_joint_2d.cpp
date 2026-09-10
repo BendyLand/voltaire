@@ -71,97 +71,17 @@ void PinJoint2D::_configure_joint(RID p_joint, PhysicsBody2D* body_a, PhysicsBod
 		p_joint, PS2DE::PIN_JOINT_FLAG_ANGULAR_LIMIT_ENABLED, angular_limit_enabled);
 }
 
-void PinJoint2D::set_softness(real_t p_softness)
-{
-	if (softness == p_softness) {
-		return;
-	}
-	softness = p_softness;
-	queue_redraw();
-	if (is_configured()) {
-		PhysicsServer2D::get_singleton()->pin_joint_set_param(
-			get_rid(), PS2DE::PIN_JOINT_SOFTNESS, p_softness);
-	}
-}
-
 real_t PinJoint2D::get_softness() const { return softness; }
-
-void PinJoint2D::set_angular_limit_lower(real_t p_angular_limit_lower)
-{
-	if (angular_limit_lower == p_angular_limit_lower) {
-		return;
-	}
-	angular_limit_lower = p_angular_limit_lower;
-	queue_redraw();
-	if (is_configured()) {
-		PhysicsServer2D::get_singleton()->pin_joint_set_param(
-			get_rid(), PS2DE::PIN_JOINT_LIMIT_LOWER, p_angular_limit_lower);
-	}
-}
 
 real_t PinJoint2D::get_angular_limit_lower() const { return angular_limit_lower; }
 
-void PinJoint2D::set_angular_limit_upper(real_t p_angular_limit_upper)
-{
-	if (angular_limit_upper == p_angular_limit_upper) {
-		return;
-	}
-	angular_limit_upper = p_angular_limit_upper;
-	queue_redraw();
-	if (is_configured()) {
-		PhysicsServer2D::get_singleton()->pin_joint_set_param(
-			get_rid(), PS2DE::PIN_JOINT_LIMIT_UPPER, p_angular_limit_upper);
-	}
-}
-
 real_t PinJoint2D::get_angular_limit_upper() const { return angular_limit_upper; }
-
-void PinJoint2D::set_motor_target_velocity(real_t p_motor_target_velocity)
-{
-	if (motor_target_velocity == p_motor_target_velocity) {
-		return;
-	}
-	motor_target_velocity = p_motor_target_velocity;
-	queue_redraw();
-	if (is_configured()) {
-		PhysicsServer2D::get_singleton()->pin_joint_set_param(
-			get_rid(), PS2DE::PIN_JOINT_MOTOR_TARGET_VELOCITY, motor_target_velocity);
-	}
-}
 
 real_t PinJoint2D::get_motor_target_velocity() const { return motor_target_velocity; }
 
-void PinJoint2D::set_motor_enabled(bool p_motor_enabled)
-{
-	if (motor_enabled == p_motor_enabled) {
-		return;
-	}
-	motor_enabled = p_motor_enabled;
-	queue_redraw();
-	if (is_configured()) {
-		PhysicsServer2D::get_singleton()->pin_joint_set_flag(
-			get_rid(), PS2DE::PIN_JOINT_FLAG_MOTOR_ENABLED, motor_enabled);
-	}
-}
-
 bool PinJoint2D::is_motor_enabled() const { return motor_enabled; }
 
-void PinJoint2D::set_angular_limit_enabled(bool p_angular_limit_enabled)
-{
-	if (angular_limit_enabled == p_angular_limit_enabled) {
-		return;
-	}
-	angular_limit_enabled = p_angular_limit_enabled;
-	queue_redraw();
-	if (is_configured()) {
-		PhysicsServer2D::get_singleton()->pin_joint_set_flag(
-			get_rid(), PS2DE::PIN_JOINT_FLAG_ANGULAR_LIMIT_ENABLED, angular_limit_enabled);
-	}
-}
-
 bool PinJoint2D::is_angular_limit_enabled() const { return angular_limit_enabled; }
-
-void PinJoint2D::_bind_methods() {}
 
 PinJoint2D::PinJoint2D() {}
 

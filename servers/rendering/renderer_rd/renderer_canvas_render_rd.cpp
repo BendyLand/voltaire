@@ -341,8 +341,6 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			uint8_t* w = index_buffer.ptrw();
 			memcpy(w, p_indices.ptr(), sizeof(int32_t) * p_indices.size());
 		}
-		pb.index_buffer = RD::get_singleton()->index_buffer_create(
-			p_count, RD::INDEX_BUFFER_FORMAT_UINT32, index_buffer);
 		pb.indices = RD::get_singleton()->index_array_create(pb.index_buffer, 0, p_count);
 		pb.primitive_count = p_count;
 	}
@@ -691,11 +689,6 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 		light_count = index;
 	}
 
-	if (light_count > 0) {
-		RD::get_singleton()->buffer_update(state.lights_storage_buffer, 0,
-			sizeof(LightUniform) * light_count, &state.light_uniforms[0]);
-	}
-
 	bool use_linear_colors = texture_storage->render_target_is_using_hdr(p_to_render_target);
 
 	{
@@ -756,8 +749,6 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 
 		state_buffer.flags = use_linear_colors ? CANVAS_FLAGS_CONVERT_ATTRIBUTES_TO_LINEAR : 0;
 
-		RD::get_singleton()->buffer_update(
-			state.canvas_state_buffer, 0, sizeof(State::Buffer), &state_buffer);
 	}
 
 	{ // default filter/repeat
@@ -1051,283 +1042,6 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 	}
 }
 
-void RendererCanvasRenderRD::light_update_shadow(RID p_rid, int p_shadow_index,
-	const Transform2D& p_light_xform, int p_light_mask, float p_near, float p_far,
-	LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
-{
-	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
-	ERR_FAIL_COND(!cl->shadow.enabled);
-
-	_update_shadow_atlas();
-
-	cl->shadow.z_far = p_far;
-	cl->shadow.y_offset = float(p_shadow_index * 2 + 1) / float(MAX_LIGHTS_PER_RENDER * 2);
-	Color cc = Color(p_far, p_far, p_far, 1.0);
-
-	// First, do a culling pass and record what occluders need to be drawn for this light.
-	static thread_local LocalVector<OccluderPolygon*> occluders;
-	static thread_local LocalVector<uint32_t> occluder_indices;
-	occluders.clear();
-	occluder_indices.clear();
-
-	uint32_t occluder_count = 0;
-
-	LightOccluderInstance* instance = p_occluders;
-	while (instance) {
-		OccluderPolygon* co = occluder_polygon_owner.get_or_null(instance->occluder);
-
-		occluder_count++;
-
-		if (!co || co->index_array.is_null()) {
-			instance = instance->next;
-			continue;
-		}
-
-		if (!(p_light_mask & instance->light_mask) ||
-			!p_light_rect.intersects_transformed(instance->xform_cache, instance->aabb_cache)) {
-			instance = instance->next;
-			continue;
-		}
-
-		occluders.push_back(co);
-		occluder_indices.push_back(occluder_count - 1);
-
-		instance = instance->next;
-	}
-
-	// Then, upload all the occluder transforms to a shared buffer.
-	// We only do this for the first light so we can avoid uploading the same
-	// Transforms over and over again.
-	if (p_shadow_index == 0 && occluder_count > 0) {
-		static thread_local LocalVector<float> transforms;
-		transforms.clear();
-		transforms.resize(occluder_count * 8);
-
-		instance = p_occluders;
-		uint32_t index = 0;
-		while (instance) {
-			_update_transform_2d_to_mat2x4(instance->xform_cache, &transforms[index * 8]);
-			index++;
-			instance = instance->next;
-		}
-
-		_update_occluder_buffer(occluder_count * 8 * sizeof(float));
-		RD::get_singleton()->buffer_update(
-			state.shadow_occluder_buffer, 0, transforms.size() * sizeof(float), transforms.ptr());
-	}
-
-	Rect2i rect(0, p_shadow_index * 2, state.shadow_texture_size, 2);
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(
-		state.shadow_fb, RD::DRAW_CLEAR_ALL, VectorView(&cc, 1), 1.0f, 0, rect);
-
-	if (state.shadow_occluder_buffer.is_valid()) {
-		RD::get_singleton()->draw_list_bind_render_pipeline(
-			draw_list, shadow_render.render_pipelines[SHADOW_RENDER_MODE_POSITIONAL_SHADOW]);
-		RD::get_singleton()->draw_list_bind_uniform_set(
-			draw_list, state.shadow_ocluder_uniform_set, 0);
-
-		for (int i = 0; i < 4; i++) {
-			Rect2i sub_rect((state.shadow_texture_size / 4) * i, p_shadow_index * 2,
-				(state.shadow_texture_size / 4), 2);
-			RD::get_singleton()->draw_list_set_viewport(draw_list, sub_rect);
-
-			static const Vector2 directions[4] = {
-				Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0), Vector2(0, -1)};
-			static const Vector4 rotations[4] = {Vector4(0, -1, 1, 0), Vector4(-1, 0, 0, -1),
-				Vector4(0, 1, -1, 0), Vector4(1, 0, 0, 1)};
-
-			PositionalShadowRenderPushConstant push_constant;
-			_update_transform_2d_to_mat2x4(p_light_xform, push_constant.modelview);
-			push_constant.direction[0] = directions[i].x;
-			push_constant.direction[1] = directions[i].y;
-			push_constant.rotation[0] = rotations[i].x;
-			push_constant.rotation[1] = rotations[i].y;
-			push_constant.rotation[2] = rotations[i].z;
-			push_constant.rotation[3] = rotations[i].w;
-			push_constant.z_far = p_far;
-			push_constant.z_near = p_near;
-
-			for (uint32_t j = 0; j < occluders.size(); j++) {
-				OccluderPolygon* co = occluders[j];
-
-				push_constant.pad = occluder_indices[j];
-				push_constant.cull_mode = uint32_t(co->cull_mode);
-
-				// The slowest part about this whole function is that we have to draw the occluders
-				// one by one, 4 times. We can optimize this so that all occluders draw at once if
-				// we store vertices and indices in a giant SSBO and just save an index into that
-				// SSBO for each occluder.
-				RD::get_singleton()->draw_list_bind_vertex_array(draw_list, co->vertex_array);
-				RD::get_singleton()->draw_list_bind_index_array(draw_list, co->index_array);
-				RD::get_singleton()->draw_list_set_push_constant(
-					draw_list, &push_constant, sizeof(PositionalShadowRenderPushConstant));
-
-				RD::get_singleton()->draw_list_draw(draw_list, true);
-			}
-		}
-	}
-	RD::get_singleton()->draw_list_end();
-}
-
-void RendererCanvasRenderRD::light_update_directional_shadow(RID p_rid, int p_shadow_index,
-	const Transform2D& p_light_xform, int p_light_mask, float p_cull_distance,
-	const Rect2& p_clip_rect, LightOccluderInstance* p_occluders)
-{
-	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
-	ERR_FAIL_COND(!cl->shadow.enabled);
-
-	_update_shadow_atlas();
-
-	Vector2 light_dir = p_light_xform.columns[1].normalized();
-
-	Vector2 center = p_clip_rect.get_center();
-
-	float to_edge_distance =
-		Math::abs(light_dir.dot(p_clip_rect.get_support(-light_dir)) - light_dir.dot(center));
-
-	Vector2 from_pos = center - light_dir * (to_edge_distance + p_cull_distance);
-	float distance = to_edge_distance * 2.0 + p_cull_distance;
-	float half_size =
-		p_clip_rect.size.length() * 0.5; // shadow length, must keep this no matter the angle
-
-	cl->shadow.z_far = distance;
-	cl->shadow.y_offset = float(p_shadow_index * 2 + 1) / float(MAX_LIGHTS_PER_RENDER * 2);
-
-	Transform2D to_light_xform;
-
-	to_light_xform[2] = from_pos;
-	to_light_xform[1] = light_dir;
-	to_light_xform[0] = -light_dir.orthogonal();
-
-	to_light_xform.invert();
-
-	Vector<Color> cc;
-	cc.push_back(Color(1, 1, 1, 1));
-
-	Rect2i rect(0, p_shadow_index * 2, state.shadow_texture_size, 2);
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(
-		state.shadow_fb, RD::DRAW_CLEAR_ALL, cc, 1.0f, 0, rect);
-	RD::get_singleton()->draw_list_bind_render_pipeline(
-		draw_list, shadow_render.render_pipelines[SHADOW_RENDER_MODE_DIRECTIONAL_SHADOW]);
-
-	Projection projection;
-	projection.set_orthogonal(-half_size, half_size, -0.5, 0.5, 0.0, distance);
-	projection =
-		projection *
-		Projection(Transform3D().looking_at(Vector3(0, 1, 0), Vector3(0, 0, -1)).affine_inverse());
-
-	ShadowRenderPushConstant push_constant;
-	for (int y = 0; y < 4; y++) {
-		for (int x = 0; x < 4; x++) {
-			push_constant.projection[y * 4 + x] = projection.columns[y][x];
-		}
-	}
-
-	push_constant.direction[0] = 0.0;
-	push_constant.direction[1] = 1.0;
-	push_constant.z_far = distance;
-
-	LightOccluderInstance* instance = p_occluders;
-
-	while (instance) {
-		OccluderPolygon* co = occluder_polygon_owner.get_or_null(instance->occluder);
-
-		if (!co || co->index_array.is_null() || !(p_light_mask & instance->light_mask)) {
-			instance = instance->next;
-			continue;
-		}
-
-		_update_transform_2d_to_mat2x4(
-			to_light_xform * instance->xform_cache, push_constant.modelview);
-		push_constant.cull_mode = uint32_t(co->cull_mode);
-
-		RD::get_singleton()->draw_list_bind_vertex_array(draw_list, co->vertex_array);
-		RD::get_singleton()->draw_list_bind_index_array(draw_list, co->index_array);
-		RD::get_singleton()->draw_list_set_push_constant(
-			draw_list, &push_constant, sizeof(ShadowRenderPushConstant));
-
-		RD::get_singleton()->draw_list_draw(draw_list, true);
-
-		instance = instance->next;
-	}
-
-	RD::get_singleton()->draw_list_end();
-
-	Transform2D to_shadow;
-	to_shadow.columns[0].x = 1.0 / -(half_size * 2.0);
-	to_shadow.columns[2].x = 0.5;
-
-	cl->shadow.directional_xform = to_shadow * to_light_xform;
-}
-
-void RendererCanvasRenderRD::render_sdf(RID p_render_target, LightOccluderInstance* p_occluders)
-{
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
-	RID fb = texture_storage->render_target_get_sdf_framebuffer(p_render_target);
-	Rect2i rect = texture_storage->render_target_get_sdf_rect(p_render_target);
-
-	Transform2D to_sdf;
-	to_sdf.columns[0] *= rect.size.width;
-	to_sdf.columns[1] *= rect.size.height;
-	to_sdf.columns[2] = rect.position;
-
-	Transform2D to_clip;
-	to_clip.columns[0] *= 2.0;
-	to_clip.columns[1] *= 2.0;
-	to_clip.columns[2] = -Vector2(1.0, 1.0);
-
-	to_clip = to_clip * to_sdf.affine_inverse();
-
-	Vector<Color> cc;
-	cc.push_back(Color(0, 0, 0, 0));
-
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(fb, RD::DRAW_CLEAR_ALL, cc);
-
-	Projection projection;
-
-	ShadowRenderPushConstant push_constant;
-	for (int y = 0; y < 4; y++) {
-		for (int x = 0; x < 4; x++) {
-			push_constant.projection[y * 4 + x] = projection.columns[y][x];
-		}
-	}
-
-	push_constant.direction[0] = 0.0;
-	push_constant.direction[1] = 0.0;
-	push_constant.z_far = 0;
-	push_constant.cull_mode = 0;
-
-	LightOccluderInstance* instance = p_occluders;
-
-	while (instance) {
-		OccluderPolygon* co = occluder_polygon_owner.get_or_null(instance->occluder);
-
-		if (!co || co->sdf_index_array.is_null() || !instance->sdf_collision) {
-			instance = instance->next;
-			continue;
-		}
-
-		_update_transform_2d_to_mat2x4(to_clip * instance->xform_cache, push_constant.modelview);
-
-		RD::get_singleton()->draw_list_bind_render_pipeline(draw_list,
-			shadow_render.sdf_render_pipelines[co->sdf_is_lines ? SHADOW_RENDER_SDF_LINES
-																: SHADOW_RENDER_SDF_TRIANGLES]);
-		RD::get_singleton()->draw_list_bind_vertex_array(draw_list, co->sdf_vertex_array);
-		RD::get_singleton()->draw_list_bind_index_array(draw_list, co->sdf_index_array);
-		RD::get_singleton()->draw_list_set_push_constant(
-			draw_list, &push_constant, sizeof(ShadowRenderPushConstant));
-
-		RD::get_singleton()->draw_list_draw(draw_list, true);
-
-		instance = instance->next;
-	}
-
-	RD::get_singleton()->draw_list_end();
-
-	texture_storage->render_target_sdf_process(p_render_target); // done rendering, process it
-}
-
 RID RendererCanvasRenderRD::occluder_polygon_create()
 {
 	OccluderPolygon occluder;
@@ -1439,19 +1153,7 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 			buffer.push_back(oc->vertex_buffer);
 			oc->vertex_array = RD::get_singleton()->vertex_array_create(
 				4 * lc / 2, shadow_render.vertex_format, buffer);
-			// indices
-
-			oc->index_buffer = RD::get_singleton()->index_buffer_create(
-				3 * lc, RD::INDEX_BUFFER_FORMAT_UINT16, indices);
 			oc->index_array = RD::get_singleton()->index_array_create(oc->index_buffer, 0, 3 * lc);
-
-		}
-		else {
-			// update existing
-			const uint8_t* vr = geometry.ptr();
-			RD::get_singleton()->buffer_update(oc->vertex_buffer, 0, geometry.size(), vr);
-			const uint8_t* ir = indices.ptr();
-			RD::get_singleton()->buffer_update(oc->index_buffer, 0, indices.size(), ir);
 		}
 	}
 
@@ -1514,8 +1216,6 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 			oc->sdf_vertex_buffer = RD::get_singleton()->vertex_buffer_create(
 				p_points.size() * 2 * sizeof(float), p_points.span().reinterpret<uint8_t>());
 #endif
-			oc->sdf_index_buffer = RD::get_singleton()->index_buffer_create(sdf_indices.size(),
-				RD::INDEX_BUFFER_FORMAT_UINT32, sdf_indices.span().reinterpret<uint8_t>());
 			oc->sdf_index_array = RD::get_singleton()->index_array_create(
 				oc->sdf_index_buffer, 0, sdf_indices.size());
 
@@ -1523,27 +1223,6 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 			buffer.push_back(oc->sdf_vertex_buffer);
 			oc->sdf_vertex_array = RD::get_singleton()->vertex_array_create(
 				p_points.size(), shadow_render.sdf_vertex_format, buffer);
-			// indices
-
-		}
-		else {
-			// update existing
-#ifdef REAL_T_IS_DOUBLE
-			PackedFloat32Array float_points;
-			float_points.resize(p_points.size() * 2);
-			float* float_points_ptr = (float*)float_points.ptrw();
-			for (int i = 0; i < p_points.size(); i++) {
-				float_points_ptr[i * 2] = p_points[i].x;
-				float_points_ptr[i * 2 + 1] = p_points[i].y;
-			}
-			RD::get_singleton()->buffer_update(
-				oc->sdf_vertex_buffer, 0, sizeof(float) * 2 * p_points.size(), float_points.ptr());
-#else
-			RD::get_singleton()->buffer_update(
-				oc->sdf_vertex_buffer, 0, sizeof(float) * 2 * p_points.size(), p_points.ptr());
-#endif
-			RD::get_singleton()->buffer_update(
-				oc->sdf_index_buffer, 0, sdf_indices.size() * sizeof(int32_t), sdf_indices.ptr());
 		}
 	}
 }
@@ -1764,196 +1443,6 @@ uint32_t RendererCanvasRenderRD::get_pipeline_compilations(RSE::PipelineSource p
 		static_cast<RendererCanvasRenderRD*>(RendererCanvasRender::singleton);
 	MutexLock lock(canvas_singleton->shader.mutex);
 	return shader.pipeline_compilations[p_source];
-}
-
-void RendererCanvasRenderRD::_render_batch_items(RenderTarget p_to_render_target, int p_item_count,
-	const Transform2D& p_canvas_transform_inverse, Light* p_lights, bool& r_sdf_used,
-	bool p_to_backbuffer, RenderingServerTypes::RenderInfo* r_render_info)
-{
-	// Record batches
-	{
-		RendererRD::MaterialStorage* material_storage =
-			RendererRD::MaterialStorage::get_singleton();
-		Item* current_clip = nullptr;
-
-		// Record Batches.
-		// First item always forms its own batch.
-		bool batch_broken = false;
-		Batch* current_batch = _new_batch(batch_broken);
-
-		for (int i = 0; i < p_item_count; i++) {
-			Item* ci = items[i];
-
-			if (ci->final_clip_owner != current_batch->clip) {
-				current_batch = _new_batch(batch_broken);
-				current_batch->clip = ci->final_clip_owner;
-				current_clip = ci->final_clip_owner;
-			}
-
-			RID material =
-				ci->material_owner == nullptr ? ci->material : ci->material_owner->material;
-
-			if (ci->use_canvas_group) {
-				if (ci->canvas_group->mode == RSE::CANVAS_GROUP_MODE_CLIP_AND_DRAW) {
-					material = default_clip_children_material;
-				}
-				else {
-					if (material.is_null()) {
-						if (ci->canvas_group->mode == RSE::CANVAS_GROUP_MODE_CLIP_ONLY) {
-							material = default_clip_children_material;
-						}
-						else {
-							material = default_canvas_group_material;
-						}
-					}
-				}
-			}
-
-			if (material != current_batch->material) {
-				current_batch = _new_batch(batch_broken);
-
-				CanvasMaterialData* material_data = nullptr;
-				if (material.is_valid()) {
-					material_data =
-						static_cast<CanvasMaterialData*>(material_storage->material_get_data(
-							material, RendererRD::MaterialStorage::SHADER_TYPE_2D));
-				}
-
-				current_batch->material = material;
-				current_batch->material_data = material_data;
-			}
-
-			if (ci->repeat_source_item == nullptr || ci->repeat_size == Vector2()) {
-				Transform2D base_transform = p_canvas_transform_inverse * ci->final_transform;
-				_record_item_commands(ci, p_to_render_target, base_transform, current_clip,
-					p_lights, batch_broken, r_sdf_used, current_batch);
-			}
-			else {
-				Point2 start_pos = ci->repeat_size * -(ci->repeat_times / 2);
-				Point2 offset;
-				int repeat_times_x = ci->repeat_size.x ? ci->repeat_times : 0;
-				int repeat_times_y = ci->repeat_size.y ? ci->repeat_times : 0;
-				for (int ry = 0; ry <= repeat_times_y; ry++) {
-					offset.y = start_pos.y + ry * ci->repeat_size.y;
-					for (int rx = 0; rx <= repeat_times_x; rx++) {
-						offset.x = start_pos.x + rx * ci->repeat_size.x;
-						Transform2D base_transform = ci->final_transform;
-						base_transform.columns[2] +=
-							ci->repeat_source_item->final_transform.basis_xform(offset);
-						base_transform = p_canvas_transform_inverse * base_transform;
-						_record_item_commands(ci, p_to_render_target, base_transform, current_clip,
-							p_lights, batch_broken, r_sdf_used, current_batch);
-					}
-				}
-			}
-		}
-	}
-
-	if (state.canvas_instance_batches.is_empty()) {
-		// Nothing to render, just return.
-		return;
-	}
-
-	// Render batches
-
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
-	RID framebuffer;
-	RID fb_uniform_set;
-	bool clear = false;
-	Color clear_color;
-
-	if (p_to_backbuffer) {
-		framebuffer = texture_storage->render_target_get_rd_backbuffer_framebuffer(
-			p_to_render_target.render_target);
-		fb_uniform_set = texture_storage->render_target_get_backbuffer_uniform_set(
-			p_to_render_target.render_target);
-	}
-	else {
-		framebuffer =
-			texture_storage->render_target_get_rd_framebuffer(p_to_render_target.render_target);
-		texture_storage->render_target_set_msaa_needs_resolve(p_to_render_target.render_target,
-			false); // If MSAA is enabled, our framebuffer will be resolved!
-
-		if (texture_storage->render_target_is_clear_requested(p_to_render_target.render_target)) {
-			clear = true;
-			clear_color = texture_storage->render_target_get_clear_request_color(
-				p_to_render_target.render_target);
-			if (texture_storage->render_target_is_using_hdr(p_to_render_target.render_target)) {
-				clear_color = clear_color.srgb_to_linear();
-			}
-			texture_storage->render_target_disable_clear_request(p_to_render_target.render_target);
-		}
-		// TODO: Obtain from framebuffer format eventually when this is implemented.
-		fb_uniform_set = texture_storage->render_target_get_framebuffer_uniform_set(
-			p_to_render_target.render_target);
-	}
-
-	if (fb_uniform_set.is_null() || !RD::get_singleton()->uniform_set_is_valid(fb_uniform_set)) {
-		fb_uniform_set =
-			_create_base_uniform_set(p_to_render_target.render_target, p_to_backbuffer);
-	}
-
-	RD::FramebufferFormatID fb_format = RD::get_singleton()->framebuffer_get_format(framebuffer);
-
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer,
-		clear ? RD::DRAW_CLEAR_COLOR_0 : RD::DRAW_DEFAULT_ALL, clear_color, 1.0f, 0, Rect2(),
-		RDD::BreadcrumbMarker::UI_PASS);
-
-	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, fb_uniform_set, BASE_UNIFORM_SET);
-	RD::get_singleton()->draw_list_bind_uniform_set(
-		draw_list, state.default_transforms_uniform_set, TRANSFORMS_UNIFORM_SET);
-
-	Item* current_clip = nullptr;
-	state.current_batch_uniform_set = RID();
-
-	for (uint32_t i = 0; i <= state.current_batch_index; i++) {
-		Batch* current_batch = &state.canvas_instance_batches[i];
-		// Skipping when there is no instances.
-		if (current_batch->instance_count == 0) {
-			continue;
-		}
-
-		// setup clip
-		if (current_clip != current_batch->clip) {
-			current_clip = current_batch->clip;
-			if (current_clip) {
-				RD::get_singleton()->draw_list_enable_scissor(
-					draw_list, current_clip->final_clip_rect);
-			}
-			else {
-				RD::get_singleton()->draw_list_disable_scissor(draw_list);
-			}
-		}
-
-		CanvasShaderData* shader_data = shader.default_version_data;
-		CanvasMaterialData* material_data = current_batch->material_data;
-		if (material_data) {
-			if (material_data->shader_data->version.is_valid() &&
-				material_data->shader_data->is_valid()) {
-				shader_data = material_data->shader_data;
-				// Update uniform set.
-				RID uniform_set =
-					texture_storage->render_target_is_using_hdr(p_to_render_target.render_target)
-						? material_data->uniform_set
-						: material_data->uniform_set_srgb;
-				if (uniform_set.is_valid() &&
-					RD::get_singleton()->uniform_set_is_valid(
-						uniform_set)) { // Material may not have a uniform set.
-					RD::get_singleton()->draw_list_bind_uniform_set(
-						draw_list, uniform_set, MATERIAL_UNIFORM_SET);
-					material_data->set_as_used();
-				}
-			}
-		}
-
-		_render_batch(draw_list, shader_data, fb_format, p_lights, current_batch, r_render_info);
-	}
-
-	RD::get_singleton()->draw_list_end();
-
-	state.current_batch_index = 0;
-	state.canvas_instance_batches.clear();
 }
 
 void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTarget p_render_target,

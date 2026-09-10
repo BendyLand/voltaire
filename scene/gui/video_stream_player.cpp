@@ -132,23 +132,6 @@ void VideoStreamPlayer::_mix_audio()
 	}
 }
 
-void VideoStreamPlayer::texture_changed(const Ref<Texture2D>& p_texture)
-{
-	const Size2 new_texture_size = p_texture.is_valid() ? p_texture->get_size() : Size2();
-
-	if (new_texture_size == texture_size) {
-		return;
-	}
-
-	texture_size = new_texture_size;
-
-	queue_redraw();
-
-	if (!expand) {
-		update_minimum_size();
-	}
-}
-
 Size2 VideoStreamPlayer::get_minimum_size() const
 {
 	if (!expand && texture.is_valid()) {
@@ -157,17 +140,6 @@ Size2 VideoStreamPlayer::get_minimum_size() const
 	else {
 		return Size2();
 	}
-}
-
-void VideoStreamPlayer::set_expand(bool p_expand)
-{
-	if (expand == p_expand) {
-		return;
-	}
-
-	expand = p_expand;
-	queue_redraw();
-	update_minimum_size();
 }
 
 bool VideoStreamPlayer::has_expand() const { return expand; }
