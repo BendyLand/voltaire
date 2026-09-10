@@ -333,7 +333,6 @@ public:
 	void show();
 	void hide();
 
-	void queue_redraw();
 	void move_to_front();
 
 	void set_clip_children_mode(ClipChildrenMode p_clip_mode);

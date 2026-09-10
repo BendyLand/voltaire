@@ -103,21 +103,6 @@ void Slider::_notification(int p_what)
 			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_SLIDER);
 	} break;
 
-	case NOTIFICATION_THEME_CHANGED: {
-		update_minimum_size();
-		queue_redraw();
-	} break;
-
-	case NOTIFICATION_MOUSE_ENTER: {
-		mouse_inside = true;
-		queue_redraw();
-	} break;
-
-	case NOTIFICATION_MOUSE_EXIT: {
-		mouse_inside = false;
-		queue_redraw();
-	} break;
-
 	case NOTIFICATION_VISIBILITY_CHANGED:
 	case NOTIFICATION_EXIT_TREE: {
 		mouse_inside = false;
@@ -264,52 +249,11 @@ void Slider::set_custom_step(double p_custom_step) { custom_step = p_custom_step
 
 double Slider::get_custom_step() const { return custom_step; }
 
-void Slider::set_ticks(int p_count)
-{
-	if (ticks == p_count) {
-		return;
-	}
-
-	ticks = p_count;
-	queue_redraw();
-}
-
 int Slider::get_ticks() const { return ticks; }
 
 bool Slider::get_ticks_on_borders() const { return ticks_on_borders; }
 
 Slider::TickPosition Slider::get_ticks_position() const { return ticks_position; }
-
-void Slider::set_ticks_on_borders(bool _tob)
-{
-	if (ticks_on_borders == _tob) {
-		return;
-	}
-
-	ticks_on_borders = _tob;
-	queue_redraw();
-}
-
-void Slider::set_ticks_position(TickPosition p_ticks_position)
-{
-	if (ticks_position == p_ticks_position) {
-		return;
-	}
-
-	ticks_position = p_ticks_position;
-	queue_redraw();
-}
-
-void Slider::set_editable(bool p_editable)
-{
-	if (editable == p_editable) {
-		return;
-	}
-	grab.active = false;
-
-	editable = p_editable;
-	queue_redraw();
-}
 
 bool Slider::is_editable() const { return editable; }
 

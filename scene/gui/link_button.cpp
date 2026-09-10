@@ -35,49 +35,9 @@
 
 String LinkButton::get_text() const { return text; }
 
-void LinkButton::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
-{
-	if (overrun_behavior != p_behavior) {
-		overrun_behavior = p_behavior;
-		_shape();
-		update_minimum_size();
-		queue_redraw();
-	}
-}
-
 TextServer::OverrunBehavior LinkButton::get_text_overrun_behavior() const
 {
 	return overrun_behavior;
-}
-
-void LinkButton::set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser)
-{
-	if (st_parser != p_parser) {
-		st_parser = p_parser;
-		_shape();
-		queue_redraw();
-	}
-}
-
-void LinkButton::set_ellipsis_char(const String& p_char)
-{
-	String c = p_char;
-	if (c.length() > 1) {
-		WARN_PRINT("Ellipsis must be exactly one character long (" + itos(c.length()) +
-				   " characters given).");
-		c = c.left(1);
-	}
-
-	if (el_char == c) {
-		return;
-	}
-	el_char = c;
-
-	if (overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
-		_shape();
-		queue_redraw();
-		update_minimum_size();
-	}
 }
 
 String LinkButton::get_ellipsis_char() const { return el_char; }
@@ -87,26 +47,7 @@ TextServer::StructuredTextParser LinkButton::get_structured_text_bidi_override()
 	return st_parser;
 }
 
-void LinkButton::set_text_direction(Control::TextDirection p_text_direction)
-{
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-	if (text_direction != p_text_direction) {
-		text_direction = p_text_direction;
-		_shape();
-		queue_redraw();
-	}
-}
-
 Control::TextDirection LinkButton::get_text_direction() const { return text_direction; }
-
-void LinkButton::set_language(const String& p_language)
-{
-	if (language != p_language) {
-		language = p_language;
-		_shape();
-		queue_redraw();
-	}
-}
 
 String LinkButton::get_language() const { return language; }
 
@@ -119,16 +60,6 @@ void LinkButton::set_uri(const String& p_uri)
 }
 
 String LinkButton::get_uri() const { return uri; }
-
-void LinkButton::set_underline_mode(UnderlineMode p_underline_mode)
-{
-	if (underline_mode == p_underline_mode) {
-		return;
-	}
-
-	underline_mode = p_underline_mode;
-	queue_redraw();
-}
 
 LinkButton::UnderlineMode LinkButton::get_underline_mode() const { return underline_mode; }
 

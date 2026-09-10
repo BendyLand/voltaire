@@ -85,12 +85,6 @@ Rect2 AnimatedSprite2D::_get_rect() const
 	return Rect2(ofs, s);
 }
 
-
-
-
-
-
-
 Ref<SpriteFrames> AnimatedSprite2D::get_sprite_frames() const { return frames; }
 
 void AnimatedSprite2D::set_frame(int p_frame)
@@ -104,35 +98,6 @@ void AnimatedSprite2D::set_frame_progress(real_t p_progress) { frame_progress = 
 
 real_t AnimatedSprite2D::get_frame_progress() const { return frame_progress; }
 
-void AnimatedSprite2D::set_frame_and_progress(int p_frame, real_t p_progress)
-{
-	if (frames.is_null()) {
-		return;
-	}
-
-	bool has_animation = frames->has_animation(animation);
-	int end_frame = has_animation ? MAX(0, frames->get_frame_count(animation) - 1) : 0;
-	bool is_changed = frame != p_frame;
-
-	if (p_frame < 0) {
-		frame = 0;
-	}
-	else if (has_animation && p_frame > end_frame) {
-		frame = end_frame;
-	}
-	else {
-		frame = p_frame;
-	}
-
-	_calc_frame_speed_scale();
-	frame_progress = p_progress;
-
-	if (!is_changed) {
-		return; // No change, don't redraw.
-	}
-	queue_redraw();
-}
-
 void AnimatedSprite2D::set_speed_scale(float p_speed_scale) { speed_scale = p_speed_scale; }
 
 float AnimatedSprite2D::get_speed_scale() const { return speed_scale; }
@@ -145,61 +110,13 @@ float AnimatedSprite2D::get_playing_speed() const
 	return speed_scale * custom_speed_scale;
 }
 
-void AnimatedSprite2D::set_centered(bool p_center)
-{
-	if (centered == p_center) {
-		return;
-	}
-
-	centered = p_center;
-	queue_redraw();
-	item_rect_changed();
-}
-
 bool AnimatedSprite2D::is_centered() const { return centered; }
-
-void AnimatedSprite2D::set_offset(const Point2& p_offset)
-{
-	if (offset == p_offset) {
-		return;
-	}
-
-	offset = p_offset;
-	queue_redraw();
-	item_rect_changed();
-}
 
 Point2 AnimatedSprite2D::get_offset() const { return offset; }
 
-void AnimatedSprite2D::set_flip_h(bool p_flip)
-{
-	if (hflip == p_flip) {
-		return;
-	}
-
-	hflip = p_flip;
-	queue_redraw();
-}
-
 bool AnimatedSprite2D::is_flipped_h() const { return hflip; }
 
-void AnimatedSprite2D::set_flip_v(bool p_flip)
-{
-	if (vflip == p_flip) {
-		return;
-	}
-
-	vflip = p_flip;
-	queue_redraw();
-}
-
 bool AnimatedSprite2D::is_flipped_v() const { return vflip; }
-
-void AnimatedSprite2D::_res_changed()
-{
-	set_frame_and_progress(frame, frame_progress);
-	queue_redraw();
-}
 
 bool AnimatedSprite2D::is_playing() const { return playing; }
 
@@ -213,8 +130,6 @@ void AnimatedSprite2D::set_autoplay(const String& p_name)
 }
 
 String AnimatedSprite2D::get_autoplay() const { return autoplay; }
-
-
 
 void AnimatedSprite2D::play_backwards(const StringName& p_name) { play(p_name, -1, true); }
 

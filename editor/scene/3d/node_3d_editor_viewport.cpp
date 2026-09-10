@@ -100,55 +100,12 @@ void ViewportNavigationControl::_notification(int p_what)
 			_update_navigation();
 		}
 	} break;
-
-	case NOTIFICATION_MOUSE_ENTER: {
-		hovered = true;
-		queue_redraw();
-	} break;
-
-	case NOTIFICATION_MOUSE_EXIT: {
-		hovered = false;
-		queue_redraw();
-	} break;
 	}
 }
 
-void ViewportNavigationControl::_process_click(int p_index, Vector2 p_position, bool p_pressed)
-{
-	hovered = false;
-	queue_redraw();
 
-	if (focused_index != -1 && focused_index != p_index) {
-		return;
-	}
-	if (p_pressed) {
-		if (p_position.distance_to(get_size() / 2.0) < get_size().x / 2.0) {
-			focused_pos = p_position;
-			focused_index = p_index;
-			queue_redraw();
-		}
-	}
-	else {
-		focused_index = -1;
-		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
-			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
-			Input::get_singleton()->warp_mouse(focused_mouse_start);
-		}
-	}
-}
 
-void ViewportNavigationControl::_process_drag(
-	int p_index, Vector2 p_position, Vector2 p_relative_position)
-{
-	if (focused_index == p_index) {
-		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_VISIBLE) {
-			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
-			focused_mouse_start = p_position;
-		}
-		focused_pos += p_relative_position;
-		queue_redraw();
-	}
-}
+
 
 void ViewportNavigationControl::set_viewport(Node3DEditorViewport* p_viewport)
 {
@@ -158,32 +115,12 @@ void ViewportNavigationControl::set_viewport(Node3DEditorViewport* p_viewport)
 void ViewportRotationControl::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		axis_menu_options.clear();
-		axis_menu_options.push_back(Node3DEditorViewport::VIEW_RIGHT);
-		axis_menu_options.push_back(Node3DEditorViewport::VIEW_TOP);
-		axis_menu_options.push_back(Node3DEditorViewport::VIEW_FRONT);
-		axis_menu_options.push_back(Node3DEditorViewport::VIEW_LEFT);
-		axis_menu_options.push_back(Node3DEditorViewport::VIEW_BOTTOM);
-		axis_menu_options.push_back(Node3DEditorViewport::VIEW_REAR);
-
-		axis_colors.clear();
-		axis_colors.push_back(get_theme_color(SNAME("axis_x_color"), EditorStringName(Editor)));
-		axis_colors.push_back(get_theme_color(SNAME("axis_y_color"), EditorStringName(Editor)));
-		axis_colors.push_back(get_theme_color(SNAME("axis_z_color"), EditorStringName(Editor)));
-		queue_redraw();
-	} break;
-
 	case NOTIFICATION_DRAW: {
 		if (viewport != nullptr) {
 			_draw();
 		}
 	} break;
 
-	case NOTIFICATION_MOUSE_EXIT: {
-		focused_axis = -2;
-		queue_redraw();
-	} break;
 
 	case NOTIFICATION_WM_WINDOW_FOCUS_OUT: {
 		gizmo_activated = false;
@@ -312,10 +249,6 @@ void ViewportRotationControl::_update_focus()
 		if (mouse_pos.distance_to(axis.screen_point) < AXIS_CIRCLE_RADIUS) {
 			focused_axis = axis.axis;
 		}
-	}
-
-	if (focused_axis != original_focus) {
-		queue_redraw();
 	}
 }
 
@@ -891,11 +824,7 @@ void Node3DEditorViewport::_surface_focus_enter()
 
 void Node3DEditorViewport::_surface_focus_exit() { view_display_menu->set_disable_shortcuts(true); }
 
-void Node3DEditorViewport::_cursor_distance_scaled()
-{
-	zoom_indicator_delay = ZOOM_FREELOOK_INDICATOR_DELAY_S;
-	surface->queue_redraw();
-}
+
 
 void Node3DEditorViewport::_pilot_ensure_undo_session()
 {
@@ -918,11 +847,7 @@ void Node3DEditorViewport::_pilot_tick_undo_session(real_t p_delta)
 	}
 }
 
-void Node3DEditorViewport::_freelook_speed_scaled()
-{
-	zoom_indicator_delay = ZOOM_FREELOOK_INDICATOR_DELAY_S;
-	surface->queue_redraw();
-}
+
 
 bool Node3DEditorViewport::_is_nav_modifier_pressed(const String& p_name)
 {
@@ -1021,12 +946,7 @@ void Node3DEditorViewport::_apply_camera_transform_to_cursor()
 	_sync_cursor_from_transform(camera->get_camera_transform());
 }
 
-void Node3DEditorViewport::_preview_camera_property_changed()
-{
-	if (previewing) {
-		surface->queue_redraw();
-	}
-}
+
 
 void Node3DEditorViewport::_update_centered_labels()
 {
@@ -1260,45 +1180,7 @@ void Node3DEditorViewport::_show_tooltip(const String& p_title, const String& p_
 	tooltip_panel->show();
 }
 
-void Node3DEditorViewport::begin_transform(TransformMode p_mode, bool instant)
-{
-	if (previewing) {
-		return;
-	}
 
-	if (get_selected_count() > 0) {
-		if (!_has_unlocked_selection()) {
-			return;
-		}
-		_edit.children_original_globals.clear();
-
-		_edit.mode = p_mode;
-		_compute_edit(_edit.mouse_pos);
-		_edit.instant = instant;
-		_edit.initial_click_vector = Vector3();
-		_edit.previous_rotation_vector = Vector3();
-		_edit.accumulated_rotation_angle = 0.0;
-		_edit.rotation_angle = 0.0;
-		_edit.gizmo_initiated = false;
-		switch (p_mode) {
-		case TRANSFORM_ROTATE:
-			_edit.show_rotation_line = true;
-			set_message(vformat(TTR("Rotating %s degrees."), String::num(0, 0)));
-			break;
-		case TRANSFORM_TRANSLATE:
-			set_message(vformat(TTR("Translating: %s"), vformat("%.0v", Vector3())));
-			break;
-		case TRANSFORM_SCALE:
-			set_message(vformat(TTR("Scaling: %s"), vformat("%.0v", Vector3())));
-			break;
-		default:
-			break;
-		}
-		update_transform_gizmo_view();
-		set_process_input(instant);
-		surface->queue_redraw();
-	}
-}
 
 void Node3DEditorViewport::update_transform_numeric()
 {

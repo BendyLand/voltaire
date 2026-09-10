@@ -817,9 +817,6 @@ void MaterialStorage::_update_global_shader_uniforms()
 										 GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE);
 		if (total_regions / global_shader_uniforms.buffer_dirty_region_count <= 4) {
 			// 25% of regions dirty, just update all buffer
-			RD::get_singleton()->buffer_update(global_shader_uniforms.buffer, 0,
-				sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size,
-				global_shader_uniforms.buffer_values);
 			memset(global_shader_uniforms.buffer_dirty_regions, 0, sizeof(bool) * total_regions);
 		}
 		else {
@@ -828,11 +825,6 @@ void MaterialStorage::_update_global_shader_uniforms()
 
 			for (uint32_t i = 0; i < total_regions; i++) {
 				if (global_shader_uniforms.buffer_dirty_regions[i]) {
-					RD::get_singleton()->buffer_update(global_shader_uniforms.buffer,
-						i * region_byte_size, region_byte_size,
-						&global_shader_uniforms
-							 .buffer_values[i * GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE]);
-
 					global_shader_uniforms.buffer_dirty_regions[i] = false;
 				}
 			}

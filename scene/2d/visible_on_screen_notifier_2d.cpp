@@ -44,15 +44,6 @@ bool VisibleOnScreenNotifier2D::_edit_use_rect() const { return show_rect; }
 
 Rect2 VisibleOnScreenNotifier2D::get_rect() const { return rect; }
 
-void VisibleOnScreenNotifier2D::set_show_rect(bool p_show_rect)
-{
-	if (show_rect == p_show_rect) {
-		return;
-	}
-	show_rect = p_show_rect;
-	queue_redraw();
-}
-
 bool VisibleOnScreenNotifier2D::is_showing_rect() const { return show_rect; }
 
 bool VisibleOnScreenNotifier2D::is_on_screen() const { return on_screen; }
@@ -62,8 +53,6 @@ VisibleOnScreenNotifier2D::VisibleOnScreenNotifier2D()
 	rect = Rect2(-10, -10, 20, 20);
 	set_hide_clip_children(true);
 }
-
-//////////////////////////////////////
 
 void VisibleOnScreenEnabler2D::_screen_enter() { _update_enable_mode(true); }
 

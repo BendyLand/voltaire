@@ -67,17 +67,6 @@ RenderingDevice::FinalAction RenderingDevice::_convert_final_action_84976(
 	}
 }
 
-RenderingDevice::DrawListID RenderingDevice::_draw_list_begin_bind_compat_90993(RID p_framebuffer,
-	InitialAction p_initial_color_action, FinalAction p_final_color_action,
-	InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
-	const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
-	const Rect2& p_region)
-{
-	return _draw_list_begin_bind_compat_98670(p_framebuffer, p_initial_color_action,
-		p_final_color_action, p_initial_depth_action, p_final_depth_action, p_clear_color_values,
-		p_clear_depth, p_clear_stencil, p_region, RDD::BreadcrumbMarker::NONE);
-}
-
 RenderingDevice::ComputeListID RenderingDevice::_compute_list_begin_bind_compat_84976(
 	bool p_allow_draw_overlap)
 {
@@ -95,12 +84,6 @@ RID RenderingDevice::_vertex_buffer_create_bind_compat_101561(
 {
 	return _vertex_buffer_create(
 		p_size_bytes, p_data, p_use_as_storage ? RD::BUFFER_CREATION_AS_STORAGE_BIT : 0);
-}
-
-RID RenderingDevice::_index_buffer_create_bind_compat_101561(uint32_t p_size_indices,
-	IndexBufferFormat p_format, const Vector<uint8_t>& p_data, bool p_use_restart_indices)
-{
-	return _index_buffer_create(p_size_indices, p_format, p_data, p_use_restart_indices, 0);
 }
 
 #endif // DISABLE_DEPRECATED

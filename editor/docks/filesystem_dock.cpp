@@ -73,22 +73,6 @@
 #include "scene/resources/packed_scene.h"
 #include "servers/display/display_server.h"
 
-void FileSystemList::_line_editor_submit(const String& p_text)
-{
-	if (popup_edit_committed) {
-		return; // Already processed by _text_editor_popup_modal_close
-	}
-
-	if (popup_editor->get_hide_reason() == Popup::HIDE_REASON_CANCELED) {
-		return; // ESC pressed, app focus lost, or forced close from code.
-	}
-
-	popup_edit_committed = true; // End edit popup processing.
-	popup_editor->hide();
-
-	queue_redraw();
-}
-
 bool FileSystemList::edit_selected()
 {
 	ERR_FAIL_COND_V_MSG(!is_anything_selected(), false, "No item selected.");
@@ -174,8 +158,6 @@ void FileSystemList::_text_editor_popup_modal_close()
 
 	_line_editor_submit(line_editor->get_text());
 }
-
-void FileSystemList::_bind_methods() {}
 
 FileSystemList::FileSystemList()
 {
@@ -2079,7 +2061,8 @@ void FileSystemDock::_rescan()
 	if (tree->has_focus()) {
 		had_focus = tree;
 	}
-	else if (files->has_focus()) {
+	else if (files
+->has_focus()) {
 		had_focus = files;
 	}
 
@@ -2813,8 +2796,6 @@ void FileSystemDock::_on_open_editor_settings_file_exts()
 	ed_settings->popup_edit_settings();
 	ed_settings->set_current_section("docks/filesystem");
 }
-
-void FileSystemDock::_bind_methods() {}
 
 FileSystemDock::FileSystemDock()
 {

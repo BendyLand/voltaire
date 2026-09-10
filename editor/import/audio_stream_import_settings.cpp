@@ -137,66 +137,6 @@ void AudioStreamImportSettingsDialog::_draw_preview()
 	}
 }
 
-void AudioStreamImportSettingsDialog::_preview_zoom_in()
-{
-	if (stream.is_null()) {
-		return;
-	}
-	float page_size = zoom_bar->get_page();
-	zoom_bar->set_page(page_size * 0.5);
-	zoom_bar->set_value(zoom_bar->get_value() + page_size * 0.25);
-	zoom_bar->show();
-
-	_preview->queue_redraw();
-	_indicator->queue_redraw();
-}
-
-void AudioStreamImportSettingsDialog::_preview_zoom_out()
-{
-	if (stream.is_null()) {
-		return;
-	}
-	float page_size = zoom_bar->get_page();
-	zoom_bar->set_page(MIN(zoom_bar->get_max(), page_size * 2.0));
-	zoom_bar->set_value(zoom_bar->get_value() - page_size * 0.5);
-	if (zoom_bar->get_value() == 0) {
-		zoom_bar->hide();
-	}
-
-	_preview->queue_redraw();
-	_indicator->queue_redraw();
-}
-
-void AudioStreamImportSettingsDialog::_preview_zoom_reset()
-{
-	if (stream.is_null()) {
-		return;
-	}
-	zoom_bar->set_max(stream->get_length());
-	zoom_bar->set_page(zoom_bar->get_max());
-	zoom_bar->set_value(0);
-	zoom_bar->hide();
-
-	_preview->queue_redraw();
-	_indicator->queue_redraw();
-}
-
-void AudioStreamImportSettingsDialog::_preview_zoom_offset_changed(double)
-{
-	_preview->queue_redraw();
-	_indicator->queue_redraw();
-}
-
-void AudioStreamImportSettingsDialog::_audio_changed()
-{
-	if (!is_visible()) {
-		return;
-	}
-	_preview->queue_redraw();
-	_indicator->queue_redraw();
-	color_rect->queue_redraw();
-}
-
 void AudioStreamImportSettingsDialog::_play()
 {
 	if (_player->is_playing()) {
@@ -216,34 +156,6 @@ void AudioStreamImportSettingsDialog::_play()
 		_play_button->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
 		set_process(true);
 	}
-}
-
-void AudioStreamImportSettingsDialog::_stop()
-{
-	if (_player->is_playing()) {
-		_load_master_state();
-	}
-
-	_player->stop();
-	_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-	_current = 0;
-	_indicator->queue_redraw();
-	set_process(false);
-}
-
-void AudioStreamImportSettingsDialog::_on_finished()
-{
-	_load_master_state();
-
-	_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-	if (!_pausing) {
-		_current = 0;
-		_indicator->queue_redraw();
-	}
-	else {
-		_pausing = false;
-	}
-	set_process(false);
 }
 
 void AudioStreamImportSettingsDialog::_draw_indicator()
@@ -304,65 +216,6 @@ void AudioStreamImportSettingsDialog::_draw_indicator()
 	}
 }
 
-void AudioStreamImportSettingsDialog::_on_indicator_mouse_exited()
-{
-	_hovering_beat = -1;
-	_indicator->queue_redraw();
-}
-
-void AudioStreamImportSettingsDialog::_on_input_indicator(Ref<InputEvent> p_event)
-{
-	const Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid() && mb->get_button_index() == MouseButton::LEFT) {
-		if (stream->get_bpm() > 0) {
-			int main_size = get_theme_font_size(SNAME("main_size"), EditorStringName(EditorFonts));
-			Ref<Font> beat_font = get_theme_font(SNAME("main"), EditorStringName(EditorFonts));
-			int y_ofs = beat_font->get_height(main_size) + 4 * EDSCALE;
-			if ((!_dragging && mb->get_position().y < y_ofs) || _beat_len_dragging) {
-				if (mb->is_pressed()) {
-					_set_beat_len_to(mb->get_position().x);
-					_beat_len_dragging = true;
-				}
-				else {
-					_beat_len_dragging = false;
-				}
-				return;
-			}
-		}
-
-		if (mb->is_pressed()) {
-			_seek_to(mb->get_position().x);
-		}
-		_dragging = mb->is_pressed();
-	}
-
-	const Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
-		if (_dragging) {
-			_seek_to(mm->get_position().x);
-		}
-		if (_beat_len_dragging) {
-			_set_beat_len_to(mm->get_position().x);
-		}
-		if (stream->get_bpm() > 0) {
-			int main_size = get_theme_font_size(SNAME("main_size"), EditorStringName(EditorFonts));
-			Ref<Font> beat_font = get_theme_font(SNAME("main"), EditorStringName(EditorFonts));
-			int y_ofs = beat_font->get_height(main_size) + 4 * EDSCALE;
-			if (mm->get_position().y < y_ofs) {
-				int new_hovering_beat = _get_beat_at_pos(mm->get_position().x);
-				if (new_hovering_beat != _hovering_beat) {
-					_hovering_beat = new_hovering_beat;
-					_indicator->queue_redraw();
-				}
-			}
-			else if (_hovering_beat != -1) {
-				_hovering_beat = -1;
-				_indicator->queue_redraw();
-			}
-		}
-	}
-}
-
 int AudioStreamImportSettingsDialog::_get_beat_at_pos(real_t p_x)
 {
 	float ofs_sec = zoom_bar->get_value() + p_x * zoom_bar->get_page() / _preview->get_size().width;
@@ -389,14 +242,6 @@ void AudioStreamImportSettingsDialog::_set_beat_len_to(real_t p_x)
 	beats_edit->set_value(beat);
 	updating_settings = false;
 	_settings_changed();
-}
-
-void AudioStreamImportSettingsDialog::_seek_to(real_t p_x)
-{
-	_current = zoom_bar->get_value() + p_x / _preview->get_rect().size.x * zoom_bar->get_page();
-	_current = CLAMP(_current, 0, stream->get_length());
-	_player->seek(_current);
-	_indicator->queue_redraw();
 }
 
 

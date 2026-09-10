@@ -60,24 +60,6 @@ void EmbeddedProcessBase::_draw()
 	}
 }
 
-void EmbeddedProcessBase::set_window_size(const Size2i& p_window_size)
-{
-	if (window_size != p_window_size) {
-		window_size = p_window_size;
-		queue_update_embedded_process();
-		queue_redraw();
-	}
-}
-
-void EmbeddedProcessBase::set_keep_aspect(bool p_keep_aspect)
-{
-	if (keep_aspect != p_keep_aspect) {
-		keep_aspect = p_keep_aspect;
-		queue_update_embedded_process();
-		queue_redraw();
-	}
-}
-
 Rect2i EmbeddedProcessBase::get_screen_embedded_window_rect() const
 {
 	return get_adjusted_embedded_window_rect(get_global_rect());
@@ -178,21 +160,6 @@ void EmbeddedProcess::embed_process(ProcessID p_pid)
 	// Attempt to embed the process, but if it has just started and the window is not ready yet,
 	// we will retry in this case.
 	_try_embed_process();
-}
-
-void EmbeddedProcess::reset()
-{
-	if (current_process_id != 0 && embedding_completed) {
-		DisplayServer::get_singleton()->remove_embedded_process(current_process_id);
-	}
-	current_process_id = 0;
-	embedding_completed = false;
-	start_embedding_time = 0;
-	embedding_grab_focus = false;
-	reset_timers();
-	set_process(false);
-	set_notify_transform(false);
-	queue_redraw();
 }
 
 void EmbeddedProcess::reset_timers()

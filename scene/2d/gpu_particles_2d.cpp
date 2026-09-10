@@ -123,20 +123,6 @@ void GPUParticles2D::set_randomness_ratio(real_t p_ratio)
 	RS::get_singleton()->particles_set_randomness_ratio(particles, randomness_ratio);
 }
 
-void GPUParticles2D::set_visibility_rect(const Rect2& p_visibility_rect)
-{
-	visibility_rect = p_visibility_rect;
-	AABB aabb;
-	aabb.position.x = p_visibility_rect.position.x;
-	aabb.position.y = p_visibility_rect.position.y;
-	aabb.size.x = p_visibility_rect.size.x;
-	aabb.size.y = p_visibility_rect.size.y;
-
-	RS::get_singleton()->particles_set_custom_aabb(particles, aabb);
-
-	queue_redraw();
-}
-
 void GPUParticles2D::set_use_local_coordinates(bool p_enable)
 {
 	local_coords = p_enable;
@@ -158,60 +144,11 @@ void GPUParticles2D::_update_particle_emission_transform()
 	RS::get_singleton()->particles_set_emission_transform(particles, xf);
 }
 
-void GPUParticles2D::set_trail_enabled(bool p_enabled)
-{
-	trail_enabled = p_enabled;
-	RS::get_singleton()->particles_set_trails(particles, trail_enabled, trail_lifetime);
-	queue_redraw();
-	update_configuration_warnings();
-
-	RS::get_singleton()->particles_set_transform_align(
-		particles, p_enabled ? RSE::PARTICLES_TRANSFORM_ALIGN_Y_TO_VELOCITY
-							 : RSE::PARTICLES_TRANSFORM_ALIGN_DISABLED);
-}
-
-void GPUParticles2D::set_trail_lifetime(double p_seconds)
-{
-	ERR_FAIL_COND(p_seconds < 0.01 - CMP_EPSILON);
-	trail_lifetime = p_seconds;
-	RS::get_singleton()->particles_set_trails(particles, trail_enabled, trail_lifetime);
-	queue_redraw();
-}
-
-void GPUParticles2D::set_trail_sections(int p_sections)
-{
-	ERR_FAIL_COND(p_sections < 2);
-	ERR_FAIL_COND(p_sections > 128);
-
-	trail_sections = p_sections;
-	queue_redraw();
-}
-
-void GPUParticles2D::set_trail_section_subdivisions(int p_subdivisions)
-{
-	ERR_FAIL_COND(p_subdivisions < 1);
-	ERR_FAIL_COND(p_subdivisions > 1024);
-
-	trail_section_subdivisions = p_subdivisions;
-	queue_redraw();
-}
-
 void GPUParticles2D::set_interp_to_end(float p_interp)
 {
 	interp_to_end_factor = CLAMP(p_interp, 0.0, 1.0);
 	RS::get_singleton()->particles_set_interp_to_end(particles, interp_to_end_factor);
 }
-
-#ifdef TOOLS_ENABLED
-void GPUParticles2D::set_show_gizmos(bool p_show_gizmos)
-{
-	if (show_gizmos == p_show_gizmos) {
-		return;
-	}
-	show_gizmos = p_show_gizmos;
-	queue_redraw();
-}
-#endif
 
 bool GPUParticles2D::is_trail_enabled() const { return trail_enabled; }
 
@@ -362,15 +299,6 @@ void GPUParticles2D::emit_particle(const Transform2D& p_transform2d, const Vecto
 
 	RS::get_singleton()->particles_emit(
 		particles, emit_transform, velocity, p_color, p_custom, p_emit_flags);
-}
-
-void GPUParticles2D::_texture_changed()
-{
-	// Changes to the texture need to trigger an update to make
-	// the editor redraw the sprite with the updated texture.
-	if (texture.is_valid()) {
-		queue_redraw();
-	}
 }
 
 void GPUParticles2D::set_sub_emitter(const NodePath& p_path)

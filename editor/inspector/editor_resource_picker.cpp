@@ -200,8 +200,6 @@ void EditorResourcePicker::set_editable(bool p_editable)
 
 bool EditorResourcePicker::is_editable() const { return editable; }
 
-// EditorScriptPicker
-
 bool EditorScriptPicker::handle_menu_selected(int p_which)
 {
 	switch (p_which) {
@@ -226,8 +224,6 @@ bool EditorScriptPicker::handle_menu_selected(int p_which)
 void EditorScriptPicker::set_script_owner(Node* p_owner) { script_owner = p_owner; }
 
 Node* EditorScriptPicker::get_script_owner() const { return script_owner; }
-
-// EditorShaderPicker
 
 bool EditorShaderPicker::handle_menu_selected(int p_which)
 {
@@ -255,8 +251,6 @@ ShaderMaterial* EditorShaderPicker::get_edited_material() const { return edited_
 
 void EditorShaderPicker::set_preferred_mode(int p_mode) { preferred_mode = p_mode; }
 
-//////////////
-
 void EditorAudioStreamPicker::_notification(int p_what)
 {
 	switch (p_what) {
@@ -264,76 +258,7 @@ void EditorAudioStreamPicker::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		_update_resource();
 	} break;
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		Ref<AudioStream> audio_stream = get_edited_resource();
-		if (audio_stream.is_valid()) {
-			if (audio_stream->get_length() > 0) {
-				Ref<AudioStreamPreview> preview =
-					AudioStreamPreviewGenerator::get_singleton()->generate_preview(audio_stream);
-				if (preview.is_valid()) {
-					if (preview->get_version() != last_preview_version) {
-						stream_preview_rect->queue_redraw();
-						last_preview_version = preview->get_version();
-					}
-				}
-			}
-
-			uint64_t tagged_frame = audio_stream->get_tagged_frame();
-			uint64_t diff_frames = AudioServer::get_singleton()->get_mixed_frames() - tagged_frame;
-			uint64_t diff_msec = diff_frames * 1000 / AudioServer::get_singleton()->get_mix_rate();
-
-			if (diff_msec < 300) {
-				uint32_t count = audio_stream->get_tagged_frame_count();
-
-				bool differ = false;
-
-				if (count != tagged_frame_offset_count) {
-					differ = true;
-				}
-				float offsets[MAX_TAGGED_FRAMES];
-
-				for (uint32_t i = 0; i < MIN(count, uint32_t(MAX_TAGGED_FRAMES)); i++) {
-					offsets[i] = audio_stream->get_tagged_frame_offset(i);
-					if (offsets[i] != tagged_frame_offsets[i]) {
-						differ = true;
-					}
-				}
-
-				if (differ) {
-					tagged_frame_offset_count = count;
-					for (uint32_t i = 0; i < count; i++) {
-						tagged_frame_offsets[i] = offsets[i];
-					}
-				}
-
-				stream_preview_rect->queue_redraw();
-			}
-			else {
-				if (tagged_frame_offset_count != 0) {
-					stream_preview_rect->queue_redraw();
-				}
-				tagged_frame_offset_count = 0;
-			}
-		}
-	} break;
 	}
-}
-
-void EditorAudioStreamPicker::_update_resource()
-{
-	EditorResourcePicker::_update_resource();
-
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
-	Ref<AudioStream> audio_stream = get_edited_resource();
-	if (audio_stream.is_valid() && audio_stream->get_length() > 0.0) {
-		set_assign_button_min_size(Size2(1, font->get_height(font_size) * 3));
-	}
-	else {
-		set_assign_button_min_size(Size2(1, font->get_height(font_size) * 1.5));
-	}
-
-	stream_preview_rect->queue_redraw();
 }
 
 bool EditorResourcePicker::handle_menu_selected(int p_idx) { return true; }

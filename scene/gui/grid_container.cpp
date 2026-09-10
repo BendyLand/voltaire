@@ -33,95 +33,9 @@
 #include "grid_container.h"
 #include "scene/theme/theme_db.h"
 
-void GridContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_SORT_CHILDREN: {
-		_resort();
-		update_minimum_size();
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		update_minimum_size();
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
-		queue_sort();
-	} break;
-	}
-}
-
-void GridContainer::set_columns(int p_columns)
-{
-	ERR_FAIL_COND(p_columns < 1);
-
-	if (columns == p_columns) {
-		return;
-	}
-
-	columns = p_columns;
-	queue_sort();
-	update_minimum_size();
-}
-
 int GridContainer::get_columns() const { return columns; }
 
 int GridContainer::get_h_separation() const { return theme_cache.h_separation; }
-
-void GridContainer::_bind_methods() {}
-
-Size2 GridContainer::_get_minimum_size(bool p_use_desired_sizes) const
-{
-	RBMap<int, int> col_minw;
-	RBMap<int, int> row_minh;
-
-	int max_row = 0;
-	int max_col = 0;
-
-	int valid_controls_index = 0;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-		int row = valid_controls_index / columns;
-		int col = valid_controls_index % columns;
-		valid_controls_index++;
-
-		Size2i ms = p_use_desired_sizes ? c->get_bound_desired_size() : c->get_bound_minimum_size();
-		if (col_minw.has(col)) {
-			col_minw[col] = MAX(col_minw[col], ms.width);
-		}
-		else {
-			col_minw[col] = ms.width;
-		}
-
-		if (row_minh.has(row)) {
-			row_minh[row] = MAX(row_minh[row], ms.height);
-		}
-		else {
-			row_minh[row] = ms.height;
-		}
-		max_col = MAX(col, max_col);
-		max_row = MAX(row, max_row);
-	}
-
-	Size2 ms;
-
-	for (const KeyValue<int, int>& E : col_minw) {
-		ms.width += E.value;
-	}
-
-	for (const KeyValue<int, int>& E : row_minh) {
-		ms.height += E.value;
-	}
-
-	ms.height += theme_cache.v_separation * max_row;
-	ms.width += theme_cache.h_separation * max_col;
-
-	return ms;
-}
 
 Size2 GridContainer::get_minimum_size() const { return _get_minimum_size(false); }
 

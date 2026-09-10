@@ -424,18 +424,6 @@ public:
 #endif
 		return buffers[curr_idx * NUM_BUFFERS + p_idx];
 	}
-
-	void upload(uint32_t p_idx, const void* p_src_data, uint32_t p_size_bytes)
-	{
-#ifdef DEV_ENABLED
-		DEV_ASSERT(can_upload[p_idx] &&
-				   "Forgot to prepare_for_upload first! Or called get_for_upload/upload() twice.");
-		can_upload[p_idx] = false;
-#endif
-		RenderingDevice* rd = RD::RenderingDevice::get_singleton();
-		rd->buffer_update(
-			buffers[curr_idx * NUM_BUFFERS + p_idx], 0, p_size_bytes, p_src_data, true);
-	}
 };
 
 

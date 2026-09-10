@@ -38,24 +38,6 @@
 
 RID NavigationRegion2D::get_rid() const { return region; }
 
-void NavigationRegion2D::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-
-	enabled = p_enabled;
-
-	NavigationServer2D::get_singleton()->region_set_enabled(region, enabled);
-
-#ifdef DEBUG_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() ||
-		NavigationServer2D::get_singleton()->get_debug_navigation_enabled()) {
-		queue_redraw();
-	}
-#endif // DEBUG_ENABLED
-}
-
 bool NavigationRegion2D::is_enabled() const { return enabled; }
 
 void NavigationRegion2D::set_use_edge_connections(bool p_enabled)
@@ -198,8 +180,6 @@ void NavigationRegion2D::_notification(int p_what)
 	}
 }
 
-
-
 Ref<NavigationPolygon> NavigationRegion2D::get_navigation_polygon() const
 {
 	return navigation_polygon;
@@ -227,32 +207,6 @@ RID NavigationRegion2D::get_navigation_map() const
 	return RID();
 }
 
-
-
-
-
-
-
-
-
-#ifdef DEBUG_ENABLED
-void NavigationRegion2D::_navigation_map_changed(RID p_map)
-{
-	if (is_inside_tree() && get_world_2d()->get_navigation_map() == p_map) {
-		queue_redraw();
-	}
-}
-#endif // DEBUG_ENABLED
-
-#ifdef DEBUG_ENABLED
-void NavigationRegion2D::_navigation_debug_changed()
-{
-	if (is_inside_tree()) {
-		queue_redraw();
-	}
-}
-#endif // DEBUG_ENABLED
-
 PackedStringArray NavigationRegion2D::get_configuration_warnings() const
 {
 	PackedStringArray warnings = Node2D::get_configuration_warnings();
@@ -267,53 +221,9 @@ PackedStringArray NavigationRegion2D::get_configuration_warnings() const
 	return warnings;
 }
 
-
-
-#ifndef DISABLE_DEPRECATED
-// Compatibility with earlier 4.0 betas.
-
-
-
-#endif // DISABLE_DEPRECATED
-
-
-
-
-
-void NavigationRegion2D::_region_enter_navigation_map()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	if (map_override.is_valid()) {
-		NavigationServer2D::get_singleton()->region_set_map(region, map_override);
-	}
-	else {
-		NavigationServer2D::get_singleton()->region_set_map(
-			region, get_world_2d()->get_navigation_map());
-	}
-
-	NavigationServer2D::get_singleton()->region_set_transform(region, get_global_transform());
-	NavigationServer2D::get_singleton()->region_set_enabled(region, enabled);
-
-	queue_redraw();
-}
-
 void NavigationRegion2D::_region_exit_navigation_map()
 {
 	NavigationServer2D::get_singleton()->region_set_map(region, RID());
-}
-
-void NavigationRegion2D::_region_update_transform()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	NavigationServer2D::get_singleton()->region_set_transform(region, get_global_transform());
-
-	queue_redraw();
 }
 
 #ifdef DEBUG_ENABLED

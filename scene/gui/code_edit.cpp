@@ -628,12 +628,6 @@ void CodeEdit::set_auto_brace_completion_enabled(bool p_enabled)
 
 bool CodeEdit::is_auto_brace_completion_enabled() const { return auto_brace_completion_enabled; }
 
-void CodeEdit::set_highlight_matching_braces_enabled(bool p_enabled)
-{
-	highlight_matching_braces_enabled = p_enabled;
-	queue_redraw();
-}
-
 bool CodeEdit::is_highlight_matching_braces_enabled() const
 {
 	return highlight_matching_braces_enabled;
@@ -848,36 +842,7 @@ void CodeEdit::set_draw_line_numbers(bool p_draw) { set_gutter_draw(line_number_
 
 bool CodeEdit::is_draw_line_numbers_enabled() const { return is_gutter_drawn(line_number_gutter); }
 
-void CodeEdit::set_line_numbers_zero_padded(bool p_zero_padded)
-{
-	String new_line_number_padding = p_zero_padded ? "0" : " ";
-	if (line_number_padding == new_line_number_padding) {
-		return;
-	}
-
-	line_number_padding = new_line_number_padding;
-	_clear_line_number_text_cache();
-	queue_redraw();
-}
-
 bool CodeEdit::is_line_numbers_zero_padded() const { return line_number_padding == "0"; }
-
-void CodeEdit::set_line_numbers_min_digits(int p_count)
-{
-	if (line_numbers_min_digits == p_count) {
-		return;
-	}
-	line_numbers_min_digits = p_count;
-
-	int digits = MAX(line_numbers_min_digits, std::log10(get_line_count()) + 1);
-	if (digits == line_number_digits) {
-		return;
-	}
-	line_number_digits = digits;
-	_clear_line_number_text_cache();
-	_update_line_number_gutter_width();
-	queue_redraw();
-}
 
 int CodeEdit::get_line_numbers_min_digits() const { return line_numbers_min_digits; }
 
@@ -1411,25 +1376,6 @@ Point2 CodeEdit::get_delimiter_end_position(int p_line, int p_column) const
 	return end_position;
 }
 
-void CodeEdit::set_code_hint(const String& p_hint)
-{
-	if (code_hint == p_hint) {
-		return;
-	}
-	code_hint = p_hint;
-	code_hint_xpos = -0xFFFF;
-	queue_redraw();
-}
-
-void CodeEdit::set_code_hint_draw_below(bool p_below)
-{
-	if (code_hint_draw_below == p_below) {
-		return;
-	}
-	code_hint_draw_below = p_below;
-	queue_redraw();
-}
-
 void CodeEdit::set_code_completion_enabled(bool p_enable) { code_completion_enabled = p_enable; }
 
 bool CodeEdit::is_code_completion_enabled() const { return code_completion_enabled; }
@@ -1461,18 +1407,6 @@ String CodeEdit::get_text_for_code_completion() const
 int CodeEdit::get_code_completion_selected_index() const
 {
 	return (code_completion_active) ? code_completion_current_selected : -1;
-}
-
-void CodeEdit::cancel_code_completion()
-{
-	if (!code_completion_active) {
-		return;
-	}
-	code_completion_forced = false;
-	code_completion_active = false;
-	is_code_completion_drag_started = false;
-	queue_accessibility_update();
-	queue_redraw();
 }
 
 void CodeEdit::set_symbol_lookup_on_click_enabled(bool p_enabled)
@@ -1781,8 +1715,6 @@ Color CodeEdit::_get_brace_mismatch_color() const { return theme_cache.brace_mis
 Color CodeEdit::_get_code_folding_color() const { return theme_cache.code_folding_color; }
 
 Ref<Texture2D> CodeEdit::_get_folded_eol_icon() const { return theme_cache.folded_eol_icon; }
-
-void CodeEdit::_bind_methods() {}
 
 int CodeEdit::_get_auto_brace_pair_open_at_pos(int p_line, int p_col)
 {

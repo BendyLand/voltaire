@@ -88,10 +88,6 @@ void CurveEdit::gui_input(const Ref<InputEvent>& p_event)
 			}
 			accept_event();
 		}
-
-		if (k->get_keycode() == Key::SHIFT || k->get_keycode() == Key::ALT) {
-			queue_redraw(); // Redraw to show the axes or constraints.
-		}
 	}
 
 	Ref<InputEventMouseButton> mb = p_event;
@@ -138,14 +134,6 @@ void CurveEdit::gui_input(const Ref<InputEvent>& p_event)
 
 		// Selecting or creating points.
 		if (mb->get_button_index() == MouseButton::LEFT) {
-			if (grabbing == GRAB_NONE) {
-				selected_tangent_index = get_tangent_at(mpos);
-				if (selected_tangent_index == TANGENT_NONE) {
-					set_selected_index(get_point_at(mpos));
-				}
-				queue_redraw();
-			}
-
 			if (selected_index != -1) {
 				// If an existing point/tangent was grabbed, remember a few things about it.
 				grabbing = GRAB_MOVE;
@@ -183,39 +171,6 @@ void CurveEdit::gui_input(const Ref<InputEvent>& p_event)
 				initial_grab_pos = new_pos;
 			}
 		}
-	}
-
-	if (mb.is_valid() && mb->get_button_index() == MouseButton::LEFT && !mb->is_pressed()) {
-		if (selected_tangent_index != TANGENT_NONE) {
-			// Finish moving a tangent control.
-			if (selected_index == 0) {
-				set_point_right_tangent(
-					selected_index, curve->get_point_right_tangent(selected_index));
-			}
-			else if (selected_index == curve->get_point_count() - 1) {
-				set_point_left_tangent(
-					selected_index, curve->get_point_left_tangent(selected_index));
-			}
-			else {
-				set_point_tangents(selected_index, curve->get_point_left_tangent(selected_index),
-					curve->get_point_right_tangent(selected_index));
-			}
-			grabbing = GRAB_NONE;
-		}
-		else if (grabbing == GRAB_MOVE) {
-			// Finish moving a point.
-			set_point_position(selected_index, curve->get_point_position(selected_index));
-			grabbing = GRAB_NONE;
-		}
-		else if (grabbing == GRAB_ADD) {
-			// Finish inserting a new point. Remove the temporary point and insert a permanent one
-			// in its place.
-			Vector2 new_pos = curve->get_point_position(selected_index);
-			curve->remove_point(selected_index);
-			add_point(new_pos);
-			grabbing = GRAB_NONE;
-		}
-		queue_redraw();
 	}
 
 	Ref<InputEventMouseMotion> mm = p_event;
@@ -316,21 +271,6 @@ void CurveEdit::gui_input(const Ref<InputEvent>& p_event)
 				}
 			}
 		}
-		else {
-			// Grab mode is GRAB_NONE, so do hovering logic.
-			hovered_index = get_point_at(mpos);
-			hovered_tangent_index = get_tangent_at(mpos);
-			queue_redraw();
-		}
-	}
-}
-
-void CurveEdit::_curve_changed()
-{
-	queue_redraw();
-	// Point count can change in case of undo.
-	if (selected_index >= curve->get_point_count()) {
-		set_selected_index(-1);
 	}
 }
 
@@ -417,14 +357,6 @@ float CurveEdit::get_offset_without_collision(
 	}
 
 	return safe_offset;
-}
-
-void CurveEdit::set_selected_index(int p_index)
-{
-	if (p_index != selected_index) {
-		selected_index = p_index;
-		queue_redraw();
-	}
 }
 
 void CurveEdit::update_view_transform()
@@ -786,12 +718,9 @@ void CurveEdit::_redraw()
 			get_theme_color(SNAME("axis_x_color"), EditorStringName(Editor)).darkened(0.4));
 		draw_line(Vector2(curve->get_min_domain(), initial_grab_pos.y),
 			Vector2(curve->get_max_domain(), initial_grab_pos.y),
-			get_theme_color(SNAME("axis_y_color"), EditorStringName
-(Editor)).darkened(0.4));
+			get_theme_color(SNAME("axis_y_color"), EditorStringName(Editor)).darkened(0.4));
 	}
 }
-
-///////////////////////
 
 const int CurveEditor::DEFAULT_SNAP = 10;
 
@@ -812,10 +741,6 @@ void CurveEditor::_on_preset_item_selected(int p_preset_id)
 }
 
 void CurveEditor::set_curve(const Ref<Curve>& p_curve) { curve_editor_rect->set_curve(p_curve); }
-
-///////////////////////
-
-///////////////////////
 
 bool CurvePreviewGenerator::handles(const String& p_type) const { return p_type == "Curve"; }
 

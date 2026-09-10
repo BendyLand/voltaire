@@ -297,19 +297,6 @@ void Node3DEditor::_preview_settings_changed()
 		return;
 	}
 
-	{ // preview sun
-		sun_rotation.x = Math::deg_to_rad(-sun_angle_altitude->get_value());
-		sun_rotation.y = Math::deg_to_rad(180.0 - sun_angle_azimuth->get_value());
-		Transform3D t;
-		t.basis = Basis::from_euler(Vector3(sun_rotation.x, sun_rotation.y, 0));
-		preview_sun->set_transform(t);
-		sun_direction->queue_redraw();
-		preview_sun->set_param(Light3D::PARAM_ENERGY, sun_energy->get_value());
-		preview_sun->set_param(
-			Light3D::PARAM_SHADOW_MAX_DISTANCE, sun_shadow_max_distance->get_value());
-		preview_sun->set_color(sun_color->get_pick_color());
-	}
-
 	{ // preview env
 		sky_material->set_energy_multiplier(environ_energy->get_value());
 		Color hz_color =
@@ -344,7 +331,6 @@ void Node3DEditor::_load_default_preview_settings()
 
 	sun_angle_altitude->set_value_no_signal(-Math::rad_to_deg(sun_rotation.x));
 	sun_angle_azimuth->set_value_no_signal(180.0 - Math::rad_to_deg(sun_rotation.y));
-	sun_direction->queue_redraw();
 	environ_sky_color->set_pick_color(Color(0.385, 0.454, 0.55));
 	environ_ground_color->set_pick_color(Color(0.2, 0.169, 0.133));
 	environ_energy->set_value_no_signal(1.0);

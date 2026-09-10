@@ -40,8 +40,6 @@
 
 RID NavigationObstacle2D::_navmesh_source_geometry_parser;
 
-
-
 void NavigationObstacle2D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -189,21 +187,6 @@ NavigationObstacle2D::~NavigationObstacle2D()
 #endif // DEBUG_ENABLED
 }
 
-void NavigationObstacle2D::set_vertices(const Vector<Vector2>& p_vertices)
-{
-	vertices = p_vertices;
-
-	vertices_are_clockwise = !Geometry2D::is_polygon_clockwise(vertices); // Geometry2D is inverted.
-	vertices_are_valid = !Geometry2D::triangulate_polygon(vertices).is_empty();
-
-	const Transform2D node_transform = is_inside_tree() ? get_global_transform() : Transform2D();
-	NavigationServer2D::get_singleton()->obstacle_set_vertices(
-		obstacle, node_transform.xform(vertices));
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
-}
-
 void NavigationObstacle2D::set_navigation_map(RID p_navigation_map)
 {
 	if (map_override == p_navigation_map) {
@@ -222,24 +205,6 @@ RID NavigationObstacle2D::get_navigation_map() const
 		return get_world_2d()->get_navigation_map();
 	}
 	return RID();
-}
-
-void NavigationObstacle2D::set_radius(real_t p_radius)
-{
-	ERR_FAIL_COND_MSG(p_radius < 0.0, "Radius must be positive.");
-	if (Math::is_equal_approx(radius, p_radius)) {
-		return;
-	}
-
-	radius = p_radius;
-
-	const Vector2 safe_scale =
-		(is_inside_tree() ? get_global_scale() : get_scale()).abs().maxf(0.001);
-	NavigationServer2D::get_singleton()->obstacle_set_radius(
-		obstacle, safe_scale[safe_scale.max_axis_index()] * radius);
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle2D::set_avoidance_layers(uint32_t p_layers)
@@ -276,20 +241,6 @@ bool NavigationObstacle2D::get_avoidance_layer_value(int p_layer_number) const
 	ERR_FAIL_COND_V_MSG(
 		p_layer_number > 32, false, "Avoidance layer number must be between 1 and 32 inclusive.");
 	return get_avoidance_layers() & (1 << (p_layer_number - 1));
-}
-
-void NavigationObstacle2D::set_avoidance_enabled(bool p_enabled)
-{
-	if (avoidance_enabled == p_enabled) {
-		return;
-	}
-
-	avoidance_enabled = p_enabled;
-	NavigationServer2D::get_singleton()->obstacle_set_avoidance_enabled(
-		obstacle, avoidance_enabled);
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 bool NavigationObstacle2D::get_avoidance_enabled() const { return avoidance_enabled; }
@@ -337,36 +288,10 @@ PackedStringArray NavigationObstacle2D::get_configuration_warnings() const
 	return warnings;
 }
 
-
-
-
-
 void NavigationObstacle2D::_update_map(RID p_map)
 {
 	map_current = p_map;
 	NavigationServer2D::get_singleton()->obstacle_set_map(obstacle, p_map);
-}
-
-void NavigationObstacle2D::_update_position(const Vector2 p_position)
-{
-	NavigationServer2D::get_singleton()->obstacle_set_position(obstacle, p_position);
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
-}
-
-void NavigationObstacle2D::_update_transform()
-{
-	_update_position(get_global_position());
-	// Prevent non-positive or non-uniform scaling of dynamic obstacle radius.
-	const Vector2 safe_scale = get_global_scale().abs().maxf(0.001);
-	const float scaling_max_value = safe_scale[safe_scale.max_axis_index()];
-	NavigationServer2D::get_singleton()->obstacle_set_radius(obstacle, scaling_max_value * radius);
-	NavigationServer2D::get_singleton()->obstacle_set_vertices(
-		obstacle, get_global_transform().translated(-get_global_position()).xform(vertices));
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 #ifdef DEBUG_ENABLED

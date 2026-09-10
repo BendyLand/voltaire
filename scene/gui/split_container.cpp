@@ -316,51 +316,6 @@ Size2 SplitContainer::get_minimum_size() const { return _get_minimum_size(false)
 
 Size2 SplitContainer::get_desired_size() const { return _get_minimum_size(true); }
 
-void SplitContainer::move_child_notify(Node* p_child)
-{
-	Container::move_child_notify(p_child);
-
-	Control* moved_child = as_sortable_control(p_child, SortableVisibilityMode::IGNORE);
-	const int prev_index = valid_children.find(moved_child);
-	if (prev_index == -1) {
-		return;
-	}
-
-	PackedInt32Array desired_sizes;
-	if (initialized && !split_offset_pending && valid_children.size() > 2u &&
-		split_offsets.size() == (int)default_dragger_positions.size()) {
-		desired_sizes = _get_desired_sizes();
-	}
-
-	valid_children.remove_at(prev_index);
-
-	// Get new index.
-	int index = 0;
-	for (int i = 0; i < get_child_count(false); i++) {
-		Control* child = as_sortable_control(get_child(i, false), SortableVisibilityMode::IGNORE);
-		if (!child) {
-			continue;
-		}
-		if (child == moved_child) {
-			break;
-		}
-		if (valid_children.has(child)) {
-			index++;
-		}
-	}
-
-	valid_children.insert(index, moved_child);
-
-	if (desired_sizes.is_empty()) {
-		return;
-	}
-
-	const int prev_desired_size = desired_sizes[prev_index];
-	desired_sizes.remove_at(prev_index);
-	desired_sizes.insert(index, prev_desired_size);
-	_set_desired_sizes(desired_sizes, index);
-}
-
 void SplitContainer::_on_child_visibility_changed(Control* p_control)
 {
 	if (p_control->is_visible()) {
@@ -371,65 +326,13 @@ void SplitContainer::_on_child_visibility_changed(Control* p_control)
 	}
 }
 
-void SplitContainer::set_split_offset(int p_offset, int p_index)
-{
-	ERR_FAIL_INDEX(p_index, split_offsets.size());
-	if (split_offsets[p_index] == p_offset) {
-		return;
-	}
-
-	split_offsets.write[p_index] = p_offset;
-	queue_sort();
-}
-
 int SplitContainer::get_split_offset(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, split_offsets.size(), 0);
 	return split_offsets[p_index];
 }
 
-void SplitContainer::set_split_offsets(const PackedInt32Array& p_offsets)
-{
-	if (split_offsets == p_offsets) {
-		return;
-	}
-	split_offsets = p_offsets;
-	split_offset_pending =
-		split_offsets.size() > 1 && (int)valid_children.size() - 1 != split_offsets.size();
-	queue_sort();
-}
-
 PackedInt32Array SplitContainer::get_split_offsets() const { return split_offsets; }
-
-void SplitContainer::clamp_split_offset(int p_priority_index)
-{
-	ERR_FAIL_INDEX(p_priority_index, split_offsets.size());
-	if (valid_children.size() < 2u) {
-		// Needs at least two children.
-		return;
-	}
-
-	_update_dragger_positions(p_priority_index);
-	queue_sort();
-}
-
-void SplitContainer::set_collapsed(bool p_collapsed)
-{
-	if (collapsed == p_collapsed) {
-		return;
-	}
-	collapsed = p_collapsed;
-	queue_sort();
-}
-
-void SplitContainer::set_dragger_visibility(DraggerVisibility p_visibility)
-{
-	if (dragger_visibility == p_visibility) {
-		return;
-	}
-	dragger_visibility = p_visibility;
-	queue_sort();
-}
 
 SplitContainer::DraggerVisibility SplitContainer::get_dragger_visibility() const
 {
@@ -490,46 +393,11 @@ Vector<int> SplitContainer::get_allowed_size_flags_vertical() const
 	return flags;
 }
 
-void SplitContainer::set_drag_area_margin_begin(int p_margin)
-{
-	if (drag_area_margin_begin == p_margin) {
-		return;
-	}
-	drag_area_margin_begin = p_margin;
-	queue_sort();
-}
-
 int SplitContainer::get_drag_area_margin_begin() const { return drag_area_margin_begin; }
-
-void SplitContainer::set_drag_area_margin_end(int p_margin)
-{
-	if (drag_area_margin_end == p_margin) {
-		return;
-	}
-	drag_area_margin_end = p_margin;
-	queue_sort();
-}
 
 int SplitContainer::get_drag_area_margin_end() const { return drag_area_margin_end; }
 
-void SplitContainer::set_drag_area_offset(int p_offset)
-{
-	if (drag_area_offset == p_offset) {
-		return;
-	}
-	drag_area_offset = p_offset;
-	queue_sort();
-}
-
 int SplitContainer::get_drag_area_offset() const { return drag_area_offset; }
-
-void SplitContainer::set_show_drag_area_enabled(bool p_enabled)
-{
-	show_drag_area = p_enabled;
-	for (SplitContainerDragger* dragger : dragging_area_controls) {
-		dragger->queue_redraw();
-	}
-}
 
 bool SplitContainer::is_show_drag_area_enabled() const { return show_drag_area; }
 
@@ -545,17 +413,6 @@ void SplitContainer::set_touch_dragger_enabled(bool p_enabled)
 }
 
 bool SplitContainer::is_touch_dragger_enabled() const { return touch_dragger_enabled; }
-
-void SplitContainer::show_grabber_icon(int p_index)
-{
-	if (force_show_grabber_icon == p_index) {
-		return;
-	}
-	force_show_grabber_icon = p_index;
-	for (SplitContainerDragger* dragger : dragging_area_controls) {
-		dragger->queue_redraw();
-	}
-}
 
 void SplitContainer::set_drag_nested_intersections(bool p_enabled)
 {
@@ -576,8 +433,6 @@ void SplitContainer::set_drag_nested_intersections(bool p_enabled)
 }
 
 bool SplitContainer::is_dragging_nested_intersections() const { return drag_nested_intersections; }
-
-void SplitContainer::_bind_methods() {}
 
 SplitContainer::SplitContainer(bool p_vertical)
 {

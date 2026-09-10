@@ -345,9 +345,7 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 		prev_ubo.taa_jitter[1] = prev_taa_jitter.y;
 		prev_ubo.time -= time_step;
 	}
-
 	uniform_buffer = p_uniform_buffer;
-	RD::get_singleton()->buffer_update(uniform_buffer, 0, sizeof(UBODATA), &ubo);
 }
 
 RID RenderSceneDataRD::get_uniform_buffer() const { return uniform_buffer; }

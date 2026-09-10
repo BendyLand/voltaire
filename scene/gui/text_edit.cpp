@@ -47,7 +47,6 @@
 #include "text_edit.compat.inc"
 #include "text_edit.h"
 
-
 void TextEdit::Text::set_font(const Ref<Font>& p_font)
 {
 	if (font == p_font) {
@@ -476,7 +475,6 @@ String TextEdit::Text::get_enabled_word_separators() const
 	return all_separators;
 }
 
-
 Ref<StyleBox> TextEdit::_get_current_stylebox() const
 {
 	return editable ? theme_cache.style_normal : theme_cache.style_readonly;
@@ -764,7 +762,6 @@ void TextEdit::_cancel_inertial_scroll()
 	last_drag_accum = Vector2();
 	drag_from = Vector2();
 }
-
 
 void TextEdit::_new_line(bool p_split_current_line, bool p_above)
 {
@@ -1440,21 +1437,6 @@ void TextEdit::apply_ime()
 	}
 }
 
-void TextEdit::set_editable(bool p_editable)
-{
-	if (editable == p_editable) {
-		return;
-	}
-
-	editable = p_editable;
-	if (editable) {
-		draw_caret = true;
-	}
-	queue_accessibility_update();
-	queue_redraw();
-	update_minimum_size();
-}
-
 bool TextEdit::is_editable() const { return editable; }
 
 Control::TextDirection TextEdit::get_text_direction() const { return text_direction; }
@@ -1466,47 +1448,13 @@ TextServer::StructuredTextParser TextEdit::get_structured_text_bidi_override() c
 	return st_parser;
 }
 
-void TextEdit::set_tab_size(const int p_size)
-{
-	ERR_FAIL_COND_MSG(p_size <= 0, "Tab size must be greater than 0.");
-	if (p_size == text.get_tab_size()) {
-		return;
-	}
-	text.set_tab_size(p_size);
-	text.invalidate_all_lines();
-	_update_placeholder();
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 int TextEdit::get_tab_size() const { return text.get_tab_size(); }
-
-void TextEdit::set_indent_wrapped_lines(bool p_enabled)
-{
-	if (text.is_indent_wrapped_lines() == p_enabled) {
-		return;
-	}
-	text.set_indent_wrapped_lines(p_enabled);
-	text.invalidate_all_lines();
-	_update_placeholder();
-	queue_redraw();
-}
 
 bool TextEdit::is_indent_wrapped_lines() const { return text.is_indent_wrapped_lines(); }
 
 void TextEdit::set_tab_input_mode(bool p_enabled) { tab_input_mode = p_enabled; }
 
 bool TextEdit::get_tab_input_mode() const { return tab_input_mode; }
-
-void TextEdit::set_overtype_mode_enabled(bool p_enabled)
-{
-	if (overtype_mode == p_enabled) {
-		return;
-	}
-
-	overtype_mode = p_enabled;
-	queue_redraw();
-}
 
 bool TextEdit::is_overtype_mode_enabled() const { return overtype_mode; }
 
@@ -1574,7 +1522,6 @@ bool TextEdit::is_empty_selection_clipboard_enabled() const
 	return empty_selection_clipboard_enabled;
 }
 
-
 void TextEdit::set_text(const String& p_text) { _set_text(p_text, false); }
 
 String TextEdit::get_text() const
@@ -1591,19 +1538,6 @@ String TextEdit::get_text() const
 }
 
 int TextEdit::get_line_count() const { return text.size(); }
-
-void TextEdit::set_placeholder(const String& p_text)
-{
-	if (placeholder_text == p_text) {
-		return;
-	}
-
-	placeholder_text = p_text;
-	_update_placeholder();
-	update_configuration_warnings();
-	queue_accessibility_update();
-	queue_redraw();
-}
 
 String TextEdit::get_placeholder() const { return placeholder_text; }
 
@@ -1810,73 +1744,6 @@ void TextEdit::insert_line_at(int p_line, const String& p_text)
 	_offset_carets_after(p_line, 0, new_line, new_column);
 
 	end_complex_operation();
-}
-
-void TextEdit::remove_line_at(int p_line, bool p_move_carets_down)
-{
-	ERR_FAIL_INDEX(p_line, text.size());
-
-	if (get_line_count() == 1) {
-		// Only one line, just remove contents.
-		begin_complex_operation();
-		int line_length = get_line(p_line).length();
-		_remove_text(p_line, 0, p_line, line_length);
-		collapse_carets(p_line, 0, p_line, line_length, true);
-		end_complex_operation();
-		return;
-	}
-
-	begin_complex_operation();
-
-	bool is_last_line = p_line == get_line_count() - 1;
-	int from_line = is_last_line ? p_line - 1 : p_line;
-	int next_line = is_last_line ? p_line : p_line + 1;
-	int from_column = is_last_line ? get_line(from_line).length() : 0;
-	int next_column = is_last_line ? get_line(next_line).length() : 0;
-
-	if ((!is_last_line && p_move_carets_down) || (p_line != 0 && !p_move_carets_down)) {
-		// Set the carets column to update their last offset x.
-		for (int i = 0; i < get_caret_count(); i++) {
-			if (get_caret_line(i) == p_line) {
-				set_caret_column(get_caret_column(i), false, i);
-			}
-			if (has_selection(i) && get_selection_origin_line(i) == p_line) {
-				set_selection_origin_column(get_selection_origin_column(i), i);
-			}
-		}
-	}
-
-	// Remove line.
-	_remove_text(from_line, from_column, next_line, next_column);
-
-	begin_multicaret_edit();
-	if ((is_last_line && p_move_carets_down) || (p_line == 0 && !p_move_carets_down)) {
-		// Collapse carets.
-		collapse_carets(from_line, from_column, next_line, next_column, true);
-	}
-	else {
-		// Move carets to visually line up.
-		int target_line = p_move_carets_down ? p_line : p_line - 1;
-		for (int i = 0; i < get_caret_count(); i++) {
-			bool selected = has_selection(i);
-			if (get_caret_line(i) == p_line) {
-				set_caret_line(target_line, i == 0, true, 0, i);
-			}
-			if (selected && get_selection_origin_line(i) == p_line) {
-				set_selection_origin_line(target_line, true, 0, i);
-				select(get_selection_origin_line(i), get_selection_origin_column(i),
-					get_caret_line(i), get_caret_column(i), i);
-			}
-		}
-
-		merge_overlapping_carets();
-	}
-	_offset_carets_after(next_line, next_column, from_line, from_column);
-	end_multicaret_edit();
-	end_complex_operation();
-
-	queue_accessibility_update();
-	queue_redraw();
 }
 
 void TextEdit::insert_text_at_caret(const String& p_text, int p_caret)
@@ -2411,8 +2278,7 @@ void TextEdit::redo()
 				break;
 			}
 		}
-
-}
+	}
 
 	carets = undo_stack_pos->get().end_carets;
 	undo_stack_pos = undo_stack_pos->next();
@@ -2565,7 +2431,8 @@ String TextEdit::get_word(int p_line, int p_column) const
 	if (p_line < 0 || p_column < 0) {
 		return String();
 	}
-	ERR_FAIL_INDEX_V(p_line, text.size(), String());
+	ERR_FAIL_INDEX_V(p_line, text.size(),
+String());
 
 	const String& text_line = text.get_text_with_ime(p_line);
 	if (text_line.is_empty()) {
@@ -2773,16 +2640,6 @@ bool TextEdit::is_mouse_over_selection(bool p_edges, int p_caret) const
 	return false;
 }
 
-void TextEdit::set_caret_type(CaretType p_type)
-{
-	if (caret_type == p_type) {
-		return;
-	}
-
-	caret_type = p_type;
-	queue_redraw();
-}
-
 TextEdit::CaretType TextEdit::get_caret_type() const { return caret_type; }
 
 void TextEdit::set_caret_blink_enabled(bool p_enabled)
@@ -2812,15 +2669,6 @@ void TextEdit::set_caret_blink_interval(const float p_interval)
 {
 	ERR_FAIL_COND(p_interval <= 0);
 	caret_blink_timer->set_wait_time(p_interval);
-}
-
-void TextEdit::set_draw_caret_when_editable_disabled(bool p_enable)
-{
-	if (draw_caret_when_editable_disabled == p_enable) {
-		return;
-	}
-	draw_caret_when_editable_disabled = p_enable;
-	queue_redraw();
 }
 
 bool TextEdit::is_drawing_caret_when_editable_disabled() const
@@ -3723,36 +3571,6 @@ void TextEdit::skip_selection_for_next_occurrence()
 	}
 }
 
-void TextEdit::select(
-	int p_origin_line, int p_origin_column, int p_caret_line, int p_caret_column, int p_caret)
-{
-	ERR_FAIL_INDEX(p_caret, get_caret_count());
-
-	p_caret_line = CLAMP(p_caret_line, 0, text.size() - 1);
-	p_caret_column = CLAMP(p_caret_column, 0, text[p_caret_line].length());
-	set_caret_line(p_caret_line, false, true, -1, p_caret);
-	set_caret_column(p_caret_column, false, p_caret);
-
-	if (!selecting_enabled) {
-		return;
-	}
-
-	p_origin_line = CLAMP(p_origin_line, 0, text.size() - 1);
-	p_origin_column = CLAMP(p_origin_column, 0, text[p_origin_line].length());
-	set_selection_origin_line(p_origin_line, true, -1, p_caret);
-	set_selection_origin_column(p_origin_column, p_caret);
-
-	bool had_selection = has_selection(p_caret);
-	bool activate = p_origin_line != p_caret_line || p_origin_column != p_caret_column;
-	carets.write[p_caret].selection.active = activate;
-	if (had_selection != activate) {
-		_selection_changed(p_caret);
-	}
-
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 bool TextEdit::has_selection(int p_caret) const
 {
 	ERR_FAIL_COND_V(p_caret >= carets.size() || p_caret < -1, false);
@@ -4039,28 +3857,6 @@ bool TextEdit::is_caret_after_selection_origin(int p_caret) const
 			   carets[p_caret].column >= carets[p_caret].selection.origin_column);
 }
 
-void TextEdit::deselect(int p_caret)
-{
-	ERR_FAIL_COND(p_caret >= carets.size() || p_caret < -1);
-	bool selection_changed = false;
-	if (p_caret >= 0) {
-		selection_changed = carets.write[p_caret].selection.active;
-		carets.write[p_caret].selection.active = false;
-	}
-	else {
-		for (int i = 0; i < carets.size(); i++) {
-			selection_changed |= carets.write[i].selection.active;
-			carets.write[i].selection.active = false;
-		}
-	}
-	if (selection_changed) {
-		_selection_changed(p_caret);
-	}
-
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 void TextEdit::delete_selection(int p_caret)
 {
 	ERR_FAIL_COND(p_caret >= get_caret_count() || p_caret < -1);
@@ -4105,31 +3901,7 @@ void TextEdit::set_selection_handle_enabled(bool p_enabled)
 
 bool TextEdit::is_selection_handle_enabled() const { return selection_handle_enabled; }
 
-void TextEdit::set_line_wrapping_mode(LineWrappingMode p_wrapping_mode)
-{
-	if (line_wrapping_mode != p_wrapping_mode) {
-		line_wrapping_mode = p_wrapping_mode;
-		_update_wrap_at_column(true);
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
 TextEdit::LineWrappingMode TextEdit::get_line_wrapping_mode() const { return line_wrapping_mode; }
-
-void TextEdit::set_autowrap_mode(TextServer::AutowrapMode p_mode)
-{
-	if (autowrap_mode == p_mode) {
-		return;
-	}
-
-	autowrap_mode = p_mode;
-	if (get_line_wrapping_mode() != LineWrappingMode::LINE_WRAPPING_NONE) {
-		_update_wrap_at_column(true);
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
 
 TextServer::AutowrapMode TextEdit::get_autowrap_mode() const { return autowrap_mode; }
 
@@ -4201,16 +3973,6 @@ void TextEdit::set_smooth_scroll_enabled(bool p_enabled)
 
 bool TextEdit::is_smooth_scroll_enabled() const { return smooth_scroll_enabled; }
 
-void TextEdit::set_scroll_past_end_of_file_enabled(bool p_enabled)
-{
-	if (scroll_past_end_of_file_enabled == p_enabled) {
-		return;
-	}
-
-	scroll_past_end_of_file_enabled = p_enabled;
-	queue_redraw();
-}
-
 bool TextEdit::is_scroll_past_end_of_file_enabled() const
 {
 	return scroll_past_end_of_file_enabled;
@@ -4254,25 +4016,7 @@ void TextEdit::set_v_scroll_speed(float p_speed)
 
 float TextEdit::get_v_scroll_speed() const { return v_scroll_speed; }
 
-void TextEdit::set_fit_content_height_enabled(bool p_enabled)
-{
-	if (fit_content_height == p_enabled) {
-		return;
-	}
-	fit_content_height = p_enabled;
-	update_minimum_size();
-}
-
 bool TextEdit::is_fit_content_height_enabled() const { return fit_content_height; }
-
-void TextEdit::set_fit_content_width_enabled(bool p_enabled)
-{
-	if (fit_content_width == p_enabled) {
-		return;
-	}
-	fit_content_width = p_enabled;
-	update_minimum_size();
-}
 
 bool TextEdit::is_fit_content_width_enabled() const { return fit_content_width; }
 
@@ -4466,29 +4210,7 @@ void TextEdit::center_viewport_to_caret(int p_caret)
 	_adjust_viewport_to_caret_horizontally(p_caret);
 }
 
-void TextEdit::set_draw_minimap(bool p_enabled)
-{
-	if (draw_minimap == p_enabled) {
-		return;
-	}
-
-	draw_minimap = p_enabled;
-	_update_wrap_at_column();
-	queue_redraw();
-}
-
 bool TextEdit::is_drawing_minimap() const { return draw_minimap; }
-
-void TextEdit::set_minimap_width(int p_minimap_width)
-{
-	if (minimap_width == p_minimap_width) {
-		return;
-	}
-
-	minimap_width = p_minimap_width;
-	_update_wrap_at_column();
-	queue_redraw();
-}
 
 int TextEdit::get_minimap_width() const { return minimap_width; }
 
@@ -4496,7 +4218,6 @@ int TextEdit::get_minimap_visible_lines() const
 {
 	return _get_control_height() / (minimap_char_size.y + minimap_line_spacing);
 }
-
 
 int TextEdit::get_gutter_count() const { return gutters.size(); }
 
@@ -4510,18 +4231,6 @@ String TextEdit::get_gutter_name(int p_gutter) const
 {
 	ERR_FAIL_INDEX_V(p_gutter, gutters.size(), "");
 	return gutters[p_gutter].name;
-}
-
-void TextEdit::set_gutter_type(int p_gutter, GutterType p_type)
-{
-	ERR_FAIL_INDEX(p_gutter, gutters.size());
-
-	if (gutters[p_gutter].type == p_type) {
-		return;
-	}
-
-	gutters.write[p_gutter].type = p_type;
-	queue_redraw();
 }
 
 TextEdit::GutterType TextEdit::get_gutter_type(int p_gutter) const
@@ -4564,18 +4273,6 @@ bool TextEdit::is_gutter_drawn(int p_gutter) const
 	return gutters[p_gutter].draw;
 }
 
-void TextEdit::set_gutter_clickable(int p_gutter, bool p_clickable)
-{
-	ERR_FAIL_INDEX(p_gutter, gutters.size());
-
-	if (gutters[p_gutter].clickable == p_clickable) {
-		return;
-	}
-
-	gutters.write[p_gutter].clickable = p_clickable;
-	queue_redraw();
-}
-
 bool TextEdit::is_gutter_clickable(int p_gutter) const
 {
 	ERR_FAIL_INDEX_V(p_gutter, gutters.size(), false);
@@ -4594,20 +4291,6 @@ bool TextEdit::is_gutter_overwritable(int p_gutter) const
 	return gutters[p_gutter].overwritable;
 }
 
-
-void TextEdit::set_line_gutter_text(int p_line, int p_gutter, const String& p_text)
-{
-	ERR_FAIL_INDEX(p_line, text.size());
-	ERR_FAIL_INDEX(p_gutter, gutters.size());
-
-	if (text.get_line_gutter_text(p_line, p_gutter) == p_text) {
-		return;
-	}
-
-	text.set_line_gutter_text(p_line, p_gutter, p_text);
-	queue_redraw();
-}
-
 String TextEdit::get_line_gutter_text(int p_line, int p_gutter) const
 {
 	ERR_FAIL_INDEX_V(p_line, text.size(), "");
@@ -4615,37 +4298,11 @@ String TextEdit::get_line_gutter_text(int p_line, int p_gutter) const
 	return text.get_line_gutter_text(p_line, p_gutter);
 }
 
-void TextEdit::set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D>& p_icon)
-{
-	ERR_FAIL_INDEX(p_line, text.size());
-	ERR_FAIL_INDEX(p_gutter, gutters.size());
-
-	if (text.get_line_gutter_icon(p_line, p_gutter) == p_icon) {
-		return;
-	}
-
-	text.set_line_gutter_icon(p_line, p_gutter, p_icon);
-	queue_redraw();
-}
-
 Ref<Texture2D> TextEdit::get_line_gutter_icon(int p_line, int p_gutter) const
 {
 	ERR_FAIL_INDEX_V(p_line, text.size(), Ref<Texture2D>());
 	ERR_FAIL_INDEX_V(p_gutter, gutters.size(), Ref<Texture2D>());
 	return text.get_line_gutter_icon(p_line, p_gutter);
-}
-
-void TextEdit::set_line_gutter_item_color(int p_line, int p_gutter, const Color& p_color)
-{
-	ERR_FAIL_INDEX(p_line, text.size());
-	ERR_FAIL_INDEX(p_gutter, gutters.size());
-
-	if (text.get_line_gutter_item_color(p_line, p_gutter) == p_color) {
-		return;
-	}
-
-	text.set_line_gutter_item_color(p_line, p_gutter, p_color);
-	queue_redraw();
 }
 
 Color TextEdit::get_line_gutter_item_color(int p_line, int p_gutter) const
@@ -4669,48 +4326,15 @@ bool TextEdit::is_line_gutter_clickable(int p_line, int p_gutter) const
 	return text.is_line_gutter_clickable(p_line, p_gutter);
 }
 
-void TextEdit::set_line_background_color(int p_line, const Color& p_color)
-{
-	ERR_FAIL_INDEX(p_line, text.size());
-
-	if (text.get_line_background_color(p_line) == p_color) {
-		return;
-	}
-
-	text.set_line_background_color(p_line, p_color);
-	queue_redraw();
-}
-
 Color TextEdit::get_line_background_color(int p_line) const
 {
 	ERR_FAIL_INDEX_V(p_line, text.size(), Color());
 	return text.get_line_background_color(p_line);
 }
 
-
 Ref<SyntaxHighlighter> TextEdit::get_syntax_highlighter() const { return syntax_highlighter; }
 
-void TextEdit::set_highlight_current_line(bool p_enabled)
-{
-	if (highlight_current_line == p_enabled) {
-		return;
-	}
-
-	highlight_current_line = p_enabled;
-	queue_redraw();
-}
-
 bool TextEdit::is_highlight_current_line_enabled() const { return highlight_current_line; }
-
-void TextEdit::set_highlight_all_occurrences(bool p_enabled)
-{
-	if (highlight_all_occurrences == p_enabled) {
-		return;
-	}
-
-	highlight_all_occurrences = p_enabled;
-	queue_redraw();
-}
 
 bool TextEdit::is_highlight_all_occurrences_enabled() const { return highlight_all_occurrences; }
 
@@ -4755,62 +4379,13 @@ void TextEdit::set_use_custom_word_separators(bool p_enabled)
 
 String TextEdit::get_default_word_separators() const { return text.get_default_word_separators(); }
 
-void TextEdit::set_draw_control_chars(bool p_enabled)
-{
-	if (draw_control_chars != p_enabled) {
-		draw_control_chars = p_enabled;
-		if (menu) {
-			menu->set_item_checked(menu->get_item_index(MENU_DISPLAY_UCC), draw_control_chars);
-		}
-		text.set_draw_control_chars(draw_control_chars);
-		text.invalidate_font();
-		_update_placeholder();
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
 bool TextEdit::get_draw_control_chars() const { return draw_control_chars; }
 
-void TextEdit::set_draw_tabs(bool p_enabled)
-{
-	if (draw_tabs == p_enabled) {
-		return;
-	}
-
-	draw_tabs = p_enabled;
-	queue_redraw();
-}
-
 bool TextEdit::is_drawing_tabs() const { return draw_tabs; }
-
-void TextEdit::set_draw_spaces(bool p_enabled)
-{
-	if (draw_spaces == p_enabled) {
-		return;
-	}
-
-	draw_spaces = p_enabled;
-	queue_redraw();
-}
 
 bool TextEdit::is_drawing_spaces() const { return draw_spaces; }
 
 Color TextEdit::get_font_color() const { return theme_cache.font_color; }
-
-void TextEdit::_set_hiding_enabled(bool p_enabled)
-{
-	if (hiding_enabled == p_enabled) {
-		return;
-	}
-
-	if (!p_enabled) {
-		_unhide_all_lines();
-	}
-	hiding_enabled = p_enabled;
-	queue_accessibility_update();
-	queue_redraw();
-}
 
 bool TextEdit::_is_hiding_enabled() const { return hiding_enabled; }
 
@@ -4820,44 +4395,9 @@ bool TextEdit::_is_line_hidden(int p_line) const
 	return text.is_hidden(p_line);
 }
 
-void TextEdit::_unhide_all_lines()
-{
-	for (int i = 0; i < text.size(); i++) {
-		text.set_hidden(i, false);
-	}
-	_update_scrollbars();
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 void TextEdit::_unhide_carets()
 {
 	// Override for functionality.
-}
-
-void TextEdit::_set_line_as_hidden(int p_line, bool p_hidden)
-{
-	ERR_FAIL_INDEX(p_line, text.size());
-
-	if (text.is_hidden(p_line) == p_hidden) {
-		return;
-	}
-
-	if (_is_hiding_enabled() || !p_hidden) {
-		text.set_hidden(p_line, p_hidden);
-	}
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void TextEdit::_set_symbol_lookup_word(const String& p_symbol)
-{
-	if (lookup_symbol_word == p_symbol) {
-		return;
-	}
-
-	lookup_symbol_word = p_symbol;
-	queue_redraw();
 }
 
 void TextEdit::_handle_unicode_input_internal(const uint32_t p_unicode, int p_caret)
@@ -5110,7 +4650,6 @@ void TextEdit::_paste_primary_clipboard_internal(int p_caret)
 	grab_focus();
 }
 
-
 Key TextEdit::_get_menu_action_accelerator(const String& p_action)
 {
 	const List<Ref<InputEvent>>* events = InputMap::get_singleton()->action_get_events(p_action);
@@ -5329,28 +4868,6 @@ int TextEdit::_get_char_pos_for_line(int p_px, int p_line, int p_wrap_index) con
 
 void TextEdit::_set_caret_pos_dirty(bool p_dirty) { caret_pos_dirty = p_dirty; }
 
-void TextEdit::_reset_caret_blink_timer()
-{
-	if (!caret_blink_enabled) {
-		return;
-	}
-
-	draw_caret = true;
-	if (has_focus()) {
-		caret_blink_timer->stop();
-		caret_blink_timer->start();
-		queue_redraw();
-	}
-}
-
-void TextEdit::_toggle_draw_caret()
-{
-	draw_caret = !draw_caret;
-	if (is_visible_in_tree() && has_focus() && window_has_focus) {
-		queue_redraw();
-	}
-}
-
 int TextEdit::_get_column_x_offset_for_line(int p_char, int p_line, int p_column) const
 {
 	ERR_FAIL_INDEX_V(p_line, text.size(), 0);
@@ -5470,17 +4987,6 @@ void TextEdit::_cancel_drag_and_drop_text()
 	if (selection_drag_attempt && get_viewport()) {
 		get_viewport()->gui_cancel_drag();
 	}
-}
-
-void TextEdit::_selection_changed(int p_caret)
-{
-	if (!selecting_enabled) {
-		return;
-	}
-
-	_cancel_drag_and_drop_text();
-	queue_accessibility_update();
-	queue_redraw();
 }
 
 void TextEdit::_click_selection_held()
@@ -5718,92 +5224,6 @@ void TextEdit::_update_wrap_at_column(bool p_force)
 	queue_accessibility_update();
 }
 
-void TextEdit::_update_scrollbars()
-{
-	Size2 size = get_size();
-	Size2 hmin = h_scroll->get_bound_minimum_size();
-	Size2 vmin = v_scroll->get_bound_minimum_size();
-
-	Ref<StyleBox> style = _get_current_stylebox();
-	v_scroll->set_begin(Point2(size.width - vmin.width, style->get_margin(SIDE_TOP)));
-	v_scroll->set_end(Point2(
-		size.width, size.height - style->get_margin(SIDE_TOP) - style->get_margin(SIDE_BOTTOM)));
-
-	h_scroll->set_begin(Point2(0, size.height - hmin.height));
-	h_scroll->set_end(Point2(size.width - vmin.width, size.height));
-
-	bool draw_placeholder = _using_placeholder();
-
-	int visible_rows = get_visible_line_count();
-	int total_rows =
-		draw_placeholder ? placeholder_wrapped_rows.size() : get_total_visible_line_count();
-	if ((scroll_past_end_of_file_enabled && !fit_content_height) || visible_rows == 0) {
-		total_rows += visible_rows - 1;
-	}
-
-	int visible_width = size.width - style->get_minimum_size().width;
-	int total_width = (draw_placeholder ? placeholder_max_width : text.get_max_width()) +
-					  gutters_width + gutter_padding;
-
-	if (draw_minimap) {
-		total_width += minimap_width;
-	}
-
-	content_size_cache = Vector2i(total_width + 10, MAX(total_rows, 1) * get_line_height());
-	if (fit_content_height || fit_content_width) {
-		update_minimum_size();
-	}
-
-	const Size2 combined_maximum_size = get_combined_maximum_size();
-	const Size2 style_minimum_size = style->get_minimum_size();
-	const bool fit_content_height_exceeds_maximum =
-		fit_content_height && combined_maximum_size.y >= 0 &&
-		style_minimum_size.y + content_size_cache.y > combined_maximum_size.y;
-	const bool fit_content_width_exceeds_maximum =
-		fit_content_width && combined_maximum_size.x >= 0 &&
-		style_minimum_size.x + content_size_cache.x > combined_maximum_size.x;
-
-	updating_scrolls = true;
-
-	if ((!fit_content_height || fit_content_height_exceeds_maximum) && total_rows > visible_rows) {
-		double visible_rows_exact = (double)_get_control_height() / (double)get_line_height();
-		double fractional_visible_rows = visible_rows_exact - (double)visible_rows;
-		fractional_visible_rows = CLAMP(fractional_visible_rows, 0.0, 1.0);
-		v_scroll->show();
-		v_scroll->set_max(total_rows);
-		v_scroll->set_page(visible_rows + fractional_visible_rows);
-		set_v_scroll(get_v_scroll());
-	}
-	else {
-		first_visible_line = 0;
-		first_visible_line_wrap_ofs = 0;
-		v_scroll->set_value(0);
-		v_scroll->set_max(0);
-		v_scroll->hide();
-	}
-
-	if ((!fit_content_width || fit_content_width_exceeds_maximum) && total_width > visible_width) {
-		h_scroll->show();
-		h_scroll->set_max(total_width);
-		h_scroll->set_page(visible_width);
-		if (first_visible_col > (total_width - visible_width)) {
-			first_visible_col = (total_width - visible_width);
-		}
-		if (std::fabs(h_scroll->get_value() - (double)first_visible_col) >= 1) {
-			h_scroll->set_value(first_visible_col);
-		}
-
-	}
-	else {
-		first_visible_col = 0;
-		h_scroll->set_value(0);
-		h_scroll->set_max(0);
-		h_scroll->hide();
-	}
-
-	updating_scrolls = false;
-}
-
 int TextEdit::_get_control_height() const
 {
 	int control_height = get_size().height - _get_current_stylebox()->get_minimum_size().height;
@@ -5817,45 +5237,6 @@ void TextEdit::_v_scroll_input()
 {
 	scrolling = false;
 	minimap_clicked = false;
-}
-
-void TextEdit::_scroll_moved(double p_to_val)
-{
-	if (updating_scrolls) {
-		return;
-	}
-
-	if (h_scroll->is_visible_in_tree()) {
-		first_visible_col = h_scroll->get_value();
-	}
-	if (v_scroll->is_visible_in_tree()) {
-		// Set line ofs and wrap ofs.
-		bool draw_placeholder = _using_placeholder();
-
-		int v_scroll_i = std::floor(get_v_scroll());
-		int sc = 0;
-		int n_line;
-		for (n_line = 0; n_line < text.size(); n_line++) {
-			if (!_is_line_hidden(n_line)) {
-				sc++;
-				sc += draw_placeholder ? placeholder_wrapped_rows.size() - 1
-									   : get_line_wrap_count(n_line);
-				if (sc > v_scroll_i) {
-					break;
-				}
-			}
-		}
-		n_line = MIN(n_line, text.size() - 1);
-		int line_wrap_amount =
-			draw_placeholder ? placeholder_wrapped_rows.size() - 1 : get_line_wrap_count(n_line);
-		int wi = line_wrap_amount - (sc - v_scroll_i - 1);
-		wi = CLAMP(wi, 0, line_wrap_amount);
-
-		first_visible_line = n_line;
-		first_visible_line_wrap_ofs = wi;
-	}
-	queue_accessibility_update();
-	queue_redraw();
 }
 
 double TextEdit::_get_visible_lines_offset() const
@@ -5988,114 +5369,6 @@ void TextEdit::_scroll_lines_down()
 	merge_overlapping_carets();
 }
 
-void TextEdit::_adjust_viewport_to_caret_horizontally(int p_caret, bool p_maximize_selection)
-{
-	if (get_line_wrapping_mode() != LineWrappingMode::LINE_WRAPPING_NONE) {
-		first_visible_col = 0;
-		h_scroll->set_value(first_visible_col);
-		queue_redraw();
-		return;
-	}
-
-	int visible_width = get_size().width - _get_current_stylebox()->get_minimum_size().width -
-						gutters_width - gutter_padding;
-	if (draw_minimap) {
-		visible_width -= minimap_width;
-	}
-	if (v_scroll->is_visible_in_tree()) {
-		visible_width -= v_scroll->get_bound_minimum_size().width;
-	}
-	visible_width -= 20; // Give it a little more space.
-
-	if (visible_width <= 0) {
-		// Not resized yet.
-		return;
-	}
-
-	int caret_start_pos;
-	int caret_end_pos;
-	bool prioritize_end = true;
-
-	// Get start and end position of the caret.
-	if (has_ime_text()) {
-		// Use the size of the IME.
-		int ime_start_column = get_caret_column(p_caret) + ime_selection.x;
-		caret_start_pos = _get_column_x_offset_for_line(
-			ime_start_column, get_caret_line(p_caret), ime_start_column);
-		int ime_end_column =
-			get_caret_column(p_caret) +
-			(ime_selection.y > 0 ? ime_selection.x + ime_selection.y : ime_text.length());
-		caret_end_pos =
-			_get_column_x_offset_for_line(ime_end_column, get_caret_line(p_caret), ime_end_column);
-		prioritize_end = false;
-	}
-	else if (p_maximize_selection && has_selection(p_caret) &&
-			   get_selection_from_line(p_caret) == get_selection_to_line(p_caret)) {
-		// Use selection if it is on one line.
-		caret_start_pos = _get_column_x_offset_for_line(get_selection_from_column(p_caret),
-			get_caret_line(p_caret), get_selection_from_column(p_caret));
-		caret_end_pos = _get_column_x_offset_for_line(get_selection_to_column(p_caret),
-			get_caret_line(p_caret), get_selection_to_column(p_caret));
-		prioritize_end = is_caret_after_selection_origin();
-	}
-	else {
-		caret_start_pos = _get_column_x_offset_for_line(
-			get_caret_column(p_caret), get_caret_line(p_caret), get_caret_column(p_caret));
-		caret_end_pos = caret_start_pos;
-	}
-
-	if (caret_start_pos > caret_end_pos) {
-		// For RTL text.
-		SWAP(caret_start_pos, caret_end_pos);
-		prioritize_end = !prioritize_end;
-	}
-
-	if (!prioritize_end && caret_end_pos > first_visible_col + visible_width) {
-		first_visible_col = caret_end_pos - visible_width + 1;
-	}
-	if (caret_start_pos < first_visible_col) {
-		first_visible_col = caret_start_pos;
-	}
-	if (prioritize_end && caret_end_pos > first_visible_col + visible_width) {
-		first_visible_col = caret_end_pos - visible_width + 1;
-	}
-
-	h_scroll->set_value(first_visible_col);
-
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-
-void TextEdit::_update_minimap_hover()
-{
-	const Point2 mp = get_local_mouse_pos();
-	const int xmargin_end =
-		get_size().width - Math::floor(_get_current_stylebox()->get_margin(SIDE_RIGHT));
-
-	bool hovering_sidebar = mp.x > xmargin_end - minimap_width && mp.x < xmargin_end;
-	if (!hovering_sidebar) {
-		if (hovering_minimap) {
-			// Only redraw if the hovering status changed.
-			hovering_minimap = false;
-			queue_redraw();
-		}
-
-		// Return early to avoid running the operations below when not needed.
-		return;
-	}
-
-	const int row = get_minimap_line_at_pos(mp);
-
-	bool new_hovering_minimap =
-		row >= get_first_visible_line() && row <= get_last_full_visible_line();
-	if (new_hovering_minimap != hovering_minimap) {
-		// Only redraw if the hovering status changed.
-		hovering_minimap = new_hovering_minimap;
-		queue_redraw();
-	}
-}
-
 void TextEdit::_update_minimap_click()
 {
 	Point2 mp = get_local_mouse_pos();
@@ -6149,24 +5422,6 @@ void TextEdit::_update_minimap_drag()
 	v_scroll->set_as_ratio(minimap_scroll_ratio + diff);
 }
 
-void TextEdit::_update_gutter_width()
-{
-	gutters_width = 0;
-	for (int i = 0; i < gutters.size(); i++) {
-		if (gutters[i].draw) {
-			gutters_width += gutters[i].width;
-		}
-	}
-	if (gutters_width > 0) {
-		gutter_padding = 2;
-	}
-	if (get_viewport()) {
-		hovered_gutter = _get_hovered_gutter(get_local_mouse_position());
-	}
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 Vector2i TextEdit::_get_hovered_gutter(const Point2& p_mouse_pos) const
 {
 	int left_margin = get_line_start_margin();
@@ -6191,14 +5446,7 @@ Vector2i TextEdit::_get_hovered_gutter(const Point2& p_mouse_pos) const
 	return Vector2i(-1, -1);
 }
 
-
 void TextEdit::_clear_syntax_highlighting_cache() { syntax_highlighting_cache.clear(); }
-
-void TextEdit::_syntax_highlighter_changed()
-{
-	_clear_syntax_highlighting_cache();
-	queue_redraw();
-}
 
 #ifndef DISABLE_DEPRECATED
 Vector<int> TextEdit::get_caret_index_edit_order()
@@ -6220,7 +5468,6 @@ int TextEdit::get_selection_column(int p_caret) const
 	return get_selection_origin_column(p_caret);
 }
 #endif
-
 
 void TextEdit::_insert_text(
 	int p_line, int p_char, const String& p_text, int* r_end_line, int* r_end_char)

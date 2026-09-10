@@ -148,39 +148,11 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_range_edit_gui_input(
 		else {
 			drag = Drag::NONE;
 		}
-
-		if (drag != prev_drag) {
-			range_edit_widget->queue_redraw();
-		}
 	}
 
 	float property_length = property_range.y - property_range.x;
 	if (mm.is_valid()) {
 		switch (drag) {
-		case Drag::NONE: {
-			const Hover prev_hover = hover;
-			float left_icon_offset = _get_left_offset() - range_slider_left_icon->get_width() - 1;
-
-			if (Rect2(Vector2(left_icon_offset, 0), range_slider_left_icon->get_size())
-					.has_point(mm->get_position())) {
-				hover = Hover::LEFT;
-			}
-			else if (Rect2(Vector2(_get_right_offset(), 0), range_slider_right_icon->get_size())
-						   .has_point(mm->get_position())) {
-				hover = Hover::RIGHT;
-			}
-			else if (_get_middle_rect().has_point(mm->get_position())) {
-				hover = Hover::MIDDLE;
-			}
-			else {
-				hover = Hover::NONE;
-			}
-
-			if (hover != prev_hover) {
-				range_edit_widget->queue_redraw();
-			}
-		} break;
-
 		case Drag::LEFT:
 		case Drag::RIGHT: {
 			float new_value = drag_from_value + (mm->get_position().x - drag_origin) /
@@ -211,15 +183,6 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_range_edit_gui_input(
 		} break;
 		}
 	}
-}
-
-void ParticleProcessMaterialMinMaxPropertyEditor::_set_mouse_inside(bool p_inside)
-{
-	mouse_inside = p_inside;
-	if (!p_inside) {
-		hover = Hover::NONE;
-	}
-	range_edit_widget->queue_redraw();
 }
 
 float ParticleProcessMaterialMinMaxPropertyEditor::_get_min_ratio() const
@@ -259,12 +222,6 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_set_clamped_values(float p_mi
 	max_range->set_value(MIN(p_max, property_range.y));
 	_update_slider_values();
 	_sync_property();
-}
-
-void ParticleProcessMaterialMinMaxPropertyEditor::_sync_property()
-{
-	const Vector2 value = Vector2(min_range->get_value(), max_range->get_value());
-	range_edit_widget->queue_redraw();
 }
 
 float ParticleProcessMaterialMinMaxPropertyEditor::_get_max_spread() const

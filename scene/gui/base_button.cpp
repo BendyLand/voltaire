@@ -57,19 +57,6 @@ void BaseButton::_unpress_group()
 
 bool BaseButton::is_disabled() const { return status.disabled; }
 
-void BaseButton::set_pressed_no_signal(bool p_pressed)
-{
-	if (!toggle_mode) {
-		return;
-	}
-	if (status.pressed == p_pressed) {
-		return;
-	}
-	status.pressed = p_pressed;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 bool BaseButton::is_pressing() const { return status.press_attempt; }
 
 bool BaseButton::is_pressed() const { return toggle_mode ? status.pressed : status.press_attempt; }
@@ -173,29 +160,6 @@ void BaseButton::set_shortcut(const Ref<Shortcut>& p_shortcut)
 
 Ref<Shortcut> BaseButton::get_shortcut() const { return shortcut; }
 
-void BaseButton::_shortcut_feedback_timeout()
-{
-	in_shortcut_feedback = false;
-	queue_redraw();
-}
-
-void BaseButton::set_button_group(const Ref<ButtonGroup>& p_group)
-{
-	if (button_group.is_valid()) {
-		button_group->buttons.erase(this);
-	}
-
-	button_group = p_group;
-
-	if (button_group.is_valid()) {
-		button_group->buttons.insert(this);
-	}
-
-	queue_accessibility_update();
-	queue_redraw(); // checkbox changes to radio if set a buttongroup
-	update_configuration_warnings();
-}
-
 Ref<ButtonGroup> BaseButton::get_button_group() const { return button_group; }
 
 bool BaseButton::_was_pressed_by_mouse() const { return was_mouse_pressed; }
@@ -211,8 +175,6 @@ PackedStringArray BaseButton::get_configuration_warnings() const
 
 	return warnings;
 }
-
-void BaseButton::_bind_methods() {}
 
 BaseButton::BaseButton() { set_focus_mode(FOCUS_ALL); }
 
@@ -244,8 +206,6 @@ BaseButton* ButtonGroup::get_pressed_button()
 void ButtonGroup::set_allow_unpress(bool p_enabled) { allow_unpress = p_enabled; }
 
 bool ButtonGroup::is_allow_unpress() { return allow_unpress; }
-
-void ButtonGroup::_bind_methods() {}
 
 ButtonGroup::ButtonGroup() { set_local_to_scene(true); }
 

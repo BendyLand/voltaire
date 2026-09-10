@@ -95,35 +95,6 @@ void VirtualJoystick::_handle_input_actions()
 	}
 }
 
-void VirtualJoystick::_reset()
-{
-	is_pressed = false;
-	has_input = false;
-	has_moved = false;
-	raw_input_vector = Vector2();
-	input_vector = Vector2();
-	is_flick_canceled = false;
-	touch_index = -1;
-	joystick_pos = get_size() * initial_offset_ratio;
-	tip_pos = joystick_pos;
-
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		// Only release actions when not currently in the editor.
-		// Custom input actions are not defined while in the editor,
-		// so this would lead to error spam due to unknown input actions.
-		Input* input = Input::get_singleton();
-		for (const StringName& action : {action_left, action_right, action_down, action_up}) {
-			if (input->is_action_pressed(action)) {
-				input->action_release(action);
-			}
-		}
-	}
-
-	queue_redraw();
-}
-
-void VirtualJoystick::_bind_methods() {}
-
 Vector2 VirtualJoystick::get_joystick_position() const { return joystick_pos; }
 
 void VirtualJoystick::set_joystick_size(float p_size)
@@ -148,23 +119,7 @@ void VirtualJoystick::set_tip_size(float p_size)
 
 float VirtualJoystick::get_tip_size() const { return tip_size; }
 
-void VirtualJoystick::set_deadzone_ratio(float p_ratio)
-{
-	deadzone_ratio = p_ratio;
-	if (Engine::get_singleton()->is_editor_hint()) {
-		queue_redraw();
-	}
-}
-
 float VirtualJoystick::get_deadzone_ratio() const { return deadzone_ratio; }
-
-void VirtualJoystick::set_clampzone_ratio(float p_ratio)
-{
-	clampzone_ratio = p_ratio;
-	if (Engine::get_singleton()->is_editor_hint()) {
-		queue_redraw();
-	}
-}
 
 float VirtualJoystick::get_clampzone_ratio() const { return clampzone_ratio; }
 

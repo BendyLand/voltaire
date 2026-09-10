@@ -109,8 +109,6 @@ OccluderPolygon2D::CullMode OccluderPolygon2D::get_cull_mode() const { return cu
 
 RID OccluderPolygon2D::get_rid() const { return occ_polygon; }
 
-void OccluderPolygon2D::_bind_methods() {}
-
 OccluderPolygon2D::OccluderPolygon2D()
 {
 	occ_polygon = RS::get_singleton()->canvas_occluder_polygon_create();
@@ -122,20 +120,11 @@ OccluderPolygon2D::~OccluderPolygon2D()
 	RS::get_singleton()->free_rid(occ_polygon);
 }
 
-void LightOccluder2D::_poly_changed()
-{
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
-}
-
 void LightOccluder2D::_physics_interpolated_changed()
 {
 	RenderingServer::get_singleton()->canvas_light_occluder_set_interpolated(
 		occluder, is_physics_interpolated());
 }
-
-
 
 #ifdef DEBUG_ENABLED
 Rect2 LightOccluder2D::_edit_get_rect() const
@@ -185,8 +174,6 @@ void LightOccluder2D::set_as_sdf_collision(bool p_enable)
 }
 
 bool LightOccluder2D::is_set_as_sdf_collision() const { return sdf_collision; }
-
-void LightOccluder2D::_bind_methods() {}
 
 LightOccluder2D::LightOccluder2D()
 {

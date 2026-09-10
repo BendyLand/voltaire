@@ -807,10 +807,6 @@ void RenderForwardMobile::_setup_lightmaps(const RenderDataRD* p_render_data,
 
 		scene_state.lightmaps_used++;
 	}
-	if (scene_state.lightmaps_used > 0) {
-		RD::get_singleton()->buffer_update(scene_state.lightmap_buffer, 0,
-			sizeof(LightmapData) * scene_state.lightmaps_used, scene_state.lightmaps);
-	}
 }
 
 void RenderForwardMobile::_pre_opaque_render(RenderDataRD* p_render_data)
@@ -854,8 +850,6 @@ void RenderForwardMobile::_pre_opaque_render(RenderDataRD* p_render_data)
 		if (p_render_data->directional_shadows.size()) {
 			// open the pass for directional shadows
 			light_storage->update_directional_shadow_atlas();
-			RD::get_singleton()->draw_list_begin(light_storage->direction_shadow_get_fb(),
-				RD::DRAW_CLEAR_DEPTH, Vector<Color>(), 0.0f);
 			RD::get_singleton()->draw_list_end();
 		}
 	}
@@ -1296,101 +1290,6 @@ void RenderForwardMobile::_render_material(const Transform3D& p_cam_transform,
 		RID(), RendererRD::MaterialStorage::get_singleton()->samplers_rd_get_default());
 
 	RENDER_TIMESTAMP("Render 3D Material");
-
-	{
-		RenderListParameters render_list_params(render_list[RENDER_LIST_SECONDARY].elements.ptr(),
-			render_list[RENDER_LIST_SECONDARY].element_info.ptr(),
-			render_list[RENDER_LIST_SECONDARY].elements.size(), true, pass_mode, rp_uniform_set,
-			scene_shader.default_specialization);
-		// regular forward for now
-		Vector<Color> clear = {Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0),
-			Color(0, 0, 0, 0), Color(0, 0, 0, 0)};
-		RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(
-			p_framebuffer, RD::DRAW_CLEAR_ALL, clear, 0.0f, 0, p_region);
-		_render_list(draw_list, RD::get_singleton()->framebuffer_get_format(p_framebuffer),
-			&render_list_params, 0, render_list_params.element_count);
-		RD::get_singleton()->draw_list_end();
-	}
-
-	RD::get_singleton()->draw_command_end_label();
-}
-
-void RenderForwardMobile::_render_uv2(const PagedArray<RenderGeometryInstance*>& p_instances,
-	RID p_framebuffer, const Rect2i& p_region)
-{
-	RENDER_TIMESTAMP("Setup Rendering UV2");
-
-	RD::get_singleton()->draw_command_begin_label("Render UV2");
-
-	_update_render_base_uniform_set();
-
-	RenderSceneDataRD scene_data;
-	scene_data.dual_paraboloid_side = 0;
-	scene_data.material_uv2_mode = true;
-	scene_data.emissive_exposure_normalization = -1.0;
-
-	RenderDataRD render_data;
-	render_data.scene_data = &scene_data;
-	render_data.instances = &p_instances;
-
-	Size2i screen_size = RD::get_singleton()->framebuffer_get_size(p_framebuffer);
-	Size2i viewport_size = p_region.size;
-	if (viewport_size == Size2()) {
-		viewport_size = screen_size;
-	}
-	_setup_environment(&render_data, true, screen_size, viewport_size, Color());
-
-	PassMode pass_mode = PASS_MODE_DEPTH_MATERIAL;
-	_fill_render_list(RENDER_LIST_SECONDARY, &render_data, pass_mode);
-	render_list[RENDER_LIST_SECONDARY].sort_by_key();
-	_fill_instance_data(RENDER_LIST_SECONDARY);
-
-	RID rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr, false,
-		RID(), RendererRD::MaterialStorage::get_singleton()->samplers_rd_get_default());
-
-	RENDER_TIMESTAMP("Render 3D Material");
-
-	{
-		RenderListParameters render_list_params(render_list[RENDER_LIST_SECONDARY].elements.ptr(),
-			render_list[RENDER_LIST_SECONDARY].element_info.ptr(),
-			render_list[RENDER_LIST_SECONDARY].elements.size(), true, pass_mode, rp_uniform_set,
-			scene_shader.default_specialization, false);
-		// regular forward for now
-		Vector<Color> clear = {Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0),
-			Color(0, 0, 0, 0), Color(0, 0, 0, 0)};
-
-		RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(
-			p_framebuffer, RD::DRAW_CLEAR_ALL, clear, 0.0f, 0, p_region);
-
-		const int uv_offset_count = 9;
-		static const Vector2 uv_offsets[uv_offset_count] = {
-			Vector2(-1, 1),
-			Vector2(1, 1),
-			Vector2(1, -1),
-			Vector2(-1, -1),
-			Vector2(-1, 0),
-			Vector2(1, 0),
-			Vector2(0, -1),
-			Vector2(0, 1),
-			Vector2(0, 0),
-
-		};
-
-		for (int i = 0; i < uv_offset_count; i++) {
-			Vector2 ofs = uv_offsets[i];
-			ofs.x /= p_region.size.width;
-			ofs.y /= p_region.size.height;
-			render_list_params.uv_offset = ofs;
-			_render_list(draw_list, RD::get_singleton()->framebuffer_get_format(p_framebuffer),
-				&render_list_params, 0,
-				render_list_params.element_count); // first wireframe, for pseudo conservative
-		}
-		render_list_params.uv_offset = Vector2();
-		_render_list(draw_list, RD::get_singleton()->framebuffer_get_format(p_framebuffer),
-			&render_list_params, 0, render_list_params.element_count); // second regular triangles
-
-		RD::get_singleton()->draw_list_end();
-	}
 
 	RD::get_singleton()->draw_command_end_label();
 }
@@ -2027,11 +1926,6 @@ void RenderForwardMobile::_fill_render_list(RenderListType p_render_list,
 
 			surf = surf->next;
 		}
-	}
-
-	if (p_render_list == RENDER_LIST_OPAQUE && lightmap_captures_used) {
-		RD::get_singleton()->buffer_update(scene_state.lightmap_capture_buffer, 0,
-			sizeof(LightmapCaptureData) * lightmap_captures_used, scene_state.lightmap_captures);
 	}
 }
 

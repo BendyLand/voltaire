@@ -216,38 +216,6 @@ CanvasItem::OversamplingWithScale CanvasItem::get_oversampling_with_scale() cons
 	return oversampling_with_scale;
 }
 
-void CanvasItem::_update_oversampling(bool p_propagate)
-{
-	if (p_propagate) {
-		for (uint32_t n = 0; n < data.canvas_item_children.size(); n++) {
-			CanvasItem* ci = data.canvas_item_children[n];
-			if (!ci->top_level &&
-				ci->get_oversampling_with_scale() == OVERSAMPLING_WITH_SCALE_PARENT_NODE) {
-				ci->_update_oversampling(p_propagate);
-			}
-		}
-	}
-
-	if (parent_visible_in_tree) {
-		bool new_oversampling_with_scale = _is_oversampling_with_scale();
-		if (new_oversampling_with_scale) {
-			double new_os =
-				MAX(get_global_transform().get_scale().x, get_global_transform().get_scale().y);
-			if (new_os != oversampling_override) {
-				oversampling_override = new_os;
-				queue_redraw();
-			}
-		}
-		else {
-			oversampling_override = -1.0;
-		}
-		if (is_oversampling_with_scale_cache != new_oversampling_with_scale) {
-			is_oversampling_with_scale_cache = new_oversampling_with_scale;
-			queue_redraw();
-		}
-	}
-}
-
 void CanvasItem::set_oversampling_with_scale(CanvasItem::OversamplingWithScale p_mode)
 {
 	if (oversampling_with_scale == p_mode) {
@@ -1108,13 +1076,6 @@ void CanvasItem::_refresh_texture_filter_cache() const
 	}
 }
 
-void CanvasItem::_update_self_texture_filter(RSE::CanvasItemTextureFilter p_texture_filter)
-{
-	RS::get_singleton()->canvas_item_set_default_texture_filter(
-		get_canvas_item(), p_texture_filter);
-	queue_redraw();
-}
-
 CanvasItem::TextureFilter CanvasItem::get_texture_filter() const
 {
 	ERR_READ_THREAD_GUARD_V(TEXTURE_FILTER_NEAREST);
@@ -1141,13 +1102,6 @@ void CanvasItem::_refresh_texture_repeat_cache() const
 	}
 }
 
-void CanvasItem::_update_self_texture_repeat(RSE::CanvasItemTextureRepeat p_texture_repeat)
-{
-	RS::get_singleton()->canvas_item_set_default_texture_repeat(
-		get_canvas_item(), p_texture_repeat);
-	queue_redraw();
-}
-
 CanvasItem::ClipChildrenMode CanvasItem::get_clip_children_mode() const
 {
 	ERR_READ_THREAD_GUARD_V(CLIP_CHILDREN_DISABLED);
@@ -1167,7 +1121,8 @@ CanvasItem::TextureFilter CanvasItem::get_texture_filter_in_tree() const
 	return (TextureFilter)texture_filter_cache;
 }
 
-CanvasItem::TextureRepeat CanvasItem::get_texture_repeat_in_tree() const
+CanvasItem::TextureRepeat CanvasItem::get_texture_repeat_in_tree()
+const
 {
 	ERR_READ_THREAD_GUARD_V(TEXTURE_REPEAT_DISABLED);
 	_refresh_texture_repeat_cache();

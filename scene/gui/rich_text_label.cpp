@@ -638,24 +638,6 @@ void RichTextLabel::_find_click(ItemFrame* p_frame, const Point2i& p_click,
 	}
 }
 
-void RichTextLabel::_scroll_changed(double)
-{
-	if (updating_scroll) {
-		return;
-	}
-
-	if (scroll_follow && vscroll->get_value() > (vscroll->get_max() - vscroll->get_page() - 1)) {
-		scroll_following = true;
-	}
-	else {
-		scroll_following = false;
-	}
-
-	scroll_updated = true;
-
-	queue_redraw();
-}
-
 void RichTextLabel::_update_fx(RichTextLabel::ItemFrame* p_frame, double p_delta_time)
 {
 	Item* it = p_frame;
@@ -790,101 +772,6 @@ void RichTextLabel::_prepare_scroll_anchor()
 {
 	scroll_w = vscroll->get_bound_minimum_size().width;
 	vscroll->set_anchor_and_offset(SIDE_LEFT, ANCHOR_END, -scroll_w);
-}
-
-void RichTextLabel::_update_selection()
-{
-	ItemFrame* c_frame = nullptr;
-	int c_line = 0;
-	Item* c_item = nullptr;
-	int c_index = 0;
-	bool outside;
-
-	// Handle auto scrolling.
-	const Size2 size = get_size();
-	if (!(local_mouse_pos.x >= 0.0 && local_mouse_pos.y >= 0.0 && local_mouse_pos.x < size.x &&
-			local_mouse_pos.y < size.y)) {
-		real_t scroll_delta = 0.0;
-		if (local_mouse_pos.y < 0) {
-			scroll_delta = -auto_scroll_speed * (1 - (local_mouse_pos.y / 15.0));
-		}
-		else if (local_mouse_pos.y > size.y) {
-			scroll_delta = auto_scroll_speed * (1 + (local_mouse_pos.y - size.y) / 15.0);
-		}
-
-		if (scroll_delta != 0.0) {
-			vscroll->scroll(scroll_delta);
-			queue_redraw();
-		}
-	}
-
-	// Update selection area.
-	_find_click(
-		main, last_clamped_mouse_pos, &c_frame, &c_line, &c_item, &c_index, &outside, false);
-	if (selection.click_item && c_item) {
-		selection.from_frame = selection.click_frame;
-		selection.from_line = selection.click_line;
-		selection.from_item = selection.click_item;
-		selection.from_char = selection.click_char;
-
-		selection.to_frame = c_frame;
-		selection.to_line = c_line;
-		selection.to_item = c_item;
-		selection.to_char = c_index;
-
-		bool swap = false;
-		if (selection.click_frame && c_frame) {
-			const Line& l1 = c_frame->lines[c_line];
-			const Line& l2 = selection.click_frame->lines[selection.click_line];
-			if (l1.char_offset + c_index < l2.char_offset + selection.click_char) {
-				swap = true;
-			}
-			else if (l1.char_offset + c_index == l2.char_offset + selection.click_char &&
-					   selection.selection_mode == Selection::SINGLE_CLICK) {
-				deselect();
-				return;
-			}
-		}
-
-		if (swap) {
-			SWAP(selection.from_frame, selection.to_frame);
-			SWAP(selection.from_line, selection.to_line);
-			SWAP(selection.from_item, selection.to_item);
-			SWAP(selection.from_char, selection.to_char);
-		}
-
-		if (selection.selection_mode == Selection::TRIPLE_CLICK && c_frame) {
-			// Expand the selection to paragraph edges.
-			selection.from_char = 0;
-			selection.to_char = selection.to_frame->lines[selection.to_line].char_count;
-		}
-		else if (selection.selection_mode == Selection::DOUBLE_CLICK && c_frame) {
-			// Expand the selection to word edges.
-
-			Line* l = &selection.from_frame->lines[selection.from_line];
-			MutexLock lock(l->text_buf->get_mutex());
-			PackedInt32Array words = TS->shaped_text_get_word_breaks(l->text_buf->get_rid());
-			for (int i = 0; i < words.size(); i = i + 2) {
-				if (selection.from_char > words[i] && selection.from_char < words[i + 1]) {
-					selection.from_char = words[i];
-					break;
-				}
-			}
-			l = &selection.to_frame->lines[selection.to_line];
-			lock = MutexLock(l->text_buf->get_mutex());
-			words = TS->shaped_text_get_word_breaks(l->text_buf->get_rid());
-			for (int i = 0; i < words.size(); i = i + 2) {
-				if (selection.to_char > words[i] && selection.to_char < words[i + 1]) {
-					selection.to_char = words[i + 1];
-					break;
-				}
-			}
-		}
-
-		selection.active = true;
-		queue_accessibility_update();
-		queue_redraw();
-	}
 }
 
 void RichTextLabel::_find_frame(Item* p_item, ItemFrame** r_frame, int* r_line)
@@ -1450,18 +1337,6 @@ bool RichTextLabel::_find_layout_subitem(Item* from, Item* to)
 	return false;
 }
 
-void RichTextLabel::_thread_end()
-{
-	set_physics_process_internal(false);
-	if (!scroll_visible) {
-		vscroll->hide();
-	}
-	if (is_visible_in_tree()) {
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
 void RichTextLabel::_stop_thread()
 {
 	if (threaded) {
@@ -1491,15 +1366,6 @@ bool RichTextLabel::is_finished() const
 }
 
 bool RichTextLabel::is_updating() const { return updating.load() || validating.load(); }
-
-void RichTextLabel::set_threaded(bool p_threaded)
-{
-	if (threaded != p_threaded) {
-		_stop_thread();
-		threaded = p_threaded;
-		queue_redraw();
-	}
-}
 
 bool RichTextLabel::is_threaded() const { return threaded; }
 
@@ -1557,140 +1423,6 @@ void RichTextLabel::_invalidate_current_line(ItemFrame* p_frame)
 	}
 }
 
-void RichTextLabel::_texture_changed(RID p_item)
-{
-	Item* it = items.get_or_null(p_item);
-	if (it && it->type == ITEM_IMAGE) {
-		ItemImage* img = reinterpret_cast<ItemImage*>(it);
-		Size2 new_size =
-			_get_image_size(img->image, img->rq_size.width, img->rq_size.height, img->region);
-		if (img->size != new_size) {
-			main->first_invalid_line.store(0);
-			img->size = new_size;
-		}
-	}
-	queue_redraw();
-}
-
-void RichTextLabel::add_text(const String& p_text)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	if (current->type == ITEM_TABLE) {
-		return; // can't add anything here
-	}
-
-	int pos = 0;
-	String t = p_text.replace("\r\n", "\n");
-
-	while (pos < t.length()) {
-		int end = t.find_char('\n', pos);
-		String line;
-		bool eol = false;
-		if (end == -1) {
-			end = t.length();
-		}
-		else {
-			eol = true;
-		}
-
-		if (pos == 0 && end == t.length()) {
-			line = t;
-		}
-		else {
-			line = t.substr(pos, end - pos);
-		}
-
-		if (line.length() > 0) {
-			if (current->subitems.size() && current->subitems.back()->get()->type == ITEM_TEXT) {
-				// append text condition!
-				ItemText* ti = static_cast<ItemText*>(current->subitems.back()->get());
-				ti->text += line;
-				current_char_ofs += line.length();
-				_invalidate_current_line(main);
-
-			}
-			else {
-				// append item condition
-				ItemText* item = memnew(ItemText);
-				item->rid = items.make_rid(item);
-				item->text = line;
-				_add_item(item, false);
-			}
-		}
-
-		if (eol) {
-			ItemNewline* item = memnew(ItemNewline); // Sets item->type to ITEM_NEWLINE.
-			item->rid = items.make_rid(item);
-			item->line = current_frame->lines.size();
-			_add_item(item, false);
-			current_frame->lines.resize(current_frame->lines.size() + 1);
-			if (item->type !=
-				ITEM_NEWLINE) { // item IS an ITEM_NEWLINE so this will never get called?
-				current_frame->lines[current_frame->lines.size() - 1].from = item;
-			}
-			_invalidate_current_line(current_frame);
-		}
-
-		pos = end + 1;
-	}
-	queue_redraw();
-}
-
-void RichTextLabel::_add_item(Item* p_item, bool p_enter, bool p_ensure_newline)
-{
-	if (!internal_stack_editing) {
-		stack_externally_modified = true;
-	}
-
-	if (p_enter && !parsing_bbcode.load() && !tag_stack.is_empty()) {
-		tag_stack.push_back(U"?");
-	}
-
-	p_item->parent = current;
-	p_item->E = current->subitems.push_back(p_item);
-	p_item->index = current_idx++;
-	p_item->char_ofs = current_char_ofs;
-	if (p_item->type == ITEM_TEXT) {
-		ItemText* t = static_cast<ItemText*>(p_item);
-		current_char_ofs += t->text.length();
-	}
-	else if (p_item->type == ITEM_IMAGE) {
-		current_char_ofs++;
-	}
-	else if (p_item->type == ITEM_NEWLINE) {
-		current_char_ofs++;
-	}
-
-	if (p_enter) {
-		current = p_item;
-	}
-
-	if (p_ensure_newline) {
-		Item* from = current_frame->lines[current_frame->lines.size() - 1].from;
-		// only create a new line for Item types that generate content/layout, ignore those that
-		// represent formatting/styling
-		if (_find_layout_subitem(from, p_item)) {
-			_invalidate_current_line(current_frame);
-			current_frame->lines.resize(current_frame->lines.size() + 1);
-		}
-	}
-
-	if (current_frame->lines[current_frame->lines.size() - 1].from == nullptr) {
-		current_frame->lines[current_frame->lines.size() - 1].from = p_item;
-	}
-	p_item->line = current_frame->lines.size() - 1;
-
-	_invalidate_current_line(current_frame);
-
-	if (fit_content) {
-		update_minimum_size();
-	}
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 Size2 RichTextLabel::_get_image_size(
 	const Ref<Texture2D>& p_image, float p_width, float p_height, const Rect2& p_region)
 {
@@ -1738,23 +1470,6 @@ Size2 RichTextLabel::_get_image_size(
 	return ret;
 }
 
-void RichTextLabel::add_newline()
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	if (current->type == ITEM_TABLE) {
-		return;
-	}
-	ItemNewline* item = memnew(ItemNewline);
-	item->rid = items.make_rid(item);
-	item->line = current_frame->lines.size();
-	_add_item(item, false);
-	current_frame->lines.resize(current_frame->lines.size() + 1);
-	_invalidate_current_line(current_frame);
-	queue_redraw();
-}
-
 void RichTextLabel::_remove_frame(HashSet<Item*>& r_erase_list, ItemFrame* p_frame, int p_line,
 	bool p_erase, int p_char_offset, int p_line_offset)
 {
@@ -1800,149 +1515,6 @@ void RichTextLabel::_remove_frame(HashSet<Item*>& r_erase_list, ItemFrame* p_fra
 		}
 		it = next_it;
 	}
-}
-
-bool RichTextLabel::remove_paragraph(int p_paragraph, bool p_no_invalidate)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	if (p_paragraph >= (int)main->lines.size() || p_paragraph < 0) {
-		return false;
-	}
-
-	stack_externally_modified = true;
-
-	if (main->lines.size() == 1) {
-		// Clear all.
-		main->_clear_children();
-		current = main;
-		current_frame = main;
-		main->lines.clear();
-		main->lines.resize(1);
-
-		current_char_ofs = 0;
-	}
-	else {
-		HashSet<Item*> erase_list;
-		Line& l = main->lines[p_paragraph];
-		int off = l.char_count;
-		for (int i = p_paragraph; i < (int)main->lines.size(); i++) {
-			if (i == p_paragraph) {
-				_remove_frame(erase_list, main, i, true, off, 0);
-			}
-			else {
-				_remove_frame(erase_list, main, i, false, off, 1);
-
-				Item* it_to = (i + 1 < (int)main->lines.size()) ? main->lines[i + 1].from : nullptr;
-				Line& nl = main->lines[i];
-				while (erase_list.has(nl.from)) {
-					nl.from = _get_next_item(nl.from);
-					if (nl.from == it_to) {
-						nl.from = nullptr;
-						break;
-					}
-				}
-			}
-		}
-		for (HashSet<Item*>::Iterator E = erase_list.begin(); E; ++E) {
-			Item* it = *E;
-			if (current_frame == it) {
-				current_frame = main;
-			}
-			if (current == it) {
-				current = main;
-			}
-			if (!erase_list.has(it->parent)) {
-				it->E->erase();
-			}
-			it->subitems.clear();
-			memdelete(it);
-		}
-		main->lines.remove_at(p_paragraph);
-		current_char_ofs -= off;
-	}
-
-	selection.click_frame = nullptr;
-	selection.click_item = nullptr;
-	selection.active = false;
-
-	if (is_processing_internal()) {
-		bool process_enabled = false;
-		Item* it = main;
-		while (it) {
-			Vector<ItemFX*> fx_stack;
-			_fetch_item_fx_stack(it, fx_stack);
-			if (fx_stack.size()) {
-				process_enabled = true;
-				break;
-			}
-			it = _get_next_item(it, true);
-		}
-		set_process_internal(process_enabled);
-	}
-
-	if (p_no_invalidate) {
-		// Do not invalidate cache, only update vertical offsets of the paragraphs after deleted one
-		// and scrollbar.
-		int to_line = main->first_invalid_line.load() - 1;
-		float total_height =
-			(p_paragraph == 0) ? 0 : _calculate_line_vertical_offset(main->lines[p_paragraph - 1]);
-		for (int i = p_paragraph; i < to_line; i++) {
-			MutexLock lock(main->lines[to_line - 1].text_buf->get_mutex());
-			main->lines[i].offset.y = total_height;
-			total_height = _calculate_line_vertical_offset(main->lines[i]);
-		}
-		updating_scroll = true;
-		vscroll->set_max(total_height);
-		updating_scroll = false;
-
-		main->first_invalid_line.store(MAX(main->first_invalid_line.load() - 1, 0));
-		main->first_resized_line.store(MAX(main->first_resized_line.load() - 1, 0));
-		main->first_invalid_font_line.store(MAX(main->first_invalid_font_line.load() - 1, 0));
-	}
-	else {
-		// Invalidate cache after the deleted paragraph.
-		main->first_invalid_line.store(MIN(main->first_invalid_line.load(), p_paragraph));
-		main->first_resized_line.store(MIN(main->first_resized_line.load(), p_paragraph));
-		main->first_invalid_font_line.store(MIN(main->first_invalid_font_line.load(), p_paragraph));
-	}
-	queue_redraw();
-
-	return true;
-}
-
-bool RichTextLabel::invalidate_paragraph(int p_paragraph)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	if (p_paragraph >= (int)main->lines.size() || p_paragraph < 0) {
-		return false;
-	}
-
-	// Invalidate cache.
-	main->first_invalid_line.store(MIN(main->first_invalid_line.load(), p_paragraph));
-	main->first_resized_line.store(MIN(main->first_resized_line.load(), p_paragraph));
-	main->first_invalid_font_line.store(MIN(main->first_invalid_font_line.load(), p_paragraph));
-
-	_invalidate_accessibility();
-	if (is_inside_tree()) {
-		queue_accessibility_update();
-	}
-	queue_redraw();
-	update_configuration_warnings();
-
-	return true;
-}
-
-void RichTextLabel::_invalidate_fonts()
-{
-	_stop_thread();
-	main->first_invalid_font_line.store(0); // Invalidate all lines.
-	_invalidate_accessibility();
-	queue_accessibility_update();
-	queue_redraw();
 }
 
 void RichTextLabel::push_normal()
@@ -2412,90 +1984,11 @@ void RichTextLabel::pop_all()
 	current_frame = main;
 }
 
-void RichTextLabel::clear()
-{
-	_stop_thread();
-	set_process_internal(false);
-	MutexLock data_lock(data_mutex);
-
-	stack_externally_modified = false;
-
-	tag_stack.clear();
-	main->_clear_children();
-	current = main;
-	current_frame = main;
-	main->lines.clear();
-	main->lines.resize(1);
-	main->first_invalid_line.store(0);
-	_invalidate_accessibility();
-
-	keyboard_focus_frame = nullptr;
-	keyboard_focus_line = 0;
-	keyboard_focus_item = nullptr;
-
-	selection.click_frame = nullptr;
-	selection.click_item = nullptr;
-	deselect();
-
-	current_idx = 1;
-	current_char_ofs = 0;
-	if (scroll_follow) {
-		scroll_following = true;
-	}
-
-	if (fit_content) {
-		update_minimum_size();
-	}
-	queue_accessibility_update();
-	update_configuration_warnings();
-}
-
-void RichTextLabel::set_tab_size(int p_spaces)
-{
-	if (tab_size == p_spaces) {
-		return;
-	}
-
-	_stop_thread();
-
-	tab_size = p_spaces;
-	main->first_resized_line.store(0);
-	_invalidate_accessibility();
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 int RichTextLabel::get_tab_size() const { return tab_size; }
-
-void RichTextLabel::set_fit_content(bool p_enabled)
-{
-	if (p_enabled == fit_content) {
-		return;
-	}
-
-	fit_content = p_enabled;
-	update_minimum_size();
-}
 
 bool RichTextLabel::is_fit_content_enabled() const { return fit_content; }
 
-void RichTextLabel::set_meta_underline(bool p_underline)
-{
-	if (underline_meta == p_underline) {
-		return;
-	}
-
-	underline_meta = p_underline;
-	queue_redraw();
-}
-
 bool RichTextLabel::is_meta_underlined() const { return underline_meta; }
-
-void RichTextLabel::set_hint_underline(bool p_underline)
-{
-	underline_hint = p_underline;
-	queue_redraw();
-}
 
 bool RichTextLabel::is_hint_underlined() const { return underline_hint; }
 
@@ -2503,19 +1996,6 @@ void RichTextLabel::set_offset(int p_pixel)
 {
 	vscroll->set_value(p_pixel);
 	queue_accessibility_update();
-}
-
-void RichTextLabel::set_scroll_active(bool p_active)
-{
-	if (scroll_active == p_active) {
-		return;
-	}
-
-	scroll_active = p_active;
-	vscroll->set_drag_node_enabled(p_active);
-	vscroll->set_visible(p_active);
-	_apply_translation(); // without this, RichLabelText is not updated in the editor/game.
-	queue_redraw();
 }
 
 bool RichTextLabel::is_scroll_active() const { return scroll_active; }
@@ -2938,114 +2418,6 @@ bool RichTextLabel::_search_line(
 	return false;
 }
 
-bool RichTextLabel::search(const String& p_string, bool p_from_selection, bool p_search_previous)
-{
-	ERR_FAIL_COND_V(!selection.enabled, false);
-
-	if (p_string.is_empty()) {
-		selection.active = false;
-		queue_accessibility_update();
-		return false;
-	}
-
-	int char_idx = p_search_previous ? -1 : 0;
-	int current_line = 0;
-	int to_line = main->first_invalid_line.load();
-	int ending_line = to_line - 1;
-	if (p_from_selection && selection.active) {
-		// First check to see if other results exist in current line
-		char_idx = p_search_previous ? selection.from_char - 1 : selection.to_char;
-		if (!(p_search_previous && char_idx < 0) &&
-			_search_line(
-				selection.from_frame, selection.from_line, p_string, char_idx, p_search_previous)) {
-			scroll_to_selection();
-			queue_redraw();
-			return true;
-		}
-		char_idx = p_search_previous ? -1 : 0;
-
-		// Next, check to see if the current search result is in a table
-		bool in_table = selection.from_frame->parent != nullptr &&
-						selection.from_frame->parent->type == ITEM_TABLE;
-		if (in_table) {
-			// Find last search result in table
-			ItemTable* parent_table = static_cast<ItemTable*>(selection.from_frame->parent);
-			List<Item*>::Element* parent_element =
-				p_search_previous ? parent_table->subitems.back() : parent_table->subitems.front();
-
-			while (parent_element->get() != selection.from_frame) {
-				parent_element =
-					p_search_previous ? parent_element->prev() : parent_element->next();
-				ERR_FAIL_NULL_V(parent_element, false);
-			}
-
-			// Search remainder of current cell
-			int from_line = p_search_previous ? selection.from_line - 1 : selection.from_line + 1;
-			if (from_line >= 0 && _search_table_cell(parent_table, parent_element, p_string,
-									  p_search_previous, from_line)) {
-				scroll_to_selection();
-				queue_redraw();
-				return true;
-			}
-
-			// Search remainder of table
-			if (!(p_search_previous && parent_element == parent_table->subitems.front()) &&
-				!(!p_search_previous && parent_element == parent_table->subitems.back())) {
-				parent_element = p_search_previous
-									 ? parent_element->prev()
-									 : parent_element->next(); // Don't want to search current item
-				ERR_FAIL_NULL_V(parent_element, false);
-
-				// Search for next element
-				if (_search_table(parent_table, parent_element, p_string, p_search_previous)) {
-					scroll_to_selection();
-					queue_redraw();
-					return true;
-				}
-			}
-		}
-
-		ending_line = selection.from_frame->line;
-		if (!in_table) {
-			ending_line += selection.from_line;
-		}
-		current_line = p_search_previous ? ending_line - 1 : ending_line + 1;
-	}
-	else if (p_search_previous) {
-		current_line = ending_line;
-		ending_line = 0;
-	}
-
-	// Search remainder of the file
-	while (current_line != ending_line) {
-		// Wrap around
-		if (current_line < 0) {
-			current_line = to_line - 1;
-		}
-		else if (current_line >= to_line) {
-			current_line = 0;
-		}
-
-		if (_search_line(main, current_line, p_string, char_idx, p_search_previous)) {
-			scroll_to_selection();
-			queue_redraw();
-			return true;
-		}
-
-		if (current_line != ending_line) {
-			p_search_previous ? current_line-- : current_line++;
-		}
-	}
-
-	if (p_from_selection && selection.active) {
-		// Check contents of selection
-		return _search_line(main, current_line, p_string, char_idx, p_search_previous);
-	}
-	else {
-		return false;
-	}
-}
-
 String RichTextLabel::_get_line_text(ItemFrame* p_frame, int p_line) const
 {
 	String txt;
@@ -3144,63 +2516,6 @@ PopupMenu* RichTextLabel::get_menu() const
 
 bool RichTextLabel::is_menu_visible() const { return menu && menu->is_visible(); }
 
-void RichTextLabel::deselect()
-{
-	selection.active = false;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void RichTextLabel::select_all()
-{
-	_validate_line_caches();
-
-	if (!selection.enabled) {
-		return;
-	}
-
-	Item* it = main;
-	Item* from_item = nullptr;
-	Item* to_item = nullptr;
-
-	while (it) {
-		if (it->type != ITEM_FRAME) {
-			if (!from_item) {
-				from_item = it;
-			}
-			to_item = it;
-		}
-		it = _get_next_item(it, true);
-	}
-	if (!from_item) {
-		return;
-	}
-
-	ItemFrame* from_frame = nullptr;
-	int from_line = 0;
-	_find_frame(from_item, &from_frame, &from_line);
-	if (!from_frame) {
-		return;
-	}
-	ItemFrame* to_frame = nullptr;
-	int to_line = 0;
-	_find_frame(to_item, &to_frame, &to_line);
-	if (!to_frame) {
-		return;
-	}
-	selection.from_line = from_line;
-	selection.from_frame = from_frame;
-	selection.from_char = 0;
-	selection.from_item = from_item;
-	selection.to_line = to_line;
-	selection.to_frame = to_frame;
-	selection.to_char = to_frame->lines[to_line].char_count;
-	selection.to_item = to_item;
-	selection.active = true;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 bool RichTextLabel::is_selection_enabled() const { return selection.enabled; }
 
 bool RichTextLabel::is_deselect_on_focus_loss_enabled() const
@@ -3256,6 +2571,7 @@ float RichTextLabel::get_selection_line_offset() const
 				selection.from_frame->lines[selection.from_line].text_buf->get_line_descent(i) +
 				theme_cache.line_separation;
 		}
+
 
 		// Add nested frame (e.g. table cell) offset.
 		ItemFrame* it = selection.from_frame;
@@ -3318,243 +2634,26 @@ String RichTextLabel::get_parsed_text() const
 	return txt;
 }
 
-void RichTextLabel::set_text_direction(Control::TextDirection p_text_direction)
-{
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-	_stop_thread();
-
-	if (text_direction != p_text_direction) {
-		text_direction = p_text_direction;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_invalidate_accessibility();
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
-
 Control::TextDirection RichTextLabel::get_text_direction() const { return text_direction; }
-
-void RichTextLabel::set_horizontal_alignment(HorizontalAlignment p_alignment)
-{
-	ERR_FAIL_INDEX((int)p_alignment, 4);
-	_stop_thread();
-
-	if (default_alignment != p_alignment) {
-		default_alignment = p_alignment;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
 
 HorizontalAlignment RichTextLabel::get_horizontal_alignment() const { return default_alignment; }
 
-void RichTextLabel::set_vertical_alignment(VerticalAlignment p_alignment)
-{
-	ERR_FAIL_INDEX((int)p_alignment, 4);
-
-	if (vertical_alignment == p_alignment) {
-		return;
-	}
-
-	vertical_alignment = p_alignment;
-	queue_redraw();
-}
-
 VerticalAlignment RichTextLabel::get_vertical_alignment() const { return vertical_alignment; }
-
-void RichTextLabel::set_justification_flags(uint32_t p_flags)
-{
-	_stop_thread();
-
-	if (default_jst_flags != p_flags) {
-		default_jst_flags = p_flags;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
 
 uint32_t RichTextLabel::get_justification_flags() const { return default_jst_flags; }
 
-void RichTextLabel::set_tab_stops(const PackedFloat32Array& p_tab_stops)
-{
-	_stop_thread();
-
-	if (default_tab_stops != p_tab_stops) {
-		default_tab_stops = p_tab_stops;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
-
 PackedFloat32Array RichTextLabel::get_tab_stops() const { return default_tab_stops; }
-
-void RichTextLabel::set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser)
-{
-	if (st_parser != p_parser) {
-		_stop_thread();
-
-		st_parser = p_parser;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_invalidate_accessibility();
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
 
 TextServer::StructuredTextParser RichTextLabel::get_structured_text_bidi_override() const
 {
 	return st_parser;
 }
 
-void RichTextLabel::set_language(const String& p_language)
-{
-	if (language != p_language) {
-		_stop_thread();
-
-		language = p_language;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_invalidate_accessibility();
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
-
 String RichTextLabel::get_language() const { return language; }
-
-void RichTextLabel::set_autowrap_mode(TextServer::AutowrapMode p_mode)
-{
-	if (autowrap_mode != p_mode) {
-		_stop_thread();
-
-		autowrap_mode = p_mode;
-		main->first_invalid_line = 0; // Invalidate all lines.
-		_invalidate_accessibility();
-		_validate_line_caches();
-		queue_redraw();
-		update_minimum_size();
-	}
-}
 
 TextServer::AutowrapMode RichTextLabel::get_autowrap_mode() const { return autowrap_mode; }
 
-void RichTextLabel::set_autowrap_trim_flags(uint32_t p_flags)
-{
-	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
-		_stop_thread();
-
-		autowrap_flags_trim = p_flags & TextServer::BREAK_TRIM_MASK;
-		main->first_invalid_line = 0; // Invalidate all lines.
-		_validate_line_caches();
-		queue_redraw();
-		update_minimum_size();
-	}
-}
-
 uint32_t RichTextLabel::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
-
-void RichTextLabel::set_visible_ratio(float p_ratio)
-{
-	if (visible_ratio != p_ratio) {
-		_stop_thread();
-
-		int prev_vc = visible_characters;
-		if (p_ratio >= 1.0) {
-			visible_characters = -1;
-			visible_ratio = 1.0;
-		}
-		else if (p_ratio < 0.0) {
-			visible_characters = 0;
-			visible_ratio = 0.0;
-		}
-		else {
-			visible_characters = get_total_character_count() * p_ratio;
-			visible_ratio = p_ratio;
-		}
-
-		if (visible_chars_behavior == TextServer::VC_CHARS_BEFORE_SHAPING &&
-			visible_characters != prev_vc) {
-			int new_vc =
-				(visible_characters < 0) ? get_total_character_count() : visible_characters;
-			int old_vc = (prev_vc < 0) ? get_total_character_count() : prev_vc;
-			int to_line = main->first_invalid_line.load();
-			int old_from_l = to_line;
-			int new_from_l = to_line;
-			for (int i = 0; i < to_line; i++) {
-				const Line& l = main->lines[i];
-				if (l.char_offset <= old_vc && l.char_offset + l.char_count > old_vc) {
-					old_from_l = i;
-				}
-				if (l.char_offset <= new_vc && l.char_offset + l.char_count > new_vc) {
-					new_from_l = i;
-				}
-			}
-			Rect2 text_rect = _get_text_rect();
-			int first_invalid = MIN(new_from_l, old_from_l);
-			int second_invalid = MAX(new_from_l, old_from_l);
-
-			float total_height = (first_invalid == 0) ? 0
-													  : _calculate_line_vertical_offset(
-															main->lines[first_invalid - 1]);
-			if (first_invalid < to_line) {
-				int total_chars = main->lines[first_invalid].char_offset;
-				total_height = _shape_line(main, first_invalid, theme_cache.normal_font,
-					theme_cache.normal_font_size, text_rect.get_size().width - scroll_w,
-					total_height, &total_chars);
-			}
-			if (first_invalid != second_invalid) {
-				for (int i = first_invalid + 1; i < second_invalid; i++) {
-					main->lines[i].offset.y = total_height;
-					total_height = _calculate_line_vertical_offset(main->lines[i]);
-				}
-				if (second_invalid < to_line) {
-					int total_chars = main->lines[second_invalid].char_offset;
-					total_height = _shape_line(main, second_invalid, theme_cache.normal_font,
-						theme_cache.normal_font_size, text_rect.get_size().width - scroll_w,
-						total_height, &total_chars);
-				}
-			}
-			for (int i = second_invalid + 1; i < to_line; i++) {
-				main->lines[i].offset.y = total_height;
-				total_height = _calculate_line_vertical_offset(main->lines[i]);
-			}
-		}
-		_update_follow_vc();
-		queue_redraw();
-	}
-}
 
 float RichTextLabel::get_visible_ratio() const { return visible_ratio; }
 
@@ -3638,107 +2737,9 @@ int RichTextLabel::get_line_width(int p_line) const
 	return 0;
 }
 
-void RichTextLabel::_maximum_size_changed()
-{
-	if (!fit_content || autowrap_mode == TextServer::AUTOWRAP_OFF) {
-		return;
-	}
-
-	_stop_thread();
-	main->first_resized_line.store(0); // Invalidate all lines.
-	_invalidate_accessibility();
-	_validate_line_caches();
-	queue_redraw();
-	update_minimum_size();
-}
-
-void RichTextLabel::_bind_methods() {}
-
 TextServer::VisibleCharactersBehavior RichTextLabel::get_visible_characters_behavior() const
 {
 	return visible_chars_behavior;
-}
-
-void RichTextLabel::set_visible_characters_behavior(
-	TextServer::VisibleCharactersBehavior p_behavior)
-{
-	if (visible_chars_behavior != p_behavior) {
-		_stop_thread();
-
-		visible_chars_behavior = p_behavior;
-		main->first_invalid_line.store(0); // Invalidate all lines.
-		_invalidate_accessibility();
-		_validate_line_caches();
-		queue_redraw();
-	}
-}
-
-void RichTextLabel::set_visible_characters(int p_visible)
-{
-	if (visible_characters != p_visible) {
-		_stop_thread();
-
-		int prev_vc = visible_characters;
-		visible_characters = p_visible;
-		if (p_visible == -1) {
-			visible_ratio = 1;
-		}
-		else {
-			int total_char_count = get_total_character_count();
-			if (total_char_count > 0) {
-				visible_ratio = (float)p_visible / (float)total_char_count;
-			}
-		}
-		if (visible_chars_behavior == TextServer::VC_CHARS_BEFORE_SHAPING &&
-			visible_characters != prev_vc) {
-			int new_vc =
-				(visible_characters < 0) ? get_total_character_count() : visible_characters;
-			int old_vc = (prev_vc < 0) ? get_total_character_count() : prev_vc;
-			int to_line = main->first_invalid_line.load();
-			int old_from_l = to_line;
-			int new_from_l = to_line;
-			for (int i = 0; i < to_line; i++) {
-				const Line& l = main->lines[i];
-				if (l.char_offset <= old_vc && l.char_offset + l.char_count > old_vc) {
-					old_from_l = i;
-				}
-				if (l.char_offset <= new_vc && l.char_offset + l.char_count > new_vc) {
-					new_from_l = i;
-				}
-			}
-			Rect2 text_rect = _get_text_rect();
-			int first_invalid = MIN(new_from_l, old_from_l);
-			int second_invalid = MAX(new_from_l, old_from_l);
-
-			float total_height = (first_invalid == 0) ? 0
-													  : _calculate_line_vertical_offset(
-															main->lines[first_invalid - 1]);
-			if (first_invalid < to_line) {
-				int total_chars = main->lines[first_invalid].char_offset;
-				total_height = _shape_line(main, first_invalid, theme_cache.normal_font,
-					theme_cache.normal_font_size, text_rect.get_size().width - scroll_w,
-					total_height, &total_chars);
-			}
-			if (first_invalid != second_invalid) {
-				for (int i = first_invalid + 1; i < second_invalid; i++) {
-					main->lines[i].offset.y = total_height;
-					total_height = _calculate_line_vertical_offset(main->lines[i]);
-				}
-				if (second_invalid < to_line) {
-					int total_chars = main->lines[second_invalid].char_offset;
-					total_height = _shape_line(main, second_invalid, theme_cache.normal_font,
-						theme_cache.normal_font_size, text_rect.get_size().width - scroll_w,
-						total_height, &total_chars);
-				}
-			}
-			for (int i = second_invalid + 1; i < to_line; i++) {
-				main->lines[i].offset.y = total_height;
-				total_height = _calculate_line_vertical_offset(main->lines[i]);
-			}
-		}
-		_update_follow_vc();
-		queue_redraw();
-	}
 }
 
 int RichTextLabel::get_visible_characters() const { return visible_characters; }
@@ -3811,7 +2812,7 @@ int RichTextLabel::get_total_character_count() const
 		it = _get_next_item(it, true);
 	}
 
-return tc;
+	return tc;
 }
 
 int RichTextLabel::get_total_glyph_count() const
@@ -3873,7 +2874,8 @@ Size2 RichTextLabel::get_minimum_size() const
 				   : min_size);
 }
 
-void RichTextLabel::_update_context_menu()
+void RichTextLabel
+::_update_context_menu()
 {
 	if (!menu) {
 		_generate_context_menu();

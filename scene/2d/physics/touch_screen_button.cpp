@@ -46,19 +46,7 @@ Ref<BitMap> TouchScreenButton::get_bitmask() const { return bitmask; }
 
 Ref<Shape2D> TouchScreenButton::get_shape() const { return shape; }
 
-void TouchScreenButton::set_shape_centered(bool p_shape_centered)
-{
-	shape_centered = p_shape_centered;
-	queue_redraw();
-}
-
 bool TouchScreenButton::is_shape_visible() const { return shape_visible; }
-
-void TouchScreenButton::set_shape_visible(bool p_shape_visible)
-{
-	shape_visible = p_shape_visible;
-	queue_redraw();
-}
 
 bool TouchScreenButton::is_shape_centered() const { return shape_centered; }
 
@@ -125,12 +113,6 @@ Rect2 TouchScreenButton::get_anchorable_rect() const
 	}
 
 	return Rect2(Size2(), texture_normal->get_size());
-}
-
-void TouchScreenButton::set_visibility_mode(VisibilityMode p_mode)
-{
-	visibility = p_mode;
-	queue_redraw();
 }
 
 TouchScreenButton::VisibilityMode TouchScreenButton::get_visibility_mode() const

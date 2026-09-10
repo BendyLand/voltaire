@@ -395,40 +395,9 @@ bool TabBar::select_next_available()
 	return next_available != -1;
 }
 
-void TabBar::set_tab_offset(int p_offset)
-{
-	ERR_FAIL_INDEX(p_offset, tabs.size());
-	offset = p_offset;
-	_update_cache();
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 int TabBar::get_tab_offset() const { return offset; }
 
 bool TabBar::get_offset_buttons_visible() const { return buttons_visible; }
-
-void TabBar::set_tab_title(int p_tab, const String& p_title)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	if (tabs[p_tab].text == p_title) {
-		return;
-	}
-
-	tabs.write[p_tab].text = p_title;
-
-	_shape(p_tab);
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_accessibility_update();
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-}
 
 String TabBar::get_tab_title(int p_tab) const
 {
@@ -449,44 +418,10 @@ String TabBar::get_tab_tooltip(int p_tab) const
 	return tabs[p_tab].tooltip;
 }
 
-void TabBar::set_tab_text_direction(int p_tab, Control::TextDirection p_text_direction)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-
-	if (tabs[p_tab].text_direction != p_text_direction) {
-		tabs.write[p_tab].text_direction = p_text_direction;
-
-		_shape(p_tab);
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
 Control::TextDirection TabBar::get_tab_text_direction(int p_tab) const
 {
 	ERR_FAIL_INDEX_V(p_tab, tabs.size(), Control::TEXT_DIRECTION_INHERITED);
 	return tabs[p_tab].text_direction;
-}
-
-void TabBar::set_tab_language(int p_tab, const String& p_language)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	if (tabs[p_tab].language != p_language) {
-		tabs.write[p_tab].language = p_language;
-
-		_shape(p_tab);
-		_update_cache();
-		_ensure_no_over_offset();
-		if (scroll_to_selected) {
-			ensure_tab_visible(current);
-		}
-		queue_accessibility_update();
-		queue_redraw();
-		update_desired_size();
-		update_minimum_size();
-	}
 }
 
 String TabBar::get_tab_language(int p_tab) const
@@ -495,82 +430,16 @@ String TabBar::get_tab_language(int p_tab) const
 	return tabs[p_tab].language;
 }
 
-void TabBar::set_tab_icon(int p_tab, const Ref<Texture2D>& p_icon)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	if (tabs[p_tab].icon == p_icon) {
-		return;
-	}
-
-	tabs.write[p_tab].icon = p_icon;
-
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-}
-
 Ref<Texture2D> TabBar::get_tab_icon(int p_tab) const
 {
 	ERR_FAIL_INDEX_V(p_tab, tabs.size(), Ref<Texture2D>());
 	return tabs[p_tab].icon;
 }
 
-void TabBar::set_tab_icon_max_width(int p_tab, int p_width)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	if (tabs[p_tab].icon_max_width == p_width) {
-		return;
-	}
-
-	tabs.write[p_tab].icon_max_width = p_width;
-
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-}
-
 int TabBar::get_tab_icon_max_width(int p_tab) const
 {
 	ERR_FAIL_INDEX_V(p_tab, tabs.size(), 0);
 	return tabs[p_tab].icon_max_width;
-}
-
-void TabBar::set_font_color_override_all(int p_tab, const Color& p_color)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	Tab& tab = tabs.write[p_tab];
-	for (int i = 0; i < DrawMode::DRAW_MAX; i++) {
-		tab.font_color_overrides[i] = p_color;
-	}
-
-	queue_redraw();
-}
-
-void TabBar::set_font_color_override(int p_tab, DrawMode p_draw_mode, const Color& p_color)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-	ERR_FAIL_INDEX(p_draw_mode, DrawMode::DRAW_MAX);
-
-	if (tabs[p_tab].font_color_overrides[p_draw_mode] == p_color) {
-		return;
-	}
-
-	tabs.write[p_tab].font_color_overrides[p_draw_mode] = p_color;
-
-	queue_redraw();
 }
 
 Color TabBar::get_font_color_override(int p_tab, DrawMode p_draw_mode) const
@@ -581,78 +450,16 @@ Color TabBar::get_font_color_override(int p_tab, DrawMode p_draw_mode) const
 	return tabs[p_tab].font_color_overrides[p_draw_mode];
 }
 
-void TabBar::set_tab_disabled(int p_tab, bool p_disabled)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	if (tabs[p_tab].disabled == p_disabled) {
-		return;
-	}
-
-	tabs.write[p_tab].disabled = p_disabled;
-
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_accessibility_update();
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-}
-
 bool TabBar::is_tab_disabled(int p_tab) const
 {
 	ERR_FAIL_INDEX_V(p_tab, tabs.size(), false);
 	return tabs[p_tab].disabled;
 }
 
-void TabBar::set_tab_hidden(int p_tab, bool p_hidden)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	if (tabs[p_tab].hidden == p_hidden) {
-		return;
-	}
-
-	tabs.write[p_tab].hidden = p_hidden;
-
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_accessibility_update();
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-}
-
 bool TabBar::is_tab_hidden(int p_tab) const
 {
 	ERR_FAIL_INDEX_V(p_tab, tabs.size(), false);
 	return tabs[p_tab].hidden;
-}
-
-void TabBar::set_tab_button_icon(int p_tab, const Ref<Texture2D>& p_icon)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	if (tabs[p_tab].right_button == p_icon) {
-		return;
-	}
-
-	tabs.write[p_tab].right_button = p_icon;
-
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
 }
 
 Ref<Texture2D> TabBar::get_tab_button_icon(int p_tab) const
@@ -839,78 +646,6 @@ Size2 TabBar::get_desired_size() const
 
 void TabBar::_hover_switch_timeout() { set_current_tab(hover); }
 
-void TabBar::_on_mouse_exited()
-{
-	rb_hover = -1;
-	cb_hover = -1;
-	hover = -1;
-	highlight_arrow = -1;
-	dragging_valid_tab = false;
-
-	_update_cache(false);
-	queue_redraw();
-}
-
-void TabBar::add_tab(const String& p_str, const Ref<Texture2D>& p_icon)
-{
-	Tab t;
-	t.text = p_str;
-	t.text_buf->set_direction(
-		is_layout_rtl() ? TextServer::DIRECTION_RTL : TextServer::DIRECTION_LTR);
-	t.icon = p_icon;
-	tabs.push_back(t);
-
-	_shape(tabs.size() - 1);
-	_update_cache();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_accessibility_update();
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-
-	if (!deselect_enabled && tabs.size() == 1) {
-		if (is_inside_tree()) {
-			set_current_tab(0);
-		}
-		else {
-			current = 0;
-			previous = -1;
-		}
-	}
-}
-
-void TabBar::_move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index)
-{
-	Tab moving_tab = p_from_tabbar->tabs[p_from_index];
-	moving_tab.accessibility_item_element = RID();
-	moving_tab.accessibility_item_dirty = true;
-	p_from_tabbar->remove_tab(p_from_index);
-	tabs.insert(p_to_index, moving_tab);
-
-	if (tabs.size() > 1) {
-		if (current >= p_to_index) {
-			current++;
-		}
-		if (previous >= p_to_index) {
-			previous++;
-		}
-	}
-
-	if (!is_tab_disabled(p_to_index)) {
-		set_current_tab(p_to_index);
-	}
-	else {
-		_update_cache();
-		queue_redraw();
-	}
-
-	queue_accessibility_update();
-	update_desired_size();
-	update_minimum_size();
-}
-
 int TabBar::get_tab_idx_at_point(const Point2& p_point) const
 {
 	if (tabs.is_empty()) {
@@ -957,42 +692,7 @@ int TabBar::get_closest_tab_idx_to_point(const Point2& p_point) const
 	return closest_tab;
 }
 
-void TabBar::set_tab_alignment(AlignmentMode p_alignment)
-{
-	ERR_FAIL_INDEX(p_alignment, ALIGNMENT_MAX);
-
-	if (tab_alignment == p_alignment) {
-		return;
-	}
-
-	tab_alignment = p_alignment;
-
-	_update_cache();
-	queue_redraw();
-}
-
 TabBar::AlignmentMode TabBar::get_tab_alignment() const { return tab_alignment; }
-
-void TabBar::set_clip_tabs(bool p_clip_tabs)
-{
-	if (clip_tabs == p_clip_tabs) {
-		return;
-	}
-	clip_tabs = p_clip_tabs;
-
-	if (!clip_tabs) {
-		offset = 0;
-		max_drawn_tab = 0;
-	}
-
-	_update_cache();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-}
 
 bool TabBar::get_clip_tabs() const { return clip_tabs; }
 
@@ -1083,46 +783,6 @@ Size2 TabBar::_get_tab_icon_size(int p_index) const
 	return icon_size;
 }
 
-void TabBar::_ensure_no_over_offset()
-{
-	if (!is_inside_tree() || !buttons_visible) {
-		return;
-	}
-
-	int limit_with_buttons = get_size().width - theme_cache.increment_icon->get_width() -
-							 theme_cache.decrement_icon->get_width();
-	int limit_with_no_button = get_size().width;
-	int offset_with_buttons = offset;
-	int offset_with_no_button = offset;
-
-	int total_w =
-		tabs[max_drawn_tab].ofs_cache + tabs[max_drawn_tab].size_cache - tabs[offset].ofs_cache;
-	for (int i = offset - 1; i >= 0; i--) {
-		if (!tabs[i].hidden) {
-			total_w += tabs[i].size_cache;
-		}
-
-		if (total_w < limit_with_buttons) {
-			offset_with_buttons--;
-			offset_with_no_button--;
-		}
-		else if (total_w < limit_with_no_button) {
-			offset_with_no_button--;
-		}
-		else {
-			break;
-		}
-	}
-
-	int new_offset = (offset_with_no_button == 0) ? 0 : offset_with_buttons;
-
-	if (new_offset != offset) {
-		offset = new_offset;
-		_update_cache();
-		queue_redraw();
-	}
-}
-
 bool TabBar::_can_deselect() const
 {
 	if (deselect_enabled) {
@@ -1135,59 +795,6 @@ bool TabBar::_can_deselect() const
 		}
 	}
 	return true;
-}
-
-void TabBar::ensure_tab_visible(int p_idx)
-{
-	if (p_idx == -1 || !is_inside_tree() || !buttons_visible) {
-		return;
-	}
-	ERR_FAIL_INDEX(p_idx, tabs.size());
-
-	if (tabs[p_idx].hidden || (p_idx >= offset && p_idx <= max_drawn_tab)) {
-		return;
-	}
-
-	if (p_idx < offset) {
-		offset = p_idx;
-		_update_cache();
-		queue_redraw();
-
-		return;
-	}
-
-	int limit_minus_buttons = get_size().width - theme_cache.increment_icon->get_width() -
-							  theme_cache.decrement_icon->get_width();
-
-	int total_w = tabs[max_drawn_tab].ofs_cache - tabs[offset].ofs_cache;
-	for (int i = max_drawn_tab; i <= p_idx; i++) {
-		if (tabs[i].hidden) {
-			continue;
-		}
-
-		total_w += tabs[i].size_cache;
-	}
-
-	int prev_offset = offset;
-
-	for (int i = offset; i < p_idx; i++) {
-		if (tabs[i].hidden) {
-			continue;
-		}
-
-		if (total_w > limit_minus_buttons) {
-			total_w -= tabs[i].size_cache;
-			offset++;
-		}
-		else {
-			break;
-		}
-	}
-
-	if (prev_offset != offset) {
-		_update_cache();
-		queue_redraw();
-	}
 }
 
 Rect2 TabBar::get_tab_rect(int p_tab) const
@@ -1210,49 +817,9 @@ void TabBar::set_close_with_middle_mouse(bool p_scroll_close)
 
 bool TabBar::get_close_with_middle_mouse() const { return close_with_middle_mouse; }
 
-void TabBar::set_tab_close_display_policy(CloseButtonDisplayPolicy p_policy)
-{
-	ERR_FAIL_INDEX(p_policy, CLOSE_BUTTON_MAX);
-
-	if (cb_displaypolicy == p_policy) {
-		return;
-	}
-
-	cb_displaypolicy = p_policy;
-
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-}
-
 TabBar::CloseButtonDisplayPolicy TabBar::get_tab_close_display_policy() const
 {
 	return cb_displaypolicy;
-}
-
-void TabBar::set_max_tab_width(int p_width)
-{
-	ERR_FAIL_COND(p_width < 0);
-
-	if (max_width == p_width) {
-		return;
-	}
-
-	max_width = p_width;
-
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
 }
 
 int TabBar::get_max_tab_width() const { return max_width; }

@@ -369,24 +369,6 @@ void TileMapLayerEditorTilesPlugin::patterns_item_list_empty_clicked(
 	}
 }
 
-void TileMapLayerEditorTilesPlugin::_tile_atlas_control_mouse_exited()
-{
-	hovered_tile.source_id = TileSet::INVALID_SOURCE;
-	hovered_tile.set_atlas_coords(TileSetSource::INVALID_ATLAS_COORDS);
-	hovered_tile.alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE;
-	tile_atlas_control->queue_redraw();
-}
-
-void TileMapLayerEditorTilesPlugin::_tile_alternatives_control_mouse_exited()
-{
-	hovered_tile.source_id = TileSet::INVALID_SOURCE;
-	hovered_tile.set_atlas_coords(TileSetSource::INVALID_ATLAS_COORDS);
-	hovered_tile.alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE;
-	alternative_tiles_control->queue_redraw();
-}
-
-void TileMapLayerEditorTilesPlugin::_bind_methods() {}
-
 void TileMapLayerEditorTilesPlugin::update_layout(EditorDock::DockLayout p_layout, int p_slot)
 {
 	bool is_vertical = (p_layout == EditorDock::DOCK_LAYOUT_VERTICAL);

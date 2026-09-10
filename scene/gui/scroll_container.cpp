@@ -37,74 +37,6 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 
-Size2 ScrollContainer::_get_minimum_size(bool p_use_desired_sizes) const
-{
-	// Calculated in this function, as it needs to traverse all child controls once to calculate;
-	// and needs to be calculated before being used by `_update_scrollbars()`.
-	largest_child_min_size = Size2();
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c || c == h_scroll || c == v_scroll || c == focus_panel || c == scroll_hint_top_left ||
-			c == scroll_hint_bottom_right) {
-			continue;
-		}
-
-		Size2 child_min_size =
-			p_use_desired_sizes ? c->get_bound_desired_size() : c->get_bound_minimum_size();
-		largest_child_min_size = largest_child_min_size.max(child_min_size);
-	}
-
-	Size2 min_size;
-	const Size2 size = get_size();
-
-	bool v_scroll_show = vertical_scroll_mode == SCROLL_MODE_SHOW_ALWAYS ||
-						 vertical_scroll_mode == SCROLL_MODE_RESERVE ||
-						 ((vertical_scroll_mode == SCROLL_MODE_AUTO ||
-							  vertical_scroll_mode == SCROLL_MODE_MAXIMIZE_FIRST) &&
-							 (largest_child_min_size.y > size.y));
-	bool h_scroll_show = horizontal_scroll_mode == SCROLL_MODE_SHOW_ALWAYS ||
-						 horizontal_scroll_mode == SCROLL_MODE_RESERVE ||
-						 ((horizontal_scroll_mode == SCROLL_MODE_AUTO ||
-							  horizontal_scroll_mode == SCROLL_MODE_MAXIMIZE_FIRST) &&
-							 (largest_child_min_size.x > size.x));
-
-	if (horizontal_scroll_mode == SCROLL_MODE_DISABLED) {
-		min_size.x = largest_child_min_size.x;
-		if (v_scroll_show && v_scroll->get_parent() == this) {
-			min_size.x += v_scroll->get_minimum_size().x + theme_cache.scrollbar_h_separation;
-		}
-	}
-	else if (horizontal_scroll_mode == SCROLL_MODE_MAXIMIZE_FIRST) {
-		float h_max_size = get_combined_maximum_size().x;
-		min_size.x =
-			h_max_size >= 0 ? MIN(largest_child_min_size.x, h_max_size) : largest_child_min_size.x;
-		if (v_scroll_show && v_scroll->get_parent() == this) {
-			min_size.x += v_scroll->get_minimum_size().x + theme_cache.scrollbar_h_separation;
-		}
-	}
-
-	if (vertical_scroll_mode == SCROLL_MODE_DISABLED) {
-		min_size.y = largest_child_min_size.y;
-		if (h_scroll_show && h_scroll->get_parent() == this) {
-			min_size.y += h_scroll->get_minimum_size().y + theme_cache.scrollbar_v_separation;
-		}
-	}
-	else if (vertical_scroll_mode == SCROLL_MODE_MAXIMIZE_FIRST) {
-		float v_max_size = get_combined_maximum_size().y;
-		min_size.y =
-			v_max_size >= 0 ? MIN(largest_child_min_size.y, v_max_size) : largest_child_min_size.y;
-		if (h_scroll_show && h_scroll->get_parent() == this) {
-			min_size.y += h_scroll->get_minimum_size().y + theme_cache.scrollbar_v_separation;
-		}
-	}
-
-	Rect2 margins = _get_margins();
-	min_size += margins.position + margins.size;
-
-	return min_size;
-}
-
 Size2 ScrollContainer::get_minimum_size() const { return _get_minimum_size(false); }
 
 Size2 ScrollContainer::get_desired_size() const { return _get_minimum_size(true); }
@@ -206,21 +138,6 @@ void ScrollContainer::_update_scrollbar_position()
 	_updating_scrollbars = false;
 }
 
-void ScrollContainer::_gui_focus_changed(Control* p_control)
-{
-	if (follow_focus && is_ancestor_of(p_control)) {
-		following = true;
-		ensure_control_visible(p_control);
-		following = false;
-	}
-	if (draw_focus_border) {
-		const bool _should_draw_focus_border = has_focus(true) || child_has_focus();
-		if (focus_border_is_drawn != _should_draw_focus_border) {
-			queue_redraw();
-		}
-	}
-}
-
 void ScrollContainer::_update_scroll_hints()
 {
 	Size2 size = get_size();
@@ -301,8 +218,6 @@ void ScrollContainer::_update_scroll_hints()
 	}
 }
 
-void ScrollContainer::_scroll_moved(float) { queue_sort(); }
-
 void ScrollContainer::set_h_scroll(int p_pos)
 {
 	h_scroll->set_value(p_pos);
@@ -333,31 +248,9 @@ void ScrollContainer::set_vertical_custom_step(float p_custom_step)
 
 float ScrollContainer::get_vertical_custom_step() const { return v_scroll->get_custom_step(); }
 
-void ScrollContainer::set_horizontal_scroll_mode(ScrollMode p_mode)
-{
-	if (horizontal_scroll_mode == p_mode) {
-		return;
-	}
-
-	horizontal_scroll_mode = p_mode;
-	update_minimum_size();
-	queue_sort();
-}
-
 ScrollContainer::ScrollMode ScrollContainer::get_horizontal_scroll_mode() const
 {
 	return horizontal_scroll_mode;
-}
-
-void ScrollContainer::set_vertical_scroll_mode(ScrollMode p_mode)
-{
-	if (vertical_scroll_mode == p_mode) {
-		return;
-	}
-
-	vertical_scroll_mode = p_mode;
-	update_minimum_size();
-	queue_sort();
 }
 
 ScrollContainer::ScrollMode ScrollContainer::get_vertical_scroll_mode() const
@@ -413,31 +306,6 @@ bool ScrollContainer::is_scroll_hint_tiled() { return tile_scroll_hint; }
 bool ScrollContainer::is_following_focus() const { return follow_focus; }
 
 void ScrollContainer::set_follow_focus(bool p_follow) { follow_focus = p_follow; }
-
-PackedStringArray ScrollContainer::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Container::get_configuration_warnings();
-
-	int found = 0;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c || c == h_scroll || c == v_scroll || c == focus_panel || c == scroll_hint_top_left ||
-			c == scroll_hint_bottom_right) {
-			continue;
-		}
-
-		found++;
-	}
-
-	if (found != 1) {
-		warnings.push_back(RTR(
-			"ScrollContainer is intended to work with a single child control.\nUse a container as "
-			"child (VBox, HBox, etc.), or a Control and set the custom minimum size manually."));
-	}
-
-	return warnings;
-}
 
 void ScrollContainer::set_scroll_on_drag_hover(bool p_scroll) { scroll_on_drag_hover = p_scroll; }
 

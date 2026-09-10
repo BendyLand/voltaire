@@ -36,15 +36,6 @@
 #include "servers/physics_2d/physics_server_2d.h"
 #include "shape_cast_2d.h"
 
-void ShapeCast2D::set_target_position(const Vector2& p_point)
-{
-	target_position = p_point;
-	if (is_inside_tree() &&
-		(Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_collisions_hint())) {
-		queue_redraw();
-	}
-}
-
 Vector2 ShapeCast2D::get_target_position() const { return target_position; }
 
 void ShapeCast2D::set_margin(real_t p_margin) { margin = p_margin; }
@@ -88,8 +79,6 @@ int ShapeCast2D::get_collision_count() const { return result.size(); }
 
 bool ShapeCast2D::is_colliding() const { return collided; }
 
-
-
 RID ShapeCast2D::get_collider_rid(int p_idx) const
 {
 	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), RID(), "No collider RID found.");
@@ -121,33 +110,11 @@ real_t ShapeCast2D::get_closest_collision_unsafe_fraction() const
 	return collision_unsafe_fraction;
 }
 
-void ShapeCast2D::set_enabled(bool p_enabled)
-{
-	enabled = p_enabled;
-	queue_redraw();
-	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
-		set_physics_process_internal(p_enabled);
-	}
-	if (!p_enabled) {
-		collided = false;
-	}
-}
-
 bool ShapeCast2D::is_enabled() const { return enabled; }
-
-
 
 Ref<Shape2D> ShapeCast2D::get_shape() const { return shape; }
 
-
-
 bool ShapeCast2D::get_exclude_parent_body() const { return exclude_parent_body; }
-
-void ShapeCast2D::_shape_changed() { queue_redraw(); }
-
-
-
-
 
 void ShapeCast2D::force_shapecast_update() { _update_shapecast_state(); }
 
@@ -185,8 +152,6 @@ PackedStringArray ShapeCast2D::get_configuration_warnings() const
 	}
 	return warnings;
 }
-
-void ShapeCast2D::_bind_methods() {}
 
 ShapeCast2D::ShapeCast2D() { set_hide_clip_children(true); }
 

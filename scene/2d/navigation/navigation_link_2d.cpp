@@ -82,21 +82,6 @@ bool NavigationLink2D::_edit_is_selected_on_click(const Point2& p_point, double 
 
 RID NavigationLink2D::get_rid() const { return link; }
 
-void NavigationLink2D::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-
-	enabled = p_enabled;
-
-	NavigationServer2D::get_singleton()->link_set_enabled(link, enabled);
-
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
-}
-
 void NavigationLink2D::set_navigation_map(RID p_navigation_map)
 {
 	if (map_override == p_navigation_map) {
@@ -117,21 +102,6 @@ RID NavigationLink2D::get_navigation_map() const
 		return get_world_2d()->get_navigation_map();
 	}
 	return RID();
-}
-
-void NavigationLink2D::set_bidirectional(bool p_bidirectional)
-{
-	if (bidirectional == p_bidirectional) {
-		return;
-	}
-
-	bidirectional = p_bidirectional;
-
-	NavigationServer2D::get_singleton()->link_set_bidirectional(link, bidirectional);
-
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationLink2D::set_navigation_layers(uint32_t p_navigation_layers)
@@ -172,50 +142,6 @@ bool NavigationLink2D::get_navigation_layer_value(int p_layer_number) const
 		p_layer_number > 32, false, "Navigation layer number must be between 1 and 32 inclusive.");
 
 	return get_navigation_layers() & (1 << (p_layer_number - 1));
-}
-
-void NavigationLink2D::set_start_position(Vector2 p_position)
-{
-	if (start_position.is_equal_approx(p_position)) {
-		return;
-	}
-
-	start_position = p_position;
-
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	NavigationServer2D::get_singleton()->link_set_start_position(
-		link, get_global_transform().xform(start_position));
-
-	update_configuration_warnings();
-
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
-}
-
-void NavigationLink2D::set_end_position(Vector2 p_position)
-{
-	if (end_position.is_equal_approx(p_position)) {
-		return;
-	}
-
-	end_position = p_position;
-
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	NavigationServer2D::get_singleton()->link_set_end_position(
-		link, get_global_transform().xform(end_position));
-
-	update_configuration_warnings();
-
-#ifdef DEBUG_ENABLED
-	queue_redraw();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationLink2D::set_global_start_position(Vector2 p_position)
@@ -294,46 +220,9 @@ PackedStringArray NavigationLink2D::get_configuration_warnings() const
 	return warnings;
 }
 
-void NavigationLink2D::_link_enter_navigation_map()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	if (map_override.is_valid()) {
-		NavigationServer2D::get_singleton()->link_set_map(link, map_override);
-	}
-	else {
-		NavigationServer2D::get_singleton()->link_set_map(
-			link, get_world_2d()->get_navigation_map());
-	}
-
-	NavigationServer2D::get_singleton()->link_set_start_position(
-		link, get_global_transform().xform(start_position));
-	NavigationServer2D::get_singleton()->link_set_end_position(
-		link, get_global_transform().xform(end_position));
-	NavigationServer2D::get_singleton()->link_set_enabled(link, enabled);
-
-	queue_redraw();
-}
-
 void NavigationLink2D::_link_exit_navigation_map()
 {
 	NavigationServer2D::get_singleton()->link_set_map(link, RID());
-}
-
-void NavigationLink2D::_link_update_transform()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	NavigationServer2D::get_singleton()->link_set_start_position(
-		link, get_global_transform().xform(start_position));
-	NavigationServer2D::get_singleton()->link_set_end_position(
-		link, get_global_transform().xform(end_position));
-
-	queue_redraw();
 }
 
 #ifdef DEBUG_ENABLED

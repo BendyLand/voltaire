@@ -471,39 +471,6 @@ void GraphEdit::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputE
 	set_zoom_custom(zoom * p_zoom_factor, p_origin);
 }
 
-void GraphEdit::reset_all_connection_activity()
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-
-	bool changed = false;
-	for (Ref<Connection>& conn : connections) {
-		if (conn->activity > 0) {
-			changed = true;
-			conn->_cache.dirty = true;
-		}
-		conn->activity = 0;
-	}
-	if (changed) {
-		connections_layer->queue_redraw();
-	}
-}
-
-void GraphEdit::clear_connections()
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-
-	for (Ref<Connection>& conn : connections) {
-		conn->_cache.line->queue_free();
-	}
-
-	connections.clear();
-	connection_map.clear();
-
-	minimap->queue_redraw();
-	queue_redraw();
-	connections_layer->queue_redraw();
-}
-
 void GraphEdit::set_panning_scheme(PanningScheme p_scheme)
 {
 	panning_scheme = p_scheme;
@@ -624,110 +591,22 @@ bool GraphEdit::is_valid_connection_type(int p_type, int p_with_type) const
 	return valid_connection_types.has(ct);
 }
 
-void GraphEdit::set_snapping_enabled(bool p_enable)
-{
-	if (snapping_enabled == p_enable) {
-		return;
-	}
-
-	snapping_enabled = p_enable;
-	toggle_snapping_button->set_pressed(p_enable);
-	queue_redraw();
-}
-
 bool GraphEdit::is_snapping_enabled() const { return snapping_enabled; }
-
-void GraphEdit::set_snapping_distance(int p_snapping_distance)
-{
-	ERR_FAIL_COND_MSG(p_snapping_distance < GRID_MIN_SNAPPING_DISTANCE ||
-						  p_snapping_distance > GRID_MAX_SNAPPING_DISTANCE,
-		vformat("GraphEdit's snapping distance must be between %d and %d (inclusive)",
-			GRID_MIN_SNAPPING_DISTANCE, GRID_MAX_SNAPPING_DISTANCE));
-	snapping_distance = p_snapping_distance;
-	snapping_distance_spinbox->set_value(p_snapping_distance);
-	queue_redraw();
-}
 
 int GraphEdit::get_snapping_distance() const { return snapping_distance; }
 
-void GraphEdit::set_show_grid(bool p_show)
-{
-	if (show_grid == p_show) {
-		return;
-	}
-
-	show_grid = p_show;
-	toggle_grid_button->set_pressed(p_show);
-	queue_redraw();
-}
-
 bool GraphEdit::is_showing_grid() const { return show_grid; }
-
-void GraphEdit::set_grid_pattern(GridPattern p_pattern)
-{
-	if (grid_pattern == p_pattern) {
-		return;
-	}
-
-	grid_pattern = p_pattern;
-	queue_redraw();
-}
 
 GraphEdit::GridPattern GraphEdit::get_grid_pattern() const { return grid_pattern; }
 
 void GraphEdit::_snapping_toggled() { snapping_enabled = toggle_snapping_button->is_pressed(); }
 
-void GraphEdit::_snapping_distance_changed(double)
-{
-	snapping_distance = snapping_distance_spinbox->get_value();
-	queue_redraw();
-}
-
-void GraphEdit::_show_grid_toggled()
-{
-	show_grid = toggle_grid_button->is_pressed();
-	queue_redraw();
-}
-
-void GraphEdit::set_minimap_size(Vector2 p_size)
-{
-	minimap->set_size(p_size);
-	Vector2 minimap_size =
-		minimap->get_size(); // The size might've been adjusted by the minimum size.
-
-	minimap->set_anchors_preset(Control::PRESET_BOTTOM_RIGHT);
-	minimap->set_offset(Side::SIDE_LEFT, -minimap_size.width - MINIMAP_OFFSET);
-	minimap->set_offset(Side::SIDE_TOP, -minimap_size.height - MINIMAP_OFFSET);
-	minimap->set_offset(Side::SIDE_RIGHT, -MINIMAP_OFFSET);
-	minimap->set_offset(Side::SIDE_BOTTOM, -MINIMAP_OFFSET);
-	minimap->queue_redraw();
-}
-
 Vector2 GraphEdit::get_minimap_size() const { return minimap->get_size(); }
-
-void GraphEdit::set_minimap_opacity(float p_opacity)
-{
-	if (minimap->get_modulate().a == p_opacity) {
-		return;
-	}
-	minimap->set_modulate(Color(1, 1, 1, p_opacity));
-	minimap->queue_redraw();
-}
 
 float GraphEdit::get_minimap_opacity() const
 {
 	Color minimap_modulate = minimap->get_modulate();
 	return minimap_modulate.a;
-}
-
-void GraphEdit::set_minimap_enabled(bool p_enable)
-{
-	if (minimap_button->is_pressed() == p_enable) {
-		return;
-	}
-	minimap_button->set_pressed(p_enable);
-	_minimap_toggled();
-	minimap->queue_redraw();
 }
 
 bool GraphEdit::is_minimap_enabled() const { return minimap_button->is_pressed(); }
@@ -765,7 +644,8 @@ void GraphEdit::set_show_grid_buttons(bool p_hidden)
 
 	toggle_grid_button->set_visible(show_grid_buttons);
 	toggle_snapping_button->set_visible(show_grid_buttons);
-	snapping_distance_spinbox->set_visible(show_grid_buttons);
+	snapping_distance_spinbox
+->set_visible(show_grid_buttons);
 }
 
 bool GraphEdit::is_showing_grid_buttons() const { return show_grid_buttons; }
@@ -786,59 +666,9 @@ void GraphEdit::set_show_arrange_button(bool p_hidden)
 
 bool GraphEdit::is_showing_arrange_button() const { return show_arrange_button; }
 
-void GraphEdit::_minimap_toggled()
-{
-	if (is_minimap_enabled()) {
-		minimap->set_visible(true);
-		minimap->queue_redraw();
-	}
-	else {
-		minimap->set_visible(false);
-	}
-}
-
-void GraphEdit::set_connection_lines_curvature(float p_curvature)
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-
-	lines_curvature = p_curvature;
-	_invalidate_connection_line_cache();
-	connections_layer->queue_redraw();
-	queue_redraw();
-}
-
 float GraphEdit::get_connection_lines_curvature() const { return lines_curvature; }
 
-void GraphEdit::set_connection_lines_thickness(float p_thickness)
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-	ERR_FAIL_COND_MSG
-(
-		p_thickness < 0, "Connection lines thickness must be greater than or equal to 0.");
-
-	if (lines_thickness == p_thickness) {
-		return;
-	}
-	lines_thickness = p_thickness;
-	_invalidate_connection_line_cache();
-	connections_layer->queue_redraw();
-	queue_redraw();
-}
-
 float GraphEdit::get_connection_lines_thickness() const { return lines_thickness; }
-
-void GraphEdit::set_connection_lines_antialiased(bool p_antialiased)
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-
-	if (lines_antialiased == p_antialiased) {
-		return;
-	}
-	lines_antialiased = p_antialiased;
-	_invalidate_connection_line_cache();
-	connections_layer->queue_redraw();
-	queue_redraw();
-}
 
 bool GraphEdit::is_connection_lines_antialiased() const { return lines_antialiased; }
 

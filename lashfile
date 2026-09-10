@@ -12,3 +12,11 @@ remind:
 
 todo:
 	todo -li
+
+summary:
+	if [[ -f errs2 ]]; then
+		awk -F "undefined reference to \`" 'NF>1 {print $2}' errs2 | sed "s/'$//" | sort | uniq -c | sort -nr > errs3
+	else
+		sed -E '/.*x86_64\.o.*/d' errs > errs2
+		lash summary
+	fi

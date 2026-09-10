@@ -45,9 +45,6 @@
 #include "scene/main/window.h"
 #include "servers/display/display_server.h"
 
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
 void DockSplitContainer::_notification(int p_what)
 {
 	switch (p_what) {
@@ -70,9 +67,6 @@ void DockSplitContainer::_update_visibility()
 	set_visible(any_visible);
 	is_updating = false;
 }
-
-////////////////////////////////////////////////
-////////////////////////////////////////////////
 
 void EditorDockManager::_dock_drag_stopped() { dock_tab_dragged = nullptr; }
 
@@ -324,9 +318,6 @@ int EditorDockManager::get_vsplit_count() const { return vsplits.size(); }
 
 PopupMenu* EditorDockManager::get_docks_menu() { return docks_menu; }
 
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
 void DockContextPopup::_notification(int p_what)
 {
 	switch (p_what) {
@@ -362,30 +353,6 @@ void DockContextPopup::_slot_clicked(int p_slot)
 		dock_manager->_update_layout();
 		hide();
 	}
-}
-
-void DockContextPopup::_tab_move_left()
-{
-	TabContainer* tab_container = context_dock->get_parent_container();
-	if (!tab_container) {
-		return;
-	}
-	int new_index = tab_container->get_tab_idx_from_control(context_dock) - 1;
-	context_dock->set_tab_index(new_index, true);
-	dock_manager->_update_layout();
-	dock_select->queue_redraw();
-}
-
-void DockContextPopup::_tab_move_right()
-{
-	TabContainer* tab_container = context_dock->get_parent_container();
-	if (!tab_container) {
-		return;
-	}
-	int new_index = tab_container->get_tab_idx_from_control(context_dock) + 1;
-	context_dock->set_tab_index(new_index, true);
-	dock_manager->_update_layout();
-	dock_select->queue_redraw();
 }
 
 void DockContextPopup::_close_dock()
@@ -613,14 +580,6 @@ void DockSlotGrid::_notification(int p_what)
 			}
 		}
 		draw_rect(main_screen_rect, unusable_dock_color);
-	} break;
-
-	case NOTIFICATION_MOUSE_EXIT: {
-		if (hovered_slot > -1) {
-			EditorDockManager::get_singleton()->set_dock_slot_highlighted(hovered_slot, false);
-			hovered_slot = -1;
-			queue_redraw();
-		}
 	} break;
 	}
 }

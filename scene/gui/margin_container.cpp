@@ -31,46 +31,6 @@
 #include "margin_container.h"
 #include "scene/theme/theme_db.h"
 
-Size2 MarginContainer::get_minimum_size() const
-{
-	Size2 max;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-
-		Size2 s = c->get_bound_minimum_size();
-		max = max.max(s);
-	}
-
-	max.width += (theme_cache.margin_left + theme_cache.margin_right);
-	max.height += (theme_cache.margin_top + theme_cache.margin_bottom);
-
-	return max;
-}
-
-Size2 MarginContainer::get_desired_size() const
-{
-	Size2 ds;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-
-		Size2 s = c->get_desired_size();
-		ds = ds.max(s);
-	}
-
-	ds.width += (theme_cache.margin_left + theme_cache.margin_right);
-	ds.height += (theme_cache.margin_top + theme_cache.margin_bottom);
-
-	return ds;
-}
-
 Size2 MarginContainer::get_inner_combined_maximum_size() const
 {
 	Size2 ms = Container::get_inner_combined_maximum_size();
@@ -118,32 +78,6 @@ int MarginContainer::get_margin_size(Side p_side) const
 
 	return 0;
 }
-
-void MarginContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_SORT_CHILDREN: {
-		Size2 s = get_size();
-
-		for (int i = 0; i < get_child_count(); i++) {
-			Control* c = as_sortable_control(get_child(i));
-			if (!c) {
-				continue;
-			}
-
-			int w = s.width - theme_cache.margin_left - theme_cache.margin_right;
-			int h = s.height - theme_cache.margin_top - theme_cache.margin_bottom;
-			fit_child_in_rect(c, Rect2(theme_cache.margin_left, theme_cache.margin_top, w, h));
-		}
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		update_minimum_size();
-	} break;
-	}
-}
-
-void MarginContainer::_bind_methods() {}
 
 MarginContainer::MarginContainer() {}
 

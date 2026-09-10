@@ -36,18 +36,6 @@
 #include "font_config_plugin.h"
 #include "scene/gui/margin_container.h"
 
-/*************************************************************************/
-/*  EditorPropertyFontMetaObject                                         */
-/*************************************************************************/
-
-/*************************************************************************/
-/*  EditorPropertyFontOTObject                                           */
-/*************************************************************************/
-
-/*************************************************************************/
-/* EditorPropertyFontMetaOverride                                        */
-/*************************************************************************/
-
 void EditorPropertyFontMetaOverride::_add_menu()
 {
 	if (script_editor) {
@@ -71,10 +59,6 @@ void EditorPropertyFontMetaOverride::_page_changed(int p_page)
 	update_property();
 }
 
-/*************************************************************************/
-/* EditorPropertyOTVariation                                             */
-/*************************************************************************/
-
 void EditorPropertyOTVariation::_page_changed(int p_page)
 {
 	if (updating) {
@@ -83,10 +67,6 @@ void EditorPropertyOTVariation::_page_changed(int p_page)
 	page_index = p_page;
 	update_property();
 }
-
-/*************************************************************************/
-/* EditorPropertyOTFeatures                                              */
-/*************************************************************************/
 
 void EditorPropertyOTFeatures::_add_menu()
 {
@@ -107,8 +87,6 @@ void EditorPropertyOTFeatures::_page_changed(int p_page)
 }
 
 Size2 FontPreview::get_minimum_size() const { return Vector2(64, 64) * EDSCALE; }
-
-void FontPreview::_preview_changed() { queue_redraw(); }
 
 void EditorPropertyFontNamesArray::_add_element()
 {

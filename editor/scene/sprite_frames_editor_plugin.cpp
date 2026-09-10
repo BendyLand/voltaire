@@ -280,33 +280,6 @@ void SpriteFramesEditor::_sheet_zoom_fit()
 	_sheet_update_zoom_label();
 }
 
-void SpriteFramesEditor::_sheet_order_selected(int p_option)
-{
-	frames_need_sort = true;
-	split_sheet_preview->queue_redraw();
-}
-
-void SpriteFramesEditor::_sheet_select_all_frames()
-{
-	for (int i = 0; i < split_sheet_h->get_value() * split_sheet_v->get_value(); i++) {
-		if (!frames_selected.has(i)) {
-			frames_selected.insert(i, selected_count);
-			selected_count++;
-			frames_need_sort = true;
-		}
-	}
-
-	split_sheet_preview->queue_redraw();
-}
-
-void SpriteFramesEditor::_sheet_clear_all_frames()
-{
-	frames_selected.clear();
-	selected_count = 0;
-
-	split_sheet_preview->queue_redraw();
-}
-
 void SpriteFramesEditor::_sheet_sort_frames()
 {
 	if (!frames_need_sort) {
@@ -436,7 +409,6 @@ void SpriteFramesEditor::_sheet_spin_changed(double p_value, int p_dominant_para
 	frames_selected.clear();
 	selected_count = 0;
 	last_frame_selected = -1;
-	split_sheet_preview->queue_redraw();
 }
 
 void SpriteFramesEditor::_toggle_show_settings()
@@ -482,7 +454,6 @@ void SpriteFramesEditor::_auto_slice_sprite_sheet()
 	frames_selected.clear();
 	selected_count = 0;
 	last_frame_selected = -1;
-	split_sheet_preview->queue_redraw();
 }
 
 bool SpriteFramesEditor::_matches_background_color(
@@ -673,8 +644,6 @@ void SpriteFramesEditor::_animation_remove_confirmed()
 }
 
 void SpriteFramesEditor::_animation_search_text_changed(const String& p_text) { _update_library(); }
-
-void SpriteFramesEditor::_animation_speed_resized() { anim_speed->update_minimum_size(); }
 
 StringName SpriteFramesEditor::_find_next_animation()
 {

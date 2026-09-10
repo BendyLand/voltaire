@@ -43,68 +43,9 @@ struct _MinSizeCache
 	int final_size = 0;
 };
 
-Size2 BoxContainer::_get_minimum_size(bool p_use_desired_sizes) const
-{
-	/* Calculate MINIMUM SIZE */
-
-	Size2i minimum;
-
-	bool first = true;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-
-		Size2i size = p_use_desired_sizes ? c->get_bound_desired_size().ceil()
-										  : c->get_bound_minimum_size().ceil();
-
-		if (vertical) { /* VERTICAL */
-
-			if (size.width > minimum.width) {
-				minimum.width = size.width;
-			}
-
-			minimum.height += size.height + (first ? 0 : theme_cache.separation);
-
-		}
-		else { /* HORIZONTAL */
-
-			if (size.height > minimum.height) {
-				minimum.height = size.height;
-			}
-
-			minimum.width += size.width + (first ? 0 : theme_cache.separation);
-		}
-
-		first = false;
-	}
-
-	return minimum;
-}
-
 Size2 BoxContainer::get_minimum_size() const { return _get_minimum_size(false); }
 
 Size2 BoxContainer::get_desired_size() const { return _get_minimum_size(true); }
-
-void BoxContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_SORT_CHILDREN: {
-		_resort();
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		update_minimum_size();
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
-		queue_sort();
-	} break;
-	}
-}
 
 void BoxContainer::set_alignment(AlignmentMode p_alignment)
 {
@@ -118,15 +59,6 @@ void BoxContainer::set_alignment(AlignmentMode p_alignment)
 BoxContainer::AlignmentMode BoxContainer::get_alignment() const { return alignment; }
 
 bool BoxContainer::is_vertical() const { return vertical; }
-
-void BoxContainer::set_reverse_sort(bool p_reverse_sort)
-{
-	if (reverse_sort == p_reverse_sort) {
-		return;
-	}
-	reverse_sort = p_reverse_sort;
-	queue_sort();
-}
 
 bool BoxContainer::is_reverse_sort() const { return reverse_sort; }
 

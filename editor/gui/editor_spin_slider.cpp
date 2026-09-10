@@ -97,12 +97,6 @@ LineEdit* EditorSpinSlider::get_line_edit()
 	return value_input;
 }
 
-void EditorSpinSlider::set_control_state(ControlState p_state)
-{
-	control_state = p_state;
-	queue_redraw();
-}
-
 EditorSpinSlider::ControlState EditorSpinSlider::get_control_state() const { return control_state; }
 
 #ifndef DISABLE_DEPRECATED
@@ -116,19 +110,7 @@ bool EditorSpinSlider::is_hiding_slider() const { return control_state == CONTRO
 
 bool EditorSpinSlider::is_editing_integer() const { return editing_integer; }
 
-void EditorSpinSlider::set_label(const String& p_label)
-{
-	label = p_label;
-	queue_redraw();
-}
-
 String EditorSpinSlider::get_label() const { return label; }
-
-void EditorSpinSlider::set_suffix(const String& p_suffix)
-{
-	suffix = p_suffix;
-	queue_redraw();
-}
 
 String EditorSpinSlider::get_suffix() const { return suffix; }
 
@@ -147,35 +129,7 @@ void EditorSpinSlider::_value_input_hidden()
 	value_input_closed_frame = Engine::get_singleton()->get_frames_drawn();
 }
 
-void EditorSpinSlider::_grabber_mouse_entered()
-{
-	mouse_over_grabber = true;
-	queue_redraw();
-}
-
-void EditorSpinSlider::_grabber_mouse_exited()
-{
-	mouse_over_grabber = false;
-	queue_redraw();
-}
-
-void EditorSpinSlider::set_read_only(bool p_enable)
-{
-	read_only = p_enable;
-	if (read_only && value_input && value_input->is_inside_tree()) {
-		value_input->release_focus();
-	}
-
-	queue_redraw();
-}
-
 bool EditorSpinSlider::is_read_only() const { return read_only; }
-
-void EditorSpinSlider::set_flat(bool p_enable)
-{
-	flat = p_enable;
-	queue_redraw();
-}
 
 bool EditorSpinSlider::is_flat() const { return flat; }
 

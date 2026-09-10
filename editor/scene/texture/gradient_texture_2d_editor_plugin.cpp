@@ -76,12 +76,6 @@ void GradientTexture2DEdit::set_fill_pos(const Vector2& p_pos)
 void GradientTexture2DEdit::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_MOUSE_EXIT: {
-		if (hovered != HANDLE_NONE) {
-			hovered = HANDLE_NONE;
-			queue_redraw();
-		}
-	} break;
 	case NOTIFICATION_THEME_CHANGED: {
 		checkerboard->set_texture(get_editor_theme_icon(SNAME("GuiMiniCheckerboard")));
 	} break;

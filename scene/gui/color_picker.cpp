@@ -191,47 +191,7 @@ void ColorPicker::set_display_old_color(bool p_enabled) { display_old_color = p_
 
 bool ColorPicker::is_displaying_old_color() const { return display_old_color; }
 
-void ColorPicker::set_edit_alpha(bool p_show)
-{
-	if (edit_alpha == p_show) {
-		return;
-	}
-	edit_alpha = p_show;
-	_update_controls();
-
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	_update_color();
-	sample->queue_redraw();
-}
-
 bool ColorPicker::is_editing_alpha() const { return edit_alpha; }
-
-void ColorPicker::set_edit_intensity(bool p_show)
-{
-	if (edit_intensity == p_show) {
-		return;
-	}
-	if (p_show) {
-		set_pick_color(color);
-	}
-	else {
-		_normalized_apply_intensity_to_color();
-		color_normalized = color;
-		intensity = 0;
-	}
-	edit_intensity = p_show;
-	_update_controls();
-
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	_update_color();
-	sample->queue_redraw();
-}
 
 bool ColorPicker::is_editing_intensity() const { return edit_intensity; }
 
@@ -342,45 +302,6 @@ void ColorPicker::_reset_sliders_theme()
 		alpha_slider->add_theme_style_override(SNAME("slider"), style_box_flat.ptr());
 	}
 	alpha_slider->end_bulk_theme_override();
-}
-
-void ColorPicker::_update_color(bool p_update_sliders)
-{
-	updating = true;
-
-	if (p_update_sliders) {
-		float step = modes[current_mode]->get_slider_step();
-		float spinbox_arrow_step = modes[current_mode]->get_spinbox_arrow_step();
-		for (int i = 0; i < current_slider_count; i++) {
-			sliders[i]->set_max(modes[current_mode]->get_slider_max(i));
-			sliders[i]->set_step(step);
-			sliders[i]->set_value(modes[current_mode]->get_slider_value(i));
-			values[i]->set_custom_arrow_step(spinbox_arrow_step);
-			values[i]->set_allow_greater(modes[current_mode]->get_allow_greater());
-		}
-		alpha_slider->set_max(modes[current_mode]->get_alpha_slider_max());
-		alpha_slider->set_step(step);
-		alpha_slider->set_value(modes[current_mode]->get_alpha_slider_value());
-		intensity_slider->set_value(intensity);
-		intensity_value->set_prefix(intensity < 0 ? "" : "+");
-	}
-
-	_update_text_value();
-
-	if (current_shape != SHAPE_NONE) {
-		for (Control* control : shapes[get_current_shape_index()]->controls) {
-			control->queue_redraw();
-		}
-	}
-
-	sample->queue_redraw();
-
-	for (int i = 0; i < current_slider_count; i++) {
-		sliders[i]->queue_redraw();
-	}
-	alpha_slider->queue_redraw();
-	updating = false;
-	queue_accessibility_update();
 }
 
 #ifdef TOOLS_ENABLED
@@ -898,8 +819,6 @@ void ColorPicker::set_hex_visible(bool p_visible)
 
 bool ColorPicker::is_hex_visible() const { return hex_visible; }
 
-void ColorPicker::_bind_methods() {}
-
 void ColorPicker::_req_permission()
 {
 #ifdef MACOS_ENABLED
@@ -980,19 +899,6 @@ void ColorPickerButton::_notification(int p_what)
 		}
 	} break;
 	}
-}
-
-void ColorPickerButton::set_pick_color(const Color& p_color)
-{
-	if (color == p_color) {
-		return;
-	}
-	color = p_color;
-	if (picker) {
-		picker->set_pick_color(p_color);
-	}
-	queue_accessibility_update();
-	queue_redraw();
 }
 
 Color ColorPickerButton::get_pick_color() const { return color; }

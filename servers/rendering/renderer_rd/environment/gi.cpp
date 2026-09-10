@@ -654,9 +654,6 @@ void GI::SDFGI::update_cascades()
 		cascade_data[i].probe_offset[2] = cascades[i].position.z / probe_divisor;
 		cascade_data[i].pad = 0;
 	}
-
-	RD::get_singleton()->buffer_update(
-		cascades_ubo, 0, sizeof(SDFGI::Cascade::UBO) * SDFGI::MAX_CASCADES, cascade_data);
 }
 
 void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_render_data)
@@ -751,8 +748,6 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 				exposure_normalization / cascades[i].baked_exposure_normalization;
 		}
 	}
-
-	RD::get_singleton()->buffer_update(gi->sdfgi_ubo, 0, sizeof(SDFGIData), &sdfgi_data);
 
 	/* Update dynamic lights in SDFGI cascades */
 
@@ -925,11 +920,6 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			}
 
 			idx++;
-		}
-
-		if (idx > 0) {
-			RD::get_singleton()->buffer_update(
-				cascade.lights_buffer, 0, idx * sizeof(SDFGIShader::Light), lights);
 		}
 
 		cascade_dynamic_light_count[i] = idx;
@@ -1245,12 +1235,6 @@ void GI::setup_voxel_gi_instances(RenderDataRD* p_render_data,
 
 	if (p_voxel_gi_instances.size() > 0) {
 		RD::get_singleton()->draw_command_begin_label("VoxelGIs Setup");
-
-		RD::get_singleton()->buffer_update(voxel_gi_buffer, 0,
-			sizeof(VoxelGIData) *
-				MIN((uint64_t)MAX_VOXEL_GI_INSTANCES, p_voxel_gi_instances.size()),
-			voxel_gi_data);
-
 		RD::get_singleton()->draw_command_end_label();
 	}
 }

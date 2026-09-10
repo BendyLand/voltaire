@@ -35,78 +35,11 @@
 #include "servers/rendering/rendering_server.h"
 #include "servers/text/text_server.h"
 
-void Label::set_autowrap_mode(TextServer::AutowrapMode p_mode)
-{
-	if (autowrap_mode == p_mode) {
-		return;
-	}
-
-	autowrap_mode = p_mode;
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-	update_configuration_warnings();
-
-	if (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
-		update_minimum_size();
-	}
-	update_desired_size();
-}
-
 TextServer::AutowrapMode Label::get_autowrap_mode() const { return autowrap_mode; }
 
-void Label::set_autowrap_trim_flags(uint32_t p_flags)
-{
-	if (autowrap_flags_trim == (p_flags & TextServer::BREAK_TRIM_MASK)) {
-		return;
-	}
-
-	autowrap_flags_trim = p_flags & TextServer::BREAK_TRIM_MASK;
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-	update_configuration_warnings();
-
-	if (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
-		update_minimum_size();
-	}
-	update_desired_size();
-}
-
-uint32_t Label::get_autowrap_trim_flags() const
-{
-	return autowrap_flags_trim;
-}
-
-void Label::set_justification_flags(uint32_t p_flags)
-{
-	if (jst_flags == p_flags) {
-		return;
-	}
-
-	jst_flags = p_flags;
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-}
+uint32_t Label::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
 
 uint32_t Label::get_justification_flags() const { return jst_flags; }
-
-void Label::set_uppercase(bool p_uppercase)
-{
-	if (uppercase == p_uppercase) {
-		return;
-	}
-
-	uppercase = p_uppercase;
-	text_dirty = true;
-
-	queue_accessibility_update();
-	queue_redraw();
-}
 
 bool Label::is_uppercase() const { return uppercase; }
 
@@ -140,8 +73,6 @@ int Label::get_line_height(int p_line) const
 		return font->get_height(font_size);
 	}
 }
-
-
 
 void Label::_update_visible() const
 {
@@ -649,6 +580,7 @@ Size2 Label::get_minimum_size() const
 				settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
 			min_size.height = MIN(
 				min_size.height, (font->get_height(font_size) + line_spacing) * max_lines_visible);
+
 		}
 		else if (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
 			min_size.height = 1;
@@ -736,241 +668,34 @@ int Label::get_visible_line_count() const
 	return lines_visible;
 }
 
-void Label::set_horizontal_alignment(HorizontalAlignment p_alignment)
-{
-	ERR_FAIL_INDEX((int)p_alignment, 4);
-	if (horizontal_alignment == p_alignment) {
-		return;
-	}
-
-	if (horizontal_alignment == HORIZONTAL_ALIGNMENT_FILL ||
-		p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
-		for (Paragraph& para : paragraphs) {
-			para.lines_dirty = true; // Reshape lines.
-		}
-	}
-	horizontal_alignment = p_alignment;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
 HorizontalAlignment Label::get_horizontal_alignment() const { return horizontal_alignment; }
-
-void Label::set_vertical_alignment(VerticalAlignment p_alignment)
-{
-	ERR_FAIL_INDEX((int)p_alignment, 4);
-
-	if (vertical_alignment == p_alignment) {
-		return;
-	}
-
-	vertical_alignment = p_alignment;
-	queue_redraw();
-}
 
 VerticalAlignment Label::get_vertical_alignment() const { return vertical_alignment; }
 
-
-
-void Label::_invalidate()
-{
-	font_dirty = true;
-	queue_redraw();
-	update_configuration_warnings();
-}
-
-void Label::_maximum_size_changed()
-{
-	if (autowrap_mode == TextServer::AUTOWRAP_OFF &&
-		overrun_behavior == TextServer::OVERRUN_NO_TRIMMING) {
-		return;
-	}
-
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-	update_minimum_size();
-	update_desired_size();
-	update_configuration_warnings();
-}
-
 Ref<LabelSettings> Label::get_label_settings() const { return settings; }
-
-void Label::set_text_direction(Control::TextDirection p_text_direction)
-{
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-	if (text_direction != p_text_direction) {
-		text_direction = p_text_direction;
-		for (Paragraph& para : paragraphs) {
-			para.dirty = true;
-		}
-		queue_redraw();
-	}
-}
-
-void Label::set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser)
-{
-	if (st_parser != p_parser) {
-		st_parser = p_parser;
-		for (Paragraph& para : paragraphs) {
-			para.dirty = true;
-		}
-		queue_redraw();
-	}
-}
 
 TextServer::StructuredTextParser Label::get_structured_text_bidi_override() const
 {
 	return st_parser;
 }
 
-
-
-
-
 Control::TextDirection Label::get_text_direction() const { return text_direction; }
-
-void Label::set_language(const String& p_language)
-{
-	if (language != p_language) {
-		language = p_language;
-		for (Paragraph& para : paragraphs) {
-			para.dirty = true;
-		}
-		queue_redraw();
-	}
-}
 
 String Label::get_language() const { return language; }
 
-void Label::set_paragraph_separator(const String& p_paragraph_separator)
-{
-	if (paragraph_separator != p_paragraph_separator) {
-		paragraph_separator = p_paragraph_separator;
-		text_dirty = true;
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
 String Label::get_paragraph_separator() const { return paragraph_separator; }
-
-void Label::set_clip_text(bool p_clip)
-{
-	if (clip == p_clip) {
-		return;
-	}
-
-	clip = p_clip;
-	queue_redraw();
-	update_minimum_size();
-	update_desired_size();
-}
 
 bool Label::is_clipping_text() const { return clip; }
 
-void Label::set_tab_stops(const PackedFloat32Array& p_tab_stops)
-{
-	if (tab_stops != p_tab_stops) {
-		tab_stops = p_tab_stops;
-		for (Paragraph& para : paragraphs) {
-			para.dirty = true;
-		}
-		queue_redraw();
-	}
-}
-
 PackedFloat32Array Label::get_tab_stops() const { return tab_stops; }
 
-void Label::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
-{
-	if (overrun_behavior == p_behavior) {
-		return;
-	}
-
-	overrun_behavior = p_behavior;
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-	if (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
-		update_minimum_size();
-	}
-	update_desired_size();
-}
-
 TextServer::OverrunBehavior Label::get_text_overrun_behavior() const { return overrun_behavior; }
-
-void Label::set_ellipsis_char(const String& p_char)
-{
-	String c = p_char;
-	if (c.length() > 1) {
-		WARN_PRINT("Ellipsis must be exactly one character long (" + itos(c.length()) +
-				   " characters given).");
-		c = c.left(1);
-	}
-	if (el_char == c) {
-		return;
-	}
-	el_char = c;
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-	if (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
-		update_minimum_size();
-	}
-	update_desired_size();
-}
 
 String Label::get_ellipsis_char() const { return el_char; }
 
 String Label::get_text() const { return text; }
 
-void Label::set_visible_characters(int p_amount)
-{
-	if (visible_chars != p_amount) {
-		visible_chars = p_amount;
-		if (p_amount == -1 || get_total_character_count() == 0) {
-			visible_ratio = 1.0;
-		}
-		else {
-			visible_ratio = (float)p_amount / (float)get_total_character_count();
-		}
-		if (visible_chars_behavior == TextServer::VC_CHARS_BEFORE_SHAPING) {
-			text_dirty = true;
-			queue_accessibility_update();
-		}
-		queue_redraw();
-	}
-}
-
 int Label::get_visible_characters() const { return visible_chars; }
-
-void Label::set_visible_ratio(float p_ratio)
-{
-	if (visible_ratio != p_ratio) {
-		if (p_ratio >= 1.0) {
-			visible_chars = -1;
-			visible_ratio = 1.0;
-		}
-		else if (p_ratio < 0.0) {
-			visible_chars = 0;
-			visible_ratio = 0.0;
-		}
-		else {
-			visible_chars = get_total_character_count() * p_ratio;
-			visible_ratio = p_ratio;
-		}
-
-		if (visible_chars_behavior == TextServer::VC_CHARS_BEFORE_SHAPING) {
-			text_dirty = true;
-			queue_accessibility_update();
-		}
-		queue_redraw();
-	}
-}
 
 float Label::get_visible_ratio() const { return visible_ratio; }
 
@@ -979,44 +704,7 @@ TextServer::VisibleCharactersBehavior Label::get_visible_characters_behavior() c
 	return visible_chars_behavior;
 }
 
-void Label::set_visible_characters_behavior(TextServer::VisibleCharactersBehavior p_behavior)
-{
-	if (visible_chars_behavior != p_behavior) {
-		if (visible_chars_behavior == TextServer::VC_CHARS_BEFORE_SHAPING ||
-			p_behavior == TextServer::VC_CHARS_BEFORE_SHAPING) {
-			text_dirty = true;
-			queue_accessibility_update();
-		}
-		visible_chars_behavior = p_behavior;
-		queue_redraw();
-	}
-}
-
-void Label::set_lines_skipped(int p_lines)
-{
-	ERR_FAIL_COND(p_lines < 0);
-
-	if (lines_skipped == p_lines) {
-		return;
-	}
-
-	lines_skipped = p_lines;
-	_update_visible();
-	queue_redraw();
-}
-
 int Label::get_lines_skipped() const { return lines_skipped; }
-
-void Label::set_max_lines_visible(int p_lines)
-{
-	if (max_lines_visible == p_lines) {
-		return;
-	}
-
-	max_lines_visible = p_lines;
-	_update_visible();
-	queue_redraw();
-}
 
 int Label::get_max_lines_visible() const { return max_lines_visible; }
 

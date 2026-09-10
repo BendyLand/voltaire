@@ -31,18 +31,6 @@
 #include "container.h"
 #include "servers/display/accessibility_server.h"
 
-void Container::_child_minsize_changed()
-{
-	update_minimum_size();
-	queue_sort();
-}
-
-void Container::_child_desired_size_changed()
-{
-	update_desired_size();
-	queue_sort();
-}
-
 Vector<int> Container::get_allowed_size_flags_horizontal() const
 {
 	Vector<int> flags;
@@ -79,17 +67,6 @@ void Container::_notification(int p_what)
 		else {
 			AccessibilityServer::get_singleton()->update_set_role(
 				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CONTAINER);
-		}
-	} break;
-
-	case NOTIFICATION_RESIZED:
-	case NOTIFICATION_THEME_CHANGED: {
-		queue_sort();
-	} break;
-
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (is_visible_in_tree()) {
-			queue_sort();
 		}
 	} break;
 	}

@@ -67,23 +67,9 @@ void GrooveJoint2D::_configure_joint(RID p_joint, PhysicsBody2D* body_a, Physics
 		p_joint, groove_A1, groove_A2, anchor_B, body_a->get_rid(), body_b->get_rid());
 }
 
-void GrooveJoint2D::set_length(real_t p_length)
-{
-	length = p_length;
-	queue_redraw();
-}
-
 real_t GrooveJoint2D::get_length() const { return length; }
 
-void GrooveJoint2D::set_initial_offset(real_t p_initial_offset)
-{
-	initial_offset = p_initial_offset;
-	queue_redraw();
-}
-
 real_t GrooveJoint2D::get_initial_offset() const { return initial_offset; }
-
-void GrooveJoint2D::_bind_methods() {}
 
 GrooveJoint2D::GrooveJoint2D() {}
 

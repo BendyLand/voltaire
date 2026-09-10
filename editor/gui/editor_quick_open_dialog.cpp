@@ -79,20 +79,6 @@ void HighlightedLabel::draw_substr_rects(
 	}
 }
 
-void HighlightedLabel::add_highlight(const Vector2i& p_interval)
-{
-	if (p_interval.y > 0) {
-		highlights.append(p_interval);
-		queue_redraw();
-	}
-}
-
-void HighlightedLabel::reset_highlights()
-{
-	highlights.clear();
-	queue_redraw();
-}
-
 void HighlightedLabel::_notification(int p_notification)
 {
 	if (p_notification == NOTIFICATION_DRAW) {
@@ -670,36 +656,6 @@ QuickOpenResultItem::QuickOpenResultItem()
 	add_child(grid_item);
 }
 
-void QuickOpenResultItem::set_display_mode(QuickOpenDisplayMode p_display_mode)
-{
-	if (p_display_mode == QuickOpenDisplayMode::LIST) {
-		grid_item->hide();
-		grid_item->reset();
-		list_item->show();
-	}
-	else {
-		list_item->hide();
-		list_item->reset();
-		grid_item->show();
-	}
-
-	queue_redraw();
-}
-
-void QuickOpenResultItem::set_content(const QuickOpenResultCandidate& p_candidate)
-{
-	_set_enabled(true);
-
-	if (list_item->is_visible()) {
-		list_item->set_content(p_candidate, enable_highlights);
-	}
-	else {
-		grid_item->set_content(p_candidate, enable_highlights);
-	}
-
-	queue_redraw();
-}
-
 void QuickOpenResultItem::reset()
 {
 	_set_enabled(false);
@@ -707,30 +663,6 @@ void QuickOpenResultItem::reset()
 	is_selected = false;
 	list_item->reset();
 	grid_item->reset();
-}
-
-void QuickOpenResultItem::highlight_item(bool p_enabled)
-{
-	is_selected = p_enabled;
-
-	if (list_item->is_visible()) {
-		if (p_enabled) {
-			list_item->highlight_item(highlighted_font_color);
-		}
-		else {
-			list_item->remove_highlight();
-		}
-	}
-	else {
-		if (p_enabled) {
-			grid_item->highlight_item(highlighted_font_color);
-		}
-		else {
-			grid_item->remove_highlight();
-		}
-	}
-
-	queue_redraw();
 }
 
 void QuickOpenResultItem::_set_enabled(bool p_enabled)
@@ -743,11 +675,6 @@ void QuickOpenResultItem::_set_enabled(bool p_enabled)
 void QuickOpenResultItem::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_MOUSE_ENTER:
-	case NOTIFICATION_MOUSE_EXIT: {
-		is_hovering = is_visible() && p_what == NOTIFICATION_MOUSE_ENTER;
-		queue_redraw();
-	} break;
 	case NOTIFICATION_THEME_CHANGED: {
 		selected_stylebox = get_theme_stylebox("selected", "Tree");
 		hovering_stylebox = get_theme_stylebox(SNAME("hovered"), "Tree");

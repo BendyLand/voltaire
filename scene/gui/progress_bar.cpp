@@ -51,43 +51,11 @@ Size2 ProgressBar::get_minimum_size() const
 	return minimum_size;
 }
 
-void ProgressBar::set_fill_mode(int p_fill)
-{
-	ERR_FAIL_INDEX(p_fill, FILL_MODE_MAX);
-	mode = (FillMode)p_fill;
-	_indeterminate_fill_progress = 0;
-	queue_redraw();
-}
-
 int ProgressBar::get_fill_mode() { return mode; }
-
-void ProgressBar::set_show_percentage(bool p_visible)
-{
-	if (show_percentage == p_visible) {
-		return;
-	}
-	show_percentage = p_visible;
-	update_minimum_size();
-	queue_redraw();
-}
 
 bool ProgressBar::is_percentage_shown() const { return show_percentage; }
 
 bool ProgressBar::is_indeterminate() const { return indeterminate; }
-
-void ProgressBar::set_editor_preview_indeterminate(bool p_preview_indeterminate)
-{
-	if (editor_preview_indeterminate == p_preview_indeterminate) {
-		return;
-	}
-	editor_preview_indeterminate = p_preview_indeterminate;
-
-	if (is_part_of_edited_scene()) {
-		_indeterminate_fill_progress = 0;
-		set_process_internal(indeterminate && editor_preview_indeterminate);
-		queue_redraw();
-	}
-}
 
 bool ProgressBar::is_editor_preview_indeterminate_enabled() const
 {

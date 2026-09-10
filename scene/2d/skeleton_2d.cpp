@@ -40,17 +40,8 @@
 #endif // TOOLS_ENABLED
 
 #ifdef TOOLS_ENABLED
-
-void Bone2D::_editor_set_show_bone_gizmo(bool p_show_gizmo)
-{
-	_editor_show_bone_gizmo = p_show_gizmo;
-	queue_redraw();
-}
-
 bool Bone2D::_editor_get_show_bone_gizmo() const { return _editor_show_bone_gizmo; }
 #endif // TOOLS_ENABLED
-
-void Bone2D::_bind_methods() {}
 
 void Bone2D::set_rest(const Transform2D& p_rest)
 {
@@ -106,25 +97,7 @@ PackedStringArray Bone2D::get_configuration_warnings() const
 
 bool Bone2D::get_autocalculate_length_and_angle() const { return autocalculate_length_and_angle; }
 
-void Bone2D::set_length(real_t p_length)
-{
-	length = p_length;
-
-#ifdef TOOLS_ENABLED
-	queue_redraw();
-#endif // TOOLS_ENABLED
-}
-
 real_t Bone2D::get_length() const { return length; }
-
-void Bone2D::set_bone_angle(real_t p_angle)
-{
-	bone_angle = p_angle;
-
-#ifdef TOOLS_ENABLED
-	queue_redraw();
-#endif // TOOLS_ENABLED
-}
 
 real_t Bone2D::get_bone_angle() const { return bone_angle; }
 

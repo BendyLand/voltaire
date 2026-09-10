@@ -33,48 +33,11 @@
 #include "scene/gui/graph_edit.h"
 #include "scene/theme/theme_db.h"
 
-void GraphElement::_resort()
-{
-	Size2 size = get_size();
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* child = as_sortable_control(get_child(i));
-		if (!child) {
-			continue;
-		}
-		fit_child_in_rect(child, Rect2(Point2(), size));
-	}
-}
-
-Size2 GraphElement::get_minimum_size() const
-{
-	Size2 minsize;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* child = as_sortable_control(get_child(i), SortableVisibilityMode::IGNORE);
-		if (!child) {
-			continue;
-		}
-
-		Size2i size = child->get_bound_minimum_size();
-
-		minsize = minsize.max(size);
-	}
-
-	return minsize;
-}
-
 void GraphElement::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_SORT_CHILDREN: {
 		_resort();
-	} break;
-
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_THEME_CHANGED: {
-		update_minimum_size();
-		queue_redraw();
 	} break;
 	}
 }
@@ -84,15 +47,6 @@ Vector2 GraphElement::get_position_offset() const { return position_offset; }
 bool GraphElement::is_selected() { return selected; }
 
 Vector2 GraphElement::get_drag_from() { return drag_from; }
-
-void GraphElement::set_resizable(bool p_enable)
-{
-	if (resizable == p_enable) {
-		return;
-	}
-	resizable = p_enable;
-	queue_redraw();
-}
 
 bool GraphElement::is_resizable() const { return resizable; }
 

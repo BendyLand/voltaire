@@ -48,16 +48,11 @@ protected:
 		IGNORE,
 	};
 
-	void queue_sort();
-	Control* as_sortable_control(Node* p_node,
-		SortableVisibilityMode p_visibility_mode = SortableVisibilityMode::VISIBLE_IN_TREE) const;
-
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	enum

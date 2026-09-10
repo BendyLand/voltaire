@@ -3057,96 +3057,6 @@ void TextureStorage::update_area_light_atlas()
 			RD::get_singleton()->texture_clear(mm.texture, clear_color, 0, 1, 0, 1);
 		}
 	}
-	else {
-		// Copy to Mipmap 0 / framebuffer
-		Vector<Color> cc;
-		cc.push_back(clear_color);
-
-		// Make area light MIPs
-		const AreaLightAtlas::MipMap& mm0 = area_light_atlas.texture_mipmaps[0];
-		RD::DrawListID draw_list =
-			RD::get_singleton()->draw_list_begin(mm0.fb, RD::DRAW_CLEAR_ALL, cc);
-		for (const KeyValue<RID, AreaLightAtlas::Texture>& E : area_light_atlas.textures) {
-			AreaLightAtlas::Texture* t = area_light_atlas.textures.getptr(E.key);
-			Texture* src_tex = get_texture(E.key);
-			Rect2 uv_rect = t->uv_rect;
-
-			copy_effects->copy_to_atlas_fb(src_tex->rd_texture_srgb, mm0.fb, uv_rect, draw_list);
-		}
-		RD::get_singleton()->draw_list_end();
-
-		// Copy blurred mipmaps
-		for (const KeyValue<RID, AreaLightAtlas::Texture>& E : area_light_atlas.textures) {
-			Vector<RID> blur_textures;
-			RID prev_blur_texture;
-			AreaLightAtlas::Texture* t = area_light_atlas.textures.getptr(E.key);
-			Rect2 uv_rect = t->uv_rect;
-
-			for (int i = 0; i < area_light_atlas.texture_mipmaps.size(); i++) {
-				Vector2i mip_size = area_light_atlas.size / pow(2, i);
-				Vector2i mip_tex_size = uv_rect.size * mip_size;
-				if (MIN(mip_tex_size.x, mip_tex_size.y) < 1) {
-					break; // already too small
-				}
-				Rect2i uv_recti = Rect2i(uv_rect.position * mip_size, uv_rect.size * mip_size);
-				Texture* src_tex = get_texture(E.key);
-
-				if (i == 0 && mip_tex_size.width == src_tex->width &&
-					mip_tex_size.height == src_tex->height) {
-					prev_blur_texture = src_tex->rd_texture;
-				}
-				else {
-					RD::TextureFormat tf_blur;
-					tf_blur.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
-					tf_blur.width = mip_tex_size.width;
-					tf_blur.height = mip_tex_size.height;
-					tf_blur.texture_type = RD::TEXTURE_TYPE_2D;
-					tf_blur.usage_bits =
-						RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
-						RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
-					RID blur_tex = RD::get_singleton()->texture_create(tf_blur, RD::TextureView());
-					blur_textures.push_back(blur_tex);
-
-					if (i == 0) {
-						RID shared_tex = RD::get_singleton()->texture_create_shared_from_slice(
-							RD::TextureView(), blur_tex, 0, 0);
-						Vector<RID> fb_vec;
-						fb_vec.push_back(shared_tex);
-						RID fb = RD::get_singleton()->framebuffer_create(fb_vec);
-						RD::DrawListID rescale_draw_list =
-							RD::get_singleton()->draw_list_begin(fb, RD::DRAW_CLEAR_ALL, cc);
-						copy_effects->copy_to_atlas_fb(src_tex->rd_texture, fb,
-							Rect2(Vector2(0.0, 0.0), Vector2(1.0, 1.0)), rescale_draw_list);
-						RD::get_singleton()->draw_list_end();
-						prev_blur_texture = blur_tex;
-
-					}
-					else {
-						const AreaLightAtlas::MipMap& mm = area_light_atlas.texture_mipmaps[i];
-						Rect2i copy_rect = Rect2i(Vector2i(0, 0), mip_tex_size);
-
-						if (RendererSceneRenderRD::get_singleton()
-								->_render_buffers_can_be_storage()) {
-							copy_effects->gaussian_blur(
-								prev_blur_texture, blur_tex, copy_rect, mip_tex_size, true);
-						}
-						else {
-							copy_effects->gaussian_blur_raster(
-								prev_blur_texture, blur_tex, copy_rect, mip_tex_size);
-						}
-
-						copy_effects->copy_to_fb_rect(blur_tex, mm.fb, uv_recti, false, false,
-							false, false, RID(), false, false, true);
-						prev_blur_texture = blur_tex;
-					}
-				}
-			}
-			for (int i = 0; i < blur_textures.size();
-				 i++) { // start at one, don't free original texture
-				RD::get_singleton()->free_rid(blur_textures[i]);
-			}
-		}
-	}
 }
 
 void TextureStorage::texture_add_to_area_light_atlas(RID p_texture)
@@ -3491,42 +3401,6 @@ void TextureStorage::update_decal_atlas()
 				RD::get_singleton()->texture_create_shared(rd_view, decal_atlas.texture);
 		}
 	}
-
-	RID prev_texture;
-	for (int i = 0; i < decal_atlas.texture_mipmaps.size(); i++) {
-		const DecalAtlas::MipMap& mm = decal_atlas.texture_mipmaps[i];
-
-		Color clear_color(0, 0, 0, 0);
-
-		if (decal_atlas.textures.size()) {
-			if (i == 0) {
-				Vector<Color> cc;
-				cc.push_back(clear_color);
-
-				// Make area light MIPs
-				RD::DrawListID draw_list =
-					RD::get_singleton()->draw_list_begin(mm.fb, RD::DRAW_CLEAR_ALL, cc);
-				for (const KeyValue<RID, DecalAtlas::Texture>& E : decal_atlas.textures) {
-					DecalAtlas::Texture* t = decal_atlas.textures.getptr(E.key);
-					Texture* src_tex = get_texture(E.key);
-
-					copy_effects->copy_to_atlas_fb(src_tex->rd_texture, mm.fb, t->uv_rect,
-						draw_list, false, t->panorama_to_dp_users > 0);
-				}
-
-				RD::get_singleton()->draw_list_end();
-
-				prev_texture = mm.texture;
-			}
-			else {
-				copy_effects->copy_to_fb_rect(prev_texture, mm.fb, Rect2i(Point2i(), mm.size));
-				prev_texture = mm.texture;
-			}
-		}
-		else {
-			RD::get_singleton()->texture_clear(mm.texture, clear_color, 0, 1, 0, 1);
-		}
-	}
 }
 
 void TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp)
@@ -3803,11 +3677,6 @@ void TextureStorage::update_decal_buffer(
 
 		// hook for subclass to do further processing.
 		RendererSceneRenderRD::get_singleton()->setup_added_decal(xform, decal_extents);
-	}
-
-	if (decal_count > 0) {
-		RD::get_singleton()->buffer_update(
-			decal_buffer, 0, sizeof(DecalData) * decal_count, decals);
 	}
 }
 
@@ -4330,7 +4199,6 @@ void TextureStorage::render_target_do_msaa_resolve(RID p_render_target)
 	if (!rt->msaa_needs_resolve) {
 		return;
 	}
-	RD::get_singleton()->draw_list_begin(rt->get_framebuffer());
 	RD::get_singleton()->draw_list_end();
 	rt->msaa_needs_resolve = false;
 }
@@ -4479,8 +4347,6 @@ void TextureStorage::render_target_do_clear_request(RID p_render_target)
 	}
 	Vector<Color> clear_colors;
 	clear_colors.push_back(rt->use_hdr ? rt->clear_color.srgb_to_linear() : rt->clear_color);
-	RD::get_singleton()->draw_list_begin(
-		rt->get_framebuffer(), RD::DRAW_CLEAR_COLOR_0, clear_colors);
 	RD::get_singleton()->draw_list_end();
 	rt->clear_requested = false;
 	rt->msaa_needs_resolve = false;

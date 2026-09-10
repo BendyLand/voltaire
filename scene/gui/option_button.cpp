@@ -278,20 +278,6 @@ void OptionButton::_select_int(int p_which)
 	_select(p_which, false);
 }
 
-void OptionButton::_refresh_size_cache()
-{
-	cache_refresh_pending = false;
-
-	if (fit_to_longest_item) {
-		_cached_size = theme_cache.normal->get_minimum_size();
-		for (int i = 0; i < get_item_count(); i++) {
-			_cached_size = _cached_size.max(
-				get_minimum_size_for_text_and_icon(popup->get_item_xl_text(i), get_item_icon(i)));
-		}
-	}
-	update_minimum_size();
-}
-
 void OptionButton::select(int p_idx) { _select(p_idx, false); }
 
 int OptionButton::get_selected() const { return current; }

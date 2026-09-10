@@ -69,8 +69,6 @@ int Polygon2DEditor::_get_polygon_count() const
 	}
 }
 
-void Polygon2DEditor::_bone_paint_selected(int p_index) { canvas->queue_redraw(); }
-
 void Polygon2DEditor::_select_mode(int p_mode)
 {
 	current_mode = Mode(p_mode);
@@ -129,7 +127,6 @@ void Polygon2DEditor::_select_mode(int p_mode)
 	default:
 		break;
 	}
-	canvas->queue_redraw();
 }
 
 void Polygon2DEditor::_update_polygon_editing_state()
@@ -157,7 +154,6 @@ void Polygon2DEditor::_set_action(int p_action)
 	for (int i = 0; i < ACTION_MAX; i++) {
 		action_buttons[i]->set_pressed(p_action == i);
 	}
-	canvas->queue_redraw();
 }
 
 void Polygon2DEditor::_update_available_modes()

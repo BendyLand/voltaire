@@ -57,15 +57,6 @@ void TileDataEditor::_tile_set_changed_deferred_update()
 	}
 }
 
-void GenericTilePolygonEditor::_center_view()
-{
-	panning = Vector2();
-	base_control->queue_redraw();
-	button_center_view->set_disabled(true);
-}
-
-void GenericTilePolygonEditor::_zoom_changed() { base_control->queue_redraw(); }
-
 void GenericTilePolygonEditor::_snap_to_tile_shape(
 	Point2& r_point, float& r_current_snapped_dist, float p_snap_dist)
 {
@@ -123,20 +114,6 @@ void GenericTilePolygonEditor::_snap_point(Point2& r_point)
 	}
 }
 
-void GenericTilePolygonEditor::_set_snap_option(int p_index)
-{
-	current_snap_option = p_index;
-	button_pixel_snap->set_button_icon(button_pixel_snap->get_popup()->get_item_icon(p_index));
-	snap_subdivision->set_visible(p_index == SNAP_GRID);
-
-	if (initializing) {
-		return;
-	}
-
-	base_control->queue_redraw();
-	_store_snap_options();
-}
-
 void GenericTilePolygonEditor::_toggle_expand(bool p_expand)
 {
 	if (p_expand) {
@@ -154,61 +131,10 @@ void GenericTilePolygonEditor::set_use_undo_redo(bool p_use_undo_redo)
 
 int GenericTilePolygonEditor::get_polygon_count() { return polygons.size(); }
 
-int GenericTilePolygonEditor::add_polygon(const Vector<Point2>& p_polygon, int p_index)
-{
-	ERR_FAIL_COND_V(p_polygon.size() < 3, -1);
-	ERR_FAIL_COND_V(!multiple_polygon_mode && polygons.size() >= 1, -1);
-
-	if (p_index < 0) {
-		polygons.push_back(p_polygon);
-		base_control->queue_redraw();
-		button_edit->set_pressed(true);
-		return polygons.size() - 1;
-	}
-	else {
-		polygons.insert(p_index, p_polygon);
-		button_edit->set_pressed(true);
-		base_control->queue_redraw();
-		return p_index;
-	}
-}
-
-void GenericTilePolygonEditor::remove_polygon(int p_index)
-{
-	ERR_FAIL_INDEX(p_index, (int)polygons.size());
-	polygons.remove_at(p_index);
-
-	if (polygons.is_empty()) {
-		button_create->set_pressed(true);
-	}
-	base_control->queue_redraw();
-}
-
-void GenericTilePolygonEditor::clear_polygons()
-{
-	polygons.clear();
-	base_control->queue_redraw();
-}
-
-void GenericTilePolygonEditor::set_polygon(int p_polygon_index, const Vector<Point2>& p_polygon)
-{
-	ERR_FAIL_INDEX(p_polygon_index, (int)polygons.size());
-	ERR_FAIL_COND(p_polygon.size() < 3);
-	polygons[p_polygon_index] = p_polygon;
-	button_edit->set_pressed(true);
-	base_control->queue_redraw();
-}
-
 Vector<Point2> GenericTilePolygonEditor::get_polygon(int p_polygon_index)
 {
 	ERR_FAIL_INDEX_V(p_polygon_index, (int)polygons.size(), Vector<Point2>());
 	return polygons[p_polygon_index];
-}
-
-void GenericTilePolygonEditor::set_polygons_color(Color p_color)
-{
-	polygon_color = p_color;
-	base_control->queue_redraw();
 }
 
 void GenericTilePolygonEditor::set_multiple_polygon_mode(bool p_multiple_polygon_mode)

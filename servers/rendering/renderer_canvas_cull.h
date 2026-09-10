@@ -207,8 +207,6 @@ public:
 	RID_Owner<Item, true> canvas_item_owner{65536, 4194304};
 	RID_Owner<RendererCanvasRender::Light, true> canvas_light_owner;
 
-	template <typename T> void _free_rids(T& p_owner, const char* p_type);
-
 	bool disable_scale;
 	bool sdf_used = false;
 	bool snapping_2d_transforms_to_pixel = false;

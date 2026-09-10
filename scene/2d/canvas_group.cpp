@@ -31,29 +31,7 @@
 #include "canvas_group.h"
 #include "servers/rendering/rendering_server.h"
 
-void CanvasGroup::set_fit_margin(real_t p_fit_margin)
-{
-	ERR_FAIL_COND(p_fit_margin < 0.0);
-
-	fit_margin = p_fit_margin;
-	RS::get_singleton()->canvas_item_set_canvas_group_mode(get_canvas_item(),
-		RSE::CANVAS_GROUP_MODE_TRANSPARENT, clear_margin, true, fit_margin, use_mipmaps);
-
-	queue_redraw();
-}
-
 real_t CanvasGroup::get_fit_margin() const { return fit_margin; }
-
-void CanvasGroup::set_clear_margin(real_t p_clear_margin)
-{
-	ERR_FAIL_COND(p_clear_margin < 0.0);
-
-	clear_margin = p_clear_margin;
-	RS::get_singleton()->canvas_item_set_canvas_group_mode(get_canvas_item(),
-		RSE::CANVAS_GROUP_MODE_TRANSPARENT, clear_margin, true, fit_margin, use_mipmaps);
-
-	queue_redraw();
-}
 
 real_t CanvasGroup::get_clear_margin() const { return clear_margin; }
 

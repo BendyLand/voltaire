@@ -109,87 +109,6 @@ String EditorProperty::get_tooltip_string(const String& p_string) const
 		   String((p_string.length() > TOOLTIP_MAX_LENGTH) ? "..." : "");
 }
 
-Size2 EditorProperty::get_minimum_size() const
-{
-	if (theme_cache.font.is_null()) {
-		// Too early.
-		return Vector2();
-	}
-
-	Size2 ms = Size2(0, theme_cache.inspector_property_height);
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i));
-		if (!c) {
-			continue;
-		}
-		if (c == bottom_editor) {
-			continue;
-		}
-		if (c == left_container) {
-			continue;
-		}
-		if (c == right_container) {
-			continue;
-		}
-
-		Size2 minsize = c->get_combined_minimum_size();
-		ms = ms.max(minsize);
-	}
-
-	if (!label.is_empty()) {
-		ms.width += theme_cache.font_offset + theme_cache.horizontal_separation;
-	}
-
-	// Always take the revert and pin values into account, since their state can be changed at whim
-	// and we don't want to update the min width every time this happens.
-	{
-		if (!is_read_only()) {
-			ms.width += theme_cache.revert_icon->get_width() + theme_cache.padding +
-						theme_cache.horizontal_separation;
-		}
-
-		ms.width += theme_cache.pin_icon->get_width() + theme_cache.horizontal_separation;
-	}
-
-	if (keying) {
-		ms.width += theme_cache.key_icon->get_width() + theme_cache.padding +
-					theme_cache.horizontal_separation;
-	}
-
-	if (deletable) {
-		ms.width += theme_cache.delete_icon->get_width() + theme_cache.padding +
-					theme_cache.horizontal_separation;
-	}
-
-	if (checkable) {
-		ms.width += theme_cache.checked_icon->get_width() + theme_cache.padding +
-					theme_cache.horizontal_separation;
-	}
-
-	Size2 ls = left_container->get_combined_minimum_size();
-	ms.width += ls.x;
-	ms.height = MAX(ms.height, ls.y);
-
-	Size2 rs = right_container->get_combined_minimum_size();
-	ms.width += rs.x;
-	ms.height = MAX(ms.height, rs.y);
-
-	if (bottom_editor != nullptr && bottom_editor->is_visible()) {
-		ms.height += label.is_empty() ? 0 : _get_v_separation();
-		Size2 bems = bottom_editor->get_combined_minimum_size();
-		ms.height += bems.height;
-		ms.width = MAX(ms.width, bems.width);
-	}
-
-	return ms;
-}
-
-void EditorProperty::set_label(const String& p_label)
-{
-	label = p_label;
-	queue_redraw();
-}
-
 void EditorProperty::set_doc_path(const String& p_doc_path) { doc_path = p_doc_path; }
 
 void EditorProperty::set_internal(bool p_internal) { internal = p_internal; }
@@ -204,59 +123,13 @@ bool EditorProperty::is_read_only() const { return read_only; }
 
 StringName EditorProperty::_get_revert_property() const { return property; }
 
-void EditorProperty::set_draw_label(bool p_draw_label)
-{
-	draw_label = p_draw_label;
-	queue_redraw();
-	queue_sort();
-}
-
 bool EditorProperty::is_draw_label() const { return draw_label; }
-
-void EditorProperty::set_draw_background(bool p_draw_background)
-{
-	draw_background = p_draw_background;
-	queue_redraw();
-}
 
 bool EditorProperty::is_draw_background() const { return draw_background; }
 
-void EditorProperty::set_checkable(bool p_checkable)
-{
-	checkable = p_checkable;
-	queue_redraw();
-	queue_sort();
-}
-
 bool EditorProperty::is_checkable() const { return checkable; }
 
-void EditorProperty::set_checked(bool p_checked)
-{
-	checked = p_checked;
-	queue_redraw();
-}
-
 bool EditorProperty::is_checked() const { return checked; }
-
-void EditorProperty::set_draw_warning(bool p_draw_warning)
-{
-	draw_warning = p_draw_warning;
-	queue_redraw();
-}
-
-void EditorProperty::set_keying(bool p_keying)
-{
-	keying = p_keying;
-	queue_redraw();
-	queue_sort();
-}
-
-void EditorProperty::set_deletable(bool p_deletable)
-{
-	deletable = p_deletable;
-	queue_redraw();
-	queue_sort();
-}
 
 bool EditorProperty::is_deletable() const { return deletable; }
 
@@ -277,13 +150,6 @@ void EditorProperty::grab_focus(int p_focusable)
 	else {
 		focusables[0]->grab_focus(true);
 	}
-}
-
-void EditorProperty::deselect()
-{
-	selected = false;
-	selected_focusable = -1;
-	queue_redraw();
 }
 
 bool EditorProperty::is_selected() const { return selected; }
@@ -359,21 +225,9 @@ void EditorProperty::set_name_split_ratio(float p_ratio) { split_ratio = p_ratio
 
 float EditorProperty::get_name_split_ratio() const { return split_ratio; }
 
-void EditorProperty::set_name_fixed_size(float p_size)
-{
-	if (name_fixed_size == p_size) {
-		return;
-	}
-	name_fixed_size = p_size;
-	queue_sort();
-}
-
 void EditorProperty::set_favoritable(bool p_favoritable) { can_favorite = p_favoritable; }
 
 bool EditorProperty::is_favoritable() const { return can_favorite; }
-
-////////////////////////////////////////////////
-////////////////////////////////////////////////
 
 void EditorInspectorPlugin::add_custom_control(Control* control)
 {
@@ -403,9 +257,6 @@ void EditorInspectorPlugin::add_property_editor_for_multiple_properties(
 	added_editors.push_back(ae);
 }
 
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
 Control* EditorInspectorCategory::make_custom_tooltip(const String& p_text) const
 {
 	// If it's not a doc tooltip, fallback to the default one.
@@ -423,14 +274,6 @@ void EditorInspectorCategory::set_as_favorite()
 }
 
 void EditorInspectorCategory::set_doc_class_name(const String& p_name) { doc_class_name = p_name; }
-
-void EditorInspectorCategory::set_color_level(int p_color_level)
-{
-	ERR_FAIL_COND(p_color_level < -1 || p_color_level > 16);
-	color_level = p_color_level;
-	update_minimum_size();
-	queue_redraw();
-}
 
 Size2 EditorInspectorCategory::get_minimum_size() const
 {
@@ -471,9 +314,6 @@ void EditorInspectorCategory::_theme_changed()
 
 EditorInspectorCategory::EditorInspectorCategory() { set_focus_mode(FOCUS_ACCESSIBILITY); }
 
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
 void EditorInspectorSection::_test_unfold()
 {
 	if (!vbox_added) {
@@ -511,56 +351,9 @@ int EditorInspectorSection::_get_header_height()
 	return header_height;
 }
 
-Size2 EditorInspectorSection::get_minimum_size() const
-{
-	Size2 ms;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i));
-		if (!c) {
-			continue;
-		}
-		Size2 minsize = c->get_combined_minimum_size();
-		ms = ms.max(minsize);
-	}
-
-	if (theme_cache.font.is_valid()) {
-		ms.height +=
-			theme_cache.font->get_height(theme_cache.font_size) + theme_cache.vertical_separation;
-		ms.width += theme_cache.inspector_margin;
-	}
-
-	if (indent_depth > 0 && theme_cache.indent_size > 0) {
-		ms.width += indent_depth * theme_cache.indent_size;
-	}
-	if (indent_depth > 0 && theme_cache.indent_box.is_valid()) {
-		ms.width += theme_cache.indent_box->get_margin(SIDE_LEFT) +
-					theme_cache.indent_box->get_margin(SIDE_RIGHT);
-	}
-
-	return ms;
-}
-
 String EditorInspectorSection::get_section() const { return section; }
 
 VBoxContainer* EditorInspectorSection::get_vbox() { return vbox; }
-
-void EditorInspectorSection::set_bg_color(const Color& p_bg_color)
-{
-	bg_color = p_bg_color;
-	queue_redraw();
-}
-
-void EditorInspectorSection::set_keying(bool p_keying)
-{
-	if (keying == (checkable && p_keying)) {
-		return;
-	}
-
-	keying = checkable && p_keying;
-	if (checkable) {
-		queue_redraw();
-	}
-}
 
 void EditorInspectorSection::reset_timer()
 {
@@ -569,40 +362,9 @@ void EditorInspectorSection::reset_timer()
 	}
 }
 
-void EditorInspectorSection::set_checked(bool p_checked)
-{
-	if (checked == p_checked) {
-		return;
-	}
-
-	checked = p_checked;
-	if (!checkbox_only && checkable && !checked) {
-		vbox->hide();
-	}
-	else if (!checkbox_only) {
-		unfold();
-	}
-
-	queue_redraw();
-}
-
 bool EditorInspectorSection::has_revertable_properties() const
 {
 	return !revertable_properties.is_empty();
-}
-
-void EditorInspectorSection::property_can_revert_changed(const String& p_path, bool p_can_revert)
-{
-	bool had_revertable_properties = has_revertable_properties();
-	if (p_can_revert) {
-		revertable_properties.insert(p_path);
-	}
-	else {
-		revertable_properties.erase(p_path);
-	}
-	if (has_revertable_properties() != had_revertable_properties) {
-		queue_redraw();
-	}
 }
 
 void EditorInspectorSection::_property_edited(const String& p_property)
@@ -611,9 +373,6 @@ void EditorInspectorSection::_property_edited(const String& p_property)
 		update_property();
 	}
 }
-
-////////////////////////////////////////////////
-////////////////////////////////////////////////
 
 void EditorInspectorArray::_add_button_pressed() { _move_element(-1, -1); }
 
@@ -670,20 +429,6 @@ void EditorInspectorArray::_panel_draw(int p_index)
 	if (array_elements[p_index].panel->has_focus(true)) {
 		array_elements[p_index].panel->draw_style_box(
 			style.ptr(), Rect2(Vector2(), array_elements[p_index].panel->get_size()));
-	}
-}
-
-void EditorInspectorArray::_panel_gui_focus(int p_index)
-{
-	array_elements[p_index].panel->queue_redraw();
-	selected = p_index;
-}
-
-void EditorInspectorArray::_panel_gui_unfocus(int p_index)
-{
-	array_elements[p_index].panel->queue_redraw();
-	if (selected == p_index) {
-		selected = -1;
 	}
 }
 
@@ -754,9 +499,6 @@ VBoxContainer* EditorInspectorArray::get_vbox(int p_index)
 	}
 }
 
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
 void EditorPaginator::update(int p_page, int p_max_page)
 {
 	page = p_page;
@@ -784,11 +526,6 @@ void EditorPaginator::_notification(int p_what)
 	} break;
 	}
 }
-
-void EditorPaginator::_bind_methods() {}
-
-////////////////////////////////////////////////
-////////////////////////////////////////////////
 
 Ref<EditorInspectorPlugin> EditorInspector::inspector_plugins[MAX_PLUGINS];
 int EditorInspector::inspector_plugin_count = 0;
@@ -1099,8 +836,6 @@ void EditorInspector::set_restrict_to_basic_settings(bool p_restrict)
 	restrict_to_basic = p_restrict;
 	update_tree();
 }
-
-void EditorInspector::_bind_methods() {}
 
 void EditorProperty::_set_read_only(bool p_read_only) {}
 

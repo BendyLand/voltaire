@@ -501,8 +501,6 @@ void ShaderTextEditor::clear_previews()
 	previews.clear();
 }
 
-void ShaderTextEditor::redraw_preview_lines() { preview_line_layer->queue_redraw(); }
-
 void ShaderTextEditor::recompile_previews()
 {
 	for (KeyValue<int, TextShaderPreview*>& E : previews) {
