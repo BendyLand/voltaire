@@ -52,8 +52,6 @@ static bool _is_action_name_valid(const String& p_name)
 	return true;
 }
 
-void ActionMapEditor::_add_action_pressed() { _add_action(add_edit->get_text()); }
-
 String ActionMapEditor::_check_new_action_name(const String& p_name)
 {
 	if (p_name.is_empty() || !_is_action_name_valid(p_name)) {
@@ -68,8 +66,6 @@ String ActionMapEditor::_check_new_action_name(const String& p_name)
 	return "";
 }
 
-
-
 bool ActionMapEditor::_has_action(const String& p_name) const
 {
 	for (const ActionInfo& action_info : actions_cache) {
@@ -78,22 +74,6 @@ bool ActionMapEditor::_has_action(const String& p_name) const
 		}
 	}
 	return false;
-}
-
-
-
-void ActionMapEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (!actions_cache.is_empty()) {
-			update_action_list();
-		}
-		if (!add_button->get_tooltip_text().is_empty()) {
-			_add_edit_text_changed(add_edit->get_text());
-		}
-	} break;
-	}
 }
 
 LineEdit* ActionMapEditor::get_search_box() const

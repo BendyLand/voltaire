@@ -109,19 +109,6 @@ void AnimationNodeBlendSpace2DEditor::_update_edited_point_name()
 	}
 }
 
-void AnimationNodeBlendSpace2DEditor::_set_selected_point(int p_index)
-{
-	selected_point = p_index;
-	if (blend_space.is_null()) {
-		return;
-	}
-	_update_tool_erase();
-	if (p_index != -1) {
-		_update_edited_point_pos();
-		Ref<AnimationNode> node = blend_space->get_blend_point_node(p_index);
-	}
-}
-
 void AnimationNodeBlendSpace2DEditor::_open_editor()
 {
 	if (selected_point >= 0 && selected_point < blend_space->get_blend_point_count()) {

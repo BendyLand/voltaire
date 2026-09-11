@@ -45,13 +45,6 @@ AnimationPlayer::_get_process_callback_bind_compat_80813() const
 	return static_cast<AnimationProcessCallback>(static_cast<int>(get_callback_mode_process()));
 }
 
-void AnimationPlayer::_set_method_call_mode_bind_compat_80813(
-	AnimationPlayer::AnimationMethodCallMode p_mode)
-{
-	set_callback_mode_method(
-		static_cast<AnimationMixer::AnimationCallbackModeMethod>(static_cast<int>(p_mode)));
-}
-
 AnimationPlayer::AnimationMethodCallMode
 AnimationPlayer::_get_method_call_mode_bind_compat_80813() const
 {

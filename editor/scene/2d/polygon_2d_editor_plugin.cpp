@@ -129,21 +129,6 @@ void Polygon2DEditor::_select_mode(int p_mode)
 	}
 }
 
-void Polygon2DEditor::_update_polygon_editing_state()
-{
-	if (!_get_node()) {
-		return;
-	}
-
-	if (node->get_internal_vertex_count() > 0) {
-		disable_polygon_editing(true, TTR("Polygon 2D has internal vertices, so it can no longer "
-										  "be edited in the viewport."));
-	}
-	else {
-		disable_polygon_editing(false, String());
-	}
-}
-
 void Polygon2DEditor::_set_action(int p_action)
 {
 	polygon_create.clear();

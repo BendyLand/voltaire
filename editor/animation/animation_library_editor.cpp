@@ -53,7 +53,6 @@ void AnimationLibraryEditor::_add_library()
 	add_library_name->grab_focus();
 	adding_animation = false;
 	adding_animation_to_library = StringName();
-	_add_library_validate("");
 }
 
 void AnimationLibraryEditor::_load_library()
@@ -87,7 +86,6 @@ void AnimationLibraryEditor::update_tree()
 
 	TreeItem* root = tree->create_item();
 	LocalVector<StringName> libs;
-	const Vector<String> collapsed_libs = _load_mixer_libs_folding();
 
 	mixer->get_animation_library_list(&libs);
 
@@ -196,10 +194,6 @@ void AnimationLibraryEditor::update_tree()
 				animation_library_is_foreign, TTR("Save animation to resource on disk."));
 			anitem->add_button(1, get_editor_theme_icon("Remove"), ANIM_BUTTON_DELETE,
 				animation_library_is_foreign, TTR("Remove animation from Library."));
-		}
-
-		if (collapsed_libs.has(String(K))) {
-			libitem->set_collapsed_recursive(true);
 		}
 	}
 }

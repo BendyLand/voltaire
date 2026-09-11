@@ -229,46 +229,6 @@ void _rescale_skin(Vector3 p_scale, Ref<Skin> p_skin)
 	}
 }
 
-Ref<Animation> ResourceImporterScene::_save_animation_to_file(Ref<Animation> anim,
-	bool p_save_to_file, const String& p_save_to_path, bool p_keep_custom_tracks)
-{
-	String res_path = ResourceUID::ensure_path(p_save_to_path);
-	if (!p_save_to_file || !res_path.is_resource_file()) {
-		return anim;
-	}
-
-	if (FileAccess::exists(res_path) && p_keep_custom_tracks) {
-		// Copy custom animation tracks from previously imported files.
-		Ref<Animation> old_anim =
-			ResourceLoader::load(res_path, "Animation", ResourceFormatLoader::CACHE_MODE_IGNORE);
-		if (old_anim.is_valid()) {
-			for (int i = 0; i < old_anim->get_track_count(); i++) {
-				if (!old_anim->track_is_imported(i)) {
-					old_anim->copy_track(i, anim);
-				}
-			}
-			anim->set_loop_mode(old_anim->get_loop_mode());
-		}
-	}
-
-	if (ResourceCache::has(res_path)) {
-		Ref<Animation> old_anim = ResourceCache::get_ref(res_path);
-		if (old_anim.is_valid()) {
-			old_anim->copy_from(anim);
-			anim = old_anim;
-		}
-	}
-	anim->set_path(res_path, true); // Set path to save externally.
-	Error err = ResourceSaver::save(anim.ptr(), res_path, ResourceSaver::FLAG_CHANGE_PATH);
-
-	ERR_FAIL_COND_V_MSG(err != OK, anim, "Saving of animation failed: " + res_path);
-	if (p_save_to_path.begins_with("uid://")) {
-		// slow
-		ResourceSaver::set_uid(res_path, ResourceUID::get_singleton()->text_to_id(p_save_to_path));
-	}
-	return anim;
-}
-
 void ResourceImporterScene::_optimize_animations(
 	AnimationPlayer* anim, float p_max_vel_error, float p_max_ang_error, int p_prc_error)
 {

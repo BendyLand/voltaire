@@ -342,9 +342,6 @@ class AnimationMarkerEdit : public Control
 
 	bool should_show_all_marker_names = false;
 
-	////////////// edit menu stuff
-
-	void _marker_insert_new_name_changed(const String& p_text);
 	void _marker_rename_new_name_changed(const String& p_text);
 
 	AnimationTrackEditor* editor = nullptr;
@@ -352,13 +349,9 @@ class AnimationMarkerEdit : public Control
 	HBoxContainer* _create_hbox_labeled_control(const String& p_text, Control* p_control) const;
 
 	void _update_key_edit();
-	void _clear_key_edit();
 
 	AnimationMarkerKeyEdit* key_edit = nullptr;
 	AnimationMultiMarkerKeyEdit* multi_key_edit = nullptr;
-
-protected:
-	static void _bind_methods();
 
 public:
 	virtual int get_key_height() const;
@@ -392,9 +385,6 @@ public:
 
 	PackedStringArray get_selected_section() const;
 	bool is_marker_selected(const StringName& p_marker) const;
-
-	// For use by AnimationTrackEditor.
-	void _clear_selection(bool p_update);
 
 	AnimationMarkerEdit();
 };
@@ -845,9 +835,6 @@ class AnimationTrackEditor : public VBoxContainer
 	bool fps_compatible = true;
 	int nearest_fps = 0;
 	void _update_snap_unit();
-
-protected:
-	static void _bind_methods();
 
 public:
 	// Public for use as signal callback.

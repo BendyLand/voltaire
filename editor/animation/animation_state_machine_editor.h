@@ -298,7 +298,7 @@ public:
 
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 
-	AnimationNodeStateMachineEditor();
+	AnimationNodeStateMachineEditor() = default;
 };
 
 class EditorAnimationMultiTransitionEdit : public RefCounted

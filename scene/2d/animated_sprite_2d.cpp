@@ -87,11 +87,6 @@ Rect2 AnimatedSprite2D::_get_rect() const
 
 Ref<SpriteFrames> AnimatedSprite2D::get_sprite_frames() const { return frames; }
 
-void AnimatedSprite2D::set_frame(int p_frame)
-{
-	set_frame_and_progress(p_frame, std::signbit(get_playing_speed()) ? 1.0 : 0.0);
-}
-
 int AnimatedSprite2D::get_frame() const { return frame; }
 
 void AnimatedSprite2D::set_frame_progress(real_t p_progress) { frame_progress = p_progress; }
@@ -130,8 +125,6 @@ void AnimatedSprite2D::set_autoplay(const String& p_name)
 }
 
 String AnimatedSprite2D::get_autoplay() const { return autoplay; }
-
-void AnimatedSprite2D::play_backwards(const StringName& p_name) { play(p_name, -1, true); }
 
 void AnimatedSprite2D::pause() { _stop_internal(false); }
 

@@ -1072,15 +1072,6 @@ bool AnimationTrackEditor::is_function_name_pressed()
 
 void AnimationTrackEditor::_auto_fit() { timeline->auto_fit(); }
 
-void AnimationTrackEditor::_auto_fit_bezier()
-{
-	timeline->auto_fit();
-
-	if (bezier_mc->is_visible()) {
-		bezier_edit->auto_fit_vertically();
-	}
-}
-
 void AnimationTrackEditor::_update_snap_unit()
 {
 	nearest_fps = 0;
@@ -1297,40 +1288,6 @@ HBoxContainer* AnimationMarkerEdit::_create_hbox_labeled_control(
 	return hbox;
 }
 
-void AnimationMarkerEdit::_update_key_edit()
-{
-	_clear_key_edit();
-	if (animation.is_null()) {
-		return;
-	}
-
-	if (selection.size() == 1) {
-		key_edit = memnew(AnimationMarkerKeyEdit);
-		key_edit->animation = animation;
-		key_edit->animation_read_only = read_only;
-		key_edit->marker_name = *selection.begin();
-		key_edit->use_fps = timeline->is_using_fps();
-		key_edit->marker_edit = this;
-
-		InspectorDock::get_singleton()->set_info(TTR("Marker name is read-only in the inspector."),
-			TTR("A marker's name can only be changed by right-clicking it in the animation "
-				"editor "
-				"and selecting \"Rename Marker\", in order to make sure that marker names are "
-				"all "
-				"unique."),
-			true);
-	}
-	else if (selection.size() > 1) {
-		multi_key_edit = memnew(AnimationMultiMarkerKeyEdit);
-		multi_key_edit->animation = animation;
-		multi_key_edit->animation_read_only = read_only;
-		multi_key_edit->marker_edit = this;
-		for (const StringName& name : selection) {
-			multi_key_edit->marker_names.push_back(name);
-		}
-	}
-}
-
 int AnimationMarkerEdit::get_key_height() const
 {
 	if (animation.is_null()) {
@@ -1413,46 +1370,6 @@ void AnimationMarkerEdit::_move_selection_begin()
 {
 	moving_selection = true;
 	moving_selection_offset = 0;
-}
-
-void AnimationMarkerEdit::_clear_selection_for_anim(const Ref<Animation>& p_anim)
-{
-	if (animation != p_anim) {
-		return;
-	}
-
-	_clear_selection(true);
-}
-
-void AnimationMarkerEdit::_insert_marker(float p_ofs)
-{
-	if (editor->is_snap_timeline_enabled()) {
-		p_ofs = editor->snap_time(p_ofs);
-	}
-
-	editor->resolve_insertion_offset(p_ofs);
-
-	marker_insert_confirm->popup_centered(Size2(200, 100) * EDSCALE);
-	marker_insert_color->set_pick_color(Color(1, 1, 1));
-
-	String base = "new_marker";
-	int count = 1;
-	while (true) {
-		String attempt = base;
-		if (count > 1) {
-			attempt += vformat("_%d", count);
-		}
-		if (animation->has_marker(attempt)) {
-			count++;
-			continue;
-		}
-		base = attempt;
-		break;
-	}
-
-	marker_insert_new_name->set_text(base);
-	_marker_insert_new_name_changed(base);
-	marker_insert_ofs = p_ofs;
 }
 
 void AnimationMarkerEdit::_rename_marker(const StringName& p_name)

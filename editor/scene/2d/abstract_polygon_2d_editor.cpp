@@ -98,37 +98,6 @@ void AbstractPolygon2DEditor::set_edit_origin_and_center(bool p_enabled)
 	}
 }
 
-void AbstractPolygon2DEditor::edit(Node* p_polygon)
-{
-	if (!canvas_item_editor) {
-		canvas_item_editor = CanvasItemEditor::get_singleton();
-	}
-
-	if (p_polygon) {
-		_set_node(p_polygon);
-
-		// Enable the pencil tool if the polygon is empty.
-		if (_is_empty()) {
-			_menu_option(MODE_CREATE);
-		}
-		else {
-			_menu_option(MODE_EDIT);
-		}
-
-		wip.clear();
-		wip_active = false;
-		edited_point = PosVertex();
-		hover_point = Vertex();
-		selected_point = Vertex();
-		center_drag = false;
-	}
-	else {
-		_set_node(nullptr);
-	}
-
-	canvas_item_editor->update_viewport();
-}
-
 AbstractPolygon2DEditor::Vertex AbstractPolygon2DEditor::get_active_point() const
 {
 	return hover_point.valid() ? hover_point : selected_point;

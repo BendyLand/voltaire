@@ -324,19 +324,16 @@ protected:
 	// Helper for extended class.
 	virtual void _set_active(bool p_active);
 	virtual void _remove_animation(const StringName& p_name);
-	virtual void _rename_animation(const StringName& p_from_name, const StringName& p_to_name);
 
 	/* ---- Blending processor ---- */
 	virtual void _process_animation(double p_delta, bool p_update_only = false);
 
 	// For post process with retrieved key value during blending.
-	void _blend_init();
 	virtual bool _blend_pre_process(
 		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map);
 	virtual void _blend_capture(double p_delta);
 	void _blend_calc_total_weight(); // For indeterministic blending.
 	void _blend_process(double p_delta, bool p_update_only = false);
-	void _blend_apply();
 	virtual void _blend_post_process();
 
 	/* ---- Capture feature ---- */
@@ -356,7 +353,9 @@ protected:
 		}
 
 		~CaptureCache() { clear(); }
-	} capture_cache;
+	};
+
+	CaptureCache capture_cache;
 
 	void blend_capture(double p_delta); // To blend capture track with all other animations.
 
@@ -366,8 +365,6 @@ public:
 	Ref<AnimationLibrary> get_animation_library(const StringName& p_name) const;
 	bool has_animation_library(const StringName& p_name) const;
 	const StringName& find_animation_library(const Ref<Animation>& p_animation) const;
-	Error add_animation_library(
-		const StringName& p_name, const Ref<AnimationLibrary>& p_animation_library);
 	void remove_animation_library(const StringName& p_name);
 	void rename_animation_library(const StringName& p_name, const StringName& p_new_name);
 
@@ -391,7 +388,6 @@ public:
 	void set_callback_mode_process(AnimationCallbackModeProcess p_mode);
 	AnimationCallbackModeProcess get_callback_mode_process() const;
 
-	void set_callback_mode_method(AnimationCallbackModeMethod p_mode);
 	AnimationCallbackModeMethod get_callback_mode_method() const;
 
 	void set_callback_mode_discrete(AnimationCallbackModeDiscrete p_mode);
@@ -423,16 +419,10 @@ void make_animation_instance(const StringName& p_name, const PlaybackInfo& p_pla
 	virtual void advance(double p_time);
 	virtual void clear_caches(); // Must be called by hand if an animation was modified after added.
 
-	/* ---- Capture feature ---- */
-	void capture(const StringName& p_name, double p_duration,
-		Tween::TransitionType p_trans_type = Tween::TRANS_LINEAR,
-		Tween::EaseType p_ease_type = Tween::EASE_IN);
-
 	/* ---- Reset on save ---- */
 	void set_reset_on_save_enabled(bool p_enabled);
 	bool is_reset_on_save_enabled() const;
 	bool can_apply_reset() const;
-	void _build_backup_track_cache();
 	Ref<AnimatedValuesBackup> make_backup();
 	void restore(const Ref<AnimatedValuesBackup>& p_backup);
 	void reset();

@@ -121,7 +121,6 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 	void _tool_switch(int p_tool);
 	void _update_edited_point_pos();
 	void _update_edited_point_name();
-	void _update_tool_erase();
 	void _set_selected_point(int p_index);
 	void _start_inline_edit(int p_point);
 	void _cancel_inline_edit();
@@ -159,7 +158,7 @@ public:
 
 	virtual bool can_edit(const Ref<AnimationNode>& p_node) override;
 	virtual void edit(const Ref<AnimationNode>& p_node) override;
-	AnimationNodeBlendSpace2DEditor();
+	AnimationNodeBlendSpace2DEditor() = default;
 };
 
 

@@ -53,7 +53,7 @@ public:
 	virtual Vector3 get_linear_velocity() const override;
 	virtual Vector3 get_angular_velocity() const override;
 
-	AnimatableBody3D();
+	AnimatableBody3D() = default;
 
 private:
 	void _update_kinematic_motion();

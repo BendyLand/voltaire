@@ -11,7 +11,7 @@
      89 PopupMenu::set_item_disabled(int, bool)
      83 Node::update_configuration_warnings()
      83 Control::set_theme_type_variation(StringName const&)
-     82 Window::popup_centered(Vector2i const&)
+     80 Window::popup_centered(Vector2i const&)
      79 SkeletonModifier3D::get_skeleton() const
      78 PopupMenu::add_item(String const&, int, Key)
      71 Label::Label(String const&)
@@ -23,7 +23,7 @@
      60 Control::set_v_size_flags(unsigned int)
      58 Node::Node()
      56 RichTextLabel::add_text(String const&)
-     54 Window::set_title(String const&)
+     53 Window::set_title(String const&)
      52 PopupMenu::add_separator(String const&, int)
      51 Node::remove_child(Node*)
      51 Control::get_theme_font(StringName const&, StringName const&) const
@@ -36,12 +36,12 @@
      44 EditorUndoRedoManager::create_action(String const&, UndoRedo::MergeMode, Object*, bool, bool)
      44 Control::get_theme_font_size(StringName const&, StringName const&) const
      43 Control::add_theme_style_override(StringName const&, StyleBox*)
-     42 Node::queue_free()
      42 EditorUndoRedoManager::commit_action(bool)
      42 Control::get_theme_stylebox(StringName const&, StringName const&) const
      42 BaseMaterial3D::set_shading_mode(BaseMaterial3D::ShadingMode)
      41 vtable for Container
      41 PopupMenu::add_icon_item(Ref<Texture2D> const&, String const&, int, Key)
+     41 Node::queue_free()
      41 Control::set_mouse_filter(Control::MouseFilter)
      40 String::sprintf(Span<Variant> const&, bool*) const
      36 PopupMenu::set_item_icon(int, Ref<Texture2D> const&)
@@ -78,7 +78,6 @@
      20 EditorMainScreen::select(int)
      20 EditorDebuggerNode::get_current_debugger() const
      20 CodeEdit::unfold_line(int)
-     20 CanvasItemEditor::update_viewport()
      19 RichTextLabel::push_font(Ref<Font> const&, int)
      19 FileDialog::set_file_mode(FileDialog::FileMode)
      19 EditorNode::get_editor_theme_native_menu_icon(StringName const&, bool, bool) const
@@ -92,6 +91,7 @@
      17 LineEdit::select_all()
      17 JoltObject3D::to_string() const
      17 IKModifier3D::_make_gizmo_dirty()
+     17 CanvasItemEditor::update_viewport()
      16 Tree::set_hide_root(bool)
      16 Theme::_emit_theme_changed(bool)
      16 TextureRect::set_stretch_mode(TextureRect::StretchMode)
@@ -121,7 +121,6 @@
      13 EditorValidationPanel::update()
      13 EditorSpinSlider::set_control_state(EditorSpinSlider::ControlState)
      13 Control::add_theme_font_override(StringName const&, Font*)
-     13 Animation::track_get_key_time(int, int) const
      12 TreeItem::propagate_check(int, bool)
      12 SpriteBase3D::_queue_redraw()
      12 ShaderMaterial::set_shader(Ref<Shader> const&)
@@ -141,6 +140,7 @@
      11 encode_variant(Variant const&, unsigned char*, int&, bool, int)
      11 Control::set_anchor(Side, float, bool, bool)
      11 Camera2D::_update_scroll()
+     11 Animation::track_get_key_time(int, int) const
      11 AnimationRootNode::_tree_changed()
      10 World3D::get_navigation_map() const
      10 World2D::get_navigation_map() const
@@ -206,9 +206,8 @@
       8 InputEventMouse::set_button_mask(unsigned int)
       8 ImageTexture::update(Ref<Image> const&)
       8 EditorInspector::update_tree()
+      8 ConfirmationDialog::ConfirmationDialog()
       8 Button::set_flat(bool)
-      8 Animation::track_get_key_count(int) const
-      8 AcceptDialog::AcceptDialog()
       7 XRServer::get_reference_frame() const
       7 Tree::update_item_cell(TreeItem*, int) const
       7 Tree::set_column_custom_minimum_width(int, int)
@@ -239,6 +238,7 @@
       7 CPUParticles2D::_set_do_redraw(bool)
       7 ColorPickerShape::handle_cursor_editing(Ref<InputEvent> const&, Control*)
       7 CanvasItem::item_rect_changed(bool)
+      7 AcceptDialog::AcceptDialog()
       6 XRServer::set_primary_interface(Ref<XRInterface> const&)
       6 Window::_notify_theme_override_changed()
       6 Viewport::_set_size(Vector2i const&, int, Vector2 const&, bool)
@@ -288,9 +288,9 @@
       6 BaseMaterial3D::set_metallic(float)
       6 BaseButton::set_button_group(Ref<ButtonGroup> const&)
       6 BackgroundProgress::end_task(String const&)
+      6 Animation::track_get_key_count(int) const
       6 AnimationRootNode::_add_node(Ref<AnimationNode> const&)
       6 AnimationNode::add_input(String const&)
-      6 AnimationMixer::_clear_caches(bool)
       6 AcceptDialog::_cancel_pressed()
       5 World3D::get_space() const
       5 Window::is_layout_rtl() const
@@ -396,6 +396,7 @@
       5 BetsyCompressor::_compress(BetsyFormat, Image*)
       5 BaseMaterial3D::set_emission(Color const&)
       5 AnimationTrackEditor::_redraw_tracks()
+      5 AnimationMixer::_clear_caches(bool)
       5 AbstractPolygon2DEditor::AbstractPolygon2DEditor(bool)
       4 XRServer::remove_tracker(Ref<XRTracker> const&)
       4 XRServer::get_tracker(StringName const&) const
@@ -502,7 +503,6 @@
       4 CreateDialog::popup_create(bool, bool, String const&, String const&)
       4 Control::set_shortcut_context(Node const*)
       4 ColorRect::set_color(Color const&)
-      4 ColorPickerButton::set_pick_color(Color const&)
       4 CodeTextEditor::_zoom_to(float)
       4 CodeHighlighter::add_keyword_color(String const&, Color const&)
       4 CodeEdit::set_line_as_breakpoint(int, bool)
@@ -518,7 +518,6 @@
       4 Area3D::_initialize_wind()
       4 AnimationTrackEditor::_clear_key_edit()
       4 AnimationNodeBlendSpace2D::_update_triangles()
-      4 AnimationMixer::_animation_set_cache_update()
       3 XRBodyModifier3D::_get_joint_data()
       3 WorldEnvironment::_update_current_environment()
       3 WorldEnvironment::_update_current_camera_attributes()
@@ -704,6 +703,7 @@
       3 ConfigFile::_internal_load(String const&, Ref<FileAccess>)
       3 ConfigFile::has_section(String const&) const
       3 ColorPicker::_update_color(bool)
+      3 ColorPickerButton::set_pick_color(Color const&)
       3 CollisionObject3D::_update_shape_data(unsigned int)
       3 CodeTextEditor::trim_final_newlines()
       3 CodeTextEditor::_set_show_warnings_panel(bool)
@@ -730,8 +730,10 @@
       3 AspectRatioContainer::set_ratio(float)
       3 Animation::track_find_key(int, double, Animation::FindMode, bool, bool) const
       3 AnimationRootNode::_remove_node(Ref<AnimationNode> const&)
+      3 AnimationPlayer::_capture(StringName const&, bool, double, Tween::TransitionType, Tween::EaseType)
       3 AnimationNodeStateMachinePlayback::_signal_state_change(AnimationTree*, StringName const&, bool)
       3 AnimationNodeBlendSpace2D::_queue_auto_triangles()
+      3 AnimationMixer::_animation_set_cache_update()
       3 AnimationBezierTrackEdit::set_animation_and_track(Ref<Animation> const&, int, bool)
       3 AcceptDialog::_ok_pressed()
       3 AABB::intersects_segment_bind(Vector3 const&, Vector3 const&) const
@@ -1285,7 +1287,6 @@
       2 AtlasTexture::set_atlas(Ref<Texture2D> const&)
       2 AnimationTrackKeyEdit::notify_change()
       2 AnimationPlayer::_stop_internal(bool, bool)
-      2 AnimationPlayer::set_assigned_animation(StringName const&)
       2 AnimationPlayer::play_section(StringName const&, double, double, double, float, bool)
       2 AnimationPlayerEditor::_update_name_dialog_library_dropdown()
       2 AnimationNodeStateMachine::remove_transition_by_index(int)
@@ -1294,6 +1295,7 @@
       2 AnimationNodeStateMachinePlayback::_get_parent_playback(AnimationTree*) const
       2 AnimationNodeStateMachinePlayback::_clear_path_children(AnimationNode::ProcessState&, AnimationTree*, AnimationNodeStateMachine*, bool)
       2 AnimationNodeStateMachine::can_edit_node(StringName const&) const
+      2 AnimationNode::_pre_process(AnimationNode::ProcessState&, AnimationNodeInstance&, AnimationMixer::PlaybackInfo const&, bool)
       2 AnimationNode::get_argument_options(StringName const&, int, List<String, DefaultAllocator>*) const
       2 AnimationNodeBlendTreeEditor::update_graph()
       2 AnimationMultiTrackKeyEdit::notify_change()
@@ -1302,7 +1304,6 @@
       2 AnimatedSprite2D::_stop_internal(bool)
       2 AcceptDialog::_update_child_rects()
       2 AcceptDialog::register_text_enter(LineEdit*)
-      2 AbstractPolygon2DEditor::disable_polygon_editing(bool, String const&)
       1 ZIPPacker::start_file(String const&, unsigned int, unsigned long)
       1 XRServer::set_world_origin(Transform3D const&)
       1 XRServer::_process()
@@ -2221,7 +2222,6 @@
       1 ItemList::set_item_tag_icon(int, Ref<Texture2D> const&)
       1 ItemList::set_fixed_tag_icon_size(Vector2i const&)
       1 ItemList::deselect(int)
-      1 InspectorDock::set_info(String const&, String const&, bool)
       1 InspectorDock::_resource_selected(Ref<Resource> const&, String const&)
       1 InspectorDock::_load_resource(String const&)
       1 InspectorDock::_edit_back()
@@ -2747,41 +2747,7 @@
       1 AnimationTrackEditTypeAudio::AnimationTrackEditTypeAudio()
       1 AnimationTrackEditor::_pick_track_select_recursive(TreeItem*, String const&, Vector<Node*>&)
       1 AnimationPlayer::set_current_animation(StringName const&)
+      1 AnimationPlayer::set_assigned_animation(StringName const&)
       1 AnimationPlayerEditor::_prepare_onion_layers_2_step_prepare(int, unsigned int)
-      1 AnimationNodeStateMachinePlayback::_travel_children(AnimationNode::ProcessState&, AnimationTree*, AnimationNodeStateMachine*, String const&, bool, bool, bool)
-      1 AnimationNodeStateMachinePlayback::_check_advance_condition(AnimationNode::ProcessState&, AnimationNodeInstance&, Ref<AnimationNodeStateMachine>, Ref<AnimationNodeStateMachineTransition>) const
-      1 AnimationNodeStateMachinePlayback::_can_transition_to_next(AnimationNode::ProcessState&, AnimationTree*, AnimationNodeStateMachine*, AnimationNodeStateMachinePlayback::NextInfo, bool)
-      1 AnimationNodeStateMachineEditor::AnimationNodeStateMachineEditor()
-      1 AnimationNode::process(AnimationNode::ProcessState&, AnimationNodeInstance&, AnimationMixer::PlaybackInfo const&, bool)
-      1 AnimationNodeBlendTreeEditor::AnimationNodeBlendTreeEditor()
-      1 AnimationNodeBlendSpace2DEditor::_update_tool_erase()
-      1 AnimationNodeBlendSpace2DEditor::AnimationNodeBlendSpace2DEditor()
-      1 AnimationMixer::set_callback_mode_method(AnimationMixer::AnimationCallbackModeMethod)
-      1 AnimationMixer::_rename_animation(StringName const&, StringName const&)
-      1 AnimationMixer::capture(StringName const&, double, Tween::TransitionType, Tween::EaseType)
-      1 AnimationMixer::_build_backup_track_cache()
-      1 AnimationMixer::_blend_init()
-      1 AnimationMixer::_blend_apply()
-      1 AnimationMixer::add_animation_library(StringName const&, Ref<AnimationLibrary> const&)
-      1 AnimationMarkerEdit::_marker_insert_new_name_changed(String const&)
-      1 AnimationMarkerEdit::_clear_selection(bool)
-      1 AnimationMarkerEdit::_clear_key_edit()
-      1 AnimationLibraryEditor::_load_mixer_libs_folding()
-      1 AnimationLibraryEditor::_add_library_validate(String const&)
-      1 AnimationLibrary::add_animation(StringName const&, Ref<Animation> const&)
-      1 Animation::copy_track(int, Ref<Animation>)
-      1 AnimationBezierTrackEdit::auto_fit_vertically()
-      1 AnimatedSprite3D::set_frame_and_progress(int, float)
-      1 AnimatedSprite3D::play(StringName const&, float, bool)
-      1 AnimatedSprite2D::set_frame_and_progress(int, float)
-      1 AnimatedSprite2D::play(StringName const&, float, bool)
-      1 AnimatableBody3D::AnimatableBody3D()
-      1 AnimatableBody2D::_update_kinematic_motion()
-      1 AddMetadataDialog::_complete_init(StringName const&)
-      1 ActionMapEditor::update_action_list(Vector<ActionMapEditor::ActionInfo> const&)
-      1 ActionMapEditor::_add_edit_text_changed(String const&)
-      1 ActionMapEditor::_add_action(String const&)
-      1 AcceptDialog::add_cancel_button(String const&)
-      1 AbstractPolygon2DEditor::_is_empty() const
-      1 AbstractPolygon2DEditor::forward_gui_input(Ref<InputEvent> const&)
-      1 AbstractPolygon2DEditor::forward_canvas_draw_over_viewport(Control*)
+      1 AnimationMixer::restore(Ref<AnimatedValuesBackup> const&)
+      1 AbstractPolygon2DEditor::edit(Node*)

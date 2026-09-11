@@ -53,8 +53,6 @@ class AnimatedSprite2D : public Node2D
 	bool hflip = false;
 	bool vflip = false;
 
-	void _res_changed();
-
 	double _get_frame_duration();
 	void _calc_frame_speed_scale();
 	void _stop_internal(bool p_reset);
@@ -62,7 +60,6 @@ class AnimatedSprite2D : public Node2D
 	Rect2 _get_rect() const;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -76,8 +73,6 @@ public:
 	void set_sprite_frames(const Ref<SpriteFrames>& p_frames);
 	Ref<SpriteFrames> get_sprite_frames() const;
 
-	void play(const StringName& p_name = StringName(), float p_custom_scale = 1.0,
-		bool p_from_end = false);
 	void play_backwards(const StringName& p_name = StringName());
 	void pause();
 	void stop();
@@ -95,8 +90,6 @@ public:
 
 	void set_frame_progress(real_t p_progress);
 	real_t get_frame_progress() const;
-
-	void set_frame_and_progress(int p_frame, real_t p_progress);
 
 	void set_speed_scale(float p_speed_scale);
 	float get_speed_scale() const;

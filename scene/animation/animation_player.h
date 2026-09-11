@@ -171,7 +171,7 @@ protected:
 	virtual void _animation_changed(const StringName& p_name) override;
 	virtual void _animation_removed(const StringName& p_name, const StringName& p_library) override;
 	virtual void _rename_animation(
-		const StringName& p_from_name, const StringName& p_to_name) override;
+		const StringName& p_from_name, const StringName& p_to_name);
 
 #ifndef DISABLE_DEPRECATED
 	void _set_process_callback_bind_compat_80813(AnimationProcessCallback p_mode);

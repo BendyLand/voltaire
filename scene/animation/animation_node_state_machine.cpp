@@ -471,16 +471,8 @@ AnimationNode::NodeTimeInfo AnimationNodeStateMachinePlayback::_process(
 			travel_path.size() <= 1 ? p_state_machine->is_allow_transition_to_self() : false,
 			new_path, p_test_only);
 		if (travel_path.size()) {
-			if (can_travel) {
-				can_travel = _travel_children(p_process_state, tree, p_state_machine, travel_target,
-					p_state_machine->is_allow_transition_to_self(), travel_path[0] == current,
-					p_test_only);
-			}
-			else {
-				_start_children(tree, p_state_machine, travel_target, p_test_only);
-			}
+			_start_children(tree, p_state_machine, travel_target, p_test_only);
 		}
-
 		// Process to travel.
 		if (can_travel) {
 			path = new_path;
@@ -652,10 +644,6 @@ bool AnimationNodeStateMachinePlayback::_transition_to_next_recursive(
 	while (true) {
 		next = _find_next(p_process_state, p_instance, p_tree, p_state_machine);
 
-		if (!_can_transition_to_next(p_process_state, p_tree, p_state_machine, next, p_test_only)) {
-			break; // Finish transition.
-		}
-
 		if (transition_path.has(next.node)) {
 			WARN_PRINT_ONCE_ED("AnimationNodeStateMachinePlayback: " + base_path +
 							   "playback has detected one or more looped transitions in a single "
@@ -808,9 +796,7 @@ AnimationNodeStateMachinePlayback::NextInfo AnimationNodeStateMachinePlayback::_
 				AnimationNodeStateMachineTransition::ADVANCE_MODE_DISABLED) {
 				continue;
 			}
-			if (p_state_machine->transitions[i].from == current &&
-				(_check_advance_condition(p_process_state, p_instance, anodesm, ref_transition) ||
-					bypass)) {
+			if (p_state_machine->transitions[i].from == current) {
 				if (ref_transition->get_priority() <= priority_best) {
 					priority_best = ref_transition->get_priority();
 					auto_advance_to = i;
@@ -1253,8 +1239,6 @@ void AnimationNodeStateMachine::get_argument_options(
 	AnimationRootNode::get_argument_options(p_function, p_idx, r_options);
 }
 #endif
-
-void AnimationNodeStateMachine::_bind_methods() {}
 
 Vector<StringName> AnimationNodeStateMachine::get_nodes_with_transitions_from(
 	const StringName& p_node) const
