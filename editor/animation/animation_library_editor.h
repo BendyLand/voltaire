@@ -100,11 +100,9 @@ class AnimationLibraryEditor : public AcceptDialog
 	AnimationMixer* mixer = nullptr;
 
 	void _add_library();
-	void _add_library_validate(const String& p_name);
 	void _load_library();
 
 	void _save_mixer_lib_folding(TreeItem* p_item);
-	Vector<String> _load_mixer_libs_folding();
 	String _get_mixer_signature() const;
 
 	bool updating = false;

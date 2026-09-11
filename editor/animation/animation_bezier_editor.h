@@ -217,7 +217,6 @@ public:
 	void set_editor(AnimationTrackEditor* p_editor);
 	void set_root(Node* p_root);
 	void set_filtered(bool p_filtered);
-	void auto_fit_vertically();
 
 	void set_play_position(real_t p_pos);
 	void update_play_position();

@@ -47,9 +47,6 @@ void GroupSettingsEditor::_notification(int p_what)
 	case NOTIFICATION_ENTER_TREE: {
 		update_groups();
 	} break;
-	case NOTIFICATION_THEME_CHANGED: {
-		add_button->set_button_icon(get_editor_theme_icon(SNAME("Add")));
-	} break;
 	}
 }
 
@@ -66,8 +63,6 @@ String GroupSettingsEditor::_check_new_group_name(const String& p_name)
 	return "";
 }
 
-void GroupSettingsEditor::_bind_methods() {}
-
 void GroupSettingsEditor::_add_group()
 {
 	_add_group(group_name->get_text(), group_description->get_text());
@@ -78,13 +73,6 @@ void GroupSettingsEditor::_text_submitted(const String& p_text)
 	if (!add_button->is_disabled()) {
 		_add_group();
 	}
-}
-
-void GroupSettingsEditor::_group_name_text_changed(const String& p_name)
-{
-	String error = _check_new_group_name(p_name.strip_edges());
-	add_button->set_tooltip_text(error);
-	add_button->set_disabled(!error.is_empty());
 }
 
 void GroupSettingsEditor::_modify_references(

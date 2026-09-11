@@ -60,88 +60,7 @@ bool CreateDialog::_is_class_disabled_by_feature_profile(const StringName& p_cla
 	return profile.is_valid() && profile->is_class_disabled(p_class);
 }
 
-void CreateDialog::_update_search()
-{
-	search_options->clear();
-	search_options_types.clear();
 
-	TreeItem* root = search_options->create_item();
-	root->set_text(0, base_type);
-	root->set_icon(0, search_options->get_editor_theme_icon(icon_fallback));
-	search_options_types[base_type] = root;
-	_configure_search_option_item(root, base_type, TypeCategory::OTHER_TYPE, "");
-
-	const String search_text = search_box->get_text();
-	bool type_filter_enabled = search_text.is_empty();
-
-	selectable_types.clear();
-	if (type_filter_enabled) {
-		for (const TypeInfo& candidate : type_info_list) {
-			bool is_editor = false;
-			bool valid = false;
-			// Native type.
-			if (is_editor) {
-				valid = types_enabled[TYPE_EDITOR];
-			}
-			else {
-				valid = types_enabled[TYPE_BUILT_IN];
-			}
-		}
-	}
-
-	float highest_score = 0.0f;
-	StringName best_match;
-
-	for (const TypeInfo& candidate : type_info_list) {
-		if (type_filter_enabled && !selectable_types.has(candidate.type_name)) {
-			continue;
-		}
-		String match_keyword;
-
-		// First check if the name matches. If it does not, try the search keywords.
-		float score = _score_type(candidate.type_name, search_text);
-		if (score < 0.0f) {
-			for (const String& keyword : candidate.search_keywords) {
-				score = _score_type(keyword, search_text);
-
-				// Reduce the score of keywords, since they are an indirect match.
-				score *= 0.1f;
-
-				if (score >= 0.0f) {
-					match_keyword = keyword;
-					break;
-				}
-			}
-		}
-
-		// Search did not match.
-		if (score < 0.0f) {
-			continue;
-		}
-
-		_add_type(candidate.type_name, TypeCategory::OTHER_TYPE, match_keyword);
-
-		if (score > highest_score) {
-			highest_score = score;
-			best_match = candidate.type_name;
-		}
-	}
-
-	// Select the best result.
-	if (search_text.is_empty()) {
-		select_type(base_type);
-	}
-	else if (best_match != StringName()) {
-		select_type(best_match);
-	}
-	else {
-		favorite->set_disabled(true);
-		help_bit->set_custom_text(String(), String(),
-			vformat(TTR("No results for \"%s\"."), search_text.replace("[", "[lb]")));
-		get_ok_button()->set_disabled(true);
-		search_options->deselect_all();
-	}
-}
 
 float CreateDialog::_score_type(const String& p_type, const String& p_search) const
 {
@@ -213,20 +132,6 @@ void CreateDialog::_reset_filters()
 	}
 	reset_filters_button->hide();
 	_update_search();
-}
-
-void CreateDialog::_update_filter_button_state()
-{
-	const bool is_searching = !search_box->get_text().is_empty();
-	filters_button->set_disabled(is_searching);
-	if (!is_searching) {
-		filters_button->get_popup()->set_item_checked(TYPE_BUILT_IN, types_enabled[TYPE_BUILT_IN]);
-		filters_button->get_popup()->set_item_checked(TYPE_CUSTOM, types_enabled[TYPE_CUSTOM]);
-		filters_button->get_popup()->set_item_checked(TYPE_EDITOR, types_enabled[TYPE_EDITOR]);
-	}
-	reset_filters_button->set_visible(
-		!is_searching && (!types_enabled[TYPE_BUILT_IN] || !types_enabled[TYPE_CUSTOM] ||
-							 types_enabled[TYPE_EDITOR]));
 }
 
 void CreateDialog::_text_changed(const String& p_newtext)

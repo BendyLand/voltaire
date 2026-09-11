@@ -59,20 +59,4 @@ void EditorObjectSelector::_show_popup()
 	sub_objects_menu->popup(rect);
 }
 
-void EditorObjectSelector::clear_path()
-{
-	set_disabled(true);
-	set_tooltip_text("");
-
-	current_object_label->set_text("");
-	current_object_icon->set_texture(nullptr);
-	sub_objects_icon->hide();
-}
-
-void EditorObjectSelector::enable_path()
-{
-	set_disabled(false);
-	sub_objects_icon->show();
-}
-
 

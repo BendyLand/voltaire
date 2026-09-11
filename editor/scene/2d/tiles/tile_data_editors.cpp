@@ -147,17 +147,6 @@ void TileDataDefaultEditor::forward_draw_over_alternatives(TileAtlasView* p_tile
 {
 }
 
-void TileDataDefaultEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		picker_button->set_button_icon(get_editor_theme_icon(SNAME("ColorPick")));
-		tile_bool_checked = get_editor_theme_icon(SNAME("TileChecked"));
-		tile_bool_unchecked = get_editor_theme_icon(SNAME("TileUnchecked"));
-	} break;
-	}
-}
-
 TileDataDefaultEditor::TileDataDefaultEditor()
 {
 	label = memnew(Label);
@@ -252,15 +241,6 @@ void TileDataTerrainsEditor::draw_over_tile(
 	ERR_FAIL_NULL(tile_data);
 
 	tile_set->draw_terrains(p_canvas_item, p_transform, tile_data);
-}
-
-void TileDataTerrainsEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		picker_button->set_button_icon(get_editor_theme_icon(SNAME("ColorPick")));
-	} break;
-	}
 }
 
 TileDataTerrainsEditor::~TileDataTerrainsEditor()

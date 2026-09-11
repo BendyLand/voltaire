@@ -304,28 +304,6 @@ void ColorPicker::_reset_sliders_theme()
 	alpha_slider->end_bulk_theme_override();
 }
 
-#ifdef TOOLS_ENABLED
-void ColorPicker::_text_type_toggled()
-{
-	text_is_constructor = !text_is_constructor;
-	if (text_is_constructor) {
-		hex_label->set_text(ETR("Expr"));
-		text_type->set_text("");
-		text_type->set_button_icon(theme_cache.color_script);
-
-		c_text->set_tooltip_text(RTR("Execute an expression as a color."));
-	}
-	else {
-		hex_label->set_text(ETR("Hex"));
-		text_type->set_text("#");
-		text_type->set_button_icon(nullptr);
-
-		c_text->set_tooltip_text(ETR("Enter a hex code (\"#ff0000\") or named color (\"red\")."));
-	}
-	_update_color();
-}
-#endif // TOOLS_ENABLED
-
 void ColorPicker::_text_copy_pressed()
 {
 	DisplayServer::get_singleton()->clipboard_set(c_text->get_text());
@@ -406,16 +384,6 @@ void ColorPicker::_show_hide_preset(
 	}
 }
 
-void ColorPicker::_update_drop_down_arrow(const bool& p_is_btn_pressed, Button* p_btn_preset)
-{
-	if (p_is_btn_pressed) {
-		p_btn_preset->set_button_icon(theme_cache.expanded_arrow);
-	}
-	else {
-		p_btn_preset->set_button_icon(theme_cache.folded_arrow);
-	}
-}
-
 void ColorPicker::_set_mode_popup_value(ColorModeType p_mode)
 {
 	ERR_FAIL_INDEX(p_mode, MODE_MAX + 1);
@@ -489,28 +457,6 @@ bool ColorPicker::is_colorizing_sliders() const { return colorize_sliders; }
 void ColorPicker::set_deferred_mode(bool p_enabled) { deferred_mode_enabled = p_enabled; }
 
 bool ColorPicker::is_deferred_mode() const { return deferred_mode_enabled; }
-
-void ColorPicker::_update_text_value()
-{
-	if (text_is_constructor || !is_color_valid_hex(color)) {
-		String t = "Color" + color_to_string(color, edit_alpha && color.a < 1, true);
-
-		text_type->set_text("");
-		text_type->set_button_icon(theme_cache.color_script);
-		text_type->set_disabled(!is_color_valid_hex(color));
-		hex_label->set_text(ETR("Expr"));
-		c_text->set_text(t);
-		c_text->set_tooltip_text(RTR("Execute an expression as a color."));
-	}
-	else {
-		text_type->set_text("#");
-		text_type->set_button_icon(nullptr);
-		text_type->set_disabled(false);
-		hex_label->set_text(ETR("Hex"));
-		c_text->set_text(color.to_html(edit_alpha && color.a < 1));
-		c_text->set_tooltip_text(ETR("Enter a hex code (\"#ff0000\") or named color (\"red\")."));
-	}
-}
 
 void ColorPicker::_sample_draw()
 {
@@ -739,22 +685,6 @@ void ColorPicker::_html_focus_exit()
 	}
 	else {
 		_update_text_value();
-	}
-}
-
-void ColorPicker::set_can_add_swatches(bool p_enabled)
-{
-	if (can_add_swatches == p_enabled) {
-		return;
-	}
-	can_add_swatches = p_enabled;
-	if (!p_enabled) {
-		btn_add_preset->set_disabled(true);
-		btn_add_preset->set_focus_mode(FOCUS_NONE);
-	}
-	else {
-		btn_add_preset->set_disabled(false);
-		btn_add_preset->set_focus_mode(FOCUS_ALL);
 	}
 }
 

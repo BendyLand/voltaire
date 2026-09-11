@@ -82,16 +82,6 @@ void TabContainer::_drag_move_tab(int p_from_index, int p_to_index)
 	move_child(get_tab_control(p_from_index), get_tab_control(p_to_index)->get_index(false));
 }
 
-void TabContainer::_popup_button_hovered(bool p_hover)
-{
-	if (p_hover) {
-		popup_button->set_button_icon(theme_cache.menu_hl_icon);
-	}
-	else {
-		popup_button->set_button_icon(theme_cache.menu_icon);
-	}
-}
-
 void TabContainer::_on_tab_visibility_changed(Control* p_child)
 {
 	if (updating_visibility) {

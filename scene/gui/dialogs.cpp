@@ -139,12 +139,4 @@ String ConfirmationDialog::get_cancel_button_text() const { return cancel->get_t
 
 Button* ConfirmationDialog::get_cancel_button() { return cancel; }
 
-ConfirmationDialog::ConfirmationDialog()
-{
-	set_title(ETR("Please Confirm..."));
-	set_min_size(Size2(200, 70));
-
-	cancel = add_cancel_button();
-}
-
 

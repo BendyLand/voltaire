@@ -76,24 +76,6 @@ String SectionedInspector::get_full_item_path(const String& p_item)
 	}
 }
 
-void SectionedInspector::_search_changed(const String& p_what)
-{
-	if (advanced_toggle) {
-		if (p_what.is_empty()) {
-			advanced_toggle->set_pressed_no_signal(!restrict_to_basic);
-			advanced_toggle->set_disabled(false);
-			advanced_toggle->set_tooltip_text(String());
-		}
-		else {
-			advanced_toggle->set_pressed_no_signal(true);
-			advanced_toggle->set_disabled(true);
-			advanced_toggle->set_tooltip_text(
-				TTRC("Advanced settings are always shown when searching."));
-		}
-	}
-	update_category_list();
-}
-
 void SectionedInspector::_advanced_toggled(bool p_toggled_on)
 {
 	restrict_to_basic = !p_toggled_on;

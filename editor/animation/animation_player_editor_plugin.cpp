@@ -58,62 +58,6 @@
 
 ///////////////////////////////////
 
-void AnimationPlayerEditor::_play_pressed()
-{
-	String current = _get_current();
-
-	if (!current.is_empty()) {
-		if (current == player->get_assigned_animation()) {
-			player->stop(); // So it won't blend with itself.
-		}
-		ERR_FAIL_COND_EDMSG(!_validate_tracks(player->get_animation(current)),
-			"Animation tracks may have any invalid key, abort playing.");
-		PackedStringArray markers = track_editor->get_selected_section();
-		if (markers.size() == 2) {
-			StringName start_marker = markers[0];
-			StringName end_marker = markers[1];
-			player->play_section_with_markers(current, start_marker, end_marker);
-		}
-		else {
-			player->play(current);
-		}
-	}
-
-	// unstop
-	stop->set_button_icon(pause_icon);
-}
-
-void AnimationPlayerEditor::_play_from_pressed()
-{
-	String current = _get_current();
-
-	if (!current.is_empty()) {
-		if (!player->is_valid()) {
-			_play_pressed(); // Fallback.
-			return;
-		}
-		double time = player->get_current_animation_position();
-		if (current == player->get_assigned_animation() && player->is_playing()) {
-			player->clear_caches(); // So it won't blend with itself.
-		}
-		ERR_FAIL_COND_EDMSG(!_validate_tracks(player->get_animation(current)),
-			"Animation tracks may have any invalid key, abort playing.");
-		player->seek_internal(time, true, true, true);
-		PackedStringArray markers = track_editor->get_selected_section();
-		if (markers.size() == 2) {
-			StringName start_marker = markers[0];
-			StringName end_marker = markers[1];
-			player->play_section_with_markers(current, start_marker, end_marker);
-		}
-		else {
-			player->play(current);
-		}
-	}
-
-	// unstop
-	stop->set_button_icon(pause_icon);
-}
-
 String AnimationPlayerEditor::_get_current() const
 {
 	String current;
@@ -122,61 +66,6 @@ String AnimationPlayerEditor::_get_current() const
 		current = animation->get_item_text(animation->get_selected());
 	}
 	return current;
-}
-
-void AnimationPlayerEditor::_play_bw_pressed()
-{
-	String current = _get_current();
-	if (!current.is_empty()) {
-		if (current == player->get_assigned_animation()) {
-			player->stop(); // So it won't blend with itself.
-		}
-		ERR_FAIL_COND_EDMSG(!_validate_tracks(player->get_animation(current)),
-			"Animation tracks may have any invalid key, abort playing.");
-		PackedStringArray markers = track_editor->get_selected_section();
-		if (markers.size() == 2) {
-			StringName start_marker = markers[0];
-			StringName end_marker = markers[1];
-			player->play_section_with_markers_backwards(current, start_marker, end_marker);
-		}
-		else {
-			player->play_backwards(current);
-		}
-	}
-
-	// unstop
-	stop->set_button_icon(pause_icon);
-}
-
-void AnimationPlayerEditor::_play_bw_from_pressed()
-{
-	String current = _get_current();
-
-	if (!current.is_empty()) {
-		if (!player->is_valid()) {
-			_play_bw_pressed(); // Fallback.
-			return;
-		}
-		double time = player->get_current_animation_position();
-		if (current == player->get_assigned_animation() && player->is_playing()) {
-			player->clear_caches(); // So it won't blend with itself.
-		}
-		ERR_FAIL_COND_EDMSG(!_validate_tracks(player->get_animation(current)),
-			"Animation tracks may have any invalid key, abort playing.");
-		player->seek_internal(time, true, true, true);
-		PackedStringArray markers = track_editor->get_selected_section();
-		if (markers.size() == 2) {
-			StringName start_marker = markers[0];
-			StringName end_marker = markers[1];
-			player->play_section_with_markers_backwards(current, start_marker, end_marker);
-		}
-		else {
-			player->play_backwards(current);
-		}
-	}
-
-	// unstop
-	stop->set_button_icon(pause_icon);
 }
 
 void AnimationPlayerEditor::_animation_new()
@@ -331,48 +220,6 @@ void AnimationPlayerEditor::_scale_changed(const String& p_scale)
 	player->set_speed_scale(p_scale.to_float());
 }
 
-void AnimationPlayerEditor::_update_animation()
-{
-	// the purpose of _update_animation is to reflect the current state
-	// of the animation player in the current editor..
-
-	updating = true;
-
-	if (player->is_playing()) {
-		stop->set_button_icon(pause_icon);
-	}
-	else {
-		stop->set_button_icon(stop_icon);
-	}
-
-	scale->set_text(String::num(player->get_speed_scale(), 2));
-	String current = player->get_assigned_animation();
-
-	for (int i = 0; i < animation->get_item_count(); i++) {
-		if (animation->get_item_text(i) == current) {
-			animation->select(i);
-			break;
-		}
-	}
-
-	updating = false;
-}
-
-void AnimationPlayerEditor::_set_controls_disabled(bool p_disabled)
-{
-	frame->set_editable(!p_disabled);
-
-	stop->set_disabled(p_disabled);
-	play->set_disabled(p_disabled);
-	play_bw->set_disabled(p_disabled);
-	play_bw_from->set_disabled(p_disabled);
-	play_from->set_disabled(p_disabled);
-	animation->set_disabled(p_disabled);
-	autoplay->set_disabled(p_disabled);
-	onion_toggle->set_disabled(p_disabled);
-	onion_skinning->set_disabled(p_disabled);
-}
-
 void AnimationPlayerEditor::_update_animation_list_icons()
 {
 	for (int i = 0; i < animation->get_item_count(); i++) {
@@ -398,78 +245,6 @@ void AnimationPlayerEditor::_update_animation_list_icons()
 	}
 }
 
-void AnimationPlayerEditor::_update_name_dialog_library_dropdown()
-{
-	StringName current_library_name;
-	if (animation->has_selectable_items()) {
-		String current_animation_name = animation->get_item_text(animation->get_selected());
-		Ref<Animation> current_animation = player->get_animation(current_animation_name);
-		if (current_animation.is_valid()) {
-			current_library_name = player->find_animation_library(current_animation);
-		}
-	}
-
-	LocalVector<StringName> libraries;
-	player->get_animation_library_list(&libraries);
-	library->clear();
-
-	int valid_library_count = 0;
-
-	// When [Global] isn't present, but other libraries are, add option of creating [Global].
-	int index_offset = 0;
-	if (!player->has_animation_library(StringName())) {
-		library->add_item(String(TTR("[Global] (create)")));
-		if (!libraries.is_empty()) {
-			index_offset = 1;
-		}
-		valid_library_count++;
-	}
-
-	int current_lib_id = index_offset; // Don't default to [Global] if it doesn't exist yet.
-	for (const StringName& library_name : libraries) {
-		if (!EditorNode::get_singleton()->is_resource_read_only(
-				player->get_animation_library(library_name))) {
-			library->add_item(
-				(library_name == StringName()) ? String(TTR("[Global]")) : String(library_name));
-			// Default to duplicating into same library.
-			if (library_name == current_library_name) {
-				current_library_name = library_name;
-				current_lib_id = valid_library_count;
-			}
-			valid_library_count++;
-		}
-	}
-
-	// If our library name is empty, but we have valid libraries, we can check here to auto assign
-	// the first one which isn't a read-only library.
-	bool auto_assigning_non_global_library = false;
-	if (current_library_name == StringName() && valid_library_count > 0) {
-		for (const StringName& library_name : libraries) {
-			if (!EditorNode::get_singleton()->is_resource_read_only(
-					player->get_animation_library(library_name))) {
-				current_library_name = library_name;
-				current_lib_id = 0;
-				if (library_name != StringName()) {
-					auto_assigning_non_global_library = true;
-				}
-				break;
-			}
-		}
-	}
-
-	if (library->get_item_count() > 0) {
-		library->select(current_lib_id);
-		if (library->get_item_count() > 1 || auto_assigning_non_global_library) {
-			library->show();
-			library->set_disabled(
-				auto_assigning_non_global_library && library->get_item_count() == 1);
-		}
-		else {
-			library->hide();
-		}
-	}
-}
-
 void AnimationPlayerEditor::_update_playback_tooltips()
 {
 	stop->set_tooltip_text(TTR("Pause/Stop Animation") + " (" +
@@ -486,31 +261,6 @@ void AnimationPlayerEditor::_update_playback_tooltips()
 	play_bw->set_tooltip_text(
 		TTR("Play Animation Backwards from End") + " (" +
 		ED_GET_SHORTCUT("animation_editor/play_animation_from_end")->get_as_text() + ")");
-}
-
-void AnimationPlayerEditor::_ensure_dummy_player()
-{
-	bool dummy_exists = is_dummy && player && original_node;
-	if (dummy_exists) {
-		if (is_visible()) {
-			player->set_active(true);
-			original_node->set_editing(true);
-		}
-		else {
-			player->set_active(false);
-			original_node->set_editing(false);
-		}
-	}
-
-	int selected = animation->get_selected();
-	autoplay->set_disabled(
-		selected != -1 ? (animation->get_item_text(selected).is_empty() ? true : dummy_exists)
-					   : true);
-
-	// Show warning.
-	if (track_editor) {
-		track_editor->show_dummy_player_warning(dummy_exists);
-	}
 }
 
 void AnimationPlayerEditor::forward_force_draw_over_viewport(Control* p_overlay)

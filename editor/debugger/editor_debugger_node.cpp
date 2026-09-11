@@ -149,88 +149,6 @@ void EditorDebuggerNode::stop(bool p_force)
 	set_process(false);
 }
 
-void EditorDebuggerNode::_notification(int p_what)
-{
-	switch (p_what) {
-	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-		if (!EditorThemeManager::is_generated_theme_outdated()) {
-			return;
-		}
-
-		if (tabs->get_tab_count() > 1) {
-			tabs->add_theme_style_override(SceneStringName(panel),
-				EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-					SNAME("DebuggerPanel"), EditorStringName(EditorStyles)).ptr());
-		}
-		_update_margins();
-
-		remote_scene_tree->update_icon_max_width();
-	} break;
-
-	case NOTIFICATION_READY: {
-		_update_debug_options();
-		initializing = false;
-	} break;
-
-	case NOTIFICATION_PROCESS: {
-		if (server.is_null()) {
-			return;
-		}
-
-		if (!server->is_active()) {
-			stop();
-			return;
-		}
-		server->poll();
-
-		_update_errors();
-
-		// Remote scene tree update.
-		if (!remote_scene_tree_wait) {
-			remote_scene_tree_timeout -= get_process_delta_time();
-			if (remote_scene_tree_timeout < 0) {
-				if (remote_scene_tree->is_visible_in_tree()) {
-					remote_scene_tree_wait = true;
-					get_current_debugger()->request_remote_tree();
-				}
-			}
-		}
-
-		// Take connections.
-		if (server->is_connection_available()) {
-			ScriptEditorDebugger* debugger = nullptr;
-			if (debugger == nullptr) {
-				if (tabs->get_tab_count() <= 4) { // Max 4 debugging sessions active.
-					debugger = _add_debugger();
-				}
-				else {
-					// We already have too many sessions, disconnecting new clients to prevent them
-					// from hanging.
-					return; // Can't add, stop here.
-				}
-			}
-
-			EditorRunBar::get_singleton()->get_pause_button()->set_disabled(false);
-			// Switch to remote tree view if so desired.
-			remote_scene_tree->set_new_session();
-			if (auto_switch_remote_scene_tree) {
-				SceneTreeDock::get_singleton()->show_remote_tree();
-			}
-			// Good to go.
-			SceneTreeDock::get_singleton()->show_tab_buttons();
-			debugger->set_editor_remote_tree(remote_scene_tree);
-			// Send breakpoints.
-			for (const KeyValue<Breakpoint, bool>& E : breakpoints) {
-				const Breakpoint& bp = E.key;
-				debugger->set_breakpoint(bp.source, bp.line, E.value);
-			} // Will arrive too late, how does the regular run work?
-
-			debugger->update_live_edit_root();
-		}
-	} break;
-	}
-}
-
 void EditorDebuggerNode::_update_errors()
 {
 	int error_count = 0;
@@ -275,24 +193,6 @@ void EditorDebuggerNode::_update_margins()
 	add_theme_constant_override("margin_left", -bottom_panel_margins->get_margin(SIDE_LEFT));
 	add_theme_constant_override("margin_right", -bottom_panel_margins->get_margin(SIDE_RIGHT));
 	add_theme_constant_override("margin_bottom", -bottom_panel_margins->get_margin(SIDE_BOTTOM));
-}
-
-void EditorDebuggerNode::_debugger_stopped(int p_id)
-{
-	ScriptEditorDebugger* dbg = get_debugger(p_id);
-	ERR_FAIL_NULL(dbg);
-
-	bool found = false;
-	if (!found) {
-		EditorRunBar::get_singleton()->get_pause_button()->set_pressed(false);
-		EditorRunBar::get_singleton()->get_pause_button()->set_disabled(true);
-		SceneTreeDock* dock = SceneTreeDock::get_singleton();
-		if (dock->is_inside_tree()) {
-			dock->hide_remote_tree();
-			dock->hide_tab_buttons();
-		}
-		EditorNode::get_singleton()->notify_all_debug_sessions_exited();
-	}
 }
 
 void EditorDebuggerNode::set_script_debug_button(MenuButton* p_button)

@@ -55,25 +55,6 @@ void EditorNetworkProfiler::_notification(int p_what)
 			refresh_rpc_data();
 		}
 	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		if (activate->is_pressed()) {
-			activate->set_button_icon(theme_cache.stop_icon);
-		}
-		else {
-			activate->set_button_icon(theme_cache.play_icon);
-		}
-		clear_button->set_button_icon(theme_cache.clear_icon);
-
-		incoming_bandwidth_text->set_right_icon(theme_cache.incoming_bandwidth_icon);
-		outgoing_bandwidth_text->set_right_icon(theme_cache.outgoing_bandwidth_icon);
-
-		// This needs to be done here to set the faded color when the profiler is first opened
-		incoming_bandwidth_text->add_theme_color_override(
-			"font_uneditable_color", theme_cache.incoming_bandwidth_color * Color(1, 1, 1, 0.5));
-		outgoing_bandwidth_text->add_theme_color_override(
-			"font_uneditable_color", theme_cache.outgoing_bandwidth_color * Color(1, 1, 1, 0.5));
-	} break;
 	}
 }
 
@@ -122,25 +103,6 @@ void EditorNetworkProfiler::_activate_pressed()
 	else {
 		refresh_timer->stop();
 	}
-}
-
-void EditorNetworkProfiler::_update_button_text()
-{
-	if (activate->is_pressed()) {
-		activate->set_button_icon(theme_cache.stop_icon);
-		activate->set_text(TTRC("Stop"));
-	}
-	else {
-		activate->set_button_icon(theme_cache.play_icon);
-		activate->set_text(TTRC("Start"));
-	}
-}
-
-void EditorNetworkProfiler::stopped()
-{
-	activate->set_disabled(true);
-	set_profiling(false);
-	refresh_timer->stop();
 }
 
 void EditorNetworkProfiler::set_bandwidth(int p_incoming, int p_outgoing)

@@ -626,10 +626,8 @@ void Window::_set_transient_exclusive_child(bool p_clear_invalid)
 			// Transient parent has another exclusive child.
 			if (transient_parent->exclusive_child && transient_parent->exclusive_child != this) {
 				ERR_PRINT(vformat("Attempting to make child window exclusive, but the parent "
-								  "window already has another exclusive child. This window: %s, "
-								  "parent window: %s, current exclusive child window: %s",
-					get_description(), transient_parent->get_description(),
-					transient_parent->exclusive_child->get_description()));
+								  "window already has another exclusive child. This window, "
+								  "parent window, and current exclusive child window"));
 			}
 			transient_parent->exclusive_child = this;
 		}

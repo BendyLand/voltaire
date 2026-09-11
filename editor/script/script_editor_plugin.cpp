@@ -95,25 +95,6 @@ void ScriptEditorQuickOpen::popup_dialog(const Vector<String>& p_functions, bool
 
 void ScriptEditorQuickOpen::_text_changed(const String& p_newtext) { _update_search(); }
 
-void ScriptEditorQuickOpen::_update_search()
-{
-	search_options->clear();
-	TreeItem* root = search_options->create_item();
-
-	for (int i = 0; i < functions.size(); i++) {
-		String file = functions[i];
-		if ((search_box->get_text().is_empty() || file.containsn(search_box->get_text()))) {
-			TreeItem* ti = search_options->create_item(root);
-			ti->set_text(0, file);
-			if (root->get_first_child() == ti) {
-				ti->select(0);
-			}
-		}
-	}
-
-	get_ok_button()->set_disabled(root->get_first_child() == nullptr);
-}
-
 void ScriptEditorQuickOpen::_confirmed()
 {
 	TreeItem* ti = search_options->get_selected();
@@ -125,52 +106,7 @@ void ScriptEditorQuickOpen::_confirmed()
 	hide();
 }
 
-ScriptEditorQuickOpen::ScriptEditorQuickOpen()
-{
-	set_ok_button_text(TTRC("Open"));
-	get_ok_button()->set_disabled(true);
-	set_hide_on_ok(false);
-
-	VBoxContainer* vbc = memnew(VBoxContainer);
-	add_child(vbc);
-
-	search_box = memnew(FilterLineEdit);
-	vbc->add_margin_child(TTRC("Search:"), search_box);
-	register_text_enter(search_box);
-
-	search_options = memnew(Tree);
-	search_box->set_forward_control(search_options);
-	search_options->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	search_options->set_hide_root(true);
-	search_options->set_hide_folding(true);
-	search_options->add_theme_constant_override("draw_guides", 1);
-	vbc->add_margin_child(TTRC("Matches:"), search_options, true);
-}
-
-/////////////////////////////////
-
-void DocumentOutline::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		sort_button->set_button_icon(get_editor_theme_icon(SNAME("Sort")));
-
-		update_visibility();
-	} break;
-	}
-}
-
-/////////////////////////////////
-
 ScriptEditor* ScriptEditor::script_editor = nullptr;
-
-/*** SCRIPT EDITOR ******/
-
-void ScriptEditor::_update_history_arrows()
-{
-	script_back->set_disabled(history_pos <= 0);
-	script_forward->set_disabled(history_pos >= history.size() - 1);
-}
 
 // Compress the history and remove duplicate patterns.
 // Example 1: If the history is ...ABAB..., it will be compressed to ...AB....

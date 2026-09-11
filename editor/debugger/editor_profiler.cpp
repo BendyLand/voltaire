@@ -56,44 +56,6 @@ const EditorProfiler::Metric& EditorProfiler::_get_frame_metric(int index) const
 						 frame_metrics.size()];
 }
 
-void EditorProfiler::add_frame_metric(const Metric& p_metric, bool p_final)
-{
-	++last_metric;
-	if (last_metric >= frame_metrics.size()) {
-		last_metric = 0;
-	}
-
-	total_metrics++;
-	if (total_metrics > frame_metrics.size()) {
-		total_metrics = frame_metrics.size();
-	}
-
-	frame_metrics.write[last_metric] = p_metric;
-	_make_metric_ptrs(frame_metrics.write[last_metric]);
-
-	updating_frame = true;
-	clear_button->set_disabled(false);
-	cursor_metric_edit->set_editable(true);
-	cursor_metric_edit->set_max(p_metric.frame_number);
-	cursor_metric_edit->set_min(_get_frame_metric(0).frame_number);
-
-	if (!seeking) {
-		cursor_metric_edit->set_value(p_metric.frame_number);
-	}
-
-	updating_frame = false;
-
-	if (frame_delay->is_stopped()) {
-		frame_delay->set_wait_time(p_final ? 0.1 : 1);
-		frame_delay->start();
-	}
-
-	if (plot_delay->is_stopped()) {
-		plot_delay->set_wait_time(0.1);
-		plot_delay->start();
-	}
-}
-
 void EditorProfiler::clear()
 {
 	frame_metrics.clear();
@@ -216,57 +178,11 @@ void EditorProfiler::_update_frame()
 	updating_frame = false;
 }
 
-void EditorProfiler::_update_button_text()
-{
-	if (activate->is_pressed()) {
-		activate->set_button_icon(get_editor_theme_icon(SNAME("Stop")));
-		activate->set_text(TTRC("Stop"));
-	}
-	else {
-		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
-		activate->set_text(TTRC("Start"));
-	}
-}
-
-void EditorProfiler::_clear_pressed()
-{
-	clear_button->set_disabled(true);
-	clear();
-	_update_plot();
-}
-
 void EditorProfiler::_internal_profiles_pressed() { _combo_changed(0); }
 
 void EditorProfiler::_autostart_toggled(bool p_toggled_on)
 {
 	EditorRunBar::get_singleton()->update_profiler_autostart_indicator();
-}
-
-void EditorProfiler::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (is_ready()) {
-			_update_frame();
-		}
-		[[fallthrough]];
-	}
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-	case NOTIFICATION_THEME_CHANGED: {
-		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
-		clear_button->set_button_icon(get_editor_theme_icon(SNAME("Clear")));
-
-		theme_cache.seek_line_color =
-			get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-		theme_cache.seek_line_color.a = 0.8;
-		theme_cache.seek_line_hover_color = theme_cache.seek_line_color;
-		theme_cache.seek_line_hover_color.a = 0.4;
-
-		if (total_metrics > 0) {
-			_update_plot();
-		}
-	} break;
-	}
 }
 
 void EditorProfiler::_graph_tex_draw()
@@ -294,14 +210,6 @@ void EditorProfiler::_combo_changed(int)
 {
 	_update_frame();
 	_update_plot();
-}
-
-void EditorProfiler::set_enabled(bool p_enable, bool p_clear)
-{
-	activate->set_disabled(!p_enable);
-	if (p_clear) {
-		clear();
-	}
 }
 
 void EditorProfiler::set_profiling(bool p_pressed)
@@ -380,131 +288,6 @@ Vector<Vector<String>> EditorProfiler::get_data_as_csv() const
 	}
 
 	return res;
-}
-
-EditorProfiler::EditorProfiler()
-{
-	HBoxContainer* hb = memnew(HBoxContainer);
-	hb->add_theme_constant_override(SNAME("separation"), 8 * EDSCALE);
-	add_child(hb);
-
-	FlowContainer* container = memnew(FlowContainer);
-	container->set_h_size_flags(SIZE_EXPAND_FILL);
-	container->add_theme_constant_override(SNAME("h_separation"), 8 * EDSCALE);
-	container->add_theme_constant_override(SNAME("v_separation"), 2 * EDSCALE);
-	hb->add_child(container);
-
-	activate = memnew(Button);
-	activate->set_toggle_mode(true);
-	activate->set_disabled(true);
-	activate->set_text(TTRC("Start"));
-	container->add_child(activate);
-
-	clear_button = memnew(Button);
-	clear_button->set_text(TTRC("Clear"));
-	clear_button->set_disabled(true);
-	container->add_child(clear_button);
-
-	CheckBox* autostart_checkbox = memnew(CheckBox);
-	autostart_checkbox->set_text(TTRC("Autostart"));
-	container->add_child(autostart_checkbox);
-
-	HBoxContainer* hb_measure = memnew(HBoxContainer);
-	hb_measure->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
-	container->add_child(hb_measure);
-
-	hb_measure->add_child(memnew(Label(TTRC("Measure:"))));
-
-	display_mode = memnew(OptionButton);
-	display_mode->set_accessibility_name(TTRC("Measure:"));
-	display_mode->add_item(TTRC("Frame Time (ms)"));
-	display_mode->add_item(TTRC("Average Time (ms)"));
-	display_mode->add_item(TTRC("Frame %"));
-	display_mode->add_item(TTRC("Physics Frame %"));
-
-	hb_measure->add_child(display_mode);
-
-	HBoxContainer* hb_time = memnew(HBoxContainer);
-	hb_time->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
-	container->add_child(hb_time);
-
-	hb_time->add_child(memnew(Label(TTRC("Time:"))));
-
-	display_time = memnew(OptionButton);
-	display_time->set_accessibility_name(TTRC("Time:"));
-	// TRANSLATORS: This is an option in the profiler to display the time spent in a function,
-	// including the time spent in other functions called by that function.
-	display_time->add_item(TTRC("Inclusive"));
-	// TRANSLATORS: This is an option in the profiler to display the time spent in a function,
-	// exincluding the time spent in other functions called by that function.
-	display_time->add_item(TTRC("Self"));
-	display_time->set_tooltip_text(TTRC(
-		"Inclusive: Includes time from other functions called by this function.\nUse this to spot "
-		"bottlenecks.\n\nSelf: Only count the time spent in the function itself, not in other "
-		"functions called by that function.\nUse this to find individual functions to optimize."));
-
-	display_internal_profiles = memnew(CheckButton(TTRC("Display internal functions")));
-	display_internal_profiles->set_pressed(false);
-	container->add_child(display_internal_profiles);
-
-	HBoxContainer* hb_frame = memnew(HBoxContainer);
-	hb_frame->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
-	hb_frame->set_v_size_flags(SIZE_SHRINK_BEGIN);
-	hb->add_child(hb_frame);
-
-	hb_frame->add_child(memnew(Label(TTRC("Frame #:"))));
-
-	cursor_metric_edit = memnew(SpinBox);
-	cursor_metric_edit->set_accessibility_name(TTRC("Frame #:"));
-	cursor_metric_edit->set_h_size_flags(SIZE_FILL);
-	cursor_metric_edit->set_value(0);
-	cursor_metric_edit->set_editable(false);
-	hb_frame->add_child(cursor_metric_edit);
-
-	h_split = memnew(HSplitContainer);
-	add_child(h_split);
-	h_split->set_v_size_flags(SIZE_EXPAND_FILL);
-
-	variables = memnew(Tree);
-	variables->set_custom_minimum_size(Size2(320, 0) * EDSCALE);
-	h_split->add_child(variables);
-	variables->set_hide_root(true);
-	variables->set_columns(3);
-	variables->set_column_titles_visible(true);
-	variables->set_column_title(0, TTRC("Name"));
-	variables->set_column_expand(0, true);
-	variables->set_column_clip_content(0, true);
-	variables->set_column_custom_minimum_width(0, 60);
-	variables->set_column_title(1, TTRC("Time"));
-	variables->set_column_expand(1, false);
-	variables->set_column_clip_content(1, true);
-	variables->set_column_custom_minimum_width(1, 75 * EDSCALE);
-	variables->set_column_title(2, TTRC("Calls"));
-	variables->set_column_expand(2, false);
-	variables->set_column_clip_content(2, true);
-	variables->set_column_custom_minimum_width(2, 50 * EDSCALE);
-	variables->set_theme_type_variation("TreeSecondary");
-
-	graph = memnew(TextureRect);
-	graph->set_custom_minimum_size(Size2(250 * EDSCALE, 0));
-	graph->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
-	graph->set_mouse_filter(MOUSE_FILTER_STOP);
-
-	h_split->add_child(graph);
-	graph->set_h_size_flags(SIZE_EXPAND_FILL);
-
-	frame_delay = memnew(Timer);
-	frame_delay->set_wait_time(0.1);
-	frame_delay->set_one_shot(true);
-	add_child(frame_delay);
-
-	plot_delay = memnew(Timer);
-	plot_delay->set_wait_time(0.1);
-	plot_delay->set_one_shot(true);
-	add_child(plot_delay);
-
-	plot_sigs.insert("physics_frame_time");
-	plot_sigs.insert("category_frame_time");
 }
 
 

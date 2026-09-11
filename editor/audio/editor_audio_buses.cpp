@@ -90,48 +90,6 @@ void EditorAudioBus::_update_visible_channels()
 void EditorAudioBus::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		bool dark_icon_and_font = EditorThemeManager::is_dark_icon_and_font();
-		Color solo_color = dark_icon_and_font ? Color(1.0, 0.89, 0.22) : Color(1.9, 1.74, 0.83);
-		Color mute_color = dark_icon_and_font ? Color(1.0, 0.16, 0.16) : Color(2.35, 1.03, 1.03);
-		Color bypass_color = dark_icon_and_font ? Color(0.13, 0.8, 1.0) : Color(1.03, 2.04, 2.35);
-		float darkening_factor = dark_icon_and_font ? 0.15 : 0.65;
-		Color solo_color_darkened = solo_color.darkened(darkening_factor);
-		Color mute_color_darkened = mute_color.darkened(darkening_factor);
-		Color bypass_color_darkened = bypass_color.darkened(darkening_factor);
-
-		Ref<StyleBoxFlat>(solo->get_theme_stylebox(SceneStringName(pressed)))
-			->set_border_color(solo_color_darkened);
-		Ref<StyleBoxFlat>(mute->get_theme_stylebox(SceneStringName(pressed)))
-			->set_border_color(mute_color_darkened);
-		Ref<StyleBoxFlat>(bypass->get_theme_stylebox(SceneStringName(pressed)))
-			->set_border_color(bypass_color_darkened);
-		Ref<StyleBoxFlat>(solo->get_theme_stylebox("hover_pressed"))
-			->set_border_color(solo_color_darkened);
-		Ref<StyleBoxFlat>(mute->get_theme_stylebox("hover_pressed"))
-			->set_border_color(mute_color_darkened);
-		Ref<StyleBoxFlat>(bypass->get_theme_stylebox("hover_pressed"))
-			->set_border_color(bypass_color_darkened);
-
-		solo->set_button_icon(get_editor_theme_icon(SNAME("AudioBusSolo")));
-		solo->add_theme_color_override("icon_pressed_color", solo_color);
-		solo->add_theme_color_override("icon_hover_pressed_color", solo_color_darkened);
-		mute->set_button_icon(get_editor_theme_icon(SNAME("AudioBusMute")));
-		mute->add_theme_color_override("icon_pressed_color", mute_color);
-		mute->add_theme_color_override("icon_hover_pressed_color", mute_color_darkened);
-		bypass->set_button_icon(get_editor_theme_icon(SNAME("AudioBusBypass")));
-		bypass->add_theme_color_override("icon_pressed_color", bypass_color);
-		bypass->add_theme_color_override("icon_hover_pressed_color", bypass_color_darkened);
-
-		bus_options->set_button_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
-
-		audio_value_preview_label->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SceneStringName(font_color), SNAME("TooltipLabel")));
-		audio_value_preview_label->add_theme_color_override("font_shadow_color",
-			get_theme_color(SNAME("font_shadow_color"), SNAME("TooltipLabel")));
-		audio_value_preview_box->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("TooltipPanel")).ptr());
-	} break;
 
 	case NOTIFICATION_READY: {
 		update_bus();
@@ -311,30 +269,6 @@ void EditorAudioBus::_notification(int p_what)
 
 		set_process(is_visible_in_tree());
 	} break;
-	}
-}
-
-void EditorAudioBus::update_send()
-{
-	send->clear();
-	if (is_master) {
-		send->set_disabled(true);
-		send->add_item(TTRC("Speakers"));
-	}
-	else {
-		send->set_disabled(false);
-		StringName current_send = AudioServer::get_singleton()->get_bus_send(get_index());
-		int current_send_index = 0; // by default to master
-
-		for (int i = 0; i < get_index(); i++) {
-			StringName send_name = AudioServer::get_singleton()->get_bus_name(i);
-			send->add_item(send_name);
-			if (send_name == current_send) {
-				current_send_index = i;
-			}
-		}
-
-		send->select(current_send_index);
 	}
 }
 
@@ -787,20 +721,6 @@ EditorAudioBuses* EditorAudioBuses::register_editor()
 void EditorAudioBuses::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		menu->set_button_icon(get_editor_theme_icon("GuiTabMenuHl"));
-		menu->get_popup()->set_item_icon((int)MenuOption::CREATE, get_editor_theme_icon("New"));
-		menu->get_popup()->set_item_icon((int)MenuOption::LOAD, get_editor_theme_icon("Load"));
-		menu->get_popup()->set_item_icon((int)MenuOption::SAVE_AS, get_editor_theme_icon("Save"));
-
-		bus_scroll->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
-		if (is_visible_in_tree()) {
-			_update_file_label_size();
-		}
-		add->set_button_icon(get_editor_theme_icon("Add"));
-	} break;
-
 	case NOTIFICATION_READY: {
 		_rebuild_buses();
 	} break;

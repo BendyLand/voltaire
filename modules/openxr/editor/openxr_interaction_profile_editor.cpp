@@ -61,14 +61,6 @@ void OpenXRInteractionProfileEditorBase::_update_interaction_profile()
 	is_dirty = false;
 }
 
-void OpenXRInteractionProfileEditorBase::_theme_changed()
-{
-	if (binding_modifiers_btn) {
-		binding_modifiers_btn->set_button_icon(
-			get_theme_icon(SNAME("Modifiers"), EditorStringName(EditorIcons)));
-	}
-}
-
 void OpenXRInteractionProfileEditorBase::remove_all_for_action_set(
 	const Ref<OpenXRActionSet>& p_action_set)
 {

@@ -113,22 +113,11 @@ protected:
 
 	int mode = MODE_EDIT;
 
-	virtual void _menu_option(int p_option);
-	void _wip_changed();
-	void _wip_close();
 	void _wip_cancel();
 
-	void _notification(int p_what);
 	void _node_removed(Node* p_node);
 
-	bool _commit_drag();
-
-	void remove_point(const Vertex& p_vertex);
 	Vertex get_active_point() const;
-	PosVertex closest_point(const Vector2& p_pos) const;
-	PosVertex closest_edge_point(const Vector2& p_pos) const;
-
-	bool _is_empty() const;
 
 	virtual Node2D* _get_node() const = 0;
 	virtual void _set_node(Node* p_polygon) = 0;
@@ -147,10 +136,6 @@ protected:
 	virtual void _create_resource();
 
 public:
-	void disable_polygon_editing(bool p_disable, const String& p_reason);
-
-	bool forward_gui_input(const Ref<InputEvent>& p_event);
-	void forward_canvas_draw_over_viewport(Control* p_overlay);
 	void set_edit_origin_and_center(bool p_enabled);
 
 	void edit(Node* p_polygon);
@@ -163,16 +148,6 @@ class AbstractPolygon2DEditorPlugin : public EditorPlugin
 	String klass;
 
 public:
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override
-	{
-		return polygon_editor->forward_gui_input(p_event);
-	}
-
-	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override
-	{
-		polygon_editor->forward_canvas_draw_over_viewport(p_overlay);
-	}
-
 	virtual String get_plugin_name() const override { return klass; }
 
 	AbstractPolygon2DEditorPlugin(AbstractPolygon2DEditor* p_polygon_editor, const String& p_class);

@@ -145,7 +145,7 @@ public:
 
 	void update_graph();
 
-	AnimationNodeBlendTreeEditor();
+	AnimationNodeBlendTreeEditor() = default;
 };
 
 // EditorPluginAnimationNodeAnimation

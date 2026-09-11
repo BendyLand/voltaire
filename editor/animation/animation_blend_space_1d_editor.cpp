@@ -105,7 +105,6 @@ void AnimationNodeBlendSpace1DEditor::_update_edited_point_name()
 void AnimationNodeBlendSpace1DEditor::_update_tool_erase()
 {
 	bool point_valid = selected_point >= 0 && selected_point < blend_space->get_blend_point_count();
-	tool_erase->set_disabled(!point_valid || read_only);
 
 	if (point_valid) {
 		Ref<AnimationNode> an = blend_space->get_blend_point_node(selected_point);
@@ -154,55 +153,10 @@ void AnimationNodeBlendSpace1DEditor::_open_editor()
 	}
 }
 
-void AnimationNodeBlendSpace1DEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("GraphBlendSpace")).ptr());
-		tool_blend->set_button_icon(get_editor_theme_icon(SNAME("EditPivot")));
-		tool_select->set_button_icon(get_editor_theme_icon(SNAME("ToolSelect")));
-		tool_create->set_button_icon(get_editor_theme_icon(SNAME("EditKey")));
-		tool_erase->set_button_icon(get_editor_theme_icon(SNAME("Remove")));
-		snap->set_button_icon(get_editor_theme_icon(SNAME("SnapGrid")));
-		open_editor->set_button_icon(get_editor_theme_icon(SNAME("Edit")));
-		interpolation->clear();
-		interpolation->add_icon_item(
-			get_editor_theme_icon(SNAME("TrackContinuous")), TTR("Continuous"), 0);
-		interpolation->add_icon_item(
-			get_editor_theme_icon(SNAME("TrackDiscrete")), TTR("Discrete"), 1);
-		interpolation->add_icon_item(
-			get_editor_theme_icon(SNAME("TrackCapture")), TTR("Capture"), 2);
-	} break;
-	}
-}
-
 bool AnimationNodeBlendSpace1DEditor::can_edit(const Ref<AnimationNode>& p_node)
 {
 	Ref<AnimationNodeBlendSpace1D> b1d = p_node;
 	return b1d.is_valid();
-}
-
-void AnimationNodeBlendSpace1DEditor::edit(const Ref<AnimationNode>& p_node)
-{
-	blend_space = p_node;
-	read_only = false;
-
-	if (blend_space.is_valid()) {
-		read_only = EditorNode::get_singleton()->is_resource_read_only(blend_space);
-
-		_update_space();
-	}
-
-	tool_create->set_disabled(read_only);
-	edit_value->set_editable(!read_only);
-	index_edit->set_editable(!read_only);
-	label_value->set_editable(!read_only);
-	min_value->set_editable(!read_only);
-	max_value->set_editable(!read_only);
-	sync->set_disabled(read_only);
-	cyclic_length_value->set_editable(!read_only);
-	interpolation->set_disabled(read_only);
 }
 
 void AnimationNodeBlendSpace1DEditor::_inline_editor_text_changed(const String& p_text)

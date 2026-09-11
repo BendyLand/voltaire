@@ -45,15 +45,6 @@
 void Particles3DEditorPlugin::_menu_callback(int p_idx)
 {
 	switch (p_idx) {
-	case MENU_OPTION_GENERATE_AABB: {
-		if (need_show_lifetime_dialog(generate_seconds)) {
-			generate_aabb->popup_centered();
-		}
-		else {
-			_generate_aabb();
-		}
-	} break;
-
 	case MENU_OPTION_CREATE_EMISSION_VOLUME_FROM_NODE: {
 		if (_can_generate_points()) {
 			emission_tree_dialog->popup_scenetree_dialog();

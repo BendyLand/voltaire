@@ -121,38 +121,7 @@ Vector<String> EditorFileSystemImportFormatSupportQueryBlend::get_file_extension
 	return ret;
 }
 
-void EditorFileSystemImportFormatSupportQueryBlend::_validate_path(String p_path)
-{
-	String error;
-	bool success = false;
-	if (p_path == "") {
-		error = TTR("Path is empty.");
-	}
-	else {
-		if (_test_blender_path(p_path, &error)) {
-			success = true;
-			if (auto_detected_path == p_path) {
-				error = TTR("Path to Blender executable is valid (Autodetected).");
-			}
-			else {
-				error = TTR("Path to Blender executable is valid.");
-			}
-		}
-	}
 
-	path_status->set_text(error);
-
-	if (success) {
-		path_status->add_theme_color_override(SceneStringName(font_color),
-			path_status->get_theme_color(SNAME("success_color"), EditorStringName(Editor)));
-		configure_blender_dialog->get_ok_button()->set_disabled(false);
-	}
-	else {
-		path_status->add_theme_color_override(SceneStringName(font_color),
-			path_status->get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		configure_blender_dialog->get_ok_button()->set_disabled(true);
-	}
-}
 
 bool EditorFileSystemImportFormatSupportQueryBlend::_autodetect_path()
 {
@@ -228,12 +197,6 @@ void EditorFileSystemImportFormatSupportQueryBlend::_browse_install()
 	}
 
 	browse_dialog->popup_centered_ratio();
-}
-
-void EditorFileSystemImportFormatSupportQueryBlend::_update_icons()
-{
-	blender_path_browse->set_button_icon(
-		blender_path_browse->get_editor_theme_icon(SNAME("FolderBrowse")));
 }
 
 

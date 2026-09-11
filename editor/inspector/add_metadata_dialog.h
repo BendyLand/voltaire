@@ -48,7 +48,6 @@ private:
 	List<StringName> _existing_metas;
 
 	void _check_meta_name();
-	void _complete_init(const StringName& p_label);
 
 	LineEdit* add_meta_name = nullptr;
 	EditorVariantTypeOptionButton* add_meta_type = nullptr;

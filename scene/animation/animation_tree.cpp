@@ -55,23 +55,6 @@ void AnimationNode::blend_animation(ProcessState& p_process_state,
 	p_process_state.tree->make_animation_instance(p_animation, p_playback_info);
 }
 
-AnimationNode::NodeTimeInfo AnimationNode::_pre_process(ProcessState& p_process_state,
-	AnimationNodeInstance& p_instance, const AnimationMixer::PlaybackInfo& p_playback_info,
-	bool p_test_only)
-{
-	ERR_FAIL_NULL_V(tls_process_state, NodeTimeInfo()); // Should not ever happen.
-	ERR_FAIL_COND_V_MSG(tls_process_state != &p_process_state, NodeTimeInfo(),
-		"AnimationNodes can only be processed from within their own AnimationTree.");
-
-	AnimationNodeInstance* prev_instance = current_instance;
-
-	current_instance = &p_instance;
-	NodeTimeInfo nti = process(p_process_state, p_instance, p_playback_info, p_test_only);
-	current_instance = prev_instance;
-
-	return nti;
-}
-
 void AnimationNode::add_validation_error(const AnimationTree* p_tree, const StringName& p_path,
 	const String& p_error, int p_input_index) const
 {

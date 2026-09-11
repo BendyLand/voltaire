@@ -202,16 +202,6 @@ void DependencyEditor::_fix_all()
 
 void DependencyEditor::_update_file() { EditorFileSystem::get_singleton()->update_file(editing); }
 
-void DependencyEditor::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_THEME_CHANGED) {
-		warning_label->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color("warning_color", EditorStringName(Editor)));
-		filter->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-		menu_sort->set_button_icon(get_editor_theme_icon(SNAME("Sort")));
-	}
-}
-
 static String _get_resolved_dep_path(const String& p_dep)
 {
 	if (p_dep.get_slice_count("::") < 3) {
@@ -301,7 +291,6 @@ void DependencyEditor::_update_menu_sort()
 	}
 }
 
-/////////////////////////////////////
 void DependencyEditorOwners::_list_rmb_clicked(
 	int p_item, const Vector2& p_pos, MouseButton p_mouse_button_index)
 {
@@ -418,8 +407,6 @@ void DependencyEditorOwners::show(const String& p_path)
 
 	popup_centered_ratio(0.3);
 }
-
-///////////////////////
 
 void DependencyRemoveDialog::_find_files_in_removed_folder(
 	EditorFileSystemDirectory* efsd, const String& p_folder)
@@ -577,9 +564,6 @@ void DependencyRemoveDialog::show(const Vector<String>& p_folders, const Vector<
 	EditorFileSystem::get_singleton()->scan_changes();
 }
 
-void DependencyRemoveDialog::_bind_methods() {}
-
-//////////////
 enum
 {
 	BUTTON_ID_SEARCH,
@@ -590,8 +574,6 @@ void DependencyErrorDialog::ok_pressed()
 {
 	EditorNode::get_singleton()->load_scene_or_resource(for_file, !errors_fixed);
 }
-
-//////////////////////////////////////////////////////////////////////
 
 void OrphanResourcesDialog::ok_pressed()
 {

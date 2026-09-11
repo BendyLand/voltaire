@@ -46,15 +46,11 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	AnimatableBody2D();
 
 private:
-	void _update_kinematic_motion();
-
-	void set_sync_to_physics(bool p_enable);
 	bool is_sync_to_physics_enabled() const;
 };
 

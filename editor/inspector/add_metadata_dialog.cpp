@@ -34,14 +34,6 @@
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/line_edit.h"
 
-void AddMetadataDialog::open(const StringName p_title, List<StringName>& p_existing_metas)
-{
-	this->_existing_metas = p_existing_metas;
-	_complete_init(p_title);
-	popup_centered();
-	add_meta_name->grab_focus();
-}
-
 StringName AddMetadataDialog::get_meta_name() { return add_meta_name->get_text(); }
 
 void AddMetadataDialog::_check_meta_name()
