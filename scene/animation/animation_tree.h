@@ -166,9 +166,6 @@ protected:
 	StringName current_position = "current_position";
 	StringName current_delta = "current_delta";
 
-	NodeTimeInfo process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false);
-
 	// Virtualizing for especially AnimationNodeAnimation needs to take "backward" into account.
 	_FORCE_INLINE_ virtual double get_process_delta(AnimationNodeInstance& p_instance,
 		const AnimationMixer::PlaybackInfo& p_playback_info) const

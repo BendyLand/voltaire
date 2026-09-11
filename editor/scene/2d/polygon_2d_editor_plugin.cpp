@@ -129,21 +129,6 @@ void Polygon2DEditor::_select_mode(int p_mode)
 	}
 }
 
-void Polygon2DEditor::_update_polygon_editing_state()
-{
-	if (!_get_node()) {
-		return;
-	}
-
-	if (node->get_internal_vertex_count() > 0) {
-		disable_polygon_editing(true, TTR("Polygon 2D has internal vertices, so it can no longer "
-										  "be edited in the viewport."));
-	}
-	else {
-		disable_polygon_editing(false, String());
-	}
-}
-
 void Polygon2DEditor::_set_action(int p_action)
 {
 	polygon_create.clear();
@@ -153,24 +138,6 @@ void Polygon2DEditor::_set_action(int p_action)
 	selected_action = Action(p_action);
 	for (int i = 0; i < ACTION_MAX; i++) {
 		action_buttons[i]->set_pressed(p_action == i);
-	}
-}
-
-void Polygon2DEditor::_update_available_modes()
-{
-	// Force point editing mode if there's no polygon yet.
-	if (node->get_polygon().is_empty()) {
-		if (current_mode != MODE_POINTS) {
-			_select_mode(MODE_POINTS);
-		}
-		mode_buttons[MODE_UV]->set_disabled(true);
-		mode_buttons[MODE_POLYGONS]->set_disabled(true);
-		mode_buttons[MODE_BONES]->set_disabled(true);
-	}
-	else {
-		mode_buttons[MODE_UV]->set_disabled(false);
-		mode_buttons[MODE_POLYGONS]->set_disabled(false);
-		mode_buttons[MODE_BONES]->set_disabled(false);
 	}
 }
 

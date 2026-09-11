@@ -45,11 +45,6 @@ void EditorLayoutsDialog::_deselect_layout_names()
 	validation->update();
 }
 
-void EditorLayoutsDialog::_multi_selected()
-{
-	get_ok_button()->set_disabled(!layout_names->is_anything_selected());
-}
-
 void EditorLayoutsDialog::set_save_mode_enabled(bool p_enabled)
 {
 	save_mode = p_enabled;

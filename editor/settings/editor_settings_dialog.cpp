@@ -98,19 +98,6 @@ void EditorSettingsDialog::_undo_redo_callback(void* p_self, const String& p_nam
 	EditorNode::get_log()->add_message(p_name, EditorLog::MSG_TYPE_EDITOR);
 }
 
-void EditorSettingsDialog::_update_icons()
-{
-	search_box->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-	search_box->set_clear_button_enabled(true);
-
-	restart_close_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
-	restart_container->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
-	restart_icon->set_texture(get_editor_theme_icon(SNAME("StatusWarning")));
-	restart_label->add_theme_color_override(SceneStringName(font_color),
-		get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-}
-
 bool EditorSettingsDialog::_is_in_project_manager() const
 {
 	return !ProjectSettings::get_singleton()->is_project_loaded();
@@ -175,15 +162,6 @@ void EditorSettingsPropertyWrapper::_update_override()
 		set_bottom_editor(nullptr);
 	}
 	can_override = !has_override;
-}
-
-void EditorSettingsPropertyWrapper::_notification(int p_what)
-{
-	if (override_container && p_what == NOTIFICATION_THEME_CHANGED) {
-		override_icon->set_texture(get_editor_theme_icon(SNAME("Hierarchy")));
-		goto_button->set_button_icon(get_editor_theme_icon(SNAME("MethodOverride")));
-		remove_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
-	}
 }
 
 void EditorSettingsPropertyWrapper::update_property() { editor_property->update_property(); }

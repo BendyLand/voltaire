@@ -110,15 +110,6 @@ String EditorQuickOpenDialog::get_dialog_title(const Vector<StringName>& p_base_
 	return vformat(TTR("Select %s"), p_base_types[0]);
 }
 
-void EditorQuickOpenDialog::_finish_dialog_setup(const Vector<StringName>& p_base_types)
-{
-	set_process_shortcut_input(allow_type_switching);
-	get_ok_button()->set_disabled(container->has_nothing_selected());
-	set_title(get_dialog_title(p_base_types));
-	popup_centered_clamped(Size2(780, 650) * EDSCALE, 0.8f);
-	search_box->grab_focus();
-}
-
 void EditorQuickOpenDialog::ok_pressed()
 {
 	container->save_selected_item();
@@ -157,14 +148,6 @@ void EditorQuickOpenDialog::item_pressed(bool p_double_click)
 		ok_pressed();
 	}
 }
-
-void EditorQuickOpenDialog::_search_box_text_changed(const String& p_query)
-{
-	container->set_query_and_update(p_query);
-	get_ok_button()->set_disabled(container->has_nothing_selected());
-}
-
-//------------------------- Result Container
 
 void style_button(Button* p_button)
 {
@@ -612,36 +595,6 @@ void QuickOpenResultContainer::cleanup()
 	}
 }
 
-void QuickOpenResultContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		Color text_color = get_theme_color("font_readonly_color", EditorStringName(Editor));
-		file_details_path->add_theme_color_override(SceneStringName(font_color), text_color);
-		no_results_label->add_theme_color_override(SceneStringName(font_color), text_color);
-
-		file_context_menu->set_item_icon(
-			FILE_SHOW_IN_FILESYSTEM, get_editor_theme_icon(SNAME("ShowInFileSystem")));
-		file_context_menu->set_item_icon(
-			FILE_SHOW_IN_FILE_MANAGER, get_editor_theme_icon(SNAME("Filesystem")));
-
-		panel_container->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
-
-		if (content_display_mode == QuickOpenDisplayMode::LIST) {
-			display_mode_toggle->set_button_icon(get_editor_theme_icon(SNAME("FileThumbnail")));
-		}
-		else {
-			display_mode_toggle->set_button_icon(get_editor_theme_icon(SNAME("FileList")));
-		}
-	} break;
-	}
-}
-
-void QuickOpenResultContainer::_bind_methods() {}
-
-//------------------------- Result Item
-
 QuickOpenResultItem::QuickOpenResultItem()
 {
 	set_focus_mode(FocusMode::FOCUS_NONE);
@@ -690,8 +643,6 @@ void QuickOpenResultItem::_notification(int p_what)
 	} break;
 	}
 }
-
-//----------------- List item
 
 static Vector2i _get_path_interval(const Vector2i& p_interval, int p_dir_index)
 {
@@ -801,8 +752,6 @@ void QuickOpenResultListItem::_notification(int p_what)
 	} break;
 	}
 }
-
-//--------------- Grid Item
 
 QuickOpenResultGridItem::QuickOpenResultGridItem()
 {

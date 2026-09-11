@@ -309,46 +309,6 @@ void AnimationPlayer::play_section_with_markers(const StringName& p_name,
 	play_section(name, start_time, end_time, p_custom_blend, p_custom_scale, p_from_end);
 }
 
-void AnimationPlayer::_capture(const StringName& p_name, bool p_from_end, double p_duration,
-	Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type)
-{
-	StringName name = p_name;
-	if (name == StringName()) {
-		name = playback.assigned;
-	}
-
-	Ref<Animation> anim = get_animation(name);
-	if (anim.is_null() || !anim->is_capture_included()) {
-		return;
-	}
-	if (std::signbit(p_duration)) {
-		double max_dur = 0;
-		double current_pos = playback.current.pos;
-		if (playback.assigned != name) {
-			current_pos = p_from_end ? anim->get_length() : 0;
-		}
-		for (int i = 0; i < anim->get_track_count(); i++) {
-			if (anim->track_get_type(i) != Animation::TYPE_VALUE) {
-				continue;
-			}
-			if (anim->value_track_get_update_mode(i) != Animation::UPDATE_CAPTURE) {
-				continue;
-			}
-			if (anim->track_get_key_count(i) == 0) {
-				continue;
-			}
-			max_dur = MAX(max_dur, p_from_end ? current_pos - anim->track_get_key_time(i,
-																  anim->track_get_key_count(i) - 1)
-											  : anim->track_get_key_time(i, 0) - current_pos);
-		}
-		p_duration = max_dur;
-	}
-	if (Math::is_zero_approx(p_duration)) {
-		return;
-	}
-	capture(name, p_duration, p_trans_type, p_ease_type);
-}
-
 void AnimationPlayer::play_with_capture(const StringName& p_name, double p_duration,
 	double p_custom_blend, float p_custom_scale, bool p_from_end,
 	Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type)
@@ -697,8 +657,6 @@ void AnimationPlayer::_animation_removed(const StringName& p_name, const StringN
 
 void AnimationPlayer::_rename_animation(const StringName& p_from_name, const StringName& p_to_name)
 {
-	AnimationMixer::_rename_animation(p_from_name, p_to_name);
-
 	// Rename autoplay or blends if needed.
 	LocalVector<BlendKey> to_erase;
 	HashMap<BlendKey, double, BlendKey> to_insert;

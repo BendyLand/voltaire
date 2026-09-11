@@ -54,102 +54,6 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 
-void ProjectListItemControl::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		if (icon_needs_reload) {
-			// The project icon may not be loaded by the time the control is displayed,
-			// so use a loading placeholder.
-			project_icon->set_texture(get_editor_theme_icon(SNAME("ProjectIconLoading")));
-		}
-
-		project_title->begin_bulk_theme_override();
-		project_title->add_theme_font_override(SceneStringName(font),
-			get_theme_font(SNAME("title"), EditorStringName(EditorFonts)).ptr());
-		project_title->add_theme_font_size_override(SceneStringName(font_size),
-			get_theme_font_size(SNAME("title_size"), EditorStringName(EditorFonts)));
-		project_title->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SceneStringName(font_color), SNAME("ProjectList")));
-		project_title->end_bulk_theme_override();
-
-		project_path->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SceneStringName(font_color), SNAME("ProjectList")));
-
-		switch (version_match_type) {
-		case VersionMatchType::PROJECT_USES_OLDER_MAJOR:
-			project_different_version->set_texture(
-				get_editor_theme_icon(SNAME("ProjectUpgradeMajor")));
-			break;
-		case VersionMatchType::PROJECT_USES_OLDER_MINOR:
-			project_different_version->set_texture(get_editor_theme_icon(SNAME("ProjectUpgrade")));
-			break;
-		case VersionMatchType::PROJECT_USES_NEWER_MAJOR:
-			project_different_version->set_texture(
-				get_editor_theme_icon(SNAME("ProjectDowngradeMajor")));
-			break;
-		case VersionMatchType::PROJECT_USES_NEWER_MINOR:
-			project_different_version->set_texture(
-				get_editor_theme_icon(SNAME("ProjectDowngrade")));
-			break;
-		default:
-			break;
-		}
-
-		project_unsupported_features->set_texture(get_editor_theme_icon(SNAME("NodeWarning")));
-
-		favorite_focus_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		_update_favorite_button_focus_color();
-		if (is_favorite) {
-			favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Favorites")));
-		}
-		else {
-			favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Unfavorite")));
-		}
-
-		if (project_is_missing) {
-			explore_button->set_button_icon(get_editor_theme_icon(SNAME("FileBroken")));
-#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-		}
-		else {
-			explore_button->set_button_icon(get_editor_theme_icon(SNAME("Load")));
-#endif
-		}
-		if (touch_menu_button) {
-			touch_menu_button->set_button_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
-		}
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		if (is_selected && is_hovering) {
-			draw_style_box(get_theme_stylebox(SNAME("hover_pressed"), SNAME("ProjectList")).ptr(),
-				Rect2(Point2(), get_size()));
-		}
-		else if (is_selected) {
-			draw_style_box(get_theme_stylebox(SNAME("selected"), SNAME("ProjectList")).ptr(),
-				Rect2(Point2(), get_size()));
-		}
-		else if (is_hovering) {
-			draw_style_box(get_theme_stylebox(SNAME("hovered"), SNAME("ProjectList")).ptr(),
-				Rect2(Point2(), get_size()));
-		}
-		// Due to how this control works, we can't rely on the built-in way of checking for focus
-		// visibility.
-		if (has_focus() && !is_focus_hidden) {
-			draw_style_box(get_theme_stylebox(SNAME("focus"), SNAME("ProjectList")).ptr(),
-				Rect2(Point2(), get_size()));
-		}
-
-		draw_line(Point2(0, get_size().y + 1), Point2(get_size().x, get_size().y + 1),
-			get_theme_color(SNAME("guide_color"), SNAME("ProjectList")));
-	} break;
-
-	case NOTIFICATION_READY: {
-		set_project_title_autowrap();
-	} break;
-	}
-}
-
 void ProjectListItemControl::_update_favorite_button_focus_color()
 {
 	if (favorite_button->has_focus()) {
@@ -321,28 +225,6 @@ void ProjectListItemControl::set_is_favorite(bool p_favorite)
 	else {
 		favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Unfavorite")));
 		favorite_button->set_accessibility_name(TTRC("Add to Favorites"));
-	}
-}
-
-void ProjectListItemControl::set_is_missing(bool p_missing)
-{
-	project_is_missing = p_missing;
-
-	if (project_is_missing) {
-		project_icon->set_modulate(Color(1, 1, 1, 0.5));
-
-		explore_button->set_button_icon(get_editor_theme_icon(SNAME("FileBroken")));
-		explore_button->set_tooltip_text(TTRC("Error: Project is missing on the filesystem."));
-	}
-	else {
-#if defined(ANDROID_ENABLED) || defined(WEB_ENABLED)
-		// Opening the system file manager is not supported on the Android and web editors.
-		explore_button->hide();
-#else  // !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-		explore_button->set_button_icon(get_editor_theme_icon(SNAME("Load")));
-		explore_button->set_tooltip_text(
-			OS::get_singleton()->get_platform_string(OS::PLATFORM_STRING_FILE_MANAGER_OPEN));
-#endif // defined(ANDROID_ENABLED) || defined(WEB_ENABLED)
 	}
 }
 

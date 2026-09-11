@@ -60,8 +60,6 @@
 #include "scene/theme/theme_db.h"
 #include "theme_editor_plugin.h"
 
-///////////////////////
-
 void ThemeItemImportTree::_toggle_type_items(bool p_collapse)
 {
 	TreeItem* root = import_items_tree->get_root();
@@ -374,73 +372,6 @@ void ThemeItemImportTree::reset_item_tree()
 
 bool ThemeItemImportTree::has_selected_items() const { return (selected_items.size() > 0); }
 
-void ThemeItemImportTree::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		select_icons_warning_icon->set_texture(get_editor_theme_icon(SNAME("StatusWarning")));
-		select_icons_warning->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor)));
-
-		import_items_filter->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-
-		// Bottom panel buttons.
-		import_collapse_types_button->set_button_icon(get_editor_theme_icon(SNAME("CollapseTree")));
-		import_expand_types_button->set_button_icon(get_editor_theme_icon(SNAME("ExpandTree")));
-
-		import_select_all_button->set_button_icon(get_editor_theme_icon(SNAME("ThemeSelectAll")));
-		import_select_full_button->set_button_icon(get_editor_theme_icon(SNAME("ThemeSelectFull")));
-		import_deselect_all_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeDeselectAll")));
-
-		// Side panel buttons.
-		select_colors_icon->set_texture(get_editor_theme_icon(SNAME("Color")));
-		deselect_all_colors_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeDeselectAll")));
-		select_all_colors_button->set_button_icon(get_editor_theme_icon(SNAME("ThemeSelectAll")));
-		select_full_colors_button->set_button_icon(get_editor_theme_icon(SNAME("ThemeSelectFull")));
-
-		select_constants_icon->set_texture(get_editor_theme_icon(SNAME("MemberConstant")));
-		deselect_all_constants_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeDeselectAll")));
-		select_all_constants_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeSelectAll")));
-		select_full_constants_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeSelectFull")));
-
-		select_fonts_icon->set_texture(get_editor_theme_icon(SNAME("FontItem")));
-		deselect_all_fonts_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeDeselectAll")));
-		select_all_fonts_button->set_button_icon(get_editor_theme_icon(SNAME("ThemeSelectAll")));
-		select_full_fonts_button->set_button_icon(get_editor_theme_icon(SNAME("ThemeSelectFull")));
-
-		select_font_sizes_icon->set_texture(get_editor_theme_icon(SNAME("FontSize")));
-		deselect_all_font_sizes_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeDeselectAll")));
-		select_all_font_sizes_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeSelectAll")));
-		select_full_font_sizes_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeSelectFull")));
-
-		select_icons_icon->set_texture(get_editor_theme_icon(SNAME("ImageTexture")));
-		deselect_all_icons_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeDeselectAll")));
-		select_all_icons_button->set_button_icon(get_editor_theme_icon(SNAME("ThemeSelectAll")));
-		select_full_icons_button->set_button_icon(get_editor_theme_icon(SNAME("ThemeSelectFull")));
-
-		select_styleboxes_icon->set_texture(get_editor_theme_icon(SNAME("StyleBoxFlat")));
-		deselect_all_styleboxes_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeDeselectAll")));
-		select_all_styleboxes_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeSelectAll")));
-		select_full_styleboxes_button->set_button_icon(
-			get_editor_theme_icon(SNAME("ThemeSelectFull")));
-	} break;
-	}
-}
-
-///////////////////////
-
 void ThemeItemEditorDialog::ok_pressed()
 {
 	if (import_default_theme_items->has_selected_items() ||
@@ -605,8 +536,6 @@ void ThemeItemEditorDialog::_select_another_theme_cbk(const String& p_path)
 
 void ThemeItemEditorDialog::set_edited_theme(const Ref<Theme>& p_theme) { edited_theme = p_theme; }
 
-///////////////////////
-
 void ThemeTypeDialog::_dialog_about_to_show()
 {
 	add_type_filter->set_text("");
@@ -691,8 +620,6 @@ void ThemeTypeDialog::_add_type_selected(const String& p_type_name)
 void ThemeTypeDialog::set_edited_theme(const Ref<Theme>& p_theme) { edited_theme = p_theme; }
 
 void ThemeTypeDialog::set_include_own_types(bool p_enable) { include_own_types = p_enable; }
-
-///////////////////////
 
 Control* ThemeItemLabel::make_custom_tooltip(const String& p_text) const
 {
@@ -860,8 +787,6 @@ bool ThemeTypeEditor::is_stylebox_pinned(Ref<StyleBox> p_stylebox)
 	return leading_stylebox.pinned && leading_stylebox.stylebox == p_stylebox;
 }
 
-///////////////////////
-
 Ref<Theme> ThemeEditor::get_edited_theme() { return theme; }
 
 void ThemeEditor::_theme_edit_button_cbk()
@@ -944,8 +869,6 @@ void ThemeEditor::_preview_tabs_resized()
 		}
 	}
 }
-
-///////////////////////
 
 bool ThemeEditorPlugin::can_auto_hide() const { return theme_editor->theme.is_null(); }
 

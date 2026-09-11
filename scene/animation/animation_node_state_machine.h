@@ -148,8 +148,6 @@ private:
 	bool _can_connect(const StringName& p_name);
 
 protected:
-	static void _bind_methods();
-
 	bool _check_advance_condition(const Ref<AnimationNodeStateMachine> p_state_machine,
 		const Ref<AnimationNodeStateMachineTransition> p_transition) const;
 
@@ -309,9 +307,6 @@ class AnimationNodeStateMachinePlayback : public Resource
 
 	void _clear_path_children(AnimationNode::ProcessState& p_process_state, AnimationTree* p_tree,
 		AnimationNodeStateMachine* p_state_machine, bool p_test_only);
-	bool _travel_children(AnimationNode::ProcessState& p_process_state, AnimationTree* p_tree,
-		AnimationNodeStateMachine* p_state_machine, const String& p_path,
-		bool p_is_allow_transition_to_self, bool p_is_parent_same_state, bool p_test_only);
 	void _start_children(AnimationTree* p_tree, AnimationNodeStateMachine* p_state_machine,
 		const String& p_path, bool p_test_only);
 
@@ -322,9 +317,6 @@ class AnimationNodeStateMachinePlayback : public Resource
 		AnimationNodeInstance& p_instance, AnimationNodeStateMachine* p_state_machine,
 		const AnimationMixer::PlaybackInfo p_playback_info, bool p_test_only);
 
-	bool _check_advance_condition(AnimationNode::ProcessState& p_process_state,
-		AnimationNodeInstance& p_instance, const Ref<AnimationNodeStateMachine> p_state_machine,
-		const Ref<AnimationNodeStateMachineTransition> p_transition) const;
 	bool _transition_to_next_recursive(AnimationNode::ProcessState& p_process_state,
 		AnimationNodeInstance& p_instance, AnimationTree* p_tree,
 		AnimationNodeStateMachine* p_state_machine, double p_delta, bool p_test_only);
@@ -335,9 +327,6 @@ class AnimationNodeStateMachinePlayback : public Resource
 		AnimationNodeStateMachine* p_state_machine,
 		const AnimationNodeStateMachine::Transition& p_transition,
 		Ref<AnimationNodeStateMachine>& r_state_machine, bool& r_bypass) const;
-	bool _can_transition_to_next(AnimationNode::ProcessState& p_process_state,
-		AnimationTree* p_tree, AnimationNodeStateMachine* p_state_machine, NextInfo p_next,
-		bool p_test_only);
 
 	void _set_current(AnimationNode::ProcessState& p_process_state,
 		AnimationNodeStateMachine* p_state_machine, const StringName& p_state);

@@ -1547,15 +1547,6 @@ void Theme::merge_with(const Ref<Theme>& p_other)
 		}
 	}
 
-	// Styleboxes.
-	{
-		for (const KeyValue<StringName, ThemeStyleMap>& E : p_other->style_map) {
-			for (const KeyValue<StringName, Ref<StyleBox>>& F : E.value) {
-				set_stylebox(F.key, E.key, F.value);
-			}
-		}
-	}
-
 	// Type variations.
 	{
 		for (const KeyValue<StringName, StringName>& E : p_other->variation_map) {

@@ -37,45 +37,6 @@
 #include "fbx_importer_manager.h"
 #include "scene/gui/link_button.h"
 
-void FBXImporterManager::_validate_path(const String& p_path)
-{
-	String error;
-	bool success = false;
-
-	if (p_path == "") {
-		error = TTR("Path to FBX2glTF executable is empty.");
-	}
-	else if (!FileAccess::exists(p_path)) {
-		error = TTR("Path to FBX2glTF executable is invalid.");
-	}
-	else {
-		List<String> args;
-		args.push_back("--version");
-		int exitcode;
-		Error err = OS::get_singleton()->execute(p_path, args, nullptr, &exitcode);
-
-		if (err == OK && exitcode == 0) {
-			success = true;
-		}
-		else {
-			error = TTR("Error executing this file (wrong version or architecture).");
-		}
-	}
-
-	if (success) {
-		path_status->set_text(TTR("FBX2glTF executable is valid."));
-		path_status->add_theme_color_override(SceneStringName(font_color),
-			path_status->get_theme_color(SNAME("success_color"), EditorStringName(Editor)));
-		get_ok_button()->set_disabled(false);
-	}
-	else {
-		path_status->set_text(error);
-		path_status->add_theme_color_override(SceneStringName(font_color),
-			path_status->get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		get_ok_button()->set_disabled(true);
-	}
-}
-
 void FBXImporterManager::_select_file(const String& p_path)
 {
 	fbx_path->set_text(p_path);

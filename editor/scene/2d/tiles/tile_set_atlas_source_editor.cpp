@@ -194,17 +194,6 @@ void TileSetAtlasSourceEditor::_update_toolbar()
 	}
 }
 
-void TileSetAtlasSourceEditor::_update_buttons()
-{
-	tool_paint_button->set_disabled(read_only);
-	tool_paint_button->set_tooltip_text(read_only
-											? TTRC("TileSet is in read-only mode. Make the "
-												   "resource unique to edit TileSet properties.")
-											: TTRC("Paint properties."));
-	tools_settings_erase_button->set_disabled(read_only);
-	tool_advanced_menu_button->set_disabled(read_only);
-}
-
 void TileSetAtlasSourceEditor::_tile_atlas_control_draw()
 {
 	// Draw the selected tile.
@@ -685,22 +674,6 @@ void TileSetAtlasSourceEditor::_notification(int p_what)
 			_update_tile_data_editors();
 			_update_atlas_view();
 		}
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		tool_setup_atlas_source_button->set_button_icon(get_editor_theme_icon(SNAME("Tools")));
-		tool_select_button->set_button_icon(get_editor_theme_icon(SNAME("ToolSelect")));
-		tool_paint_button->set_button_icon(get_editor_theme_icon(SNAME("Paint")));
-
-		tools_settings_erase_button->set_button_icon(get_editor_theme_icon(SNAME("Eraser")));
-		tool_advanced_menu_button->set_button_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
-		outside_tiles_warning->set_texture(get_editor_theme_icon(SNAME("StatusWarning")));
-
-		resize_handle = get_editor_theme_icon(SNAME("EditorHandle"));
-		resize_handle_disabled = get_editor_theme_icon(SNAME("EditorHandleDisabled"));
-
-		tile_data_editors_tree->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), "PopupPanel").ptr());
 	} break;
 
 	case NOTIFICATION_INTERNAL_PROCESS: {

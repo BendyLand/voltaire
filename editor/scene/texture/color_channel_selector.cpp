@@ -64,28 +64,6 @@ ColorChannelSelector::ColorChannelSelector()
 	add_child(panel);
 }
 
-void ColorChannelSelector::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_THEME_CHANGED) {
-		// PanelContainer's background is invisible in the editor. We need a background.
-		// And we need this in turn because buttons don't look good without background (for example,
-		// hover is transparent).
-		Ref<StyleBox> bg_style = get_theme_stylebox(SceneStringName(panel), "TabContainer");
-		ERR_FAIL_COND(bg_style.is_null());
-		bg_style = bg_style->duplicate();
-		// The default content margin makes the widget become a bit too large. It should be like
-		// mini-toolbar.
-		bg_style->set_content_margin(SIDE_LEFT, 1.0f * EDSCALE);
-		bg_style->set_content_margin(SIDE_RIGHT, 1.0f * EDSCALE);
-		bg_style->set_content_margin(SIDE_TOP, 1.0f * EDSCALE);
-		bg_style->set_content_margin(SIDE_BOTTOM, 1.0f * EDSCALE);
-		panel->add_theme_style_override(SceneStringName(panel), bg_style.ptr());
-
-		Ref<Texture2D> icon = get_editor_theme_icon(SNAME("TexturePreviewChannels"));
-		toggle_button->set_button_icon(icon);
-	}
-}
-
 void ColorChannelSelector::set_available_channels_mask(uint32_t p_mask)
 {
 	for (unsigned int i = 0; i < CHANNEL_COUNT; ++i) {
@@ -107,7 +85,6 @@ uint32_t ColorChannelSelector::get_selected_channels_mask() const
 	return mask;
 }
 
-// Helper
 Vector4 ColorChannelSelector::get_selected_channel_factors() const
 {
 	Vector4 channel_factors;

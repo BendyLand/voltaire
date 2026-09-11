@@ -97,15 +97,6 @@ void ExportTemplateManager::_request_mirrors()
 	}
 }
 
-void ExportTemplateManager::_set_empty_mirror_list()
-{
-	mirrors_list->add_item(TTRC("No mirrors"));
-	mirrors_list->set_disabled(true);
-	open_mirror->set_disabled(true);
-	mirrors_empty = true;
-	_update_install_button();
-}
-
 bool ExportTemplateManager::_is_online() const { return !offline_container->is_visible(); }
 
 void ExportTemplateManager::_open_mirror()
@@ -366,48 +357,6 @@ void ExportTemplateManager::_update_template_tree()
 
 	_fill_template_tree(available_templates_tree, installed_template_files, is_current_version);
 	_fill_template_tree(installed_templates_tree, installed_template_files, is_current_version);
-}
-
-void ExportTemplateManager::_update_install_button()
-{
-	if (is_downloading()) {
-		install_button->set_text(TTRC("Downloading templates..."));
-		install_button->set_disabled(true);
-		install_button->set_tooltip_text(String());
-		return;
-	}
-
-	download_all_enabled = true;
-	for (TreeItem* item = available_templates_tree->get_root(); item;
-		 item = item->get_next_in_tree()) {
-		if (item->is_checked(0)) {
-			download_all_enabled = false;
-			break;
-		}
-	}
-	if (download_all_enabled) {
-		install_button->set_text(TTRC("Install All Templates"));
-	}
-	else {
-		install_button->set_text(TTRC("Install Selected Templates"));
-	}
-
-	install_button->set_disabled(!_can_download_templates());
-	if (install_button->is_disabled()) {
-		if (!_is_online()) {
-			install_button->set_tooltip_text(TTRC("Download not available in offline mode."));
-		}
-		else if (mirrors_empty) {
-			install_button->set_tooltip_text(TTRC("No mirrors available for download."));
-		}
-		else {
-			install_button->set_tooltip_text(
-				TTRC("Downloads are only available for the current Godot version."));
-		}
-	}
-	else {
-		install_button->set_tooltip_text(String());
-	}
 }
 
 bool ExportTemplateManager::_can_download_templates()
@@ -1305,8 +1254,6 @@ bool TemplateDownloader::_retry_file_fragment(const String& p_reason)
 	}
 	return true;
 }
-
-void TemplateDownloader::_bind_methods() {}
 
 Error TemplateDownloader::download_template(const String& p_file_name, const String& p_source)
 {

@@ -69,23 +69,6 @@ void AnimationMixer::_animation_removed(const StringName& p_name, const StringNa
 	_remove_animation(name);
 }
 
-void AnimationMixer::_animation_renamed(
-	const StringName& p_name, const StringName& p_to_name, const StringName& p_library)
-{
-	const StringName from_name =
-		p_library == StringName() ? p_name : StringName(String(p_library) + "/" + String(p_name));
-	const StringName to_name = p_library == StringName()
-								   ? p_to_name
-								   : StringName(String(p_library) + "/" + String(p_to_name));
-
-	if (!animation_set.has(from_name)) {
-		return; // No need to update because not the one from the library being used.
-	}
-	_animation_set_cache_update();
-
-	_rename_animation(from_name, to_name);
-}
-
 void AnimationMixer::_animation_changed(const StringName& p_name) { _clear_caches(); }
 
 void AnimationMixer::get_animation_library_list(LocalVector<StringName>* p_libraries) const
@@ -326,10 +309,6 @@ void AnimationMixer::_create_track_num_to_track_cache_for_animation(
 	}
 }
 
-/* -------------------------------------------- */
-/* -- Blending processor ---------------------- */
-/* -------------------------------------------- */
-
 bool AnimationMixer::_blend_pre_process(
 	double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map)
 {
@@ -457,10 +436,6 @@ void AnimationMixer::advance(double p_time) { _process_animation(p_time); }
 
 void AnimationMixer::clear_caches() { _clear_caches(); }
 
-/* -------------------------------------------- */
-/* -- Root motion ----------------------------- */
-/* -------------------------------------------- */
-
 NodePath AnimationMixer::get_root_motion_track() const { return root_motion_track; }
 
 void AnimationMixer::set_root_motion_local(bool p_enabled) { root_motion_local = p_enabled; }
@@ -488,72 +463,11 @@ Vector3 AnimationMixer::get_root_motion_scale_accumulator() const
 	return root_motion_scale_accumulator;
 }
 
-/* -------------------------------------------- */
-/* -- Reset on save --------------------------- */
-/* -------------------------------------------- */
-
 void AnimationMixer::set_reset_on_save_enabled(bool p_enabled) { reset_on_save = p_enabled; }
 
 bool AnimationMixer::is_reset_on_save_enabled() const { return reset_on_save; }
 
 bool AnimationMixer::can_apply_reset() const { return has_animation(SceneStringName(RESET)); }
-
-Ref<AnimatedValuesBackup> AnimationMixer::make_backup()
-{
-	Ref<AnimatedValuesBackup> backup;
-	backup.instantiate();
-
-	Ref<Animation> reset_anim = animation_set[SceneStringName(RESET)].animation;
-	ERR_FAIL_COND_V(reset_anim.is_null(), Ref<AnimatedValuesBackup>());
-
-	_blend_init();
-	PlaybackInfo pi;
-	pi.time = 0;
-	pi.delta = 0;
-	pi.start = 0;
-	pi.end = reset_anim->get_length();
-	pi.seeked = true;
-	pi.weight = 1.0;
-	make_animation_instance(SceneStringName(RESET), pi);
-	_build_backup_track_cache();
-
-	backup->set_data(AHashMap<Animation::TrackCacheID, TrackCache*, HashHasher>(track_cache));
-	clear_animation_instances();
-
-	return backup;
-}
-
-void AnimationMixer::reset()
-{
-	ERR_FAIL_COND(!can_apply_reset());
-
-	Ref<Animation> reset_anim = animation_set[SceneStringName(RESET)].animation;
-	ERR_FAIL_COND(reset_anim.is_null());
-
-	Node* root_node_object = get_node_or_null(root_node);
-	ERR_FAIL_NULL(root_node_object);
-
-	AnimationPlayer* aux_player = memnew(AnimationPlayer);
-	root_node_object->add_child(aux_player);
-	Ref<AnimationLibrary> al;
-	al.instantiate();
-	al->add_animation(SceneStringName(RESET), reset_anim);
-	aux_player->set_reset_on_save_enabled(false);
-	aux_player->set_root_node(aux_player->get_path_to(root_node_object));
-	aux_player->add_animation_library("", al);
-	aux_player->set_assigned_animation(SceneStringName(RESET));
-	aux_player->seek(0.0f, true);
-	aux_player->queue_free();
-}
-
-void AnimationMixer::restore(const Ref<AnimatedValuesBackup>& p_backup)
-{
-	ERR_FAIL_COND(p_backup.is_null());
-	track_cache = p_backup->get_data();
-	_blend_apply();
-	track_cache = AHashMap<Animation::TrackCacheID, AnimationMixer::TrackCache*, HashHasher>();
-	cache_valid = false;
-}
 
 void AnimationMixer::_node_removed(Node* p_node) { _clear_caches(); }
 

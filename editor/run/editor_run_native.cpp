@@ -38,10 +38,6 @@
 void EditorRunNative::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		remote_debug->set_button_icon(get_editor_theme_icon(SNAME("PlayRemote")));
-	} break;
-
 	case NOTIFICATION_PROCESS: {
 		bool changed = EditorExport::get_singleton()->poll_export_platforms() || first;
 

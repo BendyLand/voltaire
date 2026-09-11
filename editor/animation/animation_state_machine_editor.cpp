@@ -54,34 +54,6 @@ bool AnimationNodeStateMachineEditor::can_edit(const Ref<AnimationNode>& p_node)
 	return ansm.is_valid();
 }
 
-void AnimationNodeStateMachineEditor::edit(const Ref<AnimationNode>& p_node)
-{
-	state_machine = p_node;
-
-	read_only = false;
-
-	if (state_machine.is_valid()) {
-		read_only = EditorNode::get_singleton()->is_resource_read_only(state_machine);
-
-		selected_transition_from = StringName();
-		selected_transition_to = StringName();
-		selected_transition_index = -1;
-		selected_node = StringName();
-		selected_nodes.clear();
-		connected_nodes.clear();
-		_update_mode();
-		_update_graph();
-	}
-
-	if (read_only) {
-		tool_create->set_pressed(false);
-		tool_connect->set_pressed(false);
-	}
-
-	tool_create->set_disabled(read_only);
-	tool_connect->set_disabled(read_only);
-}
-
 String AnimationNodeStateMachineEditor::_get_root_playback_path(String& r_node_directory)
 {
 	AnimationTree* tree = AnimationTreeEditor::get_singleton()->get_animation_tree();
@@ -394,35 +366,6 @@ void AnimationNodeStateMachineEditor::_update_connected_nodes(const StringName& 
 void AnimationNodeStateMachineEditor::_open_editor(const String& p_name)
 {
 	AnimationTreeEditor::get_singleton()->enter_editor(p_name);
-}
-
-void AnimationNodeStateMachineEditor::_update_mode()
-{
-	if (tool_select->is_pressed()) {
-		selection_tools_hb->show();
-		bool nothing_selected = selected_nodes.is_empty() &&
-								selected_transition_from == StringName() &&
-								selected_transition_to == StringName();
-		bool start_end_selected =
-			selected_nodes.size() == 1 && (*selected_nodes.begin() == SceneStringName(Start) ||
-											  *selected_nodes.begin() == SceneStringName(End));
-		tool_erase->set_disabled(nothing_selected || start_end_selected || read_only);
-	}
-	else {
-		selection_tools_hb->hide();
-	}
-
-	if (read_only) {
-		tool_create->set_pressed(false);
-		tool_connect->set_pressed(false);
-	}
-
-	if (tool_connect->is_pressed()) {
-		transition_tools_hb->show();
-	}
-	else {
-		transition_tools_hb->hide();
-	}
 }
 
 AnimationNodeStateMachineEditor* AnimationNodeStateMachineEditor::singleton = nullptr;

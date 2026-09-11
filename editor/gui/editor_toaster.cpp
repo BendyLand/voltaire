@@ -153,18 +153,6 @@ void EditorToaster::_draw_progress(Control* panel)
 	}
 }
 
-void EditorToaster::_set_notifications_enabled(bool p_enabled)
-{
-	vbox_container->set_visible(p_enabled);
-	if (p_enabled) {
-		main_button->set_button_icon(get_editor_theme_icon(SNAME("Notification")));
-	}
-	else {
-		main_button->set_button_icon(get_editor_theme_icon(SNAME("NotificationDisabled")));
-	}
-	_update_disable_notifications_button();
-}
-
 void EditorToaster::_popup_str(
 	const String& p_message, Severity p_severity, const String& p_tooltip)
 {
@@ -231,19 +219,6 @@ void EditorToaster::_popup_str(
 
 	is_processing_error = false;
 	set_process_internal(true);
-}
-
-void EditorToaster::_toast_theme_changed(Control* p_control)
-{
-	ERR_FAIL_COND(!toasts.has(p_control));
-
-	Toast& toast = toasts[p_control];
-	if (toast.close_button) {
-		toast.close_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
-	}
-	if (toast.copy_button) {
-		toast.copy_button->set_button_icon(get_editor_theme_icon(SNAME("ActionCopy")));
-	}
 }
 
 void EditorToaster::close(Control* p_control)

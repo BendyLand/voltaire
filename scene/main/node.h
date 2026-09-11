@@ -543,7 +543,6 @@ public:
 	/* NODE/TREE */
 
 	StringName get_name() const;
-	String get_description(bool p_show_not_in_tree = false) const;
 	void set_name(const StringName& p_name);
 
 	InternalMode get_internal_mode() const;
@@ -910,34 +909,34 @@ template <typename... VarArgs> Error Node::rpc(const StringName& p_method, VarAr
 #ifdef DEBUG_ENABLED
 #define ERR_THREAD_GUARD                                                                           \
 	ERR_FAIL_COND_MSG(!is_accessible_from_caller_thread(),                                         \
-		vformat("%s: The caller thread can't call the function `%s()` on this node. Use "          \
+		vformat("The caller thread can't call the function `%s()` on this node. Use "          \
 				"`call_deferred()` or `call_deferred_thread_group()` instead.",                    \
-			get_description(), FUNCTION_STR));
+			FUNCTION_STR));
 #define ERR_THREAD_GUARD_V(m_ret)                                                                  \
 	ERR_FAIL_COND_V_MSG(!is_accessible_from_caller_thread(), (m_ret),                              \
-		vformat("%s: The caller thread can't call the function `%s()` on this node. Use "          \
+		vformat("The caller thread can't call the function `%s()` on this node. Use "          \
 				"`call_deferred()` or `call_deferred_thread_group()` instead.",                    \
-			get_description(), FUNCTION_STR));
+			 FUNCTION_STR));
 #define ERR_MAIN_THREAD_GUARD                                                                      \
 	ERR_FAIL_COND_MSG(is_inside_tree() && !is_current_thread_safe_for_nodes(),                     \
-		vformat("%s: The function `%s()` on this node can only be accessed from the main thread. " \
+		vformat("The function `%s()` on this node can only be accessed from the main thread. " \
 				"Use `call_deferred()` instead.",                                                  \
-			get_description(), FUNCTION_STR));
+			 FUNCTION_STR));
 #define ERR_MAIN_THREAD_GUARD_V(m_ret)                                                             \
 	ERR_FAIL_COND_V_MSG(is_inside_tree() && !is_current_thread_safe_for_nodes(), (m_ret),          \
-		vformat("%s: The function `%s()` on this node can only be accessed from the main thread. " \
+		vformat("The function `%s()` on this node can only be accessed from the main thread. " \
 				"Use `call_deferred()` instead.",                                                  \
-			get_description(), FUNCTION_STR));
+			 FUNCTION_STR));
 #define ERR_READ_THREAD_GUARD                                                                      \
 	ERR_FAIL_COND_MSG(!is_readable_from_caller_thread(),                                           \
-		vformat("%s: The function `%s()` on this node can only be accessed from either the main "  \
+		vformat("The function `%s()` on this node can only be accessed from either the main "  \
 				"thread or a thread group. Use `call_deferred()` instead.",                        \
-			get_description(), FUNCTION_STR));
+			 FUNCTION_STR));
 #define ERR_READ_THREAD_GUARD_V(m_ret)                                                             \
 	ERR_FAIL_COND_V_MSG(!is_readable_from_caller_thread(), (m_ret),                                \
-		vformat("%s: The function `%s()` on this node can only be accessed from either the main "  \
+		vformat("The function `%s()` on this node can only be accessed from either the main "  \
 				"thread or a thread group. Use `call_deferred()` instead.",                        \
-			get_description(), FUNCTION_STR));
+			 FUNCTION_STR));
 #else
 #define ERR_THREAD_GUARD
 #define ERR_THREAD_GUARD_V(m_ret)

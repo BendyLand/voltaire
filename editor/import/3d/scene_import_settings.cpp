@@ -146,82 +146,12 @@ void SceneImportSettingsDialog::_reset_bone_transforms()
 	}
 }
 
-void SceneImportSettingsDialog::_play_animation()
-{
-	if (animation_player == nullptr) {
-		return;
-	}
-	StringName id = StringName(selected_id);
-	if (animation_player->has_animation(id)) {
-		if (animation_player->is_playing()) {
-			animation_player->pause();
-			animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-			set_process(false);
-		}
-		else {
-			animation_player->play(id);
-			animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
-			set_process(true);
-		}
-	}
-}
-
-void SceneImportSettingsDialog::_stop_current_animation()
-{
-	animation_pingpong = false;
-	animation_player->stop();
-	animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-	animation_slider->set_value_no_signal(0.0);
-	set_process(false);
-}
-
-void SceneImportSettingsDialog::_animation_slider_value_changed(double p_value)
-{
-	if (animation_player == nullptr || !animation_map.has(selected_id) ||
-		animation_map[selected_id].animation.is_null()) {
-		return;
-	}
-	if (animation_player->is_playing()) {
-		animation_player->stop();
-		animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-		set_process(false);
-	}
-	animation_player->seek(p_value * animation_map[selected_id].animation->get_length(), true);
-}
-
 void SceneImportSettingsDialog::_skeleton_tree_entered(Skeleton3D* p_skeleton)
 {
 	bones_mesh_preview->set_skeleton_path(p_skeleton->get_path());
 	Ref<Skin> skin = p_skeleton->create_skin_from_rest_transforms();
 	p_skeleton->register_skin(skin);
 	bones_mesh_preview->set_skin(skin);
-}
-
-void SceneImportSettingsDialog::_animation_finished(const StringName& p_name)
-{
-	Animation::LoopMode loop_mode = animation_loop_mode;
-
-	switch (loop_mode) {
-	case Animation::LOOP_NONE: {
-		animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-		animation_slider->set_value_no_signal(1.0);
-		set_process(false);
-	} break;
-	case Animation::LOOP_LINEAR: {
-		animation_player->play(p_name);
-	} break;
-	case Animation::LOOP_PINGPONG: {
-		if (animation_pingpong) {
-			animation_player->play(p_name);
-		}
-		else {
-			animation_player->play_backwards(p_name);
-		}
-		animation_pingpong = !animation_pingpong;
-	} break;
-	default: {
-	} break;
-	}
 }
 
 void SceneImportSettingsDialog::_animation_update_skeleton_visibility()

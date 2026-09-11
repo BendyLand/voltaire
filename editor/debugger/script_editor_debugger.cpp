@@ -79,30 +79,6 @@ void ScriptEditorDebugger::debug_copy()
 	DisplayServer::get_singleton()->clipboard_set(msg);
 }
 
-void ScriptEditorDebugger::debug_skip_breakpoints()
-{
-	skip_breakpoints_value = !skip_breakpoints_value;
-	if (skip_breakpoints_value) {
-		skip_breakpoints->set_button_icon(get_editor_theme_icon(SNAME("DebugSkipBreakpointsOn")));
-	}
-	else {
-		skip_breakpoints->set_button_icon(get_editor_theme_icon(SNAME("DebugSkipBreakpointsOff")));
-	}
-}
-
-void ScriptEditorDebugger::debug_ignore_error_breaks()
-{
-	ignore_error_breaks_value = !ignore_error_breaks_value;
-	if (ignore_error_breaks_value) {
-		ignore_error_breaks->set_button_icon(
-			get_theme_icon(SNAME("NotificationDisabled"), SNAME("EditorIcons")));
-	}
-	else {
-		ignore_error_breaks->set_button_icon(
-			get_theme_icon(SNAME("Notification"), SNAME("EditorIcons")));
-	}
-}
-
 void ScriptEditorDebugger::debug_out()
 {
 	ERR_FAIL_COND(!is_breaked());
@@ -318,111 +294,6 @@ void ScriptEditorDebugger::_update_reason_content_height()
 	}
 
 	reason->set_custom_minimum_size(Size2(0, CLAMP(content_height, 0, content_max_height)));
-}
-
-void ScriptEditorDebugger::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (is_ready()) {
-			for (TreeItem* file_item = breakpoints_tree->get_root()->get_first_child(); file_item;
-				 file_item = file_item->get_next()) {
-				for (TreeItem* breakpoint_item = file_item->get_first_child(); breakpoint_item;
-					 breakpoint_item = breakpoint_item->get_next()) {
-				}
-			}
-			update_tabs();
-		}
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		tabs->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("DebuggerPanel"), EditorStringName(EditorStyles)).ptr());
-
-		skip_breakpoints->set_button_icon(
-			get_editor_theme_icon(skip_breakpoints_value ? SNAME("DebugSkipBreakpointsOn")
-														 : SNAME("DebugSkipBreakpointsOff")));
-		ignore_error_breaks->set_button_icon(get_editor_theme_icon(
-			ignore_error_breaks_value ? SNAME("NotificationDisabled") : SNAME("Notification")));
-		ignore_error_breaks->add_theme_color_override(
-			"icon_normal_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
-		ignore_error_breaks->add_theme_color_override(
-			"icon_hover_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
-		ignore_error_breaks->add_theme_color_override(
-			"icon_pressed_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
-		ignore_error_breaks->add_theme_color_override(
-			"icon_focus_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
-		copy->set_button_icon(get_editor_theme_icon(SNAME("ActionCopy")));
-		step->set_button_icon(get_editor_theme_icon(SNAME("DebugStep")));
-		next->set_button_icon(get_editor_theme_icon(SNAME("DebugNext")));
-		out->set_button_icon(get_editor_theme_icon(SNAME("DebugOut")));
-		dobreak->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
-		docontinue->set_button_icon(get_editor_theme_icon(SNAME("DebugContinue")));
-		vmem_notice_icon->set_texture(get_editor_theme_icon(SNAME("NodeInfo")));
-		vmem_refresh->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
-		vmem_export->set_button_icon(get_editor_theme_icon(SNAME("Save")));
-		vmem_item_menu->set_item_icon(
-			VMEM_MENU_SHOW_IN_FILESYSTEM, get_editor_theme_icon(SNAME("ShowInFileSystem")));
-		vmem_item_menu->set_item_icon(
-			VMEM_MENU_SHOW_IN_EXPLORER, get_editor_theme_icon(SNAME("Filesystem")));
-		search->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		reason->add_theme_style_override(SNAME("normal"),
-			get_theme_stylebox(SNAME("normal"), SNAME("Label")).ptr()); // Empty stylebox.
-
-		const Ref<Font> source_font =
-			get_theme_font(SNAME("output_source"), EditorStringName(EditorFonts));
-		if (source_font.is_valid()) {
-			error_tree->add_theme_font_override("font", source_font.ptr());
-		}
-		const int font_size =
-			get_theme_font_size(SNAME("output_source_size"), EditorStringName(EditorFonts));
-		error_tree->add_theme_font_size_override("font_size", font_size);
-
-		TreeItem* error_root = error_tree->get_root();
-		if (error_root) {
-			TreeItem* error = error_root->get_first_child();
-			while (error) {
-				error = error->get_next();
-			}
-		}
-	} break;
-	}
-}
-
-void ScriptEditorDebugger::_update_buttons_state()
-{
-	const bool has_editor_tree = editor_remote_tree && editor_remote_tree->get_selected();
-	step->set_disabled(!is_breaked() || !is_debuggable());
-	next->set_disabled(!is_breaked() || !is_debuggable());
-	out->set_disabled(!is_breaked() || !is_debuggable());
-	copy->set_disabled(!is_breaked());
-	docontinue->set_disabled(!is_breaked());
-	dobreak->set_disabled(is_breaked());
-
-	thread_list_updating = true;
-	LocalVector<ThreadDebugged*> threadss;
-	for (KeyValue<uint64_t, ThreadDebugged>& I : threads_debugged) {
-		threadss.push_back(&I.value);
-	}
-	threads->set_disabled(threadss.is_empty());
-
-	threadss.sort_custom<ThreadSort>();
-	threads->clear();
-	int32_t selected_index = -1;
-	for (uint32_t i = 0; i < threadss.size(); i++) {
-		if (debugging_thread_id == threadss[i]->thread_id) {
-			selected_index = i;
-		}
-		threads->add_item(threadss[i]->name);
-	}
-	if (selected_index != -1) {
-		threads->select(selected_index);
-	}
-
-	thread_list_updating = false;
 }
 
 void ScriptEditorDebugger::_stop_and_notify()
@@ -710,18 +581,6 @@ void ScriptEditorDebugger::_vmem_item_menu_id_pressed(int p_option)
 	}
 }
 
-void ScriptEditorDebugger::_clear_errors_list()
-{
-	error_tree->clear();
-	error_count = 0;
-	warning_count = 0;
-	update_tabs();
-
-	expand_all_button->set_disabled(true);
-	collapse_all_button->set_disabled(true);
-	clear_button->set_disabled(true);
-}
-
 void ScriptEditorDebugger::_breakpoints_item_rmb_selected(
 	const Vector2& p_pos, MouseButton p_button)
 {
@@ -852,8 +711,6 @@ void ScriptEditorDebugger::_tab_changed(int p_tab)
 	}
 }
 
-void ScriptEditorDebugger::_bind_methods() {}
-
 void ScriptEditorDebugger::add_debugger_tab(Control* p_control) { tabs->add_child(p_control); }
 
 void ScriptEditorDebugger::remove_debugger_tab(Control* p_control)
@@ -881,4 +738,5 @@ void ScriptEditorDebugger::update_layout(EditorDock::DockLayout p_layout, int p_
 		vmem_tree->set_scroll_hint_mode(Tree::SCROLL_HINT_MODE_BOTTOM);
 	}
 }
+
 

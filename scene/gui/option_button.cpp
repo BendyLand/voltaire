@@ -105,16 +105,6 @@ void OptionButton::set_item_text(int p_idx, const String& p_text)
 	_queue_update_size_cache();
 }
 
-void OptionButton::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon)
-{
-	popup->set_item_icon(p_idx, p_icon);
-
-	if (current == p_idx) {
-		set_button_icon(p_icon);
-	}
-	_queue_update_size_cache();
-}
-
 void OptionButton::set_item_id(int p_idx, int p_id) { popup->set_item_id(p_idx, p_id); }
 
 void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip)
@@ -254,15 +244,6 @@ int OptionButton::get_search_bar_fuzzy_search_max_misses() const
 }
 
 void OptionButton::add_separator(const String& p_text) { popup->add_separator(p_text); }
-
-void OptionButton::clear()
-{
-	popup->clear();
-	set_text("");
-	set_button_icon(Ref<Texture2D>());
-	current = NONE_SELECTED;
-	_refresh_size_cache();
-}
 
 void OptionButton::_select_int(int p_which)
 {

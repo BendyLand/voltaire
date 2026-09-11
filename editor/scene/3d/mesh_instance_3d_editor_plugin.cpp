@@ -365,15 +365,6 @@ void MeshInstance3DEditor::_debug_uv_draw()
 		Math::round(EDSCALE) / debug_uv->get_size().x);
 }
 
-void MeshInstance3DEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		options->set_button_icon(get_editor_theme_icon(SNAME("MeshInstance3D")));
-	} break;
-	}
-}
-
 MeshInstance3DEditorPlugin::MeshInstance3DEditorPlugin()
 {
 	mesh_editor = memnew(MeshInstance3DEditor);

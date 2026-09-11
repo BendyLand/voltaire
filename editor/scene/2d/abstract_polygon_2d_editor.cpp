@@ -90,66 +90,12 @@ void AbstractPolygon2DEditor::_wip_cancel()
 	canvas_item_editor->update_viewport();
 }
 
-void AbstractPolygon2DEditor::disable_polygon_editing(bool p_disable, const String& p_reason)
-{
-	_polygon_editing_enabled = !p_disable;
-
-	button_create->set_disabled(p_disable);
-	button_edit->set_disabled(p_disable);
-	button_delete->set_disabled(p_disable);
-	button_center->set_disabled(p_disable);
-
-	if (p_disable) {
-		button_create->set_tooltip_text(p_reason);
-		button_edit->set_tooltip_text(p_reason);
-		button_delete->set_tooltip_text(p_reason);
-		button_center->set_tooltip_text(p_reason);
-	}
-	else {
-		button_create->set_tooltip_text(TTRC("Create points."));
-		button_edit->set_tooltip_text(TTRC("Edit points.\nLMB: Move Point\nRMB: Erase Point"));
-		button_delete->set_tooltip_text(TTRC("Erase points."));
-		button_center->set_tooltip_text(TTRC("Move center of gravity to geometric center."));
-	}
-}
-
 void AbstractPolygon2DEditor::set_edit_origin_and_center(bool p_enabled)
 {
 	edit_origin_and_center = p_enabled;
 	if (button_center) {
 		button_center->set_visible(edit_origin_and_center);
 	}
-}
-
-void AbstractPolygon2DEditor::edit(Node* p_polygon)
-{
-	if (!canvas_item_editor) {
-		canvas_item_editor = CanvasItemEditor::get_singleton();
-	}
-
-	if (p_polygon) {
-		_set_node(p_polygon);
-
-		// Enable the pencil tool if the polygon is empty.
-		if (_is_empty()) {
-			_menu_option(MODE_CREATE);
-		}
-		else {
-			_menu_option(MODE_EDIT);
-		}
-
-		wip.clear();
-		wip_active = false;
-		edited_point = PosVertex();
-		hover_point = Vertex();
-		selected_point = Vertex();
-		center_drag = false;
-	}
-	else {
-		_set_node(nullptr);
-	}
-
-	canvas_item_editor->update_viewport();
 }
 
 AbstractPolygon2DEditor::Vertex AbstractPolygon2DEditor::get_active_point() const
