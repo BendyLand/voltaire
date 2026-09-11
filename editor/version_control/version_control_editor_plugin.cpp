@@ -58,79 +58,11 @@
 
 VersionControlEditorPlugin* VersionControlEditorPlugin::singleton = nullptr;
 
-void VersionControlEditorPlugin::_bind_methods() {}
-
 void VersionControlEditorPlugin::_create_vcs_metadata_files()
 {
 	String dir = "res://";
 	EditorVCSInterface::create_vcs_metadata_files(
 		EditorVCSInterface::VCSMetadata(metadata_selection->get_selected_id()), dir);
-}
-
-void VersionControlEditorPlugin::_update_theme()
-{
-	change_type_to_color[EditorVCSInterface::CHANGE_TYPE_NEW] =
-		EditorNode::get_singleton()->get_editor_theme()->get_color(
-			SNAME("success_color"), EditorStringName(Editor));
-	change_type_to_color[EditorVCSInterface::CHANGE_TYPE_MODIFIED] =
-		EditorNode::get_singleton()->get_editor_theme()->get_color(
-			SNAME("warning_color"), EditorStringName(Editor));
-	change_type_to_color[EditorVCSInterface::CHANGE_TYPE_RENAMED] =
-		EditorNode::get_singleton()->get_editor_theme()->get_color(
-			SNAME("warning_color"), EditorStringName(Editor));
-	change_type_to_color[EditorVCSInterface::CHANGE_TYPE_DELETED] =
-		EditorNode::get_singleton()->get_editor_theme()->get_color(
-			SNAME("error_color"), EditorStringName(Editor));
-	change_type_to_color[EditorVCSInterface::CHANGE_TYPE_TYPECHANGE] =
-		EditorNode::get_singleton()->get_editor_theme()->get_color(
-			SceneStringName(font_color), EditorStringName(Editor));
-	change_type_to_color[EditorVCSInterface::CHANGE_TYPE_UNMERGED] =
-		EditorNode::get_singleton()->get_editor_theme()->get_color(
-			SNAME("warning_color"), EditorStringName(Editor));
-
-	change_type_to_icon[EditorVCSInterface::CHANGE_TYPE_NEW] =
-		EditorNode::get_singleton()->get_editor_theme()->get_icon(
-			SNAME("StatusSuccess"), EditorStringName(EditorIcons));
-	change_type_to_icon[EditorVCSInterface::CHANGE_TYPE_MODIFIED] =
-		EditorNode::get_singleton()->get_editor_theme()->get_icon(
-			SNAME("StatusWarning"), EditorStringName(EditorIcons));
-	change_type_to_icon[EditorVCSInterface::CHANGE_TYPE_RENAMED] =
-		EditorNode::get_singleton()->get_editor_theme()->get_icon(
-			SNAME("StatusWarning"), EditorStringName(EditorIcons));
-	change_type_to_icon[EditorVCSInterface::CHANGE_TYPE_TYPECHANGE] =
-		EditorNode::get_singleton()->get_editor_theme()->get_icon(
-			SNAME("StatusWarning"), EditorStringName(EditorIcons));
-	change_type_to_icon[EditorVCSInterface::CHANGE_TYPE_DELETED] =
-		EditorNode::get_singleton()->get_editor_theme()->get_icon(
-			SNAME("StatusError"), EditorStringName(EditorIcons));
-	change_type_to_icon[EditorVCSInterface::CHANGE_TYPE_UNMERGED] =
-		EditorNode::get_singleton()->get_editor_theme()->get_icon(
-			SNAME("StatusWarning"), EditorStringName(EditorIcons));
-
-	select_public_path_button->set_button_icon(
-		EditorNode::get_singleton()->get_gui_base()->get_editor_theme_icon("Folder"));
-	select_private_path_button->set_button_icon(
-		EditorNode::get_singleton()->get_gui_base()->get_editor_theme_icon("Folder"));
-	refresh_button->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("Reload"), EditorStringName(EditorIcons)));
-	discard_all_button->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("Close"), EditorStringName(EditorIcons)));
-	stage_all_button->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("MoveDown"), EditorStringName(EditorIcons)));
-	unstage_all_button->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("MoveUp"), EditorStringName(EditorIcons)));
-	fetch_button->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("Reload"), EditorStringName(EditorIcons)));
-	pull_button->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("MoveDown"), EditorStringName(EditorIcons)));
-	push_button->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("MoveUp"), EditorStringName(EditorIcons)));
-	extra_options->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("GuiTabMenuHl"), EditorStringName(EditorIcons)));
-
-	if (EditorVCSInterface::get_singleton()) {
-		_refresh_stage_area();
-	}
 }
 
 void VersionControlEditorPlugin::_populate_available_vcs_names()
@@ -167,13 +99,6 @@ void VersionControlEditorPlugin::popup_vcs_set_up_dialog(const Control* p_gui_ba
 				"integration features."),
 			TTR("Error"));
 	}
-}
-
-void VersionControlEditorPlugin::_set_vcs_ui_state(bool p_enabled)
-{
-	set_up_dialog->get_ok_button()->set_disabled(!p_enabled);
-	set_up_choice->set_disabled(p_enabled);
-	toggle_vcs_choice->set_pressed_no_signal(p_enabled);
 }
 
 void VersionControlEditorPlugin::_update_set_up_warning(const String& p_new_text)
@@ -301,16 +226,6 @@ void VersionControlEditorPlugin::_create_remote()
 	remote_create_name_input->clear();
 	remote_create_url_input->clear();
 	_refresh_remote_list();
-}
-
-void VersionControlEditorPlugin::_update_branch_create_button(const String& p_new_text)
-{
-	branch_create_ok->set_disabled(p_new_text.strip_edges().is_empty());
-}
-
-void VersionControlEditorPlugin::_update_remote_create_button(const String& p_new_text)
-{
-	remote_create_ok->set_disabled(p_new_text.strip_edges().is_empty());
 }
 
 int VersionControlEditorPlugin::_get_item_count(Tree* p_tree)
@@ -546,17 +461,6 @@ void VersionControlEditorPlugin::_display_diff_unified_view(
 	}
 
 	diff->pop();
-}
-
-void VersionControlEditorPlugin::_update_commit_button()
-{
-	commit_button->set_disabled(commit_message->get_text().strip_edges().is_empty());
-	if (toggle_amend_commit->is_pressed()) {
-		commit_button->set_text(TTR("Amend Commit Changes"));
-	}
-	else {
-		commit_button->set_text(TTR("Commit Changes"));
-	}
 }
 
 void VersionControlEditorPlugin::_remove_branch()

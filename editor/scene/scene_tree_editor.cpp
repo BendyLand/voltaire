@@ -449,8 +449,6 @@ void SceneTreeEditor::_bind_methods() {}
 
 SceneTreeEditor::~SceneTreeEditor() { memdelete(script_types); }
 
-/******** DIALOG *********/
-
 void SceneTreeDialog::popup_scenetree_dialog(Node* p_selected_node, Node* p_marked_node,
 	bool p_marked_node_selectable, bool p_marked_node_children_selectable)
 {
@@ -462,15 +460,11 @@ void SceneTreeDialog::popup_scenetree_dialog(Node* p_selected_node, Node* p_mark
 
 void SceneTreeDialog::_cancel() { hide(); }
 
-void SceneTreeDialog::_selected_changed() { get_ok_button()->set_disabled(!tree->get_selected()); }
-
 void SceneTreeDialog::_filter_changed(const String& p_filter) { tree->set_filter(p_filter); }
 
 void SceneTreeDialog::_bind_methods() {}
 
 LineEdit* SceneTreeDialog::get_filter_line_edit() { return filter; }
-
-/******** CACHE *********/
 
 HashMap<Node*, SceneTreeEditor::CachedNode>::Iterator SceneTreeEditor::NodeCache::add(
 	Node* p_node, TreeItem* p_item)

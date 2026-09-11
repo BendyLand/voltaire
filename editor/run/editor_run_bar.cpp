@@ -57,56 +57,6 @@
 
 EditorRunBar* EditorRunBar::singleton = nullptr;
 
-void EditorRunBar::_reset_play_buttons()
-{
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
-		return;
-	}
-
-	play_button->set_pressed(false);
-	play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-	play_button->set_tooltip_text(TTRC("Run the project's main scene."));
-
-	play_scene_button->set_pressed(false);
-	play_scene_button->set_button_icon(get_editor_theme_icon(SNAME("PlayScene")));
-	play_scene_button->set_tooltip_text(TTRC("Play the currently edited scene."));
-
-	play_custom_scene_button->set_pressed(false);
-	play_custom_scene_button->set_button_icon(get_editor_theme_icon(SNAME("PlayCustom")));
-	play_custom_scene_button->set_tooltip_text(TTRC("Play a custom scene."));
-}
-
-void EditorRunBar::_update_play_buttons()
-{
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
-		return;
-	}
-
-	_reset_play_buttons();
-	if (!is_playing()) {
-		return;
-	}
-
-	Button* active_button = nullptr;
-	if (current_mode == RUN_CURRENT) {
-		active_button = play_scene_button;
-		active_button->set_tooltip_text(TTRC("Reload the played scene that was being edited."));
-	}
-	else if (current_mode == RUN_CUSTOM) {
-		active_button = play_custom_scene_button;
-		active_button->set_tooltip_text(TTRC("Reload the played custom scene."));
-	}
-	else {
-		active_button = play_button;
-		active_button->set_tooltip_text(TTRC("Reload the played main scene."));
-	}
-
-	if (active_button) {
-		active_button->set_pressed(true);
-		active_button->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
-	}
-}
-
 void EditorRunBar::_movie_maker_item_pressed(int p_id)
 {
 	switch (p_id) {

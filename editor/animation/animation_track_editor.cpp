@@ -689,28 +689,6 @@ void AnimationTrackEditor::remove_track_edit_plugin(const Ref<AnimationTrackEdit
 	track_edit_plugins.erase(p_plugin);
 }
 
-void AnimationTrackEditor::_check_bezier_exist()
-{
-	bool is_exist = false;
-	if (animation.is_valid()) {
-		for (int i = 0; i < animation->get_track_count(); i++) {
-			if (animation->track_get_type(i) == Animation::TrackType::TYPE_BEZIER) {
-				is_exist = true;
-				break;
-			}
-		}
-	}
-	if (is_exist) {
-		bezier_edit_icon->set_disabled(false);
-	}
-	else {
-		if (bezier_mc->is_visible()) {
-			_cancel_bezier_edit();
-		}
-		bezier_edit_icon->set_disabled(true);
-	}
-}
-
 Ref<Animation> AnimationTrackEditor::get_current_animation() const { return animation; }
 
 void AnimationTrackEditor::_root_removed() { root = nullptr; }
@@ -1103,16 +1081,6 @@ void AnimationTrackEditor::_auto_fit_bezier()
 	}
 }
 
-void AnimationTrackEditor::_root_node_changed(Node* p_node, bool p_removed)
-{
-	add_animation_player->set_disabled(p_removed);
-}
-
-void AnimationTrackEditor::_scene_changed()
-{
-	add_animation_player->set_disabled(EditorNode::get_singleton()->get_edited_scene() == nullptr);
-}
-
 void AnimationTrackEditor::_update_snap_unit()
 {
 	nearest_fps = 0;
@@ -1492,16 +1460,6 @@ void AnimationMarkerEdit::_rename_marker(const StringName& p_name)
 	marker_rename_confirm->popup_centered(Size2i(200, 0) * EDSCALE);
 	marker_rename_prev_name = p_name;
 	marker_rename_new_name->set_text(p_name);
-}
-
-void AnimationMarkerEdit::_marker_insert_new_name_changed(const String& p_text)
-{
-	marker_insert_confirm->get_ok_button()->set_disabled(p_text.is_empty());
-}
-
-void AnimationMarkerEdit::_marker_rename_new_name_changed(const String& p_text)
-{
-	marker_rename_confirm->get_ok_button()->set_disabled(p_text.is_empty());
 }
 
 float AnimationMarkerKeyEdit::get_time() const { return animation->get_marker_time(marker_name); }

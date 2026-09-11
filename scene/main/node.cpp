@@ -252,7 +252,6 @@ bool Node::is_multiplayer_authority() const
 	return api.is_valid() && (api->get_unique_id() == data.multiplayer_authority);
 }
 
-
 Ref<MultiplayerAPI> Node::get_multiplayer() const
 {
 	if (!is_inside_tree()) {
@@ -260,7 +259,6 @@ Ref<MultiplayerAPI> Node::get_multiplayer() const
 	}
 	return data.tree->get_multiplayer(get_path());
 }
-
 
 bool Node::can_process_notification(int p_what) const
 {
@@ -972,7 +970,7 @@ Node* Node::get_node(const NodePath& p_path) const
 	Node* node = get_node_or_null(p_path);
 
 	if (unlikely(!node)) {
-		const String desc = get_description();
+		const String desc = "";
 		if (p_path.is_absolute()) {
 			ERR_FAIL_V_MSG(
 				nullptr, vformat(R"(Node not found: "%s" (absolute path attempted from "%s").)",
@@ -1017,7 +1015,6 @@ Node* Node::find_child(const String& p_pattern, bool p_recursive, bool p_owned) 
 	}
 	return nullptr;
 }
-
 
 void Node::reparent(Node* rp_parent, bool p_keep_global_transform)
 {
@@ -1346,9 +1343,7 @@ NodePath Node::get_path_to(const Node* rp_node, bool p_use_unique_path) const
 	}
 
 	ERR_FAIL_NULL_V_MSG(common_parent, NodePath(),
-		vformat(
-			"No path can be resolved between the nodes %s and %s as they share no common ancestor.",
-			get_description(true), rp_node->get_description(true)));
+		vformat("No path can be resolved between the nodes and as they share no common ancestor."));
 
 	visited.clear();
 
@@ -1728,8 +1723,6 @@ Node* Node::duplicate_from_editor(HashMap<const Node*, Node*>& r_duplimap, Node*
 
 #endif
 
-
-
 static void find_owned_by(Node* p_by, Node* p_node, List<Node*>* p_owned)
 {
 	if (p_node->get_owner() == p_by) {
@@ -1909,6 +1902,5 @@ Node::~Node()
 	total_node_count.decrement();
 #endif
 }
-
 
 

@@ -66,15 +66,6 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server.h"
 
-void EditorInspectorActionButton::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		set_button_icon(get_editor_theme_icon(icon_name));
-	} break;
-	}
-}
-
 EditorInspectorActionButton::EditorInspectorActionButton(
 	const String& p_text, const StringName& p_icon_name)
 {
@@ -401,13 +392,6 @@ void EditorInspectorArray::_rmb_popup_id_pressed(int p_id)
 	case OPTION_CLEAR_ARRAY:
 		_clear_array();
 		break;
-	case OPTION_RESIZE_ARRAY:
-		new_size_spin_box->set_value(count);
-		resize_dialog->get_ok_button()->set_disabled(true);
-		resize_dialog->popup_centered(Size2(250, 0) * EDSCALE);
-		new_size_spin_box->get_line_edit()->grab_focus();
-		new_size_spin_box->get_line_edit()->select_all();
-		break;
 	default:
 		break;
 	}
@@ -472,11 +456,6 @@ void EditorInspectorArray::_resize_dialog_confirmed()
 	_resize_array(int(new_size_spin_box->get_value()));
 }
 
-void EditorInspectorArray::_new_size_spin_box_value_changed(float p_value)
-{
-	resize_dialog->get_ok_button()->set_disabled(int(p_value) == count);
-}
-
 void EditorInspectorArray::_new_size_spin_box_text_submitted(const String& p_text)
 {
 	_resize_dialog_confirmed();
@@ -496,34 +475,6 @@ VBoxContainer* EditorInspectorArray::get_vbox(int p_index)
 	}
 	else {
 		return nullptr;
-	}
-}
-
-void EditorPaginator::update(int p_page, int p_max_page)
-{
-	page = p_page;
-	max_page = p_max_page;
-
-	// Update buttons.
-	first_page_button->set_disabled(page == 0);
-	prev_page_button->set_disabled(page == 0);
-	next_page_button->set_disabled(page == max_page);
-	last_page_button->set_disabled(page == max_page);
-
-	// Update page number and page count.
-	page_line_edit->set_text(vformat("%d", page + 1));
-	page_count_label->set_text(vformat("/ %d", max_page + 1));
-}
-
-void EditorPaginator::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		first_page_button->set_button_icon(get_editor_theme_icon(SNAME("PageFirst")));
-		prev_page_button->set_button_icon(get_editor_theme_icon(SNAME("PagePrevious")));
-		next_page_button->set_button_icon(get_editor_theme_icon(SNAME("PageNext")));
-		last_page_button->set_button_icon(get_editor_theme_icon(SNAME("PageLast")));
-	} break;
 	}
 }
 

@@ -89,8 +89,6 @@ static bool find_next(const String& p_line, const String& p_pattern, int p_from,
 	}
 }
 
-//--------------------------------------------------------------------------------
-
 void FindInFilesSearch::set_search_text(const String& p_pattern) { pattern = p_pattern; }
 
 void FindInFilesSearch::set_whole_words(bool p_whole_word) { whole_words = p_whole_word; }
@@ -282,8 +280,6 @@ bool FindInFilesSearch::_is_file_matched(
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-
 void FindInFilesDialog::set_replace_text(const String& p_text)
 {
 	replace_text_line_edit->set_text(p_text);
@@ -372,15 +368,6 @@ HashSet<String> FindInFilesDialog::get_excludes() const
 }
 
 void FindInFilesDialog::_on_folder_button_pressed() { folder_dialog->popup_file_dialog(); }
-
-void FindInFilesDialog::_on_search_text_modified(const String& p_text)
-{
-	ERR_FAIL_NULL(find_button);
-	ERR_FAIL_NULL(replace_button);
-
-	find_button->set_disabled(get_search_text().is_empty());
-	replace_button->set_disabled(get_search_text().is_empty());
-}
 
 void FindInFilesDialog::_on_search_text_submitted(const String& p_text)
 {
@@ -634,15 +621,6 @@ void FindInFilesPanel::_on_cancel_button_clicked() { stop_search(); }
 void FindInFilesPanel::_on_replace_text_changed(const String& p_text) { _update_replace_buttons(); }
 
 String FindInFilesPanel::_get_replace_text() { return replace_line_edit->get_text(); }
-
-void FindInFilesPanel::_update_replace_buttons()
-{
-	bool disabled = finder->is_searching();
-
-	replace_all_button->set_disabled(disabled);
-}
-
-//-----------------------------------------------------------------------------
 
 void FindInFilesContainer::_on_theme_changed()
 {

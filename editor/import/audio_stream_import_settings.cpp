@@ -137,27 +137,6 @@ void AudioStreamImportSettingsDialog::_draw_preview()
 	}
 }
 
-void AudioStreamImportSettingsDialog::_play()
-{
-	if (_player->is_playing()) {
-		_load_master_state();
-
-		// '_pausing' variable indicates that we want to pause the audio player, not stop it. See
-		// '_on_finished()'.
-		_pausing = true;
-		_player->stop();
-		_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-		set_process(false);
-	}
-	else {
-		_reset_master();
-
-		_player->play(_current);
-		_play_button->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
-		set_process(true);
-	}
-}
-
 void AudioStreamImportSettingsDialog::_draw_indicator()
 {
 	if (stream.is_null()) {

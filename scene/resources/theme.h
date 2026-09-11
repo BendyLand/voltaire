@@ -139,8 +139,6 @@ public:
 	void rename_icon_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
 	void get_icon_type_list(List<StringName>* p_list) const;
 
-	void set_stylebox(
-		const StringName& p_name, const StringName& p_theme_type, const Ref<StyleBox>& p_style);
 	virtual Ref<StyleBox> get_stylebox(
 		const StringName& p_name, const StringName& p_theme_type) const;
 	bool has_stylebox(const StringName& p_name, const StringName& p_theme_type) const;

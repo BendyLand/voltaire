@@ -68,12 +68,7 @@ String ActionMapEditor::_check_new_action_name(const String& p_name)
 	return "";
 }
 
-void ActionMapEditor::_add_edit_text_changed(const String& p_name)
-{
-	const String error = _check_new_action_name(p_name);
-	add_button->set_tooltip_text(error);
-	add_button->set_disabled(!error.is_empty());
-}
+
 
 bool ActionMapEditor::_has_action(const String& p_name) const
 {
@@ -85,21 +80,7 @@ bool ActionMapEditor::_has_action(const String& p_name) const
 	return false;
 }
 
-void ActionMapEditor::_on_search_bar_value_changed()
-{
-	if (action_list_search_bar->is_searching()) {
-		show_builtin_actions_checkbutton->set_pressed_no_signal(true);
-		show_builtin_actions_checkbutton->set_disabled(true);
-		show_builtin_actions_checkbutton->set_tooltip_text(
-			TTRC("Built-in actions are always shown when searching."));
-	}
-	else {
-		show_builtin_actions_checkbutton->set_pressed_no_signal(show_builtin_actions);
-		show_builtin_actions_checkbutton->set_disabled(false);
-		show_builtin_actions_checkbutton->set_tooltip_text(String());
-	}
-	update_action_list();
-}
+
 
 void ActionMapEditor::_notification(int p_what)
 {
@@ -110,13 +91,6 @@ void ActionMapEditor::_notification(int p_what)
 		}
 		if (!add_button->get_tooltip_text().is_empty()) {
 			_add_edit_text_changed(add_edit->get_text());
-		}
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		add_button->set_button_icon(get_editor_theme_icon(SNAME("Add")));
-		if (!actions_cache.is_empty()) {
-			update_action_list();
 		}
 	} break;
 	}

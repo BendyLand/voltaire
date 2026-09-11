@@ -98,38 +98,12 @@ void InspectorDock::_info_pressed() { info_dialog->popup_centered(); }
 
 Container* InspectorDock::get_addon_area() { return this; }
 
-void InspectorDock::_bind_methods() {}
-
 void InspectorDock::edit_resource(const Ref<Resource>& p_resource)
 {
 	_resource_selected(p_resource, "");
 }
 
 void InspectorDock::open_resource(const String& p_type) { _load_resource(p_type); }
-
-void InspectorDock::set_info(
-	const String& p_button_text, const String& p_message, bool p_is_warning)
-{
-	info->hide();
-	info_is_warning = p_is_warning;
-
-	if (info_is_warning) {
-		info->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
-		info->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-	}
-	else {
-		info->set_button_icon(get_editor_theme_icon(SNAME("NodeInfo")));
-		info->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SceneStringName(font_color), EditorStringName(Editor)));
-	}
-
-	if (!p_button_text.is_empty() && !p_message.is_empty()) {
-		info->show();
-		info->set_text(p_button_text);
-		info_dialog->set_text(p_message);
-	}
-}
 
 void InspectorDock::clear() {}
 

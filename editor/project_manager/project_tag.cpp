@@ -33,19 +33,6 @@
 #include "scene/gui/button.h"
 #include "scene/gui/color_rect.h"
 
-void ProjectTag::_notification(int p_what)
-{
-	if (display_close && p_what == NOTIFICATION_THEME_CHANGED) {
-		button->set_button_icon(get_theme_icon(SNAME("close"), SNAME("TabBar")));
-	}
-	// HACK: Can't be set in constructor because `get_size()` would return empty.
-	// This logic should be migrated once `Button` utilizes internal labels.
-	if (p_what == NOTIFICATION_READY) {
-		button->set_custom_minimum_size(button->get_size());
-		button->set_text_overrun_behavior(TextServer::OverrunBehavior::OVERRUN_TRIM_ELLIPSIS);
-	}
-}
-
 const String ProjectTag::get_tag() const { return tag_string; }
 
 ProjectTag::ProjectTag(const String& p_text, bool p_display_close)

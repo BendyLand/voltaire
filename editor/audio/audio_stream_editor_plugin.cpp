@@ -69,22 +69,6 @@ void AudioStreamEditor::_draw_preview()
 	RS::get_singleton()->canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
 }
 
-void AudioStreamEditor::_play()
-{
-	if (_player->is_playing()) {
-		_pausing = true;
-		_player->stop();
-		_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-		set_process(false);
-	}
-	else {
-		_pausing = false;
-		_player->play(_current);
-		_play_button->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
-		set_process(true);
-	}
-}
-
 void AudioStreamEditor::_draw_indicator()
 {
 	if (stream.is_null()) {

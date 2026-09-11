@@ -247,16 +247,6 @@ void AnimationNodeAnimationEditor::_validate_markers(int p_id)
 	}
 }
 
-void AnimationNodeAnimationEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		button->set_theme_type_variation(SNAME("InspectorActionButton"));
-		button->set_button_icon(get_editor_theme_icon(SNAME("Edit")));
-	} break;
-	}
-}
-
 AnimationNodeAnimationEditorDialog::AnimationNodeAnimationEditorDialog()
 {
 	set_title(TTR("Select Markers"));

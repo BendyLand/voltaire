@@ -236,65 +236,6 @@ void GameView::_editor_or_project_settings_changed()
 	_update_ui();
 }
 
-void GameView::_update_debugger_buttons()
-{
-	bool empty = active_sessions == 0;
-
-	suspend_button->set_disabled(empty);
-	camera_override_button->set_disabled(empty);
-	speed_state_button->set_disabled(empty);
-	game_size_label->set_visible(!empty);
-
-	PopupMenu* menu = camera_override_menu->get_popup();
-
-	bool disable_camera_reset = empty || !camera_override_button->is_pressed() ||
-								!menu->is_item_checked(menu->get_item_index(CAMERA_MODE_INGAME));
-	menu->set_item_disabled(CAMERA_RESET_2D, disable_camera_reset);
-	menu->set_item_disabled(CAMERA_RESET_3D, disable_camera_reset);
-
-	if (empty) {
-		suspend_button->set_pressed(false);
-		camera_override_button->set_pressed(false);
-		_reset_time_scales();
-		game_size_label->set_text("");
-		game_size_label->set_tooltip_text("");
-		game_window_size = Size2i(-1, -1);
-		hdr_output_enabled = false;
-		output_max_linear_value = 1.0f;
-	}
-
-	next_frame_button->set_disabled(!suspend_button->is_pressed());
-
-	menu = game_window_options_menu->get_popup();
-	if (empty) {
-		int menu_item_index = menu->get_item_index(WINDOW_SEPARATOR_DYNAMIC_RANGE);
-		if (menu_item_index >= 0) {
-			menu->remove_item(menu_item_index);
-		}
-		menu_item_index = menu->get_item_index(WINDOW_REQUEST_HDR_OUTPUT);
-		if (menu_item_index >= 0) {
-			menu->remove_item(menu_item_index);
-		}
-		menu_item_index = menu->get_item_index(WINDOW_HDR_OUTPUT_ERROR);
-		if (menu_item_index >= 0) {
-			menu->remove_item(menu_item_index);
-		}
-	}
-	else {
-		int menu_item_index = menu->get_item_index(WINDOW_SEPARATOR_DYNAMIC_RANGE);
-		if (menu_item_index < 0) {
-			menu->add_separator(TTRC("Window Dynamic Range"), WINDOW_SEPARATOR_DYNAMIC_RANGE);
-		}
-		if (menu->get_item_index(WINDOW_REQUEST_HDR_OUTPUT) < 0) {
-			if (menu->get_item_index(WINDOW_HDR_OUTPUT_ERROR) < 0) {
-				menu->add_item(TTRC("Loading..."), WINDOW_HDR_OUTPUT_ERROR);
-				menu->set_item_disabled(menu->get_item_index(WINDOW_HDR_OUTPUT_ERROR), true);
-				menu->set_item_tooltip(menu->get_item_index(WINDOW_HDR_OUTPUT_ERROR), "");
-			}
-		}
-	}
-}
-
 void GameView::_handle_shortcut_requested(int p_embed_action)
 {
 	switch (p_embed_action) {
@@ -441,16 +382,6 @@ void GameView::_update_embed_window_size()
 		}
 		embedded_process->set_keep_aspect(embed_size_mode == SIZE_MODE_KEEP_ASPECT);
 	}
-}
-
-void GameView::_debug_mute_audio_button_pressed()
-{
-	debug_mute_audio = !debug_mute_audio;
-	debug_mute_audio_button->set_button_icon(
-		get_editor_theme_icon(debug_mute_audio ? SNAME("AudioMute") : SNAME("AudioStreamPlayer")));
-	debug_mute_audio_button->set_tooltip_text(
-		debug_mute_audio ? TTRC("Unmute game audio.") : TTRC("Mute game audio."));
-	debugger->set_debug_mute_audio(debug_mute_audio);
 }
 
 void GameView::_setup_complete()

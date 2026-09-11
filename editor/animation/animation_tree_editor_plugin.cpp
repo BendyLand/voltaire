@@ -341,40 +341,6 @@ void AnimationTreeEditor::enter_editor(const String& p_path)
 	edit_path(path);
 }
 
-void AnimationTreeEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		Ref<StyleBoxEmpty> empty_style;
-		empty_style.instantiate();
-		error_scroll->add_theme_style_override(SceneStringName(panel), empty_style.ptr());
-		error_label->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		error_button->set_button_icon(get_editor_theme_icon(SNAME("StatusError")));
-		error_button->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		current_scope_error_label->add_theme_font_override(SNAME("normal_font"),
-			get_theme_font(SNAME("main"), EditorStringName(EditorFonts)).ptr());
-		current_scope_error_label->add_theme_font_size_override(SNAME("normal_font_size"),
-			get_theme_font_size(SNAME("main_size"), EditorStringName(EditorFonts)));
-		current_scope_error_label->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		current_scope_error_label->add_theme_style_override(
-			SNAME("normal"), get_theme_stylebox(SNAME("normal"), SNAME("Label")).ptr());
-	} break;
-
-	case NOTIFICATION_PROCESS: {
-		if (button_path.size() != edited_path.size()) {
-			edit_path(edited_path);
-		}
-
-		if (tree) {
-			_update_error_message();
-		}
-	} break;
-	}
-}
-
 AnimationTreeEditor* AnimationTreeEditor::singleton = nullptr;
 
 void AnimationTreeEditor::add_plugin(AnimationTreeNodeEditorPlugin* p_editor)

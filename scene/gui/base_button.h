@@ -120,7 +120,6 @@ public:
 	void set_shortcut_in_tooltip(bool p_on);
 	bool is_shortcut_in_tooltip_enabled() const;
 
-	void set_disabled(bool p_disabled);
 	bool is_disabled() const;
 
 	void set_action_mode(ActionMode p_mode);

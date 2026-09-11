@@ -45,21 +45,6 @@
 #include "scene/resources/image_texture.h"
 #include "scene/resources/particle_process_material.h"
 
-void GPUParticles2DEditorPlugin::_menu_callback(int p_idx)
-{
-	if (p_idx == MENU_GENERATE_VISIBILITY_RECT) {
-		if (need_show_lifetime_dialog(generate_seconds)) {
-			generate_visibility_rect->popup_centered();
-		}
-		else {
-			_generate_visibility_rect();
-		}
-	}
-	else {
-		Particles2DEditorPlugin::_menu_callback(p_idx);
-	}
-}
-
 void GPUParticles2DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
 {
 	Particles2DEditorPlugin::_add_menu_options(p_menu);
@@ -253,106 +238,11 @@ void Particles2DEditorPlugin::_process_emission_masks(PackedVector2Array& r_vali
 	}
 }
 
-void Particles2DEditorPlugin::_theme_changed()
-{
-	mask_browse_button->set_button_icon(
-		mask_browse_button->get_editor_theme_icon(SNAME("FileBrowse")));
-	direction_browse_button->set_button_icon(
-		direction_browse_button->get_editor_theme_icon(SNAME("FileBrowse")));
-}
+
 
 void Particles2DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
 {
 	p_menu->add_item(TTR("Load Emission Mask"), MENU_LOAD_EMISSION_MASK);
-}
-
-void Particles2DEditorPlugin::_validate_textures()
-{
-	DirectionMode direction_mode =
-		static_cast<DirectionMode>(emission_direction_mode->get_selected());
-	direction_img_label->set_visible(direction_mode == DIRECTION_MODE_TEXTURE);
-	direction_img_hbox->set_visible(direction_mode == DIRECTION_MODE_TEXTURE);
-
-	error_message->hide();
-	emission_mask_dialog->get_ok_button()->set_disabled(true);
-
-	if (mask_img_path_line_edit->get_text().is_empty()) {
-		emission_mask_dialog->reset_size();
-		return;
-	}
-
-	Ref<Image> mask_img;
-	mask_img.instantiate();
-	Error err = ImageLoader::load_image(mask_img_path_line_edit->get_text(), mask_img);
-	if (err != OK) {
-		error_message->show();
-		error_message->set_text(TTRC("Failed to load mask texture."));
-		emission_mask_dialog->reset_size();
-		return;
-	}
-
-	if (mask_img->is_compressed()) {
-		mask_img->decompress();
-	}
-	mask_img->convert(Image::FORMAT_RGBA8);
-
-	if (mask_img->get_format() != Image::FORMAT_RGBA8) {
-		error_message->show();
-		error_message->set_text(TTRC("Failed to convert mask texture to RGBA8."));
-		emission_mask_dialog->reset_size();
-		return;
-	}
-
-	Size2i mask_img_size = mask_img->get_size();
-	if (mask_img_size.width == 0 || mask_img_size.height == 0) {
-		error_message->show();
-		error_message->set_text(TTRC("Mask texture has an invalid size."));
-		emission_mask_dialog->reset_size();
-		return;
-	}
-
-	if (direction_mode == DIRECTION_MODE_TEXTURE) {
-		if (direction_img_path_line_edit->get_text().is_empty()) {
-			return;
-		}
-
-		Ref<Image> direction_img;
-		direction_img.instantiate();
-		err = ImageLoader::load_image(direction_img_path_line_edit->get_text(), direction_img);
-
-		if (err != OK) {
-			error_message->show();
-			error_message->set_text(TTRC("Failed to load direction texture."));
-			emission_mask_dialog->reset_size();
-			return;
-		}
-
-		if (direction_img->is_compressed()) {
-			direction_img->decompress();
-		}
-		direction_img->convert(Image::FORMAT_RGBA8);
-
-		if (direction_img->get_format() != Image::FORMAT_RGBA8) {
-			error_message->show();
-			error_message->set_text(TTRC("Failed to convert direction texture to RGBA8."));
-			emission_mask_dialog->reset_size();
-			return;
-		}
-
-		Size2i direction_img_size = direction_img->get_size();
-
-		if (direction_img_size.width == 0 || direction_img_size.height == 0 ||
-			direction_img_size != mask_img_size) {
-			error_message->show();
-			error_message->set_text(TTRC("Direction texture has an invalid size. It must have the "
-										 "same size as the mask texture."));
-			emission_mask_dialog->reset_size();
-			return;
-		}
-	}
-
-	emission_mask_dialog->get_ok_button()->set_disabled(false);
-	emission_mask_dialog->reset_size();
 }
 
 void Particles2DEditorPlugin::_emission_mask_mode_item_changed(int p_idx) const

@@ -50,18 +50,6 @@ float EditorZoomWidget::get_min_zoom() { return min_zoom; }
 
 float EditorZoomWidget::get_max_zoom() { return max_zoom; }
 
-void EditorZoomWidget::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		zoom_minus->set_button_icon(get_editor_theme_icon(SNAME("ZoomLess")));
-		zoom_plus->set_button_icon(get_editor_theme_icon(SNAME("ZoomMore")));
-	} break;
-	}
-}
-
-void EditorZoomWidget::_bind_methods() {}
-
 void EditorZoomWidget::set_shortcut_context(Node* p_node) const
 {
 	zoom_minus->set_shortcut_context(p_node);

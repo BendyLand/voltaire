@@ -156,24 +156,6 @@ void Polygon2DEditor::_set_action(int p_action)
 	}
 }
 
-void Polygon2DEditor::_update_available_modes()
-{
-	// Force point editing mode if there's no polygon yet.
-	if (node->get_polygon().is_empty()) {
-		if (current_mode != MODE_POINTS) {
-			_select_mode(MODE_POINTS);
-		}
-		mode_buttons[MODE_UV]->set_disabled(true);
-		mode_buttons[MODE_POLYGONS]->set_disabled(true);
-		mode_buttons[MODE_BONES]->set_disabled(true);
-	}
-	else {
-		mode_buttons[MODE_UV]->set_disabled(false);
-		mode_buttons[MODE_POLYGONS]->set_disabled(false);
-		mode_buttons[MODE_BONES]->set_disabled(false);
-	}
-}
-
 void Polygon2DEditor::_center_view()
 {
 	Size2 texture_size;

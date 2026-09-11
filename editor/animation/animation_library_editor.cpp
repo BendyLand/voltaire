@@ -56,59 +56,6 @@ void AnimationLibraryEditor::_add_library()
 	_add_library_validate("");
 }
 
-void AnimationLibraryEditor::_add_library_validate(const String& p_name)
-{
-	String error;
-
-	if (adding_animation) {
-		Ref<AnimationLibrary> al = mixer->get_animation_library(adding_animation_to_library);
-		ERR_FAIL_COND(al.is_null());
-		if (p_name == "") {
-			error = TTR("Animation name can't be empty.");
-		}
-		else if (!AnimationLibrary::is_valid_animation_name(p_name)) {
-			error = TTR("Animation name contains invalid characters: '/', ':', ',' or '['.");
-		}
-		else if (al->has_animation(p_name)) {
-			error = TTR("Animation with the same name already exists.");
-		}
-	}
-	else {
-		if (p_name == "" && mixer->has_animation_library("")) {
-			error = TTR("Enter a library name.");
-		}
-		else if (!AnimationLibrary::is_valid_library_name(p_name)) {
-			error = TTR("Library name contains invalid characters: '/', ':', ',' or '['.");
-		}
-		else if (mixer->has_animation_library(p_name)) {
-			error = TTR("Library with the same name already exists.");
-		}
-	}
-
-	if (error != "") {
-		add_library_validate->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		add_library_validate->set_text(error);
-		add_library_dialog->get_ok_button()->set_disabled(true);
-	}
-	else {
-		if (adding_animation) {
-			add_library_validate->set_text(TTR("Animation name is valid."));
-		}
-		else {
-			if (p_name == "") {
-				add_library_validate->set_text(TTR("Global library will be created."));
-			}
-			else {
-				add_library_validate->set_text(TTR("Library name is valid."));
-			}
-		}
-		add_library_validate->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("success_color"), EditorStringName(Editor)));
-		add_library_dialog->get_ok_button()->set_disabled(false);
-	}
-}
-
 void AnimationLibraryEditor::_load_library()
 {
 	List<String> extensions;
@@ -344,22 +291,5 @@ void AnimationLibraryEditor::show_dialog()
 	update_tree();
 	popup_centered_ratio(0.5);
 }
-
-void AnimationLibraryEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		new_library_button->set_button_icon(get_editor_theme_icon(SNAME("Add")));
-		load_library_button->set_button_icon(get_editor_theme_icon(SNAME("Load")));
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		tree->set_column_title(0, TTR("Resource"));
-		tree->set_column_title(1, TTR("Storage"));
-	} break;
-	}
-}
-
-void AnimationLibraryEditor::_bind_methods() {}
 
 

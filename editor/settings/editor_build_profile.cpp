@@ -694,18 +694,6 @@ void EditorBuildProfileManager::_action_confirm()
 		_update_edited_profile();
 	} break;
 
-	case ACTION_CLEAR_CACHE: {
-		String cache_path =
-			EditorPaths::get_singleton()->get_project_settings_dir().path_join("used_class_cache");
-		Error err = DirAccess::remove_absolute(cache_path);
-		if (err != OK) {
-			ERR_FAIL_MSG(vformat("Cannot remove cache file: '%s'.", cache_path));
-		}
-		else {
-			profile_actions[ACTION_CLEAR_CACHE]->set_disabled(true);
-		}
-	} break;
-
 	default: {
 	} break;
 	}

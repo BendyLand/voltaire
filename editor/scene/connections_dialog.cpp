@@ -73,27 +73,6 @@ void ConnectDialog::_open_method_popup()
 	method_search->grab_focus();
 }
 
-/*
- * Enables or disables the connect button. The connect button is enabled if a
- * node is selected and valid in the selected mode.
- */
-void ConnectDialog::_update_ok_enabled()
-{
-	Node* target = tree->get_selected();
-
-	if (target == nullptr) {
-		get_ok_button()->set_disabled(true);
-		return;
-	}
-
-	if (dst_method->get_text().is_empty()) {
-		get_ok_button()->set_disabled(true);
-		return;
-	}
-
-	get_ok_button()->set_disabled(false);
-}
-
 ConnectDialog::ConnectionData ConnectDialog::get_source_connection_data() const
 {
 	return source_connection_data;

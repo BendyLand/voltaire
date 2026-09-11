@@ -38,27 +38,6 @@
 #include "scene/gui/line_edit.h"
 #include "scene/gui/panel_container.h"
 
-void OpenXRActionSetEditor::_bind_methods() {}
-
-void OpenXRActionSetEditor::_set_fold_icon()
-{
-	if (is_expanded) {
-		fold_btn->set_button_icon(
-			get_theme_icon(SNAME("GuiTreeArrowDown"), EditorStringName(EditorIcons)));
-	}
-	else {
-		fold_btn->set_button_icon(
-			get_theme_icon(SNAME("GuiTreeArrowRight"), EditorStringName(EditorIcons)));
-	}
-}
-
-void OpenXRActionSetEditor::_theme_changed()
-{
-	_set_fold_icon();
-	add_action->set_button_icon(get_theme_icon(SNAME("Add"), EditorStringName(EditorIcons)));
-	rem_action_set->set_button_icon(get_theme_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
-}
-
 void OpenXRActionSetEditor::_notification(int p_what)
 {
 	switch (p_what) {

@@ -37,31 +37,6 @@
 #include "scene/gui/dialogs.h"
 #include "scene/gui/tree.h"
 
-
-
-
-
-
-
-
-
 void EditorPropertyRootMotion::setup(const NodePath& p_base_hint) { base_hint = p_base_hint; }
-
-void EditorPropertyRootMotion::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		Ref<Texture2D> t = get_editor_theme_icon(SNAME("Clear"));
-		clear->set_button_icon(t);
-	} break;
-	}
-}
-
-
-
-
-
-
-
 
 

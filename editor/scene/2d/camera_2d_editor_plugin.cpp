@@ -158,15 +158,6 @@ void Camera2DEditor::_update_hover(const Vector2& p_mouse_pos)
 	}
 }
 
-void Camera2DEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		options->set_button_icon(get_editor_theme_icon(SNAME("Camera2D")));
-	} break;
-	}
-}
-
 Camera2DEditorPlugin::Camera2DEditorPlugin()
 {
 	camera_2d_editor = memnew(Camera2DEditor(this));

@@ -124,16 +124,6 @@ void ReplicationEditor::_notification(int p_what)
 		}
 		[[fallthrough]];
 	}
-	case NOTIFICATION_ENTER_TREE: {
-		add_theme_style_override(
-			SceneStringName(panel), EditorNode::get_singleton()
-										->get_editor_theme()
-										->get_stylebox(SceneStringName(panel), SNAME("Panel"))
-										.ptr());
-		add_pick_button->set_button_icon(
-			get_theme_icon(SNAME("Add"), EditorStringName(EditorIcons)));
-		pin->set_button_icon(get_theme_icon(SNAME("Pin"), EditorStringName(EditorIcons)));
-	} break;
 	}
 }
 

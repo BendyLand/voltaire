@@ -101,105 +101,6 @@ int SpriteFramesEditor::_sheet_preview_position_to_frame_index(const Point2& p_p
 	return frame_count.x * frame.y + frame.x;
 }
 
-void SpriteFramesEditor::_sheet_preview_draw()
-{
-	const Size2i frame_count = _get_frame_count();
-	const Size2i separation = _get_separation();
-
-	const Size2 draw_offset = Size2(_get_offset()) * sheet_zoom;
-	const Size2 draw_sep = Size2(separation) * sheet_zoom;
-	const Size2 draw_frame_size = Size2(_get_frame_size()) * sheet_zoom;
-	const Size2 draw_size = draw_frame_size * frame_count + draw_sep * (frame_count - Size2i(1, 1));
-
-	const Color line_color = Color(1, 1, 1, 0.3);
-	const Color shadow_color = Color(0, 0, 0, 0.3);
-
-	// Vertical lines.
-	_draw_shadowed_line(split_sheet_preview, draw_offset, Vector2(0, draw_size.y), Vector2(1, 0),
-		line_color, shadow_color);
-	for (int i = 0; i < frame_count.x - 1; i++) {
-		const Point2 start = draw_offset + Vector2(i * draw_sep.x + (i + 1) * draw_frame_size.x, 0);
-		if (separation.x == 0) {
-			_draw_shadowed_line(split_sheet_preview, start, Vector2(0, draw_size.y), Vector2(1, 0),
-				line_color, shadow_color);
-		}
-		else {
-			const Size2 size = Size2(draw_sep.x, draw_size.y);
-			split_sheet_preview->draw_rect(Rect2(start, size), line_color);
-		}
-	}
-	_draw_shadowed_line(split_sheet_preview, draw_offset + Vector2(draw_size.x, 0),
-		Vector2(0, draw_size.y), Vector2(1, 0), line_color, shadow_color);
-
-	// Horizontal lines.
-	_draw_shadowed_line(split_sheet_preview, draw_offset, Vector2(draw_size.x, 0), Vector2(0, 1),
-		line_color, shadow_color);
-	for (int i = 0; i < frame_count.y - 1; i++) {
-		const Point2 start = draw_offset + Vector2(0, i * draw_sep.y + (i + 1) * draw_frame_size.y);
-		if (separation.y == 0) {
-			_draw_shadowed_line(split_sheet_preview, start, Vector2(draw_size.x, 0), Vector2(0, 1),
-				line_color, shadow_color);
-		}
-		else {
-			const Size2 size = Size2(draw_size.x, draw_sep.y);
-			split_sheet_preview->draw_rect(Rect2(start, size), line_color);
-		}
-	}
-	_draw_shadowed_line(split_sheet_preview, draw_offset + Vector2(0, draw_size.y),
-		Vector2(draw_size.x, 0), Vector2(0, 1), line_color, shadow_color);
-
-	if (frames_selected.is_empty()) {
-		split_sheet_dialog->get_ok_button()->set_disabled(true);
-		split_sheet_dialog->set_ok_button_text(TTRC("No Frames Selected"));
-		return;
-	}
-
-	Color accent = get_theme_color("accent_color", EditorStringName(Editor));
-
-	_sheet_sort_frames();
-
-	Ref<Font> font = get_theme_font(SNAME("bold"), EditorStringName(EditorFonts));
-	int font_size = get_theme_font_size(SNAME("bold_size"), EditorStringName(EditorFonts));
-
-	for (int i = 0; i < frames_ordered.size(); ++i) {
-		const int idx = frames_ordered[i].second;
-
-		const int x = idx % frame_count.x;
-		const int y = idx / frame_count.x;
-		const Point2 pos = draw_offset + Point2(x, y) * (draw_frame_size + draw_sep);
-		split_sheet_preview->draw_rect(
-			Rect2(pos + Size2(5, 5), draw_frame_size - Size2(10, 10)), Color(0, 0, 0, 0.35), true);
-		split_sheet_preview->draw_rect(Rect2(pos, draw_frame_size), Color(0, 0, 0, 1), false);
-		split_sheet_preview->draw_rect(
-			Rect2(pos + Size2(1, 1), draw_frame_size - Size2(2, 2)), Color(0, 0, 0, 1), false);
-		split_sheet_preview->draw_rect(
-			Rect2(pos + Size2(2, 2), draw_frame_size - Size2(4, 4)), accent, false);
-		split_sheet_preview->draw_rect(
-			Rect2(pos + Size2(3, 3), draw_frame_size - Size2(6, 6)), accent, false);
-		split_sheet_preview->draw_rect(
-			Rect2(pos + Size2(4, 4), draw_frame_size - Size2(8, 8)), Color(0, 0, 0, 1), false);
-		split_sheet_preview->draw_rect(
-			Rect2(pos + Size2(5, 5), draw_frame_size - Size2(10, 10)), Color(0, 0, 0, 1), false);
-
-		const String text = itos(i);
-		const Vector2 string_size =
-			font->get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
-
-		// Stop rendering text if too large.
-		if (string_size.x + 6 < draw_frame_size.x && string_size.y / 2 + 10 < draw_frame_size.y) {
-			split_sheet_preview->draw_string_outline(font.ptr(),
-				pos + Size2(5, 7) + Size2(0, string_size.y / 2), text, HORIZONTAL_ALIGNMENT_LEFT,
-				string_size.x, font_size, 1, Color(0, 0, 0, 1));
-			split_sheet_preview->draw_string(font.ptr(),
-				pos + Size2(5, 7) + Size2(0, string_size.y / 2), text, HORIZONTAL_ALIGNMENT_LEFT,
-				string_size.x, font_size, Color(1, 1, 1));
-		}
-	}
-
-	split_sheet_dialog->get_ok_button()->set_disabled(false);
-	split_sheet_dialog->set_ok_button_text(vformat(TTR("Add %d Frame(s)"), frames_selected.size()));
-}
-
 void SpriteFramesEditor::_sheet_update_zoom_label()
 {
 	String zoom_text;
@@ -416,18 +317,6 @@ void SpriteFramesEditor::_toggle_show_settings()
 	split_sheet_settings_vb->set_visible(!split_sheet_settings_vb->is_visible());
 
 	_update_show_settings();
-}
-
-void SpriteFramesEditor::_update_show_settings()
-{
-	if (is_layout_rtl()) {
-		toggle_settings_button->set_button_icon(get_editor_theme_icon(
-			split_sheet_settings_vb->is_visible() ? SNAME("Back") : SNAME("Forward")));
-	}
-	else {
-		toggle_settings_button->set_button_icon(get_editor_theme_icon(
-			split_sheet_settings_vb->is_visible() ? SNAME("Forward") : SNAME("Back")));
-	}
 }
 
 void SpriteFramesEditor::_auto_slice_sprite_sheet()
@@ -758,79 +647,6 @@ void SpriteFramesEditor::_zoom_reset()
 	thumbnail_zoom = MAX(1.0f, EDSCALE);
 	frame_list->set_fixed_column_width(thumbnail_default_size * 3 / 2);
 	frame_list->set_fixed_icon_size(Size2(thumbnail_default_size, thumbnail_default_size));
-}
-
-void SpriteFramesEditor::_update_anim_loop_button()
-{
-	if (frames.is_null()) {
-		anim_loop->set_button_icon(get_editor_theme_icon(SNAME("Loop")));
-		return;
-	}
-
-	SpriteFrames::LoopMode loop = frames->get_animation_loop_mode(edited_anim);
-	anim_loop->set_pressed_no_signal(loop != SpriteFrames::LOOP_NONE);
-
-	switch (loop) {
-	case SpriteFrames::LOOP_NONE:
-	case SpriteFrames::LOOP_LINEAR: {
-		anim_loop->set_button_icon(get_editor_theme_icon(SNAME("Loop")));
-	} break;
-	case SpriteFrames::LOOP_PINGPONG: {
-		anim_loop->set_button_icon(get_editor_theme_icon(SNAME("PingPongLoop")));
-	} break;
-	}
-}
-
-void SpriteFramesEditor::edit(Ref<SpriteFrames> p_frames)
-{
-	_update_stop_icon();
-
-	if (p_frames.is_null()) {
-		frames.unref();
-		_remove_sprite_node();
-		close();
-		return;
-	}
-
-	frames = p_frames;
-	read_only = EditorNode::get_singleton()->is_resource_read_only(p_frames);
-
-	if (!p_frames->has_animation(edited_anim)) {
-		List<StringName> anim_names;
-		frames->get_animation_list(&anim_names);
-		anim_names.sort_custom<StringName::AlphCompare>();
-		if (anim_names.size()) {
-			edited_anim = anim_names.front()->get();
-		}
-		else {
-			edited_anim = StringName();
-		}
-	}
-
-	_update_library();
-	// Clear zoom and split sheet texture
-	split_sheet_preview->set_texture(Ref<Texture2D>());
-	_zoom_reset();
-
-	add_anim->set_disabled(read_only);
-	duplicate_anim->set_disabled(read_only);
-	cut_anim->set_disabled(read_only);
-	copy_anim->set_disabled(read_only);
-	paste_anim->set_disabled(read_only);
-	delete_anim->set_disabled(read_only);
-	anim_speed->set_editable(!read_only);
-	anim_loop->set_disabled(read_only);
-	load->set_disabled(read_only);
-	load_sheet->set_disabled(read_only);
-	copy->set_disabled(read_only);
-	paste->set_disabled(read_only);
-	empty_before->set_disabled(read_only);
-	empty_after->set_disabled(read_only);
-	move_up->set_disabled(read_only);
-	move_down->set_disabled(read_only);
-	delete_frame->set_disabled(read_only);
-
-	_fetch_sprite_node(); // Fetch node after set frames.
 }
 
 Ref<SpriteFrames> SpriteFramesEditor::get_sprite_frames() const { return frames; }

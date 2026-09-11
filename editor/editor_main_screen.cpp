@@ -60,21 +60,6 @@ void EditorMainScreen::_notification(int p_what)
 
 		select(-1);
 	} break;
-	case NOTIFICATION_THEME_CHANGED: {
-		for (int i = 0; i < buttons.size(); i++) {
-			Button* tb = buttons[i];
-			EditorPlugin* p_editor = editor_table[i];
-			Ref<Texture2D> icon = p_editor->get_plugin_icon();
-
-			if (icon.is_valid()) {
-				tb->set_button_icon(icon);
-			}
-			else if (has_theme_icon(p_editor->get_plugin_name(), EditorStringName(EditorIcons))) {
-				tb->set_button_icon(
-					get_theme_icon(p_editor->get_plugin_name(), EditorStringName(EditorIcons)));
-			}
-		}
-	} break;
 	}
 }
 

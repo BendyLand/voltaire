@@ -146,7 +146,6 @@ public:
 	void set_language(const String& p_language);
 	String get_language() const;
 
-	void set_button_icon(const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_button_icon() const;
 
 	void set_expand_icon(bool p_enabled);

@@ -79,21 +79,6 @@ EditorPropertyNil::EditorPropertyNil()
 	add_child(prop_label);
 }
 
-void EditorPropertyVariant::_set_read_only(bool p_read_only)
-{
-	edit_button->set_disabled(p_read_only);
-	if (sub_property) {
-		sub_property->set_read_only(p_read_only);
-	}
-}
-
-void EditorPropertyVariant::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_THEME_CHANGED) {
-		edit_button->set_button_icon(get_editor_theme_icon(SNAME("Edit")));
-	}
-}
-
 void EditorPropertyText::_notification(int p_what)
 {
 	switch (p_what) {
@@ -162,49 +147,6 @@ void EditorPropertyText::set_monospaced(bool p_monospaced)
 	_update_theme();
 }
 
-void EditorPropertyMultilineText::_set_read_only(bool p_read_only)
-{
-	text->set_editable(!p_read_only);
-	open_big_text->set_disabled(p_read_only);
-}
-
-void EditorPropertyMultilineText::_update_theme()
-{
-	Ref<Texture2D> df = get_editor_theme_icon(SNAME("DistractionFree"));
-	open_big_text->set_button_icon(df);
-
-	Ref<Font> font;
-	int font_size;
-	if (expression) {
-		font = get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
-		font_size = get_theme_font_size(SNAME("expression_size"), EditorStringName(EditorFonts));
-	}
-	else {
-		// Non expression.
-		if (monospaced) {
-			font = get_theme_font(SNAME("source"), EditorStringName(EditorFonts));
-			font_size = get_theme_font_size(SNAME("source_size"), EditorStringName(EditorFonts));
-		}
-		else {
-			font = get_theme_font(SceneStringName(font), SNAME("TextEdit"));
-			font_size = get_theme_font_size(SceneStringName(font_size), SNAME("TextEdit"));
-		}
-	}
-	text->add_theme_font_override(SceneStringName(font), font.ptr());
-	text->add_theme_font_size_override(SceneStringName(font_size), font_size);
-	text->set_line_wrapping_mode(wrap_lines ? TextEdit::LineWrappingMode::LINE_WRAPPING_BOUNDARY
-											: TextEdit::LineWrappingMode::LINE_WRAPPING_NONE);
-	if (big_text) {
-		big_text->add_theme_font_override(SceneStringName(font), font.ptr());
-		big_text->add_theme_font_size_override(SceneStringName(font_size), font_size);
-		big_text->set_line_wrapping_mode(wrap_lines
-											 ? TextEdit::LineWrappingMode::LINE_WRAPPING_BOUNDARY
-											 : TextEdit::LineWrappingMode::LINE_WRAPPING_NONE);
-	}
-
-	text->set_custom_minimum_size(Vector2(0, font->get_height(font_size) * 6));
-}
-
 void EditorPropertyMultilineText::_notification(int p_what)
 {
 	switch (p_what) {
@@ -242,12 +184,6 @@ bool EditorPropertyMultilineText::EditorPropertyMultilineText::get_wrap_lines()
 	return wrap_lines;
 }
 
-void EditorPropertyTextEnum::_set_read_only(bool p_read_only)
-{
-	option_button->set_disabled(p_read_only);
-	edit_button->set_disabled(p_read_only);
-}
-
 void EditorPropertyTextEnum::_edit_custom_value()
 {
 	default_layout->hide();
@@ -269,35 +205,9 @@ void EditorPropertyTextEnum::_custom_value_accepted()
 	_custom_value_submitted(new_value);
 }
 
-void EditorPropertyTextEnum::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		edit_button->set_button_icon(get_editor_theme_icon(SNAME("Edit")));
-		accept_button->set_button_icon(get_editor_theme_icon(SNAME("ImportCheck")));
-		cancel_button->set_button_icon(get_editor_theme_icon(SNAME("ImportFail")));
-	} break;
-	}
-}
-
 void EditorPropertyLocale::setup(const String& p_hint_text) {}
 
-void EditorPropertyLocale::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		locale_edit->set_button_icon(get_editor_theme_icon(SNAME("Translation")));
-	} break;
-	}
-}
-
 void EditorPropertyLocale::_locale_focus_exited() { _locale_selected(locale->get_text()); }
-
-void EditorPropertyPath::_set_read_only(bool p_read_only)
-{
-	path->set_editable(!p_read_only);
-	path_edit->set_disabled(p_read_only);
-}
 
 void EditorPropertyPath::setup(
 	const Vector<String>& p_extensions, bool p_folder, bool p_global, bool p_enable_uid)
@@ -310,21 +220,6 @@ void EditorPropertyPath::setup(
 
 void EditorPropertyPath::set_save_mode() { save_mode = true; }
 
-void EditorPropertyPath::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		if (folder) {
-			path_edit->set_button_icon(get_editor_theme_icon(SNAME("FolderBrowse")));
-		}
-		else {
-			path_edit->set_button_icon(get_editor_theme_icon(SNAME("FileBrowse")));
-		}
-		_update_uid_icon();
-	} break;
-	}
-}
-
 void EditorPropertyPath::_path_focus_exited() { _path_selected(path->get_text()); }
 
 void EditorPropertyPath::_toggle_uid_display()
@@ -332,17 +227,6 @@ void EditorPropertyPath::_toggle_uid_display()
 	display_uid = !display_uid;
 	_update_uid_icon();
 	update_property();
-}
-
-void EditorPropertyPath::_update_uid_icon()
-{
-	toggle_uid->set_button_icon(
-		get_editor_theme_icon(display_uid ? SNAME("UID") : SNAME("NodePath")));
-}
-
-void EditorPropertyClassName::_set_read_only(bool p_read_only)
-{
-	property->set_disabled(p_read_only);
 }
 
 void EditorPropertyClassName::setup(const String& p_base_type, const String& p_selected_type)
@@ -353,20 +237,9 @@ void EditorPropertyClassName::setup(const String& p_base_type, const String& p_s
 	property->set_text(selected_type);
 }
 
-void EditorPropertyCheck::_set_read_only(bool p_read_only) { checkbox->set_disabled(p_read_only); }
-
-void EditorPropertyEnum::_set_read_only(bool p_read_only) { options->set_disabled(p_read_only); }
-
 void EditorPropertyEnum::set_option_button_clip(bool p_enable) { options->set_clip_text(p_enable); }
 
 OptionButton* EditorPropertyEnum::get_option_button() { return options; }
-
-void EditorPropertyFlags::_set_read_only(bool p_read_only)
-{
-	for (CheckBox* check : flags) {
-		check->set_disabled(p_read_only);
-	}
-}
 
 EditorPropertyFlags::EditorPropertyFlags()
 {
@@ -558,12 +431,6 @@ void EditorPropertyLayers::_notification(int p_what)
 	}
 }
 
-void EditorPropertyLayers::_set_read_only(bool p_read_only)
-{
-	button->set_disabled(p_read_only);
-	grid->set_read_only(p_read_only);
-}
-
 void EditorPropertyLayers::_button_pressed()
 {
 	int layer_count = grid->layer_count;
@@ -621,8 +488,6 @@ void EditorPropertyInteger::setup(const EditorPropertyRangeHint& p_range_hint)
 	spin->set_allow_lesser(p_range_hint.or_less);
 	spin->set_suffix(p_range_hint.suffix);
 }
-
-void EditorPropertyObjectID::_set_read_only(bool p_read_only) { edit->set_disabled(p_read_only); }
 
 void EditorPropertyObjectID::_notification(int p_what)
 {
@@ -883,27 +748,6 @@ bool EditorPropertyQuaternion::is_grabbing_euler()
 
 void EditorPropertyQuaternion::_warning_pressed() { warning_dialog->popup_centered(); }
 
-void EditorPropertyQuaternion::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		const Color* colors = _get_property_colors();
-		for (int i = 0; i < 4; i++) {
-			spin[i]->add_theme_color_override("label_color", colors[i]);
-		}
-		for (int i = 0; i < 3; i++) {
-			euler[i]->add_theme_color_override("label_color", colors[i]);
-		}
-		edit_button->set_button_icon(get_editor_theme_icon(SNAME("Edit")));
-		euler_label->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("property_color"), SNAME("EditorProperty")));
-		warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
-		warning->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-	} break;
-	}
-}
-
 void EditorPropertyQuaternion::setup(
 	const EditorPropertyRangeHint& p_range_hint, bool p_hide_editor)
 {
@@ -1155,8 +999,6 @@ void EditorPropertyProjection::setup(const EditorPropertyRangeHint& p_range_hint
 	}
 }
 
-void EditorPropertyColor::_set_read_only(bool p_read_only) { picker->set_disabled(p_read_only); }
-
 void EditorPropertyColor::_popup_opening()
 {
 	if (EditorNode::get_singleton()) {
@@ -1171,12 +1013,6 @@ void EditorPropertyColor::setup(bool p_show_alpha) { picker->set_edit_alpha(p_sh
 void EditorPropertyColor::set_live_changes_enabled(bool p_enabled)
 {
 	live_changes_enabled = p_enabled;
-}
-
-void EditorPropertyNodePath::_set_read_only(bool p_read_only)
-{
-	assign->set_disabled(p_read_only);
-	menu->set_disabled(p_read_only);
 }
 
 void EditorPropertyNodePath::_assign_draw()

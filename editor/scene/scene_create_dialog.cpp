@@ -49,15 +49,6 @@
 void SceneCreateDialog::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		select_node_button->set_button_icon(get_editor_theme_icon(SNAME("ClassList")));
-		node_type_2d->set_button_icon(get_editor_theme_icon(SNAME("Node2D")));
-		node_type_3d->set_button_icon(get_editor_theme_icon(SNAME("Node3D")));
-		node_type_gui->set_button_icon(get_editor_theme_icon(SNAME("Control")));
-		node_type_other->add_theme_icon_override(
-			SNAME("icon"), get_editor_theme_icon(SNAME("Node")).ptr());
-	} break;
-
 	case NOTIFICATION_READY: {
 		select_node_dialog->select_base();
 	} break;

@@ -67,8 +67,6 @@ void ProjectExportTextureFormatError::_on_fix_texture_format_pressed()
 	project_settings->popup_project_settings(false);
 }
 
-void ProjectExportTextureFormatError::_bind_methods() {}
-
 void ProjectExportTextureFormatError::_notification(int p_what)
 {
 	switch (p_what) {
@@ -88,14 +86,6 @@ void ProjectExportTextureFormatError::show_for_texture_format(
 	setting_identifier = p_setting_identifier;
 	show();
 }
-
-
-
-
-
-
-
-
 
 void ProjectExportDialog::_add_preset(int p_platform)
 {
@@ -135,8 +125,6 @@ void ProjectExportDialog::_add_preset(int p_platform)
 	_update_presets();
 	_edit_preset(EditorExport::get_singleton()->get_export_preset_count() - 1);
 }
-
-
 
 void ProjectExportDialog::_update_current_preset() { _edit_preset(presets->get_current()); }
 
@@ -179,35 +167,6 @@ void ProjectExportDialog::_update_presets()
 
 	updating = false;
 }
-
-void ProjectExportDialog::_update_export_all()
-{
-	bool can_export = EditorExport::get_singleton()->get_export_preset_count() > 0;
-
-	for (int i = 0; i < EditorExport::get_singleton()->get_export_preset_count(); i++) {
-		Ref<EditorExportPreset> preset = EditorExport::get_singleton()->get_export_preset(i);
-		bool needs_templates;
-		String error;
-		if (preset->get_export_path().is_empty() ||
-			!preset->get_platform()->can_export(preset, error, needs_templates)) {
-			can_export = false;
-			break;
-		}
-	}
-
-	export_all_button->set_disabled(!can_export);
-
-	if (can_export) {
-		export_all_button->set_tooltip_text(
-			TTRC("Export the project for all the presets defined."));
-	}
-	else {
-		export_all_button->set_tooltip_text(
-			TTRC("All presets must have an export path defined for Export All to work."));
-	}
-}
-
-
 
 void ProjectExportDialog::_update_feature_list()
 {
@@ -273,10 +232,6 @@ void ProjectExportDialog::_update_parameters(const String& p_edited_property)
 {
 	_update_current_preset();
 }
-
-
-
-
 
 void ProjectExportDialog::_runnable_pressed()
 {
@@ -356,8 +311,6 @@ Ref<EditorExportPreset> ProjectExportDialog::get_current_preset() const
 	return EditorExport::get_singleton()->get_export_preset(presets->get_current());
 }
 
-
-
 void ProjectExportDialog::_enc_filters_changed(const String& p_filters)
 {
 	if (updating) {
@@ -380,28 +333,6 @@ void ProjectExportDialog::_open_key_help_link()
 	OS::get_singleton()->shell_open(
 		vformat("%s/engine_details/development/compiling/compiling_with_script_encryption_key.html",
 			VLTR_VERSION_DOCS_URL));
-}
-
-void ProjectExportDialog::_enc_pck_changed(bool p_pressed)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_enc_pck(p_pressed);
-	enc_directory->set_disabled(!p_pressed);
-	enc_in_filters->set_editable(p_pressed);
-	enc_ex_filters->set_editable(p_pressed);
-	script_key->set_editable(p_pressed);
-	show_script_key->set_disabled(!p_pressed);
-	if (!p_pressed) {
-		show_script_key->set_pressed(false);
-	}
-
-	_update_current_preset();
 }
 
 void ProjectExportDialog::_seed_input_changed(const String& p_text)
@@ -450,15 +381,6 @@ void ProjectExportDialog::_script_encryption_key_changed(const String& p_key)
 	updating_script_key = false;
 }
 
-void ProjectExportDialog::_script_encryption_key_visibility_changed(bool p_visible)
-{
-	show_script_key->set_button_icon(get_editor_theme_icon(
-		p_visible ? SNAME("GuiVisibilityVisible") : SNAME("GuiVisibilityHidden")));
-	show_script_key->set_tooltip_text(
-		p_visible ? TTRC("Hide encryption key") : TTRC("Show encryption key"));
-	script_key->set_secret(!p_visible);
-}
-
 bool ProjectExportDialog::_validate_script_encryption_key(const String& p_key)
 {
 	bool is_valid = false;
@@ -483,8 +405,6 @@ void ProjectExportDialog::_script_export_mode_changed(EditorExportPreset::Script
 	_update_current_preset();
 }
 
-
-
 void ProjectExportDialog::_delete_preset()
 {
 	Ref<EditorExportPreset> current = get_current_preset();
@@ -495,29 +415,6 @@ void ProjectExportDialog::_delete_preset()
 	delete_confirm->set_text(vformat(TTR("Delete preset '%s'?"), current->get_name()));
 	delete_confirm->popup_centered();
 }
-
-void ProjectExportDialog::_delete_preset_confirm()
-{
-	int idx = presets->get_current();
-	EditorExport::get_singleton()->remove_export_preset(idx);
-	_edit_preset(idx > 0 || presets->get_item_count() == 1 ? idx - 1 : 0);
-	_update_presets();
-
-	if (presets->get_item_count() == 0) {
-		export_button->set_disabled(true);
-		get_ok_button()->set_disabled(true);
-	}
-
-	// The Export All button might become enabled (if all other presets have an export path
-	// defined), or it could be disabled (if there are no presets anymore).
-	_update_export_all();
-}
-
-
-
-
-
-
 
 void ProjectExportDialog::_export_type_changed(int p_which)
 {
@@ -614,16 +511,6 @@ void ProjectExportDialog::_fill_resource_tree()
 	}
 }
 
-
-
-
-
-
-
-
-
-
-
 void ProjectExportDialog::_tree_popup_edited(bool p_arrow_clicked)
 {
 	Rect2 bounds = include_files->get_custom_popup_rect();
@@ -634,8 +521,6 @@ void ProjectExportDialog::_tree_popup_edited(bool p_arrow_clicked)
 	}
 	file_mode_popup->popup(bounds);
 }
-
-
 
 void ProjectExportDialog::_patch_delta_encoding_changed(bool p_pressed)
 {
@@ -711,10 +596,6 @@ void ProjectExportDialog::_patch_delta_min_reduction_changed(double p_value)
 	_update_current_preset();
 }
 
-
-
-
-
 void ProjectExportDialog::_patch_file_selected(const String& p_path)
 {
 	Ref<EditorExportPreset> current = get_current_preset();
@@ -766,8 +647,6 @@ void ProjectExportDialog::_export_pck_zip()
 	export_pck_zip->popup_file_dialog();
 }
 
-
-
 void ProjectExportDialog::_open_export_template_manager()
 {
 	hide();
@@ -811,8 +690,6 @@ void ProjectExportDialog::_export_project()
 	export_project->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
 	export_project->popup_file_dialog();
 }
-
-
 
 void ProjectExportDialog::_export_all_dialog()
 {

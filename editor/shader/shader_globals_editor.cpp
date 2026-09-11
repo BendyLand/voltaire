@@ -97,13 +97,6 @@ String ShaderGlobalsEditor::_check_new_variable_name(const String& p_variable_na
 
 LineEdit* ShaderGlobalsEditor::get_name_box() const { return variable_name; }
 
-void ShaderGlobalsEditor::_variable_name_text_changed(const String& p_variable_name)
-{
-	const String& warning = _check_new_variable_name(p_variable_name.strip_edges());
-	variable_add->set_tooltip_text(warning);
-	variable_add->set_disabled(!warning.is_empty());
-}
-
 ShaderGlobalsEditor::~ShaderGlobalsEditor() { memdelete(interface); }
 
 

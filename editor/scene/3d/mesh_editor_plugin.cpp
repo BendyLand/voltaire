@@ -57,16 +57,6 @@ void MeshEditor::_update_theme_item_cache()
 	theme_cache.light_2_icon = get_editor_theme_icon(SNAME("MaterialPreviewLight2"));
 }
 
-void MeshEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		light_1_switch->set_button_icon(theme_cache.light_1_icon);
-		light_2_switch->set_button_icon(theme_cache.light_2_icon);
-	} break;
-	}
-}
-
 void MeshEditor::_update_rotation()
 {
 	Transform3D t;

@@ -162,23 +162,6 @@ void ScenePaint2DEditor::_grid_toggled(bool p_toggled)
 	_update_draw_overlay();
 }
 
-void ScenePaint2DEditor::_update_paint_mode()
-{
-	switch (paint_mode) {
-	case PAINT_MODE_FREE:
-		advanced_settings_button->set_button_icon(get_editor_theme_icon(SNAME("SnapDisable")));
-		break;
-	case PAINT_MODE_SNAP_GRID:
-		advanced_settings_button->set_button_icon(get_editor_theme_icon(SNAME("SnapGrid")));
-		break;
-	case PAINT_MODE_SNAP_GRID_CELL_CENTER:
-		advanced_settings_button->set_button_icon(get_editor_theme_icon(SNAME("Snap")));
-		break;
-	}
-	advanced_settings_popup->set_item_disabled(
-		MENU_ITEM_ALLOW_OVERLAPPING, paint_mode == PAINT_MODE_FREE);
-}
-
 void ScenePaint2DEditor::_grid_step_changed()
 {
 	grid_step = CanvasItemEditor::get_singleton()->get_grid_step();

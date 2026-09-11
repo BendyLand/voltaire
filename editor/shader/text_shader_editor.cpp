@@ -643,20 +643,6 @@ void TextShaderEditor::_notification(int p_what)
 		preview_timer->start();
 	} break;
 
-	case NOTIFICATION_THEME_CHANGED: {
-		site_search->set_button_icon(get_editor_theme_icon(SNAME("ExternalLink")));
-
-		Ref<StyleBoxFlat> tab_style = get_theme_stylebox(SNAME("tab_selected"), "TabBar");
-		Ref<StyleBoxFlat> preview_style = memnew(StyleBoxFlat);
-		preview_style->set_bg_color(
-			get_theme_color(SNAME("dark_color_1"), EditorStringName(Editor)));
-		preview_style->set_corner_radius_all(tab_style->get_corner_radius(CORNER_TOP_LEFT));
-		preview_panel->add_theme_style_override(SceneStringName(panel), preview_style.ptr());
-
-		update_params_btn->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
-		remove_all_btn->set_button_icon(get_editor_theme_icon(SNAME("Remove")));
-	} break;
-
 	case NOTIFICATION_APPLICATION_FOCUS_IN: {
 		_check_for_external_edit();
 	} break;

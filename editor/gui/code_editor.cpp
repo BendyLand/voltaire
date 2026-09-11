@@ -327,37 +327,6 @@ void FindReplaceBar::_update_results_count()
 	}
 }
 
-void FindReplaceBar::_update_matches_display()
-{
-	if (search_text->get_text().is_empty() || results_count == -1) {
-		matches_label->hide();
-	}
-	else {
-		matches_label->show();
-
-		matches_label->add_theme_color_override(SceneStringName(font_color),
-			results_count > 0 ? get_theme_color(SceneStringName(font_color), SNAME("Label"))
-							  : get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-
-		if (results_count == 0) {
-			matches_label->set_text(TTR("No match"));
-		}
-		else if (results_count_to_current == -1) {
-			matches_label->set_text(
-				vformat(TTRN("%d match", "%d matches", results_count), results_count));
-		}
-		else {
-			matches_label->set_text(
-				vformat(TTRN("%d of %d match", "%d of %d matches", results_count),
-					results_count_to_current, results_count));
-		}
-	}
-	find_prev->set_disabled(results_count < 1);
-	find_next->set_disabled(results_count < 1);
-	replace->set_disabled(search_text->get_text().is_empty());
-	replace_all->set_disabled(search_text->get_text().is_empty());
-}
-
 bool FindReplaceBar::search_current()
 {
 	_update_flags(false);
@@ -430,19 +399,6 @@ void FindReplaceBar::_hide_bar()
 	result_line = -1;
 	result_col = -1;
 	hide();
-}
-
-void FindReplaceBar::_update_toggle_replace_button(bool p_replace_visible)
-{
-	String tooltip = p_replace_visible ? TTRC("Hide Replace") : TTRC("Show Replace");
-	String shortcut = ED_GET_SHORTCUT(
-		p_replace_visible ? "script_text_editor/find" : "script_text_editor/replace")
-						  ->get_as_text();
-	toggle_replace_button->set_tooltip_text(vformat("%s (%s)", tooltip, shortcut));
-	StringName rtl_compliant_arrow =
-		is_layout_rtl() ? SNAME("GuiTreeArrowLeft") : SNAME("GuiTreeArrowRight");
-	toggle_replace_button->set_button_icon(
-		get_editor_theme_icon(p_replace_visible ? SNAME("GuiTreeArrowDown") : rtl_compliant_arrow));
 }
 
 void FindReplaceBar::popup_search(bool p_show_only)
@@ -1077,7 +1033,8 @@ void CodeTextEditor::toggle_bookmark()
 			}
 		}
 		else {
-			for (int line = from; line <= to; line++) {
+			for
+ (int line = from; line <= to; line++) {
 				text_editor->set_line_as_bookmarked(line, false);
 			}
 		}
@@ -1141,15 +1098,5 @@ void CodeTextEditor::set_toggle_list_control(Control* p_toggle_list_control)
 }
 
 void CodeTextEditor::show_toggle_files_button() { toggle_files_button->show(); }
-
-void CodeTextEditor::update_toggle_files_button()
-{
-	ERR_FAIL_NULL(toggle_files_list);
-	bool forward = toggle_files_list->is_visible() == is_layout_rtl();
-	toggle_files_button->set_button_icon(
-		get_editor_theme_icon(forward ? SNAME("Forward") : SNAME("Back")));
-	toggle_files_button->set_tooltip_text(vformat("%s (%s)", TTR("Toggle Files Panel"),
-		ED_GET_SHORTCUT("script_editor/toggle_files_panel")->get_as_text()));
-}
 
 

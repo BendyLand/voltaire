@@ -548,8 +548,8 @@ void EditorHelp::_add_type_icon(const String& p_type, int p_size, const String& 
 	class_desc->add_text(" ");                                                                     \
 	if ((m_message).is_empty()) {                                                                  \
 		class_desc->add_text(m_default_message);                                                   \
-	}                                                                                              \
-	else {                                                                                         \
+	} \
+	else {                                                                                       \
 		_add_text(m_message);                                                                      \
 	}
 
@@ -565,8 +565,8 @@ void EditorHelp::_add_type_icon(const String& p_type, int p_size, const String& 
 	class_desc->add_text(" ");                                                                     \
 	if ((m_message).is_empty()) {                                                                  \
 		class_desc->add_text(m_default_message);                                                   \
-	}                                                                                              \
-	else {                                                                                         \
+	} \
+	else {                                                                                       \
 		_add_text(m_message);                                                                      \
 	}
 
@@ -759,7 +759,6 @@ bool EditorHelp::_need_save_new_history() const
 static void _add_text_to_rt(
 	const String& p_bbcode, RichTextLabel* p_rt, const Control* p_owner_node, const String& p_class)
 {
-
 	const Ref<Font> doc_font =
 		p_owner_node->get_theme_font(SNAME("doc"), EditorStringName(EditorFonts));
 	const Ref<Font> doc_bold_font =
@@ -1610,22 +1609,6 @@ void EditorHelp::search_again(bool p_search_previous) { _search(p_search_previou
 int EditorHelp::get_scroll() const { return class_desc->get_v_scroll_bar()->get_value(); }
 
 void EditorHelp::set_scroll(int p_scroll) { class_desc->get_v_scroll_bar()->set_value(p_scroll); }
-
-void EditorHelp::update_toggle_files_button()
-{
-	if (is_layout_rtl()) {
-		toggle_files_button->set_button_icon(get_editor_theme_icon(
-			ScriptEditor::get_singleton()->is_files_panel_toggled() ? SNAME("Forward")
-																	: SNAME("Back")));
-	}
-	else {
-		toggle_files_button->set_button_icon(get_editor_theme_icon(
-			ScriptEditor::get_singleton()->is_files_panel_toggled() ? SNAME("Back")
-																	: SNAME("Forward")));
-	}
-	toggle_files_button->set_tooltip_text(vformat("%s (%s)", TTR("Toggle Files Panel"),
-		ED_GET_SHORTCUT("script_editor/toggle_files_panel")->get_as_text()));
-}
 
 void EditorHelp::_bind_methods() {}
 
@@ -2494,8 +2477,8 @@ void EditorHelpBit::parse_symbol(const String& p_symbol, const String& p_prologu
 			symbol_type = TTR("Resource");
 			symbol_hint = SYMBOL_HINT_ASSIGNABLE;
 			if (is_uid) {
-				help_data.description = vformat(
-					"%s: [color=<EditorHelpBitCommentColor>]%s[/color]", TTR("Path"), path);
+				help_data.description =
+					vformat("%s: [color=<EditorHelpBitCommentColor>]%s[/color]", TTR("Path"), path);
 			}
 			symbol_name = path.get_file();
 		}
@@ -2873,44 +2856,6 @@ EditorHelpHighlighter::~EditorHelpHighlighter()
 
 /// FindBar ///
 
-FindBar::FindBar()
-{
-	search_text = memnew(LineEdit);
-	search_text->set_keep_editing_on_text_submit(true);
-	add_child(search_text);
-	search_text->set_placeholder(TTR("Search"));
-	search_text->set_tooltip_text(TTR("Search"));
-	search_text->set_accessibility_name(TTRC("Search Documentation"));
-	search_text->set_custom_minimum_size(Size2(100 * EDSCALE, 0));
-	search_text->set_h_size_flags(SIZE_EXPAND_FILL);
-
-	matches_label = memnew(Label);
-	add_child(matches_label);
-	matches_label->set_focus_mode(FOCUS_ACCESSIBILITY);
-	matches_label->hide();
-
-	find_prev = memnew(Button);
-	find_prev->set_theme_type_variation(SceneStringName(FlatButton));
-	find_prev->set_disabled(results_count < 1);
-	find_prev->set_tooltip_text(TTR("Previous Match"));
-	add_child(find_prev);
-	find_prev->set_focus_mode(FOCUS_ACCESSIBILITY);
-
-	find_next = memnew(Button);
-	find_next->set_theme_type_variation(SceneStringName(FlatButton));
-	find_next->set_disabled(results_count < 1);
-	find_next->set_tooltip_text(TTR("Next Match"));
-	add_child(find_next);
-	find_next->set_focus_mode(FOCUS_ACCESSIBILITY);
-
-	hide_button = memnew(Button);
-	hide_button->set_theme_type_variation(SceneStringName(FlatButton));
-	hide_button->set_tooltip_text(TTR("Hide"));
-	hide_button->set_focus_mode(FOCUS_ACCESSIBILITY);
-	hide_button->set_v_size_flags(SIZE_EXPAND_FILL);
-	add_child(hide_button);
-}
-
 void FindBar::popup_search()
 {
 	show();
@@ -2934,15 +2879,6 @@ void FindBar::popup_search()
 void FindBar::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		find_prev->set_button_icon(get_editor_theme_icon(SNAME("MoveUp")));
-		find_next->set_button_icon(get_editor_theme_icon(SNAME("MoveDown")));
-		hide_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
-		matches_label->add_theme_color_override(SceneStringName(font_color),
-			results_count > 0 ? get_theme_color(SceneStringName(font_color), SNAME("Label"))
-							  : get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-	} break;
-
 	case NOTIFICATION_VISIBILITY_CHANGED: {
 		set_process_input(is_visible_in_tree());
 	} break;
@@ -3016,33 +2952,6 @@ void FindBar::_update_results_count(bool p_search_previous)
 	else if (results_count_to_current <= 0) {
 		results_count_to_current = results_count;
 	}
-}
-
-void FindBar::_update_matches_label()
-{
-	if (search_text->get_text().is_empty() || results_count == -1) {
-		matches_label->hide();
-	}
-	else {
-		matches_label->show();
-		matches_label->add_theme_color_override(SceneStringName(font_color),
-			results_count > 0 ? get_theme_color(SceneStringName(font_color), SNAME("Label"))
-							  : get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		if (results_count == 0) {
-			matches_label->set_text(TTR("No match"));
-		}
-		else if (results_count_to_current == 0) {
-			matches_label->set_text(
-				vformat(TTRN("%d match", "%d matches", results_count), results_count));
-		}
-		else {
-			matches_label->set_text(
-				vformat(TTRN("%d of %d match", "%d of %d matches", results_count),
-					results_count_to_current, results_count));
-		}
-	}
-	find_prev->set_disabled(results_count < 1);
-	find_next->set_disabled(results_count < 1);
 }
 
 void FindBar::_hide_bar()

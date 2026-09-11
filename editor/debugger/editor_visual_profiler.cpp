@@ -39,68 +39,6 @@
 #include "scene/gui/label.h"
 #include "scene/resources/image_texture.h"
 
-void EditorVisualProfiler::add_frame_metric(const Metric& p_metric)
-{
-	++last_metric;
-	if (last_metric >= frame_metrics.size()) {
-		last_metric = 0;
-	}
-
-	frame_metrics.write[last_metric] = p_metric;
-
-	List<String> stack;
-	for (int i = 0; i < frame_metrics[last_metric].areas.size(); i++) {
-		String name = frame_metrics[last_metric].areas[i].name;
-		frame_metrics.write[last_metric].areas.write[i].color_cache =
-			_get_color_from_signature(name);
-		String full_name;
-
-		if (name[0] == '<') {
-			stack.pop_back();
-		}
-
-		if (stack.size()) {
-			full_name = stack.back()->get() + name;
-		}
-		else {
-			full_name = name;
-		}
-
-		if (name[0] == '>') {
-			stack.push_back(full_name + "/");
-		}
-
-		frame_metrics.write[last_metric].areas.write[i].fullpath_cache = full_name;
-	}
-
-	updating_frame = true;
-	clear_button->set_disabled(false);
-	cursor_metric_edit->set_max(frame_metrics[last_metric].frame_number);
-	cursor_metric_edit->set_min(
-		MAX(int64_t(frame_metrics[last_metric].frame_number) - frame_metrics.size(), 0));
-
-	if (!seeking) {
-		cursor_metric_edit->set_value(frame_metrics[last_metric].frame_number);
-		if (hover_metric != -1) {
-			hover_metric++;
-			if (hover_metric >= frame_metrics.size()) {
-				hover_metric = 0;
-			}
-		}
-	}
-	updating_frame = false;
-
-	if (frame_delay->is_stopped()) {
-		frame_delay->set_wait_time(0.1);
-		frame_delay->start();
-	}
-
-	if (plot_delay->is_stopped()) {
-		plot_delay->set_wait_time(0.1);
-		plot_delay->start();
-	}
-}
-
 void EditorVisualProfiler::clear()
 {
 	frame_metrics.clear();
@@ -221,47 +159,9 @@ void EditorVisualProfiler::_update_frame(bool p_focus_selected)
 	updating_frame = false;
 }
 
-void EditorVisualProfiler::_activate_pressed()
-{
-	if (activate->is_pressed()) {
-		activate->set_button_icon(get_editor_theme_icon(SNAME("Stop")));
-		activate->set_text(TTRC("Stop"));
-		_clear_pressed(); // always clear on start
-		clear_button->set_disabled(false);
-	}
-	else {
-		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
-		activate->set_text(TTRC("Start"));
-	}
-}
-
-void EditorVisualProfiler::_clear_pressed()
-{
-	clear_button->set_disabled(true);
-	clear();
-	_update_plot();
-}
-
 void EditorVisualProfiler::_autostart_toggled(bool p_toggled_on)
 {
 	EditorRunBar::get_singleton()->update_profiler_autostart_indicator();
-}
-
-void EditorVisualProfiler::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (is_ready()) {
-			_update_frame();
-		}
-		[[fallthrough]];
-	}
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-	case NOTIFICATION_THEME_CHANGED: {
-		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
-		clear_button->set_button_icon(get_editor_theme_icon(SNAME("Clear")));
-	} break;
-	}
 }
 
 void EditorVisualProfiler::_graph_tex_draw()
@@ -369,20 +269,6 @@ void EditorVisualProfiler::_combo_changed(int)
 	_update_plot();
 }
 
-void EditorVisualProfiler::_update_button_text()
-{
-	if (activate->is_pressed()) {
-		activate->set_button_icon(get_editor_theme_icon(SNAME("Stop")));
-		activate->set_text(TTRC("Stop"));
-	}
-	else {
-		activate->set_button_icon(get_editor_theme_icon(SNAME("Play")));
-		activate->set_text(TTRC("Start"));
-	}
-}
-
-void EditorVisualProfiler::set_enabled(bool p_enable) { activate->set_disabled(!p_enable); }
-
 void EditorVisualProfiler::set_profiling(bool p_profiling)
 {
 	activate->set_pressed(p_profiling);
@@ -444,108 +330,6 @@ Vector<Vector<String>> EditorVisualProfiler::get_data_as_csv() const
 	}
 #endif
 	return res;
-}
-
-EditorVisualProfiler::EditorVisualProfiler()
-{
-	HBoxContainer* hb = memnew(HBoxContainer);
-	hb->add_theme_constant_override(SNAME("separation"), 8 * EDSCALE);
-	add_child(hb);
-
-	FlowContainer* container = memnew(FlowContainer);
-	container->set_h_size_flags(SIZE_EXPAND_FILL);
-	container->add_theme_constant_override(SNAME("h_separation"), 8 * EDSCALE);
-	container->add_theme_constant_override(SNAME("v_separation"), 2 * EDSCALE);
-	hb->add_child(container);
-
-	activate = memnew(Button);
-	activate->set_toggle_mode(true);
-	activate->set_disabled(true);
-	activate->set_text(TTRC("Start"));
-	container->add_child(activate);
-
-	clear_button = memnew(Button);
-	clear_button->set_text(TTRC("Clear"));
-	clear_button->set_disabled(true);
-	container->add_child(clear_button);
-
-	CheckBox* autostart_checkbox = memnew(CheckBox);
-	autostart_checkbox->set_text(TTRC("Autostart"));
-	container->add_child(autostart_checkbox);
-
-	HBoxContainer* hb_measure = memnew(HBoxContainer);
-	hb_measure->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
-	container->add_child(hb_measure);
-
-	hb_measure->add_child(memnew(Label(TTRC("Measure:"))));
-
-	display_mode = memnew(OptionButton);
-	display_mode->set_accessibility_name(TTRC("Measure:"));
-	display_mode->add_item(TTRC("Frame Time (ms)"));
-	display_mode->add_item(TTRC("Frame %"));
-
-	hb_measure->add_child(display_mode);
-
-	frame_relative = memnew(CheckBox(TTRC("Fit to Frame")));
-	frame_relative->set_pressed(true);
-	container->add_child(frame_relative);
-	linked = memnew(CheckBox(TTRC("Linked")));
-	linked->set_pressed(true);
-	container->add_child(linked);
-
-	HBoxContainer* hb_frame = memnew(HBoxContainer);
-	hb_frame->add_theme_constant_override(SNAME("separation"), 2 * EDSCALE);
-	hb_frame->set_v_size_flags(SIZE_SHRINK_BEGIN);
-	hb->add_child(hb_frame);
-
-	hb_frame->add_child(memnew(Label(TTRC("Frame #:"))));
-
-	cursor_metric_edit = memnew(SpinBox);
-	cursor_metric_edit->set_accessibility_name(TTRC("Frame #:"));
-	cursor_metric_edit->set_h_size_flags(SIZE_FILL);
-	hb_frame->add_child(cursor_metric_edit);
-
-	h_split = memnew(HSplitContainer);
-	add_child(h_split);
-	h_split->set_v_size_flags(SIZE_EXPAND_FILL);
-
-	variables = memnew(Tree);
-	variables->set_custom_minimum_size(Size2(300, 0) * EDSCALE);
-	h_split->add_child(variables);
-	variables->set_hide_root(true);
-	variables->set_columns(3);
-	variables->set_column_titles_visible(true);
-	variables->set_column_title(0, TTRC("Name"));
-	variables->set_column_expand(0, true);
-	variables->set_column_clip_content(0, true);
-	variables->set_column_custom_minimum_width(0, 60);
-	variables->set_column_title(1, TTRC("CPU"));
-	variables->set_column_expand(1, false);
-	variables->set_column_clip_content(1, true);
-	variables->set_column_custom_minimum_width(1, 75 * EDSCALE);
-	variables->set_column_title(2, TTRC("GPU"));
-	variables->set_column_expand(2, false);
-	variables->set_column_clip_content(2, true);
-	variables->set_column_custom_minimum_width(2, 75 * EDSCALE);
-	variables->set_theme_type_variation("TreeSecondary");
-
-	graph = memnew(TextureRect);
-	graph->set_custom_minimum_size(Size2(250 * EDSCALE, 0));
-	graph->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
-	graph->set_mouse_filter(MOUSE_FILTER_STOP);
-
-	h_split->add_child(graph);
-	graph->set_h_size_flags(SIZE_EXPAND_FILL);
-
-	frame_delay = memnew(Timer);
-	frame_delay->set_wait_time(0.1);
-	frame_delay->set_one_shot(true);
-	add_child(frame_delay);
-
-	plot_delay = memnew(Timer);
-	plot_delay->set_wait_time(0.1);
-	plot_delay->set_one_shot(true);
-	add_child(plot_delay);
 }
 
 

@@ -433,31 +433,6 @@ void ProjectManager::_erase_missing_projects_confirm()
 	_update_list_placeholder();
 }
 
-void ProjectManager::_update_project_buttons()
-{
-	Vector<ProjectList::Item> selected_projects = project_list->get_selected_projects();
-	bool empty_selection = selected_projects.is_empty();
-
-	bool is_missing_project_selected = false;
-	for (int i = 0; i < selected_projects.size(); ++i) {
-		if (selected_projects[i].missing) {
-			is_missing_project_selected = true;
-			break;
-		}
-	}
-
-	erase_btn->set_disabled(empty_selection);
-	open_btn->set_disabled(empty_selection || is_missing_project_selected);
-	open_options_btn->set_disabled(empty_selection || is_missing_project_selected);
-	rename_btn->set_disabled(empty_selection || is_missing_project_selected);
-	duplicate_btn->set_disabled(empty_selection || is_missing_project_selected);
-	manage_tags_btn->set_disabled(
-		empty_selection || is_missing_project_selected || selected_projects.size() > 1);
-	run_btn->set_disabled(empty_selection || is_missing_project_selected);
-
-	erase_missing_btn->set_disabled(!project_list->is_any_project_missing());
-}
-
 void ProjectManager::_open_options_popup()
 {
 	Rect2 rect = open_btn_container->get_screen_rect();
@@ -605,50 +580,6 @@ void ProjectManager::_on_search_term_submitted(const String& p_text)
 }
 
 LineEdit* ProjectManager::get_search_box() { return search_box; }
-
-// Project tag management.
-
-void ProjectManager::_set_new_tag_name(const String p_name)
-{
-	create_tag_dialog->get_ok_button()->set_disabled(true);
-	if (p_name.strip_edges().is_empty()) {
-		tag_error->set_text(TTRC("Tag name can't be empty."));
-		return;
-	}
-
-	if (p_name[0] == '_' || p_name[p_name.length() - 1] == '_') {
-		tag_error->set_text(TTRC("Tag name can't begin or end with underscore."));
-		return;
-	}
-
-	bool was_underscore = false;
-	for (const char32_t& c : p_name.span()) {
-		// Treat spaces as underscores, as we convert spaces to underscores automatically in the tag
-		// input field.
-		if (c == '_' || c == ' ') {
-			if (was_underscore) {
-				tag_error->set_text(
-					TTRC("Tag name can't contain consecutive underscores or spaces."));
-				return;
-			}
-			was_underscore = true;
-		}
-		else {
-			was_underscore = false;
-		}
-	}
-
-	for (const String& c : forbidden_tag_characters) {
-		if (p_name.contains(c)) {
-			tag_error->set_text(vformat(TTR("These characters are not allowed in tags: %s."),
-				String(" ").join(forbidden_tag_characters)));
-			return;
-		}
-	}
-
-	tag_error->set_text("");
-	create_tag_dialog->get_ok_button()->set_disabled(false);
-}
 
 void ProjectManager::_create_new_tag()
 {

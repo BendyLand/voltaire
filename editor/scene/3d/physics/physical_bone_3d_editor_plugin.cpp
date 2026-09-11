@@ -47,28 +47,6 @@ void PhysicalBone3DEditor::_set_move_joint()
 	}
 }
 
-PhysicalBone3DEditor::PhysicalBone3DEditor()
-{
-	spatial_editor_hb = memnew(HBoxContainer);
-	spatial_editor_hb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	spatial_editor_hb->set_alignment(BoxContainer::ALIGNMENT_BEGIN);
-	Node3DEditor::get_singleton()->add_control_to_menu_panel(spatial_editor_hb);
-
-	button_transform_joint = memnew(Button);
-	button_transform_joint->set_theme_type_variation(SceneStringName(FlatButton));
-	spatial_editor_hb->add_child(button_transform_joint);
-
-	button_transform_joint->set_text(TTR("Move Joint"));
-	// TODO: Rework this as a dedicated toolbar control so we can hook into theme changes and update
-	// it when the editor theme updates.
-	button_transform_joint->set_button_icon(
-		EditorNode::get_singleton()->get_editor_theme()->get_icon(
-			SNAME("PhysicalBone3D"), EditorStringName(EditorIcons)));
-	button_transform_joint->set_toggle_mode(true);
-
-	hide();
-}
-
 void PhysicalBone3DEditor::set_selected(PhysicalBone3D* p_pb)
 {
 	button_transform_joint->set_pressed(false);

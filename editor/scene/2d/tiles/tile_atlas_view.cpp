@@ -86,66 +86,6 @@ Size2i TileAtlasView::_compute_alternative_tiles_control_size()
 	return size;
 }
 
-void TileAtlasView::_update_zoom_and_panning(bool p_zoom_on_mouse_pos, const Vector2& p_mouse_pos)
-{
-	if (tile_set_atlas_source.is_null()) {
-		return;
-	}
-	float zoom = zoom_widget->get_zoom();
-
-	// Compute the minimum sizes.
-	Size2i base_tiles_control_size = _compute_base_tiles_control_size();
-	base_tiles_root_control->set_custom_minimum_size(Vector2(base_tiles_control_size) * zoom);
-
-	Size2i alternative_tiles_control_size = _compute_alternative_tiles_control_size();
-	alternative_tiles_root_control->set_custom_minimum_size(
-		Vector2(alternative_tiles_control_size) * zoom);
-
-	// Set the texture for the base tiles.
-	Ref<Texture2D> texture = tile_set_atlas_source->get_texture();
-
-	// Set the scales.
-	if (base_tiles_control_size.x > 0 && base_tiles_control_size.y > 0) {
-		base_tiles_drawing_root->set_scale(Vector2(zoom, zoom));
-	}
-	else {
-		base_tiles_drawing_root->set_scale(Vector2(1, 1));
-	}
-	if (alternative_tiles_control_size.x > 0 && alternative_tiles_control_size.y > 0) {
-		alternative_tiles_drawing_root->set_scale(Vector2(zoom, zoom));
-	}
-	else {
-		alternative_tiles_drawing_root->set_scale(Vector2(1, 1));
-	}
-
-	// Update the margin container's margins.
-	const char* constants[] = {"margin_left", "margin_top", "margin_right", "margin_bottom"};
-	for (int i = 0; i < 4; i++) {
-		margin_container->add_theme_constant_override(
-			constants[i], margin_container_paddings[i] * zoom);
-	}
-
-	// Update the backgrounds.
-	background_left->set_size(base_tiles_root_control->get_custom_minimum_size());
-	background_right->set_size(alternative_tiles_root_control->get_custom_minimum_size());
-
-	// Zoom on the position.
-	if (p_zoom_on_mouse_pos) {
-		Vector2 relative_mpos = p_mouse_pos - get_size() / 2;
-		panning = (panning - relative_mpos) * zoom / previous_zoom + relative_mpos;
-	}
-	else {
-		// Center of panel.
-		panning = panning * zoom / previous_zoom;
-	}
-	button_center_view->set_disabled(panning.is_zero_approx());
-
-	previous_zoom = zoom;
-
-	center_container->set_begin(panning - center_container->get_minimum_size() / 2);
-	center_container->set_size(center_container->get_minimum_size());
-}
-
 void TileAtlasView::_base_tiles_root_control_gui_input(const Ref<InputEvent>& p_event)
 {
 	if (tile_set_atlas_source.is_null()) {

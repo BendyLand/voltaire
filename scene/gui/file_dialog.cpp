@@ -189,18 +189,6 @@ void FileDialog::_post_popup()
 	_push_history();
 }
 
-void FileDialog::_push_history()
-{
-	local_history.resize(local_history_pos + 1);
-	String new_path = dir_access->get_current_dir();
-	if (local_history.is_empty() || new_path != local_history[local_history_pos]) {
-		local_history.push_back(new_path);
-		local_history_pos++;
-		dir_prev->set_disabled(local_history_pos == 0);
-		dir_next->set_disabled(true);
-	}
-}
-
 void FileDialog::_cancel_pressed()
 {
 	filename_edit->set_text("");
@@ -213,71 +201,10 @@ void FileDialog::_go_up()
 	_push_history();
 }
 
-void FileDialog::_go_back()
-{
-	if (local_history_pos <= 0) {
-		return;
-	}
-
-	local_history_pos--;
-	_change_dir(local_history[local_history_pos]);
-
-	dir_prev->set_disabled(local_history_pos == 0);
-	dir_next->set_disabled(local_history_pos == local_history.size() - 1);
-}
-
-void FileDialog::_go_forward()
-{
-	if (local_history_pos >= local_history.size() - 1) {
-		return;
-	}
-
-	local_history_pos++;
-	_change_dir(local_history[local_history_pos]);
-
-	dir_prev->set_disabled(local_history_pos == 0);
-	dir_next->set_disabled(local_history_pos == local_history.size() - 1);
-}
-
-void FileDialog::deselect_all()
-{
-	// Clear currently selected items in file manager.
-	file_list->deselect_all();
-
-	// And change get_ok title.
-	get_ok_button()->set_disabled(_is_open_should_be_disabled());
-
-	switch (mode) {
-	case FILE_MODE_OPEN_FILE:
-	case FILE_MODE_OPEN_FILES:
-		set_default_ok_text(ETR("Open"));
-		break;
-	case FILE_MODE_OPEN_DIR:
-		set_default_ok_text(ETR("Select Current Folder"));
-		break;
-	case FILE_MODE_OPEN_ANY:
-		set_default_ok_text(ETR("Open"));
-		break;
-	case FILE_MODE_SAVE_FILE:
-		set_default_ok_text(ETR("Save"));
-		break;
-	}
-}
-
 int FileDialog::_get_selected_file_idx()
 {
 	const PackedInt32Array selected = file_list->get_selected_items();
 	return selected.is_empty() ? -1 : selected[0];
-}
-
-void FileDialog::_file_list_multi_selected(int p_item, bool p_selected)
-{
-	if (p_selected) {
-		_file_list_selected(p_item);
-	}
-	else {
-		get_ok_button()->set_disabled(_is_open_should_be_disabled());
-	}
 }
 
 void FileDialog::update_file_name()
@@ -503,58 +430,6 @@ void FileDialog::set_mode_overrides_title(bool p_override) { mode_overrides_titl
 
 bool FileDialog::is_mode_overriding_title() const { return mode_overrides_title; }
 
-void FileDialog::set_file_mode(FileMode p_mode)
-{
-	ERR_FAIL_INDEX((int)p_mode, 5);
-	if (mode == p_mode) {
-		return;
-	}
-	mode = p_mode;
-	switch (mode) {
-	case FILE_MODE_OPEN_FILE:
-		set_default_ok_text(ETR("Open"));
-		if (mode_overrides_title) {
-			set_title(ETR("Open a File"));
-		}
-		break;
-	case FILE_MODE_OPEN_FILES:
-		set_default_ok_text(ETR("Open"));
-		if (mode_overrides_title) {
-			set_title(ETR("Open File(s)"));
-		}
-		break;
-	case FILE_MODE_OPEN_DIR:
-		set_default_ok_text(ETR("Select Current Folder"));
-		if (mode_overrides_title) {
-			set_title(ETR("Open a Directory"));
-		}
-		break;
-	case FILE_MODE_OPEN_ANY:
-		set_default_ok_text(ETR("Open"));
-		if (mode_overrides_title) {
-			set_title(ETR("Open a File or Directory"));
-		}
-		make_dir_button->show();
-		break;
-	case FILE_MODE_SAVE_FILE:
-		set_default_ok_text(ETR("Save"));
-		if (mode_overrides_title) {
-			set_title(ETR("Save a File"));
-		}
-		break;
-	}
-	_update_make_dir_visible();
-
-	if (mode == FILE_MODE_OPEN_FILES) {
-		file_list->set_select_mode(ItemList::SELECT_MULTI);
-	}
-	else {
-		file_list->set_select_mode(ItemList::SELECT_SINGLE);
-	}
-
-	get_ok_button()->set_disabled(_is_open_should_be_disabled());
-}
-
 FileDialog::FileMode FileDialog::get_file_mode() const { return mode; }
 
 void FileDialog::set_display_mode(DisplayMode p_mode)
@@ -709,18 +584,6 @@ void FileDialog::_invalidate()
 	is_invalidating = false;
 }
 
-void FileDialog::_setup_button(Button* p_button, const Ref<Texture2D>& p_icon)
-{
-	p_button->set_button_icon(p_icon);
-
-	p_button->begin_bulk_theme_override();
-	p_button->add_theme_color_override(SNAME("icon_normal_color"), theme_cache.icon_normal_color);
-	p_button->add_theme_color_override(SNAME("icon_hover_color"), theme_cache.icon_hover_color);
-	p_button->add_theme_color_override(SNAME("icon_focus_color"), theme_cache.icon_focus_color);
-	p_button->add_theme_color_override(SNAME("icon_pressed_color"), theme_cache.icon_pressed_color);
-	p_button->end_bulk_theme_override();
-}
-
 void FileDialog::_update_make_dir_visible()
 {
 	can_create_folders = customization_flags[CUSTOMIZATION_CREATE_FOLDER] &&
@@ -813,13 +676,6 @@ void FileDialog::_favorite_pressed()
 	}
 	favorites_changed = true;
 	_update_favorite_list();
-}
-
-void FileDialog::_update_fav_buttons()
-{
-	const int current = favorite_list->get_current();
-	fav_up_button->set_disabled(current < 1);
-	fav_down_button->set_disabled(current == -1 || current >= favorite_list->get_item_count() - 1);
 }
 
 void FileDialog::_save_to_recent()

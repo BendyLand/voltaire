@@ -43,8 +43,6 @@
 #include "scene/gui/separator.h"
 #include "scene/gui/texture_rect.h"
 
-// Inspector controls.
-
 void ControlPositioningWarning::_update_toggler()
 {
 	Ref<Texture2D> arrow;
@@ -139,19 +137,6 @@ ControlPositioningWarning::ControlPositioningWarning()
 	hint_filler_right = memnew(Control);
 	hint_filler_right->hide();
 	grid->add_child(hint_filler_right);
-}
-
-void EditorPropertyAnchorsPreset::_set_read_only(bool p_read_only)
-{
-	options->set_disabled(p_read_only);
-}
-
-void EditorPropertySizeFlags::_set_read_only(bool p_read_only)
-{
-	for (CheckBox* check : flag_checks) {
-		check->set_disabled(p_read_only);
-	}
-	flag_presets->set_disabled(p_read_only);
 }
 
 void EditorPropertySizeFlags::_preset_selected(int p_which)
@@ -283,51 +268,6 @@ void ControlEditorPresetPicker::_update_preset_button_state(int p_preset)
 	}
 }
 
-void AnchorPresetPicker::_notification(int p_notification)
-{
-	switch (p_notification) {
-	case NOTIFICATION_THEME_CHANGED: {
-		preset_buttons[PRESET_TOP_LEFT]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignTopLeft")));
-		preset_buttons[PRESET_CENTER_TOP]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignCenterTop")));
-		preset_buttons[PRESET_TOP_RIGHT]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignTopRight")));
-
-		preset_buttons[PRESET_CENTER_LEFT]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignCenterLeft")));
-		preset_buttons[PRESET_CENTER]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignCenter")));
-		preset_buttons[PRESET_CENTER_RIGHT]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignCenterRight")));
-
-		preset_buttons[PRESET_BOTTOM_LEFT]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignBottomLeft")));
-		preset_buttons[PRESET_CENTER_BOTTOM]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignCenterBottom")));
-		preset_buttons[PRESET_BOTTOM_RIGHT]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignBottomRight")));
-
-		preset_buttons[PRESET_TOP_WIDE]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignTopWide")));
-		preset_buttons[PRESET_HCENTER_WIDE]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignHCenterWide")));
-		preset_buttons[PRESET_BOTTOM_WIDE]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignBottomWide")));
-
-		preset_buttons[PRESET_LEFT_WIDE]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignLeftWide")));
-		preset_buttons[PRESET_VCENTER_WIDE]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignVCenterWide")));
-		preset_buttons[PRESET_RIGHT_WIDE]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignRightWide")));
-
-		preset_buttons[PRESET_FULL_RECT]->set_button_icon(
-			get_editor_theme_icon(SNAME("ControlAlignFullRect")));
-	} break;
-	}
-}
-
 void AnchorPresetPicker::set_selected_preset(int p_preset)
 {
 	_update_preset_button_state(p_preset);
@@ -388,63 +328,12 @@ AnchorPresetPicker::AnchorPresetPicker()
 	_add_row_button(extra_row, PRESET_FULL_RECT, TTRC("Full Rect"));
 }
 
-void SizeFlagPresetPicker::set_allowed_flags(Vector<SizeFlags>& p_flags)
-{
-	preset_buttons[SIZE_SHRINK_BEGIN]->set_disabled(!p_flags.has(SIZE_SHRINK_BEGIN));
-	preset_buttons[SIZE_SHRINK_CENTER]->set_disabled(!p_flags.has(SIZE_SHRINK_CENTER));
-	preset_buttons[SIZE_SHRINK_END]->set_disabled(!p_flags.has(SIZE_SHRINK_END));
-	preset_buttons[SIZE_FILL]->set_disabled(!p_flags.has(SIZE_FILL));
-
-	expand_button->set_disabled(!p_flags.has(SIZE_EXPAND));
-	if (p_flags.has(SIZE_EXPAND)) {
-		expand_button->set_tooltip_text(
-			TTR("Enable to also set the Expand flag.\nDisable to only set Shrink/Fill flags."));
-	}
-	else {
-		expand_button->set_pressed(false);
-		expand_button->set_tooltip_text(
-			TTR("Some parents of the selected nodes do not support the Expand flag."));
-	}
-}
-
 void SizeFlagPresetPicker::set_selected_preset(int p_preset)
 {
 	_update_preset_button_state(p_preset);
 }
 
 void SizeFlagPresetPicker::set_expand_flag(bool p_expand) { expand_button->set_pressed(p_expand); }
-
-void SizeFlagPresetPicker::_notification(int p_notification)
-{
-	switch (p_notification) {
-	case NOTIFICATION_THEME_CHANGED: {
-		if (vertical) {
-			preset_buttons[SIZE_SHRINK_BEGIN]->set_button_icon(
-				get_editor_theme_icon(SNAME("ControlAlignCenterTop")));
-			preset_buttons[SIZE_SHRINK_CENTER]->set_button_icon(
-				get_editor_theme_icon(SNAME("ControlAlignCenter")));
-			preset_buttons[SIZE_SHRINK_END]->set_button_icon(
-				get_editor_theme_icon(SNAME("ControlAlignCenterBottom")));
-
-			preset_buttons[SIZE_FILL]->set_button_icon(
-				get_editor_theme_icon(SNAME("ControlAlignVCenterWide")));
-		}
-		else {
-			preset_buttons[SIZE_SHRINK_BEGIN]->set_button_icon(
-				get_editor_theme_icon(SNAME("ControlAlignCenterLeft")));
-			preset_buttons[SIZE_SHRINK_CENTER]->set_button_icon(
-				get_editor_theme_icon(SNAME("ControlAlignCenter")));
-			preset_buttons[SIZE_SHRINK_END]->set_button_icon(
-				get_editor_theme_icon(SNAME("ControlAlignCenterRight")));
-
-			preset_buttons[SIZE_FILL]->set_button_icon(
-				get_editor_theme_icon(SNAME("ControlAlignHCenterWide")));
-		}
-	} break;
-	}
-}
-
-// Toolbar.
 
 Vector2 ControlEditorToolbar::_position_to_anchor(const Control* p_control, Vector2 position)
 {
@@ -473,20 +362,7 @@ Vector2 ControlEditorToolbar::_position_to_anchor(const Control* p_control, Vect
 	return output;
 }
 
-void ControlEditorToolbar::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		anchors_button->set_button_icon(get_editor_theme_icon(SNAME("ControlLayout")));
-		anchor_mode_button->set_button_icon(get_editor_theme_icon(SNAME("Anchor")));
-		containers_button->set_button_icon(get_editor_theme_icon(SNAME("ContainerLayout")));
-	} break;
-	}
-}
-
 ControlEditorToolbar* ControlEditorToolbar::singleton = nullptr;
-
-// Editor plugin.
 
 void ControlOffsetTransformPreview::forward_canvas_draw_over_viewport(Control* p_overlay) const
 {

@@ -85,7 +85,8 @@ bool ScriptCreateDialog::_validate_parent(const String& p_string)
 	return EditorNode::get_editor_data().is_type_recognized(p_string);
 }
 
-void ScriptCreateDialog::_parent_name_changed(const String& p_parent)
+void ScriptCreateDialog::_parent_name_changed(const String&
+ p_parent)
 {
 	is_parent_name_valid = _validate_parent(parent_name->get_text());
 	validation_panel->update();
@@ -171,122 +172,6 @@ void ScriptCreateDialog::_path_changed(const String& p_path)
 		is_new_script_created = false;
 	}
 	validation_panel->update();
-}
-
-void ScriptCreateDialog::_update_dialog()
-{
-	// "Add Script Dialog" GUI logic and script checks.
-	_update_template_menu();
-
-	// Is script path/name valid (order from top to bottom)?
-
-	if (!is_built_in && !is_path_valid) {
-		validation_panel->set_message(
-			MSG_ID_SCRIPT, TTRC("Invalid path."), EditorValidationPanel::MSG_ERROR);
-	}
-
-	if (!is_parent_name_valid && is_new_script_created) {
-		validation_panel->set_message(MSG_ID_SCRIPT, TTRC("Invalid inherited parent name or path."),
-			EditorValidationPanel::MSG_ERROR);
-	}
-
-	if (validation_panel->is_valid() && !is_new_script_created) {
-		validation_panel->set_message(
-			MSG_ID_SCRIPT, TTRC("File exists, it will be reused."), EditorValidationPanel::MSG_OK);
-	}
-
-	if (!is_built_in && !path_error.is_empty()) {
-		validation_panel->set_message(MSG_ID_PATH, path_error, EditorValidationPanel::MSG_ERROR);
-	}
-
-	// Is script Built-in?
-
-	if (is_built_in) {
-		file_path->set_editable(false);
-		path_button->set_disabled(true);
-		re_check_path = true;
-	}
-	else {
-		file_path->set_editable(true);
-		path_button->set_disabled(false);
-		if (re_check_path) {
-			re_check_path = false;
-			_path_changed(file_path->get_text());
-		}
-	}
-
-	if (!_can_be_built_in()) {
-		built_in->set_pressed(false);
-	}
-	built_in->set_disabled(!_can_be_built_in());
-
-	// Is Script created or loaded from existing file?
-
-	if (is_built_in) {
-		validation_panel->set_message(MSG_ID_BUILT_IN,
-			TTRC("Note: Built-in scripts have some limitations and can't be edited using an "
-				 "external editor."),
-			EditorValidationPanel::MSG_INFO, false);
-	}
-	else if (file_path->get_text().get_file().get_basename() == parent_name->get_text()) {
-		validation_panel->set_message(MSG_ID_BUILT_IN,
-			TTRC("Warning: Having the script name be the same as a built-in type is usually not "
-				 "desired."),
-			EditorValidationPanel::MSG_WARNING, false);
-	}
-
-	path_controls[0]->set_visible(!is_built_in);
-	path_controls[1]->set_visible(!is_built_in);
-	name_controls[0]->set_visible(is_built_in);
-	name_controls[1]->set_visible(is_built_in);
-
-	bool is_new_file = is_built_in || is_new_script_created;
-
-	parent_name->set_editable(is_new_file);
-	parent_search_button->set_disabled(!is_new_file);
-	parent_browse_button->set_disabled(!is_new_file || !can_inherit_from_file);
-	template_inactive_message = "";
-	String button_text = is_new_file ? TTR("Create") : TTR("Load");
-	set_ok_button_text(button_text);
-
-	if (is_new_file) {
-		if (is_built_in) {
-			validation_panel->set_message(MSG_ID_PATH, TTRC("Built-in script (into scene file)."),
-				EditorValidationPanel::MSG_OK);
-		}
-	}
-	else {
-		template_inactive_message = TTRC("Using existing script file.");
-		if (load_enabled) {
-			if (is_path_valid) {
-				validation_panel->set_message(MSG_ID_PATH,
-					TTRC("Will load an existing script file."), EditorValidationPanel::MSG_OK);
-			}
-		}
-		else {
-			validation_panel->set_message(
-				MSG_ID_PATH, TTRC("Script file already exists."), EditorValidationPanel::MSG_ERROR);
-		}
-	}
-
-	// Show templates list if needed.
-	if (is_using_templates) {
-		// Check if at least one suitable template has been found.
-		if (template_menu->get_item_count() == 0 && template_inactive_message.is_empty()) {
-			template_inactive_message = TTRC("No suitable template.");
-		}
-	}
-	else {
-		template_inactive_message = TTRC("Empty");
-	}
-
-	if (!template_inactive_message.is_empty()) {
-		template_menu->set_disabled(true);
-		template_menu->clear();
-		template_menu->add_item(template_inactive_message);
-		template_menu->set_item_auto_translate_mode(-1, AUTO_TRANSLATE_MODE_ALWAYS);
-		validation_panel->set_message(MSG_ID_TEMPLATE, "", EditorValidationPanel::MSG_INFO);
-	}
 }
 
 

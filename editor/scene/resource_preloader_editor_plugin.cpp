@@ -51,10 +51,6 @@ void ResourcePreloaderEditor::_notification(int p_what)
 			_update_library();
 		}
 	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		load->set_button_icon(get_editor_theme_icon(SNAME("Folder")));
-	} break;
 	}
 }
 
